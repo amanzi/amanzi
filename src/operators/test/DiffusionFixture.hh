@@ -54,7 +54,7 @@ struct DiffusionFixture {
     if (mesh_file == "Generate1D") {
       mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 1);
     } else if (mesh_file == "Generate2D") {
-      mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 10, 10);
+      mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 10);
     } else if (mesh_file == "Generate2D_HiRes") {
       mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 100);
     } else if (mesh_file == "Generate3D") {

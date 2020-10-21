@@ -467,7 +467,7 @@ class Operator {
   Teuchos::RCP<MatrixFE> Amat_;
   Teuchos::RCP<SuperMap> smap_;
 
-  Teuchos::RCP<AmanziPreconditioners::Preconditioner<Operator,CompositeVector> > preconditioner_;
+  Teuchos::RCP<Matrix<Operator,CompositeVector,CompositeVectorSpace>> preconditioner_;
 
   Teuchos::RCP<VerboseObject> vo_;
 

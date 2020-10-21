@@ -122,7 +122,8 @@ BlockVector<Scalar>::operator=(const BlockVector<Scalar>& other)
       if (other_v == Teuchos::null && this_v == Teuchos::null) {
         // pass
       } else if (this_v == Teuchos::null) {
-        auto new_v = Teuchos::rcp(new MultiVector_type_<Scalar>(*other_v));
+        auto new_v = Teuchos::rcp(new MultiVector_type_<Scalar>(*other_v,Teuchos::Copy));
+        Tpetra::deep_copy(*new_v, *other_v);
         SetComponent_(name, false, new_v);
       } else {
         Tpetra::deep_copy(*this_v, *other_v);

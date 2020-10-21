@@ -1,56 +1,71 @@
 /*
-  Copyright 2010-201x held jointly by participating institutions.
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+//! Diagonal preconditioner.
+
+/*!
+
+Simply applys the pointwise inverse of the diagonal of the matrix as an
+extremely cheap matrix.
+
+This is provided when using the `"preconditioning method`"=`"diagonal`" in the
+`Preconditioner`_ spec.
+
+No parameters are required.
+
 */
 
-//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_PRECONDITIONER_DIAGONAL_HH_
 #define AMANZI_PRECONDITIONER_DIAGONAL_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+//#include "Epetra_MultiVector.h"
+//#include "Epetra_RowMatrix.h"
 
 #include "exceptions.hh"
 #include "Preconditioner.hh"
 
 namespace Amanzi {
-namespace AmanziPreconditioners {
+namespace AmanziSolvers {
 
-template <class Matrix, class Vector>
-class PreconditionerDiagonal : public Preconditioner<Matrix, Vector> {
+class PreconditionerDiagonal : public Preconditioner {
  public:
-  PreconditionerDiagonal(){};
-  ~PreconditionerDiagonal(){};
+  virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final {};
+  virtual void InitializeInverse() override final {}
+  virtual void ComputeInverse() override final {
+    diagonal_ = Teuchos::rcp(new Vector_type(h_->getRowMap()));
+    diagonal_->putScalar(0.);
+    h_->getLocalDiagCopy(*diagonal_);
+    diagonal_->reciprocal(*diagonal_);
+  };
 
-  void
-  Init(const std::string& name, const Teuchos::RCP<Teuchos::ParameterList>& plist) override{};
-  void Update(const Teuchos::RCP<Matrix>& A) override
-  {
-    work_vec_ = Teuchos::rcp(new Vector(A->getRowMap()));
-    work_vec_->putScalar(0.);
-    A->getLocalDiagCopy(*work_vec_);
-    work_vec_->reciprocal(*work_vec_);
-  }
-
-  void Destroy() override{};
-  int applyInverse(const Vector& v, Vector& hv) const override
-  {
-    hv.elementWiseMultiply(1., v, *work_vec_, 0.);
+  virtual int ApplyInverse(const Vector_type& v, Vector_type& hv) const override final {
+    AMANZI_ASSERT(diagonal_.get()); // Compute called
+    hv.elementWiseMultiply(1., v, *diagonal_, 0.);
     return 0;
   }
-  int returned_code() override { return 0; }
+
+  virtual int returned_code() const override final  { return returned_code_; }
+  virtual std::string returned_code_string() const override final {
+    if (returned_code_ == 0) return "success";
+    return "failed ReciprocalMultiply()";
+  }
 
  private:
-  Teuchos::RCP<Vector> work_vec_;
+  Teuchos::RCP<Vector_type> diagonal_;
+  mutable int returned_code_;
 };
 
-} // namespace AmanziPreconditioners
-} // namespace Amanzi
+}  // namespace AmanziSolvers
+}  // namespace Amanzi
+
+
 
 #endif

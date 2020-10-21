@@ -19,7 +19,7 @@
 #include "dbc.hh"
 #include "DenseVector.hh"
 #include "MatrixFE.hh"
-#include "PreconditionerFactory.hh"
+#include "InverseFactory.hh"
 #include "SuperMap.hh"
 
 // Operators
@@ -396,7 +396,7 @@ int Operator::applyInverse(const CompositeVector& X, CompositeVector& Y) const
     Errors::Message msg("Operator did not initialize a preconditioner.\n");
     Exceptions::amanzi_throw(msg);
   }
-  int ierr = preconditioner_->applyInverse(X, Y);
+  int ierr = preconditioner_->ApplyInverse(X, Y);
   if (ierr) {
     Errors::Message msg("Operator: ApplyInverse failed.\n");
     Exceptions::amanzi_throw(msg);
@@ -482,10 +482,10 @@ void Operator::InitializePreconditioner(const ParameterList_ptr_type& plist)
   //   // this worked too, but ParameterList is a boost::any at heart... --etc
   //   plist.sublist("boomer amg parameters").set("block indices", block_ids.second);
   // }
-  AmanziPreconditioners::PreconditionerFactory<Operator,CompositeVector> factory;
-  preconditioner_ = factory.Create(plist);
+  //AmanziPreconditioners::PreconditionerFactory<Operator,CompositeVector> factory;
+  //preconditioner_ = factory.Create(plist);
+  preconditioner_ = AmanziSolvers::createInverse(*plist, Teuchos::rcpFromRef(*this));
 }
-
 
 /* ******************************************************************
 * Two-stage initialization of preconditioner, part 2.

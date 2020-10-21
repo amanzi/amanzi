@@ -1,15 +1,14 @@
 /*
-  Copyright 2010-201x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
-
-  Authors:
-
 */
 
-//!
+//! Calls Nox nonlinear solvers/JFNK.
 
+
+  
 #ifndef AMANZI_SOLVER_NOX_
 #define AMANZI_SOLVER_NOX_
 
@@ -22,7 +21,7 @@
 #include "NOX_Utils.H"
 
 #include "MatrixJF.hh"
-#include "LinearOperator.hh"
+#include "Matrix.hh"
 #include "ResidualDebugger.hh"
 #include "SolverFnBase.hh"
 #include "Solver.hh"
@@ -31,7 +30,7 @@
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template <class VectorClass, class VectorSpace>
+template<class VectorClass, class VectorSpace>
 class SolverNox : public Solver<VectorClass, VectorSpace> {
  public:
   SolverNox(Teuchos::ParameterList& plist)
@@ -45,7 +44,7 @@ class SolverNox : public Solver<VectorClass, VectorSpace> {
     // Create the parameterList for NOX
     noxList_ = Teuchos::rcp(new Teuchos::ParameterList);
     Teuchos::ParameterList& printing = noxList_->sublist("Printing");
-    printing.set("Output Information", 511);
+    printing.set("Output Information",511);
 
     // Get the parameters from that
     tol_ = nonlinearList.get("nonlinear tolerance", tol_);
@@ -73,29 +72,25 @@ class SolverNox : public Solver<VectorClass, VectorSpace> {
     divergence.set("Consecutive Iterations", max_divergence_count);
     maxiters.set("Test Type", "MaxIters");
     maxiters.set("Maximum Iterations", max_itrs);
-    tests_ = NOX::StatusTest::buildStatusTests(stl, utils);
+    tests_ = NOX::StatusTest::buildStatusTests(stl,utils);
   }
 
   // still needs tests!
-  void Init(const Teuchos::RCP<SolverFnBase<VectorClass>>& fn,
-            const VectorSpace& map)
-  {
+  void Init(const Teuchos::RCP<SolverFnBase<VectorClass> >& fn,
+            const VectorSpace& map) {
     // wrap the base fn in a JF fn
-    jf_fnbase_ = Teuchos::rcp(
-      new SolverFnBaseJF<VectorClass, VectorSpace>(*plist_, fn, map));
+    jf_fnbase_ = Teuchos::rcp(new SolverFnBaseJF<VectorClass,VectorSpace>(*plist_, fn, map));
 
     group_ = Teuchos::rcp(new AmanziGroup<VectorClass>(jf_fnbase_));
   }
 
-  int Solve(const Teuchos::RCP<VectorClass>& u)
-  {
+  int Solve(const Teuchos::RCP<VectorClass>& u) {
     NoxVector<VectorClass> u_nox(u);
     group_->setX(u_nox);
     // We can't build the solver until we have set X
     solver_ = NOX::Solver::buildSolver(group_, tests_, noxList_);
     solver_->solve();
-    *u =
-      *dynamic_cast<const NoxVector<VectorClass>&>(group_->getX()).get_vector();
+    *u = *dynamic_cast<const NoxVector<VectorClass>&>(group_->getX()).get_vector();
     return 0;
   }
 
@@ -103,28 +98,28 @@ class SolverNox : public Solver<VectorClass, VectorSpace> {
   void set_tolerance(double tol) { tol_ = tol; }
   void set_pc_lag(double pc_lag) { pc_lag_ = pc_lag; }
   void set_db(const Teuchos::RCP<ResidualDebugger>& db) { db_ = db; }
-
-  // access
+  
+  // access 
   double tolerance() { return tol_; }
-  double residual() { return 0.0; } // FIXME
+  double residual() { return 0.0; }  // FIXME
   int num_itrs() { return solver_->getNumIterations(); }
   int returned_code() { return 0; }
   int pc_calls() { return 0; }
   int pc_updates() { return 0; }
 
  private:
-  Teuchos::RCP<AmanziGroup<VectorClass>> group_;
+  Teuchos::RCP<AmanziGroup<VectorClass> > group_;
   Teuchos::RCP<NOX::Solver::Generic> solver_;
   Teuchos::RCP<NOX::StatusTest::Generic> tests_;
   Teuchos::RCP<Teuchos::ParameterList> plist_;
   Teuchos::RCP<Teuchos::ParameterList> noxList_;
   Teuchos::RCP<ResidualDebugger> db_;
-  Teuchos::RCP<SolverFnBaseJF<VectorClass, VectorSpace>> jf_fnbase_;
+  Teuchos::RCP<SolverFnBaseJF<VectorClass,VectorSpace> > jf_fnbase_;
   double tol_;
   double pc_lag_;
 };
 
-} // namespace AmanziSolvers
-} // namespace Amanzi
+}  // namespace AmanziSolvers
+}  // namespace Amanzi
 
 #endif

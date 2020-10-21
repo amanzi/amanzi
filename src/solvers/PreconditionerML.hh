@@ -1,17 +1,23 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+//! Trilinos ML smoothed aggregation multigrid.
+
 /*
-  Copyright 2010-201x held jointly by participating institutions.
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-//! PreconditionerML: Trilinos ML multigrid.
-
 /*!
-Internal parameters of Trilinos ML includes
+
+This is provided when using the `"preconditioning method`"=`"ml`" in the
+`Preconditioner`_ spec.
+
+.. warning:: no input spec defined
+
+See also: https://trilinos.github.io/pdfs/mlguide5.pdf
 
 Example:
 
@@ -44,40 +50,53 @@ Example:
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+//#include "Epetra_MultiVector.h"
+//#include "Epetra_RowMatrix.h"
 #include "ml_MultiLevelPreconditioner.h"
 
 #include "exceptions.hh"
 #include "Preconditioner.hh"
 
 namespace Amanzi {
-namespace AmanziPreconditioners {
+namespace AmanziSolvers {
 
-class PreconditionerML
-  : public Preconditioner<Epetra_RowMatrix, Epetra_MultiVector> {
+class PreconditionerML : public Preconditioner {
  public:
-  PreconditionerML(){};
-  ~PreconditionerML() = default;
+  PreconditionerML() :
+      Preconditioner(),
+      initialized_(false) {};
 
-  void
-  Init(const std::string& name, const Teuchos::ParameterList& list) override;
-  void Update(const Teuchos::RCP<const Epetra_RowMatrix>& A) override;
-  void Destroy() override;
+  virtual ~PreconditionerML() {
+    // unclear whether this is needed or not...  It seems that it
+    // ought to be, but destructors crash occassionally if it is used.
+    //    if (ML_.get()) ML_->DestroyPreconditioner();
+  }
 
-  int ApplyInverse(const Epetra_MultiVector& v,
-                   Epetra_MultiVector& hv) const override;
+  virtual void set_matrices(const Teuchos::RCP<Epetra_CrsMatrix>& m,
+			    const Teuchos::RCP<Epetra_CrsMatrix>& h) override final;
 
-  int returned_code() override { return returned_code_; }
+  virtual void set_inverse_parameters(Teuchos::ParameterList& list) override final;
+  virtual void InitializeInverse() override final;
+  virtual void ComputeInverse() override final;
+  virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const override final;
+
+  virtual int returned_code() const override final { return returned_code_; }
+  virtual std::string returned_code_string() const override final {
+    if (returned_code_ == 0) return "success";
+    return "PreconditionerML: unknown error";
+  }
 
  private:
   Teuchos::ParameterList list_;
   Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> ML_;
 
-  bool initialized_;
   mutable int returned_code_;
+  bool initialized_;
 };
 
-} // namespace AmanziPreconditioners
-} // namespace Amanzi
+}  // namespace AmanziSolvers
+}  // namespace Amanzi
+
 
 
 #endif

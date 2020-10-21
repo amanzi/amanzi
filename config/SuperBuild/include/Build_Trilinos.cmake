@@ -83,8 +83,6 @@ if (ENABLE_KOKKOS)
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_SERIAL:BOOL=ON") 
 endif()
 
-
-
 # Build PyTrilinos if shared
 # if (BUILD_SHARED_LIBS)
 #   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_PyTrilinos:BOOL=ON")
@@ -209,7 +207,7 @@ message(DEBUG "Trilinos_CMAKE_CXX_FLAGS = ${Trilinos_CMAKE_CXX_FLAGS}")
 if (ENABLE_KOKKOS)
   # - Architecture Args.... these will need work
   set(Trilinos_CMAKE_ARCH_ARGS
-    "-DKokkos_ENABLE_Serial:BOOL=ON"
+    "-DKokkos_ENABLE_SERIAL:BOOL=ON"
     "-DKokkos_ENABLE_Pthread:BOOL=OFF"
     )
 
@@ -222,6 +220,7 @@ if (ENABLE_KOKKOS)
     if(NOT DEFINED ENV{CUDA_LAUNCH_BLOCKING})
       message(FATAL_ERROR "Environment CUDA_LAUNCH_BLOCKING have to be set to 1 to continue")
     endif()
+    set(NVCC_WRAPPER_DEFAULT_COMPILER ${CMAKE_CXX_COMPILER})
     message(STATUS "NVCC_WRAPPER_DEFAULT_COMPILER=${NVCC_WRAPPER_DEFAULT_COMPILER}")
     set(NVCC_WRAPPER_PATH "${Trilinos_source_dir}/packages/kokkos/bin/nvcc_wrapper")
     set(Trilinos_CMAKE_CXX_FLAGS "${Trilinos_CMAKE_CXX_FLAGS} \
@@ -234,18 +233,23 @@ if (ENABLE_KOKKOS)
     message("FLAGS: ${Trilinos_CMAKE_CXX_FLAGS}")
     list(APPEND Trilinos_CMAKE_ARCH_ARGS
       "-DTPL_ENABLE_CUDA:BOOL=ON"
-      "-DKokkos_ENABLE_Cuda:BOOL=ON"
-      "-DKokkos_ENABLE_Cuda_UVM:BOOL=ON"
-      "-DKokkos_ENABLE_Cuda_Lambda:BOOL=ON"
+      "-DKokkos_ENABLE_CUDA:BOOL=ON"
+      "-DKokkos_ENABLE_CUDA_UVM:BOOL=ON"
+      "-DKokkos_ENABLE_CUDA_LAMBDA:BOOL=ON"
       "-DKOKKOS_ARCH:STRING=Power9;Volta70"
-      "-DKokkos_ENABLE_OpenMP:BOOL=OFF")
+      "-DKokkos_ENABLE_OPENMP:BOOL=OFF")
     # Change the default compiler for Trilinos to use nvcc_wrapper
     set(Trilinos_CXX_COMPILER ${NVCC_WRAPPER_PATH})
+
+    # These flags check if the underlying kokkos was build properly for 
+    # kokkos-kernels. It does not enable CUDA 
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS 
+      "-DKokkosKernels_REQUIRE_DEVICES=CUDA") 
 
   else()
     list(APPEND Trilinos_CMAKE_ARCH_ARGS
       "-DKokkos_ENABLE_CUDA:BOOL=OFF"
-      "-DKokkos_ENABLE_OpenMP:BOOL=OFF")
+      "-DKokkos_ENABLE_OPENMP:BOOL=OFF")
   endif()
 endif()
 

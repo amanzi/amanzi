@@ -126,6 +126,23 @@ void testWGravity(const Teuchos::RCP<AnalyticBase>& ana,
 * Exactness test for mixed diffusion solver.
 */
 SUITE(DIFFUSION) {
+
+ TEST(Analytic00_Linear1_FV_DirichletNeumannBox_Generate2D_RILUK) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
+    test<Operators::PDE_DiffusionFV>(
+        ana, "ifpack2: RILUK", "Dirichlet", "Generate2D",
+        "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
+#if 0 
+ TEST(Analytic00_Linear1_FV_DirichletNeumannBox_Generate2D_ILU) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
+    test<Operators::PDE_DiffusionFV>(
+        ana, "ifpack2: ILUT", "Dirichlet", "Generate2D",
+        "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
+
+#endif 
+
   // NOTE: we attempt combinations of:
   //    discretization (FV, MFD, NLFV, NLFV_BndFaces)
   //    boundary condition type (Dirichlet, DirichletNeumannBox)
@@ -149,6 +166,15 @@ SUITE(DIFFUSION) {
   //            Analytic03b: same as 03, but with Tensor coef=1 and scalar coef as the scalar
   //
 
+#if 0 
+  TEST(Analytic00_Linear1_MFD_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
+    test<Operators::PDE_DiffusionMFD>(
+        ana, "MueLu", "DirichletNeumannBox", "Generate2D",
+        "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
+#endif 
+#if 0 
   // Not all combinations make sense, obviously.  2D problems must be run with
   // 2D meshes, and 3D with 3D.
 #if FV  
@@ -291,32 +317,38 @@ SUITE(DIFFUSION) {
         "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   } 
 #endif
-#if MFD  
+#endif 
+#if 0 
+//#if MFD  
   TEST(Analytic00_Linear1_MFD_Dirichlet_Generate2D_identity) {
     auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
     test<Operators::PDE_DiffusionMFD>(
-        ana, "identity", "Dirichlet", "Generate2D",
-        "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+        ana, "MueLu", "Dirichlet", "Generate2D",
+        "mixed", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   }
+#endif 
+  #if 0 
   TEST(Analytic00_LinearGravity1_MFD_Dirichlet_Generate2D_identity) {
     auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
     testWGravity<Operators::PDE_DiffusionMFDwithGravity>(
-        ana, 1.1, "identity", "Dirichlet", "Generate2D",
+        ana, 1.1, "MueLu", "Dirichlet", "Generate2D",
         "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   }
   TEST(Analytic00_Linear1_MFD_Dirichlet_Generate2D_diagonal) {
     auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
     test<Operators::PDE_DiffusionMFD>(
-        ana, "diagonal", "Dirichlet", "Generate2D",
+        ana, "MueLu", "Dirichlet", "Generate2D",
         "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   }
   TEST(Analytic00_LinearGravity1_MFD_Dirichlet_Generate2D_diagonal) {
     auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
     testWGravity<Operators::PDE_DiffusionMFDwithGravity>(
-        ana, 1.1, "diagonal", "Dirichlet", "Generate2D",
+        ana, 1.1, "MueLu", "Dirichlet", "Generate2D",
         "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   }
-#endif
+  #endif 
+//#endif
+#if 0 
 #if NLFV  
   // TEST(Analytic00_Linear1_NLFV_Dirichlet_Generate2D_identity) {
   //   auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
@@ -368,14 +400,12 @@ SUITE(DIFFUSION) {
   // }
 #endif
 
-
   //  
   // change PC to an assembling PC, change BCs
   //
   // Exact solution
 #if ASSEMBLING
   
-#if FV  
   TEST(Analytic00_Linear1_FV_DirichletNeumannBox_Generate2D_ILU) {
     auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
     test<Operators::PDE_DiffusionFV>(
@@ -388,7 +418,7 @@ SUITE(DIFFUSION) {
         ana, 1.1, "ifpack2: ILUT", "Dirichlet", "Generate2D",
         "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   }
-#endif
+
 #if MFD  
   TEST(Analytic00_Linear1_MFD_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
     auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
@@ -953,5 +983,5 @@ SUITE(DIFFUSION) {
   // }
 #endif
 
-
+#endif 
 }
