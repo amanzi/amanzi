@@ -113,7 +113,7 @@ TEST(NAVIER_STOKES_2D) {
   iolist.get<std::string>("file name base", "plot");
   OutputXDMF io(iolist, mesh, true, false);
 
-  io.InitializeCycle(T, 1);
+  io.InitializeCycle(T, 1, "");
   const auto& u = *S->GetFieldData("fluid_velocity")->ViewComponent("node");
   const auto& p = *S->GetFieldData("pressure")->ViewComponent("cell");
   io.WriteVector(*u(0), "velocity_x", AmanziMesh::NODE);

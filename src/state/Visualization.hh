@@ -86,9 +86,12 @@ class Visualization : public IOEvent {
   std::string name() const { return name_; }
   void set_name(const std::string& name) { name_ = name; }
 
+  std::string get_tag() const { return tag_; }
+  void set_tag(const std::string& tag) { tag_ = tag; }
+
   // public interface for coordinator clients
   void CreateFiles();
-  void CreateTimestep(double time, int cycle);
+  void CreateTimestep(double time, int cycle, const std::string& tag);
   void FinalizeTimestep() const;
 
   // public interface for data clients
@@ -101,7 +104,7 @@ class Visualization : public IOEvent {
   void ReadParameters_();
 
   std::string my_units_;
-  std::string name_;
+  std::string name_, tag_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<Output> visualization_output_;

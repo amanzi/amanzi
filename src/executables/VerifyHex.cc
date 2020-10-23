@@ -85,7 +85,7 @@ dump_output(const int& me, Amanzi::AmanziMesh::Mesh &mesh, const std::string& fi
   int nmycell(cmap.NumMyElements());
   std::vector<int> myidx(nmycell, 0);
 
-  viz_output->createTimestep(0.0, 0);
+  viz_output->createTimestep(0.0, 0, "");
 
   std::vector<double> mypart(nmycell, static_cast<double>(me+1.0));
   for (unsigned int i = 0; i < nmycell; i++) myidx[i] = i;

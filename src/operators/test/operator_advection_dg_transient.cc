@@ -839,7 +839,7 @@ void Transient(std::string filename, int nx, int ny, int nz,
       const Epetra_MultiVector& pc = *sol.ViewComponent("cell");
       auto pn = InterpolateCellToNode(mesh, *dg, pc);
   
-      io.InitializeCycle(t, nstep);
+      io.InitializeCycle(t, nstep, "");
       io.WriteVector(*pc(0), "solution", AmanziMesh::CELL);
       io.WriteVector(*(*pn)(0), "interpolation", AmanziMesh::NODE);
       io.FinalizeCycle();

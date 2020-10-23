@@ -60,7 +60,7 @@ TEST(HDF5_MPI) {
     
     // write time step data
     viz_output->open_h5file();
-    viz_output->createTimestep(time, i);
+    viz_output->createTimestep(time, i, "");
     viz_output->writeCellDataReal(*cell_quantity, "cell_quantity");
     viz_output->writeCellDataReal(*fake_pressure, "pressure");
     viz_output->writeNodeDataReal(*node_quantity, "node_quantity");

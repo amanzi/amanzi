@@ -86,7 +86,7 @@ void Visualization::WriteVector(const Epetra_MultiVector& vec, const std::vector
 // Write a vector
 // -----------------------------------------------------------------------------
 void Visualization::WriteVector(const Epetra_Vector& vec, const std::string& name) const {
-  visualization_output_->WriteVector(vec ,name, AmanziMesh::CELL);
+  visualization_output_->WriteVector(vec, name, AmanziMesh::CELL);
 }
 
 
@@ -168,12 +168,12 @@ void Visualization::CreateFiles() {
 }
 
 
-void Visualization::CreateTimestep(double time, int cycle) {
+void Visualization::CreateTimestep(double time, int cycle, const std::string& tag) {
   bool success = false;
   time = units_.ConvertTime(time, "s", my_units_, success);
   AMANZI_ASSERT(success);
   
-  visualization_output_->InitializeCycle(time, cycle);
+  visualization_output_->InitializeCycle(time, cycle, tag);
   if (write_mesh_exo_ && dynamic_mesh_) {
     std::stringstream mesh_fname;
     mesh_fname << plist_.get<std::string>("file name base") << "_mesh_" << cycle << ".exo";

@@ -679,17 +679,18 @@ void HDF5_MPI::close_h5file() {
 }
 
 
-void HDF5_MPI::createTimestep(const double time, const int iteration)
+void HDF5_MPI::createTimestep(double time, int iteration, const std::string& tag)
 {
   setIteration(iteration);
   setTime(time);
+  set_tag(tag);
 
   if (TrackXdmf() && viz_comm_->MyPID() == 0) {
     // create single step xdmf file
     Teuchos::XMLObject tmp("Xdmf");
     tmp.addChild(addXdmfHeaderLocal_("Mesh",time,iteration));
     std::stringstream filename;
-    filename << H5DataFilename() << "." << iteration << ".xmf";
+    filename << H5DataFilename() << "." << iteration << tag << ".xmf";
     of_timestep_.open(filename.str().c_str());
     // channel will be closed when the endTimestep() is called
     setxdmfStepFilename(filename.str());
@@ -718,7 +719,7 @@ void HDF5_MPI::endTimestep()
 
     // add a new time step to global VisIt xdmf files
     // TODO(barker): how to get to grid collection node, rather than root???
-    std::string record = H5DataFilename() + "." + std::to_string(Iteration()) + ".xmf";
+    std::string record = H5DataFilename() + "." + std::to_string(Iteration()) + tag_ + ".xmf";
     writeXdmfVisitGrid_(record);
     // TODO(barker): where to write out depends on where the root node is
     // ?? how to terminate stream or switch to new file out??
@@ -1135,7 +1136,7 @@ void HDF5_MPI::writeFieldData_(const Epetra_Vector &x, const std::string& varnam
   //MB: }
 
   if (TrackXdmf()) {
-    h5path << "/" << Iteration();
+    h5path << "/" << Iteration() << get_tag();
   }
 
   char *tmp;

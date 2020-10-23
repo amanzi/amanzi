@@ -369,7 +369,7 @@ void RemapTestsDualRK(std::string map_name, std::string file_name,
   iolist.get<std::string>("file name base", "plot");
   OutputXDMF io(iolist, mesh1, true, false);
 
-  io.InitializeCycle(t, 1);
+  io.InitializeCycle(t, 1, "");
   io.WriteVector(*p2c(0), "solution", AmanziMesh::CELL);
   io.WriteVector(*q2c(0), "solution-prj", AmanziMesh::CELL);
   io.FinalizeCycle();
