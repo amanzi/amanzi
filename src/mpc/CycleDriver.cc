@@ -983,10 +983,14 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   pk_->set_dt(tp_dt_[time_pr_id]);
   max_dt_ = tp_max_dt_[time_pr_id];
+  
+  // conditional i/o after initialization is performed only when 
+  // new fields are added/removed to/from the state
+  auto fields_old = StateVisFields(*S_old_);
+  auto fields = StateVisFields(*S_);
+  if (fields_old != fields) Visualize(true, "ic");
 
   S_old_ = Teuchos::null;
-  
-  Visualize(true, "ic");
 }
 
 }  // namespace Amanzi
