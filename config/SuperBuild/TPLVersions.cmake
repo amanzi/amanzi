@@ -149,6 +149,8 @@
 #                - update SuperLU_DIST to 6.1.1
 #                - update CLM to 0.1.1
 #   0.97.10      - update Hypre to 2.20.0
+#                - update SuperLU to 5.2.2
+#                - update MOAB to 5.2.0
 
 include(CMakeParseArguments)
 
@@ -380,13 +382,13 @@ set(MSTK_MD5_SUM        814e2d7202ac0dbc4d735d94e5548fc8)
 # TPL: MOAB
 #
 set(MOAB_VERSION_MAJOR  5)
-set(MOAB_VERSION_MINOR  1)
+set(MOAB_VERSION_MINOR  2)
 set(MOAB_VERSION_PATCH  0)
 set(MOAB_VERSION ${MOAB_VERSION_MAJOR}.${MOAB_VERSION_MINOR}.${MOAB_VERSION_PATCH})
 set(MOAB_URL_STRING     ftp://ftp.mcs.anl.gov/pub/fathom)
 set(MOAB_ARCHIVE_FILE   moab-${MOAB_VERSION}.tar.gz)
 set(MOAB_SAVEAS_FILE    ${MOAB_ARCHIVE_FILE})
-set(MOAB_MD5_SUM        875435654b2bc81b97e85894c2a45aaa)
+set(MOAB_MD5_SUM        dd2cf5c32ede64dfd7e9b04e0387c4b4)
 
 #
 # TPL: HYPRE
@@ -417,12 +419,12 @@ set(ParMetis_MD5_SUM        56ac6ebf6e7e8a522fa053c799dc7a92)
 #
 set(SuperLU_VERSION_MAJOR  5)
 set(SuperLU_VERSION_MINOR  2)
-set(SuperLU_VERSION_PATCH  1)
+set(SuperLU_VERSION_PATCH  2)
 set(SuperLU_VERSION  ${SuperLU_VERSION_MAJOR}.${SuperLU_VERSION_MINOR}.${SuperLU_VERSION_PATCH})
 set(SuperLU_URL_STRING     "https://github.com/xiaoyeli/superlu/archive")
 set(SuperLU_ARCHIVE_FILE   v${SuperLU_VERSION}.tar.gz)
 set(SuperLU_SAVEAS_FILE    superlu_${SuperLU_VERSION}.tar.gz)
-set(SuperLU_MD5_SUM        4a1a602d9335f1da4ba786cccc7873cd)
+set(SuperLU_MD5_SUM        1e93259572bd2412674ed809a1446bd3)
 
 #
 # TPL: SuperLU_Dist
