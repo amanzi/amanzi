@@ -36,11 +36,11 @@ class InverseIterativeMethod :
         Inverse<Matrix,Preconditioner,Vector,VectorSpace>() {};
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override;
-  virtual void InitializeInverse() override {
-    h_->InitializeInverse();
+  virtual void initializeInverse() override {
+    h_->initializeInverse();
   }
-  virtual void ComputeInverse() override {
-    h_->ComputeInverse();
+  virtual void computeInverse() override {
+    h_->computeInverse();
   }
 
   // control and statistics -- must be valid for both iterative and

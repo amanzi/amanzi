@@ -76,9 +76,10 @@ class PreconditionerML : public Preconditioner {
 			    const Teuchos::RCP<Epetra_CrsMatrix>& h) override final;
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& list) override final;
-  virtual void InitializeInverse() override final;
-  virtual void ComputeInverse() override final;
-  virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const override final;
+  virtual void initializeInverse() override final;
+  virtual void computeInverse() override final;
+  virtual int applyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const override final;
+  virtual void update(const Teuchos::RCP<Matrix_type>&) override final {}; 
 
   virtual int returned_code() const override final { return returned_code_; }
   virtual std::string returned_code_string() const override final {

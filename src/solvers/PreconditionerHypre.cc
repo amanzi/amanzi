@@ -25,9 +25,9 @@ namespace AmanziSolvers {
 /* ******************************************************************
 * Apply the preconditioner.
 ****************************************************************** */
-int PreconditionerHypre::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
+int PreconditionerHypre::applyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
 {
-  returned_code_ = IfpHypre_->ApplyInverse(v, hv);
+  returned_code_ = IfpHypre_->applyInverse(v, hv);
   AMANZI_ASSERT(returned_code_ == 0);
   return returned_code_;
 }

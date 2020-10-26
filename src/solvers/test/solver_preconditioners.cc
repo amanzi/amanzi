@@ -92,7 +92,7 @@ TEST(PRECONDITIONERS) {
 
     std::cout << "Preconditioner: " << prec_name << std::endl
               << "-------------------------------------------" << std::endl;
-    solver->ApplyInverse(u, v);
+    solver->applyInverse(u, v);
     CHECK_CLOSE(11.03249773994628, v[0], 1e-6);
     CHECK_CLOSE(10.53249773994628, v[1], 1e-6);
   }
@@ -118,7 +118,7 @@ TEST(PRECONDITIONERS_OMP) {
     auto solver = get_solver(prec_name, m);
     v.PutScalar(0.0);
 
-    solver->ApplyInverse(u, v);
+    solver->applyInverse(u, v);
     CHECK_CLOSE(11.03249773994628, v[0], 1e-6);
     CHECK_CLOSE(10.53249773994628, v[1], 1e-6);
   }
@@ -139,7 +139,7 @@ TEST(PRECONDITIONERS_OMP) {
     auto solver = get_solver(prec_name, m);
     v.PutScalar(0.0);
 
-    solver->ApplyInverse(u, v);
+    solver->applyInverse(u, v);
     CHECK_CLOSE(11.03249773994628, v[0], 1e-6);
     CHECK_CLOSE(10.53249773994628, v[1], 1e-6);
   }

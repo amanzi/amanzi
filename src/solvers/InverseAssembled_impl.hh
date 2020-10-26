@@ -7,7 +7,7 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
-//! Base class for providing ApplyInverse() using assembled methods.
+//! Base class for providing applyInverse() using assembled methods.
 
 #pragma once
 
@@ -76,9 +76,9 @@ typename std::enable_if<is_assembling<Operator>::value,
                                    Teuchos::RCP<Vector_type>,
                                    Teuchos::RCP<Vector_type>>>::type
 getSuperMap(Operator& m) {
-  auto smap = m.get_supermap();
-  auto x = Teuchos::rcp(new Vector_type(*smap->Map()));
-  auto y = Teuchos::rcp(new Vector_type(*smap->Map()));
+  auto smap = m.getSuperMap();
+  auto x = Teuchos::rcp(new Vector_type(smap->getMap()));
+  auto y = Teuchos::rcp(new Vector_type(smap->getMap()));
   return std::make_tuple(smap, x, y);
 }
 
@@ -154,7 +154,7 @@ template<class Operator,
          class Preconditioner,
          class Vector,
          class VectorSpace>
-void InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::InitializeInverse()
+void InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::initializeInverse()
 {
   AMANZI_ASSERT(h_.get()); // set_matrices was called
   AMANZI_ASSERT(solver_.get()); // set_inverse_parameters was called
@@ -165,7 +165,7 @@ void InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::InitializeInv
 
   Teuchos::RCP<Matrix_type> hA = Impl::getMatrix(h_);
   solver_->set_matrix(hA);
-  solver_->InitializeInverse();
+  solver_->initializeInverse();
 
   if (!updated_) {
     std::tie(smap_,Y_,X_) = Impl::getSuperMap(*m_);
@@ -179,12 +179,12 @@ template<class Operator,
          class Preconditioner,
          class Vector,
          class VectorSpace>
-void InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::ComputeInverse()
+void InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::computeInverse()
 {
   AMANZI_ASSERT(updated_); // note, we could call Update here, but would prefer
                            // that developers to the right thing.
   Impl::assembleMatrix(h_);
-  solver_->ComputeInverse();
+  solver_->computeInverse();
   computed_once_ = true;
 }
 
@@ -193,7 +193,7 @@ template<class Operator,
          class Preconditioner,
          class Vector,
          class VectorSpace>
-int InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::ApplyInverse(const Vector& X, Vector& Y) const
+int InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::applyInverse(const Vector& X, Vector& Y) const
 {
   AMANZI_ASSERT(updated_);
   AMANZI_ASSERT(computed_once_); // see above, could also call Compute here, but
@@ -201,7 +201,7 @@ int InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::ApplyInverse(c
                             // especially since they might change values
                             // between calls and forget to call compute.
   Impl::copyToSuperVector(smap_, X, X_);
-  int returned_code = solver_->ApplyInverse(*X_, *Y_);
+  int returned_code = solver_->applyInverse(*X_, *Y_);
   Impl::copyFromSuperVector(smap_, *Y_, Y);
   return returned_code;
 }

@@ -18,7 +18,7 @@
 // Amanzi
 #include "GraphFE.hh"
 #include "MatrixFE.hh"
-#include "PreconditionerFactory.hh"
+#include "InverseFactory.hh"
 #include "SuperMap.hh"
 #include "VerboseObject.hh"
 
@@ -124,7 +124,7 @@ int TreeOperator::applyInverse(const TreeVector& X, TreeVector& Y) const
     }
     int ierr = preconditioner_->applyInverse(X, Y);
     if (ierr) {
-      Errors::Message msg("TreeOperator: ApplyInverse failed.\n");
+      Errors::Message msg("TreeOperator: applyInverse failed.\n");
       Exceptions::amanzi_throw(msg);
     }
     return ierr;
@@ -263,8 +263,11 @@ void TreeOperator::InitializePreconditioner(const ParameterList_ptr_type& plist)
   //   plist.sublist("boomer amg parameters").set("block indices", block_ids.second);
   // }
 
-  AmanziPreconditioners::PreconditionerFactory<TreeOperator,TreeVector> factory;
-  preconditioner_ = factory.Create(plist);
+  //AmanziPreconditioners::PreconditionerFactory<TreeOperator,TreeVector> factory;
+  //preconditioner_ = factory.Create(plist);
+  preconditioner_ = AmanziSolvers::createInverse<
+    TreeOperator>(*plist, Teuchos::rcpFromRef(*this));
+
 }
 
 
@@ -280,7 +283,7 @@ void TreeOperator::UpdatePreconditioner()
   }
 
   // pass the preconditioner a non-owning RCP of this
-  preconditioner_->Update(Teuchos::rcpFromRef(*this));
+  preconditioner_->update(Teuchos::rcpFromRef(*this));
 }
 
 

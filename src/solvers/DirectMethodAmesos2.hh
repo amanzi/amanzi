@@ -23,7 +23,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "CompositeMatrix.hh"
+//#include "CompositeMatrix.hh"
 #include "errors.hh"
 #include "VerboseObject.hh"
 
@@ -55,9 +55,10 @@ class DirectMethodAmesos2 :
 
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override;
-  virtual void InitializeInverse() override;
-  virtual void ComputeInverse() override;
-  virtual int ApplyInverse(const Vector_type&, Vector_type&) const override;
+  virtual void initializeInverse() override;
+  virtual void computeInverse() override;
+  virtual int applyInverse(const Vector_type&, Vector_type&) const override;
+  virtual void update(const Teuchos::RCP<Matrix_type>&) override final {}; 
 
   virtual int returned_code() const override { return returned_code_; }
   virtual std::string returned_code_string() const override { return "success"; }

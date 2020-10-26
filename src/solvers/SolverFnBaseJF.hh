@@ -117,7 +117,7 @@ SolverFnBaseJF<Vector,VectorSpace>::SolverFnBaseJF(Teuchos::ParameterList& plist
 template<class Vector, class VectorSpace>
 int SolverFnBaseJF<Vector,VectorSpace>::ApplyPreconditioner(
     const Teuchos::RCP<const Vector>& r, const Teuchos::RCP<Vector>& Pr) {
-  return lin_op_->ApplyInverse(*r, *Pr);
+  return lin_op_->applyInverse(*r, *Pr);
 }
 
 

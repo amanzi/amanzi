@@ -68,8 +68,9 @@ class IterativeMethodNKA :
       InvIt() {}
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final;
+  virtual void update(const Teuchos::RCP<Matrix>&) override final {}; 
 
-  virtual int ApplyInverse(const Vector& v, Vector& hv) const override final {
+  virtual int applyInverse(const Vector& v, Vector& hv) const override final {
     returned_code_ = NKA_(v, hv, tol_, max_itrs_, criteria_);
     if (returned_code_ <= 0) return 1;
     return 0;
@@ -124,15 +125,15 @@ int IterativeMethodNKA<Matrix,Preconditioner,Vector,VectorSpace>::NKA_(
   Teuchos::RCP<Vector> dxp = Teuchos::rcp(new Vector(x));  // preconditioned correction
   Teuchos::RCP<Vector> r   = Teuchos::rcp(new Vector(x));
 
-  double fnorm, xnorm;
-  f.Norm2(&fnorm);
-  x.Norm2(&xnorm);
+  double fnorm;
+  fnorm = f.norm2();
+  x.norm2();
 
-  int ierr = m_->Apply(x, *r);  // r = f - A * x
+  int ierr = m_->apply(x, *r);  // r = f - A * x
   AMANZI_ASSERT(!ierr);
-  r->Update(1.0, f, -1.0);
+  r->update(1.0, f, -1.0);
 
-  r->Norm2(&rnorm0_);
+  rnorm0_ = r->norm2();
   residual_ = rnorm0_;
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
@@ -146,17 +147,17 @@ int IterativeMethodNKA<Matrix,Preconditioner,Vector,VectorSpace>::NKA_(
 
   bool done = false;
   while (!done) {
-    ierr = h_->ApplyInverse(*r, *dxp);
+    ierr = h_->applyInverse(*r, *dxp);
     AMANZI_ASSERT(!ierr);
 
     nka_->Correction(*dxp, *dx);
-    x.Update(1.0, *dx, 1.0);
+    x.update(1.0, *dx, 1.0);
 
-    ierr = m_->Apply(x, *r);  // r = f - A * x
+    ierr = m_->apply(x, *r);  // r = f - A * x
     AMANZI_ASSERT(!ierr);
-    r->Update(1.0, f, -1.0);
+    r->update(1.0, f, -1.0);
 
-    r->Norm2(&residual_);
+    residual_ = r->norm2();
 
     num_itrs_++;
 
@@ -194,7 +195,7 @@ void IterativeMethodNKA<Matrix,Preconditioner,Vector,VectorSpace>::set_inverse_p
   nka_tol_ = plist.get<double>("nka vector tolerance", 0.05);
 
   // NKA
-  nka_ = Teuchos::rcp(new NKA_Base<Vector,VectorSpace>(nka_dim_, nka_tol_, m_->DomainMap()));
+  nka_ = Teuchos::rcp(new NKA_Base<Vector,VectorSpace>(nka_dim_, nka_tol_, m_->getDomainMap()));
   nka_->Init(plist);
 
   inited_ = true;

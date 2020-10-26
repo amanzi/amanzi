@@ -36,9 +36,9 @@ PreconditionerML::set_matrices(const Teuchos::RCP<Epetra_CrsMatrix>& m,
  * Apply the preconditioner.
  * ML's return code is set to 0 if successful, see Trilinos webpages.
  ****************************************************************** */
-int PreconditionerML::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
+int PreconditionerML::applyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const
 {
-  returned_code_ = ML_->ApplyInverse(v, hv);
+  returned_code_ = ML_->applyInverse(v, hv);
   return returned_code_;
 }
 
@@ -60,14 +60,14 @@ void PreconditionerML::set_inverse_parameters(Teuchos::ParameterList& list)
 /* ******************************************************************
  * Rebuild the preconditioner suing the given matrix A.
  ****************************************************************** */
-void PreconditionerML::InitializeInverse()
+void PreconditionerML::initializeInverse()
 {
   AMANZI_ASSERT(initialized_);
   AMANZI_ASSERT(h_.get());
   ML_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*h_, list_, false));
 }
 
-void PreconditionerML::ComputeInverse()
+void PreconditionerML::computeInverse()
 {
   AMANZI_ASSERT(ML_.get());
   ML_->ComputePreconditioner();

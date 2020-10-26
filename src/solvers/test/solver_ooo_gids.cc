@@ -75,7 +75,7 @@ TEST(GIDS_OUT_OF_ORDER) {
   // Solve the linear system
   // It may not like that the vectors are not contiguous
   //
-  CHECK_EQUAL(0, prec.ApplyInverse(B,X));
+  CHECK_EQUAL(0, prec.applyInverse(B,X));
 
   for (int i=0; i!=KnownX.MyLength(); ++i) {
     CHECK_CLOSE(KnownX[0][i], X[0][i], tol*10*pow(10.0,numProcs));

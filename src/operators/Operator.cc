@@ -43,7 +43,6 @@
 #include "OperatorDefs.hh"
 #include "OperatorUtils.hh"
 #include "GraphFE.hh"
-#include "MatrixFE.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -396,9 +395,9 @@ int Operator::applyInverse(const CompositeVector& X, CompositeVector& Y) const
     Errors::Message msg("Operator did not initialize a preconditioner.\n");
     Exceptions::amanzi_throw(msg);
   }
-  int ierr = preconditioner_->ApplyInverse(X, Y);
+  int ierr = preconditioner_->applyInverse(X, Y);
   if (ierr) {
-    Errors::Message msg("Operator: ApplyInverse failed.\n");
+    Errors::Message msg("Operator: applyInverse failed.\n");
     Exceptions::amanzi_throw(msg);
   }
   return ierr;
@@ -484,7 +483,7 @@ void Operator::InitializePreconditioner(const ParameterList_ptr_type& plist)
   // }
   //AmanziPreconditioners::PreconditionerFactory<Operator,CompositeVector> factory;
   //preconditioner_ = factory.Create(plist);
-  preconditioner_ = AmanziSolvers::createInverse(*plist, Teuchos::rcpFromRef(*this));
+  preconditioner_ = AmanziSolvers::createInverse<Operator>(*plist, Teuchos::rcpFromRef(*this));
 }
 
 /* ******************************************************************
@@ -500,7 +499,7 @@ void Operator::UpdatePreconditioner()
   }
 
   // pass the preconditioner a non-owning RCP of this
-  preconditioner_->Update(Teuchos::rcpFromRef(*this));
+  preconditioner_->update(Teuchos::rcpFromRef(*this));
 }
 
 

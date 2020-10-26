@@ -77,24 +77,24 @@ class MatrixJF {
   }
 
   // Space for the domain of the operator.
-  const VectorSpace& DomainMap() const { return *map_; }
+  const VectorSpace& getDomainMap() const { return *map_; }
 
   // Space for the range of the operator.
-  const VectorSpace& RangeMap() const { return *map_; }
+  const VectorSpace& getRangeMap() const { return *map_; }
 
   // Apply matrix, b <-- Ax, returns ierr = 0 if success, !0 otherwise
-  int Apply(const Vector& x, Vector& b) const;
+  int apply(const Vector& x, Vector& b) const;
 
   // Apply the inverse, x <-- A^-1 b, returns ierr = 0 if success, !0 otherwise
   void set_inverse_parameters(Teuchos::ParameterList& inv_list) {}
-  void InitializeInverse() {}
-  void ComputeInverse() {}
-  int ApplyInverse(const Vector& b, Vector& x) const;
+  void initializeInverse() {}
+  void computeInverse() {}
+  int applyInverse(const Vector& b, Vector& x) const;
 
   void set_linearization_point(const Teuchos::RCP<const Vector>& u);
 
  protected:
-  double CalculateEpsilon_(const Vector& u, const Vector& x) const;
+  double calculateEpsilon_(const Vector& u, const Vector& x) const;
 
  protected:
   Teuchos::RCP<const VectorSpace> map_;
@@ -111,7 +111,7 @@ class MatrixJF {
 // Forward (Apply) operator
 template<class Vector, class VectorSpace>
 int
-MatrixJF<Vector,VectorSpace>::Apply(const Vector& x, Vector& b) const
+MatrixJF<Vector,VectorSpace>::apply(const Vector& x, Vector& b) const
 {
   Teuchos::RCP<Vector> r1 = Teuchos::rcp(new Vector(*map_));
  
@@ -135,7 +135,7 @@ MatrixJF<Vector,VectorSpace>::Apply(const Vector& x, Vector& b) const
 
 // Forward (Apply) operator
 template<class Vector, class VectorSpace>
-int MatrixJF<Vector,VectorSpace>::ApplyInverse(const Vector& b, Vector& x) const
+int MatrixJF<Vector,VectorSpace>::applyInverse(const Vector& b, Vector& x) const
 {
   Teuchos::RCP<const Vector> b_ptr = Teuchos::rcpFromRef(b);
   Teuchos::RCP<Vector> x_ptr = Teuchos::rcpFromRef(x);
@@ -152,7 +152,7 @@ void MatrixJF<Vector,VectorSpace>::set_linearization_point(const Teuchos::RCP<co
 
 
 template<class Vector, class VectorSpace>
-double MatrixJF<Vector,VectorSpace>::CalculateEpsilon_(const Vector& u, const Vector& x) const {
+double MatrixJF<Vector,VectorSpace>::calculateEpsilon_(const Vector& u, const Vector& x) const {
   double eps = eps_;
   double typical_size_u = 100.;
 

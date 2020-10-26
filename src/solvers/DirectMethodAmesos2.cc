@@ -47,7 +47,7 @@ void DirectMethodAmesos2::set_inverse_parameters(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Update sets symbolic structure
 ****************************************************************** */
-void DirectMethodAmesos2::InitializeInverse() {
+void DirectMethodAmesos2::initializeInverse() {
   AMANZI_ASSERT(inited_);
   AMANZI_ASSERT(h_.get());
 
@@ -69,14 +69,14 @@ void DirectMethodAmesos2::InitializeInverse() {
 /* ******************************************************************
 * Compute sets symbolic structure
 ****************************************************************** */
-void DirectMethodAmesos2::ComputeInverse() {
+void DirectMethodAmesos2::computeInverse() {
   AMANZI_ASSERT(updated_);
   solver_->numericFactorization();
   computed_ = true;
 }
 
 
-int DirectMethodAmesos2::ApplyInverse(const Vector_type& v, Vector_type& hv) const
+int DirectMethodAmesos2::applyInverse(const Vector_type& v, Vector_type& hv) const
 {
   AMANZI_ASSERT(computed_);
 

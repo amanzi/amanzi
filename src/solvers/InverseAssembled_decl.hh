@@ -7,7 +7,7 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
-//! Provides ApplyInverse() using assembled methods.
+//! Provides applyInverse() using assembled methods.
 
 #pragma once
 
@@ -42,9 +42,10 @@ class InverseAssembled :
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final;
 
-  virtual void InitializeInverse() override final;
-  virtual void ComputeInverse() override final;
-  virtual int ApplyInverse(const Vector& X, Vector& Y) const override final;
+  virtual void initializeInverse() override final;
+  virtual void computeInverse() override final;
+  virtual int applyInverse(const Vector& X, Vector& Y) const override final;
+  virtual void update(const Teuchos::RCP<Operator>&) override final {}; 
 
   virtual double residual() const override final {
     return solver_->residual();

@@ -46,10 +46,11 @@ class PreconditionerIdentity :
   ~PreconditionerIdentity() {};
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& list) override final {};
-  virtual void InitializeInverse() override final {};
-  virtual void ComputeInverse() override final {};
+  virtual void initializeInverse() override final {};
+  virtual void computeInverse() override final {};
+  virtual void update(const Teuchos::RCP<Matrix>&) override final {}; 
 
-  virtual int ApplyInverse(const Vector& v, Vector& hv) const override final {
+  virtual int applyInverse(const Vector& v, Vector& hv) const override final {
     hv = v;
     return 0;
   }

@@ -115,6 +115,7 @@ Note on implementation for discretization/framework developers:
 #include "DenseVector.hh"
 #include "OperatorDefs.hh"
 #include "Schema.hh"
+#include "Matrix.hh"
 
 namespace Amanzi {
 
@@ -147,6 +148,9 @@ class Op_SurfaceFace_SurfaceCell;
 
 class Operator {
  public:
+  using Vector_t = CompositeVector;
+  using VectorSpace_t = CompositeSpace; 
+
   // constructors
   // At the moment CVS is the domain and range of the operator
   Operator() { apply_calls_ = 0; }
@@ -467,7 +471,7 @@ class Operator {
   Teuchos::RCP<MatrixFE> Amat_;
   Teuchos::RCP<SuperMap> smap_;
 
-  Teuchos::RCP<Matrix<Operator,CompositeVector,CompositeVectorSpace>> preconditioner_;
+  Teuchos::RCP<Matrix<Operator,CompositeVector,CompositeSpace>> preconditioner_;
 
   Teuchos::RCP<VerboseObject> vo_;
 

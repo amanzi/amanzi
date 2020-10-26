@@ -7,7 +7,7 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
-//! Base class for providing ApplyInverse() using assembled methods.
+//! Base class for providing applyInverse() using assembled methods.
 
 #include "InverseAssembled_decl.hh"
 #include "InverseAssembled_impl.hh"

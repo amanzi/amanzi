@@ -47,7 +47,8 @@ class IterativeMethodBelos :
       InvIt() {}
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final;
-  virtual int ApplyInverse(const Vector& v, Vector& hv) const override final;
+  virtual int applyInverse(const Vector& v, Vector& hv) const override final;
+  virtual void update(const Teuchos::RCP<Matrix>&) override final {}; 
 
  protected:
   virtual std::string MethodName_() const override { return "Belos: GMRES"; }
@@ -122,7 +123,7 @@ template<class Matrix,
          class Vector,
          class VectorSpace>
 int
-IterativeMethodBelos<Matrix,Preconditioner,Vector,VectorSpace>::ApplyInverse(
+IterativeMethodBelos<Matrix,Preconditioner,Vector,VectorSpace>::applyInverse(
     const Vector& v, Vector& hv) const
 {
   typedef Belos::LinearProblem<double,Belos::MultiVec<double>,Belos::Operator<double> > LinearProblem;
