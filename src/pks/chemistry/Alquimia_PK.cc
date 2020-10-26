@@ -799,9 +799,9 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // Get the number of owned (non-ghost) cells for the mesh.
-  unsigned int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   
-  int max_itrs (0), avg_itrs(0), imax(-1);
+  int max_itrs(0), avg_itrs(0), min_itrs(1000), imax(-1);
 
   // Ensure dependencies are filled
   S_->GetFieldEvaluator(poro_key_)->HasFieldChanged(S_.ptr(), name_);
@@ -817,6 +817,7 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         max_itrs = num_itrs;
         imax = cell;
       }
+      min_itrs = std::min(min_itrs, num_itrs);
       avg_itrs += num_itrs;
     } else {
       // Convergence failure. Compute the next time step size.
@@ -832,6 +833,14 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   send[1] = max_itrs;
   send[2] = mesh_->cell_map(false).GID(imax);
   mesh_->get_comm()->MaxAll(send, recv, 3);
+
+  int tmp(min_itrs);
+  mesh_->get_comm()->MinAll(&tmp, &min_itrs, 1);
+
+  tmp = avg_itrs;
+  mesh_->get_comm()->SumAll(&tmp, &avg_itrs, 1);
+  avg_itrs /= mesh_->cell_map(false).NumGlobalElements();
+
   if (recv[0] != 0) 
     num_successful_steps_ = 0;
   else
@@ -849,8 +858,8 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Advanced after maximum of " << num_iterations_
-               << " Newton iterations in cell " << imax << std::endl;
+    *vo_->os() << "min/avg/max Newton: " << min_itrs << "/" << avg_itrs << "/" << num_iterations_
+               << ", the maximum is in cell " << imax << std::endl;
   }
 
   // now publish auxiliary data to state
