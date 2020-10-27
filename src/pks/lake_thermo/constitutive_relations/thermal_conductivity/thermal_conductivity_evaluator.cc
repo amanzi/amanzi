@@ -82,25 +82,59 @@ void ThermalConductivityEvaluator::EvaluateField_(
 
       int ncomp = result->size(*comp, false);
 
-      for (int i=0; i!=ncomp; ++i) {
-        if (temp_v[0][i] < 32.) { // check if there is ice cover
-          ice_cover_ = true;
-        }
-      }
+      int i_ice_max;
 
       for (int i=0; i!=ncomp; ++i) {
-        if (temp_v[0][i] < 32.) { // this cell is in ice layer
+        if (temp_v[0][i] < 273.15) { // check if there is ice cover
+          ice_cover_ = true;
+          i_ice_max = i;
+        }
+      } // i
+
+      for (int i=0; i!=ncomp; ++i) {
+        if (temp_v[0][i] < 273.15) { // this cell is in ice layer
             result_v[0][i] = 2.2;
         }
         else {
           if (ice_cover_) {
               result_v[0][i] = 1.5;
           } else {
-              result_v[0][i] = 10.*K_0_ + V_wind_/V_wind_0_*(K_max_ - K_0_);
+              result_v[0][i] = 1.5; //10.*K_0_ + V_wind_/V_wind_0_*(K_max_ - K_0_);
           }
         }
+
+//        result_v[0][i] = 10.*K_0_ + V_wind_/V_wind_0_*(K_max_ - K_0_);
 //        result_v[0][i] = 0.;
-      }
+      } // i
+
+      // if melting occured at the top, swap cells
+//      while (ice_cover_ && temp_v[0][0] >= 273.15 ) {
+//        if (ice_cover_ && temp_v[0][0] >= 273.15) { // check temperature at top cell
+//            double tmp = temp_v[0][0];
+//            std::cout << "temp_v[0][0] = " << temp_v[0][0] << std::endl;
+//            for (int i=0; i!=ncomp; ++i) std::cout << "i = " << i << " result_v[0][i] = " << result_v[0][i] << std::endl;
+//            for (int i=0; i!=ncomp-1; ++i) { // check temperature in other cells
+//                if (temp_v[0][i] <= 273.15) {
+//                    result_v[0][i] = result_v[0][i+1];
+//                    temp_v[0][i]   = temp_v[0][i+1];
+//                }
+//                if (temp_v[0][i] > 273.15) {
+//                    result_v[0][i] = result_v[0][i+1];
+//                    temp_v[0][i]   = temp_v[0][i+1];
+//                }
+//            } //i
+//            for (int i=0; i!=ncomp; ++i) std::cout << "i = " << i << " result_v[0][i] = " << result_v[0][i] << std::endl;
+//        }
+//      }
+      for (int i=0; i!=ncomp; ++i) {
+        if (ice_cover_ && i < i_ice_max && temp_v[0][i] >= 273.15 ) {
+          result_v[0][i] = 2.2;
+          result_v[0][i+i_ice_max] = 1.5;
+//          temp_v[0][i] = temp_v[0][i+1];
+//          temp_v[0][i+i_ice_max] = temp_v[0][i+i_ice_max+1];
+        }
+      } // i
+
     }
 
 }

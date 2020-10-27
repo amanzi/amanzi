@@ -97,6 +97,7 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   adv_energy_flux_key_ = Keys::readKey(*plist_, domain_, "advected energy flux", "advected_energy_flux");
   conductivity_key_ = Keys::readKey(*plist_, domain_, "thermal conductivity", "thermal_conductivity");
   uw_conductivity_key_ = Keys::readKey(*plist_, domain_, "upwinded thermal conductivity", "upwind_thermal_conductivity");
+  cell_is_ice_key_ = Keys::readKey(*plist_, domain_, "ice", "ice");
 
   // Get data for special-case entities.
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
@@ -358,6 +359,10 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   S->RequireField(adv_energy_flux_key_, name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("face", AmanziMesh::FACE, 1);
 
+  // ice markers
+  S->RequireField(cell_is_ice_key_,name_)->SetMesh(mesh_)
+      ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+
   // -- simply limit to close to 0
   modify_predictor_for_freezing_ =
       plist_->get<bool>("modify predictor for freezing", false);
@@ -478,9 +483,12 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   S->GetField(flux_key_, name_)->set_initialized();
 
   S->GetFieldData(wc_key_, name_)->PutScalar(1.0);
-    S->GetField(wc_key_, name_)->set_initialized();
+  S->GetField(wc_key_, name_)->set_initialized();
 
-  S->GetFieldData(temperature_key_, name_)->PutScalar(50.0);
+  S->GetFieldData(temperature_key_, name_)->PutScalar(283.15);
+
+  S->GetFieldData(cell_is_ice_key_, name_)->PutScalar(false);
+  S->GetField(cell_is_ice_key_, name_)->set_initialized();
 
     /*
   // get temperature

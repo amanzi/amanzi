@@ -30,6 +30,40 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
                        Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
+
+  bool ice_cover_ = false; // first always assume that there is no ice
+
+    // get temperature
+    Teuchos::RCP<const CompositeVector> temp = S_inter_->GetFieldData(temperature_key_);
+
+    for (CompositeVector::name_iterator comp=temp->begin();
+           comp!=temp->end(); ++comp) {
+        // much more efficient to pull out vectors first
+  //      const Epetra_MultiVector& eta_v = *eta->ViewComponent(*comp,false);
+  //      const Epetra_MultiVector& height_v = *height->ViewComponent(*comp,false);
+        const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
+
+        int ncomp = temp->size(*comp, false);
+
+        int i_ice_max;
+
+        for (int i=0; i!=ncomp; ++i) {
+          if (temp_v[0][i] < 273.15) { // check if there is ice cover
+            ice_cover_ = true;
+            i_ice_max = i;
+          }
+        } // i
+
+        // if melting occured at the top, swap cells
+        for (int i=0; i!=ncomp; ++i) {
+          if (ice_cover_ && i < i_ice_max && temp_v[0][i] >= 273.15 ) {
+            temp_v[0][i] = temp_v[0][i+1];
+            temp_v[0][i+i_ice_max] = temp_v[0][i+i_ice_max+1];
+          }
+        } // i
+
+      }
+
   // increment, get timestep
   niter_++;
   double h = t_new - t_old;
@@ -120,7 +154,7 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   }
 #endif
 
-  g->Data()->Print(std::cout);
+//  g->Data()->Print(std::cout);
 
 
 };
@@ -140,10 +174,10 @@ int Lake_Thermo_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
   preconditioner_->PrintDiagnostics();
 
   // apply the preconditioner
-  std::cout << "Printing data" << std::endl;
-  u->Data()->Print(std::cout);
+//  std::cout << "Printing data" << std::endl;
+//  u->Data()->Print(std::cout);
   int ierr = preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
-  std::cout << "ApplyPreconditioner ierr = " << ierr << std::endl;
+//  std::cout << "ApplyPreconditioner ierr = " << ierr << std::endl;
 
 #if DEBUG_FLAG
   db_->WriteVector("PC*T_res", Pu->Data().ptr(), true);
@@ -298,10 +332,10 @@ double Lake_Thermo_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   mesh_->get_comm()->MaxAll(&err_max_tmp, &err_max, 1);
   mesh_->get_comm()->SumAll(&err_L1_tmp, &err_L1, 1);
 
-  if (mesh_->get_comm()->MyPID() == 0) {
-    std::cout << "err_max = " << err_max << std::endl;
-    std::cout << "err_L1  = " << err_L1 << std::endl;
-  }
+//  if (mesh_->get_comm()->MyPID() == 0) {
+//    std::cout << "err_max = " << err_max << std::endl;
+//    std::cout << "err_L1  = " << err_L1 << std::endl;
+//  }
 
   return PK_PhysicalBDF_Default::ErrorNorm(u,res);
 

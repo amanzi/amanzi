@@ -358,6 +358,8 @@ public:
   //  Key mass_source_key_;
   Key ss_flux_key_;
 
+  Key cell_is_ice_key_;
+
 private:
   // factory registration
   static RegisteredPKFactory<Lake_Thermo_PK> reg_;
