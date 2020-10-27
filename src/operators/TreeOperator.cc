@@ -67,7 +67,6 @@ TreeOperator::TreeOperator(const Teuchos::RCP<const TreeVectorSpace>& row_map,
   col_size_ = col_map_->size() + (col_map_->Data() == Teuchos::null ? 0 : 1);
   row_size_ = row_map_->size() + (row_map_->Data() == Teuchos::null ? 0 : 1);
 
-  // resize the blocks
   blocks_.resize(row_size_, Teuchos::Array<Teuchos::RCP<TreeOperator> >(col_size_, Teuchos::null));
 }
 
@@ -81,7 +80,6 @@ TreeOperator::TreeOperator(const Teuchos::RCP<const TreeVectorSpace>& row_map,
   col_size_ = col_map_->size() + (col_map_->Data() == Teuchos::null ? 0 : 1);
   row_size_ = row_map_->size() + (row_map_->Data() == Teuchos::null ? 0 : 1);
 
-  // resize the blocks
   blocks_.resize(row_size_, Teuchos::Array<Teuchos::RCP<TreeOperator> >(col_size_, Teuchos::null));
 }
 
@@ -386,6 +384,32 @@ void TreeOperator::AssembleMatrix() {
   // std::stringstream filename_s2;
   // filename_s2 << "assembled_matrix" << 0 << ".txt";
   // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Amat_->Matrix());
+}
+
+
+/* ******************************************************************
+* Zero all operators
+****************************************************************** */
+void TreeOperator::Init() {
+  computed_ = false;
+  for (int i=0; i!=row_size_; ++i) {
+    for (int j=0; j!=col_size_; ++j) {
+      if (get_block(i,j) != Teuchos::null) get_block(i,j)->Init();
+    }
+  }
+  if (data_ != Teuchos::null) data_->Init();
+}
+
+/* ******************************************************************
+* Zero off-diagonal operators
+****************************************************************** */
+void TreeOperator::InitOffdiagonals() {
+  computed_ = false;
+  for (int i=0; i!=row_size_; ++i) {
+    for (int j=0; j!=col_size_; ++j) {
+      if (i != j && get_block(i,j) != Teuchos::null) get_block(i,j)->Init();
+    }
+  }
 }
 
 

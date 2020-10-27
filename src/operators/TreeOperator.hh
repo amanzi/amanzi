@@ -121,6 +121,8 @@ class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
   int Apply(const TreeVector& X, TreeVector& Y, double scalar) const;
   int ApplyAssembled(const TreeVector& X, TreeVector& Y) const;
 
+  void Init();
+  void InitOffdiagonals();
   void SymbolicAssembleMatrix();
   void AssembleMatrix();
 
