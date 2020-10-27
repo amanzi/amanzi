@@ -323,7 +323,9 @@ Configuration:
   --relwithdebinfo        build optimized TPLs and Amanzi binaries with debug info
                           (for profiling)
 
-  --debug                 build debug TPLs and Amanzi binaries.
+  --debug                 build debug Amanzi libraried and binaries.
+
+  --debug_tpls            build debug TPLs libraries and binaries.
 
   --branch=BRANCH         build TPLs and Amanzi found in BRANCH ['"${amanzi_branch}"']
 
