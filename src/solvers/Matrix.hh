@@ -57,8 +57,7 @@ Developer notes:
 
 namespace Amanzi {
 
-template<class Operator, 
-         class Vector,
+template<class Vector,
          class VectorSpace>
 class Matrix {
  public:
@@ -67,12 +66,11 @@ class Matrix {
 
   virtual ~Matrix() = default;
 
-  virtual void apply(const Vector& x, Vector& y) const = 0;
+  virtual int apply(const Vector& x, Vector& y) const = 0;
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& inv_list) = 0;
   virtual void initializeInverse() = 0;
   virtual void computeInverse() = 0;
-  virtual void update(const Teuchos::RCP<Operator>&) = 0; 
   virtual int applyInverse(const Vector& y, Vector& x) const = 0;
 
   virtual const Teuchos::RCP<const VectorSpace> getDomainMap() const = 0;

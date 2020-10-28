@@ -157,8 +157,6 @@ SUITE(SOLVERS)
     pcg.set_matrices(m,m);
     Teuchos::ParameterList plist;
     pcg.set_inverse_parameters(plist); 
-    //AmanziSolvers::LinearOperatorPCG<Matrix, Matrix, Map_type> pcg(m, m);
-    //pcg.Init();
 
     // initial guess
     Vector_type u(map);
@@ -172,7 +170,7 @@ SUITE(SOLVERS)
     Vector_type v(map);
     int ierr = pcg.applyInverse(u, v);
     CHECK(ierr > 0);
-    CHECK_EQUAL(28, pcg.num_itrs());
+    CHECK_EQUAL(45, pcg.num_itrs());
 
     v.sync_host();
     {
@@ -304,8 +302,6 @@ SUITE(SOLVERS)
   //   }
   // };
 
-#if 0 
-
   TEST(NKA_SOLVER)
   {
     std::cout << "\nChecking NKA solver..." << std::endl;
@@ -318,6 +314,9 @@ SUITE(SOLVERS)
     AmanziSolvers::IterativeMethodNKA<Matrix,Matrix,Vector_type,Map_type> nka;
     nka.set_matrices(m,m);
     Teuchos::ParameterList plist;
+    plist.set("error tolerance", 1.e-13);
+    plist.set("maximum number of iterations", 200);
+    plist.sublist("verbose object").set("verbosity level", "high");
     nka.set_inverse_parameters(plist); 
     // initial guess
     Vector_type u(map);
@@ -338,8 +337,6 @@ SUITE(SOLVERS)
       for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i, 0), 1e-6);
     }
   };
-
-#endif 
 
   // TEST(BELOS_GMRES_SOLVER) {
   //   std::cout << "\nChecking Belos GMRES solver..." << std::endl;

@@ -205,12 +205,9 @@ NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
     // (unless the function value is itself 0), and we merely want to do
     // something reasonable here and hope that situation is detected on the
     // outside.
-    double s = 0.;
-    double sv = 0.;
-    s = wp->norm2();
-    sv = vp->norm2();
-    double sf = 0.;
-    sf = f.norm2();
+    double s = wp->norm2();
+    double sv = vp->norm2();
+    double sf = f.norm2();
 
     if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
       Teuchos::OSTab tab = vo_->getOSTab();
@@ -228,7 +225,6 @@ NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
       wp->scale(1.0 / s);
       vp->scale(1.0 / s);
 
-      s = 0.;
       s = wp->norm2();
       sv = vp->norm2();
     }

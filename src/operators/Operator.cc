@@ -69,7 +69,13 @@ Operator::Operator(const Teuchos::RCP<const CompositeSpace>& cvs_row,
     cvs_col_(cvs_col),
     schema_row_(schema_row),
     schema_col_(schema_col),
-    shift_(0.0)
+    shift_(0.0), 
+    plist_(plist),
+    num_colors_(0),
+    coloring_(Teuchos::null),
+    inited_(false),
+    updated_(false),
+    computed_(false)
 {
   mesh_ = cvs_col_->Mesh();
   rhs_ = Teuchos::rcp(new CompositeVector(cvs_row_));
@@ -96,6 +102,12 @@ Operator::Operator(const Teuchos::RCP<const CompositeSpace>& cvs_row,
   shift_ = plist.get<double>("diagonal shift", 0.0);
 
   apply_calls_ = 0; 
+
+  if (plist_.isSublist("inverse")) {
+    auto& inv_list = plist_.sublist("inverse");
+    AmanziSolvers::setMakeOneIterationCriteria(inv_list);
+    set_inverse_parameters(inv_list);
+  }
 }
 
 
@@ -456,52 +468,62 @@ void Operator::getLocalDiagCopy(CompositeVector& X) const
 
 /* ******************************************************************
 * Two-stage initialization of preconditioner, part 1.
+* Create the preconditioner and set options. Symbolic assemble of
+* operator's matrix must have been called.
+****************************************************************** */
+void Operator::set_inverse_parameters(Teuchos::ParameterList& plist)
+{
+  // delay pc construction until we know we have structure and can create the
+  // coloring.
+  inv_plist_ = plist;
+  inited_ = true; updated_ = false; computed_ = false;
+}
+
+
+/* ******************************************************************
+* Two-stage initialization of preconditioner, part 1.
 * Create the preconditioner and set options. Symbolic assemble of 
 * operator's matrix must have been called.
 ****************************************************************** */
-void Operator::InitializePreconditioner(const ParameterList_ptr_type& plist)
+void Operator::initializeInverse()
 {
-  if (smap_.get() == nullptr) {
-    smap_ = createSuperMap(getDomainMap().ptr());
-  }
-
-  // provide block ids for block strategies.
-  //
-  // NOTE: not implemented in SuperMap (but ignored for now since we can't use HYPRE anyway)
-  // if (plist.isParameter("preconditioner type") &&
-  //     plist.get<std::string>("preconditioner type") == "boomer amg" &&
-  //     plist.isSublist("boomer amg parameters")) {
-
-  //   // NOTE: Hypre frees this
-  //   auto block_ids = smap_->BlockIndices();
-
-  //   plist.sublist("boomer amg parameters").set("number of unique block indices", block_ids.first);
-
-  //   // Note, this passes a raw pointer through a ParameterList.  I was surprised
-  //   // this worked too, but ParameterList is a boost::any at heart... --etc
-  //   plist.sublist("boomer amg parameters").set("block indices", block_ids.second);
-  // }
-  //AmanziPreconditioners::PreconditionerFactory<Operator,CompositeVector> factory;
-  //preconditioner_ = factory.Create(plist);
-  preconditioner_ = AmanziSolvers::createInverse<Operator>(*plist, Teuchos::rcpFromRef(*this));
-}
-
-/* ******************************************************************
-* Two-stage initialization of preconditioner, part 2.
-* Set the preconditioner structure. Operator's matrix must have been
-* assembled.
-****************************************************************** */
-void Operator::UpdatePreconditioner()
-{
-  if (preconditioner_.get() == NULL) {
-    Errors::Message msg("Operator has no matrix or preconditioner for update.\n");
+  if (!inited_) {
+    Errors::Message msg("No inverse parameter list.  Provide a sublist \"inverse\" or ensure set_inverse_parameters() is called.");
+    msg << " In: " << typeid(*this).name() << "\n";
     Exceptions::amanzi_throw(msg);
   }
 
-  // pass the preconditioner a non-owning RCP of this
-  preconditioner_->update(Teuchos::rcpFromRef(*this));
+  smap_ = createSuperMap(getDomainMap().ptr());
+
+  // provide block ids for block strategies.
+  if (inv_plist_.isParameter("preconditioning method") &&
+      inv_plist_.get<std::string>("preconditioning method") == "boomer amg" &&
+      inv_plist_.isSublist("boomer amg parameters") &&
+      inv_plist_.sublist("boomer amg parameters").get<bool>("use block indices", false)) {
+    assert(false && "Not implemented");
+    //if (coloring_ == Teuchos::null || num_colors_ == 0) {
+    //  auto block_ids = smap_->BlockIndices();
+    //  set_coloring(block_ids.first, block_ids.second);
+    //}
+    inv_plist_.sublist("boomer amg parameters").set("number of unique block indices", num_colors_);
+    inv_plist_.sublist("boomer amg parameters").set("block indices", coloring_);
+  }
+  preconditioner_ = AmanziSolvers::createInverse(inv_plist_, Teuchos::rcpFromRef(*this));
+  preconditioner_->initializeInverse(); // NOTE: calls this->SymbolicAssembleMatrix()
+  updated_ = true;
+  computed_ = false;
 }
 
+void Operator::computeInverse()
+{
+  if (!updated_) {
+    initializeInverse();
+  }
+  // assembly must be possible now
+  AMANZI_ASSERT(preconditioner_.get());
+  preconditioner_->computeInverse(); // NOTE: calls this->AssembleMatrix()
+  computed_ = true;
+}
 
 
 /* ******************************************************************

@@ -146,7 +146,7 @@ class Op_SurfaceCell_SurfaceCell;
 class Op_SurfaceFace_SurfaceCell;
 
 
-class Operator {
+class Operator: public Matrix<CompositeVector,CompositeSpace> {
  public:
   using Vector_t = CompositeVector;
   using VectorSpace_t = CompositeSpace; 
@@ -178,9 +178,11 @@ class Operator {
   void Zero();
 
   // main members as an operator
-  int apply(const CompositeVector& X, CompositeVector& Y, double scalar=0.0) const;
-  //virtual int applyTranspose(const CompositeVector& X, CompositeVector& Y,
-  //                   double scalar=0.0) const;
+  virtual int apply(const CompositeVector& X, CompositeVector& Y, double scalar) const;
+  virtual int apply(const CompositeVector& X, CompositeVector& Y) const override {
+    return apply(X, Y, 0.0);
+  }
+
   int applyAssembled(const CompositeVector& X, CompositeVector& Y,
                      double scalar=0.0) const;
   int applyInverse(const CompositeVector& X, CompositeVector& Y) const;
@@ -213,8 +215,8 @@ class Operator {
   void Rescale(const CompositeVector& scaling, int iops);
 
   // -- default functionality
-  Teuchos::RCP<const CompositeSpace> getDomainMap() const { return cvs_col_; }
-  Teuchos::RCP<const CompositeSpace> getRangeMap() const { return cvs_row_; }
+  const Teuchos::RCP<const CompositeSpace> getDomainMap() const { return cvs_col_; }
+  const Teuchos::RCP<const CompositeSpace> getRangeMap() const { return cvs_row_; }
   Teuchos::RCP<const CompositeSpace> getRowMap() const { return cvs_row_; }
 
   int ComputeResidual(const CompositeVector& u, CompositeVector& r,
@@ -222,11 +224,13 @@ class Operator {
   int ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r,
                               bool zero = true);
 
-  // preconditioner
-  void InitializePreconditioner(const ParameterList_ptr_type& plist);
-  void UpdatePreconditioner();
+  // -- preferred methods -- set_parameters, initialize, compute
+  void set_inverse_parameters(Teuchos::ParameterList& plist) override final;
+  void initializeInverse() override final;
+  void computeInverse() override final;
 
   // access
+  virtual std::string name() const override { return std::string("Operator (") + schema_string_ + ")"; }
   int schema() const { return schema_col_.OldSchema(); }
   const Schema& schema_col() const { return schema_col_; }
   const Schema& schema_row() const { return schema_row_; }
@@ -247,6 +251,11 @@ class Operator {
   void set_rhs(const Teuchos::RCP<CompositeVector>& rhs) { rhs_ = rhs; }
 
   int apply_calls() { return apply_calls_; }
+
+  void set_coloring(int num_colors, const Teuchos::RCP<std::vector<int>>& coloring) {
+    num_colors_ = num_colors;
+    coloring_ = coloring;
+  }
 
   // block access
   typedef std::vector<Teuchos::RCP<Op> >::const_iterator const_op_iterator;
@@ -450,6 +459,22 @@ class Operator {
 
   // diagnostics
   std::string PrintDiagnostics() const;
+  double residual() const override {
+    AMANZI_ASSERT(preconditioner_.get());
+    return preconditioner_->residual();
+  }
+  int num_itrs() const override {
+    AMANZI_ASSERT(preconditioner_.get());
+    return preconditioner_->num_itrs();
+  }
+  int returned_code() const override {
+    AMANZI_ASSERT(preconditioner_.get());
+    return preconditioner_->returned_code();
+  }
+  std::string returned_code_string() const override {
+    AMANZI_ASSERT(preconditioner_.get());
+    return preconditioner_->returned_code_string();
+  }
 
  protected:
   int
@@ -459,6 +484,7 @@ class Operator {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<const CompositeSpace> cvs_row_;
   Teuchos::RCP<const CompositeSpace> cvs_col_;
+  Teuchos::ParameterList plist_;
 
   mutable std::vector<Teuchos::RCP<Op>> ops_;
   mutable std::vector<int> ops_properties_;
@@ -471,9 +497,14 @@ class Operator {
   Teuchos::RCP<MatrixFE> Amat_;
   Teuchos::RCP<SuperMap> smap_;
 
-  Teuchos::RCP<Matrix<Operator,CompositeVector,CompositeSpace>> preconditioner_;
+  Teuchos::RCP<Matrix<CompositeVector,CompositeSpace>> preconditioner_;
 
   Teuchos::RCP<VerboseObject> vo_;
+
+  int num_colors_;
+  Teuchos::RCP<std::vector<int>> coloring_;
+  Teuchos::ParameterList inv_plist_;
+  bool inited_, updated_, computed_;
 
   int schema_old_;
   Schema schema_row_, schema_col_;

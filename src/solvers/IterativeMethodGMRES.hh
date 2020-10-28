@@ -95,7 +95,6 @@ class IterativeMethodGMRES :
   void ComputeSolution_(Vector& x, int k, WhetStone::DenseMatrix<>& T, double* s,
                         Vector& p, Vector& r) const;
   void ComputeSolution_(Vector& x, double* d, Vector& p, Vector& r) const;
-  virtual void update(const Teuchos::RCP<Matrix>&) override final {}; 
 
 
   void InitGivensRotation_( double& dx, double& dy, double& cs, double& sn) const;

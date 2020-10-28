@@ -48,7 +48,6 @@ class IterativeMethodBelos :
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final;
   virtual int applyInverse(const Vector& v, Vector& hv) const override final;
-  virtual void update(const Teuchos::RCP<Matrix>&) override final {}; 
 
  protected:
   virtual std::string MethodName_() const override { return "Belos: GMRES"; }

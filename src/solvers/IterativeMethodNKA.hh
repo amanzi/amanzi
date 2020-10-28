@@ -68,7 +68,6 @@ class IterativeMethodNKA :
       InvIt() {}
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final;
-  virtual void update(const Teuchos::RCP<Matrix>&) override final {}; 
 
   virtual int applyInverse(const Vector& v, Vector& hv) const override final {
     returned_code_ = NKA_(v, hv, tol_, max_itrs_, criteria_);
@@ -98,6 +97,7 @@ class IterativeMethodNKA :
   using InvIt::inited_;
   using InvIt::criteria_;
   using InvIt::rnorm0_;
+  using InvIt::overflow_tol_; 
 
   Teuchos::RCP<NKA_Base<Vector,VectorSpace> > nka_;
   int nka_dim_;
@@ -111,68 +111,123 @@ template<class Matrix,class Preconditioner,class Vector,class VectorSpace>
 int IterativeMethodNKA<Matrix,Preconditioner,Vector,VectorSpace>::NKA_(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
-  AMANZI_ASSERT(m_.get()); // set_matrices() called
-  AMANZI_ASSERT(inited_); // init called
-
   Teuchos::OSTab tab = vo_->getOSTab();
-
   nka_->Restart();
 
   residual_ = 0.0;
   num_itrs_ = 0;
 
-  Teuchos::RCP<Vector> dx  = Teuchos::rcp(new Vector(x));
-  Teuchos::RCP<Vector> dxp = Teuchos::rcp(new Vector(x));  // preconditioned correction
-  Teuchos::RCP<Vector> r   = Teuchos::rcp(new Vector(x));
+  Vector dx(x.getMap());
+  Vector dxp(x.getMap());
+  Vector r(x.getMap());
 
-  double fnorm;
+  double fnorm; 
+  //double xnorm;
   fnorm = f.norm2();
-  x.norm2();
-
-  int ierr = m_->apply(x, *r);  // r = f - A * x
-  AMANZI_ASSERT(!ierr);
-  r->update(1.0, f, -1.0);
-
-  rnorm0_ = r->norm2();
-  residual_ = rnorm0_;
-
-  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-    *vo_->os() << num_itrs_ << " ||r||=" << residual_ << std::endl;
+  if (fnorm == 0.0) {
+    x.putScalar(0.0);
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+      *vo_->os() << "Converged, itr = " << num_itrs_
+                 << ", ||r|| = " << residual_ << std::endl;
+    return criteria; // Zero solution satifies all criteria.
   }
 
-  if (! (criteria & LIN_SOLVER_MAKE_ONE_ITERATION)) {
-    ierr = this->CheckConvergence_(rnorm0_, fnorm);
-    if (ierr) return ierr;
+  //xnorm = 
+  x.norm2();
+
+  int ierr = m_->apply(x, r); // r = f - A * x
+  AMANZI_ASSERT(!ierr);
+  r.update(1.0, f, -1.0);
+
+  rnorm0_ = r.norm2();
+  residual_ = rnorm0_;
+
+  if (inited_) {
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+      *vo_->os() << num_itrs_ << " ||r||=" << residual_ << std::endl;
+    }
+  }
+  if (criteria & LIN_SOLVER_RELATIVE_RHS) {
+    if (rnorm0_ < tol * fnorm) {
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+        *vo_->os() << "Converged (relative ||RHS|| = " << fnorm
+                   << "), itr = " << num_itrs_ << " ||r|| = " << rnorm0_
+                   << std::endl;
+      return LIN_SOLVER_RELATIVE_RHS;
+    }
+  }
+
+  if (residual_ > overflow_tol_) {
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+      *vo_->os() << "Diverged, ||r|| = " << residual_ << std::endl;
+    return LIN_SOLVER_RESIDUAL_OVERFLOW;
   }
 
   bool done = false;
+
+  std::cout<<"NKA: NKA_"<<std::endl;
+
   while (!done) {
-    ierr = h_->applyInverse(*r, *dxp);
+    ierr = h_->applyInverse(r, dxp);
     AMANZI_ASSERT(!ierr);
 
-    nka_->Correction(*dxp, *dx);
-    x.update(1.0, *dx, 1.0);
+    nka_->Correction(dxp, dx);
+    x.update(1.0, dx, 1.0);
 
-    ierr = m_->apply(x, *r);  // r = f - A * x
+    ierr = m_->apply(x, r); // r = f - A * x
     AMANZI_ASSERT(!ierr);
-    r->update(1.0, f, -1.0);
+    r.update(1.0, f, -1.0);
 
-    residual_ = r->norm2();
+    double rnorm = r.norm2();
+    residual_ = rnorm;
 
     num_itrs_++;
 
-    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
       *vo_->os() << num_itrs_ << " ||r||=" << residual_ << std::endl;
     }
-    ierr = this->CheckConvergence_(residual_, fnorm);
-    if (ierr) return ierr;
+
+    if (rnorm > overflow_tol_) {
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+        *vo_->os() << "Diverged, ||r|| = " << rnorm << std::endl;
+      return LIN_SOLVER_RESIDUAL_OVERFLOW;
+    }
+
+    // Return the first criterion which is fulfilled.
+    if (criteria & LIN_SOLVER_RELATIVE_RHS) {
+      if (rnorm < tol * fnorm) {
+        if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+          *vo_->os() << "Converged (relative ||RHS|| = " << fnorm
+                     << "), itr = " << num_itrs_ << " ||r|| = " << rnorm
+                     << std::endl;
+        return LIN_SOLVER_RELATIVE_RHS;
+      }
+    }
+
+    if (criteria & LIN_SOLVER_RELATIVE_RESIDUAL) {
+      if (rnorm < tol * rnorm0_) {
+        if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+          *vo_->os() << "Converged (relative ||res|| = " << rnorm0_
+                     << "), itr = " << num_itrs_ << " ||r|| = " << rnorm
+                     << std::endl;
+        return LIN_SOLVER_RELATIVE_RESIDUAL;
+      }
+    }
+    if (criteria & LIN_SOLVER_ABSOLUTE_RESIDUAL) {
+      if (rnorm < tol) {
+        if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+          *vo_->os() << "Converged (absolute), itr = " << num_itrs_
+                     << " ||r|| = " << rnorm << std::endl;
+        return LIN_SOLVER_ABSOLUTE_RESIDUAL;
+      }
+    }
 
     done = num_itrs_ > max_itrs;
   }
 
   if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-    *vo_->os() << "Failed (" << num_itrs_ << " itrs) ||r|| = "
-               << residual_ << std::endl;
+    *vo_->os() << "Failed (" << num_itrs_ << " itrs) ||r|| = " << residual_
+               << std::endl;
   return LIN_SOLVER_MAX_ITERATIONS;
 }
 

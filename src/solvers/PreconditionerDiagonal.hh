@@ -58,9 +58,6 @@ class PreconditionerDiagonal : public Preconditioner {
     return "failed ReciprocalMultiply()";
   }
 
-  virtual void update(const Teuchos::RCP<Matrix_type>&) override final {}; 
-
-
  private:
   Teuchos::RCP<Vector_type> diagonal_;
   mutable int returned_code_;

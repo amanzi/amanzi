@@ -31,11 +31,13 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
-include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${Tpetra_INCLUDE_DIRS})	
 include_directories(${Belos_INCLUDE_DIRS})
 include_directories(${NOX_INCLUDE_DIRS})
 include_directories(${ASCEMIO_INCLUDE_DIRS})
 include_directories(${HDF5_INCLUDE_DIRS})
+include_directories(${Ifpack2_INCLUDE_DIRS})
+include_directories(${MueLu_INCLUDE_DIRS})
 
 #
 # Library: solvers

@@ -45,7 +45,6 @@ class InverseAssembled :
   virtual void initializeInverse() override final;
   virtual void computeInverse() override final;
   virtual int applyInverse(const Vector& X, Vector& Y) const override final;
-  virtual void update(const Teuchos::RCP<Operator>&) override final {}; 
 
   virtual double residual() const override final {
     return solver_->residual();

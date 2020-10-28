@@ -225,7 +225,7 @@ template<class Operator,
          class Preconditioner,
          class Vector=typename Operator::Vector_t,
          class VectorSpace=typename Operator::VectorSpace_t>
-Teuchos::RCP<Matrix<Operator,Vector,VectorSpace>>
+Teuchos::RCP<Matrix<Vector,VectorSpace>>
 createIterativeMethod(Teuchos::ParameterList& inv_list,
                       const Teuchos::RCP<Operator>& m,
                       const Teuchos::RCP<Preconditioner>& h)
@@ -239,7 +239,7 @@ createIterativeMethod(Teuchos::ParameterList& inv_list,
 template<class Operator,
          class Vector=typename Operator::Vector_t,
          class VectorSpace=typename Operator::VectorSpace_t>
-Teuchos::RCP<Matrix<Operator,Vector,VectorSpace>>
+Teuchos::RCP<Matrix<Vector,VectorSpace>>
 createIterativeMethod(Teuchos::ParameterList& inv_list,
                       const Teuchos::RCP<Operator>& m)
 {
@@ -323,7 +323,7 @@ template<class Operator,
          class Vector=typename Operator::Vector_t,
          class VectorSpace=typename Operator::VectorSpace_t>
 typename std::enable_if<Impl::is_assembling<Assembler>::value,
-                        Teuchos::RCP<Matrix<Operator,Vector,VectorSpace>>>::type
+                        Teuchos::RCP<Matrix<Vector,VectorSpace>>>::type
 createInverse(Teuchos::ParameterList& inv_list,
               const Teuchos::RCP<Operator>& m,
               const Teuchos::RCP<Assembler>& h)
@@ -335,7 +335,7 @@ createInverse(Teuchos::ParameterList& inv_list,
       inv_list.set<std::string>("preconditioning method", inv_list.get<std::string>("preconditioner type"));
   }
   
-  using Matrix_t = Matrix<Operator,Vector,VectorSpace>;
+  using Matrix_t = Matrix<Vector,VectorSpace>;
   using Inverse_t = Inverse<Operator,Assembler,Vector,VectorSpace>;
 
   Teuchos::RCP<Matrix_t> inv = Teuchos::null;
@@ -380,7 +380,7 @@ createInverse(Teuchos::ParameterList& inv_list,
 template<class Operator,
          class Vector=typename Operator::Vector_t,
          class VectorSpace=typename Operator::VectorSpace_t>         
-Teuchos::RCP<Matrix<Operator,Vector,VectorSpace>>
+Teuchos::RCP<Matrix<Vector,VectorSpace>>
 createInverse(Teuchos::ParameterList& inv_list,
               const Teuchos::RCP<Operator>& m)
 {
@@ -395,7 +395,7 @@ template<class Operator,
          class Preconditioner,
          class Vector=typename Operator::Vector_t,
          class VectorSpace=typename Operator::VectorSpace_t>
-Teuchos::RCP<Matrix<Operator,Vector,VectorSpace>>
+Teuchos::RCP<Matrix<Vector,VectorSpace>>
 createInverse(const std::string& name,
               const Teuchos::ParameterList& solvers_list,
               const Teuchos::RCP<Operator>& m,
@@ -416,7 +416,7 @@ createInverse(const std::string& name,
 template<class Operator,
          class Vector=typename Operator::Vector_t,
          class VectorSpace=typename Operator::VectorSpace_t>         
-Teuchos::RCP<Matrix<Operator,Vector,VectorSpace>>
+Teuchos::RCP<Matrix<Vector,VectorSpace>>
 createInverse(const std::string& name,
               const Teuchos::ParameterList& solvers_list,
               const Teuchos::RCP<Operator>& m)

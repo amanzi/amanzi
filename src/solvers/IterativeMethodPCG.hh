@@ -54,12 +54,13 @@ class IterativeMethodPCG :
   IterativeMethodPCG() : InvIt() {}
 
   virtual int applyInverse(const Vector& v, Vector& hv) const override final {
+    std::cout<<"ApplyInverse PCG: "<<max_itrs_<<" tol: "<<tol_<<" criteria: "<<this->criteria_<<std::endl;
     AMANZI_ASSERT(inited_ && h_.get());
-    returned_code_ = PCG_(v, hv, tol_, max_itrs_, this->criteria_);
-    if (returned_code_ <= 0) return 1;
-    return 0;
+    int ierr = PCG_(v, hv, tol_, max_itrs_, this->criteria_);
+    returned_code_ = ierr;
+    //    return (ierr > 0) ? 0 : 1;  // Positive ierr code means success.
+    return returned_code_;
   }
-  virtual void update(const Teuchos::RCP<Matrix>&) override final {}; 
 
  protected:
   virtual std::string MethodName_() const override { return "PCG"; }
@@ -81,6 +82,7 @@ class IterativeMethodPCG :
   using InvIt::CheckConvergence_;
   using InvIt::inited_;
   using InvIt::rnorm0_;
+  using InvIt::overflow_tol_; 
 
 };
 
@@ -102,13 +104,15 @@ template<class Matrix,class Preconditioner,class Vector,class VectorSpace>
 int IterativeMethodPCG<Matrix,Preconditioner,Vector,VectorSpace>::PCG_(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
-  Teuchos::OSTab tab = vo_->getOSTab();
 
-  Vector r(f), p(f), v(f);  // construct empty vectors
+ Teuchos::OSTab tab = vo_->getOSTab();
+
+  Vector r(f.getMap());
+  Vector p(f.getMap()); 
+  Vector v(f.getMap());
   num_itrs_ = 0;
 
-  double fnorm;
-  fnorm = f.norm2();
+  double fnorm = f.norm2();
   if (fnorm == 0.0) {
     x.putScalar(0.0);
     residual_ = 0.0;
@@ -136,23 +140,20 @@ int IterativeMethodPCG<Matrix,Preconditioner,Vector,VectorSpace>::PCG_(
   }
 
   h_->applyInverse(r, p);  // gamma = (H r,r)
-  double gamma0;
-  gamma0 = p.dot(r);
+  double gamma0 = p.dot(r);
   if (gamma0 <= 0) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-      *vo_->os() << "Failed: non-SPD applyInverse: gamma0=" << gamma0 << std::endl;
+      *vo_->os() << "Failed: non-SPD ApplyInverse: gamma0=" << gamma0 << std::endl;
     return LIN_SOLVER_NON_SPD_APPLY_INVERSE;
   }
 
   for (int i = 0; i < max_itrs; i++) {
     m_->apply(p, v);
-    double alpha;
-    alpha = v.dot(p);
+    double alpha = v.dot(p);
 
     if (alpha < 0.0) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-        double pnorm;
-        pnorm = p.norm2();
+        double pnorm = p.norm2();
         *vo_->os() << "Failed: non-SPD Apply: alpha=" << alpha << " ||p||=" << pnorm << std::endl;
       }
       return LIN_SOLVER_NON_SPD_APPLY;
@@ -163,16 +164,14 @@ int IterativeMethodPCG<Matrix,Preconditioner,Vector,VectorSpace>::PCG_(
     r.update(-alpha, v, 1.0);
 
     h_->applyInverse(r, v);  // gamma1 = (H r, r)
-    double gamma1;
-    gamma1 = v.dot(r);
+    double gamma1 = v.dot(r);
     if (gamma1 < 0.0) {  // residual could be zero, so we use strict inequality
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-        *vo_->os() << "Failed: non-SPD applyInverse: gamma1=" << gamma1 << std::endl;
+        *vo_->os() << "Failed: non-SPD ApplyInverse: gamma1=" << gamma1 << std::endl;
       return LIN_SOLVER_NON_SPD_APPLY_INVERSE;
     }
 
-    double rnorm;
-    rnorm = r.norm2();
+    double rnorm = r.norm2();
     residual_ = rnorm;
 
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {

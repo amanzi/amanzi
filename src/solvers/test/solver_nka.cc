@@ -4,11 +4,8 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "Epetra_MpiComm.h"
-#include "Epetra_Vector.h"
-
 #include "solver_fnbase1.hh"
-#include "solver_fnbase6.hh"
+//#include "solver_fnbase6.hh"
 #include "SolverNKA.hh"
 #include "SolverNKA_LS.hh"
 #include "SolverNKA_BT_ATS.hh"
@@ -17,24 +14,23 @@
 #include "SolverJFNK.hh"
 #include "SolverAA.hh"
 #include "SolverBT.hh"
-#include "SolverNox.hh"
+//#include "SolverNox.hh"
 
 using namespace Amanzi;
 
 SUITE(SOLVERS) {
 // data structures for testing
 struct test_data {
-  Epetra_MpiComm *comm;
-  Teuchos::RCP<Epetra_Map> map;
-  Teuchos::RCP<Epetra_Vector> vec;
+  Map_ptr_type map;
+  Vector_ptr_type vec;
 
   test_data() {
-    comm = new Epetra_MpiComm(MPI_COMM_SELF);
-    map = Teuchos::rcp(new Epetra_Map(5, 0, *comm));
-    vec = Teuchos::rcp(new Epetra_Vector(*map));
+    auto comm = getDefaultComm();
+    map = Teuchos::rcp(new Map_type(5, 0, comm));
+    vec = Teuchos::rcp(new Vector_type(map));
   }
 
-  ~test_data() { delete comm; }
+  ~test_data() { }
 };
 
 
@@ -56,14 +52,14 @@ TEST_FIXTURE(test_data, NKA_SOLVER_EXACT_JACOBIAN) {
   plist.sublist("verbose object").set("verbosity level", "extreme");
 
   // create the Solver
-  Teuchos::RCP<AmanziSolvers::SolverNKA<Epetra_Vector, Epetra_BlockMap> > nka =
-      Teuchos::rcp(new AmanziSolvers::SolverNKA<Epetra_Vector, Epetra_BlockMap>(plist));
+  Teuchos::RCP<AmanziSolvers::SolverNKA<Vector_type, Map_type> > nka =
+      Teuchos::rcp(new AmanziSolvers::SolverNKA<Vector_type, Map_type>(plist));
   nka->Init(fn, *map);
 
   // initial guess
-  Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
-  (*u)[0] = -0.9;
-  (*u)[1] =  0.9; 
+  Teuchos::RCP<Vector_type> u = Teuchos::rcp(new Vector_type(*vec));
+  (*u)(0,0) = -0.9;
+  (*u)(1,0) =  0.9; 
 
   // solve
   nka->Solve(u);
@@ -71,6 +67,8 @@ TEST_FIXTURE(test_data, NKA_SOLVER_EXACT_JACOBIAN) {
   CHECK_CLOSE(0.0, (*u)[1], 1.0e-6);
 };
 
+
+#if 0 
 
 /* ******************************************************************/
 TEST_FIXTURE(test_data, NKA_SOLVER_EXACT_JACOBIAN_GLOBALIZED) {
@@ -679,7 +677,7 @@ TEST_FIXTURE(test_data, NOX_SOLVER) {
   CHECK_CLOSE(0.0, (*u)[0], 1.0e-6);
   CHECK_CLOSE(0.0, (*u)[1], 1.0e-6);
 };
-
+#endif 
 }  // SUITE
 
 

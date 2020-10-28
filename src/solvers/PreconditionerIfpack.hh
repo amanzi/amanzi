@@ -111,7 +111,6 @@ class PreconditionerIfpack : public Preconditioner {
   virtual void set_inverse_parameters(Teuchos::ParameterList& list) override final;
   virtual void initializeInverse() override final;
   virtual void computeInverse() override final;
-  virtual void update(const Teuchos::RCP<Matrix_type>&) override final {}; 
 
   virtual int applyInverse(const Vector_type& v,
                              Vector_type& hv) const override final;

@@ -125,7 +125,6 @@ class PreconditionerHypre : public Amanzi::AmanziSolvers::Preconditioner {
   virtual void initializeInverse() override final;
   virtual void computeInverse() override final;
   virtual int applyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const override final;
-  virtual void update(const Teuchos::RCP<Matrix_type>&) override final {}; 
 
   virtual int returned_code() const override final { return returned_code_; }
   virtual std::string returned_code_string() const override final {

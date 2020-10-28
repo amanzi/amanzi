@@ -58,7 +58,6 @@ class DirectMethodAmesos2 :
   virtual void initializeInverse() override;
   virtual void computeInverse() override;
   virtual int applyInverse(const Vector_type&, Vector_type&) const override;
-  virtual void update(const Teuchos::RCP<Matrix_type>&) override final {}; 
 
   virtual int returned_code() const override { return returned_code_; }
   virtual std::string returned_code_string() const override { return "success"; }

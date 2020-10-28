@@ -67,7 +67,7 @@ template<class Operator,
          class Preconditioner=Operator,
          class Vector=typename Operator::Vector_t,
          class VectorSpace=typename Vector::VectorSpace_t>
-class Inverse : public Matrix<Operator,Vector,VectorSpace> {
+class Inverse : public Matrix<Vector,VectorSpace> {
  public:
   Inverse() = default;
   Inverse(const Inverse& other) = delete;
@@ -88,8 +88,9 @@ class Inverse : public Matrix<Operator,Vector,VectorSpace> {
   virtual const Teuchos::RCP<const VectorSpace> getDomainMap() const { return m_->getDomainMap(); }
   virtual const Teuchos::RCP<const VectorSpace> getRangeMap() const { return m_->getRangeMap(); }
 
-  void apply(const Vector& x, Vector& y) const {
+  int apply(const Vector& x, Vector& y) const {
     m_->apply(x,y);
+    return 0; 
   }
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) = 0;
   virtual void initializeInverse() = 0;
