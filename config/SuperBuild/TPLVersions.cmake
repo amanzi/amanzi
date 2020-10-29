@@ -151,6 +151,8 @@
 #   0.97.10      - update Hypre to 2.20.0
 #                - update SuperLU to 5.2.2
 #                - update MOAB to 5.2.0
+#   0.97.11      - update SuperLU_dist to 6.2.0
+#                - update Trilinos to 9fec3527 (Aug5, 2020, also 13.0.0)
 
 include(CMakeParseArguments)
 
@@ -203,7 +205,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 97)
-set(AMANZI_TPLS_VERSION_PATCH 10)
+set(AMANZI_TPLS_VERSION_PATCH 11)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -430,13 +432,13 @@ set(SuperLU_MD5_SUM        1e93259572bd2412674ed809a1446bd3)
 # TPL: SuperLU_Dist
 #
 set(SuperLUDist_VERSION_MAJOR  6)
-set(SuperLUDist_VERSION_MINOR  1)
-set(SuperLUDist_VERSION_PATCH  1)
+set(SuperLUDist_VERSION_MINOR  2)
+set(SuperLUDist_VERSION_PATCH  0)
 set(SuperLUDist_VERSION  ${SuperLUDist_VERSION_MAJOR}.${SuperLUDist_VERSION_MINOR}.${SuperLUDist_VERSION_PATCH})
 set(SuperLUDist_URL_STRING     "https://github.com/xiaoyeli/superlu_dist/archive")
 set(SuperLUDist_ARCHIVE_FILE   v${SuperLUDist_VERSION}.tar.gz)
 set(SuperLUDist_SAVEAS_FILE    superlu_dist_${SuperLUDist_VERSION}.tar.gz)
-set(SuperLUDist_MD5_SUM        767e221ba3752174b65d9257f9a97e06)
+set(SuperLUDist_MD5_SUM        7b9fa7c047fd1988b61f9c6f744c829b)
 
 #
 # TPL: Sowing (Built by PETSc!)
@@ -467,15 +469,15 @@ set(PETSc_MD5_SUM        c1bfeeb3613f59049d312713b461a1b1)
 #
 # TPL: Trilinos
 #
-set(Trilinos_VERSION_MAJOR 12)
-set(Trilinos_VERSION_MINOR 18)
-set(Trilinos_VERSION_PATCH 55a7599733-Nov11)
+set(Trilinos_VERSION_MAJOR 13)
+set(Trilinos_VERSION_MINOR 0)
+set(Trilinos_VERSION_PATCH 0)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}-${Trilinos_VERSION_MINOR}-${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "https://github.com/trilinos/Trilinos/archive")
 set(Trilinos_ARCHIVE_FILE   trilinos-release-${Trilinos_VERSION}.tar.gz)
 set(Trilinos_SAVEAS_FILE    ${Trilinos_ARCHIVE_FILE})
 set(Trilinos_GIT_REPOSITORY "https://github.com/trilinos/Trilinos")
-set(Trilinos_GIT_TAG        "55a75997332636a28afc9db1aee4ae46fe8d93e7")
+set(Trilinos_GIT_TAG        "9fec35276d846a667bc668ff4cbdfd8be0dfea08")
 
 #
 # TPL: SEACAS
