@@ -766,8 +766,13 @@ int Alquimia_PK::AdvanceSingleCell(
   int num_iterations;
   bool success = chem_engine_->Advance(dt, alq_mat_props_, alq_state_, 
                                        alq_aux_data_, alq_aux_output_, num_iterations);
-  if (not success) 
+  if (not success) {
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "no convergence in cell: " << mesh_->cell_map(false).GID(cell) << std::endl;
+    }
     return -1;
+  }
 
   // Move the information back into Amanzi's state, updating the given total concentration vector.
   CopyAlquimiaStateToAmanzi(cell, 
