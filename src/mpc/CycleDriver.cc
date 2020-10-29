@@ -49,7 +49,7 @@
 
 namespace Amanzi {
 
-bool reset_info_compfunc(std::pair<double,double> x, std::pair<double,double> y) {
+bool reset_info_compfunc(const std::pair<double,double>& x, const std::pair<double,double>& y) {
   return (x.first < y.first);
 }
 
