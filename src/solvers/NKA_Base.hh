@@ -219,7 +219,7 @@ NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
     if (!too_close) {
       // update the NKA space if the previously returned direction had been
       // modified before being applied
-      if (old_dir != Teuchos::null) *vp = *old_dir;
+      if (old_dir != Teuchos::null) vp->assign(*old_dir);
 
       // Normalize w_1 and apply same factor to v_1.
       wp->scale(1.0 / s);
@@ -325,8 +325,8 @@ NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   }
 
   //  ACCELERATED CORRECTION
-  dir = f;
-  Vector dir_update(dir);
+  dir.assign(f);
+  Vector dir_update(dir.getMap());
 
   // Locate storage for the new vectors.
   AMANZI_ASSERT(free_v_ != NKA_EOL);
@@ -334,7 +334,7 @@ NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   free_v_ = next_v_[free_v_];
 
   // Save the original f for the next_v_ call.
-  *w_[new_v] = f;
+  w_[new_v]->assign(f);
 
   if (subspace_) {
     std::vector<double> c(mvec_+1,0.);
@@ -367,7 +367,7 @@ NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   }
 
   // Save the accelerated correction for the next_v_ call.
-  *v_[new_v] = dir;
+  v_[new_v]->assign(dir);
 
 
   // Prepend the new vectors to the list.

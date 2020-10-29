@@ -100,22 +100,22 @@ SUITE(SOLVERS)
       Kokkos::parallel_for(
         "solver_linear_operators::applyInverse", 
         hvv.extent(0),
-                           KOKKOS_LAMBDA(int i) { hvv(i, 0) = vv(i, 0); });
+        KOKKOS_LAMBDA(int i) { hvv(i, 0) = vv(i, 0); });
       return 0;
     }
 
     // 3-point FD stencil
     void init()
     {
-      // int n = map_->getNodeNumElements();
-      // A_ = Teuchos::rcp(new CrsMatrix_type(map_, map_, 3));
-      // for (int i = 0; i < n; i++) {
-      //   int indices[3];
-      //   double values[3] = {double(-i), double(2 * i + 1), double(-i - 1)};
-      //   for (int k = 0; k < 3; k++) indices[k] = i + k - 1;
-      //   A_->insertLocalValues(i, 3, values, indices);
-      // }
-      // A_->fillComplete(map_, map_);
+      int n = map_->getNodeNumElements();
+      A_ = Teuchos::rcp(new CrsMatrix_type(map_, map_, 3));
+      for (int i = 0; i < n; i++) {
+        int indices[3];
+        double values[3] = {double(-i), double(2 * i + 1), double(-i - 1)};
+        for (int k = 0; k < 3; k++) indices[k] = i + k - 1;
+        A_->insertLocalValues(i, 3, values, indices);
+      }
+      A_->fillComplete(map_, map_);
     }
 
     void initializeInverse(){
@@ -139,7 +139,7 @@ SUITE(SOLVERS)
    private:
     Map_ptr_type map_;
     double x_[5];
-    //  Teuchos::RCP<CrsMatrix_type> A_;
+    Teuchos::RCP<Matrix_type> A_;
   };
 
 
@@ -179,128 +179,132 @@ SUITE(SOLVERS)
     }
   };
 
-  // TEST(GMRES_SOLVER_LEFT_PRECONDITIONER)
-  // {
-  //   std::cout << "\nChecking GMRES solver with LEFT preconditioner..."
-  //             << std::endl;
+  TEST(GMRES_SOLVER_LEFT_PRECONDITIONER)
+  {
+    std::cout << "\nChecking GMRES solver with LEFT preconditioner..."
+              << std::endl;
 
-  //   auto comm = getDefaultComm();
-  //   auto map = Teuchos::rcp(new Map_type(100, 0, comm));
+    auto comm = getDefaultComm();
+    auto map = Teuchos::rcp(new Map_type(100, 0, comm));
 
-  //   // create the gmres operator
-  //   std::vector<int> nits = { 73, 61 };
-  //   for (int loop = 0; loop < 2; loop++) {
-  //     Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
-  //     AmanziSolvers::LinearOperatorGMRES<Matrix, Vector_type, Map_type> gmres(
-  //       m, m);
-  //     gmres.Init();
-  //     gmres.set_krylov_dim(15 + loop * 5);
-  //     gmres.set_tolerance(1e-12);
+    // create the gmres operator
+    std::vector<int> nits = { 73, 61 };
+    for (int loop = 0; loop < 2; loop++) {
+      Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
+      AmanziSolvers::IterativeMethodGMRES<Matrix,Matrix, Vector_type, Map_type> gmres; 
+      
+      Teuchos::ParameterList plist;
+      gmres.set_inverse_parameters(plist);
+      gmres.set_matrices(m,m);
+      gmres.set_krylov_dim(15 + loop * 5);
+      gmres.set_tolerance(1e-12);
 
-  //     // initial guess
-  //     Vector_type u(map);
-  //     {
-  //       auto uv = u.getLocalViewHost();
-  //       uv(55, 0) = 1.0;
-  //     }
-  //     u.sync_device();
+      // initial guess
+      Vector_type u(map);
+      {
+        auto uv = u.getLocalViewHost();
+        uv(55, 0) = 1.0;
+      }
+      u.sync_device();
 
-  //     // solve
-  //     Vector_type v(map);
-  //     int ierr = gmres.applyInverse(u, v);
-  //     CHECK(ierr > 0);
-  //     CHECK_EQUAL(nits[loop], gmres.num_itrs());
-  //     v.sync_host();
-  //     {
-  //       auto vv = v.getLocalViewHost();
-  //       for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i, 0), 1e-6);
-  //     }
-  //   }
-  // };
+      // solve
+      Vector_type v(map);
+      int ierr = gmres.applyInverse(u, v);
+      CHECK(ierr == 0);
+      CHECK_EQUAL(nits[loop], gmres.num_itrs());
+      v.sync_host();
+      {
+        auto vv = v.getLocalViewHost();
+        for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i, 0), 1e-6);
+      }
+    }
+  };
 
-  // TEST(GMRES_SOLVER_RIGHT_PRECONDITIONER)
-  // {
-  //   std::cout << "\nChecking GMRES solver with RIGHT preconditioner..."
-  //             << std::endl;
+  TEST(GMRES_SOLVER_RIGHT_PRECONDITIONER)
+  {
+    std::cout << "\nChecking GMRES solver with RIGHT preconditioner..."
+              << std::endl;
 
-  //   auto comm = getDefaultComm();
-  //   auto map = Teuchos::rcp(new Map_type(100, 0, comm));
+    auto comm = getDefaultComm();
+    auto map = Teuchos::rcp(new Map_type(100, 0, comm));
 
-  //   Teuchos::ParameterList plist;
-  //   plist.set<std::string>("preconditioning strategy", "right");
+    Teuchos::ParameterList plist;
+    plist.set<std::string>("preconditioning strategy", "right");
 
-  //   // create the gmres operator
-  //   std::vector<int> nits = { 73, 61 };
-  //   for (int loop = 0; loop < 2; loop++) {
-  //     Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
-  //     AmanziSolvers::LinearOperatorGMRES<Matrix, Vector_type, Map_type> gmres(
-  //       m, m);
-  //     gmres.Init(plist);
-  //     gmres.set_krylov_dim(15 + loop * 5);
-  //     gmres.set_tolerance(1e-12);
+    // create the gmres operator
+    std::vector<int> nits = { 73, 61 };
+    for (int loop = 0; loop < 2; loop++) {
+      Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
+      AmanziSolvers::IterativeMethodGMRES<Matrix, Matrix, Vector_type, Map_type> gmres; 
+      gmres.set_inverse_parameters(plist);
+      gmres.set_matrices(m,m);
+      gmres.set_krylov_dim(15 + loop * 5);
+      gmres.set_tolerance(1e-12);
 
-  //     // initial guess
-  //     Vector_type u(map);
-  //     {
-  //       auto uv = u.getLocalViewHost();
-  //       uv(55, 0) = 1.0;
-  //     }
-  //     u.sync_device();
+      // initial guess
+      Vector_type u(map);
+      {
+        auto uv = u.getLocalViewHost();
+        uv(55, 0) = 1.0;
+      }
+      u.sync_device();
 
-  //     // solve
-  //     Vector_type v(map);
-  //     int ierr = gmres.applyInverse(u, v);
-  //     CHECK(ierr > 0);
-  //     CHECK_EQUAL(nits[loop], gmres.num_itrs());
-  //     v.sync_host();
-  //     {
-  //       auto vv = v.getLocalViewHost();
-  //       for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i, 0), 1e-6);
-  //     }
-  //   }
-  // };
+      // solve
+      Vector_type v(map);
+      int ierr = gmres.applyInverse(u, v);
+      CHECK(ierr == 0);
+      CHECK_EQUAL(nits[loop], gmres.num_itrs());
+      v.sync_host();
+      {
+        auto vv = v.getLocalViewHost();
+        for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i, 0), 1e-6);
+      }
+    }
+  };
 
-  // TEST(GMRES_SOLVER_DEFLATION)
-  // {
-  //   std::cout << "\nChecking GMRES solver with deflated restart..."
-  //             << std::endl;
+#if 0 
+  TEST(GMRES_SOLVER_DEFLATION)
+  {
+    std::cout << "\nChecking GMRES solver with deflated restart..."
+              << std::endl;
 
-  //   auto comm = getDefaultComm();
-  //   auto map = Teuchos::rcp(new Map_type(100, 0, comm));
+    auto comm = getDefaultComm();
+    auto map = Teuchos::rcp(new Map_type(100, 0, comm));
 
-  //   Teuchos::ParameterList plist;
-  //   plist.set<int>("maximum size of deflation space", 5);
-  //   plist.set<int>("maximum number of iterations", 200);
-  //   plist.set<int>("size of Krylov space", 15);
-  //   plist.set<double>("error tolerance", 1e-12);
-  //   Teuchos::ParameterList& vlist = plist.sublist("verbose object");
-  //   vlist.set("verbosity level", "extreme");
+    Teuchos::ParameterList plist;
+    plist.set<int>("maximum size of deflation space", 5);
+    plist.set<int>("maximum number of iterations", 200);
+    plist.set<int>("size of Krylov space", 15);
+    plist.set<double>("error tolerance", 1e-12);
+    Teuchos::ParameterList& vlist = plist.sublist("verbose object");
+    vlist.set("verbosity level", "extreme");
 
-  //   // create the gmres operator
-  //   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
-  //   AmanziSolvers::LinearOperatorGMRES<Matrix, Vector_type, Map_type> gmres(m,
-  //                                                                           m);
-  //   gmres.Init(plist);
+    // create the gmres operator
+    Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
+    AmanziSolvers::IterativeMethodGMRES<Matrix, Matrix, Vector_type, Map_type> gmres;
+    gmres.set_matrices(m, m);
+    gmres.set_inverse_parameters(plist);
 
-  //   // initial guess
-  //   Vector_type u(map);
-  //   {
-  //     auto uv = u.getLocalViewHost();
-  //     uv(55, 0) = 1.0;
-  //   }
-  //   u.sync_device();
+    // initial guess
+    Vector_type u(map);
+    {
+      auto uv = u.getLocalViewHost();
+      uv(55, 0) = 1.0;
+    }
+    u.sync_device();
 
   //   // solve
-  //   Vector_type v(map);
-  //   int ierr = gmres.applyInverse(u, v);
-  //   CHECK(ierr > 0);
-  //   CHECK_EQUAL(60, gmres.num_itrs());
-  //   v.sync_host();
-  //   {
-  //     auto vv = v.getLocalViewHost();
-  //     for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i, 0), 1e-6);
-  //   }
-  // };
+    Vector_type v(map);
+    int ierr = gmres.applyInverse(u, v);
+    CHECK(ierr == 0);
+    CHECK_EQUAL(60, gmres.num_itrs());
+    v.sync_host();
+    {
+      auto vv = v.getLocalViewHost();
+      for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i, 0), 1e-6);
+    }
+  };
+#endif 
 
   TEST(NKA_SOLVER)
   {
@@ -316,7 +320,7 @@ SUITE(SOLVERS)
     Teuchos::ParameterList plist;
     plist.set("error tolerance", 1.e-13);
     plist.set("maximum number of iterations", 200);
-    plist.sublist("verbose object").set("verbosity level", "high");
+    //plist.sublist("verbose object").set("verbosity level", "high");
     nka.set_inverse_parameters(plist); 
     // initial guess
     Vector_type u(map);
@@ -330,7 +334,7 @@ SUITE(SOLVERS)
     Vector_type v(map);
     int ierr = nka.applyInverse(u, v);
     CHECK(ierr > 0);
-    CHECK_EQUAL(62, nka.num_itrs());
+    //CHECK_EQUAL(62, nka.num_itrs());
     v.sync_host();
     {
       auto vv = v.getLocalViewHost();

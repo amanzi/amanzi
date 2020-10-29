@@ -190,16 +190,15 @@ template<class Matrix,class Preconditioner,class Vector,class VectorSpace>
 int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
-  Vector w(f), r(f), p(f);  // construct empty vectors
+  Vector w(f.getMap()), r(f.getMap()), p(f.getMap());  // construct empty vectors
 
   double s[krylov_dim_ + 1], cs[krylov_dim_ + 1], sn[krylov_dim_ + 1];
   WhetStone::DenseMatrix<> T(krylov_dim_ + 1, krylov_dim_);
   num_itrs_inner_ = 0;
 
-  double fnorm;
   // h_->applyInverse(f, r);
   // r.Dot(fnorm, f);  This is the preconditioned norm of the residual.
-  fnorm = f.norm2();
+  double fnorm = f.norm2();
   fnorm_ = fnorm;
 
   // initial residual is r = f - M x for the right preconditioner
@@ -213,8 +212,7 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
     r.update(1.0, f, -1.0);
   }
 
-  double rnorm0;
-  rnorm0 = r.norm2();
+  double rnorm0 = r.norm2();
   residual_ = rnorm0;
   if (rnorm0_ < 0.0) rnorm0_ = rnorm0;
 
@@ -231,7 +229,7 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
     if (ierr != 0) return ierr;
   }
 
-  v_[0] = Teuchos::rcp(new Vector(r));
+  v_[0] = Teuchos::rcp(new Vector(r, Teuchos::DataAccess::Copy));
   v_[0]->update(0.0, r, 1.0 / rnorm0);
 
   s[0] = rnorm0;
@@ -301,7 +299,7 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
     }
 
     if (i < krylov_dim_ - 1) {
-      v_[i + 1] = Teuchos::rcp(new Vector(w));
+      v_[i + 1] = Teuchos::rcp(new Vector(w, Teuchos::DataAccess::Copy));
       if (tmp != 0.0) {  // zero occurs in exact arithmetic
         v_[i + 1]->update(0.0, r, 1.0 / tmp);
       }
@@ -320,12 +318,11 @@ template<class Matrix,class Preconditioner,class Vector,class VectorSpace>
 int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_Deflated_(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
-  Vector p(f), r(f), w(f);
+  Vector p(f.getMap()), r(f.getMap()), w(f.getMap());
   WhetStone::DenseVector<> d(krylov_dim_ + 1), g(krylov_dim_);
   WhetStone::DenseMatrix<> T(krylov_dim_ + 1, krylov_dim_);
 
-  double fnorm;
-  fnorm = f.norm2();
+  double fnorm = f.norm2();
   fnorm_ = fnorm;
 
   // initial residual is r = f - M x for the right preconditioner
@@ -339,8 +336,7 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_Deflat
     r.update(1.0, f, -1.0);
   }
 
-  double rnorm0;
-  rnorm0 = r.norm2();
+  double rnorm0 = r.norm2();
   residual_ = rnorm0;
   if (rnorm0_ < 0.0) rnorm0_ = rnorm0;
 
@@ -362,7 +358,7 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_Deflat
   double tmp;
   d.putScalar(0.0);
   if (num_ritz_ == 0) {
-    v_[0] = Teuchos::rcp(new Vector(r));
+    v_[0] = Teuchos::rcp(new Vector(r, Teuchos::DataAccess::Copy));
     v_[0]->update(0.0, r, 1.0 / rnorm0);
     d(0) = rnorm0;
   } else {
@@ -402,7 +398,7 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_Deflat
     T(i + 1, i) = beta;
     if (beta == 0.0) break;
 
-    v_[i + 1] = Teuchos::rcp(new Vector(w));
+    v_[i + 1] = Teuchos::rcp(new Vector(w, Teuchos::DataAccess::Copy));
     v_[i + 1]->update(0.0, r, 1.0 / beta);
   }
 
