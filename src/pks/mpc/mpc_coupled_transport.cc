@@ -115,9 +115,7 @@ bool CoupledTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
 
 
   sub_pks_[subsurf_id_]->AdvanceStep(t_old, t_new, reinit);
-  *vo_->os() <<"Subsurface step successful\n";
   sub_pks_[surf_id_]->AdvanceStep(t_old, t_new, reinit);
-  *vo_->os() <<"Overland step successful\n";
 
 
   const Epetra_MultiVector& surf_tcc = *S_inter_->GetFieldCopyData("surface-total_component_concentration", "subcycling")->ViewComponent("cell",false);  
@@ -130,7 +128,7 @@ bool CoupledTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
    std::vector<double> mass_subsurface(num_components, 0.), mass_surface(num_components, 0.);
 
   
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM){
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
     for (int i=0; i<num_components; i++){
       mass_subsurface[i] = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[subsurf_id_])
         ->ComputeSolute(tcc, i);
