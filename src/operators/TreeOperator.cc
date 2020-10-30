@@ -132,6 +132,8 @@ void TreeOperator::set_operator(const Teuchos::RCP<Operator>& op)
 
 
 void TreeOperator::set_operator_block(std::size_t i, std::size_t j, const Teuchos::RCP<Operator>& op) {
+  if (op == Teuchos::null) return;
+
   auto block_row_map = get_row_map()->SubVector(i);
   auto block_col_map = get_col_map()->SubVector(j);
 
