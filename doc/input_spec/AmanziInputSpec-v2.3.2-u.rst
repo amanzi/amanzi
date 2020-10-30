@@ -432,7 +432,7 @@ ________________________
 |                                  |              | | *default = tensorial*                                |
 +----------------------------------+--------------+--------------------------------------------------------+
 | limiter_stencil                  | string       | | ``node-to-cells``, ``face-to-cells``,                |
-|                                  |              | | ``cell-to-closests-cells``                           |
+|                                  |              | | ``cell-to-closests-cells``, ``cell-to-all-cells``    |
 |                                  |              | | *default = face-to-cells*                            |
 +----------------------------------+--------------+--------------------------------------------------------+
 | dispersion_discretization_method | string       | | ``mfd-monotone_for_hex``, ``mfd-monotone_for_hex``,  |

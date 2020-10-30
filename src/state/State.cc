@@ -1279,7 +1279,7 @@ void WriteVis(Visualization& vis,
               State& S) {
   if (!vis.is_disabled()) {
     // Create the new time step
-    vis.CreateTimestep(S.time(), S.cycle());
+    vis.CreateTimestep(S.time(), S.cycle(), vis.get_tag());
 
     // Write all fields to the visualization file, the fields know if they
     // need to be written.

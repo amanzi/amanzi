@@ -238,7 +238,7 @@ TEST(SHALLOW_WATER_1D) {
     dam_break_1D_exact_field(mesh, hh_ex, vx_ex, t_out);
 
     if (iter % 5 == 0) {
-      io.InitializeCycle(t_out, iter);
+      io.InitializeCycle(t_out, iter, "");
       io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
       io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
       io.WriteVector(*vx(0), "vx", AmanziMesh::CELL);
@@ -284,7 +284,7 @@ TEST(SHALLOW_WATER_1D) {
   CHECK_CLOSE(1./hmax, err_max, 0.5);
 
   // save final state values into HDF5 file
-  io.InitializeCycle(t_out, iter);
+  io.InitializeCycle(t_out, iter, "");
   io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
   io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
   io.WriteVector(*vx(0), "vx", AmanziMesh::CELL);

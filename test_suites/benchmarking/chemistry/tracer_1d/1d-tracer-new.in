@@ -19,15 +19,10 @@ CHEMISTRY
   PRIMARY_SPECIES
     Tracer
   /
-!:dummy reaction w/zero rate so that pflotran initializes geochem variables
-  GENERAL_REACTION
-    REACTION Tracer <-> 
-    FORWARD_RATE 0.0d0
-    BACKWARD_RATE 0.d0
-  /
   DATABASE ./tracer.dat
   LOG_FORMULATION
   ACTIVITY_COEFFICIENTS TIMESTEP
+  USE_FULL_GEOCHEMISTRY
   OUTPUT
     All
     TOTAL

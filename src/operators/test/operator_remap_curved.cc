@@ -397,7 +397,7 @@ void RemapTestsCurved(std::string file_name,
 
   p2c = *p1->ViewComponent("cell");
 
-  io->InitializeCycle(0.0, 0);
+  io->InitializeCycle(0.0, 0, "");
   io->WriteVector(*p2c(0), "solution", AmanziMesh::CELL);
   io->FinalizeCycle();
 
@@ -444,7 +444,7 @@ void RemapTestsCurved(std::string file_name,
 
     // visualize solution on mesh1
     // io = Teuchos::rcp(new OutputXDMF(iolist, mesh1, true, false));
-    io->InitializeCycle(t, iloop + 1);
+    io->InitializeCycle(t, iloop + 1, "");
     io->WriteVector(*p2c(0), "solution", AmanziMesh::CELL);
     if (order > 0) {
       io->WriteVector(*p2c(1), "gradx", AmanziMesh::CELL);

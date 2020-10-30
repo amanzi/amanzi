@@ -65,7 +65,7 @@ class Matrix {
     return 0;
   }
 
-  // 3-point FD stencil
+  // 3-point FD stencil (for direct solvers)
   void Init() {
     int n = map_->NumMyElements();
     A_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *map_, *map_, 3));
@@ -259,8 +259,8 @@ TEST(BELOS_GMRES_SOLVER) {
   plist.set<int>("size of Krylov space", 15);
   plist.set<double>("error tolerance", 1e-12);
 
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
-  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
+  Epetra_MpiComm comm(MPI_COMM_SELF);
+  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, comm));
 
   // create the operator
   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
@@ -280,8 +280,6 @@ TEST(BELOS_GMRES_SOLVER) {
   CHECK(ierr == 0);
 
   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
-
-  delete comm;
 };
 
 TEST(AMESOS_SOLVER) {
@@ -293,8 +291,8 @@ TEST(AMESOS_SOLVER) {
   plist.set<std::string>("solver name", "Amesos_Klu")
        .set<int>("amesos version", 1);
 
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
-  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(10, 0, *comm));
+  Epetra_MpiComm comm(MPI_COMM_SELF);
+  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(10, 0, comm));
 
   // create the operator
   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
@@ -336,8 +334,6 @@ TEST(AMESOS_SOLVER) {
     double residual = 11 * v[5] - 5 * v[4] - 6 * v[6];
     CHECK_CLOSE(1.0, residual, 1e-12);
   }
-
-//   delete comm;
 };
 
 TEST(SOLVER_FACTORY_NO_PC) {

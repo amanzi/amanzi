@@ -49,7 +49,7 @@
 
 namespace Amanzi {
 
-bool reset_info_compfunc(std::pair<double,double> x, std::pair<double,double> y) {
+bool reset_info_compfunc(const std::pair<double,double>& x, const std::pair<double,double>& y) {
   return (x.first < y.first);
 }
 
@@ -673,9 +673,9 @@ void CycleDriver::Observations(bool force) {
 
 
 /* ******************************************************************
-* Write visualization if requested.
+* Write visualization file with extension (cycle + tag) if requested.
 ****************************************************************** */
-void CycleDriver::Visualize(bool force) {
+void CycleDriver::Visualize(bool force, const std::string& tag) {
   bool dump = force;
   if (!dump) {
     for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
@@ -690,6 +690,7 @@ void CycleDriver::Visualize(bool force) {
   
   for (const auto& vis : visualization_) {
     if (force || vis->DumpRequested(S_->cycle(), S_->time())) {
+      vis->set_tag(tag);
       WriteVis(*vis, *S_);
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "writing visualization file" << std::endl;
@@ -818,7 +819,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
   }
 
   // enfoce consistent physics after initialization
-  // this is optionla but help corect statistics
+  // this is optional but helps with statistics
   S_->InitializeEvaluators();
 
   *S_->GetScalarData("dt", "coordinator") = dt;
@@ -982,6 +983,12 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   pk_->set_dt(tp_dt_[time_pr_id]);
   max_dt_ = tp_max_dt_[time_pr_id];
+  
+  // conditional i/o after initialization is performed only when 
+  // new fields are added/removed to/from the state
+  auto fields_old = StateVisFields(*S_old_);
+  auto fields = StateVisFields(*S_);
+  if (fields_old != fields) Visualize(true, "ic");
 
   S_old_ = Teuchos::null;
 }

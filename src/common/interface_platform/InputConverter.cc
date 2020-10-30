@@ -1321,6 +1321,17 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
       std::string value = TrimString_(mm.transcode(node->getTextContent()));
       controls << "  MAX_RESIDUAL_TOLERANCE " << value << "\n";
     }
+
+    node = GetUniqueElementByTagsString_(base, "use_full_geochemistry", flag);
+    if (flag) {
+      std::string value = TrimString_(mm.transcode(node->getTextContent()));
+      if (value == "on") {
+        controls << "  USE_FULL_GEOCHEMISTRY \n";
+      }
+    } else {
+      controls << "  USE_FULL_GEOCHEMISTRY \n";
+    }
+    
   }
 
   // set up Chemistry Options ParameterList

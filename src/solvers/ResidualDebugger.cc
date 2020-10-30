@@ -72,7 +72,7 @@ ResidualDebugger::WriteVector<TreeVector>(int iter,
          it!=vis_.end(); ++it) {
       if (it->get()) {
         (*it)->writeMesh(time_, iter);
-        (*it)->createTimestep(time_, iter);
+        (*it)->createTimestep(time_, iter, "");
         (*it)->open_h5file();
       }
     }
