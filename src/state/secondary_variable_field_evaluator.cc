@@ -30,9 +30,8 @@ SecondaryVariableFieldEvaluator::SecondaryVariableFieldEvaluator(
 
   if (plist_.isParameter("evaluator dependencies")) {
     Teuchos::Array<std::string> deps = plist_.get<Teuchos::Array<std::string> >("evaluator dependencies");
-    for (Teuchos::Array<std::string>::iterator dep=deps.begin();
-         dep!=deps.end(); ++dep) {
-      dependencies_.insert(*dep);
+    for (const auto& dep : deps) {
+      dependencies_.insert(dep);
     }
   }
 
@@ -318,16 +317,19 @@ void SecondaryVariableFieldEvaluator::EnsureCompatibility(const Teuchos::Ptr<Sta
     dep_fac->SetOwned(false);
 
     // Loop over my dependencies, ensuring they meet the requirements.
-    for (KeySet::const_iterator key=dependencies_.begin();
-         key!=dependencies_.end(); ++key) {
-      Teuchos::RCP<CompositeVectorSpace> fac = S->RequireField(*key);
+    for (const auto& key : dependencies_) {
+      if (key == my_key_) {
+        Errors::Message msg;
+        msg << "Evaluator for key \"" << my_key_ << "\" depends upon itself.";
+        Exceptions::amanzi_throw(msg);
+      }
+      Teuchos::RCP<CompositeVectorSpace> fac = S->RequireField(key);
       fac->Update(*dep_fac);
     }
 
     // Recurse into the tree to propagate info to leaves.
-    for (KeySet::const_iterator key=dependencies_.begin();
-         key!=dependencies_.end(); ++key) {
-      S->RequireFieldEvaluator(*key)->EnsureCompatibility(S);
+    for (const auto& key : dependencies_) {
+      S->RequireFieldEvaluator(key)->EnsureCompatibility(S);
     }
   }
 }
