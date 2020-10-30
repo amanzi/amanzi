@@ -50,6 +50,7 @@ OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
     niter_(0),
     source_only_if_unfrozen_(false),
     precon_used_(true),
+    precon_scaled_(false),
     jacobian_(false),
     jacobian_lag_(0),
     iter_(0),
@@ -251,6 +252,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S)
     auto& inv_list = mfd_pc_plist.sublist("inverse");
     inv_list.setParameters(plist_->sublist("inverse"));
   }
+  precon_scaled_ = plist_->get<bool>("scale preconditioner to pressure", !precon_used_);
 
   // -- create the preconditioner -- can this be done via clone?
   preconditioner_diff_ = opfactory.Create(mfd_pc_plist, mesh_, bc_);

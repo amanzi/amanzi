@@ -61,18 +61,17 @@ MPCPermafrost::Setup(const Teuchos::Ptr<State>& S) {
   pks_list_->sublist(names[3]).sublist("diffusion preconditioner").set("surface operator", true);
   pks_list_->sublist(names[3]).sublist("advection preconditioner").set("surface operator", true);
   pks_list_->sublist(names[3]).sublist("accumulation preconditioner").set("surface operator", true);
-  
+
   // grab the meshes
   surf_mesh_ = S->GetMesh(domain_surf_);
   domain_mesh_ = S->GetMesh(domain_subsurf_);
-  
+
   // alias the PKs for easier reference
   domain_flow_pk_ = sub_pks_[0];
   domain_energy_pk_ = sub_pks_[1];
   surf_flow_pk_ = sub_pks_[2];
   surf_energy_pk_ = sub_pks_[3];
 
-  
   // Create the dE_dp block, which will at least have a CELL-based diagonal
   // entry (from subsurface dE/dp) and a FACE-based diagonal entry (from
   // surface dE/dp), but the subsurface might only create a CELL-only matrix if
@@ -89,19 +88,19 @@ MPCPermafrost::Setup(const Teuchos::Ptr<State>& S) {
     Errors::Message msg("MPC_Permafrost: for permafrost problems, due to issues in Jacobians, the flow and energy discretization methods must be the same.");
     Exceptions::amanzi_throw(msg);
   }
-  
+
   if (pk0_method == "nlfv: bnd_faces" || pk0_method == "fv: bnd_faces") {
     cvs->SetMesh(domain_mesh_)->SetGhosted()
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);  
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
   } else {
     cvs->SetMesh(domain_mesh_)->SetGhosted()
       ->AddComponent("face", AmanziMesh::FACE, 1)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);  
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
   }
-  
+
   dE_dp_block_ = Teuchos::rcp(new Operators::Operator_FaceCell(cvs, plist));
-  
+
   // call the subsurface setup, which calls the sub-pk's setups and sets up
   // the subsurface block operator
   MPCSubsurface::Setup(S);
@@ -120,8 +119,8 @@ MPCPermafrost::Setup(const Teuchos::Ptr<State>& S) {
   fe = S->RequireFieldEvaluator(energy_exchange_key_);
   energy_exchange_pvfe_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fe);
   AMANZI_ASSERT(energy_exchange_pvfe_.get());
-  
-  if (precon_type_ != PRECON_NONE) {  
+
+  if (precon_type_ != PRECON_NONE) {
     // Add the (diagonal) surface blocks into the subsurface blocks.
 
     // For now we have just the basics, but this could get as complex as
@@ -171,11 +170,8 @@ MPCPermafrost::Setup(const Teuchos::Ptr<State>& S) {
         dE_dp_block_->OpPushBack(*op);
       }
     }
-
-    // must now re-symbolic assemble the matrix to get the updated surface parts
-    preconditioner_->set_inverse_parameters(plist_->sublist("preconditioner"));
   }
-      
+
   // grab the debuggers
   domain_db_ = domain_flow_pk_->debugger();
   surf_db_ = surf_flow_pk_->debugger();
@@ -351,7 +347,7 @@ MPCPermafrost::UpdatePreconditioner(double t,
   // update the various components -- note it is important that subsurface are
   // done first (which is handled as they are listed first)
   MPCSubsurface::UpdatePreconditioner(t, up, h);
-  
+
   // Add the surface off-diagonal blocks.
   // -- surface dWC/dT
   // -- ALWAYS ZERO
@@ -360,7 +356,6 @@ MPCPermafrost::UpdatePreconditioner(double t,
   // Teuchos::RCP<const CompositeVector> dWCdT =
   //     S_next_->GetFieldData("dsurface-water_content_dsurface-temperature");
   // dWC_dT_surf_->AddAccumulationTerm(*dWCdT->ViewComponent("cell", false), h);
-  
 
   if (precon_type_ != PRECON_NO_FLOW_COUPLING) {
     // -- surface dE_dp
@@ -369,7 +364,7 @@ MPCPermafrost::UpdatePreconditioner(double t,
     Teuchos::RCP<const CompositeVector> dEdp =
         S_next_->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_surf_,"energy"), Keys::getKey(domain_surf_,"pressure")));
     dE_dp_surf_->AddAccumulationTerm(*dEdp, h, "cell", false);
-  
+
     // write for debugging
     std::vector<std::string> vnames;
     //  vnames.push_back("  dwc_dT");
@@ -385,14 +380,20 @@ MPCPermafrost::UpdatePreconditioner(double t,
   double scaling = 1.e6; // dWC/dp_Pa * (Pa / MPa) --> dWC/dp_MPa
   sub_pks_[0]->preconditioner()->Rescale(scaling);
   dE_dp_block_->Rescale(scaling);
-  
+
 
   if (dump_) {
+    preconditioner_->SymbolicAssembleMatrix();
+    preconditioner_->AssembleMatrix();
+
     std::stringstream filename;
     filename << "FullyCoupled_PC_" << S_next_->cycle() << "_" << update_pcs_ << ".txt";
     EpetraExt::RowMatrixToMatlabFile(filename.str().c_str(), *preconditioner_->A());
+    // Errors::Message msg("MPC_Permafrost: Dumped preconditioner as ");
+    // msg << filename.str();
+    // Exceptions::amanzi_throw(msg);
   }
-  
+
   // update ewc Precons if needed
   //  surf_ewc_->UpdatePreconditioner(t, up, h);
 }
@@ -416,7 +417,7 @@ MPCPermafrost::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
       ->HasFieldChanged(S_next_.ptr(), name_);
     return false; // intentionally lieing -- true here triggers another call of ChangedSolution() which we want to avoid
   }
-  
+
   // write predictor
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "Extrapolated Prediction (surface):" << std::endl;
@@ -462,7 +463,7 @@ MPCPermafrost::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
     vecs[1] = u->SubVector(1)->Data().ptr();
     domain_db_->WriteVectors(vnames, vecs, true);
   }
- 
+
   // Calculate consistent faces
   modified |= domain_flow_pk_->ModifyPredictor(h, u0->SubVector(0), u->SubVector(0));
   modified |= domain_energy_pk_->ModifyPredictor(h, u0->SubVector(1), u->SubVector(1));
@@ -485,7 +486,7 @@ MPCPermafrost::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
     vecs[1] = u->SubVector(1)->Data().ptr();
     domain_db_->WriteVectors(vnames, vecs, true);
   }
-  
+
   // Copy consistent faces to surface
   if (modified) {
     //S_next_->GetFieldEvaluator(Keys::getKey(domain_surf_,"relative_permeability"))->HasFieldChanged(S_next_.ptr(),name_);
@@ -523,7 +524,7 @@ MPCPermafrost::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
     vecs[1] = u->SubVector(1)->Data().ptr();
     domain_db_->WriteVectors(vnames, vecs, true);
   }
-  
+
 
   // -- copy surf --> sub
   //  if (newly_modified) {
@@ -536,7 +537,7 @@ MPCPermafrost::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   surf_energy_pk_->ChangedSolution();
   modified |= surf_flow_pk_->ModifyPredictor(h, u0->SubVector(2), u->SubVector(2));
   modified |= surf_energy_pk_->ModifyPredictor(h, u0->SubVector(3), u->SubVector(3));
-  
+
   return modified;
 }
 
@@ -545,7 +546,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 MPCPermafrost::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
         Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
   Teuchos::OSTab tab = vo_->getOSTab();
-  
+
   // dump NKAd correction to screen
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "NKA * PC * residuals (surface):" << std::endl;
@@ -566,7 +567,7 @@ MPCPermafrost::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
   }
 
   // apply PK modifications
-  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult pk_modified =   
+  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult pk_modified =
       StrongMPC<PK_PhysicalBDF_Default>::ModifyCorrection(h,r,u,du);
   if (pk_modified) {
     CopySurfaceToSubsurface(*du->SubVector(2)->Data(),
@@ -574,7 +575,7 @@ MPCPermafrost::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
     CopySurfaceToSubsurface(*du->SubVector(3)->Data(),
                             du->SubVector(1)->Data().ptr());
   }
-    
+
   // modify correction using water approaches
   int n_modified = 0;
   double damping = 1;
@@ -587,7 +588,7 @@ MPCPermafrost::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
 
     // -- total damping
     damping = damping * damping_surf;
-  
+
     // -- accumulate globally
     int n_modified_l = n_modified;
     u->SubVector(0)->Data()->Comm()->SumAll(&n_modified_l, &n_modified, 1);

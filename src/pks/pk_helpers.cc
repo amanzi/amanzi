@@ -14,15 +14,23 @@
 namespace Amanzi {
 
 // -----------------------------------------------------------------------------
+// Given a boundary face ID, get the corresponding face ID
+// -----------------------------------------------------------------------------
+AmanziMesh::Entity_ID
+getBoundaryFaceFace(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_ID bf)
+{
+  const auto& fmap = mesh.face_map(true);
+  const auto& bfmap = mesh.exterior_face_map(true);
+  return fmap.LID(bfmap.GID(bf));
+}
+
+// -----------------------------------------------------------------------------
 // Given a boundary face ID, get the cell internal to that face.
 // -----------------------------------------------------------------------------
 AmanziMesh::Entity_ID
 getBoundaryFaceInternalCell(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_ID bf)
 {
-  const auto& fmap = mesh.face_map(true);
-  const auto& bfmap = mesh.exterior_face_map(true);
-  AmanziMesh::Entity_ID f = fmap.LID(bfmap.GID(bf));
-  return getFaceOnBoundaryInternalCell(mesh, f);
+  return getFaceOnBoundaryInternalCell(mesh, getBoundaryFaceFace(mesh, bf));
 }
 
 

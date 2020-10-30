@@ -105,7 +105,11 @@ def sources(xml):
                     pk.append(parameter.BoolParameter("source term is differentiable", True))
     
 def snow_distribution(xml):
-    for snow_dist_pk in asearch.gen_path(xml, ["PKs","snow distribution"]):
+    try:
+        snow_dist_pk = asearch.find_path(xml, ["PKs","snow distribution"])
+    except aerrors.MissingXMLError:
+        pass
+    else:
         if snow_dist_pk.isElement("primary variable key") and \
              asearch.child_by_name(snow_dist_pk,"primary variable key").getValue() == "surface-precipitation_snow":
             asearch.child_by_name(snow_dist_pk,"primary variable key").setValue("snow-precipitation")
@@ -116,7 +120,11 @@ def snow_distribution(xml):
            asearch.child_by_name(snow_dist_pk,"domain name").getValue() == "surface":
             asearch.child_by_name(snow_dist_pk,"domain name").setValue("snow")
     
-    for ssk in asearch.find_path(xml, ["state","field evaluators","snow-conductivity"]):
+    try:
+        ssk = asearch.find_path(xml, ["state","field evaluators","snow-conductivity"])
+    except aerrors.MissingXMLError:
+        pass
+    else:
         if ssk.isElement("height key"):
             asearch.child_by_name(ssk, "height key").setValue("snow-precipitation")
 

@@ -17,6 +17,14 @@
 
 namespace Amanzi {
 
+
+// -----------------------------------------------------------------------------
+// Given a boundary face ID, get the corresponding face ID
+// -----------------------------------------------------------------------------
+AmanziMesh::Entity_ID
+getBoundaryFaceFace(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_ID bf);
+
+
 // -----------------------------------------------------------------------------
 // Given a boundary face ID, get the cell internal to that face.
 // -----------------------------------------------------------------------------

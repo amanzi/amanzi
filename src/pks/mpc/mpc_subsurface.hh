@@ -170,6 +170,9 @@ class MPCSubsurface : public StrongMPC<PK_PhysicalBDF_Default> {
       update_pcs_(0)
   {
     dump_ = plist_->get<bool>("dump preconditioner", false);
+
+    auto pk_order = plist_->get<Teuchos::Array<std::string>>("PK order");
+    global_list->sublist("PKs").sublist(pk_order[0]).set("scale preconditioner to pressure", false);
   }
 
   // -- Initialize owned (dependent) variables.
@@ -190,16 +193,7 @@ class MPCSubsurface : public StrongMPC<PK_PhysicalBDF_Default> {
 
   // preconditioner application
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
-  // virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-  //     ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
-  //                      Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
-
   Teuchos::RCP<Operators::TreeOperator> preconditioner() { return preconditioner_; }
-
-  void ComputeDivCorrection( const Teuchos::RCP<const CompositeVector>& flux,
-                             const Teuchos::RCP<const CompositeVector>& k,
-                             const Teuchos::RCP<const CompositeVector>& dk,
-                             const Teuchos::RCP<Epetra_MultiVector>& res);
 
  protected:
 
@@ -266,7 +260,6 @@ class MPCSubsurface : public StrongMPC<PK_PhysicalBDF_Default> {
   Key mass_flux_key_;
   Key mass_flux_dir_key_;
   Key rho_key_;
-  Key ddivq_dT_key_, ddivKgT_dp_key_;
 
   bool is_fv_;
 
@@ -281,9 +274,7 @@ class MPCSubsurface : public StrongMPC<PK_PhysicalBDF_Default> {
 private:
   // factory registration
   static RegisteredPKFactory<MPCSubsurface> reg_;
-
 };
-
 
 } // namespace
 

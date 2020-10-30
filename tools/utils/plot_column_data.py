@@ -6,9 +6,6 @@ import matplotlib.cm
 
 import ats_xdmf, ats_units
 
-
-
-
 epilog = """
 Note this plots:
 * subsurface quantities (var, z) with a line for each time

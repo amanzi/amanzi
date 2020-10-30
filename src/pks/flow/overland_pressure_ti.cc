@@ -106,7 +106,7 @@ void OverlandPressureFlow::FunctionalResidual( double t_old,
     vnames[1] = "uf_frac_new";
     vecs[0] = S_inter_->GetFieldData(Keys::getKey(domain_,"unfrozen_fraction")).ptr();
     vecs[1] = S_next_->GetFieldData(Keys::getKey(domain_,"unfrozen_fraction")).ptr();
-    db_->WriteVectors(vnames, vecs, false);
+    db_->WriteVectors(vnames, vecs, true);
   }
   db_->WriteVector("uw_dir", S_next_->GetFieldData(flux_dir_key_).ptr(), true);
   db_->WriteVector("k_s", S_next_->GetFieldData(cond_key_).ptr(), true);
@@ -149,7 +149,7 @@ int OverlandPressureFlow::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "Precon application:" << std::endl;
-  AMANZI_ASSERT(precon_used_); // otherwise this factor was built into the matrix
+  AMANZI_ASSERT(!precon_scaled_); // otherwise this factor was built into the matrix
 
   // apply the preconditioner
   db_->WriteVector("h_res", u->Data().ptr(), true);
@@ -305,7 +305,7 @@ void OverlandPressureFlow::UpdatePreconditioner(double t,
 
   // 3.d: Rescale to use as a pressure matrix if used in a coupler
   //  if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_flux_) {
-  if (!precon_used_) {
+  if (precon_scaled_) {
     // Scale Spp by dh/dp (h, NOT h_bar), clobbering rows with p < p_atm
     std::string pd_deriv_key = Keys::getDerivKey(pd_key_,key_);
 

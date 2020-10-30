@@ -110,8 +110,9 @@ class VisFile:
         if type(indices) is int:
             indices = [indices,]
             
-        self.cycles = self.cycles[indices]
-        self.times = self.times[indices]
+        self.cycles = [self.cycles[i] for i in indices]
+        self.times = [self.times[i] for i in indices]
+
 
         
     def filterCycles(self, cycles):
@@ -124,11 +125,13 @@ class VisFile:
         ----------
         cycles :
           One of:
-          * int : limits to one specific cycle, or the last cycle if -1.
+          * int : limits to one specific cycle
           * list(int) : a list of specific cycles
         """
-        if type(cycles) is int:
+        raise RuntimeError
+        if type(cycles) is int or type(cycles) is str:
             cycles = [cycles,]
+        cycles = [str(c) for c in cycles]
 
         # note this would be faster with np.isin, but we care about order and
         # repetition of cycles here.

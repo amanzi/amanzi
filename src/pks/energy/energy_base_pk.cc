@@ -239,6 +239,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
   if (!S->FEList().isSublist(enthalpy_key_)) {
     Teuchos::ParameterList& enth_list = S->FEList().sublist(enthalpy_key_);
+    enth_list.setParameters(plist_->sublist("enthalpy evaluator"));
     enth_list.set<std::string>("field evaluator type", "enthalpy");
   }
   S->RequireFieldEvaluator(enthalpy_key_);
@@ -677,7 +678,6 @@ bool EnergyBase::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   bc_temperature_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditions_(S_next_.ptr());
-  applyDirichletBCs(*bc_, *u->Data());
 
   // predictor modification
   bool modified = false;
@@ -689,6 +689,24 @@ bool EnergyBase::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
       if (u0_c[0][c] > 273.15 && u_c[0][c] < 273.15) {
         u_c[0][c] = 273.15 - .00001;
         modified = true;
+      } else if (u0_c[0][c] < 273.15 && u_c[0][c] > 273.15) {
+        u_c[0][c] = 273.15 + .00001;
+        modified = true;
+      }
+    }
+
+    if (u0->Data()->HasComponent("boundary_face")) {
+      const Epetra_MultiVector& u0_bf = *u0->Data()->ViewComponent("boundary_face",false);
+      Epetra_MultiVector& u_bf = *u->Data()->ViewComponent("boundary_face",false);
+
+      for (int bf=0; bf!=u0_bf.MyLength(); ++bf) {
+        if (u0_bf[0][bf] > 273.15 && u_bf[0][bf] < 273.15) {
+          u_bf[0][bf] = 273.15 - .00001;
+          modified = true;
+        } else if (u0_bf[0][bf] < 273.15 && u_bf[0][bf] > 273.15) {
+          u_bf[0][bf] = 273.15 + .00001;
+          modified = true;
+        }
       }
     }
   }
@@ -760,6 +778,34 @@ EnergyBase::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
                              Teuchos::RCP<const TreeVector> u,
                              Teuchos::RCP<TreeVector> du) {
 
+  // update diffusive flux correction -- note this is not really modifying the correction as far as NKA is concerned
+  const auto& T_vec = *u->Data();
+  if (T_vec.HasComponent("boundary_face")) {
+    const Epetra_MultiVector& T_bf = *T_vec.ViewComponent("boundary_face", false);
+    const Epetra_MultiVector& T_c = *T_vec.ViewComponent("cell", false);
+
+    const Epetra_MultiVector& dT_c = *du->Data()->ViewComponent("cell", false);
+    Epetra_MultiVector& dT_bf = *du->Data()->ViewComponent("boundary_face", false);
+
+    for (int bf=0; bf!=T_bf.MyLength(); ++bf) {
+      AmanziMesh::Entity_ID f = getBoundaryFaceFace(*mesh_, bf);
+
+      // NOTE: this should get refactored into a helper class, much like predictor_delegate_bc_flux
+      // as this would be necessary to deal with general discretizations.  Note that this is not
+      // needed in cases where boundary faces are already up to date (e.g. MFD, maybe NLFV?)
+      if (bc_markers()[f] == Operators::OPERATOR_BC_NEUMANN &&
+          bc_adv_->bc_model()[f] == Operators::OPERATOR_BC_DIRICHLET) {
+        // diffusive flux BC
+        AmanziMesh::Entity_ID c = getFaceOnBoundaryInternalCell(*mesh_, f);
+        const auto& Acc = matrix_diff_->local_op()->matrices_shadow[f];
+        double T_bf_val = (Acc(0,0)*(T_c[0][c] - dT_c[0][c]) - bc_values()[f]*mesh_->face_area(f)) / Acc(0,0);
+        dT_bf[0][bf] = T_bf[0][bf] - T_bf_val;
+      }
+    }
+  }
+
+
+  // max temperature correction
   int my_limited = 0;
   int n_limited = 0;
   if (T_limit_ > 0.) {

@@ -38,14 +38,14 @@ double IEMQuadratic::DInternalEnergyDT(double temp) {
 
 void IEMQuadratic::InitializeFromPlist_() {
   if (plist_.isParameter("quadratic u_0 [J kg^-1]")) {
-    u0_ = 1.e-6 * plist_.get<double>("quadratic u_0 [J kg^-1]");
-    ka_ = 1.e-6 * plist_.get<double>("quadratic a [J kg^-1 K^-1]");
+    u0_ = 1.e-6 * plist_.get<double>("latent heat [J kg^-1]");
+    ka_ = 1.e-6 * plist_.get<double>("heat capacity [J kg^-1 K^-1]");
     kb_ = 1.e-6 * plist_.get<double>("quadratic b [J kg^-1 K^-2]");
     molar_basis_ = false;
 
   } else {
-    u0_ = 1.e-6 * plist_.get<double>("quadratic u_0 [J mol^-1]");
-    ka_ = 1.e-6 * plist_.get<double>("quadratic a [J mol^-1 K^-1]");
+    u0_ = 1.e-6 * plist_.get<double>("latent heat [J mol^-1]");
+    ka_ = 1.e-6 * plist_.get<double>("heat capacity [J mol^-1 K^-1]");
     kb_ = 1.e-6 * plist_.get<double>("quadratic b [J mol^-1 K^-2]");
     molar_basis_ = true;
   }

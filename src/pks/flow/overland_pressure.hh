@@ -305,6 +305,7 @@ protected:
   Teuchos::RCP<Operators::PDE_Accumulation> preconditioner_acc_;
 
   bool precon_used_;
+  bool precon_scaled_;
 
   // boundary condition data
   Teuchos::RCP<Functions::BoundaryFunction> bc_zero_gradient_;

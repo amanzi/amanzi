@@ -40,7 +40,7 @@ def diffusion(xml):
 
 def water_energy(xml):
     try:
-        water = asearch.find_path(xml, "state/field evaluators/water_content")
+        water = asearch.find_path(xml, ["state","field evaluators","water_content"])
     except aerrors.MissingXMLError:
         pass
     else:
@@ -163,19 +163,15 @@ def mesh_list(xml):
                    "aliased", "surface", "column", "column surface", "subgrid"]    
     for el in mesh:
         if not el.isElement("mesh type"):
-            if (el.get("type") != "ParameterList"):
-                print "I don't know what to do with: "
-                print str(el)
-                print el.get("type")
-                assert(el.get("type") == "ParameterList")
+            print(el)
             found = False
             for valid_type in valid_types:
                 if el.isElement(valid_type):
-                    print "setting type: ", valid_type
+                    print("setting type: ", valid_type)
                     el.setParameter("mesh type", "string", valid_type)
                     asearch.child_by_name(el, valid_type).setName(valid_type+" parameters")
                     found = True
-                    continue
+                    break
             assert(found)
         
     return
@@ -208,7 +204,7 @@ def snow_depth(xml):
             asearch.child_by_name(seb_pk,"conserved quantity key").set("value", "surface-snow_depth")
 
 def snow_distribution(xml):
-    for snow_dist_pk in asearch.generateElementByNamePath(xml, "PKs/snow distribution"):
+    for snow_dist_pk in asearch.findall_path(xml, ["PKs","snow distribution"]):
         snow_dist_pk.append(parameter.DoubleParameter("distribution time", 86400.0))
         if snow_dist_pk.isElement("primary variable key") and \
              asearch.child_by_name(snow_dist_pk,"primary variable key").getValue() == "surface-precipitation_snow" and \
@@ -216,13 +212,13 @@ def snow_distribution(xml):
              asearch.child_by_name(snow_dist_pk,"conserved quantity key").getValue() == "precipitation-snow":
             asearch.child_by_name(snow_dist_pk,"conserved quantity key").set("value", "surface-precipitation-snow")
         
-    for ssk in asearch.generateElementByNamePath(xml, "state/field evaluators/surface-snow_skin_potential"):
+    for ssk in asearch.findall_path(xml, ["state","field evaluators","surface-snow_skin_potential"]):
         if not ssk.isElement("dt factor"):
             ssk.append(parameter.DoubleParameter("dt factor", 86400.0))
         else:
             asearch.child_by_name(ssk, "dt factor").set("value","86400.0")
 
-    for ssc in asearch.generateElementByNamePath(xml, "state/field evaluators/surface-snow_conductivity"):
+    for ssc in asearch.findall_path(xml, ["state", "field evaluators","surface-snow_conductivity"]):
         if not ssc.isElement("include dt factor"):
             ssc.append(parameter.BoolParameter("include dt factor", True))
         else:
@@ -335,7 +331,7 @@ def update(xml):
     adds_source_units(xml)
     seepage_face_bcs(xml)
     primary_variable(xml)
-    mesh_list(xml)
+    #mesh_list(xml)
     vis(xml)
     snow_depth(xml)
     snow_distribution(xml)
@@ -355,7 +351,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    print "Converting file: %s"%args.infile
+    print("Converting file: %s"%args.infile)
     xml = aio.fromFile(args.infile, True)
     update(xml)
     if args.inplace:
