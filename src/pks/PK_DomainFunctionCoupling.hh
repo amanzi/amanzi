@@ -104,19 +104,28 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
   }
 
   // get keys of owned (in) and exterior (out) fields
-  field_in_key_ = slist.get<std::string>("field_in_key", "none");
-  copy_field_in_key_ = slist.get<std::string>("copy_field_in_key", "default");
+  if (submodel_ == "rate") {
+    field_in_key_ = slist.get<std::string>("field_in_key");
+    copy_field_in_key_ = slist.get<std::string>("copy_field_in_key", "default");
+
+    flux_key_ = slist.get<std::string>("flux_key");
+    copy_flux_key_ = slist.get<std::string>("copy_flux_key", "default");
+  } else if (submodel_ == "field") {
+    field_in_key_ = slist.get<std::string>("field_in_key");
+    copy_field_in_key_ = slist.get<std::string>("copy_field_in_key", "default");
+
+  } else if (submodel_ == "conserved quantity") {
+    field_cons_key_ = slist.get<std::string>("field_conserved_key");
+    copy_field_cons_key_ = slist.get<std::string>("copy_field_conserved_key", "default");
+
+  } else {
+    Errors::Message m;
+    m << "unknown DomainFunctionCoupling submodel \"" << submodel_ << "\", valid are: \"field\", \"rate\", and \"conserved quantity\"";
+    Exceptions::amanzi_throw(m);
+  }
 
   field_out_key_ = slist.get<std::string>("field_out_key");
   copy_field_out_key_ = slist.get<std::string>("copy_field_out_key", "default");
-
-  if (submodel_ == "field") {
-    field_cons_key_ = slist.get<std::string>("field_conserved_key");
-    copy_field_cons_key_ = slist.get<std::string>("copy_field_cons_key", "default");
-  }
-
-  flux_key_ = slist.get<std::string>("flux_key");
-  copy_flux_key_ = slist.get<std::string>("copy_flux_key", "default");
 
   // create a list of domain ids
   RegionList regions = plist.get<Teuchos::Array<std::string> >("regions").toVector();
@@ -215,6 +224,34 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
     }
 
   } else if (submodel_ == "field") {
+    // create reserse map from space (face) onto manifold (cell)
+    auto mesh_out = S_->GetFieldData(field_out_key_)->Mesh();
+
+    if (mesh_->space_dimension() == mesh_->manifold_dimension() && reverse_map_.size() == 0) {
+      const Epetra_Map& cell_map = mesh_out->cell_map(true);
+      for (int c = 0 ; c < cell_map.NumMyElements(); ++c) {
+        AmanziMesh::Entity_ID f = mesh_out->entity_get_parent(AmanziMesh::CELL, c);
+        reverse_map_[f] = c;
+      }
+    }
+
+    const auto& field_out = *S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ViewComponent("cell", true);
+
+    int num_vec = field_out.NumVectors();
+    std::vector<double> val(num_vec);
+
+    // Loop over faces (owned + ghosted) in the space restricted to the manifold.
+    // The set of these faces could be bigger then the set of manifold cells (owned + ghosted)
+    for (auto f = entity_ids_->begin(); f != entity_ids_->end(); ++f) {
+      auto it = reverse_map_.find(*f);
+      if (it == reverse_map_.end()) continue;
+
+      int c = it->second;
+      for (int k = 0; k < num_vec; ++k) val[k] = field_out[k][c]; 
+      value_[*f] = val;     
+    }
+
+  } else if (submodel_ == "conserved quantity") {
     // create reverse map from space (face) onto manifold (cell)
     auto mesh_out = S_->GetFieldData(field_out_key_)->Mesh();
 
