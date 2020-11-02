@@ -18,7 +18,7 @@ from compare_field_results import GetXY_PFloTran_1D
 from compare_field_results import GetXY_CrunchFlow_1D
 
 AXES_TICK_SIZE=15
-LINE_WIDTH=4
+LINE_WIDTH=2
 
 if __name__ == "__main__":
 
@@ -145,6 +145,28 @@ if __name__ == "__main__":
     except:
         alq = False
 
+# AmanziU + Alquimia + PFloTran WITH WRITER --->
+    try:  
+        input_file = os.path.join("amanzi-u-1d-"+root+"-alq-pflo-writer.xml")
+        path_to_amanzi = "output-u-alq-pflo-writer"
+        run_amanzi_standard.run_amanzi(input_file, 1, ["1d-"+root+"-trim.in",root+".dat",input_file], path_to_amanzi)
+
+        u_alquimia_w = [[[] for x in range(len(amanzi_totc))] for x in range(len(timesama))]
+        for i, time in enumerate(timesama):
+            for j, comp in enumerate(amanzi_totc):
+                x_alquimia_w, c_alquimia_w = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
+                u_alquimia_w[i][j] = c_alquimia_w
+              
+        v_alquimia_w = [[[] for x in range(len(amanzi_sorb))] for x in range(len(timesama))]
+        for i, time in enumerate(timesama):
+            for j, comp in enumerate(amanzi_sorb):
+                x_alquimia_w, c_alquimia_w = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
+                v_alquimia_w[i][j] = c_alquimia_w
+
+        alq_writer = True
+
+    except:
+        alq_writer = False      
 
 # AmanziU + Alquimia + CrunchFlow chemistry --->
     try:  
@@ -189,7 +211,7 @@ if __name__ == "__main__":
         struct = 0
 
 
-# AmanziS + Alaqumia + CrunchFlow chemistry --->
+# AmanziS + Alqumia + CrunchFlow chemistry --->
     try:
         input_file = os.path.join("amanzi-s-1d-isotherms-alq-crunch.xml")
         path_to_amanzi = "output-s-alq-crunch"
@@ -263,6 +285,17 @@ if __name__ == "__main__":
 
         ax[2].plot(x_alquimia, u_alquimia[i][2],color='c',linestyle='--',linewidth=LINE_WIDTH,label='Freundlich AmanziU (2nd-Ord.)+Alq(PFT)')
         ax[3].plot(x_alquimia, v_alquimia[i][2],color='c',linestyle='--',linewidth=LINE_WIDTH,label='Freundlich AmanziU (2nd-Ord.)+Alq(PFT)')
+
+# unstructured alquimia pflotran with writer
+    if alq_writer:
+        ax[0].plot(x_alquimia_w, u_alquimia_w[i][0],color='r',linestyle='--',linewidth=LINE_WIDTH,label='AmanziU (2nd-Ord.)+Alq(PFT)-W')
+        ax[1].plot(x_alquimia_w, v_alquimia_w[i][0],color='r',linestyle='--',linewidth=LINE_WIDTH,label='AmanziU (2nd-Ord.)+Alq(PFT)-W')
+
+        ax[2].plot(x_alquimia_w, u_alquimia_w[i][1],color='k',linestyle='-.',linewidth=LINE_WIDTH,label='Langmuir AmanziU (2nd-Ord.)+Alq(PFT)-W')
+        ax[3].plot(x_alquimia_w, v_alquimia_w[i][1],color='k',linestyle='-.',linewidth=LINE_WIDTH,label='Langmuir AmanziU (2nd-Ord.)+Alq(PFT)-W')
+
+        ax[2].plot(x_alquimia_w, u_alquimia_w[i][2],color='c',linestyle='-.',linewidth=LINE_WIDTH,label='Freundlich AmanziU (2nd-Ord.)+Alq(PFT)-W')
+        ax[3].plot(x_alquimia_w, v_alquimia_w[i][2],color='c',linestyle='-.',linewidth=LINE_WIDTH,label='Freundlich AmanziU (2nd-Ord.)+Alq(PFT)-W')
 
 # unstructured alquimia crunch
     if alqc:

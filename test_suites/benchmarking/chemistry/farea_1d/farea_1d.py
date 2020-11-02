@@ -168,6 +168,40 @@ if __name__ == "__main__":
     except:
         alq = False
 
+    # Amanzi + Alquimia + PFloTran chemistry with writer
+    try:  
+        input_file = os.path.join("amanzi-u-1d-"+root+"-alq-pflo-writer.xml")
+        path_to_amanzi = "output-u-alq-pflo-writer"
+        run_amanzi_standard.run_amanzi(input_file, 1, 
+                                       ["1d-"+root+"-trim.in", root+".dat",input_file],
+                                       path_to_amanzi)
+
+        # import pdb; pdb.set_trace()
+        time = timesama[0]
+
+        # tot concentration
+        u_amanzi_alquimia_w = [[] for x in range(len(totcama))]
+        for j, comp in enumerate(totcama):
+            x_amanzi_alquimia_w, c_amanzi_alquimia_w = GetXY_AmanziU_1D(path_to_amanzi,"plot",comp,1)
+            u_amanzi_alquimia_w[j] = c_amanzi_alquimia_w  
+
+        # sorbed concentration
+        v_amanzi_alquimia_w = [[] for x in range(len(sorbama))]
+        for j, sorb in enumerate(sorbama):
+            x_amanzi_alquimia_w, c_amanzi_alquimia_w = GetXY_AmanziU_1D(path_to_amanzi,"plot",sorb,1)
+            v_amanzi_alquimia_w[j] = c_amanzi_alquimia_w
+
+        # mineral volume fraction
+        w_amanzi_alquimia_w = [[] for x in range(len(vfama))]
+        for j, vf in enumerate(vfama):
+            x_amanzi_alquimia_w, c_amanzi_alquimia_w = GetXY_AmanziU_1D(path_to_amanzi,"plot",vf,1)
+            w_amanzi_alquimia_w[j] = c_amanzi_alquimia_w
+
+        alq_writer = True
+
+    except:
+        alq_writer = False
+        
     # initialize subplots
     fig, ax = plt.subplots(3,sharex=True,figsize=(8,15))
     # bx =[None,]*3
@@ -176,7 +210,7 @@ if __name__ == "__main__":
 
     colors= ['r','b','m','g'] # components
     colors2= ['c','k','g','y'] # components
-    styles = ['-','o','x'] # codes
+    styles = ['-','o','x','--'] # codes
     codes = ['Amanzi+Alquimia(PFloTran)','Amanzi Native Chemistry','PFloTran'] + [None,]*9
 
     # lines on axes
@@ -186,22 +220,32 @@ if __name__ == "__main__":
     for j, comp in enumerate(search):
         if alq:
             ax[0].plot(x_amanzi_alquimia, u_amanzi_alquimia[j],color=colors[j],linestyle=styles[0],linewidth=2)
+        if alq_writer:
+            ax[0].plot(x_amanzi_alquimia_w, u_amanzi_alquimia_w[j],color=colors[j],linestyle=styles[3],linewidth=2)
         if native:
             ax[0].plot(x_amanzi_native, u_amanzi_native[j],color=colors[j],marker=styles[1],linestyle='None',linewidth=2,label=comp)
 
         ax[0].plot(x_pflotran, u_pflotran[j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2)
- 
+        
         if alq:
-            ax[1].plot(x_amanzi_alquimia, v_amanzi_alquimia[j],color=colors[j],linestyle=styles[0],linewidth=2,label=codes[j*len(styles)])
+            label='Amanzi+Alquimia(PFloTran)' if j==0 else None
+            ax[1].plot(x_amanzi_alquimia, v_amanzi_alquimia[j],color=colors[j],linestyle=styles[0],linewidth=2,label=label)
+        if alq_writer:
+            label='Amanzi+Alquimia(PFloTran)-W' if j==0 else None
+            ax[1].plot(x_amanzi_alquimia_w, v_amanzi_alquimia_w[j],color=colors[j],linestyle=styles[3],linewidth=2,label=label)
         if native:
-            ax[1].plot(x_amanzi_native, v_amanzi_native[j],color=colors[j],marker=styles[1],linestyle='None',linewidth=2,label=codes[j*len(styles)+1])
-        ax[1].plot(x_pflotran, v_pflotran[j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2,label=codes[j*len(styles)+2])
+            label='Amanzi Native Chemistry' if j==0 else None
+            ax[1].plot(x_amanzi_native, v_amanzi_native[j],color=colors[j],marker=styles[1],linestyle='None',linewidth=2,label=label)
+        label='PFloTran' if j==0 else None
+        ax[1].plot(x_pflotran, v_pflotran[j],color=colors[j],linestyle='None',marker=styles[2],linewidth=2,label=label)
 
     # ax[2],b[2] ---> Mineral Volume Fractions
 
     for j, vf in enumerate(searchm):
         if alq:
             ax[2].plot(x_amanzi_alquimia, w_amanzi_alquimia[j],color=colors2[j],linestyle=styles[0],linewidth=2)
+        if alq_writer:
+            ax[2].plot(x_amanzi_alquimia_w, w_amanzi_alquimia_w[j],color=colors2[j],linestyle=styles[3],linewidth=2)
         if native:
             ax[2].plot(x_amanzi_native, w_amanzi_native[j],color=colors2[j],marker=styles[1],linestyle='None',linewidth=2,label=vf) 
             ax[2].plot(x_pflotran, w_pflotran[j],color=colors2[j],linestyle='None',marker=styles[2],linewidth=2)

@@ -15,7 +15,6 @@
     <process_kernels>
         <flow model="saturated" state="on"/>
         <transport state="on"/>
-	<!--chemistry database="farea-full.dat" engine="pflotran" state="on" input_filename="1d-farea-full-trim.in"/-->
 	<chemistry database="farea-full.dat" engine="pflotran" state="on"/>
     </process_kernels>
     <phases>
