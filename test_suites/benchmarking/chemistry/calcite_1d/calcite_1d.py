@@ -217,7 +217,35 @@ if __name__ == "__main__":
     except:
         alq = False
 
+    # Amanzi U + Alquimia + PFloTran chemistry with writer
+    try:
+        input_file = os.path.join("amanzi-u-1d-calcite-alq-pflo-writer.xml")
+        path_to_amanzi = "output-u-alq-pflo-writer"
+        run_amanzi_standard.run_amanzi(input_file, 1, ["1d-calcite-trim.in","calcite.dat",input_file], path_to_amanzi)
 
+        comp = 'total_component_concentration.cell.Ca++ conc'
+        Ca_amanzi_alquimia_w = []
+        for i, time in enumerate(times):
+            x_amanzi_alquimia_w, c_amanzi_alquimia_w = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
+            Ca_amanzi_alquimia_w = Ca_amanzi_alquimia_w +[c_amanzi_alquimia_w]
+
+        comp = 'free_ion_species.cell.H+'
+        pH_amanzi_alquimia_w = []
+        for i, time in enumerate(times):
+            x_amanzi_alquimia_w, c_amanzi_alquimia_w = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
+            pH_amanzi_alquimia_w = pH_amanzi_alquimia_w +[-np.log10(c_amanzi_alquimia_w)]
+
+        comp = 'mineral_volume_fractions.cell.Calcite vol frac'
+        VF_amanzi_alquimia_w = []
+        for i, time in enumerate(times):
+            x_amanzi_alquimia_w, c_amanzi_alquimia_w = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
+            VF_amanzi_alquimia_w = VF_amanzi_alquimia_w +[c_amanzi_alquimia_w]
+
+        alq_writer = True
+
+    except:
+        alq_writer = False
+        
     # Amanzi U + Alquimia + CruchFlow chemistry
     try:
         input_file = os.path.join("amanzi-u-1d-calcite-alq-crunch.xml")
@@ -295,6 +323,8 @@ if __name__ == "__main__":
         # lines on axes
         if alq: 
             ax[0].plot(x_amanzi_alquimia, Ca_amanzi_alquimia[i],'r-',linewidth=2)
+        if alq_writer: 
+            ax[0].plot(x_amanzi_alquimia_w, Ca_amanzi_alquimia_w[i],'r--',linewidth=2)
         if alq_crunch:
             ax[0].plot(x_amanzi_alquimia_crunch, Ca_amanzi_alquimia_crunch[i],'r*',linewidth=2,markersize=CRUNCH_MARKER_SIZE)
         if native:
@@ -305,6 +335,8 @@ if __name__ == "__main__":
 
         if alq:
             ax[1].plot(x_amanzi_alquimia, pH_amanzi_alquimia[i],'r-',linewidth=2,label='AmanziU(2nd-O)+Alq(PFT)')
+        if alq_writer:
+            ax[1].plot(x_amanzi_alquimia_w, pH_amanzi_alquimia_w[i],'r--',linewidth=2,label='AmanziU(2nd-O)+Alq(PFT)-W')
         if alq_crunch:
             ax[1].plot(x_amanzi_alquimia_crunch, pH_amanzi_alquimia_crunch[i],'r*',linewidth=2,markersize=CRUNCH_MARKER_SIZE,label='AmanziU(2nd-O)+Alq(CF)')
         if native:
@@ -316,6 +348,8 @@ if __name__ == "__main__":
         if i==0:
             if alq:
                 ax[2].plot(x_amanzi_alquimia, VF_amanzi_alquimia[i],'r-',linewidth=2)
+            if alq_writer:
+                ax[2].plot(x_amanzi_alquimia_w, VF_amanzi_alquimia_w[i],'r--',linewidth=2)
             if alq_crunch:
                 ax[2].plot(x_amanzi_alquimia_crunch, VF_amanzi_alquimia_crunch[i],'r*',linewidth=2,markersize=CRUNCH_MARKER_SIZE)
             if native:
@@ -326,6 +360,8 @@ if __name__ == "__main__":
         else:
             if alq:
                 ax[2].plot(x_amanzi_alquimia, VF_amanzi_alquimia[i],'r-',linewidth=2)
+            if alq_writer:
+                ax[2].plot(x_amanzi_alquimia_w, VF_amanzi_alquimia_w[i],'r--',linewidth=2)                
             if alq_crunch:
                 ax[2].plot(x_amanzi_alquimia_crunch, VF_amanzi_alquimia_crunch[i],'r*',linewidth=2,markersize=CRUNCH_MARKER_SIZE)
             if native:

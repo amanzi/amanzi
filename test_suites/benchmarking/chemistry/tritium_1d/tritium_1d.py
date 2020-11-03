@@ -116,6 +116,18 @@ if __name__ == "__main__":
     except:
         unstruct = 0
 
+    # AmanziU + Alqumia + PFloTran chemistry with writer
+    try:
+        comp = 'total_component_concentration.cell.Tritium conc'
+        input_file = os.path.join("amanzi-u-1d-"+root+"-alq-pflo-writer.xml")
+        path_to_amanzi = "output-u-alq-pflo-writer"
+        run_amanzi_standard.run_amanzi(input_file, 1,
+                                       ["1d-"+root+"-trim.in",root+".dat",input_file],
+                                       path_to_amanzi)
+        x_amanziU_w, c_amanziU_w = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
+        unstruct_writer = len(x_amanziU)
+    except:
+        unstruct_writer = 0       
 
     # AmanziU + Alqumia + CrunchFlow chemistry
     try:
@@ -138,6 +150,9 @@ if __name__ == "__main__":
     if (unstruct > 0):
         alq = ax.plot(x_amanziU, c_amanziU,'r-',label='AmanziU(2nd-Order)+Alquimia(PFloTran)',linewidth=2)
 
+    if (unstruct_writer > 0):
+        alq = ax.plot(x_amanziU_w, c_amanziU_w,'r--',label='AmanziU(2nd-Order)+Alquimia(PFloTran)-W',linewidth=2)
+        
     if (unstruct_crunch > 0):
         alq_crunch = ax.plot(x_amanziU_crunch, c_amanziU_crunch,'r*',markersize=8,label='AmanziU(2nd-Order)+Alquimia(CrunchFlow)',linewidth=2)
 

@@ -1422,13 +1422,15 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
       // double rate = units_.ConvertUnitD(val, "mol/m^2/s", "mol/cm^2/s", -1.0, flag);
       
       mineral_kinetics << "    " << name << "\n";
-      mineral_kinetics << "      RATE_CONSTANT " << rate << " mol/cm^2-sec\n";
+      mineral_kinetics << "      RATE_CONSTANT " << rate << "\n";
+	//<< " mol/cm^2-sec\n";
 
       if (element->hasAttribute(mm.transcode("prefactor_species"))) {
 	std::string species = GetAttributeValueS_(element, "prefactor_species");
         double alpha = GetAttributeValueD_(element, "alpha");
         mineral_kinetics << "      PREFACTOR\n";
-        mineral_kinetics << "        RATE_CONSTANT " << rate << " mol/cm^2-sec\n";
+        mineral_kinetics << "        RATE_CONSTANT " << rate << "\n";
+	  //" mol/cm^2-sec\n";
         mineral_kinetics << "        PREFACTOR_SPECIES " << species << "\n";
         mineral_kinetics << "          ALPHA " << alpha << "\n";
         mineral_kinetics << "        /\n";

@@ -78,16 +78,9 @@ ChemistryEngine::ChemistryEngine(const std::string& engineName,
   // NOTE: in Amanzi's input file. As stop-gap solution hands-off is indicated
   // NOTE: by the + sign at end of engine name
   bool hands_off = false;
-  if (chem_engine_name_ == "PFloTran+")
-  {
-    chem_engine_name_ = "PFloTran";
-    hands_off = true;
-  }
-  if (chem_engine_name_ == "CrunchFlow+")
-  {
-    chem_engine_name_ = "CrunchFlow";
-    hands_off = true;
-  }
+  if (chem_engine_name_ == "PFloTran" ||
+      chem_engine_name_ == "CrunchFlow") hands_off = true;
+
   if (chem_engine_name_ != "PFloTran" && chem_engine_name_ != "CrunchFlow")
   {
     msg << "ChemistryEngine: Unsupported chemistry engine: '" << chem_engine_name_ << "'\n";

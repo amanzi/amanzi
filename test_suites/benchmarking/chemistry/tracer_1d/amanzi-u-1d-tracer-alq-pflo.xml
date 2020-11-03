@@ -28,8 +28,7 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" />
-    <chemistry state="on" engine="pflotran" database="tracer.dat" />
-    <!--chemistry state="on" engine="pflotran" input_filename="1d-tracer.in" database="tracer.dat" /-->
+    <chemistry state="on" engine="pflotran" input_filename="1d-tracer.in" database="tracer.dat" />
   </process_kernels>
 
   <phases>

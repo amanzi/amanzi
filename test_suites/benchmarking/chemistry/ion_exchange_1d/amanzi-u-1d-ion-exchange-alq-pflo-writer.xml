@@ -1,7 +1,4 @@
 <amanzi_input version="2.3.0" type="unstructured">
-  <misc>
-    <echo_translated_input file_name="oldspec.xml"/>
-  </misc>
 
   <model_description name="1D Flow and Transport w/ ion exchange">
     <units>
@@ -30,7 +27,8 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" />
-    <chemistry state="on" engine="pflotran" input_filename="1d-surface-complexation.in" database="surface-complexation.dat"/>
+    <chemistry state="on" engine="pflotran" database="ion-exchange.dat" />
+    <!--chemistry state="on" engine="pflotran" input_filename="1d-ion-exchange-trim.in" database="ion-exchange.dat" /-->
   </process_kernels>
 
   <phases>
@@ -40,18 +38,11 @@
       <density>998.2</density>
       <dissolved_components>
         <primaries>
-          <primary>H+</primary>
           <primary>Na+</primary>
-          <primary>NO3-</primary>
-          <primary>Zn++</primary>
+          <primary>Ca++</primary>
+          <primary>Mg++</primary>
+          <primary>Cl-</primary>
         </primaries>
-        <secondaries>
-          <secondary>OH-</secondary>
-          <secondary>Zn(OH)2(aq)</secondary>
-          <secondary>Zn(OH)3-</secondary>
-          <secondary>Zn(OH)4--</secondary>
-          <secondary>ZnOH+</secondary>
-        </secondaries>
       </dissolved_components>
     </liquid_phase>
   </phases>
@@ -59,7 +50,7 @@
   <execution_controls>
       <verbosity level="high"/>
       <execution_control_defaults init_dt="1.5768e+5" max_dt="6.0e+10" reduction_factor="0.8" increase_factor="1.25" mode="transient" method="bdf1"/>
-      <execution_control start="0.0" end="0.0" init_dt= "1.5768e+5" max_dt="6.0e+10" reduction_factor="0.8" increase_factor="1.25" mode="steady" method="bdf1"/>
+      <execution_control start="0.0" init_dt= "1.5768e+5" max_dt="6.0e+10" reduction_factor="0.8" increase_factor="1.25" mode="steady" method="bdf1"/>
       <execution_control start="0.0" end="1.5778463e9" mode = "transient"/>
   </execution_controls>
 
@@ -76,7 +67,7 @@
       </unstr_transport_controls>
 
       <unstr_chemistry_controls>
-	  <auxiliary_data>pH</auxiliary_data>
+	  <activity_coefficients>off</activity_coefficients>
       </unstr_chemistry_controls>
 
       <unstr_steady-state_controls>
@@ -85,7 +76,6 @@
         <limit_iterations>20</limit_iterations>
         <max_preconditioner_lag_iterations>4</max_preconditioner_lag_iterations>
         <nonlinear_tolerance>1.0e-12</nonlinear_tolerance>
-        <preconditioner>hypre_amg</preconditioner>
      </unstr_steady-state_controls>
 
       <unstr_transient_controls>
@@ -94,7 +84,6 @@
           <limit_iterations>20</limit_iterations>
           <max_preconditioner_lag_iterations>4</max_preconditioner_lag_iterations>
           <nonlinear_tolerance>1.0e-12</nonlinear_tolerance>
-          <preconditioner>hypre_amg</preconditioner>
       </unstr_transient_controls>
 
       <unstr_linear_solver>
@@ -131,22 +120,22 @@
     <verbosity>verbose</verbosity>
     <constraints>
       <constraint name="initial">
-        <primary name="Zn++" type="total" value="1.0e-7"/>
-        <primary name="NO3-" type="total" value="1.0e-1"/>
-        <primary name="H+" type="pH" value="5"/>
-        <primary name="Na+" type="charge" value="1.0e-5"/>
+          <primary name="Ca++" type="total" value="1.82e-2"/>
+          <primary name="Mg++" type="total" value="1.11e-2"/>
+          <primary name="Cl-" type="charge" value="2.0e-3"/>
+          <primary name="Na+" type="total" value="8.65e-2"/>
       </constraint>
       <constraint name="west">
-        <primary name="Zn++" type="total" value="1.0e-6"/>
-        <primary name="NO3-" type="total" value="1.0e-1"/>
-        <primary name="H+" type="pH" value="6"/>
-        <primary name="Na+" type="charge" value="1.0e-5"/>
+          <primary name="Ca++" type="total" value="5.0e-4"/>
+          <primary name="Mg++" type="total" value="2.13e-3"/>
+          <primary name="Cl-" type="charge" value="1.0e-2"/>
+          <primary name="Na+" type="total" value="9.4e-3"/>
       </constraint>
       <constraint name="east">
-        <primary name="Zn++" type="total" value="1.0e-7"/>
-        <primary name="NO3-" type="total" value="1.0e-1"/>
-        <primary name="H+" type="pH" value="5"/>
-        <primary name="Na+" type="charge" value="1.0e-5"/>
+          <primary name="Ca++" type="total" value="1.82e-2"/>
+          <primary name="Mg++" type="total" value="1.11e-2"/>
+          <primary name="Cl-" type="charge" value="2.0e-3"/>
+          <primary name="Na+" type="total" value="8.65e-2"/>
       </constraint>
     </constraints>
   </geochemistry>
@@ -159,14 +148,13 @@
       <permeability x="1.0e-12" y="1.0e-12" z="1.0e-12"/>
       <assigned_regions>All</assigned_regions>
 
-      <surface_complexation>
-        <site density="1.908e-3" name=">FeOH_s">
-          <complexes>>FeOHZn+_s, >FeOH2+_s, >FeO-_s</complexes>
-        </site>
-        <site density="7.6355e-2" name=">FeOH_w">
-          <complexes>>FeOHZn+_w, >FeO-_w, >FeOH2+_w</complexes>
-        </site>
-      </surface_complexation>
+      <ion_exchange>
+        <cations cec="750.0">
+          <cation name="Ca++" value="3.38638672536"/>
+          <cation name="Mg++" value="6.00240096038"/>
+          <cation name="Na+" value="1.0"/>
+        </cations>
+      </ion_exchange>
     </material>
   </materials>
 
@@ -178,8 +166,8 @@
           <uniform_pressure value="201325.0"/>
         </liquid_component>
         <geochemistry_component>
-	  <constraint name="initial" />
-	</geochemistry_component>
+	    <constraint name="initial"/>
+        </geochemistry_component>
       </liquid_phase>
     </initial_condition>
   </initial_conditions>
@@ -192,8 +180,8 @@
           <inward_mass_flux value="7.91317859e-6" start="0" function="constant"/>
         </liquid_component>
         <geochemistry_component>
-	  <constraint name="west" start ="0.0 y" function="constant"/>
-	</geochemistry_component>
+	    <constraint name="west" start="0" function="constant"/>
+        </geochemistry_component>
       </liquid_phase>
     </boundary_condition>
     <boundary_condition name="east_bc">
@@ -203,15 +191,15 @@
           <uniform_pressure value="201325.0" start="0" function="constant"/>
         </liquid_component>
 	<geochemistry_component>
-          <constraint name="east" start ="0.0 y" function="constant"/>
-	</geochemistry_component>
+	    <constraint name="east" start="0" function="constant"/>
+        </geochemistry_component>
       </liquid_phase>
     </boundary_condition>
   </boundary_conditions>
 
   <output>
     <vis>
-      <base_filename>surface-complexation</base_filename>
+      <base_filename>ion-exchange</base_filename>
         <num_digits>5</num_digits>
         <time_macros>every_year</time_macros>
     </vis>

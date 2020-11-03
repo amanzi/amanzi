@@ -28,8 +28,7 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" />
-    <chemistry engine="pflotran" state="on" database="tritium.dat" />
-    <!--chemistry engine="pflotran" state="on" input_filename="1d-tritium-trim.in" database="tritium.dat" /-->
+    <chemistry engine="pflotran" state="on" input_filename="1d-tritium-trim.in" database="tritium.dat" />
   </process_kernels>
 
   <phases>
