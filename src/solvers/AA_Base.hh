@@ -29,7 +29,7 @@ template<class Vector, class VectorSpace>
 class AA_Base {
  public:
   //AA_Base(int mvec, double vtol, const VectorSpace& map);
-  AA_Base(int mvec, double vtol, double beta, const VectorSpace& map);
+  AA_Base(int mvec, double vtol, double beta, const Teuchos::RCP<const VectorSpace>& map);
   ~AA_Base();
 
   void Init(Teuchos::ParameterList& plist) {
@@ -76,7 +76,7 @@ class AA_Base {
  * Allocate memory
  ***************************************************************** */
 template<class Vector, class VectorSpace>
-AA_Base<Vector, VectorSpace>::AA_Base(int mvec, double vtol, double beta, const VectorSpace& map)
+AA_Base<Vector, VectorSpace>::AA_Base(int mvec, double vtol, double beta, const Teuchos::RCP<const VectorSpace>& map)
 {
   mvec_ = std::max(mvec, 1);  // we cannot have mvec_ < 1
   vtol_ = vtol;
@@ -220,8 +220,8 @@ void AA_Base<Vector, VectorSpace>::QRdelete() {
     }
 
     *temp_vec = *Q_[i];
-    temp_vec->Update(s, *Q_[i+1], c);
-    Q_[i+1]->Update(-s, *Q_[i], c);
+    temp_vec->update(s, *Q_[i+1], c);
+    Q_[i+1]->update(-s, *Q_[i], c);
    *Q_[i] = *temp_vec;
   }
 
@@ -265,21 +265,21 @@ void AA_Base<Vector, VectorSpace>::TestQR(int nv) {
 
   double norm2 = 0;
   int loc_id = 0.;
-  ff->PutScalar(0.);
+  ff->putScalar(0.);
   std::cout << "num_vec_ "<<num_vec_<<"\n";
   for (int i=0; i<nv; i++) {
-    ff->PutScalar(0.);
+    ff->putScalar(0.);
     for (int j=0; j<=i; j++) {
-      ff->Update(R_[loc_id], *Q_[j], 1.);
+      ff->update(R_[loc_id], *Q_[j], 1.);
       loc_id++;
       // Q_[j]->Print(std::cout);
     }
     int I = (first_f_ + i)%(mvec_ + 1);
-    ff->Update(-1., *dF_[I], 1.);
+    ff->update(-1., *dF_[I], 1.);
 
     //dF_[I]->Print(std::cout);
 
-    ff->Norm2(&norm2);
+    norm2 = ff->norm2();
     std::cout<<"norm2 "<<norm2<<"\n";
   }
 
@@ -314,20 +314,20 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
     *u_[new_f_] = *u_old;                         // u_new = u_old
 
     *dG_[new_f_] = *u_old;
-    dG_[new_f_]->Update(-1., *ff, 1);            // dG_new = u - ff
+    dG_[new_f_]->update(-1., *ff, 1);            // dG_new = u - ff
   }
 
   if (last_f_ >= 0) {
-    dF_[last_f_]->Update(1., *dF_[new_f_], -1.);   //dF_last =  dF_new - dF_last
-    dG_[last_f_]->Update(1., *dG_[new_f_], -1.);   //dG_last = dG_new  - dG_last
+    dF_[last_f_]->update(1., *dF_[new_f_], -1.);   //dF_last =  dF_new - dF_last
+    dG_[last_f_]->update(1., *dG_[new_f_], -1.);   //dG_last = dG_new  - dG_last
   }
 
   if (num_vec_ == 1) {
     if (last_f_ == 0) {
       double norm2;
       *Q_[last_f_] = *dF_[last_f_];
-      Q_[last_f_]->Norm2(&norm2);
-      Q_[last_f_]->Scale(1./norm2);
+      norm2 = Q_[last_f_]->norm2();
+      Q_[last_f_]->scale(1./norm2);
       R_[0] = norm2;
     }
   } else if (num_vec_ > 1) {
@@ -344,11 +344,11 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
       *tmp = *dF_[last_f_];
       for (int i=0; i<num_vec_ - 1; i++) {
         double val;
-        tmp->Dot(*Q_[i], &val);
+        val = tmp->dot(*Q_[i]);
         R_[last_col_i + i] = val;
-        tmp->Update(-val, *Q_[i], 1.);
+        tmp->update(-val, *Q_[i], 1.);
       }    
-      tmp->Norm2(&norm2); 
+      norm2 = tmp->norm2(); 
 
       if (norm2 < 1e-12) {
         QRdelete();       
@@ -358,7 +358,7 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
     }
 
     *Q_[num_vec_ - 1] = *tmp;
-    Q_[num_vec_ - 1]->Scale(1./norm2);
+    Q_[num_vec_ - 1]->scale(1./norm2);
     R_[last_col_i + num_vec_ - 1] = norm2;     
 
   }
@@ -388,7 +388,7 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
 
   for (int i=0; i<num_vec_; i++) {
     th[i] = 0.;
-    dF_[new_f_]->Dot(*Q_[i], &b[i]);
+    b[i] = dF_[new_f_]->dot(*Q_[i]);
   }
 
   for (int i = num_vec_ - 1; i>=0; i--) {
@@ -419,16 +419,16 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   dir = *dF_[new_f_];
   for (int i=0; i<num_vec_; i++) {
     int I = (first_f_ + i)%(mvec_ + 1);
-    dir.Update(th[i], *dG_[I], 1.);
+    dir.update(th[i], *dG_[I], 1.);
   }
   // std::cout<<"dir\n";
   // dir.Print(std::cout);
 
   if ((beta_ >0)&&(beta_ != 1.)) {
-    dir.Update(beta_ - 1, *dF_[new_f_], 1);
+    dir.update(beta_ - 1, *dF_[new_f_], 1);
     for (int i=0; i<num_vec_; i++) {
       int I = (first_f_ + i)%(mvec_ + 1);
-      dir.Update((1-beta_)*th[i], *dF_[I], 1.);
+      dir.update((1-beta_)*th[i], *dF_[I], 1.);
     }
   }
 

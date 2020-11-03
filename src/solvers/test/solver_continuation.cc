@@ -4,9 +4,6 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "Epetra_MpiComm.h"
-#include "Epetra_Vector.h"
-
 #include "solver_fnbase1_cont.hh"
 #include "SolverContinuation.hh"
 
@@ -15,17 +12,15 @@ using namespace Amanzi;
 SUITE(SOLVERS) {
 // data structures for testing
 struct test_data {
-  Epetra_MpiComm *comm;
-  Teuchos::RCP<Epetra_Map> map;
-  Teuchos::RCP<Epetra_Vector> vec;
+  Teuchos::RCP<Map_type> map;
+  Teuchos::RCP<Vector_type> vec;
 
   test_data() {
-    comm = new Epetra_MpiComm(MPI_COMM_SELF);
+    auto comm = getDefaultComm(); 
     map = Teuchos::rcp(new Epetra_Map(2, 0, *comm));
     vec = Teuchos::rcp(new Epetra_Vector(*map));
   }
 
-  ~test_data() { delete comm; }
 };
 
 

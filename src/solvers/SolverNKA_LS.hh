@@ -79,13 +79,13 @@ class SolverNKA_LS : public Solver<Vector, VectorSpace> {
 
   SolverNKA_LS(Teuchos::ParameterList& plist,
                const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-               const VectorSpace& map) :
+               const Teuchos::RCP<const VectorSpace>& map) :
       plist_(plist) {
     Init(fn, map);
   }
 
   void Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-            const VectorSpace& map);
+            const Teuchos::RCP<const VectorSpace>& map);
 
   int Solve(const Teuchos::RCP<Vector>& u) {
     returned_code_ = NKA_LS_(u);
@@ -166,7 +166,7 @@ class SolverNKA_LS : public Solver<Vector, VectorSpace> {
     
     double operator()(double x) {
       *u = *u0;
-      u->Update(-x, *du, 1.);
+      u->update(-x, *du, 1.);
       fn->ChangedSolution();
       fn->Residual(u, r);
       return fn->ErrorNorm(u, r);
@@ -186,7 +186,7 @@ class SolverNKA_LS : public Solver<Vector, VectorSpace> {
 template<class Vector, class VectorSpace>
 void
 SolverNKA_LS<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-        const VectorSpace& map)
+        const Teuchos::RCP<const VectorSpace>& map)
 {
   fn_ = fn;
   Init_();
@@ -284,7 +284,7 @@ int SolverNKA_LS<Vector, VectorSpace>::NKA_LS_(const Teuchos::RCP<Vector>& u) {
 
   // report error
   error = fn_->ErrorNorm(u, r);
-  r->Norm2(&l2_error);
+  l2_error = r->norm2();
   if (vo_->os_OK(Teuchos::VERB_LOW)) {
     *vo_->os() << num_itrs_ << ": error(res) = " << error << std::endl
                << num_itrs_ << ": L2 error(res) = " << l2_error << std::endl;
@@ -348,7 +348,7 @@ int SolverNKA_LS<Vector, VectorSpace>::NKA_LS_(const Teuchos::RCP<Vector>& u) {
     previous_error = error;
     previous_l2_error = l2_error;
     double alpha = 1.;
-    u->Update(-alpha, *du, 1.);
+    u->update(-alpha, *du, 1.);
     fn_->ChangedSolution();
     
     // Check the full correction
@@ -364,7 +364,7 @@ int SolverNKA_LS<Vector, VectorSpace>::NKA_LS_(const Teuchos::RCP<Vector>& u) {
       
       // report error
       error = fn_->ErrorNorm(u, r);
-      r->Norm2(&l2_error);
+      l2_error = r->norm2();
       if (vo_->os_OK(Teuchos::VERB_LOW)) {
         *vo_->os() << num_itrs_ << ": error(res) = " << error << std::endl
                    << num_itrs_ << ": L2 error(res) = " << l2_error << std::endl;
@@ -397,12 +397,12 @@ int SolverNKA_LS<Vector, VectorSpace>::NKA_LS_(const Teuchos::RCP<Vector>& u) {
       // find an admissible endpoint alpha, starting from ten times the full correction
       alpha = max_alpha_;
       *u = *u_prev;
-      u->Update(-alpha, *du, 1.0);
+      u->update(-alpha, *du, 1.0);
       fn_->ChangedSolution();
       while (!fn_->IsAdmissible(u)) {
         alpha *= 0.3;
         *u = *u_prev;
-        u->Update(-alpha, *du, 1.);
+        u->update(-alpha, *du, 1.);
         fn_->ChangedSolution();
       }
       admissible_iterate = true;
@@ -427,7 +427,7 @@ int SolverNKA_LS<Vector, VectorSpace>::NKA_LS_(const Teuchos::RCP<Vector>& u) {
       fun_calls_++;
 
       // report error
-      r->Norm2(&l2_error);
+      l2_error = r->norm2();
       if (vo_->os_OK(Teuchos::VERB_LOW)) {
         *vo_->os() << num_itrs_ << ": post-LS error(res) = " << error << std::endl
                    << num_itrs_ << ": post-LS L2 error(res) = " << l2_error << std::endl;
@@ -454,7 +454,7 @@ int SolverNKA_LS<Vector, VectorSpace>::NKA_LS_(const Teuchos::RCP<Vector>& u) {
       }
 
       // scale du to be the true correction
-      du->Scale(alpha);
+      du->scale(alpha);
 
       // debugging
       db_->WriteVector<Vector>(db_write_iter++, *r, u.ptr(), du.ptr());

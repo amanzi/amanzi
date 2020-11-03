@@ -50,7 +50,7 @@ class PreconditionerIdentity :
   virtual void computeInverse() override final {};
 
   virtual int applyInverse(const Vector& v, Vector& hv) const override final {
-    hv = v;
+    hv.assign(v);
     return 0;
   }
 

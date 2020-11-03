@@ -273,7 +273,7 @@ BDF1_TI<Vector, VectorSpace>::TimeStep(double dt,
   int ierr, code, itr;
   try {
     ierr = solver_->Solve(u);
-    itr = solver_->num_iterations();
+    itr = solver_->num_itrs();
     code = solver_->returned_code();
   } catch (const Errors::CutTimeStep& e) {
     ierr = 1;
@@ -284,8 +284,8 @@ BDF1_TI<Vector, VectorSpace>::TimeStep(double dt,
   if (ierr == 0) {
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << "success: " << itr << " nonlinear itrs"
-                 << " residual=" << solver_->residual()
-                 << " error=" << solver_->error() << std::endl;
+                 << " residual=" << solver_->residual() << std::endl;
+                 //<< " error=" << solver_->error() << std::endl;
     }
   } else {
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
@@ -315,7 +315,7 @@ BDF1_TI<Vector, VectorSpace>::TimeStep(double dt,
   solver_->set_pc_lag(state_->pc_lag);
 
   // update performance statistics
-  state_->solve_itrs += solver_->num_iterations();
+  state_->solve_itrs += solver_->num_itrs();
   state_->pc_updates += solver_->pc_updates();
   state_->pc_calls += solver_->pc_calls();
 

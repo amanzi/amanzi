@@ -36,13 +36,13 @@ class SolverNKA_BT : public Solver<Vector, VectorSpace> {
 
   SolverNKA_BT(Teuchos::ParameterList& plist,
                const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-               const VectorSpace& map) :
+               const Teuchos::RCP<const VectorSpace>& map) :
       plist_(plist) {
     Init(fn, map);
   }
 
   void Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-            const VectorSpace& map);
+            const Teuchos::RCP<const VectorSpace>& map);
 
   int Solve(const Teuchos::RCP<Vector>& u) {
     returned_code_ = NKA_BT_(u);
@@ -101,7 +101,7 @@ class SolverNKA_BT : public Solver<Vector, VectorSpace> {
 template<class Vector, class VectorSpace>
 void
 SolverNKA_BT<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-        const VectorSpace& map)
+        const Teuchos::RCP<const VectorSpace>& map)
 {
   fn_ = fn;
   Init_();
@@ -208,7 +208,7 @@ int SolverNKA_BT<Vector, VectorSpace>::NKA_BT_(const Teuchos::RCP<Vector>& u) {
       previous_error = error;
       error = fn_->ErrorNorm(u, r);
       residual_ = error;
-      r->Norm2(&l2_error);
+      l2_error = r->norm2();
 
       // We attempt to catch non-convergence early.
       if (num_itrs_ == 1) {
@@ -259,7 +259,7 @@ int SolverNKA_BT<Vector, VectorSpace>::NKA_BT_(const Teuchos::RCP<Vector>& u) {
 
     // Make sure that we do not diverge and cause numerical overflow.
     previous_du_norm = du_norm;
-    du->NormInf(&du_norm);
+    du_norm = du->normInf();
 
     if ((num_itrs_ > 1) && (du_norm > max_du_growth_factor_ * previous_du_norm)) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
@@ -274,7 +274,7 @@ int SolverNKA_BT<Vector, VectorSpace>::NKA_BT_(const Teuchos::RCP<Vector>& u) {
       nka_->Correction(*du_tmp, *du);
 
       // Re-check du. If it fails again, give up.
-      du->NormInf(&du_norm);
+      du_norm = du->normInf();
 
       if (du_norm > max_du_growth_factor_ * previous_du_norm) {
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) 
@@ -313,7 +313,7 @@ int SolverNKA_BT<Vector, VectorSpace>::NKA_BT_(const Teuchos::RCP<Vector>& u) {
     }
 
     // Next solution iterate and error estimate: u  = u - du
-    u->Update(-1.0, *du, 1.0);
+    u->update(-1.0, *du, 1.0);
     fn_->ChangedSolution();
 
     // Monitor the PC'd residual.
@@ -321,7 +321,7 @@ int SolverNKA_BT<Vector, VectorSpace>::NKA_BT_(const Teuchos::RCP<Vector>& u) {
       previous_error = error;
       error = fn_->ErrorNorm(u, du);
       residual_ = error;
-      du_tmp->Norm2(&l2_error);
+      l2_error = du_tmp->norm2();
 
       int ierr = NKA_ErrorControl_(error, previous_error, l2_error);
       if (ierr == SOLVER_CONVERGED) return num_itrs_;
@@ -333,7 +333,7 @@ int SolverNKA_BT<Vector, VectorSpace>::NKA_BT_(const Teuchos::RCP<Vector>& u) {
       previous_error = error;
       error = fn_->ErrorNorm(u, du);
       residual_ = error;
-      du->Norm2(&l2_error);
+      l2_error = du->norm2();
 
       int ierr = NKA_ErrorControl_(error, previous_error, l2_error);
       if (ierr == SOLVER_CONVERGED) return num_itrs_;

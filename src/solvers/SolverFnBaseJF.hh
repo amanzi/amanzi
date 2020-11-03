@@ -37,7 +37,7 @@ class SolverFnBaseJF : public SolverFnBase<Vector> {
  public:
   SolverFnBaseJF(Teuchos::ParameterList& plist,
                  const Teuchos::RCP<SolverFnBase<Vector> > fn,
-                 const VectorSpace& map);
+                 const Teuchos::RCP<const VectorSpace>& map);
 
   // -- Standard SolverFnBase interface.
   // computes the non-linear functional r = F(u)
@@ -92,7 +92,7 @@ class SolverFnBaseJF : public SolverFnBase<Vector> {
 template<class Vector, class VectorSpace>
 SolverFnBaseJF<Vector,VectorSpace>::SolverFnBaseJF(Teuchos::ParameterList& plist,
                                                    const Teuchos::RCP<SolverFnBase<Vector> > fn,
-                                                   const VectorSpace& map) :
+                                                   const Teuchos::RCP<const VectorSpace>& map) :
     plist_(plist), fn_(fn) {
   typical_u_ = plist.get<double>("typical solution value", 1.0);
 

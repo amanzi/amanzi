@@ -2,8 +2,8 @@
 #define AMANZI_TEST_SOLVER_FNBASE1_HH_
 
 #include <math.h>
+#include "AmanziVector.hh"
 
-#include "AmanziTypes.hh"
 #include "SolverFnBase.hh"
 
 using namespace Amanzi; 
@@ -16,40 +16,51 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Vector_type>
 
   void Residual(const Teuchos::RCP<Vector_type>& u,
                 const Teuchos::RCP<Vector_type>& f) {
-    for (int c = 0; c != u->MyLength(); ++c) {
-      double x = (*u)[c];
-      (*f)[c] = x * (x * x + 1.0);
-    }
+    auto uv = u->getLocalViewDevice();
+    auto fv = f->getLocalViewDevice();
+    Kokkos::parallel_for(
+      "solver_fnbase1::Residual",
+      fv.extent(0), KOKKOS_LAMBDA(const int c) {
+      double x = uv(c, 0);
+      fv(c, 0) = x * (x * x + 1.0);
+    });
   }
 
   int ApplyPreconditioner(const Teuchos::RCP<const Vector_type>& u,
                            const Teuchos::RCP<Vector_type>& hu) {
-    return hu->ReciprocalMultiply(1.0, *h_, *u, 0.0);
+    hu->elementWiseMultiply(1., *h_, *u, 0.);
+    return 0;
   }
 
   double ErrorNorm(const Teuchos::RCP<const Vector_type>& u,
                    const Teuchos::RCP<const Vector_type>& du) {
-    double norm_du = du->normInf();
-    double norm_u = u->normInf();
-    double norm2_du = du->Norm2();
-    return norm_du;
-    //return norm_du / (atol_ + rtol_ * norm_u);
+    return du->normInf();
   }
 
   void UpdatePreconditioner(const Teuchos::RCP<const Vector_type>& up) {
-    h_ = Teuchos::rcp(new Vector_type(*up));
+    if (!h_.get()) h_ = Teuchos::rcp(new Vector_type(up->getMap()));
 
     if (exact_jacobian_) {
-      for (int c = 0; c != up->MyLength(); ++c) {
-        double x = (*up)[c];
-        (*h_)[c] = 3 * x * x + 1.0;
-      }
+      auto upv = up->getLocalViewDevice();
+      auto hv = h_->getLocalViewDevice();
+      Kokkos::parallel_for(
+        "solver_fnbase1::UpdatePreconditioner loop 1",
+        hv.extent(0), KOKKOS_LAMBDA(const int c) {
+        double x = upv(c, 0);
+        hv(c, 0) = 3 * x * x + 1.0;
+      });
     } else {
-      for (int c = 0; c != up->MyLength(); ++c) {
-        double x = (*up)[c];
-        (*h_)[c] = x * x + 2.5;
-      }
+      auto upv = up->getLocalViewDevice();
+      auto hv = h_->getLocalViewDevice();
+      Kokkos::parallel_for(
+        "solver_fnbase1::UpdatePreconditioner loop 2",
+        hv.extent(0), KOKKOS_LAMBDA(const int c) {
+        double x = upv(c, 0);
+        hv(c, 0) = x * x + 2.5;
+      });
     }
+    h_->reciprocal(*h_);
+
   }
 
   void ChangedSolution() {};

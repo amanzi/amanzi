@@ -68,7 +68,7 @@ class SolverJFNK : public Solver<Vector, VectorSpace> {
   }
 
   void Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-            const VectorSpace& map);
+            const Teuchos::RCP<const VectorSpace>& map);
 
   int Solve(const Teuchos::RCP<Vector>& u) {
     return solver_->Solve(u);
@@ -99,7 +99,8 @@ class SolverJFNK : public Solver<Vector, VectorSpace> {
 ****************************************************************** */
 template<class Vector, class VectorSpace>
 void SolverJFNK<Vector, VectorSpace>::Init(
-    const Teuchos::RCP<SolverFnBase<Vector> >& fn, const VectorSpace& map)
+    const Teuchos::RCP<SolverFnBase<Vector> >& fn, 
+    const Teuchos::RCP<const VectorSpace>& map)
 {
   // create the nonlinear solver
   Teuchos::ParameterList& slist = plist_.sublist("nonlinear solver");

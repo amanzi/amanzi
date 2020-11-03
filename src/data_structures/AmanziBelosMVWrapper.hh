@@ -275,7 +275,7 @@ template <class Vector>
 void
 CompositeMultiVector<Vector>::MvRandom()
 {
-  for (int i = 0; i < cmv_.size(); i++) cmv_[i]->random();
+  for (int i = 0; i < cmv_.size(); i++) cmv_[i]->randomize();
 }
 
 template <class Vector>
@@ -289,7 +289,7 @@ template <class Vector>
 void
 CompositeMultiVector<Vector>::MvPrint(std::ostream& os) const
 {
-  for (int i = 0; i < cmv_.size(); i++) cmv_[i]->Print(os);
+  for (int i = 0; i < cmv_.size(); i++) cmv_[i]->print(os);
 }
 
 } // namespace Amanzi

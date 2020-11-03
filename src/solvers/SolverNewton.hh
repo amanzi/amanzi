@@ -267,9 +267,9 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
     //res_l2  = 
-    r->norm2();
+    //r->norm2();
     //res_inf = 
-    r->normInf();
+    //r->normInf();
 
     if (vo_->os_OK(Teuchos::VERB_EXTREME))
       *vo_->os() << "Applying preconditioner" << std::endl;
@@ -277,9 +277,9 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
     if (pc_error < 0) return SOLVER_LINEAR_SOLVER_ERROR;
 
     //du_l2 = 
-    du->norm2();
+    //du->norm2();
     //du_inf = 
-    du->normInf();
+    //du->normInf();
 
     // Hack the correction
     if (modify_correction_) {

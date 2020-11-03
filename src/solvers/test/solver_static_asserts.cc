@@ -2,15 +2,15 @@
 // If this compiles, the test passes...
 //
 #include "UnitTest++.h"
-#include "Epetra_CrsMatrix.h"
 
 //#include "InverseFactory.hh"
+#include "AmanziTypes.hh"
+using namespace Amanzi; 
 
-
-// class Epetra_CrsMatrix {
+// class Tpetra::CsrMatrix {
 //  public:
-//   int FillComplete(bool OptimizeDataStorage) { return 1;}
-//   int FillComplete(std::string& other1, std::string& other2) { return 1;}
+//  void 	fillComplete (const Teuchos::RCP< const map_type > &domainMap, const Teuchos::RCP< const map_type > &rangeMap, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null) 
+//  void 	fillComplete (const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
 // };
 
 
@@ -38,7 +38,9 @@ struct is_assembled
 template<typename Operator>
 struct is_assembled<Operator,
                     typename std::enable_if<std::is_member_function_pointer<
-                      decltype(static_cast<int (Operator::*)(bool)>(&Operator::FillComplete))>::value>::type>
+                      decltype(
+                        static_cast<void (Operator::*) (const Teuchos::RCP<Teuchos::ParameterList> &)>
+                        (&Operator::fillComplete))>::value>::type>
 {
   const static bool value = true;
 };
@@ -47,7 +49,6 @@ struct is_assembled<Operator,
 
 SUITE(SOLVERS) {
   TEST(static_asserts) {
-    //    static_assert(!is_assembling<Epetra_CrsMatrix>::value, "Epetra_CrsMatrix is not assembling");
-    static_assert(is_assembled<Epetra_CrsMatrix>::value, "Epetra_CrsMatrix is assembled");
+    static_assert(is_assembled<Matrix_type>::value, "Matrix_type is assembled");
   }
 }
