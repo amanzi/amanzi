@@ -20,11 +20,13 @@
 //#include "Mesh_moab.hh"
 //#endif
 
+#include "AmanziTypes.hh"
+#include "AmanziVector.hh"
+#include "AmanziMap.hh"
 #include "Mesh.hh"
 #include "MeshDefs.hh"
 #include "errors.hh"
 #include "dbc.hh"
-//#include "Epetra_Vector.h"
 #include "Teuchos_XMLObject.hpp"
 
 extern "C" {

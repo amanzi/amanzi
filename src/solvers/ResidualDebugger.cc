@@ -87,9 +87,10 @@ ResidualDebugger::WriteVector<TreeVector>(int iter,
         for (int j=0; j!=vec.extent(0); ++j) {
           std::stringstream my_name;
           my_name << "residual.cell." << j;
-          vis_[i]->writeCellDataReal(
-            vec(i,j), 
-            my_name.str());
+          assert(false); 
+          //vis_[i]->writeCellDataReal(
+          //  vec(i,j), 
+          //  my_name.str());
         }
       }
     }
@@ -105,7 +106,8 @@ ResidualDebugger::WriteVector<TreeVector>(int iter,
           for (int j=0; j!=vec.extent(0); ++j) {
             std::stringstream my_name;
             my_name << "u.cell." << j;
-            vis_[i]->writeCellDataReal(vec(i,j), my_name.str());
+            assert(false); 
+            //vis_[i]->writeCellDataReal(vec(i,j), my_name.str());
           }
         }
       }
@@ -122,7 +124,8 @@ ResidualDebugger::WriteVector<TreeVector>(int iter,
           for (int j=0; j!=vec.extent(0); ++j) {
             std::stringstream my_name;
             my_name << "du.cell." << j;
-            vis_[i]->writeCellDataReal(vec(i,j), my_name.str());
+            assert(false); 
+            //vis_[i]->writeCellDataReal(vec(i,j), my_name.str());
           }
         }
       }

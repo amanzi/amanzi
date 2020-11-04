@@ -44,7 +44,7 @@ include_directories(${MueLu_INCLUDE_DIRS})
 #
 file(GLOB solvers_inc_files "*.hh")
 set(solvers_source_files 
-#  ResidualDebugger.cc
+  ResidualDebugger.cc
 #  DirectMethodAmesos.cc
   DirectMethodAmesos2.cc
 #  PreconditionerHypre.cc
