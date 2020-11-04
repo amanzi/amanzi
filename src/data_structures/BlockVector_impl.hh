@@ -626,7 +626,7 @@ BlockVector<Scalar>::norm2() const
 // Debugging?
 template <typename Scalar>
 void
-BlockVector<Scalar>::Print(std::ostream& os, bool ghosted, bool data_io) const
+BlockVector<Scalar>::print(std::ostream& os, bool ghosted, bool data_io) const
 {
   os << "Comp Vector" << std::endl;
   os << "  components: ";
@@ -645,7 +645,7 @@ BlockVector<Scalar>::Print(std::ostream& os, bool ghosted, bool data_io) const
 // Populate by random numbers between -1 and 1.
 template <typename Scalar>
 void
-BlockVector<Scalar>::random()
+BlockVector<Scalar>::randomize()
 {
   for (const auto& name : *this) { GetComponent_(name)->randomize(); }
 };

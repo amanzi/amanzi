@@ -23,7 +23,9 @@
 #include "PK_MixinExplicit.hh"
 #include "PK_MixinLeaf.hh"
 
-#include "LinearOperatorFactory.hh"
+//#include "LinearOperatorFactory.hh"
+#include "InverseFactory.hh"
+#include "InverseIterativeMethod.hh"
 #include "Evaluator_OperatorApply.hh"
 #include "Evaluator_PDE_Accumulation.hh"
 #include "Operator_Factory.hh"
@@ -242,7 +244,7 @@ class PK_PDE_Implicit : public Base_t {
                           Teuchos::RCP<TreeVector> Pu)
   {
     if (!lin_solver_.get()) {
-      const auto& lin_op = this->S_->template GetDerivativePtr<Operators::Operator>(res_key_, tag_new_, this->key_, tag_new_);
+      const Teuchos::RCP<Operators::Operator> lin_op = this->S_->template GetDerivativePtr<Operators::Operator>(res_key_, tag_new_, this->key_, tag_new_);
       
       Teuchos::ParameterList ls_list;
       ls_list.sublist("verbose object")
@@ -254,8 +256,11 @@ class PK_PDE_Implicit : public Base_t {
       ls_list.sublist("gmres parameters").sublist("verbose object")
           .set<std::string>("verbosity level", "high");
       
-      AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeSpace> fac;
-      lin_solver_ = fac.Create(ls_list, lin_op);
+      //AmanziSolvers::InverseFactory<Operators::Operator,Operators::Operator,CompositeVector,CompositeSpace> fac;
+      //lin_solver_ = fac.Create(ls_list, lin_op);
+      lin_solver_ = AmanziSolvers::createIterativeMethod<Operators::Operator>(
+        ls_list,
+        lin_op);
     }
     this->db_->WriteVector("res", u->Data().ptr());
     lin_solver_->applyInverse(*u->Data(), *Pu->Data());
@@ -286,7 +291,7 @@ class PK_PDE_Implicit : public Base_t {
   Key res_key_;
   Key conserved_key_;
 
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator,CompositeVector,CompositeSpace> > lin_solver_;
+  Teuchos::RCP<Matrix<CompositeVector,CompositeSpace> > lin_solver_;
 
   using Base_t::tag_new_;
   using Base_t::tag_old_;

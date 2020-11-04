@@ -29,9 +29,12 @@
 #include "AmanziTypes.hh"
 #include "AmanziComm.hh"
 #include "MeshFactory.hh"
-#include "LinearOperatorPCG.hh"
-#include "LinearOperatorGMRES.hh"
-#include "LinearOperatorNKA.hh"
+#include "IterativeMethodGMRES.hh"
+#include "IterativeMethodNKA.hh"
+#include "IterativeMethodPCG.hh"
+//#include "LinearOperatorPCG.hh"
+//#include "LinearOperatorGMRES.hh"
+//#include "LinearOperatorNKA.hh"
 #include "Tensor.hh"
 
 
@@ -203,18 +206,18 @@ struct DiffusionFixture {
 
     // create preconditoner using the base operator class
     auto slist = Teuchos::sublist(Teuchos::sublist(plist, "preconditioners"), pc_name);
-    global_op->InitializePreconditioner(slist);
+    global_op->set_inverse_parameters(*slist);
 
     if (symmetric) {
       Teuchos::ParameterList lop_list = plist->sublist("solvers")
                                .sublist("AztecOO CG").sublist("pcg parameters");
-      solver = Teuchos::rcp(new AmanziSolvers::LinearOperatorPCG<Operators::Operator, CompositeVector, CompositeSpace>(global_op, global_op));
-      solver->Init(lop_list);
+      solver = Teuchos::rcp(new AmanziSolvers::IterativeMethodPCG<Operators::Operator,Operators::Operator, CompositeVector, CompositeSpace>());
+      solver->set_inverse_parameters(lop_list);
     } else {
       Teuchos::ParameterList lop_list = plist->sublist("solvers")
                                .sublist("GMRES").sublist("gmres parameters");
-      solver = Teuchos::rcp(new AmanziSolvers::LinearOperatorGMRES<Operators::Operator, CompositeVector, CompositeSpace>(global_op, global_op));
-      solver->Init(lop_list);
+      solver = Teuchos::rcp(new AmanziSolvers::IterativeMethodGMRES<Operators::Operator,Operators::Operator, CompositeVector, CompositeSpace>());
+      solver->set_inverse_parameters(lop_list);
     }
 
     CompositeVectorSpace flux_space;
@@ -235,7 +238,7 @@ struct DiffusionFixture {
     }
     
     op->ApplyBCs(true, true, true);
-    global_op->UpdatePreconditioner();
+    global_op->initializeInverse();
 
     // if (symmetric) {
     //   // Test SPD properties of the preconditioner.
@@ -295,7 +298,7 @@ struct DiffusionFixture {
   
   Teuchos::RCP<Operators::PDE_Diffusion> op;
   Teuchos::RCP<Operators::Operator> global_op;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeSpace>> solver;
+  Teuchos::RCP<AmanziSolvers::InverseIterativeMethod<Operators::Operator,Operators::Operator, CompositeVector, CompositeSpace>> solver;
 };
 
 

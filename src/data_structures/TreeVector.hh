@@ -104,7 +104,7 @@ class TreeVector {
   void putScalar(double scalar);
 
   // this <- random
-  void random();
+  void randomize();
 
   // n_l <- || this ||_{l}
   double norm2() const;
@@ -142,7 +142,7 @@ class TreeVector {
   //                        const TreeVector& B, double scalarThis);
 
   // non-inherited extras
-  void Print(std::ostream& os) const;
+  void print(std::ostream& os) const;
 
   int getGlobalLength()
   {

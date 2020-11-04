@@ -579,8 +579,8 @@ Evaluator_OperatorApply::UpdateDerivative_(State& S, const Key& wrt_key,
 
     // symbolic assemble the first time
     //    global_op->SymbolicAssembleMatrix();
-    
-    global_op->InitializePreconditioner(Teuchos::parameterList(plist_.sublist("preconditioner")));
+    auto plist = Teuchos::parameterList(plist_.sublist("preconditioner"));
+    global_op->set_inverse_parameters(*plist);
   }
 
   // push values
@@ -626,7 +626,7 @@ Evaluator_OperatorApply::UpdateDerivative_(State& S, const Key& wrt_key,
 
   // assemble
   //global_op->AssembleMatrix();
-  global_op->UpdatePreconditioner();
+  global_op->initializeInverse();
 }
 
 

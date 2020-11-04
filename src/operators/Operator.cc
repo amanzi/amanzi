@@ -1052,6 +1052,16 @@ void Operator::AssembleVectorCellOp(int c, const Schema& schema,
 //   Exceptions::amanzi_throw(msg);
 // }
 
+
+/* ******************************************************************
+* Copy constructor.
+****************************************************************** */
+Teuchos::RCP<Operator> Operator::clone() const {
+  Errors::Message msg("Cloning of a derived Operator class is missing");
+  Exceptions::amanzi_throw(msg);
+  return Teuchos::null;
+}
+
 }  // namespace Operators
 }  // namespace Amanzi
 

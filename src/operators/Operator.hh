@@ -173,6 +173,8 @@ class Operator: public Matrix<CompositeVector,CompositeSpace> {
 
   virtual ~Operator() = default;
 
+  virtual Teuchos::RCP<Operator> clone() const;
+
 
   // set all local values to 0.
   void Zero();

@@ -1,18 +1,25 @@
 /*
-  Copyright 2010-201x held jointly by participating institutions.
+  Operators
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+/*!
+
+  TreeOperators are the block analogue of Operators -- they provide
+  a linear operator acting on a TreeVectorSpace.
+
+  Note that these are really intended for enabling preconditioners -- it is
+  unlikely that these need assembled for the operator itself, and therefore no
+  ComputeResidual() methods are provided.
+
 */
 
-//! <MISSING_ONELINE_DOCSTRING>
-
-#ifndef AMANZI_TREE_OPERATOR_HH_
-#define AMANZI_TREE_OPERATOR_HH_
-
+#pragma once
 #include <vector>
 
 #include "Teuchos_RCP.hpp"
@@ -21,38 +28,56 @@
 #include "TreeVector.hh"
 #include "TreeVectorSpace.hh"
 #include "VerboseObject.hh"
-
-#include "Operator.hh"
-
-/* ******************************************************************
-  TreeOperators are the block analogue of Operators -- they provide
-  a linear operator acting on a TreeVectorSpace.  They are currently
-  assumed R^n -> R^n, and furthermore each block is currently assumed
-  to be from R^m --> R^m for n = i*m where i is an integer (every
-  block's space is the same).
-
-  Note that these are really intended for preconditioners -- it is
-  unlikely that these need assembled for the operator itself, and
-  therefore no ComputeResidual() methods are provided.  It would be
-  difficult to manage a RHS for these systems.
-
-  Future work will relax this constraint, but currently this can be
-  used for things like multi-phased flow, thermal Richards, etc.
-****************************************************************** */
+#include "Matrix.hh"
+#include "MatrixFE.hh"
 
 namespace Amanzi {
 namespace Operators {
 
+// forward declarations
 class SuperMap;
-class MatrixFE;
+class Operator;
+namespace Impl {
+class TreeOperator_BlockDiagonalPreconditioner;
+}
 
 class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
  public:
   using Vector_t = TreeVector;
   using VectorSpace_t = TreeVectorSpace;
 
-  TreeOperator() : block_diagonal_(false){};
-  TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs);
+  TreeOperator();
+  TreeOperator(Teuchos::ParameterList& plist);
+  TreeOperator(const Teuchos::RCP<const TreeVectorSpace>& row_map,
+               const Teuchos::RCP<const TreeVectorSpace>& col_map,
+               Teuchos::ParameterList& plist);
+  TreeOperator(const Teuchos::RCP<const TreeVectorSpace>& row_map,
+               const Teuchos::RCP<const TreeVectorSpace>& col_map);
+  TreeOperator(const Teuchos::RCP<const TreeVectorSpace>& tvs,
+               Teuchos::ParameterList& plist);
+  TreeOperator(const Teuchos::RCP<const TreeVectorSpace>& tvs);
+
+  //
+  // NOTE: this is not a shallow copy, but not quite a deep copy either!
+  //
+  // It is deep in the sense that it calls Clone on all leaf Operator objects,
+  // but those Clone() methods themselves are shallow!
+  TreeOperator(const TreeOperator& other);
+  Teuchos::RCP<TreeOperator> clone() const {
+    return Teuchos::rcp(new TreeOperator(*this));
+  }
+
+  // accessors
+  virtual const Teuchos::RCP<const TreeVectorSpace> getDomainMap() const override { return col_map_; }
+  virtual const Teuchos::RCP<const TreeVectorSpace> getRangeMap() const override { return row_map_; }
+
+  Teuchos::RCP<const TreeVectorSpace> get_col_map() const { return col_map_; }
+  Teuchos::RCP<const TreeVectorSpace> get_row_map() const { return row_map_; }
+  Teuchos::RCP<const SuperMap> get_col_supermap() const { return col_supermap_; }
+  Teuchos::RCP<const SuperMap> get_row_supermap() const { return row_supermap_; }
+
+  // here for use by clients that still assume square
+  Teuchos::RCP<const SuperMap> getSuperMap() const { return get_row_supermap(); }
 
   Teuchos::RCP<TreeOperator> get_block(std::size_t i, std::size_t j) { return blocks_[i][j]; }
   Teuchos::RCP<const TreeOperator> get_block(std::size_t i, std::size_t j) const { return blocks_[i][j]; }
@@ -62,32 +87,49 @@ class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
     if (get_block(i,j) != Teuchos::null) return get_block(i,j)->get_operator();
     return Teuchos::null;
   }
+  Teuchos::RCP<const Operator> get_operator_block(std::size_t i, std::size_t j) const {
+    if (get_block(i,j) != Teuchos::null) return get_block(i,j)->get_operator();
+    return Teuchos::null;
+  }
 
-  // main members
-  void SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op);
+  Teuchos::RCP<Matrix_type> A() { return A_; }
+  Teuchos::RCP<const Matrix_type> A() const { return A_; }
 
-  void getLocalDiagCopy(TreeVector& tv) const;
-
-  int apply(const TreeVector& X, TreeVector& Y) const;
-  int applyAssembled(const TreeVector& X, TreeVector& Y) const;
-  int applyInverse(const TreeVector& X, TreeVector& Y) const;
-
-  void SymbolicAssembleMatrix();
-  void AssembleMatrix();
-
-  const Teuchos::RCP<const TreeVectorSpace> getDomainMap() const { return tvs_; }
-  const Teuchos::RCP<const TreeVectorSpace> getRangeMap() const { return tvs_; }
-  const Teuchos::RCP<const TreeVectorSpace> getRowMap() const { return tvs_; }  
-
-  void set_inverse_parameters(const std::string& prec_name,
-                              const Teuchos::ParameterList& plist);
-  void set_inverse_parameters(Teuchos::ParameterList& plist) override final;
-  void initializeInverse() override final;
-  void computeInverse() override final;
+  void set_block(std::size_t i, std::size_t j, const Teuchos::RCP<TreeOperator>& op);
+  void set_operator(const Teuchos::RCP<Operator>& op);
+  void set_operator_block(std::size_t i, std::size_t j, const Teuchos::RCP<Operator>& op);
 
   bool IsSquare() const { return get_col_size() == get_row_size(); }
   std::size_t get_col_size() const { return col_size_; }
   std::size_t get_row_size() const { return row_size_; }
+
+  void set_coloring(int num_colors, const Teuchos::RCP<std::vector<int>>& coloring) {
+    num_colors_ = num_colors;
+    coloring_ = coloring;
+  }
+
+  // i/o
+  std::string PrintDiagnostics() const;
+
+  // forward operator
+  virtual int apply(const TreeVector& X, TreeVector& Y) const override {
+    return apply(X,Y,0.0);
+  }
+  int apply(const TreeVector& X, TreeVector& Y, double scalar) const;
+  int ApplyAssembled(const TreeVector& X, TreeVector& Y) const;
+
+  void SymbolicAssembleMatrix();
+  void AssembleMatrix();
+
+  // inverse operator
+  virtual int applyInverse(const TreeVector& X, TreeVector& Y) const override;
+
+  void set_inverse_parameters(const std::string& prec_name,
+                              const Teuchos::ParameterList& plist);
+
+  virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override;
+  virtual void initializeInverse() override;
+  virtual void computeInverse() override;
 
   // Inverse diagnostics... these may change
   virtual double residual() const override {
@@ -111,13 +153,11 @@ class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
     return "TreeOperator: block diagonal";
   }
 
-  // access
-  Teuchos::RCP<Matrix_type> A() { return A_; }
-  Teuchos::RCP<const Matrix_type> A() const { return A_; }
-  Teuchos::RCP<const SuperMap> getSuperMap() const { return smap_; }
+ protected:
+  int ApplyInverseBlockDiagonal_(const TreeVector& X, TreeVector& Y) const;
 
- private:
-  Teuchos::RCP<const TreeVectorSpace> tvs_;
+ protected:
+  friend Impl::TreeOperator_BlockDiagonalPreconditioner;
 
   Teuchos::RCP<const TreeVectorSpace> row_map_, col_map_;
   std::size_t row_size_, col_size_;
@@ -127,7 +167,7 @@ class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
 
   Teuchos::RCP<Matrix_type> A_;
   Teuchos::RCP<MatrixFE> Amat_;
-  Teuchos::RCP<SuperMap> smap_;
+  Teuchos::RCP<SuperMap> row_supermap_, col_supermap_;
 
   Teuchos::RCP<Matrix<TreeVector,TreeVectorSpace>> preconditioner_;
   bool block_diagonal_;
@@ -139,8 +179,59 @@ class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
   Teuchos::RCP<VerboseObject> vo_;
 };
 
-} // namespace Operators
-} // namespace Amanzi
+
+namespace Impl {
+//
+// This class simply wraps TreeOperator with ApplyInverse() calling
+// ApplyInverseBlockDiagonal() so that it can be used as a preconditioner.  To
+// provide the common interface to the client, TreeOperator's ApplyInverse must
+// call the linear solver's ApplyInverse(), which wants a preconditioner, which
+// might here be the block diagonal case.  This would be circular without
+// introducing a separate object.
+//
+class TreeOperator_BlockDiagonalPreconditioner {
+ public:
+  using Vector_t = TreeOperator::Vector_t;
+  using VectorSpace_t = TreeOperator::VectorSpace_t;
+
+  TreeOperator_BlockDiagonalPreconditioner(TreeOperator& op) :
+      op_(op) {}
+
+  int apply(const TreeVector& X, TreeVector& Y) const {
+    Exceptions::amanzi_throw("TreeOperator Preconditioner does not implement Apply()");
+    return 1;
+  }
+
+  int applyInverse(const TreeVector& X, TreeVector& Y) const {
+    return op_.ApplyInverseBlockDiagonal_(X,Y);
+  }
+  void initializeInverse() {
+    for (int n=0; n!=op_.get_col_size(); ++n) {
+      op_.get_block(n,n)->initializeInverse();
+    }
+  }
+  void computeInverse() {
+    for (int n=0; n!=op_.get_col_size(); ++n) {
+      op_.get_block(n,n)->computeInverse();
+    }
+  }
+
+ private:
+  TreeOperator& op_;
+};
+
+//
+// Nonmember function that flattens the TreeOperator into a 2D array of only
+// its leaf Operators.  Returns the shape (n_leaves_row, n_leaves_col)
+//
+std::pair<int,int>
+collectTreeOperatorLeaves(TreeOperator& tm,
+                          std::vector<std::vector<Teuchos::RCP<Operator>>>& leaves,
+                          std::size_t i, std::size_t j);
+
+} // namespace Impl
+
+}  // namespace Operators
+}  // namespace Amanzi
 
 
-#endif
