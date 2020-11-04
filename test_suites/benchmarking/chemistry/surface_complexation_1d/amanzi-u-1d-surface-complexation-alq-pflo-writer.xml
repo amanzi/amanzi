@@ -30,7 +30,8 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" />
-    <chemistry state="on" engine="pflotran" input_filename="1d-surface-complexation.in" database="surface-complexation.dat"/>
+    <chemistry state="on" engine="pflotran" database="surface-complexation.dat" />
+    <!--chemistry state="on" engine="pflotran" input_filename="1d-surface-complexation.in" database="surface-complexation.dat"/-->
   </process_kernels>
 
   <phases>

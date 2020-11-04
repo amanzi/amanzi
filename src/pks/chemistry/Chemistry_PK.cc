@@ -253,9 +253,8 @@ void Chemistry_PK::Initialize(const Teuchos::Ptr<State>& S)
 
 
 /* ******************************************************************
-* Process names of materials 
+* Initialization should be replaced by the base class function.
 ******************************************************************* */
-
 void Chemistry_PK::InitializeField_(const Teuchos::Ptr<State>& S, std::string fieldname, double default_val)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -270,6 +269,10 @@ void Chemistry_PK::InitializeField_(const Teuchos::Ptr<State>& S, std::string fi
   }
 }
 
+
+/* ******************************************************************
+* Process names of materials 
+******************************************************************* */
 void Chemistry_PK::InitializeMinerals(Teuchos::RCP<Teuchos::ParameterList> plist)
 {
   mineral_names_.clear();

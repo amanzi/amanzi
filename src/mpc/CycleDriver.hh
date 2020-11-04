@@ -53,7 +53,7 @@ class CycleDriver {
   void Finalize();
   void ReportMemory();
   double Advance(double dt);
-  void Visualize(bool force = false);
+  void Visualize(bool force = false, const std::string& tag = "");
   void Observations(bool force = false);
   void WriteCheckpoint(double dt, bool force = false);
   void WriteWalkabout(bool force);
@@ -121,6 +121,18 @@ class CycleDriver {
   // fancy OS
   Teuchos::RCP<VerboseObject> vo_;
 };
+
+
+// non-meber function
+// names of all fields that go into a vis file
+inline
+std::set<std::string> StateVisFields(const State& S)
+{
+  std::set<std::string> fields;
+  for (auto it = S.field_begin(); it != S.field_end(); ++it) 
+    if (it->second->io_vis()) fields.insert(it->first);
+  return fields;
+}
 
 }  // namespace Amanzi
 

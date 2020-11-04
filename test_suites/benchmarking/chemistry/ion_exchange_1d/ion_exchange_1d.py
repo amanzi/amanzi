@@ -167,6 +167,30 @@ if __name__ == "__main__":
         alq = False
 
 
+    # AmanziU + Alquimia + PFloTran chemistry with writer
+    try:
+        input_file = os.path.join("amanzi-u-1d-"+root+"-alq-pflo-writer.xml")
+        path_to_amanzi = "output-u-alq-pflo-writer"
+        run_amanzi_standard.run_amanzi(input_file, 1, ["1d-"+root+"-trim.in",root+".dat",input_file], path_to_amanzi)
+
+        u_amanzi_alquimia_w = [[[] for x in range(len(amanzi_components))] for x in range(len(times))]
+        for i, time in enumerate(times):
+            for j, comp in enumerate(amanzi_components):
+                x_amanzi_alquimia_w, c_amanzi_alquimia_w = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
+                u_amanzi_alquimia_w[i][j] = c_amanzi_alquimia_w
+              
+        v_amanzi_alquimia_w = [[[] for x in range(len(amanzi_sorbed))] for x in range(len(times))]
+        for i, time in enumerate(times):
+            for j, comp in enumerate(amanzi_sorbed):
+                x_amanzi_alquimia_w, c_amanzi_alquimia_w = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
+                v_amanzi_alquimia_w[i][j] = c_amanzi_alquimia_w
+
+        alq_writer = True
+
+    except: 
+        alq_writer = False
+        
+
     # AmanziU + Alquimia + CrunchFlow chemistry
     try:
         input_file = os.path.join("amanzi-u-1d-"+root+"-alq-crunch.xml")
@@ -272,6 +296,13 @@ if __name__ == "__main__":
             ax[j].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],'r-',label='AmanziU+Alq(PFT)',linewidth=LINE_WIDTH)
             bx[j].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],'r-',label='AmanziU+Alq(PFT)',linewidth=LINE_WIDTH)
 
+    if alq_writer:
+        i = 0  # hardwired for time '71'
+        for j, comp in enumerate(components):
+            ax[j].plot(x_amanzi_alquimia_w, u_amanzi_alquimia_w[i][j],'r--',label='AmanziU+Alq(PFT)-W',linewidth=LINE_WIDTH)
+            bx[j].plot(x_amanzi_alquimia_w, v_amanzi_alquimia_w[i][j],'r--',label='AmanziU+Alq(PFT)-W',linewidth=LINE_WIDTH)
+
+            
     if alq_crunch:
         i = 0  # hardwired for time '71'
         for j, comp in enumerate(components):

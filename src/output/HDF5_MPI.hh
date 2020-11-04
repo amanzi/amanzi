@@ -66,6 +66,8 @@ class HDF5_MPI {
   double Time() { return Time_;}
   void setTime(double Time) { Time_ = Time; }
   void setDynMesh(const bool dynamic_mesh) { dynamic_mesh_ = dynamic_mesh; }
+  std::string get_tag() { return tag_; }
+  void set_tag(const std::string& tag) { tag_ = tag; }
 
   Teuchos::XMLObject xmlMeshVisit() { return xmlMeshVisit_; }
 
@@ -79,7 +81,7 @@ class HDF5_MPI {
   // Adds time step attributes to VisIt Xdmf files.  Creates
   // individual Xdmf for the current step.
   // TODO(barker): Consolidate into a singel Xdmf file, after VisIt updates.
-  void createTimestep(const double time, const int iteration);
+  void createTimestep(double time, int iteration, const std::string& tag);
   void endTimestep();
   
   // before writing data to the h5 file, the user must open the
@@ -187,6 +189,7 @@ class HDF5_MPI {
   int ConnLength_;
   int Iteration_;
   double Time_;
+  std::string tag_;
 
   // Mesh information
   std::string cname_;

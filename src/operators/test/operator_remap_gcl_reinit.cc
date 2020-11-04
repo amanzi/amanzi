@@ -517,7 +517,7 @@ void RemapGCLr(const Amanzi::Explicit_TI::method_t& rk_method,
   iolist.get<std::string>("file name base", "plot");
   OutputXDMF io(iolist, mesh1, true, false);
 
-  io.InitializeCycle(t, 1);
+  io.InitializeCycle(t, 1, "");
   io.WriteVector(*p2c(0), "solution", AmanziMesh::CELL);
   io.FinalizeCycle();
 }

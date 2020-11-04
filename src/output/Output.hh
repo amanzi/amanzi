@@ -31,7 +31,7 @@ class Output {
   virtual ~Output() {}
 
   // open and close files
-  virtual void InitializeCycle(double time, int cycle) = 0;
+  virtual void InitializeCycle(double time, int cycle, const std::string& tag) = 0;
   virtual void FinalizeCycle() = 0;
 
   // write data to file
