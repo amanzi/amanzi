@@ -80,7 +80,7 @@ double Coupled_ReactiveTransport_PK_ATS::get_dt()
   dTchem_ = chemistry_pk_->get_dt();
   dTtran_ = tranport_pk_->get_dt();
 
-  if (!chem_step_succeeded && (dTchem_/dTtran_ > 0.99)) {
+  if (!chem_step_succeeded_ && (dTchem_/dTtran_ > 0.99)) {
      dTchem_ *= 0.5;
   }
 
@@ -156,7 +156,7 @@ bool Coupled_ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, b
   Teuchos::OSTab tab = vo_->getOSTab();
 
   bool fail = false;
-  chem_step_succeeded = false;
+  chem_step_succeeded_ = false;
   Key subsurface_domain_key = tranport_pk_subsurface_->domain_name();
   Key overland_domain_key = tranport_pk_overland_->domain_name();
   Key tcc_sub_key = Keys::getKey(subsurface_domain_key, "total_component_concentration");

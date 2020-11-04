@@ -19,7 +19,6 @@ include_directories(${ATS_SOURCE_DIR}/pks/flow/constitutive_relations/sources)
 include_directories(${ATS_SOURCE_DIR}/constitutive_relations/eos)
 
 
-
 set(ats_flow_src_files
   predictor_delegate_bc_flux.cc
   richards_pk.cc

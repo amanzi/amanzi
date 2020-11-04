@@ -146,6 +146,9 @@ int Transport_ATS::FindComponentNumber(const std::string component_name)
   for (int i = 0; i < ncomponents; i++) {
     if (component_names_[i] == component_name) return i;
   }
+  Errors::Message msg("TransportExplicit_PK: component \"");
+  msg << component_name << "\" was requested, but this is not a known component for this PK.";
+  Exceptions::amanzi_throw(msg);
   return -1;
 }
 
