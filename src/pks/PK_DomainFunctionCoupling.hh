@@ -115,8 +115,8 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
     copy_field_in_key_ = slist.get<std::string>("copy_field_in_key", "default");
 
   } else if (submodel_ == "conserved quantity") {
-    field_cons_key_ = slist.get<std::string>("field_conserved_key");
-    copy_field_cons_key_ = slist.get<std::string>("copy_field_conserved_key", "default");
+    field_cons_key_ = slist.get<std::string>("conserved_quantity_key");
+    copy_field_cons_key_ = slist.get<std::string>("copy_conserved_quantity_key", "default");
 
   } else {
     Errors::Message m;
