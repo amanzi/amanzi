@@ -23,8 +23,6 @@ using namespace Amanzi;
 using namespace Amanzi::AmanziSolvers;
 
 inline Teuchos::RCP<Matrix_type> matrix(const Teuchos::RCP<Map_type>& map) {
-  std::cout<<"Create matrix"<<std::endl;
-
     auto A_ = Teuchos::rcp(new Matrix_type(map, map, 3));
 
     double v0[2] = {1.0, -1.0};
@@ -53,7 +51,6 @@ inline Teuchos::RCP<Amanzi::AmanziSolvers::Preconditioner>
 preconditioner(const std::string& name,
                const Teuchos::RCP<Matrix_type>& mat)
 {  
-  std::cout<<"Create preconditioner: "<<name<<std::endl;
   Teuchos::ParameterList plist;
   plist.set<std::string>("preconditioning method", name);
   Teuchos::ParameterList& tmp = plist.sublist(name+" parameters");
@@ -77,8 +74,6 @@ preconditioner(const std::string& name,
 inline Teuchos::RCP<IterativeMethodPCG<Matrix_type,Amanzi::AmanziSolvers::Preconditioner,Vector_type,Map_type>>
     get_solver(const std::string& name, const Teuchos::RCP<Matrix_type>& m)
 {
-  std::cout<<"Get solver: "<<name<<std::endl;
-
   auto pc = preconditioner(name, m);
   
   Teuchos::ParameterList plist;
@@ -113,7 +108,9 @@ TEST(PRECONDITIONERS) {
   for (const auto& prec_name : {
     "identity", 
     "diagonal", 
-    "block ilu"//, 
+    "ifpack2: ILUT",
+    "ifpack2: RILUK",
+    "ifpack2: KSPILUK" 
     //"boomer amg", 
     //"euclid",
     //"ml"

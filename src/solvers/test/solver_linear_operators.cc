@@ -220,6 +220,7 @@ SUITE(SOLVERS)
     }
   };
 
+
   TEST(GMRES_SOLVER_RIGHT_PRECONDITIONER)
   {
     std::cout << "\nChecking GMRES solver with RIGHT preconditioner..."
@@ -263,6 +264,7 @@ SUITE(SOLVERS)
   };
 
 #if 0 
+
   TEST(GMRES_SOLVER_DEFLATION)
   {
     std::cout << "\nChecking GMRES solver with deflated restart..."
@@ -473,6 +475,8 @@ SUITE(SOLVERS)
     }
   };
 
+#endif 
+
   TEST(VERBOSITY_OBJECT)
   {
     std::cout << "\nChecking verbosity object..." << std::endl;
@@ -492,9 +496,9 @@ SUITE(SOLVERS)
 
     // create the pcg operator
     Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
-    AmanziSolvers::LinearOperatorFactory<Matrix, Vector_type, Map_type> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix, Vector_type, Map_type>>
-      solver = factory.Create("gmres", plist, m);
+    AmanziSolvers::IterativeMethodGMRES<Matrix, Matrix, Vector_type, Map_type> gmres; 
+    gmres.set_inverse_parameters(plist);
+    gmres.set_matrices(m,m);
 
     // initial guess
     Vector_type u(map);
@@ -506,7 +510,7 @@ SUITE(SOLVERS)
 
     // solve
     Vector_type v(map);
-    int ierr = solver->applyInverse(u, v);
+    int ierr = gmres.applyInverse(u, v);
     CHECK(ierr > 0);
     v.sync_host();
     {
@@ -514,7 +518,5 @@ SUITE(SOLVERS)
       for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i, 0), 1e-6);
     }
   };
-
-#endif 
 
 } // suite SOLVERS

@@ -277,9 +277,9 @@ createAssembledMethod(const std::string& method_name, Teuchos::ParameterList& in
     inv = Teuchos::rcp(new DirectMethodAmesos2());
   } else if (method_name == "diagonal") {
     inv = Teuchos::rcp(new PreconditionerDiagonal());
-  } else if (method_name == "block ilu") {
-    method_list.set<std::string>("method", "ILU");
-    inv = Teuchos::rcp(new PreconditionerIfpack2());
+  //} else if (method_name == "block ilu") {
+  //  method_list.set<std::string>("method", "ifpack2: ");
+  //  inv = Teuchos::rcp(new PreconditionerIfpack2());
   } else if (Keys::startsWith(method_name, "ifpack2: ")) {
     method_list.set<std::string>("method", method_name.substr(std::string("ifpack2: ").length(),
             method_name.length()));

@@ -41,8 +41,26 @@ class PreconditionerIfpack2 : public Preconditioner {
   virtual void initializeInverse() override {
     Ifpack2::Factory factory;
     A_ = h_; 
-    pc_ = factory.create(name_, A_);
-    pc_->setParameters(plist_.sublist(std::string("ifpack2: ")+name_+" parameters"));
+    std::string method = plist_.get<std::string>("method");
+
+    if(method == "KSPILUK"){
+      method = "RILUK"; 
+      if (!plist_.isParameter("fact: type")){
+        plist_.set<std::string>("fact: type", "KSPILUK");
+      }
+      //if (!plist_.isParameter("trisolver: type")){
+      //  plist_.set<std::string>("trisolver: type", "KSPTRSV");
+      //}
+      if (!plist_.isParameter("fact: iluk level-of-fill")){
+        plist_.set<int>("fact: iluk level-of-fill", 0);
+      }
+      if (!plist_.isParameter("fact: iluk level-of-overlap")){
+        plist_.set<int>("fact: iluk level-of-overlap", 0);
+      }
+    }
+
+    pc_ = factory.create(method, A_);
+    pc_->setParameters(plist_.sublist(std::string("ifpack2: ")+method+" parameters"));
     pc_->initialize();
   }
 
