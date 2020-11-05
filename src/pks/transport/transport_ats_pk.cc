@@ -1606,7 +1606,7 @@ void Transport_ATS::ComputeAddSourceTerms(double tp, double dtp,
       if (c >= ncells_owned) continue;
 
       if (srcs_[m]->name() == "domain coupling" && n0 == 0) {
-        (*conserve_qty_)[component_names_.size()][c] += values[component_names_.size()];
+        (*conserve_qty_)[num_vectors-2][c] += values[num_vectors-2];
       }
 
       for (int k = 0; k < tcc_index.size(); ++k) {

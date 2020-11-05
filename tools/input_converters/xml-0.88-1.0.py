@@ -31,6 +31,13 @@ def checkManning(xml):
             if eval_type.getValue() == 'independent variable':
                 func_reg = eval.getElement("function")
                 for reg in func_reg:
+                    comp_entries = asearch.findall_name(reg, ['components'])
+                    if len(comp_entries) > 1:
+                        # previous iterations of this script were broken...
+                        for entry in comp_entries[1:]:
+                            reg.remove(entry)
+                        
+
                     fixed = False
                     if not fixed:
                         try:
@@ -39,6 +46,7 @@ def checkManning(xml):
                             pass
                         else:
                             reg.pop('component')
+                            assert not any(el.getName() == 'component' for el in reg)
                             reg.append(parameter.ArrayStringParameter('components', ['cell', 'boundary_face']))
                             fixed = True
 
@@ -49,6 +57,7 @@ def checkManning(xml):
                             pass
                         else:
                             reg.pop('components')
+                            assert not any(el.getName() == 'components' for el in reg)
                             reg.append(parameter.ArrayStringParameter('components', ['cell', 'boundary_face']))
                             fixed = True
 
