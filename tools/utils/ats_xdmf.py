@@ -2,7 +2,7 @@
 import sys,os
 import numpy as np
 import h5py
-
+import matplotlib.collections
 
 def valid_data_filename(domain, format=None):
     """The filename for an HDF5 data filename formatter"""
@@ -86,6 +86,9 @@ class VisFile:
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+    def close(self):
         self.d.close()
 
     def loadTimes(self):
@@ -261,7 +264,19 @@ class VisFile:
 
         self.volume = self.get('cell_volume', cycle)
 
-            
+    def loadMeshPolygons(self, cycle=None):
+        """Load a mesh into 2D polygons."""
+        if cycle is None:
+            cycle = self.cycles[0]
+
+        self.loadMesh()
+        mesh_elems = meshXYZ(self.directory, self.mesh_filename, cycle)
+        self.mesh_elem_info = mesh_elems
+        self.polygon_coordinates = meshElemPolygons(*mesh_elems)
+
+    def getMeshPolygons(self, edgecolor='k', cmap='jet', linewidth=1):
+        polygons = matplotlib.collections.PolyCollection(self.polygon_coordinates, edgecolor=edgecolor, cmap=cmap, linewidths=linewidth)
+        return polygons
     
 elem_type = {5:'QUAD',
              8:'PRISM',
@@ -325,6 +340,40 @@ def meshXYZ(directory=".", filename="ats_vis_mesh.h5", key=None):
         raise ValueError('This reader only processes single-element-type meshes.')
     return etype, coords, conn
 
+
+def meshElemPolygons(etype, coords, conn):
+    """Given mesh info that is a bunch of HEXes, make polygons for 2D plotting."""
+    if etype != 'HEX':
+        raise RuntimeError("Only works for Hexs")
+
+    y_mean = np.array([c[1] for c in coords.values()]).mean()
+    
+    coords2 = np.array([[coords[i][0::2] for i in c[1:] if coords[i][1] > y_mean] for c in conn])
+    try:
+        assert coords2.shape[2] == 2
+        assert coords2.shape[1] == 4
+    except AssertionError:
+        print(coords2.shape)
+        for c in conn:
+            if len(c) != 9:
+                print(c)
+                raise RuntimeError("what is a conn?")
+            coords3 = np.array([coords[i][:] for i in c[1:] if coords[i][1] > y_mean])
+            if coords3.shape[0] != 4:
+                print(coords)
+                raise RuntimeError("Unable to squash to 2D")
+
+    # reorder anti-clockwise
+    for i,c in enumerate(coords2):
+        centroid = c.mean(axis=0)
+        def angle(p1):
+            a1 = np.arctan2((p1[1]-centroid[1]),(p1[0]-centroid[0]))
+            return a1
+
+        c2 = np.array(sorted(c,key=angle))
+        coords2[i] = c2
+
+    return coords2
 
 def meshElemCentroids(directory=".", filename="ats_vis_mesh.h5", key=None, round=5):
     """Reads and calculates mesh element centroids.

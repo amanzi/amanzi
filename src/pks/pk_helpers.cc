@@ -25,6 +25,17 @@ getBoundaryFaceFace(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_ID bf)
 }
 
 // -----------------------------------------------------------------------------
+// Given a face ID, get the corresponding boundary face ID (assuming it is a bf)
+// -----------------------------------------------------------------------------
+AmanziMesh::Entity_ID
+getFaceOnBoundaryBoundaryFace(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_ID f)
+{
+  const auto& fmap = mesh.face_map(true);
+  const auto& bfmap = mesh.exterior_face_map(true);
+  return bfmap.LID(fmap.GID(f));
+}
+
+// -----------------------------------------------------------------------------
 // Given a boundary face ID, get the cell internal to that face.
 // -----------------------------------------------------------------------------
 AmanziMesh::Entity_ID
@@ -87,7 +98,7 @@ applyDirichletBCs(const Operators::BCs& bcs, CompositeVector& u)
 // Looks in the following order:
 //  -- face component
 //  -- boundary Dirichlet data
-//  -- boundary_face value (currently not used -- fix me --etc)
+//  -- boundary_face value
 //  -- internal cell
 // -----------------------------------------------------------------------------
 double
@@ -97,6 +108,9 @@ getFaceOnBoundaryValue(AmanziMesh::Entity_ID f, const CompositeVector& u, const 
     return (*u.ViewComponent("face",false))[0][f];
   } else if (bcs.bc_model()[f] == Operators::OPERATOR_BC_DIRICHLET) {
     return bcs.bc_value()[f];
+  // } else if (u.HasComponent("boundary_face")) {
+  //   AmanziMesh::Entity_ID bf = getFaceOnBoundaryBoundaryFace(*u.Mesh(), f);
+  //   return (*u.ViewComponent("boundary_face",false))[0][bf];
   } else {
     auto c = getFaceOnBoundaryInternalCell(*u.Mesh(),f);
     return (*u.ViewComponent("cell",false))[0][c];

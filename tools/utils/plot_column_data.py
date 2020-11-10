@@ -3,6 +3,7 @@
 import sys,os
 from matplotlib import pyplot as plt
 import matplotlib.cm
+import colors
 
 import ats_xdmf, ats_units
 
