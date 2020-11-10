@@ -10,7 +10,6 @@
 #ifndef AMANZI_OBSERVATION_DATA_HH
 #define AMANZI_OBSERVATION_DATA_HH
 
-#include <list>
 #include <map>
 #include <ostream>
 #include <string>

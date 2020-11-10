@@ -144,14 +144,14 @@ void Visualization::WritePartition() {
 // -----------------------------------------------------------------------------
 // Writing to files
 // -----------------------------------------------------------------------------
-void Visualization::CreateFiles() {
+void Visualization::CreateFiles(bool include_io_set) {
   AMANZI_ASSERT(mesh_ != Teuchos::null);
 
   std::string file_format = plist_.get<std::string>("file format", "XDMF");
 
   if (file_format == "XDMF" || file_format == "xdmf") {
-    visualization_output_ = Teuchos::rcp(new OutputXDMF(plist_, mesh_, true, dynamic_mesh_));
-#if ENABLE_Silo    
+    visualization_output_ = Teuchos::rcp(new OutputXDMF(plist_, mesh_, true, dynamic_mesh_, include_io_set));
+#if ENABLE_Silo
   } else if (file_format == "Silo" || file_format == "SILO" || file_format == "silo") {
     visualization_output_ = Teuchos::rcp(new OutputSilo(plist_, mesh_, true, dynamic_mesh_));
 #endif
@@ -172,8 +172,10 @@ void Visualization::CreateTimestep(double time, int cycle, const std::string& ta
   bool success = false;
   time = units_.ConvertTime(time, "s", my_units_, success);
   AMANZI_ASSERT(success);
-  
+
   visualization_output_->InitializeCycle(time, cycle, tag);
+  visualization_output_->WriteAttribute(my_units_, "time unit");
+
   if (write_mesh_exo_ && dynamic_mesh_) {
     std::stringstream mesh_fname;
     mesh_fname << plist_.get<std::string>("file name base") << "_mesh_" << cycle << ".exo";

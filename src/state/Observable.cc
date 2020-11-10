@@ -1,66 +1,70 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-Amanzi
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-License:
-Author: Markus Berndt
-        Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
 
-Observable data object
+/*
 
-------------------------------------------------------------------------- */
+This class calculates the actual observation value.
 
+*/
+
+#include <cmath>
 #include <string>
 #include <algorithm>
 
-#include <boost/filesystem/operations.hpp>
-
+#include "Key.hh"
 #include "errors.hh"
 #include "Mesh.hh"
 #include "State.hh"
 #include "Field.hh"
+#include "FieldEvaluator.hh"
 
 #include "Observable.hh"
 
-
 namespace Amanzi {
+
+namespace Impl {
 
 double ObservableExtensiveSum(double a, double b, double vol) { return a + b; }
 double ObservableIntensiveSum(double a, double b, double vol) { return a + b*vol; }
 double ObservableMin(double a, double b, double vol) { return std::min(a,b); }
 double ObservableMax(double a, double b, double vol) { return std::max(a,b); }
 
+} // namespace Impl
 
-Observable::Observable(Teuchos::ParameterList& plist) :
-    IOEvent(plist),
-    count_(0),
-    write_(false)
+const double Observable::nan = std::numeric_limits<double>::quiet_NaN();
+
+Observable::Observable(Teuchos::ParameterList& plist,
+                       const Teuchos::Ptr<State>& S)
 {
   // process the spec
-  name_ = plist.name();
+  name_ = Keys::cleanPListName(plist.name());
   variable_ = plist.get<std::string>("variable");
   region_ = plist.get<std::string>("region");
-  delimiter_ = plist.get<std::string>("delimiter", ",");
+  location_ = plist.get<std::string>("location name", "cell");
+  num_vectors_ = plist.get<int>("number of vectors", 1);
 
   functional_ = plist.get<std::string>("functional");
   if (functional_ == "observation data: point" ||
       functional_ == "observation data: integral" ||
       functional_ == "observation data: average") {
-    function_ = &ObservableIntensiveSum;
+    function_ = &Impl::ObservableIntensiveSum;
   } else if (functional_ == "observation data: extensive integral") {
-    function_ = &ObservableExtensiveSum;
+    function_ = &Impl::ObservableExtensiveSum;
   } else if (functional_ == "observation data: minimum") {
-    function_ = &ObservableMin;
+    function_ = &Impl::ObservableMin;
   } else if (functional_ == "observation data: maximum") {
-    function_ = &ObservableMax;
+    function_ = &Impl::ObservableMax;
   } else {
     Errors::Message msg;
     msg << "Observable: unrecognized functional " << functional_;
     Exceptions::amanzi_throw(msg);
   }
-  
-  // entity of region
-  location_ = plist.get<std::string>("location name", "cell");
 
   // hack to orient flux to outward-normal along a boundary only
   flux_normalize_ = plist.get<bool>("direction normalized flux", false);
@@ -77,107 +81,70 @@ Observable::Observable(Teuchos::ParameterList& plist) :
               direction[1]/norm, direction[2]/norm));
     } else {
       Errors::Message msg;
-      msg << "Observable: \"direction normalized flux direction\" cannot have dimension " << (int) direction.size() << ", must be 2 or 3.";
+      msg << "Observable: \"direction normalized flux direction\" cannot have dimension "
+          << (int) direction.size() << ", must be 2 or 3.";
       Exceptions::amanzi_throw(msg);
     }
   }
 
-  // write mode
-  interval_ = plist.get<int>("write interval", 0);
-  filenamebase_ = plist.get<std::string>("observation output filename");
-}
+  // ensure the field exists, and require on location with num_vectors
+  S->RequireField(variable_)
+    ->SetMesh(S->GetMesh(Keys::getDomain(variable_)))
+    ->AddComponent(location_, AmanziMesh::entity_kind(location_), num_vectors_);
 
-void Observable::Update(const State& S,
-                        Amanzi::ObservationData::DataQuadruple& data) {
-  Update_(S, data);
-
-  // open the file if I am the writing process and it isn't already open
-  if (write_ && !out_.get()) {
-    std::string safename(name_);
-    std::replace(safename.begin(), safename.end(), ' ', '_');
-    std::replace(safename.begin(), safename.end(), ':', '_');
-    std::stringstream filename;
-    filename << filenamebase_ << "_" << safename;
-    AMANZI_ASSERT(boost::filesystem::portable_file_name(filenamebase_));
-    out_ = Teuchos::rcp(new std::ofstream(filenamebase_.c_str()));
-    WriteHeader_();
-  }
-
-  if (out_.get()) {
-    if (data.is_valid) {
-      *out_ << data.time << delimiter_ << " " << data.value << std::endl;
-    } else {
-      *out_ << data.time << delimiter_ << " " << "NaN" << std::endl;
-    }
-
-    if (count_ % interval_ == 0) out_->flush();
-  }
-  ++count_;
-}
-
-void Observable::Flush() {
-  if (out_.get()) out_->flush();
-}
-
-void Observable::WriteHeader_() {
-  if (out_.get()) {
-    *out_ << "# Observation Name: " << name_ << std::endl;
-    *out_ << "# Region: " << region_ << std::endl;
-    *out_ << "# Functional: " << functional_ << std::endl;
-    *out_ << "# Variable: " << variable_ << std::endl;
-    *out_ << "# ==========================================================="
-          << std::endl;
-    *out_ << "#" << std::endl;
-    out_->precision(16);
-    *out_ << std::scientific;
+  // try to get a field evaluator -- note, this isn't especially well supported
+  // by State
+  if (S->HasFieldEvaluator(variable_)) {
+    has_eval_ = true;
+  } else if (S->FEList().isSublist(variable_)) {
+    has_eval_ = true;
+    S->RequireFieldEvaluator(variable_);
+  } else {
+    has_eval_ = false;
   }
 }
 
-void Observable::Update_(const State& S,
-                         Amanzi::ObservationData::DataQuadruple& data) {
-  data.time = S.time();
+void Observable::Update(const Teuchos::Ptr<State>& S,
+                        std::vector<double>& data, int start_loc)
+{
+  if (has_eval_) {
+    S->GetFieldEvaluator(variable_)->HasFieldChanged(S, "observation");
+  }
 
-  Teuchos::RCP<const Field> field = S.GetField(variable_);
-
+  Teuchos::RCP<const Field> field = S->GetField(variable_);
   if (field->type() == CONSTANT_SCALAR) {
-    // only write on MPI_COMM_WORLD rank 0
-    auto comm = Amanzi::getDefaultComm();
-    write_ = comm->MyPID() == 0;
-
     // scalars, just return the value
-    data.value = *field->GetScalarData();
-    data.is_valid = true;
+    data[start_loc] = *field->GetScalarData();
 
-    
   } else if (field->type() == COMPOSITE_VECTOR_FIELD) {
     // vector field
     Teuchos::RCP<const CompositeVector> vec = field->GetFieldData();
     AMANZI_ASSERT(vec->HasComponent(location_));
 
-    // only write on field's comm's rank 0
-    write_ = vec->Mesh()->get_comm()->MyPID() == 0;
-
     // get the region
-    AmanziMesh::Entity_kind entity = vec->Location(location_);
+    AmanziMesh::Entity_kind entity = AmanziMesh::entity_kind(location_);
     AmanziMesh::Entity_ID_List ids;
     vec->Mesh()->get_set_entities(region_, entity, AmanziMesh::Parallel_type::OWNED, &ids);
 
-    double value(0.);
+    std::vector<double> value;
     if (functional_ == "observation data: minimum") {
-      value = 1.e20;
+      value.resize(num_vectors_ + 1, 1.e20);
     } else if (functional_ == "observation data: maximum") {
-      value = -1.e20;
+      value.resize(num_vectors_ + 1, -1.e20);
+    } else {
+      value.resize(num_vectors_ + 1, 0.);
     }
 
-    double volume(0.);
     const Epetra_MultiVector& subvec = *vec->ViewComponent(location_, false);
 
     if (entity == AmanziMesh::CELL) {
       for (AmanziMesh::Entity_ID_List::const_iterator id=ids.begin();
            id!=ids.end(); ++id) {
         double vol = vec->Mesh()->cell_volume(*id);
-        value = (*function_)(value, subvec[0][*id], vol);
-        volume += vol;
+        for (int i=0; i!=num_vectors_; ++i) {
+          value[i] = (*function_)(value[i], subvec[i][*id], vol);
+        }
+        value[num_vectors_] += vol;
       }
     } else if (entity == AmanziMesh::FACE) {
       for (AmanziMesh::Entity_ID_List::const_iterator id=ids.begin();
@@ -191,7 +158,7 @@ void Observable::Update_(const State& S,
             // normalize to the provided vector
             AmanziGeometry::Point normal = vec->Mesh()->face_normal(*id);
             sign = (normal * (*direction_)) / AmanziGeometry::norm(normal);
-            
+
           } else {
             // normalize to outward normal
             AmanziMesh::Entity_ID_List cells;
@@ -201,19 +168,23 @@ void Observable::Update_(const State& S,
             vec->Mesh()->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
             int i = std::find(faces.begin(), faces.end(), *id) - faces.begin();
             sign = dirs[i];
-            
           }
         }
 
-        value = (*function_)(value, sign*subvec[0][*id], vol);
-        volume += std::abs(vol);
+        for (int i=0; i!=num_vectors_; ++i) {
+          value[i] = (*function_)(value[i], sign*subvec[i][*id], vol);
+        }
+        value[num_vectors_] += std::abs(vol);
       }
     } else if (entity == AmanziMesh::NODE) {
       for (AmanziMesh::Entity_ID_List::const_iterator id=ids.begin();
            id!=ids.end(); ++id) {
         double vol = 1.0;
-        value = (*function_)(value, subvec[0][*id], vol);
-        volume += vol;
+
+        for (int i=0; i!=num_vectors_; ++i) {
+          value[i] = (*function_)(value[i], subvec[i][*id], vol);
+        }
+        value[num_vectors_] += vol;
       }
     }
 
@@ -222,42 +193,44 @@ void Observable::Update_(const State& S,
         functional_ == "observation data: integral" ||
         functional_ == "observation data: average" ||
         functional_ == "observation data: extensive integral") {
-      double local[2], global[2];
-      local[0] = value; local[1] = volume;
-      S.GetMesh()->get_comm()->SumAll(local, global, 2);
+      std::vector<double> global_value(value);
+      S->GetMesh()->get_comm()->SumAll(value.data(), global_value.data(), value.size());
 
-      if (global[1] > 0) {
+      if (global_value[num_vectors_] > 0) {
         if (functional_ == "observation data: point" ||
             functional_ == "observation data: average") {
-          data.value = global[0] / global[1];
-          data.is_valid = true;
+          for (int i=0; i!=num_vectors_; ++i) {
+            value[i] = global_value[i] / global_value[num_vectors_];
+          }
         } else if (functional_ == "observation data: integral" ||
                    functional_ == "observation data: extensive integral") {
-          data.value = global[0];
-          data.is_valid = true;
+          for (int i=0; i!=num_vectors_; ++i) {
+            value[i] = global_value[i];
+          }
         }
       } else {
-        data.value = 0.;
-        data.is_valid = false;
+        for (int i=0; i!=num_vectors_; ++i) {
+          value[i] = nan;
+        }
       }
     } else if (functional_ == "observation data: minimum") {
-      double global;
-      S.GetMesh()->get_comm()->MinAll(&value, &global, 1);
-      data.value = global;
-      data.is_valid = true;
+      std::vector<double> global_value(value);
+      S->GetMesh()->get_comm()->MinAll(value.data(), global_value.data(), value.size()-1);
+      value = global_value;
     } else if (functional_ == "observation data: maximum") {
-      double global;
-      S.GetMesh()->get_comm()->MaxAll(&value, &global, 1);
-      data.value = global;
-      data.is_valid = true;
-    } else {
-      data.value = 0.;
-      data.is_valid = false;
+      std::vector<double> global_value(value);
+      S->GetMesh()->get_comm()->MaxAll(value.data(), global_value.data(), value.size()-1);
+      value = global_value;
     }
+
+    for (int i=0; i!=num_vectors_; ++i) {
+      data[start_loc+i] = value[i];
+    }
+
   } else {
-    write_ = false;
-    data.value = 0.;
-    data.is_valid = false;
+    for (int i=0; i!=num_vectors_; ++i) {
+      data[start_loc+i] = nan;
+    }
   }
 }
 

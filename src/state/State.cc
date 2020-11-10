@@ -300,18 +300,6 @@ State::GetDomainSet(const Key& name) const {
 Teuchos::RCP<FieldEvaluator>
 State::RequireFieldEvaluator(Key key) {
   Teuchos::RCP<FieldEvaluator> evaluator = GetFieldEvaluator_(key);
-  
-  // See if the key is provided by another existing evaluator.
-  if (evaluator == Teuchos::null) {
-    for (evaluator_iterator f_it = field_evaluator_begin();
-         f_it != field_evaluator_end(); ++f_it) {
-      if (f_it->second->ProvidesKey(key)) {
-        evaluator = f_it->second;
-        SetFieldEvaluator(key, evaluator);
-        break;
-      }
-    }
-  }
 
   // Get the evaluator from state's Plist
   if (evaluator == Teuchos::null) {
@@ -440,17 +428,6 @@ State::RequireFieldEvaluator(Key key) {
 Teuchos::RCP<FieldEvaluator>
 State::RequireFieldEvaluator(Key key, Teuchos::ParameterList& plist) {
   Teuchos::RCP<FieldEvaluator> evaluator = GetFieldEvaluator_(key);
-  
-  // See if the key is provided by another existing evaluator.
-  if (evaluator == Teuchos::null) {
-    for (evaluator_iterator f_it = field_evaluator_begin();
-         f_it != field_evaluator_end(); ++f_it) {
-      if (f_it->second->ProvidesKey(key)) {
-        evaluator = f_it->second;
-        SetFieldEvaluator(key, evaluator);
-      }
-    }
-  }
 
   // Create a new evaluator.
   if (evaluator == Teuchos::null) {
@@ -463,7 +440,7 @@ State::RequireFieldEvaluator(Key key, Teuchos::ParameterList& plist) {
 }
 
 
-Teuchos::RCP<FieldEvaluator> State::GetFieldEvaluator(Key key) {
+Teuchos::RCP<FieldEvaluator> State::GetFieldEvaluator(const Key& key) {
   Teuchos::RCP<FieldEvaluator> evaluator = GetFieldEvaluator_(key);
   if (evaluator == Teuchos::null) {
     std::stringstream messagestream;
@@ -475,15 +452,21 @@ Teuchos::RCP<FieldEvaluator> State::GetFieldEvaluator(Key key) {
 };
 
 
-Teuchos::RCP<FieldEvaluator> State::GetFieldEvaluator_(Key key) {
-
-  FieldEvaluatorMap::iterator lb = field_evaluators_.lower_bound(key);
-  if (lb != field_evaluators_.end() && !(field_evaluators_.key_comp()(key, lb->first))) {
-    return lb->second;
+Teuchos::RCP<FieldEvaluator> State::GetFieldEvaluator_(const Key& key) {
+  auto f_it = field_evaluators_.find(key);
+  if (f_it != field_evaluators_.end()) {
+    return f_it->second;;
   } else {
-    return Teuchos::null;
+    // See if the key is provided by another existing evaluator.
+    for (evaluator_iterator f_it = field_evaluator_begin();
+         f_it != field_evaluator_end(); ++f_it) {
+      if (f_it->second->ProvidesKey(key)) {
+        SetFieldEvaluator(key, f_it->second);
+        return f_it->second;
+      }
+    }
   }
-  
+  return Teuchos::null;
 };
 
 

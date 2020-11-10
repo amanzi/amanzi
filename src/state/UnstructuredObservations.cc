@@ -13,9 +13,11 @@
 */
 
 #include <map>
+#include "boost/filesystem/operations.hpp"
 
 #include "UnstructuredObservations.hh"
 
+#include "UniqueHelpers.hh"
 #include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
@@ -25,60 +27,134 @@ namespace Amanzi {
 
 UnstructuredObservations::UnstructuredObservations(
     Teuchos::ParameterList& plist,
-    const Teuchos::RCP<ObservationData>& observation_data)
-    : observation_data_(observation_data)
+    const Teuchos::Ptr<State>& S)
+  : write_(false),
+    count_(0),
+    IOEvent(plist)
 {
-  // interpret paramerter list
-  // loop over the sublists and create an observation for each
-  for (auto it = plist.begin(); it != plist.end(); it++) {
-    if (plist.isSublist(plist.name(it))) {
-      Teuchos::ParameterList sublist = plist.sublist(plist.name(it));
-      Teuchos::RCP<Observable> obs = Teuchos::rcp(new Observable(sublist));
+  // interpret parameter list
+  // loop over the sublists and create an observable for each
+  num_total_ = 0;
 
-      observations_.insert(std::make_pair(sublist.name(), obs));
-    }
-  }
-}
-
-bool UnstructuredObservations::DumpRequested(int cycle, double time) const {
-  for (ObservableMap::const_iterator lcv = observations_.begin();
-       lcv != observations_.end(); ++lcv) {
-    if (lcv->second->DumpRequested(cycle, time)) return true;
-  }
-  return false;
-}
-
-void UnstructuredObservations::MakeObservations(const State& S) {
-  // loop over all observables
-  for (ObservableMap::iterator lcv = observations_.begin();
-       lcv != observations_.end(); ++lcv) {
-
-    if (lcv->second->DumpRequested(S.cycle(), S.time())) {
-      // data structure to store the observation
-      Amanzi::ObservationData::DataQuadruple data_quad;
-
-      // make the observation
-      lcv->second->Update(S, data_quad);
-
-      // push back into observation_data
-      if (observation_data_ != Teuchos::null) {
-        std::vector<Amanzi::ObservationData::DataQuadruple> &od =
-          (*observation_data_)[lcv->first];
-        od.push_back(data_quad);
+  if (plist.isSublist("observed quantities")) {
+    Teuchos::ParameterList& oq_list = plist.sublist("observed quantities");
+    for (auto it : oq_list) {
+      if (oq_list.isSublist(it.first)) {
+        auto obs = Teuchos::rcp(new Observable(oq_list.sublist(it.first), S));
+        observables_.emplace_back(obs);
+        num_total_ += obs->get_num_vectors();
+      } else {
+        Errors::Message msg;
+        msg << "Observation list \"observed quantities\" should contain only sublists.";
+        Exceptions::amanzi_throw(msg);
       }
     }
+
+    if (observables_.size() == 0) {
+      Errors::Message msg;
+      msg << "Observation list \"observed quantities\" is empty.";
+      Exceptions::amanzi_throw(msg);
+    }
+
+  } else {
+    // old style, single list/single entry
+    auto obs = Teuchos::rcp(new Observable(plist, S));
+    observables_.emplace_back(obs);
+    num_total_ += obs->get_num_vectors();
+  }
+
+  // file format
+  filename_ = plist.get<std::string>("observation output filename");
+  delimiter_ = plist.get<std::string>("delimiter", ", ");
+  interval_ = plist.get<int>("write interval", 1);
+  time_unit_ = plist.get<std::string>("time units", "s");
+  Utils::Units unit;
+  bool flag = false;
+  time_unit_factor_ = unit.ConvertTime(1., "s", time_unit_, flag);
+
+  std::string domain = plist.get<std::string>("domain", "none");
+  if (domain == "none") {
+    // write on MPI_COMM_WORLD rank 0
+    if (getDefaultComm()->MyPID() == 0) {
+      write_ = true;
+      Init_();
+    }
+  } else {
+    if (S->GetMesh(domain)->get_comm()->MyPID() == 0) {
+      write_ = true;
+      Init_();
+    }
   }
 }
 
-void UnstructuredObservations::RegisterWithTimeStepManager(
-    const Teuchos::Ptr<TimeStepManager>& tsm) {
 
-  // loop over all observables
-  for (ObservableMap::iterator lcv = observations_.begin();
-       lcv != observations_.end(); ++lcv) {
-    // register
-    lcv->second->RegisterWithTimeStepManager(tsm);
+void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
+{
+  if (DumpRequested(S->cycle(), S->time())) {
+    std::vector<double> observation(num_total_, Observable::nan);
+
+    // loop over all observables
+    int loc_start = 0;
+    for (auto& obs : observables_) {
+      obs->Update(S, observation, loc_start);
+      loc_start += obs->get_num_vectors();
+    }
+
+    // write
+    if (write_) Write_(S->time() * time_unit_factor_, observation);
   }
+}
+
+
+//
+// Note this should only be called on one rank
+//
+// Note also that this (along with Write_) may become a separate class for
+// different file types (e.g. text vs netcdf)
+//
+void UnstructuredObservations::Init_()
+{
+  if (boost::filesystem::portable_file_name(filename_)) {
+    fid_ = std::make_unique<std::ofstream>(filename_.c_str());
+
+    *fid_ << "# Observation File: " << filename_ << " column names:" << std::endl
+          << "# -----------------------------------------------------------------------------" << std::endl
+          << "# Observation Name: time [" << time_unit_ << "]" << std::endl;
+
+    for (const auto& obs : observables_) {
+      *fid_ << "# -----------------------------------------------------------------------------" << std::endl
+            << "# Observation Name: " << obs->get_name() << std::endl
+            << "# Region: " << obs->get_region() << std::endl
+            << "# Functional: " << obs->get_functional() << std::endl
+            << "# Variable: " << obs->get_variable() << std::endl
+            << "# Number of Vectors: " << obs->get_num_vectors() << std::endl;
+    }
+    *fid_ << "# =============================================================================" << std::endl
+          << std::scientific;
+    fid_->precision(16);
+  } else {
+    Errors::Message msg;
+    msg << "Invalid filename for observation: \"" << filename_ << "\"";
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
+
+void UnstructuredObservations::Write_(double time, const std::vector<double>& obs)
+{
+  if (fid_.get()) {
+    *fid_ << time;
+    for (auto val : obs) {
+      if (val == Observable::nan) {
+        *fid_ << delimiter_ << "NaN";
+      } else {
+        *fid_ << delimiter_ << val;
+      }
+    }
+    *fid_ << std::endl;
+  }
+  ++count_;
+  if (count_ % interval_ == 0) fid_->flush();
 }
 
 
@@ -86,10 +162,7 @@ void UnstructuredObservations::RegisterWithTimeStepManager(
 // destructor SHOULD flush (as in fclose), but maybe it doesn't?  Better safe
 // than sorry...
 void UnstructuredObservations::Flush() {
-  for (ObservableMap::const_iterator lcv = observations_.begin();
-       lcv != observations_.end(); ++lcv) {
-    lcv->second->Flush();
-  }
+  if (fid_.get()) fid_->flush();
 }
 
 }  // namespace Amanzi

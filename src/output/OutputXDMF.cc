@@ -19,9 +19,11 @@ namespace Amanzi {
 OutputXDMF::OutputXDMF(Teuchos::ParameterList& plist,
                        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                        bool is_vis,
-                       bool is_dynamic)
+                       bool is_dynamic,
+                       bool include_io_set)
   : is_vis_(is_vis),
     is_dynamic_(is_dynamic),
+    include_io_set_(include_io_set),
     mesh_(mesh),
     mesh_written_(false)
 {
@@ -136,14 +138,14 @@ OutputXDMF::ReadAttribute(std::string& val, const std::string& name) const {
 void
 OutputXDMF::Init_(Teuchos::ParameterList& plist) {
   // create and set up the HDF5_MPI object
-  io_ = Teuchos::rcp(new HDF5_MPI(mesh_->get_comm()));
+  io_ = Teuchos::rcp(new HDF5_MPI(mesh_->get_comm(), include_io_set_));
   io_->setTrackXdmf(is_vis_);
   io_->setDynMesh(is_dynamic_);
-  
+
   std::string filenamebase = plist.get<std::string>("file name base", "amanzi_vis");
   io_->createMeshFile(mesh_, filenamebase+"_mesh");
   io_->createDataFile(filenamebase+"_data");
 }
-  
+
 
 } // namespace Amanzi
