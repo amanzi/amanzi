@@ -63,6 +63,8 @@ endif()
 
 set(hypre_install_opt "-DHYPRE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}")
 
+string(REPLACE ";" "\\\;" hypre_module_opt "${CMAKE_MODULE_PATH}")
+
 
 # --- Set the name of the patch
 set(HYPRE_patch_file hypre-cmake.patch
@@ -109,6 +111,7 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
                                   -DMPI_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
                                   -DHYPRE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                                   -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+                    CMAKE_CACHE_ARGS -DCMAKE_MODULE_PATH:STRING=${hypre_module_opt}
                     # -- Build
                     BINARY_DIR       ${HYPRE_build_dir}        # Build directory 
                     BUILD_COMMAND    ${MAKE} 
