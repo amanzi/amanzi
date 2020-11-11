@@ -28,8 +28,11 @@ CarbonDecomposeRateEvaluator::CarbonDecomposeRateEvaluator(Teuchos::ParameterLis
   pres_key_ = Keys::getKey(domain_ss.str(),"pressure");
   dependencies_.insert(pres_key_);
   
-  //sat_key_ = Keys::getKey(domain_ss.str(),"saturation_gas");
-  //dependencies_.insert(sat_key_);
+  por_key_ = Keys::getKey(domain_ss.str(),"porosity");
+  dependencies_.insert(por_key_);
+
+  cv_key_ = Keys::getKey(domain_ss.str(),"cell_volume");
+  dependencies_.insert(cv_key_);
   
   //trans_width_ =  plist_.get<double>("transition width [K]", 0.2);
   q10_ =  plist_.get<double>("Q10 [-]", 2.0);
@@ -41,6 +44,8 @@ CarbonDecomposeRateEvaluator::CarbonDecomposeRateEvaluator(const CarbonDecompose
   : SecondaryVariableFieldEvaluator(other),
     temp_key_(other.temp_key_),
     pres_key_(other.pres_key_),
+    por_key_(other.por_key_),
+    cv_key_(other.cv_key_),
     q10_(other.q10_)
 {}
   
@@ -59,6 +64,8 @@ CarbonDecomposeRateEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
   const auto& temp_c = *S->GetFieldData(temp_key_)->ViewComponent("cell", false);
   const auto& pres_c = *S->GetFieldData(pres_key_)->ViewComponent("cell", false);
+  const auto& por_c = *S->GetFieldData(por_key_)->ViewComponent("cell", false);
+  const auto& vol_c = *S->GetFieldData(cv_key_)->ViewComponent("cell", false);
 
   std::string domain_ss = Keys::getDomain(temp_key_);
   const auto& top_z_centroid = S->GetMesh(domain_ss)->face_centroid(0);
@@ -84,7 +91,8 @@ CarbonDecomposeRateEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
       double f_pres_temp = Func_TempPres(temp_c[0][i],pres_c[0][i]);
 
-      col_sum += f_temp * f_depth * f_pres_temp * dz;
+      double soil = (1-por_c[0][i]) * vol_c[0][i];
+      col_sum += (f_temp * f_depth * f_pres_temp * dz) * soil;
     }
 
   }

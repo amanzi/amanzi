@@ -1,15 +1,15 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
-  The carbon decompostion rate evaluator gets the subsurface temperature and pressure.
-  Computes(integrates) CO2 decomposition rate.
-  This is SecondaryVariablesFieldEvaluator and depends on the subsurface temperature and pressure, 
+  The column water content evaluator gets the subsurface water content.
+  This computes the water (frozen + unfrozen) content in the column and puts on the surface cell.
+  This is SecondaryVariablesFieldEvaluator and depends on the subsurface water content, 
 
   Authors: Ahmad Jan (jana@ornl.gov)
 */
 
-#ifndef AMANZI_FLOWRELATIONS_CARBONDECOM_EVALUATOR_
-#define AMANZI_FLOWRELATIONS_CARBONDECOM_EVALUATOR_
+#ifndef AMANZI_FLOWRELATIONS_COLWATERCONTENT_EVALUATOR_
+#define AMANZI_FLOWRELATIONS_COLWATERCONTENT_EVALUATOR_
 
 #include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
@@ -17,12 +17,12 @@
 namespace Amanzi {
 namespace Flow {
 
-class CarbonDecomposeRateEvaluator : public SecondaryVariableFieldEvaluator {
+class ColumnWaterContentEvaluator : public SecondaryVariableFieldEvaluator {
 
 public:
   explicit
-  CarbonDecomposeRateEvaluator(Teuchos::ParameterList& plist);
-  CarbonDecomposeRateEvaluator(const CarbonDecomposeRateEvaluator& other);
+  ColumnWaterContentEvaluator(Teuchos::ParameterList& plist);
+  ColumnWaterContentEvaluator(const ColumnWaterContentEvaluator& other);
   Teuchos::RCP<FieldEvaluator> Clone() const;
   
 protected:
@@ -36,14 +36,13 @@ protected:
   virtual bool HasFieldChanged(const Teuchos::Ptr<State>& S, Key request);
   
   virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
-  double  Func_TempPres(double temp, double pres);
+
 
   bool updated_once_;
-  Key temp_key_, pres_key_, sat_key_, por_key_, cv_key_;
+  Key  wc_key_;
   Key domain_;
-  double q10_;
 private:
-  static Utils::RegisteredFactory<FieldEvaluator,CarbonDecomposeRateEvaluator> reg_;
+  static Utils::RegisteredFactory<FieldEvaluator,ColumnWaterContentEvaluator> reg_;
 
 };
   
