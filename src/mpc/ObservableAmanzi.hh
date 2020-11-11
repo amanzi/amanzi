@@ -60,7 +60,7 @@ class Observable : public IOEvent {
     assert(false);
   }
 
-  virtual int ComputeRegionSize() {return region_size_; }
+  virtual int ComputeRegionSize() { return region_size_; }
 
  public:
   std::string variable_;
