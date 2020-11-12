@@ -78,6 +78,8 @@ class UnstructuredObservations : public IOEvent {
   std::string delimiter_;
   int interval_;
   int count_;
+  bool time_integrated_;
+  std::vector<double> integrated_observation_;
 
   double time_unit_factor_;
   std::string time_unit_;

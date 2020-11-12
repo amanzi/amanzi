@@ -43,30 +43,30 @@ to disk by the UnstructuredObservation_ object.
     * `"functional`" ``[string]`` the type of function to apply to the variable
       on the region.  One of:
 
-      - `"observation data: point`" returns the value of the field quantity at a
+      - `"point`" returns the value of the field quantity at a
         point.  The region and location name should result in a single entity being
         selected.
 
-      - `"observation data: average`" returns the volume-weighted average of
+      - `"average`" returns the volume-weighted average of
         the field across all entities in the region selected.  This is likely
         what you want for intensive state variables such as `"temperature`" or
         `"saturation_liquid`".
 
-      - `"observation data: integral`" returns the volume-weighted sum of a
+      - `"integral`" returns the volume-weighted sum of a
         variable over the region.  This should be used for example on intensive
         sources, for instance `"surface-precipitation`", to get the total
         source/sink.
 
-      - `"observation data: extensive integral`" returns the sum of an variable
+      - `"extensive integral`" returns the sum of an variable
         over the region.  This should be used for extensive quantities such as
         `"water_content`" or `"energy`" which already include the volume in
         their value.
 
-      - `"observation data: minimum`" returns the min value over the region
+      - `"minimum`" returns the min value over the region
 
-      - `"observation data: maximum`" returns the max value over the region
+      - `"maximum`" returns the max value over the region
 
-    * `"direction normalized flux`" ``[bool]`` **optional** For flux observations,
+    * `"direction normalized flux`" ``[bool]`` **false** For flux observations,
       dots the face-normal flux with a vector to ensure fluxes are integrated
       pointing the same direction.
 
@@ -76,6 +76,9 @@ to disk by the UnstructuredObservation_ object.
       boundary faces and that the default vector is the outward normal direction
       for each face.
 
+    * `"time integrated`" ``[bool]`` **false** If true, observe the
+      time-integral, observing on all cycles and accumulating the
+      backwards-Euler product of dt times the observable at the new time.
 
 */
 
@@ -107,6 +110,7 @@ class Observable {
   const std::string& get_region() { return region_; }
   const std::string& get_location() { return location_; }
   const std::string& get_functional() { return functional_; }
+  bool is_time_integrated() { return time_integrated_; }
   int get_num_vectors() { return num_vectors_; }
 
   void Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int start_loc);
@@ -122,6 +126,8 @@ class Observable {
   std::string location_;
   int num_vectors_;
   bool has_eval_;
+  bool time_integrated_;
+  double old_time_;
 
   double (*function_)(double a, double b, double vol);
 };

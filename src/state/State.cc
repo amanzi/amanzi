@@ -201,6 +201,11 @@ void State::AliasMesh(const Key& target, const Key& alias) {
   Teuchos::RCP<AmanziMesh::Mesh> mesh = GetMesh_(target);
   RegisterMesh(alias, mesh, deformable);
   mesh_aliases_[target] = alias;
+
+  if (GetMesh_(target+"_3d") != Teuchos::null) {
+    RegisterMesh(alias+"_3d", GetMesh_(target+"_3d"), deformable);
+    mesh_aliases_[target+"_3d"] = alias+"_3d";
+  }
 };
 
 bool State::IsAliasedMesh(const Key& key) const {

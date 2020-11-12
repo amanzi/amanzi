@@ -30,12 +30,12 @@ UnstructuredObservations::UnstructuredObservations(
     const Teuchos::Ptr<State>& S)
   : write_(false),
     count_(0),
+    time_integrated_(false),
+    num_total_(0),
     IOEvent(plist)
 {
   // interpret parameter list
   // loop over the sublists and create an observable for each
-  num_total_ = 0;
-
   if (plist.isSublist("observed quantities")) {
     Teuchos::ParameterList& oq_list = plist.sublist("observed quantities");
     for (auto it : oq_list) {
@@ -43,6 +43,7 @@ UnstructuredObservations::UnstructuredObservations(
         auto obs = Teuchos::rcp(new Observable(oq_list.sublist(it.first), S));
         observables_.emplace_back(obs);
         num_total_ += obs->get_num_vectors();
+        time_integrated_ |= obs->is_time_integrated();
       } else {
         Errors::Message msg;
         msg << "Observation list \"observed quantities\" should contain only sublists.";
@@ -61,7 +62,10 @@ UnstructuredObservations::UnstructuredObservations(
     auto obs = Teuchos::rcp(new Observable(plist, S));
     observables_.emplace_back(obs);
     num_total_ += obs->get_num_vectors();
+    time_integrated_ |= obs->is_time_integrated();
   }
+
+  integrated_observation_.resize(num_total_);
 
   // file format
   filename_ = plist.get<std::string>("observation output filename");
@@ -90,7 +94,40 @@ UnstructuredObservations::UnstructuredObservations(
 
 void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
 {
-  if (DumpRequested(S->cycle(), S->time())) {
+  bool dump_requested = DumpRequested(S->cycle(), S->time());
+  if (time_integrated_) {
+    if (dump_requested) {
+      std::vector<double> observation(num_total_, Observable::nan);
+      int loc_start = 0;
+      for (auto& obs : observables_) {
+        obs->Update(S, observation, loc_start);
+        if (obs->is_time_integrated()) {
+          for (int i=0; i!=obs->get_num_vectors(); ++i) {
+            observation[loc_start + i] += integrated_observation_[loc_start+i];
+            integrated_observation_[loc_start+i] = 0.;
+          }
+        }
+        loc_start += obs->get_num_vectors();
+      }
+
+      // write
+      if (write_) Write_(S->time() * time_unit_factor_, observation);
+    } else {
+      std::vector<double> observation(num_total_, Observable::nan);
+
+      // loop over all observables
+      int loc_start = 0;
+      for (auto& obs : observables_) {
+        if (obs->is_time_integrated()) {
+          obs->Update(S, observation, loc_start);
+          for (int i=0; i!=obs->get_num_vectors(); ++i) {
+            integrated_observation_[loc_start+i] += observation[loc_start + i];
+          }
+        }
+        loc_start += obs->get_num_vectors();
+      }
+    }
+  } else if (dump_requested) {
     std::vector<double> observation(num_total_, Observable::nan);
 
     // loop over all observables
@@ -131,7 +168,7 @@ void UnstructuredObservations::Init_()
     }
     *fid_ << "# =============================================================================" << std::endl
           << std::scientific;
-    fid_->precision(16);
+    fid_->precision(12);
   } else {
     Errors::Message msg;
     msg << "Invalid filename for observation: \"" << filename_ << "\"";
@@ -144,13 +181,7 @@ void UnstructuredObservations::Write_(double time, const std::vector<double>& ob
 {
   if (fid_.get()) {
     *fid_ << time;
-    for (auto val : obs) {
-      if (val == Observable::nan) {
-        *fid_ << delimiter_ << "NaN";
-      } else {
-        *fid_ << delimiter_ << val;
-      }
-    }
+    for (auto val : obs) *fid_ << delimiter_ << val;
     *fid_ << std::endl;
   }
   ++count_;

@@ -33,8 +33,10 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 // Constructor
 // -----------------------------------------------------------------------------
-Visualization::Visualization (Teuchos::ParameterList& plist) :
-    IOEvent(plist) {
+Visualization::Visualization (Teuchos::ParameterList& plist)
+  : IOEvent(plist),
+    time_unit_written_(false)
+{
   ReadParameters_();
 
   // set the line prefix for output
@@ -53,7 +55,11 @@ Visualization::Visualization (Teuchos::ParameterList& plist) :
 // -----------------------------------------------------------------------------
 // Constructor for a disabled Vis.
 // -----------------------------------------------------------------------------
-Visualization::Visualization () : IOEvent(), my_units_("s") {}
+Visualization::Visualization ()
+  : IOEvent(),
+    my_units_("y"),
+    time_unit_written_(false)
+{}
 
 
 // -----------------------------------------------------------------------------
@@ -174,7 +180,10 @@ void Visualization::CreateTimestep(double time, int cycle, const std::string& ta
   AMANZI_ASSERT(success);
 
   visualization_output_->InitializeCycle(time, cycle, tag);
-  visualization_output_->WriteAttribute(my_units_, "time unit");
+  if (!time_unit_written_) {
+    visualization_output_->WriteAttribute(my_units_, "time unit");
+    time_unit_written_ = true;
+  }
 
   if (write_mesh_exo_ && dynamic_mesh_) {
     std::stringstream mesh_fname;

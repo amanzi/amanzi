@@ -105,6 +105,7 @@ class Visualization : public IOEvent {
 
   std::string my_units_;
   std::string name_, tag_;
+  bool time_unit_written_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<Output> visualization_output_;
