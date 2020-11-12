@@ -37,8 +37,7 @@ class MPCSurface : public StrongMPC<PK_PhysicalBDF_Default> {
                 const Teuchos::RCP<State>& S,
                 const Teuchos::RCP<TreeVector>& soln) :
       PK(pk_tree_list, global_list, S, soln),
-      StrongMPC<PK_PhysicalBDF_Default>(pk_tree_list, global_list, S, soln),
-      update_pcs_(0)
+      StrongMPC<PK_PhysicalBDF_Default>(pk_tree_list, global_list, S, soln)
   {
     dump_ = plist_->get<bool>("dump preconditioner", false);
 
@@ -95,13 +94,13 @@ class MPCSurface : public StrongMPC<PK_PhysicalBDF_Default> {
   // dE / dp off-diagonal block
   Teuchos::RCP<Operators::Operator> dE_dp_block_;
   // -- d ( div hq ) / dp terms
-  Teuchos::RCP<Operators::PDE_Diffusion> ddivhq_dp_;
+  //Teuchos::RCP<Operators::PDE_Diffusion> ddivhq_dp_;
   // -- d ( dE/dt ) / dp terms
   Teuchos::RCP<Operators::PDE_Accumulation> dE_dp_;
 
   // dE / dT on-diagonal block additional terms that use q info
   // -- d ( div hq ) / dT terms
-  Teuchos::RCP<Operators::PDE_Diffusion> ddivhq_dT_;
+  //Teuchos::RCP<Operators::PDE_Diffusion> ddivhq_dT_;
 
   Key domain_;
   Key temp_key_;
@@ -122,7 +121,6 @@ class MPCSurface : public StrongMPC<PK_PhysicalBDF_Default> {
 
   // cruft for easier global debugging
   bool dump_;
-  int update_pcs_;
   Teuchos::RCP<Debugger> db_;
 
 private:
