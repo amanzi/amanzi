@@ -39,8 +39,8 @@ namespace Amanzi {
 
 class HDF5_MPI {
  public:
-  HDF5_MPI(const Comm_ptr_type &comm);
-  HDF5_MPI(const Comm_ptr_type &comm, std::string dataFilename);
+  HDF5_MPI(const Comm_ptr_type &comm, bool include_io_set=true);
+  HDF5_MPI(const Comm_ptr_type &comm, std::string dataFilename, bool include_io_set=true);
   ~HDF5_MPI(void);
   
   bool TrackXdmf() { return TrackXdmf_; }
@@ -202,6 +202,7 @@ class HDF5_MPI {
 
   bool dynamic_mesh_, mesh_written_;
   int static_mesh_cycle_;
+  bool include_io_set_;
 };
   
 } // close namespace HDF5
