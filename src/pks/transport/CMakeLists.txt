@@ -84,7 +84,8 @@ add_amanzi_library(transport
                    LINK_LIBS geometry operators mesh error_handling state data_structures 
                              ${geochem_lib} chemistry_pk time_integration ${Epetra_LIBRARIES})
 
-
+# note that these tests test the Amanzi transport PK                           
+if (ENABLE_AmanziPhysicsModule)
 if ( BUILD_TESTS )
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
@@ -192,4 +193,4 @@ if ( BUILD_TESTS )
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
 endif()
-
+endif()
