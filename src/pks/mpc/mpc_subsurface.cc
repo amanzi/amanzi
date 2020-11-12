@@ -30,11 +30,19 @@ with freezing.
 
 namespace Amanzi {
 
-// -- Initialize owned (dependent) variables.
-void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S)
+MPCSubsurface::MPCSubsurface(Teuchos::ParameterList& pk_tree_list,
+                             const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                             const Teuchos::RCP<State>& S,
+                             const Teuchos::RCP<TreeVector>& soln) :
+  PK(pk_tree_list, global_list, S, soln),
+  StrongMPC<PK_PhysicalBDF_Default>(pk_tree_list, global_list, S, soln),
+  update_pcs_(0)
 {
-  // set up keys
-  Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
+  dump_ = plist_->get<bool>("dump preconditioner", false);
+
+  auto pk_order = plist_->get<Teuchos::Array<std::string>>("PKs order");
+  global_list->sublist("PKs").sublist(pk_order[0]).set("scale preconditioner to pressure", false);
+
   if (plist_->isParameter("domain name")) {
     domain_name_ = plist_->get<std::string>("domain name");
   } else {
@@ -56,6 +64,14 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S)
   mass_flux_key_ = Keys::readKey(*plist_, domain_name_, "mass flux", "mass_flux");
   mass_flux_dir_key_ = Keys::readKey(*plist_, domain_name_, "mass flux direction", "mass_flux_direction");
   rho_key_ = Keys::readKey(*plist_, domain_name_, "mass density liquid", "mass_density_liquid");
+
+}
+
+// -- Initialize owned (dependent) variables.
+void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S)
+{
+  // set up keys
+  Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
 
   // supress energy's vision of advective terms as we can do better
   if (!plist_->get<bool>("supress Jacobian terms: d div hq / dp,T", false)) {

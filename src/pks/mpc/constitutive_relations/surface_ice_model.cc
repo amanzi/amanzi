@@ -25,10 +25,13 @@
 namespace Amanzi {
 
 void
-SurfaceIceModel::InitializeModel(const Teuchos::Ptr<State>& S, Teuchos::ParameterList& plist) {
-  M_ = 0.0180153;
+SurfaceIceModel::InitializeModel(const Teuchos::Ptr<State>& S, Teuchos::ParameterList& plist)
+{
+  // NOTE: intentially using liquid instead of ice on the surface!
+  ice_dens_key_ = Keys::readKey(plist, "surface", "molar density ice", "molar_density_liquid");
 
   // these are not yet initialized
+  M_ = 0.0180153;
   gz_ = -1.e12;
   p_atm_ = -1.e12;
 
@@ -41,7 +44,7 @@ SurfaceIceModel::InitializeModel(const Teuchos::Ptr<State>& S, Teuchos::Paramete
   liquid_eos_ = eos_liquid_me->get_EOS();
 
   // -- ice EOS
-  me = S->GetFieldEvaluator("surface-molar_density_ice");
+  me = S->GetFieldEvaluator(ice_dens_key_);
   Teuchos::RCP<Relations::EOSEvaluator> eos_ice_me =
       Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(me);
   AMANZI_ASSERT(eos_ice_me != Teuchos::null);

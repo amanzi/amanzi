@@ -164,16 +164,7 @@ class MPCSubsurface : public StrongMPC<PK_PhysicalBDF_Default> {
   MPCSubsurface(Teuchos::ParameterList& pk_tree_list,
                 const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                 const Teuchos::RCP<State>& S,
-                const Teuchos::RCP<TreeVector>& soln) :
-      PK(pk_tree_list, global_list, S, soln),
-      StrongMPC<PK_PhysicalBDF_Default>(pk_tree_list, global_list, S, soln),
-      update_pcs_(0)
-  {
-    dump_ = plist_->get<bool>("dump preconditioner", false);
-
-    auto pk_order = plist_->get<Teuchos::Array<std::string>>("PKs order");
-    global_list->sublist("PKs").sublist(pk_order[0]).set("scale preconditioner to pressure", false);
-  }
+                const Teuchos::RCP<TreeVector>& soln);
 
   // -- Initialize owned (dependent) variables.
   virtual void Setup(const Teuchos::Ptr<State>& S);

@@ -28,7 +28,7 @@ MPCPermafrost::MPCPermafrost(Teuchos::ParameterList& pk_tree,
   // tweak the sub-PK parameter lists
   Teuchos::Array<std::string> names = plist_->get<Teuchos::Array<std::string> >("PKs order");
 
-  domain_subsurf_ = plist_->get<std::string>("domain name", "domain");
+  domain_subsurf_ = domain_name_;
   if (domain_subsurf_ == "domain" || domain_subsurf_ == "") {
     domain_surf_ = plist_->get<std::string>("surface domain name", "surface");
   } else {
@@ -45,17 +45,16 @@ MPCPermafrost::MPCPermafrost(Teuchos::ParameterList& pk_tree,
   S->FEList().sublist(mass_exchange_key_).set("field evaluator type", "primary variable");
   S->FEList().sublist(energy_exchange_key_).set("field evaluator type", "primary variable");
 
-  surf_temp_key_ = Keys::readKey(*plist_, domain_surf_, "temperature", "temperature");
-  surf_pres_key_ = Keys::readKey(*plist_, domain_surf_, "pressure", "pressure");
-  surf_e_key_ = Keys::readKey(*plist_, domain_surf_, "energy", "energy");
-  surf_wc_key_ = Keys::readKey(*plist_, domain_surf_, "water content", "water_content");
+  surf_temp_key_ = Keys::readKey(*plist_, domain_surf_, "surface temperature", "temperature");
+  surf_pres_key_ = Keys::readKey(*plist_, domain_surf_, "surface pressure", "pressure");
+  surf_e_key_ = Keys::readKey(*plist_, domain_surf_, "surface energy", "energy");
+  surf_wc_key_ = Keys::readKey(*plist_, domain_surf_, "surface water content", "water_content");
 
   surf_kr_key_ = Keys::readKey(*plist_, domain_surf_, "overland conductivity", "overland_conductivity");
   surf_kr_uw_key_ = Keys::readKey(*plist_, domain_surf_, "upwind overland conductivity", "upwind_overland_conductivity");
-  surf_potential_key_ = Keys::readKey(*plist_, domain_surf_, "potential", "pres_elev");
+  surf_potential_key_ = Keys::readKey(*plist_, domain_surf_, "surface potential", "pres_elev");
   surf_pd_bar_key_ = Keys::readKey(*plist_, domain_surf_, "ponded depth, negative", "ponded_depth_bar");
-  surf_mass_flux_key_ = Keys::readKey(*plist_, domain_surf_, "mass flux", "mass_flux");
-
+  surf_mass_flux_key_ = Keys::readKey(*plist_, domain_surf_, "surface mass flux", "mass_flux");
 }
 
 
@@ -168,7 +167,7 @@ MPCPermafrost::Setup(const Teuchos::Ptr<State>& S) {
       if (!plist_->get<bool>("supress Jacobian terms: d div surface q / dT", false)) {
         // set up the operator
         AMANZI_ASSERT(dWC_dT_block_ != Teuchos::null);
-        Teuchos::ParameterList divq_plist(pks_list_->sublist(names[0]).sublist("diffusion preconditioner"));
+        Teuchos::ParameterList divq_plist(pks_list_->sublist(names[2]).sublist("diffusion preconditioner"));
         divq_plist.set("include Newton correction", true);
         divq_plist.set("exclude primary terms", true);
         divq_plist.set("surface operator", true);
@@ -211,16 +210,19 @@ MPCPermafrost::Setup(const Teuchos::Ptr<State>& S) {
   }
 
   // create the surf EWC delegate
-  if (plist_->isSublist("surface ewc delegate")) {
-    Teuchos::RCP<Teuchos::ParameterList> surf_ewc_list = Teuchos::sublist(plist_, "surface ewc delegate");
-    surf_ewc_list->set("PK name", name_);
-    surf_ewc_list->set("domain name", domain_surf_);
-    surf_ewc_ = Teuchos::rcp(new MPCDelegateEWCSurface(*surf_ewc_list));
+  //
+  // WORK IN PROGRESS
+  //
+  // if (plist_->isSublist("surface ewc delegate")) {
+  //   Teuchos::RCP<Teuchos::ParameterList> surf_ewc_list = Teuchos::sublist(plist_, "surface ewc delegate");
+  //   surf_ewc_list->set("PK name", name_);
+  //   surf_ewc_list->set("domain name", domain_surf_);
+  //   surf_ewc_ = Teuchos::rcp(new MPCDelegateEWCSurface(*surf_ewc_list));
 
-    Teuchos::RCP<EWCModelBase> model = Teuchos::rcp(new SurfaceIceModel());
-    surf_ewc_->set_model(model);
-    surf_ewc_->setup(S);
-  }
+  //   Teuchos::RCP<EWCModelBase> model = Teuchos::rcp(new SurfaceIceModel());
+  //   surf_ewc_->set_model(model);
+  //   surf_ewc_->setup(S);
+  // }
 }
 
 void
