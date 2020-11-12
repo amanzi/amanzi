@@ -171,7 +171,7 @@ class MPCSubsurface : public StrongMPC<PK_PhysicalBDF_Default> {
   {
     dump_ = plist_->get<bool>("dump preconditioner", false);
 
-    auto pk_order = plist_->get<Teuchos::Array<std::string>>("PK order");
+    auto pk_order = plist_->get<Teuchos::Array<std::string>>("PKs order");
     global_list->sublist("PKs").sublist(pk_order[0]).set("scale preconditioner to pressure", false);
   }
 

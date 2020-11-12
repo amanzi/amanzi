@@ -30,8 +30,8 @@ with freezing.
 namespace Amanzi {
 
 // -- Initialize owned (dependent) variables.
-void MPCSurface::Setup(const Teuchos::Ptr<State>& S) {
-
+void MPCSurface::Setup(const Teuchos::Ptr<State>& S)
+{
   auto pk_order = plist_->get<Teuchos::Array<std::string>>("PKs order");
   domain_ = plist_->get<std::string>("domain name");
 
@@ -163,7 +163,6 @@ void MPCSurface::CommitStep(double t_old, double t_new, const Teuchos::RCP<State
     double dt = t_new - t_old;
     ewc_->commit_state(dt,S);
   }
-  update_pcs_ = 0;
 }
 
 
@@ -241,7 +240,6 @@ void MPCSurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
     db_->WriteVector("  de_dp", dE_dp.ptr(), false);
     db_->WriteVector("  de_dh", Teuchos::ptr(&dE_dh), false);
   }
-  update_pcs_++;
 }
 
 
