@@ -94,7 +94,7 @@ class VisFile:
     def loadTimes(self):
         """(Re-)loads the list of cycles and times."""
         a_field = next(iter(self.d.keys()))
-        self.cycles = np.array(sorted(self.d[a_field].keys(), key=int))
+        self.cycles = list(sorted(self.d[a_field].keys(), key=int))
         self.times = np.array([self.d[a_field][cycle].attrs['Time'] for cycle in self.cycles]) * self.time_factor
 
     def filterIndices(self, indices):
@@ -110,13 +110,20 @@ class VisFile:
           * list(int) : a list of specific indices
           * slice object : slice the cycle list
         """
+        assert(len(self.cycles) == len(self.times))
+
         if type(indices) is int:
-            indices = [indices,]
-            
-        self.cycles = [self.cycles[i] for i in indices]
-        self.times = [self.times[i] for i in indices]
-
-
+            assert(indices < len(self.cycles))
+            self.cycles = [self.cycles[indices],]
+            self.times = np.array([self.times[indices],])
+        elif type(indices) is slice:
+            self.cycles = self.cycles[indices]
+            self.times = self.times[indices]
+        else:
+            inds = list(indices)
+            assert(max(inds) < len(self.cycles))
+            self.cycles = [self.cycles[i] for i in inds]
+            self.times = np.array([self.times[i] for i in inds])
         
     def filterCycles(self, cycles):
         """Filter the vis file based on cycles.

@@ -180,6 +180,17 @@ def fixOverlandConductivity(xml):
         oc.setParameter("field evaluator type", "string", "overland conductivity")
         fe.append(oc)
 
+def updateObservations(xml):
+    try:
+        obs = asearch.findall_path(xml, ["observations", "functional"])
+    except aerrors.MissingXMLError:
+        pass
+    else:
+        for func in obs:
+            func_val = func.getValue()
+            if func_val.startswith("observation data: "):
+                func.setValue(func_val[len("observation data: "):])
+            
 
 def update(xml):
     vanGenuchtenParams(xml)
@@ -192,6 +203,7 @@ def update(xml):
     #fixSubgrid(xml)
     mergePreconditionerLinearSolver(xml)
     fixOverlandConductivity(xml)
+    updateObservations(xml)
 
 if __name__ == "__main__":
     import argparse

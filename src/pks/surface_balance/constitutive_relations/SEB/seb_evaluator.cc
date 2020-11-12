@@ -5,7 +5,7 @@ ATS
 
 License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon (coonet @ ornl.gov)
-   
+
  ------------------------------------------------------------------------- */
 
 //! SEBEvaluator: evaluates the Surface Energy Balance model on subgrid units.
@@ -22,7 +22,7 @@ to first cover water (likely ice), then cover land, as both water and snow
 prefer low-lying depressions due to gravity- and wind-driven redistributions,
 respectively.
 
-* 
+*
 
 */
 
@@ -86,7 +86,7 @@ SEBEvaluator::SEBEvaluator(Teuchos::ParameterList& plist) :
 
   new_snow_key_ = Keys::readKey(plist, domain_snow_, "new snow source", "source");
   my_keys_.push_back(new_snow_key_);
-  
+
   // diagnostics and debugging
   diagnostics_ = plist.get<bool>("save diagnostic data", false);
   if (diagnostics_) {
@@ -102,8 +102,8 @@ SEBEvaluator::SEBEvaluator(Teuchos::ParameterList& plist) :
     qE_lw_out_key_ = Keys::readKey(plist, domain_, "outgoing longwave radiation", "qE_lw_out");
     qE_cond_key_ = Keys::readKey(plist, domain_, "conducted energy flux", "qE_conducted");
   }
-  
-  // dependencies  
+
+  // dependencies
   // -- met data
   met_sw_key_ = Keys::readKey(plist, domain_,"incoming shortwave radiation", "incoming_shortwave_radiation");
   dependencies_.insert(met_sw_key_);
@@ -128,7 +128,7 @@ SEBEvaluator::SEBEvaluator(Teuchos::ParameterList& plist) :
   snow_death_rate_key_ = Keys::readKey(plist, domain_snow_, "snow death rate", "death_rate");
   dependencies_.insert(snow_death_rate_key_);
 
-  // -- skin properties  
+  // -- skin properties
   ponded_depth_key_ = Keys::readKey(plist, domain_, "ponded depth", "ponded_depth");
   dependencies_.insert(ponded_depth_key_);
   unfrozen_fraction_key_ = Keys::readKey(plist, domain_, "unfrozen fraction", "unfrozen_fraction");
@@ -144,7 +144,7 @@ SEBEvaluator::SEBEvaluator(Teuchos::ParameterList& plist) :
   dependencies_.insert(surf_temp_key_);
   surf_pres_key_ = Keys::readKey(plist, domain_, "pressure", "pressure");
   dependencies_.insert(surf_pres_key_);
-  
+
   // -- subsurface properties for evaporating bare soil
   sat_gas_key_ = Keys::readKey(plist, domain_ss_, "gas saturation", "saturation_gas");
   dependencies_.insert(sat_gas_key_);
@@ -192,7 +192,7 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const auto& snow_depth = *S->GetFieldData(snow_depth_key_)->ViewComponent("cell",false);
   const auto& snow_dens = *S->GetFieldData(snow_dens_key_)->ViewComponent("cell",false);
   const auto& snow_death_rate = *S->GetFieldData(snow_death_rate_key_)->ViewComponent("cell",false);
-  
+
   // collect skin properties
   const auto& ponded_depth = *S->GetFieldData(ponded_depth_key_)->ViewComponent("cell",false);
   const auto& unfrozen_fraction = *S->GetFieldData(unfrozen_fraction_key_)->ViewComponent("cell",false);
@@ -265,7 +265,7 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     met.air_temp = air_temp[0][c];
     met.relative_humidity = std::max(rel_hum[0][c], min_rel_hum_);
     met.Pr = Prain[0][c];
-    
+
     // non-snow covered column
     if (area_fracs[0][c] > 0.) {
       SEBPhysics::GroundProperties surf;
@@ -297,7 +297,7 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         met.Ps = 0.;
         surf.snow_death_rate = 0.;
       }
-      
+
       // calculate the surface balance
       const SEBPhysics::EnergyBalance eb = SEBPhysics::UpdateEnergyBalanceWithoutSnow(surf, met, params);
       SEBPhysics::MassBalance mb = SEBPhysics::UpdateMassBalanceWithoutSnow(surf, params, eb);
@@ -322,7 +322,6 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
                     << ", Mss = " << ss_mass_source_l << ", Ess = " << ss_energy_source_l
                     << ", Sn = " << flux.M_snow << std::endl;
 
-      
       // diagnostics
       if (diagnostics_) {
         (*evap_rate)[0][c] -= area_fracs[0][c] * mb.Me;
@@ -331,12 +330,12 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         (*qE_lw_out)[0][c] += area_fracs[0][c] * eb.fQlwOut;
         (*qE_cond)[0][c] += area_fracs[0][c] * eb.fQc;
         (*albedo)[0][c] += area_fracs[0][c] * surf.albedo;
-        
+
         if (area_fracs[1][c] == 0.) {
           (*qE_sm)[0][c] = eb.fQm;
           (*melt_rate)[0][c] = mb.Mm;
           (*snow_temp)[0][c] = 273.15;
-        }          
+        }
       }
     }
 
@@ -358,7 +357,7 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       surf.unfrozen_fraction = unfrozen_fraction[0][c];
 
       met.Ps = Psnow[0][c] / area_fracs[1][c];
-      
+
       SEBPhysics::SnowProperties snow;
       snow.height = snow_depth[0][c] / area_fracs[1][c]; // all snow on this patch
       AMANZI_ASSERT(snow.height >= snow_ground_trans_ - 1.e-6);
@@ -382,14 +381,12 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
       new_snow[0][c] += std::max(met.Ps + mb.Me, 0.) * area_fracs[1][c];
 
-
       if (vo_->os_OK(Teuchos::VERB_EXTREME))
         *vo_->os() << "CELL " << c << " SNOW"
                     << ": Ms = " << flux.M_surf << ", Es = " << flux.E_surf * 1.e-6
                     << ", Mss = " << 0. << ", Ess = " << 0.
                     << ", Sn = " << flux.M_snow << std::endl;
 
-      
       // diagnostics
       if (diagnostics_) {
         (*evap_rate)[0][c] -= area_fracs[1][c] * mb.Me;
@@ -402,7 +399,7 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         (*melt_rate)[0][c] = area_fracs[1][c] * mb.Mm;
         (*snow_temp)[0][c] = snow.temp;
         (*albedo)[0][c] += area_fracs[1][c] * surf.albedo;
-      }          
+      }
     }
   }
 
@@ -419,14 +416,14 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     vnames.clear();
     vecs.clear();
-    
+
     vnames.clear();
     vecs.clear();
-    vnames.push_back("air_temp"); 
+    vnames.push_back("air_temp");
     vecs.push_back(S->GetFieldData(met_air_temp_key_).ptr());
-    vnames.push_back("rel_hum"); 
+    vnames.push_back("rel_hum");
     vecs.push_back(S->GetFieldData(met_rel_hum_key_).ptr());
-    vnames.push_back("precip_rain"); 
+    vnames.push_back("precip_rain");
     vecs.push_back(S->GetFieldData(met_prain_key_).ptr());
     vnames.push_back("precip_snow");
     vecs.push_back(S->GetFieldData(met_psnow_key_).ptr());
@@ -436,15 +433,15 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     vnames.clear();
     vecs.clear();
 
-    vnames.push_back("p_ground"); 
+    vnames.push_back("p_ground");
     vecs.push_back(S->GetFieldData(surf_pres_key_).ptr());
-    vnames.push_back("ponded_depth"); 
+    vnames.push_back("ponded_depth");
     vecs.push_back(S->GetFieldData(ponded_depth_key_).ptr());
-    vnames.push_back("unfrozen_fraction"); 
+    vnames.push_back("unfrozen_fraction");
     vecs.push_back(S->GetFieldData(unfrozen_fraction_key_).ptr());
-    vnames.push_back("snow_depth"); 
+    vnames.push_back("snow_depth");
     vecs.push_back(S->GetFieldData(snow_depth_key_).ptr());
-    vnames.push_back("snow_death"); 
+    vnames.push_back("snow_death");
     vecs.push_back(S->GetFieldData(snow_death_rate_key_).ptr());
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
@@ -452,9 +449,9 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     vnames.clear();
     vecs.clear();
 
-    vnames.push_back("T_ground"); 
+    vnames.push_back("T_ground");
     vecs.push_back(S->GetFieldData(surf_temp_key_).ptr());
-    vnames.push_back("snow_temp"); 
+    vnames.push_back("snow_temp");
     vecs.push_back(S->GetFieldData(snow_temp_key_).ptr());
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
@@ -462,19 +459,19 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     vnames.clear();
     vecs.clear();
 
-    vnames.push_back("inc shortwave radiation"); 
+    vnames.push_back("inc shortwave radiation");
     vecs.push_back(S->GetFieldData(met_sw_key_).ptr());
     vnames.push_back("inc longwave radiation");
     vecs.push_back(S->GetFieldData(met_lw_key_).ptr());
-    vnames.push_back("inc latent heat"); 
+    vnames.push_back("inc latent heat");
     vecs.push_back(S->GetFieldData(qE_lh_key_).ptr());
-    vnames.push_back("inc sensible heat"); 
+    vnames.push_back("inc sensible heat");
     vecs.push_back(S->GetFieldData(qE_sh_key_).ptr());
-    vnames.push_back("out longwave radiation"); 
+    vnames.push_back("out longwave radiation");
     vecs.push_back(S->GetFieldData(qE_lw_out_key_).ptr());
-    vnames.push_back("out conducted energy"); 
+    vnames.push_back("out conducted energy");
     vecs.push_back(S->GetFieldData(qE_cond_key_).ptr());
-    vnames.push_back("out melting energy"); 
+    vnames.push_back("out melting energy");
     vecs.push_back(S->GetFieldData(qE_sm_key_).ptr());
 
     db_->WriteVectors(vnames, vecs, true);
@@ -482,22 +479,14 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     vnames.clear();
     vecs.clear();
-    
-    vnames.push_back("water_source"); 
+
+    vnames.push_back("water_source");
     vecs.push_back(S->GetFieldData(mass_source_key_).ptr());
-    vnames.push_back("evap flux"); 
+    vnames.push_back("evap flux");
     vecs.push_back(S->GetFieldData(evap_key_).ptr());
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
 
-
-    
-    *vo_->os() << "CELL " << 0 << " TOTAL"
-                    << ": Ms = " << mass_source[0][0] << ", Es = " << energy_source[0][0]
-                    << ", Mss = " << ss_mass_source[0][99] << ", Ess = " << ss_energy_source[0][99]
-                    << ", Sn = " << snow_source[0][0] << std::endl;
-
-    
     vnames.clear();
     vecs.clear();
     vnames.push_back("mass src");
@@ -539,7 +528,7 @@ SEBEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
       plist.set("debug cells", plist.get<Teuchos::Array<int>>("subsurface debug cells"));
     } else {
     }
-    if (plist.isParameter("subsurface debug faces")) 
+    if (plist.isParameter("subsurface debug faces"))
       plist.set("debug faces", plist.get<Teuchos::Array<int>>("subsurface debug faces"));
     db_ss_ = Teuchos::rcp(new Debugger(S->GetMesh(domain_ss_), my_keys_[0], plist));
   }
@@ -563,7 +552,7 @@ SEBEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
   domain_fac_owned_snow.SetMesh(S->GetMesh(domain_snow_))
       ->SetGhosted()
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  
+
   CompositeVectorSpace domain_fac_2;
   domain_fac_2.SetMesh(S->GetMesh(domain_))
       ->SetGhosted()
@@ -578,7 +567,7 @@ SEBEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
   domain_fac_snow.SetMesh(S->GetMesh(domain_snow_))
       ->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  
+
   for (auto my_key : my_keys_) {
     auto my_fac = S->RequireField(my_key, my_key);
     if (Keys::getDomain(my_key) == domain_snow_) {
@@ -619,7 +608,7 @@ SEBEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
     S->GetField(qE_lw_out_key_, qE_lw_out_key_)->set_initialized(true);
     S->GetField(qE_cond_key_, qE_cond_key_)->set_initialized(true);
   }
-  
+
   for (auto dep_key : dependencies_) {
     auto fac = S->RequireField(dep_key);
     if (Keys::getDomain(dep_key) == domain_ss_) {
