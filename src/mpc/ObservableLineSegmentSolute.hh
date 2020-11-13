@@ -17,7 +17,7 @@ class ObservableLineSegmentSolute : public ObservableSolute,
                               Teuchos::ParameterList& units_plist,
                               Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
-  virtual void ComputeObservation(State& S, double* value, double* volume, std::string& unit);
+  virtual void ComputeObservation(State& S, double* value, double* volume, std::string& unit, double dt);
   virtual int ComputeRegionSize();
   void InterpolatedValues(State& S,
                           std::string var,
@@ -45,8 +45,7 @@ int ObservableLineSegmentSolute::ComputeRegionSize() {
 
 
 void ObservableLineSegmentSolute::ComputeObservation(
-    State& S, double* value, double* volume, std::string& unit) {
-  //double volume, value;
+    State& S, double* value, double* volume, std::string& unit, double dt) {
   Errors::Message msg;
   int dim = mesh_->space_dimension();
   // double rho = *S.GetScalarData("const_fluid_density");

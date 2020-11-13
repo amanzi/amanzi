@@ -85,8 +85,7 @@ add_amanzi_library(transport
                              ${geochem_lib} chemistry_pk time_integration ${Epetra_LIBRARIES})
 
 # note that these tests test the Amanzi transport PK                           
-if (ENABLE_AmanziPhysicsModule)
-if ( BUILD_TESTS )
+if (BUILD_TESTS AND ENABLE_AmanziPhysicsModule)
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
 
@@ -163,7 +162,7 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/transport_subcycling.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    if ( ENABLE_MSTK_Mesh )
+    if (ENABLE_MSTK_Mesh)
        add_amanzi_test(transport_parallel_mstk transport_parallel_mstk
                        KIND int
                        NPROCS 4 
@@ -177,20 +176,10 @@ if ( BUILD_TESTS )
                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
     endif()    
 
-    if ( ENABLE_STK_Mesh )
-        add_amanzi_test(transport_parallel_read_stk transport_parallel_read_stk
-                       KIND int
-                       NPROCS 4 
-                       SOURCE test/Main.cc test/transport_parallel_read_stk.cc
-                       LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-    endif()    
-
-     # fractures
+    # fractures
     add_amanzi_test(transport_fractures transport_fractures
                     KIND unit
                     NPROCS 2
                     SOURCE test/Main.cc test/transport_fractures.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
-endif()
 endif()

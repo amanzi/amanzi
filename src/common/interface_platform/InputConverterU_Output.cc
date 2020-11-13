@@ -332,6 +332,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
         nobs_liquid = 0;
         DOMNodeList* children = inode->getChildNodes();
         for (int j = 0; j < children->getLength(); j++) {
+          std::stringstream name;
           Teuchos::ParameterList obPL;
           DOMNode* jnode = children->item(j);
           if (jnode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
@@ -365,17 +366,14 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             obPL.set<std::string>("variable", "pH");
           } else if (strcmp(obs_type, "aqueous_conc") == 0) {
             std::string solute_name = GetAttributeValueS_(jnode, "solute");
-            std::stringstream name;
             name << solute_name << " aqueous concentration";
             obPL.set<std::string>("variable", name.str());
           } else if (strcmp(obs_type, "sorbed_conc") == 0) {
             std::string solute_name = GetAttributeValueS_(jnode, "solute");
-            std::stringstream name;
             name << solute_name << " sorbed concentration";
             obPL.set<std::string>("variable", name.str());
           } else if (strcmp(obs_type, "free_ion_conc") == 0) {
             std::string solute_name = GetAttributeValueS_(jnode, "solute");
-            std::stringstream name;
             name << solute_name << " free ion concentration";
             obPL.set<std::string>("variable", name.str());
           } else if (strcmp(obs_type, "drawdown") == 0) {
@@ -386,8 +384,11 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             obPL.set<std::string>("variable", "water table");
           } else if (strcmp(obs_type, "solute_volumetric_flow_rate") == 0) {
             std::string solute_name = GetAttributeValueS_(jnode, "solute");
-            std::stringstream name;
             name << solute_name << " volumetric flow rate";
+            obPL.set<std::string>("variable", name.str());
+          } else if (strcmp(obs_type, "solute_breakthrough_curve") == 0) {
+            std::string solute_name = GetAttributeValueS_(jnode, "solute");
+            name << solute_name << " breakthrough curve";
             obPL.set<std::string>("variable", name.str());
           } else if (strcmp(obs_type, "fractures_aqueous_volumetric_flow_rate") == 0) {
             obPL.set<std::string>("variable", "fractures aqueous volumetric flow rate");
