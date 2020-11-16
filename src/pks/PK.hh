@@ -77,9 +77,11 @@ Developer's note:
 #define AMANZI_PK_HH_
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 #include "TreeVector.hh"
-#include "Teuchos_ParameterList.hpp"
+#include "State.hh"
+#include "primary_variable_field_evaluator.hh"
 
 namespace Amanzi {
 

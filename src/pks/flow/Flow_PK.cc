@@ -37,6 +37,7 @@ Flow_PK::Flow_PK(Teuchos::ParameterList& pk_tree,
                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
                  const Teuchos::RCP<State>& S,
                  const Teuchos::RCP<TreeVector>& soln) :
+  PK(pk_tree, glist, S, soln),
   PK_PhysicalBDF(pk_tree, glist, S, soln),
   passwd_("flow"),
   peaceman_model_(false)
@@ -119,7 +120,7 @@ void Flow_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   if (!S->HasFieldEvaluator(darcy_flux_key_)) {
-    AddDefaultPrimaryEvaluator(darcy_flux_key_);
+    AddDefaultPrimaryEvaluator_(darcy_flux_key_);
   }
 
   // Wells
