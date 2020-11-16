@@ -60,14 +60,6 @@ class PK_Physical : virtual public PK {
   Teuchos::RCP<Debugger> debugger() { return db_; }
 
  protected:
-  // This is used quite often, so I placed here
-  void AddDefaultPrimaryEvaluator_(const Key& key);
-
-  // initialization tools
-  void InitializeField_(const Teuchos::Ptr<State>& S, const std::string& passwd,
-                        std::string fieldname, double default_val);
-
- protected:
   // name of domain, associated mesh
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Key domain_;

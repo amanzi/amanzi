@@ -162,6 +162,36 @@ class PK {
   virtual void Solution_to_State(const TreeVector& soln, const Teuchos::RCP<State>& S) = 0;
 
  protected:
+  // Helper method to add a primary variable evaluator
+  void AddDefaultPrimaryEvaluator_(const Key& key) {
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("evaluator name", key);
+    auto eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+    AMANZI_ASSERT(S_ != Teuchos::null);
+    S_->SetFieldEvaluator(key, eval);
+  }
+
+  // Helper method to initialize a field
+  void InitializeField_(const Teuchos::Ptr<State>& S, const std::string& passwd,
+                        std::string fieldname, double default_val) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+
+    if (S->HasField(fieldname)) {
+      if (S->GetField(fieldname)->owner() == passwd) {
+        if (!S->GetField(fieldname)->initialized()) {
+          S->GetFieldData(fieldname, passwd)->PutScalar(default_val);
+          S->GetField(fieldname, passwd)->set_initialized();
+
+          if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+            *vo_->os() << "initialized \"" << fieldname << "\" to value " << default_val << std::endl;
+        }
+      }
+    }
+  }
+
+
+
+ protected:
   Teuchos::RCP<Teuchos::ParameterList> plist_;
   std::string name_;
   Teuchos::RCP<TreeVector> solution_;  // single vector for the global problem
