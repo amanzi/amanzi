@@ -1,7 +1,7 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
@@ -9,7 +9,7 @@
 //! The interface for a Process Kernel, an equation or system of equations.
 
 /*!
-  
+
 A process kernel represents a single or system of partial/ordinary
 differential equation(s) or conservation law(s), and is used as the
 fundamental unit for coupling strategies.
@@ -37,7 +37,7 @@ class PK, which is inherited and included by each actual PK, and lives in the
     * `"PK type`" ``[string]`` One of the registered PK types.  Note this must
       match the corresponding entry in the ``[pk-typed-spec]``
     * `"verbose object`" ``[verbose-object-spec]`` **optional** See `Verbose Object`_
-    
+
 Example:
 
 .. code-block:: xml
@@ -55,7 +55,7 @@ Example:
     <ParameterList name="Top level MPC">
       <Parameter name="PK type" type="string" value="strong MPC"/>
       <ParameterList name="sub PKs">
-        ...   
+        ...
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -93,7 +93,22 @@ class PK {
      const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
      const Teuchos::RCP<State>& S,
      const Teuchos::RCP<TreeVector>& solution)
-    :  solution_(solution) {};
+    :  solution_(solution),
+       name_(Keys::cleanPListName(pk_tree.name())),
+       S_(S)
+  {
+    Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(global_plist, "PKs", true);
+    if (pk_list->isSublist(name_)) {
+      plist_ = Teuchos::sublist(pk_list, name_);
+    } else {
+      Errors::Message msg;
+      msg << "There is no sublist for PK \"" << name_ << "\" in PKs list";
+      Exceptions::amanzi_throw(msg);
+    }
+
+    // set up the VerboseObject
+    vo_ = Teuchos::rcp(new VerboseObject(name_, *plist_));
+  };
 
   // Virtual destructor
   virtual ~PK() {};
@@ -110,9 +125,9 @@ class PK {
   // Set a time step for a PK.
   virtual void set_dt(double dt) = 0;
 
-  // Advance PK from time t_old to time t_new. True value of the last 
+  // Advance PK from time t_old to time t_new. True value of the last
   // parameter indicates drastic change of boundary and/or source terms
-  // that may need PK's attention. 
+  // that may need PK's attention.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit) = 0;
 
   // Check whether the solution calculated for the new step is valid.
@@ -121,7 +136,7 @@ class PK {
   // Tag the primary variable as changed in the DAG
   virtual void ChangedSolutionPK(const Teuchos::Ptr<State>& S) {}
   virtual void ChangedSolutionPK() { ChangedSolutionPK(S_next_.ptr()); }
-  
+
   // Update any needed secondary variables at time t_new from a sucessful step
   // from t_old. This is called after every successful AdvanceStep() call,
   // independent of coupling.

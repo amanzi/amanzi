@@ -72,7 +72,7 @@ void PK_Physical::set_states(const Teuchos::RCP<State>& S,
 // -----------------------------------------------------------------------------
 // Populate state field
 // -----------------------------------------------------------------------------
-void PK_Physical::InitializeField(const Teuchos::Ptr<State>& S, 
+void PK_Physical::InitializeField_(const Teuchos::Ptr<State>& S, 
                                   const std::string& passwd,
                                   std::string fieldname, double default_val)
 {
@@ -84,12 +84,22 @@ void PK_Physical::InitializeField(const Teuchos::Ptr<State>& S,
         S->GetFieldData(fieldname, passwd)->PutScalar(default_val);
         S->GetField(fieldname, passwd)->set_initialized();
 
-        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-           *vo_->os() << "initialized \"" << fieldname << "\" to value " << default_val << std::endl;  
+        if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+           *vo_->os() << "initialized \"" << fieldname << "\" to value " << default_val << std::endl;
       }
     }
   }
 }
 
-} // namespace Amanzi 
+
+void PK_Physical::AddDefaultPrimaryEvaluator_(const Key& key)
+{
+  Teuchos::ParameterList elist;
+  elist.set<std::string>("evaluator name", key);
+  auto eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+  AMANZI_ASSERT(S_ != Teuchos::null);
+  S_->SetFieldEvaluator(key, eval);
+}
+
+} // namespace Amanzi
 

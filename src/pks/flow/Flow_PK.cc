@@ -232,16 +232,16 @@ void Flow_PK::InitializeFields_()
         *vo_->os() << "initialized gravity to default value -9.8" << std::endl;  
   }
 
-  InitializeField(S_.ptr(), porosity_key_, porosity_key_, 0.2);
+  InitializeField_(S_.ptr(), porosity_key_, porosity_key_, 0.2);
 
-  InitializeField(S_.ptr(), passwd_, specific_storage_key_, 0.0);
-  InitializeField(S_.ptr(), passwd_, specific_yield_key_, 0.0);
+  InitializeField_(S_.ptr(), passwd_, specific_storage_key_, 0.0);
+  InitializeField_(S_.ptr(), passwd_, specific_yield_key_, 0.0);
 
-  InitializeField(S_.ptr(), passwd_, pressure_key_, 0.0);
-  InitializeField(S_.ptr(), passwd_, hydraulic_head_key_, 0.0);
-  InitializeField(S_.ptr(), passwd_, pressure_head_key_, 0.0);
+  InitializeField_(S_.ptr(), passwd_, pressure_key_, 0.0);
+  InitializeField_(S_.ptr(), passwd_, hydraulic_head_key_, 0.0);
+  InitializeField_(S_.ptr(), passwd_, pressure_head_key_, 0.0);
 
-  InitializeField(S_.ptr(), passwd_, darcy_flux_key_, 0.0);
+  InitializeField_(S_.ptr(), passwd_, darcy_flux_key_, 0.0);
 }
 
 

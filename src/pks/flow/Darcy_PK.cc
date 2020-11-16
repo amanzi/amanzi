@@ -382,8 +382,8 @@ void Darcy_PK::InitializeFields_()
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  InitializeField(S_.ptr(), passwd_, saturation_liquid_key_, 1.0);
-  InitializeField(S_.ptr(), passwd_, prev_saturation_liquid_key_, 1.0);
+  InitializeField_(S_.ptr(), passwd_, saturation_liquid_key_, 1.0);
+  InitializeField_(S_.ptr(), passwd_, prev_saturation_liquid_key_, 1.0);
 }
 
 
