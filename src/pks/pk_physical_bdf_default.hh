@@ -74,9 +74,9 @@ class PK_PhysicalBDF_Default : public PK_BDF_Default,
                           const Teuchos::RCP<Teuchos::ParameterList>& glist,
                           const Teuchos::RCP<State>& S,
                           const Teuchos::RCP<TreeVector>& solution):
+    PK(pk_tree, glist, S, solution),
     PK_BDF_Default(pk_tree, glist, S, solution),
-    PK_Physical_Default(pk_tree, glist, S, solution),
-    PK(pk_tree, glist, S, solution)
+    PK_Physical_Default(pk_tree, glist, S, solution)
   {}
 
   virtual void set_states(const Teuchos::RCP<State>& S,

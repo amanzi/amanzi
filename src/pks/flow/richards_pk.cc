@@ -1218,8 +1218,8 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr)
   if (coupled_to_surface_via_flux_) {
     // Face is Neumann with value of surface residual
     Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh(Keys::getDomain(ss_flux_key_));
-    const Epetra_MultiVector& flux = *S->GetFieldData(ss_flux_key_)->ViewComponent("cell",false);
-    unsigned int ncells_surface = flux.MyLength();
+    const Epetra_MultiVector& ss_flux = *S->GetFieldData(ss_flux_key_)->ViewComponent("cell",false);
+    unsigned int ncells_surface = ss_flux.MyLength();
     bc_counts[bc_counts.size()-1] = ncells_surface;
     for (unsigned int c=0; c!=ncells_surface; ++c) {
       // -- get the surface cell's equivalent subsurface face
@@ -1236,7 +1236,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr)
       //       as Neumann BCs are in units of mols / s / A.  The right A must
       //       be chosen, as it is the subsurface mesh's face area, not the
       //       surface mesh's cell area.
-      values[f] = flux[0][c] / mesh_->face_area(f);
+      values[f] = ss_flux[0][c] / mesh_->face_area(f);
 
       if (!kr && rel_perm[0][f] > 0.) values[f] /= rel_perm[0][f];
     }

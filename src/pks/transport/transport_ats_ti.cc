@@ -30,8 +30,8 @@ void Transport_ATS::FunctionalTimeDerivative(double t,
   auto component_tmp = Teuchos::rcp(new Epetra_Vector(component));
   component_tmp->Import(component, *tcc->importer("cell"), Insert);
 
-  Teuchos::ParameterList plist = tp_list_->sublist("reconstruction");
-  lifting_->Init(plist);
+  Teuchos::ParameterList recon_list = plist_->sublist("reconstruction");
+  lifting_->Init(recon_list);
   lifting_->ComputeGradient(component_tmp);
 
   // extract boundary conditions for the current component
@@ -55,22 +55,20 @@ void Transport_ATS::FunctionalTimeDerivative(double t,
     }
   }
 
-  limiter_->Init(plist, flux_);
+  limiter_->Init(recon_list, flux_);
   limiter_->ApplyLimiter(component_tmp, 0, lifting_->gradient(), bc_model, bc_value);
   limiter_->gradient()->ScatterMasterToGhosted("cell");
 
   // ADVECTIVE FLUXES
   // We assume that limiters made their job up to round-off errors.
   // Min-max condition will enforce robustness w.r.t. these errors.
-  int f, c1, c2;
-  double u, u1, u2, umin, umax, upwind_tcc, tcc_flux;
 
   f_component.PutScalar(0.0);
   for (int f = 0; f < nfaces_wghost; f++) {  // loop over master and slave faces
-    c1 = (*upwind_cell_)[f];
-    c2 = (*downwind_cell_)[f];
+    int c1 = (*upwind_cell_)[f];
+    int c2 = (*downwind_cell_)[f];
 
-
+    double u1, u2, umin, umax;
     if (c1 >= 0 && c2 >= 0) {
       u1 = component[c1];
       u2 = component[c2];
@@ -82,9 +80,10 @@ void Transport_ATS::FunctionalTimeDerivative(double t,
       u1 = u2 = umin = umax = component[c2];
     }
 
-    u = fabs((*flux_)[0][f]);
+    double u = fabs((*flux_)[0][f]);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
+    double upwind_tcc, tcc_flux;
     if (c1 >= 0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
       upwind_tcc = limiter_->getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
@@ -145,20 +144,18 @@ void Transport_ATS::FunctionalTimeDerivative(double t,
         for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
           int f = it->first;
           std::vector<double>& values = it->second;
-          c2 = (*downwind_cell_)[f];
+          int c2 = (*downwind_cell_)[f];
 
           if (c2 >= 0 && f < nfaces_owned) {
-            u = fabs((*flux_)[0][f]);
+            double u = fabs((*flux_)[0][f]);
             double vol_phi_ws_den = mesh_->cell_volume(c2) * (*phi_)[0][c2] * (*ws_start)[0][c2] * (*mol_dens_start)[0][c2];
             if ((*ws_start)[0][c2] < 1e-12)
               vol_phi_ws_den = mesh_->cell_volume(c2) * (*phi_)[0][c2] * (*ws_end)[0][c2] * (*mol_dens_end)[0][c2];
 
-            tcc_flux = u * values[i];
-
+            double tcc_flux = u * values[i];
             if (vol_phi_ws_den > water_tolerance_ ){
               f_component[c2] += tcc_flux / vol_phi_ws_den;
             }
-
           }
         }
       }

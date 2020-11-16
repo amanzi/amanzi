@@ -48,10 +48,8 @@ void Coupled_ReactiveTransport_PK_ATS::cast_sub_pks_()
     Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(chemistry_pk_->get_subpk(1));
   AMANZI_ASSERT(chemistry_pk_overland_!= Teuchos::null);
 
-  //std::cout<<tranport_pk_overland_->domain_name()<<" "<<chemistry_pk_overland_->domain_name()<<"\n";
-  // std::cout<<tranport_pk_subsurface_->domain_name()<<" "
-  AMANZI_ASSERT(tranport_pk_overland_->domain_name() == chemistry_pk_overland_->domain_name());
-  AMANZI_ASSERT(tranport_pk_subsurface_->domain_name() == chemistry_pk_subsurface_->domain_name());
+  AMANZI_ASSERT(tranport_pk_overland_->domain() == chemistry_pk_overland_->domain());
+  AMANZI_ASSERT(tranport_pk_subsurface_->domain() == chemistry_pk_subsurface_->domain());
 }
 
 
@@ -113,8 +111,8 @@ void Coupled_ReactiveTransport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S){
 
   //Amanzi::ReactiveTransport_PK_ATS::Initialize(S);
 
-  Key subsurface_domain_key = tranport_pk_subsurface_->domain_name();
-  Key overland_domain_key = tranport_pk_overland_->domain_name();
+  Key subsurface_domain_key = tranport_pk_subsurface_->domain();
+  Key overland_domain_key = tranport_pk_overland_->domain();
   Key tcc_sub_key = Keys::getKey(subsurface_domain_key, "total_component_concentration");
   Key tcc_over_key = Keys::getKey(overland_domain_key, "total_component_concentration");
   Key sub_mol_den_key = Keys::getKey(subsurface_domain_key,  "molar_density_liquid");
@@ -157,8 +155,8 @@ bool Coupled_ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, b
 
   bool fail = false;
   chem_step_succeeded_ = false;
-  Key subsurface_domain_key = tranport_pk_subsurface_->domain_name();
-  Key overland_domain_key = tranport_pk_overland_->domain_name();
+  Key subsurface_domain_key = tranport_pk_subsurface_->domain();
+  Key overland_domain_key = tranport_pk_overland_->domain();
   Key tcc_sub_key = Keys::getKey(subsurface_domain_key, "total_component_concentration");
   Key tcc_over_key = Keys::getKey(overland_domain_key, "total_component_concentration");
   Key sub_mol_den_key = Keys::getKey(subsurface_domain_key,  "molar_density_liquid");

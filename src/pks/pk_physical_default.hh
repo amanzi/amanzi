@@ -62,21 +62,6 @@ class PK_Physical_Default : public PK_Physical {
   // Virtual destructor
   virtual ~PK_Physical_Default() = default;
 
-  // Default implementations of PK methods.
-  // -- transfer operators -- pointer copies only
-  virtual void State_to_Solution(const Teuchos::RCP<State>& S,
-                                 TreeVector& soln);
-  virtual void Solution_to_State(TreeVector& soln,
-                                 const Teuchos::RCP<State>& S);
-  virtual void Solution_to_State(const TreeVector& soln,
-                                 const Teuchos::RCP<State>& S);
-
-
-  // new virtual set_states() to also get the primary field evaulator.
-  virtual void set_states(const Teuchos::RCP<State>& S,
-          const Teuchos::RCP<State>& S_inter,
-          const Teuchos::RCP<State>& S_next);
-
   virtual bool ValidStep();
 
   // Tag the primary variable as changed in the DAG

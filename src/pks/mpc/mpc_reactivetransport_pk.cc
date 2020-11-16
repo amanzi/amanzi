@@ -209,7 +209,7 @@ void  ReactiveTransport_PK_ATS::ConvertConcentrationToAmanzi(Teuchos::RCP<Amanzi
                                                              const Epetra_MultiVector& tcc_ats,
                                                              Epetra_MultiVector& tcc_amanzi)
 {
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh = S_->GetMesh(chem_pk->domain_name());
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = S_->GetMesh(chem_pk->domain());
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
   int num_aq_components = chem_pk->num_aqueous_components();
 
@@ -225,7 +225,7 @@ void  ReactiveTransport_PK_ATS::ConvertConcentrationToATS(Teuchos::RCP<AmanziChe
                                                           const Epetra_MultiVector& tcc_amanzi,
                                                           Epetra_MultiVector& tcc_ats)
 {
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh = S_->GetMesh(chem_pk->domain_name());
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = S_->GetMesh(chem_pk->domain());
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
   int num_aq_components = chem_pk->num_aqueous_components();
 
