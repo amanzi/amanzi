@@ -60,7 +60,7 @@ class MeshLight {
 
   // new API: cache should be build around mesh constructor,
   // so no additional checks is needed
-  const Entity_ID_List cell_get_faces(const Entity_ID c) const { return cell_face_ids_[c]; }
+  const Entity_ID_List& cell_get_faces(const Entity_ID c) const { return cell_face_ids_[c]; }
 
   // Get faces of a cell and directions in which the cell uses the face
   //
