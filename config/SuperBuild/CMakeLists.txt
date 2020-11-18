@@ -619,15 +619,18 @@ else()
     set(ParMetis_DIR ${PARMETIS_INSTALL_PREFIX})
 endif()
 
-# SuperLU -- needs to go before HYPRE and PETSc because they needs it
-include(${SuperBuild_BUILD_FILES_DIR}/Build_SuperLU.cmake)
-append_set(Amanzi_TPL_CMAKE_ARGS
-           -DSuperLU_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+option(ENABLE_SUPERLU "Build the SuperLU solver package" TRUE)
+if (ENABLE_SUPERLU)
+  # SuperLU -- needs to go before HYPRE and PETSc because they needs it
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_SuperLU.cmake)
+  append_set(Amanzi_TPL_CMAKE_ARGS
+             -DSuperLU_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
-# SuperLUDist
-include(${SuperBuild_BUILD_FILES_DIR}/Build_SuperLUDist.cmake)
-append_set(Amanzi_TPL_CMAKE_ARGS
-           -DSuperLUDist_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+  # SuperLUDist
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_SuperLUDist.cmake)
+  append_set(Amanzi_TPL_CMAKE_ARGS
+    -DSuperLUDist_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+endif()
 
 # HYPRE
 option(ENABLE_HYPRE "Build the HYPRE solver package" TRUE)
@@ -778,6 +781,9 @@ if (ENABLE_MSTK_Mesh)
   set(Nanoflann_INSTALL_PREFIX ${TPL_INSTALL_PREFIX})
   set(Nanoflann_INCLUDE_DIRS "${Nanoflann_INSTALL_PREFIX}/include")
 endif()
+
+# EXPRTK
+include(${SuperBuild_BUILD_FILES_DIR}/Build_exprtk.cmake)
 
 
 # ############################################################################ #
