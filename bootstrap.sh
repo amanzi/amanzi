@@ -364,7 +364,7 @@ Value in brackets indicates default setting.
   clm                     build CLM library for surface processes (currently only ATS) ['"${clm}"']
 
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
-  reg_tests               build regression tests into Amanzi Test Suite ['"${reg_tests}"']
+  reg_tests               build regression tests into Amanzi or ATS Test Suite ['"${reg_tests}"']
   shared                  build Amanzi and tpls using shared libraries ['"${shared}"']
   Spack                   build TPLs using the Spack package manager when appropriate ['"${Spack}"']
   xsdk                    build TPLs available in xSDK first, then supplement with additional 
@@ -1084,7 +1084,7 @@ function git_submodule_clone()
   save_dir=`pwd`
   cd ${amanzi_source_dir}
   status_message "In ${amanzi_source_dir} checking out ${submodule_name}"
-  ${git_binary} submodule update --init --remote ${submodule_name}
+  ${git_binary} submodule update --init --remote --recursive ${submodule_name}
   if [ $? -ne 0 ]; then
     error_message "Failed to check out submodule ${submodule_name}"
     exit_now 30
