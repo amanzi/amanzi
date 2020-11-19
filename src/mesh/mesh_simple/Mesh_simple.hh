@@ -107,13 +107,6 @@ class Mesh_simple : public Mesh {
                       const Parallel_type ptype,
                       std::vector<Entity_ID> *faceids) const override;
     
-  // Get faces of ptype of a particular cell that are connected to the
-  // given node
-  void node_get_cell_faces(const Entity_ID nodeid, 
-                           const Entity_ID cellid,
-                           const Parallel_type ptype,
-                           std::vector<Entity_ID> *faceids) const override;
-    
   // Cells of type 'ptype' connected to an edge
   void edge_get_cells(const Entity_ID edgeid, 
                       const Parallel_type ptype,
@@ -137,14 +130,6 @@ class Mesh_simple : public Mesh {
   void cell_get_face_adj_cells(const Entity_ID cellid,
                                const Parallel_type ptype,
                                std::vector<Entity_ID> *fadj_cellids) const override;
-
-  // Node connected neighboring cells of given cell
-  // (a hex in a structured mesh has 26 node connected neighbors)
-  // The cells are returned in no particular order
-  void cell_get_node_adj_cells(const Entity_ID cellid,
-                               const Parallel_type ptype,
-                               std::vector<Entity_ID> *nadj_cellids) const override;
-
 
   //---------------------
   // Mesh entity geometry
@@ -195,7 +180,7 @@ class Mesh_simple : public Mesh {
     
   // Get list of entities of type 'category' in set
   virtual
-  void get_set_entities_and_vofs(const std::string setname, 
+  void get_set_entities_and_vofs(const std::string& setname, 
                                  const Entity_kind kind, 
                                  const Parallel_type ptype, 
                                  Entity_ID_List *entids,

@@ -1452,7 +1452,7 @@ moab::Tag Mesh_MOAB::build_set(
 //--------------------------------------------------------------------
 // TBW
 //--------------------------------------------------------------------
-void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname, 
+void Mesh_MOAB::get_set_entities_and_vofs(const std::string& setname, 
                                           const Entity_kind kind, 
                                           const Parallel_type ptype,
                                           Entity_ID_List *setents,
@@ -1668,19 +1668,6 @@ void Mesh_MOAB::node_get_faces(const Entity_ID nodeid,
     
 
 //--------------------------------------------------------------------
-// Get faces of ptype of a particular cell that are connected to the
-// given node
-//--------------------------------------------------------------------
-void Mesh_MOAB::node_get_cell_faces(const Entity_ID nodeid, 
-                                    const Entity_ID cellid,
-                                    const Parallel_type ptype,
-                                    Entity_ID_List *faceids) const
-{
-  throw std::exception();
-}
-    
-
-//--------------------------------------------------------------------
 // Cells connected to a face
 //--------------------------------------------------------------------
 void Mesh_MOAB::face_get_cells_internal_(const Entity_ID faceid, 
@@ -1762,19 +1749,6 @@ void Mesh_MOAB::face_get_cells_internal_(const Entity_ID faceid,
 void Mesh_MOAB::cell_get_face_adj_cells(const Entity_ID cellid,
                                         const Parallel_type ptype,
                                         Entity_ID_List *fadj_cellids) const
-{
-  throw std::exception();
-}
-
-
-//--------------------------------------------------------------------
-// Node connected neighboring cells of given cell
-// (a hex in a structured mesh has 26 node connected neighbors)
-// The cells are returned in no particular order
-//--------------------------------------------------------------------
-void Mesh_MOAB::cell_get_node_adj_cells(const Entity_ID cellid,
-                                        const Parallel_type ptype,
-                                        Entity_ID_List *nadj_cellids) const
 {
   throw std::exception();
 }

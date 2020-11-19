@@ -721,37 +721,6 @@ void Mesh_simple::node_get_faces(const AmanziMesh::Entity_ID nodeid,
 
  
 //---------------------------------------------------------
-// Get faces of ptype of a particular cell that are connected to the
-// given node
-//---------------------------------------------------------
-void Mesh_simple::node_get_cell_faces(const AmanziMesh::Entity_ID nodeid, 
-                                      const AmanziMesh::Entity_ID cellid,
-                                      const AmanziMesh::Parallel_type ptype,
-                                      AmanziMesh::Entity_ID_List *faceids) const
-{
-  unsigned int offset = (unsigned int) 6*cellid;
-
-  faceids->clear();
-
-  for (int i = 0; i < 6; i++) {
-    Entity_ID cellfaceid = cell_to_face_[offset+i];
-
-    unsigned int offset2 = (unsigned int) 4*cellfaceid;
-
-    Amanzi::AmanziMesh::Entity_ID_List fnodes;
-    face_get_nodes(cellfaceid,&fnodes);
- 
-    for (int j = 0; j < 4; j++) {
-      if (face_to_node_[offset2+j] == nodeid) {
-        faceids->push_back(cellfaceid);
-        break;
-      }
-    }
-  }
-}
-    
-
-//---------------------------------------------------------
 // Cells connected to a face
 //---------------------------------------------------------
 void Mesh_simple::face_get_cells_internal_(const AmanziMesh::Entity_ID faceid, 
@@ -810,43 +779,6 @@ void Mesh_simple::cell_get_face_adj_cells(const AmanziMesh::Entity_ID cellid,
 
 
 //---------------------------------------------------------
-// Node connected neighboring cells of given cell
-// (a hex in a structured mesh has 26 node connected neighbors)
-// The cells are returned in no particular order
-//---------------------------------------------------------
-void Mesh_simple::cell_get_node_adj_cells(const AmanziMesh::Entity_ID cellid,
-                                          const AmanziMesh::Parallel_type ptype,
-                                          AmanziMesh::Entity_ID_List *nadj_cellids) const
-{
-  unsigned int offset = (unsigned int) 8*cellid;
-
-  nadj_cellids->clear();
-  
-  for (int i = 0; i < 8; i++) {
-    Entity_ID nodeid = cell_to_node_[offset+i];
-
-    unsigned int offset2 = (unsigned int) 9*nodeid;
-
-    for (int j = 0; j < 8; j++) {
-      Entity_ID nodecell = node_to_cell_[offset2+j];
-      
-      unsigned int found = 0;
-      unsigned int size = nadj_cellids->size();
-      for (int k = 0; k < size; k++) {
-        if ((*nadj_cellids)[k] == nodecell) {
-          found = 1;
-          break;
-        }
-      }
-
-      if (!found)
-        nadj_cellids->push_back(nodecell);
-    }
-  }
-}
-
-    
-//---------------------------------------------------------
 // TBW
 //---------------------------------------------------------
 const Epetra_Map& Mesh_simple::exterior_node_map(bool include_ghost) const
@@ -872,7 +804,7 @@ const Epetra_Import& Mesh_simple::exterior_face_importer(void) const
 //---------------------------------------------------------
 // TBW
 //---------------------------------------------------------
-void Mesh_simple::get_set_entities_and_vofs(const std::string setname, 
+void Mesh_simple::get_set_entities_and_vofs(const std::string& setname, 
                                             const AmanziMesh::Entity_kind kind, 
                                             const AmanziMesh::Parallel_type ptype, 
                                             AmanziMesh::Entity_ID_List *setents,

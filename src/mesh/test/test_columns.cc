@@ -15,6 +15,7 @@
 #include "AmanziComm.hh"
 #include "Geometry.hh"
 #include "Mesh.hh"
+#include "mesh_mstk/Mesh_MSTK.hh"
 #include "MeshFactory.hh"
 #include "MeshException.hh"
 
@@ -88,7 +89,8 @@ TEST(MESH_COLUMNS)
       if (fabs(ccen[2] - (1.0-dz/2.0)) < 1.e-10) found_above = true;  // top layer
 
       std::vector<int> adjcells;
-      mesh->cell_get_node_adj_cells(c, Amanzi::AmanziMesh::Parallel_type::OWNED, &adjcells);
+      Teuchos::rcp_dynamic_cast<Amanzi::AmanziMesh::Mesh_MSTK>(mesh)->cell_get_node_adj_cells(
+          c, Amanzi::AmanziMesh::Parallel_type::OWNED, &adjcells);
       int nadjcells = adjcells.size();
       for (int k = 0; k < nadjcells && (!found_above || !found_below); k++) {
         int c2 = adjcells[k];

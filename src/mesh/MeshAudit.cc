@@ -1596,7 +1596,8 @@ bool MeshAudit::check_get_set(AmanziMesh::Set_ID sid,
 
   // Get the size of the set.
   try {
-    mesh->get_set_size(sid, kind, ptype); // this may fail
+    std::string set_name = mesh->geometric_model()->FindRegion(sid)->name();
+    mesh->get_set_size(set_name, kind, ptype); // this may fail
   } catch (...) {
     os << "  ERROR: caught exception from get_set_size()" << std::endl;
     return true;
@@ -1661,12 +1662,12 @@ bool MeshAudit::check_used_set(AmanziMesh::Set_ID sid,
   if (comm_->NumProc() == 1) {
     // In serial, the owned and used sets should be identical.
 
-    int n = mesh->get_set_size(sid, kind, AmanziMesh::Parallel_type::OWNED);
+    int n = mesh->get_set_size(set_name, kind, AmanziMesh::Parallel_type::OWNED);
     AmanziMesh::Entity_ID_List set_own;
     mesh->get_set_entities(set_name, kind, AmanziMesh::Parallel_type::OWNED, &set_own);
 
     // Set sizes had better be the same.
-    if (mesh->get_set_size(sid, kind, AmanziMesh::Parallel_type::ALL) != 
+    if (mesh->get_set_size(set_name, kind, AmanziMesh::Parallel_type::ALL) != 
 	set_own.size()) {
       os << "  ERROR: owned and used set sizes differ" << std::endl;
       return true;
@@ -1687,11 +1688,11 @@ bool MeshAudit::check_used_set(AmanziMesh::Set_ID sid,
 
   } else {
 
-    int n = mesh->get_set_size(sid, kind, AmanziMesh::Parallel_type::OWNED);
+    int n = mesh->get_set_size(set_name, kind, AmanziMesh::Parallel_type::OWNED);
     AmanziMesh::Entity_ID_List set_own;
     mesh->get_set_entities(set_name, kind, AmanziMesh::Parallel_type::OWNED, &set_own);
 
-    n = mesh->get_set_size(sid, kind, AmanziMesh::Parallel_type::ALL);
+    n = mesh->get_set_size(set_name, kind, AmanziMesh::Parallel_type::ALL);
     AmanziMesh::Entity_ID_List set_use(n);
     mesh->get_set_entities(set_name, kind, AmanziMesh::Parallel_type::ALL, &set_use);
 
