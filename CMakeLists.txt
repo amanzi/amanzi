@@ -7,7 +7,7 @@
 
 # Require cmake version same as the version used to buildg TPLs 
 #(see SuperBuild/CMakeLists.txt)
-cmake_minimum_required(VERSION 3.11.4)
+cmake_minimum_required(VERSION 3.12)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -89,6 +89,11 @@ set_property(GLOBAL PROPERTY AMANZI_LIBRARY_TARGETS)
 set(AMANZI_LINK_LINE_FILE "${AMANZI_BINARY_DIR}/link_line")  # A filename to write link-line to.
 include(InstallManager)
 
+# find python3 for use in regression testing
+if (ENABLE_Regression_Tests)
+  find_package(PythonInterp 3 REQUIRED VERSION)
+endif()
+
 # Source files for all binaries and libraries found under src
 add_subdirectory(src)
 
@@ -99,8 +104,9 @@ add_subdirectory(src)
 # EIB - uncommenting this will include the verification/benchmarking tests
 include(CTest)
 if (ENABLE_Regression_Tests)
-  find_package(PythonInterp)
-  add_subdirectory(test_suites) 
+  if (ENABLE_AmanziPhysicsModule)
+    add_subdirectory(test_suites)
+  endif()
 endif()
 
 

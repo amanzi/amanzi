@@ -364,7 +364,7 @@ Value in brackets indicates default setting.
   clm                     build CLM library for surface processes (currently only ATS) ['"${clm}"']
 
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
-  reg_tests               build regression tests into Amanzi Test Suite ['"${reg_tests}"']
+  reg_tests               build regression tests into Amanzi or ATS Test Suite ['"${reg_tests}"']
   shared                  build Amanzi and tpls using shared libraries ['"${shared}"']
   Spack                   build TPLs using the Spack package manager when appropriate ['"${Spack}"']
   xsdk                    build TPLs available in xSDK first, then supplement with additional 
