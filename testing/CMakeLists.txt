@@ -1,4 +1,4 @@
-if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ats-regression-tests")
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ats-regression-tests/README.md")
   message("-- Adding ats-regression-tests")
 
   # Copy test subdirectory for out of source builds
@@ -10,13 +10,10 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ats-regression-tests")
     set(ATS_REGRESSION_TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/ats-regression-tests")    
   endif()
 
-  # get the python interpreter
-  include(FindPythonInterp)
-
   # figure out what tests are available
-  if (BUILD_TESTS)
+  if (ENABLE_Regression_Tests)
     set(ats_available_tests_string "")
-    execute_process(COMMAND ${PYTHON_EXECUTABLE} ${ATS_REGRESSION_TESTS_DIR}/regression_tests.py --list-tests .
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} ${ATS_REGRESSION_TESTS_DIR}/regression_tests.py --ats=${ATS_SOURCE_DIR} --list-tests .
       OUTPUT_VARIABLE ats_available_tests_string
       WORKING_DIRECTORY ${ATS_REGRESSION_TESTS_DIR})
 

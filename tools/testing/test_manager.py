@@ -32,7 +32,6 @@ import traceback
 import distutils.spawn
 import numpy
 import collections
-import h5py
 
 aliases = dict()
 
@@ -472,6 +471,7 @@ class RegressionTest(object):
                 if not os.path.isdir('data'):
                     os.mkdir('data')
 
+                import h5py
                 with h5py.File(os.path.join('data', "{0}_dts.h5".format(self.name())), 'w') as fid:
                     fid.create_dataset("timesteps", data=86400.*good[:,2]) # note conversion from days back to seconds
                 print("Wrote file: data/{0}_dts.h5".format(self.name()), file=testlog)
@@ -535,6 +535,8 @@ class RegressionTest(object):
         We return zero on success, one on failure so that the test
         manager can track how many tests succeeded and failed.
         """
+        import h5py
+
         if self._skip_check_gold:
             message = "    Skipping comparison to regression gold file (only test if model runs to completion)."
             print("".join(['\n', message, '\n']), file=testlog)
