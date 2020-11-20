@@ -7,11 +7,11 @@
 
 # Require cmake version same as the version used to buildg TPLs 
 #(see SuperBuild/CMakeLists.txt)
-cmake_minimum_required(VERSION 3.6.1)
+cmake_minimum_required(VERSION 3.11.4)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+#set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Enable testing, ctest needs this
 # all add_test commands are ignored unless this is called!
@@ -22,8 +22,6 @@ enable_testing()
 #     AMANZI_SOURCE_DIR
 #     AMANZI_BINARY_DIR
 project(AMANZI)
-
-message(STATUS "IN TOP CMAKELIST --------------------------------------##################")
 
 message(STATUS "\n-------------------------------------------")
 message(STATUS "\n-- CMake: Configuring Amanzi build/install.\n--")
@@ -43,30 +41,19 @@ set(CMAKE_MODULE_PATH
     ${AMANZI_MODULE_PATH}/Modules
     ${AMANZI_MODULE_PATH}/Utils)
 
-
-if (SPACKAGE_BUILD)
-  set(MSTK_VERSION ON)
-  set(MSTK_VERSION_MAJOR 3) 
-  set(MSTK_VERSION_MINOR 0)
-  # TODO generate the version file 
-  set(TPL_VERSIONS_INCLUDE_FILE ${CMAKE_BINARY_DIR}/tpl_versions.h)
-  file(WRITE ${TPL_VERSIONS_INCLUDE_FILE} "")
-  install(FILES ${CMAKE_BINARY_DIR}/tpl_versions.h DESTINATION include)
-  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DHAVE_MPI")
-  #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_MPI")
-endif()
-
 # Code version defined
 include(AmanziVersion)
 
 # Addtional build options
 include(AmanziOptions)
 
-message("ETC: Trilinos = ${Trilinos_INSTALL_PREFIX}")
-
-
 # Find required Amanzi TPL
 include(AmanziTPL)
+# The following line allows us to link third-party libraries not explicitly 
+# found by the logic in AmanziTPL.cmake.
+#
+# ETC: this is wrong, should point to TPLs, but not necessarily installed here, meaning that lots of ld warnings show up.
+#link_directories(${CMAKE_INSTALL_PREFIX}/tpls/lib)
 
 # shared libraries tweaks: enforcing absolute path
 if (BUILD_SHARED_LIBS)
@@ -79,31 +66,6 @@ if (BUILD_SHARED_LIBS)
 else()
   SET(CMAKE_SKIP_INSTALL_RPATH ON CACHE BOOL "Turn off for static install." FORCE)
   SET(CMAKE_SKIP_RPATH ON CACHE BOOL "Turn off for static install." FORCE)
-endif()
-
-#get_cmake_property(_variableNames VARIABLES)
-#list (SORT _variableNames)
-#foreach (_variableName ${_variableNames})
-#    message(STATUS "${_variableName}=${${_variableName}}")
-#endforeach()
-
-# Change CMAKE COMPILER if KOKKOS used
-if(ENABLE_KOKKOS_CUDA)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
-    -Wno-deprecated-declarations -lineinfo \
-    -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored \
-    -Xcudafe --diag_suppress=conversion_function_not_usable \
-    -Xcudafe --diag_suppress=cc_clobber_ignored \
-    -Xcudafe --diag_suppress=code_is_unreachable \
-    -Xcudafe --diag_suppress=declared_but_not_referenced \
-    -Xcudafe --diag_suppress=integer_sign_change \
-    -Xcudafe --diag_suppress=partial_override \
-    -Xcudafe --diag_suppress=virtual_function_decl_hidden \
-    -Xcudafe --diag_suppress=probable_guiding_friend \
-    -Xcudafe --display_error_number \
-    --expt-extended-lambda")
-  message(STATUS "NVCC_WRAPPER_DEFAULT_COMPILER: $ENV{NVCC_WRAPPER_DEFAULT_COMPILER}")
-  message(STATUS "CMAKE_CXX_COMPILER ${CMAKE_CXX_COMPILER}")
 endif()
 
 # Check the mesh framework choice
@@ -154,7 +116,7 @@ create_exports()
 
 option(ENABLE_Config_Report "Print out detailed information at the end of a configuration")
 set(AMANZI_CONFIG_LOG "${AMANZI_BINARY_DIR}/amanzi-config.log"
-    CACHE string "Amanzi configuration log file")
+    CACHE STRING "Amanzi configuration log file")
 include(AmanziConfigReport)
 if (ENABLE_Config_Report)
   set(cat_exec "cat")
@@ -184,7 +146,7 @@ endif()
 SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Amanzi flow and reactive transport simulator.")
 SET(CPACK_PACKAGE_VENDOR "Amanzi Development Team (LANL, LBNL, PNNL)")
 SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
-SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYRIGHT")
+SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYRIGHT.md")
 SET(CPACK_PACKAGE_VERSION_MAJOR ${AMANZI_VERSION_MAJOR})
 SET(CPACK_PACKAGE_VERSION_MINOR ${AMANZI_VERSION_MINOR})
 SET(CPACK_PACKAGE_VERSION_PATCH ${AMANZI_VERSION_PATCH}_${AMANZI_VERSION_HASH})
