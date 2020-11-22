@@ -62,7 +62,10 @@ else()
 endif()
 
 # --- Set the name of the patch 
-set(Silo_patch_file silo-4.10.2-remove-mpiposix.patch silo-4.10.2-debug-builds.patch silo-4.10.2-static-tools.patch)
+set(Silo_patch_file silo-4.10.2-remove-mpiposix.patch
+                    silo-4.10.2-debug-builds.patch
+                    silo-4.10.2-static-tools.patch
+                    silo-4.10.2-nouppercase.patch)
 
 set(Silo_sh_patch ${Silo_prefix_dir}/silo-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/silo-patch-step.sh.in

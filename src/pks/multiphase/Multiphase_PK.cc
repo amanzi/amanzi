@@ -132,6 +132,9 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
   if (!S->HasField("const_gas_viscosity"))
       S->RequireScalar("const_gas_viscosity", passwd_);
 
+  if (!S->HasField("atmospheric_pressure"))
+    S->RequireScalar("atmospheric_pressure", passwd_);
+
   // pressure is the primary solution
   if (!S->HasField(pressure_liquid_key_)) {
     S->RequireField(pressure_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)

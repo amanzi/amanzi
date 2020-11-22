@@ -112,12 +112,6 @@ class MeshExtractedManifold : public Mesh {
     AMANZI_ASSERT(false);
   }
 
-  // -- faces of type 'ptype' of a particular cell that are connected to the given node
-  //    The order of faces is not guaranteed to be the same on different processors
-  virtual void node_get_cell_faces(const Entity_ID n, const Entity_ID c,
-                                   const Parallel_type ptype,
-                                   Entity_ID_List *faces) const override;
-
   // -- cells of type 'ptype' connected to an edge - The order of cells is not guaranteed
   //    to be the same for corresponding edges on different processors
   virtual void edge_get_cells(const Entity_ID e, const Parallel_type ptype,
@@ -132,14 +126,6 @@ class MeshExtractedManifold : public Mesh {
   // across the respective faces given by cell_get_faces().
   virtual void cell_get_face_adj_cells(const Entity_ID c, const Parallel_type ptype,
                                        Entity_ID_List *cells) const override;
-
-  // -- node connected neighboring cells of given cell (a hex in a structured mesh 
-  //    has 26 node connected neighbors). The cells are returned in no particular order
-  virtual void cell_get_node_adj_cells(const Entity_ID c, const Parallel_type ptype,
-                                       Entity_ID_List *cells) const override {
-    // not used in Amanzi
-    AMANZI_ASSERT(false);
-  }
 
   // Mesh entity geometry
   // -- nodes
@@ -199,7 +185,6 @@ class MeshExtractedManifold : public Mesh {
   // -- Epetra importer that will allow apps to import values from a Epetra vector defined 
   //    on all owned faces into an Epetra vector defined only on exterior faces
   virtual const Epetra_Import& exterior_face_importer(void) const override {
-    AMANZI_ASSERT(false);
     return *exterior_face_importer_;
   }
 
@@ -207,7 +192,7 @@ class MeshExtractedManifold : public Mesh {
   // -- entities
   using Mesh::get_set_entities;
 
-  virtual void get_set_entities_and_vofs(const std::string setname,
+  virtual void get_set_entities_and_vofs(const std::string& setname,
                                          const Entity_kind kind,
                                          const Parallel_type ptype,
                                          Entity_ID_List *entids,

@@ -85,14 +85,14 @@
         </liquid_phase>
         <solid_phase>
             <minerals>
-                <mineral rate_constant="-13.345">Quartz</mineral>
-                <mineral rate_constant="-7.94">Goethite</mineral>
-                <mineral alpha="0.777" prefactor_species="H+" rate_constant="-12.967">Kaolinite</mineral>
-                <mineral rate_constant="2.0">Schoepite</mineral>
-                <mineral rate_constant="-11.5">Gibbsite</mineral>
-                <mineral rate_constant="-8.0">Jurbanite</mineral>
-                <mineral rate_constant="-8.0">Basaluminite</mineral>
-                <mineral rate_constant="-12.135">Opal</mineral>
+                <mineral rate_constant="4.51855944374922E-10">Quartz</mineral>
+                <mineral rate_constant="1.14815362149688E-04">Goethite</mineral>
+                <mineral alpha="0.777" prefactor_species="H+" rate_constant="1.07894672222983E-09">Kaolinite</mineral>
+                <mineral rate_constant="1.00000000000000E+06">Schoepite</mineral>
+                <mineral rate_constant="3.16227766016838E-08">Gibbsite</mineral>
+                <mineral rate_constant="1.00000000000000E-04">Jurbanite</mineral>
+                <mineral rate_constant="1.00000000000000E-04">Basaluminite</mineral>
+                <mineral rate_constant="4.84172367584100E-09">Opal</mineral>
             </minerals>
         </solid_phase>
         <gas_phase>
@@ -196,14 +196,14 @@
                 <dispersion_tensor alpha_l="0.0" alpha_t="0.0" type="uniform_isotropic"/>
             </mechanical_properties>
             <minerals>
-                <mineral name="Goethite" specific_surface_area="11076.30" volume_fraction="0.016"/>
-                <mineral name="Gibbsite" specific_surface_area="0.1" volume_fraction="0"/>
-                <mineral name="Jurbanite" specific_surface_area="0.10" volume_fraction="0"/>
-                <mineral name="Basaluminite" specific_surface_area="0.1" volume_fraction="0"/>
-                <mineral name="Schoepite" specific_surface_area="0.1" volume_fraction="0"/>
-                <mineral name="Opal" specific_surface_area="0.1" volume_fraction="0"/>
-                <mineral name="Quartz" specific_surface_area="3262.3" volume_fraction="0.88"/>
-                <mineral name="Kaolinite" specific_surface_area="59093.9" volume_fraction="0.11"/>
+                <mineral name="Goethite" specific_surface_area="1107630.0" volume_fraction="0.016"/>
+                <mineral name="Gibbsite" specific_surface_area="10.0" volume_fraction="0"/>
+                <mineral name="Jurbanite" specific_surface_area="10.0" volume_fraction="0"/>
+                <mineral name="Basaluminite" specific_surface_area="10.0" volume_fraction="0"/>
+                <mineral name="Schoepite" specific_surface_area="10.0" volume_fraction="0"/>
+                <mineral name="Opal" specific_surface_area="10.0" volume_fraction="0"/>
+                <mineral name="Quartz" specific_surface_area="326230.0" volume_fraction="0.88"/>
+                <mineral name="Kaolinite" specific_surface_area="5909390.0" volume_fraction="0.11"/>
             </minerals>
             <surface_complexation>
                 <site density="0.156199" name="&gt;davis_OH">

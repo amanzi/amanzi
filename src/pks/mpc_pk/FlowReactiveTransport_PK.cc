@@ -97,23 +97,21 @@ bool FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool rein
       S_->set_intermediate_time(t_old + dt_done + dt_next);
       sub_pks_[slave_]->CommitStep(t_old + dt_done, t_old + dt_done + dt_next, S_);
       dt_done += dt_next;
-      //allow dt to grow only when success
+      // allow dt to grow only when success
       dt_next = sub_pks_[slave_]->get_dt();
     }
 
-    //dt_next = sub_pks_[slave_]->get_dt();
+    // dt_next = sub_pks_[slave_]->get_dt();
+    // no state recovery (e.g. pressure) is made, so the only option is to fail.
+    if (dt_next < min_dt_)
+       Exceptions::amanzi_throw("Failure in ReactiveTransport_PK: small time step.");
 
-    // check for done condition
-    done = (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1*min_dt_) || // finished the step
-        (dt_next  < min_dt_); // failed
+    // check for subcycling condition
+    done = std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1*min_dt_;
   }
 
-  if (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1*min_dt_) {
-    // done, success
-    return false;
-  } else {
-    return true;
-  }  
+  // we reach this point when subcycling has been completed 
+  return false;
 }
 
 }  // namespace Amanzi

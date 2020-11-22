@@ -1,0 +1,18 @@
+# Observation File: obs3.dat column names:
+# -----------------------------------------------------------------------------
+# Observation Name: time [s]
+# -----------------------------------------------------------------------------
+# Observation Name: obsA
+# Region: all
+# Functional: average
+# Variable: linear
+# Number of Vectors: 1
+# -----------------------------------------------------------------------------
+# Observation Name: obsB
+# Region: all
+# Functional: average
+# Variable: constant
+# Number of Vectors: 1
+# =============================================================================
+0.000000000000e+00, 0.000000000000e+00, 2.000000000000e+00
+1.000000000000e+00, 7.500000000000e-02, 2.000000000000e+00

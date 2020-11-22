@@ -119,9 +119,10 @@ class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
     return Apply(X,Y,0.0);
   }
   int Apply(const TreeVector& X, TreeVector& Y, double scalar) const;
-  int ApplyFlattened(const TreeVector& X, TreeVector& Y) const;
   int ApplyAssembled(const TreeVector& X, TreeVector& Y) const;
 
+  void Init();
+  void InitOffdiagonals();
   void SymbolicAssembleMatrix();
   void AssembleMatrix();
 

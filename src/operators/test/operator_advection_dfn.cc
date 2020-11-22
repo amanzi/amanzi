@@ -165,7 +165,7 @@ void RunTest(double gravity) {
     double a;
     rhs.Norm2(&a);
 
-    io.InitializeCycle(t, nstep);
+    io.InitializeCycle(t, nstep, "");
     io.WriteVector(*new_c(0), "solution", AmanziMesh::CELL);
     io.FinalizeCycle();
 

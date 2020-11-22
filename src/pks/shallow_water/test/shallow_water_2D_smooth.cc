@@ -233,7 +233,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
       vortex_2D_exact_field(mesh, hh_ex, vx_ex, vy_ex, t_out);
 
       if (iter % 5 == 0) {
-        io.InitializeCycle(t_out, iter);
+        io.InitializeCycle(t_out, iter, "");
         io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
         io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
         io.WriteVector(*vx(0), "vx", AmanziMesh::CELL);
@@ -280,7 +280,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
     Linferror.push_back(err_max);
     L1error.push_back(err_L1);
 
-    io.InitializeCycle(t_out, iter);
+    io.InitializeCycle(t_out, iter, "");
     io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
     io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
     io.WriteVector(*vx(0), "vx", AmanziMesh::CELL);

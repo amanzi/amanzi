@@ -253,9 +253,8 @@ void Chemistry_PK::Initialize(const Teuchos::Ptr<State>& S)
 
 
 /* ******************************************************************
-* Process names of materials 
+* Initialization should be replaced by the base class function.
 ******************************************************************* */
-
 void Chemistry_PK::InitializeField_(const Teuchos::Ptr<State>& S, std::string fieldname, double default_val)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -270,6 +269,10 @@ void Chemistry_PK::InitializeField_(const Teuchos::Ptr<State>& S, std::string fi
   }
 }
 
+
+/* ******************************************************************
+* Process names of materials 
+******************************************************************* */
 void Chemistry_PK::InitializeMinerals(Teuchos::RCP<Teuchos::ParameterList> plist)
 {
   mineral_names_.clear();
@@ -286,13 +289,13 @@ void Chemistry_PK::InitializeMinerals(Teuchos::RCP<Teuchos::ParameterList> plist
 * NOTE: Do we need to worry about sorption sites?
 ******************************************************************* */
 void Chemistry_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist,
-                                           Teuchos::RCP<Teuchos::ParameterList> state_list)
+                                           Teuchos::RCP<Teuchos::ParameterList> ic_list)
 {
   sorption_site_names_.clear();
   if (plist->isParameter("sorption sites")) {
     sorption_site_names_ = plist->get<Teuchos::Array<std::string> >("sorption sites").toVector();
-  } 
-  
+  }
+
   number_sorption_sites_ = sorption_site_names_.size();
   using_sorption_ = (number_sorption_sites_ > 0);
 
@@ -300,18 +303,18 @@ void Chemistry_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> 
   number_ion_exchange_sites_ = 0;
   using_sorption_isotherms_ = false;
 
-  if (state_list->sublist("initial conditions").isSublist(ion_exchange_sites_key_)) {
+  if (ic_list->isSublist(ion_exchange_sites_key_)) {
     // there is currently only at most one site...
     using_sorption_ = true;
     number_ion_exchange_sites_ = 1;
   }
 
-  if (state_list->sublist("initial conditions").isSublist(isotherm_kd_key_)) {
+  if (ic_list->isSublist(isotherm_kd_key_)) {
     using_sorption_ = true;
     using_sorption_isotherms_ = true;
   }
 
-  if (state_list->sublist("initial conditions").isSublist(sorp_sites_key_)) {
+  if (ic_list->isSublist(sorp_sites_key_)) {
     using_sorption_ = true;
   }
 
@@ -320,7 +323,7 @@ void Chemistry_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> 
     using_sorption_ = true;
     number_ion_exchange_sites_ = 1;
   }
-} 
+}
 
 
 /* *******************************************************************

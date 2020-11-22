@@ -51,7 +51,7 @@ OutputSilo::~OutputSilo() {
 
 // open and close files
 void
-OutputSilo::InitializeCycle(double time, int cycle) {
+OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag) {
   // check not open
   AMANZI_ASSERT(fid_ == NULL);
   if (fid_) {

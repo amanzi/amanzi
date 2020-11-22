@@ -429,6 +429,12 @@ void Darcy_PK::InitializeStatistics_(bool init_darcy)
     *vo_->os() << vo_->color("green") << "Initialization of PK is complete, T=" 
                << S_->time() << " dT=" << get_dt() << vo_->reset() << std::endl << std::endl;
   }
+
+  if (dirichlet_bc_faces_ == 0 &&
+      domain_ == "domain" && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "WARNING: no essential boundary conditions, solver may fail" << std::endl;
+  }
 }
 
 
@@ -644,7 +650,6 @@ void Darcy_PK::FractureConservationLaw_()
           double fln = matrix_flux[0][g + (pos + j) % 2] * dirs[i];
           flux_sum -= fln;
           flux_max = std::max<double>(flux_max, std::fabs(fln));
-            
           break;
         }
       }

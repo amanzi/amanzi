@@ -21,6 +21,7 @@
 
 #include "MFD3D_Diffusion.hh"
 #include "Tensor.hh"
+#include "WhetStoneMeshUtils.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -131,7 +132,7 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
 
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
-    mesh_->node_get_cell_faces(v, c, Parallel_type::ALL, &corner_faces);
+    node_get_cell_faces(*mesh_, v, c, Parallel_type::ALL, &corner_faces);
     int nfaces = corner_faces.size();
     if (nfaces < d_) {
       Errors::Message msg;
@@ -171,7 +172,7 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
   W.PutScalar(0.0);
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
-    mesh_->node_get_cell_faces(v, c, Parallel_type::ALL, &corner_faces);
+    node_get_cell_faces(*mesh_, v, c, Parallel_type::ALL, &corner_faces);
 
     Tensor& Mv_tmp = Mv[n];
     for (int i = 0; i < d_; i++) {

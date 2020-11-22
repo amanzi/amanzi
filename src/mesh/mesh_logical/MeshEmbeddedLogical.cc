@@ -466,17 +466,6 @@ MeshEmbeddedLogical::node_get_faces(const Entity_ID nodeid,
   Exceptions::amanzi_throw(mesg);
 }  
 
-// Get faces of ptype of a particular cell that are connected to the
-// given node - The order of faces is not guarnateed to be the same
-// for corresponding nodes on different processors
-void
-MeshEmbeddedLogical::node_get_cell_faces(const Entity_ID nodeid,
-                                         const Entity_ID cellid,
-                                         const Parallel_type ptype,
-                                         Entity_ID_List *faceids) const {
-  Errors::Message mesg("No nodes in MeshEmbeddedLogical.");
-  Exceptions::amanzi_throw(mesg);
-}  
 
 // Same level adjacencies
 //-----------------------
@@ -496,16 +485,6 @@ MeshEmbeddedLogical::cell_get_face_adj_cells(const Entity_ID cellid,
   Exceptions::amanzi_throw(mesg);
 }  
 
-// Node connected neighboring cells of given cell
-// (a hex in a structured mesh has 26 node connected neighbors)
-// The cells are returned in no particular order
-void
-MeshEmbeddedLogical::cell_get_node_adj_cells(const Entity_ID cellid,
-                                             const Parallel_type ptype,
-                                             Entity_ID_List *nadj_cellids) const {
-  Errors::Message mesg("No nodes in MeshEmbeddedLogical.");
-  Exceptions::amanzi_throw(mesg);
-}
 
 //
 // Mesh entity geometry
@@ -626,12 +605,11 @@ MeshEmbeddedLogical::exterior_node_map(bool include_ghost) const {
 // FIX ME: This is probably not generic enough. --etc
 // OBSOLETE: use region name bassed routine.
 void
-MeshEmbeddedLogical::get_set_entities(const Set_ID setid,
+MeshEmbeddedLogical::get_set_entities(const std::string& setname,
                                       const Entity_kind kind,
                                       const Parallel_type ptype,
                                       Entity_ID_List *entids) const {
-  Teuchos::RCP<const AmanziGeometry::Region> rgn =
-      geometric_model_->FindRegion(setid);
+  Teuchos::RCP<const AmanziGeometry::Region> rgn = geometric_model_->FindRegion(setname);
 
   if (rgn->type() == AmanziGeometry::ALL) {
     int nent = num_entities(kind, ptype);
@@ -662,12 +640,12 @@ MeshEmbeddedLogical::get_set_entities(const Set_ID setid,
 
 void
 MeshEmbeddedLogical::get_set_entities_and_vofs(
-    const std::string setname,
+    const std::string& setname,
     const Entity_kind kind,
     const Parallel_type ptype,
     Entity_ID_List *entids,
     std::vector<double> *vofs) const {
-  get_set_entities(geometric_model_->FindRegion(setname)->id(), kind, ptype, entids);
+  get_set_entities(setname, kind, ptype, entids);
   return;
 }
   
@@ -779,28 +757,5 @@ MeshEmbeddedLogical::build_columns_() const {
   return -1;
 }
 
-
-// Cache connectivity info.
-void
-MeshEmbeddedLogical::cache_cell_face_info_() const {
-  Errors::Message mesg("DEVELOPER ERROR: cache should be created in finalize()");
-  Exceptions::amanzi_throw(mesg);
-}
-
-  
-int
-MeshEmbeddedLogical::compute_cell_geometric_quantities_() const {
-  Errors::Message mesg("DEVELOPER ERROR: cache should be created in finalize()");
-  Exceptions::amanzi_throw(mesg);
-  return -1;
-}
-
-int
-MeshEmbeddedLogical::compute_face_geometric_quantities_() const {
-  Errors::Message mesg("DEVELOPER ERROR: cache should be created in finalize()");
-  Exceptions::amanzi_throw(mesg);
-  return -1;
-}
-  
 } // close namespace AmanziMesh
 } // close namespace Amanzi

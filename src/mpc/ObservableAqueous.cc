@@ -106,7 +106,7 @@ int ObservableAqueous::ComputeRegionSize()
 * but fields do not populate them yet (FIXME).
 ****************************************************************** */
 void ObservableAqueous::ComputeObservation(
-   State& S, double* value, double* volume, std::string& unit)
+   State& S, double* value, double* volume, std::string& unit, double dt)
 {
   //double volume, value;
   Errors::Message msg;

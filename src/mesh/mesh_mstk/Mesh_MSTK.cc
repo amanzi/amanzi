@@ -2017,91 +2017,6 @@ void Mesh_MSTK::node_get_faces(const Entity_ID nodeid,
 
 
 //---------------------------------------------------------
-// Get faces of ptype of a particular cell that are connected to the
-// given node. This routine uses push_back since we cannot tell at the
-// outset how many entries will be put into the list
-//---------------------------------------------------------
-void Mesh_MSTK::node_get_cell_faces(const Entity_ID nodeid, 
-                                    const Entity_ID cellid,
-                                    const Parallel_type ptype,
-                                    std::vector<Entity_ID> *faceids) const
-{
-  int idx, lid, n;
-  MRegion_ptr mr;
-  MFace_ptr mf;
-  MEdge_ptr me;
-
-  AMANZI_ASSERT(faces_initialized);
-  AMANZI_ASSERT(faceids != nullptr);
-
-  MVertex_ptr mv = (MVertex_ptr) vtx_id_to_handle[nodeid];
-
-  if (manifold_dimension() == 3) {
-    mr = (MRegion_ptr) cell_id_to_handle[cellid];
-    List_ptr rfaces = MR_Faces(mr);
-
-    faceids->resize(List_Num_Entries(rfaces)); // resize to maximum size
-    Entity_ID_List::iterator it = faceids->begin();
-    
-    idx = 0; n = 0;
-    while ((mf = List_Next_Entry(rfaces,&idx))) {
-      if (!MF_UsesEntity(mf,mv,MVERTEX)) continue;
-
-      if (MEnt_PType(mf) == PGHOST) {
-        if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
-          lid = MEnt_ID(mf);
-          *it = lid-1;  // assign to next spot by dereferencing iterator
-          ++it;
-          ++n;
-        }
-      }
-      else {
-        if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
-          lid = MEnt_ID(mf);
-          *it = lid-1;  // assign to next spot by dereferencing iterator
-          ++it;
-          ++n;
-        }
-      }            
-    }
-    faceids->resize(n); // resize to the actual number of faces being returned
-    List_Delete(rfaces);
-  }
-  else {
-    mf = (MFace_ptr) cell_id_to_handle[cellid];
-    List_ptr fedges = MF_Edges(mf,1,0);
-
-    faceids->resize(List_Num_Entries(fedges));
-    Entity_ID_List::iterator it = faceids->begin();
-
-    idx = 0; n = 0;
-    while ((me = List_Next_Entry(fedges,&idx))) {
-      if (!ME_UsesEntity(me,mv,MVERTEX)) continue;
-
-      if (MEnt_PType(me) == PGHOST) {
-        if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
-          lid = MEnt_ID(me);
-          *it = lid-1;  // assign to next spot by dereferencing iterator
-          ++it;
-          ++n;
-        }
-      }
-      else {
-        if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
-          lid = MEnt_ID(me);
-          *it = lid-1;  // assign to next spot by dereferencing iterator
-          ++it;
-          ++n;
-        }
-      }            
-    }
-    faceids->resize(n); // resize to the actual number of faces being returned
-    List_Delete(fedges);
-  }
-}
-
-
-//---------------------------------------------------------
 // Faces of type 'ptype' connected to an edge.
 //---------------------------------------------------------
 void Mesh_MSTK::edge_get_faces(const Entity_ID edgeid, 
@@ -3229,7 +3144,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
 //---------------------------------------------------------
 // Get list of entities of type 'category' in set specified by setname
 //---------------------------------------------------------
-void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname, 
+void Mesh_MSTK::get_set_entities_and_vofs(const std::string& setname, 
                                           const Entity_kind kind, 
                                           const Parallel_type ptype, 
                                           std::vector<Entity_ID> *setents,

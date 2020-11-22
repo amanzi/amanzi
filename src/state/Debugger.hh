@@ -37,9 +37,11 @@ from the `"Verbose Object`" spec is set to `"high`" or higher.
 
 #include "Teuchos_Ptr.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Epetra_MultiVector.h"
 
 #include "VerboseObject.hh"
 #include "Mesh.hh"
+
 
 namespace Amanzi {
 
@@ -63,6 +65,9 @@ class Debugger {
                    const Teuchos::Ptr<const CompositeVector>& vec,
                    bool include_faces=false);
 
+  void WriteCellVector(const std::string& name,
+                       const Epetra_MultiVector& vec);
+  
   // Write boundary condition data.
   void WriteBoundaryConditions(const std::vector<int>& flag,
 			       const std::vector<double>& data);

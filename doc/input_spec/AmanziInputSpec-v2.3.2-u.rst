@@ -432,7 +432,7 @@ ________________________
 |                                  |              | | *default = tensorial*                                |
 +----------------------------------+--------------+--------------------------------------------------------+
 | limiter_stencil                  | string       | | ``node-to-cells``, ``face-to-cells``,                |
-|                                  |              | | ``cell-to-closests-cells``                           |
+|                                  |              | | ``cell-to-closests-cells``, ``cell-to-all-cells``    |
 |                                  |              | | *default = face-to-cells*                            |
 +----------------------------------+--------------+--------------------------------------------------------+
 | dispersion_discretization_method | string       | | ``mfd-monotone_for_hex``, ``mfd-monotone_for_hex``,  |
@@ -1843,7 +1843,7 @@ The observation element is named according to what is being observed.  The obser
        Optional Elements: integrated_mass [S], volumetric_water_content, gravimetric_water_content, aqueous_pressure, 
                           x_aqueous_volumetric_flux, y_aqueous_volumetric_flux, z_aqueous_volumetric_flux, material_id, 
                           hydraulic_head, aqueous_mass_flow_rate, aqueous_volumetric_flow_rate, aqueous_conc, sorbed_conc,
-                          drawdown, water_table, solute_volumetric_flow_rate, ph, free_ion_conc
+                          drawdown, water_table, solute_volumetric_flow_rate, solute_breakthrough_curev, ph, free_ion_conc
      </liquid_phase>
 
 The observation element identifies the field quantity to be observed.  Subelements identify the elements for a region, a model (functional) with which it will extract its source data, and a list of discrete times for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of Amanzi arguments. The elements for each observation type are as follows:
@@ -1855,10 +1855,12 @@ The observation element identifies the field quantity to be observed.  Subelemen
      Optional Elements: NONE
    </observation_type>
 
-The only exceptions are ``aqueous_conc``, ``sorbed_conc``, ``free_ion_conc``, and ``solute_volumetric_flow_rate`` which require 
-a solute to be specified.
+The only exceptions are ``aqueous_conc``, ``sorbed_conc``, ``free_ion_conc``, ``solute_volumetric_flow_rate``,
+and ``solute_breakthrough_curve`` which require a solute to be specified.
 An attribute ``solute`` gives the name of the solute to calculate the aqueous concentration or volumetric flow rate for.
 Be sure the name of given for the solute matches a defined solute elsewhere in the input file.  
+The following observations are integrated continuously in time but saved only at specified 
+times: ``solute_breakthrough_curve``.
 
 NOTE: Previously individual observation elements had the subelement ``cycle_macro`` or ``time_macro``.
 All output is moving away from only allowing a single macro to be specified to allowing multiple macros as a comma separated list.  

@@ -8,7 +8,7 @@
 
   Author: Ethan Coon (ecoon@lanl.gov)
 
-  EOS for liquid water. Need a reference.
+  EOS for liquid water for T between 0 and 30 C. Need a reference.
 */
 
 #ifndef AMANZI_EOS_LIQUID_WATER_HH_

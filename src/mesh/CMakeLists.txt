@@ -31,6 +31,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 # Library: mesh
 #
 add_amanzi_library(mesh SOURCE GenerationSpec.cc
+                               MeshLight.cc
                                Mesh.cc
                                Mesh_Sets.cc
                                DomainSet.cc
@@ -113,6 +114,7 @@ if (BUILD_TESTS)
                     KIND unit
 		    SOURCE test/Main.cc test/test_columns.cc
 		    LINK_LIBS ${test_link_libs})
+    add_amanzi_test(mesh_columns_np2 mesh_columns NPROCS 2 KIND uint)
 
     # Test: mesh KD search
     add_amanzi_test(mesh_nanoflann mesh_nanoflann

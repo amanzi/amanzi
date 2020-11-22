@@ -103,7 +103,7 @@ TEST(MULTIPHASE_2P2C) {
 
     // output solution
     if (iloop % 5 == 0) {
-      io->InitializeCycle(t, iloop);
+      io->InitializeCycle(t, iloop, "");
       const auto& u0 = *S->GetFieldData("pressure_liquid")->ViewComponent("cell");
       const auto& u1 = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
       const auto& u2 = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell");

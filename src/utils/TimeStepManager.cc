@@ -103,7 +103,7 @@ double TimeStepManager::TimeStep(double T, double dT, bool after_failure) {
   if (next_T_all_events == 1e99) return dT;
   double time_remaining(next_T_all_events - T);
 
-  if (near_equal(dT, time_remaining)) {
+  if (close(dT, time_remaining, 1.e-3)) {
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << "Proposed dT=" << units.OutputTime(dT) << ", is near equal to next event time remaining "
                  << units.OutputTime(time_remaining) << "." << std::endl;
