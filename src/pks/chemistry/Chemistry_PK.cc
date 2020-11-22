@@ -62,7 +62,7 @@ void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
     }
     S->RequireField(tcc_key_, passwd_, conc_names_cv)
       ->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
+      ->AddComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
   }
 
   // require minerals

@@ -65,6 +65,7 @@ set(state_inc_files
   constant_variable_field_evaluator.hh
   deforming_cell_volume_evaluator.hh
   deforming_cell_volume_evaluator_reg.hh
+  time_average_field_evaluator.hh
   Checkpoint.hh
   chemistry_data.hh
   Field_CompositeVector.hh
@@ -104,6 +105,7 @@ add_amanzi_library(state
                           independent_variable_field_evaluator_fromfile.cc
                           constant_variable_field_evaluator.cc
                           deforming_cell_volume_evaluator.cc
+                          time_average_field_evaluator.cc
                           UnstructuredObservations.cc
                           Visualization.cc
                           Debugger.cc
@@ -129,6 +131,7 @@ register_evaluator_with_factory(HEADERFILE secondary_variable_field_evaluator_fr
 register_evaluator_with_factory(HEADERFILE independent_variable_field_evaluator_fromfile_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE constant_variable_field_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE deforming_cell_volume_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE time_average_field_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 
 generate_evaluators_registration_header(HEADERFILE state_evaluators_registration.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS  INSTALL True)
 

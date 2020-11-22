@@ -67,6 +67,8 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   // obtain key of fields
   tcc_key_ = Keys::readKey(*cp_list_,domain_, "total component concentration", "total_component_concentration"); 
 
+ 
+  
   poro_key_ = Keys::readKey(*cp_list_, domain_, "porosity", "porosity");
   saturation_key_ = Keys::readKey(*cp_list_, domain_, "saturation liquid", "saturation_liquid");
   fluid_den_key_ = Keys::readKey(*cp_list_, domain_, "mass density liquid", "mass_density_liquid");
@@ -204,6 +206,13 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
   // initilaization using the base class
   Chemistry_PK::Initialize(S);
 
+  if (S->HasFieldEvaluator(tcc_key_)){
+    Teuchos::RCP<FieldEvaluator> fm = S->GetFieldEvaluator(tcc_key_);
+    solution_evaluator_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
+  }
+
+
+  
   if (!aux_names_.empty()) {
     aux_output_ = Teuchos::rcp(new Epetra_MultiVector(mesh_->cell_map(false), aux_names_.size()));
   } else {
@@ -286,6 +295,9 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   chem_initialized_ = true;
+  if (solution_evaluator_ != Teuchos::null) solution_evaluator_->SetFieldAsChanged(S);
+
+  
   num_iterations_ = 0;
   num_successful_steps_ = 0;
 
@@ -296,7 +308,8 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
         << S->time() << vo_->reset() << std::endl << std::endl;
   }
 
-  // S->WriteStatistics(vo_);
+  //WriteStateStatistics(*S, *vo_);
+  //exit(0);
 }
 
 
@@ -525,8 +538,14 @@ void Alquimia_PK::CopyToAlquimia(int cell,
   state.water_density = fluid_density[0][cell]; 
   state.porosity = porosity[0][cell];
 
+  // std::cout<<"cell "<<cell<<"\n";
+  // std::cout<<"water_density "<<state.water_density<<"\n";
+  // std::cout<<"porosity "<<state.porosity<<"\n";
+
   for (int i = 0; i < number_aqueous_components_; i++) {
     state.total_mobile.data[i] = (*aqueous_components)[i][cell];
+    // if (state.total_mobile.data[i] > 1e-10)
+    //   std::cout<<"tcc "<<state.total_mobile.data[i]<<"\n";
     if (using_sorption_) {
       const Epetra_MultiVector& sorbed = *S_->GetFieldData(total_sorbed_key_)->ViewComponent("cell");
       state.total_immobile.data[i] = sorbed[i][cell];
