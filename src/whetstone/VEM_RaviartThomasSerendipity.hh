@@ -55,7 +55,13 @@ class VEM_RaviartThomasSerendipity : public MFD3D {
   // -- l2 projector
   void L2Cell(int c, const std::vector<VectorPolynomial>& ve,
               const std::vector<VectorPolynomial>& vf,
-              const Polynomial* moments, VectorPolynomial& uc) {};
+              const Polynomial* moments, VectorPolynomial& uc) {
+    ProjectorCell_(c, ve, vf, ProjectorType::L2, moments, uc);
+  }
+
+  void CalculateDOFsOnBoundary(
+      int c, const std::vector<VectorPolynomial>& ve,
+      const std::vector<VectorPolynomial>& vf, DenseVector& vdof);
 
   // access
   DenseMatrix& G() { return G_; }
@@ -63,6 +69,11 @@ class VEM_RaviartThomasSerendipity : public MFD3D {
 
  private:
   // auxiliary functions
+  void ProjectorCell_(int c, const std::vector<VectorPolynomial>& ve,
+                      const std::vector<VectorPolynomial>& vf,
+                      const ProjectorType type,
+                      const Polynomial* moments, VectorPolynomial& uc);
+
   void ComputeN_(
       int c, const Entity_ID_List& faces, const std::vector<int>& dirs,
       const Basis_Regularized<AmanziMesh::Mesh>& basis,

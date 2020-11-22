@@ -794,7 +794,7 @@ void NumericalIntegration<Mesh>::CalculateFunctionMomentsFace(
     PolynomialIterator it(d_ - 1);
     for (it.begin(1); it.MonomialSetOrder() <= order; ++it) {
       const int* index = it.multi_index();
-      double factor = std::pow(area, -(double)it.MonomialSetOrder() / (d_ - 1));
+      double factor = (d_ == 2) ? 1.0 : std::pow(area, -(double)it.MonomialSetOrder() / (d_ - 1));
       Polynomial fmono(d_ - 1, index, factor);
       fmono.InverseChangeCoordinates(xf, *coordsys->tau());  
 
@@ -827,9 +827,8 @@ void NumericalIntegration<Mesh>::CalculatePolynomialMomentsFace(
   PolynomialIterator it(d_ - 1);
   for (it.begin(0); it.MonomialSetOrder() <= order; ++it) {
     const int* index = it.multi_index();
-    // double factor = std::pow(area, -(double)it.MonomialSetOrder() / (d_ - 1));
-    // Polynomial fmono(d_ - 1, index, factor);
-    Polynomial fmono(d_ - 1, index, 1.0);
+    double factor = (d_ == 2) ? 1.0 : std::pow(area, -(double)it.MonomialSetOrder() / (d_ - 1));
+    Polynomial fmono(d_ - 1, index, factor);
     fmono.InverseChangeCoordinates(xf, *coordsys->tau());  
 
     polys[1] = &fmono;

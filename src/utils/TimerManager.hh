@@ -39,7 +39,7 @@ public:
   TimerManager() {};
   ~TimerManager() {};
 
-  void    add(std::string name, Timer::Type type);
+  void    add(const std::string& name, Timer::Type type);
   size_t  size();
   void    start();
   void    start(std::string);

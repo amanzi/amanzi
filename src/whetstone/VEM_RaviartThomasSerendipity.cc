@@ -237,7 +237,12 @@ int VEM_RaviartThomasSerendipity::L2consistency(
     }
   }
 
-  // calculate Mc = R (R^T N)^{-1} R^T 
+  // DenseMatrix X;
+  // X.Transpose(N);
+  // PrintMatrix(X * R, "%12.8f", X.NumRows());
+  // GrammMatrix(numi, order_, integrals_, basis, G_);
+  // PrintMatrix(G_, "%12.8f", G_.NumRows());
+
   DenseMatrix RT;
   RT.Transpose(R);
 
@@ -262,6 +267,113 @@ int VEM_RaviartThomasSerendipity::MassMatrix(int c, const Tensor& K, DenseMatrix
 
   StabilityScalar_(N, M);
   return 0;
+}
+
+
+/* ******************************************************************
+* Generic projector on space of polynomials of order k in cell c.
+****************************************************************** */
+void VEM_RaviartThomasSerendipity::ProjectorCell_(
+    int c, const std::vector<VectorPolynomial>& ve,
+    const std::vector<VectorPolynomial>& vf,
+    const ProjectorType type,
+    const Polynomial* moments, VectorPolynomial& uc)
+{
+  // selecting regularized basis
+  Polynomial ptmp;
+  Basis_Regularized<AmanziMesh::Mesh> basis;
+  basis.Init(mesh_, c, order_, ptmp);
+
+  // calculate stiffness matrix
+  Tensor T(d_, 1);
+  T(0, 0) = 1.0;
+
+  DenseMatrix N, Mc;
+  L2consistency(c, T, N, Mc, true);
+
+  // degrees of freedom: serendipity space S contains all boundary dofs
+  // plus a few internal dofs that depend on the value of eta.
+  int ndof = N.NumRows();
+  int ndof_cs = 0;  // required cell moments
+  int ndof_s(ndof);  // serendipity dofs
+
+  // extract submatrix
+  int ncols = N.NumCols();
+  DenseMatrix Ns, NN(ncols, ncols);
+  Ns = N.SubMatrix(0, ndof_s, 0, ncols);
+
+  NN.Multiply(Ns, Ns, true);
+  NN.InverseSPD();
+
+  // calculate degrees of freedom (Ns^T Ns)^{-1} Ns^T v
+  // for consistency with other code, we use v5 for polynomial coefficients
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  DenseVector v1(ncols), v5(ncols);
+
+  DenseVector vdof(ndof_s + ndof_cs);
+  CalculateDOFsOnBoundary(c, ve, vf, vdof);
+
+  // DOFs inside cell: copy moments from input data
+  if (ndof_cs > 0) {
+    AMANZI_ASSERT(moments != NULL);
+    const DenseVector& v3 = moments->coefs();
+    AMANZI_ASSERT(ndof_cs == v3.NumRows());
+
+    for (int n = 0; n < ndof_cs; ++n) {
+      vdof(ndof_s + n) = v3(n);
+    }
+  }
+
+  Ns.Multiply(vdof, v1, true);
+  NN.Multiply(v1, v5, false);
+
+  // this gives the least square projector
+  int stride = v5.NumRows() / d_;
+  DenseVector v4(stride);
+
+  uc.resize(d_);
+  for (int k = 0; k < d_; ++k) {
+    for (int i = 0; i < stride; ++i) v4(i) = v5(k * stride + i);
+    uc[k] = basis.CalculatePolynomial(mesh_, c, order_, v4);
+  }
+
+  // set correct origin 
+  uc.set_origin(xc);
+}
+
+
+/* ******************************************************************
+* Calculate boundary degrees of freedom in 2D and 3D.
+****************************************************************** */
+void VEM_RaviartThomasSerendipity::CalculateDOFsOnBoundary(
+    int c, const std::vector<VectorPolynomial>& ve,
+    const std::vector<VectorPolynomial>& vf, DenseVector& vdof)
+{
+  std::vector<int> dirs;
+  Entity_ID_List faces;
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();
+
+  std::vector<const WhetStoneFunction*> funcs(2);
+  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+
+  // number of moments on faces
+  std::vector<double> moments;
+
+  int row(0);
+  for (int n = 0; n < nfaces; ++n) {
+    int f = faces[n];
+    double area = mesh_->face_area(f);
+    const auto& normal = mesh_->face_normal(f);
+
+    auto poly = vf[n] * normal;
+
+    numi.CalculatePolynomialMomentsFace(f, poly, order_, moments);
+    for (int k = 0; k < moments.size(); ++k) {
+      vdof(row) = dirs[n] * moments[k] / area;
+      row++;
+    }
+  }
 }
 
 

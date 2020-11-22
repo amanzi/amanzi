@@ -282,8 +282,8 @@ void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
 
       for (auto it = pf.begin(); it < pf.end(); ++it) {
         int k = it.PolynomialPosition();
-        double factor = (d == 2) ? 1.0 : std::pow(area, -(double)it.MonomialSetOrder() / 2);
-        vdof(row++) = moments[k] * factor;
+        // double factor = (d == 2) ? 1.0 : std::pow(area, -(double)it.MonomialSetOrder() / 2);
+        vdof(row++) = moments[k]; // * factor;
       }
     }
   }

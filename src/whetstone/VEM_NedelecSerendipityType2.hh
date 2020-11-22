@@ -51,6 +51,8 @@ class VEM_NedelecSerendipityType2 : public DeRham_Edge {
   int L2consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
   virtual int MassMatrix(int c, const Tensor& K, DenseMatrix& A) override;
 
+  int MassMatrixFace(int f, const Tensor& K, DenseMatrix& M);
+
   // -- stiffness matrix
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 

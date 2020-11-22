@@ -230,8 +230,8 @@ void CurlCurl_VEM(int nx, const std::string& method, int order, double tolerance
 
 TEST(CURL_CURL_HIGH_ORDER) {
   // CurlCurl_VEM<AnalyticElectromagnetics02>(0, "electromagnetics", 0, 1e+3, "test/hexes8.exo");
-  CurlCurl_VEM<AnalyticElectromagnetics02>(0, "Nedelec serendipity type2", 1, 1e+2, "test/hexes8.exo");
-  CurlCurl_VEM<AnalyticElectromagnetics02>(0, "Nedelec serendipity type2", 1, 1e+2, "test/hexes16.exo");
+  CurlCurl_VEM<AnalyticElectromagnetics02>(0, "Nedelec serendipity type2", 1, 1e+2, "test/hexes4.exo");
+  // CurlCurl_VEM<AnalyticElectromagnetics02>(0, "Nedelec serendipity type2", 1, 1e+2, "test/hexes16.exo");
 /*
 L2(e)= 0.030491648  Inf(e)= 0.033814076  itr= 89  size=10072
 L2(e)= 0.015556440  Inf(e)= 0.018429069  itr=162  size=78128

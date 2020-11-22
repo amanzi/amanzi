@@ -244,7 +244,8 @@ int VEM_NedelecSerendipityType2::L2consistency(
 
   // DenseMatrix X;
   // X.Transpose(N);
-  // PrintMatrix(X * R, "%12.5f", X.NumRows());
+  // PrintMatrix(X * R, "%12.8f", X.NumRows());
+  // PrintMatrix(sMGc, "%12.8f", sMGc.NumRows());
 
   // calculate Mc = R (R^T N)^{-1} R^T 
   DenseMatrix RT;
@@ -394,6 +395,7 @@ void VEM_NedelecSerendipityType2::CurlMatrix(int c, DenseMatrix& C)
           // surface terms
           double factor = vbasisf[n].monomial_scales()[it.MonomialSetOrder()];
           Polynomial fmono(d_ - 1, it.multi_index(), factor);
+
           std::vector<AmanziGeometry::Point> tau(1, vcoordsys[n]->Project(mesh_->edge_vector(e), false));
           fmono.ChangeCoordinates(vcoordsys[n]->Project(xe, true), tau);
 
@@ -438,6 +440,28 @@ void VEM_NedelecSerendipityType2::CurlMatrix(int c, DenseMatrix& C)
       }
     }
   }
+}
+
+
+/* ******************************************************************
+* Mass matrix for edge-based discretization.
+****************************************************************** */
+int VEM_NedelecSerendipityType2::MassMatrixFace(
+    int f, const Tensor& K, DenseMatrix& M)
+{
+  DenseMatrix N, MG;
+
+  const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+  AmanziGeometry::Point normal = mesh_->face_normal(f);
+
+  auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
+  Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
+
+  int ok = L2consistency2D_(surf_mesh, f, K, N, M, MG);
+  if (ok) return ok;
+
+  StabilityScalar_(N, M);
+  return 0;
 }
 
 

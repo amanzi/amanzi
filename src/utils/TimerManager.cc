@@ -25,7 +25,7 @@ TimerManager timer_manager;
  * \returns    void
  * \author     Nathan Barnett
  */
-void TimerManager::add(std::string name, Timer::Type type) {
+void TimerManager::add(const std::string& name, Timer::Type type) {
   _timer.insert(
       std::make_pair(name, std::shared_ptr<Timer>(new Timer(name, type))));
 }

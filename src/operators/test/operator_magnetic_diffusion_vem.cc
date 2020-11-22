@@ -80,7 +80,7 @@ void MagneticDiffusionVEM(
   RCP<Mesh> mesh;
   if (filename == "structured") {
     mesh = meshfactory.create(Xa, Ya, Za, Xb, Yb, Zb, nx, ny, nz, request_faces, request_edges);
-    // DeformMesh(mesh, 5, 1.0);
+    DeformMesh(mesh, 5, 1.0);
   } else {
     mesh = meshfactory.create(filename, request_faces, request_edges);
   }
@@ -151,6 +151,7 @@ void MagneticDiffusionVEM(
     for (int k = 0; k < moments.size(); ++k) Bf[k][f] = moments[k];
   }
 
+
   int cycle(0);
   double energy0(1e+99), divB0(0.0);
   while (told + dt/2 < tend) {
@@ -181,10 +182,9 @@ void MagneticDiffusionVEM(
           double len = mesh->edge_length(e);
           const AmanziGeometry::Point& tau = mesh->edge_vector(e);
 
-          std::vector<AmanziGeometry::Point> coordsys(1, tau);
           ana.set_parameters(tau / len, 0, tnew - dt/2);
 
-          numi.CalculateFunctionMomentsEdge(e, &ana, order, moments, 2);
+          numi.CalculateFunctionMomentsEdge(e, &ana, order, moments, 4);
           for (int k = 0; k < moments.size(); ++k) bc_value[e][k] = moments[k];
           bc_model[e] = OPERATOR_BC_DIRICHLET;
         }
@@ -199,6 +199,40 @@ void MagneticDiffusionVEM(
     global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "silent", plist.sublist("solvers"));
     global_op->InitializeInverse();
     global_op->ComputeInverse();
+
+
+// TEST
+/*
+{
+CompositeVector x(E), y(E), r(*global_op->rhs());
+auto& x_e = *x.ViewComponent("edge");
+auto& y_e = *y.ViewComponent("edge");
+auto& r_e = *r.ViewComponent("edge");
+for (int e = 0; e < nedges_owned; ++e) {
+  double len = mesh->edge_length(e);
+  const AmanziGeometry::Point& tau = mesh->edge_vector(e);
+
+  std::vector<AmanziGeometry::Point> coordsys(1, tau);
+  ana.set_parameters(tau / len, 0, tnew - dt/2);
+
+  numi.CalculateFunctionMomentsEdge(e, &ana, order, moments, 4);
+  for (int k = 0; k < moments.size(); ++k) x_e[k][e] = moments[k];
+}
+std::cout << "AAA:" << std::endl;
+op_mag->global_operator()->ComputeNegativeResidual(x, y);
+std::cout << "AAA:" << std::endl;
+for (int e = 0; e < nedges_owned; ++e) {
+if(e==16){
+std::cout << e << " sol=" << x_e[0][e] << " r=" << y_e[0][e] << "  xe=" << mesh->edge_centroid(e) << " rhs=" << r_e[0][e] << std::endl;
+std::cout << e << " sol=" << x_e[1][e] << " r=" << y_e[1][e] << "  xe=" << mesh->edge_centroid(e) << " rhs=" << r_e[1][e] << std::endl;
+}
+}
+}
+exit(0);
+*/
+// END TEST
+
+
 
     CompositeVector& rhs = *global_op->rhs();
     global_op->ApplyInverse(rhs, E);
@@ -323,10 +357,15 @@ void MagneticDiffusionVEM(
 }
 
 TEST(MAGNETIC_DIFFUSION3D_CONVERGENCE) {
-  MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 0, 6,6,6, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
-  MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 1, 6,6,6, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
+  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 0, 6,6,6, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
+  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 1, 6,6,6, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
   // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01*2, 0.1, 0, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes8.exo", "electromagnetics");
   // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01*2, 0.1, 0, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes8.exo");
-  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01*2,0.1, 1, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes8.exo");
+  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 1, 4,4,4, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
+  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01*2,0.1, 0, 4,4,4, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes4.exo");
+  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01/10000, 0.1, 1, 2,1,2, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
+  MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01*2,0.1, 1, 4,4,4, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes4.exo");
+  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01,  0.1, 1, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes8.exo");
+  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01/2,0.1, 1, 16,16,16, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes16.exo");
 }
 

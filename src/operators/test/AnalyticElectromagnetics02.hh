@@ -57,6 +57,7 @@ class AnalyticElectromagnetics02 : public AnalyticElectromagneticsBase {
     double x = p[0];
     double y = p[1];
     double z = p[2];
+
     double fx = -2 * sin(z) + y * y * sin(z);
     double fy = -2 * sin(x) + z * z * sin(x);
     double fz = -2 * sin(y) + x * x * sin(y);
