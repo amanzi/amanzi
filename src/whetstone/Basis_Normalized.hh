@@ -71,7 +71,7 @@ void Basis_Normalized<MyMesh>::Init(
   int d = mesh->space_dimension();
   monomial_scales_.Reshape(d, order);
 
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+  NumericalIntegration<AmanziMesh::MeshLight> numi(mesh);
   numi.UpdateMonomialIntegralsCell(c, 2 * order, integrals);
   
   double volume = integrals(0); 

@@ -73,7 +73,7 @@ TEST(DG_MAP_DETERMINANT_CELL) {
   MatrixPolynomial J;
 
   VectorPolynomial moments(2, 2);
-  auto numi = std::make_shared<NumericalIntegration<AmanziMesh::Mesh> >(mesh0);
+  auto numi = std::make_shared<NumericalIntegration<AmanziMesh::MeshLight> >(mesh0);
   std::vector<const char*> list = {"SerendipityPk"};
   
   for (auto name : list) {

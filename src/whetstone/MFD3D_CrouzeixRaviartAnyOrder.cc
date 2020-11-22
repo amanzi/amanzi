@@ -18,7 +18,7 @@
 #include <vector>
 
 // Amanzi
-#include "Mesh.hh"
+#include "MeshLight.hh"
 #include "Point.hh"
 #include "errors.hh"
 
@@ -38,7 +38,7 @@ namespace WhetStone {
 ****************************************************************** */
 MFD3D_CrouzeixRaviartAnyOrder::MFD3D_CrouzeixRaviartAnyOrder(
     const Teuchos::ParameterList& plist,
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
   : BilinearForm(mesh)
 {
   order_ = plist.get<int>("method order");
@@ -96,11 +96,11 @@ int MFD3D_CrouzeixRaviartAnyOrder::H1consistency(
 
   // select regularized basis
   Polynomial ptmp;
-  Basis_Regularized<AmanziMesh::Mesh> basis;
+  Basis_Regularized<AmanziMesh::MeshLight> basis;
   basis.Init(mesh_, c, order_, ptmp);
 
   // pre-calculate integrals of natural monomials 
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+  NumericalIntegration<AmanziMesh::MeshLight> numi(mesh_);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_ - 2, integrals_);
 
   // populate matrices N and R
@@ -257,11 +257,11 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorGradientCell_(
   uc.Reshape(d_, dim, d_, order_ - 1, true);
 
   std::vector<const PolynomialBase*> polys(2);
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+  NumericalIntegration<AmanziMesh::MeshLight> numi(mesh_);
 
   // selecting regularized basis
   Polynomial ptmp;
-  Basis_Regularized<AmanziMesh::Mesh> basis;
+  Basis_Regularized<AmanziMesh::MeshLight> basis;
   basis.Init(mesh_, c, order_, ptmp);
 
   for (int i = 0; i < dim; ++i) {
@@ -326,7 +326,7 @@ void MFD3D_CrouzeixRaviartAnyOrder::CalculateFaceDOFs_(
 {
   std::vector<const PolynomialBase*> polys(2);
 
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+  NumericalIntegration<AmanziMesh::MeshLight> numi(mesh_);
 
   double area = mesh_->face_area(f);
   const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 

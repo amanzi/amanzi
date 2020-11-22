@@ -12,7 +12,7 @@
   Mimetic schemes for generalized polyhedra.
 */
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 
 #include "MFD3D_GeneralizedDiffusion.hh"
 #include "WhetStoneDefs.hh"

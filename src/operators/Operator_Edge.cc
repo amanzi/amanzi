@@ -41,7 +41,7 @@ void Operator_Edge::UpdateRHS(const CompositeVector& source, bool volume_include
     AmanziMesh::Entity_ID_List edges;
 
     for (int c = 0; c != ncells_owned; ++c) {
-      mesh_->cell_get_edges(c, &edges);
+      const auto& edges = mesh_->cell_get_edges(c);
       int nedges = edges.size();
 
       double volume = mesh_->cell_volume(c);

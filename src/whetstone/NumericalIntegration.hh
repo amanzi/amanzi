@@ -187,7 +187,7 @@ double NumericalIntegration<Mesh>::IntegrateFunctionsTriangulatedCell(
 {
   double integral(0.0);
 
-  AmanziMesh::Entity_ID_List faces, nodes;
+  AmanziMesh::Entity_ID_List nodes, faces;
   std::vector<AmanziGeometry::Point> xy(d_ + 1); 
 
   mesh_->cell_get_faces(c, &faces);

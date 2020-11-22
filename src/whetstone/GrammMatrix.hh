@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "Basis_Regularized.hh"
-#include "Mesh.hh"
 #include "Polynomial.hh"
 #include "PolynomialOnMesh.hh"
 #include "Tensor.hh"

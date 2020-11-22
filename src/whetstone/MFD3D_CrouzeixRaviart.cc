@@ -18,7 +18,7 @@
 #include <vector>
 
 // Amanzi
-#include "Mesh.hh"
+#include "MeshLight.hh"
 #include "Point.hh"
 #include "errors.hh"
 
@@ -37,7 +37,7 @@ namespace WhetStone {
 * Constructor parses the parameter list
 ****************************************************************** */
 MFD3D_CrouzeixRaviart::MFD3D_CrouzeixRaviart(const Teuchos::ParameterList& plist,
-                                             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+                                             const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
   : BilinearForm(mesh)
 {
   order_ = plist.get<int>("method order");

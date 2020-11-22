@@ -242,7 +242,6 @@ void LimiterCell::LimiterTensorial_(
   Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
 
   std::vector<AmanziGeometry::Point> normals;
-  AmanziMesh::Entity_ID_List faces;
 
   // Step 1: limit gradient to a feasiable set excluding Dirichlet boundary
   if (!external_bounds_) {
@@ -254,7 +253,7 @@ void LimiterCell::LimiterTensorial_(
   
   for (int n = 0; n < ids.size(); ++n) {
     int c = ids[n];
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
 
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -328,13 +327,12 @@ void LimiterCell::LimiterExtensionTransportTensorial_()
   AMANZI_ASSERT(upwind_cells_.size() > 0);
 
   double u1f, u1;
-  AmanziMesh::Entity_ID_List faces;
 
   auto& grad_c = *gradient_->ViewComponent("cell", false);
   auto& bounds_c = *bounds_->ViewComponent("cell", true);
 
   for (int c = 0; c < ncells_owned_; c++) {
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
 
     double a, b;
@@ -458,14 +456,13 @@ void LimiterCell::LimiterExtensionTransportScalar_(
 
   double u1, u1f;
   AmanziGeometry::Point gradient_c1(dim);
-  AmanziMesh::Entity_ID_List faces;
 
   auto& grad_c = *gradient_->ViewComponent("cell", false);
   auto& bounds_c = *bounds_->ViewComponent("cell", true);
 
   for (int c = 0; c < ncells_owned_; c++) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
 
     double a, b;
@@ -515,7 +512,7 @@ void LimiterCell::LimiterScalarDG_(
   AMANZI_ASSERT(dg.cell_basis(0).id() == WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
 
   double u1, u1f, umin, umax;
-  AmanziMesh::Entity_ID_List faces, nodes;
+  AmanziMesh::Entity_ID_List nodes;
 
   int nk = field_->NumVectors();
   WhetStone::DenseVector data(nk);
@@ -530,7 +527,7 @@ void LimiterCell::LimiterScalarDG_(
 
   for (int n = 0; n < ids.size(); ++n) {
     int c = ids[n];
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
 
     for (int i = 0; i < nk; ++i) data(i) = (*field_)[i][c];
@@ -585,7 +582,7 @@ void LimiterCell::LimiterHierarchicalDG_(
   AMANZI_ASSERT(dg.cell_basis(0).id() == WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
 
   double u1, u1f, umin, umax;
-  AmanziMesh::Entity_ID_List faces, nodes;
+  AmanziMesh::Entity_ID_List nodes;
 
   int nk = field_->NumVectors();
   WhetStone::DenseVector data(nk);
@@ -617,7 +614,7 @@ void LimiterCell::LimiterHierarchicalDG_(
 
   for (int n = 0; n < ids.size(); ++n) {
     int c = ids[n];
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
 
     for (int i = 0; i < nk; ++i) data(i) = (*field_)[i][c];
@@ -826,12 +823,12 @@ void LimiterCell::LimiterExtensionTransportKuzmin_(
 
   double u1, up;
   AmanziGeometry::Point xp(dim);
-  AmanziMesh::Entity_ID_List faces, nodes;
+  AmanziMesh::Entity_ID_List nodes;
 
   auto& grad = *gradient_->ViewComponent("cell", false);
 
   for (int c = 0; c < ncells_owned_; c++) {
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
 
     double a, b;
@@ -948,11 +945,9 @@ void LimiterCell::IdentifyUpwindCells_()
   upwind_cells_.resize(nfaces_wghost_);
   downwind_cells_.resize(nfaces_wghost_);
 
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
   for (int c = 0; c < ncells_wghost_; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& dirs = mesh_->cell_get_face_dirs(c);
 
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];

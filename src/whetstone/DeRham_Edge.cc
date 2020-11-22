@@ -12,7 +12,7 @@
   Derham complex: mimetic inner products on edges.
 */
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 
 #include "DeRham_Edge.hh"
 #include "WhetStoneDefs.hh"
@@ -112,13 +112,13 @@ int DeRham_Edge::L2consistency2D_(int c, const Tensor& T,
 int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
                                   DenseMatrix& N, DenseMatrix& Mc)
 {
-  Entity_ID_List edges, fedges, faces;
+  Entity_ID_List fedges, faces;
   std::vector<int> fdirs, edirs, map;
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
   int nfaces = faces.size();
 
-  mesh_->cell_get_edges(c, &edges);
+  const auto& edges = mesh_->cell_get_edges(c);
   int nedges = edges.size();
 
   N.Reshape(nedges, d_);
@@ -299,13 +299,13 @@ int DeRham_Edge::L2consistencyInverse2D_(
 int DeRham_Edge::L2consistencyInverse3D_(
     int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
 {
-  Entity_ID_List edges, faces;
+  Entity_ID_List fedges, faces;
   std::vector<int> fdirs, edirs, map;
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
   int nfaces = faces.size();
 
-  mesh_->cell_get_edges(c, &edges);
+  const auto& edges = mesh_->cell_get_edges(c);
   int nedges = edges.size();
 
   R.Reshape(nedges, d_);
@@ -350,13 +350,13 @@ int DeRham_Edge::L2consistencyInverse3D_(
       vv[k][k] -= a1;
     }
 
-    mesh_->face_get_edges_and_dirs(f, &edges, &edirs);
-    int nfedges = edges.size();
+    mesh_->face_get_edges_and_dirs(f, &fedges, &edirs);
+    int nfedges = fedges.size();
 
     mesh_->face_to_cell_edge_map(f, c, &map);
 
     for (int m = 0; m < nfedges; ++m) {
-      int e = edges[m];
+      int e = fedges[m];
       const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
  
       v3 = xe - xf;

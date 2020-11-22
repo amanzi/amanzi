@@ -409,7 +409,7 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 ****************************************************************** */
 void Flow_PK::ComputeWellIndex(Teuchos::ParameterList& spec)
 {
-  AmanziMesh::Entity_ID_List cells, faces;
+  AmanziMesh::Entity_ID_List cells;
   Epetra_MultiVector& wi = *S_->GetFieldData("well_index", passwd_)->ViewComponent("cell");
   const Epetra_MultiVector& perm = *S_->GetFieldData(permeability_key_)->ViewComponent("cell");
 
@@ -426,7 +426,7 @@ void Flow_PK::ComputeWellIndex(Teuchos::ParameterList& spec)
 
     for (int k = 0; k < cells.size(); k++) {
       int c = cells[k];
-      mesh_->cell_get_faces(c, &faces);
+      const auto& faces = mesh_->cell_get_faces(c);
       xmin = ymin = zmin = 1e+23;
       xmax = ymax = zmax = 1e-23;
       for (int j = 0; j < faces.size(); j++) {
@@ -736,12 +736,10 @@ void Flow_PK::DeriveFaceValuesFromCellValues(
 double Flow_PK::WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
                                            const Epetra_MultiVector& darcy_flux) const
 {
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> fdirs;
-
   double volume = 0.0;
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& fdirs = mesh_->cell_get_face_dirs(c);
 
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
@@ -793,10 +791,8 @@ double Flow_PK::BoundaryFaceValue(int f, const CompositeVector& u)
 ****************************************************************** */
 void Flow_PK::VerticalNormals(int c, AmanziGeometry::Point& n1, AmanziGeometry::Point& n2)
 {
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   int i1, i2;

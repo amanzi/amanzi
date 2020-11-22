@@ -82,15 +82,6 @@ Mesh::Mesh(const Comm_ptr_type& comm,
 
   geometric_model_ = gm;
 
-  cell2face_info_cached_ = false;
-  cell2edge_info_cached_ = false;
-  face2cell_info_cached_ = false;
-  face2edge_info_cached_ = false;
-
-  cell_geometry_precomputed_ = false;
-  face_geometry_precomputed_ = false;
-  edge_geometry_precomputed_ = false;
-
   if (plist_ == Teuchos::null) {
     plist_ = Teuchos::rcp(new Teuchos::ParameterList("Mesh"));
   }

@@ -21,7 +21,7 @@
 #include <vector>
 
 // Amanzi
-#include "Mesh.hh"
+#include "MeshLight.hh"
 #include "Point.hh"
 #include "errors.hh"
 
@@ -44,7 +44,7 @@ namespace WhetStone {
 ****************************************************************** */
 MFD3D_LagrangeAnyOrder::MFD3D_LagrangeAnyOrder(
     const Teuchos::ParameterList& plist,
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
   : BilinearForm(mesh)
 {
   order_ = plist.get<int>("method order");
@@ -82,8 +82,8 @@ std::vector<SchemaItem> MFD3D_LagrangeAnyOrder::schema() const
 int MFD3D_LagrangeAnyOrder::H1consistency3D_(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac, bool doAc)
 {
-  Entity_ID_List nodes, edges, faces, fedges, fnodes, ids;
-  std::vector<int> dirs, fdirs;
+  Entity_ID_List nodes, edges, fedges, fnodes, ids;
+  std::vector<int> fdirs;
 
   mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
@@ -91,7 +91,8 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
   mesh_->cell_get_edges(c, &edges);
   int nedges = edges.size();
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c); 
@@ -226,11 +227,11 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
   G_.Reshape(nd, nd);
 
   // pre-calculate integrals of monomials 
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+  NumericalIntegration<AmanziMesh::MeshLight> numi(mesh_);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_ - 2, integrals_);
 
   // selecting regularized basis
-  Basis_Regularized<AmanziMesh::Mesh> basis;
+  Basis_Regularized<AmanziMesh::MeshLight> basis;
   basis.Init(mesh_, c, order_, integrals_.poly());
 
   // populate matrices N and R
@@ -435,12 +436,12 @@ void MFD3D_LagrangeAnyOrder::ProjectorCell_(
 {
   AMANZI_ASSERT(d_ == 2);
 
-  Entity_ID_List nodes, faces;
+  Entity_ID_List nodes;
 
   mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
-  mesh_->cell_get_faces(c, &faces);
+  const auto& faces = mesh_->cell_get_faces(c);
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -467,11 +468,11 @@ void MFD3D_LagrangeAnyOrder::ProjectorCell_(
 
   DenseVector vdof(ndof);
   std::vector<const PolynomialBase*> polys(2);
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+  NumericalIntegration<AmanziMesh::MeshLight> numi(mesh_);
 
   // selecting regularized basis
   Polynomial ptmp;
-  Basis_Regularized<AmanziMesh::Mesh> basis;
+  Basis_Regularized<AmanziMesh::MeshLight> basis;
   basis.Init(mesh_, c, order_, ptmp);
 
   AmanziGeometry::Point xv(d_);
@@ -611,15 +612,14 @@ void MFD3D_LagrangeAnyOrder::ProjectorCellFromDOFs_(
   double volume = mesh_->cell_volume(c);
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c); 
 
-  Entity_ID_List faces;
-  mesh_->cell_get_faces(c, &faces);
+  const auto& faces = mesh_->cell_get_faces(c);
   int nfaces = faces.size();
   int nnodes = nfaces;
   int ndof_c(ndof - nnodes);
 
   // selecting regularized basis
   Polynomial ptmp;
-  Basis_Regularized<AmanziMesh::Mesh> basis;
+  Basis_Regularized<AmanziMesh::MeshLight> basis;
   basis.Init(mesh_, c, order_, ptmp);
 
   // calculate polynomial coefficients (in vector v5)
@@ -661,7 +661,7 @@ void MFD3D_LagrangeAnyOrder::ProjectorCellFromDOFs_(
     DenseMatrix M, M2;
     DenseVector v6(nd - ndof_c);
     Polynomial poly(d_, order_);
-    NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+    NumericalIntegration<AmanziMesh::MeshLight> numi(mesh_);
 
     numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
     GrammMatrix(poly, integrals_, basis, M);

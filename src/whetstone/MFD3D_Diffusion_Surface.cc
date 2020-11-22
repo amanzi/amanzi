@@ -15,7 +15,7 @@
 #include <cmath>
 #include <vector>
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 
 #include "MFD3D_Diffusion.hh"
 #include "Tensor.hh"

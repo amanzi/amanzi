@@ -88,6 +88,7 @@ add_amanzi_library(whetstone
                            SplinePolynomial.hh
                            SurfaceCoordinateSystem.hh
                            SurfaceMiniMesh.hh
+                           SurfaceMeshLight.hh
                            VectorObjects.hh MatrixObjects.hh PolynomialOnMesh.hh
                            Tensor.hh
                            WhetStoneDefs.hh

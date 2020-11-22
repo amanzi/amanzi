@@ -12,7 +12,7 @@
   Derham complex: mimetic inner products on faces.
 */
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 
 #include "DeRham_Face.hh"
 #include "WhetStoneDefs.hh"

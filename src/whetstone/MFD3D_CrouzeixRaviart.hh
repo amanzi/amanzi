@@ -17,7 +17,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 #include "Point.hh"
 
 #include "BilinearFormFactory.hh"
@@ -34,7 +34,7 @@ namespace WhetStone {
 class MFD3D_CrouzeixRaviart : public MFD3D { 
  public:
   MFD3D_CrouzeixRaviart(const Teuchos::ParameterList& plist,
-                        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+                        const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh);
 
   // required methods
   // -- schema
@@ -50,14 +50,14 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
   virtual void L2Cell(int c, const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& uc) override {
-    ProjectorCell_<AmanziMesh::Mesh>(mesh_, c, ve, vf, uc);
+    ProjectorCell_<AmanziMesh::MeshLight>(mesh_, c, ve, vf, uc);
   }
 
   // -- h1 projectors
   virtual void H1Cell(int c, const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& uc) override {
-    ProjectorCell_<AmanziMesh::Mesh>(mesh_, c, ve, vf, uc);
+    ProjectorCell_<AmanziMesh::MeshLight>(mesh_, c, ve, vf, uc);
   }
 
   virtual void H1Face(int f, const std::vector<Polynomial>& ve,

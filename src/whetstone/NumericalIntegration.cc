@@ -17,6 +17,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "NumericalIntegration.hh"
+#include "SurfaceMeshLight.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -98,7 +99,7 @@ double IntegrateFunctionsTetrahedron(
 * the same order k centered at the centroid of cell c.
 ****************************************************************** */
 template <>
-void NumericalIntegration<AmanziMesh::Mesh>::IntegrateMonomialsFaceReduction_(
+void NumericalIntegration<AmanziMesh::MeshLight>::IntegrateMonomialsFaceReduction_(
     int c, int f, double factor, int k, Polynomial& integrals) const
 {
   int nk = PolynomialSpaceDimension(d_, k - 1);
@@ -196,6 +197,12 @@ double IntegratePolynomialsEdge(
 ****************************************************************** */
 template <>
 void NumericalIntegration<SurfaceMiniMesh>::IntegrateMonomialsFaceReduction_(
+    int c, int f, double factor, int k, Polynomial& integrals) const
+{};
+
+
+template <>
+void NumericalIntegration<SurfaceMeshLight>::IntegrateMonomialsFaceReduction_(
     int c, int f, double factor, int k, Polynomial& integrals) const
 {};
 

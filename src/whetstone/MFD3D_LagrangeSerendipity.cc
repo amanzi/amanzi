@@ -22,7 +22,7 @@
 #include <tuple>
 #include <vector>
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 #include "Point.hh"
 #include "errors.hh"
 
@@ -32,6 +32,7 @@
 #include "MFD3D_LagrangeSerendipity.hh"
 #include "NumericalIntegration.hh"
 #include "SurfaceCoordinateSystem.hh"
+#include "SurfaceMeshLight.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
@@ -42,7 +43,7 @@ namespace WhetStone {
 ****************************************************************** */
 MFD3D_LagrangeSerendipity::MFD3D_LagrangeSerendipity(
     const Teuchos::ParameterList& plist,
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
   : MFD3D_LagrangeAnyOrder(plist, mesh),
     BilinearForm(mesh)
 {
@@ -116,11 +117,11 @@ int MFD3D_LagrangeSerendipity::H1consistency(
   MFD3D_LagrangeAnyOrder::H1consistency(c, K, Nf, Af);
 
   // pre-calculate integrals of monomials 
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+  NumericalIntegration<AmanziMesh::MeshLight> numi(mesh_);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
   // selecting regularized basis
-  Basis_Regularized<AmanziMesh::Mesh> basis;
+  Basis_Regularized<AmanziMesh::MeshLight> basis;
   basis.Init(mesh_, c, order_, integrals_.poly());
 
   // Dot-product matrix for polynomials and Laplacian of polynomials
@@ -207,7 +208,8 @@ void MFD3D_LagrangeSerendipity::ProjectorFace_(
   const auto& normal = mesh_->face_normal(f);
   auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
 
-  Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
+  // Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
+  Teuchos::RCP<const SurfaceMeshLight> surf_mesh = Teuchos::rcp(new SurfaceMeshLight(mesh_, f));
 
   std::vector<Polynomial> vve;
   for (int i = 0; i < ve.size(); ++i) {
@@ -216,7 +218,8 @@ void MFD3D_LagrangeSerendipity::ProjectorFace_(
     vve.push_back(tmp);
   }
 
-  ProjectorCell_<SurfaceMiniMesh>(surf_mesh, f, vve, vve, type, moments, uf);
+  // ProjectorCell_<SurfaceMiniMesh>(surf_mesh, f, vve, vve, type, moments, uf);
+  ProjectorCell_<SurfaceMeshLight>(surf_mesh, 0, vve, vve, type, moments, uf);
   uf.ChangeOrigin(AmanziGeometry::Point(d_ - 1));
   uf.InverseChangeCoordinates(xf, *coordsys->tau());  
 }

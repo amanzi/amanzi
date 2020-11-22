@@ -120,11 +120,7 @@ TEST(ELASTICITY_STIFFNESS_3D) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: Stiffness matrix for Elasticity in 3D" << std::endl;
-#ifdef HAVE_MPI
   auto comm = Amanzi::getDefaultComm();
-#else
-  auto comm = Amanzi::getCommSelf();
-#endif
 
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({Framework::MSTK}));

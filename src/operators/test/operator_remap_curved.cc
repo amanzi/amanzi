@@ -232,7 +232,7 @@ double MyRemapDGc::InitialMass(const CompositeVector& p1, int order)
 
   double mass(0.0), mass0;
   WhetStone::DenseVector data(nk);
-  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh0_);
+  WhetStone::NumericalIntegration<AmanziMesh::MeshLight> numi(mesh0_);
 
   for (int c = 0; c < ncells; c++) {
     for (int i = 0; i < nk; ++i) data(i) = p1c[i][c];
@@ -493,7 +493,7 @@ void RemapTestsCurved(std::string file_name,
   double area(0.0), area0(0.0), area1(0.0);
   double mass1(0.0), gcl_err(0.0), gcl_inf(0.0);
   auto& det = remap.det();
-  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh0);
+  WhetStone::NumericalIntegration<AmanziMesh::MeshLight> numi(mesh0);
 
   for (int c = 0; c < ncells_owned; ++c) {
     double vol1 = numi.IntegratePolynomialCell(c, det[c].Value(1.0));

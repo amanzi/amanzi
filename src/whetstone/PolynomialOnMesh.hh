@@ -18,7 +18,6 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "Mesh.hh"
 #include "Point.hh"
 
 #include "Polynomial.hh"

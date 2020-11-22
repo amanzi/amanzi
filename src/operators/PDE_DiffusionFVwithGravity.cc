@@ -62,9 +62,6 @@ void PDE_DiffusionFVwithGravity::UpdateMatrices(
 
   // populating right-hand side
   if (!exclude_primary_terms_) {
-    AmanziMesh::Entity_ID_List faces;
-    std::vector<int> dirs;
-
     const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
     const Epetra_MultiVector& gravity_face = *gravity_term_->ViewComponent("face", true);
     Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
@@ -76,7 +73,8 @@ void PDE_DiffusionFVwithGravity::UpdateMatrices(
     }
 
     for (int c = 0; c != ncells_owned; ++c) {
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      const auto& faces = mesh_->cell_get_faces(c);
+      const auto& dirs = mesh_->cell_get_face_dirs(c);
       int nfaces = faces.size();
 
       for (int n = 0; n != nfaces; ++n) {
@@ -227,14 +225,14 @@ void PDE_DiffusionFVwithGravity::ComputeTransmissibility_(
   Epetra_MultiVector& h_face = *h.ViewComponent("face", true);
   h.PutScalar(0.0);
 
-  AmanziMesh::Entity_ID_List faces, cells;
+  AmanziMesh::Entity_ID_List cells;
   AmanziGeometry::Point a_dist, a;
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1); 
   Kc(0, 0) = 1.0;
 
   for (int c = 0; c < ncells_owned; ++c) {
     if (K_.get()) Kc = (*K_)[c];
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
 
     for (int i = 0; i < nfaces; i++) {

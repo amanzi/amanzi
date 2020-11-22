@@ -49,9 +49,8 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
 
     const auto& map = Yf.Map();
 
-    AmanziMesh::Entity_ID_List faces;
     for (int c = 0; c != ncells_owned; ++c) {
-      mesh_->cell_get_faces(c, &faces);
+      const auto& faces = mesh_->cell_get_faces(c);
       int nfaces = faces.size();
 
       int npoints(0);
@@ -105,9 +104,8 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_Face& op,
   {
     Epetra_MultiVector& Yf = *Y.ViewComponent("face", true);
 
-    AmanziMesh::Entity_ID_List faces;
     for (int c = 0; c != ncells_owned; ++c) {
-      mesh_->cell_get_faces(c, &faces);
+      const auto& faces = mesh_->cell_get_faces(c);
       int nfaces = faces.size();
 
       WhetStone::DenseVector v(nfaces), av(nfaces);
@@ -205,9 +203,8 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
   Teuchos::RCP<const Epetra_BlockMap> cell_map = map.ComponentMap(my_block_row, "cell");
   
   int ierr(0);
-  AmanziMesh::Entity_ID_List faces;
   for (int c = 0; c != ncells_owned; ++c) {
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
 
     int k = 0;
@@ -254,9 +251,8 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
   Teuchos::RCP<const Epetra_BlockMap> face_gh_map = map.ComponentGhostedMap(my_block_row, "face");
 
   int ierr(0);
-  AmanziMesh::Entity_ID_List faces;
   for (int c = 0; c != ncells_owned; ++c) {
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
 
     int k = 0;
@@ -356,11 +352,10 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
   Teuchos::RCP<const Epetra_BlockMap> cell_map = map.ComponentMap(my_block_row, "cell");
 
   int ierr(0);
-  AmanziMesh::Entity_ID_List faces;
   for (int c = 0; c != ncells_owned; ++c) {
-    mesh_->cell_get_faces(c, &faces);
-    
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
+
     int k = 0;
     for (int n = 0; n != nfaces; ++n) {
       int f = faces[n];
@@ -407,9 +402,8 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_Face& op,
   Teuchos::RCP<const Epetra_BlockMap> face_gh_map = map.ComponentGhostedMap(my_block_row, "face");
 
   int ierr(0);
-  AmanziMesh::Entity_ID_List faces;
   for (int c = 0; c != ncells_owned; ++c) {
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
 
     int k = 0;

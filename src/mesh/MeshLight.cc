@@ -20,6 +20,16 @@ namespace Amanzi {
 namespace AmanziMesh {
 
 // -------------------------------------------------------------------
+// Cache data
+// -------------------------------------------------------------------
+void MeshLight::BuildCache() 
+{
+  if (!cell2face_info_cached_ && faces_requested_) cache_cell2face_info_();
+  if (!cell2edge_info_cached_ && edges_requested_) cache_cell2edge_info_();
+}
+
+
+// -------------------------------------------------------------------
 // Downward connectivity: c -> f
 // -------------------------------------------------------------------
 void MeshLight::cell_get_faces_and_dirs(
@@ -29,7 +39,7 @@ void MeshLight::cell_get_faces_and_dirs(
     const bool ordered) const
 {
 #if AMANZI_MESH_CACHE_VARS != 0
-  if (!cell2face_info_cached_) cache_cell_face_info_();
+  if (!cell2face_info_cached_) cache_cell2face_info_();
 
   if (ordered)
     cell_get_faces_and_dirs_internal_(c, faceids, face_dirs, ordered);
@@ -119,7 +129,7 @@ void MeshLight::face_to_cell_edge_map(const Entity_ID faceid,
   face_get_edges_and_dirs(faceid, &fedgeids, &fedgedirs, true);
   cell_get_edges(cellid, &cedgeids);
 
-  map->resize(fedgeids.size(),-1);
+  map->resize(fedgeids.size(), -1);
   for (int f = 0; f < fedgeids.size(); ++f) {
     Entity_ID fedge = fedgeids[f];
 
@@ -160,7 +170,7 @@ AmanziGeometry::Point MeshLight::cell_centroid(
 // -------------------------------------------------------------------
 // Cache: c -> f
 // -------------------------------------------------------------------
-void MeshLight::cache_cell_face_info_() const
+void MeshLight::cache_cell2face_info_() const
 {
   int ncells = num_entities(CELL, Parallel_type::ALL);
   cell_face_ids_.resize(ncells);
@@ -221,7 +231,7 @@ void MeshLight::face_get_cells(const Entity_ID faceid,
                                Entity_ID_List *cellids) const
 {
 #if AMANZI_MESH_CACHE_VARS != 0
-  if (!face2cell_info_cached_) cache_cell_face_info_();
+  if (!face2cell_info_cached_) cache_cell2face_info_();
 
   cellids->clear();
   int n = face_cell_ptype_[faceid].size();
@@ -296,7 +306,7 @@ void MeshLight::cache_face2edge_info_() const
 unsigned int MeshLight::cell_get_num_faces(const Entity_ID cellid) const
 {
 #if AMANZI_MESH_CACHE_VARS != 0
-  if (!cell2face_info_cached_) cache_cell_face_info_();
+  if (!cell2face_info_cached_) cache_cell2face_info_();
   return cell_face_ids_[cellid].size();
 
 #else  // Non-cached version
@@ -646,8 +656,7 @@ unsigned int MeshLight::cell_get_max_edges() const
   if (edges_requested_) {
     int ncells = num_entities(CELL, Parallel_type::OWNED);
     for (int c = 0; c < ncells; ++c) {
-      AmanziMesh::Entity_ID_List edges;
-      cell_get_edges(c, &edges);
+      const auto& edges = cell_get_edges(c);
       n = std::max(n, (unsigned int) edges.size());
     }
   }

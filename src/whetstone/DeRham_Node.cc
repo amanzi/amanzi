@@ -12,7 +12,7 @@
   Derham complex: mimetic inner products for nodal DOFs.
 */
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 
 #include "DeRham_Node.hh"
 #include "WhetStoneDefs.hh"
