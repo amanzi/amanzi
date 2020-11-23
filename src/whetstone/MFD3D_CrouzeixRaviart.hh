@@ -25,7 +25,6 @@
 #include "MFD3D.hh"
 #include "Polynomial.hh"
 #include "PolynomialOnMesh.hh"
-#include "SurfaceMiniMesh.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {

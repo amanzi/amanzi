@@ -37,9 +37,13 @@ class SurfaceMeshLight : public AmanziMesh::MeshLight {
     *nodes = cell_node_ids_;
   }
 
-  virtual void face_get_nodes(const Entity_ID f, Entity_ID_List *nodes) const { *nodes = face_node_ids_[f]; }
+  virtual void face_get_nodes(const Entity_ID f, Entity_ID_List *nodes) const {
+    AMANZI_ASSERT(f < nnodes_);
+    *nodes = face_node_ids_[f];
+  }
 
   virtual void edge_get_nodes(const Entity_ID e, Entity_ID* n0, Entity_ID* n1) const {
+    AMANZI_ASSERT(e < nnodes_);
     *n0 = face_node_ids_[e][0]; 
     *n1 = face_node_ids_[e][1]; 
   }
@@ -50,12 +54,13 @@ class SurfaceMeshLight : public AmanziMesh::MeshLight {
   virtual void node_get_cells(
           const Entity_ID v,
           const Parallel_type ptype,
-          Entity_ID_List *cells) const { cells->resize(1, 0); }
+          Entity_ID_List *cells) const { AMANZI_ASSERT(v < nnodes_); cells->resize(1, 0); }
 
   virtual void node_get_faces(
           const Entity_ID v,
           const Parallel_type ptype,
           Entity_ID_List *faces) const {
+    AMANZI_ASSERT(v < nnodes_);
     faces->resize(2);
     (*faces)[0] = v; 
     (*faces)[1] = (v + 1) % nnodes_;
@@ -65,10 +70,11 @@ class SurfaceMeshLight : public AmanziMesh::MeshLight {
   // Geometry
   // --------
   virtual void node_get_coordinates(
-          const Entity_ID v, AmanziGeometry::Point* xp) const { *xp = cell_coords_[v]; }
+          const Entity_ID v, AmanziGeometry::Point* xp) const { AMANZI_ASSERT(v < nnodes_); *xp = cell_coords_[v]; }
 
   virtual void face_get_coordinates(
           const Entity_ID f, std::vector<AmanziGeometry::Point> *fcoords) const {
+    AMANZI_ASSERT(f < nnodes_);
     fcoords->resize(2);
     const auto& nodes = face_node_ids_[f];
     (*fcoords)[0] = cell_coords_[nodes[0]];
@@ -157,8 +163,9 @@ SurfaceMeshLight::SurfaceMeshLight(
   nnodes_ = fnodes.size();
 
   std::vector<int> fdirs(nnodes_, 1);
-  if (edges_requested_)
+  if (mesh->valid_edges()) {
     mesh->face_get_edges_and_dirs(f, &fedges, &fdirs);
+  }
 
   // single surface cell
   fedges.resize(nnodes_);
@@ -197,12 +204,13 @@ SurfaceMeshLight::SurfaceMeshLight(
   for (int i = 0; i < nnodes_; ++i) {
     int n0(i), n1((i + 1) % nnodes_);
 
-    enodes[0] = n0;
-    enodes[1] = n1;
+    enodes[0] = (fdirs[i] > 0) ? n0 : n1;
+    enodes[1] = (fdirs[i] > 0) ? n1 : n0;
     face_node_ids_[i] = enodes;
 
     auto tau = (cell_coords_[n1] - cell_coords_[n0]) * fdirs[i];
     face_areas_[i] = norm(tau);
+
     face_normals_[i].resize(1, AmanziGeometry::Point(tau[1], -tau[0]));
     face_centroids_[i] = (cell_coords_[n1] + cell_coords_[n0]) / 2;
   }

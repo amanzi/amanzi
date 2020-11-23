@@ -28,7 +28,6 @@
 #include "Quadrature2D.hh"
 #include "Quadrature3D.hh"
 #include "SurfaceCoordinateSystem.hh"
-#include "SurfaceMiniMesh.hh"
 #include "WhetStoneFunction.hh"
 
 namespace Amanzi {

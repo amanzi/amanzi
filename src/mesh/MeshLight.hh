@@ -48,6 +48,8 @@ class MeshLight {
   void set_manifold_dimension(const unsigned int dim) { manifold_dim_ = dim; }
   unsigned int manifold_dimension() const { return manifold_dim_; }
 
+  virtual bool valid_edges() const { return false; }
+
   // ---------------------
   // Downward connectivity
   // ---------------------

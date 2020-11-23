@@ -26,7 +26,6 @@
 #include "DenseMatrix.hh"
 #include "MFD3D_LagrangeAnyOrder.hh"
 #include "Polynomial.hh"
-#include "SurfaceMiniMesh.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {

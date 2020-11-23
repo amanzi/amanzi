@@ -31,7 +31,7 @@
 #include "MFD3D_LagrangeAnyOrder.hh"
 #include "NumericalIntegration.hh"
 #include "SurfaceCoordinateSystem.hh"
-#include "SurfaceMiniMesh.hh"
+#include "SurfaceMeshLight.hh"
 #include "Tensor.hh"
 #include "WhetStoneDefs.hh"
 #include "WhetStoneMeshUtils.hh"
@@ -123,8 +123,8 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
   std::vector<DenseMatrix> vRf;
   std::vector<std::vector<int> > vmapf;
   std::vector<std::shared_ptr<SurfaceCoordinateSystem> > vsysf;
-  std::vector<Basis_Regularized<SurfaceMiniMesh> > vbasisf;
-  std::vector<NumericalIntegration<SurfaceMiniMesh> > vnumif;
+  std::vector<Basis_Regularized<SurfaceMeshLight> > vbasisf;
+  std::vector<NumericalIntegration<SurfaceMeshLight> > vnumif;
   std::vector<PolynomialOnMesh> vintegralsf;
 
   for (int l = 0; l < nfaces; ++l) {
@@ -136,26 +136,27 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
     auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
     vsysf.push_back(coordsys);
 
-    Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
+    Teuchos::RCP<const SurfaceMeshLight> surf_mesh = Teuchos::rcp(new SurfaceMeshLight(mesh_, f, *coordsys));
 
     // -- matrices
     DenseMatrix Nf, Af, Mf;
-    mfd_surf.H1consistency2D_<SurfaceMiniMesh>(surf_mesh, f, K, Nf, Af);
+    mfd_surf.integrals().set_id(-1);
+    mfd_surf.H1consistency2D_<SurfaceMeshLight>(surf_mesh, 0, K, Nf, Af);
     const DenseMatrix& Rf = mfd_surf.R();
     const DenseMatrix& Gf = mfd_surf.G();
     auto& integrals_f = mfd_surf.integrals();
 
-    NumericalIntegration<SurfaceMiniMesh> numi_f(surf_mesh);
-    numi_f.UpdateMonomialIntegralsCell(f, 2 * order_, integrals_f);
+    NumericalIntegration<SurfaceMeshLight> numi_f(surf_mesh);
+    numi_f.UpdateMonomialIntegralsCell(0, 2 * order_, integrals_f);
     vnumif.push_back(numi_f);
     vintegralsf.push_back(integrals_f);
 
-    Basis_Regularized<SurfaceMiniMesh> basis_f;
-    basis_f.Init(surf_mesh, f, order_, integrals_f.poly());
+    Basis_Regularized<SurfaceMeshLight> basis_f;
+    basis_f.Init(surf_mesh, 0, order_, integrals_f.poly());
     vbasisf.push_back(basis_f);
 
     Polynomial tmp(d_ - 1, order_);
-    tmp.set_origin(surf_mesh->cell_centroid(f));
+    tmp.set_origin(surf_mesh->cell_centroid(0));
     GrammMatrix(tmp, integrals_f, basis_f, Mf);
 
     DenseMatrix RG(Rf), RGM(Rf);
@@ -290,7 +291,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
         polys[1] = &fmono;
 
         int k = jt.PolynomialPosition();
-        N(row + k, col) = vnumif[i].IntegratePolynomialsCell(f, polys, vintegralsf[i]) / area;
+        N(row + k, col) = vnumif[i].IntegratePolynomialsCell(0, polys, vintegralsf[i]) / area;
       }
       row += ndf;
 
@@ -414,10 +415,10 @@ int MFD3D_LagrangeAnyOrder::StiffnessMatrixSurface(
   const auto& normal = mesh_->face_normal(f);
 
   auto coordsys = std::make_shared<SurfaceCoordinateSystem>(origin, normal);
-  Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
+  Teuchos::RCP<const SurfaceMeshLight> surf_mesh = Teuchos::rcp(new SurfaceMeshLight(mesh_, f, *coordsys));
 
   DenseMatrix N;
-  int ok = H1consistency2D_<SurfaceMiniMesh>(surf_mesh, f, K, N, A);
+  int ok = H1consistency2D_<SurfaceMeshLight>(surf_mesh, f, K, N, A);
   if (ok) return ok;
 
   StabilityScalar_(N, A);

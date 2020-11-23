@@ -116,9 +116,6 @@ class Mesh : public MeshLight {
   void set_geometric_model(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm) { geometric_model_ = gm; }
   Teuchos::RCP<const AmanziGeometry::GeometricModel> geometric_model() const { return geometric_model_; }
 
-  // Were optional edges initialized?
-  virtual bool valid_edges() const { return false; }
-
   void set_parameter_list(const Teuchos::RCP<const Teuchos::ParameterList>& plist) {
     plist_ = plist;
     if (vo_ == Teuchos::null)

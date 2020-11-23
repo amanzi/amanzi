@@ -87,7 +87,6 @@ add_amanzi_library(whetstone
                            SpaceTimePolynomial.hh
                            SplinePolynomial.hh
                            SurfaceCoordinateSystem.hh
-                           SurfaceMiniMesh.hh
                            SurfaceMeshLight.hh
                            VectorObjects.hh MatrixObjects.hh PolynomialOnMesh.hh
                            Tensor.hh

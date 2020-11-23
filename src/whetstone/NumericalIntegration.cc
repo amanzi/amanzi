@@ -196,12 +196,6 @@ double IntegratePolynomialsEdge(
 * TBW
 ****************************************************************** */
 template <>
-void NumericalIntegration<SurfaceMiniMesh>::IntegrateMonomialsFaceReduction_(
-    int c, int f, double factor, int k, Polynomial& integrals) const
-{};
-
-
-template <>
 void NumericalIntegration<SurfaceMeshLight>::IntegrateMonomialsFaceReduction_(
     int c, int f, double factor, int k, Polynomial& integrals) const
 {};

@@ -38,8 +38,6 @@ void Operator_Edge::UpdateRHS(const CompositeVector& source, bool volume_include
     Epetra_MultiVector& rhs_e = *rhs_->ViewComponent("edge", true);
     const Epetra_MultiVector& source_e = *source.ViewComponent("edge", true);
 
-    AmanziMesh::Entity_ID_List edges;
-
     for (int c = 0; c != ncells_owned; ++c) {
       const auto& edges = mesh_->cell_get_edges(c);
       int nedges = edges.size();

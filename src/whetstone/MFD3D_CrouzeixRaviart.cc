@@ -28,6 +28,7 @@
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "NumericalIntegration.hh"
 #include "SurfaceCoordinateSystem.hh"
+#include "SurfaceMeshLight.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
@@ -119,10 +120,10 @@ void MFD3D_CrouzeixRaviart::H1Face(int f, const std::vector<Polynomial>& ve,
 {
   const auto& origin = mesh_->face_centroid(f);
   const auto& normal = mesh_->face_normal(f);
-  auto coordsys = std::make_shared<SurfaceCoordinateSystem>(origin, normal);
+  SurfaceCoordinateSystem coordsys(origin, normal);
 
-  Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
-  ProjectorCell_<SurfaceMiniMesh>(surf_mesh, f, ve, ve, vf);
+  Teuchos::RCP<const SurfaceMeshLight> surf_mesh = Teuchos::rcp(new SurfaceMeshLight(mesh_, f, coordsys));
+  ProjectorCell_<SurfaceMeshLight>(surf_mesh, f, ve, ve, vf);
 }
 
 }  // namespace WhetStone
