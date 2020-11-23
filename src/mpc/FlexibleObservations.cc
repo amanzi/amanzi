@@ -186,7 +186,7 @@ int FlexibleObservations::MakeContinuousObservations(State& S)
 {
   for (auto i = observations.begin(); i != observations.end(); i++) {
     std::string var = i->second->variable_;
-    if (var.find(" breakthrough curve")) {
+    if (var.find(" breakthrough curve") != std::string::npos) {
       double value(0.0), volume(0.0);
       std::string unit;
       double dt = S.final_time() - S.initial_time();
