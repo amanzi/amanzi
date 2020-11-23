@@ -25,13 +25,17 @@ namespace WhetStone {
 
 class SurfaceMeshLight : public AmanziMesh::MeshLight {
  public:
-  SurfaceMeshLight(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh, int f);
+  SurfaceMeshLight(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh, int f,
+                                      const SurfaceCoordinateSystem& coordsys);
   ~SurfaceMeshLight() {};
 
   // ---------------------
   // Downward connectivity
   // ---------------------
-  virtual void cell_get_nodes(const Entity_ID c, Entity_ID_List *nodes) const { *nodes = cell_node_ids_; }
+  virtual void cell_get_nodes(const Entity_ID c, Entity_ID_List *nodes) const {
+    AMANZI_ASSERT(c == 0);
+    *nodes = cell_node_ids_;
+  }
 
   virtual void face_get_nodes(const Entity_ID f, Entity_ID_List *nodes) const { *nodes = face_node_ids_[f]; }
 
@@ -140,19 +144,25 @@ class SurfaceMeshLight : public AmanziMesh::MeshLight {
 * Construct cache data
 ****************************************************************** */
 inline
-SurfaceMeshLight::SurfaceMeshLight(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh, int f)
+SurfaceMeshLight::SurfaceMeshLight(
+    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh, int f,
+    const SurfaceCoordinateSystem& coordsys)
 {
   int d = mesh->space_dimension() - 1;
   set_space_dimension(d);
   set_manifold_dimension(d);
 
   Entity_ID_List fedges, fnodes, enodes, cells;
-  std::vector<int> fdirs;
-  mesh->face_get_edges_and_dirs(f, &fedges, &fdirs);
-  int nfedges = fedges.size();
+  mesh->face_get_nodes(f, &fnodes);
+  nnodes_ = fnodes.size();
+
+  std::vector<int> fdirs(nnodes_, 1);
+  if (edges_requested_)
+    mesh->face_get_edges_and_dirs(f, &fedges, &fdirs);
 
   // single surface cell
-  for (int i = 0; i < nfedges; ++i) fedges[i] = i;
+  fedges.resize(nnodes_);
+  for (int i = 0; i < nnodes_; ++i) fedges[i] = i;
 
   cell_face_ids_.resize(1);
   cell_face_ids_[0] = fedges;
@@ -162,25 +172,19 @@ SurfaceMeshLight::SurfaceMeshLight(const Teuchos::RCP<const AmanziMesh::MeshLigh
 
   AmanziGeometry::Point xyz(d);
   const auto& xf = mesh->face_centroid(f);
-  const auto& normal = mesh->face_normal(f);
-  auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
-
-  cell_centroids_.resize(1, coordsys->Project(xf, true));
+  cell_centroids_.resize(1, coordsys.Project(xf, true));
 
   double volume = mesh->face_area(f);
   cell_volumes_.resize(1, volume);
 
   // cell nodes
-  mesh->face_get_nodes(f, &fnodes);
-  nnodes_ = fnodes.size();
-
   cell_node_ids_.resize(nnodes_);
   cell_coords_.resize(nnodes_);
 
   for (int i = 0; i < nnodes_; ++i) {
     cell_node_ids_[i] = i;
     mesh->node_get_coordinates(fnodes[i], &xyz);
-    cell_coords_[i] = coordsys->Project(xyz, true);
+    cell_coords_[i] = coordsys.Project(xyz, true);
   }
 
   // cell faces

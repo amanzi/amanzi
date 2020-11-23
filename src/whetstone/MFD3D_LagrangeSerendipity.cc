@@ -206,22 +206,20 @@ void MFD3D_LagrangeSerendipity::ProjectorFace_(
 {
   const auto& xf = mesh_->face_centroid(f);
   const auto& normal = mesh_->face_normal(f);
-  auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
+  SurfaceCoordinateSystem coordsys(xf, normal);
 
-  // Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
-  Teuchos::RCP<const SurfaceMeshLight> surf_mesh = Teuchos::rcp(new SurfaceMeshLight(mesh_, f));
+  Teuchos::RCP<const SurfaceMeshLight> surf_mesh = Teuchos::rcp(new SurfaceMeshLight(mesh_, f, coordsys));
 
   std::vector<Polynomial> vve;
   for (int i = 0; i < ve.size(); ++i) {
     Polynomial tmp(ve[i]);
-    tmp.ChangeCoordinates(xf, *coordsys->tau());  
+    tmp.ChangeCoordinates(xf, *coordsys.tau());  
     vve.push_back(tmp);
   }
 
-  // ProjectorCell_<SurfaceMiniMesh>(surf_mesh, f, vve, vve, type, moments, uf);
   ProjectorCell_<SurfaceMeshLight>(surf_mesh, 0, vve, vve, type, moments, uf);
   uf.ChangeOrigin(AmanziGeometry::Point(d_ - 1));
-  uf.InverseChangeCoordinates(xf, *coordsys->tau());  
+  uf.InverseChangeCoordinates(xf, *coordsys.tau());  
 }
 
 }  // namespace WhetStone

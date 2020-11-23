@@ -109,9 +109,9 @@ void NumericalIntegration<AmanziMesh::MeshLight>::IntegrateMonomialsFaceReductio
   const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
   // create a surface mesh
-  auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
-  Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
-  NumericalIntegration<SurfaceMiniMesh> numi_f(surf_mesh);
+  SurfaceCoordinateSystem coordsys(xf, normal);
+  Teuchos::RCP<const SurfaceMeshLight> surf_mesh = Teuchos::rcp(new SurfaceMeshLight(mesh_, f, coordsys));
+  NumericalIntegration<SurfaceMeshLight> numi_f(surf_mesh);
 
   PolynomialIterator it(d_);
   for (it.begin(k); it.MonomialSetOrder() <= k; ++it) {
@@ -121,9 +121,9 @@ void NumericalIntegration<AmanziMesh::MeshLight>::IntegrateMonomialsFaceReductio
     const int* idx = it.multi_index();
     Polynomial poly(d_, idx, 1.0);
     poly.set_origin(xc);
-    poly.ChangeCoordinates(xf, *coordsys->tau());  
+    poly.ChangeCoordinates(xf, *coordsys.tau());  
 
-    integrals(nk + l) += factor * numi_f.IntegratePolynomialCell(f, poly);
+    integrals(nk + l) += factor * numi_f.IntegratePolynomialCell(0, poly);
   }
 }
 

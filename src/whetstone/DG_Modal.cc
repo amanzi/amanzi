@@ -22,6 +22,7 @@
 #include "FunctionUpwind.hh"
 #include "Monomial.hh"
 #include "Polynomial.hh"
+#include "SurfaceMeshLight.hh"
 #include "WhetStoneDefs.hh"
 #include "WhetStoneMeshUtils.hh"
 
@@ -510,8 +511,8 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
   const AmanziGeometry::Point& normal = mesh_->face_normal(f);
   auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
 
-  Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
-  NumericalIntegration<SurfaceMiniMesh> numi_f(surf_mesh);
+  Teuchos::RCP<const SurfaceMeshLight> surf_mesh = Teuchos::rcp(new SurfaceMeshLight(mesh_, f, *coordsys));
+  NumericalIntegration<SurfaceMeshLight> numi_f(surf_mesh);
 
   // integrate traces of polynomials on face f
   std::vector<const PolynomialBase*> polys(3), polys0(2), polys1(2), polys_tmp(1);
@@ -568,7 +569,7 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
         polys[2] = &q;
         vel1 = numi_.IntegratePolynomialsFace(f, polys);
       } else {
-        vel1 = numi_f.IntegratePolynomialsCell(f, polys0);
+        vel1 = numi_f.IntegratePolynomialsCell(0, polys0);
       }
       vel1 /= mesh_->face_area(f);
       vel1 *= dir;  
@@ -578,7 +579,7 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
         polys[1] = &p1;
         vel0 = numi_.IntegratePolynomialsFace(f, polys);
       } else {
-        vel0 = numi_f.IntegratePolynomialsCell(f, polys1);
+        vel0 = numi_f.IntegratePolynomialsCell(0, polys1);
       }
       vel0 /= mesh_->face_area(f);
       vel0 *= dir;  
