@@ -333,12 +333,12 @@ void Transport_ATS::CalculateLpErrors(
 }
 
 
-double Transport_ATS::ComputeSolute(const Epetra_MultiVector& tcc, int i)
+double Transport_ATS::ComputeSolute(const Epetra_MultiVector& tcc_c, int i)
 {
   double mass_solute(0.0);
   for (int c = 0; c < ncells_owned; c++) {
     double vol = mesh_->cell_volume(c);
-    mass_solute += (*ws_end)[0][c] * (*phi_)[0][c] * tcc[i][c] * vol * (*mol_dens_end)[0][c] + (*solid_qty_)[i][c];
+    mass_solute += (*ws_end)[0][c] * (*phi_)[0][c] * tcc_c[i][c] * vol * (*mol_dens_end)[0][c] + (*solid_qty_)[i][c];
   }
   //mass_solute /= units_.concentration_factor();
 
@@ -349,7 +349,7 @@ double Transport_ATS::ComputeSolute(const Epetra_MultiVector& tcc, int i)
 }
 
 
-double Transport_ATS::ComputeSolute(const Epetra_MultiVector& tcc,
+double Transport_ATS::ComputeSolute(const Epetra_MultiVector& tcc_c,
                                        const Epetra_MultiVector& ws,
                                        const Epetra_MultiVector& den,
                                        int i)
@@ -357,7 +357,7 @@ double Transport_ATS::ComputeSolute(const Epetra_MultiVector& tcc,
   double mass_solute(0.0);
   for (int c = 0; c < ncells_owned; c++) {
     double vol = mesh_->cell_volume(c);
-    mass_solute += ws[0][c] * (*phi_)[0][c] * tcc[i][c] * vol * den[0][c] + (*solid_qty_)[i][c];
+    mass_solute += ws[0][c] * (*phi_)[0][c] * tcc_c[i][c] * vol * den[0][c] + (*solid_qty_)[i][c];
   }
   //mass_solute /= units_.concentration_factor();
 

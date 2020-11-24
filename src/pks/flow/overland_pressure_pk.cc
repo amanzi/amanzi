@@ -420,28 +420,26 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S)
 
       // copy subsurface face pressure to surface cell pressure
       Teuchos::RCP<const CompositeVector> subsurf_pres = S->GetFieldData(key_ss);
-      unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
+      auto ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
       if (subsurf_pres->HasComponent("face")) {
-        const Epetra_MultiVector& subsurf_pres = *S->GetFieldData(key_ss)
+        const Epetra_MultiVector& subsurf_pres_f = *S->GetFieldData(key_ss)
                                                  ->ViewComponent("face",false);
-        unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
         for (unsigned int c=0; c!=ncells_surface; ++c) {
           // -- get the surface cell's equivalent subsurface face and neighboring cell
           AmanziMesh::Entity_ID f =
               mesh_->entity_get_parent(AmanziMesh::CELL, c);
-          pres[0][c] = subsurf_pres[0][f];
+          pres[0][c] = subsurf_pres_f[0][f];
         }
 
       } else if (subsurf_pres->HasComponent("boundary_face")) {
-        const Epetra_MultiVector& subsurf_pres_vec = *subsurf_pres->ViewComponent("boundary_face",false);
+        const Epetra_MultiVector& subsurf_pres_bf = *subsurf_pres->ViewComponent("boundary_face",false);
         Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain = S->GetMesh("domain");
-        unsigned int ncells_sub = mesh_domain->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
 
         for (unsigned int c=0; c!=ncells_surface; ++c) {
           // -- get the surface cell's equivalent subsurface face and neighboring cell
           AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
           int bf = mesh_domain->exterior_face_map(false).LID(mesh_domain->face_map(false).GID(f));
-          if (bf >=0)   pres[0][c] = subsurf_pres_vec[0][bf];
+          if (bf >=0)   pres[0][c] = subsurf_pres_bf[0][bf];
         }
       }
       S->GetField(key_,name_)->set_initialized();
@@ -749,8 +747,6 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
   auto& markers = bc_markers();
   auto& values = bc_values();
 
-  AmanziMesh::Entity_ID_List cells;
-
   S->GetFieldEvaluator(elev_key_)->HasFieldChanged(S, name_);
   const Epetra_MultiVector& elevation = *S->GetFieldData(elev_key_)
       ->ViewComponent("face",false);
@@ -788,6 +784,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
 
       for (const auto& bc : *bc_pressure_) {
         int f = bc.first;
+        AmanziMesh::Entity_ID_List cells;
         mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int c = cells[0];
 
@@ -802,6 +799,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
       // non-thermal model
       for (const auto& bc : *bc_pressure_) {
         int f = bc.first;
+        AmanziMesh::Entity_ID_List cells;
         mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int c = cells[0];
 
@@ -874,6 +872,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
 
     for (const auto& bc : *bc_critical_depth_) {
       int f = bc.first;
+      AmanziMesh::Entity_ID_List cells;
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int c = cells[0];
 
@@ -896,6 +895,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
 
     for (const auto& bc : *bc_seepage_head_) {
       int f = bc.first;
+      AmanziMesh::Entity_ID_List cells;
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int c = cells[0];
 
@@ -929,6 +929,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
 
       for (const auto& bc : *bc_seepage_pressure_) {
         int f = bc.first;
+        AmanziMesh::Entity_ID_List cells;
         mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int c = cells[0];
 
@@ -949,6 +950,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
       // non-thermal model
       for (const auto& bc : *bc_seepage_pressure_) {
         int f = bc.first;
+        AmanziMesh::Entity_ID_List cells;
         mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int c = cells[0];
 
@@ -1026,6 +1028,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
   // conditions as the default, zero flux conditions
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f != nfaces_owned; ++f) {
+    AmanziMesh::Entity_ID_List cells;
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 

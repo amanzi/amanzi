@@ -164,15 +164,26 @@ MPCPermafrost::Setup(const Teuchos::Ptr<State>& S) {
 
       // Create the block for derivatives of mass conservation with respect to temperature
       // -- derivatives of kr with respect to temperature
-      if (!plist_->get<bool>("supress Jacobian terms: d div surface q / dT", false)) {
+      if (!plist_->get<bool>("supress Jacobian terms: d div surface q / dT", false) &&
+          pks_list_->sublist(names[2]).isSublist("diffusion preconditioner") &&
+          pks_list_->sublist(names[2]).sublist("diffusion preconditioner").isParameter("discretization primary")) {
+        // note the diffusion list may not exist if it is not a lateral flow problem (e.g. surface balance only)
         // set up the operator
         AMANZI_ASSERT(dWC_dT_block_ != Teuchos::null);
         Teuchos::ParameterList divq_plist(pks_list_->sublist(names[2]).sublist("diffusion preconditioner"));
         divq_plist.set("include Newton correction", true);
         divq_plist.set("exclude primary terms", true);
         divq_plist.set("surface operator", true);
+
+        // note we create this with the mesh, not the global operator, as we
+        // need the op to work on the surface mesh, not the global operator's
+        // mesh, which is the subsurface.  Then we push it into the full global
+        // operator.  Probably we need a constructor for PDE_Diffusion that
+        // takes both the mesh _and_ the global operator, as the constraint
+        // that they are the same is broken here.
         Operators::PDE_DiffusionFactory opfactory;
-        ddivq_dT_ = opfactory.Create(divq_plist, dWC_dT_block_);
+        ddivq_dT_ = opfactory.Create(divq_plist, surf_mesh_);
+        dWC_dT_block_->OpPushBack(ddivq_dT_->jacobian_op());
       }
 
       // -- ALWAYS ZERO!
@@ -256,7 +267,7 @@ MPCPermafrost::Initialize(const Teuchos::Ptr<State>& S)
   if (surf_ewc_ != Teuchos::null) surf_ewc_->initialize(S);
 
   if (ddivq_dT_ != Teuchos::null) {
-    ddivq_dT_->SetBCs(sub_pks_[0]->BCs(), sub_pks_[1]->BCs());
+    ddivq_dT_->SetBCs(sub_pks_[2]->BCs(), sub_pks_[3]->BCs());
     ddivq_dT_->SetTensorCoefficient(Teuchos::null);
   }
 }

@@ -14,6 +14,16 @@ set(ats_pks_src_files
   bc_factory.cc
   )
 
+set(ats_pks_inc_files
+  pk_helpers.hh
+  pk_bdf_default.hh
+  pk_physical_default.hh
+  pk_physical_bdf_default.hh
+  pk_explicit_default.hh
+  pk_physical_explicit_default.hh
+  bc_factory.hh
+  )
+
 file(GLOB ats_pks_inc_files "*.hh")
 
 set(ats_pks_link_libs

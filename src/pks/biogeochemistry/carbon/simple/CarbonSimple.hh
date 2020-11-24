@@ -20,10 +20,7 @@ namespace Amanzi {
 namespace BGC {
 
 class CarbonSimple : public PK_Physical_Explicit_Default {
-
  public:
-
-
   CarbonSimple(Teuchos::ParameterList& pk_tree,
                const Teuchos::RCP<Teuchos::ParameterList>& glist,
                const Teuchos::RCP<State>& S,
