@@ -66,19 +66,14 @@ class MeshLight {
   // send-receive protocols and mesh query operators are designed, a side 
   // effect of this is that master and ghost entities will have the same
   // hierarchical topology. 
-  void cell_get_faces(
-       const Entity_ID c,
-       Entity_ID_List *faces,
-       const bool ordered = false) const {
-    cell_get_faces_and_dirs(c, faces, NULL, ordered);
-  }
-
+  //
   // new API: cache should be pre-build, e.g. in mesh constructor
   // so no additional checks is needed
-  const Entity_ID_List& cell_get_faces(const Entity_ID c) const { return cell_face_ids_[c]; }
-  const std::vector<int>& cell_get_face_dirs(const Entity_ID c) const { return cell_face_dirs_[c]; }
+  const Entity_ID_List& cell_get_faces(const Entity_ID c) const {
+    return cell_face_ids_[c];
+  }
 
-  // Get faces of a cell and directions in which the cell uses the face
+  // Get directions in which the cell uses the face
   //
   // On a distributed mesh, this will return all the faces of the
   // cell, OWNED or GHOST. If ordered = true, the faces will be
@@ -90,11 +85,9 @@ class MeshLight {
   // and -1 if face normal points into cell
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
-  void cell_get_faces_and_dirs(
-       const Entity_ID c,
-       Entity_ID_List *faces,
-       std::vector<int> *dirs,
-       bool ordered = false) const;
+  const std::vector<int>& cell_get_face_dirs(const Entity_ID c) const {
+    return cell_face_dirs_[c];
+  }
 
   // Get edges: general version
   void cell_get_edges(const Entity_ID c, Entity_ID_List *edges) const;

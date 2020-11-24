@@ -32,9 +32,7 @@ namespace WhetStone {
 int MFD3D_Diffusion::L2consistencyInverseSurface(
     int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
 {
-  Entity_ID_List faces;
-
-  mesh_->cell_get_faces(c, &faces);
+  const auto& faces = mesh_->cell_get_faces(c);
   int nfaces = faces.size();
 
   R.Reshape(nfaces, d_ - 1);

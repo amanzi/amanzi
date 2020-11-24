@@ -30,35 +30,6 @@ void MeshLight::BuildCache()
 
 
 // -------------------------------------------------------------------
-// Downward connectivity: c -> f
-// -------------------------------------------------------------------
-void MeshLight::cell_get_faces_and_dirs(
-    const Entity_ID c,
-    Entity_ID_List *faceids,
-    std::vector<int> *face_dirs,
-    const bool ordered) const
-{
-#if AMANZI_MESH_CACHE_VARS != 0
-  if (!cell2face_info_cached_) cache_cell2face_info_();
-
-  if (ordered)
-    cell_get_faces_and_dirs_internal_(c, faceids, face_dirs, ordered);
-  else {
-    Entity_ID_List &cfaceids = cell_face_ids_[c];
-    *faceids = cfaceids; // copy operation
-
-    if (face_dirs) {
-      std::vector<int> &cfacedirs = cell_face_dirs_[c];
-      *face_dirs = cfacedirs; // copy operation
-    }
-  }
-#else // Non-cached version
-  cell_get_faces_and_dirs_internal_(c, faceids, face_dirs, ordered);
-#endif
-}
-
-
-// -------------------------------------------------------------------
 // Downward connectivity: c -> e
 // -------------------------------------------------------------------
 void MeshLight::cell_get_edges(const Entity_ID c,

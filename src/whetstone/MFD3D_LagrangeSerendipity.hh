@@ -129,8 +129,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
   // select number of non-aligned edges: we assume cell convexity 
   int nfaces;
   { 
-    Entity_ID_List faces;
-    mymesh->cell_get_faces(c, &faces);
+    const auto& faces = mymesh->cell_get_faces(c);
     nfaces = faces.size();
   }
   int eta(3);
@@ -244,11 +243,11 @@ void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
   // input mesh may have a different dimension than base mesh
   int d = mymesh->space_dimension();
 
-  Entity_ID_List nodes, faces, edges;
+  Entity_ID_List nodes, edges;
   mymesh->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
-  mymesh->cell_get_faces(c, &faces);
+  const auto& faces = mymesh->cell_get_faces(c);
   int nfaces = faces.size();
 
   std::vector<const PolynomialBase*> polys(2);

@@ -99,6 +99,35 @@ Mesh::entity_get_parent(const Entity_kind kind, const Entity_ID entid) const
 }
 
 
+// -------------------------------------------------------------------
+// Downward connectivity: c -> f
+// -------------------------------------------------------------------
+void Mesh::cell_get_faces_and_dirs(
+    const Entity_ID c,
+    Entity_ID_List *faceids,
+    std::vector<int> *face_dirs,
+    bool ordered) const
+{
+#if AMANZI_MESH_CACHE_VARS != 0
+  if (!cell2face_info_cached_) cache_cell2face_info_();
+
+  if (ordered)
+    cell_get_faces_and_dirs_internal_(c, faceids, face_dirs, ordered);
+  else {
+    Entity_ID_List &cfaceids = cell_face_ids_[c];
+    *faceids = cfaceids; // copy operation
+
+    if (face_dirs) {
+      std::vector<int> &cfacedirs = cell_face_dirs_[c];
+      *face_dirs = cfacedirs; // copy operation
+    }
+  }
+#else // Non-cached version
+  cell_get_faces_and_dirs_internal_(c, faceids, face_dirs, ordered);
+#endif
+}
+
+
 // Get the bisectors, i.e. vectors from cell centroid to face centroids.
 void Mesh::cell_get_faces_and_bisectors(
     const Entity_ID cellid,

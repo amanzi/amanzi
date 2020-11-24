@@ -280,9 +280,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
 void MFD3D_CrouzeixRaviartSerendipity::CalculateDOFsOnBoundary_(
     int c, const std::vector<Polynomial>& vf, DenseVector& vdof)
 {
-  Entity_ID_List faces;
-
-  mesh_->cell_get_faces(c, &faces);
+  const auto& faces = mesh_->cell_get_faces(c);
   int nfaces = faces.size();
 
   std::vector<const PolynomialBase*> polys(2);

@@ -70,10 +70,8 @@ std::vector<SchemaItem> MFD3D_CrouzeixRaviartAnyOrder::schema() const
 int MFD3D_CrouzeixRaviartAnyOrder::H1consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c); 
@@ -233,10 +231,8 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorGradientCell_(
 {
   AMANZI_ASSERT(d_ == 2);
 
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);

@@ -52,10 +52,8 @@ MFD3D_CrouzeixRaviart::MFD3D_CrouzeixRaviart(const Teuchos::ParameterList& plist
 int MFD3D_CrouzeixRaviart::H1consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   N.Reshape(nfaces, d_ + 1);

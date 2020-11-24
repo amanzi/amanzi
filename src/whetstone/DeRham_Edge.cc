@@ -45,10 +45,8 @@ int DeRham_Edge::L2consistency(int c, const Tensor& T,
 int DeRham_Edge::L2consistency2D_(int c, const Tensor& T,
                                   DenseMatrix& N, DenseMatrix& Mc)
 {
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   N.Reshape(nfaces, d_);
@@ -112,10 +110,11 @@ int DeRham_Edge::L2consistency2D_(int c, const Tensor& T,
 int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
                                   DenseMatrix& N, DenseMatrix& Mc)
 {
-  Entity_ID_List fedges, faces;
-  std::vector<int> fdirs, edirs, map;
+  Entity_ID_List fedges;
+  std::vector<int> edirs, map;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& fdirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   const auto& edges = mesh_->cell_get_edges(c);
@@ -234,10 +233,8 @@ int DeRham_Edge::L2consistencyInverse(
 int DeRham_Edge::L2consistencyInverse2D_(
     int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
 {
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   R.Reshape(nfaces, d_);
@@ -299,10 +296,11 @@ int DeRham_Edge::L2consistencyInverse2D_(
 int DeRham_Edge::L2consistencyInverse3D_(
     int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
 {
-  Entity_ID_List fedges, faces;
-  std::vector<int> fdirs, edirs, map;
+  Entity_ID_List fedges;
+  std::vector<int> edirs, map;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& fdirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   const auto& edges = mesh_->cell_get_edges(c);

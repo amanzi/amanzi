@@ -91,10 +91,8 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_(
     int c, const std::vector<Polynomial>& ve,
     const std::vector<Polynomial>& vf, Polynomial& uc)
 {
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mymesh->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mymesh->cell_get_faces(c);
+  const auto& dirs = mymesh->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mymesh->cell_centroid(c);

@@ -367,6 +367,8 @@ void RemapTestsCurved(std::string file_name,
     mesh0 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, comm, gm, mlist));
     mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, comm, gm, mlist));
   }
+  mesh0->BuildCache();
+  mesh1->BuildCache();
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);

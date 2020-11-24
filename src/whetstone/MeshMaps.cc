@@ -259,9 +259,9 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
 {
   int order = poly.order();
 
-  WhetStone::Entity_ID_List faces, nodes;
+  WhetStone::Entity_ID_List nodes;
 
-  mesh0_->cell_get_faces(c, &faces);
+  const auto& faces = mesh0_->cell_get_faces(c);
   int nfaces = faces.size();  
 
   AmanziGeometry::Point v0(d_), v1(d_);

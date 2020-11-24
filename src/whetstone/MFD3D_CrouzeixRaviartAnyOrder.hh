@@ -112,8 +112,7 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorCell_(
 {
   AMANZI_ASSERT(d_ == 2);
 
-  Entity_ID_List faces;
-  mymesh->cell_get_faces(c, &faces);
+  const auto& faces = mymesh->cell_get_faces(c);
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mymesh->cell_centroid(c);

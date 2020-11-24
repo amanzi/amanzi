@@ -76,7 +76,7 @@ void node_get_cell_faces(const AmanziMesh::MeshLight& mesh,
                          const AmanziMesh::Parallel_type ptype,
                          AmanziMesh::Entity_ID_List *faces) 
 {
-  Entity_ID_List cells, faces_tmp, nodes;
+  Entity_ID_List cells, nodes;
 
   mesh.node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
   int ncells = cells.size();
@@ -86,7 +86,7 @@ void node_get_cell_faces(const AmanziMesh::MeshLight& mesh,
 
   for (int n = 0; n < ncells; ++n) {
     if (cells[n] == c) {
-      mesh.cell_get_faces(c, &faces_tmp);
+      const auto& faces_tmp = mesh.cell_get_faces(c);
       int nfaces = faces_tmp.size();
 
       for (int i = 0; i < nfaces; ++i) {

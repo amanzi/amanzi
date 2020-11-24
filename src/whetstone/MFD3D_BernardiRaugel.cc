@@ -43,15 +43,14 @@ std::vector<SchemaItem> MFD3D_BernardiRaugel::schema() const
 int MFD3D_BernardiRaugel::H1consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List nodes, faces;
-  std::vector<int> dirs;
-
+  Entity_ID_List nodes;
   AmanziGeometry::Point xv(d_), tau(d_), v1(d_);
 
   mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   int nrows = d_ * nnodes + nfaces;
@@ -247,12 +246,11 @@ int MFD3D_BernardiRaugel::AdvectionMatrix(
 {
   AMANZI_ASSERT(d_ == 2);
 
-  Entity_ID_List nodes, faces;
-  std::vector<int> dirs;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
+  Entity_ID_List nodes;
   mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
@@ -304,11 +302,11 @@ int MFD3D_BernardiRaugel::AdvectionMatrix(
 ****************************************************************** */
 int MFD3D_BernardiRaugel::DivergenceMatrix(int c, DenseMatrix& A)
 {
-  Entity_ID_List nodes, faces;
-  std::vector<int> dirs;
-
+  Entity_ID_List nodes;
   mesh_->cell_get_nodes(c, &nodes);
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   int n1 = d_ * nodes.size();

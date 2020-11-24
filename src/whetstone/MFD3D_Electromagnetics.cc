@@ -50,10 +50,8 @@ int MFD3D_Electromagnetics::H1consistency(
 int MFD3D_Electromagnetics::H1consistency2D_(
     int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List faces;
-  std::vector<int> fdirs;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& fdirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   int nd = 3; 
@@ -101,10 +99,11 @@ int MFD3D_Electromagnetics::H1consistency2D_(
 int MFD3D_Electromagnetics::H1consistency3D_(
     int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List fedges, faces;
-  std::vector<int> fdirs, edirs, map;
+  Entity_ID_List fedges;
+  std::vector<int> edirs, map;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& fdirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   const auto& edges = mesh_->cell_get_edges(c);
@@ -287,13 +286,14 @@ int MFD3D_Electromagnetics::StiffnessMatrix_GradCorrection(
 ****************************************************************** */
 void MFD3D_Electromagnetics::CurlMatrix(int c, DenseMatrix& C)
 {
-  Entity_ID_List faces, nodes, fedges;
-  std::vector<int> fdirs, edirs, map;
+  Entity_ID_List nodes, fedges;
+  std::vector<int> edirs, map;
 
   const auto& edges = mesh_->cell_get_edges(c);
   int nedges = edges.size();
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& fdirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   C.Reshape(nfaces, nedges);

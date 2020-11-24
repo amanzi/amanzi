@@ -26,10 +26,8 @@ namespace WhetStone {
 int DeRham_Face::L2consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   N.Reshape(nfaces, d_);
@@ -94,10 +92,8 @@ int DeRham_Face::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 int DeRham_Face::L2consistencyInverse(
     int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry)
 {
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   R.Reshape(nfaces, d_);

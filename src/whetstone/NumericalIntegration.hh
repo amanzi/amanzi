@@ -186,10 +186,10 @@ double NumericalIntegration<Mesh>::IntegrateFunctionsTriangulatedCell(
 {
   double integral(0.0);
 
-  AmanziMesh::Entity_ID_List nodes, faces;
+  AmanziMesh::Entity_ID_List nodes;
   std::vector<AmanziGeometry::Point> xy(d_ + 1); 
 
-  mesh_->cell_get_faces(c, &faces);
+  const auto& faces = mesh_->cell_get_faces(c);
   int nfaces = faces.size();
 
   xy[0] = mesh_->cell_centroid(c);
@@ -500,10 +500,11 @@ void NumericalIntegration<Mesh>::IntegrateMonomialsCell(
     integrals(nk + i) = 0.0;
   }
 
-  Entity_ID_List faces, nodes;
-  std::vector<int> dirs;
+  Entity_ID_List nodes;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  // mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);

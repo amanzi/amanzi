@@ -38,11 +38,10 @@ std::vector<SchemaItem> MFD3D_GeneralizedDiffusion::schema() const
 int MFD3D_GeneralizedDiffusion::L2consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
-  Entity_ID_List faces, nodes;
-  std::vector<int> dirs;
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
+
   int nx(d_ * nfaces);
 
   N.Reshape(nx, d_);
@@ -137,9 +136,8 @@ int MFD3D_GeneralizedDiffusion::MassMatrixOptimized(
 int MFD3D_GeneralizedDiffusion::L2consistencyInverse(
     int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry)
 {
-  Entity_ID_List faces, nodes;
-  std::vector<int> dirs;
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
 
   int nfaces = faces.size();
   int nx(d_ * nfaces);
@@ -214,9 +212,8 @@ int MFD3D_GeneralizedDiffusion::StiffnessMatrix(
   DenseMatrix M;
   MassMatrixInverse(c, K, M);
 
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
 
   int nfaces = faces.size();
   int nx(d_ * nfaces);
@@ -264,10 +261,8 @@ int MFD3D_GeneralizedDiffusion::StiffnessMatrix(
 ****************************************************************** */
 int MFD3D_GeneralizedDiffusion::DivergenceMatrix(int c, DenseMatrix& A)
 {
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   A.Reshape(1, d_ * nfaces);

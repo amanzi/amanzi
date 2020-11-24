@@ -126,13 +126,12 @@ int MFD3D_LagrangeAnyOrder::H1consistency2D_(
   // input mesh may have a different dimension than base mesh
   int d = mymesh->space_dimension();
 
-  Entity_ID_List nodes, faces;
-  std::vector<int> dirs;
-
+  Entity_ID_List nodes;
   mymesh->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
-  mymesh->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mymesh->cell_get_faces(c);
+  const auto& dirs = mymesh->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mymesh->cell_centroid(c); 
