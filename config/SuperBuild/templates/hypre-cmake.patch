@@ -1,0 +1,52 @@
+--- hypre-2.20.0-orig/src/CMakeLists.txt	2020-09-24 11:56:42.000000000 -0600
++++ hypre-2.20.0-source/src/CMakeLists.txt	2020-11-19 17:47:50.747174480 -0700
+@@ -73,6 +73,8 @@
+ 
+ option(TPL_DSUPERLU_LIBRARIES        "List of absolute paths to SuperLU_Dist link libraries [].")
+ option(TPL_DSUPERLU_INCLUDE_DIRS     "List of absolute paths to SuperLU_Dist include directories [].")
++option(TPL_BLAS_LIBRARIES            "Optional list of absolute paths to BLAS libraries, otherwise use FindBLAS to locate [].")
++option(TPL_LAPACK_LIBRARIES          "Optional list of absolute paths to LAPACK libraries, otherwise use FindLAPACK to locate [].")
+ 
+ # Set config name values
+ if (HYPRE_ENABLE_SHARED)
+@@ -176,9 +178,15 @@
+ if (HYPRE_USING_HYPRE_BLAS)
+   add_subdirectory(blas)
+ else()
++  # Use TPL_BLAS_LIBRARIES if set.
++  if (TPL_BLAS_LIBRARIES)
++    message("-- Using TPL_BLAS_LIBRARIES='${TPL_BLAS_LIBRARIES}'")
++    target_link_libraries(HYPRE PUBLIC "${TPL_BLAS_LIBRARIES}")
++  else()
+   # Find system blas
+   find_package(BLAS REQUIRED)
+   target_link_libraries(HYPRE PUBLIC "${BLAS_LIBRARIES}")
++  endif()
+   target_compile_definitions(HYPRE PUBLIC "USE_VENDOR_BLAS")
+ endif()
+ 
+@@ -186,9 +194,15 @@
+ if (HYPRE_USING_HYPRE_LAPACK)
+   add_subdirectory(lapack)
+ else()
++  # Use TPL_LAPACK_LIBRARIES if set.
++  if (TPL_LAPACK_LIBRARIES)
++    message("-- Using TPL_LAPACK_LIBRARIES='${TPL_BLAS_LIBRARIES}'")
++    target_link_libraries(HYPRE PUBLIC "${TPL_LAPACK_LIBRARIES}")
++  else()
+   # Find system lapack
+   find_package(LAPACK REQUIRED)
+   target_link_libraries(HYPRE PUBLIC "${LAPACK_LIBRARIES}")
++  endif()
+ endif()
+ 
+ # Find DSUPERLU, if requested
+@@ -209,7 +223,7 @@
+   message("-- Enabled support for using DSUPERLU.")
+   set(DSUPERLU_FOUND TRUE)
+   target_link_libraries(HYPRE PUBLIC ${TPL_DSUPERLU_LIBRARIES} stdc++)
+-  target_include_directories(${TPL_DSUPERLU_INCLUDE_DIRS})
++  target_include_directories(HYPRE PUBLIC ${TPL_DSUPERLU_INCLUDE_DIRS})
+ endif()
+ 
+ if(DSUPERLU_FOUND)

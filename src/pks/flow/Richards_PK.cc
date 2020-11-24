@@ -52,6 +52,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& pk_tree,
                          const Teuchos::RCP<Teuchos::ParameterList>& glist,
                          const Teuchos::RCP<State>& S,
                          const Teuchos::RCP<TreeVector>& soln) :
+  PK(pk_tree, glist, S, soln),
   Flow_PK(pk_tree, glist, S, soln),
   glist_(glist),
   soln_(soln)
@@ -169,7 +170,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   if (!S->HasField(pressure_key_)) {
     S->RequireField(pressure_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
-    AddDefaultPrimaryEvaluator(pressure_key_);
+    AddDefaultPrimaryEvaluator_(pressure_key_);
   }
 
   // Require conserved quantity.
