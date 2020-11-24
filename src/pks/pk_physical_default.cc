@@ -20,9 +20,8 @@ PK_Physical_Default::PK_Physical_Default(Teuchos::ParameterList& pk_tree,
     PK(pk_tree, glist, S, solution),
     PK_Physical(pk_tree, glist, S, solution)
 {
-  domain_ = plist_->get<std::string>("domain name", "domain");
   key_ = Keys::readKey(*plist_, domain_, "primary variable");
-  
+
   // set up the primary variable solution, and its evaluator
   Teuchos::ParameterList& FElist = S->FEList();
   Teuchos::ParameterList& pv_sublist = FElist.sublist(key_);
@@ -33,7 +32,7 @@ PK_Physical_Default::PK_Physical_Default(Teuchos::ParameterList& pk_tree,
   max_valid_change_ = plist_->get<double>("max valid change", -1.0);
 
   // verbose object
-  if (plist_->isSublist(name_ + " verbose object")) 
+  if (plist_->isSublist(name_ + " verbose object"))
     plist_->set("verbose object", plist_->sublist(name_ + " verbose object"));
   vo_ = Teuchos::rcp(new VerboseObject(*S->GetMesh(domain_)->get_comm(), name_, *plist_));
 }
@@ -56,62 +55,6 @@ void PK_Physical_Default::Setup(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<FieldEvaluator> fm = S->GetFieldEvaluator(key_);
   solution_evaluator_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
   AMANZI_ASSERT(solution_evaluator_ != Teuchos::null);
-};
-
-
-// -----------------------------------------------------------------------------
-// Transfer operators -- ONLY COPIES POINTERS
-// -----------------------------------------------------------------------------
-void PK_Physical_Default::State_to_Solution(const Teuchos::RCP<State>& S,
-        TreeVector& solution) {
-  solution.SetData(S->GetFieldData(key_, name_));
-};
-
-
-// -----------------------------------------------------------------------------
-// Transfer operators -- ONLY COPIES POINTERS
-// -----------------------------------------------------------------------------
-void PK_Physical_Default::Solution_to_State(TreeVector& solution,
-        const Teuchos::RCP<State>& S) {
-  AMANZI_ASSERT(solution.Data() == S->GetFieldData(key_));
-  //  S->SetData(key_, name_, solution->Data());
-  //  solution_evaluator_->SetFieldAsChanged();
-};
-
-
-void PK_Physical_Default::Solution_to_State(const TreeVector& solution,
-        const Teuchos::RCP<State>& S) {
-  AMANZI_ASSERT(solution.Data() == S->GetFieldData(key_));
-  //  TreeVector* soln_nc_ptr = const_cast<TreeVector*>(&solution);
-  //  Solution_to_State(*soln_nc_ptr, S);
-};
-
-
-// -----------------------------------------------------------------------------
-// Experimental approach -- we must pull out S_next_'s solution_evaluator_ to
-// stay current for ChangedSolution()
-// -----------------------------------------------------------------------------
-void PK_Physical_Default::set_states(const Teuchos::RCP<State>& S,
-        const Teuchos::RCP<State>& S_inter,
-        const Teuchos::RCP<State>& S_next) {
-  //  PKDefaultBase::set_states(S, S_inter, S_next);
-
-  S_ = S;
-  S_inter_ = S_inter;
-  S_next_ = S_next;
-
-  // Get the FE and mark it as changed.
-  // Note that this is necessary because we need this to point at the
-  // FE in S_next_, not the one which we created in S_.
-  Teuchos::RCP<FieldEvaluator> fm = S_next->GetFieldEvaluator(key_);
-#if ENABLE_DBC
-  solution_evaluator_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
-  AMANZI_ASSERT(solution_evaluator_ != Teuchos::null);
-#else
-  solution_evaluator_ = Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(fm);
-#endif
-
-  solution_evaluator_->SetFieldAsChanged(S_next_.ptr());
 };
 
 

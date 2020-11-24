@@ -17,16 +17,13 @@ Explicit.
 #include "pk_explicit_default.hh"
 
 namespace Amanzi {
-  
+
 // -----------------------------------------------------------------------------
 // Setup
 // -----------------------------------------------------------------------------
 void PK_Explicit_Default::Setup(const Teuchos::Ptr<State>& S) {
-
-
   // initial timestep
   dt_ = plist_->get<double>("initial time step", 1.);
-
 };
 
 
@@ -43,25 +40,15 @@ void PK_Explicit_Default::Initialize(const Teuchos::Ptr<State>& S) {
 
     solution_old_ = Teuchos::rcp(new TreeVector(*solution_));
   }
-
 };
-
-
-// -----------------------------------------------------------------------------
-// Initialization of timestepper.
-// -----------------------------------------------------------------------------
-double PK_Explicit_Default::get_dt() { return dt_; }
-
-void PK_Explicit_Default::set_dt(double dt) { dt_ = dt; }
 
 
 // -----------------------------------------------------------------------------
 // Advance from state S to state S_next at time S.time + dt.
 // -----------------------------------------------------------------------------
 bool PK_Explicit_Default::AdvanceStep(double t_old, double t_new, bool reinit) {
+  double dt = t_new - t_old;
 
-  double dt = t_new - t_old;  
-  
   Teuchos::OSTab out = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "----------------------------------------------------------------" << std::endl
@@ -73,11 +60,7 @@ bool PK_Explicit_Default::AdvanceStep(double t_old, double t_new, bool reinit) {
   State_to_Solution(S_next_, *solution_);
 
   // take a timestep
-  if (true) { // this is here simply to create a context for timer,
-              // which stops the clock when it is destroyed at the
-              // closing brace.
-    time_stepper_->TimeStep(S_inter_->time(), dt, *solution_old_, *solution_);
-  }
+  time_stepper_->TimeStep(S_inter_->time(), dt, *solution_old_, *solution_);
   return false;
 };
 
