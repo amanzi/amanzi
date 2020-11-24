@@ -33,36 +33,36 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
 
   bool ice_cover_ = false; // first always assume that there is no ice
 
-    // get temperature
-    Teuchos::RCP<const CompositeVector> temp = S_inter_->GetFieldData(temperature_key_);
+  // get temperature
+  Teuchos::RCP<const CompositeVector> temp = S_inter_->GetFieldData(temperature_key_);
 
-    for (CompositeVector::name_iterator comp=temp->begin();
-           comp!=temp->end(); ++comp) {
-        // much more efficient to pull out vectors first
-  //      const Epetra_MultiVector& eta_v = *eta->ViewComponent(*comp,false);
-  //      const Epetra_MultiVector& height_v = *height->ViewComponent(*comp,false);
-        const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
+  for (CompositeVector::name_iterator comp=temp->begin();
+       comp!=temp->end(); ++comp) {
+    // much more efficient to pull out vectors first
+//      const Epetra_MultiVector& eta_v = *eta->ViewComponent(*comp,false);
+//      const Epetra_MultiVector& height_v = *height->ViewComponent(*comp,false);
+    const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
 
-        int ncomp = temp->size(*comp, false);
+    int ncomp = temp->size(*comp, false);
 
-        int i_ice_max;
+    int i_ice_max;
 
-        for (int i=0; i!=ncomp; ++i) {
-          if (temp_v[0][i] < 273.15) { // check if there is ice cover
-            ice_cover_ = true;
-            i_ice_max = i;
-          }
-        } // i
-
-        // if melting occured at the top, swap cells
-        for (int i=0; i!=ncomp; ++i) {
-          if (ice_cover_ && i < i_ice_max && temp_v[0][i] >= 273.15 ) {
-            temp_v[0][i] = temp_v[0][i+1];
-            temp_v[0][i+i_ice_max] = temp_v[0][i+i_ice_max+1];
-          }
-        } // i
-
+    for (int i=0; i!=ncomp; ++i) {
+      if (temp_v[0][i] < 273.15) { // check if there is ice cover
+        ice_cover_ = true;
+        i_ice_max = i;
       }
+    } // i
+
+    // if melting occured at the top, swap cells
+    for (int i=0; i!=ncomp; ++i) {
+      if (ice_cover_ && i < i_ice_max && temp_v[0][i] >= 273.15 ) {
+        temp_v[0][i] = temp_v[0][i+1];
+        temp_v[0][i+i_ice_max] = temp_v[0][i+i_ice_max+1];
+      }
+    } // i
+
+  }
 
   // increment, get timestep
   niter_++;

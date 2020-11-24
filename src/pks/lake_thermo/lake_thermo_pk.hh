@@ -12,7 +12,7 @@
 Solves an advection-diffusion equation for energy:
 
 .. math::
-    c\rho\frac{\partial T}{\partial t} - \nabla \cdot \kappa \nabla T + \nabla \cdot \mathbf{q} e(T) = Q_w e(T) + Q_e
+    c\rho\frac{\partial T}{\partial t} - \nabla \cdot \kappa \nabla T + \nabla \cdot \mathbf{q} T = Q_e + T \nabla q
 
 .. todo:: Document the energy error norm!
     

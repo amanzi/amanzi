@@ -23,6 +23,7 @@ Author: Svetlana Tokareva
 #include "density_evaluator.hh"
 #include "lake_energy_evaluator.hh"
 #include "thermal_conductivity_evaluator.hh"
+#include "heat_flux_bc_evaluator.hh"
 
 #include "CompositeVectorFunction.hh"
 #include "CompositeVectorFunctionFactory.hh"
