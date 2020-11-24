@@ -34,13 +34,15 @@ set(hypre_openmp_opt "-DHYPRE_USING_OPENMP:BOOL=FALSE")
 set(hypre_blas_opt)
 find_package(BLAS)
 if (BLAS_FOUND)
-  set(hypre_blas_opt "-DHYPRE_USING_HYPRE_BLAS:BOOL=FALSE")
+  set(hypre_blas_opt "-DHYPRE_USING_HYPRE_BLAS:BOOL=FALSE"
+                     "-DTPL_BLAS_LIBRARIES:STRING=${BLAS_LIBRARIES}")
 endif()
 
 set(hypre_lapack_opt)
 find_package(LAPACK)
 if (LAPACK_FOUND)
-  set(hypre_lapack_opt "-DHYPRE_USING_HYPRE_LAPACK:BOOL=FALSE")
+  set(hypre_lapack_opt "-DHYPRE_USING_HYPRE_LAPACK:BOOL=FALSE"
+                       "-DTPL_LAPACK_LIBRARIES:STRING=${LAPACK_LIBRARIES}")
 endif()
 
 # set(hypre_fortran_opt -"--disable-fortran)

@@ -35,6 +35,7 @@ EnergyTwoPhase_PK::EnergyTwoPhase_PK(
                    const Teuchos::RCP<Teuchos::ParameterList>& glist,
                    const Teuchos::RCP<State>& S,
                    const Teuchos::RCP<TreeVector>& soln) :
+    PK(pk_tree, glist, S, soln),
     Energy_PK(pk_tree, glist, S, soln),
     soln_(soln)
 {

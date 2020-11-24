@@ -37,9 +37,9 @@ class OutputXDMF : public Output {
   OutputXDMF(Teuchos::ParameterList& plist,
              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
              bool is_vis,
-             bool is_dynamic);
+             bool is_dynamic,
+             bool include_io_set=true);
 
-  
   // open and close files
   virtual void InitializeCycle(double time, int cycle, const std::string& tag);
   virtual void FinalizeCycle();
@@ -69,12 +69,13 @@ class OutputXDMF : public Output {
  protected:
   bool is_vis_;
   bool is_dynamic_;
+  bool include_io_set_;
   bool mesh_written_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<HDF5_MPI> io_;
 };
-  
+
 } // namespace Amanzi
 
 #endif  // OUTPUT_XDMF_HH_

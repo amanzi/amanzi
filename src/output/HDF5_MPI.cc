@@ -23,11 +23,12 @@
 
 namespace Amanzi {
 
-HDF5_MPI::HDF5_MPI(const Comm_ptr_type &comm)
+HDF5_MPI::HDF5_MPI(const Comm_ptr_type &comm, bool include_io_set)
     : viz_comm_(Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm)),
       dynamic_mesh_(false),
       mesh_written_(false),
-      static_mesh_cycle_(0)
+      static_mesh_cycle_(0),
+      include_io_set_(include_io_set)
 {
   AMANZI_ASSERT(viz_comm_.get());
   info_ = MPI_INFO_NULL;
@@ -41,12 +42,13 @@ HDF5_MPI::HDF5_MPI(const Comm_ptr_type &comm)
 }
 
 
-HDF5_MPI::HDF5_MPI(const Comm_ptr_type &comm, std::string dataFilename)
+HDF5_MPI::HDF5_MPI(const Comm_ptr_type &comm, std::string dataFilename, bool include_io_set)
     : viz_comm_(Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm)),
       H5DataFilename_(dataFilename),
       dynamic_mesh_(false),
       mesh_written_(false),
-      static_mesh_cycle_(0)
+      static_mesh_cycle_(0),
+      include_io_set_(include_io_set)
 {
   AMANZI_ASSERT(viz_comm_.get());
   H5DataFilename_ = dataFilename;
@@ -724,9 +726,14 @@ void HDF5_MPI::endTimestep()
     // TODO(barker): where to write out depends on where the root node is
     // ?? how to terminate stream or switch to new file out??
     int count(0);
-    std::ofstream of;
     for (auto& xmf : xmlVisit_) {
-      std::string full_name = xdmfVisitBaseFilename_ + "_io-set" + std::to_string(count++) + ".Visit.xmf";
+      std::string full_name;
+      if (include_io_set_) {
+        full_name = xdmfVisitBaseFilename_ + "_io-set" + std::to_string(count++) + ".VisIt.xmf";
+      } else {
+        full_name = xdmfVisitBaseFilename_ + ".VisIt.xmf";
+      }
+      std::ofstream of;
       of.open(full_name.c_str());
       of << xmf;
       of.close();
@@ -1365,8 +1372,13 @@ void HDF5_MPI::createXdmfVisit_()
   xmf.addChild(addXdmfHeaderGlobal_());
 
   // write xmf
-  int count = xmlVisit_.size();
-  std::string full_name = xdmfVisitBaseFilename_ + "_io-set" + std::to_string(count) + ".Visit.xmf";
+  std::string full_name;
+  if (include_io_set_) {
+    int count = xmlVisit_.size();
+    full_name = xdmfVisitBaseFilename_ + "_io-set" + std::to_string(count++) + ".VisIt.xmf";
+  } else {
+    full_name = xdmfVisitBaseFilename_ + ".VisIt.xmf";
+  }
   std::ofstream of(full_name.c_str());
   of << HDF5_MPI::xdmfHeader_ << xmf << std::endl;
   of.close();

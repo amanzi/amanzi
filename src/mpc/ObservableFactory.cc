@@ -88,7 +88,13 @@ Teuchos::RCP<Observable> CreateObservable(Teuchos::ParameterList& coord_plist,
     }
   }
 
-  observe->ComputeRegionSize();
+  int n = observe->ComputeRegionSize();
+
+  if (n == 0) {
+    Errors::Message msg;
+    msg << "Observation: variable \"" << var << "\" has no assigned mesh objects.";
+    Exceptions::amanzi_throw(msg);
+  }
 
   return observe;
 }

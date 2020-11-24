@@ -143,6 +143,11 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
     data_->PutScalar(value);
     set_initialized();
   }
+  if (plist.isParameter("value")) {
+    double value = plist.get<double>("value");
+    data_->PutScalar(value);
+    set_initialized();
+  }
 
   // ------ Set values from 1D solution -----
   if (plist.isSublist("initialize from 1D column")) {

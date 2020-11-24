@@ -159,11 +159,6 @@ void PDE_DiffusionFV::SetScalarCoefficient(const Teuchos::RCP<const CompositeVec
   if (dkdp_ != Teuchos::null) {
     AMANZI_ASSERT(dkdp_->HasComponent("cell"));
   }
-
-  // verify that mass matrices were initialized.
-  // -- this shouldn't be called here, as Trans has no dependence on
-  //    rel perm, and abs perm may not be set yet! --etc
-  // if (!transmissibility_initialized_)  ComputeTransmissibility_();
 }
 
 

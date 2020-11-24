@@ -167,8 +167,7 @@ TEST(COLUMN_MESH_3D)
   // face of the cell and the upper face of the cell
 
   for (int j = 0; j < ncells; j++) {
-    Amanzi::AmanziMesh::Entity_ID_List cfaces;
-    colmesh.cell_get_faces(j,&cfaces);
+    const auto& cfaces = colmesh.cell_get_faces(j);
     
     Amanzi::AmanziGeometry::Point locen(3), hicen(3);
     locen = colmesh.face_centroid(cfaces[0]);

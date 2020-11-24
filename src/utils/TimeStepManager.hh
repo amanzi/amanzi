@@ -24,6 +24,10 @@ bool inline near_equal (double x, double y) {
   return (fabs(x-y)<1e-12*std::max(1.0,std::max(fabs(x),fabs(y))));
 }
 
+bool inline close(double x, double y, double eps) {
+  return (fabs(x-y)<eps*std::max(1.0,std::max(fabs(x),fabs(y))));
+}
+
 class TimeStepManager {
 
   struct TimeEvent {

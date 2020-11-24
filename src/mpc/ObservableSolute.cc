@@ -53,9 +53,8 @@ int ObservableSolute::ComputeRegionSize()
     obs_planar_ = true;
   }
 
-  std::string solute_var = comp_names_[tcc_index_] + " volumetric flow rate";
-
-  if (variable_ == solute_var ||
+  if (variable_ == comp_names_[tcc_index_] + " volumetric flow rate" ||
+      variable_ == comp_names_[tcc_index_] + " breakthrough curve" ||
       variable_ == "aqueous mass flow rate" ||
       variable_ == "aqueous volumetric flow rate") {  // flux needs faces
     region_size_ = mesh_->get_set_size(region_,
@@ -98,7 +97,7 @@ int ObservableSolute::ComputeRegionSize()
 * Data calculation
 ****************************************************************** */
 void ObservableSolute::ComputeObservation(
-    State& S, double* value, double* volume, std::string& unit)
+    State& S, double* value, double* volume, std::string& unit, double dt)
 {
   Errors::Message msg;
 
@@ -162,7 +161,7 @@ void ObservableSolute::ComputeObservation(
       *volume += factor;
     }
 
-  } else if (variable_ == comp_names_[tcc_index_] + " gaseous concentration") { 
+  } else if (variable_ == comp_names_[tcc_index_] + " gaseous concentration") {
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
       double factor = porosity[0][c] * (1.0 - ws[0][c]) * mesh_->cell_volume(c);
@@ -172,8 +171,8 @@ void ObservableSolute::ComputeObservation(
       *volume += factor;
     }
 
-  } else if (variable_ == comp_names_[tcc_index_] + " volumetric flow rate") {
-
+  } else if (variable_ == comp_names_[tcc_index_] + " volumetric flow rate" ||
+             variable_ == comp_names_[tcc_index_] + " breakthrough curve") {
     const Epetra_MultiVector& darcy_flux = *S.GetFieldData(darcy_key)->ViewComponent("face");
     const auto& fmap = *S.GetFieldData(darcy_key)->Map().Map("face", true);
     Amanzi::AmanziMesh::Entity_ID_List cells;
@@ -215,6 +214,11 @@ void ObservableSolute::ComputeObservation(
       msg << "Observations of \"SOLUTE volumetric flow rate\""
           << " is only possible for Polygon, Plane and Boundary side sets";
       Exceptions::amanzi_throw(msg);
+    }
+
+    if (variable_ == comp_names_[tcc_index_] + " breakthrough curve") {
+      sum_ += *value * dt;
+      *value = sum_;
     }
   } else {
     msg << "Cannot make an observation for solute variable \"" << variable_ << "\"";

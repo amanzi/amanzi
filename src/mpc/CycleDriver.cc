@@ -631,7 +631,7 @@ double CycleDriver::Advance(double dt) {
     if (advance) {
       pk_->CalculateDiagnostics(S_);
       Visualize(force_vis);
-      Observations(force_obser);
+      Observations(force_obser, true);
       WriteCheckpoint(dt_new, force_check);   // write Checkpoint with new dt
       WriteWalkabout(force_check);
     }
@@ -659,11 +659,15 @@ double CycleDriver::Advance(double dt) {
 
 
 /* ******************************************************************
-* Make observations.
+* Make observations
 ****************************************************************** */
-void CycleDriver::Observations(bool force) {
+void CycleDriver::Observations(bool force, bool integrate) {
   if (observations_ != Teuchos::null) {
+    // integrate continuous observations in time and save results in internal variables
+    if (integrate) observations_->MakeContinuousObservations(*S_);
+
     if (observations_->DumpRequested(S_->cycle(), S_->time()) || force) {
+      // continuous observations are not updated here
       int n = observations_->MakeObservations(*S_);
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << "Cycle " << S_->cycle() << ": writing observations... " << n << std::endl;

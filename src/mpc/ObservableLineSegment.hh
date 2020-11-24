@@ -18,7 +18,7 @@ class ObservableLineSegment : public virtual Observable {
                         Teuchos::ParameterList& units_plist,
                         Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
-  virtual void ComputeObservation(State& S, double* value, double* volume, std::string& unit);
+  virtual void ComputeObservation(State& S, double* value, double* volume, std::string& unit, double dt);
   virtual int ComputeRegionSize();
   void ComputeInterpolationPoints(Teuchos::RCP<const AmanziGeometry::Region> reg_ptr);
 
@@ -77,9 +77,8 @@ int ObservableLineSegment::ComputeRegionSize() {
 
 
 void ObservableLineSegment::ComputeObservation(
-    State& S, double* value, double* volume, std::string& unit) {
+    State& S, double* value, double* volume, std::string& unit, double dt) {
   Errors::Message msg;
-    
   msg << "Observation should be computed in classes inheritated from ObservableLineSegment\n";
   Exceptions::amanzi_throw(msg);
 }

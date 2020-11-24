@@ -143,13 +143,6 @@ class Mesh_MOAB : public Mesh {
                       const Parallel_type ptype,
                       Entity_ID_List *faceids) const;
     
-  // Get faces of ptype of a particular cell that are connected to the
-  // given node
-  void node_get_cell_faces(const Entity_ID nodeid, 
-                           const Entity_ID cellid,
-                           const Parallel_type ptype,
-                           Entity_ID_List *faceids) const;    
-    
   // Cells of type 'ptype' connected to an edge
   void edge_get_cells(const Entity_ID edgeid, 
                       const Parallel_type ptype,
@@ -173,18 +166,9 @@ class Mesh_MOAB : public Mesh {
                                const Parallel_type ptype,
                                Entity_ID_List *fadj_cellids) const;
 
-  // Node connected neighboring cells of given cell
-  // (a hex in a structured mesh has 26 node connected neighbors)
-  // The cells are returned in no particular order
-  void cell_get_node_adj_cells(const Entity_ID cellid,
-                               const Parallel_type ptype,
-                               Entity_ID_List *nadj_cellids) const;
-
-    
-  //
+  //---------------------
   // Mesh entity geometry
   //---------------------
-  //
     
   // Node coordinates - 3 in 3D and 2 in 2D
   void node_get_coordinates(const Entity_ID nodeid, 
@@ -235,7 +219,7 @@ class Mesh_MOAB : public Mesh {
   //----------------------------
     
   // Get list of entities of type 'category' in set
-  void get_set_entities_and_vofs(const std::string setname, 
+  void get_set_entities_and_vofs(const std::string& setname, 
                                  const Entity_kind kind, 
                                  const Parallel_type ptype, 
                                  std::vector<Entity_ID> *entids,

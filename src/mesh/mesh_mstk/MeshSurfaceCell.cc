@@ -201,17 +201,6 @@ void MeshSurfaceCell::node_get_faces(const Entity_ID nodeid,
 }
 
 
-// Get faces of ptype of a particular cell that are connected to the
-// given node - The order of faces is not guarnateed to be the same
-// for corresponding nodes on different processors
-void MeshSurfaceCell::node_get_cell_faces(const Entity_ID nodeid,
-        const Entity_ID cellid,
-        const Parallel_type ptype,
-        Entity_ID_List *faceids) const {
-  Errors::Message mesg("Not implemented");
-  amanzi_throw(mesg);
-}
-
 // Cells of type 'ptype' connected to an edges
 void MeshSurfaceCell::edge_get_cells(const Entity_ID edgeid,
         const Parallel_type ptype,
@@ -238,23 +227,10 @@ void MeshSurfaceCell::cell_get_face_adj_cells(const Entity_ID cellid,
 }
 
 
-// Node connected neighboring cells of given cell
-// (a hex in a structured mesh has 26 node connected neighbors)
-// The cells are returned in no particular order
-void MeshSurfaceCell::cell_get_node_adj_cells(const Entity_ID cellid,
-        const Parallel_type ptype,
-        Entity_ID_List *nadj_cellids) const {
-  nadj_cellids->resize(0);
-}
-
-
-
 //
 // Mesh entity geometry
 //--------------
 //
-
-
 
 
 // Deform a mesh so that cell volumes conform as closely as possible
@@ -280,28 +256,23 @@ int MeshSurfaceCell::deform(const std::vector<double>& target_cell_volumes_in,
 
 // Get number of entities of type 'category' in set
 unsigned int
-MeshSurfaceCell::get_set_size(const Set_ID setid,
-                          const Entity_kind kind,
-                          const Parallel_type ptype) const {
+MeshSurfaceCell::get_set_size(const std::string& setname,
+        const Entity_kind kind,
+        const Parallel_type ptype) const {
+  auto setid = geometric_model()->FindRegion(setname)->id();
   if (sets_.at(setid)) {
     return kind == CELL ? 1 : nodes_.size();
   }
   return 0;
 }
 
-
-unsigned int
-MeshSurfaceCell::get_set_size(const std::string setname,
-        const Entity_kind kind,
-        const Parallel_type ptype) const {
-  return get_set_size(geometric_model()->FindRegion(setname)->id(), kind, ptype);
-}
-
 // Get list of entities of type 'category' in set
-void MeshSurfaceCell::get_set_entities(const Set_ID setid,
+void MeshSurfaceCell::get_set_entities_and_vofs(const std::string& setname,
         const Entity_kind kind,
         const Parallel_type ptype,
-        Entity_ID_List *entids) const {
+        Entity_ID_List *entids,
+        std::vector<double> *vofs) const {
+  auto setid = geometric_model()->FindRegion(setname)->id();
   if (sets_.at(setid)) {
     if (kind == CELL) {
       entids->resize(1,0);
@@ -312,15 +283,6 @@ void MeshSurfaceCell::get_set_entities(const Set_ID setid,
   } else {
     entids->resize(0);
   }
-}
-
-void MeshSurfaceCell::get_set_entities_and_vofs(const std::string setname,
-        const Entity_kind kind,
-        const Parallel_type ptype,
-        Entity_ID_List *entids,
-        std::vector<double> *vofs) const {
-  return get_set_entities(geometric_model()->FindRegion(setname)->id(),
-                          kind, ptype, entids);
 }
 
 
