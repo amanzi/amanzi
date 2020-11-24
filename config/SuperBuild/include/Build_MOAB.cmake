@@ -42,25 +42,6 @@ build_whitespace_string(moab_ldflags
                         -lz
                         ${moab_shared_dir})
 
-# --- Define the arguments passed to CMake.
-# --- Add external project and tie to the MOAB build target
-# Some CMake files are missing
-#                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}  # Global definitions from root CMakeList
-#                                     ${MOAB_CMAKE_CACHE_ARGS}
-#                                     -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
-#                                     -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-#                                     -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
-#                                     -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
-#                                     -DENABLE_FORTRAN:BOOL=TRUE
-#                                     -DENABLE_MPI:BOOL=TRUE
-#                                     -DMPI_CXX_COMPILER:FILEPATH=${MPI_CXX_COMPILER}
-#                                     -DMPI_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
-#                                     -DENABLE_HDF5:BOOL=TRUE
-#                                     -DHDF5_ROOT:FILEPATH=${TPL_INSTALL_PREFIX}
-#                                     -DENABLE_NETCDF:BOOL=TRUE
-#                                     -DNETCDF_ROOT:FILEPATH=${TPL_INSTALL_PREFIX}
-#                                     -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
-
 # --- Patch the original code
 set(MOAB_patch_file moab-configure.patch)
 set(MOAB_sh_patch ${MOAB_prefix_dir}/moab-patch-step.sh)
@@ -75,6 +56,11 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/moab-patch-step.cmake.in
 # set the patch command
 set(MOAB_PATCH_COMMAND ${CMAKE_COMMAND} -P ${MOAB_cmake_patch})
 
+# --- Define the arguments passed to CMake.
+set(MOAB_CMAKE_CACHE_ARGS 
+      "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}")
+
+# --- Add external project build and tie to the SuperLU build target
 ExternalProject_Add(${MOAB_BUILD_TARGET}
                     DEPENDS   ${MOAB_PACKAGE_DEPENDS}    # Package dependency target
                     TMP_DIR   ${MOAB_tmp_dir}            # Temporary files directory
@@ -87,27 +73,28 @@ ExternalProject_Add(${MOAB_BUILD_TARGET}
                     PATCH_COMMAND ${MOAB_PATCH_COMMAND}  # Modifications to source
                     # -- Configure
                     SOURCE_DIR   ${MOAB_source_dir}      # Source directory
-                    CONFIGURE_COMMAND
-                                 ${MOAB_source_dir}/configure
-                                       --prefix=${TPL_INSTALL_PREFIX}
-                                       --with-mpi=${MPI_PREFIX}
-                                       --with-hdf5=${TPL_INSTALL_PREFIX}
-                                       --with-netcdf=${TPL_INSTALL_PREFIX}
-                                       --with-lapack=${TPL_LAPACK_LIBRARIES}
-                                       --enable-shared=${moab_shared}
-                                       --enable-static=${moab_static}
-                                       --enable-parallel
-                                       CC=${CMAKE_C_COMPILER}
-                                       CFLAGS=${moab_cflags}
-                                       CXX=${CMAKE_CXX_COMPILER}
-                                       CFLAGS=${moab_cxxflags}
-                                       LDFLAGS=${moab_ldflags}
+                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}  # Global definitions from root CMakeList
+                                     ${MOAB_CMAKE_CACHE_ARGS}
+                                     -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
+                                     -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                                     -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
+                                     -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
+                                     -DENABLE_FORTRAN:BOOL=TRUE
+                                     -DENABLE_MPI:BOOL=TRUE
+                                     -DMPI_CXX_COMPILER:FILEPATH=${MPI_CXX_COMPILER}
+                                     -DMPI_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
+                                     -DENABLE_HDF5:BOOL=TRUE
+                                     -DHDF5_ROOT:FILEPATH=${TPL_INSTALL_PREFIX}
+                                     -DENABLE_NETCDF:BOOL=TRUE
+                                     -DNETCDF_ROOT:FILEPATH=${TPL_INSTALL_PREFIX}
+                                     -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
+
                     # -- Build
                     BINARY_DIR       ${MOAB_build_dir}         # Build directory 
-                    BUILD_COMMAND    $(MAKE)                   # $(MAKE) enables parallel builds through make
-                    BUILD_IN_SOURCE  ${MOAB_BUILD_IN_SOURCE}   # Flag for in source builds
+                    BUILD_COMMAND    ${MAKE} 
                     # -- Install
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}     # Install directory
+      		    INSTALL_COMMAND  $(MAKE) install
                     # -- Output control
                     ${MOAB_logging_args})
 
