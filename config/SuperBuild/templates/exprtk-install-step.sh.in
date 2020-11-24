@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+cd @EXPRTK_source_dir@
+
+# Manual install required for 4.0.x versions
+tpl_include_dir=@TPL_INSTALL_PREFIX@/include
+if [ ! -e ${tpl_include_dir} ]; then mkdir -p ${tpl_include_dir} ; fi
+
+cp exprtk.hpp ${tpl_include_dir}
+
+exit $?

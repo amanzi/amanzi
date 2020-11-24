@@ -139,11 +139,20 @@ if (NOT _libdir)
   if (WIN32)
     set(_libdir ENV LIB)
   elseif (APPLE)
-    set(_libdir /usr/local/lib /usr/lib /usr/local/lib64 /usr/lib64 ENV DYLD_LIBRARY_PATH)
+    if ($ENV{DYLD_LIBRARY_PATH})
+      string(REPLACE ":" ";" _env_dirs $ENV{DYLD_LIBRARY_PATH})
+    endif ()
+    set(_libdir /usr/local/lib /usr/lib /usr/local/lib64 /usr/lib64 ${_env_dirs})
   else ()
-    set(_libdir /usr/local/lib /usr/lib /usr/local/lib64 /usr/lib64 ENV LD_LIBRARY_PATH)
+    if ($ENV{LD_LIBRARY_PATH})
+      string(REPLACE ":" ";" _env_dirs $ENV{LD_LIBRARY_PATH})
+    endif ()
+    set(_libdir /usr/local/lib /usr/lib /usr/local/lib64 /usr/lib64 ${_env_dirs})
   endif ()
 endif ()
+
+message(STATUS "\t BLAS: search library=${_list} with suffixes=${CMAKE_FIND_LIBRARY_SUFFIXES}")
+message(STATUS "\t BLAS: at locations=${_libdir}")
 
 foreach(_library ${_list})
   set(_combined_name ${_combined_name}_${_library})
@@ -164,6 +173,8 @@ foreach(_library ${_list})
         set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES} .so.3gf)
       endif ()
     endif (BLA_STATIC)
+    list(REMOVE_DUPLICATES CMAKE_FIND_LIBRARY_SUFFIXES)
+
     find_library(${_prefix}_${_library}_LIBRARY
       NAMES ${_library}
       PATHS ${_libdir}

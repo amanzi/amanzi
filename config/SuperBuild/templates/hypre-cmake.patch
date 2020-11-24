@@ -1,0 +1,13 @@
+diff -ruNbB hypre-2.20.0-orig/src/CMakeLists.txt hypre-2.20.0-source/src/CMakeLists.txt
+--- hypre-2.20.0-orig/src/CMakeLists.txt	2020-10-14 22:17:16.000000000 -0600
++++ hypre-2.20.0-source/src/CMakeLists.txt	2020-10-14 22:03:05.000000000 -0600
+@@ -209,7 +209,7 @@
+   message("-- Enabled support for using DSUPERLU.")
+   set(DSUPERLU_FOUND TRUE)
+   target_link_libraries(HYPRE PUBLIC ${TPL_DSUPERLU_LIBRARIES} stdc++)
+-  target_include_directories(${TPL_DSUPERLU_INCLUDE_DIRS})
++  target_include_directories(HYPRE PUBLIC ${TPL_DSUPERLU_INCLUDE_DIRS})
+ endif()
+ 
+ if(DSUPERLU_FOUND)
+ 

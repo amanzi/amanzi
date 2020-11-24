@@ -1,0 +1,17 @@
+diff -ruNbB ../BoxLib-16.08/Src/C_BaseLib/FabArray.H ccse-16.08-source/Src/C_BaseLib/FabArray.H
+--- ../BoxLib-16.08/Src/C_BaseLib/FabArray.H	2016-08-01 08:26:59.000000000 -0600
++++ ccse-16.08-source/Src/C_BaseLib/FabArray.H	2020-06-20 01:07:54.000000000 -0600
+@@ -497,11 +497,13 @@
+     void flushFB () const;       // This flushes its own FB.
+     static void flushFBCache (); // This flushes the entire cache.
+ 
++public:
+     //
+     // parallel copy or add
+     //
+     enum CpOp { COPY = 0, ADD = 1 };
+ 
++protected:
+     struct CPC
+     {
+ 	CPC (const FabArrayBase& dstfa, int dstng, const FabArrayBase& srcfa, int srcng);

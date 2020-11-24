@@ -99,12 +99,13 @@ set(SEACAS_CMAKE_CACHE_ARGS
                     -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
                     -DSEACASProj_ENABLE_ALL_PACKAGES:BOOL=FALSE
                     -DSEACASProj_ENABLE_SEACASExodus:BOOL=TRUE
-                    -DSEACASProj_ENABLE_SEACASNemslice:STRING=:BOOL=TRUE
-                    -DSEACASProj_ENABLE_SEACASNemspread:STRING=:BOOL=TRUE
-                    -DSEACASProj_ENABLE_SEACASExodiff:STRING=:BOOL=TRUE
-                    -DSEACASProj_ENABLE_SEACASExotxt:STRING=:BOOL=TRUE
-                    -DSEACASProj_ENABLE_SEACASExoformat:STRING=:BOOL=TRUE
-                    -DSEACASProj_ENABLE_SEACASDecomp:STRING=:BOOL=TRUE
+                    -DSEACASProj_ENABLE_SEACASExodus_for:BOOL=TRUE
+                    -DSEACASProj_ENABLE_SEACASNemslice:BOOL=TRUE
+                    -DSEACASProj_ENABLE_SEACASNemspread:BOOL=TRUE
+                    -DSEACASProj_ENABLE_SEACASExodiff:BOOL=TRUE
+                    -DSEACASProj_ENABLE_SEACASExotxt:BOOL=TRUE
+                    -DSEACASProj_ENABLE_SEACASExoformat:BOOL=TRUE
+                    -DSEACASProj_ENABLE_SEACASDecomp:BOOL=TRUE
                     -DSEACASProj_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE
                     -DSEACASProj_ENABLE_SECONDARY_TESTED_CODE:BOOL=FALSE
                     -DSEACASProj_ENABLE_TESTS:BOOL=FALSE

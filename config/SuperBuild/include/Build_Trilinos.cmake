@@ -46,7 +46,7 @@ if (ENABLE_EPETRA)
 endif()
 
 if (ENABLE_KOKKOS)
-  list(APPEND Trilinos_PACKAGE_LIST Belos Galeri Zoltan2 Kokkos KokkosKernels Tpetra Xpetra Ifpack2 MueLu ShyLU ShyLU_Node Amesos2 Basker) 
+  list(APPEND Trilinos_PACKAGE_LIST Kokkos KokkosKernels Tpetra Ifpack2 MueLu)
 endif()
 
 if (ENABLE_STK_Mesh)
@@ -77,10 +77,6 @@ if (ENABLE_KOKKOS)
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_INT_LONG:BOOL=OFF")
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_INT_LONG_LONG:BOOL=OFF")
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DXpetra_Epetra_NO_64BIT_GLOBAL_INDICIES:BOOL=ON")
-
-  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DMueLu_ENABLE_Epetra:BOOL=OFF")
-  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DAmesos2_ENABLE_ShyLU_NodeBasker:BOOL=ON")
-  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_SERIAL:BOOL=ON") 
 endif()
 
 
@@ -143,10 +139,12 @@ list(APPEND Trilinos_CMAKE_TPL_ARGS
 
 # HYPRE
 if (ENABLE_HYPRE)
+  message("ETC: HYPRE_LIBRARIES = ${HYPRE_LIBRARIES}")
   list(APPEND Trilinos_CMAKE_TPL_ARGS
               "-DTPL_ENABLE_HYPRE:BOOL=ON"
               "-DTPL_HYPRE_LIBRARIES:STRING=${HYPRE_LIBRARIES}"
               "-DHYPRE_LIBRARY_DIRS:FILEPATH=${HYPRE_DIR}/lib"
+              "-DHYPRE_INCLUDE_DIRS:FILEPATH=${HYPRE_DIR}/include"
               "-DTPL_HYPRE_INCLUDE_DIRS:FILEPATH=${HYPRE_DIR}/include")
 endif()
 
@@ -206,58 +204,63 @@ set(Trilinos_CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
 set(Trilinos_CMAKE_Fortran_FLAGS ${CMAKE_Fortran_FLAGS})
 message(DEBUG "Trilinos_CMAKE_CXX_FLAGS = ${Trilinos_CMAKE_CXX_FLAGS}")
 
+# - Architecture Args.... these will need work.
+set(Trilinos_CMAKE_ARCH_ARGS "")
 if (ENABLE_KOKKOS)
-  # - Architecture Args.... these will need work
-  set(Trilinos_CMAKE_ARCH_ARGS
-    "-DKokkos_ENABLE_Serial:BOOL=ON"
-    "-DKokkos_ENABLE_Pthread:BOOL=OFF"
-    )
-
-  # By default compiler with the standard mpi compiler
-  set(Trilinos_CXX_COMPILER ${CMAKE_CXX_COMPILER})
-  message(STATUS "Trilinos COMPILER: ${Trilinos_CXX_COMPILER}")
-
-  if ( "${AMANZI_ARCH}" STREQUAL "Summit" )
-    message("AMANZI_ARCH: : ${AMANZI_ARCH}")
-    if(NOT DEFINED ENV{CUDA_LAUNCH_BLOCKING})
-      message(FATAL_ERROR "Environment CUDA_LAUNCH_BLOCKING have to be set to 1 to continue")
-    endif()
-    message(STATUS "NVCC_WRAPPER_DEFAULT_COMPILER=${NVCC_WRAPPER_DEFAULT_COMPILER}")
-    set(NVCC_WRAPPER_PATH "${Trilinos_source_dir}/packages/kokkos/bin/nvcc_wrapper")
-    set(Trilinos_CMAKE_CXX_FLAGS "${Trilinos_CMAKE_CXX_FLAGS} \
-        -Wno-deprecated-declarations -lineinfo \
-        -Xcudafe --diag_suppress=conversion_function_not_usable \
-        -Xcudafe --diag_suppress=cc_clobber_ignored \
-        -Xcudafe --diag_suppress=code_is_unreachable")
-    message("WRAPPER: ${NVCC_WRAPPER_PATH}")
-    message("COMPILER: ${CMAKE_CXX_COMPILER}")
-    message("FLAGS: ${Trilinos_CMAKE_CXX_FLAGS}")
-    list(APPEND Trilinos_CMAKE_ARCH_ARGS
-      "-DTPL_ENABLE_CUDA:BOOL=ON"
-      "-DKokkos_ENABLE_Cuda:BOOL=ON"
-      "-DKokkos_ENABLE_Cuda_UVM:BOOL=ON"
-      "-DKokkos_ENABLE_Cuda_Lambda:BOOL=ON"
-      "-DKOKKOS_ARCH:STRING=Power9;Volta70"
-      "-DKokkos_ENABLE_OpenMP:BOOL=OFF")
-    # Change the default compiler for Trilinos to use nvcc_wrapper
-    set(Trilinos_CXX_COMPILER ${NVCC_WRAPPER_PATH})
-
+  list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_Serial:BOOL=ON")
+  if (ENABLE_KOKKOS_CUDA)
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTPL_ENABLE_CUDA:BOOL=ON")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_Cuda:BOOL=ON")
   else()
-    list(APPEND Trilinos_CMAKE_ARCH_ARGS
-      "-DKokkos_ENABLE_CUDA:BOOL=OFF"
-      "-DKokkos_ENABLE_OpenMP:BOOL=OFF")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_Cuda:BOOL=OFF")
+  endif()
+  if (ENABLE_KOKKOS_OPENMP)
+    # NOTE: This is not yet tested and may need more flags set
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_OpenMP:BOOL=ON")
+  else()
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_OpenMP:BOOL=OFF")
   endif()
 endif()
 
+# By default compiler with the standard mpi compiler 
+set(Trilinos_CXX_COMPILER ${CMAKE_CXX_COMPILER})
+if (ENABLE_KOKKOS_CUDA)
+   set(NVCC_WRAPPER_DEFAULT_COMPILER "${CMAKE_CXX_COMPILER}")
+   set(NVCC_WRAPPER_PATH "${Trilinos_source_dir}/packages/kokkos/bin/nvcc_wrapper")
+   message(STATUS "NVCC_WRAPPER_DEFAULT_COMPILER ${NVCC_WRAPPER_DEFAULT_COMPILER}")
+endif()
+
+# Set ARCH-specific options
+if ( "${AMANZI_ARCH}" STREQUAL "Summit" )
+  if (ENABLE_CUDA) 
+    message("AMANZI_ARCH: : ${AMANZI_ARCH}")
+    if(NOT DEFINED ENV{CUDA_LAUNCH_BLOCKING}) 
+      message(FATAL_ERROR "Environment CUDA_LAUNCH_BLOCKING have to be set to 1 to continue")
+    endif() 
+    set(Trilinos_CMAKE_CXX_FLAGS "${Trilinos_CMAKE_CXX_FLAGS} \
+         -Wno-deprecated-declarations -lineinfo \
+         -Xcudafe --diag_suppress=conversion_function_not_usable \
+         -Xcudafe --diag_suppress=cc_clobber_ignored \
+         -Xcudafe --diag_suppress=code_is_unreachable")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS
+         "-DKokkos_ENABLE_Cuda_UVM:BOOL=ON"
+         "-DKokkos_ENABLE_Cuda_Lambda:BOOL=ON"
+         "-DKOKKOS_ARCH:STRING=Power9;Volta70") 
+    # Change the default compiler for Trilinos to use nvcc_wrapper 
+    set(Trilinos_CXX_COMPILER ${NVCC_WRAPPER_PATH})
+  endif()
+endif()
+
+message(STATUS "Trilinos_CXX_COMPILER ${Trilinos_CXX_COMPILER}")
+message(STATUS "Trilinos_CMAKE_CXX_FLAGS ${Trilinos_CMAKE_CXX_FLAGS}")
  
 #  - Final Trilinos CMake Arguments
 set(Trilinos_CMAKE_ARGS
-  ${Trilinos_CMAKE_PACKAGE_ARGS}
-  ${Trilinos_CMAKE_TPL_ARGS}
-  ${Trilinos_CMAKE_ARCH_ARGS}
-  ${Trilinos_CMAKE_EXTRA_ARGS}
-  )
-
+   ${Trilinos_CMAKE_PACKAGE_ARGS}
+   ${Trilinos_CMAKE_TPL_ARGS}
+   ${Trilinos_CMAKE_ARCH_ARGS}
+   ${Trilinos_CMAKE_EXTRA_ARGS}
+   )
 
 #  --- Define the Trilinos patch step
 #
@@ -265,7 +268,11 @@ set(Trilinos_CMAKE_ARGS
 # Trilinos patches
 set(ENABLE_Trilinos_Patch ON)
 if (ENABLE_Trilinos_Patch)
-  set(Trilinos_patch_file trilinos-duplicate-parameters.patch)
+  set(Trilinos_patch_file
+    trilinos-duplicate-parameters.patch
+    )
+#    trilinos-ifpack-memory-leak.patch
+#    trilinos-superludist.patch
   configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
                  ${Trilinos_prefix_dir}/trilinos-patch-step.sh
                  @ONLY)
