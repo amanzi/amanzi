@@ -536,7 +536,7 @@ void Transport_PK::InitializeFields_()
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // set popular default values when flow PK is off
-  InitializeField(S_.ptr(), passwd_, saturation_liquid_key_, 1.0);
+  InitializeField_(S_.ptr(), passwd_, saturation_liquid_key_, 1.0);
 
   InitializeFieldFromField_(water_content_key_, porosity_key_, false);
   InitializeFieldFromField_(prev_water_content_key_, water_content_key_, false);
@@ -547,7 +547,7 @@ void Transport_PK::InitializeFields_()
   InitializeFieldFromField_(prev_saturation_liquid_key_, saturation_liquid_key_, false);
   InitializeFieldFromField_("total_component_concentration_matrix", tcc_key_, false);
 
-  InitializeField(S_.ptr(), passwd_, "total_component_concentration_matrix_aux", 0.0);
+  InitializeField_(S_.ptr(), passwd_, "total_component_concentration_matrix_aux", 0.0);
 }
 
 
