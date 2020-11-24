@@ -98,7 +98,7 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "state", true);
 
   InitializeMinerals(cp_list_);
-  InitializeSorptionSites(cp_list_, state_list);
+  InitializeSorptionSites(cp_list_, Teuchos::sublist(state_list, "initial conditions"));
 
   // grab the component names
   comp_names_.clear();

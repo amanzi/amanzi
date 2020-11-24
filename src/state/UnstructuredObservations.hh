@@ -10,8 +10,37 @@
            Ethan Coon (ecoon@lanl.gov)
 */
 
-//!  Collection of Observations on an unstructured mesh.
+//!  Collection of Observations on an unstructured mesh to be written to a common file.
 
+/*!
+
+
+.. _observation-spec:
+.. admonition:: observation-spec
+
+    * `"observation output filename`" ``[string]`` user-defined name for the file
+      that the observations are written to.
+
+    * `"delimiter`" ``[string]`` **, ** Delimiter to split columns of the file
+
+    *  `"write interval`" ``[int]`` **1** Interval of observations on which to flush IO files.
+
+    * `"time units`" ``[string]`` **s** Controls the unit of the time column in the observation file.
+
+    * `"domain`" ``[string]`` **""** Can be used to set the communicator which writes (usually not needed).
+
+    * `"observed quantities`" ``[observable-spec-list]`` A list of Observable_ objects that are all put in the same file.
+
+    INCLUDES:
+
+    * ``[io-event-spec]`` An IOEvent_ spec
+
+
+Note, for backwards compatibility, an ``observable-spec`` may be directly
+included within the `observation-spec` if it is the only variable to be
+observed in this file.
+
+*/
 
 #ifndef AMANZI_UNSTRUCTURED_OBSERVATIONS_HH_
 #define AMANZI_UNSTRUCTURED_OBSERVATIONS_HH_
@@ -19,6 +48,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
 
+#include "IOEvent.hh"
 #include "ObservationData.hh"
 #include "Observable.hh"
 
@@ -26,24 +56,35 @@
 
 namespace Amanzi {
 
-class UnstructuredObservations {
+class UnstructuredObservations : public IOEvent {
 
  public:
-  UnstructuredObservations(Teuchos::ParameterList& observations_plist,
-                           const Teuchos::RCP<ObservationData>& observation_data);
+  UnstructuredObservations(Teuchos::ParameterList& obs_list,
+                           const Teuchos::Ptr<State>& S);
 
-  bool DumpRequested(int cycle, double time) const;
-  void MakeObservations(const State& state);
-  void RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm);
+  void MakeObservations(const Teuchos::Ptr<State>& S);
   void Flush();
 
  private:
+  void Init_();
+  void Write_(double time, const std::vector<double>& obs);
 
-  typedef std::map<std::string, Teuchos::RCP<Observable> > ObservableMap;
+ private:
+  std::vector<Teuchos::RCP<Observable>> observables_;
 
-  Teuchos::RCP<Amanzi::ObservationData> observation_data_;
-  ObservableMap observations_;
+  bool write_;
+  int num_total_;
+  std::string filename_;
+  std::string delimiter_;
+  int interval_;
+  int count_;
+  bool time_integrated_;
+  std::vector<double> integrated_observation_;
 
+  double time_unit_factor_;
+  std::string time_unit_;
+
+  std::unique_ptr<std::ofstream> fid_;
 };
 
 }

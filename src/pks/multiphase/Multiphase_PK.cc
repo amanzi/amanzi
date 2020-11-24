@@ -463,10 +463,10 @@ void Multiphase_PK::InitializeFields_()
   InitializeFieldFromField_(prev_tws_key_, tws_key_, true);
   InitializeFieldFromField_(prev_tcs_key_, tcs_key_, true);
 
-  InitializeField(S_.ptr(), passwd_, darcy_flux_liquid_key_, 0.0);
-  InitializeField(S_.ptr(), passwd_, darcy_flux_gas_key_, 0.0);
+  InitializeField_(S_.ptr(), passwd_, darcy_flux_liquid_key_, 0.0);
+  InitializeField_(S_.ptr(), passwd_, darcy_flux_gas_key_, 0.0);
 
-  InitializeField(S_.ptr(), passwd_, "constant_field", 1.0);
+  InitializeField_(S_.ptr(), passwd_, "constant_field", 1.0);
 }
 
 

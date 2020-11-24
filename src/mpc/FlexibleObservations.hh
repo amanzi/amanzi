@@ -50,6 +50,7 @@ class FlexibleObservations {
   }
 
   int MakeObservations(State& S);
+  int MakeContinuousObservations(State& S);
 
   bool DumpRequested(const int);
   bool DumpRequested(const double);

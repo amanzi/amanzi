@@ -17,7 +17,7 @@ def children_by_name(xml, name):
 def child_by_name(xml, name):
     """Find unique child by name.  Note names should always be unique."""
     matches = children_by_name(xml, name)
-    if len(matches) is 0:
+    if len(matches) == 0:
         raise errors.MissingXMLError("Object does not have child '{}'".format(name))
     elif len(matches) > 1:
         raise errors.NonUniqueXMLError("Object has more than one child '{}'".format(name))
@@ -31,7 +31,7 @@ def findall_attr(xml, attr, value):
 def find_attr(xml, attr, value):
     """Find a unique xml object, at any depth, in the xml tree."""
     matches = findall_attr(xml, attr, value)
-    if len(matches) is 0:
+    if len(matches) == 0:
         raise errors.MissingXMLError("Object does not have grandchild '{}={}'".format(attr,value))
     elif len(matches) > 1:
         raise errors.NonUniqueXMLError("Object has more than one grandchild '{}={}'".format(attr,value))
@@ -60,7 +60,7 @@ def findall_name_value(xml, name, value):
 def find_name_value(xml, name, value):
     """Find a unique xml object at any depth with the given 'name' and 'value'"""
     matches = findall_name_value(xml, name, value)
-    if len(matches) is 0:
+    if len(matches) == 0:
         raise errors.MissingXMLError("Object does not have grandchild '{},{}'".format(name,value))
     elif len(matches) > 1:
         raise errors.NonUniqueXMLError("Object has more than one grandchild '{},{}'".format(name,value))
@@ -92,7 +92,7 @@ def gen_by_path(xml, names, no_skip=False):
 def find_path(xml, names, no_skip=False):
     """Find a unique xml object with a list of names."""
     matches = list(gen_by_path(xml, names, no_skip))
-    if len(matches) is 0:
+    if len(matches) == 0:
         raise errors.MissingXMLError("Object does not have path '{}'".format(names))
     elif len(matches) > 1:
         raise errors.NonUniqueXMLError("Object has more than one path '{}'".format(names))
@@ -189,7 +189,7 @@ def change_value(xml, name_or_names, value, allow_multiple=False, no_skip=False)
         name_or_names = [name_or_names,]
 
     matches = findall_path(xml, name_or_names, no_skip)
-    if len(matches) is 0:
+    if len(matches) == 0:
         raise errors.MissingXMLError("Object does not have path '{}'".format(name_or_names))
 
     if not allow_multiple and len(matches) > 1:
@@ -220,7 +220,7 @@ def change_name(xml, old_name_or_names, new_name, allow_multiple=False, no_skip=
         old_name_or_names = [old_name_or_names,]
 
     matches = findall_path(xml, old_name_or_names, no_skip)
-    if len(matches) is 0:
+    if len(matches) == 0:
         raise errors.MissingXMLError("Object does not have path '{}'".format(old_name_or_names))
 
     if not allow_multiple and len(matches) > 1:
@@ -253,8 +253,8 @@ def remove_element(xml, name_or_names, allow_multiple=False, no_skip=False):
         name_or_names = [name_or_names,]
 
     matches = findall_path(xml, name_or_names, no_skip)
-    if len(matches) is 0:
-        raise errors.MissingXMLError("Object does not have path '{}'".format(names))
+    if len(matches) == 0:
+        raise errors.MissingXMLError("Object does not have path '{}'".format(name_or_names))
 
     if not allow_multiple and len(matches) > 1:
         raise errors.NonUniqueXMLError("Object has more than one path '{}'".format(names))
@@ -268,7 +268,7 @@ def remove_element(xml, name_or_names, allow_multiple=False, no_skip=False):
     if allow_multiple:
         return removed
     else:
-        assert(len(removed) is 1)
+        assert(len(removed) == 1)
         return removed[0]
 
 def replace_element(xml, name_or_names, new_el_or_els, allow_multiple=False, no_skip=False):
@@ -298,7 +298,7 @@ def replace_element(xml, name_or_names, new_el_or_els, allow_multiple=False, no_
         new_el_or_els = [new_el_or_els,]
 
     matches = findall_path(xml, name_or_names, no_skip)
-    if len(matches) is 0:
+    if len(matches) == 0:
         raise errors.MissingXMLError("Object does not have path '{}'".format(names))
 
     if not allow_multiple and len(matches) > 1:
@@ -313,7 +313,7 @@ def replace_element(xml, name_or_names, new_el_or_els, allow_multiple=False, no_
     if allow_multiple:
         return removed
     else:
-        assert(len(removed) is 1)
+        assert(len(removed) == 1)
         return removed[0]
         
     

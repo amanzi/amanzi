@@ -18,16 +18,113 @@
 #include <string>
 #include <vector>
 
+// Amanzi
 #include "errors.hh"
 #include "Point.hh"
 #include "Region.hh"
+#include "RegionLabeledSet.hh"
 
-#include "Mesh.hh"
+// Amanzi::AmanziMesh
 #include "MeshDefs.hh"
+#include "Mesh.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
 
+//---------------------------------------------------------
+// Is there a set with this id and entity type
+//---------------------------------------------------------
+bool Mesh::valid_set_id(Set_ID id, Entity_kind kind) const
+{
+  if (!geometric_model_.get()) return false;
+  Teuchos::RCP<const AmanziGeometry::Region> rgn;
+  try {
+    rgn = geometric_model_->FindRegion(id);
+  } catch (...) {
+    return false;
+  }
+  return valid_set_name(rgn->name(), kind);
+}
+
+
+//---------------------------------------------------------
+// Is there a set with this name and entity type
+//---------------------------------------------------------
+bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
+{
+  if (!geometric_model_.get()) {
+    Errors::Message mesg("Mesh sets not enabled because mesh was created without reference to a geometric model");
+    Exceptions::amanzi_throw(mesg);
+  }
+
+  Teuchos::RCP<const AmanziGeometry::Region> rgn;
+  try {
+    rgn = geometric_model_->FindRegion(name);
+  } catch (...) {
+    return false;
+  }
+
+  unsigned int rdim = rgn->manifold_dimension();
+
+  // For regions of type Color Function, the dimension
+  // parameter is not guaranteed to be correct
+  if (rgn->type() == AmanziGeometry::COLORFUNCTION) return true;
+
+  // For regions of type Labeled set, extract some more info and verify
+  if (rgn->type() == AmanziGeometry::LABELEDSET) {
+    auto lsrgn = Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
+    std::string entity_type = lsrgn->entity_str();
+
+    if (parent() == Teuchos::null) {
+      if ((kind == CELL && entity_type == "CELL") ||
+          (kind == FACE && entity_type == "FACE") ||
+          (kind == EDGE && entity_type == "EDGE") ||
+          (kind == NODE && entity_type == "NODE"))
+        return true;
+    } else {
+      if ((kind == CELL && entity_type == "FACE") ||
+          (kind == CELL && entity_type == "CELL") ||
+          (kind == FACE && entity_type == "FACE") ||
+          (kind == NODE && entity_type == "NODE")) {
+        // guaranteed we can call, though it may be empty.
+        return true;
+      }
+    } 
+    return false;
+  }
+
+  // If we are looking for a cell set the region has to be
+  // of the same topological dimension as the cells or it
+  // has to be a point region
+  if (kind == CELL && (rdim >= manifold_dim_ || rdim == 1 || rdim == 0)) return true;
+  // If we are looking for a side set, the region has to be
+  // one topological dimension less than the cells
+  if (kind == FACE && (rdim >= manifold_dim_-1 || rdim == 0)) return true;
+
+  // If we are looking for a node set, the region can be of any
+  // dimension upto the spatial dimension of the domain
+  if (kind == NODE) return true;
+
+  return false;
+}
+
+
+//---------------------------------------------------------
+// TBW
+//---------------------------------------------------------
+void Mesh::get_set_entities(const std::string& setname,
+                            const Entity_kind kind,
+                            const Parallel_type ptype,
+                            Entity_ID_List *entids) const
+{
+  std::vector<double> vofs;
+  get_set_entities_and_vofs(setname, kind, ptype, entids, &vofs);
+}
+
+
+//---------------------------------------------------------
+// TBW
+//---------------------------------------------------------
 void Mesh::get_set_entities_box_vofs_(
     Teuchos::RCP<const AmanziGeometry::Region> region,
     const Entity_kind kind, 
@@ -164,20 +261,7 @@ void Mesh::get_set_entities_box_vofs_(
 //---------------------------------------------------------
 // Generic implemnetation of set routines.
 //---------------------------------------------------------
-unsigned int Mesh::get_set_size(const Set_ID setid,
-                                const Entity_kind kind,
-                                const Parallel_type ptype) const 
-{
-  Entity_ID_List ents;
-  std::string setname = geometric_model()->FindRegion(setid)->name();
-
-  get_set_entities(setname, kind, ptype, &ents);
-
-  return ents.size();
-}
-
-
-unsigned int Mesh::get_set_size(const std::string setname, 
+unsigned int Mesh::get_set_size(const std::string& setname, 
                                 const Entity_kind kind, 
                                 const Parallel_type ptype) const 
 {
@@ -187,17 +271,6 @@ unsigned int Mesh::get_set_size(const std::string setname,
   get_set_entities_and_vofs(setname, kind, ptype, &setents, &vofs);
   
   return setents.size();
-}
-
-
-void Mesh::get_set_entities(const Set_ID setid, 
-                            const Entity_kind kind, 
-                            const Parallel_type ptype, 
-                            Entity_ID_List *entids) const
-{
-  std::vector<double> vofs;
-  std::string setname = geometric_model()->FindRegion(setid)->name();
-  get_set_entities_and_vofs(setname, kind, ptype, entids, &vofs);
 }
 
 }  // namespace AmanziMesh

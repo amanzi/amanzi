@@ -10,6 +10,8 @@
            Ethan Coon
            Konstantin Lipnikov
            Daniil Svyatsky
+
+  Virtual base class.
 */
 
 #ifndef AMANZI_OBSERVABLE_HH
@@ -37,6 +39,7 @@ class Observable : public IOEvent {
     : variable_(variable),
       region_(region),
       functional_(functional),
+      sum_(0.0),
       mesh_(mesh),
       IOEvent(plist)
   {
@@ -56,15 +59,13 @@ class Observable : public IOEvent {
     }
   }
 
-  virtual void ComputeObservation(State& S, double* value, double* volume, std::string& unit) {
-    assert(false);
-  }
-
-  virtual int ComputeRegionSize() {return region_size_; }
+  virtual void ComputeObservation(State& S, double* value, double* volume, std::string& unit, double dt) = 0;
+  virtual int ComputeRegionSize() { return region_size_; }
 
  public:
   std::string variable_;
   std::string functional_;
+  double sum_;
 
  protected:    
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

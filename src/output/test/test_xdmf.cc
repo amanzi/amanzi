@@ -40,7 +40,7 @@ TEST(XDMF) {
 
   // Write a file which contains both mesh and data.
   Teuchos::ParameterList plist;
-  Amanzi::OutputXDMF io(plist, Mesh, true, false);
+  Amanzi::OutputXDMF io(plist, Mesh, true, false, true);
 
   double time = 0.0;
   int cycle = 0;

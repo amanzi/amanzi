@@ -139,7 +139,7 @@ int FlexibleObservations::MakeObservations(State& S)
       std::vector<Amanzi::ObservationData::DataQuadruple>& od = observation_data_[label]; 
 
       double value(0.0), volume(0.0);
-      (i->second)->ComputeObservation(S, &value, &volume, unit);
+      i->second->ComputeObservation(S, &value, &volume, unit, 0.0);
 
       if (var == "drawdown" || var=="permeability-weighted drawdown") {
         if (od.size() > 0) { 
@@ -176,6 +176,24 @@ int FlexibleObservations::MakeObservations(State& S)
 
   FlushObservations();
   return num_obs;
+}
+
+
+/* ******************************************************************
+* Process data to extract observations.
+****************************************************************** */
+int FlexibleObservations::MakeContinuousObservations(State& S)
+{
+  for (auto i = observations.begin(); i != observations.end(); i++) {
+    std::string var = i->second->variable_;
+    if (var.find(" breakthrough curve") != std::string::npos) {
+      double value(0.0), volume(0.0);
+      std::string unit;
+      double dt = S.final_time() - S.initial_time();
+      i->second->ComputeObservation(S, &value, &volume, unit, dt);
+    }
+  }
+  return 0;
 }
 
 

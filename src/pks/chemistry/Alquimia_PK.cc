@@ -98,13 +98,7 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "state", true);
 
   InitializeMinerals(cp_list_);
-  if (cp_list_->isSublist("initial conditions")) {
-    // ATS-style input spec -- initial conditions in the PK
-    InitializeSorptionSites(cp_list_, cp_list_);
-  } else {
-    // Amanzi-style input spec -- initial conditions in State
-    InitializeSorptionSites(cp_list_, state_list);
-  }
+  InitializeSorptionSites(cp_list_, Teuchos::sublist(state_list, "initial conditions"));
 
   // create chemistry engine. (should we do it later in Setup()?)
   if (!cp_list_->isParameter("engine")) {
@@ -215,7 +209,7 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // initialize fields as soon as possible
   for (size_t i = 0; i < aux_names_.size(); ++i) {
-    InitializeField(S, passwd_, aux_names_[i], 0.0);
+    InitializeField_(S, passwd_, aux_names_[i], 0.0);
   }
 
   // Initialize the data structures that we will use to traffic data between 
@@ -436,9 +430,9 @@ void Alquimia_PK::XMLParameters()
   }
 
   Teuchos::RCP<Teuchos::ParameterList> initial_conditions;
-  if (cp_list_->isSublist("initial conditions")) {
+  if (cp_list_->isSublist("initial condition")) {
     // ATS-style input spec -- initial conditions in the PK
-    initial_conditions = Teuchos::sublist(cp_list_, "initial conditions");
+    initial_conditions = Teuchos::sublist(cp_list_, "initial condition");
   } else {
     // Amanzi-style input spec -- initial conditions in State
     initial_conditions = Teuchos::sublist(Teuchos::sublist(glist_, "state"), "initial conditions");
@@ -447,8 +441,8 @@ void Alquimia_PK::XMLParameters()
     Teuchos::ParameterList& geochem_conditions = initial_conditions->sublist("geochemical conditions");
     ParseChemicalConditionRegions(geochem_conditions, chem_initial_conditions_);
     if (chem_initial_conditions_.empty()) {
-      if (cp_list_->isSublist("initial conditions")) {
-        msg << "Alquimia_PK::XMLParameters(): No geochemical conditions were found in \"PK->initial conditions->geochemical conditions\"";
+      if (cp_list_->isSublist("initial condition")) {
+        msg << "Alquimia_PK::XMLParameters(): No geochemical conditions were found in \"PK->initial condition->geochemical conditions\"";
       } else {
         msg << "Alquimia_PK::XMLParameters(): No geochemical conditions were found in \"State->initial conditions->geochemical conditions\"";
       }
