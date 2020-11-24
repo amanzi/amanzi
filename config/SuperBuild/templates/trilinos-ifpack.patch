@@ -1,0 +1,12 @@
+diff --git a/packages/ifpack/src/Ifpack_Hypre.cpp b/packages/ifpack/src/Ifpack_Hypre.cpp
+index d70f232946b..a7beafea8de 100644
+--- a/packages/ifpack/src/Ifpack_Hypre.cpp
++++ b/packages/ifpack/src/Ifpack_Hypre.cpp
+@@ -784,6 +784,7 @@ int Ifpack_Hypre::Compute(){
+     IFPACK_CHK_ERR(Initialize());
+   }
+   Time_.ResetStartTime();
++  CopyEpetraToHypre();
+ 
+   // Hypre Setup must be called after matrix has values
+   if(SolveOrPrec_ == Solver){
