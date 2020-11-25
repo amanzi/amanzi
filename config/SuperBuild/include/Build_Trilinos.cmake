@@ -139,7 +139,6 @@ list(APPEND Trilinos_CMAKE_TPL_ARGS
 
 # HYPRE
 if (ENABLE_HYPRE)
-  message("ETC: HYPRE_LIBRARIES = ${HYPRE_LIBRARIES}")
   list(APPEND Trilinos_CMAKE_TPL_ARGS
               "-DTPL_ENABLE_HYPRE:BOOL=ON"
               "-DTPL_HYPRE_LIBRARIES:STRING=${HYPRE_LIBRARIES}"
@@ -207,18 +206,18 @@ message(DEBUG "Trilinos_CMAKE_CXX_FLAGS = ${Trilinos_CMAKE_CXX_FLAGS}")
 # - Architecture Args.... these will need work.
 set(Trilinos_CMAKE_ARCH_ARGS "")
 if (ENABLE_KOKKOS)
-  list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_Serial:BOOL=ON")
+  list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_SERIAL:BOOL=ON")
   if (ENABLE_KOKKOS_CUDA)
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTPL_ENABLE_CUDA:BOOL=ON")
-    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_Cuda:BOOL=ON")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_CUDA:BOOL=ON")
   else()
-    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_Cuda:BOOL=OFF")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_CUDA:BOOL=OFF")
   endif()
   if (ENABLE_KOKKOS_OPENMP)
     # NOTE: This is not yet tested and may need more flags set
-    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_OpenMP:BOOL=ON")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_OPENMP:BOOL=ON")
   else()
-    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_OpenMP:BOOL=OFF")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_OPENMP:BOOL=OFF")
   endif()
 endif()
 
@@ -270,9 +269,9 @@ set(ENABLE_Trilinos_Patch ON)
 if (ENABLE_Trilinos_Patch)
   set(Trilinos_patch_file
     trilinos-duplicate-parameters.patch
+    trilinos-ifpack-memory-leak.patch
+    trilinos-superludist.patch
     )
-#    trilinos-ifpack-memory-leak.patch
-#    trilinos-superludist.patch
   configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
                  ${Trilinos_prefix_dir}/trilinos-patch-step.sh
                  @ONLY)

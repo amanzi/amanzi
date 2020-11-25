@@ -194,7 +194,7 @@ function error_message()
   fi
 }
 
-function warn_message()
+function warning_message()
 {
   local PINK='35m'
   if [ "${no_color}" -eq "${TRUE}" ]; then
@@ -323,7 +323,9 @@ Configuration:
   --relwithdebinfo        build optimized TPLs and Amanzi binaries with debug info
                           (for profiling)
 
-  --debug                 build debug TPLs and Amanzi binaries.
+  --debug                 build debug Amanzi libraried and binaries.
+
+  --debug_tpls            build debug TPLs libraries and binaries.
 
   --branch=BRANCH         build TPLs and Amanzi found in BRANCH ['"${amanzi_branch}"']
 
@@ -362,7 +364,7 @@ Value in brackets indicates default setting.
   clm                     build CLM library for surface processes (currently only ATS) ['"${clm}"']
 
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
-  reg_tests               build regression tests into Amanzi Test Suite ['"${reg_tests}"']
+  reg_tests               build regression tests into Amanzi or ATS Test Suite ['"${reg_tests}"']
   shared                  build Amanzi and tpls using shared libraries ['"${shared}"']
   Spack                   build TPLs using the Spack package manager when appropriate ['"${Spack}"']
   xsdk                    build TPLs available in xSDK first, then supplement with additional 
@@ -487,7 +489,7 @@ Build configuration:
     trilinos_build_type = '"${trilinos_build_type}"'
     tpls_build_type     = '"${tpls_build_type}"'
     tpl_config_file     = '"${tpl_config_file}"'
-    amanzi_arch         ='"${amanzi_arch}"'
+    amanzi_arch         = '"${amanzi_arch}"'
 
 Amanzi Components:   
     structured     = '"${structured}"'
@@ -1082,7 +1084,7 @@ function git_submodule_clone()
   save_dir=`pwd`
   cd ${amanzi_source_dir}
   status_message "In ${amanzi_source_dir} checking out ${submodule_name}"
-  ${git_binary} submodule update --init --remote ${submodule_name}
+  ${git_binary} submodule update --init --remote --recursive ${submodule_name}
   if [ $? -ne 0 ]; then
     error_message "Failed to check out submodule ${submodule_name}"
     exit_now 30
@@ -1444,25 +1446,49 @@ function define_install_directories
 # ---------------------------------------------------------------------------- #
 function define_nersc_options
 {
-  shared=$FALSE
-  prefer_static=$TRUE
-  exec_static=$TRUE
-  prg_env="gnu"
-    
-  libsci_file=${tpl_build_src_dir}/include/trilinos-blas-libsci-${prg_env}.cmake
-  arch_tpl_opts="-DAMANZI_ARCH:STRING=${amanzi_arch} \
-                 -DMPI_EXEC:STRING=srun \
-                 -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
-                 -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
-                 -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static} \
-                 -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
-  
-  arch_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=${TRUE} \
-                    -DTESTS_REQUIRE_FULLPATH:BOOL=${TRUE}"
 
-  echo "Setting ARCH for: NERSC"
-  echo "ARCH TPL OPTS = " ${arch_tpl_opts}
-  echo "ARCH AMANZI OPTS = " ${arch_amanzi_opts}
+  if [ "${shared}" -eq "${FALSE}" ]; then
+
+    prefer_static=$TRUE
+    exec_static=$TRUE
+    prg_env="gnu"
+    
+    libsci_file=${tpl_build_src_dir}/include/trilinos-blas-libsci-${prg_env}.cmake
+    arch_tpl_opts="-DAMANZI_ARCH:STRING=${amanzi_arch} \
+                   -DMPI_EXEC:STRING=srun \
+                   -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
+                   -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
+                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static} \
+                   -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
+  
+   arch_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=${TRUE} \
+                     -DTESTS_REQUIRE_FULLPATH:BOOL=${TRUE}"
+
+  elif [ "${shared}" -eq "${TRUE}" ]; then
+
+    prefer_static=$FALSE
+    exec_static=$FALSE
+    prg_env="gnu"
+    
+    libsci_file=${tpl_build_src_dir}/include/trilinos-blas-libsci-${prg_env}.cmake
+    arch_tpl_opts="-DAMANZI_ARCH:STRING=${amanzi_arch} \
+                   -DMPI_EXEC:STRING=srun \
+                   -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
+                   -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
+                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static} \
+                   -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
+  
+    arch_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=${TRUE} \
+                      -DTESTS_REQUIRE_FULLPATH:BOOL=${TRUE}"
+
+  fi
+
+   echo ""
+   echo "Setting ARCH:        NERSC"
+   echo "ARCH TPL OPTIONS     = " ${arch_tpl_opts}
+   echo "ARCH AMANZI OPTIONS  = " ${arch_amanzi_opts}
+   echo ""
+
 }
 
 function define_summit_options
@@ -1789,7 +1815,7 @@ cmd_configure="${cmake_binary} \
     -DBUILD_SHARED_LIBS:BOOL=${shared} \
     -DCCSE_BL_SPACEDIM:INT=${spacedim} \
     -DENABLE_Regression_Tests:BOOL=${reg_tests} \
-    -DMPI_EXEC_GLOBAL_ARGS:STRING=${mpi_exec_args} \
+    -DMPI_EXEC_GLOBAL_ARGS:STRING=${mpi_exec_args}\
     ${arch_amanzi_opts} \
     ${amanzi_source_dir}"
 

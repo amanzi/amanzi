@@ -1,62 +1,33 @@
-diff -ruNbB hypre-2.20.0-orig/src/parcsr_ls/dsuperlu.c hypre-2.20.0-source/src/parcsr_ls/dsuperlu.c
---- hypre-2.20.0-orig/src/parcsr_ls/dsuperlu.c	2020-09-24 11:56:42.000000000 -0600
-+++ hypre-2.20.0-source/src/parcsr_ls/dsuperlu.c	2020-10-15 21:27:31.000000000 -0600
-@@ -113,9 +113,9 @@
-    dslu_data->dslu_options.DiagPivotThresh = 1.0;
-    dslu_data->dslu_options.ReplaceTinyPivot = NO; */
++add_subdirectory(src)
+diff -ruNbB hypre-2.14.0/src/CMakeLists.txt hypre-2.14.0-source/src/CMakeLists.txt
+--- hypre-2.14.0/src/CMakeLists.txt	2018-03-16 16:14:09.000000000 -0600
++++ hypre-2.14.0-source/src/CMakeLists.txt	2018-05-18 11:04:13.000000000 -0600
+@@ -58,6 +58,11 @@
+   set (HYPRE_NO_GLOBAL_PARTITION OFF CACHE BOOL "" FORCE)
+ endif ()
  
--   dScalePermstructInit(global_num_rows, global_num_rows, &(dslu_data->dslu_ScalePermstruct));
-+   ScalePermstructInit(global_num_rows, global_num_rows, &(dslu_data->dslu_ScalePermstruct));
++if (HYPRE_USING_TPL_SUPERLU)
++  include_directories(${SUPERLU_INCLUDE_DIR})
++  add_definitions(-DHAVE_SUPERLU)
++  add_definitions(-DHAVE_DSUPERLU)
++endif ()
+ #   --with-examples         Build example codes.
+ #   --with-fei              Use internal FEI routines.
+ #   --with-superlu          Use internal SuperLU routines.
+@@ -524,6 +529,7 @@
+   parcsr_ls/ame.c
+   parcsr_ls/par_restr.c
+   parcsr_ls/par_lr_restr.c
++  parcsr_ls/superlu.c
+ )
  
--   dLUstructInit(global_num_rows, &(dslu_data->dslu_data_LU));
-+   LUstructInit(global_num_rows, &(dslu_data->dslu_data_LU));
+ # Headers and sources: struct_mv
+@@ -827,6 +833,8 @@
+ endif ()
  
-    PStatInit(&(dslu_data->dslu_data_stat));
+ add_library (HYPRE ${HYPRE_SOURCES} ${FEI_LIBS})
++target_link_libraries(HYPRE ${SUPERLU_LIBRARY})
++target_link_libraries(HYPRE ${SUPERLUDIST_LIBRARY})
  
-@@ -158,9 +158,9 @@
- 
-    PStatFree(&(dslu_data->dslu_data_stat));
-    Destroy_CompRowLoc_Matrix_dist(&(dslu_data->A_dslu));
--   dScalePermstructFree(&(dslu_data->dslu_ScalePermstruct));
--   dDestroy_LU(dslu_data->global_num_rows, &(dslu_data->dslu_data_grid), &(dslu_data->dslu_data_LU));
--   dLUstructFree(&(dslu_data->dslu_data_LU));
-+   ScalePermstructFree(&(dslu_data->dslu_ScalePermstruct));
-+   Destroy_LU(dslu_data->global_num_rows, &(dslu_data->dslu_data_grid), &(dslu_data->dslu_data_LU));
-+   LUstructFree(&(dslu_data->dslu_data_LU));
-    if (dslu_data->dslu_options.SolveInitialized)
-       dSolveFinalize(&(dslu_data->dslu_options), &(dslu_data->dslu_solve));
-    superlu_gridexit(&(dslu_data->dslu_data_grid));
-diff -ruNbB hypre-2.20.0-orig/src/parcsr_ls/dsuperlu.h hypre-2.20.0-source/src/parcsr_ls/dsuperlu.h
---- hypre-2.20.0-orig/src/parcsr_ls/dsuperlu.h	2020-09-24 11:56:42.000000000 -0600
-+++ hypre-2.20.0-source/src/parcsr_ls/dsuperlu.h	2020-10-15 21:12:08.000000000 -0600
-@@ -17,12 +17,12 @@
-    HYPRE_BigInt global_num_rows;
-    SuperMatrix A_dslu;
-    HYPRE_Real *berr;
--   dLUstruct_t dslu_data_LU;
-+   LUstruct_t dslu_data_LU;
-    SuperLUStat_t dslu_data_stat;
-    superlu_dist_options_t dslu_options;
-    gridinfo_t dslu_data_grid;
--   dScalePermstruct_t dslu_ScalePermstruct;
--   dSOLVEstruct_t dslu_solve;
-+   ScalePermstruct_t dslu_ScalePermstruct;
-+   SOLVEstruct_t dslu_solve;
- }
- hypre_DSLUData;
- 
-diff -ruNbB hypre-2.20.0-orig/src/parcsr_ls/par_mgr.c hypre-2.20.0-source/src/parcsr_ls/par_mgr.c
---- hypre-2.20.0-orig/src/parcsr_ls/par_mgr.c	2020-09-24 11:56:42.000000000 -0600
-+++ hypre-2.20.0-source/src/parcsr_ls/par_mgr.c	2020-10-15 21:27:04.000000000 -0600
-@@ -5436,9 +5436,9 @@
-    dslu_data->dslu_options.DiagPivotThresh = 1.0;
-    dslu_data->dslu_options.ReplaceTinyPivot = NO; */
- 
--   dScalePermstructInit(global_num_rows, global_num_rows, &(dslu_data->dslu_ScalePermstruct));
-+   ScalePermstructInit(global_num_rows, global_num_rows, &(dslu_data->dslu_ScalePermstruct));
- 
--   dLUstructInit(global_num_rows, &(dslu_data->dslu_data_LU));
-+   LUstructInit(global_num_rows, &(dslu_data->dslu_data_LU));
- 
-    PStatInit(&(dslu_data->dslu_data_stat));
- 
+ install (TARGETS HYPRE DESTINATION lib)
+ install (FILES ${HYPRE_HEADERS} DESTINATION include)
