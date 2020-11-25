@@ -181,7 +181,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
     DenseMatrix M;
     Polynomial poly(d, order_);
 
-    NumericalIntegration<MyMesh> numi(mymesh);
+    NumericalIntegration numi(mymesh);
     numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
     GrammMatrix(poly, integrals_, basis, M);
@@ -205,7 +205,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
     DenseMatrix M, M2;
     Polynomial poly(d, order_);
 
-    NumericalIntegration<MyMesh> numi(mymesh);
+    NumericalIntegration numi(mymesh);
     numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
     GrammMatrix(poly, integrals_, basis, M);
@@ -251,7 +251,7 @@ void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
   int nfaces = faces.size();
 
   std::vector<const PolynomialBase*> polys(2);
-  NumericalIntegration<MyMesh> numi(mymesh);
+  NumericalIntegration numi(mymesh);
 
   int i0, i1, pos;
   AmanziGeometry::Point xv(d);

@@ -159,7 +159,7 @@ void AnalyticDGBase::ComputeCellError(
   l2_err = l2_mean = l2_int = 0.0;
   inf_err = inf_mean = 0.0;
 
-  Amanzi::WhetStone::NumericalIntegration<Amanzi::AmanziMesh::Mesh> numi(mesh_);
+  Amanzi::WhetStone::NumericalIntegration numi(mesh_);
 
   int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells; c++) {

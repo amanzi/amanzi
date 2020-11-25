@@ -117,7 +117,7 @@ int MFD3D_LagrangeSerendipity::H1consistency(
   MFD3D_LagrangeAnyOrder::H1consistency(c, K, Nf, Af);
 
   // pre-calculate integrals of monomials 
-  NumericalIntegration<AmanziMesh::MeshLight> numi(mesh_);
+  NumericalIntegration numi(mesh_);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
   // selecting regularized basis

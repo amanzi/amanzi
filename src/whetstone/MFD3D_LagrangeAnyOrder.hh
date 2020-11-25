@@ -155,7 +155,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency2D_(
   G_.Reshape(nd, nd);
 
   // pre-calculate integrals of monomials 
-  NumericalIntegration<MyMesh> numi(mymesh);
+  NumericalIntegration numi(mymesh);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_ - 2, integrals_);
 
   // selecting regularized basis

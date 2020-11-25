@@ -200,7 +200,7 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorCell_(
     DenseMatrix M, M2;
     DenseVector v6(nd - ndof_c);
     Polynomial poly(d_, order_);
-    NumericalIntegration<AmanziMesh::MeshLight> numi(mymesh);
+    NumericalIntegration numi(mymesh);
 
     numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
     GrammMatrix(poly, integrals_, basis, M);

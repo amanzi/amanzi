@@ -303,7 +303,7 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
   Polynomial moments(d_, 0);
 
   if (order == 2) {
-    NumericalIntegration<AmanziMesh::MeshLight> numi(mesh1_);
+    NumericalIntegration numi(mesh1_);
     double mass = numi.IntegratePolynomialCell(c, poly);
 
     moments(0) = mass / mesh1_->cell_volume(c);

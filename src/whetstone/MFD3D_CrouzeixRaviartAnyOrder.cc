@@ -98,7 +98,7 @@ int MFD3D_CrouzeixRaviartAnyOrder::H1consistency(
   basis.Init(mesh_, c, order_, ptmp);
 
   // pre-calculate integrals of natural monomials 
-  NumericalIntegration<AmanziMesh::MeshLight> numi(mesh_);
+  NumericalIntegration numi(mesh_);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_ - 2, integrals_);
 
   // populate matrices N and R
@@ -253,7 +253,7 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorGradientCell_(
   uc.Reshape(d_, dim, d_, order_ - 1, true);
 
   std::vector<const PolynomialBase*> polys(2);
-  NumericalIntegration<AmanziMesh::MeshLight> numi(mesh_);
+  NumericalIntegration numi(mesh_);
 
   // selecting regularized basis
   Polynomial ptmp;
@@ -322,7 +322,7 @@ void MFD3D_CrouzeixRaviartAnyOrder::CalculateFaceDOFs_(
 {
   std::vector<const PolynomialBase*> polys(2);
 
-  NumericalIntegration<AmanziMesh::MeshLight> numi(mesh_);
+  NumericalIntegration numi(mesh_);
 
   double area = mesh_->face_area(f);
   const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 

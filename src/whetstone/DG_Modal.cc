@@ -512,7 +512,7 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
   auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
 
   Teuchos::RCP<const SurfaceMeshLight> surf_mesh = Teuchos::rcp(new SurfaceMeshLight(mesh_, f, *coordsys));
-  NumericalIntegration<SurfaceMeshLight> numi_f(surf_mesh);
+  NumericalIntegration numi_f(surf_mesh);
 
   // integrate traces of polynomials on face f
   std::vector<const PolynomialBase*> polys(3), polys0(2), polys1(2), polys_tmp(1);

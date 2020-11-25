@@ -77,7 +77,7 @@ int MFD3D_CrouzeixRaviartSerendipity::H1consistency(
   MFD3D_CrouzeixRaviartAnyOrder::H1consistency(c, K, Nf, Af);
 
   // pre-calculate integrals of monomials 
-  NumericalIntegration<AmanziMesh::MeshLight> numi(mesh_);
+  NumericalIntegration numi(mesh_);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
   // selecting regularized basis
@@ -223,7 +223,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
     DenseMatrix M;
     Polynomial poly(d_, order_);
 
-    NumericalIntegration<AmanziMesh::MeshLight> numi(mesh_);
+    NumericalIntegration numi(mesh_);
     numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
     GrammMatrix(poly, integrals_, basis, M);
@@ -247,7 +247,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
     DenseMatrix M, M2;
     Polynomial poly(d_, order_);
 
-    NumericalIntegration<AmanziMesh::MeshLight> numi(mesh_);
+    NumericalIntegration numi(mesh_);
     numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
     GrammMatrix(poly, integrals_, basis, M);
@@ -284,7 +284,7 @@ void MFD3D_CrouzeixRaviartSerendipity::CalculateDOFsOnBoundary_(
   int nfaces = faces.size();
 
   std::vector<const PolynomialBase*> polys(2);
-  NumericalIntegration<AmanziMesh::MeshLight> numi(mesh_);
+  NumericalIntegration numi(mesh_);
 
   AmanziGeometry::Point xv(d_);
 

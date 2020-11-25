@@ -92,7 +92,7 @@ class DG_Modal : public BilinearForm {
 
  private:
   int numi_order_;
-  NumericalIntegration<AmanziMesh::MeshLight> numi_;
+  NumericalIntegration numi_;
 
   std::vector<Polynomial> monomial_integrals_;  // integrals of non-normalized monomials
   std::vector<std::shared_ptr<Basis<AmanziMesh::MeshLight> > > basis_;
