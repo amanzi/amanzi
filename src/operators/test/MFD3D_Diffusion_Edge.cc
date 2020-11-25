@@ -38,14 +38,14 @@ RegisteredFactory<MFD3D_Diffusion_Edge> MFD3D_Diffusion_Edge::factory_("diffusio
 int MFD3D_Diffusion_Edge::H1consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List edges, fedges;
+  Entity_ID_List fedges;
   std::vector<int> edirs, map;
 
   const auto& faces = mesh_->cell_get_faces(c);
   const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
-  mesh_->cell_get_edges(c, &edges);
+  const auto& edges = mesh_->cell_get_edges(c);
   int nedges = edges.size();
 
   N.Reshape(nedges, d_ + 1);

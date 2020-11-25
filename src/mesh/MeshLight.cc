@@ -30,23 +30,6 @@ void MeshLight::BuildCache()
 
 
 // -------------------------------------------------------------------
-// Downward connectivity: c -> e
-// -------------------------------------------------------------------
-void MeshLight::cell_get_edges(const Entity_ID c,
-                               Entity_ID_List *edgeids) const
-{
-#if AMANZI_MESH_CACHE_VARS != 0
-  if (!cell2edge_info_cached_) cache_cell2edge_info_();
-
-  *edgeids = cell_edge_ids_[c];  // copy operation
-
-#else
-  cell_get_edges_internal_(c, edgeids);
-#endif
-}
-
-
-// -------------------------------------------------------------------
 // Downward connectivity: f -> e
 // -------------------------------------------------------------------
 void MeshLight::face_get_edges_and_dirs(const Entity_ID faceid,

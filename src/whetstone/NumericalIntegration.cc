@@ -17,7 +17,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "NumericalIntegration.hh"
-#include "SurfaceMeshLight.hh"
+#include "SingleFaceMesh.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -699,7 +699,7 @@ void NumericalIntegration::IntegrateMonomialsFaceReduction_(
 
   // create a surface mesh
   SurfaceCoordinateSystem coordsys(xf, normal);
-  Teuchos::RCP<const SurfaceMeshLight> surf_mesh = Teuchos::rcp(new SurfaceMeshLight(mesh_, f, coordsys));
+  Teuchos::RCP<const SingleFaceMesh> surf_mesh = Teuchos::rcp(new SingleFaceMesh(mesh_, f, coordsys));
   NumericalIntegration numi_f(surf_mesh);
 
   PolynomialIterator it(d_);

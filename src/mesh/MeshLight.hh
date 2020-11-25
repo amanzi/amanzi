@@ -89,9 +89,10 @@ class MeshLight {
     return cell_face_dirs_[c];
   }
 
-  // Get edges: general version
-  void cell_get_edges(const Entity_ID c, Entity_ID_List *edges) const;
-  const Entity_ID_List& cell_get_edges(const Entity_ID c) const { return cell_edge_ids_[c]; }
+  // Get edges of a cell
+  const Entity_ID_List& cell_get_edges(const Entity_ID c) const {
+    return cell_edge_ids_[c];
+  }
 
   virtual void cell_get_nodes(const Entity_ID c, Entity_ID_List *nodes) const = 0;
 

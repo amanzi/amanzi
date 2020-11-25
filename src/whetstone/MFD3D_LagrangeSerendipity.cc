@@ -32,7 +32,7 @@
 #include "MFD3D_LagrangeSerendipity.hh"
 #include "NumericalIntegration.hh"
 #include "SurfaceCoordinateSystem.hh"
-#include "SurfaceMeshLight.hh"
+#include "SingleFaceMesh.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
@@ -93,7 +93,7 @@ int MFD3D_LagrangeSerendipity::H1consistency(
   int nfaces = mesh_->cell_get_num_faces(c);
   int nedges(0);
   if (d_ == 3) {
-    mesh_->cell_get_edges(c, &edges);
+    edges = mesh_->cell_get_edges(c);
     nedges = edges.size();
   }
 
@@ -208,7 +208,7 @@ void MFD3D_LagrangeSerendipity::ProjectorFace_(
   const auto& normal = mesh_->face_normal(f);
   SurfaceCoordinateSystem coordsys(xf, normal);
 
-  Teuchos::RCP<const SurfaceMeshLight> surf_mesh = Teuchos::rcp(new SurfaceMeshLight(mesh_, f, coordsys));
+  Teuchos::RCP<const SingleFaceMesh> surf_mesh = Teuchos::rcp(new SingleFaceMesh(mesh_, f, coordsys));
 
   std::vector<Polynomial> vve;
   for (int i = 0; i < ve.size(); ++i) {
@@ -367,7 +367,7 @@ void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
   // input mesh may have a different dimension than base mesh
   int d = mymesh->space_dimension();
 
-  Entity_ID_List nodes, edges;
+  Entity_ID_List nodes;
   mymesh->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
@@ -430,7 +430,7 @@ void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
   }
 
   if (d == 3) {
-    mymesh->cell_get_edges(c, &edges);
+    const auto& edges = mymesh->cell_get_edges(c);
     int nedges = edges.size();
 
     Polynomial pe(d - 2, order_ - 2);

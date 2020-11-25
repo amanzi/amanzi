@@ -31,7 +31,7 @@
 #include "MFD3D_LagrangeAnyOrder.hh"
 #include "NumericalIntegration.hh"
 #include "SurfaceCoordinateSystem.hh"
-#include "SurfaceMeshLight.hh"
+#include "SingleFaceMesh.hh"
 #include "Tensor.hh"
 #include "WhetStoneDefs.hh"
 #include "WhetStoneMeshUtils.hh"
@@ -293,13 +293,13 @@ int MFD3D_LagrangeAnyOrder::H1consistency2D_(
 int MFD3D_LagrangeAnyOrder::H1consistency3D_(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac, bool doAc)
 {
-  Entity_ID_List nodes, edges, fedges, fnodes, ids;
+  Entity_ID_List nodes, fedges, fnodes, ids;
   std::vector<int> fdirs;
 
   mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
-  mesh_->cell_get_edges(c, &edges);
+  const auto& edges = mesh_->cell_get_edges(c);
   int nedges = edges.size();
 
   const auto& faces = mesh_->cell_get_faces(c);
@@ -347,7 +347,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
     auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
     vsysf.push_back(coordsys);
 
-    Teuchos::RCP<const SurfaceMeshLight> surf_mesh = Teuchos::rcp(new SurfaceMeshLight(mesh_, f, *coordsys));
+    Teuchos::RCP<const SingleFaceMesh> surf_mesh = Teuchos::rcp(new SingleFaceMesh(mesh_, f, *coordsys));
 
     // -- matrices
     DenseMatrix Nf, Af, Mf;
@@ -625,8 +625,8 @@ int MFD3D_LagrangeAnyOrder::StiffnessMatrixSurface(
   const auto& origin = mesh_->face_centroid(f);
   const auto& normal = mesh_->face_normal(f);
 
-  auto coordsys = std::make_shared<SurfaceCoordinateSystem>(origin, normal);
-  Teuchos::RCP<const SurfaceMeshLight> surf_mesh = Teuchos::rcp(new SurfaceMeshLight(mesh_, f, *coordsys));
+  SurfaceCoordinateSystem coordsys(origin, normal);
+  Teuchos::RCP<const SingleFaceMesh> surf_mesh = Teuchos::rcp(new SingleFaceMesh(mesh_, f, coordsys));
 
   DenseMatrix N;
   int ok = H1consistency2D_(surf_mesh, f, K, N, A);

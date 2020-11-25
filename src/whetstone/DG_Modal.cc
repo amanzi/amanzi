@@ -22,7 +22,7 @@
 #include "FunctionUpwind.hh"
 #include "Monomial.hh"
 #include "Polynomial.hh"
-#include "SurfaceMeshLight.hh"
+#include "SingleFaceMesh.hh"
 #include "WhetStoneDefs.hh"
 #include "WhetStoneMeshUtils.hh"
 
@@ -511,7 +511,7 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
   const AmanziGeometry::Point& normal = mesh_->face_normal(f);
   auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
 
-  Teuchos::RCP<const SurfaceMeshLight> surf_mesh = Teuchos::rcp(new SurfaceMeshLight(mesh_, f, *coordsys));
+  Teuchos::RCP<const SingleFaceMesh> surf_mesh = Teuchos::rcp(new SingleFaceMesh(mesh_, f, *coordsys));
   NumericalIntegration numi_f(surf_mesh);
 
   // integrate traces of polynomials on face f

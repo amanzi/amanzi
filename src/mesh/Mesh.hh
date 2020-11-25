@@ -194,6 +194,11 @@ class Mesh : public MeshLight {
           std::vector<AmanziGeometry::Point> *bisectors,
           const bool ordered = false) const;
 
+  // Get edges
+  void cell_get_edges(const Entity_ID c, Entity_ID_List *edges) const;
+
+  using MeshLight::cell_get_edges;
+
   // Get edges and dirs of a 2D cell.
   //
   // This is to make the code cleaner for integrating over the cell in 2D
