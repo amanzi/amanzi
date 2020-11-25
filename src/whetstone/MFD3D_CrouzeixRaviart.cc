@@ -121,7 +121,61 @@ void MFD3D_CrouzeixRaviart::H1Face(int f, const std::vector<Polynomial>& ve,
   SurfaceCoordinateSystem coordsys(origin, normal);
 
   Teuchos::RCP<const SurfaceMeshLight> surf_mesh = Teuchos::rcp(new SurfaceMeshLight(mesh_, f, coordsys));
-  ProjectorCell_<SurfaceMeshLight>(surf_mesh, f, ve, ve, vf);
+  ProjectorCell_(surf_mesh, f, ve, ve, vf);
+}
+
+
+/* ******************************************************************
+* Energy projector on the space of linear polynomials in cell c.
+****************************************************************** */
+void MFD3D_CrouzeixRaviart::ProjectorCell_(
+    const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh, 
+    int c, const std::vector<Polynomial>& ve,
+    const std::vector<Polynomial>& vf, Polynomial& uc)
+{
+  const auto& faces = mymesh->cell_get_faces(c);
+  const auto& dirs = mymesh->cell_get_face_dirs(c);
+  int nfaces = faces.size();
+
+  const AmanziGeometry::Point& xc = mymesh->cell_centroid(c);
+  double vol = mymesh->cell_volume(c);
+
+  // create zero vector polynomial
+  uc.Reshape(d_, 1, true);
+
+  for (int n = 0; n < nfaces; ++n) {  
+    int f = faces[n];
+    const AmanziGeometry::Point& xf = mymesh->face_centroid(f);
+    const AmanziGeometry::Point& normal = mymesh->face_normal(f);
+
+    double tmp = vf[n].Value(xf) * dirs[n] / vol;
+
+    for (int j = 0; j < d_; ++j) {
+      uc(1, j) += tmp * normal[j];
+    }
+  }
+
+  // calculate projector's low-order term
+  AmanziGeometry::Point grad(d_);
+  for (int j = 0; j < d_; ++j) {
+    grad[j] = uc(1, j);
+  }
+    
+  double a1(0.0), a2(0.0), tmp;
+  for (int n = 0; n < nfaces; ++n) {  
+    int f = faces[n];
+    const AmanziGeometry::Point& xf = mymesh->face_centroid(f);
+    double area = mymesh->face_area(f);
+       
+    tmp = vf[n].Value(xf) - grad * (xf - xc);
+    a1 += tmp * area;
+    a2 += area;
+  }
+
+  uc(0) = a1 / a2;
+
+  // set the correct origin
+  uc.set_origin(xc);
 }
 
 }  // namespace WhetStone
