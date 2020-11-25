@@ -151,7 +151,7 @@ if (NOT _libdir)
   endif ()
 endif ()
 
-message(STATUS "\t BLAS: search library=${_list} with suffixes=${CMAKE_FIND_LIBRARY_SUFFIXES}")
+message(STATUS "\t BLAS: serach library=${_list} with suffixes=${CMAKE_FIND_LIBRARY_SUFFIXES}")
 message(STATUS "\t BLAS: at locations=${_libdir}")
 
 foreach(_library ${_list})
