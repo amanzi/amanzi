@@ -19,6 +19,8 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "MeshLight.hh"
+
 #include "Basis.hh"
 #include "DenseMatrix.hh"
 #include "DenseVector.hh"
@@ -28,20 +30,19 @@
 namespace Amanzi {
 namespace WhetStone {
 
-template <class MyMesh>
-class Basis_Natural : public Basis<MyMesh> { 
+class Basis_Natural : public Basis { 
  public:
   Basis_Natural() { id_ = TAYLOR_BASIS_NATURAL; }
   ~Basis_Natural() {};
 
   // initialization
-  virtual void Init(const Teuchos::RCP<const MyMesh>& mesh, 
+  virtual void Init(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh, 
                     int c, int order, Polynomial& integrals) { order_ = order; }
 
   // transformation of bilinear form
   virtual void BilinearFormNaturalToMy(DenseMatrix& A) const {};
-  virtual void BilinearFormNaturalToMy(std::shared_ptr<Basis<MyMesh> > bl,
-                                       std::shared_ptr<Basis<MyMesh> > br, DenseMatrix& A) const {};
+  virtual void BilinearFormNaturalToMy(std::shared_ptr<Basis> bl,
+                                       std::shared_ptr<Basis> br, DenseMatrix& A) const {};
 
   // transformation of linear form
   virtual void LinearFormNaturalToMy(DenseVector& v) const {};
@@ -51,7 +52,7 @@ class Basis_Natural : public Basis<MyMesh> {
   virtual void ChangeBasisNaturalToMy(DenseVector& v) const {};
 
   // recover polynomial in natural basis
-  virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const MyMesh>& mesh,
+  virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,
                                          int c, int order, DenseVector& coefs) const {
     int d = mesh->space_dimension();
     Polynomial poly(d, order, coefs);

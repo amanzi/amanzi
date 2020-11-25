@@ -148,12 +148,12 @@ void RemapDG_Helper::StaticEdgeFaceVelocities()
 ***************************************************************** */
 void RemapDG_Helper::StaticCellVelocity()
 {
-  WhetStone::Entity_ID_List edges, faces;
+  WhetStone::Entity_ID_List edges;
   uc_.resize(ncells_owned_);
 
   for (int c = 0; c < ncells_owned_; ++c) {
     // faces are always included
-    mesh0_->cell_get_faces(c, &faces);
+    const auto& faces = mesh0_->cell_get_faces(c);
 
     std::vector<WhetStone::VectorPolynomial> vve, vvf;
     for (int n = 0; n < faces.size(); ++n) {

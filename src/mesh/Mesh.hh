@@ -116,9 +116,6 @@ class Mesh : public MeshLight {
   void set_geometric_model(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm) { geometric_model_ = gm; }
   Teuchos::RCP<const AmanziGeometry::GeometricModel> geometric_model() const { return geometric_model_; }
 
-  // Were optional edges initialized?
-  virtual bool valid_edges() const { return false; }
-
   void set_parameter_list(const Teuchos::RCP<const Teuchos::ParameterList>& plist) {
     plist_ = plist;
     if (vo_ == Teuchos::null)
@@ -151,6 +148,45 @@ class Mesh : public MeshLight {
   //---------------------
   // Downward adjacencies
   //---------------------
+  // Get faces of a cell
+  // 
+  // On a distributed mesh, this will return all the faces of the
+  // cell, OWNED or GHOST. If ordered = true, the faces will be
+  // returned in a standard order according to Exodus II convention
+  // for standard cells; in all other situations (ordered = false or
+  // non-standard cells), the list of faces will be in arbitrary order
+  //
+  // EXTENSIONS: MSTK FRAMEWORK: by the way the parallel partitioning,
+  // send-receive protocols and mesh query operators are designed, a side 
+  // effect of this is that master and ghost entities will have the same
+  // hierarchical topology. 
+  void cell_get_faces(
+       const Entity_ID c,
+       Entity_ID_List *faces,
+       const bool ordered = false) const {
+    cell_get_faces_and_dirs(c, faces, NULL, ordered);
+  }
+
+  using MeshLight::cell_get_faces;
+
+  // Get faces of a cell and directions in which the cell uses the face
+  //
+  // On a distributed mesh, this will return all the faces of the
+  // cell, OWNED or GHOST. If ordered = true, the faces will be
+  // returned in a standard order according to Exodus II convention
+  // for standard cells; in all other situations (ordered = false or
+  // non-standard cells), the list of faces will be in arbitrary order
+  //
+  // In 3D, direction is 1 if face normal points out of cell
+  // and -1 if face normal points into cell
+  // In 2D, direction is 1 if face/edge is defined in the same
+  // direction as the cell polygon, and -1 otherwise
+  void cell_get_faces_and_dirs(
+       const Entity_ID c,
+       Entity_ID_List *faces,
+       std::vector<int> *dirs,
+       bool ordered = false) const;
+
   // Get the bisectors, i.e. vectors from cell centroid to face centroids.
   virtual void cell_get_faces_and_bisectors(
           const Entity_ID cellid,

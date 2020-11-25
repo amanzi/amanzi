@@ -17,7 +17,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 
 #include "BilinearForm.hh"
 #include "DenseMatrix.hh"
@@ -29,7 +29,7 @@ namespace WhetStone {
 
 class DeRham_Edge : public MFD3D {
  public:
-  DeRham_Edge(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) 
+  DeRham_Edge(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh) 
     : BilinearForm(mesh) {};
 
   virtual std::vector<SchemaItem> schema() const override {

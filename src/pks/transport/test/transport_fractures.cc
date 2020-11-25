@@ -98,12 +98,10 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   const auto flux_map = S->GetFieldData("darcy_flux", "state")->Map().Map("face", true);
 
   int dir;
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
   AmanziGeometry::Point velocity(1.0, 0.2, -0.1);
+
   for (int c = 0; c < ncells_wghost; c++) {
-    mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
+    const auto& faces = mesh->cell_get_faces(c);
     int nfaces = faces.size();
 
     for (int n = 0; n < nfaces; ++n) {

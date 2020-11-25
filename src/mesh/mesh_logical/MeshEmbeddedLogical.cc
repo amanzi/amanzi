@@ -40,7 +40,7 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
   if (!bg_mesh->face_geometry_precomputed_)
     bg_mesh->compute_face_geometric_quantities_();
   if (!bg_mesh->cell2face_info_cached_ || !bg_mesh->face2cell_info_cached_)
-    bg_mesh->cache_cell_face_info_();
+    bg_mesh->cache_cell2face_info_();
 
   // ensure cached properties are available
   if (!log_mesh->cell_geometry_precomputed_)
@@ -48,7 +48,7 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
   if (!log_mesh->face_geometry_precomputed_)
     log_mesh->compute_face_geometric_quantities_();
   if (!log_mesh->cell2face_info_cached_ || !log_mesh->face2cell_info_cached_)
-    log_mesh->cache_cell_face_info_();
+    log_mesh->cache_cell2face_info_();
 
   // merge and remap
   int ncells_bg_owned = bg_mesh->num_entities(CELL, Parallel_type::OWNED);

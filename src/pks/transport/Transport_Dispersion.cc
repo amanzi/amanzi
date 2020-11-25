@@ -37,12 +37,11 @@ void Transport_PK::CalculateDispersionTensor_(
   for (int c = 0; c < ncells_owned; c++) D_[c].Init(dim, 1);
 
   AmanziGeometry::Point velocity(dim);
-  AmanziMesh::Entity_ID_List faces;
   WhetStone::MFD3D_Diffusion mfd3d(mesh_);
   WhetStone::Polynomial poly(dim, 1);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
 
     std::vector<WhetStone::Polynomial> flux(nfaces);

@@ -72,7 +72,6 @@ void PDE_DiffusionFracturedMatrix::UpdateMatrices(
 {
   PDE_DiffusionMFD::UpdateMatrices(flux, u);
 
-  AmanziMesh::Entity_ID_List faces;
   const auto& fmap = *cvs_->Map("face", true);
 
   int dim = mesh_->space_dimension();
@@ -82,7 +81,7 @@ void PDE_DiffusionFracturedMatrix::UpdateMatrices(
   global_op_->rhs()->PutScalarGhosted(0.0);
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
 
     std::vector<int> map(nfaces + 1), lid(nfaces);
@@ -159,8 +158,6 @@ void PDE_DiffusionFracturedMatrix::ApplyBCs(
     bool primary, bool eliminate, bool essential_eqn)
 {
   // apply diffusion type BCs to FACE-CELL system
-  AmanziMesh::Entity_ID_List faces;
-
   const std::vector<int>& bc_model_trial = bcs_trial_[0]->bc_model();
   const std::vector<int>& bc_model_test = bcs_test_[0]->bc_model();
 
@@ -174,7 +171,7 @@ void PDE_DiffusionFracturedMatrix::ApplyBCs(
   const auto& fmap = *cvs_->Map("face", true);
 
   for (int c = 0; c != ncells_owned; ++c) {
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
     
     bool flag(true);
@@ -288,12 +285,11 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
   int ndofs_owned = flux->ViewComponent("face")->MyLength();
   int ndofs_wghost = flux_data.MyLength();
 
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
   std::vector<int> hits(ndofs_wghost, 0);
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& dirs = mesh_->cell_get_face_dirs(c);
     int nfaces = faces.size();
     double zc = mesh_->cell_centroid(c)[dim - 1];
 

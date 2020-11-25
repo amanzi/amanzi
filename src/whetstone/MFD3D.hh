@@ -29,7 +29,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 #include "Point.hh"
 
 #include "BilinearForm.hh"
@@ -80,7 +80,7 @@ class MFD3D : virtual public BilinearForm {
 
 
 // non-member functions
-void AddGradient(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, DenseMatrix& N);
+void AddGradient(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh, int c, DenseMatrix& N);
 
 }  // namespace WhetStone
 }  // namespace Amanzi

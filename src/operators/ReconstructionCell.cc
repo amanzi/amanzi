@@ -132,9 +132,9 @@ void ReconstructionCell::CellFaceAdjCellsNonManifold_(
     AmanziMesh::Entity_ID c, AmanziMesh::Parallel_type ptype,
     std::vector<AmanziMesh::Entity_ID>& cells) const
 {
-  AmanziMesh::Entity_ID_List faces, fcells;
+  AmanziMesh::Entity_ID_List fcells;
 
-  mesh_->cell_get_faces(c, &faces);
+  const auto& faces = mesh_->cell_get_faces(c);
   int nfaces = faces.size();
 
   cells.clear();

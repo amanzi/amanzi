@@ -24,7 +24,7 @@ void AssembleVectorCellOp(
    int c, const AmanziMesh::Mesh& mesh, const Schema& schema,
    const WhetStone::DenseVector& v, CompositeVector& X)
 {
-  AmanziMesh::Entity_ID_List nodes, edges, faces;
+  AmanziMesh::Entity_ID_List nodes, edges;
 
   int m(0);
   for (auto it = schema.begin(); it != schema.end(); ++it) {
@@ -48,7 +48,7 @@ void AssembleVectorCellOp(
     else if (kind == AmanziMesh::FACE) {
       Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
 
-      mesh.cell_get_faces(c, &faces);
+      const auto& faces = mesh.cell_get_faces(c);
       int nfaces = faces.size();
 
       for (int n = 0; n != nfaces; ++n) {
@@ -155,7 +155,7 @@ void ExtractVectorCellOp(
     int c, const AmanziMesh::Mesh& mesh, const Schema& schema,
     WhetStone::DenseVector& v, const CompositeVector& X)
 {
-  AmanziMesh::Entity_ID_List nodes, edges, faces;
+  AmanziMesh::Entity_ID_List nodes, edges;
 
   int m(0);
   for (auto it = schema.begin(); it != schema.end(); ++it) {
@@ -179,7 +179,7 @@ void ExtractVectorCellOp(
     else if (kind == AmanziMesh::FACE) {
       const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
 
-      mesh.cell_get_faces(c, &faces);
+      const auto& faces = mesh.cell_get_faces(c);
       int nfaces = faces.size();
 
       for (int n = 0; n != nfaces; ++n) {

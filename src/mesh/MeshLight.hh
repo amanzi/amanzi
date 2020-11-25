@@ -26,7 +26,20 @@ namespace AmanziMesh {
 
 class MeshLight {
  public:
-   MeshLight() : space_dim_(-1) {};
+  MeshLight()
+    : space_dim_(-1),
+      cell2face_info_cached_(false),
+      cell2edge_info_cached_(false),
+      face2cell_info_cached_(false),
+      face2edge_info_cached_(false),
+      cell_geometry_precomputed_(false),
+      face_geometry_precomputed_(false),
+      edge_geometry_precomputed_(false),
+      faces_requested_(false),
+      edges_requested_(false) {};
+
+  // initializing mesh
+  void BuildCache();
 
   // base class functionality
   void set_space_dimension(unsigned int dim) { space_dim_ = dim; }
@@ -34,6 +47,8 @@ class MeshLight {
 
   void set_manifold_dimension(const unsigned int dim) { manifold_dim_ = dim; }
   unsigned int manifold_dimension() const { return manifold_dim_; }
+
+  virtual bool valid_edges() const { return false; }
 
   // ---------------------
   // Downward connectivity
@@ -51,18 +66,14 @@ class MeshLight {
   // send-receive protocols and mesh query operators are designed, a side 
   // effect of this is that master and ghost entities will have the same
   // hierarchical topology. 
-  void cell_get_faces(
-       const Entity_ID c,
-       Entity_ID_List *faces,
-       const bool ordered = false) const {
-    cell_get_faces_and_dirs(c, faces, NULL, ordered);
+  //
+  // new API: cache should be pre-build, e.g. in mesh constructor
+  // so no additional checks is needed
+  const Entity_ID_List& cell_get_faces(const Entity_ID c) const {
+    return cell_face_ids_[c];
   }
 
-  // new API: cache should be build around mesh constructor,
-  // so no additional checks is needed
-  const Entity_ID_List& cell_get_faces(const Entity_ID c) const { return cell_face_ids_[c]; }
-
-  // Get faces of a cell and directions in which the cell uses the face
+  // Get directions in which the cell uses the face
   //
   // On a distributed mesh, this will return all the faces of the
   // cell, OWNED or GHOST. If ordered = true, the faces will be
@@ -74,13 +85,13 @@ class MeshLight {
   // and -1 if face normal points into cell
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
-  void cell_get_faces_and_dirs(
-       const Entity_ID c,
-       Entity_ID_List *faces,
-       std::vector<int> *dirs,
-       bool ordered = false) const;
+  const std::vector<int>& cell_get_face_dirs(const Entity_ID c) const {
+    return cell_face_dirs_[c];
+  }
 
+  // Get edges: general version
   void cell_get_edges(const Entity_ID c, Entity_ID_List *edges) const;
+  const Entity_ID_List& cell_get_edges(const Entity_ID c) const { return cell_edge_ids_[c]; }
 
   virtual void cell_get_nodes(const Entity_ID c, Entity_ID_List *nodes) const = 0;
 
@@ -273,7 +284,7 @@ class MeshLight {
 
  protected:
   // Cache filling methods use _internal() virtual functions.
-  void cache_cell_face_info_() const;
+  void cache_cell2face_info_() const;
   void cache_cell2edge_info_() const;
   void cache_face2edge_info_() const;
 

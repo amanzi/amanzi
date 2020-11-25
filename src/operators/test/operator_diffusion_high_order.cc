@@ -323,7 +323,7 @@ void RunHighOrderLagrange3D(const std::string& vem_name) {
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   // numerical integration
-  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+  WhetStone::NumericalIntegration numi(mesh);
 
   // create boundary data (no mixed bc)
   ParameterList op_list = plist.sublist("PK operator")

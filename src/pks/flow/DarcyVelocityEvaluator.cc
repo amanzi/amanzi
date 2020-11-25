@@ -68,10 +68,10 @@ void DarcyVelocityEvaluator::EvaluateField_(
   WhetStone::MFD3D_Diffusion mfd(mesh);
 
   WhetStone::Polynomial gradient(dim, 1);
-  AmanziMesh::Entity_ID_List faces, cells;
+  AmanziMesh::Entity_ID_List cells;
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh->cell_get_faces(c, &faces);
+    const auto& faces = mesh->cell_get_faces(c);
     int nfaces = faces.size();
     std::vector<WhetStone::Polynomial> solution(nfaces);
 

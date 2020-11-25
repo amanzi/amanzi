@@ -82,15 +82,6 @@ Mesh::Mesh(const Comm_ptr_type& comm,
 
   geometric_model_ = gm;
 
-  cell2face_info_cached_ = false;
-  cell2edge_info_cached_ = false;
-  face2cell_info_cached_ = false;
-  face2edge_info_cached_ = false;
-
-  cell_geometry_precomputed_ = false;
-  face_geometry_precomputed_ = false;
-  edge_geometry_precomputed_ = false;
-
   if (plist_ == Teuchos::null) {
     plist_ = Teuchos::rcp(new Teuchos::ParameterList("Mesh"));
   }
@@ -105,6 +96,35 @@ Mesh::entity_get_parent(const Entity_kind kind, const Entity_ID entid) const
   Errors::Message mesg("Parent/daughter entities not enabled in this framework.");
   Exceptions::amanzi_throw(mesg);
   return -1;
+}
+
+
+// -------------------------------------------------------------------
+// Downward connectivity: c -> f
+// -------------------------------------------------------------------
+void Mesh::cell_get_faces_and_dirs(
+    const Entity_ID c,
+    Entity_ID_List *faceids,
+    std::vector<int> *face_dirs,
+    bool ordered) const
+{
+#if AMANZI_MESH_CACHE_VARS != 0
+  if (!cell2face_info_cached_) cache_cell2face_info_();
+
+  if (ordered)
+    cell_get_faces_and_dirs_internal_(c, faceids, face_dirs, ordered);
+  else {
+    Entity_ID_List &cfaceids = cell_face_ids_[c];
+    *faceids = cfaceids; // copy operation
+
+    if (face_dirs) {
+      std::vector<int> &cfacedirs = cell_face_dirs_[c];
+      *face_dirs = cfacedirs; // copy operation
+    }
+  }
+#else // Non-cached version
+  cell_get_faces_and_dirs_internal_(c, faceids, face_dirs, ordered);
+#endif
 }
 
 

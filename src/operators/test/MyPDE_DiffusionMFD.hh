@@ -66,7 +66,7 @@ void MyPDE_DiffusionMFD::UpdateMatrices(
   WhetStone::MFD3D_Diffusion mfd(mesh_);
   WhetStone::DenseMatrix Wff;
 
-  AmanziMesh::Entity_ID_List faces, cells;
+  AmanziMesh::Entity_ID_List cells;
 
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
@@ -78,7 +78,7 @@ void MyPDE_DiffusionMFD::UpdateMatrices(
     for (int i = 0; i < dim; i++) kgrad[i] = (*k_grad)[i][c];
  
     // upwinded values of nonlinear factor
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
     std::vector<double> kf(nfaces, 1.0); 
     if (k_twin == Teuchos::null) {

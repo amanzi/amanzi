@@ -273,11 +273,9 @@ void PDE_AdvectionUpwind::IdentifyUpwindCells_(const CompositeVector& u)
     (*downwind_cell_)[f] = -1;
   }
 
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> fdirs;
-
   for (int c = 0; c < ncells_wghost; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& fdirs = mesh_->cell_get_face_dirs(c);
 
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
