@@ -123,7 +123,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
   std::vector<DenseMatrix> vRf;
   std::vector<std::vector<int> > vmapf;
   std::vector<std::shared_ptr<SurfaceCoordinateSystem> > vsysf;
-  std::vector<Basis_Regularized<SurfaceMeshLight> > vbasisf;
+  std::vector<Basis_Regularized> vbasisf;
   std::vector<NumericalIntegration> vnumif;
   std::vector<PolynomialOnMesh> vintegralsf;
 
@@ -151,7 +151,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
     vnumif.push_back(numi_f);
     vintegralsf.push_back(integrals_f);
 
-    Basis_Regularized<SurfaceMeshLight> basis_f;
+    Basis_Regularized basis_f;
     basis_f.Init(surf_mesh, 0, order_, integrals_f.poly());
     vbasisf.push_back(basis_f);
 
@@ -232,7 +232,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
   numi.UpdateMonomialIntegralsCell(c, 2 * order_ - 2, integrals_);
 
   // selecting regularized basis
-  Basis_Regularized<AmanziMesh::MeshLight> basis;
+  Basis_Regularized basis;
   basis.Init(mesh_, c, order_, integrals_.poly());
 
   // populate matrices N and R
@@ -473,7 +473,7 @@ void MFD3D_LagrangeAnyOrder::ProjectorCell_(
 
   // selecting regularized basis
   Polynomial ptmp;
-  Basis_Regularized<AmanziMesh::MeshLight> basis;
+  Basis_Regularized basis;
   basis.Init(mesh_, c, order_, ptmp);
 
   AmanziGeometry::Point xv(d_);
@@ -620,7 +620,7 @@ void MFD3D_LagrangeAnyOrder::ProjectorCellFromDOFs_(
 
   // selecting regularized basis
   Polynomial ptmp;
-  Basis_Regularized<AmanziMesh::MeshLight> basis;
+  Basis_Regularized basis;
   basis.Init(mesh_, c, order_, ptmp);
 
   // calculate polynomial coefficients (in vector v5)

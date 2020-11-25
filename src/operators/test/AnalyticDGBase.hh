@@ -134,7 +134,7 @@ void AnalyticDGBase::InitialGuess(
       if (! inside(xc)) continue;
 
     Amanzi::WhetStone::Polynomial coefs;
-    const Amanzi::WhetStone::Basis<Amanzi::AmanziMesh::MeshLight>& basis = dg.cell_basis(c);
+    const Amanzi::WhetStone::Basis& basis = dg.cell_basis(c);
 
     SolutionTaylor(xc, t, coefs);
     Amanzi::WhetStone::DenseVector data = coefs.coefs();
@@ -177,7 +177,7 @@ void AnalyticDGBase::ComputeCellError(
     SolutionTaylor(xc, t, sol);
     data = sol.coefs();
 
-    const Amanzi::WhetStone::Basis<Amanzi::AmanziMesh::MeshLight>& basis = dg.cell_basis(c);
+    const Amanzi::WhetStone::Basis& basis = dg.cell_basis(c);
     basis.ChangeBasisNaturalToMy(data);
     for (int i = 0; i < nk; ++i) sol(i) = data(i);
 
@@ -250,7 +250,7 @@ void AnalyticDGBase::ComputeFaceError(
       const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
       // convert analytic solution from my to natural basis 
-      const Amanzi::WhetStone::Basis<Amanzi::AmanziMesh::MeshLight>& basis = dg.cell_basis(c);
+      const Amanzi::WhetStone::Basis& basis = dg.cell_basis(c);
       for (int i = 0; i < nk; ++i) data(i) = p[i][c];
       basis.ChangeBasisMyToNatural(data);
 
@@ -314,7 +314,7 @@ void AnalyticDGBase::ComputeCellErrorRemap(
 
     double err;
     if (p_location == 0) {
-      const Amanzi::WhetStone::Basis<Amanzi::AmanziMesh::MeshLight>& basis = dg.cell_basis(c);
+      const Amanzi::WhetStone::Basis& basis = dg.cell_basis(c);
       poly = basis.CalculatePolynomial(mesh0, c, order_, data);
       err = poly.Value(xc) - SolutionExact(yc, t);
     } else {

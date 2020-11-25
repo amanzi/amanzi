@@ -113,7 +113,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
 
   // selecting regularized basis
   Polynomial ptmp;
-  Basis_Regularized<MyMesh> basis;
+  Basis_Regularized basis;
   basis.Init(mymesh, c, order_, ptmp);
 
   // calculate stiffness matrix

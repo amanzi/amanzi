@@ -159,7 +159,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency2D_(
   numi.UpdateMonomialIntegralsCell(c, 2 * order_ - 2, integrals_);
 
   // selecting regularized basis
-  Basis_Regularized<MyMesh> basis;
+  Basis_Regularized basis;
   basis.Init(mymesh, c, order_, integrals_.poly());
 
   // populate matrices N and R

@@ -139,7 +139,7 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorCell_(
 
   // selecting regularized basis
   Polynomial ptmp;
-  Basis_Regularized<AmanziMesh::MeshLight> basis;
+  Basis_Regularized basis;
   basis.Init(mymesh, c, order_, ptmp);
 
   // populate matrices N and R

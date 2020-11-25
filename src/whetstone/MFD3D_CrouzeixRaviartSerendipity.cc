@@ -81,7 +81,7 @@ int MFD3D_CrouzeixRaviartSerendipity::H1consistency(
   numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
   // selecting regularized basis
-  Basis_Regularized<AmanziMesh::MeshLight> basis;
+  Basis_Regularized basis;
   basis.Init(mesh_, c, order_, integrals_.poly());
 
   // Gramm matrix for polynomials
@@ -167,7 +167,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
 {
   // selecting regularized basis
   Polynomial ptmp;
-  Basis_Regularized<AmanziMesh::MeshLight> basis;
+  Basis_Regularized basis;
   basis.Init(mesh_, c, order_, ptmp);
 
   // calculate full matrices

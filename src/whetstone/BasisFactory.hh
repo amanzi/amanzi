@@ -17,6 +17,8 @@
 
 #include <memory>
 
+#include "MeshLight.hh"
+
 #include "Basis_Natural.hh"
 #include "Basis_Normalized.hh"
 #include "Basis_Orthonormalized.hh"
@@ -25,28 +27,27 @@
 namespace Amanzi {
 namespace WhetStone {
 
-template<class MyMesh>
 class BasisFactory {
  public:
   explicit BasisFactory() {};
   ~BasisFactory() {};
 
   // select numerical scheme using its name and order 
-  std::shared_ptr<Basis<MyMesh> > Create(const std::string& name) {
+  std::shared_ptr<Basis> Create(const std::string& name) {
     if (name == "regularized") {
-      auto basis = std::make_shared<Basis_Regularized<MyMesh> >();
+      auto basis = std::make_shared<Basis_Regularized>();
       return basis;
     }
     else if (name == "normalized") {
-      auto basis = std::make_shared<Basis_Normalized<MyMesh> >();
+      auto basis = std::make_shared<Basis_Normalized>();
       return basis;
     }
     else if (name == "orthonormalized") {
-      auto basis = std::make_shared<Basis_Orthonormalized<MyMesh> >();
+      auto basis = std::make_shared<Basis_Orthonormalized>();
       return basis;
     }
     else if (name == "natural") {
-      auto basis = std::make_shared<Basis_Natural<MyMesh> >();
+      auto basis = std::make_shared<Basis_Natural>();
       return basis;
     }
     return NULL;

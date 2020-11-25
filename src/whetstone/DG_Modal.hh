@@ -87,7 +87,7 @@ class DG_Modal : public BilinearForm {
   int get_order() const { return order_; }
 
   // -- access
-  const Basis<AmanziMesh::MeshLight>& cell_basis(int c) const { return *basis_[c]; }
+  const Basis& cell_basis(int c) const { return *basis_[c]; }
   Polynomial& monomial_integrals(int c) { return monomial_integrals_[c]; }
 
  private:
@@ -95,7 +95,7 @@ class DG_Modal : public BilinearForm {
   NumericalIntegration numi_;
 
   std::vector<Polynomial> monomial_integrals_;  // integrals of non-normalized monomials
-  std::vector<std::shared_ptr<Basis<AmanziMesh::MeshLight> > > basis_;
+  std::vector<std::shared_ptr<Basis> > basis_;
 
   static RegisteredFactory<DG_Modal> factory_;
 };

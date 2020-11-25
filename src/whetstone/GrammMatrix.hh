@@ -31,26 +31,25 @@ class Polynomial;
 class PolynomialOnMesh;
 
 // Gramm matrix for polynomials
-template<class MyMesh>
 void GrammMatrix(
     const Polynomial& poly, const PolynomialOnMesh& integrals,
-    const Basis_Regularized<MyMesh>& basis, DenseMatrix& G);
+    const Basis_Regularized& basis, DenseMatrix& G);
 
 // Gramm matrix for gradient of polynomials with tensorial weight
-template<class MyMesh>
+inline
 void GrammMatrixGradients(
     const Tensor& K, 
     const Polynomial& poly, const PolynomialOnMesh& integrals,
-    const Basis_Regularized<MyMesh>& basis, DenseMatrix& G);
+    const Basis_Regularized& basis, DenseMatrix& G);
 
 
 /* ******************************************************************
 * Gramm matrix G for polynomials.
 ****************************************************************** */
-template<class MyMesh>
+inline
 void GrammMatrix(
     const Polynomial& poly, const PolynomialOnMesh& integrals,
-    const Basis_Regularized<MyMesh>& basis, DenseMatrix& G)
+    const Basis_Regularized& basis, DenseMatrix& G)
 {
   int nd = poly.size();
   int d = poly.dimension();
@@ -81,11 +80,10 @@ void GrammMatrix(
 /* ******************************************************************
 * Gramm matrix for gradient of polynomials with tensorial weight.
 ****************************************************************** */
-template<class MyMesh>
 void GrammMatrixGradients(
     const Tensor& K, 
     const Polynomial& poly, const PolynomialOnMesh& integrals,
-    const Basis_Regularized<MyMesh>& basis, DenseMatrix& G)
+    const Basis_Regularized& basis, DenseMatrix& G)
 {
   int nd = poly.size();
   int d = poly.dimension();

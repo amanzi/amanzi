@@ -94,7 +94,7 @@ int MFD3D_CrouzeixRaviartAnyOrder::H1consistency(
 
   // select regularized basis
   Polynomial ptmp;
-  Basis_Regularized<AmanziMesh::MeshLight> basis;
+  Basis_Regularized basis;
   basis.Init(mesh_, c, order_, ptmp);
 
   // pre-calculate integrals of natural monomials 
@@ -257,7 +257,7 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorGradientCell_(
 
   // selecting regularized basis
   Polynomial ptmp;
-  Basis_Regularized<AmanziMesh::MeshLight> basis;
+  Basis_Regularized basis;
   basis.Init(mesh_, c, order_, ptmp);
 
   for (int i = 0; i < dim; ++i) {

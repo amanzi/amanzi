@@ -53,7 +53,7 @@ DG_Modal::DG_Modal(const Teuchos::ParameterList& plist,
     monomial_integrals_[c](0) = mesh_->cell_volume(c);
   }
 
-  BasisFactory<AmanziMesh::MeshLight> factory;
+  BasisFactory factory;
   for (int c = 0; c < ncells_wghost; ++c) {
     basis_[c] = factory.Create(basis_name);
     basis_[c]->Init(mesh_, c, order_, monomial_integrals_[c]);
