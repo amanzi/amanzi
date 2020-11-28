@@ -18,7 +18,7 @@
 #include <tuple>
 #include <vector>
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 #include "Point.hh"
 #include "errors.hh"
 
@@ -77,11 +77,11 @@ int MFD3D_CrouzeixRaviartSerendipity::H1consistency(
   MFD3D_CrouzeixRaviartAnyOrder::H1consistency(c, K, Nf, Af);
 
   // pre-calculate integrals of monomials 
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+  NumericalIntegration numi(mesh_);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
   // selecting regularized basis
-  Basis_Regularized<AmanziMesh::Mesh> basis;
+  Basis_Regularized basis;
   basis.Init(mesh_, c, order_, integrals_.poly());
 
   // Gramm matrix for polynomials
@@ -167,7 +167,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
 {
   // selecting regularized basis
   Polynomial ptmp;
-  Basis_Regularized<AmanziMesh::Mesh> basis;
+  Basis_Regularized basis;
   basis.Init(mesh_, c, order_, ptmp);
 
   // calculate full matrices
@@ -221,7 +221,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
   if (type == ProjectorType::H1) {
     DenseVector v4(nd);
     DenseMatrix M;
-    NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+    NumericalIntegration numi(mesh_);
 
     GrammMatrix(numi, order_, integrals_, basis, M);
     M.Multiply(v5, v4, false);
@@ -242,7 +242,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
   if (type == ProjectorType::L2 && ndof_cs > 0) {
     DenseVector v4(nd), v6(nd - ndof_cs);
     DenseMatrix M, M2;
-    NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+    NumericalIntegration numi(mesh_);
 
     GrammMatrix(numi, order_, integrals_, basis, M);
     M2 = M.SubMatrix(ndof_cs, nd, 0, nd);
@@ -274,13 +274,11 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
 void MFD3D_CrouzeixRaviartSerendipity::CalculateDOFsOnBoundary_(
     int c, const std::vector<Polynomial>& vf, DenseVector& vdof)
 {
-  Entity_ID_List faces;
-
-  mesh_->cell_get_faces(c, &faces);
+  const auto& faces = mesh_->cell_get_faces(c);
   int nfaces = faces.size();
 
   std::vector<double> moments;
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+  NumericalIntegration numi(mesh_);
 
   int row(0);
   for (int n = 0; n < nfaces; ++n) {

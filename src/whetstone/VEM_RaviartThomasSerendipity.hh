@@ -30,7 +30,7 @@
 #include "NumericalIntegration.hh"
 #include "Polynomial.hh"
 #include "PolynomialOnMesh.hh"
-#include "SurfaceMiniMesh.hh"
+#include "SingleFaceMesh.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
@@ -39,7 +39,7 @@ namespace WhetStone {
 class VEM_RaviartThomasSerendipity : public MFD3D {
  public:
   VEM_RaviartThomasSerendipity(const Teuchos::ParameterList& plist,
-                               const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+                               const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh);
 
   // required methods
   // -- schema
@@ -76,8 +76,8 @@ class VEM_RaviartThomasSerendipity : public MFD3D {
 
   void ComputeN_(
       int c, const Entity_ID_List& faces, const std::vector<int>& dirs,
-      const Basis_Regularized<AmanziMesh::Mesh>& basis,
-      const std::vector<Basis_Regularized<SurfaceMiniMesh> >& vbasisf,
+      const Basis_Regularized& basis,
+      const std::vector<Basis_Regularized>& vbasisf,
       const std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> >& vcoordsys,
       const std::vector<WhetStone::DenseMatrix>& vMGf,
       const Tensor& Kinv, DenseMatrix& N);

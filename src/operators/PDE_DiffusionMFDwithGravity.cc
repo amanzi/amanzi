@@ -59,8 +59,6 @@ void PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
     }
 
     int dir;
-    AmanziMesh::Entity_ID_List faces;
-    std::vector<int> dirs;
 
     Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
     Epetra_MultiVector& rhs_face = *global_op_->rhs()->ViewComponent("face", true);
@@ -75,7 +73,8 @@ void PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
         !(little_k_ & OPERATOR_LITTLE_K_DIVK_BASE);
 
     for (int c = 0; c < ncells_owned; c++) {
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      const auto& faces = mesh_->cell_get_faces(c);
+      const auto& dirs = mesh_->cell_get_face_dirs(c);
       int nfaces = faces.size();
       double zc = (mesh_->cell_centroid(c))[dim - 1];
 
@@ -190,7 +189,6 @@ void PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeV
   Epetra_MultiVector grav_flux(flux_data);
   grav_flux.PutScalar(0.0);
 
-  AmanziMesh::Entity_ID_List faces;
   std::vector<int> hits(nfaces_wghost, 0);
 
   WhetStone::Tensor Kc(dim, 1);
@@ -202,7 +200,7 @@ void PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeV
       !(little_k_ & OPERATOR_LITTLE_K_DIVK_BASE);
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
     double zc = mesh_->cell_centroid(c)[dim - 1];
 
@@ -306,7 +304,6 @@ void PDE_DiffusionMFDwithGravity::UpdateFluxNonManifold(
 
   int ndofs_owned = flux->ViewComponent("face")->MyLength();
 
-  AmanziMesh::Entity_ID_List faces;
   const auto& fmap = *flux->Map().Map("face", true);
 
   WhetStone::Tensor Kc(dim, 1);
@@ -314,7 +311,7 @@ void PDE_DiffusionMFDwithGravity::UpdateFluxNonManifold(
   if (const_K_.rank() > 0) Kc = const_K_;
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
 
     // Update terms due to nonlinear coefficient

@@ -21,7 +21,7 @@
 #include <vector>
 
 // Amanzi
-#include "Mesh.hh"
+#include "MeshLight.hh"
 #include "Point.hh"
 #include "errors.hh"
 
@@ -31,7 +31,7 @@
 #include "MFD3D_LagrangeAnyOrder.hh"
 #include "NumericalIntegration.hh"
 #include "SurfaceCoordinateSystem.hh"
-#include "SurfaceMiniMesh.hh"
+#include "SingleFaceMesh.hh"
 #include "Tensor.hh"
 #include "WhetStoneDefs.hh"
 #include "WhetStoneMeshUtils.hh"
@@ -44,7 +44,7 @@ namespace WhetStone {
 ****************************************************************** */
 MFD3D_LagrangeAnyOrder::MFD3D_LagrangeAnyOrder(
     const Teuchos::ParameterList& plist,
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
   : BilinearForm(mesh)
 {
   order_ = plist.get<int>("method order");
@@ -79,19 +79,219 @@ std::vector<SchemaItem> MFD3D_LagrangeAnyOrder::schema() const
 /* ******************************************************************
 * High-order consistency condition for the stiffness matrix. 
 ****************************************************************** */
+int MFD3D_LagrangeAnyOrder::H1consistency2D_(
+    const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh,
+    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
+{
+  // input mesh may have a different dimension than base mesh
+  int d = mymesh->space_dimension();
+
+  Entity_ID_List nodes;
+  mymesh->cell_get_nodes(c, &nodes);
+  int nnodes = nodes.size();
+
+  const auto& faces = mymesh->cell_get_faces(c);
+  const auto& dirs = mymesh->cell_get_face_dirs(c);
+  int nfaces = faces.size();
+
+  const AmanziGeometry::Point& xc = mymesh->cell_centroid(c); 
+  double volume = mymesh->cell_volume(c); 
+
+  // calculate degrees of freedom 
+  Polynomial poly(d, order_), pc;
+  if (order_ > 1) {
+    pc.Reshape(d, order_ - 2);
+  }
+  int nd = poly.size();
+  int ndf = PolynomialSpaceDimension(d - 1, order_ - 2);
+  int ndc = pc.size();
+
+  int ndof = nnodes + nfaces * ndf + ndc;
+  N.Reshape(ndof, nd);
+  Ac.Reshape(ndof, ndof);
+
+  R_.Reshape(ndof, nd);
+  G_.Reshape(nd, nd);
+
+  // pre-calculate integrals of monomials 
+  NumericalIntegration numi(mymesh);
+  numi.UpdateMonomialIntegralsCell(c, 2 * order_ - 2, integrals_);
+
+  // selecting regularized basis
+  Basis_Regularized basis;
+  basis.Init(mymesh, c, order_, integrals_.poly());
+
+  // populate matrices N and R
+  R_.PutScalar(0.0);
+  N.PutScalar(0.0);
+
+  for (auto it = poly.begin(); it < poly.end(); ++it) { 
+    const int* index = it.multi_index();
+    double factor = basis.monomial_scales()[it.MonomialSetOrder()];
+    Polynomial cmono(d, index, factor);
+    cmono.set_origin(xc);  
+
+    // N: degrees of freedom at vertices
+    auto grad = Gradient(cmono);
+     
+    int col = it.PolynomialPosition();
+    int row(nnodes);
+
+    AmanziGeometry::Point xv(d);
+    for (int i = 0; i < nnodes; i++) {
+      int v = nodes[i];
+      mymesh->node_get_coordinates(v, &xv);
+      N(i, col) = cmono.Value(xv);
+    }
+
+    // N and R: degrees of freedom on faces 
+    for (int i = 0; i < nfaces; i++) {
+      int f = faces[i];
+      const AmanziGeometry::Point& xf = mymesh->face_centroid(f); 
+      AmanziGeometry::Point normal = mymesh->face_normal(f);
+
+      // local coordinate system with origin at face centroid
+      auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
+
+      normal *= dirs[i];
+      AmanziGeometry::Point conormal = K * normal;
+
+      Entity_ID_List face_nodes;
+      mymesh->face_get_nodes(f, &face_nodes);
+      int nfnodes = face_nodes.size();
+
+      if (order_ == 1 && col > 0) {
+        for (int j = 0; j < nfnodes; j++) {
+          int v = face_nodes[j];
+          int pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
+          R_(pos, col) += factor * conormal[col - 1] / 2;
+        }
+      } else if (col > 0) {
+        int v, pos0, pos1;
+        AmanziGeometry::Point x0(d), x1(d), xm(d), sm(d);
+
+        Polynomial tmp = grad * conormal;
+
+        v = face_nodes[0];
+        pos0 = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
+        mymesh->node_get_coordinates(v, &x0);
+
+        v = face_nodes[1];
+        pos1 = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
+        mymesh->node_get_coordinates(v, &x1);
+
+        if (order_ == 2) {
+          // Simpson rule with 3 points
+          double q0 = tmp.Value(x0);
+          double q1 = tmp.Value(x1);
+          double qmid = tmp.Value(mymesh->face_centroid(f));
+
+          R_(pos0, col) += (q0 - qmid) / 6;
+          R_(pos1, col) += (q1 - qmid) / 6;
+          R_(row,  col) = qmid;
+        } else if (order_ > 2) {
+          if (col < 3) {
+            // constant gradient contributes only to 0th moment 
+            R_(row, col) += tmp(0);
+          } else {
+            auto polys_f = ConvertMomentsToPolynomials_(order_);
+
+            // Gauss-Legendre quadrature rule with (order_) points
+            int m(order_ - 1); 
+            for (int n = 0; n < order_; ++n) { 
+              xm = x0 * q1d_points[m][n] + x1 * (1.0 - q1d_points[m][n]);
+              sm[0] = 0.5 - q1d_points[m][n];
+
+              factor = q1d_weights[m][n] * tmp.Value(xm);
+              R_(pos0, col) += polys_f[0].Value(sm) * factor;
+              R_(pos1, col) += polys_f[1].Value(sm) * factor;
+
+              for (int k = 0; k < m; ++k) { 
+                R_(row + k, col) += polys_f[k + 2].Value(sm) * factor;
+              }
+            }
+          }
+        }
+      }
+
+      if (order_ > 1) {
+        std::vector<double> moments;
+        numi.CalculatePolynomialMomentsFace(f, cmono, order_ - 2, moments);
+        for (int k = 0; k < moments.size(); ++k) {
+          N(row++, col) = moments[k];
+        }
+      }
+    }
+
+    // N and R: degrees of freedom in cells
+    if (cmono.order() > 1) {
+      auto Kgrad = K * grad;
+      Polynomial tmp = Divergence(Kgrad);
+
+      for (auto jt = tmp.begin(); jt < tmp.end(); ++jt) {
+        int m = jt.MonomialSetOrder();
+        int n = jt.PolynomialPosition();
+
+        R_(row + n, col) = -tmp(n) / basis.monomial_scales()[m] * volume;
+      }
+    }
+
+    if (order_ > 1) {
+      for (auto jt = pc.begin(); jt < pc.end(); ++jt) {
+        int n = jt.PolynomialPosition();
+        const int* jndex = jt.multi_index();
+
+        int nm(0);
+        int multi_index[3];
+        for (int i = 0; i < d; ++i) {
+          multi_index[i] = index[i] + jndex[i];
+          nm += multi_index[i];
+        }
+
+        int m = MonomialSetPosition(d, multi_index);
+        factor = basis.monomial_scales()[it.MonomialSetOrder()] *
+                 basis.monomial_scales()[jt.MonomialSetOrder()];
+        N(row + n, col) = integrals_.poly()(nm, m) * factor / volume; 
+      }
+    }
+  }
+
+  // Gramm matrix for gradients of polynomials
+  G_.Multiply(N, R_, true);
+
+  // calculate R inv(G) R^T
+  DenseMatrix RG(ndof, nd), Rtmp(nd, ndof);
+
+  // to invert generate matrix, we add and subtruct positive number
+  G_(0, 0) = 1.0;
+  G_.Inverse();
+  G_(0, 0) = 0.0;
+  RG.Multiply(R_, G_, false);
+
+  Rtmp.Transpose(R_);
+  Ac.Multiply(RG, Rtmp, false);
+
+  return 0;
+}
+
+
+/* ******************************************************************
+* High-order consistency condition for the stiffness matrix. 
+****************************************************************** */
 int MFD3D_LagrangeAnyOrder::H1consistency3D_(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac, bool doAc)
 {
-  Entity_ID_List nodes, edges, faces, fedges, fnodes, ids;
-  std::vector<int> dirs, fdirs;
+  Entity_ID_List nodes, fedges, fnodes, ids;
+  std::vector<int> fdirs;
 
   mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
-  mesh_->cell_get_edges(c, &edges);
+  const auto& edges = mesh_->cell_get_edges(c);
   int nedges = edges.size();
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c); 
@@ -122,8 +322,8 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
   std::vector<DenseMatrix> vRf;
   std::vector<std::vector<int> > vmapf;
   std::vector<std::shared_ptr<SurfaceCoordinateSystem> > vsysf;
-  std::vector<Basis_Regularized<SurfaceMiniMesh> > vbasisf;
-  std::vector<NumericalIntegration<SurfaceMiniMesh> > vnumif;
+  std::vector<Basis_Regularized> vbasisf;
+  std::vector<NumericalIntegration> vnumif;
   std::vector<PolynomialOnMesh> vintegralsf;
 
   for (int l = 0; l < nfaces; ++l) {
@@ -135,22 +335,23 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
     auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
     vsysf.push_back(coordsys);
 
-    Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
+    Teuchos::RCP<const SingleFaceMesh> surf_mesh = Teuchos::rcp(new SingleFaceMesh(mesh_, f, *coordsys));
 
     // -- matrices
     DenseMatrix Nf, Af, Mf;
-    mfd_surf.H1consistency2D_<SurfaceMiniMesh>(surf_mesh, f, K, Nf, Af);
+    mfd_surf.integrals().set_id(-1);
+    mfd_surf.H1consistency2D_(surf_mesh, 0, K, Nf, Af);
     const DenseMatrix& Rf = mfd_surf.R();
     const DenseMatrix& Gf = mfd_surf.G();
     auto& integrals_f = mfd_surf.integrals();
 
-    NumericalIntegration<SurfaceMiniMesh> numi_f(surf_mesh);
-    numi_f.UpdateMonomialIntegralsCell(f, 2 * order_, integrals_f);
+    NumericalIntegration numi_f(surf_mesh);
+    numi_f.UpdateMonomialIntegralsCell(0, 2 * order_, integrals_f);
     vnumif.push_back(numi_f);
     vintegralsf.push_back(integrals_f);
 
-    Basis_Regularized<SurfaceMiniMesh> basis_f;
-    basis_f.Init(surf_mesh, f, order_, integrals_f.poly());
+    Basis_Regularized basis_f;
+    basis_f.Init(surf_mesh, 0, order_, integrals_f.poly());
     vbasisf.push_back(basis_f);
 
     GrammMatrix(numi_f, order_, integrals_f, basis_f, Mf);
@@ -224,11 +425,11 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
   G_.Reshape(nd, nd);
 
   // pre-calculate integrals of monomials 
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+  NumericalIntegration numi(mesh_);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_ - 2, integrals_);
 
   // selecting regularized basis
-  Basis_Regularized<AmanziMesh::Mesh> basis;
+  Basis_Regularized basis;
   basis.Init(mesh_, c, order_, integrals_.poly());
 
   // populate matrices N and R
@@ -287,7 +488,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
         polys[1] = &fmono;
 
         int k = jt.PolynomialPosition();
-        N(row + k, col) = vnumif[i].IntegratePolynomialsCell(f, polys, vintegralsf[i]) / area;
+        N(row + k, col) = vnumif[i].IntegratePolynomialsCell(0, polys, vintegralsf[i]) / area;
       }
       row += ndf;
 
@@ -399,11 +600,11 @@ int MFD3D_LagrangeAnyOrder::StiffnessMatrixSurface(
   const auto& origin = mesh_->face_centroid(f);
   const auto& normal = mesh_->face_normal(f);
 
-  auto coordsys = std::make_shared<SurfaceCoordinateSystem>(origin, normal);
-  Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
+  SurfaceCoordinateSystem coordsys(origin, normal);
+  Teuchos::RCP<const SingleFaceMesh> surf_mesh = Teuchos::rcp(new SingleFaceMesh(mesh_, f, coordsys));
 
   DenseMatrix N;
-  int ok = H1consistency2D_<SurfaceMiniMesh>(surf_mesh, f, K, N, A);
+  int ok = H1consistency2D_(surf_mesh, f, K, N, A);
   if (ok) return ok;
 
   StabilityScalar_(N, A);
@@ -422,12 +623,12 @@ void MFD3D_LagrangeAnyOrder::ProjectorCell_(
 {
   AMANZI_ASSERT(d_ == 2);
 
-  Entity_ID_List nodes, faces;
+  Entity_ID_List nodes;
 
   mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
-  mesh_->cell_get_faces(c, &faces);
+  const auto& faces = mesh_->cell_get_faces(c);
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -450,11 +651,11 @@ void MFD3D_LagrangeAnyOrder::ProjectorCell_(
 
   DenseVector vdof(ndof);
   std::vector<double> face_moments;
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+  NumericalIntegration numi(mesh_);
 
   // selecting regularized basis
   Polynomial ptmp;
-  Basis_Regularized<AmanziMesh::Mesh> basis;
+  Basis_Regularized basis;
   basis.Init(mesh_, c, order_, ptmp);
 
   AmanziGeometry::Point xv(d_);
@@ -576,15 +777,14 @@ void MFD3D_LagrangeAnyOrder::ProjectorCellFromDOFs_(
   double volume = mesh_->cell_volume(c);
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c); 
 
-  Entity_ID_List faces;
-  mesh_->cell_get_faces(c, &faces);
+  const auto& faces = mesh_->cell_get_faces(c);
   int nfaces = faces.size();
   int nnodes = nfaces;
   int ndof_c(ndof - nnodes);
 
   // selecting regularized basis
   Polynomial ptmp;
-  Basis_Regularized<AmanziMesh::Mesh> basis;
+  Basis_Regularized basis;
   basis.Init(mesh_, c, order_, ptmp);
 
   // calculate polynomial coefficients (in vector v5)
@@ -625,7 +825,7 @@ void MFD3D_LagrangeAnyOrder::ProjectorCellFromDOFs_(
 
     DenseMatrix M, M2;
     DenseVector v6(nd - ndof_c);
-    NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+    NumericalIntegration numi(mesh_);
 
     GrammMatrix(numi, order_, integrals_, basis, M);
     M2 = M.SubMatrix(ndof_c, nd, 0, nd);
@@ -705,4 +905,5 @@ std::vector<Polynomial> MFD3D_LagrangeAnyOrder::ConvertMomentsToPolynomials_(int
 
 }  // namespace WhetStone
 }  // namespace Amanzi
+
 

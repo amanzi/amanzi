@@ -66,7 +66,7 @@ void AnalyticElectromagneticsBase::ComputeFaceErrorMoments(
   l2_err.resize(nmoments, 0.0);
 
   std::vector<double> moments;
-  Amanzi::WhetStone::NumericalIntegration<Amanzi::AmanziMesh::Mesh> numi(mesh_);
+  Amanzi::WhetStone::NumericalIntegration numi(mesh_);
 
   int nfaces = mesh_->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces; f++) {

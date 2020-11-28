@@ -726,8 +726,6 @@ void HDF5_MPI::endTimestep()
     // TODO(barker): where to write out depends on where the root node is
     // ?? how to terminate stream or switch to new file out??
     int count(0);
-    std::ofstream of;
-    std::string full_name;
     for (auto& xmf : xmlVisit_) {
       std::string full_name;
       if (include_io_set_) {
@@ -735,6 +733,7 @@ void HDF5_MPI::endTimestep()
       } else {
         full_name = xdmfVisitBaseFilename_ + ".VisIt.xmf";
       }
+      std::ofstream of;
       of.open(full_name.c_str());
       of << xmf;
       of.close();

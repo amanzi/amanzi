@@ -44,8 +44,7 @@ int VEM_Diffusion_HighOrder::StiffnessMatrix(int c, const Tensor& K, DenseMatrix
   if (ok) return ok;
 
   // static condensation
-  Entity_ID_List faces;
-  mesh_->cell_get_faces(c, &faces);
+  const auto& faces = mesh_->cell_get_faces(c);
   int nfaces = faces.size();
 
   const auto& MGf = vem.MGf(); 
@@ -104,10 +103,8 @@ void VEM_Diffusion_HighOrder::UpdateFlux(
   int nrows = M.NumRows(); 
 
   // calculate flux, face-by-face
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   const auto& MGf = vem.MGf(); 

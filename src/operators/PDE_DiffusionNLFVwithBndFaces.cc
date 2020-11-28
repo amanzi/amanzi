@@ -179,7 +179,7 @@ void PDE_DiffusionNLFVwithBndFaces::InitStencils_()
   int c1, c2;
   double hap_weight;
   WhetStone::Tensor T(dim_, 2);
-  AmanziMesh::Entity_ID_List cells, faces;
+  AmanziMesh::Entity_ID_List cells;
   AmanziGeometry::Point Kn1(dim_), Kn2(dim_), p(dim_);
 
   for (int f = 0; f < nfaces_owned; f++) {
@@ -214,7 +214,6 @@ void PDE_DiffusionNLFVwithBndFaces::InitStencils_()
   stencil_data_->ScatterMasterToGhosted("gamma");
 
   // calculate coefficients in positive decompositions of conormals
-  std::vector<int> dirs;
   AmanziGeometry::Point conormal(dim_), v(dim_);
   std::vector<AmanziGeometry::Point> tau;
 
@@ -222,7 +221,8 @@ void PDE_DiffusionNLFVwithBndFaces::InitStencils_()
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
     // calculate list of candidate vectors
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& dirs = mesh_->cell_get_face_dirs(c);
     int nfaces = faces.size();
 
     WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
@@ -268,7 +268,8 @@ void PDE_DiffusionNLFVwithBndFaces::InitStencils_()
 
       int c = cells[0];
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      const auto& faces = mesh_->cell_get_faces(c);
+      const auto& dirs = mesh_->cell_get_face_dirs(c);
       int nfaces = faces.size();
 
       WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
@@ -369,14 +370,13 @@ void PDE_DiffusionNLFVwithBndFaces::UpdateMatrices(
 
   // split each stencil between different local matrices
   int c1, c2, c3, c4, k1, k2;
-  std::vector<int> dirs;
-  AmanziMesh::Entity_ID_List cells, cells_tmp, faces;
+  AmanziMesh::Entity_ID_List cells, cells_tmp;
 
   matrix_cv.PutScalarMasterAndGhosted(0.0);
   flux_data.PutScalar(0.0);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
     
     for (int n = 0; n < nfaces; ++n) {
@@ -652,13 +652,12 @@ void PDE_DiffusionNLFVwithBndFaces::OneSidedFluxCorrections_(
 
   int c1, c2, c3, k1, k2;
   double gamma, tmp;
-  std::vector<int> dirs;
-  AmanziMesh::Entity_ID_List cells, cells_tmp, faces;
+  AmanziMesh::Entity_ID_List cells, cells_tmp;
 
   flux_cv.PutScalarMasterAndGhosted(0.0);
   
   for (int c = 0; c < ncells_owned; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
     
     for (int n = 0; n < nfaces; ++n) {
@@ -700,8 +699,6 @@ void PDE_DiffusionNLFVwithBndFaces::OneSidedFluxCorrections_(
       flux[k1][f] = kf * sideflux; 
     }
   }
-
-
 }
 
 void PDE_DiffusionNLFVwithBndFaces::OneSidedNeumannCorrections_(const CompositeVector& u,
@@ -775,6 +772,7 @@ void PDE_DiffusionNLFVwithBndFaces::OneSidedNeumannCorrections_(const CompositeV
   // flux_cv.ScatterMasterToGhosted();
 }
 
+
 /* ******************************************************************
 * Calculate one-sided fluxes (i0=0) or flux corrections (i0=1).
 ****************************************************************** */
@@ -790,12 +788,11 @@ void PDE_DiffusionNLFVwithBndFaces::OneSidedWeightFluxes_(
   Epetra_MultiVector& flux_data = *stencil_data_->ViewComponent("flux_data", true);
 
   int c1, c2, c3, k1, k2;
-  std::vector<int> dirs;
-  AmanziMesh::Entity_ID_List cells, cells_tmp, faces;
+  AmanziMesh::Entity_ID_List cells;
 
   flux_cv.PutScalarMasterAndGhosted(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
     
     for (int n = 0; n < nfaces; ++n) {

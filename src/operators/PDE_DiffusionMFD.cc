@@ -212,10 +212,10 @@ void PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
   }
 
   // update matrix blocks
-  AmanziMesh::Entity_ID_List faces, cells;
+  AmanziMesh::Entity_ID_List cells;
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
 
     WhetStone::DenseMatrix& Wff = Wff_cells_[c];
@@ -400,14 +400,14 @@ void PDE_DiffusionMFD::UpdateMatricesTPFA_()
   Kc(0, 0) = 1.0;
   if (const_K_.rank() > 0) Kc = const_K_;
 
-  AmanziMesh::Entity_ID_List cells, faces;
+  AmanziMesh::Entity_ID_List cells;
   Ttmp.PutScalar(0.0);
 
   for (int c = 0; c < ncells_owned; c++) {
     if (K_.get()) Kc = (*K_)[c];
     if (Kc.isZero()) continue;  // We skip zero matrices
 
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
 
     mfd.MassMatrixInverseTPFA(c, Kc, Mff);
@@ -512,8 +512,6 @@ void PDE_DiffusionMFD::ApplyBCs_Mixed_(
     bool primary, bool eliminate, bool essential_eqn)
 {
   // apply diffusion type BCs to FACE-CELL system
-  AmanziMesh::Entity_ID_List faces;
-
   const std::vector<int>& bc_model_trial = bc_trial->bc_model();
   const std::vector<int>& bc_model_test = bc_test->bc_model();
 
@@ -535,7 +533,7 @@ void PDE_DiffusionMFD::ApplyBCs_Mixed_(
   }
 
   for (int c = 0; c != ncells_owned; ++c) {
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
     
     // Update terms due to nonlinear coefficient
@@ -702,7 +700,7 @@ void PDE_DiffusionMFD::ApplyBCs_Nodal_(
     const Teuchos::Ptr<const BCs>& bc_v,
     bool primary, bool eliminate, bool essential_eqn)
 {
-  AmanziMesh::Entity_ID_List faces, nodes, cells;
+  AmanziMesh::Entity_ID_List nodes, cells;
 
   global_op_->rhs()->PutScalarGhosted(0.0);
   Epetra_MultiVector& rhs_node = *global_op_->rhs()->ViewComponent("node", true);
@@ -718,7 +716,7 @@ void PDE_DiffusionMFD::ApplyBCs_Nodal_(
       const std::vector<double>& bc_value = bc_f->bc_value();
       const std::vector<double>& bc_mixed = bc_f->bc_mixed();
 
-      mesh_->cell_get_faces(c, &faces);
+      const auto& faces = mesh_->cell_get_faces(c);
       int nfaces = faces.size();
 
       for (int n = 0; n != nfaces; ++n) {
@@ -940,14 +938,13 @@ void PDE_DiffusionMFD::ModifyMatrices(const CompositeVector& u)
   }
 
   // populate the matrix
-  AmanziMesh::Entity_ID_List faces;
   const Epetra_MultiVector& u_c = *u.ViewComponent("cell");
 
   global_op_->rhs()->PutScalarGhosted(0.0);
 
   Epetra_MultiVector& rhs_f = *global_op_->rhs()->ViewComponent("face", true);
   for (int c = 0; c != ncells_owned; ++c) {
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
 
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
@@ -985,12 +982,11 @@ void PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
   const Epetra_MultiVector& u_face = *u->ViewComponent("face", true);
   Epetra_MultiVector& flux_data = *flux->ViewComponent("face", true);
 
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
   std::vector<int> hits(nfaces_wghost, 0);
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& dirs = mesh_->cell_get_face_dirs(c);
     int nfaces = faces.size();
 
     WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
@@ -1039,12 +1035,11 @@ void PDE_DiffusionMFD::UpdateFluxNonManifold(
 
   flux_data.PutScalar(0.0);
 
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
   const auto& fmap = *flux->Map().Map("face", true);
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& dirs = mesh_->cell_get_face_dirs(c);
     int nfaces = faces.size();
 
     WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
@@ -1401,9 +1396,8 @@ int PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
 
   // y_f - Afc * x_c
   const Epetra_MultiVector& x_c = *u.ViewComponent("cell", false);
-  AmanziMesh::Entity_ID_List faces;
   for (int c=0; c!=ncells_owned; ++c) {
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
 
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];

@@ -113,9 +113,9 @@ TEST(MASS_MATRIX_2D) {
     }
 
     WhetStone::DenseVector u(nrows), v(nrows), w(nrows), a(nrows);
-    vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, uf, uf, u);
-    vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, vf, vf, v);
-    vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, wf, wf, w);
+    vem.CalculateDOFsOnBoundary(mesh, c, uf, uf, u);
+    vem.CalculateDOFsOnBoundary(mesh, c, vf, vf, v);
+    vem.CalculateDOFsOnBoundary(mesh, c, wf, wf, w);
 
     M.Multiply(w, a, false);
     double vxx = u * a;
@@ -240,10 +240,10 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
       }
 
       WhetStone::DenseVector u(nrows), v(nrows), w(nrows), q(nrows), a(nrows);
-      vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, uf, uf, u);
-      vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, vf, vf, v);
-      vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, wf, wf, w);
-      vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, qf, qf, q);
+      vem.CalculateDOFsOnBoundary(mesh, c, uf, uf, u);
+      vem.CalculateDOFsOnBoundary(mesh, c, vf, vf, v);
+      vem.CalculateDOFsOnBoundary(mesh, c, wf, wf, w);
+      vem.CalculateDOFsOnBoundary(mesh, c, qf, qf, q);
 
       M.Multiply(w, a, false);
       double vx1 = u * a;
@@ -469,11 +469,11 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
       }
 
       WhetStone::DenseVector u(nrows), v(nrows), w(nrows), a(nrows), t(nrows), y(nrows);
-      vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, uf, uf, u);
-      vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, vf, vf, v);
-      vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, wf, wf, w);
-      vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, tf, tf, t);
-      vem.CalculateDOFsOnBoundary<AmanziMesh::Mesh>(mesh, c, yf, yf, y);
+      vem.CalculateDOFsOnBoundary(mesh, c, uf, uf, u);
+      vem.CalculateDOFsOnBoundary(mesh, c, vf, vf, v);
+      vem.CalculateDOFsOnBoundary(mesh, c, wf, wf, w);
+      vem.CalculateDOFsOnBoundary(mesh, c, tf, tf, t);
+      vem.CalculateDOFsOnBoundary(mesh, c, yf, yf, y);
 
       A.Multiply(u, a, false);
       double vxx = u * a;

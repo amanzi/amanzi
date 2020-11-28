@@ -73,12 +73,12 @@ void FlowEnergyMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
   if (!S->HasField("pressure")) {
     *S->RequireField("pressure", "flow")->SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
-    AddDefaultPrimaryEvaluator("pressure");
+    AddDefaultPrimaryEvaluator_("pressure");
   }
 
   if (!S->HasField("temperature")) {
     *S->RequireField("temperature", "thermal")->SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
-    AddDefaultPrimaryEvaluator("temperature");
+    AddDefaultPrimaryEvaluator_("temperature");
   }
 
   // -- darcy flux
@@ -89,7 +89,7 @@ void FlowEnergyMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField("darcy_flux", "flow")->SetMesh(mesh_domain_)->SetGhosted(true)
       ->SetComponent(name, AmanziMesh::FACE, mmap, gmap, 1);
 
-    AddDefaultPrimaryEvaluator("darcy_flux");
+    AddDefaultPrimaryEvaluator_("darcy_flux");
   }
 
   // -- darcy flux for fracture

@@ -106,11 +106,10 @@ InverseSchurComplement::ApplyInverse(const CompositeVector& X, CompositeVector& 
                     Operators::OPERATOR_SCHEMA_RULE_EXACT)
         && op->matrices.size() == ncells_owned) {
       // FORWARD ELIMINATION:  Tf = Xf - Afc inv(Acc) Xc
-      AmanziMesh::Entity_ID_List faces;
       {
         Epetra_MultiVector& Tf = *T.ViewComponent("face", true);
         for (int c = 0; c < ncells_owned; c++) {
-          h_->Mesh()->cell_get_faces(c, &faces);
+          const auto& faces = h_->Mesh()->cell_get_faces(c);
           int nfaces = faces.size();
 
           WhetStone::DenseMatrix& Acell = op->matrices[c];
@@ -140,7 +139,7 @@ InverseSchurComplement::ApplyInverse(const CompositeVector& X, CompositeVector& 
         Epetra_MultiVector& Yc = *Y.ViewComponent("cell", false);
         // BACKWARD SUBSTITUTION:  Yc = inv(Acc) (Xc - Acf Yf)
         for (int c = 0; c < ncells_owned; c++) {
-          h_->Mesh()->cell_get_faces(c, &faces);
+          const auto& faces = h_->Mesh()->cell_get_faces(c);
           int nfaces = faces.size();
           
           WhetStone::DenseMatrix& Acell = op->matrices[c];

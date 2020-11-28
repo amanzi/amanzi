@@ -203,14 +203,12 @@ void MagneticDiffusion2D(double dt, double tend,
     Epetra_MultiVector& sol = *Bvec.ViewComponent("cell"); 
     sol.PutScalar(0.0);
 
-    std::vector<int> dirs;
-    AmanziMesh::Entity_ID_List faces;
-
     double avgB(0.0), divB(0.0), errB(0.0);
     for (int c = 0; c < ncells_owned; ++c) {
       double vol = mesh->cell_volume(c);
       const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
+      const auto& faces = mesh->cell_get_faces(c);
+      const auto& dirs = mesh->cell_get_face_dirs(c);
       int nfaces = faces.size();
 
       double tmp(0.0);
@@ -469,14 +467,12 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
     Epetra_MultiVector& sol_b = *Bvec.ViewComponent("cell"); 
     sol_b.PutScalar(0.0);
 
-    std::vector<int> dirs;
-    AmanziMesh::Entity_ID_List faces;
-
     double avgB(0.0), divB(0.0), errB(0.0);
     for (int c = 0; c < ncells_owned; ++c) {
       double vol = mesh->cell_volume(c);
       const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
+      const auto& faces = mesh->cell_get_faces(c);
+      const auto& dirs = mesh->cell_get_face_dirs(c);
       int nfaces = faces.size();
 
       double tmp(0.0);

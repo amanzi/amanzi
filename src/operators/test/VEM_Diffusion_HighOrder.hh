@@ -20,7 +20,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 #include "Point.hh"
 
 #include "BilinearFormFactory.hh"
@@ -35,7 +35,7 @@ namespace WhetStone {
 class VEM_Diffusion_HighOrder : public MFD3D {
  public:
   VEM_Diffusion_HighOrder(const Teuchos::ParameterList& plist,
-                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+                          const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
     : BilinearForm(mesh),
       plist_(plist) {};
   ~VEM_Diffusion_HighOrder() {};

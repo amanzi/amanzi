@@ -28,8 +28,8 @@
 #include "Basis_Regularized.hh"
 #include "GrammMatrix.hh"
 #include "NumericalIntegration.hh"
+#include "SingleFaceMesh.hh"
 #include "SurfaceCoordinateSystem.hh"
-#include "SurfaceMiniMesh.hh"
 #include "Tensor.hh"
 #include "VectorObjectsUtils.hh"
 #include "VEM_RaviartThomasSerendipity.hh"
@@ -42,7 +42,7 @@ namespace WhetStone {
 ****************************************************************** */
 VEM_RaviartThomasSerendipity::VEM_RaviartThomasSerendipity(
     const Teuchos::ParameterList& plist,
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
   : BilinearForm(mesh),
     save_face_matrices_(false)
 {
@@ -77,20 +77,18 @@ int VEM_RaviartThomasSerendipity::L2consistency(
   Tensor Kinv(K);
   Kinv.Inverse();
 
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   double volume = mesh_->cell_volume(c);
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
   // selecting regularized basis (parameter integrals_ is not used)
-  Basis_Regularized<AmanziMesh::Mesh> basis;
+  Basis_Regularized basis;
   basis.Init(mesh_, c, order_, integrals_.poly());
 
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+  NumericalIntegration numi(mesh_);
   numi.UpdateMonomialIntegralsCell(c, order_ + 1, integrals_);
 
   // calculate degrees of freedom: serendipity space S contains all boundary dofs
@@ -104,7 +102,7 @@ int VEM_RaviartThomasSerendipity::L2consistency(
   // pre-compute Gramm matrices
   DenseMatrix MG;
   std::vector<WhetStone::DenseMatrix> vMGf, vMGs;
-  std::vector<Basis_Regularized<SurfaceMiniMesh> > vbasisf;
+  std::vector<Basis_Regularized> vbasisf;
   std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> > vcoordsys;
 
   MGf_.clear();
@@ -114,17 +112,17 @@ int VEM_RaviartThomasSerendipity::L2consistency(
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
     auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
-    auto surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
+    auto surf_mesh = Teuchos::rcp(new SingleFaceMesh(mesh_, f, *coordsys));
     vcoordsys.push_back(coordsys);
 
     PolynomialOnMesh integrals_f;
-    integrals_f.set_id(f);
+    integrals_f.set_id(0);  // this is a one-cell mesh
 
-    Basis_Regularized<SurfaceMiniMesh> basis_f;
-    basis_f.Init(surf_mesh, f, order_ + 1, integrals_f.poly());
+    Basis_Regularized basis_f;
+    basis_f.Init(surf_mesh, 0, order_ + 1, integrals_f.poly());
     vbasisf.push_back(basis_f);
 
-    NumericalIntegration<SurfaceMiniMesh> numi_f(surf_mesh);
+    NumericalIntegration numi_f(surf_mesh);
     GrammMatrix(numi_f, order_ + 1, integrals_f, basis_f, MG);
     vMGf.push_back(MG);
 
@@ -281,7 +279,7 @@ void VEM_RaviartThomasSerendipity::ProjectorCell_(
 {
   // selecting regularized basis
   Polynomial ptmp;
-  Basis_Regularized<AmanziMesh::Mesh> basis;
+  Basis_Regularized basis;
   basis.Init(mesh_, c, order_, ptmp);
 
   // calculate stiffness matrix
@@ -349,13 +347,12 @@ void VEM_RaviartThomasSerendipity::CalculateDOFsOnBoundary(
     int c, const std::vector<VectorPolynomial>& ve,
     const std::vector<VectorPolynomial>& vf, DenseVector& vdof)
 {
-  std::vector<int> dirs;
-  Entity_ID_List faces;
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   std::vector<const WhetStoneFunction*> funcs(2);
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+  NumericalIntegration numi(mesh_);
 
   // number of moments on faces
   std::vector<double> moments;
@@ -382,8 +379,8 @@ void VEM_RaviartThomasSerendipity::CalculateDOFsOnBoundary(
 ****************************************************************** */
 void VEM_RaviartThomasSerendipity::ComputeN_(
     int c, const Entity_ID_List& faces, const std::vector<int>& dirs,
-    const Basis_Regularized<AmanziMesh::Mesh>& basis,
-    const std::vector<Basis_Regularized<SurfaceMiniMesh> >& vbasisf,
+    const Basis_Regularized& basis,
+    const std::vector<Basis_Regularized>& vbasisf,
     const std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> >& vcoordsys,
     const std::vector<WhetStone::DenseMatrix>& vMGf,
     const Tensor& Kinv, DenseMatrix& N)

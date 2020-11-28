@@ -16,7 +16,7 @@
 #include <iterator>
 #include <vector>
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 #include "Point.hh"
 #include "errors.hh"
 
@@ -35,9 +35,7 @@ namespace WhetStone {
 int MFD3D_Elasticity::L2consistency(int c, const Tensor& T,
                                     DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
-  Entity_ID_List faces;
-
-  mesh_->cell_get_faces(c, &faces);
+  const auto& faces = mesh_->cell_get_faces(c);
   int nfaces = faces.size();
 
   N.Reshape(nfaces, d_);
@@ -70,13 +68,12 @@ int MFD3D_Elasticity::L2consistency(int c, const Tensor& T,
 int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
                                     DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List nodes, faces;
-  std::vector<int> dirs;
-
+  Entity_ID_List nodes;
   mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   double volume = mesh_->cell_volume(c);

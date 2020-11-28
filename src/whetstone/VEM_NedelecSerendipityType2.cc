@@ -34,8 +34,8 @@
 #include "GrammMatrix.hh"
 #include "MFD3D_Electromagnetics.hh"
 #include "NumericalIntegration.hh"
+#include "SingleFaceMesh.hh"
 #include "SurfaceCoordinateSystem.hh"
-#include "SurfaceMiniMesh.hh"
 #include "Tensor.hh"
 #include "VectorObjects.hh"
 #include "VectorObjectsUtils.hh"
@@ -50,7 +50,7 @@ namespace WhetStone {
 ****************************************************************** */
 VEM_NedelecSerendipityType2::VEM_NedelecSerendipityType2(
     const Teuchos::ParameterList& plist,
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
   : DeRham_Edge(mesh),
     BilinearForm(mesh)
 {
@@ -79,25 +79,26 @@ int VEM_NedelecSerendipityType2::L2consistency(
 {
   if (d_ == 2) {
     DenseMatrix MG;
-    L2consistency2D_<AmanziMesh::Mesh>(mesh_, c, K, N, Mc, MG);
+    L2consistency2D_(mesh_, c, K, N, Mc, MG);
     return 0;
   }
 
-  Entity_ID_List edges, faces, fedges;
-  std::vector<int> fdirs, edirs;
+  Entity_ID_List fedges;
+  std::vector<int> edirs;
 
-  mesh_->cell_get_edges(c, &edges);
+  const auto& edges = mesh_->cell_get_edges(c);
   int nedges = edges.size();
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& fdirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+  NumericalIntegration numi(mesh_);
 
   // selecting regularized basis (parameter integrals_ is not used)
-  Basis_Regularized<AmanziMesh::Mesh> basis;
+  Basis_Regularized basis;
   basis.Init(mesh_, c, order_ + 1, integrals_.poly());
 
   // calculate degrees of freedom: serendipity space S contains all boundary dofs
@@ -125,7 +126,7 @@ int VEM_NedelecSerendipityType2::L2consistency(
 
   // L2 projectors on faces
   std::vector<WhetStone::DenseMatrix> vL2f, vMGf;
-  std::vector<Basis_Regularized<SurfaceMiniMesh> > vbasisf;
+  std::vector<Basis_Regularized> vbasisf;
   std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> > vcoordsys;
 
   L2ProjectorsOnFaces_(c, K, faces, vL2f, vMGf, vbasisf, vcoordsys, order_ + 1);
@@ -313,9 +314,8 @@ int VEM_NedelecSerendipityType2::StiffnessMatrix(
   A.Multiply(C, MC, true); 
 
   // rescaling (FIXME)
-  Entity_ID_List faces, edges;
-  mesh_->cell_get_faces(c, &faces);
-  mesh_->cell_get_edges(c, &edges);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& edges = mesh_->cell_get_edges(c);
 
   int ndf = ndofs_f / faces.size();
   std::vector<double> areas;
@@ -338,13 +338,14 @@ int VEM_NedelecSerendipityType2::StiffnessMatrix(
 ****************************************************************** */
 void VEM_NedelecSerendipityType2::CurlMatrix(int c, DenseMatrix& C)
 {
-  Entity_ID_List faces, nodes, fedges, edges;
-  std::vector<int> fdirs, edirs, map;
+  Entity_ID_List nodes, fedges;
+  std::vector<int> edirs, map;
   
-  mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& fdirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
-  mesh_->cell_get_edges(c, &edges);
+  const auto& edges = mesh_->cell_get_edges(c);
   int nedges = edges.size();
 
   Polynomial pf(d_ - 1, order_);
@@ -358,7 +359,7 @@ void VEM_NedelecSerendipityType2::CurlMatrix(int c, DenseMatrix& C)
  
   // precompute L2 projectors on faces
   std::vector<DenseMatrix> vL2f, vMGf;
-  std::vector<Basis_Regularized<SurfaceMiniMesh> > vbasisf;
+  std::vector<Basis_Regularized> vbasisf;
   std::vector<std::shared_ptr<SurfaceCoordinateSystem> > vcoordsys;
 
   Tensor K(d_, 1);
@@ -454,10 +455,10 @@ int VEM_NedelecSerendipityType2::MassMatrixFace(
   const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
   AmanziGeometry::Point normal = mesh_->face_normal(f);
 
-  auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
-  Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
+  SurfaceCoordinateSystem coordsys(xf, normal);
+  Teuchos::RCP<const SingleFaceMesh> surf_mesh = Teuchos::rcp(new SingleFaceMesh(mesh_, f, coordsys));
 
-  int ok = L2consistency2D_(surf_mesh, f, K, N, M, MG);
+  int ok = L2consistency2D_(surf_mesh, 0, K, N, M, MG);
   if (ok) return ok;
 
   StabilityScalar_(N, M);
@@ -474,20 +475,20 @@ void VEM_NedelecSerendipityType2::ProjectorFace_(
 {
   const auto& xf = mesh_->face_centroid(f);
   const auto& normal = mesh_->face_normal(f);
-  auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
+  SurfaceCoordinateSystem coordsys(xf, normal);
 
-  Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
+  Teuchos::RCP<const SingleFaceMesh> surf_mesh = Teuchos::rcp(new SingleFaceMesh(mesh_, f, coordsys));
 
   std::vector<VectorPolynomial> vve;
   for (int i = 0; i < ve.size(); ++i) {
-    auto tmp = ProjectVectorPolynomialOnManifold(ve[i], xf, *coordsys->tau());
+    auto tmp = ProjectVectorPolynomialOnManifold(ve[i], xf, *coordsys.tau());
     vve.push_back(tmp);
   }
 
-  ProjectorCell_<SurfaceMiniMesh>(surf_mesh, f, vve, vve, type, moments, uf);
+  ProjectorCell_(surf_mesh, 0, vve, vve, type, moments, uf);
   uf.ChangeOrigin(AmanziGeometry::Point(d_ - 1));
   for (int i = 0; i < uf.NumRows(); ++i) {
-    uf[i].InverseChangeCoordinates(xf, *coordsys->tau());  
+    uf[i].InverseChangeCoordinates(xf, *coordsys.tau());  
   }
 }
 
@@ -499,7 +500,7 @@ void VEM_NedelecSerendipityType2::L2ProjectorsOnFaces_(
     int c, const Tensor& K, const Entity_ID_List& faces,
     std::vector<WhetStone::DenseMatrix>& vL2f, 
     std::vector<WhetStone::DenseMatrix>& vMGf,
-    std::vector<Basis_Regularized<SurfaceMiniMesh> >& vbasisf,
+    std::vector<Basis_Regularized>& vbasisf,
     std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> >& vcoordsys,
     int MGorder)
 {
@@ -514,11 +515,11 @@ void VEM_NedelecSerendipityType2::L2ProjectorsOnFaces_(
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
     auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
-    auto surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
+    auto surf_mesh = Teuchos::rcp(new SingleFaceMesh(mesh_, f, *coordsys));
     vcoordsys.push_back(coordsys);
 
     DenseMatrix Nf, NfT, Mf, MG;
-    L2consistency2D_<SurfaceMiniMesh>(surf_mesh, f, K, Nf, Mf, MG);
+    L2consistency2D_(surf_mesh, 0, K, Nf, Mf, MG);
     if (MGorder == order_) vMGf.push_back(Idf ^ MG);
 
     NfT.Transpose(Nf);
@@ -527,12 +528,15 @@ void VEM_NedelecSerendipityType2::L2ProjectorsOnFaces_(
     auto L2f = NN * NfT;
     vL2f.push_back(L2f);
 
-    Basis_Regularized<SurfaceMiniMesh> basis_f;
-    basis_f.Init(surf_mesh, f, order_ + 1, integrals_.poly());
+    PolynomialOnMesh integrals_f;
+    integrals_f.set_id(0);  // this is a one-cell mesh
+
+    Basis_Regularized basis_f;
+    basis_f.Init(surf_mesh, 0, order_ + 1, integrals_f.poly());
     vbasisf.push_back(basis_f);
 
-    NumericalIntegration<SurfaceMiniMesh> numi_f(surf_mesh);
-    GrammMatrix(numi_f, order_ + 1, integrals_, basis_f, MG);
+    NumericalIntegration numi_f(surf_mesh);
+    GrammMatrix(numi_f, order_ + 1, integrals_f, basis_f, MG);
     if (MGorder == order_ + 1) vMGf.push_back(Idf ^ MG);
   }
 }
@@ -572,7 +576,7 @@ void VEM_NedelecSerendipityType2::L2consistency3DFace_Method1_(
     const VectorPolynomial& p1,
     const VectorPolynomial& xyz,
     const SurfaceCoordinateSystem& coordsys,
-    const Basis_Regularized<SurfaceMiniMesh>& basis,
+    const Basis_Regularized& basis,
     const DenseMatrix& L2f,
     const DenseMatrix& MGf,
     DenseVector& p0v)
@@ -619,7 +623,7 @@ void VEM_NedelecSerendipityType2::L2consistency3DFace_Method2_(
     int f,
     const VectorPolynomial& p1,
     const SurfaceCoordinateSystem& coordsys,
-    const Basis_Regularized<SurfaceMiniMesh>& basis,
+    const Basis_Regularized& basis,
     const DenseMatrix& L2f,
     const DenseMatrix& MGf,
     DenseVector& p0v)
@@ -741,8 +745,8 @@ void VEM_NedelecSerendipityType2::L2consistency3DFace_Method2_(
 ****************************************************************** */
 void VEM_NedelecSerendipityType2::MatrixOfDofs_(
     int c, const Entity_ID_List& edges,
-    const Basis_Regularized<AmanziMesh::Mesh>& basis,
-    const NumericalIntegration<AmanziMesh::Mesh>& numi,
+    const Basis_Regularized& basis,
+    const NumericalIntegration& numi,
     DenseMatrix& N)
 {
   int nedges = edges.size();

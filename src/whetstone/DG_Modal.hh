@@ -21,7 +21,7 @@
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
-#include "Mesh.hh"
+#include "MeshLight.hh"
 #include "Point.hh"
 
 // WhetStone
@@ -47,7 +47,7 @@ class Polynomial;
 class DG_Modal : public BilinearForm {
  public:
   DG_Modal(const Teuchos::ParameterList& plist,
-           const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+           const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh);
 
   // basic member functions
   // -- schema
@@ -87,15 +87,15 @@ class DG_Modal : public BilinearForm {
   int get_order() const { return order_; }
 
   // -- access
-  const Basis<AmanziMesh::Mesh>& cell_basis(int c) const { return *basis_[c]; }
+  const Basis& cell_basis(int c) const { return *basis_[c]; }
   Polynomial& monomial_integrals(int c) { return monomial_integrals_[c]; }
 
  private:
   int numi_order_;
-  NumericalIntegration<AmanziMesh::Mesh> numi_;
+  NumericalIntegration numi_;
 
   std::vector<Polynomial> monomial_integrals_;  // integrals of non-normalized monomials
-  std::vector<std::shared_ptr<Basis<AmanziMesh::Mesh> > > basis_;
+  std::vector<std::shared_ptr<Basis> > basis_;
 
   static RegisteredFactory<DG_Modal> factory_;
 };

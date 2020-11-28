@@ -129,7 +129,7 @@ void MagneticDiffusionVEM(
   CompositeVector B(*cvs_b);
 
   // set up initial guess (only B) for a time-dependent problem 
-  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+  WhetStone::NumericalIntegration numi(mesh);
 
   Epetra_MultiVector& Ee = *E.ViewComponent("edge");
   Epetra_MultiVector& Bf = *B.ViewComponent("face");

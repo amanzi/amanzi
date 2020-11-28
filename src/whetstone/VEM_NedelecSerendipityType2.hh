@@ -31,7 +31,6 @@
 #include "NumericalIntegration.hh"
 #include "Polynomial.hh"
 #include "PolynomialOnMesh.hh"
-#include "SurfaceMiniMesh.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
@@ -40,7 +39,7 @@ namespace WhetStone {
 class VEM_NedelecSerendipityType2 : public DeRham_Edge { 
  public:
   VEM_NedelecSerendipityType2(const Teuchos::ParameterList& plist,
-                              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+                              const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh);
   ~VEM_NedelecSerendipityType2() {};
 
   // required methods
@@ -64,7 +63,7 @@ class VEM_NedelecSerendipityType2 : public DeRham_Edge {
   void L2Cell(int c, const std::vector<VectorPolynomial>& ve,
               const std::vector<VectorPolynomial>& vf,
               const Polynomial* moments, VectorPolynomial& uc) {
-    ProjectorCell_<AmanziMesh::Mesh>(mesh_, c, ve, vf, ProjectorType::L2, moments, uc);
+    ProjectorCell_(mesh_, c, ve, vf, ProjectorType::L2, moments, uc);
   }
 
   void L2Face(int f, const std::vector<VectorPolynomial>& ve,
@@ -76,20 +75,17 @@ class VEM_NedelecSerendipityType2 : public DeRham_Edge {
   PolynomialOnMesh& integrals() { return integrals_; }
 
   // support
-  template<class MyMesh>
   void CalculateDOFsOnBoundary(
-      const Teuchos::RCP<const MyMesh>& mymesh, 
+      const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh, 
       int c, const std::vector<VectorPolynomial>& ve,
       const std::vector<VectorPolynomial>& vf, DenseVector& vdof);
 
  protected:
-  template<typename MyMesh>
-  int L2consistency2D_(const Teuchos::RCP<const MyMesh>& mymesh,
+  int L2consistency2D_(const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh,
                        int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, DenseMatrix& MG);
 
  private:
-  template<class MyMesh>
-  void ProjectorCell_(const Teuchos::RCP<const MyMesh>& mymesh, 
+  void ProjectorCell_(const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh, 
                       int c, const std::vector<VectorPolynomial>& ve,
                       const std::vector<VectorPolynomial>& vf,
                       const ProjectorType type,
@@ -102,15 +98,15 @@ class VEM_NedelecSerendipityType2 : public DeRham_Edge {
   // auxiliary functions
   void MatrixOfDofs_(
       int c, const Entity_ID_List& edges,
-      const Basis_Regularized<AmanziMesh::Mesh>& basis,
-      const NumericalIntegration<AmanziMesh::Mesh>& numi,
+      const Basis_Regularized& basis,
+      const NumericalIntegration& numi,
       DenseMatrix& N);
 
   void L2ProjectorsOnFaces_(
       int c, const Tensor& K, const Entity_ID_List& faces,
       std::vector<WhetStone::DenseMatrix>& vL2f, 
       std::vector<WhetStone::DenseMatrix>& vMGf,
-      std::vector<Basis_Regularized<SurfaceMiniMesh> >& vbasisf,
+      std::vector<Basis_Regularized>& vbasisf,
       std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> >& vcoordsys,
       int MGorder);
 
@@ -120,7 +116,7 @@ class VEM_NedelecSerendipityType2 : public DeRham_Edge {
       const VectorPolynomial& p1,
       const VectorPolynomial& xyz,
       const SurfaceCoordinateSystem& coordsys,
-      const Basis_Regularized<SurfaceMiniMesh>& basis,
+      const Basis_Regularized& basis,
       const DenseMatrix& L2f,
       const DenseMatrix& MGf,
       DenseVector& p0v);
@@ -129,7 +125,7 @@ class VEM_NedelecSerendipityType2 : public DeRham_Edge {
       int f,
       const VectorPolynomial& p1,
       const SurfaceCoordinateSystem& coordsys,
-      const Basis_Regularized<SurfaceMiniMesh>& basis,
+      const Basis_Regularized& basis,
       const DenseMatrix& L2f,
       const DenseMatrix& MGf,
       DenseVector& p0v);
@@ -149,16 +145,15 @@ class VEM_NedelecSerendipityType2 : public DeRham_Edge {
 /* ******************************************************************
 * High-order consistency condition for the 2D mass matrix. 
 ****************************************************************** */
-template <class MyMesh>
+inline
 int VEM_NedelecSerendipityType2::L2consistency2D_(
-    const Teuchos::RCP<const MyMesh>& mymesh,
+    const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh,
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, DenseMatrix& MG)
 {
   // input mesh may have a different dimension than base mesh
   int d = mymesh->space_dimension();
 
-  Entity_ID_List edges;
-  mymesh->cell_get_edges(c, &edges);
+  const auto& edges = mymesh->cell_get_edges(c);
   int nedges = edges.size();
 
   Polynomial poly(d, order_);
@@ -168,12 +163,15 @@ int VEM_NedelecSerendipityType2::L2consistency2D_(
   N.Reshape(nedges * nde, ndc * d);
 
   // selecting regularized basis (parameter integrals is not used)
-  Basis_Regularized<MyMesh> basis;
-  basis.Init(mymesh, c, order_, integrals_.poly());
+  PolynomialOnMesh integrals_f;
+  integrals_f.set_id(c);
+
+  Basis_Regularized basis;
+  basis.Init(mymesh, c, order_, integrals_f.poly());
 
   // pre-calculate integrals of monomials 
-  NumericalIntegration<MyMesh> numi(mymesh);
-  numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
+  NumericalIntegration numi(mymesh);
+  numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_f);
 
   // iterators
   std::vector<double > moments;
@@ -207,7 +205,7 @@ int VEM_NedelecSerendipityType2::L2consistency2D_(
   }
 
   // calculate Mc = P0 M_G P0^T
-  GrammMatrix(numi, order_, integrals_, basis, MG);
+  GrammMatrix(numi, order_, integrals_f, basis, MG);
   
   DenseMatrix NT, P0T;
   Tensor Id(d, 2);
@@ -231,9 +229,9 @@ int VEM_NedelecSerendipityType2::L2consistency2D_(
 /* ******************************************************************
 * Generic projector on space of polynomials of order k in cell c.
 ****************************************************************** */
-template<class MyMesh>
+inline
 void VEM_NedelecSerendipityType2::ProjectorCell_(
-    const Teuchos::RCP<const MyMesh>& mymesh, 
+    const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh, 
     int c, const std::vector<VectorPolynomial>& ve,
     const std::vector<VectorPolynomial>& vf,
     const ProjectorType type,
@@ -244,7 +242,7 @@ void VEM_NedelecSerendipityType2::ProjectorCell_(
 
   // selecting regularized basis
   Polynomial ptmp;
-  Basis_Regularized<MyMesh> basis;
+  Basis_Regularized basis;
   basis.Init(mymesh, c, order_, ptmp);
 
   // calculate stiffness matrix
@@ -253,7 +251,7 @@ void VEM_NedelecSerendipityType2::ProjectorCell_(
 
   DenseMatrix N, Mc, MG;
   if (d == 2) 
-    L2consistency2D_<MyMesh>(mymesh, c, T, N, Mc, MG);
+    L2consistency2D_(mymesh, c, T, N, Mc, MG);
   else
     L2consistency(c, T, N, Mc, true);
 
@@ -280,7 +278,7 @@ void VEM_NedelecSerendipityType2::ProjectorCell_(
   DenseVector v1(ncols), v5(ncols);
 
   DenseVector vdof(ndof_s + ndof_cs);
-  CalculateDOFsOnBoundary<MyMesh>(mymesh, c, ve, vf, vdof);
+  CalculateDOFsOnBoundary(mymesh, c, ve, vf, vdof);
 
   // DOFs inside cell: copy moments from input data
   if (ndof_cs > 0) {
@@ -314,18 +312,17 @@ void VEM_NedelecSerendipityType2::ProjectorCell_(
 /* ******************************************************************
 * Calculate boundary degrees of freedom in 2D and 3D.
 ****************************************************************** */
-template<class MyMesh>
+inline
 void VEM_NedelecSerendipityType2::CalculateDOFsOnBoundary(
-    const Teuchos::RCP<const MyMesh>& mymesh, 
+    const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh, 
     int c, const std::vector<VectorPolynomial>& ve,
     const std::vector<VectorPolynomial>& vf, DenseVector& vdof)
 {
-  Entity_ID_List edges;
-  mymesh->cell_get_edges(c, &edges);
+  const auto& edges = mymesh->cell_get_edges(c);
   int nedges = edges.size();
 
   std::vector<const WhetStoneFunction*> funcs(2);
-  NumericalIntegration<MyMesh> numi(mymesh);
+  NumericalIntegration numi(mymesh);
 
   // number of moments on edges
   std::vector<double> moments;

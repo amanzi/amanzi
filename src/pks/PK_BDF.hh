@@ -29,15 +29,18 @@
 namespace Amanzi {
 
 class PK_BDF : virtual public PK,
-	       public Amanzi::BDFFnBase<TreeVector> {
+	       public BDFFnBase<TreeVector> {
  public:
-  PK_BDF() {};
+  PK_BDF()
+    : PK(),
+      BDFFnBase<TreeVector>() {};
 
   PK_BDF(Teuchos::ParameterList& pk_tree,
 	 const Teuchos::RCP<Teuchos::ParameterList>& glist,
 	 const Teuchos::RCP<State>& S,
-	 const Teuchos::RCP<TreeVector>& soln) :
-    PK(pk_tree, glist, S, soln) {};
+	 const Teuchos::RCP<TreeVector>& soln)
+    : PK(pk_tree, glist, S, soln),
+      BDFFnBase<TreeVector>() {};
 
   // access to operators and PDEs in sub-PKs
   virtual Teuchos::RCP<Operators::Operator>
@@ -46,21 +49,7 @@ class PK_BDF : virtual public PK,
   virtual Teuchos::RCP<Operators::PDE_HelperDiscretization>
       my_pde(const Operators::PDEType& type) { return Teuchos::null; }
 
- protected:
-  // This is used quite often, so I placed here
-  void AddDefaultPrimaryEvaluator(const Key& key);
 };
-
-
-inline
-void PK_BDF::AddDefaultPrimaryEvaluator(const Key& key)
-{
-  Teuchos::ParameterList elist;
-  elist.set<std::string>("evaluator name", key);
-  auto eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-  AMANZI_ASSERT(S_ != Teuchos::null);
-  S_->SetFieldEvaluator(key, eval);
-}
 
 }  // namespace Amanzi
 

@@ -24,8 +24,8 @@
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "NumericalIntegration.hh"
+#include "SingleFaceMesh.hh"
 #include "SurfaceCoordinateSystem.hh"
-#include "SurfaceMiniMesh.hh"
 #include "VectorObjects.hh"
 #include "VEM_NedelecSerendipityType2.hh"
 #include "VEM_RaviartThomasSerendipity.hh"
@@ -71,7 +71,7 @@ void ProjectorRTAccuracy() {
     int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
     AnalyticElectromagnetics02 ana(1.0, mesh);
-    WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+    WhetStone::NumericalIntegration numi(mesh);
 
     plist.set<int>("method order", order);
     WhetStone::VEM_RaviartThomasSerendipity vem(plist, mesh);
@@ -214,7 +214,7 @@ void ProjectorNDAccuracy() {
     int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
     AnalyticElectromagnetics02 ana(1.0, mesh);
-    WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+    WhetStone::NumericalIntegration numi(mesh);
 
     plist.set<int>("method order", order);
     WhetStone::VEM_NedelecSerendipityType2 vem(plist, mesh);
@@ -274,7 +274,7 @@ void ProjectorNDAccuracy() {
 
       // compute DOFs of the projector for numerical integration
       for (int n = 0; n < nedges; ++n) ve[n] = Ec;
-      vem.CalculateDOFsOnBoundary<Mesh>(mesh, c, ve, ve, v2);
+      vem.CalculateDOFsOnBoundary(mesh, c, ve, ve, v2);
       v3 = v2;
 
       // error ||| Ec - E |||_E
@@ -328,7 +328,7 @@ void PrimaryCurl() {
     int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
     AnalyticElectromagnetics05 ana(mesh);
-    WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+    WhetStone::NumericalIntegration numi(mesh);
 
     plist.set<int>("method order", order);
     WhetStone::VEM_NedelecSerendipityType2 vem(plist, mesh);
@@ -429,7 +429,7 @@ void DualCurl() {
     int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
     AnalyticElectromagnetics05 ana(mesh);
-    WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+    WhetStone::NumericalIntegration numi(mesh);
 
     plist.set<int>("method order", order);
     WhetStone::VEM_NedelecSerendipityType2 vem_nd(plist, mesh);

@@ -28,29 +28,17 @@ namespace Amanzi {
 
 class PK_Physical : virtual public PK {
  public:
-  PK_Physical() {};
+  PK_Physical()
+    : PK() {};
 
   PK_Physical(Teuchos::ParameterList& pk_tree,
               const Teuchos::RCP<Teuchos::ParameterList>& glist,
               const Teuchos::RCP<State>& S,
-              const Teuchos::RCP<TreeVector>& soln) :
-      PK(pk_tree, glist, S, soln) {
-
-    // name the PK
-    name_ = pk_tree.name();
-    auto found = name_.rfind("->");
-    if (found != std::string::npos) name_.erase(0, found + 2);
-
-    Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(glist, "PKs");
-
-    if (pks_list->isSublist(name_)) {
-      plist_ = Teuchos::sublist(pks_list, name_); 
-    } else {
-      std::stringstream messagestream;
-      messagestream << "There is no sublist for PK "<<name_<<"in PKs list\n";
-      Errors::Message message(messagestream.str());
-      Exceptions::amanzi_throw(message);
-    }
+              const Teuchos::RCP<TreeVector>& soln)
+    : PK(pk_tree, glist, S, soln)
+  {
+    domain_ = plist_->get<std::string>("domain name", "domain");
+    mesh_ = S_->GetMesh(domain_);
   };
 
   // Virtual destructor
@@ -66,10 +54,6 @@ class PK_Physical : virtual public PK {
   virtual void set_states(const Teuchos::RCP<State>& S,
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next);
-
-  // initialization tools
-  void InitializeField(const Teuchos::Ptr<State>& S, const std::string& passwd,
-                       std::string fieldname, double default_val);
 
   // access
   Key domain() { return domain_; }

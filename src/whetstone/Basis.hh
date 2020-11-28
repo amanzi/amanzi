@@ -24,7 +24,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 
 #include "DenseMatrix.hh"
 #include "DenseVector.hh"
@@ -34,14 +34,13 @@
 namespace Amanzi {
 namespace WhetStone {
 
-template <class MyMesh>
 class Basis { 
  public:
   Basis() {};
   virtual ~Basis() {};
 
   // initialization
-  virtual void Init(const Teuchos::RCP<const MyMesh>& mesh,
+  virtual void Init(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,
                     int c, int order, Polynomial& integrals) = 0;
 
   // transformation of bilinear form
@@ -49,7 +48,7 @@ class Basis {
   virtual void BilinearFormNaturalToMy(std::shared_ptr<Basis> bl,
                                        std::shared_ptr<Basis> br, DenseMatrix& A) const = 0;
 
-  // transformation of linear form
+  // transformation of a linear form
   virtual void LinearFormNaturalToMy(DenseVector& v) const = 0;
 
   // transformation of vector 
@@ -69,7 +68,7 @@ class Basis {
   }
 
   // recover polynomial in the natural basis
-  virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const MyMesh>& mymesh,
+  virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh,
                                          int c, int order, DenseVector& coefs) const = 0;
 
   // assess 

@@ -182,7 +182,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   WhetStone::Polynomial sol, src;
   WhetStone::Polynomial pc(dim, order);
   WhetStone::DenseVector data(pc.size());
-  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+  WhetStone::NumericalIntegration numi(mesh);
 
   Epetra_MultiVector& rhs_c = *global_op->rhs()->ViewComponent("cell");
   for (int c = 0; c < ncells; ++c) {

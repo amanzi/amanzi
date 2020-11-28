@@ -49,6 +49,8 @@ add_amanzi_library(whetstone
                           MFD3D_Lagrange.cc MFD3D_LagrangeAnyOrder.cc
                           MFD3D_LagrangeSerendipity.cc
                           DG_Modal.cc
+                          Basis_Regularized.cc
+                          Basis_Normalized.cc Basis_Orthonormalized.cc
                           BilinearFormFactory.cc
                           nlfv.cc 
                           NumericalIntegration.cc
@@ -89,7 +91,7 @@ add_amanzi_library(whetstone
                            Monomial.hh Polynomial.hh PolynomialBase.hh SpaceTimePolynomial.hh
                            PolynomialIterator.hh VectorObjectsIterator.hh 
                            SurfaceCoordinateSystem.hh
-                           SurfaceMiniMesh.hh
+                           SingleFaceMesh.hh
                            VectorObjects.hh MatrixObjects.hh VectorObjectsUtils.hh
                            PolynomialOnMesh.hh
                            Tensor.hh

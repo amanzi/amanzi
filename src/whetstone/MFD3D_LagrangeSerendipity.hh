@@ -19,14 +19,13 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 #include "Point.hh"
 
 #include "BilinearFormFactory.hh"
 #include "DenseMatrix.hh"
 #include "MFD3D_LagrangeAnyOrder.hh"
 #include "Polynomial.hh"
-#include "SurfaceMiniMesh.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
@@ -35,7 +34,7 @@ namespace WhetStone {
 class MFD3D_LagrangeSerendipity : public MFD3D_LagrangeAnyOrder { 
  public:
   MFD3D_LagrangeSerendipity(const Teuchos::ParameterList& plist,
-                            const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+                            const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh);
 
   // required methods
   // -- schema
@@ -49,7 +48,7 @@ class MFD3D_LagrangeSerendipity : public MFD3D_LagrangeAnyOrder {
   virtual void L2Cell(int c, const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& uc) override {
-    ProjectorCell_<AmanziMesh::Mesh>(mesh_, c, ve, vf, ProjectorType::L2, moments, uc);
+    ProjectorCell_(mesh_, c, ve, vf, ProjectorType::L2, moments, uc);
   }
 
   virtual void L2Face(int f, const std::vector<Polynomial>& ve,
@@ -61,7 +60,7 @@ class MFD3D_LagrangeSerendipity : public MFD3D_LagrangeAnyOrder {
   virtual void H1Cell(int c, const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& uc) override {
-    ProjectorCell_<AmanziMesh::Mesh>(mesh_, c, ve, vf, ProjectorType::H1, moments, uc);
+    ProjectorCell_(mesh_, c, ve, vf, ProjectorType::H1, moments, uc);
   }
 
   virtual void H1Face(int f, const std::vector<Polynomial>& ve,
@@ -72,12 +71,11 @@ class MFD3D_LagrangeSerendipity : public MFD3D_LagrangeAnyOrder {
   // other methods
   void L2Cell_LeastSquare(int c, const std::vector<Polynomial>& vf,
                           const Polynomial* moments, Polynomial& uc) {
-    ProjectorCell_<AmanziMesh::Mesh>(mesh_, c, vf, vf, ProjectorType::LS, moments, uc);
+    ProjectorCell_(mesh_, c, vf, vf, ProjectorType::LS, moments, uc);
   }
 
  private:
-  template<class MyMesh>
-  void ProjectorCell_(const Teuchos::RCP<const MyMesh>& mymesh, 
+  void ProjectorCell_(const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh, 
                       int c, const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
                       const ProjectorType type,
@@ -87,236 +85,14 @@ class MFD3D_LagrangeSerendipity : public MFD3D_LagrangeAnyOrder {
                       const ProjectorType type,
                       const Polynomial* moments, Polynomial& uf);
 
-  template<class MyMesh>
   void CalculateDOFsOnBoundary_(
-      const Teuchos::RCP<const MyMesh>& mymesh, 
+      const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh, 
       int c, const std::vector<Polynomial>& ve,
       const std::vector<Polynomial>& vf, DenseVector& vdof);
 
  private:
   static RegisteredFactory<MFD3D_LagrangeSerendipity> factory_;
 };
-
-
-/* ******************************************************************
-* Generic projector on space of polynomials of order k in cell c.
-****************************************************************** */
-template<class MyMesh>
-void MFD3D_LagrangeSerendipity::ProjectorCell_(
-    const Teuchos::RCP<const MyMesh>& mymesh, 
-    int c, const std::vector<Polynomial>& ve,
-    const std::vector<Polynomial>& vf,
-    const ProjectorType type,
-    const Polynomial* moments, Polynomial& uc)
-{
-  // input mesh may have a different dimension than base mesh
-  int d = mymesh->space_dimension();
-
-  // selecting regularized basis
-  Polynomial ptmp;
-  Basis_Regularized<MyMesh> basis;
-  basis.Init(mymesh, c, order_, ptmp);
-
-  // calculate stiffness matrix
-  Tensor T(d, 1);
-  T(0, 0) = 1.0;
-
-  DenseMatrix N, A;
-  if (d == 2)
-    H1consistency2D_<MyMesh>(mymesh, c, T, N, A);
-  else
-    H1consistency3D_(c, T, N, A, false);
-
-  // select number of non-aligned edges: we assume cell convexity 
-  int nfaces;
-  { 
-    Entity_ID_List faces;
-    mymesh->cell_get_faces(c, &faces);
-    nfaces = faces.size();
-  }
-  int eta(3);
-  if (nfaces > 3) eta = 4;
-
-  // degrees of freedom: serendipity space S contains all boundary dofs
-  // plus a few internal dofs that depend on the value of eta.
-  int nd = PolynomialSpaceDimension(d, order_);
-  int ndof = N.NumRows();
-  int ndof_c = PolynomialSpaceDimension(d, order_ - 2);
-  int ndof_cs = PolynomialSpaceDimension(d, order_ - eta);
-  int ndof_f(ndof - ndof_c);
-
-  // extract submatrix
-  DenseMatrix Ns, NN(nd, nd);
-  Ns = N.SubMatrix(0, ndof_f, 0, nd);
-
-  NN.Multiply(Ns, Ns, true);
-  NN.InverseSPD();
-
-  // calculate degrees of freedom (Ns^T Ns)^{-1} Ns^T v
-  // for consistency with other code, we use v5 for polynomial coefficients
-  const AmanziGeometry::Point& xc = mymesh->cell_centroid(c);
-  DenseVector v1(nd), v3(std::max(1, ndof_cs)), v5(nd);
-
-  DenseVector vdof(ndof_f + ndof_cs);
-  CalculateDOFsOnBoundary_<MyMesh>(mymesh, c, ve, vf, vdof);
-
-  // DOFs inside cell: copy moments from input data
-  if (ndof_cs > 0) {
-    AMANZI_ASSERT(moments != NULL);
-    const DenseVector& v4 = moments->coefs();
-    AMANZI_ASSERT(ndof_cs == v4.NumRows());
-
-    for (int n = 0; n < ndof_cs; ++n) {
-      vdof(ndof_f + n) = v4(n);
-    }
-  }
-
-  Ns.Multiply(vdof, v1, true);
-  NN.Multiply(v1, v5, false);
-
-  // this gives the least square projector
-  uc = basis.CalculatePolynomial(mymesh, c, order_, v5);
-
-  // H1 projector needs to populate moments from ndof_cs + 1 till ndof_c
-  if (type == ProjectorType::H1) {
-    DenseVector v4(nd);
-    DenseMatrix M;
-    NumericalIntegration<MyMesh> numi(mymesh);
-
-    GrammMatrix(numi, order_, integrals_, basis, M);
-    M.Multiply(v5, v4, false);
-
-    vdof.Reshape(ndof_f + ndof_c);
-    for (int n = ndof_cs; n < ndof_c; ++n) {
-      vdof(ndof_f + n) = v4(n) / mymesh->cell_volume(c); 
-    }
-
-    R_.Multiply(vdof, v4, true);
-    G_.Multiply(v4, v5, false);
-
-    v5(0) = uc(0);
-    uc = basis.CalculatePolynomial(mymesh, c, order_, v5);
-  }
-
-  // L2 projector is different if the set S contains some internal dofs
-  if (type == ProjectorType::L2 && ndof_cs > 0) {
-    DenseVector v4(nd), v6(nd - ndof_cs);
-    DenseMatrix M, M2;
-    NumericalIntegration<MyMesh> numi(mymesh);
-
-    GrammMatrix(numi, order_, integrals_, basis, M);
-    M2 = M.SubMatrix(ndof_cs, nd, 0, nd);
-    M2.Multiply(v5, v6, false);
-
-    for (int n = 0; n < ndof_cs; ++n) {
-      v4(n) = v3(n) * mymesh->cell_volume(c);
-    }
-
-    for (int n = 0; n < nd - ndof_cs; ++n) {
-      v4(ndof_cs + n) = v6(n);
-    }
-
-    M.InverseSPD();
-    M.Multiply(v4, v5, false);
-
-    uc = basis.CalculatePolynomial(mymesh, c, order_, v5);
-  }
-
-  // set correct origin 
-  uc.set_origin(xc);
-}
-
-
-/* ******************************************************************
-* Calculate boundary degrees of freedom in 2D and 3D.
-****************************************************************** */
-template<class MyMesh>
-void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
-    const Teuchos::RCP<const MyMesh>& mymesh, 
-    int c, const std::vector<Polynomial>& ve,
-    const std::vector<Polynomial>& vf, DenseVector& vdof)
-{
-  // input mesh may have a different dimension than base mesh
-  int d = mymesh->space_dimension();
-
-  Entity_ID_List nodes, faces, edges;
-  mymesh->cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
-
-  mymesh->cell_get_faces(c, &faces);
-  int nfaces = faces.size();
-
-  NumericalIntegration<MyMesh> numi(mymesh);
-
-  int i0, i1, pos;
-  AmanziGeometry::Point xv(d);
-
-  // number of moments of faces
-  Polynomial pf;
-  if (order_ > 1) {
-    pf.Reshape(d - 1, order_ - 2);
-  }
-
-  int row(nnodes);
-  for (int n = 0; n < nfaces; ++n) {
-    int f = faces[n];
-
-    Entity_ID_List face_nodes;
-    mymesh->face_get_nodes(f, &face_nodes);
-    int nfnodes = face_nodes.size();
-
-    if (d == 2) {
-      for (int j = 0; j < nfnodes; j++) {
-        int v = face_nodes[j];
-        mymesh->node_get_coordinates(v, &xv);
-
-        pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
-        vdof(pos) = vf[n].Value(xv);
-      }
-    }
-
-    if (order_ > 1) { 
-      double area = mymesh->face_area(f);
-      std::vector<double> moments;
-      numi.CalculatePolynomialMomentsFace(f, vf[n], order_ - 2, moments);
-
-      for (auto it = pf.begin(); it < pf.end(); ++it) {
-        int k = it.PolynomialPosition();
-        // double factor = (d == 2) ? 1.0 : std::pow(area, -(double)it.MonomialSetOrder() / 2);
-        vdof(row++) = moments[k]; // * factor;
-      }
-    }
-  }
-
-  if (d == 3) {
-    mymesh->cell_get_edges(c, &edges);
-    int nedges = edges.size();
-
-    Polynomial pe(d - 2, order_ - 2);
-
-    for (int n = 0; n < nedges; ++n) {
-      int e = edges[n];
-
-      // nodal DOFs
-      mymesh->edge_get_nodes(e, &i0, &i1);
-
-      mymesh->node_get_coordinates(i0, &xv);
-      pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), i0));
-      vdof(pos) = ve[n].Value(xv);
-
-      mymesh->node_get_coordinates(i1, &xv);
-      pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), i1));
-      vdof(pos) = ve[n].Value(xv);
-
-      // edge moments
-      std::vector<double> moments;
-      numi.CalculatePolynomialMomentsEdge(e, ve[n], order_ - 2, moments);
-      for (int k = 0; k < moments.size(); ++k) {
-        vdof(row++) = moments[k];
-      }
-    }
-  }
-}
 
 }  // namespace WhetStone
 }  // namespace Amanzi

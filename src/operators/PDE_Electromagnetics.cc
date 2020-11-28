@@ -102,8 +102,8 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(
     const Teuchos::Ptr<const BCs>& bc_e,
     bool primary, bool eliminate, bool essential_eqn)
 {
-  AmanziMesh::Entity_ID_List edges, faces, cells;
-  std::vector<int> edirs, fdirs;
+  AmanziMesh::Entity_ID_List edges, cells;
+  std::vector<int> edirs;
 
   global_op_->rhs()->PutScalarGhosted(0.0);
   Epetra_MultiVector& rhs_edge = *global_op_->rhs()->ViewComponent("edge", true);
@@ -134,7 +134,8 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(
       const std::vector<int>& bc_model = bc_f->bc_model();
       const std::vector<AmanziGeometry::Point>& bc_value = bc_f->bc_value_point();
 
-      mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+      const auto& faces = mesh_->cell_get_faces(c);
+      const auto& fdirs = mesh_->cell_get_face_dirs(c);
       int nfaces = faces.size();
 
       for (int n = 0; n != nfaces; ++n) {

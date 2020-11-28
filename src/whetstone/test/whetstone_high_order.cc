@@ -92,10 +92,10 @@ void HighOrderCrouzeixRaviart(int dim, std::string file_name) {
     
     PolynomialOnMesh integrals;
     integrals.set_id(cell);
-    NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+    NumericalIntegration numi(mesh);
 
     Polynomial ptmp;
-    Basis_Regularized<AmanziMesh::Mesh> basis;
+    Basis_Regularized basis;
     basis.Init(mesh, cell, k, ptmp);
 
     GrammMatrixGradients(T, numi, k, integrals, basis, G1);
@@ -163,10 +163,10 @@ void HighOrderCrouzeixRaviartSerendipity(int dim, std::string file_name) {
 
       PolynomialOnMesh integrals;
       integrals.set_id(c);
-      NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+      NumericalIntegration numi(mesh);
 
       Polynomial ptmp;
-      Basis_Regularized<AmanziMesh::Mesh> basis;
+      Basis_Regularized basis;
       basis.Init(mesh, c, k, ptmp);
 
       GrammMatrixGradients(T, numi, k, integrals, basis, G1);
@@ -250,10 +250,10 @@ void HighOrderLagrange2D(std::string file_name) {
 
       PolynomialOnMesh integrals;
       integrals.set_id(c);
-      NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+      NumericalIntegration numi(mesh);
 
       Polynomial ptmp, poly(mesh->space_dimension(), k);
-      Basis_Regularized<AmanziMesh::Mesh> basis;
+      Basis_Regularized basis;
       basis.Init(mesh, c, k, ptmp);
 
       GrammMatrixGradients(T, numi, k, integrals, basis, G1);
@@ -343,10 +343,10 @@ void HighOrderLagrange3D(const std::string& filename1,
 
     PolynomialOnMesh integrals;
     integrals.set_id(0);
-    NumericalIntegration<AmanziMesh::Mesh> numi(mesh2);
+    NumericalIntegration numi(mesh2);
 
     Polynomial ptmp;
-    Basis_Regularized<AmanziMesh::Mesh> basis;
+    Basis_Regularized basis;
     basis.Init(mesh2, 0, k, ptmp);
 
     GrammMatrixGradients(T, numi, k, integrals, basis, G1);
@@ -433,10 +433,10 @@ void HighOrderLagrangeSerendipity(const std::string& filename) {
 
       PolynomialOnMesh integrals;
       integrals.set_id(c);
-      NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+      NumericalIntegration numi(mesh);
 
       Polynomial ptmp;
-      Basis_Regularized<AmanziMesh::Mesh> basis;
+      Basis_Regularized basis;
       basis.Init(mesh, 0, k, ptmp);
 
       GrammMatrixGradients(T, numi, k, integrals, basis, G1);
@@ -550,10 +550,10 @@ void HighOrderRaviartThomasSerendipity(const std::string& filename) {
 
     PolynomialOnMesh integrals;
     integrals.set_id(c);
-    NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+    NumericalIntegration numi(mesh);
 
     Polynomial ptmp;
-    Basis_Regularized<AmanziMesh::Mesh> basis;
+    Basis_Regularized basis;
     basis.Init(mesh, 0, k, ptmp);
 
     GrammMatrix(numi, k, integrals, basis, G1);

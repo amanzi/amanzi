@@ -30,7 +30,9 @@ set(SuperLU_CMAKE_ARGS
       "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
       "-DCMAKE_INSTALL_LIBDIR:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
       "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
-      "-Denable_blaslib:BOOL=FALSE")
+      "-Denable_internal_blaslib:BOOL=FALSE")
+
+string(REPLACE ";" "\\\;" superlu_module_opt "${CMAKE_MODULE_PATH}")
 
 # --- Add external project build and tie to the SuperLU build target
 ExternalProject_Add(${SuperLU_BUILD_TARGET}
@@ -51,6 +53,7 @@ ExternalProject_Add(${SuperLU_BUILD_TARGET}
                                   -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                   -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                                   -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
+                    CMAKE_CACHE_ARGS -DCMAKE_MODULE_PATH:STRING=${superlu_module_opt}
 
                     # -- Build
                     BINARY_DIR      ${SuperLU_build_dir}       # Build directory 

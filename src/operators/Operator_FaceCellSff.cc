@@ -90,9 +90,8 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
       }
 
       // populate the schur component
-      AmanziMesh::Entity_ID_List faces;
       for (int c = 0; c != ncells_owned; ++c) {
-        mesh_->cell_get_faces(c, &faces);
+        const auto& faces = mesh_->cell_get_faces(c);
         int nfaces = faces.size();
 
         WhetStone::DenseMatrix& Scell = schur_op->matrices[c];
@@ -138,9 +137,8 @@ int Operator_FaceCellSff::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
     Epetra_MultiVector& Yf = *Y.ViewComponent("face", true);
     Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
 
-    AmanziMesh::Entity_ID_List faces;
     for (int c=0; c!=ncells_owned; ++c) {
-      mesh_->cell_get_faces(c, &faces);
+      const auto& faces = mesh_->cell_get_faces(c);
       int nfaces = faces.size();
 
       WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
