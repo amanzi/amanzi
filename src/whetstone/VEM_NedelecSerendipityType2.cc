@@ -783,6 +783,205 @@ void VEM_NedelecSerendipityType2::MatrixOfDofs_(
   }
 }
 
+
+/* ******************************************************************
+* High-order consistency condition for the 2D mass matrix. 
+****************************************************************** */
+int VEM_NedelecSerendipityType2::L2consistency2D_(
+    const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh,
+    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, DenseMatrix& MG)
+{
+  // input mesh may have a different dimension than base mesh
+  int d = mymesh->space_dimension();
+
+  const auto& edges = mymesh->cell_get_edges(c);
+  int nedges = edges.size();
+
+  Polynomial poly(d, order_);
+
+  int ndc = PolynomialSpaceDimension(d, order_);
+  int nde = PolynomialSpaceDimension(d - 1, order_);
+  N.Reshape(nedges * nde, ndc * d);
+
+  // selecting regularized basis (parameter integrals is not used)
+  PolynomialOnMesh integrals_f;
+  integrals_f.set_id(c);
+
+  Basis_Regularized basis;
+  basis.Init(mymesh, c, order_, integrals_f.poly());
+
+  // pre-calculate integrals of monomials 
+  NumericalIntegration numi(mymesh);
+  numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_f);
+
+  // iterators
+  std::vector<double > moments;
+  VectorPolynomialIterator it0(d, d, order_), it1(d, d, order_);
+  it0.begin();
+  it1.end();
+
+  for (auto it = it0; it < it1; ++it) {
+    int k = it.VectorComponent();
+    int n = it.VectorPolynomialPosition();
+    int m = it.MonomialSetOrder();
+
+    const int* index = it.multi_index();
+    double factor = basis.monomial_scales()[m];
+    Monomial cmono(d, index, factor);
+    cmono.set_origin(mymesh->cell_centroid(c));
+
+    int row(0);
+
+    for (int i = 0; i < nedges; ++i) {
+      int e = edges[i];
+      double len = mymesh->edge_length(e);
+      const AmanziGeometry::Point& tau = mymesh->edge_vector(e);
+
+      numi.CalculatePolynomialMomentsEdge(e, cmono, order_, moments);
+      for (int l = 0; l < moments.size(); ++l) {
+        N(row, n) = moments[l] * tau[k] / len;
+        row++;
+      }
+    }
+  }
+
+  // calculate Mc = P0 M_G P0^T
+  GrammMatrix(numi, order_, integrals_f, basis, MG);
+  
+  DenseMatrix NT, P0T;
+  Tensor Id(d, 2);
+  Id.MakeDiagonal(1.0);
+
+  NT.Transpose(N);
+  auto NN = NT * N;
+  NN.InverseSPD();
+
+  Tensor Kinv(K);
+  Kinv.Inverse();
+
+  auto P0 = N * NN;
+  P0T.Transpose(P0);
+  Mc = P0 * ((Id * Kinv) ^ MG) * P0T;
+
+  return 0;
+}
+
+
+/* ******************************************************************
+* Generic projector on space of polynomials of order k in cell c.
+****************************************************************** */
+void VEM_NedelecSerendipityType2::ProjectorCell_(
+    const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh, 
+    int c, const std::vector<VectorPolynomial>& ve,
+    const std::vector<VectorPolynomial>& vf,
+    const ProjectorType type,
+    const Polynomial* moments, VectorPolynomial& uc)
+{
+  // input mesh may have a different dimension than base mesh
+  int d = mymesh->space_dimension();
+
+  // selecting regularized basis
+  Polynomial ptmp;
+  Basis_Regularized basis;
+  basis.Init(mymesh, c, order_, ptmp);
+
+  // calculate stiffness matrix
+  Tensor T(d, 1);
+  T(0, 0) = 1.0;
+
+  DenseMatrix N, Mc, MG;
+  if (d == 2) 
+    L2consistency2D_(mymesh, c, T, N, Mc, MG);
+  else
+    L2consistency(c, T, N, Mc, true);
+
+  // select number of non-aligned faces: we assume cell convexity 
+  // int eta(2);
+
+  // degrees of freedom: serendipity space S contains all boundary dofs
+  // plus a few internal dofs that depend on the value of eta.
+  int ndof = N.NumRows();
+  int ndof_cs = 0;  // required cell moments
+  int ndof_s(ndof);  // serendipity dofs
+
+  // extract submatrix
+  int ncols = N.NumCols();
+  DenseMatrix Ns, NN(ncols, ncols);
+  Ns = N.SubMatrix(0, ndof_s, 0, ncols);
+
+  NN.Multiply(Ns, Ns, true);
+  NN.InverseSPD();
+
+  // calculate degrees of freedom (Ns^T Ns)^{-1} Ns^T v
+  // for consistency with other code, we use v5 for polynomial coefficients
+  const AmanziGeometry::Point& xc = mymesh->cell_centroid(c);
+  DenseVector v1(ncols), v5(ncols);
+
+  DenseVector vdof(ndof_s + ndof_cs);
+  CalculateDOFsOnBoundary(mymesh, c, ve, vf, vdof);
+
+  // DOFs inside cell: copy moments from input data
+  if (ndof_cs > 0) {
+    AMANZI_ASSERT(moments != NULL);
+    const DenseVector& v3 = moments->coefs();
+    AMANZI_ASSERT(ndof_cs == v3.NumRows());
+
+    for (int n = 0; n < ndof_cs; ++n) {
+      vdof(ndof_s + n) = v3(n);
+    }
+  }
+
+  Ns.Multiply(vdof, v1, true);
+  NN.Multiply(v1, v5, false);
+
+  // this gives the least square projector
+  int stride = v5.NumRows() / d;
+  DenseVector v4(stride);
+
+  uc.resize(d);
+  for (int k = 0; k < d; ++k) {
+    for (int i = 0; i < stride; ++i) v4(i) = v5(k * stride + i);
+    uc[k] = basis.CalculatePolynomial(mymesh, c, order_, v4);
+  }
+
+  // set correct origin 
+  uc.set_origin(xc);
+}
+
+
+/* ******************************************************************
+* Calculate boundary degrees of freedom in 2D and 3D.
+****************************************************************** */
+void VEM_NedelecSerendipityType2::CalculateDOFsOnBoundary(
+    const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh, 
+    int c, const std::vector<VectorPolynomial>& ve,
+    const std::vector<VectorPolynomial>& vf, DenseVector& vdof)
+{
+  const auto& edges = mymesh->cell_get_edges(c);
+  int nedges = edges.size();
+
+  std::vector<const WhetStoneFunction*> funcs(2);
+  NumericalIntegration numi(mymesh);
+
+  // number of moments on edges
+  std::vector<double> moments;
+
+  int row(0);
+  for (int n = 0; n < nedges; ++n) {
+    int e = edges[n];
+    double length = mymesh->edge_length(e);
+    const auto& tau = mymesh->edge_vector(e);
+
+    auto poly = ve[n] * tau;
+
+    numi.CalculatePolynomialMomentsEdge(e, poly, order_, moments);
+    for (int k = 0; k < moments.size(); ++k) {
+      vdof(row) = moments[k] / length;
+      row++;
+    }
+  }
+}
+
 }  // namespace WhetStone
 }  // namespace Amanzi
 
