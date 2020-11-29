@@ -69,8 +69,9 @@
       <ParameterList name="schema electric">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="location" type="Array(string)" value="{edge}"/>
-        <Parameter name="method" type="string" value="Nedelec serendipity type2"/>
+        <Parameter name="method" type="string" value="Nedelec serendipity"/>
         <Parameter name="method order" type="int" value="0"/>
+        <Parameter name="type" type="int" value="2"/>
       </ParameterList>
       <ParameterList name="schema magnetic">
         <Parameter name="base" type="string" value="cell"/>

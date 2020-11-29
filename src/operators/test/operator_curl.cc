@@ -27,7 +27,7 @@
 #include "SingleFaceMesh.hh"
 #include "SurfaceCoordinateSystem.hh"
 #include "VectorObjects.hh"
-#include "VEM_NedelecSerendipityType2.hh"
+#include "VEM_NedelecSerendipity.hh"
 #include "VEM_RaviartThomasSerendipity.hh"
 
 // Amanzi::Operators
@@ -73,7 +73,8 @@ void ProjectorRTAccuracy() {
     AnalyticElectromagnetics02 ana(1.0, mesh);
     WhetStone::NumericalIntegration numi(mesh);
 
-    plist.set<int>("method order", order);
+    plist.set<int>("method order", order)
+         .set<int>("type", 2);
     WhetStone::VEM_RaviartThomasSerendipity vem(plist, mesh);
 
     double err1(0.0), err2(0.0), err3(0.0), err4(0.0);
@@ -216,8 +217,9 @@ void ProjectorNDAccuracy() {
     AnalyticElectromagnetics02 ana(1.0, mesh);
     WhetStone::NumericalIntegration numi(mesh);
 
-    plist.set<int>("method order", order);
-    WhetStone::VEM_NedelecSerendipityType2 vem(plist, mesh);
+    plist.set<int>("method order", order)
+         .set<int>("type", 2);
+    WhetStone::VEM_NedelecSerendipity vem(plist, mesh);
 
     double err1(0.0), err2(0.0), err4(0.0);
     WhetStone::DenseMatrix A;
@@ -330,8 +332,9 @@ void PrimaryCurl() {
     AnalyticElectromagnetics05 ana(mesh);
     WhetStone::NumericalIntegration numi(mesh);
 
-    plist.set<int>("method order", order);
-    WhetStone::VEM_NedelecSerendipityType2 vem(plist, mesh);
+    plist.set<int>("method order", order)
+         .set<int>("type", 2);
+    WhetStone::VEM_NedelecSerendipity vem(plist, mesh);
 
     double err(0.0);
     WhetStone::DenseMatrix A;
@@ -377,18 +380,12 @@ void PrimaryCurl() {
       // error
       WhetStone::DenseVector Eh(Eex), Bh(Bex);
       A.Multiply(Eh, Bh, false);
-std::cout << A << std::endl;
-// std::cout << Eh << std::endl;
-// std::cout << Bh << std::endl;
       for (int i = 0; i < Bh.NumRows(); ++i) {
         err += std::pow(Bh(i) - Bex[i], 2.0) * mesh->cell_volume(c);
-std::cout << i << " " << Bh(i) << " exact=" << Bex[i] << std::endl;
       }
-exit(0);
     }
     std::cout << "nx=" << nx << " " << std::sqrt(err) << std::endl;
   }
-exit(0);
 }
 
 
@@ -431,8 +428,9 @@ void DualCurl() {
     AnalyticElectromagnetics05 ana(mesh);
     WhetStone::NumericalIntegration numi(mesh);
 
-    plist.set<int>("method order", order);
-    WhetStone::VEM_NedelecSerendipityType2 vem_nd(plist, mesh);
+    plist.set<int>("method order", order)
+         .set<int>("type", 2);
+    WhetStone::VEM_NedelecSerendipity vem_nd(plist, mesh);
     WhetStone::VEM_RaviartThomasSerendipity vem_rt(plist, mesh);
 
     double err(0.0);

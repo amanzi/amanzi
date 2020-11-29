@@ -24,7 +24,7 @@
 #include "MFD3D_LagrangeSerendipity.hh"
 
 #include "VEM_RaviartThomasSerendipity.hh"
-#include "VEM_NedelecSerendipityType2.hh"
+#include "VEM_NedelecSerendipity.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -44,7 +44,7 @@ RegisteredFactory<MFD3D_LagrangeSerendipity> MFD3D_LagrangeSerendipity::factory_
 RegisteredFactory<DG_Modal> DG_Modal::factory_("dg modal");
 
 RegisteredFactory<VEM_RaviartThomasSerendipity> VEM_RaviartThomasSerendipity::factory_("RaviartThomas serendipity");
-RegisteredFactory<VEM_NedelecSerendipityType2> VEM_NedelecSerendipityType2::factory_("Nedelec serendipity type2");
+RegisteredFactory<VEM_NedelecSerendipity> VEM_NedelecSerendipity::factory_("Nedelec serendipity");
 
 }  // namespace WhetStone
 }  // namespace Amanzi

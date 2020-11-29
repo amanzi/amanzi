@@ -20,7 +20,6 @@
 #include "MFD3D_Electromagnetics.hh"
 #include "Point.hh"
 #include "SuperMap.hh"
-#include "VEM_NedelecSerendipityType2.hh"
 #include "WhetStoneDefs.hh"
 
 // Amanzi::Operators

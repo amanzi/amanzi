@@ -47,7 +47,7 @@ void MagneticDiffusionVEM(
     int nx, int ny, int nz,
     double Xa, double Ya, double Za, double Xb, double Yb, double Zb,
     const std::string& filename,
-    const std::string& method = "Nedelec serendipity type2")
+    const std::string& method = "Nedelec serendipity")
 {
   using namespace Teuchos;
   using namespace Amanzi;

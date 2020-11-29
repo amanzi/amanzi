@@ -39,7 +39,7 @@
 #include "Tensor.hh"
 #include "VectorObjects.hh"
 #include "VectorObjectsUtils.hh"
-#include "VEM_NedelecSerendipityType2.hh"
+#include "VEM_NedelecSerendipity.hh"
 #include "VEM_RaviartThomasSerendipity.hh"
 
 namespace Amanzi {
@@ -48,7 +48,7 @@ namespace WhetStone {
 /* ******************************************************************
 * Constructor parses the parameter list
 ****************************************************************** */
-VEM_NedelecSerendipityType2::VEM_NedelecSerendipityType2(
+VEM_NedelecSerendipity::VEM_NedelecSerendipity(
     const Teuchos::ParameterList& plist,
     const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
   : DeRham_Edge(mesh),
@@ -56,13 +56,14 @@ VEM_NedelecSerendipityType2::VEM_NedelecSerendipityType2(
 {
   // order of the maximum polynomial space
   order_ = plist.get<int>("method order");
+  type_ = plist.get<int>("type");
 }
 
 
 /* ******************************************************************
 * Schema.
 ****************************************************************** */
-std::vector<SchemaItem> VEM_NedelecSerendipityType2::schema() const
+std::vector<SchemaItem> VEM_NedelecSerendipity::schema() const
 {
   std::vector<SchemaItem> items;
   items.push_back(std::make_tuple(AmanziMesh::EDGE, DOF_Type::SCALAR, order_ + 1));
@@ -74,7 +75,7 @@ std::vector<SchemaItem> VEM_NedelecSerendipityType2::schema() const
 /* ******************************************************************
 * VEM scheme:: mass matrix for second-order scheme.
 ****************************************************************** */
-int VEM_NedelecSerendipityType2::L2consistency(
+int VEM_NedelecSerendipity::L2consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
   if (d_ == 2) {
@@ -265,7 +266,7 @@ int VEM_NedelecSerendipityType2::L2consistency(
 /* ******************************************************************
 * Mass matrix for edge-based discretization.
 ****************************************************************** */
-int VEM_NedelecSerendipityType2::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
+int VEM_NedelecSerendipity::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 {
   DenseMatrix N;
 
@@ -280,7 +281,7 @@ int VEM_NedelecSerendipityType2::MassMatrix(int c, const Tensor& K, DenseMatrix&
 /* ******************************************************************
 * Stiffness matrix for edge-based discretization.
 ****************************************************************** */
-int VEM_NedelecSerendipityType2::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A)
+int VEM_NedelecSerendipity::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A)
 {
   DenseMatrix M, C;
 
@@ -293,7 +294,7 @@ int VEM_NedelecSerendipityType2::StiffnessMatrix(int c, const Tensor& T, DenseMa
 * Stiffness matrix: the standard algorithm. Curls in 2D and 3D are
 * defined using exterior face normals.
 ****************************************************************** */
-int VEM_NedelecSerendipityType2::StiffnessMatrix(
+int VEM_NedelecSerendipity::StiffnessMatrix(
     int c, const Tensor& T, DenseMatrix& A, DenseMatrix& M, DenseMatrix& C)
 {
   Teuchos::ParameterList plist;
@@ -336,7 +337,7 @@ int VEM_NedelecSerendipityType2::StiffnessMatrix(
 /* ******************************************************************
 * Curl matrix acts onto the space of fluxes.
 ****************************************************************** */
-void VEM_NedelecSerendipityType2::CurlMatrix(int c, DenseMatrix& C)
+void VEM_NedelecSerendipity::CurlMatrix(int c, DenseMatrix& C)
 {
   Entity_ID_List nodes, fedges;
   std::vector<int> edirs, map;
@@ -447,7 +448,7 @@ void VEM_NedelecSerendipityType2::CurlMatrix(int c, DenseMatrix& C)
 /* ******************************************************************
 * Mass matrix for edge-based discretization.
 ****************************************************************** */
-int VEM_NedelecSerendipityType2::MassMatrixFace(
+int VEM_NedelecSerendipity::MassMatrixFace(
     int f, const Tensor& K, DenseMatrix& M)
 {
   DenseMatrix N, MG;
@@ -469,7 +470,7 @@ int VEM_NedelecSerendipityType2::MassMatrixFace(
 /* ******************************************************************
 * Projector on a mesh face.
 ****************************************************************** */
-void VEM_NedelecSerendipityType2::ProjectorFace_(
+void VEM_NedelecSerendipity::ProjectorFace_(
     int f, const std::vector<VectorPolynomial>& ve,
     const ProjectorType type, const Polynomial* moments, VectorPolynomial& uf)
 {
@@ -496,7 +497,7 @@ void VEM_NedelecSerendipityType2::ProjectorFace_(
 /* ******************************************************************
 * Collection of face-based objects
 ****************************************************************** */
-void VEM_NedelecSerendipityType2::L2ProjectorsOnFaces_(
+void VEM_NedelecSerendipity::L2ProjectorsOnFaces_(
     int c, const Tensor& K, const Entity_ID_List& faces,
     std::vector<WhetStone::DenseMatrix>& vL2f, 
     std::vector<WhetStone::DenseMatrix>& vMGf,
@@ -545,7 +546,7 @@ void VEM_NedelecSerendipityType2::L2ProjectorsOnFaces_(
 /* ******************************************************************
 * Projector on edge is inverse of the Gramm matrix.
 ****************************************************************** */
-void VEM_NedelecSerendipityType2::L2ProjectorOnEdge_(
+void VEM_NedelecSerendipity::L2ProjectorOnEdge_(
     WhetStone::DenseMatrix& L2e, int order)
 {
   L2e.Reshape(order + 1, order + 1);
@@ -572,7 +573,7 @@ void VEM_NedelecSerendipityType2::L2ProjectorOnEdge_(
 /* ******************************************************************
 * Compute face integrals using L2 projection
 ****************************************************************** */
-void VEM_NedelecSerendipityType2::L2consistency3DFace_Method1_(
+void VEM_NedelecSerendipity::L2consistency3DFace_Method1_(
     const VectorPolynomial& p1,
     const VectorPolynomial& xyz,
     const SurfaceCoordinateSystem& coordsys,
@@ -619,7 +620,7 @@ void VEM_NedelecSerendipityType2::L2consistency3DFace_Method1_(
 /* ******************************************************************
 * Compute face integrals using integration by parts and L2 projection
 ****************************************************************** */
-void VEM_NedelecSerendipityType2::L2consistency3DFace_Method2_(
+void VEM_NedelecSerendipity::L2consistency3DFace_Method2_(
     int f,
     const VectorPolynomial& p1,
     const SurfaceCoordinateSystem& coordsys,
@@ -743,7 +744,7 @@ void VEM_NedelecSerendipityType2::L2consistency3DFace_Method2_(
 /* ******************************************************************
 * Mass matrix for edge-based discretization.
 ****************************************************************** */
-void VEM_NedelecSerendipityType2::MatrixOfDofs_(
+void VEM_NedelecSerendipity::MatrixOfDofs_(
     int c, const Entity_ID_List& edges,
     const Basis_Regularized& basis,
     const NumericalIntegration& numi,
@@ -787,7 +788,7 @@ void VEM_NedelecSerendipityType2::MatrixOfDofs_(
 /* ******************************************************************
 * High-order consistency condition for the 2D mass matrix. 
 ****************************************************************** */
-int VEM_NedelecSerendipityType2::L2consistency2D_(
+int VEM_NedelecSerendipity::L2consistency2D_(
     const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh,
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, DenseMatrix& MG)
 {
@@ -870,7 +871,7 @@ int VEM_NedelecSerendipityType2::L2consistency2D_(
 /* ******************************************************************
 * Generic projector on space of polynomials of order k in cell c.
 ****************************************************************** */
-void VEM_NedelecSerendipityType2::ProjectorCell_(
+void VEM_NedelecSerendipity::ProjectorCell_(
     const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh, 
     int c, const std::vector<VectorPolynomial>& ve,
     const std::vector<VectorPolynomial>& vf,
@@ -952,7 +953,7 @@ void VEM_NedelecSerendipityType2::ProjectorCell_(
 /* ******************************************************************
 * Calculate boundary degrees of freedom in 2D and 3D.
 ****************************************************************** */
-void VEM_NedelecSerendipityType2::CalculateDOFsOnBoundary(
+void VEM_NedelecSerendipity::CalculateDOFsOnBoundary(
     const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh, 
     int c, const std::vector<VectorPolynomial>& ve,
     const std::vector<VectorPolynomial>& vf, DenseVector& vdof)

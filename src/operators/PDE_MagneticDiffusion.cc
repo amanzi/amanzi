@@ -20,7 +20,7 @@
 // Amanzi
 #include "errors.hh"
 #include "MFD3D_Electromagnetics.hh"
-#include "VEM_NedelecSerendipityType2.hh"
+#include "VEM_NedelecSerendipity.hh"
 
 // Amanzi::Operators
 #include "PDE_MagneticDiffusion.hh"
@@ -47,7 +47,7 @@ void PDE_MagneticDiffusion::UpdateMatrices(
     if (tmp != Teuchos::null) {
       tmp->StiffnessMatrix(c, Kc, Acell, Mcell, Ccell);
     } else {
-      auto tmp2 = Teuchos::rcp_dynamic_cast<WhetStone::VEM_NedelecSerendipityType2>(mfd_);
+      auto tmp2 = Teuchos::rcp_dynamic_cast<WhetStone::VEM_NedelecSerendipity>(mfd_);
       tmp2->StiffnessMatrix(c, Kc, Acell, Mcell, Ccell);
     }
 

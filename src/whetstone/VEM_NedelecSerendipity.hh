@@ -13,8 +13,8 @@
   freedom are moments on edges, faces and incide cell.
 */
 
-#ifndef AMANZI_VEM_NEDELEC_SERENDIPITY_TYPE2_HH_
-#define AMANZI_VEM_NEDELEC_SERENDIPITY_TYPE2_HH_
+#ifndef AMANZI_VEM_NEDELEC_SERENDIPITY_HH_
+#define AMANZI_VEM_NEDELEC_SERENDIPITY_HH_
 
 #include "Teuchos_RCP.hpp"
 
@@ -36,11 +36,11 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class VEM_NedelecSerendipityType2 : public DeRham_Edge { 
+class VEM_NedelecSerendipity : public DeRham_Edge { 
  public:
-  VEM_NedelecSerendipityType2(const Teuchos::ParameterList& plist,
+  VEM_NedelecSerendipity(const Teuchos::ParameterList& plist,
                               const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh);
-  ~VEM_NedelecSerendipityType2() {};
+  ~VEM_NedelecSerendipity() {};
 
   // required methods
   // -- schema
@@ -135,10 +135,11 @@ class VEM_NedelecSerendipityType2 : public DeRham_Edge {
   using MFD3D::d_;
 
  private:
+  int type_;
   PolynomialOnMesh integrals_;
 
  private:
-  static RegisteredFactory<VEM_NedelecSerendipityType2> factory_;
+  static RegisteredFactory<VEM_NedelecSerendipity> factory_;
 };
 
 }  // namespace WhetStone

@@ -33,7 +33,7 @@
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
 #include "Polynomial.hh"
-#include "VEM_NedelecSerendipityType2.hh"
+#include "VEM_NedelecSerendipity.hh"
 
 
 /* **************************************************************** */
@@ -62,7 +62,8 @@ TEST(PROJECTORS_SQUARE_CR) {
   }
 
   Teuchos::ParameterList plist;
-  plist.set<int>("method order", 1);
+  plist.set<int>("method order", 1)
+       .set<int>("type", 2);
 
   MFD3D_CrouzeixRaviartAnyOrder mfd_ho(plist, mesh);
   Polynomial moments(2, 0);  // trivial polynomials p=0
@@ -1036,8 +1037,9 @@ void Projector3DNedelecSerendipitySurface(const std::string& filename)
  
   int c(0);
   Teuchos::ParameterList plist;
-  plist.set<int>("method order", 1);
-  VEM_NedelecSerendipityType2 vem(plist, mesh);
+  plist.set<int>("method order", 1)
+       .set<int>("type", 2);
+  VEM_NedelecSerendipity vem(plist, mesh);
 
   std::vector<int> edirs;
   Entity_ID_List faces, edges, nodes;
@@ -1115,8 +1117,9 @@ void Projector3DNedelecSerendipity(const std::string& filename)
  
   int c(0);
   Teuchos::ParameterList plist;
-  plist.set<int>("method order", 1);
-  VEM_NedelecSerendipityType2 vem(plist, mesh);
+  plist.set<int>("method order", 1)
+       .set<int>("type", 2);
+  VEM_NedelecSerendipity vem(plist, mesh);
 
   std::vector<int> edirs;
   Entity_ID_List edges;

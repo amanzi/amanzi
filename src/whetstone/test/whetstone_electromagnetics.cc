@@ -23,7 +23,7 @@
 
 #include "MFD3D_Electromagnetics.hh"
 #include "Tensor.hh"
-#include "VEM_NedelecSerendipityType2.hh"
+#include "VEM_NedelecSerendipity.hh"
 
 
 /* ******************************************************************
@@ -51,9 +51,10 @@ TEST(MASS_MATRIX_2D) {
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/two_cell2.exo", request_faces, request_edges); 
  
   Teuchos::ParameterList plist;
-  plist.set<int>("method order", 0);
+  plist.set<int>("method order", 0)
+       .set<int>("type", 2);
   MFD3D_Electromagnetics mfd(plist, mesh);
-  VEM_NedelecSerendipityType2 vem(plist, mesh);
+  VEM_NedelecSerendipity vem(plist, mesh);
 
   int c = 0;
   AmanziMesh::Entity_ID_List edges;
@@ -164,10 +165,11 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells; ++c) {
     Teuchos::ParameterList plist;
-    plist.set<int>("method order", 0);
+    plist.set<int>("method order", 0)
+         .set<int>("type", 2);
 
     MFD3D_Electromagnetics mfd(plist, mesh);
-    VEM_NedelecSerendipityType2 vem(plist, mesh);
+    VEM_NedelecSerendipity vem(plist, mesh);
 
     AmanziMesh::Entity_ID_List edges;
     mesh->cell_get_edges(c, &edges);
@@ -402,10 +404,11 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells; ++c) {
     Teuchos::ParameterList plist;
-    plist.set<int>("method order", 0);
+    plist.set<int>("method order", 0)
+         .set<int>("type", 2);
 
     MFD3D_Electromagnetics mfd(plist, mesh);
-    VEM_NedelecSerendipityType2 vem(plist, mesh);
+    VEM_NedelecSerendipity vem(plist, mesh);
 
     AmanziMesh::Entity_ID_List edges;
     mesh->cell_get_edges(c, &edges);
