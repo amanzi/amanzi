@@ -41,7 +41,7 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Vector_type>
   }
 
   void UpdatePreconditioner(const Teuchos::RCP<const Vector_type>& up) {
-    h_ = Teuchos::rcp(new Vector_type(*up));
+    h_ = Teuchos::rcp(new Vector_type(up->getMap()));
 
     if (exact_jacobian_) {
       for (int c = 0; c != up->getLocalLength(); ++c) {

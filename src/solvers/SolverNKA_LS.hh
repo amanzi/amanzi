@@ -159,13 +159,13 @@ class SolverNKA_LS : public Solver<Vector, VectorSpace> {
       du = du_;
       u0 = u0_;
       if (r == Teuchos::null) {
-        r = Teuchos::rcp(new Vector(*u));
+        r = Teuchos::rcp(new Vector(u->getMap()));
       }
-      *u0 = *u;
+      u0->assign(*u);
     }
     
     double operator()(double x) {
-      *u = *u0;
+      u->assign(*u0);
       u->update(-x, *du, 1.);
       fn->ChangedSolution();
       fn->Residual(u, r);
@@ -269,10 +269,10 @@ int SolverNKA_LS<Vector, VectorSpace>::NKA_LS_(const Teuchos::RCP<Vector>& u) {
   int db_write_iter = 0;
 
   // create storage
-  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> du = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> du_tmp = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> u_prev = Teuchos::rcp(new Vector(*u));
+  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(u->getMap()));
+  Teuchos::RCP<Vector> du = Teuchos::rcp(new Vector(u->getMap()));
+  Teuchos::RCP<Vector> du_tmp = Teuchos::rcp(new Vector(u->getMap()));
+  Teuchos::RCP<Vector> u_prev = Teuchos::rcp(new Vector(u->getMap()));
 
   // variables to monitor the progress of the nonlinear solver
   double error(0.0), previous_error(0.0);
@@ -344,7 +344,7 @@ int SolverNKA_LS<Vector, VectorSpace>::NKA_LS_(const Teuchos::RCP<Vector>& u) {
     // check the full correction
     bool good_iterate = false;
     bool admissible_iterate = false;
-    *u_prev = *u;
+    u_prev->assign(*u);
     previous_error = error;
     previous_l2_error = l2_error;
     double alpha = 1.;
@@ -396,12 +396,12 @@ int SolverNKA_LS<Vector, VectorSpace>::NKA_LS_(const Teuchos::RCP<Vector>& u) {
 
       // find an admissible endpoint alpha, starting from ten times the full correction
       alpha = max_alpha_;
-      *u = *u_prev;
+      u->assign(*u_prev);
       u->update(-alpha, *du, 1.0);
       fn_->ChangedSolution();
       while (!fn_->IsAdmissible(u)) {
         alpha *= 0.3;
-        *u = *u_prev;
+        u->assign(*u_prev);
         u->update(-alpha, *du, 1.);
         fn_->ChangedSolution();
       }

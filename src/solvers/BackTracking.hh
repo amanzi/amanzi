@@ -60,8 +60,8 @@ int BackTracking<Vector>::Bisection(double f0, const Teuchos::RCP<Vector> u0, Te
   initial_residual_ = f0;
   final_residual_ = f0;
 
-  Teuchos::RCP<Vector> u1 = Teuchos::rcp(new Vector(*u0));
-  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u0));
+  Teuchos::RCP<Vector> u1 = Teuchos::rcp(new Vector(u0->getMap()));
+  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(u0->getMap()));
 
   u1->update(1.0, *u0, -1.0, *du, 0.0);
   
@@ -103,7 +103,7 @@ template<class Vector>
 int BackTracking<Vector>::Bisection(const Teuchos::RCP<Vector> u0, Teuchos::RCP<Vector> du)
 {
   double f0;
-  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u0));
+  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(u0->getMap()));
 
   fn_->Residual(u0, r);
   f0 = r->norm2();
@@ -121,7 +121,7 @@ int BackTracking<Vector>::LineSearch(
     Vector& xold, double fold, Vector& g, Vector& p,
     Vector& x, double& f, double step_max) 
 {
-  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(x));
+  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(x.getMap()));
 
   // alpha ensures sufficient decrease in function value
   // tolx is the convergence criterion on x.

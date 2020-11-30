@@ -55,6 +55,7 @@ W.Fichtner, Improving accuracy of GMRES with deflated restarting, 2007 SISC.
 #include "Teuchos_RCP.hpp"
 #include "errors.hh"
 
+#include "AmanziDebug.hh"
 #include "DenseMatrix.hh"
 #include "InverseIterativeMethod.hh"
 #include "InverseDefs.hh"
@@ -190,10 +191,17 @@ template<class Matrix,class Preconditioner,class Vector,class VectorSpace>
 int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
-  Vector w(f.getMap()), r(f.getMap()), p(f.getMap());  // construct empty vectors
+  Vector w(f, Teuchos::Copy);
+  Vector r(f, Teuchos::Copy);
+  Vector p(f, Teuchos::Copy);
+
+  // Vector w(f.getMap()), r(f.getMap()), p(f.getMap()); // construct empty vectors
+  // r.assign(f);
+  // p.assign(f);
+  // w.assign(f);
 
   double s[krylov_dim_ + 1], cs[krylov_dim_ + 1], sn[krylov_dim_ + 1];
-  WhetStone::DenseMatrix<> T(krylov_dim_ + 1, krylov_dim_);
+  WhetStone::DenseMatrix<> T(krylov_dim_ + 1, krylov_dim_); T = 0.;
   num_itrs_inner_ = 0;
 
   // h_->applyInverse(f, r);
@@ -205,11 +213,15 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
   // and r = H (f - M x)  for the left preconditioner
   if (left_pc_) {
     m_->apply(x, p);
+    //std::cout << "GMRES: p0 = " << Debug::get0(p) << std::endl;
     p.update(1.0, f, -1.0);
     h_->applyInverse(p, r);
+    //std::cout << "GMRES: r0 = " << Debug::get0(r) << std::endl;
   } else {
+    //std::cout << "GMRES: x0 = " << Debug::get0(x) << std::endl;
     m_->apply(x, r);
     r.update(1.0, f, -1.0);
+    //std::cout << "GMRES: r0 = " << Debug::get0(r) << std::endl;
   }
 
   double rnorm0 = r.norm2();
@@ -231,12 +243,15 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
 
   v_[0] = Teuchos::rcp(new Vector(r, Teuchos::DataAccess::Copy));
   v_[0]->update(0.0, r, 1.0 / rnorm0);
+  // v_[0] = Teuchos::rcp(new Vector(r.getMap()));
+  // v_[0]->update(1.0 / rnorm0, r, 0.);
 
   s[0] = rnorm0;
 
   for (int i = 0; i < krylov_dim_; i++) {
     // calculate H M v_i for the left preconditioner
     //       and M H v_i for the right preconditioner
+    //std::cout << "GMRES: v" << i << " = " << Debug::get0(*(v_[i])) << std::endl;
     if (left_pc_) {
       m_->apply(*(v_[i]), p);
       h_->applyInverse(p, w);
@@ -244,6 +259,7 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
       h_->applyInverse(*(v_[i]), p);
       m_->apply(p, w);
     }
+    //std::cout << "GMRES: w" << i << " = " << Debug::get0(w) << std::endl;
 
     double tmp(0.0);
     for (int k = 0; k <= i; k++) {  // Arnoldi algorithm
@@ -254,6 +270,7 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
     tmp = w.norm2();
     T(i + 1, i) = tmp;
     s[i + 1] = 0.0;
+    //std::cout << "GMRES: 2nd w" << i << " = " << Debug::get0(w) << std::endl;
 
     for (int k = 0; k < i; k++) {
       ApplyGivensRotation_(T(k, i), T(k + 1, i), cs[k], sn[k]);
@@ -274,7 +291,13 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
 
     int ierr = CheckConvergence_(residual_, fnorm);
     if (ierr != 0) {
+      //std::cout << "GMRES: CS x = " << Debug::get0(x) << "," << x.normInf() << std::endl;
+      //std::cout << "GMRES: CS p = " << Debug::get0(p) << "," << p.normInf() << std::endl;
+      //std::cout << "GMRES: CS r = " << Debug::get0(r) << "," << r.normInf() << std::endl;
       ComputeSolution_(x, i, T, s, p, r);  // vector s is overwritten
+      //std::cout << "GMRES: CS2 x = " << Debug::get0(x) << "," << x.normInf() << std::endl;
+      //std::cout << "GMRES: CS2 p = " << Debug::get0(p) << "," << p.normInf() << std::endl;
+      //std::cout << "GMRES: CS2 r = " << Debug::get0(r) << "," << r.normInf() << std::endl;
       return ierr;
     }
 
@@ -299,6 +322,12 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
     }
 
     if (i < krylov_dim_ - 1) {
+      // v_[i + 1] = Teuchos::rcp(new Vector(w.getMap()));
+      // if (tmp != 0.0) {  // zero occurs in exact arithmetic
+      //   v_[i + 1]->update(1.0 / tmp, w, 0.);
+      // } else {
+      //   v_[i + 1]->assign(w);
+      // }
       v_[i + 1] = Teuchos::rcp(new Vector(w, Teuchos::DataAccess::Copy));
       if (tmp != 0.0) {  // zero occurs in exact arithmetic
         v_[i + 1]->update(0.0, r, 1.0 / tmp);
@@ -318,7 +347,11 @@ template<class Matrix,class Preconditioner,class Vector,class VectorSpace>
 int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_Deflated_(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
-  Vector p(f.getMap()), r(f.getMap()), w(f.getMap());
+  Vector w(f, Teuchos::Copy);
+  Vector r(f, Teuchos::Copy);
+  Vector p(f, Teuchos::Copy);
+
+  // Vector p(f.getMap()), r(f.getMap()), w(f.getMap());
   WhetStone::DenseVector<> d(krylov_dim_ + 1), g(krylov_dim_);
   WhetStone::DenseMatrix<> T(krylov_dim_ + 1, krylov_dim_);
 
@@ -360,6 +393,10 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_Deflat
   if (num_ritz_ == 0) {
     v_[0] = Teuchos::rcp(new Vector(r, Teuchos::DataAccess::Copy));
     v_[0]->update(0.0, r, 1.0 / rnorm0);
+
+    // v_[0] = Teuchos::rcp(new Vector(r.getMap()));
+    // v_[0]->update(1.0 / rnorm0, r, 0.);
+
     d(0) = rnorm0;
   } else {
     for (int i = 0 ; i <= num_ritz_; ++i) {
@@ -400,6 +437,8 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_Deflat
 
     v_[i + 1] = Teuchos::rcp(new Vector(w, Teuchos::DataAccess::Copy));
     v_[i + 1]->update(0.0, r, 1.0 / beta);
+    // v_[i + 1] = Teuchos::rcp(new Vector(w.getMap()));
+    // v_[i + 1]->update(1.0 / beta, w, 0.);
   }
 
   // Solve the least-square problem min_d ||T d - c||.
@@ -481,7 +520,7 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_Deflat
   }
 
   for (int i = 0; i <= num_ritz_; ++i) {
-    *(v_[i]) = *(vv[i]);
+    v_[i]->assign(*(vv[i]));
   }
 
   // Calculate modified Hessenberg matrix Hu = Vr_{nr+1}^T * T * Vr_nr
@@ -565,10 +604,14 @@ void IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::ComputeSolu
     Vector& p, Vector& r) const
 {
   for (int i = k; i >= 0; i--) {
+    //std::cout << "s(" << i << ") = " << s[i] << ",T(" << i << "," << i << ") = " << T(i,i);
     s[i] /= T(i, i);
+    //std::cout << " new si = " << s[i] << std::endl;
 
     for (int j = i - 1; j >= 0; j--) {
+      //std::cout << "s(" << j << ") = " << s[j] << ",T(" << j << "," << i << ") = " << T(j,i);
       s[j] -= T(j, i) * s[i];
+      //std::cout << " new sj = " << s[j] << std::endl;
     }
   }
 
@@ -581,6 +624,7 @@ void IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::ComputeSolu
   } else {
     p.putScalar(0.0);
     for (int j = 0; j <= k; j++) {
+      //std::cout << "GMRES: CS (sj = " << s[j] <<") v" << j << " = " << Debug::get0(*(v_[j])) << std::endl;
       p.update(s[j], *(v_[j]), 1.0);
     }
     h_->applyInverse(p, r);

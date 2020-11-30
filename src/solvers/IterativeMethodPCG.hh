@@ -108,7 +108,7 @@ int IterativeMethodPCG<Matrix,Preconditioner,Vector,VectorSpace>::PCG_(
  Teuchos::OSTab tab = vo_->getOSTab();
 
   Vector r(f.getMap());
-  Vector p(f.getMap()); 
+  Vector p(f.getMap());
   Vector v(f.getMap());
   num_itrs_ = 0;
 

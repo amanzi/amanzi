@@ -100,7 +100,7 @@
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="HypreAMG">
-      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="cycle applications" type="int" value="2"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
@@ -112,15 +112,23 @@
     </ParameterList>
 
     <ParameterList name="ifpack2: ILUT">
-      <Parameter name="preconditioner type" type="string" value="ifpack2: ILUT"/>
+      <Parameter name="preconditioning method" type="string" value="ifpack2: ILUT"/>
       <ParameterList name="ifpack2: ILUT parameters">
        <Parameter name="fact: ilut level-of-fill" type="double" value="10.0"/>
        <Parameter name="fact: drop tolerance" type="double" value="0.0"/>
       </ParameterList>
     </ParameterList>
 
+    <ParameterList name="ifpack2: RILUK">
+      <Parameter name="preconditioning method" type="string" value="ifpack2: RILUK"/>
+      <ParameterList name="ifpack2: RILUK parameters">
+       <Parameter name="fact: ilut level-of-fill" type="double" value="10.0"/>
+       <Parameter name="fact: drop tolerance" type="double" value="0.0"/>
+      </ParameterList>
+    </ParameterList>
+    
     <ParameterList name="ifpack2: SCHWARZ">
-      <Parameter name="preconditioner type" type="string" value="ifpack2: SCHWARZ"/>
+      <Parameter name="preconditioning method" type="string" value="ifpack2: SCHWARZ"/>
       <ParameterList name="ifpack2: SCHWARZ parameters">
         <Parameter name="schwarz: combine mode" type="string" value="add"/>
         <Parameter name="schwarz: overlap level" type="int" value="1"/>
@@ -136,11 +144,11 @@
     </ParameterList>
     
     <ParameterList name="identity">
-      <Parameter name="preconditioner type" type="string" value="identity"/>
+      <Parameter name="preconditioning method" type="string" value="identity"/>
     </ParameterList>
 
     <ParameterList name="diagonal">
-      <Parameter name="preconditioner type" type="string" value="diagonal"/>
+      <Parameter name="preconditioning method" type="string" value="diagonal"/>
     </ParameterList>
   </ParameterList>
 

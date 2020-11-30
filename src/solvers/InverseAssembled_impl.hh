@@ -45,8 +45,8 @@ void inline
 copyToSuperVector<Vector_type>(const Teuchos::RCP<const Operators::SuperMap>& smap,
         const Vector_type& v,
         Teuchos::RCP<Vector_type>& sv) {
+  // note this is a shared copy -- they have the same underlying view!
   sv = Teuchos::rcp(new Vector_type(v));
-  *sv = v;
 }
 
 //
@@ -89,8 +89,8 @@ typename std::enable_if<is_assembled<Operator>::value,
                                    Teuchos::RCP<Vector_type>,
                                    Teuchos::RCP<Vector_type>>>::type
 getSuperMap(Operator& m) {
-  auto x = Teuchos::rcp(new Vector_type(m.DomainMap()));
-  auto y = Teuchos::rcp(new Vector_type(m.RangeMap()));
+  auto x = Teuchos::rcp(new Vector_type(m.getDomainMap()));
+  auto y = Teuchos::rcp(new Vector_type(m.getRangeMap()));
   return std::make_tuple(Teuchos::null, x, y);
 }
 

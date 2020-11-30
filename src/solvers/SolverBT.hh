@@ -134,13 +134,13 @@ class SolverBT : public Solver<Vector,VectorSpace> {
       du = du_;
       u0 = u0_;
       if (r == Teuchos::null) {
-        r = Teuchos::rcp(new Vector(*u));
+        r = Teuchos::rcp(new Vector(u->getMap()));
       }
-      *u0 = *u;
+      u0->assign(*u);
     }
     
     double operator()(double x) {
-      *u = *u0;
+      u->assign(*u0);
       u->update(-x, *du, 1.);
       fn->ChangedSolution();
       fn->Residual(u, r);
@@ -228,10 +228,10 @@ int
 SolverBT<Vector,VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
 {
   // create storage
-  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> r_end = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> du = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> u0 = Teuchos::rcp(new Vector(*u));
+  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(u->getMap()));
+  Teuchos::RCP<Vector> r_end = Teuchos::rcp(new Vector(u->getMap()));
+  Teuchos::RCP<Vector> du = Teuchos::rcp(new Vector(u->getMap()));
+  Teuchos::RCP<Vector> u0 = Teuchos::rcp(new Vector(u->getMap()));
 
   // variables to monitor the progress of the nonlinear solver
   double error(0.0), previous_error(0.0);
@@ -289,7 +289,7 @@ SolverBT<Vector,VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
     fn_->ChangedSolution();
     while (!fn_->IsAdmissible(u)) {
       endpoint *= 0.1;
-      *u = *u0;
+      u->assign(*u0);
       u->update(-endpoint, *du, 1.);
       fn_->ChangedSolution();
     }
@@ -313,7 +313,7 @@ SolverBT<Vector,VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
     }
 
     // update the correction
-    *u = *u0;
+    u->assign(*u0);
     u->update(-result.first, *du, 1.);
     fn_->ChangedSolution();
 

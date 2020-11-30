@@ -213,9 +213,9 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
   pc_updates_ = 0;
 
   // create storage
-  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> du = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> du_tmp = Teuchos::rcp(new Vector(*u));
+  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(u->getMap()));
+  Teuchos::RCP<Vector> du = Teuchos::rcp(new Vector(u->getMap()));
+  Teuchos::RCP<Vector> du_tmp = Teuchos::rcp(new Vector(u->getMap()));
 
   // variables to monitor the progress of the nonlinear solver
   double error(0.0), previous_error(0.0), l2_error(0.0);
@@ -269,17 +269,17 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
     fn_->ApplyPreconditioner(r, du_tmp);
-    // *du_tmp = *r;
+    // du_tmp->assign(*r);
 
     // Calculate the accelerated correction.
     if (num_itrs_ <= aa_lag_space_) {
       // Lag the AA space, just use the PC'd update.
-      *du = *du_tmp;
+      du->assign(*du_tmp);
     } else {
       if (num_itrs_ <= aa_lag_iterations_) {
         // Lag AA's iteration, but update the space with this Jacobian info.
         aa_->Correction(*du_tmp, *du, u.ptr());
-        *du = *du_tmp;
+        du->assign(*du_tmp);
       } else {
         // Take the standard AA correction.
         aa_->Correction(*du_tmp, *du, u.ptr());

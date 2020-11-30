@@ -1,7 +1,7 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
@@ -298,10 +298,10 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
   pc_updates_ = 0;
 
   // create storage
-  Teuchos::RCP<Vector> res = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> du_nka = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> du_pic = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> u_precorr = Teuchos::rcp(new Vector(*u));
+  Teuchos::RCP<Vector> res = Teuchos::rcp(new Vector(u->getMap()));
+  Teuchos::RCP<Vector> du_nka = Teuchos::rcp(new Vector(u->getMap()));
+  Teuchos::RCP<Vector> du_pic = Teuchos::rcp(new Vector(u->getMap()));
+  Teuchos::RCP<Vector> u_precorr = Teuchos::rcp(new Vector(u->getMap()));
 
   // variables to monitor the progress of the nonlinear solver
   double error(0.), previous_error(0.);
@@ -319,7 +319,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
   // Evaluate error
   error = fn_->ErrorNorm(u, res);
   db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_nka.ptr());
-  
+
   residual_ = error;
   l2_error = res->norm2();
 
@@ -407,7 +407,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
         if (use_aa_) aa_->Restart();
         else nka_->Restart();
         nka_restarted = true;
-        
+
       }
     }
 
@@ -416,7 +416,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
     if (num_itrs_ > backtrack_lag_ && num_itrs_ < last_backtrack_iter_ &&
         hacked != FnBaseDefs::CORRECTION_MODIFIED_LAG_BACKTRACKING) {
       bool good_step = false;
-      *u_precorr = *u;
+      u_precorr->assign(*u);
       previous_error = error;
       previous_l2_error = l2_error;
 
@@ -437,7 +437,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
           // Evalute error
           error = fn_->ErrorNorm(u, res);
           db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_nka.ptr());
-          
+
           residual_ = error;
           l2_error = res->norm2();
           if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
@@ -473,7 +473,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
           // unless this is NKA itr 1, in which case the NKA update IS the
           // Picard update, so we can just copy over the NKA hacked version.
           if (nka_itr == 1) {
-            *du_pic = *du_nka;
+            du_pic->assign(*du_nka);
           } else {
             hacked = fn_->ModifyCorrection(res, u, du_pic);
 
@@ -526,7 +526,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
           total_backtrack++;
 
           // apply the correction
-          *u = *u_precorr;
+          u->assign(*u_precorr);
           u->update(-backtrack_alpha, *du_pic, 1.);
           fn_->ChangedSolution();
 
@@ -542,7 +542,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
             // Evalute error
             error = fn_->ErrorNorm(u, res);
             db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_pic.ptr());
-            
+
             residual_ = error;
             l2_error = res->norm2();
             if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
@@ -608,7 +608,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
         } else {
           db_->WriteVector<Vector>(db_write_iter++, *res, u.ptr(), du_pic.ptr());
         }
-        
+
         residual_ = error;
         l2_error = res->norm2();
         if (vo_->os_OK(Teuchos::VERB_LOW)) {

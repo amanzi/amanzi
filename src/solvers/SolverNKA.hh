@@ -94,6 +94,8 @@ especially with an approximate Jacobian.
 #include "VerboseObject.hh"
 #include "ResidualDebugger.hh"
 
+#include "AmanziDebug.hh"
+
 #include "Solver.hh"
 #include "SolverFnBase.hh"
 #include "SolverDefs.hh"
@@ -260,9 +262,9 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
   pc_updates_ = 0;
 
   // create storage
-  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> du = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> du_tmp = Teuchos::rcp(new Vector(*u));
+  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(u->getMap()));
+  Teuchos::RCP<Vector> du = Teuchos::rcp(new Vector(u->getMap()));
+  Teuchos::RCP<Vector> du_tmp = Teuchos::rcp(new Vector(u->getMap()));
 
   // variables to monitor the progress of the nonlinear solver
   double error(0.0), previous_error(0.0), l2_error(0.0);
@@ -282,6 +284,7 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
 
     // Evaluate the nonlinear function.
     fun_calls_++;
+    std::cout << "NKA::Solve u = " << Debug::get0(*u) << std::endl;
     fn_->Residual(u, r);
     db_->WriteVector<Vector>(db_write_iter++, *r, u.ptr(), du.ptr());
 
@@ -356,12 +359,12 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
     // Calculate the accelerated correction.
     if (num_itrs_ <= nka_lag_space_) {
       // Lag the NKA space, just use the PC'd update.
-      *du = *du_tmp;
+      du->assign(*du_tmp);
     } else {
       if (num_itrs_ <= nka_lag_iterations_) {
         // Lag NKA's iteration, but update the space with this Jacobian info.
         nka_->Correction(*du_tmp, *du, du.ptr());
-        *du = *du_tmp;
+        du->assign(*du_tmp);
       } else {
         // Take the standard NKA correction.
         nka_->Correction(*du_tmp, *du, du.ptr());

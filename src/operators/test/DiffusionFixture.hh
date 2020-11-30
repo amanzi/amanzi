@@ -32,9 +32,7 @@
 #include "IterativeMethodGMRES.hh"
 #include "IterativeMethodNKA.hh"
 #include "IterativeMethodPCG.hh"
-//#include "LinearOperatorPCG.hh"
-//#include "LinearOperatorGMRES.hh"
-//#include "LinearOperatorNKA.hh"
+
 #include "Tensor.hh"
 
 
@@ -207,6 +205,7 @@ struct DiffusionFixture {
     // create preconditoner using the base operator class
     auto slist = Teuchos::sublist(Teuchos::sublist(plist, "preconditioners"), pc_name);
     global_op->set_inverse_parameters(*slist);
+    global_op->initializeInverse();
 
     if (symmetric) {
       Teuchos::ParameterList lop_list = plist->sublist("solvers")
@@ -219,6 +218,8 @@ struct DiffusionFixture {
       solver = Teuchos::rcp(new AmanziSolvers::IterativeMethodGMRES<Operators::Operator,Operators::Operator, CompositeVector, CompositeSpace>());
       solver->set_inverse_parameters(lop_list);
     }
+    solver->set_matrix(global_op);
+    solver->initializeInverse();
 
     CompositeVectorSpace flux_space;
     flux_space.SetMesh(mesh)->SetGhosted(true)->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
@@ -236,9 +237,9 @@ struct DiffusionFixture {
       const auto& xc = mesh->cell_centroid(c);
       rhs_c(c,0) += ana->source_exact(xc, 0.0) * mesh->cell_volume(c);
     }
-    
     op->ApplyBCs(true, true, true);
-    global_op->initializeInverse();
+    global_op->computeInverse();
+    solver->computeInverse();
 
     // if (symmetric) {
     //   // Test SPD properties of the preconditioner.

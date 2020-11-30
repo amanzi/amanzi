@@ -120,7 +120,7 @@ void inline
 InverseIterativeMethod<Matrix,Preconditioner,Vector,VectorSpace>::set_inverse_parameters(
     Teuchos::ParameterList& plist)
 {
-  std::string vo_name = this->name() + "::" + this->MethodName_();
+  std::string vo_name = this->MethodName_(); //this->name() + "::" + this->MethodName_();
   vo_ = Teuchos::rcp(new VerboseObject(vo_name, plist));
 
   tol_ = plist.template get<double>("error tolerance", 1e-16);

@@ -1,7 +1,7 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
@@ -61,14 +61,14 @@ class MatrixJF {
  public:
   using Vector_t = Vector;
   using VectorSpace_t = VectorSpace;
-  
+
   MatrixJF() {};  // default constructor for LinOp usage
 
   MatrixJF(Teuchos::ParameterList& plist,
            const Teuchos::RCP<SolverFnBase<Vector> > fn,
            const Teuchos::RCP<const VectorSpace>& map) :
       plist_(plist),
-      fn_(fn), 
+      fn_(fn),
       map_(map)
   {
     r0_ = Teuchos::rcp(new Vector(map_));
@@ -114,7 +114,7 @@ int
 MatrixJF<Vector,VectorSpace>::apply(const Vector& x, Vector& b) const
 {
   Teuchos::RCP<Vector> r1 = Teuchos::rcp(new Vector(map_));
- 
+
   double eps = calculateEpsilon_(*u0_, x);
 
   // evaluate r1 = f(u0 + eps*x)
@@ -123,7 +123,7 @@ MatrixJF<Vector,VectorSpace>::apply(const Vector& x, Vector& b) const
   fn_->Residual(u0_, r1);
 
   // evaluate Jx = (r1 - r0) / eps
-  b = *r1;
+  b.assign(*r1);
   b.update(-1.0/eps, *r0_, 1.0/eps);
 
   // revert to old u0
@@ -159,17 +159,17 @@ double MatrixJF<Vector,VectorSpace>::calculateEpsilon_(const Vector& u, const Ve
   // simple algorithm eqn 14 from Knoll and Keyes
   if (method_name_ == "Knoll-Keyes") {
     double xinf = x.normInf();
-    
+
     if (xinf > 0) {
-      double uinf = u.normInf();      
+      double uinf = u.normInf();
       eps = std::sqrt((1 + uinf) * 1.0e-12) / xinf;
     }
   }
   else if (method_name_ == "Knoll-Keyes L2") {
     double x_l2 = x.norm2();
-    
+
     if (x_l2 > 0) {
-      double u_l2 = u.norm2();      
+      double u_l2 = u.norm2();
       eps = std::sqrt((1 + u_l2) * 1.0e-12) / x_l2;
     }
   }
@@ -179,7 +179,7 @@ double MatrixJF<Vector,VectorSpace>::calculateEpsilon_(const Vector& u, const Ve
 
     if (x_l2 > 0) {
       double alp = u.dot(x);
-      // double sgn = (alp > 0) ? 1 : -1; 
+      // double sgn = (alp > 0) ? 1 : -1;
       eps = (1e-12/x_l2)*std::max(fabs(alp), typical_size_u*xinf);
     }
 

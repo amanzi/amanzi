@@ -149,7 +149,7 @@ class Op_SurfaceFace_SurfaceCell;
 class Operator: public Matrix<CompositeVector,CompositeSpace> {
  public:
   using Vector_t = CompositeVector;
-  using VectorSpace_t = CompositeSpace; 
+  using VectorSpace_t = CompositeSpace;
 
   // constructors
   // At the moment CVS is the domain and range of the operator
@@ -187,7 +187,7 @@ class Operator: public Matrix<CompositeVector,CompositeSpace> {
 
   int applyAssembled(const CompositeVector& X, CompositeVector& Y,
                      double scalar=0.0) const;
-  int applyInverse(const CompositeVector& X, CompositeVector& Y) const;
+  virtual int applyInverse(const CompositeVector& X, CompositeVector& Y) const override;
 
   // diagonal
   void getLocalDiagCopy(CompositeVector& X) const;
@@ -203,7 +203,7 @@ class Operator: public Matrix<CompositeVector,CompositeSpace> {
   // -- wrapper
   void AssembleMatrix();
   void WriteMatrix(const std::string& fname_base);
-  
+
   // -- first dispatch
   void AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
                       int my_block_row, int my_block_col) const;
@@ -217,8 +217,8 @@ class Operator: public Matrix<CompositeVector,CompositeSpace> {
   void Rescale(const CompositeVector& scaling, int iops);
 
   // -- default functionality
-  const Teuchos::RCP<const CompositeSpace> getDomainMap() const { return cvs_col_; }
-  const Teuchos::RCP<const CompositeSpace> getRangeMap() const { return cvs_row_; }
+  virtual const Teuchos::RCP<const CompositeSpace> getDomainMap() const override { return cvs_col_; }
+  virtual const Teuchos::RCP<const CompositeSpace> getRangeMap() const override { return cvs_row_; }
   Teuchos::RCP<const CompositeSpace> getRowMap() const { return cvs_row_; }
 
   int ComputeResidual(const CompositeVector& u, CompositeVector& r,

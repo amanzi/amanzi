@@ -130,13 +130,13 @@ class SolverNKA_LS_ATS : public Solver<Vector, VectorSpace> {
       du = du_;
       u0 = u0_;
       if (r == Teuchos::null) {
-        r = Teuchos::rcp(new Vector(*u));
+        r = Teuchos::rcp(new Vector(u->getMap()));
       }
-      *u0 = *u;
+      u0->assign(*u);
     }
     
     double operator()(double x) {
-      *u = *u0;
+      u->assign(*u0);
       u->update(-x, *du, 1.);
       fn->ChangedSolution();
       fn->Residual(u, r);
@@ -244,10 +244,10 @@ int SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector
   pc_updates_ = 0;
 
   // create storage
-  Teuchos::RCP<Vector> res = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> du_nka = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> du_pic = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> u_precorr = Teuchos::rcp(new Vector(*u));
+  Teuchos::RCP<Vector> res = Teuchos::rcp(new Vector(u->getMap()));
+  Teuchos::RCP<Vector> du_nka = Teuchos::rcp(new Vector(u->getMap()));
+  Teuchos::RCP<Vector> du_pic = Teuchos::rcp(new Vector(u->getMap()));
+  Teuchos::RCP<Vector> u_precorr = Teuchos::rcp(new Vector(u->getMap()));
 
   // variables to monitor the progress of the nonlinear solver
   double error(0.), previous_error(0.);
@@ -349,7 +349,7 @@ int SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector
     if (num_itrs_ > backtrack_lag_ && num_itrs_ < last_backtrack_iter_ &&
         hacked != FnBaseDefs::CORRECTION_MODIFIED_LAG_BACKTRACKING) {
       bool good_step = false;
-      *u_precorr = *u;
+      u_precorr->assign(*u);
       previous_error = error;
       previous_l2_error = l2_error;
 
@@ -405,7 +405,7 @@ int SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector
           // unless this is NKA itr 1, in which case the NKA update IS the
           // Picard update, so we can just copy over the NKA hacked version.
           if (nka_itr == 1) {
-            *du_pic = *du_nka;
+            du_pic->assign(*du_nka);
           } else {
             hacked = fn_->ModifyCorrection(res, u, du_pic);
           
@@ -445,12 +445,12 @@ int SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector
 
         // find an admissible endpoint, starting from ten times the full correction
         double endpoint = max_alpha_;
-        *u = *u_precorr;
+        u->assign(*u_precorr);
         u->update(-endpoint, *du_pic, 1.0);
         fn_->ChangedSolution();
         while (!fn_->IsAdmissible(u)) {
           endpoint *= 0.3;
-          *u = *u_precorr;
+          u->assign(*u_precorr);
           u->update(-endpoint, *du_pic, 1.);
           fn_->ChangedSolution();
         }
@@ -471,7 +471,7 @@ int SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector
         }
           
         // update the correction
-        *u = *u_precorr;
+        u->assign(*u_precorr);
         u->update(-result.first, *du_pic, 1.);
         fn_->ChangedSolution();
         fn_->Residual(u, res);

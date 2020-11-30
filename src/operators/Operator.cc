@@ -134,6 +134,7 @@ void Operator::SymbolicAssembleMatrix()
 
   // create global matrix
   Amat_ = Teuchos::rcp(new MatrixFE(graph));
+  Amat_->fillComplete(); // some inverse methods seem to need this fillComplete, even with no data.
   A_ = Amat_->getMatrix();
 }
 
@@ -408,10 +409,10 @@ int Operator::applyInverse(const CompositeVector& X, CompositeVector& Y) const
     Exceptions::amanzi_throw(msg);
   }
   int ierr = preconditioner_->applyInverse(X, Y);
-  if (ierr) {
-    Errors::Message msg("Operator: applyInverse failed.\n");
-    Exceptions::amanzi_throw(msg);
-  }
+  // if (ierr) {
+  //   Errors::Message msg("Operator: applyInverse failed.\n");
+  //   Exceptions::amanzi_throw(msg);
+  // }
   return ierr;
 }
 

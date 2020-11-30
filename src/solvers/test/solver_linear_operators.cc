@@ -94,13 +94,7 @@ SUITE(SOLVERS)
 
     virtual int applyInverse(const Vector_t& v, Vector_t& hv) const
     {
-      auto vv = v.getLocalViewDevice();
-      auto hvv = hv.getLocalViewDevice();
-
-      Kokkos::parallel_for(
-        "solver_linear_operators::applyInverse", 
-        hvv.extent(0),
-        KOKKOS_LAMBDA(int i) { hvv(i, 0) = vv(i, 0); });
+      hv.assign(v);
       return 0;
     }
 
@@ -118,13 +112,8 @@ SUITE(SOLVERS)
       A_->fillComplete(map_, map_);
     }
 
-    void initializeInverse(){
-
-    }
-
-    void computeInverse(){ 
-
-    }
+    void initializeInverse() {}
+    void computeInverse() {}
 
     // // partial consistency with Operators'interface
     // Teuchos::RCP<CrsMatrix_type> A() const { return A_; }
@@ -192,8 +181,9 @@ SUITE(SOLVERS)
     for (int loop = 0; loop < 2; loop++) {
       Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
       AmanziSolvers::IterativeMethodGMRES<Matrix,Matrix, Vector_type, Map_type> gmres; 
-      
+
       Teuchos::ParameterList plist;
+      plist.sublist("verbose object").set<std::string>("verbosity level", "high");
       gmres.set_inverse_parameters(plist);
       gmres.set_matrices(m,m);
       gmres.set_krylov_dim(15 + loop * 5);

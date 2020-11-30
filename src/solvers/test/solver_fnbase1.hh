@@ -3,7 +3,7 @@
 
 #include <math.h>
 #include "AmanziVector.hh"
-
+#include "AmanziDebug.hh"
 #include "SolverFnBase.hh"
 
 using namespace Amanzi; 
@@ -18,6 +18,7 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Vector_type>
                 const Teuchos::RCP<Vector_type>& f) {
     auto uv = u->getLocalViewDevice();
     auto fv = f->getLocalViewDevice();
+    assert(uv != fv);
     Kokkos::parallel_for(
       "solver_fnbase1::Residual",
       fv.extent(0), KOKKOS_LAMBDA(const int c) {
@@ -28,7 +29,9 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Vector_type>
 
   int ApplyPreconditioner(const Teuchos::RCP<const Vector_type>& u,
                            const Teuchos::RCP<Vector_type>& hu) {
+    std::cout << std::setprecision(16) << "SolverFnBase1: u = " << Debug::get0(*u) << std::endl;
     hu->elementWiseMultiply(1., *h_, *u, 0.);
+    std::cout << "SolverFnBase1: hu = " << Debug::get0(*hu) << std::endl;
     return 0;
   }
 
@@ -39,6 +42,7 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Vector_type>
 
   void UpdatePreconditioner(const Teuchos::RCP<const Vector_type>& up) {
     if (!h_.get()) h_ = Teuchos::rcp(new Vector_type(up->getMap()));
+    std::cout << "SolverFnBase1: up = " << Amanzi::Debug::get0(*up) << std::endl;
 
     if (exact_jacobian_) {
       auto upv = up->getLocalViewDevice();
@@ -59,8 +63,8 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Vector_type>
         hv(c, 0) = x * x + 2.5;
       });
     }
+    std::cout << "SolverFnBase1: h = " << Amanzi::Debug::get0(*h_) << std::endl;
     h_->reciprocal(*h_);
-
   }
 
   void ChangedSolution() {};
