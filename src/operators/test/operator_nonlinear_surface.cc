@@ -193,19 +193,22 @@ void RunTest(std::string op_list_name) {
     global_op->UpdateRHS(source, false);
     op.ApplyBCs(true, true, true);
     
-    // create preconditoner
-    global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "Amanzi GMRES", plist.sublist("solvers"));
-    global_op->InitializeInverse();
-    global_op->ComputeInverse();
-
     // Test SPD properties of the matrix and preconditioner.
     VerificationCV ver(global_op);
     if (loop == 2) {
+      global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"));
+      global_op->InitializeInverse();
+      global_op->ComputeInverse();
       ver.CheckMatrixSPD(true, true);
       ver.CheckPreconditionerSPD(1e-12, true, true);
     }
 
+    // create solver (GMRES with Hypre preconditioner)
     CompositeVector rhs = *global_op->rhs();
+
+    global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "Amanzi GMRES", plist.sublist("solvers"));
+    global_op->InitializeInverse();
+    global_op->ComputeInverse();
     global_op->ApplyInverse(rhs, *solution);
 
     if (op_list_name == "diffusion operator")
