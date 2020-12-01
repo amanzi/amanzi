@@ -259,9 +259,9 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
 {
   int order = poly.order();
 
-  WhetStone::Entity_ID_List faces, nodes;
+  WhetStone::Entity_ID_List nodes;
 
-  mesh0_->cell_get_faces(c, &faces);
+  const auto& faces = mesh0_->cell_get_faces(c);
   int nfaces = faces.size();  
 
   AmanziGeometry::Point v0(d_), v1(d_);
@@ -303,7 +303,7 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
   Polynomial moments(d_, 0);
 
   if (order == 2) {
-    NumericalIntegration<AmanziMesh::Mesh> numi(mesh1_);
+    NumericalIntegration numi(mesh1_);
     double mass = numi.IntegratePolynomialCell(c, poly);
 
     moments(0) = mass / mesh1_->cell_volume(c);

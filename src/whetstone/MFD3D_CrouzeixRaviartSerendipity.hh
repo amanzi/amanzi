@@ -19,7 +19,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 #include "Point.hh"
 
 #include "BilinearFormFactory.hh"
@@ -34,7 +34,7 @@ namespace WhetStone {
 class MFD3D_CrouzeixRaviartSerendipity : public MFD3D_CrouzeixRaviartAnyOrder { 
  public:
   MFD3D_CrouzeixRaviartSerendipity(const Teuchos::ParameterList& plist,
-                                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+                                   const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
     : MFD3D_CrouzeixRaviartAnyOrder(plist, mesh),
       BilinearForm(mesh) {};
 

@@ -16,7 +16,7 @@
 #include <iterator>
 #include <vector>
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 #include "Point.hh"
 #include "errors.hh"
 
@@ -35,10 +35,8 @@ namespace WhetStone {
 int MFD3D_Diffusion::L2consistencyScaledArea(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   N.Reshape(nfaces, d_);
@@ -86,10 +84,8 @@ int MFD3D_Diffusion::L2consistencyScaledArea(
 int MFD3D_Diffusion::L2consistencyInverseScaledArea(
     int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry)
 {
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   R.Reshape(nfaces, d_);
@@ -137,16 +133,15 @@ int MFD3D_Diffusion::L2consistencyInverseScaledArea(
 int MFD3D_Diffusion::H1consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List nodes, faces;
-  std::vector<int> dirs;
-
+  Entity_ID_List nodes;
   mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
   N.Reshape(nnodes, d_ + 1);
   Ac.Reshape(nnodes, nnodes);
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
 
   double volume = mesh_->cell_volume(c);
   AmanziGeometry::Point p(d_), pnext(d_), pprev(d_), v1(d_), v2(d_), v3(d_);
@@ -331,14 +326,12 @@ void MFD3D_Diffusion::L2Cell(int c, const std::vector<Polynomial>& ve,
 {
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-  int num_faces = faces.size();
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  int nfaces = faces.size();
 
   vc.Reshape(d_, 1, true);
-  for (int i = 0; i < num_faces; i++) {
+  for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
 
@@ -357,10 +350,8 @@ void MFD3D_Diffusion::L2Cell(int c, const std::vector<Polynomial>& ve,
 ****************************************************************** */
 int MFD3D_Diffusion::DivergenceMatrix(int c, DenseMatrix& A)
 {
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   A.Reshape(1, nfaces);
@@ -384,10 +375,10 @@ int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
     int c, const Tensor& K, double kmean, const AmanziGeometry::Point& kgrad,
     DenseMatrix& R, DenseMatrix& Wc)
 {
-  Entity_ID_List faces, nodes;
-  std::vector<int> dirs;
+  Entity_ID_List nodes;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   R.Reshape(nfaces, d_);
@@ -549,21 +540,19 @@ int MFD3D_Diffusion::MassMatrixInverseDivKScaled(
 ****************************************************************** */
 void MFD3D_Diffusion::RescaleMassMatrixInverse_(int c, DenseMatrix& W)
 {
-  Entity_ID_List faces;
-
-  mesh_->cell_get_faces(c, &faces);
-  int num_faces = faces.size();
+  const auto& faces = mesh_->cell_get_faces(c);
+  int nfaces = faces.size();
 
   // calculate areas of possibly curved faces
-  std::vector<double> areas(num_faces, 0.0);
-  for (int i = 0; i < num_faces; i++) {
+  std::vector<double> areas(nfaces, 0.0);
+  for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
     areas[i] = norm(mesh_->face_normal(f));
   }
 
   // back to area-weighted fluxes
-  for (int i = 0; i < num_faces; i++) {
-    for (int j = 0; j < num_faces; j++) W(i, j) *= areas[i] * areas[j];
+  for (int i = 0; i < nfaces; i++) {
+    for (int j = 0; j < nfaces; j++) W(i, j) *= areas[i] * areas[j];
   }
 }
 
@@ -584,9 +573,8 @@ int MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M
   int map[nrows];
   for (int i = 0; i < nrows; i++) map[i] = i;
 
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
 
   int i1, i2, k, l;
   double s1, s2, area1, area2;

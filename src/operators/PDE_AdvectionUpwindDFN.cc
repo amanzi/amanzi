@@ -265,15 +265,13 @@ void PDE_AdvectionUpwindDFN::IdentifyUpwindCells_(const CompositeVector& u)
   upwind_flux_dfn_.resize(nfaces_wghost);
   downwind_flux_dfn_.resize(nfaces_wghost);
 
-  AmanziMesh::Entity_ID_List faces, cells;
-  std::vector<int> dirs;
-
   u.ScatterMasterToGhosted();
   const Epetra_MultiVector& u_f = *u.ViewComponent("face", true);
   const auto& map = u.Map().Map("face", true);
   
   for (int c = 0; c < ncells_wghost; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& dirs = mesh_->cell_get_face_dirs(c);
     
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];

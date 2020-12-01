@@ -66,8 +66,7 @@ void PDE_MagneticDiffusion::ModifyMatrices(
   Teuchos::ParameterList plist;
   WhetStone::MFD3D_Electromagnetics mfd(plist, mesh_);
 
-  std::vector<int> dirs;
-  AmanziMesh::Entity_ID_List faces, edges;
+  AmanziMesh::Entity_ID_List edges;
 
   for (int c = 0; c < ncells_owned; ++c) {
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
@@ -76,7 +75,8 @@ void PDE_MagneticDiffusion::ModifyMatrices(
     const WhetStone::DenseMatrix& Mcell = mass_op_[c];
     const WhetStone::DenseMatrix& Ccell = curl_op_[c];
 
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& dirs = mesh_->cell_get_face_dirs(c);
     mesh_->cell_get_edges(c, &edges);
 
     int nfaces = faces.size();
@@ -117,15 +117,15 @@ void PDE_MagneticDiffusion::ModifyFields(
   Epetra_MultiVector& Ee = *E.ViewComponent("edge", true);
   Epetra_MultiVector& Bf = *B.ViewComponent("face", false);
   
-  std::vector<int> dirs;
-  AmanziMesh::Entity_ID_List faces, edges;
+  AmanziMesh::Entity_ID_List edges;
 
   std::vector<bool> fflag(nedges_wghost, false);
 
   for (int c = 0; c < ncells_owned; ++c) {
     const WhetStone::DenseMatrix& Ccell = curl_op_[c];
 
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& dirs = mesh_->cell_get_face_dirs(c);
     mesh_->cell_get_edges(c, &edges);
 
     int nfaces = faces.size();
@@ -198,12 +198,10 @@ double PDE_MagneticDiffusion::CalculateMagneticEnergy(const CompositeVector& B)
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", true);
   B.ScatterMasterToGhosted("face");
 
-  std::vector<int> dirs;
-  AmanziMesh::Entity_ID_List faces;
-
   double energy(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& dirs = mesh_->cell_get_face_dirs(c);
     int nfaces = faces.size();
 
     const WhetStone::DenseMatrix& Mcell = mass_op_[c];
@@ -235,10 +233,8 @@ double PDE_MagneticDiffusion::CalculateDivergence(
 {
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", false);
   
-  std::vector<int> dirs;
-  AmanziMesh::Entity_ID_List faces;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   double div(0.0);

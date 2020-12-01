@@ -17,7 +17,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 
 #include "BilinearFormFactory.hh"
 #include "DenseMatrix.hh"
@@ -30,7 +30,7 @@ namespace WhetStone {
 class MFD3D_GeneralizedDiffusion : public MFD3D { 
  public:
   MFD3D_GeneralizedDiffusion(const Teuchos::ParameterList& plist,
-                             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+                             const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
     : BilinearForm(mesh) {};
 
   // required member functions

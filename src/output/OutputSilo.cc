@@ -1,9 +1,9 @@
 /*
   Output
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon
@@ -31,11 +31,11 @@ OutputSilo::OutputSilo(Teuchos::ParameterList& plist,
 {
   if (mesh_->vis_mesh().get_comm()->NumProc() > 1) {
     Errors::Message msg("OutputSilo does not yet support parallel runs.");
-    Exceptions::amanzi_throw(msg);  
+    Exceptions::amanzi_throw(msg);
   }
   if (mesh_->vis_mesh().space_dimension() != 3 || mesh_->vis_mesh().manifold_dimension() != 3) {
     Errors::Message msg("OutputSilo is untested on non-3D meshes.");
-    Exceptions::amanzi_throw(msg);  
+    Exceptions::amanzi_throw(msg);
   }
   Init_(plist);
 }
@@ -61,7 +61,7 @@ OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag) {
   // open file
   std::stringstream filename;
   filename << filenamebase_ << "_"
-           << std::setfill('0') << std::setw(sigfigs_) 
+           << std::setfill('0') << std::setw(sigfigs_)
            << count_;
   std::string fname = filename.str() + ".silo";
   fid_ = DBCreate(fname.c_str(), DB_CLOBBER, DB_LOCAL, NULL, DB_HDF5);
@@ -131,7 +131,7 @@ OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag) {
   // -- Construct the silo cell-face info
   std::vector<int> cell_face_counts(ncells);
   std::vector<int> cell_face_list;
-  
+
   for (int c=0; c!=ncells; ++c) {
     AmanziMesh::Entity_ID_List cfaces;
     std::vector<int> dirs;
@@ -139,19 +139,19 @@ OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag) {
     for (int i=0; i!=cfaces.size(); ++i) {
       if (dirs[i] < 0) cfaces[i] = ~cfaces[i];
     }
-    
+
     cell_face_counts[c] = cfaces.size();
 
     cell_face_list.insert(cell_face_list.end(), cfaces.begin(), cfaces.end());
   }
-  
+
   ierr |= DBPutPHZonelist(fid_, "zonelist", nfaces, &face_node_counts[0],
                           face_node_list.size(), &face_node_list[0], &ext_faces[0],
                           ncells, &cell_face_counts[0],
                           cell_face_list.size(), &cell_face_list[0],
                           0, 0, ncells-1, optlist);
   AMANZI_ASSERT(!ierr);
-                          
+
   // -- clean up (could be done on finalize if needed? --etc)
   DBFreeOptlist(optlist);
 
@@ -183,7 +183,7 @@ OutputSilo::WriteVector(const Epetra_Vector& vec, const std::string& name,
   } else {
     Errors::Message msg("OutputSilo only knows how to write CELL and NODE based quantities.");
     Exceptions::amanzi_throw(msg);
-  }    
+  }
 }
 
 
@@ -198,20 +198,14 @@ OutputSilo::WriteMultiVector(const Epetra_MultiVector& vec, const std::vector<st
 
 // can we template this?
 void
-OutputSilo::WriteAttribute(const double& val, const std::string& name) const {
-  AMANZI_ASSERT(0);
-}
+OutputSilo::WriteAttribute(const double& val, const std::string& name) const {}
 
 void
-OutputSilo::WriteAttribute(const int& val, const std::string& name) const {
-  AMANZI_ASSERT(0);
-}
+OutputSilo::WriteAttribute(const int& val, const std::string& name) const {}
 
 
 void
-OutputSilo::WriteAttribute(const std::string& val, const std::string& name) const {
-  AMANZI_ASSERT(0);
-}
+OutputSilo::WriteAttribute(const std::string& val, const std::string& name) const {}
 
 
 void

@@ -249,13 +249,17 @@ TEST_FIXTURE(test_data, JFNK_SOLVER_LEFT_PC) {
 
 /* ******************************************************************/
 TEST_FIXTURE(test_data, JFNK_SOLVER_RIGHT_PC) {
-  std::cout << "\nJFNK solver with RIGHT precondiitoner..." << std::endl;
+  std::cout << "\nJFNK solver with RIGHT preconditioner..." << std::endl;
 
   // create the function class
   Teuchos::RCP<NonlinearProblem> fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, false));
 
   // create the SolverState
   Teuchos::ParameterList plist;
+  Teuchos::Array<std::string> criteria;
+  criteria.push_back("relative rhs");
+  criteria.push_back("absolute residual");
+
   plist.sublist("nonlinear solver").set("solver type", "Newton");
   plist.sublist("nonlinear solver").sublist("Newton parameters").sublist("verbose object")
       .set("verbosity level", "extreme");
@@ -269,7 +273,9 @@ TEST_FIXTURE(test_data, JFNK_SOLVER_RIGHT_PC) {
   plist.sublist("linear operator").set("iterative method", "gmres");
   plist.sublist("linear operator").sublist("gmres parameters")
       .set("size of Krylov space", 2)
-      .set("preconditioning strategy", "right");
+      .set("preconditioning strategy", "right")
+      .set<double>("error tolerance", 1e-14)
+      .set<Teuchos::Array<std::string> >("convergence criteria", criteria);
   plist.sublist("linear operator").sublist("verbose object").set("verbosity level", "extreme");
 
   // create the Solver
