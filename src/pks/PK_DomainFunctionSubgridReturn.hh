@@ -67,7 +67,7 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Init(
   keyword_ = keyword;
 
   // get and check the model parameters
-  Teuchos::ParameterList blist = plist.sublist("sink");
+  Teuchos::ParameterList blist = plist.sublist("source function");
   field_out_suffix_ = blist.get<std::string>("subgrid field suffix");
   if (blist.isParameter("copy subgrid field"))
     copy_field_out_key_ = blist.get<std::string>("copy subgrid field");
