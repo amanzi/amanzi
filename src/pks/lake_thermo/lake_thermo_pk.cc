@@ -486,7 +486,12 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   S->GetFieldData(wc_key_, name_)->PutScalar(1.0);
   S->GetField(wc_key_, name_)->set_initialized();
 
-  S->GetFieldData(temperature_key_, name_)->PutScalar(283.15);
+  Teuchos::ParameterList& ic_list = plist_->sublist("initial condition");
+  double temp = ic_list.get<double>("initial temperature [K]");
+
+  std::cout << "temp initial = " << temp << std::endl;
+
+  S->GetFieldData(temperature_key_, name_)->PutScalar(temp);
 
   S->GetFieldData(cell_is_ice_key_, name_)->PutScalar(false);
   S->GetField(cell_is_ice_key_, name_)->set_initialized();

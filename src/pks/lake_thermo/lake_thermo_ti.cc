@@ -98,10 +98,10 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   bc_flux_->Compute(t_new);
   UpdateBoundaryConditions_(S_next_.ptr());
 
-  // update height
+  // update depth
   double dt = S_next_->time() - S_inter_->time();
   double dhdt = r_ - E_ - R_s_ - R_b_;
-//  h_ += dhdt*dt;
+  h_ += dhdt*dt;
 
   // zero out residual
   Teuchos::RCP<CompositeVector> res = g->Data();
