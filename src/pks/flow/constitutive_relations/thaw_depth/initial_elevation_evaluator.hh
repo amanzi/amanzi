@@ -8,8 +8,7 @@
   Authors: Ahmad Jan (jana@ornl.gov)
 */
 
-#ifndef AMANZI_FLOWRELATIONS_INITIAL_ELEV_EVALUATOR_
-#define AMANZI_FLOWRELATIONS_INITIAL_ELVE_EVALUATOR_
+#pragma once
 
 #include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
@@ -49,4 +48,3 @@ private:
 } //namespace
 } //namespace 
 
-#endif
