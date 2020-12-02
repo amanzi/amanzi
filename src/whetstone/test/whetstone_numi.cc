@@ -39,7 +39,7 @@ TEST(NUMI_CELL_2D_EULER_FORMULA) {
   meshfactory.set_preference(Preference({Framework::MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", true, true); 
  
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+  NumericalIntegration numi(mesh);
 
   int cell(0);
   double val;
@@ -78,7 +78,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_POLYGON) {
   meshfactory.set_preference(Preference({Framework::MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", true, true); 
  
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+  NumericalIntegration numi(mesh);
 
   int cell(0), face(0);
   double val1, val2;
@@ -133,7 +133,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_SQUARE) {
   meshfactory.set_preference(Preference({Framework::MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 2, 2); 
  
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+  NumericalIntegration numi(mesh);
 
   int cell(3), face(9);
   double val, exact;
@@ -173,7 +173,7 @@ TEST(NUMI_CELL_3D_QUADRATURE_POLYHEDRON) {
   meshfactory.set_preference(Preference({Framework::MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/dodecahedron.exo", true, true); 
  
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+  NumericalIntegration numi(mesh);
 
   int cell(0), face(3);
   double val1, val2;
@@ -230,7 +230,7 @@ TEST(NUMI_CELL_3D_QUADRATURE_CUBE) {
   meshfactory.set_preference(AmanziMesh::Preference({AmanziMesh::Framework::MSTK}));
   Teuchos::RCP<AmanziMesh::Mesh> mesh = meshfactory.create(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 2, 2, 2); 
  
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+  NumericalIntegration numi(mesh);
 
   int cell(7), face(31);
   double val, exact;

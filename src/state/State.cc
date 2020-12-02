@@ -463,11 +463,11 @@ Teuchos::RCP<FieldEvaluator> State::GetFieldEvaluator_(const Key& key) {
     return f_it->second;;
   } else {
     // See if the key is provided by another existing evaluator.
-    for (evaluator_iterator f_it = field_evaluator_begin();
-         f_it != field_evaluator_end(); ++f_it) {
-      if (f_it->second->ProvidesKey(key)) {
-        SetFieldEvaluator(key, f_it->second);
-        return f_it->second;
+    for (evaluator_iterator f_it2 = field_evaluator_begin();
+         f_it2 != field_evaluator_end(); ++f_it2) {
+      if (f_it2->second->ProvidesKey(key)) {
+        SetFieldEvaluator(key, f_it2->second);
+        return f_it2->second;
       }
     }
   }

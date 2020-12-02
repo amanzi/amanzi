@@ -18,7 +18,7 @@
 #include <tuple>
 #include <vector>
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 #include "Point.hh"
 #include "errors.hh"
 
@@ -77,11 +77,11 @@ int MFD3D_CrouzeixRaviartSerendipity::H1consistency(
   MFD3D_CrouzeixRaviartAnyOrder::H1consistency(c, K, Nf, Af);
 
   // pre-calculate integrals of monomials 
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+  NumericalIntegration numi(mesh_);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
   // selecting regularized basis
-  Basis_Regularized<AmanziMesh::Mesh> basis;
+  Basis_Regularized basis;
   basis.Init(mesh_, c, order_, integrals_.poly());
 
   // Gramm matrix for polynomials
@@ -167,7 +167,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
 {
   // selecting regularized basis
   Polynomial ptmp;
-  Basis_Regularized<AmanziMesh::Mesh> basis;
+  Basis_Regularized basis;
   basis.Init(mesh_, c, order_, ptmp);
 
   // calculate full matrices
@@ -223,7 +223,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
     DenseMatrix M;
     Polynomial poly(d_, order_);
 
-    NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+    NumericalIntegration numi(mesh_);
     numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
     GrammMatrix(poly, integrals_, basis, M);
@@ -247,7 +247,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
     DenseMatrix M, M2;
     Polynomial poly(d_, order_);
 
-    NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+    NumericalIntegration numi(mesh_);
     numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
     GrammMatrix(poly, integrals_, basis, M);
@@ -280,13 +280,11 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
 void MFD3D_CrouzeixRaviartSerendipity::CalculateDOFsOnBoundary_(
     int c, const std::vector<Polynomial>& vf, DenseVector& vdof)
 {
-  Entity_ID_List faces;
-
-  mesh_->cell_get_faces(c, &faces);
+  const auto& faces = mesh_->cell_get_faces(c);
   int nfaces = faces.size();
 
   std::vector<const PolynomialBase*> polys(2);
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+  NumericalIntegration numi(mesh_);
 
   AmanziGeometry::Point xv(d_);
 

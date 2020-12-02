@@ -24,7 +24,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 #include "Point.hh"
 
 #include "BilinearFormFactory.hh"
@@ -39,7 +39,7 @@ namespace WhetStone {
 class MFD3D_Electromagnetics : public DeRham_Edge {
  public:
   MFD3D_Electromagnetics(const Teuchos::ParameterList& plist,
-                         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+                         const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
     : DeRham_Edge(mesh),
       BilinearForm(mesh) {};
 

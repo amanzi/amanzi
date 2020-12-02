@@ -116,7 +116,7 @@ void MeshMaps_VEM::LeastSquareProjector_Cell_(
   AmanziGeometry::Point px1, px2;
   std::vector<AmanziGeometry::Point> x1, x2;
 
-  Entity_ID_List nodes, faces;
+  Entity_ID_List nodes;
   mesh0_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
@@ -130,7 +130,7 @@ void MeshMaps_VEM::LeastSquareProjector_Cell_(
 
   // FIXME
   if (order > 1) {
-    mesh0_->cell_get_faces(c, &faces);
+    const auto& faces = mesh0_->cell_get_faces(c);
     int nfaces = faces.size();
 
     for (int n = 0; n < nfaces; ++n) {

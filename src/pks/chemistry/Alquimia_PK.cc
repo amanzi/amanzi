@@ -209,7 +209,7 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // initialize fields as soon as possible
   for (size_t i = 0; i < aux_names_.size(); ++i) {
-    InitializeField(S, passwd_, aux_names_[i], 0.0);
+    InitializeField_(S, passwd_, aux_names_[i], 0.0);
   }
 
   // Initialize the data structures that we will use to traffic data between 

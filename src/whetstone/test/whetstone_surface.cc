@@ -15,14 +15,49 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "MeshFactory.hh"
-#include "MeshAudit.hh"
-
 #include "Mesh.hh"
+#include "MeshFactory.hh"
+
 #include "Point.hh"
+#include "SingleFaceMesh.hh"
 
 #include "MFD3D_Diffusion.hh"
 #include "Tensor.hh"
+
+
+/* **************************************************************** */
+TEST(DARCY_SURFACE_MESH) {
+  using namespace Teuchos;
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "Test: Mass matrix for surface mesh" << std::endl;
+  auto comm = Amanzi::getDefaultComm();
+
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 3, 4); 
+
+  Tensor T(2, 1);
+  T(0, 0) = 1;
+ 
+  for (int f = 0; f < mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL); ++f) {
+    RCP<SingleFaceMesh> surfmesh = Teuchos::rcp(new SingleFaceMesh(mesh, f));
+    MFD3D_Diffusion mfd(surfmesh);
+ 
+    DenseMatrix M;
+    mfd.MassMatrix(0, T, M);
+    int nrows = M.NumRows();
+
+    for (int i = 0; i < nrows; ++i) {
+      for (int j = 0; j < nrows; ++j) {
+        double val = (i != j) ? 0.0 : surfmesh->cell_volume(0) / 2;
+        CHECK_CLOSE(M(i, j), val, 1e-10);
+      }
+    }
+  }
+}
 
 
 /* **************************************************************** */
@@ -32,7 +67,7 @@ TEST(DARCY_SURFACE) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "Test: Mass matrix for surface Darcy" << std::endl;
+  std::cout << "Test: Mass matrix for cell face" << std::endl;
 #ifdef HAVE_MPI
   auto comm = Amanzi::getDefaultComm();
 #else

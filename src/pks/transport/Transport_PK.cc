@@ -536,7 +536,7 @@ void Transport_PK::InitializeFields_()
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // set popular default values when flow PK is off
-  InitializeField(S_.ptr(), passwd_, saturation_liquid_key_, 1.0);
+  InitializeField_(S_.ptr(), passwd_, saturation_liquid_key_, 1.0);
 
   InitializeFieldFromField_(water_content_key_, porosity_key_, false);
   InitializeFieldFromField_(prev_water_content_key_, water_content_key_, false);
@@ -547,7 +547,7 @@ void Transport_PK::InitializeFields_()
   InitializeFieldFromField_(prev_saturation_liquid_key_, saturation_liquid_key_, false);
   InitializeFieldFromField_("total_component_concentration_matrix", tcc_key_, false);
 
-  InitializeField(S_.ptr(), passwd_, "total_component_concentration_matrix_aux", 0.0);
+  InitializeField_(S_.ptr(), passwd_, "total_component_concentration_matrix_aux", 0.0);
 }
 
 
@@ -897,8 +897,7 @@ void Transport_PK::IdentifyUpwindCells()
   upwind_flux_.resize(nfaces_wghost);
   downwind_flux_.resize(nfaces_wghost);
 
-  AmanziMesh::Entity_ID_List faces, cells;
-  std::vector<int> dirs;
+  AmanziMesh::Entity_ID_List cells;
 
   // the case of fluxes that use unique face normal even if there
   // exists more than one flux on a face
@@ -912,7 +911,8 @@ void Transport_PK::IdentifyUpwindCells()
     }
     
     for (int c = 0; c < ncells_wghost; c++) {
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      const auto& faces = mesh_->cell_get_faces(c);
+      const auto& dirs = mesh_->cell_get_face_dirs(c);
       
       for (int i = 0; i < faces.size(); i++) {
         int f = faces[i];
@@ -959,7 +959,8 @@ void Transport_PK::IdentifyUpwindCells()
   // flux (could be more than one) on a face
   } else {
     for (int c = 0; c < ncells_wghost; c++) {
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      const auto& faces = mesh_->cell_get_faces(c);
+      const auto& dirs = mesh_->cell_get_face_dirs(c);
 
       for (int i = 0; i < faces.size(); i++) {
         int f = faces[i];

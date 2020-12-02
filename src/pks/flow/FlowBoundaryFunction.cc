@@ -120,7 +120,7 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(
     Exceptions::amanzi_throw(msg);
   }
 
-  AmanziMesh::Entity_ID_List cells, faces, ss_faces;
+  AmanziMesh::Entity_ID_List cells, ss_faces;
   AmanziMesh::Entity_ID_List nodes1, nodes2, common_nodes;
 
   AmanziGeometry::Point p1(dim), p2(dim), p3(dim);
@@ -137,7 +137,7 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(
     std::sort(nodes1.begin(), nodes1.end());
 
     int c = cells[0];
-    mesh->cell_get_faces(c, &faces);
+    const auto& faces = mesh->cell_get_faces(c);
     int nfaces = faces.size();
 
     // find all edges that intersection of boundary faces f1 and f2

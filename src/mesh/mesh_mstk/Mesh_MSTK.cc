@@ -3840,7 +3840,7 @@ void Mesh_MSTK::post_create_steps_(const bool request_faces,
 
   init_nodes();
 
-  edgeflip = NULL;
+  edgeflip = NULL; 
   if (request_edges) init_edges();
   if (request_faces) init_faces();
   init_cells();
