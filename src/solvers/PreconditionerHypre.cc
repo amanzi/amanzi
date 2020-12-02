@@ -229,6 +229,7 @@ void PreconditionerHypre::InitializeInverse()
 
   // must reset the parameters every time to reset the block index
   IfpHypre_->SetParameter((Hypre_Chooser)1, method_);
+  IfpHypre_->SetParameter((Hypre_Chooser)1);
   IfpHypre_->SetParameter(true);
 
   if (block_indices_.get()) {
