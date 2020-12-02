@@ -161,46 +161,46 @@ void OverlandConductivitySubgridEvaluator::EvaluateFieldPartialDerivative_(
 }
 
 
-void OverlandConductivitySubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
-  // Ensure my field exists.  Requirements should be already set.
-  AMANZI_ASSERT(my_key_ != std::string(""));
-  Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_, my_key_);
+// void OverlandConductivitySubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
+//   // Ensure my field exists.  Requirements should be already set.
+//   AMANZI_ASSERT(my_key_ != std::string(""));
+//   Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_, my_key_);
 
-  // check plist for vis or checkpointing control
-  bool io_my_key = plist_.get<bool>("visualize", true);
-  S->GetField(my_key_, my_key_)->set_io_vis(io_my_key);
-  bool checkpoint_my_key = plist_.get<bool>("checkpoint", false);
-  S->GetField(my_key_, my_key_)->set_io_checkpoint(checkpoint_my_key);
+//   // check plist for vis or checkpointing control
+//   bool io_my_key = plist_.get<bool>("visualize", true);
+//   S->GetField(my_key_, my_key_)->set_io_vis(io_my_key);
+//   bool checkpoint_my_key = plist_.get<bool>("checkpoint", false);
+//   S->GetField(my_key_, my_key_)->set_io_checkpoint(checkpoint_my_key);
 
-  // If my requirements have not yet been set, we'll have to hope they
-  // get set by someone later.  For now just defer.
-  if (my_fac->Mesh() != Teuchos::null) {
-    // Create an unowned factory to check my dependencies.
-    //
-    // Note only doing cells here, some other things would need to be fixed...
-    Teuchos::RCP<CompositeVectorSpace> dep_fac =
-        Teuchos::rcp(new CompositeVectorSpace());
-    dep_fac->SetMesh(my_fac->Mesh());
-    dep_fac->AddComponent("cell", AmanziMesh::CELL, 1);
-    dep_fac->SetGhosted(true);
+//   // If my requirements have not yet been set, we'll have to hope they
+//   // get set by someone later.  For now just defer.
+//   if (my_fac->Mesh() != Teuchos::null) {
+//     // Create an unowned factory to check my dependencies.
+//     //
+//     // Note only doing cells here, some other things would need to be fixed...
+//     Teuchos::RCP<CompositeVectorSpace> dep_fac =
+//         Teuchos::rcp(new CompositeVectorSpace());
+//     dep_fac->SetMesh(my_fac->Mesh());
+//     dep_fac->AddComponent("cell", AmanziMesh::CELL, 1);
+//     dep_fac->SetGhosted(true);
 
-    // Loop over my dependencies, ensuring they meet the requirements.
-    for (const auto& key : dependencies_) {
-      if (key == my_key_) {
-        Errors::Message msg;
-        msg << "Evaluator for key \"" << my_key_ << "\" depends upon itself.";
-        Exceptions::amanzi_throw(msg);
-      }
-      Teuchos::RCP<CompositeVectorSpace> fac = S->RequireField(key);
-      fac->Update(*dep_fac);
-    }
+//     // Loop over my dependencies, ensuring they meet the requirements.
+//     for (const auto& key : dependencies_) {
+//       if (key == my_key_) {
+//         Errors::Message msg;
+//         msg << "Evaluator for key \"" << my_key_ << "\" depends upon itself.";
+//         Exceptions::amanzi_throw(msg);
+//       }
+//       Teuchos::RCP<CompositeVectorSpace> fac = S->RequireField(key);
+//       fac->Update(*dep_fac);
+//     }
 
-    // Recurse into the tree to propagate info to leaves.
-    for (const auto& key : dependencies_) {
-      S->RequireFieldEvaluator(key)->EnsureCompatibility(S);
-    }
-  }
-}
+//     // Recurse into the tree to propagate info to leaves.
+//     for (const auto& key : dependencies_) {
+//       S->RequireFieldEvaluator(key)->EnsureCompatibility(S);
+//     }
+//   }
+// }
 
 
 

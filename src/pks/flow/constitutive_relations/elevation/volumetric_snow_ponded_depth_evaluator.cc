@@ -20,15 +20,14 @@
 */
 
 #include "volumetric_snow_ponded_depth_evaluator.hh"
-#include "subgrid.hh"
+#include "subgrid_microtopography.hh"
 
 namespace Amanzi {
 namespace Flow {
 
 
 VolumetricSnowPondedDepthEvaluator::VolumetricSnowPondedDepthEvaluator(Teuchos::ParameterList& plist) :
-    SecondaryVariablesFieldEvaluator(plist),
-    compatibility_checked_(false)
+    SecondaryVariablesFieldEvaluator(plist)
 {
   Key a_key = Keys::cleanPListName(plist.name());
   Key domain = Keys::getDomain(a_key);
@@ -51,16 +50,16 @@ VolumetricSnowPondedDepthEvaluator::VolumetricSnowPondedDepthEvaluator(Teuchos::
   my_keys_.push_back(vol_pd_key_);
   vol_sd_key_ = Keys::readKey(plist, domain_snow_, "volumetric snow depth", "volumetric_depth");
   my_keys_.push_back(vol_sd_key_);
-  
+
   // dependencies
   pd_key_ = Keys::readKey(plist_, domain_surf_, "ponded depth key", "ponded_depth");
   dependencies_.insert(pd_key_);
   sd_key_ = Keys::readKey(plist_, domain_snow_, "snow depth key", "depth");
   dependencies_.insert(sd_key_);
 
-  delta_max_key_ = Keys::readKey(plist_, domain_surf_, "microtopographic relief", "microtopographic_relief"); 
+  delta_max_key_ = Keys::readKey(plist_, domain_surf_, "microtopographic relief", "microtopographic_relief");
   dependencies_.insert(delta_max_key_);
-  
+
   delta_ex_key_ = Keys::readKey(plist_, domain_surf_, "excluded volume", "excluded_volume");
   dependencies_.insert(delta_ex_key_);
 }
@@ -78,8 +77,9 @@ VolumetricSnowPondedDepthEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const auto& del_ex = *S->GetFieldData(delta_ex_key_)->ViewComponent("cell",false);
 
   for (int c=0; c!=vpd.MyLength(); ++c){
-    double vol_tot = subgrid_VolumetricDepth(pd[0][c] + std::max(sd[0][c], 0.0) , del_max[0][c], del_ex[0][c]);
-    vpd[0][c] = subgrid_VolumetricDepth(pd[0][c], del_max[0][c], del_ex[0][c]);
+    AMANZI_ASSERT(Microtopography::validParameters(del_max[0][c], del_ex[0][c]));
+    double vol_tot = Microtopography::volumetricDepth(pd[0][c] + std::max(sd[0][c], 0.0) , del_max[0][c], del_ex[0][c]);
+    vpd[0][c] = Microtopography::volumetricDepth(pd[0][c], del_max[0][c], del_ex[0][c]);
     vsd[0][c] = vol_tot - vpd[0][c];
   }
 }
@@ -98,13 +98,13 @@ VolumetricSnowPondedDepthEvaluator::EvaluateFieldPartialDerivative_(const Teucho
 
   if (wrt_key == pd_key_) {
     for (int c=0; c!=vpd.MyLength(); ++c){
-      vpd[0][c] = subgrid_DVolumetricDepth_DDepth(pd[0][c], del_max[0][c], del_ex[0][c]);
-      vsd[0][c] = subgrid_DVolumetricDepth_DDepth(pd[0][c] + sd[0][c], del_max[0][c], del_ex[0][c]);
+      vpd[0][c] = Microtopography::dVolumetricDepth_dDepth(pd[0][c], del_max[0][c], del_ex[0][c]);
+      vsd[0][c] = Microtopography::dVolumetricDepth_dDepth(pd[0][c] + sd[0][c], del_max[0][c], del_ex[0][c]);
     }
   } else if (wrt_key == sd_key_) {
     vpd.PutScalar(0.);
     for (int c=0; c!=vpd.MyLength(); ++c){
-      vsd[0][c] = subgrid_DVolumetricDepth_DDepth(pd[0][c] + sd[0][c], del_max[0][c], del_ex[0][c]);
+      vsd[0][c] = Microtopography::dVolumetricDepth_dDepth(pd[0][c] + sd[0][c], del_max[0][c], del_ex[0][c]);
     }
   } else {
     Errors::Message msg("VolumetricSnowPondedDepthEvaluator: Not Implemented: no derivatives implemented other than depths.");
@@ -113,41 +113,55 @@ VolumetricSnowPondedDepthEvaluator::EvaluateFieldPartialDerivative_(const Teucho
 }
 
 void
-VolumetricSnowPondedDepthEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
-  if (!compatibility_checked_) {
-    // see if we can find a master fac
-    auto my_fac = S->RequireField(vol_pd_key_, vol_pd_key_);
-    my_fac->SetMesh(S->GetMesh(domain_surf_))
-        ->SetGhosted()
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+VolumetricSnowPondedDepthEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
+{
+  // require my keys
+  auto my_fac = S->RequireField(vol_pd_key_, vol_pd_key_);
+  my_fac->SetOwned(false);
+  my_fac->SetMesh(S->GetMesh(domain_surf_))
+    ->SetGhosted();
 
-    auto my_fac_snow = S->RequireField(vol_sd_key_, vol_sd_key_);
-    my_fac_snow->SetMesh(S->GetMesh(domain_snow_))
-        ->SetGhosted()
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
-  
-    // Check plist for vis or checkpointing control.
-    bool io_my_key = plist_.get<bool>("visualize", true);
-    S->GetField(vol_pd_key_, vol_pd_key_)->set_io_vis(io_my_key);
-    bool checkpoint_my_key = plist_.get<bool>("checkpoint", false);
-    S->GetField(vol_pd_key_, vol_pd_key_)->set_io_checkpoint(checkpoint_my_key);
+  auto my_fac_snow = S->RequireField(vol_sd_key_, vol_sd_key_);
+  my_fac_snow->SetOwned(false);
+  my_fac_snow->SetMesh(S->GetMesh(domain_snow_))
+    ->SetGhosted();
 
+  // Check plist for vis or checkpointing control.
+  bool io_my_key = plist_.get<bool>("visualize", true);
+  S->GetField(vol_pd_key_, vol_pd_key_)->set_io_vis(io_my_key);
+  bool checkpoint_my_key = plist_.get<bool>("checkpoint", false);
+  S->GetField(vol_pd_key_, vol_pd_key_)->set_io_checkpoint(checkpoint_my_key);
+
+  if (my_fac->size() > my_fac_snow->size()) {
+    for (const auto& cname : *my_fac) {
+      my_fac_snow->AddComponent(cname, my_fac->Location(cname), 1);
+    }
+  } else if (my_fac_snow->size() > my_fac->size()) {
+    for (const auto& cname : *my_fac_snow) {
+      my_fac->AddComponent(cname, my_fac_snow->Location(cname), 1);
+    }
+  }
+
+  if (my_fac->size() > 0) {
     for (auto dep_key : dependencies_) {
       auto fac = S->RequireField(dep_key);
       if (boost::starts_with(dep_key, domain_snow_)) {
         fac->SetMesh(S->GetMesh(domain_snow_))
-            ->SetGhosted()
-            ->SetComponent("cell", AmanziMesh::CELL, 1);
+          ->SetGhosted();
+        for (const auto& cname : *my_fac_snow) {
+          fac->AddComponent(cname, my_fac_snow->Location(cname), 1);
+        }
       } else {
         fac->SetMesh(S->GetMesh(domain_surf_))
-            ->SetGhosted()
-            ->SetComponent("cell", AmanziMesh::CELL, 1);
+          ->SetGhosted();
+        for (const auto& cname : *my_fac) {
+          fac->AddComponent(cname, my_fac->Location(cname), 1);
+        }
       }
 
       // Recurse into the tree to propagate info to leaves.
       S->RequireFieldEvaluator(dep_key)->EnsureCompatibility(S);
     }
-    compatibility_checked_ = true;
   }
 }
 

@@ -56,6 +56,7 @@ void HeightEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   AMANZI_ASSERT(my_key_ != std::string(""));
   S->RequireGravity();
   Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_, my_key_);
+  my_fac->SetOwned(false);
 
   // check plist for vis or checkpointing control
   bool io_my_key = plist_.get<bool>(std::string("visualize ")+my_key_, true);

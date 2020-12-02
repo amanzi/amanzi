@@ -25,7 +25,7 @@ class OverlandConductivitySubgridEvaluator : public SecondaryVariableFieldEvalua
   Teuchos::RCP<FieldEvaluator> Clone() const override;
 
   Teuchos::RCP<ManningConductivityModel> get_Model() { return model_; }
-  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S) override;
+  // virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S) override;
 
  protected:
   // Required methods from SecondaryVariableFieldEvaluator

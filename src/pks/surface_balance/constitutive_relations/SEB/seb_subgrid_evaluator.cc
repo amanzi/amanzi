@@ -345,8 +345,8 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     if (area_fracs[1][c] > 0.) {
       SEBPhysics::GroundProperties surf;
       surf.temp = surf_temp[0][c];
-      //surf.pressure = surf_pres[0][c];
-      surf.pressure = ponded_depth[0][c] * 1000. * 9.8 + 101325;
+      surf.pressure = surf_pres[0][c];
+      //surf.pressure = ponded_depth[0][c] * 1000. * 9.8 + 101325;
       if (ss_topcell_based_evap_)
         surf.pressure = ss_pres[0][cells[0]];
       surf.roughness = roughness_bare_ground_;
@@ -423,8 +423,8 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     if (area_fracs[2][c] > 0.) {
       SEBPhysics::GroundProperties surf;
       surf.temp = surf_temp[0][c];
-      //surf.pressure = surf_pres[0][c];
-      surf.pressure = ponded_depth[0][c] * 1000. * 9.8 + 101325;
+      surf.pressure = surf_pres[0][c];
+      //surf.pressure = ponded_depth[0][c] * 1000. * 9.8 + 101325;
       if (ss_topcell_based_evap_)
         surf.pressure = ss_pres[0][cells[0]];
       surf.roughness = roughness_bare_ground_;
