@@ -82,20 +82,8 @@ void Coordinator::coordinator_init() {
 
   // create the checkpointing
   Teuchos::ParameterList& chkp_plist = parameter_list_->sublist("checkpoint");
-  std::string chkp_filenamebase = chkp_plist.get<std::string>("file name base", "checkpoint");
-  auto split_restart = Amanzi::Keys::splitKey(chkp_filenamebase, '*');
-  if (split_restart.first.empty()) {
-    // standard checkpoint file on COMM_WORLD
-    checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
-  } else {
-    // rank-based checkpoint file on COMM_SELF
-    auto comm_self = Amanzi::getCommSelf();
-    std::stringstream chkp_filenamebase_rank;
-    chkp_filenamebase_rank << split_restart.first << comm_->MyPID() << "_" << split_restart.second;
-    chkp_plist.set("file name base", chkp_filenamebase_rank.str());
-    checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_self));
-  }
-  
+  checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
+
   // create the observations
   Teuchos::ParameterList& observation_plist = parameter_list_->sublist("observations");
   for (auto& sublist : observation_plist) {
@@ -154,19 +142,9 @@ void Coordinator::initialize() {
   // Restart from checkpoint part 1:
   //  - get the time prior to initializing anything else
   if (restart_) {
-    auto split_restart = Amanzi::Keys::splitKey(restart_filename_, '*');
-    if (split_restart.first.empty()) {
-      // standard restart file on COMM_WORLD
-      S_->set_time(Amanzi::ReadCheckpointInitialTime(comm_, restart_filename_));
-    } else {
-      // rank-based restart file on COMM_SELF
-      auto comm_self = Amanzi::getCommSelf();
-      std::stringstream restart_fname;
-      restart_fname << split_restart.first << rank << split_restart.second;
-      S_->set_time(Amanzi::ReadCheckpointInitialTime(comm_, restart_filename_));
-    }
+    S_->set_time(Amanzi::ReadCheckpointInitialTime(comm_, restart_filename_));
   }
-  
+
   // Initialize the state
   *S_->GetScalarData("dt", "coordinator") = 0.;
   S_->GetField("dt","coordinator")->set_initialized();
@@ -178,33 +156,14 @@ void Coordinator::initialize() {
   // Restart from checkpoint part 2:
   // -- load all other data
   if (restart_) {
-    auto split_restart = Amanzi::Keys::splitKey(restart_filename_, '*');
-    if (split_restart.first.empty()) {
-      // standard restart file on COMM_WORLD
-      ReadCheckpoint(comm_, *S_, restart_filename_);
-      t0_ = S_->time();
-      cycle0_ = S_->cycle();
-      
-      for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
-           mesh!=S_->mesh_end(); ++mesh) {
-        if (S_->IsDeformableMesh(mesh->first)) {
-          Amanzi::DeformCheckpointMesh(*S_, mesh->first);
-        }
-      }
-    } else {
-      // rank-based restart file on COMM_SELF
-      auto comm_self = Amanzi::getCommSelf();
-      std::stringstream restart_fname;
-      restart_fname << split_restart.first << rank << split_restart.second;
-      ReadCheckpoint(comm_self, *S_, restart_fname.str());
-      t0_ = S_->time();
-      cycle0_ = S_->cycle();
-      
-      for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
-           mesh!=S_->mesh_end(); ++mesh) {
-        if (S_->IsDeformableMesh(mesh->first)) {
-          Amanzi::DeformCheckpointMesh(*S_, mesh->first);
-        }
+    ReadCheckpoint(comm_, *S_, restart_filename_);
+    t0_ = S_->time();
+    cycle0_ = S_->cycle();
+
+    for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
+         mesh!=S_->mesh_end(); ++mesh) {
+      if (S_->IsDeformableMesh(mesh->first)) {
+        Amanzi::DeformCheckpointMesh(*S_, mesh->first);
       }
     }
   }
@@ -449,13 +408,8 @@ void Coordinator::read_parameter_list() {
 // -----------------------------------------------------------------------------
 double Coordinator::get_dt(bool after_fail) {
   // get the physical step size
-  //  std::cout<<"Coord1: "<<"\n";
   double dt = pk_->get_dt();
-  double dt_pk = dt;
-
-  if (dt < 0.) {
-    return dt;
-  }
+  if (dt < 0.) return dt;
 
   // check if the step size has gotten too small
   if (dt < min_dt_) {
@@ -470,8 +424,6 @@ double Coordinator::get_dt(bool after_fail) {
 
   // ask the step manager if this step is ok
   dt = tsm_->TimeStep(S_next_->time(), dt, after_fail);
-  dt = std::min(dt, dt_pk);
-  //  std::cout<<"Coord2: "<<" "<<dt<<" "<<dt_pk<<" "<<S_next_->time()<<"\n";
   return dt;
 }
 
@@ -629,10 +581,7 @@ void Coordinator::cycle_driver() {
       S_->set_intermediate_time(S_->time());
 
       fail = advance(S_->time(), S_->time() + dt);
-      //      std::cout<<"Coord00: "<<"\n";
       dt = get_dt(fail);
-      //      std::cout<<"Coord3: "<<" "<<dt<<" "<<S_next_->time()<<"\n";
-      //      std::cout<<"Coord01: "<<"\n";
     } // while not finished
 
 

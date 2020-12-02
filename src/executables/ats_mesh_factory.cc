@@ -38,10 +38,6 @@ createMesh(Teuchos::ParameterList& mesh_plist,
   auto mesh_name = Amanzi::Keys::cleanPListName(mesh_plist.name());
 
   if (mesh_type == "read mesh file") {
-    //Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
-    //prefs.clear();
-    //prefs.push_back(Amanzi::AmanziMesh::MSTK);
-
     // from file
     auto read_params = Teuchos::rcp(new Teuchos::ParameterList(mesh_plist.sublist("read mesh file parameters")));
     std::string partitioner = mesh_plist.get<std::string>("partitioner", "zoltan_rcb");
