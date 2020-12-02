@@ -145,9 +145,9 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   op_diff->ApplyBCs(true, true, true);
   op_adv->ApplyBCs(true, true, true);
 
-  // Create a preconditioner.
+  // Create a preconditioner
   ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"));
   global_op->InitializeInverse();
   global_op->ComputeInverse();
 
@@ -156,7 +156,12 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   ver.CheckMatrixSPD(false, true);
   ver.CheckPreconditionerSPD(1e-12, false, true);
 
+  // Create a solver and solve the problem
   CompositeVector& rhs = *global_op->rhs();
+
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "AztecOO CG", plist.sublist("solvers"));
+  global_op->InitializeInverse();
+  global_op->ComputeInverse();
   global_op->ApplyInverse(rhs, solution);
 
   int num_itrs = global_op->num_itrs();

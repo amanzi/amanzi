@@ -120,8 +120,7 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"),
-          "PCG", plist.sublist("solvers"));
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"));
   global_op->InitializeInverse();
   global_op->ComputeInverse();
 
@@ -134,7 +133,12 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
+  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"),
+                                    "PCG", plist.sublist("solvers"));
+  global_op->InitializeInverse();
+  global_op->ComputeInverse();
   global_op->ApplyInverse(rhs, solution);
+
   if (diff_op == "diffusion operator") 
       ver.CheckResidual(solution, 1.0e-12);
 
