@@ -178,11 +178,11 @@ AreaFractionsSubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
     if (Keys::getDomain(dep_key) == domain_snow_) {
       fac->SetMesh(S->GetMesh(domain_snow_))
           ->SetGhosted()
-          ->SetComponent("cell", AmanziMesh::CELL, 1);
+          ->AddComponent("cell", AmanziMesh::CELL, 1);
     } else {
       fac->SetMesh(S->GetMesh(domain_))
           ->SetGhosted()
-          ->SetComponent("cell", AmanziMesh::CELL, 1);
+          ->AddComponent("cell", AmanziMesh::CELL, 1);
     }
 
     // Recurse into the tree to propagate info to leaves.

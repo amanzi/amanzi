@@ -117,14 +117,15 @@ VolumetricSnowPondedDepthEvaluator::EnsureCompatibility(const Teuchos::Ptr<State
 {
   // require my keys
   auto my_fac = S->RequireField(vol_pd_key_, vol_pd_key_);
-  my_fac->SetOwned(false);
   my_fac->SetMesh(S->GetMesh(domain_surf_))
-    ->SetGhosted();
+    ->SetGhosted()
+    ->SetComponent("cell", AmanziMesh::CELL, 1);
 
   auto my_fac_snow = S->RequireField(vol_sd_key_, vol_sd_key_);
   my_fac_snow->SetOwned(false);
   my_fac_snow->SetMesh(S->GetMesh(domain_snow_))
-    ->SetGhosted();
+    ->SetGhosted()
+    ->SetComponent("cell", AmanziMesh::CELL, 1);
 
   // Check plist for vis or checkpointing control.
   bool io_my_key = plist_.get<bool>("visualize", true);
@@ -132,36 +133,20 @@ VolumetricSnowPondedDepthEvaluator::EnsureCompatibility(const Teuchos::Ptr<State
   bool checkpoint_my_key = plist_.get<bool>("checkpoint", false);
   S->GetField(vol_pd_key_, vol_pd_key_)->set_io_checkpoint(checkpoint_my_key);
 
-  if (my_fac->size() > my_fac_snow->size()) {
-    for (const auto& cname : *my_fac) {
-      my_fac_snow->AddComponent(cname, my_fac->Location(cname), 1);
+  for (auto dep_key : dependencies_) {
+    auto fac = S->RequireField(dep_key);
+    if (boost::starts_with(dep_key, domain_snow_)) {
+      fac->SetMesh(S->GetMesh(domain_snow_))
+        ->SetGhosted()
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
+    } else {
+      fac->SetMesh(S->GetMesh(domain_surf_))
+        ->SetGhosted()
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
     }
-  } else if (my_fac_snow->size() > my_fac->size()) {
-    for (const auto& cname : *my_fac_snow) {
-      my_fac->AddComponent(cname, my_fac_snow->Location(cname), 1);
-    }
-  }
 
-  if (my_fac->size() > 0) {
-    for (auto dep_key : dependencies_) {
-      auto fac = S->RequireField(dep_key);
-      if (boost::starts_with(dep_key, domain_snow_)) {
-        fac->SetMesh(S->GetMesh(domain_snow_))
-          ->SetGhosted();
-        for (const auto& cname : *my_fac_snow) {
-          fac->AddComponent(cname, my_fac_snow->Location(cname), 1);
-        }
-      } else {
-        fac->SetMesh(S->GetMesh(domain_surf_))
-          ->SetGhosted();
-        for (const auto& cname : *my_fac) {
-          fac->AddComponent(cname, my_fac->Location(cname), 1);
-        }
-      }
-
-      // Recurse into the tree to propagate info to leaves.
-      S->RequireFieldEvaluator(dep_key)->EnsureCompatibility(S);
-    }
+    // Recurse into the tree to propagate info to leaves.
+    S->RequireFieldEvaluator(dep_key)->EnsureCompatibility(S);
   }
 }
 
