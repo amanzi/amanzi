@@ -34,7 +34,7 @@
     <ParameterList name="AztecOO CG">
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
-        <Parameter name="maximum number of iterations" type="int" value="600"/>
+        <Parameter name="maximum number of iterations" type="int" value="2000"/>
         <Parameter name="error tolerance" type="double" value="1e-14"/>
       </ParameterList>
     </ParameterList>
@@ -42,7 +42,7 @@
     <ParameterList name="GMRES">
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
-        <Parameter name="maximum number of iterations" type="int" value="600"/>
+        <Parameter name="maximum number of iterations" type="int" value="2000"/>
         <Parameter name="error tolerance" type="double" value="1e-12"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="low"/>
@@ -53,7 +53,7 @@
     <ParameterList name="NKA">
       <Parameter name="iterative method" type="string" value="nka"/>
       <ParameterList name="nka parameters">
-        <Parameter name="maximum number of iterations" type="int" value="600"/>
+        <Parameter name="maximum number of iterations" type="int" value="2000"/>
         <Parameter name="error tolerance" type="double" value="1e-12"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="low"/>
@@ -64,7 +64,7 @@
     <ParameterList name="Belos GMRES">
       <Parameter name="iterative method" type="string" value="belos gmres"/>
       <ParameterList name="belos gmres parameters">
-        <Parameter name="maximum number of iterations" type="int" value="20"/>
+        <Parameter name="maximum number of iterations" type="int" value="2000"/>
         <Parameter name="error tolerance" type="double" value="1e-12"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="low"/>
@@ -154,7 +154,7 @@
 
   <!--  OPERATORS  -->
   <ParameterList name="PK operator">
-    <Parameter name="preconditioner" type="string" value="HypreAMG"/>
+    <Parameter name="preconditioner method" type="string" value="HypreAMG"/>
 
     <!-- NODAL (conformal) MFD schemes -->
     <ParameterList name="nodal">

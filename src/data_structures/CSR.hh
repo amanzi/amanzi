@@ -87,7 +87,7 @@ public:
     for(int i = 0 ; i < row_map_.view_host().extent(0); ++i){ 
       int tmp2 = row_map_.view_host()(i+1);
       row_map_.view_host()(i+1) = tmp1 + row_map_.view_host()(i);
-      tmp1 = tmp2;   
+      tmp1 = tmp2;
     }
     if (entries_.view_host().extent(0) < 
           row_map_.view_host()(row_map_.view_host().extent(0)-1))

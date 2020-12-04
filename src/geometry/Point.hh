@@ -226,7 +226,8 @@ L22(const Point& p)
 {
   return p * p;
 }
-inline double
+
+KOKKOS_INLINE_FUNCTION double
 norm(const Point& p)
 {
   return sqrt(p * p);

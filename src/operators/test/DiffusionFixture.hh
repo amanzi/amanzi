@@ -43,25 +43,29 @@ using namespace Amanzi;
 
 struct DiffusionFixture {
   DiffusionFixture(const Teuchos::RCP<AnalyticBase>& ana_,
-                   const std::string& mesh_file)
+                   const std::string& mesh_file,
+                   Teuchos::RCP<const AmanziMesh::Mesh> mesh_ = Teuchos::null)
       : comm(Amanzi::getDefaultComm()),
-        ana(ana_)
+        ana(ana_),
+        mesh(mesh_)
   {
     plist = Teuchos::getParametersFromXmlFile("test/operator_diffusion_discretizations.xml");
 
-    auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(ana->dimension(),
+    if (mesh == Teuchos::null ){
+      auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(ana->dimension(),
             plist->sublist("regions"), *comm));
-    AmanziMesh::MeshFactory meshfactory(comm, gm);
-    if (mesh_file == "Generate1D") {
-      mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 1);
-    } else if (mesh_file == "Generate2D") {
-      mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 10);
-    } else if (mesh_file == "Generate2D_HiRes") {
-      mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 100);
-    } else if (mesh_file == "Generate3D") {
-      mesh = meshfactory.create(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 4, 5, 6);
-    } else {
-      mesh = meshfactory.create(mesh_file);
+      AmanziMesh::MeshFactory meshfactory(comm, gm);
+      if (mesh_file == "Generate1D") {
+        mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 1);
+      } else if (mesh_file == "Generate2D") {
+        mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 10); 
+      } else if (mesh_file == "Generate2D_HiRes") {
+        mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 100);
+      } else if (mesh_file == "Generate3D") {
+        mesh = meshfactory.create(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 4, 5, 6);
+      } else {
+        mesh = meshfactory.create(mesh_file);
+      }
     }
     
   }
@@ -71,12 +75,14 @@ struct DiffusionFixture {
     // construct the operator
     op = Teuchos::rcp(new PDE_Diffusion_type(plist->sublist("PK operator").sublist(name), mesh));
     op->Init();
-
+ 
     // modify diffusion coefficient
     CompositeVectorSpace K_map;
     K_map.SetMesh(mesh);
     K_map.AddComponent("cell", AmanziMesh::CELL, 1);
     auto K = Teuchos::rcp(new TensorVector(K_map));
+
+
 
     std::vector<WhetStone::Tensor<DefaultHostMemorySpace>> host_tensors(K->size()); 
     for (int c = 0; c < K->size(); c++) {
@@ -84,7 +90,6 @@ struct DiffusionFixture {
       host_tensors[c].assign(ana->TensorDiffusivity(xc, 0.0));   
     }
     K->Init(host_tensors); 
-    
     op->SetTensorCoefficient(K);
     // boundary condition
     bc = Teuchos::rcp(new Operators::BCs(mesh, Boundary_kind, WhetStone::DOF_Type::SCALAR));

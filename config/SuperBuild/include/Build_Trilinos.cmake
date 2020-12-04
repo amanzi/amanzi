@@ -231,8 +231,7 @@ endif()
 
 # Set ARCH-specific options
 if ( "${AMANZI_ARCH}" STREQUAL "Summit" )
-  if (ENABLE_CUDA) 
-    message("AMANZI_ARCH: : ${AMANZI_ARCH}")
+  if (ENABLE_KOKKOS_CUDA) 
     if(NOT DEFINED ENV{CUDA_LAUNCH_BLOCKING}) 
       message(FATAL_ERROR "Environment CUDA_LAUNCH_BLOCKING have to be set to 1 to continue")
     endif() 
@@ -242,8 +241,8 @@ if ( "${AMANZI_ARCH}" STREQUAL "Summit" )
          -Xcudafe --diag_suppress=cc_clobber_ignored \
          -Xcudafe --diag_suppress=code_is_unreachable")
     list(APPEND Trilinos_CMAKE_ARCH_ARGS
-         "-DKokkos_ENABLE_Cuda_UVM:BOOL=ON"
-         "-DKokkos_ENABLE_Cuda_Lambda:BOOL=ON"
+         "-DKokkos_ENABLE_CUDA_UVM:BOOL=ON"
+         "-DKokkos_ENABLE_CUDA_LAMBDA:BOOL=ON"
          "-DKOKKOS_ARCH:STRING=Power9;Volta70") 
     # Change the default compiler for Trilinos to use nvcc_wrapper 
     set(Trilinos_CXX_COMPILER ${NVCC_WRAPPER_PATH})
