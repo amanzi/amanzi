@@ -87,7 +87,7 @@ Richards::Richards(Teuchos::ParameterList& pk_tree,
   sat_ice_key_ = Keys::readKey(*plist_, domain_, "saturation ice", "saturation_ice");
 
   // set up an additional primary variable evaluator for flux
-  Teuchos::ParameterList& pv_sublist = S->FEList().sublist(flux_key_);
+  Teuchos::ParameterList& pv_sublist = S->GetEvaluatorList(flux_key_);
   pv_sublist.set("field evaluator type", "primary variable");
 }
 
@@ -133,7 +133,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S)
   perm_scale_ = plist_->get<double>("permeability rescaling", 1.e7);
 
   // permeability type - scalar or tensor?
-  Teuchos::ParameterList& perm_list = S->FEList().sublist(perm_key_);
+  Teuchos::ParameterList& perm_list = S->GetEvaluatorList(perm_key_);
   std::string perm_type = perm_list.get<std::string>("permeability type", "scalar");
   if (perm_type == "scalar") {
     perm_tensor_rank_ = 1;
@@ -416,22 +416,14 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // This deals with deprecated location for the WRM list (in the PK).  Move it
   // to state.
   if (plist_->isSublist("water retention evaluator")) {
-    if (S->FEList().isSublist(sat_key_)) {
-      Errors::Message message("Sublists exist in both RichardsPK->water retention evaluator and state->field evaluators->");
-      message << sat_key_ << ".  Only use one (preferably that in State)";
-      Exceptions::amanzi_throw(message);
-    } else {
-      Teuchos::ParameterList wrm_plist(plist_->sublist("water retention evaluator"));
-      wrm_plist.setName(sat_key_);
-      wrm_plist.set("field evaluator type", "WRM");
-      S->FEList().set(sat_key_, wrm_plist);
-    }
+    auto& wrm_plist = S->GetEvaluatorList(sat_key_);
+    wrm_plist.setParameters(plist_->sublist("water retention evaluator"));
+    wrm_plist.set("field evaluator type", "WRM");
   }
-  if (!S->HasFieldEvaluator(coef_key_) && !S->FEList().isSublist(coef_key_)) {
-    Teuchos::ParameterList kr_plist(S->FEList().sublist(sat_key_));
-    kr_plist.setName(coef_key_);
+  if (!S->HasFieldEvaluator(coef_key_) && (S->GetEvaluatorList(coef_key_).numParams() == 0)) {
+    Teuchos::ParameterList& kr_plist = S->GetEvaluatorList(coef_key_);
+    kr_plist.setParameters(S->GetEvaluatorList(sat_key_));
     kr_plist.set("field evaluator type", "WRM rel perm");
-    S->FEList().set(coef_key_, kr_plist);
   }
 
   // -- saturation
@@ -452,7 +444,7 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   names2[1] = "boundary_face";
   S->RequireField(coef_key_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponents(names2, locations2, num_dofs2);
-  S->FEList().sublist(coef_key_).set<double>("permeability rescaling", perm_scale_);
+  S->GetEvaluatorList(coef_key_).set<double>("permeability rescaling", perm_scale_);
   S->RequireFieldEvaluator(coef_key_);
 
   // -- get the WRM models

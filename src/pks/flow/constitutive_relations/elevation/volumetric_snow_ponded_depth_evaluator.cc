@@ -76,10 +76,12 @@ VolumetricSnowPondedDepthEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const auto& del_max = *S->GetFieldData(delta_max_key_)->ViewComponent("cell",false);
   const auto& del_ex = *S->GetFieldData(delta_ex_key_)->ViewComponent("cell",false);
 
-  for (int c=0; c!=vpd.MyLength(); ++c){
+  for (int c=0; c!=vpd.MyLength(); ++c) {
     AMANZI_ASSERT(Microtopography::validParameters(del_max[0][c], del_ex[0][c]));
-    double vol_tot = Microtopography::volumetricDepth(pd[0][c] + std::max(sd[0][c], 0.0) , del_max[0][c], del_ex[0][c]);
-    vpd[0][c] = Microtopography::volumetricDepth(pd[0][c], del_max[0][c], del_ex[0][c]);
+    double sdc = std::max(0., sd[0][c]);
+    double pdc = std::max(0., pd[0][c]);
+    double vol_tot = Microtopography::volumetricDepth(pdc + sdc, del_max[0][c], del_ex[0][c]);
+    vpd[0][c] = Microtopography::volumetricDepth(pdc, del_max[0][c], del_ex[0][c]);
     vsd[0][c] = vol_tot - vpd[0][c];
   }
 }
@@ -97,14 +99,18 @@ VolumetricSnowPondedDepthEvaluator::EvaluateFieldPartialDerivative_(const Teucho
   const auto& del_ex = *S->GetFieldData(delta_ex_key_)->ViewComponent("cell",false);
 
   if (wrt_key == pd_key_) {
-    for (int c=0; c!=vpd.MyLength(); ++c){
-      vpd[0][c] = Microtopography::dVolumetricDepth_dDepth(pd[0][c], del_max[0][c], del_ex[0][c]);
-      vsd[0][c] = Microtopography::dVolumetricDepth_dDepth(pd[0][c] + sd[0][c], del_max[0][c], del_ex[0][c]);
+    for (int c=0; c!=vpd.MyLength(); ++c) {
+      double sdc = std::max(0., sd[0][c]);
+      double pdc = std::max(0., pd[0][c]);
+      vpd[0][c] = Microtopography::dVolumetricDepth_dDepth(pdc, del_max[0][c], del_ex[0][c]);
+      vsd[0][c] = Microtopography::dVolumetricDepth_dDepth(pdc + sdc, del_max[0][c], del_ex[0][c]);
     }
   } else if (wrt_key == sd_key_) {
     vpd.PutScalar(0.);
-    for (int c=0; c!=vpd.MyLength(); ++c){
-      vsd[0][c] = Microtopography::dVolumetricDepth_dDepth(pd[0][c] + sd[0][c], del_max[0][c], del_ex[0][c]);
+    for (int c=0; c!=vpd.MyLength(); ++c) {
+      double sdc = std::max(0., sd[0][c]);
+      double pdc = std::max(0., pd[0][c]);
+      vsd[0][c] = Microtopography::dVolumetricDepth_dDepth(pdc + sdc, del_max[0][c], del_ex[0][c]);
     }
   } else {
     Errors::Message msg("VolumetricSnowPondedDepthEvaluator: Not Implemented: no derivatives implemented other than depths.");

@@ -28,7 +28,13 @@ void
 SurfaceIceModel::InitializeModel(const Teuchos::Ptr<State>& S, Teuchos::ParameterList& plist)
 {
   // NOTE: intentially using liquid instead of ice on the surface!
-  ice_dens_key_ = Keys::readKey(plist, "surface", "molar density ice", "molar_density_liquid");
+  Key domain = plist.get<std::string>("domain name", "surface");
+  Key liq_dens_key = Keys::readKey(plist, domain, "molar density liquid", "molar_density_liquid");
+  Key ice_dens_key = Keys::readKey(plist, domain, "molar density ice", "molar_density_ice"); // NOTE: NOT ICE!
+  Key iem_liq_key = Keys::readKey(plist, domain, "internal energy liquid", "internal_energy_liquid");
+  Key iem_ice_key = Keys::readKey(plist, domain, "internal energy ice", "internal_energy_ice");
+  Key pd_key = Keys::readKey(plist, domain, "ponded depth", "ponded_depth");
+  Key uf_key = Keys::readKey(plist, domain, "unfrozen fraction", "unfrozen_fraction");
 
   // these are not yet initialized
   M_ = 0.0180153;
@@ -37,42 +43,42 @@ SurfaceIceModel::InitializeModel(const Teuchos::Ptr<State>& S, Teuchos::Paramete
 
   // Grab the models.
   // -- liquid EOS
-  Teuchos::RCP<FieldEvaluator> me = S->GetFieldEvaluator("surface-molar_density_liquid");
+  Teuchos::RCP<FieldEvaluator> me = S->GetFieldEvaluator(liq_dens_key);
   Teuchos::RCP<Relations::EOSEvaluator> eos_liquid_me =
       Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(me);
   AMANZI_ASSERT(eos_liquid_me != Teuchos::null);
   liquid_eos_ = eos_liquid_me->get_EOS();
 
   // -- ice EOS
-  me = S->GetFieldEvaluator(ice_dens_key_);
+  me = S->GetFieldEvaluator(ice_dens_key);
   Teuchos::RCP<Relations::EOSEvaluator> eos_ice_me =
       Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(me);
   AMANZI_ASSERT(eos_ice_me != Teuchos::null);
   ice_eos_ = eos_ice_me->get_EOS();
 
   // -- iem for liquid
-  me = S->GetFieldEvaluator("surface-internal_energy_liquid");
+  me = S->GetFieldEvaluator(iem_liq_key);
   Teuchos::RCP<Energy::IEMEvaluator> iem_liquid_me =
       Teuchos::rcp_dynamic_cast<Energy::IEMEvaluator>(me);
   AMANZI_ASSERT(iem_liquid_me != Teuchos::null);
   liquid_iem_ = iem_liquid_me->get_IEM();
 
   // -- iem for ice
-  me = S->GetFieldEvaluator("surface-internal_energy_ice");
+  me = S->GetFieldEvaluator(iem_ice_key);
   Teuchos::RCP<Energy::IEMEvaluator> iem_ice_me =
       Teuchos::rcp_dynamic_cast<Energy::IEMEvaluator>(me);
   AMANZI_ASSERT(iem_ice_me != Teuchos::null);
   ice_iem_ = iem_ice_me->get_IEM();
 
   // -- ponded depth evaluator
-  me = S->GetFieldEvaluator("surface-ponded_depth");
+  me = S->GetFieldEvaluator(pd_key);
   Teuchos::RCP<Flow::IcyHeightEvaluator> icy_h_me =
       Teuchos::rcp_dynamic_cast<Flow::IcyHeightEvaluator>(me);
   AMANZI_ASSERT(icy_h_me != Teuchos::null);
   pd_ = icy_h_me->get_IcyModel();
 
   // -- unfrozen fraction evaluator
-  me = S->GetFieldEvaluator("surface-unfrozen_fraction");
+  me = S->GetFieldEvaluator(uf_key);
   Teuchos::RCP<Flow::UnfrozenFractionEvaluator> uf_me =
       Teuchos::rcp_dynamic_cast<Flow::UnfrozenFractionEvaluator>(me);
   AMANZI_ASSERT(uf_me != Teuchos::null);

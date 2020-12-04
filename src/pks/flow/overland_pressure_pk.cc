@@ -86,27 +86,25 @@ OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
 
   // alter lists for evaluators
   // -- add _bar evaluators
-  Teuchos::ParameterList pd_bar_list = S->FEList().sublist(pd_key_);
-  pd_bar_list.setName(pd_bar_key_);
+  Teuchos::ParameterList& pd_bar_list = S->GetEvaluatorList(pd_bar_key_);
+  pd_bar_list.setParameters(S->GetEvaluatorList(pd_key_));
   pd_bar_list.set("allow negative ponded depth", true);
-  S->FEList().set(pd_bar_key_, pd_bar_list);
 
-  Teuchos::ParameterList wc_bar_list = S->FEList().sublist(conserved_key_);
-  wc_bar_list.setName(wc_bar_key_);
+  Teuchos::ParameterList& wc_bar_list = S->GetEvaluatorList(wc_bar_key_);
+  wc_bar_list.setParameters(S->GetEvaluatorList(conserved_key_));
   wc_bar_list.set("allow negative water content", true);
-  S->FEList().set(wc_bar_key_, wc_bar_list);
 
   // -- flux evaluator
-  S->FEList().sublist(flux_key_).set("field evaluator type", "primary variable");
+  S->GetEvaluatorList(flux_key_).set("field evaluator type", "primary variable");
 
   // -- elevation evaluator
   standalone_mode_ = S->GetMesh() == S->GetMesh(domain_);
   if (!standalone_mode_ && !S->FEList().isSublist(elev_key_)) {
-    S->FEList().sublist(elev_key_).set("field evaluator type", "meshed elevation");
+    S->GetEvaluatorList(elev_key_).set("field evaluator type", "meshed elevation");
   }
 
   // -- potential evaluator
-  auto& potential_list = S->FEList().sublist(potential_key_);
+  auto& potential_list = S->GetEvaluatorList(potential_key_);
   potential_list.set("field evaluator type", "additive evaluator");
   potential_list.set<Teuchos::Array<std::string>>("evaluator dependencies",
           std::vector<std::string>{pd_key_, elev_key_});
