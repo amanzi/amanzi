@@ -54,6 +54,7 @@ TreeOperator::TreeOperator(Teuchos::ParameterList& plist)
 {
   vo_ = Teuchos::rcp(new VerboseObject("TreeOperator", plist));
   if (plist.isSublist("inverse")) set_inverse_parameters(plist.sublist("inverse"));
+  shift_ = plist.get<double>("diagonal shift", 0.0);
 }
 
 
@@ -97,6 +98,7 @@ TreeOperator::TreeOperator(const Teuchos::RCP<const TreeVectorSpace>& tvs)
 TreeOperator::TreeOperator(const TreeOperator& other)
   : TreeOperator(other.row_map_, other.col_map_)
 {
+  shift_ = other.shift_;
   vo_ = other.vo_;
   inv_plist_ = other.inv_plist_;
 
@@ -383,9 +385,13 @@ void TreeOperator::AssembleMatrix() {
   int ierr = Amat_->FillComplete();
   AMANZI_ASSERT(!ierr);
 
+  if (shift_ != 0.0) {
+    Amat_->DiagonalShift(shift_);
+  }
+
   // std::stringstream filename_s2;
   // filename_s2 << "assembled_matrix" << 0 << ".txt";
-  // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Amat_->Matrix());
+  // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *A_);
 }
 
 
