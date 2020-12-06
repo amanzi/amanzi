@@ -107,8 +107,6 @@ void Schema::Finalize(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
 void Schema::ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                            std::vector<int>& offset) const
 {
-  AmanziMesh::Entity_ID_List nodes, edges, faces;
-
   offset.clear();
   offset.push_back(0);
 
@@ -119,11 +117,12 @@ void Schema::ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh,
     std::tie(kind, std::ignore, num) = *it;
 
     if (kind == AmanziMesh::NODE) {
+      AmanziMesh::Entity_ID_List nodes;
       mesh->cell_get_nodes(c, &nodes);
       ndofs = nodes.size();
     }
     else if (kind == AmanziMesh::EDGE) {
-      mesh->cell_get_nodes(c, &edges);
+      const auto& edges = mesh->cell_get_edges(c);
       ndofs = edges.size();
     }
     else if (kind == AmanziMesh::FACE) {
