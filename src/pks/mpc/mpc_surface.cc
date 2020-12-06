@@ -65,7 +65,7 @@ void MPCSurface::Setup(const Teuchos::Ptr<State>& S)
   tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(Teuchos::rcpFromRef(pcA->DomainMap()))));
   tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(Teuchos::rcpFromRef(pcB->DomainMap()))));
 
-  preconditioner_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
+  preconditioner_ = Teuchos::rcp(new Operators::TreeOperator(tvs, plist_->sublist("operator preconditioner")));
   preconditioner_->set_operator_block(0, 0, pcA);
   preconditioner_->set_operator_block(1, 1, pcB);
 
@@ -96,7 +96,7 @@ void MPCSurface::Setup(const Teuchos::Ptr<State>& S)
     // Create the block for derivatives of mass conservation with respect to temperature
     // -- derivatives of kr with respect to temperature
     if (precon_type_ != PRECON_NO_FLOW_COUPLING &&
-        !plist_->get<bool>("supress Jacobian terms: d div q / dT", false)) {
+        !plist_->get<bool>("supress Jacobian terms: d div surface q / dT", false)) {
       // set up the operator
       Teuchos::ParameterList divq_plist(pks_list_->sublist(pk_order[0]).sublist("diffusion preconditioner"));
       divq_plist.set("include Newton correction", true);

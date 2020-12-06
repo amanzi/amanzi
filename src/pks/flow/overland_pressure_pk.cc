@@ -391,7 +391,6 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S)
       Errors::Message message(messagestream.str());
       Exceptions::amanzi_throw(message);
     }
-    pres_cv->PutScalar(0.);
   }
 
   // Initialize BDF stuff and physical domain stuff.

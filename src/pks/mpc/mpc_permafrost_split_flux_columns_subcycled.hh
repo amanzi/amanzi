@@ -63,17 +63,19 @@ class MPCPermafrostSplitFluxColumnsSubcycled : public MPCPermafrostSplitFluxColu
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit);
 
   virtual bool ValidStep();
-  
+
   virtual void CommitStep(double t_old, double t_new,
                           const Teuchos::RCP<State>& S);
-  
- private:
+
+ protected:
   std::string subcycled_timestep_type_;
-  double  subcycled_timestep_target_, subcycled_target_time_;
+  double subcycled_target_time_;
   bool surface_star_subcycling_;
+
+private:
   // factory registration
   static RegisteredPKFactory<MPCPermafrostSplitFluxColumnsSubcycled> reg_;
-  
+
 
 };
 } // close namespace Amanzi
