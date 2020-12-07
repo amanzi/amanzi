@@ -34,7 +34,7 @@ class PreconditionerMueLu : public Preconditioner {
 
   virtual void initializeInverse() override final{
     A_ = h_; 
-    pc_ = MueLu::CreateTpetraPreconditioner(op_A,xml_plist); 
+    pc_ = MueLu::CreateTpetraPreconditioner(A_,plist_); 
 
   }
   virtual void computeInverse() override final{
@@ -47,7 +47,7 @@ class PreconditionerMueLu : public Preconditioner {
   virtual int returned_code() const override final { return returned_code_; }
   virtual std::string returned_code_string() const override final {
     if (returned_code_ == 0) return "success";
-    return "PreconditionerML: unknown error";
+    return "PreconditionerMueLu: unknown error";
   }
 
  private:
