@@ -98,9 +98,9 @@ This is provided when using the `"preconditioning method`"=`"euclid`" or
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-//#include "Epetra_MultiVector.h"
-//#include "Epetra_RowMatrix.h"
-//#include "Ifpack_Hypre.h"
+#include "Tpetra_RowMatrix_decl.hpp"
+
+#include "Ifpack2_Hypre_decl.hpp"
 
 #include "exceptions.hh"
 #include "Preconditioner.hh"
@@ -111,10 +111,15 @@ class VerboseObject;
 
 namespace AmanziSolvers {
 
-class PreconditionerHypre : public Amanzi::AmanziSolvers::Preconditioner {
+class PreconditionerHypre : public Preconditioner {
+
+  using RowMatrix_type = Tpetra::RowMatrix<Matrix_type::scalar_type,
+                                        Matrix_type::local_ordinal_type,
+                                        Matrix_type::global_ordinal_type>;
+
  public:
   PreconditionerHypre() :
-      Amanzi::AmanziSolvers::Preconditioner(),
+      Preconditioner(),
       num_blocks_(0),
       block_indices_(Teuchos::null),
       IfpHypre_(Teuchos::null),
@@ -124,7 +129,7 @@ class PreconditionerHypre : public Amanzi::AmanziSolvers::Preconditioner {
   virtual void set_inverse_parameters(Teuchos::ParameterList& list) override final;
   virtual void initializeInverse() override final;
   virtual void computeInverse() override final;
-  virtual int applyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const override final;
+  virtual int applyInverse(const Vector_type& v, Vector_type& hv) const override final;
 
   virtual int returned_code() const override final { return returned_code_; }
   virtual std::string returned_code_string() const override final {
@@ -139,15 +144,12 @@ class PreconditionerHypre : public Amanzi::AmanziSolvers::Preconditioner {
   Teuchos::ParameterList plist_;
   Teuchos::RCP<VerboseObject> vo_;
 
-  Hypre_Solver method_;
-  std::vector<Teuchos::RCP<FunctionParameter> > funcs_;
+  Ifpack2::Hypre_Solver method_;
   Teuchos::RCP<std::vector<int> > block_indices_;
   int num_blocks_;
-  int block_index_function_index_;
 
   mutable int returned_code_;
-  Teuchos::RCP<Ifpack_Hypre> IfpHypre_;
-  Teuchos::RCP<Epetra_RowMatrix> A_;
+  Teuchos::RCP<Ifpack2::Hypre<RowMatrix_type> > IfpHypre_;
 };
 
 }  // namespace AmanziSolvers

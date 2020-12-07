@@ -1,13 +1,13 @@
 /*
   Operators
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (coonet@ornl.gov)
-  
+
 */
 
 
@@ -58,7 +58,7 @@ struct DiffusionFixture {
       if (mesh_file == "Generate1D") {
         mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 1);
       } else if (mesh_file == "Generate2D") {
-        mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 10); 
+        mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 10);
       } else if (mesh_file == "Generate2D_HiRes") {
         mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 100);
       } else if (mesh_file == "Generate3D") {
@@ -67,7 +67,7 @@ struct DiffusionFixture {
         mesh = meshfactory.create(mesh_file);
       }
     }
-    
+
   }
 
   template<class PDE_Diffusion_type, AmanziMesh::Entity_kind Boundary_kind>
@@ -75,7 +75,7 @@ struct DiffusionFixture {
     // construct the operator
     op = Teuchos::rcp(new PDE_Diffusion_type(plist->sublist("PK operator").sublist(name), mesh));
     op->Init();
- 
+
     // modify diffusion coefficient
     CompositeVectorSpace K_map;
     K_map.SetMesh(mesh);
@@ -84,12 +84,12 @@ struct DiffusionFixture {
 
 
 
-    std::vector<WhetStone::Tensor<DefaultHostMemorySpace>> host_tensors(K->size()); 
+    std::vector<WhetStone::Tensor<DefaultHostMemorySpace>> host_tensors(K->size());
     for (int c = 0; c < K->size(); c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      host_tensors[c].assign(ana->TensorDiffusivity(xc, 0.0));   
+      host_tensors[c].assign(ana->TensorDiffusivity(xc, 0.0));
     }
-    K->Init(host_tensors); 
+    K->Init(host_tensors);
     op->SetTensorCoefficient(K);
     // boundary condition
     bc = Teuchos::rcp(new Operators::BCs(mesh, Boundary_kind, WhetStone::DOF_Type::SCALAR));
@@ -113,13 +113,13 @@ struct DiffusionFixture {
     K_map.AddComponent("cell", AmanziMesh::CELL, 1);
     auto K = Teuchos::rcp(new TensorVector(K_map));
 
-    std::vector<WhetStone::Tensor<DefaultHostMemorySpace>> host_tensors(K->size()); 
+    std::vector<WhetStone::Tensor<DefaultHostMemorySpace>> host_tensors(K->size());
     for (int c = 0; c < K->size(); c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      host_tensors[c].assign(ana->TensorDiffusivity(xc, 0.0));   
+      host_tensors[c].assign(ana->TensorDiffusivity(xc, 0.0));
     }
-    K->Init(host_tensors); 
-    
+    K->Init(host_tensors);
+
     op->SetTensorCoefficient(K);
 
     // boundary condition
@@ -153,11 +153,11 @@ struct DiffusionFixture {
   void setBCsDirichlet() {
     auto bc_value = bc->bc_value();
     auto bc_model = bc->bc_model();
-    
+
     if (bc->kind() == AmanziMesh::FACE) {
       const auto& bf_map = *mesh->map(AmanziMesh::BOUNDARY_FACE, false);
       const auto& f_map = *mesh->map(AmanziMesh::FACE, false);
-      
+
       for (int bf=0; bf!=bf_map.getNodeNumElements(); ++bf) {
         auto f = f_map.getLocalElement(bf_map.getGlobalElement(bf));
         bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
@@ -171,11 +171,11 @@ struct DiffusionFixture {
   void setBCsDirichletNeumannBox() {
     auto bc_value = bc->bc_value();
     auto bc_model = bc->bc_model();
-    
+
     if (bc->kind() == AmanziMesh::FACE) {
       const auto& bf_map = *mesh->map(AmanziMesh::BOUNDARY_FACE, false);
       const auto& f_map = *mesh->map(AmanziMesh::FACE, false);
-      
+
       for (int bf=0; bf!=bf_map.getNodeNumElements(); ++bf) {
         auto f = f_map.getLocalElement(bf_map.getGlobalElement(bf));
         auto fc = mesh->face_centroid(f);
@@ -188,43 +188,29 @@ struct DiffusionFixture {
         } else {
           bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
           bc_value[f] = ana->pressure_exact(mesh->face_centroid(f), 0.0);
-        }          
+        }
       }
     } else {
       assert(false && "OperatorDiffusion test harness not implemented for this kind.");
     }
   }
 
-  void setup(const std::string& pc_name_, bool symmetric_) {
-    symmetric = symmetric_;
+  void setup(const std::string& pc_name_, const std::string& solver_name_) {
     pc_name = pc_name_;
+    solver_name = solver_name_;
     global_op = op->global_operator();
     solution = Teuchos::rcp(new CompositeVector(global_op->getDomainMap()));
     solution->putScalar(0.);
-    
-    // get and assemble the global operator
-    // if (pc_name != "identity") {
-    //   global_op->SymbolicAssembleMatrix();
-    // }
 
     // create preconditoner using the base operator class
-    auto slist = Teuchos::sublist(Teuchos::sublist(plist, "preconditioners"), pc_name);
-    global_op->set_inverse_parameters(*slist);
-    global_op->initializeInverse();
-
-    if (symmetric) {
-      Teuchos::ParameterList lop_list = plist->sublist("solvers")
-                               .sublist("AztecOO CG").sublist("pcg parameters");
-      solver = Teuchos::rcp(new AmanziSolvers::IterativeMethodPCG<Operators::Operator,Operators::Operator, CompositeVector, CompositeSpace>());
-      solver->set_inverse_parameters(lop_list);
-    } else {
-      Teuchos::ParameterList lop_list = plist->sublist("solvers")
-                               .sublist("GMRES").sublist("gmres parameters");
-      solver = Teuchos::rcp(new AmanziSolvers::IterativeMethodGMRES<Operators::Operator,Operators::Operator, CompositeVector, CompositeSpace>());
-      solver->set_inverse_parameters(lop_list);
+    if (pc_name != "none") {
+      inverse_list.setParameters(*Teuchos::sublist(Teuchos::sublist(plist, "preconditioners"), pc_name));
     }
-    solver->set_matrix(global_op);
-    solver->initializeInverse();
+    if (solver_name != "none") {
+      inverse_list.setParameters(*Teuchos::sublist(Teuchos::sublist(plist, "solvers"), solver_name));
+    }
+    global_op->set_inverse_parameters(inverse_list);
+    global_op->initializeInverse();
 
     CompositeVectorSpace flux_space;
     flux_space.SetMesh(mesh)->SetGhosted(true)->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
@@ -243,24 +229,18 @@ struct DiffusionFixture {
       rhs_c(c,0) += ana->source_exact(xc, 0.0) * mesh->cell_volume(c);
     }
     op->ApplyBCs(true, true, true);
+
     global_op->computeInverse();
-    solver->computeInverse();
-
-    // if (symmetric) {
-    //   // Test SPD properties of the preconditioner.
-    //   VerificationCV ver(global_op);
-    //   ver.CheckPreconditionerSPD();
-    // }
-
-    int ierr = solver->applyInverse(*global_op->rhs(), *solution);
+    int ierr = global_op->applyInverse(*global_op->rhs(), *solution);
+    //    inverse_list.print(std::cout);
 
     auto MyPID = comm->getRank();
     if (MyPID == 0) {
-      std::cout << "pressure solve: ||r||=" << solver->residual() 
-                << " itr=" << solver->num_itrs()
-                << " code=" << solver->returned_code() << std::endl;
+      std::cout << "pressure solve: ||r||=" << global_op->residual()
+                << " itr=" << global_op->num_itrs()
+                << " code=" << global_op->returned_code() << std::endl;
     }
-      
+
     if (tol > 0.0) {
       // compute pressure error
       double pnorm(0.), pl2_err(0.), pinf_err(0.);
@@ -275,33 +255,33 @@ struct DiffusionFixture {
         auto fv = flux->ViewComponent<MirrorHost>("face", false);
       }
 
-      
+
       ComputeFaceError(*ana, mesh, *flux, 0.0, unorm, ul2_err, uinf_err);
       //flux->Print(std::cout);
 
       if (MyPID == 0) {
-        pl2_err /= pnorm; 
+        pl2_err /= pnorm;
         ul2_err /= unorm;
         printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f itr=%3d\n",
-               pl2_err, pinf_err, ul2_err, uinf_err, solver->num_itrs());
-        
+               pl2_err, pinf_err, ul2_err, uinf_err, global_op->num_itrs());
+
         CHECK(pl2_err < tol);
         CHECK(ul2_err < 10*tol);
-        //if (pc_name != "identity" && pc_name != "diagonal") CHECK(solver->num_itrs() < 10);
+        //if (pc_name != "identity" && pc_name != "diagonal") CHECK(global_op->num_itrs() < 10);
       }
     }
   }
-  
+
   Comm_ptr_type comm;
   ParameterList_ptr_type plist;
+  Teuchos::ParameterList inverse_list;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh;
 
-  bool symmetric;
   Teuchos::RCP<Operators::BCs> bc;
   Teuchos::RCP<AnalyticBase> ana;
   Teuchos::RCP<CompositeVector> solution, flux;
-  std::string pc_name;
-  
+  std::string pc_name, solver_name;
+
   Teuchos::RCP<Operators::PDE_Diffusion> op;
   Teuchos::RCP<Operators::Operator> global_op;
   Teuchos::RCP<AmanziSolvers::InverseIterativeMethod<Operators::Operator,Operators::Operator, CompositeVector, CompositeSpace>> solver;

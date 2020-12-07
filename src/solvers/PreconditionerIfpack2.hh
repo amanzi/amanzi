@@ -1,7 +1,7 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -28,10 +28,10 @@ using Ifpack2_PC_type = Ifpack2::Preconditioner<Matrix_type::scalar_type,
 
 class PreconditionerIfpack2 : public Preconditioner {
  public:
-  PreconditionerIfpack2(): 
+  PreconditionerIfpack2():
     Preconditioner(), initialized_(false) {};
 
-  void set_inverse_parameters(Teuchos::ParameterList& plist) override{
+  virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override {
     plist_ = plist;
     std::string vo_name = this->name()+" ("+plist_.get<std::string>("method")+")";
     vo_ = Teuchos::rcp(new VerboseObject(vo_name, plist_));
@@ -40,44 +40,31 @@ class PreconditionerIfpack2 : public Preconditioner {
 
   virtual void initializeInverse() override {
     Ifpack2::Factory factory;
-    A_ = h_; 
+    A_ = h_;
     std::string method = plist_.get<std::string>("method");
-
-    if(method == "KSPILUK"){
-      method = "RILUK"; 
-      if (!plist_.isParameter("fact: type")){
-        plist_.set<std::string>("fact: type", "KSPILUK");
-      }
-      //if (!plist_.isParameter("trisolver: type")){
-      //  plist_.set<std::string>("trisolver: type", "KSPTRSV");
-      //}
-      if (!plist_.isParameter("fact: iluk level-of-fill")){
-        plist_.set<int>("fact: iluk level-of-fill", 0);
-      }
-      if (!plist_.isParameter("fact: iluk level-of-overlap")){
-        plist_.set<int>("fact: iluk level-of-overlap", 0);
-      }
-    }
+    if (vo_->os_OK(Teuchos::VERB_LOW))
+      *vo_->os() << "Ifpack2 method: " << method << std::endl;
 
     pc_ = factory.create(method, A_);
-    pc_->setParameters(plist_.sublist(std::string("ifpack2: ")+method+" parameters"));
+    pc_->setParameters(plist_);
     pc_->initialize();
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) plist_.print(*vo_->os());
   }
 
-  void computeInverse() override { 
+  virtual void computeInverse() override {
     pc_->compute();
     if (vo_->os_OK(Teuchos::VERB_HIGH)) pc_->describe(*vo_->os(), vo_->getVerbLevel());
   }
 
   virtual int returned_code() const override final { return returned_code_; }
-  
-  int applyInverse(const Vector_type& v, Vector_type& hv) const override {
+
+  virtual int applyInverse(const Vector_type& v, Vector_type& hv) const override {
     pc_->apply(v, hv);
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) pc_->describe(*vo_->os(), vo_->getVerbLevel());
     return 0;
   }
 
-  std::string returned_code_string() const override
+  virtual std::string returned_code_string() const override
   {
     switch (returned_code()) {
       case -1 :
@@ -107,7 +94,7 @@ class PreconditionerIfpack2 : public Preconditioner {
   Teuchos::RCP<const Matrix_type> A_;
 
 
-  bool initialized_; 
+  bool initialized_;
   mutable int returned_code_;
 
 };
@@ -115,4 +102,4 @@ class PreconditionerIfpack2 : public Preconditioner {
 } // namespace AmanziPreconditioners
 } // namespace Amanzi
 
-#endif 
+#endif

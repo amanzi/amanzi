@@ -73,7 +73,11 @@ void test(const Teuchos::RCP<AnalyticBase>& ana,
   } else {
     AMANZI_ASSERT(false);
   }
-  fix.setup(pc_type, symmetric);
+  if (symmetric) {
+    fix.setup(pc_type, "PCG");
+  } else {
+    fix.setup(pc_type, "GMRES");
+  }
   for (int i=0; i!=niters-1; ++i) fix.go(0.0);
   fix.go(tol);    
   std::cout << "=============================================================================" << std::endl;
@@ -107,7 +111,11 @@ void testWGravity(const Teuchos::RCP<AnalyticBase>& ana,
   } else {
     AMANZI_ASSERT(false);
   }      
-  fix.setup(pc_type, symmetric);
+  if (symmetric) {
+    fix.setup(pc_type, "PCG");
+  } else {
+    fix.setup(pc_type, "GMRES");
+  }
   for (int i=0; i!=niters-1; ++i) fix.go(0.0);
   fix.go(tol);
   std::cout << "=============================================================================" << std::endl;
@@ -157,7 +165,7 @@ SUITE(DIFFUSION) {
     DiffusionFixture fix(ana, "Generate1D");
     fix.discretize<Operators::PDE_DiffusionFV, AmanziMesh::FACE>("fv");
     fix.setBCsDirichlet();
-    fix.setup("diagonal", true);
+    fix.setup("diagonal", "PCG");
 
     std::cout << "Diffusion Forward Apply Test (np=" << fix.comm->getSize() << "): " << "fv" << ", "
               << ana->name() << ", " << "Generate1D" << std::endl
@@ -208,7 +216,7 @@ SUITE(DIFFUSION) {
     DiffusionFixture fix(ana, "Generate1D");
     fix.discretize<Operators::PDE_DiffusionMFD, AmanziMesh::FACE>("mixed");
     fix.setBCsDirichlet();
-    fix.setup("diagonal", true);
+    fix.setup("diagonal", "PCG");
 
     std::cout << "Diffusion Forward Apply Test (np=" << fix.comm->getSize() << "): " << "MFD" << ", "
               << ana->name() << ", " << "Generate1D" << std::endl

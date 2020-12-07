@@ -47,7 +47,7 @@ set(solvers_source_files
   ResidualDebugger.cc
 #  DirectMethodAmesos.cc
   DirectMethodAmesos2.cc
-#  PreconditionerHypre.cc
+  PreconditionerHypre.cc
 #  PreconditionerML.cc
   SolverFactory.cc
   )
