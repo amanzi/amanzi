@@ -77,10 +77,9 @@ struct Problem {
       ana(ana_),
       discretization(discretization_),
       comm(mesh_->get_comm())
-      
   {}
 
-  ~Problem() { }
+  ~Problem() {}
 
   void Setup() {
     MakeBCs();
@@ -835,7 +834,7 @@ std::pair<double,double> RunForwardProblem_Assembled(
 std::pair<double,double> RunInverseProblem(
     const std::string& discretization,
     bool upwind,
-    int nx, int ny, bool write_file, bool multi_domain) {
+    int nx, int ny, bool write_file) {
 
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -1331,7 +1330,7 @@ void RunForwardTest(const std::string& discretization, bool upwind) {
 }
 
 
-void RunInverseTest(const std::string& discretization, bool upwind, bool multi_domain) {
+void RunInverseTest(const std::string& discretization, bool upwind) {
   std::cout << std::endl
             << std::endl
             << "============================================================================="
@@ -1343,7 +1342,7 @@ void RunInverseTest(const std::string& discretization, bool upwind, bool multi_d
   std::cout << "x = np.array([\n";
   std::vector<std::pair<double,double> > l2s;
   for (int i=2; i<=129; i*=2) {
-    std::pair<double,double> l2 = RunInverseProblem(discretization, upwind, i, i, false, multi_domain);
+    std::pair<double,double> l2 = RunInverseProblem(discretization, upwind, i, i, false);
     l2s.push_back(l2);
   }
   std::cout << "])" << std::endl;
@@ -1431,10 +1430,10 @@ void RunNonlinearTest(const std::string& discretization, const std::string& jaco
 //   RunForwardTest("fv: default", true);
 // }
 TEST(OPERATOR_COUPLED_DIFFUSION_INVERSE_UPWIND_CONVERGENCE_FV) {
-  RunInverseTest("fv: default", true, false);
+  RunInverseTest("mfd: default", true);
 }
 TEST(OPERATOR_COUPLED_DIFFUSION_INVERSE_UPWIND_CONVERGENCE_FV_MD) {
-  RunInverseTest("fv: default", true, true);
+  RunInverseTest("mfd: default", true);
 }
 // TEST(OPERATOR_COUPLED_DIFFUSION_NONLINEAR_UPWIND_CONVERGENCE_FV) {
 //   RunNonlinearTest("fv: default", "none");
