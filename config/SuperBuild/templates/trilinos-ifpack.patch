@@ -10,3 +10,15 @@ index d70f232946b..a7beafea8de 100644
  
    // Hypre Setup must be called after matrix has values
    if(SolveOrPrec_ == Solver){
+diff --git a/packages/ifpack2/src/Ifpack2_Hypre_def.hpp b/packages/ifpack2/src/Ifpack2_Hypre_def.hpp
+index 39567505393..50e219172de 100644
+--- a/packages/ifpack2/src/Ifpack2_Hypre_def.hpp
++++ b/packages/ifpack2/src/Ifpack2_Hypre_def.hpp
+@@ -844,6 +844,7 @@ void Hypre<MatrixType>::compute(){
+     if(isInitialized() == false){
+       initialize();
+     }
++    CopyTpetraToHypre();
+
+     // Hypre Setup must be called after matrix has values
+     if(SolveOrPrec_ == Hypre_Is_Solver){
