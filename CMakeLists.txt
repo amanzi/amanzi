@@ -80,6 +80,23 @@ if ((ENABLE_Unstructured)  AND
                       "-D ENABLE_MSTK_Mesh:BOOL=ON\n")
 endif()    
 
+if(ENABLE_KOKKOS_CUDA) 
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
+    -Wno-deprecated-declarations \
+    -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored \
+    -Xcudafe --diag_suppress=conversion_function_not_usable \
+    -Xcudafe --diag_suppress=cc_clobber_ignored \
+    -Xcudafe --diag_suppress=code_is_unreachable \
+    -Xcudafe --diag_suppress=declared_but_not_referenced \
+    -Xcudafe --diag_suppress=integer_sign_change \
+    -Xcudafe --diag_suppress=partial_override \
+    -Xcudafe --diag_suppress=virtual_function_decl_hidden \
+    -Xcudafe --diag_suppress=probable_guiding_friend \
+    -Xcudafe --display_error_number \
+    --expt-extended-lambda")  
+  message(STATUS "NVCC_WRAPPER_DEFAULT_COMPILER: $ENV{NVCC_WRAPPER_DEFAULT_COMPILER}")  
+  message(STATUS "CMAKE_CXX_COMPILER ${CMAKE_CXX_COMPILER}")  
+endif()
 
 # A property for accumulating the a global amanzi link line.
 set_property(GLOBAL PROPERTY AMANZI_LINK_LINE "-L${CMAKE_INSTALL_PREFIX}/lib")

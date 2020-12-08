@@ -71,7 +71,7 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
                                .sublist("diffusion operator Crouzeix-Raviart");
   int order = op_list.sublist("schema").get<int>("method order");
   
-  Analytic00 ana(mesh, 1.0, 2.0, order);
+  Analytic00 ana(mesh, order);
 
   Point xv(2), x0(2), x1(2);
   AmanziMesh::Entity_ID_List nodes;
@@ -183,7 +183,7 @@ void RunHighOrderLagrange2D(std::string vem_name, bool polygonal_mesh) {
                                .sublist("diffusion operator " + vem_name);
   int order = op_list.sublist("schema").get<int>("method order");
 
-  Analytic00 ana(mesh, 1.0, 2.0, order);
+  Analytic00 ana(mesh, order);
 
   Point xv(2), x0(2), x1(2);
   AmanziMesh::Entity_ID_List nodes;
