@@ -222,7 +222,7 @@ CompositeMultiVector<Vector>::MvTransMv(
 
   for (int r = 0; r < cmvA->GetNumberVecs(); r++) {
     for (int c = 0; c < GetNumberVecs(); c++)
-      cmv_[c]->Dot(*cmvA->cmv_[r], &B(r, c));
+      B(r, c) = cmv_[c]->dot(*cmvA->cmv_[r]);
   }
 }
 
@@ -238,7 +238,7 @@ CompositeMultiVector<Vector>::MvDot(const Belos::MultiVec<double>& A,
     std::invalid_argument,
     "CompositeMultiVector::MvAddMv: A must be a CompositeMultiVector");
 
-  for (int i = 0; i < cmv_.size(); i++) { cmv_[i]->Dot(*cmvA->cmv_[i], &b[i]); }
+  for (int i = 0; i < cmv_.size(); i++) { b[i] = cmv_[i]->dot(*cmvA->cmv_[i]); }
 }
 
 template <class Vector>
@@ -275,7 +275,7 @@ template <class Vector>
 void
 CompositeMultiVector<Vector>::MvRandom()
 {
-  for (int i = 0; i < cmv_.size(); i++) cmv_[i]->Random();
+  for (int i = 0; i < cmv_.size(); i++) cmv_[i]->randomize();
 }
 
 template <class Vector>
@@ -289,7 +289,7 @@ template <class Vector>
 void
 CompositeMultiVector<Vector>::MvPrint(std::ostream& os) const
 {
-  for (int i = 0; i < cmv_.size(); i++) cmv_[i]->Print(os);
+  for (int i = 0; i < cmv_.size(); i++) cmv_[i]->print(os);
 }
 
 } // namespace Amanzi

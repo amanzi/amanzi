@@ -160,7 +160,7 @@ class BlockVector {
   void putScalarGhosted(Scalar scalar);
 
   // cheap randomizer
-  void random();
+  void randomize();
 
   // this <- abs(this)
   void abs(const BlockVector<Scalar>& other);
@@ -213,7 +213,7 @@ class BlockVector {
   // Scalar MeanValue() const;
 
   // Extras
-  void Print(std::ostream& os, bool ghosted = false, bool data_io = true) const;
+  void print(std::ostream& os, bool ghosted = false, bool data_io = true) const;
 
  protected:
   virtual cMultiVector_ptr_type_<Scalar>

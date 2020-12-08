@@ -122,7 +122,8 @@ BlockVector<Scalar>::operator=(const BlockVector<Scalar>& other)
       if (other_v == Teuchos::null && this_v == Teuchos::null) {
         // pass
       } else if (this_v == Teuchos::null) {
-        auto new_v = Teuchos::rcp(new MultiVector_type_<Scalar>(*other_v));
+        auto new_v = Teuchos::rcp(new MultiVector_type_<Scalar>(*other_v,Teuchos::Copy));
+        Tpetra::deep_copy(*new_v, *other_v);
         SetComponent_(name, false, new_v);
       } else {
         Tpetra::deep_copy(*this_v, *other_v);
@@ -625,7 +626,7 @@ BlockVector<Scalar>::norm2() const
 // Debugging?
 template <typename Scalar>
 void
-BlockVector<Scalar>::Print(std::ostream& os, bool ghosted, bool data_io) const
+BlockVector<Scalar>::print(std::ostream& os, bool ghosted, bool data_io) const
 {
   os << "Comp Vector" << std::endl;
   os << "  components: ";
@@ -644,7 +645,7 @@ BlockVector<Scalar>::Print(std::ostream& os, bool ghosted, bool data_io) const
 // Populate by random numbers between -1 and 1.
 template <typename Scalar>
 void
-BlockVector<Scalar>::random()
+BlockVector<Scalar>::randomize()
 {
   for (const auto& name : *this) { GetComponent_(name)->randomize(); }
 };

@@ -841,8 +841,8 @@ TEST(SUPERMAP_COPY_INVERTIBLE)
   Teuchos::RCP<TreeVector> tv = Teuchos::rcp(new TreeVector(maps.tvs));
 
   // initialize randomly
-  tv->SubVector(0)->Data()->random();
-  tv->SubVector(1)->Data()->random();
+  tv->SubVector(0)->Data()->randomize();
+  tv->SubVector(1)->Data()->randomize();
 
   Vector_type vec(maps.map->getMap());
 

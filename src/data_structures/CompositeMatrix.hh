@@ -35,7 +35,7 @@ class CompositeMatrix {
 
   // Apply the inverse, x <-- A^-1 b, returns ierr
   virtual int
-  ApplyInverse(const CompositeVector& b, CompositeVector& x) const = 0;
+  applyInverse(const CompositeVector& b, CompositeVector& x) const = 0;
 };
 
 } // namespace Amanzi

@@ -176,7 +176,7 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
                                      const Teuchos::Ptr<const CompositeVector>& u)
 {
   if (!transmissibility_initialized_) ComputeTransmissibility_();
-
+  
   if (local_op_.get()) {
     using memory_space = decltype(local_op_->A)::memory_space;
     using DenseMatrix = WhetStone::DenseMatrix<memory_space>;
@@ -204,7 +204,6 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
             }
           }
         });
-    
   }
 }
 
@@ -504,8 +503,8 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
     }
     K_ = K;
   }
-
   {
+
     auto trans_face = transmissibility_->ViewComponent<DefaultDevice>("face", true);
     const Amanzi::AmanziMesh::Mesh* m = mesh_.get();
     const int space_dimension = mesh_->space_dimension(); 
@@ -522,7 +521,6 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
           m->cell_get_faces_and_bisectors(c, faces, bisectors);
 
           WhetStone::Tensor<DeviceOnlyMemorySpace> Kc = K->at(c);
-
           for (int i = 0; i < faces.extent(0); i++) {
             auto f = faces(i);
             const AmanziGeometry::Point& a = bisectors(i);

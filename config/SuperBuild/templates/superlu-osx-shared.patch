@@ -1,23 +1,21 @@
 diff -ruNbB superlu-5.2.1-original/CBLAS/CMakeLists.txt superlu-5.2.1-source/CBLAS/CMakeLists.txt
 --- superlu-5.2.1-original/CBLAS/CMakeLists.txt	2016-05-22 09:58:44.000000000 -0600
 +++ superlu-5.2.1-source/CBLAS/CMakeLists.txt	2017-10-18 11:21:56.000000000 -0600
-@@ -80,6 +80,9 @@
- #endif()
+@@ -80,3 +80,7 @@
+ endif()
  
  add_library(blas ${sources} ${HEADERS})
 +if (APPLE)
 +  set_target_properties(blas PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
 +endif()
- 
- include(GNUInstallDirs)
- install(TARGETS blas
++
 diff -ruNbB superlu-5.2.1-original/TESTING/MATGEN/CMakeLists.txt superlu-5.2.1-source/TESTING/MATGEN/CMakeLists.txt
 --- superlu-5.2.1-original/TESTING/MATGEN/CMakeLists.txt	2016-05-22 09:58:44.000000000 -0600
 +++ superlu-5.2.1-source/TESTING/MATGEN/CMakeLists.txt	2017-10-18 11:22:37.000000000 -0600
-@@ -114,3 +114,6 @@
+@@ -97,3 +97,6 @@
+ endif()
  
  add_library(matgen ${sources})
- target_link_libraries(matgen superlu)
 +if (APPLE)
 +  set_target_properties(matgen PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
 +endif()

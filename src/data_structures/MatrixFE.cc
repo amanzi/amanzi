@@ -126,7 +126,7 @@ void
 MatrixFE::fillComplete() {
   if (graph_->includes_offproc()) {
     // fill complete the offproc matrix
-    offproc_matrix_->fillComplete(graph_->getDomainMap(), graph_->getRangeMap());
+    offproc_matrix_->fillComplete(graph_->getOffProcGraph()->getDomainMap(), graph_->getOffProcGraph()->getRangeMap());
 
     // scatter offproc into onproc
     matrix_->doExport(*offproc_matrix_, *graph_->getExporter(), Tpetra::ADD);

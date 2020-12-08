@@ -103,7 +103,7 @@ SUITE(PKS_PDE)
 
     // print final solution
     std::cout << "Final solution" << std::endl;
-    run->S->Get<CompositeVector>("u").Print(std::cout);
+    run->S->Get<CompositeVector>("u").print(std::cout);
 
     // check error
     auto m = run->S->GetMesh();

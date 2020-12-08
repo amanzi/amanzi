@@ -83,6 +83,12 @@ collectTreeVectorLeaves_const(const T& tv)
   return leaves;
 }
 
+template<class T>
+int getNumTreeVectorLeaves(const T& tv) {
+  return collectTreeVectorLeaves_const(tv).size();
+}
+
+
 
 } // namespace Amanzi
 

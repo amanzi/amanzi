@@ -215,8 +215,9 @@ EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
     update |= S.GetEvaluator(dep.first, dep.second).Update(S, my_request);
 
     // and we must update our dependencies derivatives to apply the chain rule
-    if (S.GetEvaluator(dep.first, dep.second)
-          .IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+    auto& dep_eval = S.GetEvaluator(dep.first, dep.second);
+    if (dep_eval.IsDifferentiableWRT(S, wrt_key, wrt_tag) &&
+        !dep_eval.ProvidesKey(wrt_key, wrt_tag)) {
       update |= S.GetEvaluator(dep.first, dep.second)
                   .UpdateDerivative(S, my_request, wrt_key, wrt_tag);
     }

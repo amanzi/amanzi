@@ -135,6 +135,15 @@ std::string VerboseObject::color(const std::string& name) const
   return output;
 }
 
+std::string VerboseObject::reset() const
+{ 
+  std::string output("");
+#ifdef __linux
+  output = std::string("\033[0m");
+#endif
+  return output;
+}
+
 
 std::string VerboseObject::clock() const
 {

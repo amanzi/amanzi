@@ -21,8 +21,11 @@
 
 #include "dbc.hh"
 #include "errors.hh"
+#include "AmanziDebug.hh"
 
 namespace Amanzi {
+
+
 
 // The Amanzi::SolutionHistory class stores the solution history of the time
 // stepper and provides interpolation methods that are used in the DAE
@@ -247,7 +250,9 @@ SolutionHistory<Vector>::InterpolateSolution(double t, Vector& x,
   AMANZI_ASSERT(order > 0);
 
   x.assign(*d_[order]);
+  std::cout << "Interp: x = " << Debug::get0(x) << std::endl;
   for (int k = order - 1; k >= 0; k--) { x.update(1.0, *d_[k], t - times_[k]); }
+  std::cout << "Interp2: x = " << Debug::get0(x) << std::endl;
 }
 
 

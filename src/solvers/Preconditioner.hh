@@ -1,59 +1,25 @@
 /*
-  Copyright 2010-201x held jointly by participating institutions.
-  Amanzi is released under the three-clause BSD License.
-  The terms of use and "as is" disclaimer for this license are
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Ethan Coon (coonet@ornl.gov)
 */
 
-//! Base class for preconditioners.
+//! A base class for assembled preconditioners.
 
-/*!
+#pragma once
 
-``[preconditioner-typed-spec]``
-
-* `"preconditioner type`" ``[string]`` Iterative method to be used.
-* `"_preconditioner_type_ parameters`" ``[_preconditioner_type_-spec]``
-  Parameters associated with the requested preconditioner.
-
- */
-
-#ifndef AMANZI_PRECONDITIONER_HH_
-#define AMANZI_PRECONDITIONER_HH_
-
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "Inverse.hh"
 
 namespace Amanzi {
-namespace AmanziPreconditioners {
+namespace AmanziSolvers {
 
-template <class Matrix, class Vector>
-class Preconditioner {
- public:
-  virtual ~Preconditioner() = default;
+using Preconditioner = Inverse<Matrix_type,
+                               Matrix_type,
+                               Vector_type,
+                               Map_type>;
 
-  // Initializes the solver with provided parameters.
-  // This need not be called by preconditioners created using the factory.
-  virtual void
-  Init(const std::string& name,
-       const Teuchos::RCP<Teuchos::ParameterList>& list) = 0;
-
-  // Rebuild the preconditioner using the given matrix A.
-  virtual void Update(const Teuchos::RCP<Matrix>& A) = 0;
-
-  // Destroy the preconditioner and auxiliary data structures.
-  virtual void Destroy() = 0;
-
-  // Apply the preconditioner.
-  virtual int applyInverse(const Vector& v, Vector& hv) const = 0;
-
-  virtual int returned_code() = 0;
-};
-
-} // namespace AmanziPreconditioners
+} // namespace AmanziSolvers
 } // namespace Amanzi
-
-
-#endif

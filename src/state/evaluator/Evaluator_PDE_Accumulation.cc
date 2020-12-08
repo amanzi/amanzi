@@ -120,7 +120,7 @@ Evaluator_PDE_Accumulation::EvaluatePartialDerivative_(
   }
 
   if (vo_.os_OK(Teuchos::VERB_EXTREME))
-    results[0]->Print(*vo_.os());
+    results[0]->print(*vo_.os());
 }
 
 } // namespace Amanzi

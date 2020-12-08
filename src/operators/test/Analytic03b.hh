@@ -103,13 +103,13 @@ class Analytic03b : public AnalyticBase {
     double x = p[0];
     double y = p[1];
 
-    double plaplace, pmean, kmean;
+    double plaplace, kmean;
     Amanzi::AmanziGeometry::Point pgrad(dim), kgrad(dim);
 
     kmean = ScalarDiffusivity(p,t);
     kgrad = ScalarTensorGradient(p, t);
 
-    pmean = pressure_exact(p, t);
+    pressure_exact(p, t);
     pgrad = gradient_exact(p, t);
 
     if (x < 0.5) { 

@@ -11,12 +11,11 @@
 
 // Amanzi
 #include "errors.hh"
-#include "LinearOperator.hh"
-#include "LinearOperatorFactory.hh"
+#include "Inverse.hh"
 #include "MatrixFE.hh"
 // #include "MFD3D_CrouzeixRaviart.hh"
 #include "MFD3D_Diffusion.hh"
-#include "PreconditionerFactory.hh"
+#include "InverseFactory.hh"
 #include "SuperMap.hh"
 #include "WhetStoneDefs.hh"
 
@@ -1482,11 +1481,11 @@ int PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
   //      plist_.sublist("consistent faces").sublist("linear solver"), consistent_face_op_);
 
   //  CompositeVector u_f_copy(y);
-  //  ierr = lin_solver->ApplyInverse(y, u_f_copy);
+  //  ierr = lin_solver->applyInverse(y, u_f_copy);
   //  u.ViewComponent("face", false) = u_f_copy.ViewComponent("face", false);
   //} else {
   //  CompositeVector u_f_copy(y);
-  //  ierr = consistent_face_op_->ApplyInverse(y, u);
+  //  ierr = consistent_face_op_->applyInverse(y, u);
   //  u.ViewComponent("face", false) = u_f_copy.ViewComponent("face", false);
   //}
   

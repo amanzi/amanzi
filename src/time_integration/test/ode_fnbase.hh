@@ -36,12 +36,21 @@ class nonlinearODE : public Amanzi::BDFFnBase<Vector_type> {
     // uex = u0/(1-u0(t-t0))
 
     // compute udot... f <-- (unew-uold)/(tnew-told)
+    std::cout << "nonlinearODE::Residual u = " << Debug::get0(*unew) << std::endl;
+    std::cout << "nonlinearODE::Residual f = " << Debug::get0(*f) << std::endl;
+    std::cout << "nonlinearODE::Residual u == f = " << Debug::isSame(*unew, *f) << std::endl;
+    assert(!Debug::isSame(*unew, *f));
     f->assign(*unew);
+    std::cout << "nonlinearODE::Residual u = " << Debug::get0(*unew) << std::endl;
+    std::cout << "nonlinearODE::Residual f = " << Debug::get0(*f) << std::endl;
+    std::cout << "nonlinearODE::Residual u == f = " << Debug::isSame(*unew, *f) << std::endl;
     double hinv(1.0 / (tnew - told));
     f->update(-hinv, *uold, hinv);
 
     // f <-- f - unew^2
+    std::cout << "nonlinearODE::Residual u = " << Debug::get0(*unew) << std::endl;
     f->elementWiseMultiply(-1.0, *unew, *unew, 1.0);
+    std::cout << "nonlinearODE::Residual u = " << Debug::get0(*unew) << std::endl;
 
     {
       auto u0v = uold->getLocalViewHost();

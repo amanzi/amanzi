@@ -113,16 +113,15 @@ EvaluatorSecondaryMonotype<
 
   // if provides key, then the result is 1
   if (ProvidesKey(wrt_key, wrt_tag)) {
-    int i = std::find(my_keys_.begin(), my_keys_.end(), std::make_pair(wrt_key, wrt_tag))
-            - my_keys_.begin();
-    AMANZI_ASSERT(i < my_keys_.size()); // ensured by IsDifferentiableWRT() check previously
-    results[i]->putScalar(1.0);
-    return;
+    Errors::Message msg;
+    msg << "EvaluatorSecondary (" << my_keys_[0].first << "," << my_keys_[0].second << ") provides key (" << wrt_key << "," << wrt_tag << ") and so should not be differentiated with respect to this key.";
+    throw(msg);
   }
 
   // dF/dx = sum_(deps) partial F/ partial dep * ddep/dx + partial F/partial x
   for (auto& dep : dependencies_) {
-    if (wrt_key == dep.first && wrt_tag == dep.second) {
+    auto& dep_eval = S.GetEvaluator(dep.first, dep.second);
+    if (dep_eval.ProvidesKey(wrt_key, wrt_tag)) {
       // partial F / partial x
       std::vector<CompositeVector> tmp_data(my_keys_.size(), *results[0]);
       std::vector<CompositeVector*> tmp(my_keys_.size());
@@ -132,7 +131,7 @@ EvaluatorSecondaryMonotype<
         results[i]->update(1., tmp_data[i], 1.);
 
     } else if (S.GetEvaluator(dep.first, dep.second)
-                 .IsDependency(S, wrt_key, wrt_tag)) {
+                 .IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
       // partial F / partial dep * ddep/dx
       // note this has already been Updated in the public version of this
       // function
@@ -244,8 +243,9 @@ EvaluatorSecondaryMonotype<CompositeVector,
           for (const auto& deriv :
                S.GetDerivativeSet(keytag.first, keytag.second)) {
             auto wrt = Keys::splitKeyTag(deriv.first);
-            if (S.GetEvaluator(dep.first, dep.second)
-                  .IsDifferentiableWRT(S, wrt.first, wrt.second)) {
+            auto& dep_eval = S.GetEvaluator(dep.first, dep.second);
+            if (dep_eval.IsDifferentiableWRT(S, wrt.first, wrt.second) &&
+                !dep_eval.ProvidesKey(wrt.first, wrt.second)) {
               S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
                  dep.first, dep.second, wrt.first, wrt.second)
                 .Update(my_fac);

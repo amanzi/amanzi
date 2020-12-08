@@ -59,7 +59,7 @@ SUITE(RESTART)
 
     S0.Setup();
     // randomize
-    S0.GetW<Amanzi::CompositeVector>("celldata", "", "state_restart").random();
+    S0.GetW<Amanzi::CompositeVector>("celldata", "", "state_restart").randomize();
     S0.set_time(1.02);
     S0.set_cycle(5);
 

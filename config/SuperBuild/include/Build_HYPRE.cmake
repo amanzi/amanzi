@@ -34,41 +34,37 @@ set(hypre_openmp_opt "-DHYPRE_USING_OPENMP:BOOL=FALSE")
 set(hypre_blas_opt)
 find_package(BLAS)
 if (BLAS_FOUND)
-  set(hypre_blas_opt "-DHYPRE_USING_HYPRE_BLAS:BOOL=FALSE")
+  set(hypre_blas_opt "-DHYPRE_USING_HYPRE_BLAS:BOOL=TRUE")
 endif()
 
 set(hypre_lapack_opt)
 find_package(LAPACK)
 if (LAPACK_FOUND)
-  set(hypre_lapack_opt "-DHYPRE_USING_HYPRE_LAPACK:BOOL=FALSE")
+  set(hypre_lapack_opt "-DHYPRE_USING_HYPRE_LAPACK:BOOL=TRUE")
 endif()
 
 # set(hypre_fortran_opt -"--disable-fortran)
 
 # Locate SuperLU and SuperLUDist
-set(hypre_superlu_opt "-DTPL_DSUPERLU_INCLUDE_DIRS:PATH=${TPL_INSTALL_PREFIX}/include"
-                      "-DTPL_DSUPERLU_LIBRARIES:FILEPATH=${SuperLUDist_LIBRARY}"
+set(hypre_superlu_opt "-DSUPERLU_INCLUDE_DIR:PATH=${TPL_INSTALL_PREFIX}/include"
                       "-DSUPERLU_LIBRARY:FILEPATH=${SuperLU_LIBRARY}"
-                      "-DHYPRE_WITH_DSUPERLU:BOOL=TRUE"
+                      "-DSUPERLUDIST_LIBRARY:FILEPATH=${SuperLUDist_LIBRARY}"
+                      "-DHYPRE_USING_TPL_SUPERLU:BOOL=TRUE"
                       "-DHYPRE_USING_FEI:BOOL=FALSE")
 
 # shared/static libraries (shared FEI is broken in HYPRE)
 set(hypre_shared_opt)
 if (BUILD_SHARED_LIBS)
-  set(hypre_shared_opt "-DHYPRE_ENABLE_SHARED:BOOL=TRUE"
-                       "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}")
+  set(hypre_shared_opt "-DHYPRE_SHARED:BOOL=TRUE")
 else()
-  set(hypre_shared_opt "-DHYPRE_ENABLE_SHARED:BOOL=FALSE")
+  set(hypre_shared_opt "-DHYPRE_SHARED:BOOL=FALSE")
 endif()
 
 set(hypre_install_opt "-DHYPRE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}")
 
-string(REPLACE ";" "\\\;" hypre_module_opt "${CMAKE_MODULE_PATH}")
-
 
 # --- Set the name of the patch
-set(HYPRE_patch_file hypre-cmake.patch
-                     hypre-superlu.patch)
+set(HYPRE_patch_file hypre-superlu.patch)
 # --- Configure the bash patch script
 set(HYPRE_sh_patch ${HYPRE_prefix_dir}/hypre-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hypre-patch-step.sh.in
@@ -111,7 +107,6 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
                                   -DMPI_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
                                   -DHYPRE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                                   -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-                    CMAKE_CACHE_ARGS -DCMAKE_MODULE_PATH:STRING=${hypre_module_opt}
                     # -- Build
                     BINARY_DIR       ${HYPRE_build_dir}        # Build directory 
                     BUILD_COMMAND    ${MAKE} 
