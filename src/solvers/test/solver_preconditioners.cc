@@ -45,37 +45,33 @@ inline Teuchos::RCP<Matrix_type> matrix(const Teuchos::RCP<Map_type>& map) {
 
   return A_;
 }
-  
+
 
 inline Teuchos::RCP<Amanzi::AmanziSolvers::Preconditioner>
 preconditioner(const std::string& name,
                const Teuchos::RCP<Matrix_type>& mat)
-{  
+{
   Teuchos::ParameterList plist;
   plist.set<std::string>("preconditioning method", name);
   Teuchos::ParameterList& tmp = plist.sublist(name+" parameters");
 
   tmp.sublist("verbose object").set<std::string>("verbosity level", "high");
-  //if (name == "ml") {
-  //  tmp.set("coarse: max size", 5);
-  //  tmp.set("cycle applications", 2);
-  //  tmp.set("ML output", 0);
-  //} else if (name == "boomer amg") {
-  //  tmp.set("max coarse size", 5);
-  //  tmp.set("cycle applications", 1);
-  //}
+
+  if (name == "ifpack2: RILUK") {
+    tmp.set("fact: type", "KSPILUK"); // get the kokkos kernels variant
+  }
 
   //static_assert(Amanzi::AmanziSolvers::Impl::is_assembled<Matrix_type>::value, "Matrix_type is assembled?");
   auto pc = createAssembledMethod<>(name, plist);
   pc->set_matrix(mat);
   return pc;
-};    
+};
 
 inline Teuchos::RCP<IterativeMethodPCG<Matrix_type,Amanzi::AmanziSolvers::Preconditioner,Vector_type,Map_type>>
     get_solver(const std::string& name, const Teuchos::RCP<Matrix_type>& m)
 {
   auto pc = preconditioner(name, m);
-  
+
   Teuchos::ParameterList plist;
   plist.set("error tolerance", 1.e-12);
   plist.set("maximum number of iterations", 200);
@@ -102,18 +98,17 @@ TEST(PRECONDITIONERS) {
     for (int i = 0; i < N; i++) uv(i,0) = 1.0 / (i + 2.0);
   }
   u.sync_device();
-    
+
   Vector_type v(m->getDomainMap());
-  
+
   for (const auto& prec_name : {
-    "identity", 
-    "diagonal", 
+    "identity",
+    "diagonal",
     "ifpack2: ILUT",
     "ifpack2: RILUK",
-    "ifpack2: KSPILUK" 
-    //"boomer amg", 
-    //"euclid",
-    //"ml"
+    "hypre: boomer amg",
+    "hypre: euclid",
+    "muelu"
   }) {
     auto solver = get_solver(prec_name, m);
     v.putScalar(0.0);
@@ -126,6 +121,7 @@ TEST(PRECONDITIONERS) {
     auto vv = v.getLocalViewHost();
     CHECK_CLOSE(11.03249773994628, vv(0,0), 1e-6);
     CHECK_CLOSE(10.53249773994628, vv(1,0), 1e-6);
+    std::cout << std::endl << std::endl;
   }
 };
 
@@ -145,7 +141,7 @@ TEST(PRECONDITIONERS_OMP) {
 
     Vector_type u(*map), v(*map);
     for (int i = 0; i < N; i++) u[i] = 1.0 / (i + 2.0);
-  
+
     auto solver = get_solver(prec_name, m);
     v.putScalar(0.0);
 
@@ -166,7 +162,7 @@ TEST(PRECONDITIONERS_OMP) {
 
     Vector_type u(*map), v(*map);
     for (int i = 0; i < N; i++) u[i] = 1.0 / (i + 2.0);
-  
+
     auto solver = get_solver(prec_name, m);
     v.putScalar(0.0);
 
@@ -179,7 +175,7 @@ TEST(PRECONDITIONERS_OMP) {
   int nthreads = omp_get_max_threads();
   double cpu1 = omp_get_wtime();
   std::cout << "CPU (serial): " << cpu1 - cpu0 << " [sec]  threads=" << nthreads << std::endl;
-  
+
 };
 #endif
 

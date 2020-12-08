@@ -156,7 +156,8 @@
     <ParameterList name="ifpack2: RILUK">
       <Parameter name="preconditioning method" type="string" value="ifpack2: RILUK"/>
       <ParameterList name="ifpack2: RILUK parameters">
-       <Parameter name="fact: iluk level-of-fill" type="int" value="10"/>
+        <Parameter name="fact: iluk level-of-fill" type="int" value="10"/>
+        <Parameter name="fact: type" type="string" value="KSPILUK"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="medium"/>
         </ParameterList>
