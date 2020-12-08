@@ -64,10 +64,20 @@ if (compiler_id_lc)
           set(Boost_bjam_args "cxxflags=\"-stdlib=libstdc++\" linkflags=\"-stdlib=libstdc++\"")
         endif()
       endif()
+      
       # On Mac OS 10.10, we don't know what to do yet
       if (${OS_VERSION_MAJOR} GREATER 13) # OSX 10.9.x -> Darwin-13.x.y
-        # Check if it looks like an mpi wrapper
-        if (CMAKE_CXX_COMPILER MATCHES "mpi")
+        execute_process(COMMAND g++ -v ERROR_VARIABLE GXX_IS_CLANG)
+        string(FIND ${GXX_IS_CLANG} "LLVM" LLVM_INDEX)
+        message (STATUS "BOOST: CLANG? - ${GXX_IS_CLANG} ")
+        if (${LLVM_INDEX} EQUAL -1)
+          message (STATUS "BOOST: reset toolset - gcc ")
+          set(Boost_toolset gcc)
+        endif()
+      endif() #moved here from LINE 122
+      
+    # Check if it looks like an mpi wrapper
+	if (CMAKE_CXX_COMPILER MATCHES "mpi")
           execute_process(COMMAND ${CMAKE_CXX_COMPILER} -show
                           OUTPUT_VARIABLE  COMPILE_CMDLINE OUTPUT_STRIP_TRAILING_WHITESPACE
                           ERROR_VARIABLE   COMPILE_CMDLINE ERROR_STRIP_TRAILING_WHITESPACE
@@ -78,12 +88,12 @@ if (compiler_id_lc)
         string(REPLACE " " ";" COMPILE_CMDLINE_LIST ${COMPILE_CMDLINE})
         list(GET COMPILE_CMDLINE_LIST 0 RAW_CXX_COMPILER)
             message (STATUS "BOOST: RAW_CXX_COMPILER=${RAW_CXX_COMPILER}")
-      else()
-        message (FATAL_ERROR "BOOST: Unable to determine the compiler command")
-          endif()
-    else()
+	  else()
+	    message (FATAL_ERROR "BOOST: Unable to determine the compiler command")
+      endif()
+	else()
           set(RAW_CXX_COMPILER ${CMAKE_CXX_COMPILER})
-        endif()
+    endif()
 
     # Extract the version of the compiler
     execute_process(
@@ -115,10 +125,12 @@ if (compiler_id_lc)
           set(Boost_bootstrap_args)
           set(Boost_toolset ${Boost_user_key})
         elseif ( _version_string MATCHES "LLVM")
-          message(STATUS "BOOST: compiler is Clang")
+	      message(STATUS "BOOST: compiler is Clang")
+        else()
+          message(STATUS "BOOST: compiler is user-built GCC")
         endif()
-      endif()
-    endif()
+      
+    endif()  #if(${compiler_id_lc} STREQUAL "gnu")
 
   elseif(UNIX)
     if (${compiler_id_lc} STREQUAL "gnu")
