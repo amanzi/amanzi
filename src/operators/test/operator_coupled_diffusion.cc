@@ -711,22 +711,22 @@ std::pair<double,double> RunForwardProblem(
   *X.SubVector(1)->Data() = *v;
 
   TreeVector AX(*problem->tvs);
-  problem->op->Apply(X,AX);
+  problem->op->Apply(X, AX);
   AX.Update(-1., B, 1.);
 
   double error0_l2, error1_l2;
   double error0_linf, error1_linf;
   double unorm, vnorm;
 
-  B.SubVector(0)->Data()->ViewComponent("cell",false)->Norm2(&unorm);
-  B.SubVector(0)->Data()->ViewComponent("cell",false)->Norm2(&vnorm);
+  B.SubVector(0)->Data()->ViewComponent("cell")->Norm2(&unorm);
+  B.SubVector(0)->Data()->ViewComponent("cell")->Norm2(&vnorm);
 
-  AX.SubVector(0)->Data()->ViewComponent("cell",false)->Norm2(&error0_l2);
-  AX.SubVector(1)->Data()->ViewComponent("cell",false)->Norm2(&error1_l2);
-  AX.SubVector(0)->Data()->ViewComponent("cell",false)->NormInf(&error0_linf);
-  AX.SubVector(1)->Data()->ViewComponent("cell",false)->NormInf(&error1_linf);
+  AX.SubVector(0)->Data()->ViewComponent("cell")->Norm2(&error0_l2);
+  AX.SubVector(1)->Data()->ViewComponent("cell")->Norm2(&error1_l2);
+  AX.SubVector(0)->Data()->ViewComponent("cell")->NormInf(&error0_linf);
+  AX.SubVector(1)->Data()->ViewComponent("cell")->NormInf(&error1_linf);
 
-  double error_l2 = sqrt(pow(error0_l2/unorm,2) + pow(error1_l2/vnorm,2));
+  double error_l2 = sqrt((error0_l2 * error0_l2 + error1_l2 * error1_l2) / (unorm * unorm + vnorm * vnorm));
   double error_linf = std::max(error0_linf, error1_linf);
 
   if (problem->comm->MyPID() == 0) {
@@ -801,20 +801,14 @@ std::pair<double,double> RunForwardProblem_Assembled(
   AX.Update(-1., B, 1.);
 
   // norms
-  double error0_l2, error1_l2;
-  double error0_linf, error1_linf;
-  double unorm, vnorm;
+  double error_l2, error_linf;
+  double unorm;
 
-  B.SubVector(0)->Data()->ViewComponent("cell",false)->Norm2(&unorm);
-  B.SubVector(0)->Data()->ViewComponent("cell",false)->Norm2(&vnorm);
+  B.Norm2(&unorm);
+  AX.Norm2(&error_l2);
+  AX.NormInf(&error_linf);
 
-  AX.SubVector(0)->Data()->ViewComponent("cell",false)->Norm2(&error0_l2);
-  AX.SubVector(1)->Data()->ViewComponent("cell",false)->Norm2(&error1_l2);
-  AX.SubVector(0)->Data()->ViewComponent("cell",false)->NormInf(&error0_linf);
-  AX.SubVector(1)->Data()->ViewComponent("cell",false)->NormInf(&error1_linf);
-
-  double error_l2 = sqrt(pow(error0_l2/unorm,2) + pow(error1_l2/vnorm,2));
-  double error_linf = std::max(error0_linf, error1_linf);
+  error_l2 /= unorm;
 
   if (problem->comm->MyPID() == 0) {
     printf("[%4d, %6.12e, %6.12e],\n",(int) round(log2(nx)), log2(error_l2), log2(error_linf));
@@ -891,11 +885,12 @@ std::pair<double,double> RunInverseProblem(
   
   Teuchos::ParameterList pc_list;
   pc_list.set("preconditioning method", "boomer amg");
-  pc_list.sublist("boomer amg parameters").set("tolerance", 0.);
+  pc_list.sublist("boomer amg parameters").set("tolerance", 0.0);
+  pc_list.sublist("boomer amg parameters").set("verbosity", 0);
   //  pc_list.sublist("boomer amg parameters").set("number of functions", 2);
   pc_list.set("iterative method", "pcg");
   pc_list.sublist("pcg parameters").set("maximum number of iterations", 200);
-  pc_list.sublist("verbose object").set("verbosity level", "high");
+  pc_list.sublist("verbose object").set("verbosity level", "medium");
   problem->op->set_inverse_parameters(pc_list);
   problem->op->InitializeInverse();
   problem->op->ComputeInverse();
@@ -947,7 +942,7 @@ std::pair<double,double> RunInverseProblem(
 
 
 // -----------------------------------------------------------------------------
-// Solves the full nonlinear problem->
+// Solves the full nonlinear problem
 //
 // Returns the l2, linf errors as a pair.
 // -----------------------------------------------------------------------------
@@ -1110,7 +1105,7 @@ std::pair<double,double> RunNonlinearProblem(
     
     Teuchos::ParameterList pc_list;
     pc_list.set("preconditioning method", "boomer amg");
-    pc_list.sublist("boomer amg parameters").set("tolerance", 0.);
+    pc_list.sublist("boomer amg parameters").set("tolerance", 0.0);
     pc_list.sublist("boomer amg parameters").set("number of functions", 2);
     pc_list.set("iterative method", "gmres");
     pc_list.sublist("verbose object").set("verbosity level", "medium");
@@ -1324,7 +1319,7 @@ void RunForwardTest(const std::string& discretization, bool upwind) {
     CHECK(rate2 > 0.8);
     CHECK(rateinf > 0.8);
   } else {
-    CHECK(rate2 > 1.8);
+    CHECK(rate2 > 1.5);
     CHECK(rateinf > 1.5);
   }
 }
@@ -1341,7 +1336,7 @@ void RunInverseTest(const std::string& discretization, bool upwind) {
   
   std::cout << "x = np.array([\n";
   std::vector<std::pair<double,double> > l2s;
-  for (int i=2; i<=129; i*=2) {
+  for (int i=4; i<=128; i*=2) {
     std::pair<double,double> l2 = RunInverseProblem(discretization, upwind, i, i, false);
     l2s.push_back(l2);
   }
@@ -1353,11 +1348,9 @@ void RunInverseTest(const std::string& discretization, bool upwind) {
   std::cout << "  Convergence rates = ";
 
   // mean via the last few -- let's not base convergence on a 2x2 problem!
-  for (int i = 3; i!=l2s.size(); ++i) {
+  for (int i = 1; i!=l2s.size(); ++i) {
     mean_dl2 += (l2s[i].first - l2s[i-1].first);
     mean_dlinf += (l2s[i].second - l2s[i-1].second);
-    // std::cout << " (" << l2s[i].first - l2s[i-1].first << ", "
-    //           << (l2s[i].second - l2s[i-1].second) << "),";
     size++;
   }
   std::cout << std::endl;
@@ -1420,21 +1413,31 @@ void RunNonlinearTest(const std::string& discretization, const std::string& jaco
 // -----------------------------------------------------------------------------
 // Full Suite is the following 12 tests
 // -----------------------------------------------------------------------------
-// TEST(OPERATOR_COUPLED_DIFFUSION_FORWARD_HARMONIC_CONVERGENCE_FV) {
-//   RunForwardTest("fv: default", false);
+TEST(OPERATOR_COUPLED_DIFFUSION_FORWARD_HARMONIC_CONVERGENCE_MFD) {
+  RunForwardTest("mfd: default", false);
+}
+TEST(OPERATOR_COUPLED_DIFFUSION_FORWARD_HARMONIC_CONVERGENCE_FV) {
+  RunForwardTest("fv: default", false);
+}
+
+// TEST(OPERATOR_COUPLED_DIFFUSION_FORWARD_UPWIND_CONVERGENCE_MFD) {
+//   RunForwardTest("mfd: default", true);
 // }
-// TEST(OPERATOR_COUPLED_DIFFUSION_INVERSE_HARMONIC_CONVERGENCE_FV) {
-//   RunInverseTest("fv: default", false);
-// }
-// TEST(OPERATOR_COUPLED_DIFFUSION_FORWARD_UPWIND_CONVERGENCE_FV) {
-//   RunForwardTest("fv: default", true);
-// }
+
+TEST(OPERATOR_COUPLED_DIFFUSION_INVERSE_HARMONIC_CONVERGENCE_MFD) {
+  RunInverseTest("mfd: default", false);
+}
+TEST(OPERATOR_COUPLED_DIFFUSION_INVERSE_HARMONIC_CONVERGENCE_FV) {
+  RunInverseTest("fv: default", false);
+}
+
+TEST(OPERATOR_COUPLED_DIFFUSION_INVERSE_UPWIND_CONVERGENCE_MFD) {
+  RunInverseTest("mfd: default", true);
+}
 TEST(OPERATOR_COUPLED_DIFFUSION_INVERSE_UPWIND_CONVERGENCE_FV) {
-  RunInverseTest("mfd: default", true);
+  RunInverseTest("fv: default", true);
 }
-TEST(OPERATOR_COUPLED_DIFFUSION_INVERSE_UPWIND_CONVERGENCE_FV_MD) {
-  RunInverseTest("mfd: default", true);
-}
+
 // TEST(OPERATOR_COUPLED_DIFFUSION_NONLINEAR_UPWIND_CONVERGENCE_FV) {
 //   RunNonlinearTest("fv: default", "none");
 // }
@@ -1443,19 +1446,6 @@ TEST(OPERATOR_COUPLED_DIFFUSION_INVERSE_UPWIND_CONVERGENCE_FV_MD) {
 // }
 
 
-
-// TEST(OPERATOR_COUPLED_DIFFUSION_FORWARD_HARMONIC_CONVERGENCE_MFD) {
-//   RunForwardTest("mfd: default", false);
-// }
-// TEST(OPERATOR_COUPLED_DIFFUSION_INVERSE_HARMONIC_CONVERGENCE_MFD) {
-//   RunInverseTest("mfd: default", false);
-// }
-// TEST(OPERATOR_COUPLED_DIFFUSION_FORWARD_UPWIND_CONVERGENCE_MFD) {
-//   RunForwardTest("mfd: default", true);
-// }
-// TEST(OPERATOR_COUPLED_DIFFUSION_INVERSE_UPWIND_CONVERGENCE_MFD) {
-//   RunInverseTest("mfd: default", true);
-// }
 // TEST(OPERATOR_COUPLED_DIFFUSION_NONLINEAR_UPWIND_CONVERGENCE_MFD) {
 //   RunNonlinearTest("mfd: default", "none");
 // }
@@ -1464,7 +1454,7 @@ TEST(OPERATOR_COUPLED_DIFFUSION_INVERSE_UPWIND_CONVERGENCE_FV_MD) {
 // }
 
 
-//
+// -----------------------------------------------------------------------------
 // debugging tests, simply run one run and write more info to files
 // -----------------------------------------------------------------------------
 // TEST(OPERATOR_COUPLED_DIFFUSION_NONLINEAR_MFD_NONE) {
