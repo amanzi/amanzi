@@ -153,6 +153,7 @@
 #                - update MOAB to 5.2.0
 #   0.97.11      - update SuperLU_dist to 6.2.0
 #                - update Trilinos to 9fec3527 (Aug5, 2020, also 13.0.0)
+#   0.97.12      - update Trilinos to afc4e525 (Nov 14, 2020)
 
 include(CMakeParseArguments)
 
@@ -205,7 +206,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 97)
-set(AMANZI_TPLS_VERSION_PATCH 11)
+set(AMANZI_TPLS_VERSION_PATCH 12)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -471,13 +472,13 @@ set(PETSc_MD5_SUM        c1bfeeb3613f59049d312713b461a1b1)
 #
 set(Trilinos_VERSION_MAJOR 13)
 set(Trilinos_VERSION_MINOR 0)
-set(Trilinos_VERSION_PATCH 0)
+set(Trilinos_VERSION_PATCH afc4e525)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}-${Trilinos_VERSION_MINOR}-${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "https://github.com/trilinos/Trilinos/archive")
 set(Trilinos_ARCHIVE_FILE   trilinos-release-${Trilinos_VERSION}.tar.gz)
 set(Trilinos_SAVEAS_FILE    ${Trilinos_ARCHIVE_FILE})
 set(Trilinos_GIT_REPOSITORY "https://github.com/trilinos/Trilinos")
-set(Trilinos_GIT_TAG        "9fec35276d846a667bc668ff4cbdfd8be0dfea08")
+set(Trilinos_GIT_TAG        "afc4e52595ab82f449f8a4676febbcfbf8223afc")
 
 #
 # TPL: SEACAS
