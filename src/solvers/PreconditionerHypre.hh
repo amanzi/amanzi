@@ -140,10 +140,8 @@ class PreconditionerHypre : public Amanzi::AmanziSolvers::Preconditioner {
   Teuchos::RCP<VerboseObject> vo_;
 
   Hypre_Solver method_;
-  std::vector<Teuchos::RCP<FunctionParameter> > funcs_;
   Teuchos::RCP<std::vector<int> > block_indices_;
   int num_blocks_;
-  int block_index_function_index_;
 
   mutable int returned_code_;
   Teuchos::RCP<Ifpack_Hypre> IfpHypre_;
