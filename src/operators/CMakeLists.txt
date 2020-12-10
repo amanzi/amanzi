@@ -223,7 +223,6 @@ if (BUILD_TESTS)
                                         test/operator_diffusion_nodal.cc
                                         test/operator_diffusion_divk.cc
                                         test/operator_diffusion_nonsymmetric.cc
-                                        test/operator_diffusion_nlfv.cc
                                         test/operator_diffusion_curved.cc
                                         test/operator_diffusion_edges.cc test/MFD3D_Diffusion_Edge.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
