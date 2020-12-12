@@ -595,8 +595,8 @@ void PDE_DiffusionNLFV::OneSidedFluxCorrections_(
           sideflux += tmp * (uc[0][c] - uc[0][c3]);
         } else if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
           tmp = weight[i + k2][f];
-          mesh_->face_normal(f1, false, c, &dir);
-          sideflux += tmp * (uc[0][c] - MapBoundaryValue_(f1, bc_value[f1])) * dir;
+          // mesh_->face_normal(f1, false, c, &dir);
+          sideflux += tmp * (uc[0][c] - MapBoundaryValue_(f1, bc_value[f1])); // * dir;
         } else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
           tmp = weight[i + k2][f];
           neumann_flux += tmp * bc_value[f1] * mesh_->face_area(f1);
@@ -732,12 +732,13 @@ void PDE_DiffusionNLFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
   AmanziMesh::Entity_ID_List cells;
 
   for (int f = 0; f < nfaces_owned; ++f) {
-    if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+    if (bc_model[f] == OPERATOR_BC_DIRICHLET ||
+        bc_model[f] == OPERATOR_BC_NEUMANN) {
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       mesh_->face_normal(f, false, cells[0], &dir);
       flux_data[0][f] = wgt_sideflux[0][f] * dir;     
-    } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-      flux_data[0][f] = bc_value[f] * mesh_->face_area(f);
+    // } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+    //   flux_data[0][f] = bc_value[f] * mesh_->face_area(f);
     } else if (bc_model[f] == OPERATOR_BC_NONE) {
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       OrderCellsByGlobalId_(cells, c1, c2);

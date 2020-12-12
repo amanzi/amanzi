@@ -672,16 +672,14 @@ SUITE(DIFFUSION) {
   // test in 3D
   //
   // These probably should pass?  Not sure why they don't.
-  // TEST(Analytic02_NLFV_DirichletNeumannBox_Generate3D_ifpack2_ILUT) {
-  //   test("ifpack2: ILUT", "DirichletNeumannBox", "Generate3D",
-  //        "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-11, 1, "02", 20);
-  // }
-  // TEST(Analytic02_Gravity_NLFV_DirichletNeumannBox_Generate3D_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic02(3, 0.1));
-  //   testWGravity<Operators::PDE_DiffusionNLFVwithGravity>(
-  //       ana, 0.1, "ifpack2: ILUT", "DirichletNeumannBox", "Generate3D",
-  //       "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 50);
-  // }
+  TEST(Analytic02_NLFV_DirichletNeumannBox_Generate3D_ifpack2_ILUT) {
+    test("ifpack2: ILUT", "DirichletNeumannBox", "Generate3D",
+         "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-11, 1, "02", 20);
+  }
+  TEST(Analytic02_Gravity_NLFV_DirichletNeumannBox_Generate3D_ifpack2_ILUT) {
+    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumannBox", "Generate3D",
+                 "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 1, "02", 20);
+  }
 
   //
   // With NLFV and Boundary Faces
@@ -696,8 +694,6 @@ SUITE(DIFFUSION) {
   }
 
   // the original test tested on circle-quad
-  //
-  // These probably should pass?  Not sure why the don't.
   TEST(Analytic02_NLFVwithBndFaces_DirichletNeumannBox_CircleQuad_ifpack2_ILUT) {
     test("ifpack2: ILUT", "DirichletNeumannBox", "test/circle_quad10.exo",
          "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-10, 1, "02", 50);
@@ -708,14 +704,14 @@ SUITE(DIFFUSION) {
   }
 
   // test in 3D
-  // TEST(Analytic02_NLFVwithBndFaces_DirichletNeumannBox_Generate3D_ifpack2_ILUT) {
-  //   test("ifpack2: ILUT", "DirichletNeumannBox", "GAnalytic02_NLFV_DirichletNeumannBox_Generate3D_ifpack2_ILUTenerate3D",
-  //        "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 1, "02", 50);
-  // }
-  // TEST(Analytic02_Gravity_NLFVwithBndFaces_DirichletNeumannBox_Generate3D_ifpack2_ILUT) {
-  //   testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumannBox", "Generate3D",
-  //                "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-11, 1, "02", 50);
-  // }
+  TEST(Analytic02_NLFVwithBndFaces_DirichletNeumannBox_Generate3D_ifpack2_ILUT) {
+    test("ifpack2: ILUT", "DirichletNeumannBox", "Generate3D",
+         "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 1, "02", 20);
+  }
+  TEST(Analytic02_Gravity_NLFVwithBndFaces_DirichletNeumannBox_Generate3D_ifpack2_ILUT) {
+    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumannBox", "Generate3D",
+                 "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-11, 1, "02", 20);
+  }
 #endif 
 #endif
 
