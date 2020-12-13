@@ -219,8 +219,7 @@ if (BUILD_TESTS)
 
     add_amanzi_test(operators_diffusion operators_diffusion
                     KIND unit
-                    SOURCE test/Main.cc test/operator_diffusion.cc
-                                        test/operator_diffusion_nodal.cc
+                    SOURCE test/Main.cc test/operator_diffusion_nodal.cc
                                         test/operator_diffusion_divk.cc
                                         test/operator_diffusion_nonsymmetric.cc
                                         test/operator_diffusion_curved.cc

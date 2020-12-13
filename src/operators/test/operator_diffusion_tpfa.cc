@@ -116,7 +116,6 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
     }
   }
   coef->ScatterMasterToGhosted("face");
-  double rho(1.0), mu(1.0);
 
   // create boundary data
   Point xv(2);
@@ -134,7 +133,7 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
 
   AmanziMesh::Entity_ID_List right;
   mesh->get_set_entities("Right side", AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL, &right);
-  for (int f=0; f!=right.size(); ++f) {
+  for (int f = 0; f != right.size(); ++f) {
     bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
     mesh->face_centroid(f, &xv);
     bc_value[f] = ana.pressure_exact(xv, 0.0);
@@ -144,9 +143,7 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
 
   // create diffusion operator 
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator");
-  Point g(2);
-  g[0] = 0.0;
-  g[1] = 0.0;
+  Point g(0.0, 0.0);
 
   Teuchos::RCP<DiffusionTPFA> op2 = Teuchos::rcp(new DiffusionTPFA(*op1, op_list, bc));
   op2->SetUpwind(0);
@@ -173,7 +170,7 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
 
   // check residual
   CompositeVector residual(*cell_space);
-  //  int ierr = op1->ComputeNegativeResidual(solution, residual);
+  // int ierr = op1->ComputeNegativeResidual(solution, residual);
   solution.Print(std::cout);
 
   op2->rhs()->Print(std::cout);

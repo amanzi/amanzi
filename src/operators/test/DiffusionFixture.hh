@@ -32,6 +32,7 @@
 #include "OperatorDefs.hh"
 #include "PDE_Diffusion.hh"
 #include "PDE_DiffusionFactory.hh"
+#include "Verification.hh"
 #include "WhetStoneMeshUtils.hh"
 
 using namespace Amanzi;
@@ -52,7 +53,8 @@ struct DiffusionFixture {
 
   // -- boundary conditions
   void SetBCsDirichlet();
-  void SetBCsDirichletNeumannBox();
+  void SetBCsDirichletNeumann();
+  void SetBCsDirichletNeumannRobin();
 
   void Go(double tol = 1.e-14);
   
@@ -249,7 +251,7 @@ void DiffusionFixture::SetBCsDirichlet()
 }
 
 
-void DiffusionFixture::SetBCsDirichletNeumannBox()
+void DiffusionFixture::SetBCsDirichletNeumann()
 {
   auto& bc_value = bc->bc_value();
   auto& bc_model = bc->bc_model();
@@ -266,6 +268,45 @@ void DiffusionFixture::SetBCsDirichletNeumannBox()
         auto normal = ana->face_normal_exterior(f, &flag);
         bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value[f] = (ana->velocity_exact(xf, 0.0) * normal) / mesh->face_area(f);
+      } else {
+        bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value[f] = ana->pressure_exact(xf, 0.0);
+      }          
+    }
+  } else {
+    Exceptions::amanzi_throw("OperatorDiffusion test harness not implemented for this kind.");
+  }
+}
+
+
+void DiffusionFixture::SetBCsDirichletNeumannRobin()
+{
+  auto& bc_value = bc->bc_value();
+  auto& bc_model = bc->bc_model();
+  auto& bc_mixed = bc->bc_mixed();
+    
+  if (bc->kind() == AmanziMesh::FACE) {
+    const auto& bf_map = mesh->map(AmanziMesh::BOUNDARY_FACE, true);
+    const auto& f_map = mesh->map(AmanziMesh::FACE, true);
+      
+    for (int bf = 0; bf != bf_map.NumMyElements(); ++bf) {
+      auto f = f_map.LID(bf_map.GID(bf));
+      const auto& xf = mesh->face_centroid(f);
+
+      bool flag;
+      auto normal = ana->face_normal_exterior(f, &flag);
+      double area = mesh->face_area(f);
+
+      if (xf[0] < 0.0) {
+        bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_value[f] = (ana->velocity_exact(xf, 0.0) * normal) / mesh->face_area(f);
+      } else if (xf[1] < 0.0) {
+        bc_model[f] = Operators::OPERATOR_BC_MIXED;
+        bc_value[f] = ana->velocity_exact(xf, 0.0) * normal / area;
+
+        double tmp = ana->pressure_exact(xf, 0.0);
+        bc_mixed[f] = 1.0;
+        bc_value[f] -= bc_mixed[f] * tmp;
       } else {
         bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
         bc_value[f] = ana->pressure_exact(xf, 0.0);
@@ -296,13 +337,6 @@ void DiffusionFixture::Go(double tol)
     
   op->ApplyBCs(true, true, true);
   global_op->ComputeInverse();
-
-  // if (symmetric) {
-  //   // Test SPD properties of the preconditioner.
-  //   VerificationCV ver(global_op);
-  //   ver.CheckPreconditionerSPD();
-  // }
-
   global_op->ApplyInverse(*global_op->rhs(), *solution);
 
   auto MyPID = comm->MyPID();
@@ -339,6 +373,11 @@ void DiffusionFixture::Go(double tol)
       CHECK(pl2_err < tol);
       CHECK(ul2_err < 10*tol);
       //if (pc_name != "identity" && pc_name != "diagonal") CHECK(solver->num_itrs() < 10);
+    }
+
+    if (symmetric) {
+      VerificationCV ver(global_op);
+      ver.CheckMatrixSPD();
     }
   }
 }

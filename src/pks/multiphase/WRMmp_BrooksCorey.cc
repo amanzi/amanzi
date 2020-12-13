@@ -63,6 +63,8 @@ double WRMmp_BrooksCorey::k_relative(double Sw, int phase)
       return pow(Sne,2.0)*(1.0 - pow(Swe,(2+lambda_)/lambda_));
     }
   }
+
+  return -1.0;  // should trigger errors
 }
 
 
@@ -80,6 +82,8 @@ double WRMmp_BrooksCorey::dKdS(double Sw, int phase)
     return -(lambda_ + 2.0)/lambda_*factor*pow(1.0-Swe,2.0)*pow(Swe,(lambda_+2.0)/lambda_-1.0) - 
       2.0*factor*(1.0-Swe)*(1.0 - pow(Swe,(lambda_+2.0)/lambda_));
   }
+
+  return 0.0;  // to avoid compiler warnings
 }
 
 
