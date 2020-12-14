@@ -100,12 +100,14 @@ void OverlandPressureFlow::FunctionalResidual( double t_old,
 
   db_->WriteBoundaryConditions(bc_markers(), bc_values());
   if (S_next_->HasField(Keys::getKey(domain_,"unfrozen_fraction"))) {
+    Key uf_key = Keys::getKey(domain_,"unfrozen_fraction");
+    S_next_->GetFieldEvaluator(uf_key)->HasFieldChanged(S_next_.ptr(), name_);
     vnames.resize(2);
     vecs.resize(2);
     vnames[0] = "uf_frac_old";
     vnames[1] = "uf_frac_new";
-    vecs[0] = S_inter_->GetFieldData(Keys::getKey(domain_,"unfrozen_fraction")).ptr();
-    vecs[1] = S_next_->GetFieldData(Keys::getKey(domain_,"unfrozen_fraction")).ptr();
+    vecs[0] = S_inter_->GetFieldData(uf_key).ptr();
+    vecs[1] = S_next_->GetFieldData(uf_key).ptr();
     db_->WriteVectors(vnames, vecs, true);
   }
   db_->WriteVector("uw_dir", S_next_->GetFieldData(flux_dir_key_).ptr(), true);
