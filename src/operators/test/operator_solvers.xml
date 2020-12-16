@@ -124,6 +124,7 @@
       <ParameterList name="ifpack2: RILUK parameters">
        <Parameter name="fact: ilut level-of-fill" type="double" value="10.0"/>
        <Parameter name="fact: drop tolerance" type="double" value="0.0"/>
+       <Parameter name="fact: type" type="string" value="KSPILUK"/>
       </ParameterList>
     </ParameterList>
     
