@@ -293,7 +293,7 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorGradientCell_(
 
       // calculate coefficients of polynomial
       DenseMatrix M;
-      GrammMatrix(numi, order_ - 1, integrals_, basis, M);
+      GrammMatrix(c, numi, order_ - 1, integrals_, basis, M);
 
       M.Inverse();
       M.Multiply(v4, v5, false);
@@ -445,7 +445,7 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorCell_(
     DenseMatrix M, M2;
     DenseVector v6(nd - ndof_c);
 
-    GrammMatrix(numi, order_, integrals_, basis, M);
+    GrammMatrix(c, numi, order_, integrals_, basis, M);
     M2 = M.SubMatrix(ndof_c, nd, 0, nd);
     M2.Multiply(v5, v6, false);
 

@@ -292,7 +292,7 @@ if (BUILD_TESTS)
     add_amanzi_test(operators_electromagnetics_vem operators_electromagnetics_vem
                     KIND unit
                     SOURCE test/Main.cc test/AnalyticElectromagneticsBase.cc
-                                        # test/operator_electromagnetics_vem.cc
+                                        test/operator_electromagnetics_vem.cc
                                         test/operator_magnetic_diffusion_vem.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 

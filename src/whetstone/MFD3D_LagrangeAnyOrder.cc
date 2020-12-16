@@ -354,7 +354,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
     basis_f.Init(surf_mesh, 0, order_, integrals_f.poly());
     vbasisf.push_back(basis_f);
 
-    GrammMatrix(numi_f, order_, integrals_f, basis_f, Mf);
+    GrammMatrix(0, numi_f, order_, integrals_f, basis_f, Mf);
 
     DenseMatrix RG(Rf), RGM(Rf);
     RG.Multiply(Rf, Gf, false);
@@ -736,7 +736,7 @@ void MFD3D_LagrangeAnyOrder::ProjectorCell_(
     DenseMatrix M, M2;
     DenseVector v6(nd - ndof_c);
 
-    GrammMatrix(numi, order_, integrals_, basis, M);
+    GrammMatrix(c, numi, order_, integrals_, basis, M);
     M2 = M.SubMatrix(ndof_c, nd, 0, nd);
     M2.Multiply(v5, v6, false);
 
@@ -827,7 +827,7 @@ void MFD3D_LagrangeAnyOrder::ProjectorCellFromDOFs_(
     DenseVector v6(nd - ndof_c);
     NumericalIntegration numi(mesh_);
 
-    GrammMatrix(numi, order_, integrals_, basis, M);
+    GrammMatrix(c, numi, order_, integrals_, basis, M);
     M2 = M.SubMatrix(ndof_c, nd, 0, nd);
     M2.Multiply(v5, v6, false);
 

@@ -357,15 +357,7 @@ exit(0);
 }
 
 TEST(MAGNETIC_DIFFUSION3D_CONVERGENCE) {
-  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 0, 6,6,6, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
-  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 1, 6,6,6, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
-  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01*2, 0.1, 0, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes8.exo", "electromagnetics");
-  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01*2, 0.1, 0, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes8.exo");
-  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 1, 4,4,4, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
-  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01*2,0.1, 0, 4,4,4, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes4.exo");
-  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01/10000, 0.1, 1, 2,1,2, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
-  MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01*2,0.1, 1, 4,4,4, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes4.exo");
-  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01,  0.1, 1, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes8.exo");
-  // MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01/2,0.1, 1, 16,16,16, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes16.exo");
+  MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.01, 0.1, 0, 6,6,6, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
+  MagneticDiffusionVEM<AnalyticElectromagnetics05>(0.02, 0.1, 0, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/hexes8.exo", "electromagnetics");
 }
 

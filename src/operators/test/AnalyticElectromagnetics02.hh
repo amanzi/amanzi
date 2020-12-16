@@ -36,6 +36,7 @@ class AnalyticElectromagnetics02 : public AnalyticElectromagneticsBase {
     double y = p[1];
     double z = p[2];
 
+    // return Amanzi::AmanziGeometry::Point(y*y, 0.0, 0.0);
     double Ex = y * y * sin(z);
     double Ey = z * z * sin(x);
     double Ez = x * x * sin(y);
@@ -47,6 +48,7 @@ class AnalyticElectromagnetics02 : public AnalyticElectromagneticsBase {
     double y = p[1];
     double z = p[2];
 
+    // return Amanzi::AmanziGeometry::Point(0.0, 0.0, -2*y);
     double Bx = x * x * cos(y) - 2 * z * sin(x);
     double By = y * y * cos(z) - 2 * x * sin(y);
     double Bz = z * z * cos(x) - 2 * y * sin(z);
@@ -57,7 +59,8 @@ class AnalyticElectromagnetics02 : public AnalyticElectromagneticsBase {
     double x = p[0];
     double y = p[1];
     double z = p[2];
-
+ 
+    // return Amanzi::AmanziGeometry::Point(-2.0, 0.0, 0.0) + c_ * electric_exact(p, t);
     double fx = -2 * sin(z) + y * y * sin(z);
     double fy = -2 * sin(x) + z * z * sin(x);
     double fz = -2 * sin(y) + x * x * sin(y);

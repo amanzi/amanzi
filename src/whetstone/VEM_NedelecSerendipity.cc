@@ -9,7 +9,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  High-order 3D serendipity Nedelec type 2 element: degrees of freedom
+  High-order 3D serendipity Nedelec element: degrees of freedom
   are moments on edges, selected moments on faces and inside cell:
   Degrees of freedom are ordered as follows:
     (1) moments on edges, order is moment number -> edge id
@@ -17,6 +17,11 @@
     (4) moments inside cell
   Vector degrees of freedom are ordered first by moments on a geometric
   entity and then by the vector component.
+
+  Type 2 element provides optimal order for the L2 norm of function
+  and one order less for the L2 norm of curl of this function.
+  Type 1 element is optimal for both norms but has more degrees of
+  freedom.
 
   At the moment, loop over the space of test polynomials is hard-coded.
 */
@@ -52,7 +57,8 @@ VEM_NedelecSerendipity::VEM_NedelecSerendipity(
     const Teuchos::ParameterList& plist,
     const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
   : DeRham_Edge(mesh),
-    BilinearForm(mesh)
+    BilinearForm(mesh),
+    type_(2)
 {
   // order of the maximum polynomial space
   order_ = plist.get<int>("method order");
@@ -67,6 +73,11 @@ std::vector<SchemaItem> VEM_NedelecSerendipity::schema() const
 {
   std::vector<SchemaItem> items;
   items.push_back(std::make_tuple(AmanziMesh::EDGE, DOF_Type::SCALAR, order_ + 1));
+
+  if (type_ == 1) {
+    int ndf = PolynomialSpaceDimension(d_ - 1, order_) - 1;
+    items.push_back(std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, ndf));
+  }
 
   return items;
 }
@@ -105,10 +116,12 @@ int VEM_NedelecSerendipity::L2consistency(
   // calculate degrees of freedom: serendipity space S contains all boundary dofs
   Polynomial pc(d_, order_);
 
-  int ndc, nde;
+  int ndc, ndf, nde;
   ndc = pc.size();
+  ndf = PolynomialSpaceDimension(d_ - 1, order_);
   nde = PolynomialSpaceDimension(d_ - 2, order_);
   int ndof_S = nedges * nde;
+  if (type_ == 1) ndof_S += nfaces * (ndf - 1);
 
   // iterators
   VectorPolynomialIterator it0(d_, d_, order_), it1(d_, d_, order_);
@@ -137,8 +150,7 @@ int VEM_NedelecSerendipity::L2consistency(
   Idc.MakeDiagonal(1.0);
 
   DenseMatrix MGc, sMGc, rMGc, NT, L2c;
-  integrals_.set_id(c);
-  GrammMatrix(numi, order_ + 1, integrals_, basis, MGc);
+  GrammMatrix(c, numi, order_ + 1, integrals_, basis, MGc);
   sMGc = MGc.SubMatrix(0, ndc, 0, ndc);
 
   NT.Transpose(N);
@@ -352,8 +364,9 @@ void VEM_NedelecSerendipity::CurlMatrix(int c, DenseMatrix& C)
   Polynomial pf(d_ - 1, order_);
   int ndf = pf.size();
   int nde = PolynomialSpaceDimension(d_ - 2, order_);
-  int ncols = nedges * nde;
   int nrows = nfaces * ndf;
+  int ncols = nedges * nde;
+  if (type_ == 1) ncols += nfaces * (ndf - 1);
 
   C.Reshape(nrows, ncols);
   C.PutScalar(0.0);
@@ -409,7 +422,16 @@ void VEM_NedelecSerendipity::CurlMatrix(int c, DenseMatrix& C)
     }
 
     // volumetric term
-    if (order_ > 0) {
+    if (order_ > 0 && type_ == 1) {
+      int row = n * ndf;
+      int col = nedges * nde + n * (ndf - 1);
+
+      for (auto it = pf.begin(1); it < pf.end(); ++it) {
+        int pos = it.PolynomialPosition();
+        C(row + pos, col + pos - 1) += fdirs[n];
+      }
+
+    } else if (order_ > 0 && type_ == 2) {
       for (auto it = pf.begin(); it < pf.end(); ++it) {
         int pos = it.PolynomialPosition();
         if (pos == 0) continue;
@@ -537,7 +559,7 @@ void VEM_NedelecSerendipity::L2ProjectorsOnFaces_(
     vbasisf.push_back(basis_f);
 
     NumericalIntegration numi_f(surf_mesh);
-    GrammMatrix(numi_f, order_ + 1, integrals_f, basis_f, MG);
+    GrammMatrix(0, numi_f, order_ + 1, integrals_f, basis_f, MG);
     if (MGorder == order_ + 1) vMGf.push_back(Idf ^ MG);
   }
 }
@@ -781,6 +803,36 @@ void VEM_NedelecSerendipity::MatrixOfDofs_(
         row++;
       }
     }
+
+    if (order_ > 0 && type_ == 1 && d_ == 3) {
+      AMANZI_ASSERT(order_ == 1);
+      WhetStone::Polynomial pf(2, order_);
+
+      const auto& faces = mesh_->cell_get_faces(c);
+      int nfaces = faces.size();
+
+      for (int n = 0; n < nfaces; ++n) {
+        int f = faces[n];
+        double area = mesh_->face_area(f);
+        const auto& xf = mesh_->face_centroid(f);
+        const auto& normal = mesh_->face_normal(f);
+        WhetStone::SurfaceCoordinateSystem coordsys(xf, normal);
+
+        for (auto it = pf.begin(1); it < pf.end(); ++it) {
+          double factor = std::pow(area, -(double)it.MonomialSetOrder() / 2);
+          WhetStone::Polynomial fmono(2, it.multi_index(), factor);
+          auto rot = Rot2D(fmono);
+
+          AmanziGeometry::Point tmp = rot[0](0) * (*coordsys.tau())[0] 
+                                    + rot[1](0) * (*coordsys.tau())[1];
+
+          numi.CalculatePolynomialMomentsFace(f, cmono, 0, moments);
+
+          N(row, col) = moments[0] * tmp[k];
+          row++;
+        }
+      }
+    }
   }
 }
 
@@ -847,7 +899,7 @@ int VEM_NedelecSerendipity::L2consistency2D_(
   }
 
   // calculate Mc = P0 M_G P0^T
-  GrammMatrix(numi, order_, integrals_f, basis, MG);
+  GrammMatrix(c, numi, order_, integrals_f, basis, MG);
   
   DenseMatrix NT, P0T;
   Tensor Id(d, 2);
@@ -979,6 +1031,36 @@ void VEM_NedelecSerendipity::CalculateDOFsOnBoundary(
     for (int k = 0; k < moments.size(); ++k) {
       vdof(row) = moments[k] / length;
       row++;
+    }
+  }
+
+  // rot(q) moments on faces
+  if (order_ > 0 && type_ == 1 && d_ == 3) {
+    AMANZI_ASSERT(order_ == 1);
+    WhetStone::Polynomial pf(2, order_);
+
+    const auto& faces = mymesh->cell_get_faces(c);
+    int nfaces = faces.size();
+
+    for (int n = 0; n < nfaces; ++n) {
+      int f = faces[n];
+      double area = mymesh->face_area(f);
+      const auto& xf = mymesh->face_centroid(f);
+      const auto& normal = mymesh->face_normal(f);
+      WhetStone::SurfaceCoordinateSystem coordsys(xf, normal);
+
+      for (auto it = pf.begin(1); it < pf.end(); ++it) {
+        double factor = std::pow(area, -(double)it.MonomialSetOrder() / 2);
+        WhetStone::Polynomial fmono(2, it.multi_index(), factor);
+        auto rot = Rot2D(fmono);
+
+        AmanziGeometry::Point tmp = rot[0](0) * (*coordsys.tau())[0] 
+                                  + rot[1](0) * (*coordsys.tau())[1];
+        auto poly = vf[n] * tmp;
+        numi.CalculatePolynomialMomentsFace(f, poly, 0, moments);
+
+        vdof(row++) = moments[0];
+      }
     }
   }
 }

@@ -182,7 +182,12 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
     T(1, 0) = 1.0;
     T(2, 2) = 1.0;
 
-    for (int method = 0; method < 6; method++) {
+    Tensor Tinv(T);
+    Tinv.Inverse();
+
+    NumericalIntegration numi(mesh);
+
+    for (int method = 0; method < 7; method++) {
       DenseMatrix M;
 
       int order(0);
@@ -198,9 +203,16 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
         M.Inverse();
       } else if (method == 4) {
         vem.set_order(0);
+        vem.set_type(2);
         vem.MassMatrix(c, T, M);
       } else if (method == 5) {
         vem.set_order(1);
+        vem.set_type(2);
+        vem.MassMatrix(c, T, M);
+        order = 1;
+      } else if (method == 6) {
+        vem.set_order(1);
+        vem.set_type(1);
         vem.MassMatrix(c, T, M);
         order = 1;
       }
@@ -219,50 +231,41 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
       for (int i = 0; i < nrows; i++) CHECK(M(i, i) > 0.0);
 
       // verify exact integration property
-      std::vector<VectorPolynomial> uf(nedges), vf(nedges), wf(nedges), qf(nedges);
-      const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+      int ord = (method >= 5) ? 1 : 0;
+      VectorPolynomial q(3, 3, ord);
+      std::vector<VectorPolynomial> uf(nedges), vf(nedges);
 
-      int k = (method == 5) ? 1 : 0;
-      for (int i = 0; i < nedges; ++i) {
-        uf[i].Reshape(3, 3, 0);
-        uf[i][0](0) = 1.0;
-        uf[i].set_origin(xc);
+      for (auto it = q.begin(); it < q.end(); ++it) {
+        int k = it.VectorComponent();
+        int m = it.PolynomialPosition();
+        for (auto jt = q.begin(); jt < q.end(); ++jt) {
+          int l = jt.VectorComponent();
+          int n = jt.PolynomialPosition();
+          for (int i = 0; i < nedges; ++i) {
+            uf[i].Reshape(3, 3, order);
+            uf[i][k](m) = 1.0;
 
-        vf[i].Reshape(3, 3, 0);
-        vf[i][1](0) = 1.0;
-        vf[i].set_origin(xc);
-
-        wf[i].Reshape(3, 3, k);
-        wf[i][0](k) = 1.0;
-        wf[i].set_origin(xc);
-
-        qf[i].Reshape(3, 3, k);
-        qf[i][2](k + 1) = 2.0;
-        qf[i].set_origin(xc);
+            vf[i].Reshape(3, 3, order);
+            vf[i][l](n) = -1.0;
+          }
+        }
       }
 
-      WhetStone::DenseVector u(nrows), v(nrows), w(nrows), q(nrows), a(nrows);
+      WhetStone::DenseVector u(nrows), v(nrows), a(nrows);
       vem.CalculateDOFsOnBoundary(mesh, c, uf, uf, u);
       vem.CalculateDOFsOnBoundary(mesh, c, vf, vf, v);
-      vem.CalculateDOFsOnBoundary(mesh, c, wf, wf, w);
-      vem.CalculateDOFsOnBoundary(mesh, c, qf, qf, q);
 
-      M.Multiply(w, a, false);
-      double vx1 = u * a;
-      double vy1 = v * a;
-      double vxx = w * a;
-      double vxy = q * a;
+      M.Multiply(u, a, false);
+      double vxy = v * a;
 
+      Polynomial poly = uf[0] * (Tinv * vf[0]);
+      double exact = numi.IntegratePolynomialCell(c, poly);
+      
       double volume = mesh->cell_volume(c); 
-      if (method != 5) {
-        CHECK_CLOSE(volume, vx1, 1e-10);
-        CHECK_CLOSE(-volume, vy1, 1e-10);
-      } else {
-        CHECK_CLOSE(0.0, vx1, 1e-10);
-        CHECK_CLOSE(0.0, vy1, 1e-10);
-        CHECK_CLOSE(vem.integrals().poly()(4), vxx, 2e-10 * vxx);
-        CHECK_CLOSE(0.0, vxy, 1e-10);
-      }
+      double tol = volume * (std::fabs(vxy) + 1.0) * 1e-10;
+
+      CHECK_CLOSE(exact, vxy, tol);
+      if (fabs(exact - vxy) > tol) exit(0); 
     }
   }
 }
@@ -397,7 +400,7 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
 
   RCP<Mesh> mesh;
   if (mesh_file == "")
-    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, true, true); 
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 3, 2, true, true); 
   else 
     mesh = meshfactory.create(mesh_file, true, true); 
  
@@ -410,9 +413,10 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
     MFD3D_Electromagnetics mfd(plist, mesh);
     VEM_NedelecSerendipity vem(plist, mesh);
 
-    AmanziMesh::Entity_ID_List edges;
-    mesh->cell_get_edges(c, &edges);
+    const auto& edges = mesh->cell_get_edges(c);
     int nedges = edges.size();
+
+    NumericalIntegration numi(mesh);
 
     Tensor T(3, 2);
     T(0, 0) = 2.0;
@@ -421,7 +425,7 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
     T(0, 1) = 1.0;
     T(1, 0) = 1.0;
 
-    for (int method = 0; method < 4; method++) {
+    for (int method = 0; method < 5; method++) {
       DenseMatrix A;
 
       if (method == 0) {
@@ -433,6 +437,11 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
         vem.StiffnessMatrix(c, T, A);
       } else if (method == 3) {
         vem.set_order(1);
+        vem.set_type(2);
+        vem.StiffnessMatrix(c, T, A);
+      } else if (method == 4) {
+        vem.set_order(1);
+        vem.set_type(1);
         vem.StiffnessMatrix(c, T, A);
       }
 
@@ -450,46 +459,41 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
       for (int i = 0; i < nrows; i++) CHECK(A(i, i) > 0.0);
 
       // verify exact integration property
-      std::vector<VectorPolynomial> uf(nedges), vf(nedges), wf(nedges), tf(nedges), yf(nedges);
-      for (int i = 0; i < nedges; ++i) {
-        uf[i].Reshape(3, 3, 1);
-        uf[i][1](3) =-1.0;
-        uf[i][2](2) = 1.0;
+      int order = (method == 4) ? 2 : 1;
+      VectorPolynomial q(3, 3, order);
+      std::vector<VectorPolynomial> uf(nedges), vf(nedges);
 
-        vf[i].Reshape(3, 3, 1);
-        vf[i][0](3) = 1.0;
-        vf[i][2](1) =-1.0;
+      for (auto it = q.begin(); it < q.end(); ++it) {
+        int k = it.VectorComponent();
+        int m = it.PolynomialPosition();
+        for (auto jt = q.begin(); jt < q.end(); ++jt) {
+          int l = jt.VectorComponent();
+          int n = jt.PolynomialPosition();
+          for (int i = 0; i < nedges; ++i) {
+            uf[i].Reshape(3, 3, order);
+            uf[i][k](m) = 1.0;
 
-        wf[i].Reshape(3, 3, 1);
-        wf[i][0](2) =-1.0;
-        wf[i][1](1) = 1.0;
-
-        tf[i].Reshape(3, 3, 0);
-        tf[i][0](0) = 1.0;
-
-        yf[i].Reshape(3, 3, 1);
-        yf[i][0](1) = 1.0;
+            vf[i].Reshape(3, 3, order);
+            vf[i][l](n) = -1.0;
+          }
+        }
       }
 
-      WhetStone::DenseVector u(nrows), v(nrows), w(nrows), a(nrows), t(nrows), y(nrows);
+      WhetStone::DenseVector u(nrows), v(nrows), a(nrows);
       vem.CalculateDOFsOnBoundary(mesh, c, uf, uf, u);
       vem.CalculateDOFsOnBoundary(mesh, c, vf, vf, v);
-      vem.CalculateDOFsOnBoundary(mesh, c, wf, wf, w);
-      vem.CalculateDOFsOnBoundary(mesh, c, tf, tf, t);
-      vem.CalculateDOFsOnBoundary(mesh, c, yf, yf, y);
 
       A.Multiply(u, a, false);
-      double vxx = u * a;
       double vxy = v * a;
-      double vxz = w * a;
-      double vxt = t * a;
 
+      Polynomial poly = Curl3D(uf[0]) * (T * Curl3D(vf[0]));
+      double exact = numi.IntegratePolynomialCell(c, poly);
+      
       double volume = mesh->cell_volume(c); 
-      double tol = volume * 1e-10;
-      CHECK_CLOSE(4 * volume * T(0,0), vxx, tol);
-      CHECK_CLOSE(4 * volume * T(0,1), vxy, tol);
-      CHECK_CLOSE(4 * volume * T(0,2), vxz, tol);
-      CHECK_CLOSE(0.0, vxt, tol);
+      double tol = volume * (std::fabs(vxy) + 3.0) * 1e-10;
+
+      CHECK_CLOSE(exact, vxy, tol);
+      if (fabs(exact - vxy) > tol) exit(0); 
     }
   }
 }
@@ -510,5 +514,8 @@ TEST(STIFFNESS_MATRIX_3D_24SIDES) {
   StiffnessMatrix3D("test/cube_triangulated.exo", 10);
 } 
 
+// TEST(STIFFNESS_MATRIX_3D_HEXMESH) {
+//   StiffnessMatrix3D("test/hexes4.exo", 10);
+// } 
 
 

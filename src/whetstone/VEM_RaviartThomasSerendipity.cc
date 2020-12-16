@@ -123,7 +123,7 @@ int VEM_RaviartThomasSerendipity::L2consistency(
     vbasisf.push_back(basis_f);
 
     NumericalIntegration numi_f(surf_mesh);
-    GrammMatrix(numi_f, order_ + 1, integrals_f, basis_f, MG);
+    GrammMatrix(0, numi_f, order_ + 1, integrals_f, basis_f, MG);
     vMGf.push_back(MG);
 
     auto S = MG.SubMatrix(0, ndf, 0, ndf);
@@ -166,8 +166,7 @@ int VEM_RaviartThomasSerendipity::L2consistency(
     for (int i = 0; i < d_; ++i) xyz[i](i + 1) = 1.0;
     xyz.set_origin(xc);
 
-    integrals_.set_id(c);
-    GrammMatrix(numi, order_, integrals_, basis, MGc);
+    GrammMatrix(c, numi, order_, integrals_, basis, MGc);
   }
 
   // assemble matrix R

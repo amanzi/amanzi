@@ -35,6 +35,7 @@ class PolynomialOnMesh;
 
 // Gramm matrix for polynomials
 void GrammMatrix(
+    int c,
     NumericalIntegration& numi,
     int order, PolynomialOnMesh& integrals,
     const Basis_Regularized& basis, DenseMatrix& G);
@@ -42,6 +43,7 @@ void GrammMatrix(
 // Gramm matrix for gradient of polynomials with tensorial weight
 inline
 void GrammMatrixGradients(
+    int c,
     const Tensor& K, 
     NumericalIntegration& numi,
     int order, PolynomialOnMesh& integrals,
@@ -53,6 +55,7 @@ void GrammMatrixGradients(
 ****************************************************************** */
 inline
 void GrammMatrix(
+    int c,
     NumericalIntegration& numi,
     int order, PolynomialOnMesh& integrals,
     const Basis_Regularized& basis, DenseMatrix& G)
@@ -67,7 +70,6 @@ void GrammMatrix(
   G.Reshape(nd, nd);
 
   // extended database of integrals of monomials
-  int c = integrals.get_id();
   numi.UpdateMonomialIntegralsCell(c, 2 * order, integrals);
 
   int multi_index[3];
@@ -96,6 +98,7 @@ void GrammMatrix(
 * Gramm matrix for gradient of polynomials with tensorial weight.
 ****************************************************************** */
 void GrammMatrixGradients(
+    int c,
     const Tensor& K, 
     NumericalIntegration& numi,
     int order, PolynomialOnMesh& integrals,
@@ -111,7 +114,6 @@ void GrammMatrixGradients(
   G.Reshape(nd, nd);
 
   // extended database of integrals of monomials
-  int c = integrals.get_id();
   numi.UpdateMonomialIntegralsCell(c, std::max(0, 2 * (order - 1)), integrals);
 
   Tensor Ktmp(d, 2);

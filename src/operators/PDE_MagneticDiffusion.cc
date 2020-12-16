@@ -129,7 +129,7 @@ void PDE_MagneticDiffusion::ModifyMatrices(
 void PDE_MagneticDiffusion::ModifyFields(
    CompositeVector& E, CompositeVector& B, double dt)
 {
-  E.ScatterMasterToGhosted("edge");
+  E.ScatterMasterToGhosted();
 
   Epetra_MultiVector& Ee = *E.ViewComponent("edge", true);
   Epetra_MultiVector& Bf = *B.ViewComponent("face", false);
@@ -187,7 +187,7 @@ void PDE_MagneticDiffusion::ModifyFields(
 double PDE_MagneticDiffusion::CalculateOhmicHeating(const CompositeVector& E)
 {
   const Epetra_MultiVector& Ee = *E.ViewComponent("edge", true);
-  E.ScatterMasterToGhosted("edge");
+  E.ScatterMasterToGhosted();
 
   double energy(0.0);
   AmanziMesh::Entity_ID_List edges;

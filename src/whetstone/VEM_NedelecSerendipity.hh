@@ -39,7 +39,7 @@ namespace WhetStone {
 class VEM_NedelecSerendipity : public DeRham_Edge { 
  public:
   VEM_NedelecSerendipity(const Teuchos::ParameterList& plist,
-                              const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh);
+                         const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh);
   ~VEM_NedelecSerendipity() {};
 
   // required methods
@@ -71,7 +71,8 @@ class VEM_NedelecSerendipity : public DeRham_Edge {
     ProjectorFace_(f, ve, ProjectorType::L2, moments, uf);
   }
 
-  // access
+  // access and modifiers
+  void set_type(int type) { type_ = type; }
   PolynomialOnMesh& integrals() { return integrals_; }
 
   // support

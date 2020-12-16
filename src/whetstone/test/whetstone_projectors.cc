@@ -1110,50 +1110,57 @@ void Projector3DNedelecSerendipity(const std::string& filename)
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, true, true);
-  // Teuchos::RCP<Mesh> mesh = meshfactory.create(filename, true, true); 
+
+  int c;
+  Teuchos::RCP<Mesh> mesh;
+  if (filename == "") {
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, true, true);
+    c = 5;
+  } else {
+    mesh = meshfactory.create(filename, true, true); 
+    c = 0;
+  }
  
-  int c(0);
-  Teuchos::ParameterList plist;
-  plist.set<int>("method order", 1)
-       .set<int>("type", 2);
-  VEM_NedelecSerendipity vem(plist, mesh);
+  for (int type = 1; type < 3; ++type) { 
+    Teuchos::ParameterList plist;
+    plist.set<int>("method order", 1)
+         .set<int>("type", type);
+    VEM_NedelecSerendipity vem(plist, mesh);
 
-  std::vector<int> edirs;
-  Entity_ID_List edges;
+    const auto& edges = mesh->cell_get_edges(c);
+    int nedges = edges.size();
 
-  mesh->cell_get_edges(c, &edges);
-  int nedges = edges.size();
+    for (int k = 0; k < 2; ++k) {
+      std::vector<VectorPolynomial> ve(nedges);
 
-  for (int k = 0; k < 2; ++k) {
-    std::vector<VectorPolynomial> ve(nedges);
-
-    for (int n = 0; n < nedges; ++n) {
-      ve[n].Reshape(3, 3, k);
-      for (int i = 0; i < 3; ++i) {
-        ve[n][i](0) = i + 1.0;
-        if (k > 0) {
-          ve[n][i](i + 1) = i + 1;
-          ve[n][i](3 - i) = 3 - i;
+      for (int n = 0; n < nedges; ++n) {
+        ve[n].Reshape(3, 3, k);
+        for (int i = 0; i < 3; ++i) {
+          ve[n][i](0) = i + 1.0;
+          if (k > 0) {
+            ve[n][i](i + 1) = i + 1;
+            ve[n][i](3 - i) = 3 - i;
+          }
         }
       }
+
+      VectorPolynomial uc;
+
+      vem.set_order(k);
+      vem.L2Cell(c, ve, ve, NULL, uc);
+      uc.ChangeOrigin(AmanziGeometry::Point(3));
+
+      uc -= ve[0];
+      CHECK(uc.NormInf() < 4e-10);
     }
-
-    VectorPolynomial uc;
-
-    vem.set_order(k);
-    vem.L2Cell(c, ve, ve, NULL, uc);
-    uc.ChangeOrigin(AmanziGeometry::Point(3));
-
-    uc -= ve[0];
-    CHECK(uc.NormInf() < 4e-10);
   }
 }
 
 
 TEST(SERENDIPITY_PROJECTORS_CUBE_NEDELEC) {
+  Projector3DNedelecSerendipity("");
   Projector3DNedelecSerendipity("test/cube_unit_rotated.exo");
   Projector3DNedelecSerendipity("test/dodecahedron.exo");
 }

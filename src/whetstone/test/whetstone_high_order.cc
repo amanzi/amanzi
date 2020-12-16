@@ -52,7 +52,7 @@ void HighOrderCrouzeixRaviart(int dim, std::string file_name) {
   MFD3D_CrouzeixRaviart mfd_lo(plist, mesh);
   MFD3D_CrouzeixRaviartAnyOrder mfd_ho(plist, mesh);
 
-  int cell(0);
+  int c(0);
   DenseMatrix G1, A1, Ak;
 
   Tensor T(dim, 2);
@@ -62,11 +62,11 @@ void HighOrderCrouzeixRaviart(int dim, std::string file_name) {
 
   // 1st-order scheme
   mfd_lo.set_order(1);
-  mfd_lo.StiffnessMatrix(cell, T, A1);
+  mfd_lo.StiffnessMatrix(c, T, A1);
 
   // 1st-order scheme (new algorithm)
   mfd_ho.set_order(1);
-  mfd_ho.StiffnessMatrix(cell, T, Ak);
+  mfd_ho.StiffnessMatrix(c, T, Ak);
 
   printf("Stiffness (sub)matrix for order = 1\n");
   PrintMatrix(A1, "%8.4f ");
@@ -78,7 +78,7 @@ void HighOrderCrouzeixRaviart(int dim, std::string file_name) {
   int kmax = (dim == 3) ? 3 : 4;
   for (int k = 2; k < kmax; ++k) {
     mfd_ho.set_order(k);
-    mfd_ho.StiffnessMatrix(cell, T, Ak);
+    mfd_ho.StiffnessMatrix(c, T, Ak);
 
     printf("Stiffness (sub)matrix for order=%d, size=%d\n", k, Ak.NumRows());
     PrintMatrix(Ak, "%8.4f ", 12);
@@ -91,14 +91,14 @@ void HighOrderCrouzeixRaviart(int dim, std::string file_name) {
     const DenseMatrix& G = mfd_ho.G();
     
     PolynomialOnMesh integrals;
-    integrals.set_id(cell);
+    integrals.set_id(c);
     NumericalIntegration numi(mesh);
 
     Polynomial ptmp;
     Basis_Regularized basis;
-    basis.Init(mesh, cell, k, ptmp);
+    basis.Init(mesh, c, k, ptmp);
 
-    GrammMatrixGradients(T, numi, k, integrals, basis, G1);
+    GrammMatrixGradients(c, T, numi, k, integrals, basis, G1);
 
     G1(0, 0) = 1.0;
     G1.Inverse();
@@ -169,7 +169,7 @@ void HighOrderCrouzeixRaviartSerendipity(int dim, std::string file_name) {
       Basis_Regularized basis;
       basis.Init(mesh, c, k, ptmp);
 
-      GrammMatrixGradients(T, numi, k, integrals, basis, G1);
+      GrammMatrixGradients(c, T, numi, k, integrals, basis, G1);
 
       G1(0, 0) = 1.0;
       G1.Inverse();
@@ -256,7 +256,7 @@ void HighOrderLagrange2D(std::string file_name) {
       Basis_Regularized basis;
       basis.Init(mesh, c, k, ptmp);
 
-      GrammMatrixGradients(T, numi, k, integrals, basis, G1);
+      GrammMatrixGradients(c, T, numi, k, integrals, basis, G1);
 
       G1(0, 0) = 1.0;
       G1.Inverse();
@@ -349,7 +349,7 @@ void HighOrderLagrange3D(const std::string& filename1,
     Basis_Regularized basis;
     basis.Init(mesh2, 0, k, ptmp);
 
-    GrammMatrixGradients(T, numi, k, integrals, basis, G1);
+    GrammMatrixGradients(0, T, numi, k, integrals, basis, G1);
 
     G1(0, 0) = 1.0;
     G1.Inverse();
@@ -439,7 +439,7 @@ void HighOrderLagrangeSerendipity(const std::string& filename) {
       Basis_Regularized basis;
       basis.Init(mesh, 0, k, ptmp);
 
-      GrammMatrixGradients(T, numi, k, integrals, basis, G1);
+      GrammMatrixGradients(c, T, numi, k, integrals, basis, G1);
 
       G1(0, 0) = 1.0;
       G1.Inverse();
@@ -556,7 +556,7 @@ void HighOrderRaviartThomasSerendipity(const std::string& filename) {
     Basis_Regularized basis;
     basis.Init(mesh, 0, k, ptmp);
 
-    GrammMatrix(numi, k, integrals, basis, G1);
+    GrammMatrix(c, numi, k, integrals, basis, G1);
     G1 /= T(0, 0);
     int nd = G1.NumRows() / 3;
     G2 = G.SubMatrix(0, nd, 0, nd);

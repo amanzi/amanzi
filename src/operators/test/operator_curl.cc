@@ -64,17 +64,17 @@ void ProjectorRTAccuracy() {
   WhetStone::Tensor K(3, 1);
   K(0, 0) = 1.0;
 
-  for (int nx = 1; nx < 2; nx *= 2) {
+  for (int nx = 1; nx < 3; nx *= 2) {
     // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, true, true);
     // DeformMesh(mesh, 5, 0.1);
-    RCP<Mesh> mesh = meshfactory.create("test/hexes4.exo", true, true);
+    std::string name = (nx == 1) ? "4" : "8";
+    RCP<Mesh> mesh = meshfactory.create("test/hexes" + name + ".exo", true, true);
     int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
     AnalyticElectromagnetics02 ana(1.0, mesh);
     WhetStone::NumericalIntegration numi(mesh);
 
-    plist.set<int>("method order", order)
-         .set<int>("type", 2);
+    plist.set<int>("method order", order);
     WhetStone::VEM_RaviartThomasSerendipity vem(plist, mesh);
 
     double err1(0.0), err2(0.0), err3(0.0), err4(0.0);
@@ -171,6 +171,7 @@ void ProjectorRTAccuracy() {
     std::cout << "nx=" << nx << " errors=" << std::sqrt(err1) << " " 
               << std::sqrt(err2) << " " << std::sqrt(err3) 
               << "  ortho=" << err4 << std::endl;
+    CHECK_CLOSE(err4, 0.0, 1e-10);
   }
 }
 
@@ -208,10 +209,11 @@ void ProjectorNDAccuracy() {
   WhetStone::Tensor K(3, 1);
   K(0, 0) = 1.0;
 
-  for (int nx = 1; nx < 2; nx *= 2) {
+  for (int nx = 1; nx < 3; nx *= 2) {
     // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, true, true);
     // DeformMesh(mesh, 5, 0.1);
-    RCP<Mesh> mesh = meshfactory.create("test/hexes4.exo", true, true);
+    std::string name = (nx == 1) ? "4" : "8";
+    RCP<Mesh> mesh = meshfactory.create("test/hexes" + name + ".exo", true, true);
     int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
     AnalyticElectromagnetics02 ana(1.0, mesh);
@@ -292,6 +294,8 @@ void ProjectorNDAccuracy() {
     }
     std::cout << "nx=" << nx << " errors=" << std::sqrt(err1) << " " 
               << std::sqrt(err2) << "  ortho=" << err4 << std::endl;
+
+    CHECK_CLOSE(err4, 0.0, 1e-10);
   }
 }
 
@@ -303,6 +307,7 @@ TEST(PROJECTOR_ND_ACCURACY) {
 
 /* *****************************************************************
 * Test approximation of B = curl E with the primary curl operator 
+* CURL is exact, so error depends only on accuracy of a quadrature.
 * **************************************************************** */
 void PrimaryCurl() {
   using namespace Teuchos;
@@ -322,18 +327,18 @@ void PrimaryCurl() {
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
 
-  int order(1);
-  for (int nx = 1; nx < 2; nx *= 2) {
-    RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, true, true);
+  int order(1), type(1);
+  for (int nx = 4; nx < 5; nx *= 2) {
+    // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, true, true);
     // DeformMesh(mesh, 1, 0.1);
-    // RCP<Mesh> mesh = meshfactory.create("test/hexes8.exo", true, true);
+    RCP<Mesh> mesh = meshfactory.create("test/hexes4.exo", true, true);
     int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-    AnalyticElectromagnetics05 ana(mesh);
+    AnalyticElectromagnetics02 ana(1.0, mesh);
     WhetStone::NumericalIntegration numi(mesh);
 
     plist.set<int>("method order", order)
-         .set<int>("type", 2);
+         .set<int>("type", type);
     WhetStone::VEM_NedelecSerendipity vem(plist, mesh);
 
     double err(0.0);
@@ -346,7 +351,7 @@ void PrimaryCurl() {
 
       vem.CurlMatrix(c, A);
 
-      // electric field moments
+      // electric field moments (on edges)
       std::vector<double> moments, Eex, Bex;
       mesh->cell_get_edges(c, &edges);
       int nedges = edges.size();
@@ -361,10 +366,35 @@ void PrimaryCurl() {
         for (int k = 0; k < moments.size(); ++k) Eex.push_back(moments[k]);
       }
 
-      // magnetic field moments wrt exterior normal
+      // electric field moments (on faces)
       mesh->cell_get_faces_and_dirs(c, &faces, &fdirs);
       int nfaces = faces.size();
 
+      if (type == 1) {
+        WhetStone::Polynomial pf(2, order);
+
+        for (int n = 0; n < nfaces; ++n) {
+          int f = faces[n];
+          double area = mesh->face_area(f);
+          const auto& xf = mesh->face_centroid(f);
+          const auto& normal = mesh->face_normal(f);
+          WhetStone::SurfaceCoordinateSystem coordsys(xf, normal);
+
+          for (auto it = pf.begin(1); it < pf.end(); ++it) {
+            double factor = std::pow(area, -(double)it.MonomialSetOrder() / 2);
+            WhetStone::Polynomial fmono(2, it.multi_index(), factor);
+            auto rot = Rot2D(fmono);
+
+            AmanziGeometry::Point tmp = rot[0](0) * (*coordsys.tau())[0] 
+                                      + rot[1](0) * (*coordsys.tau())[1];
+            ana.set_parameters(tmp, 0, 0.0);
+            numi.CalculateFunctionMomentsFace(f, &ana, order - 1, moments, 4);
+            for (int k = 0; k < moments.size(); ++k) Eex.push_back(moments[k]);
+          }
+        }
+      }
+      
+      // magnetic field moments wrt exterior normal
       for (int n = 0; n < nfaces; ++n) {
         int f = faces[n];
         double area = mesh->face_area(f);
@@ -385,6 +415,7 @@ void PrimaryCurl() {
       }
     }
     std::cout << "nx=" << nx << " " << std::sqrt(err) << std::endl;
+    CHECK_CLOSE(err, 0.0, 1e-10);
   }
 }
 

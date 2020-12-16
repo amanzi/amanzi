@@ -126,7 +126,7 @@ int MFD3D_LagrangeSerendipity::H1consistency(
 
   // Dot-product matrix for polynomials and Laplacian of polynomials
   DenseMatrix M(nd, nd);
-  GrammMatrix(numi, order_, integrals_, basis, M);
+  GrammMatrix(c, numi, order_, integrals_, basis, M);
 
   // setup matrix representing Laplacian of polynomials
   DenseMatrix L(nd, nd);
@@ -306,7 +306,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
     DenseMatrix M;
     NumericalIntegration numi(mymesh);
 
-    GrammMatrix(numi, order_, integrals_, basis, M);
+    GrammMatrix(c, numi, order_, integrals_, basis, M);
     M.Multiply(v5, v4, false);
 
     vdof.Reshape(ndof_f + ndof_c);
@@ -327,7 +327,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
     DenseMatrix M, M2;
     NumericalIntegration numi(mymesh);
 
-    GrammMatrix(numi, order_, integrals_, basis, M);
+    GrammMatrix(c, numi, order_, integrals_, basis, M);
     M2 = M.SubMatrix(ndof_cs, nd, 0, nd);
     M2.Multiply(v5, v6, false);
 
