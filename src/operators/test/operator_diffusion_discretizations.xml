@@ -213,7 +213,7 @@
 
     <!-- MIXED MFD schemes -->
     <ParameterList name="mixed">
-      <Parameter name="discretization primary" type="string" value="mfd: two-point flux approximation"/>
+      <Parameter name="discretization primary" type="string" value="mfd: default"/>
       <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
       <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
       <Parameter name="nonlinear coefficient" type="string" value="none"/>
@@ -221,7 +221,7 @@
     </ParameterList>
 
     <ParameterList name="mixed upwind">
-      <Parameter name="discretization primary" type="string" value="mfd: two-point flux approximation"/>
+      <Parameter name="discretization primary" type="string" value="mfd: default"/>
       <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
       <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
       <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>

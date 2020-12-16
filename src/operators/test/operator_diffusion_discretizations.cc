@@ -576,15 +576,13 @@ SUITE(DIFFUSION) {
     auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
     test<Operators::PDE_DiffusionMFD>(
         ana, "ifpack2: ILUT", "DirichletNeumannBox", "test/random10.exo",
-        "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 2.e-2);
-    //        "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+        "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   }
   TEST(Analytic00_LinearGravity1_MFD_DirichletNeumannBox_Wiggled_ifpack2_ILUT) {
     auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
     testWGravity<Operators::PDE_DiffusionMFDwithGravity>(
         ana, 1.1, "ifpack2: ILUT", "DirichletNeumannBox", "test/random10.exo",
-        "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 2.e-2);
-    //        "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+        "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   }
 #endif
 #if NLFV
@@ -619,7 +617,7 @@ SUITE(DIFFUSION) {
   //
   // NOTE: FV cannot be exact
   //       MFD is still exact
-  //       NLFV must converge to be exact.  Also, NLFV loses symmetry as it iterates.
+  //       NLFV must converge to be exact. By desing, NLFV loses symmetry as it iterates.
 #if FV
   TEST(Analytic00_Linear1_FV_DirichletNeumannBox_Poly_ifpack2_ILUT) {
     auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
@@ -640,15 +638,13 @@ SUITE(DIFFUSION) {
     auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 0.0));
     test<Operators::PDE_DiffusionMFD>(
         ana, "ifpack2: ILUT", "DirichletNeumannBox", "test/median7x8_filtered.exo",
-        "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 2.7e-2);
-    //        "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+        "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   }
   TEST(Analytic00_LinearGravity1_MFD_DirichletNeumannBox_Poly_ifpack2_ILUT) {
     auto ana = Teuchos::rcp(new Analytic00(1, 1.0, 1.0, 1.1));
     testWGravity<Operators::PDE_DiffusionMFDwithGravity>(
         ana, 1.1, "ifpack2: ILUT", "DirichletNeumannBox", "test/median7x8_filtered.exo",
-        "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 2.8e-2);
-    //        "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+        "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   }
 #endif
 #if NLFV
@@ -739,51 +735,50 @@ SUITE(DIFFUSION) {
 
   //
   // Analytic02: Tensor diffusion.  Note FV cannot solve this problem, but MFD
-  // can (and maybe NLFV as well?)
+  // and NLFV can.
   //
   // This test replaces old operator_diffusion.cc mixed tests.
 #if MFD
-  // on mfd: default, these have a tolerance of 1.e-12.  On TPFA, it is the same as FV?
-  // TEST(Analytic02_MFD_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic02(2));
-  //   test<Operators::PDE_DiffusionMFD>(
-  //       ana, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
-  //       "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
-  // TEST(Analytic02_Gravity_MFD_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic02(2, 0.1));
-  //   testWGravity<Operators::PDE_DiffusionMFDwithGravity>(
-  //       ana, 0.1, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
-  //       "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
+  TEST(Analytic02_MFD_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic02(2));
+    test<Operators::PDE_DiffusionMFD>(
+        ana, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
+        "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
+  TEST(Analytic02_Gravity_MFD_DirichletNeumannBox_Generate2D_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic02(2, 0.1));
+    testWGravity<Operators::PDE_DiffusionMFDwithGravity>(
+        ana, 0.1, "ifpack2: ILUT", "DirichletNeumannBox", "Generate2D",
+        "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
 
   // the original test tested on circle-quad
-  // TEST(Analytic02_MFD_DirichletNeumannBox_CircleQuad_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic02(2));
-  //   test<Operators::PDE_DiffusionMFD>(
-  //       ana, "ifpack2: ILUT", "DirichletNeumannBox", "test/circle_quad10.exo",
-  //       "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
-  // TEST(Analytic02_Gravity_MFD_DirichletNeumannBox_CircleQuad_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic02(2, 0.1));
-  //   testWGravity<Operators::PDE_DiffusionMFDwithGravity>(
-  //       ana, 0.1, "ifpack2: ILUT", "DirichletNeumannBox", "test/circle_quad10.exo",
-  //       "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
+  TEST(Analytic02_MFD_DirichletNeumannBox_CircleQuad_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic02(2));
+    test<Operators::PDE_DiffusionMFD>(
+        ana, "ifpack2: ILUT", "DirichletNeumannBox", "test/circle_quad10.exo",
+        "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
+  TEST(Analytic02_Gravity_MFD_DirichletNeumannBox_CircleQuad_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic02(2, 0.1));
+    testWGravity<Operators::PDE_DiffusionMFDwithGravity>(
+        ana, 0.1, "ifpack2: ILUT", "DirichletNeumannBox", "test/circle_quad10.exo",
+        "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
 
   // test in 3D
-  // TEST(Analytic02_MFD_DirichletNeumannBox_Generate3D_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic02(3));
-  //   test<Operators::PDE_DiffusionMFD>(
-  //       ana, "ifpack2: ILUT", "DirichletNeumannBox", "Generate3D",
-  //       "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
-  // TEST(Analytic02_Gravity_MFD_DirichletNeumannBox_Generate3D_ifpack2_ILUT) {
-  //   auto ana = Teuchos::rcp(new Analytic02(3, 0.1));
-  //   testWGravity<Operators::PDE_DiffusionMFDwithGravity>(
-  //       ana, 0.1, "ifpack2: ILUT", "DirichletNeumannBox", "Generate3D",
-  //       "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
-  // }
+  TEST(Analytic02_MFD_DirichletNeumannBox_Generate3D_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic02(3));
+    test<Operators::PDE_DiffusionMFD>(
+        ana, "ifpack2: ILUT", "DirichletNeumannBox", "Generate3D",
+        "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
+  TEST(Analytic02_Gravity_MFD_DirichletNeumannBox_Generate3D_ifpack2_ILUT) {
+    auto ana = Teuchos::rcp(new Analytic02(3, 0.1));
+    testWGravity<Operators::PDE_DiffusionMFDwithGravity>(
+        ana, 0.1, "ifpack2: ILUT", "DirichletNeumannBox", "Generate3D",
+        "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
 #endif
 
   //
@@ -888,7 +883,7 @@ SUITE(DIFFUSION) {
   //
   // NOTE: FV cannot be exact
   //       MFD is still exact
-  //       NLFV must converge to be exact.  Also, NLFV loses symmetry as it iterates.
+  //       NLFV must converge to be exact. By design, NLFV loses symmetry as it iterates.
 #if FV
   TEST(Analytic03b_Linear1_FV_Dirichlet_Poly_ifpack2_ILUT) {
     auto ana = Teuchos::rcp(new Analytic03b());
@@ -898,7 +893,6 @@ SUITE(DIFFUSION) {
   }
 #endif
 #if MFD
-  // on mfd: default, these have a tolerance of 1.e-12.  On TPFA, it is the same as FV?
   TEST(Analytic03b_Linear1_MFD_Dirichlet_Poly_ifpack2_ILUT) {
     auto ana = Teuchos::rcp(new Analytic03b());
     test<Operators::PDE_DiffusionMFD>(
@@ -930,7 +924,6 @@ SUITE(DIFFUSION) {
   }
 #endif
 #if MFD
-  // on mfd: default, these have a tolerance of 1.e-12.  On TPFA, it is the same as FV?
   TEST(Analytic03b_Linear1_MFD_Dirichlet_Poly_ifpack2_diagonal) {
     auto ana = Teuchos::rcp(new Analytic03b());
     test<Operators::PDE_DiffusionMFD>(
@@ -952,6 +945,5 @@ SUITE(DIFFUSION) {
   //       "nlfv with bfaces", false, AmanziMesh::Entity_kind::FACE, 1.e-12, 20);
   // }
 #endif
-
 
 }
