@@ -119,6 +119,7 @@ void Schema::ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh,
     std::tie(kind, std::ignore, num) = *it;
 
     if (kind == AmanziMesh::NODE) {
+      AmanziMesh::Entity_ID_List nodes;
       mesh->cell_get_nodes(c, &nodes);
       ndofs = nodes.size();
     }

@@ -249,7 +249,7 @@ TEST_FIXTURE(test_data, JFNK_SOLVER_LEFT_PC) {
 
 /* ******************************************************************/
 TEST_FIXTURE(test_data, JFNK_SOLVER_RIGHT_PC) {
-  std::cout << "\nJFNK solver with RIGHT precondiitoner..." << std::endl;
+  std::cout << "\nJFNK solver with RIGHT preconditioner..." << std::endl;
 
   // create the function class
   Teuchos::RCP<NonlinearProblem> fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, false));

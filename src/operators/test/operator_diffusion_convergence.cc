@@ -315,16 +315,8 @@ std::pair<double, double> RunInverseProblem(const std::string& discretization,
 }
 
 
-void RunForwardTest(const std::string& discretization) {
-  std::cout << "Convergence for discretization: " << discretization << std::endl;
-  std::cout << "x = np.array([";
-  std::vector<std::pair<double,double> > l2s;
-  for (int i = 2; i <= 65; i *= 2) {
-    std::pair<double,double> l2 = RunForwardProblem(discretization, i, i);
-    l2s.push_back(l2);
-  }
-  std::cout << "])" << std::endl;
-
+void MeanConvergenceRate(const std::vector<std::pair<double, double> >& l2s)
+{
   double mean_dl2 = 0.0;
   double mean_dlinf = 0.0;
   int size = 0;
@@ -342,6 +334,20 @@ void RunForwardTest(const std::string& discretization) {
 }
 
 
+void RunForwardTest(const std::string& discretization) {
+  std::cout << "Convergence for discretization: " << discretization << std::endl;
+  std::cout << "x = np.array([";
+  std::vector<std::pair<double,double> > l2s;
+  for (int i = 2; i <= 65; i *= 2) {
+    std::pair<double,double> l2 = RunForwardProblem(discretization, i, i);
+    l2s.push_back(l2);
+  }
+  std::cout << "])" << std::endl;
+
+  MeanConvergenceRate(l2s);
+}
+
+
 void RunInverseTest(const std::string& discretization) {
   std::cout << "Convergence for discretization: " << discretization << std::endl;
   std::cout << "x = np.array([";
@@ -352,20 +358,7 @@ void RunInverseTest(const std::string& discretization) {
   }
   std::cout << "])" << std::endl;
 
-  double mean_dl2 = 0.0;
-  double mean_dlinf = 0.0;
-  int size = 0;
-  for (int i = 1; i != l2s.size(); ++i) {
-    mean_dl2 += (l2s[i].first - l2s[i-1].first);
-    mean_dlinf += (l2s[i].second - l2s[i-1].second);
-    size++;
-  }
-
-  double rate2 = -mean_dl2 / size;
-  double rateinf = -mean_dlinf / size;
-  std::cout << " Mean convergence rate (l2, linf) = " << rate2 << ", " << rateinf << std::endl;
-  CHECK(rate2 > 1.9);
-  CHECK(rateinf > 1.8);
+  MeanConvergenceRate(l2s);
 }
 
 

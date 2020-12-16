@@ -1,15 +1,6 @@
 diff -ruNbB pflotran-0.0.b681066-source/src/pflotran/pflotran_rxn.F90 pflotran-0.0.b681066-new/src/pflotran/pflotran_rxn.F90
 --- pflotran-0.0.b681066-source/src/pflotran/pflotran_rxn.F90  2019-09-27 12:49:34.000000000 -0600
 +++ pflotran-0.0.b681066-new/src/pflotran/pflotran_rxn.F90     2019-09-27 12:50:29.000000000 -0600
-@@ -174,7 +174,7 @@
-         call InputReadWord(input, option, tran_constraint%name, PETSC_TRUE)
-         call InputErrorMsg(input, option, 'constraint', 'name') 
-         call PrintMsg(option, tran_constraint%name)
--        call TranConstraintReadRT(tran_constraint, reaction, input, option)
-+        call TranConstraintRead(tran_constraint, reaction, input, option)
-         call TranConstraintAddToList(tran_constraint, transport_constraints)
-         nullify(tran_constraint)
- 
 @@ -304,7 +304,7 @@
    call InputGetCommandLineString(string, option%global_prefix, option_found, option)
  
