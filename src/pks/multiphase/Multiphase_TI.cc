@@ -269,7 +269,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
           if (fname == keyc) {
             der_key = "constant_field";  // DAG does not calculate derivative when g(u)=u
           } else {
-            der_key = "d" + fname + "_d" + keyc;
+            der_key = Keys::getDerivKey(fname, keyc);
             S_->GetFieldEvaluator(fname)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
           }
 
@@ -297,7 +297,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
         // -- advection operator div[ (K f grad dg/dv) dv ]
         if ((key = eqns_[row].advection[phase].first) != "") {
           Key fname = eqns_[row].advection[phase].second;
-          der_key = "d" + fname + "_d" + keyc;
+          der_key = Keys::getDerivKey(fname, keyc);
           S_->GetFieldEvaluator(fname)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
 
           if (S_->HasField(der_key)) {
@@ -322,7 +322,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
         // -- advection operator div [ (K df/dv grad g) dv ]
         if ((key = eqns_[row].advection[phase].first) != "") {
-          der_key = "d" + key + "_d" + keyc;
+          der_key = Keys::getDerivKey(key, keyc);
           S_->GetFieldEvaluator(key)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
 
           if (S_->HasField(der_key)) {
@@ -357,7 +357,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
           if (fname == keyc) {
             der_key = "constant_field";  // DAG does not calculate derivative when g(u)=u
           } else {
-            der_key = "d" + fname + "_d" + keyc;
+            der_key = Keys::getDerivKey(key, keyc);
             S_->GetFieldEvaluator(fname)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
           }
 
@@ -387,7 +387,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
         // -- advection operator div[ (f grad dg/dv) dv ]
         if ((key = eqns_[row].diffusion[phase].first) != "") {
           Key fname = eqns_[row].diffusion[phase].second;
-          der_key = "d" + fname + "_d" + keyc;
+          der_key = Keys::getDerivKey(fname, keyc);
           S_->GetFieldEvaluator(fname)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
 
           if (S_->HasField(der_key)) {
@@ -412,7 +412,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
         // -- advection operator div [ (df/dv grad g) dv ]
         if ((key = eqns_[row].diffusion[phase].first) != "" && keyc == saturation_liquid_key_) {
-          der_key = "d" + key + "_d" + keyc;
+          der_key = Keys::getDerivKey(key, keyc);
           S_->GetFieldEvaluator(key)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
 
           if (S_->HasField(der_key)) {
@@ -446,7 +446,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
       // storage term
       if ((key = eqns_[row].storage) != "") {
-        der_key = "d" + key + "_d" + keyc;
+        der_key = Keys::getDerivKey(key, keyc);
         S_->GetFieldEvaluator(key)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
 
         if (S_->HasField(der_key)) {
@@ -474,7 +474,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
     const auto& ncp_fc = *S_->GetFieldData(key)->ViewComponent("cell");
 
     Key keyc = soln_names_[solc.var];
-    Key derf_key = "d" + key + "_d" + keyc;
+    Key derf_key = Keys::getDerivKey(key, keyc);
     S_->GetFieldEvaluator(key)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
     if (S_->HasField(derf_key)) der_fc = S_->GetFieldData(derf_key)->ViewComponent("cell");
 
@@ -483,7 +483,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
     const auto& ncp_gc = *S_->GetFieldData(key)->ViewComponent("cell");
 
     keyc = soln_names_[solc.var];
-    Key derg_key = "d" + key + "_d" + keyc;
+    Key derg_key = Keys::getDerivKey(key, keyc);
     S_->GetFieldEvaluator(key)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
     if (S_->HasField(derg_key)) der_gc = S_->GetFieldData(derg_key)->ViewComponent("cell");
 

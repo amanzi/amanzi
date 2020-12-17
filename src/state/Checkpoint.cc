@@ -49,14 +49,18 @@ Checkpoint::Checkpoint(Teuchos::ParameterList& plist,
       const std::string& domain = entry->first;
       const auto& mesh = S.GetMesh(domain);
       if (!sameComm(*comm, *mesh->get_comm())) {
-        Errors::Message msg;
-        msg << "Checkpointing: cannot use single file/old style checkpointing when not all meshes are on MPI_COMM_WORLD (mesh \""
-            << domain << "\" not on MPI_COMM_WORLD). Instead use new-style checkpointing by setting \"single file checkpoint\" to \"false\"";
-        Exceptions::amanzi_throw(msg);
+        std::stringstream msg;
+        msg << "Checkpointing: cannot use single file checkpointing when not all meshes are on MPI_COMM_WORLD (mesh \""
+            << domain << "\" not on MPI_COMM_WORLD).  Using multi-file checkpointing.  (Hide this warning by setting \"single file checkpoint\" to \"false\" in the \"checkpoint\" list.";
+        std::cerr << "WARNING: " << msg.str() << std::endl;
+        old_ = false;
+        break;
       }
     }
+  }
 
-  } else {
+  // NOTE: do not make this an 'else' clause!
+  if (!old_) {
     for (auto domain=S.mesh_begin(); domain!=S.mesh_end(); ++domain) {
       const auto& mesh = S.GetMesh(domain->first);
       output_[domain->first] = Teuchos::rcp(new HDF5_MPI(mesh->get_comm()));
@@ -127,7 +131,7 @@ void Checkpoint::CreateFinalFile(const int cycle) {
     std::string ch_final = filebasename_ + "_final";
     if (boost::filesystem::is_directory(ch_final.data()))
       boost::filesystem::remove(ch_final.data());
-    boost::filesystem::create_hard_link(ch_dir.data(), ch_final.data());
+    boost::filesystem::create_symlink(ch_dir.data(), ch_final.data());
   }
 }
 

@@ -161,12 +161,14 @@ void State::AssignDomain(const State& other, const std::string& domain)
         auto myfield = GetField_(f_it.first);
         auto otherfield = f_it.second;
 
-        if (myfield->type() == COMPOSITE_VECTOR_FIELD) {
-          myfield->SetData(*otherfield->GetFieldData());
-        } else if (myfield->type() == CONSTANT_VECTOR) {
-          myfield->SetData(*otherfield->GetConstantVectorData());
-        } else if (myfield->type() == CONSTANT_SCALAR) {
-          myfield->SetData(*otherfield->GetScalarData());
+        if (myfield != Teuchos::null) {
+          if (myfield->type() == COMPOSITE_VECTOR_FIELD) {
+            myfield->SetData(*otherfield->GetFieldData());
+          } else if (myfield->type() == CONSTANT_VECTOR) {
+            myfield->SetData(*otherfield->GetConstantVectorData());
+          } else if (myfield->type() == CONSTANT_SCALAR) {
+            myfield->SetData(*otherfield->GetScalarData());
+          }
         }
       }
     }

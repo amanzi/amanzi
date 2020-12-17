@@ -161,18 +161,36 @@ getCommWrapper(const Comm& comm) {
 bool inline sameComm(const Comm_type& c1, const Comm_type& c2) {
   auto mpi_c1 = dynamic_cast<const MpiComm_type*>(&c1);
   auto mpi_c2 = dynamic_cast<const MpiComm_type*>(&c2);
-  int cmp;
-  MPI_Comm_compare(mpi_c1->getRawMpiComm(), mpi_c2->getRawMpiComm(), &cmp);
-  return cmp == MPI_IDENT;
+  if (mpi_c1 != nullptr && mpi_c2 != nullptr) {
+    int cmp;
+    MPI_Comm_compare(mpi_c1->getRawMpiComm(), mpi_c2->getRawMpiComm(), &cmp);
+    return cmp == MPI_IDENT;
+  }
+
+  auto serial_c1 = dynamic_cast<const SerialComm_type*>(&c1);
+  auto serial_c2 = dynamic_cast<const SerialComm_type*>(&c2);
+  if (serial_c1 != nullptr && serial_c2 != nullptr) {
+    return true;
+  }
+  return false;
 }
 
 #else // Epetra stack
 bool inline sameComm(const Comm_type& c1, const Comm_type& c2) {
   auto mpi_c1 = dynamic_cast<const MpiComm_type*>(&c1);
   auto mpi_c2 = dynamic_cast<const MpiComm_type*>(&c2);
-  int cmp;
-  MPI_Comm_compare(mpi_c1->Comm(), mpi_c2->Comm(), &cmp);
-  return cmp == MPI_IDENT;
+  if (mpi_c1 != nullptr && mpi_c2 != nullptr) {
+    int cmp;
+    MPI_Comm_compare(mpi_c1->Comm(), mpi_c2->Comm(), &cmp);
+    return cmp == MPI_IDENT;
+  }
+
+  auto serial_c1 = dynamic_cast<const SerialComm_type*>(&c1);
+  auto serial_c2 = dynamic_cast<const SerialComm_type*>(&c2);
+  if (serial_c1 != nullptr && serial_c2 != nullptr) {
+    return true;
+  }
+  return false;
 }
 #endif
 #else

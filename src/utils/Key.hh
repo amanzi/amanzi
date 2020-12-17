@@ -1,11 +1,11 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
-/* 
-   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-   Amanzi is released under the three-clause BSD License. 
-   The terms of use and "as is" disclaimer for this license are 
+/*
+   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+   Amanzi is released under the three-clause BSD License.
+   The terms of use and "as is" disclaimer for this license are
    provided in the top-level COPYRIGHT file.
    See $ATS_DIR/COPYRIGHT
-   
+
    Author: Ethan Coon
 */
 
@@ -63,7 +63,7 @@ inline KeyPair
 splitKey(const Key& name, const char& delimiter='-')
 {
   std::size_t pos = name.find(delimiter);
-  if (pos == std::string::npos) 
+  if (pos == std::string::npos)
     return std::make_pair(Key(""), name);
   else
     return std::make_pair(name.substr(0,pos), name.substr(pos+1,name.size()));
@@ -72,7 +72,13 @@ splitKey(const Key& name, const char& delimiter='-')
 // Grab the domain prefix of a DOMAIN-VARNAME key.
 inline Key
 getDomain(const Key& name) {
-  return splitKey(name).first;
+  if (name.find('|') == std::string::npos) {
+    // not a derivative
+    return splitKey(name).first;
+  } else {
+    // pop the initial d
+    return splitKey(name).first.substr(1,std::string::npos);
+  }
 }
 
 // Grab the domain prefix of a DOMAIN-VARNAME Key, including the "-"
@@ -101,13 +107,14 @@ matchesDomainSet(const Key& domain_set, const Key& name) {
   KeyTriple result;
   return splitDomainSet(name, result) ? std::get<0>(result) == domain_set : false;
 }
-    
-// Derivatives are of the form dKey_dKey.
+
+// Derivatives are of the form dKey|dKey.
 inline Key
 getDerivKey(Key var, Key wrt) {
-  return std::string("d")+var+"_d"+wrt;
+  return std::string("d")+var+"|d"+wrt;
 }
-// Convencience function for requesting the name of a Key from an input spec.
+
+// Convenience function for requesting the name of a Key from an input spec.
 Key
 readKey(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
         const Key& default_name="");
@@ -126,7 +133,7 @@ inline bool ends_with(const std::string& key, const std::string& substr) {
 } // namespace Amanzi
 
 #endif
-  
 
 
-   
+
+
