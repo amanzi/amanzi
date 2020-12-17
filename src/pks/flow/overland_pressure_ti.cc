@@ -262,7 +262,7 @@ void OverlandPressureFlow::UpdatePreconditioner(double t,
   // if (S_next_->GetFieldEvaluator(source_key_)->IsDependency(S_next_.ptr(), key_)) {
   //   S_next_->GetFieldEvaluator(source_key_)
   //       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-  //   std::string dkey = std::string("d")+source_key_+std::string("_d")+key_;
+  //   Key dkey = Keys::getDerivKey(source_key_,key_);
   //   const Epetra_MultiVector& dq_dp = *S_next_->GetFieldData(dkey)
   //       ->ViewComponent("cell",false);
 

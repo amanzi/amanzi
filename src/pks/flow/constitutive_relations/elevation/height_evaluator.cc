@@ -154,7 +154,7 @@ void HeightEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<State>& S,
 
       if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
         *vo_->os() << ddep_key << " = " << (*ddep)("cell",0) << ", ";
-        *vo_->os() << "d"<< my_key_ << "_d" << *dep << " = " << (*tmp)("cell",0) << std::endl;
+        *vo_->os() << Keys::getDerivKey(my_key_, *dep) << " = " << (*tmp)("cell",0) << std::endl;
       }
 
       dmy->ViewComponent("cell",false)
