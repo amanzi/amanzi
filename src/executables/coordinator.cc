@@ -82,7 +82,7 @@ void Coordinator::coordinator_init() {
 
   // create the checkpointing
   Teuchos::ParameterList& chkp_plist = parameter_list_->sublist("checkpoint");
-  checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
+  checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, *S_));
 
   // create the observations
   Teuchos::ParameterList& observation_plist = parameter_list_->sublist("observations");
@@ -156,7 +156,7 @@ void Coordinator::initialize() {
   // Restart from checkpoint part 2:
   // -- load all other data
   if (restart_) {
-    ReadCheckpoint(comm_, *S_, restart_filename_);
+    ReadCheckpoint(*S_, restart_filename_);
     t0_ = S_->time();
     cycle0_ = S_->cycle();
 
@@ -276,7 +276,7 @@ void Coordinator::initialize() {
 void Coordinator::finalize() {
   // Force checkpoint at the end of simulation, and copy to checkpoint_final
   pk_->CalculateDiagnostics(S_next_);
-  WriteCheckpoint(*checkpoint_, *S_next_, 0.0, true);
+  checkpoint_->Write(*S_next_, 0.0, true);
 
   // flush observations to make sure they are saved
   for (const auto& obs : observations_) obs->Flush();
@@ -519,7 +519,7 @@ void Coordinator::visualize(bool force) {
 
 void Coordinator::checkpoint(double dt, bool force) {
   if (force || checkpoint_->DumpRequested(S_next_->cycle(), S_next_->time())) {
-    WriteCheckpoint(*checkpoint_, *S_next_, dt);
+    checkpoint_->Write(*S_next_, dt);
   }
 }
 
