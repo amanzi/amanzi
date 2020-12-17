@@ -26,6 +26,7 @@ include_directories(${DBC_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
+include_directories(${MSTK_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
@@ -162,6 +163,15 @@ if (BUILD_TESTS)
                     LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
                               ${UnitTest_LIBRARIES} ${NOX_LIBRARIES} ${HDF5_LIBRARIES})
 
+    add_amanzi_test(state_restart2 state_restart2
+                    KIND int
+                    SOURCE
+	  	          test/Main.cc
+	 		  test/state_restart2.cc
+                    NPROCS 2
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
+                              ${UnitTest_LIBRARIES} ${NOX_LIBRARIES} ${HDF5_LIBRARIES})
+                            
     add_amanzi_test(state_copy state_copy
                     KIND int
                     SOURCE test/Main.cc test/state_copy.cc

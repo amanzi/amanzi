@@ -19,6 +19,7 @@ initialized (as independent variables are owned by state, not by any PK).
 #include <regex>
 
 #include "boost/algorithm/string/predicate.hpp"
+#include "boost/filesystem.hpp"
 
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Epetra_Vector.h"
@@ -1285,82 +1286,22 @@ void WriteVis(Visualization& vis,
 
 
 // Non-member function for checkpointing.
-void WriteCheckpoint(Checkpoint& chk,
-                     State& S,
-                     double dt,
-                     bool final,
-                     Amanzi::ObservationData* obs_data) {
-  if ( !chk.is_disabled() ) {
-    chk.CreateFile(S.cycle());
+double ReadCheckpoint(State& S, const std::string& filename) {
+  bool old = false;
+  if (Keys::ends_with(filename, ".h5")) old = true;
 
-    // create hard link to the final file
-    if (final && S.GetMesh()->get_comm()->MyPID() == 0)
-      chk.CreateFinalFile(S.cycle());
-
-    for (State::field_iterator field=S.field_begin(); field!=S.field_end(); ++field) {
-      field->second->WriteCheckpoint(chk);
-    }
-
-    chk.WriteAttributes(S.time(), dt, S.cycle(), S.position());
-    chk.WriteObservations(obs_data);
-    
-    chk.Finalize();
-  }
-};
-
-
-// Non-member function for checkpointing.
-double ReadCheckpoint(const Comm_ptr_type& comm,
-                      State& S,
-                      std::string filename) {
-  HDF5_MPI checkpoint(comm, filename);
-  checkpoint.open_h5file();
-
-  // load the attributes
-  double time(0.);
-  checkpoint.readAttrReal(time, "time");
-  S.set_time(time);
-
-  double dt(0.);
-  checkpoint.readAttrReal(dt, "dt");
-
-  int cycle(0);
-  checkpoint.readAttrInt(cycle, "cycle");
-  S.set_cycle(cycle);
-
-  int pos(0);
-  checkpoint.readAttrInt(pos, "position");
-  S.set_position(pos);
-
-  // load the number of processes and ensure they are the same -- otherwise
-  // the below just gives crap.
-  int rank(-1);
-  checkpoint.readAttrInt(rank, "mpi_comm_world_rank");
-  if (comm->NumProc() != rank) {
-    std::stringstream messagestream;
-    messagestream << "Requested checkpoint file " << filename << " was created on "
-                  << rank << " processes, making it incompatible with this run on "
-                  << comm->NumProc() << " process.";
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
-  }
-
-  // load the data
-  for (State::field_iterator field=S.field_begin(); field!=S.field_end(); ++field) {
-    if (field->second->type() == COMPOSITE_VECTOR_FIELD &&
-        field->second->io_checkpoint()) {
-      bool read_complete = field->second->ReadCheckpoint(checkpoint);
-      if (read_complete) field->second->set_initialized();
-    }
-  }
-  
-  checkpoint.close_h5file();
-  return dt;
+  Checkpoint chkp(old);
+  return chkp.Read(S, filename);
 };
 
 // Non-member function for checkpointing.
 double ReadCheckpointInitialTime(const Comm_ptr_type& comm,
-                                 const std::string& filename) {
+                                 std::string filename) {
+  if (!Keys::ends_with(filename, ".h5")) {
+    // new style checkpoint
+    boost::filesystem::path filepath = boost::filesystem::path(filename) / "domain.h5";
+    filename = filepath.string();
+  }
   HDF5_MPI checkpoint(comm, filename);
 
   // load the attributes
@@ -1373,7 +1314,12 @@ double ReadCheckpointInitialTime(const Comm_ptr_type& comm,
 
 // Non-member function for checkpointing position.
 int ReadCheckpointPosition(const Comm_ptr_type& comm,
-                           const std::string& filename) {
+                           std::string filename) {
+  if (!Keys::ends_with(filename, ".h5")) {
+    // new style checkpoint
+    boost::filesystem::path filepath = boost::filesystem::path(filename) / "domain.h5";
+    filename = filepath.string();
+  }
   HDF5_MPI checkpoint(comm, filename);
 
   // load the attributes
@@ -1386,8 +1332,14 @@ int ReadCheckpointPosition(const Comm_ptr_type& comm,
 
 // Non-member function for checkpointing observations.
 void ReadCheckpointObservations(const Comm_ptr_type& comm,
-                                const std::string& filename,
+                                std::string filename,
                                 Amanzi::ObservationData& obs_data) {
+  if (!Keys::ends_with(filename, ".h5")) {
+    // new style checkpoint
+    boost::filesystem::path filepath = boost::filesystem::path(filename) / "domain.h5";
+    filename = filepath.string();
+  }
+
   HDF5_MPI checkpoint(comm, filename);
   checkpoint.open_h5file();
 
@@ -1434,10 +1386,11 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
 
 // Non-member function for deforming the mesh after reading a checkpoint file
 // that contains the vertex coordinate field (this is written by deformation pks)
-  void DeformCheckpointMesh(State& S, Key domain) {
-    if (S.HasField(Keys::getKey(domain,"vertex_coordinate"))) { 
-      // only deform mesh if vertex coordinate field exists
+void DeformCheckpointMesh(State& S, Key domain) {
+  if (S.HasField(Keys::getKey(domain,"vertex_coordinate"))) { 
+    // only deform mesh if vertex coordinate field exists
     AmanziMesh::Mesh * write_access_mesh_ =  const_cast<AmanziMesh::Mesh*>(&*S.GetMesh(domain));
+
     // get vertex coordinates state
     Teuchos::RCP<const CompositeVector> vc = S.GetFieldData(Keys::getKey(domain,"vertex_coordinate"));
     vc->ScatterMasterToGhosted("node");
@@ -1463,7 +1416,6 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
       write_access_mesh_->deform( nodeids, new_pos, false, &final_pos); // deforms the mesh
     else
       write_access_mesh_->deform( nodeids, new_pos, true, &final_pos); // deforms the mesh
-
   }
 }
 
