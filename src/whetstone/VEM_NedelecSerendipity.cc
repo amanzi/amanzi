@@ -818,9 +818,9 @@ void VEM_NedelecSerendipity::MatrixOfDofs_(
         const auto& normal = mesh_->face_normal(f);
         WhetStone::SurfaceCoordinateSystem coordsys(xf, normal);
 
-        for (auto it = pf.begin(1); it < pf.end(); ++it) {
-          double factor = std::pow(area, -(double)it.MonomialSetOrder() / 2);
-          WhetStone::Polynomial fmono(2, it.multi_index(), factor);
+        for (auto jt = pf.begin(1); jt < pf.end(); ++jt) {
+          double factor_tmp = std::pow(area, -(double)jt.MonomialSetOrder() / 2);
+          WhetStone::Polynomial fmono(2, jt.multi_index(), factor_tmp);
           auto rot = Rot2D(fmono);
 
           AmanziGeometry::Point tmp = rot[0](0) * (*coordsys.tau())[0] 
