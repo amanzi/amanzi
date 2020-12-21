@@ -30,7 +30,7 @@ namespace WhetStone {
 class DeRham_Edge : public MFD3D {
  public:
   DeRham_Edge(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh) 
-    : BilinearForm(mesh) {};
+    : MFD3D(mesh) {};
 
   virtual std::vector<SchemaItem> schema() const override {
     return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::EDGE, DOF_Type::SCALAR, 1));

@@ -34,7 +34,7 @@ namespace WhetStone {
 ****************************************************************** */
 MFD3D_Lagrange::MFD3D_Lagrange(const Teuchos::ParameterList& plist,
                                const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
-  : BilinearForm(mesh)
+  : MFD3D(mesh)
 {
   order_ = plist.get<int>("method order");
 }

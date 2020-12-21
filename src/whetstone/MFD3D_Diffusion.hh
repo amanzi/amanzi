@@ -40,12 +40,10 @@ class MFD3D_Diffusion : public DeRham_Face {
  public:
   // constructor for backward compatibility
   MFD3D_Diffusion(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
-    : DeRham_Face(mesh),
-      BilinearForm(mesh) {};
+    : DeRham_Face(mesh) {}
   MFD3D_Diffusion(const Teuchos::ParameterList& plist,
                   const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
-    : DeRham_Face(mesh),
-      BilinearForm(mesh) {};
+    : DeRham_Face(mesh) {}
 
   // main methods 
   // -- schema
