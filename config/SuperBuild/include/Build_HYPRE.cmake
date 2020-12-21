@@ -27,41 +27,43 @@ set(hypre_openmp_opt)
 #   set(hypre_openmp_opt "-DHYPRE_USING_OPENMP:BOOL=TRUE")
 # endif()
 #else()
-set(hypre_openmp_opt "-DHYPRE_USING_OPENMP:BOOL=FALSE")
+#set(hypre_openmp_opt "-DHYPRE_USING_OPENMP:BOOL=FALSE")
+#set(hypre_openmp_opt "--with-openmp")
 #endif()
 
 # Locate LAPACK and BLAS
 set(hypre_blas_opt)
 find_package(BLAS)
 if (BLAS_FOUND)
-  set(hypre_blas_opt "-DHYPRE_USING_HYPRE_BLAS:BOOL=TRUE")
+  set(hypre_blas_opt "--with-blas")
 endif()
 
 set(hypre_lapack_opt)
 find_package(LAPACK)
 if (LAPACK_FOUND)
-  set(hypre_lapack_opt "-DHYPRE_USING_HYPRE_LAPACK:BOOL=TRUE")
+  set(hypre_lapack_opt "--with-lapack")
+endif()
+
+set(hypre_kokkos_cuda)
+if(ENABLE_KOKKOS_CUDA)
+  set(hypre_kokkos_cuda "--with-cuda --enable-cusparse --enable-unified-memory")
 endif()
 
 # set(hypre_fortran_opt -"--disable-fortran)
 
 # Locate SuperLU and SuperLUDist
-set(hypre_superlu_opt "-DSUPERLU_INCLUDE_DIR:PATH=${TPL_INSTALL_PREFIX}/include"
-                      "-DSUPERLU_LIBRARY:FILEPATH=${SuperLU_LIBRARY}"
-                      "-DSUPERLUDIST_LIBRARY:FILEPATH=${SuperLUDist_LIBRARY}"
-                      "-DHYPRE_USING_TPL_SUPERLU:BOOL=TRUE"
-                      "-DHYPRE_USING_FEI:BOOL=FALSE")
+set(hypre_superlu_opt "--with-superlu" 
+                      "--with-superlu-include=${TPL_INSTALL_PREFIX}/include"
+                      "--with-superlu-lib=${SuperLU_LIBRARY}"
+                      "--with-dsuperlu"
+                      "--with-dsuperlu-include=${TPL_INSTALL_PREFIX}/include"
+                      "--with-dsuperlu-lib=${SuperLUDist_LIBRARY}")
 
 # shared/static libraries (shared FEI is broken in HYPRE)
-set(hypre_shared_opt)
+set(hypre_shared_opt "no")
 if (BUILD_SHARED_LIBS)
-  set(hypre_shared_opt "-DHYPRE_SHARED:BOOL=TRUE")
-else()
-  set(hypre_shared_opt "-DHYPRE_SHARED:BOOL=FALSE")
+  set(hypre_shared_opt "yes")
 endif()
-
-set(hypre_install_opt "-DHYPRE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}")
-
 
 # --- Set the name of the patch
 set(HYPRE_patch_file hypre-superlu.patch)
@@ -94,25 +96,25 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
                     # -- Configure
                     SOURCE_DIR    ${HYPRE_source_dir}
                     SOURCE_SUBDIR src                          # cmake 3.7+ feature 
-		    CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
-                                  ${hypre_openmp_opt} 
-                                  ${hypre_lapack_opt} ${hypre_blas_opt}
-                                  ${hypre_superlu_opt} ${hypre_shared_opt}
-                                  ${hypre_install_opt}
-                                  -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
-                                  -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-                                  -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
-                                  -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
-                                  -DMPI_CXX_COMPILER:FILEPATH=${MPI_CXX_COMPILER}
-                                  -DMPI_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
-                                  -DHYPRE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-                                  -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+                    CONFIGURE_COMMAND
+                                 ${HYPRE_source_dir}/src/configure
+                                       --prefix=${TPL_INSTALL_PREFIX}
+                                       --with-MPI
+                                       --enable-shared=${hypre_shared_opt}
+                                       ${hypre_openmp_opt}
+                                       ${hypre_lapack_opt}
+                                       ${hypre_blas_opt}
+                                       ${hypre_superlu_opt}
+                                       CC=${CMAKE_C_COMPILER}
+                                       CFLAGS=${Amanzi_COMMON_CFLAGS}
+                                       CXX=${CMAKE_CXX_COMPILER}
+                                       CXXFLAGS=${Amanzi_COMMON_CXXFLAGS}
                     # -- Build
-                    BINARY_DIR       ${HYPRE_build_dir}        # Build directory 
+                    BINARY_DIR       ${HYPRE_source_dir}/src        # Build directory 
                     BUILD_COMMAND    ${MAKE} 
                     # -- Install
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}     # Install directory
-      		    INSTALL_COMMAND  $(MAKE) install
+      		          INSTALL_COMMAND  $(MAKE) install
                     # -- Output control
                     ${HYPRE_logging_args})
 
