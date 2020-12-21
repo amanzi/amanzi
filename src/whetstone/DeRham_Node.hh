@@ -30,7 +30,7 @@ namespace WhetStone {
 class DeRham_Node : public MFD3D { 
  public:
   DeRham_Node(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh) 
-    : BilinearForm(mesh) {};
+    : MFD3D(mesh) {};
 
   virtual std::vector<SchemaItem> schema() const override {
     return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::NODE, DOF_Type::SCALAR, 1));

@@ -39,7 +39,7 @@ namespace WhetStone {
 MFD3D_CrouzeixRaviartAnyOrder::MFD3D_CrouzeixRaviartAnyOrder(
     const Teuchos::ParameterList& plist,
     const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
-  : BilinearForm(mesh)
+  : MFD3D(mesh)
 {
   order_ = plist.get<int>("method order");
 }

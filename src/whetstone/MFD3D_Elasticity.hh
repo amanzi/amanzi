@@ -35,7 +35,7 @@ class MFD3D_Elasticity : public MFD3D {
  public:
   MFD3D_Elasticity(const Teuchos::ParameterList& plist,
                    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
-    : BilinearForm(mesh) {};
+    : MFD3D(mesh) {};
 
   // required methods
   // -- schema
