@@ -18,9 +18,9 @@ static PArray<Material> materials;
 std::ostream& operator<<(std::ostream& os, const Material& mat) {
   std::cout << "Material: " << mat.Name() << std::endl;
   std::cout << "  Regions: ";
-  const Array<const Region*>& regions = mat.Regions();
-  for (int i=0; i<regions.size(); ++i) {
-    std::cout << regions[i]->name << " ";
+  const Array<const Region*>& regs = mat.Regions();
+  for (int i=0; i<regs.size(); ++i) {
+    std::cout << regs[i]->name << " ";
   }
   std::cout << std::endl;
   return os;
