@@ -288,8 +288,22 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
     gm = inmesh->geometric_model();
   }
 
-  auto comm = Comm_ptr_type(comm_);
-  if (comm == Teuchos::null) {
+  // create the comm via split
+  Comm_ptr_type comm = Teuchos::null;
+  auto parent_comm = Teuchos::rcp_dynamic_cast<const MpiComm_type>(inmesh->get_comm());
+  if (parent_comm != Teuchos::null) {
+    // comm split
+    MPI_Comm child_comm;
+    bool empty = setids.size() == 0;
+    int ierr = MPI_Comm_split(parent_comm->Comm(),
+            empty ? MPI_UNDEFINED : 1,
+            0, &child_comm);
+    if (ierr) {
+      Errors::Message msg("Error in MPI_Comm_split in creating extracted mesh.");
+      Exceptions::amanzi_throw(msg);
+    }
+    if (!empty) comm = Teuchos::rcp(new Epetra_MpiComm(child_comm));
+  } else {
     comm = inmesh->get_comm();
   }
 
@@ -304,16 +318,19 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
 
   // extract
   for (auto p : preference_) {
-#ifdef HAVE_MSTK_MESH      
+#ifdef HAVE_MSTK_MESH
     if (p == Framework::MSTK) {
-      auto mesh = Teuchos::rcp(new Mesh_MSTK(
-          inmesh, setids, setkind, flatten,
-          comm, gm, plist_, request_faces, request_edges));
-
-      mesh->BuildCache();
-      return mesh;
+      if (comm != Teuchos::null) {
+        auto mesh = Teuchos::rcp(new Mesh_MSTK(
+                  inmesh, setids, setkind, flatten,
+                  comm, gm, plist_, request_faces, request_edges));
+        mesh->BuildCache();
+        return mesh;
+      } else {
+        return Teuchos::null;
+      }
     }
-#endif      
+#endif
   }
 
   Exceptions::amanzi_throw(Message("No construct was found in preferences that is available and can extract."));
