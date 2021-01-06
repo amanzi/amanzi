@@ -45,8 +45,14 @@ if (LAPACK_FOUND)
 endif()
 
 set(hypre_kokkos_cuda)
+set(CUDA_HOME)
+set(Hypre_CUDA_SM)
 if(ENABLE_KOKKOS_CUDA)
-  set(hypre_kokkos_cuda "--with-cuda --enable-cusparse --enable-unified-memory")
+  find_package(CUDA REQUIRED)
+  set(CUDA_HOME ${CUDA_INCLUDE_DIRS}/..)
+  message(STATUS "CUDA_HOME: ${CUDA_HOME}")
+  set(Hypre_CUDA_SM 70)
+  set(hypre_kokkos_cuda "--with-cuda" "--enable-cusparse" "--enable-unified-memory")
 endif()
 
 # set(hypre_fortran_opt -"--disable-fortran)
@@ -105,13 +111,16 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
                                        ${hypre_lapack_opt}
                                        ${hypre_blas_opt}
                                        ${hypre_superlu_opt}
-                                       CC=${CMAKE_C_COMPILER}
-                                       CFLAGS=${Amanzi_COMMON_CFLAGS}
+                                       ${hypre_kokkos_cuda}
+                                       CC=${CMAKE_CC_COMPILER}
+                                       CFLAGS=${Hypre_CC_FLAGS}
                                        CXX=${CMAKE_CXX_COMPILER}
-                                       CXXFLAGS=${Amanzi_COMMON_CXXFLAGS}
+                                       CXXFLAGS=${Hypre_CXX_FLAGS}
+                                       CUDA_HOME=${CUDA_HOME}
+                                       HYPRE_CUDA_SM=${Hypre_CUDA_SM}               
                     # -- Build
                     BINARY_DIR       ${HYPRE_source_dir}/src        # Build directory 
-                    BUILD_COMMAND    ${MAKE} 
+                    BUILD_COMMAND    $(MAKE) VERBOSE=1 
                     # -- Install
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}     # Install directory
       		          INSTALL_COMMAND  $(MAKE) install
