@@ -294,10 +294,14 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S)
   acc_pc_plist.set("entity kind", "cell");
   preconditioner_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(acc_pc_plist, preconditioner_));
 
-  // primary variable and potential
+  // primary variable requirement of boundary face and cells
   S->RequireField(key_, name_)->Update(matrix_->RangeMap())->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+
+  // potential may not actually need cells, but for debugging and sanity's sake, we require them
   S->RequireField(potential_key_)->Update(matrix_->RangeMap())->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
   S->RequireFieldEvaluator(potential_key_);
 

@@ -82,7 +82,7 @@ void Coordinator::coordinator_init() {
 
   // create the checkpointing
   Teuchos::ParameterList& chkp_plist = parameter_list_->sublist("checkpoint");
-  checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
+  checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, *S_));
 
   // create the observations
   Teuchos::ParameterList& observation_plist = parameter_list_->sublist("observations");
@@ -156,7 +156,7 @@ void Coordinator::initialize() {
   // Restart from checkpoint part 2:
   // -- load all other data
   if (restart_) {
-    Amanzi::ReadCheckpoint(comm_, *S_, restart_filename_);
+    Amanzi::ReadCheckpoint(*S_, restart_filename_);
     t0_ = S_->time();
     cycle0_ = S_->cycle();
 
@@ -210,20 +210,18 @@ void Coordinator::initialize() {
 
       visualization_.push_back(vis);
 
-    } else if (boost::ends_with(domain_name, "_*")) {
+    } else if (Amanzi::Keys::isDomainSet(domain_name)) {
       // visualize domain set
-      std::string domain_set_name = domain_name.substr(0,domain_name.size()-2);
-      for (auto m=S_->mesh_begin(); m!=S_->mesh_end(); ++m) {
-        if (boost::starts_with(m->first, domain_set_name)) {
-          // visualize each subdomain
-          Teuchos::ParameterList sublist = vis_list->sublist(domain_name);
-          sublist.set<std::string>("file name base", std::string("ats_vis_")+m->first);
-          auto vis = Teuchos::rcp(new Amanzi::Visualization(sublist));
-          vis->set_name(m->first);
-          vis->set_mesh(m->second.first);
-          vis->CreateFiles(false);
-          visualization_.push_back(vis);
-        }
+      const auto& dset = S_->GetDomainSet(Amanzi::Keys::getDomainSetName(domain_name));
+      for (auto name_id : *dset) {
+        // visualize each subdomain
+        Teuchos::ParameterList sublist = vis_list->sublist(name_id.first);
+        sublist.set<std::string>("file name base", std::string("ats_vis_")+name_id.first);
+        auto vis = Teuchos::rcp(new Amanzi::Visualization(sublist));
+        vis->set_name(name_id.first);
+        vis->set_mesh(S_->GetMesh(name_id.first));
+        vis->CreateFiles(false);
+        visualization_.push_back(vis);
       }
 
     }
@@ -276,7 +274,7 @@ void Coordinator::initialize() {
 void Coordinator::finalize() {
   // Force checkpoint at the end of simulation, and copy to checkpoint_final
   pk_->CalculateDiagnostics(S_next_);
-  WriteCheckpoint(*checkpoint_, *S_next_, 0.0, true);
+  checkpoint_->Write(*S_next_, 0.0, true);
 
   // flush observations to make sure they are saved
   for (const auto& obs : observations_) obs->Flush();
@@ -522,7 +520,7 @@ void Coordinator::visualize(bool force) {
 
 void Coordinator::checkpoint(double dt, bool force) {
   if (force || checkpoint_->DumpRequested(S_next_->cycle(), S_next_->time())) {
-    WriteCheckpoint(*checkpoint_, *S_next_, dt);
+    checkpoint_->Write(*S_next_, dt);
   }
 }
 
