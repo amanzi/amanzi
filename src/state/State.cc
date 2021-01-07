@@ -360,7 +360,7 @@ State::RequireFieldEvaluator(Key key) {
         // of that name.  Grab the parameter list for the set's list and use
         // that to construct the evaluator.
         // -- Get this evaluator's plist.
-        Key lifted_key = Keys::getKey(ds_name+"_*",std::get<2>(split));
+        Key lifted_key = Keys::getKey(ds_name, "*", std::get<2>(split));
 
         Teuchos::ParameterList& fm_plist = FEList();
         if (fm_plist.isSublist(lifted_key)) {
@@ -395,9 +395,9 @@ State::RequireFieldEvaluator(Key key) {
           fm_plist.set(key, sublist);
           FieldEvaluator_Factory evaluator_factory;
           evaluator = evaluator_factory.createFieldEvaluator(sublist);
-            
+
           SetFieldEvaluator(key, evaluator);
-        }            
+        }
       } else {
         Errors::Message msg;
         msg << "Model for field \"" << key << "\" is on a DomainSet, but no DomainSet of name \"" << ds_name << "\" exists in State.";

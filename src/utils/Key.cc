@@ -38,33 +38,5 @@ readKey(Teuchos::ParameterList& list, const Key& domain, const Key& basename, co
   }
 }
 
-bool
-splitDomainSet(const Key& name, std::tuple<std::string,std::string,std::string>& result)
-{
-  auto domain_var = splitKey(name);
-  std::get<2>(result) = domain_var.second;
-
-  // make sure format is domain_set_name_#-var_name
-  std::size_t pos = domain_var.first.find_last_of('_');
-  if (pos == std::string::npos) {
-    return false;
-  }
-
-  // check sure the # is a number
-  std::string domain_int = domain_var.first.substr(pos+1,domain_var.first.size());
-  std::size_t not_translated;
-  if (!(domain_int.size() == 1 && domain_int[0] == '*')) {
-    if (!std::isdigit(domain_int[0])) return false;
-    std::stoi(domain_int, &not_translated);
-    if (not_translated != domain_int.size()) {
-      return false;
-    }
-  }
-  std::get<1>(result) = domain_int;
-  std::get<0>(result) = domain_var.first.substr(0,pos);
-  return true;
-}
-
-
 } // namespace
 } // namespace

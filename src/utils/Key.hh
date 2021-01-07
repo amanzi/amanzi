@@ -13,8 +13,26 @@
 //! Keys are just strings.
 
 /*
+
   Here we provide a bunch of useful string manipulation stuff that is
   specific to Amanzi style keys, domains, etc.
+
+  Currently the following characters are reserved, and should not be used in
+  names:
+
+  * '-' is used between domain names and variable names, e.g. "surface-ponded_depth"
+  * '|' is used in derivative names, e.g. "dwater_content|dpressure"
+  * ':' is used in domain sets, between the set name and the ID, e.g. "column:0" or "subdomain:upstream"
+
+  Note these are distinct and can be combined, e.g. the following are valid names:
+  * 'column:0-pressure'
+  * 'subdomain_surface:upstream_surface-ponded_depth'
+  * 'dsubdomain_surface:upstream_surface-ponded_depth|dsubdomain_surface:upstream_surface-pressure'
+
+  This can get quite ugly, but is needed for generic code.  Note that both ' '
+  and '_' are valid characters in names, but users should prefer to use
+  underscores as some tools can have difficulty with spaces.
+
 */
 
 
@@ -40,7 +58,31 @@ typedef std::tuple<Key,Key,Key> KeyTriple;
 
 namespace Keys {
 
-// parameter list names take their parent history?
+static const char name_delimiter = '-';
+static const char deriv_delimiter = '|';
+static const char dset_delimiter = ':';
+
+// Convenience function for requesting the name of a Key from an input spec.
+//
+// helper functions...
+inline bool starts_with(const Key& key, const std::string& substr) {
+  return key.length() >= substr.length() && key.substr(0,substr.length()) == substr;
+}
+
+inline bool ends_with(const Key& key, const std::string& substr) {
+  return key.length() >= substr.length() &&
+      key.substr(key.length()-substr.length(), key.length()) == substr;
+}
+
+inline bool in(const Key& key, const char& c) {
+  return key.find(c) != std::string::npos;
+}
+
+// for parsing parameter lists
+Key
+readKey(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
+        const Key& default_name="");
+
 inline Key
 cleanPListName(std::string name)
 {
@@ -53,14 +95,14 @@ cleanPListName(std::string name)
 
 // Generate a DOMAIN-VARNAME key.
 inline Key
-getKey(const Key& domain, const Key& name)
+getKey(const Key& domain, const Key& name, const char& delimiter=name_delimiter)
 {
-  return (domain.empty() || domain == std::string("domain") ) ? name : domain+"-"+name;
+  return (domain.empty() || domain == std::string("domain") ) ? name : domain+delimiter+name;
 }
 
 // Split a DOMAIN-VARNAME key.
 inline KeyPair
-splitKey(const Key& name, const char& delimiter='-')
+splitKey(const Key& name, const char& delimiter=name_delimiter)
 {
   std::size_t pos = name.find(delimiter);
   if (pos == std::string::npos)
@@ -72,7 +114,7 @@ splitKey(const Key& name, const char& delimiter='-')
 // Grab the domain prefix of a DOMAIN-VARNAME key.
 inline Key
 getDomain(const Key& name) {
-  if (name.find('|') == std::string::npos) {
+  if (name.find(deriv_delimiter) == std::string::npos) {
     // not a derivative
     return splitKey(name).first;
   } else {
@@ -81,10 +123,10 @@ getDomain(const Key& name) {
   }
 }
 
-// Grab the domain prefix of a DOMAIN-VARNAME Key, including the "-"
+// Grab the domain prefix of a DOMAIN-VARNAME Key, including the delimiter
 inline Key
 getDomainPrefix(const Key& name) {
-  std::size_t pos = name.find('-');
+  std::size_t pos = name.find(name_delimiter);
   return pos == std::string::npos ? Key("") : name.substr(0,pos+1);
 }
 
@@ -94,12 +136,69 @@ getVarName(const Key& name) {
   return splitKey(name).second;
 }
 
-// Domain set keys are of the form DOMAIN_*-VARNAME, where * is an integer
-// indexing the domain set.
+// Domain Sets are of the form NAME:ID, where ID is an integer or
+// region string indexing the domain set.
+inline Key
+getDomainInSet(const Key& ds_name, const Key& subdomain)
+{
+  return getKey(ds_name, subdomain, dset_delimiter);
+}
+
+inline Key
+getDomainInSet(const Key& ds_name, const int& subdomain)
+{
+  return getKey(ds_name, std::to_string(subdomain), dset_delimiter);
+}
+
+inline Key
+getDomainSetName(const Key& name_id)
+{
+  return splitKey(name_id, dset_delimiter).first;
+}
+
+template<typename ID_type=std::string>
+ID_type getDomainSetID(const Key& name_id)
+{
+  return splitKey(name_id, dset_delimiter).second;
+}
+
+template<>
+inline int getDomainSetID(const Key& name_id)
+{
+  return std::atoi(getDomainSetID<std::string>(name_id).c_str());
+}
 
 // Split a domain set into DOMAIN, *, VARNAME
-bool
-splitDomainSet(const Key& name, KeyTriple& result);
+inline bool
+splitDomainSet(const Key& name, KeyTriple& result) {
+  if (!in(name, dset_delimiter)) return false;
+  auto domain_var = splitKey(name, name_delimiter);
+  std::get<2>(result) = domain_var.second;
+  auto name_id = splitKey(domain_var.first, dset_delimiter);
+  std::get<0>(result) = name_id.first;
+  std::get<1>(result) = name_id.second;
+  return true;
+}
+
+inline bool
+isDomainSet(const Key& name) {
+  KeyTriple result;
+  return splitDomainSet(name, result);
+}
+
+// reconstruct a key from components
+inline Key
+getKey(const Key& ds_name, const Key& ds_id, const Key& varname)
+{
+  return getKey(getKey(ds_name, ds_id, dset_delimiter), varname);
+}
+
+// reconstruct a key from components
+inline Key
+getKey(const Key& ds_name, const int& ds_id, const Key& varname)
+{
+  return getKey(ds_name, std::to_string(ds_id), varname);
+}
 
 // Check if a key, interpreted as a domain set, matches the domain-set name
 inline bool
@@ -110,23 +209,8 @@ matchesDomainSet(const Key& domain_set, const Key& name) {
 
 // Derivatives are of the form dKey|dKey.
 inline Key
-getDerivKey(Key var, Key wrt) {
-  return std::string("d")+var+"|d"+wrt;
-}
-
-// Convenience function for requesting the name of a Key from an input spec.
-Key
-readKey(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
-        const Key& default_name="");
-
-// helper functions...
-inline bool starts_with(const std::string& key, const std::string& substr) {
-  return key.length() >= substr.length() && key.substr(0,substr.length()) == substr;
-}
-
-inline bool ends_with(const std::string& key, const std::string& substr) {
-  return key.length() >= substr.length() &&
-      key.substr(key.length()-substr.length(), key.length()) == substr;
+getDerivKey(const Key& var, const Key& wrt) {
+  return std::string("d")+var+deriv_delimiter+"d"+wrt;
 }
 
 } // namespace Keys

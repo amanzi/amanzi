@@ -15,30 +15,46 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
+
 DomainSet::DomainSet(const Teuchos::RCP<const Mesh>& parent_,
-                 const std::vector<std::string>& sets_,
-                 Entity_kind kind_,
-                 const std::string& name_)
+                     const std::vector<std::string>& regions_,
+                     Entity_kind kind_,
+                     const std::string& name_,
+                     bool by_region_,
+                     std::vector<std::string>* region_aliases)
     : parent(parent_),
-      sets(sets_),
+      regions(regions_),
       kind(kind_),
-      name(name_)
+      name(name_),
+      by_region(by_region_)
 {
-  // construct a list of names by GID
-  //
-  // NOTE: we do not check, but sets really probably should be non-overlapping?
-  for (const auto& set : sets) {
+  // construct the collection of mesh names and, if by entity ID, the
+  // corresponding ID.
+  if (region_aliases == nullptr) region_aliases = &regions;
+  AMANZI_ASSERT(region_aliases->size() == regions.size());
+
+  int lcv = 0;
+  for (const auto& region : regions) {
     Entity_ID_List ids;
-    parent->get_set_entities(set, kind, Parallel_type::OWNED, &ids);
+    parent->get_set_entities(region, kind, Parallel_type::OWNED, &ids);
     const auto& map = parent->map(kind, false);
 
-    for (Entity_ID id : ids) {
-      Key mesh_name = name+"_" + std::to_string(map.GID(id));
-      meshes[mesh_name] = id;
-    }
-  }
-}  
+    if (by_region_) {
+      // one domain for each region
+      if (ids.size() > 0) {
+        Key mesh_name = Keys::getDomainInSet(name, (*region_aliases)[lcv]);
+        meshes[mesh_name] = lcv;
+      }
 
+    } else {
+      for (Entity_ID id : ids) {
+        Key mesh_name = Keys::getDomainInSet(name, map.GID(id));
+        meshes[mesh_name] = id;
+      }
+    }
+    lcv++;
+  }
+}
 
 } // namespace AmanziMesh
 } // namespace Amanzi

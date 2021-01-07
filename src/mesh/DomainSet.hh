@@ -40,22 +40,32 @@ class Mesh;
 
 struct DomainSet {
 
+  // this constructor is for domain sets indexed by an entity + regions
+  // (e.g. one for each entity in that collection of regions)
   DomainSet(const Teuchos::RCP<const Mesh>& parent_,
-          const std::vector<std::string>& sets_,
-          Entity_kind kind_,
-          const std::string& name_);
+            const std::vector<std::string>& regions_,
+            Entity_kind kind_,
+            const std::string& name_,
+            bool by_region_=true,
+            std::vector<std::string>* region_aliases=nullptr);
 
   using DomainSetMap = std::map<Key,Entity_ID>;
-  
+
   using const_iterator = DomainSetMap::const_iterator;
   const_iterator begin() const { return meshes.begin(); }
   const_iterator end() const { return meshes.end(); }
   std::size_t size() const { return meshes.size(); }
 
+  std::string get_region(int id) {
+    if (by_region) return regions[id];
+    else return "";
+  }
+
   Teuchos::RCP<const Mesh> parent;
-  std::vector<std::string> sets;
+  std::vector<std::string> regions;
   Entity_kind kind;
   std::string name;
+  bool by_region;
 
   DomainSetMap meshes;
 };

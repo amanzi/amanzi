@@ -19,6 +19,7 @@
 #include "RegionLogical.hh"
 #include "RegionPoint.hh"
 #include "RegionLabeledSet.hh"
+#include "RegionEnumerated.hh"
 
 #include "Mesh_MSTK.hh"
 
@@ -2562,6 +2563,21 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         MSet_Add(mset,cell_id_to_handle[icell]);
 
     }
+    else if (region->type() == AmanziGeometry::ENUMERATED)  {
+      auto rgn = Teuchos::rcp_static_cast<const AmanziGeometry::RegionEnumerated>(region);
+      int ncell = num_entities(CELL, Parallel_type::ALL);
+
+      for (int icell = 0; icell < ncell; icell++) {
+        Entity_ID gid = MEnt_GlobalID(cell_id_to_handle[icell]);
+        for (const auto& jset : rgn->entities()) {
+          if (jset == gid) {
+            MSet_Add(mset,cell_id_to_handle[icell]);
+            break;
+          }
+        }
+      }
+
+    }
     else if (region->type() == AmanziGeometry::POINT) {
       AmanziGeometry::Point vpnt(space_dim);
       AmanziGeometry::Point rgnpnt(space_dim);
@@ -3136,7 +3152,6 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         MSet_Delete(msets[ms]);
     }
   }
-
   return mset;
 }
 
