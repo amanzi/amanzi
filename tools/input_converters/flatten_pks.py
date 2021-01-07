@@ -29,9 +29,11 @@ def coordinator_to_cycle_driver(xml):
 
 def flatten(pks, flat_pks, cd_pks):
     while len(pks) > 0:
-        pk = pks.getchildren().pop(0)
+        pk_name = pks.getchildren()[0].get("name")
+        new_cd = ParameterList(pk_name)
+        pk = pks.pop(pk_name)
         flat_pks.append(pk)
-        new_cd = ParameterList(pk.get("name"))
+        print(f'Flattened PK: {pk_name}')
         new_cd.append(parameter.StringParameter("PK type", asearch.child_by_name(pk, "PK type").get("value")))
         cd_pks.append(new_cd)
 
@@ -60,7 +62,7 @@ def flatten_pks(xml):
 
 if __name__ == "__main__":
     if "-h" in sys.argv or "--help" in sys.argv or "--h" in sys.argv:
-        print "Usage: python flatten_pks.py INFILE OUTFILE"
+        print("Usage: python flatten_pks.py INFILE OUTFILE")
         sys.exit(0)
 
     outfile = sys.argv.pop(-1)

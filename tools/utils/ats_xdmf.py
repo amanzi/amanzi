@@ -2,7 +2,7 @@
 import sys,os
 import numpy as np
 import h5py
-
+import matplotlib.collections
 
 def valid_data_filename(domain, format=None):
     """The filename for an HDF5 data filename formatter"""
@@ -34,10 +34,10 @@ class VisFile:
         domain : str, optional
           Amanzi/ATS domain name.  Useful in variable names, filenames, and more.
         filename : str, optional
-          Filename of h5 vis file.  Default is 'visdump_DOMAIN_data.h5'.
-          (e.g. visdump_surface_data.h5).
+          Filename of h5 vis file.  Default is 'ats_vis_DOMAIN_data.h5'.
+          (e.g. ats_vis_surface_data.h5).
         mesh_filename : str, optional
-          Filename for the h5 mesh file.  Default is 'visdump_DOMAIN_mesh.h5'.
+          Filename for the h5 mesh file.  Default is 'ats_vis_DOMAIN_mesh.h5'.
 
         Returns
         -------
@@ -49,16 +49,16 @@ class VisFile:
         self.filename = filename
         if self.filename is None:
             if self.domain is None:
-                self.filename = 'visdump_data.h5'
+                self.filename = 'ats_vis_data.h5'
             else:
-                self.filename = 'visdump_{}_data.h5'.format(self.domain)
+                self.filename = 'ats_vis_{}_data.h5'.format(self.domain)
 
         self.mesh_filename = mesh_filename
         if self.mesh_filename is None:
             if self.domain is None:
-                self.mesh_filename = 'visdump_mesh.h5'
+                self.mesh_filename = 'ats_vis_mesh.h5'
             else:
-                self.mesh_filename = 'visdump_{}_mesh.h5'.format(self.domain)
+                self.mesh_filename = 'ats_vis_{}_mesh.h5'.format(self.domain)
 
         if time_unit == 'yr':
             time_factor = 1.0
@@ -86,12 +86,15 @@ class VisFile:
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+    def close(self):
         self.d.close()
 
     def loadTimes(self):
         """(Re-)loads the list of cycles and times."""
         a_field = next(iter(self.d.keys()))
-        self.cycles = np.array(sorted(self.d[a_field].keys(), key=int))
+        self.cycles = list(sorted(self.d[a_field].keys(), key=int))
         self.times = np.array([self.d[a_field][cycle].attrs['Time'] for cycle in self.cycles]) * self.time_factor
 
     def filterIndices(self, indices):
@@ -107,12 +110,20 @@ class VisFile:
           * list(int) : a list of specific indices
           * slice object : slice the cycle list
         """
-        if type(indices) is int:
-            indices = [indices,]
-            
-        self.cycles = self.cycles[indices]
-        self.times = self.times[indices]
+        assert(len(self.cycles) == len(self.times))
 
+        if type(indices) is int:
+            assert(indices < len(self.cycles))
+            self.cycles = [self.cycles[indices],]
+            self.times = np.array([self.times[indices],])
+        elif type(indices) is slice:
+            self.cycles = self.cycles[indices]
+            self.times = self.times[indices]
+        else:
+            inds = list(indices)
+            assert(max(inds) < len(self.cycles))
+            self.cycles = [self.cycles[i] for i in inds]
+            self.times = np.array([self.times[i] for i in inds])
         
     def filterCycles(self, cycles):
         """Filter the vis file based on cycles.
@@ -124,11 +135,13 @@ class VisFile:
         ----------
         cycles :
           One of:
-          * int : limits to one specific cycle, or the last cycle if -1.
+          * int : limits to one specific cycle
           * list(int) : a list of specific cycles
         """
-        if type(cycles) is int:
+        raise RuntimeError
+        if type(cycles) is int or type(cycles) is str:
             cycles = [cycles,]
+        cycles = [str(c) for c in cycles]
 
         # note this would be faster with np.isin, but we care about order and
         # repetition of cycles here.
@@ -258,7 +271,19 @@ class VisFile:
 
         self.volume = self.get('cell_volume', cycle)
 
-            
+    def loadMeshPolygons(self, cycle=None):
+        """Load a mesh into 2D polygons."""
+        if cycle is None:
+            cycle = self.cycles[0]
+
+        self.loadMesh()
+        mesh_elems = meshXYZ(self.directory, self.mesh_filename, cycle)
+        self.mesh_elem_info = mesh_elems
+        self.polygon_coordinates = meshElemPolygons(*mesh_elems)
+
+    def getMeshPolygons(self, edgecolor='k', cmap='jet', linewidth=1):
+        polygons = matplotlib.collections.PolyCollection(self.polygon_coordinates, edgecolor=edgecolor, cmap=cmap, linewidths=linewidth)
+        return polygons
     
 elem_type = {5:'QUAD',
              8:'PRISM',
@@ -266,7 +291,7 @@ elem_type = {5:'QUAD',
              4:'TRIANGLE'
              }
 
-def meshXYZ(directory=".", filename="visdump_mesh.h5", key=None):
+def meshXYZ(directory=".", filename="ats_vis_mesh.h5", key=None):
     """Reads a mesh nodal coordinates and connectivity.
 
     Note this only currently works for fixed structure meshes, i.e. not
@@ -277,7 +302,7 @@ def meshXYZ(directory=".", filename="visdump_mesh.h5", key=None):
     directory : str, optional
       Directory to read mesh files from.  Default is '.'
     filename : str, optional
-      Mesh filename. Default is the Amanzi/ATS default name, 'visdump_mesh.h5'
+      Mesh filename. Default is the Amanzi/ATS default name, 'ats_vis_mesh.h5'
     key : str, optional
       Key of mesh within the file.  This is the cycle number, defaults to the
       first mesh found in the file.
@@ -323,7 +348,41 @@ def meshXYZ(directory=".", filename="visdump_mesh.h5", key=None):
     return etype, coords, conn
 
 
-def meshElemCentroids(directory=".", filename="visdump_mesh.h5", key=None, round=5):
+def meshElemPolygons(etype, coords, conn):
+    """Given mesh info that is a bunch of HEXes, make polygons for 2D plotting."""
+    if etype != 'HEX':
+        raise RuntimeError("Only works for Hexs")
+
+    y_mean = np.array([c[1] for c in coords.values()]).mean()
+    
+    coords2 = np.array([[coords[i][0::2] for i in c[1:] if coords[i][1] > y_mean] for c in conn])
+    try:
+        assert coords2.shape[2] == 2
+        assert coords2.shape[1] == 4
+    except AssertionError:
+        print(coords2.shape)
+        for c in conn:
+            if len(c) != 9:
+                print(c)
+                raise RuntimeError("what is a conn?")
+            coords3 = np.array([coords[i][:] for i in c[1:] if coords[i][1] > y_mean])
+            if coords3.shape[0] != 4:
+                print(coords)
+                raise RuntimeError("Unable to squash to 2D")
+
+    # reorder anti-clockwise
+    for i,c in enumerate(coords2):
+        centroid = c.mean(axis=0)
+        def angle(p1):
+            a1 = np.arctan2((p1[1]-centroid[1]),(p1[0]-centroid[0]))
+            return a1
+
+        c2 = np.array(sorted(c,key=angle))
+        coords2[i] = c2
+
+    return coords2
+
+def meshElemCentroids(directory=".", filename="ats_vis_mesh.h5", key=None, round=5):
     """Reads and calculates mesh element centroids.
 
     Note this only currently works for fixed structure meshes, i.e. not
@@ -334,7 +393,7 @@ def meshElemCentroids(directory=".", filename="visdump_mesh.h5", key=None, round
     directory : str, optional
       Directory to read mesh files from.  Default is '.'
     filename : str, optional
-      Mesh filename. Default is the Amanzi/ATS default name, 'visdump_mesh.h5'
+      Mesh filename. Default is the Amanzi/ATS default name, 'ats_vis_mesh.h5'
     key : str, optional
       Key of mesh within the file.  This is the cycle number, defaults to the
       first mesh found in the file.

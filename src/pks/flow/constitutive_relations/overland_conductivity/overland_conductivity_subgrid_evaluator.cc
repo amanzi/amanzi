@@ -39,11 +39,11 @@ OverlandConductivitySubgridEvaluator::OverlandConductivitySubgridEvaluator(Teuch
   dependencies_.insert(dens_key_);
 
   frac_cond_key_ = Keys::readKey(plist_, domain, "fractional conductance", "fractional_conductance");
-  dependencies_.insert(frac_cond_key_); 
-  
+  dependencies_.insert(frac_cond_key_);
+
   drag_exp_key_ = Keys::readKey(plist_, domain, "drag exponent", "drag_exponent");
-  dependencies_.insert(drag_exp_key_); 
-  
+  dependencies_.insert(drag_exp_key_);
+
   // create the model
   Teuchos::ParameterList& sublist = plist_.sublist("overland conductivity model");
   model_ = Teuchos::rcp(new ManningConductivityModel(sublist));
@@ -68,7 +68,7 @@ void OverlandConductivitySubgridEvaluator::EvaluateField_(const Teuchos::Ptr<Sta
   Teuchos::RCP<const CompositeVector> drag = S->GetFieldData(drag_exp_key_);
 
   Teuchos::RCP<const CompositeVector> dens = S->GetFieldData(dens_key_);
-  
+
   for (const auto& comp : *result) {
     const Epetra_MultiVector& depth_v = *depth->ViewComponent(comp,false);
     const Epetra_MultiVector& slope_v = *slope->ViewComponent(comp,false);
@@ -76,9 +76,9 @@ void OverlandConductivitySubgridEvaluator::EvaluateField_(const Teuchos::Ptr<Sta
 
     const Epetra_MultiVector& frac_cond_v = *frac_cond->ViewComponent(comp,false);
     const Epetra_MultiVector& drag_v = *drag->ViewComponent(comp,false);
-    const Epetra_MultiVector& dens_v = *S->GetFieldData(dens_key_)->ViewComponent(comp,false);    
+    const Epetra_MultiVector& dens_v = *S->GetFieldData(dens_key_)->ViewComponent(comp,false);
     Epetra_MultiVector& result_v = *result->ViewComponent(comp,false);
-    
+
     int ncomp = result->size(comp, false);
     for (int i=0; i!=ncomp; ++i) {
       result_v[0][i] = model_->Conductivity(depth_v[0][i], slope_v[0][i], coef_v[0][i]);
@@ -86,7 +86,7 @@ void OverlandConductivitySubgridEvaluator::EvaluateField_(const Teuchos::Ptr<Sta
     }
   }
 }
-  
+
 
 void OverlandConductivitySubgridEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
@@ -100,7 +100,7 @@ void OverlandConductivitySubgridEvaluator::EvaluateFieldPartialDerivative_(
   Teuchos::RCP<const CompositeVector> drag = S->GetFieldData(drag_exp_key_);
 
   Teuchos::RCP<const CompositeVector> dens = S->GetFieldData(dens_key_);
-  
+
   if (wrt_key == depth_key_) {
     for (const auto& comp : *result) {
       const Epetra_MultiVector& depth_v = *depth->ViewComponent(comp,false);
@@ -109,9 +109,9 @@ void OverlandConductivitySubgridEvaluator::EvaluateFieldPartialDerivative_(
 
       const Epetra_MultiVector& frac_cond_v = *frac_cond->ViewComponent(comp,false);
       const Epetra_MultiVector& drag_v = *drag->ViewComponent(comp,false);
-      const Epetra_MultiVector& dens_v = *S->GetFieldData(dens_key_)->ViewComponent(comp,false);    
+      const Epetra_MultiVector& dens_v = *S->GetFieldData(dens_key_)->ViewComponent(comp,false);
       Epetra_MultiVector& result_v = *result->ViewComponent(comp,false);
-    
+
       int ncomp = result->size(comp, false);
       for (int i=0; i!=ncomp; ++i) {
         result_v[0][i] = model_->DConductivityDDepth(depth_v[0][i], slope_v[0][i], coef_v[0][i]);
@@ -127,9 +127,9 @@ void OverlandConductivitySubgridEvaluator::EvaluateFieldPartialDerivative_(
 
       const Epetra_MultiVector& frac_cond_v = *frac_cond->ViewComponent(comp,false);
       const Epetra_MultiVector& drag_v = *drag->ViewComponent(comp,false);
-      const Epetra_MultiVector& dens_v = *S->GetFieldData(dens_key_)->ViewComponent(comp,false);    
+      const Epetra_MultiVector& dens_v = *S->GetFieldData(dens_key_)->ViewComponent(comp,false);
       Epetra_MultiVector& result_v = *result->ViewComponent(comp,false);
-    
+
       int ncomp = result->size(comp, false);
       for (int i=0; i!=ncomp; ++i) {
         result_v[0][i] = model_->Conductivity(depth_v[0][i], slope_v[0][i], coef_v[0][i]);
@@ -145,9 +145,9 @@ void OverlandConductivitySubgridEvaluator::EvaluateFieldPartialDerivative_(
 
       const Epetra_MultiVector& frac_cond_v = *frac_cond->ViewComponent(comp,false);
       const Epetra_MultiVector& drag_v = *drag->ViewComponent(comp,false);
-      const Epetra_MultiVector& dens_v = *S->GetFieldData(dens_key_)->ViewComponent(comp,false);    
+      const Epetra_MultiVector& dens_v = *S->GetFieldData(dens_key_)->ViewComponent(comp,false);
       Epetra_MultiVector& result_v = *result->ViewComponent(comp,false);
-    
+
       int ncomp = result->size(comp, false);
       for (int i=0; i!=ncomp; ++i) {
         result_v[0][i] = model_->Conductivity(depth_v[0][i], slope_v[0][i], coef_v[0][i]);
@@ -158,7 +158,51 @@ void OverlandConductivitySubgridEvaluator::EvaluateFieldPartialDerivative_(
   } else {
     result->PutScalar(0.);
   }
-}  
+}
+
+
+void OverlandConductivitySubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
+  // Ensure my field exists.  Requirements should be already set.
+  AMANZI_ASSERT(my_key_ != std::string(""));
+  Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_, my_key_);
+
+  // check plist for vis or checkpointing control
+  bool io_my_key = plist_.get<bool>("visualize", true);
+  S->GetField(my_key_, my_key_)->set_io_vis(io_my_key);
+  bool checkpoint_my_key = plist_.get<bool>("checkpoint", false);
+  S->GetField(my_key_, my_key_)->set_io_checkpoint(checkpoint_my_key);
+
+  // If my requirements have not yet been set, we'll have to hope they
+  // get set by someone later.  For now just defer.
+  if (my_fac->Mesh() != Teuchos::null) {
+    // Create an unowned factory to check my dependencies.
+    //
+    // Note only doing cells here, some other things would need to be fixed...
+    Teuchos::RCP<CompositeVectorSpace> dep_fac =
+        Teuchos::rcp(new CompositeVectorSpace());
+    dep_fac->SetMesh(my_fac->Mesh());
+    dep_fac->AddComponent("cell", AmanziMesh::CELL, 1);
+    dep_fac->SetGhosted(true);
+
+    // Loop over my dependencies, ensuring they meet the requirements.
+    for (const auto& key : dependencies_) {
+      if (key == my_key_) {
+        Errors::Message msg;
+        msg << "Evaluator for key \"" << my_key_ << "\" depends upon itself.";
+        Exceptions::amanzi_throw(msg);
+      }
+      Teuchos::RCP<CompositeVectorSpace> fac = S->RequireField(key);
+      fac->Update(*dep_fac);
+    }
+
+    // Recurse into the tree to propagate info to leaves.
+    for (const auto& key : dependencies_) {
+      S->RequireFieldEvaluator(key)->EnsureCompatibility(S);
+    }
+  }
+}
+
+
 
 } // namespace Flow
 } // namespace Amanzi

@@ -44,6 +44,7 @@ set(ats_mpc_src_files
   mpc_flowreactivetransport_pk.cc
   mpc_coupled_reactive_transport_pk.cc
   mpc_delegate_ewc_subsurface.cc
+  mpc_delegate_ewc_surface.cc
   mpc_delegate_water.cc
   mpc_coupled_water.cc
   mpc_coupled_water_split_flux.cc
@@ -77,6 +78,7 @@ set(ats_mpc_inc_files
   mpc_flowreactivetransport_pk.hh
   mpc_coupled_reactive_transport_pk.hh
   mpc_delegate_ewc_subsurface.hh
+  mpc_delegate_ewc_surface.hh
   mpc_delegate_water.hh
   mpc_coupled_water.hh
   mpc_coupled_transport.hh

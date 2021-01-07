@@ -22,15 +22,16 @@ domains/meshes of PKPhysicalBase and Explicit methods of PKExplicitBase.
 namespace Amanzi {
 
 
-class  PK_Physical_Explicit_Default : virtual public PK_Explicit_Default, public PK_Physical_Default {
+class  PK_Physical_Explicit_Default : public PK_Explicit_Default, public PK_Physical_Default {
 
 public:
   PK_Physical_Explicit_Default(Teuchos::ParameterList& pk_tree,
                           const Teuchos::RCP<Teuchos::ParameterList>& glist,
                           const Teuchos::RCP<State>& S,
-                          const Teuchos::RCP<TreeVector>& solution):
-    PK_Explicit_Default(pk_tree, glist, S, solution),
-    PK_Physical_Default(pk_tree, glist, S, solution){}
+                          const Teuchos::RCP<TreeVector>& solution)
+    : PK(pk_tree, glist, S, solution),
+      PK_Explicit_Default(pk_tree, glist, S, solution),
+      PK_Physical_Default(pk_tree, glist, S, solution) {}
 
   virtual void Setup(const Teuchos::Ptr<State>& S) {
     PK_Physical_Default::Setup(S);

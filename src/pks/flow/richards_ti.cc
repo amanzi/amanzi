@@ -53,9 +53,7 @@ void Richards::FunctionalResidual(double t_old,
   db_->WriteVectors(vnames, vecs, true);
 
   // update boundary conditions
-  bc_pressure_->Compute(t_new);
-  bc_head_->Compute(t_new);
-  bc_flux_->Compute(t_new);
+  ComputeBoundaryConditions_(S_next_.ptr());
   UpdateBoundaryConditions_(S_next_.ptr());
   db_->WriteBoundaryConditions(bc_markers(), bc_values());
 
@@ -154,9 +152,7 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   if (jacobian_ && iter_ >= jacobian_lag_) UpdatePermeabilityDerivativeData_(S_next_.ptr());
 
   // update boundary conditions
-  bc_pressure_->Compute(S_next_->time());
-  bc_head_->Compute(S_next_->time());
-  bc_flux_->Compute(S_next_->time());
+  ComputeBoundaryConditions_(S_next_.ptr());
   UpdateBoundaryConditions_(S_next_.ptr());
 
   Teuchos::RCP<const CompositeVector> rel_perm =

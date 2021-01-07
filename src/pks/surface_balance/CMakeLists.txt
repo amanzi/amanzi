@@ -1,8 +1,8 @@
 # -*- mode: cmake -*-
 # ATS Surface balance PKs describe Evaporation, energy fluxes from
 #  long/showtwave radiation, precip, etc etc etc
-include_directories(${ATS_SOURCE_DIR}/pks)
-include_directories(${ATS_SOURCE_DIR}/constitutive_relations/surface_subsurface_fluxes)
+include_directories(${ATS_SOURCE_DIR}/src//pks)
+include_directories(${ATS_SOURCE_DIR}/src/constitutive_relations/surface_subsurface_fluxes)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/constitutive_relations/SEB)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/constitutive_relations/litter)
 include_directories(${CLM_INCLUDE_DIRS})

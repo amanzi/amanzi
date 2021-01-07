@@ -3,11 +3,9 @@
 import sys,os
 from matplotlib import pyplot as plt
 import matplotlib.cm
+import colors
 
 import ats_xdmf, ats_units
-
-
-
 
 epilog = """
 Note this plots:
@@ -159,21 +157,31 @@ def plot_subsurface(vis, col, ax, label, color=None, cmap=None):
 
 def plot_surface(vis, col, ax, label, color):
     formats = ['-', '--', '-.']
+
     for varname, form in zip(col, formats):
         data = vis.getArray(varname)
         assert(data.shape[1] == 1)
         ax.plot(vis.times, data[:,0], form, color=color, label=label)
 
-def plot(vis_objs, layout, axs, dirname, color):
+def plot(vis_objs, layout, axs, dirname, color_or_cmap, color_mode):
     for i,row in enumerate(layout):
         for j,col in enumerate(row):
             ax = axs[i][j]
             domain, _ = domain_var(col[0])
             vis = vis_objs[domain]
-            if domain == '':
-                plot_subsurface(vis, col, ax, dirname, color)
-            else:
-                plot_surface(vis, col, ax, dirname, color)
+            if color_mode == 'runs':
+                # color_or_cmap is a color
+                if domain == '':
+                    plot_subsurface(vis, col, ax, dirname, color_or_cmap)
+                else:
+                    plot_surface(vis, col, ax, dirname, color_or_cmap)
+            elif color_mode == 'time':
+                if domain == '':
+                    plot_subsurface(vis, col, ax, dirname, None, color_or_cmap)
+                else:
+                    cm = colors.cm_mapper(-.1, 1, color_or_cmap)
+                    color = cm(0)
+                    plot_surface(vis, col, ax, dirname, color)
 
 def layout_flattener(layout):
     for row in layout:
@@ -211,10 +219,10 @@ if __name__ == '__main__':
     parser.add_argument('directories', nargs='+', type=directory,
                         help='Directories of runs to plot.')
     parser.add_argument('--data-filename-format', type=str,
-                        default='visdump_{}_data.h5',
+                        default='ats_vis_{}_data.h5',
                         help='Format string to generate a data hdf5 filename.')
     parser.add_argument('--mesh-filename-format', type=str,
-                        default='visdump_{}_mesh.h5',
+                        default='ats_vis_{}_mesh.h5',
                         help='Format string to generate a mesh hdf5 filename.')
     parser.add_argument('--time-unit', type=str, default='d',
                         help='Unit for time plots.')
@@ -228,17 +236,28 @@ if __name__ == '__main__':
                         help='Layout in a complicated format -- see below.')
     parser.add_argument('-f', '--figsize', type=float, nargs=2, default=[5,3],
                         help='Figure size')
-    parser.add_argument('-c', '--colors', type=str,
+    parser.add_argument('--color-mode', type=str,
+                        choices=['runs', 'time'], default='runs',
+                        help='Choose whether colors represent different runs or time.')
+    parser.add_argument('--color-sample', type=str,
                         choices=['enumerated','sampled'], default='enumerated',
                         help='Choose colors from an enumerate set or a sampled colormap.')
+    parser.add_argument('--color-map', type=str,
+                        default='jet',
+                        help='Choose which colormap to use.')
 
     
     args = parser.parse_args()
-
-    if args.colors == 'enumerated':
-        color_list = colors.enumerated_colors(len(args.directories))
-    else:
-        color_list = colors.sampled_colors(len(args.directories), matplotlib.cm.jet)
+    if args.color_mode == 'runs':
+        if args.color_sample == 'enumerated':
+            color_list = colors.enumerated_colors(len(args.directories))
+        else:
+            color_list = colors.sampled_colors(len(args.directories),
+                                               getattr(matplotlib.cm, args.color_map))
+    elif args.color_mode == 'time':
+        color_list = [args.color_map,]*len(args.directories)
+        
+    
 
     fig = plt.figure(figsize=args.figsize)
     axs = fig.subplots(len(args.layout), len(args.layout[0]), squeeze=False)
@@ -262,7 +281,7 @@ if __name__ == '__main__':
 
             vis_objs[domain] = vis
 
-        plot(vis_objs, args.layout, axs, dirname, color)
+        plot(vis_objs, args.layout, axs, dirname, color, args.color_mode)
 
     annotate(args.layout, axs, args.time_unit)        
     plt.show()

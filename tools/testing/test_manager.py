@@ -32,7 +32,6 @@ import traceback
 import distutils.spawn
 import numpy
 import collections
-import h5py
 
 aliases = dict()
 
@@ -472,6 +471,7 @@ class RegressionTest(object):
                 if not os.path.isdir('data'):
                     os.mkdir('data')
 
+                import h5py
                 with h5py.File(os.path.join('data', "{0}_dts.h5".format(self.name())), 'w') as fid:
                     fid.create_dataset("timesteps", data=86400.*good[:,2]) # note conversion from days back to seconds
                 print("Wrote file: data/{0}_dts.h5".format(self.name()), file=testlog)
@@ -493,6 +493,17 @@ class RegressionTest(object):
                 # empty the checkpoint list
                 for i in range(len(chp)):
                     chp.pop(chp[0].get('name'))
+
+                # remove the vis list and coordinator "required times" lists which can affect timestepping
+                try:
+                    xml.pop("visualization")
+                except aerrors.MissingXMLError:
+                    pass
+                coord = asearch.find_name(xml, "cycle driver")
+                try:
+                    coord.pop("required times")
+                except aerrors.MissingXMLError:
+                    pass
 
                 chp.setParameter('cycles', 'Array(int)', chp_cycles)
 
@@ -524,6 +535,8 @@ class RegressionTest(object):
         We return zero on success, one on failure so that the test
         manager can track how many tests succeeded and failed.
         """
+        import h5py
+
         if self._skip_check_gold:
             message = "    Skipping comparison to regression gold file (only test if model runs to completion)."
             print("".join(['\n', message, '\n']), file=testlog)
@@ -1065,12 +1078,10 @@ class RegressionTestManager(object):
         return self._file_status
 
     def display_available_tests(self):
-        print("Available tests: ")
         for test in sorted(self._available_tests.keys()):
-            print("    {0}".format(test))
+            print("{0} {1}".format(os.path.split(os.getcwd())[-1], test))
 
     def display_available_suites(self):
-        print("Available test suites: ")
         for suite in self._available_suites:
             print("    {0} :".format(suite))
             for test in self._available_suites[suite].split():
@@ -1470,15 +1481,19 @@ def append_command_to_log(command, testlog, tempfile):
         shutil.copyfileobj(tempinfo, testlog)
     os.remove(tempfile)    
 
-def setup_testlog(txtwrap):
+def setup_testlog(txtwrap, silence=False):
     """
     Create the test log and try to add some useful information about
     the environment.
     """
     now = datetime.datetime.today().strftime("%Y-%m-%d_%H-%M-%S")
+    if not os.path.isdir("LOGS"):
+        os.mkdir("LOGS")
     filename = os.path.join("LOGS", "ats-tests-{0}.testlog".format(now))
+
+    if not silence:
+        print("  Test log file : {0}".format(filename))
     testlog = open(filename, 'w')
-    print("  Test log file : {0}".format(filename))
 
     print("ATS Regression Test Log", file=testlog)
     print("Date : {0}".format(now), file=testlog)

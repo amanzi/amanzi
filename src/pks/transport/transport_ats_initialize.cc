@@ -32,18 +32,18 @@ void Transport_ATS::InitializeAll_()
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // global transport parameters
-  cfl_ = tp_list_->get<double>("cfl", 1.0);
+  cfl_ = plist_->get<double>("cfl", 1.0);
 
-  spatial_disc_order = tp_list_->get<int>("spatial discretization order", 1);
+  spatial_disc_order = plist_->get<int>("spatial discretization order", 1);
   if (spatial_disc_order < 1 || spatial_disc_order > 2) spatial_disc_order = 1;
-  temporal_disc_order = tp_list_->get<int>("temporal discretization order", 1);
+  temporal_disc_order = plist_->get<int>("temporal discretization order", 1);
   if (temporal_disc_order < 1 || temporal_disc_order > 2) temporal_disc_order = 1;
 
-  num_aqueous = tp_list_->get<int>("number of aqueous components", component_names_.size());
-  num_gaseous = tp_list_->get<int>("number of gaseous components", 0);
+  num_aqueous = plist_->get<int>("number of aqueous components", component_names_.size());
+  num_gaseous = plist_->get<int>("number of gaseous components", 0);
 
-  if (tp_list_->isSublist("material properties")) {
-    Teuchos::ParameterList& dlist = tp_list_->sublist("material properties");
+  if (plist_->isSublist("material properties")) {
+    Teuchos::ParameterList& dlist = plist_->sublist("material properties");
 
     int nblocks = 0;
     for (Teuchos::ParameterList::ConstIterator i = dlist.begin(); i != dlist.end(); i++) {
@@ -70,8 +70,8 @@ void Transport_ATS::InitializeAll_()
   // transport diffusion (default is none)
   diffusion_phase_.resize(TRANSPORT_NUMBER_PHASES, Teuchos::null);
 
-  if (tp_list_->isSublist("molecular diffusion")) {
-    Teuchos::ParameterList& dlist = tp_list_->sublist("molecular diffusion");
+  if (plist_->isSublist("molecular diffusion")) {
+    Teuchos::ParameterList& dlist = plist_->sublist("molecular diffusion");
     if (dlist.isParameter("aqueous names")) {
       diffusion_phase_[0] = Teuchos::rcp(new DiffusionPhase());
       diffusion_phase_[0]->names() = dlist.get<Teuchos::Array<std::string> >("aqueous names").toVector();
@@ -86,8 +86,8 @@ void Transport_ATS::InitializeAll_()
   }
 
   // statistics of solutes
-  if (tp_list_->isParameter("runtime diagnostics: solute names")) {
-    runtime_solutes_ = tp_list_->get<Teuchos::Array<std::string> >("runtime diagnostics: solute names").toVector();
+  if (plist_->isParameter("runtime diagnostics: solute names")) {
+    runtime_solutes_ = plist_->get<Teuchos::Array<std::string> >("runtime diagnostics: solute names").toVector();
   } else {
     runtime_solutes_.push_back(component_names_[0]);
     if (num_gaseous > 0) runtime_solutes_.push_back(component_names_[num_aqueous]);
@@ -97,21 +97,21 @@ void Transport_ATS::InitializeAll_()
   mass_solutes_bc_.assign(num_aqueous + num_gaseous, 0.0);
   mass_solutes_stepstart_.assign(num_aqueous + num_gaseous, 0.0);
 
-  if (tp_list_->isParameter("runtime diagnostics: regions")) {
-    runtime_regions_ = tp_list_->get<Teuchos::Array<std::string> >("runtime diagnostics: regions").toVector();
+  if (plist_->isParameter("runtime diagnostics: regions")) {
+    runtime_regions_ = plist_->get<Teuchos::Array<std::string> >("runtime diagnostics: regions").toVector();
   }
 
-  internal_tests = tp_list_->get<std::string>("enable internal tests", "no") == "yes";
-  tests_tolerance = tp_list_->get<double>("internal tests tolerance", TRANSPORT_CONCENTRATION_OVERSHOOT);
-  dt_debug_ = tp_list_->get<double>("maximum time step", TRANSPORT_LARGE_TIME_STEP);
+  internal_tests = plist_->get<std::string>("enable internal tests", "no") == "yes";
+  tests_tolerance = plist_->get<double>("internal tests tolerance", TRANSPORT_CONCENTRATION_OVERSHOOT);
+  dt_debug_ = plist_->get<double>("maximum time step", TRANSPORT_LARGE_TIME_STEP);
 
 //   // populate the list of boundary influx functions
 //   bcs.clear();
 
-//   if (tp_list_->isSublist("boundary conditions")) {  // New flexible format.
+//   if (plist_->isSublist("boundary conditions")) {  // New flexible format.
 //     std::vector<std::string> bcs_tcc_name;
 //     Teuchos::RCP<Teuchos::ParameterList> bcs_list =
-//         Teuchos::rcp(new Teuchos::ParameterList(tp_list_->get<Teuchos::ParameterList>("boundary conditions")));
+//         Teuchos::rcp(new Teuchos::ParameterList(plist_->get<Teuchos::ParameterList>("boundary conditions")));
 // #ifdef ALQUIMIA_ENABLED
 //     TransportBCFactory bc_factory(S_, mesh_, bcs_list, chem_pk_, chem_engine_);
 // #else
@@ -146,6 +146,9 @@ int Transport_ATS::FindComponentNumber(const std::string component_name)
   for (int i = 0; i < ncomponents; i++) {
     if (component_names_[i] == component_name) return i;
   }
+  Errors::Message msg("TransportExplicit_PK: component \"");
+  msg << component_name << "\" was requested, but this is not a known component for this PK.";
+  Exceptions::amanzi_throw(msg);
   return -1;
 }
 

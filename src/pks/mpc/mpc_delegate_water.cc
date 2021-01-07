@@ -40,7 +40,7 @@ MPCDelegateWater::MPCDelegateWater(const Teuchos::RCP<Teuchos::ParameterList>& p
     damp_the_sat_spurt_ = true;
     cap_the_sat_spurt_ = true;
   }
-  
+
   // set the size of the caps
   if (cap_the_spurt_ || damp_the_spurt_ ||
       cap_the_sat_spurt_ || damp_the_sat_spurt_ ||
@@ -69,7 +69,7 @@ MPCDelegateWater::ModifyCorrection_WaterFaceLimiter(double h, Teuchos::RCP<const
       Exceptions::amanzi_throw(message);
     }
 
-    
+
     Epetra_MultiVector& domain_Pu_f = *Pu->SubVector(i_domain_)->Data()
         ->ViewComponent(face_entity,false);
 
@@ -105,7 +105,7 @@ MPCDelegateWater::ModifyCorrection_WaterSpurtDamp(double h, Teuchos::RCP<const T
     Errors::Message message("Subsurface vector does not have face component.");
     Exceptions::amanzi_throw(message);
   }
-  
+
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh =
       u->SubVector(i_surf_)->Data()->Mesh();
   int ncells_surf = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -168,10 +168,10 @@ MPCDelegateWater::ModifyCorrection_WaterSpurtCap(double h, Teuchos::RCP<const Tr
       if ((p_new > patm + cap_size_) && (p_old < patm)) {
         double p_corrected = p_old - (patm + cap_size_);
         SetDomainFaceValue(*domain_Pu, f, p_corrected);
-        
+
         n_modified++;
         if (vo_->os_OK(Teuchos::VERB_HIGH))
-          std::cout << "  CAPPING THE SPURT (sc=" << surf_mesh->cell_map(false).GID(cs) << ",f=" 
+          std::cout << "  CAPPING THE SPURT (sc=" << surf_mesh->cell_map(false).GID(cs) << ",f="
 		    << u->SubVector(i_domain_)->Data()->Mesh()->face_map(false).GID(f) << "): p_old = " << p_old
                     << ", p_new = " << p_new << ", p_capped = " << p_old - p_corrected << std::endl;
       } else if ((p_new < patm) && (p_old > patm)) {
@@ -369,16 +369,12 @@ MPCDelegateWater::ModifyPredictor_WaterSpurtDamp(double h,
       Epetra_MultiVector& domain_pnew_f = *domain_pnew -> ViewComponent("boundary face",false);
       domain_pnew_f.Comm().MinAll(&proc_damp, &damp, 1);
     }
-    
+
     if (damp < 1.0) {
       if (vo_->os_OK(Teuchos::VERB_HIGH))
         *vo_->os() << "  DAMPING THE SPURT!, coef = " << damp << std::endl;
 
       // apply the damping
-
-      Teuchos::RCP<const CompositeVector> domain_pold = S_inter_->GetFieldData(key_ss);
-
-      Teuchos::RCP<CompositeVector> domain_pnew = u->SubVector(i_domain_)->Data();
       db_->WriteVector("p_old", domain_pold.ptr());
       db_->WriteVector("p_new", domain_pnew.ptr());
       domain_pnew->Update(1. - damp, *domain_pold, damp);
@@ -403,7 +399,7 @@ MPCDelegateWater::ModifyPredictor_WaterSpurtDamp(double h,
           double new_value = patm + 2*(p_old - patm);
           SetDomainFaceValue(*domain_pnew, f, new_value);
           surf_pnew_c[0][cs] = new_value;
-                             
+
           if (vo_->os_OK(Teuchos::VERB_HIGH))
             std::cout << "  CAPPING THE SPURT (2nd over) (sc=" << surf_mesh->cell_map(false).GID(cs) << "): p_old = " << p_old << ", p_new = " << p_new << ", p_capped = " << new_value << std::endl;
         } else {
@@ -437,7 +433,7 @@ MPCDelegateWater::ModifyPredictor_TempFromSource(double h, const Teuchos::RCP<Tr
     // Epetra_MultiVector& domain_pnew_f = *u->SubVector(i_domain_)->Data()
     //     ->ViewComponent("face",false);
     Teuchos::RCP<CompositeVector> domain_pnew = u->SubVector(i_domain_)->Data();
-    
+
     const Epetra_MultiVector& Told = *S_inter_->GetFieldData("surface_temperature")
         ->ViewComponent("cell",false);
     const Epetra_MultiVector& Tsource = *S_next_->GetFieldData("surface_mass_source_temperature")

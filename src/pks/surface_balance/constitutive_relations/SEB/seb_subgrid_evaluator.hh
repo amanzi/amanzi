@@ -28,18 +28,18 @@ depressions due to gravity- and wind-driven redistributions, respectively.
 .. _seb_subgrid_evaluator-spec:
 .. admonition:: seb_subgrid_evaluator-spec
 
-   * `"roughness length of bare ground [m]`" **0.04** Defines a fetch controlling
+   * `"roughness length of bare ground [m]`" ``[double]`` **0.04** Defines a fetch controlling
      latent and sensible heat fluxes.
-   * `"roughness length of snow-covered ground [m]`" **0.004** Defines a
+   * `"roughness length of snow-covered ground [m]`" ``[double]`` **0.004** Defines a
      fetch controlling latent and sensible heat fluxes.
-   * `"dessicated zone thickness [m]`" Thickness of the immediate surface
+   * `"dessicated zone thickness [m]`" ``[double]`` Thickness of the immediate surface
      layer over which vapor pressure diffusion must move water to evaporate
      from dry soil.  More implies less evaporation.
-   * `"wind speed reference height [m]`" **2.0** Reference height at which
+   * `"wind speed reference height [m]`" ``[double]`` **2.0** Reference height at which
      wind speed is measured.
-   * `"minimum wind speed [m s^-1]`" **1.0** Sets a floor on wind speed for
+   * `"minimum wind speed [m s^-1]`" ``[double]`` **1.0** Sets a floor on wind speed for
      potential wierd data.  Models have trouble with no wind.
-   * `"minimum relative humidity [-]`" **1.0** Sets a floor on relative
+   * `"minimum relative humidity [-]`" ``[double]`` **1.0** Sets a floor on relative
      humidity for potential wierd data.  Models have trouble with no
      humidity.
   

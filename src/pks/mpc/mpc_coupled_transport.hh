@@ -35,17 +35,13 @@ namespace Amanzi {
     // PK methods
     // -- dt is the minimum of the sub pks
     virtual double get_dt();
-    //virtual void set_dt(double dt);
     virtual void Setup(const Teuchos::Ptr<State>& S);
-    virtual void Initialize(const Teuchos::Ptr<State>& S);
 
     // -- advance each sub pk from t_old to t_new.
     virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
-    //virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
 
     std::string name() { return name_;}
     int num_aqueous_component();
-
 
   private:
 
@@ -64,7 +60,6 @@ namespace Amanzi {
     Key subsurface_flux_key_, surface_flux_key_;
     Key surface_name_, subsurface_name_;
     Key mass_darcy_key, surf_mass_darcy_key;
-    Key vol_darcy_key, surf_vol_darcy_key;
     Key mol_density_key, surf_mol_density_key;
 
 
@@ -75,4 +70,5 @@ namespace Amanzi {
 };
 
 }  // namespace Amanzi
+
 #endif

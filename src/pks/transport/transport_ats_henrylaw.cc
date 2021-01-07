@@ -34,7 +34,7 @@ void Transport_ATS::PrepareAirWaterPartitioning_()
       henry_law_ = false;
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
         Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "Gas component \"" << component_names_[ig] 
+        *vo_->os() << "Gas component \"" << component_names_[ig]
                    << "\" has no matching liquid component \"" << name_l << "\"\n";
       }
       break;
@@ -43,7 +43,7 @@ void Transport_ATS::PrepareAirWaterPartitioning_()
 
   if (henry_law_) {
     Teuchos::Array<double> empty;
-    kH_ = tp_list_->sublist("molecular diffusion")
+    kH_ = plist_->sublist("molecular diffusion")
         .get<Teuchos::Array<double> >("air-water partitioning coefficient", empty).toVector();
   } else {
     air_water_map_.clear();
@@ -56,21 +56,19 @@ void Transport_ATS::PrepareAirWaterPartitioning_()
 ******************************************************************* */
 void Transport_ATS::MakeAirWaterPartitioning_()
 {
-  Epetra_MultiVector& tcc = *tcc_tmp->ViewComponent("cell", false);
+  Epetra_MultiVector& tcc_c = *tcc_tmp->ViewComponent("cell", false);
   const Epetra_MultiVector& sat_l = *ws_;
 
-  int ig, il;
-  double sl, sg, total;
   for (int i = 0; i < num_gaseous; ++i) {
-    ig = num_aqueous + i;
-    il = air_water_map_[i];
+    int ig = num_aqueous + i;
+    int il = air_water_map_[i];
 
     for (int c = 0; c < ncells_owned; c++) {
-      sl = sat_l[0][c];
-      total = tcc[il][c] * sl + tcc[ig][c] * (1.0 - sl);
-      tcc[ig][c] = total / (1.0 + (kH_[i] - 1.0) * sl);
-      tcc[il][c] = tcc[ig][c] * kH_[i];
-    } 
+      double sl = sat_l[0][c];
+      double total = tcc_c[il][c] * sl + tcc_c[ig][c] * (1.0 - sl);
+      tcc_c[ig][c] = total / (1.0 + (kH_[i] - 1.0) * sl);
+      tcc_c[il][c] = tcc_c[ig][c] * kH_[i];
+    }
   }
 }
 

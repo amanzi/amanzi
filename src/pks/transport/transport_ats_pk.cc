@@ -48,28 +48,21 @@ namespace Transport {
 Transport_ATS::Transport_ATS(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<Teuchos::ParameterList>& glist,
                            const Teuchos::RCP<State>& S,
-                           const Teuchos::RCP<TreeVector>& soln) :
-  S_(S),
-  soln_(soln)
+                           const Teuchos::RCP<TreeVector>& solution) :
+  PK(pk_tree, glist, S, solution),
+  PK_PhysicalExplicit<Epetra_Vector>(pk_tree, glist, S, solution)
 {
-  name_ = Keys::cleanPListName(pk_tree.name());
-
-  // Create miscaleneous lists.
-  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-
-  tp_list_ = Teuchos::sublist(pk_list, name_, true);
-
-  if (tp_list_->isParameter("component names")) {
-    component_names_ = tp_list_->get<Teuchos::Array<std::string> >("component names").toVector();
-    mol_masses_ = tp_list_->get<Teuchos::Array<double> >("component molar masses").toVector();
+  if (plist_->isParameter("component names")) {
+    component_names_ = plist_->get<Teuchos::Array<std::string> >("component names").toVector();
+    mol_masses_ = plist_->get<Teuchos::Array<double> >("component molar masses").toVector();
   } else {
-    Errors::Message msg("Transport PK: parameter component names is missing.");
+    Errors::Message msg("Transport PK: parameter \"component names\" is missing.");
     Exceptions::amanzi_throw(msg);
   }
 
-  subcycling_ = tp_list_->get<bool>("transport subcycling", false);
-  special_source_ = tp_list_->get<bool>("special source", false);
-  water_source_in_meters_ = tp_list_->get<bool>("water source in meters", true);
+  subcycling_ = plist_->get<bool>("transport subcycling", false);
+
+  water_source_in_meters_ = plist_->get<bool>("water source in meters", true);
 
   // initialize io
   Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "units");
@@ -118,35 +111,69 @@ void Transport_ATS::set_states(const Teuchos::RCP<State>& S,
 ****************************************************************** */
 void Transport_ATS::Setup(const Teuchos::Ptr<State>& S)
 {
-  passwd_ = "state";  // owner's password
+  saturation_key_ = Keys::readKey(*plist_, domain_, "saturation liquid", "saturation_liquid");
+  prev_saturation_key_ = Keys::readKey(*plist_, domain_, "previous saturation liquid", "prev_saturation_liquid");
+  flux_key_ = Keys::readKey(*plist_, domain_, "mass flux", "mass_flux");
+  permeability_key_ = Keys::readKey(*plist_, domain_, "permeability", "permeability");
+  tcc_key_ = Keys::readKey(*plist_, domain_, "concentration", "total_component_concentration");
+  conserve_qty_key_ = Keys::readKey(*plist_, domain_, "conserved quantity", "total_component_quantity");
+  porosity_key_ = Keys::readKey(*plist_, domain_, "porosity", "porosity");
+  molar_density_key_ = Keys::readKey(*plist_, domain_, "molar density", "molar_density_liquid");
+  tcc_matrix_key_ = Keys::readKey(*plist_, domain_, "tcc matrix", "total_component_concentration_matrix");
+  solid_residue_mass_key_ =  Keys::readKey(*plist_, domain_, "solid residue", "solid_residue_mass");
+  mass_src_key_ = Keys::readKey(*plist_, domain_, "mass source", "mass_source");
+  water_content_key_ = Keys::readKey(*plist_, domain_, "water content", "water_content");
+  cv_key_ = Keys::readKey(*plist_, domain_, "cell volume", "cell_volume");
 
-  domain_name_ = tp_list_->get<std::string>("domain name", "domain");
+  water_tolerance_ = plist_->get<double>("water tolerance", 1e-6);
+  dissolution_ = plist_->get<bool>("allow dissolution", false);
+  max_tcc_ = plist_->get<double>("maximum concentration", 0.9);
 
-  saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "saturation liquid", "saturation_liquid");
-  prev_saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "previous saturation liquid", "prev_saturation_liquid");
-  flux_key_ = Keys::readKey(*tp_list_, domain_name_, "mass flux", "mass_flux");
-  permeability_key_ = Keys::readKey(*tp_list_, domain_name_, "permeability", "permeability");
-  tcc_key_ = Keys::readKey(*tp_list_, domain_name_, "concentration", "total_component_concentration");
-  porosity_key_ = Keys::readKey(*tp_list_, domain_name_, "porosity", "porosity");
-  molar_density_key_ = Keys::readKey(*tp_list_, domain_name_, "molar density", "molar_density_liquid");
-  tcc_matrix_key_ = Keys::readKey(*tp_list_, domain_name_, "tcc matrix", "total_component_concentration_matrix");
-  solid_residue_mass_key_ =  Keys::readKey(*tp_list_, domain_name_, "solid residue", "solid_residue_mass");
-  mass_src_key_ = Keys::readKey(*tp_list_, domain_name_, "mass source", "mass_source");
-  water_content_key_ = Keys::getKey(domain_, "water_content");
-
-  water_tolerance_ = tp_list_->get<double>("water tolerance", 1e-6);
-  dissolution_ = tp_list_->get<bool>("allow dissolution", false);
-  max_tcc_ = tp_list_->get<double>("maximum concentration", 0.9);
-
-
-  mesh_ = S->GetMesh(domain_name_);
   dim = mesh_->space_dimension();
 
   // cross-coupling of PKs
   Teuchos::RCP<Teuchos::ParameterList> physical_models =
-      Teuchos::sublist(tp_list_, "physical models and assumptions");
+      Teuchos::sublist(plist_, "physical models and assumptions");
   bool abs_perm = physical_models->get<bool>("permeability field is required", false);
   std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single porosity");
+
+  // require my field
+  int ncomponents = component_names_.size();
+  std::vector<std::vector<std::string> > subfield_names(1);
+  subfield_names[0] = component_names_;
+
+  if (component_names_.size() == 0) {
+    Errors::Message msg;
+    msg << "Transport PK: list of solutes is empty.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  const auto& tcc_fac = S->RequireField(tcc_key_)->SetMesh(mesh_)->SetGhosted(true);
+  name_ = "state"; // note: this is required because the chemistry PK is Amanzi code and uses this.
+  S->RequireField(tcc_key_, name_, subfield_names)
+      ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
+
+  // we may not use this, but having it in vis makes life so much easier
+  S->RequireField(cv_key_);
+  S->RequireFieldEvaluator(cv_key_);
+
+  // This vector stores the conserved amount (in mols) of ncomponent
+  // transported components, plus two for water.  The first water component is
+  // given by the water content (in mols) at the old time plus dt * all fluxes
+  // treated explictly.  The second water component is given by the water
+  // content at the new time plus dt * all fluxes treated implicitly (notably
+  // just DomainCoupling fluxes, which must be able to take all the transported
+  // quantity.)
+  S->RequireField(conserve_qty_key_, name_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, ncomponents+2);
+
+  // other things that I own
+  S->RequireField(prev_saturation_key_, name_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->GetField(prev_saturation_key_, name_)->set_io_vis(false);
+
+  S->RequireField(solid_residue_mass_key_,  name_)->SetMesh(mesh_)->SetGhosted(true)
+    ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
 
   // require state fields
   if (abs_perm) {
@@ -155,62 +182,26 @@ void Transport_ATS::Setup(const Teuchos::Ptr<State>& S)
     S->RequireFieldEvaluator(permeability_key_);
   }
 
-  if (!S->HasField(flux_key_)){
-    S->RequireField(flux_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, 1);
-    S->RequireFieldEvaluator(flux_key_);
-  }
+  S->RequireField(flux_key_)->SetMesh(mesh_)->SetGhosted(true)
+    ->SetComponent("face", AmanziMesh::FACE, 1);
+  S->RequireFieldEvaluator(flux_key_);
 
   S->RequireField(saturation_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(saturation_key_);
 
-  // prev_sat does not have an evaluator, this is managed by hand.  not sure why
-  S->RequireField(prev_saturation_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->GetField(prev_saturation_key_, passwd_)->set_io_vis(false);
+  S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(porosity_key_);
 
-  if (!S->HasField(porosity_key_)){
-    S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator(porosity_key_);
-  }
+  S->RequireField(molar_density_key_, molar_density_key_)->SetMesh(mesh_)->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(molar_density_key_);
 
-  int ncomponents = component_names_.size();
-  std::vector<std::vector<std::string> > subfield_names(1);
-  subfield_names[0] = component_names_;
-
-  if (!S->HasField(solid_residue_mass_key_)){
-    S->RequireField(solid_residue_mass_key_,  passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
-  }
-
-  if (!S->HasField(molar_density_key_)){
-    S->RequireField(molar_density_key_, molar_density_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator(molar_density_key_);
-  }
-
-  if (!S->HasField(mass_src_key_) && tp_list_->sublist("source terms").isSublist("geochemical")){
+  if (plist_->sublist("source terms").isSublist("geochemical")){
     S->RequireField(mass_src_key_, mass_src_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(mass_src_key_);
-  }
-
-  // require state fields when Transport PK is on
-  if (component_names_.size() == 0) {
-    Errors::Message msg;
-    msg << "Transport PK: list of solutes is empty.\n";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  S->RequireField(tcc_key_, passwd_, subfield_names)
-      ->SetMesh(mesh_)->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, ncomponents);
-
-  if (!S->HasField(solid_residue_mass_key_)){
-    S->RequireField(solid_residue_mass_key_,  passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
   }
 
   // require multiscale fields
@@ -218,16 +209,19 @@ void Transport_ATS::Setup(const Teuchos::Ptr<State>& S)
   if (multiscale_model == "dual porosity") {
     multiscale_porosity_ = true;
     Teuchos::RCP<Teuchos::ParameterList>
-        msp_list = Teuchos::sublist(tp_list_, "multiscale models", true);
+        msp_list = Teuchos::sublist(plist_, "multiscale models", true);
     msp_ = CreateMultiscaleTransportPorosityPartition(mesh_, msp_list);
 
-    std::vector<std::vector<std::string> > subfield_names(1);
-    subfield_names[0] = component_names_;
-
-    S->RequireField(tcc_matrix_key_, passwd_, subfield_names)
+    S->RequireField(tcc_matrix_key_, name_, subfield_names)
         ->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
   }
+
+  // Create verbosity object.
+  Teuchos::ParameterList vlist;
+  vlist.sublist("verbose object") = plist_->sublist("verbose object");
+  vo_ = Teuchos::rcp(new VerboseObject(name_, vlist));
+  db_ = Teuchos::rcp(new Debugger(mesh_, name_, *plist_));
 }
 
 
@@ -242,19 +236,14 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
   double time = S->time();
   if (time >= 0.0) t_physics_ = time;
 
-  if (tp_list_->isSublist("initial conditions")) {
-    S->GetField(tcc_key_,passwd_)->Initialize(tp_list_->sublist("initial conditions"));
+  if (plist_->isSublist("initial condition")) {
+    S->GetField(tcc_key_,name_)->Initialize(plist_->sublist("initial condition"));
   }
 
   internal_tests = 0;
   tests_tolerance = TRANSPORT_CONCENTRATION_OVERSHOOT;
 
   bc_scaling = 0.0;
-
-  // Create verbosity object.
-  Teuchos::ParameterList vlist;
-  vlist.sublist("verbose object") = tp_list_->sublist("verbose object");
-  vo_ =  Teuchos::rcp(new VerboseObject("TransportPK", vlist));
 
   Teuchos::OSTab tab = vo_->getOSTab();
   MyPID = mesh_->get_comm()->MyPID();
@@ -263,27 +252,22 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
   InitializeFields_(S);
 
   //create copies
-  S->RequireFieldCopy(tcc_key_, "subcycling", passwd_);
-  tcc_tmp = S->GetField(tcc_key_, passwd_)->GetCopy("subcycling", passwd_)->GetFieldData();
+  S->RequireFieldCopy(tcc_key_, "subcycling", name_);
+  tcc_tmp = S->GetField(tcc_key_, name_)->GetCopy("subcycling", name_)->GetFieldData();
 
-  if (special_source_){
-    S->RequireFieldCopy(tcc_key_, "with source", passwd_);
-    tcc_w_src = S->GetField(tcc_key_, passwd_)->GetCopy("with source", passwd_)->GetFieldData();
-  }
-
-  S->RequireFieldCopy(saturation_key_, "subcycle_start", passwd_);
-  ws_subcycle_start = S->GetFieldCopyData(saturation_key_, "subcycle_start",passwd_)
+  S->RequireFieldCopy(saturation_key_, "subcycle_start", name_);
+  ws_subcycle_start = S->GetFieldCopyData(saturation_key_, "subcycle_start",name_)
     ->ViewComponent("cell");
-  S->RequireFieldCopy(saturation_key_, "subcycle_end", passwd_);
-  ws_subcycle_end = S->GetFieldCopyData(saturation_key_, "subcycle_end", passwd_)
+  S->RequireFieldCopy(saturation_key_, "subcycle_end", name_);
+  ws_subcycle_end = S->GetFieldCopyData(saturation_key_, "subcycle_end", name_)
     ->ViewComponent("cell");
-  S->RequireFieldCopy(molar_density_key_, "subcycle_start", passwd_);
-  mol_dens_subcycle_start = S->GetFieldCopyData(molar_density_key_, "subcycle_start",passwd_)->ViewComponent("cell");
-  S->RequireFieldCopy(molar_density_key_, "subcycle_end", passwd_);
-  mol_dens_subcycle_end = S->GetFieldCopyData(molar_density_key_, "subcycle_end", passwd_)->ViewComponent("cell");
+  S->RequireFieldCopy(molar_density_key_, "subcycle_start", name_);
+  mol_dens_subcycle_start = S->GetFieldCopyData(molar_density_key_, "subcycle_start",name_)->ViewComponent("cell");
+  S->RequireFieldCopy(molar_density_key_, "subcycle_end", name_);
+  mol_dens_subcycle_end = S->GetFieldCopyData(molar_density_key_, "subcycle_end", name_)->ViewComponent("cell");
 
-  S->RequireFieldCopy(flux_key_, "next_timestep", passwd_);
-  flux_copy_ = S->GetFieldCopyData(flux_key_,  "next_timestep", passwd_)->ViewComponent("face", true);
+  S->RequireFieldCopy(flux_key_, "next_timestep", name_);
+  flux_copy_ = S->GetFieldCopyData(flux_key_,  "next_timestep", name_)->ViewComponent("face", true);
   flux_copy_ -> PutScalar(0.);
 
   // Check input parameters. Due to limited amount of checks, we can do it earlier.
@@ -291,7 +275,6 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
 
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-
   nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
@@ -310,13 +293,13 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
   mol_dens_ = S->GetFieldData(molar_density_key_)->ViewComponent("cell", false);
   mol_dens_prev_ = S->GetFieldData(molar_density_key_)->ViewComponent("cell", false);
 
-  tcc = S->GetFieldData(tcc_key_, passwd_);
+  tcc = S->GetFieldData(tcc_key_, name_);
 
   flux_ = S->GetFieldData(flux_key_)->ViewComponent("face", true);
-  solid_qty_ = S->GetFieldData(solid_residue_mass_key_, passwd_)->ViewComponent("cell", false);
+  solid_qty_ = S->GetFieldData(solid_residue_mass_key_, name_)->ViewComponent("cell", false);
 
   //create vector of conserved quatities
-  conserve_qty_ = Teuchos::rcp(new Epetra_MultiVector(*(S->GetFieldData(tcc_key_)->ViewComponent("cell", true))));
+  conserve_qty_ = S->GetFieldData(conserve_qty_key_, name_)->ViewComponent("cell", true);
 
   // upwind
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
@@ -337,29 +320,29 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
 
   // mechanical dispersion
   flag_dispersion_ = false;
-  if (tp_list_->isSublist("material properties")) {
+  if (plist_->isSublist("material properties")) {
     Teuchos::RCP<Teuchos::ParameterList>
-        mdm_list = Teuchos::sublist(tp_list_, "material properties");
+        mdm_list = Teuchos::sublist(plist_, "material properties");
     mdm_ = CreateMDMPartition(mesh_, mdm_list, flag_dispersion_);
     if (flag_dispersion_) CalculateAxiSymmetryDirection();
   }
 
   // create boundary conditions
-  if (tp_list_->isSublist("boundary conditions")) {
+  if (plist_->isSublist("boundary conditions")) {
     // -- try tracer-type conditions
     PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_);
-    Teuchos::ParameterList& clist = tp_list_->sublist("boundary conditions").sublist("concentration");
+    Teuchos::ParameterList& conc_bcs_list = plist_->sublist("boundary conditions").sublist("concentration");
 
-    for (Teuchos::ParameterList::ConstIterator it = clist.begin(); it != clist.end(); ++it) {
-      std::string name = it->first;
-      if (clist.isSublist(name)) {
-        Teuchos::ParameterList& bc_list = clist.sublist(name);
-        if (name == "coupling") {
-          Teuchos::ParameterList::ConstIterator it1 = bc_list.begin();
-          std::string specname = it1->first;
-          Teuchos::ParameterList& spec = bc_list.sublist(specname);
-          Teuchos::RCP<TransportDomainFunction>
-            bc = factory.Create(spec, "boundary concentration", AmanziMesh::FACE, Kxy);
+    for (const auto& it : conc_bcs_list) {
+      std::string name = it.first;
+      if (conc_bcs_list.isSublist(name)) {
+        Teuchos::ParameterList& bc_list = conc_bcs_list.sublist(name);
+        std::string bc_type = bc_list.get<std::string>("spatial distribution method", "none");
+
+        if (bc_type == "domain coupling") {
+          // domain couplings are special -- they always work on all components
+          Teuchos::RCP<TransportDomainFunction> bc =
+            factory.Create(bc_list, "fields", AmanziMesh::FACE, Kxy);
 
           for (int i = 0; i < component_names_.size(); i++){
             bc->tcc_names().push_back(component_names_[i]);
@@ -367,18 +350,18 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
           }
           bc->set_state(S_);
           bcs_.push_back(bc);
-        } else if (name == "subgrid") {
-          Teuchos::ParameterList::ConstIterator it1 = bc_list.begin();
-          std::string specname = it1->first;
-          Teuchos::ParameterList& spec = bc_list.sublist(specname);
-          Teuchos::Array<std::string> regions(1, domain_name_);
 
-          std::size_t last_of = domain_name_.find_last_of("_");
+        } else if (bc_type == "subgrid") {
+          // subgrid domains take a BC from a single entity of a parent mesh --
+          // find the GID of that entity.
+          Teuchos::Array<std::string> regions(1, domain_);
+          std::size_t last_of = domain_.find_last_of("_");
           AMANZI_ASSERT(last_of != std::string::npos);
-          int gid = std::stoi(domain_name_.substr(last_of+1, domain_name_.size()));
-          spec.set("entity_gid_out", gid);
-          Teuchos::RCP<TransportDomainFunction>
-            bc = factory.Create(spec, "boundary concentration", AmanziMesh::FACE, Kxy);
+          int gid = std::stoi(domain_.substr(last_of+1, domain_.size()));
+          bc_list.set("entity_gid_out", gid);
+
+          Teuchos::RCP<TransportDomainFunction> bc =
+            factory.Create(bc_list, "none", AmanziMesh::FACE, Kxy);
 
           for (int i = 0; i < component_names_.size(); i++){
             bc->tcc_names().push_back(component_names_[i]);
@@ -388,28 +371,25 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
           bcs_.push_back(bc);
 
         } else {
-          for (Teuchos::ParameterList::ConstIterator it1 = bc_list.begin(); it1 != bc_list.end(); ++it1) {
-            std::string specname = it1->first;
-            Teuchos::ParameterList& spec = bc_list.sublist(specname);
-            Teuchos::RCP<TransportDomainFunction>
-              bc = factory.Create(spec, "boundary concentration", AmanziMesh::FACE, Kxy);
+          Teuchos::RCP<TransportDomainFunction> bc =
+            factory.Create(bc_list, "boundary concentration function", AmanziMesh::FACE, Kxy);
+          bc->set_state(S_);
 
-            std::vector<int>& tcc_index = bc->tcc_index();
-            std::vector<std::string>& tcc_names = bc->tcc_names();
-            bc->set_state(S_);
+          std::vector<std::string> tcc_names = bc_list.get<Teuchos::Array<std::string>>("component names").toVector();
+          bc->set_tcc_names(tcc_names);
 
-            tcc_names.push_back(name);
-            tcc_index.push_back(FindComponentNumber(name));
-
-            bcs_.push_back(bc);
+          // set the component indicies
+          for (const auto& n : bc->tcc_names()) {
+            bc->tcc_index().push_back(FindComponentNumber(n));
           }
+          bcs_.push_back(bc);
         }
       }
     }
 
 #ifdef ALQUIMIA_ENABLED
     // -- try geochemical conditions
-    Teuchos::ParameterList& glist = tp_list_->sublist("boundary conditions").sublist("geochemical");
+    Teuchos::ParameterList& glist = plist_->sublist("boundary conditions").sublist("geochemical");
 
     for (Teuchos::ParameterList::ConstIterator it = glist.begin(); it != glist.end(); ++it) {
       std::string specname = it->first;
@@ -439,28 +419,23 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
 
   // boundary conditions initialization
   time = t_physics_;
-  // for (int i = 0; i < bcs_.size(); i++) {
-  //   bcs_[i]->Compute(time, time);
-  // }
-
   VV_CheckInfluxBC();
 
   // source term initialization: so far only "concentration" is available.
-  if (tp_list_->isSublist("source terms")) {
+  if (plist_->isSublist("source terms")) {
     PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_);
-    //if (domain_name_ == "domain")  PKUtils_CalculatePermeabilityFactorInWell(S_.ptr(), Kxy);
+    Teuchos::ParameterList& conc_sources_list = plist_->sublist("source terms").sublist("concentration");
 
-    Teuchos::ParameterList& clist = tp_list_->sublist("source terms").sublist("concentration");
-    for (Teuchos::ParameterList::ConstIterator it = clist.begin(); it != clist.end(); ++it) {
-      std::string name = it->first;
-      if (clist.isSublist(name)) {
-        Teuchos::ParameterList& src_list = clist.sublist(name);
-        if (name=="coupling") {
-          Teuchos::ParameterList::ConstIterator it1 = src_list.begin();
-          std::string specname = it1->first;
-          Teuchos::ParameterList& spec = src_list.sublist(specname);
+    for (const auto& it : conc_sources_list) {
+      std::string name = it.first;
+      if (conc_sources_list.isSublist(name)) {
+        Teuchos::ParameterList& src_list = conc_sources_list.sublist(name);
+        std::string src_type = src_list.get<std::string>("spatial distribution method", "none");
+
+        if (src_type == "domain coupling") {
+          // domain couplings are special -- they always work on all components
           Teuchos::RCP<TransportDomainFunction> src =
-              factory.Create(spec, "sink", AmanziMesh::CELL, Kxy);
+              factory.Create(src_list, "fields", AmanziMesh::CELL, Kxy);
 
           for (int i = 0; i < component_names_.size(); i++){
             src->tcc_names().push_back(component_names_[i]);
@@ -470,37 +445,30 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
           srcs_.push_back(src);
 
         } else {
-          for (Teuchos::ParameterList::ConstIterator it1 = src_list.begin(); it1 != src_list.end(); ++it1) {
-            std::string specname = it1->first;
-            Teuchos::ParameterList& spec = src_list.sublist(specname);
-            Teuchos::RCP<TransportDomainFunction> src =
-              factory.Create(spec, "sink", AmanziMesh::CELL, Kxy);
-            std::vector<std::string> tcc = spec.get<Teuchos::Array<std::string>>("component names").toVector();
-            src->set_tcc_names(tcc);
-            // sets the default component name to be the parameterlist's name
-            if (src->tcc_names().size() == 0) {
-              src->tcc_names().push_back(name);
-            }
+          Teuchos::RCP<TransportDomainFunction> src =
+              factory.Create(src_list, "source function", AmanziMesh::CELL, Kxy);
 
-            // set the component indicies
-            for (const auto& n : src->tcc_names()) {
-              src->tcc_index().push_back(FindComponentNumber(n));
-            }
+          std::vector<std::string> tcc_names = src_list.get<Teuchos::Array<std::string>>("component names").toVector();
+          src->set_tcc_names(tcc_names);
 
-            src->set_state(S_);
-            srcs_.push_back(src);
+          // set the component indicies
+          for (const auto& n : src->tcc_names()) {
+            src->tcc_index().push_back(FindComponentNumber(n));
           }
+
+          src->set_state(S_);
+          srcs_.push_back(src);
         }
       }
     }
 
 #ifdef ALQUIMIA_ENABLED
     // -- try geochemical conditions
-    Teuchos::ParameterList& glist = tp_list_->sublist("source terms").sublist("geochemical");
+    Teuchos::ParameterList& geochem_list = plist_->sublist("source terms").sublist("geochemical");
 
-    for (auto it = glist.begin(); it != glist.end(); ++it) {
+    for (auto it = geochem_list.begin(); it != geochem_list.end(); ++it) {
       std::string specname = it->first;
-      Teuchos::ParameterList& spec = glist.sublist(specname);
+      Teuchos::ParameterList& spec = geochem_list.sublist(specname);
 
       Teuchos::RCP<TransportSourceFunction_Alquimia_Units>
           src = Teuchos::rcp(new TransportSourceFunction_Alquimia_Units(spec, mesh_, chem_pk_, chem_engine_));
@@ -520,8 +488,7 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
   // Temporarily Transport hosts Henry law.
   PrepareAirWaterPartitioning_();
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     *vo_->os() << "Number of components: " << tcc->size() << std::endl
                << "cfl=" << cfl_ << " spatial/temporal discretization: "
                << spatial_disc_order << " " << temporal_disc_order << std::endl;
@@ -540,10 +507,10 @@ void Transport_ATS::InitializeFields_(const Teuchos::Ptr<State>& S)
 
   // set popular default values when flow PK is off
   if (S->HasField(saturation_key_)) {
-    if (S->GetField(saturation_key_)->owner() == passwd_) {
-      if (!S->GetField(saturation_key_, passwd_)->initialized()) {
-        S->GetFieldData(saturation_key_, passwd_)->PutScalar(1.0);
-        S->GetField(saturation_key_, passwd_)->set_initialized();
+    if (S->GetField(saturation_key_)->owner() == name_) {
+      if (!S->GetField(saturation_key_, name_)->initialized()) {
+        S->GetFieldData(saturation_key_, name_)->PutScalar(1.0);
+        S->GetField(saturation_key_, name_)->set_initialized();
 
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
             *vo_->os() << "initilized saturation_liquid to value 1.0" << std::endl;
@@ -551,15 +518,10 @@ void Transport_ATS::InitializeFields_(const Teuchos::Ptr<State>& S)
       InitializeFieldFromField_(prev_saturation_key_, saturation_key_, S, true, true);
 
     } else {
-      if (S->GetField(prev_saturation_key_)->owner() == passwd_) {
-        if (!S->GetField(prev_saturation_key_, passwd_)->initialized()) {
-          // S->GetFieldData(prev_saturation_key_, passwd_)->PutScalar(1.0);
-          // S->GetField(prev_saturation_key_, passwd_)->set_initialized();
-          // if (S->HasFieldEvaluator(Keys::getKey(domain_,saturation_key_))){
-          //   S->GetFieldEvaluator(Keys::getKey(domain_,saturation_key_))->HasFieldChanged(S.ptr(), "transport");
-          // }
+      if (S->GetField(prev_saturation_key_)->owner() == name_) {
+        if (!S->GetField(prev_saturation_key_, name_)->initialized()) {
           InitializeFieldFromField_(prev_saturation_key_, saturation_key_, S, true, true);
-          S->GetField(prev_saturation_key_, passwd_)->set_initialized();
+          S->GetField(prev_saturation_key_, name_)->set_initialized();
 
           if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
             *vo_->os() << "initilized prev_saturation_liquid from saturation" << std::endl;
@@ -567,20 +529,10 @@ void Transport_ATS::InitializeFields_(const Teuchos::Ptr<State>& S)
       }
     }
   }
-
   InitializeFieldFromField_(tcc_matrix_key_, tcc_key_, S, false, false);
-
-  //InitializeFieldFromField_(flux_key_, darcy_flux_key_, S, false, false);
-
-  // if (vol_flux_conversion_){
-  //   vol_flux = S->GetFieldData(flux_key_, passwd_)->ViewComponent("face", true);
-  //   ComputeVolumeDarcyFlux(S->GetFieldData(darcy_flux_key_)->ViewComponent("face", true),
-  //                          S->GetFieldData(molar_density_key_)->ViewComponent("cell", true),
-  //                          vol_flux);
-  // }
-
-  S->GetFieldData(solid_residue_mass_key_, passwd_)->PutScalar(0.0);
-  S->GetField(solid_residue_mass_key_, passwd_)->set_initialized();
+  S->GetFieldData(solid_residue_mass_key_, name_)->PutScalar(0.0);
+  S->GetField(solid_residue_mass_key_, name_)->set_initialized();
+  S->GetField(conserve_qty_key_, name_)->set_initialized();
 }
 
 
@@ -594,20 +546,20 @@ void Transport_ATS::InitializeFieldFromField_(const std::string& field0,
                                                  bool overwrite)
 {
   if (S->HasField(field0)) {
-    if (S->GetField(field0)->owner() == passwd_) {
-      if ((!S->GetField(field0, passwd_)->initialized())||(overwrite)) {
+    if (S->GetField(field0)->owner() == name_) {
+      if ((!S->GetField(field0, name_)->initialized())||(overwrite)) {
         if (call_evaluator)
-            S->GetFieldEvaluator(field1)->HasFieldChanged(S.ptr(), passwd_);
+            S->GetFieldEvaluator(field1)->HasFieldChanged(S.ptr(), name_);
 
         const CompositeVector& f1 = *S->GetFieldData(field1);
-        CompositeVector& f0 = *S->GetFieldData(field0, passwd_);
+        CompositeVector& f0 = *S->GetFieldData(field0, name_);
 
         double vmin0, vmax0, vavg0;
         double vmin1, vmax1, vavg1;
 
         f0 = f1;
 
-        S->GetField(field0, passwd_)->set_initialized();
+        S->GetField(field0, name_)->set_initialized();
         if ((vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)&&(!overwrite)){
           *vo_->os() << "initiliazed " << field0 << " to " << field1 << std::endl;
         }
@@ -636,7 +588,7 @@ double Transport_ATS::StableTimeStep()
   Teuchos::RCP<Epetra_Map> cell_map = Teuchos::rcp(new Epetra_Map(mesh_->cell_map(false)));
   IdentifyUpwindCells();
 
-  tcc = S_inter_->GetFieldData(tcc_key_, passwd_);
+  tcc = S_inter_->GetFieldData(tcc_key_, name_);
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
 
   // loop over faces and accumulate upwinding fluxes
@@ -747,11 +699,6 @@ double Transport_ATS::get_dt()
   if (subcycling_) {
     return 1e+99;
   } else {
-    //  flux_ = S_next_->GetFieldData(flux_key_)->ViewComponent("face", true);
-    // *flux_copy_ = *flux_; // copy flux vector from S_next_ to S_;
-    // double norm = 0.;
-    // flux_->NormInf(&norm);
-    // *vo_->os()<< name()<<" "<<"flux is copied norm:"<<norm<<"\n";
     StableTimeStep();
     return dt_;
   }
@@ -768,16 +715,24 @@ bool Transport_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
   bool failed = false;
   double dt_MPC = t_new - t_old;
 
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_LOW))
+    *vo_->os() << "----------------------------------------------------------------" << std::endl
+               << "Advancing: t0 = " << S_inter_->time()
+               << " t1 = " << S_next_->time() << " h = " << dt_MPC << std::endl
+               << "----------------------------------------------------------------" << std::endl;
+
   flux_ = S_next_->GetFieldData(flux_key_)->ViewComponent("face", true);
   *flux_copy_ = *flux_; // copy flux vector from S_next_ to S_;
 
   ws_ = S_next_->GetFieldData(saturation_key_)->ViewComponent("cell", false);
   mol_dens_ = S_next_->GetFieldData(molar_density_key_)->ViewComponent("cell", false);
-  solid_qty_ = S_next_->GetFieldData(solid_residue_mass_key_, passwd_)->ViewComponent("cell", false);
+  solid_qty_ = S_next_->GetFieldData(solid_residue_mass_key_, name_)->ViewComponent("cell", false);
 
   // We use original tcc and make a copy of it later if needed.
-  tcc = S_inter_->GetFieldData(tcc_key_, passwd_);
+  tcc = S_inter_->GetFieldData(tcc_key_, name_);
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
+  db_->WriteVector("tcc_old", tcc.ptr());
 
   // calculate stable time step
   double dt_shift = 0.0, dt_global = dt_MPC;
@@ -819,18 +774,11 @@ bool Transport_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
     mol_dens_end = mol_dens_;
   }
 
+  db_->WriteVector("sat_old", S_inter_->GetFieldData(prev_saturation_key_).ptr());
   for (int c = 0; c < ncells_owned; c++) {
     double vol_phi_ws_den;
     vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_prev_)[0][c] * (*mol_dens_prev_)[0][c];
-    for (int i=0; i<num_aqueous + num_gaseous; i++){
-      mass_solutes_stepstart_[i] = tcc_prev[i][c] * vol_phi_ws_den;
-    }
-  }
-
-  for (int c = 0; c < ncells_owned; c++) {
-    double vol_phi_ws_den;
-    vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_prev_)[0][c] * (*mol_dens_prev_)[0][c];
-    for (int i=0; i<num_aqueous + num_gaseous; i++){
+    for (int i=0; i<num_aqueous + num_gaseous; i++) {
       mass_solutes_stepstart_[i] = tcc_prev[i][c] * vol_phi_ws_den;
     }
   }
@@ -840,15 +788,13 @@ bool Transport_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
     // update boundary conditions
     time = t_physics_ + dt_cycle / 2;
     for (int i = 0; i < bcs_.size(); i++){
-      bcs_[i]->Compute(time, time);
+      bcs_[i]->Compute(t_physics_, t_physics_+dt_cycle);
     }
 
     double dt_try = dt_MPC - dt_sum;
     double tol = 1e-10 * (dt_try + dt_stable);
     bool final_cycle = false;
 
-    // *vo_->os() <<std::setprecision(10)<<"dt_MPC "<<dt_MPC<<" dt_cycle "<<dt_cycle<<" dt_sum "<<dt_sum<<" dt_stable "<<
-    //   dt_stable<<" dt_try "<<dt_try<<" "<<dt_try - (dt_stable + tol)<<" tol "<<tol<<"\n";
     if (dt_try >= 2 * dt_stable) {
       dt_cycle = dt_stable;
     } else if (dt_try > dt_stable + tol) {
@@ -919,8 +865,7 @@ bool Transport_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // statistics output
   nsubcycles = ncycles;
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     *vo_->os() << ncycles << " sub-cycles, dt_stable=" << units_.OutputTime(dt_stable)
                << " [sec]  dt_MPC=" << units_.OutputTime(dt_MPC) << " [sec]" << std::endl;
 
@@ -954,16 +899,16 @@ void Transport_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new)
   }
 
   if (flag_dispersion_ || flag_diffusion) {
-    Teuchos::ParameterList& op_list =
-        tp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
-
+    // default boundary conditions (none inside domain and Neumann on its boundary)
     Teuchos::RCP<Operators::BCs> bc_dummy =
         Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
-
-    // default boundary conditions (none inside domain and Neumann on its boundary)
     auto& bc_model = bc_dummy->bc_model();
     auto& bc_value = bc_dummy->bc_value();
     PopulateBoundaryData(bc_model, bc_value, -1);
+
+    // diffusion operator
+    Teuchos::ParameterList& op_list = plist_->sublist("diffusion");
+    op_list.set("inverse", plist_->sublist("inverse"));
 
     Operators::PDE_DiffusionFactory opfactory;
     Teuchos::RCP<Operators::PDE_Diffusion> op1 = opfactory.Create(op_list, mesh_, bc_dummy);
@@ -1057,7 +1002,7 @@ void Transport_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new)
       }
     }
 
-    // Diffuse gaseous components. We ignore dispersion
+    // Diffuse aqueous components. We ignore dispersion
     // tensor (D is reset). Inactive cells (s[c] = 1 and D_[c] = 0)
     // are treated with a hack of the accumulation term.
     D_.clear();
@@ -1139,7 +1084,7 @@ void Transport_ATS::AddMultiscalePorosity_(
 {
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell");
   Epetra_MultiVector& tcc_matrix =
-     *S_inter_->GetFieldData("total_component_concentration_matrix", passwd_)->ViewComponent("cell");
+     *S_inter_->GetFieldData("total_component_concentration_matrix", name_)->ViewComponent("cell");
 
   const Epetra_MultiVector& wcf_prev = *S_inter_->GetFieldData("prev_water_content")->ViewComponent("cell");
   const Epetra_MultiVector& wcf = *S_inter_->GetFieldData("water_content")->ViewComponent("cell");
@@ -1153,7 +1098,7 @@ void Transport_ATS::AddMultiscalePorosity_(
   int nnodes(1);
   Teuchos::RCP<Epetra_MultiVector> tcc_matrix_aux;
   if (S_inter_->HasField("total_component_concentration_matrix_aux")) {
-    tcc_matrix_aux = S_inter_->GetFieldData("total_component_concentration_matrix_aux", passwd_)->ViewComponent("cell");
+    tcc_matrix_aux = S_inter_->GetFieldData("total_component_concentration_matrix_aux", name_)->ViewComponent("cell");
     nnodes = tcc_matrix_aux->NumVectors() + 1;
   }
   WhetStone::DenseVector tcc_m(nnodes);
@@ -1212,16 +1157,17 @@ void Transport_ATS::AddMultiscalePorosity_(
 ******************************************************************* */
 void Transport_ATS::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
-  Teuchos::RCP<CompositeVector> tcc;
-  tcc = S->GetFieldData(tcc_key_, passwd_);
-  *tcc = *tcc_tmp;
+  Teuchos::RCP<CompositeVector> tcc_vec_S = S->GetFieldData(tcc_key_, name_);
+  *tcc_vec_S = *tcc_tmp;
   InitializeFieldFromField_(prev_saturation_key_, saturation_key_, S.ptr(), false, true);
+  ChangedSolutionPK(S.ptr());
 
   // Copy to S_ as well
-  tcc = S->GetFieldData(tcc_key_, passwd_);
-  *tcc = *tcc_tmp;
-
-  ChangedSolutionPK(S.ptr());
+  //
+  // WHY?  is this required for subcycling?  this used to be S, which was a
+  // bug as it duplicates the above line of code. --etc
+  Teuchos::RCP<CompositeVector> tcc_vec_Sold = S_->GetFieldData(tcc_key_, name_);
+  *tcc_vec_Sold = *tcc_tmp;
 }
 
 
@@ -1240,19 +1186,22 @@ void Transport_ATS::AdvanceDonorUpwind(double dt_cycle)
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 
   // prepare conservative state in master and slave cells
-  double vol_phi_ws_den, tcc_flux;
   double mass_start = 0., tmp1, mass;
 
   // We advect only aqueous components.
   int num_advect = num_aqueous;
+  int num_components = tcc_next.NumVectors();
+  conserve_qty_->PutScalar(0.);
 
   for (int c = 0; c < ncells_owned; c++) {
-    vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_start)[0][c] * (*mol_dens_start)[0][c];
+    double vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_start)[0][c] * (*mol_dens_start)[0][c];
+    (*conserve_qty_)[num_components+1][c] = vol_phi_ws_den;
+
     for (int i = 0; i < num_advect; i++){
       (*conserve_qty_)[i][c] = tcc_prev[i][c] * vol_phi_ws_den;
 
-      if (dissolution_){
-        if (( (*ws_start)[0][c]  > water_tolerance_) && ((*solid_qty_)[i][c] > 0 )){  // Dissolve solid residual into liquid
+      if (dissolution_) {
+        if (( (*ws_start)[0][c]  > water_tolerance_) && ((*solid_qty_)[i][c] > 0 )) {  // Dissolve solid residual into liquid
           double add_mass = std::min((*solid_qty_)[i][c], max_tcc_* vol_phi_ws_den - (*conserve_qty_)[i][c]);
           (*solid_qty_)[i][c] -= add_mass;
           (*conserve_qty_)[i][c] += add_mass;
@@ -1263,6 +1212,7 @@ void Transport_ATS::AdvanceDonorUpwind(double dt_cycle)
     }
   }
 
+  db_->WriteCellVector("cons (start)", *conserve_qty_);
   tmp1 = mass_start;
   mesh_->get_comm()->SumAll(&tmp1, &mass_start, 1);
 
@@ -1270,31 +1220,38 @@ void Transport_ATS::AdvanceDonorUpwind(double dt_cycle)
   for (int f = 0; f < nfaces_wghost; f++) {  // loop over master and slave faces
     int c1 = (*upwind_cell_)[f];
     int c2 = (*downwind_cell_)[f];
-
     double u = fabs((*flux_)[0][f]);
 
     if (c1 >=0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
       for (int i = 0; i < num_advect; i++) {
-        tcc_flux = dt_ * u * tcc_prev[i][c1];
+        double tcc_flux = dt_ * u * tcc_prev[i][c1];
         (*conserve_qty_)[i][c1] -= tcc_flux;
         (*conserve_qty_)[i][c2] += tcc_flux;
       }
-
+      (*conserve_qty_)[num_components+1][c1] -= dt_ * u;
+      (*conserve_qty_)[num_components+1][c2] += dt_ * u;
     }
     else if (c1 >=0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
       for (int i = 0; i < num_advect; i++) {
-        tcc_flux = dt_ * u * tcc_prev[i][c1];
+        double tcc_flux = dt_ * u * tcc_prev[i][c1];
         (*conserve_qty_)[i][c1] -= tcc_flux;
         if (c2 < 0) mass_solutes_bc_[i] -= tcc_flux;
         //AmanziGeometry::Point normal = mesh_->face_normal(f);
       }
+      (*conserve_qty_)[num_components+1][c1] -= dt_ * u;
 
     } else if (c1 >= ncells_owned && c2 >= 0 && c2 < ncells_owned) {
       for (int i = 0; i < num_advect; i++) {
-        tcc_flux = dt_ * u * tcc_prev[i][c1];
+        double tcc_flux = dt_ * u * tcc_prev[i][c1];
         (*conserve_qty_)[i][c2] += tcc_flux;
       }
+      (*conserve_qty_)[num_components+1][c2] += dt_ * u;
 
+    } else if (c2 < 0 && c1 >= 0 && c1 < ncells_owned) {
+      (*conserve_qty_)[num_components+1][c1] -= dt_ * u;
+
+    } else if (c1 < 0 && c2 >= 0 && c2 < ncells_owned) {
+      (*conserve_qty_)[num_components+1][c2] += dt_ * u;
     }
   }
 
@@ -1307,12 +1264,14 @@ void Transport_ATS::AdvanceDonorUpwind(double dt_cycle)
       int f = it->first;
       std::vector<double>& values = it->second;
       int c2 = (*downwind_cell_)[f];
+      int c1 = (*upwind_cell_)[f];
+
+      double u = fabs((*flux_)[0][f]);
       if (c2 >= 0) {
-        double u = fabs((*flux_)[0][f]);
         for (int i = 0; i < ncomp; i++) {
           int k = tcc_index[i];
           if (k < num_advect) {
-            tcc_flux = dt_ * u * values[i];
+            double tcc_flux = dt_ * u * values[i];
             (*conserve_qty_)[k][c2] += tcc_flux;
             mass_solutes_bc_[k] += tcc_flux;
           }
@@ -1320,27 +1279,48 @@ void Transport_ATS::AdvanceDonorUpwind(double dt_cycle)
       }
     }
   }
+  db_->WriteCellVector("cons (adv)", *conserve_qty_);
 
   // process external sources
   if (srcs_.size() != 0) {
     double time = t_physics_;
     ComputeAddSourceTerms(time, dt_, *conserve_qty_, 0, num_advect - 1);
   }
+  db_->WriteCellVector("cons (src)", *conserve_qty_);
 
   // recover concentration from new conservative state
   for (int c = 0; c < ncells_owned; c++) {
-    vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_end)[0][c] * (*mol_dens_end)[0][c];
-    for (int i = 0; i < num_advect; i++) {
+    double water_new = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_end)[0][c] * (*mol_dens_end)[0][c];
+    double water_sink = (*conserve_qty_)[num_components][c]; // water at the new time + outgoing domain coupling source
+    double water_total = water_new + water_sink;
+    AMANZI_ASSERT(water_total >= water_new);
+    (*conserve_qty_)[num_components][c] = water_total;
 
-      if (vol_phi_ws_den > water_tolerance_ && (*conserve_qty_)[i][c] > 0) {
-        tcc_next[i][c] = (*conserve_qty_)[i][c] / vol_phi_ws_den;
-      }
-      else  {
+    // if (std::abs((*conserve_qty_)[num_components+1][c] - water_total) > water_tolerance_
+    //     && vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+    //   *vo_->os() << "Water balance error (cell " << c << "): " << std::endl
+    //              << "  water_old + advected = " << (*conserve_qty_)[num_components+1][c] << std::endl
+    //              << "  water_sink = " << water_sink << std::endl
+    //              << "  water_new = " << water_new << std::endl;
+    // }
+
+    for (int i = 0; i < num_advect; i++) {
+      if (water_new > water_tolerance_ && (*conserve_qty_)[i][c] > 0) {
+        // there is both water and stuff present at the new time
+        // this is stuff at the new time + stuff leaving through the domain coupling, divided by water of both
+        tcc_next[i][c] = (*conserve_qty_)[i][c] / water_total;
+      } else if (water_sink > water_tolerance_ && (*conserve_qty_)[i][c] > 0) {
+        // there is water and stuff leaving through the domain coupling, but it all leaves (none at the new time)
+        tcc_next[i][c] = 0.;
+      } else {
+        // there is no water leaving, and no water at the new time.  Change any stuff into solid
         (*solid_qty_)[i][c] += std::max((*conserve_qty_)[i][c], 0.);
+        (*conserve_qty_)[i][c] = 0.;
         tcc_next[i][c] = 0.;
       }
     }
   }
+  db_->WriteCellVector("tcc_new", tcc_next);
 
   double mass_final = 0;
   for (int c = 0; c < ncells_owned; c++) {
@@ -1355,41 +1335,11 @@ void Transport_ATS::AdvanceDonorUpwind(double dt_cycle)
   // update mass balance
   for (int i = 0; i < mass_solutes_exact_.size(); i++) {
     mass_solutes_exact_[i] += mass_solutes_source_[i] * dt_;
-
-    // if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
-    //   tmp1 = mass_solutes_bc_[i];
-    //   mesh_->get_comm()->SumAll(&tmp1, &mass_solutes_bc_[i], 1);
-    //   *vo_->os() << "*****************\n";
-    //   if (domain_name_ == "surface") *vo_->os()<<"Surface mass BC "<<mass_solutes_bc_[i]<<"\n";
-    //   else *vo_->os() <<"Subsurface mass BC "<<mass_solutes_bc_[i]<<"\n";
-    //   tmp1 = mass_solutes_source_[i];
-    //   mesh_->get_comm()->SumAll(&tmp1, &mass_solutes_source_[i], 1);
-    //   if (domain_name_ == "surface") *vo_->os()<<"Surface mass_solutes source "<<mass_solutes_source_[i]*dt_<<"\n";
-    //   else *vo_->os() << "Subsurface mass_solutes source "<<mass_solutes_source_[i]*dt_<<"\n";
-    //   *vo_->os() << "*****************\n";
-    // }
   }
 
   if (internal_tests) {
     VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
   }
-
-  // if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
-  //   if (domain_name_ == "surface")  *vo_->os()<<"Surface mass final "<<mass_final<<"\n";
-  //   else  *vo_->os()<<"Subsurface mass final "<<mass_final<<"\n";
-  // }
-
-  // if (domain_name_ == "surface")  {
-  //   Epetra_MultiVector& tcc_w_src_vec = *tcc_w_src->ViewComponent("cell");
-  //   *vo_->os()<<"Surface mass final\n";
-  //   std::cout<<" conserve_qty "<<" ws "<< "tcc "<< "tcc_w_src\n";
-  //   for (int c = 0; c < ncells_owned; c++)
-  //     std::cout<<(*conserve_qty_)[0][c]<<" "<<(*ws_end)[0][c]<<" "<<tcc_next[0][c]<<" "<<tcc_w_src_vec[0][c]<<"\n";
-  // }
-
-  // if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-  //   *vo_->os()<<"mass error "<<abs(mass_final - (mass_start + mass_solutes_bc_[0] + mass_solutes_source_[0]*dt_) )<<"\n";
-  //if (abs(mass_final - (mass_start + mass_solutes_bc_[0] + mass_solutes_source_[0]*dt_) )/mass_final > 1e-6) exit(-1);
 }
 
 
@@ -1406,49 +1356,73 @@ void Transport_ATS::AdvanceSecondOrderUpwindRK1(double dt_cycle)
 
   // work memory
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-  Epetra_Vector f_component(cmap_wghost);
 
   // distribute vector of concentrations
   S_inter_->GetFieldData(tcc_key_)->ScatterMasterToGhosted("cell");
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 
-
-  Epetra_Vector ws_ratio(Copy, *ws_start, 0);
-  for (int c = 0; c < ncells_owned; c++){
-    double vol_phi_ws_den_end = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_end)[0][c] * (*mol_dens_end)[0][c];
-    if (vol_phi_ws_den_end > water_tolerance_)  {
-      double vol_phi_ws_den_start = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_start)[0][c] * (*mol_dens_start)[0][c];
-      if (vol_phi_ws_den_start > water_tolerance_){
-        ws_ratio[c] = ( (*ws_start)[0][c] * (*mol_dens_start)[0][c] )
-                    / ( (*ws_end)[0][c]   * (*mol_dens_end)[0][c]   );
-      }else{
-        ws_ratio[c] = 1;
-      }
-    }
-    else  ws_ratio[c]=0.;
-  }
+  // Epetra_Vector ws_ratio(Copy, *ws_start, 0);
+  // for (int c = 0; c < ncells_owned; c++){
+  //   double vol_phi_ws_den_end = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_end)[0][c] * (*mol_dens_end)[0][c];
+  //   if (vol_phi_ws_den_end > water_tolerance_)  {
+  //     double vol_phi_ws_den_start = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_start)[0][c] * (*mol_dens_start)[0][c];
+  //     if (vol_phi_ws_den_start > water_tolerance_){
+  //       ws_ratio[c] = ( (*ws_start)[0][c] * (*mol_dens_start)[0][c] )
+  //                   / ( (*ws_end)[0][c]   * (*mol_dens_end)[0][c]   );
+  //     } else {
+  //       ws_ratio[c] = 1;
+  //     }
+  //   }
+  //   else  ws_ratio[c]=0.;
+  // }
 
   // We advect only aqueous components.
   int num_advect = num_aqueous;
+  int num_components = tcc_next.NumVectors();
+  conserve_qty_->PutScalar(0.);
+
+  // prepopulate with initial water for better debugging
+  for (int c = 0; c < ncells_owned; c++) {
+    double vol_phi_ws_den_start = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_start)[0][c] * (*mol_dens_start)[0][c];
+    (*conserve_qty_)[num_components+1][c] = vol_phi_ws_den_start;
+  }
 
   for (int i = 0; i < num_advect; i++) {
     current_component_ = i;  // needed by BJ
-
     double T = t_physics_;
     Epetra_Vector*& component = tcc_prev(i);
-    FunctionalTimeDerivative(T, *component, f_component);
+    FunctionalTimeDerivative(T, *component, *(*conserve_qty_)(i));
+  }
+  db_->WriteCellVector("cons (time_deriv)", *conserve_qty_);
 
-    for (int c = 0; c < ncells_owned; c++) {
-      tcc_next[i][c] = (tcc_prev[i][c] + dt_ * f_component[c]) * ws_ratio[c];
+  // calculate the new conc
+  for (int c = 0; c < ncells_owned; c++) {
+    double water_old = (*conserve_qty_)[num_components+1][c];
+    double water_new = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_end)[0][c] * (*mol_dens_end)[0][c];
+    double water_sink = (*conserve_qty_)[num_components][c];
+    double water_total = water_sink + water_new;
+    (*conserve_qty_)[num_components][c] = water_total;
 
-      if (tcc_next[i][c] < 0){
-        double vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_end)[0][c] * (*mol_dens_end)[0][c];
-        (*solid_qty_)[i][c] += abs(tcc_next[i][c])*vol_phi_ws_den;
+    for (int i=0; i!=num_components; ++i) {
+      double cons_qty = (tcc_prev[i][c] + dt_ * (*conserve_qty_)[i][c]) * water_old;
+      (*conserve_qty_)[i][c] = cons_qty;
+      if (water_new > water_tolerance_ && cons_qty > 0) {
+        // there is both water and stuff present at the new time
+        // this is stuff at the new time + stuff leaving through the domain coupling, divided by water of both
+        tcc_next[i][c] = cons_qty / water_total;
+      } else if (water_sink > water_tolerance_ && cons_qty > 0) {
+        // there is water and stuff leaving through the domain coupling, but it all leaves (none at the new time)
+        tcc_next[i][c] = 0.;
+      } else {
+        // there is no water leaving, and no water at the new time.  Change any stuff into solid
+        (*solid_qty_)[i][c] += std::max(cons_qty, 0.);
+        (*conserve_qty_)[i][c] = 0.;
         tcc_next[i][c] = 0.;
       }
     }
   }
+  db_->WriteCellVector("tcc_new", tcc_next);
 
   // update mass balance
   for (int i = 0; i < num_aqueous + num_gaseous; i++) {
@@ -1513,8 +1487,8 @@ void Transport_ATS::AdvanceSecondOrderUpwindRK2(double dt_cycle)
 
   tcc_tmp->ScatterMasterToGhosted("cell");
 
-  //if (domain_name_ == "surface") {
-  //*vo_->os()<<"after predictor ToTaL "<<domain_name_<<" :"<<std::setprecision(10)<<ComputeSolute( tcc_next, 0)<<"\n";
+  //if (domain_ == "surface") {
+  //*vo_->os()<<"after predictor ToTaL "<<domain_<<" :"<<std::setprecision(10)<<ComputeSolute( tcc_next, 0)<<"\n";
   //}
 
   // corrector step
@@ -1540,9 +1514,9 @@ void Transport_ATS::AdvanceSecondOrderUpwindRK2(double dt_cycle)
   // f_component2.Update(-1, f_component, 1.);
   // double diff_norm;
   // f_component2.NormInf(&diff_norm);
-  // *vo_->os()<<domain_name_<<" difference "<<diff_norm<<"\n";
-  //if (domain_name_ == "surface") {
-  //*vo_->os()<<"after corrector ToTaL "<<domain_name_<<" :"<<std::setprecision(10)<<ComputeSolute( tcc_next, 0)<<"\n";
+  // *vo_->os()<<domain_<<" difference "<<diff_norm<<"\n";
+  //if (domain_ == "surface") {
+  //*vo_->os()<<"after corrector ToTaL "<<domain_<<" :"<<std::setprecision(10)<<ComputeSolute( tcc_next, 0)<<"\n";
   //}
 
   // update mass balance
@@ -1620,6 +1594,10 @@ void Transport_ATS::ComputeAddSourceTerms(double tp, double dtp,
 
       if (c >= ncells_owned) continue;
 
+      if (srcs_[m]->name() == "domain coupling" && n0 == 0) {
+        (*conserve_qty_)[num_vectors-2][c] += values[num_vectors-2];
+      }
+
       for (int k = 0; k < tcc_index.size(); ++k) {
         int i = tcc_index[k];
         if (i < n0 || i > n1) continue;
@@ -1627,16 +1605,7 @@ void Transport_ATS::ComputeAddSourceTerms(double tp, double dtp,
         int imap = i;
         if (num_vectors == 1) imap = 0;
 
-        double value;
-        if (srcs_[m]->name() == "domain coupling") {
-          value = values[k];
-        } else {
-          value =  mesh_->cell_volume(c) * values[k];
-          // correction for non-SI concentration units
-          // if (srcs_[m]->name() == "volume" || srcs_[m]->name() == "weight")
-          //     value /= units_.concentration_factor();
-        }
-
+        double value = mesh_->cell_volume(c) * values[k];
         cons_qty[imap][c] += dtp * value;
         mass_solutes_source_[i] += value;
       }
@@ -1645,101 +1614,13 @@ void Transport_ATS::ComputeAddSourceTerms(double tp, double dtp,
 }
 
 
-/* ******************************************************************
-*
-*
-*
-****************************************************************** */
-void Transport_ATS::MixingSolutesWthSources(double told, double tnew)
-
-{
-
-  if (!special_source_) return;
-
-  Key mass_source_key =  Keys::readKey(*tp_list_, domain_name_, "water source", "mass_source");
-  if (!S_->HasFieldEvaluator(mass_source_key)) return;
-
-  const Epetra_MultiVector& water_source =
-    *S_->GetFieldData(mass_source_key)->ViewComponent("cell",false);
-
-  Teuchos::RCP<const Epetra_MultiVector> nliq1_s;
-
-  if (water_source_in_meters_) {
-      // External source term is in [m water / s], not in [mols / s], so a
-      // density is required.  This density should be upwinded.
-    nliq1_s =
-      S_->GetFieldData(Keys::getKey(domain_name_,"source_molar_density"))->ViewComponent("cell",false);
-  }
-
-  const Epetra_MultiVector& tcc_prev_vec = *tcc->ViewComponent("cell");
-  Epetra_MultiVector& tcc_w_src_vec = *tcc_w_src->ViewComponent("cell");
-  int num_vectors = tcc_w_src_vec.NumVectors();
-  int nsrcs = srcs_.size();
-  double dt = (tnew - told);
-
-  for (int m = 0; m < nsrcs; m++) {
-
-    srcs_[m]->Compute(told, tnew);
-
-    std::vector<int> index = srcs_[m]->tcc_index();
-    for (auto it = srcs_[m]->begin(); it != srcs_[m]->end(); ++it) {
-
-      if (srcs_[m]->name() == "domain coupling") continue;
-
-      int c = it->first;
-      if (c >= ncells_owned) continue;
-
-      std::vector<double>& values = it->second;
-      double vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_prev_)[0][c] * (*mol_dens_prev_)[0][c];
-      double add_water = 0.;
-
-      if (water_source_in_meters_) {
-        double s1 = water_source[0][c] > 0. ? water_source[0][c] * (*nliq1_s)[0][c] : 0.;
-        add_water = mesh_->cell_volume(c) * s1 * dt;
-      } else {
-        double s1 =  water_source[0][c] > 0. ? water_source[0][c] : 0.;
-        add_water = mesh_->cell_volume(c) * s1 * dt;
-      }
-
-      for (int k = 0; k < index.size(); ++k) {
-        int i = index[k];
-
-        int imap = i;
-        if (num_vectors == 1) imap = 0;
-
-        double tcc_src_value =  mesh_->cell_volume(c) * values[k] * (tnew - told);
-        double consv_qty = tcc_prev_vec[imap][c]*vol_phi_ws_den + tcc_src_value;
-
-        if (vol_phi_ws_den + add_water > water_tolerance_){
-          tcc_w_src_vec[imap][c] = consv_qty/(vol_phi_ws_den + add_water);
-        }else{
-          // if (vo_->getVerbLevel() > Teuchos::VERB_HIGH) {
-          //   Teuchos::OSTab tab = vo_->getOSTab();
-          //   *vo_->os() << vo_->color("yellow") << "No liquid phase in the sources. No mixing occured." << vo_->reset() << std::endl;
-          // }
-        }
-      }
-    }
-  }
-
-  // for (int c = 0; c < ncells_owned; c++) {
-  //   mass2 += tcc[0][c];
-  // }
-  // tmp1 = mass2;
-  // mesh_->get_comm()->SumAll(&tmp1, &mass2, 1);
-  // tmp1 = add_mass;
-  // mesh_->get_comm()->SumAll(&tmp1, &add_mass, 1);
-
-
-}
-
-void Transport_ATS::Sinks2TotalOutFlux(Epetra_MultiVector& tcc,
+void Transport_ATS::Sinks2TotalOutFlux(Epetra_MultiVector& tcc_c,
                                           std::vector<double>& total_outflux, int n0, int n1){
 
   std::vector<double> sink_add(ncells_wghost, 0.0);
   //Assumption that there is only one sink per component per cell
   double t0 = S_inter_->intermediate_time();
-  int num_vectors = tcc.NumVectors();
+  int num_vectors = tcc_c.NumVectors();
   int nsrcs = srcs_.size();
   Key coupled_flux_key = "surface-surface_subsurface_flux";
 
@@ -1759,12 +1640,13 @@ void Transport_ATS::Sinks2TotalOutFlux(Epetra_MultiVector& tcc,
         int imap = i;
         if (num_vectors == 1) imap = 0;
 
-        if ((values[k] < 0)&&(tcc[imap][c]>1e-16)) {
+        if ((values[k] < 0) && (tcc_c[imap][c] > 1e-16)) {
           if (srcs_[m]->name() == "domain coupling") {
-            //val = std::max(val, fabs(values[k])/tcc[imap][c]);
+            //val = std::max(val, fabs(values[k])/tcc_c[imap][c]);
             //val = std::max(val, fabs(values[k]));
-            const Epetra_MultiVector& flux_interface_ = *S_next_->GetFieldData(coupled_flux_key)->ViewComponent("cell", false);
-	    val = std::max(val, fabs(flux_interface_[0][c]));
+            const Epetra_MultiVector& flux_interface_ =
+              *S_next_->GetFieldData(coupled_flux_key)->ViewComponent("cell", false);
+            val = std::max(val, fabs(flux_interface_[0][c]));
           }
         }
       }
@@ -1828,11 +1710,10 @@ void Transport_ATS::IdentifyUpwindCells()
   for (int f = 0; f < nfaces_wghost; f++) {
     (*upwind_cell_)[f] = -1;  // negative value indicates boundary
     (*downwind_cell_)[f] = -1;
+  }
 
-    }
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
-
   for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
@@ -1857,7 +1738,6 @@ void Transport_ATS::ComputeVolumeDarcyFlux(Teuchos::RCP<const Epetra_MultiVector
                                               Teuchos::RCP<const Epetra_MultiVector> molar_density,
                                               Teuchos::RCP<Epetra_MultiVector>& vol_darcy_flux)
 {
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   AmanziMesh::Entity_ID_List cells;
 
   for (int f = 0; f < nfaces_wghost ; f++){
