@@ -9,15 +9,15 @@
 add_subdirectory(constitutive_relations)
 
 # ATS include directories
-include_directories(${ATS_SOURCE_DIR}/pks)
-include_directories(${ATS_SOURCE_DIR}/operators/advection)
-include_directories(${ATS_SOURCE_DIR}/operators/upwinding)
-include_directories(${ATS_SOURCE_DIR}/pks/lake_thermo/constitutive_relations/density)
-include_directories(${ATS_SOURCE_DIR}/pks/lake_thermo/constitutive_relations/energy)
-include_directories(${ATS_SOURCE_DIR}/pks/lake_thermo/constitutive_relations/enthalpy)
-include_directories(${ATS_SOURCE_DIR}/pks/lake_thermo/constitutive_relations/thermal_conductivity)
-include_directories(${ATS_SOURCE_DIR}/pks/lake_thermo/constitutive_relations/heat_flux_bc)
-include_directories(${ATS_SOURCE_DIR}/constitutive_relations/eos)
+include_directories(${ATS_SOURCE_DIR}/src/pks)
+include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
+include_directories(${ATS_SOURCE_DIR}/src/operators/upwinding)
+include_directories(${ATS_SOURCE_DIR}/src/pks/lake_thermo/constitutive_relations/density)
+include_directories(${ATS_SOURCE_DIR}/src/pks/lake_thermo/constitutive_relations/energy)
+include_directories(${ATS_SOURCE_DIR}/src/pks/lake_thermo/constitutive_relations/enthalpy)
+include_directories(${ATS_SOURCE_DIR}/src/pks/lake_thermo/constitutive_relations/thermal_conductivity)
+include_directories(${ATS_SOURCE_DIR}/src/pks/lake_thermo/constitutive_relations/heat_flux_bc)
+include_directories(${ATS_SOURCE_DIR}/src/constitutive_relations/eos)
 
 
 set(ats_lake_src_files

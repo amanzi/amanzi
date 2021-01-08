@@ -889,10 +889,10 @@ bool Lake_Thermo_PK::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0
   bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditions_(S_next_.ptr());
   
-  // push Dirichlet data into predictor
-  if (u->Data()->HasComponent("boundary_cell")) {
-    ApplyBoundaryConditions_(u->Data().ptr());
-  }
+//  // push Dirichlet data into predictor
+//  if (u->Data()->HasComponent("boundary_cell")) {
+//    ApplyBoundaryConditions_(u->Data().ptr());
+//  }
 
   bool modified = false;
   if (modify_predictor_for_freezing_) {
