@@ -29,6 +29,7 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 
 #include "TimeStepManager.hh"
 #include "Visualization.hh"
+#include "VisualizationDomainSet.hh"
 #include "Checkpoint.hh"
 #include "UnstructuredObservations.hh"
 #include "State.hh"
@@ -156,7 +157,7 @@ void Coordinator::initialize() {
   // Restart from checkpoint part 2:
   // -- load all other data
   if (restart_) {
-    ReadCheckpoint(*S_, restart_filename_);
+    Amanzi::ReadCheckpoint(*S_, restart_filename_);
     t0_ = S_->time();
     cycle0_ = S_->cycle();
 
@@ -210,22 +211,36 @@ void Coordinator::initialize() {
 
       visualization_.push_back(vis);
 
-    } else if (boost::ends_with(domain_name, "_*")) {
+    } else if (Amanzi::Keys::isDomainSet(domain_name)) {
       // visualize domain set
-      std::string domain_set_name = domain_name.substr(0,domain_name.size()-2);
-      for (auto m=S_->mesh_begin(); m!=S_->mesh_end(); ++m) {
-        if (boost::starts_with(m->first, domain_set_name)) {
-          // visualize each subdomain
-          Teuchos::ParameterList sublist = vis_list->sublist(domain_name);
-          sublist.set<std::string>("file name base", std::string("ats_vis_")+m->first);
+      const auto& dset = S_->GetDomainSet(Amanzi::Keys::getDomainSetName(domain_name));
+      auto sublist_p = Teuchos::sublist(vis_list, domain_name);
+
+      if (sublist_p->get("visualize individually", false)) {
+        // visualize each subdomain
+        for (const auto& name_id : *dset) {
+          Teuchos::ParameterList sublist = vis_list->sublist(name_id.first);
+          sublist.set<std::string>("file name base", std::string("ats_vis_")+name_id.first);
           auto vis = Teuchos::rcp(new Amanzi::Visualization(sublist));
-          vis->set_name(m->first);
-          vis->set_mesh(m->second.first);
+          vis->set_name(name_id.first);
+          vis->set_mesh(S_->GetMesh(name_id.first));
           vis->CreateFiles(false);
           visualization_.push_back(vis);
         }
+      } else {
+        // visualize collectively
+        auto domain_name_base = Amanzi::Keys::getDomainSetName(domain_name);
+        if (!sublist_p->isParameter("file name base"))
+          sublist_p->set("file name base", std::string("ats_vis_")+domain_name_base);
+        auto vis = Teuchos::rcp(new Amanzi::VisualizationDomainSet(*sublist_p));
+        vis->set_name(domain_name_base);
+        vis->set_mesh(dset->parent);
+        for (const auto& name_id : *dset) {
+          vis->set_subdomain_mesh(name_id.first, S_->GetMesh(name_id.first));
+        }
+        vis->CreateFiles(false);
+        visualization_.push_back(vis);
       }
-
     }
   }
 

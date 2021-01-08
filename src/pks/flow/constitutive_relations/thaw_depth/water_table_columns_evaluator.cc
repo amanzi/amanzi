@@ -7,14 +7,12 @@
   Authors: Ahmad Jan (jana@ornl.gov)
 */
 
-#include "water_table_evaluator.hh"
+#include "water_table_columns_evaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-
-
-WaterTableEvaluator::WaterTableEvaluator(Teuchos::ParameterList& plist)
+WaterTableColumnsEvaluator::WaterTableColumnsEvaluator(Teuchos::ParameterList& plist)
     : SecondaryVariableFieldEvaluator(plist)
 {
   domain_ = Keys::getDomain(my_key_);
@@ -40,7 +38,7 @@ WaterTableEvaluator::WaterTableEvaluator(Teuchos::ParameterList& plist)
 }
   
 
-WaterTableEvaluator::WaterTableEvaluator(const WaterTableEvaluator& other)
+WaterTableColumnsEvaluator::WaterTableColumnsEvaluator(const WaterTableColumnsEvaluator& other)
   : SecondaryVariableFieldEvaluator(other),
     temp_key_(other.temp_key_),
     sat_key_(other.sat_key_),
@@ -48,14 +46,14 @@ WaterTableEvaluator::WaterTableEvaluator(const WaterTableEvaluator& other)
 {}
   
 Teuchos::RCP<FieldEvaluator>
-WaterTableEvaluator::Clone() const
+WaterTableColumnsEvaluator::Clone() const
 {
-  return Teuchos::rcp(new WaterTableEvaluator(*this));
+  return Teuchos::rcp(new WaterTableColumnsEvaluator(*this));
 }
 
 
 void
-WaterTableEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
+WaterTableColumnsEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 { 
   Epetra_MultiVector& res_c = *result->ViewComponent("cell",false);
@@ -95,14 +93,14 @@ WaterTableEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 }
   
 void
-WaterTableEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
+WaterTableColumnsEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
                Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {}
 
  
 // Custom EnsureCompatibility forces this to be updated once.
 bool
-WaterTableEvaluator::HasFieldChanged(const Teuchos::Ptr<State>& S,
+WaterTableColumnsEvaluator::HasFieldChanged(const Teuchos::Ptr<State>& S,
         Key request)
 {
   bool changed = SecondaryVariableFieldEvaluator::HasFieldChanged(S,request);
@@ -116,7 +114,7 @@ WaterTableEvaluator::HasFieldChanged(const Teuchos::Ptr<State>& S,
 }
 
 void
-WaterTableEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
+WaterTableColumnsEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
 {
 
   AMANZI_ASSERT(my_key_ != std::string(""));

@@ -32,10 +32,16 @@ void
 createMesh(Teuchos::ParameterList& mesh_plist,
            const Amanzi::Comm_ptr_type& comm,
            const Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel>& gm,
-           Amanzi::State& S)
+           Amanzi::State& S,
+           Amanzi::VerboseObject& vo)
 {
   auto mesh_type = mesh_plist.get<std::string>("mesh type");
   auto mesh_name = Amanzi::Keys::cleanPListName(mesh_plist.name());
+
+  auto tab = vo.getOSTab();
+  if (vo.os_OK(Teuchos::VERB_HIGH)) {
+    *vo.os() << "Creating mesh \"" << mesh_name << "\" of type \"" << mesh_type << "\"." << std::endl;
+  }
 
   if (mesh_type == "read mesh file") {
     // from file
@@ -77,12 +83,17 @@ createMesh(Teuchos::ParameterList& mesh_plist,
     if (mesh_plist.isParameter("build columns from set")) {
       std::string regionname = mesh_plist.get<std::string>("build columns from set");
       mesh->build_columns(regionname);
+    } else if (mesh_plist.get("build columns", false)) {
+      mesh->build_columns();
     }
 
     bool deformable = mesh_plist.get<bool>("deformable mesh",false);
 
     checkVerifyMesh(mesh_plist, mesh);
     S.RegisterMesh(mesh_name, mesh, deformable);
+    if (vo.os_OK(Teuchos::VERB_HIGH)) {
+      *vo.os() << "  Registered mesh \"" << mesh_name << "\"." << std::endl;
+    }
 
   } else if (mesh_type == "generate mesh") {
     // generated mesh
@@ -105,6 +116,9 @@ createMesh(Teuchos::ParameterList& mesh_plist,
     checkVerifyMesh(mesh_plist, mesh);
     std::string name = mesh_plist.name();
     S.RegisterMesh(mesh_name, mesh, deformable);
+    if (vo.os_OK(Teuchos::VERB_HIGH)) {
+      *vo.os() << "  Registered mesh \"" << mesh_name << "\"." << std::endl;
+    }
 
   } else if (mesh_type == "logical mesh") {
     // -- from logical mesh file
@@ -122,6 +136,9 @@ createMesh(Teuchos::ParameterList& mesh_plist,
 
     checkVerifyMesh(mesh_plist, mesh);
     S.RegisterMesh(mesh_name, mesh, deformable);
+    if (vo.os_OK(Teuchos::VERB_HIGH)) {
+      *vo.os() << "  Registered mesh \"" << mesh_name << "\"." << std::endl;
+    }
 
   } else if (mesh_type == "aliased") {
     S.AliasMesh(mesh_plist.sublist("aliased parameters").get<std::string>("alias"), mesh_name);
@@ -132,7 +149,11 @@ createMesh(Teuchos::ParameterList& mesh_plist,
     if (surface_plist.isParameter("surface sideset name")) {
       setnames.push_back(surface_plist.get<std::string>("surface sideset name"));
     } else if (surface_plist.isParameter("surface sideset names")) {
-      setnames = surface_plist.get<Teuchos::Array<std::string> >("surface sideset names").toVector();
+      setnames = surface_plist.get<Teuchos::Array<std::string>>("surface sideset names").toVector();
+    } else if (surface_plist.isParameter("region")) {
+      setnames.push_back(surface_plist.get<std::string>("region"));
+    } else if (surface_plist.isParameter("regions")) {
+      setnames = surface_plist.get<Teuchos::Array<std::string>>("regions").toVector();
     } else {
       Errors::Message message("Surface mesh sublist missing parameter \"surface sideset names\".");
       Exceptions::amanzi_throw(message);
@@ -142,29 +163,108 @@ createMesh(Teuchos::ParameterList& mesh_plist,
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> surface_mesh = Teuchos::null;
 
     auto surface_plist_rcp = Teuchos::rcp(new Teuchos::ParameterList(surface_plist));
+
     // create the MSTK factory
     Amanzi::AmanziMesh::MeshFactory factory(comm, gm, surface_plist_rcp);
-    // Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
-    // prefs.clear();
-    // prefs.push_back(Amanzi::AmanziMesh::MSTK);
 
-    auto parent = S.GetMesh(surface_plist.get<std::string>("parent domain", "domain"));
+    // find the parent mesh
+    auto parent_name = surface_plist.get<std::string>("parent domain", "domain");
+    if (Amanzi::Keys::isDomainSet(parent_name)) {
+      Amanzi::KeyTriple dset_parent;
+      Amanzi::Keys::splitDomainSet(parent_name, dset_parent);
+      Amanzi::KeyTriple dset;
+      Amanzi::Keys::splitDomainSet(mesh_name, dset);
+      parent_name = Amanzi::Keys::getDomainInSet(std::get<0>(dset_parent), std::get<1>(dset));
+    }
+    if (vo.os_OK(Teuchos::VERB_HIGH)) {
+      *vo.os() << "  extracted from \"" << parent_name << "\"." << std::endl;
+    }
+    auto parent = S.GetMesh(parent_name);
+
+    // construct a 3D submanifold mesh if needed and the flattened surface mesh
     if (parent->manifold_dimension() == 3) {
       surface3D_mesh = factory.create(parent,setnames,Amanzi::AmanziMesh::FACE,false,true,false);
       surface_mesh = factory.create(parent,setnames,Amanzi::AmanziMesh::FACE,true,true,false);
     } else {
       surface_mesh = factory.create(parent,setnames,Amanzi::AmanziMesh::CELL,true,true,false);
     }
-    bool deformable = mesh_plist.get<bool>("deformable mesh",false);
 
-    if (surface3D_mesh.get()) {
-      S.RegisterMesh(Amanzi::Keys::cleanPListName(mesh_plist.name())+"_3d", surface3D_mesh, deformable);
-    } else {
-      S.AliasMesh(surface_plist.get<std::string>("parent domain", "domain"),
-                  Amanzi::Keys::cleanPListName(mesh_plist.name())+"_3d");
+    // register wiht state
+    if (surface_mesh != Teuchos::null) {
+      bool deformable = mesh_plist.get<bool>("deformable mesh",false);
+
+      if (surface3D_mesh.get()) {
+        std::string mesh3d_name = Amanzi::Keys::cleanPListName(mesh_plist.name())+"_3d";
+        S.RegisterMesh(mesh3d_name, surface3D_mesh, deformable);
+        if (vo.os_OK(Teuchos::VERB_HIGH)) {
+          *vo.os() << "  Registered mesh \"" << mesh3d_name << "\"." << std::endl;
+        }
+      } else {
+        std::string mesh3d_name = Amanzi::Keys::cleanPListName(mesh_plist.name())+"_3d";
+        S.AliasMesh(surface_plist.get<std::string>("parent domain", "domain"), mesh3d_name);
+        if (vo.os_OK(Teuchos::VERB_HIGH)) {
+          *vo.os() << "  Aliased mesh \"" << mesh3d_name << "\"." << std::endl;
+        }
+      }
+      checkVerifyMesh(mesh_plist, surface_mesh);
+      S.RegisterMesh(mesh_name, surface_mesh, deformable);
+      if (vo.os_OK(Teuchos::VERB_HIGH)) {
+        *vo.os() << "  Registered mesh \"" << mesh_name << "\"." << std::endl;
+      }
     }
-    checkVerifyMesh(mesh_plist, surface_mesh);
-    S.RegisterMesh(mesh_name, surface_mesh, deformable);
+
+  } else if (mesh_type == "extracted subset") {
+    Teuchos::ParameterList& extracted_plist = mesh_plist.sublist("extracted subset parameters");
+    std::vector<std::string> setnames;
+    if (extracted_plist.isParameter("region")) {
+      setnames.push_back(extracted_plist.get<std::string>("region"));
+    } else if (extracted_plist.isParameter("regions")) {
+      setnames = extracted_plist.get<Teuchos::Array<std::string> >("regions").toVector();
+    } else {
+      Errors::Message message("extracted subset mesh sublist missing parameter \"regions\".");
+      Exceptions::amanzi_throw(message);
+    }
+
+    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> extracted_mesh = Teuchos::null;
+
+    auto extracted_plist_rcp = Teuchos::rcp(new Teuchos::ParameterList(extracted_plist));
+
+    // create the MSTK factory
+    Amanzi::AmanziMesh::MeshFactory factory(comm, gm, extracted_plist_rcp);
+
+    // get the parent mesh
+    auto parent_name = extracted_plist.get<std::string>("parent domain", "domain");
+    if (Amanzi::Keys::isDomainSet(parent_name)) {
+      Amanzi::KeyTriple dset_parent;
+      Amanzi::Keys::splitDomainSet(parent_name, dset_parent);
+      Amanzi::KeyTriple dset;
+      Amanzi::Keys::splitDomainSet(mesh_name, dset);
+      parent_name = Amanzi::Keys::getDomainInSet(std::get<0>(dset_parent), std::get<1>(dset));
+    }
+    if (vo.os_OK(Teuchos::VERB_HIGH)) {
+      *vo.os() << "  extracted from \"" << parent_name << "\"." << std::endl;
+    }
+    auto parent = S.GetMesh(parent_name);
+
+    // construct the extracted mesh
+    extracted_mesh = factory.create(parent,setnames,Amanzi::AmanziMesh::CELL,false,true,false);
+
+    // register with state
+    if (extracted_mesh != Teuchos::null) {
+      if (mesh_plist.isParameter("build columns from set")) {
+        std::string regionname = mesh_plist.get<std::string>("build columns from set");
+        extracted_mesh->build_columns(regionname);
+      } else if (mesh_plist.get("build columns", false)) {
+        extracted_mesh->build_columns();
+      }
+
+      bool deformable = mesh_plist.get<bool>("deformable mesh",false);
+      checkVerifyMesh(mesh_plist, extracted_mesh);
+      S.RegisterMesh(mesh_name, extracted_mesh, deformable);
+      if (vo.os_OK(Teuchos::VERB_HIGH)) {
+        *vo.os() << "  Registered mesh \"" << mesh_name << "\"." << std::endl;
+      }
+    }
 
   } else if (mesh_type == "column") {
     Teuchos::ParameterList& column_list = mesh_plist.sublist("column parameters");
@@ -175,6 +275,9 @@ createMesh(Teuchos::ParameterList& mesh_plist,
 
     checkVerifyMesh(mesh_plist, mesh);
     S.RegisterMesh(mesh_name, mesh, deformable);
+    if (vo.os_OK(Teuchos::VERB_HIGH)) {
+      *vo.os() << "  Registered mesh \"" << mesh_name << "\"." << std::endl;
+    }
 
   } else if (mesh_type == "column surface") {
     Teuchos::ParameterList& column_list = mesh_plist.sublist("column surface parameters");
@@ -189,44 +292,73 @@ createMesh(Teuchos::ParameterList& mesh_plist,
 
     checkVerifyMesh(mesh_plist, mesh);
     S.RegisterMesh(mesh_name, mesh, deformable);
+    if (vo.os_OK(Teuchos::VERB_HIGH)) {
+      *vo.os() << "  Registered mesh \"" << mesh_name << "\"." << std::endl;
+    }
 
   } else if (mesh_type == "domain set") {
-    if (Amanzi::Keys::ends_with(mesh_name, "_*")) mesh_name = mesh_name.substr(0,mesh_name.length()-2);
+    std::string delim(1, Amanzi::Keys::dset_delimiter);
+    if (Amanzi::Keys::ends_with(mesh_name, delim+"*")) mesh_name = mesh_name.substr(0,mesh_name.length()-2);
 
     Teuchos::ParameterList& ds_list = mesh_plist.sublist("domain set parameters");
     auto parent_mesh_name = ds_list.get<std::string>("parent domain");
     auto parent_mesh = S.GetMesh(parent_mesh_name);
-    auto entity_sets = ds_list.get<Teuchos::Array<std::string>>("entity set names").toVector();
+
+    // two ways to index a domain set -- by a collection of entities or by a
+    // collection of regions
+    auto regions = ds_list.get<Teuchos::Array<std::string>>("regions").toVector();
+    std::vector<std::string> region_aliases(regions);
+    if (ds_list.isParameter("region aliases"))
+      region_aliases = ds_list.get<Teuchos::Array<std::string>>("region aliases").toVector();
     auto entity_kind = Amanzi::AmanziMesh::entity_kind(ds_list.get<std::string>("entity kind"));
-    auto ds = Teuchos::rcp(new Amanzi::AmanziMesh::DomainSet(parent_mesh, entity_sets,
-            entity_kind, mesh_name));
+    bool by_region = ds_list.get<bool>("by region", false); // otherwise one per entity id
+    auto ds = Teuchos::rcp(new Amanzi::AmanziMesh::DomainSet(parent_mesh, regions,
+            entity_kind, mesh_name, by_region, &region_aliases));
+
+    // collection of entities
     S.RegisterDomainSet(mesh_name, ds);
 
     // a flyweight allows each subgrid model to share (topologically and
     // geometrically) identical meshes.
     bool flyweight = ds_list.get<bool>("flyweight mesh", false);
 
-    // for each id in the regions of the parent mesh on entity, create a
-    // subgrid mesh on MPI_COMM_SELF
-    auto comm_self = Amanzi::getCommSelf();
+    // comms for id-based ds are comm_self, otherwise the comm will get set on
+    // extraction
+    Amanzi::Comm_ptr_type subdomain_comm;
+    if (by_region) {
+      subdomain_comm = parent_mesh->get_comm();
+    } else {
+      subdomain_comm = Amanzi::getCommSelf();
+    }
 
+    // for each region, create a subgrid mesh, extracted from the parent
     for (auto name_id : *ds) {
       Teuchos::ParameterList subgrid_i_list;
       if (ds_list.isSublist(name_id.first)) {
         subgrid_i_list = ds_list.sublist(name_id.first);
       } else {
-        subgrid_i_list = ds_list.sublist(mesh_name+"_*");
+        subgrid_i_list = ds_list.sublist(Amanzi::Keys::getDomainInSet(mesh_name, "*"));
       }
       subgrid_i_list.setName(name_id.first);
       auto& subgrid_i_param_list =
-          subgrid_i_list.sublist(subgrid_i_list.get<std::string>("mesh type")+" parameters");
-      if (!subgrid_i_param_list.isParameter("entity LID"))
-        subgrid_i_param_list.set("entity LID", name_id.second);
-      if (!subgrid_i_param_list.isParameter("entity kind"))
-        subgrid_i_param_list.set("entity kind", Amanzi::AmanziMesh::entity_kind_string(ds->kind));
-      if (!subgrid_i_param_list.isParameter("parent domain"))
-        subgrid_i_param_list.set("parent domain", parent_mesh_name);
-      createMesh(subgrid_i_list, comm_self, gm, S);
+        subgrid_i_list.sublist(subgrid_i_list.get<std::string>("mesh type")+" parameters");
+      if (by_region) {
+        if (!subgrid_i_param_list.isParameter("region")) {
+          std::string region_name = ds->get_region(name_id.second);
+          subgrid_i_param_list.set<std::string>("region", region_name);
+        }
+        if (!subgrid_i_param_list.isParameter("parent domain"))
+          subgrid_i_param_list.set("parent domain", parent_mesh_name);
+
+      } else {
+        if (!subgrid_i_param_list.isParameter("entity LID"))
+          subgrid_i_param_list.set("entity LID", name_id.second);
+        if (!subgrid_i_param_list.isParameter("entity kind"))
+          subgrid_i_param_list.set("entity kind", Amanzi::AmanziMesh::entity_kind_string(ds->kind));
+        if (!subgrid_i_param_list.isParameter("parent domain"))
+          subgrid_i_param_list.set("parent domain", parent_mesh_name);
+      }
+      createMesh(subgrid_i_list, subdomain_comm, gm, S, vo);
     }
 
   } else if (mesh_type == "Sperry 1D column") {
@@ -305,22 +437,25 @@ createMeshes(Teuchos::ParameterList& global_list,
   Teuchos::TimeMonitor timer(*volmeshtime);
 
   Teuchos::ParameterList& meshes_list = global_list.sublist("mesh");
+  Amanzi::VerboseObject vo(comm, "ATS Mesh Factory", meshes_list);
 
   // always try to do the domain mesh first
   if (meshes_list.isSublist("domain")) {
-    createMesh(meshes_list.sublist("domain"), comm, gm, S);
+    createMesh(meshes_list.sublist("domain"), comm, gm, S, vo);
   }
 
   // always try to do the surface mesh second
   if (meshes_list.isSublist("surface")) {
-    createMesh(meshes_list.sublist("surface"), comm, gm, S);
+    createMesh(meshes_list.sublist("surface"), comm, gm, S, vo);
   }
 
   // now do the rest
   for (auto sublist : meshes_list) {
-    if (sublist.first != "domain" && sublist.first != "surface" &&
+    if (sublist.first != "domain" &&
+        sublist.first != "surface" &&
+        sublist.first != "verbose object" &&
         meshes_list.isSublist(sublist.first)) {
-      createMesh(meshes_list.sublist(sublist.first), comm, gm, S);
+      createMesh(meshes_list.sublist(sublist.first), comm, gm, S, vo);
     }
   }
 

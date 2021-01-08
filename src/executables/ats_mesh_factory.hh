@@ -278,6 +278,7 @@ Example:
 
 #include "Teuchos_ParameterList.hpp"
 #include "State.hh"
+#include "VerboseObject.hh"
 
 
 namespace ATS {
@@ -290,12 +291,13 @@ void
 createMesh(Teuchos::ParameterList& plist,
            const Amanzi::Comm_ptr_type& comm,
            const Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel>& gm,
-           Amanzi::State& s);
+           Amanzi::State& s,
+           Amanzi::VerboseObject& vo);
 
 
 void
 createMeshes(Teuchos::ParameterList& plist,
-             const Amanzi::Comm_ptr_type& comm,             
+             const Amanzi::Comm_ptr_type& comm,
              const Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel>& gm,
              Amanzi::State& s);
 

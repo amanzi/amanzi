@@ -27,14 +27,8 @@ void OverlandPressureFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   // update the stiffness matrix
   matrix_->Init();
   matrix_diff_->SetScalarCoefficient(cond, Teuchos::null);
-
-  std::vector<WhetStone::DenseMatrix>& Aff =
-    matrix_diff_->local_op()->matrices;
-
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-
   FixBCsForOperator_(S_next_.ptr(), matrix_diff_.ptr()); // deals with zero gradient case
-
   matrix_diff_->ApplyBCs(true, true, true);
 
   // derive fluxes -- this gets done independently fo update as precon does
