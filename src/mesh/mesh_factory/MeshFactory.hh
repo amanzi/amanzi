@@ -17,6 +17,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "AmanziTypes.hh"
+#include "VerboseObject.hh"
 #include "MeshDefs.hh"
 #include "MeshFramework.hh"
 
@@ -143,6 +144,7 @@ class MeshFactory {
   bool request_faces_;
   bool request_edges_;
 
+  Teuchos::RCP<VerboseObject> vo_;
  private:
   std::string extraction_method_;
 };

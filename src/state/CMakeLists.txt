@@ -81,6 +81,7 @@ set(state_inc_files
   StateDefs.hh
   State.hh
   Visualization.hh
+  VisualizationDomainSet.hh
   UnstructuredObservations.hh
   Debugger.hh)
 
@@ -109,6 +110,7 @@ add_amanzi_library(state
                           deforming_cell_volume_evaluator.cc
                           UnstructuredObservations.cc
                           Visualization.cc
+                          VisualizationDomainSet.cc
                           Debugger.cc
                    HEADERS ${state_inc_files}
 		   LINK_LIBS data_structures functions mesh_functions output mesh atk

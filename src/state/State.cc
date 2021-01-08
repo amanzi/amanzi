@@ -1465,7 +1465,7 @@ State::GetEvaluatorList(const Key& key)
     KeyTriple split;
     bool is_ds = Keys::splitDomainSet(key, split);
     if (is_ds) {
-      Key lifted_key = Keys::getKey(std::get<0>(split)+"_*", std::get<2>(split));
+      Key lifted_key = Keys::getKey(std::get<0>(split), "*", std::get<2>(split));
       if (FEList().isParameter(lifted_key)) {
         return FEList().sublist(lifted_key);
       }

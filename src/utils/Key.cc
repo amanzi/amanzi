@@ -16,6 +16,7 @@
   specific to Amanzi style keys, domains, etc.
 */
 
+#include "dbc.hh"
 #include "Key.hh"
 
 namespace Amanzi {
@@ -37,6 +38,28 @@ readKey(Teuchos::ParameterList& list, const Key& domain, const Key& basename, co
     return list.get<std::string>(basename_key_arg);
   }
 }
+
+bool
+splitDomainSet(const Key& name, KeyTriple& result) {
+  if (!in(name, dset_delimiter)) return false;
+  Key domain;
+  if (in(name, name_delimiter)) {
+    auto domain_var = splitKey(name, name_delimiter);
+    std::get<2>(result) = domain_var.second;
+    domain = domain_var.first;
+  } else {
+    std::get<2>(result) = "";
+    domain = name;
+  }
+  auto name_id = splitKey(domain, dset_delimiter);
+
+  // if this assertion fails, the dset delimiter was in the varname!
+  AMANZI_ASSERT(in(domain, dset_delimiter));
+  std::get<0>(result) = name_id.first;
+  std::get<1>(result) = name_id.second;
+  return true;
+}
+
 
 } // namespace
 } // namespace

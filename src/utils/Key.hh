@@ -169,16 +169,7 @@ inline int getDomainSetID(const Key& name_id)
 }
 
 // Split a domain set into DOMAIN, *, VARNAME
-inline bool
-splitDomainSet(const Key& name, KeyTriple& result) {
-  if (!in(name, dset_delimiter)) return false;
-  auto domain_var = splitKey(name, name_delimiter);
-  std::get<2>(result) = domain_var.second;
-  auto name_id = splitKey(domain_var.first, dset_delimiter);
-  std::get<0>(result) = name_id.first;
-  std::get<1>(result) = name_id.second;
-  return true;
-}
+bool splitDomainSet(const Key& name, KeyTriple& result);
 
 inline bool
 isDomainSet(const Key& name) {
