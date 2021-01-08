@@ -43,6 +43,7 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
                    const Teuchos::RCP<Teuchos::ParameterList>& glist,
                    const Teuchos::RCP<State>& S,
                    const Teuchos::RCP<TreeVector>& soln) :
+  PK(pk_tree, glist, S, soln),
   Flow_PK(pk_tree, glist, S, soln),
   soln_(soln)
 {
@@ -152,7 +153,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField(pressure_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
 
-    AddDefaultPrimaryEvaluator(pressure_key_);
+    AddDefaultPrimaryEvaluator_(pressure_key_);
   }
 
   // require additional fields for this PK
@@ -170,7 +171,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField(saturation_liquid_key_, saturation_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
-    AddDefaultPrimaryEvaluator(saturation_liquid_key_);
+    AddDefaultPrimaryEvaluator_(saturation_liquid_key_);
   }
 
   if (!S->HasField(prev_saturation_liquid_key_)) {
@@ -382,8 +383,8 @@ void Darcy_PK::InitializeFields_()
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  InitializeField(S_.ptr(), passwd_, saturation_liquid_key_, 1.0);
-  InitializeField(S_.ptr(), passwd_, prev_saturation_liquid_key_, 1.0);
+  InitializeField_(S_.ptr(), passwd_, saturation_liquid_key_, 1.0);
+  InitializeField_(S_.ptr(), passwd_, prev_saturation_liquid_key_, 1.0);
 }
 
 

@@ -55,13 +55,11 @@ int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector
   Epetra_MultiVector& Tc = *T.ViewComponent("cell");
 
   // lump Aff
-  AmanziMesh::Entity_ID_List faces;
-
   for (const_op_iterator it = begin(); it != end(); ++it) {
     if ((*it)->schema_old() == (OPERATOR_SCHEMA_BASE_CELL |
                                OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
       for (int c = 0; c != ncells_owned; c++) {
-        mesh_->cell_get_faces(c, &faces);
+        const auto& faces = mesh_->cell_get_faces(c);
         int nfaces = faces.size();
 
         WhetStone::DenseMatrix& Acell = (*it)->matrices[c];
@@ -83,7 +81,7 @@ int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector
     if ((*it)->schema_old() == (OPERATOR_SCHEMA_BASE_CELL |
                                OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
       for (int c = 0; c < ncells_owned; c++) {
-        mesh_->cell_get_faces(c, &faces);
+        const auto& faces = mesh_->cell_get_faces(c);
         int nfaces = faces.size();
 
         WhetStone::DenseMatrix& Acell = (*it)->matrices[c];
@@ -111,7 +109,7 @@ int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector
       if ((*it)->schema_old() == (OPERATOR_SCHEMA_BASE_CELL |
                                  OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
         for (int c = 0; c < ncells_owned; c++) {
-          mesh_->cell_get_faces(c, &faces);
+          const auto& faces = mesh_->cell_get_faces(c);
           int nfaces = faces.size();
 
           WhetStone::DenseMatrix& Acell = (*it)->matrices[c];
@@ -211,11 +209,11 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
       CompositeVector T(cv_space, true);
       Epetra_MultiVector& Ttmp = *T.ViewComponent("face", true);
 
-      AmanziMesh::Entity_ID_List cells, faces;
+      AmanziMesh::Entity_ID_List cells;
 
       Ttmp.PutScalar(0.0);
       for (int c = 0; c < ncells_owned; c++) {
-        mesh_->cell_get_faces(c, &faces);
+        const auto& faces = mesh_->cell_get_faces(c);
         int nfaces = faces.size();
 
         int c0 = cmap_wghost.GID(c);
@@ -306,9 +304,8 @@ int Operator_FaceCellScc::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
     Epetra_MultiVector& Yf = *Y.ViewComponent("face", true);
     Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
 
-    AmanziMesh::Entity_ID_List faces;
     for (int c=0; c!=ncells_owned; ++c) {
-      mesh_->cell_get_faces(c, &faces);
+      const auto& faces = mesh_->cell_get_faces(c);
       int nfaces = faces.size();
 
       WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);

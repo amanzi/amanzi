@@ -6421,12 +6421,16 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * aqueous volumetric flow rate [m^3/s] (when functional="integral")
       * fractures aqueous volumetric flow rate [m^3/s] (when functional="integral")
       * SOLUTE volumetric flow rate [mol/s] (when functional="integral")
+      * SOLUTE breakthrough curve [mol] (when functional="integral")
       * pH [-] 
 
     Observations *drawdown* and *permeability-weighted* are calculated with respect to the value 
     registered at the first time it was requested.
 
     The following observations are point-type obervations: "water table", "drawdown".
+
+    The following observations are integrated continuously in time but saved only at specified
+    times: "SOLUTE breakthrough curve". 
 
     * `"functional`" [string] the label of a function to apply to each of the variables
       in the variable list (Function options detailed below)

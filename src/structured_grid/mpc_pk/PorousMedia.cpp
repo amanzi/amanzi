@@ -4008,8 +4008,8 @@ PorousMedia::errorEst (TagBoxArray& tags,
                     // may not be in the coarse level
                     const Box fine_box =  Box(tagbox.box()).refine(cumRatio);
                     mask.resize(fine_box,1); mask.setVal(0);
-                    for (int j=0; j<my_regions.size(); ++j) {
-                      my_regions[j]->setVal(mask,1,0,dx_fine,0);
+                    for (int k=0; k<my_regions.size(); ++k) {
+                      my_regions[k]->setVal(mask,1,0,dx_fine,0);
                     }
                     coarsenMask(cmask,mask,cumRatio);
                   }
@@ -4018,8 +4018,8 @@ PorousMedia::errorEst (TagBoxArray& tags,
                     // derive field at that resolution
                     cmask.resize( (*mf)[mfi].box(), 1); cmask.setVal(0);
                     const Real* dx_crse = geom.CellSize();
-                    for (int j=0; j<my_regions.size(); ++j) {
-                      my_regions[j]->setVal(cmask,1,0,dx_crse,0);
+                    for (int k=0; k<my_regions.size(); ++k) {
+                      my_regions[k]->setVal(cmask,1,0,dx_crse,0);
                     }
                   }
 

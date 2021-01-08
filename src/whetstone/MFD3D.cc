@@ -15,7 +15,7 @@
 #include <cmath>
 #include <vector>
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 #include "Point.hh"
 
 #include "MFD3D.hh"
@@ -27,7 +27,8 @@ namespace WhetStone {
 /* ******************************************************************
 * Constructors
 ****************************************************************** */
-MFD3D::MFD3D()
+MFD3D::MFD3D(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
+  : BilinearForm(mesh)
 {
   stability_method_ = WHETSTONE_STABILITY_GENERIC;
   scaling_factor_ = 1.0;
@@ -630,13 +631,12 @@ void MFD3D::SimplexExchangeVariables_(DenseMatrix& T, int kp, int ip)
 /* ******************************************************************
 * Modify the stability space by extending matrix N.
 ****************************************************************** */
-void AddGradient(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, DenseMatrix& N)
+void AddGradient(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh, int c, DenseMatrix& N)
 {
-  Entity_ID_List edges, nodes;
-
-  mesh->cell_get_edges(c, &edges);
+  const auto& edges = mesh->cell_get_edges(c);
   int nedges = edges.size();
 
+  Entity_ID_List nodes;
   mesh->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 

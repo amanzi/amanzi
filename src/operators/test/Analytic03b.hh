@@ -34,7 +34,7 @@ class Analytic03 : public AnalyticBase {
   ~Analytic03() {};
 
   Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) {
-    Amanzi::WhetStone::Tensor K(1,1);
+    Amanzi::WhetStone::Tensor K(2, 1);
     K(0, 0) = 1.0;
     return K;
   }

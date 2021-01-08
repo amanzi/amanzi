@@ -4630,8 +4630,8 @@ namespace Amanzi {
             std::string Cycle_Macros_str = "Cycle Macros";
             if (rslist.isParameter(Time_Macros_str)) {
               const Array<std::string>& _timeMacros = underscore(rslist.get<Array<std::string> >(Time_Macros_str));
-	      for (int i=0; i<_timeMacros.size(); ++i) {
-		const std::string& _timeMacro = _timeMacros[i];
+	      for (int k=0; k<_timeMacros.size(); ++k) {
+		const std::string& _timeMacro = _timeMacros[k];
 		if (time_macros.find(_timeMacro) == time_macros.end()) {
 		  std::cerr << "Unrecognized time macro: \"" << AMR_to_Amanzi_label_map[_timeMacro]
 			    << "\" for observation data: \"" << label << "\"" << std::endl;
@@ -4642,8 +4642,8 @@ namespace Amanzi {
             }
             else if (rslist.isParameter(Cycle_Macros_str)) {
               const Array<std::string>& _cycleMacros = underscore(rslist.get<Array<std::string> >(Cycle_Macros_str));
-	      for (int i=0; i<_cycleMacros.size(); ++i) {
-		const std::string& _cycleMacro = _cycleMacros[i];
+	      for (int k=0; k<_cycleMacros.size(); ++k) {
+		const std::string& _cycleMacro = _cycleMacros[k];
 		if (cycle_macros.find(_cycleMacro) == cycle_macros.end()) {
 		  std::cerr << "Unrecognized cycle macro: \"" << AMR_to_Amanzi_label_map[_cycleMacro]
 			    << "\" for observation data: \"" << label << "\"" << std::endl;

@@ -40,7 +40,7 @@ TEST(XDMF) {
 
   // Write a file which contains both mesh and data.
   Teuchos::ParameterList plist;
-  Amanzi::OutputXDMF io(plist, Mesh, true, false);
+  Amanzi::OutputXDMF io(plist, Mesh, true, false, true);
 
   double time = 0.0;
   int cycle = 0;
@@ -54,7 +54,7 @@ TEST(XDMF) {
     node_quantity->ReplaceGlobalValues(12, node_values, node_index_list);
     
     // write time step data
-    io.InitializeCycle(time,i);
+    io.InitializeCycle(time, i, "");
     io.WriteVector(*cell_quantity, "cell_quantity", Amanzi::AmanziMesh::CELL);
     io.WriteVector(*fake_pressure, "pressure", Amanzi::AmanziMesh::CELL);
     io.WriteVector(*node_quantity, "node_quantity", Amanzi::AmanziMesh::CELL);

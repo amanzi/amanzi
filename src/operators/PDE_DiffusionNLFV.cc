@@ -180,7 +180,7 @@ void PDE_DiffusionNLFV::InitStencils_()
   int c1, c2;
   double hap_weight;
   WhetStone::Tensor T(dim_, 2);
-  AmanziMesh::Entity_ID_List cells, faces;
+  AmanziMesh::Entity_ID_List cells;
   AmanziGeometry::Point Kn1(dim_), Kn2(dim_), p(dim_);
 
   for (int f = 0; f < nfaces_owned; f++) {
@@ -216,7 +216,6 @@ void PDE_DiffusionNLFV::InitStencils_()
 
   // calculate coefficients in positive decompositions of conormals
   int dir;
-  std::vector<int> dirs;
   AmanziGeometry::Point conormal(dim_), v(dim_);
   std::vector<AmanziGeometry::Point> tau;
 
@@ -224,7 +223,8 @@ void PDE_DiffusionNLFV::InitStencils_()
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
     // calculate list of candidate vectors
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& dirs = mesh_->cell_get_face_dirs(c);
     int nfaces = faces.size();
 
     tau.clear();
@@ -315,13 +315,13 @@ void PDE_DiffusionNLFV::UpdateMatrices(
 
   // split each stencil between different local matrices
   int c1, c2, c3, c4, k1, k2;
-  AmanziMesh::Entity_ID_List cells, cells_tmp, faces;
+  AmanziMesh::Entity_ID_List cells, cells_tmp;
 
   matrix_cv.PutScalarMasterAndGhosted(0.0);
   flux_data.PutScalar(0.0);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
     
     for (int n = 0; n < nfaces; ++n) {
@@ -561,11 +561,11 @@ void PDE_DiffusionNLFV::OneSidedFluxCorrections_(
 
   int c1, c2, c3, k1, k2, dir;
   double gamma, tmp;
-  AmanziMesh::Entity_ID_List cells, cells_tmp, faces;
+  AmanziMesh::Entity_ID_List cells, cells_tmp;
 
   flux_cv.PutScalarMasterAndGhosted(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
     
     for (int n = 0; n < nfaces; ++n) {
@@ -595,8 +595,8 @@ void PDE_DiffusionNLFV::OneSidedFluxCorrections_(
           sideflux += tmp * (uc[0][c] - uc[0][c3]);
         } else if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
           tmp = weight[i + k2][f];
-          mesh_->face_normal(f1, false, c, &dir);
-          sideflux += tmp * (uc[0][c] - MapBoundaryValue_(f1, bc_value[f1])) * dir;
+          // mesh_->face_normal(f1, false, c, &dir);
+          sideflux += tmp * (uc[0][c] - MapBoundaryValue_(f1, bc_value[f1])); // * dir;
         } else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
           tmp = weight[i + k2][f];
           neumann_flux += tmp * bc_value[f1] * mesh_->face_area(f1);
@@ -627,11 +627,11 @@ void PDE_DiffusionNLFV::OneSidedWeightFluxes_(
   Epetra_MultiVector& flux_data = *stencil_data_->ViewComponent("flux_data", true);
 
   int c1, c2, c3, k1, k2;
-  AmanziMesh::Entity_ID_List cells, cells_tmp, faces;
+  AmanziMesh::Entity_ID_List cells, cells_tmp;
 
   flux_cv.PutScalarMasterAndGhosted(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
     
     for (int n = 0; n < nfaces; ++n) {
@@ -732,12 +732,13 @@ void PDE_DiffusionNLFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
   AmanziMesh::Entity_ID_List cells;
 
   for (int f = 0; f < nfaces_owned; ++f) {
-    if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+    if (bc_model[f] == OPERATOR_BC_DIRICHLET ||
+        bc_model[f] == OPERATOR_BC_NEUMANN) {
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       mesh_->face_normal(f, false, cells[0], &dir);
       flux_data[0][f] = wgt_sideflux[0][f] * dir;     
-    } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-      flux_data[0][f] = bc_value[f] * mesh_->face_area(f);
+    // } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+    //   flux_data[0][f] = bc_value[f] * mesh_->face_area(f);
     } else if (bc_model[f] == OPERATOR_BC_NONE) {
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       OrderCellsByGlobalId_(cells, c1, c2);

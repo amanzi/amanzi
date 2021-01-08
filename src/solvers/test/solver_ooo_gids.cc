@@ -1,9 +1,10 @@
 #include "UnitTest++.h"
 
-#include "Teuchos_RCP.hpp"
 #include "Epetra_MpiComm.h"
 #include "Epetra_CrsMatrix.h"
+#include "HYPRE_parcsr_ls.h"
 #include "Ifpack_Hypre.h"
+#include "Teuchos_RCP.hpp"
 
 SUITE(SOLVERS) {
 
@@ -37,27 +38,22 @@ TEST(GIDS_OUT_OF_ORDER) {
   accMat.FillComplete();
 
   //
-  // Create the parameter list
+  // Populate the parameters
   //
+  Ifpack_Hypre prec(&accMat);
+
   const double tol = 1e-7;
-  Teuchos::ParameterList list("Preconditioner List");
-  std::vector<Teuchos::RCP<FunctionParameter>> functs(5, Teuchos::null);
-  functs[0] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_PCGSetMaxIter, 100));               // max iterations
-  functs[1] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_PCGSetTol, tol));                   // conv. tolerance
-  functs[2] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_PCGSetTwoNorm, 1));                  // use the two norm as the stopping criteria
-  functs[3] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_PCGSetPrintLevel, 2));               // print solve info
-  functs[4] = Teuchos::rcp(new FunctionParameter(Solver, &HYPRE_PCGSetLogging, 1));
-  list.set("Solver", PCG);
-  list.set("SolveOrPrecondition", Solver);
-  list.set("SetPreconditioner", false);
-  list.set("NumFunctions", 5);
-  list.set<Teuchos::RCP<FunctionParameter>*>("Functions", functs.data());
+  prec.SetParameter(Solver, &HYPRE_PCGSetMaxIter, 100);               // max iterations
+  prec.SetParameter(Solver, &HYPRE_PCGSetTol, tol);                   // conv. tolerance
+  prec.SetParameter(Solver, &HYPRE_PCGSetTwoNorm, 1);                 // use the two norm as the stopping criteria
+  prec.SetParameter(Solver, &HYPRE_PCGSetPrintLevel, 2);              // print solve info
+  prec.SetParameter(Solver, &HYPRE_PCGSetLogging, 1);
+  prec.SetParameter(Solver, PCG);
+  prec.SetParameter(false);
 
   //
   // Create the preconditioner (which is actually a PCG solver)
   //
-  Ifpack_Hypre prec(&accMat);
-  CHECK_EQUAL(prec.SetParameters(list),0);
   CHECK_EQUAL(prec.Compute(),0);
 
   //

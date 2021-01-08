@@ -46,7 +46,7 @@ if (ENABLE_EPETRA)
 endif()
 
 if (ENABLE_KOKKOS)
-  list(APPEND Trilinos_PACKAGE_LIST Kokkos KokkosKernels Tpetra Ifpack2 MueLu)
+  list(APPEND Trilinos_PACKAGE_LIST Kokkos KokkosKernels Tpetra Ifpack2 MueLu Xpetra)
 endif()
 
 if (ENABLE_STK_Mesh)
@@ -77,6 +77,8 @@ if (ENABLE_KOKKOS)
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_INT_LONG:BOOL=OFF")
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_INT_LONG_LONG:BOOL=OFF")
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DXpetra_Epetra_NO_64BIT_GLOBAL_INDICIES:BOOL=ON")
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DMueLu_ENABLE_Epetra:BOOL=OFF")
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_SERIAL:BOOL=ON") 
 endif()
 
 
@@ -143,6 +145,7 @@ if (ENABLE_HYPRE)
               "-DTPL_ENABLE_HYPRE:BOOL=ON"
               "-DTPL_HYPRE_LIBRARIES:STRING=${HYPRE_LIBRARIES}"
               "-DHYPRE_LIBRARY_DIRS:FILEPATH=${HYPRE_DIR}/lib"
+              "-DHYPRE_INCLUDE_DIRS:FILEPATH=${HYPRE_DIR}/include"
               "-DTPL_HYPRE_INCLUDE_DIRS:FILEPATH=${HYPRE_DIR}/include")
 endif()
 
@@ -205,18 +208,18 @@ message(DEBUG "Trilinos_CMAKE_CXX_FLAGS = ${Trilinos_CMAKE_CXX_FLAGS}")
 # - Architecture Args.... these will need work.
 set(Trilinos_CMAKE_ARCH_ARGS "")
 if (ENABLE_KOKKOS)
-  list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_Serial:BOOL=ON")
+  list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_SERIAL:BOOL=ON")
   if (ENABLE_KOKKOS_CUDA)
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTPL_ENABLE_CUDA:BOOL=ON")
-    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_Cuda:BOOL=ON")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_CUDA:BOOL=ON")
   else()
-    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_Cuda:BOOL=OFF")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_CUDA:BOOL=OFF")
   endif()
   if (ENABLE_KOKKOS_OPENMP)
     # NOTE: This is not yet tested and may need more flags set
-    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_OpenMP:BOOL=ON")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_OPENMP:BOOL=ON")
   else()
-    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_OpenMP:BOOL=OFF")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_OPENMP:BOOL=OFF")
   endif()
 endif()
 
@@ -230,10 +233,9 @@ endif()
 
 # Set ARCH-specific options
 if ( "${AMANZI_ARCH}" STREQUAL "Summit" )
-  if (ENABLE_CUDA) 
-    message("AMANZI_ARCH: : ${AMANZI_ARCH}")
+  if (ENABLE_KOKKOS_CUDA) 
     if(NOT DEFINED ENV{CUDA_LAUNCH_BLOCKING}) 
-      message(FATAL_ERROR "Environment CUDA_LAUNCH_BLOCKING have to be set to 1 to continue")
+      message(FATAL_ERROR "Environment variable CUDA_LAUNCH_BLOCKING has to be set to 1 to continue")
     endif() 
     set(Trilinos_CMAKE_CXX_FLAGS "${Trilinos_CMAKE_CXX_FLAGS} \
          -Wno-deprecated-declarations -lineinfo \
@@ -241,8 +243,8 @@ if ( "${AMANZI_ARCH}" STREQUAL "Summit" )
          -Xcudafe --diag_suppress=cc_clobber_ignored \
          -Xcudafe --diag_suppress=code_is_unreachable")
     list(APPEND Trilinos_CMAKE_ARCH_ARGS
-         "-DKokkos_ENABLE_Cuda_UVM:BOOL=ON"
-         "-DKokkos_ENABLE_Cuda_Lambda:BOOL=ON"
+         "-DKokkos_ENABLE_CUDA_UVM:BOOL=ON"
+         "-DKokkos_ENABLE_CUDA_LAMBDA:BOOL=ON"
          "-DKOKKOS_ARCH:STRING=Power9;Volta70") 
     # Change the default compiler for Trilinos to use nvcc_wrapper 
     set(Trilinos_CXX_COMPILER ${NVCC_WRAPPER_PATH})
@@ -268,8 +270,8 @@ set(ENABLE_Trilinos_Patch ON)
 if (ENABLE_Trilinos_Patch)
   set(Trilinos_patch_file
     trilinos-duplicate-parameters.patch
-    trilinos-ifpack-memory-leak.patch
     trilinos-superludist.patch
+    trilinos-ifpack.patch
     )
   configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
                  ${Trilinos_prefix_dir}/trilinos-patch-step.sh

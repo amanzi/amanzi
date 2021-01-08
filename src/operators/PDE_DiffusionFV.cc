@@ -159,11 +159,6 @@ void PDE_DiffusionFV::SetScalarCoefficient(const Teuchos::RCP<const CompositeVec
   if (dkdp_ != Teuchos::null) {
     AMANZI_ASSERT(dkdp_->HasComponent("cell"));
   }
-
-  // verify that mass matrices were initialized.
-  // -- this shouldn't be called here, as Trans has no dependence on
-  //    rel perm, and abs perm may not be set yet! --etc
-  // if (!transmissibility_initialized_)  ComputeTransmissibility_();
 }
 
 
@@ -329,13 +324,13 @@ void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solu
   const Epetra_MultiVector& p = *solution->ViewComponent("cell", true);
   Epetra_MultiVector& flux = *darcy_mass_flux->ViewComponent("face", false);
 
-  AmanziMesh::Entity_ID_List cells, faces;
-  std::vector<int> dirs;
+  AmanziMesh::Entity_ID_List cells;
 
   std::vector<int> flag(nfaces_wghost, 0);
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& dirs = mesh_->cell_get_face_dirs(c);
     int nfaces = faces.size();
 
     for (int n = 0; n < nfaces; n++) {
@@ -426,9 +421,9 @@ void PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
     }
 
     // find the face direction from cell 0 to cell 1
-    AmanziMesh::Entity_ID_List cfaces;
-    std::vector<int> fdirs;
-    mesh_->cell_get_faces_and_dirs(cells[0], &cfaces, &fdirs);
+    const auto& cfaces = mesh_->cell_get_faces(cells[0]);
+    const auto& fdirs = mesh_->cell_get_face_dirs(cells[0]);
+
     int f_index = std::find(cfaces.begin(), cfaces.end(), f) - cfaces.begin();
     ComputeJacobianLocal_(mcells, f, fdirs[f_index], bc_model[f], bc_value[f],
                           pres, dkdp, Aface);

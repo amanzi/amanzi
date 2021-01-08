@@ -304,10 +304,10 @@ class State {
   Teuchos::RCP<FieldEvaluator> RequireFieldEvaluator(Key, Teuchos::ParameterList&);
 
   // Ensure a FieldEvaluator exists.
-  bool HasFieldEvaluator(Key key) { return GetFieldEvaluator_(key) != Teuchos::null; }
+  bool HasFieldEvaluator(const Key& key) { return GetFieldEvaluator_(key) != Teuchos::null; }
 
   // FieldEvaluator accessor.
-  Teuchos::RCP<FieldEvaluator> GetFieldEvaluator(Key);
+  Teuchos::RCP<FieldEvaluator> GetFieldEvaluator(const Key&);
 
   // FieldEvaluator mutator.
   void SetFieldEvaluator(Key key, const Teuchos::RCP<FieldEvaluator>& evaluator);
@@ -388,7 +388,7 @@ class State {
   Teuchos::RCP<AmanziMesh::Mesh> GetMesh_(const Key& key) const;
   Teuchos::RCP<const Field> GetField_(Key fieldname) const;
   Teuchos::RCP<Field> GetField_(Key fieldname);
-  Teuchos::RCP<FieldEvaluator> GetFieldEvaluator_(Key key);
+  Teuchos::RCP<FieldEvaluator> GetFieldEvaluator_(const Key& key);
   Teuchos::RCP<const Functions::MeshPartition> GetMeshPartition_(Key);
 
   // Consistency checking of fieldnames and types.

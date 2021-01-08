@@ -28,7 +28,7 @@ DOMAIN-NAME`".
     * `"file name base`" ``[string]`` **visdump_DOMAIN_data**
     * `"dynamic mesh`" ``[bool]`` **false** Write mesh data for every
       visualization dump; this facilitates visualizing deforming meshes.
-    * `"time units`" ``[string]`` **s** A valid time unit to convert time
+    * `"time unit`" ``[string]`` **s** A valid time unit to convert time
       into for output files.  One of `"s`", `"d`", `"y`", or `"yr 365`"
 
     INCLUDES:
@@ -86,9 +86,12 @@ class Visualization : public IOEvent {
   std::string name() const { return name_; }
   void set_name(const std::string& name) { name_ = name; }
 
+  std::string get_tag() const { return tag_; }
+  void set_tag(const std::string& tag) { tag_ = tag; }
+
   // public interface for coordinator clients
-  void CreateFiles();
-  void CreateTimestep(double time, int cycle);
+  void CreateFiles(bool include_io_set=true);
+  void CreateTimestep(double time, int cycle, const std::string& tag);
   void FinalizeTimestep() const;
 
   // public interface for data clients
@@ -101,7 +104,8 @@ class Visualization : public IOEvent {
   void ReadParameters_();
 
   std::string my_units_;
-  std::string name_;
+  std::string name_, tag_;
+  bool time_unit_written_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<Output> visualization_output_;

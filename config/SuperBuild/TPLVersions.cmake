@@ -148,6 +148,12 @@
 #                - update PETSc to 3.13
 #                - update SuperLU_DIST to 6.1.1
 #                - update CLM to 0.1.1
+#   0.97.10      - update Hypre to 2.20.0
+#                - update SuperLU to 5.2.2
+#                - update MOAB to 5.2.0
+#   0.97.11      - update SuperLU_dist to 6.2.0
+#                - update Trilinos to 9fec3527 (Aug5, 2020, also 13.0.0)
+#   0.97.12      - update Trilinos to afc4e525 (Nov 14, 2020)
 
 include(CMakeParseArguments)
 
@@ -200,7 +206,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 97)
-set(AMANZI_TPLS_VERSION_PATCH 9)
+set(AMANZI_TPLS_VERSION_PATCH 12)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -379,25 +385,25 @@ set(MSTK_MD5_SUM        814e2d7202ac0dbc4d735d94e5548fc8)
 # TPL: MOAB
 #
 set(MOAB_VERSION_MAJOR  5)
-set(MOAB_VERSION_MINOR  1)
+set(MOAB_VERSION_MINOR  2)
 set(MOAB_VERSION_PATCH  0)
 set(MOAB_VERSION ${MOAB_VERSION_MAJOR}.${MOAB_VERSION_MINOR}.${MOAB_VERSION_PATCH})
 set(MOAB_URL_STRING     ftp://ftp.mcs.anl.gov/pub/fathom)
 set(MOAB_ARCHIVE_FILE   moab-${MOAB_VERSION}.tar.gz)
 set(MOAB_SAVEAS_FILE    ${MOAB_ARCHIVE_FILE})
-set(MOAB_MD5_SUM        875435654b2bc81b97e85894c2a45aaa)
+set(MOAB_MD5_SUM        dd2cf5c32ede64dfd7e9b04e0387c4b4)
 
 #
 # TPL: HYPRE
 #
 set(HYPRE_VERSION_MAJOR  2)
-set(HYPRE_VERSION_MINOR  14)
+set(HYPRE_VERSION_MINOR  20)
 set(HYPRE_VERSION_PATCH  0)
 set(HYPRE_VERSION  ${HYPRE_VERSION_MAJOR}.${HYPRE_VERSION_MINOR}.${HYPRE_VERSION_PATCH})
 set(HYPRE_URL_STRING     "https://github.com/hypre-space/hypre/archive/")
 set(HYPRE_ARCHIVE_FILE   v${HYPRE_VERSION}.tar.gz)
 set(HYPRE_SAVEAS_FILE    hypre-${HYPRE_VERSION}.tar.gz)
-set(HYPRE_MD5_SUM        270a6e4620622516655dd9903a36d314)
+set(HYPRE_MD5_SUM        aba74c2f30fdb0188c4328e53b1929f2)
 
 #
 # TPL: ParMetis
@@ -416,24 +422,24 @@ set(ParMetis_MD5_SUM        56ac6ebf6e7e8a522fa053c799dc7a92)
 #
 set(SuperLU_VERSION_MAJOR  5)
 set(SuperLU_VERSION_MINOR  2)
-set(SuperLU_VERSION_PATCH  1)
+set(SuperLU_VERSION_PATCH  2)
 set(SuperLU_VERSION  ${SuperLU_VERSION_MAJOR}.${SuperLU_VERSION_MINOR}.${SuperLU_VERSION_PATCH})
 set(SuperLU_URL_STRING     "https://github.com/xiaoyeli/superlu/archive")
 set(SuperLU_ARCHIVE_FILE   v${SuperLU_VERSION}.tar.gz)
 set(SuperLU_SAVEAS_FILE    superlu_${SuperLU_VERSION}.tar.gz)
-set(SuperLU_MD5_SUM        4a1a602d9335f1da4ba786cccc7873cd)
+set(SuperLU_MD5_SUM        1e93259572bd2412674ed809a1446bd3)
 
 #
 # TPL: SuperLU_Dist
 #
 set(SuperLUDist_VERSION_MAJOR  6)
-set(SuperLUDist_VERSION_MINOR  1)
-set(SuperLUDist_VERSION_PATCH  1)
+set(SuperLUDist_VERSION_MINOR  2)
+set(SuperLUDist_VERSION_PATCH  0)
 set(SuperLUDist_VERSION  ${SuperLUDist_VERSION_MAJOR}.${SuperLUDist_VERSION_MINOR}.${SuperLUDist_VERSION_PATCH})
 set(SuperLUDist_URL_STRING     "https://github.com/xiaoyeli/superlu_dist/archive")
 set(SuperLUDist_ARCHIVE_FILE   v${SuperLUDist_VERSION}.tar.gz)
 set(SuperLUDist_SAVEAS_FILE    superlu_dist_${SuperLUDist_VERSION}.tar.gz)
-set(SuperLUDist_MD5_SUM        767e221ba3752174b65d9257f9a97e06)
+set(SuperLUDist_MD5_SUM        7b9fa7c047fd1988b61f9c6f744c829b)
 
 #
 # TPL: Sowing (Built by PETSc!)
@@ -464,15 +470,15 @@ set(PETSc_MD5_SUM        c1bfeeb3613f59049d312713b461a1b1)
 #
 # TPL: Trilinos
 #
-set(Trilinos_VERSION_MAJOR 12)
-set(Trilinos_VERSION_MINOR 18)
-set(Trilinos_VERSION_PATCH 55a7599733-Nov11)
+set(Trilinos_VERSION_MAJOR 13)
+set(Trilinos_VERSION_MINOR 0)
+set(Trilinos_VERSION_PATCH afc4e525)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}-${Trilinos_VERSION_MINOR}-${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "https://github.com/trilinos/Trilinos/archive")
 set(Trilinos_ARCHIVE_FILE   trilinos-release-${Trilinos_VERSION}.tar.gz)
 set(Trilinos_SAVEAS_FILE    ${Trilinos_ARCHIVE_FILE})
 set(Trilinos_GIT_REPOSITORY "https://github.com/trilinos/Trilinos")
-set(Trilinos_GIT_TAG        "55a75997332636a28afc9db1aee4ae46fe8d93e7")
+set(Trilinos_GIT_TAG        "afc4e52595ab82f449f8a4676febbcfbf8223afc")
 
 #
 # TPL: SEACAS

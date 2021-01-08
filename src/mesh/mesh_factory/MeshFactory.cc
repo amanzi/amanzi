@@ -104,7 +104,9 @@ MeshFactory::create(const std::string& filename,
     if (p == Framework::MSTK) {
       if ((nproc == 1 && fmt == FileFormat::EXODUS_II) ||
           (nproc > 1 && (fmt == FileFormat::EXODUS_II || fmt == FileFormat::NEMESIS))) {
-        return Teuchos::rcp(new Mesh_MSTK(filename, comm_, gm_, plist_, request_faces, request_edges));
+        auto mesh = Teuchos::rcp(new Mesh_MSTK(filename, comm_, gm_, plist_, request_faces, request_edges));
+        mesh->BuildCache();
+        return mesh;
       }
     }
 #endif
@@ -112,7 +114,9 @@ MeshFactory::create(const std::string& filename,
 #ifdef HAVE_MOAB_MESH
     if (p == Framework::MOAB) {
       if (fmt == FileFormat::MOAB_HDF5 || (nproc == 1 && fmt == FileFormat::EXODUS_II)) {
-        return Teuchos::rcp(new Mesh_MOAB(filename, comm_, gm_, plist_, request_faces, request_edges));
+        auto mesh = Teuchos::rcp(new Mesh_MOAB(filename, comm_, gm_, plist_, request_faces, request_edges));
+        mesh->BuildCache();
+        return mesh;
       }
     }
 #endif
@@ -149,14 +153,22 @@ MeshFactory::create(const double x0, const double y0, const double z0,
 
   for (auto p : preference_) {
     if (p == Framework::SIMPLE && nproc == 1) {
-      return Teuchos::rcp(new Mesh_simple(x0,y0,z0,x1,y1,z1,nx,ny,nz,
-              comm_, gm_, plist_, request_faces, request_edges));
+      auto mesh = Teuchos::rcp(new Mesh_simple(
+          x0, y0, z0, x1, y1, z1, nx, ny, nz,
+          comm_, gm_, plist_, request_faces, request_edges));
+
+      mesh->BuildCache();
+      return mesh;
     }
 
 #ifdef HAVE_MSTK_MESH
     if (p == Framework::MSTK) {
-      return Teuchos::rcp(new Mesh_MSTK(x0,y0,z0,x1,y1,z1,nx,ny,nz,
-              comm_, gm_, plist_, request_faces, request_edges));
+      auto mesh = Teuchos::rcp(new Mesh_MSTK(
+          x0, y0, z0, x1, y1, z1, nx, ny, nz,
+          comm_, gm_, plist_, request_faces, request_edges));
+
+      mesh->BuildCache();
+      return mesh;
     }
 #endif
   }
@@ -189,8 +201,12 @@ MeshFactory::create(const double x0, const double y0,
   for (auto p : preference_) {
 #ifdef HAVE_MSTK_MESH
     if (p == Framework::MSTK) {
-      return Teuchos::rcp(new Mesh_MSTK(x0,y0,x1,y1,nx,ny,
-              comm_, gm_, plist_, request_faces, request_edges));
+      auto mesh = Teuchos::rcp(new Mesh_MSTK(
+          x0, y0, x1, y1, nx, ny,
+          comm_, gm_, plist_, request_faces, request_edges));
+
+      mesh->BuildCache();
+      return mesh;
     }
 #endif
   }
@@ -290,8 +306,12 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
   for (auto p : preference_) {
 #ifdef HAVE_MSTK_MESH      
     if (p == Framework::MSTK) {
-      return Teuchos::rcp(new Mesh_MSTK(inmesh, setids, setkind, flatten,
+      auto mesh = Teuchos::rcp(new Mesh_MSTK(
+          inmesh, setids, setkind, flatten,
           comm, gm, plist_, request_faces, request_edges));
+
+      mesh->BuildCache();
+      return mesh;
     }
 #endif      
   }
@@ -318,8 +338,12 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
     const auto& comm = inmesh->get_comm();
     const auto& gm = inmesh->geometric_model();
 
-    return Teuchos::rcp(new MeshExtractedManifold(inmesh, setnames[0], setkind,
+    auto mesh = Teuchos::rcp(new MeshExtractedManifold(
+        inmesh, setnames[0], setkind,
         comm, gm, plist_, request_faces, request_edges));
+
+    mesh->BuildCache();
+    return mesh;
   } 
 
   Entity_ID_List ids;

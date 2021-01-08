@@ -1,0 +1,246 @@
+<amanzi_input version="2.3.0" type="unstructured">
+
+  <model_description name="1D Flow and Transport w/ calcite dissolution">
+    <units>
+      <length_unit>m</length_unit>
+      <time_unit>s</time_unit>
+      <mass_unit>kg</mass_unit>
+      <conc_unit>molar</conc_unit>
+    </units>
+  </model_description>
+
+  <definitions>
+    <macros>
+      <time_macro name="Every_0.05_year">
+        <start>0.0</start>
+        <timestep_interval>1.5768e6</timestep_interval>
+        <stop>-1</stop>
+      </time_macro>
+      <time_macro name="Every_year">
+        <start>0.0</start>
+        <timestep_interval>31556926.0</timestep_interval>
+        <stop>-1</stop>
+      </time_macro>
+    </macros>
+  </definitions>
+
+  <process_kernels>
+    <flow state="on" model="saturated"/>
+    <transport state="on" />
+    <chemistry state="on" engine="pflotran" database="calcite.dat" />
+    <!--chemistry state="on" engine="pflotran" input_filename="1d-calcite-trim.in" database="calcite.dat"/-->
+  </process_kernels>
+
+  <phases>
+    <liquid_phase name="water">
+      <eos>False</eos>
+      <viscosity>1.002e-03</viscosity>
+      <density>998.2</density>
+      <dissolved_components>
+        <primaries>
+          <primary coefficient_of_diffusion="0.0000E00">H+</primary>
+          <primary coefficient_of_diffusion="0.0000E00">HCO3-</primary>
+          <primary coefficient_of_diffusion="0.0000E00">Ca++</primary>
+        </primaries>
+        <secondaries>
+          <secondary>CO2(aq)</secondary>
+          <secondary>CO3--</secondary>
+          <secondary>CaCO3(aq)</secondary>
+          <secondary>CaHCO3+</secondary>
+          <secondary>CaOH+</secondary>
+          <secondary>OH-</secondary>
+        </secondaries>
+      </dissolved_components>
+    </liquid_phase>
+    <solid_phase>
+      <minerals>
+        <mineral rate_constant="1.0e-9">Calcite</mineral>
+	<!-- EIB: note existing IN file show 1.0e-13 mol/cm^2-sec, but default units are mol/m^2-sec; hence value change -->
+      </minerals>
+    </solid_phase>
+    <gas_phase>
+      <gases>
+        <gas>CO2(g)</gas>
+      </gases>
+    </gas_phase>
+  </phases>
+
+  <execution_controls>
+      <comments> </comments>
+      <verbosity level="high"/>
+      <execution_control_defaults init_dt= "1.5768e+5"   max_dt="6.0e+10"  reduction_factor="0.8"  increase_factor="1.25" mode="transient" method="bdf1"/>
+      <execution_control  start="0.0 y" end="0.0 y" init_dt= "1.5768e+5" max_dt="6.0e+10"  reduction_factor="0.8"  increase_factor="1.25" mode="steady" method="bdf1"/>
+      <execution_control  start="0.0 y" end="1.5778463e9" mode = "transient" />
+  </execution_controls>
+
+  <numerical_controls>
+    <unstructured_controls>
+
+      <unstr_flow_controls>
+          <preconditioning_strategy>diffusion_operator</preconditioning_strategy>
+      </unstr_flow_controls>
+
+      <unstr_transport_controls>
+          <algorithm>explicit second-order</algorithm>
+          <cfl>1</cfl>
+      </unstr_transport_controls>
+
+      <unstr_steady-state_controls>
+          <min_iterations>10</min_iterations>
+          <max_iterations>15</max_iterations>
+          <limit_iterations>20</limit_iterations>
+          <max_preconditioner_lag_iterations>4</max_preconditioner_lag_iterations>
+          <nonlinear_tolerance>1.0e-12</nonlinear_tolerance>
+          <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
+          <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
+          <max_divergent_iterations>3</max_divergent_iterations>
+      </unstr_steady-state_controls>
+
+      <unstr_transient_controls>
+          <min_iterations>10</min_iterations>
+          <max_iterations>15</max_iterations>
+          <limit_iterations>20</limit_iterations>
+          <max_preconditioner_lag_iterations>4</max_preconditioner_lag_iterations>
+          <nonlinear_tolerance>1.0e-12</nonlinear_tolerance>
+          <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
+          <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
+          <max_divergent_iterations>3</max_divergent_iterations>
+      </unstr_transient_controls>
+
+      <unstr_chemistry_controls>
+        <max_residual_tolerance>1.0e-12</max_residual_tolerance>
+        <maximum_newton_iterations>150</maximum_newton_iterations>
+        <auxiliary_data>pH</auxiliary_data>
+        <initial_time_step>220000.0</initial_time_step>
+        <max_time_step>220000.0</max_time_step>
+        <time_step_cut_threshold>5</time_step_cut_threshold>
+      </unstr_chemistry_controls>
+
+      <unstr_linear_solver>
+          <max_iterations>100</max_iterations>
+          <tolerance>1e-20</tolerance>
+      </unstr_linear_solver>
+      <unstr_preconditioners>
+          <hypre_amg />
+          <trilinos_ml />
+        <block_ilu />
+      </unstr_preconditioners>
+    </unstructured_controls>
+  </numerical_controls>
+
+  <mesh framework="mstk">
+    <comments>pseudo 3D</comments>
+    <dimension>3</dimension>
+    <generate>
+      <number_of_cells nx = "100"  ny = "1"  nz = "1"/>
+      <box  low_coordinates = "0.0,0.0,0.0" high_coordinates = "100.0,1.0,1.0"/>
+    </generate>
+  </mesh>
+
+  <regions>
+    <region name ="All">
+      <box low_coordinates= "0.0,0.0,0.0"     high_coordinates="100.0,1.0,1.0"/>
+    </region>
+
+    <region name ="west">
+      <box low_coordinates= "0.0,0.0,0.0"     high_coordinates="0.0,1.0,1.0"/>
+    </region>
+
+    <region name ="east">
+      <box low_coordinates= "100.0,0.0,0.0"   high_coordinates="100.0,1.0,1.0"/>
+    </region>
+  </regions>
+
+  <materials>
+    <material name="soil">
+      <mechanical_properties>
+        <porosity value="0.25"/>
+        <!--particle_density value="2720.0"/-->
+      </mechanical_properties>
+      <permeability x="1.0e-12" y="1.0e-12" z="1.0e-12"/>
+      <assigned_regions>All</assigned_regions>
+      <minerals>
+        <mineral name="Calcite" volume_fraction="1.0e-5" specific_surface_area="100.0"/> <!-- area= m2/m3 -->
+      </minerals>
+    </material>
+  </materials>
+
+  <initial_conditions>  
+    <initial_condition name="initial_ic">
+      <assigned_regions>All</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure value="201325.0"/>
+        </liquid_component>
+        <geochemistry_component>
+          <constraint name="initial"/>
+        </geochemistry_component>
+      </liquid_phase>
+    </initial_condition>
+  </initial_conditions>
+
+  <boundary_conditions> 
+    <boundary_condition name="west_bc">
+      <assigned_regions>west</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <inward_mass_flux value="7.91317859e-6" start="0" function="constant"/>
+        </liquid_component>
+        <geochemistry_component>
+          <constraint name="west" start = "0.0" function="constant"/>
+        </geochemistry_component>
+      </liquid_phase>
+    </boundary_condition>
+    <boundary_condition name="east_bc">
+      <assigned_regions>east</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure value="201325.0" start="0" function="constant"/>
+        </liquid_component>
+      </liquid_phase>
+    </boundary_condition>
+    <!-- EIB: problem I'm matching uses BC: Zero Gradient which doesn't actually exist, 
+         so removing BC to match target problem.
+    <boundary_condition name="east_bc">
+      <assigned_regions>east</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure value="201325.0" start="0.0" function="constant"/>
+        </liquid_component>
+        <solute_component name="solute">
+          <aqueous_conc name = "A" start = "0.0" value= "0" function="constant"/>
+          <aqueous_conc name = "B" start = "0.0" value= "0" function="constant"/>
+          <aqueous_conc name = "C" start = "0.0" value= "0" function="constant"/>
+        </solute_component>
+      </liquid_phase>
+    </boundary_condition>
+                -->
+  </boundary_conditions>
+
+  <geochemistry>
+    <verbosity>silent</verbosity>
+    <constraints>
+      <constraint name="initial">
+        <primary mineral="Calcite" name="Ca++" type="mineral" value="5.0e-4"/>
+        <primary name="HCO3-" type="gas" value="1.0e-3" gas="CO2(g)"/>
+        <primary name="H+" type="free_ion" value="1.0e-8"/>
+	<!--<mineral name="Calcite"     volume_fraction="1.0e-5" specific_surface_area="100.0"/-->
+	<!-- EIB: note existing IN file show 2.0 cm^2/cm^3, but default units are m^2/m^3; hence value change -->
+      </constraint>
+      <constraint name="west">
+        <primary name="Ca++" type="charge" value="1e-6"/>
+        <primary name="HCO3-" type="total" value="1e-3"/>
+        <primary name="H+" type="pH" value="5"/>
+      </constraint>
+    </constraints>
+  </geochemistry>
+
+  <output>
+    <vis>
+      <base_filename>calcite</base_filename>
+        <num_digits>5</num_digits>
+        <time_macros>Every_year</time_macros>
+    </vis>
+  </output>
+
+</amanzi_input>

@@ -1071,8 +1071,8 @@ RichardSolver::BuildOpSkel(Mat& J, bool calcSpace)
               IVScit it=growCellStencilLev[d].find(ivA);
               if (it!=growCellStencilLev[d].end()) {
                 const Stencil& s = it->second;
-                for (Stencil::const_iterator it=s.begin(), End=s.end(); it!=End; ++it) {
-                  const Node& node = it->first;
+                for (Stencil::const_iterator jt=s.begin(), End=s.end(); jt!=End; ++jt) {
+                  const Node& node = jt->first;
                   const IntVect& ivs = node.iv;
                   int slev = node.level;
                   if (slev==lev) {

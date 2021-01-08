@@ -18,8 +18,8 @@
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
-#include "Mesh.hh"
 #include "MeshDefs.hh"
+#include "MeshLight.hh"
 #include "Point.hh"
 
 #include "WhetStoneDefs.hh"
@@ -34,7 +34,8 @@ namespace WhetStone {
 ****************************************************************** */
 inline
 void PolygonCentroidWeights(
-    const AmanziMesh::Mesh& mesh, const AmanziMesh::Entity_ID_List& nodes,
+    const AmanziMesh::MeshLight& mesh, 
+    const AmanziMesh::Entity_ID_List& nodes,
     double area, std::vector<double>& weights)
 {
   int d = mesh.space_dimension();
@@ -61,6 +62,48 @@ void PolygonCentroidWeights(
 
     weights[i1] += tmp;
     weights[i2] += tmp;
+  }
+}
+
+
+/* ******************************************************************
+// Faces of ptype of cell c that are connected to node v.
+****************************************************************** */
+inline
+void node_get_cell_faces(const AmanziMesh::MeshLight& mesh,
+                         const AmanziMesh::Entity_ID v, 
+                         const AmanziMesh::Entity_ID c,
+                         const AmanziMesh::Parallel_type ptype,
+                         AmanziMesh::Entity_ID_List *faces) 
+{
+  Entity_ID_List cells, nodes;
+
+  mesh.node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
+  int ncells = cells.size();
+
+  faces->clear();  
+  int nfaces_owned = mesh.num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+
+  for (int n = 0; n < ncells; ++n) {
+    if (cells[n] == c) {
+      const auto& faces_tmp = mesh.cell_get_faces(c);
+      int nfaces = faces_tmp.size();
+
+      for (int i = 0; i < nfaces; ++i) {
+        int f = faces_tmp[i];
+        if (f >= nfaces_owned) continue;
+
+        mesh.face_get_nodes(f, &nodes);
+        int nnodes = nodes.size();
+        for (int k = 0; k < nnodes; ++k) {
+          if (nodes[k] == v) {
+            faces->push_back(f);
+            break;
+          }
+        }
+      }
+      break;
+    }
   }
 }
 

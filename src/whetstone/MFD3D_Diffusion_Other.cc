@@ -15,12 +15,13 @@
 #include <cmath>
 #include <vector>
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 #include "Point.hh"
 #include "errors.hh"
 
 #include "MFD3D_Diffusion.hh"
 #include "Tensor.hh"
+#include "WhetStoneMeshUtils.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -30,10 +31,8 @@ namespace WhetStone {
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& W)
 {
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   W.Reshape(nfaces, nfaces);
@@ -89,8 +88,7 @@ int MFD3D_Diffusion::MassMatrixInverseDiagonal(int c, const Tensor& K, DenseMatr
 {
   double volume = mesh_->cell_volume(c);
 
-  Entity_ID_List faces;
-  mesh_->cell_get_faces(c, &faces);
+  const auto& faces = mesh_->cell_get_faces(c);
   int nfaces = faces.size();
 
   W.Reshape(nfaces, nfaces);
@@ -110,10 +108,8 @@ int MFD3D_Diffusion::MassMatrixInverseDiagonal(int c, const Tensor& K, DenseMatr
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
 {
-  Entity_ID_List faces;
-  std::vector<int> fdirs;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& fdirs = mesh_->cell_get_face_dirs(c);
   int num_faces = faces.size();
 
   Entity_ID_List nodes, corner_faces;
@@ -131,7 +127,7 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
 
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
-    mesh_->node_get_cell_faces(v, c, Parallel_type::ALL, &corner_faces);
+    node_get_cell_faces(*mesh_, v, c, Parallel_type::ALL, &corner_faces);
     int nfaces = corner_faces.size();
     if (nfaces < d_) {
       Errors::Message msg;
@@ -171,7 +167,7 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
   W.PutScalar(0.0);
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
-    mesh_->node_get_cell_faces(v, c, Parallel_type::ALL, &corner_faces);
+    node_get_cell_faces(*mesh_, v, c, Parallel_type::ALL, &corner_faces);
 
     Tensor& Mv_tmp = Mv[n];
     for (int i = 0; i < d_; i++) {

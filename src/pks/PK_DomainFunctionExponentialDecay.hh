@@ -71,7 +71,7 @@ void PK_DomainFunctionExponentialDecay<FunctionBase>::Init(
   keyword_ = keyword;
 
   // get the model parameters
-  Teuchos::ParameterList blist = plist.sublist("sink");
+  Teuchos::ParameterList blist = plist.sublist("source function");
   tcc_key_ = Keys::readKey(blist, blist.get<std::string>("domain name", "domain"),
                            "total component concentration",
                            "total_component_concentration");

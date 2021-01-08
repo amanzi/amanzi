@@ -288,7 +288,7 @@ void AdvectionFn<Analytic>::FunctionalTimeDerivative(
 
   WhetStone::Polynomial sol, src, pc(d, order_);
   WhetStone::DenseVector data(pc.size());
-  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
+  WhetStone::NumericalIntegration numi(mesh_);
 
   CompositeVector& rhs = *global_op_->rhs();
   Epetra_MultiVector& rhs_c = *rhs.ViewComponent("cell");
@@ -444,12 +444,12 @@ void AdvectionFn_Projection<Analytic>::ComputeVelocities(
   auto maps = maps_factory.Create(map_list, mesh_, mesh_);
 
   // calculate approximate velocities
-  AmanziMesh::Entity_ID_List faces, edges;
+  AmanziMesh::Entity_ID_List edges;
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
   double dtfac = 1.0 / dt;
   for (int c = 0; c < ncells_wghost; ++c) {
-    mesh_->cell_get_faces(c, &faces);
+    const auto& faces = mesh_->cell_get_faces(c);
     int nfaces = faces.size();
 
     WhetStone::VectorPolynomial v;
@@ -839,7 +839,7 @@ void Transient(std::string filename, int nx, int ny, int nz,
       const Epetra_MultiVector& pc = *sol.ViewComponent("cell");
       auto pn = InterpolateCellToNode(mesh, *dg, pc);
   
-      io.InitializeCycle(t, nstep);
+      io.InitializeCycle(t, nstep, "");
       io.WriteVector(*pc(0), "solution", AmanziMesh::CELL);
       io.WriteVector(*(*pn)(0), "interpolation", AmanziMesh::NODE);
       io.FinalizeCycle();

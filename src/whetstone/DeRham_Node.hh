@@ -17,7 +17,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 
 #include "BilinearForm.hh"
 #include "DenseMatrix.hh"
@@ -29,8 +29,8 @@ namespace WhetStone {
 
 class DeRham_Node : public MFD3D { 
  public:
-  DeRham_Node(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) 
-    : BilinearForm(mesh) {};
+  DeRham_Node(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh) 
+    : MFD3D(mesh) {};
 
   virtual std::vector<SchemaItem> schema() const override {
     return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::NODE, DOF_Type::SCALAR, 1));

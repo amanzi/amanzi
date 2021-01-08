@@ -71,7 +71,7 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
                                .sublist("diffusion operator Crouzeix-Raviart");
   int order = op_list.sublist("schema").get<int>("method order");
   
-  Analytic00 ana(mesh, 1.0, 2.0, order);
+  Analytic00 ana(mesh, order);
 
   Point xv(2), x0(2), x1(2);
   AmanziMesh::Entity_ID_List nodes;
@@ -183,7 +183,7 @@ void RunHighOrderLagrange2D(std::string vem_name, bool polygonal_mesh) {
                                .sublist("diffusion operator " + vem_name);
   int order = op_list.sublist("schema").get<int>("method order");
 
-  Analytic00 ana(mesh, 1.0, 2.0, order);
+  Analytic00 ana(mesh, order);
 
   Point xv(2), x0(2), x1(2);
   AmanziMesh::Entity_ID_List nodes;
@@ -323,7 +323,7 @@ void RunHighOrderLagrange3D(const std::string& vem_name) {
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   // numerical integration
-  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+  WhetStone::NumericalIntegration numi(mesh);
 
   // create boundary data (no mixed bc)
   ParameterList op_list = plist.sublist("PK operator")

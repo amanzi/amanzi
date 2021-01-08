@@ -121,6 +121,8 @@ class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
   int Apply(const TreeVector& X, TreeVector& Y, double scalar) const;
   int ApplyAssembled(const TreeVector& X, TreeVector& Y) const;
 
+  void Init();
+  void InitOffdiagonals();
   void SymbolicAssembleMatrix();
   void AssembleMatrix();
 
@@ -174,6 +176,7 @@ class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
 
   Teuchos::RCP<Matrix<TreeVector>> preconditioner_;
   bool block_diagonal_;
+  double shift_;
 
   int num_colors_;
   Teuchos::RCP<std::vector<int>> coloring_;

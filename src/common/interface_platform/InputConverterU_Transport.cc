@@ -137,7 +137,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
 
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, limiter_stencil", flag);
   if (flag) {
-    std::string stencil = GetTextContentS_(node, "node-to-cells, face-to-cells, cell-to-closest-cells");
+    std::string stencil = GetTextContentS_(node, "node-to-cells, face-to-cells, cell-to-closest-cells, cell-to-all-cells");
     std::replace(stencil.begin(), stencil.end(), '-', ' ');
     trp_lift.set<std::string>("limiter stencil", stencil);
   }

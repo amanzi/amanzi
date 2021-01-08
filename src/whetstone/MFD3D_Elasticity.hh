@@ -20,7 +20,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 #include "Point.hh"
 
 #include "BilinearFormFactory.hh"
@@ -34,8 +34,8 @@ namespace WhetStone {
 class MFD3D_Elasticity : public MFD3D { 
  public:
   MFD3D_Elasticity(const Teuchos::ParameterList& plist,
-                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : BilinearForm(mesh) {};
+                   const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
+    : MFD3D(mesh) {};
 
   // required methods
   // -- schema

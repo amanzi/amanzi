@@ -17,7 +17,7 @@
 #include <vector>
 
 // Amanzi
-#include "Mesh.hh"
+#include "MeshLight.hh"
 #include "Point.hh"
 #include "errors.hh"
 
@@ -33,8 +33,8 @@ namespace WhetStone {
 * Constructor parses the parameter list
 ****************************************************************** */
 MFD3D_Lagrange::MFD3D_Lagrange(const Teuchos::ParameterList& plist,
-                               const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  : BilinearForm(mesh)
+                               const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
+  : MFD3D(mesh)
 {
   order_ = plist.get<int>("method order");
 }
@@ -46,16 +46,15 @@ MFD3D_Lagrange::MFD3D_Lagrange(const Teuchos::ParameterList& plist,
 int MFD3D_Lagrange::H1consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List nodes, faces;
-  std::vector<int> dirs;
-
+  Entity_ID_List nodes;
   mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
   N.Reshape(nnodes, d_ + 1);
   Ac.Reshape(nnodes, nnodes);
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
 
   double volume = mesh_->cell_volume(c);
   AmanziGeometry::Point p(d_), pnext(d_), pprev(d_), v1(d_), v2(d_), v3(d_);
@@ -148,13 +147,12 @@ void MFD3D_Lagrange::ProjectorCell_(
     int c, const std::vector<Polynomial>& ve,
     const std::vector<Polynomial>& vf, Polynomial& uc)
 {
-  Entity_ID_List nodes, faces;
-  std::vector<int> dirs;
-
+  Entity_ID_List nodes;
   mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int num_faces = faces.size();
 
   // populate matrix R (should be a separate routine lipnikov@lanl.gv)

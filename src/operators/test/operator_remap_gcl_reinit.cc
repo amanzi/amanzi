@@ -233,7 +233,7 @@ double MyRemapDGr::InitialMass(const TreeVector& p1, int order)
 
   double mass(0.0), mass0;
   WhetStone::DenseVector data(nk);
-  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh0_);
+  WhetStone::NumericalIntegration numi(mesh0_);
 
   for (int c = 0; c < ncells; c++) {
     for (int i = 0; i < nk; ++i) data(i) = p1c[i][c];
@@ -475,7 +475,7 @@ void RemapGCLr(const Amanzi::Explicit_TI::method_t& rk_method,
   // concervation errors: mass and volume (CGL)
   auto& jac = remap.jac();
   double area(0.0), area1(0.0), mass1(0.0), gcl_err(0.0), gcl_inf(0.0);
-  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh0);
+  WhetStone::NumericalIntegration numi(mesh0);
 
   for (int c = 0; c < ncells_owned; ++c) {
     double vol1 = numi.IntegratePolynomialCell(c, jac[c]);
@@ -517,7 +517,7 @@ void RemapGCLr(const Amanzi::Explicit_TI::method_t& rk_method,
   iolist.get<std::string>("file name base", "plot");
   OutputXDMF io(iolist, mesh1, true, false);
 
-  io.InitializeCycle(t, 1);
+  io.InitializeCycle(t, 1, "");
   io.WriteVector(*p2c(0), "solution", AmanziMesh::CELL);
   io.FinalizeCycle();
 }

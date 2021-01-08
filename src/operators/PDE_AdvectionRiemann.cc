@@ -222,9 +222,6 @@ void PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential
   int d = mesh_->space_dimension();
   std::vector<AmanziGeometry::Point> tau(d - 1);
 
-  // create integration object for all mesh cells
-  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
-
   for (int f = 0; f != nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET ||
         bc_model[f] == OPERATOR_BC_DIRICHLET_TYPE2) {

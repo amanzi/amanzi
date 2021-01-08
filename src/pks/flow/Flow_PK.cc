@@ -37,6 +37,7 @@ Flow_PK::Flow_PK(Teuchos::ParameterList& pk_tree,
                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
                  const Teuchos::RCP<State>& S,
                  const Teuchos::RCP<TreeVector>& soln) :
+  PK(pk_tree, glist, S, soln),
   PK_PhysicalBDF(pk_tree, glist, S, soln),
   passwd_("flow"),
   peaceman_model_(false)
@@ -119,7 +120,7 @@ void Flow_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   if (!S->HasFieldEvaluator(darcy_flux_key_)) {
-    AddDefaultPrimaryEvaluator(darcy_flux_key_);
+    AddDefaultPrimaryEvaluator_(darcy_flux_key_);
   }
 
   // Wells
@@ -232,16 +233,16 @@ void Flow_PK::InitializeFields_()
         *vo_->os() << "initialized gravity to default value -9.8" << std::endl;  
   }
 
-  InitializeField(S_.ptr(), porosity_key_, porosity_key_, 0.2);
+  InitializeField_(S_.ptr(), porosity_key_, porosity_key_, 0.2);
 
-  InitializeField(S_.ptr(), passwd_, specific_storage_key_, 0.0);
-  InitializeField(S_.ptr(), passwd_, specific_yield_key_, 0.0);
+  InitializeField_(S_.ptr(), passwd_, specific_storage_key_, 0.0);
+  InitializeField_(S_.ptr(), passwd_, specific_yield_key_, 0.0);
 
-  InitializeField(S_.ptr(), passwd_, pressure_key_, 0.0);
-  InitializeField(S_.ptr(), passwd_, hydraulic_head_key_, 0.0);
-  InitializeField(S_.ptr(), passwd_, pressure_head_key_, 0.0);
+  InitializeField_(S_.ptr(), passwd_, pressure_key_, 0.0);
+  InitializeField_(S_.ptr(), passwd_, hydraulic_head_key_, 0.0);
+  InitializeField_(S_.ptr(), passwd_, pressure_head_key_, 0.0);
 
-  InitializeField(S_.ptr(), passwd_, darcy_flux_key_, 0.0);
+  InitializeField_(S_.ptr(), passwd_, darcy_flux_key_, 0.0);
 }
 
 
@@ -409,7 +410,7 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 ****************************************************************** */
 void Flow_PK::ComputeWellIndex(Teuchos::ParameterList& spec)
 {
-  AmanziMesh::Entity_ID_List cells, faces;
+  AmanziMesh::Entity_ID_List cells;
   Epetra_MultiVector& wi = *S_->GetFieldData("well_index", passwd_)->ViewComponent("cell");
   const Epetra_MultiVector& perm = *S_->GetFieldData(permeability_key_)->ViewComponent("cell");
 
@@ -426,7 +427,7 @@ void Flow_PK::ComputeWellIndex(Teuchos::ParameterList& spec)
 
     for (int k = 0; k < cells.size(); k++) {
       int c = cells[k];
-      mesh_->cell_get_faces(c, &faces);
+      const auto& faces = mesh_->cell_get_faces(c);
       xmin = ymin = zmin = 1e+23;
       xmax = ymax = zmax = 1e-23;
       for (int j = 0; j < faces.size(); j++) {
@@ -736,12 +737,10 @@ void Flow_PK::DeriveFaceValuesFromCellValues(
 double Flow_PK::WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
                                            const Epetra_MultiVector& darcy_flux) const
 {
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> fdirs;
-
   double volume = 0.0;
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& fdirs = mesh_->cell_get_face_dirs(c);
 
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
@@ -793,10 +792,8 @@ double Flow_PK::BoundaryFaceValue(int f, const CompositeVector& u)
 ****************************************************************** */
 void Flow_PK::VerticalNormals(int c, AmanziGeometry::Point& n1, AmanziGeometry::Point& n2)
 {
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
   int i1, i2;

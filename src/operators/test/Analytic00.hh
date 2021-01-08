@@ -11,9 +11,9 @@
   Polynomial solution and constant coefficient is defined by
   the user-provided gradient and polynomial order:
   Solution: p = 1  order=0
-            p = 1 + gx x + gy y  order=1
-            p = 1 + gx x + gy y + 3x^2 + 4xy - 3y^2  order=2
-            p = 1 + gx x + gy y + 3x^2 + 4xy - 3y^2 + x^3 + 6x^2y - 3xy^2 - 3y^3  order=3
+            p = 1 + x + 2y  order=1
+            p = 1 + x + 2y + 3x^2 + 4xy - 3y^2  order=2
+            p = 1 + x + 2y + 3x^2 + 4xy - 3y^2 + x^3 + 6x^2y - 3xy^2 - 3y^3  order=3
   Diffusion: K = 1
   Velocity: v = [vx, vy]
   Source: f = -Laplacian(p)
@@ -29,16 +29,18 @@
 
 class Analytic00 : public AnalyticBase {
  public:
-  Analytic00(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, double gx, double gy, int order,
+  Analytic00(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order,
+             double g = 0.0,
              const Amanzi::AmanziGeometry::Point v = Amanzi::AmanziGeometry::Point(2)) :
       AnalyticBase(mesh),
-      poly_(2, order),
-      v_(v) {
+      g_(g),
+      v_(v),
+      poly_(2, order) {
     poly_(0, 0) = 1.0;
 
     if (order > 0) {
-      poly_(1, 0) = gx;
-      poly_(1, 1) = gy;
+      poly_(1, 0) = 1.0;
+      poly_(1, 1) = 2.0;
     }
 
     if (order > 1) {
@@ -55,6 +57,9 @@ class Analytic00 : public AnalyticBase {
     }
 
     grad_ = Gradient(poly_);
+    // grad_[0] += v_[0] * poly_;
+    // grad_[1] += v_[1] * poly_;
+    grad_[1](0) += g_;
  
     Amanzi::WhetStone::VectorPolynomial tmp(2, 2);
     for (int i = 0; i < 2; ++i) {
@@ -92,6 +97,7 @@ class Analytic00 : public AnalyticBase {
   double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { return rhs_.Value(p); }
 
  private:
+  double g_;
   Amanzi::AmanziGeometry::Point v_;
   Amanzi::WhetStone::Polynomial poly_, rhs_;
   Amanzi::WhetStone::VectorPolynomial grad_;

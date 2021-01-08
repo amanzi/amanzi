@@ -98,13 +98,7 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "state", true);
 
   InitializeMinerals(cp_list_);
-  if (cp_list_->isSublist("initial conditions")) {
-    // ATS-style input spec -- initial conditions in the PK
-    InitializeSorptionSites(cp_list_, cp_list_);
-  } else {
-    // Amanzi-style input spec -- initial conditions in State
-    InitializeSorptionSites(cp_list_, state_list);
-  }
+  InitializeSorptionSites(cp_list_, Teuchos::sublist(state_list, "initial conditions"));
 
   // create chemistry engine. (should we do it later in Setup()?)
   if (!cp_list_->isParameter("engine")) {
@@ -215,7 +209,7 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // initialize fields as soon as possible
   for (size_t i = 0; i < aux_names_.size(); ++i) {
-    InitializeField(S, passwd_, aux_names_[i], 0.0);
+    InitializeField_(S, passwd_, aux_names_[i], 0.0);
   }
 
   // Initialize the data structures that we will use to traffic data between 
@@ -436,9 +430,9 @@ void Alquimia_PK::XMLParameters()
   }
 
   Teuchos::RCP<Teuchos::ParameterList> initial_conditions;
-  if (cp_list_->isSublist("initial conditions")) {
+  if (cp_list_->isSublist("initial condition")) {
     // ATS-style input spec -- initial conditions in the PK
-    initial_conditions = Teuchos::sublist(cp_list_, "initial conditions");
+    initial_conditions = Teuchos::sublist(cp_list_, "initial condition");
   } else {
     // Amanzi-style input spec -- initial conditions in State
     initial_conditions = Teuchos::sublist(Teuchos::sublist(glist_, "state"), "initial conditions");
@@ -447,8 +441,8 @@ void Alquimia_PK::XMLParameters()
     Teuchos::ParameterList& geochem_conditions = initial_conditions->sublist("geochemical conditions");
     ParseChemicalConditionRegions(geochem_conditions, chem_initial_conditions_);
     if (chem_initial_conditions_.empty()) {
-      if (cp_list_->isSublist("initial conditions")) {
-        msg << "Alquimia_PK::XMLParameters(): No geochemical conditions were found in \"PK->initial conditions->geochemical conditions\"";
+      if (cp_list_->isSublist("initial condition")) {
+        msg << "Alquimia_PK::XMLParameters(): No geochemical conditions were found in \"PK->initial condition->geochemical conditions\"";
       } else {
         msg << "Alquimia_PK::XMLParameters(): No geochemical conditions were found in \"State->initial conditions->geochemical conditions\"";
       }
@@ -766,8 +760,13 @@ int Alquimia_PK::AdvanceSingleCell(
   int num_iterations;
   bool success = chem_engine_->Advance(dt, alq_mat_props_, alq_state_, 
                                        alq_aux_data_, alq_aux_output_, num_iterations);
-  if (not success) 
+  if (not success) {
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "no convergence in cell: " << mesh_->cell_map(false).GID(cell) << std::endl;
+    }
     return -1;
+  }
 
   // Move the information back into Amanzi's state, updating the given total concentration vector.
   CopyAlquimiaStateToAmanzi(cell, 
@@ -799,9 +798,9 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // Get the number of owned (non-ghost) cells for the mesh.
-  unsigned int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   
-  int max_itrs (0), avg_itrs(0), imax(-1);
+  int max_itrs(0), avg_itrs(0), min_itrs(1000), imax(-1);
 
   // Ensure dependencies are filled
   S_->GetFieldEvaluator(poro_key_)->HasFieldChanged(S_.ptr(), name_);
@@ -817,6 +816,7 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         max_itrs = num_itrs;
         imax = cell;
       }
+      min_itrs = std::min(min_itrs, num_itrs);
       avg_itrs += num_itrs;
     } else {
       // Convergence failure. Compute the next time step size.
@@ -832,6 +832,14 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   send[1] = max_itrs;
   send[2] = mesh_->cell_map(false).GID(imax);
   mesh_->get_comm()->MaxAll(send, recv, 3);
+
+  int tmp(min_itrs);
+  mesh_->get_comm()->MinAll(&tmp, &min_itrs, 1);
+
+  tmp = avg_itrs;
+  mesh_->get_comm()->SumAll(&tmp, &avg_itrs, 1);
+  avg_itrs /= mesh_->cell_map(false).NumGlobalElements();
+
   if (recv[0] != 0) 
     num_successful_steps_ = 0;
   else
@@ -849,8 +857,8 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Advanced after maximum of " << num_iterations_
-               << " Newton iterations in cell " << imax << std::endl;
+    *vo_->os() << "min/avg/max Newton: " << min_itrs << "/" << avg_itrs << "/" << num_iterations_
+               << ", the maximum is in cell " << imax << std::endl;
   }
 
   // now publish auxiliary data to state

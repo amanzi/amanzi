@@ -22,7 +22,16 @@ def GetXY_AmanziU_1D(path,root,comp,dim):
     x_amanziU = np.diff(y)/2 + y[0:-1]
 
     # extract concentration array
-    alltimes = [int(n) for n in amanzi_file[comp].keys()]
+    alltimes = [n for n in amanzi_file[comp].keys()]
+    remove = []
+    for i in alltimes:
+        try:
+            a = int(i)
+        except:
+            remove += [i]
+    for i in remove:
+        alltimes.remove(i)
+    alltimes = [int(n) for n in alltimes]   
     time = list(amanzi_file[comp].keys())[alltimes.index(max(alltimes))]
 
     c_amanziU = np.array(amanzi_file[comp][time]).flatten()

@@ -232,7 +232,7 @@ double MyRemapDGc::InitialMass(const CompositeVector& p1, int order)
 
   double mass(0.0), mass0;
   WhetStone::DenseVector data(nk);
-  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh0_);
+  WhetStone::NumericalIntegration numi(mesh0_);
 
   for (int c = 0; c < ncells; c++) {
     for (int i = 0; i < nk; ++i) data(i) = p1c[i][c];
@@ -367,6 +367,8 @@ void RemapTestsCurved(std::string file_name,
     mesh0 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, comm, gm, mlist));
     mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, comm, gm, mlist));
   }
+  mesh0->BuildCache();
+  mesh1->BuildCache();
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
@@ -397,7 +399,7 @@ void RemapTestsCurved(std::string file_name,
 
   p2c = *p1->ViewComponent("cell");
 
-  io->InitializeCycle(0.0, 0);
+  io->InitializeCycle(0.0, 0, "");
   io->WriteVector(*p2c(0), "solution", AmanziMesh::CELL);
   io->FinalizeCycle();
 
@@ -444,7 +446,7 @@ void RemapTestsCurved(std::string file_name,
 
     // visualize solution on mesh1
     // io = Teuchos::rcp(new OutputXDMF(iolist, mesh1, true, false));
-    io->InitializeCycle(t, iloop + 1);
+    io->InitializeCycle(t, iloop + 1, "");
     io->WriteVector(*p2c(0), "solution", AmanziMesh::CELL);
     if (order > 0) {
       io->WriteVector(*p2c(1), "gradx", AmanziMesh::CELL);
@@ -493,7 +495,7 @@ void RemapTestsCurved(std::string file_name,
   double area(0.0), area0(0.0), area1(0.0);
   double mass1(0.0), gcl_err(0.0), gcl_inf(0.0);
   auto& det = remap.det();
-  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh0);
+  WhetStone::NumericalIntegration numi(mesh0);
 
   for (int c = 0; c < ncells_owned; ++c) {
     double vol1 = numi.IntegratePolynomialCell(c, det[c].Value(1.0));

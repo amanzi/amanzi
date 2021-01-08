@@ -27,8 +27,7 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" />
-    <chemistry state="on" engine="pflotran" database="calcite.dat" />
-    <!--chemistry state="on" engine="pflotran" input_filename="1d-calcite-trim.in" database="calcite.dat"/-->
+    <chemistry state="on" engine="pflotran" input_filename="1d-calcite-trim.in" database="calcite.dat"/>
   </process_kernels>
 
   <phases>

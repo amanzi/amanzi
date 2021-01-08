@@ -7,7 +7,7 @@
 
 # Require cmake version same as the version used to buildg TPLs 
 #(see SuperBuild/CMakeLists.txt)
-cmake_minimum_required(VERSION 3.11.4)
+cmake_minimum_required(VERSION 3.13.3)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -80,6 +80,23 @@ if ((ENABLE_Unstructured)  AND
                       "-D ENABLE_MSTK_Mesh:BOOL=ON\n")
 endif()    
 
+if(ENABLE_KOKKOS_CUDA) 
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
+    -Wno-deprecated-declarations \
+    -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored \
+    -Xcudafe --diag_suppress=conversion_function_not_usable \
+    -Xcudafe --diag_suppress=cc_clobber_ignored \
+    -Xcudafe --diag_suppress=code_is_unreachable \
+    -Xcudafe --diag_suppress=declared_but_not_referenced \
+    -Xcudafe --diag_suppress=integer_sign_change \
+    -Xcudafe --diag_suppress=partial_override \
+    -Xcudafe --diag_suppress=virtual_function_decl_hidden \
+    -Xcudafe --diag_suppress=probable_guiding_friend \
+    -Xcudafe --display_error_number \
+    --expt-extended-lambda")  
+  message(STATUS "NVCC_WRAPPER_DEFAULT_COMPILER: $ENV{NVCC_WRAPPER_DEFAULT_COMPILER}")  
+  message(STATUS "CMAKE_CXX_COMPILER ${CMAKE_CXX_COMPILER}")  
+endif()
 
 # A property for accumulating the a global amanzi link line.
 set_property(GLOBAL PROPERTY AMANZI_LINK_LINE "-L${CMAKE_INSTALL_PREFIX}/lib")
@@ -88,6 +105,11 @@ set_property(GLOBAL PROPERTY AMANZI_LINK_LINE "-L${CMAKE_INSTALL_PREFIX}/lib")
 set_property(GLOBAL PROPERTY AMANZI_LIBRARY_TARGETS)
 set(AMANZI_LINK_LINE_FILE "${AMANZI_BINARY_DIR}/link_line")  # A filename to write link-line to.
 include(InstallManager)
+
+# find python3 for use in regression testing
+if (ENABLE_Regression_Tests)
+  find_package(PythonInterp 3 REQUIRED VERSION)
+endif()
 
 # Source files for all binaries and libraries found under src
 add_subdirectory(src)
@@ -99,8 +121,9 @@ add_subdirectory(src)
 # EIB - uncommenting this will include the verification/benchmarking tests
 include(CTest)
 if (ENABLE_Regression_Tests)
-  find_package(PythonInterp)
-  add_subdirectory(test_suites) 
+  if (ENABLE_AmanziPhysicsModule)
+    add_subdirectory(test_suites)
+  endif()
 endif()
 
 

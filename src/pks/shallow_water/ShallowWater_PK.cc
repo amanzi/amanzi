@@ -199,8 +199,8 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   // default
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-  InitializeField(S_.ptr(), passwd_, bathymetry_key_, 0.0);
-  InitializeField(S_.ptr(), passwd_, ponded_depth_key_, 1.0);
+  InitializeField_(S_.ptr(), passwd_, bathymetry_key_, 0.0);
+  InitializeField_(S_.ptr(), passwd_, ponded_depth_key_, 1.0);
 
   if (!S_->GetField(total_depth_key_, passwd_)->initialized()) {
     const Epetra_MultiVector& h_c = *S_->GetFieldData(ponded_depth_key_)->ViewComponent("cell");
@@ -214,10 +214,10 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
     S_->GetField(total_depth_key_, passwd_)->set_initialized();
   }
 
-  InitializeField(S_.ptr(), passwd_, velocity_x_key_, 0.0);
-  InitializeField(S_.ptr(), passwd_, velocity_y_key_, 0.0);
-  InitializeField(S_.ptr(), passwd_, discharge_x_key_, 0.0);
-  InitializeField(S_.ptr(), passwd_, discharge_y_key_, 0.0);
+  InitializeField_(S_.ptr(), passwd_, velocity_x_key_, 0.0);
+  InitializeField_(S_.ptr(), passwd_, velocity_y_key_, 0.0);
+  InitializeField_(S_.ptr(), passwd_, discharge_x_key_, 0.0);
+  InitializeField_(S_.ptr(), passwd_, discharge_y_key_, 0.0);
 
   // summary of initialization
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {

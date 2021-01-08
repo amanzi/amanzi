@@ -91,6 +91,32 @@ if __name__ == "__main__":
     except:
         alq = 0
 
+    # AmanziU + Alquimia + PFloTran chemistry WITH WRITER
+    try:
+        comp = 'total_component_concentration.cell.tracer conc'
+        input_file = os.path.join("amanzi-u-1d-"+root+"-alq-pflo-writer.xml")
+        path_to_amanzi = "output-u-alq-pflo-writer"
+        run_amanzi_standard.run_amanzi(input_file, 1, ["1d-"+root+".in",root+".dat",input_file], path_to_amanzi)
+
+        x_amanzi_alquimia_w, c_amanzi_alquimia_w = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
+        alq_writer = len(x_amanzi_alquimia)
+
+    except:
+        alq_writer = 0
+
+        
+    # AmanziU + Alquimia + CrunchFlow chemistry
+    try:
+        comp = 'total_component_concentration.cell.tracer conc'
+        input_file = os.path.join("amanzi-u-1d-"+root+"-alq-crunch.xml")
+        path_to_amanzi = "output-u-alq-crunch"
+        run_amanzi_standard.run_amanzi(input_file, 1, ["1d-"+root+"-crunch.in",root+".dbs",input_file], path_to_amanzi)
+        x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
+        alq_crunch = len(x_amanzi_alquimia_crunch)
+
+    except:
+        alq_crunch = 0
+        
     
     # AmanziS + Alquimia + PFloTran chemistry
     try:
@@ -105,9 +131,20 @@ if __name__ == "__main__":
     except:
         struct = 0
 
-
+    # AmanziS + Alquimia + CrunchFlow chemistry
+    try:
+        input_file = os.path.join("amanzi-s-1d-"+root+"-alq-crunch.xml")
+        path_to_amanziS = "output-s-alq-crunch"
+        run_amanzi_standard.run_amanzi(input_file, 1, ["1d-"+root+"-crunch.in",root+".dbs",input_file], path_to_amanziS)
+        root_amanziS = "plt"
+        compS = "tracer_water_Concentration"
+        x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanziS,root_amanziS,compS,1)
+        struct_crunch = len(x_amanziS_crunch)
+    except:
+        struct_crunch = 0
+        
 # plotting --------------------------------------------------------
-    fig = plt.figure(figsize=[7.00,5.25])
+    fig = plt.figure(figsize=[8.00,5.25])
     ax = fig.add_subplot()
     
     # pflotran
@@ -125,10 +162,23 @@ if __name__ == "__main__":
     if alq>0:
         ax.plot(x_amanzi_alquimia, c_amanzi_alquimia,'r-',label='AmanziU+Alq(PFT)',linewidth=2)
 
+    # unstruct amanzi alquimia + pflotran with writer
+    if alq_writer>0:
+        ax.plot(x_amanzi_alquimia_w, c_amanzi_alquimia_w,'r--',label='AmanziU+Alq(PFT)-W',linewidth=2)
+        
+    # unstruct amanzi alquimia + crunchflow        
+    if alq_crunch>0:
+        ax.plot(x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch,'r*',label='AmanziU+Alq(CF)',linewidth=2)
+        
+
     # struct amanzi alquimia + pflotran
     if (struct>0):
         sam = ax.plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alq(PFT)',linewidth=2)     
 
+    # struct amanzi alquimia + pflotran
+    if (struct_crunch>0):
+        sam = ax.plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alq(CF)',linewidth=2) 
+        
 # figure look
     # axes
     ax.set_xlabel("Distance (m)",fontsize=20)

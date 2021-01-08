@@ -56,7 +56,7 @@ struct RSdata
 
   virtual const PArray<MFTower>& GetKappaEC(Real t) {return KappaEC;}
   virtual const MFTower* GetKappaCCdir(Real t) {return KappaCCdir;}
-  virtual const MFTower* GetSource(Real time) {return Source;}
+  virtual const MFTower* GetSource(Real t) {return Source;}
 
   // Algorithm switches for Richard Solver
   bool semi_analytic_J;                      // Explicitly use dPc/ds relationship in computing the Jacobian

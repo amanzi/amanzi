@@ -68,7 +68,7 @@ void AdvectionDiffusion2D(int nx, double* error)
 
   // populate diffusion coefficient
   AmanziGeometry::Point vel(1.0, 1.0);
-  Analytic ana(mesh, 1.0, 2.0, 1, vel);
+  Analytic ana(mesh, 1, 0.0, vel);
 
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells_owned; c++) {
