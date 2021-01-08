@@ -22,10 +22,11 @@ public:
   double basis_grad(int,std::vector<double>&);
   void quadrature();
 
+  int nquad_vol, nquad_edge;
   std::vector<std::vector<double> > quad_nodes_vol;
   std::vector<double> weight_vol;
-  std::vector<std::vector<double> > quad_nodes_face;
-  std::vector<double> weight_face;
+  std::vector<std::vector<double> > quad_nodes_edge;
+  std::vector<double> weight_edge;
 
 };
 
@@ -80,11 +81,11 @@ void quadrature(int c){
 
   // quadrature in the cell
   //---- 9-point, 2d product of 3-point Gauss ----!
-  int nquad=9;
+  nquad_vol = 9;
   int nvertex = 4;
   quad_nodes_vol.resize(nvertex);
-  for int (n = 0; n < nquad; n++) quad_nodes_vol[n].resize(nquad);
-  weight_vol.resize(nquad);
+  for int (n = 0; n < nquad_vol; n++) quad_nodes_vol[n].resize(nquad_vol);
+  weight_vol.resize(nquad_vol);
 
   std::vector<double> qp, qw;
   qp.resize(3); qw.resize(3);
@@ -107,32 +108,82 @@ void quadrature(int c){
      }
   }
 
-  for (iq = 0; iq < nquad; iq++) {
+  for (iq = 0; iq < nquad_vol; iq++) {
       quad_nodes_vol[2][iq] = 1.0 - quad_nodes_vol[0,iq];
       quad_nodes_vol[3][iq] = 1.0 - quad_nodes_vol[1,iq];
   }
 
   // quadrature on edges
   //---- 3-point Gauss formula ----!
-  quad_nodes_face[0][0] = 0.5*(1.0 - s);
-  quad_nodes_face[1][0] = 0.5*(1.0 + s);
-  weight_face[0] = 5.0/18.0;
-  quad_nodes_face[0][1] = 0.5*(1.0 + s);
-  quad_nodes_face[1][1] = 0.5*(1.0 - s);
-  weight_face[1] = 5.0/18.0;
-  quad_nodes_face[0][2] = 0.5;
-  quad_nodes_face[1][2] = 0.5;
-  weight_face[2] = 8.0/18.0;
+  nquad_edge = 3;
 
+  std::vector<std::vector<double> > qp_edge;
+  std::vector<double> qw_edge;
+  qp_edge.resize(nquad_edge); qw_edge.resize(nquad_edge);
+
+  qp_edge[0].resize(nquad_edge);
+  qp_edge[0][0] = 0.5*(1.0 - s);
+  qp_edge[1][0] = 0.5*(1.0 + s);
+  qw_edge[0] = 5.0/18.0;
+  qp_edge[1].resize(nquad_edge);
+  qp_edge[0][1] = 0.5*(1.0 + s);
+  qp_edge[1][1] = 0.5*(1.0 - s);
+  qw_edge[1] = 5.0/18.0;
+  qp_edge[2].resize(nquad_edge);
+  qp_edge[0][2] = 0.5;
+  qp_edge[1][2] = 0.5;
+  qw_edge[2] = 8.0/18.0;
+
+  // triangles
 //  mesh_->cell_get_faces(c,&cfaces);
+
 //
-//  for (int f = 0; f < cfaces.size(); f++) {
+//  for (int edgenum = 0; edgenum < cfaces.size(); edgenum++) {
 //    for (iq = 0; iq < nquad; iq++) {
-//       quad_nodes_face(edgenum,edgenum,iq)         = quad_edge(1,iq)
-//       quad_nodes_face(edgenum,e%next(edgenum),iq) = quad_edge(2,iq)
-//       weight_face(edgenum,iq)               = weight_edge(iq)
+//       quad_nodes_edge(edgenum,edgenum,iq)         = qp_edge(1,iq)
+//       quad_nodes_edge(edgenum,e%next(edgenum),iq) = qp_edge(2,iq)
+//       weight_edge(edgenum,iq)                     = qw_edge(iq)
 //    }
 //  }
+
+  // quads
+
+  int edgenum;
+
+  edgenum = 0
+  for (int iq = 0; iq < nquad_edge; iq++) {
+      quad_nodes_edge(edgenum,0,iq)   = quad_edge(0,iq);
+      quad_nodes_edge(edgenum,1,iq)   = 0.0;
+      quad_nodes_edge(edgenum,2,iq) = 1.0 - e%quad_edge(edgenum,0,iq);
+      quad_nodes_edge(edgenum,3,iq) = 1.0 - e%quad_edge(edgenum,1,iq);
+  }
+  edgenum = 1
+  for (int iq = 0; iq < nquad_edge; iq++) {
+    quad_nodes_edge(edgenum,0,iq)   = 1.0;
+    quad_nodes_edge(edgenum,1,iq)   = quad_edge(0,iq);
+    quad_nodes_edge(edgenum,2,iq) = 1.0 - e%quad_edge(edgenum,0,iq);
+    quad_nodes_edge(edgenum,3,iq) = 1.0 - e%quad_edge(edgenum,1,iq);
+  }
+  edgenum = 2
+  for (int iq = 0; iq < nquad_edge; iq++) {
+    quad_nodes_edge(edgenum,0,iq)   = quad_edge(0,iq);
+    quad_nodes_edge(edgenum,1,iq)   = 1.0;
+    quad_nodes_edge(edgenum,2,iq) = 1.0 - e%quad_edge(edgenum,0,iq);
+    quad_nodes_edge(edgenum,3,iq) = 1.0 - e%quad_edge(edgenum,1,iq);
+  }
+  edgenum = 3
+  for (int iq = 0; iq < nquad_edge; iq++) {
+    quad_nodes_edge(edgenum,0,iq)   = 0.0;
+    quad_nodes_edge(edgenum,1,iq)   = quad_edge(0,iq);
+    quad_nodes_edge(edgenum,2,iq) = 1.0 - e%quad_edge(edgenum,0,iq);
+    quad_nodes_edge(edgenum,3,iq) = 1.0 - e%quad_edge(edgenum,1,iq);
+  }
+
+  for (edgenum = 0; edgenum < 3; edgenum++) {
+    for (int iq = 0; iq < nquad_edge; iq++) {
+        weight_edge(edgenum,iq)   = weight_edge(iq);
+    }
+  }
 
 }
 
