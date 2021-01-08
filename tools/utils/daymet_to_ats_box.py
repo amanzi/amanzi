@@ -183,8 +183,8 @@ def writeATS(time, dat, x, y, attrs, filename):
         assert(len(x.shape) == 1)
         assert(len(y.shape) == 1)
 
-        fid.create_dataset('row coordinate [m]', data=x)        
-        fid.create_dataset('col coordinate [m]', data=y)
+        fid.create_dataset('x coordinate [m]', data=x)        
+        fid.create_dataset('y coordinate [m]', data=y)
 
         for key in dat.keys():
             assert(dat[key].shape[0] == time.shape[0])
