@@ -382,6 +382,9 @@ class State {
   int position() const { return position_in_tp_; }
   void set_position(int pos ) { position_in_tp_ = pos; }
 
+  // Utility for setting vis flags using blacklist and whitelist
+  void InitializeIOFlags_();
+
  private:
 
   // Accessors that return null if the Key does not exist.
@@ -394,9 +397,6 @@ class State {
   // Consistency checking of fieldnames and types.
   Teuchos::RCP<Field> CheckConsistent_or_die_(Key fieldname,
           FieldType type, Key owner);
-
-  // Utility for setting vis flags using blacklist and whitelist
-  void InitializeIOFlags_();
 
   // Containers
   MeshMap meshes_;

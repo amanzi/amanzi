@@ -221,6 +221,15 @@ class Mesh : public MeshLight {
           const Parallel_type ptype,
           Entity_ID_List *cellids) const = 0;
 
+  // Edges of type 'ptype' connected to a node
+  //
+  // The order of edges is not guaranteed to be the same for corresponding
+  // node on different processors
+  virtual void node_get_edges(
+          const Entity_ID nodeid,
+          const Parallel_type ptype,
+          Entity_ID_List *edgeids) const { AMANZI_ASSERT(false); }
+
 
   //-----------------------
   // Same level adjacencies
