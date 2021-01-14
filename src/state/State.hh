@@ -383,7 +383,7 @@ class State {
   void set_position(int pos ) { position_in_tp_ = pos; }
 
   // Utility for setting vis flags using blacklist and whitelist
-  void InitializeIOFlags_();
+  void InitializeIOFlags();
 
  private:
 
