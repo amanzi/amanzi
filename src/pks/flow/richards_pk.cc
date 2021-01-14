@@ -359,6 +359,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S)
 
   // Require fields and evaluators
   CompositeVectorSpace matrix_cvs = matrix_->RangeMap();
+  compute_boundary_values_ = plist_->get<bool>("compute boundary values", false);
   if (compute_boundary_values_)
     matrix_cvs.AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
   S->RequireField(key_, name_)->Update(matrix_cvs)->SetGhosted();
@@ -390,9 +391,6 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S)
   // -- valid step controls
   sat_change_limit_ = plist_->get<double>("max valid change in saturation in a time step [-]", -1.);
   sat_ice_change_limit_ = plist_->get<double>("max valid change in ice saturation in a time step [-]", -1.);
-
-  // -- not sure what this is for? -- etc
-  compute_boundary_values_ = plist_->get<bool>("compute boundary values", false);
 }
 
 
