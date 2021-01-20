@@ -218,12 +218,12 @@ void Coordinator::initialize() {
 
       if (sublist_p->get("visualize individually", false)) {
         // visualize each subdomain
-        for (const auto& name_id : *dset) {
-          Teuchos::ParameterList sublist = vis_list->sublist(name_id.first);
-          sublist.set<std::string>("file name base", std::string("ats_vis_")+name_id.first);
+        for (const auto& subdomain : *dset) {
+          Teuchos::ParameterList sublist = vis_list->sublist(subdomain);
+          sublist.set<std::string>("file name base", std::string("ats_vis_")+subdomain);
           auto vis = Teuchos::rcp(new Amanzi::Visualization(sublist));
-          vis->set_name(name_id.first);
-          vis->set_mesh(S_->GetMesh(name_id.first));
+          vis->set_name(subdomain);
+          vis->set_mesh(S_->GetMesh(subdomain));
           vis->CreateFiles(false);
           visualization_.push_back(vis);
         }
@@ -234,9 +234,9 @@ void Coordinator::initialize() {
           sublist_p->set("file name base", std::string("ats_vis_")+domain_name_base);
         auto vis = Teuchos::rcp(new Amanzi::VisualizationDomainSet(*sublist_p));
         vis->set_name(domain_name_base);
-        vis->set_mesh(dset->parent);
-        for (const auto& name_id : *dset) {
-          vis->set_subdomain_mesh(name_id.first, S_->GetMesh(name_id.first));
+        vis->set_mesh(dset->get_referencing_parent());
+        for (const auto& subdomain : *dset) {
+          vis->set_subdomain_mesh(subdomain, S_->GetMesh(subdomain));
         }
         vis->CreateFiles(false);
         visualization_.push_back(vis);

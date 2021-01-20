@@ -75,11 +75,11 @@ MPCWeakDomainDecomposition::init_(const Teuchos::RCP<State>& S)
 
   // get the domain set and save the comm of the parent mesh for later
   const auto& ds = S->GetDomainSet(std::get<0>(subgrid_triple));
-  comm_ = ds->parent->get_comm();
+  comm_ = ds->get_indexing_parent()->get_comm();
 
   // add one PK for each subdomain
-  for (const auto& dname_id : *ds) {
-    subpks.push_back(Keys::getKey(dname_id.first, std::get<2>(subgrid_triple)));
+  for (const auto& subdomain : *ds) {
+    subpks.push_back(Keys::getKey(subdomain, std::get<2>(subgrid_triple)));
   }
 
   // -- create the lifted PKs
