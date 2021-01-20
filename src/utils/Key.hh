@@ -156,16 +156,16 @@ getDomainSetName(const Key& name_id)
   return splitKey(name_id, dset_delimiter).first;
 }
 
-template<typename ID_type=std::string>
-ID_type getDomainSetID(const Key& name_id)
+template<typename Index=std::string>
+Index getDomainSetIndex(const Key& name_id)
 {
   return splitKey(name_id, dset_delimiter).second;
 }
 
 template<>
-inline int getDomainSetID(const Key& name_id)
+inline int getDomainSetIndex(const Key& name_id)
 {
-  return std::atoi(getDomainSetID<std::string>(name_id).c_str());
+  return std::atoi(getDomainSetIndex<std::string>(name_id).c_str());
 }
 
 // Split a domain set into DOMAIN, *, VARNAME

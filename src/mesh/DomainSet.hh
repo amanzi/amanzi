@@ -31,44 +31,92 @@ actual mesh, this works with State.
 #include <vector>
 #include "Teuchos_RCP.hpp"
 
+#include "errors.hh"
+#include "exceptions.hh"
 #include "MeshDefs.hh"
+
+class Epetra_MultiVector;
 
 namespace Amanzi {
 namespace AmanziMesh {
 
-class Mesh;
-
-struct DomainSet {
+//
+// A class for iterating over subdomains and storing importers
+//
+class DomainSet {
+ public:
 
   // this constructor is for domain sets indexed by an entity + regions
   // (e.g. one for each entity in that collection of regions)
-  DomainSet(const Teuchos::RCP<const Mesh>& parent_,
-            const std::vector<std::string>& regions_,
-            Entity_kind kind_,
-            const std::string& name_,
-            bool by_region_=true,
-            std::vector<std::string>* region_aliases=nullptr);
+  DomainSet(const std::string& name,
+            const Teuchos::RCP<const Mesh>& indexing_parent,
+            const std::vector<std::string>& indices);
 
-  using DomainSetMap = std::map<Key,Entity_ID>;
+  DomainSet(const std::string& name,
+            const Teuchos::RCP<const Mesh>& indexing_parent,
+            const std::vector<std::string>& indices,
+            const Teuchos::RCP<const Mesh>& referencing_parent,
+            const std::map<std::string, Teuchos::RCP<const std::vector<int>>> maps);
 
-  using const_iterator = DomainSetMap::const_iterator;
-  const_iterator begin() const { return meshes.begin(); }
-  const_iterator end() const { return meshes.end(); }
-  std::size_t size() const { return meshes.size(); }
+  // iterate over mesh names
+  using const_iterator = std::vector<std::string>::const_iterator;
+  const_iterator begin() const { return meshes_.begin(); }
+  const_iterator end() const { return meshes_.end(); }
+  std::size_t size() const { return meshes_.size(); }
 
-  std::string get_region(int id) {
-    if (by_region) return regions[id];
-    else return "";
+  const std::string& get_name() const { return name_; }
+  Teuchos::RCP<const Mesh> get_indexing_parent() const { return indexing_parent_; }
+  Teuchos::RCP<const Mesh> get_referencing_parent() const { return referencing_parent_; }
+
+  // exporters and maps to/from the parent
+  const std::vector<int>& get_subdomain_map(const std::string& subdomain) const {
+    if (maps_.size() == 0) {
+      Errors::Message msg("DomainSet: subdomain map was requested, but no reference maps were created on construction.");
+      Exceptions::amanzi_throw(msg);
+    } else if (!maps_.count(subdomain)) {
+      Errors::Message msg("DomainSet: subdomain map \"");
+      msg << subdomain << "\" requested, but no such subdomain map exists.";
+      Exceptions::amanzi_throw(msg);
+    }
+    return *maps_.at(subdomain);
+  }
+  void set_subdomain_map(const std::string& subdomain,
+                         const Teuchos::RCP<const std::vector<int>>& map) {
+    maps_[subdomain] = map;
   }
 
-  Teuchos::RCP<const Mesh> parent;
-  std::vector<std::string> regions;
-  Entity_kind kind;
-  std::string name;
-  bool by_region;
+  // import from subdomain to parent domain
+  void DoImport(const std::string& subdomain,
+                const Epetra_MultiVector& src, Epetra_MultiVector& target) const;
 
-  DomainSetMap meshes;
+  // import from parent domain to subdomain
+  void DoExport(const std::string& subdomain,
+                const Epetra_MultiVector& src, Epetra_MultiVector& target) const;
+
+ protected:
+  std::string name_;
+  Teuchos::RCP<const Mesh> indexing_parent_;
+  Teuchos::RCP<const Mesh> referencing_parent_;
+  std::vector<std::string> meshes_;
+
+  std::map<std::string, Teuchos::RCP<const std::vector<int>>> maps_;
 };
+
+//
+// helper functions to create importers
+//
+// Creates an importer from an extracted mesh entity to its parent entities.
+Teuchos::RCP<const std::vector<int>>
+createMapToParent(const AmanziMesh::Mesh& subdomain_mesh,
+                  const AmanziMesh::Entity_kind& src_kind=AmanziMesh::Entity_kind::CELL);
+
+//
+// Creates an importer from a surface mesh lifted from an extracted subdomain
+// mesh to the global surface mesh (which itself was lifted from the extracted
+// subdomain's parent mesh).
+Teuchos::RCP<const std::vector<int>>
+createMapSurfaceToSurface(const AmanziMesh::Mesh& subdomain_mesh,
+        const AmanziMesh::Mesh& parent_mesh);
 
 } // namespace AmanziMesh
 } // namespace Amanzi
