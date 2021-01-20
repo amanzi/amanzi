@@ -709,7 +709,6 @@ void Mesh_MSTK::extract_mstk_mesh(List_ptr src_entities,
         MEnt_Set_AttVal(mr,copyatt,ival,rval,mr_new);
         MEnt_Set_AttVal(mr_new,rparentatt,0,0.0,mr);
       }
-
       break;
     }
     case MFACE: {  // Extracting a surface from a solid mesh or subset of 
@@ -863,14 +862,16 @@ void Mesh_MSTK::extract_mstk_mesh(List_ptr src_entities,
         MEnt_Set_AttVal(mv,vparentgid_att,MV_GlobalID((MVertex_ptr)pval),0.0,
                         NULL);
       }
-    idx = 0;
     MEdge_ptr me = nullptr;
-    while ((me = (MEdge_ptr) MESH_Next_Edge(mesh_,&idx)))
-      if (ME_PType(me) == POVERLAP) {
-        MEnt_Get_AttVal(me,eparentatt,&ival,&rval,&pval);
-        MEnt_Set_AttVal(me,eparentgid_att,ME_GlobalID((MEdge_ptr)pval),0.0,
-                        NULL);
-      }
+    if (entity_dim != MREGION) { // edge parents not set on 3D extraction -- maybe they should be --etc
+      idx = 0;
+      while ((me = (MEdge_ptr) MESH_Next_Edge(mesh_,&idx)))
+        if (ME_PType(me) == POVERLAP) {
+          MEnt_Get_AttVal(me,eparentatt,&ival,&rval,&pval);
+          MEnt_Set_AttVal(me,eparentgid_att,ME_GlobalID((MEdge_ptr)pval),0.0,
+                          NULL);
+        }
+    }
     idx = 0;
     MFace_ptr mf = nullptr;
     while ((mf = (MFace_ptr) MESH_Next_Face(mesh_,&idx)))
@@ -906,16 +907,18 @@ void Mesh_MSTK::extract_mstk_mesh(List_ptr src_entities,
       }
       MEnt_Set_AttVal(mv,vparentatt,0,0.0,mv_parent);
     }
-    idx = 0;
-    while ((me = (MEdge_ptr) MESH_Next_GhostEdge(mesh_,&idx))) {
-      MEnt_Get_AttVal(me,eparentgid_att,&ival,&rval,&pval);
-      MEdge_ptr me_parent = MESH_EdgeFromGlobalID(parent_mesh_mstk,ival);
-      if (!me_parent) {
-        Errors::Message 
-          mesg("Cannot find ghost edge with given global ID");
-        Exceptions::amanzi_throw(mesg);
+    if (entity_dim != MREGION) {
+      idx = 0;
+      while ((me = (MEdge_ptr) MESH_Next_GhostEdge(mesh_,&idx))) {
+        MEnt_Get_AttVal(me,eparentgid_att,&ival,&rval,&pval);
+        MEdge_ptr me_parent = MESH_EdgeFromGlobalID(parent_mesh_mstk,ival);
+        if (!me_parent) {
+          Errors::Message 
+            mesg("Cannot find ghost edge with given global ID");
+          Exceptions::amanzi_throw(mesg);
+        }
+        MEnt_Set_AttVal(me,eparentatt,0,0.0,me_parent);
       }
-      MEnt_Set_AttVal(me,eparentatt,0,0.0,me_parent);
     }
     idx = 0;
     while ((mf = (MFace_ptr) MESH_Next_GhostFace(mesh_,&idx))) {
