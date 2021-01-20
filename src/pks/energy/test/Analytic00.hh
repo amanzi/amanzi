@@ -33,7 +33,7 @@ class Analytic00 : public AnalyticBase {
   Amanzi::WhetStone::Tensor Conductivity(int c, const Amanzi::AmanziGeometry::Point& p, double t) {
     int d = mesh_->space_dimension();
     Amanzi::WhetStone::Tensor K(1, d);
-    K(0, 0) = 2.;
+    K(0, 0) = 4.0;
     return K;
   }
 
@@ -41,7 +41,7 @@ class Analytic00 : public AnalyticBase {
   Amanzi::AmanziGeometry::Point FluidVelocity(int c, const Amanzi::AmanziGeometry::Point& p, double t) {
     int d = mesh_->space_dimension();
     Amanzi::AmanziGeometry::Point v(d);
-    v[0] = 1.;
+    v[0] = 1.0;
     return v;
   }
 
