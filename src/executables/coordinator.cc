@@ -178,6 +178,7 @@ void Coordinator::initialize() {
 
   // Write dependency graph.
   S_->WriteDependencyGraph();
+  S_->InitializeIOFlags(); 
 
   // Check final initialization
   WriteStateStatistics(*S_, *vo_);
