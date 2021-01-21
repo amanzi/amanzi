@@ -1,9 +1,9 @@
 /*
-  This is the state component of the Amanzi code. 
+  This is the state component of the Amanzi code.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Markus Berndt
@@ -69,7 +69,7 @@ UnstructuredObservations::UnstructuredObservations(
 
   // file format
   filename_ = plist.get<std::string>("observation output filename");
-  delimiter_ = plist.get<std::string>("delimiter", ", ");
+  delimiter_ = plist.get<std::string>("delimiter", ",");
   interval_ = plist.get<int>("write interval", 1);
   time_unit_ = plist.get<std::string>("time units", "s");
   Utils::Units unit;
@@ -166,7 +166,12 @@ void UnstructuredObservations::Init_()
             << "# Variable: " << obs->get_variable() << std::endl
             << "# Number of Vectors: " << obs->get_num_vectors() << std::endl;
     }
-    *fid_ << "# =============================================================================" << std::endl
+    *fid_ << "# =============================================================================" << std::endl;
+    *fid_ << "\"time [" << time_unit_ << "]\"";
+    for (const auto& obs : observables_) {
+      *fid_ << delimiter_ << "\"" << obs->get_name() << "\"";
+    }
+    *fid_ << std::endl
           << std::scientific;
     fid_->precision(12);
   } else {
