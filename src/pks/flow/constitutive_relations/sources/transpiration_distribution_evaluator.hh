@@ -1,12 +1,11 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
-//! TranspirationDistributionEvaluator distributes potential ET across the rooting zone.
 /*
-  ATS is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
+//! Distributes and downregulates potential transpiration to the rooting zone.
 
 /*!
 
@@ -49,20 +48,38 @@ long.  Good choices for those models depend upon the local climate, but may be
 something like Julian day 101 for leaf on and Julian day 254 for leaf off (PRMS
 defaults for US temperate forests).
 
-Note that `"leaf on time`" and `"leaf off time`" are relative to the simulation
-start time.  If the run starts on Jan 1, these are Julain day.  This leaf
-on/off cycle is modulo the `"year duration`" (typically either 1 noleap or 1
-year).  If the simulation is run across a water year (e.g. starts October 1),
-then `"leaf on time`" and `"leaf off time`" must be adjusted relative to this
-start date.  Note if `"leaf off time`" < `"leaf on time`" is ok too -- this is
-the case if the simulation starts mid-summer.
+Note that `"leaf on time`" and `"leaf off time`" are relative to the
+simulation's zero time, not the start time.  Typically these are Julian day of
+the year, but this assumes that the 0 time of the simulation (not the "start
+time", but time 0!) is Jan 1.  This leaf on/off cycle is modulo the `"year
+duration`" (typically 1 noleap).  Note if `"leaf off time`" < `"leaf on
+time`" is ok too -- this is the case if simulation time zero is mid-summer.
 
-* `"year duration`" ``[double]`` **1**
-* `"year duration units`" ``[string]`` **noleap**
-* `"leaf on time`" ``[double]`` **0**
-* `"leaf on time units`" ``[string]`` **d**
-* `"leaf off time`" ``[double]`` **366**
-* `"leaf off time units`" ``[string]`` **d**
+.. _transpiration-distribution-evaluator-spec:
+.. admonition:: transpiration-distribution-evaluator
+
+    * `"year duration`" ``[double]`` **1**
+    * `"year duration units`" ``[string]`` **noleap**
+    * `"leaf on time`" ``[double]`` **0**
+    * `"leaf on time units`" ``[string]`` **d**
+    * `"leaf off time`" ``[double]`` **366**
+    * `"leaf off time units`" ``[string]`` **d**
+
+    * `"number of PFTs`" ``[int]`` **1** NOTE: must be 1 currently.
+
+    * `"water limiter function`" ``[function-spec]`` **optional** If provided,
+      limit the total water sink as a function of the integral of the water
+      potential * rooting fraction.
+
+
+    KEYS:
+
+    * `"plant wilting factor`"
+    * `"rooting depth fraction`"
+    * `"potential transpiration`"
+    * `"cell volume`"
+    * `"surface cell volume`"
+
 
 WARNING: there is some odd code here in which some quantities are PFT based and
 some are not.  It isn't clear that those are correct for all usages.  And there
@@ -71,26 +88,9 @@ PFT-based) to collapse it into a single sink for use in the water balance.
 DON'T USE THIS WITH MULTIPLE PFTS without really understanding what you are
 doing! (NOTE, error added for NPFTS > 1)  --etc
 
-
-* `"number of PFTs`" ``[int]`` **1** NOTE: must be 1 currently.
-
-* `"water limiter function`" ``[function-spec]`` **optional** If provided,
-  limit the total water sink as a function of the integral of the water
-  potential * rooting fraction.
-
-
-Keys:
-
-* `"plant wilting factor`"
-* `"rooting depth fraction`"
-* `"potential transpiration`"
-* `"cell volume`"
-* `"surface cell volume`"
-
 */
 
-#ifndef AMANZI_FLOW_TRANSPIRATION_DISTRIBUTION_EVALUATOR_HH_
-#define AMANZI_FLOW_TRANSPIRATION_DISTRIBUTION_EVALUATOR_HH_
+#pragma once
 
 #include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
@@ -119,7 +119,7 @@ class TranspirationDistributionEvaluator : public SecondaryVariableFieldEvaluato
 
   // need a custom EnsureCompatibility as some vectors cross meshes.
   virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
-  
+
  protected:
   void InitializeFromPlist_();
   bool TranspirationPeriod_(double time);
@@ -134,7 +134,7 @@ class TranspirationDistributionEvaluator : public SecondaryVariableFieldEvaluato
   double leaf_on_time_, leaf_off_time_, year_duration_;
   bool limiter_local_;
   Teuchos::RCP<Function> limiter_;
-  
+
  private:
   static Utils::RegisteredFactory<FieldEvaluator,TranspirationDistributionEvaluator> reg_;
 
@@ -143,5 +143,3 @@ class TranspirationDistributionEvaluator : public SecondaryVariableFieldEvaluato
 } //namespace
 } //namespace
 } //namespace
-
-#endif
