@@ -96,7 +96,7 @@ TEST(ENERGY_CONVERGENCE_SRC) {
   Teuchos::RCP<VerboseObject> vo_ = Teuchos::rcp(new VerboseObject("", *plist));
 
   int nx(20);
-  double dt(0.04);
+  double dt(5.0);
   for (int n = 0; n < nmeshes; n++, nx *= 2) {
     dt /= 2.0;
 
@@ -151,7 +151,7 @@ TEST(ENERGY_CONVERGENCE_SRC) {
        
     // constant time stepping 
     int itrs(0);
-    double t(0.0), t1(0.5), dt_next;
+    double t(0.0), t1(100), dt_next;
     while (t < t1) {
       // swap conserved quntity (no backup, we check dt_next instead)
       const CompositeVector& e = *S->GetFieldData("energy");

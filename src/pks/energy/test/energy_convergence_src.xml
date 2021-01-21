@@ -126,6 +126,9 @@
 
 	<Parameter name="time integration method" type="string" value="BDF1"/>
 	<ParameterList name="BDF1">
+	  <ParameterList name="verbose object">
+	    <Parameter name="verbosity level" type="string" value="high"/>
+	  </ParameterList>
 	  <Parameter name="timestep controller type" type="string" value="standard"/>
 	  <ParameterList name="timestep controller standard parameters">
 	    <Parameter name="min iterations" type="int" value="8"/>
@@ -147,7 +150,7 @@
 	    <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
 	    <Parameter name="modify correction" type="bool" value="false"/>
 	    <ParameterList name="verbose object">
-	      <Parameter name="verbosity level" type="string" value="none"/>
+	      <Parameter name="verbosity level" type="string" value="high"/>
 	    </ParameterList>
 	  </ParameterList>
 
@@ -314,8 +317,8 @@
             <Parameter name="regions" type="Array(string)" value="{All}"/>
             <ParameterList name="IEM parameters">
               <Parameter name="iem type" type="string" value="linear"/>
-              <Parameter name="molar heat capacity" type="double" value="0.0"/>
-              <Parameter name="reference temperature" type="double" value="1.0"/>
+              <Parameter name="molar heat capacity" type="double" value="1.0"/>
+              <Parameter name="reference temperature" type="double" value="0.0"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
