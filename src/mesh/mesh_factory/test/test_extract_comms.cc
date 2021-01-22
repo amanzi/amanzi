@@ -50,7 +50,7 @@ TEST (EXTRACT_COMM_SPLIT) {
   Amanzi::AmanziMesh::Preference pref;
 
   auto plist = Teuchos::rcp(new Teuchos::ParameterList());
-  plist->sublist("expert").set<std::string>("partitioner", "zoltan_rcb");
+  plist->sublist("expert").set<std::string>("partitioner", "metis");
   Amanzi::AmanziMesh::MeshFactory meshfactory(comm,gm,plist);
 
   bool flatten = true;
@@ -80,6 +80,7 @@ TEST (EXTRACT_COMM_SPLIT) {
     comm->SumAll(&local_cells, &global_cells, 1);
     CHECK(global_cells == 1000);
 
+    // BELOW SEGMENT DEMONSTRATES MSTK ISSUE #112
     int max_cell = -1;
     for (int c=0; c!=local_cells; ++c) {
       max_cell = std::max(max_cell, parent_mesh->cell_map(false).GID(c));
@@ -87,7 +88,8 @@ TEST (EXTRACT_COMM_SPLIT) {
     int global_max_cell;
     comm->MaxAll(&max_cell, &global_max_cell, 1);
     std::cout << "cell counts: total = " << global_cells << ", max = " << global_max_cell << std::endl;
-    CHECK(global_max_cell == 1000);
+    CHECK(global_max_cell == 999);
+    // END SEGMENT
 
     auto newmesh = meshfactory.create(parent_mesh, setnames, Amanzi::AmanziMesh::FACE, flatten);
     if (local_count == 0) {
