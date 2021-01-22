@@ -359,7 +359,6 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S)
 
   // Require fields and evaluators
   CompositeVectorSpace matrix_cvs = matrix_->RangeMap();
-  // -- not sure what this is for? -- etc
   compute_boundary_values_ = plist_->get<bool>("compute boundary values", false);
   if (compute_boundary_values_)
     matrix_cvs.AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
