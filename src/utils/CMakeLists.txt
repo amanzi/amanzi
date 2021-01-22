@@ -28,7 +28,8 @@ include_directories(${DBC_SOURCE_DIR})
 
 
 add_amanzi_library(atk
-                   SOURCE Timer.cc 
+                   SOURCE AmanziComm.cc
+                          Timer.cc
                           TimerManager.cc
                           TimeStepManager.cc
                           Units.cc

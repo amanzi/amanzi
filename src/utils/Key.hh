@@ -8,8 +8,6 @@
 
    Author: Ethan Coon
 */
-
-
 //! Keys are just strings.
 
 /*
@@ -35,10 +33,7 @@
 
 */
 
-
-#ifndef UTILS_KEY_HH_
-#define UTILS_KEY_HH_
-
+#pragma once
 
 #include <set>
 #include "boost/algorithm/string.hpp"
@@ -65,96 +60,40 @@ static const char dset_delimiter = ':';
 // Convenience function for requesting the name of a Key from an input spec.
 //
 // helper functions...
-inline bool starts_with(const Key& key, const std::string& substr) {
-  return key.length() >= substr.length() && key.substr(0,substr.length()) == substr;
-}
-
-inline bool ends_with(const Key& key, const std::string& substr) {
-  return key.length() >= substr.length() &&
-      key.substr(key.length()-substr.length(), key.length()) == substr;
-}
-
-inline bool in(const Key& key, const char& c) {
-  return key.find(c) != std::string::npos;
-}
+bool starts_with(const Key& key, const std::string& substr);
+bool ends_with(const Key& key, const std::string& substr);
+bool in(const Key& key, const char& c);
 
 // for parsing parameter lists
-Key
-readKey(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
+Key readKey(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
         const Key& default_name="");
 
-inline Key
-cleanPListName(std::string name)
-{
-  auto res = boost::algorithm::find_last(name,"->");
-  if (res.end() - name.end() != 0) boost::algorithm::erase_head(name, res.end() - name.begin());
-  return name;
-}
+Key cleanPListName(std::string name);
 
 // Keys are often a combination of a domain and a variable name.
 
 // Generate a DOMAIN-VARNAME key.
-inline Key
-getKey(const Key& domain, const Key& name, const char& delimiter=name_delimiter)
-{
-  return (domain.empty() || domain == std::string("domain") ) ? name : domain+delimiter+name;
-}
+Key getKey(const Key& domain, const Key& name, const char& delimiter=name_delimiter);
 
 // Split a DOMAIN-VARNAME key.
-inline KeyPair
-splitKey(const Key& name, const char& delimiter=name_delimiter)
-{
-  std::size_t pos = name.find(delimiter);
-  if (pos == std::string::npos)
-    return std::make_pair(Key(""), name);
-  else
-    return std::make_pair(name.substr(0,pos), name.substr(pos+1,name.size()));
-}
+KeyPair splitKey(const Key& name, const char& delimiter=name_delimiter);
 
 // Grab the domain prefix of a DOMAIN-VARNAME key.
-inline Key
-getDomain(const Key& name) {
-  if (name.find(deriv_delimiter) == std::string::npos) {
-    // not a derivative
-    return splitKey(name).first;
-  } else {
-    // pop the initial d
-    return splitKey(name).first.substr(1,std::string::npos);
-  }
-}
+Key getDomain(const Key& name);
 
 // Grab the domain prefix of a DOMAIN-VARNAME Key, including the delimiter
-inline Key
-getDomainPrefix(const Key& name) {
-  std::size_t pos = name.find(name_delimiter);
-  return pos == std::string::npos ? Key("") : name.substr(0,pos+1);
-}
+Key getDomainPrefix(const Key& name);
 
 // Grab the varname suffix of a DOMAIN-VARNAME Key
-inline Key
-getVarName(const Key& name) {
-  return splitKey(name).second;
-}
+Key getVarName(const Key& name);
 
 // Domain Sets are of the form NAME:ID, where ID is an integer or
 // region string indexing the domain set.
-inline Key
-getDomainInSet(const Key& ds_name, const Key& subdomain)
-{
-  return getKey(ds_name, subdomain, dset_delimiter);
-}
+Key getDomainInSet(const Key& ds_name, const Key& subdomain);
 
-inline Key
-getDomainInSet(const Key& ds_name, const int& subdomain)
-{
-  return getKey(ds_name, std::to_string(subdomain), dset_delimiter);
-}
+Key getDomainInSet(const Key& ds_name, const int& subdomain);
 
-inline Key
-getDomainSetName(const Key& name_id)
-{
-  return splitKey(name_id, dset_delimiter).first;
-}
+Key getDomainSetName(const Key& name_id);
 
 template<typename Index=std::string>
 Index getDomainSetIndex(const Key& name_id)
@@ -171,44 +110,20 @@ inline int getDomainSetIndex(const Key& name_id)
 // Split a domain set into DOMAIN, *, VARNAME
 bool splitDomainSet(const Key& name, KeyTriple& result);
 
-inline bool
-isDomainSet(const Key& name) {
-  KeyTriple result;
-  return splitDomainSet(name, result);
-}
+bool isDomainSet(const Key& name);
 
 // reconstruct a key from components
-inline Key
-getKey(const Key& ds_name, const Key& ds_id, const Key& varname)
-{
-  return getKey(getKey(ds_name, ds_id, dset_delimiter), varname);
-}
+Key getKey(const Key& ds_name, const Key& ds_id, const Key& varname);
 
 // reconstruct a key from components
-inline Key
-getKey(const Key& ds_name, const int& ds_id, const Key& varname)
-{
-  return getKey(ds_name, std::to_string(ds_id), varname);
-}
+Key getKey(const Key& ds_name, const int& ds_id, const Key& varname);
 
 // Check if a key, interpreted as a domain set, matches the domain-set name
-inline bool
-matchesDomainSet(const Key& domain_set, const Key& name) {
-  KeyTriple result;
-  return splitDomainSet(name, result) ? std::get<0>(result) == domain_set : false;
-}
+bool matchesDomainSet(const Key& domain_set, const Key& name);
 
 // Derivatives are of the form dKey|dKey.
-inline Key
-getDerivKey(const Key& var, const Key& wrt) {
-  return std::string("d")+var+deriv_delimiter+"d"+wrt;
-}
+Key getDerivKey(const Key& var, const Key& wrt);
+
 
 } // namespace Keys
 } // namespace Amanzi
-
-#endif
-
-
-
-

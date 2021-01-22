@@ -1,6 +1,4 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! Includes and a few helper functions to make it easier to work with Comms.
-
 /*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -9,7 +7,7 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
-
+//! Includes and a few helper functions to make it easier to work with Comms.
 
 /*!
 
@@ -18,8 +16,7 @@
 */
 
 
-#ifndef AMANZI_COMM_HH_
-#define AMANZI_COMM_HH_
+#pragma once
 
 #include "Teuchos_RCP.hpp"
 #include "AmanziTypes.hh"
@@ -101,9 +98,6 @@ class CommWrapper {
   CommWrapper(const Comm& comm)
       : comm_(comm.Clone()) {}
 
-  // CommWrapper(MPI_Comm comm)
-  //     : comm_(Teuchos::rcp(new Comm(comm))) {}
-  
   // hacks required to allow Epetra and Tpetra to coexist
   template<typename Return_type>
   void MinAll(Return_type* local, Return_type* reduced, size_t count) {
@@ -128,9 +122,6 @@ class CommWrapper<Comm_ptr_type> {
   CommWrapper(const Comm_ptr_type& comm)
       : comm_(comm) {}
 
-  // CommWrapper(MPI_Comm comm)
-  //     : comm_(Teuchos::rcp(new Comm_type(comm))) {}
-  
   // hacks required to allow Epetra and Tpetra to coexist
   template<typename Return_type>
   void MinAll(Return_type* local, Return_type* reduced, size_t count) {
@@ -154,52 +145,7 @@ getCommWrapper(const Comm& comm) {
 }
 
 
-// Comm operator== not provided by Epetra/Tpetra?
-#ifdef HAVE_MPI
+bool sameComm(const Comm_type& c1, const Comm_type& c2);
 
-#ifdef TRILINOS_TPETRA_STACK
-bool inline sameComm(const Comm_type& c1, const Comm_type& c2) {
-  auto mpi_c1 = dynamic_cast<const MpiComm_type*>(&c1);
-  auto mpi_c2 = dynamic_cast<const MpiComm_type*>(&c2);
-  if (mpi_c1 != nullptr && mpi_c2 != nullptr) {
-    int cmp;
-    MPI_Comm_compare(mpi_c1->getRawMpiComm(), mpi_c2->getRawMpiComm(), &cmp);
-    return cmp == MPI_IDENT;
-  }
 
-  auto serial_c1 = dynamic_cast<const SerialComm_type*>(&c1);
-  auto serial_c2 = dynamic_cast<const SerialComm_type*>(&c2);
-  if (serial_c1 != nullptr && serial_c2 != nullptr) {
-    return true;
-  }
-  return false;
-}
-
-#else // Epetra stack
-bool inline sameComm(const Comm_type& c1, const Comm_type& c2) {
-  auto mpi_c1 = dynamic_cast<const MpiComm_type*>(&c1);
-  auto mpi_c2 = dynamic_cast<const MpiComm_type*>(&c2);
-  if (mpi_c1 != nullptr && mpi_c2 != nullptr) {
-    int cmp;
-    MPI_Comm_compare(mpi_c1->Comm(), mpi_c2->Comm(), &cmp);
-    return cmp == MPI_IDENT;
-  }
-
-  auto serial_c1 = dynamic_cast<const SerialComm_type*>(&c1);
-  auto serial_c2 = dynamic_cast<const SerialComm_type*>(&c2);
-  if (serial_c1 != nullptr && serial_c2 != nullptr) {
-    return true;
-  }
-  return false;
-}
-#endif
-#else
-
-bool inline sameComm(const Comm_type& c1, const Comm_type& c2) {
-  return true;
-}
-
-#endif
 } // namespace Amanzi
-
-#endif
