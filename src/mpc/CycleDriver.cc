@@ -284,6 +284,7 @@ void CycleDriver::Initialize() {
   S_->CheckAllFieldsInitialized();
 
   // S_->WriteDependencyGraph();
+  S_->InitializeIOFlags(); 
 
   // commit the initial conditions.
   // pk_->CommitStep(t0_-get_dt(), get_dt());
@@ -834,6 +835,9 @@ Teuchos::RCP<State> CycleDriver::Go() {
 
   // visualization at IC
   // Amanzi::timer_manager.start("I/O");
+  // after initialization of State and PK we know all fields and clean of
+  S_->InitializeIOFlags(); 
+
   pk_->CalculateDiagnostics(S_);
   Visualize();
   Observations();

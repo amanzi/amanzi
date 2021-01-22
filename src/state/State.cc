@@ -929,7 +929,7 @@ void State::Initialize() {
   WriteDependencyGraph();
 
   // Reset io_vis flags using blacklist and whitelist
-  InitializeIOFlags_();
+  InitializeIOFlags();
 };
 
 
@@ -989,7 +989,7 @@ void State::Initialize(Teuchos::RCP<State> S) {
   WriteDependencyGraph();
 
   // Reset io_vis flags using blacklist and whitelist
-  InitializeIOFlags_();
+  InitializeIOFlags();
 };
 
 
@@ -1234,7 +1234,7 @@ void State::set_time( double new_time ) {
 
 
 // Utility for setting vis flags
-void State::InitializeIOFlags_() {
+void State::InitializeIOFlags() {
   Teuchos::Array<std::string> empty;
 
   // removing fields from vis dump

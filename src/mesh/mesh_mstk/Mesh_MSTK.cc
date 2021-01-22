@@ -2021,6 +2021,57 @@ void Mesh_MSTK::node_get_faces(const Entity_ID nodeid,
 
 
 //---------------------------------------------------------
+// Edges of type 'ptype' connected to a node.
+//---------------------------------------------------------
+void Mesh_MSTK::node_get_edges(const Entity_ID nodeid, 
+                               const Parallel_type ptype,
+                               std::vector<Entity_ID> *edgeids) const
+{
+  int idx, lid, nc;
+  List_ptr edge_list;
+  MEntity_ptr ment;
+
+  AMANZI_ASSERT (edgeids != nullptr);
+
+  MVertex_ptr mv = (MVertex_ptr) vtx_id_to_handle[nodeid];
+  
+  // mesh vertex on a processor boundary may be connected to owned
+  // and ghost cells. So depending on the requested cell type, we
+  // may have to omit some entries
+
+  edge_list = MV_Edges(mv);
+  nc = List_Num_Entries(edge_list);
+
+  edgeids->resize(nc); // resize to maximum size possible
+  Entity_ID_List::iterator it = edgeids->begin();
+
+  int n = 0;
+  idx = 0; 
+  while ((ment = List_Next_Entry(edge_list, &idx))) {
+    if (MEnt_PType(ment) == PGHOST) {
+      if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
+        lid = MEnt_ID(ment);
+        *it = lid-1;  // assign to next spot by dereferencing iterator
+        ++it;
+        ++n;
+      }
+    }
+    else {
+      if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
+        lid = MEnt_ID(ment);
+        *it = lid-1;  // assign to next spot by dereferencing iterator
+        ++it;
+        ++n;
+      }
+    }
+  }
+  edgeids->resize(n); // resize to the actual number of cells being returned
+
+  List_Delete(edge_list);
+}
+
+
+//---------------------------------------------------------
 // Faces of type 'ptype' connected to an edge.
 //---------------------------------------------------------
 void Mesh_MSTK::edge_get_faces(const Entity_ID edgeid, 

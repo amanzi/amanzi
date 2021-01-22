@@ -34,6 +34,14 @@
       <Parameter name="preconditioner schema" type="Array(string)" value="{cell,face}"/>
     </ParameterList>
 
+    <ParameterList name="diffusion operator fv">
+      <Parameter name="schema" type="Array(string)" value="{cell}"/>
+      <Parameter name="discretization primary" type="string" value="fv: default"/>
+      <Parameter name="discretization secondary" type="string" value="fv: default"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
+      <Parameter name="gravity" type="bool" value="false"/>
+    </ParameterList>
+
     <ParameterList name="advection operator">
       <Parameter name="schema" type="Array(string)" value="{cell}"/>
       <Parameter name="method order" type="int" value="0"/>
@@ -49,7 +57,7 @@
         <Parameter name="error tolerance" type="double" value="1e-14"/>
         <Parameter name="maximum number of iterations" type="int" value="200"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="medium"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -65,7 +73,7 @@
         <Parameter name="smoother sweeps" type="int" value="3"/>
         <Parameter name="strong threshold" type="double" value="0.5"/>
         <Parameter name="tolerance" type="double" value="0.0"/>
-        <Parameter name="verbosity" type="int" value="3"/>
+        <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

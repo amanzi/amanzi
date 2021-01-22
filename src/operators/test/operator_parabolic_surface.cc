@@ -155,7 +155,7 @@ void RunTest(std::string op_list_name) {
 
   // repeat the above without destroying the operators.
   solution.PutScalar(0.0);
-  global_op->rhs()->PutScalar(0.);
+  global_op->rhs()->PutScalar(0.0);
 
   op.UpdateMatrices(Teuchos::null, Teuchos::null);
   op_acc.AddAccumulationDelta(solution, phi, phi, dT, "cell");

@@ -82,7 +82,7 @@
 	<ParameterList name="thermal conductivity parameters">
 	  <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
 	  <Parameter name="thermal conductivity of rock" type="double" value="0."/>
-	  <Parameter name="thermal conductivity of liquid" type="double" value="2.0"/>
+	  <Parameter name="thermal conductivity of liquid" type="double" value="4.0"/>
 	  <Parameter name="reference temperature" type="double" value="1.0"/>
 	  <Parameter name="polynomial expansion" type="Array(double)" value="{1.0, 0.0, 0.0}"/>
 	</ParameterList>
@@ -162,17 +162,20 @@
 	    <Parameter name="regions" type="Array(string)" value="{Left side}"/>
 	    <Parameter name="spatial distribution method" type="string" value="none"/>
 	    <ParameterList name="boundary temperature">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1."/>
-              </ParameterList>              
+              <ParameterList name="function-exprtk">
+                <Parameter name="number of arguments" type="int" value="2"/>
+                <Parameter name="formula" type="string" value="x^2"/>
+              </ParameterList>
 	    </ParameterList>
 	  </ParameterList>
+	</ParameterList>
+	<ParameterList name="energy flux">
 	  <ParameterList name="BC 2">
 	    <Parameter name="regions" type="Array(string)" value="{Right side}"/>
 	    <Parameter name="spatial distribution method" type="string" value="none"/>
-	    <ParameterList name="boundary temperature">
+	    <ParameterList name="outward energy flux">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="4."/>
+                <Parameter name="value" type="double" value="-16.0"/>
               </ParameterList>                            
             </ParameterList>
           </ParameterList>
@@ -184,8 +187,9 @@
           <Parameter name="regions" type="Array(string)" value="{All}"/>
           <Parameter name="spatial distribution method" type="string" value="none"/>
           <ParameterList name="source">            
-            <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="-4.0"/>
+            <ParameterList name="function-exprtk">
+              <Parameter name="number of arguments" type="int" value="2"/>
+              <Parameter name="formula" type="string" value="-8.0 + 2 * x"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -358,7 +362,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1."/>
+                <Parameter name="value" type="double" value="1.0"/>
               </ParameterList>
             </ParameterList>              
           </ParameterList>
@@ -375,7 +379,7 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.0"/>
+                  <Parameter name="value" type="double" value="1.0"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">

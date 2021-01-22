@@ -27,7 +27,8 @@ namespace WhetStone {
 /* ******************************************************************
 * Constructors
 ****************************************************************** */
-MFD3D::MFD3D()
+MFD3D::MFD3D(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
+  : BilinearForm(mesh)
 {
   stability_method_ = WHETSTONE_STABILITY_GENERIC;
   scaling_factor_ = 1.0;

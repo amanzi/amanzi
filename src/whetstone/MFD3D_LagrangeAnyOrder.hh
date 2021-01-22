@@ -43,7 +43,7 @@ namespace WhetStone {
 class MFD3D_LagrangeAnyOrder : public MFD3D { 
  public:
   MFD3D_LagrangeAnyOrder(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
-    : BilinearForm(mesh) {};
+    : MFD3D(mesh) {};
   MFD3D_LagrangeAnyOrder(const Teuchos::ParameterList& plist,
                          const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh);
 

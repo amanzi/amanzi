@@ -40,9 +40,9 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D : virtual public BilinearForm {
+class MFD3D : public BilinearForm {
  public:
-  MFD3D();
+  MFD3D(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh);
 
   // access members
   double simplex_functional() { return simplex_functional_; }

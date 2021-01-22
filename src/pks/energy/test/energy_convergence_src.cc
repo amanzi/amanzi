@@ -55,10 +55,11 @@ class TestEnthalpyEvaluator : public EnthalpyEvaluator {
           const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& result) {
     for (auto comp = result->begin(); comp != result->end(); ++comp) {
+      const auto& temp_c = *S->GetFieldData("temperature")->ViewComponent(*comp);
       auto& result_c = *result->ViewComponent(*comp);
       int ncomp = result->size(*comp, false);
       for (int i = 0; i != ncomp; ++i) {
-        result_c[0][i] = 0.0;
+        result_c[0][i] = temp_c[0][i];
       }
     }
   }
@@ -70,7 +71,7 @@ class TestEnthalpyEvaluator : public EnthalpyEvaluator {
       auto& result_c = *result->ViewComponent(*comp);
       int ncomp = result->size(*comp, false);
       for (int i = 0; i != ncomp; ++i) {
-        result_c[0][i] = 0.0;
+        result_c[0][i] = 1.0;
       }
     }
   }
@@ -201,7 +202,7 @@ TEST(ENERGY_CONVERGENCE_SRC) {
   // check convergence rate
   double l2_rate = Amanzi::Utils::bestLSfit(h, error);
   printf("convergence rate: %10.2f\n", l2_rate);
-  CHECK(l2_rate > 1.81);
+  CHECK(l2_rate > 0.91);
 }
 
 
