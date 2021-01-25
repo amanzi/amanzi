@@ -154,6 +154,7 @@
 #   0.97.11      - update SuperLU_dist to 6.2.0
 #                - update Trilinos to 9fec3527 (Aug5, 2020, also 13.0.0)
 #   0.97.12      - update Trilinos to afc4e525 (Nov 14, 2020)
+#   0.97.13      - update Alquimia to 1.0.8
 
 include(CMakeParseArguments)
 
@@ -206,7 +207,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 97)
-set(AMANZI_TPLS_VERSION_PATCH 12)
+set(AMANZI_TPLS_VERSION_PATCH 13)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -511,12 +512,12 @@ set(PFLOTRAN_GIT_TAG        "1ba735f1a64a12315c52a64107a75571c53492b3")
 #
 set(ALQUIMIA_VERSION_MAJOR 1)
 set(ALQUIMIA_VERSION_MINOR 0)
-set(ALQUIMIA_VERSION_PATCH 7-rc)
+set(ALQUIMIA_VERSION_PATCH 8)
 set(ALQUIMIA_VERSION ${ALQUIMIA_VERSION_MAJOR}.${ALQUIMIA_VERSION_MINOR}.${ALQUIMIA_VERSION_PATCH})
 set(ALQUIMIA_URL_STRING     https://github.com/LBL-EESA/alquimia-dev/archive)
 set(ALQUIMIA_ARCHIVE_FILE   v${ALQUIMIA_VERSION}.tar.gz)
 set(ALQUIMIA_SAVEAS_FILE    alquimia-dev-${ALQUIMIA_VERSION}.tar.gz)
-set(ALQUIMIA_MD5_SUM        863b62d0da516fc3de59b5b3587906d3)
+set(ALQUIMIA_MD5_SUM        20c9d27ba6dd00e56b7deaeab903ccbe)
 
 #
 # TPL: Silo
