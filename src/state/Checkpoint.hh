@@ -75,7 +75,7 @@ class Checkpoint : public IOEvent {
   Checkpoint(Teuchos::ParameterList& plist, const State& S);
 
   // constructor for object that cannot write, but can read
-  Checkpoint(bool old_style);
+  Checkpoint(bool old_style=true);
 
   // public interface for coordinator clients
   void Write(const State& S,

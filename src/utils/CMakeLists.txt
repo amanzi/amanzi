@@ -115,7 +115,7 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/utils_exprtk.cc
                     LINK_LIBS atk error_handling 
-                              ${UnitTest_LIBRARIES})
+                              ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 
 endif()
 

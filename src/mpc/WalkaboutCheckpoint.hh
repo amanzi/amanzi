@@ -30,8 +30,8 @@ namespace Amanzi {
 class WalkaboutCheckpoint : public Checkpoint {
  public:
   WalkaboutCheckpoint(Teuchos::ParameterList& plist,
-                      const Comm_ptr_type& comm) : Checkpoint (plist, comm) {};
-  WalkaboutCheckpoint() : Checkpoint() {};
+                      const State& S) : Checkpoint (plist, S) {};
+  WalkaboutCheckpoint() : Checkpoint(true) {};
 
   // output of fields
   void WriteDataFile(Teuchos::RCP<State>& S, Teuchos::RCP<PK> pk);

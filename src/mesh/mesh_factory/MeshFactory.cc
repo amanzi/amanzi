@@ -307,8 +307,11 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
   // create the comm via split
   Comm_ptr_type comm = Teuchos::null;
   auto parent_comm = Teuchos::rcp_dynamic_cast<const MpiComm_type>(inmesh->get_comm());
-  if (parent_comm != Teuchos::null) {
-    // comm split
+  auto& expert = plist_->sublist("unstructured").sublist("expert");
+  if (parent_comm != Teuchos::null &&
+      expert.get<bool>("create subcommunicator", false)) {
+
+    // mpi comm split
     MPI_Comm child_comm;
     bool empty = setids.size() == 0;
     int ierr = MPI_Comm_split(parent_comm->Comm(),

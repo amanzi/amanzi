@@ -28,10 +28,10 @@ namespace Amanzi {
 class MeshInfo : public Checkpoint {
 
 public:
-  MeshInfo(Teuchos::ParameterList& plist, const Comm_ptr_type& comm): Checkpoint (plist, comm) {};
-  MeshInfo() : Checkpoint() {};
+  MeshInfo(Teuchos::ParameterList& plist, const State& S): Checkpoint (plist, S) {};
+  MeshInfo() : Checkpoint(true) {};
 
-  void WriteMeshCentroids( const AmanziMesh::Mesh& mesh );
+  void WriteMeshCentroids(std::string domain, const AmanziMesh::Mesh& mesh);
 };
 
 }  // namespace Amanzi

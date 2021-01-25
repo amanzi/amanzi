@@ -104,7 +104,7 @@ if (BUILD_TESTS)
    add_amanzi_test(mesh_factory_test_np2 mesh_factory_test NPROCS 2 KIND uint)
 
    # Test: test_mesh_factory
-   add_amanzi_test(mesh_extract_comms mesh_extract_comms
+   add_amanzi_test(mesh_extract_comms_np5 mesh_extract_comms
                    KIND unit
 		   SOURCE test/Main.cc test/test_extract_comms.cc
                    LINK_LIBS mesh_factory ${UnitTest_LIBRARIES} ${Boost_LIBRARIES} ${Epetra_LIBRARIES} ${HDF5_LIBRARIES}
