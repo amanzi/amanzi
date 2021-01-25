@@ -30,7 +30,8 @@ all domains/meshes.
     * `"single file checkpoint`" ``[bool]`` **true** If true, writes all
       checkpoint to one file.  If false, uses a subdirectory with one file per
       mesh.  false is required if meshes exist on other communicators than
-      MPI_COMM_WORLD.
+      MPI_COMM_WORLD, but this is toggled if the code detects that this is
+      necessary.
 
     INCLUDES:
 
