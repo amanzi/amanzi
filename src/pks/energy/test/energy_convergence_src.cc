@@ -112,13 +112,13 @@ TEST(ENERGY_CONVERGENCE_SRC) {
     meshfactory.set_preference(pref);
     Teuchos::RCP<const Mesh> mesh;
     if (n == 0) {
-      mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 20, 10);
+      mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 20, 1);
       // mesh = meshfactory.create("test/random_mesh1.exo");
     } else if (n == 1) {
-      mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 40, 10);
+      mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 40, 1);
       // mesh = meshfactory.create("test/random_mesh2.exo");
     } else if (n == 2) {
-      mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 80, 10);
+      mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 80, 1);
       // mesh = meshfactory.create("test/random_mesh3.exo");
     }
 
