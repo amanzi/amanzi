@@ -180,8 +180,12 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   SizeBeakerStructures_();
 
-  // copy the first cell data into the beaker storage for
-  // initialization purposes
+  // copy the cell data into the beaker storage for initialization purposes
+  // but first ensure dependencies are filled
+  S->GetFieldEvaluator(poro_key_)->HasFieldChanged(S_.ptr(), name_);
+  S->GetFieldEvaluator(fluid_den_key_)->HasFieldChanged(S_.ptr(), name_);
+  S->GetFieldEvaluator(saturation_key_)->HasFieldChanged(S_.ptr(), name_);
+
   CopyCellStateToBeakerStructures(0, tcc);
 
   // finish setting up & testing the chemistry object
