@@ -6,9 +6,34 @@ import warnings
 #
 # Functions for finding elements based on their own attributes
 # ---------------------------------------------------------------------------
+def children_by_tag(xml, tag):
+    """Find all matches, at depth 1.
+
+    Note that tag may be a tag, or it may be "tag,name".  This is ugly
+    but useful.
+    """
+    name = None
+    if ',' in tag:
+        name = ','.join(tag.split(',')[1:])
+        tag = tag.split(',')[0]
+
+    matches = xml.findall(tag)
+    if name is not None:
+        matches = [m for m in matches if m.get("name") == name]
+    return matches
+        
+def child_by_tag(xml, tag):
+    """Find unique child by tag.  Note tags may not be unique."""
+    matches = children_by_tag(xml, tag)
+    if len(matches) == 0:
+        raise errors.MissingXMLError(f"Object does not have child with tag '{tag}'")
+    elif len(matches) > 1:
+        raise errors.NonUniqueXMLError(f"Object has more than one child with tag '{tag}'")
+    return matches[0]
+
 def children_by_attr(xml, attr, value):
     """Find all matches, at depth 1."""
-    return xml.findall('./*[@{}="{}"]'.format(attr, value))
+    return xml.findall(f'./*[@{attr}="{value}"]')
 
 def children_by_name(xml, name):
     """Find children by name."""
@@ -18,12 +43,14 @@ def child_by_name(xml, name):
     """Find unique child by name.  Note names should always be unique."""
     matches = children_by_name(xml, name)
     if len(matches) == 0:
-        raise errors.MissingXMLError("Object does not have child '{}'".format(name))
+        raise errors.MissingXMLError(f"Object does not have child '{name}'")
     elif len(matches) > 1:
-        raise errors.NonUniqueXMLError("Object has more than one child '{}'".format(name))
+        raise errors.NonUniqueXMLError(f"Object has more than one child '{name}'")
     return matches[0]
 
 # ---------------------------------------------------------------------------
+
+
 def findall_attr(xml, attr, value):
     """Find all matches, at any depth, in the xml tree."""
     return xml.findall('.//*/[@{}="{}"]'.format(attr,value))
@@ -32,9 +59,9 @@ def find_attr(xml, attr, value):
     """Find a unique xml object, at any depth, in the xml tree."""
     matches = findall_attr(xml, attr, value)
     if len(matches) == 0:
-        raise errors.MissingXMLError("Object does not have grandchild '{}={}'".format(attr,value))
+        raise errors.MissingXMLError(f"Object does not have grandchild '{attr}={value}'")
     elif len(matches) > 1:
-        raise errors.NonUniqueXMLError("Object has more than one grandchild '{}={}'".format(attr,value))
+        raise errors.NonUniqueXMLError(f"Object has more than one grandchild '{attr}={value}'")
     return matches[0]
 
 def findall_name(xml, name):
@@ -61,14 +88,27 @@ def find_name_value(xml, name, value):
     """Find a unique xml object at any depth with the given 'name' and 'value'"""
     matches = findall_name_value(xml, name, value)
     if len(matches) == 0:
-        raise errors.MissingXMLError("Object does not have grandchild '{},{}'".format(name,value))
+        raise errors.MissingXMLError(f"Object does not have grandchild '{name},{value}'")
     elif len(matches) > 1:
-        raise errors.NonUniqueXMLError("Object has more than one grandchild '{},{}'".format(name,value))
+        raise errors.NonUniqueXMLError(f"Object has more than one grandchild '{name},{value}'")
     return matches[0]
 
 #
-# Finds by path, a list of names for nesting
+# Finds by path, a list of tags or names for nesting
 # ---------------------------------------------------------------------------
+def gen_by_tag_path(xml, tags):
+    """Generator that takes a list of tags and returns matching elements."""
+    assert(type(tags) is not str)
+    assert(len(tags) > 0)
+    if len(tags) == 1:
+        for m in children_by_tag(xml,tags[0]):
+            yield m
+    else:
+        for m in children_by_tag(xml,tags[0]):
+            for n in gen_by_tag_path(m, tags[1:]):
+                yield n
+
+
 def gen_by_path(xml, names, no_skip=False):
     """Generator that takes a list of names and returns matching elements.
 
@@ -88,6 +128,28 @@ def gen_by_path(xml, names, no_skip=False):
         for m in findall(xml, names[0]):
             for n in gen_by_path(m, names[1:], no_skip):
                 yield n
+
+def find_tag_path(xml, tags):
+    """Find a unique xml object with a list of tags."""
+    assert(type(tags) is not str)
+    assert(len(tags) > 0)
+    if (xml.tag == tags[0]):
+        tags.pop(0)
+
+    matches = list(gen_by_tag_path(xml, tags))
+    if len(matches) == 0:
+        raise errors.MissingXMLError(f"Object does not have tag path '{tags}'")
+    elif len(matches) > 1:
+        raise errors.NonUniqueXMLError(f"Object has more than one tag path '{tags}'")
+    return matches[0]
+
+def findall_tag_path(xml, tags):
+    """Find a list of matching elements by tag."""
+    assert(type(tags) is not str)
+    assert(len(tags) > 0)
+    if (xml.tag == tags[0]):
+        tags.pop(0)
+    return list(gen_by_tag_path(xml, tags))
 
 def find_path(xml, names, no_skip=False):
     """Find a unique xml object with a list of names."""

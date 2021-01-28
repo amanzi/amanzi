@@ -611,7 +611,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
         
         residual_ = error;
         res->Norm2(&l2_error);
-        if (vo_->os_OK(Teuchos::VERB_LOW)) {
+        if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
           *vo_->os() << num_itrs_ << (nka_applied ? ": NKA " : ": PIC ")
                      << ": error(res) = " << error << std::endl
                      << num_itrs_ << (nka_applied ? ": NKA " : ": PIC ")

@@ -16,11 +16,11 @@ class ObservationXMLv2(object):
         self.names = []
 
     def getObservationList(self):
-        return search.getElementByTags(self.xml, "/amanzi_input/output/observations/liquid_phase")
-        #return search.getElementByPath(self.xml, "/amanzi_input/output/observations/liquid_phase")
+        return search.find_tag_path(self.xml, ["amanzi_input","output","observations","liquid_phase",])
+        #return search.find_path(self.xml, ["amanzi_input","output","observations","liquid_phase",], False)
 
     def getRegionList(self):
-        return search.getElementByPath(self.xml, "/amanzi_input/regions")
+        return search.find_path(self.xml, ["amanzi_input","regions",], False)
 
     def getAllNames(self):
         self.names = []
@@ -31,10 +31,10 @@ class ObservationXMLv2(object):
     def getAllCoordinates(self):
         self.coordinates = {}
         for item in self.obs_lists:
-            children = [el for el in search.generateChildByTag(item, "assigned_regions")]
+            children = [el for el in search.children_by_tag(item, "assigned_regions")]
             well_name = children[0].text
-            regions = search.getElementByTags(self.xml, "/amanzi_input/regions/")
-            children = [el for el in search.generateChildByName(regions, well_name)]
+            regions = search.find_tag_path(self.xml, ["amanzi_input","regions",])
+            children = [el for el in search.children_by_name(regions, well_name)]
             coords = children[0].get("coordinate")
             coordinate = []
             for el in coords.strip(",").split(","):
@@ -44,7 +44,7 @@ class ObservationXMLv2(object):
 
     def getCoordinateFromList(self, one_list):
         well_name = one_list.getElement("Region").value
-        region = search.getElementByName(search.getElementByPath(self.xml, "/amanzi_input/regions/"), well_name)
+        region = search.child_by_name(search.find_path(self.xml, ["amanzi_input","regions",], False), well_name)
 
         try:
             coordinate = region.get("coordinate")
@@ -53,7 +53,7 @@ class ObservationXMLv2(object):
         return coordinate
 
     def getObservationFilename(self):
-        obs = search.getElementByTags(self.xml, "/amanzi_input/output/observations/filename")
+        obs = search.find_tag_path(self.xml, ["amanzi_input","output","observations","filename",])
         obs_file = obs.text.strip()
         return obs_file
 
