@@ -630,13 +630,15 @@ if (NOT ENABLE_XSDK)
 else()
   amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
                            PREFIX HDF5
-                           VERSION 1 10 0)
+                           VERSION 1 10 6)
   find_spack_install_location(hdf5 HDF5_INSTALL_PREFIX)
   message(STATUS "HDF5_INSTALL_PREFIX = ${HDF5_INSTALL_PREFIX}")
   build_library_name(hdf5 HDF5_C_LIBRARY APPEND_PATH ${HDF5_INSTALL_PREFIX}/lib)
   build_library_name(hdf5_hl HDF5_HL_LIBRARY APPEND_PATH ${HDF5_INSTALL_PREFIX}/lib)
-  set(HDF5_LIBRARIES ${HDF5_HL_LIBRARY} ${HDF5_C_LIBRARY} ${ZLIB_LIBRARIES} m)
-  set(HDF5_INCLUDE_DIRS ${HDF5_INSTALL_PREFIX}/include ${ZLIB_INCLUDE_DIRS})
+  build_library_name(hdf5_fortran HDF5_FORTRAN_LIBRARY APPEND_PATH ${HDF5_INSTALL_PREFIX}/lib)
+  build_library_name(hdf5_hl_fortran HDF5_HL_FORTRAN_LIBRARY APPEND_PATH ${HDF5_INSTALL_PREFIX}/lib)
+  set(HDF5_LIBRARIES ${HDF5_HL_FORTRAN_LIBRARY} ${HDF5_FORTRAN_LIBRARY} ${HDF5_HL_LIBRARY} ${HDF5_C_LIBRARY} ${ZLIB_LIBRARIES} m dl)
+  set(HDF5_INCLUDE_DIRS ${HDF5_INSTALL_PREFIX}/include ${HDF5_INSTALL_PREFIX}/include/static ${HDF5_INSTALL_PREFIX}/include/shared ${ZLIB_INCLUDE_DIRS})
   set(HDF5_DIR ${HDF5_INSTALL_PREFIX})
 endif()
 append_set(Amanzi_TPL_CMAKE_ARGS

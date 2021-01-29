@@ -155,14 +155,15 @@ set_package_properties(HDF5 PROPERTIES
                        PURPOSE "Required library for several components in Amanzi"
                       )
 
-set(HDF5_LIBRARIES ${HDF5_HL_LIBRARIES} ${HDF5_C_LIBRARIES} ${ZLIB_LIBRARIES} m dl)
+set(HDF5_LIBRARIES ${HDF5_HL_FORTRAN_LIBRARY} ${HDF5_FORTRAN_LIBRARY} ${HDF5_HL_LIBRARY} ${HDF5_C_LIBRARY} ${ZLIB_LIBRARIES} m dl)
 
 message(STATUS "HDF5 Package information")
 message(STATUS "\tHDF5_INCLUDE_DIR  = ${HDF5_INCLUDE_DIR}")
 message(STATUS "\tHDF5_INCLUDE_DIRS = ${HDF5_INCLUDE_DIRS}")
 message(STATUS "\tHDF5_LIBRARY_DIR  = ${HDF5_LIBRARY_DIR}")
-message(STATUS "\tHDF5_LIBRARY      = ${HDF5_LIBRARY}")
+message(STATUS "\tHDF5_LIBRARY      = ${HDF5_C_LIBRARY}")
 message(STATUS "\tHDF5_LIBRARIES    = ${HDF5_LIBRARIES}")
+message(STATUS "\tHDF5_HL_LIBRARY   = ${HDF5_HL_LIBRARY}")
 message(STATUS "\tHDF5_HL_LIBRARIES = ${HDF5_HL_LIBRARIES}")
 message(STATUS "")
 
