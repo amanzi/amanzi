@@ -35,15 +35,21 @@
 #include "Verification.hh"
 #include "WhetStoneMeshUtils.hh"
 
+#include "AnalyticBase.hh"
+
 using namespace Amanzi;
 
 struct DiffusionFixture {
-  DiffusionFixture(int d, const std::string& mesh_file);
+  DiffusionFixture(Teuchos::RCP<Teuchos::ParameterList> plist_)
+    : plist(plist_),
+      comm(Amanzi::getDefaultComm()) {};
 
   void Discretize(const std::string& name, AmanziMesh::Entity_kind kind);
   void DiscretizeWithGravity(const std::string& name, double gravity, AmanziMesh::Entity_kind kind);
 
   // set up the problem
+  void Init(int d, int nx, const std::string& mesh_file);
+
   // -- general parameters
   void Setup(const std::string& pc_name_, bool symmetric_);
 
@@ -75,22 +81,21 @@ struct DiffusionFixture {
 
 
 /* ******************************************************************
-* Constructor
+* Initialization
 ****************************************************************** */
-DiffusionFixture::DiffusionFixture(int d, const std::string& mesh_file)
-  : comm(Amanzi::getDefaultComm())
+void DiffusionFixture::Init(int d, int nx, const std::string& mesh_file)
 {
-  plist = Teuchos::getParametersFromXmlFile("test/operator_diffusion_low_order.xml");
+  if (!plist.get())
+    plist = Teuchos::getParametersFromXmlFile("test/operator_diffusion_low_order.xml");
 
   auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(d, plist->sublist("regions"), *comm));
   AmanziMesh::MeshFactory meshfactory(comm, gm);
-  if (mesh_file == "Generate1D") {
+
+  if (mesh_file == "structured1d") {
     mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 1);
-  } else if (mesh_file == "Generate2D") {
-    mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 10, 10);
-  } else if (mesh_file == "Generate2D_HiRes") {
-      mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 50, 50);
-  } else if (mesh_file == "Generate3D") {
+  } else if (mesh_file == "structured2d") {
+    mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, nx, nx);
+  } else if (mesh_file == "structured3d") {
     mesh = meshfactory.create(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 4, 5, 6);
   } else {
     mesh = meshfactory.create(mesh_file);

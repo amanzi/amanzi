@@ -36,93 +36,7 @@
 // #include "Verification.hh"
 
 #include "DiffusionFixture.hh"
-
-void test(const std::string& pc_type,
-          const std::string& bc_type,
-          const std::string& mesh_type,
-          const std::string& disc_type,
-          bool symmetric,
-          AmanziMesh::Entity_kind scalar_coef, 
-          double tol = 1.0e-12,
-          int order = 1,
-          const std::string& ana = "00",
-          int niters = 1)
-{
-  DiffusionFixture fix(2, mesh_type);
-  std::cout << std::endl << std::endl << std::endl
-            << "================================================================================" << std::endl
-            << "Diffusion Test (np=" << fix.comm->NumProc() << "): " << disc_type 
-            << ", PC: " << pc_type << ", mesh=" << mesh_type << std::endl
-            << "--------------------------------------------------------------------------------"
-            << std::endl;
-
-  if (ana == "00") 
-    fix.ana = Teuchos::rcp(new Analytic00(fix.mesh, order));
-  else if (ana == "02") 
-    fix.ana = Teuchos::rcp(new Analytic02(fix.mesh));
-  else if (ana == "03") 
-    fix.ana = Teuchos::rcp(new Analytic03(fix.mesh));
-
-  fix.Discretize(disc_type, scalar_coef);
-  std::cout << "Discretize done" << std::endl;
-
-  if (bc_type == "Dirichlet") {
-    fix.SetBCsDirichlet();
-  } else if (bc_type == "DirichletNeumann") {
-    fix.SetBCsDirichletNeumann();
-  } else if (bc_type == "DirichletNeumannRobin") {
-    fix.SetBCsDirichletNeumannRobin();
-  } else {
-    AMANZI_ASSERT(false);
-  }      
-  fix.Setup(pc_type, symmetric);
-  for (int i = 0; i < niters - 1; ++i) fix.Go(0.0);
-  fix.Go(tol);
-  std::cout << "=============================================================================" << std::endl;
-}
-
-
-void testWGravity(double gravity,
-                  const std::string& pc_type,
-                  const std::string& bc_type,
-                  const std::string& mesh_type,
-                  const std::string& disc_type,
-                  bool symmetric,
-                  AmanziMesh::Entity_kind scalar_coef,
-                  double tol = 1.0e-12,
-                  int order = 1,
-                  const std::string& ana = "00",
-                  int niters = 1)
-{
-  DiffusionFixture fix(2, mesh_type);
-  std::cout << std::endl << std::endl << std::endl
-            << "================================================================================" << std::endl
-            << "DiffusionWithGravity Test (np=" << fix.comm->NumProc() << "): "
-            << disc_type << ", PC: " << pc_type << ", mesh=" << mesh_type << std::endl
-            << "--------------------------------------------------------------------------------"
-            << std::endl;
-
-  if (ana == "00") 
-    fix.ana = Teuchos::rcp(new Analytic00(fix.mesh, order, gravity));
-  else if (ana == "02") 
-    fix.ana = Teuchos::rcp(new Analytic02(fix.mesh, gravity));
-  else if (ana == "03") 
-    fix.ana = Teuchos::rcp(new Analytic03(fix.mesh));
-
-  fix.DiscretizeWithGravity(disc_type, gravity, scalar_coef);
-
-  if (bc_type == "Dirichlet") {
-    fix.SetBCsDirichlet();
-  } else if (bc_type == "DirichletNeumann") {
-    fix.SetBCsDirichletNeumann();
-  } else {
-    AMANZI_ASSERT(false);
-  }      
-  fix.Setup(pc_type, symmetric);
-  for (int i = 0; i < niters - 1; ++i) fix.Go(0.0);
-  fix.Go(tol);
-  std::cout << "=============================================================================" << std::endl;
-}
+#include "DiffusionFixtureTests.hh"
 
 #define FV 1
 #define MFD 1
@@ -161,10 +75,12 @@ SUITE(DIFFUSION) {
   // 2D meshes, and 3D with 3D.
 #if FV  
   TEST(EXACT) {
-    DiffusionFixture fix(2, "Generate1D");
+    DiffusionFixture fix(Teuchos::null);
+    fix.Init(2, 10, "structured1d");
+
     std::cout << std::endl
               << "Diffusion Forward Apply Test (np=" << fix.comm->NumProc() << "): " << "fv" << ", "
-              << "Generate1D" << std::endl
+              << "structured1d" << std::endl
               << "--------------------------------------------------------------------------------"
               << std::endl;
     
@@ -210,11 +126,13 @@ SUITE(DIFFUSION) {
 
 #if MFD
   TEST(EXACT_MFD) {
-    DiffusionFixture fix(2, "Generate1D");
+    DiffusionFixture fix(Teuchos::null);
+    fix.Init(2, 10, "structured1d");
+
     std::cout << std::endl
               << "================================================================================" << std::endl
               << "Diffusion Forward Apply Test (np=" << fix.comm->NumProc() << "): " << "MFD" << ", "
-              << "Generate1D" << std::endl
+              << "structured1d" << std::endl
               << "--------------------------------------------------------------------------------" << std::endl;
     
     fix.ana = Teuchos::rcp(new Analytic00(fix.mesh, 1));
@@ -271,73 +189,73 @@ SUITE(DIFFUSION) {
   //
   // Exact solution
 #if FV
-  TEST(Analytic00_Linear1_FV_Dirichlet_Generate2D_identity) {
-    test("identity", "Dirichlet", "Generate2D",
+  TEST(Analytic00_Linear1_FV_Dirichlet_structured2d_identity) {
+    test("identity", "Dirichlet", "structured2d", 2, 10,
          "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   }
-  TEST(Analytic00_LinearGravity1_FV_Dirichlet_Generate2D_identity) {
-    testWGravity(1.1, "identity", "Dirichlet", "Generate2D",
+  TEST(Analytic00_LinearGravity1_FV_Dirichlet_structured2d_identity) {
+    testWGravity(1.1, "identity", "Dirichlet", "structured2d", 2, 10,
                  "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   }
-  TEST(Analytic00_Linear1_FV_Dirichlet_Generate2D_diagonal) {
-    test("diagonal", "Dirichlet", "Generate2D",
+  TEST(Analytic00_Linear1_FV_Dirichlet_structured2d_diagonal) {
+    test("diagonal", "Dirichlet", "structured2d", 2, 10,
          "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   }
 
-  TEST(Analytic00_LinearGravity1_FV_Dirichlet_Generate2D_diagonal) {
-    testWGravity(1.1, "diagonal", "Dirichlet", "Generate2D",
+  TEST(Analytic00_LinearGravity1_FV_Dirichlet_structured2d_diagonal) {
+    testWGravity(1.1, "diagonal", "Dirichlet", "structured2d", 2, 10,
                  "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   } 
 #endif
 #if MFD  
-  TEST(Analytic00_Linear1_MFD_Dirichlet_Generate2D_identity) {
-    test("identity", "Dirichlet", "Generate2D",
+  TEST(Analytic00_Linear1_MFD_Dirichlet_structured2d_identity) {
+    test("identity", "Dirichlet", "structured2d", 2, 10,
          "mixed", true, AmanziMesh::Entity_kind::UNKNOWN);
   }
-  TEST(Analytic00_LinearGravity1_MFD_Dirichlet_Generate2D_identity) {
-    testWGravity(1.1, "identity", "Dirichlet", "Generate2D",
+  TEST(Analytic00_LinearGravity1_MFD_Dirichlet_structured2d_identity) {
+    testWGravity(1.1, "identity", "Dirichlet", "structured2d", 2, 10,
                  "mixed", true, AmanziMesh::Entity_kind::UNKNOWN);
   }
-  TEST(Analytic00_Linear1_MFD_Dirichlet_Generate2D_diagonal) {
-    test("diagonal", "Dirichlet", "Generate2D",
+  TEST(Analytic00_Linear1_MFD_Dirichlet_structured2d_diagonal) {
+    test("diagonal", "Dirichlet", "structured2d", 2, 10,
          "mixed", true, AmanziMesh::Entity_kind::UNKNOWN);
   }
-  TEST(Analytic00_LinearGravity1_MFD_Dirichlet_Generate2D_diagonal) {
-    testWGravity(1.1, "diagonal", "Dirichlet", "Generate2D",
+  TEST(Analytic00_LinearGravity1_MFD_Dirichlet_structured2d_diagonal) {
+    testWGravity(1.1, "diagonal", "Dirichlet", "structured2d", 2, 10,
                  "mixed", true, AmanziMesh::Entity_kind::UNKNOWN);
   }
 #endif
 #if NLFV  
-  TEST(Analytic00_Linear1_NLFV_Dirichlet_Generate2D_identity) {
-    test("identity", "Dirichlet", "Generate2D",
+  TEST(Analytic00_Linear1_NLFV_Dirichlet_structured2d_identity) {
+    test("identity", "Dirichlet", "structured2d", 2, 10,
          "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN);
   }
-   TEST(Analytic00_LinearGravity1_NLFV_Dirichlet_Generate2D_identity) {
-     testWGravity(1.1, "identity", "Dirichlet", "Generate2D",
+   TEST(Analytic00_LinearGravity1_NLFV_Dirichlet_structured2d_identity) {
+     testWGravity(1.1, "identity", "Dirichlet", "structured2d", 2, 10,
                   "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 1e-12);
   }
-  TEST(Analytic00_Linear1_NLFVBFace_Dirichlet_Generate2D_identity) {
-     test("identity", "Dirichlet", "Generate2D",
+  TEST(Analytic00_Linear1_NLFVBFace_Dirichlet_structured2d_identity) {
+     test("identity", "Dirichlet", "structured2d", 2, 10,
           "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-11);
   }
-  TEST(Analytic00_LinearGravity1_NLFVBFace_Dirichlet_Generate2D_identity) {
-     testWGravity(1.1, "identity", "Dirichlet", "Generate2D",
+  TEST(Analytic00_LinearGravity1_NLFVBFace_Dirichlet_structured2d_identity) {
+     testWGravity(1.1, "identity", "Dirichlet", "structured2d", 2, 10,
                   "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-11);
   }
-  TEST(Analytic00_Linear1_NLFV_Dirichlet_Generate2D_diagonal) {
-    test("diagonal", "Dirichlet", "Generate2D",
+  TEST(Analytic00_Linear1_NLFV_Dirichlet_structured2d_diagonal) {
+    test("diagonal", "Dirichlet", "structured2d", 2, 10,
          "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 1e-12);
   }
-  TEST(Analytic00_LinearGravity1_NLFV_Dirichlet_Generate2D_diagonal) {
-    testWGravity(1.1, "diagonal", "Dirichlet", "Generate2D",
+  TEST(Analytic00_LinearGravity1_NLFV_Dirichlet_structured2d_diagonal) {
+    testWGravity(1.1, "diagonal", "Dirichlet", "structured2d", 2, 10,
                  "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 1e-12);
   }
-  TEST(Analytic00_Linear1_NLFVBFace_Dirichlet_Generate2D_diagonal) {
-    test("diagonal", "Dirichlet", "Generate2D",
+  TEST(Analytic00_Linear1_NLFVBFace_Dirichlet_structured2d_diagonal) {
+    test("diagonal", "Dirichlet", "structured2d", 2, 10,
          "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-10);
   }
-  TEST(Analytic00_LinearGravity1_NLFVBFace_Dirichlet_Generate2D_diagonal) {
-    testWGravity(1.1, "diagonal", "Dirichlet", "Generate2D",
+  TEST(Analytic00_LinearGravity1_NLFVBFace_Dirichlet_structured2d_diagonal) {
+    testWGravity(1.1, "diagonal", "Dirichlet", "structured2d", 2, 10,
                  "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-10);
   }
 #endif
@@ -350,40 +268,40 @@ SUITE(DIFFUSION) {
 #if ASSEMBLING
   
 #if FV  
-  TEST(Analytic00_Linear1_FV_Dirichlet_Generate2D_ILU) {
-    test("ifpack2: ILUT", "Dirichlet", "Generate2D",
+  TEST(Analytic00_Linear1_FV_Dirichlet_structured2d_ILU) {
+    test("ifpack2: ILUT", "Dirichlet", "structured2d", 2, 10,
          "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1e-12);
   }
-  TEST(Analytic00_LinearGravity1_FV_Dirichlet_Generate2D_ILU) {
-    testWGravity(1.1, "ifpack2: ILUT", "Dirichlet", "Generate2D",
+  TEST(Analytic00_LinearGravity1_FV_Dirichlet_structured2d_ILU) {
+    testWGravity(1.1, "ifpack2: ILUT", "Dirichlet", "structured2d", 2, 10,
                  "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1e-12);
   }
 #endif
 #if MFD  
-  TEST(Analytic00_Linear1_MFD_DirichletNeumann_Generate2D_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "Generate2D",
+  TEST(Analytic00_Linear1_MFD_DirichletNeumann_structured2d_ifpack2_ILUT) {
+    test("ifpack2: ILUT", "DirichletNeumann", "structured2d", 2, 10,
          "mixed", true, AmanziMesh::Entity_kind::UNKNOWN);
   }
-  TEST(Analytic00_LinearGravity1_MFD_DirichletNeumann_Generate2D_ifpack2_ILUT) {
-    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "Generate2D",
+  TEST(Analytic00_LinearGravity1_MFD_DirichletNeumann_structured2d_ifpack2_ILUT) {
+    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "structured2d", 2, 10,
                  "mixed", true, AmanziMesh::Entity_kind::UNKNOWN);
   }
 #endif
 #if NLFV  
-  TEST(Analytic00_Linear1_NLFV_DirichletNeumann_Generate2D_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "Generate2D",
+  TEST(Analytic00_Linear1_NLFV_DirichletNeumann_structured2d_ifpack2_ILUT) {
+    test("ifpack2: ILUT", "DirichletNeumann", "structured2d", 2, 10,
          "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 1e-12);
   }
-  TEST(Analytic00_LinearGravity1_NLFV_DirichletNeumann_Generate2D_ifpack2_ILUT) {
-     testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "Generate2D",
+  TEST(Analytic00_LinearGravity1_NLFV_DirichletNeumann_structured2d_ifpack2_ILUT) {
+     testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "structured2d", 2, 10,
                   "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 1e-12);
   }
-  TEST(Analytic00_Linear1_NLFVBFace_DirichletNeumann_Generate2D_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "Generate2D",
+  TEST(Analytic00_Linear1_NLFVBFace_DirichletNeumann_structured2d_ifpack2_ILUT) {
+    test("ifpack2: ILUT", "DirichletNeumann", "structured2d", 2, 10,
          "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-12);
   }
-  TEST(Analytic00_LinearGravity1_NLFVBFace_DirichletNeumann_Generate2D_ifpack2_ILUT) {
-    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "Generate2D",
+  TEST(Analytic00_LinearGravity1_NLFVBFace_DirichletNeumann_structured2d_ifpack2_ILUT) {
+    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "structured2d", 2, 10,
                  "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-12);
   }
 #endif
@@ -394,40 +312,40 @@ SUITE(DIFFUSION) {
   //
   // Exact solution
 #if FV
-  TEST(Analytic00_Linearkr_FV_Dirichlet_Generate2D_Diagonal) {
-    test("diagonal", "Dirichlet", "Generate2D",
+  TEST(Analytic00_Linearkr_FV_Dirichlet_structured2d_Diagonal) {
+    test("diagonal", "Dirichlet", "structured2d", 2, 10,
          "fv", true, AmanziMesh::Entity_kind::FACE, 1e-12);
   }
-  TEST(Analytic00_LinearGravitykr_FV_Dirichlet_Generate2D_Diagonal) {
-    testWGravity(1.1, "diagonal", "Dirichlet", "Generate2D",
+  TEST(Analytic00_LinearGravitykr_FV_Dirichlet_structured2d_Diagonal) {
+    testWGravity(1.1, "diagonal", "Dirichlet", "structured2d", 2, 10,
                  "fv", true, AmanziMesh::Entity_kind::FACE, 1e-12);
   }
 #endif
 #if MFD  
-  TEST(Analytic00_Linearkr_MFD_Dirichlet_Generate2D_Diagonal) {
-    test("diagonal", "Dirichlet", "Generate2D",
+  TEST(Analytic00_Linearkr_MFD_Dirichlet_structured2d_Diagonal) {
+    test("diagonal", "Dirichlet", "structured2d", 2, 10,
          "mixed upwind", true, AmanziMesh::Entity_kind::FACE);
   }
-  TEST(Analytic00_LinearGravitykr_MFD_Dirichlet_Generate2D_Diagonal) {
-    testWGravity(1.1, "diagonal", "Dirichlet", "Generate2D",
+  TEST(Analytic00_LinearGravitykr_MFD_Dirichlet_structured2d_Diagonal) {
+    testWGravity(1.1, "diagonal", "Dirichlet", "structured2d", 2, 10,
                  "mixed upwind", true, AmanziMesh::Entity_kind::FACE);
   }
 #endif
 #if NLFV  
-  TEST(Analytic00_Linearkr_NLFV_Dirichlet_Generate2D_diagonal) {
-     test("diagonal", "Dirichlet", "Generate2D",
+  TEST(Analytic00_Linearkr_NLFV_Dirichlet_structured2d_diagonal) {
+     test("diagonal", "Dirichlet", "structured2d", 2, 10,
           "nlfv", true, AmanziMesh::Entity_kind::FACE, 1e-12);
   }
-  TEST(Analytic00_LinearGravitykr_NLFV_Dirichlet_Generate2D_diagonal) {
-     testWGravity(1.1, "diagonal", "Dirichlet", "Generate2D",
+  TEST(Analytic00_LinearGravitykr_NLFV_Dirichlet_structured2d_diagonal) {
+     testWGravity(1.1, "diagonal", "Dirichlet", "structured2d", 2, 10,
                   "nlfv", true, AmanziMesh::Entity_kind::FACE, 1e-12);
   }
-  TEST(Analytic00_Linearkr_NLFVBFace_Dirichlet_Generate2D_diagonal) {
-    test("diagonal", "Dirichlet", "Generate2D",
+  TEST(Analytic00_Linearkr_NLFVBFace_Dirichlet_structured2d_diagonal) {
+    test("diagonal", "Dirichlet", "structured2d", 2, 10,
          "nlfv with bfaces", false, AmanziMesh::Entity_kind::FACE, 1e-10);
   }
-  TEST(Analytic00_LinearGravitykr_NLFVBFace_Dirichlet_Generate2D_diagonal) {
-    testWGravity(1.1, "diagonal", "Dirichlet", "Generate2D",
+  TEST(Analytic00_LinearGravitykr_NLFVBFace_Dirichlet_structured2d_diagonal) {
+    testWGravity(1.1, "diagonal", "Dirichlet", "structured2d", 2, 10,
                  "nlfv with bfaces", false, AmanziMesh::Entity_kind::FACE, 1e-10);
   }
 #endif
@@ -437,40 +355,40 @@ SUITE(DIFFUSION) {
   //
   // Exact solution
 #if FV
-  TEST(Analytic00_LinearK_FV_DirichletNeumann_Generate2D_diagonal) {
-    test("diagonal", "DirichletNeumann", "Generate2D",
+  TEST(Analytic00_LinearK_FV_DirichletNeumann_structured2d_diagonal) {
+    test("diagonal", "DirichletNeumann", "structured2d", 2, 10,
          "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   }
-  TEST(Analytic00_LinearGravityK_FV_DirichletNeumann_Generate2D_diagonal) {
-    testWGravity(1.1, "diagonal", "DirichletNeumann", "Generate2D",
+  TEST(Analytic00_LinearGravityK_FV_DirichletNeumann_structured2d_diagonal) {
+    testWGravity(1.1, "diagonal", "DirichletNeumann", "structured2d", 2, 10,
                  "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   }
 #endif
 #if MFD  
-  TEST(Analytic00_LinearK_MFD_DirichletNeumann_Generate2D_diagona) {
-    test("diagonal", "DirichletNeumann", "Generate2D",
+  TEST(Analytic00_LinearK_MFD_DirichletNeumann_structured2d_diagona) {
+    test("diagonal", "DirichletNeumann", "structured2d", 2, 10,
          "mixed", true, AmanziMesh::Entity_kind::UNKNOWN);
   }
-  TEST(Analytic00_LinearGravityK_MFD_DirichletNeumann_Generate2D_diagona) {
-    testWGravity(1.1, "diagonal", "DirichletNeumann", "Generate2D",
+  TEST(Analytic00_LinearGravityK_MFD_DirichletNeumann_structured2d_diagona) {
+    testWGravity(1.1, "diagonal", "DirichletNeumann", "structured2d", 2, 10,
                  "mixed", true, AmanziMesh::Entity_kind::UNKNOWN);
   }
 #endif
 #if NLFV  
-  TEST(Analytic00_LinearK_NLFV_DirichletNeumann_Generate2D_diagona) {
-    test("diagonal", "DirichletNeumann", "Generate2D",
+  TEST(Analytic00_LinearK_NLFV_DirichletNeumann_structured2d_diagona) {
+    test("diagonal", "DirichletNeumann", "structured2d", 2, 10,
          "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 1e-12);
   }
-  TEST(Analytic00_LinearGravityK_NLFV_DirichletNeumann_Generate2D_diagona) {
-    testWGravity(1.1, "diagonal", "DirichletNeumann", "Generate2D",
+  TEST(Analytic00_LinearGravityK_NLFV_DirichletNeumann_structured2d_diagona) {
+    testWGravity(1.1, "diagonal", "DirichletNeumann", "structured2d", 2, 10,
                  "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 1e-12);
   }
-  TEST(Analytic00_LinearK_NLFVBFace_DirichletNeumann_Generate2D_diagona) {
-    test("diagonal", "DirichletNeumann", "Generate2D",
+  TEST(Analytic00_LinearK_NLFVBFace_DirichletNeumann_structured2d_diagona) {
+    test("diagonal", "DirichletNeumann", "structured2d", 2, 10,
          "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 2e-10);
   }
-  TEST(Analytic00_LinearGravityK_NLFVBFace_DirichletNeumann_Generate2D_diagona) {
-    testWGravity(1.1, "diagonal", "DirichletNeumann", "Generate2D",
+  TEST(Analytic00_LinearGravityK_NLFVBFace_DirichletNeumann_structured2d_diagona) {
+    testWGravity(1.1, "diagonal", "DirichletNeumann", "structured2d", 2, 10,
                  "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 2e-10);
   }
 #endif
@@ -484,40 +402,40 @@ SUITE(DIFFUSION) {
 #if ASSEMBLING
 #if FV
   TEST(Analytic00_Linear1_FV_DirichletNeumann_Wiggled_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "test/random10.exo",
+    test("ifpack2: ILUT", "DirichletNeumann", "test/random10.exo", 2, -1,
          "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 2.e-2);
   }
   TEST(Analytic00_LinearGravity1_FV_DirichletNeumann_Wiggled_ifpack2_ILUT) {
-    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "test/random10.exo",
+    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "test/random10.exo", 2, -1,
                  "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 2.e-2);
   }
 #endif
 #if MFD
   // on mfd: default, these have a tolerance of 1.e-12.  On TPFA, it is the same as FV?
   TEST(Analytic00_Linear1_MFD_DirichletNeumann_Wiggled_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "test/random10.exo",
+    test("ifpack2: ILUT", "DirichletNeumann", "test/random10.exo", 2, -1,
          "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 2e-2);
   }
   TEST(Analytic00_LinearGravity1_MFD_DirichletNeumann_Wiggled_ifpack2_ILUT) {
-    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "test/random10.exo",
+    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "test/random10.exo", 2, -1,
                  "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 2e-2);
   }
 #endif
 #if NLFV
   TEST(Analytic00_Linear1_NLFV_DirichletNeumann_Wiggled_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "test/random10.exo",
+    test("ifpack2: ILUT", "DirichletNeumann", "test/random10.exo", 2, -1,
          "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-11, 1, "00", 15);
   }
   TEST(Analytic00_LinearGravity1_NLFV_DirichletNeumann_Wiggled_ifpack2_ILUT) {
-    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "test/random10.exo",
+    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "test/random10.exo", 2, -1,
                  "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-11, 1, "00", 15);
   }
   TEST(Analytic00_Linear1_NLFVBFace_DirichletNeumann_Wiggled_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "test/random10.exo",
+    test("ifpack2: ILUT", "DirichletNeumann", "test/random10.exo", 2, -1,
          "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-11, 1, "00", 15);
   }
   TEST(Analytic00_LinearGravity1_NLFVBFace_DirichletNeumann_Wiggled_ifpack2_ILUT) {
-    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "test/random10.exo",
+    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "test/random10.exo", 2, -1,
                  "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-11, 1, "00", 15);
   }
 #endif
@@ -530,40 +448,40 @@ SUITE(DIFFUSION) {
   //       NLFV must converge to be exact.  Also, NLFV loses symmetry as it iterates.
 #if FV
   TEST(Analytic00_Linear1_FV_DirichletNeumann_Poly_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "test/median7x8_filtered.exo",
+    test("ifpack2: ILUT", "DirichletNeumann", "test/median7x8_filtered.exo", 2, -1,
          "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 3e-2);
   }
   TEST(Analytic00_LinearGravity1_FV_DirichletNeumann_Poly_ifpack2_ILUT) {
-    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "test/median7x8_filtered.exo",
+    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "test/median7x8_filtered.exo", 2, -1,
                  "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 3e-2);
   }
 #endif
 #if MFD
   // on mfd: default, these have a tolerance of 1.e-12.  On TPFA, it is the same as FV?
   TEST(Analytic00_Linear1_MFD_DirichletNeumann_Poly_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "test/median7x8_filtered.exo",
+    test("ifpack2: ILUT", "DirichletNeumann", "test/median7x8_filtered.exo", 2, -1,
          "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 2.7e-2);
   }
   TEST(Analytic00_LinearGravity1_MFD_DirichletNeumann_Poly_ifpack2_ILUT) {
-    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "test/median7x8_filtered.exo",
+    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "test/median7x8_filtered.exo", 2, -1,
                  "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 2.8e-2);
   }
 #endif
 #if NLFV
   TEST(Analytic00_Linear1_NLFV_DirichletNeumann_Poly_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "test/median7x8_filtered.exo",
+    test("ifpack2: ILUT", "DirichletNeumann", "test/median7x8_filtered.exo", 2, -1,
          "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12, 1, "00", 15);
   }
   TEST(Analytic00_LinearGravity1_NLFV_DirichletNeumann_Poly_ifpack2_ILUT) {
-    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "test/median7x8_filtered.exo",
+    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "test/median7x8_filtered.exo", 2, -1,
                  "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-12, 1, "00", 15);
   }
   TEST(Analytic00_Linear1_NLFVBFace_DirichletNeumann_Poly_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "test/median7x8_filtered.exo",
+    test("ifpack2: ILUT", "DirichletNeumann", "test/median7x8_filtered.exo", 2, -1,
          "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-12, 1, "00", 15);
   }
   TEST(Analytic00_LinearGravity1_NLFVBFace_DirichletNeumann_Poly_ifpack2_ILUT) {
-    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "test/median7x8_filtered.exo",
+    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "test/median7x8_filtered.exo", 2, -1,
                  "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-12, 1, "00", 15);
   }
 #endif
@@ -573,40 +491,40 @@ SUITE(DIFFUSION) {
   // polynomial with coefficient=1
   //
 #if FV
-  TEST(Analytic00_Quadratic1_FV_DirichletNeumann_Generate2D_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "Generate2D",
+  TEST(Analytic00_Quadratic1_FV_DirichletNeumann_structured2d_ifpack2_ILUT) {
+    test("ifpack2: ILUT", "DirichletNeumann", "structured2d", 2, 10,
          "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 0.006, 2);
   }
-  TEST(Analytic00_QuadraticGravity1_FV_DirichletNeumann_Generate2D_ifpack2_ILUT) {
-    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "Generate2D",
+  TEST(Analytic00_QuadraticGravity1_FV_DirichletNeumann_structured2d_ifpack2_ILUT) {
+    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "structured2d", 2, 10,
                  "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 0.006, 2);
   }
 #endif
 #if MFD
-  TEST(Analytic00_Quadratic1_MFD_DirichletNeumann_Generate2D_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "Generate2D",
+  TEST(Analytic00_Quadratic1_MFD_DirichletNeumann_structured2d_ifpack2_ILUT) {
+    test("ifpack2: ILUT", "DirichletNeumann", "structured2d", 2, 10,
          "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 0.006, 2);
   }
-  TEST(Analytic00_QuadraticGravity1_MFD_DirichletNeumann_Generate2D_ifpack2_ILUT) {
-    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "Generate2D",
+  TEST(Analytic00_QuadraticGravity1_MFD_DirichletNeumann_structured2d_ifpack2_ILUT) {
+    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "structured2d", 2, 10,
                  "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 0.006, 2);
   }
 #endif
 #if NLFV
-  TEST(Analytic00_Quadratic1_NLFV_DirichletNeumann_Generate2D_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "Generate2D",
+  TEST(Analytic00_Quadratic1_NLFV_DirichletNeumann_structured2d_ifpack2_ILUT) {
+    test("ifpack2: ILUT", "DirichletNeumann", "structured2d", 2, 10,
          "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 0.006, 2);
   }
-  TEST(Analytic00_QuadraticGravity1_NLFV_DirichletNeumann_Generate2D_ifpack2_ILUT) {
-     testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "Generate2D",
+  TEST(Analytic00_QuadraticGravity1_NLFV_DirichletNeumann_structured2d_ifpack2_ILUT) {
+     testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "structured2d", 2, 10,
                   "nlfv", true, AmanziMesh::Entity_kind::UNKNOWN, 0.006, 2);
   }
-  TEST(Analytic00_Quadratic1_NLFVBFace_DirichletNeumann_Generate2D_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "Generate2D",
+  TEST(Analytic00_Quadratic1_NLFVBFace_DirichletNeumann_structured2d_ifpack2_ILUT) {
+    test("ifpack2: ILUT", "DirichletNeumann", "structured2d", 2, 10,
          "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 0.006, 2);
   }
-  TEST(Analytic00_QuadraticGravity1_NLFVBFace_DirichletNeumann_Generate2D_ifpack2_ILUT) {
-    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "Generate2D",
+  TEST(Analytic00_QuadraticGravity1_NLFVBFace_DirichletNeumann_structured2d_ifpack2_ILUT) {
+    testWGravity(1.1, "ifpack2: ILUT", "DirichletNeumann", "structured2d", 2, 10,
                  "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 0.006, 2);
   }
 #endif
@@ -615,40 +533,40 @@ SUITE(DIFFUSION) {
   // Analytic02: Tensor diffusion.  Note FV cannot be exact for this problem.
   // This test replaces old operator_diffusion.cc mixed tests.
 #if FV
-  TEST(Analytic02_FV_DirichletNeumann_Generate2D_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "Dirichlet", "Generate2D",
+  TEST(Analytic02_FV_DirichletNeumann_structured2d_ifpack2_ILUT) {
+    test("ifpack2: ILUT", "Dirichlet", "structured2d", 2, 10,
          "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 0.004, 1, "02");
   }
 #endif
 
 #if MFD
   // on mfd: default, these have a tolerance of 1.e-12.  On TPFA, it is the same as FV?
-  TEST(Analytic02_MFD_DirichletNeumann_Generate2D_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumannRobin", "Generate2D",
+  TEST(Analytic02_MFD_DirichletNeumann_structured2d_ifpack2_ILUT) {
+    test("ifpack2: ILUT", "DirichletNeumannRobin", "structured2d", 2, 10,
          "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1e-12, 1, "02");
   }
-  TEST(Analytic02_Gravity_MFD_DirichletNeumann_Generate2D_ifpack2_ILUT) {
-    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumann", "Generate2D",
+  TEST(Analytic02_Gravity_MFD_DirichletNeumann_structured2d_ifpack2_ILUT) {
+    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumann", "structured2d", 2, 10,
                  "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1e-12, 2, "02");
   }
 
   // the original test tested on circle-quad
   TEST(Analytic02_MFD_DirichletNeumann_CircleQuad_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "test/circle_quad10.exo",
+    test("ifpack2: ILUT", "DirichletNeumann", "test/circle_quad10.exo", 2, -1,
          "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1e-12, 1, "02");
   }
   TEST(Analytic02_Gravity_MFD_DirichletNeumann_CircleQuad_ifpack2_ILUT) {
-    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumann", "test/circle_quad10.exo",
+    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumann", "test/circle_quad10.exo", 2, -1,
                  "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1e-12, 1, "02");
   }
 
   // test in 3D
-  TEST(Analytic02_MFD_DirichletNeumann_Generate3D_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "Generate3D",
+  TEST(Analytic02_MFD_DirichletNeumann_structured3d_ifpack2_ILUT) {
+    test("ifpack2: ILUT", "DirichletNeumann", "structured3d", 3, 10,
          "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1e-12, 2, "02");
   }
-  TEST(Analytic02_Gravity_MFD_DirichletNeumann_Generate3D_ifpack2_ILUT) {
-    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumann", "Generate3D",
+  TEST(Analytic02_Gravity_MFD_DirichletNeumann_structured3d_ifpack2_ILUT) {
+    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumann", "structured3d", 3, 10,
                  "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1e-12, 1, "02");
   }
 #endif
@@ -657,66 +575,66 @@ SUITE(DIFFUSION) {
   // With NLFV
   //
 #if NLFV
-  TEST(Analytic02_NLFV_DirichletNeumann_Generate2D_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "Generate2D",
+  TEST(Analytic02_NLFV_DirichletNeumann_structured2d_ifpack2_ILUT) {
+    test("ifpack2: ILUT", "DirichletNeumann", "structured2d", 2, 10,
          "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-12, 1, "02", 20);
   }
-  TEST(Analytic02_Gravity_NLFV_DirichletNeumann_Generate2D_ifpack2_ILUT) {
-    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumann", "Generate2D",
+  TEST(Analytic02_Gravity_NLFV_DirichletNeumann_structured2d_ifpack2_ILUT) {
+    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumann", "structured2d", 2, 10,
                  "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-12, 1, "02", 20);
   }
 
   // the original test tested on circle-quad
   TEST(Analytic02_NLFV_DirichletNeumann_CircleQuad_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "test/circle_quad10.exo",
+    test("ifpack2: ILUT", "DirichletNeumann", "test/circle_quad10.exo", 2, -1,
          "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-11, 1, "02", 50);
   }
   TEST(Analytic02_Gravity_NLFV_DirichletNeumann_CircleQuad_ifpack2_ILUT) {
-    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumann", "test/circle_quad10.exo",
+    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumann", "test/circle_quad10.exo", 2, -1,
                  "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-11, 1, "02", 50);
   }
 
   // test in 3D
   //
   // These probably should pass?  Not sure why they don't.
-  TEST(Analytic02_NLFV_DirichletNeumann_Generate3D_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "Generate3D",
+  TEST(Analytic02_NLFV_DirichletNeumann_structured3d_ifpack2_ILUT) {
+    test("ifpack2: ILUT", "DirichletNeumann", "structured3d", 3, 10,
          "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-11, 1, "02", 20);
   }
-  TEST(Analytic02_Gravity_NLFV_DirichletNeumann_Generate3D_ifpack2_ILUT) {
-    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumann", "Generate3D",
+  TEST(Analytic02_Gravity_NLFV_DirichletNeumann_structured3d_ifpack2_ILUT) {
+    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumann", "structured3d", 3, 10,
                  "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 1, "02", 20);
   }
 
   //
   // With NLFV and Boundary Faces
   // 
-  TEST(Analytic02_NLFVwithBndFaces_DirichletNeumann_Generate2D_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "Generate2D",
+  TEST(Analytic02_NLFVwithBndFaces_DirichletNeumann_structured2d_ifpack2_ILUT) {
+    test("ifpack2: ILUT", "DirichletNeumann", "structured2d", 2, 10,
          "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-12, 1, "02", 15);
   }
-  TEST(Analytic02_Gravity_NLFVwithBndFaces_DirichletNeumann_Generate2D_ifpack2_ILUT) {
-    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumann", "Generate2D",
+  TEST(Analytic02_Gravity_NLFVwithBndFaces_DirichletNeumann_structured2d_ifpack2_ILUT) {
+    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumann", "structured2d", 2, 10,
                  "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-12, 1, "02", 15);
   }
 
   // the original test tested on circle-quad
   TEST(Analytic02_NLFVwithBndFaces_DirichletNeumann_CircleQuad_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "test/circle_quad10.exo",
+    test("ifpack2: ILUT", "DirichletNeumann", "test/circle_quad10.exo", 2, -1,
          "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-10, 1, "02", 50);
   }
   TEST(Analytic02_Gravity_NLFVwithBndFaces_DirichletNeumann_CircleQuad_ifpack2_ILUT) {
-    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumann", "test/circle_quad10.exo",
+    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumann", "test/circle_quad10.exo", 2, -1,
          "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-10, 1, "02", 50);
   }
 
   // test in 3D
-  TEST(Analytic02_NLFVwithBndFaces_DirichletNeumann_Generate3D_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "Generate3D",
+  TEST(Analytic02_NLFVwithBndFaces_DirichletNeumann_structured3d_ifpack2_ILUT) {
+    test("ifpack2: ILUT", "DirichletNeumann", "structured3d", 3, 10,
          "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 1, "02", 20);
   }
-  TEST(Analytic02_Gravity_NLFVwithBndFaces_DirichletNeumann_Generate3D_ifpack2_ILUT) {
-    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumann", "Generate3D",
+  TEST(Analytic02_Gravity_NLFVwithBndFaces_DirichletNeumann_structured3d_ifpack2_ILUT) {
+    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumann", "structured3d", 3, 10,
                  "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-11, 1, "02", 20);
   }
 #endif 
@@ -732,47 +650,47 @@ SUITE(DIFFUSION) {
   //       NLFV must converge to be exact.  Also, NLFV loses symmetry as it iterates.
 #if FV
   TEST(Analytic03b_Linear1_FV_Dirichlet_Poly_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "Dirichlet", "Generate2D_HiRes",
+    test("ifpack2: ILUT", "Dirichlet", "structured2d", 2, 50,
          "fv", false, AmanziMesh::Entity_kind::FACE, 2.7e-2, 1, "03");
   }
 #endif
 #if MFD
   TEST(Analytic03b_Linear1_MFD_Dirichlet_Poly_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "Dirichlet", "Generate2D_HiRes",
+    test("ifpack2: ILUT", "Dirichlet", "structured2d", 2, 50,
          "mixed upwind", false, AmanziMesh::Entity_kind::FACE, 2.7e-2, 2, "03");
   }
 #endif
 #if NLFV
   TEST(Analytic03b_Linear1_NLFV_Dirichlet_Poly_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "Dirichlet", "Generate2D",
+    test("ifpack2: ILUT", "Dirichlet", "structured2d", 2, 10,
         "nlfv", false, AmanziMesh::Entity_kind::FACE, 3e-2, 2, "03", 10);
   }
   TEST(Analytic03b_Linear1_NLFVBFace_Dirichlet_Poly_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "Dirichlet", "Generate2D",
+    test("ifpack2: ILUT", "Dirichlet", "structured2d", 2, 10,
          "nlfv with bfaces", false, AmanziMesh::Entity_kind::FACE, 3e-2, 2, "03", 10);
   }
 #endif
 
 #if FV
   TEST(Analytic03b_Linear1_FV_Dirichlet_Poly_ifpack2_diagonal) {
-    test("diagonal", "Dirichlet", "Generate2D",
+    test("diagonal", "Dirichlet", "structured2d", 2, 10,
          "fv", false, AmanziMesh::Entity_kind::FACE, 2.7e-2, 1, "03");
   }
 #endif
 #if MFD
   // on mfd: default, these have a tolerance of 1.e-12.  On TPFA, it is the same as FV?
   TEST(Analytic03b_Linear1_MFD_Dirichlet_Poly_ifpack2_diagonal) {
-    test("diagonal", "Dirichlet", "Generate2D",
+    test("diagonal", "Dirichlet", "structured2d", 2, 10,
          "mixed upwind", false, AmanziMesh::Entity_kind::FACE, 2.7e-2, 1, "03");
   }
 #endif
 #if NLFV
   TEST(Analytic03b_Linear1_NLFV_Dirichlet_Poly_ifpack2_diagonal) {
-    test("diagonal", "Dirichlet", "Generate2D",
+    test("diagonal", "Dirichlet", "structured2d", 2, 10,
         "nlfv", false, AmanziMesh::Entity_kind::FACE, 3e-2, 2, "03", 10);
   }
   TEST(Analytic03b_Linear1_NLFVBFace_Dirichlet_Poly_ifpack2_diagonal) {
-    test("diagonal", "Dirichlet", "Generate2D",
+    test("diagonal", "Dirichlet", "structured2d", 2, 10,
          "nlfv with bfaces", false, AmanziMesh::Entity_kind::FACE, 3e-2, 2, "03", 10);
   }
 #endif
