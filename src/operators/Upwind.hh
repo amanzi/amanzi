@@ -83,8 +83,7 @@ class Upwind {
     return cvs;
   }
 
-  void PopulateDirichletFaces(const std::vector<int>& bc_model,
-                              CompositeVector& field);
+  void CellToDirichletFaces(const std::vector<int>& bc_model, CompositeVector& field);
 
   // modifiers
   void set_face_comp(const std::string& name) { face_comp_ = name; }
@@ -102,8 +101,8 @@ class Upwind {
 * Support function: copy data from cells to dirichlet faces
 ****************************************************************** */
 template<class Model>
-void Upwind<Model>::PopulateDirichletFaces(const std::vector<int>& bc_model,
-                                           CompositeVector& field)
+void Upwind<Model>::CellToDirichletFaces(const std::vector<int>& bc_model,
+                                         CompositeVector& field)
 {
   Epetra_MultiVector& field_df = *field.ViewComponent("dirichlet_faces", true);
   Epetra_MultiVector& field_c = *field.ViewComponent("cell", true);

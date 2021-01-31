@@ -277,5 +277,54 @@ void PDE_Electromagnetics::Init_(Teuchos::ParameterList& plist)
   K_symmetric_ = (plist.get<std::string>("diffusion tensor", "symmetric") == "symmetric");
 }
 
+
+/* ******************************************************************
+* Additional data for AMS solver: coordinates of nodes
+****************************************************************** */
+Teuchos::RCP<Epetra_MultiVector> PDE_Electromagnetics::GraphGeometry()
+{
+  int d = mesh_->space_dimension();
+  auto map = mesh_->node_map(true);
+  auto xyz = Teuchos::rcp(new Epetra_MultiVector(map, d));
+
+  AmanziGeometry::Point xv;
+  for (int n = 0; n < nnodes_wghost; ++n) {
+    mesh_->node_get_coordinates(n, &xv);
+    for (int i = 0; i < d; ++i) (*xyz)[i][n] = xv[i];
+  }
+
+  return xyz;
+}
+
+
+/* ******************************************************************
+* Additional data for AMS solver: gradient
+****************************************************************** */
+Teuchos::RCP<Epetra_CrsMatrix> PDE_Electromagnetics::GradientOperator()
+{
+  auto map_row = mesh_->edge_map(false);
+  auto map_col = mesh_->node_map(true);
+  auto G = Teuchos::rcp(new Epetra_CrsMatrix(Copy, map_row, map_col, 2));
+
+  int n1, n2, lid_c[2];
+  double values[2];
+
+  for (int e = 0; e != nedges_owned; ++e) {
+    double len = mesh_->edge_length(e);
+    mesh_->edge_get_nodes(e, &n1, &n2);
+
+    lid_c[0] = map_col.GID(n1); 
+    lid_c[1] = map_col.GID(n2); 
+
+    values[0] =-1.0 / len;
+    values[1] = 1.0 / len;
+
+    G->InsertGlobalValues(map_row.GID(e), 2, values, lid_c);
+  }
+
+  G->FillComplete(map_col, map_row);
+  return G;
+}
+
 }  // namespace Operators
 }  // namespace Amanzi

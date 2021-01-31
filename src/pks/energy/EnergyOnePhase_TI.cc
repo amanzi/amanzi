@@ -40,7 +40,7 @@ void EnergyOnePhase_PK::FunctionalResidual(
     *upw_conductivity_->ViewComponent("cell") = *conductivity->ViewComponent("cell");
 
     const auto& bc_model = op_bc_->bc_model();
-    upwind_->PopulateDirichletFaces(bc_model, *upw_conductivity_);
+    upwind_->CellToDirichletFaces(bc_model, *upw_conductivity_);
     upwind_->Compute(*flux, *u_new->Data(), bc_model, *upw_conductivity_);
   }
 
@@ -109,7 +109,7 @@ void EnergyOnePhase_PK::UpdatePreconditioner(
 
     Teuchos::RCP<const CompositeVector> flux = S_->GetFieldData(darcy_flux_key_);
     const auto& bc_model = op_bc_->bc_model();
-    upwind_->PopulateDirichletFaces(bc_model, *upw_conductivity_);
+    upwind_->CellToDirichletFaces(bc_model, *upw_conductivity_);
     upwind_->Compute(*flux, *up->Data(), bc_model, *upw_conductivity_);
   }
 

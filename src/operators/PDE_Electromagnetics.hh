@@ -75,6 +75,10 @@ class PDE_Electromagnetics : public PDE_HelperDiscretization {
   // -- after solving the problem
   virtual void ModifyFields(CompositeVector& E, CompositeVector& B, double dt) {};
 
+  // support of AMS solver
+  Teuchos::RCP<Epetra_MultiVector> GraphGeometry();
+  Teuchos::RCP<Epetra_CrsMatrix> GradientOperator();
+
  protected:
   void Init_(Teuchos::ParameterList& plist);
   void ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_f,

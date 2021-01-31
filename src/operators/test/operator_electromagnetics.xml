@@ -97,7 +97,7 @@
     <ParameterList name="default">
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
-        <Parameter name="error tolerance" type="double" value="1e-12"/>
+        <Parameter name="error tolerance" type="double" value="1e-6"/>
         <Parameter name="maximum number of iterations" type="int" value="200"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
@@ -115,10 +115,31 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
+
+    <ParameterList name="GMRES">
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+        <Parameter name="error tolerance" type="double" value="1e-12"/>
+        <Parameter name="maximum number of iterations" type="int" value="200"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
+    <ParameterList name="Hypre AMS">
+      <Parameter name="preconditioning method" type="string" value="ams"/>
+      <ParameterList name="ams parameters">
+        <Parameter name="cycle applications" type="int" value="1"/>
+        <Parameter name="cycle type" type="int" value="1"/>
+        <Parameter name="tolerance" type="double" value="0.0"/>
+        <Parameter name="relaxation type" type="int" value="6"/>
+        <Parameter name="verbosity" type="int" value="0"/>
+      </ParameterList>
+    </ParameterList>
     <ParameterList name="Hypre AMG">
       <Parameter name="preconditioning method" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">

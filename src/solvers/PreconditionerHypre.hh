@@ -98,6 +98,7 @@ This is provided when using the `"preconditioning method`"=`"euclid`" or
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Epetra_CrsMatrix.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_RowMatrix.h"
 #include "Ifpack_Hypre.h"
@@ -111,10 +112,10 @@ class VerboseObject;
 
 namespace AmanziSolvers {
 
-class PreconditionerHypre : public Amanzi::AmanziSolvers::Preconditioner {
+class PreconditionerHypre : public AmanziSolvers::Preconditioner {
  public:
   PreconditionerHypre() :
-      Amanzi::AmanziSolvers::Preconditioner(),
+      AmanziSolvers::Preconditioner(),
       num_blocks_(0),
       block_indices_(Teuchos::null),
       IfpHypre_(Teuchos::null),
@@ -132,9 +133,9 @@ class PreconditionerHypre : public Amanzi::AmanziSolvers::Preconditioner {
   }
 
  private:
-  void Init_();
   void InitBoomer_();
   void InitEuclid_();
+  void InitAMS_();
 
   Teuchos::ParameterList plist_;
   Teuchos::RCP<VerboseObject> vo_;
