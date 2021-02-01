@@ -284,11 +284,11 @@ void PDE_Electromagnetics::Init_(Teuchos::ParameterList& plist)
 Teuchos::RCP<Epetra_MultiVector> PDE_Electromagnetics::GraphGeometry()
 {
   int d = mesh_->space_dimension();
-  auto map = mesh_->node_map(true);
+  auto map = mesh_->node_map(false);
   auto xyz = Teuchos::rcp(new Epetra_MultiVector(map, d));
 
   AmanziGeometry::Point xv;
-  for (int n = 0; n < nnodes_wghost; ++n) {
+  for (int n = 0; n < nnodes_owned; ++n) {
     mesh_->node_get_coordinates(n, &xv);
     for (int i = 0; i < d; ++i) (*xyz)[i][n] = xv[i];
   }
@@ -303,24 +303,26 @@ Teuchos::RCP<Epetra_MultiVector> PDE_Electromagnetics::GraphGeometry()
 Teuchos::RCP<Epetra_CrsMatrix> PDE_Electromagnetics::GradientOperator()
 {
   auto map_row = mesh_->edge_map(false);
-  auto map_col = mesh_->node_map(true);
-  auto G = Teuchos::rcp(new Epetra_CrsMatrix(Copy, map_row, map_col, 2));
+  auto map_col = mesh_->node_map(false);
+  auto map_col_wghost = mesh_->node_map(true);
+  auto G = Teuchos::rcp(new Epetra_CrsMatrix(Copy, map_row, map_col_wghost, 2));
 
-  int n1, n2, lid_c[2];
+  int ierr(0), n1, n2, lid_c[2];
   double values[2];
 
   for (int e = 0; e != nedges_owned; ++e) {
     double len = mesh_->edge_length(e);
     mesh_->edge_get_nodes(e, &n1, &n2);
 
-    lid_c[0] = map_col.GID(n1); 
-    lid_c[1] = map_col.GID(n2); 
+    lid_c[0] = map_col_wghost.GID(n1); 
+    lid_c[1] = map_col_wghost.GID(n2); 
 
     values[0] =-1.0 / len;
     values[1] = 1.0 / len;
 
-    G->InsertGlobalValues(map_row.GID(e), 2, values, lid_c);
+    ierr |= G->InsertGlobalValues(map_row.GID(e), 2, values, lid_c);
   }
+  AMANZI_ASSERT(!ierr);
 
   G->FillComplete(map_col, map_row);
   return G;
