@@ -122,7 +122,7 @@
         <Parameter name="error tolerance" type="double" value="1e-12"/>
         <Parameter name="maximum number of iterations" type="int" value="200"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="none"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -137,6 +137,7 @@
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="tolerance" type="double" value="0.0"/>
         <Parameter name="relaxation type" type="int" value="6"/>
+        <Parameter name="coarse level relaxation" type="int" value="9"/>
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
     </ParameterList>

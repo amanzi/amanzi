@@ -240,15 +240,15 @@ void PreconditionerHypre::InitAMS_()
   tmp.sublist("Coordinates").set<Teuchos::RCP<Epetra_MultiVector> >("Coordinates", xyz);
   tmp.sublist("Operators").set<Teuchos::RCP<const Epetra_CrsMatrix> >("G", G);
   tmp.sublist("HYPRE_AMSSetAlphaAMGOptions")
-     .set<int>("arg 0", 10)
-     .set<int>("arg 1", 1)
+     .set<int>("arg 0", 6)  // 10
+     .set<int>("arg 1", 0)  // 1
      .set<int>("arg 2", 6)
      .set<double>("arg 3", 0.25)
      .set<int>("arg 4", 0)
      .set<int>("arg 5", 0);
   tmp.sublist("HYPRE_AMSSetBetaAMGOptions")
-     .set<int>("arg 0", 10)
-     .set<int>("arg 1", 1)
+     .set<int>("arg 0", 6)  // 10
+     .set<int>("arg 1", 0)  // 1
      .set<int>("arg 2", 6)
      .set<double>("arg 3", 0.25)
      .set<int>("arg 4", 0)
@@ -259,8 +259,8 @@ void PreconditionerHypre::InitAMS_()
   IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_AMSSetPrintLevel, plist_.get<int>("verbosity", 0));
   IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_AMSSetMaxIter, plist_.get<int>("cycle applications", 5));
   IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_AMSSetCycleType, plist_.get<int>("cycle type", 1));
-  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_AMSSetAlphaAMGCoarseRelaxType, 9);
-  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_AMSSetBetaAMGCoarseRelaxType, 9);
+  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_AMSSetAlphaAMGCoarseRelaxType, plist_.get<int>("coarse level relaxation", 9));
+  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_AMSSetBetaAMGCoarseRelaxType, plist_.get<int>("coarse level relaxation", 9));
 
 #else
   Errors::Message msg("Hypre (AMS) is not available in this installation of Amanzi. To use Hypre, please reconfigure.");
