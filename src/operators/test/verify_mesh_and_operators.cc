@@ -106,6 +106,12 @@ TEST(Verify_Mesh_and_Operators) {
       .set<Teuchos::Array<std::string> >("preconditioner schema", dofs)
       .set<std::string>("nonlinear coefficient", "none");
 
+  plist->sublist("PK operator").sublist("fv")
+      .set<std::string>("discretization primary", "fv: default")
+      .set<std::string>("schema", "cell")
+      .set<std::string>("preconditioner schema", "cell")
+      .set<std::string>("nonlinear coefficient", "none");
+
   plist->sublist("solvers").sublist("AztecOO CG")
       .set<std::string>("iterative method", "pcg").sublist("pcg parameters")
       .set<int>("maximum number of iterations", 1000)
