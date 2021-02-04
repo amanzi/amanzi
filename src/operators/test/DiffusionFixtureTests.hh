@@ -13,7 +13,7 @@
 #include "Analytic02.hh"
 #include "Analytic03b.hh"
 
-void test(const std::string& pc_type,
+void test(const std::string& prec_solver,
           const std::string& bc_type,
           const std::string& mesh_type, int dim, int nx,
           const std::string& disc_type,
@@ -28,12 +28,14 @@ void test(const std::string& pc_type,
   DiffusionFixture fix(plist);
   fix.Init(dim, nx, mesh_type);
 
-  std::cout << std::endl << std::endl
-            << "================================================================================" << std::endl
-            << "Diffusion Test (np=" << fix.comm->NumProc() << "): " << disc_type 
-            << ", PC: " << pc_type << ", mesh=" << mesh_type << std::endl
-            << "--------------------------------------------------------------------------------"
-            << std::endl;
+  if (fix.get_comm()->MyPID() == 0) {
+    std::cout 
+      << "================================================================================" << std::endl
+      << "Diffusion Test (np=" << fix.comm->NumProc() << "): " << disc_type 
+      << ",  " << prec_solver << ",  mesh=" << mesh_type << std::endl
+      << "--------------------------------------------------------------------------------"
+      << std::endl;
+  }
 
   if (ana == "00") 
     fix.ana = Teuchos::rcp(new Analytic00(fix.mesh, order));
@@ -43,7 +45,6 @@ void test(const std::string& pc_type,
     fix.ana = Teuchos::rcp(new Analytic03(fix.mesh));
 
   fix.Discretize(disc_type, scalar_coef);
-  std::cout << "Discretize done" << std::endl;
 
   if (bc_type == "Dirichlet") {
     fix.SetBCsDirichlet();
@@ -54,10 +55,14 @@ void test(const std::string& pc_type,
   } else {
     AMANZI_ASSERT(false);
   }      
-  fix.Setup(pc_type, symmetric);
+  fix.Setup(prec_solver, symmetric);
   for (int i = 0; i < niters - 1; ++i) fix.Go(0.0);
   fix.Go(tol);
-  std::cout << "================================================================================" << std::endl;
+
+  if (fix.get_comm()->MyPID() == 0) {
+    std::cout << "================================================================================" 
+              << std::endl << std::endl;
+  }
 }
 
 
@@ -77,12 +82,14 @@ void testWGravity(double gravity,
   DiffusionFixture fix(plist);
   fix.Init(dim, nx, mesh_type);
 
-  std::cout << std::endl << std::endl
-            << "================================================================================" << std::endl
-            << "DiffusionWithGravity Test (np=" << fix.comm->NumProc() << "): "
-            << disc_type << ", PC: " << pc_type << ", mesh=" << mesh_type << std::endl
-            << "--------------------------------------------------------------------------------"
-            << std::endl;
+  if (fix.get_comm()->MyPID() == 0) {
+    std::cout
+      << "================================================================================" << std::endl
+      << "DiffusionWithGravity Test (np=" << fix.comm->NumProc() << "): "
+      << disc_type << ", PC: " << pc_type << ", mesh=" << mesh_type << std::endl
+      << "--------------------------------------------------------------------------------"
+      << std::endl;
+  }
 
   if (ana == "00") 
     fix.ana = Teuchos::rcp(new Analytic00(fix.mesh, order, gravity));
@@ -103,6 +110,10 @@ void testWGravity(double gravity,
   fix.Setup(pc_type, symmetric);
   for (int i = 0; i < niters - 1; ++i) fix.Go(0.0);
   fix.Go(tol);
-  std::cout << "=============================================================================" << std::endl;
+
+  if (fix.get_comm()->MyPID() == 0) {
+    std::cout << "================================================================================" 
+              << std::endl << std::endl;
+  }
 }
 
