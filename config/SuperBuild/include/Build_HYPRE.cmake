@@ -27,50 +27,52 @@ set(hypre_openmp_opt)
 #   set(hypre_openmp_opt "-DHYPRE_USING_OPENMP:BOOL=TRUE")
 # endif()
 #else()
-set(hypre_openmp_opt "-DHYPRE_USING_OPENMP:BOOL=FALSE")
+#set(hypre_openmp_opt "-DHYPRE_USING_OPENMP:BOOL=FALSE")
+#set(hypre_openmp_opt "--with-openmp")
 #endif()
 
 # Locate LAPACK and BLAS
 set(hypre_blas_opt)
 find_package(BLAS)
 if (BLAS_FOUND)
-  set(hypre_blas_opt "-DHYPRE_USING_HYPRE_BLAS:BOOL=FALSE"
-                     "-DTPL_BLAS_LIBRARIES:STRING=${BLAS_LIBRARIES}")
+  set(hypre_blas_opt "--with-blas")
 endif()
 
 set(hypre_lapack_opt)
 find_package(LAPACK)
 if (LAPACK_FOUND)
-  set(hypre_lapack_opt "-DHYPRE_USING_HYPRE_LAPACK:BOOL=FALSE"
-                       "-DTPL_LAPACK_LIBRARIES:STRING=${LAPACK_LIBRARIES}")
+  set(hypre_lapack_opt "--with-lapack")
+endif()
+
+set(hypre_kokkos_cuda)
+set(CUDA_HOME)
+set(Hypre_CUDA_SM)
+if(ENABLE_KOKKOS_CUDA)
+  find_package(CUDA REQUIRED)
+  set(CUDA_HOME ${CUDA_INCLUDE_DIRS}/..)
+  message(STATUS "CUDA_HOME: ${CUDA_HOME}")
+  set(Hypre_CUDA_SM 70)
+  set(hypre_kokkos_cuda "--with-cuda" "--enable-cusparse" "--enable-unified-memory")
 endif()
 
 # set(hypre_fortran_opt -"--disable-fortran)
 
 # Locate SuperLU and SuperLUDist
-set(hypre_superlu_opt "-DTPL_DSUPERLU_INCLUDE_DIRS:PATH=${TPL_INSTALL_PREFIX}/include"
-                      "-DTPL_DSUPERLU_LIBRARIES:FILEPATH=${SuperLUDist_LIBRARY}"
-                      "-DSUPERLU_LIBRARY:FILEPATH=${SuperLU_LIBRARY}"
-                      "-DHYPRE_WITH_DSUPERLU:BOOL=TRUE"
-                      "-DHYPRE_USING_FEI:BOOL=FALSE")
+set(hypre_superlu_opt "--with-superlu" 
+                      "--with-superlu-include=${TPL_INSTALL_PREFIX}/include"
+                      "--with-superlu-lib=${SuperLU_LIBRARY}"
+                      "--with-dsuperlu"
+                      "--with-dsuperlu-include=${TPL_INSTALL_PREFIX}/include"
+                      "--with-dsuperlu-lib=${SuperLUDist_LIBRARY}")
 
 # shared/static libraries (shared FEI is broken in HYPRE)
-set(hypre_shared_opt)
+set(hypre_shared_opt "no")
 if (BUILD_SHARED_LIBS)
-  set(hypre_shared_opt "-DHYPRE_ENABLE_SHARED:BOOL=TRUE"
-                       "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}")
-else()
-  set(hypre_shared_opt "-DHYPRE_ENABLE_SHARED:BOOL=FALSE")
+  set(hypre_shared_opt "yes")
 endif()
 
-set(hypre_install_opt "-DHYPRE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}")
-
-string(REPLACE ";" "\\\;" hypre_module_opt "${CMAKE_MODULE_PATH}")
-
-
 # --- Set the name of the patch
-set(HYPRE_patch_file hypre-cmake.patch
-                     hypre-superlu.patch)
+#set(HYPRE_patch_file hypre-superlu.patch)
 # --- Configure the bash patch script
 set(HYPRE_sh_patch ${HYPRE_prefix_dir}/hypre-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hypre-patch-step.sh.in
@@ -100,23 +102,25 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
                     # -- Configure
                     SOURCE_DIR    ${HYPRE_source_dir}
                     SOURCE_SUBDIR src                          # cmake 3.7+ feature 
-		    CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
-                                  ${hypre_openmp_opt} 
-                                  ${hypre_lapack_opt} ${hypre_blas_opt}
-                                  ${hypre_superlu_opt} ${hypre_shared_opt}
-                                  ${hypre_install_opt}
-                                  -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
-                                  -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-                                  -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
-                                  -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
-                                  -DMPI_CXX_COMPILER:FILEPATH=${MPI_CXX_COMPILER}
-                                  -DMPI_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
-                                  -DHYPRE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-                                  -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-                    CMAKE_CACHE_ARGS -DCMAKE_MODULE_PATH:STRING=${hypre_module_opt}
+                    CONFIGURE_COMMAND
+                                 ${HYPRE_source_dir}/src/configure
+                                       --prefix=${TPL_INSTALL_PREFIX}
+                                       --with-MPI
+                                       --enable-shared=${hypre_shared_opt}
+                                       ${hypre_openmp_opt}
+                                       ${hypre_lapack_opt}
+                                       ${hypre_blas_opt}
+                                       ${hypre_superlu_opt}
+                                       ${hypre_kokkos_cuda}
+                                       CC=${CMAKE_CC_COMPILER}
+                                       CFLAGS=${Hypre_CC_FLAGS}
+                                       CXX=${CMAKE_CXX_COMPILER}
+                                       CXXFLAGS=${Hypre_CXX_FLAGS}
+                                       CUDA_HOME=${CUDA_HOME}
+                                       HYPRE_CUDA_SM=${Hypre_CUDA_SM}               
                     # -- Build
-                    BINARY_DIR       ${HYPRE_build_dir}        # Build directory 
-                    BUILD_COMMAND    ${MAKE} 
+                    BINARY_DIR       ${HYPRE_source_dir}/src        # Build directory 
+                    BUILD_COMMAND    $(MAKE)  
                     # -- Install
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}     # Install directory
       		    INSTALL_COMMAND  $(MAKE) install
