@@ -217,7 +217,6 @@ add_amanzi_library(operators
   HEADERS ${operators_inc_files}
   LINK_LIBS ${operators_link_libs})
 
-
 if (BUILD_TESTS)
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
@@ -450,5 +449,11 @@ if (BUILD_TESTS)
     #                 SOURCE test/Main.cc test/operator_advection_dg.cc
     #                                     test/operator_advection_dg_transient
     #                 LINK_LIBS ${operators_test_link_libs})
+
+add_amanzi_executable(verify_operators
+                      SOURCE test/verify_operators.cc
+                      LINK_LIBS ${operators_test_link_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                      OUTPUT_NAME verify_operators
+                      OUTPUT_DIRECTORY ${OPERATORS_BINARY_DIR}/test)
 
 endif()

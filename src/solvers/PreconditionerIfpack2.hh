@@ -42,8 +42,6 @@ class PreconditionerIfpack2 : public Preconditioner {
     Ifpack2::Factory factory;
     A_ = h_;
     std::string method = plist_.get<std::string>("method");
-    if (vo_->os_OK(Teuchos::VERB_LOW))
-      *vo_->os() << "Ifpack2 method: " << method << std::endl;
 
     pc_ = factory.create(method, A_);
     pc_->setParameters(plist_);

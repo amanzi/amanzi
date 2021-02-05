@@ -1189,7 +1189,8 @@ void PDE_DiffusionMFD::ParsePList_()
   //   Exceptions::amanzi_throw(msg);
   // }
 
-  if (primary != "mfd: two-point flux approximation") {
+  if (primary != "mfd: two-point flux approximation" &&
+      primary != "mfd: default") {
     AMANZI_ASSERT(false);
   } else {
     mfd_primary_ = WhetStone::DIFFUSION_TPFA;

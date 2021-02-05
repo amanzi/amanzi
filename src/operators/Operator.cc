@@ -467,6 +467,26 @@ void Operator::getLocalDiagCopy(CompositeVector& X) const
   X.GatherGhostedToMaster();
 }
 
+
+void Operator::set_inverse_parameters(const std::string& prec_name,
+        const Teuchos::ParameterList& plist) {
+  Teuchos::ParameterList inner_plist(plist.sublist(prec_name));
+  set_inverse_parameters(inner_plist);
+}
+
+
+void Operator::set_inverse_parameters(const std::string& prec_name,
+        const Teuchos::ParameterList& prec_list,
+        const std::string& iter_name,
+        const Teuchos::ParameterList& iter_list,
+        bool make_one_iteration) {
+  auto inv_plist = AmanziSolvers::mergePreconditionerSolverLists(
+      prec_name, prec_list, iter_name, iter_list, make_one_iteration);
+  inv_plist.setName(iter_name);
+  set_inverse_parameters(inv_plist);
+}
+
+
 /* ******************************************************************
 * Two-stage initialization of preconditioner, part 1.
 * Create the preconditioner and set options. Symbolic assemble of

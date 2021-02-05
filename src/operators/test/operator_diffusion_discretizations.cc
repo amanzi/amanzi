@@ -44,7 +44,7 @@
 // #include "UpwindSecondOrder.hh"
 // #include "Verification.hh"
 
-#include "DiffusionFixture.hh"
+#include "DiffusionFixtureOld.hh"
 
 template<class PDE_Diffusion_type>
 void test(const Teuchos::RCP<AnalyticBase>& ana,

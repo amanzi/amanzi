@@ -54,7 +54,6 @@ class IterativeMethodPCG :
   IterativeMethodPCG() : InvIt() {}
 
   virtual int applyInverse(const Vector& v, Vector& hv) const override final {
-    std::cout<<"ApplyInverse PCG: "<<max_itrs_<<" tol: "<<tol_<<" criteria: "<<this->criteria_<<std::endl;
     AMANZI_ASSERT(inited_ && h_.get());
     int ierr = PCG_(v, hv, tol_, max_itrs_, this->criteria_);
     returned_code_ = ierr;

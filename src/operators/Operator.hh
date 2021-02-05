@@ -226,6 +226,15 @@ class Operator: public Matrix<CompositeVector,CompositeSpace> {
   int ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r,
                               bool zero = true);
 
+  // versions that make it easier to deal with Amanzi input spec format
+  void set_inverse_parameters(const std::string& prec_name,
+                         const Teuchos::ParameterList& plist);
+  void set_inverse_parameters(const std::string& prec_name,
+                         const Teuchos::ParameterList& prec_list,
+                         const std::string& iter_name,
+                         const Teuchos::ParameterList& iter_list,
+                         bool make_one_iteration=true);
+
   // -- preferred methods -- set_parameters, initialize, compute
   void set_inverse_parameters(Teuchos::ParameterList& plist) override final;
   void initializeInverse() override final;

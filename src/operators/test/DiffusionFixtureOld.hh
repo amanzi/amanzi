@@ -82,8 +82,6 @@ struct DiffusionFixture {
     K_map.AddComponent("cell", AmanziMesh::CELL, 1);
     auto K = Teuchos::rcp(new TensorVector(K_map));
 
-
-
     std::vector<WhetStone::Tensor<DefaultHostMemorySpace>> host_tensors(K->size());
     for (int c = 0; c < K->size(); c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
@@ -91,6 +89,7 @@ struct DiffusionFixture {
     }
     K->Init(host_tensors);
     op->SetTensorCoefficient(K);
+
     // boundary condition
     bc = Teuchos::rcp(new Operators::BCs(mesh, Boundary_kind, WhetStone::DOF_Type::SCALAR));
     op->SetBCs(bc,bc);
@@ -251,10 +250,6 @@ struct DiffusionFixture {
 
       op->UpdateMatrices(Teuchos::null, Teuchos::null);
       op->UpdateFlux(solution.ptr(), flux.ptr());
-      {
-        auto fv = flux->ViewComponent<MirrorHost>("face", false);
-      }
-
 
       ComputeFaceError(*ana, mesh, *flux, 0.0, unorm, ul2_err, uinf_err);
       //flux->Print(std::cout);
