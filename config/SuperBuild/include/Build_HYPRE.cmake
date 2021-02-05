@@ -72,7 +72,7 @@ if (BUILD_SHARED_LIBS)
 endif()
 
 # --- Set the name of the patch
-#set(HYPRE_patch_file hypre-superlu.patch)
+set(HYPRE_patch_file hypre-superlu.patch)
 # --- Configure the bash patch script
 set(HYPRE_sh_patch ${HYPRE_prefix_dir}/hypre-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hypre-patch-step.sh.in
