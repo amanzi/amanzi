@@ -10,12 +10,17 @@
 #ifndef AMANZI_PRECONDITIONER_MUELU_HH_
 #define AMANZI_PRECONDITIONER_MUELU_HH_
 
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#if defined(HAVE_MUELU_EPETRA)
 #include "MueLu.hpp"
 #include "MueLu_EpetraOperator.hpp"
 #include "MueLu_CreateEpetraPreconditioner.hpp"
+#endif
 
 #include "exceptions.hh"
 #include "Preconditioner.hh"
