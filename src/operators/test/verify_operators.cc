@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
   if (argc < 4) {
     std::cout <<
       "Usage: verify_operators  with_pc|direct  mesh_type  mesh_size|mesh_file  scheme  tol\n\n"
-      "  (req) with_pc   = identity|diagonal|ifpack2: ILUT\n"
+      "  (req) with_pc   = identity|diagonal|ifpack2: ILUT|ifpack2: RILUK\n"
       "                    Hypre: AMG|Hypre: Euclid\n"
       "                    Trilinos: ML|Trilinos: MueLu\n"
       "  (req) direct    = Amesos: KLU|Amesos: Basker|Amesos: SuperLUDist\n\n"
@@ -212,8 +212,15 @@ TEST(Verify_Mesh_and_Operators) {
   // -- ILU
   plist->sublist("preconditioners").sublist("ifpack2: ILUT")
       .set<std::string>("preconditioning method", "ifpack2: ILUT").sublist("ifpack2: ILUT parameters")
-      .set<double>("fact: ilut level-of-fill", 10.0)
+      .set<double>("fact: ilut level-of-fill", 10)
       .set<double>("fact: drop tolerance", 0.0);
+
+  // -- RILUK: a modified variant of the ILU(k) factorization
+  plist->sublist("preconditioners").sublist("ifpack2: RILUK")
+      .set<std::string>("preconditioning method", "ifpack2: RILUK").sublist("ifpack2: RILUK parameters")
+      .set<int>("fact: iluk level-of-fill", 10)
+      .set<double>("fact: drop tolerance", 0.0)
+      .set<std::string>("fact: type", "KSPILUK");
 
   // summary of options
   if (MyPID == 0) {
