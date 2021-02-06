@@ -70,6 +70,7 @@ of methods.
 #include "PreconditionerDiagonal.hh"
 #include "PreconditionerIfpack2.hh"
 #include "PreconditionerHypre.hh"
+// #include "PreconditionerML.hh"
 #include "PreconditionerMueLu.hh"
 
 namespace Amanzi {
@@ -289,6 +290,8 @@ createAssembledMethod(const std::string& method_name, Teuchos::ParameterList& in
             method_name.length()));
     inv = Teuchos::rcp(new PreconditionerHypre());
 
+  // } else if (method_name == "ml") {
+  //   inv = Teuchos::rcp(new PreconditionerML());
   } else if (method_name == "muelu") {
     inv = Teuchos::rcp(new PreconditionerMueLu());
 

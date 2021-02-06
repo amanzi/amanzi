@@ -32,15 +32,14 @@ class PreconditionerMueLu : public Preconditioner {
   }
 
   virtual void initializeInverse() override final {
-    Teuchos::RCP<TpetraOperator_type> t_op = h_;
-
-    Teuchos::ParameterList plist_muelu(plist_);
-    plist_muelu.remove("verbose object");
-    plist_muelu.remove("method");
-    pc_ = MueLu::CreateTpetraPreconditioner(t_op, plist_muelu);
+    plist_.remove("verbose object");
+    plist_.remove("method");
   }
 
-  virtual void computeInverse() override final{}
+  virtual void computeInverse() override final {
+    Teuchos::RCP<TpetraOperator_type> t_op = h_;
+    pc_ = MueLu::CreateTpetraPreconditioner(t_op, plist_);
+  }
 
   virtual int applyInverse(const Vector_type& v, Vector_type& hv) const override final {
     pc_->apply(v, hv);
