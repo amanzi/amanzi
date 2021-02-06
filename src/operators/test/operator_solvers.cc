@@ -37,7 +37,7 @@
 #include "PDE_DiffusionMFD.hh"
 #include "PDE_DiffusionMFDwithGravity.hh"
 
-#include "DiffusionFixture.hh"
+#include "DiffusionFixtureOld.hh"
 
 #ifdef ENABLE_CUDA
 #include "nvToolsExt.h"

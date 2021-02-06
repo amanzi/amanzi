@@ -160,13 +160,13 @@ TEST(Verify_Mesh_and_Operators) {
 
   // -- Hypre
   plist->sublist("preconditioners").sublist("Hypre: Euclid")
-      .set<std::string>("preconditioning method", "euclid").sublist("euclid parameters")
+      .set<std::string>("preconditioning method", "hypre: euclid").sublist("hypre: euclid parameters")
       .set<int>("ilu(k) fill level", 10)
       .set<bool>("rescale rows", false)
       .set<double>("ilut drop tolerance", 1e-5);
 
   plist->sublist("preconditioners").sublist("Hypre: AMG")
-      .set<std::string>("preconditioning method", "boomer amg").sublist("boomer amg parameters")
+      .set<std::string>("preconditioning method", "hypre: boomer amg").sublist("hypre: boomer amg parameters")
       .set<int>("cycle applications", 2)
       .set<int>("smoother sweeps", 3)
       .set<double>("strong threshold", 0.5)

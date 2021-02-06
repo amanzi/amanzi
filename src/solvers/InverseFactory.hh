@@ -290,7 +290,7 @@ createAssembledMethod(const std::string& method_name, Teuchos::ParameterList& in
     inv = Teuchos::rcp(new PreconditionerHypre());
 
   } else if (method_name == "muelu") {
-   inv = Teuchos::rcp(new PreconditionerMueLu());
+    inv = Teuchos::rcp(new PreconditionerMueLu());
 
   } else if (method_name == "identity") {
     inv = Teuchos::rcp(new PreconditionerIdentity<Matrix,Matrix,Vector,VectorSpace>());
