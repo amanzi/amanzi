@@ -48,6 +48,15 @@ preconditioner(const std::string& name,
     tmp.set("coarse: max size", 5);
     tmp.set("cycle applications", 2);
     tmp.set("ML output", 0);
+  } else if (name == "muelu") {
+    tmp.set<int>("coarse: max size", 5)
+       .set<std::string>("coarse: type", "SuperLU_dist")
+       .set<std::string>("verbosity", "low")
+       .set<std::string>("multigrid algorithm", "sa")
+       .set<std::string>("smoother: type", "RELAXATION").sublist("smoother: params")
+         .set<std::string>("relaxation: type", "symmetric Gauss-Seidel")
+         .set<int>("relaxation: sweeps", 1)
+         .set<double>("relaxation: damping factor", 0.9);
   } else if (name == "boomer amg") {
     tmp.set("max coarse size", 5);
     tmp.set("cycle applications", 1);
@@ -67,11 +76,13 @@ inline Teuchos::RCP<IterativeMethodPCG<Epetra_CrsMatrix,Amanzi::AmanziSolvers::P
   Teuchos::ParameterList plist;
   plist.set("error tolerance", 1.e-12);
   plist.set("maximum number of iterations", 200);
+
   auto inv = Teuchos::rcp(new IterativeMethodPCG<Epetra_CrsMatrix,Amanzi::AmanziSolvers::Preconditioner,Epetra_Vector,Epetra_Map>());
   inv->set_inverse_parameters(plist);
   inv->set_matrices(m, pc);
   inv->InitializeInverse();
   inv->ComputeInverse();
+
   return inv;
 }
 
@@ -86,7 +97,17 @@ TEST(PRECONDITIONERS) {
   Epetra_Vector u(map), v(map);
   for (int i = 0; i < N; i++) u[i] = 1.0 / (i + 2.0);
   
-  for (const auto& prec_name : {"identity", "diagonal", "block ilu", "boomer amg", "euclid", "ml"}) {
+  for (const auto& prec_name : {
+    "identity",
+    "diagonal",
+    "block ilu",
+    "boomer amg",
+    "euclid",
+    "ml"
+#if defined(HAVE_MUELU_EPETRA)
+    , "muelu"
+#endif
+  }) {
     auto solver = get_solver(prec_name, m);
     v.PutScalar(0.0);
 

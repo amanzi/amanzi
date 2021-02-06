@@ -356,9 +356,6 @@ void DiffusionFixture::Go(double tol)
 
     op->UpdateMatrices(Teuchos::null, solution.ptr());
     op->UpdateFlux(solution.ptr(), flux.ptr());
-    {
-      auto fv = flux->ViewComponent("face", false);
-    }
 
     Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
     ana->ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);

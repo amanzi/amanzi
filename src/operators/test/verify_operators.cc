@@ -32,8 +32,10 @@ int main(int argc, char *argv[])
   if (argc < 4) {
     std::cout <<
       "Usage: verify_operators  with_pc|direct  mesh_type  mesh_size|mesh_file  scheme  tol\n\n"
-      "  (req) with_pc   = identity|diagonal|ifpack2: ILUT|Hypre: AMG|Hypre: Euclid|Trilinos: ML\n"
-      "  (req) direct    = Amesos: KLU|Amesos: Basker|Amesos: SuperLUDist\n"
+      "  (req) with_pc   = identity|diagonal|ifpack2: ILUT\n"
+      "                    Hypre: AMG|Hypre: Euclid\n"
+      "                    Trilinos: ML|Trilinos: MueLu\n"
+      "  (req) direct    = Amesos: KLU|Amesos: Basker|Amesos: SuperLUDist\n\n"
       "  (req) mesh_type = structured2d|structured3d|unstructured2d|unstructured3d\n"
       "  (req) mesh_size = positive integer\n"
       "  (req) mesh_file = file containing mesh\n\n"
@@ -163,7 +165,7 @@ TEST(Verify_Mesh_and_Operators) {
       .set<std::string>("preconditioning method", "euclid").sublist("euclid parameters")
       .set<int>("ilu(k) fill level", 10)
       .set<bool>("rescale rows", false)
-      .set<double>("ilut drop tolerance", 1e-5);
+      .set<double>("ilut drop tolerance", 1e-6);
 
   plist->sublist("preconditioners").sublist("Hypre: AMG")
       .set<std::string>("preconditioning method", "boomer amg").sublist("boomer amg parameters")
@@ -191,6 +193,21 @@ TEST(Verify_Mesh_and_Operators) {
       .set<double>("smoother: damping factor", 1.0)
       .set<std::string>("smoother: pre or post", "both")
       .set<int>("smoother: sweeps", 2);
+
+  plist->sublist("preconditioners").sublist("Trilinos: MueLu")
+    .set<std::string>("preconditioning method", "muelu").sublist("muelu parameters")
+    .set<int>("max levels", 25)
+    .set<int>("coarse: max size", 10)
+    .set<std::string>("coarse: type", "SuperLU_dist")
+    .set<std::string>("verbosity", "low")
+    .set<std::string>("multigrid algorithm", "sa")
+    .set<std::string>("smoother: type", "RELAXATION")
+    .set<std::string>("aggregation: type", "uncoupled")
+    .set<int>("aggregation: min agg size", 3)
+    .set<int>("aggregation: max agg size", 9).sublist("smoother: params")
+      .set<std::string>("relaxation: type", "symmetric Gauss-Seidel")
+      .set<int>("relaxation: sweeps", 1)
+      .set<double>("relaxation: damping factor", 0.9);
 
   // -- ILU
   plist->sublist("preconditioners").sublist("ifpack2: ILUT")
