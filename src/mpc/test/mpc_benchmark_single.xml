@@ -466,7 +466,6 @@
     </ParameterList>
     <ParameterList name="Block ILU">
       <Parameter name="preconditioning method" type="string" value="block ilu"/>
-      <Parameter name="discretization method" type="string" value="mfd: optimized for sparsity"/>
       <ParameterList name="block ilu parameters">
         <Parameter name="fact: relax value" type="double" value="1.0e+00"/>
         <Parameter name="fact: absolute threshold" type="double" value="0.0e+00"/>

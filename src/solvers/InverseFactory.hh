@@ -288,10 +288,10 @@ createAssembledMethod(const std::string& method_name, Teuchos::ParameterList& in
     method_list.set<std::string>("method", method_name.substr(std::string("ifpack: ").length(),
             method_name.length()));
     inv = Teuchos::rcp(new PreconditionerIfpack());
-  } else if (Keys::starts_with(method_name, "ifpack2: ")) {
-    method_list.set<std::string>("method", method_name.substr(std::string("ifpack2: ").length(),
-            method_name.length()));
-    inv = Teuchos::rcp(new PreconditionerIfpack());
+  // } else if (Keys::starts_with(method_name, "ifpack2: ")) {
+  //   method_list.set<std::string>("method", method_name.substr(std::string("ifpack2: ").length(),
+  //           method_name.length()));
+  //   inv = Teuchos::rcp(new PreconditionerIfpack2());
   } else if (method_name == "boomer amg" || method_name == "euclid" || method_name == "ams") {
     method_list.set<std::string>("method", method_name);
     inv = Teuchos::rcp(new PreconditionerHypre());
