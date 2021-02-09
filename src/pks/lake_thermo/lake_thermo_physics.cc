@@ -40,8 +40,6 @@ void Lake_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   const Epetra_MultiVector& rho =
   *S_inter_->GetFieldData(density_key_)->ViewComponent("cell",false);
 
-  double rho0 = 1000.;
-
   // Update the residual with the accumulation of energy over the
   // timestep, on cells.
   g->ViewComponent("cell", false)
@@ -49,20 +47,21 @@ void Lake_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
           -cp_*rho0/dt, *T0->ViewComponent("cell", false), 1.0);
 
 
-//  const Epetra_MultiVector& T1_c = *S_next_->GetFieldData(temperature_key_)->ViewComponent("cell", false);
-//  const Epetra_MultiVector& T0_c = *S_inter_->GetFieldData(temperature_key_)->ViewComponent("cell", false);
-//
-//  const Epetra_MultiVector& g_c = *g->ViewComponent("cell", false);
-//
-//  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-//
+  const Epetra_MultiVector& T1_c = *S_next_->GetFieldData(temperature_key_)->ViewComponent("cell", false);
+  const Epetra_MultiVector& T0_c = *S_inter_->GetFieldData(temperature_key_)->ViewComponent("cell", false);
+
+  const Epetra_MultiVector& g_c = *g->ViewComponent("cell", false);
+
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
 //  for (int c = 0; c < ncells_owned; c++) {
-//      g_c[0][c] = cp_*rho[0][c]/dt*(T1_c[0][c] - T0_c[0][c]);
-//      std::cout << "g_c[0][c] = " << g_c[0][c] << std::endl;
-//      std::cout << "T1_c[0][c] = " << T1_c[0][c] << std::endl;
-//      std::cout << "T0_c[0][c] = " << T0_c[0][c] << std::endl;
-//      std::cout << "rho[0][c] = " << rho[0][c] << std::endl;
-//      std::cout << "cp_ = " << cp_ << std::endl;
+//      std::cout << "c = " << c << " acc = " << cp_*rho[0][c]/dt*(T1_c[0][c] - T0_c[0][c]) << std::endl;
+////      g_c[0][c] = cp_*rho[0][c]/dt*(T1_c[0][c] - T0_c[0][c]);
+////      std::cout << "g_c[0][c] = " << g_c[0][c] << std::endl;
+////      std::cout << "T1_c[0][c] = " << T1_c[0][c] << std::endl;
+////      std::cout << "T0_c[0][c] = " << T0_c[0][c] << std::endl;
+////      std::cout << "rho[0][c] = " << rho[0][c] << std::endl;
+////      std::cout << "cp_ = " << cp_ << std::endl;
 //  }
 
 };
@@ -101,15 +100,16 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
 
   double dt = S_next_->time() - S_inter_->time();
 
-  // GENERALLY, DON'T UPDATE HERE
-  // update h
-//  h_ += dhdt*dt;
-
   for (int f = 0; f < nfaces_owned; f++) {
     const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
-    double rho = 1000.;
-//    flux_f[0][f] = cp_*rho*dhdt*xcf[2]/(h_+1.e-6);
-    flux_f[0][f] = cp_*rho*(dhdt*xcf[2] - B_w)/(h_+1.e-6);
+
+    AmanziGeometry::Point normal = mesh_->face_normal(f);
+    normal /= norm(normal);
+
+//    flux_f[0][f] = cp_*rho0*dhdt*xcf[2]/(h_+1.e-6);
+//    flux_f[0][f] = cp_*rho0*(dhdt*xcf[2] - B_w)/(h_+1.e-6);
+    flux_f[0][f] = 1.*normal[2];
+//    std::cout << "f = " << f << " flux = " << flux_f[0][f] << std::endl;
   }
 
   db_->WriteVector(" adv flux", flux.ptr(), true);
@@ -137,8 +137,8 @@ void Lake_Thermo_PK::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   Teuchos::RCP<const CompositeVector> conductivity =
       S_next_->GetFieldData(uw_conductivity_key_);
 
-  const Epetra_MultiVector& uw_cond_c = *S_next_->GetFieldData(uw_conductivity_key_)->ViewComponent("face", false);
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+//  const Epetra_MultiVector& uw_cond_c = *S_next_->GetFieldData(uw_conductivity_key_)->ViewComponent("face", false);
+//  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
 //  for (int f = 0; f < nfaces_owned; f++) {
 //      std::cout << uw_cond_c[0][f] << std::endl;
@@ -152,9 +152,19 @@ void Lake_Thermo_PK::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   matrix_diff_->UpdateMatrices(Teuchos::null, temp.ptr());
   matrix_diff_->ApplyBCs(true, true, true);
 
-  // update the flux
-  Teuchos::RCP<CompositeVector> flux = S->GetFieldData(energy_flux_key_, name_);
-  matrix_diff_->UpdateFlux(temp.ptr(), flux.ptr());
+//  std::cout << "energy_flux_key_ = " << energy_flux_key_ << std::endl;
+//
+//  // update the flux
+//  Teuchos::RCP<CompositeVector> flux = S->GetFieldData(energy_flux_key_, name_);
+//
+//  const Epetra_MultiVector& flux_c = *S_next_->GetFieldData(energy_flux_key_)->ViewComponent("face", false);
+//  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+//
+//  for (int f = 0; f < nfaces_owned; f++) {
+//      std::cout << "f = " << f << " flux_c = " << flux_c[0][f] << std::endl;
+//  }
+//
+//  matrix_diff_->UpdateFlux(temp.ptr(), flux.ptr());
 
   // calculate the residual
   matrix_diff_->global_operator()->ComputeNegativeResidual(*temp, *g);
@@ -207,11 +217,13 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
     for (unsigned int c=0; c!=ncells; ++c) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
-      if (temp[0][c] < 273.15) {
-          g_c[0][c] += -cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6) * cv[0][c];
-      } else {
-          g_c[0][c] += (S0_*exp(-alpha_e_*h_*xc[2])*(-alpha_e_*h_) - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6)) * cv[0][c]; // + M
-      }
+//      if (temp[0][c] < 273.15) {
+//          g_c[0][c] += -cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6) * cv[0][c];
+//      } else {
+//          g_c[0][c] += (S0_*exp(-alpha_e_*h_*xc[2])*(-alpha_e_*h_) - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6)) * cv[0][c]; // + M
+//      }
+
+      g_c[0][c] += (8.-2.*xc[2]) * cv[0][c];
 
       /* TESTING
 //      // manufactured solution 1: linear temperature distribution

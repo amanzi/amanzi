@@ -43,9 +43,9 @@ public:
     return CreateWithFunction("temperature", "boundary temperature");
   }
 
-  Teuchos::RCP<Functions::BoundaryFunction> CreateTotalFlux() const {
-    return CreateWithFunction("enthalpy flux", "outward enthalpy flux");
-  }
+//  Teuchos::RCP<Functions::BoundaryFunction> CreateTotalFlux() const {
+//    return CreateWithFunction("enthalpy flux", "outward enthalpy flux");
+//  }
 
   Teuchos::RCP<Functions::BoundaryFunction> CreateDiffusiveFlux() const {
     return CreateWithFunction("diffusive flux", "outward diffusive flux");

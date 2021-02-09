@@ -345,7 +345,8 @@ public:
   // heat capacity
   double cp_;
 
-
+  // density
+  double rho0;
 
   Key energy_key_;
   Key wc_key_;

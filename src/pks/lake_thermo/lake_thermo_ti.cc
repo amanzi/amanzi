@@ -36,33 +36,33 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   // get temperature
   Teuchos::RCP<const CompositeVector> temp = S_inter_->GetFieldData(temperature_key_);
 
-  for (CompositeVector::name_iterator comp=temp->begin();
-       comp!=temp->end(); ++comp) {
-    // much more efficient to pull out vectors first
-//      const Epetra_MultiVector& eta_v = *eta->ViewComponent(*comp,false);
-//      const Epetra_MultiVector& height_v = *height->ViewComponent(*comp,false);
-    const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
-
-    int ncomp = temp->size(*comp, false);
-
-    int i_ice_max;
-
-    for (int i=0; i!=ncomp; ++i) {
-      if (temp_v[0][i] < 273.15) { // check if there is ice cover
-        ice_cover_ = true;
-        i_ice_max = i;
-      }
-    } // i
-
-    // if melting occured at the top, swap cells
-    for (int i=0; i!=ncomp; ++i) {
-      if (ice_cover_ && i < i_ice_max && temp_v[0][i] >= 273.15 ) {
-        temp_v[0][i] = temp_v[0][i+1];
-        temp_v[0][i+i_ice_max] = temp_v[0][i+i_ice_max+1];
-      }
-    } // i
-
-  }
+//  for (CompositeVector::name_iterator comp=temp->begin();
+//       comp!=temp->end(); ++comp) {
+//    // much more efficient to pull out vectors first
+////      const Epetra_MultiVector& eta_v = *eta->ViewComponent(*comp,false);
+////      const Epetra_MultiVector& height_v = *height->ViewComponent(*comp,false);
+//    const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
+//
+//    int ncomp = temp->size(*comp, false);
+//
+//    int i_ice_max;
+//
+//    for (int i=0; i!=ncomp; ++i) {
+//      if (temp_v[0][i] < 273.15) { // check if there is ice cover
+//        ice_cover_ = true;
+//        i_ice_max = i;
+//      }
+//    } // i
+//
+//    // if melting occured at the top, swap cells
+//    for (int i=0; i!=ncomp; ++i) {
+//      if (ice_cover_ && i < i_ice_max && temp_v[0][i] >= 273.15 ) {
+//        temp_v[0][i] = temp_v[0][i+1];
+//        temp_v[0][i+i_ice_max] = temp_v[0][i+i_ice_max+1];
+//      }
+//    } // i
+//
+//  }
 
   // increment, get timestep
   niter_++;
@@ -95,7 +95,7 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   // update boundary conditions
   bc_temperature_->Compute(t_new);
   bc_diff_flux_->Compute(t_new);
-  bc_flux_->Compute(t_new);
+//  bc_flux_->Compute(t_new);
   UpdateBoundaryConditions_(S_next_.ptr());
 
   // update depth
@@ -107,12 +107,27 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   Teuchos::RCP<CompositeVector> res = g->Data();
   res->PutScalar(0.0);
 
+//  std::cout << "Starting res" << std::endl;
+//  res->Print(std::cout);
+
   // diffusion term, implicit
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 #if DEBUG_FLAG
   db_->WriteVector("K",S_next_->GetFieldData(conductivity_key_).ptr(),true);
   db_->WriteVector("res (diff)", res.ptr(), true);
 #endif
+
+//  std::cout << "After ApplyDiffusion_" << std::endl;
+//  res->Print(std::cout);
+
+  // source terms
+  AddSources_(S_next_.ptr(), res.ptr());
+#if DEBUG_FLAG
+  db_->WriteVector("res (src)", res.ptr());
+#endif
+
+//  std::cout << "After AddSources_" << std::endl;
+//  res->Print(std::cout);
 
   // accumulation term
   AddAccumulation_(res.ptr());
@@ -125,6 +140,9 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   db_->WriteVector("res (acc)", res.ptr());
 #endif
 
+//  std::cout << "After AddAccumulation_" << std::endl;
+//  res->Print(std::cout);
+
   // advection term
   if (implicit_advection_) {
     AddAdvection_(S_next_.ptr(), res.ptr(), true);
@@ -135,11 +153,8 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   db_->WriteVector("res (adv)", res.ptr());
 #endif
 
-  // source terms
-  AddSources_(S_next_.ptr(), res.ptr());
-#if DEBUG_FLAG
-  db_->WriteVector("res (src)", res.ptr());
-#endif
+//  std::cout << "After AddAdvection_" << std::endl;
+//  res->Print(std::cout);
 
   // Dump residual to state for visual debugging.
 #if MORE_DEBUG_FLAG
@@ -154,8 +169,9 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   }
 #endif
 
-//  g->Data()->Print(std::cout);
+  g->Data()->Print(std::cout);
 
+//  if (ice_cover_) exit(0);
 
 };
 
@@ -183,6 +199,16 @@ int Lake_Thermo_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
   db_->WriteVector("PC*T_res", Pu->Data().ptr(), true);
 #endif
   
+  Pu->Data()->ViewComponent("boundary_face")->PutScalar(0.0); // correction 01/22/21
+
+//  std::cout << "ApplyPreconditioner" << std::endl;
+//  Pu->Data()->Print(std::cout);
+
+//  std::cout << *Pu->Data()->ViewComponent("cell") << std::endl;
+
+  std::cout << "ApplyPreconditioner ierr = " << ierr << std::endl;
+  std::cout << *preconditioner_->A() << std::endl;
+
   return (ierr > 0) ? 0 : 1;
 };
 
@@ -205,7 +231,7 @@ void Lake_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
   // update boundary conditions
   bc_temperature_->Compute(S_next_->time());
   bc_diff_flux_->Compute(S_next_->time());
-  bc_flux_->Compute(S_next_->time());
+//  bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditions_(S_next_.ptr());
 
   // div K_e grad u
@@ -295,7 +321,7 @@ void Lake_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
 //    preconditioner_adv_->Setup(*mass_flux);
 //    preconditioner_adv_->SetBCs(bc_adv_, bc_adv_);
 //    preconditioner_adv_->UpdateMatrices(mass_flux.ptr(), dhdT.ptr());
-//    ApplyDirichletBCsToEnthalpy_(S_next_.ptr());
+//    ApplyDirichletBCsToEnthalpy_(S_next_.ptr());  !!!!!!!!!!!!! IMPORTANT !!!!!!
 //    preconditioner_adv_->ApplyBCs(false, true, false);
 //
 //  }
@@ -304,41 +330,75 @@ void Lake_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
   preconditioner_diff_->ApplyBCs(true, true, true);
 };
 
-double Lake_Thermo_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
-        Teuchos::RCP<const TreeVector> res) {
+//double Lake_Thermo_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
+//        Teuchos::RCP<const TreeVector> res) {
+//
+//  const Epetra_MultiVector& temp = *S_inter_->GetFieldData(temperature_key_)
+//        ->ViewComponent("cell",true);
+//  const Epetra_MultiVector& cv = *S_inter_->GetFieldData(cell_vol_key_)
+//        ->ViewComponent("cell",true);
+//
+//  int ncells_owned = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+//
+//  double err_max = 0.;
+//  double err_L1 = 0.;
+//
+//  for (int c = 0; c < ncells_owned; c++) {
+//    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+//    double T0 = 280., T1 = 400.;
+//    double coef = log(T1/T0);
+//    double temp_ex_c = T0*exp(coef*xc[2]);
+//    err_max = std::max(err_max,std::abs(temp_ex_c-temp[0][c]));
+//    err_L1 += std::abs(temp_ex_c-temp[0][c])*cv[0][c];
+//  }
+//
+//  double err_max_tmp(err_max);
+//  double err_L1_tmp(err_L1);
+//
+//  mesh_->get_comm()->MaxAll(&err_max_tmp, &err_max, 1);
+//  mesh_->get_comm()->SumAll(&err_L1_tmp, &err_L1, 1);
+//
+////  if (mesh_->get_comm()->MyPID() == 0) {
+////    std::cout << "err_max = " << err_max << std::endl;
+////    std::cout << "err_L1  = " << err_L1 << std::endl;
+////  }
+//
+//  return PK_PhysicalBDF_Default::ErrorNorm(u,res);
+//
+//}
 
-  const Epetra_MultiVector& temp = *S_inter_->GetFieldData(temperature_key_)
-        ->ViewComponent("cell",true);
-  const Epetra_MultiVector& cv = *S_inter_->GetFieldData(cell_vol_key_)
-        ->ViewComponent("cell",true);
+double Lake_Thermo_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
+                                    Teuchos::RCP<const TreeVector> du)
+{
+  Teuchos::OSTab tab = vo_->getOSTab();
+
+  // Relative error in cell-centered temperature
+  const Epetra_MultiVector& uc = *u->Data()->ViewComponent("cell", false);
+  const Epetra_MultiVector& duc = *du->Data()->ViewComponent("cell", false);
 
   int ncells_owned = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
-  double err_max = 0.;
-  double err_L1 = 0.;
-
+  double error_t(0.0);
+  double ref_temp(273.0);
   for (int c = 0; c < ncells_owned; c++) {
-    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    double T0 = 280., T1 = 400.;
-    double coef = log(T1/T0);
-    double temp_ex_c = T0*exp(coef*xc[2]);
-    err_max = std::max(err_max,std::abs(temp_ex_c-temp[0][c]));
-    err_L1 += std::abs(temp_ex_c-temp[0][c])*cv[0][c];
+    double tmp = fabs(duc[0][c]) / (fabs(uc[0][c] - ref_temp) + ref_temp);
+    if (tmp > error_t) {
+      error_t = tmp;
+    }
   }
 
-  double err_max_tmp(err_max);
-  double err_L1_tmp(err_L1);
+  // Cell error is based upon error in energy conservation relative to
+  // a characteristic energy
+  double error_e(0.0);
 
-  mesh_->get_comm()->MaxAll(&err_max_tmp, &err_max, 1);
-  mesh_->get_comm()->SumAll(&err_L1_tmp, &err_L1, 1);
+  double error = std::max(error_t, error_e);
 
-//  if (mesh_->get_comm()->MyPID() == 0) {
-//    std::cout << "err_max = " << err_max << std::endl;
-//    std::cout << "err_L1  = " << err_L1 << std::endl;
-//  }
+#ifdef HAVE_MPI
+  double buf = error;
+  du->Data()->Comm()->MaxAll(&buf, &error, 1);  // find the global maximum
+#endif
 
-  return PK_PhysicalBDF_Default::ErrorNorm(u,res);
-
+  return error;
 }
 
 

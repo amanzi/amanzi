@@ -112,7 +112,7 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   LakeThermoBCFactory bc_factory(mesh_, bc_plist);
   bc_temperature_ = bc_factory.CreateTemperature();
   bc_diff_flux_ = bc_factory.CreateDiffusiveFlux();
-  bc_flux_ = bc_factory.CreateTotalFlux();
+//  bc_flux_ = bc_factory.CreateTotalFlux();
 
   bc_adv_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
 
@@ -143,6 +143,9 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
     Errors::Message message("Unknown upwind coefficient location in energy.");
     Exceptions::amanzi_throw(message);
   }
+
+  std::cout << "coef_location " << coef_location << std::endl;
+
   S->GetField(uw_conductivity_key_,name_)->set_io_vis(false);
   
   // -- create the forward operator for the diffusion term
@@ -150,7 +153,7 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   mfd_plist.set("nonlinear coefficient", coef_location);
   Operators::PDE_DiffusionFactory opfactory;
   matrix_diff_ = opfactory.Create(mfd_plist, mesh_, bc_);
-  matrix_diff_->SetTensorCoefficient(Teuchos::null);
+//  matrix_diff_->SetTensorCoefficient(Teuchos::null);
   matrix_ = matrix_diff_->global_operator();
 
   // -- create the forward operator for the advection term
@@ -409,12 +412,9 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   // initialize BDF stuff and physical domain stuff
   PK_PhysicalBDF_Default::Initialize(S);
 
-  // read parameters
-//  // precipitation rate
-//  Epetra_Vector& rvec = *S_->GetConstantVectorData("precipitation", "state");
-//  r_ = std::fabs(rvec[0]);
-//
-//  // precipitation rate
+  // read model parameters
+
+//  // evaporation rate
 //  Epetra_Vector& Evec = *S_->GetConstantVectorData("evaporation", "state");
 //  E_ = std::fabs(Evec[0]);
 //
@@ -437,10 +437,21 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
 //  // heat capacity of water
 //  Epetra_Vector& cp_vec = *S_->GetConstantVectorData("heat capacity", "state");
 //  cp_ = std::fabs(cp_vec[0]);
-  cp_ = 4184./1000.;
 
-  r_ = 0.; //1.; //1.e-7;
-  E_ = 0.;
+  rho0 = 1.;
+
+  cp_ = 1.; // 4184./rho0;
+
+  Teuchos::ParameterList& param_list = plist_->sublist("parameters");
+
+  // precipitation rate
+  double r_ = param_list.get<double>("precipitation");
+  std::cout << "Precipitation rate = " << r_ << std::endl;
+
+  // evaporation rate
+  double E_ = param_list.get<double>("evaporation");
+  std::cout << "Evaporation rate = " << E_ << std::endl;
+
   R_s_ = 0.;
   R_b_ = 0.;
   alpha_e_ = 0.;
@@ -542,7 +553,7 @@ void Lake_Thermo_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<S
 
   bc_temperature_->Compute(S->time());
   bc_diff_flux_->Compute(S->time());
-  bc_flux_->Compute(S->time());
+//  bc_flux_->Compute(S->time());
   UpdateBoundaryConditions_(S.ptr());
   
   niter_ = 0;
@@ -662,7 +673,7 @@ void Lake_Thermo_PK::UpdateBoundaryConditions_(
 
   auto& adv_markers = bc_adv_->bc_model();
   auto& adv_values = bc_adv_->bc_value();
-  
+
   for (unsigned int n=0; n!=markers.size(); ++n) {
     markers[n] = Operators::OPERATOR_BC_NONE;
     values[n] = 0.0;
@@ -678,17 +689,18 @@ void Lake_Thermo_PK::UpdateBoundaryConditions_(
     markers[f] = Operators::OPERATOR_BC_DIRICHLET;
     values[f] = bc->second;
     adv_markers[f] = Operators::OPERATOR_BC_DIRICHLET;
+    adv_values[f] = bc->first;
   }
 
-  // Neumann flux boundary conditions
-  for (Functions::BoundaryFunction::Iterator bc=bc_flux_->begin();
-       bc!=bc_flux_->end(); ++bc) {
-    int f = bc->first;
-    markers[f] = Operators::OPERATOR_BC_NEUMANN;
-    values[f] = bc->second;
-    adv_markers[f] = Operators::OPERATOR_BC_NEUMANN;
-    // push all onto diffusion, assuming that the incoming enthalpy is 0 (likely mass flux is 0)
-  }
+//  // Neumann flux boundary conditions
+//  for (Functions::BoundaryFunction::Iterator bc=bc_flux_->begin();
+//       bc!=bc_flux_->end(); ++bc) {
+//    int f = bc->first;
+//    markers[f] = Operators::OPERATOR_BC_NEUMANN;
+//    values[f] = bc->second;
+//    adv_markers[f] = Operators::OPERATOR_BC_NEUMANN;
+//    // push all onto diffusion, assuming that the incoming enthalpy is 0 (likely mass flux is 0)
+//  }
 
   // Neumann diffusive flux, not Neumann TOTAL flux.  Potentially advective flux.
   for (Functions::BoundaryFunction::Iterator bc=bc_diff_flux_->begin();
@@ -696,9 +708,10 @@ void Lake_Thermo_PK::UpdateBoundaryConditions_(
     int f = bc->first;
     markers[f] = Operators::OPERATOR_BC_NEUMANN;
     values[f] = bc->second;
-    adv_markers[f] = Operators::OPERATOR_BC_DIRICHLET;
+    adv_markers[f] = Operators::OPERATOR_BC_NEUMANN;
+    adv_values[f] = 0.;
   }
-  
+
   // Dirichlet temperature boundary conditions from a coupled surface.
   if (coupled_to_surface_via_temp_) {
     // Face is Dirichlet with value of surface temp
@@ -716,34 +729,35 @@ void Lake_Thermo_PK::UpdateBoundaryConditions_(
       markers[f] = Operators::OPERATOR_BC_DIRICHLET;
       values[f] = temp[0][c];
       adv_markers[f] = Operators::OPERATOR_BC_DIRICHLET;
+      adv_values[f] = temp[0][c];
     }
   }
 
-  // surface coupling
-  if (coupled_to_surface_via_flux_) {
-    // Diffusive fluxes are given by the residual of the surface equation.
-    // Advective fluxes are given by the surface temperature and whatever flux we have.
-    Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh(Keys::getDomain(ss_flux_key_));
-    const Epetra_MultiVector& flux =
-      *S->GetFieldData(ss_flux_key_)->ViewComponent("cell",false);
-
-    int ncells_surface = flux.MyLength();
-    for (int c=0; c!=ncells_surface; ++c) {
-      // -- get the surface cell's equivalent subsurface face
-      AmanziMesh::Entity_ID f =
-        surface->entity_get_parent(AmanziMesh::CELL, c);
-
-      // -- set that value to Neumann
-      markers[f] = Operators::OPERATOR_BC_NEUMANN;
-      // flux provided by the coupler is in units of J / s, whereas Neumann BCs are J/s/A
-      values[f] = flux[0][c] / mesh_->face_area(f);
-
-      // -- mark advective BCs as Dirichlet: this ensures the surface
-      //    temperature is picked up and advective fluxes are treated
-      //    via advection operator, not diffusion operator.
-      adv_markers[f] = Operators::OPERATOR_BC_DIRICHLET;
-    }
-  }
+//  // surface coupling
+//  if (coupled_to_surface_via_flux_) {
+//    // Diffusive fluxes are given by the residual of the surface equation.
+//    // Advective fluxes are given by the surface temperature and whatever flux we have.
+//    Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh(Keys::getDomain(ss_flux_key_));
+//    const Epetra_MultiVector& flux =
+//      *S->GetFieldData(ss_flux_key_)->ViewComponent("cell",false);
+//
+//    int ncells_surface = flux.MyLength();
+//    for (int c=0; c!=ncells_surface; ++c) {
+//      // -- get the surface cell's equivalent subsurface face
+//      AmanziMesh::Entity_ID f =
+//        surface->entity_get_parent(AmanziMesh::CELL, c);
+//
+//      // -- set that value to Neumann
+//      markers[f] = Operators::OPERATOR_BC_NEUMANN;
+//      // flux provided by the coupler is in units of J / s, whereas Neumann BCs are J/s/A
+//      values[f] = flux[0][c] / mesh_->face_area(f);
+//
+//      // -- mark advective BCs as Dirichlet: this ensures the surface
+//      //    temperature is picked up and advective fluxes are treated
+//      //    via advection operator, not diffusion operator.
+////      adv_markers[f] = Operators::OPERATOR_BC_DIRICHLET;
+//    }
+//  }
 
   // mark all remaining boundary conditions as zero diffusive flux conditions
   AmanziMesh::Entity_ID_List cells;
@@ -756,7 +770,8 @@ void Lake_Thermo_PK::UpdateBoundaryConditions_(
       if (ncells == 1) {
         markers[f] = Operators::OPERATOR_BC_NEUMANN;
         values[f] = 0.0;
-        adv_markers[f] = Operators::OPERATOR_BC_DIRICHLET;
+        adv_markers[f] = Operators::OPERATOR_BC_NEUMANN;
+        adv_values[f] = 0.;
       }
     }
   }
@@ -767,7 +782,6 @@ void Lake_Thermo_PK::UpdateBoundaryConditions_(
     ApplyDirichletBCsToBoundaryFace_(temp.ptr());
   }
 };
-
 
 
 // -----------------------------------------------------------------------------
@@ -886,7 +900,8 @@ bool Lake_Thermo_PK::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0
 
   // update boundary conditions
   bc_temperature_->Compute(S_next_->time());
-  bc_flux_->Compute(S_next_->time());
+  bc_diff_flux_->Compute(S_next_->time());
+//  bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditions_(S_next_.ptr());
   
 //  // push Dirichlet data into predictor
