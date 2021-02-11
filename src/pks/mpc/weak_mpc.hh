@@ -55,7 +55,6 @@ private:
   // factory registration
   static RegisteredPKFactory<WeakMPC> reg_;
 
-
 };
 } // close namespace Amanzi
 

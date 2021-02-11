@@ -28,6 +28,7 @@ class OverlandConductivitySubgridEvaluator : public SecondaryVariableFieldEvalua
   virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S) override;
 
  protected:
+
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& result) override;
@@ -40,7 +41,7 @@ private:
   Key slope_key_;
   Key coef_key_;
   Key dens_key_;
-  Key depth_key_;
+  Key mobile_depth_key_;
   Key drag_exp_key_;
   Key frac_cond_key_;
 

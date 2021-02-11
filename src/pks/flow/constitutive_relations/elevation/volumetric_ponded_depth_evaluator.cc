@@ -18,7 +18,7 @@
 */
 
 #include "volumetric_ponded_depth_evaluator.hh"
-#include "subgrid.hh"
+#include "subgrid_microtopography.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -32,9 +32,9 @@ VolumetricPondedDepthEvaluator::VolumetricPondedDepthEvaluator(Teuchos::Paramete
   pd_key_ = Keys::readKey(plist_, domain, "ponded depth key", "ponded_depth");
   dependencies_.insert(pd_key_);
 
-  delta_max_key_ = Keys::readKey(plist_, domain, "microtopographic relief", "microtopographic_relief"); 
+  delta_max_key_ = Keys::readKey(plist_, domain, "microtopographic relief", "microtopographic_relief");
   dependencies_.insert(delta_max_key_);
-  
+
   delta_ex_key_ = Keys::readKey(plist_, domain, "excluded volume", "excluded_volume");
   dependencies_.insert(delta_ex_key_);
 }
@@ -51,7 +51,8 @@ VolumetricPondedDepthEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     const auto& del_ex = *S->GetFieldData(delta_ex_key_)->ViewComponent(comp,false);
 
     for (int c=0; c!=res.MyLength(); ++c){
-      res[0][c] = subgrid_VolumetricDepth(pd[0][c], del_max[0][c], del_ex[0][c]);
+      AMANZI_ASSERT(Microtopography::validParameters(del_max[0][c], del_ex[0][c]));
+      res[0][c] = Microtopography::volumetricDepth(pd[0][c], del_max[0][c], del_ex[0][c]);
     }
   }
 }
@@ -69,8 +70,7 @@ VolumetricPondedDepthEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::P
 
     if (wrt_key == pd_key_) {
       for (int c=0; c!=res.MyLength(); ++c){
-        res[0][c] = subgrid_DVolumetricDepth_DDepth(pd[0][c],
-                del_max[0][c], del_ex[0][c]);
+        res[0][c] = Microtopography::dVolumetricDepth_dDepth(pd[0][c], del_max[0][c], del_ex[0][c]);
       }
     } else {
       Errors::Message msg("VolumetricPondedDepthEvaluator: Not Implemented: no derivatives implemented other than ponded depth.");

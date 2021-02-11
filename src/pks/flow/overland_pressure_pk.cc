@@ -86,27 +86,25 @@ OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
 
   // alter lists for evaluators
   // -- add _bar evaluators
-  Teuchos::ParameterList pd_bar_list = S->FEList().sublist(pd_key_);
-  pd_bar_list.setName(pd_bar_key_);
+  Teuchos::ParameterList& pd_bar_list = S->GetEvaluatorList(pd_bar_key_);
+  pd_bar_list.setParameters(S->GetEvaluatorList(pd_key_));
   pd_bar_list.set("allow negative ponded depth", true);
-  S->FEList().set(pd_bar_key_, pd_bar_list);
 
-  Teuchos::ParameterList wc_bar_list = S->FEList().sublist(conserved_key_);
-  wc_bar_list.setName(wc_bar_key_);
+  Teuchos::ParameterList& wc_bar_list = S->GetEvaluatorList(wc_bar_key_);
+  wc_bar_list.setParameters(S->GetEvaluatorList(conserved_key_));
   wc_bar_list.set("allow negative water content", true);
-  S->FEList().set(wc_bar_key_, wc_bar_list);
 
   // -- flux evaluator
-  S->FEList().sublist(flux_key_).set("field evaluator type", "primary variable");
+  S->GetEvaluatorList(flux_key_).set("field evaluator type", "primary variable");
 
   // -- elevation evaluator
   standalone_mode_ = S->GetMesh() == S->GetMesh(domain_);
   if (!standalone_mode_ && !S->FEList().isSublist(elev_key_)) {
-    S->FEList().sublist(elev_key_).set("field evaluator type", "meshed elevation");
+    S->GetEvaluatorList(elev_key_).set("field evaluator type", "meshed elevation");
   }
 
   // -- potential evaluator
-  auto& potential_list = S->FEList().sublist(potential_key_);
+  auto& potential_list = S->GetEvaluatorList(potential_key_);
   potential_list.set("field evaluator type", "additive evaluator");
   potential_list.set<Teuchos::Array<std::string>>("evaluator dependencies",
           std::vector<std::string>{pd_key_, elev_key_});
@@ -313,10 +311,14 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S)
   acc_pc_plist.set("entity kind", "cell");
   preconditioner_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(acc_pc_plist, preconditioner_));
 
-  // primary variable and potential
+  // primary variable requirement of boundary face and cells
   S->RequireField(key_, name_)->Update(matrix_->RangeMap())->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+
+  // potential may not actually need cells, but for debugging and sanity's sake, we require them
   S->RequireField(potential_key_)->Update(matrix_->RangeMap())->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
   S->RequireFieldEvaluator(potential_key_);
 
@@ -378,6 +380,7 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
   S->RequireField(cond_key_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+
   S->RequireFieldEvaluator(cond_key_);
 }
 
@@ -411,7 +414,6 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S)
       Errors::Message message(messagestream.str());
       Exceptions::amanzi_throw(message);
     }
-    pres_cv->PutScalar(0.);
   }
 
   // Initialize BDF stuff and physical domain stuff.
@@ -426,7 +428,7 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S)
 
       // figure out the subsurface domain's pressure
       Key key_ss;
-      if (boost::starts_with(domain_, "surface") && domain_.find("column") != std::string::npos) {
+      if (boost::starts_with(domain_, "surface")) {
         Key domain_ss;
         if (domain_ == "surface") domain_ss = "domain";
         else domain_ss = domain_.substr(8,domain_.size());

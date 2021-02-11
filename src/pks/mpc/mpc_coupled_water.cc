@@ -29,18 +29,17 @@ MPCCoupledWater::Setup(const Teuchos::Ptr<State>& S) {
   pks_list_->sublist(names[1]).sublist("diffusion preconditioner").set("surface operator", true);
   pks_list_->sublist(names[1]).sublist("accumulation preconditioner").set("surface operator", true);
 
-  
   domain_ss_ = plist_->get<std::string>("domain name","domain");
   domain_surf_ = (domain_ss_.empty() || domain_ss_ == "domain") ? "surface" : std::string("surface_")+domain_ss_;
   domain_surf_ = plist_->get<std::string>("surface domain name",domain_surf_);
-  // grab the meshes 
+  // grab the meshes
   surf_mesh_ = S->GetMesh(domain_surf_);
   domain_mesh_ = S->GetMesh(domain_ss_);
-  
+
   // cast the PKs
   domain_flow_pk_ = sub_pks_[0];
   surf_flow_pk_ = sub_pks_[1];
-  
+
   // call the MPC's setup, which calls the sub-pk's setups
   StrongMPC<PK_PhysicalBDF_Default>::Setup(S);
 
@@ -64,7 +63,7 @@ MPCCoupledWater::Setup(const Teuchos::Ptr<State>& S) {
        op != precon_surf_->end(); ++op) {
     precon_->OpPushBack(*op);
   }
-  
+
   // set up the Water delegate
   Teuchos::RCP<Teuchos::ParameterList> water_list = Teuchos::sublist(plist_, "water delegate");
   water_ = Teuchos::rcp(new MPCDelegateWater(water_list, domain_ss_));
@@ -208,7 +207,7 @@ MPCCoupledWater::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
     MergeSubsurfaceAndSurfacePressure(*h_prev, u->SubVector(0)->Data().ptr(),
             u->SubVector(1)->Data().ptr());
   }
-  
+
 
   // Hack surface faces
   bool newly_modified = false;
@@ -257,7 +256,7 @@ MPCCoupledWater::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
   // modify correction using sub-pk approaches
   AmanziSolvers::FnBaseDefs::ModifyCorrectionResult modified_res =
     StrongMPC<PK_PhysicalBDF_Default>::ModifyCorrection(h, res, u, du);
-  
+
   // modify correction using water approaches
   int n_modified = 0;
   n_modified += water_->ModifyCorrection_WaterFaceLimiter(h, res, u, du);

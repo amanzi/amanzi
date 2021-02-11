@@ -409,7 +409,11 @@ FluxBalance UpdateFluxesWithoutSnow(const GroundProperties& surf,
   //
   // This is fine because diffusion of energy always works, and doing otherwise
   // sets up local minima for energy in the top cell, which breaks code.
-  flux.E_surf += eb.fQe;
+  flux.E_surf += eb.fQe; // v1.0
+
+  // // enthalpy of evap/condensation -- v0.88
+  // flux.E_surf += (1-evap_to_subsurface_fraction) * eb.fQe;
+  // flux.E_subsurf += evap_to_subsurface_fraction * eb.fQe;
 
   // snow mass change
   flux.M_snow = met.Ps - mb.Mm;

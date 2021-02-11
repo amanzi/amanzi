@@ -75,21 +75,6 @@ class AreaFractionsSubgridEvaluator : public SecondaryVariableFieldEvaluator {
 
  protected:
 
-  // TODO: put these functions into a model and share them across evaluators:
-  //  - this one
-  //  - overland_subgrid_water_content_evaluator
-  //  - volumetric_ponded_depth evaluator --etc
-  double f_(double delta, double del_max, double del_ex) {
-    return delta >= del_max ? delta - del_ex:
-        std::pow(delta/del_max, 2) * (2*del_max - 3*del_ex)
-        + std::pow(delta/del_max,3) * (2*del_ex - del_max);
-  }
-  double f_prime_(double delta, double del_max, double del_ex) {
-    return delta >= del_max ? 1 :
-        2 * delta/del_max * (2*del_max - 3*del_ex) / del_max
-        + 3 * std::pow(delta/del_max,2) * (2*del_ex - del_max) / del_max;
-  }
-
   Key domain_, domain_snow_;
   Key ponded_depth_key_, snow_depth_key_, vol_snow_depth_key_;
   Key delta_max_key_, delta_ex_key_;

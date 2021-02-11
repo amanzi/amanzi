@@ -5,9 +5,9 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
+//! A subgrid model for determining the area fraction of land, water, and snow within a grid cell with subgrid microtopography.
 
-#include "boost/algorithm/string/predicate.hpp"
-
+#include "subgrid_microtopography.hh"
 #include "area_fractions_subgrid_evaluator.hh"
 
 namespace Amanzi {
@@ -73,8 +73,9 @@ AreaFractionsSubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
   for (int c=0; c!=res.MyLength(); ++c) {
     // calculate area of land
-    double liquid_water_area = f_prime_(pd[0][c], del_max[0][c], del_ex[0][c]);
-    double wet_area = f_prime_(pd[0][c] + std::max(sd[0][c],0.0), del_max[0][c], del_ex[0][c]);
+    AMANZI_ASSERT(Flow::Microtopography::validParameters(del_max[0][c], del_ex[0][c]));
+    double liquid_water_area = Flow::Microtopography::dVolumetricDepth_dDepth(pd[0][c], del_max[0][c], del_ex[0][c]);
+    double wet_area = Flow::Microtopography::dVolumetricDepth_dDepth(pd[0][c] + std::max(sd[0][c],0.0), del_max[0][c], del_ex[0][c]);
 
     // now partition the wet area into snow and water
     if (vsd[0][c] >= wet_area * snow_subgrid_transition_) {
@@ -147,11 +148,11 @@ AreaFractionsSubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
     if (Keys::getDomain(dep_key) == domain_snow_) {
       fac->SetMesh(S->GetMesh(domain_snow_))
           ->SetGhosted()
-          ->SetComponent("cell", AmanziMesh::CELL, 1);
+          ->AddComponent("cell", AmanziMesh::CELL, 1);
     } else {
       fac->SetMesh(S->GetMesh(domain_))
           ->SetGhosted()
-          ->SetComponent("cell", AmanziMesh::CELL, 1);
+          ->AddComponent("cell", AmanziMesh::CELL, 1);
     }
 
     // Recurse into the tree to propagate info to leaves.

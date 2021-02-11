@@ -238,7 +238,6 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     qE_cond->PutScalar(0.);
   }
 
-  int cycle = S->cycle();
   unsigned int ncells = mass_source.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
     // get the top cell
@@ -261,7 +260,7 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     if (area_fracs[0][c] > 0.) {
       SEBPhysics::GroundProperties surf;
       surf.temp = surf_temp[0][c];
-      surf.pressure = std::min(surf_pres[0][c], 101325.);
+      surf.pressure = std::min<double>(surf_pres[0][c], 101325.);
       if (ss_topcell_based_evap_)
         surf.pressure = ss_pres[0][cells[0]];
       surf.roughness = roughness_bare_ground_;
@@ -398,8 +397,7 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       SEBPhysics::GroundProperties surf;
       surf.temp = surf_temp[0][c];
       surf.pressure = surf_pres[0][c];
-      if (ss_topcell_based_evap_)
-        surf.pressure = ss_pres[0][cells[0]];
+      if (ss_topcell_based_evap_) surf.pressure = ss_pres[0][cells[0]];
       surf.roughness = roughness_bare_ground_;
       surf.density_w = params.density_water; // NOTE: could update this to use true density! --etc
       surf.dz = dessicated_zone_thickness_;

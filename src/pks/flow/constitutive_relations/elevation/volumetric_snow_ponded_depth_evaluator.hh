@@ -60,8 +60,6 @@ class VolumetricSnowPondedDepthEvaluator : public SecondaryVariablesFieldEvaluat
 
   Key domain_snow_, domain_surf_;
 
-  bool compatibility_checked_;
-  
  private:
   static Utils::RegisteredFactory<FieldEvaluator,VolumetricSnowPondedDepthEvaluator> reg_;
 

@@ -21,20 +21,28 @@ WaterTableColumnsEvaluator::WaterTableColumnsEvaluator(Teuchos::ParameterList& p
   
   std::stringstream domain_ss;
   domain_ss << "column_"<< col_id;
+
+  std::stringstream domain_sf;
+  domain_sf << "surface_column_"<< col_id;
+  
   temp_key_ = Keys::getKey(domain_ss.str(),"temperature");
   dependencies_.insert(temp_key_);
   
   sat_key_ = Keys::getKey(domain_ss.str(),"saturation_liquid");
   dependencies_.insert(sat_key_);
 
-  trans_width_ =  plist_.get<double>("transition width [K]", 0.2);
+  pd_key_ = Keys::getKey(domain_sf.str(),"ponded_depth");
+  dependencies_.insert(pd_key_);
+  
+  trans_width_ =  plist_.get<double>("transition width [K]", 0.0);
 }
   
 
 WaterTableColumnsEvaluator::WaterTableColumnsEvaluator(const WaterTableColumnsEvaluator& other)
   : SecondaryVariableFieldEvaluator(other),
     temp_key_(other.temp_key_),
-    sat_key_(other.sat_key_)
+    sat_key_(other.sat_key_),
+    pd_key_(other.pd_key_)
 {}
   
 Teuchos::RCP<FieldEvaluator>
@@ -60,23 +68,28 @@ WaterTableColumnsEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
   const auto& temp_c = *S->GetFieldData(temp_key_)->ViewComponent("cell", false);
   const auto& sat_c = *S->GetFieldData(sat_key_)->ViewComponent("cell", false);
-
+  const auto& pd_c = *S->GetFieldData(pd_key_)->ViewComponent("cell", false);
+  
   int col_cells = temp_c.MyLength();
   bool water_flag = false;
 
-  for (int i=0; i!=col_cells; ++i) {
-    if (sat_c[0][i] == 1.0) {
-      z_centroid = S->GetMesh(domain_ss)->face_centroid(i);
-      water_flag = true;
-      break;
-    }
+  if (pd_c[0][0] >0) {
+    res_c[0][0] = top_z_centroid[2] + pd_c[0][0];
   }
-  
-  if (water_flag)
-    res_c[0][0] = top_z_centroid[2] - z_centroid[2];
-  else
-    res_c[0][0] = -100; // no water table
- 
+  else {
+    for (int i=0; i!=col_cells; ++i) {
+      if (sat_c[0][i] == 1.0) {
+        z_centroid = S->GetMesh(domain_ss)->face_centroid(i+1);
+        water_flag = true;
+        break;
+      }
+    }
+    if (water_flag)
+      res_c[0][0] = top_z_centroid[2] - z_centroid[2];
+    else
+      res_c[0][0] = -100; // no water table
+  }
+
 }
   
 void

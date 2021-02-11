@@ -50,8 +50,8 @@ void MPCCoupledCells::Setup(const Teuchos::Ptr<State>& S) {
   B_key_ = plist_->get<std::string>("conserved quantity B");
   y1_key_ = plist_->get<std::string>("primary variable A");
   y2_key_ = plist_->get<std::string>("primary variable B");
-  dA_dy2_key_ = std::string("d")+A_key_+std::string("_d")+y2_key_;
-  dB_dy1_key_ = std::string("d")+B_key_+std::string("_d")+y1_key_;
+  dA_dy2_key_ = Keys::getDerivKey(A_key_, y2_key_);
+  dB_dy1_key_ = Keys::getDerivKey(B_key_, y1_key_);
 
   Key mesh_key = plist_->get<std::string>("domain name");
   mesh_ = S->GetMesh(mesh_key);
