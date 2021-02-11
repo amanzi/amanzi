@@ -24,7 +24,7 @@ closed (the wilting point).
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
-namespace Flow {
+namespace LandCover {
 namespace Relations {
 
 class PlantWiltingFactorModel;

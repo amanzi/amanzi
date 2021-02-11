@@ -1,15 +1,11 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
+/*
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-ATS
-
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon (coonet @ ornl.gov)
-   
- ------------------------------------------------------------------------- */
-
-//! AlbedoEvaluator: evaluates albedos and emissivities
-
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+//! Evaluates albedos and emissivities in a two-area model.
 /*!
 Evaluates the albedo and emissivity as an interpolation on the surface
 properties and cover.  This allows for two channels -- water/ice/land and
@@ -17,24 +13,27 @@ snow.  Note this internally calculates albedo of snow based upon snow density.
 
 Channels are: 0 = land/ice/water, 1 = snow.
 
-* `"albedo ice [-]`" ``[double]`` **0.44** 
-* `"albedo water [-]`" ``[double]`` **0.1168** 
-* `"albedo ground surface [-]`" ``[double]`` **0.135** Defaults to that of tundra.
+.. _albedo-evaluator-spec:
+.. admonition:: albedo-evaluator-spec
 
-* `"emissivity ice [-]`" ``[double]`` **0.98** 
-* `"emissivity water [-]`" ``[double]`` **0.995** 
-* `"emissivity ground surface [-]`" ``[double]`` **0.92** Defaults to that of tundra.
-* `"emissivity snow [-]`" ``[double]`` **0.98**
+   * `"albedo ice [-]`" ``[double]`` **0.44**
+   * `"albedo water [-]`" ``[double]`` **0.1168**
 
-* `"snow density key`" ``[string]`` **SNOW_DOMAIN-density** 
-* `"ponded depth key`" ``[string]`` **DOMAIN-ponded_depth** 
-* `"unfrozen fraction key`" ``[string]`` **DOMAIN-unfrozen_fraction**
+   * `"emissivity ice [-]`" ``[double]`` **0.98**
+   * `"emissivity water [-]`" ``[double]`` **0.995**
+   * `"emissivity snow [-]`" ``[double]`` **0.98**
+
+   KEYS:
+   * `"subgrid_albedos`" **DOMAIN-subgrid_albedos**
+   * `"subgrid_emissivities`" **DOMAIN-subgrid_emissivities**
+
+   * `"snow density`" **SNOW_DOMAIN-density**
+   * `"ponded depth`" **DOMAIN-ponded_depth**
+   * `"unfrozen fraction`" **DOMAIN-unfrozen_fraction**
 
 */
 
-
-#ifndef ALBEDO_EVALUATOR_HH_
-#define ALBEDO_EVALUATOR_HH_
+#pragma once
 
 #include "Factory.hh"
 #include "secondary_variables_field_evaluator.hh"
@@ -53,7 +52,7 @@ class AlbedoEvaluator : public SecondaryVariablesFieldEvaluator {
   }
 
   virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
-  
+
  protected:
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
@@ -69,14 +68,16 @@ class AlbedoEvaluator : public SecondaryVariablesFieldEvaluator {
   Key albedo_key_, emissivity_key_;
   Key snow_dens_key_, ponded_depth_key_, unfrozen_fraction_key_;
 
-  double a_ice_, a_water_, a_tundra_;
-  double e_snow_, e_ice_, e_water_, e_tundra_;
-  
+  double a_ice_, a_water_;
+  double e_snow_, e_ice_, e_water_;
+
+  // this is horrid, because this cannot yet live in state
+  // bring on new state!
+  LandCoverVector land_cover_;
+
  private:
   static Utils::RegisteredFactory<FieldEvaluator,AlbedoEvaluator> reg_;
 };
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi
-
-#endif

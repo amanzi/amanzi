@@ -21,7 +21,7 @@ an artificial cutoff is generated.
 #include "rooting_depth_fraction_model.hh"
 
 namespace Amanzi {
-namespace Flow {
+namespace LandCover {
 namespace Relations {
 
 // Constructor from ParameterList

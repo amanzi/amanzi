@@ -19,7 +19,7 @@ Requires the following dependencies:
 #include "snow_meltrate_evaluator.hh"
 
 namespace Amanzi {
-namespace Flow {
+namespace LandCover {
 namespace Relations {
 
 

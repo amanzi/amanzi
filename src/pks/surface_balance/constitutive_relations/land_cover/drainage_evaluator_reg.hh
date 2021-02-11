@@ -12,7 +12,7 @@ namespace SurfaceBalance {
 namespace Relations {
 
 // registry of method
-Utils::RegisteredFactory<FieldEvaluator,DrainageEvaluator> DrainageEvaluator::factory_("interception drainage");
+Utils::RegisteredFactory<FieldEvaluator,DrainageEvaluator> DrainageEvaluator::factory_("canopy drainage");
 
 } // namespace
 } // namespace

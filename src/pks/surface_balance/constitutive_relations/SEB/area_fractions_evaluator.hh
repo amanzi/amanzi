@@ -1,21 +1,32 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  License: see $ATS_DIR/COPYRIGHT
-  Author: Ethan Coon (ecoon@ornl.gov)
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Ethan Coon (ecoon@lanl.gov)
 */
-
 //! A subgrid model for determining the area fraction of land and snow within a grid cell
-
 /*!
 
-Requires the following dependencies:
+A simple linear scaling from bare to snow-covered area fractions [-].  Ordering
+of the area fractions calculated are: [land, snow].
 
-* `"snow depth key`" ``[string]`` **DOMAIN-snow_depth**
-         
+.. _area-fractions-evaluator-spec:
+.. admonition:: area-fractions-evaluator-spec
+
+   * `"snow transitional height [m]`" ``[double]`` **0.02**
+     Minimum thickness for specifying the snow gradient.
+   * `"minimum fractional area [-]`" ``[double]`` **1.e-5**
+     Mimimum area fraction allowed, less than this is rebalanced as zero.
+   * `"snow domain name`" ``[string]`` **DOMAIN_SNOW** A default is guessed at
+     by replacing `"surface`" with `"snow`" in the this's domain.
+
+   KEYS:
+   * `"snow depth`" **DOMAIN_SNOW-depth**
+
 */
 
-#ifndef AMANZI_SURFACE_BALANCE_AREA_FRACTIONS_EVALUATOR_HH_
-#define AMANZI_SURFACE_BALANCE_AREA_FRACTIONS_EVALUATOR_HH_
+#pragma once
 
 #include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
@@ -49,8 +60,11 @@ class AreaFractionsEvaluator : public SecondaryVariableFieldEvaluator {
 
   Key domain_, domain_snow_;
   Key snow_depth_key_;
-  double snow_subgrid_transition_;
   double min_area_;
+
+  // this is horrid, because this cannot yet live in state
+  // bring on new state!
+  LandCoverVector land_cover_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,AreaFractionsEvaluator> reg_;
@@ -59,5 +73,3 @@ class AreaFractionsEvaluator : public SecondaryVariableFieldEvaluator {
 
 } //namespace
 } //namespace
-
-#endif

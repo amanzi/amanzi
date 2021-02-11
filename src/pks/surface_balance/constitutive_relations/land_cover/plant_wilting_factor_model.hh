@@ -21,7 +21,7 @@ closed (the wilting point).
 #define AMANZI_FLOW_PLANT_WILTING_FACTOR_MODEL_HH_
 
 namespace Amanzi {
-namespace Flow {
+namespace LandCover {
 namespace Relations {
 
 class PlantWiltingFactorModel {

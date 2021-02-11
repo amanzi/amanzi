@@ -133,9 +133,9 @@ SEBEvaluator::SEBEvaluator(Teuchos::ParameterList& plist) :
   dependencies_.insert(ponded_depth_key_);
   unfrozen_fraction_key_ = Keys::readKey(plist, domain_, "unfrozen fraction", "unfrozen_fraction");
   dependencies_.insert(unfrozen_fraction_key_);
-  sg_albedo_key_ = Keys::readKey(plist, domain_, "subgrid albedos", "subgrid_albedos");
+  sg_albedo_key_ = Keys::readKey(plist, domain_, "albedo", "albedo");
   dependencies_.insert(sg_albedo_key_);
-  sg_emissivity_key_ = Keys::readKey(plist, domain_, "subgrid emissivities", "subgrid_emissivities");
+  sg_emissivity_key_ = Keys::readKey(plist, domain_, "emissivity", "emissivity");
   dependencies_.insert(sg_emissivity_key_);
   area_frac_key_ = Keys::readKey(plist, domain_, "area fractions", "fractional_areas");
   dependencies_.insert(area_frac_key_); // specifically excluding to get the old value of area fractions, which deals correctly with snow disappearance. FIXME :ISSUE:#8

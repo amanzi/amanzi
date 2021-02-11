@@ -139,6 +139,25 @@ void OverlandPressureFlow::Setup(const Teuchos::Ptr<State>& S)
 
   SetupOverlandFlow_(S);
   SetupPhysicalEvaluators_(S);
+
+#if DEBUG_RES_FLAG
+  for (int i=1; i!=23; ++i) {
+    std::stringstream namestream;
+    namestream << "surface-flow_residual_" << i;
+    S->RequireField(namestream.str(),name_)
+      ->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+
+    std::stringstream solnstream;
+    solnstream << "surface-flow_solution_" << i;
+    S->RequireField(solnstream.str(),name_)
+      ->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+  }
+#endif
+
 }
 
 
@@ -371,12 +390,12 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S)
 #if DEBUG_RES_FLAG
   for (int i=1; i!=23; ++i) {
     std::stringstream namestream;
-    namestream << "flow_residual_" << i;
+    namestream << "surface-flow_residual_" << i;
     S->GetFieldData(namestream.str(),name_)->PutScalar(0.);
     S->GetField(namestream.str(),name_)->set_initialized();
 
     std::stringstream solnstream;
-    solnstream << "flow_solution_" << i;
+    solnstream << "surface-flow_solution_" << i;
     S->GetFieldData(solnstream.str(),name_)->PutScalar(0.);
     S->GetField(solnstream.str(),name_)->set_initialized();
   }

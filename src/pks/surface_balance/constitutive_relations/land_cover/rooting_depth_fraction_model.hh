@@ -20,7 +20,7 @@ an artificial cutoff is generated.
 #define AMANZI_FLOW_ROOTING_DEPTH_FRACTION_MODEL_HH_
 
 namespace Amanzi {
-namespace Flow {
+namespace LandCover {
 namespace Relations {
 
 class RootingDepthFractionModel {

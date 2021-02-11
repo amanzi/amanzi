@@ -99,7 +99,7 @@ namespace Amanzi {
 
 class Function;
 
-namespace Flow {
+namespace LandCover {
 namespace Relations {
 
 class TranspirationDistributionEvaluator : public SecondaryVariableFieldEvaluator {

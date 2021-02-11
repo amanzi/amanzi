@@ -41,7 +41,7 @@ Allows the following parameters:
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
-namespace Flow {
+namespace LandCover {
 namespace Relations {
 
 class SnowMeltRateEvaluator : public SecondaryVariableFieldEvaluator {

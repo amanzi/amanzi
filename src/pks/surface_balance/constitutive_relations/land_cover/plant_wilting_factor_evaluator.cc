@@ -18,7 +18,7 @@ closed (the wilting point).
 #include "plant_wilting_factor_model.hh"
 
 namespace Amanzi {
-namespace Flow {
+namespace LandCover {
 namespace Relations {
 
 // Constructor from ParameterList

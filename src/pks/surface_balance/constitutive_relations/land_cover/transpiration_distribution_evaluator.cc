@@ -12,7 +12,7 @@
 #include "transpiration_distribution_evaluator.hh"
 
 namespace Amanzi {
-namespace Flow {
+namespace LandCover {
 namespace Relations {
 
 // Constructor from ParameterList

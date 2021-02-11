@@ -26,7 +26,7 @@ InterceptionFractionModel::InterceptionFractionModel(Teuchos::ParameterList& pli
 void
 InterceptionFractionModel::InitializeFromPlist_(Teuchos::ParameterList& plist)
 {
-  alpha_ = plist.get<double>("scaling factor [-]", 0.25);
+  alpha_ = plist.get<double>("leaf area interception fraction [-]", 0.25);
 }
 
 

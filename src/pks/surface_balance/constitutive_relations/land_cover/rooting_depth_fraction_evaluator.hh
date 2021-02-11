@@ -16,24 +16,25 @@ an artificial cutoff is generated.
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_FLOW_ONE_PFT_ROOTING_DEPTH_FRACTION_EVALUATOR_HH_
-#define AMANZI_FLOW_ONE_PFT_ROOTING_DEPTH_FRACTION_EVALUATOR_HH_
+#ifndef AMANZI_FLOW_ROOTING_DEPTH_FRACTION_EVALUATOR_HH_
+#define AMANZI_FLOW_ROOTING_DEPTH_FRACTION_EVALUATOR_HH_
 
 #include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
-namespace Flow {
+namespace LandCover {
 namespace Relations {
 
 class RootingDepthFractionModel;
 
-class OnePFTRootingDepthFractionEvaluator : public SecondaryVariableFieldEvaluator {
+class RootingDepthFractionEvaluator : public SecondaryVariableFieldEvaluator {
 
  public:
   explicit
-  OnePFTRootingDepthFractionEvaluator(Teuchos::ParameterList& plist);
-  OnePFTRootingDepthFractionEvaluator(const OnePFTRootingDepthFractionEvaluator& other) = default;
+  RootingDepthFractionEvaluator(Teuchos::ParameterList& plist);
+  RootingDepthFractionEvaluator(const RootingDepthFractionEvaluator& other);
+
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
   // Required methods from SecondaryVariableFieldEvaluator
@@ -42,7 +43,7 @@ class OnePFTRootingDepthFractionEvaluator : public SecondaryVariableFieldEvaluat
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
-  std::vector<std::pair<std::string, Teuchos::RCP<RootingDepthFractionModel> > > get_models() { return models_; }
+  std::vector<Teuchos::RCP<RootingDepthFractionModel>> get_models() { return models_; }
 
   // need a custom EnsureCompatibility as some vectors cross meshes.
   virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
@@ -53,14 +54,12 @@ class OnePFTRootingDepthFractionEvaluator : public SecondaryVariableFieldEvaluat
   Key z_key_;
   Key cv_key_;
   Key surf_cv_key_;
+  int npfts_;
 
-  Key surf_domain_;
-  Key subsurf_domain_;
-
-  std::vector<std::pair<std::string, Teuchos::RCP<RootingDepthFractionModel> > > models_;
+  std::vector<Teuchos::RCP<RootingDepthFractionModel>> models_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,OnePFTRootingDepthFractionEvaluator> reg_;
+  static Utils::RegisteredFactory<FieldEvaluator,RootingDepthFractionEvaluator> reg_;
 
 };
 
