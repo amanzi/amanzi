@@ -155,6 +155,7 @@
 #                - update Trilinos to 9fec3527 (Aug5, 2020, also 13.0.0)
 #   0.97.12      - update Trilinos to afc4e525 (Nov 14, 2020)
 #   0.97.13      - update Alquimia to 1.0.8
+#   0.97.14      - update MSTK to 3.3.6
 
 include(CMakeParseArguments)
 
@@ -207,7 +208,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 97)
-set(AMANZI_TPLS_VERSION_PATCH 13)
+set(AMANZI_TPLS_VERSION_PATCH 14)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -374,13 +375,13 @@ set(ASCEMIO_MD5_SUM        e395b1d32bac6f04fa518911d57de725)
 #
 set(MSTK_VERSION_MAJOR 3)
 set(MSTK_VERSION_MINOR 3)
-set(MSTK_VERSION_PATCH 5)
+set(MSTK_VERSION_PATCH 6)
 
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}.${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "https://github.com/MeshToolkit/MSTK/archive")
 set(MSTK_ARCHIVE_FILE   ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}.${MSTK_VERSION_PATCH}.tar.gz)
 set(MSTK_SAVEAS_FILE    mstk-${MSTK_VERSION}.tar.gz)
-set(MSTK_MD5_SUM        814e2d7202ac0dbc4d735d94e5548fc8)
+set(MSTK_MD5_SUM        3ab4d8811257cb7a487a24e0c866a4db)
 
 #
 # TPL: MOAB
