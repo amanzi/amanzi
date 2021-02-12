@@ -115,24 +115,22 @@ def createFromXML(filename):
     #
     #  Material Properties
     #
-    strK = search.getElementByTags(xml, "/amanzi_input/materials/material/permeability").get('x')
+    strK = search.find_tag_path(xml, ["amanzi_input","materials","material","permeability",]).get('x')
     params["k"] = float(strK)
 
-    strMu = search.getElementByTags(xml, "/amanzi_input/phases/liquid_phase/viscosity").text
+    strMu = search.find_tag_path(xml, ["amanzi_input","phases","liquid_phase","viscosity",]).text
     params["mu"] = float(strMu)
 
-    strRho = search.getElementByTags(xml, "/amanzi_input/phases/liquid_phase/density").text
+    strRho = search.find_tag_path(xml, ["amanzi_input","phases","liquid_phase","density",]).text
     params["rho"] = float(strRho)
 
     #
     #  Boundary Conditions
     #
-    strH0 = search.getElementByTags(xml, "/amanzi_input/boundary_conditions/boundary_condition,LeftBC" + 
-                                         "/liquid_phase/liquid_component/hydrostatic").get("value")
+    strH0 = search.find_tag_path(xml, ["amanzi_input","boundary_conditions","boundary_condition,LeftBC","liquid_phase","liquid_component","hydrostatic",]).get("value")
     params["h_0"] = float(strH0)
 
-    strH1 = search.getElementByTags(xml, "/amanzi_input/boundary_conditions/boundary_condition,RightBC" + 
-                                         "/liquid_phase/liquid_component/hydrostatic").get("value")
+    strH1 = search.find_tag_path(xml, ["amanzi_input","boundary_conditions","boundary_condition,RightBC","liquid_phase","liquid_component","hydrostatic",]).get("value")
     params["h_1"] = float(strH1)
 
     #

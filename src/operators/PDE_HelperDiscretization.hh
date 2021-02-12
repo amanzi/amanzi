@@ -65,6 +65,10 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
                           const Teuchos::Ptr<CompositeVector>& u) = 0;
 
+  // preprocessing
+  // -- set essential boundary conditions
+  void EnforceBCs(CompositeVector& field);
+
   // access
   // -- global operator (collection of ops with Apply, etc)
   Teuchos::RCP<const Operator> global_operator() const { return global_op_; }

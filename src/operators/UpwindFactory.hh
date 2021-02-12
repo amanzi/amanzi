@@ -34,13 +34,11 @@ namespace Operators {
 template<class Model>
 class UpwindFactory {
  public:
-  UpwindFactory() {};
-  ~UpwindFactory() {};
-
   Teuchos::RCP<Upwind<Model> > Create(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                               Teuchos::RCP<const Model> model,
-                               Teuchos::ParameterList& plist);
+                               Teuchos::ParameterList& plist,
+                               Teuchos::RCP<const Model> model = Teuchos::null);
 };
+
 
 /* ******************************************************************
 * The base class for all upwind methods. 
@@ -48,7 +46,8 @@ class UpwindFactory {
 template<class Model>
 Teuchos::RCP<Upwind<Model> > UpwindFactory<Model>::Create(
     Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-    Teuchos::RCP<const Model> model, Teuchos::ParameterList& plist)
+    Teuchos::ParameterList& plist,
+    Teuchos::RCP<const Model> model)
 {
   if (!plist.isParameter("upwind method")) {
     Errors::Message msg("UpwindFactory: parameter \"upwind method\" is missing");

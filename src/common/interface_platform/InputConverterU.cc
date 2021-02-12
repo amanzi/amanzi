@@ -90,22 +90,31 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   }
 
   // -- additional saturated flow fields
+  //    various data flow scenarios require both ic and ev to be defined FIXME
   if (pk_model_["flow"] == "darcy") {
     Teuchos::Array<std::string> regions(1, "All");
-    out_list.sublist("state").sublist("initial conditions").sublist("saturation_liquid")
-        .sublist("function").sublist("ALL")
+    auto& ic_m = out_list.sublist("state").sublist("initial conditions").sublist("saturation_liquid");
+    ic_m.sublist("function").sublist("ALL")
         .set<Teuchos::Array<std::string> >("regions", regions)
         .set<std::string>("component", "cell")
         .sublist("function").sublist("function-constant")
         .set<double>("value", 1.0);
 
+    auto& ev_m = out_list.sublist("state").sublist("field evaluators").sublist("saturation_liquid");
+    ev_m = ic_m;
+    ev_m.set<std::string>("field evaluator type", "independent variable");
+
     if (fracture_regions_.size() > 0) {
-      out_list.sublist("state").sublist("initial conditions").sublist("fracture-saturation_liquid")
-        .sublist("function").sublist("ALL")
-        .set<Teuchos::Array<std::string> >("regions", regions)
-        .set<std::string>("component", "cell")
-        .sublist("function").sublist("function-constant")
-        .set<double>("value", 1.0);
+      auto& ic_f = out_list.sublist("state").sublist("initial conditions").sublist("fracture-saturation_liquid");
+      ic_f.sublist("function").sublist("ALL")
+          .set<Teuchos::Array<std::string> >("regions", regions)
+          .set<std::string>("component", "cell")
+          .sublist("function").sublist("function-constant")
+          .set<double>("value", 1.0);
+
+      auto& ev_f = out_list.sublist("state").sublist("field evaluators").sublist("fracture-saturation_liquid");
+      ev_f = ic_f;
+      ev_f.set<std::string>("field evaluator type", "independent variable");
     }
   }
 
