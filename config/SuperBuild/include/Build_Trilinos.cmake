@@ -219,6 +219,7 @@ if (ENABLE_KOKKOS)
   if (ENABLE_KOKKOS_OPENMP)
     # NOTE: This is not yet tested and may need more flags set
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_OPENMP:BOOL=ON")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTrilinos_ENABLE_OpenMP:BOOL=ON")
   else()
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_OPENMP:BOOL=OFF")
   endif()

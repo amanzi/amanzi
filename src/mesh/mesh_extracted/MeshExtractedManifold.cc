@@ -419,17 +419,10 @@ void MeshExtractedManifold::get_set_entities_and_vofs(
 Entity_ID_List MeshExtractedManifold::build_set_(
     const Teuchos::RCP<const AmanziGeometry::Region>& rgn, const Entity_kind kind) const
 {
-  int manifold_dim = manifold_dimension();
-  int space_dim = space_dimension();
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = geometric_model();
-
   // modify rgn/set name by prefixing it with the type of entity requested
   std::string internal_name = rgn->name() + std::to_string(kind);
 
   // create entity set based on the region definition  
-  int ncells_wghost = num_entities(CELL, Parallel_type::ALL);              
-  int nfaces_wghost = num_entities(FACE, Parallel_type::ALL);              
-  int nnodes_wghost = num_entities(NODE, Parallel_type::ALL);
   Entity_ID_List mset;
 
   // special processing of regions
@@ -461,132 +454,12 @@ Entity_ID_List MeshExtractedManifold::build_set_(
 
   bool missing(false);
 
-  switch (kind) {      
-  // create a set of cells
-  case CELL:
-    if (rgn->type() == AmanziGeometry::BOX ||
-        rgn->type() == AmanziGeometry::CYLINDER ||
-        rgn->type() == AmanziGeometry::COLORFUNCTION) {
-
-      for (int c = 0; c < ncells_wghost; ++c)
-        if (rgn->inside(cell_centroid(c))) mset.push_back(c);
-    }
-
-    else if (rgn->type() == AmanziGeometry::POINT) {
-      auto rp = Teuchos::rcp_static_cast<const AmanziGeometry::RegionPoint>(rgn)->point();
-
-      for (int c = 0; c < ncells_wghost; ++c)
-        if (point_in_cell(rp, c)) mset.push_back(c);
-    }
-
-    else if (((rgn->type() == AmanziGeometry::PLANE) ||
-              (rgn->type() == AmanziGeometry::POLYGON)) && 
-             manifold_dim == 2) {
-      for (int c = 0; c < ncells_wghost; ++c) {
-        std::vector<AmanziGeometry::Point> ccoords(space_dim);
-        cell_get_coordinates(c, &ccoords);
-
-        bool on_plane(true);
-        for (int i = 0; i < ccoords.size(); ++i) {
-          if (!rgn->inside(ccoords[i])) {
-            on_plane = false;
-            break;
-          }
-        }
-        if (on_plane) mset.push_back(c);
-      }
-    }
-
-    else if (rgn->type() != AmanziGeometry::LOGICAL) {
-      missing = true;
-    }
-
-    break;
-
-  // create a set of faces
-  case FACE:
-    if (rgn->type() == AmanziGeometry::BOX ||
-        rgn->type() == AmanziGeometry::CYLINDER) {
-      for (int f = 0; f < nfaces_wghost; ++f) {
-        if (rgn->inside(face_centroid(f))) mset.push_back(f);
-      }
-    }
-
-    else if (rgn->type() == AmanziGeometry::PLANE ||
-             rgn->type() == AmanziGeometry::POLYGON) {
-      for (int f = 0; f < nfaces_wghost; ++f) {
-        std::vector<AmanziGeometry::Point> fcoords(space_dim);
-        face_get_coordinates(f, &fcoords);
-            
-        bool on_plane(true);
-        for (int i = 0; i < fcoords.size(); ++i) {
-          if (!rgn->inside(fcoords[i])) {
-            on_plane = false;
-            break;
-          }
-        }
-        if (on_plane) mset.push_back(f);
-      }
-    }
-
-    else if (rgn->type() == AmanziGeometry::BOUNDARY)  {
-      const Epetra_Map& fmap = face_map(true); 
-      const Epetra_Map& map = exterior_face_map(true); 
-
-      int nfaces = map.NumMyElements(); 
-
-      for (int f = 0; f < nfaces; ++f) {
-        int lid = fmap.LID(map.GID(f));
-        mset.push_back(lid);
-      }
-    }
-
-    else if (rgn->type() != AmanziGeometry::LOGICAL) {
-      missing = true;
-    }
-
-    break;
-
-  // create a set of nodes
-  case NODE:
-    if (rgn->type() == AmanziGeometry::BOX ||
-        rgn->type() == AmanziGeometry::PLANE ||
-        rgn->type() == AmanziGeometry::POLYGON ||
-        rgn->type() == AmanziGeometry::CYLINDER ||
-        rgn->type() == AmanziGeometry::POINT) {
-      for (int v = 0; v < nnodes_wghost; ++v) {
-        AmanziGeometry::Point xp(space_dim);
-        node_get_coordinates(v, &xp);
-                  
-        if (rgn->inside(xp)) {
-          mset.push_back(v);
-          // Only one node per point rgn
-          if (rgn->type() == AmanziGeometry::POINT) break;      
-        }
-      }
-    }
-
-    else if (rgn->type() == AmanziGeometry::BOUNDARY)  {
-      const Epetra_Map& vmap = node_map(true); 
-      const Epetra_Map& map = exterior_node_map(true); 
-
-      int nnodes = map.NumMyElements(); 
-
-      for (int v = 0; v < nnodes; ++v) {
-        int lid = vmap.LID(map.GID(v));
-        mset.push_back(lid);
-      }
-    }
-
-    else if (rgn->type() != AmanziGeometry::LOGICAL) {
-      missing = true;
-    }
-      
-    break;
-
-  default:
-    break;
-  }
+  if (kind == CELL)
+    mset = build_set_cells_(rgn, &missing);
+  else if (kind == FACE) 
+    mset = build_set_faces_(rgn, &missing);
+  else if (kind == NODE) 
+    mset = build_set_nodes_(rgn, &missing);
 
   if (missing) {
     if (vo_.get() && vo_->os_OK(Teuchos::VERB_HIGH)) {
@@ -598,6 +471,8 @@ Entity_ID_List MeshExtractedManifold::build_set_(
   }
 
   if (rgn->type() == AmanziGeometry::LOGICAL) {
+    Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = geometric_model();
+
     auto boolrgn = Teuchos::rcp_static_cast<const AmanziGeometry::RegionLogical>(rgn);
     const std::vector<std::string> rgn_names = boolrgn->component_regions();
     int nregs = rgn_names.size();
@@ -661,6 +536,168 @@ Entity_ID_List MeshExtractedManifold::build_set_(
 
     for (auto it = msets[0].begin(); it != msets[0].end(); ++it)
       mset.push_back(*it);
+  }
+
+  return mset;
+}
+
+
+/* ******************************************************************
+* Create a cell-set from similar set in mesh
+****************************************************************** */
+Entity_ID_List MeshExtractedManifold::build_set_cells_(
+    const Teuchos::RCP<const AmanziGeometry::Region>& rgn, bool* missing) const
+{
+  int space_dim = space_dimension();
+  int manifold_dim = manifold_dimension();
+
+  Entity_ID_List mset;
+
+  int ncells_wghost = num_entities(CELL, Parallel_type::ALL);              
+  *missing = false;
+
+  if (rgn->type() == AmanziGeometry::BOX ||
+      rgn->type() == AmanziGeometry::CYLINDER ||
+      rgn->type() == AmanziGeometry::COLORFUNCTION) {
+
+    for (int c = 0; c < ncells_wghost; ++c)
+      if (rgn->inside(cell_centroid(c))) mset.push_back(c);
+  }
+
+  else if (rgn->type() == AmanziGeometry::POINT) {
+    auto rp = Teuchos::rcp_static_cast<const AmanziGeometry::RegionPoint>(rgn)->point();
+
+    for (int c = 0; c < ncells_wghost; ++c)
+      if (point_in_cell(rp, c)) mset.push_back(c);
+  }
+
+  else if (((rgn->type() == AmanziGeometry::PLANE) ||
+            (rgn->type() == AmanziGeometry::POLYGON)) && 
+           manifold_dim == 2) {
+    for (int c = 0; c < ncells_wghost; ++c) {
+      std::vector<AmanziGeometry::Point> ccoords(space_dim);
+      cell_get_coordinates(c, &ccoords);
+
+      bool on_plane(true);
+      for (int i = 0; i < ccoords.size(); ++i) {
+        if (!rgn->inside(ccoords[i])) {
+          on_plane = false;
+          break;
+        }
+      }
+      if (on_plane) mset.push_back(c);
+    }
+  }
+
+  else if (rgn->type() != AmanziGeometry::LOGICAL) {
+    *missing = true;
+  }
+
+  return mset;
+}
+
+
+/* ******************************************************************
+* Create a face-set from similar set in mesh
+****************************************************************** */
+Entity_ID_List MeshExtractedManifold::build_set_faces_(
+    const Teuchos::RCP<const AmanziGeometry::Region>& rgn, bool* missing) const
+{
+  int space_dim = space_dimension();
+  int nfaces_wghost = num_entities(FACE, Parallel_type::ALL);              
+
+  Entity_ID_List mset;
+
+  *missing = false;
+
+  if (rgn->type() == AmanziGeometry::BOX ||
+      rgn->type() == AmanziGeometry::CYLINDER) {
+    for (int f = 0; f < nfaces_wghost; ++f) {
+      if (rgn->inside(face_centroid(f))) mset.push_back(f);
+    }
+  }
+
+  else if (rgn->type() == AmanziGeometry::PLANE ||
+           rgn->type() == AmanziGeometry::POLYGON) {
+    for (int f = 0; f < nfaces_wghost; ++f) {
+      std::vector<AmanziGeometry::Point> fcoords(space_dim);
+      face_get_coordinates(f, &fcoords);
+            
+      bool on_plane(true);
+      for (int i = 0; i < fcoords.size(); ++i) {
+        if (!rgn->inside(fcoords[i])) {
+          on_plane = false;
+          break;
+        }
+      }
+      if (on_plane) mset.push_back(f);
+    }
+  }
+
+  else if (rgn->type() == AmanziGeometry::BOUNDARY)  {
+    const Epetra_Map& fmap = face_map(true); 
+    const Epetra_Map& map = exterior_face_map(true); 
+
+    int nfaces = map.NumMyElements(); 
+
+    for (int f = 0; f < nfaces; ++f) {
+      int lid = fmap.LID(map.GID(f));
+      mset.push_back(lid);
+    }
+  }
+
+  else if (rgn->type() != AmanziGeometry::LOGICAL) {
+    *missing = true;
+  }
+
+  return mset;
+}
+
+
+/* ******************************************************************
+* Create a node-set from similar set in mesh
+****************************************************************** */
+Entity_ID_List MeshExtractedManifold::build_set_nodes_(
+    const Teuchos::RCP<const AmanziGeometry::Region>& rgn, bool* missing) const
+{
+  int space_dim = space_dimension();
+  int nnodes_wghost = num_entities(NODE, Parallel_type::ALL);
+
+  Entity_ID_List mset;
+
+  *missing = false;
+
+  if (rgn->type() == AmanziGeometry::BOX ||
+      rgn->type() == AmanziGeometry::PLANE ||
+      rgn->type() == AmanziGeometry::POLYGON ||
+      rgn->type() == AmanziGeometry::CYLINDER ||
+      rgn->type() == AmanziGeometry::POINT) {
+    for (int v = 0; v < nnodes_wghost; ++v) {
+      AmanziGeometry::Point xp(space_dim);
+      node_get_coordinates(v, &xp);
+                  
+      if (rgn->inside(xp)) {
+        mset.push_back(v);
+        // Only one node per point rgn
+        if (rgn->type() == AmanziGeometry::POINT) break;      
+      }
+    }
+  }
+
+  else if (rgn->type() == AmanziGeometry::BOUNDARY)  {
+    const Epetra_Map& vmap = node_map(true); 
+    const Epetra_Map& map = exterior_node_map(true); 
+
+    int nnodes = map.NumMyElements(); 
+
+    for (int v = 0; v < nnodes; ++v) {
+      int lid = vmap.LID(map.GID(v));
+      mset.push_back(lid);
+    }
+  }
+
+  else if (rgn->type() != AmanziGeometry::LOGICAL) {
+    *missing = true;
   }
 
   return mset;
