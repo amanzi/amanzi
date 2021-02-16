@@ -251,7 +251,7 @@ if (BUILD_TESTS)
 
     add_amanzi_test(verify_operators_direct verify_operators
                     KIND unit
-                    "Amesos: Basker" structured3d 10 fv 1e-10)
+                    "Amesos2: Basker" structured3d 10 fv 1e-10)
 
     add_amanzi_test(operators_diffusion_dg operators_diffusion_dg
                     KIND unit

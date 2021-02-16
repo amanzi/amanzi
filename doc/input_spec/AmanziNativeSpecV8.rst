@@ -5573,7 +5573,7 @@ Preconditioners
 
 This sublist contains entries for various
 preconditioners required by a simulation. At the moment, we support Trilinos multilevel
-preconditioner, Hypre BoomerAMG preconditioner, ILU preconditioner, Euclid ILU
+preconditioner, Hypre BoomerAMG preconditioner, ILU preconditioner, Hypre's Euclid ILU
 preconditioner, and identity preconditioner. 
 
 * `"preconditioning method`" [string] defines preconditioner algorithm.
@@ -5605,7 +5605,10 @@ preconditioner, and identity preconditioner.
         ...
       </ParameterList>
     </ParameterList>
-  </ParameterList>
+
+    <ParameterList name="_DIAGONAL">
+      <Parameter name="preconditioning method" type="string" value="diagonal"/>
+    </ParameterList>
   </ParameterList>
 
 
@@ -5685,8 +5688,8 @@ Internal parameters for Boomer AMG include
   </ParameterList>
 
 
-Euclid ILU
-..........
+Hypre's Euclid ILU
+..................
 
 The Euclid Parallel ILU algorithm was presented at SC99 and published in expanded 
 form in the SIAM Journal on Scientific Computing. 
@@ -5716,6 +5719,52 @@ Internal parameters for this preconditioner include
     <Parameter name="ilut drop tolerance" type="double" value="0.01"/>
     <Parameter name="rescale rows" type="bool" value="true"/>
     <Parameter name="verbosity" type="int" value="0"/>
+  </ParameterList>
+  </ParameterList>
+
+
+Hypre's Block ILU
+..................
+
+The internal parameters for block ILU are as follows (see 
+https://docs.trilinos.org/dev/packages/ifpack/doc/html/index.html for more detail):
+
+* `"fact: level-of-fill`" [int] sets the level of fill used by the level-based ilu(k) strategy.
+  This is based on powers of the graph, so the value 0 means no-fill. Default is 0.
+
+* `"fact: absolute threshold`" [double] defines the value to add to each diagonal element 
+  (times the sign of the actual diagonal element). Default is 0.
+
+* `"fact: relative threshold`" [double] multiplies the diagonal by this value before checking 
+  the threshold. Default is 1.
+
+* `"fact: relax value`" [double] if nonzero, dropped values are added to the diagonal (times 
+  this factor). Default is 0.
+
+* `"overlap`" [int] defines overlap of the additive Schwarz. Default is 0.
+
+* `"schwarz: combine mode`" [string] defines how values corresponding to overlapping nodes are 
+  handled. Users should set this value to `"Add`" if interested in a symmetric preconditioner. 
+  Otherwise, the default value of `"Zero`" usually results in better convergence.
+  If the level of overlap is set to zero, the rows of the user matrix that are stored on a 
+  given processor are treated as a self-contained local matrix and all column entries that 
+  reach to off-processor entries are ignored. Setting the level of overlap to one tells Ifpack 
+  to increase the size of the local matrix by adding rows that are reached to by rows owned by 
+  this processor. Increasing levels of overlap are defined recursively in the same way. 
+  For sufficiently large levels of overlap, the entire matrix would be part of each processor's 
+  local ILU factorization process. 
+  Default is `"Add`".
+
+.. code-block:: xml
+
+  <ParameterList name="_MY ILU">  <!-- parent list -->
+  <ParameterList name="block ilu parameters">
+    <Parameter name="fact: relax value" type="double" value="1.0"/>
+    <Parameter name="fact: absolute threshold" type="double" value="0.0"/>
+    <Parameter name="fact: relative threshold" type="double" value="1.0"/>
+    <Parameter name="fact: level-of-fill" type="int" value="10"/>
+    <Parameter name="overlap" type="int" value="0"/>
+    <Parameter name="schwarz: combine mode" type="string" value="Add"/>
   </ParameterList>
   </ParameterList>
 
@@ -5750,30 +5799,18 @@ Internal parameters for Trilinos ML include
   </ParameterList>
 
 
-Block ILU
-.........
-
-The internal parameters for block ILU are as follows:
-
-.. code-block:: xml
-
-  <ParameterList name="_MY ILU">  <!-- parent list -->
-  <ParameterList name="block ilu parameters">
-    <Parameter name="fact: relax value" type="double" value="1.0"/>
-    <Parameter name="fact: absolute threshold" type="double" value="0.0"/>
-    <Parameter name="fact: relative threshold" type="double" value="1.0"/>
-    <Parameter name="fact: level-of-fill" type="int" value="0"/>
-    <Parameter name="overlap" type="int" value="0"/>
-    <Parameter name="schwarz: combine mode" type="string" value="Add"/>
-  </ParameterList>
-  </ParameterList>
-
-
 Identity
-.........
+........
 
 The identity preconditioner is instantiated if either no preconditioner is
 specified or the specified preconditioner list does not exists.
+
+
+Diagonal
+........
+
+The diagonal preconditioner is instantiated by the name and needs no additional
+parameters.
 
 
 Mesh

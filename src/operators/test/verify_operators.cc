@@ -32,10 +32,10 @@ int main(int argc, char *argv[])
   if (argc < 4) {
     std::cout <<
       "Usage: verify_operators  with_pc|direct  mesh_type  mesh_size|mesh_file  scheme  tol\n\n"
-      "  (req) with_pc   = identity|diagonal|ifpack2: ILUT\n"
+      "  (req) with_pc   = identity|diagonal|ifpack: ILUT\n"
       "                    Hypre: AMG|Hypre: Euclid\n"
       "                    Trilinos: ML|Trilinos: MueLu\n"
-      "  (req) direct    = Amesos: KLU|Amesos: Basker|Amesos: SuperLUDist\n\n"
+      "  (req) direct    = Amesos1: KLU|Amesos2: Basker|Amesos2: SuperLUDist\n\n"
       "  (req) mesh_type = structured2d|structured3d|unstructured2d|unstructured3d\n"
       "  (req) mesh_size = positive integer\n"
       "  (req) mesh_file = file containing mesh\n\n"
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
       "  (opt) tol       = positive double  (default 1e-10)\n\n"
       "Examples:\n"
       "  verify_operators \"Hypre: AMG\" structured3d 10 fv 1e-10\n"
-      "  verify_operators \"Amesos: KLU\" unstructured2d mymesh.exo mfd 1e-10\n";
+      "  verify_operators \"Amesos1: KLU\" unstructured2d mymesh.exo mfd 1e-10\n";
     return 1;
   }
   for (int i = 1; i < argc; ++i) argv_copy.push_back(argv[i]);
@@ -137,17 +137,17 @@ TEST(Verify_Mesh_and_Operators) {
       .set<int>("maximum number of iterations", 5000)
       .set<double>("error tolerance", tol);
 
-  plist->sublist("solvers").sublist("Amesos: KLU")
+  plist->sublist("solvers").sublist("Amesos1: KLU")
       .set<std::string>("direct method", "amesos").sublist("amesos parameters")
       .set<std::string>("solver name", "Klu")
       .set<int>("amesos version", 1);
 
-  plist->sublist("solvers").sublist("Amesos: Basker")
+  plist->sublist("solvers").sublist("Amesos2: Basker")
       .set<std::string>("direct method", "amesos").sublist("amesos parameters")
       .set<std::string>("solver name", "basker")
       .set<int>("amesos version", 2);
 
-  plist->sublist("solvers").sublist("Amesos: SuperLUDist")
+  plist->sublist("solvers").sublist("Amesos2: SuperLUDist")
       .set<std::string>("direct method", "amesos").sublist("amesos parameters")
       .set<std::string>("solver name", "Superludist")
       .set<int>("amesos version", 2);
@@ -210,10 +210,25 @@ TEST(Verify_Mesh_and_Operators) {
       .set<double>("relaxation: damping factor", 0.9);
 
   // -- ILU
+  plist->sublist("preconditioners").sublist("ifpack: ILUT")
+      .set<std::string>("preconditioning method", "ifpack: ILUT").sublist("ifpack: ILUT parameters")
+      .set<double>("fact: ilut level-of-fill", 10.0)
+      .set<double>("fact: drop tolerance", 0.0);
+
   plist->sublist("preconditioners").sublist("ifpack2: ILUT")
       .set<std::string>("preconditioning method", "ifpack2: ILUT").sublist("ifpack2: ILUT parameters")
       .set<double>("fact: ilut level-of-fill", 10.0)
       .set<double>("fact: drop tolerance", 0.0);
+
+  // -- RILUK: a modified variant of the ILU(k) factorization
+  // -- RILUK: a modified variant of the ILU(k) factorization
+  /*
+  plist->sublist("preconditioners").sublist("ifpack2: RILUK")
+      .set<std::string>("preconditioning method", "ifpack2: RILUK").sublist("ifpack2: RILUK parameters")
+      .set<int>("fact: iluk level-of-fill", 10)
+      .set<double>("fact: drop tolerance", 0.0)
+      .set<std::string>("fact: type", "KSPILUK");
+  */
 
   // summary of options
   if (MyPID == 0) {

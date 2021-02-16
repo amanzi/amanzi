@@ -99,7 +99,7 @@ bool RegionBoxVolumeFractions::inside(const Point& p) const
 #ifdef ENABLE_DBC
   if (p.dim() != p0_.dim()) {
     Errors::Message msg;
-    msg << "Mismatch in corner dimension of RegionBox \""
+    msg << "Mismatch in corner dimension of RegionBoxVolumeFractions \""
         << name() << "\" and query point.";
     Exceptions::amanzi_throw(msg);
   }
