@@ -23,13 +23,9 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 #   find_package(OpenMP)
 
 set(hypre_openmp_opt)
-# if (OPENMP_FOUND)
-#   set(hypre_openmp_opt "-DHYPRE_USING_OPENMP:BOOL=TRUE")
-# endif()
-#else()
-#set(hypre_openmp_opt "-DHYPRE_USING_OPENMP:BOOL=FALSE")
-#set(hypre_openmp_opt "--with-openmp")
-#endif()
+if (KOKKOS_ENABLE_OPENMP)
+  set(hypre_openmp_opt "--with-openmp")
+endif()
 
 # Locate LAPACK and BLAS
 set(hypre_blas_opt)
