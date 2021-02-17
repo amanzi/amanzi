@@ -72,7 +72,8 @@ list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_Stratimikos:BOOL=FALS
 list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_SEACAS:BOOL=FALSE")
 
 # use MueLu on master and Tpetra branches
-list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DMueLu_ENABLE_Epetra:BOOL=ON")
+list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DMueLu_ENABLE_Epetra:BOOL=OFF")
+list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DMueLu_ENABLE_Tpetra:BOOL=ON")
 
 # we use ints for GOs in Tpetra only (for now)
 if (ENABLE_KOKKOS)
@@ -80,7 +81,16 @@ if (ENABLE_KOKKOS)
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_INT_LONG:BOOL=OFF")
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_INT_LONG_LONG:BOOL=OFF")
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DXpetra_Epetra_NO_64BIT_GLOBAL_INDICIES:BOOL=ON")
-  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_SERIAL:BOOL=ON") 
+  if(ENABLE_KOKKOS_OPENMP)
+    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DHAVE_MUELU_OPENMP=ON")
+    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DHAVE_MUELU_SERIAL=OFF")
+    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_SERIAL:BOOL=OFF")
+    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DXpetra_CAN_USE_SERIAL:BOOL=OFF")
+    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_OPENMP:BOOL=ON")
+  else()
+    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_SERIAL:BOOL=ON") 
+    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_OPENMP:BOOL=OFF") 
+  endif()
 endif()
 
 
@@ -209,7 +219,6 @@ message(DEBUG "Trilinos_CMAKE_CXX_FLAGS = ${Trilinos_CMAKE_CXX_FLAGS}")
 # - Architecture Args.... these will need work.
 set(Trilinos_CMAKE_ARCH_ARGS "")
 if (ENABLE_KOKKOS)
-  list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_SERIAL:BOOL=ON")
   if (ENABLE_KOKKOS_CUDA)
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTPL_ENABLE_CUDA:BOOL=ON")
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_CUDA:BOOL=ON")
@@ -220,8 +229,10 @@ if (ENABLE_KOKKOS)
     # NOTE: This is not yet tested and may need more flags set
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_OPENMP:BOOL=ON")
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTrilinos_ENABLE_OpenMP:BOOL=ON")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_SERIAL:BOOL=OFF")
   else()
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_OPENMP:BOOL=OFF")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_SERIAL:BOOL=ON")
   endif()
 endif()
 
