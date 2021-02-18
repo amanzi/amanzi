@@ -31,13 +31,15 @@ endif()
 set(hypre_blas_opt)
 find_package(BLAS)
 if (BLAS_FOUND)
-  set(hypre_blas_opt "--with-blas")
+  set(hypre_blas_opt "--with-blas"
+                     "--with-blas-lib=${BLAS_LIBRARIES}")
 endif()
 
 set(hypre_lapack_opt)
 find_package(LAPACK)
 if (LAPACK_FOUND)
-  set(hypre_lapack_opt "--with-lapack")
+  set(hypre_lapack_opt "--with-lapack"
+                       "--with-lapack-lib=${LAPACK_LIBRARIES}")
 endif()
 
 set(hypre_kokkos_cuda)
@@ -108,7 +110,7 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
                                        ${hypre_blas_opt}
                                        ${hypre_superlu_opt}
                                        ${hypre_kokkos_cuda}
-                                       CC=${CMAKE_CC_COMPILER}
+                                       CC=${CMAKE_C_COMPILER}
                                        CFLAGS=${Hypre_CC_FLAGS}
                                        CXX=${CMAKE_CXX_COMPILER}
                                        CXXFLAGS=${Hypre_CXX_FLAGS}
