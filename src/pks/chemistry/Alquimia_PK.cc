@@ -290,7 +290,6 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
         << S->time() << vo_->reset() << std::endl << std::endl;
   }
 
-  // S->WriteStatistics(vo_);
 }
 
 
@@ -518,9 +517,10 @@ void Alquimia_PK::CopyToAlquimia(int cell,
 
   state.water_density = fluid_density[0][cell]; 
   state.porosity = porosity[0][cell];
-
+  
   for (int i = 0; i < number_aqueous_components_; i++) {
     state.total_mobile.data[i] = (*aqueous_components)[i][cell];
+
     if (using_sorption_) {
       const Epetra_MultiVector& sorbed = *S_->GetFieldData(total_sorbed_key_)->ViewComponent("cell");
       state.total_immobile.data[i] = sorbed[i][cell];
@@ -584,6 +584,8 @@ void Alquimia_PK::CopyToAlquimia(int cell,
 
   mat_props.volume = mesh_->cell_volume(cell);
   mat_props.saturation = water_saturation[0][cell];
+
+
 
   // sorption isotherms
   if (using_sorption_isotherms_) {
@@ -756,16 +758,20 @@ int Alquimia_PK::AdvanceSingleCell(
   CopyToAlquimia(cell, aqueous_components, 
                  alq_mat_props_, alq_state_, alq_aux_data_);
 
-  // Do the reaction.
-  int num_iterations;
-  bool success = chem_engine_->Advance(dt, alq_mat_props_, alq_state_, 
-                                       alq_aux_data_, alq_aux_output_, num_iterations);
-  if (not success) {
-    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "no convergence in cell: " << mesh_->cell_map(false).GID(cell) << std::endl;
+
+  int num_iterations = 0;
+  if (alq_mat_props_.saturation > 1e-14){
+         
+    // Do the reaction.
+    bool success = chem_engine_->Advance(dt, alq_mat_props_, alq_state_, 
+                                         alq_aux_data_, alq_aux_output_, num_iterations);
+    if (not success) {
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *vo_->os() << "no convergence in cell: " << mesh_->cell_map(false).GID(cell) << std::endl;
+      }
+      return -1;
     }
-    return -1;
   }
 
   // Move the information back into Amanzi's state, updating the given total concentration vector.
@@ -797,6 +803,12 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     prev_time_step_ = dt;
   }
 
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "Starting AdvanceStep ...\n";
+  }
+
+  
   // Get the number of owned (non-ghost) cells for the mesh.
   int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   
@@ -807,6 +819,7 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   S_->GetFieldEvaluator(fluid_den_key_)->HasFieldChanged(S_.ptr(), name_);
   S_->GetFieldEvaluator(saturation_key_)->HasFieldChanged(S_.ptr(), name_);
 
+  
   // Now loop through all the cells and advance the chemistry.
   int convergence_failure = 0;
   for (int cell = 0; cell < num_cells; ++cell) {
@@ -959,6 +972,7 @@ void Alquimia_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<Stat
 {
   if (S_ != S) CopyFieldstoNewState(S);
   saved_time_ = t_new;
+
 }
 
 
