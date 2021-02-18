@@ -125,7 +125,7 @@ TEST(PRECONDITIONERS) {
   }
 };
 
-
+#if 0 
 #ifdef _OPENMP
 TEST(PRECONDITIONERS_OMP) {
   std::cout << "\nComparison of preconditioners for N=125" << std::endl;
@@ -178,7 +178,7 @@ TEST(PRECONDITIONERS_OMP) {
 
 };
 #endif
-
+#endif 
 }
 
 
