@@ -19,6 +19,7 @@ namespace Amanzi {
 IndependentVariableFieldEvaluatorConstant::IndependentVariableFieldEvaluatorConstant(
   Teuchos::ParameterList& plist)
     : IndependentVariableFieldEvaluator(plist),
+      value_(plist.get<double>("value")),
       computed_once_(false)
 {}
 
@@ -64,7 +65,7 @@ IndependentVariableFieldEvaluatorConstant::UpdateField_(
   const Teuchos::Ptr<State>& S)
 {
   if (!computed_once_) {
-    S->GetField(my_key_, my_key_)->Initialize(plist_);
+    S->GetFieldData(my_key_, my_key_)->PutScalar(value_);
     computed_once_ = true;
   }
 }

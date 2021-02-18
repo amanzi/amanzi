@@ -54,6 +54,7 @@ protected:
   virtual void UpdateField_(const Teuchos::Ptr<State>& S) override;
 
  protected:
+  double value_;
   bool computed_once_;
 
  private:

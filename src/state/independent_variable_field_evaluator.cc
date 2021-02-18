@@ -64,16 +64,13 @@ void IndependentVariableFieldEvaluator::operator=(const FieldEvaluator& other) {
 // ---------------------------------------------------------------------------
 void IndependentVariableFieldEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   // Require the field and claim ownership.
-  const auto& fac = S->RequireField(my_key_, my_key_);
-
-  // set not owned -- this allows subsequent calls to add to my components
-  fac->SetOwned(false);
-
+  S->RequireField(my_key_, my_key_);
   // check plist for vis or checkpointing control
   bool io_my_key = plist_.get<bool>("visualize", true);
   S->GetField(my_key_, my_key_)->set_io_vis(io_my_key);
   bool checkpoint_my_key = plist_.get<bool>("checkpoint", false);
   S->GetField(my_key_, my_key_)->set_io_checkpoint(checkpoint_my_key);
+  
 }
 
 // ---------------------------------------------------------------------------
