@@ -2625,7 +2625,6 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         
       int inode;
       for (inode = 0; inode < nnode; inode++) {
-                  
         node_get_coordinates(inode, &vpnt);                  
         double dist2 = (vpnt-rgnpnt)*(vpnt-rgnpnt);
  
@@ -2637,8 +2636,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         }
       }
 
-      Entity_ID_List cells, cells1;
-
+      Entity_ID_List cells;
       node_get_cells(minnode, Parallel_type::ALL, &cells);
       
       int ncells = cells.size();
@@ -2648,6 +2646,14 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         // Check if point is contained in cell            
         if (point_in_cell(rgnpnt, icell))
           MSet_Add(mset, cell_id_to_handle[icell]);
+      }
+
+      // finally check all cells, typical for anisotropic meshes
+      if (MSet_Num_Entries(mset) == 0) {
+        int ncells_wghost = num_entities(CELL, Parallel_type::ALL);
+        for (int c = 0; c < ncells_wghost; ++c)
+          if (point_in_cell(rgnpnt, c)) 
+            MSet_Add(mset, cell_id_to_handle[c]);
       }
 
     }
