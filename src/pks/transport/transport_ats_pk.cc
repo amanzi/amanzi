@@ -253,8 +253,9 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
 
   //create copies
   S->RequireFieldCopy(tcc_key_, "subcycling", name_);
-  tcc_tmp = S->GetField(tcc_key_, name_)->GetCopy("subcycling", name_)->GetFieldData();
+  tcc_tmp = S->GetFieldCopyData(tcc_key_,"subcycling", name_);
 
+  
   S->RequireFieldCopy(saturation_key_, "subcycle_start", name_);
   ws_subcycle_start = S->GetFieldCopyData(saturation_key_, "subcycle_start",name_)
     ->ViewComponent("cell");
@@ -294,7 +295,8 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
   mol_dens_prev_ = S->GetFieldData(molar_density_key_)->ViewComponent("cell", false);
 
   tcc = S->GetFieldData(tcc_key_, name_);
-
+  *tcc_tmp = *tcc;
+  
   flux_ = S->GetFieldData(flux_key_)->ViewComponent("face", true);
   solid_qty_ = S->GetFieldData(solid_residue_mass_key_, name_)->ViewComponent("cell", false);
 
@@ -324,6 +326,7 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
     Teuchos::RCP<Teuchos::ParameterList>
         mdm_list = Teuchos::sublist(plist_, "material properties");
     mdm_ = CreateMDMPartition(mesh_, mdm_list, flag_dispersion_);
+    //if (flag_dispersion_) CalculateAxiSymmetryDirection(S);
     if (flag_dispersion_) CalculateAxiSymmetryDirection();
   }
 
@@ -495,6 +498,7 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
     *vo_->os() << vo_->color("green") << "Initalization of PK is complete."
                << vo_->reset() << std::endl << std::endl;
   }
+
 }
 
 
@@ -729,6 +733,18 @@ bool Transport_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
   mol_dens_ = S_next_->GetFieldData(molar_density_key_)->ViewComponent("cell", false);
   solid_qty_ = S_next_->GetFieldData(solid_residue_mass_key_, name_)->ViewComponent("cell", false);
 
+  if (plist_->sublist("source terms").isSublist("geochemical")){
+    for (auto& src : srcs_) {
+      if (src->name() == "alquimia source"){
+        auto mass_src = S_next_->GetFieldData(mass_src_key_)->ViewComponent("cell",false);
+        Teuchos::RCP<TransportSourceFunction_Alquimia_Units> src_alq =
+          Teuchos::rcp_dynamic_cast<TransportSourceFunction_Alquimia_Units>(src); 
+        src_alq->set_conversion(-1000, mass_src, false);
+      }
+    }
+  }
+
+    
   // We use original tcc and make a copy of it later if needed.
   tcc = S_inter_->GetFieldData(tcc_key_, name_);
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
@@ -1158,6 +1174,7 @@ void Transport_ATS::AddMultiscalePorosity_(
 void Transport_ATS::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   Teuchos::RCP<CompositeVector> tcc_vec_S = S->GetFieldData(tcc_key_, name_);
+        
   *tcc_vec_S = *tcc_tmp;
   InitializeFieldFromField_(prev_saturation_key_, saturation_key_, S.ptr(), false, true);
   ChangedSolutionPK(S.ptr());
@@ -1166,8 +1183,9 @@ void Transport_ATS::CommitStep(double t_old, double t_new, const Teuchos::RCP<St
   //
   // WHY?  is this required for subcycling?  this used to be S, which was a
   // bug as it duplicates the above line of code. --etc
-  Teuchos::RCP<CompositeVector> tcc_vec_Sold = S_->GetFieldData(tcc_key_, name_);
-  *tcc_vec_Sold = *tcc_tmp;
+  //Teuchos::RCP<CompositeVector> tcc_vec_Sold = S_->GetFieldData(tcc_key_, name_);
+  //*tcc_vec_Sold = *tcc_tmp;
+  //WriteStateStatistics(*S, *vo_); 
 }
 
 
@@ -1604,6 +1622,8 @@ void Transport_ATS::ComputeAddSourceTerms(double tp, double dtp,
 
         int imap = i;
         if (num_vectors == 1) imap = 0;
+
+        std::cout<<"values "<<values[k]<<"\n";
 
         double value = mesh_->cell_volume(c) * values[k];
         cons_qty[imap][c] += dtp * value;
