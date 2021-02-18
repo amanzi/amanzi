@@ -744,7 +744,19 @@ bool Transport_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
     }
   }
 
+
+  if (plist_->sublist("boundary conditions").isSublist("geochemical")){
+    for (auto& bc : bcs_){
+      if (bc->name() == "alquimia bc"){
+        Teuchos::RCP<TransportBoundaryFunction_Alquimia_Units>  bc_alq =
+          Teuchos::rcp_dynamic_cast<TransportBoundaryFunction_Alquimia_Units>(bc);
+        bc_alq->set_conversion(1000.0, mol_dens_, true);
+      }
+    }
+  }
     
+
+  
   // We use original tcc and make a copy of it later if needed.
   tcc = S_inter_->GetFieldData(tcc_key_, name_);
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
