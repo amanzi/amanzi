@@ -184,8 +184,7 @@ class State {
 
   // Alias a mesh to an existing mesh
   void AliasMesh(const Key& target, const Key& alias);
-  bool IsAliasedMesh(const Key& alias) const;
-  bool IsAliasedMesh(const Key& target, const Key& alias) const;
+  bool IsAliasedMesh(const Key& key) const;
 
   // Remove a mesh.
   void RemoveMesh(const Key& key);
