@@ -231,7 +231,9 @@ TEST(Verify_Mesh_and_Operators) {
       plist->sublist("preconditioners").sublist(prec_solver).print(std::cout, 0, true, false);
   }
 
+  auto start = omp_get_wtime();
   test(prec_solver, "Dirichlet", mesh_file, d, n,
        scheme, symmetric, scalar_coef, 10 * tol, order, ana, 1, plist);
+  printf("Compute: %gs\n", omp_get_wtime() - start);
 }
 
