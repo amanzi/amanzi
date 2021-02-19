@@ -137,7 +137,7 @@ void open_data_file(std::string meshfile,
 }
 
 
-void open_data_file(const AmanziMesh::Mesh &mesh, std::string filename) 
+void open_data_file(const AmanziMesh::Mesh& mesh, const std::string& filename) 
 {
   write_mesh_to_file_(mesh, filename);
 }

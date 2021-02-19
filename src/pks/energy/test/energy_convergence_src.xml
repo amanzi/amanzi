@@ -94,12 +94,23 @@
       <ParameterList name="operators">
 	<Parameter name="include enthalpy in preconditioner" type="bool" value="true"/>
 	<ParameterList name="diffusion operator">
+	  <ParameterList name="conductivity">
+            <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
+            <Parameter name="upwind frequency" type="string" value="every timestep"/>
+            <ParameterList name="upwind parameters">
+              <Parameter name="tolerance" type="double" value="1e-12"/>
+              <Parameter name="method" type="string" value="cell-based"/>
+              <Parameter name="polynomial order" type="int" value="1"/>
+              <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
+            </ParameterList>
+          </ParameterList>
+          
 	  <ParameterList name="matrix">
 	    <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
 	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
 	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+	    <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
 	    <Parameter name="gravity" type="bool" value="false"/>
 	  </ParameterList>
 	  <ParameterList name="preconditioner">
@@ -107,7 +118,7 @@
 	    <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
 	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+	    <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
 	    <Parameter name="gravity" type="bool" value="false"/>
 	  </ParameterList>
 	</ParameterList>
@@ -126,6 +137,9 @@
 
 	<Parameter name="time integration method" type="string" value="BDF1"/>
 	<ParameterList name="BDF1">
+	  <ParameterList name="verbose object">
+	    <Parameter name="verbosity level" type="string" value="high"/>
+	  </ParameterList>
 	  <Parameter name="timestep controller type" type="string" value="standard"/>
 	  <ParameterList name="timestep controller standard parameters">
 	    <Parameter name="min iterations" type="int" value="8"/>
@@ -138,7 +152,7 @@
 
 	  <Parameter name="solver type" type="string" value="nka"/>
 	  <ParameterList name="nka parameters">
-	    <Parameter name="nonlinear tolerance" type="double" value="1e-5"/>
+	    <Parameter name="nonlinear tolerance" type="double" value="1e-7"/>
 	    <Parameter name="diverged tolerance" type="double" value="1e+10"/>
 	    <Parameter name="limit iterations" type="int" value="20"/>
 	    <Parameter name="max du growth factor" type="double" value="1e+5"/>
@@ -147,7 +161,7 @@
 	    <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
 	    <Parameter name="modify correction" type="bool" value="false"/>
 	    <ParameterList name="verbose object">
-	      <Parameter name="verbosity level" type="string" value="none"/>
+	      <Parameter name="verbosity level" type="string" value="high"/>
 	    </ParameterList>
 	  </ParameterList>
 
@@ -314,8 +328,8 @@
             <Parameter name="regions" type="Array(string)" value="{All}"/>
             <ParameterList name="IEM parameters">
               <Parameter name="iem type" type="string" value="linear"/>
-              <Parameter name="molar heat capacity" type="double" value="0.0"/>
-              <Parameter name="reference temperature" type="double" value="1.0"/>
+              <Parameter name="molar heat capacity" type="double" value="1.0"/>
+              <Parameter name="reference temperature" type="double" value="0.0"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>

@@ -99,21 +99,16 @@ TEST(ENERGY_CONVERGENCE) {
   int nmeshes = plist->get<int>("number of meshes", 1);
   std::vector<double> h, error;
 
-  int nx(20), ny(5);
-  double dt(0.04);
-  for (int n = 0; n < nmeshes; n++, nx *= 2) {
+  int nx(14), ny(7);
+  double dt(0.05);
+  for (int n = 0; n < nmeshes; n++, nx *= 1.8, ny *= 1.8) {
     dt /= 2.0;
 
     Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
-    Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
+    auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
     
-    Preference pref;
-    pref.clear();
-    pref.push_back(Framework::MSTK);
-
-    MeshFactory meshfactory(comm,gm);
-    meshfactory.set_preference(pref);
+    MeshFactory meshfactory(comm, gm);
+    meshfactory.set_preference(Preference({Framework::MSTK}));
     Teuchos::RCP<const Mesh> mesh;
     // if (n == 0)
     //   mesh = meshfactory.create("test/random_mesh1.exo");
@@ -136,7 +131,7 @@ TEST(ENERGY_CONVERGENCE) {
     Teuchos::ParameterList ev_list;
     ev_list.set<std::string>("enthalpy key", "enthalpy")
            .set<bool>("include work term", false);
-    S->RequireField("enthalpy")->SetMesh(mesh)->SetGhosted()
+    S->RequireField("enthalpy")->SetMesh(mesh)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
     auto enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
@@ -188,11 +183,11 @@ TEST(ENERGY_CONVERGENCE) {
     h.push_back(1.0 / nx);
     error.push_back(l2_err);
 
-    printf("mesh=%d bdf1_steps=%3d  L2_temp_err=%7.3e L2_temp=%7.3e\n", n, itrs, l2_err, l2_norm);
+    printf("nx=%2d ny=%2d  bdf1_steps=%3d  errL2(T)=%7.3e L2(T)=%5.3f\n", nx, ny, itrs, l2_err, l2_norm);
     CHECK(l2_err < 8e-1);
 
     // save solution
-    GMV::open_data_file(*mesh, (std::string)"energy.gmv");
+    GMV::open_data_file(*mesh, "energy.gmv");
     GMV::start_data();
     GMV::write_cell_data(*temp->ViewComponent("cell"), 0, "temperature");
     GMV::close_data_file();
@@ -200,8 +195,8 @@ TEST(ENERGY_CONVERGENCE) {
 
   // check convergence rate
   double l2_rate = Amanzi::Utils::bestLSfit(h, error);
-  printf("convergence rate: %10.2f\n", l2_rate);
-  CHECK(l2_rate > 0.85);
+  printf("convergence rate: %8.2f\n", l2_rate);
+  CHECK(l2_rate > 0.84);
 }
 
 
@@ -226,7 +221,7 @@ TEST(ENERGY_PRECONDITIONER) {
     MeshFactory meshfactory(comm,gm);
     meshfactory.set_preference(pref);
     Teuchos::RCP<const Mesh> mesh;
-    mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 30, 30);
+    mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 15, 15);
     // mesh = meshfactory.create("test/random_mesh1.exo");
 
     // create a simple state and populate it

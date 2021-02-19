@@ -496,6 +496,52 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(
 
 
 /* ******************************************************************
+* Enforce essential boundary conditions.
+****************************************************************** */
+void PDE_HelperDiscretization::EnforceBCs(CompositeVector& field)
+{
+  for (auto bc : bcs_trial_) {
+    std::string name = entity_kind_string(bc->kind());
+    if (field.HasComponent(name)) {
+      auto& field_comp = *field.ViewComponent(name, true);
+
+      const std::vector<int>& bc_model = bc->bc_model();
+
+      if (bc->type() == WhetStone::DOF_Type::SCALAR ||
+          bc->type() == WhetStone::DOF_Type::NORMAL_COMPONENT) {
+        const auto& bc_value = bc->bc_value();
+        for (int i = 0; i < bc_model.size(); ++i) {
+          if (bc_model[i] == OPERATOR_BC_DIRICHLET) {
+            field_comp[0][i] = bc_value[i];
+          }
+        }
+      }
+      else if (bc->type() == WhetStone::DOF_Type::VECTOR) {
+        const auto& bc_value = bc->bc_value_vector();
+        int n = bc_value[0].size();
+        for (int i = 0; i < bc_model.size(); ++i) {
+          if (bc_model[i] == OPERATOR_BC_DIRICHLET) {
+            for (int k = 0; k < n; ++k)
+              field_comp[k][i] = bc_value[i][k];
+          }
+        }
+      }
+      else if (bc->type() == WhetStone::DOF_Type::POINT) {
+        const auto& bc_value = bc->bc_value_point();
+        int n = bc_value[0].dim();
+        for (int i = 0; i < bc_model.size(); ++i) {
+          if (bc_model[i] == OPERATOR_BC_DIRICHLET) {
+            for (int k = 0; k < n; ++k)
+              field_comp[k][i] = bc_value[i][k];
+          }
+        }
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
 * Composite vector space with one face component having multiple DOFs
 * and one regular cell component
 ****************************************************************** */

@@ -435,8 +435,14 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
     op_mag->ModifyMatrices(E, B, dt);
     op_mag->ApplyBCs(true, true, true);
 
+    // extension for AMS solver
+    auto& aux = plist.sublist("preconditioners").sublist("Hypre AMS").sublist("ams parameters");
+    aux.set<Teuchos::RCP<Epetra_MultiVector> >("graph coordinates", op_mag->GraphGeometry());
+    aux.set<Teuchos::RCP<Epetra_CrsMatrix> >("discrete gradient operator", op_mag->GradientOperator());
+
     // Solve the problem.
-    global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "silent", plist.sublist("solvers"));
+    global_op->set_inverse_parameters("Hypre AMS", plist.sublist("preconditioners"),
+                                      "GMRES", plist.sublist("solvers"));
     global_op->InitializeInverse();
     global_op->ComputeInverse();
 

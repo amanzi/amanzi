@@ -172,7 +172,14 @@ add_amanzi_library(operators
                           RemapDG_Helper.cc RemapUtils.cc
                           HEADERS ${operators_inc_files}
                    LINK_LIBS geometry mesh mesh_factory error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})                          
+# Add useful utility
+set(amanzi_libs geometry atk mesh mesh_factory mesh_logical data_structures operators whetstone output atk)
 
+add_amanzi_executable(verify_operators
+                      SOURCE test/verify_operators.cc
+                      LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                      OUTPUT_NAME verify_operators
+                      OUTPUT_DIRECTORY ${OPERATORS_BINARY_DIR}/test)
 
 if (BUILD_TESTS)
     # Add UnitTest includes
@@ -186,14 +193,11 @@ if (BUILD_TESTS)
         file(COPY ${DataFiles} DESTINATION ${OPERATORS_BINARY_DIR}/test/)
     endif()
 
-    set(amanzi_libs geometry atk mesh mesh_factory mesh_logical data_structures operators whetstone output atk)
-
     # Tests: diffusion
     add_amanzi_test(operators_utils operators_utils
                     KIND unit
                     SOURCE test/Main.cc test/operator_utils.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
 
     add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
                     KIND unit
@@ -240,6 +244,14 @@ if (BUILD_TESTS)
 
     add_amanzi_test(operators_diffusion_consistent_face_3pe operators_diffusion_consistent_face 
                     NPROCS 3 KIND unit)
+
+    add_amanzi_test(verify_operators_iterative verify_operators
+                    KIND unit
+                    "Hypre: AMG" structured3d 10 mfd 1e-10)
+
+    add_amanzi_test(verify_operators_direct verify_operators
+                    KIND unit
+                    "Amesos2: Basker" structured3d 10 fv 1e-10)
 
     add_amanzi_test(operators_diffusion_dg operators_diffusion_dg
                     KIND unit
