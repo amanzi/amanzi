@@ -23,7 +23,7 @@ using namespace boost;
 namespace Amanzi
 {
 
-  MeshAudit:: MeshAudit(Teuchos::RCP<AmanziMesh::Mesh> &mesh_, std::ostream& os_) :
+  MeshAudit:: MeshAudit(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh_, std::ostream& os_) :
       mesh(mesh_),
       comm_(mesh_->get_comm()),
       MyPID(mesh_->get_comm()->MyPID()),

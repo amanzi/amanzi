@@ -426,8 +426,8 @@ void WalkaboutCheckpoint::WriteDataFile(
           strcpy(tmp_names[i], names[i].c_str());
         }
 
-        checkpoint_output_->writeAttrInt(tmp_ids, nnames, "material_labels");
-        checkpoint_output_->writeDataString(tmp_names, nnames, "material_names");
+        output_["domain"]->writeAttrInt(tmp_ids, nnames, "material_labels");
+        output_["domain"]->writeDataString(tmp_names, nnames, "material_names");
 
         for (int i = 0; i < nnames; ++i) free(tmp_names[i]);
         free(tmp_names);
@@ -436,7 +436,7 @@ void WalkaboutCheckpoint::WriteDataFile(
     }
 
     // timestamp and cycle number 
-    WriteAttributes(S->time(), S->cycle());    
+    WriteAttributes(mesh.get_comm()->NumProc(), S->time(), S->cycle());    
     Finalize();
   }
 }

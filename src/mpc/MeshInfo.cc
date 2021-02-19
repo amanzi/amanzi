@@ -9,12 +9,14 @@
 
 namespace Amanzi {
 
-void MeshInfo::WriteMeshCentroids(const AmanziMesh::Mesh& mesh) {
+void MeshInfo::WriteMeshCentroids(std::string domain, const AmanziMesh::Mesh& mesh) {
 
   std::string filename = plist_.get<std::string>("filename", "meshinfo");
 
-  checkpoint_output_->createDataFile(filename);
-  checkpoint_output_->open_h5file();
+  if (old_) domain = "domain";
+  AMANZI_ASSERT(output_.count(domain));
+  output_.at(domain)->createDataFile(filename);
+  output_.at(domain)->open_h5file();
 
   int ncells_owned = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int n_glob;
@@ -42,7 +44,7 @@ void MeshInfo::WriteMeshCentroids(const AmanziMesh::Mesh& mesh) {
 
   WriteVector(*aux, name);
 
-  checkpoint_output_->close_h5file(); 
+  output_.at(domain)->close_h5file(); 
 }
 
 } // namespace Amanzi

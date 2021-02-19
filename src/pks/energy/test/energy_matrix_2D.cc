@@ -139,14 +139,14 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   CompositeVector solution(op->DomainMap());
 
   S->GetFieldEvaluator("energy")->HasFieldDerivativeChanged(S.ptr(), passwd, "temperature");
-  const CompositeVector& dEdT = *S->GetFieldData("denergy_dtemperature");
+  const CompositeVector& dEdT = *S->GetFieldData(Keys::getDerivKey("energy", "temperature"));
 
   op2->AddAccumulationDelta(solution, dEdT, dEdT, dT, "cell");
 
   // add advection term: u = q_l n_l c_v
   // we do not upwind n_l c_v  in this test.
   S->GetFieldEvaluator("internal_energy_liquid")->HasFieldDerivativeChanged(S.ptr(), passwd, "temperature");
-  const Epetra_MultiVector& c_v = *S->GetFieldData("dinternal_energy_liquid_dtemperature")
+  const Epetra_MultiVector& c_v = *S->GetFieldData(Keys::getDerivKey("internal_energy_liquid", "temperature"))
       ->ViewComponent("cell", true);
   const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell", true);
 

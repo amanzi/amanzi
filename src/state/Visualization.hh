@@ -92,16 +92,16 @@ class Visualization : public IOEvent {
   // public interface for coordinator clients
   void CreateFiles(bool include_io_set=true);
   void CreateTimestep(double time, int cycle, const std::string& tag);
-  void FinalizeTimestep() const;
+  virtual void FinalizeTimestep() const;
 
   // public interface for data clients
-  void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names ) const;
-  void WriteVector(const Epetra_Vector& vec, const std::string& name ) const;
-  void WriteRegions();
-  void WritePartition();
+  virtual void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names ) const;
+  virtual void WriteVector(const Epetra_Vector& vec, const std::string& name ) const;
+  virtual void WriteRegions();
+  virtual void WritePartition();
 
  protected:
-  void ReadParameters_();
+  virtual void ReadParameters_();
 
   std::string my_units_;
   std::string name_, tag_;
