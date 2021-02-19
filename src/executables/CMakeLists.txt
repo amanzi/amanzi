@@ -44,6 +44,9 @@ include_directories(${ATS_SOURCE_DIR}/src/operators/upwinding)
 include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
 include_directories(${ATS_SOURCE_DIR}/src/operators/deformation)
 
+include_directories(${AMANZI_BINARY_DIR}) # required to pick up amanzi_version.hh
+include_directories(${ATS_BINARY_DIR})
+
 if (ENABLE_FATES)
   link_directories(/nh/u/dasvyat/Coastal/ats-fates-new/install/lib/)
   link_directories(/nh/u/dasvyat/Coastal/ParallelIO/install/lib/)

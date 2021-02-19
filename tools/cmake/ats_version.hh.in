@@ -1,0 +1,15 @@
+/*
+
+   ATS Version Defines
+
+*/
+
+#ifndef ATS_VERSION_HH_
+#define ATS_VERSION_HH_
+
+#define ATS_VERSION @ATS_VERSION@
+
+#define ATS_GIT_BRANCH      @ATS_GIT_BRANCH@
+#define ATS_GIT_GLOBAL_HASH @ATS_GIT_GLOBAL_HASH@
+
+#endif
