@@ -126,7 +126,7 @@ void IndependentVariableFieldEvaluatorFromFile::UpdateField_(const Teuchos::Ptr<
     val_after_ = Teuchos::rcp(new CompositeVector(*cv));
     LoadFile_(0);
   }
-  
+
   double t = S->time();
   if (time_func_ != Teuchos::null) {
     std::vector<double> point(1,t);
@@ -169,8 +169,8 @@ void IndependentVariableFieldEvaluatorFromFile::UpdateField_(const Teuchos::Ptr<
   } else if (t == t_after_) {
     // at the end of the interval
     AMANZI_ASSERT(val_after_ != Teuchos::null);
-    *cv = *val_after_;        
-        
+    *cv = *val_after_;
+
   } else {
     // to the right of the interval -- advance the interval
     while (t > t_after_) {

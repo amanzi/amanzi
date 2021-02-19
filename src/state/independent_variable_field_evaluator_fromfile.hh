@@ -43,7 +43,7 @@ class IndependentVariableFieldEvaluatorFromFile :
   void LoadFile_(int i);
 
   void Interpolate_(double time, const Teuchos::Ptr<CompositeVector>& v);
-  
+
  protected:
   double t_before_, t_after_;
   Teuchos::RCP<CompositeVector> val_before_, val_after_;
@@ -58,7 +58,7 @@ class IndependentVariableFieldEvaluatorFromFile :
   int ndofs_;
 
   Teuchos::RCP<Function> time_func_;
-  
+
  private:
   static Utils::RegisteredFactory<FieldEvaluator,IndependentVariableFieldEvaluatorFromFile> fac_;
 };
