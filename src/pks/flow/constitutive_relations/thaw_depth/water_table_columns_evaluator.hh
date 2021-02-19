@@ -39,7 +39,7 @@ protected:
 
 
   bool updated_once_;
-  Key temp_key_, sat_key_;
+  Key temp_key_, sat_key_, pd_key_;
   Key domain_;
   double trans_width_;
 private:

@@ -39,7 +39,7 @@ protected:
 
 
   bool updated_once_;
-  bool volumetric_wc_;
+  bool volumetric_wc_,average_sat_;
   Key temp_key_, cv_key_, sat_key_, por_key_;
   Key domain_;
   double trans_width_;

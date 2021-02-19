@@ -13,9 +13,9 @@ See additional documentation in the base class src/pks/mpc/MPC.hh
 ------------------------------------------------------------------------- */
 
 #include "weak_mpc.hh"
+#include "mpc_weak_domain_decomposition.hh"
 
 namespace Amanzi {
-
 RegisteredPKFactory<WeakMPC> WeakMPC::reg_("weak MPC");
 
 } // namespace

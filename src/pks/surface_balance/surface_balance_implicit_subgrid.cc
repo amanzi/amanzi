@@ -34,8 +34,6 @@ ImplicitSubgrid::ImplicitSubgrid(Teuchos::ParameterList& pk_tree,
   if (!plist_->isParameter("conserved quantity key suffix"))
     plist_->set("conserved quantity key suffix", "snow_water_equivalent");
 
-  Teuchos::ParameterList& FElist = S->FEList();
-
   // set up keys
   Key domain_surf;
   if (domain_ == "snow") {
@@ -46,26 +44,22 @@ ImplicitSubgrid::ImplicitSubgrid(Teuchos::ParameterList& pk_tree,
     Errors::Message message("SurfaceBalance::ImplicitSubgrid PK cannot deduce surface domain name.");
     Exceptions::amanzi_throw(message);
   }
-  
+
   snow_dens_key_ = Keys::readKey(*plist_, domain_, "snow density", "density");
   snow_age_key_ = Keys::readKey(*plist_, domain_, "snow age", "age");
   new_snow_key_ = Keys::readKey(*plist_, domain_, "new snow source", "source");
   area_frac_key_ = Keys::readKey(*plist_, domain_surf, "area fractions", "fractional_areas");
   snow_death_rate_key_ = Keys::readKey(*plist_, domain_, "snow death rate", "death_rate");
-  
+
   // set up additional primary variables -- this is very hacky, and can become an evaluator in new-state
   // -- snow density
-  Teuchos::ParameterList& snow_dens_sublist = FElist.sublist(snow_dens_key_);
-  snow_dens_sublist.set("evaluator name", snow_dens_key_);
+  Teuchos::ParameterList& snow_dens_sublist = S->GetEvaluatorList(snow_dens_key_);
   snow_dens_sublist.set("field evaluator type", "primary variable");
-  S->FEList().set(snow_dens_key_, snow_dens_sublist);
 
   // -- snow death rate
-  Teuchos::ParameterList& snow_death_rate_sublist = FElist.sublist(snow_death_rate_key_);
-  snow_death_rate_sublist.set("evaluator name", snow_death_rate_key_);
+  Teuchos::ParameterList& snow_death_rate_sublist = S->GetEvaluatorList(snow_death_rate_key_);
   snow_death_rate_sublist.set("field evaluator type", "primary variable");
-  S->FEList().set(snow_death_rate_key_, snow_death_rate_sublist);
-  
+
   // set the error tolerance for snow
   plist_->set("absolute error tolerance", 0.01);
 }
@@ -80,7 +74,7 @@ ImplicitSubgrid::Setup(const Teuchos::Ptr<State>& S) {
   S->RequireField(new_snow_key_)->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(new_snow_key_);
-  
+
   // requirements: other primary variables
   Teuchos::RCP<FieldEvaluator> fm;
   S->RequireField(snow_dens_key_, name_)->SetMesh(mesh_)
@@ -102,7 +96,7 @@ ImplicitSubgrid::Setup(const Teuchos::Ptr<State>& S) {
     Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
     Exceptions::amanzi_throw(message);
   }
-  
+
   // requirements: internally we must track snow age, this should become an
   // evaluator with snow_density.
   S->RequireField(snow_age_key_, name_)->SetMesh(mesh_)
@@ -125,7 +119,7 @@ ImplicitSubgrid::Initialize(const Teuchos::Ptr<State>& S) {
   // initialize snow density, age
   AMANZI_ASSERT(plist_->isSublist("initial condition"));
   Teuchos::ParameterList& ic_list = plist_->sublist("initial condition");
-  
+
   if (!S->GetField(snow_dens_key_)->initialized()) {
     if (ic_list.isParameter("restart file")) {
       // initialize density, age from restart file
@@ -221,9 +215,9 @@ ImplicitSubgrid::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<Tre
     }
   }
   pvfe_snow_death_rate_->SetFieldAsChanged(S_next_.ptr());
-  
+
   // update the residual
-  SurfaceBalanceBase::FunctionalResidual(t_old, t_new, u_old, u_new, g);  
+  SurfaceBalanceBase::FunctionalResidual(t_old, t_new, u_old, u_new, g);
 
   // now fill the role of age/density evaluator, as these depend upon old and new values
   const auto& cell_vol = *S_next_->GetFieldData(cell_vol_key_)->ViewComponent("cell",false);
@@ -233,7 +227,7 @@ ImplicitSubgrid::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<Tre
 
   const auto& snow_dens_old = *S_inter_->GetFieldData(snow_dens_key_)->ViewComponent("cell",false);
   auto& snow_dens_new = *S_next_->GetFieldData(snow_dens_key_, name_)->ViewComponent("cell",false);
-  
+
   S_next_->GetFieldEvaluator(new_snow_key_)->HasFieldChanged(S_next_.ptr(), name_);
   const auto& new_snow = *S_next_->GetFieldData(new_snow_key_)->ViewComponent("cell",false);
 
@@ -255,7 +249,7 @@ ImplicitSubgrid::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<Tre
       // age the old snow
       double age_settled = snow_age_old[0][c] + dt_days;
       double dens_settled = params.density_freshsnow * std::max(std::pow(age_settled, 0.3), 1.);
-      
+
       // Match frost age with assigned density -- Calculate which day frost
       // density matched snow defermation function from (Martinec, 1977)
       //double age_frost = std::pow((params.density_frost / params.density_freshsnow),

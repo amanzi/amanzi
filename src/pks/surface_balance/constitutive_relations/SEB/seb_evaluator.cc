@@ -314,7 +314,7 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       ss_energy_source[0][cells[0]] += area_fracs[0][c] * ss_energy_source_l;
 
       snow_source[0][c] += area_fracs[0][c] * flux.M_snow;
-      new_snow[0][c] += met.Ps;
+      new_snow[0][c] += area_fracs[0][c] * met.Ps;
 
       if (vo_->os_OK(Teuchos::VERB_EXTREME))
         *vo_->os() << "CELL " << c << " NO_SNOW"

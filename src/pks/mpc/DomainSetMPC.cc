@@ -35,8 +35,8 @@ DomainSetMPC::DomainSetMPC(Teuchos::ParameterList& pk_tree,
 
   // add for the various sub-pks based on IDs
   auto ds = S->GetDomainSet(std::get<0>(triple));
-  for (auto& name_id : *ds) {
-    subpks.push_back(Keys::getKey(name_id.first, std::get<2>(triple)));
+  for (auto& subdomain : *ds) {
+    subpks.push_back(Keys::getKey(subdomain, std::get<2>(triple)));
   }
   this->plist_->template set("PKs order", subpks);
 
