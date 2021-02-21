@@ -164,7 +164,7 @@ MPCPermafrost::Setup(const Teuchos::Ptr<State>& S) {
 
       // Create the block for derivatives of mass conservation with respect to temperature
       // -- derivatives of kr with respect to temperature
-      if (!plist_->get<bool>("supress Jacobian terms: d div surface q / dT", false) &&
+      if (!plist_->get<bool>("supress Jacobian terms: d div surface q / dT", true) &&
           pks_list_->sublist(names[2]).isSublist("diffusion preconditioner") &&
           pks_list_->sublist(names[2]).sublist("diffusion preconditioner").isParameter("discretization primary")) {
         // note the diffusion list may not exist if it is not a lateral flow problem (e.g. surface balance only)

@@ -209,6 +209,12 @@ capability is experimental and has not been well tested.
   - if :math:`q \cdot \hat{n} < q_0`, then :math:`q = q_0`
   - if :math:`p > p_{atm}`, then :math:`p = p_{atm}`
 
+Note the condition also accepts a parameter:
+
+* `"explicit time index`" ``[bool]`` **false** If true, the _type_ of the BC is
+  evaluated at the old time, keeping it fixed while the nonlinear solve
+  iterates.
+
 Example: seepage with infiltration
 
 .. code-block:: xml
@@ -216,6 +222,7 @@ Example: seepage with infiltration
  <ParameterList name="boundary conditions">
    <ParameterList name="seepage face with infiltration">
      <ParameterList name="BC west">
+       <Parameter name="explicit time index" type="bool" value="true"/>
        <Parameter name="regions" type="Array(string)" value="{west}"/>
        <ParameterList name="outward mass flux">
          <ParameterList name="function-constant">
@@ -376,8 +383,11 @@ public:
     return CreateWithFunction("seepage face pressure", "boundary pressure");
   }
 
-  Teuchos::RCP<Functions::BoundaryFunction> CreateSeepageFacePressureWithInfiltration() const {
-    return CreateWithFunction("seepage face with infiltration", "outward mass flux");
+  std::pair<bool, Teuchos::RCP<Functions::BoundaryFunction>>
+  CreateSeepageFacePressureWithInfiltration() {
+    bool is_explicit = CheckExplicitFlag("seepage face with infiltration");
+    auto bfunc = CreateWithFunction("seepage face with infiltration", "outward mass flux");
+    return std::make_pair(is_explicit, bfunc);
   }
 
   Teuchos::RCP<Functions::BoundaryFunction> CreateCriticalDepth() const {

@@ -90,32 +90,34 @@ public:
      : mesh_(mesh), plist_(plist) {}
 
   Teuchos::RCP<Functions::BoundaryFunction>
-  CreateWithFunction(std::string list_name, std::string function_name) const;
+  CreateWithFunction(const std::string& list_name, const std::string& function_name) const;
 
   Teuchos::RCP<Functions::BoundaryFunction>
-  CreateWithoutFunction(std::string list_name) const;
+  CreateWithoutFunction(const std::string& list_name) const;
 
   Teuchos::RCP<Functions::DynamicBoundaryFunction>
-  CreateDynamicFunction(std::string list_name) const;
+  CreateDynamicFunction(const std::string& list_name) const;
+
+  bool CheckExplicitFlag(const std::string& list_name);
 
  private:
 
   void ProcessListWithFunction_(const Teuchos::ParameterList&,
-          std::string function_name,
+          const std::string& function_name,
           const Teuchos::RCP<Functions::BoundaryFunction>&) const;
 
   void ProcessListWithoutFunction_(const Teuchos::ParameterList&,
           const Teuchos::RCP<Functions::BoundaryFunction>&) const;
 
   void ProcessSpecWithFunction_(const Teuchos::ParameterList&,
-          std::string function_name,
+          const std::string& function_name,
           const Teuchos::RCP<Functions::BoundaryFunction>&) const;
 
   void ProcessSpecWithoutFunction_(const Teuchos::ParameterList&,
           const Teuchos::RCP<Functions::BoundaryFunction>&) const;
 
   void ProcessSpecWithFunctionRegions_(const Teuchos::ParameterList& list,
-                                       std::string function_name,
+                                       const std::string& function_name,
                                        std::vector<std::string>& regions,
                                        const Teuchos::RCP<Functions::BoundaryFunction>& bc) const;
 
