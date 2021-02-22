@@ -105,14 +105,13 @@ double SaturatedVaporPressureELM(double temp)
 {
   // Saturated vapor pressure in [KPa] from CLM technical note
   double T = temp - 273.15;
-  double coef[9];
-  if (T < 0) {
-    coef = {6.1123516, 5.03109514e-1, 1.88369801e-2, 4.20547422e-4, 6.14396778e-6,
+  double coef_w[9] = {6.1123516, 5.03109514e-1, 1.88369801e-2, 4.20547422e-4, 6.14396778e-6,
     6.02780717e-8, 3.87940929e-10, 1.49436277e-12, 2.62655803e-15};
-  } else {
-    coef = {6.11213467, 4.44007856e-1, 1.43064234e-2, 2.64461437e-4, 3.05903558e-6,
+  double coef_i[9] = {6.11213467, 4.44007856e-1, 1.43064234e-2, 2.64461437e-4, 3.05903558e-6,
       1.96237241e-8, 8.92344772e-11, -3.73208410e-13, 2.09339997e-16};
-  }
+  double* coef;
+  if (T >= 0) coef = coef_w;
+  else coef = coef_i;
 
   double res = coef[0];
   double Tn = T;
