@@ -222,11 +222,8 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
 
 
 void Field_CompositeVector::WriteVis(Visualization& vis) {
-  Key name = vis.name();
-  if (name == "domain") name = "";
   if (io_vis_ &&
-      ((name == Keys::getDomain(fieldname_)) ||
-       (Keys::isDomainSet(fieldname_) && name == Keys::getDomainSetName(fieldname_)))) {
+      ((vis.WritesDomain(Keys::getDomain(fieldname_))))) {
     EnsureSubfieldNames_();
 
     // loop over the components and dump them to the vis file if possible
