@@ -1,12 +1,11 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
-//! RelPermEvaluator: evaluates relative permeability using water retention models.
 /*
-  ATS is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
+//! RelPermEvaluator: evaluates relative permeability using water retention models.
 /*!
 
 Uses a list of regions and water retention models on those regions to evaluate
@@ -14,7 +13,7 @@ relative permeability, typically as a function of liquid saturation.
 
 Most of the parameters are provided to the WRM model, and not the evaluator.
 
-* `"use density on viscosity in rel perm`" ``[bool]`` **true** Include 
+* `"use density on viscosity in rel perm`" ``[bool]`` **true** Include
 
 * `"boundary rel perm strategy`" ``[string]`` **boundary pressure** Controls
   how the rel perm is calculated on boundary faces.  Note, this may be
@@ -66,8 +65,8 @@ enum class BoundaryRelPerm {
   ONE,
   SURF_REL_PERM
 };
-  
-  
+
+
 
 
 class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
@@ -84,11 +83,11 @@ class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
   virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
-  
+
   Teuchos::RCP<WRMPartition> get_WRMs() { return wrms_; }
 
  protected:
-  
+
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& result);
@@ -107,7 +106,7 @@ class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
   bool is_dens_visc_;
   Key surf_domain_;
   BoundaryRelPerm boundary_krel_;
-  
+
   double perm_scale_;
   double min_val_;
 

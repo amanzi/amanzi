@@ -5,21 +5,24 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
-//! AlbedoEvaluator: evaluates albedos and emissivities in a two-area model.
+//! Evaluates albedos and emissivities in a three-area subgrid model.
 
-#include "albedo_evaluator.hh"
+#include "boost/algorithm/string/predicate.hpp"
+
+
+#include "albedo_subgrid_evaluator.hh"
 #include "seb_physics_defs.hh"
 #include "seb_physics_funcs.hh"
 
 namespace Amanzi {
 namespace SurfaceBalance {
 
-AlbedoEvaluator::AlbedoEvaluator(Teuchos::ParameterList& plist) :
+AlbedoSubgridEvaluator::AlbedoSubgridEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariablesFieldEvaluator(plist)
 {
   // determine the domain
   domain_ = Keys::getDomain(Keys::cleanPListName(plist_.name()));
-  domain_snow_ = Keys::getDomainFromSurface(plist_, domain_, "snow");
+  domain_snow_ = Keys::readDomainHint(plist_, domain_, "surface", "snow");
 
   // my keys
   // -- sources
@@ -34,75 +37,51 @@ AlbedoEvaluator::AlbedoEvaluator(Teuchos::ParameterList& plist) :
   dependencies_.insert(snow_dens_key_);
 
   // -- skin properties
-  ponded_depth_key_ = Keys::readKey(plist, domain_, "ponded depth", "ponded_depth");
-  dependencies_.insert(ponded_depth_key_);
   unfrozen_fraction_key_ = Keys::readKey(plist, domain_, "unfrozen fraction", "unfrozen_fraction");
   dependencies_.insert(unfrozen_fraction_key_);
 
   // parameters
   a_ice_ = plist_.get<double>("albedo ice [-]", 0.44);
   a_water_ = plist_.get<double>("albedo water [-]", 0.1168);
+  a_tundra_ = plist_.get<double>("albedo ground surface [-]", 0.135);
 
   e_ice_ = plist_.get<double>("emissivity ice [-]", 0.98);
   e_water_ = plist_.get<double>("emissivity water [-]", 0.995);
+  e_tundra_ = plist_.get<double>("emissivity tundra [-]", 0.92);
   e_snow_ = plist_.get<double>("emissivity ground surface [-]", 0.98);
 }
 
 // Required methods from SecondaryVariableFieldEvaluator
 void
-AlbedoEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
+AlbedoSubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const std::vector<Teuchos::Ptr<CompositeVector> >& results)
 {
-  auto mesh = S->GetMesh(domain_);
-
   // collect dependencies
   const auto& snow_dens = *S->GetFieldData(snow_dens_key_)->ViewComponent("cell",false);
-  const auto& ponded_depth = *S->GetFieldData(ponded_depth_key_)->ViewComponent("cell",false);
   const auto& unfrozen_fraction = *S->GetFieldData(unfrozen_fraction_key_)->ViewComponent("cell",false);
 
   // collect output vecs
   auto& albedo = *results[0]->ViewComponent("cell",false);
   auto& emissivity = *results[1]->ViewComponent("cell",false);
-  emissivity(1)->PutScalar(e_snow_);
 
-  for (const auto& lc : land_cover_) {
-    Entity_ID_List lc_ids;
-    mesh->get_set_entities(lc.first, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED, lc_ids);
+  albedo(0)->PutScalar(a_tundra_);
+  emissivity(0)->PutScalar(e_tundra_);
+  emissivity(2)->PutScalar(e_snow_);
 
-    for (auto c : lc_ids) {
-      // albedo of the snow
-      albedo[1][c] = SEBPhysics::CalcAlbedoSnow(snow_dens[0][c]);
-
-      double albedo_water = unfrozen_fraction[0][c] * a_water_ + (1-unfrozen_fraction[0][c]) * a_ice_;
-      if (ponded_depth[0][c] > 0.1) {
-        albedo[0][c] = albedo_water;
-      } else {
-        double frac = ponded_depth[0][c] / 0.1;
-        albedo[0][c] =  frac * albedo_water + (1-frac) * lc.second.albedo_ground;
-      }
-
-      double emissivity_water = unfrozen_fraction[0][c] * e_water_ + (1-unfrozen_fraction[0][c]) * e_ice_;
-      if (ponded_depth[0][c] > 0.02) {
-        emissivity[0][c] = emissivity_water;
-      } else {
-        double frac = ponded_depth[0][c] / 0.02;
-        emissivity[0][c] =  frac * emissivity_water + (1-frac) * lc.second.emissivity_ground;
-      }
-    }
+  for (unsigned int c=0; c!=albedo.MyLength(); ++c) {
+    // albedo of the snow
+    albedo[2][c] = SEBPhysics::CalcAlbedoSnow(snow_dens[0][c]);
+    albedo[1][c] = unfrozen_fraction[0][c] * a_water_ + (1-unfrozen_fraction[0][c]) * a_ice_;
+    emissivity[1][c] = unfrozen_fraction[0][c] * e_water_ + (1-unfrozen_fraction[0][c]) * e_ice_;
   }
 }
 
 void
-AlbedoEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
+AlbedoSubgridEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> > & results) {}
 
 
-void
-AlbedoEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
-{
-  // new state!
-  land_cover_ = getLandCover(S->ICList()->sublist("land cover types"));
-
+void AlbedoSubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   CompositeVectorSpace domain_fac;
   domain_fac.SetMesh(S->GetMesh(domain_))
       ->SetGhosted()
@@ -116,7 +95,7 @@ AlbedoEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
   CompositeVectorSpace domain_fac_owned;
   domain_fac_owned.SetMesh(S->GetMesh(domain_))
       ->SetGhosted()
-      ->SetComponent("cell", AmanziMesh::CELL, 2);
+      ->SetComponent("cell", AmanziMesh::CELL, 3);
 
   // see if we can find a master fac
   for (auto my_key : my_keys_) {

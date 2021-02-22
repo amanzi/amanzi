@@ -623,9 +623,7 @@ bool EnergyBase::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
     Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm_p);
   const MPI_Comm& comm = mpi_comm_p->Comm();
 
-
-
-  if (minT < 200.0 || maxT > 300.0) {
+  if (minT < 200.0 || maxT > 320.0) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       *vo_->os() << " is not admissible, as it is not within bounds of constitutive models:" << std::endl;
       ENorm_t global_minT_c, local_minT_c;

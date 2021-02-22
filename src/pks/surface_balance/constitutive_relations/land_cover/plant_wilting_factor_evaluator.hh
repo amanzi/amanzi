@@ -1,5 +1,12 @@
 /*
-  The plant wilting factor evaluator is an algebraic evaluator of a given model.
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+//! Plant wilting factor provides a moisture availability-based limiter on transpiration.
+/*!
 
   Generated via evaluator_generator with:
 Wilting factor.
@@ -12,19 +19,26 @@ where p is the capillary pressure or soil mafic potential, and closed
 and open indicate the values at which stomates are fully open or fully
 closed (the wilting point).
 
+Note this makes use of LandCover objects for mafic potential of fully open and
+fully closed stomata.
 
-    
-  Authors: Ethan Coon (ecoon@lanl.gov)
+.. _plant-wilting-factor-evaluator-spec:
+.. admonition:: plant-wilting-factor-evaluator-spec
+
+   KEYS:
+   * `"capillary pressure`" **DOMAIN-capillary_pressure_gas_liq**
+
+
 */
 
-#ifndef AMANZI_FLOW_PLANT_WILTING_FACTOR_EVALUATOR_HH_
-#define AMANZI_FLOW_PLANT_WILTING_FACTOR_EVALUATOR_HH_
+#pragma once
 
 #include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
+#include "LandCover.hh"
 
 namespace Amanzi {
-namespace LandCover {
+namespace SurfaceBalance {
 namespace Relations {
 
 class PlantWiltingFactorModel;
@@ -45,11 +59,14 @@ class PlantWiltingFactorEvaluator : public SecondaryVariableFieldEvaluator {
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
  protected:
-  void InitializeFromPlist_();
 
   Key pc_key_;
 
-  std::vector<std::pair<std::string,Teuchos::RCP<PlantWiltingFactorModel> > > models_;
+  Key domain_surf_;
+  Key domain_sub_;
+
+  LandCoverMap land_cover_;
+  std::map<std::string,Teuchos::RCP<PlantWiltingFactorModel>> models_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,PlantWiltingFactorEvaluator> reg_;
@@ -60,4 +77,3 @@ class PlantWiltingFactorEvaluator : public SecondaryVariableFieldEvaluator {
 } //namespace
 } //namespace
 
-#endif

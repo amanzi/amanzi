@@ -37,7 +37,7 @@ have been a bunch of small numbers which then got normalized to 1, meaning they
 are all now significant.
 
 Finally, transpiration may be turned off for winter -- relative to time zero,
-parameters `"leaf on time`" and `"leaf off time`" are used to control when ET
+parameters `"leaf on doy`" and `"leaf off doy`" are used to control when ET
 is zero.  By default these are set to 0 and 366 days, ensuring that
 transpiration is never turned off and the potential ET must include this
 factor.  This is the right choice for, e.g. ELM output, or eddy covariance flux
@@ -48,29 +48,23 @@ long.  Good choices for those models depend upon the local climate, but may be
 something like Julian day 101 for leaf on and Julian day 254 for leaf off (PRMS
 defaults for US temperate forests).
 
-Note that `"leaf on time`" and `"leaf off time`" are relative to the
-simulation's zero time, not the start time.  Typically these are Julian day of
-the year, but this assumes that the 0 time of the simulation (not the "start
-time", but time 0!) is Jan 1.  This leaf on/off cycle is modulo the `"year
-duration`" (typically 1 noleap).  Note if `"leaf off time`" < `"leaf on
-time`" is ok too -- this is the case if simulation time zero is mid-summer.
+Note that `"leaf on doy`" and `"leaf off doy`" are relative to the simulation's
+zero time, not the start time.  Typically these are Julian day of the year, but
+this assumes that the 0 time of the simulation (not the "start time", but time
+0!) is Jan 1.  This leaf on/off cycle is modulo the `"year duration`"
+(typically 1 noleap).  Note if `"leaf off doy`" < `"leaf on time`" is ok too --
+this is the case if simulation time zero is mid-summer.  These parameters come
+from the LandCover type.
 
 .. _transpiration-distribution-evaluator-spec:
 .. admonition:: transpiration-distribution-evaluator
 
     * `"year duration`" ``[double]`` **1**
     * `"year duration units`" ``[string]`` **noleap**
-    * `"leaf on time`" ``[double]`` **0**
-    * `"leaf on time units`" ``[string]`` **d**
-    * `"leaf off time`" ``[double]`` **366**
-    * `"leaf off time units`" ``[string]`` **d**
-
-    * `"number of PFTs`" ``[int]`` **1** NOTE: must be 1 currently.
 
     * `"water limiter function`" ``[function-spec]`` **optional** If provided,
       limit the total water sink as a function of the integral of the water
       potential * rooting fraction.
-
 
     KEYS:
 
@@ -80,26 +74,19 @@ time`" is ok too -- this is the case if simulation time zero is mid-summer.
     * `"cell volume`"
     * `"surface cell volume`"
 
-
-WARNING: there is some odd code here in which some quantities are PFT based and
-some are not.  It isn't clear that those are correct for all usages.  And there
-is currently no accumulation on the result of this evaluator (which is
-PFT-based) to collapse it into a single sink for use in the water balance.
-DON'T USE THIS WITH MULTIPLE PFTS without really understanding what you are
-doing! (NOTE, error added for NPFTS > 1)  --etc
-
 */
 
 #pragma once
 
 #include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
+#include "LandCover.hh"
 
 namespace Amanzi {
 
 class Function;
 
-namespace LandCover {
+namespace SurfaceBalance {
 namespace Relations {
 
 class TranspirationDistributionEvaluator : public SecondaryVariableFieldEvaluator {
@@ -122,16 +109,21 @@ class TranspirationDistributionEvaluator : public SecondaryVariableFieldEvaluato
 
  protected:
   void InitializeFromPlist_();
-  bool TranspirationPeriod_(double time);
+  bool TranspirationPeriod_(double time, double leaf_on_doy, double leaf_off_doy);
+
+  Key domain_surf_;
+  Key domain_sub_;
 
   Key f_wp_key_;
   Key f_root_key_;
   Key potential_trans_key_;
   Key cv_key_;
   Key surf_cv_key_;
-  int npfts_;
 
-  double leaf_on_time_, leaf_off_time_, year_duration_;
+  double year_duration_;
+
+  LandCoverMap land_cover_;
+
   bool limiter_local_;
   Teuchos::RCP<Function> limiter_;
 

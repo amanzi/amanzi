@@ -1,46 +1,46 @@
 /*
-  The rooting depth fraction model is an algebraic model with dependencies.
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-  Generated via evaluator_generator with:
-Rooting depth function.
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+//! Provides a depth-based profile of root density.
+/*!
 
 Sets the root fraction as a function of depth,
 
-F_root =  ( a*exp(-az) + b*exp(-bz) ) / 2
+.. math:
+   F_root =  ( \alpha \; exp(-\alpha z) + \beta \; exp(-\beta z) ) / 2
 
 This function is such that the integral over depth = [0,inf) is 1, but
 an artificial cutoff is generated.
 
+Note that all three parameters, a, b, and the cutoff, are provided in the
+LandCover type.
 
-    
-  Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_FLOW_ROOTING_DEPTH_FRACTION_MODEL_HH_
-#define AMANZI_FLOW_ROOTING_DEPTH_FRACTION_MODEL_HH_
+#pragma once
+
+#include "LandCover.hh"
 
 namespace Amanzi {
-namespace LandCover {
+namespace SurfaceBalance {
 namespace Relations {
 
 class RootingDepthFractionModel {
 
  public:
   explicit
-  RootingDepthFractionModel(Teuchos::ParameterList& plist);
+  RootingDepthFractionModel(const LandCover& lc);
 
   double RootingDepthFraction(double z) const;
 
   double DRootingDepthFractionDDepth(double z) const;
-  
- protected:
-  void InitializeFromPlist_(Teuchos::ParameterList& plist);
 
  protected:
-
-  double a_;
-  double b_;
-  double z_max_;
+  const LandCover& lc_;
 
 };
 
@@ -48,4 +48,3 @@ class RootingDepthFractionModel {
 } //namespace
 } //namespace
 
-#endif

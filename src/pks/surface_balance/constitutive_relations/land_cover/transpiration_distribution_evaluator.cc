@@ -1,6 +1,6 @@
 /*
-  ATS is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
@@ -12,7 +12,7 @@
 #include "transpiration_distribution_evaluator.hh"
 
 namespace Amanzi {
-namespace LandCover {
+namespace SurfaceBalance {
 namespace Relations {
 
 // Constructor from ParameterList
@@ -22,6 +22,7 @@ TranspirationDistributionEvaluator::TranspirationDistributionEvaluator(Teuchos::
   InitializeFromPlist_();
 }
 
+
 // Virtual copy constructor
 Teuchos::RCP<FieldEvaluator>
 TranspirationDistributionEvaluator::Clone() const
@@ -29,24 +30,15 @@ TranspirationDistributionEvaluator::Clone() const
   return Teuchos::rcp(new TranspirationDistributionEvaluator(*this));
 }
 
+
 // Initialize by setting up dependencies
 void
 TranspirationDistributionEvaluator::InitializeFromPlist_()
 {
   // Set up my dependencies
   // - defaults to prefixed via domain
-  Key domain_name = Keys::getDomainPrefix(my_key_);
-  Key surface_name;
-  if (domain_name.empty() || domain_name == "domain") {
-    surface_name = "surface";
-  } else {
-    surface_name = Key("surface_")+domain_name;
-  }
-  surface_name = plist_.get<std::string>("surface domain name", surface_name);
-  if (surface_name == domain_name) {
-    Errors::Message message("TranspirationDistributionEvaluator: subsurface domain name and surface domain name cannot be the same.");
-    Exceptions::amanzi_throw(message);
-  }
+  domain_sub_ = Keys::getDomain(my_key_);
+  domain_surf_ = Keys::readDomainHint(plist_, domain_sub_, "domain", "surface");
 
   limiter_local_ = false;
   if (plist_.isSublist("water limiter function")) {
@@ -58,34 +50,22 @@ TranspirationDistributionEvaluator::InitializeFromPlist_()
 
   // - pull Keys from plist
   // dependency: pressure
-  f_wp_key_ = Keys::readKey(plist_, domain_name, "plant wilting factor", "plant_wilting_factor");
+  f_wp_key_ = Keys::readKey(plist_, domain_sub_, "plant wilting factor", "plant_wilting_factor");
   dependencies_.insert(f_wp_key_);
 
   // dependency: rooting_depth_fraction
-  f_root_key_ = Keys::readKey(plist_, domain_name, "rooting depth fraction", "rooting_depth_fraction");
+  f_root_key_ = Keys::readKey(plist_, domain_sub_, "rooting depth fraction", "rooting_depth_fraction");
   dependencies_.insert(f_root_key_);
 
   // dependency: transpiration
-  potential_trans_key_ = Keys::readKey(plist_, surface_name, "potential transpiration", "potential_transpiration");
+  potential_trans_key_ = Keys::readKey(plist_, domain_surf_, "potential transpiration", "potential_transpiration");
   dependencies_.insert(potential_trans_key_);
 
   // dependency: cell volume, surface cell volume
-  cv_key_ = Keys::readKey(plist_, domain_name, "cell volume", "cell_volume");
+  cv_key_ = Keys::readKey(plist_, domain_sub_, "cell volume", "cell_volume");
   dependencies_.insert(cv_key_);
-  surf_cv_key_ = Keys::readKey(plist_, surface_name, "surface cell volume", "cell_volume");
+  surf_cv_key_ = Keys::readKey(plist_, domain_surf_, "surface cell volume", "cell_volume");
   dependencies_.insert(surf_cv_key_);
-
-  npfts_ = plist_.get<int>("number of PFTs", 1);
-  if (npfts_ > 1) {
-    Errors::Message message("TranspirationDistributionEvaluator: it is unclear whether this evaluator works for >1 PFT.  Contact developers if you need this.");
-    Exceptions::amanzi_throw(message);
-  }
-
-  leaf_on_time_ = plist_.get<double>("leaf on time", 0);
-  std::string leaf_on_units = plist_.get<std::string>("leaf on time units", "d");
-
-  leaf_off_time_ = plist_.get<double>("leaf off time",366);
-  std::string leaf_off_units = plist_.get<std::string>("leaf on time units", "d");
 
   year_duration_ = plist_.get<double>("year duration", 1.0);
   std::string year_duration_units = plist_.get<std::string>("year duration units", "noleap");
@@ -93,8 +73,6 @@ TranspirationDistributionEvaluator::InitializeFromPlist_()
   // deal with units
   Amanzi::Utils::Units units;
   bool flag;
-  leaf_on_time_ = units.ConvertTime(leaf_on_time_, leaf_on_units, "s", flag);
-  leaf_off_time_ = units.ConvertTime(leaf_off_time_, leaf_off_units, "s", flag);
   year_duration_ = units.ConvertTime(year_duration_, year_duration_units, "s", flag);
 }
 
@@ -111,57 +89,52 @@ TranspirationDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   // on the surface
   const Epetra_MultiVector& potential_trans = *S->GetFieldData(potential_trans_key_)->ViewComponent("cell", false);
   const Epetra_MultiVector& surf_cv = *S->GetFieldData(surf_cv_key_)->ViewComponent("cell", false);
+  Epetra_MultiVector& result_v = *result->ViewComponent("cell", false);
 
   double p_atm = *S->GetScalarData("atmospheric_pressure");
 
-  // check for winter (FIXME -- evergreens!)
-  if (!TranspirationPeriod_(S->time())) {
-    result->PutScalar(0.);
-    return;
-  }
+  auto& subsurf_mesh = *S->GetMesh(domain_sub_);
+  auto& surf_mesh = *S->GetMesh(domain_surf_);
 
-  // result, on the subsurface
-  const AmanziMesh::Mesh& subsurf_mesh = *result->Mesh();
-  Epetra_MultiVector& result_v = *result->ViewComponent("cell", false);
+  result_v.PutScalar(0.);
+  for (const auto& region_lc : land_cover_) {
+    AmanziMesh::Entity_ID_List lc_ids;
+    surf_mesh.get_set_entities(region_lc.first, AmanziMesh::Entity_kind::CELL,
+                           AmanziMesh::Parallel_type::OWNED, &lc_ids);
 
-  for (int pft=0; pft!=result_v.NumVectors(); ++pft) {
-    for (int sc=0; sc!=potential_trans.MyLength(); ++sc) {
-      double column_total = 0.;
-      double f_root_total = 0.;
-      double f_wp_total = 0.;
-      double var_dz = 0.;
-      for (auto c : subsurf_mesh.cells_of_column(sc)) {
-        column_total += f_wp[0][c] * f_root[pft][c] * cv[0][c];
-        result_v[pft][c] = f_wp[0][c] * f_root[pft][c];
-        if (f_wp[0][c] * f_root[pft][c] > 0)
-          var_dz += cv[0][c];
-      }
-
-      if (column_total > 0.) {
-        double coef = potential_trans[pft][sc] * surf_cv[0][sc] / column_total;
-        if (limiter_.get()) {
-          auto column_total_vector = std::vector<double>(1, column_total / surf_cv[0][sc]);
-          double limiting_factor = (*limiter_)(column_total_vector);
-          AMANZI_ASSERT(limiting_factor >= 0.);
-          AMANZI_ASSERT(limiting_factor <= 1.);
-          coef *= limiting_factor;
+    if (TranspirationPeriod_(S->time(), region_lc.second.leaf_on_doy, region_lc.second.leaf_off_doy)) {
+      for (int sc : lc_ids) {
+        double column_total = 0.;
+        double f_root_total = 0.;
+        double f_wp_total = 0.;
+        double var_dz = 0.;
+        for (auto c : subsurf_mesh.cells_of_column(sc)) {
+          column_total += f_wp[0][c] * f_root[0][c] * cv[0][c];
+          result_v[0][c] = f_wp[0][c] * f_root[0][c];
+          if (f_wp[0][c] * f_root[0][c] > 0)
+            var_dz += cv[0][c];
         }
 
-        for (auto c : subsurf_mesh.cells_of_column(sc)) {
-          result_v[pft][c] *= coef;
-          if (limiter_local_) {
-            result_v[pft][c] *= f_wp[0][c];
+        if (column_total > 0.) {
+          double coef = potential_trans[0][sc] * surf_cv[0][sc] / column_total;
+          if (limiter_.get()) {
+            auto column_total_vector = std::vector<double>(1, column_total / surf_cv[0][sc]);
+            double limiting_factor = (*limiter_)(column_total_vector);
+            AMANZI_ASSERT(limiting_factor >= 0.);
+            AMANZI_ASSERT(limiting_factor <= 1.);
+            coef *= limiting_factor;
           }
-        }
 
-      } else {
-        for (auto c : subsurf_mesh.cells_of_column(sc)) {
-          result_v[pft][c] = 0.;
+          for (auto c : subsurf_mesh.cells_of_column(sc)) {
+            result_v[0][c] *= coef;
+            if (limiter_local_) {
+              result_v[0][c] *= f_wp[0][c];
+            }
+          }
         }
       }
     }
   }
-
 }
 
 
@@ -176,6 +149,10 @@ TranspirationDistributionEvaluator::EvaluateFieldPartialDerivative_(const Teucho
 void
 TranspirationDistributionEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
 {
+  // new state!
+  if (land_cover_.size() == 0)
+    land_cover_ = getLandCover(S->ICList().sublist("land cover types"));
+
   // Ensure my field exists.  Requirements should be already set.
   AMANZI_ASSERT(!my_key_.empty());
   auto my_fac = S->RequireField(my_key_, my_key_);
@@ -188,7 +165,7 @@ TranspirationDistributionEvaluator::EnsureCompatibility(const Teuchos::Ptr<State
 
   Key domain = Keys::getDomain(my_key_);
   my_fac->SetMesh(S->GetMesh(domain))
-    ->SetComponent("cell", AmanziMesh::CELL, npfts_)
+    ->SetComponent("cell", AmanziMesh::CELL, 1)
     ->SetGhosted(true);
 
   // Create an unowned factory to check my dependencies.
@@ -208,7 +185,7 @@ TranspirationDistributionEvaluator::EnsureCompatibility(const Teuchos::Ptr<State
   CompositeVectorSpace surf_fac;
   surf_fac.SetMesh(S->GetMesh(Keys::getDomain(surf_cv_key_)))
     ->SetGhosted(true)
-    ->AddComponent("cell", AmanziMesh::CELL, npfts_);
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireField(potential_trans_key_)->Update(surf_fac);
 
   CompositeVectorSpace surf_fac_one;
@@ -225,12 +202,19 @@ TranspirationDistributionEvaluator::EnsureCompatibility(const Teuchos::Ptr<State
 }
 
 bool
-TranspirationDistributionEvaluator::TranspirationPeriod_(double time)
+TranspirationDistributionEvaluator::TranspirationPeriod_(double time, double leaf_on_doy, double leaf_off_doy)
 {
+  if (leaf_on_doy < 0 || leaf_off_doy < 0) {
+    return true; // evergreen
+  }
+
   double time_of_year = fmod(time, year_duration_);
-  if (leaf_on_time_ < leaf_off_time_) {
+  double leaf_on_time = leaf_on_doy * 86400;
+  double leaf_off_time = leaf_off_doy * 86400;
+
+  if (leaf_on_time < leaf_off_time) {
     // northern hemisphere
-    if ((leaf_on_time_ <= time_of_year) && (time_of_year < leaf_off_time_)) {
+    if ((leaf_on_time <= time_of_year) && (time_of_year < leaf_off_time)) {
       //summer
       return true;
     } else {
@@ -238,7 +222,7 @@ TranspirationDistributionEvaluator::TranspirationPeriod_(double time)
     }
   } else {
     // southern hemisphere
-    if ((leaf_off_time_ <= time_of_year) && (time_of_year < leaf_on_time_)) {
+    if ((leaf_off_time <= time_of_year) && (time_of_year < leaf_on_time)) {
       // southern hemisphere summer
       return true;
     } else {

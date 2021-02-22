@@ -46,7 +46,10 @@ partition.
 
 #pragma once
 
-namespace ATS {
+#include <map>
+#include "Teuchos_ParameterList.hpp"
+
+namespace Amanzi {
 namespace SurfaceBalance {
 
 //
@@ -56,9 +59,13 @@ struct LandCover {
   LandCover(Teuchos::ParameterList& plist);
 
   // rooting profiles
-  double max_rooting_depth;  // [m]
+  double rooting_depth_max;  // [m]
   double rooting_profile_alpha; // alpha in the rooting profile function [-]
   double rooting_profile_beta; // beta in the rooting profile function [-]
+
+  // stomatal limiters
+  double stomata_closed_mafic_potential; // [Pa] mafic potential at which stomates are fully closed
+  double stomata_open_mafic_potential; // [Pa] mafic potential at which stomates are fully open
 
   // manning's coef
   double mannings_n; // [?]
@@ -66,9 +73,6 @@ struct LandCover {
   // transpiration controls
   double leaf_on_doy; // [doy], -1 implies evergreen
   double leaf_off_doy; // [doy], -1 implies evergreen
-
-  // interception factor, per unit LAI
-  double interception_coef; // [m ground^2 m leaf^-2]
 
   // radiation parameters
   double albedo_ground;
@@ -80,7 +84,13 @@ struct LandCover {
   double beers_k_lw;
 
   // transition thickness between snow and bare ground
+  // likely this is a property of the understory veg
   double snow_transition_depth; // [m]
+
+  // soil properties controlling evaporation
+  double dessicated_zone_thickness; // [m] Thickness over which vapor must diffuse
+      //  when the soil is dry.
+  double clapp_horn_b; // [-] exponent of the WRM, Clapp & Hornberger eqn 1
 
 };
 

@@ -6,7 +6,6 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 //! Fraction of incoming water that is intercepted.
-
 /*!
 
 Based on CLM 4.5 and Lawrence et al 2007:
@@ -53,9 +52,7 @@ class InterceptionFractionEvaluator : public SecondaryVariablesFieldEvaluator {
   InterceptionFractionEvaluator(Teuchos::ParameterList& plist);
   InterceptionFractionEvaluator(const InterceptionFractionEvaluator& other) = default;
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const override {
-    return Teuchos::rcp(new InterceptionFractionEvaluator(*this));
-  }
+  virtual Teuchos::RCP<FieldEvaluator> Clone() const override;
 
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
@@ -88,4 +85,4 @@ class InterceptionFractionEvaluator : public SecondaryVariablesFieldEvaluator {
 } //namespace
 } //namespace
 
-#endif
+

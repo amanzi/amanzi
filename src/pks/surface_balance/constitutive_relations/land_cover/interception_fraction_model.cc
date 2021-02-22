@@ -1,11 +1,11 @@
 /*
-  The interception fraction model is an algebraic model with dependencies.
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-  Generated via evaluator_generator with:
-
-    
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
+//! Fraction of incoming water that is intercepted.
 
 #include "Teuchos_ParameterList.hpp"
 #include "dbc.hh"
@@ -46,4 +46,4 @@ InterceptionFractionModel::DInterceptionFractionDAreaIndex(double ai) const
 } //namespace
 } //namespace
 } //namespace
-  
+

@@ -185,26 +185,26 @@ createMeshAliased(const std::string& mesh_name,
   Teuchos::ParameterList& alias_plist = mesh_plist.sublist("aliased parameters");
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = Teuchos::null;
-  std::string alias;
-  if (alias_plist.isParameter("alias")) {
-    alias = alias_plist.get<std::string>("alias");
+  std::string target;
+  if (alias_plist.isParameter("target")) {
+    target = alias_plist.get<std::string>("target");
 
-    if (S.HasMesh(alias)) {
-      mesh = S.GetMesh(alias);
+    if (S.HasMesh(target)) {
+      mesh = S.GetMesh(target);
     } else {
       Errors::Message msg("Aliased mesh \"");
-      msg << mesh_name << "\" target mesh \"" << alias << "\" does not exist in State."
+      msg << mesh_name << "\" target mesh \"" << target << "\" does not exist in State."
           << "  Ensure it appears in the \"mesh\" list prior to the aliased mesh.";
       Exceptions::amanzi_throw(msg);
     }
   } else {
     Errors::Message msg("Aliased mesh \"");
-    msg << mesh_name << "\" is missing parameter \"alias\"";
+    msg << mesh_name << "\" is missing parameter \"target\"";
     Exceptions::amanzi_throw(msg);
   }
-  if (mesh != Teuchos::null) S.AliasMesh(alias, mesh_name);
+  if (mesh != Teuchos::null) S.AliasMesh(target, mesh_name);
   if (vo.os_OK(Teuchos::VERB_HIGH)) {
-    *vo.os() << "  Aliased mesh \"" << mesh_name << "\" to \"" << alias << "\"." << std::endl;
+    *vo.os() << "  Aliased mesh \"" << mesh_name << "\" to \"" << target << "\"." << std::endl;
   }
   return mesh;
 }
@@ -793,38 +793,38 @@ createMeshes(Teuchos::ParameterList& global_list,
     }
   }
 
-  // FIXME --etc
-  // this should be dealt with somewhere else, and more generally
-  // generalize vis for columns
-  if (global_list.isSublist("visualization columns")) {
-    auto surface_mesh = S.GetMesh("surface");
-    Teuchos::ParameterList& vis_ss_plist = global_list.sublist("visualization columns");
-    int nc = surface_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  // // FIXME --etc
+  // // this should be dealt with somewhere else, and more generally
+  // // generalize vis for columns
+  // if (global_list.isSublist("visualization columns")) {
+  //   auto surface_mesh = S.GetMesh("surface");
+  //   Teuchos::ParameterList& vis_ss_plist = global_list.sublist("visualization columns");
+  //   int nc = surface_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-    for (int c=0; c!=nc; ++c){
-      int id = surface_mesh->cell_map(false).GID(c);
-      std::stringstream name_ss;
-      name_ss << "column_" << id;
-      vis_ss_plist.set("file name base", "visdump_"+name_ss.str());
-      global_list.set("visualization " +name_ss.str(), vis_ss_plist);
-    }
-    global_list.remove("visualization columns");
-  }
+  //   for (int c=0; c!=nc; ++c){
+  //     int id = surface_mesh->cell_map(false).GID(c);
+  //     std::stringstream name_ss;
+  //     name_ss << "column_" << id;
+  //     vis_ss_plist.set("file name base", "visdump_"+name_ss.str());
+  //     global_list.set("visualization " +name_ss.str(), vis_ss_plist);
+  //   }
+  //   global_list.remove("visualization columns");
+  // }
 
-  // generalize vis for surface columns
-  if (global_list.isSublist("visualization surface cells")) {
-    auto surface_mesh = S.GetMesh("surface");
-    Teuchos::ParameterList& vis_sf_plist = global_list.sublist("visualization surface cells");
-    int nc = surface_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    for (int c=0; c!=nc; ++c){
-      int id = surface_mesh->cell_map(false).GID(c);
-      std::stringstream name_ss, name_sf;
-      name_sf << "surface_column_" << id;
-      vis_sf_plist.set("file name base", "visdump_"+name_sf.str());
-      global_list.set("visualization " +name_sf.str(), vis_sf_plist);
-    }
-    global_list.remove("visualization surface cells");
-  }
+  // // generalize vis for surface columns
+  // if (global_list.isSublist("visualization surface cells")) {
+  //   auto surface_mesh = S.GetMesh("surface");
+  //   Teuchos::ParameterList& vis_sf_plist = global_list.sublist("visualization surface cells");
+  //   int nc = surface_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  //   for (int c=0; c!=nc; ++c){
+  //     int id = surface_mesh->cell_map(false).GID(c);
+  //     std::stringstream name_ss, name_sf;
+  //     name_sf << "surface_column_" << id;
+  //     vis_sf_plist.set("file name base", "visdump_"+name_sf.str());
+  //     global_list.set("visualization " +name_sf.str(), vis_sf_plist);
+  //   }
+  //   global_list.remove("visualization surface cells");
+  // }
 
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);

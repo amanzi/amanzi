@@ -9,26 +9,37 @@
 
 #include "LandCover.hh"
 
-namespace ATS {
+namespace Amanzi {
 namespace SurfaceBalance {
 
 
 LandCover::LandCover(Teuchos::ParameterList& plist) :
-  max_rooting_depth(plist.get<double>("max rooting depth [m]", -1)),
-  rooting_profile_alpha(plist.get<double>("rooting profile alpha [-]", -1)),
-  rooting_profile_beta(plist.get<double>("rooting profile beta [-]", -1)),
-  mannings_n(plist.get<double>("Manning's n [-]", -1)),
-  leaf_on_doy(plist.get<double>("leaf on time [doy]", -1)),
-  leaf_off_doy(plist.get<double>("leaf off time [doy]", -1)),
-  interception_coef(plist.get<double>("interception coefficient [-]", -1)) {}
+  rooting_depth_max(plist.get<double>("rooting depth max [m]")),
+  rooting_profile_alpha(plist.get<double>("rooting profile alpha [-]")),
+  rooting_profile_beta(plist.get<double>("rooting profile beta [-]")),
+  stomata_closed_mafic_potential(plist.get<double>("mafic potential at fully closed stomata [Pa]")),
+  stomata_open_mafic_potential(plist.get<double>("mafic potential at fully open stomata [Pa]")),
+  mannings_n(plist.get<double>("Manning's n [?]")),
+  leaf_on_doy(plist.get<double>("leaf on time [doy]")),
+  leaf_off_doy(plist.get<double>("leaf off time [doy]")),
+  albedo_ground(plist.get<double>("albedo of ground surface [-]")),
+  emissivity_ground(plist.get<double>("emissivity of ground surface [-]")),
+  albedo_canopy(plist.get<double>("albedo of canopy [-]")),
+  emissivity_canopy(plist.get<double>("emissivity of canopy [-]")),
+  beers_k_sw(plist.get<double>("Beer's law extinction coefficient, shortwave [-]")),
+  beers_k_lw(plist.get<double>("Beer's law extinction coefficient, longwave [-]")),
+  snow_transition_depth(plist.get<double>("snow transition depth [m]")),
+  dessicated_zone_thickness(plist.get<double>("dessicated zone thickness [m]")),
+  clapp_horn_b(plist.get<double>("Clapp and Hornberger b [-]"))
+{}
 
 
 LandCoverMap getLandCover(Teuchos::ParameterList& plist)
 {
   LandCoverMap lc;
   for (auto& item : plist) {
-    if (lc.isSublist(item.first)) {
-      lc.try_insert(item.first, LandCover{plist.sublist(item.first)});
+    if (plist.isSublist(item.first)) {
+      lc.insert({item.first, LandCover{plist.sublist(item.first)}});
     }
   }
   return lc;

@@ -41,10 +41,8 @@ std::pair<double,double> IncomingRadiation(const MetData& met, double albedo)
 {
   // Calculate incoming short-wave radiation
   double fQswIn = (1 - albedo) * met.QswIn;
-
   // Calculate incoming long-wave radiation
   double fQlwIn = met.QlwIn;
-
   return std::make_pair(fQswIn, fQlwIn);
 }
 
@@ -52,7 +50,8 @@ std::pair<double,double> IncomingRadiation(const MetData& met, double albedo)
 //
 // Calculate longwave from air temp and relative humidity
 // ------------------------------------------------------------------------------------------
-double CalcIncomingLongwave(double air_temp, double relative_humidity, double c_stephan_boltzmann) {
+double IncomingLongwaveRadiation(double air_temp, double relative_humidity)
+{
   double e_air = std::pow(10 * VaporPressureAir(air_temp, relative_humidity), air_temp / 2016.);
   e_air = 1.08 * (1 - std::exp(-e_air));
   double longwave = e_air * c_stephan_boltzmann * std::pow(air_temp,4);
@@ -61,11 +60,17 @@ double CalcIncomingLongwave(double air_temp, double relative_humidity, double c_
 }
 
 
-double OutgoingRadiation(double temp, double emissivity, double c_stephan_boltzmann)
+double OutgoingLongwaveRadiation(double temp, double emissivity)
 {
   // Calculate outgoing long-wave radiation
   return emissivity * c_stephan_boltzmann * std::pow(temp,4);
 }
+
+double BeersLaw(double sw_in, double k_extinction, double lai)
+{
+  return sw_in * std::exp(-k_extinction * lai);
+}
+
 
 double WindFactor(double Us, double Z_Us, double Z_rough, double c_von_Karman)
 {
@@ -91,10 +96,39 @@ double StabilityFunction(double air_temp, double skin_temp, double Us,
 double SaturatedVaporPressure(double temp)
 {
   // Sat vap. press o/water Dingman D-7 (Bolton, 1980)
-  // *** (Bolton, 1980) Calculates vapor pressure in [kPa]  ****
+  // *** (Bolton, 1980) Calculates vapor pressure in [KPa]  ****
   double tempC = temp - 273.15;
   return 0.6112 * std::exp(17.67 * tempC / (tempC + 243.5));
 }
+
+double SaturatedVaporPressureELM(double temp)
+{
+  // Saturated vapor pressure in [KPa] from CLM technical note
+  double T = temp - 273.15;
+  double coef[9];
+  if (T < 0) {
+    coef = {6.1123516, 5.03109514e-1, 1.88369801e-2, 4.20547422e-4, 6.14396778e-6,
+    6.02780717e-8, 3.87940929e-10, 1.49436277e-12, 2.62655803e-15};
+  } else {
+    coef = {6.11213467, 4.44007856e-1, 1.43064234e-2, 2.64461437e-4, 3.05903558e-6,
+      1.96237241e-8, 8.92344772e-11, -3.73208410e-13, 2.09339997e-16};
+  }
+
+  double res = coef[0];
+  double Tn = T;
+  for (int i=1; i!=9; ++i) {
+    res += coef[i] * Tn;
+    Tn *= T;
+  }
+  return 0.1*res;
+}
+
+double SaturatedSpecificHumidityELM(double temp)
+{
+  double vp_sat = 1000.*SaturatedSpecificHumidityELM(temp); // convert to Pa
+  return 0.622 * vp_sat / (c_p_atm - 0.378 * vp_sat);
+}
+
 
 double VaporPressureAir(double air_temp, double relative_humidity)
 {
@@ -105,9 +139,9 @@ double VaporPressureGround(const GroundProperties& surf, const ModelParams& para
 {
   // Ho & Webb 2006
   double relative_humidity = -1;
-  if (surf.pressure < params.Apa * 1000.) {
+  if (surf.pressure < c_p_atm) {
     // vapor pressure lowering
-    double pc = 1000.*params.Apa - surf.pressure;
+    double pc = c_p_atm - surf.pressure;
     relative_humidity = std::exp(-pc / (surf.density_w * params.R_ideal_gas * surf.temp));
   } else {
     relative_humidity = 1.;
@@ -137,14 +171,21 @@ double EvaporativeResistanceCoef(double saturation_gas,
     Rsoil = 0.; // ponded water
   } else {
     // Equation for reduced vapor diffusivity
-    // See Sakagucki and Zeng 2009 eqaution (9) and Moldrup et al., 2004. 
-    double vp_diffusion = 0.000022 * (std::pow(porosity,2))
-                          * std::pow((1-(0.0556/porosity)),(2+3*Clapp_Horn_b));
+    // See Sakagucki and Zeng 2009 eqaution (9) and Moldrup et al., 2004.
+
+    // This really needs to be refactored independently of C&H.  There are a
+    // lot of assumptions here of hard-coded parameters including C&H WRM, a
+    // residual water content of 0.0556 (not sure why this was chosen), and
+    // more.
+    double s_res = 0.0556 / porosity;
+    double vp_diffusion = 0.000022 * std::pow(porosity,2)
+                          * std::pow(1-s_res, 2 + 3*Clapp_Horn_b);
     // Sakagucki and Zeng 2009 eqaution (10)
-    double L_Rsoil = std::exp(std::pow(saturation_gas, 5));
-    L_Rsoil = dessicated_zone_thickness * (L_Rsoil -1) * (1/(std::exp(1.)-1));
+    double L_Rsoil = dessicated_zone_thickness *
+      (std::exp(std::pow(saturation_gas, 5)) - 1) / (std::exp(1)-1);
     Rsoil = L_Rsoil/vp_diffusion;
   }
+  AMANZI_ASSERT(Rsoil >= 0);
   return Rsoil;
 }
 
@@ -159,7 +200,7 @@ double SensibleHeat(double resistance_coef,
 
 
 double LatentHeat(double resistance_coef,
-                  double density_air,  /// this should be w?
+                  double density_air,
                   double latent_heat_fusion,
                   double vapor_pressure_air,
                   double vapor_pressure_skin,
@@ -192,7 +233,7 @@ void UpdateEnergyBalanceWithSnow_Inner(const GroundProperties& surf,
   // incoming radiation -- DONE IN OUTER
 
   // outgoing radiation
-  eb.fQlwOut = OutgoingRadiation(snow.temp, snow.emissivity, params.stephB);
+  eb.fQlwOut = OutgoingLongwaveRadiation(snow.temp, snow.emissivity);
 
   // sensible heat
   double Dhe = WindFactor(met.Us, met.Z_Us, CalcRoughnessFactor(snow.height, surf.roughness, snow.roughness), params.VKc);
@@ -248,7 +289,7 @@ EnergyBalance UpdateEnergyBalanceWithoutSnow(const GroundProperties& surf,
   std::tie(eb.fQswIn, eb.fQlwIn) = IncomingRadiation(met, surf.albedo);
 
   // outgoing radiation
-  eb.fQlwOut = OutgoingRadiation(surf.temp, surf.emissivity, params.stephB);
+  eb.fQlwOut = OutgoingLongwaveRadiation(surf.temp, surf.emissivity);
 
   // potentially have incoming precip to melt
   if (surf.temp > 273.65) {

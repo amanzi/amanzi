@@ -4,7 +4,6 @@
 #  Generic Evaluators 
 #
 set(ats_generic_evals_src_files
-    EvaluatorUtils.cc
     MultiplicativeEvaluator.cc
     AdditiveEvaluator.cc
     SubgridDisaggregateEvaluator.cc

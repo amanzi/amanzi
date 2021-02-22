@@ -14,21 +14,21 @@ namespace Relations {
 DrainageEvaluator::DrainageEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariablesFieldEvaluator(plist)
 {
-  std::string domain = Keys::getDomainName(my_key_);
+  Key domain = Keys::getDomain(Keys::cleanPListName(plist_.name()));
 
-  drainage_key_ = Keys::getKey(plist_, domain, "drainage", "drainage");
+  drainage_key_ = Keys::readKey(plist_, domain, "drainage", "drainage");
   my_keys_.push_back(drainage_key_);
 
-  fracwet_key_ = Keys::getKey(plist_, domain, "fraction wet", "fracwet");
+  fracwet_key_ = Keys::readKey(plist_, domain, "fraction wet", "fracwet");
   my_keys_.push_back(fracwet_key_);
 
   // Set up my dependencies.
   // -- the extent of material, LAI for
-  ai_key_ = Keys::getKey(plist_, domain, "area index", "area_index");
+  ai_key_ = Keys::readKey(plist_, domain, "area index", "area_index");
   dependencies_.insert(ai_key_);
 
   // -- water content of the layer drained
-  wc_key_ = Keys::getKey(plist_, domain, "water equivalent", "water_equivalent");
+  wc_key_ = Keys::readKey(plist_, domain, "water equivalent", "water_equivalent");
   dependencies_.insert(wc_key_);
 
   // parameters for the drainage model
@@ -58,7 +58,7 @@ void DrainageEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   Epetra_MultiVector& res_fracwet_c = *results[1]->ViewComponent("cell",false);
 
   // evaluate the model
-  for (int c=0; c!=res_c.MyLength(); ++c) {
+  for (int c=0; c!=res_drainage_c.MyLength(); ++c) {
     double wc_sat = ai[0][c] * wc_sat_;
     res_fracwet_c[0][c] = wc_sat > 0. ? wc[0][c] / wc_sat : 0.;
     if (wc[0][c] > wc_sat) {
@@ -87,14 +87,14 @@ DrainageEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
   Epetra_MultiVector& res_fracwet_c = *results[1]->ViewComponent("cell",false);
 
   if (wrt_key == wc_key_) {
-    for (int c=0; c!=res_c.MyLength(); ++c) {
+    for (int c=0; c!=res_drainage_c.MyLength(); ++c) {
       double wc_sat = ai[0][c] * wc_sat_;
       res_fracwet_c[0][c] = wc_sat > 0. ? 1/wc_sat : 0;
       if (wc[0][c] > wc_sat) {
         //  is oversaturated and draining
-        res_c[0][c] = 1.0 / tau_;
+        res_drainage_c[0][c] = 1.0 / tau_;
       } else {
-        res_c[0][c] = 0.;
+        res_drainage_c[0][c] = 0.;
       }
     }
   } else {

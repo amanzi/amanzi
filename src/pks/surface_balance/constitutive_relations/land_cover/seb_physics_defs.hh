@@ -25,6 +25,11 @@ namespace Amanzi {
 namespace SurfaceBalance {
 namespace SEBPhysics {
 
+static const double c_stephan_boltzmann = 0.00000005670373;
+static const double c_p_atm = 101325.;
+
+
+
 
 // Struct of skin data
 struct GroundProperties {

@@ -43,7 +43,7 @@ Requires the following dependencies:
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
-namespace LandCover {
+namespace SurfaceBalance {
 namespace Relations {
 
 namespace PriestleyTaylor {
@@ -51,7 +51,7 @@ namespace PriestleyTaylor {
 //
 // PRMS-IV eqn 1-59, calculates ground heat flux density in units of
 // [MJ m^-2 d^-1] given a daily-averaged ground and air temperature
-// (in C or K).
+// (in C or K).  We convert to W/m^2
 //
 double groundHeatFlux(double temp_ground, double temp_air);
 
@@ -64,19 +64,20 @@ double vaporPressureSlope(double temp_air);
 //
 // PRMS-IV eqn 1-57, calculates the psychrometric constant in [KPa C^-1] as a
 // function of an elevation (lapse rate fixed) and a latent heat of
-// vaporization in [cal gm^-1]
+// vaporization in [cal gm^-1].
 //
 double psychrometricConstant(double lh_vap, double evel);
 
 //
-// PRMS-IV eqn 1-51, calculates the latent heat of vaporization [J kg^-1] as a
+// PRMS-IV eqn 1-51, calculates the latent heat of vaporization [cal g^-1] as a
 // function of the daily averaged air temperature [K] for liquid water
 //
 double latentHeatVaporization_water(double temp_air);
 
 //
-// PRMS-IV eqn 1-51, calculates the latent heat of vaporization [J kg^-1] as a
-// function of the daily averaged air temperature [K] for snow
+// PRMS-IV eqn 1-51, calculates the latent heat of vaporization [cal g^-1] as a
+// function of the daily averaged air temperature [K] for snow -- note this is
+// currently the same as the water value, but should get modified for snow!
 //
 double latentHeatVaporization_snow(double temp_air);
 
@@ -109,7 +110,7 @@ class PETPriestleyTaylorEvaluator : public SecondaryVariableFieldEvaluator {
   Key ground_temp_key_;
   Key rel_hum_key_;
   Key elev_key_;
-  Key swr_key_;
+  Key rad_key_;
   Key limiter_key_;
   Key one_minus_limiter_key_;
 

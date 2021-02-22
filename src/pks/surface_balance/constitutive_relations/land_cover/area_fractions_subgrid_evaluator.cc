@@ -32,14 +32,7 @@ AreaFractionsSubgridEvaluator::AreaFractionsSubgridEvaluator(Teuchos::ParameterL
 
   // get domain names
   domain_ = Keys::getDomain(my_key_);
-  if (domain_ == "surface") {
-    domain_snow_ = plist_.get<std::string>("snow domain name", "snow");
-  } else if (boost::starts_with(domain_, "surface_")) {
-    domain_snow_ = plist_.get<std::string>("snow domain name",
-            std::string("snow_") + domain_.substr(8,domain_.size()));
-  } else {
-    domain_snow_ = plist_.get<std::string>("snow domain name");
-  }
+  domain_snow_ = Keys::readDomainHint(plist_, domain_, "surface", "snow");
 
   // get dependencies
   delta_max_key_ = Keys::readKey(plist_, domain_, "microtopographic relief", "microtopographic_relief");
@@ -63,13 +56,13 @@ void
 AreaFractionsSubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 {
-  auto& res = *result->ViewComponent("cell",false);
+  Epetra_MultiVector& res = *result->ViewComponent("cell",false);
 
-  const auto& pd = *S->GetFieldData(ponded_depth_key_)->ViewComponent("cell",false);
-  const auto& sd = *S->GetFieldData(snow_depth_key_)->ViewComponent("cell",false);
-  const auto& vsd = *S->GetFieldData(vol_snow_depth_key_)->ViewComponent("cell",false);
-  const auto& del_max = *S->GetFieldData(delta_max_key_)->ViewComponent("cell", false);
-  const auto& del_ex = *S->GetFieldData(delta_ex_key_)->ViewComponent("cell", false);
+  const Epetra_MultiVector& pd = *S->GetFieldData(ponded_depth_key_)->ViewComponent("cell",false);
+  const Epetra_MultiVector& sd = *S->GetFieldData(snow_depth_key_)->ViewComponent("cell",false);
+  const Epetra_MultiVector& vsd = *S->GetFieldData(vol_snow_depth_key_)->ViewComponent("cell",false);
+  const Epetra_MultiVector& del_max = *S->GetFieldData(delta_max_key_)->ViewComponent("cell", false);
+  const Epetra_MultiVector& del_ex = *S->GetFieldData(delta_ex_key_)->ViewComponent("cell", false);
 
   for (int c=0; c!=res.MyLength(); ++c) {
     // calculate area of land

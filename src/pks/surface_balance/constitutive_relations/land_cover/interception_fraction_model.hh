@@ -23,8 +23,7 @@ The interception fraction is everything here after the precip.
 
 */
 
-#ifndef AMANZI_SURFACEBALANCE_INTERCEPTION_FRACTION_MODEL_HH_
-#define AMANZI_SURFACEBALANCE_INTERCEPTION_FRACTION_MODEL_HH_
+#pragma once
 
 namespace Amanzi {
 namespace SurfaceBalance {
@@ -52,5 +51,3 @@ class InterceptionFractionModel {
 } //namespace
 } //namespace
 } //namespace
-
-#endif

@@ -191,7 +191,13 @@ def updateObservations(xml):
             if func_val.startswith("observation data: "):
                 func.setValue(func_val[len("observation data: "):])
             
+def aliasMesh(xml):
+    for mesh in asearch.findall_path(xml, ["mesh", "aliased parameters", "alias"]):
+        mesh.setName("target")
+        
+        
 
+                
 def update(xml):
     vanGenuchtenParams(xml)
     thermalConductivityParams(xml)
@@ -204,6 +210,7 @@ def update(xml):
     mergePreconditionerLinearSolver(xml)
     fixOverlandConductivity(xml)
     updateObservations(xml)
+    aliasMesh(xml)
 
 if __name__ == "__main__":
     import argparse
