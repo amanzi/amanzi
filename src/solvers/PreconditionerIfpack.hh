@@ -87,8 +87,8 @@ Example:
 */
 
 
-#ifndef AMANZI_PRECONDITIONER_BLOCK_ILU_HH_
-#define AMANZI_PRECONDITIONER_BLOCK_ILU_HH_
+#ifndef AMANZI_PRECONDITIONER_IFPACK_HH_
+#define AMANZI_PRECONDITIONER_IFPACK_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"

@@ -43,18 +43,12 @@ public:
     default;
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const override;
-  virtual void operator=(const FieldEvaluator& other) override;
-
-  void operator=(const IndependentVariableFieldEvaluatorConstant& other);
 
 protected:
   // ---------------------------------------------------------------------------
   // Update the value in the state.
   // ---------------------------------------------------------------------------
   virtual void UpdateField_(const Teuchos::Ptr<State>& S) override;
-
- protected:
-  bool computed_once_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,IndependentVariableFieldEvaluatorConstant> fac_;

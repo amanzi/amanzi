@@ -211,12 +211,8 @@ void State::AliasMesh(const Key& target, const Key& alias) {
   }
 };
 
-bool State::IsAliasedMesh(const Key& alias) const {
-  return (bool) mesh_aliases_.count(alias);
-}
-bool State::IsAliasedMesh(const Key& target, const Key& alias) const {
-  if (IsAliasedMesh(alias) && (mesh_aliases_.at(alias) == target)) return true;
-  return false;
+bool State::IsAliasedMesh(const Key& key) const {
+  return (bool) mesh_aliases_.count(key);
 }
 
 
@@ -1280,14 +1276,8 @@ void WriteVis(Visualization& vis,
     // need to be written.
     Key vis_domain = vis.get_name();
     for (State::field_iterator field=S.field_begin(); field!=S.field_end(); ++field) {
-      // filter for domain or aliased names
-      Key domain = Keys::getDomain(field->first);
-      if (domain == "") domain = "domain";
-      if (domain == vis_domain || S.IsAliasedMesh(vis_domain, domain)) {
-        field->second->WriteVis(vis);
-      }
+      field->second->WriteVis(vis);
     }
-
     vis.WriteRegions();
     vis.WritePartition();
 

@@ -562,11 +562,11 @@ SUITE(DIFFUSION) {
 
   // test in 3D
   TEST(Analytic02_MFD_DirichletNeumann_structured3d_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "structured3d", 3, 10,
+    test("ifpack2: ILUT", "DirichletNeumann", "structured3d", 3, 5,
          "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1e-12, 2, "02");
   }
   TEST(Analytic02_Gravity_MFD_DirichletNeumann_structured3d_ifpack2_ILUT) {
-    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumann", "structured3d", 3, 10,
+    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumann", "structured3d", 3, 5,
                  "mixed", true, AmanziMesh::Entity_kind::UNKNOWN, 1e-12, 1, "02");
   }
 #endif
@@ -598,11 +598,11 @@ SUITE(DIFFUSION) {
   //
   // These probably should pass?  Not sure why they don't.
   TEST(Analytic02_NLFV_DirichletNeumann_structured3d_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "structured3d", 3, 10,
+    test("ifpack2: ILUT", "DirichletNeumann", "structured3d", 3, 5,
          "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-11, 1, "02", 20);
   }
   TEST(Analytic02_Gravity_NLFV_DirichletNeumann_structured3d_ifpack2_ILUT) {
-    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumann", "structured3d", 3, 10,
+    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumann", "structured3d", 3, 5,
                  "nlfv", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 1, "02", 20);
   }
 
@@ -630,11 +630,11 @@ SUITE(DIFFUSION) {
 
   // test in 3D
   TEST(Analytic02_NLFVwithBndFaces_DirichletNeumann_structured3d_ifpack2_ILUT) {
-    test("ifpack2: ILUT", "DirichletNeumann", "structured3d", 3, 10,
+    test("ifpack2: ILUT", "DirichletNeumann", "structured3d", 3, 5,
          "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1.e-11, 1, "02", 20);
   }
   TEST(Analytic02_Gravity_NLFVwithBndFaces_DirichletNeumann_structured3d_ifpack2_ILUT) {
-    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumann", "structured3d", 3, 10,
+    testWGravity(0.1, "ifpack2: ILUT", "DirichletNeumann", "structured3d", 3, 5,
                  "nlfv with bfaces", false, AmanziMesh::Entity_kind::UNKNOWN, 1e-11, 1, "02", 20);
   }
 #endif 
