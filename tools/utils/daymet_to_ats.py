@@ -123,17 +123,17 @@ def get_argument_parser():
     
     def string_to_start_date(s):
         if len(s) == 4:
-            return datetime.datetime(int(s),1,1)
+            return datetime.datetime(int(s),1,1).date()
         else:
-            return datetime.datetime.strptime(s, '%Y-%m-%d')
+            return datetime.datetime.strptime(s, '%Y-%m-%d').date()
     parser.add_argument('-s', '--start', type=string_to_start_date,
                         help='Start date, either YYYY or YYYY-MM-DD')
 
     def string_to_end_date(s):
         if len(s) == 4:
-            return datetime.datetime(int(s),12,31)
+            return datetime.datetime(int(s),12,31).date()
         else:
-            return datetime.datetime.strptime(s, '%Y-%m-%d')
+            return datetime.datetime.strptime(s, '%Y-%m-%d').date()
     parser.add_argument('-e', '--end', type=string_to_end_date,
                         help='End date, either YYYY or YYYY-MM-DD')
 
