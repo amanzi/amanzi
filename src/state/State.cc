@@ -1278,7 +1278,7 @@ void WriteVis(Visualization& vis,
 
     // Write all fields to the visualization file, the fields know if they
     // need to be written.
-    Key vis_domain = vis.name();
+    Key vis_domain = vis.get_name();
     for (State::field_iterator field=S.field_begin(); field!=S.field_end(); ++field) {
       // filter for domain or aliased names
       Key domain = Keys::getDomain(field->first);
