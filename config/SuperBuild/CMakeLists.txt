@@ -204,6 +204,12 @@ if (ENABLE_Structured)
   endif()
 endif()
 
+if(ENABLE_KOKKOS_OPENMP)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+  set(CMAKE_LINK_FLAGS "${CMAKE_LINK_FLAGS} -lpthread")
+endif()
+
 # If unstructured is not enabled, there is no reason to have these mesh frameworks
 if (NOT ENABLE_Unstructured)
   set(ENABLE_STK_Mesh FALSE)
