@@ -21,7 +21,7 @@ set(ats_flow_relations_src_files "")
 set(ats_flow_relations_inc_files "")
 
 foreach(lcv IN LISTS subdirs)
-  include_directories(${ATS_SOURCE_DIR}/pks/flow/constitutive_relations/${lcv})
+  include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/${lcv})
   
   file(GLOB subdir_sources "./${lcv}/*.cc")
   set(ats_flow_relations_src_files ${ats_flow_relations_src_files} ${subdir_sources})
@@ -47,5 +47,4 @@ add_amanzi_library(ats_flow_relations
                    SOURCE ${ats_flow_relations_src_files}
                    HEADERS ${ats_flow_relations_inc_files}
 		   LINK_LIBS ${ats_flow_relations_link_libs})
-
 

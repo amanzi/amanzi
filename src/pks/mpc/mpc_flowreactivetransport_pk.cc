@@ -26,23 +26,16 @@ FlowReactiveTransport_PK_ATS::FlowReactiveTransport_PK_ATS(
     PK(pk_tree, global_list, S, soln),
     PK_MPCSubcycled_ATS(pk_tree, global_list, S, soln) { 
 
-  name_ = pk_tree.name();
-  const char* result = name_.data();
-
-  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(name_,"->"); 
-  if (res.end() - name_.end() != 0) boost::algorithm::erase_head(name_,  res.end() - name_.begin());
-
+  name_ = Keys::cleanPListName(pk_tree.name());
   Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(global_list, "PKs", true);
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list, name_, true);
 
-  vo_ = Teuchos::null;
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = pk_list -> sublist("verbose object");
-  vo_ =  Teuchos::rcp(new VerboseObject("Flow&TransportPK", vlist)); 
+  vo_ =  Teuchos::rcp(new VerboseObject(name_, vlist)); 
 
   flow_timer_ = Teuchos::TimeMonitor::getNewCounter("flow");
   rt_timer_ = Teuchos::TimeMonitor::getNewCounter("reactive tranport");
-  
 }
 
 

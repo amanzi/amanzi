@@ -14,7 +14,7 @@ from amanzi_xml.utils import errors as aerrors
 
         
 def fixVerboseObject(xml):
-    for vo in asearch.gen_by_path(xml, "VerboseObject"):
+    for vo in asearch.findall_path(xml, ["VerboseObject"]):
         vo.set("name", "verbose object")
         try:
             asearch.change_name(vo, "Verbosity Level", "verbosity level", no_skip=True)

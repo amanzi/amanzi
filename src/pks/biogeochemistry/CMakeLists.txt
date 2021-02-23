@@ -1,6 +1,8 @@
 # -*- mode: cmake -*-
-include_directories(${ATS_SOURCE_DIR}/pks)
-include_directories(${ATS_SOURCE_DIR}/pks/biogeochemistry/bgc_simple/)
+
+include_directories(${ATS_SOURCE_DIR}/src/pks)
+#include_directories(${ATS_SOURCE_DIR}/src/pks/biogeochemistry/bgc_simple/)
+
 
 # ATS Surface balance PKs describe Evaporation, energy fluxes from
 #  long/showtwave radiation, precip, etc etc etc

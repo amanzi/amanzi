@@ -20,7 +20,6 @@ CarbonSimple::CarbonSimple(Teuchos::ParameterList& pk_tree,
                             const Teuchos::RCP<State>& S,
                             const Teuchos::RCP<TreeVector>& solution):
     Amanzi::PK(pk_tree, glist, S, solution),
-    Amanzi::PK_Explicit_Default(pk_tree, glist, S, solution),
     Amanzi::PK_Physical_Explicit_Default(pk_tree, glist, S, solution),
     is_diffusion_(false),
     is_source_(false),

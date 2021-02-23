@@ -16,7 +16,7 @@ modifier.  It is notably better than the daily average radiation times
 the daily average aspect modifier.
 
 
-    
+
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 #include <cmath>
@@ -93,9 +93,6 @@ IncidentShortwaveRadiationModel::IncidentShortwaveRadiation(double slope, double
     double hour = 12.0 + 24 * (doy - doy_i);
     rad = Impl::Radiation(slope, aspect, doy_i, hour, lat_, qSWin);
   }
-  if (qSWin > 200) {
-    std::cout << "slope = " << slope << ", aspect = " << aspect << ", doy = " << doy_i << " qSWin = " << qSWin << ", rad = " << rad << std::endl;
-  }
 
   return rad;
 }
@@ -120,15 +117,15 @@ IncidentShortwaveRadiationModel::DIncidentShortwaveRadiationDIncomingShortwaveRa
   return IncidentShortwaveRadiation(slope, aspect, qSWin, time) / qSWin;
 }
 
-namespace Impl {  
+namespace Impl {
 
     /*Declination angle
-    
+
     Parameters
     ----------
     doy : int
       Julian day of the year
-    
+
     Returns
     -------
     delta : double
@@ -139,12 +136,12 @@ double DeclinationAngle(double doy) {
 }
 
     /*Angle of the sun as a function of the time of day
-    
+
     Parameters
     ----------
     hour : double
        Time, in a 24 hour clock in [0,24)
-    
+
     Returns
     -------
     tau : angle in radians
@@ -155,7 +152,7 @@ double HourAngle(double hour)
 }
 
     /*The solar altitude
-    
+
     Parameters
     ----------
     delta : double
@@ -163,7 +160,7 @@ double HourAngle(double hour)
     phi : double
       Latitude (radians)
     tau : hour angle (radians)
-    
+
     Returns
     -------
     alpha : altitude (radians)
@@ -179,7 +176,7 @@ double SolarAltitude(double delta, double phi, double tau)
 }
 
     /*The sun's azhimuth
-    
+
     Parameters
     ----------
     delta : double
@@ -187,7 +184,7 @@ double SolarAltitude(double delta, double phi, double tau)
     phi : double
       Latitude (radians)
     tau : hour angle (radians)
-    
+
     Returns
     -------
     phi_sun : altitude (radians)
@@ -205,12 +202,12 @@ double SolarAzhimuth(double delta, double phi, double tau) {
     /*Geometric reference factor for a flat surface.
 
     Parameters
-    ----------    
+    ----------
     alpha : double
       solar altitude (radians)
     phi_sun : double
       sun's azhimuth (radians)
-      
+
     Returns
     -------
     flat : geometric factor [-]
@@ -221,9 +218,9 @@ double FlatGeometry(double alpha, double phi_sun)
 }
 
     /*Geometric reference factor of a slope at a given aspect.
-    
+
     Parameters
-    ----------   
+    ----------
     slope : double or array_like
       Positive, down-dip slope [radians]
     aspect : double or array_like
@@ -232,11 +229,11 @@ double FlatGeometry(double alpha, double phi_sun)
       solar altitude (radians)
     phi_sun : double
       sun's azhimuth (radians)
-      
+
     Returns
     -------
     factor : double or array_like
-      
+
     */
 double SlopeGeometry(double slope, double aspect, double alpha, double phi_sun)
 {
@@ -244,15 +241,15 @@ double SlopeGeometry(double slope, double aspect, double alpha, double phi_sun)
 }
 
     /*Returns the geometric factor to multiply times a solar radiation to get a slope-aspect specific value
-    
+
     Parameters
     ----------
     slope : double or array_like
-      Positive, down-dip slope, $-grad z \dot \hat{n}^\perp$, 
-      where $\hat{n}^\perp$ here refers to the projection of 
+      Positive, down-dip slope, $-grad z \dot \hat{n}^\perp$,
+      where $\hat{n}^\perp$ here refers to the projection of
       the normal onto the x-y plane. [-]
     aspect : double or array_like
-      Angle of $\hat{n}^\perp$ in map-view, measured 
+      Angle of $\hat{n}^\perp$ in map-view, measured
       clockwise from N = 0 [radians].
     doy : int
       Julian day of the year
@@ -260,7 +257,7 @@ double SlopeGeometry(double slope, double aspect, double alpha, double phi_sun)
       Hour of the day, in 24-hour clock [0,24)
     lat : double
       Latitude [degrees]
-      
+
     Returns
     -------
     Rslope : double or array_like
@@ -280,14 +277,14 @@ GeometricRadiationFactors(double slope, double aspect, int doy, double hour, dou
   AMANZI_ASSERT(360 > aspect);
   AMANZI_ASSERT(aspect >= 0);
 #endif
-    
+
   double delta = DeclinationAngle(doy);
   double lat_r = M_PI / 180. * lat;
   double tau = HourAngle(hour);
 
   double alpha = SolarAltitude(delta,lat_r,tau);
   double phi_sun = SolarAzhimuth(delta,lat_r,tau);
-    
+
   double fac_flat = FlatGeometry(alpha, phi_sun);
   double slope_r = std::atan(slope);
   double fac_slope = SlopeGeometry(slope_r, aspect, alpha, phi_sun);
@@ -299,11 +296,11 @@ GeometricRadiationFactors(double slope, double aspect, int doy, double hour, dou
     Parameters
     ----------
     slope : double
-      Positive, down-dip slope, $-grad z \dot \hat{n}^\perp$, 
-      where $\hat{n}^\perp$ here refers to the projection of 
+      Positive, down-dip slope, $-grad z \dot \hat{n}^\perp$,
+      where $\hat{n}^\perp$ here refers to the projection of
       the normal onto the x-y plane. [-]
     aspect : double
-      Angle of $\hat{n}^\perp$ in map-view, measured 
+      Angle of $\hat{n}^\perp$ in map-view, measured
       clockwise from N = 0 [radians].
     doy : int
       Julian day of the year
@@ -313,7 +310,7 @@ GeometricRadiationFactors(double slope, double aspect, int doy, double hour, dou
       Latitude [degrees]
     qSWin : double
       Incoming radiation on a flat surface. [W/m^2]
-      
+
     Returns
     -------
     qSWincident : double

@@ -86,8 +86,15 @@ void Coordinator::coordinator_init() {
 
   // create the observations
   Teuchos::ParameterList& observation_plist = parameter_list_->sublist("observations");
-  observations_ = Teuchos::rcp(new Amanzi::UnstructuredObservations(observation_plist,
-          Teuchos::null));
+  for (auto& sublist : observation_plist) {
+    if (observation_plist.isSublist(sublist.first)) {
+      observations_.emplace_back(Teuchos::rcp(new Amanzi::UnstructuredObservations(
+                observation_plist.sublist(sublist.first), S_.ptr())));
+    } else {
+      Errors::Message msg("\"observations\" list must only include sublists.");
+      Exceptions::amanzi_throw(msg);
+    }
+  }
 
   // check whether meshes are deformable, and if so require a nodal position
   for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
@@ -128,42 +135,38 @@ void Coordinator::setup() {
 }
 
 void Coordinator::initialize() {
-  // Restart from checkpoint, part 1.
-
-  // This is crufty -- blame the BDF1 time integrator, whose solution history
-  // needs to be updated to accept the new time as its initial time.
-
-  // Note that if this is so, we can probably ignore some of the above
-  // initialize() calls and the commit_state() call, but I'm afraid to try
-  // that and break all the PKs.
-  // Currently not a true restart -- for a true restart this should also get:
-  // -- timestep size dt
-  // -- BDF history to allow projection to continue correctly.
   Teuchos::OSTab tab = vo_->getOSTab();
   int size = comm_->NumProc();
   int rank = comm_->MyPID();
 
-  // Restart from checkpoint, part 2.
+  // Restart from checkpoint part 1:
+  //  - get the time prior to initializing anything else
   if (restart_) {
-    ReadCheckpoint(comm_, *S_, restart_filename_);
+    S_->set_time(Amanzi::ReadCheckpointInitialTime(comm_, restart_filename_));
+  }
+  
+  // Initialize the state
+  *S_->GetScalarData("dt", "coordinator") = 0.;
+  S_->GetField("dt","coordinator")->set_initialized();
+  S_->InitializeFields();
+
+  // Initialize the process kernels
+  pk_->Initialize(S_.ptr());
+
+  // Restart from checkpoint part 2:
+  // -- load all other data
+  if (restart_) {
+    Amanzi::ReadCheckpoint(comm_, *S_, restart_filename_);
     t0_ = S_->time();
     cycle0_ = S_->cycle();
 
     for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
          mesh!=S_->mesh_end(); ++mesh) {
       if (S_->IsDeformableMesh(mesh->first)) {
-        DeformCheckpointMesh(*S_, mesh->first);
+        Amanzi::DeformCheckpointMesh(*S_, mesh->first);
       }
     }
   }
-
-  // Initialize the state (initializes all dependent variables).
-  *S_->GetScalarData("dt", "coordinator") = 0.;
-  S_->GetField("dt","coordinator")->set_initialized();
-  S_->InitializeFields();
-
-  // Initialize the process kernels (initializes all independent variables)
-  pk_->Initialize(S_.ptr());
 
   // Final checks.
   S_->CheckNotEvaluatedFieldsInitialized();
@@ -175,9 +178,6 @@ void Coordinator::initialize() {
 
   // Write dependency graph.
   S_->WriteDependencyGraph();
-
-  // Reset io_vis flags using blacklist and whitelist
-  //S_->InitializeIOFlags();
 
   // Check final initialization
   WriteStateStatistics(*S_, *vo_);
@@ -206,7 +206,7 @@ void Coordinator::initialize() {
       auto vis = Teuchos::rcp(new Amanzi::Visualization(*sublist_p));
       vis->set_name(domain_name);
       vis->set_mesh(mesh_p);
-      vis->CreateFiles();
+      vis->CreateFiles(false);
 
       visualization_.push_back(vis);
 
@@ -221,7 +221,7 @@ void Coordinator::initialize() {
           auto vis = Teuchos::rcp(new Amanzi::Visualization(sublist));
           vis->set_name(m->first);
           vis->set_mesh(m->second.first);
-          vis->CreateFiles();
+          vis->CreateFiles(false);
           visualization_.push_back(vis);
         }
       }
@@ -230,23 +230,20 @@ void Coordinator::initialize() {
   }
 
   // make observations
-  observations_->MakeObservations(*S_);
+  for (const auto& obs : observations_) obs->MakeObservations(S_.ptr());
 
   S_->set_time(t0_); // in case steady state solve changed this
   S_->set_cycle(cycle0_);
 
   // set up the TSM
   // -- register visualization times
-  for (std::vector<Teuchos::RCP<Amanzi::Visualization> >::iterator vis=visualization_.begin();
-       vis!=visualization_.end(); ++vis) {
-    (*vis)->RegisterWithTimeStepManager(tsm_.ptr());
-  }
+  for (const auto& vis : visualization_) vis->RegisterWithTimeStepManager(tsm_.ptr());
 
   // -- register checkpoint times
   checkpoint_->RegisterWithTimeStepManager(tsm_.ptr());
 
   // -- register observation times
-  observations_->RegisterWithTimeStepManager(tsm_.ptr());
+  for (const auto& obs : observations_) obs->RegisterWithTimeStepManager(tsm_.ptr());
 
   // -- register the final time
   tsm_->RegisterTimeEvent(t1_);
@@ -282,7 +279,7 @@ void Coordinator::finalize() {
   WriteCheckpoint(*checkpoint_, *S_next_, 0.0, true);
 
   // flush observations to make sure they are saved
-  observations_->Flush();
+  for (const auto& obs : observations_) obs->Flush();
 }
 
 
@@ -449,7 +446,7 @@ bool Coordinator::advance(double t_old, double t_new) {
     pk_->CommitStep(t_old, t_new, S_next_);
 
     // make observations, vis, and checkpoints
-    observations_->MakeObservations(*S_next_);
+    for (const auto& obs : observations_) obs->MakeObservations(S_next_.ptr());
     visualize();
     checkpoint(dt);
 
@@ -460,10 +457,7 @@ bool Coordinator::advance(double t_old, double t_new) {
   } else {
     // Failed the timestep.
     // Potentially write out failed timestep for debugging
-    for (std::vector<Teuchos::RCP<Amanzi::Visualization> >::iterator vis=failed_visualization_.begin();
-         vis!=failed_visualization_.end(); ++vis) {
-      WriteVis(*(*vis), *S_next_);
-    }
+    for (const auto& vis : failed_visualization_) WriteVis(*vis, *S_next_);
 
     // The timestep sizes have been updated, so copy back old soln and try again.
     *S_next_ = *S_;
@@ -508,9 +502,8 @@ void Coordinator::visualize(bool force) {
   // write visualization if requested
   bool dump = force;
   if (!dump) {
-    for (std::vector<Teuchos::RCP<Amanzi::Visualization> >::iterator vis=visualization_.begin();
-         vis!=visualization_.end(); ++vis) {
-      if ((*vis)->DumpRequested(S_next_->cycle(), S_next_->time())) {
+    for (const auto& vis : visualization_) {
+      if (vis->DumpRequested(S_next_->cycle(), S_next_->time())) {
         dump = true;
       }
     }
@@ -520,10 +513,9 @@ void Coordinator::visualize(bool force) {
     pk_->CalculateDiagnostics(S_next_);
   }
 
-  for (std::vector<Teuchos::RCP<Amanzi::Visualization> >::iterator vis=visualization_.begin();
-       vis!=visualization_.end(); ++vis) {
-    if (force || (*vis)->DumpRequested(S_next_->cycle(), S_next_->time())) {
-      WriteVis(*(*vis), *S_next_);
+  for (const auto& vis : visualization_) {
+    if (force || vis->DumpRequested(S_next_->cycle(), S_next_->time())) {
+      WriteVis(*vis, *S_next_);
     }
   }
 }
@@ -577,8 +569,8 @@ void Coordinator::cycle_driver() {
         *vo_->os() << "======================================================================"
                   << std::endl << std::endl;
         *vo_->os() << "Cycle = " << S_->cycle();
-        *vo_->os() << ",  Time [days] = "<< S_->time() / (60*60*24);
-        *vo_->os() << ",  dt [days] = " << dt / (60*60*24)  << std::endl;
+        *vo_->os() << ",  Time [days] = "<< std::setprecision(16) << S_->time() / (60*60*24);
+        *vo_->os() << ",  dt [days] = " << std::setprecision(16) << dt / (60*60*24)  << std::endl;
         *vo_->os() << "----------------------------------------------------------------------"
                   << std::endl;
       }
@@ -606,7 +598,7 @@ void Coordinator::cycle_driver() {
     visualize(true); // force vis
 
     // flush observations to make sure they are saved
-    observations_->Flush();
+    for (const auto& obs : observations_) obs->Flush();
 
     // catch errors to dump two checkpoints -- one as a "last good" checkpoint
     // and one as a "debugging data" checkpoint.

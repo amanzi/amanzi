@@ -1,8 +1,8 @@
 /*
-This is the flow component of the Amanzi code. 
-License: BSD
-Authors: Neil Carlson (versions 1 & 2)  (nnc@lanl.gov)
-         Ethan Coon (ATS version)
+  This is the flow component of the Amanzi code.
+  License: BSD
+  Authors: Neil Carlson (versions 1 & 2)  (nnc@lanl.gov)
+           Ethan Coon (ATS version)
 */
 
 #include "FunctionConstant.hh"
@@ -63,10 +63,9 @@ BCFactory::CreateDynamicFunction(std::string list_name) const{
   std::vector<std::string> regions;
   std::vector<std::string> bc_types;
   std::vector<std::string> bc_functions;
-  
+
   Teuchos::RCP<Functions::BoundaryFunction> bc;
-  std::stringstream m;
-  
+
   Teuchos::RCP<Functions::DynamicBoundaryFunction> bcs =
     Teuchos::rcp(new Functions::DynamicBoundaryFunction(mesh_));
 
@@ -84,15 +83,14 @@ BCFactory::CreateDynamicFunction(std::string list_name) const{
         if (list.isParameter("bc types")){
           bc_types = list.get<Teuchos::Array<std::string> >("bc types").toVector();
         } else {  // Parameter "regions" is missing.
-          m << "parameter \"bc types\" is missing";
-          Errors::Message msg(m.str());
+          Errors::Message msg;
+          msg << "parameter \"bc types\" is missing";
           Exceptions::amanzi_throw(msg);
         }
         if (list.isParameter("bc functions")){
           bc_functions = list.get<Teuchos::Array<std::string> >("bc functions").toVector();
         } else {  // Parameter "regions" is missing.
-          m << "parameter \"bc functions\" is missing";
-          Errors::Message msg(m.str());
+          Errors::Message msg("parameter \"bc functions\" is missing");
           Exceptions::amanzi_throw(msg);
         }
 
@@ -100,7 +98,7 @@ BCFactory::CreateDynamicFunction(std::string list_name) const{
 
         for(int i=0; i<bc_types.size(); i++){
 
-          bc = Teuchos::rcp(new Functions::BoundaryFunction(mesh_));         
+          bc = Teuchos::rcp(new Functions::BoundaryFunction(mesh_));
           if (list.isParameter( bc_types[i] )) {
             if (list.isSublist( bc_types[i] )) {
               if ((bc_types[i]=="pressure")||
@@ -112,22 +110,21 @@ BCFactory::CreateDynamicFunction(std::string list_name) const{
                 ProcessListWithFunction_(list.sublist(bc_types[i]), bc_functions[i], bc);
               }else{
                 ProcessListWithoutFunction_(list.sublist(bc_types[i]), bc);
-              }                            
+              }
             } else {
-              std::stringstream mstream;
-              mstream << "BCFactory: " << list_name << " sublist error: not a sublist.";
-              Errors::Message m(mstream.str());
-              Exceptions::amanzi_throw(m);
+              Errors::Message msg;
+              msg << "BCFactory: " << list_name << " sublist error: not a sublist.";
+              Exceptions::amanzi_throw(msg);
             }
           }
 
           bcs->AddFunction(bc);
-          
+
         }
-        
-      }else {  // Parameter "regions" is missing.
-        m << "sublist \"bcs \" is missing";
-        Errors::Message msg(m.str());
+
+      } else {  // Parameter "regions" is missing.
+        Errors::Message msg;
+        msg << "sublist \"bcs \" is missing";
         Exceptions::amanzi_throw(msg);
       }
 
@@ -140,14 +137,14 @@ BCFactory::CreateDynamicFunction(std::string list_name) const{
           Exceptions::amanzi_throw(m);
         }
       } else { // ERROR -- parameter is not a sublist
-        Errors::Message m;
-        m << "parameter \"switch function\" is not a sublist";
-        Exceptions::amanzi_throw(m);
+        Errors::Message msg;
+        msg << "parameter \"switch function\" is not a sublist";
+        Exceptions::amanzi_throw(msg);
       }
-      
+
     }
   }
- 
+
   return bcs;
 }
 
@@ -222,7 +219,7 @@ void BCFactory::ProcessSpecWithFunction_(const Teuchos::ParameterList& list,
   // Make the boundary pressure function.
   Teuchos::RCP<Function> f;
   FunctionFactory f_fact;
-  try {   
+  try {
     f = Teuchos::rcp(f_fact.Create(f_list));
   } catch (Errors::Message& msg) {
     m << "error in sublist " << function_name << ": " << msg.what();
@@ -234,7 +231,7 @@ void BCFactory::ProcessSpecWithFunction_(const Teuchos::ParameterList& list,
   // options for mesh_functions.
   Teuchos::RCP<MultiFunction> func = Teuchos::rcp(new MultiFunction(f));
 
-  
+
 
   // Add this BC specification to the boundary function.
   bc->Define(regions, func);
@@ -282,7 +279,7 @@ void BCFactory::ProcessSpecWithFunctionRegions_(const Teuchos::ParameterList& li
   // Add this BC specification to the boundary function.
   bc->Define(regions, func);
 }
-  
+
 
 /* ******************************************************************
 * Process Dirichet BC (pressure), step 2.

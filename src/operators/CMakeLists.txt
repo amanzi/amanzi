@@ -3,9 +3,9 @@
 #
 #  ATS Operators
 #
-include_directories(${ATS_SOURCE_DIR}/operators/advection)
-include_directories(${ATS_SOURCE_DIR}/operators/upwinding)
-include_directories(${ATS_SOURCE_DIR}/operators/deformation)
+include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
+include_directories(${ATS_SOURCE_DIR}/src/operators/upwinding)
+include_directories(${ATS_SOURCE_DIR}/src/operators/deformation)
 
 set(ats_operators_src_files
   advection/advection.cc
