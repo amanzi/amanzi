@@ -135,18 +135,36 @@ Function* FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
     reader.ReadData(x, vec_x);
     reader.ReadData(y, vec_y);
     if (params.isParameter("forms")) {
-      Teuchos::Array<std::string> form_strings(params.get<Teuchos::Array<std::string> >("forms"));
-      std::vector<FunctionTabular::Form> form(form_strings.size());
-      for (int i = 0; i < form_strings.size(); ++i) {
-        if (form_strings[i] == "linear")
-          form[i] = FunctionTabular::LINEAR;
-        else if (form_strings[i] == "constant")
-          form[i] = FunctionTabular::CONSTANT;
-        else {
+      std::vector<FunctionTabular::Form> form;
+      if (params.isType<Teuchos::Array<std::string>>("forms")) {
+        Teuchos::Array<std::string> form_strings(params.get<Teuchos::Array<std::string> >("forms"));
+        form.resize(form_strings.size());
+        for (int i = 0; i < form_strings.size(); ++i) {
+          if (form_strings[i] == "linear")
+            form[i] = FunctionTabular::LINEAR;
+          else if (form_strings[i] == "constant")
+            form[i] = FunctionTabular::CONSTANT;
+          else {
+            Errors::Message m;
+            m << "unknown form \"" << form_strings[i].c_str() << "\"";
+            Exceptions::amanzi_throw(m);
+          }
+        }
+      } else if (params.isType<std::string>("forms")) {
+        std::string form_string = params.get<std::string>("forms");
+
+        if (form_string == "linear") {
+          form.resize(vec_x.size()-1, FunctionTabular::LINEAR);
+        } else if (form_string == "constant") {
+          form.resize(vec_x.size()-1, FunctionTabular::CONSTANT);
+        } else {
           Errors::Message m;
-          m << "unknown form \"" << form_strings[i].c_str() << "\"";
+          m << "unknown form \"" << form_string << "\"";
           Exceptions::amanzi_throw(m);
         }
+      } else {
+        Errors::Message m("Parameter \"forms\" in \"function-tabular\" passed of invalid type.");
+        Exceptions::amanzi_throw(m);
       }
       f = new FunctionTabular(vec_x, vec_y, xi, form);
     } else {
@@ -176,6 +194,7 @@ Function* FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
 
       std::vector<double> y(params.get<Teuchos::Array<double> >("y values").toVector());
       if (params.isParameter("forms")) {
+
         Teuchos::Array<std::string> form_strings(params.get<Teuchos::Array<std::string> >("forms"));
         int nforms = form_strings.size();
         std::vector<FunctionTabular::Form> form(nforms);

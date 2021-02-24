@@ -68,7 +68,6 @@ class MeshColumn : public Mesh {
   MeshColumn(const Teuchos::RCP<const Mesh>& parent_mesh,
              const int column_id,
              const Teuchos::RCP<const Teuchos::ParameterList>& plist=Teuchos::null);
-             
 
   ~MeshColumn();
 

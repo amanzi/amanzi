@@ -27,9 +27,11 @@
 #ifdef TRILINOS_TPETRA_STACK
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_MpiComm.hpp"
+#include "Teuchos_SerialComm.hpp"
 #else
 
 #include "Epetra_MpiComm.h"
+#include "Epetra_SerialComm.h"
 #endif
 
 namespace Amanzi {
@@ -38,11 +40,13 @@ namespace Amanzi {
 typedef Teuchos::Comm<int> Comm_type;
 #ifdef HAVE_MPI
 typedef Teuchos::MpiComm<int> MpiComm_type;
+typedef Teuchos::SerialComm<int> SerialComm_type;
 #endif
 #else
 typedef Epetra_Comm Comm_type;
 #ifdef HAVE_MPI
 typedef Epetra_MpiComm MpiComm_type;
+typedef Epetra_SerialComm SerialComm_type;
 #endif
 #endif
 

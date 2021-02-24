@@ -433,25 +433,17 @@ class State {
 void WriteVis(Visualization& vis,
               State& S);
 
-// Checkpointing State.
-void WriteCheckpoint(Checkpoint& ckp,
-                     State& S,
-                     double dt,
-                     bool final = false,
-                     Amanzi::ObservationData* obs_data = NULL);
-
-double ReadCheckpoint(const Comm_ptr_type& comm,
-                      State& S,
-                      std::string filename);
+double ReadCheckpoint(State& S,
+                      const std::string& filename);
 
 double ReadCheckpointInitialTime(const Comm_ptr_type& comm,
-                                 const std::string& filename);
+                                 std::string filename);
 
 int ReadCheckpointPosition(const Comm_ptr_type& comm,
-                           const std::string& filename);
+                           std::string filename);
 
 void ReadCheckpointObservations(const Comm_ptr_type& comm,
-                                const std::string& filename,
+                                std::string filename,
                                 Amanzi::ObservationData& obs_data);
 
 void DeformCheckpointMesh(State& S, Key domain);

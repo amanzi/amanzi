@@ -677,7 +677,8 @@ void HDF5_MPI::open_h5file()
 
 
 void HDF5_MPI::close_h5file() {
-  parallelIO_close_file(data_file_, &IOgroup_); 
+  parallelIO_close_file(data_file_, &IOgroup_);
+  data_file_ = -1;
 }
 
 

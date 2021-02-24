@@ -32,7 +32,7 @@ file(GLOB geometry_source_files "*.cc")
 file(GLOB geometry_inc_files "*.hh")
 add_amanzi_library(geometry 
                    SOURCE ${geometry_source_files} HEADERS ${geometry_inc_files}
-                   LINK_LIBS error_handling functions ${Teuchos_LIBRARIES} )
+                   LINK_LIBS functions error_handling atk ${Teuchos_LIBRARIES} )
 
 
 #
@@ -60,9 +60,7 @@ if (BUILD_TESTS)
                    KIND unit
                    SOURCE test/Main.cc 
                           test/test_geometric_ops.cc
-                   LINK_LIBS 
-                          geometry
-                          ${Teuchos_LIBRARIES} ${UnitTest_LIBRARIES})
+                   LINK_LIBS geometry ${UnitTest_LIBRARIES})
 
    # Test: test region creation
    add_amanzi_test(geometry_region geometry_region
@@ -75,18 +73,15 @@ if (BUILD_TESTS)
                           test/test_colorfunc_region.cc
 			  test/test_polygon_region.cc
 			  test/test_cylinder_region.cc
-                   LINK_LIBS 
-                          geometry
-                          ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})  
+                   LINK_LIBS geometry ${UnitTest_LIBRARIES})
 
    # Test: test geometric model creation
    add_amanzi_test(geometry_geometric_model geometry_geometric_model
                    KIND unit
                    SOURCE test/Main.cc
                           test/test_geometric_model.cc
-                   LINK_LIBS 
-                          geometry
-                          ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})  
+                   LINK_LIBS geometry
+                          ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})  
 
 endif()
 
