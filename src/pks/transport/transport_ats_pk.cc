@@ -55,7 +55,9 @@ Transport_ATS::Transport_ATS(Teuchos::ParameterList& pk_tree,
 {
 
 
-  key_ = Keys::readKey(*plist_, domain_, "primary variable");  
+  key_ = Keys::readKey(*plist_, domain_, "primary variable", "total_component_concentration");
+  tcc_key_ = key_;
+  
   // set up the primary variable solution, and its evaluator
   Teuchos::ParameterList& FElist = S->FEList();
   Teuchos::ParameterList& pv_sublist = FElist.sublist(key_);
