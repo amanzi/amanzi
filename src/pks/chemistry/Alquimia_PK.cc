@@ -585,8 +585,6 @@ void Alquimia_PK::CopyToAlquimia(int cell,
   mat_props.volume = mesh_->cell_volume(cell);
   mat_props.saturation = water_saturation[0][cell];
 
-
-
   // sorption isotherms
   if (using_sorption_isotherms_) {
     const Epetra_MultiVector& isotherm_kd = *S_->GetFieldData(isotherm_kd_key_)->ViewComponent("cell");
@@ -803,7 +801,7 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     prev_time_step_ = dt;
   }
 
-  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Starting AdvanceStep ...\n";
   }
@@ -972,7 +970,6 @@ void Alquimia_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<Stat
 {
   if (S_ != S) CopyFieldstoNewState(S);
   saved_time_ = t_new;
-
 }
 
 
