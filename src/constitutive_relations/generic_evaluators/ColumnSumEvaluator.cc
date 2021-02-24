@@ -1,15 +1,16 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
-
 /*
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
   Authors: Ahmad Jan (jana@ornl.gov)
 */
+//! Sums a subsurface field vertically only a surface field.
 
 #include "ColumnSumEvaluator.hh"
 
 namespace Amanzi {
 namespace Relations {
-
-
 
 ColumnSumEvaluator::ColumnSumEvaluator(Teuchos::ParameterList& plist)
     : SecondaryVariableFieldEvaluator(plist)
@@ -17,19 +18,19 @@ ColumnSumEvaluator::ColumnSumEvaluator(Teuchos::ParameterList& plist)
   surf_domain_ = Keys::getDomain(my_key_);
   if (surf_domain_ == "surface") {
     domain_ = "";
-    domain_ = plist.get<std::string>("column domain name", domain_);
+    domain_ = plist_.get<std::string>("column domain name", domain_);
   } else if (Keys::starts_with(surf_domain_, "surface_")) {
     domain_ = surf_domain_.substr(8, surf_domain_.size());
-    domain_ = plist.get<std::string>("column domain name", domain_);
+    domain_ = plist_.get<std::string>("column domain name", domain_);
   } else {
-    domain_ = plist.get<std::string>("column domain name");
+    domain_ = plist_.get<std::string>("column domain name");
   }
 
-  dep_key_ = Keys::readKey(plist_, domain_, "evaluator dependency", Keys::getKey(domain_, Keys::getVarName(my_key_)));
+  dep_key_ = Keys::readKey(plist_, domain_, "summed", Keys::getKey(domain_, Keys::getVarName(my_key_)));
   dependencies_.insert(dep_key_);
 
   Key pname = dep_key_ + " coefficient";
-  coef_ = plist.get<double>(pname, 1.0);
+  coef_ = plist_.get<double>(pname, 1.0);
 
   // dependency: cell volume, surface cell volume
   if (plist_.get<bool>("include volume factor", true)) {

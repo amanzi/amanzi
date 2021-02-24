@@ -33,15 +33,14 @@ Author: Ethan Coon (ecoon@lanl.gov)
 
 
 int SimulationDriver::Run(
-    const MPI_Comm& mpi_comm, Teuchos::ParameterList& plist) {
-
-  
-  #ifdef HAVE_MPI
+    const MPI_Comm& mpi_comm, Teuchos::ParameterList& plist)
+{
+#ifdef HAVE_MPI
   auto comm = Teuchos::rcp(new Amanzi::MpiComm_type(mpi_comm));
-  #else
+#else
   auto comm = Amanzi::getCommSelf();
-  #endif
-  
+#endif
+
   // verbosity settings
   setDefaultVerbLevel(Amanzi::VerbosityLevel::level_);
   Teuchos::EVerbosityLevel verbLevel = getVerbLevel();
@@ -68,9 +67,6 @@ int SimulationDriver::Run(
 
   // create the geometric model and regions
   Teuchos::ParameterList reg_params = plist.sublist("regions");
-
-
-  
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
     Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_params, *comm) );
 
@@ -80,14 +76,12 @@ int SimulationDriver::Run(
 
   // create and register meshes
   //ATS::createMeshes(plist.sublist("mesh"), comm, gm, *S);
-  ATS::createMeshes(plist, comm, gm, *S);
- 
+  ATS::Mesh::createMeshes(plist, comm, gm, *S);
+
   // create the top level Coordinator
   ATS::Coordinator coordinator(plist, S, comm);
-  
+
   // run the simulation
   coordinator.cycle_driver();
   return 0;
 }
-
-

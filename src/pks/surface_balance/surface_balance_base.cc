@@ -39,7 +39,7 @@ SurfaceBalanceBase::SurfaceBalanceBase(Teuchos::ParameterList& pk_tree,
   eps_ = plist_->get<double>("source term finite difference epsilon", 1.e-8);
 
   modify_predictor_positivity_preserving_ = plist_->get<bool>("modify predictor positivity preserving", false);
-  
+
   theta_ = plist_->get<double>("time discretization theta", 1.0);
   AMANZI_ASSERT(theta_ <= 1.);
   AMANZI_ASSERT(theta_ >= 0.);
@@ -65,7 +65,7 @@ SurfaceBalanceBase::Setup(const Teuchos::Ptr<State>& S) {
         ->AddComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(source_key_);
   }
-  
+
   conserved_quantity_ = conserved_key_ != key_;
   if (conserved_quantity_) {
     S->RequireField(conserved_key_)->SetMesh(mesh_)
@@ -80,7 +80,7 @@ SurfaceBalanceBase::Setup(const Teuchos::Ptr<State>& S) {
   // old style... deprecate me!
   acc_plist.sublist("inverse").setParameters(plist_->sublist("preconditioner"));
   acc_plist.sublist("inverse").setParameters(plist_->sublist("linear solver"));
-  
+
   preconditioner_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(acc_plist, mesh_));
   preconditioner_ = preconditioner_acc_->global_operator();
 }
@@ -95,7 +95,7 @@ SurfaceBalanceBase::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<
 
   // pointer-copy temperature into state and update any auxilary data
   Solution_to_State(*u_new, S_next_);
-  
+
   bool debug = false;
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) debug = true;
 
@@ -155,7 +155,7 @@ SurfaceBalanceBase::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<
   }
 }
 
-  
+
 // updates the preconditioner
 void
 SurfaceBalanceBase::UpdatePreconditioner(double t,
@@ -201,7 +201,6 @@ SurfaceBalanceBase::UpdatePreconditioner(double t,
       db_->WriteVector("d(Q)/d(prim)", dsource_dT.ptr());
       preconditioner_acc_->AddAccumulationTerm(*dsource_dT, -1.0/theta_, "cell", true);
     }
-
   }
 }
 
@@ -210,8 +209,7 @@ SurfaceBalanceBase::UpdatePreconditioner(double t,
 int SurfaceBalanceBase::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu) {
   Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_HIGH))
-    *vo_->os() << "Precon application:" << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) *vo_->os() << "Precon application:" << std::endl;
 
   if (conserved_quantity_) {
     db_->WriteVector("seb_res", u->Data().ptr(), true);
@@ -221,9 +219,9 @@ int SurfaceBalanceBase::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
     *Pu = *u;
     Pu->Scale(S_next_->time() - S_inter_->time());
   }
-  
   return 0;
 }
+
 
 bool
 SurfaceBalanceBase::ModifyPredictor(double h,

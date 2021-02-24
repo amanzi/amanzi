@@ -38,6 +38,7 @@ set(ats_mpc_src_files
   mpc_surface_subsurface_helpers.cc
   weak_mpc_semi_coupled_helper.cc
   mpc_weak_subgrid.cc
+  mpc_weak_domain_decomposition.cc
   mpc_delegate_ewc.cc
   mpc_reactivetransport_pk.cc
   mpc_flowreactivetransport_pk.cc
@@ -71,6 +72,7 @@ set(ats_mpc_inc_files
   mpc_surface_subsurface_helpers.hh
   weak_mpc_semi_coupled_helper.hh
   mpc_weak_subgrid.hh
+  mpc_weak_domain_decomposition.hh
   mpc_delegate_ewc.hh
   mpc_reactivetransport_pk.hh
   mpc_flowreactivetransport_pk.hh
@@ -88,6 +90,7 @@ set(ats_mpc_inc_files
   mpc_surface.hh
   mpc_permafrost.hh
   biomass_evaluator.hh
+  mpc_weak_domain_decomposition.hh
   )
 
 set(ats_mpc_link_libs
@@ -227,6 +230,11 @@ register_evaluator_with_factory(
 
 register_evaluator_with_factory(
   HEADERFILE mpc_weak_subgrid_reg.hh
+  LISTNAME   ATS_MPC_REG
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE mpc_weak_domain_decomposition_reg.hh
   LISTNAME   ATS_MPC_REG
   )
 

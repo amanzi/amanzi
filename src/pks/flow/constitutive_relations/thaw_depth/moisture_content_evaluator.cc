@@ -32,7 +32,7 @@ MoistureContentEvaluator::MoistureContentEvaluator(Teuchos::ParameterList& plist
   sat_key_ = Keys::getKey(domain_ss.str(),"saturation_liquid");
   dependencies_.insert(sat_key_);
   
-  trans_width_ =  plist_.get<double>("transition width [K]", 0.2);
+  trans_width_ =  plist_.get<double>("transition width [K]", 0.0);
 
   volumetric_wc_ =  plist_.get<bool>("volumetric water content", false);
 
@@ -40,6 +40,8 @@ MoistureContentEvaluator::MoistureContentEvaluator(Teuchos::ParameterList& plist
     por_key_ = Keys::getKey(domain_ss.str(),"base_porosity");
     dependencies_.insert(por_key_);
   }
+
+  average_sat_ =  plist_.get<bool>("average saturation", false);
 }
   
 
@@ -50,8 +52,8 @@ MoistureContentEvaluator::MoistureContentEvaluator(const MoistureContentEvaluato
     sat_key_(other.sat_key_),
     por_key_(other.por_key_),
     trans_width_(other.trans_width_),
-    volumetric_wc_(other.volumetric_wc_)
-    
+    volumetric_wc_(other.volumetric_wc_),
+    average_sat_(other.average_sat_)
 {}
   
 Teuchos::RCP<FieldEvaluator>
@@ -80,20 +82,28 @@ MoistureContentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   int col_cells = temp_c.MyLength();
   double col_sum = 0;
   double cv_sum = 0;
-  if (!volumetric_wc_) {
+  if (average_sat_) {
     for (int i=0; i!=col_cells; ++i) {
       if (temp_c[0][i] >= trans_temp) {
-        col_sum += cv_c[0][i] * sat_c[0][i];
-        cv_sum += cv_c[0][i];
+        col_sum += sat_c[0][i];
+        cv_sum += 1.0;
       }
     }
   }
-  else {
+  else if (volumetric_wc_) {
     const auto& por_c = *S->GetFieldData(por_key_)->ViewComponent("cell", false);
     for (int i=0; i!=col_cells; ++i) {
       if (temp_c[0][i] >= trans_temp) {
         col_sum += por_c[0][i] * sat_c[0][i];
         cv_sum += 1.0;
+      }
+    }
+  }
+  else {
+    for (int i=0; i!=col_cells; ++i) {
+      if (temp_c[0][i] >= trans_temp) {
+        col_sum += cv_c[0][i] * sat_c[0][i];
+        cv_sum += cv_c[0][i];
       }
     }
   }

@@ -237,8 +237,8 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S)
     ->SetGhosted()
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-  if (!S->FEList().isSublist(enthalpy_key_)) {
-    Teuchos::ParameterList& enth_list = S->FEList().sublist(enthalpy_key_);
+  if (plist_->isSublist("enthalpy evaluator")) {
+    Teuchos::ParameterList& enth_list = S->GetEvaluatorList(enthalpy_key_);
     enth_list.setParameters(plist_->sublist("enthalpy evaluator"));
     enth_list.set<std::string>("field evaluator type", "enthalpy");
   }

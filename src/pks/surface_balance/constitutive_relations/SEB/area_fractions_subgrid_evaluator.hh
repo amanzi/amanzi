@@ -21,13 +21,13 @@ Requires the following dependencies:
 * `"pressure key`" ``[string]`` **DOMAIN-pressure**
          The name of the pressure on the surface.
 
-  
+
   NOTE: this evaluator simplifies the situation by assuming constant
   density.  This make it so that ice and water see the same geometry per
   unit pressure, which isn't quite true thanks to density differences.
   However, we hypothesize that these differences, on the surface (unlike in
   the subsurface) really don't matter much. --etc
-         
+
 */
 
 #ifndef AMANZI_SURFACE_BALANCE_AREA_FRACTIONS_SUBGRID_EVALUATOR_HH_
@@ -51,7 +51,7 @@ class AreaFractionsSubgridEvaluator : public SecondaryVariableFieldEvaluator {
   }
 
   virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
-  
+
  protected:
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
@@ -62,21 +62,6 @@ class AreaFractionsSubgridEvaluator : public SecondaryVariableFieldEvaluator {
   }
 
  protected:
-
-  // TODO: put these functions into a model and share them across evaluators:
-  //  - this one
-  //  - overland_subgrid_water_content_evaluator
-  //  - volumetric_ponded_depth evaluator --etc
-  double f_(double delta, double del_max, double del_ex) {
-    return delta >= del_max ? delta - del_ex:
-        std::pow(delta/del_max, 2) * (2*del_max - 3*del_ex)
-        + std::pow(delta/del_max,3) * (2*del_ex - del_max);
-  }
-  double f_prime_(double delta, double del_max, double del_ex) {
-    return delta >= del_max ? 1 :
-        2 * delta/del_max * (2*del_max - 3*del_ex) / del_max
-        + 3 * std::pow(delta/del_max,2) * (2*del_ex - del_max) / del_max;
-  }
 
   Key domain_, domain_snow_;
   Key ponded_depth_key_, snow_depth_key_, vol_snow_depth_key_;

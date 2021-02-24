@@ -56,6 +56,7 @@ void HeightEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   AMANZI_ASSERT(my_key_ != std::string(""));
   S->RequireGravity();
   Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_, my_key_);
+  my_fac->SetOwned(false);
 
   // check plist for vis or checkpointing control
   bool io_my_key = plist_.get<bool>(std::string("visualize ")+my_key_, true);
@@ -153,7 +154,7 @@ void HeightEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<State>& S,
 
       if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
         *vo_->os() << ddep_key << " = " << (*ddep)("cell",0) << ", ";
-        *vo_->os() << "d"<< my_key_ << "_d" << *dep << " = " << (*tmp)("cell",0) << std::endl;
+        *vo_->os() << Keys::getDerivKey(my_key_, *dep) << " = " << (*tmp)("cell",0) << std::endl;
       }
 
       dmy->ViewComponent("cell",false)

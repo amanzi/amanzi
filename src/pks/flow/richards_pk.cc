@@ -87,7 +87,7 @@ Richards::Richards(Teuchos::ParameterList& pk_tree,
   sat_ice_key_ = Keys::readKey(*plist_, domain_, "saturation ice", "saturation_ice");
 
   // set up an additional primary variable evaluator for flux
-  Teuchos::ParameterList& pv_sublist = S->FEList().sublist(flux_key_);
+  Teuchos::ParameterList& pv_sublist = S->GetEvaluatorList(flux_key_);
   pv_sublist.set("field evaluator type", "primary variable");
 }
 
@@ -134,7 +134,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S)
   perm_scale_ = plist_->get<double>("permeability rescaling", 1.e7);
 
   // permeability type - scalar or tensor?
-  Teuchos::ParameterList& perm_list = S->FEList().sublist(perm_key_);
+  Teuchos::ParameterList& perm_list = S->GetEvaluatorList(perm_key_);
   std::string perm_type = perm_list.get<std::string>("permeability type", "scalar");
   if (perm_type == "scalar") {
     perm_tensor_rank_ = 1;
@@ -360,6 +360,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S)
 
   // Require fields and evaluators
   CompositeVectorSpace matrix_cvs = matrix_->RangeMap();
+  compute_boundary_values_ = plist_->get<bool>("compute boundary values", false);
   if (compute_boundary_values_)
     matrix_cvs.AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
   S->RequireField(key_, name_)->Update(matrix_cvs)->SetGhosted();
@@ -391,9 +392,6 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S)
   // -- valid step controls
   sat_change_limit_ = plist_->get<double>("max valid change in saturation in a time step [-]", -1.);
   sat_ice_change_limit_ = plist_->get<double>("max valid change in ice saturation in a time step [-]", -1.);
-
-  // -- not sure what this is for? -- etc
-  compute_boundary_values_ = plist_->get<bool>("compute boundary values", false);
 }
 
 
@@ -420,6 +418,7 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     auto& wrm_plist = S->GetEvaluatorList(sat_key_);
     wrm_plist.setParameters(plist_->sublist("water retention evaluator"));
     wrm_plist.set("field evaluator type", "WRM");
+
     
     if (!S->HasFieldEvaluator(suction_key_)) {
       Teuchos::ParameterList wrm_plist(plist_->sublist("water retention evaluator"));
@@ -459,7 +458,7 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   names2[1] = "boundary_face";
   S->RequireField(coef_key_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponents(names2, locations2, num_dofs2);
-  S->FEList().sublist(coef_key_).set<double>("permeability rescaling", perm_scale_);
+  S->GetEvaluatorList(coef_key_).set<double>("permeability rescaling", perm_scale_);
   S->RequireFieldEvaluator(coef_key_);
 
   // -- get the WRM models

@@ -230,7 +230,7 @@ class Richards : public PK_PhysicalBDF_Default {
 
 public:
 
-  Richards(Teuchos::ParameterList& FElist,
+  Richards(Teuchos::ParameterList& pk_tree,
            const Teuchos::RCP<Teuchos::ParameterList>& plist,
            const Teuchos::RCP<State>& S,
            const Teuchos::RCP<TreeVector>& solution);

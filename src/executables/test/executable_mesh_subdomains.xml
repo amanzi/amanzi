@@ -1,0 +1,54 @@
+<ParameterList name="Main" type="ParameterList">
+  <ParameterList name="mesh" type="ParameterList">
+    <ParameterList name="verbose object" type="ParameterList">
+      <Parameter name="verbosity level" type="string" value="high" />
+    </ParameterList>
+
+    <ParameterList name="watershed:*" type="ParameterList">
+      <Parameter name="mesh type" type="string" value="domain set" />
+      <ParameterList name="domain set parameters" type="ParameterList">
+        <Parameter name="parent domain" type="string" value="domain" />
+        <Parameter name="entity kind" type="string" value="cell" />
+        <Parameter name="regions" type="Array(string)" value="{upstream,downstream}" />
+        <Parameter name="by region" type="bool" value="true" />
+        <ParameterList name="watershed:*" type="ParameterList">
+          <Parameter name="mesh type" type="string" value="extracted subset" />
+          <Parameter name="build columns from set" type="string" value="surface" />
+          <ParameterList name="extracted subset parameters" type="ParameterList">
+            <Parameter name="parent domain" type="string" value="domain" />
+            <ParameterList name="verbose object" type="ParameterList">
+              <Parameter name="verbosity level" type="string" value="high" />
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="domain" type="ParameterList">
+      <Parameter name="mesh type" type="string" value="read mesh file" />
+      <Parameter name="build columns from set" type="string" value="surface" />
+      <ParameterList name="read mesh file parameters" type="ParameterList">
+        <Parameter name="file" type="string" value="test/double_open_book.exo" />
+        <Parameter name="format" type="string" value="Exodus II" />
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="regions" type="ParameterList">
+
+    <ParameterList name="upstream" type="ParameterList">
+      <ParameterList name="region: enumerated set" type="ParameterList">
+        <Parameter name="file" type="string" value="../subdomain_coloring.h5" />
+        <Parameter name="entity" type="string" value="cell" />
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="downstream" type="ParameterList">
+      <ParameterList name="region: enumerated set" type="ParameterList">
+        <Parameter name="file" type="string" value="../subdomain_coloring.h5" />
+        <Parameter name="entity" type="string" value="cell" />
+      </ParameterList>
+    </ParameterList>
+    
+  </ParameterList>
+</ParameterList>
