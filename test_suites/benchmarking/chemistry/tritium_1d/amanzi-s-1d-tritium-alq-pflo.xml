@@ -35,7 +35,7 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on"/>
-    <chemistry engine="pflotran+" state="on" database="tritium.dat" />
+    <chemistry engine="pflotran" state="on" database="tritium.dat" />
   </process_kernels>
 
   <phases>
