@@ -232,7 +232,7 @@ public:
     sizes_.realloc(csr.sizes_.view_host().extent(0),
                   csr.sizes_.view_host().extent(1)); 
     Kokkos::deep_copy(sizes_,csr.sizes_);
-    return *this; 
+    // return *this; 
   }
 
   void putScalar(T val) {
