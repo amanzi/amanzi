@@ -27,7 +27,6 @@ void test(const std::string& prec_solver,
 {
   DiffusionFixture fix(plist);
   fix.Init(dim, nx, mesh_type);
-
   if (fix.get_comm()->getRank() == 0) {
     std::cout 
       << "================================================================================" << std::endl
@@ -36,19 +35,16 @@ void test(const std::string& prec_solver,
       << "--------------------------------------------------------------------------------"
       << std::endl;
   }
-
   if (ana == "00") 
     fix.ana = Teuchos::rcp(new Analytic00(order, 1.0, 1.0, 0.0));
   else if (ana == "02") 
     fix.ana = Teuchos::rcp(new Analytic02(dim));
   else if (ana == "03") 
     fix.ana = Teuchos::rcp(new Analytic03b());
-
   if (disc_type == "mixed")
     fix.Discretize<Amanzi::Operators::PDE_DiffusionMFD>(disc_type, scalar_coef);
   else if (disc_type == "fv")
     fix.Discretize<Amanzi::Operators::PDE_DiffusionFV>(disc_type, scalar_coef);
-
   if (bc_type == "Dirichlet") {
     fix.SetBCsDirichlet();
   } else if (bc_type == "DirichletNeumann") {
@@ -57,11 +53,10 @@ void test(const std::string& prec_solver,
     fix.SetBCsDirichletNeumannRobin();
   } else {
     AMANZI_ASSERT(false);
-  }      
+  }     
   fix.Setup(prec_solver, symmetric);
   for (int i = 0; i < niters - 1; ++i) fix.Go(0.0);
   fix.Go(tol);
-
   if (fix.get_comm()->getRank() == 0) {
     std::cout << "================================================================================" 
               << std::endl << std::endl;

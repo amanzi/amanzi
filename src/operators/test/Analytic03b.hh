@@ -23,8 +23,7 @@
 class Analytic03b : public AnalyticBase {
  public:
   Analytic03b() :
-      AnalyticBase(2),
-      K_(2,1)
+      AnalyticBase(2)
   {
     K_(0,0) = 1.0;
     k1 = 1.0;
@@ -37,9 +36,9 @@ class Analytic03b : public AnalyticBase {
 
   std::string name() const override { return "Analytic03b"; }
   
-  Amanzi::WhetStone::Tensor<Kokkos::HostSpace>
+  const Amanzi::WhetStone::Tensor<Kokkos::HostSpace>&
   TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) const override {
-    return K_;
+    return std::move(K_);
   }
 
   double ScalarDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) const override {
@@ -124,9 +123,7 @@ class Analytic03b : public AnalyticBase {
  private:
   int dim;
   double k1, k2;
-  double a1, a2, b2;
-  WhetStone::Tensor<Kokkos::HostSpace> K_;
-  
+  double a1, a2, b2;  
 };
 
 #endif

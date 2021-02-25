@@ -26,7 +26,6 @@ class Analytic00 : public AnalyticBase {
         order_(order),
         poly_(2, order),
         kr_(kr),
-        K_(2, 1),
         gravity_(gravity),
         v_(v)
   {
@@ -68,7 +67,7 @@ class Analytic00 : public AnalyticBase {
     return str.str();
   }
 
-  Amanzi::WhetStone::Tensor<Kokkos::HostSpace> TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) const override {
+  const Amanzi::WhetStone::Tensor<Kokkos::HostSpace>& TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) const override {
     return K_;
   }
 
@@ -106,7 +105,6 @@ class Analytic00 : public AnalyticBase {
   double gravity_;
   int order_;
   double kr_;
-  WhetStone::Tensor<Kokkos::HostSpace> K_;
 };
 
   

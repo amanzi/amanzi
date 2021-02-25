@@ -115,24 +115,24 @@ void DiffusionFixture::Discretize(const std::string& name,
 {
   op = Teuchos::rcp(new PDE_Diffusion_type(plist->sublist("PK operator").sublist(name), mesh));
   op->Init();
-
   // modify diffusion coefficient
   CompositeVectorSpace K_map;
   K_map.SetMesh(mesh);
   K_map.AddComponent("cell", AmanziMesh::CELL, 1);
   auto K = Teuchos::rcp(new TensorVector(K_map));
-
-  std::vector<WhetStone::Tensor<DefaultHostMemorySpace>> host_tensors(K->size());
-  for (int c = 0; c < K->size(); c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-    host_tensors[c].assign(ana->TensorDiffusivity(xc, 0.0));
-  }
-  K->Init(host_tensors);
+  K->Init(
+      K->size(), 
+      //size function: size of element c 
+      [&](int c) -> const auto& {
+       const AmanziGeometry::Point& xc = mesh->cell_centroid(c); 
+       return ana->TensorDiffusivity(xc,0.0); 
+      }
+  );    
   op->SetTensorCoefficient(K);
-
   // boundary condition
   bc = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   op->SetBCs(bc,bc);
+
 }
 
 
@@ -231,7 +231,6 @@ void DiffusionFixture::Go(double tol)
 {
   global_op->Zero();
   op->UpdateMatrices(Teuchos::null, solution.ptr());
-
   int ncells = mesh->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
   CompositeVector& rhs = *global_op->rhs();
 
@@ -240,7 +239,7 @@ void DiffusionFixture::Go(double tol)
     const auto& xc = mesh->cell_centroid(c);
     rhs_c(c, 0) += ana->source_exact(xc, 0.0) * mesh->cell_volume(c);
   }
-    
+
   op->ApplyBCs(true, true, true);
   global_op->computeInverse();
   global_op->applyInverse(*global_op->rhs(), *solution);
@@ -268,7 +267,6 @@ void DiffusionFixture::Go(double tol)
       CHECK(pl2_err < tol);
       CHECK(ul2_err < 10*tol);
     }
-
     // if (symmetric) {
     //   VerificationCV ver(global_op);
     //   ver.CheckMatrixSPD();
