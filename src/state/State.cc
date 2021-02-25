@@ -298,6 +298,11 @@ bool State::HasDomainSet(const Key& name) const {
 
 Teuchos::RCP<const AmanziMesh::DomainSet>
 State::GetDomainSet(const Key& name) const {
+  if (!domain_sets_.count(name)) {
+    Errors::Message msg;
+    msg << "DomainSet \"" << name << "\" does not exist in State.";
+    Exceptions::amanzi_throw(msg);
+  }
   return domain_sets_.at(name);
 }
 
