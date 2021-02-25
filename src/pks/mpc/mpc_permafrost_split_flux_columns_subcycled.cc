@@ -45,16 +45,10 @@ double MPCPermafrostSplitFluxColumnsSubcycled::get_dt()
       dt_l = std::min(pk->get_dt(), dt_l);
     }
     double dt_g;
-    /*
-    if (surface_star_subcycling_) {
-      dt_l = subcycled_target_time_;
-    }*/
     dt_l = std::max(dt_l,subcycled_target_time_);
 
     S_next_->GetMesh(Keys::getDomain(p_primary_variable_star_))->get_comm()->MinAll(&dt_l, &dt_g, 1);
-    //if (surface_star_subcycling_)
-      //      std::cout<<"Time: "<<surface_star_subcycling_<<" "<<dt_l<<" "<<dt_g<<"\n";
-    //    dt_g = std::max(subcycled_target_time_, dt_g);
+
     return dt_g;
 
   } else {
@@ -73,13 +67,7 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_
   bool fail = false;
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Beginning timestepping on surface star system" << std::endl;
-  /*
-  fail = sub_pks_[0]->AdvanceStep(t_old, t_new, reinit);
-  fail |= !sub_pks_[0]->ValidStep();
-  if (fail) return fail;
-  sub_pks_[0]->CommitStep(t_old, t_new, S_next_);
-  */
-  //std::cout<<"T old, T new: "<<t_old<<" "<<t_new<<"\n ";
+  
   // Now advance the primary
   double t_inner = t_old;
   bool done_sf = false;
@@ -95,18 +83,8 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_
     double dt_inner = std::min(sub_pks_[0]->get_dt(), t_new - t_inner);
 
 
-    if (count >=1) {
-      sf_star_subcycling_ = true;
-      //std::cout<<"surface_star timestep: "<<my_pid<<" "<<count<<" "<<dt_inner<<" "<<sub_pks_[0]->get_dt()<<" "<<sf_star_subcycling_<<" \n";
-    }
-    /*    if (dt_inner <= 0.5*(t_new - t_inner)) {
-      sf_star_subcycling_ = true;
-      std::cout<<"sf_star: "<<dt_inner<<" "<<my_pid<<"\n";
-      }*/
+    if (count >=1) sf_star_subcycling_ = true;
     count++;
-
-
-    // std::cout<<"surf_star: "<<my_pid<<" "<<count<<" "<<sf_star_subcycling_<<"\n";
 
     *S_next_->GetScalarData("dt", "coordinator") = dt_inner;
     S_next_->set_time(t_inner + dt_inner);

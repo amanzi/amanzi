@@ -44,7 +44,7 @@ MPCPermafrostSplitFluxColumns::MPCPermafrostSplitFluxColumns(Teuchos::ParameterL
   bool is_ds = Keys::splitDomainSet(colname, col_triple);
   if (!is_ds) {
     Errors::Message msg;
-    msg << "WeakMPCSemiCoupled subpk: \"" << colname << "\" should be a domain-set PK of the form column_*-NAME";
+    msg << "WeakMPCSemiCoupled subpk: \"" << colname << "\" should be a domain-set PK of the form column:*-NAME";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -57,7 +57,7 @@ MPCPermafrostSplitFluxColumns::MPCPermafrostSplitFluxColumns(Teuchos::ParameterL
   for (int i=0; i!=ncols; ++i) {
     int gid = surf_mesh->cell_map(false).GID(i);
     std::stringstream domain_name_stream;
-    domain_name_stream << domain_col << "_" << gid;
+    domain_name_stream << domain_col << ":" << gid;
     subpks.push_back(Keys::getKey(domain_name_stream.str(), std::get<2>(col_triple)));
     col_domains_.push_back(domain_name_stream.str());
   }
@@ -79,10 +79,10 @@ MPCPermafrostSplitFluxColumns::MPCPermafrostSplitFluxColumns(Teuchos::ParameterL
     cv_key_ = Keys::readKey(*plist_, domain_star, "cell volume", "cell_volume");
   
     // set up for a primary variable field evaluator for the flux
-    Key primary_pkey = Keys::getKey(domain_surf + std::string("_*"), p_lateral_flow_source_suffix_);
+    Key primary_pkey = Keys::getKey(domain_surf + std::string(":*"), p_lateral_flow_source_suffix_);
     auto& p_sublist = S->FEList().sublist(primary_pkey);
     p_sublist.set("field evaluator type", "primary variable");
-    Key primary_Tkey = Keys::getKey(domain_surf + std::string("_*"), T_lateral_flow_source_suffix_);
+    Key primary_Tkey = Keys::getKey(domain_surf + std::string(":*"), T_lateral_flow_source_suffix_);
     auto& T_sublist = S->FEList().sublist(primary_Tkey);
     T_sublist.set("field evaluator type", "primary variable");
   }
@@ -90,11 +90,13 @@ MPCPermafrostSplitFluxColumns::MPCPermafrostSplitFluxColumns(Teuchos::ParameterL
   // init sub-pks
   plist_->set("PKs order", subpks);
   init_(S);
+  std::cout<<"HERE6: \n";
 };
 
 
 void MPCPermafrostSplitFluxColumns::Initialize(const Teuchos::Ptr<State>& S)
 {
+  std::cout<<"HERE1: \n";
   // initialize the columns
   for (int i=1; i!=sub_pks_.size(); ++i) sub_pks_[i]->Initialize(S);
 
@@ -105,11 +107,13 @@ void MPCPermafrostSplitFluxColumns::Initialize(const Teuchos::Ptr<State>& S)
   sub_pks_[0]->Initialize(S);
   S->GetField(p_primary_variable_star_, S->GetField(p_primary_variable_star_)->owner())->set_initialized();
   S->GetField(T_primary_variable_star_, S->GetField(T_primary_variable_star_)->owner())->set_initialized();
+  std::cout<<"HERE2: \n";
 }
 
 
 void MPCPermafrostSplitFluxColumns::Setup(const Teuchos::Ptr<State>& S)
 {
+  std::cout<<"HERE4: \n";
   MPC<PK>::Setup(S);
 
   if (coupling_ != "pressure") {
@@ -129,6 +133,7 @@ void MPCPermafrostSplitFluxColumns::Setup(const Teuchos::Ptr<State>& S)
       S->RequireFieldEvaluator(Tkey);
     }
   }
+  std::cout<<"HERE5: "<<col_domains_[0]<<"\n";
 }
 
 // -----------------------------------------------------------------------------
@@ -163,6 +168,7 @@ void MPCPermafrostSplitFluxColumns::set_dt( double dt)
 // -----------------------------------------------------------------------------
 bool MPCPermafrostSplitFluxColumns::AdvanceStep(double t_old, double t_new, bool reinit)
 {
+  std::cout<<"HERE3: \n";
   Teuchos::OSTab tab = vo_->getOSTab();
   // Advance the star system 
   bool fail = false;

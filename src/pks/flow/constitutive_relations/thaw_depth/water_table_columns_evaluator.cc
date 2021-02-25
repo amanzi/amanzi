@@ -16,14 +16,14 @@ WaterTableColumnsEvaluator::WaterTableColumnsEvaluator(Teuchos::ParameterList& p
     : SecondaryVariableFieldEvaluator(plist)
 {
   domain_ = Keys::getDomain(my_key_);
-  auto pos = domain_.find_last_of('_');
+  auto pos = domain_.find_last_of(':');
   int col_id = std::stoi(domain_.substr(pos+1, domain_.size()));
   
   std::stringstream domain_ss;
-  domain_ss << "column_"<< col_id;
+  domain_ss << "column:"<< col_id;
 
   std::stringstream domain_sf;
-  domain_sf << "surface_column_"<< col_id;
+  domain_sf << "surface_column:"<< col_id;
   
   temp_key_ = Keys::getKey(domain_ss.str(),"temperature");
   dependencies_.insert(temp_key_);
@@ -85,9 +85,9 @@ WaterTableColumnsEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       }
     }
     if (water_flag)
-      res_c[0][0] = top_z_centroid[2] - z_centroid[2];
+      res_c[0][0] = z_centroid[2];
     else
-      res_c[0][0] = -100; // no water table
+      res_c[0][0] = res_c[0][0]; // water table location unchanged (frozen)
   }
 
 }

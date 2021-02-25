@@ -320,8 +320,8 @@ public:
   Key dconductivity_key_;
   Key duw_conductivity_key_;
   Key source_key_;
-  //  Key mass_source_key_;
   Key ss_flux_key_;
+  Key uf_key_;
 };
 
 } // namespace Energy

@@ -18,11 +18,11 @@ ColumnWaterContentEvaluator::ColumnWaterContentEvaluator(Teuchos::ParameterList&
     : SecondaryVariableFieldEvaluator(plist)
 {
   domain_ = Keys::getDomain(my_key_);
-  auto pos = domain_.find_last_of('_');
+  auto pos = domain_.find_last_of(':');
   int col_id = std::stoi(domain_.substr(pos+1, domain_.size()));
   
   std::stringstream domain_ss;
-  domain_ss << "column_"<< col_id;
+  domain_ss << "column:"<< col_id;
   wc_key_ = Keys::getKey(domain_ss.str(),"water_content");
   dependencies_.insert(wc_key_);
 }

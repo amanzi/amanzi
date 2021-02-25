@@ -50,7 +50,7 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
   for (int c=0; c !=ncells; c++){
     std::stringstream my_name;
     int id = S->GetMesh("surface_star")->cell_map(false).GID(c);
-    my_name << "column_" << id;
+    my_name << "column:" << id;
     
     //int nfaces = S->GetMesh(my_name.str())->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
     
@@ -96,7 +96,7 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
     
       std::stringstream my_name;
       int id = S->GetMesh("surface_star")->cell_map(false).GID(c);
-      my_name << "column_" << id;
+      my_name << "column:" << id;
       
       std::vector<AmanziGeometry::Point> Normal;
       AmanziGeometry::Point N, PQ, PR, Nor_avg(3);
@@ -131,7 +131,7 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
     
   }
   else{
-    slope_c[0][0] = 0.0; // if domain is surface_column_*, slope is zero.
+    slope_c[0][0] = 0.0; // if domain is surface_column:*, slope is zero.
   }
 
   
@@ -167,7 +167,7 @@ void ElevationEvaluatorColumn::EnsureCompatibility(const Teuchos::Ptr<State>& S)
     for (int c =0; c < ncells; c++){
       std::stringstream name;
       int id = S->GetMesh("surface_star")->cell_map(false).GID(c);
-      name << "column_"<< id;
+      name << "column:"<< id;
       base_por_key_ = Keys::readKey(plist_, name.str(), "base porosity", "base_porosity");
       dependencies_.insert(base_por_key_);
     }

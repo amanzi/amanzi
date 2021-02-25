@@ -456,7 +456,7 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S)
         int id = mesh_->cell_map(false).GID(c);
 
         std::stringstream name;
-        name << "surface_column_"<< id;
+        name << "surface_column:"<< id;
 
         const Epetra_MultiVector& pres = *S->GetFieldData(Keys::getKey(name.str(),"pressure"))->ViewComponent("cell",false);
 
