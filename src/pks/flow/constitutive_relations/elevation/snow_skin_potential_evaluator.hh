@@ -22,7 +22,7 @@ Evaluator type: "snow skin potential"
 * `"elevation key`" ``[string]`` **elevation** Names the elevation variable. [m]
 * `"dt factor [s]`" ``[double]`` A free-parameter factor for providing a time scale for diffusion of snow precipitation into low-lying areas.  Typically on the order of 1e4-1e7. This timestep times the wave speed of snow provides an approximate length of how far snow precip can travel.  Extremely tunable! [s]
 
-NOTE: This is equivalent to a generic AdditiveEvaluator_
+NOTE: This is equivalent to a generic Additive_ Evaluator
 
 Example:
 
