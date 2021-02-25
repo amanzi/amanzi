@@ -32,8 +32,10 @@ SubgridAggregateEvaluator::SubgridAggregateEvaluator(Teuchos::ParameterList& pli
 {
   domain_ = Keys::getDomain(my_key_);
   source_domain_ = plist_.get<std::string>("source domain name");
+  if (Keys::isDomainSet(source_domain_)) { // strip the :*
+    source_domain_ = Keys::getDomainSetName(source_domain_);
+  }
   var_key_ = Keys::getVarName(my_key_);
-
 }
 
 Teuchos::RCP<FieldEvaluator>
@@ -47,24 +49,12 @@ void
 SubgridAggregateEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 {
-
-  int ncells = S->GetMesh("surface_star")->num_entities(AmanziMesh::CELL,
-                                                        AmanziMesh::Parallel_type::OWNED);
-
-  for (int c =0; c < ncells; c++) {
-    std::stringstream name;
-    int id = S->GetMesh(domain_)->cell_map(false).GID(c);
-    if (Keys::starts_with(source_domain_, "surface_")) {
-      name << "surface_column:"<< id;
-    } else if (Keys::starts_with(source_domain_,"snow_")) {
-      name << "snow_column:"<< id;
-    }
-
-    Key source_key = Keys::getKey(name.str(),var_key_);
-    const auto& source = *S->GetFieldData(source_key)->ViewComponent("cell",false);
-
-    AMANZI_ASSERT(source.MyLength() == 1);
-    (*result->ViewComponent("cell", false))[0][c] = source[0][0];
+  auto ds = S->GetDomainSet(source_domain_);
+  Epetra_MultiVector& result_v = *result->ViewComponent("cell", false);
+  for (const auto& subdomain : *ds) {
+    ds->DoImport(subdomain,
+                 *S->GetFieldData(Keys::getKey(subdomain, var_key_))->ViewComponent("cell", false),
+                 result_v);
   }
 }
 
@@ -79,38 +69,38 @@ SubgridAggregateEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<St
 void
 SubgridAggregateEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
 {
-
-  int ncells = S->GetMesh("surface_star")->num_entities(AmanziMesh::CELL,
-                                                        AmanziMesh::Parallel_type::OWNED);
-
-  for (int c =0; c < ncells; c++) {
-    std::stringstream name;
-    int id = S->GetMesh("surface_star")->cell_map(false).GID(c);
-    if (boost::starts_with(source_domain_, "surface_")) {
-      name << "surface_column:"<< id;
+  if (dependencies_.size() == 0) {
+    auto ds = S->GetDomainSet(source_domain_);
+    if (ds->get_referencing_parent() == Teuchos::null) {
+      Errors::Message msg;
+      msg << "SubgridAggregateEvaluator: DomainSet \"" << source_domain_ << "\" does not have a referencing parent but must have one to aggregate.";
+      Exceptions::amanzi_throw(msg);
     }
-    else if (boost::starts_with(source_domain_,"snow_")) {
-      name << "snow_column:"<< id;
+    if (S->GetMesh(domain_) != ds->get_referencing_parent()) {
+      Errors::Message msg;
+      msg << "SubgridAggregateEvaluator: DomainSet \"" << source_domain_ << "\" has a referencing parent, but it does not match the aggregate vector's domain, \"" << domain_ << "\"";
+      Exceptions::amanzi_throw(msg);
     }
-    Key temp_key = Keys::getKey(name.str(),var_key_);
-    dependencies_.insert(temp_key);
-  }
 
-  Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_, my_key_);
+    for (const auto& subdomain : *ds) {
+      dependencies_.insert(Keys::getKey(subdomain, var_key_));
+    }
 
-  // check plist for vis or checkpointing control
-  bool io_my_key = plist_.get<bool>(std::string("visualize ")+my_key_, true);
-  S->GetField(my_key_, my_key_)->set_io_vis(io_my_key);
-  bool checkpoint_my_key = plist_.get<bool>(std::string("checkpoint ")+my_key_, false);
-  S->GetField(my_key_, my_key_)->set_io_checkpoint(checkpoint_my_key);
+    Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_, my_key_);
+    my_fac->SetMesh(S->GetMesh(domain_))->SetComponent("cell", AmanziMesh::CELL, 1);
 
-  if (my_fac->Mesh() != Teuchos::null) {
+    // check plist for vis or checkpointing control
+    bool io_my_key = plist_.get<bool>(std::string("visualize ")+my_key_, true);
+    S->GetField(my_key_, my_key_)->set_io_vis(io_my_key);
+    bool checkpoint_my_key = plist_.get<bool>(std::string("checkpoint ")+my_key_, false);
+    S->GetField(my_key_, my_key_)->set_io_checkpoint(checkpoint_my_key);
+
     // Recurse into the tree to propagate info to leaves.
-    for (KeySet::const_iterator key=dependencies_.begin();
-         key!=dependencies_.end(); ++key) {
-      S->RequireField(*key)->SetMesh(S->GetMesh(Keys::getDomain(*key)))
+    for (const auto& subdomain : *ds) {
+      auto key = Keys::getKey(subdomain, var_key_);
+      S->RequireField(key)->SetMesh(S->GetMesh(subdomain))
         ->AddComponent("cell", AmanziMesh::CELL, 1);
-      S->RequireFieldEvaluator(*key)->EnsureCompatibility(S);
+      S->RequireFieldEvaluator(key)->EnsureCompatibility(S);
     }
   }
 }
