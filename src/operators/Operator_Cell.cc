@@ -78,8 +78,8 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
   auto Yc = Y.ViewComponent("cell", true);
   auto Xc = X.ViewComponent("cell", true);
 
-  const AmanziMesh::Mesh* mesh = mesh_.get();
-
+  const auto& mc = mesh_->getMeshCache(); 
+  
   // Allocate the first time 
   if (op.v.size() != op.A.size()) {
     op.PreallocateWorkVectors();
@@ -95,7 +95,7 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
       nfaces_owned,
       KOKKOS_LAMBDA(const int f) {
         AmanziMesh::Entity_ID_View cells;
-        mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+        mc.face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
 
         int ncells = cells.extent(0);
         auto lv = local_v[f];
