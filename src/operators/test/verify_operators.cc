@@ -99,6 +99,11 @@ TEST(Verify_Mesh_and_Operators) {
     tol = std::stod(argv_copy[4]);
   }
 
+  double nloops(1);
+  if (argc > 5) {
+    nloops = std::stoi(argv_copy[5]);
+  }
+
   // little_k
   AmanziMesh::Entity_kind scalar_coef(AmanziMesh::Entity_kind::UNKNOWN);
 
@@ -231,9 +236,9 @@ TEST(Verify_Mesh_and_Operators) {
       plist->sublist("preconditioners").sublist(prec_solver).print(std::cout, 0, true, false);
   }
 
-  auto start = omp_get_wtime();
+  // auto start = omp_get_wtime();
   test(prec_solver, "Dirichlet", mesh_file, d, n,
-       scheme, symmetric, scalar_coef, 10 * tol, order, ana, 1, plist);
-  printf("Compute: %gs\n", omp_get_wtime() - start);
+       scheme, symmetric, scalar_coef, 10 * tol, order, ana, nloops, plist);
+  // printf("Compute: %gs\n", omp_get_wtime() - start);
 }
 

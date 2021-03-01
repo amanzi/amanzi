@@ -62,6 +62,7 @@ struct DiffusionFixture {
   void SetBCsDirichletNeumannRobin() {};
 
   void Go(double tol = 1.e-14);
+  void MatVec(int nloops);
 
   // access
   Comm_ptr_type get_comm() const { return comm; }
@@ -123,7 +124,7 @@ void DiffusionFixture::Discretize(const std::string& name,
   K->Init(
       K->size(), 
       //size function: size of element c 
-      [&](int c) -> const auto& {
+      [&](int c) -> const Amanzi::WhetStone::Tensor<Kokkos::HostSpace>& {
        const AmanziGeometry::Point& xc = mesh->cell_centroid(c); 
        return ana->TensorDiffusivity(xc,0.0); 
       }
@@ -272,6 +273,31 @@ void DiffusionFixture::Go(double tol)
     //   ver.CheckMatrixSPD();
     // }
   }
+}
+
+
+/* ******************************************************************
+* Run the mat-vec
+****************************************************************** */
+void DiffusionFixture::MatVec(int nloops)
+{
+  global_op->Zero();
+  op->UpdateMatrices(Teuchos::null, solution.ptr());
+  int ncells = mesh->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+
+  op->ApplyBCs(true, true, true);
+  global_op->computeInverse();
+
+  auto sol(*solution);
+
+  auto start = std::chrono::high_resolution_clock::now();
+  for (int i = 0; i < nloops; ++i) {
+    global_op->apply(sol, *solution);
+  }
+  auto stop = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+
+  printf("iterative loop time = %g sec\n", double(duration.count() * 1e-6));
 }
 
 #endif

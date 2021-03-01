@@ -55,8 +55,14 @@ void test(const std::string& prec_solver,
     AMANZI_ASSERT(false);
   }     
   fix.Setup(prec_solver, symmetric);
-  for (int i = 0; i < niters - 1; ++i) fix.Go(0.0);
-  fix.Go(tol);
+
+  if (prec_solver == "mat-vec") {
+    fix.MatVec(niters);
+  } else {
+    for (int i = 0; i < niters - 1; ++i) fix.Go(0.0);
+    fix.Go(tol);
+  }
+
   if (fix.get_comm()->getRank() == 0) {
     std::cout << "================================================================================" 
               << std::endl << std::endl;
