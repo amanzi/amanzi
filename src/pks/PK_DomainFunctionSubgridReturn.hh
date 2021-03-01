@@ -74,7 +74,7 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Init(
   if (blist.isParameter("subgrid field prefix"))
     field_out_prefix_ = blist.get<std::string>("subgrid field prefix");
   else
-    field_out_prefix_ = "subgrid"
+    field_out_prefix_ = "subgrid";
       
   if (blist.isParameter("copy subgrid field"))
     copy_field_out_key_ = blist.get<std::string>("copy subgrid field");
