@@ -1,6 +1,3 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
-//! A simple model for allowing porosity to vary with pressure.
-
 /*
   ATS is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -8,47 +5,31 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
-
-
 /*!
 
-Exponential Model, i.e.
-Smooth version:
+The Leinjnse model is an exponential model of porosity as a function of
+pressure, based on (insert citation!):
 
-$$ p_\lambda = p - p_\text{ref}$$
+.. math:
+   p_\lambda = p - p_\text{ref}
+   \phi = 1 - (1-\phi_\text{base}) * (exp(- \alpha (p_\lambda - \delta)) - 0.5 \alpha \delta), p_\lambda > \delta
+   \phi = 1 - (1-\phi_\text{base}) * (1 - 0.5 \alpha / \delta p_\lambda^2)
 
-$$ \phi = 1 - (1-\phi_\text{base}) * (exp(- \alpha (p_\lambda - \delta)) - 0.5 \alpha \delta), p_\lambda > \delta$$
-$$ \phi = 1 - (1-\phi_\text{base}) * (1 - 0.5 \alpha / \delta p_\lambda^2) $$
+where :math:`\alpha` is the provided
+compressibility, and :math:`\delta` is the cutoff (inflection point). 
 
-where $\alpha$ is the provided
-compressibility, and $\delta$ is the cutoff (inflection point). 
-# If the inflection point is set to zero, the above function
-#is exact.  However, then the porosity function is not smooth (has
-#discontinuous derivatives).
+If the inflection point is set to zero, the above function is exact.  However,
+then the porosity function is not smooth (has discontinuous derivatives).
   
-* `"pore compressibility [Pa^-1]`" ``[double]`` $\alpha$ as described above
+* `"pore compressibility [Pa^-1]`" ``[double]`` :math:`\alpha` as described above
   
 * `"pore compressibility inflection point [Pa]`" ``[double]`` **1000** The inflection point above which the function is linear.
 
-Provide a parameter in the EWC to turn Leijnse model ON 
+NOTE: provide a parameter in the `EWC Globalization Delegate`_ to turn Leijnse model ON 
 
   <Parameter name="porosity leijnse model" type="bool" value="true"/>
 
-State --> ParameterList::Porosity
-   <Parameter name="field evaluator type" type="string" value="compressible porosity leijnse" />
-
-Example:
-
-.. code-block::xml  
-
-  <ParameterList name="soil" type="ParameterList">
-    <Parameter name="region" type="string" value="soil" />
-    <Parameter name="pore compressibility [Pa^-1]" type="double" value="1.e-9" />
-    <Parameter name="pore compressibility inflection point [Pa]" type="double" value="1000." />
-  </ParameterList>
-
 */
-
 
 #ifndef AMANZI_FLOWRELATIONS_COMPRESSIBLE_POROSITY_LEIJNSE_MODEL_HH_
 #define AMANZI_FLOWRELATIONS_COMPRESSIBLE_POROSITY_LEIJNSE_MODEL_HH_
