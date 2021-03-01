@@ -626,7 +626,7 @@ bool EnergyBase::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
 
 
 
-  if (minT < 200.0 || maxT > 300.0) {
+  if (minT < 200.0 || maxT > 330.0) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       *vo_->os() << " is not admissible, as it is not within bounds of constitutive models:" << std::endl;
       ENorm_t global_minT_c, local_minT_c;
