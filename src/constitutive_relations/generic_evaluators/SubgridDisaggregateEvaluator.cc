@@ -50,7 +50,7 @@ SubgridDisaggregateEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 {
   if (source_gid_ < 0) {
-    auto pos = domain_.find_last_of('_');
+    auto pos = domain_.find_last_of(':');
     AMANZI_ASSERT(pos != domain_.size());
     AMANZI_ASSERT(pos != domain_.size()-1);
     int col_id = std::stoi(domain_.substr(pos+1, domain_.size()));
