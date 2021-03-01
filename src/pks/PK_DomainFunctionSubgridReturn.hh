@@ -53,7 +53,7 @@ class PK_DomainFunctionSubgridReturn : public FunctionBase,
 
  private:
 
-  std::string field_out_suffix_, copy_field_out_key_;
+  std::string field_out_suffix_, copy_field_out_key_, field_out_prefix_;
 };
 
 
@@ -69,6 +69,13 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Init(
   // get and check the model parameters
   Teuchos::ParameterList blist = plist.sublist("source function");
   field_out_suffix_ = blist.get<std::string>("subgrid field suffix");
+
+  // check for prefixing -- mostly used in the multisubgrid models
+  if (blist.isParameter("subgrid field prefix"))
+    field_out_prefix_ = blist.get<std::string>("subgrid field prefix");
+  else
+    field_out_prefix_ = "subgrid"
+      
   if (blist.isParameter("copy subgrid field"))
     copy_field_out_key_ = blist.get<std::string>("copy subgrid field");
   else
@@ -136,7 +143,7 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
       // find the subgrid gid to be integrated
       auto gid = map.GID(*c);
       std::stringstream domain;
-      domain << "subgrid_" << gid << "-";
+      domain << field_out_prefix_ << ":" << gid << "-";
 
       // get the vector to be integrated
       const CompositeVector& vec_out =

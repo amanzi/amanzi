@@ -139,7 +139,10 @@ MatrixFE::DiagonalShift(double shift) {
   int ierr(0);
   Epetra_Vector diag(RowMap());
   ierr = matrix_->ExtractDiagonalCopy(diag);
-  for (int i=0; i!=diag.MyLength(); ++i) diag[i] += shift;
+  for (int i=0; i!=diag.MyLength(); ++i) {
+    shift = diag[i] > 0 ? 1.0e-6 : shift;
+    diag[i] += shift;
+  }
   ierr |= matrix_->ReplaceDiagonalValues(diag);  
   return ierr;
 }
