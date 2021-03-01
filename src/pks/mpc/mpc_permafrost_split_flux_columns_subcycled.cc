@@ -202,7 +202,6 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_
 
   // Copy the primary into the star to advance
   CopyPrimaryToStar(S_next_.ptr(), S_next_.ptr());
-  //std::cout<<"DONE!!! \n";
 
   if (sf_star_subcycling_) subcycling_surf++;
   int subcycling_local_sf = subcycling_surf;
@@ -214,7 +213,6 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_
   else {
     surface_star_subcycling_ = false;
   }
-  //  std::cout<<" Last: "<<surface_star_subcycling_<<" "<<subcycling_surf<<"\n";
   return false;
 }
 
