@@ -63,7 +63,7 @@ add_amanzi_library(atk
                            SplinedCurve.hh
                            Key.hh
                            ExprTK.hh
-                    LINK_LIBS error_handling ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
+                    LINK_LIBS error_handling ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${HDF5_LIBRARIES})
 
 if (APPLE AND BUILD_SHARED_LIBS)
   set_target_properties(atk PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
