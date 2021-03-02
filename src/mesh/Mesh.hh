@@ -199,15 +199,6 @@ class Mesh : public MeshLight {
 
   using MeshLight::cell_get_edges;
 
-  // Get edges and dirs of a 2D cell.
-  //
-  // This is to make the code cleaner for integrating over the cell in 2D
-  // where faces and edges are identical but integrating over the cells using
-  // face information is more cumbersome (one would have to take the face
-  // normals, rotate them and then get a consistent edge vector)
-  void cell_2D_get_edges_and_dirs(const Entity_ID cellid,
-                                  Entity_ID_List *edgeids,
-                                  std::vector<int> *edge_dirs) const;
 
   //-------------------
   // Upward adjacencies
