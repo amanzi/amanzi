@@ -28,8 +28,7 @@ namespace Amanzi {
 namespace Relations {
 
 SubgridDisaggregateEvaluator::SubgridDisaggregateEvaluator(Teuchos::ParameterList& plist) :
-    SecondaryVariableFieldEvaluator(plist),
-    source_gid_(-1)
+    SecondaryVariableFieldEvaluator(plist)
 {
   domain_ = Keys::getDomainSetName(my_key_);
   source_domain_ = plist_.get<std::string>("source domain name");
@@ -70,7 +69,7 @@ SubgridDisaggregateEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
   if (dependencies_.size() == 0) {
     dependencies_.insert(source_key_);
 
-    auto ds = S->GetDomainSet(source_domain_);
+    auto ds = S->GetDomainSet(domain_);
     if (ds->get_referencing_parent() == Teuchos::null) {
       Errors::Message msg;
       msg << "SubgridDisaggregateEvaluator: DomainSet \"" << domain_ << "\" does not have a referencing parent but must have one to disaggregate.";
