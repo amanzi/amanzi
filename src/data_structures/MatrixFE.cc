@@ -139,14 +139,24 @@ MatrixFE::DiagonalShift(double shift) {
   int ierr(0);
   Epetra_Vector diag(RowMap());
   ierr = matrix_->ExtractDiagonalCopy(diag);
+  for (int i=0; i!=diag.MyLength(); ++i) diag[i] += shift;
+  ierr |= matrix_->ReplaceDiagonalValues(diag);  
+  return ierr;
+}
+
+// diagonal shift for (near) singular matrices where the constant vector is the null space
+int
+MatrixFE::DiagonalShiftAdaptive(double shift_minor, double shift_major) {
+  int ierr(0);
+  Epetra_Vector diag(RowMap());
+  ierr = matrix_->ExtractDiagonalCopy(diag);
   for (int i=0; i!=diag.MyLength(); ++i) {
-    shift = diag[i] > 0 ? 1.0e-6 : shift;
+    double shift = diag[i] > 0 ? shift_minor : shift_major;
     diag[i] += shift;
   }
   ierr |= matrix_->ReplaceDiagonalValues(diag);  
   return ierr;
 }
-
 
 // Passthroughs
 int

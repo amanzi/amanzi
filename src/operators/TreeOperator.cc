@@ -44,7 +44,9 @@ TreeOperator::TreeOperator()
     block_diagonal_(false),
     num_colors_(0),
     coloring_(Teuchos::null),
-    shift_(0.0)
+    shift_(0.0),
+    shift_minor_(0.0),
+    shift_major_(0.0)
 {
   vo_ = Teuchos::rcp(new VerboseObject("TreeOperator", Teuchos::ParameterList()));
 }
@@ -56,6 +58,8 @@ TreeOperator::TreeOperator(Teuchos::ParameterList& plist)
   vo_ = Teuchos::rcp(new VerboseObject("TreeOperator", plist));
   if (plist.isSublist("inverse")) set_inverse_parameters(plist.sublist("inverse"));
   shift_ = plist.get<double>("diagonal shift", 0.0);
+  shift_minor_ = plist.get<double>("diagonal shift minor", 0.0);
+  shift_major_ = plist.get<double>("diagonal shift major", 0.0);
 }
 
 
@@ -100,6 +104,8 @@ TreeOperator::TreeOperator(const TreeOperator& other)
   : TreeOperator(other.row_map_, other.col_map_)
 {
   shift_ = other.shift_;
+  shift_minor_ = other.shift_minor_;
+  shift_major_ = other.shift_minor_;
   vo_ = other.vo_;
   inv_plist_ = other.inv_plist_;
 
@@ -388,6 +394,9 @@ void TreeOperator::AssembleMatrix() {
 
   if (shift_ != 0.0) {
     Amat_->DiagonalShift(shift_);
+  }
+  else if (shift_minor_ != 0.0 || shift_major_ != 0) {
+    Amat_->DiagonalShiftAdaptive(shift_minor_, shift_major_);
   }
 
   // std::stringstream filename_s2;
