@@ -31,6 +31,8 @@ protected:
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
                                                Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
+  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
+  
   Key delta_init_key_,delta_evolve_key_,sg_entity_key_;
 
 private:
