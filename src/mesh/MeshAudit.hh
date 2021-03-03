@@ -4,7 +4,7 @@
 #include "Teuchos_RCP.hpp"
 
 
-#include "Mesh.hh"
+#include "MeshFramework.hh"
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/visitors.hpp>
@@ -15,7 +15,7 @@ namespace Amanzi {
 class MeshAudit {
 public:
 
-  MeshAudit(Teuchos::RCP<AmanziMesh::Mesh> &mesh_, std::ostream& os=std::cout);
+  MeshAudit(Teuchos::RCP<AmanziMesh::MeshFramework> &mesh_, std::ostream& os=std::cout);
 
   // This is the main method.
   int Verify() const;
@@ -43,6 +43,7 @@ public:
   bool check_node_to_coordinates() const;
   bool check_cell_to_coordinates() const;
   bool check_face_to_coordinates() const;
+#if 0
   bool check_node_maps() const;
   bool check_face_maps() const;
   bool check_cell_maps() const;
@@ -65,10 +66,10 @@ public:
   
   bool check_node_partition() const;
   bool check_face_partition() const;
-
+#endif
 private:
 
-  Teuchos::RCP<AmanziMesh::Mesh> mesh;
+  Teuchos::RCP<AmanziMesh::MeshFramework> mesh;
   Comm_ptr_type comm_;
 
   const int MyPID;

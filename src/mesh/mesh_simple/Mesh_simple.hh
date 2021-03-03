@@ -1,9 +1,9 @@
 /*
   Mesh
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Implementation of simple mesh.
@@ -45,70 +45,70 @@ class Mesh_simple : public Mesh {
               const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
               const bool request_faces = true,
               const bool request_edges = false);
-  
-  virtual ~Mesh_simple() = default;  
+
+  virtual ~Mesh_simple() = default;
 
   // Get parallel type of entity
-  Parallel_type entity_get_ptype(const Entity_kind kind, 
+  Parallel_type entity_ptype(const Entity_kind kind,
                                  const Entity_ID entid) const override { return Parallel_type::OWNED; }
 
   // Get cell type
-  Cell_type cell_get_type(const Entity_ID cellid) const override { return HEX; }
-        
+  Cell_type cell_type(const Entity_ID cellid) const override { return HEX; }
+
   // Number of entities of any kind (cell, face, node) and in a
   // particular category (OWNED, GHOST, ALL)
   unsigned int num_entities(const Entity_kind kind,
                             const Parallel_type ptype) const override;
-    
+
   // Global ID of any entity (this is a serial code)
   Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const override { return lid; }
-    
-    
+
+
   //---------------------
   // Downward Adjacencies
   //---------------------
-    
-  // Get nodes of cell 
-  // On a distributed mesh, all nodes (OWNED or GHOST) of the cell 
+
+  // Get nodes of cell
+  // On a distributed mesh, all nodes (OWNED or GHOST) of the cell
   // are returned
   // Nodes are returned in a standard order (Exodus II convention)
   // STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES in 3D
   // For a general polyhedron this will return the nodes in
   // arbitrary order
-  // In 2D, the nodes of the polygon will be returned in ccw order 
+  // In 2D, the nodes of the polygon will be returned in ccw order
   // consistent with the face normal
-  void cell_get_nodes(const Entity_ID cellid, 
+  void cell_nodes(const Entity_ID cellid,
                       std::vector<Entity_ID> *nodeids) const override;
-    
-  // Get nodes of face 
-  // On a distributed mesh, all nodes (OWNED or GHOST) of the face 
+
+  // Get nodes of face
+  // On a distributed mesh, all nodes (OWNED or GHOST) of the face
   // are returned
   // In 3D, the nodes of the face are returned in ccw order consistent
   // with the face normal
   // In 2D, nfnodes is 2
-  void face_get_nodes(const Entity_ID faceid, 
+  void face_nodes(const Entity_ID faceid,
                       std::vector<Entity_ID> *nodeids) const override;
 
   // Get nodes of edge
-  void edge_get_nodes(const Entity_ID edgeid, Entity_ID *nodeid0,
+  void edge_nodes(const Entity_ID edgeid, Entity_ID *nodeid0,
                       Entity_ID *nodeid1) const override;
 
   //-------------------
   // Upward adjacencies
   //-------------------
-    
+
   // Cells of type 'ptype' connected to a node
-  void node_get_cells(const Entity_ID nodeid, 
+  void node_cells(const Entity_ID nodeid, 
                       const Parallel_type ptype,
                       std::vector<Entity_ID> *cellids) const override;
     
   // Faces of type 'ptype' connected to a node
-  void node_get_faces(const Entity_ID nodeid, 
+  void node_faces(const Entity_ID nodeid, 
                       const Parallel_type ptype,
                       std::vector<Entity_ID> *faceids) const override;
     
   // Cells of type 'ptype' connected to an edge
-  void edge_get_cells(const Entity_ID edgeid, 
+  void edge_cells(const Entity_ID edgeid, 
                       const Parallel_type ptype,
                       std::vector<Entity_ID> *cellids) const override {
     Errors::Message msg("Edge to cell connectivity is not implemented in this framework.");
@@ -126,8 +126,8 @@ class Mesh_simple : public Mesh {
   // The order in which the cellids are returned cannot be
   // guaranteed in general except when ptype = ALL, in which case
   // the cellids will correcpond to cells across the respective
-  // faces given by cell_get_faces
-  void cell_get_face_adj_cells(const Entity_ID cellid,
+  // faces given by cell_faces
+  void cell_face_adj_cells(const Entity_ID cellid,
                                const Parallel_type ptype,
                                std::vector<Entity_ID> *fadj_cellids) const override;
 
@@ -136,12 +136,12 @@ class Mesh_simple : public Mesh {
   //---------------------
     
   // Node coordinates - 3 in 3D and 2 in 2D
-  void node_get_coordinates(const Entity_ID nodeid, 
+  void node_coordinates(const Entity_ID nodeid, 
                             AmanziGeometry::Point *ncoord) const override;
     
   // Face coordinates - conventions same as face_to_nodes call 
   // Number of nodes is the vector size divided by number of spatial dimensions
-  void face_get_coordinates(const Entity_ID faceid, 
+  void face_coordinates(const Entity_ID faceid, 
                             std::vector<AmanziGeometry::Point> *fcoords) const override; 
     
   // Coordinates of cells in standard order (Exodus II convention)
@@ -149,7 +149,7 @@ class Mesh_simple : public Mesh {
   // For a general polyhedron this will return the node coordinates in
   // arbitrary order
   // Number of nodes is vector size divided by number of spatial dimensions
-  void cell_get_coordinates(const Entity_ID cellid, 
+  void cell_coordinates(const Entity_ID cellid, 
                             std::vector<AmanziGeometry::Point> *ccoords) const override;
     
   // Modify the coordinates of a node
@@ -263,23 +263,23 @@ class Mesh_simple : public Mesh {
   // and -1 if face normal points into cell
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
-  void cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
+  void cell_faces_and_dirs(const Entity_ID cellid,
                                          Entity_ID_List *faceids,
                                          std::vector<int> *face_dirs,
                                          const bool ordered = false) const override;
 
   // Cells connected to a face
-  void face_get_cells_internal_(const Entity_ID faceid, 
+  void face_cells(const Entity_ID faceid, 
                                 const Parallel_type ptype,
                                 std::vector<Entity_ID> *cellids) const override;
 
 
   // Edges of a cell
-  void cell_get_edges_internal_(const Entity_ID cellid,
+  void cell_edges(const Entity_ID cellid,
                                 Entity_ID_List *edgeids) const override;
 
   // Edges and directions of a 2D cell
-  void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
+  void cell_2D_edges_and_dirs(const Entity_ID cellid,
                                             Entity_ID_List *edgeids,
                                             std::vector<int> *edgedirs) const override { 
     Errors::Message mesg("2D cells are not supported in this framework.");
@@ -289,7 +289,7 @@ class Mesh_simple : public Mesh {
   // Get edges of a face and directions in which the face uses the edges.
   // In 3D, edge direction is 1 when it is oriented counter clockwise
   // with respect to the face natural normal.
-  void face_get_edges_and_dirs_internal_(const Entity_ID cellid,
+  void face_edges_and_dirs(const Entity_ID cellid,
                                          Entity_ID_List *edgeids,
                                          std::vector<int> *edgedirs,
                                          bool ordered = true) const override;

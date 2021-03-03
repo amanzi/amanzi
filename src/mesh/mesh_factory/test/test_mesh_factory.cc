@@ -1,7 +1,7 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Rao Garimella, others
@@ -31,12 +31,12 @@
 SUITE (MeshFramework)
 {
 
-    
+
   TEST (Generate3D)
   {
     auto comm = Amanzi::getDefaultComm();
     bool parallel(comm->NumProc() > 1);
-    
+
     Amanzi::AmanziMesh::Preference pref;
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
 
@@ -90,7 +90,7 @@ SUITE (MeshFramework)
   TEST (Generate2D)
   {
     auto comm = Amanzi::getDefaultComm();
-    
+
     Amanzi::AmanziMesh::Preference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
@@ -111,7 +111,7 @@ SUITE (MeshFramework)
       mesh.reset();
     }
 
-    // The Simple framework is always available, but 
+    // The Simple framework is always available, but
     // cannot generate 2D meshes
     pref.clear(); pref.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
     meshfactory.set_preference(pref);
@@ -140,13 +140,13 @@ SUITE (MeshFramework)
   {
     auto comm = Amanzi::getDefaultComm();
     bool parallel(comm->NumProc() > 1);
-    
+
     Amanzi::AmanziMesh::Preference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
 
     // make a parameter list to try out
-    
+
     Teuchos::ParameterList parameter_list;
     Teuchos::Array<int> ncells = Teuchos::tuple<int>(10,10,10);
     Teuchos::Array<double> low = Teuchos::tuple<double>(0.0, 0.0, 0.0);
@@ -154,7 +154,7 @@ SUITE (MeshFramework)
     parameter_list.set< Teuchos::Array<int> >("number of cells", ncells);
     parameter_list.set< Teuchos::Array<double> >("domain low coordinate", low);
     parameter_list.set< Teuchos::Array<double> >("domain high coordinate", high);
-    
+
     pref.clear(); pref.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
     meshfactory.set_preference(pref);
 
@@ -176,11 +176,11 @@ SUITE (MeshFramework)
       CHECK(!mesh.is_null());
       mesh.reset();
     }
-    
+
     // Other frameworks can't generate, so they should throw
     if (Amanzi::AmanziMesh::framework_enabled(
             Amanzi::AmanziMesh::Framework::MOAB)) {
-      pref.clear(); 
+      pref.clear();
       pref.push_back(Amanzi::AmanziMesh::Framework::MOAB);
       meshfactory.set_preference(pref);
       CHECK_THROW(mesh = meshfactory.create(parameter_list),
@@ -188,17 +188,17 @@ SUITE (MeshFramework)
     }
   }
 
-  
+
   TEST (ParameterGenerate2)
   {
     auto comm = Amanzi::getDefaultComm();
-    
+
     Amanzi::AmanziMesh::Preference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
 
     // make a parameter list to try out
-    
+
     Teuchos::ParameterList parameter_list;
     Teuchos::Array<int> ncells = Teuchos::tuple<int>(10,10);
     Teuchos::Array<double> low = Teuchos::tuple<double>(0.0, 0.0);
@@ -206,7 +206,7 @@ SUITE (MeshFramework)
     parameter_list.set< Teuchos::Array<int> >("number of cells", ncells);
     parameter_list.set< Teuchos::Array<double> >("domain low coordinate", low);
     parameter_list.set< Teuchos::Array<double> >("domain high coordinate", high);
-    
+
 
     // MSTK, if available, can generate 2D meshes
     if (Amanzi::AmanziMesh::framework_enabled(
@@ -229,7 +229,7 @@ SUITE (MeshFramework)
     // Other frameworks can't generate, so they should throw
     if (Amanzi::AmanziMesh::framework_enabled(
             Amanzi::AmanziMesh::Framework::MOAB)) {
-      pref.clear(); 
+      pref.clear();
       pref.push_back(Amanzi::AmanziMesh::Framework::MOAB);
       meshfactory.set_preference(pref);
       CHECK_THROW(mesh = meshfactory.create(parameter_list),
@@ -241,7 +241,7 @@ SUITE (MeshFramework)
   // The Simple framework cannot read anything, even if it exists
   TEST (ReadSimple) {
     auto comm = Amanzi::getDefaultComm();
-    
+
     Amanzi::AmanziMesh::Preference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
@@ -277,7 +277,7 @@ SUITE (MeshFramework)
     }
   }
 
-  TEST (ReadExodus) 
+  TEST (ReadExodus)
   {
     auto comm = Amanzi::getDefaultComm();
     bool parallel(comm->NumProc() > 1);
@@ -305,11 +305,11 @@ SUITE (MeshFramework)
     }
   }
 
-  TEST (ReadNemesis) 
+  TEST (ReadNemesis)
   {
     auto comm = Amanzi::getDefaultComm();
     bool parallel(comm->NumProc() > 1);
-    
+
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
 
@@ -325,18 +325,18 @@ SUITE (MeshFramework)
       CHECK_THROW(mesh = meshfactory.create(NEMESIS_TEST_FILE),
                   Amanzi::AmanziMesh::Message);
     }
-  }      
+  }
 
 
   TEST (Extract3)
   {
     auto comm = Amanzi::getDefaultComm();
     bool parallel(comm->NumProc() > 1);
-    
+
     double x0( 0.0), y0( 0.0), z0( 0.0);
     double x1(10.0), y1(10.0), z1(10.0);
     int nx(10), ny(10), nz(10);
- 
+
   // create a sublist name Regions and put a reference to it in
   // reg_spec and other sublists as references. Turns out it is
   // important to define reg_spec and other lists below as references
@@ -344,8 +344,8 @@ SUITE (MeshFramework)
 
     Teuchos::ParameterList parameterlist;
 
-    Teuchos::ParameterList& reg_spec = parameterlist.sublist("regions"); 
-  
+    Teuchos::ParameterList& reg_spec = parameterlist.sublist("regions");
+
     Teuchos::ParameterList& top_surface = reg_spec.sublist("Top Surface");
     Teuchos::ParameterList& top_surface_def = top_surface.sublist("region: plane");
     Teuchos::Array<double> loc1 = Teuchos::tuple(0.0,0.0,10.0);
@@ -355,14 +355,14 @@ SUITE (MeshFramework)
 
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
         Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, *comm));
-    
+
     std::string topsurfname("Top Surface");
     std::vector<std::string> setnames;
     setnames.push_back(topsurfname);
 
     Amanzi::AmanziMesh::Preference pref;
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm,gm);
-    
+
     bool flatten = true;
     bool extrude = false;
 
@@ -390,7 +390,7 @@ SUITE (MeshFramework)
                     Amanzi::AmanziMesh::Message);
     }
 
-    
+
     // The MSTK framework, if available, will always generate
     if (Amanzi::AmanziMesh::framework_enabled(
             Amanzi::AmanziMesh::Framework::MSTK)) {
@@ -401,7 +401,7 @@ SUITE (MeshFramework)
               x1, y1, z1,
               nx, ny, nz);
       CHECK(!mesh.is_null());
-      
+
       newmesh = meshfactory.create(mesh,setnames,Amanzi::AmanziMesh::FACE,flatten);
       CHECK(!newmesh.is_null());
     }
@@ -420,5 +420,5 @@ SUITE (MeshFramework)
     }
   }
 
-    
+
 } // SUITE

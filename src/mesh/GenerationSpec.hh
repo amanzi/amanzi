@@ -1,16 +1,13 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/**
- * @file   GenerationSpec.hh
- * @author William A. Perkins
- * @date Wed Sep 28 08:25:52 2011
- * 
- * @brief  Declaration of the GenerationSpec class
- * 
- * 
- */
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-#ifndef __H_GenerationSpec
-#define __H_GenerationSpec
+  Authors: Rao Garimella, others
+*/
+
+#pragma once
 
 #include "Region.hh"
 #include "RegionBox.hh"
@@ -78,7 +75,7 @@ class GenerationSpec {
 
   AmanziGeometry::RegionVector blocks_; /**< list of mesh subdomains */
 
-  Partitioner_type partitioner_ = PARTITIONER_DEFAULT;  /**< partitioner type */
+  Partitioner_type partitioner_;
 
   /// fill attributes from specified list
   void parse_(const Teuchos::ParameterList &parameter_list);
@@ -95,4 +92,4 @@ class GenerationSpec {
 } // end namespace AmanziMesh
 } // end namespace Amanzi
 
-#endif
+

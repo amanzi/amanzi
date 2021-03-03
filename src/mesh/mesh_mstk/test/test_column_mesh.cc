@@ -50,7 +50,7 @@ TEST(COLUMN_MESH_3D)
   
 
   // Create the mesh
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh =
+  Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh =
       Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,
               lx,ly,lz,nx,ny,nz,
               comm, gm));
@@ -74,7 +74,7 @@ TEST(COLUMN_MESH_3D)
   CHECK_EQUAL(5, mesh->faces_of_column(10).size());
   
   // Create a column mesh from one of the columns
-  Amanzi::AmanziMesh::MeshColumn colmesh(mesh,10);
+  Amanzi::AmanziMesh::MeshFrameworkColumn colmesh(mesh,10);
 
   
   // Verify column mesh topology
@@ -216,7 +216,7 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   
 
   // Create the mesh
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh =
+  Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh =
       Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,
               lx,ly,lz,nx,ny,nz,
               comm, gm));
@@ -231,7 +231,7 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   CHECK_EQUAL(5, mesh->faces_of_column(10).size());
   
   // Create a column mesh from one of the columns
-  Amanzi::AmanziMesh::MeshColumn colmesh(mesh,10);
+  Amanzi::AmanziMesh::MeshFrameworkColumn colmesh(mesh,10);
 
   
   // Verify column mesh topology

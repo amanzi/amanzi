@@ -46,22 +46,12 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 # about MPI_COMM_WORLD. --lpritch
 add_definitions("-DMSTK_HAVE_MPI")
 
-if (WITH_MSTK_2_20rc1_OR_NEWER)
-  add_definitions("-DMSTK_2_20rc1_OR_NEWER")
-endif ()
-
-if (WITH_MSTK_2_21rc1_OR_NEWER)
-  add_definitions("-DMSTK_2_21rc1_OR_NEWER")
-endif ()
-
-if (WITH_MSTK_3_00_OR_NEWER)
-  add_definitions("-DMSTK_3_00_OR_NEWER")
-endif ()
 
 #
 # Library: mstk_mesh
 #
-set(mstk_mesh_files Mesh_MSTK.cc Mesh_MSTK_deform.cc MeshColumn.cc MeshSurfaceCell.cc) 
+#set(mstk_mesh_files Mesh_MSTK.cc Mesh_MSTK_deform.cc MeshColumn.cc MeshSurfaceCell.cc) 
+set(mstk_mesh_files Mesh_MSTK.cc) 
 file(GLOB mstk_inc_files "*.hh")
 add_amanzi_library(mstk_mesh
                    SOURCE ${mstk_mesh_files} HEADERS ${mstk_inc_files}
@@ -115,13 +105,13 @@ if (BUILD_TESTS)
                          test/test_hex_1x1x1.cc
                          test/test_hex_2x2x1.cc
                          test/test_hex_3x3x3.cc
-                         test/test_hex_3x3x3_sets.cc
+#                         test/test_hex_3x3x3_sets.cc
                          test/test_hex_gen_3x3x3.cc
                          test/test_quad_gen_3x3.cc
-                         test/test_extract_surface.cc
- 			 test/test_extract_column.cc
-                         test/test_deform_vols.cc
-		         test/test_extnode_map.cc
+#                         test/test_extract_surface.cc
+# 			 test/test_extract_column.cc
+#                         test/test_deform_vols.cc
+#		         test/test_extnode_map.cc
                     LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}) 
 
 
@@ -132,39 +122,39 @@ if (BUILD_TESTS)
                     SOURCE
                          test/Main.cc
                          test/test_hex_3x3x3_4P.cc
-                         test/test_hex_3x3x3_sets_4P.cc
+#                         test/test_hex_3x3x3_sets_4P.cc
                          test/test_hex_3x3x3_par_read_4P.cc
                          test/test_quad_gen_3x3_4P.cc
                          test/test_hex_gen_3x3x3_4P.cc
                          test/test_edges_4P.cc
-                         test/test_extract_surface_4P.cc
-		         test/test_extface_map_4P.cc
-		         test/test_extnode_map.cc
-                         test/test_deform_vols.cc
+#                         test/test_extract_surface_4P.cc
+#		         test/test_extface_map_4P.cc
+#		         test/test_extnode_map.cc
+#                         test/test_deform_vols.cc
                     LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: column_mesh
-    add_amanzi_test(mstk_column_mesh mstk_column_mesh
-                    KIND unit
-                    SOURCE
-                          test/Main.cc 
-                          test/test_column_mesh.cc 
-			  LINK_LIBS mstk_mesh geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # add_amanzi_test(mstk_column_mesh mstk_column_mesh
+    #                 KIND unit
+    #                 SOURCE
+    #                       test/Main.cc 
+    #                       test/test_column_mesh.cc 
+    #     		  LINK_LIBS mstk_mesh geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: extracted surface from column_mesh
-    add_amanzi_test(mstk_surface_column_mesh mstk_surface_column_mesh
-                    KIND unit
-                    SOURCE
-                          test/Main.cc 
-                          test/test_surface_column_mesh.cc 
-                    LINK_LIBS mstk_mesh geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # add_amanzi_test(mstk_surface_column_mesh mstk_surface_column_mesh
+    #                 KIND unit
+    #                 SOURCE
+    #                       test/Main.cc 
+    #                       test/test_surface_column_mesh.cc 
+    #                 LINK_LIBS mstk_mesh geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: extract fracture test
-    add_amanzi_test(mstk_fracture_mesh mstk_fracture_mesh
-                    KIND unit
-                    SOURCE
-                          test/Main.cc 
-                          test/test_fracture_mesh.cc 
-                    LINK_LIBS mstk_mesh geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # add_amanzi_test(mstk_fracture_mesh mstk_fracture_mesh
+    #                 KIND unit
+    #                 SOURCE
+    #                       test/Main.cc 
+    #                       test/test_fracture_mesh.cc 
+    #                 LINK_LIBS mstk_mesh geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 endif()
 

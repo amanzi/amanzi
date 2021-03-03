@@ -8,8 +8,7 @@
   Authors: William Perkins, others
 */
 
-#ifndef AMANZI_MESH_FRAMEWORK_HH_
-#define AMANZI_MESH_FRAMEWORK_HH_
+#pragma once
 
 #include <string>
 #include <vector>
@@ -37,4 +36,3 @@ Preference filter_preference(const Preference& pref);
 } // namespace AmanziMesh
 } // namespace Amanzi
 
-#endif

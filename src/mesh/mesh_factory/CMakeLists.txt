@@ -42,11 +42,17 @@ include_directories(${MESH_SOURCE_DIR})
 #
 set(mesh_factory_files 
     FileFormat.cc
-    MeshFramework.cc
-    MeshFactory.cc) 
-file(GLOB mesh_factory_inc_files "*.hh")
+    MeshFrameworkTraits.cc
+    MeshFrameworkFactory.cc) 
 
-list(APPEND mesh_factory_frameworks simple_mesh)
+set(mesh_factory_inc_files
+    MeshException.hh
+    FileFormat.hh
+    MeshFrameworkTraits.hh
+    MeshFrameworkFactory.hh)
+
+
+#list(APPEND mesh_factory_frameworks simple_mesh)
 
 if (ENABLE_STK_Mesh)
     include_directories(${STK_INCLUDE_DIR} ${STK_SOURCE_DIR})
@@ -68,7 +74,8 @@ endif()
 
 add_amanzi_library(mesh_factory
                    SOURCE ${mesh_factory_files} HEADERS ${mesh_factory_inc_files}
-                   LINK_LIBS ${mesh_factory_frameworks} mesh_extracted ${Boost_LIBRARIES})
+                   LINK_LIBS ${mesh_factory_frameworks} ${Boost_LIBRARIES})
+#                   LINK_LIBS ${mesh_factory_frameworks} mesh_extracted ${Boost_LIBRARIES})
 
 if (BUILD_TESTS)
 

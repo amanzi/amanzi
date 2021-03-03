@@ -24,43 +24,11 @@ TEST(MSTK_QUAD_GEN_3x3_4P)
     std::cerr << "Test must be run with 4 processors" << std::endl;
   }
 
-
-  // Load a single hex from the hex1.exo file
-
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,1.0,1.0,3,3,comm));
-
-
-
-  std::vector<Amanzi::AmanziMesh::Entity_ID>  c2f(4);
-  Epetra_Map cell_map(mesh->cell_map(false));
-  Epetra_Map face_map(mesh->face_map(true));
-
-  for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
-    {
-      CHECK_EQUAL(cell_map.GID(c),mesh->GID(c,Amanzi::AmanziMesh::CELL));
-      mesh->cell_get_faces(c, &c2f, true);
-
-      for (int j=0; j<4; j++)
-	{
-	  int f = face_map.LID(mesh->GID(c2f[j],Amanzi::AmanziMesh::FACE));
-	  CHECK_EQUAL( f,c2f[j] );
-	  if (f != c2f[j]) {
-	    std::cout << std::endl;
-	    std::cout << "Processor ID " << rank << std::endl;
-	    std::cout << "Cell ID " << cell_map.GID(c) << std::endl;
-	    std::cout << "Problem face c2f[j] = " << c2f[j] << " GID = " << mesh->GID(c2f[j],Amanzi::AmanziMesh::FACE) << " f = " << f << std::endl;
-	    std::cout << std::endl;
-	  }
-	}
-
-    }
-
+  Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,1.0,1.0,3,3,comm));
   std::stringstream fname;
   fname << "test/mstk_quad_gen_3x3_4P." << rank << ".out";
   std::ofstream fout(fname.str().c_str());
   Amanzi::MeshAudit auditor(mesh,fout);
   auditor.Verify();
-
-
 }
 

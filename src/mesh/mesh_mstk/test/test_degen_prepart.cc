@@ -14,7 +14,7 @@
 
 #include "MeshAudit.hh"
 
-#include "../../mesh_factory/MeshFactory.hh"
+#include "../../mesh_factory/MeshFrameworkFactory.hh"
 #include "../Mesh_MSTK.hh"
 
 
@@ -36,7 +36,7 @@ TEST(ELIM_DEGEN_PREPARTITION)
   
   // create and register meshes
   auto mesh_plist = plist->sublist("mesh");
-  Amanzi::AmanziMesh::MeshFactory meshfactory(comm, gm);
+  Amanzi::AmanziMesh::MeshFrameworkFactory meshfactory(comm, gm);
   Amanzi::AmanziMesh::Preference prefs(meshfactory.get_preference());
   prefs.clear();
   prefs.push_back(Amanzi::AmanziMesh::Framework::MSTK);

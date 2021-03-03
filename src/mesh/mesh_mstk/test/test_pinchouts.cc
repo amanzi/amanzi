@@ -14,7 +14,7 @@
 
 #include "MeshAudit.hh"
 
-#include "../../mesh_factory/MeshFactory.hh"
+#include "../../mesh_factory/MeshFrameworkFactory.hh"
 #include "../Mesh_MSTK.hh"
 
 
@@ -38,13 +38,13 @@ TEST(ELIM_DEGEN_INLINE_PARTITION)
   
   // create and register meshes
   Teuchos::ParameterList mesh_plist = plist->sublist("mesh");
-  Amanzi::AmanziMesh::MeshFactory meshfactory(comm, gm);
+  Amanzi::AmanziMesh::MeshFrameworkFactory meshfactory(comm, gm);
   Amanzi::AmanziMesh::Preference prefs(meshfactory.get_preference());
   prefs.clear();
   prefs.push_back(Amanzi::AmanziMesh::Framework::MSTK);
   
   // create the base mesh
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
+  Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh;
   
   std::string in_exo_file;
   if (mesh_plist.isSublist("read mesh file")) {
@@ -124,8 +124,8 @@ TEST(ELIM_DEGEN_INLINE_PARTITION)
   CHECK(mstk_mesh->run_internal_mstk_checks());
   
   // Create the surface mesh if needed
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> surface_mesh = Teuchos::null;
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> surface3D_mesh = Teuchos::null;
+  Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> surface_mesh = Teuchos::null;
+  Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> surface3D_mesh = Teuchos::null;
   if (mesh_plist.isSublist("surface mesh")) {
     Teuchos::ParameterList surface_plist = mesh_plist.sublist("surface mesh");
     

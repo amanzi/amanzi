@@ -51,7 +51,7 @@ TEST(SURFACE_COLUMN_MESH_3D)
   gm->AddRegion(r1);
   
   // Create the mesh
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh =
+  Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh =
       Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,
               lx,ly,lz,nx,ny,nz,
               comm, gm));
@@ -70,10 +70,10 @@ TEST(SURFACE_COLUMN_MESH_3D)
   }
 
   // Create a column mesh from one of the columns
-  auto colmesh = Teuchos::rcp(new Amanzi::AmanziMesh::MeshColumn(mesh,10));
+  auto colmesh = Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkColumn(mesh,10));
 
   // Extract the surface from this column
-  Amanzi::AmanziMesh::MeshSurfaceCell col_surf(colmesh, "surface");
+  Amanzi::AmanziMesh::MeshFrameworkSurfaceCell col_surf(colmesh, "surface");
 
   // -- check basic mesh structure
   CHECK_EQUAL(1, col_surf.num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED));
@@ -125,7 +125,7 @@ TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED)
   gm->AddRegion(r1);
 
   // Create the mesh
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh =
+  Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh =
       Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK("test/slab-0.05-5x4x25.exo", comm, gm));
 
   CHECK_EQUAL(20, mesh->get_set_size("surface",Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::ALL));
@@ -134,11 +134,11 @@ TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED)
   CHECK_EQUAL(1, mesh->build_columns());
   
   // Create a column mesh from one of the columns
-  auto colmesh = Teuchos::rcp(new Amanzi::AmanziMesh::MeshColumn(mesh,10));
+  auto colmesh = Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkColumn(mesh,10));
   CHECK_EQUAL(1, colmesh->get_set_size("surface",Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::ALL));
 
   // Extract the surface from this column
-  Amanzi::AmanziMesh::MeshSurfaceCell col_surf(colmesh, "surface");
+  Amanzi::AmanziMesh::MeshFrameworkSurfaceCell col_surf(colmesh, "surface");
 
   CHECK_EQUAL(1, col_surf.num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED));
   CHECK_EQUAL(4, col_surf.num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED));
@@ -211,12 +211,12 @@ TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED_SETS)
   CHECK_EQUAL(1, mesh->build_columns());
   
   // Create a column mesh from one of the columns
-  auto colmesh = Teuchos::rcp(new Amanzi::AmanziMesh::MeshColumn(mesh,0));
+  auto colmesh = Teuchos::rcp(new Amanzi::AmanziMesh::MeshFrameworkColumn(mesh,0));
   CHECK_EQUAL(1, colmesh->get_set_size("Top Surface",Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::ALL));
   CHECK_EQUAL(1, colmesh->get_set_size("Region 1",Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL));
 
   // Extract the surface from this column
-  Amanzi::AmanziMesh::MeshSurfaceCell col_surf(colmesh, "Top Surface");
+  Amanzi::AmanziMesh::MeshFrameworkSurfaceCell col_surf(colmesh, "Top Surface");
 
   CHECK_EQUAL(1, col_surf.num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED));
   CHECK_EQUAL(4, col_surf.num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED));

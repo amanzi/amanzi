@@ -47,7 +47,7 @@ TEST(MSTK_DEFORM_VOLS_2D)
   plist->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "zoltan_rcb");
   bool request_faces = true;
   bool request_edges = true;
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
+  Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> 
     mesh(new Amanzi::AmanziMesh::Mesh_MSTK(-5.0,0.0,5.0,10.0,10,10,comm,
 					   gm,plist,
 					   request_faces,request_edges));
@@ -131,7 +131,7 @@ TEST(MSTK_DEFORM_VOLS_3D)
   plist->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "zoltan_rcb");
   bool request_faces = true;
   bool request_edges = true;
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
+  Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> 
     mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,10.0,1.0,10.0,10,1,10,
 					   comm,gm,plist,
 					   request_faces,request_edges));

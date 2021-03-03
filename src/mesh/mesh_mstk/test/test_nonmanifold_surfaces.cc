@@ -49,7 +49,7 @@ TEST(MSTK_READ_NONMANIFOLD_SURFACES)
   // intersecting surfaces in 3 space. Each surface is meshed with 100
   // regular quads
 
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/fractures.exo",comm,3,gm));
+  Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/fractures.exo",comm,3,gm));
 
 
   CHECK_EQUAL(2, mesh->manifold_dimension());

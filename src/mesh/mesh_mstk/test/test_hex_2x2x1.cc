@@ -52,7 +52,7 @@ TEST(MSTK_HEX_2x2x1)
 
   // Load a simple 4 element hex mesh 
 
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_2x2x1_ss.exo",comm));
+  Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_2x2x1_ss.exo",comm));
   
   
   nv = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::OWNED);

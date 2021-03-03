@@ -43,7 +43,7 @@ TEST(MSTK_HEX1)
 
   // Load a single hex from the hex1.exo file
 
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_1x1x1_ss.exo",comm));
+  Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_1x1x1_ss.exo",comm));
 
 
   // Check number of nodes and their coordinates

@@ -21,7 +21,7 @@ TEST(MSTK_EXTNODE_MAP_4P)
   auto comm = Amanzi::getDefaultComm();
   int size = comm->NumProc();
 
-  Teuchos::RCP<AmanziMesh::Mesh> mesh;
+  Teuchos::RCP<AmanziMesh::MeshFramework> mesh;
   if (size == 4) {
     mesh = Teuchos::rcp(new AmanziMesh::Mesh_MSTK("test/hex_3x3x3_sets.exo", comm));
     nbnd = 56;
