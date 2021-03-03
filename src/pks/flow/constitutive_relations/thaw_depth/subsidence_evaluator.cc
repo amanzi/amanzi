@@ -18,16 +18,16 @@ SubsidenceEvaluator::SubsidenceEvaluator(Teuchos::ParameterList& plist)
     : SecondaryVariableFieldEvaluator(plist)
 {
   domain_ = Keys::getDomain(my_key_);
-  auto pos = domain_.find_last_of('_');
+  auto pos = domain_.find_last_of(':');
   int col_id = std::stoi(domain_.substr(pos+1, domain_.size()));
   
   std::stringstream domain_ss;
-  domain_ss << "column_"<< col_id;
+  domain_ss << "column:"<< col_id;
   bp_key_ = Keys::getKey(domain_ss.str(),"base_porosity");
   dependencies_.insert(bp_key_);
 
   std::stringstream domain_sf;
-  domain_sf << "surface_column_"<< col_id;
+  domain_sf << "surface_column:"<< col_id;
   init_elev_key_ = Keys::getKey(domain_sf.str(),"initial_elevation");
   //  dependencies_.insert(init_elev_key_);
 }
