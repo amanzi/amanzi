@@ -32,9 +32,6 @@ int Operator_ConsistentFace::ApplyMatrixFreeOp(
     const Op_Cell_FaceCell& op, const CompositeVector& X, CompositeVector& Y) const
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
-
-  Y.PutScalarGhosted(0.);
-  X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
 
   {
@@ -63,7 +60,6 @@ int Operator_ConsistentFace::ApplyMatrixFreeOp(
       }
     } 
   }
-  Y.GatherGhostedToMaster("face", Add);
   return 0;
 }
 
