@@ -135,6 +135,7 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
   void Init_(Teuchos::ParameterList& plist);
   
  protected:
+  Teuchos::RCP<CompositeVector> beta_; // workspace
   Teuchos::RCP<CompositeVector> transmissibility_;
   bool transmissibility_initialized_;
 

@@ -490,52 +490,55 @@ void PDE_DiffusionFV::ComputeJacobianLocal_(
 ****************************************************************** */
 void PDE_DiffusionFV::ComputeTransmissibility_()
 {
-  Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
-
   // Compute auxiliary structure. Note that first components of both 
   // fields are used symmetrically (no specific order).
-  CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh_);
-  cvs.SetGhosted(true);
-  cvs.SetComponent("face", AmanziMesh::FACE, 1);
 
-  CompositeVector beta(cvs, true);
-  Epetra_MultiVector& beta_face = *beta.ViewComponent("face", true);
-  beta.PutScalar(0.0);
+  if (!beta_.get()) {
+    CompositeVectorSpace cvs;
+    cvs.SetMesh(mesh_);
+    cvs.SetGhosted(true);
+    cvs.SetComponent("face", AmanziMesh::FACE, 1);
+    beta_ = Teuchos::rcp(new CompositeVector(cvs, true));
+  }
+  beta_->PutScalar(0.0);
+  {
+    Epetra_MultiVector& beta_face = *beta_->ViewComponent("face", true);
+    AmanziMesh::Entity_ID_List faces, cells;
+    std::vector<AmanziGeometry::Point> bisectors;
+    AmanziGeometry::Point a_dist;
+    WhetStone::Tensor Kc(mesh_->space_dimension(), 1); 
+    Kc(0, 0) = 1.0;
 
-  AmanziMesh::Entity_ID_List faces, cells;
-  std::vector<AmanziGeometry::Point> bisectors;
-  AmanziGeometry::Point a_dist;
-  WhetStone::Tensor Kc(mesh_->space_dimension(), 1); 
-  Kc(0, 0) = 1.0;
+    for (int c = 0; c < ncells_owned; ++c) {
+      if (K_.get()) Kc = (*K_)[c];
+      mesh_->cell_get_faces_and_bisectors(c, &faces, &bisectors);
+      int nfaces = faces.size();
 
-  for (int c = 0; c < ncells_owned; ++c) {
-    if (K_.get()) Kc = (*K_)[c];
-    mesh_->cell_get_faces_and_bisectors(c, &faces, &bisectors);
-    int nfaces = faces.size();
+      for (int i = 0; i < nfaces; i++) {
+        int f = faces[i];
+        const AmanziGeometry::Point& a = bisectors[i];
+        const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+        double area = mesh_->face_area(f);
 
-    for (int i = 0; i < nfaces; i++) {
-      int f = faces[i];
-      const AmanziGeometry::Point& a = bisectors[i];
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      double area = mesh_->face_area(f);
-
-      double h_tmp = norm(a);
-      double s = area / h_tmp;
-      double perm = ((Kc * a) * normal) * s;
-      double dxn = a * normal;
-      beta_face[0][f] += fabs(dxn / perm);
+        double h_tmp = norm(a);
+        double s = area / h_tmp;
+        double perm = ((Kc * a) * normal) * s;
+        double dxn = a * normal;
+        beta_face[0][f] += fabs(dxn / perm);
+      }
     }
   }
-
-  beta.GatherGhostedToMaster(Add);
+  beta_->GatherGhostedToMaster(Add);
 
   // Compute transmissibilities. Since it is done only once, we repeat
   // some calculatons.
   transmissibility_->PutScalar(0.0);
-
-  for (int f = 0; f < nfaces_owned; f++) {
-    trans_face[0][f] = 1.0 / beta_face[0][f];
+  {
+    Epetra_MultiVector& beta_face = *beta_->ViewComponent("face", true);
+    Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
+    for (int f = 0; f < nfaces_owned; f++) {
+      trans_face[0][f] = 1.0 / beta_face[0][f];
+    }
   }
   transmissibility_->ScatterMasterToGhosted("face", true);
   transmissibility_initialized_ = true;

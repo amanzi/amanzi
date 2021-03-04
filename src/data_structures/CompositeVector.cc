@@ -135,11 +135,16 @@ CompositeVector::CompositeVector(const CompositeVector& other,
     names_(other.names_),
     indexmap_(other.indexmap_),
     ghost_are_current_(other.map_->NumComponents(),false),
-    ghosted_(other.ghosted_)
+    ghosted_(other.ghosted_),
+    importers_(other.importers_),
+    vandelay_importer_(other.vandelay_importer_)
 {
   InitMap_(*map_);
   CreateData_();
   InitData_(other, mode);
+  if (other.vandelay_vector_ != Teuchos::null) {
+    
+  }
 }
 
 CompositeVector::CompositeVector(const CompositeVector& other, bool ghosted,
@@ -148,7 +153,9 @@ CompositeVector::CompositeVector(const CompositeVector& other, bool ghosted,
     names_(other.names_),
     indexmap_(other.indexmap_),
     ghost_are_current_(other.map_->NumComponents(),false),
-    ghosted_(ghosted)
+    ghosted_(ghosted),
+    importers_(other.importers_),
+    vandelay_importer_(other.vandelay_importer_)
 {
   InitMap_(*map_);
   CreateData_();
@@ -461,15 +468,21 @@ void CompositeVector::GatherGhostedToMaster(std::string name,
 
 
 // Vandelay operations
-void CompositeVector::CreateVandelay_() const {
+void CompositeVector::CreateVandelayImporter_() const {
   vandelay_importer_ = Teuchos::rcp(new Epetra_Import(Mesh()->exterior_face_importer()));
+}
+
+void CompositeVector::CreateVandelayVector_() const {
   vandelay_vector_ = Teuchos::rcp(new Epetra_MultiVector(Mesh()->exterior_face_map(false),
           mastervec_->NumVectors("face"), false));
 }
 
 void CompositeVector::ApplyVandelay_() const {
   if (vandelay_importer_ == Teuchos::null) {
-    CreateVandelay_();
+    CreateVandelayImporter_();
+  }
+  if (vandelay_vector_ == Teuchos::null) {
+    CreateVandelayVector_();
   }
   vandelay_vector_->Import(*ViewComponent("face",false), *vandelay_importer_, Insert);
 }

@@ -401,7 +401,8 @@ class CompositeVector {
 
   // The Vandelay is an Importer/Exporter which allows face unknowns
   // to be spoofed as boundary face unknowns.
-  void CreateVandelay_() const;
+  void CreateVandelayImporter_() const;
+  void CreateVandelayVector_() const;
   void ApplyVandelay_() const;
 
 
