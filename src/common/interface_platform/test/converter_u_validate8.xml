@@ -578,6 +578,7 @@
         <Parameter name="convergence criteria" type="Array(string)" value="{relative rhs, relative residual}"/>
         <Parameter name="controller training start" type="int" value="0"/>
         <Parameter name="controller training end" type="int" value="3"/>
+        <Parameter name="release Krylov vectors" type="bool" value="true"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
