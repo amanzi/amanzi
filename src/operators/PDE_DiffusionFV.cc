@@ -494,15 +494,14 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
 
   // Compute auxiliary structure. Note that first components of both 
   // fields are used symmetrically (no specific order).
-  if (!beta_.get()) {
-    CompositeVectorSpace cvs;
-    cvs.SetMesh(mesh_);
-    cvs.SetGhosted(true);
-    cvs.SetComponent("face", AmanziMesh::FACE, 1);
-    beta_ = Teuchos::rcp(new CompositeVector(cvs, true));
-  }
-  Epetra_MultiVector& beta_face = *beta_->ViewComponent("face", true);
-  beta_face.PutScalar(0.0);
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(mesh_);
+  cvs.SetGhosted(true);
+  cvs.SetComponent("face", AmanziMesh::FACE, 1);
+
+  CompositeVector beta(cvs, true);
+  Epetra_MultiVector& beta_face = *beta.ViewComponent("face", true);
+  beta.PutScalar(0.0);
 
   AmanziMesh::Entity_ID_List faces, cells;
   std::vector<AmanziGeometry::Point> bisectors;
@@ -529,7 +528,7 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
     }
   }
 
-  beta_->GatherGhostedToMaster(Add);
+  beta.GatherGhostedToMaster(Add);
 
   // Compute transmissibilities. Since it is done only once, we repeat
   // some calculatons.
