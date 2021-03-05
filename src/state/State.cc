@@ -1010,6 +1010,23 @@ void State::InitializeEvaluators() {
   }
 };
 
+void State::InitializeFieldCopies() {
+  VerboseObject vo("State", state_plist_); 
+  if (vo.os_OK(Teuchos::VERB_HIGH)) {
+    Teuchos::OSTab tab = vo.getOSTab();
+    *vo.os() << "initializing field copies..." << std::endl;
+  }
+
+  for (FieldMap::iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
+    Teuchos::RCP<Field> field = f_it->second;
+    for (Amanzi::Field::copy_iterator cp_it = field->copy_begin(); cp_it != field->copy_end(); ++cp_it){
+      Key owner_key = field->GetCopy(cp_it->first)->owner();
+      *field->GetCopy(cp_it->first,owner_key)->GetFieldData() = *field->GetFieldData();
+    } 
+  }
+
+};
+
 
 void State::InitializeFields() {
   bool pre_initialization = false;
