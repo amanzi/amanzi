@@ -30,7 +30,7 @@ void TransportExplicit_PK::FunctionalTimeDerivative(
 
   // distribute vector
   Epetra_Vector component_tmp(component);
-  component_tmp.Import(component, *tcc->importer("cell"), Insert);
+  component_tmp.Import(component, tcc->importer("cell"), Insert);
 
   // transport routines need an RCP pointer
   Teuchos::RCP<const Epetra_Vector> component_rcp(&component_tmp, false);
