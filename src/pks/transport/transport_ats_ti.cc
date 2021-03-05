@@ -28,7 +28,7 @@ void Transport_ATS::FunctionalTimeDerivative(double t,
 {
   // distribute vector
   auto component_tmp = Teuchos::rcp(new Epetra_Vector(component));
-  component_tmp->Import(component, tcc->importer("cell"), Insert);
+  component_tmp->Import(component, *tcc->importer("cell"), Insert);
 
   Teuchos::ParameterList recon_list = plist_->sublist("reconstruction");
   lifting_->Init(recon_list);
