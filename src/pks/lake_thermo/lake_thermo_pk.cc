@@ -414,44 +414,17 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
 
   // read model parameters
 
-//  // evaporation rate
-//  Epetra_Vector& Evec = *S_->GetConstantVectorData("evaporation", "state");
-//  E_ = std::fabs(Evec[0]);
-//
-//  // surface runoff
-//  Epetra_Vector& Rsvec = *S_->GetConstantVectorData("surface runoff", "state");
-//  R_s_ = std::fabs(Rsvec[0]);
-//
-//  // bottom runoff
-//  Epetra_Vector& Rbvec = *S_->GetConstantVectorData("bottom runoff", "state");
-//  R_b_ = std::fabs(Rbvec[0]);
-//
-//  // extinction coefficient
-//  Epetra_Vector& alpha_e_vec = *S_->GetConstantVectorData("extinction coefficient", "state");
-//  alpha_e_ = std::fabs(alpha_e_vec[0]);
-//
-//  // solar radiation maximum S(0)
-//  Epetra_Vector& S0_vec = *S_->GetConstantVectorData("solar radiation max", "state");
-//  S0_ = std::fabs(S0_vec[0]);
-//
-//  // heat capacity of water
-//  Epetra_Vector& cp_vec = *S_->GetConstantVectorData("heat capacity", "state");
-//  cp_ = std::fabs(cp_vec[0]);
-
-//  rho0 = 1.;
-//  cp_ = 1.; // 4184./rho0;
-
   rho0 = 1000.;
   cp_ = 4184./rho0;
 
   Teuchos::ParameterList& param_list = plist_->sublist("parameters");
 
   // precipitation rate
-  double r_ = param_list.get<double>("precipitation");
+  r_ = param_list.get<double>("precipitation");
   std::cout << "Precipitation rate = " << r_ << std::endl;
 
   // evaporation rate
-  double E_ = param_list.get<double>("evaporation");
+  E_ = param_list.get<double>("evaporation");
   std::cout << "Evaporation rate = " << E_ << std::endl;
 
   R_s_ = 0.;
