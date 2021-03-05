@@ -140,9 +140,6 @@ CompositeVector::CompositeVector(const CompositeVector& other,
   InitMap_(*map_);
   CreateData_();
   InitData_(other, mode);
-  if (other.vandelay_vector_ != Teuchos::null) {
-    
-  }
 }
 
 CompositeVector::CompositeVector(const CompositeVector& other, bool ghosted,
