@@ -295,7 +295,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // Shallow water equations have the form
   // U_t + F_x(U) + G_y(U) = S(U)
 
-  AmanziMesh::Entity_ID_List cfaces, fcells;
+  AmanziMesh::Entity_ID_List cfaces;
   std::vector<double> U_new(3);
 
   // Simplest first-order form
@@ -322,10 +322,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     for (int i = 0; i < 3; i++) FS[i] = 0.;
 
     for (int f = 0; f < cfaces.size(); f++) {
-
       int orientation;
-      AmanziGeometry::Point normal = mesh_->face_normal(cfaces[f],false,c,&orientation);
-      mesh_->face_get_cells(cfaces[f],AmanziMesh::Parallel_type::OWNED,&fcells);
+      AmanziGeometry::Point normal = mesh_->face_normal(cfaces[f], false, c, &orientation);
       farea = mesh_->face_area(cfaces[f]);
       normal /= farea;
 
