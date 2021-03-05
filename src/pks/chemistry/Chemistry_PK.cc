@@ -39,6 +39,8 @@ void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   mesh_ = S->GetMesh(domain_);
 
+  saturation_tolerance_ = cp_list_->get<double>("saturation tolerance", 1e-14);
+  
   // Require data from flow
   S->RequireField(poro_key_, passwd_)->SetMesh(mesh_)->SetGhosted(false)
     ->AddComponent("cell", AmanziMesh::CELL, 1);

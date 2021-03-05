@@ -63,7 +63,7 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   cp_list_ = Teuchos::sublist(pk_list, pk_name, true);
 
   domain_ = cp_list_->get<std::string>("domain name", "domain");
-
+  
   // obtain key of fields
   tcc_key_ = Keys::readKey(*cp_list_,domain_, "total component concentration", "total_component_concentration"); 
 
@@ -758,7 +758,7 @@ int Alquimia_PK::AdvanceSingleCell(
 
 
   int num_iterations = 0;
-  if (alq_mat_props_.saturation > 1e-14){
+  if (alq_mat_props_.saturation > saturation_tolerance_){
          
     // Do the reaction.
     bool success = chem_engine_->Advance(dt, alq_mat_props_, alq_state_, 
