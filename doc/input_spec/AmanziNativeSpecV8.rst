@@ -5115,7 +5115,7 @@ Internal parameters for GMRES include
 * `"maximum size of deflation space`" [int] defines the size of deflation space. It should be 
   smaller than the size of the Krylov space. Default is 0. This is experimental feature.
 
-* `"release Krylov vectors`" [bool] cleans the stack of Krylov vectors. Default is *true*.
+* `"release Krylov vectors`" [bool] cleans the stack of Krylov vectors. Default is *false*.
   This may be useful to reduce internal work memory of a persistent solver.
 
 .. code-block:: xml
@@ -5129,7 +5129,7 @@ Internal parameters for GMRES include
     <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
     <Parameter name="maximum size of deflation space" type="int" value="0"/>
     <Parameter name="preconditioning strategy`" type="string" value="left"/>
-    <Parameter name="release Krylov vectors" type="bool" value="true"/>
+    <Parameter name="release Krylov vectors" type="bool" value="false"/>
 
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="high"/>
