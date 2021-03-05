@@ -93,6 +93,7 @@ void ThermalConductivityEvaluator::EvaluateField_(
 
       int i_ice_max;
 
+
       for (int i=0; i!=ncomp; ++i) {
         if (temp_v[0][i] < 273.15) { // check if there is ice cover
           ice_cover_ = true;
@@ -100,6 +101,14 @@ void ThermalConductivityEvaluator::EvaluateField_(
         }
       } // i
 
+      const AmanziGeometry::Point& zci = mesh->cell_centroid(i_ice_max-1);
+      z_ice = zci[2];
+
+      const AmanziGeometry::Point& zcw = mesh->cell_centroid(i_ice_max+1);
+      z_w = zcw[2];
+
+
+      /*
       for (int i=0; i!=ncomp; ++i) {
         if (temp_v[0][i] < 273.15) { // this cell is in ice layer
             result_v[0][i] = lambda_ice;
@@ -115,8 +124,9 @@ void ThermalConductivityEvaluator::EvaluateField_(
 //        result_v[0][i] = 10.*K_0_ + V_wind_/V_wind_0_*(K_max_ - K_0_);
 //        result_v[0][i] = 0.;
       } // i
+      */
 
-      /*
+
       // continuous conductivity between ice and water, no ice movement or changes depending on temperature
       for (int i=0; i!=ncomp; ++i) {
 
@@ -133,7 +143,8 @@ void ThermalConductivityEvaluator::EvaluateField_(
         }
 //        std::cout << "z = " << zc[2] << ", lambda = " << result_v[0][i] << std::endl;
       } // i
-      */
+
+
 
       // if melting occured at the top, swap cells
 //      while (ice_cover_ && temp_v[0][0] >= 273.15 ) {
@@ -161,9 +172,9 @@ void ThermalConductivityEvaluator::EvaluateField_(
         }
       } // i
 
-      for (int i=0; i!=ncomp; ++i) {
-          result_v[0][i] = 4.;
-      }
+//      for (int i=0; i!=ncomp; ++i) {
+//          result_v[0][i] = 4.;
+//      }
 
     }
 

@@ -438,9 +438,11 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
 //  Epetra_Vector& cp_vec = *S_->GetConstantVectorData("heat capacity", "state");
 //  cp_ = std::fabs(cp_vec[0]);
 
-  rho0 = 1.;
+//  rho0 = 1.;
+//  cp_ = 1.; // 4184./rho0;
 
-  cp_ = 1.; // 4184./rho0;
+  rho0 = 1000.;
+  cp_ = 4184./rho0;
 
   Teuchos::ParameterList& param_list = plist_->sublist("parameters");
 

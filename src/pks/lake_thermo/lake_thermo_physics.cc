@@ -107,8 +107,8 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
     normal /= norm(normal);
 
 //    flux_f[0][f] = cp_*rho0*dhdt*xcf[2]/(h_+1.e-6);
-//    flux_f[0][f] = cp_*rho0*(dhdt*xcf[2] - B_w)/(h_+1.e-6);
-    flux_f[0][f] = 1.*normal[2];
+    flux_f[0][f] = cp_*rho0*(dhdt*xcf[2] - B_w)/(h_+1.e-6);
+//    flux_f[0][f] = 1.*normal[2];
 //    std::cout << "f = " << f << " flux = " << flux_f[0][f] << std::endl;
   }
 
@@ -217,13 +217,13 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
     for (unsigned int c=0; c!=ncells; ++c) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
-//      if (temp[0][c] < 273.15) {
-//          g_c[0][c] += -cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6) * cv[0][c];
-//      } else {
-//          g_c[0][c] += (S0_*exp(-alpha_e_*h_*xc[2])*(-alpha_e_*h_) - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6)) * cv[0][c]; // + M
-//      }
+      if (temp[0][c] < 273.15) {
+          g_c[0][c] += -cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6) * cv[0][c];
+      } else {
+          g_c[0][c] += (S0_*exp(-alpha_e_*h_*xc[2])*(-alpha_e_*h_) - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6)) * cv[0][c]; // + M
+      }
 
-      g_c[0][c] += (8.-2.*xc[2]) * cv[0][c];
+//      g_c[0][c] += (8.-2.*xc[2]) * cv[0][c];
 
       /* TESTING
 //      // manufactured solution 1: linear temperature distribution
