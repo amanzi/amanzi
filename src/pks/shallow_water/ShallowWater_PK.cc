@@ -61,10 +61,8 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
   dim_ = mesh_->space_dimension();
 
   // domain name
-  velocity_x_key_   = Keys::getKey(domain_, "velocity-x");
-  velocity_y_key_   = Keys::getKey(domain_, "velocity-y");
-  discharge_x_key_  = Keys::getKey(domain_, "discharge-x");
-  discharge_y_key_  = Keys::getKey(domain_, "discharge-y");
+  velocity_key_   = Keys::getKey(domain_, "velocity");
+  discharge_key_  = Keys::getKey(domain_, "discharge");
   ponded_depth_key_ = Keys::getKey(domain_, "ponded_depth");
   total_depth_key_  = Keys::getKey(domain_, "total_depth");
   bathymetry_key_   = Keys::getKey(domain_, "bathymetry");
@@ -93,28 +91,16 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  // x velocity
-  if (!S->HasField(velocity_x_key_)) {
-    S->RequireField(velocity_x_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  // velocity
+  if (!S->HasField(velocity_key_)) {
+    S->RequireField(velocity_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 2);
   }
 
-  // y velocity
-  if (!S->HasField(velocity_y_key_)) {
-    S->RequireField(velocity_y_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-
-  // x discharge
-  if (!S->HasField(discharge_x_key_)) {
-    S->RequireField(discharge_x_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-
-  // y discharge
-  if (!S->HasField(discharge_y_key_)) {
-    S->RequireField(discharge_y_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  // discharge
+  if (!S->HasField(discharge_key_)) {
+    S->RequireField(discharge_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 2);
   }
 
   // bathymetry
@@ -190,9 +176,9 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   InitializeField_(S_.ptr(), passwd_, ponded_depth_key_, 1.0);
 
   if (!S_->GetField(total_depth_key_, passwd_)->initialized()) {
-    const Epetra_MultiVector& h_c = *S_->GetFieldData(ponded_depth_key_)->ViewComponent("cell");
-    const Epetra_MultiVector& B_c = *S_->GetFieldData(bathymetry_key_)->ViewComponent("cell");
-    Epetra_MultiVector& ht_c = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell");
+    const auto& h_c = *S_->GetFieldData(ponded_depth_key_)->ViewComponent("cell");
+    const auto& B_c = *S_->GetFieldData(bathymetry_key_)->ViewComponent("cell");
+    auto& ht_c = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell");
 
     for (int c = 0; c < ncells_owned; c++) {
       ht_c[0][c] = h_c[0][c] + B_c[0][c];
@@ -201,10 +187,8 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
     S_->GetField(total_depth_key_, passwd_)->set_initialized();
   }
 
-  InitializeField_(S_.ptr(), passwd_, velocity_x_key_, 0.0);
-  InitializeField_(S_.ptr(), passwd_, velocity_y_key_, 0.0);
-  InitializeField_(S_.ptr(), passwd_, discharge_x_key_, 0.0);
-  InitializeField_(S_.ptr(), passwd_, discharge_y_key_, 0.0);
+  InitializeField_(S_.ptr(), passwd_, velocity_key_, 0.0);
+  InitializeField_(S_.ptr(), passwd_, discharge_key_, 0.0);
 
   // summary of initialization
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -222,7 +206,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   double dt = t_new - t_old;
 
   bool failed = false;
-
   double eps = 1.e-6;
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -236,26 +219,18 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   Epetra_MultiVector& ht_vec_c = *S_->GetFieldData(total_depth_key_,passwd_)->ViewComponent("cell",true);
   Epetra_MultiVector ht_vec_c_tmp(ht_vec_c);
 
-  Epetra_MultiVector& vx_vec_c = *S_->GetFieldData(velocity_x_key_,passwd_)->ViewComponent("cell",true);
-  Epetra_MultiVector vx_vec_c_tmp(vx_vec_c);
+  Epetra_MultiVector& vel_vec_c = *S_->GetFieldData(velocity_key_,passwd_)->ViewComponent("cell",true);
+  Epetra_MultiVector vel_vec_c_tmp(vel_vec_c);
 
-  Epetra_MultiVector& vy_vec_c = *S_->GetFieldData(velocity_y_key_,passwd_)->ViewComponent("cell",true);
-  Epetra_MultiVector vy_vec_c_tmp(vy_vec_c);
-
-  Epetra_MultiVector& qx_vec_c = *S_->GetFieldData(discharge_x_key_,passwd_)->ViewComponent("cell",true);
-  Epetra_MultiVector qx_vec_c_tmp(qx_vec_c);
-
-  Epetra_MultiVector& qy_vec_c = *S_->GetFieldData(discharge_y_key_,passwd_)->ViewComponent("cell",true);
-  Epetra_MultiVector qy_vec_c_tmp(qy_vec_c);
+  Epetra_MultiVector& q_vec_c = *S_->GetFieldData(discharge_key_,passwd_)->ViewComponent("cell",true);
+  Epetra_MultiVector q_vec_c_tmp(q_vec_c);
 
   // distribute data to ghost cells
   S_->GetFieldData(bathymetry_key_)->ScatterMasterToGhosted("cell");
   S_->GetFieldData(total_depth_key_)->ScatterMasterToGhosted("cell");
   S_->GetFieldData(ponded_depth_key_)->ScatterMasterToGhosted("cell");
-  S_->GetFieldData(velocity_x_key_)->ScatterMasterToGhosted("cell");
-  S_->GetFieldData(velocity_y_key_)->ScatterMasterToGhosted("cell");
-  S_->GetFieldData(discharge_x_key_)->ScatterMasterToGhosted("cell");
-  S_->GetFieldData(discharge_y_key_)->ScatterMasterToGhosted("cell");
+  S_->GetFieldData(velocity_key_)->ScatterMasterToGhosted("cell");
+  S_->GetFieldData(discharge_key_)->ScatterMasterToGhosted("cell");
 
   // limited reconstructions
   auto tmp1 = S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
@@ -268,24 +243,24 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   limiter_->ApplyLimiter(tmp2, 0, bathymetry_grad_->gradient());
   limiter_->gradient()->ScatterMasterToGhosted("cell");
 
-  auto tmp3 = S_->GetFieldData(velocity_x_key_, passwd_)->ViewComponent("cell", true);
-  velocity_x_grad_->ComputeGradient(tmp3);
+  auto tmp3 = S_->GetFieldData(velocity_key_, passwd_)->ViewComponent("cell", true);
+  velocity_x_grad_->ComputeGradient(tmp3, 0);
   limiter_->ApplyLimiter(tmp3, 0, velocity_x_grad_->gradient());
   limiter_->gradient()->ScatterMasterToGhosted("cell");
 
-  auto tmp4 = S_->GetFieldData(velocity_y_key_, passwd_)->ViewComponent("cell", true);
-  velocity_y_grad_->ComputeGradient(tmp4);
-  limiter_->ApplyLimiter(tmp4, 0, velocity_y_grad_->gradient());
+  auto tmp4 = S_->GetFieldData(velocity_key_, passwd_)->ViewComponent("cell", true);
+  velocity_y_grad_->ComputeGradient(tmp4, 1);
+  limiter_->ApplyLimiter(tmp4, 1, velocity_y_grad_->gradient());
   limiter_->gradient()->ScatterMasterToGhosted("cell");
 
-  auto tmp5 = S_->GetFieldData(discharge_x_key_, passwd_)->ViewComponent("cell", true);
-  discharge_x_grad_->ComputeGradient(tmp5);
+  auto tmp5 = S_->GetFieldData(discharge_key_, passwd_)->ViewComponent("cell", true);
+  discharge_x_grad_->ComputeGradient(tmp5, 0);
   limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_->gradient());
   limiter_->gradient()->ScatterMasterToGhosted("cell");
 
-  auto tmp6 = S_->GetFieldData(discharge_y_key_, passwd_)->ViewComponent("cell", true);
-  discharge_y_grad_->ComputeGradient(tmp6);
-  limiter_->ApplyLimiter(tmp6, 0, discharge_y_grad_->gradient());
+  auto tmp6 = S_->GetFieldData(discharge_key_, passwd_)->ViewComponent("cell", true);
+  discharge_y_grad_->ComputeGradient(tmp6, 1);
+  limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_->gradient());
   limiter_->gradient()->ScatterMasterToGhosted("cell");
 
   // update boundary conditions
@@ -425,8 +400,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     U.resize(3);
 
     h  = h_vec_c[0][c];
-    qx = qx_vec_c[0][c];
-    qy = qy_vec_c[0][c];
+    qx = q_vec_c[0][c];
+    qy = q_vec_c[1][c];
     u = 2.*h*qx/(h*h + std::fmax(h*h,eps*eps));
     v = 2.*h*qy/(h*h + std::fmax(h*h,eps*eps));
 
@@ -447,10 +422,10 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     h_vec_c_tmp[0][c] = h;
     u = 2.*h*qx/(h*h + std::fmax(h*h,eps*eps));
     v = 2.*h*qy/(h*h + std::fmax(h*h,eps*eps));
-    vx_vec_c_tmp[0][c] = u;
-    vy_vec_c_tmp[0][c] = v;
-    qx_vec_c_tmp[0][c] = h*u;
-    qy_vec_c_tmp[0][c] = h*v;
+    vel_vec_c_tmp[0][c] = u;
+    vel_vec_c_tmp[1][c] = v;
+    q_vec_c_tmp[0][c] = h*u;
+    q_vec_c_tmp[1][c] = h*v;
 
     ht_vec_c_tmp[0][c] = h_vec_c_tmp[0][c] + B_vec_c[0][c];
 
@@ -458,10 +433,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   h_vec_c  = h_vec_c_tmp;
   ht_vec_c = ht_vec_c_tmp;
-  vx_vec_c = vx_vec_c_tmp;
-  vy_vec_c = vy_vec_c_tmp;
-  qx_vec_c = qx_vec_c_tmp;
-  qy_vec_c = qy_vec_c_tmp;
+  vel_vec_c = vel_vec_c_tmp;
+  q_vec_c = q_vec_c_tmp;
 
   return failed;
 }
@@ -756,16 +729,15 @@ double ShallowWater_PK::get_dt()
   double eps = 1.e-6;
 
   Epetra_MultiVector& h_vec_c = *S_->GetFieldData(ponded_depth_key_,passwd_)->ViewComponent("cell");
-  Epetra_MultiVector& vx_vec_c = *S_->GetFieldData(velocity_x_key_,passwd_)->ViewComponent("cell");
-  Epetra_MultiVector& vy_vec_c = *S_->GetFieldData(velocity_y_key_,passwd_)->ViewComponent("cell");
+  Epetra_MultiVector& vel_vec_c = *S_->GetFieldData(velocity_key_,passwd_)->ViewComponent("cell");
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   dt = 1.e10;
   for (int c = 0; c < ncells_owned; c++) {
     h = h_vec_c[0][c];
-    u = vx_vec_c[0][c];
-    v = vy_vec_c[0][c];
+    u = vel_vec_c[0][c];
+    v = vel_vec_c[1][c];
     S = std::max(std::fabs(u) + std::sqrt(g_*h),std::fabs(v) + std::sqrt(g_*h)) + eps;
     vol = mesh_->cell_volume(c);
     dx = std::sqrt(vol);

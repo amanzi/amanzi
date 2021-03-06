@@ -99,12 +99,10 @@ class ShallowWater_PK : public PK_Physical,
   Key domain_;
 
   // names of state fields
-  Key velocity_x_key_, velocity_y_key_;
-  Key discharge_x_key_, discharge_y_key_;
+  Key velocity_key_, discharge_key_;
   Key ponded_depth_key_;
   Key total_depth_key_;
   Key bathymetry_key_;
-  Key discharge_y_grad_key_;
 
   std::string passwd_;
 
