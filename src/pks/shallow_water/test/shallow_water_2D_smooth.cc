@@ -95,7 +95,7 @@ void vortex_2D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos:
   Epetra_MultiVector& q_vec_c = *S->GetFieldData("surface-discharge", "surface-discharge")->ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; c++) {
-    Amanzi::AmanziGeometry::Point xc = mesh->cell_centroid(c);
+    const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     double h, u, v;
     vortex_2D_exact(0., xc[0], xc[1], h, u, v);
     h_vec_c[0][c] = h;
@@ -119,8 +119,9 @@ void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   hmax = 0.;
 
   for (int c = 0; c < ncells_owned; c++) {
-    err_max = std::max(err_max,std::abs(hh_ex[0][c]-hh[0][c]));
-    err_L1 += std::abs(hh_ex[0][c]-hh[0][c])*mesh->cell_volume(c);
+    double tmp = std::abs(hh_ex[0][c] - hh[0][c]);
+    err_max = std::max(err_max, tmp);
+    err_L1 += tmp * mesh->cell_volume(c);
     hmax = std::sqrt(mesh->cell_volume(c));
   }
 
@@ -148,7 +149,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: 1D shallow water" << std::endl;
+  if (MyPID == 0) std::cout << "Test: 2D shallow water: smooth vortex" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/shallow_water_2D_smooth.xml";
@@ -194,7 +195,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
     const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
     const Epetra_MultiVector& vel = *S->GetFieldData("surface-velocity")->ViewComponent("cell");
     const Epetra_MultiVector& q = *S->GetFieldData("surface-discharge")->ViewComponent("cell");
-    const Epetra_MultiVector& B  = *S->GetFieldData("surface-bathymetry")->ViewComponent("cell");
+    const Epetra_MultiVector& B = *S->GetFieldData("surface-bathymetry")->ViewComponent("cell");
 
     // create pid vector
     Epetra_MultiVector pid(B);
@@ -295,5 +296,5 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
 
   std::cout << "computed order = " << order << std::endl;
 
-  CHECK_CLOSE(1.5, order, 0.5);
+  CHECK_CLOSE(1.5, order, 0.2);
 }
