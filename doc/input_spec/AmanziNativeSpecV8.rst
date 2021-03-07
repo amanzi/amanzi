@@ -3681,6 +3681,9 @@ The list of global parameters include:
 * `"domain name`" [string] specifies mesh name that defined domain of this PK.
   Default is `"domain`".
 
+* `"limiter cfl`" [double] is a safety factor (less than 1) applied to the limiter.
+  Default value is 1.
+
 
 Reconstruction and limiters
 ...........................

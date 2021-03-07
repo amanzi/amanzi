@@ -92,7 +92,7 @@ void vortex_2D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos:
   Epetra_MultiVector& h_vec_c = *S->GetFieldData("surface-ponded_depth",passwd)->ViewComponent("cell");
   Epetra_MultiVector& ht_vec_c = *S->GetFieldData("surface-total_depth",passwd)->ViewComponent("cell");
   Epetra_MultiVector& vel_vec_c = *S->GetFieldData("surface-velocity",passwd)->ViewComponent("cell");
-  Epetra_MultiVector& q_vec_c = *S->GetFieldData("surface-discharge",passwd)->ViewComponent("cell");
+  Epetra_MultiVector& q_vec_c = *S->GetFieldData("surface-discharge", "surface-discharge")->ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; c++) {
     Amanzi::AmanziGeometry::Point xc = mesh->cell_centroid(c);

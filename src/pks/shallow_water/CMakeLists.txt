@@ -57,6 +57,7 @@ generate_evaluators_registration_header(
 set(sw_src_files ShallowWater_PK.cc
                  ShallowWater_TI.cc
                  ShallowWaterBoundaryFunction.cc
+                 DischargeEvaluator.cc
                  )
 set(sw_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
 if (Ifpack_ENABLE_HYPRE)

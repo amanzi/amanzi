@@ -49,7 +49,7 @@ void dam_break_1D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   }
 
   S->GetFieldData("surface-velocity", passwd)->PutScalar(0.0);
-  S->GetFieldData("surface-discharge", passwd)->PutScalar(0.0);
+  S->GetFieldData("surface-discharge", "surface-discharge")->PutScalar(0.0);
 }
 
 
