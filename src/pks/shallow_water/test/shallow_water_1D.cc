@@ -85,7 +85,6 @@ void dam_break_1D_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
-
     Amanzi::AmanziGeometry::Point xc = mesh->cell_centroid(c);
 
     x = xc[0];
@@ -109,9 +108,11 @@ void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   hmax = 0.;
 
   for (int c = 0; c < ncells_owned; c++) {
-    err_max = std::max(err_max,std::abs(hh_ex[0][c]-hh[0][c]));
-    err_L1 += std::abs(hh_ex[0][c]-hh[0][c])*mesh->cell_volume(c);
-    hmax = std::sqrt(mesh->cell_volume(c));
+    double vol = mesh->cell_volume(c);
+    double tmp = std::abs(hh_ex[0][c] - hh[0][c]);
+    err_max = std::max(err_max, tmp);
+    err_L1 += tmp * vol;
+    hmax = std::sqrt(vol);
   }
 
   double err_max_tmp(err_max);
@@ -139,11 +140,11 @@ void ConservationCheck(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, const 
 
   for (int c = 0; c < ncells_owned; c++) {
     double volume = mesh->cell_volume(c);
-    KE += 0.5*hh[0][c]*(vel[0][c]*vel[0][c] + vel[1][c]*vel[1][c])*volume;
-    IE += 0.5*g*hh[0][c]*hh[0][c]*volume;
+    KE += hh[0][c] * (vel[0][c] * vel[0][c] + vel[1][c] * vel[1][c]) * volume;
+    IE += g * hh[0][c] * hh[0][c] * volume;
   }
 
-  double TE_tmp = KE + IE;
+  double TE_tmp = (KE + IE) / 2;
   mesh->get_comm()->SumAll(&TE_tmp, &TE, 1);
 }
 
@@ -199,7 +200,7 @@ TEST(SHALLOW_WATER_1D) {
   const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
   const Epetra_MultiVector& vel = *S->GetFieldData("surface-velocity")->ViewComponent("cell");
   const Epetra_MultiVector& q = *S->GetFieldData("surface-discharge")->ViewComponent("cell");
-  const Epetra_MultiVector& B  = *S->GetFieldData("surface-bathymetry")->ViewComponent("cell");
+  const Epetra_MultiVector& B = *S->GetFieldData("surface-bathymetry")->ViewComponent("cell");
 
   // create pid vector
   Epetra_MultiVector pid(B);
@@ -261,13 +262,15 @@ TEST(SHALLOW_WATER_1D) {
     t_old = t_new;
     iter++;
 
-    ConservationCheck(mesh, hh, ht, vel, B, TEini);
-    if (MyPID == 0 && iter == 1) std::cout << "cycle= " << iter << "  initial TE=" << TEini << "  dt=" << dt << std::endl;
+    if (iter == 1) {
+      ConservationCheck(mesh, hh, ht, vel, B, TEini);
+      if (MyPID == 0) std::cout << "cycle= " << iter << "  initial TE=" << TEini << "  dt=" << dt << std::endl;
+    }
   }
 
   ConservationCheck(mesh, hh, ht, vel, B, TEfin);
   if (MyPID == 0) std::cout << "cycle= " << iter << "  final TE=" << TEfin << "  dt=" << dt << std::endl;
-  CHECK_CLOSE(TEini, TEfin, 2e-5 * TEini);
+  CHECK_CLOSE(TEini, TEfin, 6e-3 * TEini);
 
   // error calculation at the time time
   double t_out = t_new;

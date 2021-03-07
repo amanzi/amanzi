@@ -408,13 +408,11 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
     h_vec_c_tmp[0][c] = h;
     factor = 2.0 * h / (h * h + std::fmax(h * h, eps2));
-    u = factor * qx;
-    v = factor * qy;
-    vel_vec_c_tmp[0][c] = u;
-    vel_vec_c_tmp[1][c] = v;
+    vel_vec_c_tmp[0][c] = factor * qx;
+    vel_vec_c_tmp[1][c] = factor * qy;
   } // c
 
-  h_vec_c  = h_vec_c_tmp;
+  h_vec_c = h_vec_c_tmp;
   vel_vec_c = vel_vec_c_tmp;
 
   for (int c = 0; c < ncells_owned; c++) {
@@ -678,14 +676,14 @@ std::vector<double> ShallowWater_PK::NumericalSource(
       B_rec = B_vec_c[0][c];
     }
 
-    S1 += (-2.0 * B_rec * ht_rec + B_rec * B_rec) * normal[0];
-    S2 += (-2.0 * B_rec * ht_rec + B_rec * B_rec) * normal[1];
+    S1 += (-B_rec * ht_rec + B_rec * B_rec / 2) * normal[0];
+    S2 += (-B_rec * ht_rec + B_rec * B_rec / 2) * normal[1];
   }
     
   std::vector<double> S(3);
   S[0] = 0.0;
-  S[1] = 0.5 * g_ / vol * S1;
-  S[2] = 0.5 * g_ / vol * S2;
+  S[1] = g_ / vol * S1;
+  S[2] = g_ / vol * S2;
 
   return S;
 }
@@ -699,8 +697,8 @@ double ShallowWater_PK::get_dt()
   double h, u, v, S, vol, dx, dt;
   double eps = 1.e-6;
 
-  auto& h_vec_c = *S_->GetFieldData(ponded_depth_key_,passwd_)->ViewComponent("cell");
-  auto& vel_vec_c = *S_->GetFieldData(velocity_key_,passwd_)->ViewComponent("cell");
+  auto& h_vec_c = *S_->GetFieldData(ponded_depth_key_)->ViewComponent("cell");
+  auto& vel_vec_c = *S_->GetFieldData(velocity_key_)->ViewComponent("cell");
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
@@ -709,10 +707,10 @@ double ShallowWater_PK::get_dt()
     h = h_vec_c[0][c];
     u = vel_vec_c[0][c];
     v = vel_vec_c[1][c];
-    S = std::max(std::fabs(u) + std::sqrt(g_*h),std::fabs(v) + std::sqrt(g_*h)) + eps;
+    S = std::max(std::fabs(u), std::fabs(v)) + std::sqrt(g_*h) + eps;
     vol = mesh_->cell_volume(c);
     dx = std::sqrt(vol);
-    dt = std::min(dt,dx/S);
+    dt = std::min(dt, dx/S);
   }
 
   double dt_min;
