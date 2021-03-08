@@ -1,0 +1,17 @@
+name: Amanzi CI
+
+on: [push]
+
+env:
+    AMANZI_TPLS_VER: 0.97.12
+
+jobs:
+  build_test:
+    runs-on: ubuntu-latest
+    name: Build and test with Docker
+    steps:
+    - name: Docker build
+      id: docker
+      working_directory: Docker
+      run: docker build -t my-project/base .
+      docker build --build-arg amanzi_tpls_ver=${AMANZI_TPLS_VER} -t metsi/amanzi:latest -f Dockerfile-Amanzi . 

@@ -9,7 +9,7 @@ RUN echo "${AMANZI_PREFIX}"
 RUN echo "${AMANZI_TPLS_DIR}"
 
 # Arguments
-ARG amanzi_branch=master
+ARG amanzi_branch=david/actions-docker
 
 # Change the Working Directory and update amanzi
 WORKDIR /home/amanzi_user/amanzi
