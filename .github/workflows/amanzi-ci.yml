@@ -15,7 +15,7 @@ jobs:
     - name: Get TPLs version
       id: version
       working-directory: Docker
-      echo "::set-output name=AMANZI_TPLS_VER=::`./get_tpls_version.sh`"
+      echo "::set-output name=AMANZI_TPLS_VER=::$(./get_tpls_version.sh)"
     - name: Docker build
       id: docker
       working-directory: Docker
