@@ -53,21 +53,21 @@ TEST(Extract_Column_MSTK)
   }
 
   // construct a column mesh by extracting from mesh
-  Amanzi::AmanziMesh::Mesh_MSTK column_mesh(mesh,cell_list, Amanzi::AmanziMesh::CELL,false,Amanzi::getCommSelf());
+  Amanzi::AmanziMesh::Mesh_MSTK column_mesh(mesh,cell_list, Amanzi::AmanziMesh::Entity_kind::CELL,false,Amanzi::getCommSelf());
   
   // Number of cells in column mesh
-  int ncells_col = column_mesh.num_entities(Amanzi::AmanziMesh::CELL,
+  int ncells_col = column_mesh.getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
                                             Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(3,ncells_col);
 
   // Number of faces in the column mesh
-  int nfaces_col = column_mesh.num_entities(Amanzi::AmanziMesh::FACE,
+  int nfaces_col = column_mesh.getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE,
                                             Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(16,nfaces_col);
   
   // Check that their parents are as expected
   for (int i = 0; i < ncells_col; ++i) {
-    int parent_cell = column_mesh.entity_get_parent(Amanzi::AmanziMesh::CELL,i);
+    int parent_cell = column_mesh.getEntityParent(Amanzi::AmanziMesh::Entity_kind::CELL,i);
     CHECK_EQUAL(cell_list[i], parent_cell);
   }
 }
@@ -121,7 +121,7 @@ TEST(Extract_Column_MSTK_SETS)
 
   // make sure we can get sets on the mesh
   Amanzi::AmanziMesh::Entity_ID_List set_ids;
-  mesh->get_set_entities("Region 1", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL, &set_ids);
+  mesh->get_set_entities("Region 1", Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::ALL, &set_ids);
   CHECK_EQUAL(9, set_ids.size());
 
   int ncells = 3;
@@ -132,41 +132,41 @@ TEST(Extract_Column_MSTK_SETS)
   CHECK_EQUAL(ncells+1,face_list.size());
 
   // construct a column mesh by extracting from mesh
-  Amanzi::AmanziMesh::Mesh_MSTK column_mesh(mesh, cell_list, Amanzi::AmanziMesh::CELL,false,Amanzi::getCommSelf());
+  Amanzi::AmanziMesh::Mesh_MSTK column_mesh(mesh, cell_list, Amanzi::AmanziMesh::Entity_kind::CELL,false,Amanzi::getCommSelf());
   
   // Number of cells in column mesh
-  int ncells_col = column_mesh.num_entities(Amanzi::AmanziMesh::CELL,
+  int ncells_col = column_mesh.getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
                                             Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(ncells,ncells_col);
 
   // Number of faces in the column mesh
-  int nfaces_col = column_mesh.num_entities(Amanzi::AmanziMesh::FACE,
+  int nfaces_col = column_mesh.getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE,
                                             Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(5*ncells + 1, nfaces_col);
   
   // Check that their parents are as expected
   for (int i = 0; i < ncells_col; ++i) {
-    int parent_cell = column_mesh.entity_get_parent(Amanzi::AmanziMesh::CELL,i);
+    int parent_cell = column_mesh.getEntityParent(Amanzi::AmanziMesh::Entity_kind::CELL,i);
     CHECK_EQUAL(cell_list[i], parent_cell);
   }
 
   // check we can still get sets
   Amanzi::AmanziMesh::Entity_ID_List set_ids2;
-  bool is_valid = column_mesh.valid_set_name("Region 1", Amanzi::AmanziMesh::CELL);
+  bool is_valid = column_mesh.valid_set_name("Region 1", Amanzi::AmanziMesh::Entity_kind::CELL);
   CHECK(is_valid);
-  column_mesh.get_set_entities("Region 1", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL, &set_ids2);
+  column_mesh.get_set_entities("Region 1", Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::ALL, &set_ids2);
   CHECK_EQUAL(1, set_ids2.size());
 
   set_ids2.clear();
-  is_valid = column_mesh.valid_set_name("Top Surface", Amanzi::AmanziMesh::FACE);
+  is_valid = column_mesh.valid_set_name("Top Surface", Amanzi::AmanziMesh::Entity_kind::FACE);
   CHECK(is_valid);
-  column_mesh.get_set_entities("Top Surface", Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::ALL, &set_ids2);
+  column_mesh.get_set_entities("Top Surface", Amanzi::AmanziMesh::Entity_kind::FACE, Amanzi::AmanziMesh::Parallel_type::ALL, &set_ids2);
   CHECK_EQUAL(1, set_ids2.size());
 
   set_ids2.clear();
-  is_valid = column_mesh.valid_set_name("Side Surface", Amanzi::AmanziMesh::FACE);
+  is_valid = column_mesh.valid_set_name("Side Surface", Amanzi::AmanziMesh::Entity_kind::FACE);
   CHECK(is_valid);
-  column_mesh.get_set_entities("Side Surface", Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::ALL, &set_ids2);
+  column_mesh.get_set_entities("Side Surface", Amanzi::AmanziMesh::Entity_kind::FACE, Amanzi::AmanziMesh::Parallel_type::ALL, &set_ids2);
   CHECK_EQUAL(3, set_ids2.size());
 }
 

@@ -19,6 +19,22 @@ namespace AmanziMesh {
 namespace MeshAlgorithms {
 
 template<class Mesh_type>
+int getFaceDirectionInCell(const Mesh_type& mesh, const Entity_ID f, const Entity_ID c)
+{
+  Entity_ID_List cfaces;
+  Entity_Direction_List dirs;
+  mesh.getCellFacesAndDirs(c, cfaces, &dirs);
+  int dir = 1;
+  for (int j=0; j!=cfaces.size(); ++j) {
+    if (cfaces[j] == f) {
+      dir = dirs[j];
+      break;
+    }
+  }
+  return dir;
+}
+
+template<class Mesh_type>
 std::pair<double, AmanziGeometry::Point>
 computeCellGeometry(const Mesh_type& mesh, const Entity_ID c)
 {
@@ -31,7 +47,7 @@ computeCellGeometry(const Mesh_type& mesh, const Entity_ID c)
   nfnodes.resize(faces.size());
 
   for (int j = 0; j != faces.size(); ++j) {
-    auto fcoords = mesh.face_coordinates(faces[j]);
+    auto fcoords = mesh.getFaceCoordinates(faces[j]);
     nfnodes[j] = fcoords.size();
 
     if (fdirs[j] == 1) {
@@ -43,13 +59,13 @@ computeCellGeometry(const Mesh_type& mesh, const Entity_ID c)
     }
   }
 
-  auto ccoords = mesh.cell_coordinates(c);
-  std::pair<double, AmanziGeometry::Point> vol_cent;
+  auto ccoords = mesh.getCellCoordinates(c);
+  auto vol_cent = std::make_pair((double)0,
+          AmanziGeometry::Point(mesh.get_space_dimension()));
   AmanziGeometry::polyhed_get_vol_centroid(ccoords, faces.size(), nfnodes,
             cfcoords, &vol_cent.first, &vol_cent.second);
   return vol_cent;
 }
-
 
 
 template<class Mesh_type>
@@ -58,111 +74,63 @@ computeFaceGeometry(const Mesh_type& mesh, const Entity_ID f)
 {
   if (mesh.get_manifold_dimension() == 3) {
     // 3D Elements with possibly curved faces
-    Point_List fcoords = mesh.face_coordinates(f);
+    Point_List fcoords = mesh.getFaceCoordinates(f);
 
     double area;
     AmanziGeometry::Point centroid(3);
     AmanziGeometry::Point normal(3);
     AmanziGeometry::polygon_get_area_centroid_normal(fcoords, &area, &centroid, &normal);
 
-    Entity_ID_List cellids;
-    mesh.getFaceCells(f, Parallel_type::ALL, cellids);
-    AMANZI_ASSERT(cellids.size() <= 2);
-
-    Point_List normals(cellids.size());
-    for (int i = 0; i < cellids.size(); i++) {
-      Entity_ID_List cellfaceids;
-      Entity_Direction_List cellfacedirs;
-      int dir = 1;
-
-      mesh.getCellFacesAndDirs(cellids[i], cellfaceids, &cellfacedirs);
-
-      bool found = false;
-      for (int j = 0; j < cellfaceids.size(); j++) {
-        if (cellfaceids[j] == f) {
-          found = true;
-          dir = cellfacedirs[j];
-          break;
-        }
-      }
-      AMANZI_ASSERT(found);
-      normals[i] = (dir == 1) ? normal : -normal;
-    }
+    Entity_ID_List fcells;
+    mesh.getFaceCells(f, Parallel_type::ALL, fcells);
+    Point_List normals(fcells.size(), normal);
     return std::make_tuple(area, centroid, normals);
 
   } else if (mesh.get_manifold_dimension() == 2) {
 
     if (mesh.get_space_dimension() == 2) {
       // 2D mesh
-      auto fcoords = mesh.face_coordinates(f);
+      auto fcoords = mesh.getFaceCoordinates(f);
       AMANZI_ASSERT(fcoords.size() == 2);
 
       AmanziGeometry::Point evec = fcoords[1] - fcoords[0];
       double area = std::sqrt(evec*evec);
       AmanziGeometry::Point centroid = 0.5 * (fcoords[0] + fcoords[1]);
-      AmanziGeometry::Point normal(evec[1] - evec[0]);
+      AmanziGeometry::Point normal(evec[1], -evec[0]);
 
-      Entity_ID_List cellids;
-      mesh.getFaceCells(f, Parallel_type::ALL, cellids);
-      AMANZI_ASSERT(cellids.size() <= 2);
-
-      Point_List normals(cellids.size());
-      for (int i = 0; i < cellids.size(); i++) {
-        Entity_ID_List cellfaceids;
-        Entity_Direction_List cellfacedirs;
-        int dir = 1;
-
-        mesh.getCellFacesAndDirs(cellids[i], cellfaceids, &cellfacedirs);
-
-        bool found = false;
-        for (int j = 0; j < cellfaceids.size(); j++) {
-          if (cellfaceids[j] == f) {
-            found = true;
-            dir = cellfacedirs[j];
-            break;
-          }
-        }
-        AMANZI_ASSERT(found);
-        normals[i] = (dir == 1) ? normal : -normal;
-      }
+      // only one normal needed
+      Entity_ID_List fcells;
+      mesh.getFaceCells(f, Parallel_type::ALL, fcells);
+      Point_List normals(fcells.size(), normal);
       return std::make_tuple(area, centroid, normals);
 
-    } else {  // Surface mesh - cells are 2D, coordinates are 3D
-      // Since the edge likely forms a discontinuity in the surface
+    } else {
+      // Surface mesh - cells are 2D, coordinates are 3D
+      // Since the face likely forms a discontinuity in the surface
       // (or may even be the intersection of several surfaces), we
-      // have to compute an outward normal to the edge with respect to
-      // each face
-      auto fcoords = mesh.face_coordinates(f);
+      // have to compute an outward normal to the face with respect to
+      // each cell.
+      auto fcoords = mesh.getFaceCoordinates(f);
       AMANZI_ASSERT(fcoords.size() == 2);
 
       AmanziGeometry::Point evec = fcoords[1] - fcoords[0];
-      double area = std::sqrt(evec*evec);
+      double area = AmanziGeometry::norm(evec);
       AmanziGeometry::Point centroid = 0.5 * (fcoords[0] + fcoords[1]);
 
       Entity_ID_List cellids;
       mesh.getFaceCells(f, Parallel_type::ALL, cellids);
       Point_List normals(cellids.size());
       for (int i = 0; i < cellids.size(); i++) {
-        Entity_ID_List cellfaceids;
-        Entity_Direction_List cellfacedirs;
-        mesh.getCellFacesAndDirs(cellids[i], cellfaceids, &cellfacedirs);
-
-        bool found = false;
-        for (int j = 0; j < cellfaceids.size(); j++) {
-          if (cellfaceids[j] == f) {
-            found = true;
-            break;
-          }
-        }
-        AMANZI_ASSERT(found);
         AmanziGeometry::Point cvec = fcoords[0] - mesh.getCellCentroid(cellids[i]);
         AmanziGeometry::Point trinormal = cvec^evec;
         AmanziGeometry::Point normal = evec^trinormal;
 
         double len = norm(normal);
-        normal /= len;
-        normal *= area;
-        normals[i] = normal;  // Always an outward normal as calculated
+        normal *= (area/len);
+
+        // Always an outward normal as calculated, so must negate for negative dir
+        int dir = getFaceDirectionInCell(mesh, f, cellids[i]);
+        normals[i] = (dir == 1) ? normal : -normal;
       }
       return std::make_tuple(area, centroid, normals);
     }
@@ -172,6 +140,7 @@ computeFaceGeometry(const Mesh_type& mesh, const Entity_ID f)
   msg << "Invalid mesh argument to MeshAlgorithm: manifold_dim = " << mesh.get_manifold_dimension()
       << ", space_dim = " << mesh.get_space_dimension();
   Exceptions::amanzi_throw(msg);
+  return std::make_tuple(0, AmanziGeometry::Point(), std::vector<AmanziGeometry::Point>());
 }
 
 
@@ -197,6 +166,29 @@ computeBisectors(const Mesh_type& mesh, const Entity_ID c,
   for (int i = 0; i != faces.size(); ++i)
     bisectors[i] = mesh.getFaceCentroid(faces[i]) - mesh.getCellCentroid(c);
 }
+
+
+template<class Mesh_type>
+void debugCell(const Mesh_type& mesh, const Entity_ID c)
+{
+  auto cc = mesh.getCellCentroid(c);
+  std::stringstream stream;
+  stream << "Debug cell: LID " << c << " Rank " << mesh.get_comm()->MyPID()
+         << " GID " << mesh.getEntityGID(Entity_kind::CELL, c)
+         << " of type " << to_string(mesh.getCellType(c)) << std::endl
+          << "  centroid = " << mesh.getCellCentroid(c) << std::endl;
+  Entity_ID_List faces;
+  Entity_Direction_List f_dirs;
+  mesh.getCellFacesAndDirs(c, faces, &f_dirs);
+  for (int fi=0; fi!=faces.size(); ++fi) {
+    auto fc = mesh.getFaceCentroid(faces[fi]);
+    stream << "  face " << faces[fi]
+           << " GID " << mesh.getEntityGID(Entity_kind::FACE, faces[fi])
+           << " dir " << f_dirs[fi] << " centroid " << fc << " normal " << mesh.getFaceNormal(faces[fi]) << " bisector " <<  fc - cc << std::endl;
+  }
+  std::cout << stream.str();
+}
+
 
 
 } // namespace MeshAlgorithms

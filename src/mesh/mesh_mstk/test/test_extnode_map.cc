@@ -30,7 +30,7 @@ TEST(MSTK_EXTNODE_MAP_4P)
     nbnd = 12;
   }
 
-  int d = mesh->space_dimension();
+  int d = mesh->get_space_dimension();
 
   Epetra_Map node_map(mesh->node_map(true));
   Epetra_Map extnode_map(mesh->exterior_node_map(false));
@@ -48,7 +48,7 @@ TEST(MSTK_EXTNODE_MAP_4P)
   // Check if ghostmap contains only boundary faces
   for (int v = extnode_map_wghost.MinLID(); v <= extnode_map_wghost.MaxLID(); ++v) {
     int gid = extnode_map_wghost.GID(v);
-    mesh->node_get_coordinates(node_map.LID(gid), &xp);
+    xp = mesh->getNodeCoordinate(node_map.LID(gid));
     CHECK(fabs(xp[0]) < 1e-6 || fabs(xp[0] - 1.0) < 1e-6 ||
           fabs(xp[1]) < 1e-6 || fabs(xp[1] - 1.0) < 1e-6 ||
           fabs(xp[d-1]) < 1e-6 || fabs(xp[d-1] - 1.0) < 1e-6);

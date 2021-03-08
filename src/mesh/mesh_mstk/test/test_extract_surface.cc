@@ -150,7 +150,7 @@ TEST(Extract_Surface_MSTK2)
 
   // Extract surface mesh while projecting to 2D
   Amanzi::AmanziMesh::Mesh_MSTK surfmesh(mesh,ids1,Amanzi::AmanziMesh::Entity_kind::FACE,true,mesh->get_comm());
-  CHECK_EQUAL(surfmesh.space_dimension(),2);
+  CHECK_EQUAL(surfmesh.get_space_dimension(),2);
 
   // Number of cells (quadrilaterals) in surface mesh
   int ncells_surf = surfmesh.getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);

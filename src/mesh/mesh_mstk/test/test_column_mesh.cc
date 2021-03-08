@@ -58,14 +58,14 @@ TEST(COLUMN_MESH_3D)
   CHECK_EQUAL(mesh->build_columns(), 1);
   
   // Perturb the nodes above the base layer just a bit
-  int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,
+  int nnodes = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
           Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int n = 0; n < nnodes; n++) {
     Amanzi::AmanziGeometry::Point xyz(3);
-    mesh->node_get_coordinates(n,&xyz);
+    xyz = mesh->getNodeCoordinate(n);
     xyz[2] += 0.005*xyz[0]*xyz[1]*xyz[2];
-    mesh->node_set_coordinates(n,xyz);
+    mesh->setNodeCoordinate(n,xyz);
   }
 
   // verify in-going topology
@@ -78,29 +78,29 @@ TEST(COLUMN_MESH_3D)
 
   
   // Verify column mesh topology
-  int ncells = colmesh.num_entities(Amanzi::AmanziMesh::CELL,
+  int ncells = colmesh.getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
           Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(4,ncells);
   
-  int nfaces = colmesh.num_entities(Amanzi::AmanziMesh::FACE,
+  int nfaces = colmesh.getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE,
           Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(5,nfaces);
 
-  nnodes = colmesh.num_entities(Amanzi::AmanziMesh::NODE,
+  nnodes = colmesh.getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
           Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(20,nnodes);
 
   for (int j = 0; j < ncells; j++) {
     Amanzi::AmanziMesh::Entity_ID_List cfaces;
     std::vector<int> cfdirs;
-    colmesh.cell_get_faces_and_dirs(j,&cfaces,&cfdirs);
+    colmesh.getCellFacesAndDirs(j,cfaces,&cfdirs);
     
     CHECK_EQUAL(2,cfaces.size());
   }
 
   for (int j = 0; j < nfaces; j++) {
     Amanzi::AmanziMesh::Entity_ID_List fcells;
-    colmesh.face_get_cells(j,Amanzi::AmanziMesh::Parallel_type::OWNED,&fcells);
+    colmesh.getFaceCells(j,Amanzi::AmanziMesh::Parallel_type::OWNED,fcells);
       
     if (j == 0) {
       CHECK_EQUAL(1,fcells.size());
@@ -118,17 +118,17 @@ TEST(COLUMN_MESH_3D)
   // centroid of base face 
 
   Amanzi::AmanziGeometry::Point fcenbase(3);
-  fcenbase = colmesh.face_centroid(0);
+  fcenbase = colmesh.getFaceCentroid(0)
 
   // area of base face
-  double fareabase = colmesh.face_area(0);
+  double fareabase = colmesh.getFaceArea(0)
 
   // Make sure centroids of other faces are stacked up 
   // exactly above that of the base face
 
   for (int j = 1; j < nfaces; j++) {
     Amanzi::AmanziGeometry::Point fcen(3);
-    fcen = colmesh.face_centroid(j);
+    fcen = colmesh.getFaceCentroid(j)
     CHECK_EQUAL(fcenbase[0],fcen[0]);
     CHECK_EQUAL(fcenbase[1],fcen[1]);
   }
@@ -136,7 +136,7 @@ TEST(COLUMN_MESH_3D)
   // Make sure the normals of the faces are have only a Z component
   for (int j = 0; j < nfaces; j++) {
     Amanzi::AmanziGeometry::Point normal(3);
-    normal = colmesh.face_normal(j);
+    normal = colmesh.getFaceNormal(j)
     CHECK_EQUAL(0.0,normal[0]);
     CHECK_EQUAL(0.0,normal[1]);
     CHECK_EQUAL(1.0,fabs(normal[2]));
@@ -149,10 +149,10 @@ TEST(COLUMN_MESH_3D)
   for (int i = 0; i < ncells; i++) {
     Amanzi::AmanziGeometry::Point ccen(3), fcen0(3), fcen1(3);
 
-    ccen = colmesh.cell_centroid(i);
+    ccen = colmesh.getCellCentroid(i)
 
-    fcen0 = colmesh.face_centroid(i);
-    fcen1 = colmesh.face_centroid(i+1);
+    fcen0 = colmesh.getFaceCentroid(i)
+    fcen1 = colmesh.getFaceCentroid(i+1)
 
     CHECK_EQUAL(fcenbase[0],ccen[0]);
     CHECK_EQUAL(fcenbase[1],ccen[1]);
@@ -167,17 +167,17 @@ TEST(COLUMN_MESH_3D)
   // face of the cell and the upper face of the cell
 
   for (int j = 0; j < ncells; j++) {
-    const auto& cfaces = colmesh.cell_get_faces(j);
+    const auto& cfaces = colmesh.getCellFaces(j);
     
     Amanzi::AmanziGeometry::Point locen(3), hicen(3);
-    locen = colmesh.face_centroid(cfaces[0]);
-    hicen = colmesh.face_centroid(cfaces[1]);
+    locen = colmesh.getFaceCentroid(cfaces[0])
+    hicen = colmesh.getFaceCentroid(cfaces[1])
       
     double height = norm(hicen-locen);
 
     double expvolume = fareabase*height;
 
-    double volume = colmesh.cell_volume(j);
+    double volume = colmesh.getCellVolume(j)
 
     CHECK_CLOSE(expvolume,volume,1.0e-08);
   }
@@ -185,10 +185,10 @@ TEST(COLUMN_MESH_3D)
 
   // verify that the regions have made it through
   Amanzi::AmanziMesh::Entity_ID_List myregion;
-  colmesh.get_set_entities("myregion", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL, &myregion);
+  colmesh.get_set_entities("myregion", Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::ALL, &myregion);
   CHECK_EQUAL(2, myregion.size());
-  CHECK(colmesh.cell_centroid(myregion[0])[2] >= 2.5);
-  CHECK(colmesh.cell_centroid(myregion[1])[2] >= 2.5);
+  CHECK(colmesh.getCellCentroid(myregion[0])[2] >= 2.5)
+  CHECK(colmesh.getCellCentroid(myregion[1])[2] >= 2.5)
 }
 
 
@@ -222,7 +222,7 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
               comm, gm));
   mesh->build_columns("surface");
 
-  int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,
+  int nnodes = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
           Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   // verify in-going topology
@@ -235,29 +235,29 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
 
   
   // Verify column mesh topology
-  int ncells = colmesh.num_entities(Amanzi::AmanziMesh::CELL,
+  int ncells = colmesh.getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,
           Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(4,ncells);
   
-  int nfaces = colmesh.num_entities(Amanzi::AmanziMesh::FACE,
+  int nfaces = colmesh.getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE,
           Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(5,nfaces);
 
-  nnodes = colmesh.num_entities(Amanzi::AmanziMesh::NODE,
+  nnodes = colmesh.getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,
           Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(20,nnodes);
 
   for (int j = 0; j < ncells; j++) {
     Amanzi::AmanziMesh::Entity_ID_List cfaces;
     std::vector<int> cfdirs;
-    colmesh.cell_get_faces_and_dirs(j,&cfaces,&cfdirs);
+    colmesh.getCellFacesAndDirs(j,cfaces,&cfdirs);
     
     CHECK_EQUAL(2,cfaces.size());
   }
 
   for (int j = 0; j < nfaces; j++) {
     Amanzi::AmanziMesh::Entity_ID_List fcells;
-    colmesh.face_get_cells(j,Amanzi::AmanziMesh::Parallel_type::OWNED,&fcells);
+    colmesh.getFaceCells(j,Amanzi::AmanziMesh::Parallel_type::OWNED,fcells);
       
     if (j == 0) {
       CHECK_EQUAL(1,fcells.size());
@@ -275,17 +275,17 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   // centroid of base face 
 
   Amanzi::AmanziGeometry::Point fcenbase(3);
-  fcenbase = colmesh.face_centroid(0);
+  fcenbase = colmesh.getFaceCentroid(0)
 
   // area of base face
-  double fareabase = colmesh.face_area(0);
+  double fareabase = colmesh.getFaceArea(0)
 
   // Make sure centroids of other faces are stacked up 
   // exactly above that of the base face
 
   for (int j = 1; j < nfaces; j++) {
     Amanzi::AmanziGeometry::Point fcen(3);
-    fcen = colmesh.face_centroid(j);
+    fcen = colmesh.getFaceCentroid(j)
     CHECK_EQUAL(fcenbase[0],fcen[0]);
     CHECK_EQUAL(fcenbase[1],fcen[1]);
   }
@@ -293,7 +293,7 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   // Make sure the normals of the faces are have only a Z component
   for (int j = 0; j < nfaces; j++) {
     Amanzi::AmanziGeometry::Point normal(3);
-    normal = colmesh.face_normal(j);
+    normal = colmesh.getFaceNormal(j)
     CHECK_EQUAL(0.0,normal[0]);
     CHECK_EQUAL(0.0,normal[1]);
     CHECK_EQUAL(1.0,fabs(normal[2]));
@@ -306,10 +306,10 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   for (int i = 0; i < ncells; i++) {
     Amanzi::AmanziGeometry::Point ccen(3), fcen0(3), fcen1(3);
 
-    ccen = colmesh.cell_centroid(i);
+    ccen = colmesh.getCellCentroid(i)
 
-    fcen0 = colmesh.face_centroid(i);
-    fcen1 = colmesh.face_centroid(i+1);
+    fcen0 = colmesh.getFaceCentroid(i)
+    fcen1 = colmesh.getFaceCentroid(i+1)
 
     CHECK_EQUAL(fcenbase[0],ccen[0]);
     CHECK_EQUAL(fcenbase[1],ccen[1]);
@@ -325,17 +325,17 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
 
   for (int j = 0; j < ncells; j++) {
     Amanzi::AmanziMesh::Entity_ID_List cfaces;
-    colmesh.cell_get_faces(j,&cfaces);
+    colmesh.getCellFaces(j,cfaces);
     
     Amanzi::AmanziGeometry::Point locen(3), hicen(3);
-    locen = colmesh.face_centroid(cfaces[0]);
-    hicen = colmesh.face_centroid(cfaces[1]);
+    locen = colmesh.getFaceCentroid(cfaces[0])
+    hicen = colmesh.getFaceCentroid(cfaces[1])
       
     double height = norm(hicen-locen);
 
     double expvolume = fareabase*height;
 
-    double volume = colmesh.cell_volume(j);
+    double volume = colmesh.getCellVolume(j)
 
     CHECK_CLOSE(expvolume,volume,1.0e-08);
   }
@@ -343,10 +343,10 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
 
   // verify that the regions have made it through
   Amanzi::AmanziMesh::Entity_ID_List myregion;
-  colmesh.get_set_entities("myregion", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL, &myregion);
+  colmesh.get_set_entities("myregion", Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::ALL, &myregion);
   CHECK_EQUAL(2, myregion.size());
-  CHECK(colmesh.cell_centroid(myregion[0])[2] >= 2.5);
-  CHECK(colmesh.cell_centroid(myregion[1])[2] >= 2.5);
+  CHECK(colmesh.getCellCentroid(myregion[0])[2] >= 2.5)
+  CHECK(colmesh.getCellCentroid(myregion[1])[2] >= 2.5)
 
 }
 

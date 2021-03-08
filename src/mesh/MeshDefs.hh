@@ -110,11 +110,23 @@ enum class Cell_type {
   POLYHED  // Polyhedron
 };
 
-// // Check if Cell_type is valid
-// inline
-// bool validCellType (const int cell_type) {
-//   return (cell_type >= Cell_type::TRI && cell_type <= Cell_type::POLYHED);
-// }
+// string from entity kind
+inline
+std::string to_string(const Cell_type ctype)
+{
+  switch(ctype) {
+    case(Cell_type::TRI): return "cell type: triangle";
+    case(Cell_type::QUAD): return "cell type: quadrilateral";
+    case(Cell_type::POLYGON): return "cell type: polygon";
+    case(Cell_type::TET): return "cell type: tetrahedron";
+    case(Cell_type::PRISM): return "cell type: prism";
+    case(Cell_type::PYRAMID): return "cell type: pyramid";
+    case(Cell_type::HEX): return "cell type: hexahedron";
+    case(Cell_type::POLYHED): return "cell type: polyhedron";
+    default: return "cell type: unknown";
+  }
+}
+
 
 // Types of partitioners (partitioning scheme bundled into the name)
 enum class Partitioner_type {
@@ -147,6 +159,7 @@ Partitioner_type createPartitionerType(const std::string& pstring) {
     msg << "Unknown Partitioner_type string: \"" << pstring << "\", valid are \"metis\", \"zoltan_graph\", \"zoltan_rcb\"";
     Exceptions::amanzi_throw(msg);
   }
+  return Partitioner_type::METIS;
 }
 
 }  // namespace AmanziMesh

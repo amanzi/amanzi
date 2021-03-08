@@ -91,7 +91,7 @@ class Mesh_MSTK : public MeshFramework {
 
   ~Mesh_MSTK();
 
-  void write_to_exodus_file(const std::string filename) const;
+  virtual void write_to_exodus_file(const std::string& filename) const override;
 
   //
   // Accessors/mutators
@@ -152,9 +152,8 @@ class Mesh_MSTK : public MeshFramework {
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
   virtual void getCellFacesAndDirs(const Entity_ID cellid,
-                           Entity_ID_List& faceids,
-                           Entity_Direction_List * const face_dirs,
-                           const bool ordered=false) const override;
+          Entity_ID_List& faceids,
+          Entity_Direction_List * const face_dirs) const override;
 
   // Get edges of a cell
   virtual void getCellEdges(const Entity_ID cellid,
@@ -181,8 +180,7 @@ class Mesh_MSTK : public MeshFramework {
   // Edges and edge directions of a face
   virtual void getFaceEdgesAndDirs(const Entity_ID cellid,
                            Entity_ID_List& edgeids,
-                           Entity_Direction_List * const edgedirs,
-                           bool ordered=true) const override;
+                           Entity_Direction_List * const edgedirs) const override;
 
   // Get nodes of face
   // On a distributed mesh, all nodes (OWNED or GHOST) of the face
@@ -330,8 +328,7 @@ class Mesh_MSTK : public MeshFramework {
           Entity_ID_List &faceids,
           Entity_Direction_List * const face_dirs) const;
 
-
-private:
+ private:
   MPI_Comm mpicomm_;
   int myprocid, numprocs;
   Mesh_ptr mesh_;
@@ -340,7 +337,7 @@ private:
   bool contiguous_gids_;
   Partitioner_type partitioner_;
   bool edges_requested_, faces_requested_;
-  mutable bool edges_initialized_, faces_initialized_;
+  mutable bool edges_initialized_, faces_initialized_, cells_initialized_;
 
   // Local handles to entity lists (Vertices, "Faces", "Cells")
   //

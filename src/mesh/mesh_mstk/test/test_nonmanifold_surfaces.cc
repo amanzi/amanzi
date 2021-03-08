@@ -52,10 +52,10 @@ TEST(MSTK_READ_NONMANIFOLD_SURFACES)
   Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/fractures.exo",comm,3,gm));
 
 
-  CHECK_EQUAL(2, mesh->manifold_dimension());
-  CHECK_EQUAL(3, mesh->space_dimension());
+  CHECK_EQUAL(2, mesh->get_manifold_dimension());
+  CHECK_EQUAL(3, mesh->get_space_dimension());
 
-  int nc = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int nc = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   Teuchos::ParameterList::ConstIterator i;
   for (i = reg_spec.begin(); i != reg_spec.end(); i++) {
@@ -85,13 +85,13 @@ TEST(MSTK_READ_NONMANIFOLD_SURFACES)
 
         // Do we have a valid cellset by this name
         
-        CHECK(mesh->valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
+        CHECK(mesh->valid_set_name(reg_name,Amanzi::AmanziMesh::Entity_kind::CELL));
 
         if (expcsetnames[0] != reg_name && expcsetnames[1] != reg_name) break;
         
         // Verify that we can get the number of entities in the set
         
-        int set_size = mesh->get_set_size(reg_name, Amanzi::AmanziMesh::CELL,
+        int set_size = mesh->get_set_size(reg_name, Amanzi::AmanziMesh::Entity_kind::CELL,
                                           Amanzi::AmanziMesh::Parallel_type::OWNED);
 
         CHECK_EQUAL(nc/2, set_size);
@@ -99,14 +99,14 @@ TEST(MSTK_READ_NONMANIFOLD_SURFACES)
         // Verify that we can retrieve the set entities
         
         Amanzi::AmanziMesh::Entity_ID_List setents;
-        mesh->get_set_entities(reg_name, Amanzi::AmanziMesh::CELL,
+        mesh->get_set_entities(reg_name, Amanzi::AmanziMesh::Entity_kind::CELL,
                                Amanzi::AmanziMesh::Parallel_type::OWNED, &setents);
 
         if (reg_name == "FRACTURE 1") {  
           // VERIFY THAT EACH 2D CELL HAS A NORMAL THAT POINTS IN [0,0,1] DIR
           std::vector<Amanzi::AmanziGeometry::Point> ccoords;
           for (auto const& cellid : setents) {
-            mesh->cell_get_coordinates(cellid, &ccoords);
+            ccoords = mesh->getCellCoordinates(cellid);
 
             // Assumes that for 2D cells the coordinates are returned in 
             // ccw direction around the cell
@@ -124,7 +124,7 @@ TEST(MSTK_READ_NONMANIFOLD_SURFACES)
           // VERIFY THAT EACH 2D CELL HAS A NORMAL THAT POINTS IN [0,-1,0] DIR
           std::vector<Amanzi::AmanziGeometry::Point> ccoords;
           for (auto const& cellid : setents) {
-            mesh->cell_get_coordinates(cellid, &ccoords);
+            ccoords = mesh->getCellCoordinates(cellid);
 
             // Assumes that for 2D cells the coordinates are returned in 
             // ccw direction around the cell
@@ -147,15 +147,15 @@ TEST(MSTK_READ_NONMANIFOLD_SURFACES)
   // Check some things about the non-manifold edges where the two
   // surfaces come together
 
-  int nf = mesh->num_entities(Amanzi::AmanziMesh::FACE,
+  int nf = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE,
                               Amanzi::AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nf; f++) {
     Amanzi::AmanziMesh::Entity_ID_List fcells;
-    mesh->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &fcells);
+    mesh->getFaceCells(f, Amanzi::AmanziMesh::Parallel_type::ALL, fcells);
 
     std::vector<Amanzi::AmanziGeometry::Point> fnormals(fcells.size());
 
-    Amanzi::AmanziGeometry::Point fcen = mesh->face_centroid(f);
+    Amanzi::AmanziGeometry::Point fcen = mesh->getFaceCentroid(f)
     for (int j = 0; j < fcells.size(); j++) {
       int dir;
       fnormals[j] = mesh->face_normal(f, false, fcells[j], &dir);
@@ -164,7 +164,7 @@ TEST(MSTK_READ_NONMANIFOLD_SURFACES)
       // Check that the face normal with respect to the cell is
       // actually pointing out of the face
 
-      Amanzi::AmanziGeometry::Point ccen = mesh->cell_centroid(fcells[j]);
+      Amanzi::AmanziGeometry::Point ccen = mesh->getCellCentroid(fcells[j])
       Amanzi::AmanziGeometry::Point nvec = fcen-ccen;
       nvec /= norm(nvec);
 

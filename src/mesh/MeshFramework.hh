@@ -87,6 +87,8 @@ class MeshFramework  {
   // Some meshes can be deformed.
   virtual bool is_deformable() const { return false; }
 
+  virtual void write_to_exodus_file(const std::string& filename) const = 0;
+
   // ----------------
   // Entity meta-data
   // ----------------
@@ -124,9 +126,9 @@ class MeshFramework  {
   virtual AmanziGeometry::Point getFaceCentroid(const Entity_ID f) const;
   virtual AmanziGeometry::Point getEdgeCentroid(const Entity_ID e) const;
 
-  virtual Point_List cell_coordinates(const Entity_ID c) const;
-  virtual Point_List face_coordinates(const Entity_ID f) const;
-  virtual Point_List edge_coordinates(const Entity_ID e) const;
+  virtual Point_List getCellCoordinates(const Entity_ID c) const;
+  virtual Point_List getFaceCoordinates(const Entity_ID f) const;
+  virtual Point_List getEdgeCoordinates(const Entity_ID e) const;
 
   // extent
   virtual double getCellVolume(const Entity_ID c) const;
@@ -328,6 +330,7 @@ class MeshFramework  {
  protected:
   void hasEdgesOrThrow_() const;
   void throwNotImplemented_(const std::string& fname) const;
+  Cell_type getCellType_(const Entity_ID c, const Entity_ID_List& faces) const;
 
  protected:
   Comm_ptr_type comm_;

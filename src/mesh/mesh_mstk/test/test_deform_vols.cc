@@ -55,7 +55,7 @@ TEST(MSTK_DEFORM_VOLS_2D)
   CHECK_EQUAL(mesh->build_columns(), 1);
   
   int nc = 
-    mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,Amanzi::AmanziMesh::Parallel_type::ALL);
 
   // Request target volume of 50% for some cells at the bottom of the center column
   // The others are unconstrained except for a barrier of minimum volume
@@ -67,19 +67,19 @@ TEST(MSTK_DEFORM_VOLS_2D)
   min_volumes.reserve(nc);
 
   for (int i = 0; i < nc; i++) {    
-    orig_volumes[i] = mesh->cell_volume(i);
+    orig_volumes[i] = mesh->getCellVolume(i)
     // target_volumes[i] = orig_volumes[i];
     target_volumes[i] = 0.0;
     min_volumes[i] = 0.25*orig_volumes[i];
 
-    Amanzi::AmanziGeometry::Point ccen = mesh->cell_centroid(i);
+    Amanzi::AmanziGeometry::Point ccen = mesh->getCellCentroid(i)
     if (fabs(ccen[0]) < 3.0)
       if (ccen[1] > 3.1 && ccen[1] < 4.1)
         target_volumes[i] = 0.90*orig_volumes[i];
   }
 
   Amanzi::AmanziMesh::Entity_ID_List fixed_nodes;
-  mesh->get_set_entities("Bottom Region", Amanzi::AmanziMesh::NODE,
+  mesh->get_set_entities("Bottom Region", Amanzi::AmanziMesh::Entity_kind::NODE,
                          Amanzi::AmanziMesh::Parallel_type::ALL, &fixed_nodes);
 
   bool move_vertical = true;
@@ -100,7 +100,7 @@ TEST(MSTK_DEFORM_VOLS_2D)
     if (mesh->cell_volume(i) < min_volumes[i])
       std::cerr << "Cell volume = " << mesh->cell_volume(i) << 
           " is less than min volume = " << min_volumes[i] << std::endl;
-    //    CHECK(mesh->cell_volume(i) >= min_volumes[i]);
+    //    CHECK(mesh->getCellVolume(i) >= min_volumes[i])
   }
 
   mesh->write_to_exodus_file("deformed2.exo");
@@ -139,9 +139,9 @@ TEST(MSTK_DEFORM_VOLS_3D)
   CHECK_EQUAL(mesh->build_columns(), 1);
   
   int ncused = 
-    mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::ALL);
+    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,Amanzi::AmanziMesh::Parallel_type::ALL);
   int ncowned = 
-    mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
+    mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   // Request target volume of 50% for some cells at the bottom of the center column
   // The others are unconstrained except for a barrier of minimum volume
@@ -153,11 +153,11 @@ TEST(MSTK_DEFORM_VOLS_3D)
   min_volumes.reserve(ncused);
 
   for (int i = 0; i < ncused; i++) {    
-    orig_volumes[i] = mesh->cell_volume(i);
+    orig_volumes[i] = mesh->getCellVolume(i)
     target_volumes[i] = orig_volumes[i];
     min_volumes[i] = 0.90*orig_volumes[i]; 
 
-    Amanzi::AmanziGeometry::Point ccen = mesh->cell_centroid(i);
+    Amanzi::AmanziGeometry::Point ccen = mesh->getCellCentroid(i)
     if (ccen[0] > 2.0 && ccen[0] < 8.0) { // row of cells along x axis
       if (ccen[2] > 3.1 && ccen[2] < 4.1)  {
         target_volumes[i] = 0.85*orig_volumes[i];
@@ -170,7 +170,7 @@ TEST(MSTK_DEFORM_VOLS_3D)
   }
 
   Amanzi::AmanziMesh::Entity_ID_List fixed_nodes;
-  mesh->get_set_entities_and_vofs("Bottom Region", Amanzi::AmanziMesh::NODE,
+  mesh->get_set_entities_and_vofs("Bottom Region", Amanzi::AmanziMesh::Entity_kind::NODE,
                                   Amanzi::AmanziMesh::Parallel_type::ALL, &fixed_nodes, NULL);
 
   bool move_vertical = true;
@@ -192,10 +192,10 @@ TEST(MSTK_DEFORM_VOLS_3D)
     // give some margin of numerical error
 
     double eps = 1.0e-6*orig_volumes[i];
-    CHECK(mesh->cell_volume(i)+eps >= min_volumes[i]);
+    CHECK(mesh->getCellVolume(i)+eps >= min_volumes[i])
     if (!(mesh->cell_volume(i)+eps >= min_volumes[i])) {
       double diff = mesh->cell_volume(i)-min_volumes[i];
-      std::cerr << "Cell Global ID " << mesh->GID(i,Amanzi::AmanziMesh::CELL)
+      std::cerr << "Cell Global ID " << mesh->getEntityGID(i,Amanzi::AmanziMesh::Entity_kind::CELL)
                 << " Cell Local ID " << i 
                 << " Rank " << comm->MyPID() 
                 << ": Min volume = " << min_volumes[i] << "    "

@@ -36,6 +36,7 @@ Mesh_MSTK::Mesh_MSTK(const std::string& filename,
                      const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                      const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : MeshFramework(comm, gm, plist),
+    cells_initialized_(false),
     faces_initialized_(false),
     edges_initialized_(false)
 {
@@ -109,6 +110,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
                      const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : MeshFramework(comm, gm, plist),
     edges_requested_(false),
+    cells_initialized_(false),
     faces_initialized_(false),
     edges_initialized_(false)
 {
@@ -173,6 +175,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
                      const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : MeshFramework(comm, gm, plist),
     edges_requested_(false),
+    cells_initialized_(false),
     faces_initialized_(false),
     edges_initialized_(false)
 {
@@ -241,6 +244,7 @@ Mesh_MSTK::Mesh_MSTK(const Teuchos::RCP<const MeshFramework>& parent_mesh,
                   plist == Teuchos::null ? Teuchos::rcp(
                     new Teuchos::ParameterList(*parent_mesh->get_parameter_list())) : plist),
     edges_requested_(false),
+    cells_initialized_(false),
     faces_initialized_(false),
     edges_initialized_(false)
 {
@@ -312,11 +316,10 @@ Mesh_MSTK::~Mesh_MSTK() {
 void Mesh_MSTK::read_plist_()
 {
   // extract optional control parameters, but first specify defaults
-  auto expert = Teuchos::sublist(Teuchos::sublist(plist_, "unstructured"), "expert");
-  partitioner_ = createPartitionerType(expert->get<std::string>("partitioner", "metis"));
-  contiguous_gids_ = expert->get<bool>("contiguous global ids", true);
-  edges_requested_ = expert->get<bool>("request edges", false);
-  faces_requested_ = expert->get<bool>("request faces", true);
+  partitioner_ = createPartitionerType(plist_->get<std::string>("partitioner", "metis"));
+  contiguous_gids_ = plist_->get<bool>("contiguous global ids", true);
+  edges_requested_ = plist_->get<bool>("request edges", false);
+  faces_requested_ = plist_->get<bool>("request faces", true);
 }
 
 
@@ -591,7 +594,6 @@ void Mesh_MSTK::getCellFacesAndDirs_ordered_(const Entity_ID cellid,
   } else {
     getCellFacesAndDirs_unordered_(cellid,faceids,face_dirs);
   }
-
 }
 
 
@@ -663,14 +665,14 @@ void Mesh_MSTK::getCellFacesAndDirs_unordered_(const Entity_ID cellid,
 
 void Mesh_MSTK::getCellFacesAndDirs(const Entity_ID cellid,
         Entity_ID_List& faceids,
-        Entity_Direction_List * const face_dirs,
-        const bool ordered) const
+        Entity_Direction_List * const face_dirs) const
 {
   AMANZI_ASSERT(faces_initialized_);
-  if (ordered)
+  if (cells_initialized_) {
     getCellFacesAndDirs_ordered_(cellid, faceids, face_dirs);
-  else
+  } else {
     getCellFacesAndDirs_unordered_(cellid, faceids, face_dirs);
+  }
 }
 
 
@@ -806,8 +808,7 @@ void Mesh_MSTK::getCellNodes(const Entity_ID cellid,
 
 void Mesh_MSTK::getFaceEdgesAndDirs(const Entity_ID faceid,
                                                   Entity_ID_List& edgeids,
-                                                  Entity_Direction_List * const edge_dirs,
-                                                  bool ordered) const
+                                                  Entity_Direction_List * const edge_dirs) const
 {
   AMANZI_ASSERT(faces_initialized_);
   AMANZI_ASSERT(edges_initialized_);
@@ -1329,8 +1330,6 @@ Entity_GID Mesh_MSTK::getEntityGID(const Entity_kind kind, const Entity_ID lid) 
 //---------------------------------------------------------
 void Mesh_MSTK::post_create_steps_()
 {
-  label_celltype_();
-
   // Initialize data structures for various entities - vertices/nodes
   // and cells are always initialized; edges and faces only if
   // requested
@@ -1416,10 +1415,12 @@ void Mesh_MSTK::init_faces_()
 //---------------------------------------------------------
 void Mesh_MSTK::init_cells_()
 {
+  label_celltype_();
   // create owned and not owned cell lists
   init_pcell_lists_();
   // create maps from IDs to handles
   init_cell_id2handle_maps_();
+  cells_initialized_ = true;
 }
 
 
@@ -1816,7 +1817,6 @@ void Mesh_MSTK::init_pface_dirs_2_()
 void Mesh_MSTK::init_pcell_lists_()
 {
   int idx = 0;
-
   if (get_manifold_dimension() == 3) {
     MRegion_ptr region;
     owned_cells_ = MSet_New(mesh_,"owned_cells_",MREGION);
@@ -1849,6 +1849,43 @@ void Mesh_MSTK::init_pcell_lists_()
   }
   return;
 }
+
+void Mesh_MSTK::label_celltype_()
+{
+  if (get_manifold_dimension() == 2) {
+    celltype_att_ = MAttrib_New(mesh_,"Cell_type",INT,MFACE);
+    int idx = 0;
+    MFace_ptr face;
+    while ((face = MESH_Next_Face(mesh_,&idx))) {
+      Entity_ID_List edges;
+      List_ptr fedges = MF_Edges(face, 0, 0);
+      int idx2 = 0;
+      MEdge_ptr edge;
+      while ((edge = List_Next_Entry(fedges,&idx2)))
+        edges.push_back(MEnt_ID(edge)-1);
+
+      Cell_type ctype = MeshFramework::getCellType_(MEnt_ID(face), edges);
+      MEnt_Set_AttVal(face, celltype_att_, (int) ctype, 0.0, NULL);
+    }
+
+  } else if (get_manifold_dimension() == 3) {
+    celltype_att_ = MAttrib_New(mesh_,"Cell_type",INT,MREGION);
+    int idx = 0;
+    MRegion_ptr region;
+    while ((region = MESH_Next_Region(mesh_,&idx))) {
+      List_ptr rfaces = MR_Faces(region);
+      Entity_ID_List faces;
+      int idx2 = 0;
+      MFace_ptr face;
+      while ((face = List_Next_Entry(rfaces,&idx2)))
+        faces.push_back(MEnt_ID(face)-1);
+
+      Cell_type ctype = MeshFramework::getCellType_(MEnt_ID(region), faces);
+      MEnt_Set_AttVal(region, celltype_att_, (int) ctype, 0.0, NULL);
+    }
+  }
+}
+
 
 
 void
@@ -2184,29 +2221,6 @@ void Mesh_MSTK::collapse_degen_edges_()
     }
   }
 #endif
-}
-
-
-void Mesh_MSTK::label_celltype_()
-{
-  if (get_manifold_dimension() == 2) {
-    celltype_att_ = MAttrib_New(mesh_,"Cell_type",INT,MFACE);
-    int idx = 0;
-    MFace_ptr face;
-    while ((face = MESH_Next_Face(mesh_,&idx))) {
-      Cell_type ctype = MeshFramework::getCellType(MEnt_ID(face));
-      MEnt_Set_AttVal(face, celltype_att_, (int) ctype, 0.0, NULL);
-    }
-
-  } else if (get_manifold_dimension() == 3) {
-    celltype_att_ = MAttrib_New(mesh_,"Cell_type",INT,MREGION);
-    int idx = 0;
-    MRegion_ptr region;
-    while ((region = MESH_Next_Region(mesh_,&idx))) {
-      Cell_type ctype = MeshFramework::getCellType(MEnt_ID(region));
-      MEnt_Set_AttVal(region, celltype_att_, (int) ctype, 0.0, NULL);
-    }
-  }
 }
 
 
@@ -3356,7 +3370,7 @@ void Mesh_MSTK::extract_mstk_mesh_(List_ptr src_entities,
 // Write mesh out to exodus file
 //---------------------------------------------------------
 void
-Mesh_MSTK::write_to_exodus_file(const std::string filename) const {
+Mesh_MSTK::write_to_exodus_file(const std::string& filename) const {
   MESH_ExportToExodusII(mesh_, filename.c_str(), -1, NULL, NULL, mpicomm_);
 }
 

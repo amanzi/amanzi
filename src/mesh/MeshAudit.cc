@@ -13,6 +13,8 @@
 #include "Epetra_IntVector.h"
 
 #include "Geometry.hh"
+#include "CellTopology.hh"
+
 
 #include <iostream>
 #include <iomanip>
@@ -23,16 +25,18 @@ using namespace boost;
 namespace Amanzi
 {
 
-  MeshAudit:: MeshAudit(Teuchos::RCP<AmanziMesh::MeshFramework> &mesh_, std::ostream& os_) :
-      mesh(mesh_),
-      comm_(mesh_->get_comm()),
-      MyPID(mesh_->get_comm()->MyPID()),
-      os(os_),
-      nnode(mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL)),
-      nface(mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL)),
-      ncell(mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL)),
-      MAX_OUT(5)
-    { create_test_dependencies(); }
+MeshAudit:: MeshAudit(Teuchos::RCP<AmanziMesh::MeshFramework> &mesh_, std::ostream& os_) :
+  mesh(mesh_),
+  comm_(mesh_->get_comm()),
+  MyPID(mesh_->get_comm()->MyPID()),
+  os(os_),
+  nnode(mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL)),
+  nface(mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL)),
+  ncell(mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL)),
+  MAX_OUT(5)
+{
+  create_test_dependencies();
+}
 
 // Verify runs all the tests in an order that respects the dependencies
 // between tests.  If a particular test fails, all other tests that have it
@@ -286,63 +290,63 @@ void MeshAudit::create_test_dependencies()
 // if any discrepancy is found, but it is safe to perform other tests as
 // they do not use these methods.
 
-/*
 bool MeshAudit::check_entity_counts() const
 {
   int n, nref;
   bool error = false;
 
-  // Check the number of owned nodes.
-  n = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE,AmanziMesh::Parallel_type::OWNED);
-  nref = mesh->node_map(false).NumMyElements();
-  if (n != nref) {
-    os << ": ERROR: getNumEntities(NODE,OWNED)=" << n << "; should be " << nref << std::endl;
-    error = true;
-  }
+/*
+// Check the number of owned nodes.
+n = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE,AmanziMesh::Parallel_type::OWNED);
+nref = mesh->node_map(false).NumMyElements();
+if (n != nref) {
+os << ": ERROR: getNumEntities(NODE,OWNED)=" << n << "; should be " << nref << std::endl;
+error = true;
+}
 
-  // Check the number of used nodes.
-  n = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE,AmanziMesh::Parallel_type::ALL);
-  nref = mesh->node_map(true).NumMyElements();
-  if (n != nref) {
-    os << "ERROR: getNumEntities(NODE,ALL)=" << n << "; should be " << nref << std::endl;
-    error = true;
-  }
+// Check the number of used nodes.
+n = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE,AmanziMesh::Parallel_type::ALL);
+nref = mesh->node_map(true).NumMyElements();
+if (n != nref) {
+os << "ERROR: getNumEntities(NODE,ALL)=" << n << "; should be " << nref << std::endl;
+error = true;
+}
 
-  // Check the number of owned faces.
-  n = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE,AmanziMesh::Parallel_type::OWNED);
-  nref = mesh->face_map(false).NumMyElements();
-  if (n != nref) {
-    os << "ERROR: getNumEntities(FACE,OWNED)=" << n << "; should be " << nref << std::endl;
-    error = true;
-  }
+// Check the number of owned faces.
+n = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE,AmanziMesh::Parallel_type::OWNED);
+nref = mesh->face_map(false).NumMyElements();
+if (n != nref) {
+os << "ERROR: getNumEntities(FACE,OWNED)=" << n << "; should be " << nref << std::endl;
+error = true;
+}
 
-  // Check the number of used faces.
-  n = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE,AmanziMesh::Parallel_type::ALL);
-  nref = mesh->face_map(true).NumMyElements();
-  if (n != nref) {
-    os << "ERROR: getNumEntities(FACE,ALL)=" << n << "; should be " << nref << std::endl;
-    error = true;
-  }
+// Check the number of used faces.
+n = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE,AmanziMesh::Parallel_type::ALL);
+nref = mesh->face_map(true).NumMyElements();
+if (n != nref) {
+os << "ERROR: getNumEntities(FACE,ALL)=" << n << "; should be " << nref << std::endl;
+error = true;
+}
 
-  // Check the number of owned cells.
-  n = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL,AmanziMesh::Parallel_type::OWNED);
-  nref = mesh->cell_map(false).NumMyElements();
-  if (n != nref) {
-    os << "ERROR: getNumEntities(CELL,OWNED)=" << n << "; should be " << nref << std::endl;
-    error = true;
-  }
+// Check the number of owned cells.
+n = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL,AmanziMesh::Parallel_type::OWNED);
+nref = mesh->cell_map(false).NumMyElements();
+if (n != nref) {
+os << "ERROR: getNumEntities(CELL,OWNED)=" << n << "; should be " << nref << std::endl;
+error = true;
+}
 
-  // Check the number of used cells.
-  n = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL,AmanziMesh::Parallel_type::ALL);
-  nref = mesh->cell_map(true).NumMyElements();
-  if (n != nref) {
-    os << "ERROR: getNumEntities(CELL,ALL)=" << n << "; should be " << nref << std::endl;
-    error = true;
-  }
-
-  return global_any(error);
+// Check the number of used cells.
+n = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL,AmanziMesh::Parallel_type::ALL);
+nref = mesh->cell_map(true).NumMyElements();
+if (n != nref) {
+os << "ERROR: getNumEntities(CELL,ALL)=" << n << "; should be " << nref << std::endl;
+error = true;
 }
 */
+  return global_any(error);
+}
+
 
 // Check that cell_to_nodes successfully returns valid references to local
 // nodes.  Here the std::vector accessor is used.  The consistency of
@@ -357,7 +361,7 @@ bool MeshAudit::check_cell_to_nodes() const
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
     try {
-      mesh->getCellNodes(j, &cnode); // this may fail
+      mesh->getCellNodes(j, cnode); // this may fail
       bool invalid_refs = false;
       for (int k = 0; k < cnode.size(); ++k) {
         if (cnode[k] >= nnode) invalid_refs = true;
@@ -395,7 +399,7 @@ bool MeshAudit::check_node_refs_by_cells() const
   vector<bool> ref(nnode, false);
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
-    mesh->getCellNodes(j, &cnode); // this should not fail
+    mesh->getCellNodes(j, cnode); // this should not fail
     for (int k = 0; k < cnode.size(); ++k) ref[cnode[k]] = true;
   }
 
@@ -429,7 +433,7 @@ bool MeshAudit::check_cell_to_faces() const
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
     try {
-      mesh->getCellFaces(j, &cface); // this may fail
+      mesh->getCellFaces(j, cface); // this may fail
       bool invalid_refs = false;
       for (int k = 0; k < cface.size(); ++k) {
         if (cface[k] >= nface) invalid_refs = true;
@@ -468,7 +472,7 @@ bool MeshAudit::check_face_refs_by_cells() const
   vector<unsigned int> refs(nface, 0);
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
-    mesh->getCellFaces(j, &cface);
+    mesh->getCellFaces(j, cface);
     for (int k = 0; k < cface.size(); ++k) (refs[cface[k]])++;
   }
 
@@ -511,7 +515,7 @@ bool MeshAudit::check_face_to_nodes() const
 
   for (AmanziMesh::Entity_ID j = 0; j < nface; ++j) {
     try {
-      mesh->getFaceNodes(j, &fnode); // this may fail
+      mesh->getFaceNodes(j, fnode); // this may fail
       bool invalid_refs = false;
       for (int k = 0; k < fnode.size(); ++k) {
         if (fnode[k] >= nnode) invalid_refs = true;
@@ -549,7 +553,7 @@ bool MeshAudit::check_node_refs_by_faces() const
   vector<bool> ref(nnode, false);
 
   for (AmanziMesh::Entity_ID j = 0; j < nface; ++j) {
-    mesh->getFaceNodes(j, &fnode);
+    mesh->getFaceNodes(j, fnode);
     for (int k = 0; k < fnode.size(); ++k) ref[fnode[k]] = true;
   }
 
@@ -583,7 +587,7 @@ bool MeshAudit::check_cell_to_face_dirs() const
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
     fdirs.assign(6, INT_MAX);
     try {
-      mesh->getCellFacesAndDirs(j, &faces, &fdirs);  // this may fail
+      mesh->getCellFacesAndDirs(j, faces, &fdirs);  // this may fail
       bool bad_data = false;
       for (int k = 0; k < fdirs.size(); ++k)
         if (fdirs[k] != -1 && fdirs[k] != 1) bad_data = true;
@@ -623,7 +627,7 @@ bool MeshAudit::check_cell_degeneracy() const
   AmanziMesh::Entity_ID_List bad_cells;
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
-    mesh->getCellNodes(j, &cnode); // should not fail
+    mesh->getCellNodes(j, cnode); // should not fail
     if (!distinct_values(cnode)) bad_cells.push_back(j);
   }
 
@@ -635,7 +639,7 @@ bool MeshAudit::check_cell_degeneracy() const
     error = true;
   }
 
-    return global_any(error);
+  return global_any(error);
 }
 
 // Check that cell_to_faces and face_to_nodes are returning the correct
@@ -658,19 +662,19 @@ bool MeshAudit::check_cell_to_faces_to_nodes() const
   AmanziMesh::Entity_ID_List bad_cells1;
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
-    AmanziMesh::Cell_type ctype = mesh->cell_get_type(j);
+    AmanziMesh::Cell_type ctype_enum = mesh->getCellType(j);
 
     // If this is a general, non-standard element there is nothing to
     // to check against
 
-    if (ctype == AmanziMesh::Entity_kind::CELLTYPE_UNKNOWN || 
-	ctype == AmanziMesh::POLYGON || 
-	ctype == AmanziMesh::POLYHED)
+    if (ctype_enum == AmanziMesh::Cell_type::UNKNOWN ||
+        ctype_enum == AmanziMesh::Cell_type::POLYGON ||
+        ctype_enum == AmanziMesh::Cell_type::POLYHED)
       continue;
 
-    mesh->getCellNodes(j, &cnode); // this should not fail
-
-    mesh->getCellFacesAndDirs(j, &cface, &fdirs, true); // this should not fail
+    int ctype = (int) ctype_enum;
+    mesh->getCellNodes(j, cnode); // this should not fail
+    mesh->getCellFacesAndDirs(j, cface, &fdirs); // this should not fail
 
     bool bad_face = false;
     bool bad_dir  = false;
@@ -681,30 +685,30 @@ bool MeshAudit::check_cell_to_faces_to_nodes() const
 
       for (int k = 0; k < cface.size(); ++k) {
 
-	mesh->getFaceNodes(cface[k], &fnode); // this should not fail
+        mesh->getFaceNodes(cface[k], fnode); // this should not fail
 
-	int nfn = AmanziMesh::nfnodes_std[ctype][k];
+        int nfn = AmanziMesh::nfnodes_std[ctype][k];
 
-	if (fnode.size() != nfn) {
-	  bad_face = true;
-	  break;
-	}
+        if (fnode.size() != nfn) {
+          bad_face = true;
+          break;
+        }
 
-	fnode_ref.clear();
-	for (int i = 0; i < nfn; ++i) {
-	  int nodenum = AmanziMesh::fnodes_std[ctype][k][i];
-	  fnode_ref.push_back(cnode[nodenum]);
-	}
+        fnode_ref.clear();
+        for (int i = 0; i < nfn; ++i) {
+          int nodenum = AmanziMesh::fnodes_std[ctype][k][i];
+          fnode_ref.push_back(cnode[nodenum]);
+        }
 
-	int dir = same_face(fnode, fnode_ref); // should be the same face
-	if (dir == 0) { // wrong face
-	  bad_face = true;
-	  break;
-	}
-	else if (dir != fdirs[k]) { // right face but wrong dir value
-	  bad_dir = true;
-	  break;
-	}
+        int dir = same_face(fnode, fnode_ref); // should be the same face
+        if (dir == 0) { // wrong face
+          bad_face = true;
+          break;
+        }
+        else if (dir != fdirs[k]) { // right face but wrong dir value
+          bad_dir = true;
+          break;
+        }
       }
 
     }
@@ -745,7 +749,7 @@ bool MeshAudit::check_node_to_coordinates() const
     AmanziGeometry::Point x0(spdim);
     x0.set(DBL_MAX);
     try {
-      mesh->getNodeCoordinate(j, &x0); // this may fail
+      x0 = mesh->getNodeCoordinate(j); // this may fail
       bool bad_data = false;
       for (int k = 0; k < spdim; ++k)
         if (x0[k] == DBL_MAX) bad_data = true;
@@ -787,20 +791,20 @@ bool MeshAudit::check_cell_to_coordinates() const
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
     vector<AmanziGeometry::Point> x0;
     try {
-      mesh->cell_get_coordinates(j, &x0); // this may fail
-      mesh->getCellNodes(j, &cnode); // this should not fail
+      x0 = mesh->getCellCoordinates(j); // this may fail
+      mesh->getCellNodes(j, cnode); // this should not fail
       for (int k = 0; k < cnode.size(); ++k) {
-	AmanziGeometry::Point xref(spdim);
-	bool bad_data = false;
-        mesh->getNodeCoordinate(cnode[k], &xref); // this should not fail
-	for (int i = 0; i < spdim; i++)
-	  if (x0[k][i] != xref[i]) {
-	    bad_data = true;
-	    bad_cells.push_back(j);
-	    break;
-	  }
-	if (bad_data)
-	  break;
+        AmanziGeometry::Point xref(spdim);
+        bool bad_data = false;
+        xref = mesh->getNodeCoordinate(cnode[k]); // this should not fail
+        for (int i = 0; i < spdim; i++)
+          if (x0[k][i] != xref[i]) {
+            bad_data = true;
+            bad_cells.push_back(j);
+            break;
+          }
+        if (bad_data)
+          break;
       }
     } catch (...) {
       bad_cells_exc.push_back(j);
@@ -843,19 +847,19 @@ bool MeshAudit::check_face_to_coordinates() const
     try {
       vector<AmanziGeometry::Point> x0;
       bool bad_data = false;
-      mesh->face_get_coordinates(j, &x0); // this may fail
-      mesh->getFaceNodes(j, &fnode); // this should not fail
+      x0 = mesh->getFaceCoordinates(j); // this may fail
+      mesh->getFaceNodes(j, fnode); // this should not fail
       for (int k = 0; k < fnode.size(); ++k) {
-	AmanziGeometry::Point xref(spdim);
-        mesh->getNodeCoordinate(fnode[k], &xref); // this should not fail
-	for (int i = 0; i < spdim; i++)
-	  if (x0[k][i] != xref[i]) {
-	    bad_data = true;
-	    bad_faces.push_back(j);
-	    break;
-	  }
-	if (bad_data)
-	  break;
+        AmanziGeometry::Point xref(spdim);
+        xref = mesh->getNodeCoordinate(fnode[k]); // this should not fail
+        for (int i = 0; i < spdim; i++)
+          if (x0[k][i] != xref[i]) {
+            bad_data = true;
+            bad_faces.push_back(j);
+            break;
+          }
+        if (bad_data)
+          break;
       }
     } catch (...) {
       bad_faces_exc.push_back(j);
@@ -893,7 +897,7 @@ bool MeshAudit::check_cell_geometry() const
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
     hvol = mesh->getCellVolume(j);
-      
+
     if (hvol <= 0.0) bad_cells.push_back(j);
   }
 
@@ -971,7 +975,7 @@ bool MeshAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_use)
     if (diff > 1) {
       os << "ERROR: owned map is not contiguous" << std::endl;
       os << "Global IDs jump from " << owned_getEntityGIDs[i] << " to " <<
-          owned_getEntityGIDs[i+1] << std::endl;
+        owned_getEntityGIDs[i+1] << std::endl;
       error = true;
     }
   }
@@ -1069,7 +1073,7 @@ bool MeshAudit::check_node_to_coordinates_ghost_data() const
   Epetra_MultiVector coord_own(View, node_map_own, data, spdim);
 
   for (AmanziMesh::Entity_ID j = 0; j < nnode_own; ++j) {
-    mesh->getNodeCoordinate(j, &coord);
+    coord = mesh->getNodeCoordinate(j);
     for (int k = 0; k < spdim; ++k) coord_own[k][j] = coord[k];
   }
 
@@ -1077,7 +1081,7 @@ bool MeshAudit::check_node_to_coordinates_ghost_data() const
   coord_use.Import(coord_own, importer, Insert);
 
   for (AmanziMesh::Entity_ID j = nnode_own; j < nnode_use; ++j) {
-    mesh->getNodeCoordinate(j, &coord);
+    coord = mesh->getNodeCoordinate(j);
     bool bad_data = false;
     for (int k = 0; k < spdim; ++k)
       if (coord[k] != coord_use[k][j]) bad_data = true;
@@ -1145,7 +1149,7 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
     mesh->getFaceNodes(j, &fnode);
     bool bad_data = false;
     for (int k = 0; k < fnode.size(); ++k)
-      if (node_map.getEntityGID(fnode[k]) != gids(j,k)) { 
+      if (node_map.getEntityGID(fnode[k]) != gids(j,k)) {
         bad_data = true;
       }
     if (bad_data) {
@@ -1157,43 +1161,43 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
       }
       int n = same_face(fnode, fnode_ref);
       switch (n) {
-      case 0: // completely bad -- different face
-        bad_faces.push_back(j);
+        case 0: // completely bad -- different face
+          bad_faces.push_back(j);
 
-        std::cerr << "P " << comm_->MyPID() << ": ghost face " << j << " (getEntityGID "
-                  << face_map_use.getEntityGID(j) << ")," <<
+          std::cerr << "P " << comm_->MyPID() << ": ghost face " << j << " (getEntityGID "
+                    << face_map_use.getEntityGID(j) << ")," <<
             " has different nodes than its master " << std::endl;
-        std::cerr << "ghost face nodes (getEntityGIDs): ";
-        for (int k = 0; k < fnode.size(); ++k)
-          std::cerr << fnode[k] << " ";
-        std::cerr << std::endl;
-        std::cerr << "master face nodes (getEntityGIDs): ";
-        for (int k = 0; k < fnode_ref.size(); ++k)
-          std::cerr << fnode_ref[k] << " ";
-        std::cerr << std::endl;
-        break;
-      case -1: // very bad -- same face but wrong orientation
-        bad_faces1.push_back(j);
+          std::cerr << "ghost face nodes (getEntityGIDs): ";
+          for (int k = 0; k < fnode.size(); ++k)
+            std::cerr << fnode[k] << " ";
+          std::cerr << std::endl;
+          std::cerr << "master face nodes (getEntityGIDs): ";
+          for (int k = 0; k < fnode_ref.size(); ++k)
+            std::cerr << fnode_ref[k] << " ";
+          std::cerr << std::endl;
+          break;
+        case -1: // very bad -- same face but wrong orientation
+          bad_faces1.push_back(j);
 
-        std::cerr << "P " << comm_->MyPID() << ": ghost face " << j << ", has different orientation than its master " << std::endl;
-        std::cerr << "ghost face nodes (getEntityGIDs): ";
-        for (int k = 0; k < fnode.size(); ++k)
-          std::cerr << fnode[k];
-        std::cerr << std::endl;
-        std::cerr << "master face nodes (getEntityGIDs): ";
-        for (int k = 0; k < fnode_ref.size(); ++k)
-          std::cerr << fnode_ref[k];
-        std::cerr << std::endl;
-        break;
-      case 1:  
-        // This is fine because there is no way to ensure this for
-        // general meshes (think of building a tet mesh and defining
-        // the faces such that they return the same vertices in the
-        // same order (unpermuted) no matter which way the elements
-        // match up. You can only ensure this for hexahedral meshes
-        // As long as the faces have the same vertices and have the
-        // same direction, but the vertices are permuted, its fine
-        break;
+          std::cerr << "P " << comm_->MyPID() << ": ghost face " << j << ", has different orientation than its master " << std::endl;
+          std::cerr << "ghost face nodes (getEntityGIDs): ";
+          for (int k = 0; k < fnode.size(); ++k)
+            std::cerr << fnode[k];
+          std::cerr << std::endl;
+          std::cerr << "master face nodes (getEntityGIDs): ";
+          for (int k = 0; k < fnode_ref.size(); ++k)
+            std::cerr << fnode_ref[k];
+          std::cerr << std::endl;
+          break;
+        case 1:
+          // This is fine because there is no way to ensure this for
+          // general meshes (think of building a tet mesh and defining
+          // the faces such that they return the same vertices in the
+          // same order (unpermuted) no matter which way the elements
+          // match up. You can only ensure this for hexahedral meshes
+          // As long as the faces have the same vertices and have the
+          // same direction, but the vertices are permuted, its fine
+          break;
       }
     }
   }
@@ -1555,7 +1559,7 @@ bool MeshAudit::check_cell_sets() const
 }
 
 bool MeshAudit::check_sets(AmanziMesh::Entity_kind kind,
-                          const Epetra_Map &map_own, const Epetra_Map &map_use) const
+                           const Epetra_Map &map_own, const Epetra_Map &map_use) const
 {
   os << "WARNING: Checks on sets disabled until MeshAudit handles new set specification methods (Tkt #686)" << std::endl;
   return false;
@@ -1571,9 +1575,9 @@ bool MeshAudit::check_sets(AmanziMesh::Entity_kind kind,
   //   os << "  Checking set ID=" << sids[n] << " ..." << std::endl;
 
   //   // Basic sanity checks of the owned and used sets.
-  //   bool bad_set = check_get_set(sids[n], kind, AmanziMesh::Parallel_type::OWNED, 
+  //   bool bad_set = check_get_set(sids[n], kind, AmanziMesh::Parallel_type::OWNED,
   //       			 map_own) ||
-  //                  check_get_set(sids[n], kind, AmanziMesh::Parallel_type::ALL,  
+  //                  check_get_set(sids[n], kind, AmanziMesh::Parallel_type::ALL,
   //       			 map_use);
   //   bad_set = global_any(bad_set);
 
@@ -1592,10 +1596,10 @@ bool MeshAudit::check_sets(AmanziMesh::Entity_kind kind,
 // to the map.  This test runs independently on each process and returns a
 // per-process pass/fail result.
 
-bool MeshAudit::check_get_set(AmanziMesh::Set_ID sid, 
-			      AmanziMesh::Entity_kind kind,
-			      AmanziMesh::Parallel_type ptype, 
-			      const Epetra_Map &map) const
+bool MeshAudit::check_get_set(AmanziMesh::Set_ID sid,
+        AmanziMesh::Entity_kind kind,
+        AmanziMesh::Parallel_type ptype,
+        const Epetra_Map &map) const
 {
   os << "WARNING: Checks on sets disabled until MeshAudit handles new set specification methods (Tkt #686)" << std::endl;
   return false;
@@ -1655,10 +1659,10 @@ bool MeshAudit::check_get_set(AmanziMesh::Set_ID sid,
 // presented in any order.  This is a collective test, returning a collective
 // pass/fail result.
 
-bool MeshAudit::check_used_set(AmanziMesh::Set_ID sid, 
-			       AmanziMesh::Entity_kind kind,
-                               const Epetra_Map &map_own, 
-			       const Epetra_Map &map_use) const
+bool MeshAudit::check_used_set(AmanziMesh::Set_ID sid,
+        AmanziMesh::Entity_kind kind,
+        const Epetra_Map &map_own,
+        const Epetra_Map &map_use) const
 {
   os << "WARNING: Checks on sets disabled until MeshAudit handles new set specification methods (Tkt #686)" << std::endl;
   return false;
@@ -1673,8 +1677,8 @@ bool MeshAudit::check_used_set(AmanziMesh::Set_ID sid,
     mesh->getSetEntities(set_name, kind, AmanziMesh::Parallel_type::OWNED, &set_own);
 
     // Set sizes had better be the same.
-    if (mesh->get_set_size(set_name, kind, AmanziMesh::Parallel_type::ALL) != 
-	set_own.size()) {
+    if (mesh->get_set_size(set_name, kind, AmanziMesh::Parallel_type::ALL) !=
+        set_own.size()) {
       os << "  ERROR: owned and used set sizes differ" << std::endl;
       return true;
     }
@@ -1842,10 +1846,10 @@ int MeshAudit::same_face(const AmanziMesh::Entity_ID_List fnode1, const AmanziMe
 
   if (nn == 2) {
     // These are edges in a 2D mesh
-    
+
     if (n == 0 && fnode1[1] == fnode2[1]) return 1;
     if (n == 1 && fnode1[0] == fnode2[1]) return -1;
-    
+
     if (n == 0 && fnode1[1] == fnode2[1]) return 1;
     if (n == 1 && fnode1[0] == fnode2[1]) return -1;
 
@@ -1856,7 +1860,7 @@ int MeshAudit::same_face(const AmanziMesh::Entity_ID_List fnode1, const AmanziMe
     if (i == nn) return 1;  // they match
 
     // Modify the permutation to reverse the orientation of fnode1.
-    
+
     for (i = 1; i < nn; ++i)
       if (fnode1[(n-i+nn)%nn] != fnode2[i]) break;
     if (i == nn) return -1;   // matched nodes but orientation is reversed

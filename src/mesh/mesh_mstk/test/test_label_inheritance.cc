@@ -68,19 +68,19 @@ TEST(RegionInheritanceMSTK)
   Amanzi::AmanziMesh::Entity_ID_List top_faces;
   Amanzi::AmanziMesh::Entity_ID_List side_faces;
 
-  mesh->get_set_entities(setnames[0], Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::ALL, &top_faces);
-  mesh->get_set_entities(setnames[1], Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::ALL, &side_faces);
+  mesh->get_set_entities(setnames[0], Amanzi::AmanziMesh::Entity_kind::FACE, Amanzi::AmanziMesh::Parallel_type::ALL, &top_faces);
+  mesh->get_set_entities(setnames[1], Amanzi::AmanziMesh::Entity_kind::FACE, Amanzi::AmanziMesh::Parallel_type::ALL, &side_faces);
 
   // Verify union of regions
   Amanzi::AmanziMesh::Entity_ID_List union_faces;
-  mesh->get_set_entities(setnames[2], Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::ALL, &union_faces);
+  mesh->get_set_entities(setnames[2], Amanzi::AmanziMesh::Entity_kind::FACE, Amanzi::AmanziMesh::Parallel_type::ALL, &union_faces);
   CHECK_EQUAL(top_faces.size() + side_faces.size(), union_faces.size());
 
   // Extract surface mesh
-  Amanzi::AmanziMesh::Mesh_MSTK surfmesh(mesh,union_faces,Amanzi::AmanziMesh::FACE, false, mesh->get_comm());
+  Amanzi::AmanziMesh::Mesh_MSTK surfmesh(mesh,union_faces,Amanzi::AmanziMesh::Entity_kind::FACE, false, mesh->get_comm());
 
   Amanzi::AmanziMesh::Entity_ID_List surf_union_faces;
-  surfmesh.get_set_entities(setnames[2], Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED, &surf_union_faces);
+  surfmesh.get_set_entities(setnames[2], Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED, &surf_union_faces);
 
   // Verify that we have extracted the correct # of set entities
   CHECK_EQUAL(surf_union_faces.size(), union_faces.size());
@@ -89,8 +89,8 @@ TEST(RegionInheritanceMSTK)
   for (int i = 0; i < surf_union_faces.size(); i++) {
     Amanzi::AmanziGeometry::Point centroid1, centroid2;
 
-    centroid1 = mesh->face_centroid(union_faces[i]);
-    centroid2 = surfmesh.cell_centroid(surf_union_faces[i]);
+    centroid1 = mesh->getFaceCentroid(union_faces[i])
+    centroid2 = surfmesh.getCellCentroid(surf_union_faces[i])
 
     CHECK_EQUAL(abs(centroid1.x() - centroid2.x()) < 0.01, true);
     CHECK_EQUAL(abs(centroid1.y() - centroid2.y()) < 0.01, true);

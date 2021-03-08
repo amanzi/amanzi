@@ -48,29 +48,29 @@ TEST(MSTK_HEX1)
 
   // Check number of nodes and their coordinates
 
-  nv = mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  nv = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NV,nv);
 
   for (i = 0; i < nv; i++) {
-    Amanzi::AmanziGeometry::Point coords(mesh->space_dimension());
+    Amanzi::AmanziGeometry::Point coords(mesh->get_space_dimension());
 
-    //    coords.init(mesh->space_dimension());
+    //    coords.init(mesh->get_space_dimension());
 
-    mesh->node_get_coordinates(i,&coords);
+    coords = mesh->getNodeCoordinate(i);
     CHECK_ARRAY_EQUAL(xyz[i],coords,3);
   }
 
 
   // Check number of cells and their face nodes and their face coordinates
   
-  nc = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
+  nc = mesh->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NC,nc);
 
 
   // Check cell coordinates directly
 
-  mesh->cell_get_nodes(0,&cellnodes);
-  mesh->cell_get_coordinates(0,&ccoords);
+  mesh->getCellNodes(0,cellnodes);
+  ccoords = mesh->getCellCoordinates(0);
     
   for (j = 0; j < 8; j++) {
     CHECK_ARRAY_EQUAL(xyz[cellnodes[j]],ccoords[j],3);
@@ -78,11 +78,11 @@ TEST(MSTK_HEX1)
 
 
     
-  mesh->cell_get_faces_and_dirs(0,&faces,&facedirs,true);
+  mesh->getCellFacesAndDirs(0,faces,&facedirs);
 
   for (j = 0; j < 6; j++) {
-    mesh->face_get_nodes(faces[j],&facenodes);
-    mesh->face_get_coordinates(faces[j],&fcoords);
+    mesh->getFaceNodes(faces[j],facenodes);
+    fcoords = mesh->getFaceCoordinates(faces[j]);
 
 
     for (k = 0; k < 4; k++)

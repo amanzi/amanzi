@@ -11,6 +11,7 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "GeometricModel.hh"
 
 #include "MeshAudit.hh"
 

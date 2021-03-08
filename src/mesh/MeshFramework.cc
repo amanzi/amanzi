@@ -28,8 +28,8 @@ MeshFramework::MeshFramework(const Comm_ptr_type& comm,
     manifold_dim_(-1),
     vis_mesh_(Teuchos::null)
 {
-  vo_ = Teuchos::rcp(new VerboseObject(comm, "MeshFramework", *plist));
-  if (!plist_.get()) plist_ = Teuchos::rcp(new Teuchos::ParameterList());
+  if (!plist_.get()) plist_ = Teuchos::rcp(new Teuchos::ParameterList("mesh"));
+  vo_ = Teuchos::rcp(new VerboseObject(comm, "MeshFramework", *plist_));
 }
 
 
@@ -65,9 +65,16 @@ Entity_ID MeshFramework::getEntityParent(const Entity_kind kind, const Entity_ID
 Cell_type
 MeshFramework::getCellType(const Entity_ID c) const
 {
+  Entity_ID_List faces;
+  getCellFaces(c, faces);
+  return getCellType_(c, faces);
+}
+
+Cell_type
+MeshFramework::getCellType_(const Entity_ID c,
+                           const Entity_ID_List& faces) const
+{
   if (get_manifold_dimension() == 2) {
-    Entity_ID_List faces;
-    getCellFaces(c, faces);
     switch (faces.size()) {
     case 3:
       return Cell_type::TRI;
@@ -79,33 +86,24 @@ MeshFramework::getCellType(const Entity_ID c) const
       return Cell_type::POLYGON;
     }
   } else if (get_manifold_dimension() == 3) {
-    Entity_ID_List faces;
-    getCellFaces(c, faces);
-    Entity_ID_List nodes;
-    getCellNodes(c, nodes);
-
     int nquads = 0;
+    for (const auto& f : faces) {
+      Entity_ID_List fnodes;
+      getFaceNodes(f, fnodes);
+      if (fnodes.size() == 4) nquads++;
+    }
+
     switch (faces.size()) {
       case 4:
-        if (nodes.size() == 3) return Cell_type::TET;
+        if (nquads == 0) return Cell_type::TET;
         else return Cell_type::POLYHED;
         break;
       case 5:
-        for (const auto& f : faces) {
-          Entity_ID_List fnodes;
-          getFaceNodes(f, fnodes);
-          if (fnodes.size() == 4) nquads++;
-        }
         if (nquads == 1) return Cell_type::PYRAMID;
         else if (nquads == 3) return Cell_type::PRISM;
         else return Cell_type::POLYHED;
         break;
       case 6:
-        for (const auto& f : faces) {
-          Entity_ID_List fnodes;
-          getFaceNodes(f, fnodes);
-          if (fnodes.size() == 4) nquads++;
-        }
         if (nquads == 6) return Cell_type::HEX;
         else return Cell_type::POLYHED;
         break;
@@ -117,6 +115,7 @@ MeshFramework::getCellType(const Entity_ID c) const
     msg << "Mesh of manifold_dimension = " << get_manifold_dimension() << " not supported";
     Exceptions::amanzi_throw(msg);
   }
+  return Cell_type::UNKNOWN;
 }
 
 
@@ -129,7 +128,7 @@ MeshFramework::setNodeCoordinate(const Entity_ID nodeid, const AmanziGeometry::P
 
 
 Point_List
-MeshFramework::cell_coordinates(const Entity_ID c) const
+MeshFramework::getCellCoordinates(const Entity_ID c) const
 {
   Entity_ID_List nodes;
   getCellNodes(c, nodes);
@@ -144,7 +143,7 @@ MeshFramework::cell_coordinates(const Entity_ID c) const
 }
 
 Point_List
-MeshFramework::face_coordinates(const Entity_ID f) const
+MeshFramework::getFaceCoordinates(const Entity_ID f) const
 {
   Entity_ID_List nodes;
   getFaceNodes(f, nodes);
@@ -159,7 +158,7 @@ MeshFramework::face_coordinates(const Entity_ID f) const
 }
 
 Point_List
-MeshFramework::edge_coordinates(const Entity_ID e) const
+MeshFramework::getEdgeCoordinates(const Entity_ID e) const
 {
   Entity_ID_List nodes;
   getEdgeNodes(e, nodes);
@@ -223,15 +222,16 @@ MeshFramework::getFaceNormal(const Entity_ID f, const Entity_ID c, int * const o
   if (c >= 0) {
     Entity_ID_List cells;
     getFaceCells(f, Parallel_type::ALL, cells);
-    AMANZI_ASSERT(cells.size() <= 2);
-    if (c == cells[0]) {
-      if (orientation) *orientation = 1;
-      return std::get<2>(geom)[0];
-    } else if (c == cells[1]) {
-      if (orientation) *orientation = -1;
-      return std::get<2>(geom)[1];
+
+    for (int i=0; i!=cells.size(); ++i) {
+      if (c == cells[i]) {
+        int dir = MeshAlgorithms::getFaceDirectionInCell(*this, f, c);
+        if (orientation) *orientation = dir;
+        return dir * std::get<2>(geom)[i];
+      }
     }
   }
+  // called with a negative argument, returns the natural normal
   return std::get<2>(geom)[0];
 }
 
@@ -283,9 +283,9 @@ MeshFramework::getEdgeCentroid(const Entity_ID e) const
 //
 void
 MeshFramework::getCellFacesAndBisectors(const Entity_ID cellid,
-        Entity_ID_List& faceids, Point_List * const bisectors, bool ordered) const
+        Entity_ID_List& faceids, Point_List * const bisectors) const
 {
-  getCellFaces(cellid, faceids, ordered);
+  getCellFaces(cellid, faceids);
   if (bisectors)
     MeshAlgorithms::computeBisectors(*this, cellid, faceids, *bisectors);
 }

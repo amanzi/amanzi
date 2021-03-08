@@ -50,11 +50,11 @@ TEST(EXTRACT_FRACTURE_MESH) {
   Entity_ID_List ids;
   for (auto name : setnames) {
     Entity_ID_List ids_l;
-    mesh3D->get_set_entities(name, AmanziMesh::FACE, Parallel_type::OWNED, &ids_l);
+    mesh3D->get_set_entities(name, AmanziMesh::Entity_kind::FACE, Parallel_type::OWNED, &ids_l);
     ids.insert(ids.end(), ids_l.begin(), ids_l.end());
   }
 
-  RCP<const Mesh> mesh = Teuchos::rcp(new Mesh_MSTK(mesh3D, ids, AmanziMesh::FACE,
+  RCP<const Mesh> mesh = Teuchos::rcp(new Mesh_MSTK(mesh3D, ids, AmanziMesh::Entity_kind::FACE,
                                                     false, comm, gm, plist, true, false));
 
   int ncells = mesh->cell_map(false).NumGlobalElements();

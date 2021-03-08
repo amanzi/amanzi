@@ -12,6 +12,7 @@
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
+#include "GeometricModel.hh"
 #include "MeshAudit.hh"
 
 #include "../../mesh_factory/MeshFrameworkFactory.hh"
@@ -122,77 +123,78 @@ TEST(ELIM_DEGEN_INLINE_PARTITION)
   Amanzi::AmanziMesh::Mesh_MSTK *mstk_mesh = 
       dynamic_cast<Amanzi::AmanziMesh::Mesh_MSTK *>(mesh.get());
   CHECK(mstk_mesh->run_internal_mstk_checks());
-  
-  // Create the surface mesh if needed
-  Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> surface_mesh = Teuchos::null;
-  Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> surface3D_mesh = Teuchos::null;
-  if (mesh_plist.isSublist("surface mesh")) {
-    Teuchos::ParameterList surface_plist = mesh_plist.sublist("surface mesh");
+
+
+  // // Create the surface mesh if needed
+  // Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> surface_mesh = Teuchos::null;
+  // Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> surface3D_mesh = Teuchos::null;
+  // if (mesh_plist.isSublist("surface mesh")) {
+  //   Teuchos::ParameterList surface_plist = mesh_plist.sublist("surface mesh");
     
-    std::vector<std::string> setnames;
-    if (surface_plist.isParameter("surface sideset name")) {
-      setnames.push_back(surface_plist.get<std::string>("surface sideset name"));
-    } else if (surface_plist.isParameter("surface sideset names")) {
-      setnames = surface_plist.get<Teuchos::Array<std::string> >("surface sideset names").toVector();
-    } else {
-      Errors::Message message("Surface mesh sublist missing parameter \"surface sideset names\".");
-      Exceptions::amanzi_throw(message);
-    }
+  //   std::vector<std::string> setnames;
+  //   if (surface_plist.isParameter("surface sideset name")) {
+  //     setnames.push_back(surface_plist.get<std::string>("surface sideset name"));
+  //   } else if (surface_plist.isParameter("surface sideset names")) {
+  //     setnames = surface_plist.get<Teuchos::Array<std::string> >("surface sideset names").toVector();
+  //   } else {
+  //     Errors::Message message("Surface mesh sublist missing parameter \"surface sideset names\".");
+  //     Exceptions::amanzi_throw(message);
+  //   }
     
-    if (mesh->manifold_dimension() == 3) {
-      surface3D_mesh = meshfactory.create(mesh,setnames,Amanzi::AmanziMesh::FACE,false);
-      surface_mesh = meshfactory.create(mesh,setnames,Amanzi::AmanziMesh::FACE,true);
-    } else {
-      surface3D_mesh = mesh;
-      surface_mesh = meshfactory.create(mesh,setnames,Amanzi::AmanziMesh::CELL,true);
-    }
+  //   if (mesh->get_manifold_dimension() == 3) {
+  //     surface3D_mesh = meshfactory.create(mesh,setnames,Amanzi::AmanziMesh::Entity_kind::FACE,false);
+  //     surface_mesh = meshfactory.create(mesh,setnames,Amanzi::AmanziMesh::Entity_kind::FACE,true);
+  //   } else {
+  //     surface3D_mesh = mesh;
+  //     surface_mesh = meshfactory.create(mesh,setnames,Amanzi::AmanziMesh::Entity_kind::CELL,true);
+  //   }
     
-    bool surf_verify = surface_plist.get<bool>("verify mesh", false);
-    if (surf_verify) {
-      if (rank == 0)
-        std::cout << "Verifying surface mesh with Mesh Audit..." << std::endl;
-      if (num_procs == 1) {
-        Amanzi::MeshAudit surf_mesh_auditor(surface_mesh);
-        int status = surf_mesh_auditor.Verify();
-        if (status == 0) {
-          std::cout << "Mesh Audit confirms that surface mesh is ok" << std::endl;
-        } else {
-          Errors::Message msg("Mesh Audit could not verify correctness of surface mesh.");
-          Exceptions::amanzi_throw(msg);
-        }
-      } else {
-        std::ostringstream ofile;
-        ofile << "surf_mesh_audit_" << std::setfill('0') << std::setw(4) << rank << ".txt";
-        std::ofstream ofs(ofile.str().c_str());
-        if (rank == 0)
-          std::cout << "Writing Surface Mesh Audit output to " << ofile.str() << ", etc." << std::endl;
+  //   bool surf_verify = surface_plist.get<bool>("verify mesh", false);
+  //   if (surf_verify) {
+  //     if (rank == 0)
+  //       std::cout << "Verifying surface mesh with Mesh Audit..." << std::endl;
+  //     if (num_procs == 1) {
+  //       Amanzi::MeshAudit surf_mesh_auditor(surface_mesh);
+  //       int status = surf_mesh_auditor.Verify();
+  //       if (status == 0) {
+  //         std::cout << "Mesh Audit confirms that surface mesh is ok" << std::endl;
+  //       } else {
+  //         Errors::Message msg("Mesh Audit could not verify correctness of surface mesh.");
+  //         Exceptions::amanzi_throw(msg);
+  //       }
+  //     } else {
+  //       std::ostringstream ofile;
+  //       ofile << "surf_mesh_audit_" << std::setfill('0') << std::setw(4) << rank << ".txt";
+  //       std::ofstream ofs(ofile.str().c_str());
+  //       if (rank == 0)
+  //         std::cout << "Writing Surface Mesh Audit output to " << ofile.str() << ", etc." << std::endl;
         
-        int ierr = 0, aerr = 0;
-        Amanzi::MeshAudit surf_mesh_auditor(mesh, ofs);
-        int status = surf_mesh_auditor.Verify();        // check the mesh
-        if (status != 0) ierr = 1;
+  //       int ierr = 0, aerr = 0;
+  //       Amanzi::MeshAudit surf_mesh_auditor(mesh, ofs);
+  //       int status = surf_mesh_auditor.Verify();        // check the mesh
+  //       if (status != 0) ierr = 1;
         
-        comm->SumAll(&ierr, &aerr, 1);
-        if (aerr == 0) {
-          if (rank == 0)
-            std::cout << "Mesh Audit confirms that surface mesh is ok" << std::endl;
-        } else {
-          Errors::Message msg("Mesh Audit could not verify correctness of surface mesh.");
-          Exceptions::amanzi_throw(msg);
-        }
-      }
-      std::cout << "Verifying the surface mesh using the internal MSTK check..." << std::endl;
-      Amanzi::AmanziMesh::Mesh_MSTK *surf_mstk_mesh =
-        dynamic_cast<Amanzi::AmanziMesh::Mesh_MSTK *>(surface_mesh.get());
-      CHECK(surf_mstk_mesh->run_internal_mstk_checks());
-    }  // if surf_verify
+  //       comm->SumAll(&ierr, &aerr, 1);
+  //       if (aerr == 0) {
+  //         if (rank == 0)
+  //           std::cout << "Mesh Audit confirms that surface mesh is ok" << std::endl;
+  //       } else {
+  //         Errors::Message msg("Mesh Audit could not verify correctness of surface mesh.");
+  //         Exceptions::amanzi_throw(msg);
+  //       }
+  //     }
+  //     std::cout << "Verifying the surface mesh using the internal MSTK check..." << std::endl;
+  //     Amanzi::AmanziMesh::Mesh_MSTK *surf_mstk_mesh =
+  //       dynamic_cast<Amanzi::AmanziMesh::Mesh_MSTK *>(surface_mesh.get());
+  //     CHECK(surf_mstk_mesh->run_internal_mstk_checks());
+  //   }  // if surf_verify
     
-    if (surface_plist.isParameter("export mesh to file")) {
-      std::string export_surf_mesh_filename =
-      surface_plist.get<std::string>("export mesh to file");
-      surface3D_mesh->write_to_exodus_file(export_surf_mesh_filename);
-    }
-  }
+  //   if (surface_plist.isParameter("export mesh to file")) {
+  //     std::string export_surf_mesh_filename =
+  //     surface_plist.get<std::string>("export mesh to file");
+  //     surface3D_mesh->write_to_exodus_file(export_surf_mesh_filename);
+  //   }
+  // }
   
   mesh->write_to_exodus_file(out_exo_filename);
 }
