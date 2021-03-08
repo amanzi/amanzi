@@ -18,5 +18,4 @@ jobs:
     - name: Docker build
       id: docker
       working-directory: Docker
-      run: echo "TPLs version = ${{steps.version.outputs.AMANZI_TPLS_VER}}"
       run: docker build --build-arg amanzi_tpls_ver=${{steps.version.outputs.AMANZI_TPLS_VER}} -t metsi/amanzi:latest -f Dockerfile-Amanzi .
