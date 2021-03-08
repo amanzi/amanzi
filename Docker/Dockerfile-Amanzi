@@ -35,12 +35,10 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --enable-alquimia --enable-pflotran --enable-crunchtope \
    --with-mpi=/usr \
    --enable-shared \
-   --dry_run
+   && cd /home/amanzi_user/amanzi_builddir/amanzi \
+   && make test
 
-#  && cd /home/amanzi_user/amanzi_builddir/amanzi \
-#  && make test
-
-# 2>&1 > ~/install/unit-tests-output.log 
+# make test 2>&1 > ~/install/unit-tests-output.log 
 
 #  && rm -r /home/amanzi_user/amanzi_builddir/
 
