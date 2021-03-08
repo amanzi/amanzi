@@ -13,5 +13,4 @@ jobs:
     - name: Docker build
       id: docker
       working_directory: Docker
-      run: docker build -t my-project/base .
-      docker build --build-arg amanzi_tpls_ver=${AMANZI_TPLS_VER} -t metsi/amanzi:latest -f Dockerfile-Amanzi . 
+      run: docker build --build-arg amanzi_tpls_ver=${AMANZI_TPLS_VER} -t metsi/amanzi:latest -f Dockerfile-Amanzi .
