@@ -13,5 +13,5 @@ jobs:
       working-directory: Docker
       run: echo "::set-output name=AMANZI_TPLS_VER=::0.97.12"
       id: version
-    - name Output the TPLs version
+    - name: Output the TPLs version
       run: echo "TPLs version = ${{steps.version.outputs.AMANZI_TPLS_VER}}"
