@@ -17,7 +17,7 @@ Checkpointing for state.
 #include "State.hh"
 #include "Epetra_MpiComm.h"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-
+#include "primary_variable_field_evaluator.hh"
 
 namespace Amanzi {
 
@@ -216,10 +216,21 @@ double Checkpoint::Read(State& S, const std::string& file_or_dirname)
     if (field->second->type() == COMPOSITE_VECTOR_FIELD &&
         field->second->io_checkpoint()) {
       Key domain = Keys::getDomain(field->first);
-      if (domain.empty()) domain = "domain";
-
+      if (domain.empty()) domain = "domain";      
+      
       bool read_complete = field->second->ReadCheckpoint(*output_[domain]);
-      if (read_complete) field->second->set_initialized();
+      if (read_complete) {
+        if (S.HasFieldEvaluator(field->first)) {
+          Teuchos::RCP<FieldEvaluator> fm = S.GetFieldEvaluator(field->first);
+          Teuchos::RCP<PrimaryVariableFieldEvaluator> solution_evaluator =
+            Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
+          if (solution_evaluator != Teuchos::null){
+            Teuchos::Ptr<State> S_ptr(&S);
+            solution_evaluator->SetFieldAsChanged(S_ptr);
+          }        
+          field->second->set_initialized();
+        }
+      }
     }
   }
 
