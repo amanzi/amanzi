@@ -2,7 +2,7 @@
 
 #
 #  ATS
-#    Lake Thermo PK class
+#    Soil Thermo PK class
 #
 
 include_directories(${ATS_SOURCE_DIR}/src/factory)

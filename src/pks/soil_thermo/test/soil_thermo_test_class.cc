@@ -1,6 +1,6 @@
 #include "soil_thermo_test_class.hh"
 
-LakeThermoTest::LakeThermoTest(Teuchos::ParameterList& plist_,
+SoilThermoTest::SoilThermoTest(Teuchos::ParameterList& plist_,
                              const Teuchos::RCP<AmanziMesh::Mesh>& mesh_,
                              int num_components_) :
     mesh(mesh_), parameter_list(plist_), num_components(num_components_) {
@@ -15,10 +15,10 @@ LakeThermoTest::LakeThermoTest(Teuchos::ParameterList& plist_,
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector("solution"));
 
   // create the PK
-  LTPK = Teuchos::rcp(new Lake_Thermo_PK(energy_plist, S0, soln));
+  LTPK = Teuchos::rcp(new Soil_Thermo_PK(energy_plist, S0, soln));
 }
 
-void LakeThermoTest::initialize() {
+void SoilThermoTest::initialize() {
   // initialize state, including darcy flux, sat, density, poro from parameter list
   S0->Initialize();
   S0->set_time(0.0);
@@ -37,11 +37,11 @@ void LakeThermoTest::initialize() {
   LTPK->set_states(S0,S0,S1);
 }
 
-void LakeThermoTest::commit_step() {
+void SoilThermoTest::commit_step() {
   *S0 = *S1;
 }
 
-void LakeThermoTest::initialize_owned() {
+void SoilThermoTest::initialize_owned() {
   Teuchos::RCP<CompositeVector> temp = S0->GetFieldData("temperature", "energy");
 
   int c_owned = temp->size("cell");
@@ -54,7 +54,7 @@ void LakeThermoTest::initialize_owned() {
   S0->GetField("temperature", "energy")->set_initialized();
 }
 
-void LakeThermoTest::initialize_mass_flux() {
+void SoilThermoTest::initialize_mass_flux() {
   const Epetra_BlockMap& fmap = mesh->face_map(true);
   Teuchos::RCP<CompositeVector> mass_flux =
     S0->GetFieldData("mass_flux", "state");
@@ -67,7 +67,7 @@ void LakeThermoTest::initialize_mass_flux() {
   S0->GetField("mass_flux", "state")->set_initialized();
 }
 
-void LakeThermoTest::evaluate_error_temp(double t, double* L1, double* L2) {
+void SoilThermoTest::evaluate_error_temp(double t, double* L1, double* L2) {
   const Epetra_BlockMap& cmap = mesh->cell_map(true);
   Teuchos::RCP<const CompositeVector> temp = S1->GetFieldData("temperature");
 
@@ -88,44 +88,44 @@ void LakeThermoTest::evaluate_error_temp(double t, double* L1, double* L2) {
   *L2 = sqrt(*L2);
 }
 
-AmanziGeometry::Point LakeThermoTest::my_u(const AmanziGeometry::Point& x, double t) {
+AmanziGeometry::Point SoilThermoTest::my_u(const AmanziGeometry::Point& x, double t) {
   return AmanziGeometry::Point(1.0, 0.0, 0.0);
 }
 
 // test problem with constant solution of 1
-LakeThermoTestOne::LakeThermoTestOne(Teuchos::ParameterList& plist_,
+SoilThermoTestOne::SoilThermoTestOne(Teuchos::ParameterList& plist_,
         const Teuchos::RCP<AmanziMesh::Mesh>& mesh_, int num_components_) :
-  LakeThermoTest::LakeThermoTest(plist_, mesh_, num_components_) {}
+  SoilThermoTest::SoilThermoTest(plist_, mesh_, num_components_) {}
 
-double LakeThermoTestOne::my_f(const AmanziGeometry::Point& x, double t) {
+double SoilThermoTestOne::my_f(const AmanziGeometry::Point& x, double t) {
   return 293.15;
 }
 
 // test problem with step solution
-LakeThermoTestStep::LakeThermoTestStep(Teuchos::ParameterList& plist_,
+SoilThermoTestStep::SoilThermoTestStep(Teuchos::ParameterList& plist_,
         const Teuchos::RCP<AmanziMesh::Mesh>& mesh_, int num_components_) :
-  LakeThermoTest::LakeThermoTest(plist_, mesh_, num_components_) {}
+  SoilThermoTest::SoilThermoTest(plist_, mesh_, num_components_) {}
 
-double LakeThermoTestStep::my_f(const AmanziGeometry::Point& x, double t) {
+double SoilThermoTestStep::my_f(const AmanziGeometry::Point& x, double t) {
   if (x[0] <= 1 + t) return 293.15;
   return 0;
 }
 
 // // test problem with smooth solution
-// LakeThermoTestSmooth::LakeThermoTestSmooth(Teuchos::ParameterList& plist_,
+// SoilThermoTestSmooth::SoilThermoTestSmooth(Teuchos::ParameterList& plist_,
 //         const Teuchos::RCP<AmanziMesh::Mesh>& mesh_, int num_components_) :
-//   LakeThermoTest::LakeThermoTest(plist_, mesh_, num_components_) {}
+//   SoilThermoTest::SoilThermoTest(plist_, mesh_, num_components_) {}
 
-// double LakeThermoTestSmooth::my_f(const AmanziGeometry::Point& x, double t) {
+// double SoilThermoTestSmooth::my_f(const AmanziGeometry::Point& x, double t) {
 //   return 0.5 - atan(50*(x[0]-5-t)) / M_PI;
 // }
 
 // // test problem with cubic solution
-// LakeThermoTestCubic::LakeThermoTestCubic(Teuchos::ParameterList& plist_,
+// SoilThermoTestCubic::SoilThermoTestCubic(Teuchos::ParameterList& plist_,
 //         const Teuchos::RCP<AmanziMesh::Mesh>& mesh_, int num_components_) :
-//   LakeThermoTest::LakeThermoTest(plist_, mesh_, num_components_) {}
+//   SoilThermoTest::SoilThermoTest(plist_, mesh_, num_components_) {}
 
-// double LakeThermoTestCubic::my_f(const AmanziGeometry::Point& x, double t) {
+// double SoilThermoTestCubic::my_f(const AmanziGeometry::Point& x, double t) {
 //   if( x[0] < 1 + t ) return 1;
 //   if( x[0] > 3 + t ) return 0;
 //   double z = (x[0]-1-t) / 2;
@@ -133,15 +133,15 @@ double LakeThermoTestStep::my_f(const AmanziGeometry::Point& x, double t) {
 // }
 
 // test problem on 2D square with velocity in the <1,1> x-y direction, still virtual
-LakeThermoTestTwoDOne::LakeThermoTestTwoDOne(Teuchos::ParameterList& plist_,
+SoilThermoTestTwoDOne::SoilThermoTestTwoDOne(Teuchos::ParameterList& plist_,
         const Teuchos::RCP<AmanziMesh::Mesh>& mesh_, int num_components_) :
-  LakeThermoTest::LakeThermoTest(plist_, mesh_, num_components_) {}
+  SoilThermoTest::SoilThermoTest(plist_, mesh_, num_components_) {}
 
-AmanziGeometry::Point LakeThermoTestTwoDOne::my_u(const AmanziGeometry::Point& x, double t) {
+AmanziGeometry::Point SoilThermoTestTwoDOne::my_u(const AmanziGeometry::Point& x, double t) {
   return AmanziGeometry::Point(1.0, 1.0);
 }
 
-double LakeThermoTestTwoDOne::my_f(const AmanziGeometry::Point& x, double t) {
+double SoilThermoTestTwoDOne::my_f(const AmanziGeometry::Point& x, double t) {
   return 293.15;
 }
 

@@ -2,7 +2,7 @@
 
 #
 #  ATS
-#    Lake Thermo Heat Flux Evaluator class
+#    Soil Thermo Heat Flux Evaluator class
 #
 
 include_directories(${ATS_SOURCE_DIR}/src/factory)

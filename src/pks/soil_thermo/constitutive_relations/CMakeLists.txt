@@ -8,12 +8,12 @@
 # collect all registrations and register
 file(GLOB_RECURSE registrations "./*_reg.hh" )
 foreach(reg_lcv IN LISTS registrations)
-  register_abs_evaluator_with_factory(HEADERFILE ${reg_lcv} LISTNAME ATS_LAKE_THERMO_RELATIONS_REG)
+  register_abs_evaluator_with_factory(HEADERFILE ${reg_lcv} LISTNAME ATS_SOIL_THERMO_RELATIONS_REG)
 endforeach(reg_lcv)
 
 generate_evaluators_registration_header(
   HEADERFILE ats_soil_thermo_relations_registration.hh
-  LISTNAME   ATS_LAKE_THERMO_RELATIONS_REG
+  LISTNAME   ATS_SOIL_THERMO_RELATIONS_REG
   INSTALL    True
   )
 
