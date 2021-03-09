@@ -45,6 +45,7 @@ EnergyBase::EnergyBase(Teuchos::ParameterList& FElist,
     coupled_to_subsurface_via_flux_(false),
     coupled_to_surface_via_temp_(false),
     coupled_to_surface_via_flux_(false),
+    decoupled_from_subsurface_(false),
     niter_(0),
     flux_exists_(true),
     implicit_advection_(true)
@@ -289,6 +290,8 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S)
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
+  decoupled_from_subsurface_ = plist_->get<bool>("decoupled from subsurface", false); //surface-only system
+  
   // -- Make sure coupling isn't flagged multiple ways.
   if (coupled_to_surface_via_flux_ && coupled_to_surface_via_temp_) {
     Errors::Message message("Energy PK requested both flux and temperature coupling -- choose one.");

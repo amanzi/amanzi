@@ -15,23 +15,22 @@ namespace Flow {
 WaterTableColumnsEvaluator::WaterTableColumnsEvaluator(Teuchos::ParameterList& plist)
     : SecondaryVariableFieldEvaluator(plist)
 {
-  domain_ = Keys::getDomain(my_key_);
-  auto pos = domain_.find_last_of(':');
-  int col_id = std::stoi(domain_.substr(pos+1, domain_.size()));
+  Key dset_name = plist.get<std::string>("domain set name", "column");
+  Key surf_dset_name = plist.get<std::string>("surface domain set name", "surface_column");
   
-  std::stringstream domain_ss;
-  domain_ss << "column:"<< col_id;
-
-  std::stringstream domain_sf;
-  domain_sf << "surface_column:"<< col_id;
+  domain_ = Keys::getDomain(my_key_); //surface_column domain
+  int col_id = Keys::getDomainSetIndex<int>(domain_);
   
-  temp_key_ = Keys::getKey(domain_ss.str(),"temperature");
+  Key domain_ss = Keys::getDomainInSet(dset_name, col_id);
+  Key domain_sf = Keys::getDomainInSet(surf_dset_name, col_id);
+  
+  temp_key_ = Keys::getKey(domain_ss,"temperature");
   dependencies_.insert(temp_key_);
   
-  sat_key_ = Keys::getKey(domain_ss.str(),"saturation_liquid");
+  sat_key_ = Keys::getKey(domain_ss,"saturation_liquid");
   dependencies_.insert(sat_key_);
 
-  pd_key_ = Keys::getKey(domain_sf.str(),"ponded_depth");
+  pd_key_ = Keys::getKey(domain_sf,"ponded_depth");
   dependencies_.insert(pd_key_);
   
   trans_width_ =  plist_.get<double>("transition width [K]", 0.0);
