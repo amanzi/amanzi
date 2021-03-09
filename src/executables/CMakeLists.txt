@@ -63,6 +63,8 @@ include_evaluators_directories(LISTNAME ATS_FLOW_PKS_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ATS_FLOW_RELATIONS_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ATS_LAKE_THERMO_PKS_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ATS_LAKE_THERMO_RELATIONS_REG_INCLUDES)
+include_evaluators_directories(LISTNAME ATS_SOIL_THERMO_PKS_REG_INCLUDES)
+include_evaluators_directories(LISTNAME ATS_SOIL_THERMO_RELATIONS_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ATS_DEFORMATION_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ATS_SURFACE_BALANCE_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ATS_BGC_REG_INCLUDES)
@@ -128,6 +130,8 @@ set(ats_link_libs
   ats_mpc_relations
   ats_lake
   ats_lake_thermo_relations
+  ats_soil
+  ats_soil_thermo_relations
   )
 
 # note, we can be inclusive here, because if they aren't enabled,
