@@ -1634,9 +1634,6 @@ void Transport_ATS::ComputeAddSourceTerms(double tp, double dtp,
 
         int imap = i;
         if (num_vectors == 1) imap = 0;
-
-	//        std::cout<<"values "<<values[k]<<"\n";
-
         double value = mesh_->cell_volume(c) * values[k];
         cons_qty[imap][c] += dtp * value;
         mass_solutes_source_[i] += value;
