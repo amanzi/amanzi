@@ -5,12 +5,12 @@ ATS
 
 Authors: Svetlana Tokareva (tokareva@lanl.gov)
 
-FieldEvaluator for water density.
+FieldEvaluator for energy, e = cp*rho*T.
 ----------------------------------------------------------------------------- */
 
 
-#ifndef AMANZI_LAKE_DENSITY_EVALUATOR_HH_
-#define AMANZI_LAKE_DENSITY_EVALUATOR_HH_
+#ifndef AMANZI_SOIL_ENERGY_EVALUATOR_HH_
+#define AMANZI_SOIL_ENERGY_EVALUATOR_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -18,14 +18,14 @@ FieldEvaluator for water density.
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
-namespace LakeThermo {
+namespace SoilThermo {
 
-class DensityEvaluator : public SecondaryVariableFieldEvaluator {
+class SoilEnergyEvaluator : public SecondaryVariableFieldEvaluator {
 
  public:
   explicit
-  DensityEvaluator(Teuchos::ParameterList& plist);
-  DensityEvaluator(const DensityEvaluator& other);
+  SoilEnergyEvaluator(Teuchos::ParameterList& plist);
+  SoilEnergyEvaluator(const SoilEnergyEvaluator& other);
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
@@ -40,7 +40,7 @@ class DensityEvaluator : public SecondaryVariableFieldEvaluator {
   Key temperature_key_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,DensityEvaluator> factory_;
+  static Utils::RegisteredFactory<FieldEvaluator,SoilEnergyEvaluator> factory_;
 
 };
 

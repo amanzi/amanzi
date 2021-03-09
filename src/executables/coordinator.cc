@@ -428,6 +428,7 @@ double Coordinator::get_dt(bool after_fail) {
 
   // ask the step manager if this step is ok
   dt = tsm_->TimeStep(S_next_->time(), dt, after_fail);
+
   return dt;
 }
 
@@ -582,15 +583,9 @@ void Coordinator::cycle_driver() {
       S_->set_final_time(S_->time() + dt);
       S_->set_intermediate_time(S_->time());
 
-      std::cout << "cycle_driver: before advance" << std::endl;
-
       fail = advance(S_->time(), S_->time() + dt);
 
-      std::cout << "cycle_driver: after advance" << std::endl;
-
       dt = get_dt(fail);
-
-      std::cout << "cycle_driver: time = " << S_->time() << std::endl;
 
     } // while not finished
 

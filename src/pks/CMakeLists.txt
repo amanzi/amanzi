@@ -48,6 +48,7 @@ add_amanzi_library(ats_pks
 
 
 add_subdirectory(lake_thermo)
+add_subdirectory(soil_thermo)
 add_subdirectory(energy)
 add_subdirectory(flow)
 add_subdirectory(transport)

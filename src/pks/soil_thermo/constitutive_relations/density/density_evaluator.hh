@@ -9,8 +9,8 @@ FieldEvaluator for water density.
 ----------------------------------------------------------------------------- */
 
 
-#ifndef AMANZI_LAKE_DENSITY_EVALUATOR_HH_
-#define AMANZI_LAKE_DENSITY_EVALUATOR_HH_
+#ifndef AMANZI_SOIL_DENSITY_EVALUATOR_HH_
+#define AMANZI_SOIL_DENSITY_EVALUATOR_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -18,7 +18,7 @@ FieldEvaluator for water density.
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
-namespace LakeThermo {
+namespace SoilThermo {
 
 class DensityEvaluator : public SecondaryVariableFieldEvaluator {
 

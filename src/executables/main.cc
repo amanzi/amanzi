@@ -35,6 +35,8 @@
 #include "multiscale_transport_registration.hh"
 #include "ats_lake_pks_registration.hh"
 #include "ats_lake_thermo_relations_registration.hh"
+#include "ats_soil_pks_registration.hh"
+#include "ats_soil_thermo_relations_registration.hh"
 #ifdef ALQUIMIA_ENABLED
 #include "pks_chemistry_registration.hh"
 #endif

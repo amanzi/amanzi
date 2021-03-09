@@ -29,7 +29,7 @@ def parse_logfile(fid, wallclock=False):
             if len(data) > 0 and data[-1][0] == cyc:
                 faildata.append(data.pop())
             data.append([cyc,time,dt])
-
+            
     return np.array(data), np.array(faildata)
 
 

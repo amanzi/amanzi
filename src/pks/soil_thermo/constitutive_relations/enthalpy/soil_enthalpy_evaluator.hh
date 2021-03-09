@@ -3,14 +3,14 @@
 /* -----------------------------------------------------------------------------
 ATS
 
-Authors: Svetlana Tokareva (tokareva@lanl.gov)
+Authors: Ethan Coon (ecoon@lanl.gov)
 
-FieldEvaluator for water density.
+FieldEvaluator for enthalpy.
 ----------------------------------------------------------------------------- */
 
 
-#ifndef AMANZI_LAKE_DENSITY_EVALUATOR_HH_
-#define AMANZI_LAKE_DENSITY_EVALUATOR_HH_
+#ifndef AMANZI_SOIL_ENTHALPY_EVALUATOR_HH_
+#define AMANZI_SOIL_ENTHALPY_EVALUATOR_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -18,14 +18,14 @@ FieldEvaluator for water density.
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
-namespace LakeThermo {
+namespace SoilThermo {
 
-class DensityEvaluator : public SecondaryVariableFieldEvaluator {
+class SoilEnthalpyEvaluator : public SecondaryVariableFieldEvaluator {
 
  public:
   explicit
-  DensityEvaluator(Teuchos::ParameterList& plist);
-  DensityEvaluator(const DensityEvaluator& other);
+  SoilEnthalpyEvaluator(Teuchos::ParameterList& plist);
+  SoilEnthalpyEvaluator(const SoilEnthalpyEvaluator& other);
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
@@ -37,10 +37,13 @@ class DensityEvaluator : public SecondaryVariableFieldEvaluator {
 
  protected:
 
-  Key temperature_key_;
+  Key pres_key_;
+  Key dens_key_;
+  Key ie_key_;
+  bool include_work_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,DensityEvaluator> factory_;
+  static Utils::RegisteredFactory<FieldEvaluator,SoilEnthalpyEvaluator> factory_;
 
 };
 
