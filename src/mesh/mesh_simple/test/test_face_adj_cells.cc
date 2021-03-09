@@ -48,9 +48,9 @@ TEST(FACE_ADJ_CELLS) {
 
   Amanzi::AmanziMesh::Mesh_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3, comm); 
 
-  CHECK_EQUAL(exp_ncell,Mm.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED));
-  CHECK_EQUAL(exp_nface,Mm.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED));
-  CHECK_EQUAL(exp_nnode,Mm.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::OWNED));
+  CHECK_EQUAL(exp_ncell,Mm.getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED));
+  CHECK_EQUAL(exp_nface,Mm.getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED));
+  CHECK_EQUAL(exp_nnode,Mm.getNumEntities(Amanzi::AmanziMesh::Entity_kind::NODE,Amanzi::AmanziMesh::Parallel_type::OWNED));
 
 
   for (int i = 0; i < exp_ncell; i++)

@@ -89,9 +89,9 @@ class Mesh_MSTK : public MeshFramework {
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm=Teuchos::null,
             const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null);
 
-  ~Mesh_MSTK();
+  virtual ~Mesh_MSTK();
 
-  virtual void write_to_exodus_file(const std::string& filename) const override;
+  virtual void writeToExodusFile(const std::string& filename) const override;
 
   //
   // Accessors/mutators
@@ -158,11 +158,6 @@ class Mesh_MSTK : public MeshFramework {
   // Get edges of a cell
   virtual void getCellEdges(const Entity_ID cellid,
                   Entity_ID_List& edgeids) const override;
-
-  // Get edges and directions of a 2D cell
-  virtual void getCell2DEdgesAndDirs(const Entity_ID cellid,
-          Entity_ID_List& edgeids,
-          Entity_Direction_List * const edgedirs) const override;
 
   // Get nodes of cell
   // On a distributed mesh, all nodes (OWNED or GHOST) of the cell

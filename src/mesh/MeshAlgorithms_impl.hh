@@ -38,33 +38,44 @@ template<class Mesh_type>
 std::pair<double, AmanziGeometry::Point>
 computeCellGeometry(const Mesh_type& mesh, const Entity_ID c)
 {
-  Entity_ID_List faces;
-  std::vector<std::size_t> nfnodes;
-  Entity_Direction_List fdirs;
-  Point_List cfcoords;
+  if (mesh.get_manifold_dimension() == 2) {
+    auto ccoords = mesh.getCellCoordinates(c);
+    auto vol_cent = std::make_pair((double)0,
+            AmanziGeometry::Point(mesh.get_space_dimension()));
+    AmanziGeometry::Point normal(mesh.get_space_dimension());
+    AmanziGeometry::polygon_get_area_centroid_normal(ccoords,
+            &vol_cent.first, &vol_cent.second, &normal);
+    return vol_cent;
+  } else {
 
-  mesh.getCellFacesAndDirs(c, faces, &fdirs);
-  nfnodes.resize(faces.size());
+    Entity_ID_List faces;
+    std::vector<std::size_t> nfnodes;
+    Entity_Direction_List fdirs;
+    Point_List cfcoords;
 
-  for (int j = 0; j != faces.size(); ++j) {
-    auto fcoords = mesh.getFaceCoordinates(faces[j]);
-    nfnodes[j] = fcoords.size();
+    mesh.getCellFacesAndDirs(c, faces, &fdirs);
+    nfnodes.resize(faces.size());
 
-    if (fdirs[j] == 1) {
-      for (int k = 0; k != nfnodes[j]; ++k)
-        cfcoords.emplace_back(fcoords[k]);
-    } else {
-      for (int k = nfnodes[j]-1; k >= 0; --k)
-        cfcoords.emplace_back(fcoords[k]);
+    for (int j = 0; j != faces.size(); ++j) {
+      auto fcoords = mesh.getFaceCoordinates(faces[j]);
+      nfnodes[j] = fcoords.size();
+
+      if (fdirs[j] == 1) {
+        for (int k = 0; k != nfnodes[j]; ++k)
+          cfcoords.emplace_back(fcoords[k]);
+      } else {
+        for (int k = nfnodes[j]-1; k >= 0; --k)
+          cfcoords.emplace_back(fcoords[k]);
+      }
     }
-  }
 
-  auto ccoords = mesh.getCellCoordinates(c);
-  auto vol_cent = std::make_pair((double)0,
-          AmanziGeometry::Point(mesh.get_space_dimension()));
-  AmanziGeometry::polyhed_get_vol_centroid(ccoords, faces.size(), nfnodes,
+    auto ccoords = mesh.getCellCoordinates(c);
+    auto vol_cent = std::make_pair((double)0,
+            AmanziGeometry::Point(mesh.get_space_dimension()));
+    AmanziGeometry::polyhed_get_vol_centroid(ccoords, faces.size(), nfnodes,
             cfcoords, &vol_cent.first, &vol_cent.second);
-  return vol_cent;
+    return vol_cent;
+  }
 }
 
 

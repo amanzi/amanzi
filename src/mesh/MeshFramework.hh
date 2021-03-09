@@ -8,8 +8,17 @@
 */
 
 //! The interface for meshes provided by external frameworks.
-
 /*!
+
+Developer note:
+
+This interface is largely here for testing.  Very little is likely to be used
+in the final code, because largely the interface will be used to generate a
+MeshCache object.  The MeshCache will then provide the full interface using
+fast access, non-virtual methods.
+
+A new Framework really must supply only a handful of methods, but may choose to
+provide more, as long as they are consistent.
 
 */
 
@@ -87,7 +96,9 @@ class MeshFramework  {
   // Some meshes can be deformed.
   virtual bool is_deformable() const { return false; }
 
-  virtual void write_to_exodus_file(const std::string& filename) const = 0;
+  virtual void writeToExodusFile(const std::string& filename) const {
+    throwNotImplemented_("writeExodusFile");
+  }
 
   // ----------------
   // Entity meta-data
@@ -228,16 +239,6 @@ class MeshFramework  {
   virtual void getCellEdges(const Entity_ID c, Entity_ID_List& edges) const;
   virtual void getCellNodes(const Entity_ID c, Entity_ID_List& nodes) const;
 
-  // Get edges and dirs of a 2D cell.
-  //
-  // This is to make the code cleaner for integrating over the cell in 2D
-  // where faces and edges are identical but integrating over the cells using
-  // face information is more cumbersome (one would have to take the face
-  // normals, rotate them and then get a consistent edge vector)
-  virtual void getCell2DEdgesAndDirs(const Entity_ID cellid,
-          Entity_ID_List& edgeids,
-          Entity_Direction_List * const edge_dirs) const;
-
   void getFaceEdges(const Entity_ID f,
                   Entity_ID_List& edges) const {
     getFaceEdgesAndDirs(f, edges);
@@ -259,7 +260,7 @@ class MeshFramework  {
   // integral around the 2D cell.
   virtual void getFaceEdgesAndDirs(const Entity_ID f,
           Entity_ID_List& edges,
-          Entity_Direction_List * const dirs=nullptr) const = 0;
+          Entity_Direction_List * const dirs=nullptr) const;
 
   // Get nodes of face
   //
@@ -276,37 +277,37 @@ class MeshFramework  {
   // is not guaranteed to be the same for corresponding faces on different
   // processors
   virtual void getFaceCells(const Entity_ID f,
-                          const Parallel_type ptype,
-                          Entity_ID_List& cells) const = 0;
+                            const Parallel_type ptype,
+                            Entity_ID_List& cells) const = 0;
 
   // Cells of a given Parallel_type connected to an edge
   //
   // The order of cells is not guaranteed to be the same for corresponding
   // edges on different processors
   virtual void getEdgeCells(const Entity_ID edgeid,
-                          const Parallel_type ptype,
-                          Entity_ID_List& cellids) const = 0;
+                            const Parallel_type ptype,
+                            Entity_ID_List& cellids) const;
 
   // Faces of type 'ptype' connected to an edge
   // NOTE: The order of faces is not guaranteed to be the same for
   // corresponding edges on different processors
   virtual void getEdgeFaces(const Entity_ID edgeid,
-                          const Parallel_type ptype,
-                          Entity_ID_List& faceids) const = 0;
+                            const Parallel_type ptype,
+                            Entity_ID_List& faceids) const;
 
   // Cells of type 'ptype' connected to a node
   // NOTE: The order of cells is not guaranteed to be the same for
   // corresponding nodes on different processors
   virtual void getNodeCells(const Entity_ID nodeid,
-                          const Parallel_type ptype,
-                          Entity_ID_List& cellids) const;
+                            const Parallel_type ptype,
+                            Entity_ID_List& cellids) const;
 
   // Faces of type parallel 'ptype' connected to a node
   // NOTE: The order of faces is not guarnateed to be the same for
   // corresponding nodes on different processors
   virtual void getNodeFaces(const Entity_ID nodeid,
-                          const Parallel_type ptype,
-                          Entity_ID_List& faceids) const = 0;
+                            const Parallel_type ptype,
+                            Entity_ID_List& faceids) const = 0;
 
   // Edges of type 'ptype' connected to a node
   //

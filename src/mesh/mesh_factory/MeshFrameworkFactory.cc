@@ -16,7 +16,7 @@
 #include "FileFormat.hh"
 
 // #include "MeshExtractedManifold.hh"
-// #include "Mesh_simple.hh"
+#include "Mesh_simple.hh"
 
 #ifdef HAVE_MSTK_MESH
 #include "Mesh_MSTK.hh"
@@ -104,7 +104,6 @@ MeshFrameworkFactory::create(const std::string& filename)
           (nproc > 1 && (fmt == FileFormat::EXODUS_II || fmt == FileFormat::NEMESIS))) {
         auto mesh = Teuchos::rcp(new Mesh_MSTK(filename, comm_, gm_,
                 Teuchos::rcp(new Teuchos::ParameterList(*plist_))));
-//        mesh->BuildCache();
         return mesh;
       }
     }
@@ -115,7 +114,6 @@ MeshFrameworkFactory::create(const std::string& filename)
       if (fmt == FileFormat::MOAB_HDF5 || (nproc == 1 && fmt == FileFormat::EXODUS_II)) {
         auto mesh = Teuchos::rcp(new Mesh_MOAB(filename, comm_, gm_,
                 Teuchos::rcp(new Teuchos::ParameterList(*plist_))));
-//        mesh->BuildCache();
         return mesh;
       }
     }
@@ -150,15 +148,13 @@ MeshFrameworkFactory::create(const double x0, const double y0, const double z0,
   int nproc = comm_->NumProc();
 
   for (auto p : preference_) {
-    // if (p == Framework::SIMPLE && nproc == 1) {
-    //   auto mesh = Teuchos::rcp(new Mesh_simple(
-    //       x0, y0, z0, x1, y1, z1, nx, ny, nz,
-    //       comm_, gm_,
-//    Teuchos::rcp(new Teuchos::ParameterList(*plist_))));
-
-    //   mesh->BuildCache();
-    //   return mesh;
-    // }
+    if (p == Framework::SIMPLE && nproc == 1) {
+      auto mesh = Teuchos::rcp(new Mesh_simple(
+                x0, y0, z0, x1, y1, z1, nx, ny, nz,
+                comm_, gm_,
+                Teuchos::rcp(new Teuchos::ParameterList(*plist_))));
+      return mesh;
+    }
 
 #ifdef HAVE_MSTK_MESH
     if (p == Framework::MSTK) {

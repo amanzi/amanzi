@@ -400,7 +400,6 @@ TEST(MESH_GEOMETRY_SOLID)
       Amanzi::AmanziMesh::Preference prefs(meshfactory.get_preference());
       prefs.clear(); 
       prefs.push_back(frameworks[frm]);
-
       meshfactory.set_preference(prefs);
 
       mesh = meshfactory.create(0.0,0.0,0.0,1.0,1.0,1.0,2,2,2);
@@ -414,8 +413,7 @@ TEST(MESH_GEOMETRY_SOLID)
     }
 
     comm->SumAll(&ierr, &aerr, 1);
-
-    CHECK_EQUAL(aerr,0);
+    CHECK_EQUAL(0, aerr);
 
 
     double exp_getCellVolume[8] = {0.125,0.125,0.125,0.125,

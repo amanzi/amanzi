@@ -56,8 +56,6 @@ if (BUILD_TESTS)
                           test/Main.cc 
                           test/test_maps.cc 
                           test/test_cell_numbering.cc 
-                          test/test_face_adj_cells.cc 
-                          test/test_sets.cc
                     LINK_LIBS simple_mesh ${UnitTest_LIBRARIES})
 
 endif()

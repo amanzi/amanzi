@@ -85,7 +85,7 @@ TEST(SETS) {
 
         // Do we have a valid sideset by this name
         
-        CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::FACE));
+        CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::Entity_kind::FACE));
         
         int j;
         for (j = 0; j < 2; j++) {
@@ -97,7 +97,7 @@ TEST(SETS) {
         
         // Verify that we can get the right number of entities in the set
         
-        int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::ALL);
+        int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::Entity_kind::FACE,Amanzi::AmanziMesh::Parallel_type::ALL);
         
         CHECK_EQUAL(expfsetsizes[j],set_size);
         
@@ -105,7 +105,7 @@ TEST(SETS) {
         // Verify that we can get the correct set entities
         
         Amanzi::AmanziMesh::Entity_ID_List setents;
-        mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::ALL,&setents);
+        mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::Entity_kind::FACE,Amanzi::AmanziMesh::Parallel_type::ALL,&setents);
         
         CHECK_ARRAY_EQUAL(expfsetfaces[j],setents,set_size);
         
@@ -114,7 +114,7 @@ TEST(SETS) {
 
         // Do we have a valid nodeset by this name
         
-        CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::NODE));
+        CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::Entity_kind::NODE));
         
         int j;
         for (j = 0; j < 3; j++) {
@@ -126,7 +126,7 @@ TEST(SETS) {
         
         // Verify that we can get the right number of entities in the set
         
-        int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);
+        int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::Entity_kind::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);
         
         CHECK_EQUAL(expnsetsizes[j],set_size);
         
@@ -134,7 +134,7 @@ TEST(SETS) {
         // Verify that we can get the correct set entities
         
         Amanzi::AmanziMesh::Entity_ID_List setents;
-        mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL,&setents);
+        mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::Entity_kind::NODE,Amanzi::AmanziMesh::Parallel_type::ALL,&setents);
         
         CHECK_ARRAY_EQUAL(expnsetnodes[j],setents,set_size);
         
@@ -155,7 +155,7 @@ TEST(SETS) {
 
             // Do we have a valid sideset by this name
             
-            CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::FACE));
+            CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::Entity_kind::FACE));
             
             int j;
             for (j = 0; j < 2; j++) {
@@ -167,7 +167,7 @@ TEST(SETS) {
             
             // Verify that we can get the right number of entities in the set
             
-            int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::ALL);
+            int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::Entity_kind::FACE,Amanzi::AmanziMesh::Parallel_type::ALL);
             
             CHECK_EQUAL(expfsetsizes[j],set_size);
             
@@ -175,7 +175,7 @@ TEST(SETS) {
             // Verify that we can get the correct set entities
             
             Amanzi::AmanziMesh::Entity_ID_List setents;
-            mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::ALL,&setents);
+            mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::Entity_kind::FACE,Amanzi::AmanziMesh::Parallel_type::ALL,&setents);
             
             CHECK_ARRAY_EQUAL(expfsetfaces[j],setents,set_size);	  
             
@@ -184,7 +184,7 @@ TEST(SETS) {
 
             // Do we have a valid set by this name
             
-            CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::NODE));
+            CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::Entity_kind::NODE));
             
             int j;
             for (j = 0; j < 3; j++) {
@@ -196,7 +196,7 @@ TEST(SETS) {
             
             // Verify that we can get the right number of entities in the set
             
-            int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);
+            int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::Entity_kind::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);
             
             CHECK_EQUAL(expnsetsizes[j],set_size);
             
@@ -204,7 +204,7 @@ TEST(SETS) {
             // Verify that we can get the correct set entities
             
             Amanzi::AmanziMesh::Entity_ID_List setents;
-            mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL,&setents);
+            mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::Entity_kind::NODE,Amanzi::AmanziMesh::Parallel_type::ALL,&setents);
             
             CHECK_ARRAY_EQUAL(expnsetnodes[j],setents,set_size);	  
                         
@@ -214,7 +214,7 @@ TEST(SETS) {
 	{
 	  // Do we have a valid cellset by this name
 	  
-	  CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
+	  CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::Entity_kind::CELL));
 	  
 	  // Find the expected cell set info corresponding to this name 
 	  
@@ -226,14 +226,14 @@ TEST(SETS) {
 	  
 	  // Verify that we can get the right number of entities in the set
 	  
-	  int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::ALL);
+	  int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::Entity_kind::CELL,Amanzi::AmanziMesh::Parallel_type::ALL);
 	  
 	  CHECK_EQUAL(expcsetsizes[j],set_size);
 	  
 	  // Verify that we can get the correct set entities
 	  
 	  Amanzi::AmanziMesh::Entity_ID_List setents;
-	  mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::ALL,&setents);
+	  mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::Entity_kind::CELL,Amanzi::AmanziMesh::Parallel_type::ALL,&setents);
 	  
 	  CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);
 	}
@@ -242,7 +242,7 @@ TEST(SETS) {
 
       // Do we have a valid set by this name
       
-      CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::NODE));
+      CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::Entity_kind::NODE));
       
       int j;
       for (j = 0; j < 3; j++) {
@@ -254,7 +254,7 @@ TEST(SETS) {
             
       // Verify that we can get the right number of entities in the set
       
-      int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);
+      int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::Entity_kind::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);
       
       CHECK_EQUAL(expnsetsizes[j],set_size);
       
@@ -262,7 +262,7 @@ TEST(SETS) {
       // Verify that we can get the correct set entities
       
       Amanzi::AmanziMesh::Entity_ID_List setents;
-      mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL,&setents);
+      mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::Entity_kind::NODE,Amanzi::AmanziMesh::Parallel_type::ALL,&setents);
       
       CHECK_ARRAY_EQUAL(expnsetnodes[j],setents,set_size);	  
                         
@@ -278,7 +278,7 @@ TEST(SETS) {
 
       // Do we have a valid set by this name
             
-      CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
+      CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::Entity_kind::CELL));
             
       int j;
       for (j = 0; j < 6; j++) {
@@ -290,7 +290,7 @@ TEST(SETS) {
             
       // Verify that we can get the right number of entities in the set
             
-      int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::ALL);
+      int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::Entity_kind::CELL,Amanzi::AmanziMesh::Parallel_type::ALL);
             
       CHECK_EQUAL(expcsetsizes[j],set_size);
             
@@ -298,7 +298,7 @@ TEST(SETS) {
       // Verify that we can get the correct set entities
             
       Amanzi::AmanziMesh::Entity_ID_List setents;
-      mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::ALL,&setents);
+      mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::Entity_kind::CELL,Amanzi::AmanziMesh::Parallel_type::ALL,&setents);
             
       CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);	  
     }

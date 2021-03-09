@@ -15,7 +15,7 @@
 
 #include "dbc.hh"
 #include "GeometricModel.hh"
-#include "../MeshFactory.hh"
+#include "../MeshFrameworkFactory.hh"
 #include "../MeshException.hh"
 
 // Check to see if we have some files to read
@@ -38,7 +38,7 @@ SUITE (MeshFramework)
     bool parallel(comm->NumProc() > 1);
 
     Amanzi::AmanziMesh::Preference pref;
-    Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
+    Amanzi::AmanziMesh::MeshFrameworkFactory meshfactory(comm);
 
     double x0( 0.0), y0( 0.0), z0( 0.0);
     double x1(10.0), y1(10.0), z1(10.0);
@@ -50,13 +50,13 @@ SUITE (MeshFramework)
     meshfactory.set_preference(pref);
 
     if (parallel) {
-      Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
+      Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh;
       CHECK_THROW(mesh = meshfactory.create(x0, y0, z0,
                                       x1, y1, z1,
                                       nx, ny, nz),
                   Amanzi::AmanziMesh::Message);
     } else {
-      Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
+      Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh;
       mesh = meshfactory.create(x0, y0, z0,
                           x1, y1, z1,
                           nx, ny, nz);
@@ -68,7 +68,7 @@ SUITE (MeshFramework)
             Amanzi::AmanziMesh::Framework::MSTK)) {
       pref.clear(); pref.push_back(Amanzi::AmanziMesh::Framework::MSTK);
       meshfactory.set_preference(pref);
-      Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh =
+      Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh =
           meshfactory.create(x0, y0, z0,
                              x1, y1, z1,
                              nx, ny, nz);
@@ -92,8 +92,8 @@ SUITE (MeshFramework)
     auto comm = Amanzi::getDefaultComm();
 
     Amanzi::AmanziMesh::Preference pref;
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-    Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
+    Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh;
+    Amanzi::AmanziMesh::MeshFrameworkFactory meshfactory(comm);
 
     double x0( 0.0), y0( 0.0);
     double x1(10.0), y1(10.0);
@@ -142,8 +142,8 @@ SUITE (MeshFramework)
     bool parallel(comm->NumProc() > 1);
 
     Amanzi::AmanziMesh::Preference pref;
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-    Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
+    Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh;
+    Amanzi::AmanziMesh::MeshFrameworkFactory meshfactory(comm);
 
     // make a parameter list to try out
 
@@ -194,8 +194,8 @@ SUITE (MeshFramework)
     auto comm = Amanzi::getDefaultComm();
 
     Amanzi::AmanziMesh::Preference pref;
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-    Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
+    Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh;
+    Amanzi::AmanziMesh::MeshFrameworkFactory meshfactory(comm);
 
     // make a parameter list to try out
 
@@ -243,8 +243,8 @@ SUITE (MeshFramework)
     auto comm = Amanzi::getDefaultComm();
 
     Amanzi::AmanziMesh::Preference pref;
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-    Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
+    Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh;
+    Amanzi::AmanziMesh::MeshFrameworkFactory meshfactory(comm);
 
     pref.clear(); pref.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
     meshfactory.set_preference(pref);
@@ -264,8 +264,8 @@ SUITE (MeshFramework)
   {
     auto comm = Amanzi::getDefaultComm();
 
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-    Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
+    Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh;
+    Amanzi::AmanziMesh::MeshFrameworkFactory meshfactory(comm);
 
     if (Amanzi::AmanziMesh::framework_enabled(
             Amanzi::AmanziMesh::Framework::MOAB)) {
@@ -282,8 +282,8 @@ SUITE (MeshFramework)
     auto comm = Amanzi::getDefaultComm();
     bool parallel(comm->NumProc() > 1);
 
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-    Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
+    Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh;
+    Amanzi::AmanziMesh::MeshFrameworkFactory meshfactory(comm);
 
     bool available = false;
     if (Amanzi::AmanziMesh::framework_enabled(
@@ -310,8 +310,8 @@ SUITE (MeshFramework)
     auto comm = Amanzi::getDefaultComm();
     bool parallel(comm->NumProc() > 1);
 
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-    Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
+    Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh;
+    Amanzi::AmanziMesh::MeshFrameworkFactory meshfactory(comm);
 
     bool available = false;
     if (Amanzi::AmanziMesh::framework_enabled(
@@ -361,7 +361,7 @@ SUITE (MeshFramework)
     setnames.push_back(topsurfname);
 
     Amanzi::AmanziMesh::Preference pref;
-    Amanzi::AmanziMesh::MeshFactory meshfactory(comm,gm);
+    Amanzi::AmanziMesh::MeshFrameworkFactory meshfactory(comm,gm);
 
     bool flatten = true;
     bool extrude = false;
@@ -372,29 +372,30 @@ SUITE (MeshFramework)
     meshfactory.set_preference(pref);
 
     if (parallel) {
-      Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh, newmesh;
+      Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh, newmesh;
       CHECK_THROW(mesh = meshfactory.create(x0, y0, z0,
                                       x1, y1, z1,
                                       nx, ny, nz),
                   Amanzi::AmanziMesh::Message);
     } else {
-      Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh, newmesh;
+      Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh, newmesh;
       mesh = meshfactory.create(x0, y0, z0,
               x1, y1, z1,
               nx, ny, nz);
 
       CHECK(!mesh.is_null());
-        CHECK_THROW(newmesh = meshfactory.create(mesh,setnames,
-                                         Amanzi::AmanziMesh::FACE,
-                                         flatten,extrude),
-                    Amanzi::AmanziMesh::Message);
+      Amanzi::AmanziMesh::Entity_ID_List ids(1,0);
+      CHECK_THROW(newmesh = meshfactory.create(mesh,ids,
+              Amanzi::AmanziMesh::Entity_kind::FACE,
+              flatten),
+                  Amanzi::AmanziMesh::Message);
     }
 
 
     // The MSTK framework, if available, will always generate
     if (Amanzi::AmanziMesh::framework_enabled(
             Amanzi::AmanziMesh::Framework::MSTK)) {
-      Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh, newmesh;
+      Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh, newmesh;
       pref.clear(); pref.push_back(Amanzi::AmanziMesh::Framework::MSTK);
       meshfactory.set_preference(pref);
       mesh = meshfactory.create(x0, y0, z0,
@@ -402,14 +403,15 @@ SUITE (MeshFramework)
               nx, ny, nz);
       CHECK(!mesh.is_null());
 
-      newmesh = meshfactory.create(mesh,setnames,Amanzi::AmanziMesh::FACE,flatten);
+      Amanzi::AmanziMesh::Entity_ID_List ents(1,0);
+      newmesh = meshfactory.create(mesh,ents,Amanzi::AmanziMesh::Entity_kind::FACE,flatten);
       CHECK(!newmesh.is_null());
     }
 
     // The MOAB framework cannot generate
     if (Amanzi::AmanziMesh::framework_enabled(
             Amanzi::AmanziMesh::Framework::MOAB)) {
-      Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
+      Teuchos::RCP<Amanzi::AmanziMesh::MeshFramework> mesh;
       pref.clear(); pref.push_back(Amanzi::AmanziMesh::Framework::MOAB);
       meshfactory.set_preference(pref);
       CHECK_THROW(mesh = meshfactory.create(x0, y0, z0,

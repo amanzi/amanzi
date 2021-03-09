@@ -49,7 +49,7 @@ add_install_include_file(${mesh_inc_files})
 
 
 # Mesh Frameworks
-#add_subdirectory(mesh_simple)
+add_subdirectory(mesh_simple)
 
 # MOAB Mesh framework
 if (ENABLE_MOAB_Mesh)
@@ -83,8 +83,7 @@ if (BUILD_TESTS)
     endif()
 
     # Test link libraries
-    set(test_link_libs geometry  mesh_factory ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-    # simple_mesh
+    set(test_link_libs simple_mesh geometry mesh_factory ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # MOAB Mesh framework
     if (ENABLE_MOAB_Mesh)

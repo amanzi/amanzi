@@ -52,7 +52,7 @@ set(mesh_factory_inc_files
     MeshFrameworkFactory.hh)
 
 
-#list(APPEND mesh_factory_frameworks simple_mesh)
+list(APPEND mesh_factory_frameworks simple_mesh)
 
 if (ENABLE_STK_Mesh)
     include_directories(${STK_INCLUDE_DIR} ${STK_SOURCE_DIR})

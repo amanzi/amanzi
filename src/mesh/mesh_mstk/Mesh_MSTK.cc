@@ -724,44 +724,6 @@ void Mesh_MSTK::getCellEdges(const Entity_ID cellid,
 
 
 //---------------------------------------------------------
-// For 2D cells, get edges and directions in which edges are used in cell
-//---------------------------------------------------------
-void Mesh_MSTK::getCell2DEdgesAndDirs(const Entity_ID cellid,
-        Entity_ID_List& edgeids,
-        Entity_Direction_List * const edgedirs) const
-{
-  AMANZI_ASSERT(get_manifold_dimension() == 2);
-
-  if (!edgedirs) {
-    getCellEdges(cellid, edgeids);
-  } else {
-    AMANZI_ASSERT(edges_initialized_);
-    MEntity_ptr cell = cell_id_to_handle_[cellid];
-    int nfe;
-    List_ptr fedges;
-    fedges = MF_Edges((MFace_ptr)cell,1,0);
-    nfe = List_Num_Entries(fedges);
-
-    edgeids.resize(nfe);
-    edgedirs->resize(nfe);
-
-    Entity_ID_List::iterator ite = edgeids.begin();
-    std::vector<int>::iterator itd = edgedirs->begin();
-    for (int i = 0; i < nfe; ++i) {
-      MEdge_ptr edge = List_Entry(fedges,i);
-      int lid = MEnt_ID(edge);
-      *ite = lid-1;  // assign to next spot by dereferencing iterator
-      ++ite;
-      *itd = 2*MF_EdgeDir_i((MFace_ptr)cell,i) - 1; // convert [0,1] to [-1,1]
-      ++itd;
-    }
-
-    List_Delete(fedges);
-  }
-}
-
-
-//---------------------------------------------------------
 // Get nodes of cell
 // On a distributed mesh, all nodes (OWNED or GHOST) of the cell
 // are returned
@@ -3370,7 +3332,7 @@ void Mesh_MSTK::extract_mstk_mesh_(List_ptr src_entities,
 // Write mesh out to exodus file
 //---------------------------------------------------------
 void
-Mesh_MSTK::write_to_exodus_file(const std::string& filename) const {
+Mesh_MSTK::writeToExodusFile(const std::string& filename) const {
   MESH_ExportToExodusII(mesh_, filename.c_str(), -1, NULL, NULL, mpicomm_);
 }
 

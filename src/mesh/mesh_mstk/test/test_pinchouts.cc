@@ -196,5 +196,5 @@ TEST(ELIM_DEGEN_INLINE_PARTITION)
   //   }
   // }
   
-  mesh->write_to_exodus_file(out_exo_filename);
+  mesh->writeToExodusFile(out_exo_filename);
 }

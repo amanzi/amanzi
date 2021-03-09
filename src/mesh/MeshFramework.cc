@@ -329,10 +329,11 @@ MeshFramework::getCellNodes(const Entity_ID c, Entity_ID_List& nodes) const
 }
 
 void
-MeshFramework::getCell2DEdgesAndDirs(const Entity_ID c, Entity_ID_List& edges, Entity_Direction_List * const edge_dirs) const
-{
+MeshFramework::getFaceEdgesAndDirs(const Entity_ID f,
+        Entity_ID_List& edges,
+        Entity_Direction_List * const dirs) const {
   hasEdgesOrThrow_();
-  throwNotImplemented_("getCell2DEdgesAndDirs");
+  throwNotImplemented_("getFaceEdgesAndDirs");
 }
 
 
@@ -340,7 +341,7 @@ void
 MeshFramework::getEdgeNodes(const Entity_ID e, Entity_ID_List& nodes) const
 {
   hasEdgesOrThrow_();
-  throwNotImplemented_("getCell2DEdgesAndDirs");
+  throwNotImplemented_("getEdgeNodes");
 }
 
 
@@ -348,14 +349,14 @@ void
 MeshFramework::getEdgeCells(const Entity_ID e, const Parallel_type ptype, Entity_ID_List& cells) const
 {
   hasEdgesOrThrow_();
-  throwNotImplemented_("edges_cells");
+  throwNotImplemented_("getEdgeCells");
 }
 
 void
 MeshFramework::getEdgeFaces(const Entity_ID e, const Parallel_type ptype, Entity_ID_List& faces) const
 {
   hasEdgesOrThrow_();
-  throwNotImplemented_("edges_faces");
+  throwNotImplemented_("getEdgeFaces");
 }
 
 void
