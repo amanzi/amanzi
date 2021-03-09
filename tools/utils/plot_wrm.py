@@ -41,13 +41,13 @@ class VanGenuchten(object):
         # smoothing for sat
         self._s0 = 1.0 - smoothing_interval_sat
         if self._s0 < 1.:
-            self._spline = spline.Spline(self._s0, self.k_relative(self._s0), self.d_k_relative(self._s0),
+            self._spline = Spline(self._s0, self.k_relative(self._s0), self.d_k_relative(self._s0),
                                          1.0, 1.0, 0.)
             
         # smoothing for pc
         self._pc0 = smoothing_interval_p
         if self._pc0 > 0.:
-            self._spline_sat = spline.Spline(0., 1., 0., self._pc0, self.saturation(self._pc0), self.d_saturation(self._pc0))
+            self._spline_sat = Spline(0., 1., 0., self._pc0, self.saturation(self._pc0), self.d_saturation(self._pc0))
 
     def capillaryPressure( self, s ):
         if s <= self._sr:
@@ -79,6 +79,24 @@ class VanGenuchten(object):
             return (se**self._l) * pow( 1.0 - pow( 1.0 - pow(se,1.0/self._m),self._m), 2)
         else:
             return self._spline.Value(s)
+
+    def d_k_relative( self, s ):
+        if s >= 1.:
+            return 0
+        elif s <= self._sr:
+            return 0.
+        elif s <= self._s0 + 1.e-6:
+            se = (s - self._sr)/(1-self._sr);
+            x = pow(se, 1.0 / self._m);
+
+            if (abs(1.0 - x) < 1.e-10):
+                return 0.0;
+            y = pow(1.0 - x, self._m);
+
+            dkdse = (1.0 - y) * (self._l * (1.0 - y) + 2 * x * y / (1.0 - x)) * pow(se, self._l - 1.0);
+            return dkdse / (1 - self._sr);
+        else:
+            return self._spline.Derivative(s)
 
     def label( self ):
         return "VG: a=%1.2e [1/Pa], n=%1.2g, sr=%1.2g, smooth=%g"%(self._alpha, self._n, self._sr, 1-self._s0)
@@ -138,41 +156,53 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser('plot WRM curves')
 
-    import wrm_vangenuchten
     def option_to_wrm(s):
         print("got: {}".format(s))
         try:
             s = shlex.split(s)
             print("s = {}".format(s))
-            assert(len(s) == 4 or len(s) == 3)
+            assert(3 <= len(s) <= 5)
 
             alpha, n, sr = map(float, s[0:3])
-            print("WRM:")
-            print("  alpha = {}".format(alpha))
-            print("  n = {}".format(n))
-            print("  sr = {}".format(sr))
 
-            if (len(s) == 4):
+            if len(s) > 3:
                 label = s[3]
             else:
                 label = None
-            print("  label = {}".format(label))
-        except:
-            raise argparse.ArgumentTypeError("WRM must be van Genucten parameters (alpha, n, sr, label)")
-        else:
-            return label, VanGenuchten(alpha=alpha, n=n, sr=sr)
+
+            if len(s) > 4:
+                smooth_int_sat = float(s[4])
+            else:
+                smooth_int_sat = 0.
+                
+            print("WRM:")
+            print(f"  alpha = {alpha}")
+            print(f"  n = {n}")
+            print(f"  sr = {sr}")
+            print(f"  smoothing_interval_sat = {smooth_int_sat}")
+            print(f"  label = {label}")
             
-    parser.add_argument('--wrm', type=option_to_wrm, action='append', help='WRM parameters, "alpha n sr [label]"')
+        except:
+            raise argparse.ArgumentTypeError("WRM must be van Genucten parameters (alpha, n, sr, label, smoothing_interval_sat)")
+        else:
+            return label, VanGenuchten(alpha=alpha, n=n, sr=sr, smoothing_interval_sat=smooth_int_sat)
+            
+    parser.add_argument('--wrm', type=option_to_wrm, action='append', help='WRM parameters, "alpha n sr [label [smoothing_interval_sat]]"')
     parser.add_argument('--y-units', type=str, choices=['Pa','m','hPa','cm'], default='Pa', help='units of the y-axis, in log space')
+    parser.add_argument('--kr', action='store_true', help='Plot relative permeability curve')
 
     args = parser.parse_args()
     color_list = colors.enumerated_colors(len(args.wrm))
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    
-    for (label,wrm), color in zip(args.wrm, color_list):
-        wrm.plot(ax, color, y_units=args.y_units, label=label)
+
+    if args.kr:
+        for (label,wrm), color in zip(args.wrm, color_list):
+            wrm.plot_kr(ax, color, label=label)
+    else:
+        for (label,wrm), color in zip(args.wrm, color_list):
+            wrm.plot(ax, color, y_units=args.y_units, label=label)
     ax.legend()
     plt.show()
     sys.exit(0)

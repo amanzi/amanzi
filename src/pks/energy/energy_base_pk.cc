@@ -237,8 +237,8 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S)
     ->SetGhosted()
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-  if (!S->FEList().isSublist(enthalpy_key_)) {
-    Teuchos::ParameterList& enth_list = S->FEList().sublist(enthalpy_key_);
+  if (plist_->isSublist("enthalpy evaluator")) {
+    Teuchos::ParameterList& enth_list = S->GetEvaluatorList(enthalpy_key_);
     enth_list.setParameters(plist_->sublist("enthalpy evaluator"));
     enth_list.set<std::string>("field evaluator type", "enthalpy");
   }
@@ -625,7 +625,7 @@ bool EnergyBase::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
 
 
 
-  if (minT < 200.0 || maxT > 300.0) {
+  if (minT < 200.0 || maxT > 330.0) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       *vo_->os() << " is not admissible, as it is not within bounds of constitutive models:" << std::endl;
       ENorm_t global_minT_c, local_minT_c;

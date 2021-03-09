@@ -203,25 +203,25 @@ int MPCDelegateEWC::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
 
 
 void MPCDelegateEWC::update_precon_ewc_(double t, Teuchos::RCP<const TreeVector> up, double h) {
-  Key dedT_key = std::string("d")+e_key_+std::string("_d")+temp_key_;
+  Key dedT_key = Keys::getKey(e_key_, temp_key_);
   S_next_->GetFieldEvaluator(e_key_)
       ->HasFieldDerivativeChanged(S_next_.ptr(), "ewc", temp_key_);
   const Epetra_MultiVector& dedT = *S_next_->GetFieldData(dedT_key)
       ->ViewComponent("cell",false);
 
-  Key dedp_key = std::string("d")+e_key_+std::string("_d")+pres_key_;
+  Key dedp_key = Keys::getKey(e_key_, pres_key_);
   S_next_->GetFieldEvaluator(e_key_)
       ->HasFieldDerivativeChanged(S_next_.ptr(), "ewc", pres_key_);
   const Epetra_MultiVector& dedp = *S_next_->GetFieldData(dedp_key)
       ->ViewComponent("cell",false);
 
-  Key dwcdT_key = std::string("d")+wc_key_+std::string("_d")+temp_key_;
+  Key dwcdT_key = Keys::getKey(wc_key_, temp_key_);
   S_next_->GetFieldEvaluator(wc_key_)
       ->HasFieldDerivativeChanged(S_next_.ptr(), "ewc", temp_key_);
   const Epetra_MultiVector& dwcdT = *S_next_->GetFieldData(dwcdT_key)
       ->ViewComponent("cell",false);
 
-  Key dwcdp_key = std::string("d")+wc_key_+std::string("_d")+pres_key_;
+  Key dwcdp_key = Keys::getKey(wc_key_, pres_key_);
   S_next_->GetFieldEvaluator(wc_key_)
       ->HasFieldDerivativeChanged(S_next_.ptr(), "ewc", pres_key_);
   const Epetra_MultiVector& dwcdp = *S_next_->GetFieldData(dwcdp_key)

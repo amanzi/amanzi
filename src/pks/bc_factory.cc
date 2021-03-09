@@ -18,7 +18,7 @@ namespace Amanzi {
 * Process Dirichet BC (pressure), step 1.
 ****************************************************************** */
 Teuchos::RCP<Functions::BoundaryFunction>
-BCFactory::CreateWithFunction(std::string list_name, std::string function_name) const {
+BCFactory::CreateWithFunction(const std::string& list_name, const std::string& function_name) const {
   Teuchos::RCP<Functions::BoundaryFunction> bc =
       Teuchos::rcp(new Functions::BoundaryFunction(mesh_));
 
@@ -39,7 +39,7 @@ BCFactory::CreateWithFunction(std::string list_name, std::string function_name) 
 * Process Dirichet BC (pressure), step 1.
 ****************************************************************** */
 Teuchos::RCP<Functions::BoundaryFunction>
-BCFactory::CreateWithoutFunction(std::string list_name) const {
+BCFactory::CreateWithoutFunction(const std::string& list_name) const {
   Teuchos::RCP<Functions::BoundaryFunction> bc =
       Teuchos::rcp(new Functions::BoundaryFunction(mesh_));
 
@@ -58,7 +58,7 @@ BCFactory::CreateWithoutFunction(std::string list_name) const {
 
 
 Teuchos::RCP<Functions::DynamicBoundaryFunction>
-BCFactory::CreateDynamicFunction(std::string list_name) const{
+BCFactory::CreateDynamicFunction(const std::string& list_name) const{
 
   std::vector<std::string> regions;
   std::vector<std::string> bc_types;
@@ -149,11 +149,22 @@ BCFactory::CreateDynamicFunction(std::string list_name) const{
 }
 
 
+bool BCFactory::CheckExplicitFlag(const std::string& list_name)
+{
+  bool is_explicit = false;
+  if (plist_.isSublist(list_name)) {
+    is_explicit = plist_.sublist(list_name).get<bool>("explicit time index", false);
+    plist_.sublist(list_name).remove("explicit time index");
+  }
+  return is_explicit;
+}
+
+
 /* ******************************************************************
 * Process Dirichet BC (pressure), step 2.
 ****************************************************************** */
 void BCFactory::ProcessListWithFunction_(const Teuchos::ParameterList& list,
-        std::string function_name,
+        const std::string& function_name,
         const Teuchos::RCP<Functions::BoundaryFunction>& bc) const {
   // Iterate through the BC specification sublists in the list.
   // All are expected to be sublists of identical structure.
@@ -168,10 +179,6 @@ void BCFactory::ProcessListWithFunction_(const Teuchos::ParameterList& list,
         m << "in sublist " << spec.name().c_str() << ": " << msg.what();
         Exceptions::amanzi_throw(m);
       }
-    } else { // ERROR -- parameter is not a sublist
-      Errors::Message m;
-      m << "parameter " << name.c_str() << " is not a sublist";
-      Exceptions::amanzi_throw(m);
     }
   }
 }
@@ -181,7 +188,7 @@ void BCFactory::ProcessListWithFunction_(const Teuchos::ParameterList& list,
 * Process Dirichet BC (pressure), step 3.
 ****************************************************************** */
 void BCFactory::ProcessSpecWithFunction_(const Teuchos::ParameterList& list,
-        std::string function_name,
+        const std::string& function_name,
         const Teuchos::RCP<Functions::BoundaryFunction>& bc) const {
   std::stringstream m;
   std::vector<std::string> regions;
@@ -240,7 +247,7 @@ void BCFactory::ProcessSpecWithFunction_(const Teuchos::ParameterList& list,
 
 
 void BCFactory::ProcessSpecWithFunctionRegions_(const Teuchos::ParameterList& list,
-                                                std::string function_name,
+                                                const std::string& function_name,
                                                 std::vector<std::string>& regions,
                                                 const Teuchos::RCP<Functions::BoundaryFunction>& bc) const {
   std::stringstream m;
@@ -300,11 +307,6 @@ void BCFactory::ProcessListWithoutFunction_(const Teuchos::ParameterList& list,
         Errors::Message lmsg(m.str());
         Exceptions::amanzi_throw(lmsg);
       }
-    } else { // ERROR -- parameter is not a sublist
-      std::stringstream m;
-      m << "parameter " << name.c_str() << " is not a sublist";
-      Errors::Message msg(m.str());
-      Exceptions::amanzi_throw(msg);
     }
   }
 }

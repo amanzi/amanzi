@@ -358,13 +358,13 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
           // subgrid domains take a BC from a single entity of a parent mesh --
           // find the GID of that entity.
           Teuchos::Array<std::string> regions(1, domain_);
-          std::size_t last_of = domain_.find_last_of("_");
+          std::size_t last_of = domain_.find_last_of(":");
           AMANZI_ASSERT(last_of != std::string::npos);
           int gid = std::stoi(domain_.substr(last_of+1, domain_.size()));
           bc_list.set("entity_gid_out", gid);
 
           Teuchos::RCP<TransportDomainFunction> bc =
-            factory.Create(bc_list, "none", AmanziMesh::FACE, Kxy);
+            factory.Create(bc_list, "boundary concentration", AmanziMesh::FACE, Kxy);
 
           for (int i = 0; i < component_names_.size(); i++){
             bc->tcc_names().push_back(component_names_[i]);
