@@ -229,11 +229,11 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
       }
     } else {
 
-      if (domain_.find("surface_star") != std::string::npos) {
+      if (decoupled_from_subsurface_) {
         const Epetra_MultiVector& uf_c = *S_next_->GetFieldData(uf_key_)
           ->ViewComponent("cell",false);
         for (unsigned int c=0; c!=ncells; ++c) {
-          acc_c[0][c] = std::max(de_dT[0][c] / h , 1.0e-1*uf_c[0][c]) + 1.e-6;
+          acc_c[0][c] = std::max(de_dT[0][c] / h , 1.e-1*uf_c[0][c]) + 1.e-6;
         }
         
       }

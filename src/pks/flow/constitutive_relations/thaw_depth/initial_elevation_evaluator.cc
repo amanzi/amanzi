@@ -17,13 +17,14 @@ namespace Flow {
 InitialElevationEvaluator::InitialElevationEvaluator(Teuchos::ParameterList& plist)
     : SecondaryVariableFieldEvaluator(plist)
 {
-  domain_ = Keys::getDomain(my_key_);
-  auto pos = domain_.find_last_of(':');
-  int col_id = std::stoi(domain_.substr(pos+1, domain_.size()));
+  Key dset_name = plist.get<std::string>("domain set name", "column");
   
-  std::stringstream domain_ss;
-  domain_ss << "column:"<< col_id;
-  bp_key_ = Keys::getKey(domain_ss.str(),"base_porosity");
+  domain_ = Keys::getDomain(my_key_); //surface_column domain
+  int col_id = Keys::getDomainSetIndex<int>(domain_);
+  
+  Key domain_ss = Keys::getDomainInSet(dset_name, col_id);
+  
+  bp_key_ = Keys::getKey(domain_ss,"base_porosity");
 }
   
 

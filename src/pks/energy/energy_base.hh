@@ -307,6 +307,7 @@ public:
   bool coupled_to_subsurface_via_flux_;
   bool coupled_to_surface_via_temp_;
   bool coupled_to_surface_via_flux_;
+  bool decoupled_from_subsurface_;
 
   // Keys
   Key ss_primary_key_;

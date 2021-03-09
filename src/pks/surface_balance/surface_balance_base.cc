@@ -28,7 +28,6 @@ SurfaceBalanceBase::SurfaceBalanceBase(Teuchos::ParameterList& pk_tree,
 {
   // name the layer
   layer_ = plist_->get<std::string>("layer name", domain_);
-  std::cout<<"general surface: "<<domain_<<"\n";
   // source terms
   is_source_ = plist_->get<bool>("source term", true);
   if (is_source_) {

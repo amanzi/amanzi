@@ -17,19 +17,20 @@ namespace Flow {
 GasContentEvaluator::GasContentEvaluator(Teuchos::ParameterList& plist)
     : SecondaryVariableFieldEvaluator(plist)
 {
-  domain_ = Keys::getDomain(my_key_);
-  auto pos = domain_.find_last_of(':');
-  int col_id = std::stoi(domain_.substr(pos+1, domain_.size()));
+  Key dset_name = plist.get<std::string>("domain set name", "column");
   
-  std::stringstream domain_ss;
-  domain_ss << "column:"<< col_id;
-  temp_key_ = Keys::getKey(domain_ss.str(),"temperature");
+  domain_ = Keys::getDomain(my_key_); //surface_column domain
+  int col_id = Keys::getDomainSetIndex<int>(domain_);
+  
+  Key domain_ss = Keys::getDomainInSet(dset_name, col_id);
+  
+  temp_key_ = Keys::getKey(domain_ss,"temperature");
   dependencies_.insert(temp_key_);
   
-  cv_key_ = Keys::getKey(domain_ss.str(),"cell_volume");
+  cv_key_ = Keys::getKey(domain_ss,"cell_volume");
   dependencies_.insert(cv_key_);
   
-  sat_key_ = Keys::getKey(domain_ss.str(),"saturation_gas");
+  sat_key_ = Keys::getKey(domain_ss,"saturation_gas");
   dependencies_.insert(sat_key_);
   
   trans_width_ =  plist_.get<double>("transition width [K]", 0.2);
