@@ -13,12 +13,9 @@
 
 TEST(MSTK_EXTFACE_MAP_4P)
 {
-  std::vector<Amanzi::AmanziMesh::Entity_ID> faces(6), nodes(8);
-  std::vector<Amanzi::AmanziGeometry::Point> ccoords(8), fcoords(4);
-
   auto comm = Amanzi::getDefaultComm();
   int size = comm->NumProc();
-  CHECK_EQUAL(4,size);
+  CHECK_EQUAL(4, size);
 
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_sets.exo",comm));
 
@@ -27,17 +24,16 @@ TEST(MSTK_EXTFACE_MAP_4P)
 
   Epetra_Import all_to_extface_importer = mesh->exterior_face_importer();
 
-  for (int f = extface_map.MinLID(); f <= extface_map.MaxLID(); f++)
-    {
-      int gid = extface_map.GID(f);
-      int f2 = face_map.LID(gid); // f2 is local face id in face_map
+  for (int f = extface_map.MinLID(); f <= extface_map.MaxLID(); f++) {
+    int gid = extface_map.GID(f);
+    int f2 = face_map.LID(gid);  // f2 is local face id in face_map
 
-      CHECK_EQUAL(face_map.GID(f2),gid);
+    CHECK_EQUAL(face_map.GID(f2), gid);
 
-      Amanzi::AmanziMesh::Entity_ID_List fcells;
-      mesh->face_get_cells(f2, Amanzi::AmanziMesh::Parallel_type::OWNED, &fcells);
-      CHECK_EQUAL(1,fcells.size());
-    }
+    Amanzi::AmanziMesh::Entity_ID_List fcells;
+    mesh->face_get_cells(f2, Amanzi::AmanziMesh::Parallel_type::ALL, &fcells);
+    CHECK_EQUAL(1, fcells.size());
+  }
 
   Epetra_Vector allvec(face_map);
   Epetra_Vector bdryvec(extface_map);

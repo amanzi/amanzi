@@ -70,11 +70,7 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
                                      const CompositeVector& X, CompositeVector& Y) const
 {
   AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
-  
-  X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
-
-  Y.PutScalarGhosted(0.);
   Epetra_MultiVector& Yc = *Y.ViewComponent("cell", true);
 
   AmanziMesh::Entity_ID_List cells;
@@ -94,8 +90,6 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
       Yc[0][cells[n]] += av(n);
     }
   }
-
-  Y.GatherGhostedToMaster("cell",Add);
   return 0;
 }
 

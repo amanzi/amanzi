@@ -34,12 +34,9 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
                                      const CompositeVector& X, CompositeVector& Y) const
 {
   AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
-  
-  X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
   const Epetra_MultiVector& Xbnd = *X.ViewComponent("boundary_face", true);
 
-  Y.PutScalarGhosted(0.);
   Epetra_MultiVector& Yc = *Y.ViewComponent("cell", true);
   Epetra_MultiVector& Ybnd = *Y.ViewComponent("boundary_face", true); 
 
@@ -71,13 +68,9 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
       Aface.Multiply(v, av, false);
 
       Yc[0][cells[0]] += av(0);
-      Ybnd[0][bf] += av(1);    
+      Ybnd[0][bf] += av(1);
     }
   }
-
-  Y.GatherGhostedToMaster("cell",Add);
-  Y.GatherGhostedToMaster("boundary_face",Add);
-  
   return 0;
 }
 
@@ -169,15 +162,15 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op
 {
   int nsurf_cells = op.surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   AMANZI_ASSERT(op.diag->MyLength() == nsurf_cells);
-  
+
   const Epetra_MultiVector& Xf = *X.ViewComponent("boundary_face", false);
   Epetra_MultiVector& Yf = *Y.ViewComponent("boundary_face", false);
   for (int sc = 0; sc != nsurf_cells; ++sc) {
     int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL, sc);
     int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
     Yf[0][bf] += (*op.diag)[0][sc] * Xf[0][bf];
-  } 
-  return 0;  
+  }
+  return 0;
 }
 
 /* ******************************************************************
@@ -189,12 +182,9 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op
   int nsurf_faces = op.surf_mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   AMANZI_ASSERT(op.matrices.size() == nsurf_faces);
 
-  X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xf = *X.ViewComponent("boundary_face", true);
-
-  Y.PutScalarGhosted(0.);
   Epetra_MultiVector& Yf = *Y.ViewComponent("boundary_face", true);
-  
+
   AmanziMesh::Entity_ID_List cells;
   for (int sf = 0; sf != nsurf_faces; ++sf) {
     op.surf_mesh->face_get_cells(sf, AmanziMesh::Parallel_type::ALL, &cells);
@@ -215,8 +205,7 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op
       int bf = mesh_->exterior_face_map(true).LID(mesh_->face_map(true).GID(f));
       Yf[0][bf] += av(n);
     }
-  } 
-  Y.GatherGhostedToMaster("boundary_face");
+  }
   return 0;
 }
 

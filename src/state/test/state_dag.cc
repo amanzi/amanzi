@@ -411,13 +411,13 @@ SUITE(DAG) {
     // calculate dA/dB
     std::cout << "Calculate derivative of field A wrt field B:" << std::endl;
     fa_eval->HasFieldDerivativeChanged(S.ptr(), "fa", "fb");
-    const Epetra_MultiVector& dfa_dfb = *S->GetFieldData("dfa_dfb")->ViewComponent("cell");
+    const Epetra_MultiVector& dfa_dfb = *S->GetFieldData(Keys::getDerivKey("fa", "fb"))->ViewComponent("cell");
     CHECK_CLOSE(2.0, dfa_dfb[0][0], 1e-12);
 
     // calculate dA/dG
     std::cout << "Calculate derivative of field A wrt field G:" << std::endl;
     fa_eval->HasFieldDerivativeChanged(S.ptr(), "fa", "fg");
-    const Epetra_MultiVector& dfa_dfg = *S->GetFieldData("dfa_dfg")->ViewComponent("cell");
+    const Epetra_MultiVector& dfa_dfg = *S->GetFieldData(Keys::getDerivKey("fa","fg"))->ViewComponent("cell");
     CHECK_CLOSE(8640.0, dfa_dfg[0][0], 1e-12);
 
     // calculate dE/dD is not well defined.
@@ -441,7 +441,7 @@ SUITE(DAG) {
     // calculate dE/dG:
     std::cout << "Calculate derivative of field E wrt field G:" << std::endl;
     fe_eval->HasFieldDerivativeChanged(S.ptr(), "fe", "fg");
-    const Epetra_MultiVector& dfe_dfg = *S->GetFieldData("dfe_dfg")->ViewComponent("cell");
+    const Epetra_MultiVector& dfe_dfg = *S->GetFieldData(Keys::getDerivKey("fe","fg"))->ViewComponent("cell");
     CHECK_CLOSE(24.0, dfe_dfg[0][0], 1e-12);
 
     // Now we repeat some calculations. Since no primary fields changed,
@@ -450,7 +450,7 @@ SUITE(DAG) {
     std::cout << "Calculate derivative of field A wrt field G:" << std::endl;
     fb_eval->SetFieldAsChanged(S.ptr());
     fa_eval->HasFieldDerivativeChanged(S.ptr(), "fa", "fg");
-    const Epetra_MultiVector& dfa_dfg2 = *S->GetFieldData("dfa_dfg")->ViewComponent("cell");
+    const Epetra_MultiVector& dfa_dfg2 = *S->GetFieldData(Keys::getDerivKey("fa","fg"))->ViewComponent("cell");
     CHECK_CLOSE(8640.0, dfa_dfg2[0][0], 1e-12);
   }
 }

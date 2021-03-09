@@ -1,11 +1,7 @@
 # Amanzi
 
 Master:
-[![Build Status](https://travis-ci.org/amanzi/amanzi.svg?branch=master)](https://travis-ci.org/amanzi/amanzi)
-Amanzi-1.0:
-[![Build Status](https://travis-ci.org/amanzi/amanzi.svg?branch=amanzi-1.0)](https://travis-ci.org/amanzi/amanzi)
-Amanzi-0.88:
-[![Build Status](https://travis-ci.org/amanzi/amanzi.svg?branch=amanzi-0.88)](https://travis-ci.org/amanzi/amanzi)
+[![Build Status](https://github.com/amanzi/amanzi/actions/workflows/amanzi-ci.yml/badge.svg?branch=master)](https://github.com/amanzi/amanzi/actions)
 
 ### BACKGROUND
 

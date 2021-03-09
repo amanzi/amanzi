@@ -1,4 +1,3 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
   ATS is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -6,10 +5,27 @@
 
   Author: Ethan Coon (ecoon@lanl.gov)
 */
-
 //! A FieldEvaluator is a node in the dependency graph.
-
 /*!
+
+Evaluators combine data (variables) with functions (physics) providing the
+values inside of that data.  Evaluators are the core concept of a model in
+Amanzi-ATS: much if not all physics lives inside of an evaluator.
+
+All evaluators are one of three types: primary, secondary, or independent
+variable evaluators.  Primary variables are those that have no dependencies,
+and are solved for.  Independent variables have no dependencies as well, but
+are data provided by the user.  They may be constant or variable in time and
+space, but they are assumed given.  Secondary variables are functions of time
+and space, and of other variables.
+
+From a software perspective, evaluators are nodes in a dependency graph, and
+therefore provide the task ordering needed to evaluate the model.  Primary
+variable evaluators do next to no work, but provide a target for solver to tell
+the dependency graph when primary variables have been updated through the
+solution/iteration of the nonlinear solve.  Independent and secondary variable
+evaluators, on the other hand, implement the required processes needed to
+update their data.
 
 All field evaluators have keys they depend upon (unless they are a leaf) and
 keys they provide.
@@ -17,8 +33,13 @@ keys they provide.
 All evaluator lists must provide an evaluator type, which is one of the types
 registered with the evaluator factory.
 
-* `"field evaluator type`" ``[string]`` Type registered in evaluator factory.
-  
+.. _field-evaluator-spec:
+.. admonition:: field-evaluator-spec
+
+   * `"field evaluator type`" ``[string]`` Type registered in evaluator factory.
+   * `"write checkpoint`" ``[bool]`` **true** Write this data when checkpointing.
+   * `"write vis`" ``[bool]`` **true** Write this data when visualizing.
+
 */
 
 #ifndef AMANZI_STATE_FIELD_EVALUATOR_HH_

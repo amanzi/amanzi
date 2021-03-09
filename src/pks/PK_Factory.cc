@@ -1,9 +1,9 @@
 /*
   Process Kernels
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon
@@ -56,7 +56,7 @@ PKFactory::CreatePK(std::string pk_name,
   // This is the constructed PK's subtree of the full PK tree
   Teuchos::ParameterList pk_subtree;
   bool pk_subtree_found = false;
-    
+
   if (pk_tree.isSublist(pk_name)) {
     pk_subtree = pk_tree.sublist(pk_name);
     pk_subtree_found = true;
@@ -73,11 +73,11 @@ PKFactory::CreatePK(std::string pk_name,
       if (state->HasDomainSet(ds_name)) {
         // flyweight PK, alter the sublist and construct
         // -- get the domain name and base varname
-        Key pk_flyweight = Keys::getKey(ds_name+"_*", std::get<2>(pk_triple));
+        Key pk_flyweight = Keys::getKey(ds_name, "*", std::get<2>(pk_triple));
         Teuchos::ParameterList pk_list_new = global_list->sublist("PKs").sublist(pk_flyweight);
 
         // -- overwrite the domain name
-        Key new_domain = ds_name+"_"+std::get<1>(pk_triple);
+        Key new_domain = Keys::getDomainInSet(ds_name, std::get<1>(pk_triple));
         if (pk_list_new.isParameter("domain name")) pk_list_new.set("domain name", new_domain);
 
         // -- overwrite sub pks names with prepended domain
@@ -88,13 +88,12 @@ PKFactory::CreatePK(std::string pk_name,
             bool subpk_is_ds = Keys::splitDomainSet(subpk_name, subpk_triple);
 
             if (subpk_is_ds) {
-              subpk_name = Keys::getKey(std::get<0>(subpk_triple)+"_"+std::get<1>(pk_triple),
-                      std::get<2>(subpk_triple));
+              subpk_name = Keys::getKey(std::get<0>(subpk_triple), std::get<1>(pk_triple), std::get<2>(subpk_triple));
             }
           }
           pk_list_new.set("PKs order", subpks_names);
         }
-            
+
         // push into the PKs list
         global_list->sublist("PKs").set(pk_name, pk_list_new);
 
@@ -105,7 +104,7 @@ PKFactory::CreatePK(std::string pk_name,
               << pk_flyweight << "\"\n";
           Errors::Message message(msg.str());
           Exceptions::amanzi_throw(message);
-        }            
+        }
         pk_subtree = pk_tree.sublist(pk_flyweight);
         pk_subtree.setName(pk_name);
 
@@ -121,7 +120,7 @@ PKFactory::CreatePK(std::string pk_name,
     Errors::Message message(msg.str());
     Exceptions::amanzi_throw(message);
   }
-    
+
   // get the PK type
   std::string pk_type;
   if (pk_subtree.isParameter("PK type")) {
@@ -139,7 +138,7 @@ PKFactory::CreatePK(std::string pk_name,
     std::stringstream message;
     message << "PK Factory: PK \"" << pk_name << "\" requested type \""
             << pk_type << "\" which is not a registered PK type.\n";
-    
+
     for (map_type::iterator it = GetMap()->begin(); it != GetMap()->end(); ++it) {
       message  << std::endl << "  option: " << it->first;
     }

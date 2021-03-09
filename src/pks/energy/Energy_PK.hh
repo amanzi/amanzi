@@ -32,6 +32,7 @@
 #include "primary_variable_field_evaluator.hh"
 #include "Tensor.hh"
 #include "TreeVector.hh"
+#include "Upwind.hh"
 #include "VerboseObject.hh"
 
 namespace Amanzi {
@@ -143,7 +144,7 @@ class Energy_PK : public PK_PhysicalBDF {
 
   // source terms
   std::vector<Teuchos::RCP<PK_DomainFunction> > srcs_;
-  
+
   // operators and solvers
   Teuchos::RCP<Operators::PDE_Diffusion> op_matrix_diff_, op_preconditioner_diff_;
   Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
@@ -152,6 +153,10 @@ class Energy_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Operators::BCs> op_bc_, op_bc_enth_;
 
   bool prec_include_enthalpy_;
+
+  // upwinding 
+  Teuchos::RCP<CompositeVector> upw_conductivity_;
+  Teuchos::RCP<Operators::Upwind<int> > upwind_;  // int implies fake model
 };
 
 }  // namespace Energy

@@ -106,6 +106,20 @@
 
   <ParameterList name="state">
     <ParameterList name="field evaluators">
+      <ParameterList name="saturation_liquid">
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="ALL">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.00000000000000000e+00"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="particle_density">
         <Parameter name="field evaluator type" type="string" value="constant variable"/>
       </ParameterList>

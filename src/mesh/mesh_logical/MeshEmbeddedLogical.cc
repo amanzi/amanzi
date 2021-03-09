@@ -738,18 +738,6 @@ MeshEmbeddedLogical::cell_get_edges_internal_(
 }
   
 
-// edges and directions of a 2D cell - this function is implemented
-// in each mesh framework. The results are cached in the base class.
-void
-MeshEmbeddedLogical::cell_2D_get_edges_and_dirs_internal_(
-    const Entity_ID cellid,
-    Entity_ID_List *edgeids,
-    std::vector<int> *edge_dirs) const {
-  Errors::Message mesg("No edges in MeshEmbeddedLogical.");
-  Exceptions::amanzi_throw(mesg);
-}
-  
-
 int
 MeshEmbeddedLogical::build_columns_() const {
   Errors::Message mesg("No columns are buildable in MeshEmbeddedLogical.");

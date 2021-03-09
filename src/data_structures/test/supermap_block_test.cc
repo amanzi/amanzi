@@ -85,7 +85,7 @@ TEST(SUPERMAP_BLOCKMAP_NULL_PROC) {
   int NumProc = comm->NumProc();
 
   // only for parallel tests
-  if (NumProc > 1) {
+  if (NumProc > 2) {
   
     if (MyPID == 0) std::cout << "Test: SuperMapLumped with BlockMap with variable element size" << std::endl;
 

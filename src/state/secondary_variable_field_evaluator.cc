@@ -9,7 +9,6 @@ Default field evaluator base class.  A FieldEvaluator is a node in the Phalanx-l
 dependency tree.
 
 ------------------------------------------------------------------------- */
-
 #include "primary_variable_field_evaluator.hh"
 #include "secondary_variable_field_evaluator.hh"
 
@@ -135,7 +134,7 @@ bool SecondaryVariableFieldEvaluator::HasFieldDerivativeChanged(const Teuchos::P
   AMANZI_ASSERT(!request.empty());
   
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-    *vo_->os() << "Secondary Variable d" << my_key_ << "_d" << wrt_key
+    *vo_->os() << "Secondary Variable " << Keys::getDerivKey(my_key_, wrt_key)
           << " requested by " << request << std::endl;
   }
 
@@ -167,7 +166,7 @@ bool SecondaryVariableFieldEvaluator::HasFieldDerivativeChanged(const Teuchos::P
   std::pair<Key,Key> deriv_request(request, wrt_key);
   if (update) {
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_->os() << "Updating d" << my_key_ << "_d" << wrt_key << "... " << std::endl;
+      *vo_->os() << "Updating " << Keys::getDerivKey(my_key_, wrt_key) << "... " << std::endl;
     }
 
     // If so, update ourselves, empty our list of filled requests, and return.
@@ -180,12 +179,12 @@ bool SecondaryVariableFieldEvaluator::HasFieldDerivativeChanged(const Teuchos::P
     if (deriv_requests_.find(deriv_request) == deriv_requests_.end()) {
       deriv_requests_.insert(deriv_request);
       if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-        *vo_->os() << "d" << my_key_ << "_d" << wrt_key << " has changed, but no need to update... " << std::endl;
+        *vo_->os() << Keys::getDerivKey(my_key_, wrt_key) << " has changed, but no need to update... " << std::endl;
       }
       return true;
     } else {
       if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-        *vo_->os() << "d" << my_key_ << "_d" << wrt_key << " has not changed... " << std::endl;
+        *vo_->os() << Keys::getDerivKey(my_key_, wrt_key) << " has not changed... " << std::endl;
       }
       return false;
     }
@@ -213,7 +212,7 @@ void SecondaryVariableFieldEvaluator::UpdateField_(const Teuchos::Ptr<State>& S)
 // ---------------------------------------------------------------------------
 void SecondaryVariableFieldEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key) {
-  Key dmy_key = std::string("d")+my_key_+std::string("_d")+wrt_key;
+  Key dmy_key = Keys::getDerivKey(my_key_, wrt_key);
   Teuchos::RCP<CompositeVector> dmy;
   if (S->HasField(dmy_key)) {
     // Get the field...
@@ -252,14 +251,14 @@ void SecondaryVariableFieldEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<
     } else if (S->GetFieldEvaluator(*dep)->IsDependency(S, wrt_key)) {
       // partial F / partial dep * ddep/dx
       // -- ddep/dx
-      Key ddep_key = std::string("d")+*dep+std::string("_d")+wrt_key;
+      Key ddep_key = Keys::getDerivKey(*dep, wrt_key);
       Teuchos::RCP<const CompositeVector> ddep = S->GetFieldData(ddep_key);
       // -- partial F / partial dep
       EvaluateFieldPartialDerivative_(S, *dep, tmp.ptr());
 
       if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
         *vo_->os() << ddep_key << " = " << (*ddep)("cell",0) << ", ";
-        *vo_->os() << "d"<< my_key_ << "_d" << *dep << " = " << (*tmp)("cell",0) << std::endl;
+        *vo_->os() << Keys::getDerivKey(my_key_, *dep) << " = " << (*tmp)("cell",0) << std::endl;
       }
 
       dmy->Multiply(1.0, *ddep, *tmp, 1.0);
@@ -339,7 +338,7 @@ void SecondaryVariableFieldEvaluator::CheckDerivative_(const Teuchos::Ptr<State>
                                                        Key wrt_key) {
   double eps = 1.e-10;
 
-  Key dmy_key = std::string("d")+my_key_+std::string("_d")+wrt_key;
+  Key dmy_key = Keys::getDerivKey(my_key_, wrt_key);
   Teuchos::RCP<const CompositeVector> dmy = S->GetFieldData(dmy_key);
 
   // get unperturbed dependency and set up perturbed dependency

@@ -216,6 +216,7 @@ if (Trilinos_FOUND)
   # ML      - multilevel preconditioner (Unstructured ONLY)
   set(Trilinos_REQUIRED_PACKAGE_LIST Teuchos Epetra) 
   if (ENABLE_Unstructured)
+    # list(APPEND Trilinos_REQUIRED_PACKAGE_LIST NOX ML Amesos2 MueLu)
     list(APPEND Trilinos_REQUIRED_PACKAGE_LIST NOX ML Amesos2)
   endif()
 

@@ -19,6 +19,7 @@
 #include "RegionLogical.hh"
 #include "RegionPoint.hh"
 #include "RegionLabeledSet.hh"
+#include "RegionEnumerated.hh"
 
 #include "Mesh_MSTK.hh"
 
@@ -708,7 +709,6 @@ void Mesh_MSTK::extract_mstk_mesh(List_ptr src_entities,
         MEnt_Set_AttVal(mr,copyatt,ival,rval,mr_new);
         MEnt_Set_AttVal(mr_new,rparentatt,0,0.0,mr);
       }
-
       break;
     }
     case MFACE: {  // Extracting a surface from a solid mesh or subset of 
@@ -862,14 +862,16 @@ void Mesh_MSTK::extract_mstk_mesh(List_ptr src_entities,
         MEnt_Set_AttVal(mv,vparentgid_att,MV_GlobalID((MVertex_ptr)pval),0.0,
                         NULL);
       }
-    idx = 0;
     MEdge_ptr me = nullptr;
-    while ((me = (MEdge_ptr) MESH_Next_Edge(mesh_,&idx)))
-      if (ME_PType(me) == POVERLAP) {
-        MEnt_Get_AttVal(me,eparentatt,&ival,&rval,&pval);
-        MEnt_Set_AttVal(me,eparentgid_att,ME_GlobalID((MEdge_ptr)pval),0.0,
-                        NULL);
-      }
+    if (entity_dim != MREGION) { // edge parents not set on 3D extraction -- maybe they should be --etc
+      idx = 0;
+      while ((me = (MEdge_ptr) MESH_Next_Edge(mesh_,&idx)))
+        if (ME_PType(me) == POVERLAP) {
+          MEnt_Get_AttVal(me,eparentatt,&ival,&rval,&pval);
+          MEnt_Set_AttVal(me,eparentgid_att,ME_GlobalID((MEdge_ptr)pval),0.0,
+                          NULL);
+        }
+    }
     idx = 0;
     MFace_ptr mf = nullptr;
     while ((mf = (MFace_ptr) MESH_Next_Face(mesh_,&idx)))
@@ -905,16 +907,18 @@ void Mesh_MSTK::extract_mstk_mesh(List_ptr src_entities,
       }
       MEnt_Set_AttVal(mv,vparentatt,0,0.0,mv_parent);
     }
-    idx = 0;
-    while ((me = (MEdge_ptr) MESH_Next_GhostEdge(mesh_,&idx))) {
-      MEnt_Get_AttVal(me,eparentgid_att,&ival,&rval,&pval);
-      MEdge_ptr me_parent = MESH_EdgeFromGlobalID(parent_mesh_mstk,ival);
-      if (!me_parent) {
-        Errors::Message 
-          mesg("Cannot find ghost edge with given global ID");
-        Exceptions::amanzi_throw(mesg);
+    if (entity_dim != MREGION) {
+      idx = 0;
+      while ((me = (MEdge_ptr) MESH_Next_GhostEdge(mesh_,&idx))) {
+        MEnt_Get_AttVal(me,eparentgid_att,&ival,&rval,&pval);
+        MEdge_ptr me_parent = MESH_EdgeFromGlobalID(parent_mesh_mstk,ival);
+        if (!me_parent) {
+          Errors::Message 
+            mesg("Cannot find ghost edge with given global ID");
+          Exceptions::amanzi_throw(mesg);
+        }
+        MEnt_Set_AttVal(me,eparentatt,0,0.0,me_parent);
       }
-      MEnt_Set_AttVal(me,eparentatt,0,0.0,me_parent);
     }
     idx = 0;
     while ((mf = (MFace_ptr) MESH_Next_GhostFace(mesh_,&idx))) {
@@ -1549,68 +1553,6 @@ void Mesh_MSTK::cell_get_edges_internal_(const Entity_ID cellid,
 }
 
 
-//---------------------------------------------------------
-// For 2D cells, get edges and directions in which edges are used in cell
-//---------------------------------------------------------
-void Mesh_MSTK::cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
-                                                     Entity_ID_List *edgeids,
-                                                     std::vector<int> *edgedirs) const 
-{
-  AMANZI_ASSERT(manifold_dimension() == 2); 
-
-  if (!edgedirs) 
-    cell_get_edges(cellid, edgeids);
-  else {
-
-    AMANZI_ASSERT(edges_initialized);
-    
-    MEntity_ptr cell;
-    
-    AMANZI_ASSERT(edgeids != nullptr);
-    
-    cell = cell_id_to_handle[cellid];
-    
-    int nfe;
-    
-    List_ptr fedges;
-    fedges = MF_Edges((MFace_ptr)cell,1,0);
-    nfe = List_Num_Entries(fedges);
-    
-    edgeids->resize(nfe);
-    edgedirs->resize(nfe);
-    
-    Entity_ID_List::iterator ite = edgeids->begin();
-    std::vector<int>::iterator itd = edgedirs->begin();
-    for (int i = 0; i < nfe; ++i) {
-      MEdge_ptr edge = List_Entry(fedges,i);
-      int lid = MEnt_ID(edge);
-      *ite = lid-1;  // assign to next spot by dereferencing iterator
-      ++ite;
-      *itd = 2*MF_EdgeDir_i((MFace_ptr)cell,i) - 1; // convert [0,1] to [-1,1]
-      ++itd;
-    }
-  
-    List_Delete(fedges);
-  
-    /* Reserved for next major MSTK release 
-       
-       int fedgeids[MAXPV2];
-       MF_EdgeIDs((MFace_ptr)cell,1,0,&nfe,fedgeids);
-       
-       edgeids->resize(nfe);
-       Entity_ID_List::iterator ite = edgeids->begin();
-       std::vector<int>::iterator itd = edgedirs->begin();
-       for (int i = 0; i < nfe; ++i) {
-       *ite = fedgeids[i]-1;
-       ++ite;
-       *itd = 2*MF_EdgeDir_i((MFace_ptr)cell,i) - 1; // convert [0,1] to [-1,1]
-       ++itd;
-       }
-    */
-  }
-}
-
- 
 //---------------------------------------------------------
 // Get nodes of cell 
 // On a distributed mesh, all nodes (OWNED or GHOST) of the cell 
@@ -2613,6 +2555,21 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         MSet_Add(mset,cell_id_to_handle[icell]);
 
     }
+    else if (region->type() == AmanziGeometry::ENUMERATED)  {
+      auto rgn = Teuchos::rcp_static_cast<const AmanziGeometry::RegionEnumerated>(region);
+      int ncell = num_entities(CELL, Parallel_type::ALL);
+
+      for (int icell = 0; icell < ncell; icell++) {
+        Entity_ID gid = MEnt_GlobalID(cell_id_to_handle[icell]);
+        for (const auto& jset : rgn->entities()) {
+          if (jset == gid) {
+            MSet_Add(mset,cell_id_to_handle[icell]);
+            break;
+          }
+        }
+      }
+
+    }
     else if (region->type() == AmanziGeometry::POINT) {
       AmanziGeometry::Point vpnt(space_dim);
       AmanziGeometry::Point rgnpnt(space_dim);
@@ -2625,7 +2582,6 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         
       int inode;
       for (inode = 0; inode < nnode; inode++) {
-                  
         node_get_coordinates(inode, &vpnt);                  
         double dist2 = (vpnt-rgnpnt)*(vpnt-rgnpnt);
  
@@ -2637,8 +2593,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         }
       }
 
-      Entity_ID_List cells, cells1;
-
+      Entity_ID_List cells;
       node_get_cells(minnode, Parallel_type::ALL, &cells);
       
       int ncells = cells.size();
@@ -2648,6 +2603,14 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         // Check if point is contained in cell            
         if (point_in_cell(rgnpnt, icell))
           MSet_Add(mset, cell_id_to_handle[icell]);
+      }
+
+      // finally check all cells, typical for anisotropic meshes
+      if (MSet_Num_Entries(mset) == 0) {
+        int ncells_wghost = num_entities(CELL, Parallel_type::ALL);
+        for (int c = 0; c < ncells_wghost; ++c)
+          if (point_in_cell(rgnpnt, c)) 
+            MSet_Add(mset, cell_id_to_handle[c]);
       }
 
     }
@@ -3187,7 +3150,6 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         MSet_Delete(msets[ms]);
     }
   }
-
   return mset;
 }
 

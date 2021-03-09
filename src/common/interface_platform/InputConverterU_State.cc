@@ -332,7 +332,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
     }
   }
 
-  // initialization of fields via the initial_conditions list
+  // initialization of fields via the initial_conditions list.
+  // We have to move most fields to evaluaton list
   node_list = doc_->getElementsByTagName(mm.transcode("initial_conditions"));
   int nchildren(0);
   if (node_list->getLength() != 0) {

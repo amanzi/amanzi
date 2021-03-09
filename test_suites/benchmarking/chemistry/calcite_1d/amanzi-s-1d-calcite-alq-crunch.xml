@@ -27,7 +27,7 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" />
-    <chemistry state="on" engine="crunchflow+" input_filename="1d-calcite-crunch.in" database="calcite.dbs"/>
+    <chemistry state="on" engine="crunchflow" input_filename="1d-calcite-crunch.in" database="calcite.dbs"/>
   </process_kernels>
 
   <phases>

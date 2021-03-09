@@ -228,17 +228,13 @@ class MeshExtractedManifold : public Mesh {
   //    framework. The results are cached in the base class.
   virtual void cell_get_edges_internal_(const Entity_ID c, Entity_ID_List *edges) const override;
 
-  // -- edges and directions of a 2D cell - this function is implemented
-  //    in each mesh framework. The results are cached in the base class.
-  virtual void cell_2D_get_edges_and_dirs_internal_(const Entity_ID c,
-                                                    Entity_ID_List *edges,
-                                                    std::vector<int> *edirs) const override {
-    AMANZI_ASSERT(false);
-  }
-
  private:
   Entity_ID_List build_set_(const Teuchos::RCP<const AmanziGeometry::Region>& rgn,
                             const Entity_kind kind) const;
+
+  Entity_ID_List build_set_cells_(const Teuchos::RCP<const AmanziGeometry::Region>& rgn, bool* missing) const;
+  Entity_ID_List build_set_faces_(const Teuchos::RCP<const AmanziGeometry::Region>& rgn, bool* missing) const;
+  Entity_ID_List build_set_nodes_(const Teuchos::RCP<const AmanziGeometry::Region>& rgn, bool* missing) const;
 
   void TryExtension_(const std::string& setname,
                      Entity_kind kind_p, Entity_kind kind_d, Entity_ID_List* setents) const;
