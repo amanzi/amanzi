@@ -32,7 +32,7 @@ initialized (as independent variables are owned by state, not by any PK).
 #include "FieldEvaluator_Factory.hh"
 #include "cell_volume_evaluator.hh"
 #include "rank_evaluator.hh"
-
+#include "primary_variable_field_evaluator.hh"
 #include "State.hh"
 
 namespace Amanzi {
@@ -1040,8 +1040,18 @@ void State::InitializeFields() {
     for (FieldMap::iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
       if (f_it->second->type() == COMPOSITE_VECTOR_FIELD) {
         bool read_complete = f_it->second->ReadCheckpoint(file_input);
-        if (read_complete)
+        if (read_complete){
+          if (HasFieldEvaluator(f_it->first)) {
+            Teuchos::RCP<FieldEvaluator> fm = GetFieldEvaluator(f_it->first);
+            Teuchos::RCP<PrimaryVariableFieldEvaluator> solution_evaluator =
+              Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
+            if (solution_evaluator != Teuchos::null){
+              Teuchos::Ptr<State> S_ptr(this);
+              solution_evaluator->SetFieldAsChanged(S_ptr);
+            }
+          }          
           f_it->second->set_initialized();
+        }
       }
     }
     file_input.close_h5file();
