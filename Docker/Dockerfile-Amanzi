@@ -36,9 +36,9 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --with-mpi=/usr \
    --enable-shared \
    && cd /home/amanzi_user/amanzi_builddir/amanzi \
-   && ctest -R operators_marshak -V
+   && make test
 
-# make test 2>&1 > ~/install/unit-tests-output.log 
+# 2>&1 > ~/install/unit-tests-output.log 
 
 #  && rm -r /home/amanzi_user/amanzi_builddir/
 
