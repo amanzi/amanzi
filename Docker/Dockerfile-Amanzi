@@ -1,5 +1,5 @@
 ARG amanzi_tpls_ver=latest
-FROM metsi/amanzi-tpls:${amanzi_tpls_ver}-openmpi
+FROM metsi/amanzi-tpls:${amanzi_tpls_ver}-mpich
 LABEL Description="Amanzi: Build and install Amanzi in a Docker image."
 
 # Switch to amanzi_user
@@ -38,7 +38,7 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    && cd /home/amanzi_user/amanzi_builddir/amanzi \
    && make test
 
-# make test 2>&1 > ~/install/unit-tests-output.log 
+# 2>&1 > ~/install/unit-tests-output.log 
 
 #  && rm -r /home/amanzi_user/amanzi_builddir/
 
