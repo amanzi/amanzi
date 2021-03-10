@@ -227,9 +227,9 @@ double Checkpoint::Read(State& S, const std::string& file_or_dirname)
           if (solution_evaluator != Teuchos::null){
             Teuchos::Ptr<State> S_ptr(&S);
             solution_evaluator->SetFieldAsChanged(S_ptr);
-          }        
-          field->second->set_initialized();
+          }                 
         }
+        field->second->set_initialized();
       }
     }
   }

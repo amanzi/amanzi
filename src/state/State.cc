@@ -1049,8 +1049,7 @@ void State::InitializeFields() {
               Teuchos::Ptr<State> S_ptr(this);
               solution_evaluator->SetFieldAsChanged(S_ptr);
             }
-          }
-          
+          }          
           f_it->second->set_initialized();
         }
       }
