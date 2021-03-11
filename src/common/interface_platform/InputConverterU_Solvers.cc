@@ -96,6 +96,7 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
       method_list.set<int>("controller training start", 0);
       method_list.set<int>("controller training end", 3);
       method_list.sublist("verbose object").set<std::string>("verbosity level", "low");
+      method_list.set<bool>("release Krylov vectors", true);
     }
   }
 

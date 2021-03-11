@@ -12,6 +12,7 @@
 #ifndef AMANZI_DIFFUSION_FIXTURE_HH_
 #define AMANZI_DIFFUSION_FIXTURE_HH_
 
+#include <chrono>
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
@@ -63,6 +64,7 @@ struct DiffusionFixture {
   void SetBCsDirichletNeumannRobin();
 
   void Go(double tol = 1.e-14);
+  void MatVec(int nloops);
 
   // access
   Comm_ptr_type get_comm() const { return comm; }
@@ -343,7 +345,10 @@ void DiffusionFixture::Go(double tol)
     
   op->ApplyBCs(true, true, true);
   global_op->ComputeInverse();
+
+  auto start = std::chrono::high_resolution_clock::now();
   global_op->ApplyInverse(*global_op->rhs(), *solution);
+  auto stop = std::chrono::high_resolution_clock::now();
 
   if (tol > 0.0) {
     // compute pressure error
@@ -362,6 +367,8 @@ void DiffusionFixture::Go(double tol)
 
     auto MyPID = comm->MyPID();
     if (MyPID == 0) {
+      auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+      printf("solution time only = %g sec\n", double(duration.count() * 1e-6));
       pl2_err /= pnorm; 
       ul2_err /= unorm;
       printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f\ndofs=%d  itr=%d  ||r||=%10.5f\n",
@@ -377,6 +384,30 @@ void DiffusionFixture::Go(double tol)
       ver.CheckMatrixSPD();
     }
   }
+}
+
+
+/* ******************************************************************
+* Run the mat-vec
+****************************************************************** */
+void DiffusionFixture::MatVec(int nloops)
+{
+  global_op->Init();
+  op->UpdateMatrices(Teuchos::null, solution.ptr());
+
+  op->ApplyBCs(true, true, true);
+  global_op->ComputeInverse();
+
+  auto sol(*solution);
+
+  auto start = std::chrono::high_resolution_clock::now();
+  for (int i = 0; i < nloops; ++i) {
+    global_op->Apply(sol, *solution);
+  }
+  auto stop = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+
+  printf("iterative loop time = %g sec\n", double(duration.count() * 1e-6));
 }
 
 #endif

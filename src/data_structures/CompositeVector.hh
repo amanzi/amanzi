@@ -308,7 +308,7 @@ class CompositeVector {
   void GatherGhostedToMaster(std::string name, Epetra_CombineMode mode=Add);
 
   // returns non-empty importer
-  const Teuchos::RCP<Epetra_Import>& importer(std::string name);
+  const Epetra_Import& importer(std::string name) const;
 
   // -- Assorted vector operations, this implements a Vec --
 
@@ -401,7 +401,7 @@ class CompositeVector {
 
   // The Vandelay is an Importer/Exporter which allows face unknowns
   // to be spoofed as boundary face unknowns.
-  void CreateVandelay_() const;
+  void CreateVandelayVector_() const;
   void ApplyVandelay_() const;
 
 
@@ -418,11 +418,7 @@ class CompositeVector {
   mutable Teuchos::RCP<BlockVector> ghostvec_;
   Teuchos::RCP<BlockVector> mastervec_;
 
-  // importers for scatter/gather operation
-  mutable std::vector<Teuchos::RCP<Epetra_Import> > importers_;
-
-  // importer and vector for boundary data
-  mutable Teuchos::RCP<Epetra_Import> vandelay_importer_;
+  // vector for boundary data
   mutable Teuchos::RCP<Epetra_MultiVector> vandelay_vector_;
 };
 

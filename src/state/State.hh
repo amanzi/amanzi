@@ -157,6 +157,7 @@ class State {
   // Sub-steps in the initialization process. (Used by Amanzi)
   void InitializeEvaluators();
   void InitializeFields();
+  void InitializeFieldCopies();
   bool CheckNotEvaluatedFieldsInitialized();
   bool CheckAllFieldsInitialized();
 

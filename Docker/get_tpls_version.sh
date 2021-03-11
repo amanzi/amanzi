@@ -20,9 +20,9 @@ EOF
 }
 
 #
-# Default location based on Travis configuration
+# Default location based on Docker working-directory (relative path is ok).
 #
-AMANZI_SOURCE_DIR=/home/travis/build/amanzi/amanzi
+AMANZI_SOURCE_DIR=../
 
 parse_options()
 {

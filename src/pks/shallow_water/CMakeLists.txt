@@ -57,6 +57,7 @@ generate_evaluators_registration_header(
 set(sw_src_files ShallowWater_PK.cc
                  ShallowWater_TI.cc
                  ShallowWaterBoundaryFunction.cc
+                 DischargeEvaluator.cc
                  )
 set(sw_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
 if (Ifpack_ENABLE_HYPRE)
@@ -110,6 +111,13 @@ if (BUILD_TESTS)
                     KIND int
                     NPROCS 3
                     SOURCE test/Main.cc test/shallow_water_2D_smooth.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                   
+                    
+    # Test: smooth 2D equilibrium
+    add_amanzi_test(shallow_water_bathymetry shallow_water_bathymetry
+                    KIND int
+                    NPROCS 3
+                    SOURCE test/Main.cc test/shallow_water_bathymetry.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                   
 endif()
 

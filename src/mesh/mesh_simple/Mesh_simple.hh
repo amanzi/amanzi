@@ -278,14 +278,6 @@ class Mesh_simple : public Mesh {
   void cell_get_edges_internal_(const Entity_ID cellid,
                                 Entity_ID_List *edgeids) const override;
 
-  // Edges and directions of a 2D cell
-  void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
-                                            Entity_ID_List *edgeids,
-                                            std::vector<int> *edgedirs) const override { 
-    Errors::Message mesg("2D cells are not supported in this framework.");
-    Exceptions::amanzi_throw(mesg);
-  }
-
   // Get edges of a face and directions in which the face uses the edges.
   // In 3D, edge direction is 1 when it is oriented counter clockwise
   // with respect to the face natural normal.

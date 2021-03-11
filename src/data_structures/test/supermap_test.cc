@@ -89,9 +89,8 @@ void CHECK_UNIQUE(std::vector<const std::vector<int>* > index_lists, int total) 
 /* *****************************************************************
  * manually constructed test
  * **************************************************************** */
-TEST(SUPERMAP_MANUAL) {
-  //  using namespace Amanzi::Operators;
-
+void SuperMap_Manual(bool continuous)
+{
   auto comm = getDefaultComm();
   int MyPID = comm->MyPID();
   int NumProc = comm->NumProc();
@@ -100,8 +99,14 @@ TEST(SUPERMAP_MANUAL) {
 
   // make a ghosted and local map 1
   std::vector<int> gids(3);
-  for (int i=0; i!=3; ++i) {
-    gids[i] = 3*MyPID + i;
+  if (continuous) {
+    for (int i=0; i!=3; ++i) {
+      gids[i] = 3*MyPID + i;
+    }
+  } else {
+    for (int i=0; i!=3; ++i) {
+      gids[i] = 3*(NumProc - MyPID) + i;
+    }
   }
   Teuchos::RCP<Epetra_Map> owned_map1 = Teuchos::rcp(new Epetra_Map(3*NumProc, 3, &gids[0], 0, *comm));
 
@@ -278,6 +283,10 @@ TEST(SUPERMAP_MANUAL) {
   }
 }
   
+TEST(SUPERMAP_MANUAL_TEST) {
+  SuperMap_Manual(false);
+  SuperMap_Manual(true);
+}
   
 TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR) {
   using namespace Amanzi;
@@ -361,7 +370,6 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR) {
     CHECK_EQUAL(2*ncells_used + 2*nfaces_owned+2, inds_f0[nfaces_owned+1]);
     CHECK_EQUAL(2*ncells_used + 2*nfaces_owned+3, inds_f1[nfaces_owned+1]);
   }
-  
 }
 
 

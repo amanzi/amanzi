@@ -124,11 +124,6 @@ class SingleFaceMesh : public AmanziMesh::MeshLight {
           const AmanziMesh::Entity_ID c,
           AmanziMesh::Entity_ID_List* edges) const {};
 
-  virtual void cell_2D_get_edges_and_dirs_internal_(
-          const AmanziMesh::Entity_ID c,
-          AmanziMesh::Entity_ID_List* edges,
-          std::vector<int>* edirs) const {};
-
   virtual void face_get_edges_and_dirs_internal_(
           const AmanziMesh::Entity_ID f,
           AmanziMesh::Entity_ID_List* edges,

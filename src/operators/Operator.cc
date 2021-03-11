@@ -393,6 +393,7 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar)
 
   for (auto& it : *this) it->ApplyMatrixFreeOp(this, X, Y);
 
+  Y.GatherGhostedToMaster(Add);
   return 0;
 }
 
