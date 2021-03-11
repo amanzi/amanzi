@@ -312,13 +312,6 @@ class MeshEmbeddedLogical : public Mesh {
   void cell_get_edges_internal_(const Entity_ID cellid,
           Entity_ID_List *edgeids) const override;
 
-  // edges and directions of a 2D cell - this function is implemented
-  // in each mesh framework. The results are cached in the base class.
-  virtual
-  void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
-          Entity_ID_List *edgeids,
-          std::vector<int> *edge_dirs) const override;
-
   virtual
   int build_columns_() const;
 

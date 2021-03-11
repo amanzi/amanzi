@@ -325,13 +325,6 @@ class MeshSurfaceCell : public Mesh {
           Entity_ID_List *edgeids) const override;
 
 
-  // edges and directions of a 2D cell - this function is implemented
-  // in each mesh framework. The results are cached in the base class.
-  virtual
-  void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
-          Entity_ID_List *edgeids,
-          std::vector<int> *edge_dirs) const override;
-
  protected:
   std::vector<AmanziGeometry::Point> nodes_;
   std::map<Set_ID,bool> sets_;

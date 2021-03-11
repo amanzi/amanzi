@@ -85,6 +85,7 @@ class Chemistry_PK : public PK_Physical {
   bool using_sorption_, using_sorption_isotherms_;
 
   int number_free_ion_, number_ion_exchange_sites_;
+  double saturation_tolerance_;
 
   // names of state fields 
   Key tcc_key_;

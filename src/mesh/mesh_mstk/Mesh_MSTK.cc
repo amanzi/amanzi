@@ -1554,68 +1554,6 @@ void Mesh_MSTK::cell_get_edges_internal_(const Entity_ID cellid,
 
 
 //---------------------------------------------------------
-// For 2D cells, get edges and directions in which edges are used in cell
-//---------------------------------------------------------
-void Mesh_MSTK::cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
-                                                     Entity_ID_List *edgeids,
-                                                     std::vector<int> *edgedirs) const 
-{
-  AMANZI_ASSERT(manifold_dimension() == 2); 
-
-  if (!edgedirs) 
-    cell_get_edges(cellid, edgeids);
-  else {
-
-    AMANZI_ASSERT(edges_initialized);
-    
-    MEntity_ptr cell;
-    
-    AMANZI_ASSERT(edgeids != nullptr);
-    
-    cell = cell_id_to_handle[cellid];
-    
-    int nfe;
-    
-    List_ptr fedges;
-    fedges = MF_Edges((MFace_ptr)cell,1,0);
-    nfe = List_Num_Entries(fedges);
-    
-    edgeids->resize(nfe);
-    edgedirs->resize(nfe);
-    
-    Entity_ID_List::iterator ite = edgeids->begin();
-    std::vector<int>::iterator itd = edgedirs->begin();
-    for (int i = 0; i < nfe; ++i) {
-      MEdge_ptr edge = List_Entry(fedges,i);
-      int lid = MEnt_ID(edge);
-      *ite = lid-1;  // assign to next spot by dereferencing iterator
-      ++ite;
-      *itd = 2*MF_EdgeDir_i((MFace_ptr)cell,i) - 1; // convert [0,1] to [-1,1]
-      ++itd;
-    }
-  
-    List_Delete(fedges);
-  
-    /* Reserved for next major MSTK release 
-       
-       int fedgeids[MAXPV2];
-       MF_EdgeIDs((MFace_ptr)cell,1,0,&nfe,fedgeids);
-       
-       edgeids->resize(nfe);
-       Entity_ID_List::iterator ite = edgeids->begin();
-       std::vector<int>::iterator itd = edgedirs->begin();
-       for (int i = 0; i < nfe; ++i) {
-       *ite = fedgeids[i]-1;
-       ++ite;
-       *itd = 2*MF_EdgeDir_i((MFace_ptr)cell,i) - 1; // convert [0,1] to [-1,1]
-       ++itd;
-       }
-    */
-  }
-}
-
- 
-//---------------------------------------------------------
 // Get nodes of cell 
 // On a distributed mesh, all nodes (OWNED or GHOST) of the cell 
 // are returned

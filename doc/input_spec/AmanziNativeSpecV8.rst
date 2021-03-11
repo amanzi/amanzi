@@ -3681,6 +3681,9 @@ The list of global parameters include:
 * `"domain name`" [string] specifies mesh name that defined domain of this PK.
   Default is `"domain`".
 
+* `"limiter cfl`" [double] is a safety factor (less than 1) applied to the limiter.
+  Default value is 1.
+
 
 Reconstruction and limiters
 ...........................
@@ -5115,6 +5118,9 @@ Internal parameters for GMRES include
 * `"maximum size of deflation space`" [int] defines the size of deflation space. It should be 
   smaller than the size of the Krylov space. Default is 0. This is experimental feature.
 
+* `"release Krylov vectors`" [bool] cleans the stack of Krylov vectors. Default is *false*.
+  This may be useful to reduce internal work memory of a persistent solver.
+
 .. code-block:: xml
 
   <ParameterList name="_GMRES with HYPRE AMG">  <!-- parent list -->
@@ -5126,6 +5132,7 @@ Internal parameters for GMRES include
     <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
     <Parameter name="maximum size of deflation space" type="int" value="0"/>
     <Parameter name="preconditioning strategy`" type="string" value="left"/>
+    <Parameter name="release Krylov vectors" type="bool" value="false"/>
 
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="high"/>

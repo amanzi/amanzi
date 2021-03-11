@@ -69,26 +69,25 @@ class ShallowWater_PK : public PK_Physical,
                                         Epetra_Vector& f_component) override;
 
   // Commit any secondary (dependent) variables.
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override {};
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
 
   // Calculate any diagnostics prior to doing vis
   virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override {};
 
   virtual std::string name() override { return "Shallow water PK"; }
 
-  std::vector<double> PhysFlux_x(std::vector<double>);
+  // due to rotational invariance of SW equations, we need flux in the x-direction only.
+  std::vector<double> PhysicalFlux_x(const std::vector<double>&);
 
-  std::vector<double> PhysFlux_y(std::vector<double>);
+  std::vector<double> NumericalFlux_x(std::vector<double>&, std::vector<double>&);
+  std::vector<double> NumericalFlux_x_Rusanov(const std::vector<double>&, const std::vector<double>&);
+  std::vector<double> NumericalFlux_x_CentralUpwind(const std::vector<double>&, const std::vector<double>&);
 
-  std::vector<double> NumFlux_x(std::vector<double>&, std::vector<double>&);
+  std::vector<double> PhysicalSource(const std::vector<double>&);
+  std::vector<double> NumericalSource(const std::vector<double>&, int);
 
-  std::vector<double> NumFlux_x_Rus(std::vector<double>&, std::vector<double>&);
-
-  std::vector<double> NumFlux_x_central_upwind(std::vector<double>&, std::vector<double>&);
-
-  std::vector<double> PhysSrc(std::vector<double>);
-
-  std::vector<double> NumSrc(std::vector<double>,int);
+ private:
+  void ErrorDiagnostics_(int c, double h, double B, double ht);
 
  protected:
   Teuchos::RCP<Teuchos::ParameterList> glist_;
@@ -99,12 +98,10 @@ class ShallowWater_PK : public PK_Physical,
   Key domain_;
 
   // names of state fields
-  Key velocity_x_key_, velocity_y_key_;
-  Key discharge_x_key_, discharge_y_key_;
+  Key velocity_key_, discharge_key_;
   Key ponded_depth_key_;
   Key total_depth_key_;
   Key bathymetry_key_;
-  Key discharge_y_grad_key_;
 
   std::string passwd_;
 
@@ -124,6 +121,8 @@ class ShallowWater_PK : public PK_Physical,
   Teuchos::RCP<Operators::ReconstructionCell> velocity_x_grad_, velocity_y_grad_;
   Teuchos::RCP<Operators::ReconstructionCell> discharge_x_grad_, discharge_y_grad_;
   Teuchos::RCP<Operators::LimiterCell> limiter_;
+
+  double cfl_;
 
  private:
   // factory registration
