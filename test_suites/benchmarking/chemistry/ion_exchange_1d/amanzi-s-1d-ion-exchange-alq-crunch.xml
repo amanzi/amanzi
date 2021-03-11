@@ -28,7 +28,7 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" />
-    <chemistry state="on" engine="crunchflow+" input_filename="1d-ion-exchange-crunch.in" database="ion-exchange.dbs" />
+    <chemistry state="on" engine="crunchflow" input_filename="1d-ion-exchange-crunch.in" database="ion-exchange.dbs" />
   </process_kernels>
 
   <phases>

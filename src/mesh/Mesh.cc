@@ -165,27 +165,6 @@ Mesh::cell_get_edges(const Entity_ID c, Entity_ID_List *edgeids) const
 }
 
 
-// -------------------------------------------------------------------
-// Downward connectivity: c -> e
-// -------------------------------------------------------------------
-void
-Mesh::cell_2D_get_edges_and_dirs(const Entity_ID cellid,
-                                 Entity_ID_List *edgeids,
-                                 std::vector<int> *edgedirs) const
-{
-#if AMANZI_MESH_CACHE_VARS != 0
-  if (!cell2edge_info_cached_) cache_cell2edge_info_();
-
-  *edgeids = cell_edge_ids_[cellid]; // copy operation
-  *edgedirs = cell_2D_edge_dirs_[cellid];
-
-#else  // Non-cached version
-  cell_2D_get_edges_and_dirs_internal_(cellid, edgeids, edgedirs);
-
-#endif
-}
-
-
 int
 Mesh::compute_cell_geometry_(const Entity_ID cellid, double *volume,
                              AmanziGeometry::Point *centroid) const

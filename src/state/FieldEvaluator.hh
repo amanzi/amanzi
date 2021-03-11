@@ -1,4 +1,3 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
   ATS is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -6,9 +5,7 @@
 
   Author: Ethan Coon (ecoon@lanl.gov)
 */
-
 //! A FieldEvaluator is a node in the dependency graph.
-
 /*!
 
 Evaluators combine data (variables) with functions (physics) providing the
@@ -40,6 +37,8 @@ registered with the evaluator factory.
 .. admonition:: field-evaluator-spec
 
    * `"field evaluator type`" ``[string]`` Type registered in evaluator factory.
+   * `"write checkpoint`" ``[bool]`` **true** Write this data when checkpointing.
+   * `"write vis`" ``[bool]`` **true** Write this data when visualizing.
 
 */
 

@@ -162,10 +162,9 @@ void MeshLight::cache_cell2edge_info_() const
   cell_edge_ids_.resize(ncells);
 
   if (space_dim_ == 2) {
-    cell_2D_edge_dirs_.resize(ncells);
+    std::vector<int> dirs;
     for (int c = 0; c < ncells; c++)
-      cell_2D_get_edges_and_dirs_internal_(c, &(cell_edge_ids_[c]),
-              &(cell_2D_edge_dirs_[c]));
+      cell_get_faces_and_dirs_internal_(c, &(cell_edge_ids_[c]), &dirs);
   }
   else
     for (int c = 0; c < ncells; c++)

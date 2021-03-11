@@ -1,14 +1,36 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-ATS
+/*
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+  Author: Ethan Coon (ecoon@lanl.gov)
+*/
+// Interface for a Field containing a CompositeVector.
 
-Interface of a Field containing a vector that is constant over the mesh.
+/*
 
-Field also stores some basic metadata for Vis, checkpointing, etc.
-------------------------------------------------------------------------- */
+  Field_ConstantVector is metadata for a small vector of scalar, but also
+includes functionality to initialize, restart, visualize, etc the data.
+Parameters available here are provided for use in InitialConditions_ specs.
+
+*/
+
+/*!
+
+``[initial-conditions-constantvector-spec]``
+
+* `"value`" ``[Array(double)]`` Set the value.
+
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="gravity">
+    <Parameter name="value" type="Array(double)" value="{{0.0, -9.81}}"/>
+  </ParameterList>
+
+*/
 
 #ifndef STATE_FIELD_CONSTANTVECTOR_HH_
 #define STATE_FIELD_CONSTANTVECTOR_HH_

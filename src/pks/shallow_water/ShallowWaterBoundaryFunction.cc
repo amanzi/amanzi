@@ -21,6 +21,7 @@ namespace ShallowWater {
 **************************************************************** */
 ShallowWaterBoundaryFunction::ShallowWaterBoundaryFunction(const Teuchos::ParameterList& plist)
 {
+  // place holder
 }
 
 }  // namespace ShallowWater

@@ -235,13 +235,7 @@ TEST_FIXTURE(obs_test, ObserveMax) {
   std::vector<double> observation(1, Observable::nan);
   obs.Update(S.ptr(), observation, 0);
 
-  // this ugliness is because of MSTK issue #112 : https://github.com/MeshToolkit/MSTK/issues/112
-  // When that is fixed, this can be removed in favor of always being 26
-  if (S->GetMesh("domain")->get_comm()->NumProc() == 2) {
-    CHECK_CLOSE(52, observation[0], 1.e-10); // biggest id is num cells - 1
-  } else {
-    CHECK_CLOSE(26, observation[0], 1.e-10); // biggest id is num cells - 1
-  }
+  CHECK_CLOSE(26, observation[0], 1.e-10); // biggest id is num cells - 1
 }
 
 

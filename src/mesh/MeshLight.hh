@@ -312,12 +312,6 @@ class MeshLight {
           const Entity_ID cellid,
           Entity_ID_List *edgeids) const = 0;
 
-  // edges of a 2D cell and directions
-  virtual void cell_2D_get_edges_and_dirs_internal_(
-          const Entity_ID cellid,
-          Entity_ID_List *edgeids,
-          std::vector<int> *edge_dirs) const = 0;
-
   // edges of a face
   virtual void face_get_edges_and_dirs_internal_(
           const Entity_ID faceid,
@@ -363,7 +357,6 @@ class MeshLight {
   // cache: c -> e
   mutable bool cell2edge_info_cached_;
   mutable std::vector<Entity_ID_List> cell_edge_ids_;
-  mutable std::vector<std::vector<int> > cell_2D_edge_dirs_;
 
   // cache: f -> e
   mutable bool face2edge_info_cached_;

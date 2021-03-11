@@ -60,11 +60,7 @@ int Operator_Edge::ApplyMatrixFreeOp(const Op_Cell_Edge& op,
                                      const CompositeVector& X, CompositeVector& Y) const
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
-
-  X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xe = *X.ViewComponent("edge", true);
-  Y.PutScalarGhosted(0.0);
-
   {
     Epetra_MultiVector& Ye = *Y.ViewComponent("edge", true);
 
@@ -84,10 +80,8 @@ int Operator_Edge::ApplyMatrixFreeOp(const Op_Cell_Edge& op,
       for (int n = 0; n != nedges; ++n) {
         Ye[0][edges[n]] += av(n);
       }
-    } 
+    }
   }
-
-  Y.GatherGhostedToMaster(Add);
   return 0;
 }
 
