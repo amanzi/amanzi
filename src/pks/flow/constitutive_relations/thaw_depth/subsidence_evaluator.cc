@@ -26,10 +26,10 @@ SubsidenceEvaluator::SubsidenceEvaluator(Teuchos::ParameterList& plist)
   Key domain_ss = Keys::getDomainInSet(dset_name, col_id);
   Key domain_sf = Keys::getDomainInSet(surf_dset_name, col_id);
 
-  bp_key_ = Keys::getKey(domain_ss,"base_porosity");
+  bp_key_ = Keys::readKey(plist, domain_ss, "base porosity", "base_porosity");
   dependencies_.insert(bp_key_);
 
-  init_elev_key_ = Keys::getKey(domain_sf,"initial_elevation");
+  init_elev_key_ = Keys::readKey(plist, domain_sf, "initial elevation", "initial_elevation");
 }
   
 

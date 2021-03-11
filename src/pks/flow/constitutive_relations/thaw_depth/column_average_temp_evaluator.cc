@@ -23,7 +23,7 @@ ColumnAverageTempEvaluator::ColumnAverageTempEvaluator(Teuchos::ParameterList& p
   
   Key domain_ss = Keys::getDomainInSet(dset_name, col_id);
   
-  temp_key_ = Keys::getKey(domain_ss,"temperature");
+  temp_key_ = Keys::readKey(plist, domain_ss, "temperature", "temperature");
   dependencies_.insert(temp_key_);
   
   depth_ = plist_.get<double>("depth from surface [m]", 0); // depth from the surface

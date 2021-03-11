@@ -24,13 +24,13 @@ WaterTableColumnsEvaluator::WaterTableColumnsEvaluator(Teuchos::ParameterList& p
   Key domain_ss = Keys::getDomainInSet(dset_name, col_id);
   Key domain_sf = Keys::getDomainInSet(surf_dset_name, col_id);
   
-  temp_key_ = Keys::getKey(domain_ss,"temperature");
+  temp_key_ = Keys::readKey(plist, domain_ss, "temperature", "temperature");
   dependencies_.insert(temp_key_);
   
-  sat_key_ = Keys::getKey(domain_ss,"saturation_liquid");
+  sat_key_ = Keys::readKey(plist, domain_ss, "saturation liquid", "saturation_liquid");
   dependencies_.insert(sat_key_);
 
-  pd_key_ = Keys::getKey(domain_sf,"ponded_depth");
+  pd_key_ = Keys::readKey(plist, domain_sf, "ponded depth", "ponded_depth");
   dependencies_.insert(pd_key_);
   
   trans_width_ =  plist_.get<double>("transition width [K]", 0.0);

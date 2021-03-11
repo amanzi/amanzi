@@ -23,8 +23,9 @@ InitialElevationEvaluator::InitialElevationEvaluator(Teuchos::ParameterList& pli
   int col_id = Keys::getDomainSetIndex<int>(domain_);
   
   Key domain_ss = Keys::getDomainInSet(dset_name, col_id);
-  
-  bp_key_ = Keys::getKey(domain_ss,"base_porosity");
+
+  bp_key_ = Keys::readKey(plist, domain_ss, "base porosity", "base_porosity");
+
 }
   
 

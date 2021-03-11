@@ -24,13 +24,13 @@ MoistureContentEvaluator::MoistureContentEvaluator(Teuchos::ParameterList& plist
   
   Key domain_ss = Keys::getDomainInSet(dset_name, col_id);
 
-  temp_key_ = Keys::getKey(domain_ss,"temperature");
+  temp_key_ = Keys::readKey(plist, domain_ss, "temperature", "temperature");
   dependencies_.insert(temp_key_);
   
-  cv_key_ = Keys::getKey(domain_ss,"cell_volume");
+  cv_key_ = Keys::readKey(plist, domain_ss, "cell volume", "cell_volume");
   dependencies_.insert(cv_key_);
   
-  sat_key_ = Keys::getKey(domain_ss,"saturation_liquid");
+  sat_key_ =  Keys::readKey(plist, domain_ss, "saturation liquid", "saturation_liquid");
   dependencies_.insert(sat_key_);
   
   trans_width_ =  plist_.get<double>("transition width [K]", 0.0);
@@ -38,7 +38,7 @@ MoistureContentEvaluator::MoistureContentEvaluator(Teuchos::ParameterList& plist
   volumetric_wc_ =  plist_.get<bool>("volumetric water content", false);
 
   if (volumetric_wc_) {
-    por_key_ = Keys::getKey(domain_ss,"base_porosity");
+    por_key_ =  Keys::readKey(plist, domain_ss, "base porosity", "base_porosity");
     dependencies_.insert(por_key_);
   }
 

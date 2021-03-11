@@ -24,7 +24,7 @@ ThawDepthColumnsEvaluator::ThawDepthColumnsEvaluator(Teuchos::ParameterList& pli
   
   Key domain_ss = Keys::getDomainInSet(dset_name, col_id);
   
-  temp_key_ = Keys::getKey(domain_ss,"temperature");
+  temp_key_ = Keys::readKey(plist, domain_ss, "temperature", "temperature");
   dependencies_.insert(temp_key_);
 
   trans_width_ =  plist_.get<double>("transition width [K]", 0.2);
