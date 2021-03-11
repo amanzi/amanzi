@@ -146,13 +146,12 @@ MatrixFE::DiagonalShift(double shift) {
 
 // diagonal shift for (near) singular matrices where the constant vector is the null space
 int
-MatrixFE::DiagonalShiftAdaptive(double shift_minor, double shift_major) {
+MatrixFE::DiagonalShiftMin(double shift_min) {
   int ierr(0);
   Epetra_Vector diag(RowMap());
   ierr = matrix_->ExtractDiagonalCopy(diag);
   for (int i=0; i!=diag.MyLength(); ++i) {
-    double shift = diag[i] > 0 ? shift_minor : shift_major;
-    diag[i] += shift;
+    diag[i] += std::max(diag[i], shift_min);
   }
   ierr |= matrix_->ReplaceDiagonalValues(diag);  
   return ierr;
