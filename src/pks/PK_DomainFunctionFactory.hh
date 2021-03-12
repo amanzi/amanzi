@@ -22,7 +22,7 @@
 #include "PK_DomainFunctionVolumeFraction.hh"
 #include "PK_DomainFunctionWeight.hh"
 #include "PK_DomainFunctionCoupling.hh"
-#include "PK_DomainFunctionExponentialDecay.hh"
+#include "PK_DomainFunctionFirstOrderExchange.hh"
 #include "PK_DomainFunctionSubgrid.hh"
 #include "PK_DomainFunctionSubgridReturn.hh"
 #include "PK_DomainFunctionSimpleWell.hh"
@@ -109,10 +109,10 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
     func->Init(plist, keyword, kind);
     return func;
   }
-  else if (model == "exponential decay") {
+  else if (model == "first order exchange") {
     AMANZI_ASSERT(kind == AmanziMesh::CELL);
-    Teuchos::RCP<PK_DomainFunctionExponentialDecay<FunctionBase> >
-        func = Teuchos::rcp(new PK_DomainFunctionExponentialDecay<FunctionBase>(mesh_, plist, kind));
+    Teuchos::RCP<PK_DomainFunctionFirstOrderExchange<FunctionBase> >
+        func = Teuchos::rcp(new PK_DomainFunctionFirstOrderExchange<FunctionBase>(mesh_, plist, kind));
     func->Init(plist, keyword);
     return func;
   }
