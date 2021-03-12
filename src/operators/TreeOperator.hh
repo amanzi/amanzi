@@ -176,7 +176,7 @@ class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
 
   Teuchos::RCP<Matrix<TreeVector>> preconditioner_;
   bool block_diagonal_;
-  double shift_;
+  double shift_, shift_min_;
 
   int num_colors_;
   Teuchos::RCP<std::vector<int>> coloring_;
