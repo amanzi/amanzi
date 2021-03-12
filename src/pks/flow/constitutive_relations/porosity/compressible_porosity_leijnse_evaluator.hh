@@ -1,14 +1,23 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
-
 /*
-  Evaluates the porosity, given a small compressibility of rock.
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-  Compressible grains are both physically realistic (based on bulk modulus)
-  and a simple way to provide a non-elliptic, diagonal term for helping
-  solvers to converge.
+  Authors: Ethan Coon (coonet@ornl.gov)
+*/
+//! Evaluates the porosity, given a small compressibility of rock.
+/*!
 
+Compressible grains are both physically realistic (based on bulk modulus) and a
+simple way to provide a non-elliptic, diagonal term for helping solvers to
+converge.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+* `"compressible porosity model parameters`" ``[compressible-porosity-leijnse-model-spec]``
+
+KEYS:
+* `"pressure`" **DOMAIN-pressure**
+* `"base porosity`" **DOMAIN-base_porosity**
+
 */
 
 #ifndef AMANZI_FLOWRELATIONS_COMPRESSIBLE_POROSITY_LEIJNSE_EVALUATOR_HH_

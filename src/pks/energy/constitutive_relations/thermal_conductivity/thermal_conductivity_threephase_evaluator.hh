@@ -1,14 +1,13 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
-
 /*
-  Interface for a thermal conductivity model with three phases.
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-  License: BSD
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
+//! Thermal conductivity based on a three-phase (air,liquid,ice) composition of the porous media.
 
-#ifndef AMANZI_ENERGY_RELATIONS_TC_THREEPHASE_EVALUATOR_HH_
-#define AMANZI_ENERGY_RELATIONS_TC_THREEPHASE_EVALUATOR_HH_
+#pragma once
 
 #include "secondary_variable_field_evaluator.hh"
 #include "thermal_conductivity_threephase.hh"
@@ -51,4 +50,3 @@ class ThermalConductivityThreePhaseEvaluator :
 } // namespace
 } // namespace
 
-#endif

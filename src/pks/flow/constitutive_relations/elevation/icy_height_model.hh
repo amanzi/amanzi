@@ -2,8 +2,8 @@
 
 /*
   Evaluates height(pressure)
-
   Authors: Ethan Coon (ecoon@lanl.gov)
+
 */
 
 #ifndef AMANZI_FLOWRELATIONS_ICY_HEIGHT_MODEL_
