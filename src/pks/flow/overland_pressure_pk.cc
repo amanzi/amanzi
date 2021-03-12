@@ -449,16 +449,16 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S)
     if (ic_plist.get<bool>("initialize surface_star head from surface cells",false)) {
       // TODO: can't this move into an MPC?
       AMANZI_ASSERT(domain_ == "surface_star");
+      Key surf_dset_name = ic_plist.get<std::string>("surface domain set name", "surface_column");
       Epetra_MultiVector& pres_star = *pres_cv->ViewComponent("cell",false);
 
       unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
       for (unsigned int c=0; c!=ncells_surface; ++c) {
         int id = mesh_->cell_map(false).GID(c);
-
-        std::stringstream name;
-        name << "surface_column_"<< id;
-
-        const Epetra_MultiVector& pres = *S->GetFieldData(Keys::getKey(name.str(),"pressure"))->ViewComponent("cell",false);
+        
+        Key domain_sf = Keys::getDomainInSet(surf_dset_name, id);
+        
+        const Epetra_MultiVector& pres = *S->GetFieldData(Keys::getKey(domain_sf,"pressure"))->ViewComponent("cell",false);
 
         // -- get the surface cell's equivalent subsurface face and neighboring cell
         if (pres[0][0] > 101325.)

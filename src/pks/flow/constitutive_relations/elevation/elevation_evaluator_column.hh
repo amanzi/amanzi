@@ -56,7 +56,7 @@ class ElevationEvaluatorColumn : public ElevationEvaluator {
  private:
   static Utils::RegisteredFactory<FieldEvaluator,ElevationEvaluatorColumn> reg_;
 
-  Key slope_key_, base_por_key_;
+  Key slope_key_, base_por_key_, surface_domain_, dset_name_;
 };
 
 } //namespace

@@ -25,7 +25,8 @@ MPCPermafrostSplitFluxColumns::MPCPermafrostSplitFluxColumns(Teuchos::ParameterL
 {
   // collect keys and names
   std::string domain_star = plist_->get<std::string>("star domain name");
-
+  std::string col_dset_name = plist_->get<std::string>("column domain set name", "column");
+  
   // generate a list of sub-pks, based upon the star system + a list of columns
   // -- get the original PKs order -- the column must be the last one
   auto subpks = plist_->get<Teuchos::Array<std::string> >("PKs order");
@@ -44,7 +45,7 @@ MPCPermafrostSplitFluxColumns::MPCPermafrostSplitFluxColumns(Teuchos::ParameterL
   bool is_ds = Keys::splitDomainSet(colname, col_triple);
   if (!is_ds) {
     Errors::Message msg;
-    msg << "WeakMPCSemiCoupled subpk: \"" << colname << "\" should be a domain-set PK of the form column_*-NAME";
+    msg << "WeakMPCSemiCoupled subpk: \"" << colname << "\" should be a domain-set PK of the form column:*-NAME";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -56,10 +57,9 @@ MPCPermafrostSplitFluxColumns::MPCPermafrostSplitFluxColumns(Teuchos::ParameterL
   int ncols = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int i=0; i!=ncols; ++i) {
     int gid = surf_mesh->cell_map(false).GID(i);
-    std::stringstream domain_name_stream;
-    domain_name_stream << domain_col << "_" << gid;
-    subpks.push_back(Keys::getKey(domain_name_stream.str(), std::get<2>(col_triple)));
-    col_domains_.push_back(domain_name_stream.str());
+    Key col_domain_ss = Keys::getDomainInSet(col_dset_name, gid);
+    subpks.push_back(Keys::getKey(col_domain_ss, std::get<2>(col_triple)));
+    col_domains_.push_back(col_domain_ss);
   }
 
   // set up keys
@@ -79,10 +79,10 @@ MPCPermafrostSplitFluxColumns::MPCPermafrostSplitFluxColumns(Teuchos::ParameterL
     cv_key_ = Keys::readKey(*plist_, domain_star, "cell volume", "cell_volume");
   
     // set up for a primary variable field evaluator for the flux
-    Key primary_pkey = Keys::getKey(domain_surf + std::string("_*"), p_lateral_flow_source_suffix_);
+    Key primary_pkey = Keys::getKey(domain_surf, "*", p_lateral_flow_source_suffix_);
     auto& p_sublist = S->FEList().sublist(primary_pkey);
     p_sublist.set("field evaluator type", "primary variable");
-    Key primary_Tkey = Keys::getKey(domain_surf + std::string("_*"), T_lateral_flow_source_suffix_);
+    Key primary_Tkey = Keys::getKey(domain_surf,"*", T_lateral_flow_source_suffix_);
     auto& T_sublist = S->FEList().sublist(primary_Tkey);
     T_sublist.set("field evaluator type", "primary variable");
   }
