@@ -228,14 +228,26 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
         acc_c[0][c] = std::max(de_dT[0][c], 1.e-12) / h;
       }
     } else {
-      for (unsigned int c=0; c!=ncells; ++c) {
-        //      AMANZI_ASSERT(de_dT[0][c] > 1.e-10);
-        // ?? Not using e_bar anymore apparently, though I didn't think we were ever.  Need a nonzero here to ensure not singlar.
-        // apply a diagonal shift manually for coupled problems
-        acc_c[0][c] = de_dT[0][c] / h + 1.e-6;
+
+      if (decoupled_from_subsurface_) {
+        const Epetra_MultiVector& uf_c = *S_next_->GetFieldData(uf_key_)
+          ->ViewComponent("cell",false);
+        for (unsigned int c=0; c!=ncells; ++c) {
+          acc_c[0][c] = std::max(de_dT[0][c] / h , 1.e-1*uf_c[0][c]) + 1.e-6;
+        }
+        
+      }
+      else {
+        for (unsigned int c=0; c!=ncells; ++c) {
+          //      AMANZI_ASSERT(de_dT[0][c] > 1.e-10);
+          // ?? Not using e_bar anymore apparently, though I didn't think we were ever.  Need a nonzero here to ensure not singlar.
+          // apply a diagonal shift manually for coupled problems
+          acc_c[0][c] = de_dT[0][c] / h + 1.e-6;
+        }
       }
     }
   }
+  
   preconditioner_acc_->AddAccumulationTerm(acc, "cell");
 
   // -- update preconditioner with source term derivatives if needed

@@ -17,19 +17,20 @@ namespace Flow {
 MoistureContentEvaluator::MoistureContentEvaluator(Teuchos::ParameterList& plist)
     : SecondaryVariableFieldEvaluator(plist)
 {
-  domain_ = Keys::getDomain(my_key_);
-  auto pos = domain_.find_last_of('_');
-  int col_id = std::stoi(domain_.substr(pos+1, domain_.size()));
+  Key dset_name = plist.get<std::string>("domain set name", "column");
   
-  std::stringstream domain_ss;
-  domain_ss << "column_"<< col_id;
-  temp_key_ = Keys::getKey(domain_ss.str(),"temperature");
+  domain_ = Keys::getDomain(my_key_); //surface_column domain
+  int col_id = Keys::getDomainSetIndex<int>(domain_);
+  
+  Key domain_ss = Keys::getDomainInSet(dset_name, col_id);
+
+  temp_key_ = Keys::readKey(plist, domain_ss, "temperature", "temperature");
   dependencies_.insert(temp_key_);
   
-  cv_key_ = Keys::getKey(domain_ss.str(),"cell_volume");
+  cv_key_ = Keys::readKey(plist, domain_ss, "cell volume", "cell_volume");
   dependencies_.insert(cv_key_);
   
-  sat_key_ = Keys::getKey(domain_ss.str(),"saturation_liquid");
+  sat_key_ =  Keys::readKey(plist, domain_ss, "saturation liquid", "saturation_liquid");
   dependencies_.insert(sat_key_);
   
   trans_width_ =  plist_.get<double>("transition width [K]", 0.0);
@@ -37,7 +38,7 @@ MoistureContentEvaluator::MoistureContentEvaluator(Teuchos::ParameterList& plist
   volumetric_wc_ =  plist_.get<bool>("volumetric water content", false);
 
   if (volumetric_wc_) {
-    por_key_ = Keys::getKey(domain_ss.str(),"base_porosity");
+    por_key_ =  Keys::readKey(plist, domain_ss, "base porosity", "base_porosity");
     dependencies_.insert(por_key_);
   }
 

@@ -127,7 +127,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S)
   bc_flux_ = bc_factory.CreateMassFlux();
   bc_seepage_ = bc_factory.CreateSeepageFacePressure();
   bc_seepage_->Compute(0.); // compute at t=0 to set up
-  bc_seepage_infilt_ = bc_factory.CreateSeepageFacePressureWithInfiltration();
+  std::tie(bc_seepage_infilt_explicit_, bc_seepage_infilt_) =
+    bc_factory.CreateSeepageFacePressureWithInfiltration();
   bc_seepage_infilt_->Compute(0.); // compute at t=0 to set up
   bc_rho_water_ = bc_plist.get<double>("hydrostatic water density [kg m^-3]",1000.);
 
@@ -1146,6 +1147,16 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr)
   // seepage face -- pressure <= p_atm, outward mass flux is specified
   bc_counts.push_back(bc_seepage_infilt_->size());
   bc_names.push_back("seepage with infiltration");
+  {
+    Teuchos::Ptr<State> Sl;
+    if (bc_seepage_infilt_explicit_ && S_inter_.get()) {
+      Sl = S_inter_.ptr();
+    } else {
+      Sl = S;
+    }
+    const Epetra_MultiVector& flux = *Sl->GetFieldData(flux_key_)->ViewComponent("face", true);
+    Teuchos::RCP<const CompositeVector> u = Sl->GetFieldData(key_);
+  int i = 0;
   for (const auto& bc : *bc_seepage_infilt_) {
     int f = bc.first;
 #ifdef ENABLE_DBC
@@ -1157,39 +1168,47 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr)
     double flux_seepage_tol = std::abs(bc.second) * .001;
     double boundary_pressure = getFaceOnBoundaryValue(f, *u, *bc_);
     double boundary_flux = flux[0][f]*getBoundaryDirection(*mesh_, f);
-    //    std::cout << "BFlux = " << boundary_flux << " with constraint = " << bc.second - flux_seepage_tol << std::endl;
+
+    if (i == 0)
+      std::cout << "BFlux = " << boundary_flux << " with constraint = " << bc.second - flux_seepage_tol << std::endl;
 
     if (boundary_flux < bc.second - flux_seepage_tol &&
         boundary_pressure > p_atm + seepage_tol) {
       // both constraints are violated, either option should push things in the right direction
       markers[f] = Operators::OPERATOR_BC_DIRICHLET;
       values[f] = p_atm;
-      //      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in DIRICHLET pressure " << p_atm << std::endl;
+      if (i == 0)
+        std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*getBoundaryDirection(*mesh_, f) << " resulted in DIRICHLET pressure " << p_atm << std::endl;
 
     } else if (boundary_flux >= bc.second - flux_seepage_tol &&
         boundary_pressure > p_atm - seepage_tol) {
       // max pressure condition violated
       markers[f] = Operators::OPERATOR_BC_DIRICHLET;
       values[f] = p_atm;
-      //      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in DIRICHLET pressure " << p_atm << std::endl;
+    if (i == 0)
+      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*getBoundaryDirection(*mesh_, f) << " resulted in DIRICHLET pressure " << p_atm << std::endl;
 
     } else if (boundary_flux < bc.second - flux_seepage_tol &&
         boundary_pressure <= p_atm + seepage_tol) {
       // max infiltration violated
       markers[f] = Operators::OPERATOR_BC_NEUMANN;
       values[f] = bc.second;
-      //      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in NEUMANN flux " << bc.second << std::endl;
+    if (i == 0)
+      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*getBoundaryDirection(*mesh_, f) << " resulted in NEUMANN flux " << bc.second << std::endl;
 
     } else if (boundary_flux >= bc.second - flux_seepage_tol &&
         boundary_pressure <= p_atm - seepage_tol) {
       // both conditions are valid
       markers[f] = Operators::OPERATOR_BC_NEUMANN;
       values[f] = bc.second;
-      //      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in NEUMANN flux " << bc.second << std::endl;
+    if (i == 0)
+      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*getBoundaryDirection(*mesh_, f) << " resulted in NEUMANN flux " << bc.second << std::endl;
 
     } else {
       AMANZI_ASSERT(0);
     }
+    i++;
+  }
   }
 
   // surface coupling

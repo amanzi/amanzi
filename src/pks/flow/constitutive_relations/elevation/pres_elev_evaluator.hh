@@ -25,7 +25,7 @@ the input spec.  However, we include it here because this could easily be
 abstracted for new potential surfaces, kinematic wave, etc, at which point it
 would need to be added to the factory and the input spec.
 
-NOTE: This could easily be replaced by a generic AdditiveEvaluator_
+NOTE: This could easily be replaced by a generic Additive_ Evaluator.
 
 */
 

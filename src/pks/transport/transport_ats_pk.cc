@@ -757,6 +757,7 @@ bool Transport_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
   mol_dens_ = S_next_->GetFieldData(molar_density_key_)->ViewComponent("cell", false);
   solid_qty_ = S_next_->GetFieldData(solid_residue_mass_key_, name_)->ViewComponent("cell", false);
 
+#ifdef ALQUIMIA_ENABLED
   if (plist_->sublist("source terms").isSublist("geochemical")){
     for (auto& src : srcs_) {
       if (src->name() == "alquimia source"){
@@ -768,7 +769,6 @@ bool Transport_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
     }
   }
 
-
   if (plist_->sublist("boundary conditions").isSublist("geochemical")){
     for (auto& bc : bcs_){
       if (bc->name() == "alquimia bc"){
@@ -778,9 +778,8 @@ bool Transport_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
       }
     }
   }
-    
+#endif
 
-  
   // We use original tcc and make a copy of it later if needed.
   tcc = S_inter_->GetFieldData(tcc_key_, name_);
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
@@ -1657,9 +1656,6 @@ void Transport_ATS::ComputeAddSourceTerms(double tp, double dtp,
 
         int imap = i;
         if (num_vectors == 1) imap = 0;
-
-	//        std::cout<<"values "<<values[k]<<"\n";
-
         double value = mesh_->cell_volume(c) * values[k];
         cons_qty[imap][c] += dtp * value;
         mass_solutes_source_[i] += value;
