@@ -228,17 +228,17 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   // save a copy of primary and conservative fields
-  Epetra_MultiVector& B_vec_c = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("cell", true);
-  Epetra_MultiVector& h_vec_c = *S_->GetFieldData(ponded_depth_key_, passwd_)->ViewComponent("cell", true);
-  Epetra_MultiVector& ht_vec_c = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
-  Epetra_MultiVector& vel_vec_c = *S_->GetFieldData(velocity_key_, passwd_)->ViewComponent("cell", true);
+  Epetra_MultiVector& B_c = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("cell", true);
+  Epetra_MultiVector& h_c = *S_->GetFieldData(ponded_depth_key_, passwd_)->ViewComponent("cell", true);
+  Epetra_MultiVector& ht_c = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
+  Epetra_MultiVector& vel_c = *S_->GetFieldData(velocity_key_, passwd_)->ViewComponent("cell", true);
 
   S_->GetFieldEvaluator(discharge_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  Epetra_MultiVector& q_vec_c = *S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
+  Epetra_MultiVector& q_c = *S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
 
   // create copies of primary fields
-  Epetra_MultiVector h_vec_c_tmp(h_vec_c);
-  Epetra_MultiVector vel_vec_c_tmp(vel_vec_c);
+  Epetra_MultiVector h_c_tmp(h_c);
+  Epetra_MultiVector vel_c_tmp(vel_c);
 
   // distribute data to ghost cells
   S_->GetFieldData(total_depth_key_)->ScatterMasterToGhosted("cell");
@@ -307,8 +307,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       double B_rec = bathymetry_grad_->getValue(c, xcf);
 
       if (ht_rec < B_rec) {
-        ht_rec = ht_vec_c[0][c];
-        B_rec = B_vec_c[0][c];
+        ht_rec = ht_c[0][c];
+        B_rec = B_c[0][c];
       }
       double h_rec = ht_rec - B_rec;
       ErrorDiagnostics_(c, h_rec, ht_rec, B_rec); 
@@ -345,8 +345,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         B_rec = bathymetry_grad_->getValue(cn, xcf);
 
         if (ht_rec < B_rec) {
-          ht_rec = ht_vec_c[0][cn];
-          B_rec = B_vec_c[0][cn];
+          ht_rec = ht_c[0][cn];
+          B_rec = B_c[0][cn];
         }
         h_rec = ht_rec - B_rec;
         ErrorDiagnostics_(cn, h_rec, ht_rec, B_rec); 
@@ -384,9 +384,9 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     double h, u, v, qx, qy;
     U.resize(3);
 
-    h  = h_vec_c[0][c];
-    qx = q_vec_c[0][c];
-    qy = q_vec_c[1][c];
+    h  = h_c[0][c];
+    qx = q_c[0][c];
+    qy = q_c[1][c];
     double factor = 2.0 * h / (h * h + std::fmax(h * h, eps2));
     u = factor * qx;
     v = factor * qy;
@@ -406,17 +406,17 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     qx = U_new[1];
     qy = U_new[2];
 
-    h_vec_c_tmp[0][c] = h;
+    h_c_tmp[0][c] = h;
     factor = 2.0 * h / (h * h + std::fmax(h * h, eps2));
-    vel_vec_c_tmp[0][c] = factor * qx;
-    vel_vec_c_tmp[1][c] = factor * qy;
+    vel_c_tmp[0][c] = factor * qx;
+    vel_c_tmp[1][c] = factor * qy;
   } // c
 
-  h_vec_c = h_vec_c_tmp;
-  vel_vec_c = vel_vec_c_tmp;
+  h_c = h_c_tmp;
+  vel_c = vel_c_tmp;
 
   for (int c = 0; c < ncells_owned; c++) {
-    ht_vec_c[0][c] = h_vec_c_tmp[0][c] + B_vec_c[0][c];
+    ht_c[0][c] = h_c_tmp[0][c] + B_c[0][c];
   }
 
   return failed;
@@ -653,8 +653,8 @@ std::vector<double> ShallowWater_PK::NumericalFlux_x_CentralUpwind(
 std::vector<double> ShallowWater_PK::NumericalSource(
     const std::vector<double>& U, int c)
 {
-  Epetra_MultiVector& B_vec_c = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("cell", true);
-  Epetra_MultiVector& ht_vec_c = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
+  Epetra_MultiVector& B_c = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("cell", true);
+  Epetra_MultiVector& ht_c = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
 
   AmanziMesh::Entity_ID_List cfaces;
   mesh_->cell_get_faces(c, &cfaces);
@@ -672,8 +672,8 @@ std::vector<double> ShallowWater_PK::NumericalSource(
     double B_rec = bathymetry_grad_->getValue(c, xcf);
 
     if (ht_rec < B_rec) {
-      ht_rec = ht_vec_c[0][c];
-      B_rec = B_vec_c[0][c];
+      ht_rec = ht_c[0][c];
+      B_rec = B_c[0][c];
     }
 
     S1 += (-B_rec * ht_rec + B_rec * B_rec / 2) * normal[0];
@@ -697,16 +697,16 @@ double ShallowWater_PK::get_dt()
   double h, u, v, S, vol, dx, dt;
   double eps = 1.e-6;
 
-  auto& h_vec_c = *S_->GetFieldData(ponded_depth_key_)->ViewComponent("cell");
-  auto& vel_vec_c = *S_->GetFieldData(velocity_key_)->ViewComponent("cell");
+  auto& h_c = *S_->GetFieldData(ponded_depth_key_)->ViewComponent("cell");
+  auto& vel_c = *S_->GetFieldData(velocity_key_)->ViewComponent("cell");
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   dt = 1.e10;
   for (int c = 0; c < ncells_owned; c++) {
-    h = h_vec_c[0][c];
-    u = vel_vec_c[0][c];
-    v = vel_vec_c[1][c];
+    h = h_c[0][c];
+    u = vel_c[0][c];
+    v = vel_c[1][c];
     S = std::max(std::fabs(u), std::fabs(v)) + std::sqrt(g_*h) + eps;
     vol = mesh_->cell_volume(c);
     dx = std::sqrt(vol);

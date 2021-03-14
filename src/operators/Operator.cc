@@ -66,6 +66,7 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
     schema_row_(schema),
     schema_col_(schema),
     shift_(0.0),
+    shift_min_(0.0),
     plist_(plist),
     num_colors_(0),
     coloring_(Teuchos::null),
@@ -94,6 +95,8 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
 
   vo_ = Teuchos::rcp(new VerboseObject("Operator", plist));
   shift_ = plist.get<double>("diagonal shift", 0.0);
+  shift_min_ = plist.get<double>("diagonal shift minimum", 0.0);
+
   apply_calls_ = 0;
 
   if (plist_.isSublist("inverse")) {
@@ -118,6 +121,7 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
     schema_row_(schema_row),
     schema_col_(schema_col),
     shift_(0.0),
+    shift_min_(0.0),
     plist_(plist),
     num_colors_(0),
     coloring_(Teuchos::null),
@@ -144,6 +148,7 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
 
   vo_ = Teuchos::rcp(new VerboseObject("Operator", plist));
   shift_ = plist.get<double>("diagonal shift", 0.0);
+  shift_min_ = plist.get<double>("diagonal shift mininum", 0.0);
   apply_calls_ = 0;
 }
 
@@ -257,6 +262,9 @@ void Operator::AssembleMatrix()
 
   if (shift_ != 0.0) {
     Amat_->DiagonalShift(shift_);
+  }
+  else if (shift_min_ != 0.0) {
+    Amat_->DiagonalShiftMin(shift_min_);
   }
 
   // std::stringstream filename_s2;

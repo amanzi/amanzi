@@ -9,8 +9,8 @@
   Author: Ethan Coon (coonet@ornl.gov)
 */
 
-#ifndef AMANZI_PK_DOMAIN_FUNCTION_EXPONENTIAL_DECAY_HH_
-#define AMANZI_PK_DOMAIN_FUNCTION_EXPONENTIAL_DECAY_HH_
+#ifndef AMANZI_PK_DOMAIN_FUNCTION_FIRSTORDER_EXCHANGE_HH_
+#define AMANZI_PK_DOMAIN_FUNCTION_FIRSTORDER_EXCHANGE_HH_
 
 #include <string>
 #include <vector>
@@ -27,17 +27,17 @@
 namespace Amanzi {
 
 template <class FunctionBase>
-class PK_DomainFunctionExponentialDecay : public FunctionBase,
+class PK_DomainFunctionFirstOrderExchange : public FunctionBase,
                                 public Functions::UniqueMeshFunction {
  public:
-  PK_DomainFunctionExponentialDecay(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+  PK_DomainFunctionFirstOrderExchange(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                           const Teuchos::ParameterList& plist,
                           AmanziMesh::Entity_kind kind) :
     UniqueMeshFunction(mesh),
     FunctionBase(plist),
     kind_(kind) {
   };
-  virtual ~PK_DomainFunctionExponentialDecay() = default;
+  virtual ~PK_DomainFunctionFirstOrderExchange() = default;
 
   // member functions
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
@@ -46,7 +46,7 @@ class PK_DomainFunctionExponentialDecay : public FunctionBase,
 
   // required member functions
   virtual void Compute(double t0, double t1);
-  virtual std::string name() const { return "exponential decay"; }
+  virtual std::string name() const { return "first order exchange"; }
 
  protected:
   using FunctionBase::value_;
@@ -65,7 +65,7 @@ class PK_DomainFunctionExponentialDecay : public FunctionBase,
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
 template <class FunctionBase>
-void PK_DomainFunctionExponentialDecay<FunctionBase>::Init(
+void PK_DomainFunctionFirstOrderExchange<FunctionBase>::Init(
     const Teuchos::ParameterList& plist, const std::string& keyword)
 {
   keyword_ = keyword;
@@ -99,10 +99,10 @@ void PK_DomainFunctionExponentialDecay<FunctionBase>::Init(
 
 
 /* ******************************************************************
-* Compute and distribute the result by ExponentialDecay.
+* Compute and distribute the result by FirstOrderExchange.
 ****************************************************************** */
 template <class FunctionBase>
-void PK_DomainFunctionExponentialDecay<FunctionBase>::Compute(double t0, double t1)
+void PK_DomainFunctionFirstOrderExchange<FunctionBase>::Compute(double t0, double t1)
 {
   if (unique_specs_.size() == 0) return;
 
