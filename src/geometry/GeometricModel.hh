@@ -2,9 +2,9 @@
 /*
   Collection of Regions which decompose the domain into subdomains.
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: William Perkins
@@ -34,19 +34,23 @@ class GeometricModel {
   // Constructor from parameter list
   GeometricModel(unsigned int dim,
                  Teuchos::ParameterList& gm_param_list,
-                 const Comm_type& comm);      
+                 const Comm_type& comm);
 
   unsigned int dimension() const { return dim_; }
-  
+
   // Add a Region to a GeometricModel
   void AddRegion(const Teuchos::RCP<Region>& r);
+
+  bool HasRegion(const std::string& name) const {
+    return regions_name_.count(name);
+  }
 
   // Region iterators
   typedef std::vector<Teuchos::RCP<const Region> >::const_iterator RegionConstIterator;
   std::size_t size() const { return regions_.size(); }
   RegionConstIterator begin() const { return regions_.begin(); }
   RegionConstIterator end() const { return regions_.end(); }
-  
+
   // Get a region by its ID
   Teuchos::RCP<const Region>
   FindRegion(const int id) const {
@@ -55,7 +59,7 @@ class GeometricModel {
 
   // Get a region by its name
   Teuchos::RCP<const Region>
-  FindRegion(const std::string name) const {
+  FindRegion(const std::string& name) const {
     return regions_name_.at(name);
   }
 

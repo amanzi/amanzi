@@ -86,7 +86,7 @@ if (BUILD_TESTS)
    include_directories(${UnitTest_INCLUDE_DIRS})
 
    # Test: test_mesh_factory
-   add_amanzi_test(mesh_factory test_mesh_factory
+   add_amanzi_test(mesh_factory_test mesh_factory_test
                    KIND unit
 		   SOURCE
                          test/Main.cc
@@ -101,7 +101,14 @@ if (BUILD_TESTS)
 
    # Do not call add_amanzi_test again with SOURCE and LINK_LIBS since the
    # previous call carries instructions to build the executable
-   add_amanzi_test(mesh_factory_parallel test_mesh_factory NPROCS 2 KIND uint)
+   add_amanzi_test(mesh_factory_test_np2 mesh_factory_test NPROCS 2 KIND uint)
 
+   # Test: test_mesh_factory
+   add_amanzi_test(mesh_extract_comms_np5 mesh_extract_comms
+                   KIND unit
+		   SOURCE test/Main.cc test/test_extract_comms.cc
+                   LINK_LIBS mesh_factory ${UnitTest_LIBRARIES} ${Boost_LIBRARIES} ${Epetra_LIBRARIES} ${HDF5_LIBRARIES}
+                   NPROCS 5) # need sufficient cores to force one proc to have no surface faces
+   
 endif()
    

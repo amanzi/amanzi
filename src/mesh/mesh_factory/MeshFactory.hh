@@ -17,6 +17,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "AmanziTypes.hh"
+#include "VerboseObject.hh"
 #include "MeshDefs.hh"
 #include "MeshFramework.hh"
 
@@ -96,6 +97,11 @@ class MeshFactory {
   //    Frameworks that extract often need to assume the parent_mesh is the same
   //    type as the constructed mesh in order to use internal information.  Note
   //    this could likely be relaxed, but is easiest to require for now.
+  //
+  //    If expert parameter "create_subcommunicator" is true, this mesh is
+  //    constructed on an MPI_Comm that consists of only processes that have
+  //    entities in setids.  If false (default) it is constructed on the same
+  //    MPI_Comm as parent_mesh.
   Teuchos::RCP<Mesh> create(const Teuchos::RCP<const Mesh>& parent_mesh,
                             const Entity_ID_List& setids,
                             const Entity_kind setkind,
@@ -118,6 +124,11 @@ class MeshFactory {
   //
   //    If expert paraeter "extraction method" is present, then the specified 
   //    value is use to build a new mesh.
+  //
+  //    If expert parameter "create_subcommunicator" is true, this mesh is
+  //    constructed on an MPI_Comm that consists of only processes that have
+  //    entities in setids.  If false (default) it is constructed on the same
+  //    MPI_Comm as parent_mesh.
   Teuchos::RCP<Mesh> create(const Teuchos::RCP<const Mesh>& parent_mesh,
                             const std::vector<std::string>& setnames,
                             const Entity_kind setkind,
@@ -134,7 +145,7 @@ class MeshFactory {
 
   // Object encoding the level of verbosity and output stream for diagnostic
   // messages, other control parameters that are NOT about construction.
-  Teuchos::RCP<const Teuchos::ParameterList> plist_;
+  Teuchos::RCP<Teuchos::ParameterList> plist_;
 
   // The geometric model describing the space within which the mesh lives
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_;
@@ -143,6 +154,7 @@ class MeshFactory {
   bool request_faces_;
   bool request_edges_;
 
+  Teuchos::RCP<VerboseObject> vo_;
  private:
   std::string extraction_method_;
 };

@@ -69,6 +69,8 @@ class HDF5_MPI {
   std::string get_tag() { return tag_; }
   void set_tag(const std::string& tag) { tag_ = tag; }
 
+  Comm_ptr_type Comm() const { return viz_comm_; }
+  
   Teuchos::XMLObject xmlMeshVisit() { return xmlMeshVisit_; }
 
   // Output mesh data to filename.h5 and filename.xmf
