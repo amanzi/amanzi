@@ -487,7 +487,7 @@ class Operator : public Matrix<CompositeVector,CompositeVectorSpace> {
   int schema_old_;
   Schema schema_row_, schema_col_;
   std::string schema_string_;
-  double shift_;
+  double shift_, shift_min_;
 
   mutable int apply_calls_;
 

@@ -32,7 +32,7 @@ initialized (as independent variables are owned by state, not by any PK).
 #include "FieldEvaluator_Factory.hh"
 #include "cell_volume_evaluator.hh"
 #include "rank_evaluator.hh"
-
+#include "primary_variable_field_evaluator.hh"
 #include "State.hh"
 
 namespace Amanzi {
@@ -58,6 +58,7 @@ State::State(const State& other, StateConstructMode mode) :
     field_factories_(other.field_factories_),
     time_(other.time_),
     position_in_tp_(other.position_in_tp_),
+    domain_sets_(other.domain_sets_),
     cycle_(other.cycle_) {
 
   if (mode == STATE_CONSTRUCT_MODE_COPY_DATA) {
@@ -298,6 +299,11 @@ bool State::HasDomainSet(const Key& name) const {
 
 Teuchos::RCP<const AmanziMesh::DomainSet>
 State::GetDomainSet(const Key& name) const {
+  if (!domain_sets_.count(name)) {
+    Errors::Message msg;
+    msg << "DomainSet \"" << name << "\" does not exist in State.";
+    Exceptions::amanzi_throw(msg);
+  }
   return domain_sets_.at(name);
 }
 
@@ -1005,6 +1011,23 @@ void State::InitializeEvaluators() {
   }
 };
 
+void State::InitializeFieldCopies() {
+  VerboseObject vo("State", state_plist_); 
+  if (vo.os_OK(Teuchos::VERB_HIGH)) {
+    Teuchos::OSTab tab = vo.getOSTab();
+    *vo.os() << "initializing field copies..." << std::endl;
+  }
+
+  for (FieldMap::iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
+    Teuchos::RCP<Field> field = f_it->second;
+    for (Amanzi::Field::copy_iterator cp_it = field->copy_begin(); cp_it != field->copy_end(); ++cp_it){
+      Key owner_key = field->GetCopy(cp_it->first)->owner();
+      *field->GetCopy(cp_it->first,owner_key)->GetFieldData() = *field->GetFieldData();
+    } 
+  }
+
+};
+
 
 void State::InitializeFields() {
   bool pre_initialization = false;
@@ -1018,8 +1041,18 @@ void State::InitializeFields() {
     for (FieldMap::iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
       if (f_it->second->type() == COMPOSITE_VECTOR_FIELD) {
         bool read_complete = f_it->second->ReadCheckpoint(file_input);
-        if (read_complete)
+        if (read_complete){
+          if (HasFieldEvaluator(f_it->first)) {
+            Teuchos::RCP<FieldEvaluator> fm = GetFieldEvaluator(f_it->first);
+            Teuchos::RCP<PrimaryVariableFieldEvaluator> solution_evaluator =
+              Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
+            if (solution_evaluator != Teuchos::null){
+              Teuchos::Ptr<State> S_ptr(this);
+              solution_evaluator->SetFieldAsChanged(S_ptr);
+            }
+          }          
           f_it->second->set_initialized();
+        }
       }
     }
     file_input.close_h5file();

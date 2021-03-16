@@ -685,32 +685,36 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   S_->GetFieldEvaluator(fluid_den_key_)->HasFieldChanged(S_.ptr(), name_);
   S_->GetFieldEvaluator(saturation_key_)->HasFieldChanged(S_.ptr(), name_);
 
+  const Epetra_MultiVector& sat_vec = *S_->GetFieldData(saturation_key_)->ViewComponent("cell");
   int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
   for (int c = 0; c < num_cells; ++c) {
-    CopyCellStateToBeakerStructures(c, aqueous_components_);
-    try {
-      // create a backup copy of the components
-      chem_->CopyComponents(beaker_components_, &beaker_components_copy_);
+    if (sat_vec[0][c] > saturation_tolerance_) {
+      CopyCellStateToBeakerStructures(c, aqueous_components_);
+      try {
+        // create a backup copy of the components
+        chem_->CopyComponents(beaker_components_, &beaker_components_copy_);
 
-      // chemistry computations for this cell
-      num_itrs = chem_->ReactionStep(&beaker_components_, beaker_parameters_, dt);
+        // chemistry computations for this cell
+        num_itrs = chem_->ReactionStep(&beaker_components_, beaker_parameters_, dt);
 
-      if (max_itrs < num_itrs) {
-        max_itrs = num_itrs;
-        cmax = c;
+        if (max_itrs < num_itrs) {
+          max_itrs = num_itrs;
+          cmax = c;
+        }
+        if (min_itrs > num_itrs) {
+          min_itrs = num_itrs;
+        }
+        avg_itrs += num_itrs;
+      } catch (ChemistryException& geochem_err) {
+        ierr = 1;
+        internal_msg = AmanziChemistry::kChemistryError;
+        break;
       }
-      if (min_itrs > num_itrs) {
-        min_itrs = num_itrs;
-      }
-      avg_itrs += num_itrs;
-    } catch (ChemistryException& geochem_err) {
-      ierr = 1;
-      internal_msg = AmanziChemistry::kChemistryError;
-      break;
+
+      if (ierr == 0) CopyBeakerStructuresToCellState(c, aqueous_components_);
+      // TODO: was porosity etc changed? copy someplace
     }
-
-    if (ierr == 0) CopyBeakerStructuresToCellState(c, aqueous_components_);
-    // TODO: was porosity etc changed? copy someplace
   }
 
   ErrorAnalysis(ierr, internal_msg);

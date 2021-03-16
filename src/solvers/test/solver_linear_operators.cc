@@ -161,6 +161,7 @@ TEST(GMRES_SOLVER_RIGHT_PRECONDITIONER) {
 
   Teuchos::ParameterList plist;
   plist.set<std::string>("preconditioning strategy", "right");
+  plist.set<bool>("release Krylov vectors", true);
 
   // create the gmres operator
   for (int loop = 0; loop < 2; loop++) {
