@@ -5,7 +5,7 @@ ATS
 
 Authors: Svetlana Tokareva (tokareva@lanl.gov)
 
-FieldEvaluator for water density.
+FieldEvaluator for soil density.
 ----------------------------------------------------------------------------- */
 
 
@@ -20,12 +20,12 @@ FieldEvaluator for water density.
 namespace Amanzi {
 namespace SoilThermo {
 
-class DensityEvaluator : public SecondaryVariableFieldEvaluator {
+class SoilDensityEvaluator : public SecondaryVariableFieldEvaluator {
 
  public:
   explicit
-  DensityEvaluator(Teuchos::ParameterList& plist);
-  DensityEvaluator(const DensityEvaluator& other);
+  SoilDensityEvaluator(Teuchos::ParameterList& plist);
+  SoilDensityEvaluator(const DensityEvaluator& other);
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 

@@ -5,20 +5,20 @@ ATS
 
 Authors: Svetlana Tokareva (tokareva@lanl.gov)
 
-FieldEvaluator for water density.
+FieldEvaluator for soil density.
 ----------------------------------------------------------------------------- */
 
 
-#include "density_evaluator.hh"
+#include "soil_density_evaluator.hh"
 
 namespace Amanzi {
 namespace SoilThermo {
 
-DensityEvaluator::DensityEvaluator(Teuchos::ParameterList& plist) :
+SoilDensityEvaluator::SoilDensityEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   if (my_key_.empty()) {
 
-    my_key_ = plist_.get<std::string>("density key", "surface-density");
+    my_key_ = plist_.get<std::string>("soil density key", "surface-density");
   }
 
   // Set up my dependencies.
@@ -30,17 +30,17 @@ DensityEvaluator::DensityEvaluator(Teuchos::ParameterList& plist) :
 
 };
 
-DensityEvaluator::DensityEvaluator(const DensityEvaluator& other) :
+SoilDensityEvaluator::SoilDensityEvaluator(const DensityEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     temperature_key_(other.temperature_key_) {};
 
 Teuchos::RCP<FieldEvaluator>
-DensityEvaluator::Clone() const {
+SoilDensityEvaluator::Clone() const {
   return Teuchos::rcp(new DensityEvaluator(*this));
 };
 
 
-void DensityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
+void SoilDensityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
 
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
@@ -62,7 +62,7 @@ void DensityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 };
 
 
-void DensityEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
+void SoilDensityEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
   // not implemented
   if (wrt_key == temperature_key_) {
