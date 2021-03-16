@@ -20,10 +20,10 @@ Author: Svetlana Tokareva
 #include "upwind_total_flux.hh"
 #include "upwind_gravity_flux.hh"
 #include "soil_enthalpy_evaluator.hh"
-#include "density_evaluator.hh"
+#include "soil_density_evaluator.hh"
 #include "soil_energy_evaluator.hh"
-#include "thermal_conductivity_evaluator.hh"
-#include "heat_flux_bc_evaluator.hh"
+#include "soil_thermal_conductivity_evaluator.hh"
+#include "soil_heat_flux_bc_evaluator.hh"
 
 #include "CompositeVectorFunction.hh"
 #include "CompositeVectorFunctionFactory.hh"
@@ -272,8 +272,8 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
   Teuchos::ParameterList den_plist =
     plist_->sublist("density evaluator");
   den_plist.set("evaluator name", density_key_);
-  Teuchos::RCP<SoilThermo::DensityEvaluator> den =
-    Teuchos::rcp(new SoilThermo::DensityEvaluator(den_plist));
+  Teuchos::RCP<SoilThermo::SoilDensityEvaluator> den =
+    Teuchos::rcp(new SoilThermo::SoilDensityEvaluator(den_plist));
   S->SetFieldEvaluator(density_key_, den);
 
   // -- energy evaluator
@@ -292,8 +292,8 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
   Teuchos::ParameterList tcm_plist =
     plist_->sublist("thermal conductivity evaluator");
   tcm_plist.set("evaluator name", conductivity_key_);
-  Teuchos::RCP<SoilThermo::ThermalConductivityEvaluator> tcm =
-    Teuchos::rcp(new SoilThermo::ThermalConductivityEvaluator(tcm_plist));
+  Teuchos::RCP<SoilThermo::SoilThermalConductivityEvaluator> tcm =
+    Teuchos::rcp(new SoilThermo::SoilThermalConductivityEvaluator(tcm_plist));
   S->SetFieldEvaluator(conductivity_key_, tcm);
 
 //  // source terms

@@ -18,13 +18,13 @@
 namespace Amanzi {
 namespace SoilThermo {
 
-class ThermalConductivityEvaluator :
+class SoilThermalConductivityEvaluator :
     public SecondaryVariableFieldEvaluator {
 
  public:
   // constructor format for all derived classes
-  ThermalConductivityEvaluator(Teuchos::ParameterList& plist);
-  ThermalConductivityEvaluator(const ThermalConductivityEvaluator& other);
+  SoilThermalConductivityEvaluator(Teuchos::ParameterList& plist);
+  SoilThermalConductivityEvaluator(const SoilThermalConductivityEvaluator& other);
 
   Teuchos::RCP<FieldEvaluator> Clone() const;
 
@@ -55,7 +55,7 @@ class ThermalConductivityEvaluator :
 //  double min_K_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,ThermalConductivityEvaluator> factory_;
+  static Utils::RegisteredFactory<FieldEvaluator,SoilThermalConductivityEvaluator> factory_;
 
 };
 

@@ -18,13 +18,13 @@
 namespace Amanzi {
 namespace SoilThermo {
 
-class HeatFluxBCEvaluator :
+class SoilHeatFluxBCEvaluator :
     public SecondaryVariableFieldEvaluator {
 
  public:
   // constructor format for all derived classes
-  HeatFluxBCEvaluator(Teuchos::ParameterList& plist);
-  HeatFluxBCEvaluator(const HeatFluxBCEvaluator& other);
+  SoilHeatFluxBCEvaluator(Teuchos::ParameterList& plist);
+  SoilHeatFluxBCEvaluator(const SoilHeatFluxBCEvaluator& other);
 
   Teuchos::RCP<FieldEvaluator> Clone() const;
 
@@ -49,7 +49,7 @@ class HeatFluxBCEvaluator :
   Key temperature_key_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,HeatFluxBCEvaluator> factory_;
+  static Utils::RegisteredFactory<FieldEvaluator,SoilHeatFluxBCEvaluator> factory_;
 
 };
 

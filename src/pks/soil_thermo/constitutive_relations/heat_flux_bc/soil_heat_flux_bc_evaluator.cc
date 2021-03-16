@@ -7,16 +7,16 @@
   Authors: Svetlana Tokareva (tokareva@lanl.gov)
 */
 
-#include "heat_flux_bc_evaluator.hh"
+#include "soil_heat_flux_bc_evaluator.hh"
 
 namespace Amanzi {
 namespace SoilThermo {
 
-HeatFluxBCEvaluator::HeatFluxBCEvaluator(
+  SoilHeatFluxBCEvaluator::SoilHeatFluxBCEvaluator(
       Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   if (my_key_ == std::string("")) {
-    my_key_ = plist_.get<std::string>("heat flux bc key",
+    my_key_ = plist_.get<std::string>("soil heat flux bc key",
             "surface-heat_flux_bc");
   }
 
@@ -29,8 +29,8 @@ HeatFluxBCEvaluator::HeatFluxBCEvaluator(
   temperature_key_ = Keys::readKey(plist_, domain_name, "temperature", "temperature");
   dependencies_.insert(temperature_key_);
 
-  AMANZI_ASSERT(plist_.isSublist("heat flux bc parameters"));
-  Teuchos::ParameterList sublist = plist_.sublist("heat flux bc parameters");
+  AMANZI_ASSERT(plist_.isSublist("soil heat flux bc parameters"));
+  Teuchos::ParameterList sublist = plist_.sublist("soil heat flux bc parameters");
 
   // later: read these parameters from xml
   SS = 0;
@@ -43,8 +43,8 @@ HeatFluxBCEvaluator::HeatFluxBCEvaluator(
 }
 
 
-HeatFluxBCEvaluator::HeatFluxBCEvaluator(
-      const HeatFluxBCEvaluator& other) :
+  SoilHeatFluxBCEvaluator::SoilHeatFluxBCEvaluator(
+      const SoilHeatFluxBCEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     SS(other.SS),
     alpha(other.alpha),
@@ -56,11 +56,11 @@ HeatFluxBCEvaluator::HeatFluxBCEvaluator(
 
 
 Teuchos::RCP<FieldEvaluator>
-HeatFluxBCEvaluator::Clone() const {
-  return Teuchos::rcp(new HeatFluxBCEvaluator(*this));
+SoilHeatFluxBCEvaluator::Clone() const {
+  return Teuchos::rcp(new SoilHeatFluxBCEvaluator(*this));
 }
 
-void HeatFluxBCEvaluator::EvaluateField_(
+void SoilHeatFluxBCEvaluator::EvaluateField_(
       const Teuchos::Ptr<State>& S,
       const Teuchos::Ptr<CompositeVector>& result) {
 
@@ -85,7 +85,7 @@ void HeatFluxBCEvaluator::EvaluateField_(
 
 }
 
-void HeatFluxBCEvaluator::EvaluateFieldPartialDerivative_(
+void SoilHeatFluxBCEvaluator::EvaluateFieldPartialDerivative_(
       const Teuchos::Ptr<State>& S, Key wrt_key,
       const Teuchos::Ptr<CompositeVector>& result) {
   std::cout<<"HEAT FLUX BC: Derivative not implemented yet!"<<wrt_key<<"\n";
