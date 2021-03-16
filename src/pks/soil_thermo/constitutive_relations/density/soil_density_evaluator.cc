@@ -30,13 +30,13 @@ SoilDensityEvaluator::SoilDensityEvaluator(Teuchos::ParameterList& plist) :
 
 };
 
-SoilDensityEvaluator::SoilDensityEvaluator(const DensityEvaluator& other) :
+SoilDensityEvaluator::SoilDensityEvaluator(const SoilDensityEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     temperature_key_(other.temperature_key_) {};
 
 Teuchos::RCP<FieldEvaluator>
 SoilDensityEvaluator::Clone() const {
-  return Teuchos::rcp(new DensityEvaluator(*this));
+  return Teuchos::rcp(new SoilDensityEvaluator(*this));
 };
 
 

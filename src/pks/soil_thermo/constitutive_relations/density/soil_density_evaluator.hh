@@ -25,7 +25,7 @@ class SoilDensityEvaluator : public SecondaryVariableFieldEvaluator {
  public:
   explicit
   SoilDensityEvaluator(Teuchos::ParameterList& plist);
-  SoilDensityEvaluator(const DensityEvaluator& other);
+  SoilDensityEvaluator(const SoilDensityEvaluator& other);
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
@@ -40,7 +40,7 @@ class SoilDensityEvaluator : public SecondaryVariableFieldEvaluator {
   Key temperature_key_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,DensityEvaluator> factory_;
+  static Utils::RegisteredFactory<FieldEvaluator,SoilDensityEvaluator> factory_;
 
 };
 

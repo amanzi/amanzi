@@ -4,7 +4,7 @@ namespace Amanzi {
 namespace SoilThermo {
 
 // registry of method
-Utils::RegisteredFactory<FieldEvaluator,SoilDensityEvaluator> DensityEvaluator::factory_("soil density");
+Utils::RegisteredFactory<FieldEvaluator,SoilDensityEvaluator> SoilDensityEvaluator::factory_("soil density");
 
 } //namespace
 } //namespace
