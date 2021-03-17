@@ -99,7 +99,7 @@ xsdk=$FALSE #default is to not use
 xsdk_root_dir=
 
 # Enable/Disable Downloads
-disable_external_downloads=$FALSE
+external_downloads=$TRUE
 
 # Tools build parameters
 tools_build_dir=${dflt_build_prefix}/build/tools
