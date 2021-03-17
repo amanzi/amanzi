@@ -44,8 +44,7 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
   auto Yc = Y.ViewComponent("cell", false);
   
   const auto& map = Y.getMap();
-  const AmanziMesh::Mesh* mesh = mesh_.get();
-
+  const auto& mc = mesh_->getMeshCache(); 
 
   // Allocate the first time 
   if (op.v.size() != op.A.size()) {
@@ -61,7 +60,7 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
     ncells_owned, 
     KOKKOS_LAMBDA(const int& c){
       AmanziMesh::Entity_ID_View faces;
-      mesh->cell_get_faces(c, faces);
+      mc.cell_get_faces(c, faces);
       int nfaces = faces.size();
 
       auto lv = local_v[c];
