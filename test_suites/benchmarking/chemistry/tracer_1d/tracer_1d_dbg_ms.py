@@ -38,7 +38,8 @@ if __name__ == "__main__":
         pass
 
     try:
-        PF_DIR='/home/smolins/work/PF-Alquimia_verification'
+        PF_DIR=os.environ.get('PARFLOW_RESULTS_DIR')
+        print('Parflow results directory: ',PF_DIR)
         sys.path.append(PF_DIR)
         from PF_GetXY import GetXY_ParFlow_1D_100
     except:
@@ -124,7 +125,7 @@ if __name__ == "__main__":
        
     # parflow + pflotran
     try:
-        path_to_parflow = os.path.join(PF_DIR,root+'_1d','run_pflotran')
+        path_to_parflow = os.path.join(PF_DIR,root+'_1d','pflotran')
         
         compPF = "tracer_pf.out.PrimaryMobile.00.tracer.00005.txt"
         x_parflow_pflo, c_parflow_pflo = GetXY_ParFlow_1D_100(compPF,path=path_to_parflow)
@@ -135,7 +136,7 @@ if __name__ == "__main__":
         
     # parflow + crunch
     try:
-        path_to_parflow = os.path.join(PF_DIR,root+'_1d','run_crunch')
+        path_to_parflow = os.path.join(PF_DIR,root+'_1d','crunch')
         
         compPF = "tracer_pf.out.PrimaryMobile.00.tracer.00005.txt"
         x_parflow_crunch, c_parflow_crunch = GetXY_ParFlow_1D_100(compPF,path=path_to_parflow)
@@ -147,10 +148,10 @@ if __name__ == "__main__":
 # plotting --------------------------------------------------------
 
 # subplots
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(9,6))
 
 # pflotran
-    ax.plot(x_pflotran, c_pflotran,'m-',label='PFloTran',linewidth=2)
+    ax.plot(x_pflotran, c_pflotran,'m-',label='PFLOTRAN',linewidth=2)
 
 # crunchflow
     ax.plot(x_crunchflow, c_crunchflow,'m--',label='CrunchFlow GIMRT',linewidth=2)
@@ -158,27 +159,27 @@ if __name__ == "__main__":
 
 # unstruct amanzi alquimia + pflotran
     if alq>0:
-        ax.plot(x_amanzi_alquimia, c_amanzi_alquimia,'r-',label='AmanziU+Alq(PFT)',linewidth=2)
+        ax.plot(x_amanzi_alquimia, c_amanzi_alquimia,'r-',label='AmanziU+Alq(PFLOTRAN)',linewidth=2)
 
     if alq_crunch>0:
-        ax.plot(x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch,'r*',label='AmanziU+Alq(CF)',linewidth=2)
+        ax.plot(x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch,'r*',label='AmanziU+Alq(CrunchFlow)',linewidth=2)
 
 # struct amanzi alquimia + pflotran
     if (struct>0):
-        sam = ax.plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alq(PFT)',linewidth=2)     
+        sam = ax.plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alq(PFLOTRAN)',linewidth=2)     
 
     if (struct_crunch>0):
-        sam = ax.plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alq(CF)',linewidth=2)     
+        sam = ax.plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alq(CrunchFlow)',linewidth=2)     
 
 #    import pdb; pdb.set_trace()
         
 # parflow + pflotran
     if (parflow_pflo>0):
-        pfpfC  = ax.plot(x_parflow_pflo, c_parflow_pflo,'b-',label='Parflow+Alq(PFT)',linewidth=2)
+        pfpfC  = ax.plot(x_parflow_pflo, c_parflow_pflo,'b-',label='Parflow+Alq(PFLOTRAN)',linewidth=2)
 
 # parflow + crunch
     if (parflow_crunch>0):
-        pfcfC  = ax.plot(x_parflow_crunch, c_parflow_crunch,'b*',label='Parflow+Alq(CF)',linewidth=2)
+        pfcfC  = ax.plot(x_parflow_crunch, c_parflow_crunch,'b*',label='Parflow+Alq(CrunchFlow)',linewidth=2)
         
 # figure look
     # axes
@@ -188,7 +189,7 @@ if __name__ == "__main__":
     # plot adjustments
     plt.subplots_adjust(left=0.20,bottom=0.15,right=0.95,top=0.90)
     plt.legend(loc='upper right',fontsize=13)
-    plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
+##    plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
     plt.tick_params(axis='both', which='major', labelsize=20)
 
     plt.savefig(root+"_1d.png",format="png")

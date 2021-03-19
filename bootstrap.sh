@@ -370,7 +370,7 @@ Value in brackets indicates default setting.
   reg_tests               build regression tests into Amanzi or ATS Test Suite ['"${reg_tests}"']
   shared                  build Amanzi and tpls using shared libraries ['"${shared}"']
   external_downloads      allow TPL tar balls or git repos to be downloaded directly from 
-                          external sites ['"${external downloads}"']
+                          external sites ['"${external_downloads}"']
   Spack                   build TPLs using the Spack package manager when appropriate ['"${Spack}"']
   xsdk                    build TPLs available in xSDK first, then supplement with additional 
                           individual TPL builds ['"${xsdk}"']
