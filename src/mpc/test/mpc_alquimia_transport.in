@@ -19,7 +19,7 @@ CHEMISTRY
   MINERALS
     Calcite
   /
-  GAS_SPECIES
+  PASSIVE_GAS_SPECIES
     CO2(g)
   /
   MINERAL_KINETICS
@@ -27,7 +27,7 @@ CHEMISTRY
       RATE_CONSTANT 1.d-13 mol/cm^2-sec
     /
   /
-  DATABASE ./test/mpc_alquimia_transport.dat
+  DATABASE mpc_alquimia_transport.dat
   LOG_FORMULATION
   ACTIVITY_COEFFICIENTS TIMESTEP
   OUTPUT

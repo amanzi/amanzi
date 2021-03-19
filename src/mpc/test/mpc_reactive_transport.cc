@@ -23,7 +23,7 @@
 #include "State.hh"
 
 
-void RunTestReactiveTransport(const std::string& xmlInFileName) {
+void RunTestReactiveTransport(const std::string& xmlInFileName, int npks) {
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
@@ -90,15 +90,15 @@ using namespace Amanzi::AmanziGeometry;
   CHECK_CLOSE(avg1, avg2, 1e-5 * avg1);
 
   // checking that we created only two PKs and one MPC PK two times
-  CHECK(PKFactory::num_pks == 6);
+  CHECK(PKFactory::num_pks == npks);
   std::cout << PKFactory::list_pks << std::endl;
 }
 
 
 TEST(MPC_DRIVER_REACTIVE_TRANSPORT_NATIVE) {
-  RunTestReactiveTransport("test/mpc_reactive_transport.xml");
+  RunTestReactiveTransport("test/mpc_reactive_transport.xml", 6);
 }
 
-//TEST(MPC_DRIVER_REACTIVE_TRANSPORT_ALQUIMIA) {
-//  RunTestReactiveTransport("test/mpc_alquimia_transport.xml");
-//}
+TEST(MPC_DRIVER_REACTIVE_TRANSPORT_ALQUIMIA) {
+  RunTestReactiveTransport("test/mpc_alquimia_transport.xml", 12);
+}
