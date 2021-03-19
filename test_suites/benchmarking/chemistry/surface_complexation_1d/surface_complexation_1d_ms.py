@@ -491,8 +491,8 @@ if __name__ == "__main__":
             
     # for i,comp in enumerate(components):
     i=1
-    ax[i].set_ylabel("Total Concentration [mol/L]",fontsize=16)
-    bx[i].set_ylabel("Total Sorbed Concent. [mol/m3]",fontsize=16)
+    ax[i].set_ylabel("Total Aqueous Concentration [mol/L]",fontsize=16)
+    bx[i].set_ylabel("Total Sorbed Concentration [mol/m3]",fontsize=16)
 
     px.set_xlabel("Distance(m)",fontsize=16)
     px.set_ylabel("pH",fontsize=16)
@@ -511,7 +511,7 @@ if __name__ == "__main__":
     # plot adjustments
 #    ax[0].legend(fontsize=15)
 #    bx[0].legend(fontsize=15)
-    px.legend(fontsize=15,bbox_to_anchor=(2, 1))
+    px.legend(fontsize=15,bbox_to_anchor=(1.925, 1.10))
 
 ##    plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",fontsize=20) #,x=0.57,fontsize=20)
 
@@ -519,7 +519,7 @@ if __name__ == "__main__":
   
 #    plt.tight_layout() #(pad=0.4, w_pad=0.5, h_pad=1.0)
 
-    plt.subplots_adjust(wspace=0.2,hspace=0.5) #left=0.10,bottom=0.15,right=0.90,top=0.95)
+    plt.subplots_adjust(wspace=0.2,hspace=0.35,left=0.10,bottom=0.05,right=0.95,top=0.95)
 
     # pyplot.show()
     plt.savefig(root+"_1d.png",format="png")

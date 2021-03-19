@@ -342,7 +342,7 @@ if __name__ == "__main__":
         if alq: 
             ax[0].plot(x_amanzi_alquimia, Ca_amanzi_alquimia[i],'r-',linewidth=2)
         if alq_crunch:
-            ax[0].plot(x_amanzi_alquimia_crunch, Ca_amanzi_alquimia_crunch[i],'r*',linewidth=2,markersize=12)
+            ax[0].plot(x_amanzi_alquimia_crunch, Ca_amanzi_alquimia_crunch[i],'r*',linewidth=2)
         if native:
             ax[0].plot(x_amanzi_native, Ca_amanzi_native[i],'rx')
 
@@ -360,15 +360,16 @@ if __name__ == "__main__":
         ax[1].plot(x_crunchflow, pH_crunchOS3D[i],'m*')
 
         if i==0:
-            if alq:
-                ax[2].plot(x_amanzi_alquimia, VF_amanzi_alquimia[i],'r-',linewidth=2,label='AmanziU+Alq(PFLOTRAN)')
-            if alq_crunch:
-                ax[2].plot(x_amanzi_alquimia_crunch, VF_amanzi_alquimia_crunch[i],'r*',linewidth=2,markersize=12,label='AmanziU+Alq(CrunchFlow)')
-            if native:
-                ax[2].plot(x_amanzi_native, VF_amanzi_native[i],'rx',label='AmanziU(2nd-O)+Native')
 
             ax[2].plot(x_pflotran_OS, VF_pflotran_OS[i],'m-',label='PFLOTRAN',linewidth=2)
-            ax[2].plot(x_crunchflow, VF_crunchOS3D[i],'m*',label='CrunchFlow OS3D',markersize=7)
+            ax[2].plot(x_crunchflow, VF_crunchOS3D[i],'m*',label='CrunchFlow OS3D')
+            
+            if alq:
+                ax[2].plot(x_amanzi_alquimia, VF_amanzi_alquimia[i],'r-',linewidth=2,label='AmanziU+Alquimia(PFLOTRAN)')
+            if alq_crunch:
+                ax[2].plot(x_amanzi_alquimia_crunch, VF_amanzi_alquimia_crunch[i],'r*',linewidth=2,label='AmanziU+Alquimia(CrunchFlow)')
+            if native:
+                ax[2].plot(x_amanzi_native, VF_amanzi_native[i],'rx',label='AmanziU(2nd-O)+Native')
         else:
             if alq:
                 ax[2].plot(x_amanzi_alquimia, VF_amanzi_alquimia[i],'r-',linewidth=2)
@@ -383,24 +384,24 @@ if __name__ == "__main__":
     if (struct>0):
         sam = ax[0].plot(x_amanziS, c_amanziS,'g-',linewidth=2)#label='AmanziS+Alq(PFLOTRAN)',linewidth=2)
         sampH = ax[1].plot(x_amanziS, pH_amanziS,'g-',linewidth=2)
-        samVF = ax[2].plot(x_amanziS, VF_amanziS,'g-',linewidth=2,label='AmanziS+Alq(PFLOTRAN)')
+        samVF = ax[2].plot(x_amanziS, VF_amanziS,'g-',linewidth=2,label='AmanziS+Alquimia(PFLOTRAN)')
 
     if (struct_c>0):
         samc = ax[0].plot(x_amanziS_crunch, c_amanziS_crunch,'g*',linewidth=2)#,label='AmanziS+Alq(CrunchFlow)',linewidth=2)     
         samcpH = ax[1].plot(x_amanziS_crunch, pH_amanziS_crunch,'g*',linewidth=2)     
-        samcVF = ax[2].plot(x_amanziS_crunch, VF_amanziS_crunch,'g*',linewidth=2,label='AmanziS+Alq(CrunchFlow)')
+        samcVF = ax[2].plot(x_amanziS_crunch, VF_amanziS_crunch,'g*',linewidth=2,label='AmanziS+Alquimia(CrunchFlow)')
 
     # parflow + pflotran
     if (parflow_pflo>0):
         pfpfC  = ax[0].plot(x_parflow_pflo, c_parflow_pflo,'b-',linewidth=2)#label='Parflow+Alq(PFLOTRAN)',linewidth=2)
         pfpfpH = ax[1].plot(x_parflow_pflo, pH_parflow_pflo,'b-',linewidth=2)
-        pfpfVF = ax[2].plot(x_parflow_pflo, VF_parflow_pflo,'b-',linewidth=2,label='Parflow+Alq(PFLOTRAN)')
+        pfpfVF = ax[2].plot(x_parflow_pflo, VF_parflow_pflo,'b-',linewidth=2,label='Parflow+Alquimia(PFLOTRAN)')
         
     # parflow + crunch    
     if (parflow_crunch>0):
         pfcfC  = ax[0].plot(x_parflow_crunch, c_parflow_crunch,'b*',linewidth=2)#label='Parflow+Alq(CrunchFlow)',linewidth=2)
         pfcfpH = ax[1].plot(x_parflow_crunch, pH_parflow_crunch,'b*',linewidth=2)
-        pfcfVF = ax[2].plot(x_parflow_crunch, VF_parflow_crunch,'b*',linewidth=2,label='Parflow+Alq(CrunchFlow)')
+        pfcfVF = ax[2].plot(x_parflow_crunch, VF_parflow_crunch,'b*',linewidth=2,label='Parflow+Alquimia(CrunchFlow)')
 
     # set x lim
     # ax[0].set_xlim((18,32))
