@@ -61,12 +61,8 @@ using namespace Amanzi::AmanziGeometry;
   
   {
     Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
-    try {
-      cycle_driver.Go();
-      S->GetFieldData("total_component_concentration")->MeanValue(&avg1);
-    } catch (...) {
-      CHECK(false);
-    }
+    cycle_driver.Go();
+    S->GetFieldData("total_component_concentration")->MeanValue(&avg1);
   }
 
   // restart simulation and compare results
@@ -79,12 +75,8 @@ using namespace Amanzi::AmanziGeometry;
   
   {
     Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
-    try {
-      cycle_driver.Go();
-      S->GetFieldData("total_component_concentration")->MeanValue(&avg2);
-    } catch (...) {
-      CHECK(false);
-    }
+    cycle_driver.Go();
+    S->GetFieldData("total_component_concentration")->MeanValue(&avg2);
   }
 
   CHECK_CLOSE(avg1, avg2, 1e-5 * avg1);
@@ -96,9 +88,9 @@ using namespace Amanzi::AmanziGeometry;
 
 
 TEST(MPC_DRIVER_REACTIVE_TRANSPORT_NATIVE) {
-  // RunTestReactiveTransport("test/mpc_reactive_transport.xml", 6);
+  RunTestReactiveTransport("test/mpc_reactive_transport.xml", 6);
 }
 
 TEST(MPC_DRIVER_REACTIVE_TRANSPORT_ALQUIMIA) {
-  RunTestReactiveTransport("test/mpc_alquimia_transport.xml", 6);
+  RunTestReactiveTransport("test/mpc_alquimia_transport.xml", 12);
 }
