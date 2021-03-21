@@ -66,6 +66,7 @@ using namespace Amanzi::AmanziGeometry;
   }
 
   // restart simulation and compare results
+  /*
   glist->sublist("cycle driver").sublist("restart").set<std::string>("file name", "chk_rt00005.h5");
   glist->sublist("state").sublist("initial conditions").remove("geochemical conditions", false);
   S = Teuchos::null;
@@ -84,6 +85,7 @@ using namespace Amanzi::AmanziGeometry;
   // checking that we created only two PKs and one MPC PK two times
   CHECK(PKFactory::num_pks == npks);
   std::cout << PKFactory::list_pks << std::endl;
+  */
 }
 
 

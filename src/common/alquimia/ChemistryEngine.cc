@@ -312,8 +312,6 @@ void ChemistryEngine::CreateCondition(const std::string& condition_name)
   AllocateAlquimiaGeochemicalCondition(kAlquimiaMaxStringLength, num_aq, num_min, &condition->condition);
   AllocateAlquimiaState(&sizes_, &condition->chem_state);
   AllocateAlquimiaAuxiliaryData(&sizes_, &condition->aux_data);
-  
-  condition->condition.name = (char*) malloc (condition_name.size() + 1);
   std::strcpy(condition->condition.name, condition_name.c_str());
 
   // Add this to the conditions map.
