@@ -1,10 +1,31 @@
 /*
-  The liquid + ice water content evaluator is an algebraic evaluator of a given model.
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-  Generated via evaluator_generator with:
-Water content for a two-phase, liquid+ice evaluator.
-    
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Author: Ethan Coon (ecoon@lanl.gov)
+*/
+//! Water content for liquid + water vapor.
+/*!
+
+.. math::
+  \Theta = (n_l s_l + n_i s_i) \phi V
+
+
+Specified with evaluator type: `"liquid+ice water content`"
+
+.. _field-evaluator-type-liquid-ice-water-content-spec:
+.. admonition:: field-evaluator-type-liquid-ice-water-content-spec
+
+   DEPENDENCIES:
+
+   - `"porosity`"
+   - `"molar density liquid`"
+   - `"molar density ice`"
+   - `"saturation liquid`"
+   - `"saturation ice`"
+   - `"cell volume`"
+
 */
 
 #ifndef AMANZI_FLOW_LIQUID_ICE_WATER_CONTENT_EVALUATOR_HH_

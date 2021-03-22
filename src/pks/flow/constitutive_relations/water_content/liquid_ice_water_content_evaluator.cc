@@ -1,6 +1,6 @@
 /*
   The liquid + ice water content evaluator is an algebraic evaluator of a given model.
-Water content for a two-phase, liquid+ice evaluator.  
+Water content for a two-phase, liquid+ice evaluator.
   Generated via evaluator_generator.
 */
 
@@ -29,7 +29,7 @@ LiquidIceWaterContentEvaluator::LiquidIceWaterContentEvaluator(const LiquidIceWa
     nl_key_(other.nl_key_),
     si_key_(other.si_key_),
     ni_key_(other.ni_key_),
-    cv_key_(other.cv_key_),    
+    cv_key_(other.cv_key_),
     model_(other.model_) {}
 
 

@@ -39,7 +39,9 @@ LongwaveEvaluator::LongwaveEvaluator(Teuchos::ParameterList& plist) :
   rel_hum_key_ = Keys::readKey(plist, domain, "relative humidity", "relative_humidity");
   dependencies_.insert(rel_hum_key_);
 
-  min_rel_hum_ = plist.get<double>("minimum relative humidity [-]", 0.1);  
+  min_rel_hum_ = plist.get<double>("minimum relative humidity [-]", 0.1);
+  scale_ = plist.get<double>("scaling factor [-]", 1.0);
+  stephB_ = SEBPhysics::ModelParams().stephB;
 }
 
 // Required methods from SecondaryVariableFieldEvaluator
@@ -52,8 +54,8 @@ LongwaveEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   auto& res = *result->ViewComponent("cell", false);
 
   for (int c=0; c!=res.MyLength(); ++c) {
-    res[0][c] = SEBPhysics::IncomingLongwaveRadiation(air_temp[0][c], std::max(min_rel_hum_, rel_hum[0][c]));
-  }  
+    res[0][c] = scale_ * SEBPhysics::CalcIncomingLongwave(air_temp[0][c], std::max(min_rel_hum_, rel_hum[0][c]), stephB_);
+  }
 }
 
 } //namespace

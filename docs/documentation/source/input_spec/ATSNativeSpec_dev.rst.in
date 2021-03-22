@@ -1,7 +1,9 @@
-ATS Native XML Input Specification V1
-#######################################
+ATS Native XML Input Specification V-dev
+****************************************
+
 
 .. contents:: **Table of Contents**
+   :depth: 2
 
   
 Syntax of the Specification
@@ -78,6 +80,10 @@ Mesh
 Region
 ######
 { Region }
+
+.. contents:: **Region Types**
+   :local:
+
 
 All
 ===
@@ -156,6 +162,9 @@ Observation
 PK
 ###
 { PK }
+
+.. contents:: **List of PKs**
+   :local:
 
 Base PKs
 ========
@@ -394,7 +403,7 @@ EWC Globalization Delegate
 { mpc_delegate_ewc }
 
 State
-##############
+#####
 { State }
 
 State consists of two sublists, one for evaluators and the other for
@@ -420,6 +429,9 @@ Field Evaluators
 =================
 { FieldEvaluator }
 
+
+.. contents:: **List of Evalutors**
+   :local:
 
 PrimaryVariableEvaluator
 ------------------------

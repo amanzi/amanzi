@@ -16,11 +16,16 @@ namespace Flow {
 
 ElevationEvaluatorColumn::ElevationEvaluatorColumn(Teuchos::ParameterList& plist) :
   ElevationEvaluator(plist) 
-{};
+{
+  surface_domain_ =  plist.get<std::string>("surface domain name", "surface_star");
+  dset_name_ = plist.get<std::string>("domain set name", "column");
+};
 
 ElevationEvaluatorColumn::ElevationEvaluatorColumn(const ElevationEvaluatorColumn& other) :
   ElevationEvaluator(other),
-  base_por_key_(other.base_por_key_)
+  base_por_key_(other.base_por_key_),
+  surface_domain_(other.surface_domain_),
+  dset_name_(other.dset_name_)
 {};
 
 Teuchos::RCP<FieldEvaluator>
@@ -37,7 +42,7 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
   Epetra_MultiVector& slope_c = *slope->ViewComponent("cell", false);
  
   // Get the elevation and slope values from the domain mesh.
-  Key domain = Keys::getDomain(my_keys_[0]);
+  Key domain_sf = Keys::getDomain(my_keys_[0]);
   
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -46,23 +51,21 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
   int ncells = elev_c.MyLength();
   std::vector<AmanziGeometry::Point> my_centroid;
 
-  //get elevation on all cells first
-  for (int c=0; c !=ncells; c++){
-    std::stringstream my_name;
-    int id = S->GetMesh("surface_star")->cell_map(false).GID(c);
-    my_name << "column_" << id;
-    
-    //int nfaces = S->GetMesh(my_name.str())->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-    
-    std::vector<AmanziGeometry::Point> coord; 
-    // S->GetMesh(my_name.str())->face_get_coordinates(nfaces-1, &coord);
-    S->GetMesh(my_name.str())->face_get_coordinates(0, &coord); // 0 is the id of top face of the column mesh
+  auto domain_set = S->GetDomainSet(dset_name_);
+  const Epetra_Map& cell_map = S->GetMesh(surface_domain_)->cell_map(false);
+  
+  for (const auto& domain : *domain_set) {
+    int id = Keys::getDomainSetIndex<int>(domain);
+    int c = cell_map.LID(id);
+    std::vector<AmanziGeometry::Point> coord;
+
+    S->GetMesh(domain)->face_get_coordinates(0, &coord); // 0 is the id of top face of the column mesh
     
     elev_c[0][c] = coord[0][2];
   }
-
+  
   //Now get slope
-  if (domain == "surface_star"){
+  if (domain_sf == surface_domain_){
     Teuchos::RCP<CompositeVector> elev_ngb = S->GetFieldData(my_keys_[0], S->GetField(my_keys_[0])->owner() );
     elev_ngb->ScatterMasterToGhosted("cell");
     const Epetra_MultiVector& elev_ngb_c = *elev_ngb->ViewComponent("cell",true);
@@ -71,32 +74,29 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
     //get all cell centroids
     for (int c=0; c!=ncells; ++c) {
       std::stringstream my_name;
-      int id = S->GetMesh("surface_star")->cell_map(true).GID(c);
-      AmanziGeometry::Point P1 = S->GetMesh("surface_star")->cell_centroid(c);
+      int id = S->GetMesh(surface_domain_)->cell_map(true).GID(c);
+      AmanziGeometry::Point P1 = S->GetMesh(surface_domain_)->cell_centroid(c);
       P1.set(P1[0], P1[1], elev_ngb_c[0][c]);
       my_centroid.push_back(P1);
     }
     
     //get neighboring cell ids
     for (int c=0; c!= ncells; c++){
-      //int id = S->GetMesh("surface_star")->cell_map(false).GID(c);
       AmanziMesh::Entity_ID_List nadj_cellids;
-      S->GetMesh("surface_star")->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::ALL, &nadj_cellids);
-      int nface_pcell = S->GetMesh("surface_star")->cell_get_num_faces(c);
+      S->GetMesh(surface_domain_)->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::ALL, &nadj_cellids);
+      int nface_pcell = S->GetMesh(surface_domain_)->cell_get_num_faces(c);
 
       int ngb_cells = nadj_cellids.size();
       std::vector<AmanziGeometry::Point> ngb_centroids(ngb_cells);
           
       //get the neighboring cell's centroids
       for(unsigned i=0; i<ngb_cells; i++){
-        AmanziGeometry::Point P2 = S->GetMesh("surface_star")->cell_centroid(nadj_cellids[i]);
+        AmanziGeometry::Point P2 = S->GetMesh(surface_domain_)->cell_centroid(nadj_cellids[i]);
         ngb_centroids[i].set(P2[0], P2[1], elev_ngb_c[0][nadj_cellids[i]]);
       }
-
-    
-      std::stringstream my_name;
-      int id = S->GetMesh("surface_star")->cell_map(false).GID(c);
-      my_name << "column_" << id;
+      
+      int id = S->GetMesh(surface_domain_)->cell_map(false).GID(c);
+      Key my_name = Keys::getDomainInSet(dset_name_, id);
       
       std::vector<AmanziGeometry::Point> Normal;
       AmanziGeometry::Point N, PQ, PR, Nor_avg(3);
@@ -111,7 +111,7 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
 	  Normal.push_back(N);
 	}
 
-        AmanziGeometry::Point fnor = S->GetMesh(my_name.str())->face_normal(0); //0 is the id of top face
+        AmanziGeometry::Point fnor = S->GetMesh(my_name)->face_normal(0); //0 is the id of top face
 	Nor_avg = (nface_pcell - Normal.size()) * fnor; 
 	for (int i=0; i <Normal.size(); i++)
 	  Nor_avg += Normal[i];
@@ -131,7 +131,7 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
     
   }
   else{
-    slope_c[0][0] = 0.0; // if domain is surface_column_*, slope is zero.
+    slope_c[0][0] = 0.0; // if domain is surface_column:*, slope is zero.
   }
 
   
@@ -145,7 +145,7 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
     
     for (int f=0; f!=nfaces; ++f) {
       AmanziMesh::Entity_ID_List nadj_cellids;
-      S->GetMesh("surface_star")->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &nadj_cellids);
+      S->GetMesh(surface_domain_)->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &nadj_cellids);
       double ef = 0;
       for (int i=0; i<nadj_cellids.size(); i++){
         ef += elev_ngb_c[0][nadj_cellids[i]];
@@ -159,16 +159,15 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
 
 void ElevationEvaluatorColumn::EnsureCompatibility(const Teuchos::Ptr<State>& S){
   
-  Key domain = Keys::getDomain(my_keys_[0]);
+  Key domain_sf = Keys::getDomain(my_keys_[0]);
 
-  int ncells = S->GetMesh("surface_star")->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells = S->GetMesh(surface_domain_)->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
  
-  if (domain == "surface_star") {
+  if (domain_sf == surface_domain_) {
     for (int c =0; c < ncells; c++){
-      std::stringstream name;
-      int id = S->GetMesh("surface_star")->cell_map(false).GID(c);
-      name << "column_"<< id;
-      base_por_key_ = Keys::readKey(plist_, name.str(), "base porosity", "base_porosity");
+      int id = S->GetMesh(surface_domain_)->cell_map(false).GID(c);
+      Key name = Keys::getDomainInSet(dset_name_, id);
+      base_por_key_ = Keys::readKey(plist_, name, "base porosity", "base_porosity");
       dependencies_.insert(base_por_key_);
     }
   } else {

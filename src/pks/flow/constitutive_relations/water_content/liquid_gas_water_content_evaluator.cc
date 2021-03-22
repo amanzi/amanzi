@@ -1,6 +1,6 @@
 /*
   The liquid + gas water content evaluator is an algebraic evaluator of a given model.
-Water content for a two-phase, liquid+water vapor evaluator.  
+Water content for a two-phase, liquid+water vapor evaluator.
   Generated via evaluator_generator.
 */
 
@@ -30,7 +30,7 @@ LiquidGasWaterContentEvaluator::LiquidGasWaterContentEvaluator(const LiquidGasWa
     sg_key_(other.sg_key_),
     ng_key_(other.ng_key_),
     omega_key_(other.omega_key_),
-    cv_key_(other.cv_key_),    
+    cv_key_(other.cv_key_),
     model_(other.model_) {}
 
 

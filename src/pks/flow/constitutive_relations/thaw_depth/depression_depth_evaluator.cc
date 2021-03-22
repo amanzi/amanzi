@@ -63,7 +63,37 @@ void DepressionDepthEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 void DepressionDepthEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
                Key wrt_key, const Teuchos::Ptr<CompositeVector>& result){}
 
-
+void
+DepressionDepthEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
+{
+  AMANZI_ASSERT(my_key_ != std::string(""));
+   
+  Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_, my_key_);
+  
+  // check plist for vis or checkpointing control
+  bool io_my_key = plist_.get<bool>(std::string("visualize ")+my_key_, true);
+  S->GetField(my_key_, my_key_)->set_io_vis(io_my_key);
+  bool checkpoint_my_key = plist_.get<bool>(std::string("checkpoint ")+my_key_, true);
+  S->GetField(my_key_, my_key_)->set_io_checkpoint(checkpoint_my_key);
+  
+  if (my_fac->Mesh() != Teuchos::null) {
+    Teuchos::RCP<CompositeVectorSpace> dep_fac =
+      Teuchos::rcp(new CompositeVectorSpace());
+    dep_fac->SetMesh(my_fac->Mesh());
+    dep_fac->AddComponent("cell", AmanziMesh::CELL, 1);
+    dep_fac->SetGhosted(true);
+    for (const auto& key : dependencies_) { 
+      Teuchos::RCP<CompositeVectorSpace> fac = S->RequireField(key);
+      fac->Update(*dep_fac);
+    }
+    // Recurse into the tree to propagate info to leaves.
+    for (KeySet::const_iterator key=dependencies_.begin();
+         key!=dependencies_.end(); ++key) {
+      S->RequireFieldEvaluator(*key)->EnsureCompatibility(S);
+    }
+  }
+}
+  
 } //namespace
 } //namespace
 
