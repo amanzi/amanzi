@@ -87,12 +87,11 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   secondary_activity_coeff_key_ = Keys::readKey(*cp_list_, domain_, "secondary activity coeff", "secondary_activity_coeff");
   alquimia_aux_data_key_ = Keys::readKey(*cp_list_, domain_, "alquimia aux data", "alquimia_aux_data");
 
-  ion_exchange_ref_cation_conc_key_ = Keys::readKey(*cp_list_, domain_,"ion exchange ref cation conc", "ion_exchange_ref_cation_conc");
-  secondary_activity_coeff_key_ = Keys::readKey(*cp_list_, domain_,"secondary activity coeff", "secondary_activity_coeff");
-  alquimia_aux_data_key_ = Keys::readKey(*cp_list_, domain_,"alquimia aux data", "alquimia_aux_data");
-  mineral_rate_constant_key_ = Keys::readKey(*cp_list_, domain_,"mineral rate constant", "mineral_rate_constant");
-  first_order_decay_constant_key_ = Keys::readKey(*cp_list_, domain_,"first order decay constant", "first_order_decay_constant");
-
+  ion_exchange_ref_cation_conc_key_ = Keys::readKey(*cp_list_, domain_, "ion exchange ref cation conc", "ion_exchange_ref_cation_conc");
+  secondary_activity_coeff_key_ = Keys::readKey(*cp_list_, domain_, "secondary activity coeff", "secondary_activity_coeff");
+  alquimia_aux_data_key_ = Keys::readKey(*cp_list_, domain_, "alquimia aux data", "alquimia_aux_data");
+  mineral_rate_constant_key_ = Keys::readKey(*cp_list_, domain_, "mineral rate constant", "mineral_rate_constant");
+  first_order_decay_constant_key_ = Keys::readKey(*cp_list_, domain_, "first order decay constant", "first_order_decay_constant");
 
   // collect high-level information about the problem
   Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "state", true);
@@ -195,7 +194,7 @@ void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
 ******************************************************************* */
 void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S) 
 { 
-  // initilaization using the base class
+  // initialization using the base class
   Chemistry_PK::Initialize(S);
 
   if (!aux_names_.empty()) {
@@ -289,7 +288,6 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
     *vo_->os() << vo_->color("green") << "Initialization of PK was successful, T="
         << S->time() << vo_->reset() << std::endl << std::endl;
   }
-
 }
 
 
@@ -609,7 +607,7 @@ void Alquimia_PK::CopyToAlquimia(int cell,
 
 
 /* *******************************************************************
-*
+* Auxiliary output.
 ******************************************************************* */
 void Alquimia_PK::CopyAlquimiaStateToAmanzi(
     const int cell,
@@ -621,9 +619,6 @@ void Alquimia_PK::CopyAlquimiaStateToAmanzi(
 {
   CopyFromAlquimia(cell, mat_props, state, aux_data, aux_output, 
                    aqueous_components);
-
-  // Auxiliary output.
-  std::string full_name;
 
   if (aux_output_ != Teuchos::null) {
     int numAqueousComplexes = chem_engine_->NumAqueousComplexes();
@@ -653,7 +648,7 @@ void Alquimia_PK::CopyAlquimiaStateToAmanzi(
 
 
 /* *******************************************************************
-x * 
+* 
 ******************************************************************* */
 void Alquimia_PK::CopyFromAlquimia(const int cell,
                                    const AlquimiaProperties& mat_props,
@@ -756,11 +751,8 @@ int Alquimia_PK::AdvanceSingleCell(
   CopyToAlquimia(cell, aqueous_components, 
                  alq_mat_props_, alq_state_, alq_aux_data_);
 
-
   int num_iterations = 0;
-  if (alq_mat_props_.saturation > saturation_tolerance_){
-         
-    // Do the reaction.
+  if (alq_mat_props_.saturation > saturation_tolerance_) {
     bool success = chem_engine_->Advance(dt, alq_mat_props_, alq_state_, 
                                          alq_aux_data_, alq_aux_output_, num_iterations);
     if (not success) {
@@ -806,7 +798,6 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     *vo_->os() << "Starting AdvanceStep ...\n";
   }
 
-  
   // Get the number of owned (non-ghost) cells for the mesh.
   int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   
@@ -817,7 +808,6 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   S_->GetFieldEvaluator(fluid_den_key_)->HasFieldChanged(S_.ptr(), name_);
   S_->GetFieldEvaluator(saturation_key_)->HasFieldChanged(S_.ptr(), name_);
 
-  
   // Now loop through all the cells and advance the chemistry.
   int convergence_failure = 0;
   for (int cell = 0; cell < num_cells; ++cell) {

@@ -58,6 +58,7 @@ State::State(const State& other, StateConstructMode mode) :
     field_factories_(other.field_factories_),
     time_(other.time_),
     position_in_tp_(other.position_in_tp_),
+    domain_sets_(other.domain_sets_),
     cycle_(other.cycle_) {
 
   if (mode == STATE_CONSTRUCT_MODE_COPY_DATA) {

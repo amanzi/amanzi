@@ -1,5 +1,5 @@
 ==========================================
-Amanzi-U Native XML Input Specification V8
+Amanzi-U Native XML Input Specification V9
 ==========================================
 
 .. contents:: **Table of Contents**
@@ -3681,8 +3681,8 @@ The list of global parameters include:
 * `"domain name`" [string] specifies mesh name that defined domain of this PK.
   Default is `"domain`".
 
-* `"limiter cfl`" [double] is a safety factor (less than 1) applied to the limiter.
-  Default value is 1.
+* `"cfl`" [double] is a safety factor (less than 1) applied to a stable 
+  time step estimate. Default value is 1.
 
 
 Reconstruction and limiters

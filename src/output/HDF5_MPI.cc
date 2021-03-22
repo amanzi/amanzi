@@ -1207,7 +1207,7 @@ bool HDF5_MPI::checkFieldData_(const std::string& varname)
     exists = parallelIO_name_exists(currfile->fid, h5path);
 
     if (!exists) {
-      std::cout<< "Field "<<h5path<<" is not found in hdf5 file.\n";
+      std::cout << "Field " << h5path << " is not found in hdf5 file.\n";
     }
 
     MPI_Bcast(&exists, 1, MPI_C_BOOL, 0, viz_comm_->Comm()); 
@@ -1222,10 +1222,10 @@ bool HDF5_MPI::checkFieldData_(const std::string& varname)
 bool HDF5_MPI::readFieldData_(Epetra_Vector &x, const std::string& varname,
                               datatype_t type)
 {
+  if (!checkFieldData_(varname)) return false;
+
   char *h5path = new char[varname.size() + 1];
   strcpy(h5path, varname.c_str());
-
-  if (!checkFieldData_(varname)) return false;
 
   int ndims;
   parallelIO_get_dataset_ndims(&ndims, data_file_, h5path, &IOgroup_);

@@ -68,7 +68,7 @@ set(pks_inc_files
   PK_DomainFunctionCoupling.hh
   PK_DomainFunctionSubgrid.hh
   PK_DomainFunctionSubgridReturn.hh
-  PK_DomainFunctionExponentialDecay.hh
+  PK_DomainFunctionFirstOrderExchange.hh
   PK_DomainFunctionSimpleWell.hh
   PK_Factory.hh
   PK_Utils.hh)

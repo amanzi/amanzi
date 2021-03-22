@@ -288,14 +288,22 @@ endif()
 # --- Define the Trilinos location
 set(Trilinos_install_dir ${TPL_INSTALL_PREFIX}/${Trilinos_BUILD_TARGET}-${Trilinos_VERSION})
 
+# --- If downloads are disabled point to local repository
+if ( DISABLE_EXTERNAL_DOWNLOAD )
+  STRING(REGEX REPLACE ".*\/" "" Trilinos_GIT_REPOSITORY_LOCAL_DIR ${Trilinos_GIT_REPOSITORY})
+  set (Trilinos_GIT_REPOSITORY_TEMP ${TPL_DOWNLOAD_DIR}/${Trilinos_GIT_REPOSITORY_LOCAL_DIR})
+else()
+  set (Trilinos_GIT_REPOSITORY_TEMP ${Trilinos_GIT_REPOSITORY})
+endif()
+message(STATUS "Trilinos git repository = ${Trilinos_GIT_REPOSITORY_TEMP}")
+
 # --- Add external project build and tie to the Trilinos build target
 ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     DEPENDS   ${Trilinos_PACKAGE_DEPENDS}             # Package dependency target
                     TMP_DIR   ${Trilinos_tmp_dir}                     # Temporary files directory
                     STAMP_DIR ${Trilinos_stamp_dir}                   # Timestamp and log directory
                     # -- Download and URL definitions
-                    DOWNLOAD_DIR   ${TPL_DOWNLOAD_DIR}                # Download directory
-                    GIT_REPOSITORY ${Trilinos_GIT_REPOSITORY}              
+                    GIT_REPOSITORY ${Trilinos_GIT_REPOSITORY_TEMP}              
                     GIT_TAG        ${Trilinos_GIT_TAG}      
                     # -- Update (one way to skip this step is use null command)
                     UPDATE_COMMAND ""

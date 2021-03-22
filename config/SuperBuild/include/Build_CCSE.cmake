@@ -81,9 +81,10 @@ ExternalProject_Add(${CCSE_BUILD_TARGET}
                     TMP_DIR   ${CCSE_tmp_dir}                     # Temporary files directory
                     STAMP_DIR ${CCSE_stamp_dir}                   # Timestamp and log directory
                     # -- Download and URL definitions
-                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}              # Download directory
-                    URL          ${CCSE_URL}                      # URL may be a web site OR a local file
-                    URL_MD5      ${CCSE_MD5_SUM}                  # md5sum of the archive file
+                    DOWNLOAD_DIR   ${TPL_DOWNLOAD_DIR}            # Download directory
+                    URL            ${CCSE_URL}                    # URL may be a web site OR a local file
+                    URL_MD5        ${CCSE_MD5_SUM}                # md5sum of the archive file
+                    DOWNLOAD_NAME  ${CCSE_SAVEAS_FILE}            # file name to store (if not end of URL)
                     # GIT_REPOSITORY ${CCSE_GIT_REPOSITORY}              
                     # GIT_TAG        ${CCSE_GIT_TAG}      
                     # -- Update (one way to skip this step is use null command)
