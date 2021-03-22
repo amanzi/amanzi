@@ -42,9 +42,9 @@ Solves an advection-diffusion equation for energy:
       - `"cell centered`" harmonic mean
 
     IF
-      
+
     * `"explicit advection`" ``[bool]`` **false** Treat the advection term implicitly.
-    
+
     ELSE
 
     * `"supress advective terms in preconditioner`" ``[bool]`` **false**
@@ -117,9 +117,9 @@ Solves an advection-diffusion equation for energy:
     * `"advected energy flux`" ``[string]`` **DOMAIN-advected_energy_flux** :math:`\mathbf{q_e^{adv}} = q e` `[MJ s^-1]`
     * `"thermal conductivity`" ``[string]`` **DOMAIN-thermal_conductivity** Thermal conductivity on cells `[W m^-1 K^-1]`
     * `"upwinded thermal conductivity`" ``[string]`` **DOMAIN-upwinded_thermal_conductivity** Thermal conductivity on faces `[W m^-1 K^-1]`
-    
+
     * `"advection`" ``[pde-advection-spec]`` **optional** The PDE_Advection_ spec.  Only one current implementation, so defaults are typically fine.
-    
+
     * `"accumulation preconditioner`" ``[pde-accumulation-spec]`` **optional**
       The inverse of the accumulation operator.  See PDE_Accumulation_.
       Typically not provided by users, as defaults are correct.
@@ -319,6 +319,8 @@ public:
 
   // Keys
   Key temperature_key_;
+  Key water_content_key_;
+  Key ice_content_key_;
   Key density_key_;
   Key conductivity_key_;
   Key uw_conductivity_key_;

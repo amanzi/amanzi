@@ -23,6 +23,7 @@ Author: Svetlana Tokareva
 #include "soil_density_evaluator.hh"
 #include "soil_energy_evaluator.hh"
 #include "soil_thermal_conductivity_evaluator.hh"
+#include "soil_heat_capacity_evaluator.hh"
 #include "soil_heat_flux_bc_evaluator.hh"
 
 #include "CompositeVectorFunction.hh"
@@ -82,21 +83,22 @@ void Soil_Thermo_PK::Setup(const Teuchos::Ptr<State>& S) {
 
   SetupSoilThermo_(S);
   SetupPhysicalEvaluators_(S);
-
 };
 
 
 void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
   // Set up keys if they were not already set.
   temperature_key_ = Keys::readKey(*plist_, domain_, "temperature", "temperature");
-  density_key_ = Keys::readKey(*plist_, domain_, "density", "density");
+  water_content_key_ = Keys::readKey(*plist_, domain_, "soil water content", "soil_water_content");
+  ice_content_key_ = Keys::readKey(*plist_, domain_, "soil ice content", "soil_ice_content");
+  density_key_ = Keys::readKey(*plist_, domain_, "soil density", "soil density");
   energy_key_ = Keys::readKey(*plist_, domain_, "energy", "energy");
   wc_key_ = Keys::readKey(*plist_, domain_, "water content", "water_content");
   enthalpy_key_ = Keys::readKey(*plist_, domain_, "enthalpy", "enthalpy");
   flux_key_ = Keys::readKey(*plist_, domain_, "mass flux", "mass_flux");
   energy_flux_key_ = Keys::readKey(*plist_, domain_, "diffusive energy flux", "diffusive_energy_flux");
   adv_energy_flux_key_ = Keys::readKey(*plist_, domain_, "advected energy flux", "advected_energy_flux");
-  conductivity_key_ = Keys::readKey(*plist_, domain_, "thermal conductivity", "thermal_conductivity");
+  conductivity_key_ = Keys::readKey(*plist_, domain_, "soil thermal conductivity", "soil_thermal_conductivity");
   uw_conductivity_key_ = Keys::readKey(*plist_, domain_, "upwinded thermal conductivity", "upwind_thermal_conductivity");
   cell_is_ice_key_ = Keys::readKey(*plist_, domain_, "ice", "ice");
 
@@ -143,8 +145,6 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
     Errors::Message message("Unknown upwind coefficient location in energy.");
     Exceptions::amanzi_throw(message);
   }
-
-  std::cout << "coef_location " << coef_location << std::endl;
 
   S->GetField(uw_conductivity_key_,name_)->set_io_vis(false);
   
@@ -270,7 +270,7 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
   S->RequireField(density_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList den_plist =
-    plist_->sublist("density evaluator");
+    plist_->sublist("soil density evaluator");
   den_plist.set("evaluator name", density_key_);
   Teuchos::RCP<SoilThermo::SoilDensityEvaluator> den =
     Teuchos::rcp(new SoilThermo::SoilDensityEvaluator(den_plist));
@@ -290,7 +290,7 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
   S->RequireField(conductivity_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList tcm_plist =
-    plist_->sublist("thermal conductivity evaluator");
+    plist_->sublist("soil thermal conductivity evaluator");
   tcm_plist.set("evaluator name", conductivity_key_);
   Teuchos::RCP<SoilThermo::SoilThermalConductivityEvaluator> tcm =
     Teuchos::rcp(new SoilThermo::SoilThermalConductivityEvaluator(tcm_plist));
@@ -344,7 +344,7 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
 
   // -- primary variable
   S->RequireField(key_, name_)->Update(matrix_cvs)->SetGhosted();
-  
+
   // Require a field for the mass flux for advection.
   flux_exists_ = S->HasField(flux_key_); // this bool is needed to know if PK
                                          // makes flux or we need an
@@ -367,6 +367,14 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
   S->RequireField(cell_is_ice_key_,name_)->SetMesh(mesh_)
       ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
 
+  // Require a field for soil water content
+  S->RequireField(water_content_key_, name_)->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+
+  // Require a field for soil ice content
+  S->RequireField(ice_content_key_, name_)->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+
   // -- simply limit to close to 0
   modify_predictor_for_freezing_ =
       plist_->get<bool>("modify predictor for freezing", false);
@@ -376,6 +384,7 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
 
   // correction controls
   T_limit_ = plist_->get<double>("limit correction to temperature change [K]", -1.);
+
 };
 
 // -------------------------------------------------------------
@@ -414,8 +423,8 @@ void Soil_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
 
   // read model parameters
 
-  rho0 = 1000.;
-  cp_ = 4184./rho0;
+  rho0 = 1200.;
+  cp_ = 800./rho0; // ?????
 
   Teuchos::ParameterList& param_list = plist_->sublist("parameters");
 
@@ -503,6 +512,16 @@ void Soil_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
 
   S->GetField(temperature_key_, name_)->set_initialized();
 
+  S->GetFieldData(water_content_key_, name_)->PutScalar(0.);
+  S->GetField(water_content_key_, name_)->set_initialized();
+
+  std::cout << "Initialized W" << std::endl;
+
+  S->GetFieldData(ice_content_key_, name_)->PutScalar(0.);
+  S->GetField(ice_content_key_, name_)->set_initialized();
+
+  std::cout << "Initialized I" << std::endl;
+
   // summary of initialization
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
@@ -553,7 +572,7 @@ void Soil_Thermo_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<S
     Teuchos::RCP<const CompositeVector> enth = S->GetFieldData(enthalpy_key_);;
     ApplyDirichletBCsToTemperature_(S.ptr());
 
-    Teuchos::RCP<CompositeVector> adv_energy = S->GetFieldData(adv_energy_flux_key_, name_);  
+    Teuchos::RCP<CompositeVector> adv_energy = S->GetFieldData(adv_energy_flux_key_, name_);
     matrix_adv_->UpdateFlux(enth.ptr(), flux.ptr(), bc_adv_, adv_energy.ptr());
   }
 };

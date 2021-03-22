@@ -16,6 +16,7 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/soil_thermo/constitutive_relations
 include_directories(${ATS_SOURCE_DIR}/src/pks/soil_thermo/constitutive_relations/energy)
 include_directories(${ATS_SOURCE_DIR}/src/pks/soil_thermo/constitutive_relations/enthalpy)
 include_directories(${ATS_SOURCE_DIR}/src/pks/soil_thermo/constitutive_relations/thermal_conductivity)
+include_directories(${ATS_SOURCE_DIR}/src/pks/soil_thermo/constitutive_relations/heat_capacity)
 include_directories(${ATS_SOURCE_DIR}/src/pks/soil_thermo/constitutive_relations/heat_flux_bc)
 include_directories(${ATS_SOURCE_DIR}/src/constitutive_relations/eos)
 

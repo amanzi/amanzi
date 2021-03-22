@@ -33,37 +33,35 @@ void Soil_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
 
   bool ice_cover_ = false; // first always assume that there is no ice
 
-  // get temperature
-  Teuchos::RCP<const CompositeVector> temp = S_inter_->GetFieldData(temperature_key_);
-
-  for (CompositeVector::name_iterator comp=temp->begin();
-       comp!=temp->end(); ++comp) {
-    // much more efficient to pull out vectors first
-//      const Epetra_MultiVector& eta_v = *eta->ViewComponent(*comp,false);
-//      const Epetra_MultiVector& height_v = *height->ViewComponent(*comp,false);
-    const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
-
-    int ncomp = temp->size(*comp, false);
-
-    int i_ice_max;
-
-    for (int i=0; i!=ncomp; ++i) {
-      if (temp_v[0][i] < 273.15) { // check if there is ice cover
-        ice_cover_ = true;
-        i_ice_max = i;
-      }
-    } // i
-
-
-    // if melting occured at the top, swap cells
-    for (int i=0; i!=ncomp; ++i) {
-      if (ice_cover_ && i < i_ice_max && temp_v[0][i] >= 273.15 ) {
-        temp_v[0][i] = temp_v[0][i+1];
-        temp_v[0][i+i_ice_max] = temp_v[0][i+i_ice_max+1];
-      }
-    } // i
-
-  }
+//  // get temperature
+//  Teuchos::RCP<const CompositeVector> temp = S_inter_->GetFieldData(temperature_key_);
+//
+//  for (CompositeVector::name_iterator comp=temp->begin();
+//       comp!=temp->end(); ++comp) {
+//    // much more efficient to pull out vectors first
+//    const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
+//
+//    int ncomp = temp->size(*comp, false);
+//
+//    int i_ice_max;
+//
+//    for (int i=0; i!=ncomp; ++i) {
+//      if (temp_v[0][i] < 273.15) { // check if there is ice cover
+//        ice_cover_ = true;
+//        i_ice_max = i;
+//      }
+//    } // i
+//
+//
+//    // if melting occured at the top, swap cells
+//    for (int i=0; i!=ncomp; ++i) {
+//      if (ice_cover_ && i < i_ice_max && temp_v[0][i] >= 273.15 ) {
+//        temp_v[0][i] = temp_v[0][i+1];
+//        temp_v[0][i+i_ice_max] = temp_v[0][i+i_ice_max+1];
+//      }
+//    } // i
+//
+//  }
 
   // increment, get timestep
   niter_++;
@@ -87,10 +85,6 @@ void Soil_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   vecs.push_back(S_inter_->GetFieldData(key_).ptr()); vecs.push_back(u.ptr());
   db_->WriteVectors(vnames, vecs, true);
 
-  // vnames[0] = "sl"; vnames[1] = "si";
-  // vecs[0] = S_next_->GetFieldData("saturation_liquid").ptr();
-  // vecs[1] = S_next_->GetFieldData("saturation_ice").ptr();
-  // db_->WriteVectors(vnames, vecs, false);
 #endif
 
   // update boundary conditions
@@ -108,9 +102,6 @@ void Soil_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   Teuchos::RCP<CompositeVector> res = g->Data();
   res->PutScalar(0.0);
 
-//  std::cout << "Starting res" << std::endl;
-//  res->Print(std::cout);
-
   // diffusion term, implicit
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 #if DEBUG_FLAG
@@ -118,17 +109,11 @@ void Soil_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   db_->WriteVector("res (diff)", res.ptr(), true);
 #endif
 
-//  std::cout << "After ApplyDiffusion_" << std::endl;
-//  res->Print(std::cout);
-
   // source terms
   AddSources_(S_next_.ptr(), res.ptr());
 #if DEBUG_FLAG
   db_->WriteVector("res (src)", res.ptr());
 #endif
-
-//  std::cout << "After AddSources_" << std::endl;
-//  res->Print(std::cout);
 
   // accumulation term
   AddAccumulation_(res.ptr());
@@ -141,9 +126,6 @@ void Soil_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   db_->WriteVector("res (acc)", res.ptr());
 #endif
 
-//  std::cout << "After AddAccumulation_" << std::endl;
-//  res->Print(std::cout);
-
   // advection term
   if (implicit_advection_) {
     AddAdvection_(S_next_.ptr(), res.ptr(), true);
@@ -153,9 +135,6 @@ void Soil_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
 #if DEBUG_FLAG
   db_->WriteVector("res (adv)", res.ptr());
 #endif
-
-//  std::cout << "After AddAdvection_" << std::endl;
-//  res->Print(std::cout);
 
   // Dump residual to state for visual debugging.
 #if MORE_DEBUG_FLAG
@@ -169,10 +148,6 @@ void Soil_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
     *S_next_->GetFieldData(solnstream.str(),name_) = *u;
   }
 #endif
-
-//  g->Data()->Print(std::cout);
-
-//  if (ice_cover_) exit(0);
 
 };
 
@@ -191,24 +166,13 @@ int Soil_Thermo_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
 //  preconditioner_->PrintDiagnostics();
 
   // apply the preconditioner
-//  std::cout << "Printing data" << std::endl;
-//  u->Data()->Print(std::cout);
   int ierr = preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
-//  std::cout << "ApplyPreconditioner ierr = " << ierr << std::endl;
 
 #if DEBUG_FLAG
   db_->WriteVector("PC*T_res", Pu->Data().ptr(), true);
 #endif
   
   Pu->Data()->ViewComponent("boundary_face")->PutScalar(0.0); // correction 01/22/21
-
-//  std::cout << "ApplyPreconditioner" << std::endl;
-//  Pu->Data()->Print(std::cout);
-
-//  std::cout << *Pu->Data()->ViewComponent("cell") << std::endl;
-
-//  std::cout << "ApplyPreconditioner ierr = " << ierr << std::endl;
-//  std::cout << *preconditioner_->A() << std::endl;
 
   return (ierr > 0) ? 0 : 1;
 };
@@ -331,43 +295,6 @@ void Soil_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
   preconditioner_diff_->ApplyBCs(true, true, true);
 };
 
-//double Soil_Thermo_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
-//        Teuchos::RCP<const TreeVector> res) {
-//
-//  const Epetra_MultiVector& temp = *S_inter_->GetFieldData(temperature_key_)
-//        ->ViewComponent("cell",true);
-//  const Epetra_MultiVector& cv = *S_inter_->GetFieldData(cell_vol_key_)
-//        ->ViewComponent("cell",true);
-//
-//  int ncells_owned = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
-//
-//  double err_max = 0.;
-//  double err_L1 = 0.;
-//
-//  for (int c = 0; c < ncells_owned; c++) {
-//    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-//    double T0 = 280., T1 = 400.;
-//    double coef = log(T1/T0);
-//    double temp_ex_c = T0*exp(coef*xc[2]);
-//    err_max = std::max(err_max,std::abs(temp_ex_c-temp[0][c]));
-//    err_L1 += std::abs(temp_ex_c-temp[0][c])*cv[0][c];
-//  }
-//
-//  double err_max_tmp(err_max);
-//  double err_L1_tmp(err_L1);
-//
-//  mesh_->get_comm()->MaxAll(&err_max_tmp, &err_max, 1);
-//  mesh_->get_comm()->SumAll(&err_L1_tmp, &err_L1, 1);
-//
-////  if (mesh_->get_comm()->MyPID() == 0) {
-////    std::cout << "err_max = " << err_max << std::endl;
-////    std::cout << "err_L1  = " << err_L1 << std::endl;
-////  }
-//
-//  return PK_PhysicalBDF_Default::ErrorNorm(u,res);
-//
-//}
-
 double Soil_Thermo_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
                                     Teuchos::RCP<const TreeVector> du)
 {
@@ -401,161 +328,6 @@ double Soil_Thermo_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
   return error;
 }
-
-
-/*
-// -----------------------------------------------------------------------------
-// Default enorm that uses an abs and rel tolerance to monitor convergence.
-// -----------------------------------------------------------------------------
-double Soil_Thermo_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
-        Teuchos::RCP<const TreeVector> res) {
-  // Abs tol based on old conserved quantity -- we know these have been vetted
-  // at some level whereas the new quantity is some iterate, and may be
-  // anything from negative to overflow.
-
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-
-  const Epetra_MultiVector& temp_c = *S_inter_->GetFieldData(temperature_key_)->ViewComponent("cell");
-
-  std::cout << "PRINTING Temperature: " << std::endl;
-  for (int c = 0; c < ncells_owned; c++) {
-    std::cout << temp_c[0][c] << std::endl;
-  }
-  std::cout << "end" << std::endl;
-
-
-
-  int cycle = S_next_->cycle();
-  if (cycle == 32) {
-    std::cout << "we is here" << std::endl;
-  }
-
-  S_inter_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_inter_.ptr(), name_);
-  const Epetra_MultiVector& energy = *S_inter_->GetFieldData(energy_key_)
-      ->ViewComponent("cell",true);
-
-//  S_inter_->GetFieldEvaluator(wc_key_)->HasFieldChanged(S_inter_.ptr(), name_);
-//  const Epetra_MultiVector& wc = *S_inter_->GetFieldData(wc_key_)
-//      ->ViewComponent("cell",true);
-
-  const Epetra_MultiVector& wc = *S_inter_->GetFieldData(wc_key_)
-          ->ViewComponent("cell",true);
-
-  const Epetra_MultiVector& cv = *S_inter_->GetFieldData(cell_vol_key_)
-      ->ViewComponent("cell",true);
-
-//  std::cout << "mass_atol_ = " << mass_atol_ << std::endl;
-//  std::cout << "soil_atol_ = " << soil_atol_ << std::endl;
-//  std::cout << "atol_ = " << atol_ << std::endl;
-
-
-
-
-  // VerboseObject stuff.
-  Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-    *vo_->os() << "ENorm (Infnorm) of: " << conserved_key_ << ": " << std::endl;
-
-  Teuchos::RCP<const CompositeVector> dvec = res->Data();
-  double h = S_next_->time() - S_inter_->time();
-
-  Teuchos::RCP<const Comm_type> comm_p = mesh_->get_comm();
-  Teuchos::RCP<const MpiComm_type> mpi_comm_p =
-    Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm_p);
-  const MPI_Comm& comm = mpi_comm_p->Comm();
-
-  double enorm_val = 0.0;
-  for (CompositeVector::name_iterator comp=dvec->begin();
-       comp!=dvec->end(); ++comp) {
-    double enorm_comp = 0.0;
-    int enorm_loc = -1;
-    const Epetra_MultiVector& dvec_v = *dvec->ViewComponent(*comp, false);
-
-    if (*comp == std::string("cell")) {
-      // error done in two parts, relative to mass but absolute in
-      // energy since it doesn't make much sense to be relative to
-      // energy
-      int ncells = dvec->size(*comp,false);
-      for (unsigned int c=0; c!=ncells; ++c) {
-        double mass = std::max(mass_atol_, wc[0][c] / cv[0][c]);
-        double energy = mass * atol_ + soil_atol_;
-        double enorm_c = std::abs(h * dvec_v[0][c]) / (energy*cv[0][c]);
-
-//        std::cout << "c = " << c << ", enorm_c = " << enorm_c << std::endl;
-//        std::cout << "mass = " << mass << std::endl;
-//        std::cout << "energy = " << energy << std::endl;
-//        std::cout << "h = " << h << std::endl;
-//        std::cout << "dvec_v[0][c] = " << dvec_v[0][c] << std::endl;
-//        std::cout << "cv[0][c] = " << cv[0][c] << std::endl;
-//        std::cout << "wc[0][c] = " << wc[0][c] << std::endl;
-
-        if (enorm_c > enorm_comp) {
-          enorm_comp = enorm_c;
-          enorm_loc = c;
-        }
-      }
-
-    } else if (*comp == std::string("face")) {
-      // error in flux -- relative to cell's extensive conserved quantity
-      int nfaces = dvec->size(*comp, false);
-
-      for (unsigned int f=0; f!=nfaces; ++f) {
-        AmanziMesh::Entity_ID_List cells;
-        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, &cells);
-        double cv_min = cells.size() == 1 ? cv[0][cells[0]]
-            : std::min(cv[0][cells[0]],cv[0][cells[1]]);
-        double mass_min = cells.size() == 1 ? wc[0][cells[0]]/cv[0][cells[0]]
-          : std::min(wc[0][cells[0]]/cv[0][cells[0]], wc[0][cells[1]]/cv[0][cells[1]]);
-        mass_min = std::max(mass_min, mass_atol_);
-
-        double energy = mass_min * atol_ + soil_atol_;
-        double enorm_f = fluxtol_ * h * std::abs(dvec_v[0][f])
-          / (energy * cv_min);
-
-//        std::cout << "f = " << f << ", enorm_f = " << enorm_f << std::endl;
-
-        if (enorm_f > enorm_comp) {
-          enorm_comp = enorm_f;
-          enorm_loc = f;
-        }
-      }
-
-    } else {
-      // boundary face components had better be effectively identically 0
-      double norm;
-      dvec_v.Norm2(&norm);
-      AMANZI_ASSERT(norm < 1.e-15);
-    }
-
-
-    // Write out Inf norms too.
-    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-      double infnorm(0.);
-      dvec_v.NormInf(&infnorm);
-
-      ENorm_t err;
-      ENorm_t l_err;
-      l_err.value = enorm_comp;
-      l_err.gid = dvec_v.Map().GID(enorm_loc);
-
-      int ierr;
-      ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, comm);
-      AMANZI_ASSERT(!ierr);
-      *vo_->os() << "  ENorm (" << *comp << ") = " << err.value << "[" << err.gid << "] (" << infnorm << ")" << std::endl;
-    }
-
-    enorm_val = std::max(enorm_val, enorm_comp);
-  }
-
-  double enorm_val_l = enorm_val;
-
-  int ierr;
-  ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, comm);
-  AMANZI_ASSERT(!ierr);
-  return enorm_val;
-};
-*/
-
 
 } // namespace SoilThermo
 } // namespace Amanzi

@@ -54,16 +54,6 @@ void Soil_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-//  for (int c = 0; c < ncells_owned; c++) {
-//      std::cout << "c = " << c << " acc = " << cp_*rho[0][c]/dt*(T1_c[0][c] - T0_c[0][c]) << std::endl;
-////      g_c[0][c] = cp_*rho[0][c]/dt*(T1_c[0][c] - T0_c[0][c]);
-////      std::cout << "g_c[0][c] = " << g_c[0][c] << std::endl;
-////      std::cout << "T1_c[0][c] = " << T1_c[0][c] << std::endl;
-////      std::cout << "T0_c[0][c] = " << T0_c[0][c] << std::endl;
-////      std::cout << "rho[0][c] = " << rho[0][c] << std::endl;
-////      std::cout << "cp_ = " << cp_ << std::endl;
-//  }
-
 };
 
 
@@ -106,10 +96,7 @@ void Soil_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
     AmanziGeometry::Point normal = mesh_->face_normal(f);
     normal /= norm(normal);
 
-//    flux_f[0][f] = cp_*rho0*dhdt*xcf[2]/(h_+1.e-6);
-    flux_f[0][f] = cp_*rho0*(dhdt*xcf[2] - B_w)/(h_+1.e-6);
-//    flux_f[0][f] = 1.*normal[2];
-//    std::cout << "f = " << f << " flux = " << flux_f[0][f] << std::endl;
+    flux_f[0][f] = 0.;
   }
 
   db_->WriteVector(" adv flux", flux.ptr(), true);
@@ -152,8 +139,6 @@ void Soil_Thermo_PK::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   matrix_diff_->UpdateMatrices(Teuchos::null, temp.ptr());
   matrix_diff_->ApplyBCs(true, true, true);
 
-//  std::cout << "energy_flux_key_ = " << energy_flux_key_ << std::endl;
-//
 //  // update the flux
 //  Teuchos::RCP<CompositeVector> flux = S->GetFieldData(energy_flux_key_, name_);
 //
@@ -185,17 +170,11 @@ void Soil_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
     Epetra_MultiVector& g_c = *g->ViewComponent("cell",false);
 
     // Update the source term
-//    S->GetFieldEvaluator(source_key_)->HasFieldChanged(S, name_);
-//    const Epetra_MultiVector& source1 =
-//        *S->GetFieldData(source_key_)->ViewComponent("cell",false);
     const Epetra_MultiVector& cv =
       *S->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
 
     double dhdt = r_ - E_ - R_s_ - R_b_;
     double B_w  = r_ - E_;
-
-//    double dt = S_next_->time() - S_inter_->time();
-//    h_ += dhdt*dt;
 
     S->GetFieldEvaluator(density_key_)->HasFieldChanged(S.ptr(), name_);
 
@@ -217,49 +196,8 @@ void Soil_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
     for (unsigned int c=0; c!=ncells; ++c) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
-      if (temp[0][c] < 273.15) {
-          g_c[0][c] += -cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6) * cv[0][c];
-      } else {
-          g_c[0][c] += (S0_*exp(-alpha_e_*h_*xc[2])*(-alpha_e_*h_) - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6)) * cv[0][c]; // + M
-      }
+      g_c[0][c] += 0.;
 
-//      g_c[0][c] += (8.-2.*xc[2]) * cv[0][c];
-
-      /* TESTING
-//      // manufactured solution 1: linear temperature distribution
-//      double T0 = 280., T1 = 400.;
-//      g_c[0][c] += cp_*rho[0][c]*(T1-T0)/(h_+1.e-6)*(dhdt*xc[2] - B_w) * cv[0][c]; // - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6) * cv[0][c];
-      // manufactured solution 2: exponential temperature distribution
-      double T0 = 280., T1 = 400.;
-      double coef = log(T1/T0);
-//      std::cout << "lambda_c[0][c] = " << lambda_c[0][c] << std::endl;
-//      std::cout << "coef = " << coef << std::endl;
-//      std::cout << "exp(coef*xc[2]) = " << exp(coef*xc[2]) << std::endl;
-//      std::cout << "h_ = " << h_ << std::endl;
-      g_c[0][c] += T0*coef*exp(coef*xc[2])*( 1./(h_+1.e-6)*lambda_c[0][c]*coef - cp_*rho[0][c]*(dhdt*xc[2] - B_w) )/(h_+1.e-6) * cv[0][c];
-//          - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6) * cv[0][c];
-//      // manufactured solution 3: quadratic temperature distribution
-//      double T0 = 280., T1 = 400.;
-//      double zm = 0.5, Tm = 300.;
-//      double d = T0;
-//      double b = (Tm-T0-zm*zm*(T1-T0))/(zm*(1.-zm));
-//      double a = T1-T0-b;
-////      std::cout << "a = " << a << ", b = " << b << std::endl;
-//      g_c[0][c] += (2.*a*lambda_c[0][c]/(h_+1.e-6) - cp_*rho[0][c]*(2.*a*xc[2] + b)*(dhdt*xc[2] - B_w))/(h_+1.e-6) * cv[0][c];
-//          - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6) * cv[0][c];
-//      g_c[0][c] += 2.*a*lambda_c[0][c]/(h_+1.e-6)/(h_+1.e-6) * cv[0][c];
-      //          - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6) * cv[0][c];
-//      // manufactured solution without non-conservative part
-//      g_c[0][c] -= (-2.*a*lambda_c[0][c]/(h_+1.e-6) -
-//          cp_*rho[0][c]/(h_+1.e-6)*( dhdt*(3.*a*xc[2]*xc[2] + 2.*b*xc[2] + c) - B_w*(2.*a*xc[2] + b) ) ) * cv[0][c];
-//          - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6) * cv[0][c];
-//      g_c[0][c] += ( 2.*a*lambda_c[0][c]/(h_+1.e-6)/(h_+1.e-6) - (2.*a*xc[2] + b) ) * cv[0][c];
-//       g_c[0][c] += ( 2.*a*lambda_c[0][c]/(h_+1.e-6)/(h_+1.e-6) - cp_*rho[0][c]*dhdt/(h_+1.e-6)*(3.*a*xc[2]*xc[2] + 2.*b*xc[2] + c) + cp_*rho[0][c]*B_w/(h_+1.e-6)*(2.*a*xc[2] + b) ) * cv[0][c]
-//                 + cp_*rho[0][c]*dhdt/(h_+1.e-6)*(a*xc[2]*xc[2] + b*xc[2] + c) * cv[0][c];
-//      std::cout << "h_ = " << h_ << std::endl;
-//      std::cout << "SRC = " << g_c[0][c] << std::endl;
- *
- */
     }
 
     if (vo_->os_OK(Teuchos::VERB_EXTREME))

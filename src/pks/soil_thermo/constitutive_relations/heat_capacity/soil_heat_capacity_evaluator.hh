@@ -1,14 +1,14 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
-  Interface for a thermal conductivity model with two phases.
+  Interface for a soil heat capacity model
 
   License: BSD
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_SOIL_TC_EVALUATOR_HH_
-#define AMANZI_SOIL_TC_EVALUATOR_HH_
+#ifndef AMANZI_SOIL_HC_EVALUATOR_HH_
+#define AMANZI_SOIL_HC_EVALUATOR_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -18,13 +18,13 @@
 namespace Amanzi {
 namespace SoilThermo {
 
-class SoilThermalConductivityEvaluator :
+class SoilHeatCapacityEvaluator :
     public SecondaryVariableFieldEvaluator {
 
  public:
   // constructor format for all derived classes
-  SoilThermalConductivityEvaluator(Teuchos::ParameterList& plist);
-  SoilThermalConductivityEvaluator(const SoilThermalConductivityEvaluator& other);
+  SoilHeatCapacityEvaluator(Teuchos::ParameterList& plist);
+  SoilHeatCapacityEvaluator(const SoilHeatCapacityEvaluator& other);
 
   Teuchos::RCP<FieldEvaluator> Clone() const;
 
@@ -37,10 +37,14 @@ class SoilThermalConductivityEvaluator :
  protected:
   // dependencies
 
+  double cg, cw, ci;
+
   Key temperature_key_;
+  Key water_content_key_;
+  Key ice_content_key_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,SoilThermalConductivityEvaluator> factory_;
+  static Utils::RegisteredFactory<FieldEvaluator,SoilHeatCapacityEvaluator> factory_;
 
 };
 
