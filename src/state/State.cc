@@ -1007,7 +1007,7 @@ void State::InitializeEvaluators() {
   }
   for (evaluator_iterator f_it = field_evaluator_begin(); f_it != field_evaluator_end(); ++f_it) {
     f_it->second->HasFieldChanged(Teuchos::Ptr<State>(this), "state");
-    fields_[f_it->first]->set_initialized();
+    if (!f_it->second->IsPrimary()) fields_[f_it->first]->set_initialized();
   }
 };
 

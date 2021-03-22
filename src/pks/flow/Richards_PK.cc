@@ -515,6 +515,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   if (ti_list_->isSublist("pressure-lambda constraints") && pressure.HasComponent("face")) {
     DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
                                    *pressure.ViewComponent("face"));
+    Teuchos::rcp_dynamic_cast<Field_CompositeVector>(S->GetField(pressure_key_, passwd_))->set_initialized("face");
   }
 
   // error control options
@@ -707,6 +708,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Verbose output of initialization statistics.
   InitializeStatistics_();
+
 }
 
 

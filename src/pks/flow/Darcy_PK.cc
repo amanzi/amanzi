@@ -306,6 +306,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
       Epetra_MultiVector& lambda = *solution->ViewComponent("face");
 
       DeriveFaceValuesFromCellValues(p, lambda);
+      Teuchos::rcp_dynamic_cast<Field_CompositeVector>(S->GetField(pressure_key_, passwd_))->set_initialized("face");
     }
   }
 
@@ -383,7 +384,7 @@ void Darcy_PK::InitializeFields_()
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  InitializeField_(S_.ptr(), passwd_, saturation_liquid_key_, 1.0);
+  InitializeField_(S_.ptr(), saturation_liquid_key_, saturation_liquid_key_, 1.0);
   InitializeField_(S_.ptr(), passwd_, prev_saturation_liquid_key_, 1.0);
 }
 

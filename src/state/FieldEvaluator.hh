@@ -86,10 +86,10 @@ class FieldEvaluator {
           Key requester, Key wrt_key) = 0;
 
   // Update the field if needed.
-  //  virtual UpdateField(const Teuchos::Ptr<State>& S) = 0;
+  // virtual UpdateField(const Teuchos::Ptr<State>& S) = 0;
 
   // Update the field's derivative with respect to wrt_key if needed.
-  //  virtual UpdateFieldDerivative(const Teuchos::Ptr<State>& S, Key wrt_key) = 0;
+  // virtual UpdateFieldDerivative(const Teuchos::Ptr<State>& S, Key wrt_key) = 0;
 
 
   virtual bool IsDependency(const Teuchos::Ptr<State>& S, Key key) const = 0;
@@ -100,6 +100,9 @@ class FieldEvaluator {
   virtual std::string WriteToString() const = 0;
 
   friend std::ostream& operator<<(std::ostream&, const FieldEvaluator&);
+
+  // special flags
+  virtual bool IsPrimary() { return false; }
 
  protected:
   // parameter list for the object
