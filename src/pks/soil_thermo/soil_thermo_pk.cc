@@ -99,6 +99,7 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
   energy_flux_key_ = Keys::readKey(*plist_, domain_, "diffusive energy flux", "diffusive_energy_flux");
   adv_energy_flux_key_ = Keys::readKey(*plist_, domain_, "advected energy flux", "advected_energy_flux");
   conductivity_key_ = Keys::readKey(*plist_, domain_, "soil thermal conductivity", "soil_thermal_conductivity");
+  heat_capacity_key_ = Keys::readKey(*plist_, domain_, "soil heat capacity", "soil_heat_capacity");
   uw_conductivity_key_ = Keys::readKey(*plist_, domain_, "upwinded thermal conductivity", "upwind_thermal_conductivity");
   cell_is_ice_key_ = Keys::readKey(*plist_, domain_, "ice", "ice");
 
@@ -296,6 +297,16 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
     Teuchos::rcp(new SoilThermo::SoilThermalConductivityEvaluator(tcm_plist));
   S->SetFieldEvaluator(conductivity_key_, tcm);
 
+  // -- heat capacity evaluator
+  S->RequireField(heat_capacity_key_)->SetMesh(mesh_)
+    ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::ParameterList hc_plist =
+    plist_->sublist("soil heat capacity evaluator");
+  hc_plist.set("evaluator name", heat_capacity_key_);
+  Teuchos::RCP<SoilThermo::SoilHeatCapacityEvaluator> hc =
+    Teuchos::rcp(new SoilThermo::SoilHeatCapacityEvaluator(hc_plist));
+  S->SetFieldEvaluator(heat_capacity_key_, hc);
+
 //  // source terms
 //  is_source_term_ = plist_->get<bool>("source term");
 //  is_source_term_differentiable_ = plist_->get<bool>("source term is differentiable", true);
@@ -405,6 +416,11 @@ void Soil_Thermo_PK::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField(conductivity_key_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(conductivity_key_);
+
+  // -- Heat Capacity
+  S->RequireField(heat_capacity_key_)->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(heat_capacity_key_);
 
   // -- Enthalpy
   S->RequireField(enthalpy_key_)->SetMesh(mesh_)->SetGhosted()

@@ -326,6 +326,7 @@ public:
   Key uw_conductivity_key_;
   Key dconductivity_key_;
   Key duw_conductivity_key_;
+  Key heat_capacity_key_;
 
   // precipitation and evaporation rates
   double r_;
