@@ -59,7 +59,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
 
   out_list.set<std::string>("linear solver", TI_SOLVER);
   out_list.set<std::string>("preconditioner", prec);
-  out_list.set<std::string>("preconditioner enhancement", "none");
+  // out_list.set<std::string>("preconditioner enhancement", "none");
 
   // pressure-lambda constraints
   Teuchos::ParameterList& plamb = out_list.sublist("pressure-lambda constraints");

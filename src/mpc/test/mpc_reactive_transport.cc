@@ -66,10 +66,10 @@ using namespace Amanzi::AmanziGeometry;
   }
 
   // restart simulation and compare results
-  /*
   glist->sublist("cycle driver").sublist("restart").set<std::string>("file name", "chk_rt00005.h5");
   glist->sublist("state").sublist("initial conditions").remove("geochemical conditions", false);
   S = Teuchos::null;
+  /*
   avg2 = 0.;
   S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
