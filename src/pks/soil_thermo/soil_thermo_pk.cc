@@ -297,6 +297,14 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
     Teuchos::rcp(new SoilThermo::SoilThermalConductivityEvaluator(tcm_plist));
   S->SetFieldEvaluator(conductivity_key_, tcm);
 
+  // Require a field for soil water content
+  S->RequireField(water_content_key_, name_)->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+
+  // Require a field for soil ice content
+  S->RequireField(ice_content_key_, name_)->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+
   // -- heat capacity evaluator
   S->RequireField(heat_capacity_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -377,14 +385,6 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
   // ice markers
   S->RequireField(cell_is_ice_key_,name_)->SetMesh(mesh_)
       ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  // Require a field for soil water content
-  S->RequireField(water_content_key_, name_)->SetMesh(mesh_)->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  // Require a field for soil ice content
-  S->RequireField(ice_content_key_, name_)->SetMesh(mesh_)->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   // -- simply limit to close to 0
   modify_predictor_for_freezing_ =
@@ -527,6 +527,8 @@ void Soil_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   */
 
   S->GetField(temperature_key_, name_)->set_initialized();
+
+  std::cout << "Initialized T" << std::endl;
 
   S->GetFieldData(water_content_key_, name_)->PutScalar(0.);
   S->GetField(water_content_key_, name_)->set_initialized();

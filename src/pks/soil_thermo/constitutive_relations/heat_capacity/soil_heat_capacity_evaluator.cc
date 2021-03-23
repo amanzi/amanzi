@@ -29,13 +29,13 @@ SoilHeatCapacityEvaluator::SoilHeatCapacityEvaluator(
   temperature_key_ = Keys::readKey(plist_, domain_name, "temperature", "temperature");
   dependencies_.insert(temperature_key_);
 
-  // -- water content
-  water_content_key_ = Keys::readKey(plist_, domain_name, "soil water content", "soil water content");
-  dependencies_.insert(water_content_key_);
-
-  // -- ice content
-  ice_content_key_ = Keys::readKey(plist_, domain_name, "soil ice content", "soil ice content");
-  dependencies_.insert(ice_content_key_);
+//  // -- water content
+//  water_content_key_ = Keys::readKey(plist_, domain_name, "soil water content", "soil_water_content");
+//  dependencies_.insert(water_content_key_);
+//
+//  // -- ice content
+//  ice_content_key_ = Keys::readKey(plist_, domain_name, "soil ice content", "soil_ice_content");
+//  dependencies_.insert(ice_content_key_);
 
 //  AMANZI_ASSERT(plist_.isSublist("soil heat capacity parameters"));
 //  Teuchos::ParameterList sublist = plist_.sublist("soil heat capacity parameters");
@@ -69,11 +69,11 @@ void SoilHeatCapacityEvaluator::EvaluateField_(
       const Teuchos::Ptr<State>& S,
       const Teuchos::Ptr<CompositeVector>& result) {
 
-  // get water content
-  Teuchos::RCP<const CompositeVector> wc = S->GetFieldData(water_content_key_);
-
-  // get ice content
-  Teuchos::RCP<const CompositeVector> ic = S->GetFieldData(ice_content_key_);
+//  // get water content
+//  Teuchos::RCP<const CompositeVector> wc = S->GetFieldData(water_content_key_);
+//
+//  // get ice content
+//  Teuchos::RCP<const CompositeVector> ic = S->GetFieldData(ice_content_key_);
 
   // get mesh
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = result->Mesh();

@@ -56,6 +56,8 @@ void SoilThermalConductivityEvaluator::EvaluateField_(
   // get mesh
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = result->Mesh();
 
+  double eps = 1.e-10;
+
   // read these parameters from states
   double por = 0.;
   double wl = 0.;
@@ -106,16 +108,16 @@ void SoilThermalConductivityEvaluator::EvaluateField_(
   double lambda_solids = pow(lambda_quartz,quartz_ratio) * pow(lambda_othmin,(1.-quartz_ratio));
 
   // Conversion from mass ratios to volume ratios
-  double water_vol_ratio = wl / (por*(wl + row0/roi*wi + row0/rosdry));
-  double ice_vol_ratio = wi / (por*(wi + roi/row0*wl + roi/rosdry));
+  double water_vol_ratio = wl / (por*(wl + row0/roi*wi + row0/rosdry) + eps);
+  double ice_vol_ratio = wi / (por*(wi + roi/row0*wl + roi/rosdry) + eps);
 
   double waterice_vol_ratio = water_vol_ratio + ice_vol_ratio;
 
   CK_const = CK_consts[2]; // silty and clay soils are assumed
-  double Kersten = CK_const*waterice_vol_ratio / (1. + (CK_const - 1.)*waterice_vol_ratio);
+  double Kersten = CK_const*waterice_vol_ratio / (1. + (CK_const - 1.)*waterice_vol_ratio + eps);
 
-  double water_sat_ratio = por*water_vol_ratio/waterice_vol_ratio;
-  double ice_sat_ratio = por*ice_vol_ratio/waterice_vol_ratio;
+  double water_sat_ratio = por*water_vol_ratio/(waterice_vol_ratio + eps);
+  double ice_sat_ratio = por*ice_vol_ratio/(waterice_vol_ratio + eps);
 
   // This is the original formula from Johansen (1975) extended for the case
   // with the ice content
