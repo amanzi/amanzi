@@ -18,7 +18,7 @@ generate_evaluators_registration_header(
   )
 
 # collect all sources
-list(APPEND subdirs density energy enthalpy internal_energy thermal_conductivity heat_flux_bc)
+list(APPEND subdirs density energy enthalpy internal_energy thermal_conductivity heat_capacity heat_flux_bc)
 set(ats_soil_thermo_relations_src_files "")
 set(ats_soil_thermo_relations_inc_files "")
 
