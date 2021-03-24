@@ -12,12 +12,14 @@
  Various definitions needed by Mesh class.
 */
 
-#ifndef AMANZI_MESH_DEFS_HH_
-#define AMANZI_MESH_DEFS_HH_
+#pragma once
 
 #include <vector>
 #include <string>
 #include "boost/algorithm/string.hpp"
+
+#include "Epetra_Map.h"
+#include "Epetra_Import.h"
 
 #include "errors.hh"
 #include "Point.hh"
@@ -26,13 +28,28 @@ namespace Amanzi {
 namespace AmanziMesh {
 
 // Necessary typedefs and enumerations
-typedef int Entity_ID;
-typedef int Entity_GID;
-typedef std::vector<Entity_ID> Entity_ID_List;
-typedef std::vector<Entity_GID> Entity_GID_List;
-typedef std::vector<int> Entity_Direction_List;
-typedef std::vector<AmanziGeometry::Point> Point_List;
-typedef int Set_ID;
+using Entity_ID = int;
+using Entity_GID = int;
+using Entity_ID_List = std::vector<Entity_ID>;
+using Entity_GID_List = std::vector<Entity_GID>;
+using Entity_Direction_List = std::vector<int>;
+using Point_List = std::vector<AmanziGeometry::Point>;
+
+template<typename T> using View_type = std::vector<T>;
+using Entity_ID_View = View_type<Entity_ID>;
+using Entity_GID_View = View_type<Entity_GID>;
+using Entity_Direction_View = View_type<int>;
+using Point_View = View_type<AmanziGeometry::Point>;
+
+template<typename T> using CSR = std::vector<std::vector<T>>;
+using Double_View = View_type<double>;
+
+using Map_type = Epetra_Map;
+using Map_ptr_type = Teuchos::RCP<Map_type>;
+using Import_type = Epetra_Import;
+using Import_ptr_type = Teuchos::RCP<Import_type>;
+
+using Set_ID = int;
 
 // Cells (aka zones/elements) are the highest dimension entities in a mesh
 // Nodes (aka vertices) are lowest dimension entities in a mesh
@@ -47,7 +64,8 @@ enum class Entity_kind
   EDGE = 2,
   FACE = 3,
   CELL = 4,
-  BOUNDARY_FACE,
+  BOUNDARY_FACE = 5,
+  BOUNDARY_NODE = 6
 };
 
 // Check if Entity_kind is valid
@@ -65,6 +83,7 @@ Entity_kind createEntityKind(const std::string& instring)
   if (estring == "cell") return Entity_kind::CELL;
   else if (estring == "face") return Entity_kind::FACE;
   else if (estring == "boundary_face") return Entity_kind::BOUNDARY_FACE;
+  else if (estring == "boundary_node") return Entity_kind::BOUNDARY_NODE;
   else if (estring == "edge") return Entity_kind::EDGE;
   else if (estring == "node") return Entity_kind::NODE;
   else {
@@ -83,6 +102,7 @@ std::string to_string(const Entity_kind kind)
     case(Entity_kind::CELL): return "cell";
     case(Entity_kind::FACE): return "face";
     case(Entity_kind::BOUNDARY_FACE): return "boundary_face";
+    case(Entity_kind::BOUNDARY_NODE): return "boundary_node";
     case(Entity_kind::EDGE): return "edge";
     case(Entity_kind::NODE): return "node";
     default: return "unknown";
@@ -165,4 +185,4 @@ Partitioner_type createPartitionerType(const std::string& pstring) {
 }  // namespace AmanziMesh
 }  // namespace Amanzi
 
-#endif
+

@@ -52,7 +52,7 @@ TEST(GEOMETRIC_MODEL)
     CHECK(reg.get());
 
     // Do their names match ?
-    CHECK_EQUAL(reg->name(),reg_name);
+    CHECK_EQUAL(reg->get_name(),reg_name);
 
     // Get the region info directly from the XML and compare
     Teuchos::ParameterList::ConstIterator j = reg_params.begin(); 
@@ -61,7 +61,7 @@ TEST(GEOMETRIC_MODEL)
 
     if (shape == "region: plane") {
       // Make sure that the region type is a Plane
-      CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::PLANE);
+      CHECK_EQUAL(reg->get_type(),Amanzi::AmanziGeometry::PLANE);
 
       // See if the point and normal of the region were correctly retrieved
       Teuchos::Array<double> in_xyz, in_nrm;
@@ -91,7 +91,7 @@ TEST(GEOMETRIC_MODEL)
       
     } else if (shape == "region: box") {
       // Make sure that the region type is a BOX
-      CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::BOX);
+      CHECK_EQUAL(reg->get_type(),Amanzi::AmanziGeometry::BOX);
 
       // Get the min-max bounds of the region from the XML specification
       Teuchos::Array<double> in_min_xyz, in_max_xyz;
@@ -102,7 +102,7 @@ TEST(GEOMETRIC_MODEL)
  
       // Make sure that the region dimension is equal to the topological
       // dimension of the box
-      CHECK_EQUAL(reg->manifold_dimension(),in_min_xyz.size());
+      CHECK_EQUAL(reg->get_manifold_dimension(),in_min_xyz.size());
       
       // See if the min-max of the region were correctly retrieved
       Amanzi::AmanziGeometry::Point pmin, pmax;
@@ -132,7 +132,7 @@ TEST(GEOMETRIC_MODEL)
       std::string in_entity_str = labset_params.get< std::string >("entity");
 
       // Make sure that the region type is a Labeled Set
-      CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::LABELEDSET);
+      CHECK_EQUAL(reg->get_type(),Amanzi::AmanziGeometry::LABELEDSET);
   
       Teuchos::RCP<const Amanzi::AmanziGeometry::RegionLabeledSet> lsreg =
 	Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionLabeledSet>(reg);

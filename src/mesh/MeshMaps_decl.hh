@@ -16,9 +16,6 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
-using Map_type = Epetra_Map;
-usign Map_ptr_type = Teuchos::RCP<Map_type>;
-
 //
 // Creates a pair of maps, <ALL, OWNED>, for a given entity_kind.
 // Uses GIDs provided by the Mesh object.
@@ -36,48 +33,40 @@ std::pair<Map_ptr_type, Map_ptr_type>
 createMapsFromNaturalGIDs(const Mesh& mesh, const Entity_kind kind);
 
 
-
-
-
-template<class Mesh>
-class MeshMap {
+class MeshMaps {
 
  public:
-  explicit MeshMap(const Mesh& mesh);
+  MeshMaps() {}
 
-  const Epetra_Map& map(Entity_kind kind, bool include_ghost) const;
-  const Epetra_Import& importer(Entity_kind kind) const;
+  template<class Mesh>
+  void initialize(const Mesh& mesh,
+                  bool natural_ordering=false,
+                  bool request_edges=false);
 
-  const Epetra_Map& cell_map(bool include_ghost) const {
-    return map(Entity_kind::CELL, include_ghost);
+  const Entity_ID_View& get_boundary_faces() const {
+    return boundary_faces_;
   }
-  const Epetra_Map& face_map(bool include_ghost) const {
-    return map(Entity_kind::FACE, include_ghost);
+  const Entity_ID_View& get_boundary_nodes() const {
+    return boundary_nodes_;
   }
-  const Epetra_Map& edge_map(bool include_ghost) const {
-    return map(Entity_kind::EDGE, include_ghost);
+  const Map_type& get_map(Entity_kind kind, bool include_ghost) const;
+  const Import_type& get_importer(Entity_kind kind) const;
+  const Import_type& get_boundary_face_importer() const {
+    return *boundary_face_importer_;
   }
-  const Epetra_Map& node_map(bool include_ghost) const {
-    return map(Entity_kind::NODE, include_ghost);
-  }
-  const Epetra_Map& boundary_face_map(bool include_ghost) const {
-    return map(Entity_kind::BOUNDARY_FACE, include_ghost);
-  }
-  const Epetra_Map& exterior_node_map(bool include_ghost) const {
-    return map(Entity_kind::BOUNDARY_NODE, include_ghost);
-  }
-
-  const Epetra_Import& exterior_face_importer() const {
-    return *ext_face_importer_;
+  const Import_type& get_boundary_node_importer() const {
+    return *boundary_node_importer_;
   }
 
  private:
-  std::map<Entity_kind, Teuchos::RCP<Epetra_Map>> owned_;
-  std::map<Entity_kind, Teuchos::RCP<Epetra_Map>> all_;
-  std::map<Entity_kind, Teuchos::RCP<Epetra_Import>> importer_;
-  Teuchos::RCP<Epetra_Import> ext_face_importer_;
-  Teuchos::RCP<Epetra_Import> ext_node_importer_;
-}
+  std::map<Entity_kind, Map_ptr_type> owned_;
+  std::map<Entity_kind, Map_ptr_type> all_;
+  std::map<Entity_kind, Import_ptr_type> importer_;
+  Import_ptr_type boundary_face_importer_;
+  Import_ptr_type boundary_node_importer_;
+  Entity_ID_View boundary_faces_;
+  Entity_ID_View boundary_nodes_;
+};
 
 } // namespace AmanziMesh
 } // namespace Amanzi

@@ -102,6 +102,7 @@ class Mesh_MSTK : public MeshFramework {
 
   virtual bool has_edges() const override { return edges_requested_; }
   virtual bool is_deformable() const override { return true; }
+  virtual bool is_ordered() const override { return true; }
 
   //
   // Entity meta-data

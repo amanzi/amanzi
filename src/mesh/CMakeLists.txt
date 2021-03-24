@@ -32,14 +32,9 @@ include_directories(${Boost_INCLUDE_DIRS})
 #
 add_amanzi_library(mesh SOURCE GenerationSpec.cc
                                MeshFramework.cc
+                               MeshSets_Helpers.cc
                                #DomainSet.cc
                         LINK_LIBS geometry atk ${Epetra_LIBRARIES})
-
-#
-# Library: mesh_audit
-#
-add_amanzi_library(mesh_audit SOURCE MeshAudit.cc 
-	                      LINK_LIBS mesh error_handling ${Epetra_LIBRARIES})
 
 #
 # Install Header files
@@ -78,8 +73,9 @@ if (BUILD_TESTS)
 
     # Need to copy files for the tests 
     if (NOT (${MESH_SOURCE_DIR} EQUAL ${MESH_BINARY_DIR}))
-      # file(GLOB DataFiles "${MESH_SOURCE_DIR}/test/*.xml")
-      # file(COPY ${DataFiles} DESTINATION ${MESH_BINARY_DIR}/test/)
+      file(GLOB DataFiles "${MESH_SOURCE_DIR}/test/*.xml")
+      file(GLOB DataFiles "${MESH_SOURCE_DIR}/test/*.exo")
+      file(COPY ${DataFiles} DESTINATION ${MESH_BINARY_DIR}/test/)
     endif()
 
     # Test link libraries
@@ -101,6 +97,7 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/test_mesh_geometry.cc
                     LINK_LIBS ${test_link_libs})
 
+                  
     # Test: mesh deformation
     # add_amanzi_test(mesh_deform mesh_deform
     #                 KIND unit

@@ -36,7 +36,7 @@ RegionHalfSpace::RegionHalfSpace(const std::string& name,
   if (p_.dim() != n_.dim()) {
     Errors::Message mesg;
     mesg << "Mismatch in point and normal dimensions of RegionHalfSpace "
-         << Region::name();
+         << Region::get_name();
     Exceptions::amanzi_throw(mesg);
   }
 }

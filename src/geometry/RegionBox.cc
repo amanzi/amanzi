@@ -35,7 +35,7 @@ RegionBox::RegionBox(const std::string& name,
   if (p0_.dim() != p1_.dim()) {
     Errors::Message msg;
     msg << "Mismatch in dimensions of corner points of RegionBox \""
-        << Region::name() << "\"";
+        << Region::get_name() << "\"";
     Exceptions::amanzi_throw(msg);
   }
   
@@ -64,7 +64,7 @@ bool RegionBox::inside(const Point& p) const
   if (p.dim() != p0_.dim()) {
     Errors::Message msg;
     msg << "Mismatch in corner dimension of RegionBox \""
-        << name() << "\" and query point.";
+        << get_name() << "\" and query point.";
     Exceptions::amanzi_throw(msg);
   }
 #endif

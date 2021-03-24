@@ -40,10 +40,10 @@ RegionPolygon::RegionPolygon(const std::string& name,
 
 
 void RegionPolygon::Init_() {
-  if (size() < manifold_dimension()) {
+  if (size() < get_manifold_dimension()) {
     Errors::Message mesg;
-    mesg << "Polygons of dimension " << (int) manifold_dimension() << 
-      " need to be specified by at least " << (int) manifold_dimension() << 
+    mesg << "Polygons of dimension " << (int) get_manifold_dimension() << 
+      " need to be specified by at least " << (int) get_manifold_dimension() << 
       " points";
     Exceptions::amanzi_throw(mesg);
   }
@@ -110,7 +110,7 @@ RegionPolygon::inside(const Point& p) const
 #ifdef ENABLE_DBC
   if (p.dim() != points_[0].dim()) {
     Errors::Message mesg;
-    mesg << "Mismatch in corner dimension of Polygon \"" << name()
+    mesg << "Mismatch in corner dimension of Polygon \"" << get_name()
          << "\" and query point.";
     Exceptions::amanzi_throw(mesg);
   }

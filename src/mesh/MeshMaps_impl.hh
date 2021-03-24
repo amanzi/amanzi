@@ -42,7 +42,7 @@ createMapsFromNaturalGIDs(const Mesh& mesh, const Entity_kind kind)
 
 
 template<class Mesh>
-MeshMap::MeshMap(const Mesh& mesh, bool natural=false)
+void MeshMaps::initialize(const Mesh& mesh, bool natural)
 {
   std::vector<Entity_kind> to_construct{Entity_kind::CELL,
     Entity_kind::FACE, Entity_kind::NODE};
@@ -64,7 +64,7 @@ MeshMap::MeshMap(const Mesh& mesh, bool natural=false)
   // -- get a list of all face LIDs with 1 cell
   std::size_t nfaces_owned = mesh.getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
   std::size_t nfaces_all = mesh.getNumEntities(Entity_kind::FACE, Parallel_type::ALL);
-  Entity_ID_List bfaces(nfaces_all, -1);
+  boundary_faces_.resize(nfaces_all, -1);
   std::size_t nbf_all = 0;
   std::size_t nbf_owned = 0;
   for (Entity_ID f=0; f!=nfaces_all; ++f) {
@@ -76,6 +76,7 @@ MeshMap::MeshMap(const Mesh& mesh, bool natural=false)
       if (f < nfaces_owned) nbf_owned = nbf_all;
     }
   }
+  boundary_faces_.resize(nbf_all);
 
   // -- convert to GID
   const auto& fmap_all = *map(Entity_kind::FACE, true);

@@ -1858,7 +1858,7 @@ Mesh_MSTK::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
 {
   if (kind != createEntityKind(region.entity_str())) {
     Errors::Message msg;
-    msg << "Inconsistent request of labeled set for region \"" << region.name()
+    msg << "Inconsistent request of labeled set for region \"" << region.get_name()
         << "\" of kind \"" << region.entity_str() << "\" requested as type \""
         << to_string(kind) << "\"";
     Exceptions::amanzi_throw(msg);
@@ -2742,18 +2742,13 @@ void Mesh_MSTK::inherit_labeled_sets_(MAttrib_ptr copyatt,
   int idx, idx2, diffdim;
   MSet_ptr mset;
 
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = get_geometric_model();
-
-  if (gm == Teuchos::null) {
-    std::cerr << "Need region definitions to initialize sets" << std::endl;
-    return;
-  }
+  auto gm = get_geometric_model();
+  if (gm == Teuchos::null) return;
 
   Mesh_ptr parent_mstk_mesh = parent_mesh_->mesh_;
 
   // Difference in cell dimension of this mesh and its parent
   // Labeled set entity dimensions will be similarly dialed down
-
   diffdim = parent_mesh_->get_manifold_dimension() - get_manifold_dimension();
   if (diffdim > 1) {
     Errors::Message mesg("Dimension of mesh and its parent differ by more than 1");
@@ -2761,14 +2756,10 @@ void Mesh_MSTK::inherit_labeled_sets_(MAttrib_ptr copyatt,
   }
 
   unsigned int ngr = gm->size();
-
   for (int i = 0; i < ngr; ++i) {
-    Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(i);
-
-    if (rgn->type() == AmanziGeometry::LABELEDSET) {
-
+    auto rgn = gm->FindRegion(i);
+    if (rgn->get_type() == AmanziGeometry::LABELEDSET) {
       // Get the set from the parent mesh
-
       Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
           Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
 
@@ -2782,11 +2773,9 @@ void Mesh_MSTK::inherit_labeled_sets_(MAttrib_ptr copyatt,
       else if (lsrgn->entity_str() == "NODE")
         internal_name = internal_name_of_set_(*lsrgn,Entity_kind::NODE);
 
-
       MSet_ptr mset_parent = MESH_MSetByName(parent_mstk_mesh,
                                              internal_name.c_str());
-      if (!mset_parent)
-        continue;
+      if (!mset_parent) continue;
 
       // Also, if this is a lower dimensional mesh (like a surface
       // mesh created from a solid mesh) and the set contains entities
@@ -2794,7 +2783,6 @@ void Mesh_MSTK::inherit_labeled_sets_(MAttrib_ptr copyatt,
       // inherit this set - otherwise we will get odd things like
       // internal edges in the surface mesh being labeled as "face
       // sets"
-
       if (diffdim > 0) {
         int found = 0;
         idx = 0;
@@ -2809,19 +2797,15 @@ void Mesh_MSTK::inherit_labeled_sets_(MAttrib_ptr copyatt,
       }
 
       // Create the set in this mesh
-
       MType subentdim;
       MType entdim = MSet_EntDim(mset_parent);
       if (entdim == MVERTEX)
         subentdim = MVERTEX;
       else
         subentdim = (MType) (entdim-diffdim);
-
       mset = MSet_New(mesh_,internal_name.c_str(),subentdim);
 
-
       // Populate the set
-
       int mkid = MSTK_GetMarker();
 
       MEntity_ptr ent;
@@ -2832,14 +2816,12 @@ void Mesh_MSTK::inherit_labeled_sets_(MAttrib_ptr copyatt,
         MEntity_ptr copyent;
         int ival;
         double rval;
-
         if (subentdim == entdim) {
           MEnt_Get_AttVal(ent,copyatt,&ival,&rval,&copyent);
           if (!copyent) continue;
-
           MSet_Add(mset,copyent);
-        }
-        else {
+
+        } else {
           if (entdim == MREGION) {
             MFace_ptr rf;
             List_ptr rfaces = MR_Faces((MRegion_ptr)ent);
@@ -2847,15 +2829,14 @@ void Mesh_MSTK::inherit_labeled_sets_(MAttrib_ptr copyatt,
             while ((rf = List_Next_Entry(rfaces,&idx2))) {
               MEnt_Get_AttVal(rf,copyatt,&ival,&rval,&copyent);
               if (!copyent) continue;
-
               if (!MEnt_IsMarked(copyent,mkid)) {
                 MSet_Add(mset,copyent);
                 MEnt_Mark(copyent,mkid);
               }
             }
             List_Delete(rfaces);
-          }
-          else if (entdim == MFACE) {
+
+          } else if (entdim == MFACE) {
             MEdge_ptr fe;
             List_ptr fedges = MF_Edges((MFace_ptr)ent,1,0);
             idx2 = 0;
@@ -2871,12 +2852,10 @@ void Mesh_MSTK::inherit_labeled_sets_(MAttrib_ptr copyatt,
             List_Delete(fedges);
           }
         }
-
       }
 
       MSet_Unmark(mset,mkid);
       MSTK_FreeMarker(mkid);
-
     }
   }
 }

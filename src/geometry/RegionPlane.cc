@@ -37,7 +37,7 @@ RegionPlane::RegionPlane(const std::string& name,
   if (p_.dim() != n_.dim()) {
     Errors::Message mesg;
     mesg << "Mismatch in point and normal dimensions of RegionPlane "
-         << Region::name();
+         << Region::get_name();
     Exceptions::amanzi_throw(mesg);
   }
 }
@@ -53,7 +53,7 @@ RegionPlane::inside(const Point& p) const
   if (p_.dim() != n_.dim()) {
     Errors::Message mesg;
     mesg << "Mismatch in point dimension of RegionPlane \""
-         << Region::name() << "\" and query point.";
+         << Region::get_name() << "\" and query point.";
     Exceptions::amanzi_throw(mesg);
   }
 #endif

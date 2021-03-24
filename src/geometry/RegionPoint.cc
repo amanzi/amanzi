@@ -34,7 +34,7 @@ RegionPoint::inside(const Point& p) const
 {
   if (p.dim() != p_.dim()) {
     Errors::Message mesg;
-    mesg << "Mismatch in dimension of RegionPoint \"" << name()
+    mesg << "Mismatch in dimension of RegionPoint \"" << get_name()
          << "\" and query point.";
     Exceptions::amanzi_throw(mesg);
   }

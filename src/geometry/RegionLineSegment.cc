@@ -41,13 +41,13 @@ RegionLineSegment::RegionLineSegment(
   Errors::Message msg;
   if (p0_.dim() != p1_.dim()) {
     msg << "Mismatch in dimensions of end points of RegionLineSegment \""
-        << Region::name() << "\"";
+        << Region::get_name() << "\"";
     Exceptions::amanzi_throw(msg);
   }
 
   double eps = 1e-15;
   if (norm(p0_ - p1_) < eps) {
-    msg <<" Zero length line segment \""<< Region::name() <<"\" is NOT allowed."; 
+    msg <<" Zero length line segment \""<< Region::get_name() <<"\" is NOT allowed."; 
     Exceptions::amanzi_throw(msg);
   }
 }
@@ -74,7 +74,7 @@ double RegionLineSegment::intersect(
 {
   int mdim, sdim;
 
-  mdim = manifold_dimension();
+  mdim = get_manifold_dimension();
   sdim = polytope[0].dim();
 
   if ((mdim == 3)&&(sdim==3)) {
@@ -167,7 +167,7 @@ void RegionLineSegment::ComputeInterLinePoints(const std::vector<Point>& polytop
   int mdim, sdim;
   double eps = 1e-12;
 
-  mdim = manifold_dimension();
+  mdim = get_manifold_dimension();
   sdim = polytope[0].dim();
 
   if ((mdim == 3)&&(sdim==3)) {

@@ -7,14 +7,14 @@
 
 #pragma once
 
-#include "Mesh.hh"
+#include "MeshFramework.hh"
 #include "MeshAudit_decl.hh"
 #include "MeshAudit_impl.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
 
-using MeshAudit = MeshAudit_<Mesh, Impl::MeshAudit_Sets>;
+using MeshFrameworkAudit = MeshAudit_<MeshFramework, Impl::MeshAudit_Geometry>;
 
 }
 }

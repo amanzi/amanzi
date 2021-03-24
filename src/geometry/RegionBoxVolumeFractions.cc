@@ -40,13 +40,13 @@ RegionBoxVolumeFractions::RegionBoxVolumeFractions(
   Errors::Message msg;
   if (p0_.dim() != p1_.dim()) {
     msg << "Mismatch in dimensions of corner points of RegionBoxVolumeFractions \""
-        << Region::name() << "\"";
+        << Region::get_name() << "\"";
     Exceptions::amanzi_throw(msg);
 
     for (int n = 0; n < normals.size(); ++n) {
       if (p0_.dim() != normals_[n].dim()) {
         msg << "Mismatch in dimensions of points and normals of RegionBoxVolumeFractions \""
-            << Region::name() << "\"";
+            << Region::get_name() << "\"";
         Exceptions::amanzi_throw(msg);
       }
     }
@@ -100,7 +100,7 @@ bool RegionBoxVolumeFractions::inside(const Point& p) const
   if (p.dim() != p0_.dim()) {
     Errors::Message msg;
     msg << "Mismatch in corner dimension of RegionBoxVolumeFractions \""
-        << name() << "\" and query point.";
+        << get_name() << "\" and query point.";
     Exceptions::amanzi_throw(msg);
   }
 #endif

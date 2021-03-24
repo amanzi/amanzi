@@ -41,8 +41,8 @@ TEST(POLYGON_REGION2)
 					 reg_params, *ecomm);
   
   // See if we retrieved the name and id correctly
-  CHECK_EQUAL(reg->name(),reg_name);
-  CHECK_EQUAL(reg->id(),reg_id);
+  CHECK_EQUAL(reg->get_name(),reg_name);
+  CHECK_EQUAL(reg->get_id(),reg_id);
   
   // Get the min-max bounds of the region from the XML specification
   int numpoints;
@@ -60,7 +60,7 @@ TEST(POLYGON_REGION2)
   // }
   
   // Make sure that the region type is a Plane
-  CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::POLYGON);
+  CHECK_EQUAL(reg->get_type(),Amanzi::AmanziGeometry::POLYGON);
   
   // See if the parameters of the region were correctly retrieved
   Teuchos::RCP<const Amanzi::AmanziGeometry::RegionPolygon> poly =
@@ -133,8 +133,8 @@ TEST(POLYGON_REGION3)
 					 reg_params, *ecomm);
   
   // See if we retrieved the name and id correctly
-  CHECK_EQUAL(reg->name(),reg_name);
-  CHECK_EQUAL(reg->id(),reg_id);
+  CHECK_EQUAL(reg->get_name(),reg_name);
+  CHECK_EQUAL(reg->get_id(),reg_id);
   CHECK_EQUAL(reg_spec.isSublist(reg_spec.name(i)),true);
   
   // Get the min-max bounds of the region from the XML specification
@@ -146,7 +146,7 @@ TEST(POLYGON_REGION3)
   in_xyz = poly_params.get< Teuchos::Array<double> >("points");
  
   // Make sure that the region type is a Plane
-  CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::POLYGON);
+  CHECK_EQUAL(reg->get_type(),Amanzi::AmanziGeometry::POLYGON);
   
   // See if the parameters of the region were correctly retrieved
   Teuchos::RCP<const Amanzi::AmanziGeometry::RegionPolygon> poly =

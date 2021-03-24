@@ -93,6 +93,9 @@ class MeshFramework  {
   // any edge method -- defaults here all throw errors.
   virtual bool has_edges() const { return false; }
 
+  // Some meshes may natively order in the ExodusII ordering
+  virtual bool is_ordered() const { return false; }
+
   // Some meshes can be deformed.
   virtual bool is_deformable() const { return false; }
 
