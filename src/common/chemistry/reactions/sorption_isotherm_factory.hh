@@ -10,6 +10,7 @@
 #ifndef AMANZI_CHEMISTRY_SORP_ISOTHERM_FACTORY_HH_
 #define AMANZI_CHEMISTRY_SORP_ISOTHERM_FACTORY_HH_
 
+#include <memory>
 #include <string>
 
 #include "species.hh"
