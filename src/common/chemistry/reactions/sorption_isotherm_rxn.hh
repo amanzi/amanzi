@@ -13,6 +13,7 @@
 #ifndef AMANZI_CHEMISTRY_SORPTION_ISOTHERM_RXN_HH_
 #define AMANZI_CHEMISTRY_SORPTION_ISOTHERM_RXN_HH_
 
+#include <memory>
 #include <string>
 #include <vector>
 
