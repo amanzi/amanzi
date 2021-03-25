@@ -104,14 +104,6 @@ Beaker::~Beaker() {
       delete(*rate);
     }
   }
-
-  if (sorption_isotherm_rxns_.size() != 0) {
-    std::vector<SorptionIsothermRxn>::iterator rxn;
-    for (rxn = sorption_isotherm_rxns_.begin();
-         rxn != sorption_isotherm_rxns_.end(); ++rxn) {
-      rxn->CleanMemory();
-    }
-  }
 }
 
 
@@ -855,7 +847,7 @@ void Beaker::ResizeInternalMemory(const int size) {
     dtotal_sorbed_.Zero();
   } else {
     total_sorbed_.resize(0);
-    //dtotal_sorbed_.Resize(0);
+    // dtotal_sorbed_.Resize(0);
   }
 
   fixed_accumulation_.resize(ncomp());

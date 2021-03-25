@@ -15,37 +15,52 @@
 #include <ostream>
 #include <vector>
 
+#include "chemistry_exception.hh"
+#include "matrix_block.hh"
+
 namespace Amanzi {
 namespace AmanziChemistry {
 
-class MatrixBlock;
+#define PREFIX
+#define F77_LAPACK_MANGLE(lcase,UCASE) lcase ## _
+#define DGESV_F77  F77_LAPACK_MANGLE(dgesv,DGESV)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void PREFIX DGESV_F77(int* n, int* nrhs, double* a, int* lda, int* ipiv, 
+                      double* b, int* ldb, int* info);
+
+#ifdef __cplusplus
+}
+#endif
+
 
 class LUSolver {
  public:
-  LUSolver();
-  virtual ~LUSolver() {};
+  LUSolver() : system_size_(0) { ipiv_.clear(); }
+  ~LUSolver() {};
 
-  void Initialize(const int size);
-  void Solve(MatrixBlock* A, std::vector<double>* b);
-
-  static const double kSmallNumber;
-
- protected:
-  void Decomposition(MatrixBlock* A);
-  void BackSolve(MatrixBlock* A, std::vector<double>* b);
-  void set_system_size(const int size) {
-    this->system_size_ = size;
+  void Initialize(int size) {
+    system_size_ = size;
+    ipiv_.resize(size);
   }
-  int system_size(void) const {
-    return this->system_size_;
+
+  void Solve(MatrixBlock* A, std::vector<double>* b) {
+    int ierr, nrhs(1), n(A->size());
+    int ipiv[n];
+    DGESV_F77(&n, &nrhs, A->GetValues(), &n, &(ipiv[0]), &(*b)[0], &n, &ierr);
+
+    if (ierr != 0) {
+      std::string msg("LUSolver::Decomposition() : Singular matrix.");
+      Exceptions::amanzi_throw(ChemistryUnrecoverableError(msg));
+    }
   }
 
  private:
   int system_size_;
-  double row_interchange_;
-  std::vector<int> pivoting_indices_;
-  std::vector<double> row_scaling_;
-  bool factored_;
+  std::vector<int> ipiv_;
 };
 
 }  // namespace AmanziChemistry

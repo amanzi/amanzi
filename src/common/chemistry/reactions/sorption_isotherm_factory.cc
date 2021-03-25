@@ -27,15 +27,13 @@ const std::string SorptionIsothermFactory::linear = "linear";
 const std::string SorptionIsothermFactory::langmuir = "langmuir";
 const std::string SorptionIsothermFactory::freundlich = "freundlich";
 
-SorptionIsotherm* SorptionIsothermFactory::Create( 
+std::shared_ptr<SorptionIsotherm> SorptionIsothermFactory::Create( 
     const std::string& isotherm_type,
     const StringTokenizer parameters) {
-  SorptionIsotherm* sorption_isotherm = NULL;
+  std::shared_ptr<SorptionIsotherm> sorption_isotherm = nullptr;
 
   if (isotherm_type == linear) {
-    SorptionIsothermLinear *linear_isotherm =
-      new SorptionIsothermLinear(std::atof(parameters[0].c_str()));
-    sorption_isotherm = linear_isotherm;
+    sorption_isotherm = std::make_shared<SorptionIsothermLinear>(std::atof(parameters[0].c_str()));
   } else if (isotherm_type == langmuir) {
     // require two parameters
     if (parameters.size() != 2) {
@@ -46,10 +44,8 @@ SorptionIsotherm* SorptionIsothermFactory::Create(
                    << "    param_1 == Kd, param_2 == b  .\n"; 
       Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
     }
-    SorptionIsothermLangmuir *langmuir_isotherm =
-        new SorptionIsothermLangmuir(std::atof(parameters.at(0).c_str()),
-                                     std::atof(parameters.at(1).c_str()));
-    sorption_isotherm = langmuir_isotherm;
+    sorption_isotherm = std::make_shared<SorptionIsothermLangmuir>(
+        std::atof(parameters.at(0).c_str()), std::atof(parameters.at(1).c_str()));
   } else if (isotherm_type == freundlich) {
     // require two parameters
     if (parameters.size() != 2) {
@@ -61,10 +57,8 @@ SorptionIsotherm* SorptionIsothermFactory::Create(
                    << "    param_1 == Kd, param_2 == n  .\n"; 
       Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
     }
-    SorptionIsothermFreundlich *freundlich_isotherm =
-        new SorptionIsothermFreundlich(std::atof(parameters.at(0).c_str()),
-                                       std::atof(parameters.at(1).c_str()));
-    sorption_isotherm = freundlich_isotherm;
+    sorption_isotherm = std::make_shared<SorptionIsothermFreundlich>(
+        std::atof(parameters.at(0).c_str()), std::atof(parameters.at(1).c_str()));
   } else {
     // default type, error...!
     std::ostringstream error_stream;
@@ -76,7 +70,7 @@ SorptionIsotherm* SorptionIsothermFactory::Create(
     Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
   }
 
-  if (sorption_isotherm == NULL) {
+  if (sorption_isotherm == nullptr) {
     // something went wrong, should throw an exception and exit gracefully....
     std::ostringstream error_stream;
     error_stream << "SorptionIsothermFactory::Create(): \n"

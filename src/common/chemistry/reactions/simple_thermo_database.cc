@@ -458,8 +458,7 @@ void SimpleThermoDatabase::ParseSorptionIsotherm(const std::string& data) {
   std::string isotherm_type = no_spaces.at(0);
   StringTokenizer parameters(substrings.at(2),space);
 
-  SorptionIsotherm *sorption_isotherm = sif.Create(isotherm_type,
-                                                   parameters);
+  auto sorption_isotherm = sif.Create(isotherm_type, parameters);
 
   SorptionIsothermRxn rxn(species_name,SpeciesNameToID(species_name),
                           sorption_isotherm);

@@ -14,10 +14,8 @@
 SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
   namespace ac = Amanzi::AmanziChemistry;
   /*****************************************************************************
-   **
-   **  Test for AqueousEquilibriumComplex.cpp
-   **
-   *****************************************************************************/
+  **  Test for Aqueous Equilibrium Complex
+  *****************************************************************************/
 
   class AqueousEquilibriumComplexTest {
    public:
@@ -42,10 +40,10 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
     ac::Species water_;
 
    private:
-  };  // end class AqueousEquilibriumComplexTest
+  };
 
   AqueousEquilibriumComplexTest::AqueousEquilibriumComplexTest()
-      : name_("CO3--"),
+    : name_("CO3--"),
       id_(3),
       h2o_stoich_(0.0),
       charge_(-2),
@@ -78,9 +76,7 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
     primarySpecies_.push_back(HCO3_m);
   }
 
-
-  AqueousEquilibriumComplexTest::~AqueousEquilibriumComplexTest() {
-  }
+  AqueousEquilibriumComplexTest::~AqueousEquilibriumComplexTest() {};
 
   //
   // most of the basic functionality comes from the parent SecondarySpecies class.
@@ -138,18 +134,17 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
 
     ac::MatrixBlock expected(aec.ncomp());
     expected.Zero();
-    expected.SetValue(0, 0, 6.9485826433413e-08);
-    expected.SetValue(0, 1, -5.21143698250598e-08);
-    expected.SetValue(1, 0, -6.9485826433413e-08);
-    expected.SetValue(1, 1, 5.21143698250598e-08);
-    double** e = expected.GetValues();
+    expected(0, 0) = 6.9485826433413e-08;
+    expected(0, 1) =-5.21143698250598e-08;
+    expected(1, 0) =-6.9485826433413e-08;
+    expected(1, 1) = 5.21143698250598e-08;
+    double* e = expected.GetValues();
 
     ac::MatrixBlock dtotal(aec.ncomp());
     dtotal.Zero();
     aec.Update(primarySpecies_,water_);
     aec.AddContributionToDTotal(primarySpecies_, &dtotal);
-    double** dt = dtotal.GetValues();
-    CHECK_ARRAY_CLOSE(dt[0], e[0], aec.ncomp(), 1.0e-15);
-    CHECK_ARRAY_CLOSE(dt[1], e[1], aec.ncomp(), 1.0e-15);
+    double* dt = dtotal.GetValues();
+    CHECK_ARRAY_CLOSE(dt, e, aec.ncomp(), 1.0e-15);
   }
 }  // end SUITE(GeochemistryTestAqueousEquilibriumComplex)

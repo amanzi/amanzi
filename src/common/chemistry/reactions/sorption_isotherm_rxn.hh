@@ -30,7 +30,7 @@ class SorptionIsothermRxn {
   SorptionIsothermRxn() {};
   SorptionIsothermRxn(const SpeciesName species_name, 
                       const SpeciesId species_id,
-                      SorptionIsotherm *isotherm);
+                      std::shared_ptr<SorptionIsotherm> isotherm);
   ~SorptionIsothermRxn() {};
 
   const std::vector<double>& GetIsothermParameters(void) const;
@@ -57,15 +57,11 @@ class SorptionIsothermRxn {
                                MatrixBlock* dtotal);
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
 
-  void CleanMemory(void) {
-    delete isotherm_;
-  }
-
  private:
   SpeciesId species_id_; // ID of primary species
   SpeciesName species_name_; // Name of primary species
   double sorbed_concentration_;
-  SorptionIsotherm *isotherm_;
+  std::shared_ptr<SorptionIsotherm> isotherm_;
 };
 
 }  // namespace AmanziChemistry

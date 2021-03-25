@@ -154,9 +154,9 @@ void RadioactiveDecay::AddContributionToJacobian(
     int icomp = species_ids_.at(i);
     // row loop
     for (int j = 0; j < J->size(); ++j) {
-      double tempd = dtotal.GetValue(icomp, j) * volume_h2o;
+      double tempd = dtotal(icomp, j) * volume_h2o;
       if (dtotal_sorbed.size() > 0) {
-        tempd += dtotal_sorbed.GetValue(icomp, j) * bulk_volume;
+        tempd += dtotal_sorbed(icomp, j) * bulk_volume;
       }
       tempd *= -rate_constant() * stoichiometry_.at(i);
       J->AddValue(icomp, j, tempd);

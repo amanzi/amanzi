@@ -344,7 +344,6 @@ void InputConverterS::ParseDefinitions_()
   DOMNode* constants_block = GetUniqueElementByTagsString_("definitions, constants", found);
   if (found)
   {
-    bool found;
     vector<DOMNode*> constants = GetChildren_(constants_block, "constant", found);
     if (found)
     {
@@ -367,7 +366,6 @@ void InputConverterS::ParseDefinitions_()
   DOMNode* macros = GetUniqueElementByTagsString_("definitions, macros", found);
   if (found)
   {
-    bool found;
     vector<DOMNode*> time_macros = GetChildren_(macros, "time_macro", found);
     vector<string> time_macro_names;
     if (found)
@@ -380,7 +378,6 @@ void InputConverterS::ParseDefinitions_()
         vector<string> times;
 
         // Before we look for specific times, check for other stuff.
-        bool found;
         string start = GetChildValueS_(time_macro, "start", found);
         if (found)
         {
@@ -415,7 +412,6 @@ void InputConverterS::ParseDefinitions_()
         else
         {
           // We're just looking for times.
-          bool found;
           vector<DOMNode*> time_nodes = GetChildren_(time_macro, "time", found, true);
           vector<string> times;
           for (size_t j = 0; j < time_nodes.size(); ++j)
