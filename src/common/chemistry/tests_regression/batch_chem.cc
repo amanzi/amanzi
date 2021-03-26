@@ -35,7 +35,7 @@ const std::string kCrunch("crunch");
 const std::string kPflotran("pflotran");
 
 /* TODO: might be worth switching over to reading the component values
-   into a map rather than a vector, then order of components in the
+   into a map rather than a vector, then order of state in the
    cfg file wouldn't matter, but we need to request an name-id map
    from the beaker.  */
 
@@ -80,21 +80,21 @@ int main(int argc, char** argv) {
     exit(EXIT_SUCCESS);
   }
 
-  ac::Beaker::BeakerComponents components;
+  ac::Beaker::BeakerState state;
 
   SimulationParameters simulation_params;
   if (!input_file_name.empty()) {
-    ReadInputFile(input_file_name, &simulation_params, &components, vo);
+    ReadInputFile(input_file_name, &simulation_params, &state, vo);
   }
 
-  if (components.total.size() == 0) {
+  if (state.total.size() == 0) {
     message << "Must have a non-zero number of total component values.\n";
     vo->WriteWarning(Teuchos::VERB_LOW, message);
     abort();
   }
 
   if (debug_batch_driver) {
-    PrintInput(simulation_params, components, vo);
+    PrintInput(simulation_params, state, vo);
   }
 
   double time_units_conversion = 1.0;
@@ -120,24 +120,24 @@ int main(int argc, char** argv) {
       parameters.saturation = simulation_params.saturation;  // -
       parameters.volume = simulation_params.volume;  // m^3
       ModelSpecificParameters(simulation_params.comparison_model, &parameters);
-      if (components.free_ion.size() != components.total.size()) {
-        components.free_ion.resize(components.total.size(), 1.0e-9);
+      if (state.free_ion.size() != state.total.size()) {
+        state.free_ion.resize(state.total.size(), 1.0e-9);
       }
-      chem->Setup(components, parameters);
+      chem->Setup(state, parameters);
 
       if (vo->getVerbLevel() >= Teuchos::VERB_HIGH) {
         chem->Display();
-        chem->DisplayComponents(components);
+        chem->DisplayComponents(state);
       }
 
       // solve for free-ion concentrations
-      chem->Speciate(&components, parameters);
-      chem->CopyBeakerToComponents(&components);
+      chem->Speciate(&state, parameters);
+      chem->CopyBeakerToState(&state);
       if (vo->getVerbLevel() >= Teuchos::VERB_EXTREME) {
         chem->DisplayResults();
       }
       bool using_sorption = false;
-      if (components.total_sorbed.size() > 0) {
+      if (state.total_sorbed.size() > 0) {
         using_sorption = true;
       }
       if (simulation_params.num_time_steps != 0) {
@@ -147,22 +147,22 @@ int main(int argc, char** argv) {
 
         // write out the headers info and initial conditions
         chem->DisplayTotalColumnHeaders(simulation_params.display_free_columns);
-        chem->DisplayTotalColumns(0.0, components,
+        chem->DisplayTotalColumns(0.0, state,
                                   simulation_params.display_free_columns);
         std::vector<std::string> names;
         chem->GetPrimaryNames(&names);
         WriteTextOutputHeader(&text_output, time_units, names, using_sorption);
-        WriteTextOutput(&text_output, 0.0, components);
+        WriteTextOutput(&text_output, 0.0, state);
 
         // parameters.max_iterations = 2;
         for (int time_step = 0; time_step < simulation_params.num_time_steps;
              time_step++) {
-          chem->ReactionStep(&components, parameters, simulation_params.delta_time);
+          chem->ReactionStep(&state, parameters, simulation_params.delta_time);
           if ((time_step + 1) % simulation_params.output_interval == 0) {
             double time = (time_step + 1) * simulation_params.delta_time;
-            chem->DisplayTotalColumns(time, components, 
+            chem->DisplayTotalColumns(time, state, 
                                       simulation_params.display_free_columns);
-            WriteTextOutput(&text_output, time * time_units_conversion, components);
+            WriteTextOutput(&text_output, time * time_units_conversion, state);
           }
           if (vo->getVerbLevel() >= Teuchos::VERB_HIGH) {
             message.str("");
@@ -176,7 +176,7 @@ int main(int argc, char** argv) {
           }
         }
         vo->Write(Teuchos::VERB_HIGH, "---- Final Speciation\n");
-        chem->Speciate(&components, parameters);
+        chem->Speciate(&state, parameters);
         if (vo->getVerbLevel() >= Teuchos::VERB_EXTREME) {
           chem->DisplayResults();
         }
@@ -321,7 +321,7 @@ int CommandLineOptions(int argc, char** argv,
  *******************************************************************************/
 void ReadInputFile(const std::string& file_name,
                    SimulationParameters* simulation_params,
-                   ac::Beaker::BeakerComponents* components,
+                   ac::Beaker::BeakerState* state,
                    const Teuchos::RCP<Amanzi::VerboseObject>& vo)
 {
   std::stringstream message;
@@ -411,19 +411,19 @@ void ReadInputFile(const std::string& file_name,
       if (current_section == kSectionSimulation) {
         ParseSimulationParameter(raw_line, simulation_params);
       } else if (current_section == kSectionTotal) {
-        ParseComponentValue(raw_line, &(components->total));
+        ParseComponentValue(raw_line, &(state->total));
       } else if (current_section == kSectionSorbed) {
-        ParseComponentValue(raw_line, &(components->total_sorbed));
+        ParseComponentValue(raw_line, &(state->total_sorbed));
       } else if (current_section == kSectionFreeIon) {
-        ParseComponentValue(raw_line, &(components->free_ion));
+        ParseComponentValue(raw_line, &(state->free_ion));
       } else if (current_section == kSectionMineral) {
-        ParseComponentValue(raw_line, &(components->mineral_volume_fraction));
+        ParseComponentValue(raw_line, &(state->mineral_volume_fraction));
       } else if (current_section == kSectionSpecificSurfaceArea) {
-        ParseComponentValue(raw_line, &(components->mineral_specific_surface_area));
+        ParseComponentValue(raw_line, &(state->mineral_specific_surface_area));
       } else if (current_section == kSectionIonExchange) {
-        ParseComponentValue(raw_line, &(components->ion_exchange_sites));
+        ParseComponentValue(raw_line, &(state->ion_exchange_sites));
       } else if (current_section == kSectionSiteDensity) {
-        ParseComponentValue(raw_line, &(components->surface_site_density));
+        ParseComponentValue(raw_line, &(state->surface_site_density));
       } else if (current_section == kSectionIsotherms) {
         // TODO: need to figure out the format of this data...
       }
@@ -643,15 +643,15 @@ void WriteTextOutputHeader(std::fstream* text_output, const char time_units,
 
 
 void WriteTextOutput(std::fstream* text_output, const double time, 
-                     const Amanzi::AmanziChemistry::Beaker::BeakerComponents& components) {
+                     const Amanzi::AmanziChemistry::Beaker::BeakerState& state) {
   if (text_output->is_open()) {
     std::string seperator(" , ");
     *text_output << std::scientific << std::setprecision(6) << std::setw(15) << time;
-    for (int i = 0; i < components.total.size(); ++i) {
-      *text_output << seperator << components.total.at(i);
+    for (int i = 0; i < state.total.size(); ++i) {
+      *text_output << seperator << state.total.at(i);
     }
-    for (int i = 0; i < components.total_sorbed.size(); ++i) {
-      *text_output << seperator << components.total_sorbed.at(i);
+    for (int i = 0; i < state.total_sorbed.size(); ++i) {
+      *text_output << seperator << state.total_sorbed.at(i);
     }
     *text_output << std::endl;
   }
@@ -659,12 +659,12 @@ void WriteTextOutput(std::fstream* text_output, const double time,
 
 
 void PrintInput(const SimulationParameters& params,
-                const Amanzi::AmanziChemistry::Beaker::BeakerComponents& components,
+                const Amanzi::AmanziChemistry::Beaker::BeakerState& state,
                 const Teuchos::RCP<Amanzi::VerboseObject>& vo)
 {
   vo->Write(Teuchos::VERB_HIGH, "- Input File ---------------------------------------------------------\n");
   PrintSimulationParameters(params, vo);
-  components.Display("-- Input components: \n", vo);
+  state.Display("-- Input state: \n", vo);
   vo->Write(Teuchos::VERB_HIGH, "--------------------------------------------------------- Input File -\n");
 }  // end PrintInput()
 

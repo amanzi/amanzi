@@ -211,7 +211,7 @@ AmanziChemHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       
 
     for (IntVect iv=thread_box.smallEnd(), End=thread_box.bigEnd(); iv<=End && chem_ok; thread_box.next(iv)) {
       Amanzi::AmanziChemistry::SimpleThermoDatabase&     TheChemSolve = chemSolve[threadid];
-      Amanzi::AmanziChemistry::Beaker::BeakerComponents& TheComponent = components[threadid];
+      Amanzi::AmanziChemistry::Beaker::BeakerState&      TheComponent = components[threadid];
       Amanzi::AmanziChemistry::Beaker::BeakerParameters& TheParameter = parameters[threadid];
       
       TheParameter.volume     = volume(iv,sVol);
@@ -433,7 +433,7 @@ AmanziChemHelper_Structured::Initialize(const FArrayBox& aqueous_saturation,    
 
     for (IntVect iv=thread_box.smallEnd(), End=thread_box.bigEnd(); iv<=End && chem_ok; thread_box.next(iv)) {
       Amanzi::AmanziChemistry::SimpleThermoDatabase&     TheChemSolve = chemSolve[threadid];
-      Amanzi::AmanziChemistry::Beaker::BeakerComponents& TheComponent = components[threadid];
+      Amanzi::AmanziChemistry::Beaker::BeakerState&      TheComponent = components[threadid];
       Amanzi::AmanziChemistry::Beaker::BeakerParameters& TheParameter = parameters[threadid];
       
       TheParameter.volume     = volume(iv,sVol);
@@ -617,7 +617,7 @@ AmanziChemHelper_Structured::Initialize(const FArrayBox& aqueous_saturation,    
 void
 AmanziChemHelper_Structured::DumpChemStructures(std::ostream&                                      os,
 						Amanzi::AmanziChemistry::SimpleThermoDatabase&     TheChemSolve,
-						Amanzi::AmanziChemistry::Beaker::BeakerComponents& TheComponent,
+						Amanzi::AmanziChemistry::Beaker::BeakerState&      TheComponent,
 						Amanzi::AmanziChemistry::Beaker::BeakerParameters& TheParameter)
 {
   os << "Volume " << TheParameter.volume << std::endl;

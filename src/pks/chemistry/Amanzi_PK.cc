@@ -142,9 +142,9 @@ void Amanzi_PK::Setup(const Teuchos::Ptr<State>& S)
 * Can this be done during Setup phase?
 ******************************************************************* */
 void Amanzi_PK::AllocateAdditionalChemistryStorage_(
-    const Beaker::BeakerComponents& components)
+    const Beaker::BeakerState& state)
 {
-  int n_secondary_comps = components.secondary_activity_coeff.size();
+  int n_secondary_comps = state.secondary_activity_coeff.size();
   if (n_secondary_comps > 0) {
     Teuchos::RCP<CompositeVectorSpace> fac = S_->RequireField(secondary_activity_coeff_key_, passwd_);
     fac->SetMesh(mesh_)->SetGhosted(false)
@@ -193,7 +193,7 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
   std::string internal_msg;
   try {
     vo_->Write(Teuchos::VERB_HIGH, "Initializing chemistry in cell 0...\n");
-    chem_->Setup(beaker_components_, beaker_parameters_);
+    chem_->Setup(beaker_state_, beaker_parameters_);
     chem_->Display();
 
     // check names of primary species
@@ -212,7 +212,7 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
 
     // solve for initial free-ion concentrations
     vo_->Write(Teuchos::VERB_HIGH, "Initial speciation calculations in cell 0...\n");
-    chem_->Speciate(&beaker_components_, beaker_parameters_);
+    chem_->Speciate(&beaker_state_, beaker_parameters_);
 
     vo_->Write(Teuchos::VERB_HIGH, "\nTest solution of initial conditions in cell 0:\n");
     chem_->DisplayResults();
@@ -225,7 +225,7 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // TODO(bandre): at this point we should know about any additional
   // storage that chemistry needs...
-  AllocateAdditionalChemistryStorage_(beaker_components_);
+  AllocateAdditionalChemistryStorage_(beaker_state_);
 
   SetupAuxiliaryOutput();
 
@@ -237,7 +237,7 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
       CopyCellStateToBeakerStructures(c, tcc);
 
       try {
-        chem_->Speciate(&beaker_components_, beaker_parameters_);
+        chem_->Speciate(&beaker_state_, beaker_parameters_);
         CopyBeakerStructuresToCellState(c, tcc);
       } 
       catch (ChemistryException& geochem_err) {
@@ -413,42 +413,42 @@ void Amanzi_PK::SizeBeakerStructures_()
   // own value. If we want to over ride the global chemistry value
   // with cell by cell data, then we resize the containers here.
 
-  beaker_components_.total.resize(number_aqueous_components_, 0.0);
-  beaker_components_.free_ion.resize(number_aqueous_components_, 1.0e-9);
-  beaker_components_.mineral_volume_fraction.resize(number_minerals_, 0.0);
+  beaker_state_.total.resize(number_aqueous_components_, 0.0);
+  beaker_state_.free_ion.resize(number_aqueous_components_, 1.0e-9);
+  beaker_state_.mineral_volume_fraction.resize(number_minerals_, 0.0);
 
   if (using_sorption_) {
-    beaker_components_.total_sorbed.resize(number_total_sorbed_, 0.0);
+    beaker_state_.total_sorbed.resize(number_total_sorbed_, 0.0);
   } else {
-    beaker_components_.total_sorbed.clear();
+    beaker_state_.total_sorbed.clear();
   }
 
   if (number_minerals_ > 0) {
-    beaker_components_.mineral_specific_surface_area.resize(number_minerals_, 0.0);
+    beaker_state_.mineral_specific_surface_area.resize(number_minerals_, 0.0);
   } else {
-    beaker_components_.mineral_specific_surface_area.clear();
+    beaker_state_.mineral_specific_surface_area.clear();
   }
 
   if (number_ion_exchange_sites_ > 0) {
-    beaker_components_.ion_exchange_sites.resize(number_ion_exchange_sites_, 0.0);
+    beaker_state_.ion_exchange_sites.resize(number_ion_exchange_sites_, 0.0);
   } else {
-    beaker_components_.ion_exchange_sites.clear();
+    beaker_state_.ion_exchange_sites.clear();
   }
 
   if (number_sorption_sites_ > 0) {
-    beaker_components_.surface_site_density.resize(number_sorption_sites_, 0.0);
+    beaker_state_.surface_site_density.resize(number_sorption_sites_, 0.0);
   } else {
-    beaker_components_.surface_site_density.clear();
+    beaker_state_.surface_site_density.clear();
   }
 
   if (using_sorption_isotherms_) {
-    beaker_components_.isotherm_kd.resize(number_aqueous_components_, 0.0);
-    beaker_components_.isotherm_freundlich_n.resize(number_aqueous_components_, 0.0);
-    beaker_components_.isotherm_langmuir_b.resize(number_aqueous_components_, 0.0);
+    beaker_state_.isotherm_kd.resize(number_aqueous_components_, 0.0);
+    beaker_state_.isotherm_freundlich_n.resize(number_aqueous_components_, 0.0);
+    beaker_state_.isotherm_langmuir_b.resize(number_aqueous_components_, 0.0);
   } else {
-    beaker_components_.isotherm_kd.clear();
-    beaker_components_.isotherm_freundlich_n.clear();
-    beaker_components_.isotherm_langmuir_b.clear();
+    beaker_state_.isotherm_kd.clear();
+    beaker_state_.isotherm_freundlich_n.clear();
+    beaker_state_.isotherm_langmuir_b.clear();
   }
 }
 
@@ -461,26 +461,26 @@ void Amanzi_PK::CopyCellStateToBeakerStructures(
     int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components)
 {
   for (unsigned int i = 0; i < number_aqueous_components_; i++) {
-    beaker_components_.total.at(i) = (*aqueous_components)[i][c];
+    beaker_state_.total.at(i) = (*aqueous_components)[i][c];
   }
 
   const Epetra_MultiVector& free_ion = *S_->GetFieldData(free_ion_species_key_)->ViewComponent("cell");
   for (int i = 0; i < number_aqueous_components_; ++i) {
-    beaker_components_.free_ion.at(i) = free_ion[i][c];
+    beaker_state_.free_ion.at(i) = free_ion[i][c];
   }
 
   // activity coefficients
-  if (beaker_components_.primary_activity_coeff.size() > 0) {
+  if (beaker_state_.primary_activity_coeff.size() > 0) {
     const Epetra_MultiVector& activity = *S_->GetFieldData(primary_activity_coeff_key_)->ViewComponent("cell");
-    for (int i = 0; i < beaker_components_.primary_activity_coeff.size(); ++i) {
-      beaker_components_.primary_activity_coeff.at(i) = activity[i][c];
+    for (int i = 0; i < beaker_state_.primary_activity_coeff.size(); ++i) {
+      beaker_state_.primary_activity_coeff.at(i) = activity[i][c];
     }
   }
 
-  if (beaker_components_.secondary_activity_coeff.size() > 0) {
+  if (beaker_state_.secondary_activity_coeff.size() > 0) {
     const Epetra_MultiVector& activity = *S_->GetFieldData(secondary_activity_coeff_key_)->ViewComponent("cell");
-    for (int i = 0; i < beaker_components_.secondary_activity_coeff.size(); ++i) {
-      beaker_components_.secondary_activity_coeff.at(i) = activity[i][c];
+    for (int i = 0; i < beaker_state_.secondary_activity_coeff.size(); ++i) {
+      beaker_state_.secondary_activity_coeff.at(i) = activity[i][c];
     }
   }
 
@@ -490,8 +490,8 @@ void Amanzi_PK::CopyCellStateToBeakerStructures(
     const Epetra_MultiVector& mineral_ssa = *S_->GetFieldData(min_ssa_key_)->ViewComponent("cell");
 
     for (int i = 0; i < number_minerals_; ++i) {
-      beaker_components_.mineral_volume_fraction[i] = mineral_vf[i][c];
-      beaker_components_.mineral_specific_surface_area.at(i) = mineral_ssa[i][c];
+      beaker_state_.mineral_volume_fraction[i] = mineral_vf[i][c];
+      beaker_state_.mineral_specific_surface_area.at(i) = mineral_ssa[i][c];
     }
   }
 
@@ -499,7 +499,7 @@ void Amanzi_PK::CopyCellStateToBeakerStructures(
   if (using_sorption_) {
     const Epetra_MultiVector& sorbed = *S_->GetFieldData(total_sorbed_key_)->ViewComponent("cell");
     for (int i = 0; i < number_aqueous_components_; ++i) {
-      beaker_components_.total_sorbed.at(i) = sorbed[i][c];
+      beaker_state_.total_sorbed.at(i) = sorbed[i][c];
     }
   }
 
@@ -508,15 +508,15 @@ void Amanzi_PK::CopyCellStateToBeakerStructures(
   if (number_ion_exchange_sites_ > 0) {
     const Epetra_MultiVector& ion_exchange = *S_->GetFieldData(ion_exchange_sites_key_)->ViewComponent("cell");
     for (unsigned int i = 0; i < number_ion_exchange_sites_; i++) {
-      beaker_components_.ion_exchange_sites[i] = ion_exchange[i][c];
+      beaker_state_.ion_exchange_sites[i] = ion_exchange[i][c];
       // TODO(bandre): need to save ion exchange ref cation conc here!
     }
   }
   
-  if (beaker_components_.ion_exchange_ref_cation_conc.size() > 0) {
+  if (beaker_state_.ion_exchange_ref_cation_conc.size() > 0) {
     const Epetra_MultiVector& ion_exchange = *S_->GetFieldData(ion_exchange_ref_cation_conc_key_)->ViewComponent("cell");
-    for (unsigned int i = 0; i < beaker_components_.ion_exchange_ref_cation_conc.size(); ++i) {
-      beaker_components_.ion_exchange_ref_cation_conc.at(i) = ion_exchange[i][c];
+    for (unsigned int i = 0; i < beaker_state_.ion_exchange_ref_cation_conc.size(); ++i) {
+      beaker_state_.ion_exchange_ref_cation_conc.at(i) = ion_exchange[i][c];
     }
   }
 
@@ -525,16 +525,16 @@ void Amanzi_PK::CopyCellStateToBeakerStructures(
     const Epetra_MultiVector& sorption_sites = *S_->GetFieldData(sorp_sites_key_)->ViewComponent("cell");
 
     for (int i = 0; i < number_sorption_sites_; ++i) {
-      beaker_components_.surface_site_density[i] = sorption_sites[i][c];
+      beaker_state_.surface_site_density[i] = sorption_sites[i][c];
       // TODO(bandre): need to save surface complexation free site conc here!
     }
   }
 
-  if (beaker_components_.surface_complex_free_site_conc.size() > 0) {
+  if (beaker_state_.surface_complex_free_site_conc.size() > 0) {
     const Epetra_MultiVector& surface_complex =
         *S_->GetFieldData(surf_cfsc_key_)->ViewComponent("cell");
-    for (int i = 0; i < beaker_components_.surface_complex_free_site_conc.size(); ++i) {
-      beaker_components_.surface_complex_free_site_conc.at(i) = surface_complex[i][c];
+    for (int i = 0; i < beaker_state_.surface_complex_free_site_conc.size(); ++i) {
+      beaker_state_.surface_complex_free_site_conc.at(i) = surface_complex[i][c];
     }
   }
 
@@ -545,9 +545,9 @@ void Amanzi_PK::CopyCellStateToBeakerStructures(
     const Epetra_MultiVector& isotherm_langmuir_b = *S_->GetFieldData(isotherm_langmuir_b_key_)->ViewComponent("cell");
 
     for (unsigned int i = 0; i < number_aqueous_components_; ++i) {
-      beaker_components_.isotherm_kd.at(i) = isotherm_kd[i][c];
-      beaker_components_.isotherm_freundlich_n.at(i) = isotherm_freundlich_n[i][c];
-      beaker_components_.isotherm_langmuir_b.at(i) = isotherm_langmuir_b[i][c];
+      beaker_state_.isotherm_kd.at(i) = isotherm_kd[i][c];
+      beaker_state_.isotherm_freundlich_n.at(i) = isotherm_freundlich_n[i][c];
+      beaker_state_.isotherm_langmuir_b.at(i) = isotherm_langmuir_b[i][c];
     }
   }
 
@@ -570,26 +570,26 @@ void Amanzi_PK::CopyBeakerStructuresToCellState(
     int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components)
 {
   for (unsigned int i = 0; i < number_aqueous_components_; ++i) {
-    (*aqueous_components)[i][c] = beaker_components_.total.at(i);
+    (*aqueous_components)[i][c] = beaker_state_.total.at(i);
   }
 
   const Epetra_MultiVector& free_ion = *S_->GetFieldData(free_ion_species_key_)->ViewComponent("cell");
   for (int i = 0; i < number_aqueous_components_; ++i) {
-    free_ion[i][c] = beaker_components_.free_ion.at(i);
+    free_ion[i][c] = beaker_state_.free_ion.at(i);
   }
 
   // activity coefficients
-  if (beaker_components_.primary_activity_coeff.size() > 0) {
+  if (beaker_state_.primary_activity_coeff.size() > 0) {
     const Epetra_MultiVector& activity = *S_->GetFieldData(primary_activity_coeff_key_)->ViewComponent("cell");
-    for (int i = 0; i < beaker_components_.primary_activity_coeff.size(); ++i) {
-      activity[i][c] = beaker_components_.primary_activity_coeff.at(i);
+    for (int i = 0; i < beaker_state_.primary_activity_coeff.size(); ++i) {
+      activity[i][c] = beaker_state_.primary_activity_coeff.at(i);
     }
   }
 
-  if (beaker_components_.secondary_activity_coeff.size() > 0) {
+  if (beaker_state_.secondary_activity_coeff.size() > 0) {
     const Epetra_MultiVector& activity = *S_->GetFieldData(secondary_activity_coeff_key_)->ViewComponent("cell");
-    for (int i = 0; i < beaker_components_.secondary_activity_coeff.size(); ++i) {
-      activity[i][c] =  beaker_components_.secondary_activity_coeff.at(i);
+    for (int i = 0; i < beaker_state_.secondary_activity_coeff.size(); ++i) {
+      activity[i][c] =  beaker_state_.secondary_activity_coeff.at(i);
     }
   }
 
@@ -599,8 +599,8 @@ void Amanzi_PK::CopyBeakerStructuresToCellState(
     const Epetra_MultiVector& mineral_ssa = *S_->GetFieldData(min_ssa_key_)->ViewComponent("cell");
 
     for (int i = 0; i < number_minerals_; ++i) {
-      mineral_vf[i][c] = beaker_components_.mineral_volume_fraction.at(i);
-      mineral_ssa[i][c] = beaker_components_.mineral_specific_surface_area.at(i);
+      mineral_vf[i][c] = beaker_state_.mineral_volume_fraction.at(i);
+      mineral_ssa[i][c] = beaker_state_.mineral_specific_surface_area.at(i);
     }
   }
 
@@ -608,7 +608,7 @@ void Amanzi_PK::CopyBeakerStructuresToCellState(
   if (using_sorption_) {
     const Epetra_MultiVector& sorbed = *S_->GetFieldData(total_sorbed_key_)->ViewComponent("cell");
     for (int i = 0; i < number_aqueous_components_; ++i) {
-      sorbed[i][c] = beaker_components_.total_sorbed.at(i);
+      sorbed[i][c] = beaker_state_.total_sorbed.at(i);
     }
   }
 
@@ -616,16 +616,16 @@ void Amanzi_PK::CopyBeakerStructuresToCellState(
   if (number_sorption_sites_ > 0) {
     const Epetra_MultiVector& sorption_sites = *S_->GetFieldData(sorp_sites_key_)->ViewComponent("cell");
     for (int i = 0; i < number_sorption_sites_; i++) {
-      sorption_sites[i][c] = beaker_components_.surface_site_density.at(i);
+      sorption_sites[i][c] = beaker_state_.surface_site_density.at(i);
       // TODO: need to save surface complexation free site conc here!
     }
   }
 
-  if (beaker_components_.surface_complex_free_site_conc.size() > 0) {
+  if (beaker_state_.surface_complex_free_site_conc.size() > 0) {
     const Epetra_MultiVector& surface_complex =
         *S_->GetFieldData(surf_cfsc_key_)->ViewComponent("cell");
-    for (int i = 0; i < beaker_components_.surface_complex_free_site_conc.size(); ++i) {
-      surface_complex[i][c] = beaker_components_.surface_complex_free_site_conc.at(i);
+    for (int i = 0; i < beaker_state_.surface_complex_free_site_conc.size(); ++i) {
+      surface_complex[i][c] = beaker_state_.surface_complex_free_site_conc.at(i);
     }
   }
 
@@ -633,15 +633,15 @@ void Amanzi_PK::CopyBeakerStructuresToCellState(
   if (number_ion_exchange_sites_ > 0) {
     const Epetra_MultiVector& ion_exchange = *S_->GetFieldData(ion_exchange_sites_key_)->ViewComponent("cell");
     for (int i = 0; i < number_ion_exchange_sites_; ++i) {
-      ion_exchange[i][c] = beaker_components_.ion_exchange_sites.at(i);
+      ion_exchange[i][c] = beaker_state_.ion_exchange_sites.at(i);
       // TODO(bandre): need to save ion exchange ref cation conc here!
     }
   }
 
-  if (beaker_components_.ion_exchange_ref_cation_conc.size() > 0) {
+  if (beaker_state_.ion_exchange_ref_cation_conc.size() > 0) {
     const Epetra_MultiVector& ion_exchange = *S_->GetFieldData(ion_exchange_ref_cation_conc_key_)->ViewComponent("cell");
-    for (int i = 0; i < beaker_components_.ion_exchange_ref_cation_conc.size(); ++i) {
-      ion_exchange[i][c] = beaker_components_.ion_exchange_ref_cation_conc.at(i);
+    for (int i = 0; i < beaker_state_.ion_exchange_ref_cation_conc.size(); ++i) {
+      ion_exchange[i][c] = beaker_state_.ion_exchange_ref_cation_conc.at(i);
     }
   }
 
@@ -652,9 +652,9 @@ void Amanzi_PK::CopyBeakerStructuresToCellState(
     const Epetra_MultiVector& isotherm_langmuir_b = *S_->GetFieldData(isotherm_langmuir_b_key_)->ViewComponent("cell");
 
     for (unsigned int i = 0; i < number_aqueous_components_; ++i) {
-      isotherm_kd[i][c] = beaker_components_.isotherm_kd.at(i);
-      isotherm_freundlich_n[i][c] = beaker_components_.isotherm_freundlich_n.at(i);
-      isotherm_langmuir_b[i][c] = beaker_components_.isotherm_langmuir_b.at(i);
+      isotherm_kd[i][c] = beaker_state_.isotherm_kd.at(i);
+      isotherm_freundlich_n[i][c] = beaker_state_.isotherm_freundlich_n.at(i);
+      isotherm_langmuir_b[i][c] = beaker_state_.isotherm_langmuir_b.at(i);
     }
   }
 
@@ -693,10 +693,10 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       CopyCellStateToBeakerStructures(c, aqueous_components_);
       try {
         // create a backup copy of the components
-        chem_->CopyComponents(beaker_components_, &beaker_components_copy_);
+        chem_->CopyState(beaker_state_, &beaker_state_copy_);
 
         // chemistry computations for this cell
-        num_itrs = chem_->ReactionStep(&beaker_components_, beaker_parameters_, dt);
+        num_itrs = chem_->ReactionStep(&beaker_state_, beaker_parameters_, dt);
 
         if (max_itrs < num_itrs) {
           max_itrs = num_itrs;
@@ -730,7 +730,7 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // dumping the values of the final cell. not very helpful by itself,
   // but can be move up into the loops....
   // chem_->DisplayTotalColumnHeaders(true);
-  // chem_->DisplayTotalColumns(current_time_, beaker_components_, true);
+  // chem_->DisplayTotalColumns(current_time_, beaker_state_, true);
 
   // update time control parameters
   num_successful_steps_++;
@@ -767,10 +767,10 @@ void Amanzi_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>
   }
 
   // debug output
-  // chem_->Speciate(&beaker_components_, beaker_parameters_);
+  // chem_->Speciate(&beaker_state_, beaker_parameters_);
   // chem_->DisplayResults();
   // chem_->DisplayTotalColumnHeaders(bool display_free_columns);
-  // chem_->DisplayTotalColumns(saved_time_, beaker_components_, true);
+  // chem_->DisplayTotalColumns(saved_time_, beaker_state_, true);
 }
 
 

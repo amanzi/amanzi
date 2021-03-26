@@ -56,15 +56,15 @@ SimpleThermoDatabase::SimpleThermoDatabase(Teuchos::RCP<VerboseObject> vo)
 }
 
 
-void SimpleThermoDatabase::Setup(const Beaker::BeakerComponents& components,
+void SimpleThermoDatabase::Setup(const Beaker::BeakerState& state,
                                  const Beaker::BeakerParameters& parameters) {
   ReadFile(parameters.thermo_database_file);
   SetParameters(parameters);
   SetupActivityModel(parameters.activity_model_name, 
                      parameters.pitzer_database, parameters.jfunction_pitzer);
   ResizeInternalMemory(primary_species().size());
-  VerifyComponentSizes(components);
-  CopyComponentsToBeaker(components);
+  VerifyState(state);
+  CopyStateToBeaker(state);
 }
 
 

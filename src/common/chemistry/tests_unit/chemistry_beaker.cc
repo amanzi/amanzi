@@ -30,19 +30,19 @@ SUITE(BeakerTests) {
 
     SimpleThermoDatabase chem(vo);
 
-    Beaker::BeakerComponents components;
-    components.free_ion.clear();
-    components.mineral_volume_fraction.clear();
-    components.ion_exchange_sites.clear();
-    components.total.clear();
-    components.total_sorbed.clear();
+    Beaker::BeakerState state;
+    state.free_ion.clear();
+    state.mineral_volume_fraction.clear();
+    state.ion_exchange_sites.clear();
+    state.total.clear();
+    state.total_sorbed.clear();
 
-    components.total.push_back(1.0e-3);  // H+
-    components.total.push_back(1.0e-3);  // HCO3-
-    components.total.push_back(0.0);
-    components.free_ion.push_back(0.0);
-    components.mineral_volume_fraction.push_back(0.0);
-    components.ion_exchange_sites.push_back(0.0);
+    state.total.push_back(1.0e-3);  // H+
+    state.total.push_back(1.0e-3);  // HCO3-
+    state.total.push_back(0.0);
+    state.free_ion.push_back(0.0);
+    state.mineral_volume_fraction.push_back(0.0);
+    state.ion_exchange_sites.push_back(0.0);
 
     Beaker::BeakerParameters parameters = chem.GetDefaultParameters();
 
@@ -53,7 +53,7 @@ SUITE(BeakerTests) {
 
     try {
       // should throw an error
-      chem.Setup(components, parameters);
+      chem.Setup(state, parameters);
     } catch (ChemistryMemorySizeError& e) {
       correct_exception = true;
     } catch (ChemistryException& e) {
@@ -71,15 +71,15 @@ SUITE(BeakerTests) {
 
     SimpleThermoDatabase chem(vo);
 
-    Beaker::BeakerComponents components;
-    components.free_ion.clear();
-    components.mineral_volume_fraction.clear();
-    components.ion_exchange_sites.clear();
-    components.total.clear();
-    components.total_sorbed.clear();
+    Beaker::BeakerState state;
+    state.free_ion.clear();
+    state.mineral_volume_fraction.clear();
+    state.ion_exchange_sites.clear();
+    state.total.clear();
+    state.total_sorbed.clear();
 
-    components.total.push_back(1.0e-3);  // H+
-    components.total.push_back(1.0e-3);  // HCO3-
+    state.total.push_back(1.0e-3);  // H+
+    state.total.push_back(1.0e-3);  // HCO3-
 
     Beaker::BeakerParameters parameters = chem.GetDefaultParameters();
 
@@ -90,7 +90,7 @@ SUITE(BeakerTests) {
 
     try {
       // should throw an error
-      chem.Setup(components, parameters);
+      chem.Setup(state, parameters);
     } catch (ChemistryUnrecoverableError& e) {
     } catch (ChemistryInvalidInput& e) {
       correct_exception = true;
@@ -107,15 +107,15 @@ SUITE(BeakerTests) {
 
     SimpleThermoDatabase chem(vo);
 
-    Beaker::BeakerComponents components;
-    components.free_ion.clear();
-    components.mineral_volume_fraction.clear();
-    components.ion_exchange_sites.clear();
-    components.total.clear();
-    components.total_sorbed.clear();
+    Beaker::BeakerState state;
+    state.free_ion.clear();
+    state.mineral_volume_fraction.clear();
+    state.ion_exchange_sites.clear();
+    state.total.clear();
+    state.total_sorbed.clear();
 
-    components.total.push_back(1.0e-3);  // H+
-    components.total.push_back(1.0e-3);  // HCO3-
+    state.total.push_back(1.0e-3);  // H+
+    state.total.push_back(1.0e-3);  // HCO3-
 
     Beaker::BeakerParameters parameters = chem.GetDefaultParameters();
 
@@ -126,7 +126,7 @@ SUITE(BeakerTests) {
 
     try {
       // should throw an error
-      chem.Setup(components, parameters);
+      chem.Setup(state, parameters);
     } catch (ChemistryUnrecoverableError& e) {
     } catch (ChemistryInvalidInput& e) {
       correct_exception = true;

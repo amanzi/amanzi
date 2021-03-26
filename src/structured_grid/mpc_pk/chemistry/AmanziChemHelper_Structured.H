@@ -51,12 +51,12 @@ public:
 protected:
   void DumpChemStructures(std::ostream&                                      os,
 			  Amanzi::AmanziChemistry::SimpleThermoDatabase&     TheChemSolve,
-			  Amanzi::AmanziChemistry::Beaker::BeakerComponents& TheComponent,
+			  Amanzi::AmanziChemistry::Beaker::BeakerState&      TheComponent,
 			  Amanzi::AmanziChemistry::Beaker::BeakerParameters& TheParameter);
 
   int nthreads;
   PArray<Amanzi::AmanziChemistry::SimpleThermoDatabase> chemSolve;
-  Array<Amanzi::AmanziChemistry::Beaker::BeakerComponents> components;
+  Array<Amanzi::AmanziChemistry::Beaker::BeakerState> components;
   Array<Amanzi::AmanziChemistry::Beaker::BeakerParameters> parameters;
 
 

@@ -105,11 +105,11 @@ void WriteTextOutputHeader(std::fstream* text_output,
 
 void WriteTextOutput(std::fstream* text_output,
                      const double time,
-                     const Amanzi::AmanziChemistry::Beaker::BeakerComponents& components);
+                     const Amanzi::AmanziChemistry::Beaker::BeakerState& state);
 
 void ReadInputFile(const std::string& file_name,
                    SimulationParameters* simulation_params,
-                   Amanzi::AmanziChemistry::Beaker::BeakerComponents* components,
+                   Amanzi::AmanziChemistry::Beaker::BeakerState* state,
                    const Teuchos::RCP<Amanzi::VerboseObject>& vo);
 
 void ParseSimulationParameter(const std::string& raw_line,
@@ -124,7 +124,7 @@ void ModelSpecificParameters(const std::string model,
                              Amanzi::AmanziChemistry::Beaker::BeakerParameters* parameters);
 
 void PrintInput(const SimulationParameters& params,
-                const Amanzi::AmanziChemistry::Beaker::BeakerComponents& components,
+                const Amanzi::AmanziChemistry::Beaker::BeakerState& state,
                 const Teuchos::RCP<Amanzi::VerboseObject>& vo);
 void PrintSimulationParameters(const SimulationParameters& params,
                                const Teuchos::RCP<Amanzi::VerboseObject>& vo);

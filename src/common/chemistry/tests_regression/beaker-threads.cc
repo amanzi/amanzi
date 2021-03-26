@@ -54,26 +54,26 @@ int main(int argc, char** argv) {
   int num_threads = omp_get_max_threads();
   std::cout << "  number of threads: " << num_threads << std::endl;
   std::vector<ac::Beaker*> mixing_cells(num_threads);
-  std::vector<ac::Beaker::BeakerComponents> cell_components(num_threads);
+  std::vector<ac::Beaker::BeakerState> cell_state(num_threads);
 
   for (int thread = 0; thread < num_threads; thread++) {
-    // apply fbasin 'source' condition to all the components
-    fbasin_source(&(cell_components[thread]));
+    // apply fbasin 'source' condition to all the state
+    fbasin_source(&(cell_state[thread]));
 
     // create and setup the beakers
     mixing_cells[thread] = new ac::SimpleThermoDatabase();
     mixing_cells[thread]->verbosity(verbosity);
-    mixing_cells[thread]->Setup(cell_components[thread], parameters);
+    mixing_cells[thread]->Setup(cell_state[thread], parameters);
 
     {
       std::cout << "Thread: " << thread << std::endl;
       mixing_cells[thread]->Display();
-      mixing_cells[thread]->DisplayComponents(cell_components[thread]);
+      mixing_cells[thread]->DisplayComponents(cell_state[thread]);
     }
 
     // solve for initial free-ion concentrations
-    mixing_cells[thread]->Speciate(&(cell_components[thread]), parameters);
-    mixing_cells[thread]->CopyBeakerToComponents(&cell_components[thread]);
+    mixing_cells[thread]->Speciate(&(cell_state[thread]), parameters);
+    mixing_cells[thread]->CopyBeakerToState(&cell_state[thread]);
     mixing_cells[thread]->DisplayResults();
   }
 
@@ -90,8 +90,8 @@ int main(int argc, char** argv) {
       std::cout << "grid block: " << grid_block << "   on thread: " << thread << std::endl;
 
       try {
-        mixing_cells[thread]->ReactionStep(&cell_components[thread], parameters, delta_time);
-        mixing_cells[thread]->Speciate(&(cell_components[thread]), parameters);
+        mixing_cells[thread]->ReactionStep(&cell_state[thread], parameters, delta_time);
+        mixing_cells[thread]->Speciate(&(cell_state[thread]), parameters);
       } catch (const ac::ChemistryException& geochem_error) {
         std::cout << geochem_error.what() << std::endl;
       } catch (const std::runtime_error& rt_error) {
@@ -150,70 +150,70 @@ int CommandLineOptions(int argc, char** argv) {
 }
 
 
-void fbasin_source(ac::Beaker::BeakerComponents* components) {
-  fbasin_aqueous_source(components);
-  fbasin_free_ions(components);
-  fbasin_minerals(components);
-  fbasin_sorbed(components);
+void fbasin_source(ac::Beaker::BeakerState* state) {
+  fbasin_aqueous_source(state);
+  fbasin_free_ions(state);
+  fbasin_minerals(state);
+  fbasin_sorbed(state);
 }
 
 
-void fbasin_aqueous_source(ac::Beaker::BeakerComponents* components) {
+void fbasin_aqueous_source(ac::Beaker::BeakerState* state) {
   // constraint: source
-  components->total.push_back(3.4363E-02);  // Na+
-  components->total.push_back(1.2475E-05);  // Ca++
-  components->total.push_back(3.0440E-05);  // Fe++
-  components->total.push_back(1.7136E-05);  // K+
-  components->total.push_back(2.8909E-05);  // Al+++
-  components->total.push_back(3.6351E-03);  // H+
-  components->total.push_back(1.3305E-03);  // N2(aq)
-  components->total.push_back(3.4572E-02);  // NO3-
-  components->total.push_back(2.1830E-03);  // HCO3-
-  components->total.push_back(3.3848E-05);  // Cl-
-  components->total.push_back(6.2463E-04);  // SO4--
-  components->total.push_back(7.1028E-05);  // HPO4--
-  components->total.push_back(7.8954E-05);  // F-
-  components->total.push_back(2.5280E-04);  // SiO2(aq)
-  components->total.push_back(3.5414E-05);  // UO2++
-  components->total.push_back(2.6038E-04);  // O2(aq)
-  components->total.push_back(3.5414E-05);  // Tracer
+  state->total.push_back(3.4363E-02);  // Na+
+  state->total.push_back(1.2475E-05);  // Ca++
+  state->total.push_back(3.0440E-05);  // Fe++
+  state->total.push_back(1.7136E-05);  // K+
+  state->total.push_back(2.8909E-05);  // Al+++
+  state->total.push_back(3.6351E-03);  // H+
+  state->total.push_back(1.3305E-03);  // N2(aq)
+  state->total.push_back(3.4572E-02);  // NO3-
+  state->total.push_back(2.1830E-03);  // HCO3-
+  state->total.push_back(3.3848E-05);  // Cl-
+  state->total.push_back(6.2463E-04);  // SO4--
+  state->total.push_back(7.1028E-05);  // HPO4--
+  state->total.push_back(7.8954E-05);  // F-
+  state->total.push_back(2.5280E-04);  // SiO2(aq)
+  state->total.push_back(3.5414E-05);  // UO2++
+  state->total.push_back(2.6038E-04);  // O2(aq)
+  state->total.push_back(3.5414E-05);  // Tracer
 }  // end fbasin_aqueous_source
 
-void fbasin_free_ions(ac::Beaker::BeakerComponents* components) {
+void fbasin_free_ions(ac::Beaker::BeakerState* state) {
   // free ion concentrations (better initial guess)
-  components->free_ion.push_back(9.9969E-06);  // Na+
-  components->free_ion.push_back(9.9746E-06);  // Ca++
-  components->free_ion.push_back(2.2405E-18);  // Fe++
-  components->free_ion.push_back(1.8874E-04);  // K+
-  components->free_ion.push_back(5.2970E-16);  // Al+++
-  components->free_ion.push_back(3.2759E-08);  // H+
-  components->free_ion.push_back(1.0000E-05);  // N2(aq)
-  components->free_ion.push_back(1.0000E-05);  // NO3-
-  components->free_ion.push_back(1.9282E-04);  // HCO3-
-  components->free_ion.push_back(9.9999E-06);  // Cl-
-  components->free_ion.push_back(9.9860E-07);  // SO4--
-  components->free_ion.push_back(9.9886E-07);  // HPO4--
-  components->free_ion.push_back(1.0000E-06);  // F-
-  components->free_ion.push_back(1.8703E-04);  // SiO2(aq)
-  components->free_ion.push_back(1.7609E-20);  // UO2++
-  components->free_ion.push_back(2.5277E-04);  // O2(aq)
-  components->free_ion.push_back(1.0000E-15);  // Tracer
+  state->free_ion.push_back(9.9969E-06);  // Na+
+  state->free_ion.push_back(9.9746E-06);  // Ca++
+  state->free_ion.push_back(2.2405E-18);  // Fe++
+  state->free_ion.push_back(1.8874E-04);  // K+
+  state->free_ion.push_back(5.2970E-16);  // Al+++
+  state->free_ion.push_back(3.2759E-08);  // H+
+  state->free_ion.push_back(1.0000E-05);  // N2(aq)
+  state->free_ion.push_back(1.0000E-05);  // NO3-
+  state->free_ion.push_back(1.9282E-04);  // HCO3-
+  state->free_ion.push_back(9.9999E-06);  // Cl-
+  state->free_ion.push_back(9.9860E-07);  // SO4--
+  state->free_ion.push_back(9.9886E-07);  // HPO4--
+  state->free_ion.push_back(1.0000E-06);  // F-
+  state->free_ion.push_back(1.8703E-04);  // SiO2(aq)
+  state->free_ion.push_back(1.7609E-20);  // UO2++
+  state->free_ion.push_back(2.5277E-04);  // O2(aq)
+  state->free_ion.push_back(1.0000E-15);  // Tracer
 }  // end fbasin_free_ions()
 
-void fbasin_minerals(ac::Beaker::BeakerComponents* components) {
-  components->mineral_volume_fraction.push_back(0.0);  // Gibbsite
-  components->mineral_volume_fraction.push_back(0.21);  // Quartz
-  components->mineral_volume_fraction.push_back(0.15);  // K-Feldspar
-  components->mineral_volume_fraction.push_back(0.0);  // Jurbanite
-  components->mineral_volume_fraction.push_back(0.1);  // Ferrihydrite
-  components->mineral_volume_fraction.push_back(0.15);  // Kaolinite
-  components->mineral_volume_fraction.push_back(0.0);  // Schoepite
-  components->mineral_volume_fraction.push_back(0.0);  // (UO2)3(PO4)2.4H2O
-  components->mineral_volume_fraction.push_back(0.0);  // Soddyite
-  components->mineral_volume_fraction.push_back(0.0);  // Calcite
-  components->mineral_volume_fraction.push_back(0.0);  // Chalcedony
+void fbasin_minerals(ac::Beaker::BeakerState* state) {
+  state->mineral_volume_fraction.push_back(0.0);  // Gibbsite
+  state->mineral_volume_fraction.push_back(0.21);  // Quartz
+  state->mineral_volume_fraction.push_back(0.15);  // K-Feldspar
+  state->mineral_volume_fraction.push_back(0.0);  // Jurbanite
+  state->mineral_volume_fraction.push_back(0.1);  // Ferrihydrite
+  state->mineral_volume_fraction.push_back(0.15);  // Kaolinite
+  state->mineral_volume_fraction.push_back(0.0);  // Schoepite
+  state->mineral_volume_fraction.push_back(0.0);  // (UO2)3(PO4)2.4H2O
+  state->mineral_volume_fraction.push_back(0.0);  // Soddyite
+  state->mineral_volume_fraction.push_back(0.0);  // Calcite
+  state->mineral_volume_fraction.push_back(0.0);  // Chalcedony
 }  // end fbasin_minerals()
 
-void fbasin_sorbed(ac::Beaker::BeakerComponents* components) {
-  components->total_sorbed.resize(components->total.size(), 0.0);
+void fbasin_sorbed(ac::Beaker::BeakerState* state) {
+  state->total_sorbed.resize(state->total.size(), 0.0);
 }  // end fbasin_sorbed

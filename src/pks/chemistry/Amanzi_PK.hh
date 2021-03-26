@@ -58,7 +58,7 @@ class Amanzi_PK : public Chemistry_PK {
   void set_chemistry_output_names(std::vector<std::string>* names);
 
  private:
-  void AllocateAdditionalChemistryStorage_(const Beaker::BeakerComponents& components);
+  void AllocateAdditionalChemistryStorage_(const Beaker::BeakerState& state);
 
   void XMLParameters();
   void SetupAuxiliaryOutput();
@@ -77,8 +77,7 @@ class Amanzi_PK : public Chemistry_PK {
  private:
   Beaker* chem_;
   Beaker::BeakerParameters beaker_parameters_;
-  Beaker::BeakerComponents beaker_components_;
-  Beaker::BeakerComponents beaker_components_copy_;
+  Beaker::BeakerState beaker_state_, beaker_state_copy_;
 
   std::string dt_control_method_;
   double current_time_, saved_time_;

@@ -131,22 +131,20 @@ void ActivityModel::CalculateActivityCoefficients(
 
   // Set activity coefficients
   int isp(-1);
-  for (std::vector<Species>::iterator i = primarySpecies->begin();
-       i != primarySpecies->end(); ++i) {
+  for (auto it = primarySpecies->begin(); it != primarySpecies->end(); ++it) {
     isp++;
-    i->act_coef(gamma_[isp]);
-    i->update();
+    it->set_act_coef(gamma_[isp]);
+    it->update();
   }
 
   // secondary aqueous complexes
-  for (std::vector<AqueousEquilibriumComplex>::iterator i = secondarySpecies->begin();
-       i != secondarySpecies->end(); ++i) {
+  for (auto it = secondarySpecies->begin(); it != secondarySpecies->end(); ++it) {
     isp++;
-    i->act_coef(gamma_[isp]);
-    i->update();
+    it->set_act_coef(gamma_[isp]);
+    it->update();
   }
   // Set the water activity
-  water->act_coef(actw);
+  water->set_act_coef(actw);
 }
 
 }  // namespace AmanziChemistry

@@ -44,10 +44,9 @@ class Beaker {
   Beaker(const Teuchos::Ptr<VerboseObject> vo);
   virtual ~Beaker();
 
-  struct BeakerComponents {
-    // TODO(bandre): rename to BeakerState and move all "state"
-    // variables (porosity, density, volume, mineral ssa, isotherms,
-    // etc) into a single struct.
+  struct BeakerState {
+    // TODO(bandre): move all "state" variables (porosity, density, 
+    // volume, mineral ssa, isotherms, etc) into a single struct.
     std::vector<double> total;  // molarity
     std::vector<double> total_sorbed;
     std::vector<double> free_ion;  // molality
@@ -62,24 +61,6 @@ class Beaker {
     std::vector<double> isotherm_kd;
     std::vector<double> isotherm_freundlich_n;
     std::vector<double> isotherm_langmuir_b;
-
-    void Display(const std::string& message, const Teuchos::RCP<VerboseObject>& vo) const {
-      vo->Write(Teuchos::VERB_HIGH, message);
-      utilities::PrintVector("Totals", total, vo, 16, true);
-      utilities::PrintVector("Total sorbed", total_sorbed, vo, 16, true);
-      utilities::PrintVector("Free Ion", free_ion, vo, 16, true);
-      utilities::PrintVector("Primary activity coeff", primary_activity_coeff, vo, 16, true);
-      utilities::PrintVector("Secondary activity coeff", secondary_activity_coeff, vo, 16, true);
-      utilities::PrintVector("Mineral VF", mineral_volume_fraction, vo, 16, true);
-      utilities::PrintVector("Mineral SSA", mineral_specific_surface_area, vo, 16, true);
-      utilities::PrintVector("Ion Exchange Sites", ion_exchange_sites, vo, 16, true);
-      utilities::PrintVector("Ion Exchange ref cation conc", ion_exchange_ref_cation_conc, vo, 16, true);
-      utilities::PrintVector("Surface Site Density", surface_site_density, vo, 16, true);
-      utilities::PrintVector("Surface Complex free site conc", surface_complex_free_site_conc, vo, 16, true);
-      utilities::PrintVector("Kd", isotherm_kd, vo, 16, true);
-      utilities::PrintVector("Freundlich n", isotherm_freundlich_n, vo, 16, true);
-      utilities::PrintVector("Langmuir b", isotherm_langmuir_b, vo, 16, true);
-    }
   };
 
   struct BeakerParameters {
@@ -115,14 +96,14 @@ class Beaker {
   //
 
   // inheriting classes setup the species, etc
-  virtual void Setup(const Beaker::BeakerComponents& components,
-             const Beaker::BeakerParameters& parameters);
-  void CopyBeakerToComponents(Beaker::BeakerComponents* components);
+  virtual void Setup(const BeakerState& state,
+                     const BeakerParameters& parameters);
+  void CopyBeakerToState(BeakerState* state);
 
-  BeakerParameters GetDefaultParameters(void) const;
+  BeakerParameters GetDefaultParameters() const;
+  // take parameters object and map the data into chemistry object
   void SetParameters(const BeakerParameters& parameters);
-  void CopyComponents(const Beaker::BeakerComponents& from,
-                      Beaker::BeakerComponents* to);
+  void CopyState(const BeakerState& from, BeakerState* to) { *to = from; }
 
   void GetPrimaryNames(std::vector<std::string>* names) const;
   int GetPrimaryIndex(const std::string& name) const;
@@ -130,19 +111,17 @@ class Beaker {
   bool HaveKinetics() const;
 
   // speciate for free-ion concentrations
-  int Speciate(BeakerComponents* components,
-               const BeakerParameters& parameters);
+  int Speciate(BeakerState* state, const BeakerParameters& parameters);
 
   // solve a chemistry step
-  int ReactionStep(BeakerComponents* components, const BeakerParameters& parameters,
-                   double dt);
+  int ReactionStep(BeakerState* state, const BeakerParameters& parameters, double dt);
 
   // i/o
   void Display() const;
-  void DisplayComponents(const BeakerComponents& components) const;
+  void DisplayComponents(const BeakerState& state) const;
   void DisplayTotalColumnHeaders(const bool display_free) const;
   void DisplayTotalColumns(const double time, 
-                           const BeakerComponents& total,
+                           const BeakerState& total,
                            const bool display_free) const;
   void DisplayResults() const;
 
@@ -172,8 +151,8 @@ class Beaker {
   void ResizeInternalMemory(const int size);
 
   void SetupActivityModel(std::string model, std::string pitzer_database, std::string jfunction_pitzer);
-  void VerifyComponentSizes(const Beaker::BeakerComponents& components) const;
-  void CopyComponentsToBeaker(const Beaker::BeakerComponents& components);
+  void VerifyState(const BeakerState& state) const;
+  void CopyStateToBeaker(const BeakerState& state);
 
   void AddPrimarySpecies(const Species& s);
   void AddIonExchangeRxn(const IonExchangeRxn& ionx_rxn);
@@ -211,9 +190,6 @@ class Beaker {
 
   void set_use_log_formulation(bool value) { use_log_formulation_ = value; }
 
- protected:
-  Teuchos::Ptr<VerboseObject> vo_;
-
  private:
   void CheckChargeBalance(const std::vector<double>& aqueous_totals) const;
 
@@ -222,24 +198,24 @@ class Beaker {
   // volume [m^3]
   void UpdateParameters(const BeakerParameters& parameters, double dt);
 
-  void UpdateActivityCoefficients(void);
-  void UpdateKineticMinerals(void);
+  void UpdateActivityCoefficients();
+  void UpdateKineticMinerals();
   void InitializeMolalities(double initial_molality);
   void InitializeMolalities(const std::vector<double>& initial_molalities);
 
   // equilibrium chemistry
   // update activities, equilibrium complex concentrations, etc.
-  void UpdateEquilibriumChemistry(void);
+  void UpdateEquilibriumChemistry();
   void CalculateTotal();
 
   // calculate block of Jacobian corresponding to derivatives of total with
   // respect to free-ion
-  void CalculateDTotal(void);
+  void CalculateDTotal();
 
   // kinetic chemistry
-  void UpdateKineticChemistry(void);
-  void AddKineticChemistryToResidual(void);
-  void AddKineticChemistryToJacobian(void);
+  void UpdateKineticChemistry();
+  void AddKineticChemistryToResidual();
+  void AddKineticChemistryToJacobian();
 
   // accumulation terms
   void AddAccumulation(const std::vector<double>& total,
@@ -256,26 +232,30 @@ class Beaker {
   // utilities for updating solution, convergence checks
   void UpdateMolalitiesWithTruncation(const double max_change);
   void CalculateMaxRelChangeInMolality(double* max_rel_change, int* max_rel_index);
-  void ValidateSolution(void);
+  void ValidateSolution();
 
   // solvers
-  void ScaleRHSAndJacobian(void);
+  void ScaleRHSAndJacobian();
 
   // output
-  void DisplayParameters(void) const;
-  void DisplayPrimary(void) const;
-  void DisplayAqueousEquilibriumComplexes(void) const;
-  void DisplayGeneralKinetics(void) const;
-  void DisplayRadioactiveDecayRxns(void) const;
-  void DisplayMinerals(void) const;
-  void DisplayMineralKinetics(void) const;
-  void DisplayIonExchangeRxns(void) const;
-  void DisplayIonExchangeSites(void) const;
-  void DisplayIonExchangeComplexes(void) const;
-  void DisplaySurfaceSites(void) const;
-  void DisplaySurfaceComplexes(void) const;
-  void DisplaySorptionIsotherms(void) const;
+  void DisplayParameters() const;
+  void DisplayPrimary() const;
+  void DisplayAqueousEquilibriumComplexes() const;
+  void DisplayGeneralKinetics() const;
+  void DisplayRadioactiveDecayRxns() const;
+  void DisplayMinerals() const;
+  void DisplayMineralKinetics() const;
+  void DisplayIonExchangeRxns() const;
+  void DisplayIonExchangeSites() const;
+  void DisplayIonExchangeComplexes() const;
+  void DisplaySurfaceSites() const;
+  void DisplaySurfaceComplexes() const;
+  void DisplaySorptionIsotherms() const;
 
+ protected:
+  Teuchos::Ptr<VerboseObject> vo_;
+
+ private:
   double tolerance_;
   unsigned int max_iterations_;
   int ncomp_;                   // # basis species
@@ -293,13 +273,13 @@ class Beaker {
   MatrixBlock dtotal_sorbed_;  // [kg water/sec]
 
   // common parameters among reactions
-  double porosity_;            // [m^3 pore / m^3 bulk]
-  double saturation_;          // [m^3 water / m^3 pore]
+  double porosity_;  // [m^3 pore / m^3 bulk]
+  double saturation_;  // [m^3 water / m^3 pore]
   double water_density_kg_m3_;  // [kg water / m^3 water]
   double water_density_kg_L_;  // [kg water / L water]
-  double volume_;              // cell volume [m^3 bulk]
-  double dt_;                  // time step size [seconds]
-  // aqueous_accumulation_coef_ = porosity*saturation*volume*1000./dt [L water/sec]
+  double volume_;  // cell volume [m^3 bulk]
+  double dt_; 
+  // aqueous_accumulation_coef_ = porosity * saturation * volume * 1000 / dt [L water/sec]
   // units = (m^3 por/m^3 bulk)*(m^3 water/m^3 por)*
   //         (m^3 bulk)*(1000L water/m^3 water)/(sec) = (L water/sec)
   double aqueous_accumulation_coef_;
@@ -318,18 +298,18 @@ class Beaker {
   std::vector<GeneralRxn> generalKineticRxns_;  // list of general kinetic reactions
   std::vector<RadioactiveDecay> radioactive_decay_rxns_;  // list of radioactive decay rxns
   std::vector<KineticRate*> mineral_rates_;
-  //  vector<GasExchange*> gasRxns_;
+  // vector<GasExchange*> gasRxns_;
   std::vector<IonExchangeRxn> ion_exchange_rxns_;
   std::vector<SurfaceComplexationRxn> surfaceComplexationRxns_;
   std::vector<SorptionIsothermRxn> sorption_isotherm_rxns_;
 
   // solver data structures
   std::vector<double> fixed_accumulation_;  // fixed (time t) portion of accumulation term
-  std::vector<double> residual_;       // entire residual [mol/sec]
-  std::vector<double> prev_molal_;     // previous molality of primary species
+  std::vector<double> residual_;  // entire residual [mol/sec]
+  std::vector<double> prev_molal_;  // previous molality of primary species
 
-  std::vector<double> rhs_;            // right-hand-side of system
-  MatrixBlock jacobian_;              // Jacobian [kg water/sec]
+  std::vector<double> rhs_;
+  MatrixBlock jacobian_;  // Jacobian [kg water/sec]
 
   SolverStatus status_;
   void ResetStatus();
@@ -346,6 +326,29 @@ class Beaker {
 
   std::vector<double> sorption_isotherm_params_;
 };
+
+
+// non-member functions
+inline
+void Display(Beaker::BeakerState& state,
+             const std::string& message,
+             const Teuchos::RCP<VerboseObject>& vo) {
+  vo->Write(Teuchos::VERB_HIGH, message);
+  utilities::PrintVector("Totals", state.total, vo, 16, true);
+  utilities::PrintVector("Total sorbed", state.total_sorbed, vo, 16, true);
+  utilities::PrintVector("Free Ion", state.free_ion, vo, 16, true);
+  utilities::PrintVector("Primary activity coeff", state.primary_activity_coeff, vo, 16, true);
+  utilities::PrintVector("Secondary activity coeff", state.secondary_activity_coeff, vo, 16, true);
+  utilities::PrintVector("Mineral VF", state.mineral_volume_fraction, vo, 16, true);
+  utilities::PrintVector("Mineral SSA", state.mineral_specific_surface_area, vo, 16, true);
+  utilities::PrintVector("Ion Exchange Sites", state.ion_exchange_sites, vo, 16, true);
+  utilities::PrintVector("Ion Exchange ref cation conc", state.ion_exchange_ref_cation_conc, vo, 16, true);
+  utilities::PrintVector("Surface Site Density", state.surface_site_density, vo, 16, true);
+  utilities::PrintVector("Surface Complex free site conc", state.surface_complex_free_site_conc, vo, 16, true);
+  utilities::PrintVector("Kd", state.isotherm_kd, vo, 16, true);
+  utilities::PrintVector("Freundlich n", state.isotherm_freundlich_n, vo, 16, true);
+  utilities::PrintVector("Langmuir b", state.isotherm_langmuir_b, vo, 16, true);
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

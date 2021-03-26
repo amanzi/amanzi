@@ -24,7 +24,7 @@ class SimpleThermoDatabase : public Beaker {
   SimpleThermoDatabase(Teuchos::RCP<VerboseObject> vo);
   virtual ~SimpleThermoDatabase() {};
 
-  virtual void Setup(const Beaker::BeakerComponents& components,
+  virtual void Setup(const Beaker::BeakerState& state,
                      const Beaker::BeakerParameters& parameters) override;
 
  protected:

@@ -8,10 +8,10 @@
 
 int CommandLineOptions(int argc, char** argv);
 
-void fbasin_source(Amanzi::AmanziChemistry::Beaker::BeakerComponents* components);
-void fbasin_aqueous_source(Amanzi::AmanziChemistry::Beaker::BeakerComponents* components);
-void fbasin_free_ions(Amanzi::AmanziChemistry::Beaker::BeakerComponents* components);
-void fbasin_minerals(Amanzi::AmanziChemistry::Beaker::BeakerComponents* components);
-void fbasin_sorbed(Amanzi::AmanziChemistry::Beaker::BeakerComponents* components);
+void fbasin_source(Amanzi::AmanziChemistry::Beaker::BeakerState* state);
+void fbasin_aqueous_source(Amanzi::AmanziChemistry::Beaker::BeakerState* state);
+void fbasin_free_ions(Amanzi::AmanziChemistry::Beaker::BeakerState* state);
+void fbasin_minerals(Amanzi::AmanziChemistry::Beaker::BeakerState* state);
+void fbasin_sorbed(Amanzi::AmanziChemistry::Beaker::BeakerState* state);
 
 #endif

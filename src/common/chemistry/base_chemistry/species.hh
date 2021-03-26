@@ -86,12 +86,8 @@ class Species {
   }
 
   // these should only be used by the activity coefficient model
-  void act_coef(double d) {
-    this->act_coef_ = d;
-  }
-  void ln_act_coef(double d) {
-    this->ln_act_coef_ = d;
-  }
+  void set_act_coef(double d) { act_coef_ = d; }
+  void ln_act_coef(double d) { ln_act_coef_ = d; }
 
   void display(void) const;
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
