@@ -664,7 +664,7 @@ void PrintInput(const SimulationParameters& params,
 {
   vo->Write(Teuchos::VERB_HIGH, "- Input File ---------------------------------------------------------\n");
   PrintSimulationParameters(params, vo);
-  state.Display("-- Input state: \n", vo);
+  ac::Display(state, "-- Input state: \n", vo);
   vo->Write(Teuchos::VERB_HIGH, "--------------------------------------------------------- Input File -\n");
 }  // end PrintInput()
 
