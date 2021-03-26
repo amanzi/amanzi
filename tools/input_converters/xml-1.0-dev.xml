@@ -195,7 +195,18 @@ def aliasMesh(xml):
     for mesh in asearch.findall_path(xml, ["mesh", "aliased parameters", "alias"]):
         mesh.setName("target")
         
-        
+def landCover(xml):
+    for evaluator in asearch.findall_path(xml, ["state", "field evaluators", "field evaluator type"]):
+        if evaluator.getValue() == "surface balance area fractions":
+            evaluator.setValue("snow area fraction")
+    for evaluator in asearch.findall_path(xml, ["state", "field evaluators", "surface-fractional_areas"]):
+        evaluator.setName("snow-area_fraction")
+    for evaluator in asearch.findall_path(xml, ["state", "field evaluators", "field evaluator type"]):
+        if evaluator.getValue() == "albedo":
+            evaluator.setValue("ground albedo")
+    for evaluator in asearch.findall_path(xml, ["state", "field evaluators", "surface-subgrid_albedos"]):
+        evaluator.setName("surface-albedos")
+            
 
                 
 def update(xml):
@@ -211,6 +222,7 @@ def update(xml):
     fixOverlandConductivity(xml)
     updateObservations(xml)
     aliasMesh(xml)
+    landCover(xml)
 
 if __name__ == "__main__":
     import argparse
