@@ -162,11 +162,9 @@ void IonExchangeRxn::Update(const std::vector<Species>& primarySpecies) {
 
 void IonExchangeRxn::AddContributionToTotal(std::vector<double> *total) {
   // pflotran: reaction.F90, function RTotalSorbEqIonX
-  for (std::vector<IonExchangeComplex>::iterator ionx =
-           ionx_complexes_.begin();
-       ionx != ionx_complexes_.end(); ionx++) {
-    int icomp = ionx->primary_id();
-    (*total)[icomp] += ionx->concentration();
+  for (auto it = ionx_complexes_.begin(); it != ionx_complexes_.end(); ++it) {
+    int icomp = it->primary_id();
+    (*total)[icomp] += it->concentration();
   }
 }
 

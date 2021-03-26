@@ -150,8 +150,7 @@ class Beaker {
   void print_results(double time) const;
 
   // access
-  int ncomp() const { return ncomp_; }
-  double tolerance() const { return tolerance_; }
+  // int ncomp() const { return ncomp_; }
 
   double water_density_kg_m3() const { return water_density_kg_m3_; }
   double water_density_kg_L() const { return water_density_kg_L_; }
@@ -187,12 +186,12 @@ class Beaker {
   void AddSurfaceComplexationRxn(const SurfaceComplexationRxn& r);
   void AddSorptionIsothermRxn(const SorptionIsothermRxn& r);
 
-  void ncomp(int i) { this->ncomp_ = i; }
-  void tolerance(double value) { this->tolerance_ = value; }
-  void max_iterations(unsigned int value) { this->max_iterations_ = value; }
+  void set_ncomp(int i) { ncomp_ = i; }
+  void set_tolerance(double value) { tolerance_ = value; }
+  void set_max_iterations(int value) { max_iterations_ = value; }
 
-  void porosity(double d) { porosity_ = d; }
-  void saturation(double d) { saturation_ = d; }
+  void set_porosity(double value) { porosity_ = value; }
+  void set_saturation(double value) { saturation_ = value; }
 
   // updates both water density variables
   void water_density_kg_m3(double d) {
@@ -204,16 +203,11 @@ class Beaker {
     water_density_kg_L_ = d;
   }
 
-  void volume(double vol) { volume_ = vol; }
-  void dt(double dt) { dt_ = dt; }
+  void set_volume(double vol) { volume_ = vol; }
+  void set_dt(double dt) { dt_ = dt; }
   void set_aqueous_accumulation_coef(double coef) { aqueous_accumulation_coef_ = coef; }
   void set_sorbed_accumulation_coef(double coef) { sorbed_accumulation_coef_ = coef; }
   void por_sat_den_vol(double coef) { por_sat_den_vol_ = coef; }
-
-  // calculates the coefficient in aqueous portion of accumulation term
-  void update_accumulation_coefficients();
-  // calculates product of porosity,saturation,water_density[kg/m^3],volume
-  void update_por_sat_den_vol();
 
   void set_use_log_formulation(bool value) { use_log_formulation_ = value; }
 
@@ -236,7 +230,7 @@ class Beaker {
   // equilibrium chemistry
   // update activities, equilibrium complex concentrations, etc.
   void UpdateEquilibriumChemistry(void);
-  void CalculateTotal(void);
+  void CalculateTotal();
 
   // calculate block of Jacobian corresponding to derivatives of total with
   // respect to free-ion
@@ -256,8 +250,8 @@ class Beaker {
                                   const std::vector<double>& total_sorbed,
                                   std::vector<double> *fixed_accumulation);
   // residual and Jacobian
-  void CalculateResidual(void);
-  void CalculateJacobian(void);
+  void CalculateResidual();
+  void CalculateJacobian();
 
   // utilities for updating solution, convergence checks
   void UpdateMolalitiesWithTruncation(const double max_change);
@@ -338,7 +332,7 @@ class Beaker {
   MatrixBlock jacobian_;              // Jacobian [kg water/sec]
 
   SolverStatus status_;
-  void ResetStatus(void);
+  void ResetStatus();
   static const double tolerance_default_;
   static const unsigned int max_iterations_default_;
   static const double porosity_default_;

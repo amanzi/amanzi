@@ -43,7 +43,7 @@ class Species {
   // ActivityCoefficient models and determine what the most generic
   // version of this interface will require.
   void update(const double molarity, const double ionic_strength);
-  virtual void update(void);
+  virtual void update();
   virtual void update(const double molality);
 
   // accessor methods for calculated values

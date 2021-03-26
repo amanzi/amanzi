@@ -170,20 +170,16 @@ void SurfaceComplexationRxn::AddContributionToDTotal(
   std::vector<double> nu_li_nu_i_Si(num_primary_species, 0.0);
 
   double sum_nu_i_sq_Si = 0.;
-  std::vector<SurfaceComplex>::iterator srfcplx;
-  for (srfcplx = surface_complexes_.begin();
-       srfcplx != surface_complexes_.end(); srfcplx++) {
-    double tempd = srfcplx->free_site_stoichiometry() *
-        srfcplx->surface_concentration();
-    for (int icomp = 0; icomp < srfcplx->ncomp(); icomp++) {
+  for (auto it = surface_complexes_.begin(); it != surface_complexes_.end(); ++it) {
+    double tempd = it->free_site_stoichiometry() * it->surface_concentration();
+    for (int icomp = 0; icomp < it->ncomp(); icomp++) {
       // sum of nu_li * nu_i * S_i
-      nu_li_nu_i_Si.at(srfcplx->species_id(icomp)) +=
-          srfcplx->stoichiometry(icomp) * tempd;
+      nu_li_nu_i_Si.at(it->species_id(icomp)) += it->stoichiometry(icomp) * tempd;
     }
     // sum of nu_i^2 * S_i
-    sum_nu_i_sq_Si += srfcplx->free_site_stoichiometry() *
-        tempd;  // (free_site_stoich*surf_conc)
+    sum_nu_i_sq_Si += it->free_site_stoichiometry() * tempd;  // (free_site_stoich*surf_conc)
   }
+
   // complete the denominator within the brackets
   sum_nu_i_sq_Si /= surface_site_.at(0).free_site_concentration();
   double Sx_plus_sum_nu_i_sq_Si = 1. + sum_nu_i_sq_Si;
@@ -194,7 +190,7 @@ void SurfaceComplexationRxn::AddContributionToDTotal(
     nu_li_nu_i_Si.at(i) /= primarySpecies.at(i).molality();
   }
 
-  for (srfcplx = surface_complexes_.begin();
+  for (auto srfcplx = surface_complexes_.begin();
        srfcplx != surface_complexes_.end(); ++srfcplx) {
     double surface_concentration = srfcplx->surface_concentration();
     double nui_Si_over_Sx =
