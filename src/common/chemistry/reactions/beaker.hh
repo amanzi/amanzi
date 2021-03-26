@@ -80,37 +80,22 @@ class Beaker {
       utilities::PrintVector("Freundlich n", isotherm_freundlich_n, vo, 16, true);
       utilities::PrintVector("Langmuir b", isotherm_langmuir_b, vo, 16, true);
     }
-    void DumpCfg(const std::vector<std::string>& names, const Teuchos::RCP<VerboseObject>& vo) const {
-      std::stringstream message;
-      message << std::scientific << std::setprecision(12);
-      message << "\n[total]\n";
-      for (int i = 0; i < total.size(); ++i) {
-        message << names.at(i) << " = " << total.at(i) << "\n";
-      }
-      message << "\n[total_sorbed]\n";
-      for (int i = 0; i < total_sorbed.size(); ++i) {
-        message << names.at(i) << " = " << total_sorbed.at(i) << "\n";
-      }
-      message << "\n[free_ion]\n";
-      for (int i = 0; i < free_ion.size(); ++i) {
-        message << names.at(i) << " = " << free_ion.at(i) << "\n";
-      }
-      vo->Write(Teuchos::VERB_HIGH, message.str());
-    }
   };
 
   struct BeakerParameters {
-    // input files
     std::string thermo_database_file;
+
     // solver parameters
     double tolerance;
     unsigned int max_iterations;
+
     // models
     std::string activity_model_name;
     // Name of the Pitzer virial coefficients database
     std::string pitzer_database;
     // Name of the approach for J's functions for the Pitzer model
     std::string jfunction_pitzer;
+
     // physical parameters
     double porosity;  // [-]
     double saturation;  // [-]
@@ -131,11 +116,10 @@ class Beaker {
 
   // inheriting classes setup the species, etc
   virtual void Setup(const Beaker::BeakerComponents& components,
-                     const Beaker::BeakerParameters& parameters);
+             const Beaker::BeakerParameters& parameters);
   void CopyBeakerToComponents(Beaker::BeakerComponents* components);
 
   BeakerParameters GetDefaultParameters(void) const;
-  BeakerParameters GetCurrentParameters(void) const;
   void SetParameters(const BeakerParameters& parameters);
   void CopyComponents(const Beaker::BeakerComponents& from,
                       Beaker::BeakerComponents* to);
@@ -143,16 +127,7 @@ class Beaker {
   void GetPrimaryNames(std::vector<std::string>* names) const;
   int GetPrimaryIndex(const std::string& name) const;
 
-  void Display(void) const;
-  void DisplayComponents(const BeakerComponents& components) const;
-  void DisplayTotalColumnHeaders(const bool display_free) const;
-  void DisplayTotalColumns(const double time, 
-                           const BeakerComponents& total,
-                           const bool display_free) const;
-  void DisplayResults(void) const;
-
-
-  bool HaveKinetics(void) const;
+  bool HaveKinetics() const;
 
   // speciate for free-ion concentrations
   int Speciate(BeakerComponents* components,
@@ -162,36 +137,36 @@ class Beaker {
   int ReactionStep(BeakerComponents* components, const BeakerParameters& parameters,
                    double dt);
 
-  void print_results(void) const;
+  // i/o
+  void Display() const;
+  void DisplayComponents(const BeakerComponents& components) const;
+  void DisplayTotalColumnHeaders(const bool display_free) const;
+  void DisplayTotalColumns(const double time, 
+                           const BeakerComponents& total,
+                           const bool display_free) const;
+  void DisplayResults() const;
+
+  void print_results() const;
   void print_results(double time) const;
 
-  int ncomp(void) const { return this->ncomp_; }
-  double tolerance(void) const { return this->tolerance_; }
-  unsigned int max_iterations(void) const { return this->max_iterations_; }
+  // access
+  int ncomp() const { return ncomp_; }
+  double tolerance() const { return tolerance_; }
 
-  double porosity(void) const { return this->porosity_; }
-  double saturation(void) const { return this->saturation_; }
+  double water_density_kg_m3() const { return water_density_kg_m3_; }
+  double water_density_kg_L() const { return water_density_kg_L_; }
 
-  double water_density_kg_m3(void) const { return this->water_density_kg_m3_; }
-  double water_density_kg_L(void) const { return this->water_density_kg_L_; }
-  double volume(void) const { return this->volume_; }
-  double dt(void) const { return this->dt_; }
+  double sorbed_accumulation_coef() const { return sorbed_accumulation_coef_; }
+  double por_sat_den_vol() const { return por_sat_den_vol_; }
 
-  double aqueous_accumulation_coef(void) const { return this->aqueous_accumulation_coef_; }
-  double sorbed_accumulation_coef(void) const { return this->sorbed_accumulation_coef_; }
-  double por_sat_den_vol(void) const { return this->por_sat_den_vol_; }
+  SolverStatus status() const { return status_; }
 
-  SolverStatus status(void) const { return this->status_; }
+  const std::vector<Mineral>& minerals() const { return minerals_; }
+  const std::vector<Species>& primary_species() const { return primary_species_; }
+  const std::vector<IonExchangeRxn>& ion_exchange_rxns() const { return ion_exchange_rxns_; }
 
-  const std::vector<Mineral>& minerals(void) const { return this->minerals_; }
-  const std::vector<Species>& primary_species(void) const { return this->primary_species_; }
-  const std::vector<IonExchangeRxn>& ion_exchange_rxns(void) const { return this->ion_exchange_rxns_; }
-
-  const std::vector<double>& total(void) const { return this->total_; }
-  const std::vector<double>& total_sorbed(void) const { return this->total_sorbed_; }
-
-  const std::vector<double>& fixed_accumulation(void) const { return this->fixed_accumulation_; }
-  const std::vector<double>& prev_molal(void) const { return this->prev_molal_; }
+  const std::vector<double>& total() const { return total_; }
+  const std::vector<double>& total_sorbed() const { return total_sorbed_; }
 
  protected:
   // resizes matrix and vectors for nonlinear system
@@ -216,32 +191,31 @@ class Beaker {
   void tolerance(double value) { this->tolerance_ = value; }
   void max_iterations(unsigned int value) { this->max_iterations_ = value; }
 
-  void porosity(double d) { this->porosity_ = d; }
-  void saturation(double d) { this->saturation_ = d; }
+  void porosity(double d) { porosity_ = d; }
+  void saturation(double d) { saturation_ = d; }
 
   // updates both water density variables
   void water_density_kg_m3(double d) {
-    this->water_density_kg_m3_ = d;
-    this->water_density_kg_L_ = d / 1000.;
+    water_density_kg_m3_ = d;
+    water_density_kg_L_ = d / 1000.;
   }
   void water_density_kg_L(double d) {
-    this->water_density_kg_m3_ = d * 1000.;
-    this->water_density_kg_L_ = d;
+    water_density_kg_m3_ = d * 1000.;
+    water_density_kg_L_ = d;
   }
 
-  void volume(double d) { this->volume_ = d; }
-  void dt(double d) { this->dt_ = d; }
-  void aqueous_accumulation_coef(double d) { this->aqueous_accumulation_coef_ = d; }
-  void sorbed_accumulation_coef(double d) { this->sorbed_accumulation_coef_ = d; }
-  void por_sat_den_vol(double d) { this->por_sat_den_vol_ = d; }
+  void volume(double vol) { volume_ = vol; }
+  void dt(double dt) { dt_ = dt; }
+  void set_aqueous_accumulation_coef(double coef) { aqueous_accumulation_coef_ = coef; }
+  void set_sorbed_accumulation_coef(double coef) { sorbed_accumulation_coef_ = coef; }
+  void por_sat_den_vol(double coef) { por_sat_den_vol_ = coef; }
 
   // calculates the coefficient in aqueous portion of accumulation term
-  void update_accumulation_coefficients(void);
+  void update_accumulation_coefficients();
   // calculates product of porosity,saturation,water_density[kg/m^3],volume
-  void update_por_sat_den_vol(void);
+  void update_por_sat_den_vol();
 
-  void set_use_log_formulation(const bool value) { use_log_formulation_ = value; }
-  bool use_log_formulation(void) const { return use_log_formulation_; }
+  void set_use_log_formulation(bool value) { use_log_formulation_ = value; }
 
  protected:
   Teuchos::Ptr<VerboseObject> vo_;

@@ -149,31 +149,6 @@ Beaker::BeakerParameters Beaker::GetDefaultParameters(void) const {
 }
 
 
-Beaker::BeakerParameters Beaker::GetCurrentParameters(void) const {
-  // Extract data from the various chemistry objects and store them
-  // into a beaker parameters object that can be handed off to the
-  // driver.
-  Beaker::BeakerParameters parameters;
-
-  parameters.thermo_database_file.clear();
-
-  parameters.tolerance = tolerance();
-  parameters.max_iterations = max_iterations();
-
-  parameters.activity_model_name.clear();
-  if (activity_model_ != NULL) {
-    parameters.activity_model_name = activity_model_->name();
-  }
-
-  parameters.porosity = porosity();
-  parameters.saturation = saturation();
-  parameters.water_density = water_density_kg_m3();  // kg / m^3
-  parameters.volume = volume();  // m^3
-
-  return parameters;
-}
-
-
 void Beaker::SetParameters(const Beaker::BeakerParameters& parameters) {
   // Take a parameters object that was created by the driver, and map
   // the data into the appropriate chemistry object, potentially over
@@ -277,7 +252,7 @@ int Beaker::Speciate(Beaker::BeakerComponents* components,
 
     // exist if maximum relative change is below tolerance
   } while (max_rel_change > speciation_tolerance &&
-           num_iterations < max_iterations());
+           num_iterations < max_iterations_);
   
   // for now, initialize total sorbed concentrations based on the current free
   // ion concentrations
@@ -330,13 +305,12 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   // initialize to a large number (not necessary, but safe)
   double max_rel_change = 1.e20;
   int max_rel_index = -1;
-  // iteration counter
   unsigned int num_iterations = 0;
 
-  //set_use_log_formulation(false);
+  // set_use_log_formulation(false);
 
   // lagging activity coefficients by a time step in this case
-  //UpdateActivityCoefficients();
+  // UpdateActivityCoefficients();
 
   // calculate portion of residual at time level t
   CalculateFixedAccumulation(components->total, components->total_sorbed,
@@ -361,7 +335,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
     // scale the Jacobian
     ScaleRHSAndJacobian();
 
-    if (use_log_formulation()) {
+    if (use_log_formulation_) {
       // for derivatives with respect to ln concentration, scale columns
       // by primary species concentrations  
       for (int i = 0; i < ncomp(); i++) {
@@ -408,9 +382,9 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
     //    }
 
     // exit if maximum relative change is below tolerance
-  } while (max_rel_change > tolerance() && num_iterations < max_iterations());
+  } while (max_rel_change > tolerance() && num_iterations < max_iterations_);
 
-  if (num_iterations >= max_iterations()) {
+  if (num_iterations >= max_iterations_) {
     // TODO(bandre): should this be an error to the driver...?
     // code eventually produces nans when this isn't an error.
     std::ostringstream error_stream;
@@ -419,7 +393,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
     error_stream << "Warning: max relative change = " << max_rel_change << std::endl;
     error_stream << "Warning: max relative index = " << max_rel_index << std::endl;
     error_stream << "Warning: tolerance = " << tolerance() << std::endl;
-    error_stream << "Warning: max iterations = " << max_iterations() << std::endl;
+    error_stream << "Warning: max iterations = " << max_iterations_ << std::endl;
     // update before leaving so that we can see the erroneous values!
     CopyBeakerToComponents(components);
     Exceptions::amanzi_throw(ChemistryMaxIterationsReached(error_stream.str()));
@@ -614,7 +588,7 @@ int Beaker::GetPrimaryIndex(const std::string& name) const {
 // public output
 //
 
-void Beaker::Display(void) const {
+void Beaker::Display() const {
   vo_->Write(Teuchos::VERB_HIGH, "-- Beaker description ------------------------------------------------\n");
   DisplayParameters();
 
@@ -1174,13 +1148,13 @@ void Beaker::ResetStatus(void) {
 
 
 void Beaker::update_accumulation_coefficients(void) {
-  aqueous_accumulation_coef(porosity() * saturation() * volume() * 1000.0 / dt());
-  sorbed_accumulation_coef(volume() / dt());
+  set_aqueous_accumulation_coef(porosity_ * saturation_ * volume_ * 1000.0 / dt_);
+  set_sorbed_accumulation_coef(volume_ / dt_);
 } 
 
 
 void Beaker::update_por_sat_den_vol(void) {
-  por_sat_den_vol(porosity() * saturation() * water_density_kg_m3() * volume());
+  por_sat_den_vol(porosity_ * saturation_ * water_density_kg_m3() * volume_);
 }
 
 
@@ -1211,7 +1185,7 @@ void Beaker::UpdateKineticMinerals(void) {
        r != mineral_rates_.end(); ++r) {
     double kinetic_rate = (*r)->reaction_rate();
     int i = (*r)->identifier();
-    minerals_.at(i).UpdateVolumeFraction(kinetic_rate, dt());
+    minerals_.at(i).UpdateVolumeFraction(kinetic_rate, dt_);
     minerals_.at(i).UpdateSpecificSurfaceArea();
   }
 }
@@ -1375,7 +1349,7 @@ void Beaker::UpdateKineticChemistry(void) {
   // need to pass the volume of liquid: porosity * saturation * volume
   for (std::vector<RadioactiveDecay>::iterator i = radioactive_decay_rxns_.begin();
        i != radioactive_decay_rxns_.end(); ++i) {
-    i->UpdateRate(total_, total_sorbed_, porosity(), saturation(), volume());
+    i->UpdateRate(total_, total_sorbed_, porosity_, saturation_, volume_);
   }
 
   // add mineral saturation and rate calculations here
@@ -1404,7 +1378,7 @@ void Beaker::AddKineticChemistryToResidual(void) {
   // add mineral mineral contribution to residual here.  units = mol/sec.
   for (std::vector<KineticRate*>::iterator rate = mineral_rates_.begin();
        rate != mineral_rates_.end(); rate++) {
-    (*rate)->AddContributionToResidual(minerals_, volume(), &residual_);
+    (*rate)->AddContributionToResidual(minerals_, volume_, &residual_);
   }
 
   // add multirate kinetic surface complexation contribution to residual here.
@@ -1422,14 +1396,14 @@ void Beaker::AddKineticChemistryToJacobian(void) {
   for (std::vector<RadioactiveDecay>::iterator i = radioactive_decay_rxns_.begin();
        i != radioactive_decay_rxns_.end(); ++i) {
     i->AddContributionToJacobian(dtotal_, dtotal_sorbed_,
-                                 porosity(), saturation(), volume(),
+                                 porosity_, saturation_, volume_,
                                  &jacobian_);
   }
 
   // add mineral mineral contribution to Jacobian here.  units = kg water/sec.
   for (std::vector<KineticRate*>::iterator rate = mineral_rates_.begin();
        rate != mineral_rates_.end(); rate++) {
-    (*rate)->AddContributionToJacobian(primary_species(), minerals_, volume(), &jacobian_);
+    (*rate)->AddContributionToJacobian(primary_species(), minerals_, volume_, &jacobian_);
   }
 
   // add multirate kinetic surface complexation contribution to Jacobian here.
@@ -1445,7 +1419,7 @@ void Beaker::AddAccumulation(const std::vector<double>& total,
   // 1000.d0 converts vol from m^3 -> L
   // all residual entries should be in mol/sec
   for (unsigned int i = 0; i < total.size(); i++) {
-    residual->at(i) += aqueous_accumulation_coef() * total.at(i);
+    residual->at(i) += aqueous_accumulation_coef_ * total.at(i);
   }
 
   // add accumulation term for equilibrium sorption (e.g. Kd, surface
@@ -1466,7 +1440,7 @@ void Beaker::AddAccumulationDerivative(MatrixBlock* J,
   // units = (m^3 por/m^3 bulk)*(m^3 water/m^3 por)*(m^3 bulk)/(sec)
   //         *(kg water/L water)*(1000L water/m^3 water) = kg water/sec
   // all Jacobian entries should be in kg water/sec
-  J->AddValues(dtotal, aqueous_accumulation_coef());
+  J->AddValues(dtotal, aqueous_accumulation_coef_);
 
   // add accumulation derivative term for equilibrium sorption
   // (e.g. Kd, surface complexation) here
@@ -1492,7 +1466,7 @@ void Beaker::CalculateResidual(void) {
   status_.num_rhs_evaluations++;
   // subtract fixed porition
   for (int i = 0; i < ncomp(); i++) {
-    residual_.at(i) = -fixed_accumulation().at(i);
+    residual_.at(i) = -fixed_accumulation_.at(i);
   }
 
   // accumulation adds in equilibrium chemistry
@@ -1533,7 +1507,7 @@ void Beaker::ScaleRHSAndJacobian(void) {
 void Beaker::UpdateMolalitiesWithTruncation(const double max_ln_change) {
   double max_linear_change = std::pow(10.0, max_ln_change); // log10 vs ln... close enough
   double max_change;
-  if (use_log_formulation()) {
+  if (use_log_formulation_) {
     max_change = max_ln_change;
   } else {
     max_change = max_linear_change;
@@ -1552,19 +1526,19 @@ void Beaker::UpdateMolalitiesWithTruncation(const double max_ln_change) {
     // store the previous solution
     prev_molal_.at(i) = primary_species().at(i).molality();
 
-    if (!use_log_formulation()) {
+    if (!use_log_formulation_) {
       // ensure non-negative concentration
       if (prev_molal_.at(i) <= rhs_.at(i)) {
         double ratio = std::fabs(prev_molal_.at(i) / rhs_.at(i));
         min_ratio = std::min(ratio, min_ratio);
       }
-    }  // if (use_log_formulation)
-  }  // for (i)
+    }
+  }
 
   // update primary species molalities (log formulation)
   for (int i = 0; i < ncomp(); ++i) {
     double molality;
-    if (use_log_formulation()) {
+    if (use_log_formulation_) {
       molality = prev_molal_.at(i) * std::exp(-rhs_.at(i));
     } else {
       if (min_ratio < 1.0) {
@@ -1582,8 +1556,7 @@ void Beaker::CalculateMaxRelChangeInMolality(double* max_rel_change, int* max_re
   *max_rel_change = 0.0;
   *max_rel_index = -1;
   for (int i = 0; i < ncomp(); i++) {
-    double delta = std::fabs(primary_species().at(i).molality() - prev_molal().at(i)) / 
-        prev_molal().at(i);
+    double delta = std::fabs(primary_species().at(i).molality() - prev_molal_.at(i)) / prev_molal_.at(i);
     if (delta > *max_rel_change) {
       *max_rel_change = delta;
       *max_rel_index = i;
@@ -1641,14 +1614,14 @@ void Beaker::DisplayParameters(void) const {
   message << "---- Parameters" << std::endl;
   // message << "    thermo_database_file: " << thermo_database_file << std::endl;
   message << "    tolerance: " << tolerance() << std::endl;
-  message << "    max_iterations :" << max_iterations() << std::endl;
+  message << "    max_iterations :" << max_iterations_ << std::endl;
 
   message << "    activity model: " << activity_model_->name() << std::endl;
 
-  message << "    porosity: " << porosity() << " [-]" << std::endl;
-  message << "    water saturation: " << saturation() << " [-]" << std::endl;
+  message << "    porosity: " << porosity_ << " [-]" << std::endl;
+  message << "    water saturation: " << saturation_ << " [-]" << std::endl;
   message << "    water density: " << water_density_kg_m3() << " [kg m^-3]" << std::endl;
-  message << "    volume: " << volume() << " [m^3]" << std::endl;
+  message << "    volume: " << volume_ << " [m^3]" << std::endl;
   message << std::endl;
   vo_->Write(Teuchos::VERB_HIGH, message.str());
 }

@@ -24,8 +24,8 @@ class SimpleThermoDatabase : public Beaker {
   SimpleThermoDatabase(Teuchos::RCP<VerboseObject> vo);
   virtual ~SimpleThermoDatabase() {};
 
-  void Setup(const Beaker::BeakerComponents& components,
-             const Beaker::BeakerParameters& parameters);
+  virtual void Setup(const Beaker::BeakerComponents& components,
+                     const Beaker::BeakerParameters& parameters) override;
 
  protected:
   void ReadFile(const std::string& thermo_filename);
