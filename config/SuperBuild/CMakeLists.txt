@@ -204,11 +204,25 @@ if (ENABLE_Structured)
   endif()
 endif()
 
+message(STATUS ">>>>>> JDM: CMAKE_C_COMPILER_ID    = ${CMAKE_C_COMPILER_ID}")
+message(STATUS ">>>>>> JDM: CMAKE_CXX_COMPILER_ID  = ${CMAKE_CXX_COMPILER_ID}")
+
 if(ENABLE_KOKKOS_OPENMP)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-  set(CMAKE_LINK_FLAGS "${CMAKE_LINK_FLAGS} -lpthread")
+  find_package(OpenMP)
+  if (OpenMP_FOUND)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
+  endif()
+  # These might be needed for intel, seems like FindOpenMP packages is a bit broken.
+  #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
+  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+  #set(CMAKE_LINK_FLAGS "${CMAKE_LINK_FLAGS} -lpthread")
 endif()
+
+message(STATUS ">>>>>> JDM: CMAKE_C_FLAGS       = ${CMAKE_C_FLAGS}")
+message(STATUS ">>>>>> JDM: CMAKE_CXX_FLAGS     = ${CMAKE_CXX_FLAGS}")
+message(STATUS ">>>>>> JDM: CMAKE_Fortran_FLAGS = ${CMAKE_Fortran_FLAGS}")
 
 # If unstructured is not enabled, there is no reason to have these mesh frameworks
 if (NOT ENABLE_Unstructured)
