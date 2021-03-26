@@ -283,6 +283,11 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   }
 
   // optional fracture network
+  node = GetUniqueElementByTagsString_("fracture_network", flag);
+  if (flag) {
+    AddIndependentFieldEvaluator_(out_ev, "fracture-mass_density_liquid", "FRACTURE_NETWORK_INTERNAL", rho_);
+  }
+
   node = GetUniqueElementByTagsString_("fracture_network, materials", flag);
   if (flag) {
     children = node->getChildNodes();
@@ -329,11 +334,29 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       if (flag) {
         TranslateFieldIC_(node, "fracture-normal_conductivity", "", reg_str, regions, out_ic, out_ev, "normal");
       }
+
+      // -- liquid heat capacity
+      node = GetUniqueElementByTagsString_(inode, "thermal_properties, liquid_heat_capacity", flag);
+      if (flag) {
+        double cv = GetAttributeValueD_(node, "cv", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "kg*m^2/s^2/mol/K");
+        std::string model = GetAttributeValueS_(node, "model", "linear");
+
+        Teuchos::ParameterList& field_ev = out_ev.sublist("fracture-internal_energy_liquid");
+        field_ev.set<std::string>("field evaluator type", "iem")
+            .set<std::string>("internal energy key", "fracture-internal_energy_liquid");
+
+        field_ev.sublist("IEM parameters").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters")
+            .set<std::string>("iem type", model)
+            .set<double>("heat capacity", cv);
+      }
     }
   }
 
+  // ---------------------------------------------------------
   // initialization of fields via the initial_conditions list.
   // We have to move most fields to evaluaton list
+  // ---------------------------------------------------------
   node_list = doc_->getElementsByTagName(mm.transcode("initial_conditions"));
   int nchildren(0);
   if (node_list->getLength() != 0) {
@@ -530,10 +553,16 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       if (flag) {
         double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1000.0, "K");
 
+        Teuchos::Array<std::string> components(1, "cell");
+        std::string disc_method("mfd");
+        node = GetUniqueElementByTagsString_("unstructured_controls, unstr_energy_controls, discretization_method", flag);
+        if (flag) disc_method = mm.transcode(node->getNodeName());
+        if (disc_method.compare(0, 3, "mfd") == 0) components.push_back("face");
+
         Teuchos::ParameterList& temperature_ic = out_ic.sublist("temperature");
         temperature_ic.sublist("function").sublist(reg_str)
             .set<Teuchos::Array<std::string> >("regions", regions)
-            .set<std::string>("component", "cell")
+            .set<Teuchos::Array<std::string> >("components", components)
             .sublist("function").sublist("function-constant")
             .set<double>("value", val);
       }
@@ -626,10 +655,16 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       if (flag) {
         double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1000.0, "K");
 
+        Teuchos::Array<std::string> components(1, "cell");
+        std::string disc_method("mfd");
+        node = GetUniqueElementByTagsString_("unstructured_controls, unstr_energy_controls, discretization_method", flag);
+        if (flag) disc_method = mm.transcode(node->getNodeName());
+        if (disc_method.compare(0, 3, "mfd") == 0) components.push_back("face");
+
         Teuchos::ParameterList& temperature_ic = out_ic.sublist("fracture-temperature");
         temperature_ic.sublist("function").sublist(reg_str)
             .set<Teuchos::Array<std::string> >("regions", regions)
-            .set<std::string>("component", "cell")
+            .set<Teuchos::Array<std::string> >("components", components)
             .sublist("function").sublist("function-constant")
             .set<double>("value", val);
       }
@@ -850,6 +885,21 @@ void InputConverterU::AddIndependentFieldEvaluator_(
 
   out_ev.sublist(field)
       .set<std::string>("field evaluator type", "independent variable");
+}
+
+
+/* ******************************************************************
+* Add constant field
+****************************************************************** */
+void InputConverterU::AddConstantFieldInitialization_(
+    Teuchos::ParameterList& out_ic,
+    const std::string& field, const std::string& region, double val)
+{
+  out_ic.sublist(field).sublist("function").sublist("All")
+      .set<std::string>("region", region)
+      .set<std::string>("component", "cell")
+      .sublist("function").sublist("function-constant")
+      .set<double>("value", val);
 }
 
 }  // namespace AmanziInput

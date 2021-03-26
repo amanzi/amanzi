@@ -231,6 +231,7 @@ else:
 
 [extensions]
 todo_include_todos=env_include_todos
+bibtex_bibfiles = ['bib/ascem.bib']
 
 # -- Options for LaTeX output --------------------------------------------------
 

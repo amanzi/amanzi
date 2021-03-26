@@ -98,6 +98,9 @@ build_Spack=$FALSE
 xsdk=$FALSE #default is to not use
 xsdk_root_dir=
 
+# Enable/Disable Downloads
+external_downloads=$TRUE
+
 # Tools build parameters
 tools_build_dir=${dflt_build_prefix}/build/tools
 tools_download_dir=${tools_build_dir}/Downloads
@@ -366,6 +369,8 @@ Value in brackets indicates default setting.
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
   reg_tests               build regression tests into Amanzi or ATS Test Suite ['"${reg_tests}"']
   shared                  build Amanzi and tpls using shared libraries ['"${shared}"']
+  external_downloads      allow TPL tar balls or git repos to be downloaded directly from 
+                          external sites ['"${external_downloads}"']
   Spack                   build TPLs using the Spack package manager when appropriate ['"${Spack}"']
   xsdk                    build TPLs available in xSDK first, then supplement with additional 
                           individual TPL builds ['"${xsdk}"']
@@ -515,6 +520,7 @@ Amanzi TPLs:
     silo         = '"${silo}"'
     Spack        = '"${Spack}"'
     xsdk         = '"${xsdk}"'
+    external_downloads = '"${external_downloads}"'
 
 Tools and Tests:
     ccse_tools   = '"${ccse_tools}"'
@@ -767,9 +773,16 @@ List of INPUT parameters
       i=$[$i+1]
   done
 
+  # TPLs CMake option is "disable_external_downloads"
+  if [ "${external_downloads}" -eq "${TRUE}" ]; then
+      disable_external_downloads=${FALSE}
+  else
+      disable_external_downloads=${TRUE}
+  fi
+  
 # ---------------------------------------------------------------------------- #
 # Enforce implicit TPL dependencies
-  # ---------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------- #
   if [ "${build_user_guide}" -eq "${TRUE}" ]; then
     build_amanzi=${TRUE}
   fi
@@ -1693,6 +1706,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_XSDK:BOOL=${xsdk} \
       -DBUILD_SHARED_LIBS:BOOL=${shared} \
       -DTPL_DOWNLOAD_DIR:FILEPATH=${tpl_download_dir} \
+      -DDISABLE_EXTERNAL_DOWNLOAD=${disable_external_downloads} \
       ${arch_tpl_opts} \
       ${tpl_build_src_dir}"
 

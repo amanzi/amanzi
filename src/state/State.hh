@@ -21,31 +21,33 @@ various fields.
   are owned by state, not by any PK).
 
 
-``[state-spec]``
+.. _state-spec:
+.. admonition:: state-spec
 
-* `"field evaluators`" ``[evaluator-typedinline-spec-list]`` A list of evaluators.
-* `"initial conditions`" ``[list]`` A list of constants --
-    `"initial conditions`" is a terrible name and will go away in the next
-    iteration of state.
+   * `"field evaluators`" ``[evaluator-typedinline-spec-list]`` A list of evaluators.
 
-``[evaluator-typedinline-spec]``
+   * `"initial conditions`" ``[list]`` A list of constant-in-time variables :
+       `"initial conditions`" is a terrible name and will go away in the next
+       iteration of state.
 
-* `"field evaluator type`" ``[string]`` Type of the evaluator
-    
-Included for convenience in defining data that is not in the dependency graph,
-constants are things (like gravity, or atmospheric pressure) which are stored
-in state but never change.  Typically they're limited to scalars and dense,
-local vectors.
+.. _evaluator-typedinline-spec:
+.. admonition:: evaluator-typedinline-spec
 
-``[constants-scalar-spec]``
+   * `"field evaluator type`" ``[string]`` Type of the evaluator Included for
+      convenience in defining data that is not in the dependency graph,
+      constants are things (like gravity, or atmospheric pressure) which are
+      stored in state but never change.  Typically they're limited to scalars
+      and dense, local vectors.
 
-* `"value`" ``[double]`` Value of a scalar constant
+.. _constants-scalar-spec:
+.. admonition:: constants-scalar-spec
 
-``[constants-vector-spec]``
+   * `"value`" ``[double]`` Value of a scalar constant
 
-* `"value`" ``[Array(double)]`` Value of a dense, local vector.
+.. _constants-vector-spec:
+.. admonition:: constants-vector-spec
 
-
+   * `"value`" ``[Array(double)]`` Value of a dense, local vector.
 
 Example:
 
@@ -68,7 +70,6 @@ Example:
       </ParameterList>
     </ParameterList>
 
-    
 */
 
 #ifndef STATE_STATE_HH_
