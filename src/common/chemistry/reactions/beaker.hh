@@ -330,7 +330,7 @@ class Beaker {
 
 // non-member functions
 inline
-void Display(Beaker::BeakerState& state,
+void Display(const Beaker::BeakerState& state,
              const std::string& message,
              const Teuchos::RCP<VerboseObject>& vo) {
   vo->Write(Teuchos::VERB_HIGH, message);

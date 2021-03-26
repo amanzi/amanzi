@@ -81,22 +81,22 @@ SUITE(GeochemistryTestsMineral) {
     ac::SpeciesId id = 0;
     ac::SpeciesName name = "H+";
     ac::Species H_p = ac::Species(id, name, 1.0, 1.0079, 9.0);
-    H_p.act_coef(1.0);
+    H_p.set_act_coef(1.0);
     H_p.update(2.74965e-9);
 
     id = 1;
     name = "HCO3-";
     ac::Species HCO3_m = ac::Species(id, name, -1.0, 61.0171, 4.0);
-    HCO3_m.act_coef(1.0);
+    HCO3_m.set_act_coef(1.0);
     HCO3_m.update(9.71848e-4);
 
     id = 2;
     name = "Ca++";
     ac::Species Ca_pp = ac::Species(id, name, 2.0, 40.0780, 6.0);
-    Ca_pp.act_coef(1.0);
+    Ca_pp.set_act_coef(1.0);
     Ca_pp.update(9.61037e-5);
 
-    water_.act_coef(1.0);
+    water_.set_act_coef(1.0);
     water_.update(1.0);
 
     primarySpecies_.clear();
@@ -169,16 +169,16 @@ SUITE(GeochemistryTestsMineral) {
       ac::SpeciesId id = 0;
       ac::SpeciesName name = "Al+3";
       ac::Species Al = ac::Species(id, name, 3.0, 0.0, 0.0);
-      Al.act_coef(1.0);
+      Al.set_act_coef(1.0);
       Al.update(0.5);
 
       id = 1;
       name = "SO4-2";
       ac::Species SO4 = ac::Species(id, name, -2.0, 0.0, 0.0);
-      SO4.act_coef(1.0);
+      SO4.set_act_coef(1.0);
       SO4.update(0.5);
 
-      water_.act_coef(0.5);
+      water_.set_act_coef(0.5);
       water_.update(1.0);
 
       primarySpecies_.clear();

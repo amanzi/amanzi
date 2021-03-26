@@ -128,7 +128,7 @@ SUITE(GeochemistryTestsSpecies) {
     ac::Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
     double act_coef = 0.9;
 
-    species.act_coef(act_coef);
+    species.set_act_coef(act_coef);
     CHECK_CLOSE(act_coef, species.act_coef(), 1.0e-9);
   }
 
@@ -137,7 +137,7 @@ SUITE(GeochemistryTestsSpecies) {
     double act_coef = 0.9;
     double ln_act_coef = std::log(act_coef);
 
-    species.act_coef(act_coef);  // does not update ln_act_coef!
+    species.set_act_coef(act_coef);  // does not update ln_act_coef!
     species.update();  // forces the update of ln_act_coef
     CHECK_CLOSE(ln_act_coef, species.ln_act_coef(), 1.0e-9);
   }
@@ -148,7 +148,7 @@ SUITE(GeochemistryTestsSpecies) {
     double act_coef = 0.9;
     double activity = molality * act_coef;
 
-    species.act_coef(act_coef);
+    species.set_act_coef(act_coef);
     species.update(molality);
     CHECK_CLOSE(activity, species.activity(), 1.0e-9);
   }
@@ -160,7 +160,7 @@ SUITE(GeochemistryTestsSpecies) {
     double act_coef = 0.9;
     double ln_activity = std::log(molality * act_coef);
 
-    species.act_coef(act_coef);
+    species.set_act_coef(act_coef);
     species.update(molality);
     CHECK_CLOSE(ln_activity, species.ln_activity(), 1.0e-9);
   }
