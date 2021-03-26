@@ -161,7 +161,8 @@ private:
   Teuchos::RCP<Teuchos::Time> cycle_timer_;
   Teuchos::RCP<Teuchos::Time> timer_;
   double duration_;
-
+  bool subcycled_ts_;
+  
   // fancy OS
   Teuchos::RCP<Amanzi::VerboseObject> vo_;
 };

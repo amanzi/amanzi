@@ -28,14 +28,14 @@ namespace Amanzi {
 namespace Relations {
 
 SubgridDisaggregateEvaluator::SubgridDisaggregateEvaluator(Teuchos::ParameterList& plist) :
-    SecondaryVariableFieldEvaluator(plist),
-    source_gid_(-1)
+    SecondaryVariableFieldEvaluator(plist)
 {
-  // my_key_ = "surface_column_6-del_max"
-  domain_ = Keys::getDomain(my_key_);  // "surface_column_6"
-  source_domain_ = plist_.get<std::string>("source domain name"); // "surface_star"
-  source_key_ = Keys::readKey(plist_, source_domain_, "field", Keys::getVarName(my_key_)); // "surface_star-del_max"
-  dependencies_.insert(source_key_);
+  domain_ = Keys::getDomainSetName(my_key_);
+  source_domain_ = plist_.get<std::string>("source domain name");
+  if (Keys::isDomainSet(source_domain_)) { // strip the :*
+    source_domain_ = Keys::getDomainSetName(source_domain_);
+  }
+  source_key_ = Keys::readKey(plist_, source_domain_, "field", Keys::getVarName(my_key_));
 }
 
 Teuchos::RCP<FieldEvaluator>
@@ -49,20 +49,10 @@ void
 SubgridDisaggregateEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 {
-  if (source_gid_ < 0) {
-    auto pos = domain_.find_last_of('_');
-    AMANZI_ASSERT(pos != domain_.size());
-    AMANZI_ASSERT(pos != domain_.size()-1);
-    int col_id = std::stoi(domain_.substr(pos+1, domain_.size()));
-    AMANZI_ASSERT(col_id >= 0 && col_id <= 1e3);
-    source_gid_ = col_id; // 6
-  }
-
-  const auto& source = *S->GetFieldData(source_key_)->ViewComponent("cell",false);
-
-  int source_lid = S->GetMesh("surface")->cell_map(false).LID(source_gid_);
-  AMANZI_ASSERT(source.MyLength() > source_lid);
-  (*result->ViewComponent("cell", false))[0][0] = source[0][source_lid];
+  auto ds = S->GetDomainSet(domain_);
+  ds->DoExport(Keys::getDomain(my_key_),
+               *S->GetFieldData(source_key_)->ViewComponent("cell", false),
+               *result->ViewComponent("cell", false));
 }
 
 void
@@ -76,21 +66,36 @@ SubgridDisaggregateEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr
 void
 SubgridDisaggregateEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
 {
-  S->RequireField(my_key_, my_key_)
-      ->SetMesh(S->GetMesh(domain_))
+  if (dependencies_.size() == 0) {
+    dependencies_.insert(source_key_);
+
+    auto ds = S->GetDomainSet(domain_);
+    if (ds->get_referencing_parent() == Teuchos::null) {
+      Errors::Message msg;
+      msg << "SubgridDisaggregateEvaluator: DomainSet \"" << domain_ << "\" does not have a referencing parent but must have one to disaggregate.";
+      Exceptions::amanzi_throw(msg);
+    }
+    if (S->GetMesh(source_domain_) != ds->get_referencing_parent()) {
+      Errors::Message msg;
+      msg << "SubgridDisaggregateEvaluator: DomainSet \"" << domain_ << "\" has a referencing parent, but it does not match the aggregate vector's domain, \"" << source_domain_ << "\"";
+      Exceptions::amanzi_throw(msg);
+    }
+
+    auto my_fac = S->RequireField(my_key_, my_key_);
+    my_fac->SetMesh(S->GetMesh(Keys::getDomain(my_key_)))
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
-  // Check plist for vis or checkpointing control.
-  bool io_my_key = plist_.get<bool>("visualize", true);
-  S->GetField(my_key_, my_key_)->set_io_vis(io_my_key);
-  bool checkpoint_my_key = plist_.get<bool>("checkpoint", false);
-  S->GetField(my_key_, my_key_)->set_io_checkpoint(checkpoint_my_key);
-  
-  S->RequireField(source_key_)
+    // Check plist for vis or checkpointing control.
+    bool io_my_key = plist_.get<bool>("visualize", true);
+    S->GetField(my_key_, my_key_)->set_io_vis(io_my_key);
+    bool checkpoint_my_key = plist_.get<bool>("checkpoint", false);
+    S->GetField(my_key_, my_key_)->set_io_checkpoint(checkpoint_my_key);
+
+    S->RequireField(source_key_)
       ->SetMesh(S->GetMesh(source_domain_))
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator(source_key_)->EnsureCompatibility(S);
-      
+    S->RequireFieldEvaluator(source_key_)->EnsureCompatibility(S);
+  }
 }
 
 

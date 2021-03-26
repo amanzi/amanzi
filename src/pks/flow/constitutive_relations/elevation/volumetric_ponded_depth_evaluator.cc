@@ -71,6 +71,7 @@ VolumetricPondedDepthEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::P
     if (wrt_key == pd_key_) {
       for (int c=0; c!=res.MyLength(); ++c){
         res[0][c] = Microtopography::dVolumetricDepth_dDepth(pd[0][c], del_max[0][c], del_ex[0][c]);
+        res[0][c] = std::max(res[0][c],0.001);
       }
     } else {
       Errors::Message msg("VolumetricPondedDepthEvaluator: Not Implemented: no derivatives implemented other than ponded depth.");
