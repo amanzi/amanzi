@@ -48,7 +48,7 @@ ImplicitSubgrid::ImplicitSubgrid(Teuchos::ParameterList& pk_tree,
   snow_dens_key_ = Keys::readKey(*plist_, domain_, "snow density", "density");
   snow_age_key_ = Keys::readKey(*plist_, domain_, "snow age", "age");
   new_snow_key_ = Keys::readKey(*plist_, domain_, "new snow source", "source");
-  area_frac_key_ = Keys::readKey(*plist_, domain_surf, "area fractions", "fractional_areas");
+  area_frac_key_ = Keys::readKey(*plist_, domain_, "area fraction", "area_fraction");
   snow_death_rate_key_ = Keys::readKey(*plist_, domain_, "snow death rate", "death_rate");
 
   // set up additional primary variables -- this is very hacky, and can become an evaluator in new-state

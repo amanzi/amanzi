@@ -79,8 +79,10 @@ RootingDepthFractionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       }
 
       // normalize to 1 over the column
-      for (auto c : subsurf_mesh.cells_of_column(sc)) {
-        result_v[0][c] = result_v[0][c] * 1.0 * surf_cv[0][sc] / column_total;
+      if (column_total > 0) {
+        for (auto c : subsurf_mesh.cells_of_column(sc)) {
+          result_v[0][c] = result_v[0][c] * 1.0 * surf_cv[0][sc] / column_total;
+        }
       }
     }
   }
