@@ -133,7 +133,7 @@ void GeneralRxn::addContributionToResidual(std::vector<double> *residual,
 }
 
 
-void GeneralRxn::addContributionToJacobian(
+void GeneralRxn::AddContributionToJacobian(
     MatrixBlock* J,
     const std::vector<Species> primarySpecies,
     double por_den_sat_vol) {

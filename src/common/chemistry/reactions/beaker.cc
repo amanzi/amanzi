@@ -337,12 +337,12 @@ int Beaker::ReactionStep(BeakerState* state,
 
     num_iterations++;
 
-    //  if (num_iterations >= 100) {
-    //    for (int i = 0; i < ncomp_; i++)
-    //      std::cout << primary_species_.at(i).name() << " " <<
-    //                   primary_species_.at(i).molality() << " " << total_.at(i) << "\n";
-    //      std::cout << max_rel_change << " " << tolerance_ << std::endl;
-    //  }
+    // if (num_iterations >= 100) {
+    //   for (int i = 0; i < ncomp_; i++)
+    //     std::cout << primary_species_.at(i).name() << " " <<
+    //                  primary_species_.at(i).molality() << " " << total_.at(i) << "\n";
+    //     std::cout << max_rel_change << " " << tolerance_ << std::endl;
+    // }
 
     // exit if maximum relative change is below tolerance
   } while (max_rel_change > tolerance_ && num_iterations < max_iterations_);
@@ -519,19 +519,17 @@ void Beaker::CopyBeakerToState(Beaker::BeakerState* state) {
 
 void Beaker::GetPrimaryNames(std::vector<std::string>* names) const {
   names->clear();
-  for (std::vector<Species>::const_iterator primary = primary_species().begin();
-       primary != primary_species().end(); primary++) {
-    names->push_back(primary->name());
+  for (auto it = primary_species().begin(); it != primary_species().end(); ++it) {
+    names->push_back(it->name());
   }
 }
 
 
 int Beaker::GetPrimaryIndex(const std::string& name) const {
   int index = -1;
-  for (std::vector<Species>::const_iterator primary = primary_species().begin();
-       primary != primary_species().end(); primary++) {
-    if (primary->name() == name) {
-      index = primary->identifier();
+  for (auto it = primary_species().begin(); it != primary_species().end(); ++it) {
+    if (it->name() == name) {
+      index = it->identifier();
     }
   }
   return index;
@@ -1112,10 +1110,9 @@ void Beaker::UpdateKineticMinerals() {
   // loop through the kinetic minerals list. Update the volume
   // fraction, specific surface area, etc
 
-  for (std::vector<KineticRate*>::iterator r = mineral_rates_.begin();
-       r != mineral_rates_.end(); ++r) {
-    double kinetic_rate = (*r)->reaction_rate();
-    int i = (*r)->identifier();
+  for (auto it = mineral_rates_.begin(); it != mineral_rates_.end(); ++it) {
+    double kinetic_rate = (*it)->reaction_rate();
+    int i = (*it)->identifier();
     minerals_.at(i).UpdateVolumeFraction(kinetic_rate, dt_);
     minerals_.at(i).UpdateSpecificSurfaceArea();
   }
@@ -1255,23 +1252,20 @@ void Beaker::CalculateDTotal() {
 
 void Beaker::UpdateKineticChemistry() {
   // loop over general kinetic reactions and update effective rates
-  for (std::vector<GeneralRxn>::iterator i = generalKineticRxns_.begin();
-       i != generalKineticRxns_.end(); i++) {
-    i->update_rates(primary_species());
+  for (auto it = generalKineticRxns_.begin(); it != generalKineticRxns_.end(); ++it) {
+    it->update_rates(primary_species());
   }
 
   // loop over radioactive decay reactions and update effective rates
   // NOTE(bandre): radio active decay operates on total, not free conc.
   // need to pass the volume of liquid: porosity * saturation * volume
-  for (std::vector<RadioactiveDecay>::iterator i = radioactive_decay_rxns_.begin();
-       i != radioactive_decay_rxns_.end(); ++i) {
-    i->UpdateRate(total_, total_sorbed_, porosity_, saturation_, volume_);
+  for (auto it = radioactive_decay_rxns_.begin(); it != radioactive_decay_rxns_.end(); ++it) {
+    it->UpdateRate(total_, total_sorbed_, porosity_, saturation_, volume_);
   }
 
   // add mineral saturation and rate calculations here
-  for (std::vector<KineticRate*>::iterator rate = mineral_rates_.begin();
-       rate != mineral_rates_.end(); rate++) {
-    (*rate)->Update(primary_species(), minerals_);
+  for (auto it = mineral_rates_.begin(); it != mineral_rates_.end(); ++it) {
+    (*it)->Update(primary_species(), minerals_);
   }
   // add multirate kinetic surface complexation reaction quotient calculations
   // here
@@ -1280,21 +1274,18 @@ void Beaker::UpdateKineticChemistry() {
 
 void Beaker::AddKineticChemistryToResidual() {
   // loop over general kinetic reactions and add rates
-  for (std::vector<GeneralRxn>::iterator i = generalKineticRxns_.begin();
-       i != generalKineticRxns_.end(); i++) {
-    i->addContributionToResidual(&residual_, por_sat_den_vol());
+  for (auto it = generalKineticRxns_.begin(); it != generalKineticRxns_.end(); ++it) {
+    it->addContributionToResidual(&residual_, por_sat_den_vol());
   }
 
   // loop over radioactive decay reactions and add rates
-  for (std::vector<RadioactiveDecay>::iterator i = radioactive_decay_rxns_.begin();
-       i != radioactive_decay_rxns_.end(); ++i) {
-    i->AddContributionToResidual(&residual_);
+  for (auto it = radioactive_decay_rxns_.begin(); it != radioactive_decay_rxns_.end(); ++it) {
+    it->AddContributionToResidual(&residual_);
   }
 
   // add mineral mineral contribution to residual here.  units = mol/sec.
-  for (std::vector<KineticRate*>::iterator rate = mineral_rates_.begin();
-       rate != mineral_rates_.end(); rate++) {
-    (*rate)->AddContributionToResidual(minerals_, volume_, &residual_);
+  for (auto it = mineral_rates_.begin(); it != mineral_rates_.end(); ++it) {
+    (*it)->AddContributionToResidual(minerals_, volume_, &residual_);
   }
 
   // add multirate kinetic surface complexation contribution to residual here.
@@ -1303,23 +1294,20 @@ void Beaker::AddKineticChemistryToResidual() {
 
 void Beaker::AddKineticChemistryToJacobian() {
   // loop over general kinetic reactions and add rates
-  for (std::vector<GeneralRxn>::iterator i = generalKineticRxns_.begin();
-       i != generalKineticRxns_.end(); i++) {
-    i->addContributionToJacobian(&jacobian_, primary_species(), por_sat_den_vol());
+  for (auto it = generalKineticRxns_.begin(); it != generalKineticRxns_.end(); ++it) {
+    it->AddContributionToJacobian(&jacobian_, primary_species(), por_sat_den_vol());
   }
 
   // loop over radioactive decay reactions and add rates
-  for (std::vector<RadioactiveDecay>::iterator i = radioactive_decay_rxns_.begin();
-       i != radioactive_decay_rxns_.end(); ++i) {
-    i->AddContributionToJacobian(dtotal_, dtotal_sorbed_,
-                                 porosity_, saturation_, volume_,
-                                 &jacobian_);
+  for (auto it = radioactive_decay_rxns_.begin(); it != radioactive_decay_rxns_.end(); ++it) {
+    it->AddContributionToJacobian(dtotal_, dtotal_sorbed_,
+                                  porosity_, saturation_, volume_,
+                                  &jacobian_);
   }
 
   // add mineral mineral contribution to Jacobian here.  units = kg water/sec.
-  for (std::vector<KineticRate*>::iterator rate = mineral_rates_.begin();
-       rate != mineral_rates_.end(); rate++) {
-    (*rate)->AddContributionToJacobian(primary_species(), minerals_, volume_, &jacobian_);
+  for (auto it = mineral_rates_.begin(); it != mineral_rates_.end(); ++it) {
+    (*it)->AddContributionToJacobian(primary_species(), minerals_, volume_, &jacobian_);
   }
 
   // add multirate kinetic surface complexation contribution to Jacobian here.

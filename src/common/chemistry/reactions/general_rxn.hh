@@ -42,7 +42,7 @@ class GeneralRxn {
   void update_rates(const std::vector<Species> primarySpecies);
   void addContributionToResidual(std::vector<double> *residual,
                                  double por_den_sat_vol);
-  void addContributionToJacobian(MatrixBlock* J,
+  void AddContributionToJacobian(MatrixBlock* J,
                                  const std::vector<Species> primarySpecies,
                                  double por_den_sat_vol);
   void display(const Teuchos::Ptr<VerboseObject> vo) const;
