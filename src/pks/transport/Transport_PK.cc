@@ -127,11 +127,12 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 * Setup for Alquimia.
 ****************************************************************** */
 #ifdef ALQUIMIA_ENABLED
-void Transport_PK::SetupAlquimia(Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk,
-                                 Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine)
+void Transport_PK::SetupAlquimia()
 {
-  chem_pk_ = chem_pk;
-  chem_engine_ = chem_engine;
+  if (chem_pk_ == Teuchos::null) return;
+
+  alquimia_pk_ = Teuchos::rcp_dynamic_cast<AmanziChemistry::Alquimia_PK>(chem_pk_);
+  chem_engine_ = chem_pk_->chem_engine();
 
   if (chem_engine_ != Teuchos::null) {
     // Retrieve the component names (primary and secondary) from the chemistry 
@@ -291,6 +292,10 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
     }
   }
+
+#ifdef ALQUIMIA_ENABLED
+  SetupAlquimia();
+#endif
 }
 
 
@@ -424,7 +429,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
       Teuchos::ParameterList& spec = glist.sublist(specname);
 
       Teuchos::RCP<TransportBoundaryFunction_Alquimia> 
-          bc = Teuchos::rcp(new TransportBoundaryFunction_Alquimia(spec, mesh_, chem_pk_, chem_engine_));
+          bc = Teuchos::rcp(new TransportBoundaryFunction_Alquimia(spec, mesh_, alquimia_pk_, chem_engine_));
 
       std::vector<int>& tcc_index = bc->tcc_index();
       std::vector<std::string>& tcc_names = bc->tcc_names();
@@ -499,7 +504,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
       Teuchos::ParameterList& spec = glist.sublist(specname);
 
       Teuchos::RCP<TransportSourceFunction_Alquimia> 
-          src = Teuchos::rcp(new TransportSourceFunction_Alquimia(spec, mesh_, chem_pk_, chem_engine_));
+          src = Teuchos::rcp(new TransportSourceFunction_Alquimia(spec, mesh_, alquimia_pk_, chem_engine_));
 
       std::vector<int>& tcc_index = src->tcc_index();
       std::vector<std::string>& tcc_names = src->tcc_names();
