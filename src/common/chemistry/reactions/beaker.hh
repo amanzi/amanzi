@@ -116,6 +116,11 @@ class Beaker {
   // solve a chemistry step
   int ReactionStep(BeakerState* state, const BeakerParameters& parameters, double dt);
 
+  // enforce constraint
+  int EnforceConstraint(BeakerState* state, const BeakerParameters& parameters,
+                        const std::vector<std::string>& names,
+                        const std::vector<double>& values);
+
   // i/o
   void Display() const;
   void DisplayComponents(const BeakerState& state) const;

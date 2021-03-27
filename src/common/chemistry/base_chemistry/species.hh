@@ -69,21 +69,11 @@ class Species {
   }
 
   // access invariant data
-  SpeciesId identifier(void) const {
-    return this->identifier_;
-  }
-  double charge(void) const {
-    return this->charge_;
-  }
-  double gram_molecular_weight(void) const {
-    return this->gram_molecular_weight_;
-  }
-  double ion_size_parameter(void) const {
-    return this->ion_size_parameter_;
-  }
-  SpeciesName name(void) const {
-    return this->name_;
-  }
+  SpeciesId identifier(void) const { return identifier_; }
+  double charge() const { return charge_; }
+  double gram_molecular_weight(void) const { return gram_molecular_weight_; }
+  double ion_size_parameter(void) const { return ion_size_parameter_; }
+  SpeciesName name(void) const { return name_; }
 
   // these should only be used by the activity coefficient model
   void set_act_coef(double d) { act_coef_ = d; }

@@ -40,11 +40,13 @@ class AqueousEquilibriumComplex : public SecondarySpecies {
   // update molalities
   using SecondarySpecies::Update;
   virtual void Update(const std::vector<Species>& primary_species, const Species& water_species);
+
   // add stoichiometric contribution of complex to total
   virtual void AddContributionToTotal(std::vector<double>* total);
+
   // add derivative of total with respect to free-ion to dtotal
-  virtual void AddContributionToDTotal(const std::vector<Species>& primary_species,
-                                       MatrixBlock* dtotal);
+  virtual void AddContributionToDTotal(
+          const std::vector<Species>& primary_species, MatrixBlock* dtotal);
 
   using SecondarySpecies::Display;
   void display(const Teuchos::Ptr<VerboseObject> vo) const;

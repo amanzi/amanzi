@@ -176,16 +176,13 @@ void IonExchangeRxn::AddContributionToDTotal(
 
   // sum up charges
   double sumZX = 0.;
-  for (std::vector<IonExchangeComplex>::iterator ionx = ionx_complexes_.begin(); 
-       ionx != ionx_complexes_.end(); ionx++) {
+  for (auto ionx = ionx_complexes_.begin(); ionx != ionx_complexes_.end(); ionx++) {
     int icomp = ionx->primary_id();
-    sumZX += primarySpecies[icomp].charge()*ionx->X();
+    sumZX += primarySpecies[icomp].charge() * ionx->X();
   }
 
   // add contribution to derivatives
-  for (std::vector<IonExchangeComplex>::iterator ionx =
-           ionx_complexes_.begin();
-       ionx != ionx_complexes_.end(); ionx++) {
+  for (auto ionx = ionx_complexes_.begin(); ionx != ionx_complexes_.end(); ionx++) {
     int icomp = ionx->primary_id();
     double temp = primarySpecies[icomp].charge() / sumZX;
     for (std::vector<IonExchangeComplex>::iterator ionx2 =

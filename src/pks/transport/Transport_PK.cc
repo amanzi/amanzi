@@ -37,6 +37,7 @@
 #include "MultiscaleTransportPorosityFactory.hh"
 #include "Transport_PK.hh"
 #include "TransportBoundaryFunction_Alquimia.hh"
+#include "TransportBoundaryFunction_Chemistry.hh"
 #include "TransportDomainFunction.hh"
 #include "TransportSourceFunction_Alquimia.hh"
 
@@ -127,11 +128,12 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 * Setup for Alquimia.
 ****************************************************************** */
 #ifdef ALQUIMIA_ENABLED
-void Transport_PK::SetupAlquimia(Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk,
-                                 Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine)
+void Transport_PK::SetupAlquimia()
 {
-  chem_pk_ = chem_pk;
-  chem_engine_ = chem_engine;
+  if (chem_pk_ == Teuchos::null) return;
+
+  alquimia_pk_ = Teuchos::rcp_dynamic_cast<AmanziChemistry::Alquimia_PK>(chem_pk_);
+  chem_engine_ = chem_pk_->chem_engine();
 
   if (chem_engine_ != Teuchos::null) {
     // Retrieve the component names (primary and secondary) from the chemistry 
@@ -291,6 +293,10 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
     }
   }
+
+#ifdef ALQUIMIA_ENABLED
+  SetupAlquimia();
+#endif
 }
 
 
@@ -415,6 +421,27 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
         }
       }
     }
+    // -- try geochemical Dirichlet conditions for species
+    PK_DomainFunctionFactory<TransportBoundaryFunction_Chemistry> factory2(mesh_);
+    Teuchos::ParameterList& cvlist = tp_list_->sublist("boundary conditions").sublist("constraints");
+
+    for (auto it = cvlist.begin(); it != cvlist.end(); ++it) {
+      std::string name = it->first;
+      if (cvlist.isSublist(name)) {
+        Teuchos::ParameterList& spec = cvlist.sublist(name);
+        spec.set<Teuchos::RCP<AmanziChemistry::Chemistry_PK> >("chemical pk", chem_pk_);
+
+        Teuchos::RCP<TransportBoundaryFunction_Chemistry> 
+          bc = factory2.Create(spec, "boundary constraints", AmanziMesh::FACE, Kxy);
+
+        for (int i = 0; i < component_names_.size(); i++) {
+          bc->tcc_names().push_back(component_names_[i]);
+          bc->tcc_index().push_back(i);
+        }
+        bc->set_state(S_);
+        bcs_.push_back(bc);
+      }
+    }
 #ifdef ALQUIMIA_ENABLED
     // -- try geochemical conditions
     Teuchos::ParameterList& glist = tp_list_->sublist("boundary conditions").sublist("geochemical");
@@ -424,7 +451,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
       Teuchos::ParameterList& spec = glist.sublist(specname);
 
       Teuchos::RCP<TransportBoundaryFunction_Alquimia> 
-          bc = Teuchos::rcp(new TransportBoundaryFunction_Alquimia(spec, mesh_, chem_pk_, chem_engine_));
+          bc = Teuchos::rcp(new TransportBoundaryFunction_Alquimia(spec, mesh_, alquimia_pk_, chem_engine_));
 
       std::vector<int>& tcc_index = bc->tcc_index();
       std::vector<std::string>& tcc_names = bc->tcc_names();
@@ -447,6 +474,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   time = t_physics_;
   for (int i = 0; i < bcs_.size(); i++) {
     bcs_[i]->Compute(time, time);
+    bcs_[i]->ComputeSubmodel(mesh_, tcc);
   }
 
   VV_CheckInfluxBC();
@@ -499,7 +527,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
       Teuchos::ParameterList& spec = glist.sublist(specname);
 
       Teuchos::RCP<TransportSourceFunction_Alquimia> 
-          src = Teuchos::rcp(new TransportSourceFunction_Alquimia(spec, mesh_, chem_pk_, chem_engine_));
+          src = Teuchos::rcp(new TransportSourceFunction_Alquimia(spec, mesh_, alquimia_pk_, chem_engine_));
 
       std::vector<int>& tcc_index = src->tcc_index();
       std::vector<std::string>& tcc_names = src->tcc_names();

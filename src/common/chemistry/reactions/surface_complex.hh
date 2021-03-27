@@ -86,10 +86,10 @@ class SurfaceComplex {
 
  private:
   double log_to_ln(double d) {
-    return d * 2.30258509299;
+    return d * 2.302585092994046;
   }
   double ln_to_log(double d) {
-    return d * 0.434294481904;
+    return d * 0.434294481903252;
   }
 
   SpeciesName name_;

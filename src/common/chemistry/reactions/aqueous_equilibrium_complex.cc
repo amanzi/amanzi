@@ -77,8 +77,7 @@ void AqueousEquilibriumComplex::AddContributionToDTotal(
   for (int j = 0; j < ncomp(); j++) {
     int jcomp = species_ids_.at(j);
     double tempd = stoichiometry_.at(j) *
-        std::exp(lnQK_ - primarySpecies.at(jcomp).ln_molality()) /
-        act_coef_;  // here act_coef is from complex
+        std::exp(lnQK_ - primarySpecies.at(jcomp).ln_molality()) / act_coef_;  // here act_coef is from complex
     // row loop
     for (int i = 0; i < ncomp(); i++) {
       dtotal->AddValue(species_ids_.at(i), jcomp, stoichiometry_.at(i)*tempd);

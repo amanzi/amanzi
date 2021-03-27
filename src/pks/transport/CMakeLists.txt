@@ -60,6 +60,7 @@ set(transport_inc_files
   MultiscaleTransportPorosity_GDPM.hh
   TransportDomainFunction.hh
   TransportBoundaryFunction_Alquimia.hh
+  TransportBoundaryFunction_Chemistry.hh
   TransportSourceFunction_Alquimia.hh
   TransportDefs.hh
   Transport_PK.hh

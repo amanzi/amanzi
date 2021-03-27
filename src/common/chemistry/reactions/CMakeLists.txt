@@ -13,7 +13,7 @@ include_directories(${CHEM_INCLUDES_DIR})
 # library
 #
 set(geochemrxns_src_files aqueous_equilibrium_complex.cc 
-	                  beaker.cc 
+	                  beaker.cc beaker_constraints.cc
 	                  general_rxn.cc 
 	                  radioactive_decay.cc 
 	                  ion_exchange_complex.cc 

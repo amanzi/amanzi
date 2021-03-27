@@ -49,6 +49,17 @@ class MatrixBlock {
   void Zero();
   void SetDiagonal(double d);
 
+  // output 
+  friend std::ostream& operator << (std::ostream& os, const MatrixBlock& A) {
+    for (int i = 0; i < A.size(); i++) {
+      for (int j = 0; j < A.size(); j++) {
+        os << std::setw(12) << std::setprecision(12) << A(i, j) << " ";
+      }
+      os << "\n";
+    }
+    return os;
+  }
+
  private:
   int size_;
   double* A_;

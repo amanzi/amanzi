@@ -57,6 +57,15 @@ class Amanzi_PK : public Chemistry_PK {
   Teuchos::RCP<Epetra_MultiVector> extra_chemistry_output_data();
   void set_chemistry_output_names(std::vector<std::string>* names);
 
+  // functions used in Rransport PK
+  void CopyCellStateToBeakerStructures(
+      int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
+
+  // access
+  Beaker* get_engine() { return chem_; }
+  const Beaker::BeakerParameters& beaker_parameters() const { return beaker_parameters_; }
+  Beaker::BeakerState beaker_state() { return beaker_state_; }
+
  private:
   void AllocateAdditionalChemistryStorage_(const Beaker::BeakerState& state);
 
@@ -64,12 +73,8 @@ class Amanzi_PK : public Chemistry_PK {
   void SetupAuxiliaryOutput();
   void SizeBeakerStructures_();
 
-  void CopyCellStateToBeakerStructures(
-      int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
   void CopyBeakerStructuresToCellState(
       int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
-
-  // void CopyFieldstoNewState(const Teuchos::RCP<State>& S_next);
 
  protected:
   Teuchos::RCP<TreeVector> soln_;
