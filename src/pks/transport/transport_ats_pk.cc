@@ -476,6 +476,10 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
       Teuchos::RCP<TransportSourceFunction_Alquimia_Units>
           src = Teuchos::rcp(new TransportSourceFunction_Alquimia_Units(spec, mesh_, chem_pk_, chem_engine_));
 
+      if (S->HasFieldEvaluator(mass_src_key_)){
+        S->GetFieldEvaluator(mass_src_key_)->HasFieldChanged(S.ptr(), name_);
+      }
+
       auto mass_src = S->GetFieldData(mass_src_key_)->ViewComponent("cell",false);
       src->set_conversion(-1000., mass_src, false);
 
@@ -732,7 +736,10 @@ bool Transport_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
   ws_ = S_next_->GetFieldData(saturation_key_)->ViewComponent("cell", false);
   mol_dens_ = S_next_->GetFieldData(molar_density_key_)->ViewComponent("cell", false);
   solid_qty_ = S_next_->GetFieldData(solid_residue_mass_key_, name_)->ViewComponent("cell", false);
-
+  if (S_next_->HasFieldEvaluator(mass_src_key_)){
+    S_next_->GetFieldEvaluator(mass_src_key_)->HasFieldChanged(S_next_.ptr(), name_);
+  }
+    
 #ifdef ALQUIMIA_ENABLED
   if (plist_->sublist("source terms").isSublist("geochemical")){
     for (auto& src : srcs_) {
