@@ -1,6 +1,6 @@
 /*
-  ATS is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
@@ -10,41 +10,25 @@
 /*!
 
 .. math::
-  Theta = (n_l * s_l + n_i * s_i + n_g * s_g * \omega_g ) * \phi * |E|
+  \Theta = (n_l s_l + n_i s_i + n_g s_g \omega_g ) \phi V
 
-* `"porosity key`" ``[string]`` **DOMAIN-porosity** 
+Specified with evaluator type: `"three phase water content`"
 
-* `"molar density liquid key`" ``[string]`` **DOMAIN-molar_density_liquid** 
-* `"saturation liquid key`" ``[string]`` **DOMAIN-saturation_liquid** 
+.. _field-evaluator-type-three-phase-water-content-spec:
+.. admonition:: field-evaluator-type-three-phase-water-content-spec
 
-* `"molar density ice key`" ``[string]`` **DOMAIN-molar_density_ice** 
-* `"saturation ice key`" ``[string]`` **DOMAIN-saturation_ice** 
+   DEPENDENCIES:
 
-* `"molar density gas key`" ``[string]`` **DOMAIN-molar_density_gas** 
-* `"saturation gas key`" ``[string]`` **DOMAIN-saturation_gas** 
-* `"mol frac gas key`" ``[string]`` **DOMAIN-mol_frac_gas** The molar fraction of water vapor in the gaseous phase.
+   - `"porosity`"
+   - `"molar density liquid`"
+   - `"saturation liquid`"
+   - `"molar density ice`"
+   - `"saturation ice`"
+   - `"molar density gas`"
+   - `"saturation gas`"
+   - `"molar fraction gas`"
+   - `"cell volume`"
 
-* `"cell volume key`" ``[string]`` **DOMAIN-cell_volume**
-
-EVALUATORS:
-- `"porosity`"
-- `"molar density liquid`"
-- `"saturation liquid`"
-- `"molar density ice`"
-- `"saturation ice`"
-- `"molar density gas`"
-- `"saturation gas`"
-- `"molar fraction gas`"
-- `"cell volume`"
-
-*/
-/*
-
-
-  Generated via evaluator_generator with:
-Water content for a three-phase, gas+liquid+ice evaluator.
-    
-  Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
 #ifndef AMANZI_FLOW_THREE_PHASE_WATER_CONTENT_EVALUATOR_HH_

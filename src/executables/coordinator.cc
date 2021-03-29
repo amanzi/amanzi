@@ -29,6 +29,7 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 
 #include "TimeStepManager.hh"
 #include "Visualization.hh"
+#include "VisualizationDomainSet.hh"
 #include "Checkpoint.hh"
 #include "UnstructuredObservations.hh"
 #include "State.hh"
@@ -82,7 +83,7 @@ void Coordinator::coordinator_init() {
 
   // create the checkpointing
   Teuchos::ParameterList& chkp_plist = parameter_list_->sublist("checkpoint");
-  checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
+  checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, *S_));
 
   // create the observations
   Teuchos::ParameterList& observation_plist = parameter_list_->sublist("observations");
@@ -144,7 +145,7 @@ void Coordinator::initialize() {
   if (restart_) {
     S_->set_time(Amanzi::ReadCheckpointInitialTime(comm_, restart_filename_));
   }
-  
+
   // Initialize the state
   *S_->GetScalarData("dt", "coordinator") = 0.;
   S_->GetField("dt","coordinator")->set_initialized();
@@ -156,10 +157,10 @@ void Coordinator::initialize() {
   // Restart from checkpoint part 2:
   // -- load all other data
   if (restart_) {
-    Amanzi::ReadCheckpoint(comm_, *S_, restart_filename_);
+    Amanzi::ReadCheckpoint(*S_, restart_filename_);
     t0_ = S_->time();
     cycle0_ = S_->cycle();
-
+    
     for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
          mesh!=S_->mesh_end(); ++mesh) {
       if (S_->IsDeformableMesh(mesh->first)) {
@@ -171,11 +172,16 @@ void Coordinator::initialize() {
   // Final checks.
   S_->CheckNotEvaluatedFieldsInitialized();
   S_->InitializeEvaluators();
+  S_->InitializeFieldCopies();
   S_->CheckAllFieldsInitialized();
 
+
+  //WriteStateStatistics(*S_, *vo_);
   // commit the initial conditions.
   pk_->CommitStep(0., 0., S_);
 
+
+  //WriteStateStatistics(*S_, *vo_);  
   // Write dependency graph.
   S_->WriteDependencyGraph();
   S_->InitializeIOFlags(); 
@@ -183,6 +189,8 @@ void Coordinator::initialize() {
   // Check final initialization
   WriteStateStatistics(*S_, *vo_);
 
+
+  
   // visualization
   auto vis_list = Teuchos::sublist(parameter_list_,"visualization");
   for (auto& entry : *vis_list) {
@@ -211,22 +219,36 @@ void Coordinator::initialize() {
 
       visualization_.push_back(vis);
 
-    } else if (boost::ends_with(domain_name, "_*")) {
+    } else if (Amanzi::Keys::isDomainSet(domain_name)) {
       // visualize domain set
-      std::string domain_set_name = domain_name.substr(0,domain_name.size()-2);
-      for (auto m=S_->mesh_begin(); m!=S_->mesh_end(); ++m) {
-        if (boost::starts_with(m->first, domain_set_name)) {
-          // visualize each subdomain
-          Teuchos::ParameterList sublist = vis_list->sublist(domain_name);
-          sublist.set<std::string>("file name base", std::string("ats_vis_")+m->first);
+      const auto& dset = S_->GetDomainSet(Amanzi::Keys::getDomainSetName(domain_name));
+      auto sublist_p = Teuchos::sublist(vis_list, domain_name);
+
+      if (sublist_p->get("visualize individually", false)) {
+        // visualize each subdomain
+        for (const auto& subdomain : *dset) {
+          Teuchos::ParameterList sublist = vis_list->sublist(subdomain);
+          sublist.set<std::string>("file name base", std::string("ats_vis_")+subdomain);
           auto vis = Teuchos::rcp(new Amanzi::Visualization(sublist));
-          vis->set_name(m->first);
-          vis->set_mesh(m->second.first);
+          vis->set_name(subdomain);
+          vis->set_mesh(S_->GetMesh(subdomain));
           vis->CreateFiles(false);
           visualization_.push_back(vis);
         }
+      } else {
+        // visualize collectively
+        auto domain_name_base = Amanzi::Keys::getDomainSetName(domain_name);
+        if (!sublist_p->isParameter("file name base"))
+          sublist_p->set("file name base", std::string("ats_vis_")+domain_name_base);
+        auto vis = Teuchos::rcp(new Amanzi::VisualizationDomainSet(*sublist_p));
+        vis->set_name(domain_name_base);
+        vis->set_mesh(dset->get_referencing_parent());
+        for (const auto& subdomain : *dset) {
+          vis->set_subdomain_mesh(subdomain, S_->GetMesh(subdomain));
+        }
+        vis->CreateFiles(false);
+        visualization_.push_back(vis);
       }
-
     }
   }
 
@@ -277,7 +299,7 @@ void Coordinator::initialize() {
 void Coordinator::finalize() {
   // Force checkpoint at the end of simulation, and copy to checkpoint_final
   pk_->CalculateDiagnostics(S_next_);
-  WriteCheckpoint(*checkpoint_, *S_next_, 0.0, true);
+  checkpoint_->Write(*S_next_, 0.0, true);
 
   // flush observations to make sure they are saved
   for (const auto& obs : observations_) obs->Flush();
@@ -396,7 +418,8 @@ void Coordinator::read_parameter_list() {
   cycle0_ = coordinator_list_->get<int>("start cycle",0);
   cycle1_ = coordinator_list_->get<int>("end cycle",-1);
   duration_ = coordinator_list_->get<double>("wallclock duration [hrs]", -1.0);
-
+  
+  subcycled_ts_ = coordinator_list_->get<bool>("subcycled timestep", false); //this is only valid for subcycling intermediate-scale model
   // restart control
   restart_ = coordinator_list_->isParameter("restart from checkpoint file");
   if (restart_) restart_filename_ = coordinator_list_->get<std::string>("restart from checkpoint file");
@@ -410,10 +433,9 @@ void Coordinator::read_parameter_list() {
 double Coordinator::get_dt(bool after_fail) {
   // get the physical step size
   double dt = pk_->get_dt();
-
-  if (dt < 0.) {
-    return dt;
-  }
+  double dt_pk = dt;
+  
+  if (dt < 0.) return dt;
 
   // check if the step size has gotten too small
   if (dt < min_dt_) {
@@ -428,7 +450,8 @@ double Coordinator::get_dt(bool after_fail) {
 
   // ask the step manager if this step is ok
   dt = tsm_->TimeStep(S_next_->time(), dt, after_fail);
-
+  if (subcycled_ts_) dt = std::min(dt, dt_pk);
+  
   return dt;
 }
 
@@ -524,7 +547,7 @@ void Coordinator::visualize(bool force) {
 
 void Coordinator::checkpoint(double dt, bool force) {
   if (force || checkpoint_->DumpRequested(S_next_->cycle(), S_next_->time())) {
-    WriteCheckpoint(*checkpoint_, *S_next_, dt);
+    checkpoint_->Write(*S_next_, dt);
   }
 }
 
@@ -543,6 +566,8 @@ void Coordinator::cycle_driver() {
     initialize();
 
   }
+
+  ////exit(0);
 
   // get the intial timestep -- note, this would have to be fixed for a true restart
   double dt = get_dt(false);
@@ -584,9 +609,7 @@ void Coordinator::cycle_driver() {
       S_->set_intermediate_time(S_->time());
 
       fail = advance(S_->time(), S_->time() + dt);
-
       dt = get_dt(fail);
-
     } // while not finished
 
 

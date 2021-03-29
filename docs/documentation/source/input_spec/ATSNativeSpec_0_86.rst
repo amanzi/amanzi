@@ -1,11 +1,10 @@
-=======================================
-ATS Native XML Input Specification V1
-=======================================
+ATS Native XML Input Specification V0.86
+****************************************
 
 .. contents:: **Table of Contents**
 
 Notes
-=====
+#####
 
 * ATS's input spec is similar, but not identical, to Amanzi's Native
   input spec.  Much of this document is stolen from Amanzi's Native Spec.
@@ -15,7 +14,7 @@ Notes
 
   
 Syntax of the Specification
-===========================
+###########################
 
 * Input specification for each ParameterList entry consists of two parts.  
   First, a bulleted list defines the usage syntax and available options.  
@@ -69,7 +68,9 @@ Conventions:
 * Bold values are default values, and are used if the Parameter
   is not provided.
 
-
+Input Spec
+##########
+  
   
 Main
 ====
@@ -983,35 +984,24 @@ For each solver, a few parameters are used:
 
 Preconditioner
 --------------
-{ Preconditioner }
+
+These can be used by a process kernel lists to define a preconditioner.  The only common parameter required by all lists is the type:
+
+ * `"preconditioner type`" ``[string]`` **"identity"**, `"boomer amg`", `"trilinos ml`", `"block ilu`" ???
+ * `"PC TYPE parameters`" ``[list]`` includes a list of parameters specific to the type of PC.
+
+Example:
+
+.. code-block:: xml
+
+     <ParameterList name="my preconditioner">
+       <Parameter name="type" type="string" value="trilinos ml"/>
+        <ParameterList name="trilinos ml parameters"> ?????? check me!
+            ... 
+        </ParameterList>
+     </ParameterList>
 
 
-Identity
-^^^^^^^^
-{ PreconditionerIdentity }
-
-Diagonal
-^^^^^^^^
-{ PreconditionerDiagonal }
-
-Block ILU
-^^^^^^^^^
-{ PreconditionerBlockILU }
-
-Boomer AMG
-^^^^^^^^^^
-{ PreconditionerBoomerAMG }
-
-Euclid
-^^^^^^
-{ PreconditionerEuclid }
-
-ML (Trilinos AMG)
-^^^^^^^^^^^^^^^^^
-{ PreconditionerML }
-
-
-     
 Hypre AMG
 ^^^^^^^^^^^^
 
@@ -1092,6 +1082,16 @@ The internal parameters of the block ILU are as follows:
      <Parameter name="schwarz: combine mode" type="string" value="Add"/>
    </ParameterList>
 
+
+Indentity
+^^^^^^^^^
+
+The default, no PC applied.
+
+
+
+NonlinearSolver
+----------------
 
 
 

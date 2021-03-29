@@ -29,18 +29,19 @@ Requires the following dependencies:
          Minimum thickness for specifying the snow gradient.
 * `"minimum fractional area [-]`" ``[double]`` **1.e-5**
          Mimimum area fraction allowed, less than this is rebalanced as zero.
-         
+
 Ordering of the area fractions calculated are: [land, water, snow].
-         
+
 NOTE: this evaluator simplifies the situation by assuming constant
 density.  This make it so that ice and water see the same geometry per
 unit pressure, which isn't quite true thanks to density differences.
 However, we hypothesize that these differences, on the surface (unlike in
 the subsurface) really don't matter much. --etc
-         
+
 */
 #include "boost/algorithm/string/predicate.hpp"
 
+#include "subgrid_microtopography.hh"
 #include "area_fractions_subgrid_evaluator.hh"
 
 namespace Amanzi {
@@ -49,7 +50,7 @@ namespace SurfaceBalance {
 // Constructor from ParameterList
 AreaFractionsSubgridEvaluator::AreaFractionsSubgridEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist)
-{ 
+{
   //
   // NOTE: this evaluator simplifies the situation by assuming constant
   // density.  This make it so that ice and water see the same geometry per
@@ -61,7 +62,7 @@ AreaFractionsSubgridEvaluator::AreaFractionsSubgridEvaluator(Teuchos::ParameterL
   if (min_area_ < 0.) {
     Errors::Message message("AreaFractionsEvaluator: Minimum fractional area should be >= 0.");
     Exceptions::amanzi_throw(message);
-  }  
+  }
 
   domain_ = Keys::getDomain(my_key_);
   if (domain_ == "surface") {
@@ -71,9 +72,9 @@ AreaFractionsSubgridEvaluator::AreaFractionsSubgridEvaluator(Teuchos::ParameterL
   }
 
   // FIXME: "maximum_ponded_depth" is a terrible name, this is a geometric thing, not a dynamic thing. --etc
-  delta_max_key_ = Keys::readKey(plist_, domain_, "microtopographic relief", "microtopographic_relief"); 
+  delta_max_key_ = Keys::readKey(plist_, domain_, "microtopographic relief", "microtopographic_relief");
   dependencies_.insert(delta_max_key_);
-  
+
   delta_ex_key_ = Keys::readKey(plist_, domain_, "excluded volume", "excluded_volume");
   dependencies_.insert(delta_ex_key_);
 
@@ -102,8 +103,9 @@ AreaFractionsSubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
   for (int c=0; c!=res.MyLength(); ++c) {
     // calculate area of land
-    double liquid_water_area = f_prime_(pd[0][c], del_max[0][c], del_ex[0][c]);
-    double wet_area = f_prime_(pd[0][c] + std::max(sd[0][c],0.0), del_max[0][c], del_ex[0][c]);
+    AMANZI_ASSERT(Flow::Microtopography::validParameters(del_max[0][c], del_ex[0][c]));
+    double liquid_water_area = Flow::Microtopography::dVolumetricDepth_dDepth(pd[0][c], del_max[0][c], del_ex[0][c]);
+    double wet_area = Flow::Microtopography::dVolumetricDepth_dDepth(pd[0][c] + std::max(sd[0][c],0.0), del_max[0][c], del_ex[0][c]);
 
     // now partition the wet area into snow and water
     if (vsd[0][c] >= wet_area * snow_subgrid_transition_) {
@@ -170,17 +172,17 @@ AreaFractionsSubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
   bool checkpoint_my_key = plist_.get<bool>("checkpoint", false);
   S->GetField(my_key_, my_key_)->set_io_checkpoint(checkpoint_my_key);
 
-  
+
   for (auto dep_key : dependencies_) {
     auto fac = S->RequireField(dep_key);
     if (Keys::getDomain(dep_key) == domain_snow_) {
       fac->SetMesh(S->GetMesh(domain_snow_))
           ->SetGhosted()
-          ->SetComponent("cell", AmanziMesh::CELL, 1);
+          ->AddComponent("cell", AmanziMesh::CELL, 1);
     } else {
       fac->SetMesh(S->GetMesh(domain_))
           ->SetGhosted()
-          ->SetComponent("cell", AmanziMesh::CELL, 1);
+          ->AddComponent("cell", AmanziMesh::CELL, 1);
     }
 
     // Recurse into the tree to propagate info to leaves.

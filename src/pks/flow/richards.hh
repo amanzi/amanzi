@@ -230,7 +230,7 @@ class Richards : public PK_PhysicalBDF_Default {
 
 public:
 
-  Richards(Teuchos::ParameterList& FElist,
+  Richards(Teuchos::ParameterList& pk_tree,
            const Teuchos::RCP<Teuchos::ParameterList>& plist,
            const Teuchos::RCP<State>& S,
            const Teuchos::RCP<TreeVector>& solution);
@@ -384,6 +384,7 @@ protected:
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_infilt_;
+  bool bc_seepage_infilt_explicit_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_infiltration_;
   double bc_rho_water_;
 

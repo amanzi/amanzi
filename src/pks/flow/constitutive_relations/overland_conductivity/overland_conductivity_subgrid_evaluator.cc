@@ -20,14 +20,16 @@ OverlandConductivitySubgridEvaluator::OverlandConductivitySubgridEvaluator(Teuch
 
   if (plist_.isParameter("height key") ||
       plist_.isParameter("ponded depth key") ||
+      plist_.isParameter("depth key") ||
       plist_.isParameter("height key suffix") ||
-      plist_.isParameter("ponded depth key suffix")) {
-    Errors::Message message("OverlandConductivitySubgrid: only use \"depth key\" or \"depth key suffix\", not \"height key\" or \"ponded depth key\".");
+      plist_.isParameter("ponded depth key suffix") ||
+      plist_.isParameter("depth key suffix")) {
+    Errors::Message message("OverlandConductivitySubgrid: only use \"mobile depth key\" or \"mobile depth key suffix\", not \"height key\" or \"ponded depth key\" or \"depth key\".");
     Exceptions::amanzi_throw(message);
   }
 
-  depth_key_ = Keys::readKey(plist_, domain, "mobile depth", "mobile_depth");
-  dependencies_.insert(depth_key_);
+  mobile_depth_key_ = Keys::readKey(plist_, domain, "mobile depth", "mobile_depth");
+  dependencies_.insert(mobile_depth_key_);
 
   slope_key_ = Keys::readKey(plist_, domain, "slope", "slope_magnitude");
   dependencies_.insert(slope_key_);
@@ -60,7 +62,7 @@ OverlandConductivitySubgridEvaluator::Clone() const {
 void OverlandConductivitySubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 {
-  Teuchos::RCP<const CompositeVector> depth = S->GetFieldData(depth_key_);
+  Teuchos::RCP<const CompositeVector> mobile_depth = S->GetFieldData(mobile_depth_key_);
   Teuchos::RCP<const CompositeVector> slope = S->GetFieldData(slope_key_);
   Teuchos::RCP<const CompositeVector> coef = S->GetFieldData(coef_key_);
 
@@ -69,8 +71,41 @@ void OverlandConductivitySubgridEvaluator::EvaluateField_(const Teuchos::Ptr<Sta
 
   Teuchos::RCP<const CompositeVector> dens = S->GetFieldData(dens_key_);
 
-  for (const auto& comp : *result) {
-    const Epetra_MultiVector& depth_v = *depth->ViewComponent(comp,false);
+  std::string comp = "cell";
+  const Epetra_MultiVector& mobile_depth_v = *mobile_depth->ViewComponent(comp,false);
+  const Epetra_MultiVector& slope_v = *slope->ViewComponent(comp,false);
+  const Epetra_MultiVector& coef_v = *coef->ViewComponent(comp,false);
+
+  const Epetra_MultiVector& frac_cond_v = *frac_cond->ViewComponent(comp,false);
+  const Epetra_MultiVector& drag_v = *drag->ViewComponent(comp,false);
+  const Epetra_MultiVector& dens_v = *S->GetFieldData(dens_key_)->ViewComponent(comp,false);
+  Epetra_MultiVector& result_v = *result->ViewComponent(comp,false);
+
+  int ncomp = result->size(comp, false);
+  for (int i=0; i!=ncomp; ++i) {
+    result_v[0][i] = model_->Conductivity(mobile_depth_v[0][i], slope_v[0][i], coef_v[0][i]);
+    result_v[0][i] *= dens_v[0][i] * std::pow(frac_cond_v[0][i], drag_v[0][i] + 1);
+  }
+
+  // NOTE: Should deal with boundary face here! --etc
+}
+
+void OverlandConductivitySubgridEvaluator::EvaluateFieldPartialDerivative_(
+    const Teuchos::Ptr<State>& S,
+    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
+{
+  Teuchos::RCP<const CompositeVector> mobile_depth = S->GetFieldData(mobile_depth_key_);
+  Teuchos::RCP<const CompositeVector> slope = S->GetFieldData(slope_key_);
+  Teuchos::RCP<const CompositeVector> coef = S->GetFieldData(coef_key_);
+
+  Teuchos::RCP<const CompositeVector> frac_cond = S->GetFieldData(frac_cond_key_);
+  Teuchos::RCP<const CompositeVector> drag = S->GetFieldData(drag_exp_key_);
+
+  Teuchos::RCP<const CompositeVector> dens = S->GetFieldData(dens_key_);
+
+  if (wrt_key == mobile_depth_key_) {
+    std::string comp = "cell";
+    const Epetra_MultiVector& mobile_depth_v = *mobile_depth->ViewComponent(comp,false);
     const Epetra_MultiVector& slope_v = *slope->ViewComponent(comp,false);
     const Epetra_MultiVector& coef_v = *coef->ViewComponent(comp,false);
 
@@ -81,86 +116,48 @@ void OverlandConductivitySubgridEvaluator::EvaluateField_(const Teuchos::Ptr<Sta
 
     int ncomp = result->size(comp, false);
     for (int i=0; i!=ncomp; ++i) {
-      result_v[0][i] = model_->Conductivity(depth_v[0][i], slope_v[0][i], coef_v[0][i]);
+      result_v[0][i] = model_->DConductivityDDepth(mobile_depth_v[0][i], slope_v[0][i], coef_v[0][i]);
       result_v[0][i] *= dens_v[0][i] * std::pow(frac_cond_v[0][i], drag_v[0][i] + 1);
-    }
-  }
-}
-
-
-void OverlandConductivitySubgridEvaluator::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
-{
-  Teuchos::RCP<const CompositeVector> depth = S->GetFieldData(depth_key_);
-  Teuchos::RCP<const CompositeVector> slope = S->GetFieldData(slope_key_);
-  Teuchos::RCP<const CompositeVector> coef = S->GetFieldData(coef_key_);
-
-  Teuchos::RCP<const CompositeVector> frac_cond = S->GetFieldData(frac_cond_key_);
-  Teuchos::RCP<const CompositeVector> drag = S->GetFieldData(drag_exp_key_);
-
-  Teuchos::RCP<const CompositeVector> dens = S->GetFieldData(dens_key_);
-
-  if (wrt_key == depth_key_) {
-    for (const auto& comp : *result) {
-      const Epetra_MultiVector& depth_v = *depth->ViewComponent(comp,false);
-      const Epetra_MultiVector& slope_v = *slope->ViewComponent(comp,false);
-      const Epetra_MultiVector& coef_v = *coef->ViewComponent(comp,false);
-
-      const Epetra_MultiVector& frac_cond_v = *frac_cond->ViewComponent(comp,false);
-      const Epetra_MultiVector& drag_v = *drag->ViewComponent(comp,false);
-      const Epetra_MultiVector& dens_v = *S->GetFieldData(dens_key_)->ViewComponent(comp,false);
-      Epetra_MultiVector& result_v = *result->ViewComponent(comp,false);
-
-      int ncomp = result->size(comp, false);
-      for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = model_->DConductivityDDepth(depth_v[0][i], slope_v[0][i], coef_v[0][i]);
-        result_v[0][i] *= dens_v[0][i] * std::pow(frac_cond_v[0][i], drag_v[0][i] + 1);
-      }
     }
 
   } else if (wrt_key == dens_key_) {
-    for (const auto& comp : *result) {
-      const Epetra_MultiVector& depth_v = *depth->ViewComponent(comp,false);
-      const Epetra_MultiVector& slope_v = *slope->ViewComponent(comp,false);
-      const Epetra_MultiVector& coef_v = *coef->ViewComponent(comp,false);
+    std::string comp = "cell";
+    const Epetra_MultiVector& mobile_depth_v = *mobile_depth->ViewComponent(comp,false);
+    const Epetra_MultiVector& slope_v = *slope->ViewComponent(comp,false);
+    const Epetra_MultiVector& coef_v = *coef->ViewComponent(comp,false);
 
-      const Epetra_MultiVector& frac_cond_v = *frac_cond->ViewComponent(comp,false);
-      const Epetra_MultiVector& drag_v = *drag->ViewComponent(comp,false);
-      const Epetra_MultiVector& dens_v = *S->GetFieldData(dens_key_)->ViewComponent(comp,false);
-      Epetra_MultiVector& result_v = *result->ViewComponent(comp,false);
+    const Epetra_MultiVector& frac_cond_v = *frac_cond->ViewComponent(comp,false);
+    const Epetra_MultiVector& drag_v = *drag->ViewComponent(comp,false);
+    const Epetra_MultiVector& dens_v = *S->GetFieldData(dens_key_)->ViewComponent(comp,false);
+    Epetra_MultiVector& result_v = *result->ViewComponent(comp,false);
 
-      int ncomp = result->size(comp, false);
-      for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = model_->Conductivity(depth_v[0][i], slope_v[0][i], coef_v[0][i]);
-        result_v[0][i] *= std::pow(frac_cond_v[0][i], drag_v[0][i] + 1);
-      }
+    int ncomp = result->size(comp, false);
+    for (int i=0; i!=ncomp; ++i) {
+      result_v[0][i] = model_->Conductivity(mobile_depth_v[0][i], slope_v[0][i], coef_v[0][i]);
+      result_v[0][i] *= std::pow(frac_cond_v[0][i], drag_v[0][i] + 1);
     }
 
   } else if (wrt_key == frac_cond_key_) {
-    for (const auto& comp : *result) {
-      const Epetra_MultiVector& depth_v = *depth->ViewComponent(comp,false);
-      const Epetra_MultiVector& slope_v = *slope->ViewComponent(comp,false);
-      const Epetra_MultiVector& coef_v = *coef->ViewComponent(comp,false);
+    std::string comp = "cell";
+    const Epetra_MultiVector& mobile_depth_v = *mobile_depth->ViewComponent(comp,false);
+    const Epetra_MultiVector& slope_v = *slope->ViewComponent(comp,false);
+    const Epetra_MultiVector& coef_v = *coef->ViewComponent(comp,false);
 
-      const Epetra_MultiVector& frac_cond_v = *frac_cond->ViewComponent(comp,false);
-      const Epetra_MultiVector& drag_v = *drag->ViewComponent(comp,false);
-      const Epetra_MultiVector& dens_v = *S->GetFieldData(dens_key_)->ViewComponent(comp,false);
-      Epetra_MultiVector& result_v = *result->ViewComponent(comp,false);
+    const Epetra_MultiVector& frac_cond_v = *frac_cond->ViewComponent(comp,false);
+    const Epetra_MultiVector& drag_v = *drag->ViewComponent(comp,false);
+    const Epetra_MultiVector& dens_v = *S->GetFieldData(dens_key_)->ViewComponent(comp,false);
+    Epetra_MultiVector& result_v = *result->ViewComponent(comp,false);
 
-      int ncomp = result->size(comp, false);
-      for (int i=0; i!=ncomp; ++i) {
-        result_v[0][i] = model_->Conductivity(depth_v[0][i], slope_v[0][i], coef_v[0][i]);
-        result_v[0][i] *= dens_v[0][i] * (drag_v[0][i] + 1) *
-                          std::pow(frac_cond_v[0][i], drag_v[0][i]);
-      }
+    int ncomp = result->size(comp, false);
+    for (int i=0; i!=ncomp; ++i) {
+      result_v[0][i] = model_->Conductivity(mobile_depth_v[0][i], slope_v[0][i], coef_v[0][i]);
+      result_v[0][i] *= dens_v[0][i] * (drag_v[0][i] + 1) *
+        std::pow(frac_cond_v[0][i], drag_v[0][i]);
     }
   } else {
     result->PutScalar(0.);
   }
 }
-
-
 void OverlandConductivitySubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   // Ensure my field exists.  Requirements should be already set.
   AMANZI_ASSERT(my_key_ != std::string(""));
@@ -193,6 +190,10 @@ void OverlandConductivitySubgridEvaluator::EnsureCompatibility(const Teuchos::Pt
       }
       Teuchos::RCP<CompositeVectorSpace> fac = S->RequireField(key);
       fac->Update(*dep_fac);
+
+      if (key == mobile_depth_key_ && my_fac->HasComponent("boundary_face")) {
+        fac->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+      }
     }
 
     // Recurse into the tree to propagate info to leaves.
@@ -201,8 +202,6 @@ void OverlandConductivitySubgridEvaluator::EnsureCompatibility(const Teuchos::Pt
     }
   }
 }
-
-
 
 } // namespace Flow
 } // namespace Amanzi

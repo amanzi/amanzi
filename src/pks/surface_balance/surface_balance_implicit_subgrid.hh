@@ -1,6 +1,6 @@
 /*
-  ATS is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
@@ -21,7 +21,7 @@ There is also some wierd hackiness here about area fractions -- see ATS Issue
 .. _subgrid-balance-pk-spec:
 .. admonition:: subgrid-balance-pk-spec
 
-    * `"absolute error tolerance`" ``[double]`` **0.01** ``[m]``    
+    * `"absolute error tolerance`" ``[double]`` **0.01** ``[m]``
 
     INCLUDES:
 
@@ -40,7 +40,7 @@ There is also some wierd hackiness here about area fractions -- see ATS Issue
       model fractional areas, see note above. `[-]`
     * `"snow death rate key`" ``[string]`` **LAYER-death_rate** Deals with last
       tiny bit of snowmelt.
-    
+
 */
 
 
@@ -73,11 +73,10 @@ public:
   virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
           Teuchos::RCP<TreeVector> u) override;
 
-
   virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
   ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
                    Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) override;
-  
+
   // computes the non-linear functional g = g(t,u,udot)
   virtual void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                    Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) override;

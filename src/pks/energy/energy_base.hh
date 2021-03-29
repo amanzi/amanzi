@@ -308,6 +308,7 @@ public:
   bool coupled_to_subsurface_via_flux_;
   bool coupled_to_surface_via_temp_;
   bool coupled_to_surface_via_flux_;
+  bool decoupled_from_subsurface_;
 
   // Keys
   Key ss_primary_key_;
@@ -321,8 +322,8 @@ public:
   Key dconductivity_key_;
   Key duw_conductivity_key_;
   Key source_key_;
-  //  Key mass_source_key_;
   Key ss_flux_key_;
+  Key uf_key_;
 };
 
 } // namespace Energy

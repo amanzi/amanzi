@@ -45,6 +45,7 @@ EnergyBase::EnergyBase(Teuchos::ParameterList& FElist,
     coupled_to_subsurface_via_flux_(false),
     coupled_to_surface_via_temp_(false),
     coupled_to_surface_via_flux_(false),
+    decoupled_from_subsurface_(false),
     niter_(0),
     flux_exists_(true),
     implicit_advection_(true)
@@ -75,6 +76,7 @@ EnergyBase::EnergyBase(Teuchos::ParameterList& FElist,
   adv_energy_flux_key_ = Keys::readKey(*plist_, domain_, "advected energy flux", "advected_energy_flux");
   conductivity_key_ = Keys::readKey(*plist_, domain_, "thermal conductivity", "thermal_conductivity");
   uw_conductivity_key_ = Keys::readKey(*plist_, domain_, "upwinded thermal conductivity", "upwind_thermal_conductivity");
+  uf_key_ = Keys::readKey(*plist_, domain_, "unfrozen fraction", "unfrozen_fraction");
 }
 
 
@@ -237,8 +239,8 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S)
     ->SetGhosted()
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-  if (!S->FEList().isSublist(enthalpy_key_)) {
-    Teuchos::ParameterList& enth_list = S->FEList().sublist(enthalpy_key_);
+  if (plist_->isSublist("enthalpy evaluator")) {
+    Teuchos::ParameterList& enth_list = S->GetEvaluatorList(enthalpy_key_);
     enth_list.setParameters(plist_->sublist("enthalpy evaluator"));
     enth_list.set<std::string>("field evaluator type", "enthalpy");
   }
@@ -288,6 +290,8 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S)
       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
+  decoupled_from_subsurface_ = plist_->get<bool>("decoupled from subsurface", false); //surface-only system
+  
   // -- Make sure coupling isn't flagged multiple ways.
   if (coupled_to_surface_via_flux_ && coupled_to_surface_via_temp_) {
     Errors::Message message("Energy PK requested both flux and temperature coupling -- choose one.");
@@ -625,7 +629,7 @@ bool EnergyBase::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
 
 
 
-  if (minT < 200.0 || maxT > 300.0) {
+  if (minT < 200.0 || maxT > 330.0) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       *vo_->os() << " is not admissible, as it is not within bounds of constitutive models:" << std::endl;
       ENorm_t global_minT_c, local_minT_c;

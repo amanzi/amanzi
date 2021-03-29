@@ -15,26 +15,33 @@ namespace Flow {
 WaterTableColumnsEvaluator::WaterTableColumnsEvaluator(Teuchos::ParameterList& plist)
     : SecondaryVariableFieldEvaluator(plist)
 {
-  domain_ = Keys::getDomain(my_key_);
-  auto pos = domain_.find_last_of('_');
-  int col_id = std::stoi(domain_.substr(pos+1, domain_.size()));
+  Key dset_name = plist.get<std::string>("domain set name", "column");
+  Key surf_dset_name = plist.get<std::string>("surface domain set name", "surface_column");
   
-  std::stringstream domain_ss;
-  domain_ss << "column_"<< col_id;
-  temp_key_ = Keys::getKey(domain_ss.str(),"temperature");
+  domain_ = Keys::getDomain(my_key_); //surface_column domain
+  int col_id = Keys::getDomainSetIndex<int>(domain_);
+  
+  Key domain_ss = Keys::getDomainInSet(dset_name, col_id);
+  Key domain_sf = Keys::getDomainInSet(surf_dset_name, col_id);
+  
+  temp_key_ = Keys::readKey(plist, domain_ss, "temperature", "temperature");
   dependencies_.insert(temp_key_);
   
-  sat_key_ = Keys::getKey(domain_ss.str(),"saturation_liquid");
+  sat_key_ = Keys::readKey(plist, domain_ss, "saturation liquid", "saturation_liquid");
   dependencies_.insert(sat_key_);
 
-  trans_width_ =  plist_.get<double>("transition width [K]", 0.2);
+  pd_key_ = Keys::readKey(plist, domain_sf, "ponded depth", "ponded_depth");
+  dependencies_.insert(pd_key_);
+  
+  trans_width_ =  plist_.get<double>("transition width [K]", 0.0);
 }
   
 
 WaterTableColumnsEvaluator::WaterTableColumnsEvaluator(const WaterTableColumnsEvaluator& other)
   : SecondaryVariableFieldEvaluator(other),
     temp_key_(other.temp_key_),
-    sat_key_(other.sat_key_)
+    sat_key_(other.sat_key_),
+    pd_key_(other.pd_key_)
 {}
   
 Teuchos::RCP<FieldEvaluator>
@@ -60,23 +67,28 @@ WaterTableColumnsEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
   const auto& temp_c = *S->GetFieldData(temp_key_)->ViewComponent("cell", false);
   const auto& sat_c = *S->GetFieldData(sat_key_)->ViewComponent("cell", false);
-
+  const auto& pd_c = *S->GetFieldData(pd_key_)->ViewComponent("cell", false);
+  
   int col_cells = temp_c.MyLength();
   bool water_flag = false;
 
-  for (int i=0; i!=col_cells; ++i) {
-    if (sat_c[0][i] == 1.0) {
-      z_centroid = S->GetMesh(domain_ss)->face_centroid(i);
-      water_flag = true;
-      break;
-    }
+  if (pd_c[0][0] >0) {
+    res_c[0][0] = top_z_centroid[2] + pd_c[0][0];
   }
-  
-  if (water_flag)
-    res_c[0][0] = top_z_centroid[2] - z_centroid[2];
-  else
-    res_c[0][0] = -100; // no water table
- 
+  else {
+    for (int i=0; i!=col_cells; ++i) {
+      if (sat_c[0][i] == 1.0) {
+        z_centroid = S->GetMesh(domain_ss)->face_centroid(i+1);
+        water_flag = true;
+        break;
+      }
+    }
+    if (water_flag)
+      res_c[0][0] = z_centroid[2];
+    else
+      res_c[0][0] = res_c[0][0]; // water table location unchanged (frozen)
+  }
+
 }
   
 void

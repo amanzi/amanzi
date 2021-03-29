@@ -45,7 +45,7 @@ class FractionalConductanceEvaluator : public SecondaryVariableFieldEvaluator {
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
  private:
-  Key pdd_key_, pd_key_, vpd_key_;
+  Key mobile_depth_key_, pd_key_, vpd_key_;
   Key depr_depth_key_, delta_ex_key_, delta_max_key_;
 
  private:

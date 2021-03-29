@@ -87,7 +87,7 @@ Richards::Richards(Teuchos::ParameterList& pk_tree,
   sat_ice_key_ = Keys::readKey(*plist_, domain_, "saturation ice", "saturation_ice");
 
   // set up an additional primary variable evaluator for flux
-  Teuchos::ParameterList& pv_sublist = S->FEList().sublist(flux_key_);
+  Teuchos::ParameterList& pv_sublist = S->GetEvaluatorList(flux_key_);
   pv_sublist.set("field evaluator type", "primary variable");
 }
 
@@ -125,7 +125,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S)
   bc_flux_ = bc_factory.CreateMassFlux();
   bc_seepage_ = bc_factory.CreateSeepageFacePressure();
   bc_seepage_->Compute(0.); // compute at t=0 to set up
-  bc_seepage_infilt_ = bc_factory.CreateSeepageFacePressureWithInfiltration();
+  std::tie(bc_seepage_infilt_explicit_, bc_seepage_infilt_) =
+    bc_factory.CreateSeepageFacePressureWithInfiltration();
   bc_seepage_infilt_->Compute(0.); // compute at t=0 to set up
   bc_rho_water_ = bc_plist.get<double>("hydrostatic water density [kg m^-3]",1000.);
 
@@ -133,7 +134,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S)
   perm_scale_ = plist_->get<double>("permeability rescaling", 1.e7);
 
   // permeability type - scalar or tensor?
-  Teuchos::ParameterList& perm_list = S->FEList().sublist(perm_key_);
+  Teuchos::ParameterList& perm_list = S->GetEvaluatorList(perm_key_);
   std::string perm_type = perm_list.get<std::string>("permeability type", "scalar");
   if (perm_type == "scalar") {
     perm_tensor_rank_ = 1;
@@ -414,22 +415,14 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // This deals with deprecated location for the WRM list (in the PK).  Move it
   // to state.
   if (plist_->isSublist("water retention evaluator")) {
-    if (S->FEList().isSublist(sat_key_)) {
-      Errors::Message message("Sublists exist in both RichardsPK->water retention evaluator and state->field evaluators->");
-      message << sat_key_ << ".  Only use one (preferably that in State)";
-      Exceptions::amanzi_throw(message);
-    } else {
-      Teuchos::ParameterList wrm_plist(plist_->sublist("water retention evaluator"));
-      wrm_plist.setName(sat_key_);
-      wrm_plist.set("field evaluator type", "WRM");
-      S->FEList().set(sat_key_, wrm_plist);
-    }
+    auto& wrm_plist = S->GetEvaluatorList(sat_key_);
+    wrm_plist.setParameters(plist_->sublist("water retention evaluator"));
+    wrm_plist.set("field evaluator type", "WRM");
   }
-  if (!S->HasFieldEvaluator(coef_key_) && !S->FEList().isSublist(coef_key_)) {
-    Teuchos::ParameterList kr_plist(S->FEList().sublist(sat_key_));
-    kr_plist.setName(coef_key_);
+  if (!S->HasFieldEvaluator(coef_key_) && (S->GetEvaluatorList(coef_key_).numParams() == 0)) {
+    Teuchos::ParameterList& kr_plist = S->GetEvaluatorList(coef_key_);
+    kr_plist.setParameters(S->GetEvaluatorList(sat_key_));
     kr_plist.set("field evaluator type", "WRM rel perm");
-    S->FEList().set(coef_key_, kr_plist);
   }
 
   // -- saturation
@@ -450,7 +443,7 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   names2[1] = "boundary_face";
   S->RequireField(coef_key_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponents(names2, locations2, num_dofs2);
-  S->FEList().sublist(coef_key_).set<double>("permeability rescaling", perm_scale_);
+  S->GetEvaluatorList(coef_key_).set<double>("permeability rescaling", perm_scale_);
   S->RequireFieldEvaluator(coef_key_);
 
   // -- get the WRM models
@@ -1137,6 +1130,16 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr)
   // seepage face -- pressure <= p_atm, outward mass flux is specified
   bc_counts.push_back(bc_seepage_infilt_->size());
   bc_names.push_back("seepage with infiltration");
+  {
+    Teuchos::Ptr<State> Sl;
+    if (bc_seepage_infilt_explicit_ && S_inter_.get()) {
+      Sl = S_inter_.ptr();
+    } else {
+      Sl = S;
+    }
+    const Epetra_MultiVector& flux = *Sl->GetFieldData(flux_key_)->ViewComponent("face", true);
+    Teuchos::RCP<const CompositeVector> u = Sl->GetFieldData(key_);
+  int i = 0;
   for (const auto& bc : *bc_seepage_infilt_) {
     int f = bc.first;
 #ifdef ENABLE_DBC
@@ -1148,39 +1151,47 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr)
     double flux_seepage_tol = std::abs(bc.second) * .001;
     double boundary_pressure = getFaceOnBoundaryValue(f, *u, *bc_);
     double boundary_flux = flux[0][f]*getBoundaryDirection(*mesh_, f);
-    //    std::cout << "BFlux = " << boundary_flux << " with constraint = " << bc.second - flux_seepage_tol << std::endl;
+
+    if (i == 0)
+      std::cout << "BFlux = " << boundary_flux << " with constraint = " << bc.second - flux_seepage_tol << std::endl;
 
     if (boundary_flux < bc.second - flux_seepage_tol &&
         boundary_pressure > p_atm + seepage_tol) {
       // both constraints are violated, either option should push things in the right direction
       markers[f] = Operators::OPERATOR_BC_DIRICHLET;
       values[f] = p_atm;
-      //      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in DIRICHLET pressure " << p_atm << std::endl;
+      if (i == 0)
+        std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*getBoundaryDirection(*mesh_, f) << " resulted in DIRICHLET pressure " << p_atm << std::endl;
 
     } else if (boundary_flux >= bc.second - flux_seepage_tol &&
         boundary_pressure > p_atm - seepage_tol) {
       // max pressure condition violated
       markers[f] = Operators::OPERATOR_BC_DIRICHLET;
       values[f] = p_atm;
-      //      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in DIRICHLET pressure " << p_atm << std::endl;
+    if (i == 0)
+      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*getBoundaryDirection(*mesh_, f) << " resulted in DIRICHLET pressure " << p_atm << std::endl;
 
     } else if (boundary_flux < bc.second - flux_seepage_tol &&
         boundary_pressure <= p_atm + seepage_tol) {
       // max infiltration violated
       markers[f] = Operators::OPERATOR_BC_NEUMANN;
       values[f] = bc.second;
-      //      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in NEUMANN flux " << bc.second << std::endl;
+    if (i == 0)
+      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*getBoundaryDirection(*mesh_, f) << " resulted in NEUMANN flux " << bc.second << std::endl;
 
     } else if (boundary_flux >= bc.second - flux_seepage_tol &&
         boundary_pressure <= p_atm - seepage_tol) {
       // both conditions are valid
       markers[f] = Operators::OPERATOR_BC_NEUMANN;
       values[f] = bc.second;
-      //      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in NEUMANN flux " << bc.second << std::endl;
+    if (i == 0)
+      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*getBoundaryDirection(*mesh_, f) << " resulted in NEUMANN flux " << bc.second << std::endl;
 
     } else {
       AMANZI_ASSERT(0);
     }
+    i++;
+  }
   }
 
   // surface coupling

@@ -61,7 +61,7 @@ void OverlandPressureFlow::FunctionalResidual( double t_old,
   vnames.push_back("h_old");
   vnames.push_back("h_new");
   vnames.push_back("h+z");
-  if (plist_->get<bool>("subgrid model", false)) {
+  if (plist_->isSublist("overland conductivity subgrid evaluator")) {
     vnames.push_back("pd - dd");
     vnames.push_back("frac_cond");
   }
@@ -75,8 +75,8 @@ void OverlandPressureFlow::FunctionalResidual( double t_old,
   vecs.push_back(S_next_->GetFieldData(pd_key_).ptr());
   vecs.push_back(S_next_->GetFieldData(potential_key_).ptr());
 
-  if (plist_->get<bool>("subgrid model", false)) {
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"ponded_depth_minus_depression_depth")).ptr());
+  if (plist_->isSublist("overland conductivity subgrid evaluator")) {
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"mobile_depth")).ptr());
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"fractional_conductance")).ptr());
   }
   db_->WriteVectors(vnames, vecs, true);
@@ -264,7 +264,7 @@ void OverlandPressureFlow::UpdatePreconditioner(double t,
   // if (S_next_->GetFieldEvaluator(source_key_)->IsDependency(S_next_.ptr(), key_)) {
   //   S_next_->GetFieldEvaluator(source_key_)
   //       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-  //   std::string dkey = std::string("d")+source_key_+std::string("_d")+key_;
+  //   Key dkey = Keys::getDerivKey(source_key_,key_);
   //   const Epetra_MultiVector& dq_dp = *S_next_->GetFieldData(dkey)
   //       ->ViewComponent("cell",false);
 

@@ -125,17 +125,18 @@ struct ModelParams {
       water_ground_transition_depth(0.02),
       evap_transition_width(100.), // transition on evaporation from surface to evaporation from subsurface [m]
       gravity(9.807),
-      Clapp_Horn_b(1.),          // Clapp and Hornberger "b" [-]
+      Clapp_Horn_b(1.),         // Clapp and Hornberger "b" [-]
       R_ideal_gas(461.52)       // ideal gas law R? [Pa m^3 kg^-1 K^-1]
   {}         // gravity [kg m / s^2]
-  
+
   ModelParams(Teuchos::ParameterList& plist) :
       ModelParams() {
     thermalK_freshsnow = plist.get<double>("thermal conductivity of fresh snow [W m^-1 K^-1]", thermalK_freshsnow);
     thermalK_snow_exp = plist.get<double>("thermal conductivity of snow aging exponent [-]", thermalK_snow_exp);
     density_snow_max = plist.get<double>("max density of snow [kg m^-3]", density_snow_max);
+    evap_transition_width = plist.get<double>("evaporation transition width [Pa]", evap_transition_width);
   }
-  
+
   double density_air;
   double density_water;
   double density_freshsnow;
@@ -143,7 +144,6 @@ struct ModelParams {
   double density_snow_max;
   double thermalK_freshsnow;
   double thermalK_snow_exp;
-  
   double Hf, Ls, Le, Cp_air, Cv_water;
   double R_ideal_gas;
 
@@ -151,7 +151,7 @@ struct ModelParams {
   double VKc;
   double stephB;
   double Clapp_Horn_b;
-  
+
   // other constants
   double Apa;
   double evap_transition_width;
