@@ -404,11 +404,20 @@ endif()
 # LAPACK/BLAS Configuration 
 # ############################################################################ #
 
+message(STATUS ">>> Amanzi: Starting Search for BLAS and LAPACK.")
+
 # Search for BLAS (Basic Linear Algebra Subprograms) http://www.netlib.org/blas
+set(AMANZI_BLA_VENDOR "Generic")
+set(BLA_VENDOR ${AMANZI_BLA_VENDOR})
+#set(BLA_DIR "/usr/lib/x86_64-linux-gnu/openblas")
+set(BLA_DIR ${TPL_BLAS_DIR})
+
+# set(BLA_VENDOR "OpenBLAS")
 find_package(BLAS REQUIRED)
 message(STATUS ">>>  BLAS_LIBRARIES = ${BLAS_LIBRARIES}") 
 
 # Search for LAPACK (Linear Algebra PACKage) http://www/netlib.org/lapack
+set(LAPCK_DIR ${TPL_LAPACK_DIR})
 find_package(LAPACK REQUIRED)
 message(STATUS ">>>  LAPACK_LIBRARIES = ${LAPACK_LIBRARIES}") 
 

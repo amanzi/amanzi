@@ -88,6 +88,9 @@ mpi_root_dir=
 mpi_exec_args=
 
 # TPL (Third Party Libraries)
+# BLAS / LAPACK
+tpl_blas_dir=
+tpl_lapack_dir=
 
 # Spack
 Spack=$FALSE
@@ -408,6 +411,15 @@ Tool definitions:
   --with-xsdk=DIR            use libraries already available in xSDK installation in lieu of
                              downloading and installing them individually. ['"${xsdk_root_dir}"']
 
+System/Vendor Supported Third Party Libraries (TPLs):
+Bootstrap builds community supported TPLs, however, some TPLs have vendor or compiler optimized versions
+and are provided on the system.  Some of these libraries may be in nonstandard locations.
+
+  --with-blas=DIR                Search for the BLAS libraries only in DIR
+                                 [default is blank so CMake searches in system directories] 
+
+  --with-lapack=DIR              Search for the LAPACK libraries only in DIR
+                                 [default is blank so CMake searches in system directories] 
 
 Directories and file names: 
 
@@ -494,6 +506,8 @@ Build configuration:
     trilinos_build_type = '"${trilinos_build_type}"'
     tpls_build_type     = '"${tpls_build_type}"'
     tpl_config_file     = '"${tpl_config_file}"'
+    tpl_blas_dir        = '"${tpl_blas_dir}"'
+    tpl_lapack_dir      = '"${tpl_lapack_dir}"'
     amanzi_arch         = '"${amanzi_arch}"'
 
 Amanzi Components:   
@@ -707,6 +721,16 @@ List of INPUT parameters
                  XSDK=TRUE
                  ;;
 
+      --with-blas=*)
+                 tmp=`parse_option_with_equal "${opt}" 'with-blas'`
+                 tpl_blas_dir=$tmp
+                 ;;
+
+      --with-lapack=*)
+                 tmp=`parse_option_with_equal "${opt}" 'with-lapack'`
+                 tpl_lapack_dir=$tmp
+                 ;;
+
       --amanzi-build-dir=*)
                  tmp=`parse_option_with_equal "${opt}" 'amanzi-build-dir'`
                  amanzi_build_dir=`make_fullpath $tmp`
@@ -869,6 +893,16 @@ List of INPUT parameters
       warning_message "Enabling 'superlu' as required by 'hypre'"
       superlu=${TRUE}
     fi
+  fi
+
+  # BLAS
+  if [ ! -z "${tpl_blas_dir}" ]; then
+      tpl_blas_opts=-DTPL_BLAS_DIR:FILEPATH=${tpl_blas_dir}
+  fi
+
+  # LAPACK
+  if [ ! -z "${tpl_lapack_dir}" ]; then
+      tpl_lapack_opts=-DTPL_LAPACK_DIR:FILEPATH=${tpl_lapack_dir}
   fi
   
   # deprecated options
@@ -1452,8 +1486,6 @@ function define_install_directories
   status_message "TPL installation: ${tpl_install_prefix}"
 }    
 
-
-
 # ---------------------------------------------------------------------------- #
 # Arch-specific functions
 # ---------------------------------------------------------------------------- #
@@ -1707,6 +1739,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DBUILD_SHARED_LIBS:BOOL=${shared} \
       -DTPL_DOWNLOAD_DIR:FILEPATH=${tpl_download_dir} \
       -DDISABLE_EXTERNAL_DOWNLOAD=${disable_external_downloads} \
+      ${tpl_blas_opts} ${tpl_lapack_opts} \
       ${arch_tpl_opts} \
       ${tpl_build_src_dir}"
 

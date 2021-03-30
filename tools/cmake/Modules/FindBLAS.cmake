@@ -88,6 +88,8 @@ The following variables may be set to influence this module's behavior:
   if set ``pkg-config`` will be used to search for a BLAS library first
   and if one is found that is preferred
 
+``BLA_DIR``
+  
 Imported targets
 ^^^^^^^^^^^^^^^^
 
@@ -219,15 +221,25 @@ macro(CHECK_BLAS_LIBRARIES LIBRARIES _prefix _name _flags _list _threadlibs _add
   set(_combined_name)
 
   set(_extaddlibdir "${_addlibdir}")
-  if(WIN32)
-    list(APPEND _extaddlibdir ENV LIB)
-  elseif(APPLE)
-    list(APPEND _extaddlibdir ENV DYLD_LIBRARY_PATH)
+  if(BLA_DIR)
+    # User told us where to look
+    # "/usr/lib/x86_64-linux-gnu/openblas"
+    list(APPEND _extaddlibdir ${BLA_DIR})
   else()
-    list(APPEND _extaddlibdir ENV LD_LIBRARY_PATH)
+    if(WIN32)
+      list(APPEND _extaddlibdir ENV LIB)
+    elseif(APPLE)
+      list(APPEND _extaddlibdir ENV DYLD_LIBRARY_PATH)
+    else()
+      list(APPEND _extaddlibdir ENV LD_LIBRARY_PATH)
+    endif()
+    list(APPEND _extaddlibdir "${CMAKE_C_IMPLICIT_LINK_DIRECTORIES}")
   endif()
-  list(APPEND _extaddlibdir "${CMAKE_C_IMPLICIT_LINK_DIRECTORIES}")
 
+  #set(_extaddlibdir "/packages/lib")
+  message(STATUS ">>>>>> JDM: directories to search = ${_extaddlibdir}")
+  message(STATUS ">>>>>> JDM: library list = ${_list}")
+  
   foreach(_library ${_list})
     if(_library MATCHES "^-Wl,--(start|end)-group$")
       # Respect linker flags like --start/end-group (required by MKL)
@@ -238,13 +250,16 @@ macro(CHECK_BLAS_LIBRARIES LIBRARIES _prefix _name _flags _list _threadlibs _add
         set(_combined_name ${_combined_name}_threadlibs)
       endif()
       if(_libraries_work)
+	message(STATUS ">>>>>> JDM: in find library PATHS = ${_extaddlibdir} PATH_SUFFIXES = ${_subdirs}")
+	message(STATUS ">>>>>> JDM: in find library NAMES = ${_library}")
         find_library(${_prefix}_${_library}_LIBRARY
           NAMES ${_library}
           NAMES_PER_DIR
           PATHS ${_extaddlibdir}
-          PATH_SUFFIXES ${_subdirs}
+	  PATH_SUFFIXES ${_subdirs}
+	  NO_DEFAULT_PATH
         )
-        #message("DEBUG: find_library(${_library}) got ${${_prefix}_${_library}_LIBRARY}")
+        message("DEBUG: find_library(${_library}) got ${${_prefix}_${_library}_LIBRARY}")
         mark_as_advanced(${_prefix}_${_library}_LIBRARY)
         set(${LIBRARIES} ${${LIBRARIES}} ${${_prefix}_${_library}_LIBRARY})
         set(_libraries_work ${${_prefix}_${_library}_LIBRARY})
