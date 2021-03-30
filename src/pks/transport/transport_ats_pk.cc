@@ -121,7 +121,7 @@ void Transport_ATS::Setup(const Teuchos::Ptr<State>& S)
   molar_density_key_ = Keys::readKey(*plist_, domain_, "molar density", "molar_density_liquid");
   tcc_matrix_key_ = Keys::readKey(*plist_, domain_, "tcc matrix", "total_component_concentration_matrix");
   solid_residue_mass_key_ =  Keys::readKey(*plist_, domain_, "solid residue", "solid_residue_mass");
-  mass_src_key_ = Keys::readKey(*plist_, domain_, "mass source", "mass_source");
+  mass_src_key_ = Keys::readKey(*plist_, domain_, "water source", "water_source");
   geochem_src_factor_key_ = Keys::readKey(*plist_, domain_, "geochem source factor", "geochem_src_factor");
   water_content_key_ = Keys::readKey(*plist_, domain_, "water content", "water_content");
   cv_key_ = Keys::readKey(*plist_, domain_, "cell volume", "cell_volume");

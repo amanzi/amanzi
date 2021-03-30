@@ -292,7 +292,7 @@ public:
   bool is_source_term_;
   bool is_source_term_differentiable_;
   bool is_source_term_finite_differentiable_;
-  bool is_mass_source_term_;
+  bool is_water_source_term_;
   bool implicit_advection_;
   bool implicit_advection_in_pc_;
   bool precon_used_;

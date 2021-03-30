@@ -22,7 +22,7 @@ AdvectedEnergySourceEvaluator::AdvectedEnergySourceEvaluator(const AdvectedEnerg
     SecondaryVariableFieldEvaluator(other),
     internal_enthalpy_key_(other.internal_enthalpy_key_),
     external_enthalpy_key_(other.external_enthalpy_key_),
-    mass_source_key_(other.mass_source_key_),
+    water_source_key_(other.water_source_key_),
     internal_density_key_(other.internal_density_key_),
     external_density_key_(other.external_density_key_),
     cell_vol_key_(other.cell_vol_key_),
@@ -44,7 +44,7 @@ AdvectedEnergySourceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       ->ViewComponent("cell",false);
   const Epetra_MultiVector& ext_enth = *S->GetFieldData(external_enthalpy_key_)
       ->ViewComponent("cell",false);
-  const Epetra_MultiVector& mass_source = *S->GetFieldData(mass_source_key_)
+  const Epetra_MultiVector& water_source = *S->GetFieldData(water_source_key_)
       ->ViewComponent("cell",false);
   const Epetra_MultiVector& cv = *S->GetFieldData(cell_vol_key_)
       ->ViewComponent("cell",false);
@@ -59,25 +59,25 @@ AdvectedEnergySourceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     unsigned int ncells = res.MyLength();
     for (unsigned int c=0; c!=ncells; ++c) {
-      if (mass_source[0][c] > 0.) { // positive indicates increase of water in surface
+      if (water_source[0][c] > 0.) { // positive indicates increase of water in surface
         // upwind, take external values
-        res[0][c] = mass_source[0][c] * ext_dens[0][c] * ext_enth[0][c];
+        res[0][c] = water_source[0][c] * ext_dens[0][c] * ext_enth[0][c];
       } else {
         // upwind, take internal values
-        res[0][c] = mass_source[0][c] * int_dens[0][c] * int_enth[0][c];
+        res[0][c] = water_source[0][c] * int_dens[0][c] * int_enth[0][c];
       }
     }
 
   } else {
     unsigned int ncells = res.MyLength();
     for (unsigned int c=0; c!=ncells; ++c) {
-      if (mass_source[0][c] > 0.) { // positive indicates increase of water in surface
+      if (water_source[0][c] > 0.) { // positive indicates increase of water in surface
         // upwind, take external values
-        res[0][c] = mass_source[0][c] * ext_enth[0][c];
+        res[0][c] = water_source[0][c] * ext_enth[0][c];
       } else {
         // upwind, take internal values
-        res[0][c] = mass_source[0][c] * int_enth[0][c];
-        //std::cout << "Advected E-source air-surf = " << mass_source[0][c] << " * " << int_enth[0][c] << " = " << res[0][c] << std::endl;
+        res[0][c] = water_source[0][c] * int_enth[0][c];
+        //std::cout << "Advected E-source air-surf = " << water_source[0][c] << " * " << int_enth[0][c] << " = " << res[0][c] << std::endl;
       }
     }
   }
@@ -116,15 +116,15 @@ AdvectedEnergySourceEvaluator::InitializeFromPlist_() {
   std::string domain = Keys::getDomain(my_key_);
 
   internal_enthalpy_key_ = Keys::readKey(plist_, domain, "internal enthalpy", "enthalpy");
-  external_enthalpy_key_ = Keys::readKey(plist_, domain, "external enthalpy", "mass_source_enthalpy");
-  mass_source_key_ = Keys::readKey(plist_, domain, "mass source", "mass_source");
+  external_enthalpy_key_ = Keys::readKey(plist_, domain, "external enthalpy", "water_source_enthalpy");
+  water_source_key_ = Keys::readKey(plist_, domain, "water source", "water_source");
 
   dependencies_.insert(internal_enthalpy_key_);
   dependencies_.insert(external_enthalpy_key_);
-  dependencies_.insert(mass_source_key_);
+  dependencies_.insert(water_source_key_);
 
   // this handles both surface fluxes (in m/s) and subsurface fluxes (in mol/s)
-  std::string source_units = plist_.get<std::string>("mass source units");
+  std::string source_units = plist_.get<std::string>("water source units");
   if (source_units == "mol s^-1") {
     source_units_ = SOURCE_UNITS_MOLS_PER_SECOND;
   } else if (source_units == "m s^-1") {
