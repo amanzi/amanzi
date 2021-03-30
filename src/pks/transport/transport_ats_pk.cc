@@ -122,6 +122,7 @@ void Transport_ATS::Setup(const Teuchos::Ptr<State>& S)
   tcc_matrix_key_ = Keys::readKey(*plist_, domain_, "tcc matrix", "total_component_concentration_matrix");
   solid_residue_mass_key_ =  Keys::readKey(*plist_, domain_, "solid residue", "solid_residue_mass");
   mass_src_key_ = Keys::readKey(*plist_, domain_, "mass source", "mass_source");
+  geochem_src_factor_key_ = Keys::readKey(*plist_, domain_, "geochem source factor", "geochem_src_factor");
   water_content_key_ = Keys::readKey(*plist_, domain_, "water content", "water_content");
   cv_key_ = Keys::readKey(*plist_, domain_, "cell volume", "cell_volume");
 
@@ -202,6 +203,17 @@ void Transport_ATS::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField(mass_src_key_, mass_src_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(mass_src_key_);
+    
+    S->RequireField(geochem_src_factor_key_, geochem_src_factor_key_)->SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+
+    Teuchos::ParameterList& wc_eval = S->FEList().sublist(geochem_src_factor_key_);
+    wc_eval.set<std::string>("field evaluator type", "reciprocal evaluator");
+    std::vector<std::string> dep(2);
+    dep[0] = mass_src_key_; dep[1] = molar_density_key_;
+    wc_eval.set<Teuchos::Array<std::string> >("evaluator dependencies", dep);   
+    S->RequireFieldEvaluator(geochem_src_factor_key_);
+
   }
 
   // require multiscale fields
@@ -476,12 +488,12 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
       Teuchos::RCP<TransportSourceFunction_Alquimia_Units>
           src = Teuchos::rcp(new TransportSourceFunction_Alquimia_Units(spec, mesh_, chem_pk_, chem_engine_));
 
-      if (S->HasFieldEvaluator(mass_src_key_)){
-        S->GetFieldEvaluator(mass_src_key_)->HasFieldChanged(S.ptr(), name_);
+      if (S->HasFieldEvaluator(geochem_src_factor_key_)){
+        S->GetFieldEvaluator(geochem_src_factor_key_)->HasFieldChanged(S.ptr(), name_);
       }
 
-      auto mass_src = S->GetFieldData(mass_src_key_)->ViewComponent("cell",false);
-      src->set_conversion(-1000., mass_src, false);
+      auto src_factor = S->GetFieldData(geochem_src_factor_key_)->ViewComponent("cell",false);
+      src->set_conversion(-1000., src_factor, false);
 
       for (const auto& n : src->tcc_names()) {
         src->tcc_index().push_back(FindComponentNumber(n));

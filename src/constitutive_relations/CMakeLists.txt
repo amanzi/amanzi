@@ -118,6 +118,12 @@ register_evaluator_with_factory(
   )
 
 register_evaluator_with_factory(
+  HEADERFILE generic_evaluators/ReciprocalEvaluator_reg.hh
+  LISTNAME ATS_RELATIONS_REG
+  )
+
+
+register_evaluator_with_factory(
   HEADERFILE generic_evaluators/SubgridDisaggregateEvaluator_reg.hh
   LISTNAME ATS_RELATIONS_REG
   )
