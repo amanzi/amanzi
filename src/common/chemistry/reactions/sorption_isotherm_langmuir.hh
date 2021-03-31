@@ -22,22 +22,23 @@ namespace AmanziChemistry {
 class SorptionIsothermLangmuir : public SorptionIsotherm {
  public:
   SorptionIsothermLangmuir();
-  SorptionIsothermLangmuir(const double K, const double b);
+  SorptionIsothermLangmuir(double K, double b);
   ~SorptionIsothermLangmuir() {};
 
-  void Init(const double K, const double b);
+  void Init(double K, double b);
+
   // returns sorbed concentration
   double Evaluate(const Species& primarySpecies);
   double EvaluateDerivative(const Species& primarySpecies);
-  void Display(void) const;
 
-  double K(void) const { return K_; }
-  void set_K(const double K) { K_ = K; }
-  double b(void) const { return b_; }
-  void set_b(const double b) { b_ = b; }
+  // setters
+  void set_K(double K) { K_ = K; }
+  void set_b(double b) { b_ = b; }
 
-  const std::vector<double>& GetParameters(void);
+  const std::vector<double>& GetParameters();
   void SetParameters(const std::vector<double>& params);
+
+  void Display() const;
 
 private:
   // equilibrium constant or Langmuir adsorption constant

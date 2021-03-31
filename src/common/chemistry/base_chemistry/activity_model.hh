@@ -62,19 +62,18 @@ class ActivityModel {
       std::vector<double>* gamma,
       double* actw) = 0;
 
-  double ionic_strength(void) const { return this->I_; }
-  int num_species(void) const { return num_species_; }
+  double ionic_strength() const { return I_; }
 
-  virtual void Display(void) const = 0;
+  virtual void Display() const = 0;
 
-  void name(const std::string name) { this->name_ = name; }
-  std::string name(void) { return this->name_; }
+  void name(const std::string name) { name_ = name; }
+  std::string name() { return name_; }
 
   void set_verbosity(Teuchos::Ptr<VerboseObject> vo) { vo_ = vo; } 
   Teuchos::Ptr<VerboseObject> verbosity() { return vo_; } 
 
  protected:
-  void ResizeGamma(const int size);
+  void ResizeGamma(int size);
 
   void ionic_strength(double d) { I_ = d; }
 
@@ -85,8 +84,6 @@ class ActivityModel {
   Teuchos::Ptr<VerboseObject> vo_;
 
  private:
-  void set_num_species(const int value) { this->num_species_ = value; }
-
   std::string name_;
   int num_species_;
   std::vector<double> gamma_;

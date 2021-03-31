@@ -37,16 +37,17 @@ class IonExchangeComplex {
   void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 
-  std::string name(void) const { return name_; };
-  std::string primary_name(void) const { return primary_name_; };
+  // setters and getters
+  std::string name() const { return name_; };
+  std::string primary_name() const { return primary_name_; };
 
-  int primary_id(void) const { return primary_id_; };
-  double K(void) const { return K_; };
-  double X(void) const { return X_; };
-  double concentration(void) const { return concentration_; };
+  int primary_id() const { return primary_id_; };
+  double K() const { return K_; };
+  double X() const { return X_; };
+  double concentration() const { return concentration_; };
 
-  void set_X(const double d) { X_ = d; };
-  void set_concentration(const double d) { concentration_ = d; };
+  void set_X(double d) { X_ = d; };
+  void set_concentration(double d) { concentration_ = d; };
 
  private:
   std::string name_, primary_name_;

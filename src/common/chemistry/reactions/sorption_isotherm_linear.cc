@@ -28,20 +28,20 @@ SorptionIsothermLinear::SorptionIsothermLinear()
 }
 
 
-SorptionIsothermLinear::SorptionIsothermLinear(const double KD)
+SorptionIsothermLinear::SorptionIsothermLinear(double KD)
     : SorptionIsotherm("linear", SorptionIsotherm::LINEAR),
       KD_(KD),
       params_(1, 0.0) {
 }
 
 
-void SorptionIsothermLinear::Init(const double KD) {
+void SorptionIsothermLinear::Init(double KD) {
   set_KD(KD);
 }
 
 
-const std::vector<double>& SorptionIsothermLinear::GetParameters(void) {
-  params_.at(0) = KD();
+const std::vector<double>& SorptionIsothermLinear::GetParameters() {
+  params_.at(0) = KD_;
   return params_;
 }
 
@@ -51,12 +51,12 @@ void SorptionIsothermLinear::SetParameters(const std::vector<double>& params) {
 }
 
 
-double SorptionIsothermLinear::Evaluate(const Species& primarySpecies ) {
+double SorptionIsothermLinear::Evaluate(const Species& primarySpecies) {
   // Csorb = KD * activity
   // Units:
   // sorbed_concentration [mol/m^3 bulk] = KD [kg water/m^3 bulk] * 
   //   activity [mol/kg water]
-  return KD() * primarySpecies.activity();
+  return KD_ * primarySpecies.activity();
 }
 
 
@@ -65,7 +65,7 @@ double SorptionIsothermLinear::EvaluateDerivative(const Species& primarySpecies)
   // dCsorb/dCaq = KD * activity_coef
   // Units:
   //  KD [kg water/m^3 bulk]
-  return KD() * primarySpecies.act_coef();
+  return KD_ * primarySpecies.act_coef();
 }
 
 
@@ -73,7 +73,7 @@ void SorptionIsothermLinear::Display(const Teuchos::RCP<VerboseObject>& vo) cons
   std::stringstream message;
   message << std::setw(5) << "KD:"
           << std::scientific << std::setprecision(5)
-          << std::setw(15) << KD() << std::endl;
+          << std::setw(15) << KD_ << std::endl;
   vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 

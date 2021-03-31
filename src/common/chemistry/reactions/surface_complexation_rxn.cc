@@ -34,7 +34,7 @@ SurfaceComplexationRxn::SurfaceComplexationRxn()
     : use_newton_solve_(false) {
   surface_site_.clear();
   surface_complexes_.clear();
-  //dSx_dmi_.clear();
+  // dSx_dmi_.clear();
 }
 
 SurfaceComplexationRxn::SurfaceComplexationRxn(
@@ -44,9 +44,8 @@ SurfaceComplexationRxn::SurfaceComplexationRxn(
   surface_site_.push_back(*surface_sites);
 
   // surface complexes
-  for (std::vector<SurfaceComplex>::const_iterator i = surface_complexes.begin();
-       i != surface_complexes.end(); i++) {
-    surface_complexes_.push_back(*i);
+  for (auto it = surface_complexes.begin(); it != surface_complexes.end(); ++it) {
+    surface_complexes_.push_back(*it);
   }
 }
 
@@ -63,9 +62,8 @@ void SurfaceComplexationRxn::AddSurfaceComplex(SurfaceComplex surface_complex) {
 }
 
 
-void SurfaceComplexationRxn::SetNewtonSolveFlag(void) {
-  std::vector<SurfaceComplex>::const_iterator srfcplx =
-      surface_complexes_.begin();
+void SurfaceComplexationRxn::SetNewtonSolveFlag() {
+  std::vector<SurfaceComplex>::const_iterator srfcplx = surface_complexes_.begin();
   const double tolerance = 1.e-20;
   for (; srfcplx != surface_complexes_.end(); srfcplx++) {
     if (std::fabs(srfcplx->free_site_stoichiometry() - 1.) > tolerance) {
@@ -76,7 +74,7 @@ void SurfaceComplexationRxn::SetNewtonSolveFlag(void) {
 }
 
 
-void SurfaceComplexationRxn::UpdateSiteDensity(const double site_density) {
+void SurfaceComplexationRxn::UpdateSiteDensity(double site_density) {
   surface_site_.at(0).UpdateSiteDensity(site_density);
 }
 
@@ -96,17 +94,12 @@ void SurfaceComplexationRxn::Update(const std::vector<Species>& primarySpecies) 
     double total = free_site_concentration;
     // Update surface complex concentrations; Add to total
 
-    for (std::vector<SurfaceComplex>::iterator srfcplx =
-             surface_complexes_.begin();
-         srfcplx != surface_complexes_.end(); srfcplx++) {
+    for (auto srfcplx = surface_complexes_.begin(); srfcplx != surface_complexes_.end(); ++srfcplx) {
       srfcplx->Update(primarySpecies, (surface_site_[0]));
-      total += srfcplx->free_site_stoichiometry() *
-          srfcplx->surface_concentration();
+      total += srfcplx->free_site_stoichiometry() * srfcplx->surface_concentration();
     }
 
-    if (one_more) {
-      break;
-    }
+    if (one_more) break;
 
     if (/*use_newton_solve()*/true) {
       double residual = site_density - total;

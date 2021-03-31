@@ -22,20 +22,19 @@ namespace AmanziChemistry {
 class SorptionIsothermFreundlich : public SorptionIsotherm {
  public:
   SorptionIsothermFreundlich();
-  SorptionIsothermFreundlich(const double KD, const double n);
+  SorptionIsothermFreundlich(double KD, double n);
   ~SorptionIsothermFreundlich() {};
 
   // returns sorbed concentration
   double Evaluate(const Species& primarySpecies);
   double EvaluateDerivative(const Species& primarySpecies);
-  void Display(void) const;
+  void Display() const;
 
-  double KD(void) const { return KD_; }
-  void set_KD(const double KD) { KD_ = KD; }
-  double n(void) const { return n_; }
-  void set_n(const double n) { n_ = n; }
+  // stters and getters
+  void set_KD(double KD) { KD_ = KD; }
+  void set_n(double n) { n_ = n; }
 
-  const std::vector<double>& GetParameters(void);
+  const std::vector<double>& GetParameters();
   void SetParameters(const std::vector<double>& params);
 
  private:

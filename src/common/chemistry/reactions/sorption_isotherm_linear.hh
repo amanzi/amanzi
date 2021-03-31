@@ -20,20 +20,23 @@ namespace AmanziChemistry {
 class SorptionIsothermLinear : public SorptionIsotherm {
  public:
   SorptionIsothermLinear();
-  SorptionIsothermLinear(const double KD);
+  SorptionIsothermLinear(double KD);
   ~SorptionIsothermLinear() {};
 
-  void Init(const double KD);
+  void Init(double KD);
+
   // returns sorbed concentration
   double Evaluate(const Species& primarySpecies);
   double EvaluateDerivative(const Species& primarySpecies);
-  void Display(const Teuchos::RCP<VerboseObject>& vo) const;
 
-  double KD(void) const { return KD_; }
-  void set_KD(const double KD) { KD_ = KD; }
+  // setters and getters
+  // double KD() const { return KD_; }
+  void set_KD(double KD) { KD_ = KD; }
 
-  const std::vector<double>& GetParameters(void);
+  const std::vector<double>& GetParameters();
   void SetParameters(const std::vector<double>& params);
+
+  void Display(const Teuchos::RCP<VerboseObject>& vo) const;
 
  private:
   // distribution coefficient

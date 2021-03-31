@@ -23,24 +23,19 @@ class SorptionIsotherm {
  public:
   enum SorptionIsothermType { FREUNDLICH, LANGMUIR, LINEAR };
 
-  SorptionIsotherm(const std::string name, const SorptionIsothermType type);
-  virtual~SorptionIsotherm() {};
+  SorptionIsotherm(const std::string& name, const SorptionIsothermType type);
+  virtual ~SorptionIsotherm() {};
 
   virtual double Evaluate(const Species& primarySpecies) = 0;
   virtual double EvaluateDerivative(const Species& primarySpecies) = 0;
 
   virtual void Display(const Teuchos::Ptr<VerboseObject> vo) const {};
 
-  virtual const std::vector<double>& GetParameters(void) = 0;
+  virtual const std::vector<double>& GetParameters() = 0;
   virtual void SetParameters(const std::vector<double>& params) = 0;
 
-  std::string name(void) const {
-    return name_;
-  }
-
-  SorptionIsothermType isotherm_type(void) const {
-    return isotherm_type_;
-  }
+  std::string name() const { return name_; }
+  SorptionIsothermType isotherm_type() const { return isotherm_type_; }
 
  private:
   std::string name_;

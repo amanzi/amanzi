@@ -56,8 +56,7 @@ void Mineral::UpdateSpecificSurfaceArea(void) {
 }
 
 
-void Mineral::UpdateVolumeFraction(const double rate,
-                                   const double delta_time) {
+void Mineral::UpdateVolumeFraction(double rate, double delta_time) {
   // NOTE: the rate is a dissolution rate so either need to use -rate
   // or vol_frac -= .... inorder to get the correct
   // dissolution/precipitation behavior.
@@ -67,17 +66,17 @@ void Mineral::UpdateVolumeFraction(const double rate,
   // to adjust time step or reaction rate in the N-R solve!
 
   // delta_vf = [m^3/mole] * [moles/m^3/sec] * [sec]
-  volume_fraction_ -= molar_volume() * rate * delta_time;
+  volume_fraction_ -= molar_volume_ * rate * delta_time;
   if (volume_fraction_ < 0.0) {
     volume_fraction_ = 0.0;
   }
   /*
     std::stringstream message;
     message << name() << "::UpdateVolumeFraction() : \n"
-            << "molar_volume : " << molar_volume() << "\n"
+            << "molar_volume : " << molar_volume_ << "\n"
             << "rate : " << rate << "\n"
             << "dt : " << delta_time << "\n"
-            << "delta_vf : " << molar_volume() * rate * delta_time << std::endl;
+            << "delta_vf : " << molar_volume_ * rate * delta_time << std::endl;
     vo->Write(Teuchos::VERB_HIGH, message);
   */
 }
@@ -124,7 +123,7 @@ void Mineral::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   message << std::endl;
   message << std::setw(40) << " "
           << std::setw(10) << std::setprecision(5) << std::fixed << logK_
-          << std::setw(13) << std::scientific << molar_volume()
+          << std::setw(13) << std::scientific << molar_volume_
           << std::setw(13) << std::fixed << gram_molecular_weight()
           << std::setw(13) << specific_surface_area()
           << std::setw(13) << std::fixed << volume_fraction()

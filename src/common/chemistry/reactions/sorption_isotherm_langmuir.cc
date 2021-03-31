@@ -28,8 +28,7 @@ SorptionIsothermLangmuir::SorptionIsothermLangmuir()
 }
 
 
-SorptionIsothermLangmuir::SorptionIsothermLangmuir(const double K, 
-                                                   const double b)
+SorptionIsothermLangmuir::SorptionIsothermLangmuir(double K, double b)
     : SorptionIsotherm("langmuir", SorptionIsotherm::LANGMUIR),
       K_(K), 
       b_(b),
@@ -37,15 +36,15 @@ SorptionIsothermLangmuir::SorptionIsothermLangmuir(const double K,
 }
 
 
-void SorptionIsothermLangmuir::Init(const double K, const double b) {
+void SorptionIsothermLangmuir::Init(double K, double b) {
   set_K(K);
   set_b(b);
 }
 
 
 const std::vector<double>& SorptionIsothermLangmuir::GetParameters(void) {
-  params_.at(0) = K();
-  params_.at(1) = b();
+  params_.at(0) = K_;
+  params_.at(1) = b_;
   return params_;
 }
 
@@ -66,8 +65,8 @@ double SorptionIsothermLangmuir::Evaluate(const Species& primarySpecies) {
   // NOTE(bandre): need to be careful with the variable names
   // here. Looking at Langmuir (1997), would lead one to expect:
   // Csorb = K * b * activity / (1 + b * activity)
-  double K_activity = K() * primarySpecies.activity(); // temporary variable
-  return K_activity * b() / (1. + K_activity);
+  double K_activity = K_ * primarySpecies.activity(); // temporary variable
+  return K_activity * b_ / (1. + K_activity);
 }
 
 
@@ -78,8 +77,8 @@ double SorptionIsothermLangmuir::EvaluateDerivative(
   //               (K * activity * b / (1 + K * activity)^2 * K * activity_coef)
   // Units:
   //  KD [kg water/m^3 bulk]
-  double K_activity = K() * primarySpecies.activity(); // temporary variable
-  double C_sorb = K_activity * b() / (1. + K_activity);
+  double K_activity = K_ * primarySpecies.activity(); // temporary variable
+  double C_sorb = K_activity * b_ / (1. + K_activity);
   return C_sorb / primarySpecies.molality() - 
            (C_sorb / (1. + K_activity) * K_activity / 
              primarySpecies.molality());
@@ -89,10 +88,10 @@ double SorptionIsothermLangmuir::EvaluateDerivative(
 void SorptionIsothermLangmuir::Display(void) const {
   std::cout << std::setw(5) << "K:"
             << std::scientific << std::setprecision(5)
-            << std::setw(15) << K() 
+            << std::setw(15) << K_
             << std::setw(5) << "b:"
             << std::scientific << std::setprecision(5)
-            << std::setw(15) << b() 
+            << std::setw(15) << b_
             << std::endl;
 }
 

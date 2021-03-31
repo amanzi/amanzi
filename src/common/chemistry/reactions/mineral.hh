@@ -44,6 +44,7 @@ class Mineral : public SecondarySpecies {
   // update molalities
   using SecondarySpecies::Update;
   virtual void Update(const std::vector<Species>& primary_species, const Species& water_species);
+
   // add stoichiometric contribution of complex to total
   virtual void AddContributionToTotal(std::vector<double> *total);
   // add derivative of total with respect to free-ion to dtotal
@@ -54,31 +55,25 @@ class Mineral : public SecondarySpecies {
   void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 
-  double Q_over_K(void) const {
-    return std::exp(this->lnQK_);
-  };
-  double saturation_index(void) const {
-    return std::log10(Q_over_K());
-  };  // SI = log10(Q/Keq)
+  double Q_over_K(void) const { return std::exp(lnQK_); };
+  double saturation_index(void) const { return std::log10(Q_over_K()); };  // SI = log10(Q/Keq)
 
-  double molar_volume(void) const {
-    return this->molar_volume_;
-  }
+  double specific_surface_area() const { return specific_surface_area_; }
+  void set_specific_surface_area(double d) { specific_surface_area_ = d; }
 
-  double specific_surface_area(void) const { return this->specific_surface_area_; }
-  void set_specific_surface_area(const double d) { this->specific_surface_area_ = d; }
+  double molar_volume() const { return molar_volume_; }
 
-  void UpdateSpecificSurfaceArea(void);
+  void UpdateSpecificSurfaceArea();
 
-  double volume_fraction(void) const { return this->volume_fraction_; }
-  void set_volume_fraction(const double d) { this->volume_fraction_ = d; }
+  double volume_fraction() const { return volume_fraction_; }
+  void set_volume_fraction(double d) { volume_fraction_ = d; }
 
-  void UpdateVolumeFraction(const double rate, const double delta_time);
+  void UpdateVolumeFraction(double rate, double delta_time);
 
  private:
-  double molar_volume_;     // [m^3 / moles]
+  double molar_volume_;  // [m^3 / moles]
   double specific_surface_area_;  // [m^2 mineral / m^3 bulk]
-  double volume_fraction_;   // [m^3 mineral / m^3 bulk]
+  double volume_fraction_;  // [m^3 mineral / m^3 bulk]
 };
 
 }  // namespace AmanziChemistry

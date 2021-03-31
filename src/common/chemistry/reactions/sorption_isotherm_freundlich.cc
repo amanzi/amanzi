@@ -28,8 +28,7 @@ SorptionIsothermFreundlich::SorptionIsothermFreundlich()
 }
 
 
-SorptionIsothermFreundlich::SorptionIsothermFreundlich(const double KD, 
-                                                       const double n)
+SorptionIsothermFreundlich::SorptionIsothermFreundlich(double KD, double n)
     : SorptionIsotherm("freundlich", SorptionIsotherm::FREUNDLICH),
       KD_(KD), 
       n_(n),
@@ -40,13 +39,13 @@ SorptionIsothermFreundlich::SorptionIsothermFreundlich(const double KD,
 double SorptionIsothermFreundlich::Evaluate(const Species& primarySpecies) {
   // Csorb = KD * activity^(n)
   // Units: The units don't make a whole lot of sense.
-  return KD() * std::pow(primarySpecies.activity(), n());
+  return KD_ * std::pow(primarySpecies.activity(), n_);
 }
 
 
 const std::vector<double>& SorptionIsothermFreundlich::GetParameters(void) {
-  params_.at(0) = KD();
-  params_.at(1) = n();
+  params_.at(0) = KD_;
+  params_.at(1) = n_;
   return params_;
 }
 
@@ -57,25 +56,24 @@ void SorptionIsothermFreundlich::SetParameters(const std::vector<double>& params
 }
 
 
-double SorptionIsothermFreundlich::EvaluateDerivative(
-    const Species& primarySpecies) {
+double SorptionIsothermFreundlich::EvaluateDerivative(const Species& primarySpecies) {
   // Csorb = KD * activity^(n)
   // dCsorb/dCaq = KD * n * activity^(n-1) * activity_coef
   //             = Csorb * n / molality
   // Units:
   //  KD [kg water/m^3 bulk]
-  double C_sorb = KD() * std::pow(primarySpecies.activity(), n());
-  return C_sorb * n() / primarySpecies.molality();
+  double C_sorb = KD_ * std::pow(primarySpecies.activity(), n_);
+  return C_sorb * n_ / primarySpecies.molality();
 }
 
 
-void SorptionIsothermFreundlich::Display(void) const {
+void SorptionIsothermFreundlich::Display() const {
   std::cout << std::setw(5) << "KD:"
             << std::scientific << std::setprecision(5)
-            << std::setw(15) << KD() 
+            << std::setw(15) << KD_
             << std::setw(5) << "n:"
             << std::scientific << std::setprecision(5)
-            << std::setw(15) << n() 
+            << std::setw(15) << n_
             << std::endl;
 }
 

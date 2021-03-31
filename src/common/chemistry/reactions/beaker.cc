@@ -1275,7 +1275,7 @@ void Beaker::UpdateKineticChemistry() {
 void Beaker::AddKineticChemistryToResidual() {
   // loop over general kinetic reactions and add rates
   for (auto it = generalKineticRxns_.begin(); it != generalKineticRxns_.end(); ++it) {
-    it->addContributionToResidual(&residual_, por_sat_den_vol());
+    it->AddContributionToResidual(&residual_, por_sat_den_vol());
   }
 
   // loop over radioactive decay reactions and add rates

@@ -38,9 +38,9 @@ void ActivityModel::Setup(
 }
 
 
-void ActivityModel::ResizeGamma(const int size) {
-  set_num_species(size);
-  gamma_.resize(num_species(), 1.0);  
+void ActivityModel::ResizeGamma(int size) {
+  num_species_ = size;
+  gamma_.resize(num_species_, 1.0);  
 }
 
 void ActivityModel::CalculateIonicStrength(

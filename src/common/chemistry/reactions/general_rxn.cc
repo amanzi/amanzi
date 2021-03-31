@@ -89,7 +89,7 @@ void GeneralRxn::update_rates(const std::vector<Species> primarySpecies) {
 }
 
 
-void GeneralRxn::addContributionToResidual(std::vector<double> *residual,
+void GeneralRxn::AddContributionToResidual(std::vector<double> *residual,
                                            double por_den_sat_vol) {
   // por_den_sat_vol = porosity*water_density*saturation*volume
   double effective_rate = 0.;

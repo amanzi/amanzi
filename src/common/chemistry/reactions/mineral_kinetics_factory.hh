@@ -26,8 +26,8 @@ class KineticRate;
 
 class MineralKineticsFactory {
  public:
-  MineralKineticsFactory(void);
-  ~MineralKineticsFactory(void) {};
+  MineralKineticsFactory();
+  ~MineralKineticsFactory() {};
 
   KineticRate* Create(const std::string& rate_type,
                       const StringTokenizer& rate_data,
@@ -37,13 +37,8 @@ class MineralKineticsFactory {
   int VerifyMineralName(const std::string& mineral_name,
                         const std::vector<Mineral>& minerals) const;
 
-
-  void set_debug(const bool value) {
-    this->debug_ = value;
-  };
-  bool debug(void) const {
-    return this->debug_;
-  };
+  void set_debug(bool value) { debug_ = value; };
+  bool debug() const { return debug_; };
 
  private:
   bool debug_;

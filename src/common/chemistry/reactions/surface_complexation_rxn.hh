@@ -38,13 +38,11 @@ class SurfaceComplexationRxn {
 
   // add complexes to the reaction
   void AddSurfaceComplex(SurfaceComplex surface_complex);
-  void UpdateSiteDensity(const double);
-  double GetSiteDensity(void) const {
-    return surface_site_.at(0).molar_density();
-  }
+  void UpdateSiteDensity(double d);
+  double GetSiteDensity() const { return surface_site_.at(0).molar_density(); }
   int SiteId() const { return surface_site_.at(0).identifier(); }
 
-  double free_site_concentration(void) const {
+  double free_site_concentration() const {
     return surface_site_.at(0).free_site_concentration();
   }
 
@@ -54,6 +52,7 @@ class SurfaceComplexationRxn {
 
   // update sorbed concentrations
   void Update(const std::vector<Species>& primarySpecies);
+
   // add stoichiometric contribution of complex to sorbed total
   void AddContributionToTotal(std::vector<double> *total);
   // add derivative of total with respect to free-ion to sorbed dtotal
@@ -63,7 +62,7 @@ class SurfaceComplexationRxn {
   // is not equal to 1., we must use Newton's method to solve for
   // the free site concentration.  This function determines if this
   // is the case.
-  void SetNewtonSolveFlag(void);
+  void SetNewtonSolveFlag();
 
   void display(const Teuchos::Ptr<VerboseObject> vo) const;
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;

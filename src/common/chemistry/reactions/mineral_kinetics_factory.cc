@@ -43,8 +43,6 @@ KineticRate* MineralKineticsFactory::Create(const std::string& rate_type,
   std::string space(" ");
   StringTokenizer rate_name(rate_type, space);  // strip out spaces
 
-  // std::cout << "rate_name[0] = \'" << rate_name.at(0) << "\'" << std::endl;
-
   if (!(rate_name.at(0).compare(this->kTST))) {
     kinetic_rate = new KineticRateTST();
   } else {
