@@ -25,7 +25,7 @@ SoilEnergyEvaluator::SoilEnergyEvaluator(Teuchos::ParameterList& plist) :
   std::string domain_name = Keys::getDomain(my_key_);
 
   // -- temperature
-  temperature_key_ = Keys::readKey(plist_, domain_name, "temperature", "temperature");
+  temperature_key_ = Keys::readKey(plist_, domain_name, "soil temperature", "soil_temperature");
   dependencies_.insert(temperature_key_);
 
 };

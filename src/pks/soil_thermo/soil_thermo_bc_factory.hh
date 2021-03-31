@@ -40,7 +40,7 @@ public:
       Amanzi::BCFactory(mesh,plist) {}
 
   Teuchos::RCP<Functions::BoundaryFunction> CreateTemperature() const {
-    return CreateWithFunction("temperature", "boundary temperature");
+    return CreateWithFunction("soil_temperature", "boundary temperature");
   }
 
 //  Teuchos::RCP<Functions::BoundaryFunction> CreateTotalFlux() const {

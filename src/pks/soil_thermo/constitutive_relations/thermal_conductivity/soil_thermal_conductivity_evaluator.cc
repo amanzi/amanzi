@@ -25,9 +25,9 @@ SoilThermalConductivityEvaluator::SoilThermalConductivityEvaluator(
   // Set up my dependencies.
   std::string domain_name = Keys::getDomain(my_key_);
 
-  // -- temperature
-  temperature_key_ = Keys::readKey(plist_, domain_name, "temperature", "temperature");
-  dependencies_.insert(temperature_key_);
+//  // -- temperature
+//  temperature_key_ = Keys::readKey(plist_, domain_name, "temperature", "temperature");
+//  dependencies_.insert(temperature_key_);
 
 //  cell_is_ice_key_ = Keys::readKey(plist_, domain_name, "ice", "ice");
 //  dependencies_.insert(cell_is_ice_key_);

@@ -88,7 +88,7 @@ void Soil_Thermo_PK::Setup(const Teuchos::Ptr<State>& S) {
 
 void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
   // Set up keys if they were not already set.
-  temperature_key_ = Keys::readKey(*plist_, domain_, "temperature", "temperature");
+  temperature_key_ = Keys::readKey(*plist_, domain_, "soil temperature", "soil_temperature");
   water_content_key_ = Keys::readKey(*plist_, domain_, "soil water content", "soil_water_content");
   ice_content_key_ = Keys::readKey(*plist_, domain_, "soil ice content", "soil_ice_content");
   density_key_ = Keys::readKey(*plist_, domain_, "soil density", "soil density");
