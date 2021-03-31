@@ -32,14 +32,17 @@ SoilThermalConductivityEvaluator::SoilThermalConductivityEvaluator(
 //  cell_is_ice_key_ = Keys::readKey(plist_, domain_name, "ice", "ice");
 //  dependencies_.insert(cell_is_ice_key_);
 
+//  // -- cell volume
+//  cell_vol_key_ = Keys::readKey(plist_, domain_name, "cell volume", "cell_volume");
+//  dependencies_.insert(cell_vol_key_);
 
-//  // -- water content
-//  water_content_key_ = Keys::readKey(plist_, domain_name, "soil water content", "soil_water_content");
-//  dependencies_.insert(water_content_key_);
-//
-//  // -- ice content
-//  ice_content_key_ = Keys::readKey(plist_, domain_name, "soil ice content", "soil_ice_content");
-//  dependencies_.insert(ice_content_key_);
+  // -- water content
+  water_content_key_ = Keys::readKey(plist_, domain_name, "soil water content", "soil_water_content");
+  dependencies_.insert(water_content_key_);
+
+  // -- ice content
+  ice_content_key_ = Keys::readKey(plist_, domain_name, "soil ice content", "soil_ice_content");
+  dependencies_.insert(ice_content_key_);
 
   AMANZI_ASSERT(plist_.isSublist("soil thermal conductivity parameters"));
   Teuchos::ParameterList sublist = plist_.sublist("soil thermal conductivity parameters");
@@ -50,7 +53,9 @@ SoilThermalConductivityEvaluator::SoilThermalConductivityEvaluator(
 SoilThermalConductivityEvaluator::SoilThermalConductivityEvaluator(
       const SoilThermalConductivityEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
-    temperature_key_(other.temperature_key_){}
+    temperature_key_(other.temperature_key_),
+    water_content_key_(other.water_content_key_),
+    ice_content_key_(other.ice_content_key_){}
 
 
 Teuchos::RCP<FieldEvaluator>
@@ -62,8 +67,8 @@ void SoilThermalConductivityEvaluator::EvaluateField_(
       const Teuchos::Ptr<State>& S,
       const Teuchos::Ptr<CompositeVector>& result) {
 
-  // get temperature
-  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
+//  // get temperature
+//  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
 
 //  // get water content
 //  Teuchos::RCP<const CompositeVector> wc = S->GetFieldData(water_content_key_);
@@ -79,7 +84,7 @@ void SoilThermalConductivityEvaluator::EvaluateField_(
   for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       // much more efficient to pull out vectors first
-      const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
+//      const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
 //      const Epetra_MultiVector& wc_v = *wc->ViewComponent(*comp,false);
 //      const Epetra_MultiVector& ic_v = *ic->ViewComponent(*comp,false);
       Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);

@@ -92,22 +92,48 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
   water_content_key_ = Keys::readKey(*plist_, domain_, "soil water content", "soil_water_content");
   ice_content_key_ = Keys::readKey(*plist_, domain_, "soil ice content", "soil_ice_content");
   density_key_ = Keys::readKey(*plist_, domain_, "soil density", "soil density");
-  energy_key_ = Keys::readKey(*plist_, domain_, "energy", "energy");
-  wc_key_ = Keys::readKey(*plist_, domain_, "water content", "water_content");
-  enthalpy_key_ = Keys::readKey(*plist_, domain_, "enthalpy", "enthalpy");
-  flux_key_ = Keys::readKey(*plist_, domain_, "mass flux", "mass_flux");
-  energy_flux_key_ = Keys::readKey(*plist_, domain_, "diffusive energy flux", "diffusive_energy_flux");
-  adv_energy_flux_key_ = Keys::readKey(*plist_, domain_, "advected energy flux", "advected_energy_flux");
+  energy_key_ = Keys::readKey(*plist_, domain_, "soil energy", "soil_energy");
+  wc_key_ = Keys::readKey(*plist_, domain_, "water content soil", "water_content_soil");
+  enthalpy_key_ = Keys::readKey(*plist_, domain_, "soil enthalpy", "soil_enthalpy");
+  flux_key_ = Keys::readKey(*plist_, domain_, "soil mass flux", "soil_mass_flux");
+  energy_flux_key_ = Keys::readKey(*plist_, domain_, "soil diffusive energy flux", "soil_diffusive_energy_flux");
+  adv_energy_flux_key_ = Keys::readKey(*plist_, domain_, "soil advected energy flux", "soil_advected_energy_flux");
   conductivity_key_ = Keys::readKey(*plist_, domain_, "soil thermal conductivity", "soil_thermal_conductivity");
   heat_capacity_key_ = Keys::readKey(*plist_, domain_, "soil heat capacity", "soil_heat_capacity");
-  uw_conductivity_key_ = Keys::readKey(*plist_, domain_, "upwinded thermal conductivity", "upwind_thermal_conductivity");
-  cell_is_ice_key_ = Keys::readKey(*plist_, domain_, "ice", "ice");
+  uw_conductivity_key_ = Keys::readKey(*plist_, domain_, "soil upwinded thermal conductivity", "soil_upwind_thermal_conductivity");
+  cell_is_ice_key_ = Keys::readKey(*plist_, domain_, "soil ice", "soil_ice");
 
   // Get data for special-case entities.
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(cell_vol_key_);
 //  S->RequireScalar("atmospheric_pressure");
+
+  // Set primary evaluator for water content
+
+  S->RequireField(water_content_key_)->SetMesh(mesh_)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+
+  Teuchos::ParameterList elist_wc;
+  elist_wc.set<std::string>("evaluator name", water_content_key_);
+  auto eval_wc = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist_wc));
+  AMANZI_ASSERT(S != Teuchos::null);
+  S->SetFieldEvaluator(water_content_key_, eval_wc);
+
+  S->RequireFieldEvaluator(water_content_key_);
+
+  // Set primary evaluator for ice content
+
+  S->RequireField(ice_content_key_)->SetMesh(mesh_)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+
+  Teuchos::ParameterList elist_ic;
+  elist_ic.set<std::string>("evaluator name", ice_content_key_);
+  auto eval_ic = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist_ic));
+  AMANZI_ASSERT(S != Teuchos::null);
+  S->SetFieldEvaluator(ice_content_key_, eval_ic);
+
+  S->RequireFieldEvaluator(ice_content_key_);
 
   // Set up Operators
   // -- boundary conditions

@@ -25,14 +25,14 @@ SoilHeatCapacityEvaluator::SoilHeatCapacityEvaluator(
   // Set up my dependencies.
   std::string domain_name = Keys::getDomain(my_key_);
 
-  // -- temperature
-  temperature_key_ = Keys::readKey(plist_, domain_name, "temperature", "temperature");
-  dependencies_.insert(temperature_key_);
+//  // -- temperature
+//  temperature_key_ = Keys::readKey(plist_, domain_name, "temperature", "temperature");
+//  dependencies_.insert(temperature_key_);
 
 //  // -- water content
 //  water_content_key_ = Keys::readKey(plist_, domain_name, "soil water content", "soil_water_content");
 //  dependencies_.insert(water_content_key_);
-//
+
 //  // -- ice content
 //  ice_content_key_ = Keys::readKey(plist_, domain_name, "soil ice content", "soil_ice_content");
 //  dependencies_.insert(ice_content_key_);
