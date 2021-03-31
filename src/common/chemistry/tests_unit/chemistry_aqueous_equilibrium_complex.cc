@@ -1,10 +1,11 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
+#include <string>
 #include <vector>
 #include <typeinfo>
 #include "species.hh"
+
 #include <UnitTest++.h>
 
 #include "aqueous_equilibrium_complex.hh"
@@ -13,6 +14,7 @@
 
 SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
   namespace ac = Amanzi::AmanziChemistry;
+
   /*****************************************************************************
   **  Test for Aqueous Equilibrium Complex
   *****************************************************************************/
@@ -24,17 +26,17 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
     AqueousEquilibriumComplexTest();
     ~AqueousEquilibriumComplexTest();
 
-    ac::SpeciesName name_;
-    ac::SpeciesId id_;
+    std::string name_;
+    int id_;
     double h2o_stoich_;
     double charge_;
     double gram_molecular_weight_;
     double ion_size_parameter_;
     double logK_;
 
-    std::vector<ac::SpeciesName> species_names_;
+    std::vector<std::string> species_names_;
     std::vector<double> stoichiometry_;
-    std::vector<ac::SpeciesId> species_ids_;
+    std::vector<int> species_ids_;
 
     ac::SpeciesArray primarySpecies_;
     ac::Species water_;
@@ -62,8 +64,9 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
     species_names_.push_back("HCO3-");
     stoichiometry_.push_back(1.0);
     species_ids_.push_back(1);
-    ac::SpeciesId id = 0;
-    ac::SpeciesName name = "H+";
+
+    int id = 0;
+    std::string name = "H+";
     ac::Species H_p = ac::Species(id, name, 1.0, 1.0079, 9.0);
     H_p.update(9.0e-4);
     id = 1;

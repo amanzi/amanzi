@@ -1,21 +1,21 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
+#include <string>
 #include <vector>
 #include <typeinfo>
-#include "species.hh"
+
 #include <UnitTest++.h>
 
-#include "mineral.hh"
 #include "chemistry_exception.hh"
+#include "mineral.hh"
+#include "species.hh"
 
 SUITE(GeochemistryTestsMineral) {
   namespace ac = Amanzi::AmanziChemistry;
+
   /*****************************************************************************
-   **
    **  Test for Mineral.cpp
-   **
    *****************************************************************************/
 
   class MineralTest {
@@ -25,8 +25,8 @@ SUITE(GeochemistryTestsMineral) {
     MineralTest();
     ~MineralTest();
 
-    ac::SpeciesName name_;
-    ac::SpeciesId id_;
+    std::string name_;
+    int id_;
     double h2o_stoich_;
     double charge_;
     double gram_molecular_weight_;
@@ -35,9 +35,9 @@ SUITE(GeochemistryTestsMineral) {
     double molar_volume_;
     double specific_surface_area_;
 
-    std::vector<ac::SpeciesName> species_names_;
+    std::vector<std::string> species_names_;
     std::vector<double> stoichiometry_;
-    std::vector<ac::SpeciesId> species_ids_;
+    std::vector<int> species_ids_;
 
     ac::SpeciesArray primarySpecies_;
     ac::Species water_;
@@ -78,8 +78,8 @@ SUITE(GeochemistryTestsMineral) {
                                h2o_stoich_, gram_molecular_weight_, logK_,
                                molar_volume_, specific_surface_area_);
 
-    ac::SpeciesId id = 0;
-    ac::SpeciesName name = "H+";
+    int id = 0;
+    std::string name = "H+";
     ac::Species H_p = ac::Species(id, name, 1.0, 1.0079, 9.0);
     H_p.set_act_coef(1.0);
     H_p.update(2.74965e-9);
@@ -117,8 +117,8 @@ SUITE(GeochemistryTestsMineral) {
       MineralTestHydrated();
       ~MineralTestHydrated();
 
-      ac::SpeciesName name_;
-      ac::SpeciesId id_;
+      std::string name_;
+      int id_;
       double h2o_stoich_;
       double charge_;
       double gram_molecular_weight_;
@@ -127,9 +127,9 @@ SUITE(GeochemistryTestsMineral) {
       double molar_volume_;
       double specific_surface_area_;
 
-      std::vector<ac::SpeciesName> species_names_;
+      std::vector<std::string> species_names_;
       std::vector<double> stoichiometry_;
-      std::vector<ac::SpeciesId> species_ids_;
+      std::vector<int> species_ids_;
 
       ac::SpeciesArray primarySpecies_;
       ac::Species water_;
@@ -166,8 +166,8 @@ SUITE(GeochemistryTestsMineral) {
                                  h2o_stoich_, gram_molecular_weight_, logK_,
                                  molar_volume_, specific_surface_area_);
 
-      ac::SpeciesId id = 0;
-      ac::SpeciesName name = "Al+3";
+      int id = 0;
+      std::string name = "Al+3";
       ac::Species Al = ac::Species(id, name, 3.0, 0.0, 0.0);
       Al.set_act_coef(1.0);
       Al.update(0.5);

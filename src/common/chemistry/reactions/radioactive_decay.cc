@@ -47,9 +47,9 @@ RadioactiveDecay::RadioactiveDecay()
 }  // end RadioactiveDecay() constructor
 
 
-RadioactiveDecay::RadioactiveDecay(const std::vector<SpeciesName> species_names,
-                                   const std::vector<int> species_ids,
-                                   const std::vector<double> stoichiometries,
+RadioactiveDecay::RadioactiveDecay(const std::vector<std::string>& species_names,
+                                   const std::vector<int>& species_ids,
+                                   const std::vector<double>& stoichiometries,
                                    const double half_life,
                                    const std::string half_life_units)
     : species_names_(species_names),

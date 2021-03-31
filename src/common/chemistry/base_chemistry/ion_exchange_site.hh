@@ -25,14 +25,11 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-typedef std::string IonxSiteName;
-typedef int IonxSiteId; 
-
 class IonExchangeSite {
  public:
   IonExchangeSite();
-  IonExchangeSite(const IonxSiteName in_name);
-  IonExchangeSite(const IonxSiteName in_name, const double charge, const std::string location);
+  IonExchangeSite(const std::string& in_name);
+  IonExchangeSite(const std::string& in_name, const double charge, const std::string location);
   virtual ~IonExchangeSite() {};
 
   virtual void Display(const Teuchos::Ptr<VerboseObject> vo) const;
@@ -46,14 +43,14 @@ class IonExchangeSite {
   void set_charge(const double value) { charge_ = value; }
   double get_charge() const { return charge_; }
 
-  void set_name(const IonxSiteName name) { name_ = name; }
-  IonxSiteName get_name(void) const { return name_; }
+  void set_name(const std::string& name) { name_ = name; }
+  std::string get_name(void) const { return name_; }
 
   void set_mineral_name(const std::string& name) { mineral_name_ = name; }
   std::string get_mineral_name() const { return mineral_name_; }
 
  protected:
-  IonxSiteName name_;
+  std::string name_;
   double cation_exchange_capacity_;  // units...
   std::string mineral_name_;
   double charge_;

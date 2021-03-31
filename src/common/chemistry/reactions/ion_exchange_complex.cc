@@ -70,10 +70,10 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 IonExchangeComplex::IonExchangeComplex(
-    const IonxComplexName in_name,
-    const IonxComplexId in_id,
-    const SpeciesName in_primary_name,
-    const SpeciesId in_primary_id,
+    const std::string& in_name,
+    const int in_id,
+    const std::string& in_primary_name,
+    const int in_primary_id,
     const double in_K)
     : name_(in_name),
       id_(in_id),

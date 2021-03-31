@@ -12,6 +12,7 @@
 #ifndef AMANZI_CHEMISTRY_SURFACECOMPLEX_HH_
 #define AMANZI_CHEMISTRY_SURFACECOMPLEX_HH_
 
+#include <string>
 #include <vector>
 
 #include "species.hh"
@@ -26,24 +27,25 @@ class MatrixBlock;
 class SurfaceComplex {
  public:
   SurfaceComplex();
-  SurfaceComplex(const SpeciesName name,
-                 const SpeciesId id,
-                 const std::vector<SpeciesName>& species,
+  SurfaceComplex(const std::string& name,
+                 const int id,
+                 const std::vector<std::string>& species,
                  const std::vector<double>& stoichiometries,
                  const std::vector<int>& species_ids,
                  const double h2o_stoich,
                  const double free_site_stoichiometry,
                  const double charge,
                  const double logK);
-  SurfaceComplex(const SpeciesName name,
-                 const SpeciesId id,
-                 const std::vector<SpeciesName>& species,
+
+  SurfaceComplex(const std::string& name,
+                 const int id,
+                 const std::vector<std::string>& species,
                  const std::vector<double>& stoichiometries,
                  const std::vector<int>& species_ids,
                  const double h2o_stoich,
-                 SpeciesName free_site_name,
+                 const std::string& free_site_name,
                  const double free_site_stoichiometry,
-                 SpeciesId free_site_id,
+                 int free_site_id,
                  const double charge,
                  const double logK);
   ~SurfaceComplex() {};
@@ -62,8 +64,8 @@ class SurfaceComplex {
   void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 
-  void set_name(SpeciesName name) { this->name_ = name; }
-  void set_identifier(SpeciesId i) { this->identifier_ = i; }
+  void set_name(const std::string& name) { name_ = name; }
+  void set_identifier(int id) { identifier_ = id; }
   void set_charge(double d) { this->charge_ = d; }
 
   void set_free_site_stoichiometry(const double d) { this->free_site_stoichiometry_ = d; }
@@ -72,9 +74,9 @@ class SurfaceComplex {
   void set_ncomp(const int i) { this->ncomp_ = i; };
   void set_surface_concentration(const double d) { this->surface_concentration_ = d; };
 
-  SpeciesName name(void) const { return this->name_; }
-  SpeciesId identifier(void) const { return this->identifier_; }
-  double charge(void) const { return this->charge_; }
+  std::string name() const { return name_; }
+  int identifier() const { return identifier_; }
+  double charge() const { return charge_; }
 
   double free_site_stoichiometry(void) const { return this->free_site_stoichiometry_; }
   double stoichiometry(const int i) const { return this->stoichiometry_[i]; }
@@ -85,23 +87,23 @@ class SurfaceComplex {
   double surface_concentration(void) const { return this->surface_concentration_; };
 
  private:
-  SpeciesName name_;
-  SpeciesId identifier_;
+  std::string name_;
+  int identifier_;
   double charge_;
 
   double surface_concentration_;  // units? ?[mol/m^3 bulk]?
 
   int ncomp_;  // # components in reaction
-  std::vector<SpeciesName> species_names_;
-  std::vector<SpeciesId> species_ids_;       // ids of primary species in rxn
+  std::vector<std::string> species_names_;
+  std::vector<int> species_ids_;  // ids of primary species in rxn
   std::vector<double> stoichiometry_;  // stoich of primary species in rxn
-  SpeciesName free_site_name_;
-  double free_site_stoichiometry_;     // stoichiometry of free site in rxn
-  SpeciesId free_site_id_;
-  std::vector<double> logK_array_;     // for temperature dep. logK
-  double h2o_stoichiometry_;           // stoichiometry of water in equation
-  double lnK_;                         // log value of equlibrium constant
-  double lnQK_;                        // store lnQK for derivatives later
+  std::string free_site_name_;
+  double free_site_stoichiometry_;  // stoichiometry of free site in rxn
+  int free_site_id_;
+  std::vector<double> logK_array_;  // for temperature dep. logK
+  double h2o_stoichiometry_;  // stoichiometry of water in equation
+  double lnK_;  // log value of equlibrium constant
+  double lnQK_;  // store lnQK for derivatives later
   double logK_;
 };
 

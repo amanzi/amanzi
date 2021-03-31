@@ -74,8 +74,8 @@ KineticRate* MineralKineticsFactory::Create(const std::string& rate_type,
 }
 
 
-SpeciesId MineralKineticsFactory::VerifyMineralName(const std::string mineral_name,
-                                                    const std::vector<Mineral>& minerals) const {
+int MineralKineticsFactory::VerifyMineralName(const std::string& mineral_name,
+                                              const std::vector<Mineral>& minerals) const {
   bool mineral_found = false;
   int mineral_id = -1;
   for (std::vector<Mineral>::const_iterator m = minerals.begin();

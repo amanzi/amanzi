@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
+#include <string>
 #include <vector>
 #include <typeinfo>
 
@@ -140,7 +141,7 @@ SUITE(GeochemistryTestsKineticRate) {
     MockKineticRate rate;
 
     std::string species_type("primary");
-    std::vector<ac::SpeciesName> in_names;
+    std::vector<std::string> in_names;
     in_names.push_back("Ca++");
     in_names.push_back("OH-");
     in_names.push_back("foo");
@@ -149,14 +150,14 @@ SUITE(GeochemistryTestsKineticRate) {
     in_stoichiometry.push_back(0.12);
     in_stoichiometry.push_back(6.78);
 
-    std::vector<ac::SpeciesId> out_ids;
+    std::vector<int> out_ids;
     std::vector<double>* out_stoichiometry = NULL;
 
     rate.SetSpeciesIds(species_, species_type,
                        in_names, in_stoichiometry,
                        &out_ids, out_stoichiometry);
     // check that the output id's agree with the input
-    std::vector<ac::SpeciesId> expeced_ids;
+    std::vector<int> expeced_ids;
     expeced_ids.push_back(2);
     expeced_ids.push_back(1);
     CHECK_ARRAY_EQUAL(expeced_ids, out_ids, 2);
@@ -166,7 +167,7 @@ SUITE(GeochemistryTestsKineticRate) {
     MockKineticRate rate;
 
     std::string species_type("primary");
-    std::vector<ac::SpeciesName> in_names;
+    std::vector<std::string> in_names;
     in_names.push_back("Ca++");
     in_names.push_back("OH-");
     in_names.push_back("foo");
@@ -175,7 +176,7 @@ SUITE(GeochemistryTestsKineticRate) {
     in_stoichiometry.push_back(0.12);
     in_stoichiometry.push_back(6.78);
 
-    std::vector<ac::SpeciesId> out_ids;
+    std::vector<int> out_ids;
     std::vector<double> out_stoichiometry;
 
     rate.SetSpeciesIds(species_, species_type,

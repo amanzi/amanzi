@@ -21,16 +21,13 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-typedef std::string IonxComplexName;
-typedef int IonxComplexId; 
-
 class IonExchangeComplex {
  public:
   IonExchangeComplex() {};
-  IonExchangeComplex(const IonxComplexName,
-                     const IonxComplexId complex_id,
-                     const SpeciesName primary_name,
-                     const SpeciesId primary_id,
+  IonExchangeComplex(const std::string& complex_name,
+                     const int complex_id,
+                     const std::string& primary_name,
+                     const int primary_id,
                      const double K);
   virtual ~IonExchangeComplex() {};
 
@@ -52,14 +49,10 @@ class IonExchangeComplex {
   void set_concentration(const double d) { concentration_ = d; };
 
  private:
-  IonxComplexName name_;
-  IonxComplexId id_;
-  SpeciesName primary_name_;
-  SpeciesId primary_id_;
+  std::string name_, primary_name_;
+  int id_, primary_id_;
 
-  double concentration_;
-  double K_;
-  double X_;
+  double concentration_, K_, X_;
 };
 
 }  // namespace AmanziChemistry

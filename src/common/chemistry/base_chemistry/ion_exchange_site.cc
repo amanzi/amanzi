@@ -30,14 +30,14 @@ IonExchangeSite::IonExchangeSite()
       charge_(0.0) {
 }
 
-IonExchangeSite::IonExchangeSite(const IonxSiteName in_name)
+IonExchangeSite::IonExchangeSite(const std::string& in_name)
     : name_(in_name),
       cation_exchange_capacity_(0.0),
       mineral_name_("bulk"),
       charge_(0.0) {
 }
 
-IonExchangeSite::IonExchangeSite(const IonxSiteName name,
+IonExchangeSite::IonExchangeSite(const std::string& name,
                                  const double charge,
                                  const std::string location)
     : name_(name),

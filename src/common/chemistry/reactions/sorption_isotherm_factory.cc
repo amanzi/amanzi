@@ -85,8 +85,8 @@ std::shared_ptr<SorptionIsotherm> SorptionIsothermFactory::Create(
 }
 
 
-SpeciesId SorptionIsothermFactory::VerifySpeciesName(
-    const SpeciesName species_name,
+int SorptionIsothermFactory::VerifySpeciesName(
+    const std::string& species_name,
     const std::vector<Species>& species) const {
   int species_id = -1;
   for (std::vector<Species>::const_iterator s = species.begin();

@@ -49,53 +49,36 @@ class KineticRate {
 
   void SetSpeciesIds(const SpeciesArray& species,
                      const std::string& species_type,
-                     const std::vector<SpeciesName>& in_names,
+                     const std::vector<std::string>& in_names,
                      const std::vector<double>& in_stoichiometry,
-                     std::vector<SpeciesId>* out_ids,
+                     std::vector<int>* out_ids,
                      std::vector<double>* out_stoichiometry);
 
   void DisplayReaction(const Teuchos::Ptr<VerboseObject> vo) const;
 
-  void set_debug(const bool value) {
-    this->debug_ = value;
-  };
+  void set_debug(const bool value) { debug_ = value; };
+  bool debug() const { return debug_; };
 
-  bool debug(void) const {
-    return this->debug_;
-  };
-  std::string name(void) const {
-    return this->name_;
-  };
-  SpeciesId identifier(void) const {
-    return this->identifier_;
-  };
+  std::string name(void) const { return name_; };
+  int identifier(void) const { return identifier_; };
 
-  double reaction_rate(void) const {
-    return this->reaction_rate_;
-  }
+  double reaction_rate(void) const { return reaction_rate_; }
 
  protected:
   KineticRate(void);
 
-  void set_name(const std::string in_name) {
-    this->name_ = in_name;
-  };
-  void set_identifier(const SpeciesId in_id) {
-    this->identifier_ = in_id;
-  };
+  void set_name(const std::string& in_name) { name_ = in_name; }
+  void set_identifier(const int in_id) { identifier_ = in_id; }
+  void set_reaction_rate(const double rate) { reaction_rate_ = rate; }
 
-  void set_reaction_rate(const double rate) {
-    this->reaction_rate_ = rate;
-  };
-
-  std::vector<SpeciesName> reactant_names;
+  std::vector<std::string> reactant_names;
   std::vector<double> reactant_stoichiometry;
-  std::vector<SpeciesId> reactant_ids;
+  std::vector<int> reactant_ids;
 
  private:
   bool debug_;
   std::string name_;
-  SpeciesId identifier_;  // the index identifier of the associated mineral!
+  int identifier_;  // the index identifier of the associated mineral!
   double reaction_rate_;  // volumetric rate: [moles/sec/m^3 bulk]
 };
 

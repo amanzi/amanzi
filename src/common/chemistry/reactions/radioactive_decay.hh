@@ -28,9 +28,9 @@ class RadioactiveDecay {
  public:
   RadioactiveDecay();
   explicit RadioactiveDecay(std::string s) {};
-  RadioactiveDecay(const std::vector<SpeciesName> species_names,
-                   const std::vector<int> species_ids,
-                   const std::vector<double> stoichiometries,
+  RadioactiveDecay(const std::vector<std::string>& species_names,
+                   const std::vector<int>& species_ids,
+                   const std::vector<double>& stoichiometries,
                    const double half_life,
                    const std::string half_life_units);
   ~RadioactiveDecay() {};
@@ -58,8 +58,8 @@ class RadioactiveDecay {
  private:
   void ConvertHalfLifeUnits(void);
   void ConvertHalfLifeToRateConstant(void);
-  std::vector<SpeciesName> species_names_;
-  std::vector<int> species_ids_;       // ids of primary species in rxn
+  std::vector<std::string> species_names_;
+  std::vector<int> species_ids_;  // ids of primary species in rxn
   std::vector<double> stoichiometry_;  // stoich of primary species in rxn
 
   double rate_constant_;     // rate constant [1/sec]

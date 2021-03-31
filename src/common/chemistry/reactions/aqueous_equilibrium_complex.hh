@@ -25,11 +25,11 @@ class MatrixBlock;
 class AqueousEquilibriumComplex : public SecondarySpecies {
  public:
   AqueousEquilibriumComplex() : SecondarySpecies() {};
-  AqueousEquilibriumComplex(const SpeciesName name,
-                            const SpeciesId id,
-                            const std::vector<SpeciesName>& species,
+  AqueousEquilibriumComplex(const std::string& name,
+                            const int id,
+                            const std::vector<std::string>& species,
                             const std::vector<double>& stoichiometry,
-                            const std::vector<SpeciesId>& species_ids,
+                            const std::vector<int>& species_ids,
                             const double h2o_stoich,
                             const double charge,
                             const double mol_wt,

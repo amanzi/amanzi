@@ -29,8 +29,8 @@ class MatrixBlock;
 class SorptionIsothermRxn {
  public:
   SorptionIsothermRxn() {};
-  SorptionIsothermRxn(const SpeciesName species_name, 
-                      const SpeciesId species_id,
+  SorptionIsothermRxn(const std::string& species_name, 
+                      const int species_id,
                       std::shared_ptr<SorptionIsotherm> isotherm);
   ~SorptionIsothermRxn() {};
 
@@ -38,17 +38,13 @@ class SorptionIsothermRxn {
 
   void SetIsothermParameters(const std::vector<double>& params);
 
-  std::string IsothermName(void) const {
-    return isotherm_->name();
-  }
+  std::string IsothermName() const { return isotherm_->name(); }
 
   SorptionIsotherm::SorptionIsothermType IsothermType(void) const {
     return isotherm_->isotherm_type();
   }
 
-  SpeciesId species_id(void) const {
-    return species_id_;
-  }
+  int species_id() const { return species_id_; }
 
   void Update(const std::vector<Species>& primarySpecies);
   // add sorbed concentration to sorbed total
@@ -59,8 +55,8 @@ class SorptionIsothermRxn {
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
 
  private:
-  SpeciesId species_id_; // ID of primary species
-  SpeciesName species_name_; // Name of primary species
+  int species_id_;   // ID of primary species
+  std::string species_name_;  // Name of primary species
   double sorbed_concentration_;
   std::shared_ptr<SorptionIsotherm> isotherm_;
 };

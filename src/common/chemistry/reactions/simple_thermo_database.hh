@@ -43,34 +43,34 @@ class SimpleThermoDatabase : public Beaker {
   void FinishSurfaceComplexation(void);
   void ParseReaction(const std::string& reaction,
                      std::string* name,
-                     std::vector<SpeciesName>* species,
+                     std::vector<std::string>* species,
                      std::vector<double>* stoichiometries,
                      std::vector<int>* species_ids,
                      double* h2o_stoich);
   void ParseReactionString(const std::string reaction,
                            const std::string arrow,
-                           std::vector<SpeciesName>* species,
+                           std::vector<std::string>* species,
                            std::vector<double>* stoichiometries);
-  int SpeciesNameToID(const std::string species_name);
+  int SpeciesNameToID(const std::string& species_name);
   void RemoveLeadingAndTrailingSpaces(std::string* s);
 
   void ParseSurfaceComplexReaction(const std::string& reaction,
                                    std::string* name,
-                                   std::vector<SpeciesName>* primary_name,
+                                   std::vector<std::string>* primary_name,
                                    std::vector<double>* primary_stoichiometry,
-                                   std::vector<SpeciesId>* primary_id,
-                                   SpeciesName* surface_name,
+                                   std::vector<int>* primary_id,
+                                   std::string* surface_name,
                                    double* surface_stoichiometry,
-                                   SpeciesId* surface_id,
+                                   int* surface_id,
                                    double* h2o_stoich);
  private:
-  SpeciesId primary_id_;
-  SpeciesId aqueous_equilibrium_complex_id_;
-  SpeciesId mineral_id_;
-  SpeciesId ion_exchange_complex_id_;
-  SpeciesId surface_site_id_;
-  SpeciesId surface_complex_id_;
-  SpeciesId surface_complexation_rxn_id_;
+  int primary_id_;
+  int aqueous_equilibrium_complex_id_;
+  int mineral_id_;
+  int ion_exchange_complex_id_;
+  int surface_site_id_;
+  int surface_complex_id_;
+  int surface_complexation_rxn_id_;
 
   std::vector<SurfaceSite> surface_sites_;
   std::vector<SurfaceComplexationRxn> surface_complexation_reactions_;

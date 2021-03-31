@@ -39,11 +39,11 @@ SecondarySpecies::SecondarySpecies()
 }
 
 
-SecondarySpecies::SecondarySpecies(const SpeciesName in_name,
-                                   const SpeciesId in_id,
-                                   const std::vector<SpeciesName>& in_species,
+SecondarySpecies::SecondarySpecies(const std::string& in_name,
+                                   const int in_id,
+                                   const std::vector<std::string>& in_species,
                                    const std::vector<double>& in_stoichiometries,
-                                   const std::vector<SpeciesId>& in_species_ids,
+                                   const std::vector<int>& in_species_ids,
                                    const double in_h2o_stoich,
                                    const double in_charge,
                                    const double in_mol_wt,

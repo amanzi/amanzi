@@ -41,7 +41,7 @@ Species::Species()
 }
 
 
-Species::Species(SpeciesId id, SpeciesName name, double charge, double mol_wt,
+Species::Species(int id, const std::string& name, double charge, double mol_wt,
                  double size)
     : molality_(1.e-9),
       activity_(1.0),

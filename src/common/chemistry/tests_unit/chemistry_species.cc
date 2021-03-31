@@ -1,8 +1,7 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include <cstdlib>
 #include <cmath>
-
 #include <iostream>
+#include <string>
 #include <vector>
 
 #include <UnitTest++.h>
@@ -28,11 +27,11 @@ SUITE(GeochemistryTestsSpecies) {
     ~SpeciesTest();
 
    protected:
-    ac::SpeciesId id_;
+    int id_;
     double charge_;
     double gram_molecular_weight_;
     double ion_size_parameter_;
-    ac::SpeciesName name_;
+    std::string name_;
 
    private:
   };  // end class SpeciesTest

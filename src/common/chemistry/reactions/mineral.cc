@@ -32,9 +32,9 @@ Mineral::Mineral()
 }
 
 
-Mineral::Mineral(const SpeciesName in_name,
-                 const SpeciesId in_id,
-                 const std::vector<SpeciesName>& in_species,
+Mineral::Mineral(const std::string& in_name,
+                 const int in_id,
+                 const std::vector<std::string>& in_species,
                  const std::vector<double>& in_stoichiometries,
                  const std::vector<int>& in_species_ids,
                  const double in_h2o_stoich,

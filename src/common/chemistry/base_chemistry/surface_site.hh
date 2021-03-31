@@ -27,14 +27,14 @@ class Block;
 class SurfaceSite {
  public:
   SurfaceSite();
-  SurfaceSite(const SpeciesName name,
-              const SpeciesId id,
+  SurfaceSite(const std::string& name,
+              const int id,
               const double molar_density);
   ~SurfaceSite() {};
 
   // adds a pointer to mineral list
   void AddMineral(Mineral* mineral);
-  double SiteDensity(void) const;
+  double SiteDensity() const;
   void UpdateSiteDensity(const double site_density);
 
   void display(void) const;
@@ -44,15 +44,9 @@ class SurfaceSite {
 
   // TODO(bandre): should all these really be public? should not be changing the
   // name, id, etc after creation!
-  void set_name(SpeciesName name) {
-    this->name_ = name;
-  }
-  void set_identifier(SpeciesId i) {
-    this->identifier_ = i;
-  }
-  void set_charge(double d) {
-    this->charge_ = d;
-  }
+  void set_name(const std::string& name) { name_ = name; }
+  void set_identifier(int id) { identifier_ = id; }
+  void set_charge(double d) { charge_ = d; }
 
   // TODO(bandre): I'd like to keep set_xyz just as a mutator for a single
   // variable. Since these are changing two variables, can we call
@@ -72,15 +66,9 @@ class SurfaceSite {
     this->molar_surface_density_ = d;
   }
 
-  SpeciesName name(void) const {
-    return this->name_;
-  }
-  SpeciesId identifier(void) const {
-    return this->identifier_;
-  }
-  double charge(void) const {
-    return this->charge_;
-  }
+  std::string name() const { return name_; }
+  int identifier() const { return identifier_; }
+  double charge() const { return charge_; }
 
   double free_site_concentration(void) const {
     return this->free_site_concentration_;
@@ -96,8 +84,8 @@ class SurfaceSite {
   }
 
  private:
-  SpeciesName name_;
-  SpeciesId identifier_;
+  std::string name_;
+  int identifier_;
   double charge_;
 
   double molar_density_;  // [moles sites / m^3 mineral]

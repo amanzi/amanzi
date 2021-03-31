@@ -1,8 +1,7 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include <cstdlib>
 #include <cmath>
-
 #include <iostream>
+#include <string>
 #include <vector>
 #include <typeinfo>
 
@@ -26,22 +25,21 @@ SUITE(GeochemistryTestsSecondarySpecies) {
     SecondarySpeciesTest();
     ~SecondarySpeciesTest();
 
-    ac::SpeciesName name_;
-    ac::SpeciesId secondary_id_;
+    std::string name_;
+    int secondary_id_;
     double h2o_stoich_;
     double charge_;
     double gram_molecular_weight_;
     double ion_size_parameter_;
     double logK_;
 
-    std::vector<ac::SpeciesName> species_names_;
+    std::vector<std::string> species_names_;
     std::vector<double> stoichiometry_;
-    std::vector<ac::SpeciesId> species_ids_;
-   private:
-  };  // end class SecondarySpeciesTest
+    std::vector<int> species_ids_;
+  };
 
   SecondarySpeciesTest::SecondarySpeciesTest()
-      : name_("CO3--"),
+    : name_("CO3--"),
       secondary_id_(3),
       h2o_stoich_(0.0),
       charge_(-2),
@@ -72,10 +70,10 @@ SUITE(GeochemistryTestsSecondarySpecies) {
   class MockSecondarySpecies : public ac::SecondarySpecies {
    public:
     MockSecondarySpecies() : SecondarySpecies() {}
-    MockSecondarySpecies(const ac::SpeciesName name, const ac::SpeciesId id,
-                         const std::vector<ac::SpeciesName>& species_names,
+    MockSecondarySpecies(const std::string name, const int id,
+                         const std::vector<std::string>& species_names,
                          const std::vector<double>& stoichiometry,
-                         const std::vector<ac::SpeciesId>& species_ids,
+                         const std::vector<int>& species_ids,
                          const double h2o_stoich,
                          const double charge,
                          const double mol_wt,
@@ -126,7 +124,7 @@ SUITE(GeochemistryTestsSecondarySpecies) {
                                    species_names_, stoichiometry_, species_ids_,
                                    h2o_stoich_, charge_, gram_molecular_weight_,
                                    ion_size_parameter_, logK_);
-    CHECK_CLOSE(logK_ * 2.30258509299, secondary.lnK(), 1.0e-12);
+    CHECK_CLOSE(logK_ * 2.30258509299405, secondary.lnK(), 1.0e-12);
   }
 
   // was species_names set?

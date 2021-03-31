@@ -16,6 +16,7 @@
 #define AMANZI_CHEMISTRY_MINERAL_HH_
 
 #include <cmath>
+#include <string>
 #include <vector>
 
 #include "species.hh"
@@ -30,11 +31,11 @@ class MatrixBlock;
 class Mineral : public SecondarySpecies {
  public:
   Mineral();
-  Mineral(const SpeciesName name,
-          SpeciesId mineral_id,
-          const std::vector<SpeciesName>& species,
+  Mineral(const std::string& name,
+          const int mineral_id,
+          const std::vector<std::string>& species,
           const std::vector<double>& stoichiometries,
-          const std::vector<SpeciesId>& species_ids,
+          const std::vector<int>& species_ids,
           const double h2o_stoich, const double mol_wt,
           const double logK, const double molar_volume,
           const double specific_surface_area);

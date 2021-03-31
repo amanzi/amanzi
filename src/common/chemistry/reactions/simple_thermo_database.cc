@@ -389,9 +389,10 @@ void SimpleThermoDatabase::ParseAqueousEquilibriumComplex(const std::string& dat
   StringTokenizer aqueous_eq(data, semicolon);
 
   std::string name;
-  std::vector<SpeciesName> species;
+  std::vector<std::string> species;
   std::vector<double> stoichiometries;
-  std::vector<SpeciesId> species_ids;
+  std::vector<int> species_ids;
+
   double h2o_stoich = 0;
   std::string reaction(aqueous_eq.at(0));
   ParseReaction(reaction, &name, &species, &stoichiometries, &species_ids, &h2o_stoich);
@@ -489,13 +490,12 @@ void SimpleThermoDatabase::ParseGeneralKinetics(const std::string& data) {
   StringTokenizer substring;
 
   // parse main reaction string
-  std::vector<SpeciesName> species;
+  std::vector<std::string> species;
   std::vector<double> stoichiometries;
   ParseReactionString(substrings.at(0), lr_arrow, &species, &stoichiometries);
 
   std::vector<int> species_ids;
-  for (std::vector<SpeciesName>::iterator s = species.begin();
-       s != species.end(); s++) {
+  for (auto s = species.begin(); s != species.end(); s++) {
     species_ids.push_back(SpeciesNameToID(*s));
   }
 
@@ -661,7 +661,7 @@ void SimpleThermoDatabase::ParseReactionString(const std::string reaction,
    Author: Glenn Hammond
    Date: 07/28/11
 / ************************************************************************** */
-int SimpleThermoDatabase::SpeciesNameToID(const SpeciesName species_name) {
+int SimpleThermoDatabase::SpeciesNameToID(const std::string& species_name) {
   for (SpeciesArray::const_iterator primary_species =
            this->primary_species().begin();
        primary_species != this->primary_species().end(); primary_species++) {
@@ -720,7 +720,7 @@ void SimpleThermoDatabase::ParseRadioactiveDecay(const std::string& data) {
     Exceptions::amanzi_throw(ChemistryInvalidInput(message.str()));
   }
 
-  std::vector<SpeciesName> species;
+  std::vector<std::string> species;
   std::vector<double> stoichiometry;
   std::vector<int> species_ids;
 
@@ -829,7 +829,7 @@ void SimpleThermoDatabase::ParseMineral(const std::string& data) {
   StringTokenizer mineral_eq(data, semicolon);
 
   std::string name;
-  std::vector<SpeciesName> species;
+  std::vector<std::string> species;
   std::vector<double> stoichiometries;
   std::vector<int> species_ids;
   double h2o_stoich = 0;
@@ -904,7 +904,7 @@ void SimpleThermoDatabase::ParseMineralKinetics(const std::string& data) {
 
   MineralKineticsFactory mkf;
   mkf.set_debug(false);
-  SpeciesId mineral_id = mkf.VerifyMineralName(mineral_name, minerals());
+  int mineral_id = mkf.VerifyMineralName(mineral_name, minerals());
   Mineral mineral = minerals().at(mineral_id);
   KineticRate* kinetic_rate = mkf.Create(rate_type, rate_data, mineral, primary_species());
 
@@ -998,8 +998,8 @@ void SimpleThermoDatabase::ParseIonExchangeComplex(const std::string& data) {
   std::string complex_name = tokenizer.at(0);
   std::string products = tokenizer.at(1);
   tokenizer.tokenize(products,space);
-  SpeciesName primary_name = tokenizer.at(1);
-  IonxSiteName site_name = tokenizer.at(3);
+  std::string primary_name = tokenizer.at(1);
+  std::string site_name = tokenizer.at(3);
   tokenizer.tokenize(complex_data.at(1), space);
   double K(std::atof(tokenizer.at(0).c_str()));
 
@@ -1108,12 +1108,13 @@ void SimpleThermoDatabase::ParseSurfaceComplex(const std::string& data) {
   StringTokenizer complex_data(data, semicolon);
 
   std::string name;
-  std::vector<SpeciesName> primary_name;
+  std::vector<std::string> primary_name;
   std::vector<double> primary_stoichiometry;
-  std::vector<SpeciesId> primary_id;
-  SpeciesName surface_site_name;
+  std::vector<int> primary_id;
+  std::string surface_site_name;
   double surface_site_stoichiometry;
-  SpeciesId surface_site_id;
+  int surface_site_id;
+
   double h2o_stoich = 0;
   std::string reaction(complex_data.at(0));
   ParseSurfaceComplexReaction(reaction, &name,
@@ -1173,7 +1174,7 @@ void SimpleThermoDatabase::FinishSurfaceComplexation(void) {
  *******************************************************************************/
 void SimpleThermoDatabase::ParseReaction(const std::string& reaction,
                                          std::string* name,
-                                         std::vector<SpeciesName>* species,
+                                         std::vector<std::string>* species,
                                          std::vector<double>* stoichiometries,
                                          std::vector<int>* species_ids,
                                          double* h2o_stoich) {
@@ -1241,12 +1242,12 @@ void SimpleThermoDatabase::ParseReaction(const std::string& reaction,
  *******************************************************************************/
 void SimpleThermoDatabase::ParseSurfaceComplexReaction(const std::string& reaction,
                                                        std::string* name,
-                                                       std::vector<SpeciesName>* primaries,
+                                                       std::vector<std::string>* primaries,
                                                        std::vector<double>* primary_stoichiometries,
-                                                       std::vector<SpeciesId>* primary_ids,
-                                                       SpeciesName* surface_site_name,
+                                                       std::vector<int>* primary_ids,
+                                                       std::string* surface_site_name,
                                                        double* surface_site_stoichiometry,
-                                                       SpeciesId* surface_site_id,
+                                                       int* surface_site_id,
                                                        double* h2o_stoich) {
   if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
     *vo_->os() << "    SimpleThermoDatabase::ParseReaction()...." << std::endl;

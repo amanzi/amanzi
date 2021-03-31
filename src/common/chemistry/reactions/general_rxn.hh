@@ -27,14 +27,14 @@ class GeneralRxn {
  public:
   GeneralRxn();
   explicit GeneralRxn(std::string s) {};
-  GeneralRxn(SpeciesName name,
-             std::vector<SpeciesName>species,
-             std::vector<double>stoichiometries,
-             std::vector<int>species_ids,
-             std::vector<double>forward_stoichiometries,
-             std::vector<int>forward_species_ids,
-             std::vector<double>backward_stoichiometries,
-             std::vector<int>backward_species_ids,
+  GeneralRxn(const std::string& name,
+             const std::vector<std::string>& species,
+             const std::vector<double>& stoichiometries,
+             const std::vector<int>& species_ids,
+             const std::vector<double>& forward_stoichiometries,
+             const std::vector<int>& forward_species_ids,
+             const std::vector<double>& backward_stoichiometries,
+             const std::vector<int>& backward_species_ids,
              double kf, double kb);
   ~GeneralRxn() {};
 
@@ -52,7 +52,7 @@ class GeneralRxn {
   unsigned int ncomp_;  // # components in reaction
   unsigned int ncomp_forward_;  // # components in forward reaction
   unsigned int ncomp_backward_;  // # components in backward reaction
-  std::vector<SpeciesName> species_names_;
+  std::vector<std::string> species_names_;
   std::vector<int> species_ids_;       // ids of primary species in rxn
   std::vector<double> stoichiometry_;  // stoich of primary species in rxn
   std::vector<int> forward_species_ids_;       // ids species used in forward rate calc

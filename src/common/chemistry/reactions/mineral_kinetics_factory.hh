@@ -34,8 +34,8 @@ class MineralKineticsFactory {
                       const Mineral& mineral,
                       const SpeciesArray& primary_species);
 
-  SpeciesId VerifyMineralName(const std::string mineral_name,
-                              const std::vector<Mineral>& minerals) const;
+  int VerifyMineralName(const std::string& mineral_name,
+                        const std::vector<Mineral>& minerals) const;
 
 
   void set_debug(const bool value) {

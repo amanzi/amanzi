@@ -2,19 +2,21 @@
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
+#include <string>
 #include <vector>
 #include <typeinfo>
 
 #include <UnitTest++.h>
 
-#include "species.hh"
-#include "mineral_kinetics_factory.hh"
+#include "chemistry_exception.hh"
 #include "kinetic_rate.hh"
 #include "kinetic_rate_tst.hh"
-#include "chemistry_exception.hh"
+#include "mineral_kinetics_factory.hh"
+#include "species.hh"
 
 SUITE(GeochemistryTestsMineralKineticsFactory) {
   namespace ac = Amanzi::AmanziChemistry;
+
   /*****************************************************************************
    **
    **  Test for MineralKineticsFactory.cpp
@@ -75,15 +77,15 @@ SUITE(GeochemistryTestsMineralKineticsFactory) {
     species_.push_back(PO4_mmm);
 
     // setup a list of minerals
-    ac::SpeciesName name("Calcite");
+    std::string name("Calcite");
     double h2o_stoich(0.0);
     double gram_molecular_weight(100.0872);
     double logK(1.8487);
     double molar_volume(36.9340);
     double specific_surface_area(0.987654);
-    std::vector<ac::SpeciesName> species_names;
+    std::vector<std::string> species_names;
     std::vector<double> stoichiometry;
-    std::vector<ac::SpeciesId> species_ids;
+    std::vector<int> species_ids;
     species_names.clear();
     stoichiometry.clear();
     species_ids.clear();
@@ -136,7 +138,7 @@ SUITE(GeochemistryTestsMineralKineticsFactory) {
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(MineralKineticsFactoryTest, MineralKineticsFactory_verify_mineral_valid) {
-    ac::SpeciesId mineral_id = mkf_.VerifyMineralName("Calcite", minerals_);
+    int mineral_id = mkf_.VerifyMineralName("Calcite", minerals_);
     CHECK_EQUAL(mineral_id, 1);
   }  // end TEST_FIXTURE()
 

@@ -28,8 +28,8 @@ SUITE(GeochemistryTestsSurfaceSite) {
     ~SurfaceSiteTest();
 
    protected:
-    ac::SpeciesName name_;
-    ac::SpeciesId id_;
+    std::string name_;
+    int id_;
     double molar_density_;
     ac::SurfaceSite site_;
    private:
@@ -87,13 +87,13 @@ SUITE(GeochemistryTestsSurfaceSite) {
   // check that updating the individual parameters works correctly
   //
   TEST_FIXTURE(SurfaceSiteTest, SurfaceSite_set_name) {
-    ac::SpeciesName new_name("Foo");
+    std::string new_name("Foo");
     site_.set_name(new_name);
     CHECK_EQUAL(new_name, site_.name());
   }
 
   TEST_FIXTURE(SurfaceSiteTest, SurfaceSite_set_id) {
-    ac::SpeciesId new_id(543);
+    int new_id(543);
     site_.set_identifier(new_id);
     CHECK_EQUAL(new_id, site_.identifier());
   }

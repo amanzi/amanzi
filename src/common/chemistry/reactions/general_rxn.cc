@@ -39,50 +39,26 @@ GeneralRxn::GeneralRxn() {
 }
 
 
-GeneralRxn::GeneralRxn(SpeciesName name,
-                       std::vector<SpeciesName>species,
-                       std::vector<double>stoichiometries,
-                       std::vector<int>species_ids,
-                       std::vector<double>forward_stoichiometries,
-                       std::vector<int>forward_species_ids,
-                       std::vector<double>backward_stoichiometries,
-                       std::vector<int>backward_species_ids,
-                       double kf, double kb) {
-  static_cast<void>(name);
+GeneralRxn::GeneralRxn(const std::string& name,
+                       const std::vector<std::string>& species,
+                       const std::vector<double>& stoichiometries,
+                       const std::vector<int>& species_ids,
+                       const std::vector<double>& forward_stoichiometries,
+                       const std::vector<int>& forward_species_ids,
+                       const std::vector<double>& backward_stoichiometries,
+                       const std::vector<int>& backward_species_ids,
+                       double kf, double kb) 
+  : species_names_(species),
+    stoichiometry_(stoichiometries),
+    species_ids_(species_ids),
+    forward_stoichiometry_(forward_stoichiometries),
+    forward_species_ids_(forward_species_ids),
+    backward_stoichiometry_(backward_stoichiometries),
+    backward_species_ids_(backward_species_ids) {
+
   ncomp_ = species_ids.size();
   ncomp_forward_ = forward_species_ids.size();
   ncomp_backward_ = backward_species_ids.size();
-
-  for (std::vector<SpeciesName>::const_iterator i = species.begin();
-       i != species.end(); i++) {
-    species_names_.push_back(*i);
-  }
-  for (std::vector<double>::const_iterator i = stoichiometries.begin();
-       i != stoichiometries.end(); i++) {
-    stoichiometry_.push_back(*i);
-  }
-  for (std::vector<int>::const_iterator i = species_ids.begin();
-       i != species_ids.end(); i++) {
-    species_ids_.push_back(*i);
-  }
-  // forward species
-  for (std::vector<double>::const_iterator i = forward_stoichiometries.begin();
-       i != forward_stoichiometries.end(); i++) {
-    forward_stoichiometry_.push_back(*i);
-  }
-  for (std::vector<int>::const_iterator i = forward_species_ids.begin();
-       i != forward_species_ids.end(); i++) {
-    forward_species_ids_.push_back(*i);
-  }
-  // backward species
-  for (std::vector<double>::const_iterator i = backward_stoichiometries.begin();
-       i != backward_stoichiometries.end(); i++) {
-    backward_stoichiometry_.push_back(*i);
-  }
-  for (std::vector<int>::const_iterator i = backward_species_ids.begin();
-       i != backward_species_ids.end(); i++) {
-    backward_species_ids_.push_back(*i);
-  }
 
   kf_ = kf;
   kb_ = kb;

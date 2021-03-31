@@ -30,9 +30,9 @@ SurfaceComplex::SurfaceComplex() {
 }
 
 
-SurfaceComplex::SurfaceComplex(const SpeciesName name,
-                               const SpeciesId id,
-                               const std::vector<SpeciesName>& species,
+SurfaceComplex::SurfaceComplex(const std::string& name,
+                               const int id,
+                               const std::vector<std::string>& species,
                                const std::vector<double>& stoichiometries,
                                const std::vector<int>& species_ids,
                                const double h2o_stoich,
@@ -42,6 +42,9 @@ SurfaceComplex::SurfaceComplex(const SpeciesName name,
     : name_(name),
       identifier_(id),
       charge_(charge),
+      species_names_(species),
+      stoichiometry_(stoichiometries),
+      species_ids_(species_ids),
       surface_concentration_(0.),
       free_site_name_("Unknown"),
       free_site_stoichiometry_(free_site_stoich),
@@ -51,45 +54,29 @@ SurfaceComplex::SurfaceComplex(const SpeciesName name,
       lnQK_(0.),
       logK_(logK) {
 
-  species_names_.clear();
-  species_ids_.clear();
-  stoichiometry_.clear();
   logK_array_.clear();
 
   set_ncomp(static_cast<int>(stoichiometries.size()));
-
-  // species names
-  for (std::vector<SpeciesName>::const_iterator i = species.begin();
-       i != species.end(); i++) {
-    species_names_.push_back(*i);
-  }
-  // species stoichiometries
-  for (std::vector<double>::const_iterator i = stoichiometries.begin();
-       i != stoichiometries.end(); i++) {
-    stoichiometry_.push_back(*i);
-  }
-  // species ids
-  for (std::vector<int>::const_iterator i = species_ids.begin();
-       i != species_ids.end(); i++) {
-    species_ids_.push_back(*i);
-  }
 }
 
 
-SurfaceComplex::SurfaceComplex(const SpeciesName name,
-                               const SpeciesId id,
-                               const std::vector<SpeciesName>& species,
+SurfaceComplex::SurfaceComplex(const std::string& name,
+                               const int id,
+                               const std::vector<std::string>& species,
                                const std::vector<double>& stoichiometries,
                                const std::vector<int>& species_ids,
                                const double h2o_stoich,
-                               const SpeciesName free_site_name,
+                               const std::string& free_site_name,
                                const double free_site_stoich,
-                               const SpeciesId free_site_id,
+                               const int free_site_id,
                                const double charge,
                                const double logK)
     : name_(name),
       identifier_(id),
       charge_(charge),
+      species_names_(species),
+      stoichiometry_(stoichiometries),
+      species_ids_(species_ids),
       surface_concentration_(0.),
       free_site_name_(free_site_name),
       free_site_stoichiometry_(free_site_stoich),
@@ -99,28 +86,9 @@ SurfaceComplex::SurfaceComplex(const SpeciesName name,
       lnQK_(0.),
       logK_(logK) {
 
-  species_names_.clear();
-  species_ids_.clear();
-  stoichiometry_.clear();
   logK_array_.clear();
 
   set_ncomp(static_cast<int>(stoichiometries.size()));
-
-  // species names
-  for (std::vector<SpeciesName>::const_iterator i = species.begin();
-       i != species.end(); i++) {
-    species_names_.push_back(*i);
-  }
-  // species stoichiometries
-  for (std::vector<double>::const_iterator i = stoichiometries.begin();
-       i != stoichiometries.end(); i++) {
-    stoichiometry_.push_back(*i);
-  }
-  // species ids
-  for (std::vector<int>::const_iterator i = species_ids.begin();
-       i != species_ids.end(); i++) {
-    species_ids_.push_back(*i);
-  }
 }
 
 

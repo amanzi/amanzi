@@ -23,6 +23,7 @@
 #ifndef AMANZI_CHEMISTRY_KINETIC_RATE_TST_HH_
 #define AMANZI_CHEMISTRY_KINETIC_RATE_TST_HH_
 
+#include <string>
 #include <vector>
 
 #include "VerboseObject.hh"
@@ -125,7 +126,7 @@ class KineticRateTST : public KineticRate {
 
   // length is the number of modifying species (primary and secondary
   // in the same list!)
-  std::vector<SpeciesName> modifying_species_names;
+  std::vector<std::string> modifying_species_names;
   std::vector<double> modifying_exponents;
   std::vector<int> modifying_primary_ids;  // not needed?
   std::vector<int> modifying_secondary_ids;  // not needed?

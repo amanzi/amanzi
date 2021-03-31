@@ -33,8 +33,8 @@ SurfaceSite::SurfaceSite()
   // minerals_.clear();
 }
 
-SurfaceSite::SurfaceSite(const SpeciesName name,
-                         const SpeciesId id,
+SurfaceSite::SurfaceSite(const std::string& name,
+                         const int id,
                          const double molar_density)
     : name_(name),
       identifier_(id),

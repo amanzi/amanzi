@@ -26,11 +26,11 @@ class MatrixBlock;
 class SecondarySpecies : public Species {
  public:
   SecondarySpecies();
-  SecondarySpecies(const SpeciesName name,
-                   const SpeciesId secondary_id,
-                   const std::vector<SpeciesName>& species,
+  SecondarySpecies(const std::string& name,
+                   const int secondary_id,
+                   const std::vector<std::string>& species,
                    const std::vector<double>& stoichiometries,
-                   const std::vector<SpeciesId>& species_ids,
+                   const std::vector<int>& species_ids,
                    const double h2o_stoich,
                    const double charge,
                    const double mol_wt,
@@ -54,16 +54,16 @@ class SecondarySpecies : public Species {
   double lnK() const { return lnK_; };
   double lnQK() const { return lnQK_; };
 
-  std::vector<SpeciesName> species_names() const { return species_names_; };
-  std::vector<SpeciesId> species_ids() const { return species_ids_; };
+  std::vector<std::string> species_names() const { return species_names_; };
+  std::vector<int> species_ids() const { return species_ids_; };
   std::vector<double> stoichiometry() const { return stoichiometry_; };
 
   virtual void Display() const;
 
  protected:
   int ncomp_;  // # components in reaction
-  std::vector<SpeciesName> species_names_;
-  std::vector<SpeciesId> species_ids_;  // ids of primary species in rxn
+  std::vector<std::string> species_names_;
+  std::vector<int> species_ids_;  // ids of primary species in rxn
   std::vector<double> stoichiometry_;  // stoich of primary species in rxn
   std::vector<double> logK_array_;  // for temperature dep. logK
   double h2o_stoich_;  // stoichiometry of water in equation

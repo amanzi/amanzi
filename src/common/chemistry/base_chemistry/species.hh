@@ -24,8 +24,6 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-typedef std::string SpeciesName;
-typedef int SpeciesId;  // unsigned int?
 // typedef std::vector<Species> SpeciesArray;
 /*  SpeciesArray is actually defined at the end of the file because we
 **  can't use it in the typdef until it is declared.... Put all these
@@ -34,7 +32,7 @@ typedef int SpeciesId;  // unsigned int?
 class Species {
  public:
   Species();  // this is only present for stl containers, don't use it
-  Species(SpeciesId id, SpeciesName name, double charge, double mol_wt,
+  Species(int id, const std::string& name, double charge, double mol_wt,
           double size);
   virtual ~Species() {};
 
@@ -69,11 +67,11 @@ class Species {
   }
 
   // access invariant data
-  SpeciesId identifier(void) const { return identifier_; }
+  int identifier() const { return identifier_; }
   double charge() const { return charge_; }
   double gram_molecular_weight(void) const { return gram_molecular_weight_; }
   double ion_size_parameter(void) const { return ion_size_parameter_; }
-  SpeciesName name(void) const { return name_; }
+  std::string name(void) const { return name_; }
 
   // these should only be used by the activity coefficient model
   void set_act_coef(double d) { act_coef_ = d; }
@@ -85,9 +83,6 @@ class Species {
   void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 
  protected:
-  // Species(const double s_charge, const double s_GMW,
-  //         const ActivityCoefficient* s_activityCoefficient, SpeciesName s_name);
-
   // these are dangerous, should only be used internally. Use the
   // public update() to ensure that all related data gets updated!
   void molality(double d) {
@@ -113,21 +108,11 @@ class Species {
   // ActivityCoefficient* activityCoefficient;
 
  private:
-  SpeciesId identifier_;
+  int identifier_;
   double charge_;  // why is this a double rather than int...?
   double gram_molecular_weight_;
   double ion_size_parameter_;  // angstroms
-  SpeciesName name_;
-
-  // these are data and should not be changed during a
-  // simulation. Remove this interface and require correct data be
-  // provided during initialization! Probably means we need to ditch
-  // the empty constructor as well.
-  // void identifier(SpeciesId i) { this->identifier_ = i; }
-  // void charge(double d) { this->charge_ = d; }
-  // void gram_molecular_weight(double d) { this->gram_molecular_weight_ = d; }
-  // void ion_size_parameter(double d) { this->ion_size_parameter_ = d; }
-  // void name(SpeciesName name) { this->name_ = name; }
+  std::string name_;
 };
 
 typedef std::vector<Species> SpeciesArray;

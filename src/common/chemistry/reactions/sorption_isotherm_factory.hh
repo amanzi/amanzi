@@ -29,8 +29,8 @@ class SorptionIsothermFactory {
   std::shared_ptr<SorptionIsotherm> Create(const std::string& model, 
                                            const StringTokenizer parameters);
 
-  SpeciesId VerifySpeciesName(const SpeciesName species_name,
-                              const std::vector<Species>& species) const;
+  int VerifySpeciesName(const std::string& species_name,
+                        const std::vector<Species>& species) const;
 
   static const std::string linear;
   static const std::string langmuir;

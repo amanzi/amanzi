@@ -42,9 +42,7 @@ class SurfaceComplexationRxn {
   double GetSiteDensity(void) const {
     return surface_site_.at(0).molar_density();
   }
-  SpeciesId SiteId(void) const {
-    return surface_site_.at(0).identifier();
-  }
+  int SiteId() const { return surface_site_.at(0).identifier(); }
 
   double free_site_concentration(void) const {
     return surface_site_.at(0).free_site_concentration();

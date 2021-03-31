@@ -33,9 +33,9 @@ KineticRate::KineticRate(void)
 
 void KineticRate::SetSpeciesIds(const SpeciesArray& species,
                                 const std::string& species_type,
-                                const std::vector<SpeciesName>& in_names,
+                                const std::vector<std::string>& in_names,
                                 const std::vector<double>& in_stoichiometry,
-                                std::vector<SpeciesId>* out_ids,
+                                std::vector<int>* out_ids,
                                 std::vector<double>* out_stoichiometry) {
   /*
   ** loop through a list of input names. Compare the names to the
