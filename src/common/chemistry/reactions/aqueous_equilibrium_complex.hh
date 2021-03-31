@@ -57,4 +57,5 @@ class AqueousEquilibriumComplex : public SecondarySpecies {
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
+
 #endif

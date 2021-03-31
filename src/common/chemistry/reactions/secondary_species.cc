@@ -15,12 +15,15 @@
 #include <sstream>
 
 #include "chemistry_exception.hh"
+#include "chemistry_utilities.hh"
 #include "exceptions.hh"
 #include "matrix_block.hh"
 #include "secondary_species.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
+
+namespace acu = Amanzi::AmanziChemistry::utilities;
 
 SecondarySpecies::SecondarySpecies()
     : Species(),
@@ -52,25 +55,24 @@ SecondarySpecies::SecondarySpecies(const SpeciesName in_name,
       lnQK_(0.0),
       logK_(in_logK) {
 
-  ncomp(static_cast<int>(in_species.size()));
+  ncomp_ = in_species.size();
 
   // species names
-  for (std::vector<SpeciesName>::const_iterator i = in_species.begin();
-       i != in_species.end(); i++) {
-    species_names_.push_back(*i);
-  }
-  // species stoichiometries
-  for (std::vector<double>::const_iterator i = in_stoichiometries.begin();
-       i != in_stoichiometries.end(); i++) {
-    stoichiometry_.push_back(*i);
-  }
-  // species ids
-  for (std::vector<int>::const_iterator i = in_species_ids.begin();
-       i != in_species_ids.end(); i++) {
-    species_ids_.push_back(*i);
+  for (auto it = in_species.begin(); it != in_species.end(); ++it) {
+    species_names_.push_back(*it);
   }
 
-  lnK_ = log_to_ln(logK());
+  // species stoichiometries
+  for (auto it = in_stoichiometries.begin(); it != in_stoichiometries.end(); ++it) {
+    stoichiometry_.push_back(*it);
+  }
+
+  // species ids
+  for (auto it = in_species_ids.begin(); it != in_species_ids.end(); ++it) {
+    species_ids_.push_back(*it);
+  }
+
+  lnK_ = acu::log_to_ln(logK());
 
   //
   // verify the setup

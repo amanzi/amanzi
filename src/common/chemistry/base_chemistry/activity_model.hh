@@ -76,10 +76,7 @@ class ActivityModel {
  protected:
   void ResizeGamma(const int size);
 
-  double log_to_ln(double d) { return d * 2.30258509299; }
-  double ln_to_log(double d) { return d * 0.434294481904; }
-
-  void ionic_strength(double d) { this->I_ = d; }
+  void ionic_strength(double d) { I_ = d; }
 
   double I_;  // ionic strength
   double Z_;  // sum ( m_i * abs(z_i) )

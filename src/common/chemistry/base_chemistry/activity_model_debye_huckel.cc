@@ -16,12 +16,16 @@
   debye-huckel and debye-huckel b-dot?
 */
 
-#include "activity_model_debye_huckel.hh"
 #include <cmath>
 #include <iostream>
 
+#include "chemistry_utilities.hh"
+#include "activity_model_debye_huckel.hh"
+
 namespace Amanzi {
 namespace AmanziChemistry {
+
+namespace acu = Amanzi::AmanziChemistry::utilities;
 
 const double ActivityModelDebyeHuckel::debyeA = 0.5114;  // 25C
 const double ActivityModelDebyeHuckel::debyeB = 0.3288;  // 25C
@@ -41,7 +45,7 @@ double ActivityModelDebyeHuckel::Evaluate(const Species& species) {
         debyeBdot * I_;
 
     // bja: why not just std::pow(10.0, log_gamma)?
-    gamma = std::exp(log_to_ln(log_gamma));
+    gamma = std::exp(acu::log_to_ln(log_gamma));
   }
   return gamma;
 }

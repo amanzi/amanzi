@@ -13,11 +13,14 @@
 #include <iostream>
 #include <iomanip>
 
+#include "chemistry_utilities.hh"
 #include "matrix_block.hh"
 #include "surface_complex.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
+
+namespace acu = Amanzi::AmanziChemistry::utilities;
 
 SurfaceComplex::SurfaceComplex() {
   species_names_.clear();
@@ -44,7 +47,7 @@ SurfaceComplex::SurfaceComplex(const SpeciesName name,
       free_site_stoichiometry_(free_site_stoich),
       free_site_id_(-1),
       h2o_stoichiometry_(h2o_stoich),
-      lnK_(log_to_ln(logK)),
+      lnK_(acu::log_to_ln(logK)),
       lnQK_(0.),
       logK_(logK) {
 
@@ -92,7 +95,7 @@ SurfaceComplex::SurfaceComplex(const SpeciesName name,
       free_site_stoichiometry_(free_site_stoich),
       free_site_id_(free_site_id),
       h2o_stoichiometry_(h2o_stoich),
-      lnK_(log_to_ln(logK)),
+      lnK_(acu::log_to_ln(logK)),
       lnQK_(0.),
       logK_(logK) {
 

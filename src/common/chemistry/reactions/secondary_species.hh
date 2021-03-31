@@ -47,59 +47,29 @@ class SecondarySpecies : public Species {
   virtual void AddContributionToDTotal(const std::vector<Species>& primary_species,
                                        MatrixBlock* dtotal) = 0;
 
-  int ncomp(void) const {
-    return this->ncomp_;
-  };
+  int ncomp() const { return ncomp_; };
 
-  void set_logK(const double in_logK) {
-    this->logK_ = in_logK;
-  };
-  double logK(void) const {
-    return this->logK_;
-  };
-  double lnK(void) const {
-    return this->lnK_;
-  };
-  double lnQK(void) const {
-    return this->lnQK_;
-  };
+  void set_logK(const double in_logK) { logK_ = in_logK; };
+  double logK() const { return logK_; };
+  double lnK() const { return lnK_; };
+  double lnQK() const { return lnQK_; };
 
-  std::vector<SpeciesName> species_names(void) const {
-    return this->species_names_;
-  };
-  std::vector<SpeciesId> species_ids(void) const {
-    return this->species_ids_;
-  };
-  std::vector<double> stoichiometry(void) const {
-    return this->stoichiometry_;
-  };
+  std::vector<SpeciesName> species_names() const { return species_names_; };
+  std::vector<SpeciesId> species_ids() const { return species_ids_; };
+  std::vector<double> stoichiometry() const { return stoichiometry_; };
 
-  virtual void Display(void) const;
+  virtual void Display() const;
 
  protected:
-  double log_to_ln(double d) {
-    return d * 2.30258509299;
-  }
-  double ln_to_log(double d) {
-    return d * 0.434294481904;
-  }
-
   int ncomp_;  // # components in reaction
   std::vector<SpeciesName> species_names_;
-  std::vector<SpeciesId> species_ids_;       // ids of primary species in rxn
+  std::vector<SpeciesId> species_ids_;  // ids of primary species in rxn
   std::vector<double> stoichiometry_;  // stoich of primary species in rxn
-  std::vector<double> logK_array_;     // for temperature dep. logK
-  double h2o_stoich_;                  // stoichiometry of water in equation
-  double lnK_;                         // log value of equlibrium constant
-  double lnQK_;                        // store lnQK for derivatives later
+  std::vector<double> logK_array_;  // for temperature dep. logK
+  double h2o_stoich_;  // stoichiometry of water in equation
+  double lnK_;  // log value of equlibrium constant
+  double lnQK_;  // store lnQK for derivatives later
   double logK_;
-
- private:
-  // should not be able to change ncomp after it is set in the constructor...?
-  // void set_ncomp(const int in_ncomp) { this->ncomp_ = in_ncomp; };
-  void ncomp(const int in_ncomp) {
-    this->ncomp_ = in_ncomp;
-  };
 };
 
 }  // namespace AmanziChemistry
