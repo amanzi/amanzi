@@ -69,7 +69,7 @@ SUITE(ChemistryBenchmarkTests) {
     Chemistry1DBenchmarkTest();
     ~Chemistry1DBenchmarkTest();
  
-    void RunTest(const std::string name, double* gamma);
+    void RunTest(const std::string& filename);
 
    protected:
     std::string amanzi_exe_;
@@ -78,11 +78,7 @@ SUITE(ChemistryBenchmarkTests) {
 
   Chemistry1DBenchmarkTest::Chemistry1DBenchmarkTest() {
     H5open();
-
-    // Figure out where Amanzi lives. 
     amanzi_exe_ = std::string(CMAKE_BINARY_DIR) + std::string("/src/common/standalone_simulation_coordinator/amanzi");
-
-    // Figure out the 1D chemistry benchmark directory.
     benchmark_dir_ = std::string(CMAKE_SOURCE_DIR) + std::string("/test_suites/benchmarking/chemistry");
   }
 
@@ -90,10 +86,8 @@ SUITE(ChemistryBenchmarkTests) {
     H5close();
   }
 
-  void Chemistry1DBenchmarkTest::RunTest(const std::string name, double * gamma) {};
-
-  // Amanzi U Calcite benchmark.
-  TEST_FIXTURE(Chemistry1DBenchmarkTest, AmanziUCalcite) {
+  // Amanzi U Calcite benchmarks
+  TEST_FIXTURE(Chemistry1DBenchmarkTest, AmanziUCalciteA) {
     // Construct the Calcite benchmark directory.
     char test_dir[1025];
     snprintf(test_dir, 1024, "%s/calcite_1d", benchmark_dir_.c_str());
@@ -104,7 +98,7 @@ SUITE(ChemistryBenchmarkTests) {
     int status = std::system(command);
 
     // Run Amanzi.
-    snprintf(command, 1024, "%s --xml_file=%s/amanzi-u-1d-calcite.xml", amanzi_exe_.c_str(), test_dir);
+    snprintf(command, 1024, "%s --xml_file=test/chemistry_benchmarks_1d_a.xml", amanzi_exe_.c_str());
     std::cout<<command<<"\n";
     status = std::system(command);
     CHECK_EQUAL(0, status);
@@ -118,13 +112,47 @@ SUITE(ChemistryBenchmarkTests) {
     // Compute the L2 error norm for the Calcite concentration by reading data from 
     // the HDF5 files.
     double conc_L2 = ComputeL2Error(output, "total_component_concentration.cell.Ca++ conc",
-                                    reference, "Total_Ca++ [M]", 71, 9.0);
+                                    reference, "Total_Ca++ [M]", 27, 9.0);
     std::cout << "Ca++ concentration L2 norm: " << conc_L2 << std::endl;
     CHECK(conc_L2 < 0.025);
 
     // Compute the L2 error norm for the Calcite volume fraction.
     double VF_L2 = ComputeL2Error(output, "mineral_volume_fractions.cell.Calcite vol frac",
-                                  reference, "Calcite_VF", 71, 9.0);
+                                  reference, "Calcite_VF", 27, 9.0);
+    std::cout << "Ca++ volume fraction L2 norm: " << VF_L2 << std::endl;
+    CHECK(VF_L2 < 0.0002);
+
+    // Close the files.
+    H5Fclose(output);
+    H5Fclose(reference);
+  }
+
+  TEST_FIXTURE(Chemistry1DBenchmarkTest, AmanziUCalciteB) {
+    char test_dir[1025];
+    snprintf(test_dir, 1024, "%s/calcite_1d", benchmark_dir_.c_str());
+
+    char command[1025];
+    snprintf(command, 1024, "%s --xml_file=test/chemistry_benchmarks_1d_b.xml", amanzi_exe_.c_str());
+    std::cout<<command<<"\n";
+    int status = std::system(command);
+    CHECK_EQUAL(0, status);
+
+    // Fetch the newly-created output and the reference data.
+    hid_t output = H5Fopen("calcite_data.h5", H5F_ACC_RDONLY, H5P_DEFAULT);
+    char reference_file[1025];
+    snprintf(reference_file, 1024, "%s/pflotran/1d-calcite.h5", test_dir);
+    hid_t reference = H5Fopen(reference_file, H5F_ACC_RDONLY, H5P_DEFAULT);
+
+    // Compute the L2 error norm for the Calcite concentration by reading data from 
+    // the HDF5 files.
+    double conc_L2 = ComputeL2Error(output, "total_component_concentration.cell.Ca++ conc",
+                                    reference, "Total_Ca++ [M]", 27, 9.0);
+    std::cout << "Ca++ concentration L2 norm: " << conc_L2 << std::endl;
+    CHECK(conc_L2 < 0.025);
+
+    // Compute the L2 error norm for the Calcite volume fraction.
+    double VF_L2 = ComputeL2Error(output, "mineral_volume_fractions.cell.Calcite vol frac",
+                                  reference, "Calcite_VF", 27, 9.0);
     std::cout << "Ca++ volume fraction L2 norm: " << VF_L2 << std::endl;
     CHECK(VF_L2 < 0.0002);
 
