@@ -52,7 +52,6 @@ class Mineral : public SecondarySpecies {
                                        MatrixBlock* dtotal);
 
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
-  void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 
   double Q_over_K() const { return std::exp(lnQK_); };

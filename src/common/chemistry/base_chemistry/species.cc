@@ -108,17 +108,6 @@ void Species::Display(const Teuchos::Ptr<VerboseObject> vo) const {
 }
 
 
-void Species::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const {
-  std::stringstream message;
-  message << std::setw(15) << "Name"
-          << std::setw(15) << "Molality"
-          << std::setw(15) << "Activity Coeff"
-          << std::setw(15) << "Activity"
-          << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message.str());
-}
-
-
 void Species::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << name()

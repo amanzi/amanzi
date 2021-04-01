@@ -618,15 +618,11 @@ void Beaker::DisplayComponents(const Beaker::BeakerState& state) const {
 
 
 void Beaker::DisplayResults() const {
-  std::stringstream message;
-  message << std::endl;
-  message << "-- Solution ----------------------------------------------------------"
-          << std::endl;
-  message << "---- Components " << std::endl;
-  message << std::setw(15) << "Name"
-          << std::setw(15) << "Molality"
-          << std::setw(15) << "Molarity"
-          << std::endl;
+  std::stringstream message, header;
+  message << std::endl
+          << "-- Solution ----------------------------------------------------------\n"
+          << "---- Components\n" 
+          << "           Name       Molality       Molarity\n";
   for (int i = 0; i < ncomp_; i++) {
     message << std::setw(15) << primary_species().at(i).name()
             << std::scientific << std::setprecision(5)
@@ -635,7 +631,7 @@ void Beaker::DisplayResults() const {
             << std::endl;
   }
 
-  message << "---- Change Balance " << std::endl;
+  message << "---- Charge Balance\n";
   double charge_balance_molal = 0.0;
   for (int i = 0; i < ncomp_; i++) {
     charge_balance_molal += primary_species().at(i).charge() * total_.at(i);
@@ -646,10 +642,12 @@ void Beaker::DisplayResults() const {
           << std::setw(15) << charge_balance_molal
           << std::endl;
 
-  message << "---- Species " << std::endl;
+  message << "---- Species\n";
   vo_->Write(Teuchos::VERB_HIGH, message.str());
 
-  primary_species().at(0).DisplayResultsHeader(vo_);
+  header << "           Name       Molality Activity Coeff       Activity\n";
+  vo_->Write(Teuchos::VERB_HIGH, header.str());
+
   for (int i = 0; i < ncomp_; i++) {
     primary_species().at(i).DisplayResults(vo_);
   }
@@ -661,7 +659,8 @@ void Beaker::DisplayResults() const {
 
   if (minerals_.size() > 0) {
     vo_->Write(Teuchos::VERB_HIGH, "---- Minerals\n");
-    minerals_[0].DisplayResultsHeader(vo_);
+    vo_->Write(Teuchos::VERB_HIGH, header.str());
+
     for (unsigned int i = 0; i < minerals_.size(); i++) {
       minerals_.at(i).DisplayResults(vo_);
     }
@@ -1004,8 +1003,6 @@ void Beaker::SetupActivityModel(std::string model,
   activity_model_ = amf.Create(model, parameters,
                                primary_species(), aqComplexRxns_,
                                vo_);
-
-  // activity_model_->Display();
 }
 
 
@@ -1616,9 +1613,8 @@ void Beaker::DisplayMinerals() const {
             << std::setw(13) << "[-]"
             << std::endl;
     vo_->Write(Teuchos::VERB_HIGH, message.str());
-    for (std::vector<Mineral>::const_iterator m = minerals_.begin();
-         m != minerals_.end(); m++) {
-      m->Display(vo_);
+    for (auto it = minerals_.begin(); it != minerals_.end(); ++it) {
+      it->Display(vo_);
     }
     vo_->Write(Teuchos::VERB_HIGH, "\n");
   }

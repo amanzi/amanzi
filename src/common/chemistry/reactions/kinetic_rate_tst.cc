@@ -300,10 +300,10 @@ void KineticRateTST::ParseParameters(const StringTokenizer& reaction_data) {
 
     } else {
       // assume we are dealing with the list of rate modifying species
-      for (unsigned int modifier = 0; modifier < st.size(); modifier++) {
-        this->modifying_species_names.push_back(st.at(modifier));
-        modifier++;  // increment to get the exponent of this modifier
-        this->modifying_exponents.push_back(std::atof(st.at(modifier).c_str()));
+      for (int modifier = 0; modifier < st.size(); modifier++) {
+        modifying_species_names.push_back(st.at(modifier));
+        modifier++;
+        modifying_exponents.push_back(std::atof(st.at(modifier).c_str()));
       }
     }
     if (0) {
@@ -315,7 +315,8 @@ void KineticRateTST::ParseParameters(const StringTokenizer& reaction_data) {
 
 void KineticRateTST::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   vo->Write(Teuchos::VERB_HIGH, "    Rate law: TST\n");
-  this->DisplayReaction(vo);
+  DisplayReaction(vo);
+
   std::stringstream message;
   message << "    Parameters:" << std::endl;
   message << "      mineral = " << name() << std::endl;
@@ -323,10 +324,10 @@ void KineticRateTST::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   message << "      log10_rate constant = " << log10_rate_constant_ << std::endl;
   message << "      rate constant = " << std::scientific << rate_constant_<< std::endl;
   message << "      rate modifiers: " << std::endl;
-  for (unsigned int mod = 0; mod < this->modifying_species_names.size(); mod++) {
+  for (int mod = 0; mod < modifying_species_names.size(); mod++) {
     message << "        ";
-    message << "{ " << this->modifying_species_names.at(mod) << " }";
-    message << "^" << this->modifying_exponents.at(mod) << " " << std::endl;
+    message << "{ " << modifying_species_names.at(mod) << " }";
+    message << "^" << modifying_exponents.at(mod) << " " << std::endl;
   }
   message << std::endl;
   vo->Write(Teuchos::VERB_HIGH, message.str());

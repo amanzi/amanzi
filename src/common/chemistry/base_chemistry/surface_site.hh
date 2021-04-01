@@ -50,20 +50,16 @@ class SurfaceSite {
   // TODO(bandre): I'd like to keep set_xyz just as a mutator for a single
   // variable. Since these are changing two variables, can we call
   // them update_free_site_concentration, update_ln_free_site....?
-  void set_free_site_concentration(const double d) {
-    this->free_site_concentration_ = d;
-    this->ln_free_site_concentration_ = std::log(d);
+  void set_free_site_concentration(double d) {
+    free_site_concentration_ = d;
+    ln_free_site_concentration_ = std::log(d);
   }
-  void set_ln_free_site_concentration(const double d) {
-    this->free_site_concentration_ = std::exp(d);
-    this->ln_free_site_concentration_ = d;
+  void set_ln_free_site_concentration(double d) {
+    free_site_concentration_ = std::exp(d);
+    ln_free_site_concentration_ = d;
   }
-  void set_molar_density(const double d) {
-    this->molar_density_ = d;
-  }
-  void set_molar_surface_density(const double d) {
-    this->molar_surface_density_ = d;
-  }
+  void set_molar_density(double d) { molar_density_ = d; }
+  void set_molar_surface_density(double d) { molar_surface_density_ = d; }
 
   std::string name() const { return name_; }
   int identifier() const { return identifier_; }

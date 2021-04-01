@@ -65,7 +65,6 @@ class Species {
   void ln_act_coef(double d) { ln_act_coef_ = d; }
 
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
-  void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 
  protected:

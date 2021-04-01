@@ -25,8 +25,6 @@ class VirialCoefficient {
   VirialCoefficient();
   ~VirialCoefficient() {};
 
-  void Display() {};
-
   void UpdateVirial(const double& temp, const double& pressure);
 
   double GetVirial() const {return virial;};

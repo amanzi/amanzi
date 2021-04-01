@@ -17,6 +17,7 @@
 
 namespace Amanzi {
 namespace AmanziChemistry {
+
 const double ActivityModelPitzerHWM::bdh = 1.2;
 const double ActivityModelPitzerHWM::cwater = 55.50837;
 // -------------------------------------------------------------

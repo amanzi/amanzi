@@ -127,16 +127,6 @@ void Mineral::Display(const Teuchos::Ptr<VerboseObject> vo) const {
 }
 
 
-void Mineral::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const {
-  std::stringstream message;
-  message << std::setw(15) << "Name"
-          << std::setw(15) << "Q/K"
-          << std::setw(15) << "SI"
-          << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message.str());
-}
-
-
 void Mineral::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << name()

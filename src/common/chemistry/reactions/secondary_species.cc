@@ -124,24 +124,5 @@ void SecondarySpecies::AddContributionToDTotal(
   static_cast<void>(dtotal);
 }
 
-
-/*
-**  Display functions
-*/
-void SecondarySpecies::Display() const {
-  std::cout << "    " << name() << " = ";
-  for (unsigned int i = 0; i < species_names_.size(); i++) {
-    std::cout << stoichiometry_[i] << " " << species_names_[i];
-    if (i < species_names_.size() - 1) {
-      std::cout << " + ";
-    }
-  }
-  std::cout << std::endl;
-  std::cout << std::setw(40) << " "
-            << std::setw(10) << logK_
-            << std::setw(10) << gram_molecular_weight()
-            << std::endl;
-}
-
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

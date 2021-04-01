@@ -57,8 +57,6 @@ class SecondarySpecies : public Species {
   std::vector<int> species_ids() const { return species_ids_; };
   std::vector<double> stoichiometry() const { return stoichiometry_; };
 
-  virtual void Display() const;
-
  protected:
   int ncomp_;  // # components in reaction
   std::vector<std::string> species_names_;

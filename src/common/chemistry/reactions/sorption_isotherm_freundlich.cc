@@ -51,30 +51,19 @@ const std::vector<double>& SorptionIsothermFreundlich::GetParameters() {
 
 
 void SorptionIsothermFreundlich::SetParameters(const std::vector<double>& params) {
-  set_KD(params.at(0));
-  set_n(params.at(1));
+  KD_ = params.at(0);
+  n_ = params.at(1);
 }
 
 
 double SorptionIsothermFreundlich::EvaluateDerivative(const Species& primarySpecies) {
-  // Csorb = KD * activity^(n)
+  // Csorb = KD * activity^n
   // dCsorb/dCaq = KD * n * activity^(n-1) * activity_coef
   //             = Csorb * n / molality
   // Units:
   //  KD [kg water/m^3 bulk]
   double C_sorb = KD_ * std::pow(primarySpecies.activity(), n_);
   return C_sorb * n_ / primarySpecies.molality();
-}
-
-
-void SorptionIsothermFreundlich::Display() const {
-  std::cout << std::setw(5) << "KD:"
-            << std::scientific << std::setprecision(5)
-            << std::setw(15) << KD_
-            << std::setw(5) << "n:"
-            << std::scientific << std::setprecision(5)
-            << std::setw(15) << n_
-            << std::endl;
 }
 
 }  // namespace AmanziChemistry
