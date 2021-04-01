@@ -97,14 +97,6 @@ void Species::update() {
 }
 
 
-void Species::display() const {
-  std::cout << "    " << name();
-  std::cout << std::endl;
-  std::cout << "        charge = " << charge() << std::endl;
-  std::cout << "        mol wt = " << gram_molecular_weight() << std::endl;
-}
-
-
 void Species::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << name() << std::fixed

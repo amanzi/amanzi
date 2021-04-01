@@ -78,12 +78,6 @@ double SurfaceSite::SiteDensity() const {
 }
 
 
-void SurfaceSite::display() const {
-  std::cout << "    " << name() << std::endl;
-  std::cout << "        site density = " << molar_density() << std::endl;
-}
-
-
 void SurfaceSite::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << name()

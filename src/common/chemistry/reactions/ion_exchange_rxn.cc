@@ -248,7 +248,7 @@ void IonExchangeRxn::display(const Teuchos::Ptr<VerboseObject> vo) const {
 }
 
 
-void IonExchangeRxn::DisplayResultsHeader(void) const {
+void IonExchangeRxn::DisplayResultsHeader() const {
   std::cout << std::setw(15) << "---" << std::endl;
 }
 

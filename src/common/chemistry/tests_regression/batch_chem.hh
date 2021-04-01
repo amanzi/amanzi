@@ -91,7 +91,7 @@ int CommandLineOptions(int argc, char** argv,
 void WriteTemplateFile(const std::string& file_name,
                        const Teuchos::RCP<Amanzi::VerboseObject>& vo);
 
-void SetupChemistryOutput(void);
+void SetupChemistryOutput();
 
 void SetupTextOutput(const SimulationParameters& simulation_params,
                      const std::string& input_file_name,

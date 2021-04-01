@@ -128,7 +128,7 @@ void SecondarySpecies::AddContributionToDTotal(
 /*
 **  Display functions
 */
-void SecondarySpecies::Display(void) const {
+void SecondarySpecies::Display() const {
   std::cout << "    " << name() << " = ";
   for (unsigned int i = 0; i < species_names_.size(); i++) {
     std::cout << stoichiometry_[i] << " " << species_names_[i];

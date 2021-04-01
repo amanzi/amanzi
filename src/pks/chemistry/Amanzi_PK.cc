@@ -381,7 +381,7 @@ void Amanzi_PK::SetupAuxiliaryOutput()
     }
     int index = chem_->GetPrimaryIndex(name);
     if (index == -1) {
-        // check to make sure it is not -1, an invalid name/index
+      // check to make sure it is not -1, an invalid name/index
       std::stringstream message;
       message << "ChemistryPK::SetupAuxiliaryOutput() : "
               << "Output was requested for '" << aux_names_.at(i) 

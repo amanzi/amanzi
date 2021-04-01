@@ -341,28 +341,21 @@ void SimpleThermoDatabase::ParsePrimarySpecies(const std::string& data) {
   // get name
   no_spaces.tokenize(primary_data.at(0), space);
   std::string name(no_spaces.at(0));
-  // std::cout << "name: " << name << "  id: " << primary_id_ << std::endl;
 
   // get size parameter
   no_spaces.tokenize(primary_data.at(1), space);
   double size_parameter(std::atof(no_spaces.at(0).c_str()));
-  // std::cout << "size parameter: " << size_parameter << std::endl;
 
   // get charge
   no_spaces.tokenize(primary_data.at(2), space);
   double charge(std::atof(no_spaces.at(0).c_str()));
-  // std::cout << "change: " << charge << std::endl;
 
   // get gram molecular weight
   no_spaces.tokenize(primary_data.at(3), space);
   double gram_molecular_weight(std::atof(no_spaces.at(0).c_str()));
-  // std::cout << "gmw: " << gram_molecular_weight << std::endl;
 
   Species primary(primary_id_++, name, charge, gram_molecular_weight, size_parameter);
-  this->AddPrimarySpecies(primary);
-  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-    primary.display();
-  }
+  AddPrimarySpecies(primary);
 }
 
 
@@ -416,10 +409,7 @@ void SimpleThermoDatabase::ParseAqueousEquilibriumComplex(const std::string& dat
                                       species_ids,
                                       h2o_stoich,
                                       charge, gram_molecular_weight, size_parameter, logKeq);
-  this->AddAqueousEquilibriumComplex(secondary);
-  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-    secondary.display(vo_);
-  }
+  AddAqueousEquilibriumComplex(secondary);
 }
 
 
@@ -862,11 +852,7 @@ void SimpleThermoDatabase::ParseMineral(const std::string& data) {
                   molar_volume,
                   specific_surface_area);
 
-  this->AddMineral(mineral);
-
-  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-    mineral.display();
-  }
+  AddMineral(mineral);
 }
 
 
@@ -1073,11 +1059,7 @@ void SimpleThermoDatabase::ParseSurfaceComplexSite(const std::string& data) {
   surface_complexation_reactions_.push_back(rxn);
   surface_complexation_rxn_id_++;
 
-  // this->AddSurfaceComplexationRxn(rxn);
-  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-    site.display();
-    // rxn.Display();
-  }
+  // AddSurfaceComplexationRxn(rxn);
 }
 
 
@@ -1147,7 +1129,7 @@ void SimpleThermoDatabase::ParseSurfaceComplex(const std::string& data) {
 }
 
 
-void SimpleThermoDatabase::FinishSurfaceComplexation(void) {
+void SimpleThermoDatabase::FinishSurfaceComplexation() {
   if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
     *vo_->os() << "SimpleThermoDatabase::FinishSurfaceComplexation() :" << std::endl;
   }

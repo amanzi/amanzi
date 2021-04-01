@@ -67,7 +67,7 @@ void SurfaceComplexationRxn::SetNewtonSolveFlag() {
   const double tolerance = 1.e-20;
   for (; srfcplx != surface_complexes_.end(); srfcplx++) {
     if (std::fabs(srfcplx->free_site_stoichiometry() - 1.) > tolerance) {
-      set_use_newton_solve(true);
+      use_newton_solve_ = true;
       break;
     }
   }
@@ -101,7 +101,7 @@ void SurfaceComplexationRxn::Update(const std::vector<Species>& primarySpecies) 
 
     if (one_more) break;
 
-    if (/*use_newton_solve()*/true) {
+    if (/*use_newton_solve_*/true) {
       double residual = site_density - total;
       double dresidual_dfree_site_conc = 1.;
       std::vector<SurfaceComplex>::iterator srfcplx =

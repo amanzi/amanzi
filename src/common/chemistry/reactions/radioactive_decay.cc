@@ -72,7 +72,7 @@ RadioactiveDecay::RadioactiveDecay(const std::vector<std::string>& species_names
 }
 
 
-void RadioactiveDecay::ConvertHalfLifeUnits(void) {
+void RadioactiveDecay::ConvertHalfLifeUnits() {
   double conversion = 1.0;
   std::string units = half_life_units_;
   utilities::RemoveLeadingAndTrailingWhitespace(&units);
@@ -98,7 +98,7 @@ void RadioactiveDecay::ConvertHalfLifeUnits(void) {
 }
 
 
-void RadioactiveDecay::ConvertHalfLifeToRateConstant(void) {
+void RadioactiveDecay::ConvertHalfLifeToRateConstant() {
   /*
   **  Solve:
   **    C = C_0 * exp(-k*t) for k where C = 0.5*C_0 and t = half life > 0

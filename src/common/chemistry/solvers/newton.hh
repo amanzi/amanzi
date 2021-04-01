@@ -22,8 +22,8 @@ class Newton {
   explicit Newton(const int n);
   virtual ~Newton() {};
 
-  void size(int i) { this->size_ = i; }
-  int size(void) const { return this->size_; }
+  void size(int i) { size_ = i; }
+  int size() const { return size_; }
 
   void solve();
 

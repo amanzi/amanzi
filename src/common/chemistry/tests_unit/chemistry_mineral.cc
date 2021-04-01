@@ -250,7 +250,7 @@ SUITE(GeochemistryTestsMineral) {
   TEST_FIXTURE(MineralTest, Mineral_UpdateSpecificSurfaceArea) {
     // code currently has a hard coded value of 100
     mineral_->set_volume_fraction(0.2);
-    mineral_->UpdateSpecificSurfaceArea(void);
+    mineral_->UpdateSpecificSurfaceArea();
     CHECK_CLOSE(mineral_->specific_surface_area(), 100.0, 1.0e-10);
   }
 */

@@ -29,8 +29,7 @@ namespace AmanziChemistry {
 
 const std::string MineralKineticsFactory::kTST = "TST";
 
-MineralKineticsFactory::MineralKineticsFactory(void)
-    : debug_(false) {
+MineralKineticsFactory::MineralKineticsFactory() : debug_(false) {
 } 
 
 

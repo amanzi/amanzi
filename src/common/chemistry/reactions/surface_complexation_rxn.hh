@@ -71,15 +71,6 @@ class SurfaceComplexationRxn {
   void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 
- protected:
-  void set_use_newton_solve(const bool b) {
-    this->use_newton_solve_ = b;
-  };
-
-  bool use_newton_solve(void) const {
-    return this->use_newton_solve_;
-  };
-
  private:
   std::vector<SurfaceComplex> surface_complexes_;
   std::vector<SurfaceSite> surface_site_;

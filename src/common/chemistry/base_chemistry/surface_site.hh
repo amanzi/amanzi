@@ -37,7 +37,6 @@ class SurfaceSite {
   double SiteDensity() const;
   void UpdateSiteDensity(const double site_density);
 
-  void display() const;
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
