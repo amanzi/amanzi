@@ -50,14 +50,14 @@ class RadioactiveDecay {
                                  MatrixBlock* J);
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
 
-  int parent_id(void) const { return species_ids_.at(0); }
-  std::string parent_name(void) const {return species_names_.at(0); }
-  double rate(void) const { return rate_; }
-  double rate_constant(void) const { return rate_constant_; }
+  int parent_id() const { return species_ids_.at(0); }
+  std::string parent_name() const {return species_names_.at(0); }
+  double rate() const { return rate_; }
+  double rate_constant() const { return rate_constant_; }
 
  private:
-  void ConvertHalfLifeUnits(void);
-  void ConvertHalfLifeToRateConstant(void);
+  void ConvertHalfLifeUnits();
+  void ConvertHalfLifeToRateConstant();
   std::vector<std::string> species_names_;
   std::vector<int> species_ids_;  // ids of primary species in rxn
   std::vector<double> stoichiometry_;  // stoich of primary species in rxn

@@ -61,7 +61,7 @@ void SurfaceSite::UpdateSiteDensity(const double site_density) {
 
 
 // Sum the total site concentration based on minerals
-double SurfaceSite::SiteDensity(void) const {
+double SurfaceSite::SiteDensity() const {
   /* For now, we are skipping the use of minerals - geh
      double sum = 0.;
      for (std::vector<Mineral*>::const_iterator mineral_ptr=minerals_.begin();
@@ -78,7 +78,7 @@ double SurfaceSite::SiteDensity(void) const {
 }
 
 
-void SurfaceSite::display(void) const {
+void SurfaceSite::display() const {
   std::cout << "    " << name() << std::endl;
   std::cout << "        site density = " << molar_density() << std::endl;
 }

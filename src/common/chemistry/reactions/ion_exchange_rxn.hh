@@ -45,18 +45,18 @@ class IonExchangeRxn {
                                MatrixBlock* dtotal);
   void CheckUniformZ(const std::vector<Species>& primarySpecies);
   void set_uniform_z(const bool flag) { uniform_z_ = flag; };
-  bool uniform_z(void) const { return uniform_z_; };
-  bool uniform_z_set(void) const { return uniform_z_set_; };
-  IonExchangeSite site(void) const { return ionx_site_[0]; };
-  std::vector<IonExchangeSite>  ionx_sites(void) const { return ionx_site_; };
-  std::vector<IonExchangeComplex>  ionx_complexes(void) const { return ionx_complexes_; };
+  bool uniform_z() const { return uniform_z_; };
+  bool uniform_z_set() const { return uniform_z_set_; };
+  IonExchangeSite site() const { return ionx_site_[0]; };
+  std::vector<IonExchangeSite>  ionx_sites() const { return ionx_site_; };
+  std::vector<IonExchangeComplex>  ionx_complexes() const { return ionx_complexes_; };
   void set_cation_exchange_capacity(const double d) { ionx_site_[0].set_cation_exchange_capacity(d); };
 
   void set_ref_cation_sorbed_conc(double value) {
     ref_cation_sorbed_conc_ = value;
   }
 
-  double ref_cation_sorbed_conc(void) const {
+  double ref_cation_sorbed_conc() const {
     return ref_cation_sorbed_conc_;
   }
 
@@ -64,7 +64,7 @@ class IonExchangeRxn {
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplaySite(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayComplexes(const Teuchos::Ptr<VerboseObject> vo) const;
-  void DisplayResultsHeader(void) const;
+  void DisplayResultsHeader() const;
   void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 
  private:

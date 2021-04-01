@@ -47,10 +47,9 @@ class ActivityModelPitzerHWM : public ActivityModel {
                       const std::vector<AqueousEquilibriumComplex>& sec,
                       std::vector<double>* gamma,
                       double* actw);
-  void Display(void) const;
+  void Display() const;
 
-  private:
-
+ private:
   void ReadDataBase(const std::string& database,
 		            const std::vector<Species>& primary_species,
 		            const std::vector<AqueousEquilibriumComplex>& aqueous_complexes);

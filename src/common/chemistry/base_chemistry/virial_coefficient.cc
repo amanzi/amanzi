@@ -25,7 +25,7 @@ VirialCoefficient::VirialCoefficient()
        ifun1(-1),
        ifun2(-1),
        ifun3(-1),
-       virial(0.0e0) {
+       virial(0.0) {
 }
 
 

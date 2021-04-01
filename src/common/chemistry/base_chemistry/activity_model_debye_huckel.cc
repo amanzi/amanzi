@@ -79,7 +79,7 @@ void ActivityModelDebyeHuckel::EvaluateVector(
 }
 
 
-void ActivityModelDebyeHuckel::Display(void) const {
+void ActivityModelDebyeHuckel::Display() const {
   std::cout << "Activity model: Debye-Huckel" << std::endl;
 }
 

@@ -78,7 +78,7 @@ Species::Species(int id, const std::string& name, double charge, double mol_wt,
 }
 
 
-void Species::update(const double molality) {
+void Species::update(double molality) {
   molality_ = molality;
   // note that activity coefficient not updated
   // act_coef_ = 1.;
@@ -97,7 +97,7 @@ void Species::update() {
 }
 
 
-void Species::display(void) const {
+void Species::display() const {
   std::cout << "    " << name();
   std::cout << std::endl;
   std::cout << "        charge = " << charge() << std::endl;

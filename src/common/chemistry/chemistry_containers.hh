@@ -74,7 +74,7 @@ struct SolverStatus {
   SolverStatus() {
     Reset();
   }
-  void Reset(void) {
+  void Reset() {
     num_rhs_evaluations = 0;
     num_jacobian_evaluations = 0;
     num_iterations = 0;
@@ -97,6 +97,7 @@ struct OutputOptions {
   std::vector<std::string> verbosity_levels;
 };
 
+
 /*******************************************************************************
  **
  ** Database : format independent containers for info from
@@ -104,12 +105,12 @@ struct OutputOptions {
  **
  ******************************************************************************/
 struct AqueousSpeciesData {
-  AqueousSpeciesData(void) 
+  AqueousSpeciesData() 
       : name(""),
         charge(0.0),
         gmw(0.0),
         ion_size(0.0) {}
-  void Clear(void) {
+  void Clear() {
     this->name = "";
     this->charge = 0.0;
     this->gmw = 0.0;
@@ -121,14 +122,15 @@ struct AqueousSpeciesData {
   double ion_size;  // [angstroms]
 };
 
+
 struct AqueousReactionData {
-  AqueousReactionData(void)
+  AqueousReactionData()
       : aqueous_species() {
     stoich_coeff.clear();
     species_names.clear();
     log_K_temperature.clear();
   }
-  void Clear(void) {
+  void Clear() {
     this->aqueous_species.Clear();
     this->stoich_coeff.clear();
     this->species_names.clear();
@@ -140,14 +142,15 @@ struct AqueousReactionData {
   std::vector<double> log_K_temperature;
 };
 
+
 struct MineralSpeciesData {
-  MineralSpeciesData(void) 
+  MineralSpeciesData() 
       : name(""),
         molar_volume(0.0),
         gmw(0.0),
         specific_surface_area(0.0),
         bulk_surface_area(0.0) {}
-  void Clear(void) {
+  void Clear() {
     this->name = "";
     this->molar_volume = 0.0;
     this->gmw = 0.0;
@@ -161,14 +164,15 @@ struct MineralSpeciesData {
   double bulk_surface_area;  // [m^2/m^3]
 };
 
+
 struct MineralReactionData {
-  MineralReactionData(void)
+  MineralReactionData()
       : mineral_species() {
     stoich_coeff.clear();
     species_names.clear();
     log_K_temperature.clear();
   }
-  void Clear(void) {
+  void Clear() {
     this->mineral_species.Clear();
     this->stoich_coeff.clear();
     this->species_names.clear();
@@ -180,12 +184,13 @@ struct MineralReactionData {
   std::vector<double> log_K_temperature;
 };
 
+
 struct GasSpeciesData {
-  GasSpeciesData(void) 
+  GasSpeciesData() 
       : name(""),
         molar_volume(0.0),
         gmw(0.0) {}
-  void Clear(void) {
+  void Clear() {
     this->name = "";
     this->molar_volume = 0.0;
     this->gmw = 0.0;
@@ -195,14 +200,15 @@ struct GasSpeciesData {
   double gmw;  // [grams/mole]
 };
 
+
 struct GasReactionData {
-  GasReactionData(void)
+  GasReactionData()
       : gas_species() {
     stoich_coeff.clear();
     species_names.clear();
     log_K_temperature.clear();
   }
-  void Clear(void) {
+  void Clear() {
     gas_species.Clear();
   this->stoich_coeff.clear();
   this->species_names.clear();
@@ -214,8 +220,9 @@ struct GasReactionData {
   std::vector<double> log_K_temperature;
 };
 
+
 struct AqueousKineticsTSTData {
-  AqueousKineticsTSTData(void)
+  AqueousKineticsTSTData()
       : rate(0.0) {
     prefactor_species.clear();
     prefactor_exponents.clear();
@@ -224,9 +231,10 @@ struct AqueousKineticsTSTData {
   std::vector<std::string> prefactor_species;
   std::vector<double> prefactor_exponents;
 };
+
 
 struct AqueousKineticsIrreversibleData {
-  AqueousKineticsIrreversibleData(void)
+  AqueousKineticsIrreversibleData()
       : rate(0.0) {
     prefactor_species.clear();
     prefactor_exponents.clear();
@@ -236,8 +244,9 @@ struct AqueousKineticsIrreversibleData {
   std::vector<double> prefactor_exponents;
 };
 
+
 struct AqueousKineticsData {
-  AqueousKineticsData(void)
+  AqueousKineticsData()
       : name(""),
         rate_type(""),
         log_10_K(0.0) {
@@ -254,9 +263,10 @@ struct AqueousKineticsData {
   std::vector<AqueousKineticsIrreversibleData> irreversible_rates;
 };
 
+
 struct MineralKineticsTSTData {
   // see process models doc, Eq 5.129
-  MineralKineticsTSTData(void)
+  MineralKineticsTSTData()
       : label(""),
         mineral_name(""),
         rate(0.0),
@@ -276,13 +286,14 @@ struct MineralKineticsTSTData {
   std::vector<double> prefactor_exponents;
 };
 
+
 struct MineralKineticsData {
-  MineralKineticsData(void) {
+  MineralKineticsData() {
     tst_rates.clear();
-    //irreversible_rates.clear();
+    // irreversible_rates.clear();
   }
   std::vector<MineralKineticsTSTData> tst_rates;
-  //std::vector<MineralKineticsIrreversibleData> irreversible_rates;
+  // std::vector<MineralKineticsIrreversibleData> irreversible_rates;
 };
 
 

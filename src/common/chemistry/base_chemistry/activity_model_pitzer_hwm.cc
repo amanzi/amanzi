@@ -45,7 +45,7 @@ const double ActivityModelPitzerHWM::c9aphi_debye_huckel_slope = 9.3816144;  // 
 
   @details Create the object
 */
-ActivityModelPitzerHWM::ActivityModelPitzerHWM(void)
+ActivityModelPitzerHWM::ActivityModelPitzerHWM()
     : ActivityModel(),
       aphi_debye_huckel_slope(aphi_debye_huckel_slope25),
       number_b_functions(0),
@@ -503,7 +503,7 @@ void ActivityModelPitzerHWM::ComputeJFunctions() {
 
   @details Write the attributes
 */
-void ActivityModelPitzerHWM::Display(void) const {
+void ActivityModelPitzerHWM::Display() const {
   std::cout << "============================================>" << std::endl;
   std::cout << "Activity model: HWM (Harvie et al., 1984)" << std::endl;
   std::cout << "============================================>" << std::endl;

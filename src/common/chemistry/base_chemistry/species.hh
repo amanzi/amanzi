@@ -40,44 +40,31 @@ class Species {
   // activity and associated log values. Need to look at different
   // ActivityCoefficient models and determine what the most generic
   // version of this interface will require.
-  void update(const double molarity, const double ionic_strength);
   virtual void update();
-  virtual void update(const double molality);
+  virtual void update(double molality);
 
   // accessor methods for calculated values
-  double molality(void) const {
-    return this->molality_;
-  }
-  double activity(void) const {
-    return this->activity_;
-  }
-  double act_coef(void) const {
-    return this->act_coef_;
-  }
+  double molality() const { return molality_; }
+  double activity() const { return activity_; }
+  double act_coef() const { return act_coef_; }
 
   // natural log versions
-  double ln_molality(void) const {
-    return this->ln_molality_;
-  }
-  double ln_activity(void) const {
-    return this->ln_activity_;
-  }
-  double ln_act_coef(void) const {
-    return this->ln_act_coef_;
-  }
+  double ln_molality() const { return ln_molality_; }
+  double ln_activity() const { return ln_activity_; }
+  double ln_act_coef() const { return ln_act_coef_; }
 
   // access invariant data
   int identifier() const { return identifier_; }
   double charge() const { return charge_; }
-  double gram_molecular_weight(void) const { return gram_molecular_weight_; }
-  double ion_size_parameter(void) const { return ion_size_parameter_; }
-  std::string name(void) const { return name_; }
+  double gram_molecular_weight() const { return gram_molecular_weight_; }
+  double ion_size_parameter() const { return ion_size_parameter_; }
+  std::string name() const { return name_; }
 
   // these should only be used by the activity coefficient model
   void set_act_coef(double d) { act_coef_ = d; }
   void ln_act_coef(double d) { ln_act_coef_ = d; }
 
-  void display(void) const;
+  void display() const;
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
@@ -85,18 +72,10 @@ class Species {
  protected:
   // these are dangerous, should only be used internally. Use the
   // public update() to ensure that all related data gets updated!
-  void molality(double d) {
-    this->molality_ = d;
-  }
-  void activity(double d) {
-    this->activity_ = d;
-  }
-  void ln_molality(double d) {
-    this->ln_molality_ = d;
-  }
-  void ln_activity(double d) {
-    this->ln_activity_ = d;
-  }
+  void molality(double d) { molality_ = d; }
+  void activity(double d) { activity_ = d; }
+  void ln_molality(double d) { ln_molality_ = d; }
+  void ln_activity(double d) { ln_activity_ = d; }
 
   double molality_;
   double activity_;

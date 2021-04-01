@@ -49,7 +49,7 @@ IonExchangeSite::IonExchangeSite(const std::string& name,
 
 void IonExchangeSite::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
-  message << std::setw(15) << get_name()
+  message << std::setw(15) << name_
           << std::setw(20) << get_mineral_name()
           << std::setw(10) << std::fixed << get_charge()
           << std::setw(10) << std::scientific << get_cation_exchange_capacity()
@@ -69,7 +69,7 @@ void IonExchangeSite::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo)
 
 void IonExchangeSite::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
-  message << std::setw(15) << get_name()
+  message << std::setw(15) << name_
           << std::setw(15) << get_cation_exchange_capacity()
           << std::endl;
   vo->Write(Teuchos::VERB_HIGH, message.str());

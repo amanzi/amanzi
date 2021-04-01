@@ -38,7 +38,7 @@ class ActivityModelDebyeHuckel : public ActivityModel {
                       std::vector<double>* gamma,
                       double* actw);
 
-  void Display(void) const;
+  void Display() const;
 
  private:
   static const double debyeA;

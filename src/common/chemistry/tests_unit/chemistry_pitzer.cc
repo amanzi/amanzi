@@ -21,7 +21,7 @@ SUITE(TestPitzer) {
     PitzerTest();
     ~PitzerTest() {};
 
-    void StorePrimaries(void);
+    void StorePrimaries();
 
     ac::ActivityModel::ActivityModelParameters parameters;
     ac::ActivityModelFactory amfac_;
@@ -76,7 +76,7 @@ SUITE(TestPitzer) {
     vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry", plist));
   }
 
-  void PitzerTest::StorePrimaries(void) {
+  void PitzerTest::StorePrimaries() {
     sp_.clear();
     sp_.push_back(Cl);
     sp_.push_back(Na);

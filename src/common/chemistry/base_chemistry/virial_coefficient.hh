@@ -25,7 +25,7 @@ class VirialCoefficient {
   VirialCoefficient();
   ~VirialCoefficient() {};
 
-  void Display(void) {};
+  void Display() {};
 
   void UpdateVirial(const double& temp, const double& pressure);
 
@@ -65,4 +65,4 @@ class VirialCoefficient {
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
 
-#endif  // AMANZI_CHEMISTRY_VIRIAL_COEFFICIENT_HH_
+#endif

@@ -55,15 +55,16 @@ class Mineral : public SecondarySpecies {
   void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 
-  double Q_over_K(void) const { return std::exp(lnQK_); };
-  double saturation_index(void) const { return std::log10(Q_over_K()); };  // SI = log10(Q/Keq)
+  double Q_over_K() const { return std::exp(lnQK_); };
+  double saturation_index() const { return std::log10(Q_over_K()); };  // SI = log10(Q/Keq)
 
   double specific_surface_area() const { return specific_surface_area_; }
   void set_specific_surface_area(double d) { specific_surface_area_ = d; }
 
   double molar_volume() const { return molar_volume_; }
 
-  void UpdateSpecificSurfaceArea();
+  // not supported yet
+  void UpdateSpecificSurfaceArea() {};
 
   double volume_fraction() const { return volume_fraction_; }
   void set_volume_fraction(double d) { volume_fraction_ = d; }

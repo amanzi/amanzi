@@ -32,9 +32,6 @@ class SorptionIsothermLangmuir : public SorptionIsotherm {
   double EvaluateDerivative(const Species& primarySpecies);
 
   // setters
-  void set_K(double K) { K_ = K; }
-  void set_b(double b) { b_ = b; }
-
   const std::vector<double>& GetParameters();
   void SetParameters(const std::vector<double>& params);
 

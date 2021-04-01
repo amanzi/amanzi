@@ -43,7 +43,7 @@ double SorptionIsothermFreundlich::Evaluate(const Species& primarySpecies) {
 }
 
 
-const std::vector<double>& SorptionIsothermFreundlich::GetParameters(void) {
+const std::vector<double>& SorptionIsothermFreundlich::GetParameters() {
   params_.at(0) = KD_;
   params_.at(1) = n_;
   return params_;

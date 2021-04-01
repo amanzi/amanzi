@@ -34,13 +34,13 @@ class SorptionIsothermRxn {
                       std::shared_ptr<SorptionIsotherm> isotherm);
   ~SorptionIsothermRxn() {};
 
-  const std::vector<double>& GetIsothermParameters(void) const;
+  const std::vector<double>& GetIsothermParameters() const;
 
   void SetIsothermParameters(const std::vector<double>& params);
 
   std::string IsothermName() const { return isotherm_->name(); }
 
-  SorptionIsotherm::SorptionIsothermType IsothermType(void) const {
+  SorptionIsotherm::SorptionIsothermType IsothermType() const {
     return isotherm_->isotherm_type();
   }
 

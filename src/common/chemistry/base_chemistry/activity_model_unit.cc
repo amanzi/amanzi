@@ -31,14 +31,12 @@ void ActivityModelUnit::EvaluateVector(
     std::vector<double>* gamma, 
     double* actw) {
   // double r1(1.0);
-  for (std::vector<double>::iterator i = gamma->begin(); i != gamma->end(); ++i) {
-    (*i) = 1.0;
-  }
+  gamma->assign(gamma->size(), 1.0);
   *actw = 1.0;
 }
 
 
-void ActivityModelUnit::Display(void) const {
+void ActivityModelUnit::Display() const {
   std::cout << "Activity Model: unit activity coefficients (gamma = 1.0)." << std::endl;
 }
 

@@ -41,8 +41,8 @@ class MatrixBlock;
 
 class KineticRateTST : public KineticRate {
  public:
-  KineticRateTST(void);
-  virtual ~KineticRateTST(void) {};
+  KineticRateTST();
+  virtual ~KineticRateTST() {};
 
   void Setup(const SecondarySpecies& reaction,
              const StringTokenizer& reaction_data,
@@ -65,61 +65,11 @@ class KineticRateTST : public KineticRate {
   ** end of KineticRate inherited interface
   */
 
- protected:
-  void area(double set_area) {
-    this->area_ = set_area;
-  };
-  double area(void) const {
-    return this->area_;
-  };
-  void log_Keq(double set_log_Keq) {
-    this->log_Keq_ = set_log_Keq;
-  };
-  double log_Keq(void) const {
-    return this->log_Keq_;
-  };
-
-  void rate_constant(double rate_constant) {
-    this->rate_constant_ = rate_constant;
-  };
-  double rate_constant(void) const {
-    return this->rate_constant_;
-  };
-
-  void log10_rate_constant(double log10_k) {
-    this->log10_rate_constant_ = log10_k;
-  };
-  double log10_rate_constant(void) const {
-    return this->log10_rate_constant_;
-  };
-
-  void sat_state_exponent(double set_sat_state_exponent) {
-    this->sat_state_exponent_ = set_sat_state_exponent;
-  };
-  double sat_state_exponent(void) const {
-    return this->sat_state_exponent_;
-  };
-
-  void Q_over_Keq(const double QK) {
-    this->Q_over_Keq_ = QK;
-  };
-  double Q_over_Keq(void) const {
-    return this->Q_over_Keq_;
-  };
-
-  void modifying_term(const double mod) {
-    this->modifying_term_ = mod;
-  };
-  double modifying_term(void) const {
-    return this->modifying_term_;
-  };
-
  private:
   double area_;  // surface area [m^2]
   double log_Keq_;  // log_Keq [-]
   double rate_constant_;  // k, rate constant, [moles/m^2/sec]
   double log10_rate_constant_;  // log10(k),
-  double sat_state_exponent_;  // n, saturation state exponent, [-]
 
   double Q_over_Keq_;
   double modifying_term_;

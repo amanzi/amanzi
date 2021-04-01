@@ -26,16 +26,16 @@ class ActivityModelTest {
 
   void RunTest(const std::string name, double* gamma);
 
-  void set_activity_model_name(const std::string name) {
+  void set_activity_model_name(const std::string& name) {
     activity_model_name_ = name;
   };
-  std::string activity_model_name(void) const {
+  std::string activity_model_name() const {
     return activity_model_name_;
   };
-  double ionic_strength(void) {
+  double ionic_strength() {
     return activity_model_->ionic_strength();
   };
-  double tolerance(void) {
+  double tolerance() {
     return tolerance_;
   };
 

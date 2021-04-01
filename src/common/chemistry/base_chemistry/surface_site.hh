@@ -37,7 +37,7 @@ class SurfaceSite {
   double SiteDensity() const;
   void UpdateSiteDensity(const double site_density);
 
-  void display(void) const;
+  void display() const;
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
@@ -70,18 +70,11 @@ class SurfaceSite {
   int identifier() const { return identifier_; }
   double charge() const { return charge_; }
 
-  double free_site_concentration(void) const {
-    return this->free_site_concentration_;
-  }
-  double ln_free_site_concentration(void) const {
-    return this->ln_free_site_concentration_;
-  }
-  double molar_density(void) const {
-    return this->molar_density_;
-  }
-  double molar_surface_density(void) const {
-    return this->molar_surface_density_;
-  }
+  double free_site_concentration() const { return free_site_concentration_; }
+  double ln_free_site_concentration() const { return ln_free_site_concentration_; }
+
+  double molar_density() const { return molar_density_; }
+  double molar_surface_density() const { return molar_surface_density_; }
 
  private:
   std::string name_;

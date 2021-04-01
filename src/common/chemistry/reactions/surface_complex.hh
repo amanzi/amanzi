@@ -64,27 +64,24 @@ class SurfaceComplex {
   void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 
-  void set_name(const std::string& name) { name_ = name; }
   void set_identifier(int id) { identifier_ = id; }
   void set_charge(double d) { this->charge_ = d; }
 
   void set_free_site_stoichiometry(const double d) { this->free_site_stoichiometry_ = d; }
-  void set_lnQK(const double d) { this->lnQK_ = d; };
-  void set_logK(const double d) { this->logK_ = d; };
-  void set_ncomp(const int i) { this->ncomp_ = i; };
+  void set_ncomp(const int i) { ncomp_ = i; };
   void set_surface_concentration(const double d) { this->surface_concentration_ = d; };
 
   std::string name() const { return name_; }
   int identifier() const { return identifier_; }
   double charge() const { return charge_; }
 
-  double free_site_stoichiometry(void) const { return this->free_site_stoichiometry_; }
-  double stoichiometry(const int i) const { return this->stoichiometry_[i]; }
-  double lnQK(void) const { return this->lnQK_; };
-  double logK(void) const { return this->logK_; };
-  int ncomp(void) const { return this->ncomp_; };
-  int species_id(const int i) const { return this->species_ids_[i]; };
-  double surface_concentration(void) const { return this->surface_concentration_; };
+  double free_site_stoichiometry() const { return free_site_stoichiometry_; }
+  double stoichiometry(int i) const { return stoichiometry_[i]; }
+  double lnQK() const { return lnQK_; };
+  double logK() const { return logK_; };
+  int ncomp() const { return ncomp_; };
+  int species_id(int i) const { return species_ids_[i]; };
+  double surface_concentration() const { return this->surface_concentration_; };
 
  private:
   std::string name_;

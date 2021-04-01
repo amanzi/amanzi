@@ -105,8 +105,8 @@ void SurfaceComplex::Update(const std::vector<Species>& primarySpecies,
     lnQK_temp += stoichiometry_[i] *
         primarySpecies[species_ids_[i]].ln_activity();
   }
-  set_lnQK(lnQK_temp);
-  set_surface_concentration(std::exp(lnQK()));
+  lnQK_ = lnQK_temp;
+  set_surface_concentration(std::exp(lnQK_));
 }
 
 

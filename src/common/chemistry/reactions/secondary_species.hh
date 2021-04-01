@@ -49,7 +49,6 @@ class SecondarySpecies : public Species {
 
   int ncomp() const { return ncomp_; };
 
-  void set_logK(const double in_logK) { logK_ = in_logK; };
   double logK() const { return logK_; };
   double lnK() const { return lnK_; };
   double lnQK() const { return lnQK_; };

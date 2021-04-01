@@ -31,7 +31,7 @@ class ActivityModelUnit : public ActivityModel {
                       std::vector<double>* gamma,
                       double* actw);
 
-  void Display(void) const;
+  void Display() const;
 };
 
 }  // namespace AmanziChemistry

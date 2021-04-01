@@ -43,8 +43,7 @@ class IonExchangeSite {
   void set_charge(const double value) { charge_ = value; }
   double get_charge() const { return charge_; }
 
-  void set_name(const std::string& name) { name_ = name; }
-  std::string get_name(void) const { return name_; }
+  std::string get_name() const { return name_; }
 
   void set_mineral_name(const std::string& name) { mineral_name_ = name; }
   std::string get_mineral_name() const { return mineral_name_; }

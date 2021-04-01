@@ -20,7 +20,7 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-KineticRate::KineticRate(void)
+KineticRate::KineticRate()
     : debug_(false),
       name_("KineticRate"),
       identifier_(0),

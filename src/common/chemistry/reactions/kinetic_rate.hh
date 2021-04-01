@@ -29,7 +29,7 @@ class MatrixBlock;
 
 class KineticRate {
  public:
-  virtual ~KineticRate(void) {};
+  virtual ~KineticRate() {};
 
   virtual void Setup(const SecondarySpecies& reaction,
                      const StringTokenizer& reaction_data,
@@ -59,17 +59,17 @@ class KineticRate {
   void set_debug(const bool value) { debug_ = value; };
   bool debug() const { return debug_; };
 
-  std::string name(void) const { return name_; };
-  int identifier(void) const { return identifier_; };
+  std::string name() const { return name_; };
+  int identifier() const { return identifier_; };
 
-  double reaction_rate(void) const { return reaction_rate_; }
+  double reaction_rate() const { return reaction_rate_; }
 
  protected:
-  KineticRate(void);
+  KineticRate();
 
   void set_name(const std::string& in_name) { name_ = in_name; }
-  void set_identifier(const int in_id) { identifier_ = in_id; }
-  void set_reaction_rate(const double rate) { reaction_rate_ = rate; }
+  void set_identifier(int in_id) { identifier_ = in_id; }
+  void set_reaction_rate(double rate) { reaction_rate_ = rate; }
 
   std::vector<std::string> reactant_names;
   std::vector<double> reactant_stoichiometry;

@@ -37,12 +37,12 @@ SorptionIsothermLangmuir::SorptionIsothermLangmuir(double K, double b)
 
 
 void SorptionIsothermLangmuir::Init(double K, double b) {
-  set_K(K);
-  set_b(b);
+  K_ = K;
+  b_ = b;
 }
 
 
-const std::vector<double>& SorptionIsothermLangmuir::GetParameters(void) {
+const std::vector<double>& SorptionIsothermLangmuir::GetParameters() {
   params_.at(0) = K_;
   params_.at(1) = b_;
   return params_;
@@ -50,8 +50,8 @@ const std::vector<double>& SorptionIsothermLangmuir::GetParameters(void) {
 
 
 void SorptionIsothermLangmuir::SetParameters(const std::vector<double>& params) {
-  set_K(params.at(0));
-  set_b(params.at(1));
+  K_ = params.at(0);
+  b_ = params.at(1);
 }
 
 
@@ -85,7 +85,7 @@ double SorptionIsothermLangmuir::EvaluateDerivative(
 }
 
 
-void SorptionIsothermLangmuir::Display(void) const {
+void SorptionIsothermLangmuir::Display() const {
   std::cout << std::setw(5) << "K:"
             << std::scientific << std::setprecision(5)
             << std::setw(15) << K_

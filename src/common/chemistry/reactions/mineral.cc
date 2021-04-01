@@ -51,11 +51,6 @@ Mineral::Mineral(const std::string& in_name,
 }
 
 
-void Mineral::UpdateSpecificSurfaceArea(void) {
-  // updating SSA not supported at this time!
-}
-
-
 void Mineral::UpdateVolumeFraction(double rate, double delta_time) {
   // NOTE: the rate is a dissolution rate so either need to use -rate
   // or vol_frac -= .... inorder to get the correct
