@@ -135,9 +135,9 @@ if (DEFINED ENV{NERSC_HOST})
                       --with-cxx=${CMAKE_CXX_COMPILER} 
                       --with-fc=${CMAKE_Fortran_COMPILER})
   set(petsc_compiler_flags --CFLAGS=${petsc_cflags}
-                           --CXXFLAGS=${petsc_cxxflags}
-                           --with-clib-autodetect=0 
-                           --with-cxxlib-autodetect=0)
+                           --CXXFLAGS=${petsc_cxxflags})
+#                           --with-clib-autodetect=0 
+#                           --with-cxxlib-autodetect=0)
 else()
   set(petsc_mpi_flags --with-mpi=1 --with-mpi-dir=${MPI_PREFIX})
   set(petsc_compilers)

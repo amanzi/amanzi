@@ -404,22 +404,39 @@ endif()
 # LAPACK/BLAS Configuration 
 # ############################################################################ #
 
-message(STATUS ">>> Amanzi: Starting Search for BLAS and LAPACK.")
+
+# set(BLA_VENDOR "Generic")
+# set(BLA_VENDOR "OpenBLAS")
+# set(BLA_DIR "/usr/lib/x86_64-linux-gnu/openblas")
+# set(BLA_DIR ${TPL_BLAS_DIR})
+# set(LAPCK_DIR ${TPL_LAPACK_DIR})
+
+if ( DEFINED ENV{NERSC_HOST} )
+   
+   set(BLA_VENDOR "CRAYSCI")
+   string(TOLOWER ${CMAKE_Fortran_COMPILER_ID} _lib_compiler_id)
+   set(LIBBLAS_BASE_NAME "sci_${_lib_compiler_id}")
+   set(LIBLAPACK_BASE_NAME "sci_${_lib_compiler_id}")
+   string (REPLACE "-" "_" CRAY_CPU_TEMP $ENV{CRAY_CPU_TARGET})
+   string (REPLACE "x86_64" "${CRAY_CPU_TEMP}/lib" BLA_DIR $ENV{CRAY_LIBSCI_PREFIX_DIR})
+   set(LAPCK_DIR ${BLA_DIR})
+   
+   message(STATUS ">>> Amanzi: On NERSC system BLA_DIR = ${BLA_DIR}")
+   message(STATUS ">>> Amanzi: On NERSC system LAPCK_DIR = ${LAPCK_DIR}")
+   
+endif()
 
 # Search for BLAS (Basic Linear Algebra Subprograms) http://www.netlib.org/blas
-set(AMANZI_BLA_VENDOR "Generic")
-set(BLA_VENDOR ${AMANZI_BLA_VENDOR})
-#set(BLA_DIR "/usr/lib/x86_64-linux-gnu/openblas")
-set(BLA_DIR ${TPL_BLAS_DIR})
 
-# set(BLA_VENDOR "OpenBLAS")
+message(STATUS ">>> Amanzi: Starting Search for BLAS")
 find_package(BLAS REQUIRED)
-message(STATUS ">>>  BLAS_LIBRARIES = ${BLAS_LIBRARIES}") 
+message(STATUS ">>> Amanzi: BLAS_LIBRARIES = ${BLAS_LIBRARIES}") 
 
 # Search for LAPACK (Linear Algebra PACKage) http://www/netlib.org/lapack
-set(LAPCK_DIR ${TPL_LAPACK_DIR})
+
+message(STATUS ">>> Amanzi: Starting Search for LAPACK")
 find_package(LAPACK REQUIRED)
-message(STATUS ">>>  LAPACK_LIBRARIES = ${LAPACK_LIBRARIES}") 
+message(STATUS ">>> Amanzi: LAPACK_LIBRARIES = ${LAPACK_LIBRARIES}") 
 
 
 # ############################################################################ #

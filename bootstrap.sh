@@ -1503,8 +1503,8 @@ function define_nersc_options
                    -DMPI_EXEC:STRING=srun \
                    -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
                    -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
-                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static} \
-                   -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
+                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static}" 
+#                   -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
   
    arch_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=${TRUE} \
                      -DTESTS_REQUIRE_FULLPATH:BOOL=${TRUE}"
@@ -1520,8 +1520,8 @@ function define_nersc_options
                    -DMPI_EXEC:STRING=srun \
                    -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
                    -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
-                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static} \
-                   -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
+                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static}"
+#                   -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
   
     arch_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=${TRUE} \
                       -DTESTS_REQUIRE_FULLPATH:BOOL=${TRUE}"

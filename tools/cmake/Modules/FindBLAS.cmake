@@ -144,6 +144,8 @@ Hints
 
 #]=======================================================================]
 
+message(STATUS ">>>>> JDM: Entering FindBLAS.cmake ...")
+
 # Check the language being used
 if(NOT (CMAKE_C_COMPILER_LOADED OR CMAKE_CXX_COMPILER_LOADED OR CMAKE_Fortran_COMPILER_LOADED))
   if(BLAS_FIND_REQUIRED)
@@ -788,7 +790,23 @@ if(BLA_VENDOR STREQUAL "SCSL" OR BLA_VENDOR STREQUAL "All")
       BLAS
       sgemm
       ""
-      "scsl"
+      "${LIBBLAS_BASE_NAME}"
+      ""
+      ""
+      ""
+      )
+  endif()
+endif()
+
+# BLAS in CRAYSCI library 
+if(BLA_VENDOR STREQUAL "CRAYSCI" OR BLA_VENDOR STREQUAL "All")
+  if(NOT BLAS_LIBRARIES)
+    check_blas_libraries(
+      BLAS_LIBRARIES
+      BLAS
+      sgemm
+      ""
+      "${LIBBLAS_BASE_NAME}"
       ""
       ""
       ""

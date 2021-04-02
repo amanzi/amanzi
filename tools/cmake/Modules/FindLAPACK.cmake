@@ -240,7 +240,7 @@ macro(CHECK_LAPACK_LIBRARIES LIBRARIES _prefix _name _flags _list _threadlibs _a
   if(_libraries_work)
     # Test this combination of libraries.
     set(CMAKE_REQUIRED_LIBRARIES ${_flags} ${${LIBRARIES}} ${_blas} ${_threadlibs})
-    #message("DEBUG: CMAKE_REQUIRED_LIBRARIES = ${CMAKE_REQUIRED_LIBRARIES}")
+    message("DEBUG: CMAKE_REQUIRED_LIBRARIES = ${CMAKE_REQUIRED_LIBRARIES}")
     if(CMAKE_Fortran_COMPILER_LOADED)
       check_fortran_function_exists("${_name}" ${_prefix}${_combined_name}_WORKS)
     else()
@@ -263,7 +263,7 @@ macro(CHECK_LAPACK_LIBRARIES LIBRARIES _prefix _name _flags _list _threadlibs _a
   unset(_extaddlibdir)
   unset(_libraries_work)
   unset(_combined_name)
-  #message("DEBUG: ${LIBRARIES} = ${${LIBRARIES}}")
+  # message("DEBUG: ${LIBRARIES} = ${${LIBRARIES}}")
 endmacro()
 
 macro(_lapack_find_dependency dep)
@@ -567,6 +567,23 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
       cheev
       ""
       "vecLib"
+      ""
+      ""
+      ""
+      "${BLAS_LIBRARIES}"
+    )
+  endif()
+
+  # CRAYSCI libray (Cray Scientific Library including BLAS and LAPACK)
+  if(NOT LAPACK_LIBRARIES
+      AND (BLA_VENDOR STREQUAL "CRAYSCI" OR BLA_VENDOR STREQUAL "All"))
+    message(STATUS ">>>>>> JDM: Checking Cray Scientific Library ... ")
+    check_lapack_libraries(
+      LAPACK_LIBRARIES
+      LAPACK
+      cheev
+      ""
+      "${LIBLAPACK_BASE_NAME}"
       ""
       ""
       ""
