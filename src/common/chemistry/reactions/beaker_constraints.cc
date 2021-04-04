@@ -12,11 +12,14 @@
 #include <vector>
 
 #include "exceptions.hh"
+#include "Key.hh"
 
 #include "beaker.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
+
+namespace acu = Amanzi::AmanziChemistry::utilities;
 
 int Beaker::EnforceConstraint(
     BeakerState* state, const BeakerParameters& parameters,
@@ -26,42 +29,65 @@ int Beaker::EnforceConstraint(
   ResetStatus();
   UpdateParameters(parameters, 1.0);
 
+  std::vector<int> map(ncomp_, 0);
+
   // initial guess
   for (int i = 0; i < ncomp_; i++) {
+    auto pair = Keys::splitKey(names[i], '@');
+    std::string name = (pair.first.size() > 0) ? pair.first : pair.second;
+
     state->total.at(i) = 0.0;
     state->free_ion.at(i) = 1.0e-9;
 
-    if (names[i] == "total concentration") {
+    if (name == "total") {
       state->total.at(i) = values[i];
-    } else if (names[i] == "charge balance") {
+    } else if (name == "charge") {
       state->free_ion.at(i) = values[i];
-    } else if (names[i] == "pH") {
+    } else if (name == "pH") {
       state->free_ion.at(i) = std::pow(10.0, -values[i]);
+    } else if (name == "mineral") {
+      state->free_ion.at(i) = values[i];
+
+      int im(-1);
+      for (auto it = minerals_.begin(); it != minerals_.end(); ++it, ++im) {
+        if (it->name() == pair.second) break;
+      }
+      map[i] = im + 1;
+      if (im < 0)
+          Exceptions::amanzi_throw(ChemistryInvalidInput("Unknown mineral in constraint: " + pair.second));
+    } else if (name == "gas") {
+      // pass for now
+    } else {
+      Exceptions::amanzi_throw(ChemistryInvalidInput("Unknown geochemical constraint: " + names[i]));
     }
   }
 
   CopyStateToBeaker(*state);
 
   // initialize to a large number (not necessary, but safe)
-  double max_residual, max_rel_change(1.0e20), tolerance(1.0e-12);
+  double max_residual, max_rel_change(1.0e+20), tolerance(1.0e-14);
   int max_rel_index, num_iterations(0);
 
   do {
     UpdateActivityCoefficients();
     UpdateEquilibriumChemistry();
+    UpdateKineticChemistry();
     CalculateDTotal();
 
     jacobian_.Zero();
 
     for (int i = 0; i < ncomp_; i++) {
-      if (names[i] == "total concentration") {
+      auto pair = Keys::splitKey(names[i], '@');
+      std::string name = (pair.first.size() > 0) ? pair.first : pair.second;
+
+      if (name == "total") {
         residual_[i] = total_.at(i) - state->total.at(i);
 
         for (int j = 0; j < ncomp_; ++j) {
           jacobian_(i, j) += dtotal_(i, j);
         }
 
-      } else if (names[i] == "charge balance") {
+      } else if (name == "charge") {
         residual_[i] = 0.0;
         for (int j = 0; j < ncomp_; ++j) {
           residual_[i] += primary_species().at(j).charge() * total_[j];
@@ -71,12 +97,24 @@ int Beaker::EnforceConstraint(
           }
         }
 
-      } else if (names[i] == "pH") {
-        residual_[i] = 0.0;
-        jacobian_(i, i) = 1.0;
+      } else if (name == "pH") {
+        double act_coef = primary_species_[i].act_coef();
+        residual_[i] = primary_species_[i].molality() * act_coef - std::pow(10.0, -values[i]);
+        jacobian_(i, i) = act_coef;
 
-      } else {
-        Exceptions::amanzi_throw(ChemistryInvalidInput("Unknown geochemical constraint"));
+      // equilibrium condition is ln(Q/K) = 0
+      } else if (name == "mineral") {
+        int im = map[i];
+        residual_[i] = minerals_[im].lnQK();
+
+        for (int j = 0; j < minerals_[im].ncomp(); ++j) {
+          int jds = minerals_[im].species_ids().at(j);
+          jacobian_(i, jds) += minerals_[im].stoichiometry().at(j) / primary_species_.at(jds).molality();
+        }
+
+      } else if (name == "gas") {
+        residual_[i] = std::log(primary_species_.at(i).molality()) - values[i];
+        jacobian_(i, i) = 1.0 / primary_species_.at(i).molality();
       }
     }
 

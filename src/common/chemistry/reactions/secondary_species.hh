@@ -40,12 +40,11 @@ class SecondarySpecies : public Species {
   virtual ~SecondarySpecies() {};
 
   // update molalities
-  virtual void Update(const std::vector<Species>& primary_species);
+  virtual void Update(const std::vector<Species>& primary_species, const Species& water_species) = 0;
   // add stoichiometric contribution of complex to totalmembermember
   virtual void AddContributionToTotal(std::vector<double> *total) = 0;
   // add derivative of total with respect to free-ion to dtotal
-  virtual void AddContributionToDTotal(const std::vector<Species>& primary_species,
-                                       MatrixBlock* dtotal) = 0;
+  virtual void AddContributionToDTotal(const std::vector<Species>& primary_species, MatrixBlock* dtotal) = 0;
 
   int ncomp() const { return ncomp_; };
 

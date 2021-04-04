@@ -467,7 +467,7 @@
             <Parameter name="regions" type="Array(string)" value="{West}"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
             <Parameter name="use area fractions" type="bool" value="false"/>
-            <Parameter name="names" type="Array(string)" value="{pH, total concentration, charge balance}"/>
+            <Parameter name="names" type="Array(string)" value="{pH, total, charge}"/>
             <ParameterList name="boundary constraints">
               <Parameter name="number of dofs" type="int" value="3"/>
               <Parameter name="function type" type="string" value="composite function"/>

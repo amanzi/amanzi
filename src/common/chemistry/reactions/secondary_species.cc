@@ -103,26 +103,5 @@ SecondarySpecies::SecondarySpecies(const std::string& in_name,
   }
 }
 
-
-/*
-**  these functions are only needed if SecondarySpecies equilibrium is added.
-*/
-void SecondarySpecies::Update(const std::vector<Species>& primary_species) {
-  static_cast<void>(primary_species);
-}
-
-
-void SecondarySpecies::AddContributionToTotal(std::vector<double> *total) {
-  static_cast<void>(total);
-}
-
-
-void SecondarySpecies::AddContributionToDTotal(
-    const std::vector<Species>& primary_species,
-    MatrixBlock* dtotal) {
-  static_cast<void>(primary_species);
-  static_cast<void>(dtotal);
-}
-
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

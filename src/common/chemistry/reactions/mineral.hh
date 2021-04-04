@@ -42,7 +42,6 @@ class Mineral : public SecondarySpecies {
   ~Mineral() {};
 
   // update molalities
-  using SecondarySpecies::Update;
   virtual void Update(const std::vector<Species>& primary_species, const Species& water_species);
 
   // add stoichiometric contribution of complex to total

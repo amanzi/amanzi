@@ -81,18 +81,12 @@ SUITE(GeochemistryTestsSecondarySpecies) {
                          const double logK)
         : SecondarySpecies(name, id, species_names, stoichiometry, species_ids,
                            h2o_stoich, charge, mol_wt, size, logK) {}
-    void AddContributionToTotal(std::vector<double> *total) {
-      static_cast<void>(total);
-    }  // end addContributionToTotal()
+
+    virtual void Update(const std::vector<Species>& primary_species, const Species& water_species) {};
+    virtual void AddContributionToTotal(std::vector<double> *total) {};
 
     void AddContributionToDTotal(const std::vector<ac::Species>& primary_species,
-                                 ac::MatrixBlock* dtotal) {
-      static_cast<void>(primary_species);
-      static_cast<void>(dtotal);
-    }  // end addContributionToDTotal()
-
-   protected:
-   private:
+                                 ac::MatrixBlock* dtotal) {};
   };
 
   //

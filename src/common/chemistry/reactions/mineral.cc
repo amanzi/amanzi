@@ -65,15 +65,6 @@ void Mineral::UpdateVolumeFraction(double rate, double delta_time) {
   if (volume_fraction_ < 0.0) {
     volume_fraction_ = 0.0;
   }
-  /*
-    std::stringstream message;
-    message << name() << "::UpdateVolumeFraction() : \n"
-            << "molar_volume : " << molar_volume_ << "\n"
-            << "rate : " << rate << "\n"
-            << "dt : " << delta_time << "\n"
-            << "delta_vf : " << molar_volume_ * rate * delta_time << std::endl;
-    vo->Write(Teuchos::VERB_HIGH, message);
-  */
 }
 
 

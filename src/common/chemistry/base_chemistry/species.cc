@@ -81,7 +81,6 @@ Species::Species(int id, const std::string& name, double charge, double mol_wt,
 void Species::update(double molality) {
   molality_ = molality;
   // note that activity coefficient not updated
-  // act_coef_ = 1.;
   activity_ = act_coef_ * molality_;
   ln_molality_ = std::log(molality_);
   ln_act_coef_ = std::log(act_coef_);
