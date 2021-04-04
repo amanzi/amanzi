@@ -52,7 +52,7 @@ void AqueousEquilibriumComplex::Update(const std::vector<Species>& primarySpecie
   // Add the contribution of the water activity
   lnQK += SecondarySpecies::h2o_stoich_ * std::log(water_species.act_coef());
   lnQK_ = lnQK;
-  //  molality_ = std::exp(lnQK) / act_coef_;
+  // molality_ = std::exp(lnQK) / act_coef_;
   update(std::exp(lnQK) / act_coef_);
 }
 

@@ -12,14 +12,14 @@
   The expected plist is of the form:
 
   <ParameterList name="constuctor plist">
-    <Parameter name="number of dofs">
-  <ParameterList name="dof 1 function">
+    <Parameter name="number of dofs" type="int" value="N">
+    <ParameterList name="dof 1 function">
       <ParameterList name="function-constant">
         ...
       </ParameterList>
     </ParameterList>
 
-  <ParameterList name="dof 2 function">
+    <ParameterList name="dof 2 function">
       <ParameterList name="function-linear">
         ...
       </ParameterList>
@@ -28,8 +28,15 @@
     ...
   </ParameterList>
 
-  Where each of the "Function X" lists are valid input to the
+  Where each of the "function-xxx" lists are valid input to the
   function-factory Create() method (see ./function-factory.hh).
+
+  To simplify input for the case where all scalar functions are 
+  constant, parameter "values" is supported
+
+  <ParameterList name="constuctor plist">
+    <Parameter name="constant values" type="Array(double)" value="{1.0, 2.1, 3.2}">
+  </ParameterList>
 */
 
 #include "dbc.hh"
@@ -70,6 +77,17 @@ MultiFunction::MultiFunction(Teuchos::ParameterList& plist) {
       // ERROR -- invalid number of dofs
       AMANZI_ASSERT(0);
     }
+
+  } else if (plist.isParameter("constant values")) {
+    auto values = plist.get<Teuchos::Array<double> >("constant values").toVector();
+    int ndofs = values.size();
+
+    for (int i = 0; i < ndofs; ++i) {
+      Teuchos::ParameterList flist;
+      flist.sublist("function-constant").set<double>("value", values[i]);
+      functions_.push_back(Teuchos::rcp(factory.Create(flist)));
+    }
+
   } else {
     // assume it is a single dof function
     functions_.push_back(Teuchos::rcp(factory.Create(plist)));

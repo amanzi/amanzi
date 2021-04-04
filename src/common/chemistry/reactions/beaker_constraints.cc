@@ -7,7 +7,9 @@
   provided in the top-level COPYRIGHT file.
 */
 
+#include <algorithm>
 #include <cstdlib>
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -48,15 +50,34 @@ int Beaker::EnforceConstraint(
     } else if (name == "mineral") {
       state->free_ion.at(i) = values[i];
 
-      int im(-1);
+      int im(0);
+      bool found(false);
       for (auto it = minerals_.begin(); it != minerals_.end(); ++it, ++im) {
-        if (it->name() == pair.second) break;
+        if (it->name() == pair.second) { 
+          found = true;
+          break;
+        }
       }
-      map[i] = im + 1;
-      if (im < 0)
-          Exceptions::amanzi_throw(ChemistryInvalidInput("Unknown mineral in constraint: " + pair.second));
+      map[i] = im;
+
+      if (!found)
+        Exceptions::amanzi_throw(ChemistryInvalidInput("Unknown mineral in constraint: " + pair.second));
+
     } else if (name == "gas") {
-      // pass for now
+      int ip(0);
+      bool found(false);
+      for (auto it = primary_species_.begin(); it != primary_species_.end(); ++it, ++ip) {
+        if (it->name() == pair.second + "(aq)") {
+          found = true;
+          break;
+        }
+      }
+      map[i] = ip;
+
+      if (!found)
+        Exceptions::amanzi_throw(ChemistryInvalidInput("Unknown primary species in constraint: " + pair.second));
+      if (pair.second != "CO2")
+        Exceptions::amanzi_throw(ChemistryInvalidInput("Missing Henry law for gas constraint: " + pair.second));
     } else {
       Exceptions::amanzi_throw(ChemistryInvalidInput("Unknown geochemical constraint: " + names[i]));
     }
@@ -112,9 +133,12 @@ int Beaker::EnforceConstraint(
           jacobian_(i, jds) += minerals_[im].stoichiometry().at(j) / primary_species_.at(jds).molality();
         }
 
+      // equilibrium is the Henry law: C = p / KH, where p is in [bars]
       } else if (name == "gas") {
-        residual_[i] = std::log(primary_species_.at(i).molality()) - values[i];
-        jacobian_(i, i) = 1.0 / primary_species_.at(i).molality();
+        int ip = map[i];
+        double KH = 29.4375;
+        residual_[i] = primary_species_.at(ip).molality() - std::pow(10.0, values[i]) / KH;
+        jacobian_(i, ip) = 1.0;
       }
     }
 

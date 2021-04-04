@@ -469,23 +469,7 @@
             <Parameter name="use area fractions" type="bool" value="false"/>
             <Parameter name="names" type="Array(string)" value="{pH, total, charge}"/>
             <ParameterList name="boundary constraints">
-              <Parameter name="number of dofs" type="int" value="3"/>
-              <Parameter name="function type" type="string" value="composite function"/>
-              <ParameterList name="dof 1 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="5.0"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="dof 2 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0e-03"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="dof 3 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0e-06"/>
-                </ParameterList>
-              </ParameterList>
+              <Parameter name="constant values" type="Array(double)" value="{5.0, 1.0e-3, 1.0e-6}"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
