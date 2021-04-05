@@ -45,6 +45,8 @@ int Beaker::EnforceConstraint(
       state->total.at(i) = values[i];
     } else if (name == "charge") {
       state->free_ion.at(i) = values[i];
+    } else if (name == "free") {
+      state->free_ion.at(i) = values[i] / water_density_kg_L();
     } else if (name == "pH") {
       state->free_ion.at(i) = std::pow(10.0, -values[i]);
     } else if (name == "mineral") {
@@ -117,6 +119,10 @@ int Beaker::EnforceConstraint(
             jacobian_(i, j) += primary_species().at(k).charge() * dtotal_(k, j);
           }
         }
+
+      } else if (name == "free") {
+        residual_[i] = 0.0;
+        jacobian_(i, i) = 1.0;
 
       } else if (name == "pH") {
         double act_coef = primary_species_[i].act_coef();

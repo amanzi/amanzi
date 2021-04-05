@@ -13,7 +13,7 @@
      http:// www.thecodezone.com/diary/archives/000057.html
  
    - no longer available from origional source, but archived at:
-     http:// web.archive.org/web/20030810163805/http:// www.thecodezone.com/diary/archives/000057.html
+     http://web.archive.org/web/20030810163805/http://www.thecodezone.com/diary/archives/000057.html
 */
 
 #ifndef AMANZI_CHEMISTRY_STRING_TOKENIZER_HH_

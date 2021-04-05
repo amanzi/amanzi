@@ -1227,7 +1227,7 @@ void Beaker::CalculateDTotal() {
     it->AddContributionToDTotal(primary_species(), &dtotal_);
   }
 
-  // scale by density of water
+  // scale by density of water ( = molarity / molality)
   dtotal_.Scale(water_density_kg_L());
 
   // calculate sorbed derivatives
