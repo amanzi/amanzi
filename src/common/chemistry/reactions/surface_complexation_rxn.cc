@@ -85,18 +85,19 @@ void SurfaceComplexationRxn::Update(const std::vector<Species>& primarySpecies) 
 
   bool one_more = false;
   double damping_factor = 1.0;
-  int max_iterations = 5000;
-  int iterations = 0;
+  int iterations(0), max_iterations(100);
+
   while (iterations < max_iterations) {
     iterations++;
+
     // Initialize total to free site concentration
     double free_site_concentration = (surface_site_[0]).free_site_concentration();
-    double total = free_site_concentration;
-    // Update surface complex concentrations; Add to total
 
-    for (auto srfcplx = surface_complexes_.begin(); srfcplx != surface_complexes_.end(); ++srfcplx) {
-      srfcplx->Update(primarySpecies, (surface_site_[0]));
-      total += srfcplx->free_site_stoichiometry() * srfcplx->surface_concentration();
+    // Update surface complex concentrations; Add to total
+    double total = free_site_concentration;
+    for (auto it = surface_complexes_.begin(); it != surface_complexes_.end(); ++it) {
+      it->Update(primarySpecies, (surface_site_[0]));
+      total += it->free_site_stoichiometry() * it->surface_concentration();
     }
 
     if (one_more) break;
@@ -104,14 +105,12 @@ void SurfaceComplexationRxn::Update(const std::vector<Species>& primarySpecies) 
     if (/*use_newton_solve_*/true) {
       double residual = site_density - total;
       double dresidual_dfree_site_conc = 1.;
-      std::vector<SurfaceComplex>::iterator srfcplx =
-          surface_complexes_.begin();
-      for (; srfcplx != surface_complexes_.end(); srfcplx++) {
-        dresidual_dfree_site_conc += srfcplx->free_site_stoichiometry() *
-            srfcplx->surface_concentration() /
-            free_site_concentration;
+      for (auto it = surface_complexes_.begin(); it != surface_complexes_.end(); ++it) {
+        dresidual_dfree_site_conc += it->free_site_stoichiometry() *
+            it->surface_concentration() / free_site_concentration;
       }
       double dfree_site_conc = residual / dresidual_dfree_site_conc;
+
       if (iterations > 1000) {
         // excessive iterations, try damping the update
         damping_factor = 0.5;
@@ -131,6 +130,7 @@ void SurfaceComplexationRxn::Update(const std::vector<Species>& primarySpecies) 
     // update free site concentration
     (surface_site_[0]).set_free_site_concentration(free_site_concentration);
   }
+
   if (iterations == max_iterations) {
     std::ostringstream error_stream;
     error_stream << "SurfaceComplexationRxn::Update(): \n"

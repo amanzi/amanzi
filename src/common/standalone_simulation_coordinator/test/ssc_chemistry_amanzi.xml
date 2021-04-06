@@ -234,20 +234,36 @@
         <primary name="UO2++"    type="total" value="1.25e-10"/>
       </constraint>
       <constraint name="seepage">
-        <primary name="H+"       type="total" value="9.7317820303283020E-03"/>
-        <primary name="Al+++"    type="total" value="1.0e-08" />
-        <primary name="Ca++"     type="total" value="1.00e-05"/>
-        <primary name="Cl-"      type="total" value="3.39e-05"/>
-        <primary name="Fe+++"    type="total"  value="2.4142508014351454E-06"/>
-        <primary name="CO2(aq)"  type="total"  value="1.0712465873417377E-05"/>
-        <primary name="K+"       type="total"  value="1.72e-06"/>
-        <primary name="Mg++"     type="total"  value="2.47e-06"/>
-        <primary name="Na+"      type="total"  value="3.0398521726429520E-04"/>
-        <primary name="SiO2(aq)" type="total"  value="1.18e-04"/>
-        <primary name="SO4--"    type="total"  value="4.80e-05"/>
-        <primary name="Tritium"  type="total"  value="2.17e-09"/>
-        <primary name="NO3-"     type="total"  value="1.0e-2"/>
-        <primary name="UO2++"    type="total"  value="3.01e-05"/>
+        <primary name="H+" type="pH" value="2.05"/>
+        <primary name="Al+++" type="total" value="1.0e-8"/>
+        <primary name="Ca++" type="total" value="1.0e-5"/>
+        <primary name="Cl-" type="total" value="3.39e-5"/>
+        <primary name="Fe+++" type="mineral@Goethite" value="2.75e-6"/>
+        <primary name="CO2(aq)" type="gas@CO2" value="-3.5"/>
+        <primary name="K+" type="total" value="1.72e-6"/>
+        <primary name="Mg++" type="total" value="2.47e-6"/>
+        <primary name="Na+" type="charge" value="6.82e-5"/>
+        <primary name="SiO2(aq)" type="total" value="1.18e-4"/>
+        <primary name="SO4--" type="total" value="4.80e-5"/>
+        <primary name="Tritium" type="total" value="2.17e-9"/>
+        <primary name="NO3-" type="total" value="1.0e-2"/>
+        <primary name="UO2++" type="total" value="3.01e-5"/>
+      </constraint>
+      <constraint name="outlet">
+        <primary name="H+" type="pH" value="5.4"/>
+        <primary name="Al+++" type="mineral@Kaolinite" value="3.09e-08" />
+        <primary name="Ca++" type="total" value="1.0000000000000001E-05"/>
+        <primary name="Cl-" type="charge" value="9.98e-03"/>
+        <primary name="Fe+++" type="mineral@Goethite" value="2.92E-16"/>
+        <primary name="CO2(aq)" type="gas@CO2" value="-3.5"/>
+        <primary name="K+" type="total" value="3.32e-05"/>
+        <primary name="Mg++" type="total" value="5.35e-03"/>
+        <primary name="Na+" type="total" value="2.78e-04"/>
+        <primary name="SiO2(aq)" type="mineral@Quartz" value="1.77e-04"/>
+        <primary name="SO4--" type="total"  value="2.25e-05"/>
+        <primary name="Tritium" type="total" value="1.e-15"/>
+        <primary name="NO3-" type="total" value="1.0e-3"/>
+        <primary name="UO2++" type="total" value="1.25e-10"/>
       </constraint>
     </constraints>
   </geochemistry>
@@ -285,7 +301,7 @@
           <uniform_pressure function="constant" start="0.0" value="201325.0 Pa"/>
         </liquid_component>
         <geochemistry_component>
-          <constraint function="constant" name="background" start="0.0"/>
+          <constraint function="constant" name="outlet" start="0.0"/>
         </geochemistry_component>
       </liquid_phase>
     </boundary_condition>
