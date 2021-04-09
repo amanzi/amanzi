@@ -34,6 +34,7 @@ initialized (as independent variables are owned by state, not by any PK).
 #include "rank_evaluator.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "State.hh"
+#include "StateDefs.hh"
 
 namespace Amanzi {
 
@@ -1006,8 +1007,10 @@ void State::InitializeEvaluators() {
     *vo.os() << "initializing evaluators..." << std::endl;
   }
   for (evaluator_iterator f_it = field_evaluator_begin(); f_it != field_evaluator_end(); ++f_it) {
-    f_it->second->HasFieldChanged(Teuchos::Ptr<State>(this), "state");
-    if (!f_it->second->IsPrimary()) fields_[f_it->first]->set_initialized();
+    if (f_it->second->get_type() != EvaluatorType::PRIMARY) {
+      f_it->second->HasFieldChanged(Teuchos::Ptr<State>(this), "state");
+      fields_[f_it->first]->set_initialized();
+    }
   }
 };
 

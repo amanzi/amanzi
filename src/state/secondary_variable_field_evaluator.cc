@@ -22,6 +22,8 @@ SecondaryVariableFieldEvaluator::SecondaryVariableFieldEvaluator(
         Teuchos::ParameterList& plist) :
     FieldEvaluator(plist)
 {
+  type_ = EvaluatorType::SECONDARY;
+
   // process the plist
   if (plist_.isParameter("evaluator name")) {
     my_key_ = plist_.get<std::string>("evaluator name");

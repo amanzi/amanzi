@@ -54,6 +54,7 @@ registered with the evaluator factory.
 #include "Teuchos_RCP.hpp"
 
 #include "State.hh"
+#include "StateDefs.hh"
 
 namespace Amanzi {
 
@@ -102,9 +103,11 @@ class FieldEvaluator {
   friend std::ostream& operator<<(std::ostream&, const FieldEvaluator&);
 
   // special flags
-  virtual bool IsPrimary() { return false; }
+  EvaluatorType get_type() const { return type_; }
 
  protected:
+  EvaluatorType type_;
+
   // parameter list for the object
   Teuchos::ParameterList plist_;
 

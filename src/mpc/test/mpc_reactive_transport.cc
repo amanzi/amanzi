@@ -69,7 +69,6 @@ using namespace Amanzi::AmanziGeometry;
   glist->sublist("cycle driver").sublist("restart").set<std::string>("file name", "chk_rt00005.h5");
   glist->sublist("state").sublist("initial conditions").remove("geochemical conditions", false);
   S = Teuchos::null;
-  /*
   avg2 = 0.;
 
   /*
