@@ -404,12 +404,18 @@ endif()
 # LAPACK/BLAS Configuration 
 # ############################################################################ #
 
-
 # set(BLA_VENDOR "Generic")
 # set(BLA_VENDOR "OpenBLAS")
 # set(BLA_DIR "/usr/lib/x86_64-linux-gnu/openblas")
 # set(BLA_DIR ${TPL_BLAS_DIR})
 # set(LAPCK_DIR ${TPL_LAPACK_DIR})
+
+option(TPL_BLAS_VENDOR "Identifies the vendor for BLAS and LAPACK library search" All)
+set(BLA_VENDOR ${TPL_BLAS_VENDOR})
+
+# message(STATUS ">>>>>>>> JDM: BLA_VENDOR = ${BLA_VENDOR}")
+# message(STATUS ">>>>>>>> JDM: TPL_DEBUG_FIND_BLAS = ${TPL_DEBUG_FIND_BLAS}")
+
 
 if ( DEFINED ENV{NERSC_HOST} )
    

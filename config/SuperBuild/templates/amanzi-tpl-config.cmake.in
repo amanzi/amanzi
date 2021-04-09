@@ -113,8 +113,8 @@ set(Silo_DIR @Silo_DIR@ CACHE PATH "Silo installation prefix")
 set(MOAB_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "MOAB installation prefix")
 
 # PETSc
-set(ENABLE_PETSC @ENABLE_PETSC@ CACHE BOOL "Build PETSc interfaces")
-set(PETSC_DIR @PETSC_DIR@ CACHE PATH "PETSc installation prefix")
+set(ENABLE_PETSC @ENABLE_PETSc@ CACHE BOOL "Build PETSc interfaces")
+set(PETSc_DIR @PETSc_DIR@ CACHE PATH "PETSc installation prefix")
 
 # HYPRE
 set(ENABLE_HYPRE @ENABLE_HYPRE@ CACHE BOOL "Enable HYPRE (Ifpack) solver interface")
@@ -130,13 +130,13 @@ set(SEACAS_DIR @SEACAS_DIR@ CACHE PATH "SEACAS installation prefix")
 set(XERCES_DIR @XERCES_DIR@ CACHE PATH "XERCES installation prefix")
 
 # ALQUIMIA
-set(ALQUIMIA_DIR @ALQUIMIA_INSTALL_PREFIX@ CACHE PATH "ALQUIMIA installation prefix")
+set(Alquimia_DIR @Alquimia_INSTALL_PREFIX@ CACHE PATH "Alquimia installation prefix")
 
 # PFLOTRAN
 set(PFLOTRAN_DIR @PFLOTRAN_DIR@ CACHE PATH "PFLOTRAN installation prefix")
 
 # CRUNCHTOPE
-set(CRUNCHTOPE_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "CRUNCHTOPE installation prefix")
+set(CrunchTope_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "CrunchTope installation prefix")
 
 # SuperLU
 set(SuperLU_DIR @SuperLU_DIR@ CACHE PATH "SuperLU installation prefix")

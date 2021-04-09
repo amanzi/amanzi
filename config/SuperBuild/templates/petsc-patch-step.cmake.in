@@ -1,7 +1,7 @@
 # CMake PETSC patch file
 
 # Now run the patch script
-set(command bash @PETSC_sh_patch@)
+set(command bash @PETSc_sh_patch@)
 execute_process(
   COMMAND ${command}
   WORKING_DIRECTORY "@PETSc_source_dir@"

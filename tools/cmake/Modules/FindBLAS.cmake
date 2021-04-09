@@ -144,7 +144,9 @@ Hints
 
 #]=======================================================================]
 
-message(STATUS ">>>>> JDM: Entering FindBLAS.cmake ...")
+if (TPL_DEBUG_FIND_BLAS)
+  message(STATUS "  >>>>> FindBLAS:: Entering FindBLAS.cmake ...")
+endif()
 
 # Check the language being used
 if(NOT (CMAKE_C_COMPILER_LOADED OR CMAKE_CXX_COMPILER_LOADED OR CMAKE_Fortran_COMPILER_LOADED))
@@ -224,8 +226,7 @@ macro(CHECK_BLAS_LIBRARIES LIBRARIES _prefix _name _flags _list _threadlibs _add
 
   set(_extaddlibdir "${_addlibdir}")
   if(BLA_DIR)
-    # User told us where to look
-    # "/usr/lib/x86_64-linux-gnu/openblas"
+    # User provided the desired path
     list(APPEND _extaddlibdir ${BLA_DIR})
   else()
     if(WIN32)
@@ -238,9 +239,10 @@ macro(CHECK_BLAS_LIBRARIES LIBRARIES _prefix _name _flags _list _threadlibs _add
     list(APPEND _extaddlibdir "${CMAKE_C_IMPLICIT_LINK_DIRECTORIES}")
   endif()
 
-  #set(_extaddlibdir "/packages/lib")
-  message(STATUS ">>>>>> JDM: directories to search = ${_extaddlibdir}")
-  message(STATUS ">>>>>> JDM: library list = ${_list}")
+  if (TPL_DEBUG_FIND_BLAS)
+    message(STATUS "    >>> FindBLAS:: directories to search = ${_extaddlibdir}")
+    message(STATUS "    >>> FindBLAS:: library list = ${_list}")
+  endif()
   
   foreach(_library ${_list})
     if(_library MATCHES "^-Wl,--(start|end)-group$")
@@ -252,19 +254,21 @@ macro(CHECK_BLAS_LIBRARIES LIBRARIES _prefix _name _flags _list _threadlibs _add
         set(_combined_name ${_combined_name}_threadlibs)
       endif()
       if(_libraries_work)
-	message(STATUS ">>>>>> JDM: in find library PATHS = ${_extaddlibdir} PATH_SUFFIXES = ${_subdirs}")
-	message(STATUS ">>>>>> JDM: in find library NAMES = ${_library}")
         find_library(${_prefix}_${_library}_LIBRARY
           NAMES ${_library}
           NAMES_PER_DIR
           PATHS ${_extaddlibdir}
-	  PATH_SUFFIXES ${_subdirs}
-	  NO_DEFAULT_PATH
-        )
-        message("DEBUG: find_library(${_library}) got ${${_prefix}_${_library}_LIBRARY}")
-        mark_as_advanced(${_prefix}_${_library}_LIBRARY)
-        set(${LIBRARIES} ${${LIBRARIES}} ${${_prefix}_${_library}_LIBRARY})
-        set(_libraries_work ${${_prefix}_${_library}_LIBRARY})
+	      PATH_SUFFIXES ${_subdirs}
+	      NO_DEFAULT_PATH
+          )
+        if (TPL_DEBUG_FIND_BLAS)
+          message(STATUS "    >>> FindBLAS:: find_library(${_library}) got ${${_prefix}_${_library}_LIBRARY}")
+        endif()
+        if ( NOT (${${_prefix}_${_library}_LIBRARY} MATCHES "NOTFOUND" ) )
+          mark_as_advanced(${_prefix}_${_library}_LIBRARY)
+          set(${LIBRARIES} ${${LIBRARIES}} ${${_prefix}_${_library}_LIBRARY})
+          set(_libraries_work ${${_prefix}_${_library}_LIBRARY})
+        endif()
       endif()
     endif()
   endforeach()
@@ -304,6 +308,11 @@ else()
     set(BLA_VENDOR "All")
   endif()
 endif()
+
+if (TPL_DEBUG_FIND_BLAS)
+  message(STATUS "  >>>>> FindBLAS:: BLA_VENDOR = ${BLA_VENDOR}")
+endif()
+
 
 # Implicitly linked BLAS libraries?
 if(BLA_VENDOR STREQUAL "All")
@@ -1000,7 +1009,7 @@ if(BLA_VENDOR STREQUAL "Apple" OR BLA_VENDOR STREQUAL "All")
       BLAS
       dgemm
       ""
-      "Accelerate"
+      "Accelerate;blas"
       ""
       ""
       ""
