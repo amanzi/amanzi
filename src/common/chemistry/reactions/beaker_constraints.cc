@@ -84,7 +84,7 @@ int Beaker::EnforceConstraint(
       Exceptions::amanzi_throw(ChemistryInvalidInput("Unknown geochemical constraint: " + names[i]));
     }
 
-    total_.at(i) = state->total.at(i);
+    // total_.at(i) = state->total.at(i);
   }
 
   CopyStateToBeaker(*state);

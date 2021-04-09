@@ -43,6 +43,7 @@ void ActivityModel::ResizeGamma(int size) {
   gamma_.resize(num_species_, 1.0);  
 }
 
+
 void ActivityModel::CalculateIonicStrength(
     const std::vector<Species>& primarySpecies,
     const std::vector<AqueousEquilibriumComplex>& secondarySpecies) {
@@ -50,15 +51,13 @@ void ActivityModel::CalculateIonicStrength(
   I_ = 0.0;
 
   // primary species
-  for (std::vector<Species>::const_iterator i = primarySpecies.begin();
-       i != primarySpecies.end(); i++) {
-    I_ += i->molality() * i->charge() * i->charge();
+  for (auto it = primarySpecies.begin(); it != primarySpecies.end(); ++it) {
+    I_ += it->molality() * it->charge() * it->charge();
   }
 
   // secondary aqueous complexes
-  for (std::vector<AqueousEquilibriumComplex>::const_iterator i = secondarySpecies.begin();
-       i != secondarySpecies.end(); i++) {
-    I_ += i->molality() * i->charge() * i->charge();
+  for (auto it = secondarySpecies.begin(); it != secondarySpecies.end(); ++it) {
+    I_ += it->molality() * it->charge() * it->charge();
   }
 
   I_ *= 0.5;

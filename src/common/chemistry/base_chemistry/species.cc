@@ -26,35 +26,34 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 Species::Species()
-    : molality_(1.e-9),
-      activity_(1.0),
-      act_coef_(1.0),
-      ln_molality_(0.0),
-      ln_activity_(0.0),
-      ln_act_coef_(0.0),
-      identifier_(0),
-      charge_(0),
-      gram_molecular_weight_(0.0),
-      ion_size_parameter_(0.0),
-      name_("") {
-   //  ActivityCoefficient* activityCoefficient;
-}
+  : molality_(1.e-9),
+    activity_(1.0),
+    act_coef_(1.0),
+    ln_molality_(0.0),
+    ln_activity_(0.0),
+    ln_act_coef_(0.0),
+    identifier_(0),
+    charge_(0),
+    gram_molecular_weight_(0.0),
+    ion_size_parameter_(0.0),
+    name_("") {};
 
 
-Species::Species(int id, const std::string& name, double charge, double mol_wt,
+Species::Species(int id, const std::string& name,
+                 double charge, double mol_wt,
                  double size)
-    : molality_(1.e-9),
-      activity_(1.0),
-      act_coef_(1.0),
-      ln_molality_(0.0),
-      ln_activity_(0.0),
-      ln_act_coef_(0.0),
-      identifier_(id),
-      charge_(charge),
-      gram_molecular_weight_(mol_wt),
-      ion_size_parameter_(size),
-      name_(name) {
-  //  ActivityCoefficient* activityCoefficient;
+  : molality_(1.e-9),
+    activity_(1.0),
+    act_coef_(1.0),
+    ln_molality_(0.0),
+    ln_activity_(0.0),
+    ln_act_coef_(0.0),
+    identifier_(id),
+    charge_(charge),
+    gram_molecular_weight_(mol_wt),
+    ion_size_parameter_(size),
+    name_(name)
+{
   if (identifier() < 0) {
     std::ostringstream error_stream;
     error_stream << "Species::Species(): \n"
@@ -78,7 +77,8 @@ Species::Species(int id, const std::string& name, double charge, double mol_wt,
 }
 
 
-void Species::update(double molality) {
+void Species::update(double molality)
+{
   molality_ = molality;
   // note that activity coefficient not updated
   activity_ = act_coef_ * molality_;
@@ -88,7 +88,8 @@ void Species::update(double molality) {
 }
 
 
-void Species::update() {
+void Species::update()
+{
   activity_ = act_coef_ * molality_;
   ln_molality_ = std::log(molality_);
   ln_act_coef_ = std::log(act_coef_);
@@ -96,7 +97,8 @@ void Species::update() {
 }
 
 
-void Species::Display(const Teuchos::Ptr<VerboseObject> vo) const {
+void Species::Display(const Teuchos::Ptr<VerboseObject> vo) const
+{
   std::stringstream message;
   message << std::setw(15) << name() << std::fixed
           << std::setprecision(2) << std::setw(10) << charge()
@@ -107,7 +109,8 @@ void Species::Display(const Teuchos::Ptr<VerboseObject> vo) const {
 }
 
 
-void Species::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const {
+void Species::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const
+{
   std::stringstream message;
   message << std::setw(15) << name()
           << std::scientific << std::setprecision(5)

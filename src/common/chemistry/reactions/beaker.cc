@@ -171,16 +171,11 @@ void Beaker::SetParameters(const Beaker::BeakerParameters& parameters) {
 }
 
 
-//
-// public "computation engine" routines
-//
-
 /* ******************************************************************
 * if no water density provided, default is 1000.0 kg/m^3
 ****************************************************************** */
 int Beaker::Speciate(BeakerState* state,
                      const BeakerParameters& parameters) {
-  std::stringstream message;
   double speciation_tolerance = 1.e-12;
   double residual_tolerance = 1.e-12;
   ResetStatus();
@@ -194,10 +189,8 @@ int Beaker::Speciate(BeakerState* state,
     prev_molal_.at(i) = primary_species().at(i).molality();
   }
 
-  double max_rel_change;
-  int max_rel_index;
-  double max_residual;
-  unsigned int num_iterations = 0;
+  int max_rel_index, num_iterations(0);
+  double max_rel_change, max_residual;
   bool calculate_activity_coefs = false;
 
   do {
@@ -273,9 +266,7 @@ int Beaker::Speciate(BeakerState* state,
 int Beaker::ReactionStep(BeakerState* state,
                          const BeakerParameters& parameters,
                          double dt) {
-  // update class paramters
-  // water_density [kg/m^3]
-  // volume [m^3]
+  // update class parameters
   ResetStatus();
   UpdateParameters(parameters, dt);
   CheckChargeBalance(state->total);
@@ -307,10 +298,10 @@ int Beaker::ReactionStep(BeakerState* state,
     UpdateKineticChemistry();
 
     // units of residual: mol/sec
-    CalculateResidual();
     // units of Jacobian: kg water/sec
-    CalculateJacobian();
     // therefore, units of solution: mol/kg water (change in molality)
+    CalculateResidual();
+    CalculateJacobian();
 
     rhs_ = residual_;
 
@@ -337,15 +328,8 @@ int Beaker::ReactionStep(BeakerState* state,
 
     num_iterations++;
 
-    // if (num_iterations >= 100) {
-    //   for (int i = 0; i < ncomp_; i++)
-    //     std::cout << primary_species_.at(i).name() << " " <<
-    //                  primary_species_.at(i).molality() << " " << total_.at(i) << "\n";
-    //     std::cout << max_rel_change << " " << tolerance_ << std::endl;
-    // }
-
-    // exit if maximum relative change is below tolerance
-  } while (max_rel_change > tolerance_ && num_iterations < max_iterations_);
+  } while (max_rel_change > tolerance_ && 
+           num_iterations < max_iterations_);
 
   if (num_iterations >= max_iterations_) {
     // TODO(bandre): should this be an error to the driver...?
@@ -386,7 +370,6 @@ int Beaker::ReactionStep(BeakerState* state,
 }
 
 
-
 /* ******************************************************************
 * Copy the beaker state into variables are be returned to the
 * driver for long term storage.
@@ -416,15 +399,14 @@ void Beaker::CopyBeakerToState(Beaker::BeakerState* state) {
     state->free_ion.at(i) = primary_species().at(i).molality();
   }
 
-  //
   // activity coeff
-  //
   if (state->primary_activity_coeff.size() != ncomp_) {
     state->primary_activity_coeff.resize(ncomp_);
   }
   for (int i = 0; i < ncomp_; ++i) {
     state->primary_activity_coeff.at(i) = primary_species().at(i).act_coef();
   }
+
   if (state->secondary_activity_coeff.size() != aqComplexRxns_.size()) {
     state->secondary_activity_coeff.resize(aqComplexRxns_.size());
   }
@@ -432,11 +414,9 @@ void Beaker::CopyBeakerToState(Beaker::BeakerState* state) {
     state->secondary_activity_coeff.at(i) = aqComplexRxns_.at(i).act_coef();
   }
 
-  //
   // minerals
-  //
   assert(state->mineral_volume_fraction.size() == minerals_.size());
-  for (unsigned int m = 0; m < minerals_.size(); ++m) {
+  for (int m = 0; m < minerals_.size(); ++m) {
     state->mineral_volume_fraction.at(m) = minerals_.at(m).volume_fraction();
   }
 
@@ -448,9 +428,7 @@ void Beaker::CopyBeakerToState(Beaker::BeakerState* state) {
     state->mineral_specific_surface_area.at(m) = ssa;
   }
 
-  //
   // ion exchange
-  //
   if (state->ion_exchange_sites.size() != ion_exchange_rxns_.size()) {
     state->ion_exchange_sites.resize(ion_exchange_rxns_.size());
   }
@@ -460,39 +438,30 @@ void Beaker::CopyBeakerToState(Beaker::BeakerState* state) {
   }
 
   if (state->ion_exchange_ref_cation_conc.size() != ion_exchange_rxns_.size()) {
-    state->ion_exchange_ref_cation_conc.resize( 
-        ion_exchange_rxns_.size());
+    state->ion_exchange_ref_cation_conc.resize(ion_exchange_rxns_.size());
   }
   for (int i = 0; i < ion_exchange_rxns_.size(); ++i) {
     state->ion_exchange_ref_cation_conc.at(i) = 
         ion_exchange_rxns_[i].ref_cation_sorbed_conc();
   }
 
-  //
   // surface complexation
-  //
-  if (state->surface_complex_free_site_conc.size() != 
-      surfaceComplexationRxns_.size()) {
-    state->surface_complex_free_site_conc.resize( 
-        surfaceComplexationRxns_.size());
+  if (state->surface_complex_free_site_conc.size() != surfaceComplexationRxns_.size()) {
+    state->surface_complex_free_site_conc.resize(surfaceComplexationRxns_.size());
   }
   for (unsigned int i = 0; i < surfaceComplexationRxns_.size(); ++i) {
     state->surface_complex_free_site_conc.at(i) =
         surfaceComplexationRxns_.at(i).free_site_concentration();
   }
 
-  if (state->surface_site_density.size() != 
-      surfaceComplexationRxns_.size()) {
+  if (state->surface_site_density.size() != surfaceComplexationRxns_.size()) {
     state->surface_site_density.resize(surfaceComplexationRxns_.size());
   }
-  for (unsigned int i = 0; i < surfaceComplexationRxns_.size(); ++i) {
-    state->surface_site_density.at(i) =
-        surfaceComplexationRxns_.at(i).GetSiteDensity();
+  for (int i = 0; i < surfaceComplexationRxns_.size(); ++i) {
+    state->surface_site_density.at(i) = surfaceComplexationRxns_.at(i).GetSiteDensity();
   }
 
-  //
   // sorption isotherms
-  //
   if (sorption_isotherm_rxns_.size() > 0) {
     if (state->isotherm_kd.size() != ncomp_) {
       state->isotherm_kd.resize(ncomp_, 0.0);
@@ -526,19 +495,12 @@ void Beaker::GetPrimaryNames(std::vector<std::string>* names) const {
 
 
 int Beaker::GetPrimaryIndex(const std::string& name) const {
-  int index = -1;
   for (auto it = primary_species().begin(); it != primary_species().end(); ++it) {
-    if (it->name() == name) {
-      index = it->identifier();
-    }
+    if (it->name() == name) return it->identifier();
   }
-  return index;
+  return -1;
 }
 
-
-//
-// public output
-//
 
 void Beaker::Display() const {
   vo_->Write(Teuchos::VERB_HIGH, "-- Beaker description ------------------------------------------------\n");
@@ -1140,7 +1102,8 @@ void Beaker::InitializeMolalities(const std::vector<double>& initial_molalities)
 }
 
 
-void Beaker::UpdateEquilibriumChemistry() {
+void Beaker::UpdateEquilibriumChemistry()
+{
   // calculateActivityCoefficients(-1);
 
   // update primary species activities
@@ -1491,7 +1454,7 @@ void Beaker::ValidateSolution() {
   CheckChargeBalance(total_);
 
   // negative mineral volume fractions are bad...
-  for (unsigned int m = 0; m < minerals_.size(); m++) {
+  for (int m = 0; m < minerals_.size(); m++) {
     if (minerals_.at(m).volume_fraction() < 0.0) {
       std::ostringstream error_stream;
       error_stream << "Beaker::ValidateSolution(): \n";

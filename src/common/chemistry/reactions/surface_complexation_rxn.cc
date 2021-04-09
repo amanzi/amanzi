@@ -79,7 +79,8 @@ void SurfaceComplexationRxn::UpdateSiteDensity(double site_density) {
 }
 
 
-void SurfaceComplexationRxn::Update(const std::vector<Species>& primarySpecies) {
+void SurfaceComplexationRxn::Update(const std::vector<Species>& primarySpecies)
+{
   // see pflotran source: surface_complexation.F90:694, subroutine RTotalSorbEqSurfCplx1
   const double site_density = (surface_site_[0]).SiteDensity();
 

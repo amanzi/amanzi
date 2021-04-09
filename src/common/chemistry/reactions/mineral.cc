@@ -79,8 +79,7 @@ void Mineral::Update(const std::vector<Species>& primary_species, const Species&
 }
 
 
-void Mineral::AddContributionToTotal(std::vector<double> *total) {
-}
+void Mineral::AddContributionToTotal(std::vector<double> *total) {};
 
 
 void Mineral::AddContributionToDTotal(const std::vector<Species>& primary_species,

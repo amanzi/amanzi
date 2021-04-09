@@ -112,6 +112,7 @@ double ActivityModelPitzerHWM::Evaluate(const Species& species) {
   return 1.0;
 }
 
+
 /*!
   @brief EvaluateVector
 
@@ -138,6 +139,7 @@ void ActivityModelPitzerHWM::EvaluateVector(
   CalculateIonicStrength(primary_species, aqueous_complexes);
   CalculateSumAbsZ(primary_species, aqueous_complexes);
   CalculateSumC(primary_species, aqueous_complexes);
+
   if (I_ == 0.0 || Z_ == 0.0 || M_ == 0.0) {
     std::ostringstream error_stream;
     error_stream << "Error, zero concentrations" << "\n";
@@ -152,6 +154,7 @@ void ActivityModelPitzerHWM::EvaluateVector(
     isp++;
     molality.at(isp) = (*i).molality();
   }
+
   ComputeQmatrices();
   ComputeDebyeHuckelTerm(*gamma, osmotic_coefficient, gclm);
   ComputemQmProduct(*gamma, osmotic_coefficient);
@@ -166,6 +169,7 @@ void ActivityModelPitzerHWM::EvaluateVector(
   }
   *water_activity = osmotic_coefficient;
 }
+
 
 /*!
   @brief ComputeQc
@@ -521,6 +525,7 @@ void ActivityModelPitzerHWM::Display() const {
   int isp2(-1);
   int isp3(-1);
   int nvirial(0);
+
   if (number_non_zero_beta > 0) {
     std::cout << "=================> Beta0 ==============>" << std::endl;
     for (int i = 0; i < number_non_zero_beta; i++) {
@@ -531,6 +536,7 @@ void ActivityModelPitzerHWM::Display() const {
         std::cout << name_species.at(isp1) << "  " << name_species.at(isp2) << "  " << beta0_virial.at(i).GetVirial() << std::endl;
       }
     }
+
     std::cout << "=================> Beta1 ==============>" << std::endl;
     for (int i = 0; i < number_non_zero_beta; i++) {
       isp1 = beta1_virial.at(i).GetIsp1();
@@ -540,6 +546,7 @@ void ActivityModelPitzerHWM::Display() const {
         std::cout << name_species.at(isp1) << "  " << name_species.at(isp2) << "  " << beta1_virial.at(i).GetVirial() << std::endl;
       }
     }
+
     std::cout << "=================> Beta2 ==============>" << std::endl;
     for (int i = 0; i < number_non_zero_beta; i++) {
       isp1 = beta2_virial.at(i).GetIsp1();
@@ -548,9 +555,9 @@ void ActivityModelPitzerHWM::Display() const {
         nvirial++;
         std::cout << name_species.at(isp1) << "  " << name_species.at(isp2) << "  " << beta2_virial.at(i).GetVirial() << std::endl;
       }
-
     }
   }
+
   if (number_non_zero_cphi > 0) {
     std::cout << "=================> Cphi ==============>" << std::endl;
     for (int i = 0; i < number_non_zero_cphi; i++) {
@@ -560,9 +567,9 @@ void ActivityModelPitzerHWM::Display() const {
         nvirial++;
         std::cout << name_species.at(isp1) << "  " << name_species.at(isp2) << "  " << cphi_virial.at(i).GetVirial() << std::endl;
       }
-
     }
   }
+
   if (number_non_zero_theta > 0) {
     std::cout << "=================> Theta ==============>" << std::endl;
     for (int i = 0; i < number_non_zero_theta; i++) {
@@ -572,9 +579,9 @@ void ActivityModelPitzerHWM::Display() const {
         nvirial++;
         std::cout << name_species.at(isp1) << "  " << name_species.at(isp2) << "  " << theta_virial.at(i).GetVirial() << std::endl;
       }
-
     }
   }
+
   if (number_non_zero_lamda > 0) {
     std::cout << "=================> Lamda ==============>" << std::endl;
     for (int i = 0; i < number_non_zero_lamda; i++) {
@@ -584,9 +591,9 @@ void ActivityModelPitzerHWM::Display() const {
         nvirial++;
         std::cout << name_species.at(isp1) << "  " << name_species.at(isp2) << "  " << lamda_virial.at(i).GetVirial() << std::endl;
       }
-
     }
   }
+
   if (number_non_zero_psi > 0) {
     std::cout << "=================> Psi ==============>" << std::endl;
     for (int i = 0; i < number_non_zero_psi; i++) {
@@ -600,6 +607,7 @@ void ActivityModelPitzerHWM::Display() const {
       }
     }
   }
+
   std::cout << "=====================================>" << std::endl;
   std::cout << "Total number of virial coefficients: " << nvirial << std::endl;
   std::cout << "=====================================>" << std::endl;
@@ -636,17 +644,15 @@ void ActivityModelPitzerHWM::ReadDataBase(const std::string& namedatabase,
     error_stream << "Error, zero number of species" << "\n";
     Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
   }
-  for (std::vector<Species>::const_iterator i = primary_species.begin();
-       i != primary_species.end(); i++) {
+  for (auto it = primary_species.begin(); it != primary_species.end(); ++it) {
     molality.push_back(0.0);
-    charge.push_back((*i).charge());
-    name_species.push_back((*i).name());
+    charge.push_back((*it).charge());
+    name_species.push_back((*it).name());
   }
-  for (std::vector<AqueousEquilibriumComplex>::const_iterator i = aqueous_complexes.begin();
-       i != aqueous_complexes.end(); i++) {
+  for (auto it = aqueous_complexes.begin(); it != aqueous_complexes.end(); ++it) {
     molality.push_back(0.0);
-    charge.push_back((*i).charge());
-    name_species.push_back((*i).name());
+    charge.push_back((*it).charge());
+    name_species.push_back((*it).name());
   }
 
   // Open Pitzer virial coefficients database

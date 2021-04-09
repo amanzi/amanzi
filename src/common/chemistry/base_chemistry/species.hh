@@ -24,15 +24,11 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-// typedef std::vector<Species> SpeciesArray;
-/*  SpeciesArray is actually defined at the end of the file because we
-**  can't use it in the typdef until it is declared.... Put all these
-**  in the class to get around this...?  */
-
 class Species {
  public:
   Species();  // this is only present for stl containers, don't use it
-  Species(int id, const std::string& name, double charge, double mol_wt,
+  Species(int id, const std::string& name,
+          double charge, double mol_wt,
           double size);
   virtual ~Species() {};
 
@@ -82,8 +78,6 @@ class Species {
   double ln_activity_;
   double ln_act_coef_;
 
-  // ActivityCoefficient* activityCoefficient;
-
  private:
   int identifier_;
   double charge_;  // why is this a double rather than int...?
@@ -96,4 +90,5 @@ typedef std::vector<Species> SpeciesArray;
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
+
 #endif

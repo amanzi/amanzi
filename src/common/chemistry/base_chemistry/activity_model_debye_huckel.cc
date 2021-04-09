@@ -57,22 +57,24 @@ void ActivityModelDebyeHuckel::EvaluateVector(
     std::vector<double>* gamma, 
     double* actw) {
   int isp(-1);
+
   // For primary species
-  for (std::vector<Species>::const_iterator i = prim.begin(); i != prim.end(); i++) {
+  for (auto it = prim.begin(); it != prim.end(); ++it) {
     isp++;
-    if (std::fabs((*i).charge()) < 1.0e-10) {
+    if (std::fabs((*it).charge()) < 1.0e-10) {
       gamma->at(isp) = 1.0;
     } else {
-      gamma->at(isp) = Evaluate(*i);
+      gamma->at(isp) = Evaluate(*it);
     }
   }
+
   // For aqueous complexes
-  for (std::vector<AqueousEquilibriumComplex>::const_iterator i = sec.begin(); i != sec.end(); i++) {
+  for (auto it = sec.begin(); it != sec.end(); ++it) {
     isp++;
-    if (std::fabs((*i).charge()) < 1.0e-10) {
+    if (std::fabs((*it).charge()) < 1.0e-10) {
       gamma->at(isp) = 1.0;
     } else {
-      gamma->at(isp) = Evaluate(*i);
+      gamma->at(isp) = Evaluate(*it);
     }
   }
   *actw = 1.0;

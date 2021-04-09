@@ -57,9 +57,7 @@ class TransportBoundaryFunction_Chemistry : public TransportDomainFunction {
 
       for (int i = 0; i < values.size(); i++) {
         values[i] = beaker_state.total.at(i);
-// std::cout << "AAA: " << i << " " << values[i] << std::endl;
       }
-// exit(0);
     }
   }
   
