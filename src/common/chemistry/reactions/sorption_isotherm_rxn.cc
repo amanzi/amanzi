@@ -26,10 +26,10 @@ namespace AmanziChemistry {
 SorptionIsothermRxn::SorptionIsothermRxn(const std::string& species_name, 
                                          const int species_id,
                                          std::shared_ptr<SorptionIsotherm> isotherm) 
-    : species_name_(species_name), 
-      species_id_(species_id), 
-      isotherm_(isotherm) {
-}
+  : species_name_(species_name), 
+    species_id_(species_id), 
+    isotherm_(isotherm)
+{}
 
 
 const std::vector<double>& SorptionIsothermRxn::GetIsothermParameters() const {
@@ -42,8 +42,8 @@ void SorptionIsothermRxn::SetIsothermParameters(const std::vector<double>& param
 }
 
 
-void SorptionIsothermRxn::Update(const std::vector<Species>& primarySpecies) {
-  sorbed_concentration_= isotherm_->Evaluate(primarySpecies.at(species_id_));
+void SorptionIsothermRxn::Update(const std::vector<Species>& primary_species) {
+  sorbed_concentration_= isotherm_->Evaluate(primary_species.at(species_id_));
 }
 
 
@@ -56,7 +56,7 @@ void SorptionIsothermRxn::AddContributionToDTotal(
     const std::vector<Species>& primarySpecies,
     MatrixBlock* dtotal) {
   dtotal->AddValue(species_id_,species_id_,
-      isotherm_->EvaluateDerivative(primarySpecies.at(species_id_)));
+                   isotherm_->EvaluateDerivative(primarySpecies.at(species_id_)));
 }
 
 

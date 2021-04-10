@@ -33,7 +33,7 @@ namespace AmanziInput {
 XERCES_CPP_NAMESPACE_USE
 
 /* ******************************************************************
-* Create flow list.
+* Create chemistry list.
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& domain)
 {
@@ -60,25 +60,11 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& d
   if (engine ==  "amanzi") {
     out_list.set<std::string>("chemistry model", "Amanzi");
 
-    std::string bgdfilename, format("simple");
+    std::string bgdfilename;
     node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
-    if (flag) {
-      bgdfilename = GetAttributeValueS_(node, "input_filename", TYPE_NONE, false, "");
-      if (bgdfilename == "") {
-        int status;
-        bgdfilename = CreateBGDFile_(xmlfilename_, rank_, status);
-        if (!status && vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-          Teuchos::OSTab tab = vo_->getOSTab();
-          *vo_->os() << "File \"" << bgdfilename.c_str() 
-                     << "\" exists, skipping its creation." << std::endl;
-        }
-      }
-      format = GetAttributeValueS_(node, "format", TYPE_NONE, false, format);
-    }
 
     Teuchos::ParameterList& bgd_list = out_list.sublist("thermodynamic database");
     bgd_list.set<std::string>("file", bgdfilename);
-    bgd_list.set<std::string>("format", format);
 
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
       *vo_->os() << " using file:" << bgdfilename << std::endl;

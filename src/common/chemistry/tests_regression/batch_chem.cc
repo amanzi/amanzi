@@ -109,7 +109,8 @@ int main(int argc, char** argv) {
 
   try {
     if (simulation_params.database_file.size() != 0) {
-      chem = new ac::SimpleThermoDatabase(vo);
+      Teuchos::RCP<Teuchos::ParameterList> plist;
+      chem = new ac::SimpleThermoDatabase(plist, vo);
 
       ac::Beaker::BeakerParameters parameters = chem->GetDefaultParameters();
       parameters.thermo_database_file = simulation_params.database_file;

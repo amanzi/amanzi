@@ -28,21 +28,17 @@ class SorptionIsothermLangmuir : public SorptionIsotherm {
   void Init(double K, double b);
 
   // returns sorbed concentration
-  double Evaluate(const Species& primarySpecies);
-  double EvaluateDerivative(const Species& primarySpecies);
+  virtual double Evaluate(const Species& primary_species) override;
+  virtual double EvaluateDerivative(const Species& primary_species) override;
 
   // setters
-  const std::vector<double>& GetParameters();
-  void SetParameters(const std::vector<double>& params);
+  virtual const std::vector<double>& GetParameters() override;
+  virtual void SetParameters(const std::vector<double>& params) override;
 
-  void Display() const;
-
-private:
-  // equilibrium constant or Langmuir adsorption constant
-  // units = L water/mol
+ private:
+  // equilibrium constant or Langmuir adsorption constant [L water/mol]
   double K_; 
-  // number of sorption sites (max sorbed concentration)
-  // units = mol/m^3 bulk
+  // number of sorption sites (max sorbed concentration) [mol/m^3 bulk]
   double b_;
   std::vector<double> params_;
 };

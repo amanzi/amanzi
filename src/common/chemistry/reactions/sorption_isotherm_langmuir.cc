@@ -21,19 +21,19 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 SorptionIsothermLangmuir::SorptionIsothermLangmuir()
-    : SorptionIsotherm("langmuir", SorptionIsotherm::LANGMUIR),
-      K_(0.), 
-      b_(0.),
-      params_(2, 0.0) {
-}
+  : SorptionIsotherm("langmuir", SorptionIsotherm::LANGMUIR),
+    K_(0.0),
+    b_(0.0),
+    params_(2, 0.0) 
+{}
 
 
 SorptionIsothermLangmuir::SorptionIsothermLangmuir(double K, double b)
     : SorptionIsotherm("langmuir", SorptionIsotherm::LANGMUIR),
       K_(K), 
       b_(b),
-      params_(2, 0.0) {
-}
+      params_(2, 0.0)
+{}
 
 
 void SorptionIsothermLangmuir::Init(double K, double b) {
@@ -55,44 +55,37 @@ void SorptionIsothermLangmuir::SetParameters(const std::vector<double>& params) 
 }
 
 
+/* *******************************************************************
+* Csorb = K * activity * b / (1 + K * activity)
+* Units:
+* sorbed_concentration [mol/m^3 bulk] = 
+*   K [kg water/mol] * activity [mol/kg water] * b [mol/m^3 bulk] /
+*     (1. + K [kg water/mol] * activity [mol/kg water])
+*
+* NOTE(bandre): need to be careful with the variable names
+* here. Looking at Langmuir (1997), would lead one to expect:
+* Csorb = K * b * activity / (1 + b * activity)
+******************************************************************* */
 double SorptionIsothermLangmuir::Evaluate(const Species& primarySpecies) {
-  // Csorb = K * activity * b / (1 + K * activity)
-  // Units:
-  // sorbed_concentration [mol/m^3 bulk] = 
-  //   K [kg water/mol] * activity [mol/kg water] * b [mol/m^3 bulk] /
-  //     (1. + K [kg water/mol] * activity [mol/kg water])
-  //
-  // NOTE(bandre): need to be careful with the variable names
-  // here. Looking at Langmuir (1997), would lead one to expect:
-  // Csorb = K * b * activity / (1 + b * activity)
-  double K_activity = K_ * primarySpecies.activity(); // temporary variable
-  return K_activity * b_ / (1. + K_activity);
+  double K_activity = K_ * primarySpecies.activity();
+  return K_activity * b_ / (1.0 + K_activity);
 }
 
 
-double SorptionIsothermLangmuir::EvaluateDerivative(
-    const Species& primarySpecies) {
-  // Csorb = K * activity * b / (1 + K * activity)
-  // dCsorb/dCaq = (K * activity_coef * b / (1 + K * activity)) - 
-  //               (K * activity * b / (1 + K * activity)^2 * K * activity_coef)
-  // Units:
-  //  KD [kg water/m^3 bulk]
-  double K_activity = K_ * primarySpecies.activity(); // temporary variable
-  double C_sorb = K_activity * b_ / (1. + K_activity);
-  return C_sorb / primarySpecies.molality() - 
-           (C_sorb / (1. + K_activity) * K_activity / 
-             primarySpecies.molality());
-}
-
-
-void SorptionIsothermLangmuir::Display() const {
-  std::cout << std::setw(5) << "K:"
-            << std::scientific << std::setprecision(5)
-            << std::setw(15) << K_
-            << std::setw(5) << "b:"
-            << std::scientific << std::setprecision(5)
-            << std::setw(15) << b_
-            << std::endl;
+/* *******************************************************************
+* Csorb = K * activity * b / (1 + K * activity)
+* dCsorb/dCaq = (K * activity_coef * b / (1 + K * activity)) - 
+*               (K * activity * b / (1 + K * activity)^2 * K * activity_coef)
+* Units:
+*   KD [kg water/m^3 bulk]
+******************************************************************* */
+double SorptionIsothermLangmuir::EvaluateDerivative(const Species& primary_species)
+{
+  double K_activity = K_ * primary_species.activity();
+  double C_sorb = K_activity * b_ / (1.0 + K_activity);
+  return C_sorb / primary_species.molality() - 
+           (C_sorb / (1.0 + K_activity) * K_activity / 
+             primary_species.molality());
 }
 
 }  // namespace AmanziChemistry

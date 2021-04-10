@@ -18,7 +18,6 @@
 #include "sorption_isotherm_linear.hh"
 #include "sorption_isotherm_langmuir.hh"
 #include "sorption_isotherm_freundlich.hh"
-#include "string_tokenizer.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -29,11 +28,12 @@ const std::string SorptionIsothermFactory::freundlich = "freundlich";
 
 std::shared_ptr<SorptionIsotherm> SorptionIsothermFactory::Create( 
     const std::string& isotherm_type,
-    const StringTokenizer parameters) {
+    const std::vector<double>& parameters)
+{
   std::shared_ptr<SorptionIsotherm> sorption_isotherm = nullptr;
 
   if (isotherm_type == linear) {
-    sorption_isotherm = std::make_shared<SorptionIsothermLinear>(std::atof(parameters[0].c_str()));
+    sorption_isotherm = std::make_shared<SorptionIsothermLinear>(parameters[0]);
   } else if (isotherm_type == langmuir) {
     // require two parameters
     if (parameters.size() != 2) {
@@ -44,8 +44,7 @@ std::shared_ptr<SorptionIsotherm> SorptionIsothermFactory::Create(
                    << "    param_1 == Kd, param_2 == b  .\n"; 
       Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
     }
-    sorption_isotherm = std::make_shared<SorptionIsothermLangmuir>(
-        std::atof(parameters.at(0).c_str()), std::atof(parameters.at(1).c_str()));
+    sorption_isotherm = std::make_shared<SorptionIsothermLangmuir>(parameters[0], parameters[1]);
   } else if (isotherm_type == freundlich) {
     // require two parameters
     if (parameters.size() != 2) {
@@ -57,8 +56,7 @@ std::shared_ptr<SorptionIsotherm> SorptionIsothermFactory::Create(
                    << "    param_1 == Kd, param_2 == n  .\n"; 
       Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
     }
-    sorption_isotherm = std::make_shared<SorptionIsothermFreundlich>(
-        std::atof(parameters.at(0).c_str()), std::atof(parameters.at(1).c_str()));
+    sorption_isotherm = std::make_shared<SorptionIsothermFreundlich>(parameters[0], parameters[1]);
   } else {
     // default type, error...!
     std::ostringstream error_stream;
@@ -87,15 +85,16 @@ std::shared_ptr<SorptionIsotherm> SorptionIsothermFactory::Create(
 
 int SorptionIsothermFactory::VerifySpeciesName(
     const std::string& species_name,
-    const std::vector<Species>& species) const {
+    const std::vector<Species>& species) const
+{
   int species_id = -1;
-  for (std::vector<Species>::const_iterator s = species.begin();
-       s != species.end(); s++) {
-    if (s->name() == species_name) {
-      species_id = s->identifier();
+  for (auto it = species.begin(); it != species.end(); ++it) {
+    if (it->name() == species_name) {
+      species_id = it->identifier();
       break;
     }
   }
+
   if (species_id < 0) {
     // print helpful message and exit gracefully
     std::ostringstream error_stream;

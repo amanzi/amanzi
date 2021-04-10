@@ -26,17 +26,17 @@ class SorptionIsothermLinear : public SorptionIsotherm {
   void Init(double KD);
 
   // returns sorbed concentration
-  double Evaluate(const Species& primarySpecies);
-  double EvaluateDerivative(const Species& primarySpecies);
+  virtual double Evaluate(const Species& primary_species) override;
+  virtual double EvaluateDerivative(const Species& primary_species) override;
 
   // setters and getters
   // double KD() const { return KD_; }
   void set_KD(double KD) { KD_ = KD; }
 
-  const std::vector<double>& GetParameters();
-  void SetParameters(const std::vector<double>& params);
+  virtual const std::vector<double>& GetParameters() override;
+  virtual void SetParameters(const std::vector<double>& params) override;
 
-  void Display(const Teuchos::RCP<VerboseObject>& vo) const;
+  virtual void Display(const Teuchos::Ptr<VerboseObject> vo) const override;
 
  private:
   // distribution coefficient

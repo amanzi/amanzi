@@ -280,42 +280,11 @@ void Amanzi_PK::XMLParameters()
 {
   // thermo file name and format, then create the database!
   if (cp_list_->isSublist("thermodynamic database")) {
-    Teuchos::ParameterList& tdb_list_ = cp_list_->sublist("thermodynamic database");
+    Teuchos::RCP<Teuchos::ParameterList> tdb_list = Teuchos::sublist(glist_, "thermodynamic database", true);
 
     // currently we only support the simple format.
-    if (tdb_list_.isParameter("format")) {
-      std::string database_format = tdb_list_.get<std::string>("format");
-      if (database_format == "simple") {
-        chem_ = new SimpleThermoDatabase(vo_);
-      } else {
-        // invalid database format
-        std::ostringstream msg;
-        msg << AmanziChemistry::kChemistryError;
-        msg << "Amanzi_PK::XMLParameters(): \n";
-        msg << "  In sublist 'thermodynamic database', the parameter 'format' must be 'simple'.\n";
-        Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));  
-      }
-    } else {
-      // invalid database format
-      std::ostringstream msg;
-      msg << AmanziChemistry::kChemistryError;
-      msg << "Amanzi_PK::XMLParameters(): \n";
-      msg << "  In sublist 'thermodynamic database', the parameter 'format' must be specified.\n";
-      Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));
-    }
-
+    chem_ = new SimpleThermoDatabase(tdb_list, vo_);
     beaker_parameters_ = chem_->GetDefaultParameters();
-
-    // get file name
-    if (tdb_list_.isParameter("file")) {
-      beaker_parameters_.thermo_database_file = tdb_list_.get<std::string>("file");
-    } else {
-      std::ostringstream msg;
-      msg << AmanziChemistry::kChemistryError;
-      msg << "Amanzi_PK::XMLParameters(): \n";
-      msg << "  Input parameter 'file' in 'thermodynamic database' sublist must be specified.\n";
-      Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));         
-    }
   } else {
     std::ostringstream msg;
     msg << AmanziChemistry::kChemistryError;

@@ -21,49 +21,41 @@ namespace AmanziChemistry {
 
 class SimpleThermoDatabase : public Beaker {
  public:
-  SimpleThermoDatabase(Teuchos::RCP<VerboseObject> vo);
+  SimpleThermoDatabase(Teuchos::RCP<Teuchos::ParameterList> plist,
+                       Teuchos::RCP<VerboseObject> vo);
   virtual ~SimpleThermoDatabase() {};
 
   virtual void Setup(const Beaker::BeakerState& state,
                      const Beaker::BeakerParameters& parameters) override;
 
  protected:
-  void ReadFile(const std::string& thermo_filename);
-  void ParsePrimarySpecies(const std::string& data);
-  void ParseAqueousEquilibriumComplex(const std::string& data);
-  void ParseGeneralKinetics(const std::string& data);
-  void ParseRadioactiveDecay(const std::string& data);
-  void ParseMineral(const std::string& data);
-  void ParseMineralKinetics(const std::string& data);
-  void ParseIonExchangeSite(const std::string& data);
-  void ParseIonExchangeComplex(const std::string& data);
-  void ParseSurfaceComplexSite(const std::string& data);
-  void ParseSurfaceComplex(const std::string& data);
-  void ParseSorptionIsotherm(const std::string& data);
   void FinishSurfaceComplexation();
-  void ParseReaction(const std::string& reaction,
-                     std::string* name,
-                     std::vector<std::string>* species,
-                     std::vector<double>* stoichiometries,
-                     std::vector<int>* species_ids,
-                     double* h2o_stoich);
-  void ParseReactionString(const std::string reaction,
-                           const std::string arrow,
-                           std::vector<std::string>* species,
-                           std::vector<double>* stoichiometries);
   int SpeciesNameToID(const std::string& species_name);
-  void RemoveLeadingAndTrailingSpaces(std::string* s);
 
-  void ParseSurfaceComplexReaction(const std::string& reaction,
-                                   std::string* name,
-                                   std::vector<std::string>* primary_name,
-                                   std::vector<double>* primary_stoichiometry,
-                                   std::vector<int>* primary_id,
-                                   std::string* surface_name,
-                                   double* surface_stoichiometry,
-                                   int* surface_id,
-                                   double* h2o_stoich);
  private:
+  void ParseReaction_(const std::string& reaction,
+                      std::vector<std::string>* species,
+                      std::vector<int>* species_ids,
+                      std::vector<double>* stoichiometries,
+                      double* h2o_stoich);
+
+  void ParseReaction_(const std::string& reactants,
+                      const std::string& products,
+                      std::vector<std::string>* species,
+                      std::vector<double>* stoichiometries);
+
+  void ParseReaction_(const std::string& reaction,
+                      std::vector<std::string>* primary_name,
+                      std::vector<double>* primary_stoichiometry,
+                      std::vector<int>* primary_id,
+                      std::string* surface_name,
+                      double* surface_stoichiometry,
+                      int* surface_id,
+                      double* h2o_stoich);
+
+ private:
+  Teuchos::RCP<Teuchos::ParameterList> plist_;
+
   int primary_id_;
   int aqueous_equilibrium_complex_id_;
   int mineral_id_;

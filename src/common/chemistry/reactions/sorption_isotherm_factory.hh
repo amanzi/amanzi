@@ -14,7 +14,6 @@
 #include <string>
 
 #include "species.hh"
-#include "string_tokenizer.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -27,7 +26,7 @@ class SorptionIsothermFactory {
   ~SorptionIsothermFactory() {};
 
   std::shared_ptr<SorptionIsotherm> Create(const std::string& model, 
-                                           const StringTokenizer parameters);
+                                           const std::vector<double>& parameters);
 
   int VerifySpeciesName(const std::string& species_name,
                         const std::vector<Species>& species) const;

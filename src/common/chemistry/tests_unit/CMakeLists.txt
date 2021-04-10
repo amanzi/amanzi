@@ -18,7 +18,7 @@ include_directories(${CHEM_INCLUDES_DIR})
 # Add the UnitTest includes
 include_directories(${UnitTest_INCLUDE_DIRS})
 
-add_amanzi_test(chemistry chemistry_tests
+add_amanzi_test(chemistry_native chemistry_native
                 KIND unit
                 SOURCE Main.cc   
                        chemistry_string_tokenizer.cc
@@ -46,6 +46,7 @@ add_install_include_file(${chem_inc})
 
 if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
   file(GLOB DataFiles "${CHEM_SOURCE_DIR}/tests_unit/*.bgd"
+                      "${CHEM_SOURCE_DIR}/tests_unit/*.xml"
                       "${CHEM_SOURCE_DIR}/tests_unit/*.dat")
   file(COPY ${DataFiles} DESTINATION ${CHEM_BINARY_DIR}/tests_unit/)
 endif()

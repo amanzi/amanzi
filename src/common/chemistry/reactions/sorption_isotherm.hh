@@ -26,8 +26,8 @@ class SorptionIsotherm {
   SorptionIsotherm(const std::string& name, const SorptionIsothermType type);
   virtual ~SorptionIsotherm() {};
 
-  virtual double Evaluate(const Species& primarySpecies) = 0;
-  virtual double EvaluateDerivative(const Species& primarySpecies) = 0;
+  virtual double Evaluate(const Species& primary_species) = 0;
+  virtual double EvaluateDerivative(const Species& primary_species) = 0;
 
   virtual void Display(const Teuchos::Ptr<VerboseObject> vo) const {};
 

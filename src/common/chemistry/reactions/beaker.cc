@@ -56,32 +56,33 @@ const double Beaker::water_density_kg_m3_default_ = 1000.0;
 const double Beaker::volume_default_ = 1.0;  // [m^3]
 
 Beaker::Beaker(const Teuchos::Ptr<VerboseObject> vo)
-    : vo_(vo),
-      tolerance_(tolerance_default_),
-      max_iterations_(max_iterations_default_),
-      ncomp_(0),
-      total_(),
-      dtotal_(),
-      total_sorbed_(),
-      dtotal_sorbed_(),
-      porosity_(porosity_default_),
-      saturation_(saturation_default_),
-      water_density_kg_m3_(water_density_kg_m3_default_),
-      water_density_kg_L_(1.0),
-      volume_(volume_default_),
-      dt_(1.0),
-      aqueous_accumulation_coef_(0.0),
-      sorbed_accumulation_coef_(0.0),
-      por_sat_den_vol_(0.0),
-      activity_model_(NULL),
-      fixed_accumulation_(),
-      residual_(),
-      prev_molal_(),
-      rhs_(),
-      jacobian_(),
-      lu_solver_(),
-      use_log_formulation_(true),
-      sorption_isotherm_params_(4, 0.0) {
+  : vo_(vo),
+    tolerance_(tolerance_default_),
+    max_iterations_(max_iterations_default_),
+    ncomp_(0),
+    total_(),
+    dtotal_(),
+    total_sorbed_(),
+    dtotal_sorbed_(),
+    porosity_(porosity_default_),
+    saturation_(saturation_default_),
+    water_density_kg_m3_(water_density_kg_m3_default_),
+    water_density_kg_L_(1.0),
+    volume_(volume_default_),
+    dt_(1.0),
+    aqueous_accumulation_coef_(0.0),
+    sorbed_accumulation_coef_(0.0),
+    por_sat_den_vol_(0.0),
+    activity_model_(NULL),
+    fixed_accumulation_(),
+    residual_(),
+    prev_molal_(),
+    rhs_(),
+    jacobian_(),
+    lu_solver_(),
+    use_log_formulation_(true),
+    sorption_isotherm_params_(4, 0.0)
+{
   primary_species_.clear();
   minerals_.clear();
   aqComplexRxns_.clear();
@@ -1541,23 +1542,24 @@ void Beaker::DisplayGeneralKinetics() const {
 }
 
 
-void Beaker::DisplayRadioactiveDecayRxns() const {
+void Beaker::DisplayRadioactiveDecayRxns() const
+{
   if (radioactive_decay_rxns_.size() > 0) {
     std::stringstream message;
     message << "---- Radioactive Decay" << std::endl;
     message << std::setw(12) << "Reaction" << std::endl;
     vo_->Write(Teuchos::VERB_HIGH, message.str());
-    std::vector<RadioactiveDecay>::const_iterator rxn;
-    for (rxn = radioactive_decay_rxns_.begin();
-         rxn != radioactive_decay_rxns_.end(); ++rxn) {
-      rxn->Display(vo_);
+
+    for (auto it = radioactive_decay_rxns_.begin(); it != radioactive_decay_rxns_.end(); ++it) {
+      it->Display(vo_);
     }
     vo_->Write(Teuchos::VERB_HIGH, "\n");
   }
 }
 
 
-void Beaker::DisplayMinerals() const {
+void Beaker::DisplayMinerals() const
+{
   if (minerals_.size() > 0) {
     std::stringstream message;
     message << "---- Minerals" << std::endl;
@@ -1584,7 +1586,8 @@ void Beaker::DisplayMinerals() const {
 } 
 
 
-void Beaker::DisplayMineralKinetics() const {
+void Beaker::DisplayMineralKinetics() const
+{
   if (mineral_rates_.size() > 0) {
     std::stringstream message;
     vo_->Write(Teuchos::VERB_HIGH, "---- Mineral Kinetics\n");

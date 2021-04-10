@@ -7,13 +7,14 @@
 
 #include "UnitTest++.h"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "VerboseObject.hh"
 
-#include "simple_thermo_database.hh"
-#include "beaker.hh"
 #include "activity_model_factory.hh"
+#include "beaker.hh"
 #include "chemistry_exception.hh"
+#include "simple_thermo_database.hh"
 
 SUITE(BeakerTests) {
   using Amanzi::AmanziChemistry::Beaker;
@@ -28,7 +29,8 @@ SUITE(BeakerTests) {
     Teuchos::ParameterList plist;
     auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry PK", plist));
 
-    SimpleThermoDatabase chem(vo);
+    Teuchos::RCP<Teuchos::ParameterList> bgd_list = Teuchos::getParametersFromXmlFile("chemistry_beaker_carbonate.xml");
+    SimpleThermoDatabase chem(bgd_list, vo);
 
     Beaker::BeakerState state;
     state.free_ion.clear();
@@ -61,51 +63,15 @@ SUITE(BeakerTests) {
     }
 
     CHECK(correct_exception);
-  }  // end TEST(CheckBadComponentSizes)
+  }
 
-
-
-  TEST(CheckBadDatabaseFile) {
-    Teuchos::ParameterList plist;
-    auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry PK", plist));
-
-    SimpleThermoDatabase chem(vo);
-
-    Beaker::BeakerState state;
-    state.free_ion.clear();
-    state.mineral_volume_fraction.clear();
-    state.ion_exchange_sites.clear();
-    state.total.clear();
-    state.total_sorbed.clear();
-
-    state.total.push_back(1.0e-3);  // H+
-    state.total.push_back(1.0e-3);  // HCO3-
-
-    Beaker::BeakerParameters parameters = chem.GetDefaultParameters();
-
-    parameters.thermo_database_file = "test_drivers/input/bad_database_file.bgd";
-    parameters.activity_model_name = ActivityModelFactory::unit;
-
-    bool correct_exception = false;
-
-    try {
-      // should throw an error
-      chem.Setup(state, parameters);
-    } catch (ChemistryUnrecoverableError& e) {
-    } catch (ChemistryInvalidInput& e) {
-      correct_exception = true;
-    } catch (ChemistryException& e) {
-    } catch (std::exception& e) {
-    }
-
-    CHECK(correct_exception);
-  }  // end TEST(CheckBadDatabaseFile)
 
   TEST(CheckBadActivityModel) {
     Teuchos::ParameterList plist;
     auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry PK", plist));
 
-    SimpleThermoDatabase chem(vo);
+    Teuchos::RCP<Teuchos::ParameterList> bgd_list = Teuchos::getParametersFromXmlFile("chemistry_beaker_carbonate.xml");
+    SimpleThermoDatabase chem(bgd_list, vo);
 
     Beaker::BeakerState state;
     state.free_ion.clear();
@@ -135,5 +101,6 @@ SUITE(BeakerTests) {
     }
 
     CHECK(correct_exception);
-  }  // end TEST(CheckBadActivityModel)
-}  // end SUITE(BeakerTests)
+  }
+}
+

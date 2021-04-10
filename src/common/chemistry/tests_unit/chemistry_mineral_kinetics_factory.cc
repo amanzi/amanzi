@@ -137,15 +137,6 @@ SUITE(GeochemistryTestsMineralKineticsFactory) {
     CHECK(!kinetic_rate_);
   }  // end TEST_FIXTURE()
 
-  TEST_FIXTURE(MineralKineticsFactoryTest, MineralKineticsFactory_verify_mineral_valid) {
-    int mineral_id = mkf_.VerifyMineralName("Calcite", minerals_);
-    CHECK_EQUAL(mineral_id, 1);
-  }  // end TEST_FIXTURE()
-
-  TEST_FIXTURE(MineralKineticsFactoryTest, MineralKineticsFactory_verify_mineral_invalid) {
-    CHECK_THROW(mkf_.VerifyMineralName("Pyrite", minerals_), ac::ChemistryException);
-  }  // end TEST_FIXTURE()
-
   TEST_FIXTURE(MineralKineticsFactoryTest, MineralKineticsFactory_set_debug) {
     // if we set the debug flag on the factory, the resulting kinetic
     // rate objects should have the debug flag set

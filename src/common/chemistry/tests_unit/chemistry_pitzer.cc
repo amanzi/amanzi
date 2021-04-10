@@ -132,7 +132,6 @@ SUITE(TestPitzer) {
     double actw = log10(H2O.act_coef());
     for (int i = 0; i < sp_.size(); i++) {
       gamma[i] = log10(sp_[i].act_coef());
-      // std::cout << sp_[i].name() << "  " <<gamma[i] << std::endl;
     }
     // std::cout << "Testing coeff. 1" << std::endl;
     // Results are compared with PHREEQC

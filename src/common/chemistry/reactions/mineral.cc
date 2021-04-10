@@ -25,11 +25,11 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 Mineral::Mineral()
-    : SecondarySpecies(),
-      molar_volume_(0.0),
-      specific_surface_area_(0.0),
-      volume_fraction_(0.0) {
-}
+  : SecondarySpecies(),
+    molar_volume_(0.0),
+    specific_surface_area_(0.0),
+    volume_fraction_(0.0)
+{}
 
 
 Mineral::Mineral(const std::string& in_name,
@@ -42,24 +42,25 @@ Mineral::Mineral(const std::string& in_name,
                  const double in_logK,
                  const double molar_volume,
                  const double specific_surface_area)
-    : SecondarySpecies(in_name, in_id,
-                       in_species, in_stoichiometries, in_species_ids,
-                       in_h2o_stoich, 0., in_mol_wt, 0., in_logK),
-      molar_volume_(molar_volume),
-      specific_surface_area_(specific_surface_area),
-      volume_fraction_(0.0) {
-}
+  : SecondarySpecies(in_name, in_id,
+                     in_species, in_stoichiometries, in_species_ids,
+                     in_h2o_stoich, 0., in_mol_wt, 0., in_logK),
+    molar_volume_(molar_volume),
+    specific_surface_area_(specific_surface_area),
+    volume_fraction_(0.0)
+{}
 
 
+/* *******************************************************************
+* NOTE: the rate is a dissolution rate so either need to use -rate
+* or vol_frac -= .... inorder to get the correct
+* dissolution/precipitation behavior.
+*
+* TODO(bandre): Right now we are just setting volume fraction to
+* zero if they go negative, introducing mass balance errors! Need
+* to adjust time step or reaction rate in the N-R solve!
+******************************************************************* */
 void Mineral::UpdateVolumeFraction(double rate, double delta_time) {
-  // NOTE: the rate is a dissolution rate so either need to use -rate
-  // or vol_frac -= .... inorder to get the correct
-  // dissolution/precipitation behavior.
-
-  // TODO(bandre): Right now we are just setting volume fraction to
-  // zero if they go negative, introducing mass balance errors! Need
-  // to adjust time step or reaction rate in the N-R solve!
-
   // delta_vf = [m^3/mole] * [moles/m^3/sec] * [sec]
   volume_fraction_ -= molar_volume_ * rate * delta_time;
   if (volume_fraction_ < 0.0) {
@@ -79,19 +80,15 @@ void Mineral::Update(const std::vector<Species>& primary_species, const Species&
 }
 
 
-void Mineral::AddContributionToTotal(std::vector<double> *total) {};
+void Mineral::AddContributionToTotal(std::vector<double> *total)
+{}
 
 
 void Mineral::AddContributionToDTotal(const std::vector<Species>& primary_species,
-                                      MatrixBlock* dtotal) {
-  static_cast<void>(primary_species);
-  static_cast<void>(dtotal);
-}
+                                      MatrixBlock* dtotal)
+{}
 
 
-/*
-**  Display functions
-*/
 void Mineral::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << "    " << name() << " = ";
@@ -101,6 +98,7 @@ void Mineral::Display(const Teuchos::Ptr<VerboseObject> vo) const {
       message << " + ";
     }
   }
+
   if (SecondarySpecies::h2o_stoich_!=0.0) {
     message << " + ";
     message << std::setprecision(2) << h2o_stoich_ << " " << "H2O";

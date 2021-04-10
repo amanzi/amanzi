@@ -34,17 +34,18 @@ namespace AmanziChemistry {
 **  of elements that are incorporated into minerals.
 */
 RadioactiveDecay::RadioactiveDecay()
-    : species_names_(),
-      species_ids_(),
-      stoichiometry_(),
-      rate_constant_(0.0),
-      half_life_user_(1.0),
-      half_life_units_("seconds"),
-      half_life_seconds_(0.0),
-      rate_(0.0) {
+  : species_names_(),
+    species_ids_(),
+    stoichiometry_(),
+    rate_constant_(0.0),
+    half_life_user_(1.0),
+    half_life_units_("seconds"),
+    half_life_seconds_(0.0),
+    rate_(0.0)
+{
   ConvertHalfLifeUnits();
   ConvertHalfLifeToRateConstant();
-}  // end RadioactiveDecay() constructor
+}
 
 
 RadioactiveDecay::RadioactiveDecay(const std::vector<std::string>& species_names,
@@ -52,14 +53,15 @@ RadioactiveDecay::RadioactiveDecay(const std::vector<std::string>& species_names
                                    const std::vector<double>& stoichiometries,
                                    const double half_life,
                                    const std::string half_life_units)
-    : species_names_(species_names),
-      species_ids_(species_ids),
-      stoichiometry_(stoichiometries),      
-      rate_constant_(0.0),
-      half_life_user_(half_life),
-      half_life_units_(half_life_units),
-      half_life_seconds_(0.0),
-      rate_(0.0) {
+  : species_names_(species_names),
+    species_ids_(species_ids),
+    stoichiometry_(stoichiometries),      
+    rate_constant_(0.0),
+    half_life_user_(half_life),
+    half_life_units_(half_life_units),
+    half_life_seconds_(0.0),
+    rate_(0.0)
+{
   // we assume that species_names[0] etc is for the parent, any
   // following species are the progeny. The stoichiometry of the
   // parent should be negative!
@@ -72,7 +74,9 @@ RadioactiveDecay::RadioactiveDecay(const std::vector<std::string>& species_names
 }
 
 
-void RadioactiveDecay::ConvertHalfLifeUnits() {
+// this should go away, dince we use SI
+void RadioactiveDecay::ConvertHalfLifeUnits()
+{
   double conversion = 1.0;
   std::string units = half_life_units_;
   utilities::RemoveLeadingAndTrailingWhitespace(&units);
@@ -115,7 +119,8 @@ void RadioactiveDecay::UpdateRate(const std::vector<double>& total,
                                   const std::vector<double>& total_sorbed,
                                   const double porosity,
                                   const double saturation,
-                                  const double bulk_volume) {
+                                  const double bulk_volume)
+{
   // NOTE: we are working on the totals, not free ion!
   // need total moles of the decaying species:
   //    total * volume_h2o + total_sorbed * volume_bulk
@@ -142,8 +147,8 @@ void RadioactiveDecay::AddContributionToResidual(std::vector<double> *residual) 
 void RadioactiveDecay::AddContributionToJacobian(
     const MatrixBlock& dtotal, const MatrixBlock& dtotal_sorbed,
     const double porosity, const double saturation, const double bulk_volume,
-    MatrixBlock* J) {
-
+    MatrixBlock* J)
+{
   // NOTE: operating on total [moles/L] not free [moles/kg]
   double volume_h2o = porosity * saturation * bulk_volume * 1000.0; // [L]
   // taking derivative of contribution to residual in row i with respect
@@ -161,11 +166,12 @@ void RadioactiveDecay::AddContributionToJacobian(
       tempd *= -rate_constant() * stoichiometry_.at(i);
       J->AddValue(icomp, j, tempd);
     }
-  }  // end columns
+  }
 }
 
 
-void RadioactiveDecay::Display(const Teuchos::Ptr<VerboseObject> vo) const {
+void RadioactiveDecay::Display(const Teuchos::Ptr<VerboseObject> vo) const
+{
   // convention for this reaction is that reactants have negative
   // stoichiometries, products have positive stoichiometries....
   // write them in standard chemistry notation by printing -stoich
@@ -179,6 +185,7 @@ void RadioactiveDecay::Display(const Teuchos::Ptr<VerboseObject> vo) const {
     message << -stoichiometry_.at(0) << " ";
   }
   message << parent_name() << " --> ";
+
   // products, note we start at 1 (0=parent)!
   for (unsigned int i = 1; i < species_names_.size(); i++) {
     message << stoichiometry_.at(i) << " " << species_names_.at(i);
@@ -194,7 +201,6 @@ void RadioactiveDecay::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   message << std::setw(10) << std::scientific << half_life_seconds_ << std::fixed << " [seconds]" << std::endl;
   message << std::setw(20) << " k : " << std::scientific << rate_constant() << std::fixed << std::endl;
   vo->Write(Teuchos::VERB_HIGH, message.str());
-
 }
 
 }  // namespace AmanziChemistry

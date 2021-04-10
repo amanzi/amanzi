@@ -22,16 +22,16 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 SorptionIsothermLinear::SorptionIsothermLinear()
-    : SorptionIsotherm("linear", SorptionIsotherm::LINEAR),
-      KD_(0.0),
-      params_(1, 0.0) {
+  : SorptionIsotherm("linear", SorptionIsotherm::LINEAR),
+    KD_(0.0),
+    params_(1, 0.0) {
 }
 
 
 SorptionIsothermLinear::SorptionIsothermLinear(double KD)
-    : SorptionIsotherm("linear", SorptionIsotherm::LINEAR),
-      KD_(KD),
-      params_(1, 0.0) {
+  : SorptionIsotherm("linear", SorptionIsotherm::LINEAR),
+    KD_(KD),
+    params_(1, 0.0) {
 }
 
 
@@ -69,7 +69,7 @@ double SorptionIsothermLinear::EvaluateDerivative(const Species& primarySpecies)
 }
 
 
-void SorptionIsothermLinear::Display(const Teuchos::RCP<VerboseObject>& vo) const {
+void SorptionIsothermLinear::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(5) << "KD:"
           << std::scientific << std::setprecision(5)

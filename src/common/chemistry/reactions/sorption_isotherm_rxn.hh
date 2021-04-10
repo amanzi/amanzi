@@ -50,17 +50,18 @@ class SorptionIsothermRxn {
   // add sorbed concentration to sorbed total
   void AddContributionToTotal(std::vector<double> *total);
   // add sorbed concentration to sorbed total
-  void AddContributionToDTotal(const std::vector<Species>& primarySpecies,
+  void AddContributionToDTotal(const std::vector<Species>& primary_species,
                                MatrixBlock* dtotal);
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
 
  private:
-  int species_id_;   // ID of primary species
-  std::string species_name_;  // Name of primary species
+  int species_id_;  // ID of primary species
+  std::string species_name_;  // name of primary species
   double sorbed_concentration_;
   std::shared_ptr<SorptionIsotherm> isotherm_;
 };
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
+
 #endif

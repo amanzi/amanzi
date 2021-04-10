@@ -640,6 +640,24 @@
       </ParameterList>
       <ParameterList name="initial conditions"/>
     </ParameterList>
-
   </ParameterList>
+
+  <ParameterList name="thermodynamic database">
+    <ParameterList name="primary species">
+      <ParameterList name="Tritium">
+        <Parameter name="ion size parameter" type="double" value="9.00000000000000000e+00"/>
+        <Parameter name="charge" type="int" value="0"/>
+        <Parameter name="gram molecular weight" type="double" value="1.01000000000000001e+00"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="general kinetics">
+      <ParameterList name="general_0">
+        <Parameter name="reactants" type="string" value="1.0 Tritium"/>
+        <Parameter name="products" type="string" value=""/>
+        <Parameter name="forward rate" type="double" value="1.78576999999999992e-09"/>
+        <Parameter name="backward rate" type="double" value="0.00000000000000000e+00"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  
 </ParameterList>

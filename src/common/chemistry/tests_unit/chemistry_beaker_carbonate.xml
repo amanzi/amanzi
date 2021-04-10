@@ -1,0 +1,39 @@
+<ParameterList name="thermodynamic database">
+  <ParameterList name="primary species">
+    <ParameterList name="H+">
+      <Parameter name="ion size parameter" type="double" value="9.00000000000000000e+00"/>
+      <Parameter name="charge" type="int" value="1"/>
+      <Parameter name="gram molecular weight" type="double" value="1.0079"/>
+    </ParameterList>
+    <ParameterList name="HCO3-">
+      <Parameter name="ion size parameter" type="double" value="4.0"/>
+      <Parameter name="charge" type="int" value="-1"/>
+      <Parameter name="gram molecular weight" type="double" value="61.0171"/>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="aqueous equilibrium complexes">
+    <ParameterList name="OH-">
+      <Parameter name="ion size parameter" type="double" value="3.50000000000000000e+00"/>
+      <Parameter name="charge" type="int" value="-1"/>
+      <Parameter name="gram molecular weight" type="double" value="1.70073000000000008e+01"/>
+      <Parameter name="reaction" type="string" value="1.0 H2O  -1.0 H+"/>
+      <Parameter name="equilibrium constant" type="double" value="1.39951000000000008e+01"/>
+    </ParameterList>
+    <ParameterList name="CO3--">
+      <Parameter name="ion size parameter" type="double" value="4.5"/>
+      <Parameter name="charge" type="int" value="-2"/>
+      <Parameter name="gram molecular weight" type="double" value="60.0092"/>
+      <Parameter name="reaction" type="string" value="-1.0 H+  1.0 HCO3-"/>
+      <Parameter name="equilibrium constant" type="double" value="10.3288"/>
+    </ParameterList>
+    <ParameterList name="CO2(aq)">
+      <Parameter name="ion size parameter" type="double" value="3.0"/>
+      <Parameter name="charge" type="int" value="0"/>
+      <Parameter name="gram molecular weight" type="double" value="44.0098"/>
+      <Parameter name="reaction" type="string" value=" -1.0 H2O  1.0 H+  1.0 HCO3-"/>
+      <Parameter name="equilibrium constant" type="double" value="-6.3447"/>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>
+

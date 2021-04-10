@@ -28,6 +28,7 @@ class RadioactiveDecay {
  public:
   RadioactiveDecay();
   explicit RadioactiveDecay(std::string s) {};
+
   RadioactiveDecay(const std::vector<std::string>& species_names,
                    const std::vector<int>& species_ids,
                    const std::vector<double>& stoichiometries,
@@ -62,8 +63,8 @@ class RadioactiveDecay {
   std::vector<int> species_ids_;  // ids of primary species in rxn
   std::vector<double> stoichiometry_;  // stoich of primary species in rxn
 
-  double rate_constant_;     // rate constant [1/sec]
-  double half_life_user_; // user specified units
+  double rate_constant_;  // rate constant [1/sec]
+  double half_life_user_;  // user specified units
   std::string half_life_units_;
   double half_life_seconds_;
   double rate_;
@@ -71,4 +72,5 @@ class RadioactiveDecay {
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
+
 #endif
