@@ -258,6 +258,8 @@ function download_file()
   else
     curl_opts="--remote-name"
   fi
+  # Problems with self-signed certificate from cmake
+  curl_opts="--insecure ${curl_opts}"
   cmd="${curl_binary} ${curl_opts} $url/$file"
   echo $cmd
   ${curl_binary} $curl_opts $url/$file
