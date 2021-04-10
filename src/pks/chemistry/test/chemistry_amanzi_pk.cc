@@ -124,9 +124,9 @@ SUITE(GeochemistryTestsChemistryPK) {
     try {
       cpk_ = new ac::Amanzi_PK(pk_tree_, glist_, state_, Teuchos::null);
     } catch (ac::ChemistryException chem_error) {
-      std::cout << "ERRROR test1 "<< chem_error.what() << std::endl;
+      std::cout << "ERROR test1 "<< chem_error.what() << std::endl;
     } catch (std::exception e) {
-      std::cout <<  "ERRROR test1a " << e.what() << std::endl;
+      std::cout << "ERROR test1a " << e.what() << std::endl;
     }
   }  
 
@@ -142,7 +142,7 @@ SUITE(GeochemistryTestsChemistryPK) {
       state_->InitializeEvaluators();
       cpk_->Initialize(state_.ptr());
     } catch (std::exception e) {
-      std::cout << "ERRROR test2 "<<e.what() << std::endl;
+      std::cout << "ERROR test2 "<<e.what() << std::endl;
       throw e;
     }
     // assume all is right with the world if we exited w/o an error
@@ -159,7 +159,7 @@ SUITE(GeochemistryTestsChemistryPK) {
       state_->InitializeEvaluators();
       cpk_->Initialize(state_.ptr());
     } catch (std::exception e) {
-      std::cout << "ERRROR test3 "<<e.what() << std::endl;
+      std::cout << "ERROR test3 "<<e.what() << std::endl;
       throw e;
     }
     std::vector<std::string> names;

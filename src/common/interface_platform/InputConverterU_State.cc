@@ -848,9 +848,13 @@ void InputConverterU::TranslateStateICsAmanziGeochemistry_(
         .set<int>("number of dofs", children.size())
         .set<std::string>("function type", "composite function");
 
+    int nsolutes = children.size();
+    Teuchos::Array<std::string> types(nsolutes);
+
     for (int i = 0; i < children.size(); ++i) {
       std::string species = GetAttributeValueS_(children[i], "name");
       double val = GetAttributeValueD_(children[i], "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX);
+      types[i] = GetAttributeValueS_(children[i], "type");
 
       // find position of species in the list of component names
       int k(-1);
@@ -866,6 +870,9 @@ void InputConverterU::TranslateStateICsAmanziGeochemistry_(
       tmp_list.sublist(dof_str.str()).sublist("function-constant")
                                      .set<double>("value", val);
     }
+
+    out_list.sublist("total_component_concentration")
+        .set<Teuchos::Array<std::string> >("names", types);
   }
 }
 

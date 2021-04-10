@@ -217,22 +217,6 @@
   <geochemistry>
     <verbosity>silent</verbosity>
     <constraints>
-      <constraint name="background">
-        <primary name="H+"       type="total" value="2.9578630770689822E-06"/>
-        <primary name="Al+++"    type="total" value="2.2134319178343449E-08" />
-        <primary name="Ca++"     type="total" value="1.0000000000000001E-05"/>
-        <primary name="Cl-"      type="total" value="9.9892245160353443E-03"/>
-        <primary name="Fe+++"    type="total" value="2.5231281704019796E-16"/>
-        <primary name="CO2(aq)"  type="total" value="1.2146187645233065E-05"/>
-        <primary name="K+"       type="total" value="3.32e-05"/>
-        <primary name="Mg++"     type="total" value="5.35e-03"/>
-        <primary name="Na+"      type="total" value="2.78e-04"/>
-        <primary name="SiO2(aq)" type="total" value="1.7728213902597242E-04"/>
-        <primary name="SO4--"    type="total" value="2.25e-05"/>
-        <primary name="Tritium"  type="total" value="1.e-15"/>
-        <primary name="NO3-"     type="total" value="1.0e-3"/>
-        <primary name="UO2++"    type="total" value="1.25e-10"/>
-      </constraint>
       <constraint name="seepage">
         <primary name="H+" type="pH" value="2.05"/>
         <primary name="Al+++" type="total" value="1.0e-8"/>
@@ -249,7 +233,7 @@
         <primary name="NO3-" type="total" value="1.0e-2"/>
         <primary name="UO2++" type="total" value="3.01e-5"/>
       </constraint>
-      <constraint name="outlet">
+      <constraint name="background">
         <primary name="H+" type="pH" value="5.4"/>
         <primary name="Al+++" type="mineral@Kaolinite" value="3.09e-08" />
         <primary name="Ca++" type="total" value="1.0000000000000001E-05"/>
@@ -301,7 +285,7 @@
           <uniform_pressure function="constant" start="0.0" value="201325.0 Pa"/>
         </liquid_component>
         <geochemistry_component>
-          <constraint function="constant" name="outlet" start="0.0"/>
+          <constraint function="constant" name="background" start="0.0"/>
         </geochemistry_component>
       </liquid_phase>
     </boundary_condition>

@@ -31,7 +31,7 @@ int Beaker::EnforceConstraint(
   ResetStatus();
   UpdateParameters(parameters, 1.0);
 
-  std::vector<int> map(ncomp_, 0);
+  std::vector<int> map(ncomp_, -1), map_aqx(ncomp_, -1);
 
   // initial guess
   for (int i = 0; i < ncomp_; i++) {
@@ -61,7 +61,6 @@ int Beaker::EnforceConstraint(
         }
       }
       map[i] = im;
-
       if (!found)
         Exceptions::amanzi_throw(ChemistryInvalidInput("Unknown mineral in constraint: " + pair.second));
 
@@ -71,13 +70,24 @@ int Beaker::EnforceConstraint(
       for (auto it = primary_species_.begin(); it != primary_species_.end(); ++it, ++ip) {
         if (it->name() == pair.second + "(aq)") {
           found = true;
+          map[i] = ip;
           break;
         }
       }
-      map[i] = ip;
+
+      if (!found) {
+        ip = 0;
+        for (auto it = aqComplexRxns_.begin(); it != aqComplexRxns_.end(); ++it, ip++) {
+          if (it->name() == pair.second + "(aq)") {
+            found = true;
+            map_aqx[i] = ip;
+            break;
+          }
+        }
+      }
 
       if (!found)
-        Exceptions::amanzi_throw(ChemistryInvalidInput("Unknown primary species in constraint: " + pair.second));
+        Exceptions::amanzi_throw(ChemistryInvalidInput("Cannot process gas constraint: " + pair.second));
       if (pair.second != "CO2")
         Exceptions::amanzi_throw(ChemistryInvalidInput("Missing Henry law for gas constraint: " + pair.second));
     } else {
@@ -144,9 +154,24 @@ int Beaker::EnforceConstraint(
       // equilibrium is the Henry law: C = p / KH, where p is in [bars]
       } else if (name == "gas") {
         int ip = map[i];
-        double KH = 29.4375;
-        residual_[i] = primary_species_.at(ip).molality() - std::pow(10.0, values[i]) / KH;
-        jacobian_(i, ip) = 1.0;
+        if (ip >= 0) {
+          double KH = 29.4375;
+          residual_[i] = primary_species_.at(ip).molality() - std::pow(10.0, values[i]) / KH;
+          jacobian_(i, ip) = 1.0;
+        } else {
+          ip = map_aqx[i];
+          double lnQK = aqComplexRxns_[ip].lnQK();
+ 
+          double KH = 29.4375;
+          double conc = std::pow(10.0, values[i]) / KH;
+          residual_[i] = lnQK - std::log(conc);
+
+          const auto& pri_ids = aqComplexRxns_[ip].species_ids();
+          for (int n = 0; n < pri_ids.size(); ++n) {
+            int jds = pri_ids[n];
+            jacobian_(i, jds) = aqComplexRxns_[ip].stoichiometry().at(n) / primary_species_.at(jds).molality();
+          }
+        }
       }
     }
 

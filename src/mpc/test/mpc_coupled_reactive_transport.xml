@@ -375,6 +375,7 @@
       </ParameterList>
 
       <ParameterList name="total_component_concentration">
+        <Parameter name="names" type="Array(string)" value="{total}"/>
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
@@ -393,6 +394,7 @@
       </ParameterList>
 
       <ParameterList name="fracture-total_component_concentration">
+        <Parameter name="names" type="Array(string)" value="{total}"/>
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{fracture}"/>

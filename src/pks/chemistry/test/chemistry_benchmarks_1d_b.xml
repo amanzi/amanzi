@@ -149,6 +149,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="total_component_concentration">
+        <Parameter name="names" type="Array(string)" value="{free, gas@CO2, mineral@Calcite}"/>
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
@@ -156,19 +157,19 @@
             <ParameterList name="function">
               <Parameter name="number of dofs" type="int" value="3"/>
               <Parameter name="function type" type="string" value="composite function"/>
-              <ParameterList name="dof 3 function">
+              <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="5.22580e-04"/>
+                  <Parameter name="value" type="double" value="1e-8"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.73839999999999997e-03"/>
+                  <Parameter name="value" type="double" value="-3.0"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="dof 1 function">
+              <ParameterList name="dof 3 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.6288e-05"/>
+                  <Parameter name="value" type="double" value="5.0e-4"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>

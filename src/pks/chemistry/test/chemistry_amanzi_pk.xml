@@ -359,6 +359,7 @@
       </ParameterList>
 
       <ParameterList name="total_component_concentration">
+        <Parameter name="names" type="Array(string)" value="{total, pH, total, total, total}"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
@@ -373,7 +374,7 @@
               </ParameterList>
               <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="9.99999999999999979e-17"/>
+                  <Parameter name="value" type="double" value="5.0"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 3 function">

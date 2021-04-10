@@ -186,14 +186,14 @@
     <verbosity>silent</verbosity>
     <constraints>
       <constraint name="initial">
-        <primary mineral="Calcite" name="Ca++" type="mineral" value="5.2258e-4"/>
-        <primary name="HCO3-" type="gas" value="1.7384e-3" gas="CO2(g)"/>
-        <primary name="H+" type="free_ion" value="1.6288e-5"/>
+        <primary name="H+" type="free" value="1.0e-8"/>
+        <primary name="HCO3-" type="gas@CO2" value="-3"/>
+        <primary name="Ca++" type="mineral@Calcite" value="5.0e-4"/>
       </constraint>
       <constraint name="west">
-        <primary name="Ca++" type="charge" value="1.6787E-05"/>
-        <primary name="HCO3-" type="total" value="1e-3"/>
         <primary name="H+" type="pH" value="9.6643E-04"/>
+        <primary name="HCO3-" type="total" value="1e-3"/>
+        <primary name="Ca++" type="charge" value="1.6787E-05"/>
       </constraint>
     </constraints>
   </geochemistry>

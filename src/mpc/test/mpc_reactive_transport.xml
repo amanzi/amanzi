@@ -612,6 +612,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="total_component_concentration">
+        <Parameter name="names" type="Array(string)" value="{total, total, total, total}"/>
         <ParameterList name="function">
           <ParameterList name="Entire DomainSoil_1Soil_2">
             <Parameter name="regions" type="Array(string)" value="{Entire Domain, Soil_1, Soil_2}"/>

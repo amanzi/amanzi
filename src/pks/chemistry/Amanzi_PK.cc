@@ -189,15 +189,20 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
   CopyCellStateToBeakerStructures(0, tcc);
 
   // finish setting up & testing the chemistry object
-  int ierr(0);
+  int nprimary, ierr(0);
   std::string internal_msg;
+  std::vector<double> values;
+
+  const auto& iclist = glist_->sublist("state").sublist("initial conditions").sublist(tcc_key_);
+  auto constraints = iclist.get<Teuchos::Array<std::string> >("names").toVector();
+
   try {
     vo_->Write(Teuchos::VERB_HIGH, "Initializing chemistry in cell 0...\n");
     chem_->Setup(beaker_state_, beaker_parameters_);
     chem_->Display();
 
     // check names of primary species
-    int nprimary = chem_->primary_species().size(); 
+    nprimary = chem_->primary_species().size(); 
     if (nprimary == comp_names_.size()) {
       for (int i = 0; i < nprimary; ++i) {
         std::string species_name = chem_->primary_species().at(i).name();
@@ -212,7 +217,10 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
 
     // solve for initial free-ion concentrations
     vo_->Write(Teuchos::VERB_HIGH, "Initial speciation calculations in cell 0...\n");
-    chem_->Speciate(&beaker_state_, beaker_parameters_);
+
+    for (int i = 0; i < nprimary; ++i) values.push_back((*tcc)[i][0]);
+    chem_->EnforceConstraint(&beaker_state_, beaker_parameters_, constraints, values);
+    // chem_->Speciate(&beaker_state_, beaker_parameters_);
 
     vo_->Write(Teuchos::VERB_HIGH, "\nTest solution of initial conditions in cell 0:\n");
     chem_->DisplayResults();
@@ -237,7 +245,9 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
       CopyCellStateToBeakerStructures(c, tcc);
 
       try {
-        chem_->Speciate(&beaker_state_, beaker_parameters_);
+        for (int i = 0; i < nprimary; ++i) values[i] = (*tcc)[i][c];
+        chem_->EnforceConstraint(&beaker_state_, beaker_parameters_, constraints, values);
+        // chem_->Speciate(&beaker_state_, beaker_parameters_);
         CopyBeakerStructuresToCellState(c, tcc);
       } 
       catch (ChemistryException& geochem_err) {
@@ -765,12 +775,6 @@ void Amanzi_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>
     double tmp(dt_next_);
     mesh_->get_comm()->MinAll(&tmp, &dt_next_, 1);
   }
-
-  // debug output
-  // chem_->Speciate(&beaker_state_, beaker_parameters_);
-  // chem_->DisplayResults();
-  // chem_->DisplayTotalColumnHeaders(bool display_free_columns);
-  // chem_->DisplayTotalColumns(saved_time_, beaker_state_, true);
 }
 
 
