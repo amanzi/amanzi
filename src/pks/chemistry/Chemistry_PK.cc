@@ -191,27 +191,10 @@ void Chemistry_PK::Initialize(const Teuchos::Ptr<State>& S)
     }
  
     InitializeField_(S, passwd_, primary_activity_coeff_key_, 1.0);    
-
-    // special initialization of free ion concentration
-    if (S_->HasField(free_ion_species_key_)) {
-      if (!S_->GetField(free_ion_species_key_)->initialized()) {
-        CompositeVector& ion = *S_->GetFieldData(free_ion_species_key_, passwd_);
-        const CompositeVector& tcc = *S_->GetFieldData(tcc_key_);
-
-        ion.Update(0.1, tcc, 0.0);
-        S_->GetField(free_ion_species_key_, passwd_)->set_initialized();
-
-        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-          Teuchos::OSTab tab = vo_->getOSTab();
-          *vo_->os() << "initialized \" "<<free_ion_species_key_<<"\" to 10% of \" "<<
-            tcc_key_<<"\"\n";  
-        }
-      }
-    }
+    InitializeField_(S, passwd_, free_ion_species_key_, 1.0e-9);    
 
     // Sorption sites: all will have a site density, but we can default to zero
     if (using_sorption_) {
-      // InitializeField_(S,  total_sorbed_key_, 0.0);
       InitializeField_(S, passwd_, total_sorbed_key_, 0.0);
     }
 

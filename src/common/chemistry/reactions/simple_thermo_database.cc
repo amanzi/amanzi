@@ -291,7 +291,6 @@ void SimpleThermoDatabase::Setup(const Beaker::BeakerState& state,
     }
   }
 
-
   // surface complex sites
   const auto& sslist = plist_->sublist("surface complex sites");
 
@@ -310,7 +309,6 @@ void SimpleThermoDatabase::Setup(const Beaker::BeakerState& state,
       surface_complexation_rxn_id_++;
     }
   }
-
 
   // surface complexes
   const auto& sclist = plist_->sublist("surface complexes");

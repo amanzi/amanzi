@@ -1097,7 +1097,7 @@ void Beaker::InitializeMolalities(const std::vector<double>& initial_molalities)
   }
 
   // iterator doesnt seem to work then passing a vector entry - geh
-  for (unsigned int i = 0; i < primary_species().size(); i++) {
+  for (int i = 0; i < primary_species().size(); i++) {
     primary_species_.at(i).update(initial_molalities.at(i));
   }
 }
