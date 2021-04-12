@@ -1325,10 +1325,7 @@ void WriteVis(Visualization& vis,
 
 // Non-member function for checkpointing.
 double ReadCheckpoint(State& S, const std::string& filename) {
-  bool old = false;
-  if (Keys::ends_with(filename, ".h5")) old = true;
-
-  Checkpoint chkp(old);
+  Checkpoint chkp;
   return chkp.Read(S, filename);
 };
 

@@ -22,7 +22,7 @@ HDF5Reader::HDF5Reader(const std::string& filename)
     file_ = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   } else {
     Errors::Message msg;
-    msg << "HDF5Reader: error, invalid filename \"" << filename << "\"";
+    msg << "HDF5Reader: error opening file \"" << filename << "\" with READ_ONLY access.";
     Exceptions::amanzi_throw(msg);
   }
 }
