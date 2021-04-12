@@ -28,8 +28,8 @@ class SurfaceSite {
  public:
   SurfaceSite();
   SurfaceSite(const std::string& name,
-              const int id,
-              const double molar_density);
+              int id,
+              double molar_density);
   ~SurfaceSite() {};
 
   // adds a pointer to mineral list

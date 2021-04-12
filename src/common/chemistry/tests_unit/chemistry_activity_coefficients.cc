@@ -24,7 +24,7 @@ class ActivityModelTest {
   ActivityModelTest();
   ~ActivityModelTest();
 
-  void RunTest(const std::string name, double* gamma);
+  void RunTest(const std::string& name, double* gamma);
 
   void set_activity_model_name(const std::string& name) {
     activity_model_name_ = name;
@@ -60,15 +60,41 @@ class ActivityModelTest {
 
 
 ActivityModelTest::ActivityModelTest()
-    : amf_(),
-      tolerance_(1.0e-5),
-      activity_model_name_(""),
-      H_p(0, "H+", 1.0, 1.0079, 9.0),
-      OH_m(1, "OH-", -1.0, 17.0073, 3.5),
-      Ca_pp(2, "Ca++", 2.0, 40.0780, 6.0),
-      SO4_mm(3, "SO4--", -2.0, 96.0636, 4.0),
-      Al_ppp(4, "Al+++", 3.0, 26.9815, 9.0),
-      PO4_mmm(5, "PO4---", -3.0, 94.9714, 4.0) {
+  : amf_(),
+    tolerance_(1.0e-5),
+    activity_model_name_("")
+{
+  Teuchos::ParameterList plist;
+  plist.set<int>("charge", 1)
+       .set<double>("ion size parameter", 9.0)
+       .set<double>("gram molecular weight", 1.0079);
+  H_p = ac::Species(0, "H+", plist);
+
+  plist.set<int>("charge", -1)
+       .set<double>("ion size parameter", 3.5)
+       .set<double>("gram molecular weight", 17.0073);
+  OH_m = ac::Species(1, "OH-", plist);
+
+  plist.set<int>("charge", 2)
+       .set<double>("ion size parameter", 6.0)
+       .set<double>("gram molecular weight", 40.0780);
+  Ca_pp = ac::Species(2, "Ca++", plist);
+
+  plist.set<int>("charge", -2)
+       .set<double>("ion size parameter", 4.0)
+       .set<double>("gram molecular weight", 96.0636);
+  SO4_mm = ac::Species(3, "SO4--", plist);
+
+  plist.set<int>("charge", 3)
+       .set<double>("ion size parameter", 9.0)
+       .set<double>("gram molecular weight", 26.9815);
+  Al_ppp = ac::Species(4, "Al+++", plist);
+
+  plist.set<int>("charge", -3)
+       .set<double>("ion size parameter", 4.0)
+       .set<double>("gram molecular weight", 94.9714);
+  PO4_mmm = ac::Species(5, "PO4---", plist);
+
   // set concentrations to get ionic strength of 0.025
   H_p.update(0.0005);
   OH_m.update(0.0015);
@@ -85,7 +111,6 @@ ActivityModelTest::ActivityModelTest()
   // TODO(bandre): should add some aqueous complexes to test ionic strength....
   aqueous_complexes_.clear();
 
-  Teuchos::ParameterList plist;
   vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry", plist));
 }
 
@@ -93,12 +118,11 @@ ActivityModelTest::~ActivityModelTest() {
   delete activity_model_;
 }
 
-void ActivityModelTest::RunTest(const std::string name, double * gamma) {
+void ActivityModelTest::RunTest(const std::string& name, double* gamma) {
   int index = -1;
-  for (std::vector<ac::Species>::iterator primary = species_.begin();
-       primary != species_.end(); primary++) {
-    if (primary->name() == name) {
-      index = primary->identifier();
+  for (auto it = species_.begin(); it != species_.end(); ++it) {
+    if (it->name() == name) {
+      index = it->identifier();
     }
   }
   *gamma = -1.0;  // final value should always be > 0

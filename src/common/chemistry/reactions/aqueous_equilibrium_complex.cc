@@ -21,23 +21,15 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 AqueousEquilibriumComplex::AqueousEquilibriumComplex(
-    const std::string& name,
-    const int id,
-    const std::vector<std::string>& species,
-    const std::vector<double>& stoichiometry,
-    const std::vector<int>& species_ids,
-    const double h2o_stoich,
-    const double charge,
-    const double mol_wt,
-    const double size,
-    const double logK)
-    : SecondarySpecies(name, id, species, stoichiometry,
-                       species_ids, h2o_stoich, charge,
-                       mol_wt, size, logK) {
+    int id, const std::string& name,
+    const Teuchos::ParameterList& plist,
+    const std::vector<Species>& primary_species)
+  : SecondarySpecies(id, name, plist, primary_species) {
 }
 
 
-void AqueousEquilibriumComplex::Update(const std::vector<Species>& primarySpecies, const Species& water_species) {
+void AqueousEquilibriumComplex::Update(
+    const std::vector<Species>& primary_species, const Species& water_species) {
   /* This is not the true Q/K for the reaction, but is instead
   **   BC <==> cC + bB
   **   K = a_C^c * a_B^b / a_BC^1
@@ -46,14 +38,12 @@ void AqueousEquilibriumComplex::Update(const std::vector<Species>& primarySpecie
   */
   double lnQK = -lnK();
   for (int i = 0; i < ncomp(); i++) {
-    lnQK += stoichiometry_.at(i) *
-        primarySpecies.at(species_ids_.at(i)).ln_activity();
+    lnQK += stoichiometry_.at(i) * primary_species.at(species_ids_.at(i)).ln_activity();
   }
   // Add the contribution of the water activity
   lnQK += SecondarySpecies::h2o_stoich_ * std::log(water_species.act_coef());
   lnQK_ = lnQK;
-  // molality_ = std::exp(lnQK) / act_coef_;
-  update(std::exp(lnQK) / act_coef_);
+  update(std::exp(lnQK) / act_coef_);  // new molality_
 }
 
 
@@ -65,9 +55,9 @@ void AqueousEquilibriumComplex::AddContributionToTotal(std::vector<double> *tota
 
 
 void AqueousEquilibriumComplex::AddContributionToDTotal(
-    const std::vector<Species>& primarySpecies,
-    MatrixBlock* dtotal) {
-
+    const std::vector<Species>& primary_species,
+    MatrixBlock* dtotal)
+{
   // taking derivative of contribution to residual in row i with respect
   // to species in column j
 
@@ -77,7 +67,7 @@ void AqueousEquilibriumComplex::AddContributionToDTotal(
   for (int j = 0; j < ncomp(); j++) {
     int jcomp = species_ids_.at(j);
     double tempd = stoichiometry_.at(j) *
-        std::exp(lnQK_ - primarySpecies.at(jcomp).ln_molality()) / act_coef_;  // here act_coef is from complex
+        std::exp(lnQK_ - primary_species.at(jcomp).ln_molality()) / act_coef_;  // here act_coef is from complex
     // row loop
     for (int i = 0; i < ncomp(); i++) {
       dtotal->AddValue(species_ids_.at(i), jcomp, stoichiometry_.at(i)*tempd);
@@ -86,7 +76,8 @@ void AqueousEquilibriumComplex::AddContributionToDTotal(
 }
 
 
-void AqueousEquilibriumComplex::display(const Teuchos::Ptr<VerboseObject> vo) const {
+void AqueousEquilibriumComplex::display(const Teuchos::Ptr<VerboseObject> vo) const
+{
   std::stringstream message;
   message << "    " << name() << " = ";
   // TODO(bandre): uncomment and update test output
@@ -100,8 +91,8 @@ void AqueousEquilibriumComplex::display(const Teuchos::Ptr<VerboseObject> vo) co
     }
   }
   if (SecondarySpecies::h2o_stoich_!=0.0) {
-  	  message << " + ";
-  	  message << std::setprecision(2) << h2o_stoich_ << " " << "H2O";
+    message << " + ";
+    message << std::setprecision(2) << h2o_stoich_ << " " << "H2O";
   }
   message << std::endl;
   message << "        logK = " << logK_ << std::endl;
@@ -114,12 +105,12 @@ void AqueousEquilibriumComplex::display(const Teuchos::Ptr<VerboseObject> vo) co
 void AqueousEquilibriumComplex::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << "    " << name() << " = "
-            << std::fixed << std::setprecision(3);
+          << std::fixed << std::setprecision(3);
   // TODO(bandre): uncomment and update test output
-  //   if (h2o_stoichiometry_ > 0) {
-  //     message << h2o_stoichiometry_ << " " << "H2O" << " + ";
-  //   }
-  for (unsigned int i = 0; i < species_names_.size(); i++) {
+  // if (h2o_stoichiometry_ > 0) {
+  //   message << h2o_stoichiometry_ << " " << "H2O" << " + ";
+  // }
+  for (int i = 0; i < species_names_.size(); i++) {
     message << stoichiometry_.at(i) << " " << species_names_.at(i);
     if (i < species_names_.size() - 1) {
       message << " + ";

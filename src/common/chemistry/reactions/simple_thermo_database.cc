@@ -47,14 +47,7 @@ namespace AmanziChemistry {
 SimpleThermoDatabase::SimpleThermoDatabase(Teuchos::RCP<Teuchos::ParameterList> plist,
                                            Teuchos::RCP<VerboseObject> vo)
   : plist_(plist),
-    Beaker(vo.ptr()),
-    primary_id_(0),
-    aqueous_equilibrium_complex_id_(0),
-    mineral_id_(0),
-    ion_exchange_complex_id_(0),
-    surface_site_id_(0),
-    surface_complex_id_(0),
-    surface_complexation_rxn_id_(0) {
+    Beaker(vo.ptr()) {
   surface_sites_.clear();
   surface_complexation_reactions_.clear();
 }
@@ -69,47 +62,32 @@ void SimpleThermoDatabase::Setup(const Beaker::BeakerState& state,
   // primary species
   const auto& pslist = plist_->sublist("primary species");
   
-  for (auto it = pslist.begin(); it != pslist.end(); ++it) {
+  int id(0);
+  primary_species_.clear();
+  std::map<std::string, int> name_to_id;
+
+  for (auto it = pslist.begin(); it != pslist.end(); ++it, ++id) {
     std::string name = it->first;
     if (pslist.isSublist(name)) {
       const auto& tmp = pslist.sublist(name);
-      double size_parameter = tmp.get<double>("ion size parameter");
-      double charge = tmp.get<int>("charge");
-      double gram_molecular_weight = tmp.get<double>("gram molecular weight");
-
-      Species primary(primary_id_++, name, charge, gram_molecular_weight, size_parameter);
-      AddPrimarySpecies(primary);
+      Species primary(id, name, tmp);
+      primary_species_.push_back(primary);
+      name_to_id[name] = id;
     }
   }
 
   // aqueous complexes
   const auto& aqlist = plist_->sublist("aqueous equilibrium complexes");
 
-  for (auto it = aqlist.begin(); it != aqlist.end(); ++it) {
+  id = 0;
+  for (auto it = aqlist.begin(); it != aqlist.end(); ++it, ++id) {
     std::string name = it->first;
     if (aqlist.isSublist(name)) {
       const auto& tmp = aqlist.sublist(name);
 
       double h2o_stoich(0.0);
-      std::vector<std::string> species;
-      std::vector<double> stoichiometries;
-      std::vector<int> species_ids;
 
-      std::string reaction = tmp.get<std::string>("reaction");
-      ParseReaction_(reaction, &species, &species_ids, &stoichiometries, &h2o_stoich);
-
-      double size_parameter = tmp.get<double>("ion size parameter");
-      double charge = tmp.get<int>("charge");
-      double gram_molecular_weight = tmp.get<double>("gram molecular weight");
-      double logKeq = tmp.get<double>("equilibrium constant");
-
-      AqueousEquilibriumComplex secondary(name,
-                                          aqueous_equilibrium_complex_id_++,
-                                          species,
-                                          stoichiometries,
-                                          species_ids,
-                                          h2o_stoich,
-                                          charge, gram_molecular_weight, size_parameter, logKeq);
+      AqueousEquilibriumComplex secondary(id, name, tmp, this->primary_species());
       AddAqueousEquilibriumComplex(secondary);
     }
   }
@@ -117,40 +95,13 @@ void SimpleThermoDatabase::Setup(const Beaker::BeakerState& state,
   // minerals
   const auto& mnlist = plist_->sublist("mineral kinetics");
 
-  for (auto it = mnlist.begin(); it != mnlist.end(); ++it) {
+  id = 0;
+  for (auto it = mnlist.begin(); it != mnlist.end(); ++it, ++id) {
     std::string name = it->first;
     if (mnlist.isSublist(name)) {
       const auto& tmp = mnlist.sublist(name);
 
-      double h2o_stoich(0.0);
-      std::vector<std::string> species;
-      std::vector<double> stoichiometries;
-      std::vector<int> species_ids;
-
-      std::string reaction = tmp.get<std::string>("reaction");
-      ParseReaction_(reaction, &species, &species_ids, &stoichiometries, &h2o_stoich);
-
-      double gram_molecular_weight = tmp.get<double>("gram molecular weight");
-      double logKeq = tmp.get<double>("equilibrium constant");
-
-      double molar_volume = tmp.get<double>("molar volume");
-      // convert: [cm^3/mole] --> [m^3/mole]
-      molar_volume /= 1000000.0;
-
-      double specific_surface_area = tmp.get<double>("specific surface area");
-      // convert: [cm^2 mineral / cm^3 bulk] --> [m^2 mineral / m^3 bulk]
-      specific_surface_area *= 100.0;
-
-      Mineral mineral(name, mineral_id_++,
-                      species,
-                      stoichiometries,
-                      species_ids,
-                      h2o_stoich,
-                      gram_molecular_weight,
-                      logKeq,
-                      molar_volume,
-                      specific_surface_area);
-
+      Mineral mineral(id, name, tmp, this->primary_species());
       AddMineral(mineral);
 
       std::string model = tmp.get<std::string>("rate model");
@@ -187,19 +138,18 @@ void SimpleThermoDatabase::Setup(const Beaker::BeakerState& state,
 
       std::vector<int> species_ids;
       for (auto s = species.begin(); s != species.end(); s++) {
-        species_ids.push_back(SpeciesNameToID(*s));
+        species_ids.push_back(name_to_id.at(*s));
       }
 
       // parse forward rates
       double coeff;
-      std::string name;
       std::vector<double> forward_stoichiometries;
       std::vector<int> forward_species_ids;
 
       std::istringstream iss1(reactants);
       while (iss1 >> coeff || !iss1.eof()) {
         iss1 >> name;
-        forward_species_ids.push_back(SpeciesNameToID(name));
+        forward_species_ids.push_back(name_to_id.at(name));
         forward_stoichiometries.push_back(coeff);
       }
 
@@ -210,7 +160,7 @@ void SimpleThermoDatabase::Setup(const Beaker::BeakerState& state,
       std::istringstream iss2(reactants);
       while (iss2 >> coeff || !iss2.eof()) {
         iss2 >> name;
-        backward_species_ids.push_back(SpeciesNameToID(name));
+        backward_species_ids.push_back(name_to_id.at(name));
         backward_stoichiometries.push_back(coeff);
       }
 
@@ -253,7 +203,8 @@ void SimpleThermoDatabase::Setup(const Beaker::BeakerState& state,
   // species and a single exchange site.
   const auto& iclist = plist_->sublist("ion exchange complexes");
 
-  for (auto it = iclist.begin(); it != iclist.end(); ++it) {
+  id = 0;
+  for (auto it = iclist.begin(); it != iclist.end(); ++it, ++id) {
     std::string name = it->first;
     if (iclist.isSublist(name)) {
       const auto& tmp = iclist.sublist(name);
@@ -276,10 +227,8 @@ void SimpleThermoDatabase::Setup(const Beaker::BeakerState& state,
         }
       }
 
-      IonExchangeComplex ion_complex(name,
-                                     ion_exchange_complex_id_++,
-                                     primary_name,
-                                     primary_id,
+      IonExchangeComplex ion_complex(name, id,
+                                     primary_name, primary_id,
                                      lnKeq);
 
       for (int i = 0; i < ion_exchange_rxns().size(); i++) {
@@ -294,26 +243,27 @@ void SimpleThermoDatabase::Setup(const Beaker::BeakerState& state,
   // surface complex sites
   const auto& sslist = plist_->sublist("surface complex sites");
 
-  for (auto it = sslist.begin(); it != sslist.end(); ++it) {
+  id = 0;
+  for (auto it = sslist.begin(); it != sslist.end(); ++it, ++id) {
     std::string name = it->first;
     if (sslist.isSublist(name)) {
       const auto& tmp = sslist.sublist(name);
 
       double density = tmp.get<double>("density");
 
-      SurfaceSite site(name, surface_site_id_++, density);
+      SurfaceSite site(name, id, density);
       surface_sites_.push_back(site);  // local storage to make parsing reactions easier...
 
       SurfaceComplexationRxn rxn(site);
       surface_complexation_reactions_.push_back(rxn);
-      surface_complexation_rxn_id_++;
     }
   }
 
   // surface complexes
   const auto& sclist = plist_->sublist("surface complexes");
 
-  for (auto it = sclist.begin(); it != sclist.end(); ++it) {
+  id = 0;
+  for (auto it = sclist.begin(); it != sclist.end(); ++it, ++id) {
     std::string name = it->first;
     if (sclist.isSublist(name)) {
       const auto& tmp = sclist.sublist(name);
@@ -334,15 +284,10 @@ void SimpleThermoDatabase::Setup(const Beaker::BeakerState& state,
                      &surface_site_name, &surface_site_stoichiometry, &surface_site_id,
                      &h2o_stoich);
 
-      SurfaceComplex surf_complex(name,
-                                  surface_complex_id_++,
-                                  primary_name,
-                                  primary_stoichiometry,
-                                  primary_id,
+      SurfaceComplex surf_complex(name, id,
+                                  primary_name, primary_stoichiometry, primary_id,
                                   h2o_stoich,
-                                  surface_site_name,
-                                  surface_site_stoichiometry,
-                                  surface_site_id,
+                                  surface_site_name, surface_site_stoichiometry, surface_site_id,
                                   charge,
                                   lnKeq);
 
@@ -364,7 +309,7 @@ void SimpleThermoDatabase::Setup(const Beaker::BeakerState& state,
       SorptionIsothermFactory sif;
       auto sorption_isotherm = sif.Create(model, params);
 
-      SorptionIsothermRxn rxn(name, SpeciesNameToID(name), sorption_isotherm);
+      SorptionIsothermRxn rxn(name, name_to_id.at(name), sorption_isotherm);
       AddSorptionIsothermRxn(rxn);
     }
   }
@@ -384,7 +329,7 @@ void SimpleThermoDatabase::Setup(const Beaker::BeakerState& state,
       std::vector<int> species_ids;
 
       std::string parent = tmp.get<std::string>("reactant");
-      int parent_id = SpeciesNameToID(parent);
+      int parent_id = name_to_id.at(parent);
       if (parent_id < 0) {
         std::stringstream ss;
         ss << "Unknown parent species '" << parent << "'.\n"
@@ -399,15 +344,15 @@ void SimpleThermoDatabase::Setup(const Beaker::BeakerState& state,
 
       // NOTE: we allow zero progeny
       if (progeny.size() > 0) {
-        int id = SpeciesNameToID(progeny);
-        if (id < 0) {
+        int id2 = name_to_id.at(progeny);
+        if (id2 < 0) {
           std::stringstream ss;
           ss << "Unknown progeny species '" << name << "'.\n"
              << "Progeny species must be in the primary species list.\n";
           Exceptions::amanzi_throw(ChemistryInvalidInput(ss.str()));
         }
         species.push_back(progeny);
-        species_ids.push_back(id);
+        species_ids.push_back(id2);
         stoichiometry.push_back(1.0);
       }
 
@@ -420,7 +365,12 @@ void SimpleThermoDatabase::Setup(const Beaker::BeakerState& state,
   }
 
   // cleaning
-  FinishSurfaceComplexation();
+  for (auto rxn = surface_complexation_reactions_.begin();
+       rxn != surface_complexation_reactions_.end(); rxn++) {
+    this->AddSurfaceComplexationRxn(*rxn);
+  }
+  surface_sites_.clear();
+  surface_complexation_reactions_.clear();
 
   SetParameters(parameters);
   SetupActivityModel(parameters.activity_model_name, 
@@ -428,53 +378,6 @@ void SimpleThermoDatabase::Setup(const Beaker::BeakerState& state,
   ResizeInternalMemory(primary_species().size());
   VerifyState(state);
   CopyStateToBeaker(state);
-}
-
-
-/* *******************************************************************
-* Parses a reaction whose products are all primary species
-******************************************************************* */
-void SimpleThermoDatabase::ParseReaction_(const std::string& reaction,
-                                          std::vector<std::string>* species,
-                                          std::vector<int>* species_ids,
-                                          std::vector<double>* stoichiometries,
-                                          double* h2o_stoich)
-{
-  double coeff;
-  std::string primary_name;
-  std::vector<Species> primary_species = this->primary_species();
-
-  species->clear();
-  species_ids->clear();
-  stoichiometries->clear();
-
-  std::istringstream iss(reaction);
-  while (iss >> coeff || !iss.eof()) {
-    iss >> primary_name;
-
-    if (primary_name == "H2O") {
-      *h2o_stoich = coeff;
-    } else {
-      int id(-1);
-      for (auto it = primary_species.begin(); it != primary_species.end(); ++it) {
-        if (it->name() == primary_name) {
-          id = it->identifier();
-          break;
-        }
-      }
-
-      if (id < 0) {
-        std::stringstream msg;
-        msg << "Reaction primary species \'" << primary_name 
-            << "\' was not found in the primary species list\n";
-        Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));
-      }
-
-      species->push_back(primary_name);
-      species_ids->push_back(id);
-      stoichiometries->push_back(coeff);
-    }
-  }
 }
 
 
@@ -582,36 +485,6 @@ void SimpleThermoDatabase::ParseReaction_(const std::string& reactants,
     species->push_back(name);
     stoichiometries->push_back(coeff);
   }
-}
-
-
-/* *******************************************************************
-* Maps a primary species name to an id
-******************************************************************* */
-int SimpleThermoDatabase::SpeciesNameToID(const std::string& species_name)
-{
-  for (auto it = this->primary_species().begin(); it != this->primary_species().end(); ++it) {
-    if (it->name() == species_name) {
-      return it->identifier();
-    }
-  }
-  return -1;
-}
-
-
-/* *******************************************************************
-* TBW
-******************************************************************* */
-void SimpleThermoDatabase::FinishSurfaceComplexation()
-{
-  for (auto rxn = surface_complexation_reactions_.begin();
-       rxn != surface_complexation_reactions_.end(); rxn++) {
-    this->AddSurfaceComplexationRxn(*rxn);
-  }
-  // just to maintain our sanity, clear our temporary working copies
-  // to make sure they aren't used anywhere else!
-  surface_sites_.clear();
-  surface_complexation_reactions_.clear();
 }
 
 }  // namespace AmanziChemistry

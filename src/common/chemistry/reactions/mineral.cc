@@ -32,23 +32,20 @@ Mineral::Mineral()
 {}
 
 
-Mineral::Mineral(const std::string& in_name,
-                 const int in_id,
-                 const std::vector<std::string>& in_species,
-                 const std::vector<double>& in_stoichiometries,
-                 const std::vector<int>& in_species_ids,
-                 const double in_h2o_stoich,
-                 const double in_mol_wt,
-                 const double in_logK,
-                 const double molar_volume,
-                 const double specific_surface_area)
-  : SecondarySpecies(in_name, in_id,
-                     in_species, in_stoichiometries, in_species_ids,
-                     in_h2o_stoich, 0., in_mol_wt, 0., in_logK),
-    molar_volume_(molar_volume),
-    specific_surface_area_(specific_surface_area),
+Mineral::Mineral(int id, const std::string& name,
+                 const Teuchos::ParameterList& plist,
+                 const std::vector<Species>& primary_species)
+  : SecondarySpecies(id, name, plist, primary_species),
     volume_fraction_(0.0)
-{}
+{
+  molar_volume_ = plist.get<double>("molar volume");
+  // convert: [cm^3/mole] --> [m^3/mole]
+  molar_volume_ /= 1000000.0;
+
+  specific_surface_area_ = plist.get<double>("specific surface area");
+  // convert: [cm^2 mineral / cm^3 bulk] --> [m^2 mineral / m^3 bulk]
+  specific_surface_area_ *= 100.0;
+}
 
 
 /* *******************************************************************

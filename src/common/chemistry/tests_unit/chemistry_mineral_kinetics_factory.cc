@@ -52,16 +52,43 @@ SUITE(GeochemistryTestsMineralKineticsFactory) {
     ac::Species Al_ppp;
     ac::Species PO4_mmm;
   };
+
   MineralKineticsFactoryTest::MineralKineticsFactoryTest()
       : mkf_(),
       kinetic_rate_(NULL),
-      rate_data_("log10_rate_constant -9.0 moles/m^2/sec", ";"),
-      H_p(0, "H+", 1.0, 1.0079, 9.0),
-      OH_m(1, "OH-", -1.0, 17.0073, 3.5),
-      Ca_pp(2, "Ca++", 2.0, 40.0780, 6.0),
-      CO3_mm(3, "CO3--", -2.0, 96.0636, 4.0),
-      Al_ppp(4, "Al+++", 3.0, 26.9815, 9.0),
-      PO4_mmm(5, "PO4---", -3.0, 94.9714, 4.0) {
+      rate_data_("log10_rate_constant -9.0 moles/m^2/sec", ";")
+  {
+    Teuchos::ParameterList plist;
+    plist.set<int>("charge", 1)
+         .set<double>("gram molecular weight", 1.0079)
+         .set<double>("ion size parameter", 9.0);
+    H_p = ac::Species(0, "H+", plist);
+
+    plist.set<int>("charge", -1)
+         .set<double>("gram molecular weight", 17.0073)
+         .set<double>("ion size parameter", 3.5);
+    OH_m = ac::Species(1, "OH-", plist);
+
+    plist.set<int>("charge", 2)
+         .set<double>("gram molecular weight", 40.0780)
+         .set<double>("ion size parameter", 6.0);
+    Ca_pp = ac::Species(2, "Ca++", plist);
+
+    plist.set<int>("charge", -2)
+         .set<double>("gram molecular weight", 96.0636)
+         .set<double>("ion size parameter", 4.0);
+    CO3_mm = ac::Species(3, "CO3--", plist);
+
+    plist.set<int>("charge", 3)
+         .set<double>("gram molecular weight", 26.9815)
+         .set<double>("ion size parameter", 9.0);
+    Al_ppp = ac::Species(4, "Al+++", plist);
+
+    plist.set<int>("charge", -3)
+         .set<double>("gram molecular weight", 94.9714)
+         .set<double>("ion size parameter", 4.0);
+    PO4_mmm = ac::Species(5, "PO4---", plist);
+
     // set primary species
     H_p.update(0.0005);
     OH_m.update(0.0015);
@@ -102,15 +129,25 @@ SUITE(GeochemistryTestsMineralKineticsFactory) {
     stoichiometry.push_back(1.0);
     species_ids.push_back(2);
     minerals_.clear();
+
+    std::vector<ac::Species> primary_species;
+
+    plist.set<int>("charge", 0)
+         .set<double>("gram molecular weight", 100.0)
+         .set<double>("equilibrium constant", 10.0)
+         .set<std::string>("reaction", "2.0 H2O  -3.0 H+  1.0 HCO3-")
+         .set<double>("specific surface area", 1.0)
+         .set<double>("molar volume", 1.0);
+
+    primary_species.push_back(ac::Species(0, "H+", plist));
+    primary_species.push_back(ac::Species(1, "HCO3-", plist));
+
     // dummy mineral
-    minerals_.push_back(ac::Mineral("Foo", 0, species_names, stoichiometry, species_ids,
-                                    h2o_stoich, gram_molecular_weight, logK, molar_volume, specific_surface_area));
+    minerals_.push_back(ac::Mineral(0, "Foo", plist, primary_species));
     // "real" mineral
-    minerals_.push_back(ac::Mineral(name, 1, species_names, stoichiometry, species_ids,
-                                    h2o_stoich, gram_molecular_weight, logK, molar_volume, specific_surface_area));
+    minerals_.push_back(ac::Mineral(1, name, plist, primary_species));
     // dummy mineral
-    minerals_.push_back(ac::Mineral("Bar", 2, species_names, stoichiometry, species_ids,
-                                    h2o_stoich, gram_molecular_weight, logK, molar_volume, specific_surface_area));
+    minerals_.push_back(ac::Mineral(2, "Bar", plist, primary_species));
   }
 
   MineralKineticsFactoryTest::~MineralKineticsFactoryTest() {
@@ -144,4 +181,5 @@ SUITE(GeochemistryTestsMineralKineticsFactory) {
     RunTest("TST");
     CHECK_EQUAL(kinetic_rate_->debug(), true);
   }
-}  // end SUITE(GeochemistryTestMineralKineticsFactory)
+}
+

@@ -84,5 +84,6 @@ class KineticRate {
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
+
 #endif
 

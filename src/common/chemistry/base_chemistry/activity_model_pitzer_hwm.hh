@@ -12,25 +12,18 @@
 #ifndef AMANZI_CHEMISTRY_ACTIVITY_MODEL_PITZER_HWM_HH_
 #define AMANZI_CHEMISTRY_ACTIVITY_MODEL_PITZER_HWM_HH_
 
-#include <vector>
-#include <string>
 #include <cstdlib>
-#include <math.h>
-// Base class for activity calculations
+#include <cmath>
+#include <string>
+#include <vector>
+
 #include "activity_model.hh"
-#include <virial_coefficient.hh>
-
-
-// forward declarations
-class Epetra_MultiVector;
-class Epetra_Vector;
-class Epetra_SerialDenseVector;
+#include "virial_coefficient.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
 
 class Species;
-
 class VirialCoefficient;
 
 class ActivityModelPitzerHWM : public ActivityModel {
@@ -38,21 +31,24 @@ class ActivityModelPitzerHWM : public ActivityModel {
   ActivityModelPitzerHWM();
   ~ActivityModelPitzerHWM() {};
 
-  void Setup(const ActivityModelParameters& parameters,
-             const std::vector<Species>& primary_species,
-             const std::vector<AqueousEquilibriumComplex>& secondary_species);
+  virtual void Setup(const ActivityModelParameters& parameters,
+                     const std::vector<Species>& primary_species,
+                     const std::vector<AqueousEquilibriumComplex>& secondary_species) override;
 
-  double Evaluate(const Species& species);
-  void EvaluateVector(const std::vector<Species>& prim, 
-                      const std::vector<AqueousEquilibriumComplex>& sec,
-                      std::vector<double>* gamma,
-                      double* actw);
-  void Display() const;
+  virtual double Evaluate(const Species& species) final;
+  virtual void EvaluateVector(
+      const std::vector<Species>& primary_species, 
+      const std::vector<AqueousEquilibriumComplex>& secondary_species,
+      std::vector<double>* gamma,
+      double* actw) final;
+
+  virtual void Display() const override;
 
  private:
   void ReadDataBase(const std::string& database,
-		            const std::vector<Species>& primary_species,
-		            const std::vector<AqueousEquilibriumComplex>& aqueous_complexes);
+		    const std::vector<Species>& primary_species,
+		    const std::vector<AqueousEquilibriumComplex>& aqueous_complexes);
+
   void ParseBeta0VirialCoefficient(const std::string& data);
   void ParseBeta1VirialCoefficient(const std::string& data);
   void ParseBeta2VirialCoefficient(const std::string& data);
@@ -60,12 +56,15 @@ class ActivityModelPitzerHWM : public ActivityModel {
   void ParseThetaVirialCoefficient(const std::string& data);
   void ParseLamdaVirialCoefficient(const std::string& data);
   void ParsePsiVirialCoefficient(const std::string& data);
+
   void AssignIndexBetaFunctions();
   void AssignIndexJFunctions();
+
   void ComputemQmProduct(std::vector<double>& gamma, double& osmotic_coefficient);
   void ComputemQlmProduct(double& osmotic_coefficient);
   void ComputemQcmProduct(std::vector<double>& gamma, double& osmotic_coefficient);
   void ComputemTmmProduct(std::vector<double>& gamma, double& osmotic_coefficient);
+
   void ComputeQmatrices();
   void ComputeBetaFunctions();
   void ComputeJFunctions();
@@ -74,7 +73,7 @@ class ActivityModelPitzerHWM : public ActivityModel {
   void PushPrivateVectors();
   void Update(const double& temperature, const double& pressure);
   void SetVirialCoefficient(const std::vector<double>& virial, const std::string& typevirial,
-    		                const int& isp1, const int& isp2, const int& isp3);
+                            const int& isp1, const int& isp2, const int& isp3);
   int GetIndexSpeciesFromName(const std::string& name_species);
 
   static const double cwater;
@@ -131,8 +130,9 @@ class ActivityModelPitzerHWM : public ActivityModel {
   std::vector<double> charge;                          // Electric charge of the aqueous species [number_species]
   std::vector<std::string> name_species;               // Name of the aqueous species [number_species]
   int number_species;                                  // Number of aqueous species
-
 };
+
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_PITZER_HWM_HH_
+
+#endif

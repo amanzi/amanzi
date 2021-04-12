@@ -28,17 +28,7 @@ class SimpleThermoDatabase : public Beaker {
   virtual void Setup(const Beaker::BeakerState& state,
                      const Beaker::BeakerParameters& parameters) override;
 
- protected:
-  void FinishSurfaceComplexation();
-  int SpeciesNameToID(const std::string& species_name);
-
  private:
-  void ParseReaction_(const std::string& reaction,
-                      std::vector<std::string>* species,
-                      std::vector<int>* species_ids,
-                      std::vector<double>* stoichiometries,
-                      double* h2o_stoich);
-
   void ParseReaction_(const std::string& reactants,
                       const std::string& products,
                       std::vector<std::string>* species,
@@ -56,18 +46,11 @@ class SimpleThermoDatabase : public Beaker {
  private:
   Teuchos::RCP<Teuchos::ParameterList> plist_;
 
-  int primary_id_;
-  int aqueous_equilibrium_complex_id_;
-  int mineral_id_;
-  int ion_exchange_complex_id_;
-  int surface_site_id_;
-  int surface_complex_id_;
-  int surface_complexation_rxn_id_;
-
   std::vector<SurfaceSite> surface_sites_;
   std::vector<SurfaceComplexationRxn> surface_complexation_reactions_;
 };
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
+
 #endif

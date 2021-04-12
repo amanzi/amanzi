@@ -32,17 +32,41 @@ SUITE(GeochemistryTestsKineticRate) {
 
   KineticRateTest::KineticRateTest() {
     // set primary species
-    ac::Species H_p(0, "H+", 1.0, 1.0079, 9.0);
+    Teuchos::ParameterList plist;
+    plist.set<int>("charge", 1)
+         .set<double>("gram molecular weight", 1.0079)
+         .set<double>("ion size parameter", 9.0);
+    ac::Species H_p(0, "H+", plist);
     H_p.update(0.0005);
-    ac::Species OH_m(1, "OH-", -1.0, 17.0073, 3.5);
+
+    plist.set<int>("charge", -1)
+         .set<double>("gram molecular weight", 17.0073)
+         .set<double>("ion size parameter", 3.5);
+    ac::Species OH_m(1, "OH-", plist);
     OH_m.update(0.0015);
-    ac::Species Ca_pp(2, "Ca++", 2.0, 40.0780, 6.0);
+
+    plist.set<int>("charge", 2)
+         .set<double>("gram molecular weight", 40.0780)
+         .set<double>("ion size parameter", 6.0);
+    ac::Species Ca_pp(2, "Ca++", plist);
     Ca_pp.update(0.001);
-    ac::Species CO3_mm(3, "CO3--", -2.0, 96.0636, 4.0);
+
+    plist.set<int>("charge", -2)
+         .set<double>("gram molecular weight", 96.0636)
+         .set<double>("ion size parameter", 4.0);
+    ac::Species CO3_mm(3, "CO3--", plist);
     CO3_mm.update(0.002);
-    ac::Species Al_ppp(4, "Al+++", 3.0, 26.9815, 9.0);
+
+    plist.set<int>("charge", 3)
+         .set<double>("gram molecular weight", 26.9815)
+         .set<double>("ion size parameter", 9.0);
+    ac::Species Al_ppp(4, "Al+++", plist);
     Al_ppp.update(0.003);
-    ac::Species PO4_mmm(5, "PO4---", -3.0, 94.9714, 4.0);
+
+    plist.set<int>("charge", -3)
+         .set<double>("gram molecular weight", 94.9714)
+         .set<double>("ion size parameter", 4.0);
+    ac::Species PO4_mmm(5, "PO4---", plist);
     PO4_mmm.update(0.001);
 
     species_.push_back(H_p);

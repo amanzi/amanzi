@@ -27,9 +27,9 @@ class VirialCoefficient {
 
   void UpdateVirial(const double& temp, const double& pressure);
 
-  double GetVirial() const {return virial;};
+  double GetVirial() const { return virial; }
 
-  void SetPol(const double& poli) {
+  void SetPol(double poli) {
     npol++;
     pol.push_back(poli);
   }

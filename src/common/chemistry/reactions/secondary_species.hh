@@ -26,17 +26,9 @@ class MatrixBlock;
 class SecondarySpecies : public Species {
  public:
   SecondarySpecies();
-  SecondarySpecies(const std::string& name,
-                   const int secondary_id,
-                   const std::vector<std::string>& species,
-                   const std::vector<double>& stoichiometries,
-                   const std::vector<int>& species_ids,
-                   const double h2o_stoich,
-                   const double charge,
-                   const double mol_wt,
-                   const double size,
-                   const double logK);
-
+  SecondarySpecies(int id, const std::string& name,
+                   const Teuchos::ParameterList& plist,
+                   const std::vector<Species>& primary_species);
   virtual ~SecondarySpecies() {};
 
   // update molalities
@@ -55,6 +47,14 @@ class SecondarySpecies : public Species {
   std::vector<std::string> species_names() const { return species_names_; };
   std::vector<int> species_ids() const { return species_ids_; };
   std::vector<double> stoichiometry() const { return stoichiometry_; };
+
+ private:
+  void ParseReaction_(const std::string& reaction,
+                      std::vector<std::string>* species,
+                      std::vector<int>* species_ids,
+                      std::vector<double>* stoichiometries,
+                      double* h2o_stoich,
+                      const std::vector<Species>& primary_species);
 
  protected:
   int ncomp_;  // # components in reaction

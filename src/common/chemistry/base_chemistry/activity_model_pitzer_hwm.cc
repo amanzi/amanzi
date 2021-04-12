@@ -1,5 +1,4 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-
 #include "activity_model_pitzer_hwm.hh"
 #include <cstdlib>
 #include <math.h>
@@ -14,7 +13,6 @@
 #include "chemistry_exception.hh"
 #include "exceptions.hh"
 
-
 namespace Amanzi {
 namespace AmanziChemistry {
 
@@ -27,16 +25,16 @@ const double ActivityModelPitzerHWM::aphi_debye_huckel_slope25 = 0.392;
 // -------------------------------------------------------------
 // aphi_debye_huckel_slope25=0.39153d0,   & ! Limiting Debye-Hückel slope to 25º   0.39153  0.392
 // -------------------------------------------------------------
-const double ActivityModelPitzerHWM::c0aphi_debye_huckel_slope = 0.13422;    //   Temperature depending coefficients
-const double ActivityModelPitzerHWM::c1aphi_debye_huckel_slope = 0.0368329;  //   Temperature depending coefficients
-const double ActivityModelPitzerHWM::c2aphi_debye_huckel_slope = 14.62718;   //   Temperature depending coefficients
-const double ActivityModelPitzerHWM::c3aphi_debye_huckel_slope = 1530.1474;  //   Temperature depending coefficients
-const double ActivityModelPitzerHWM::c4aphi_debye_huckel_slope = 80.40631;   //   Temperature depending coefficients
-const double ActivityModelPitzerHWM::c5aphi_debye_huckel_slope = 4.1725332;  //   Temperature depending coefficients
-const double ActivityModelPitzerHWM::c6aphi_debye_huckel_slope = 0.1481291;  //   Temperature depending coefficients
-const double ActivityModelPitzerHWM::c7aphi_debye_huckel_slope = 1.5188505;  //   Temperature depending coefficients
-const double ActivityModelPitzerHWM::c8aphi_debye_huckel_slope = 1.8016317;  //   Temperature depending coefficients
-const double ActivityModelPitzerHWM::c9aphi_debye_huckel_slope = 9.3816144;  //   Temperature depending coefficients
+const double ActivityModelPitzerHWM::c0aphi_debye_huckel_slope = 0.13422;    // Temperature depending coefficients
+const double ActivityModelPitzerHWM::c1aphi_debye_huckel_slope = 0.0368329;  // Temperature depending coefficients
+const double ActivityModelPitzerHWM::c2aphi_debye_huckel_slope = 14.62718;   // Temperature depending coefficients
+const double ActivityModelPitzerHWM::c3aphi_debye_huckel_slope = 1530.1474;  // Temperature depending coefficients
+const double ActivityModelPitzerHWM::c4aphi_debye_huckel_slope = 80.40631;   // Temperature depending coefficients
+const double ActivityModelPitzerHWM::c5aphi_debye_huckel_slope = 4.1725332;  // Temperature depending coefficients
+const double ActivityModelPitzerHWM::c6aphi_debye_huckel_slope = 0.1481291;  // Temperature depending coefficients
+const double ActivityModelPitzerHWM::c7aphi_debye_huckel_slope = 1.5188505;  // Temperature depending coefficients
+const double ActivityModelPitzerHWM::c8aphi_debye_huckel_slope = 1.8016317;  // Temperature depending coefficients
+const double ActivityModelPitzerHWM::c9aphi_debye_huckel_slope = 9.3816144;  // Temperature depending coefficients
 
 
 /*!
@@ -47,22 +45,22 @@ const double ActivityModelPitzerHWM::c9aphi_debye_huckel_slope = 9.3816144;  // 
   @details Create the object
 */
 ActivityModelPitzerHWM::ActivityModelPitzerHWM()
-    : ActivityModel(),
-      aphi_debye_huckel_slope(aphi_debye_huckel_slope25),
-      number_b_functions(0),
-      number_j_functions(0),
-      number_non_zero_beta(0),
-      number_non_zero_theta(0),
-      number_non_zero_cphi(0),
-      number_non_zero_lamda(0),
-      number_non_zero_psi(0),
-      number_non_zero_q(0),
-      index_cl_species(-1),
-      index_h2o_species(-1),
-      index_k_species(-1),
-      number_species(0),
-      macinnes_scaled(false),
-      jfunction_approach("pitzer1975") {
+  : ActivityModel(),
+    aphi_debye_huckel_slope(aphi_debye_huckel_slope25),
+    number_b_functions(0),
+    number_j_functions(0),
+    number_non_zero_beta(0),
+    number_non_zero_theta(0),
+    number_non_zero_cphi(0),
+    number_non_zero_lamda(0),
+    number_non_zero_psi(0),
+    number_non_zero_q(0),
+    index_cl_species(-1),
+    index_h2o_species(-1),
+    index_k_species(-1),
+    number_species(0),
+    macinnes_scaled(false),
+    jfunction_approach("pitzer1975") {
 }
 
 
@@ -146,13 +144,13 @@ void ActivityModelPitzerHWM::EvaluateVector(
     Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
   }
   int isp(-1);
-  for (std::vector<Species>::const_iterator i = primary_species.begin(); i != primary_species.end(); i++) {
+  for (auto it = primary_species.begin(); it != primary_species.end(); ++it) {
     isp++;
-    molality.at(isp) = (*i).molality();
+    molality.at(isp) = (*it).molality();
   }
-  for (std::vector<AqueousEquilibriumComplex>::const_iterator i = aqueous_complexes.begin(); i != aqueous_complexes.end(); i++) {
+  for (auto it = aqueous_complexes.begin(); it != aqueous_complexes.end(); ++it) {
     isp++;
-    molality.at(isp) = (*i).molality();
+    molality.at(isp) = (*it).molality();
   }
 
   ComputeQmatrices();
@@ -161,9 +159,11 @@ void ActivityModelPitzerHWM::EvaluateVector(
   ComputemQlmProduct(osmotic_coefficient);
   ComputemQcmProduct(*gamma, osmotic_coefficient);
   ComputemTmmProduct(*gamma, osmotic_coefficient);
+
   if (macinnes_scaled && index_cl_species > -1) {
     gcl = gamma->at(index_cl_species);
-    for (int i = 0; i < number_species; i++) if (i != index_h2o_species) {
+    for (int i = 0; i < number_species; i++)
+      if (i != index_h2o_species) {
         gamma->at(i) *= pow((gcl / gclm), charge.at(i));
       }
   }
@@ -750,8 +750,8 @@ void ActivityModelPitzerHWM::ReadDataBase(const std::string& namedatabase,
     if (iblock == block_exit) {
       exit_loop = true;
     }
-
   }
+
   if (isdebug) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "=================> Assign Beta's functions ==============>" << std::endl;

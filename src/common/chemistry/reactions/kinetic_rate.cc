@@ -21,10 +21,11 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 KineticRate::KineticRate()
-    : debug_(false),
-      name_("KineticRate"),
-      identifier_(0),
-      reaction_rate_(0.0) {
+  : debug_(false),
+    name_("KineticRate"),
+    identifier_(0),
+    reaction_rate_(0.0)
+{
   reactant_names.clear();
   reactant_stoichiometry.clear();
   reactant_ids.clear();
@@ -49,7 +50,7 @@ void KineticRate::SetSpeciesIds(const SpeciesArray& species,
     out_stoichiometry->clear();
     out_stoichiometry->resize(species.size(), 0.0);
   }
-  for (unsigned int current = 0; current < in_names.size(); current++) {
+  for (int current = 0; current < in_names.size(); current++) {
     bool species_found = false;
     // check primary species
     SpeciesArray::const_iterator s;

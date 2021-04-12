@@ -8,7 +8,7 @@
 
   Author: Ben Andre
 
-  Base class for ion exchange sites (e.g. X- in standard geochemistry notation)
+  Base class for ion exchange sites (e.g. X- in standard notation)
 */
 
 #ifndef AMANZI_CHEMISTRY_IONEXCHANGESITE_HH_
@@ -28,8 +28,8 @@ namespace AmanziChemistry {
 class IonExchangeSite {
  public:
   IonExchangeSite();
-  IonExchangeSite(const std::string& in_name);
-  IonExchangeSite(const std::string& in_name, const double charge, const std::string location);
+  IonExchangeSite(const std::string& name);
+  IonExchangeSite(const std::string& name, const double charge, const std::string& location);
   virtual ~IonExchangeSite() {};
 
   virtual void Display(const Teuchos::Ptr<VerboseObject> vo) const;

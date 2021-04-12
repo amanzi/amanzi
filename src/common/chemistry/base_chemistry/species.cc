@@ -40,39 +40,36 @@ Species::Species()
 
 
 Species::Species(int id, const std::string& name,
-                 double charge, double mol_wt,
-                 double size)
-  : molality_(1.e-9),
+                 const Teuchos::ParameterList& plist)
+  : identifier_(id),
+    name_(name),
+    molality_(1.e-9),
     activity_(1.0),
     act_coef_(1.0),
     ln_molality_(0.0),
     ln_activity_(0.0),
-    ln_act_coef_(0.0),
-    identifier_(id),
-    charge_(charge),
-    gram_molecular_weight_(mol_wt),
-    ion_size_parameter_(size),
-    name_(name)
+    ln_act_coef_(0.0)
 {
-  if (identifier() < 0) {
-    std::ostringstream error_stream;
-    error_stream << "Species::Species(): \n"
-                 << "invalid identifier (id < 0), id = " << identifier() << std::endl;
-    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+  ion_size_parameter_ = 0.0;
+  if (plist.isParameter("ion size parameter")) {
+    ion_size_parameter_ = plist.get<double>("ion size parameter");
   }
-  if (gram_molecular_weight() < 0.0) {
-    std::ostringstream error_stream;
-    error_stream << "Species::Species(): \n"
-                 << "invalid gram molecular weight "
-                 << "(gmw < 0.0), gmw = " << gram_molecular_weight() << std::endl;
-    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+
+  charge_ = 0.0;
+  if (plist.isParameter("charge")) {
+    charge_ = plist.get<int>("charge");
   }
-  if (ion_size_parameter() < 0.0) {
-    std::ostringstream error_stream;
-    error_stream << "Species::Species(): \n"
-                 << "invalid ion size parameter "
-                 << "(size < 0.0), size = " << ion_size_parameter() << std::endl;
-    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+
+  gram_molecular_weight_ = plist.get<double>("gram molecular weight");
+
+  if (identifier() < 0 || 
+      gram_molecular_weight() < 0.0 ||
+      ion_size_parameter() < 0.0) {
+    std::ostringstream oss;
+    oss << "Invalid species data, id = " << identifier() << std::endl
+        << "   gram molecular weight = " << gram_molecular_weight() << std::endl
+        << "      ion size parameter = " << ion_size_parameter() << std::endl;
+    Exceptions::amanzi_throw(ChemistryInvalidInput(oss.str()));
   }
 }
 

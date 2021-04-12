@@ -25,16 +25,9 @@ class MatrixBlock;
 class AqueousEquilibriumComplex : public SecondarySpecies {
  public:
   AqueousEquilibriumComplex() : SecondarySpecies() {};
-  AqueousEquilibriumComplex(const std::string& name,
-                            const int id,
-                            const std::vector<std::string>& species,
-                            const std::vector<double>& stoichiometry,
-                            const std::vector<int>& species_ids,
-                            const double h2o_stoich,
-                            const double charge,
-                            const double mol_wt,
-                            const double size,
-                            const double logK);
+  AqueousEquilibriumComplex(int id, const std::string& name,
+                            const Teuchos::ParameterList& plist,
+                            const std::vector<Species>& primary_species);
   ~AqueousEquilibriumComplex() {};
 
   // update molalities

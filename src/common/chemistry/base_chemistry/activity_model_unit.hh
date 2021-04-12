@@ -24,14 +24,15 @@ class ActivityModelUnit : public ActivityModel {
   ActivityModelUnit() : ActivityModel() {};
   ~ActivityModelUnit() {};
 
-  double Evaluate(const Species& species);
+  virtual double Evaluate(const Species& species) final;
 
-  void EvaluateVector(const std::vector<Species>& prim, 
-                      const std::vector<AqueousEquilibriumComplex>& sec,
-                      std::vector<double>* gamma,
-                      double* actw);
+  virtual void EvaluateVector(
+      const std::vector<Species>& primary_species, 
+      const std::vector<AqueousEquilibriumComplex>& secondary_species,
+      std::vector<double>* gamma,
+      double* actw) final;
 
-  void Display() const;
+  virtual void Display() const override;
 };
 
 }  // namespace AmanziChemistry

@@ -91,10 +91,6 @@ class Beaker {
     bool converged;
   };
 
-  //
-  // public routines that may need to be accessed by the driver
-  //
-
   // inheriting classes setup the species, etc
   virtual void Setup(const BeakerState& state,
                      const BeakerParameters& parameters);
@@ -153,15 +149,14 @@ class Beaker {
 
  protected:
   // resizes matrix and vectors for nonlinear system
-  void ResizeInternalMemory(const int size);
+  void ResizeInternalMemory(int size);
 
   void SetupActivityModel(std::string model, std::string pitzer_database, std::string jfunction_pitzer);
   void VerifyState(const BeakerState& state) const;
   void CopyStateToBeaker(const BeakerState& state);
 
-  void AddPrimarySpecies(const Species& s);
   void AddIonExchangeRxn(const IonExchangeRxn& ionx_rxn);
-  void AddIonExchangeComplex(const int irxn, const IonExchangeComplex& ionx_complex);
+  void AddIonExchangeComplex(int irxn, const IonExchangeComplex& ionx_complex);
   void AddAqueousEquilibriumComplex(const AqueousEquilibriumComplex& c);
   void AddMineral(const Mineral& m);
   void AddMineralKineticRate(KineticRate* rate);
@@ -260,6 +255,10 @@ class Beaker {
  protected:
   Teuchos::Ptr<VerboseObject> vo_;
 
+  Species water_;
+  std::vector<Species> primary_species_; 
+  std::vector<Mineral> minerals_;
+
  private:
   double tolerance_;
   unsigned int max_iterations_;
@@ -292,10 +291,6 @@ class Beaker {
   double sorbed_accumulation_coef_;
   // por_sat_den_vol_ = porosity * saturation * water_density * volume [kg water]
   double por_sat_den_vol_;
-
-  Species water_;
-  std::vector<Species> primary_species_;  // list of primary species
-  std::vector<Mineral> minerals_;  // list of mineral species
 
   ActivityModel* activity_model_;
 

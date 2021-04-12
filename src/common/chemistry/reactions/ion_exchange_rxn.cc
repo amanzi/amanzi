@@ -69,7 +69,7 @@ void IonExchangeRxn::AddIonExchangeSite(const IonExchangeSite& site) {
 }
 
 
-void IonExchangeRxn::Update(const std::vector<Species>& primarySpecies) {
+void IonExchangeRxn::Update(const std::vector<Species>& primary_species) {
   // pflotran: reaction.F90, function RTotalSorbEqIonX
 
   //
@@ -81,7 +81,7 @@ void IonExchangeRxn::Update(const std::vector<Species>& primarySpecies) {
   double tol = 1.e-12;
 
   if (!uniform_z_set()) {
-    CheckUniformZ(primarySpecies);
+    CheckUniformZ(primary_species);
   }
 
   for (std::vector<IonExchangeComplex>::iterator ionx = ionx_complexes_.begin(); 
@@ -92,8 +92,8 @@ void IonExchangeRxn::Update(const std::vector<Species>& primarySpecies) {
   if (!uniform_z()) { // Z_i /= Z_j for all i,j
     int interation_count = 0;
     int ref_cation = ionx_complexes_[0].primary_id();
-    double ref_cation_act = primarySpecies[ref_cation].activity();
-    double ref_cation_Z = primarySpecies[ref_cation].charge();
+    double ref_cation_act = primary_species[ref_cation].activity();
+    double ref_cation_Z = primary_species[ref_cation].charge();
     double ref_cation_K = ionx_complexes_[0].K();
     double ref_cation_X = ref_cation_Z*ref_cation_sorbed_conc_/omega;
     one_more = false;
@@ -104,10 +104,10 @@ void IonExchangeRxn::Update(const std::vector<Species>& primarySpecies) {
       double total = ref_cation_X;
       for (unsigned int i = 1; i < ionx_complexes_.size(); i++) {
         int icomp = ionx_complexes_[i].primary_id();
-        double value = primarySpecies[icomp].activity()/
+        double value = primary_species[icomp].activity()/
                        ionx_complexes_[i].K()*
                        pow(ref_cation_quotient, 
-                           primarySpecies[icomp].charge()/
+                           primary_species[icomp].charge()/
                              ref_cation_Z);
         ionx_complexes_[i].set_X(value);
         total += value;
@@ -121,7 +121,7 @@ void IonExchangeRxn::Update(const std::vector<Species>& primarySpecies) {
       double dres_dref_cation_X = 1.;
       for (unsigned int i = 1; i < ionx_complexes_.size(); i++) {
         int icomp = ionx_complexes_[i].primary_id();
-        dres_dref_cation_X += (primarySpecies[icomp].charge() / ref_cation_Z) *
+        dres_dref_cation_X += (primary_species[icomp].charge() / ref_cation_Z) *
             (ionx_complexes_[i].X() / ref_cation_X);
       }
       double dref_cation_X = -res / dres_dref_cation_X;
@@ -138,7 +138,7 @@ void IonExchangeRxn::Update(const std::vector<Species>& primarySpecies) {
     for (std::vector<IonExchangeComplex>::iterator ionx = ionx_complexes_.begin(); 
        ionx != ionx_complexes_.end(); ionx++) {
       int icomp = ionx->primary_id();
-      double value = primarySpecies[icomp].activity()*
+      double value = primary_species[icomp].activity()*
                      ionx->K();
       ionx->set_X(value);
       sumkm += value;
@@ -155,7 +155,7 @@ void IonExchangeRxn::Update(const std::vector<Species>& primarySpecies) {
        ionx != ionx_complexes_.end(); ionx++) {
     int icomp = ionx->primary_id();
     // NOTE: pflotran is doing a += here, but the array was zeroed out.
-    ionx->set_concentration(ionx->X()*omega/primarySpecies[icomp].charge());
+    ionx->set_concentration(ionx->X()*omega/primary_species[icomp].charge());
   }
 }
 
@@ -170,7 +170,7 @@ void IonExchangeRxn::AddContributionToTotal(std::vector<double> *total) {
 
 
 void IonExchangeRxn::AddContributionToDTotal(
-    const std::vector<Species>& primarySpecies,
+    const std::vector<Species>& primary_species,
     MatrixBlock* dtotal) {
   // pflotran: reaction.F90, function RTotalSorbEqIonX
 
@@ -178,23 +178,23 @@ void IonExchangeRxn::AddContributionToDTotal(
   double sumZX = 0.;
   for (auto ionx = ionx_complexes_.begin(); ionx != ionx_complexes_.end(); ionx++) {
     int icomp = ionx->primary_id();
-    sumZX += primarySpecies[icomp].charge() * ionx->X();
+    sumZX += primary_species[icomp].charge() * ionx->X();
   }
 
   // add contribution to derivatives
   for (auto ionx = ionx_complexes_.begin(); ionx != ionx_complexes_.end(); ionx++) {
     int icomp = ionx->primary_id();
-    double temp = primarySpecies[icomp].charge() / sumZX;
+    double temp = primary_species[icomp].charge() / sumZX;
     for (std::vector<IonExchangeComplex>::iterator ionx2 =
              ionx_complexes_.begin();
          ionx2 != ionx_complexes_.end(); ionx2++) {
       int jcomp = ionx2->primary_id();
       double value;
       if (ionx == ionx2) {
-        value = ionx->concentration()*(1.-temp*ionx2->X())/primarySpecies[jcomp].molality();
+        value = ionx->concentration()*(1.-temp*ionx2->X())/primary_species[jcomp].molality();
       }
       else {
-        value = -ionx->concentration()*temp*ionx2->X()/primarySpecies[jcomp].molality();
+        value = -ionx->concentration()*temp*ionx2->X()/primary_species[jcomp].molality();
       }
       dtotal->AddValue(icomp,jcomp,value);
     }
@@ -202,12 +202,12 @@ void IonExchangeRxn::AddContributionToDTotal(
 }
 
 
-void IonExchangeRxn::CheckUniformZ(const std::vector<Species>& primarySpecies) {
+void IonExchangeRxn::CheckUniformZ(const std::vector<Species>& primary_species) {
   bool uniform_z = true;
   for (unsigned int i = 0; i < ionx_complexes_.size(); i++) {
     for (unsigned int j = i+1; j < ionx_complexes_.size(); j++) {
-      if (primarySpecies[ionx_complexes_[i].primary_id()].charge() != 
-          primarySpecies[ionx_complexes_[j].primary_id()].charge()) {
+      if (primary_species[ionx_complexes_[i].primary_id()].charge() != 
+          primary_species[ionx_complexes_[j].primary_id()].charge()) {
         uniform_z = false;
         i = ionx_complexes_.size();
         break;
@@ -228,22 +228,13 @@ void IonExchangeRxn::DisplaySite(const Teuchos::Ptr<VerboseObject> vo) const {
 
 
 void IonExchangeRxn::DisplayComplexes(const Teuchos::Ptr<VerboseObject> vo) const {
-  std::vector<IonExchangeComplex>::const_iterator complex;
-  for (complex = ionx_complexes_.begin();
-       complex != ionx_complexes_.end(); complex++) {
-    complex->Display(vo);
+  for (auto it = ionx_complexes_.begin(); it != ionx_complexes_.end(); ++it) {
+    it->Display(vo);
   }
 }
 
 
 void IonExchangeRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const {
-  //DisplaySite();
-  DisplayComplexes(vo);
-}
-
-
-void IonExchangeRxn::display(const Teuchos::Ptr<VerboseObject> vo) const {
-  DisplaySite(vo);
   DisplayComplexes(vo);
 }
 

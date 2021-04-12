@@ -6,7 +6,8 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Author: Ben Andre
+  Authors: Ben Andre
+           Sergio A Bea
 */
 
 #include <sstream>
@@ -14,7 +15,6 @@
 
 #include "activity_model.hh"
 #include "activity_model_debye_huckel.hh"
-// Pitzer equations were implemented (Sergio A Bea)
 #include "activity_model_pitzer_hwm.hh"
 #include "activity_model_unit.hh"
 #include "chemistry_exception.hh"
@@ -35,9 +35,9 @@ ActivityModel* ActivityModelFactory::Create(
     const ActivityModel::ActivityModelParameters& parameters,
     const std::vector<Species>& primary_species,
     const std::vector<AqueousEquilibriumComplex>& secondary_species,
-    const Teuchos::Ptr<VerboseObject> vo) {
-
-  ActivityModel* activity_model = NULL;
+    const Teuchos::Ptr<VerboseObject> vo)
+{
+  ActivityModel* activity_model = nullptr;
 
   if (model == debye_huckel) {
     activity_model = new ActivityModelDebyeHuckel();
@@ -46,31 +46,17 @@ ActivityModel* ActivityModelFactory::Create(
   } else if (model == unit) {
     activity_model = new ActivityModelUnit();
   } else {
-    // default type, error...?
-    std::ostringstream error_stream;
-    error_stream << "ActivityModelFactory::Create(): \n"
-                 << "Unknown activity model name: " << model << "\n"
-                 << "       valid names: " << unit << "\n"
-                 << "                    " << debye_huckel << "\n"
-                 << "                    " << pitzer_hwm << "\n" ;
-    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+    std::ostringstream oss;
+    oss << "Unknown activity model name: " << model << "\n"
+        << "  valid names: " << unit << "\n"
+        << "               " << debye_huckel << "\n"
+        << "               " << pitzer_hwm << "\n" ;
+    Exceptions::amanzi_throw(ChemistryInvalidInput(oss.str()));
   }
 
-  if (activity_model == NULL) {
-    // something went wrong, should throw an exception and exit gracefully....
-    std::ostringstream error_stream;
-    error_stream << "ActivityModelFactory::Create(): \n"
-                 << "Activity model was not created for some reason....\n";
-    Exceptions::amanzi_throw(ChemistryException(error_stream.str()));
-  } else {
-    // finish any additional setup
-
-    // TODO(bandre): set the name in the object constructor so we can
-    // verify that the correct object was created.
-    activity_model->set_verbosity(vo);
-    activity_model->name(model);
-    activity_model->Setup(parameters, primary_species, secondary_species);
-  }
+  activity_model->set_verbosity(vo);
+  activity_model->name(model);
+  activity_model->Setup(parameters, primary_species, secondary_species);
 
   return activity_model;
 }

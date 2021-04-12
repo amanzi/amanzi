@@ -13,6 +13,7 @@
 #define AMANZI_CHEMISTRY_ACTIVITY_MODEL_FACTORY_HH_
 
 #include <string>
+#include <vector>
 
 #include "activity_model.hh"
 

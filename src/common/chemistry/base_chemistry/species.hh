@@ -26,10 +26,8 @@ namespace AmanziChemistry {
 
 class Species {
  public:
-  Species();  // this is only present for stl containers, don't use it
-  Species(int id, const std::string& name,
-          double charge, double mol_wt,
-          double size);
+  Species();
+  Species(int id, const std::string& name, const Teuchos::ParameterList& plist);
   virtual ~Species() {};
 
   // update(): calculate the new activity coefficient, set the molarity,

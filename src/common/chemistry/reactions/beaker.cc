@@ -125,7 +125,7 @@ void Beaker::Setup(const BeakerState& state,
 
   SetupActivityModel(parameters.activity_model_name,
                      parameters.pitzer_database, parameters.jfunction_pitzer);
-  ResizeInternalMemory(static_cast<int>(primary_species().size()));
+  ResizeInternalMemory(primary_species().size());
   VerifyState(state);
 }
 
@@ -722,7 +722,8 @@ void Beaker::DisplayTotalColumns(const double time,
  ** protected interface (SimpleThermoDatabase)
  **
  ******************************************************************************/
-void Beaker::ResizeInternalMemory(const int size) {
+void Beaker::ResizeInternalMemory(int size)
+{
   set_ncomp(size);
   total_.resize(size);
   dtotal_.Resize(size);
@@ -969,17 +970,12 @@ void Beaker::SetupActivityModel(std::string model,
 }
 
 
-void Beaker::AddPrimarySpecies(const Species& s) {
-  primary_species_.push_back(s);
-}
-
-
 void Beaker::AddIonExchangeRxn(const IonExchangeRxn& ionx_rxn) {
   ion_exchange_rxns_.push_back(ionx_rxn);
 }
 
 
-void Beaker::AddIonExchangeComplex(const int irxn, const IonExchangeComplex& ionx_complex) {
+void Beaker::AddIonExchangeComplex(int irxn, const IonExchangeComplex& ionx_complex) {
   ion_exchange_rxns_[irxn].AddIonExchangeComplex(ionx_complex);
 }
 

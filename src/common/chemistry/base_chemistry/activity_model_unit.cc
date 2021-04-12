@@ -9,28 +9,24 @@
   Author: Ben Andre
 */
 
-#include "activity_model_unit.hh"
-
-#include <cmath>
-
 #include <iostream>
+
+#include "activity_model_unit.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
 
 double ActivityModelUnit::Evaluate(const Species& species) {
-  static_cast<void>(species);
-  // log(gamma_i) = 0.0, gamma_i = 1.0
   return 1.0;
 }
 
 
 void ActivityModelUnit::EvaluateVector(
-    const std::vector<Species>& prim, 
-    const std::vector<AqueousEquilibriumComplex>& sec,
+    const std::vector<Species>& primary_species, 
+    const std::vector<AqueousEquilibriumComplex>& secondary_species,
     std::vector<double>* gamma, 
-    double* actw) {
-  // double r1(1.0);
+    double* actw)
+{
   gamma->assign(gamma->size(), 1.0);
   *actw = 1.0;
 }

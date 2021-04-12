@@ -42,41 +42,45 @@ class ActivityModel {
                      const std::vector<Species>& primary_species,
                      const std::vector<AqueousEquilibriumComplex>& secondary_species);
 
-  void CalculateIonicStrength(
-      const std::vector<Species>& primarySpecies,
-      const std::vector<AqueousEquilibriumComplex>& secondarySpecies);
-  void CalculateSumAbsZ(
-        const std::vector<Species>& primarySpecies,
-        const std::vector<AqueousEquilibriumComplex>& secondarySpecies);
-  void CalculateSumC(
-          const std::vector<Species>& primarySpecies,
-          const std::vector<AqueousEquilibriumComplex>& secondarySpecies);
-  void CalculateActivityCoefficients(
-      std::vector<Species>* primarySpecies,
-      std::vector<AqueousEquilibriumComplex>* secondarySpecies,
-      Species* water);
   virtual double Evaluate(const Species& species) = 0;
+
   virtual void EvaluateVector(
-      const std::vector<Species>& primarySpecies,
-      const std::vector<AqueousEquilibriumComplex>& secondarySpecies,
+      const std::vector<Species>& primary_species,
+      const std::vector<AqueousEquilibriumComplex>& secondary_species,
       std::vector<double>* gamma,
       double* actw) = 0;
 
+  void CalculateIonicStrength(
+      const std::vector<Species>& primary_species,
+      const std::vector<AqueousEquilibriumComplex>& secondary_species);
+
+  void CalculateSumAbsZ(
+      const std::vector<Species>& primary_species,
+      const std::vector<AqueousEquilibriumComplex>& secondary_species);
+
+  void CalculateSumC(
+      const std::vector<Species>& primary_species,
+      const std::vector<AqueousEquilibriumComplex>& secondary_species);
+
+  void CalculateActivityCoefficients(
+      std::vector<Species>* primary_species,
+      std::vector<AqueousEquilibriumComplex>* secondary_species,
+      Species* water);
+
+  // access
   double ionic_strength() const { return I_; }
 
-  virtual void Display() const = 0;
-
-  void name(const std::string name) { name_ = name; }
+  void name(const std::string& name) { name_ = name; }
   std::string name() { return name_; }
 
+  // i/o
+  virtual void Display() const = 0;
   void set_verbosity(Teuchos::Ptr<VerboseObject> vo) { vo_ = vo; } 
-  Teuchos::Ptr<VerboseObject> verbosity() { return vo_; } 
 
  protected:
   void ResizeGamma(int size);
 
-  void ionic_strength(double d) { I_ = d; }
-
+ protected:
   double I_;  // ionic strength
   double Z_;  // sum ( m_i * abs(z_i) )
   double M_;  // sum ( m_i )

@@ -25,10 +25,10 @@ class IonExchangeComplex {
  public:
   IonExchangeComplex() {};
   IonExchangeComplex(const std::string& complex_name,
-                     const int complex_id,
+                     int complex_id,
                      const std::string& primary_name,
-                     const int primary_id,
-                     const double K);
+                     int primary_id,
+                     double K);
   virtual ~IonExchangeComplex() {};
 
   void display(const Teuchos::Ptr<VerboseObject> vo) const;

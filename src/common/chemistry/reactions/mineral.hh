@@ -31,14 +31,9 @@ class MatrixBlock;
 class Mineral : public SecondarySpecies {
  public:
   Mineral();
-  Mineral(const std::string& name,
-          const int mineral_id,
-          const std::vector<std::string>& species,
-          const std::vector<double>& stoichiometries,
-          const std::vector<int>& species_ids,
-          const double h2o_stoich, const double mol_wt,
-          const double logK, const double molar_volume,
-          const double specific_surface_area);
+  Mineral(int id, const std::string& name,
+          const Teuchos::ParameterList& plist,
+          const std::vector<Species>& primary_species);
   ~Mineral() {};
 
   // update molalities

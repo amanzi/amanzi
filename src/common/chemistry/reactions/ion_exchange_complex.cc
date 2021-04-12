@@ -71,32 +71,28 @@ namespace AmanziChemistry {
 
 IonExchangeComplex::IonExchangeComplex(
     const std::string& in_name,
-    const int in_id,
+    int in_id,
     const std::string& in_primary_name,
-    const int in_primary_id,
+    int in_primary_id,
     const double in_K)
-    : name_(in_name),
-      id_(in_id),
-      primary_name_(in_primary_name),
-      primary_id_(in_primary_id),
-      K_(in_K),
-      concentration_(0.),
-      X_(0.) {
+  : name_(in_name),
+    id_(in_id),
+    primary_name_(in_primary_name),
+    primary_id_(in_primary_id),
+    K_(in_K),
+    concentration_(0.),
+    X_(0.) {
 }
 
 
-/*
-**
-**  Display functions
-**
-*/
 void IonExchangeComplex::display(const Teuchos::Ptr<VerboseObject> vo) const {
   DisplayReaction(vo);
   *vo->os() << "      K: " << K() << std::endl;
 }
 
 
-void IonExchangeComplex::Display(const Teuchos::Ptr<VerboseObject> vo) const {
+void IonExchangeComplex::Display(const Teuchos::Ptr<VerboseObject> vo) const
+{
   DisplayReaction(vo);
   std::stringstream message;
   message << std::setw(40) << " "
@@ -106,7 +102,8 @@ void IonExchangeComplex::Display(const Teuchos::Ptr<VerboseObject> vo) const {
 }
 
 
-void IonExchangeComplex::DisplayReaction(const Teuchos::Ptr<VerboseObject> vo) const {
+void IonExchangeComplex::DisplayReaction(const Teuchos::Ptr<VerboseObject> vo) const
+{
   std::stringstream message;
   message << "    " << name() << " = "
           << primary_name()
@@ -115,7 +112,8 @@ void IonExchangeComplex::DisplayReaction(const Teuchos::Ptr<VerboseObject> vo) c
 }
 
 
-void IonExchangeComplex::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const {
+void IonExchangeComplex::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const
+{
   std::stringstream message;
   message << std::setw(15) << "Name"
           << std::setw(15) << "X"
@@ -125,7 +123,8 @@ void IonExchangeComplex::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> 
 }
 
 
-void IonExchangeComplex::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const {
+void IonExchangeComplex::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const
+{
   std::stringstream message;
   message << std::setw(15) << name()
           << std::scientific << std::setprecision(5)

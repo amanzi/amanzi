@@ -51,28 +51,55 @@ SUITE(TestPitzer) {
   };
 
   PitzerTest::PitzerTest() 
-      : H(0, "H+", 1.0, 0.0, 0.0),
-        OH(1, "OH-", -1.0, 0.0, 0.0),
-        Cl(2, "Cl-", -1.0, 0.0, 0.0),
-        Na(3, "Na+", 1.0, 0.0, 0.0),
-        K(4, "K+", 1.0, 0.0, 0.0),
-        Ca(5, "Ca+2", 2.0, 0.0, 0.0),
-        Mg(6, "Mg+2", 2.0, 0.0, 0.0),
-        CO3(7, "CO3-2", -2.0, 0.0, 0.0),
-        CO2(8, "CO2", 0.0, 0.0, 0.0),
-        HCO3(9, "HCO3-", -1.0, 0.0, 0.0),
-        MgOH(10, "MgOH+", 1.0, 0.0, 0.0),
-        MgCO3(11, "MgCO3", 0.0, 0.0, 0.0),
-        CaCO3(12, "CaCO3", 0.0, 0.0, 0.0),
-        H2O(13, "H2O", 0.0, 0.0, 0.0),
-        HSO4(13, "HSO4-", -1.0,0.0,0.0),
-        SO4(14, "SO4-2", -2.0,0.0,0.0),
-        Br(16, "Br-", -1.0, 0.0, 0.0) {
+  {
+    Teuchos::ParameterList plist;
+    plist.set<int>("charge", 1)
+         .set<double>("ion size parameters", 9.0)
+         .set<double>("gram molecular weight", 1.0079);
+    H = ac::Species(0, "H+", plist);
+
+    plist.set<int>("charge", -1);
+    OH = ac::Species(1, "OH-", plist);
+    Cl = ac::Species(2, "Cl-", plist);
+
+    plist.set<int>("charge", 1);
+    Na = ac::Species(3, "Na+", plist);
+    K = ac::Species(4, "K+", plist);
+
+    plist.set<int>("charge", 2);
+    Ca = ac::Species(5, "Ca+2", plist);
+    Mg = ac::Species(6, "Mg+2", plist);
+
+    plist.set<int>("charge", -2);
+    CO3 = ac::Species(7, "CO3-2", plist);
+
+    plist.set<int>("charge", 0);
+    CO2 = ac::Species(8, "CO2", plist);
+
+    plist.set<int>("charge", -1);
+    HCO3 = ac::Species(9, "HCO3-", plist);
+
+    plist.set<int>("charge", 1);
+    MgOH = ac::Species(10, "MgOH+", plist);
+
+    plist.set<int>("charge", 0);
+    MgCO3 = ac::Species(11, "MgCO3", plist),
+    CaCO3 = ac::Species(12, "CaCO3", plist),
+    H2O = ac::Species(13, "H2O", plist);
+
+    plist.set<int>("charge", -1);
+    HSO4 = ac::Species(13, "HSO4-", plist);
+
+    plist.set<int>("charge", -2);
+    SO4 = ac::Species(14, "SO4-2", plist);
+
+    plist.set<int>("charge", -1);
+    Br = ac::Species(16, "Br-", plist);
+
     // parameters.database_filename = "phreeqc_pitzer.dat";
     parameters.database_filename = "chemistry_pitzer.dat";
     parameters.pitzer_jfunction = "pitzer1975";
 
-    Teuchos::ParameterList plist;
     vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry", plist));
   }
 
@@ -184,9 +211,7 @@ SUITE(TestPitzer) {
     std::vector<double> gamma(sp_.size(), 1.0);
 
     am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_, vo_.ptr());
-    if (am_->verbosity()->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-      am_->Display();
-    }
+    am_->Display();
 
     am_->CalculateActivityCoefficients(&sp_, &aqx_, &H2O);
     double actw = log10(H2O.act_coef());
@@ -249,9 +274,7 @@ SUITE(TestPitzer) {
     std::vector<double> gamma(sp_.size(), 1.0);
 
     am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_, vo_.ptr());
-    if (am_->verbosity()->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-      am_->Display();
-    }
+    am_->Display();
 
     am_->CalculateActivityCoefficients(&sp_, &aqx_, &H2O);
     double actw = log10(H2O.act_coef());
@@ -288,8 +311,14 @@ SUITE(TestPitzer) {
     @test ActivityModelPitzer::Create()
   */
   TEST_FIXTURE(PitzerTest, TestInvalidActivityModel) {
-    ac::Species Cl(0, "Cl-", -1.0, 0.0, 0.0);
-    ac::Species Na(1, "Na+", 1.0, 0.0, 0.0);
+    Teuchos::ParameterList plist;
+    plist.set<int>("charge", -1)
+         .set<double>("gram molecular weight", 0.0);
+    ac::Species Cl(0, "Cl-", plist);
+
+    plist.set<int>("charge", 1);
+    ac::Species Na(1, "Na+", plist);
+
     Cl.update(1.0);
     Na.update(1.0);
     aqx_.clear();
@@ -310,8 +339,14 @@ SUITE(TestPitzer) {
     @test ActivityModelPitzer::Create()
   */
   TEST_FIXTURE(PitzerTest, TestInvalidDatabase) {
-    ac::Species Cl(0, "Cl-", -1.0, 0.0, 0.0);
-    ac::Species Na(1, "Na+", 1.0, 0.0, 0.0);
+    Teuchos::ParameterList plist;
+    plist.set<int>("charge", -1)
+         .set<double>("gram molecular weight", 0.0);
+    ac::Species Cl(0, "Cl-", plist);
+
+    plist.set<int>("charge", 1);
+    ac::Species Na(1, "Na+", plist);
+
     Cl.update(1.0);
     Na.update(1.0);
     aqx_.clear();
@@ -344,9 +379,17 @@ SUITE(TestPitzer) {
     @test ActivityModelPitzer::EvaluateVector()
   */
   TEST_FIXTURE(PitzerTest, TestZeroConcentrations) {
-    ac::Species Cl(0, "Cl-", -1.0, 0.0, 0.0);
-    ac::Species Na(1, "Na+", 1.0, 0.0, 0.0);
-    ac::Species H2O(2, "H2O", 0.0, 0.0, 0.0);
+    Teuchos::ParameterList plist;
+    plist.set<int>("charge", -1)
+         .set<double>("gram molecular weight", 0.0);
+    ac::Species Cl(0, "Cl-", plist);
+
+    plist.set<int>("charge", 1);
+    ac::Species Na(1, "Na+", plist);
+
+    plist.set<int>("charge", 0);
+    ac::Species H2O(2, "H2O", plist);
+
     Cl.update(0.0);
     Na.update(0.0);
     H2O.update(0.0);
@@ -357,9 +400,7 @@ SUITE(TestPitzer) {
     std::vector<double> gamma(sp_.size(), 1.0);
 
     am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_, vo_.ptr());
-    if (am_->verbosity()->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-      am_->Display();
-    }
+    am_->Display();
     CHECK_THROW(am_->CalculateActivityCoefficients(&sp_, &aqx_, &H2O), ac::ChemistryException);
   }
 
@@ -373,10 +414,20 @@ SUITE(TestPitzer) {
     @test ActivityModelPitzer::EvaluateVector()
   */
   TEST_FIXTURE(PitzerTest, TestNumberSpecies) {
-    ac::Species Cl(0, "Cl-", -1.0, 0.0, 0.0);
-    ac::Species Na(1, "Na+", 1.0, 0.0, 0.0);
-    ac::Species H2O(2, "H2O", 0.0, 0.0, 0.0);
-    ac::Species Ca(3, "Ca+2", 2.0, 0.0, 0.0);
+    Teuchos::ParameterList plist;
+    plist.set<int>("charge", -1)
+         .set<double>("gram molecular weight", 0.0);
+    ac::Species Cl(0, "Cl-", plist);
+
+    plist.set<int>("charge", 1);
+    ac::Species Na(1, "Na+", plist);
+
+    plist.set<int>("charge", 0);
+    ac::Species H2O(2, "H2O", plist);
+
+    plist.set<int>("charge", 2);
+    ac::Species Ca(3, "Ca+2", plist);
+
     Cl.update(3.0);
     Na.update(1.0);
     Ca.update(1.0);
@@ -388,9 +439,8 @@ SUITE(TestPitzer) {
     sp_.push_back(Ca);
     std::vector<double> gamma(sp_.size(), 1.0);
     am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_, vo_.ptr());
-    if (am_->verbosity()->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-      am_->Display();
-    }
+    am_->Display();
+
     sp_.pop_back();
     CHECK_THROW(am_->CalculateActivityCoefficients(&sp_, &aqx_, &H2O), ac::ChemistryException);
   }

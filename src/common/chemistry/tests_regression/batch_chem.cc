@@ -65,8 +65,8 @@ int main(int argc, char** argv) {
   Amanzi::VerboseObject::global_hide_line_prefix = false;  // two default value
   Amanzi::VerboseObject::global_default_level = Teuchos::VERB_MEDIUM;
 
-  Teuchos::ParameterList plist;
-  auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry PK", plist));
+  Teuchos::ParameterList pklist;
+  auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry PK", pklist));
 
   error = CommandLineOptions(argc, argv,
                              &verbosity_name,
