@@ -72,5 +72,10 @@ if (BUILD_TESTS)
 
    add_amanzi_test(mesh_extracted_fracture_3pe mesh_extracted_fracture NPROCS 3 KIND unit)
 
+   add_amanzi_test(mesh_surface_flattened mesh_surface_flattened
+                   KIND unit
+                   SOURCE test/Main.cc test/mesh_surface_flattened.cc
+                   LINK_LIBS ${mesh_frameworks} mesh_extracted geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
 endif()
   

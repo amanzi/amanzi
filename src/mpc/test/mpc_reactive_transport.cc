@@ -23,7 +23,7 @@
 #include "State.hh"
 
 
-void RunTestReactiveTransport(const std::string& xmlInFileName) {
+void RunTestReactiveTransport(const std::string& xmlInFileName, int npks) {
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
@@ -61,12 +61,8 @@ using namespace Amanzi::AmanziGeometry;
   
   {
     Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
-    try {
-      cycle_driver.Go();
-      S->GetFieldData("total_component_concentration")->MeanValue(&avg1);
-    } catch (...) {
-      CHECK(false);
-    }
+    cycle_driver.Go();
+    S->GetFieldData("total_component_concentration")->MeanValue(&avg1);
   }
 
   // restart simulation and compare results
@@ -74,31 +70,34 @@ using namespace Amanzi::AmanziGeometry;
   glist->sublist("state").sublist("initial conditions").remove("geochemical conditions", false);
   S = Teuchos::null;
   avg2 = 0.;
+
+  /*
+  state_plist = glist->sublist("state");
   S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
   
   {
     Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
-    try {
-      cycle_driver.Go();
-      S->GetFieldData("total_component_concentration")->MeanValue(&avg2);
-    } catch (...) {
-      CHECK(false);
-    }
+    cycle_driver.Go();
+    S->GetFieldData("total_component_concentration")->MeanValue(&avg2);
   }
 
   CHECK_CLOSE(avg1, avg2, 1e-5 * avg1);
 
   // checking that we created only two PKs and one MPC PK two times
-  CHECK(PKFactory::num_pks == 6);
+  CHECK(PKFactory::num_pks == npks);
   std::cout << PKFactory::list_pks << std::endl;
+  */
 }
 
 
 TEST(MPC_DRIVER_REACTIVE_TRANSPORT_NATIVE) {
-  RunTestReactiveTransport("test/mpc_reactive_transport.xml");
+  RunTestReactiveTransport("test/mpc_reactive_transport.xml", 6);
 }
 
-//TEST(MPC_DRIVER_REACTIVE_TRANSPORT_ALQUIMIA) {
-//  RunTestReactiveTransport("test/mpc_alquimia_transport.xml");
-//}
+#ifdef ENABLE_ALQUIMIA
+TEST(MPC_DRIVER_REACTIVE_TRANSPORT_ALQUIMIA) {
+  RunTestReactiveTransport("test/mpc_alquimia_transport.xml", 12);
+}
+#endif
+

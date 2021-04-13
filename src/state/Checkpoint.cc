@@ -166,11 +166,22 @@ void Checkpoint::Write(const State& S,
 
 double Checkpoint::Read(State& S, const std::string& file_or_dirname)
 {
+  // if provided a directory, use new style
+  if (boost::filesystem::is_directory(file_or_dirname)) {
+    old_ = false;
+  } else if (boost::filesystem::is_regular_file(file_or_dirname)) {
+    old_ = true;
+  } else {
+    Errors::Message message;
+    message << "Checkpoint::Read: location \"" << file_or_dirname << "\" does not exist.";
+    Exceptions::amanzi_throw(message);
+  }
+
   // create the readers
   auto comm = S.GetMesh()->get_comm();
   if (old_) {
     output_["domain"] = Teuchos::rcp(new HDF5_MPI(comm, file_or_dirname));
-    output_["domain"]->open_h5file();
+    output_["domain"]->open_h5file(true);
 
   } else {
     for (auto domain=S.mesh_begin(); domain!=S.mesh_end(); ++domain) {
@@ -178,7 +189,7 @@ double Checkpoint::Read(State& S, const std::string& file_or_dirname)
 
       boost::filesystem::path chkp_file = boost::filesystem::path(file_or_dirname) / (domain->first+".h5");
       output_[domain->first] = Teuchos::rcp(new HDF5_MPI(mesh->get_comm(), chkp_file.string()));
-      output_[domain->first]->open_h5file();
+      output_[domain->first]->open_h5file(true);
     }
   }
 
@@ -203,11 +214,10 @@ double Checkpoint::Read(State& S, const std::string& file_or_dirname)
   int rank(-1);
   output_["domain"]->readAttrInt(rank, "mpi_comm_world_rank");
   if (comm->NumProc() != rank) {
-    std::stringstream messagestream;
-    messagestream << "Requested checkpoint file " << file_or_dirname << " was created on "
-                  << rank << " processes, making it incompatible with this run on "
-                  << comm->NumProc() << " process.";
-    Errors::Message message(messagestream.str());
+    Errors::Message message;
+    message << "Requested checkpoint file " << file_or_dirname << " was created on "
+            << rank << " processes, making it incompatible with this run on "
+            << comm->NumProc() << " process.";
     Exceptions::amanzi_throw(message);
   }
 
@@ -215,9 +225,9 @@ double Checkpoint::Read(State& S, const std::string& file_or_dirname)
   for (State::field_iterator field=S.field_begin(); field!=S.field_end(); ++field) {
     if (field->second->type() == COMPOSITE_VECTOR_FIELD &&
         field->second->io_checkpoint()) {
-      Key domain = Keys::getDomain(field->first);
-      if (domain.empty()) domain = "domain";      
-      
+      Key domain = old_ ? "domain" : Keys::getDomain(field->first);
+      if (domain.empty()) domain = "domain";
+
       bool read_complete = field->second->ReadCheckpoint(*output_[domain]);
       if (read_complete) {
         if (S.HasFieldEvaluator(field->first)) {
@@ -227,7 +237,7 @@ double Checkpoint::Read(State& S, const std::string& file_or_dirname)
           if (solution_evaluator != Teuchos::null){
             Teuchos::Ptr<State> S_ptr(&S);
             solution_evaluator->SetFieldAsChanged(S_ptr);
-          }                 
+          }
         }
         field->second->set_initialized();
       }
@@ -322,7 +332,7 @@ void Checkpoint::WriteObservations(ObservationData* obs_data)
 
   if (nlabels > 0) {
     // save names of observations and their number
-    int *nobs; 
+    int *nobs;
     char **tmp_labels;
 
     nobs = (int*)malloc(nlabels * sizeof(int));

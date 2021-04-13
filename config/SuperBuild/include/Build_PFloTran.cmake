@@ -67,18 +67,26 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/pflotran-install-step.cmake.in
                @ONLY)
 set(PFLOTRAN_INSTALL_COMMAND ${CMAKE_COMMAND} -P ${PFLOTRAN_cmake_install})
 
+# --- If downloads are disabled point to local repository
+if ( DISABLE_EXTERNAL_DOWNLOAD )
+  STRING(REGEX REPLACE "/src/master" "" GIT_REPOSITORY_TEMP ${PFLOTRAN_GIT_REPOSITORY})
+  STRING(REGEX REPLACE ".*\/" "" PFLOTRAN_GIT_REPOSITORY_LOCAL_DIR ${GIT_REPOSITORY_TEMP})
+  set (PFLOTRAN_GIT_REPOSITORY_TEMP ${TPL_DOWNLOAD_DIR}/${PFLOTRAN_GIT_REPOSITORY_LOCAL_DIR})
+else()
+  set (PFLOTRAN_GIT_REPOSITORY_TEMP ${PFLOTRAN_GIT_REPOSITORY})
+endif()
+message(STATUS "PFLOTRAN git repository = ${PFLOTRAN_GIT_REPOSITORY_TEMP}")
+
+
 # --- Add external project build and tie to the PFLOTRAN build target
 ExternalProject_Add(${PFLOTRAN_BUILD_TARGET}
                     DEPENDS   ${PFLOTRAN_PACKAGE_DEPENDS}        # Package dependency target
                     TMP_DIR   ${PFLOTRAN_tmp_dir}                # Temporary files directory
                     STAMP_DIR ${PFLOTRAN_stamp_dir}              # Timestamp and log directory
                     # -- Download and URL definitions
-                    GIT_REPOSITORY ${PFLOTRAN_GIT_REPOSITORY}              
+                    # -- Note: The repo is cloned into the ${PFLOTRAN_source_dir} directory
+                    GIT_REPOSITORY ${PFLOTRAN_GIT_REPOSITORY_TEMP}              
                     GIT_TAG        ${PFLOTRAN_GIT_TAG}      
-                    DOWNLOAD_DIR   ${TPL_DOWNLOAD_DIR}
-                    URL            ${PFLOTRAN_URL}               # URL may be a web site OR a local file
-                    URL_MD5        ${PFLOTRAN_MD5_SUM}           # md5sum of the archive file
-                    DOWNLOAD_NAME  ${PFLOTRAN_SAVEAS_FILE}       # file name to store (if not end of URL)
                     # -- Update (one way to skip this step is use null command)
                     UPDATE_COMMAND ""
                     # -- Patch 

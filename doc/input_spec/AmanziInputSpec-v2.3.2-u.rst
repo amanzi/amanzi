@@ -964,8 +964,10 @@ Supported operators are union, intersection, subtraction and complement.
 
 .. code-block:: xml
 
-    <logical name="MY_REGION" operation="[union|intersection|subtraction|complement]"
-             region_list="region1, region2, region3"/>
+    <logical name="MY_REGION">
+      <operation>union|intersection|subtraction|complement</operation>
+      <region_list>region1, region2, region3<region_list/>
+    </logical>
 
 
 Geochemistry

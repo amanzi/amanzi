@@ -135,6 +135,10 @@ class InputConverterU : public InputConverter {
       Teuchos::ParameterList& out_ev,
       const std::string& field, const std::string& region, double val);
 
+  void AddConstantFieldInitialization_(
+      Teuchos::ParameterList& out_ev,
+      const std::string& field, const std::string& region, double val);
+
   // -- flow
   Teuchos::ParameterList TranslateFlow_(const std::string& mode, const std::string& domain);
   Teuchos::ParameterList TranslateWRM_(const std::string& pk_name);

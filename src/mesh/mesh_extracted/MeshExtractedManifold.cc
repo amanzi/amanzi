@@ -41,14 +41,18 @@ MeshExtractedManifold::MeshExtractedManifold(
     const Comm_ptr_type& comm,
     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
     const Teuchos::RCP<const Teuchos::ParameterList>& plist,
-    bool request_faces, bool request_edges)
+    bool request_faces, bool request_edges,
+    bool flattened)
   : Mesh(comm, gm, plist, request_faces, request_edges),
-    parent_mesh_(parent_mesh)
+    parent_mesh_(parent_mesh),
+    flattened_(flattened)
 {
   vo_ = Teuchos::rcp(new VerboseObject(comm_, "MeshExtractedManifold", *plist_));
 
-  set_space_dimension(parent_mesh_->space_dimension());
-  set_manifold_dimension(parent_mesh_->space_dimension() - 1);
+  int d = parent_mesh_->space_dimension();
+  set_space_dimension(d);
+  set_manifold_dimension(d - 1);
+  if (flattened_) set_space_dimension(d - 1);
 
   InitParentMaps(setname); 
   InitEpetraMaps(); 
@@ -305,6 +309,12 @@ void MeshExtractedManifold::cell_get_coordinates(
     parent_mesh_->node_get_coordinates(nodes[i], &p);
     vxyz->push_back(p);
   }
+
+  if (flattened_) {
+    for (int i = 0; i < nnodes; ++i) {
+      (*vxyz)[i].set((*vxyz)[i][0], (*vxyz)[i][1]);
+    }
+  }
 }
 
 
@@ -327,6 +337,12 @@ void MeshExtractedManifold::face_get_coordinates(
 
   parent_mesh_->node_get_coordinates(v1, &xyz);
   vxyz->push_back(xyz);
+
+  if (flattened_) {
+    for (int i = 0; i < 2; ++i) {
+      (*vxyz)[i].set((*vxyz)[i][0], (*vxyz)[i][1]);
+    }
+  }
 }
 
 
@@ -338,6 +354,8 @@ void MeshExtractedManifold::node_get_coordinates(
 {
   auto np = entid_to_parent_[NODE][n];
   parent_mesh_->node_get_coordinates(np, xyz);
+
+  if (flattened_) xyz->set((*xyz)[0], (*xyz)[1]);
 }
 
 

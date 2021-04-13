@@ -22,10 +22,10 @@ namespace Transport {
 TransportBoundaryFunction_Alquimia::TransportBoundaryFunction_Alquimia(
     const Teuchos::ParameterList& plist,
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-    Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk,
+    Teuchos::RCP<AmanziChemistry::Alquimia_PK> alquimia_pk,
     Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine)
     : mesh_(mesh),
-      chem_pk_(chem_pk),
+      alquimia_pk_(alquimia_pk),
       chem_engine_(chem_engine)
 {
   // Check arguments.
@@ -101,7 +101,7 @@ void TransportBoundaryFunction_Alquimia::Compute(double t_old, double t_new)
     int cell = cell_for_face_[f];
 
     // Dump the contents of the chemistry state into our Alquimia containers.
-    chem_pk_->CopyToAlquimia(cell, alq_mat_props_, alq_state_, alq_aux_data_);
+    alquimia_pk_->CopyToAlquimia(cell, alq_mat_props_, alq_state_, alq_aux_data_);
 
     // Enforce the condition.
     chem_engine_->EnforceCondition(cond_name, t_new, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
