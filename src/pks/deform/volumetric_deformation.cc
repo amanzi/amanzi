@@ -121,7 +121,9 @@ void VolumetricDeformation::Setup(const Teuchos::Ptr<State>& S) {
     case (DEFORM_MODE_DVDT): {
       // Create the deformation function
       Teuchos::ParameterList func_plist = plist_->sublist("deformation function");
-      deform_func_ = Functions::CreateCompositeVectorFunction(func_plist, *cv_fac);
+      std::vector<std::string> compnames;
+      deform_func_ = Functions::CreateCompositeVectorFunction(func_plist, *cv_fac, compnames);
+      // note, should check that cells exist
       break;
     }
 
