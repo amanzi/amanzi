@@ -52,7 +52,7 @@ void IndependentVariableFieldEvaluatorFromFunction::UpdateField_(const Teuchos::
 
   // NOTE: IndependentVariableFieldEvaluatorFromFunctions own their own data.
   Teuchos::RCP<CompositeVector> cv = S->GetFieldData(my_key_, my_key_);
-  func_->Compute(time_, cv.ptr());
+  func_->Compute(time_, cv.ptr(), vo_.get());
 }
 
 

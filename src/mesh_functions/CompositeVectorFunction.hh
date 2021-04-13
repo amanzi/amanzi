@@ -1,17 +1,14 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-ATS
+/*
+   Copyright 2010-201x held jointly by LANL, ORNL, LBNL, and PNNL.
+   Amanzi is released under the three-clause BSD License.
+   The terms of use and "as is" disclaimer for this license are
+   provided in the top-level COPYRIGHT file.
+   See $ATS_DIR/COPYRIGHT
 
-License: see $AMANZI_DIR/COPYRIGHT
-Author Ethan Coon
+  Author: Ethan Coon (ecoon@lanl.gov)
+*/
 
-Function applied to a mesh component, along with meta-data to store the values
-of this function in a ComposteVector.
-
-------------------------------------------------------------------------- */
-
-#ifndef AMANZI_COMPOSITE_VECTOR_FUNCTION_HH_
-#define AMANZI_COMPOSITE_VECTOR_FUNCTION_HH_
+#pragma once
 
 #include <string>
 #include <utility>
@@ -22,16 +19,20 @@ of this function in a ComposteVector.
 #include "CompositeVector.hh"
 
 namespace Amanzi {
+
+class VerboseObject;
+
 namespace Functions {
 
-class CompositeVectorFunction {
+class CompositeVectorFunction final {
 
 public:
   CompositeVectorFunction(const Teuchos::RCP<const MeshFunction>& func,
                           const std::vector<std::string>& names);
-  virtual ~CompositeVectorFunction() = default;
-  
-  virtual void Compute(double time, const Teuchos::Ptr<CompositeVector>& vec);
+  ~CompositeVectorFunction() = default;
+
+  void Compute(double time, const Teuchos::Ptr<CompositeVector>& vec,
+               const VerboseObject* vo=nullptr);
 
 protected:
   typedef std::pair<std::string, Teuchos::RCP<MeshFunction::Spec> > CompositeVectorSpec;
@@ -44,4 +45,4 @@ protected:
 } // namespace
 } // namespace
 
-#endif
+
