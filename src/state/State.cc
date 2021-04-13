@@ -267,10 +267,9 @@ bool State::IsDeformableMesh(const Key& key) const {
   if (lb != meshes_.end() && !(meshes_.key_comp()(key, lb->first))) {
     return lb->second.second;
   } else {
-    std::stringstream messagestream;
-    messagestream << "Mesh " << key << " does not exist in the state.";
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
+    Errors::Message msg;
+    msg << "Mesh " << key << " does not exist in the state.";
+    Exceptions::amanzi_throw(msg);
   }
   return false;
 };
