@@ -155,7 +155,7 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
       
       for (int c_sg=0; c_sg!=ncells_sg; ++c_sg) {
         for (int k=0; k!=nfun; ++k) {
-          val[k] += vec_c[k][c_sg] * alpha[k] ;
+          val[k] += vec_c[k][c_sg] * alpha[k];
         }
       }
       
