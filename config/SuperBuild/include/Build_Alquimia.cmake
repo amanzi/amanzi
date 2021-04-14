@@ -46,7 +46,6 @@ set(Alquimia_CMAKE_ARGS
       "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
       "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
       "-DPETSC_DIR=${PETSc_DIR}"
-      "-DPETSC_ARCH:PATH=."
       "-DXSDK_WITH_PFLOTRAN:BOOL=${ENABLE_PFLOTRAN}" 
       "-DTPL_PFLOTRAN_LIBRARIES:FILEPATH=${PFLOTRAN_DIR}/lib/libpflotranchem.a" 
       "-DTPL_PFLOTRAN_INCLUDE_DIRS:FILEPATH=${PFLOTRAN_INCLUDE_DIRS}"
@@ -74,6 +73,8 @@ ExternalProject_Add(${Alquimia_BUILD_TARGET}
                                   ${Alquimia_CMAKE_ARGS}
                                   -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                   -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                                  -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}  # Ensure uniform build
+                                  -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
                                   -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
                                   -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
                     # -- Build
