@@ -1076,11 +1076,12 @@ Within the Materials block an unbounded number of ``material`` elements can be d
 
   <material>
       Required Elements: mechanical_properties, permeability or hydraulic_conductivity, assigned_regions
-      Optional Elements: comments, cap_pressure, rel_perm, sorption_isotherms, minerals, ion_exchange, surface_complexation 
+      Optional Elements: comments, cap_pressure, rel_perm, sorption_isotherms, minerals,
+                         ion_exchange, surface_complexation, thermal_properties
   </material>
  
 Mechanical_properties
----------------------
+_____________________
 
 .. code-block:: xml
 
@@ -1094,7 +1095,7 @@ The ``mechanical_properties`` has multiple elements that can be either values or
 It has the following requirements.
 
     * ``porosity``, ``particle_density`` and ``transport_porosity`` are defined in-line using attributes. 
-      It is specified in one of three ways: as a value between 0 and 1 
+      For instance, porosity is specified in one of three ways: as a value between 0 and 1 
       using value="<value>", through an amanzi RESTART file using type="file" and filename="<filename>", or through an
       HDF5 file (formatted differently than restart file) using using type="h5file", filename="<filename>" and 
       "constant_in_time="true | false".
@@ -1127,7 +1128,7 @@ It has the following requirements.
   </mechanical_properties>
 
 Assigned_regions
-----------------
+________________
 
 The ``assigned_regions`` is a comma separated list of region names for which this material is to be assigned.
 Region names must be from the regions defined in the ``regions`` sections.  Region names can contain spaces.
@@ -1137,7 +1138,7 @@ Region names must be from the regions defined in the ``regions`` sections.  Regi
     <assigned_regions>Region1, Region_2, Region 3</assigned_regions>
 
 Permeability
-------------
+____________
 
 Permeability or hydraulic_conductivity must be specified but not both. If specified as constant values, permeability has the attributes ``x``, ``y``, and ``z``.  Permeability may also be extracted from the attributes of an Exodus II file.
 
@@ -1148,7 +1149,7 @@ Permeability or hydraulic_conductivity must be specified but not both. If specif
   <permeability type="file" filename="file name" attribute="attribute name"/>
 
 Hydraulic_conductivity
-----------------------
+______________________
 
 The ``hydraulic_conductivity`` is the hydraulic conductivity and has the attributes ``x``, ``y``, and ``z``.
 Permeability or hydraulic_conductivity must be specified but not both.
@@ -1158,7 +1159,7 @@ Permeability or hydraulic_conductivity must be specified but not both.
   <hydraulic_conductivity x="double" y="double" z="double" />
 
 Cap_pressure
-------------
+____________
 
 The ``cap_pressure`` is an optional element.
 The available models are ``van_genuchten`` and ``brooks_corey``
@@ -1178,7 +1179,7 @@ Model parameters are listed as attributes to the parameter element.
   </cap_pressure>
 
 Rel_perm
---------
+________
 
 The  ``rel_perm`` is an optional element.
 The available models are ``mualem`` and ``burdine``.
@@ -1197,7 +1198,7 @@ Model parameters are listed as attributes to the parameter element.
   </rel_perm>
 
 Sorption_isotherms
-------------------
+__________________
 
 The ``sorption_isotherms`` is an optional element for providing Kd models and molecular diffusion values for individual solutes.  All non-reactive primaries or solutes should be listed under each material.  Values of 0 indicate that the primary is not present/active in the current material.  The available Kd models are `"linear`", `"langmuir`", and `"freundlich`".  Different models and parameters are assigned per solute in sub-elements through attributes. The Kd and molecular diffusion parameters are specified in subelements.
 
@@ -1221,7 +1222,7 @@ The ``kd_model`` element takes the following form:
     </sorption_isotherms>
   
 Minerals
---------
+________
 
 For each mineral, the concentrations are specified using the volume fraction and specific surface area using the attributes ``volume_fraction`` and ``specific_surface_area`` respectively.  
 
@@ -1232,7 +1233,7 @@ For each mineral, the concentrations are specified using the volume fraction and
        </minerals>
 
 Ion_exchange
-------------
+____________
 
 The ``ion_exhange`` block, specified parameters for an ion exchange reaction.  Cations active in the reaction are grouped under the element ``cations``.  The attribute ``cec`` specifies the cation exchange capacity for the reaction.  Each cation is listed in a ``cation`` subelement with the attributes ``name`` and ``value`` to specify the cation name and the associated selectivity coefficient.
 
@@ -1247,7 +1248,7 @@ The ``ion_exhange`` block, specified parameters for an ion exchange reaction.  C
         </ion_exchange>
 
 Surface_complexation
---------------------
+____________________
 
 The ``surface_complexation`` block specifies parameters for surface complexation reactions.  Individual reactions are specified using the ``site`` block.  It has the attributes ``density`` and ``name`` to specify the site density and the name of the site.  Note, the site name must match a surface complexation site in the database file without any leading characters, such as `>`.  The subelement ``complexes`` provides a comma seperated list of complexes.  Again, the names of the complexes must match names within the datafile without any leading characters.
 
@@ -1262,6 +1263,24 @@ The ``surface_complexation`` block specifies parameters for surface complexation
             </site>
         </surface_complexation>
     
+Thermal_properties
+__________________
+
+The ``thermal_properties`` has two elements.
+
+    * ``liquid_heat_capacity`` has two attributes ``cv`` and ``model``.
+      The ``model`` defines temperature dependence of internal energy.
+      For the linear model, the internal energy has the form ``cv (T - 273.15)``.
+
+    * ``rock_heat_capacity`` has two attributes ``cv`` and ``model``, see above.
+
+.. code-block:: xml
+
+  <thermal_properties>
+     <liquid_heat_capacity cv="76.0" model="linear"/>
+     <rock_heat_capacity cv="620.0 J/K/kg" model="linear"/>
+  </thermal_properties>
+
 
 Process Kernels
 ===============
@@ -1271,7 +1290,7 @@ The ``process_kernels`` block specifies which PKs are active.  This block is req
 .. code-block:: xml
 
   <process_kernels>
-      Required Elements: flow, transport, chemistry
+      Required Elements: flow, transport, chemistry, energy
       Optional Elements: comments
   </process_kernels>
 
@@ -1327,6 +1346,22 @@ The ``chemistry`` has the following attributes,
       * ``database`` is the name of the chemistry reaction database file (filename.dat).   
 
 For ``chemistry`` a combination of ``state`` and ``engine`` must be specified.  If ``state`` is `"off`" then ``engine`` is set to `"none`".  Otherwise the ``engine`` must be specified. 
+
+
+Energy
+------
+
+The ``energy`` has the following attributes, 
+      
+      * ``state`` = "on | off"
+
+      *  ``model`` = " one-phase energy | two-phase energy" 
+
+Currently three scenarios are available for calculated the flow field.
+
+*  ``one-phase energy`` is a single phase thermal flows.
+
+*  ``two-phase energy`` is a two-phase (liquid, water-vapor) thermal flow.
 
 
 Phases
@@ -1699,6 +1734,172 @@ Here is more info on the ``solute_component`` elements:
       The ``name`` is the name of a previously defined solute.
       The ``start`` is a series of time values at which time intervals start.
       The ``value`` is the value of the ``diffusion_dominated_release`` during the time interval. 
+
+
+Fracture Network
+================
+
+Fracture network describes a reactive flow and transport problem on a non-manifold.
+It contains a few required and optional elements that are quite similar to that
+described above for the subsurface. 
+For documentation completness of the documentation, we repeat the description here.
+
+.. code-block:: xml
+
+  <fracture_network>
+      Required Elements: materials, initial_conditions
+      Optional Elements: boundary_conditions, sources
+  </fracture_network>
+
+Materials
+---------
+
+The ``material`` in this context is meant to represent a part of the fracture network through which fluid phases are transported. 
+Properties of the material must be specified over the entire fracture domain, and is carried out using partion of this network
+into a few non-overlapping regions.
+
+Material
+________
+
+Within the Materials block an unbounded number of ``material`` elements can be defined. 
+Each material requires a label and has the following requirements.
+
+.. code-block:: xml
+
+  <material>
+      Required Elements: mechanical_properties, fracture_permeability, assigned_regions
+      Optional Elements: comments, thermal_properties, fracture_conductivity
+  </material>
+ 
+Mechanical_properties
++++++++++++++++++++++
+
+.. code-block:: xml
+
+  <mechanical_properties>
+      Required Elements: porosity
+      Optional Elements: particle_density, specific_storage
+  </mechanical_properties>
+
+The ``mechanical_properties`` has multiple elements that can be either values or specified as files.
+It has the following requirements.
+
+    * ``porosity``, ``particle_density`` and ``specific_storage`` are defined in-line using attributes. 
+      For instance porosity is specified in one of three ways: as a value between 0 and 1 
+      using value="<value>", through an amanzi RESTART file using type="file" and filename="<filename>", or through an
+      HDF5 file (formatted differently than restart file) using using type="h5file", filename="<filename>" and 
+      "constant_in_time="true | false".
+      The dataset label should be the field name.
+
+    * ``specific_storage`` is defined in-line using attributes.
+      Either it is specified as a value greater than 0 using ``value`` or it specified through 
+      a file using type="file" and filename="<filename>".
+
+.. code-block:: xml
+
+  <mechanical_properties>
+      <porosity value="double"/>
+      <particle_density value="double"/>
+      <specific_storage value="double"/>
+  </mechanical_properties>
+
+Assigned_regions
+++++++++++++++++
+
+The ``assigned_regions`` is a comma separated list of region names for which this material is to be assigned.
+Region names must be from the regions defined in the ``regions`` sections.  Region names can contain spaces.
+
+.. code-block:: xml
+
+    <assigned_regions>Region1, Region_2, Region 3</assigned_regions>
+
+Fracture_permeability
++++++++++++++++++++++
+
+Fracture permeability is specified as constant values, using three parameters: ``model``, ``aperture``, and ``normal``. 
+The parameter ``model`` has only one admissible value ``cubic law``.
+The parameter ``aperture`` defines a constant fracture aperture.
+The parameter ``normal`` defines a constant normal permeability.
+
+.. code-block:: xml
+
+  <fracture_permeability model="cubic law" aperture="3e-5" normal="2.0"/>
+
+Thermal_properties
+++++++++++++++++++
+
+The ``thermal_properties`` has two elements.
+
+    * ``liquid_heat_capacity`` has two attributes ``cv`` and ``model``.
+      The ``model`` defines temperature dependence of internal energy.
+      For the linear model, the internal energy has the form ``cv (T - 273.15)``.
+
+    * ``rock_heat_capacity`` has two attributes ``cv`` and ``model``, see above.
+
+.. code-block:: xml
+
+  <thermal_properties>
+     <liquid_heat_capacity cv="76.0" model="linear"/>
+     <rock_heat_capacity cv="620.0 J/K/kg" model="linear"/>
+  </thermal_properties>
+
+Fracture_conductivity
++++++++++++++++++++++
+
+Fracture thermal conductivity has only one parameter ``normal`` that defined the normal conductivity.
+
+.. code-block:: xml
+
+  <fracture_conductivity normal="100.0"/>
+
+
+Initial Conditions
+------------------
+
+The ``initial_condition`` section is used to provide available field values at the beginning of a simulation.
+This section requires at least 1 and up to an unbounded number of ``initial_condition`` elements.  
+Each ``initial_condition`` element defines a single initial condition that is applied to one or more region.
+
+.. code-block:: xml
+
+  <initial_condition>
+      Required Elements: assigned_regions
+      Optional Elements: liquid_phase, uniform_temperature
+  </initial_condition>
+
+The ``uniform_temperature`` element is placed here temporaty and can be relocated in the future.
+
+Assigned_regions
+________________
+
+The ``assigned_regions`` is a comma separated list of regions to apply the initial condition to.
+
+Liquid_phase
+____________
+
+The ``liquid_phase`` has the following elements
+
+.. code-block:: xml
+
+  <liquid_phase>
+      Required Elements: liquid_component
+      Optional Elements: solute_component
+  </liquid_phase>
+
+Here is the list of elements of the ``liquid_component`` block:
+
+    * ``uniform_pressure`` is defined in-line using attributes.  Uniform specifies that the initial condition is uniform in space.  Value specifies the value of the pressure.  
+      
+    * ``linear_pressure`` is defined in-line using attributes.  Linear specifies that the initial condition is linear in space.
+      The ``gradient`` specifies the gradient value in each direction in the form of a coordinate (grad_x, grad_y, grad_z).  
+      The ``reference_coord`` specifies a location of known pressure value.
+      The ``value`` specifies the known pressure value.
+      
+
+Boundary Conditions
+-------------------
+
+The ``boundary_condition`` section is used to provide available field values at the beginning of a simulation.
 
 
 Output
