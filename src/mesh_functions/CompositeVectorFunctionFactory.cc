@@ -23,11 +23,12 @@ namespace Functions {
 
 Teuchos::RCP<CompositeVectorFunction>
 CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
-        const CompositeVectorSpace& sample) {
+        const CompositeVectorSpace& sample,
+        std::vector<std::string>& componentname_list) {
 
   Teuchos::RCP<MeshFunction> mesh_func =
     Teuchos::rcp(new MeshFunction(sample.Mesh()));
-  std::vector<std::string> componentname_list;
+  componentname_list.clear();
 
   // top level plist contains sublists containing the entry
   for (Teuchos::ParameterList::ConstIterator lcv=plist.begin();

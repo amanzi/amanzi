@@ -39,6 +39,7 @@
 #include "DiffusionFixtureTests.hh"
 
 #define FV 1
+#define SO 1
 #define MFD 1
 #define NLFV 1
 #define ASSEMBLING 1
@@ -206,6 +207,12 @@ SUITE(DIFFUSION) {
     testWGravity(1.1, "diagonal", "Dirichlet", "structured2d", 2, 10,
                  "fv", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
   } 
+#endif
+#if SO 
+  TEST(Analytic00_Linear1_SO_Dirichlet_structured2d_identity) {
+    test("identity", "Dirichlet", "structured2d", 2, 10,
+         "so", true, AmanziMesh::Entity_kind::UNKNOWN, 1.e-12);
+  }
 #endif
 #if MFD  
   TEST(Analytic00_Linear1_MFD_Dirichlet_structured2d_identity) {

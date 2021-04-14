@@ -132,6 +132,19 @@ public:
 
   long int GetLocalElementCount();
 
+  // initialization
+  // -- this function assumes that all components of the data vector
+  //    were initialized. If component is missing, it returns false
+  virtual bool initialized() const;
+  // -- sets all components of the data vector to the given flag
+  virtual void set_initialized(bool initialized=true);
+
+  // component-wise initialization
+  // -- returns false if component is either missing or not initialized
+  bool initialized(const std::string& comp) const;
+  // -- does nothing if component does not exist in the data vector
+  void set_initialized(const std::string& comp, bool initialized=true);
+
 protected:
   bool ReadCheckpoint_(std::string filename);
   void ReadCellsFromCheckpoint_(const std::string& filename); // for ICs
@@ -149,7 +162,9 @@ private:
   // check to ensure subfield names are set
   void EnsureSubfieldNames_();
 
-}; // class Field
+  // component information
+  std::map<std::string, bool> initialized_comp_;
+};
 
 } // namespace Amanzi
 
