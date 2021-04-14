@@ -92,15 +92,23 @@ SEBEvaluator::SEBEvaluator(Teuchos::ParameterList& plist) :
   if (diagnostics_) {
     // -- diagnostics
     albedo_key_ = Keys::readKey(plist, domain_, "albedo", "albedo");
+    my_keys_.push_back(albedo_key_);
     melt_key_ = Keys::readKey(plist, domain_, "snowmelt", "snowmelt");
+    my_keys_.push_back(melt_key_);
     evap_key_ = Keys::readKey(plist, domain_, "evaporation", "evaporative_flux");
     my_keys_.push_back(evap_key_);
     snow_temp_key_ = Keys::readKey(plist, domain_snow_, "snow temperature", "temperature");
+    my_keys_.push_back(snow_temp_key_);
     qE_sh_key_ = Keys::readKey(plist, domain_, "sensible heat flux", "qE_sensible_heat");
+    my_keys_.push_back(qE_sh_key_);
     qE_lh_key_ = Keys::readKey(plist, domain_, "latent heat of evaporation", "qE_latent_heat");
+    my_keys_.push_back(qE_lh_key_);
     qE_sm_key_ = Keys::readKey(plist, domain_, "latent heat of snowmelt", "qE_snowmelt");
+    my_keys_.push_back(qE_sm_key_);
     qE_lw_out_key_ = Keys::readKey(plist, domain_, "outgoing longwave radiation", "qE_lw_out");
+    my_keys_.push_back(qE_lw_out_key_);
     qE_cond_key_ = Keys::readKey(plist, domain_, "conducted energy flux", "qE_conducted");
+    my_keys_.push_back(qE_cond_key_);
   }
 
   // dependencies
@@ -598,15 +606,6 @@ SEBEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
     S->RequireField(qE_sm_key_, qE_sm_key_)->Update(domain_fac_owned);
     S->RequireField(qE_lw_out_key_, qE_lw_out_key_)->Update(domain_fac_owned);
     S->RequireField(qE_cond_key_, qE_cond_key_)->Update(domain_fac_owned);
-    S->GetField(albedo_key_, albedo_key_)->set_initialized(true);
-    S->GetField(melt_key_, melt_key_)->set_initialized(true);
-    S->GetField(evap_key_, evap_key_)->set_initialized(true);
-    S->GetField(snow_temp_key_, snow_temp_key_)->set_initialized(true);
-    S->GetField(qE_sh_key_, qE_sh_key_)->set_initialized(true);
-    S->GetField(qE_lh_key_, qE_lh_key_)->set_initialized(true);
-    S->GetField(qE_sm_key_, qE_sm_key_)->set_initialized(true);
-    S->GetField(qE_lw_out_key_, qE_lw_out_key_)->set_initialized(true);
-    S->GetField(qE_cond_key_, qE_cond_key_)->set_initialized(true);
   }
 
   for (auto dep_key : dependencies_) {
