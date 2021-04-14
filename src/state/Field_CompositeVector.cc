@@ -209,14 +209,21 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
       func->Compute(0.0, data_.ptr()); 
 
       for (const auto& comp : complist) set_initialized(comp);
-      // set_initialized(); 
     }
   }
 
   // ------ Set face values by interpolation -----
-  if ((data_->HasComponent("face") || data_->HasComponent("boundary_face"))  && data_->HasComponent("cell") &&
+  if (data_->HasComponent("face") &&
+      data_->HasComponent("cell") &&
       plist.get<bool>("initialize faces from cells", false)) {
     DeriveFaceValuesFromCellValues(*data_);
+    set_initialized("face");
+  }
+  if (data_->HasComponent("boundary_face") &&
+      data_->HasComponent("cell") &&
+      plist.get<bool>("initialize faces from cells", false)) {
+    DeriveFaceValuesFromCellValues(*data_);
+    set_initialized("boundary_face");
   }
 
   return;
