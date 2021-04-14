@@ -13,9 +13,11 @@ class FunctionPointer : public Function {
   FunctionPointer(double (*f)(const double*, const double*), const std::vector<double>&);
   FunctionPointer(const FunctionPointer&);
   ~FunctionPointer();
-  FunctionPointer* Clone() const { return new FunctionPointer(*this); }
+  std::unique_ptr<Function> Clone() const {
+    return std::make_unique<FunctionPointer>(*this);
+  }
   double operator()(const std::vector<double>& x) const { return (*f_)(&x[0], p_); }
-  
+
  private:
   double (*f_)(const double*, const double*);
   int np_;

@@ -59,7 +59,9 @@ class FunctionBilinear : public Function {
   FunctionBilinear(const std::vector<double> &x, const std::vector<double> &y,
                    const Epetra_SerialDenseMatrix &v, const int xi, const int yi);
   ~FunctionBilinear() {};
-  FunctionBilinear* Clone() const { return new FunctionBilinear(*this); }
+  std::unique_ptr<Function> Clone() const {
+    return std::make_unique<FunctionBilinear>(*this);
+  }
   double operator()(const std::vector<double>& x) const;
 
  private:
