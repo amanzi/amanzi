@@ -389,7 +389,7 @@ void Amanzi_PK::SizeBeakerStructures_()
   // NOTE: The beaker already has data for site density, sorption
   // isotherms, ssa. If we want to use that single global value, then
   // we leave these arrays empty as a flag to the beaker to use its
-  // own value. If we want to over ride the global chemistry value
+  // own value. If we want to override the global chemistry value
   // with cell by cell data, then we resize the containers here.
 
   beaker_state_.total.resize(number_aqueous_components_, 0.0);

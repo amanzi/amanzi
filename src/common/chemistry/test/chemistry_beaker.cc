@@ -29,7 +29,7 @@ SUITE(BeakerTests) {
     Teuchos::ParameterList plist;
     auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry PK", plist));
 
-    Teuchos::RCP<Teuchos::ParameterList> bgd_list = Teuchos::getParametersFromXmlFile("chemistry_beaker_carbonate.xml");
+    auto bgd_list = Teuchos::getParametersFromXmlFile("test/chemistry_beaker_carbonate.xml");
     SimpleThermoDatabase chem(bgd_list, vo);
 
     Beaker::BeakerState state;
@@ -70,7 +70,7 @@ SUITE(BeakerTests) {
     Teuchos::ParameterList plist;
     auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry PK", plist));
 
-    Teuchos::RCP<Teuchos::ParameterList> bgd_list = Teuchos::getParametersFromXmlFile("chemistry_beaker_carbonate.xml");
+    auto bgd_list = Teuchos::getParametersFromXmlFile("test/chemistry_beaker_carbonate.xml");
     SimpleThermoDatabase chem(bgd_list, vo);
 
     Beaker::BeakerState state;

@@ -20,7 +20,6 @@
 #include "species.hh"
 #include "secondary_species.hh"
 #include "mineral.hh"
-#include "string_tokenizer.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {

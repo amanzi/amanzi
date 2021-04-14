@@ -35,4 +35,5 @@ class MineralKineticsFactory {
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
+
 #endif

@@ -146,6 +146,7 @@ class Beaker {
 
   const std::vector<double>& total() const { return total_; }
   const std::vector<double>& total_sorbed() const { return total_sorbed_; }
+  std::vector<SorptionIsothermRxn> sorption_isotherm_rxns() const { return sorption_isotherm_rxns_; }
 
  protected:
   // resizes matrix and vectors for nonlinear system

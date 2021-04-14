@@ -108,14 +108,6 @@ Beaker::~Beaker() {
 }
 
 
-/********************************************************************
- **
- ** public interface for drivers (batch_chem, unstructured and
- ** structured process kernels)
- **
- *******************************************************************/
-
-
 /* ******************************************************************
 * public setup related
 ****************************************************************** */
@@ -125,11 +117,15 @@ void Beaker::Setup(const BeakerState& state,
 
   SetupActivityModel(parameters.activity_model_name,
                      parameters.pitzer_database, parameters.jfunction_pitzer);
+
   ResizeInternalMemory(primary_species().size());
   VerifyState(state);
 }
 
 
+/* ******************************************************************
+* TBW
+****************************************************************** */
 Beaker::BeakerParameters Beaker::GetDefaultParameters() const {
   Beaker::BeakerParameters parameters;
 
@@ -717,11 +713,9 @@ void Beaker::DisplayTotalColumns(const double time,
 }
 
 
-/*******************************************************************************
- **
- ** protected interface (SimpleThermoDatabase)
- **
- ******************************************************************************/
+/* ******************************************************************
+* protected interface (SimpleThermoDatabase)
+****************************************************************** */
 void Beaker::ResizeInternalMemory(int size)
 {
   set_ncomp(size);
@@ -761,7 +755,7 @@ void Beaker::VerifyState(const Beaker::BeakerState& state) const {
   // database input don't match. Print a helpful message and exit
   // gracefully.
 
-  if (static_cast<unsigned int>(ncomp_) != state.total.size()) {
+  if (ncomp_ != state.total.size()) {
     error = true;
     error_stream << "ncomp(" << ncomp_
                  << ") and state.total.size(" << state.total.size()
@@ -1082,14 +1076,15 @@ void Beaker::InitializeMolalities(double initial_molality) {
 }
 
 
-void Beaker::InitializeMolalities(const std::vector<double>& initial_molalities) {
+void Beaker::InitializeMolalities(const std::vector<double>& initial_molalities)
+{
   if (initial_molalities.size() != primary_species().size()) {
     std::ostringstream error_stream;
     error_stream << "Beaker::InitializeMolalities(): \n";
     error_stream << "   Mismatch in size of initial_molalities array (" 
                  << initial_molalities.size() << ") and the number of "
                  << "primary species (" << primary_species().size() << ")\n";
-    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+    Exceptions::amanzi_throw(ChemistryMemorySizeError(error_stream.str()));
   }
 
   // iterator doesnt seem to work then passing a vector entry - geh

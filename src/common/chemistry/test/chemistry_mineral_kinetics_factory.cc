@@ -36,14 +36,13 @@ SUITE(GeochemistryTestsMineralKineticsFactory) {
     MineralKineticsFactoryTest();
     ~MineralKineticsFactoryTest();
 
-    void RunTest(const std::string name);
+    void RunTest(const std::string& name);
 
     ac::MineralKineticsFactory mkf_;
     ac::KineticRate* kinetic_rate_;
     std::vector<ac::Mineral> minerals_;
 
    private:
-    ac::StringTokenizer rate_data_;
     ac::SpeciesArray species_;
     ac::Species H_p;
     ac::Species OH_m;
@@ -55,8 +54,7 @@ SUITE(GeochemistryTestsMineralKineticsFactory) {
 
   MineralKineticsFactoryTest::MineralKineticsFactoryTest()
       : mkf_(),
-      kinetic_rate_(NULL),
-      rate_data_("log10_rate_constant -9.0 moles/m^2/sec", ";")
+      kinetic_rate_(NULL)
   {
     Teuchos::ParameterList plist;
     plist.set<int>("charge", 1)
@@ -154,8 +152,12 @@ SUITE(GeochemistryTestsMineralKineticsFactory) {
     delete kinetic_rate_;
   }
 
-  void MineralKineticsFactoryTest::RunTest(const std::string name) {
-    kinetic_rate_ = mkf_.Create(name, rate_data_, minerals_.at(1), species_);
+  void MineralKineticsFactoryTest::RunTest(const std::string& name) {
+    Teuchos::ParameterList plist;
+    plist.set<std::string>("rate model", name)
+         .set<double>("rate constant", -9.0)
+         .set<std::string>("modifiers", "");
+    kinetic_rate_ = mkf_.Create(plist, minerals_.at(1), species_);
   }
 
   // use C++ RTTI to determine if the correct type of object was
@@ -173,13 +175,5 @@ SUITE(GeochemistryTestsMineralKineticsFactory) {
     CHECK_THROW(RunTest(name), ac::ChemistryException);
     CHECK(!kinetic_rate_);
   }  // end TEST_FIXTURE()
-
-  TEST_FIXTURE(MineralKineticsFactoryTest, MineralKineticsFactory_set_debug) {
-    // if we set the debug flag on the factory, the resulting kinetic
-    // rate objects should have the debug flag set
-    mkf_.set_debug(true);
-    RunTest("TST");
-    CHECK_EQUAL(kinetic_rate_->debug(), true);
-  }
 }
 

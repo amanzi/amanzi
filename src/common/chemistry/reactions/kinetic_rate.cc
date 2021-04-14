@@ -15,7 +15,6 @@
 #include <sstream>
 
 #include "kinetic_rate.hh"
-#include "string_tokenizer.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {

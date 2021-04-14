@@ -97,7 +97,7 @@ SUITE(TestPitzer) {
     Br = ac::Species(16, "Br-", plist);
 
     // parameters.database_filename = "phreeqc_pitzer.dat";
-    parameters.database_filename = "chemistry_pitzer.dat";
+    parameters.database_filename = "test/chemistry_pitzer.dat";
     parameters.pitzer_jfunction = "pitzer1975";
 
     vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry", plist));

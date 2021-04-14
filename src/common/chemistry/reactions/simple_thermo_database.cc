@@ -32,7 +32,6 @@
 #include "sorption_isotherm_linear.hh"
 #include "beaker.hh"
 #include "species.hh"
-#include "string_tokenizer.hh"
 #include "chemistry_exception.hh"
 
 #include "exceptions.hh"
@@ -367,7 +366,8 @@ void SimpleThermoDatabase::Setup(const Beaker::BeakerState& state,
   SetupActivityModel(parameters.activity_model_name, 
                      parameters.pitzer_database, parameters.jfunction_pitzer);
   ResizeInternalMemory(primary_species().size());
-  VerifyState(state);
+
+  // this call will allocate/resize internal arrays
   CopyStateToBeaker(state);
 }
 

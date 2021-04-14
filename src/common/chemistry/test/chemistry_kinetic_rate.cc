@@ -92,15 +92,7 @@ SUITE(GeochemistryTestsKineticRate) {
       set_name("abc123");
       set_identifier(456);
     };
-    virtual ~MockKineticRate() {}
-
-    void Setup(const ac::SecondarySpecies& reaction,
-               const ac::StringTokenizer& reaction_data,
-               const ac::SpeciesArray& primary_species) {
-      static_cast<void>(reaction);
-      static_cast<void>(reaction_data);
-      static_cast<void>(primary_species);
-    };  // end Setup()
+    virtual ~MockKineticRate() {};
 
     void Update(const ac::SpeciesArray& primary_species,
                 const std::vector<ac::Mineral>& minerals) {
@@ -129,13 +121,6 @@ SUITE(GeochemistryTestsKineticRate) {
     void Display(const Teuchos::Ptr<Amanzi::VerboseObject> vo) const {
       std::cout << this->name() << std::endl;
     };  // end Display()
-
-    void ParseParameters(const ac::StringTokenizer& rate_parameters) {
-      static_cast<void>(rate_parameters);
-    };  // end ParseParameters()
-
-   protected:
-   private:
   };  // end MockKineticRate
 
   // make sure we can create an object with the constructor
