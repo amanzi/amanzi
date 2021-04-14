@@ -15,9 +15,8 @@
 #include <vector>
 #include <string>
 
-#include "species.hh"
 #include "mineral.hh"
-#include "string_tokenizer.hh"
+#include "species.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -26,20 +25,12 @@ class KineticRate;
 
 class MineralKineticsFactory {
  public:
-  MineralKineticsFactory();
+  MineralKineticsFactory() {};
   ~MineralKineticsFactory() {};
 
-  KineticRate* Create(const std::string& rate_type,
-                      const StringTokenizer& rate_data,
+  KineticRate* Create(const Teuchos::ParameterList& plist,
                       const Mineral& mineral,
                       const SpeciesArray& primary_species);
-
-  void set_debug(bool value) { debug_ = value; };
-  bool debug() const { return debug_; };
-
- private:
-  bool debug_;
-  static const std::string kTST;
 };
 
 }  // namespace AmanziChemistry

@@ -45,25 +45,20 @@ class KineticRateTST : public KineticRate {
   virtual ~KineticRateTST() {};
 
   void Setup(const SecondarySpecies& reaction,
-             const StringTokenizer& reaction_data,
+             double rate,
+             const std::string& modifiers,
              const SpeciesArray& primary_species);
   void Update(const SpeciesArray& primary_species,
               const std::vector<Mineral>& minerals);
   void AddContributionToResidual(const std::vector<Mineral>& minerals,
-                                 const double bulk_volume,
+                                 double bulk_volume,
                                  std::vector<double> *residual);
 
   void AddContributionToJacobian(const SpeciesArray& primary_species,
                                  const std::vector<Mineral>& minerals,
-                                 const double bulk_volume_vol,
+                                 double bulk_volume_vol,
                                  MatrixBlock* J);
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
-
-  void ParseParameters(const StringTokenizer& rate);
-
-  /*
-  ** end of KineticRate inherited interface
-  */
 
  private:
   double area_;  // surface area [m^2]

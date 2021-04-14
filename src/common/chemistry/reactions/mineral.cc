@@ -50,7 +50,7 @@ Mineral::Mineral(int id, const std::string& name,
 
 /* *******************************************************************
 * NOTE: the rate is a dissolution rate so either need to use -rate
-* or vol_frac -= .... inorder to get the correct
+* or vol_frac -= .... in order to get the correct
 * dissolution/precipitation behavior.
 *
 * TODO(bandre): Right now we are just setting volume fraction to

@@ -85,10 +85,9 @@ void KineticRate::DisplayReaction(const Teuchos::Ptr<VerboseObject> vo) const {
 
   message << name();
   message << " = ";
-  for (unsigned int species = 0;
-       species < this->reactant_names.size(); species++) {
+  for (int species = 0; species < this->reactant_names.size(); species++) {
     message << std::setprecision(2) << this->reactant_stoichiometry.at(species) << " "
-              << this->reactant_names.at(species);
+            << this->reactant_names.at(species);
     if (species < this->reactant_names.size() - 1) {
       message << " + ";
     }

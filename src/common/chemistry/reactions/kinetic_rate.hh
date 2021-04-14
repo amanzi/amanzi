@@ -31,9 +31,6 @@ class KineticRate {
  public:
   virtual ~KineticRate() {};
 
-  virtual void Setup(const SecondarySpecies& reaction,
-                     const StringTokenizer& reaction_data,
-                     const SpeciesArray& primary_species) = 0;
   virtual void Update(const SpeciesArray& primary_species,
                       const std::vector<Mineral>& minerals) = 0;
   virtual void AddContributionToResidual(const std::vector<Mineral>& minerals,
@@ -44,8 +41,6 @@ class KineticRate {
                                          const double bulk_volume,
                                          MatrixBlock* J) = 0;
   virtual void Display(const Teuchos::Ptr<VerboseObject> vo) const = 0;
-
-  virtual void ParseParameters(const StringTokenizer& rate_parameters) = 0;
 
   void SetSpeciesIds(const SpeciesArray& species,
                      const std::string& species_type,

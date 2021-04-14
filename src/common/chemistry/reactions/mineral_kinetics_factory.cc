@@ -10,8 +10,6 @@
 */
  
 #include <cstdlib>
-#include <iostream>
-#include <fstream>
 #include <string>
 #include <sstream>
 
@@ -22,42 +20,29 @@
 #include "mineral.hh"
 #include "mineral_kinetics_factory.hh"
 #include "species.hh"
-#include "string_tokenizer.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
 
-const std::string MineralKineticsFactory::kTST = "TST";
-
-MineralKineticsFactory::MineralKineticsFactory() : debug_(false) {
-} 
-
-
-KineticRate* MineralKineticsFactory::Create(const std::string& rate_type,
-                                            const StringTokenizer& rate_data,
+KineticRate* MineralKineticsFactory::Create(const Teuchos::ParameterList& plist,
                                             const Mineral& mineral,
-                                            const SpeciesArray& primary_species) {
-  KineticRate* kinetic_rate = NULL;
+                                            const SpeciesArray& primary_species)
+{
+  std::string model = plist.get<std::string>("rate model");
+  double rate = plist.get<double>("rate constant");
+  std::string modifiers = plist.get<std::string>("modifiers");
 
-  std::string space(" ");
-  StringTokenizer rate_name(rate_type, space);  // strip out spaces
-
-  if (!(rate_name.at(0).compare(this->kTST))) {
-    kinetic_rate = new KineticRateTST();
+  if (model == "TST") {
+    auto kinetic_rate = new KineticRateTST();
+    kinetic_rate->Setup(mineral, rate, modifiers, primary_species);
+    return kinetic_rate;
   } else {
-    std::ostringstream error_stream;
-    error_stream << "MineralKineticsFactory::Create(): \n";
-    error_stream << "Unknown kinetic rate name: " << rate_name.at(0)
-                 << "\n       valid names: " << kTST << "\n";
-    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+    std::ostringstream oss;
+    oss << "Unknown kinetic rate model: " << model << ", valid names: TST\n";
+    Exceptions::amanzi_throw(ChemistryInvalidInput(oss.str()));
   }
 
-  kinetic_rate->set_debug(debug());
-  // TODO(bandre): get rid of the dynamic cast...?
-  kinetic_rate->Setup(dynamic_cast<const SecondarySpecies&>(mineral),
-                      rate_data, primary_species);
-
-  return kinetic_rate;
+  return NULL;
 }
 
 }  // namespace AmanziChemistry

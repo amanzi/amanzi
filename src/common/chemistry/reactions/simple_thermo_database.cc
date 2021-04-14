@@ -104,17 +104,8 @@ void SimpleThermoDatabase::Setup(const Beaker::BeakerState& state,
       Mineral mineral(id, name, tmp, this->primary_species());
       AddMineral(mineral);
 
-      std::string model = tmp.get<std::string>("rate model");
-      double rate = tmp.get<double>("rate constant");
-      std::string modifiers = tmp.get<std::string>("modifiers");
-
-      // FIXME (lipnikov@lanl.gov)
-      std::string aux("log10_rate_constant " + std::to_string(rate) + " moles/cm^2/sec");
-      if (modifiers != "") aux += " ; " + modifiers;
-      StringTokenizer rate_data(aux, ";");
-
       MineralKineticsFactory mkf;
-      KineticRate* kinetic_rate = mkf.Create(model, rate_data, mineral, primary_species());
+      KineticRate* kinetic_rate = mkf.Create(tmp, mineral, primary_species());
 
       AddMineralKineticRate(kinetic_rate);
     }
