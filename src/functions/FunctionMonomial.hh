@@ -56,7 +56,9 @@ class FunctionMonomial : public Function {
  public:
   FunctionMonomial(double c, const std::vector<double>& x0, const std::vector<int>& p);
   ~FunctionMonomial() {}
-  FunctionMonomial* Clone() const { return new FunctionMonomial(*this); }
+  std::unique_ptr<Function> Clone() const {
+    return std::make_unique<FunctionMonomial>(*this);
+  }
   double operator()(const std::vector<double>& x) const;
 
  private:

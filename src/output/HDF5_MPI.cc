@@ -665,13 +665,24 @@ void HDF5_MPI::createDataFile(const std::string& base_filename)
 }
 
 
-void HDF5_MPI::open_h5file()
+void HDF5_MPI::open_h5file(bool read_only)
 {
-  data_file_ = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_,
-                                    FILE_READWRITE);
-  if (data_file_ < 0) {
-    Errors::Message message("HDF5_MPI::writeFieldData_ - error opening data file to write field data");
-    Exceptions::amanzi_throw(message);
+  if (read_only) {
+    data_file_ = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_,
+             FILE_READWRITE);
+    if (data_file_ < 0) {
+      Errors::Message msg;
+      msg << "HDF5_MPI: error opening file \"" << H5DataFilename_ << "\" with READ_WRITE access.";
+      Exceptions::amanzi_throw(msg);
+    }
+  } else {
+    data_file_ = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_,
+             FILE_READWRITE);
+    if (data_file_ < 0) {
+      Errors::Message msg;
+      msg << "HDF5_MPI: error opening file \"" << H5DataFilename_ << "\" with READ_ONLY access.";
+      Exceptions::amanzi_throw(msg);
+    }
   }
 }
 

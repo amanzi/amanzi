@@ -25,6 +25,7 @@ IndependentVariableFieldEvaluator::IndependentVariableFieldEvaluator(Teuchos::Pa
     temporally_variable_(true),
     computed_once_(false) {
 
+  type_ = EvaluatorType::INDEPENDENT;
   my_key_ = plist_.get<std::string>("evaluator name");
   temporally_variable_ = !plist_.get<bool>("constant in time", false);
 }

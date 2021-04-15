@@ -238,7 +238,6 @@ void Flow_PK::InitializeFields_()
   InitializeField_(S_.ptr(), passwd_, specific_storage_key_, 0.0);
   InitializeField_(S_.ptr(), passwd_, specific_yield_key_, 0.0);
 
-  InitializeField_(S_.ptr(), passwd_, pressure_key_, 0.0);
   InitializeField_(S_.ptr(), passwd_, hydraulic_head_key_, 0.0);
   InitializeField_(S_.ptr(), passwd_, pressure_head_key_, 0.0);
 

@@ -51,14 +51,14 @@ class Field {
   FieldType type() const { return type_; }
   bool io_checkpoint() const { return io_checkpoint_; }
   bool io_vis() const { return io_vis_; }
-  bool initialized() const { return initialized_; }
+  virtual bool initialized() const { return initialized_; }
 
   // mutators
   void set_owner(std::string owner) { owner_ = owner; }
   void set_vis_key(std::string key) { vis_key_ = key; }
   void set_io_checkpoint(bool io_checkpoint=true) { io_checkpoint_ = io_checkpoint; }
   void set_io_vis(bool io_vis=true) { io_vis_ = io_vis; }
-  void set_initialized(bool initialized=true) { initialized_ = initialized; }
+  virtual void set_initialized(bool initialized=true) { initialized_ = initialized; }
 
   void RequireCopy(Key tag);
   void RequireCopy(Key tag, Key new_owner);

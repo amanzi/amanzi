@@ -47,7 +47,9 @@ class FunctionPolynomial : public Function {
  public:
   FunctionPolynomial(const std::vector<double> &c, const std::vector<int> &p, double x0 = 0.0);
   ~FunctionPolynomial() {}
-  FunctionPolynomial* Clone() const { return new FunctionPolynomial(*this); }
+  std::unique_ptr<Function> Clone() const {
+    return std::make_unique<FunctionPolynomial>(*this);
+  }
   double operator()(const std::vector<double>& x) const;
 
  private:
