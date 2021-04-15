@@ -43,7 +43,7 @@ class KineticRateTST : public KineticRate {
   KineticRateTST();
   virtual ~KineticRateTST() {};
 
-  void Setup(const SecondarySpecies& reaction,
+  void Setup(const Mineral& reaction,
              double rate,
              const std::string& modifiers,
              const SpeciesArray& primary_species);

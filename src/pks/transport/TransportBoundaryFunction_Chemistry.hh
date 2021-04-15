@@ -50,7 +50,7 @@ class TransportBoundaryFunction_Chemistry : public TransportDomainFunction {
       mesh->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, &cells);
       int c = cells[0];
 
-      amanzi_pk_->CopyCellStateToBeakerStructures(c, tcc->ViewComponent("cell", true));
+      amanzi_pk_->CopyCellStateToBeakerState(c, tcc->ViewComponent("cell", true));
 
       auto& values = it->second;
       chem_engine_->EnforceConstraint(&beaker_state, beaker_parameters, constraints_, values);

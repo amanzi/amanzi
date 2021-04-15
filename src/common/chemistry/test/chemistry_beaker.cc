@@ -25,47 +25,6 @@ SUITE(BeakerTests) {
   using Amanzi::AmanziChemistry::ChemistryMemorySizeError;
   using Amanzi::AmanziChemistry::ChemistryInvalidInput;
 
-  TEST(CheckBadComponentSizes) {
-    Teuchos::ParameterList plist;
-    auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry PK", plist));
-
-    auto bgd_list = Teuchos::getParametersFromXmlFile("test/chemistry_beaker_carbonate.xml");
-    SimpleThermoDatabase chem(bgd_list, vo);
-
-    Beaker::BeakerState state;
-    state.free_ion.clear();
-    state.mineral_volume_fraction.clear();
-    state.ion_exchange_sites.clear();
-    state.total.clear();
-    state.total_sorbed.clear();
-
-    state.total.push_back(1.0e-3);  // H+
-    state.total.push_back(1.0e-3);  // HCO3-
-    state.total.push_back(0.0);
-    state.free_ion.push_back(0.0);
-    state.mineral_volume_fraction.push_back(0.0);
-    state.ion_exchange_sites.push_back(0.0);
-
-    Beaker::BeakerParameters parameters = chem.GetDefaultParameters();
-
-    parameters.thermo_database_file = "chemistry_beaker_carbonate.bgd";
-    parameters.activity_model_name = ActivityModelFactory::unit;
-
-    bool correct_exception = false;
-
-    try {
-      // should throw an error
-      chem.Setup(state, parameters);
-    } catch (ChemistryMemorySizeError& e) {
-      correct_exception = true;
-    } catch (ChemistryException& e) {
-    } catch (std::exception& e) {
-    }
-
-    CHECK(correct_exception);
-  }
-
-
   TEST(CheckBadActivityModel) {
     Teuchos::ParameterList plist;
     auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry PK", plist));
@@ -83,16 +42,16 @@ SUITE(BeakerTests) {
     state.total.push_back(1.0e-3);  // H+
     state.total.push_back(1.0e-3);  // HCO3-
 
-    Beaker::BeakerParameters parameters = chem.GetDefaultParameters();
+    Beaker::BeakerParameters parameters;
 
-    parameters.thermo_database_file = "chemistry_beaker_carbonate.bgd";
     parameters.activity_model_name = "bad activity model name";
+    parameters.tolerance = 1.0e-12;
 
     bool correct_exception = false;
 
     try {
       // should throw an error
-      chem.Setup(state, parameters);
+      chem.Initialize(parameters);
     } catch (ChemistryUnrecoverableError& e) {
     } catch (ChemistryInvalidInput& e) {
       correct_exception = true;

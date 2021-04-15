@@ -58,7 +58,7 @@ class Amanzi_PK : public Chemistry_PK {
   void set_chemistry_output_names(std::vector<std::string>* names);
 
   // functions used in Rransport PK
-  void CopyCellStateToBeakerStructures(
+  void CopyCellStateToBeakerState(
       int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
 
   // access
@@ -71,7 +71,7 @@ class Amanzi_PK : public Chemistry_PK {
 
   void XMLParameters();
   void SetupAuxiliaryOutput();
-  void SizeBeakerStructures_();
+  void SizeBeakerState_();
 
   void CopyBeakerStructuresToCellState(
       int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components);

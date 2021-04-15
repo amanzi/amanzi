@@ -103,7 +103,7 @@ KineticRateTST::KineticRateTST()
 }
 
 
-void KineticRateTST::Setup(const SecondarySpecies& reaction,
+void KineticRateTST::Setup(const Mineral& reaction,
                            double rate,
                            const std::string& modifiers,
                            const SpeciesArray& primary_species)
@@ -164,7 +164,7 @@ void KineticRateTST::Update(const SpeciesArray& primary_species,
 
   // calculate the modifying primary species term:
   double ln_mod_term = 0.0;
-  for (unsigned int p = 0; p < primary_species.size(); p++) {
+  for (int p = 0; p < primary_species.size(); p++) {
     ln_mod_term += modifying_primary_exponents.at(p) * primary_species.at(p).ln_activity();
   }
   modifying_term_ = std::exp(ln_mod_term);

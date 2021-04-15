@@ -178,15 +178,17 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
   // state/chemistry_state object before we reach this point. We just
   // resize our local memory for migrating data here.
 
-  SizeBeakerStructures_();
+  SizeBeakerState_();
+  CopyCellStateToBeakerState(0, tcc);
+  chem_->Initialize(beaker_parameters_);
+  chem_->CopyStateToBeaker(beaker_state_);
+  // chem_->VerifyState(beaker_state_);
 
   // copy the cell data into the beaker storage for initialization purposes
   // but first ensure dependencies are filled
   S->GetFieldEvaluator(poro_key_)->HasFieldChanged(S_.ptr(), name_);
   S->GetFieldEvaluator(fluid_den_key_)->HasFieldChanged(S_.ptr(), name_);
   S->GetFieldEvaluator(saturation_key_)->HasFieldChanged(S_.ptr(), name_);
-
-  CopyCellStateToBeakerStructures(0, tcc);
 
   // finish setting up & testing the chemistry object
   int nprimary, ierr(0);
@@ -198,7 +200,6 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   try {
     vo_->Write(Teuchos::VERB_HIGH, "Initializing chemistry in cell 0...\n");
-    chem_->Setup(beaker_state_, beaker_parameters_);
     chem_->Display();
 
     // check names of primary species
@@ -242,7 +243,7 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
   ierr = 0;
   if (fabs(initial_conditions_time_ - S->time()) <= 1e-8 * fabs(S->time())) {
     for (int c = 0; c < num_cells; ++c) {
-      CopyCellStateToBeakerStructures(c, tcc);
+      CopyCellStateToBeakerState(c, tcc);
 
       try {
         for (int i = 0; i < nprimary; ++i) values[i] = (*tcc)[i][c];
@@ -284,7 +285,10 @@ void Amanzi_PK::XMLParameters()
 
     // currently we only support the simple format.
     chem_ = new SimpleThermoDatabase(tdb_list, vo_);
-    beaker_parameters_ = chem_->GetDefaultParameters();
+    beaker_parameters_.tolerance = 1e-12;
+    beaker_parameters_.max_iterations = 250;
+    beaker_parameters_.activity_model_name = "unit";
+
   } else {
     std::ostringstream msg;
     msg << AmanziChemistry::kChemistryError;
@@ -384,7 +388,7 @@ void Amanzi_PK::SetupAuxiliaryOutput()
 /* *******************************************************************
 * Initialize the beaker component data structure
 ******************************************************************* */
-void Amanzi_PK::SizeBeakerStructures_()
+void Amanzi_PK::SizeBeakerState_()
 {
   // NOTE: The beaker already has data for site density, sorption
   // isotherms, ssa. If we want to use that single global value, then
@@ -436,7 +440,7 @@ void Amanzi_PK::SizeBeakerStructures_()
 * We must use the aqueous totals value calculated from transport
 * (aqueous_components), not the value stored in state!
 ******************************************************************* */
-void Amanzi_PK::CopyCellStateToBeakerStructures(
+void Amanzi_PK::CopyCellStateToBeakerState(
     int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components)
 {
   for (unsigned int i = 0; i < number_aqueous_components_; i++) {
@@ -535,10 +539,10 @@ void Amanzi_PK::CopyCellStateToBeakerStructures(
   const Epetra_MultiVector& water_saturation = *S_->GetFieldData(saturation_key_)->ViewComponent("cell", true);
   const Epetra_MultiVector& fluid_density = *S_->GetFieldData(fluid_den_key_)->ViewComponent("cell", true);
 
-  beaker_parameters_.water_density = fluid_density[0][c];
-  beaker_parameters_.porosity = porosity[0][c];
-  beaker_parameters_.saturation = water_saturation[0][c];
-  beaker_parameters_.volume = mesh_->cell_volume(c);
+  beaker_state_.water_density = fluid_density[0][c];
+  beaker_state_.porosity = porosity[0][c];
+  beaker_state_.saturation = water_saturation[0][c];
+  beaker_state_.volume = mesh_->cell_volume(c);
 }
 
 
@@ -669,13 +673,13 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   for (int c = 0; c < num_cells; ++c) {
     if (sat_vec[0][c] > saturation_tolerance_) {
-      CopyCellStateToBeakerStructures(c, aqueous_components_);
+      CopyCellStateToBeakerState(c, aqueous_components_);
       try {
         // create a backup copy of the components
         chem_->CopyState(beaker_state_, &beaker_state_copy_);
 
         // chemistry computations for this cell
-        num_itrs = chem_->ReactionStep(&beaker_state_, beaker_parameters_, dt);
+        num_itrs = chem_->ReactionStep(&beaker_state_, dt);
 
         if (max_itrs < num_itrs) {
           max_itrs = num_itrs;

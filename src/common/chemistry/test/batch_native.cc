@@ -51,10 +51,13 @@ int CompareFiles(const std::string& file1, const std::string& file2)
 }
 
 
-void RunBatchNative(const std::string& filename,
+void RunBatchNative(const std::string& filexml,
+                    const std::string& filetest,
                     const std::string& activity_model,
-                    const std::vector<double>& ic,
-                    double porosity, double saturation, double volume)
+                    const std::vector<double>& ict,
+                    const std::vector<double>& icm,
+                    double porosity, double saturation, double volume,
+                    double dt = 0.0, int max_dt_steps = 0)
 {
 #ifdef ABORT_ON_FLOATING_POINT_EXCEPTIONS
 #ifdef __APPLE__
@@ -70,24 +73,32 @@ void RunBatchNative(const std::string& filename,
 #endif
 
   // default i/o level
-  auto plist = Teuchos::getParametersFromXmlFile(filename + ".xml");
+  auto plist = Teuchos::getParametersFromXmlFile(filexml);
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Beaker", *plist));
 
   ac::Beaker::BeakerState state;
 
   ac::Beaker* chem = new ac::SimpleThermoDatabase(plist, vo);
 
-  ac::Beaker::BeakerParameters parameters = chem->GetDefaultParameters();
-  parameters.thermo_database_file = "";
-  parameters.activity_model_name = activity_model;
-  parameters.max_iterations = 100;
+  ac::Beaker::BeakerParameters parameters;
   parameters.tolerance = 1e-12;
-  parameters.porosity = porosity;
-  parameters.saturation = saturation;
-  parameters.water_density = 997.16;
-  parameters.volume = volume;
+  parameters.max_iterations = 100;
+  parameters.activity_model_name = activity_model;
 
-  chem->Setup(state, parameters);
+  state.porosity = porosity;
+  state.saturation = saturation;
+  state.water_density = 997.16;
+  state.volume = volume;
+
+  chem->Initialize(parameters);
+
+  state.mineral_volume_fraction = icm;
+
+  chem->CopyStateToBeaker(state);
+
+  // we do not have external state in this test, we need to initialize 
+  // chemistry state from beaker's data
+  chem->CopyBeakerToState(&state);
 
   int ncomp = chem->primary_species().size();
   int nmineral = chem->minerals().size();
@@ -95,7 +106,7 @@ void RunBatchNative(const std::string& filename,
   int nion_site = chem->ion_exchange_rxns().size();
   int nisotherm = chem->sorption_isotherm_rxns().size();
 
-  state.total = ic;
+  state.total = ict;
   state.free_ion.resize(ncomp, 1.0e-9);
 
   if (nmineral > 0) {
@@ -120,25 +131,95 @@ void RunBatchNative(const std::string& filename,
   chem->DisplayComponents(state);
 
   // solve for free-ion concentrations
-  chem->Speciate(&state, parameters);
+  chem->Speciate(&state);
 
   chem->CopyBeakerToState(&state);
   chem->DisplayResults();
 
+  // kinetics
+  if (dt > 0.0) {
+    double time(0.0);
+
+    for (int n = 0; n < max_dt_steps; ++n) {
+      chem->ReactionStep(&state, dt);
+      // chem->CopyBeakerToState(&state);
+      time += dt;
+      chem->DisplayTotalColumns(time, state, false);
+    }
+    chem->Speciate(&state);
+    chem->DisplayResults();
+  }
+
   vo = Teuchos::null;  // closing the stream
   std::string tmp = plist->sublist("verbose object").get<std::string>("output filename");
-  int ok = CompareFiles(tmp, filename + ".test");
+  int ok = CompareFiles(tmp, filetest);
   CHECK(ok == 0);
 
   // cleanup memory
   delete chem;
 }
 
-TEST(NATIVE_CHEMISTRY) {
-  std::vector<double> ic = {3.0e-3, 1.0e-3, 1.0e-3};
-  RunBatchNative("test/native/ca-carbonate",
+
+TEST(NATIVE_CA_DEBYE_HUCKEL) {
+  std::vector<double> ict = {3.0e-3, 1.0e-3, 1.0e-3};
+  std::vector<double> icm;
+  RunBatchNative("test/native/ca-carbonate.xml",
+                 "test/native/ca-carbonate-debye-huckel.test",
                  "debye-huckel",
-                 ic,  // initial conditions
+                 ict, icm,  // initial conditions
+                 0.5, 1.0, 1.0);  // porosity, saturation, cell volume
+}
+
+TEST(NATIVE_CA_UNIT) {
+  std::vector<double> ict = {3.0e-3, 1.0e-3, 1.0e-3};
+  std::vector<double> icm;
+  RunBatchNative("test/native/ca-carbonate.xml",
+                 "test/native/ca-carbonate-unit.test",
+                 "unit",
+                 ict, icm,  // initial conditions
+                 0.5, 1.0, 1.0);  // porosity, saturation, cell volume
+}
+
+
+TEST(NATIVE_CALCITE_KINETICS) {
+  std::vector<double> ict = {-1.0e-5, 1.0e-5, 1.0e-5};
+  std::vector<double> icm = {0.2};
+  RunBatchNative("test/native/calcite.xml",
+                 "test/native/calcite-kinetics.test",
+                 "debye-huckel",
+                 ict, icm,  // initial conditions
+                 0.5, 1.0, 1.0);  // porosity, saturation, cell volume
+}
+
+TEST(NATIVE_CALCITE_KINETICS_VOLUME_FRACTIONS) {
+  std::vector<double> ict = {1.0e-2, 1.0e-2, 1.0e-19};
+  std::vector<double> icm = {0.2};
+  RunBatchNative("test/native/calcite.xml",
+                 "test/native/calcite-kinetics-volume-fractions.test",
+                 "debye-huckel",
+                 ict, icm,  // initial conditions
+                 0.5, 1.0, 1.0,  // porosity, saturation, cell volume, dt
+                 2592000.0, 60);  // dt, max time steps
+}
+
+
+TEST(NATIVE_CARBONATE_DEBYE_HUCKEL) {
+  std::vector<double> ict = {1.0e-3, 1.0e-3};
+  std::vector<double> icm;
+  RunBatchNative("test/native/carbonate.xml",
+                 "test/native/carbonate-debye-huckel.test",
+                 "debye-huckel",
+                 ict, icm,  // initial conditions
+                 0.5, 1.0, 1.0);  // porosity, saturation, cell volume
+}
+
+TEST(NATIVE_CARBONATE_UNIT) {
+  std::vector<double> ict = {1.0e-3, 1.0e-3};
+  std::vector<double> icm;
+  RunBatchNative("test/native/carbonate.xml",
+                 "test/native/carbonate-debye-huckel.test",
+                 "unit",
+                 ict, icm,  // initial conditions
                  0.5, 1.0, 1.0);  // porosity, saturation, cell volume
 }
 

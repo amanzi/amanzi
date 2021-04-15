@@ -1,23 +1,114 @@
-<Primary Species
-# name               ; debye-huckel a0 ; charge ; GMW     
+<ParameterList>
+<ParameterList name="primary species">
+  <ParameterList name="Na+">
+    <Parameter name="ion size parameter" type="double" value="4.00000000000000000e+00"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="2.29897999999999989e+01"/>
+  </ParameterList>
+  <ParameterList name="Ca++">
+    <Parameter name="ion size parameter" type="double" value="6.00000000000000000e+00"/>
+    <Parameter name="charge" type="int" value="2"/>
+    <Parameter name="gram molecular weight" type="double" value="4.00799999999999983e+01"/>
+  </ParameterList>
+  <ParameterList name="Fe++">
+    <Parameter name="ion size parameter" type="double" value="6.0"/>
+    <Parameter name="charge" type="int" value="2"/>
+    <Parameter name="gram molecular weight" type="double" value="55.847"/>
+  </ParameterList>
+  <ParameterList name="K+">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="39.0983"/>
+  </ParameterList>
+  <ParameterList name="Al+++">
+    <Parameter name="ion size parameter" type="double" value="9.0"/>
+    <Parameter name="charge" type="int" value="3"/>
+    <Parameter name="gram molecular weight" type="double" value="2.69815000000000005e+01"/>
+  </ParameterList>
+  <ParameterList name="H+">
+   <Parameter name="ion size parameter" type="double" value="9.00000000000000000e+00"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="1.0079"/>
+  </ParameterList>
+  <ParameterList name="N2(aq)">
+   <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="28.0135"/>
+  </ParameterList>
+  <ParameterList name="NO3-">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="62.0049"/>
+  </ParameterList>
+  <ParameterList name="HCO3-">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="61.0171"/>
+  </ParameterList>
+  <ParameterList name="Cl-">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="3.54527e+01"/>
+  </ParameterList>
+  <ParameterList name="SO4--">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-2"/>
+    <Parameter name="gram molecular weight" type="double" value="9.60636e+01"/>
+  </ParameterList>
+  <ParameterList name="HPO4--">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-2"/>
+    <Parameter name="gram molecular weight" type="double" value="95.9793"/>
+  </ParameterList>
+  <ParameterList name="F-">
+    <Parameter name="ion size parameter" type="double" value="3.5"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="18.9984"/>
+  </ParameterList>
+  <ParameterList name="SiO2(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="60.0843"/>
+  </ParameterList>
+  <ParameterList name="UO2++">
+    <Parameter name="ion size parameter" type="double" value="4.5"/>
+    <Parameter name="charge" type="int" value="2"/>
+    <Parameter name="gram molecular weight" type="double" value="270.028"/>
+  </ParameterList>
+  <ParameterList name="O2(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="31.9988"/>
+  </ParameterList>
+  <ParameterList name="Tracer">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="0.0"/>
+  </ParameterList>
+</ParameterList>
 
-Na+                  ;   4.0 ;   1.0 ;  22.9898
-Ca++                 ;   6.0 ;   2.0 ;   40.078
-Fe++                 ;   6.0 ;   2.0 ;   55.847
-K+                   ;   3.0 ;   1.0 ;  39.0983
-Al+++                ;   9.0 ;   3.0 ;  26.9815
-H+                   ;   9.0 ;   1.0 ;   1.0079
-N2(aq)               ;   3.0 ;   0.0 ;  28.0135
-NO3-                 ;   3.0 ;  -1.0 ;  62.0049
-HCO3-                ;   4.0 ;  -1.0 ;  61.0171
-Cl-                  ;   3.0 ;  -1.0 ;  35.4527
-SO4--                ;   4.0 ;  -2.0 ;  96.0636
-HPO4--               ;   4.0 ;  -2.0 ;  95.9793
-F-                   ;   3.5 ;  -1.0 ;  18.9984
-SiO2(aq)             ;   3.0 ;   0.0 ;  60.0843
-UO2++                ;   4.5 ;   2.0 ;  270.028
-O2(aq)               ;   3.0 ;   0.0 ;  31.9988
-Tracer               ;   3.0 ;   0.0 ;      0.0
+<ParameterList name="aqueous equilibrium complexes">
+  <ParameterList name="OH-">
+    <Parameter name="ion size parameter" type="double" value="3.50000000000000000e+00"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="1.70073000000000008e+01"/>
+    <Parameter name="reaction" type="string" value="1.0 H2O  -1.0 H+"/>
+    <Parameter name="equilibrium constant" type="double" value="1.39951000000000008e+01"/>
+  </ParameterList>
+  <ParameterList name="HCO3-">
+    <Parameter name="ion size parameter" type="double" value="4.00000000000000000e+00"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="6.10170999999999992e+01"/>
+    <Parameter name="reaction" type="string" value="1.0 H2O  -1.0 H+  1.0 CO2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="6.34469999999999956e+00"/>
+  </ParameterList>
+  <ParameterList name="CO3--">
+    <Parameter name="ion size parameter" type="double" value="4.50000000000000000e+00"/>
+    <Parameter name="charge" type="int" value="-2"/>
+    <Parameter name="gram molecular weight" type="double" value="6.00091999999999999e+01"/>
+    <Parameter name="reaction" type="string" value="1.0 H2O  -2.0 H+  1.0 CO2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="1.66735000000000007e+01"/>
+  </ParameterList>
 
 <Aqueous Equilibrium Complexes
 # name               =  coeff primary_name  coeff primary_name  ; log10(Keq) 25C ; debye-huckel a0 ; charge ; GMW      

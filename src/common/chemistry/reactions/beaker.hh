@@ -45,8 +45,12 @@ class Beaker {
   virtual ~Beaker();
 
   struct BeakerState {
-    // TODO(bandre): move all "state" variables (porosity, density, 
-    // volume, mineral ssa, isotherms, etc) into a single struct.
+    BeakerState() 
+      : porosity(1.0),
+        saturation(1.0),
+        water_density(1000.0),
+        volume(1.0) {};
+
     std::vector<double> total;  // molarity
     std::vector<double> total_sorbed;
     std::vector<double> free_ion;  // molality
@@ -61,10 +65,18 @@ class Beaker {
     std::vector<double> isotherm_kd;
     std::vector<double> isotherm_freundlich_n;
     std::vector<double> isotherm_langmuir_b;
+
+    double porosity;  // [-]
+    double saturation;  // [-]
+    double water_density;  // [kg/m^3]
+    double volume;  // [m^3]
   };
 
   struct BeakerParameters {
-    std::string thermo_database_file;
+    BeakerParameters()
+      : tolerance(1.0e-12),
+        max_iterations(250),
+        activity_model_name("unit") {};
 
     // solver parameters
     double tolerance;
@@ -72,16 +84,11 @@ class Beaker {
 
     // models
     std::string activity_model_name;
+
     // Name of the Pitzer virial coefficients database
     std::string pitzer_database;
     // Name of the approach for J's functions for the Pitzer model
     std::string jfunction_pitzer;
-
-    // physical parameters
-    double porosity;  // [-]
-    double saturation;  // [-]
-    double water_density;  // [kg/m^3]
-    double volume;  // [m^3]
   };
 
   struct SolverStatus {
@@ -92,13 +99,12 @@ class Beaker {
   };
 
   // inheriting classes setup the species, etc
-  virtual void Setup(const BeakerState& state,
-                     const BeakerParameters& parameters);
-  void CopyBeakerToState(BeakerState* state);
+  virtual void Initialize(const BeakerParameters& parameters);
 
-  BeakerParameters GetDefaultParameters() const;
-  // take parameters object and map the data into chemistry object
-  void SetParameters(const BeakerParameters& parameters);
+  // we only copy data allocate by Amanzi state
+  void CopyStateToBeaker(const BeakerState& state);
+  // we copy all and allocate memory as needed
+  void CopyBeakerToState(BeakerState* state);
   void CopyState(const BeakerState& from, BeakerState* to) { *to = from; }
 
   void GetPrimaryNames(std::vector<std::string>* names) const;
@@ -107,10 +113,10 @@ class Beaker {
   bool HaveKinetics() const;
 
   // speciate for free-ion concentrations
-  int Speciate(BeakerState* state, const BeakerParameters& parameters);
+  int Speciate(BeakerState* state);
 
   // solve a chemistry step
-  int ReactionStep(BeakerState* state, const BeakerParameters& parameters, double dt);
+  int ReactionStep(BeakerState* state, double dt);
 
   // enforce constraint
   int EnforceConstraint(BeakerState* state, const BeakerParameters& parameters,
@@ -131,6 +137,8 @@ class Beaker {
 
   // access
   // int ncomp() const { return ncomp_; }
+  void set_porosity(double porosity) { porosity_ = porosity; }
+  double get_porosity() { return porosity_; }
 
   double water_density_kg_m3() const { return water_density_kg_m3_; }
   double water_density_kg_L() const { return water_density_kg_L_; }
@@ -150,11 +158,10 @@ class Beaker {
 
  protected:
   // resizes matrix and vectors for nonlinear system
-  void ResizeInternalMemory(int size);
+  void ResizeInternalMemory();
 
   void SetupActivityModel(std::string model, std::string pitzer_database, std::string jfunction_pitzer);
   void VerifyState(const BeakerState& state) const;
-  void CopyStateToBeaker(const BeakerState& state);
 
   void AddIonExchangeRxn(const IonExchangeRxn& ionx_rxn);
   void AddIonExchangeComplex(int irxn, const IonExchangeComplex& ionx_complex);
@@ -166,12 +173,11 @@ class Beaker {
   void AddSurfaceComplexationRxn(const SurfaceComplexationRxn& r);
   void AddSorptionIsothermRxn(const SorptionIsothermRxn& r);
 
+  void set_saturation(double value) { saturation_ = value; }
+
   void set_ncomp(int i) { ncomp_ = i; }
   void set_tolerance(double value) { tolerance_ = value; }
   void set_max_iterations(int value) { max_iterations_ = value; }
-
-  void set_porosity(double value) { porosity_ = value; }
-  void set_saturation(double value) { saturation_ = value; }
 
   // updates both water density variables
   void water_density_kg_m3(double d) {
@@ -193,11 +199,6 @@ class Beaker {
 
  private:
   void CheckChargeBalance(const std::vector<double>& aqueous_totals) const;
-
-  // update discretization and flow parameters
-  // water_density [kg/m^3]
-  // volume [m^3]
-  void UpdateParameters(const BeakerParameters& parameters, double dt);
 
   void UpdateActivityCoefficients();
   void UpdateKineticMinerals();

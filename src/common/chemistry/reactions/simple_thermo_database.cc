@@ -55,8 +55,7 @@ SimpleThermoDatabase::SimpleThermoDatabase(Teuchos::RCP<Teuchos::ParameterList> 
 /* *******************************************************************
 * Setup
 ******************************************************************* */
-void SimpleThermoDatabase::Setup(const Beaker::BeakerState& state,
-                                 const Beaker::BeakerParameters& parameters)
+void SimpleThermoDatabase::Initialize(const BeakerParameters& parameters)
 {
   // primary species
   const auto& pslist = plist_->sublist("primary species");
@@ -362,13 +361,8 @@ void SimpleThermoDatabase::Setup(const Beaker::BeakerState& state,
   surface_sites_.clear();
   surface_complexation_reactions_.clear();
 
-  SetParameters(parameters);
-  SetupActivityModel(parameters.activity_model_name, 
-                     parameters.pitzer_database, parameters.jfunction_pitzer);
-  ResizeInternalMemory(primary_species().size());
-
-  // this call will allocate/resize internal arrays
-  CopyStateToBeaker(state);
+  // this will allocate internal memory
+  Beaker::Initialize(parameters);
 }
 
 

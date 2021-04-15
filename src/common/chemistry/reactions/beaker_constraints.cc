@@ -29,7 +29,6 @@ int Beaker::EnforceConstraint(
     const std::vector<double>& values)
 {
   ResetStatus();
-  UpdateParameters(parameters, 1.0);
 
   std::vector<int> map(ncomp_, -1), map_aqx(ncomp_, -1);
 
