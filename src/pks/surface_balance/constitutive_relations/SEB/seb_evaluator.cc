@@ -278,23 +278,22 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     if (area_fracs[0][c] > 0.) {
       SEBPhysics::GroundProperties surf;
       surf.temp = surf_temp[0][c];
-      surf.pressure = surf_pres[0][c];
-      if (ss_topcell_based_evap_)
-        surf.pressure = ss_pres[0][cells[0]];
+      if (ponded_depth[0][c] > params.water_ground_transition_depth) {
+        surf.porosity = 1.;
+        surf.saturation_gas = 0.;
+        surf.pressure = surf_pres[0][c];
+      } else {
+        double factor = std::max(ponded_depth[0][c],0.)/params.water_ground_transition_depth;
+        surf.porosity = factor + (1-factor)*poro[0][cells[0]];
+        surf.saturation_gas = (1-factor)*sat_gas[0][cells[0]];
+        surf.pressure = factor*surf_pres[0][c] + (1-factor)*ss_pres[0][cells[0]];
+      }
+      surf.ponded_depth = ponded_depth[0][c];
       surf.roughness = roughness_bare_ground_;
       surf.density_w = params.density_water; // NOTE: could update this to use true density! --etc
       surf.dz = dessicated_zone_thickness_;
       surf.albedo = sg_albedo[0][c];
       surf.emissivity = emissivity[0][c];
-      if (ponded_depth[0][c] > params.water_ground_transition_depth) {
-        surf.porosity = 1.;
-        surf.saturation_gas = 0.;
-      } else {
-        double factor = std::max(ponded_depth[0][c],0.)/params.water_ground_transition_depth;
-        surf.porosity = 1. * factor + poro[0][cells[0]] * (1-factor);
-        surf.saturation_gas = (1-factor) * sat_gas[0][cells[0]];
-      }
-      surf.unfrozen_fraction = unfrozen_fraction[0][c];
 
       // must ensure that energy is put into melting snow precip, even if it
       // all melts so there is no snow column
@@ -352,17 +351,15 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       SEBPhysics::GroundProperties surf;
       surf.temp = surf_temp[0][c];
       surf.pressure = surf_pres[0][c];
-      if (ss_topcell_based_evap_)
-        surf.pressure = ss_pres[0][cells[0]];
+      surf.ponded_depth = ponded_depth[0][c];
+      surf.porosity = 1.;
+      surf.saturation_gas = 0.;
+      surf.unfrozen_fraction = unfrozen_fraction[0][c];
       surf.roughness = roughness_bare_ground_;
       surf.density_w = params.density_water; // NOTE: could update this to use true density! --etc
       surf.dz = dessicated_zone_thickness_;
       surf.emissivity = emissivity[1][c];
       surf.albedo = sg_albedo[1][c];
-
-      surf.saturation_gas = 0.;
-      surf.porosity = 1.;
-      surf.unfrozen_fraction = unfrozen_fraction[0][c];
 
       met.Ps = Psnow[0][c] / area_fracs[1][c];
 

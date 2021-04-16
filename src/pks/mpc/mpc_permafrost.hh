@@ -102,6 +102,9 @@ class MPCPermafrost : public MPCSubsurface {
   Key energy_exchange_key_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> mass_exchange_pvfe_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> energy_exchange_pvfe_;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> surf_mass_source_pvfe_;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> subsurf_mass_source_pvfe_;
+
 
   // off-diagonal terms
   // -- d ( dE/dt ) / dp terms
@@ -121,6 +124,15 @@ class MPCPermafrost : public MPCSubsurface {
   Key surf_enth_key_;
   Key surf_mass_flux_key_;
   Key surf_rho_key_;
+
+  Key surf_mass_source_key_;
+  Key subsurf_mass_source_key_;
+  Key adj_surf_mass_source_key_;
+  Key adj_subsurf_mass_source_key_;
+  Key surf_rel_perm_key_;
+  Key surf_molar_dens_key_;
+  Key surf_cv_key_;
+  Key subsurf_cv_key_;
 
   // EWC delegate for the surface
   Teuchos::RCP<MPCDelegateEWC> surf_ewc_;

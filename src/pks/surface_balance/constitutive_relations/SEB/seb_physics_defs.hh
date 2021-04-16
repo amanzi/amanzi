@@ -30,6 +30,7 @@ namespace SEBPhysics {
 struct GroundProperties {
   double temp;                          // temperature [K]
   double pressure;                      // [Pa]
+  double ponded_depth;                  // [m]
   double porosity;                      // [-]
   double density_w;                     // density [kg/m^3]
   double dz;                            // [m]

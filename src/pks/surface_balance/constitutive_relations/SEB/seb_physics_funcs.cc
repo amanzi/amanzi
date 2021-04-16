@@ -125,8 +125,7 @@ double EvaporativeResistanceGround(const GroundProperties& surf,
   if (vapor_pressure_air > vapor_pressure_ground) { // condensation
     return 0.;
   } else {
-    return EvaporativeResistanceCoef(surf.saturation_gas,
-            surf.porosity, surf.dz, params.Clapp_Horn_b);
+    return EvaporativeResistanceCoef(surf.saturation_gas, surf.porosity, surf.dz, params.Clapp_Horn_b);
   }
 }
 
@@ -259,7 +258,7 @@ EnergyBalance UpdateEnergyBalanceWithoutSnow(const GroundProperties& surf,
     double Em = (met.Ps + surf.snow_death_rate) * surf.density_w * params.Hf;
     eb.fQm = Em * (surf.temp - 273.15) / (0.5);
   }
-  
+
   // sensible heat
   double Dhe = WindFactor(met.Us, met.Z_Us, surf.roughness, params.VKc);
   double Sqig = StabilityFunction(met.air_temp, surf.temp, met.Us, met.Z_Us, params.gravity);
@@ -272,12 +271,8 @@ EnergyBalance UpdateEnergyBalanceWithoutSnow(const GroundProperties& surf,
   double Rsoil = EvaporativeResistanceGround(surf, met, params, vapor_pressure_air, vapor_pressure_skin);
   double coef = 1.0 / (Rsoil + 1.0/(Dhe*Sqig));
 
-
-  // NUMERICAL DOWNREGULATION due to difficulty evaporating ice...
-  //  coef *= surf.unfrozen_fraction;
-  
   // positive is condensation
-  eb.fQe = LatentHeat(coef, params.density_air, 
+  eb.fQe = LatentHeat(coef, params.density_air,
 		      surf.unfrozen_fraction * params.Le + (1-surf.unfrozen_fraction) * params.Ls,
 		      vapor_pressure_air, vapor_pressure_skin, params.Apa);
 
@@ -343,8 +338,6 @@ double DetermineSnowTemperature(const GroundProperties& surf,
   // We choose to set the solution as the center of that interval.
   // Call the function again to set the fluxes.
   double solution = (result.first + result.second)/2.;
-  //  std::cout << "  Got T=" << solution << " with SW = " << eb.fQswIn << ", LW = " << eb.fQlwIn << ", LWout = " << eb.fQlwOut << ", Sens = " << eb.fQh << ", Lat = " << eb.fQe << ", Cond = " << eb.fQc << ", melt = " << eb.fQm << std::endl;
-
   return solution;
 }
 
@@ -392,16 +385,18 @@ FluxBalance UpdateFluxesWithoutSnow(const GroundProperties& surf,
   // At this point we have Mass and Energy fluxes but not including
   // evaporation, which we have to allocate to surface or subsurface.
   double evap_to_subsurface_fraction = 0.;
-  if (mb.Me < 0) {
-    if (surf.pressure >= 1000.*params.Apa + params.evap_transition_width) {
-      evap_to_subsurface_fraction = 0.;
-    } else if (surf.pressure < 1000.*params.Apa) {
-      evap_to_subsurface_fraction = 1.;
-    } else {
-      evap_to_subsurface_fraction = (1000.*params.Apa + params.evap_transition_width - surf.pressure) / (params.evap_transition_width);
-    }
+  if (mb.Me < 0 && surf.ponded_depth == 0) {
+    evap_to_subsurface_fraction = 1.;
   }
-  AMANZI_ASSERT(evap_to_subsurface_fraction >= 0. && evap_to_subsurface_fraction <= 1.);
+  //   if (surf.pressure >= 1000.*params.Apa + params.evap_transition_width) {
+  //     evap_to_subsurface_fraction = 0.;
+  //   } else if (surf.pressure < 1000.*params.Apa) {
+  //     evap_to_subsurface_fraction = 1.;
+  //   } else {
+  //     evap_to_subsurface_fraction = (1000.*params.Apa + params.evap_transition_width - surf.pressure) / (params.evap_transition_width);
+  //   }
+  // }
+  // AMANZI_ASSERT(evap_to_subsurface_fraction >= 0. && evap_to_subsurface_fraction <= 1.);
   flux.M_surf += (1. - evap_to_subsurface_fraction) * mb.Me;
   flux.M_subsurf += evap_to_subsurface_fraction * mb.Me;
 
@@ -410,10 +405,6 @@ FluxBalance UpdateFluxesWithoutSnow(const GroundProperties& surf,
   // This is fine because diffusion of energy always works, and doing otherwise
   // sets up local minima for energy in the top cell, which breaks code.
   flux.E_surf += eb.fQe; // v1.0
-
-  // // enthalpy of evap/condensation -- v0.88
-  // flux.E_surf += (1-evap_to_subsurface_fraction) * eb.fQe;
-  // flux.E_subsurf += evap_to_subsurface_fraction * eb.fQe;
 
   // snow mass change
   flux.M_snow = met.Ps - mb.Mm;
@@ -434,7 +425,7 @@ FluxBalance UpdateFluxesWithSnow(const GroundProperties& surf,
 
   // Energy to surface.
   double Train = std::max(0., met.air_temp - 273.15);
-  flux.E_surf = eb.fQc   // conducted to ground  
+  flux.E_surf = eb.fQc   // conducted to ground
                 + surf.density_w * met.Pr * Train * params.Cv_water; // rain enthalpy
                // + 0 // enthalpy of meltwater at 0C.
   return flux;
