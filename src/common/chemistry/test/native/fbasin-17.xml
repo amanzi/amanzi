@@ -606,7 +606,7 @@
     <Parameter name="reaction" type="string" value="2.0 H2O  -2.0 H+  1.0 UO2++"/>
     <Parameter name="equilibrium constant" type="double" value="10.3146"/>
   </ParameterList>
-  <ParameterList name="UO2(OH)3- ">
+  <ParameterList name="UO2(OH)3-">
     <Parameter name="ion size parameter" type="double" value="4.0"/>
     <Parameter name="charge" type="int" value="-1"/>
     <Parameter name="gram molecular weight" type="double" value="321.05"/>

@@ -188,7 +188,7 @@ void RunBatchNative(const std::string& filexml,
 
 TEST(NATIVE_CA_DEBYE_HUCKEL) {
   std::vector<double> ict = {3.0e-3, 1.0e-3, 1.0e-3};
-  std::vector<double> icm, icie, icfi;
+  std::vector<double> icm, icie, icfi, icsd, icssa;
   RunBatchNative("test/native/ca-carbonate.xml",
                  "test/native/ca-carbonate-debye-huckel.test",
                  "debye-huckel",
@@ -198,7 +198,7 @@ TEST(NATIVE_CA_DEBYE_HUCKEL) {
 
 TEST(NATIVE_CA_UNIT) {
   std::vector<double> ict = {3.0e-3, 1.0e-3, 1.0e-3};
-  std::vector<double> icm, icie, icfi;
+  std::vector<double> icm, icie, icfi, icsd, icssa;
   RunBatchNative("test/native/ca-carbonate.xml",
                  "test/native/ca-carbonate-unit.test",
                  "unit",
@@ -355,7 +355,7 @@ TEST(NATIVE_VALOCCHI_INITIAL) {
   std::vector<double> icm = { 1.0e-5 };
   std::vector<double> icts = { 1.607889E+02, 1.415668E+02, 1.530388E+02, 0.000000E+00 };  // total sorbed
   std::vector<double> icie = { 750.0 };  // ion exchange
-  std::vector<double> icfi;  // free ion
+  std::vector<double> icfi, icsd, icssa;  // free ion, side density, specific surface area
   RunBatchNative("test/native/ion-exchange-valocchi.xml",
                  "test/native/ion-exchange-valocchi-initial.test",
                  "unit",
@@ -367,7 +367,7 @@ TEST(NATIVE_VALOCCHI_INITIAL) {
 
 TEST(NATIVE_SURFACE_COMPLEXATION_1) {
   std::vector<double> ict = { 1.1973159693031387E-05, 9.9987826840306965E-02, 0.1, 1.0e-7 };
-  std::vector<double> icm, icie, icfi;
+  std::vector<double> icm, icie, icfi, icsd, icssa;
   std::vector<double> icts = { 7.585367E+04, 0.0, 0.0, 9.695984E-03 }; // total sorbed
   RunBatchNative("test/native/surface-complexation-1.xml",
                  "test/native/surface-complexation-1.test",
@@ -375,6 +375,18 @@ TEST(NATIVE_SURFACE_COMPLEXATION_1) {
                  ict, icm, icie, icfi,  // initial conditions
                  0.9, 1.0, 1.0,  // porosity, saturation, cell volume
                  3600.0, 10);
+}
+
+TEST(NATIVE_SURFACE_COMPLEXATION_2) {
+  std::vector<double> ict = { 1.1973159693031387E-05, 9.9987826840306965E-02, 0.1, 1.0e-7 };
+  std::vector<double> icm, icie, icfi, icsd, icssa;
+  std::vector<double> icts = { 7.774868E+04, 0.0, 0.0, 2.410517E-01 }; // total sorbed
+  RunBatchNative("test/native/surface-complexation-2.xml",
+                 "test/native/surface-complexation-2.test",
+                 "debye-huckel",
+                 ict, icm, icie, icfi,  // initial conditions
+                 0.9, 1.0, 1.0,  // porosity, saturation, cell volume
+                 1.0, 10);
 }
 
 
@@ -400,4 +412,73 @@ TEST(NATIVE_RADIOACTIVE_DECAY_SORBED_TINY) {
                  1.0, 1.0, 1.0,  // porosity, saturation, cell volume
                  86400.0, 2000, 50);
 }
+
+TEST(NATIVE_RADIOACTIVE_DECAY_SORBED) {
+  std::vector<double> ict = { 1.0e-01, 1.0e-20, 1.0e-20 };
+  std::vector<double> icm, icie, icfi;
+  std::vector<double> icts = { 1.0e-20, 1.0e-20, 1.0e-20 };  // total sorbed
+  RunBatchNative("test/native/radioactive-decay-sorbed.xml",
+                 "test/native/radioactive-decay-sorbed.test",
+                 "unit",
+                 ict, icm, icie, icfi,  // initial conditions
+                 0.25, 1.0, 1.0,  // porosity, saturation, cell volume
+                 864000.0, 2000, 50);
+}
+
+
+TEST(NATIVE_SORPTION_ISOTHERMS) {
+  std::vector<double> ict = { 1.0e-4, 1.0e-4, 1.0e-4 };
+  std::vector<double> icm, icie, icfi;
+  std::vector<double> icts = { 1.0e-4, 1.0e-4, 1.0e-4 };  // total sorbed
+  RunBatchNative("test/native/sorption-isotherms.xml",
+                 "test/native/sorption-isotherms.test",
+                 "unit",
+                 ict, icm, icie, icfi,  // initial conditions
+                 0.25, 1.0, 1.0,  // porosity, saturation, cell volume
+                 86400.0, 500, 10);
+}
+
+
+TEST(NATIVE_FAREA5_INITIAL) {
+  std::vector<double> ict = { 6.1426E-09, 2.2923e-08, 1.0000E-06, 1.8703E-04, 1.0000E-15 };
+  std::vector<double> icm = { 0.15, 0.21, 0.0 };
+  std::vector<double> icie;
+  // [total_sorbed] - all zeros 
+  std::vector<double> icfi = { 5.2970E-16, 3.2759E-08, 9.9886E-07, 1.8703E-04, 1.7609E-20 };
+  RunBatchNative("test/native/uo2-5-component.xml",
+                 "test/native/uo2-5-component-initial.test",
+                 "debye-huckel",
+                 ict, icm, icie, icfi,  // initial conditions
+                 0.5, 1.0, 1.0,  // porosity, saturation, cell volume
+                 2592000.0, 12);
+}
+
+TEST(NATIVE_FAREA5_OUTLET) {
+  std::vector<double> ict = { 1.0000E-12, -1.1407E-09, 1.0000E-06, 1.0000E-05, 1.0000E-15 };
+  std::vector<double> icm = { 0.15, 0.21, 0.0 };
+  std::vector<double> icie;
+  // [total_sorbed] - all zeros 
+  std::vector<double> icfi = { 5.2970E-16, 3.2759E-08, 9.9886E-07, 1.8703E-04, 1.7609E-20 };
+  RunBatchNative("test/native/uo2-5-component.xml",
+                 "test/native/uo2-5-component-outlet.test",
+                 "debye-huckel",
+                 ict, icm, icie, icfi,  // initial conditions
+                 0.5, 1.0, 1.0,  // porosity, saturation, cell volume
+                 2592000.0, 12);
+}
+
+TEST(NATIVE_FAREA5_SOURCE) {
+  std::vector<double> ict = { 2.8909E-05, 1.2786E-03, 7.1028E-05, 2.5280E-04, 3.5414E-05 };
+  std::vector<double> icm = { 0.15, 0.21, 0.0 };
+  std::vector<double> icie;
+  // [total_sorbed] - all zeros 
+  std::vector<double> icfi = { 5.2970E-16, 3.2759E-08, 9.9886E-07, 1.8703E-04, 1.7609E-20 };
+  RunBatchNative("test/native/uo2-5-component-source.xml",
+                 "test/native/uo2-5-component-source.test",
+                 "debye-huckel",
+                 ict, icm, icie, icfi,  // initial conditions
+                 0.5, 1.0, 1.0,  // porosity, saturation, cell volume
+                 2592000.0, 12);
+}
+
 
