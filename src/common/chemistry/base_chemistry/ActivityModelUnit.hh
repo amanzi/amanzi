@@ -7,29 +7,22 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Ben Andre
-
-  Class for activity calculations based on the Debye-Huckel B-dot equation.
-   
-  TODO(bandre): need to fix the name of this class to be
-  DebyeHuckelBdot or something to distinguish it from a pure
-  Debye-Huckel. Is it worth worrying about code reuse between
-  debye-huckel and debye-huckel b-dot?
 */
 
-#ifndef AMANZI_CHEMISTRY_ACTIVITY_MODEL_DEBYE_HUCKEL_HH_
-#define AMANZI_CHEMISTRY_ACTIVITY_MODEL_DEBYE_HUCKEL_HH_
+#ifndef AMANZI_CHEMISTRY_ACTIVITY_MODEL_UNIT_HH_
+#define AMANZI_CHEMISTRY_ACTIVITY_MODEL_UNIT_HH_
 
-#include "activity_model.hh"
+#include "ActivityModel.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
 
 class Species;
 
-class ActivityModelDebyeHuckel : public ActivityModel {
+class ActivityModelUnit : public ActivityModel {
  public:
-  ActivityModelDebyeHuckel() : ActivityModel() {};
-  ~ActivityModelDebyeHuckel() {};
+  ActivityModelUnit() : ActivityModel() {};
+  ~ActivityModelUnit() {};
 
   virtual double Evaluate(const Species& species) final;
 
@@ -40,11 +33,6 @@ class ActivityModelDebyeHuckel : public ActivityModel {
       double* actw) final;
 
   virtual void Display() const override;
-
- private:
-  static const double debyeA;
-  static const double debyeB;
-  static const double debyeBdot;
 };
 
 }  // namespace AmanziChemistry

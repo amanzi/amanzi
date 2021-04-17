@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 
-#include "activity_model.hh"
+#include "ActivityModel.hh"
 #include "virial_coefficient.hh"
 
 namespace Amanzi {

@@ -24,8 +24,8 @@
 
 #include "exceptions.hh"
 
-#include "activity_model.hh"
-#include "activity_model_factory.hh"
+#include "ActivityModel.hh"
+#include "ActivityModelFactory.hh"
 #include "aqueous_equilibrium_complex.hh"
 #include "general_rxn.hh"
 #include "radioactive_decay.hh"
@@ -1286,7 +1286,8 @@ void Beaker::CalculateJacobian() {
 }
 
 
-void Beaker::ScaleRHSAndJacobian() {
+void Beaker::ScaleRHSAndJacobian()
+{
   for (int i = 0; i < jacobian_.size(); i++) {
     double max = jacobian_.GetRowAbsMax(i);
     if (max > 1.0) {
@@ -1298,7 +1299,8 @@ void Beaker::ScaleRHSAndJacobian() {
 }
 
 
-void Beaker::UpdateMolalitiesWithTruncation(const double max_ln_change) {
+void Beaker::UpdateMolalitiesWithTruncation(const double max_ln_change)
+{
   double max_linear_change = std::pow(10.0, max_ln_change); // log10 vs ln... close enough
   double max_change;
   if (use_log_formulation_) {

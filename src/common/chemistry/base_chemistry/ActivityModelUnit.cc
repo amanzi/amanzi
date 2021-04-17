@@ -11,7 +11,7 @@
 
 #include <iostream>
 
-#include "activity_model_unit.hh"
+#include "ActivityModelUnit.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {

@@ -8,10 +8,10 @@
 
 #include "species.hh"
 #include "aqueous_equilibrium_complex.hh"
-#include "activity_model_factory.hh"
-#include "activity_model_unit.hh"
-#include "activity_model_debye_huckel.hh"
-#include "activity_model.hh"
+#include "ActivityModelFactory.hh"
+#include "ActivityModelUnit.hh"
+#include "ActivityModelDebyeHuckel.hh"
+#include "ActivityModel.hh"
 #include "chemistry_exception.hh"
 
 /*****************************************************************************

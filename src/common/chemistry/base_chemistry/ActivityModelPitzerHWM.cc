@@ -1,5 +1,4 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include "activity_model_pitzer_hwm.hh"
 #include <cstdlib>
 #include <math.h>
 #include <vector>
@@ -8,10 +7,13 @@
 #include <fstream>
 #include <iomanip>
 #include <sstream>
-#include "string_tokenizer.hh"
-#include "virial_coefficient.hh"
+
 #include "chemistry_exception.hh"
 #include "exceptions.hh"
+#include "string_tokenizer.hh"
+#include "virial_coefficient.hh"
+
+#include "ActivityModelPitzerHWM.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {

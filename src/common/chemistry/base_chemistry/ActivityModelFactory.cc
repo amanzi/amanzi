@@ -13,15 +13,15 @@
 #include <sstream>
 #include <string>
 
-#include "activity_model.hh"
-#include "activity_model_debye_huckel.hh"
-#include "activity_model_pitzer_hwm.hh"
-#include "activity_model_unit.hh"
+#include "ActivityModel.hh"
+#include "ActivityModelDebyeHuckel.hh"
+#include "ActivityModelPitzerHWM.hh"
+#include "ActivityModelUnit.hh"
 #include "chemistry_exception.hh"
 #include "exceptions.hh"
 #include "species.hh"
 
-#include "activity_model_factory.hh"
+#include "ActivityModelFactory.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {

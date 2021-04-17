@@ -20,7 +20,7 @@
 
 #include "VerboseObject.hh"
 
-#include "activity_model.hh"
+#include "ActivityModel.hh"
 #include "aqueous_equilibrium_complex.hh"
 #include "general_rxn.hh"
 #include "radioactive_decay.hh"

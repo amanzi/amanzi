@@ -22,7 +22,7 @@
 // Chemistry
 #include "simple_thermo_database.hh"
 #include "beaker.hh"
-#include "activity_model_factory.hh"
+#include "ActivityModelFactory.hh"
 #include "chemistry_utilities.hh"
 #include "chemistry_exception.hh"
 
@@ -35,17 +35,33 @@ int CompareFiles(const std::string& file1, const std::string& file2)
   std::ifstream ifs2(file2.c_str(), std::ios::in | std::ios::binary);
   if(!ifs1.good() || !ifs2.good()) return 1;
 
-  char *buffer1 = new char[BUFFER_SIZE];
-  char *buffer2 = new char[BUFFER_SIZE];
+  char *buffer1 = new char[BUFFER_SIZE + 1];
+  char *buffer2 = new char[BUFFER_SIZE + 1];
 
   do {
     ifs1.read(buffer1, BUFFER_SIZE);
     ifs2.read(buffer2, BUFFER_SIZE);
     std::streamsize count1 = ifs1.gcount();
     std::streamsize count2 = ifs2.gcount();
+    if (count1 != count2) return 2;
 
-    if (count1 != count2 || std::memcmp(buffer1, buffer2, count1) != 0) return 2;
+    std::string word1, word2;
+    std::istringstream iss1(buffer1);
+    std::istringstream iss2(buffer2);
+    do {
+      iss1 >> word1;
+      iss2 >> word2;
+      // first check that the words match
+      if (std::memcmp(word1.c_str(), word2.c_str(), word1.size()) != 0) {
+        double val1 = std::atof(word1.c_str());
+        double val2 = std::atof(word2.c_str());
+        if (std::fabs(val1 - val2) > 1e-12 * std::max(1.0, val1)) return 3;
+      }
+    } while(!iss1.eof() && !iss2.eof());
   } while (ifs1.good() || ifs2.good());
+
+  delete [] buffer1;
+  delete [] buffer2;
 
   return 0;
 }
@@ -54,10 +70,12 @@ int CompareFiles(const std::string& file1, const std::string& file2)
 void RunBatchNative(const std::string& filexml,
                     const std::string& filetest,
                     const std::string& activity_model,
-                    const std::vector<double>& ict,
-                    const std::vector<double>& icm,
+                    const std::vector<double>& ic_total,
+                    const std::vector<double>& ic_mineral,
+                    const std::vector<double>& ic_ion_exchange,
+                    const std::vector<double>& ic_free_ion,
                     double porosity, double saturation, double volume,
-                    double dt = 0.0, int max_dt_steps = 0)
+                    double dt = 0.0, int max_dt_steps = 0, int frequency = 1)
 {
 #ifdef ABORT_ON_FLOATING_POINT_EXCEPTIONS
 #ifdef __APPLE__
@@ -82,7 +100,7 @@ void RunBatchNative(const std::string& filexml,
 
   ac::Beaker::BeakerParameters parameters;
   parameters.tolerance = 1e-12;
-  parameters.max_iterations = 100;
+  parameters.max_iterations = 250;
   parameters.activity_model_name = activity_model;
 
   state.porosity = porosity;
@@ -92,7 +110,8 @@ void RunBatchNative(const std::string& filexml,
 
   chem->Initialize(parameters);
 
-  state.mineral_volume_fraction = icm;
+  state.mineral_volume_fraction = ic_mineral;
+  state.ion_exchange_sites = ic_ion_exchange;
 
   chem->CopyStateToBeaker(state);
 
@@ -106,8 +125,14 @@ void RunBatchNative(const std::string& filexml,
   int nion_site = chem->ion_exchange_rxns().size();
   int nisotherm = chem->sorption_isotherm_rxns().size();
 
-  state.total = ict;
-  state.free_ion.resize(ncomp, 1.0e-9);
+  state.total = ic_total;
+  if (ic_free_ion.size() > 0) {
+    state.free_ion = ic_free_ion;
+  } else { 
+    // state.free_ion.resize(ncomp, 1.0e-9);
+    for (int i = 0; i < ncomp; ++i)
+      state.free_ion[i] = std::max(0.1 * state.total[i], 1e-9);
+  }
 
   if (nmineral > 0) {
     state.mineral_volume_fraction.resize(nmineral, 0.0);
@@ -131,7 +156,8 @@ void RunBatchNative(const std::string& filexml,
   chem->DisplayComponents(state);
 
   // solve for free-ion concentrations
-  chem->Speciate(&state);
+  int itrs = chem->Speciate(&state);
+  std::cout << "Speciation: " << filetest << " " << itrs << " itrs" << std::endl;
 
   chem->CopyBeakerToState(&state);
   chem->DisplayResults();
@@ -144,7 +170,7 @@ void RunBatchNative(const std::string& filexml,
       chem->ReactionStep(&state, dt);
       // chem->CopyBeakerToState(&state);
       time += dt;
-      chem->DisplayTotalColumns(time, state, false);
+      if ((n + 1) % frequency == 0) chem->DisplayTotalColumns(time, state, false);
     }
     chem->Speciate(&state);
     chem->DisplayResults();
@@ -153,6 +179,7 @@ void RunBatchNative(const std::string& filexml,
   vo = Teuchos::null;  // closing the stream
   std::string tmp = plist->sublist("verbose object").get<std::string>("output filename");
   int ok = CompareFiles(tmp, filetest);
+  if (ok != 0) std::cout << "Error = " << ok << std::endl;
   CHECK(ok == 0);
 
   // cleanup memory
@@ -162,21 +189,21 @@ void RunBatchNative(const std::string& filexml,
 
 TEST(NATIVE_CA_DEBYE_HUCKEL) {
   std::vector<double> ict = {3.0e-3, 1.0e-3, 1.0e-3};
-  std::vector<double> icm;
+  std::vector<double> icm, icie, icfi;
   RunBatchNative("test/native/ca-carbonate.xml",
                  "test/native/ca-carbonate-debye-huckel.test",
                  "debye-huckel",
-                 ict, icm,  // initial conditions
+                 ict, icm, icie, icfi, // initial conditions
                  0.5, 1.0, 1.0);  // porosity, saturation, cell volume
 }
 
 TEST(NATIVE_CA_UNIT) {
   std::vector<double> ict = {3.0e-3, 1.0e-3, 1.0e-3};
-  std::vector<double> icm;
+  std::vector<double> icm, icie, icfi;
   RunBatchNative("test/native/ca-carbonate.xml",
                  "test/native/ca-carbonate-unit.test",
                  "unit",
-                 ict, icm,  // initial conditions
+                 ict, icm, icie, icfi,  // initial conditions
                  0.5, 1.0, 1.0);  // porosity, saturation, cell volume
 }
 
@@ -184,20 +211,22 @@ TEST(NATIVE_CA_UNIT) {
 TEST(NATIVE_CALCITE_KINETICS) {
   std::vector<double> ict = {-1.0e-5, 1.0e-5, 1.0e-5};
   std::vector<double> icm = {0.2};
+  std::vector<double> icie, icfi;
   RunBatchNative("test/native/calcite.xml",
                  "test/native/calcite-kinetics.test",
                  "debye-huckel",
-                 ict, icm,  // initial conditions
+                 ict, icm, icie, icfi,  // initial conditions
                  0.5, 1.0, 1.0);  // porosity, saturation, cell volume
 }
 
 TEST(NATIVE_CALCITE_KINETICS_VOLUME_FRACTIONS) {
   std::vector<double> ict = {1.0e-2, 1.0e-2, 1.0e-19};
   std::vector<double> icm = {0.2};
+  std::vector<double> icie, icfi;
   RunBatchNative("test/native/calcite.xml",
                  "test/native/calcite-kinetics-volume-fractions.test",
                  "debye-huckel",
-                 ict, icm,  // initial conditions
+                 ict, icm, icie, icfi,  // initial conditions
                  0.5, 1.0, 1.0,  // porosity, saturation, cell volume, dt
                  2592000.0, 60);  // dt, max time steps
 }
@@ -205,21 +234,148 @@ TEST(NATIVE_CALCITE_KINETICS_VOLUME_FRACTIONS) {
 
 TEST(NATIVE_CARBONATE_DEBYE_HUCKEL) {
   std::vector<double> ict = {1.0e-3, 1.0e-3};
-  std::vector<double> icm;
+  std::vector<double> icm, icie, icfi;
   RunBatchNative("test/native/carbonate.xml",
                  "test/native/carbonate-debye-huckel.test",
                  "debye-huckel",
-                 ict, icm,  // initial conditions
+                 ict, icm, icie, icfi,  // initial conditions
                  0.5, 1.0, 1.0);  // porosity, saturation, cell volume
 }
 
 TEST(NATIVE_CARBONATE_UNIT) {
   std::vector<double> ict = {1.0e-3, 1.0e-3};
-  std::vector<double> icm;
+  std::vector<double> icm, icie, icfi;
   RunBatchNative("test/native/carbonate.xml",
-                 "test/native/carbonate-debye-huckel.test",
+                 "test/native/carbonate-unit.test",
                  "unit",
-                 ict, icm,  // initial conditions
+                 ict, icm, icie, icfi,  // initial conditions
                  0.5, 1.0, 1.0);  // porosity, saturation, cell volume
 }
+
+
+TEST(NATIVE_FAREA17_UNIT) {
+  std::vector<double> ict = {3.4363E-02, 1.2475E-05, 3.0440E-05, 1.7136E-05,
+                             2.8909E-05, 3.6351E-03, 1.3305E-03, 3.4572E-02,
+                             2.1830E-03, 3.3848E-05, 6.2463E-04, 7.1028E-05,
+                             7.8954E-05, 2.5280E-04, 3.5414E-05, 2.6038E-04, 3.5414E-05};
+  std::vector<double> icm = { 0.0, 0.21, 0.15,
+                              0.0, 0.1,  0.15,
+                              0.0, 0.0,  0.0,
+                              0.0, 0.0};
+  std::vector<double> icie, icfi;
+  // [total_sorbed] - all zeros 
+  // std::vector<double> icfi = { 9.9969E-06, 9.9746E-06, 2.2405E-18, 1.8874E-04,
+  //                              5.2970E-16, 3.2759E-08, 1.0000E-05, 1.0000E-05,
+  //                              1.9282E-04, 9.9999E-06, 9.9860E-07, 9.9886E-07,
+  //                              1.0000E-06, 1.8703E-04, 1.7609E-20, 2.5277E-04, 1.0000E-15 };
+  RunBatchNative("test/native/fbasin-17.xml",
+                 "test/native/fbasin-17-unit.test",
+                 "unit",
+                 ict, icm, icie, icfi,  // initial conditions
+                 0.5, 1.0, 1.0,
+                 2592000.0, 12);  // porosity, saturation, cell volume
+}
+
+TEST(NATIVE_FAREA17_DEBYE_HUCKEL) {
+  std::vector<double> ict = { 1.3132E-04, 1.0000E-05, 1.0000E-12, 1.0000E-06,
+                              1.0000E-12, 1.0716E-05, 1.0000E-05, 1.0000E-05,
+                              6.0081E-05, 1.0000E-05, 1.0000E-06, 1.0000E-06,
+                              7.8954E-05, 1.0000E-05, 1.0000E-15, 2.5277E-04, 1.0000E-15 };
+  std::vector<double> icm = { 0.0, 0.21, 0.15,
+                              0.0, 0.1,  0.15,
+                              0.0, 0.0,  0.0,
+                              0.0, 0.0};
+  std::vector<double> icie, icfi;
+  RunBatchNative("test/native/fbasin-17.xml",
+                 "test/native/fbasin-17-debye-huckel.test",
+                 "debye-huckel",
+                 ict, icm, icie, icfi,  // initial conditions
+                 0.5, 1.0, 1.0,
+                 2592000.0, 12);  // porosity, saturation, cell volume
+}
+
+TEST(NATIVE_FAREA17_DEBYE_HUCKEL_10PERCENT_FREE_ION) {
+  std::vector<double> ict = { 1.3132E-04, 1.0000E-05, 1.0000E-12, 1.0000E-06,
+                              1.0000E-12, 1.0716E-05, 1.0000E-05, 1.0000E-05,
+                              6.0081E-05, 1.0000E-05, 1.0000E-06, 1.0000E-06,
+                              7.8954E-05, 1.0000E-05, 1.0000E-15, 2.5277E-04, 1.0000E-15 };
+  std::vector<double> icm = { 0.0, 0.21, 0.15,
+                              0.0, 0.1,  0.15,
+                              0.0, 0.0,  0.0,
+                              0.0, 0.0};
+  std::vector<double> icie;
+  // [total_sorbed] - all zeros 
+  std::vector<double> icfi = { 9.9969E-06, 9.9746E-06, 2.2405E-18, 1.8874E-04,
+                               5.2970E-16, 3.2759E-08, 1.0000E-05, 1.0000E-05,
+                               1.9282E-04, 9.9999E-06, 9.9860E-07, 9.9886E-07,
+                               1.0000E-06, 1.8703E-04, 1.7609E-20, 2.5277E-04, 1.0000E-15 };  // free ion
+  RunBatchNative("test/native/fbasin-17.xml",
+                 "test/native/fbasin-17-debye-huckel.test",
+                 "debye-huckel",
+                 ict, icm, icie, icfi,  // initial conditions
+                 0.5, 1.0, 1.0,
+                 2592000.0, 12);  // porosity, saturation, cell volume
+}
+
+TEST(NATIVE_FAREA17_DEBYE_HUCKEL_CONSTANT_FREE_ION) {
+  std::vector<double> ict = { 1.3132E-04, 1.0000E-05, 1.0000E-12, 1.0000E-06,
+                              1.0000E-12, 1.0716E-05, 1.0000E-05, 1.0000E-05,
+                              6.0081E-05, 1.0000E-05, 1.0000E-06, 1.0000E-06,
+                              7.8954E-05, 1.0000E-05, 1.0000E-15, 2.5277E-04, 1.0000E-15 };
+  std::vector<double> icm = { 0.0, 0.21, 0.15,
+                              0.0, 0.1,  0.15,
+                              0.0, 0.0,  0.0,
+                              0.0, 0.0};
+  std::vector<double> icie;
+  std::vector<double> icfi = { 1.0e-9, 1.0e-9, 1.0e-9, 1.0e-9, 1.0e-9, 1.0e-9,
+                               1.0e-9, 1.0e-9, 1.0e-9, 1.0e-9, 1.0e-9, 1.0e-9,
+                               1.0e-9, 1.0e-9, 1.0e-9, 1.0e-9, 1.0e-9 };
+  RunBatchNative("test/native/fbasin-17.xml",
+                 "test/native/fbasin-17-debye-huckel.test",
+                 "debye-huckel",
+                 ict, icm, icie, icfi,  // initial conditions
+                 0.5, 1.0, 1.0,
+                 2592000.0, 12);  // porosity, saturation, cell volume
+}
+
+
+TEST(NATIVE_GENERAL_KINETICS) {
+  std::vector<double> ict = { 1.0e-4, 2.0e-5 };
+  std::vector<double> icm, icie, icfi;
+  RunBatchNative("test/native/general-reaction.xml",
+                 "test/native/general-reaction.test",
+                 "unit",
+                 ict, icm, icie, icfi,  // initial conditions
+                 0.25, 1.0, 1.0,  // porosity, saturation, cell volume
+                 8640.0, 500, 5);
+}
+
+
+TEST(NATIVE_VALOCCHI_INITIAL) {
+  std::vector<double> ict = { 8.65e-02, 1.82e-02, 1.11e-02, 0.1451 };
+  std::vector<double> icm = { 1.0e-5 };
+  std::vector<double> icts = { 1.607889E+02, 1.415668E+02, 1.530388E+02, 0.000000E+00 };  // total sorbed
+  std::vector<double> icie = { 750.0 };  // ion exchange
+  std::vector<double> icfi;  // free ion
+  RunBatchNative("test/native/ion-exchange-valocchi.xml",
+                 "test/native/ion-exchange-valocchi-initial.test",
+                 "unit",
+                 ict, icm, icie, icfi,  // initial conditions
+                 0.25, 1.0, 1.0,  // porosity, saturation, cell volume
+                 86400.0, 10);
+}
+
+
+TEST(NATIVE_SURFACE_COMPLEXATION_1) {
+  std::vector<double> ict = { 1.1973159693031387E-05, 9.9987826840306965E-02, 0.1, 1.0e-7 };
+  std::vector<double> icm, icie, icfi;
+  std::vector<double> icts = { 7.585367E+04, 0.0, 0.0, 9.695984E-03 }; // total sorbed
+  RunBatchNative("test/native/surface-complexation-1.xml",
+                 "test/native/surface-complexation-1.test",
+                 "debye-huckel",
+                 ict, icm, icie, icfi,  // initial conditions
+                 0.9, 1.0, 1.0,  // porosity, saturation, cell volume
+                 3600.0, 10);
+}
+
 

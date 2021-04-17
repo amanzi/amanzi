@@ -8,9 +8,9 @@
 
 #include "species.hh"
 #include "aqueous_equilibrium_complex.hh"
-#include "activity_model_factory.hh"
-#include "activity_model_pitzer_hwm.hh"
-#include "activity_model.hh"
+#include "ActivityModel.hh"
+#include "ActivityModelFactory.hh"
+#include "ActivityModelPitzerHWM.hh"
 #include "chemistry_exception.hh"
 
 SUITE(TestPitzer) {

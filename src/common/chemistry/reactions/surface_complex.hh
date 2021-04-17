@@ -6,7 +6,7 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Class for aqueous equilibrium complexation reaction
+  Class for surface equilibrium complexation reaction
 */
 
 #ifndef AMANZI_CHEMISTRY_SURFACECOMPLEX_HH_

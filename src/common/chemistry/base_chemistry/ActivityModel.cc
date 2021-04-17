@@ -15,7 +15,7 @@
 #include <math.h>
 #include <vector>
 
-#include "activity_model.hh"
+#include "ActivityModel.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {

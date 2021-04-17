@@ -105,14 +105,15 @@ void SurfaceComplexationRxn::Update(const std::vector<Species>& primarySpecies)
 
     if (/*use_newton_solve_*/true) {
       double residual = site_density - total;
-      double dresidual_dfree_site_conc = 1.;
+      double dresidual_dfree_site_conc = 1.0;
       for (auto it = surface_complexes_.begin(); it != surface_complexes_.end(); ++it) {
         dresidual_dfree_site_conc += it->free_site_stoichiometry() *
             it->surface_concentration() / free_site_concentration;
       }
+
       double dfree_site_conc = residual / dresidual_dfree_site_conc;
 
-      if (iterations > 1000) {
+      if (iterations > 100) {
         // excessive iterations, try damping the update
         damping_factor = 0.5;
       }
@@ -143,10 +144,8 @@ void SurfaceComplexationRxn::Update(const std::vector<Species>& primarySpecies)
 
 void SurfaceComplexationRxn::AddContributionToTotal(std::vector<double> *total) {
   // see pflotran source: surface_complexation.F90:825, subroutine RTotalSorbEqSurfCplx1
-  for (std::vector<SurfaceComplex>::iterator srfcplx =
-           surface_complexes_.begin();
-       srfcplx != surface_complexes_.end(); srfcplx++) {
-    srfcplx->AddContributionToTotal(total);
+  for (auto it = surface_complexes_.begin(); it != surface_complexes_.end(); ++it) {
+    it->AddContributionToTotal(total);
   }
 }
 
@@ -177,7 +176,7 @@ void SurfaceComplexationRxn::AddContributionToDTotal(
   // complete the denominator within the brackets
   sum_nu_i_sq_Si /= surface_site_.at(0).free_site_concentration();
   double Sx_plus_sum_nu_i_sq_Si = 1. + sum_nu_i_sq_Si;
-  for (unsigned int i = 0; i < num_primary_species; ++i) {
+  for (int i = 0; i < num_primary_species; ++i) {
     nu_li_nu_i_Si.at(i) *= -1.0;
     nu_li_nu_i_Si.at(i) /= Sx_plus_sum_nu_i_sq_Si;
     // convert from dlogm to dm
@@ -216,10 +215,8 @@ void SurfaceComplexationRxn::DisplaySite(const Teuchos::Ptr<VerboseObject> vo) c
 
 
 void SurfaceComplexationRxn::DisplayComplexes(const Teuchos::Ptr<VerboseObject> vo) const {
-  std::vector<SurfaceComplex>::const_iterator complex;
-  for (complex = surface_complexes_.begin();
-       complex != surface_complexes_.end(); complex++) {
-    complex->Display(vo);
+  for (auto it = surface_complexes_.begin(); it != surface_complexes_.end(); ++it) {
+    it->Display(vo);
   }
 }
 
@@ -252,10 +249,8 @@ void SurfaceComplexationRxn::DisplayResults(const Teuchos::Ptr<VerboseObject> vo
   }
   vo->Write(Teuchos::VERB_HIGH, "\n");
   surface_complexes_[0].DisplayResultsHeader(vo);
-  std::vector<SurfaceComplex>::const_iterator complex;
-  for (complex = surface_complexes_.begin();
-       complex != surface_complexes_.end(); complex++) {
-    complex->DisplayResults(vo);
+  for (auto it = surface_complexes_.begin(); it != surface_complexes_.end(); ++it) {
+    it->DisplayResults(vo);
   }
 }
 

@@ -95,173 +95,894 @@
     <Parameter name="reaction" type="string" value="1.0 H2O  -1.0 H+"/>
     <Parameter name="equilibrium constant" type="double" value="1.39951000000000008e+01"/>
   </ParameterList>
-  <ParameterList name="HCO3-">
-    <Parameter name="ion size parameter" type="double" value="4.00000000000000000e+00"/>
-    <Parameter name="charge" type="int" value="-1"/>
-    <Parameter name="gram molecular weight" type="double" value="6.10170999999999992e+01"/>
-    <Parameter name="reaction" type="string" value="1.0 H2O  -1.0 H+  1.0 CO2(aq)"/>
-    <Parameter name="equilibrium constant" type="double" value="6.34469999999999956e+00"/>
-  </ParameterList>
   <ParameterList name="CO3--">
-    <Parameter name="ion size parameter" type="double" value="4.50000000000000000e+00"/>
+    <Parameter name="ion size parameter" type="double" value="4.5"/>
     <Parameter name="charge" type="int" value="-2"/>
-    <Parameter name="gram molecular weight" type="double" value="6.00091999999999999e+01"/>
-    <Parameter name="reaction" type="string" value="1.0 H2O  -2.0 H+  1.0 CO2(aq)"/>
-    <Parameter name="equilibrium constant" type="double" value="1.66735000000000007e+01"/>
+    <Parameter name="gram molecular weight" type="double" value="60.0092"/>
+    <Parameter name="reaction" type="string" value="-1.0 H+  1.0 HCO3-"/>
+    <Parameter name="equilibrium constant" type="double" value="10.3288"/>
   </ParameterList>
+  <ParameterList name="CO2(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="44.0098"/>
+    <Parameter name="reaction" type="string" value="-1.0 H2O  1.0 H+  1.0 HCO3-"/>
+    <Parameter name="equilibrium constant" type="double" value="-6.3447"/>
+  </ParameterList>
+  <ParameterList name="CH4(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="0.0"/>
+    <Parameter name="reaction" type="string" value="1.0 H2O  1.0 H+  1.0 HCO3-  -2.0 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="144.141"/>
+  </ParameterList>
+  <ParameterList name="NaHCO3(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="84.0069"/>
+    <Parameter name="reaction" type="string" value="1.0 Na+  1.0 HCO3-"/>
+    <Parameter name="equilibrium constant" type="double" value="-0.1541"/>
+  </ParameterList>
+  <ParameterList name="NaCl(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="58.4425"/>
+    <Parameter name="reaction" type="string" value="1.0 Na+  1.0 Cl-"/>
+    <Parameter name="equilibrium constant" type="double" value="0.777"/>
+  </ParameterList>
+  <ParameterList name="NaF(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="41.9882"/>
+    <Parameter name="reaction" type="string" value="1.0 Na+  1.0 F-"/>
+    <Parameter name="equilibrium constant" type="double" value="0.777"/>
+  </ParameterList>
+  <ParameterList name="NH4SO4-">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="114.102"/>
+    <Parameter name="reaction" type="string" value="1.5 H2O  1.0 H+  0.5 N2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="57.2905"/>
+  </ParameterList>
+  <ParameterList name="NaAlO2(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="81.9701"/>
+    <Parameter name="reaction" type="string" value="2.0 H2O  1.0 Na+  1.0 Al+++  -4.0 H+"/>
+    <Parameter name="equilibrium constant" type="double" value="23.6266"/>
+  </ParameterList>
+  <ParameterList name="NaHP2O7--">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-2"/>
+    <Parameter name="gram molecular weight" type="double" value="197.941"/>
+    <Parameter name="reaction" type="string" value="-1.0 H2O  1.0 Na+  1.0 H+  2.0 HPO4--"/>
+    <Parameter name="equilibrium constant" type="double" value="-6.8498"/>
+  </ParameterList>
+  <ParameterList name="NaHPO4-">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="118.969"/>
+    <Parameter name="reaction" type="string" value="1.0 Na+  1.0 HPO4--"/>
+    <Parameter name="equilibrium constant" type="double" value="-0.92"/>
+  </ParameterList>
+  <ParameterList name="NaHSiO3(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="100.081"/>
+    <Parameter name="reaction" type="string" value="1.0 H2O  1.0 Na+  -1.0 H+  1.0 SiO2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="8.304"/>
+  </ParameterList>
+  <ParameterList name="NaNO3(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="84.9947"/>
+    <Parameter name="reaction" type="string" value="1.0 Na+  1.0 NO3-"/>
+    <Parameter name="equilibrium constant" type="double" value="1.044"/>
+  </ParameterList>
+  <ParameterList name="NaOH(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="39.9971"/>
+    <Parameter name="reaction" type="string" value=" 1.0 H2O  1.0 Na+  -1.0 H+"/>
+    <Parameter name="equilibrium constant" type="double" value="14.7948"/>
+  </ParameterList>
+  <ParameterList name="NaSO4-">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="119.053 "/>
+    <Parameter name="reaction" type="string" value="1.0 Na+  1.0 SO4-- "/>
+    <Parameter name="equilibrium constant" type="double" value="-0.82 "/>
+  </ParameterList>
+  <ParameterList name="CaCO3(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="100.087"/>
+    <Parameter name="reaction" type="string" value="1.0 Ca++  -1.0 H+  1.0 HCO3-"/>
+    <Parameter name="equilibrium constant" type="double" value="7.0017"/>
+  </ParameterList>
+  <ParameterList name="CaHCO3+">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="101.095"/>
+    <Parameter name="reaction" type="string" value="1.0 Ca++  1.0 HCO3-"/>
+    <Parameter name="equilibrium constant" type="double" value="-1.0467"/>
+  </ParameterList>
+  <ParameterList name="KCl(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="74.551"/>
+    <Parameter name="reaction" type="string" value="1.0 K+  1.0 Cl-"/>
+    <Parameter name="equilibrium constant" type="double" value=""/>
+  </ParameterList>
+  <ParameterList name="KHPO4-">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="135.078 "/>
+    <Parameter name="reaction" type="string" value="1.0 K+  1.0 HPO4--"/>
+    <Parameter name="equilibrium constant" type="double" value="-0.78 "/>
+  </ParameterList>
+  <ParameterList name="KHSO4(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="136.17"/>
+    <Parameter name="reaction" type="string" value="1.0 K+  1.0 H+  1.0 SO4--"/>
+    <Parameter name="equilibrium constant" type="double" value="-0.8136"/>
+  </ParameterList>
+  <ParameterList name="KOH(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="56.1056"/>
+    <Parameter name="reaction" type="string" value="1.0 H2O  1.0 K+  -1.0 H+"/>
+    <Parameter name="equilibrium constant" type="double" value="14.46"/>
+  </ParameterList>
+  <ParameterList name="KP2O7---">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-3"/>
+    <Parameter name="gram molecular weight" type="double" value="213.042"/>
+    <Parameter name="reaction" type="string" value="-1.0 H2O  1.0 K+  2.0 HPO4--"/>
+    <Parameter name="equilibrium constant" type="double" value="1.4286"/>
+  </ParameterList>
+  <ParameterList name="KSO4-">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="135.162"/>
+    <Parameter name="reaction" type="string" value="1.0 K+  1.0 SO4--"/>
+    <Parameter name="equilibrium constant" type="double" value="-0.8796"/>
+  </ParameterList>
+  <ParameterList name="Fe+++">
+    <Parameter name="ion size parameter" type="double" value="9.0"/>
+    <Parameter name="charge" type="int" value="3"/>
+    <Parameter name="gram molecular weight" type="double" value="55.847"/>
+    <Parameter name="reaction" type="string" value="-0.5 H2O  1.0 Fe++  1.0 H+  0.25 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="-8.49"/>
+  </ParameterList>
+  <ParameterList name="Fe(SO4)2-">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="247.974"/>
+    <Parameter name="reaction" type="string" value="-0.5 H2O  1.0 Fe++  1.0 H+  2.0 SO4--  0.25 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="-11.7037 "/>
+  </ParameterList>
+  <ParameterList name="Fe2(OH)2++++">
+    <Parameter name="ion size parameter" type="double" value="4.4"/>
+    <Parameter name="charge" type="int" value="4"/>
+    <Parameter name="gram molecular weight" type="double" value="145.709"/>
+    <Parameter name="reaction" type="string" value="1.0 H2O  2.0 Fe++  0.5 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="-14.0299"/>
+  </ParameterList>
+  <ParameterList name="Fe3(OH)4(5+)">
+    <Parameter name="ion size parameter" type="double" value="6.0"/>
+    <Parameter name="charge" type="int" value="5"/>
+    <Parameter name="gram molecular weight" type="double" value="235.57"/>
+    <Parameter name="reaction" type="string" value="2.5 H2O  3.0 Fe++  -1.0 H+  0.75 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="-19.1699"/>
+  </ParameterList>
+  <ParameterList name="Fe(OH)2(aq) ">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="89.8617 "/>
+    <Parameter name="reaction" type="string" value="2.0 H2O  1.0 Fe++  -2.0 H+ "/>
+    <Parameter name="equilibrium constant" type="double" value="20.6 "/>
+  </ParameterList>
+  <ParameterList name="Fe(OH)2+ ">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="2"/>
+    <Parameter name="gram molecular weight" type="double" value="89.8617"/>
+    <Parameter name="reaction" type="string" value="1.5 H2O  1.0 Fe++  -1.0 H+  0.25 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="-2.82"/>
+  </ParameterList>
+  <ParameterList name="Fe(OH)3(aq) ">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="106.869 "/>
+    <Parameter name="reaction" type="string" value="2.5 H2O  1.0 Fe++  -2.0 H+  0.25 O2(aq) "/>
+    <Parameter name="equilibrium constant" type="double" value="3.51 "/>
+  </ParameterList>
+  <ParameterList name="Fe(OH)3- ">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="106.869"/>
+    <Parameter name="reaction" type="string" value="3.0 H2O  1.0 Fe++  -3.0 H+"/>
+    <Parameter name="equilibrium constant" type="double" value="31.0"/>
+  </ParameterList>
+  <ParameterList name="Fe(OH)4- ">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="123.876 "/>
+    <Parameter name="reaction" type="string" value="3.5 H2O  1.0 Fe++  -3.0 H+  0.25 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="13.11 "/>
+  </ParameterList>
+  <ParameterList name="Fe(OH)4--">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-2"/>
+    <Parameter name="gram molecular weight" type="double" value="123.876"/>
+    <Parameter name="reaction" type="string" value="4.0 H2O  1.0 Fe++  -4.0 H+"/>
+    <Parameter name="equilibrium constant" type="double" value="46.0"/>
+  </ParameterList>
+  <ParameterList name="FeCO3(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="115.856"/>
+    <Parameter name="reaction" type="string" value="1.0 Fe++  -1.0 H+  1.0 HCO3-"/>
+    <Parameter name="equilibrium constant" type="double" value="5.5988"/>
+  </ParameterList>
+  <ParameterList name="FeCO3+">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="115.856"/>
+    <Parameter name="reaction" type="string" value="-0.5 H2O  1.0 Fe++  1.0 HCO3-  0.25 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="-7.8812"/>
+  </ParameterList>
+  <ParameterList name="FeCl+">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="91.2997"/>
+    <Parameter name="reaction" type="string" value="1.0 Fe++  1.0 Cl-"/>
+    <Parameter name="equilibrium constant" type="double" value="0.1605"/>
+  </ParameterList>
+  <ParameterList name="FeCl++">
+    <Parameter name="ion size parameter" type="double" value="4.5"/>
+    <Parameter name="charge" type="int" value="2"/>
+    <Parameter name="gram molecular weight" type="double" value="91.2997"/>
+    <Parameter name="reaction" type="string" value="-0.5 H2O  1.0 Fe++  1.0 H+  1.0 Cl-  0.25 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="-7.6792"/>
+  </ParameterList>
+  <ParameterList name="FeCl2(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="126.752"/>
+    <Parameter name="reaction" type="string" value="1.0 Fe++  2.0 Cl-"/>
+    <Parameter name="equilibrium constant" type="double" value="2.4541"/>
+  </ParameterList>
+  <ParameterList name="FeCl2+">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="126.752"/>
+    <Parameter name="reaction" type="string" value="-0.5 H2O  1.0 Fe++  1.0 H+  2.0 Cl-  0.25 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="-10.62"/>
+  </ParameterList>
+  <ParameterList name="FeCl4-">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="197.658"/>
+    <Parameter name="reaction" type="string" value="-0.5 H2O  1.0 Fe++  1.0 H+  4.0 Cl-  0.25 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="-7.7"/>
+  </ParameterList>
+  <ParameterList name="FeCl4--">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-2"/>
+    <Parameter name="gram molecular weight" type="double" value="197.658"/>
+    <Parameter name="reaction" type="string" value="1.0 Fe++  4.0 Cl-"/>
+    <Parameter name="equilibrium constant" type="double" value="-1.9"/>
+  </ParameterList>
+  <ParameterList name="FeF+">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="74.8454"/>
+    <Parameter name="reaction" type="string" value="1.0 Fe++  1.0 F-"/>
+    <Parameter name="equilibrium constant" type="double" value="-1.36"/>
+  </ParameterList>
+  <ParameterList name="FeF++">
+    <Parameter name="ion size parameter" type="double" value="4.5"/>
+    <Parameter name="charge" type="int" value="2"/>
+    <Parameter name="gram molecular weight" type="double" value="74.8454"/>
+    <Parameter name="reaction" type="string" value="-0.5 H2O  1.0 Fe++  1.0 H+  1.0 F-  0.25 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="-12.6265"/>
+  </ParameterList>
+  <ParameterList name="FeF2+">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="93.8438"/>
+    <Parameter name="reaction" type="string" value="-0.5 H2O  1.0 Fe++  1.0 H+  2.0 F-  0.25 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="-16.8398"/>
+  </ParameterList>
+  <ParameterList name="FeH2PO4+">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="152.834"/>
+    <Parameter name="reaction" type="string" value="1.0 Fe++  1.0 H+  1.0 HPO4--"/>
+    <Parameter name="equilibrium constant" type="double" value="-2.7"/>
+  </ParameterList>
+  <ParameterList name="FeH2PO4++">
+    <Parameter name="ion size parameter" type="double" value="4.5"/>
+    <Parameter name="charge" type="int" value="2"/>
+    <Parameter name="gram molecular weight" type="double" value="152.834"/>
+    <Parameter name="reaction" type="string" value="-0.5 H2O  1.0 Fe++  2.0 H+  1.0 HPO4--  0.25 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="-12.66"/>
+  </ParameterList>
+  <ParameterList name="FeHCO3+">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="116.864"/>
+    <Parameter name="reaction" type="string" value="1.0 Fe++  1.0 HCO3-"/>
+    <Parameter name="equilibrium constant" type="double" value="-2.72"/>
+  </ParameterList>
+  <ParameterList name="FeHPO4(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="151.826"/>
+    <Parameter name="reaction" type="string" value="1.0 Fe++  1.0 HPO4--"/>
+    <Parameter name="equilibrium constant" type="double" value="-3.6"/>
+  </ParameterList>
+  <ParameterList name="FeHPO4+">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="151.826"/>
+    <Parameter name="reaction" type="string" value="-0.5 H2O  1.0 Fe++  1.0 H+  1.0 HPO4--  0.25 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="-18.67"/>
+  </ParameterList>
+  <ParameterList name="FeNO3++">
+    <Parameter name="ion size parameter" type="double" value="4.5"/>
+    <Parameter name="charge" type="int" value="2"/>
+    <Parameter name="gram molecular weight" type="double" value="117.852"/>
+    <Parameter name="reaction" type="string" value="-0.5 H2O  1.0 Fe++  1.0 H+  1.0 NO3-  0.25 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="-9.49"/>
+  </ParameterList>
+  <ParameterList name="FeOH+">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="72.8543"/>
+    <Parameter name="reaction" type="string" value="1.0 H2O  1.0 Fe++  -1.0 H+"/>
+    <Parameter name="equilibrium constant" type="double" value="9.5"/>
+  </ParameterList>
+  <ParameterList name="FeOH++">
+    <Parameter name="ion size parameter" type="double" value="4.5"/>
+    <Parameter name="charge" type="int" value="2"/>
+    <Parameter name="gram molecular weight" type="double" value="72.8543"/>
+    <Parameter name="reaction" type="string" value="0.5 H2O  1.0 Fe++  0.25 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="-6.3"/>
+  </ParameterList>
+  <ParameterList name="FePO4-">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="150.818"/>
+    <Parameter name="reaction" type="string" value="1.0 Fe++  -1.0 H+  1.0 HPO4--"/>
+    <Parameter name="equilibrium constant" type="double" value="4.3918"/>
+  </ParameterList>
+  <ParameterList name="FeSO4(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="151.911"/>
+    <Parameter name="reaction" type="string" value="1.0 Fe++  1.0 SO4--"/>
+    <Parameter name="equilibrium constant" type="double" value="-2.2"/>
+  </ParameterList>
+  <ParameterList name="FeSO4+">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="151.911"/>
+    <Parameter name="reaction" type="string" value="-0.5 H2O  1.0 Fe++  1.0 H+  1.0 SO4--  0.25 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="-10.4176"/>
+  </ParameterList>
+  <ParameterList name="AlOH++">
+    <Parameter name="ion size parameter" type="double" value="4.5"/>
+    <Parameter name="charge" type="int" value="2"/>
+    <Parameter name="gram molecular weight" type="double" value="43.9889"/>
+    <Parameter name="reaction" type="string" value="1.0 H2O  1.0 Al+++  -1.0 H+"/>
+    <Parameter name="equilibrium constant" type="double" value="4.9571"/>
+  </ParameterList>
+  <ParameterList name="Al(OH)2+">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="60.9962"/>
+    <Parameter name="reaction" type="string" value="2.0 H2O  1.0 Al+++  -2.0 H+"/>
+    <Parameter name="equilibrium constant" type="double" value="10.5945"/>
+  </ParameterList>
+  <ParameterList name="Al(OH)3(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="78.0034"/>
+    <Parameter name="reaction" type="string" value="3.0 H2O  1.0 Al+++  -3.0 H+"/>
+    <Parameter name="equilibrium constant" type="double" value="16.1577"/>
+  </ParameterList>
+  <ParameterList name="Al(OH)4-">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="95.0107"/>
+    <Parameter name="reaction" type="string" value="4.0 H2O  1.0 Al+++  -4.0 H+"/>
+    <Parameter name="equilibrium constant" type="double" value="22.8833"/>
+  </ParameterList>
+  <ParameterList name="HSO4-">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="97.0715"/>
+    <Parameter name="reaction" type="string" value="1.0 H+  1.0 SO4--"/>
+    <Parameter name="equilibrium constant" type="double" value="-1.9791"/>
+  </ParameterList>
+  <ParameterList name="H2SO4(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="98.0795"/>
+    <Parameter name="reaction" type="string" value="2.0 H+  1.0 SO4--"/>
+    <Parameter name="equilibrium constant" type="double" value="1.0209"/>
+  </ParameterList>
+  <ParameterList name="HCl(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="36.4606"/>
+    <Parameter name="reaction" type="string" value="1.0 H+  1.0 Cl-"/>
+    <Parameter name="equilibrium constant" type="double" value="-0.67"/>
+  </ParameterList>
+  <ParameterList name="HNO3(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="63.0129"/>
+    <Parameter name="reaction" type="string" value="1.0 H+  1.0 NO3-"/>
+    <Parameter name="equilibrium constant" type="double" value="1.3025"/>
+  </ParameterList>
+  <ParameterList name="HO2-">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="33.0067"/>
+    <Parameter name="reaction" type="string" value="1.0 H2O  -1.0 H+  0.5 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="28.302"/>
+  </ParameterList>
+  <ParameterList name="NH3(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="17.0306"/>
+    <Parameter name="reaction" type="string" value="1.5 H2O  0.5 N2(aq)  -0.75 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="58.2305"/>
+  </ParameterList>
+  <ParameterList name="NH4+">
+    <Parameter name="ion size parameter" type="double" value="2.5"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="18.0385"/>
+    <Parameter name="reaction" type="string" value="1.5 H2O  1.0 H+  0.5 N2(aq)  -0.75 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="48.9895"/>
+  </ParameterList>
+  <ParameterList name="N3-">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="42.0202"/>
+    <Parameter name="reaction" type="string" value="0.5 H2O  -1.0 H+  1.5 N2(aq)  -0.25 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="77.7234"/>
+  </ParameterList>
+  <ParameterList name="HS-">
+    <Parameter name="ion size parameter" type="double" value="3.5"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="33.0739"/>
+    <Parameter name="reaction" type="string" value="1.0 H+  1.0 SO4--  -2.0 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="138.317"/>
+  </ParameterList>
+  <ParameterList name="H2S(aq) ">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="34.0819"/>
+    <Parameter name="reaction" type="string" value="2.0 H+  1.0 SO4--  -2.0 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="131.329"/>
+  </ParameterList>
+  <ParameterList name="U+++">
+    <Parameter name="ion size parameter" type="double" value="5.0"/>
+    <Parameter name="charge" type="int" value="3"/>
+    <Parameter name="gram molecular weight" type="double" value="238.029"/>
+    <Parameter name="reaction" type="string" value="-0.5 H2O  1.0 H+  1.0 UO2++  -0.75 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="64.8028"/>
+  </ParameterList>
+  <ParameterList name="U++++">
+    <Parameter name="ion size parameter" type="double" value="5.5"/>
+    <Parameter name="charge" type="int" value="4"/>
+    <Parameter name="gram molecular weight" type="double" value="238.029"/>
+    <Parameter name="reaction" type="string" value="-1.0 H2O  2.0 H+  1.0 UO2++  -0.5 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="33.949"/>
+  </ParameterList>
+  <ParameterList name="UO2+ ">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="270.028"/>
+    <Parameter name="reaction" type="string" value="0.5 H2O  -1.0 H+  1.0 UO2++  -0.25 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="20.0169"/>
+  </ParameterList>
+  <ParameterList name="UO2OH+">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="287.035"/>
+    <Parameter name="reaction" type="string" value="1.0 H2O  -1.0 H+  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="5.2073 "/>
+  </ParameterList>
+  <ParameterList name="UO2(OH)2(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="304.042"/>
+    <Parameter name="reaction" type="string" value="2.0 H2O  -2.0 H+  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="10.3146"/>
+  </ParameterList>
+  <ParameterList name="UO2(OH)3- ">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="321.05"/>
+    <Parameter name="reaction" type="string" value="3.0 H2O  -3.0 H+  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="19.2218"/>
+  </ParameterList>
+  <ParameterList name="UO2(OH)4--">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-2"/>
+    <Parameter name="gram molecular weight" type="double" value="338.057"/>
+    <Parameter name="reaction" type="string" value="4.0 H2O  -4.0 H+  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="33.0291"/>
+  </ParameterList>
+  <ParameterList name="(UO2)2OH+++">
+    <Parameter name="ion size parameter" type="double" value="5.0"/>
+    <Parameter name="charge" type="int" value="3"/>
+    <Parameter name="gram molecular weight" type="double" value=" 557.063"/>
+    <Parameter name="reaction" type="string" value="1.0 H2O  -1.0 H+  2.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="2.7072"/>
+  </ParameterList>
+  <ParameterList name="(UO2)2(OH)2++">
+    <Parameter name="ion size parameter" type="double" value="4.5"/>
+    <Parameter name="charge" type="int" value="2"/>
+    <Parameter name="gram molecular weight" type="double" value="574.07"/>
+    <Parameter name="reaction" type="string" value="2.0 H2O  -2.0 H+  2.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="5.6346"/>
+  </ParameterList>
+  <ParameterList name="(UO2)3(OH)4++">
+    <Parameter name="ion size parameter" type="double" value="4.5"/>
+    <Parameter name="charge" type="int" value="2"/>
+    <Parameter name="gram molecular weight" type="double" value="878.112"/>
+    <Parameter name="reaction" type="string" value="4.0 H2O  -4.0 H+  3.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value=" 11.929"/>
+  </ParameterList>
+  <ParameterList name="(UO2)3(OH)5+">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="895.12"/>
+    <Parameter name="reaction" type="string" value="5.0 H2O  -5.0 H+  3.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="15.5862"/>
+  </ParameterList>
+  <ParameterList name="(UO2)3(OH)7-">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="929.135"/>
+    <Parameter name="reaction" type="string" value="7.0 H2O  -7.0 H+  3.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="31.0508"/>
+  </ParameterList>
+  <ParameterList name="(UO2)4(OH)7+">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="1199.16"/>
+    <Parameter name="reaction" type="string" value="7.0 H2O  -7.0 H+  4.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="21.9508"/>
+  </ParameterList>
+  <ParameterList name="UO2CO3(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="330.037"/>
+    <Parameter name="reaction" type="string" value="-1.0 H+  1.0 HCO3-  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="0.6634"/>
+  </ParameterList>
+  <ParameterList name="UO2(CO3)2--">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-2"/>
+    <Parameter name="gram molecular weight" type="double" value="390.046"/>
+    <Parameter name="reaction" type="string" value="-2.0 H+  2.0 HCO3-  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="3.7467"/>
+  </ParameterList>
+  <ParameterList name="UO2(CO3)3----">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-4"/>
+    <Parameter name="gram molecular weight" type="double" value="450.055"/>
+    <Parameter name="reaction" type="string" value="-3.0 H+  3.0 HCO3-  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="9.4302"/>
+  </ParameterList>
+  <ParameterList name="(UO2)2CO3(OH)3-">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="651.087"/>
+    <Parameter name="reaction" type="string" value="3.0 H2O  -4.0 H+  1.0 HCO3-  2.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="11.2229"/>
+  </ParameterList>
+  <ParameterList name="Ca2UO2(CO3)3(aq)">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="530.215"/>
+    <Parameter name="reaction" type="string" value="2.0 Ca++  -3.0 H+  3.0 HCO3-  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="0.2864"/>
+  </ParameterList>
+  <ParameterList name="CaUO2(CO3)3--">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-2"/>
+    <Parameter name="gram molecular weight" type="double" value="530.215"/>
+    <Parameter name="reaction" type="string" value="1.0 Ca++  -3.0 H+  3.0 HCO3-  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="3.8064"/>
+  </ParameterList>
+  <ParameterList name="UO2NO3+">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="332.033"/>
+    <Parameter name="reaction" type="string" value="1.0 NO3-  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="-0.2805"/>
+  </ParameterList>
+  <ParameterList name="UO2Cl+">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="305.48"/>
+    <Parameter name="reaction" type="string" value="1.0 Cl-  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="-0.1572"/>
+  </ParameterList>
+  <ParameterList name="UO2Cl2(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="340.933"/>
+    <Parameter name="reaction" type="string" value="2.0 Cl-  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="1.1253"/>
+  </ParameterList>
+  <ParameterList name="UO2SO4(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="366.091"/>
+    <Parameter name="reaction" type="string" value="1.0 SO4--  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="-3.0703"/>
+  </ParameterList>
+  <ParameterList name="UO2(SO4)2--">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-2"/>
+    <Parameter name="gram molecular weight" type="double" value="462.155"/>
+    <Parameter name="reaction" type="string" value="2.0 SO4--  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="-3.9806"/>
+  </ParameterList>
+  <ParameterList name="UO2F+">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="289.026"/>
+    <Parameter name="reaction" type="string" value="1.0 F-  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="-5.0502"/>
+  </ParameterList>
+  <ParameterList name="UO2F2(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="308.024"/>
+    <Parameter name="reaction" type="string" value="2.0 F-  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="-8.5403"/>
+  </ParameterList>
+  <ParameterList name="UO2F3-">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="327.023"/>
+    <Parameter name="reaction" type="string" value="3.0 F-  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="-10.7806"/>
+  </ParameterList>
+  <ParameterList name="UO2F4--">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-2"/>
+    <Parameter name="gram molecular weight" type="double" value="346.021"/>
+    <Parameter name="reaction" type="string" value="4.0 F-  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="-11.5407"/>
+  </ParameterList>
+  <ParameterList name="UO2(H2PO4)(H3PO4)+">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="465.01"/>
+    <Parameter name="reaction" type="string" value="3.0 H+  2.0 HPO4--  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="-22.7537"/>
+  </ParameterList>
+  <ParameterList name="UO2(H2PO4)2(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="464.002"/>
+    <Parameter name="reaction" type="string" value="2.0 H+  2.0 HPO4--  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="-21.7437"/>
+  </ParameterList>
+  <ParameterList name="UO2HPO4(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="366.007"/>
+    <Parameter name="reaction" type="string" value="1.0 HPO4--  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="-8.4398"/>
+  </ParameterList>
+  <ParameterList name="UO2H2PO4+">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="367.015"/>
+    <Parameter name="reaction" type="string" value="1.0 H+  1.0 HPO4--  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="-11.6719"/>
+  </ParameterList>
+  <ParameterList name="UO2H3PO4++">
+    <Parameter name="ion size parameter" type="double" value="4.5"/>
+    <Parameter name="charge" type="int" value="2"/>
+    <Parameter name="gram molecular weight" type="double" value="368.023"/>
+    <Parameter name="reaction" type="string" value="2.0 H+  1.0 HPO4--  1.0 UO2++ "/>
+    <Parameter name="equilibrium constant" type="double" value="-11.3119"/>
+  </ParameterList>
+  <ParameterList name="UO2PO4-">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="364.999"/>
+    <Parameter name="reaction" type="string" value="-1.0 H+  1.0 HPO4--  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="-2.0798"/>
+  </ParameterList>
+</ParameterList>
 
-<Aqueous Equilibrium Complexes
-# name               =  coeff primary_name  coeff primary_name  ; log10(Keq) 25C ; debye-huckel a0 ; charge ; GMW      
+<ParameterList name="mineral kinetics">
+  <ParameterList name="Gibbsite">
+    <Parameter name="rate model" type="string" value="TST"/>
+    <Parameter name="rate constant" type="double" value="-14.0"/>
+    <Parameter name="modifiers" type="string" value=""/>
+    <Parameter name="gram molecular weight" type="double" value="78.0036"/>
+    <Parameter name="reaction" type="string" value="3.0 H2O  -3.0 H+  1.0 Al+++"/>
+    <Parameter name="equilibrium constant" type="double" value="7.756"/>
+    <Parameter name="molar volume" type="double" value="3.19559999999999995e+01"/>
+    <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+  </ParameterList>
+  <ParameterList name="Quartz">
+    <Parameter name="rate model" type="string" value="TST"/>
+    <Parameter name="rate constant" type="double" value="-18.0"/>
+    <Parameter name="modifiers" type="string" value=""/>
+    <Parameter name="gram molecular weight" type="double" value="6.00842999999999989e+01"/>
+    <Parameter name="reaction" type="string" value="1.0 SiO2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="-3.9993"/>
+    <Parameter name="molar volume" type="double" value="2.26879999999999988e+01"/>
+    <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+  </ParameterList>
+  <ParameterList name="K-Feldspar">
+    <Parameter name="rate model" type="string" value="TST"/>
+    <Parameter name="rate constant" type="double" value="-16.699"/>
+    <Parameter name="modifiers" type="string" value=""/>
+    <Parameter name="gram molecular weight" type="double" value="278.332 "/>
+    <Parameter name="reaction" type="string" value="2.00 H2O  1.00 K+  1.00 Al+++  -4.00 H+  3.00 SiO2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="-0.2753"/>
+    <Parameter name="molar volume" type="double" value="108.87"/>
+    <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+  </ParameterList>
+  <ParameterList name="Jurbanite">
+    <Parameter name="rate model" type="string" value="TST"/>
+    <Parameter name="rate constant" type="double" value="-14.0"/>
+    <Parameter name="modifiers" type="string" value=""/>
+    <Parameter name="gram molecular weight" type="double" value="2.30063999999999993e+02"/>
+    <Parameter name="reaction" type="string" value="6.0 H2O  -1.0 H+  1.0 Al+++  1.0 SO4--"/>
+    <Parameter name="equilibrium constant" type="double" value="-3.79999999999999982e+00"/>
+    <Parameter name="molar volume" type="double" value="1.26000000000000000e+02"/>
+    <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+  </ParameterList>
+  <ParameterList name="Ferrihydrite">
+    <Parameter name="rate model" type="string" value="TST"/>
+    <Parameter name="rate constant" type="double" value="-14.0"/>
+    <Parameter name="modifiers" type="string" value=""/>
+    <Parameter name="gram molecular weight" type="double" value="106.869"/>
+    <Parameter name="reaction" type="string" value="2.50 H2O  1.00 Fe++  -2.00 H+  0.25 O2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="-3.594"/>
+    <Parameter name="molar volume" type="double" value="23.99"/>
+    <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+  </ParameterList>
+  <ParameterList name="Kaolinite">
+    <Parameter name="rate model" type="string" value="TST"/>
+    <Parameter name="rate constant" type="double" value="-16.699"/>
+    <Parameter name="modifiers" type="string" value="H+  7.77000E-01"/>
+    <Parameter name="gram molecular weight" type="double" value="2.58160000000000025e+02"/>
+    <Parameter name="reaction" type="string" value="5.0 H2O  -6.0 H+  2.0 Al+++  2.0 SiO2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="7.57000000000000028e+00"/>
+    <Parameter name="molar volume" type="double" value="9.95199999999999960e+01"/>
+    <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+  </ParameterList>
+  <ParameterList name="Schoepite">
+    <Parameter name="rate model" type="string" value="TST"/>
+    <Parameter name="rate constant" type="double" value="-10.0"/>
+    <Parameter name="modifiers" type="string" value=""/>
+    <Parameter name="gram molecular weight" type="double" value="3.22057999999999993e+02"/>
+    <Parameter name="reaction" type="string" value="3.0 H2O  -2.0 H+  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="4.8333"/>
+    <Parameter name="molar volume" type="double" value="6.60799999999999983e+01"/>
+    <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+  </ParameterList>
+  <ParameterList name="(UO2)3(PO4)2.4H2O">
+    <Parameter name="rate model" type="string" value="TST"/>
+    <Parameter name="rate constant" type="double" value="-10.0"/>
+    <Parameter name="modifiers" type="string" value=""/>
+    <Parameter name="gram molecular weight" type="double" value="1072.09"/>
+    <Parameter name="reaction" type="string" value="4.00 H2O  -2.00 H+  2.00 HPO4--  3.00 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="-27.0349"/>
+    <Parameter name="molar volume" type="double" value="500.0"/>
+    <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+  </ParameterList>
+  <ParameterList name="Soddyite">
+    <Parameter name="rate model" type="string" value="TST"/>
+    <Parameter name="rate constant" type="double" value="-10.0"/>
+    <Parameter name="modifiers" type="string" value=""/>
+    <Parameter name="gram molecular weight" type="double" value="668.169"/>
+    <Parameter name="reaction" type="string" value="4.00 H2O  -4.00 H+  1.00 SiO2(aq)  2.00 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="0.392"/>
+    <Parameter name="molar volume" type="double" value="131.27"/>
+    <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+  </ParameterList>
+  <ParameterList name="Calcite">
+    <Parameter name="rate model" type="string" value="TST"/>
+    <Parameter name="rate constant" type="double" value="-10.0"/>
+    <Parameter name="modifiers" type="string" value=""/>
+    <Parameter name="gram molecular weight" type="double" value="100.087"/>
+    <Parameter name="reaction" type="string" value="1.00 Ca++  -1.00 H+  1.00 HCO3-"/>
+    <Parameter name="equilibrium constant" type="double" value="1.8487"/>
+    <Parameter name="molar volume" type="double" value="36.934"/>
+    <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+  </ParameterList>
+  <ParameterList name="Chalcedony">
+    <Parameter name="rate model" type="string" value="TST"/>
+    <Parameter name="rate constant" type="double" value="-14.0"/>
+    <Parameter name="modifiers" type="string" value=""/>
+    <Parameter name="gram molecular weight" type="double" value="60.0843"/>
+    <Parameter name="reaction" type="string" value="1.00 SiO2(aq)"/>
+    <Parameter name="equilibrium constant" type="double" value="-3.7281"/>
+    <Parameter name="molar volume" type="double" value="22.688"/>
+    <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+  </ParameterList>
+</ParameterList>
 
-OH-                  =  1.0 H2O  -1.0 H+  ;    13.9951 ;   3.5 ;  -1.0 ;  17.0073 
-CO3--                =  -1.0 H+  1.0 HCO3-  ;    10.3288 ;   4.5 ;  -2.0 ;  60.0092 
-CO2(aq)              =  -1.0 H2O  1.0 H+  1.0 HCO3-  ;    -6.3447 ;   3.0 ;   0.0 ;  44.0098 
-CH4(aq)              =  1.0 H2O  1.0 H+  1.0 HCO3-  -2.0 O2(aq)  ;    144.141 ;   3.0 ;   0.0 ;      0.0 
-NaHCO3(aq)           =  1.0 Na+  1.0 HCO3-  ;    -0.1541 ;   3.0 ;   0.0 ;  84.0069 
-NaCl(aq)             =  1.0 Na+  1.0 Cl-  ;      0.777 ;   3.0 ;   0.0 ;  58.4425 
-NaF(aq)              =  1.0 Na+  1.0 F-  ;     0.9976 ;   3.0 ;   0.0 ;  41.9882 
-NH4SO4-              =  1.5 H2O  1.0 H+  0.5 N2(aq)  1.0 SO4--  -0.75 O2(aq)  ;    57.2905 ;   4.0 ;  -1.0 ;  114.102 
-NaAlO2(aq)           =  2.0 H2O  1.0 Na+  1.0 Al+++  -4.0 H+  ;    23.6266 ;   3.0 ;   0.0 ;  81.9701 
-NaHP2O7--            =  -1.0 H2O  1.0 Na+  1.0 H+  2.0 HPO4--  ;    -6.8498 ;   4.0 ;  -2.0 ;  197.941 
-NaHPO4-              =  1.0 Na+  1.0 HPO4--  ;      -0.92 ;   4.0 ;  -1.0 ;  118.969 
-NaHSiO3(aq)          =  1.0 H2O  1.0 Na+  -1.0 H+  1.0 SiO2(aq)  ;      8.304 ;   3.0 ;   0.0 ;  100.081 
-NaNO3(aq)            =  1.0 Na+  1.0 NO3-  ;      1.044 ;   3.0 ;   0.0 ;  84.9947 
-NaOH(aq)             =  1.0 H2O  1.0 Na+  -1.0 H+  ;    14.7948 ;   3.0 ;   0.0 ;  39.9971 
-NaSO4-               =  1.0 Na+  1.0 SO4--  ;      -0.82 ;   4.0 ;  -1.0 ;  119.053 
-CaCO3(aq)            =  1.0 Ca++  -1.0 H+  1.0 HCO3-  ;     7.0017 ;   3.0 ;   0.0 ;  100.087 
-CaHCO3+              =  1.0 Ca++  1.0 HCO3-  ;    -1.0467 ;   4.0 ;   1.0 ;  101.095 
-KCl(aq)              =  1.0 K+  1.0 Cl-  ;     1.4946 ;   3.0 ;   0.0 ;   74.551 
-KHPO4-               =  1.0 K+  1.0 HPO4--  ;      -0.78 ;   4.0 ;  -1.0 ;  135.078 
-KHSO4(aq)            =  1.0 K+  1.0 H+  1.0 SO4--  ;    -0.8136 ;   3.0 ;   0.0 ;   136.17 
-KOH(aq)              =  1.0 H2O  1.0 K+  -1.0 H+  ;      14.46 ;   3.0 ;   0.0 ;  56.1056 
-KP2O7---             =  -1.0 H2O  1.0 K+  2.0 HPO4--  ;     1.4286 ;   4.0 ;  -3.0 ;  213.042 
-KSO4-                =  1.0 K+  1.0 SO4--  ;    -0.8796 ;   4.0 ;  -1.0 ;  135.162 
-Fe+++                =  -0.5 H2O  1.0 Fe++  1.0 H+  0.25 O2(aq)  ;      -8.49 ;   9.0 ;   3.0 ;   55.847 
-Fe(SO4)2-            =  -0.5 H2O  1.0 Fe++  1.0 H+  2.0 SO4--  0.25 O2(aq)  ;   -11.7037 ;   4.0 ;  -1.0 ;  247.974 
-Fe2(OH)2++++         =  1.0 H2O  2.0 Fe++  0.5 O2(aq)  ;   -14.0299 ;   5.5 ;   4.0 ;  145.709 
-Fe3(OH)4(5+)         =  2.5 H2O  3.0 Fe++  -1.0 H+  0.75 O2(aq)  ;   -19.1699 ;   6.0 ;   5.0 ;   235.57 
-Fe(OH)2(aq)          =  2.0 H2O  1.0 Fe++  -2.0 H+  ;       20.6 ;   3.0 ;   0.0 ;  89.8617 
-Fe(OH)2+             =  1.5 H2O  1.0 Fe++  -1.0 H+  0.25 O2(aq)  ;      -2.82 ;   4.0 ;   1.0 ;  89.8617 
-Fe(OH)3(aq)          =  2.5 H2O  1.0 Fe++  -2.0 H+  0.25 O2(aq)  ;       3.51 ;   3.0 ;   0.0 ;  106.869 
-Fe(OH)3-             =  3.0 H2O  1.0 Fe++  -3.0 H+  ;       31.0 ;   4.0 ;  -1.0 ;  106.869 
-Fe(OH)4-             =  3.5 H2O  1.0 Fe++  -3.0 H+  0.25 O2(aq)  ;      13.11 ;   4.0 ;  -1.0 ;  123.876 
-Fe(OH)4--            =  4.0 H2O  1.0 Fe++  -4.0 H+  ;       46.0 ;   4.0 ;  -2.0 ;  123.876 
-FeCO3(aq)            =  1.0 Fe++  -1.0 H+  1.0 HCO3-  ;     5.5988 ;   3.0 ;   0.0 ;  115.856 
-FeCO3+               =  -0.5 H2O  1.0 Fe++  1.0 HCO3-  0.25 O2(aq)  ;    -7.8812 ;   4.0 ;   1.0 ;  115.856 
-FeCl+                =  1.0 Fe++  1.0 Cl-  ;     0.1605 ;   4.0 ;   1.0 ;  91.2997 
-FeCl++               =  -0.5 H2O  1.0 Fe++  1.0 H+  1.0 Cl-  0.25 O2(aq)  ;    -7.6792 ;   4.5 ;   2.0 ;  91.2997 
-FeCl2(aq)            =  1.0 Fe++  2.0 Cl-  ;     2.4541 ;   3.0 ;   0.0 ;  126.752 
-FeCl2+               =  -0.5 H2O  1.0 Fe++  1.0 H+  2.0 Cl-  0.25 O2(aq)  ;     -10.62 ;   4.0 ;   1.0 ;  126.752 
-FeCl4-               =  -0.5 H2O  1.0 Fe++  1.0 H+  4.0 Cl-  0.25 O2(aq)  ;       -7.7 ;   4.0 ;  -1.0 ;  197.658 
-FeCl4--              =  1.0 Fe++  4.0 Cl-  ;       -1.9 ;   4.0 ;  -2.0 ;  197.658 
-FeF+                 =  1.0 Fe++  1.0 F-  ;      -1.36 ;   4.0 ;   1.0 ;  74.8454 
-FeF++                =  -0.5 H2O  1.0 Fe++  1.0 H+  1.0 F-  0.25 O2(aq)  ;   -12.6265 ;   4.5 ;   2.0 ;  74.8454 
-FeF2+                =  -0.5 H2O  1.0 Fe++  1.0 H+  2.0 F-  0.25 O2(aq)  ;   -16.8398 ;   4.0 ;   1.0 ;  93.8438 
-FeH2PO4+             =  1.0 Fe++  1.0 H+  1.0 HPO4--  ;       -2.7 ;   4.0 ;   1.0 ;  152.834 
-FeH2PO4++            =  -0.5 H2O  1.0 Fe++  2.0 H+  1.0 HPO4--  0.25 O2(aq)  ;     -12.66 ;   4.5 ;   2.0 ;  152.834 
-FeHCO3+              =  1.0 Fe++  1.0 HCO3-  ;      -2.72 ;   4.0 ;   1.0 ;  116.864 
-FeHPO4(aq)           =  1.0 Fe++  1.0 HPO4--  ;       -3.6 ;   3.0 ;   0.0 ;  151.826 
-FeHPO4+              =  -0.5 H2O  1.0 Fe++  1.0 H+  1.0 HPO4--  0.25 O2(aq)  ;     -18.67 ;   4.0 ;   1.0 ;  151.826 
-FeNO3++              =  -0.5 H2O  1.0 Fe++  1.0 H+  1.0 NO3-  0.25 O2(aq)  ;      -9.49 ;   4.5 ;   2.0 ;  117.852 
-FeOH+                =  1.0 H2O  1.0 Fe++  -1.0 H+  ;        9.5 ;   4.0 ;   1.0 ;  72.8543 
-FeOH++               =  0.5 H2O  1.0 Fe++  0.25 O2(aq)  ;       -6.3 ;   4.5 ;   2.0 ;  72.8543 
-FePO4-               =  1.0 Fe++  -1.0 H+  1.0 HPO4--  ;     4.3918 ;   4.0 ;  -1.0 ;  150.818 
-FeSO4(aq)            =  1.0 Fe++  1.0 SO4--  ;       -2.2 ;   3.0 ;   0.0 ;  151.911 
-FeSO4+               =  -0.5 H2O  1.0 Fe++  1.0 H+  1.0 SO4--  0.25 O2(aq)  ;   -10.4176 ;   4.0 ;   1.0 ;  151.911 
-AlOH++               =  1.0 H2O  1.0 Al+++  -1.0 H+  ;     4.9571 ;   4.5 ;   2.0 ;  43.9889 
-Al(OH)2+             =  2.0 H2O  1.0 Al+++  -2.0 H+  ;    10.5945 ;   4.0 ;   1.0 ;  60.9962 
-Al(OH)3(aq)          =  3.0 H2O  1.0 Al+++  -3.0 H+  ;    16.1577 ;   3.0 ;   0.0 ;  78.0034 
-Al(OH)4-             =  4.0 H2O  1.0 Al+++  -4.0 H+  ;    22.8833 ;   4.0 ;  -1.0 ;  95.0107 
-HSO4-                =  1.0 H+  1.0 SO4--  ;    -1.9791 ;   4.0 ;  -1.0 ;  97.0715 
-H2SO4(aq)            =  2.0 H+  1.0 SO4--  ;     1.0209 ;   3.0 ;   0.0 ;  98.0795 
-HCl(aq)              =  1.0 H+  1.0 Cl-  ;      -0.67 ;   3.0 ;   0.0 ;  36.4606 
-HNO3(aq)             =  1.0 H+  1.0 NO3-  ;     1.3025 ;   3.0 ;   0.0 ;  63.0129 
-HO2-                 =  1.0 H2O  -1.0 H+  0.5 O2(aq)  ;     28.302 ;   4.0 ;  -1.0 ;  33.0067 
-NH3(aq)              =  1.5 H2O  0.5 N2(aq)  -0.75 O2(aq)  ;    58.2305 ;   3.0 ;   0.0 ;  17.0306 
-NH4+                 =  1.5 H2O  1.0 H+  0.5 N2(aq)  -0.75 O2(aq)  ;    48.9895 ;   2.5 ;   1.0 ;  18.0385 
-N3-                  =  0.5 H2O  -1.0 H+  1.5 N2(aq)  -0.25 O2(aq)  ;    77.7234 ;   4.0 ;  -1.0 ;  42.0202 
-HS-                  =  1.0 H+  1.0 SO4--  -2.0 O2(aq)  ;    138.317 ;   3.5 ;  -1.0 ;  33.0739 
-H2S(aq)              =  2.0 H+  1.0 SO4--  -2.0 O2(aq)  ;    131.329 ;   3.0 ;   0.0 ;  34.0819 
-U+++                 =  -0.5 H2O  1.0 H+  1.0 UO2++  -0.75 O2(aq)  ;    64.8028 ;   5.0 ;   3.0 ;  238.029 
-U++++                =  -1.0 H2O  2.0 H+  1.0 UO2++  -0.5 O2(aq)  ;     33.949 ;   5.5 ;   4.0 ;  238.029 
-UO2+                 =  0.5 H2O  -1.0 H+  1.0 UO2++  -0.25 O2(aq)  ;    20.0169 ;   4.0 ;   1.0 ;  270.028 
-UO2OH+               =  1.0 H2O  -1.0 H+  1.0 UO2++  ;     5.2073 ;   4.0 ;   1.0 ;  287.035 
-UO2(OH)2(aq)         =  2.0 H2O  -2.0 H+  1.0 UO2++  ;    10.3146 ;   3.0 ;   0.0 ;  304.042 
-UO2(OH)3-            =  3.0 H2O  -3.0 H+  1.0 UO2++  ;    19.2218 ;   4.0 ;  -1.0 ;   321.05 
-UO2(OH)4--           =  4.0 H2O  -4.0 H+  1.0 UO2++  ;    33.0291 ;   4.0 ;  -2.0 ;  338.057 
-(UO2)2OH+++          =  1.0 H2O  -1.0 H+  2.0 UO2++  ;     2.7072 ;   5.0 ;   3.0 ;  557.063 
-(UO2)2(OH)2++        =  2.0 H2O  -2.0 H+  2.0 UO2++  ;     5.6346 ;   4.5 ;   2.0 ;   574.07 
-(UO2)3(OH)4++        =  4.0 H2O  -4.0 H+  3.0 UO2++  ;     11.929 ;   4.5 ;   2.0 ;  878.112 
-(UO2)3(OH)5+         =  5.0 H2O  -5.0 H+  3.0 UO2++  ;    15.5862 ;   4.0 ;   1.0 ;   895.12 
-(UO2)3(OH)7-         =  7.0 H2O  -7.0 H+  3.0 UO2++  ;    31.0508 ;   4.0 ;  -1.0 ;  929.135 
-(UO2)4(OH)7+         =  7.0 H2O  -7.0 H+  4.0 UO2++  ;    21.9508 ;   4.0 ;   1.0 ;  1199.16 
-UO2CO3(aq)           =  -1.0 H+  1.0 HCO3-  1.0 UO2++  ;     0.6634 ;   3.0 ;   0.0 ;  330.037 
-UO2(CO3)2--          =  -2.0 H+  2.0 HCO3-  1.0 UO2++  ;     3.7467 ;   4.0 ;  -2.0 ;  390.046 
-UO2(CO3)3----        =  -3.0 H+  3.0 HCO3-  1.0 UO2++  ;     9.4302 ;   4.0 ;  -4.0 ;  450.055 
-(UO2)2CO3(OH)3-      =  3.0 H2O  -4.0 H+  1.0 HCO3-  2.0 UO2++  ;    11.2229 ;   4.0 ;  -1.0 ;  651.087 
-Ca2UO2(CO3)3(aq)     =  2.0 Ca++  -3.0 H+  3.0 HCO3-  1.0 UO2++  ;     0.2864 ;   4.0 ;   0.0 ;  530.215 
-CaUO2(CO3)3--        =  1.0 Ca++  -3.0 H+  3.0 HCO3-  1.0 UO2++  ;     3.8064 ;   4.0 ;  -2.0 ;  530.215 
-UO2NO3+              =  1.0 NO3-  1.0 UO2++  ;    -0.2805 ;   4.0 ;   1.0 ;  332.033 
-UO2Cl+               =  1.0 Cl-  1.0 UO2++  ;    -0.1572 ;   4.0 ;   1.0 ;   305.48 
-UO2Cl2(aq)           =  2.0 Cl-  1.0 UO2++  ;     1.1253 ;   3.0 ;   0.0 ;  340.933 
-UO2SO4(aq)           =  1.0 SO4--  1.0 UO2++  ;    -3.0703 ;   3.0 ;   0.0 ;  366.091 
-UO2(SO4)2--          =  2.0 SO4--  1.0 UO2++  ;    -3.9806 ;   4.0 ;  -2.0 ;  462.155 
-UO2F+                =  1.0 F-  1.0 UO2++  ;    -5.0502 ;   4.0 ;   1.0 ;  289.026 
-UO2F2(aq)            =  2.0 F-  1.0 UO2++  ;    -8.5403 ;   3.0 ;   0.0 ;  308.024 
-UO2F3-               =  3.0 F-  1.0 UO2++  ;   -10.7806 ;   4.0 ;  -1.0 ;  327.023 
-UO2F4--              =  4.0 F-  1.0 UO2++  ;   -11.5407 ;   4.0 ;  -2.0 ;  346.021 
-UO2(H2PO4)(H3PO4)+   =  3.0 H+  2.0 HPO4--  1.0 UO2++  ;   -22.7537 ;   4.0 ;   1.0 ;   465.01 
-UO2(H2PO4)2(aq)      =  2.0 H+  2.0 HPO4--  1.0 UO2++  ;   -21.7437 ;   3.0 ;   0.0 ;  464.002 
-UO2HPO4(aq)          =  1.0 HPO4--  1.0 UO2++  ;    -8.4398 ;   3.0 ;   0.0 ;  366.007 
-UO2H2PO4+            =  1.0 H+  1.0 HPO4--  1.0 UO2++  ;   -11.6719 ;   4.0 ;   1.0 ;  367.015 
-UO2H3PO4++           =  2.0 H+  1.0 HPO4--  1.0 UO2++  ;   -11.3119 ;   4.5 ;   2.0 ;  368.023 
-UO2PO4-              =  -1.0 H+  1.0 HPO4--  1.0 UO2++  ;    -2.0798 ;   4.0 ;  -1.0 ;  364.999 
+<ParameterList name="surface complex sites">
+  <ParameterList name=">FeOH">
+    <Parameter name="density" type="double" value="6.3600E-03"/>
+  </ParameterList>
+  <ParameterList name=">AlOH">
+    <Parameter name="density" type="double" value="6.3600E-03"/>
+  </ParameterList>
+  <ParameterList name=">SiOH">
+    <Parameter name="density" type="double" value="6.3600E-03"/>
+  </ParameterList>
+</ParameterList>
 
-<Minerals
-# name               =  coeff primary_name  coeff primary_name  ; log10(Keq) 25C ; GMW      ; molar volume [cm^2/mol] ; SSA [m^2/g] 
+<ParameterList name="surface complexes">
+  <ParameterList name=">SiOUO3H3++">
+    <Parameter name="charge" type="int" value="2"/>
+    <Parameter name="reaction" type="string" value="1.0 >SiOH  1.0 H2O  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="5.18"/>
+  </ParameterList>
+  <ParameterList name=">SiOUO3H2+">
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="reaction" type="string" value="1.0 >SiOH  1.0 H2O  -1.0 H+  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="5.18"/>
+  </ParameterList>
+  <ParameterList name=">SiOUO3H">
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="reaction" type="string" value="1.0 >SiOH  1.0 H2O  -2.0 H+  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="5.18"/>
+  </ParameterList>
+  <ParameterList name=">SiOUO3-">
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="reaction" type="string" value="1.0 >SiOH  1.0 H2O  -3.0 H+  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="12.35"/>
+  </ParameterList>
+  <ParameterList name=">SiOUO2(OH)2-">
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="reaction" type="string" value="1.0 >SiOH  2.0 H2O  -3.0 H+  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="12.35"/>
+  </ParameterList>
+  <ParameterList name=">FeOHUO3">
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="reaction" type="string" value="1.0 >FeOH  1.0 H2O  -2.0 H+  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="3.05"/>
+  </ParameterList>
+  <ParameterList name=">FeOHUO2++">
+    <Parameter name="charge" type="int" value="2"/>
+    <Parameter name="reaction" type="string" value="1.0 >FeOH  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="-6.63"/>
+  </ParameterList>
+  <ParameterList name=">AlOUO2+">
+    <Parameter name="charge" type="int" value=""/>
+    <Parameter name="reaction" type="string" value="1.0 >AlOH  -1.0 H+  1.0 UO2++"/>
+    <Parameter name="equilibrium constant" type="double" value="-3.13"/>
+  </ParameterList>
+</ParameterList>
 
-Gibbsite             =  3.00 H2O  1.00 Al+++  -3.00 H+  ;      7.756 ;  78.0036 ;   31.956 ;   1.0 
-Quartz               =  1.00 SiO2(aq)  ;    -3.9993 ;  60.0843 ;   22.688 ;   1.0 
-K-Feldspar           =  2.00 H2O  1.00 K+  1.00 Al+++  -4.00 H+  3.00 SiO2(aq)  ;    -0.2753 ;  278.332 ;   108.87 ;   1.0 
-Jurbanite            =  6.00 H2O  1.00 Al+++  -1.00 H+  1.00 SO4--  ;      -3.23 ;  230.064 ;    126.0 ;   1.0 
-Ferrihydrite         =  2.50 H2O  1.00 Fe++  -2.00 H+  0.25 O2(aq)  ;     -3.594 ;  106.869 ;    23.99 ;   1.0 
-Kaolinite            =  5.00 H2O  2.00 Al+++  -6.00 H+  2.00 SiO2(aq)  ;     6.8101 ;   258.16 ;    99.52 ;   1.0 
-Schoepite            =  3.00 H2O  -2.00 H+  1.00 UO2++  ;     4.8333 ;  322.058 ;    66.08 ;   1.0 
-(UO2)3(PO4)2.4H2O    =  4.00 H2O  -2.00 H+  2.00 HPO4--  3.00 UO2++  ;   -27.0349 ;  1072.09 ;    500.0 ;   1.0 
-Soddyite             =  4.00 H2O  -4.00 H+  1.00 SiO2(aq)  2.00 UO2++  ;      0.392 ;  668.169 ;   131.27 ;   1.0 
-Calcite              =  1.00 Ca++  -1.00 H+  1.00 HCO3-  ;     1.8487 ;  100.087 ;   36.934 ;   1.0 
-Chalcedony           =  1.00 SiO2(aq)  ;    -3.7281 ;  60.0843 ;   22.688 ;   1.0 
+<ParameterList name="verbose object">
+  <Parameter name="verbosity level" type="string" value="high"/>
+  <Parameter name="hide line prefix" type="bool" value="true"/>
+  <Parameter name="output filename" type="string" value="batch_native.test"/>
+</ParameterList>
+</ParameterList>
 
-<Mineral Kinetics
-# name               ; TST ; log10_rate_constant double     moles/m^2/sec 
-
-Gibbsite             ; TST ; log10_rate_constant      -14.0 moles/m^2/sec 
-Quartz               ; TST ; log10_rate_constant      -18.0 moles/m^2/sec 
-K-Feldspar           ; TST ; log10_rate_constant    -16.699 moles/m^2/sec 
-Jurbanite            ; TST ; log10_rate_constant      -14.0 moles/m^2/sec 
-Ferrihydrite         ; TST ; log10_rate_constant      -14.0 moles/m^2/sec 
-Kaolinite            ; TST ; log10_rate_constant    -16.699 moles/m^2/sec 
-Schoepite            ; TST ; log10_rate_constant      -10.0 moles/m^2/sec 
-(UO2)3(PO4)2.4H2O    ; TST ; log10_rate_constant      -10.0 moles/m^2/sec 
-Soddyite             ; TST ; log10_rate_constant      -10.0 moles/m^2/sec 
-Calcite              ; TST ; log10_rate_constant      -10.0 moles/m^2/sec 
-Chalcedony           ; TST ; log10_rate_constant      -14.0 moles/m^2/sec 
-
-<Surface Complex Sites
-# name               ; surface_density
-
->FeOH                ; 6.3600E-03
->AlOH                ; 6.3600E-03
->SiOH                ; 6.3600E-03
-
-<Surface Complexes
-# name               =  coeff surface site  coeff primary_name  ; log10(Keq) 25C ; charge 
-
->SiOUO3H3++          =  1.0 >SiOH  1.0 H2O  1.0 UO2++  ;       5.18 ;   2.0 
->SiOUO3H2+           =  1.0 >SiOH  1.0 H2O  -1.0 H+  1.0 UO2++  ;       5.18 ;   1.0 
->SiOUO3H             =  1.0 >SiOH  1.0 H2O  -2.0 H+  1.0 UO2++  ;       5.18 ;   0.0 
->SiOUO3-             =  1.0 >SiOH  1.0 H2O  -3.0 H+  1.0 UO2++  ;      12.35 ;  -1.0 
->SiOUO2(OH)2-        =  1.0 >SiOH  2.0 H2O  -3.0 H+  1.0 UO2++  ;      12.35 ;  -1.0 
->FeOHUO3             =  1.0 >FeOH  1.0 H2O  -2.0 H+  1.0 UO2++  ;       3.05 ;   0.0 
->FeOHUO2++           =  1.0 >FeOH  1.0 UO2++  ;      -6.63 ;   2.0 
->AlOUO2+             =  1.0 >AlOH  -1.0 H+  1.0 UO2++  ;      -3.13 ;   1.0 

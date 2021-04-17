@@ -40,7 +40,7 @@
 #include <AmanziChemHelper_Structured.H>
 
 #include "simple_thermo_database.hh"
-#include "activity_model_factory.hh"
+#include "ActivityModelFactory.hh"
 #include "beaker.hh"
 
 #include <TabularFunction.H>

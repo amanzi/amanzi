@@ -1,0 +1,66 @@
+<ParameterList name="thermodynamic database">
+<ParameterList name="primary species">
+  <ParameterList name="Na+">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="22.99"/>
+  </ParameterList>
+  <ParameterList name="Ca++">
+    <Parameter name="ion size parameter" type="double" value="6.0"/>
+    <Parameter name="charge" type="int" value="2"/>
+    <Parameter name="gram molecular weight" type="double" value="4.00799999999999983e+01"/>
+  </ParameterList>
+  <ParameterList name="Mg++">
+    <Parameter name="ion size parameter" type="double" value="8.0"/>
+    <Parameter name="charge" type="int" value="2"/>
+    <Parameter name="gram molecular weight" type="double" value="2.43000000000000007e+01"/>
+  </ParameterList>
+  <ParameterList name="Cl-">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="3.54500000000000028e+01"/>
+  </ParameterList>
+</ParameterList>
+
+<ParameterList name="mineral kinetics">
+  <ParameterList name="Halite">
+    <Parameter name="rate model" type="string" value="TST"/>
+    <Parameter name="rate constant" type="double" value="-4.0e+01"/>
+    <Parameter name="modifiers" type="string" value=""/>
+    <Parameter name="gram molecular weight" type="double" value=" 5.84425E+01"/>
+    <Parameter name="reaction" type="string" value="1.00 Na+  1.00 Cl-"/>
+    <Parameter name="equilibrium constant" type="double" value="1.58550E+00"/>
+    <Parameter name="molar volume" type="double" value="2.70150E+01"/>
+    <Parameter name="specific surface area" type="double" value="1.0"/>
+  </ParameterList>
+</ParameterList>
+
+<ParameterList name="ion exchange sites">
+  <ParameterList name="X-">
+    <Parameter name="location" type="string" value="Halite"/>
+    <Parameter name="charge" type="int" value="-1"/>
+  </ParameterList>
+</ParameterList>
+
+<ParameterList name="ion exchange complexes">
+  <ParameterList name="Na+X">
+    <Parameter name="reaction" type="string" value="1.0 Na+  1.0 X-"/>
+    <Parameter name="equilibrium constant" type="double" value="1.0"/>
+  </ParameterList>
+  <ParameterList name="Ca++X">
+    <Parameter name="reaction" type="string" value="1.0 Ca++  2.0 X-"/>
+    <Parameter name="equilibrium constant" type="double" value="2.95300E-01"/>
+  </ParameterList>
+  <ParameterList name="Mg++X">
+    <Parameter name="reaction" type="string" value="1.0 Mg++  2.0 X-"/>
+    <Parameter name="equilibrium constant" type="double" value="1.66600E-01"/>
+  </ParameterList>
+</ParameterList>
+
+<ParameterList name="verbose object">
+  <Parameter name="verbosity level" type="string" value="high"/>
+  <Parameter name="hide line prefix" type="bool" value="true"/>
+  <Parameter name="output filename" type="string" value="batch_native.test"/>
+</ParameterList>
+</ParameterList>
+

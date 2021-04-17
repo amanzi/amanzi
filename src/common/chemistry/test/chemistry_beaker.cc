@@ -11,7 +11,7 @@
 
 #include "VerboseObject.hh"
 
-#include "activity_model_factory.hh"
+#include "ActivityModelFactory.hh"
 #include "beaker.hh"
 #include "chemistry_exception.hh"
 #include "simple_thermo_database.hh"
