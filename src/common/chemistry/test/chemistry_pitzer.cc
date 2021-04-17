@@ -96,8 +96,8 @@ SUITE(TestPitzer) {
     plist.set<int>("charge", -1);
     Br = ac::Species(16, "Br-", plist);
 
-    // parameters.database_filename = "phreeqc_pitzer.dat";
-    parameters.database_filename = "test/chemistry_pitzer.dat";
+    // parameters.database_filename = "phreeqc_pitzer";
+    parameters.database_filename = "test/chemistry_pitzer";
     parameters.pitzer_jfunction = "pitzer1975";
 
     vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry", plist));
@@ -328,47 +328,6 @@ SUITE(TestPitzer) {
     CHECK_THROW(am_ = amfac_.Create("invalid activity model", parameters, sp_, aqx_, vo_.ptr()), ac::ChemistryException);
   }
 
-  /*!
-    @class Amanzi::AmanziChemistry::unit_tests::ActivityModelPitzer::TestInvalidDatabase
-
-    @brief TestInvalidDatabase
-
-    @details Test that a chemistry exception is thrown when an invalid virial coefficient
-    database is provided.
-
-    @test ActivityModelPitzer::Create()
-  */
-  TEST_FIXTURE(PitzerTest, TestInvalidDatabase) {
-    Teuchos::ParameterList plist;
-    plist.set<int>("charge", -1)
-         .set<double>("gram molecular weight", 0.0);
-    ac::Species Cl(0, "Cl-", plist);
-
-    plist.set<int>("charge", 1);
-    ac::Species Na(1, "Na+", plist);
-
-    Cl.update(1.0);
-    Na.update(1.0);
-    aqx_.clear();
-    sp_.clear();
-    sp_.push_back(Cl);
-    sp_.push_back(Na);
-    parameters.database_filename = "invalid data base";
-    CHECK_THROW(am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_, vo_.ptr()), ac::ChemistryException);
-  }
-
-  /*!
-    @class Amanzi::AmanziChemistry::unit_tests::ActivityModelPitzer::TestZeroNumberSpecies
-
-    @brief TestZeroNumberSpecies
-
-    @details Test that a chemistry exception is thrown when the number of primary species and aquous complexes are zero.
-
-    @test ActivityModelPitzer::Create()
-  */
-  TEST_FIXTURE(PitzerTest, TestZeroNumberSpecies) {
-    CHECK_THROW(am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_, vo_.ptr()), ac::ChemistryException);
-  }
   /*!
     @class Amanzi::AmanziChemistry::unit_tests::ActivityModelPitzer::TestZeroConcentrations
 

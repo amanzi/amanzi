@@ -1,16 +1,17 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include <cstdlib>
 #include <math.h>
-#include <vector>
-#include <string>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <string>
 #include <sstream>
+#include <vector>
+
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "chemistry_exception.hh"
 #include "exceptions.hh"
-#include "string_tokenizer.hh"
 #include "virial_coefficient.hh"
 
 #include "ActivityModelPitzerHWM.hh"
@@ -39,13 +40,9 @@ const double ActivityModelPitzerHWM::c8aphi_debye_huckel_slope = 1.8016317;  // 
 const double ActivityModelPitzerHWM::c9aphi_debye_huckel_slope = 9.3816144;  // Temperature depending coefficients
 
 
-/*!
-  @brief ActivityModelPitzerHWM
-
-  @class ActivityModelPitzerHWM
-
-  @details Create the object
-*/
+/* ******************************************************************
+* Create the object
+****************************************************************** */
 ActivityModelPitzerHWM::ActivityModelPitzerHWM()
   : ActivityModel(),
     aphi_debye_huckel_slope(aphi_debye_huckel_slope25),
@@ -66,18 +63,14 @@ ActivityModelPitzerHWM::ActivityModelPitzerHWM()
 }
 
 
-/*!
-  @brief ActivityModelPitzerHWM
-
-  @class ActivityModelPitzerHWM
-
-  @details Create the object
-*/
+/* ******************************************************************
+* Setup the object
+****************************************************************** */
 void ActivityModelPitzerHWM::Setup(
     const ActivityModelParameters& parameters,
     const std::vector<Species>& primary_species,
-    const std::vector<AqueousEquilibriumComplex>& aqueous_complexes) {
-
+    const std::vector<AqueousEquilibriumComplex>& aqueous_complexes)
+{
   // initialize storage in the base class:
   ResizeGamma(primary_species.size() + aqueous_complexes.size());
 
@@ -95,37 +88,65 @@ void ActivityModelPitzerHWM::Setup(
     const_j_functions.push_back(0.0164);
   }
 
+  // collect aquoues species in one array
+  for (auto it = primary_species.begin(); it != primary_species.end(); ++it) {
+    molality.push_back(0.0);
+    charge.push_back((*it).charge());
+    name_species.push_back((*it).name());
+  }
+  for (auto it = aqueous_complexes.begin(); it != aqueous_complexes.end(); ++it) {
+    molality.push_back(0.0);
+    charge.push_back((*it).charge());
+    name_species.push_back((*it).name());
+  }
+  number_species = primary_species.size() + aqueous_complexes.size();
+
+  auto plist = Teuchos::getParametersFromXmlFile(parameters.database_filename + ".xml");
+
+  ParseVirialCoefficient_(plist, "b0");
+  ParseVirialCoefficient_(plist, "b1");
+  ParseVirialCoefficient_(plist, "b2");
+  ParseVirialCoefficient_(plist, "cfi");
+  ParseVirialCoefficient_(plist, "theta");
+  ParseVirialCoefficient_(plist, "lamda");
+  ParseVirialCoefficient_(plist, "psi");
+
   // Read Pitzer coefficients database
-  ReadDataBase(parameters.database_filename,
-               primary_species, aqueous_complexes);
+  AssignIndexBetaFunctions();
+  AssignIndexJFunctions();
+  number_non_zero_q = number_non_zero_beta + number_non_zero_theta + number_non_zero_lamda;
+  PushPrivateVectors();
+  Update(273.15, 0.0);
+
+  for (int isp = 0; isp < number_species; isp++) {
+    if (name_species.at(isp) == "H2O") index_h2o_species = isp;
+    if (name_species.at(isp) == "Cl-") index_cl_species = isp;
+    if (name_species.at(isp) == "K+") index_k_species = isp;
+  }
+  if (index_cl_species > -1 && index_k_species > -1) {
+    macinnes_scaled = true;
+  }
 }
 
 
-/*!
-  @brief Evaluate
-
-  @class ActivityModelPitzerHWM
-
-  @details Compute the activity coefficient (return 1)
-*/
+/* ******************************************************************
+* Compute the activity coefficient
+****************************************************************** */
 double ActivityModelPitzerHWM::Evaluate(const Species& species) {
   return 1.0;
 }
 
 
-/*!
-  @brief EvaluateVector
-
-  @class ActivityModelPitzerHWM
-
-  @details Compute the activity coefficients
-*/
+/* ******************************************************************
+* Compute the activity coefficients
+****************************************************************** */
 void ActivityModelPitzerHWM::EvaluateVector(
     const std::vector<Species>& primary_species,
     const std::vector<AqueousEquilibriumComplex>& aqueous_complexes,
     std::vector<double>* gamma,
-    double* water_activity) {
-  unsigned int number_species_(primary_species.size() + aqueous_complexes.size());
+    double* water_activity)
+{
+  int number_species_(primary_species.size() + aqueous_complexes.size());
 
   // Check the number of species
   if (number_species_ != number_species) {
@@ -173,15 +194,12 @@ void ActivityModelPitzerHWM::EvaluateVector(
 }
 
 
-/*!
-  @brief ComputeQc
-
-  @class ActivityModelPitzerHWM
-
-  @details Compute the m(Qc)m product.
-*/
+/* ******************************************************************
+* Compute the m(Qc)m product.
+****************************************************************** */
 void ActivityModelPitzerHWM::ComputemQcmProduct(std::vector<double>& gamma,
-                                                double& osmotic_coefficient) {
+                                                double& osmotic_coefficient)
+{
   double qc(0.0);
   for (int nz = 0; nz < number_non_zero_cphi; nz++) {
     int i(cphi_virial.at(nz).GetIsp1());
@@ -203,14 +221,11 @@ void ActivityModelPitzerHWM::ComputemQcmProduct(std::vector<double>& gamma,
 }
 
 
-/*!
-  @brief ComputeQl
-
-  @class ActivityModelPitzerHWM
-
-  @details Compute the m(Ql)m product.
-*/
-void ActivityModelPitzerHWM::ComputemQlmProduct(double& osmotic_coefficient) {
+/* ******************************************************************
+* Compute the m(Ql)m product.
+****************************************************************** */
+void ActivityModelPitzerHWM::ComputemQlmProduct(double& osmotic_coefficient)
+{
   for (int nz = 0; nz < number_non_zero_lamda; nz++) {
     int i(lamda_virial.at(nz).GetIsp1());
     int j(lamda_virial.at(nz).GetIsp2());
@@ -222,15 +237,12 @@ void ActivityModelPitzerHWM::ComputemQlmProduct(double& osmotic_coefficient) {
 }
 
 
-/*!
-  @brief ComputeQ
-
-  @class ActivityModelPitzerHWM
-
-  @details Compute mQm product.
-*/
+/* ******************************************************************
+* Compute mQm product.
+****************************************************************** */
 void ActivityModelPitzerHWM::ComputemQmProduct(std::vector<double>& gamma,
-                                               double& osmotic_coefficient) {
+                                               double& osmotic_coefficient)
+{
   double q2phi(0.0), q2prim(0.0);
   for (int nz = 0; nz < number_non_zero_q; nz++) {
     double qij(q_matrix.at(nz));
@@ -252,15 +264,12 @@ void ActivityModelPitzerHWM::ComputemQmProduct(std::vector<double>& gamma,
 }
 
 
-/*!
-  @brief ComputeT
-
-  @class ActivityModelPitzerHWM
-
-  @details Compute mTmm product.
-*/
+/* ******************************************************************
+* Compute mTmm product.
+****************************************************************** */
 void ActivityModelPitzerHWM::ComputemTmmProduct(std::vector<double>& gamma,
-                                                double& osmotic_coefficient) {
+                                                double& osmotic_coefficient)
+{
   double tril(0.0);
   std::vector<double> vector;
   for (int i = 0; i < number_species; i++) {
@@ -294,16 +303,13 @@ void ActivityModelPitzerHWM::ComputemTmmProduct(std::vector<double>& gamma,
 }
 
 
-/*!
-  @brief ComputeDH
-
-  @class ActivityModelPitzerHWM
-
-  @details Compute the Debye-Huckel term.
-*/
+/* ******************************************************************
+* Compute the Debye-Huckel term.
+****************************************************************** */
 void ActivityModelPitzerHWM::ComputeDebyeHuckelTerm(std::vector<double>& gamma,
                                                     double& osmotic_coefficient,
-                                                    double& gclm) {
+                                                    double& gclm)
+{
   gclm = 1.0;
   double den(1.0 + bdh * sqrt(I_));
   double dh(-aphi_debye_huckel_slope * sqrt(I_) / den);
@@ -320,15 +326,12 @@ void ActivityModelPitzerHWM::ComputeDebyeHuckelTerm(std::vector<double>& gamma,
 }
 
 
-/*!
-  @brief gclm_
-
-  @class ActivityModelPitzerHWM
-
-  @details Compute the activity coefficient for Cl- in a KCl-K system
-  (performed for the MacIness convention).
-*/
-double ActivityModelPitzerHWM::gclm_(const double& dhterm) {
+/* ******************************************************************
+* Compute the activity coefficient for Cl- in a KCl-K system
+*  (performed for the MacIness convention).
+****************************************************************** */
+double ActivityModelPitzerHWM::gclm_(const double& dhterm)
+{
   const double mtb0kcl(0.04835);
   const double mtb1kcl(0.2122);
   const double mtc0kcl(-0.00084);
@@ -342,15 +345,11 @@ double ActivityModelPitzerHWM::gclm_(const double& dhterm) {
 }
 
 
-/*!
-  @brief ComputeQmatrices
-
-  @class ActivityModelPitzerHWM
-
-  @details Compute the Q's matrices and store
-  them in sparse storage
-*/
-void ActivityModelPitzerHWM::ComputeQmatrices() {
+/* ******************************************************************
+* Compute the Q's matrices and store them in sparse storage
+****************************************************************** */
+void ActivityModelPitzerHWM::ComputeQmatrices()
+{
   for (int i = 0; i < number_b_functions; i++) {
     g_function.at(i).at(0) = 0.0;
     g_function.at(i).at(1) = 0.0;
@@ -363,7 +362,7 @@ void ActivityModelPitzerHWM::ComputeQmatrices() {
     j_function.at(i) = 0.0;
     j_pri_function.at(i) = 0.0;
   }
-  ComputeBetaFunctions();
+  ComputeBetaFunctions_();
   ComputeJFunctions();
   int nz(-1);
   for (int nz_loc = 0; nz_loc < number_non_zero_beta; nz_loc++) {
@@ -386,6 +385,7 @@ void ActivityModelPitzerHWM::ComputeQmatrices() {
     index_non_zero_q.at(0).at(nz) = i;
     index_non_zero_q.at(1).at(nz) = j;
   }
+
   for (int nz_loc = 0; nz_loc < number_non_zero_theta; nz_loc++) {
     nz++;
     int i(theta_virial.at(nz_loc).GetIsp1());
@@ -423,6 +423,7 @@ void ActivityModelPitzerHWM::ComputeQmatrices() {
     index_non_zero_q.at(0).at(nz) = i;
     index_non_zero_q.at(1).at(nz) = j;
   }
+
   if ((nz + 1) != number_non_zero_q) {
     std::ostringstream error_stream;
     error_stream << "Warning different number non-zero terms in Q's matrices\n";
@@ -431,14 +432,11 @@ void ActivityModelPitzerHWM::ComputeQmatrices() {
 }
 
 
-/*!
-  @brief ComputeFbeta
-
-  @class ActivityModelPitzerHWM
-
-  @details Compute the Beta functions
-*/
-void ActivityModelPitzerHWM::ComputeBetaFunctions() {
+/* ******************************************************************
+* Compute the Beta functions
+****************************************************************** */
+void ActivityModelPitzerHWM::ComputeBetaFunctions_()
+{
   for (int j = 0; j < number_b_functions; j++) {
     double x1(alpha1.at(j)*sqrt(I_));
     double x1q(x1 * x1);
@@ -456,20 +454,15 @@ void ActivityModelPitzerHWM::ComputeBetaFunctions() {
 }
 
 
-/*!
-  @brief ComputeFj
-
-  @class ActivityModelPitzerHWM
-
-  @details Compute the J's functions.
-*/
-void ActivityModelPitzerHWM::ComputeJFunctions() {
+/* ******************************************************************
+* Compute the J's functions.
+****************************************************************** */
+void ActivityModelPitzerHWM::ComputeJFunctions()
+{
   const double e1(4.581), e2(0.7237), e3(0.012), e4(0.528);  // e12(7.8963);
 
   if (jfunction_approach == "pitzer1975") {
-
     for (int i = 0; i < number_j_functions; i++) {
-
       double zizj(charge_product.at(i));
       double x(2.352 * sqrt(I_)*zizj);
       double x2(x * x);
@@ -503,23 +496,17 @@ void ActivityModelPitzerHWM::ComputeJFunctions() {
 }
 
 
-/*!
-  @brief Display
-
-  @class ActivityModelPitzerHWM
-
-  @details Write the attributes
-*/
+/* ******************************************************************
+* Write the attributes
+****************************************************************** */
 void ActivityModelPitzerHWM::Display() const {
   std::cout << "============================================>" << std::endl;
   std::cout << "Activity model: HWM (Harvie et al., 1984)" << std::endl;
-  std::cout << "============================================>" << std::endl;
   std::cout << "Species:" << std::endl;
-  std::cout << "---------------------------------------------" << std::endl;
+
   for (int i = 0; i < number_species; i++) {
     std::cout << name_species.at(i) << " " << charge.at(i) << " " << std::endl;
   }
-  std::cout << "============================================>" << std::endl;
   std::cout << "--------------------------------------------------------------------" << std::endl;
   std::cout << " Virial coefficients" << std::endl;
   std::cout << "--------------------------------------------------------------------" << std::endl;
@@ -612,9 +599,7 @@ void ActivityModelPitzerHWM::Display() const {
 
   std::cout << "=====================================>" << std::endl;
   std::cout << "Total number of virial coefficients: " << nvirial << std::endl;
-  std::cout << "=====================================>" << std::endl;
   std::cout << "Total number of Beta's functions: " << number_b_functions << std::endl;
-  std::cout << "=====================================>" << std::endl;
   std::cout << "Total number of J's functions: " << number_j_functions << std::endl;
   std::cout << "--------------------------------------" << std::endl;
   for (int i = 0; i < number_j_functions; i++) {
@@ -624,469 +609,13 @@ void ActivityModelPitzerHWM::Display() const {
 }
 
 
-/*!
-  @brief ReadDataBase
-
-  @class ActivityModelPitzerHWM
-
-  @details Read the virial coefficients database
-*/
-void ActivityModelPitzerHWM::ReadDataBase(const std::string& namedatabase,
-                                          const std::vector<Species>& primary_species,
-                                          const std::vector<AqueousEquilibriumComplex>& aqueous_complexes)
+/* ******************************************************************
+* Set virial coefficients
+****************************************************************** */
+void ActivityModelPitzerHWM::SetVirialCoefficient(
+     const std::vector<double>& virial, const std::string& typevirial,
+     const int& isp1, const int& isp2, const int& isp3)
 {
-  bool isdebug((vo_->getVerbLevel() >= Teuchos::VERB_HIGH));
-
-  const int mxlines(10000);
-  const int block_b0(0), block_b1(1), block_b2(2), block_cfi(3), block_theta(4), block_lamda(5), block_psi(7), block_exit(8);
-  const std::string longspace("                  ");
-  number_species = primary_species.size() + aqueous_complexes.size();
-  if (number_species == 0) {
-    std::ostringstream error_stream;
-    error_stream << "Error, zero number of species" << "\n";
-    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
-  }
-  for (auto it = primary_species.begin(); it != primary_species.end(); ++it) {
-    molality.push_back(0.0);
-    charge.push_back((*it).charge());
-    name_species.push_back((*it).name());
-  }
-  for (auto it = aqueous_complexes.begin(); it != aqueous_complexes.end(); ++it) {
-    molality.push_back(0.0);
-    charge.push_back((*it).charge());
-    name_species.push_back((*it).name());
-  }
-
-  // Open Pitzer virial coefficients database
-  if (isdebug) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "=================> Opening Pitzer Data Base ==============> "
-               << namedatabase << std::endl;
-  }
-  std::ifstream database(namedatabase.c_str());
-  if (!database) {
-    std::ostringstream error_stream;
-    error_stream << "ActivityModelPitzerHWM::ReadFile(): \n";
-    error_stream << "file could not be opened.... " << namedatabase << "\n";
-    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
-  } else {
-    if (isdebug) {
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "Opening Pitzer virial coefficients database was successful: " << namedatabase << std::endl;
-    }
-  }
-
-  std::string space(" ");
-  StringTokenizer no_spaces;
-
-  int count(0), iblock(-1);
-  bool exit_loop(false);
-  while (!database.eof() && count < mxlines && !exit_loop) {
-    count++;
-    std::string error_section("");
-    std::string line;
-    getline(database, line);
-    // Read the first character
-    char first = line[0];
-    // Check if the file was finished
-    StringTokenizer input(line, space);
-    no_spaces.tokenize(input.at(0), space);
-    std::string line1(no_spaces.at(0));
-    if (line1 == space) {
-      exit_loop = true;
-    }
-    if (first == '>') {
-      iblock++;
-      if (iblock == block_b0 && isdebug) {
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "=================> Parse Beta0 ==============>" << std::endl;
-      }
-      if (iblock == block_b1 && isdebug) {
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "=================> Parse Beta1 ==============>" << std::endl;
-      }
-      if (iblock == block_b2 && isdebug) {
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "=================> Parse Beta2 ==============>" << std::endl;
-      }
-      if (iblock == block_cfi && isdebug) {
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "=================> Parse Cphi ==============>" << std::endl;
-      }
-      if (iblock == block_theta && isdebug) {
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "=================> Parse Theta ==============>" << std::endl;
-      }
-      if (iblock == block_lamda && isdebug) {
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "=================> Parse Lamda ==============>" << std::endl;
-      }
-      if (iblock == block_psi && isdebug) {
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "=================> Parse Psi ==============>" << std::endl;
-      }
-      getline(database, line);
-    }
-    if (iblock == block_b0) {
-      ParseBeta0VirialCoefficient(line);
-    }
-    if (iblock == block_b1) {
-      ParseBeta1VirialCoefficient(line);
-    }
-    if (iblock == block_b2) {
-      ParseBeta2VirialCoefficient(line);
-    }
-    if (iblock == block_cfi) {
-      ParseCfiVirialCoefficient(line);
-    }
-    if (iblock == block_theta) {
-      ParseThetaVirialCoefficient(line);
-    }
-    if (iblock == block_lamda) {
-      ParseLamdaVirialCoefficient(line);
-    }
-    if (iblock == block_psi) {
-      ParsePsiVirialCoefficient(line);
-    }
-
-    if (iblock == block_exit) {
-      exit_loop = true;
-    }
-  }
-
-  if (isdebug) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "=================> Assign Beta's functions ==============>" << std::endl;
-  }
-  AssignIndexBetaFunctions();
-  if (isdebug) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "=================> Assign F's functions ==============>" << std::endl;
-  }
-  AssignIndexJFunctions();
-  if (isdebug) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "=================> Compute total number of non-zero terms ==============>" << std::endl;
-  }
-  number_non_zero_q = number_non_zero_beta + number_non_zero_theta + number_non_zero_lamda;
-  PushPrivateVectors();
-  Update(273.15, 0.0);
-  for (int isp = 0; isp < number_species; isp++) {
-    if (name_species.at(isp) == "H2O" || name_species.at(isp) == "h2o") {
-      index_h2o_species = isp;
-    }
-    if (name_species.at(isp) == "Cl-" || name_species.at(isp) == "cl-") {
-      index_cl_species = isp;
-    }
-    if (name_species.at(isp) == "K+"  || name_species.at(isp) == "k+") {
-      index_k_species = isp;
-    }
-  }
-  if (index_cl_species > -1 && index_k_species > -1) {
-    macinnes_scaled = true;
-  }
-  database.close();
-  if (isdebug) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "=================> Closing Pitzer Data Base ==============>" << std::endl;
-    *vo_->os() << "=================> Print virial coefficients ==============>" << std::endl;
-
-    Display();
-
-    *vo_->os() << "=================> End print virial coefficients ==============>" << std::endl;
-  }
-}
-
-
-/*!
-  @brief ParseB0
-
-  @class ActivityModelPitzerHWM
-
-  @details Parse Beta0 virial coefficients
-*/
-void ActivityModelPitzerHWM::ParseBeta0VirialCoefficient(const std::string& data) {
-  std::string semicolon(";");
-  std::string space(" ");
-  StringTokenizer b0(data, space);
-  StringTokenizer no_spaces;
-  // get name 1
-  no_spaces.tokenize(b0.at(0), space);
-  std::string name1(no_spaces.at(0));
-  // get nam2 2
-  no_spaces.tokenize(b0.at(1), space);
-  std::string name2(no_spaces.at(0));
-  int isp1;
-  int isp2;
-  isp1 = GetIndexSpeciesFromName(name1);
-  if (isp1 > -1) {
-    isp2 = GetIndexSpeciesFromName(name2);
-  }
-  if (isp1 > -1 && isp2 > -1) {
-    no_spaces.tokenize(b0.at(2), space);
-    double virial(std::atof(no_spaces.at(0).c_str()));
-    std::vector<double> virial_vec;
-    virial_vec.push_back(virial);
-    SetVirialCoefficient(virial_vec, "b0", isp1, isp2, -1);
-    bool isdebug(false);
-    if (isdebug) {
-      std::cout << name_species.at(isp1) << name_species.at(isp2) << virial << std::endl;
-    }
-  }
-}
-
-
-/*!
-  @brief ParseB1
-
-  @class ActivityModelPitzerHWM
-
-  @details Parse Beta1 virial coefficients
-*/
-void ActivityModelPitzerHWM::ParseBeta1VirialCoefficient(const std::string& data) {
-  std::string semicolon(";");
-  std::string space(" ");
-  StringTokenizer b1(data, space);
-  StringTokenizer no_spaces;
-  // get name 1
-  no_spaces.tokenize(b1.at(0), space);
-  std::string name1(no_spaces.at(0));
-  // get nam2 2
-  no_spaces.tokenize(b1.at(1), space);
-  std::string name2(no_spaces.at(0));
-  int isp1;
-  int isp2;
-  isp1 = GetIndexSpeciesFromName(name1);
-  if (isp1 > -1) {
-    isp2 = GetIndexSpeciesFromName(name2);
-  }
-  if (isp1 > -1 && isp2 > -1) {
-    no_spaces.tokenize(b1.at(2), space);
-    double virial(std::atof(no_spaces.at(0).c_str()));
-    std::vector<double> virial_vec;
-    virial_vec.push_back(virial);
-    SetVirialCoefficient(virial_vec, "b1", isp1, isp2, -1);
-    bool isdebug(false);
-    if (isdebug) {
-      std::cout << name_species.at(isp1) << name_species.at(isp2) << virial << std::endl;
-    }
-  }
-}
-
-
-/*!
-  @brief ParseB2
-
-  @class ActivityModelPitzerHWM
-
-  @details Parse Beta2 virial coefficients
-*/
-void ActivityModelPitzerHWM::ParseBeta2VirialCoefficient(const std::string& data) {
-  std::string semicolon(";");
-  std::string space(" ");
-  StringTokenizer b2(data, space);
-  StringTokenizer no_spaces;
-  // get name 1
-  no_spaces.tokenize(b2.at(0), space);
-  std::string name1(no_spaces.at(0));
-  // get nam2 2
-  no_spaces.tokenize(b2.at(1), space);
-  std::string name2(no_spaces.at(0));
-  int isp1;
-  int isp2;
-  isp1 = GetIndexSpeciesFromName(name1);
-  if (isp1 > -1) {
-    isp2 = GetIndexSpeciesFromName(name2);
-  }
-  if (isp1 > -1 && isp2 > -1) {
-    no_spaces.tokenize(b2.at(2), space);
-    double virial(std::atof(no_spaces.at(0).c_str()));
-    std::vector<double> virial_vec;
-    virial_vec.push_back(virial);
-    SetVirialCoefficient(virial_vec, "b2", isp1, isp2, -1);
-    bool isdebug(false);
-    if (isdebug) {
-      std::cout << name_species.at(isp1) << name_species.at(isp2) << virial << std::endl;
-    }
-  }
-}
-
-
-/*!
-  @brief ParseCfi
-
-  @class ActivityModelPitzerHWM
-
-  @details Parse Cfi virial coefficients
-*/
-void ActivityModelPitzerHWM::ParseCfiVirialCoefficient(const std::string& data) {
-  std::string semicolon(";");
-  std::string space(" ");
-  StringTokenizer cfi(data, space);
-  StringTokenizer no_spaces;
-  // get name 1
-  no_spaces.tokenize(cfi.at(0), space);
-  std::string name1(no_spaces.at(0));
-  // get nam2 2
-  no_spaces.tokenize(cfi.at(1), space);
-  std::string name2(no_spaces.at(0));
-  int isp1;
-  int isp2;
-  isp1 = GetIndexSpeciesFromName(name1);
-  if (isp1 > -1) {
-    isp2 = GetIndexSpeciesFromName(name2);
-  }
-  if (isp1 > -1 && isp2 > -1) {
-    no_spaces.tokenize(cfi.at(2), space);
-    double virial(std::atof(no_spaces.at(0).c_str()));
-    virial /= 2.0 * sqrt(std::abs(charge.at(isp1) * charge.at(isp2)));
-    std::vector<double> virial_vec;
-    virial_vec.push_back(virial);
-    SetVirialCoefficient(virial_vec, "cfi", isp1, isp2, -1);
-    bool isdebug(false);
-    if (isdebug) {
-      std::cout << name_species.at(isp1) << name_species.at(isp2) << virial << std::endl;
-    }
-  }
-}
-
-
-/*!
-  @brief ParseTheta
-
-  @class ActivityModelPitzerHWM
-
-  @details Compute the J's functions
-*/
-void ActivityModelPitzerHWM::ParseThetaVirialCoefficient(const std::string& data) {
-  std::string semicolon(";");
-  std::string space(" ");
-  StringTokenizer th(data, space);
-  StringTokenizer no_spaces;
-  // get name 1
-  no_spaces.tokenize(th.at(0), space);
-  std::string name1(no_spaces.at(0));
-  // get name 2
-  no_spaces.tokenize(th.at(1), space);
-  std::string name2(no_spaces.at(0));
-  int isp1;
-  int isp2;
-  isp1 = GetIndexSpeciesFromName(name1);
-  if (isp1 > -1) {
-    isp2 = GetIndexSpeciesFromName(name2);
-  }
-  if (isp1 > -1 && isp2 > -1) {
-    no_spaces.tokenize(th.at(2), space);
-    double virial(std::atof(no_spaces.at(0).c_str()));
-    std::vector<double> virial_vec;
-    virial_vec.push_back(virial);
-    SetVirialCoefficient(virial_vec, "theta", isp1, isp2, -1);
-    bool isdebug(false);
-    if (isdebug) {
-      std::cout << name_species.at(isp1) << name_species.at(isp2) << virial << std::endl;
-      for (int i = 0; i < number_non_zero_theta; i++) {
-        std::cout << "zi zj" << theta_virial.at(i).GetIfun1() << std::endl;
-        std::cout << "zi zi" << theta_virial.at(i).GetIfun2() << std::endl;
-        std::cout << "zj zj" << theta_virial.at(i).GetIfun3() << std::endl;
-      }
-    }
-  }
-}
-
-
-/*!
-  @brief ParseLamda
-
-  @class ActivityModelPitzerHWM
-
-  @details Parse Lamda virial coeffienets
-*/
-void ActivityModelPitzerHWM::ParseLamdaVirialCoefficient(const std::string& data) {
-  ;
-  std::string semicolon(";");
-  std::string space(" ");
-  StringTokenizer lam(data, space);
-  StringTokenizer no_spaces;
-  // get name 1
-  no_spaces.tokenize(lam.at(0), space);
-  std::string name1(no_spaces.at(0));
-  // get name 2
-  no_spaces.tokenize(lam.at(1), space);
-  std::string name2(no_spaces.at(0));
-  int isp1;
-  int isp2;
-  isp1 = GetIndexSpeciesFromName(name1);
-  if (isp1 > -1) {
-    isp2 = GetIndexSpeciesFromName(name2);
-  }
-  if (isp1 > -1 && isp2 > -1) {
-    no_spaces.tokenize(lam.at(2), space);
-    double virial(std::atof(no_spaces.at(0).c_str()));
-    std::vector<double> virial_vec;
-    virial_vec.push_back(virial);
-    SetVirialCoefficient(virial_vec, "lamda", isp1, isp2, -1);
-    bool isdebug(false);
-    if (isdebug) {
-      std::cout << name_species.at(isp1) << name_species.at(isp2) << virial << std::endl;
-    }
-  }
-}
-
-
-/*!
-  @brief ParsePsi
-
-  @class ActivityModelPitzerHWM
-
-  @details Parse Psi virial coefficients
-*/
-void ActivityModelPitzerHWM::ParsePsiVirialCoefficient(const std::string& data) {
-  std::string semicolon(";");
-  std::string space(" ");
-  StringTokenizer psi_loc(data, space);
-  StringTokenizer no_spaces;
-  // get name 1
-  no_spaces.tokenize(psi_loc.at(0), space);
-  std::string name1(no_spaces.at(0));
-  // get name 2
-  no_spaces.tokenize(psi_loc.at(1), space);
-  std::string name2(no_spaces.at(0));
-  // get name 3
-  no_spaces.tokenize(psi_loc.at(2), space);
-  std::string name3(no_spaces.at(0));
-  int isp1;
-  int isp2;
-  int isp3;
-  isp1 = GetIndexSpeciesFromName(name1);
-  if (isp1 > -1) {
-    isp2 = GetIndexSpeciesFromName(name2);
-  }
-  if (isp1 > -1 && isp2 > -1) {
-    isp3 = GetIndexSpeciesFromName(name3);
-  }
-  if (isp1 > -1 && isp2 > -1 && isp3 > -1) {
-    no_spaces.tokenize(psi_loc.at(3), space);
-    double virial(std::atof(no_spaces.at(0).c_str()));
-    std::vector<double> virial_vec;
-    virial_vec.push_back(virial);
-    SetVirialCoefficient(virial_vec, "psi", isp1, isp2, isp3);
-    bool isdebug(false);
-    if (isdebug) {
-      std::cout << name_species.at(isp1) << name_species.at(isp2) << name_species.at(isp3) << virial << std::endl;
-    }
-  }
-}
-
-
-/*!
-  @brief SetVirial
-
-  @class ActivityModelPitzerHWM
-
-  @details Set virial coefficients
-*/
-void ActivityModelPitzerHWM::SetVirialCoefficient(const std::vector<double>& virial, const std::string& typevirial,
-                                                  const int& isp1, const int& isp2, const int& isp3) {
   VirialCoefficient vir;
   VirialCoefficient vir0;
   bool not_stored(true);
@@ -1200,7 +729,7 @@ void ActivityModelPitzerHWM::SetVirialCoefficient(const std::vector<double>& vir
   } else if (typevirial == "lamda") {
 
     number_non_zero_lamda++;
-    for (std::vector<double>::const_iterator j = virial.begin(); j != virial.end(); j++) {
+    for (auto j = virial.begin(); j != virial.end(); j++) {
       vir.SetPol((*j));
     }
     vir.SetIsp1(isp1);
@@ -1226,14 +755,11 @@ void ActivityModelPitzerHWM::SetVirialCoefficient(const std::vector<double>& vir
 }
 
 
-/*!
-  @brief AssignFbeta
-
-  @class ActivityModelPitzerHWM
-
-  @details Assign Beta's functions
-*/
-void ActivityModelPitzerHWM::AssignIndexBetaFunctions() {
+/* ******************************************************************
+* Assign Beta's functions
+****************************************************************** */
+void ActivityModelPitzerHWM::AssignIndexBetaFunctions()
+{
   // Local variables and constants
   int l1(0), l2(0), l3(0), n1(0), n2(0), n3(0), nz(0);
   number_b_functions = 0;
@@ -1292,14 +818,11 @@ void ActivityModelPitzerHWM::AssignIndexBetaFunctions() {
 }
 
 
-/*!
-  @brief AssignFj
-
-  @class ActivityModelPitzerHWM
-
-  @details Assign J's functions
-*/
-void ActivityModelPitzerHWM::AssignIndexJFunctions() {
+/* ******************************************************************
+* Assign J's functions
+****************************************************************** */
+void ActivityModelPitzerHWM::AssignIndexJFunctions()
+{
   VirialCoefficient vir;
   for (int i = 0; i < number_species; i++) {
     for (int j = 0; j < number_species; j++) {
@@ -1377,14 +900,11 @@ void ActivityModelPitzerHWM::AssignIndexJFunctions() {
 }
 
 
-/*!
-  @brief PushPrivateVectors
-
-  @class ActivityModelPitzerHWM
-
-  @details Push back private vectors.
-*/
-void ActivityModelPitzerHWM::PushPrivateVectors() {
+/* ******************************************************************
+* Push back private vectors.
+****************************************************************** */
+void ActivityModelPitzerHWM::PushPrivateVectors()
+{
   g_function.resize(number_b_functions);
   g_pri_function.resize(number_b_functions);
   g_function.resize(number_b_functions);
@@ -1412,56 +932,87 @@ void ActivityModelPitzerHWM::PushPrivateVectors() {
 }
 
 
-/*!
-  @brief Update
-
-  @class ActivityModelPitzerHWM
-
-  @details Update virial coefficients with temperature and liquid pressure.
-*/
+/* ******************************************************************
+* Update virial coefficients with temperature and liquid pressure.
+****************************************************************** */
 void ActivityModelPitzerHWM::Update(const double& temperature,
-                                    const double& pressure) {
-  for (std::vector<VirialCoefficient>::iterator i = beta0_virial.begin(); i != beta0_virial.end(); i++) {
-    (*i).UpdateVirial(temperature, pressure);
+                                    const double& pressure)
+{
+  for (auto i = beta0_virial.begin(); i != beta0_virial.end(); i++) {
+    i->UpdateVirial(temperature, pressure);
   }
-  for (std::vector<VirialCoefficient>::iterator i = beta1_virial.begin(); i != beta1_virial.end(); i++) {
-    (*i).UpdateVirial(temperature, pressure);
+  for (auto i = beta1_virial.begin(); i != beta1_virial.end(); i++) {
+    i->UpdateVirial(temperature, pressure);
   }
-  for (std::vector<VirialCoefficient>::iterator i = beta2_virial.begin(); i != beta2_virial.end(); i++) {
-    (*i).UpdateVirial(temperature, pressure);
+  for (auto i = beta2_virial.begin(); i != beta2_virial.end(); i++) {
+    i->UpdateVirial(temperature, pressure);
   }
-  for (std::vector<VirialCoefficient>::iterator i = cphi_virial.begin(); i != cphi_virial.end(); i++) {
-    (*i).UpdateVirial(temperature, pressure);
+  for (auto i = cphi_virial.begin(); i != cphi_virial.end(); i++) {
+    i->UpdateVirial(temperature, pressure);
   }
-  for (std::vector<VirialCoefficient>::iterator i = theta_virial.begin(); i != theta_virial.end(); i++) {
-    (*i).UpdateVirial(temperature, pressure);
+  for (auto i = theta_virial.begin(); i != theta_virial.end(); i++) {
+    i->UpdateVirial(temperature, pressure);
   }
-  for (std::vector<VirialCoefficient>::iterator i = psi_virial.begin(); i != psi_virial.end(); i++) {
-    (*i).UpdateVirial(temperature, pressure);
+  for (auto i = psi_virial.begin(); i != psi_virial.end(); i++) {
+    i->UpdateVirial(temperature, pressure);
   }
-  for (std::vector<VirialCoefficient>::iterator i = lamda_virial.begin(); i != lamda_virial.end(); i++) {
-    (*i).UpdateVirial(temperature, pressure);
+  for (auto i = lamda_virial.begin(); i != lamda_virial.end(); i++) {
+    i->UpdateVirial(temperature, pressure);
   }
 }
 
 
-/*!
-  @brief Update
+/* ******************************************************************
+* Search in an vector
+****************************************************************** */
+void ActivityModelPitzerHWM::ParseVirialCoefficient_(
+   Teuchos::RCP<Teuchos::ParameterList> plist, const std::string& block_name)
+{
+  int isp1, isp2, isp3;
+  double virial;
+  std::string name;
 
-  @class ActivityModelPitzerHWM
+  const auto& tmp = plist->sublist(block_name);
 
-  @details Return the index of name species.
-*/
-int ActivityModelPitzerHWM::GetIndexSpeciesFromName(const std::string& name_species_) {
-  bool not_found(true);
-  int isp(-1);
-  for (int i = 0; (i < number_species && not_found); i++) {
-    if (name_species.at(i) == name_species_) {
-      isp = i;
-      not_found = false;
+  for (auto it = tmp.begin(); it != tmp.end(); ++it) {
+    std::istringstream iss(tmp.get<std::string>(it->first));
+    iss >> name; 
+    isp1 = GetIndexSpeciesFromName(name);
+    if (isp1 > -1) {
+      iss >> name; 
+      isp2 = GetIndexSpeciesFromName(name);
+    }
+
+    isp3 = -1;
+    if (block_name == "psi") {
+      if (isp1 > -1 && isp2 > -1) {
+        iss >> name; 
+        isp3 = GetIndexSpeciesFromName(name);
+      }
+      if (isp3 == -1) continue;
+    }
+
+    if (isp1 > -1 && isp2 > -1) {
+      iss >> virial;
+      if (block_name == "cfi")
+        virial /= 2.0 * sqrt(std::abs(charge.at(isp1) * charge.at(isp2)));
+      std::vector<double> virial_vec;
+      virial_vec.push_back(virial);
+      SetVirialCoefficient(virial_vec, block_name, isp1, isp2, isp3);
     }
   }
-  return isp;
+}
+
+
+/* ******************************************************************
+* search in an vector
+****************************************************************** */
+int ActivityModelPitzerHWM::GetIndexSpeciesFromName(const std::string& name)
+{
+  for (int i = 0; i < name_species.size(); i++) {
+    if (name_species.at(i) == name) return i;
+  }
+  return -1;
 }
 
 }  // namespace AmanziChemistry

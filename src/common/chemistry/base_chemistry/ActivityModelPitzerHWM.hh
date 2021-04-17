@@ -17,6 +17,9 @@
 #include <string>
 #include <vector>
 
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RCP.hpp"
+
 #include "ActivityModel.hh"
 #include "virial_coefficient.hh"
 
@@ -45,17 +48,8 @@ class ActivityModelPitzerHWM : public ActivityModel {
   virtual void Display() const override;
 
  private:
-  void ReadDataBase(const std::string& database,
-		    const std::vector<Species>& primary_species,
-		    const std::vector<AqueousEquilibriumComplex>& aqueous_complexes);
-
-  void ParseBeta0VirialCoefficient(const std::string& data);
-  void ParseBeta1VirialCoefficient(const std::string& data);
-  void ParseBeta2VirialCoefficient(const std::string& data);
-  void ParseCfiVirialCoefficient(const std::string& data);
-  void ParseThetaVirialCoefficient(const std::string& data);
-  void ParseLamdaVirialCoefficient(const std::string& data);
-  void ParsePsiVirialCoefficient(const std::string& data);
+  void ParseVirialCoefficient_(Teuchos::RCP<Teuchos::ParameterList> plist,
+                               const std::string& block_name);
 
   void AssignIndexBetaFunctions();
   void AssignIndexJFunctions();
@@ -66,7 +60,7 @@ class ActivityModelPitzerHWM : public ActivityModel {
   void ComputemTmmProduct(std::vector<double>& gamma, double& osmotic_coefficient);
 
   void ComputeQmatrices();
-  void ComputeBetaFunctions();
+  void ComputeBetaFunctions_();
   void ComputeJFunctions();
   void ComputeDebyeHuckelTerm(std::vector<double>& gamma, double& osmotic_coefficient, double& gclm);
   double gclm_(const double& dhterm);
@@ -76,6 +70,7 @@ class ActivityModelPitzerHWM : public ActivityModel {
                             const int& isp1, const int& isp2, const int& isp3);
   int GetIndexSpeciesFromName(const std::string& name_species);
 
+ private:
   static const double cwater;
   static const double bdh;
   static const double aphi_debye_huckel_slope25;
