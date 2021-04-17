@@ -17,8 +17,8 @@
 #include <string>
 #include <vector>
 
-#include<species.hh>
-#include<sorption_isotherm.hh>
+#include "Species.hh"
+#include "sorption_isotherm.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {

@@ -6,12 +6,12 @@
 
 #include <UnitTest++.h>
 
-#include "species.hh"
-#include "aqueous_equilibrium_complex.hh"
 #include "ActivityModel.hh"
 #include "ActivityModelFactory.hh"
 #include "ActivityModelPitzerHWM.hh"
+#include "aqueous_equilibrium_complex.hh"
 #include "chemistry_exception.hh"
+#include "Species.hh"
 
 SUITE(TestPitzer) {
   namespace ac = Amanzi::AmanziChemistry;

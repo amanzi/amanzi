@@ -17,7 +17,7 @@
 
 #include "VerboseObject.hh"
 
-#include "species.hh"
+#include "Species.hh"
 #include "secondary_species.hh"
 #include "mineral.hh"
 

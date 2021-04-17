@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 #include <typeinfo>
-#include "species.hh"
+#include "Species.hh"
 
 #include <UnitTest++.h>
 

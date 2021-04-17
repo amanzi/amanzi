@@ -6,8 +6,8 @@
 
 #include <UnitTest++.h>
 
-#include "species.hh"
 #include "chemistry_exception.hh"
+#include "Species.hh"
 
 SUITE(GeochemistryTestsSpecies) {
   namespace ac = Amanzi::AmanziChemistry;

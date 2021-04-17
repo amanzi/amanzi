@@ -12,7 +12,7 @@
 #include "kinetic_rate.hh"
 #include "kinetic_rate_tst.hh"
 #include "mineral_kinetics_factory.hh"
-#include "species.hh"
+#include "Species.hh"
 
 SUITE(GeochemistryTestsMineralKineticsFactory) {
   namespace ac = Amanzi::AmanziChemistry;

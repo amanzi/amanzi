@@ -23,6 +23,7 @@
 #include "XMLParameterListWriter.hh"
 
 #include "dbc.hh"
+#include "chemistry_exception.hh"
 #include "errors.hh"
 #include "exceptions.hh"
 #include "GenerationSpec.hh"
@@ -30,8 +31,7 @@
 #include "State.hh"
 
 #include "Amanzi_PK.hh"
-#include "species.hh"
-#include "chemistry_exception.hh"
+#include "Species.hh"
 
 
 /*****************************************************************************

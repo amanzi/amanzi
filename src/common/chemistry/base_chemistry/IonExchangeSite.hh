@@ -11,8 +11,8 @@
   Base class for ion exchange sites (e.g. X- in standard notation)
 */
 
-#ifndef AMANZI_CHEMISTRY_IONEXCHANGESITE_HH_
-#define AMANZI_CHEMISTRY_IONEXCHANGESITE_HH_
+#ifndef AMANZI_CHEMISTRY_ION_EXCHANGE_SITE_HH_
+#define AMANZI_CHEMISTRY_ION_EXCHANGE_SITE_HH_
 
 #include <cmath>
 #include <string>

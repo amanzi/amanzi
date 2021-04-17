@@ -20,7 +20,7 @@
 #include <vector>
 
 #include "surface_complex.hh"
-#include "surface_site.hh"
+#include "SurfaceSite.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {

@@ -34,7 +34,7 @@
 #include "kinetic_rate.hh"
 #include "mineral.hh"
 #include "mineral_kinetics_factory.hh"
-#include "species.hh"
+#include "Species.hh"
 #include "surface_complexation_rxn.hh"
 #include "lu_solver.hh"
 #include "matrix_block.hh"

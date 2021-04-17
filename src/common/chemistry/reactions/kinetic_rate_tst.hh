@@ -29,9 +29,9 @@
 #include "VerboseObject.hh"
 
 #include "kinetic_rate.hh"
-#include "species.hh"
-#include "secondary_species.hh"
 #include "mineral.hh"
+#include "Species.hh"
+#include "secondary_species.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {

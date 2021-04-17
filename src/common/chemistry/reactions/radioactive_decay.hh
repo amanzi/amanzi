@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-#include "species.hh"
+#include "Species.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {

@@ -15,8 +15,8 @@
 #include <vector>
 
 #include "ion_exchange_complex.hh"
-#include "ion_exchange_site.hh"
-#include "species.hh"
+#include "IonExchangeSite.hh"
+#include "Species.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {

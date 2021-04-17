@@ -7,8 +7,8 @@
 
 #include <UnitTest++.h>
 
-#include "surface_site.hh"
-#include "species.hh"
+#include "Species.hh"
+#include "SurfaceSite.hh"
 
 SUITE(GeochemistryTestsSurfaceSite) {
   namespace ac = Amanzi::AmanziChemistry;

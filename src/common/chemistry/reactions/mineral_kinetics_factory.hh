@@ -16,7 +16,7 @@
 #include <string>
 
 #include "mineral.hh"
-#include "species.hh"
+#include "Species.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {

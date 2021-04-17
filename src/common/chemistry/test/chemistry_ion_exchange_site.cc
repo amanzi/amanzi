@@ -6,7 +6,7 @@
 
 #include <UnitTest++.h>
 
-#include "ion_exchange_site.hh"
+#include "IonExchangeSite.hh"
 
 SUITE(GeochemistryTestsIonExchangeSite) {
   namespace ac = Amanzi::AmanziChemistry;

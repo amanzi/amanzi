@@ -12,7 +12,7 @@
 #include <cmath>
 #include <iostream>
 
-#include "virial_coefficient.hh"
+#include "VirialCoefficient.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {

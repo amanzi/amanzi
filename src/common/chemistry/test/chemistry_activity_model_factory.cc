@@ -10,7 +10,7 @@
 
 #include "VerboseObject.hh"
 
-#include "species.hh"
+#include "Species.hh"
 #include "aqueous_equilibrium_complex.hh"
 #include "ActivityModel.hh"
 #include "ActivityModelFactory.hh"

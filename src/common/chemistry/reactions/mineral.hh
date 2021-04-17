@@ -19,7 +19,7 @@
 #include <string>
 #include <vector>
 
-#include "species.hh"
+#include "Species.hh"
 #include "secondary_species.hh"
 
 namespace Amanzi {

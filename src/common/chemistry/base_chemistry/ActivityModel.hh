@@ -21,7 +21,7 @@
 #include "VerboseObject.hh"
 
 #include "aqueous_equilibrium_complex.hh"
-#include "species.hh"
+#include "Species.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {

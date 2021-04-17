@@ -19,7 +19,7 @@
 #include "ActivityModelUnit.hh"
 #include "chemistry_exception.hh"
 #include "exceptions.hh"
-#include "species.hh"
+#include "Species.hh"
 
 #include "ActivityModelFactory.hh"
 

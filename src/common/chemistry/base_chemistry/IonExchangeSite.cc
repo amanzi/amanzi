@@ -11,14 +11,14 @@
   Base class for ion exchange sites (e.g. X- in standard geochemistry notation)
 */
 
-#include "ion_exchange_site.hh"
-
 #include <cmath>
 #include <iostream>
 #include <sstream>
 #include <iomanip>
 
 #include "VerboseObject.hh"
+
+#include "IonExchangeSite.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {

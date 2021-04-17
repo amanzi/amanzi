@@ -9,7 +9,7 @@
 
 #include "chemistry_exception.hh"
 #include "mineral.hh"
-#include "species.hh"
+#include "Species.hh"
 
 SUITE(GeochemistryTestsMineral) {
   namespace ac = Amanzi::AmanziChemistry;

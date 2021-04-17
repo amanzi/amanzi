@@ -6,7 +6,7 @@
 
 #include "UnitTest++.h"
 
-#include "species.hh"
+#include "Species.hh"
 #include "aqueous_equilibrium_complex.hh"
 #include "ActivityModelFactory.hh"
 #include "ActivityModelUnit.hh"

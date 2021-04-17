@@ -27,7 +27,7 @@
 #include "ion_exchange_rxn.hh"
 #include "kinetic_rate.hh"
 #include "mineral.hh"
-#include "species.hh"
+#include "Species.hh"
 #include "sorption_isotherm_rxn.hh"
 #include "surface_complexation_rxn.hh"
 #include "lu_solver.hh"

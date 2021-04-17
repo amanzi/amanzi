@@ -21,7 +21,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "ActivityModel.hh"
-#include "virial_coefficient.hh"
+#include "VirialCoefficient.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {

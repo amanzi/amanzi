@@ -13,8 +13,8 @@
 #include <vector>
 #include <string>
 
-#include "species.hh"
 #include "beaker.hh"
+#include "Species.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {

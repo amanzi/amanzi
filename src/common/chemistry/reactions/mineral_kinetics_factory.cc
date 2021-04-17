@@ -19,7 +19,7 @@
 #include "kinetic_rate.hh"
 #include "mineral.hh"
 #include "mineral_kinetics_factory.hh"
-#include "species.hh"
+#include "Species.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {

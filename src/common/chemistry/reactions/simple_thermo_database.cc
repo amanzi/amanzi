@@ -18,23 +18,23 @@
 #include <sstream>
 
 #include "aqueous_equilibrium_complex.hh"
+#include "beaker.hh"
+#include "chemistry_exception.hh"
+#include "exceptions.hh"
 #include "general_rxn.hh"
-#include "radioactive_decay.hh"
+#include "ion_exchange_complex.hh"
+#include "ion_exchange_rxn.hh"
+#include "IonExchangeSite.hh"
 #include "mineral_kinetics_factory.hh"
 #include "mineral.hh"
-#include "surface_site.hh"
+#include "radioactive_decay.hh"
+#include "SurfaceSite.hh"
 #include "surface_complex.hh"
-#include "ion_exchange_rxn.hh"
-#include "ion_exchange_site.hh"
-#include "ion_exchange_complex.hh"
 #include "sorption_isotherm_factory.hh"
 #include "sorption_isotherm.hh"
 #include "sorption_isotherm_linear.hh"
-#include "beaker.hh"
-#include "species.hh"
-#include "chemistry_exception.hh"
+#include "Species.hh"
 
-#include "exceptions.hh"
 #include "simple_thermo_database.hh"
 
 namespace Amanzi {

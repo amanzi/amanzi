@@ -11,8 +11,8 @@
   Class for storing surface site data for surface complexation
 */
 
-#ifndef AMANZI_CHEMISTRY_SURFACESITE_HH_
-#define AMANZI_CHEMISTRY_SURFACESITE_HH_
+#ifndef AMANZI_CHEMISTRY_SURFACE_SITE_HH_
+#define AMANZI_CHEMISTRY_SURFACE_SITE_HH_
 
 #include <vector>
 

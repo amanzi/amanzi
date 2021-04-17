@@ -17,19 +17,19 @@
 
 #include "VerboseObject.hh"
 
-#include "surface_site.hh"
+#include "SurfaceSite.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
 
 SurfaceSite::SurfaceSite()
-    : name_(""),
-      identifier_(0),
-      charge_(0.),
-      molar_density_(0.),
-      molar_surface_density_(0.),
-      free_site_concentration_(0.),
-      ln_free_site_concentration_(0.) {
+  : name_(""),
+    identifier_(0),
+    charge_(0.0),
+    molar_density_(0.0),
+    molar_surface_density_(0.0),
+    free_site_concentration_(0.0),
+    ln_free_site_concentration_(0.0) {
   // minerals_.clear();
 }
 

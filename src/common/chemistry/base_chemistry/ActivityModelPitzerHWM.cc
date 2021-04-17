@@ -12,7 +12,7 @@
 
 #include "chemistry_exception.hh"
 #include "exceptions.hh"
-#include "virial_coefficient.hh"
+#include "VirialCoefficient.hh"
 
 #include "ActivityModelPitzerHWM.hh"
 
