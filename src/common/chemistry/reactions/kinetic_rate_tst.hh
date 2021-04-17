@@ -29,7 +29,7 @@
 #include "VerboseObject.hh"
 
 #include "kinetic_rate.hh"
-#include "mineral.hh"
+#include "Mineral.hh"
 #include "Species.hh"
 #include "secondary_species.hh"
 

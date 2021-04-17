@@ -16,7 +16,7 @@
 
 #include <vector>
 
-#include "mineral.hh"
+#include "Mineral.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {

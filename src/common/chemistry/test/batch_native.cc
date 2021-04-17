@@ -145,7 +145,7 @@ void RunBatchNative(const std::string& filexml,
     state.ion_exchange_sites.resize(nion_site, 0.0);
 
   if (nisotherm > 0) {
-    state.surface_site_density.resize(nisotherm, 0.0);
+    // state.surface_site_density.resize(nisotherm, 0.0);
     state.isotherm_kd.resize(ncomp, 0.0);
     state.isotherm_freundlich_n.resize(ncomp, 0.0);
     state.isotherm_langmuir_b.resize(ncomp, 0.0);
@@ -185,7 +185,6 @@ void RunBatchNative(const std::string& filexml,
   // cleanup memory
   delete chem;
 }
-
 
 TEST(NATIVE_CA_DEBYE_HUCKEL) {
   std::vector<double> ict = {3.0e-3, 1.0e-3, 1.0e-3};
@@ -378,4 +377,27 @@ TEST(NATIVE_SURFACE_COMPLEXATION_1) {
                  3600.0, 10);
 }
 
+
+TEST(NATIVE_RADIOACTIVE_DECAY_AQUEOUS) {
+  std::vector<double> ict = { 1.0e-01, 1.0e-20, 1.0e-20, 1.0e-01 };
+  std::vector<double> icm, icie, icfi, icts;
+  RunBatchNative("test/native/radioactive-decay-aqueous.xml",
+                 "test/native/radioactive-decay-aqueous.test",
+                 "unit",
+                 ict, icm, icie, icfi,  // initial conditions
+                 0.25, 1.0, 1.0,  // porosity, saturation, cell volume
+                 864.0, 500, 10);
+}
+
+TEST(NATIVE_RADIOACTIVE_DECAY_SORBED_TINY) {
+  std::vector<double> ict = { 1.0e-20 };
+  std::vector<double> icm, icie, icfi;
+  std::vector<double> icts = { 1.0e-20 };  // total sorbed
+  RunBatchNative("test/native/radioactive-decay-sorbed-tiny.xml",
+                 "test/native/radioactive-decay-sorbed-tiny.test",
+                 "unit",
+                 ict, icm, icie, icfi,  // initial conditions
+                 1.0, 1.0, 1.0,  // porosity, saturation, cell volume
+                 86400.0, 2000, 50);
+}
 

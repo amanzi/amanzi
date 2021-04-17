@@ -8,7 +8,7 @@
 #include <UnitTest++.h>
 
 #include "chemistry_exception.hh"
-#include "mineral.hh"
+#include "Mineral.hh"
 #include "Species.hh"
 
 SUITE(GeochemistryTestsMineral) {

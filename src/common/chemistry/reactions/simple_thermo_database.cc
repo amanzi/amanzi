@@ -26,7 +26,7 @@
 #include "ion_exchange_rxn.hh"
 #include "IonExchangeSite.hh"
 #include "mineral_kinetics_factory.hh"
-#include "mineral.hh"
+#include "Mineral.hh"
 #include "radioactive_decay.hh"
 #include "SurfaceSite.hh"
 #include "surface_complex.hh"

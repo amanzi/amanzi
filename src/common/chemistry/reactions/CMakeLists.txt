@@ -20,7 +20,7 @@ set(geochemrxns_src_files aqueous_equilibrium_complex.cc
 	                  ion_exchange_rxn.cc 
 	                  kinetic_rate.cc 
 	                  kinetic_rate_tst.cc 
-	                  mineral.cc 
+	                  Mineral.cc 
 	                  mineral_kinetics_factory.cc 
 	                  secondary_species.cc 
 	                  simple_thermo_database.cc
@@ -41,7 +41,7 @@ set(geochemrxns_inc_files aqueous_equilibrium_complex.hh
 	                  ion_exchange_rxn.hh
 	                  kinetic_rate.hh
 	                  kinetic_rate_tst.hh
-	                  mineral.hh
+	                  Mineral.hh
 	                  mineral_kinetics_factory.hh
 	                  secondary_species.hh
 	                  simple_thermo_database.hh

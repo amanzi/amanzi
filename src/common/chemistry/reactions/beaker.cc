@@ -32,7 +32,7 @@
 #include "ion_exchange_rxn.hh"
 #include "sorption_isotherm.hh"
 #include "kinetic_rate.hh"
-#include "mineral.hh"
+#include "Mineral.hh"
 #include "mineral_kinetics_factory.hh"
 #include "Species.hh"
 #include "surface_complexation_rxn.hh"
@@ -751,7 +751,8 @@ void Beaker::VerifyState(const Beaker::BeakerState& state) const {
 /* ******************************************************************
 * NOTE: Do not copy total and total_sorbed here!
 ****************************************************************** */
-void Beaker::CopyStateToBeaker(const Beaker::BeakerState& state) {
+void Beaker::CopyStateToBeaker(const Beaker::BeakerState& state)
+{
   // free ion
   int size = state.free_ion.size();
   if (size > 0) {

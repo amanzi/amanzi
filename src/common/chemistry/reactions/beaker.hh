@@ -26,7 +26,7 @@
 #include "radioactive_decay.hh"
 #include "ion_exchange_rxn.hh"
 #include "kinetic_rate.hh"
-#include "mineral.hh"
+#include "Mineral.hh"
 #include "Species.hh"
 #include "sorption_isotherm_rxn.hh"
 #include "surface_complexation_rxn.hh"

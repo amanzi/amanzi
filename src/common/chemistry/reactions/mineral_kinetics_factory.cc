@@ -17,7 +17,7 @@
 #include "exceptions.hh"
 #include "kinetic_rate_tst.hh"
 #include "kinetic_rate.hh"
-#include "mineral.hh"
+#include "Mineral.hh"
 #include "mineral_kinetics_factory.hh"
 #include "Species.hh"
 

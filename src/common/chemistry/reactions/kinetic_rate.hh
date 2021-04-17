@@ -17,9 +17,9 @@
 
 #include "VerboseObject.hh"
 
-#include "Species.hh"
+#include "Mineral.hh"
 #include "secondary_species.hh"
-#include "mineral.hh"
+#include "Species.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
