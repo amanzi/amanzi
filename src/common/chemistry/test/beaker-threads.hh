@@ -4,7 +4,7 @@
 
 #include <string>
 
-#include "beaker.hh"
+#include "Beaker.hh"
 
 int CommandLineOptions(int argc, char** argv);
 

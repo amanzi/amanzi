@@ -17,7 +17,7 @@
 #include "ActivityModelDebyeHuckel.hh"
 #include "ActivityModelPitzerHWM.hh"
 #include "ActivityModelUnit.hh"
-#include "chemistry_exception.hh"
+#include "ChemistryException.hh"
 #include "exceptions.hh"
 #include "Species.hh"
 

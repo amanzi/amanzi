@@ -18,7 +18,7 @@
 
 #include "VerboseObject.hh"
 
-#include "chemistry_exception.hh"
+#include "ChemistryException.hh"
 #include "exceptions.hh"
 #include "Species.hh"
 

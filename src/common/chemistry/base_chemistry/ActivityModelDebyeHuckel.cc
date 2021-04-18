@@ -19,8 +19,8 @@
 #include <cmath>
 #include <iostream>
 
-#include "chemistry_utilities.hh"
 #include "ActivityModelDebyeHuckel.hh"
+#include "ChemistryUtilities.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {

@@ -20,7 +20,7 @@
 // Amanzi
 #include "VerboseObject.hh"
 
-#include "aqueous_equilibrium_complex.hh"
+#include "AqueousEquilibriumComplex.hh"
 #include "Species.hh"
 
 namespace Amanzi {

@@ -8,27 +8,23 @@
 
 #include <UnitTest++.h>
 
-#include "kinetic_rate.hh"
-#include "chemistry_exception.hh"
+#include "KineticRate.hh"
+#include "ChemistryException.hh"
 
 SUITE(GeochemistryTestsKineticRate) {
   namespace ac = Amanzi::AmanziChemistry;
+
   /*****************************************************************************
-   **
-   **  Test for KineticRate.cpp
-   **
-   *****************************************************************************/
+  **  Test for KineticRate.cpp
+  *****************************************************************************/
 
   class KineticRateTest {
-   public:
-
    protected:
     KineticRateTest();
     ~KineticRateTest();
 
     ac::SpeciesArray species_;
-   private:
-  };  // end class KineticRateTest
+  };
 
   KineticRateTest::KineticRateTest() {
     // set primary species

@@ -28,11 +28,11 @@
 
 // Amanzi
 #include "Mesh.hh"
-#include "beaker.hh"
-#include "chemistry_exception.hh"
+#include "Beaker.hh"
+#include "ChemistryException.hh"
 #include "errors.hh"
 #include "exceptions.hh"
-#include "simple_thermo_database.hh"
+#include "SimpleThermoDatabase.hh"
 #include "VerboseObject.hh"
 
 // Chemistry

@@ -8,10 +8,10 @@
 # Chemistry includes
 include_directories(${CHEM_INCLUDES_DIR})
 
-set(geochemsolvers_src newton.cc)
+set(geochemsolvers_src Newton.cc)
 
-set(geochemsolvers_inc lu_solver.hh
-	               newton.hh)
+set(geochemsolvers_inc LUSolver.hh
+	               Newton.hh)
 
 add_amanzi_library(geochemsolvers SOURCE ${geochemsolvers_src}
 	                          LINK_LIBS geochemutil) 

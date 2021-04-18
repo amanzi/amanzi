@@ -19,8 +19,8 @@
 #include "Teuchos_ParameterList.hpp"
 
 // Amanzi
-#include "beaker.hh"
-#include "chemistry_exception.hh"
+#include "Beaker.hh"
+#include "ChemistryException.hh"
 #include "Chemistry_PK.hh"
 #include "PK_Factory.hh"
 #include "Mesh.hh"

@@ -7,7 +7,7 @@
 
 #include <UnitTest++.h>
 
-#include "chemistry_exception.hh"
+#include "ChemistryException.hh"
 #include "Mineral.hh"
 #include "Species.hh"
 

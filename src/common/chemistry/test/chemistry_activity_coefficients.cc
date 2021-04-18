@@ -6,13 +6,13 @@
 
 #include "UnitTest++.h"
 
-#include "Species.hh"
-#include "aqueous_equilibrium_complex.hh"
+#include "AqueousEquilibriumComplex.hh"
 #include "ActivityModelFactory.hh"
 #include "ActivityModelUnit.hh"
 #include "ActivityModelDebyeHuckel.hh"
 #include "ActivityModel.hh"
-#include "chemistry_exception.hh"
+#include "ChemistryException.hh"
+#include "Species.hh"
 
 /*****************************************************************************
 *  Common testing code

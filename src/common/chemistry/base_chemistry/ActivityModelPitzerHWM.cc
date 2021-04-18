@@ -10,7 +10,7 @@
 
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "chemistry_exception.hh"
+#include "ChemistryException.hh"
 #include "exceptions.hh"
 #include "VirialCoefficient.hh"
 

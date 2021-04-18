@@ -10,9 +10,9 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
-#include <vector>
-#include <string>
 #include <stdexcept>
+#include <string>
+#include <vector>
 
 // TPLs
 #include "boost/algorithm/string.hpp"
@@ -20,11 +20,11 @@
 #include <UnitTest++.h>
 
 // Chemistry
-#include "simple_thermo_database.hh"
-#include "beaker.hh"
+#include "Beaker.hh"
 #include "ActivityModelFactory.hh"
-#include "chemistry_utilities.hh"
-#include "chemistry_exception.hh"
+#include "ChemistryUtilities.hh"
+#include "ChemistryException.hh"
+#include "SimpleThermoDatabase.hh"
 
 namespace ac = Amanzi::AmanziChemistry;
 int BUFFER_SIZE = 100000;
@@ -51,13 +51,15 @@ int CompareFiles(const std::string& file1, const std::string& file2)
     do {
       iss1 >> word1;
       iss2 >> word2;
+      if (iss1.eof() || iss2.eof()) break;
+
       // first check that the words match
       if (std::memcmp(word1.c_str(), word2.c_str(), word1.size()) != 0) {
         double val1 = std::atof(word1.c_str());
         double val2 = std::atof(word2.c_str());
-        if (std::fabs(val1 - val2) > 1e-12 * std::max(1.0, val1)) return 3;
+        if (std::fabs(val1 - val2) > 1e-12 * std::max(1.0, std::fabs(val1))) return 3;
       }
-    } while(!iss1.eof() && !iss2.eof());
+    } while(true);
   } while (ifs1.good() || ifs2.good());
 
   delete [] buffer1;

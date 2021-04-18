@@ -8,20 +8,18 @@
 
 #include <UnitTest++.h>
 
-#include "chemistry_exception.hh"
-#include "kinetic_rate.hh"
-#include "kinetic_rate_tst.hh"
-#include "mineral_kinetics_factory.hh"
+#include "ChemistryException.hh"
+#include "KineticRate.hh"
+#include "KineticRateTST.hh"
+#include "KineticRateFactory.hh"
 #include "Species.hh"
 
-SUITE(GeochemistryTestsMineralKineticsFactory) {
+SUITE(GeochemistryTestsKineticRateFactory) {
   namespace ac = Amanzi::AmanziChemistry;
 
   /*****************************************************************************
-   **
-   **  Test for MineralKineticsFactory.cpp
-   **
-   *****************************************************************************/
+  **  Test for KineticRateFactory.cpp
+  *****************************************************************************/
 
   /*
     if you pass the factory a valid name, it should return the correct
@@ -29,16 +27,14 @@ SUITE(GeochemistryTestsMineralKineticsFactory) {
     throw an error.
   */
 
-  class MineralKineticsFactoryTest {
-   public:
-
+  class KineticRateFactoryTest {
    protected:
-    MineralKineticsFactoryTest();
-    ~MineralKineticsFactoryTest();
+    KineticRateFactoryTest();
+    ~KineticRateFactoryTest();
 
     void RunTest(const std::string& name);
 
-    ac::MineralKineticsFactory mkf_;
+    ac::KineticRateFactory mkf_;
     ac::KineticRate* kinetic_rate_;
     std::vector<ac::Mineral> minerals_;
 
@@ -52,7 +48,7 @@ SUITE(GeochemistryTestsMineralKineticsFactory) {
     ac::Species PO4_mmm;
   };
 
-  MineralKineticsFactoryTest::MineralKineticsFactoryTest()
+  KineticRateFactoryTest::KineticRateFactoryTest()
       : mkf_(),
       kinetic_rate_(NULL)
   {
@@ -148,11 +144,11 @@ SUITE(GeochemistryTestsMineralKineticsFactory) {
     minerals_.push_back(ac::Mineral(2, "Bar", plist, primary_species));
   }
 
-  MineralKineticsFactoryTest::~MineralKineticsFactoryTest() {
+  KineticRateFactoryTest::~KineticRateFactoryTest() {
     delete kinetic_rate_;
   }
 
-  void MineralKineticsFactoryTest::RunTest(const std::string& name) {
+  void KineticRateFactoryTest::RunTest(const std::string& name) {
     Teuchos::ParameterList plist;
     plist.set<std::string>("rate model", name)
          .set<double>("rate constant", -9.0)
@@ -164,13 +160,13 @@ SUITE(GeochemistryTestsMineralKineticsFactory) {
   // returned from the factory, e.g. see "typeid" at
   // http:// en.wikibooks.org/wiki/C++_Programming/RTTI
 
-  TEST_FIXTURE(MineralKineticsFactoryTest, MineralKineticsFactory_create) {
+  TEST_FIXTURE(KineticRateFactoryTest, KineticRateFactory_create) {
     std::string name("TST");
     RunTest(name);
     CHECK_EQUAL(typeid(ac::KineticRateTST).name(), typeid(*kinetic_rate_).name());
   }  // end TEST_FIXTURE()
 
-  TEST_FIXTURE(MineralKineticsFactoryTest, MineralKineticsFactory_invalid_rate) {
+  TEST_FIXTURE(KineticRateFactoryTest, KineticRateFactory_invalid_rate) {
     std::string name("invalid-name");
     CHECK_THROW(RunTest(name), ac::ChemistryException);
     CHECK(!kinetic_rate_);

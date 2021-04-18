@@ -1,13 +1,11 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include "chemistry_exception.hh"
-
 #include <cstdlib>
 #include <cmath>
-#include <vector>
 #include <iostream>
+#include <vector>
 
 #include <UnitTest++.h>
 
+#include "ChemistryException.hh"
 #include "exceptions.hh"
 
 SUITE(GeochemistryTests_ChemistryException) {

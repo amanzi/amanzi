@@ -23,7 +23,7 @@
 #include "XMLParameterListWriter.hh"
 
 #include "dbc.hh"
-#include "chemistry_exception.hh"
+#include "ChemistryException.hh"
 #include "errors.hh"
 #include "exceptions.hh"
 #include "GenerationSpec.hh"

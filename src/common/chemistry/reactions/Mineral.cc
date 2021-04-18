@@ -12,14 +12,13 @@
     Calcite = 1.0 Ca++ + 1.0 HCO3- -1.0 H+
 */
  
-#include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 
-#include "secondary_species.hh"
-#include "matrix_block.hh"
-
+#include "MatrixBlock.hh"
 #include "Mineral.hh"
+#include "SecondarySpecies.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {

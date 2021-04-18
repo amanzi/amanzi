@@ -8,9 +8,9 @@
 
 #include <UnitTest++.h>
 
-#include "aqueous_equilibrium_complex.hh"
-#include "chemistry_exception.hh"
-#include "matrix_block.hh"
+#include "AqueousEquilibriumComplex.hh"
+#include "ChemistryException.hh"
+#include "MatrixBlock.hh"
 
 SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
   namespace ac = Amanzi::AmanziChemistry;

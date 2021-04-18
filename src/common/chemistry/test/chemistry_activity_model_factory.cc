@@ -10,16 +10,15 @@
 
 #include "VerboseObject.hh"
 
-#include "Species.hh"
-#include "aqueous_equilibrium_complex.hh"
+#include "AqueousEquilibriumComplex.hh"
 #include "ActivityModel.hh"
 #include "ActivityModelFactory.hh"
 #include "ActivityModelDebyeHuckel.hh"
 #include "ActivityModelUnit.hh"
-#include "chemistry_exception.hh"
+#include "ChemistryException.hh"
+#include "Species.hh"
 
 /*!
-
   @namespace Amanzi::AmanziChemistry::unit_tests::ActivityModelFactory
 
   @details Test that the activity model factory class returns the
@@ -28,20 +27,15 @@
   http://en.wikibooks.org/wiki/C++_Programming/RTTI
 
   @test Unit tests for: ActivityModelFactory
-
 */
 
 SUITE(amanzi_chemistry_unit_tests_ActivityModelFactory) {
   /*****************************************************************************
-   **
-   **  Test for ActivityModelFactory.cpp
-   **
-   *****************************************************************************/
+  **  Test for ActivityModelFactory.cpp
+  *****************************************************************************/
   namespace ac = Amanzi::AmanziChemistry;
 
   class ActivityModelFactoryTest {
-   public:
-
    protected:
     ActivityModelFactoryTest();
     ~ActivityModelFactoryTest();

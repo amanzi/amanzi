@@ -8,13 +8,13 @@
 # Chemistry includes
 include_directories(${CHEM_INCLUDES_DIR})
 
-set(geochemutil_src_files matrix_block.cc 
-	                  chemistry_utilities.cc
+set(geochemutil_src_files MatrixBlock.cc 
+	                  ChemistryUtilities.cc
 )
 
 set(geochemutil_inc_files matrix_block.hh
-                          chemistry_exception.hh
-                          chemistry_utilities.hh)
+                          ChemistryException.hh
+                          ChemistryUtilities.hh)
 
 add_amanzi_library(geochemutil SOURCE ${geochemutil_src_files}
 	                       LINK_LIBS ${Teuchos_LIBRARIES}) 

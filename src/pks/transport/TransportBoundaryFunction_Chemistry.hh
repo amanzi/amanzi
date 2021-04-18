@@ -18,7 +18,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "beaker.hh"
+#include "Beaker.hh"
 #include "Mesh.hh"
 #include "TransportDomainFunction.hh"
 

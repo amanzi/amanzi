@@ -18,10 +18,10 @@
 #include <string>
 #include <stdexcept>
 
-#include "simple_thermo_database.hh"
-#include "beaker.hh"
+#include "Beaker.hh"
 #include "chemistry_output.hh"
 #include "chemistry_exception.hh"
+#include "SimpleThermoDatabase.hh"
 
 namespace ac = Amanzi::AmanziChemistry;
 

@@ -4,7 +4,7 @@
 #include "UnitTest++.h"
 #include "boost/algorithm/string.hpp"
 
-#include "chemistry_utilities.hh"
+#include "ChemistryUtilities.hh"
 
 SUITE(amanzi_chemistry_unit_tests_ChemistryUtilities) {
   namespace acu = Amanzi::AmanziChemistry::utilities;
