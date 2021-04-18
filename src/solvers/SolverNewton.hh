@@ -134,6 +134,7 @@ class SolverNewton : public Solver<Vector,VectorSpace> {
   bool modify_correction_;
   double residual_;
   ConvergenceMonitor monitor_;
+  int norm_type_;
 };
 
 
@@ -167,15 +168,7 @@ void SolverNewton<Vector, VectorSpace>::Init_()
   make_one_iteration_ = (plist_.get<bool>("make one iteration", false)) ? 1 : 0;
 
   std::string monitor_name = plist_.get<std::string>("monitor", "monitor update");
-  if (monitor_name == "monitor update") {
-    monitor_ = SOLVER_MONITOR_UPDATE;  // default value
-  } else if (monitor_name == "monitor residual") {
-    monitor_ = SOLVER_MONITOR_RESIDUAL;
-  } else {
-    Errors::Message m;
-    m << "SolverNewton: Invalid monitor \"" << monitor_name << "\"";
-    Exceptions::amanzi_throw(m);
-  }
+  ParseConvergenceCriteria(monitor_name, &monitor_, &norm_type_);
 
   fun_calls_ = 0;
   pc_calls_ = 0;

@@ -6,10 +6,11 @@
 #endif
 
 #include <cmath>
+
+#include "exceptions.hh"
+
 #include <Utility.H>
 #include <ParallelDescriptor.H>
-
-#include <chemistry_exception.hh>
 
 static bool abort_on_chem_fail = true;
 //#define DEBUG_NO_CHEM 
@@ -105,12 +106,11 @@ AmanziChemHelper_Structured::AmanziChemHelper_Structured(const std::vector<std::
   parameters.resize(tnum);
       
   for (int ithread = 0; ithread < tnum; ithread++) {
+    Teuchos::RCP<Teuchos::ParameterList> tdb_list;
     Teuchos::ParameterList vo_list;
     vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry PK", vo_list));
-    chemSolve.set(ithread, new Amanzi::AmanziChemistry::SimpleThermoDatabase(vo_));
+    chemSolve.set(ithread, new Amanzi::AmanziChemistry::SimpleThermoDatabase(tdb_list, vo_));
 	  
-    parameters[ithread] = chemSolve[ithread].GetDefaultParameters();
-    parameters[ithread].thermo_database_file = thermo_database_file;
     parameters[ithread].activity_model_name  = activity_model;
  
     components[ithread].total.resize(Nmobile,total_conc);
@@ -134,7 +134,7 @@ AmanziChemHelper_Structured::AmanziChemHelper_Structured(const std::vector<std::
       components[ithread].surface_site_density.resize(NsorptionSites,surface_site_density);
     }
     
-    chemSolve[ithread].Setup(components[ithread], parameters[ithread]);
+    chemSolve[ithread].Initialize(parameters[ithread]);
   }
 }
 
@@ -214,11 +214,11 @@ AmanziChemHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       
       Amanzi::AmanziChemistry::Beaker::BeakerState&      TheComponent = components[threadid];
       Amanzi::AmanziChemistry::Beaker::BeakerParameters& TheParameter = parameters[threadid];
       
-      TheParameter.volume     = volume(iv,sVol);
-      TheParameter.saturation = std::min(1., std::max(0., aqueous_saturation(iv,sSat)));
+      TheComponent.volume     = volume(iv,sVol);
+      TheComponent.saturation = std::min(1., std::max(0., aqueous_saturation(iv,sSat)));
 
-      TheParameter.water_density = water_density;
-      TheParameter.porosity   = porosity(iv,sPhi);
+      TheComponent.water_density = water_density;
+      TheComponent.porosity   = porosity(iv,sPhi);
 
       bool is_neg = false;
       for (int i = 0; i < Nmobile; ++i) {
@@ -308,16 +308,15 @@ AmanziChemHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       
       try
       { 
 #ifndef DEBUG_NO_CHEM 
-        TheChemSolve.ReactionStep(&TheComponent,TheParameter,dt);
+        TheChemSolve.ReactionStep(&TheComponent,dt);
 #endif
         stat = TheChemSolve.status();
         fcnCnt(iv,sFunc) = stat.num_rhs_evaluations;        
       }
-      catch (const Amanzi::Exceptions::Amanzi_exception& geochem_error)
+      catch (const Exceptions::Amanzi_exception& geochem_error)
       {
         if (chem_verbose>=0) {
           std::cout << "CHEMISTRY FAILED on level at " << iv << " : ";
-          TheComponent.Display("components: ", vo_);
           if (abort_on_chem_fail) {
             BoxLib::Abort(geochem_error.what());
           }
@@ -436,11 +435,11 @@ AmanziChemHelper_Structured::Initialize(const FArrayBox& aqueous_saturation,    
       Amanzi::AmanziChemistry::Beaker::BeakerState&      TheComponent = components[threadid];
       Amanzi::AmanziChemistry::Beaker::BeakerParameters& TheParameter = parameters[threadid];
       
-      TheParameter.volume     = volume(iv,sVol);
-      TheParameter.saturation = std::min(1., std::max(0., aqueous_saturation(iv,sSat)));
+      TheComponent.volume     = volume(iv,sVol);
+      TheComponent.saturation = std::min(1., std::max(0., aqueous_saturation(iv,sSat)));
 
-      TheParameter.water_density = water_density;
-      TheParameter.porosity   = porosity(iv,sPhi);
+      TheComponent.water_density = water_density;
+      TheComponent.porosity   = porosity(iv,sPhi);
 
       bool is_neg = false;
       for (int i = 0; i < Nmobile; ++i) {
@@ -524,15 +523,14 @@ AmanziChemHelper_Structured::Initialize(const FArrayBox& aqueous_saturation,    
       try
       {  
 #ifndef DEBUG_NO_CHEM 
-        TheChemSolve.Speciate(&TheComponent,TheParameter);
+        TheChemSolve.Speciate(&TheComponent);
 #endif
         stat = TheChemSolve.status();
         fcnCnt(iv,sFunc) = stat.num_rhs_evaluations;        
       }
-      catch (const Amanzi::Exceptions::Amanzi_exception& geochem_error)
+      catch (const Exceptions::Amanzi_exception& geochem_error)
       {
 	std::cout << "CHEMISTRY SPECIATION FAILED on level at " << iv << " : ";
-	TheComponent.Display("components: ", vo_);
 	if (abort_on_chem_fail) {
 	  BoxLib::Abort(geochem_error.what());
 	}
@@ -620,10 +618,10 @@ AmanziChemHelper_Structured::DumpChemStructures(std::ostream&                   
 						Amanzi::AmanziChemistry::Beaker::BeakerState&      TheComponent,
 						Amanzi::AmanziChemistry::Beaker::BeakerParameters& TheParameter)
 {
-  os << "Volume " << TheParameter.volume << std::endl;
-  os << "Saturation " << TheParameter.saturation << std::endl;
-  os << "Water density " << TheParameter.water_density << std::endl;
-  os << "Porosity " << TheParameter.porosity << std::endl;
+  os << "Volume " << TheComponent.volume << std::endl;
+  os << "Saturation " << TheComponent.saturation << std::endl;
+  os << "Water density " << TheComponent.water_density << std::endl;
+  os << "Porosity " << TheComponent.porosity << std::endl;
 
   for (int i=0; i<Nmobile; ++i) {
     const std::string label=primarySpeciesNames[i] + "_Primary_Species_Mobile"; 

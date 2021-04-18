@@ -427,11 +427,20 @@ TEST_FIXTURE(test_fixture, Extract_Flatten_Surface_MSTK3_SIDE_FACES) {
   //
   bool is_valid = surfmesh->valid_set_name("Side Surface", Amanzi::AmanziMesh::FACE);
   CHECK(is_valid);
-  Amanzi::AmanziMesh::Entity_ID_List setents;
-  // In this case, a face set in the parent becomes a face set in the surface
-  surfmesh->get_set_entities("Side Surface",Amanzi::AmanziMesh::FACE,
-                            Amanzi::AmanziMesh::Parallel_type::OWNED,&setents);
-  CHECK_EQUAL(3, setents.size());
+  {
+    Amanzi::AmanziMesh::Entity_ID_List setents;
+    // In this case, a face set in the parent becomes a face set in the surface
+    surfmesh->get_set_entities("Side Surface",Amanzi::AmanziMesh::FACE,
+            Amanzi::AmanziMesh::Parallel_type::OWNED,&setents);
+    CHECK_EQUAL(3, setents.size());
+  }
+  { // fool me once...
+    Amanzi::AmanziMesh::Entity_ID_List setents;
+    // In this case, a face set in the parent becomes a face set in the surface
+    surfmesh->get_set_entities("Side Surface",Amanzi::AmanziMesh::FACE,
+            Amanzi::AmanziMesh::Parallel_type::OWNED,&setents);
+    CHECK_EQUAL(3, setents.size());
+  }
 }
 
 TEST_FIXTURE(test_fixture, Extract_Flatten_Surface_MSTK3_SIDE_FACES_NO_CELLS) {
@@ -455,10 +464,21 @@ TEST_FIXTURE(test_fixture, Extract_Flatten_Surface_MSTK3_TOP_FACES) {
   // In this case, a face set in the parent becomes a cell set in the surface
   bool is_valid = surfmesh->valid_set_name("Top Surface", Amanzi::AmanziMesh::CELL);
   CHECK(is_valid);
-  Amanzi::AmanziMesh::Entity_ID_List setents;
-  surfmesh->get_set_entities("Top Surface",Amanzi::AmanziMesh::CELL,
-                            Amanzi::AmanziMesh::Parallel_type::OWNED,&setents);
-  CHECK_EQUAL(9, setents.size());
+  {
+    Amanzi::AmanziMesh::Entity_ID_List setents;
+    surfmesh->get_set_entities("Top Surface",Amanzi::AmanziMesh::CELL,
+            Amanzi::AmanziMesh::Parallel_type::OWNED,&setents);
+    CHECK_EQUAL(9, setents.size());
+  }
+
+  // bug existed where the set was not stored of the correct type -- make sure
+  // you can get this twice...
+  {
+    Amanzi::AmanziMesh::Entity_ID_List setents;
+    surfmesh->get_set_entities("Top Surface",Amanzi::AmanziMesh::CELL,
+            Amanzi::AmanziMesh::Parallel_type::OWNED,&setents);
+    CHECK_EQUAL(9, setents.size());
+  }
 }
 
 TEST_FIXTURE(test_fixture, Extract_Flatten_Surface_MSTK3_TOP_FACES_NO_FACES) {
@@ -470,7 +490,7 @@ TEST_FIXTURE(test_fixture, Extract_Flatten_Surface_MSTK3_TOP_FACES_NO_FACES) {
   // valid, and get_set_entities() does not throw but returns an empty list, or
   // is not valid.
   bool is_valid = surfmesh->valid_set_name("Side Surface", Amanzi::AmanziMesh::FACE);
-  if (is_valid) {  
+  if (is_valid) {
     Amanzi::AmanziMesh::Entity_ID_List setents;
     surfmesh->get_set_entities("Top Surface",Amanzi::AmanziMesh::FACE,
             Amanzi::AmanziMesh::Parallel_type::OWNED,&setents);
@@ -484,10 +504,18 @@ TEST_FIXTURE(test_fixture, Extract_Flatten_Surface_MSTK3_TOP_CELLS) {
   // In this case, a cell set in the parent becomes a cell set in the surface
   bool is_valid = surfmesh->valid_set_name("Region 1", Amanzi::AmanziMesh::CELL);
   CHECK(is_valid);
-  Amanzi::AmanziMesh::Entity_ID_List setents;
-  surfmesh->get_set_entities("Region 1",Amanzi::AmanziMesh::CELL,
-                            Amanzi::AmanziMesh::Parallel_type::OWNED,&setents);
-  CHECK_EQUAL(9, setents.size());
+  {
+    Amanzi::AmanziMesh::Entity_ID_List setents;
+    surfmesh->get_set_entities("Region 1",Amanzi::AmanziMesh::CELL,
+            Amanzi::AmanziMesh::Parallel_type::OWNED,&setents);
+    CHECK_EQUAL(9, setents.size());
+  }
+  { // you don't get fooled again
+    Amanzi::AmanziMesh::Entity_ID_List setents;
+    surfmesh->get_set_entities("Region 1",Amanzi::AmanziMesh::CELL,
+            Amanzi::AmanziMesh::Parallel_type::OWNED,&setents);
+    CHECK_EQUAL(9, setents.size());
+  }
 }
 
 TEST_FIXTURE(test_fixture, Extract_Flatten_Surface_MSTK3_BOTTOM_CELLS) {

@@ -55,7 +55,8 @@ namespace Functions {
 
 Teuchos::RCP<CompositeVectorFunction>
 CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
-        const CompositeVectorSpace& factory);
+        const CompositeVectorSpace& factory,
+        std::vector<std::string>& componentname_list);
 
 } // namespace
 } // namespace

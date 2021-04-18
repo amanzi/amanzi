@@ -30,10 +30,9 @@ TEST(constant_test)
   Function *f = new FunctionConstant(1.0);
   std::vector<double> x(1,3.0);
   CHECK_EQUAL((*f)(x), 1.0);
-  Function *g = f->Clone();
+  auto g = f->Clone();
   delete f;
   CHECK_EQUAL((*g)(x), 1.0);
-  delete g;
 }
 
 TEST(smooth_step_test)
@@ -54,11 +53,10 @@ TEST(smooth_step_test)
   CHECK_EQUAL((*f)(x), 0.0);
   x[0] = 4.0;
   CHECK_EQUAL((*f)(x), 0.0);
-  Function *g = f->Clone();
+  auto g = f->Clone();
   delete f;
   x[0] = 2.0;
   CHECK_EQUAL((*g)(x), 0.5);
-  delete g;
   CHECK_THROW(FunctionSmoothStep fun(3.0, 1.0, 3.0, 0.0), Errors::Message);
 }
       
@@ -88,11 +86,11 @@ TEST(tabular_test)
   CHECK_EQUAL((*f)(z), 0.0);
   z[0] = 4.0;
   CHECK_EQUAL((*f)(z), 0.0);
-  Function *g = f->Clone();
+  auto g = f->Clone();
   delete f;
   z[0] = 3.0;
   CHECK_EQUAL((*g)(z), 2.0);
-  delete g;
+
   // Now try with optional form argument
   FunctionTabular::Form form[3] = {FunctionTabular::CONSTANT,
       FunctionTabular::LINEAR, FunctionTabular::CONSTANT};
@@ -120,7 +118,7 @@ TEST(tabular_test)
   delete f;
   z[0] = 3.0;
   CHECK_EQUAL((*g)(z), 2.0);
-  delete g;
+
   // Verify the constructor fails with only a single table entry.
   xvec.assign(x, x+1);
   yvec.assign(y, y+1);
@@ -224,10 +222,9 @@ SUITE(polynomial_test) {
     FunctionPolynomial *f = new FunctionPolynomial(cvec, pvec);
     std::vector<double> x(1, 2.0);
     CHECK_EQUAL((*f)(x), -5.0);
-    FunctionPolynomial *g = f->Clone();
+    auto g = f->Clone();
     delete f;
     CHECK_EQUAL((*g)(x), -5.0);
-    delete g;
   }
 }
 
@@ -243,10 +240,9 @@ TEST(linear_test)
   std::vector<double> b(3,1.); b[1] = -1.;
   CHECK_EQUAL(5.0, (*f)(a));
   CHECK_EQUAL(-3.0, (*f)(b));
-  Function *g = f->Clone();
+  auto g = f->Clone();
   delete f;
   CHECK_EQUAL(-3.0, (*g)(b));
-  delete g;
   // Two variable linear function with x0.
   double x0[3] = { 1.0, 2.0, 3.0};
   std::vector<double> x0vec(x0, x0+2);
@@ -340,7 +336,7 @@ TEST(static_head_test)
   std::vector<double> b(4,1.);
   b[1] = 2.;
   CHECK_EQUAL(patm+rho*g*(y0+grad[1]*b[1]+grad[2]*b[2]-b[3]), (*f)(b));
-  Function *ff = f->Clone();
+  auto ff = f->Clone();
   double val = (*f)(b);
   delete f;
   CHECK_EQUAL(val, (*ff)(b));
@@ -461,10 +457,9 @@ TEST(pointer_test)
   std::vector<double> pvec(p,p+2);
   f = new FunctionPointer(&f_using_params, pvec);
   CHECK_EQUAL(f_using_params(&x[0],p), (*f)(x));
-  Function *g = f->Clone();
+  auto g = f->Clone();
   delete f;
   CHECK_EQUAL(f_using_params(&x[0],p), (*g)(x));
-  delete g;
 }
 
 TEST(bilinear_and_time_test)

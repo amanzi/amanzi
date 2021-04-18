@@ -40,6 +40,7 @@
 */
 
 #include "dbc.hh"
+#include "AmanziTypes.hh"
 #include "MultiFunction.hh"
 
 namespace Amanzi {

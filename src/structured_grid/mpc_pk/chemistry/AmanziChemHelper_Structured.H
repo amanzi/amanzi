@@ -3,7 +3,7 @@
 
 #include <ChemistryHelper_Structured.H>
 
-#include <simple_thermo_database.hh>
+#include <SimpleThermoDatabase.hh>
 
 class AmanziChemHelper_Structured
   : public ChemistryHelper_Structured

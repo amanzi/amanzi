@@ -76,18 +76,19 @@ class FunctionBilinearAndTime : public Function {
                           const std::string& column_coordinate,
                           const std::string& val_header);
 
-  FunctionBilinearAndTime(const FunctionBilinearAndTime& other);    
+  FunctionBilinearAndTime(const FunctionBilinearAndTime& other);
 
   ~FunctionBilinearAndTime() {};
-  FunctionBilinearAndTime* Clone() const { return new FunctionBilinearAndTime(*this); }
+  std::unique_ptr<Function> Clone() const {
+    return std::make_unique<FunctionBilinearAndTime>(*this);
+  }
 
   double operator()(const std::vector<double>& x) const;
 
  private:
   std::unique_ptr<FunctionBilinear> Load_(const int i) const;
-  
- private:
 
+ private:
   std::string row_header_, col_header_, val_header_;
   int row_index_, col_index_;
   std::vector<double> times_;
@@ -96,8 +97,8 @@ class FunctionBilinearAndTime : public Function {
   mutable double t_after_;
   mutable int current_interval_;
 
-  mutable std::unique_ptr<FunctionBilinear> val_before_;
-  mutable std::unique_ptr<FunctionBilinear> val_after_;
+  mutable std::unique_ptr<Function> val_before_;
+  mutable std::unique_ptr<Function> val_after_;
 
 };
 

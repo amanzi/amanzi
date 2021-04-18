@@ -1335,7 +1335,8 @@ void InputConverterS::ParseGeochemistry_()
 	format = GetAttributeValueS_(element, "format", TYPE_NONE, false, format);
       } else {
         int status;
-	bgdfilename = CreateBGDFile_(xmlfilename_, rank_, status);
+        Exceptions::amanzi_throw(Errors::Message("BGD file is no longer created. Aborting."));
+	// bgdfilename = CreateBGDFile_(xmlfilename_, rank_, status);
       }
 
       AddToTable(table, MakePPPrefix("Chemistry", "Thermodynamic_Database_File"), MakePPEntry(bgdfilename));

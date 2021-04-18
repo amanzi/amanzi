@@ -21,6 +21,7 @@ namespace Amanzi {
 PrimaryVariableFieldEvaluator::PrimaryVariableFieldEvaluator(
     Teuchos::ParameterList& plist) :
     FieldEvaluator(plist) {
+  type_ = EvaluatorType::PRIMARY;
   my_key_ = plist_.get<std::string>("evaluator name");
 }
 
