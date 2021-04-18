@@ -1411,7 +1411,7 @@ void Beaker::DisplayParameters() const {
   message << "---- Parameters" << std::endl;
   // message << "    thermo_database_file: " << thermo_database_file << std::endl;
   message << "    tolerance: " << tolerance_ << std::endl;
-  message << "    max_iterations :" << max_iterations_ << std::endl;
+  message << "    max_iterations: " << max_iterations_ << std::endl;
 
   message << "    activity model: " << activity_model_->name() << std::endl;
 
