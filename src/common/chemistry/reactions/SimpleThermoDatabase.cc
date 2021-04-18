@@ -17,10 +17,11 @@
 #include <string>
 #include <sstream>
 
+#include "exceptions.hh"
+#include "errors.hh"
+
 #include "AqueousEquilibriumComplex.hh"
 #include "Beaker.hh"
-#include "ChemistryException.hh"
-#include "exceptions.hh"
 #include "GeneralRxn.hh"
 #include "IonExchangeComplex.hh"
 #include "IonExchangeRxn.hh"
@@ -323,7 +324,7 @@ void SimpleThermoDatabase::Initialize(const BeakerParameters& parameters)
         std::stringstream ss;
         ss << "Unknown parent species '" << parent << "'.\n"
            << "Parent species must be in the primary species list.\n";
-        Exceptions::amanzi_throw(ChemistryInvalidInput(ss.str()));
+        Exceptions::amanzi_throw(Errors::Message(ss.str()));
       }
       species.push_back(parent);
       species_ids.push_back(parent_id);
@@ -338,7 +339,7 @@ void SimpleThermoDatabase::Initialize(const BeakerParameters& parameters)
           std::stringstream ss;
           ss << "Unknown progeny species '" << name << "'.\n"
              << "Progeny species must be in the primary species list.\n";
-          Exceptions::amanzi_throw(ChemistryInvalidInput(ss.str()));
+          Exceptions::amanzi_throw(Errors::Message(ss.str()));
         }
         species.push_back(progeny);
         species_ids.push_back(id2);

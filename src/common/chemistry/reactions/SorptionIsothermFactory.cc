@@ -11,8 +11,9 @@
 #include <sstream>
 #include <string>
 
-#include "ChemistryException.hh"
 #include "exceptions.hh"
+#include "errors.hh"
+
 #include "SorptionIsotherm.hh"
 #include "SorptionIsothermFactory.hh"
 #include "SorptionIsothermLinear.hh"
@@ -37,12 +38,12 @@ std::shared_ptr<SorptionIsotherm> SorptionIsothermFactory::Create(
   } else if (isotherm_type == langmuir) {
     // require two parameters
     if (parameters.size() != 2) {
-      std::ostringstream error_stream;
-      error_stream << "SorptionIsothermFactory::Create(): \n"
-                   << "  Langmuir isotherm requires exactly two parameters, received "
-                   << parameters.size() << ".\n"
-                   << "    param_1 == Kd, param_2 == b  .\n"; 
-      Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+      std::ostringstream oss;
+      oss << "SorptionIsothermFactory::Create(): \n"
+          << "  Langmuir isotherm requires exactly two parameters, received "
+          << parameters.size() << ".\n"
+          << "    param_1 == Kd, param_2 == b  .\n"; 
+      Exceptions::amanzi_throw(Errors::Message(oss.str()));
     }
     sorption_isotherm = std::make_shared<SorptionIsothermLangmuir>(parameters[0], parameters[1]);
   } else if (isotherm_type == freundlich) {
@@ -54,7 +55,7 @@ std::shared_ptr<SorptionIsotherm> SorptionIsothermFactory::Create(
                    << "  Freundlich isotherm requires exactly two parameters, received "
                    << parameters.size() << ".\n"
                    << "    param_1 == Kd, param_2 == n  .\n"; 
-      Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+      Exceptions::amanzi_throw(Errors::Message(error_stream.str()));
     }
     sorption_isotherm = std::make_shared<SorptionIsothermFreundlich>(parameters[0], parameters[1]);
   } else {
@@ -65,19 +66,11 @@ std::shared_ptr<SorptionIsotherm> SorptionIsothermFactory::Create(
                  << "       valid names: " << linear << "\n"
                  << "                    " << langmuir << "\n"
                  << "                    " << freundlich << "\n";
-    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+    Exceptions::amanzi_throw(Errors::Message(error_stream.str()));
   }
 
-  if (sorption_isotherm == nullptr) {
-    // something went wrong, should throw an exception and exit gracefully....
-    std::ostringstream error_stream;
-    error_stream << "SorptionIsothermFactory::Create(): \n"
-                 << "SorptionIsotherm was not created for some reason....\n";
-    Exceptions::amanzi_throw(ChemistryException(error_stream.str()));
-  } else {
-    // finish any additional setup
-    // GEH - none for now
-  }
+  // finish any additional setup
+  // GEH - none for now
 
   return sorption_isotherm;
 }
@@ -101,7 +94,7 @@ int SorptionIsothermFactory::VerifySpeciesName(
     error_stream << "SorptionIsothermFactory::VerifySpeciesName(): \n";
     error_stream << "Did not find species: \'" << species_name << "\'\n"
                  << "       in the primary species list. " << std::endl;
-    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+    Exceptions::amanzi_throw(Errors::Message(error_stream.str()));
   }
 
   return species_id;

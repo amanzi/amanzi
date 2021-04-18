@@ -8,7 +8,8 @@
 
 #include <UnitTest++.h>
 
-#include "ChemistryException.hh"
+#include "exceptions.hh"
+
 #include "KineticRate.hh"
 #include "KineticRateTST.hh"
 #include "KineticRateFactory.hh"
@@ -156,20 +157,16 @@ SUITE(GeochemistryTestsKineticRateFactory) {
     kinetic_rate_ = mkf_.Create(plist, minerals_.at(1), species_);
   }
 
-  // use C++ RTTI to determine if the correct type of object was
-  // returned from the factory, e.g. see "typeid" at
-  // http:// en.wikibooks.org/wiki/C++_Programming/RTTI
-
   TEST_FIXTURE(KineticRateFactoryTest, KineticRateFactory_create) {
     std::string name("TST");
     RunTest(name);
     CHECK_EQUAL(typeid(ac::KineticRateTST).name(), typeid(*kinetic_rate_).name());
-  }  // end TEST_FIXTURE()
+  }
 
   TEST_FIXTURE(KineticRateFactoryTest, KineticRateFactory_invalid_rate) {
     std::string name("invalid-name");
-    CHECK_THROW(RunTest(name), ac::ChemistryException);
+    CHECK_THROW(RunTest(name), Exceptions::Amanzi_exception);
     CHECK(!kinetic_rate_);
-  }  // end TEST_FIXTURE()
+  }
 }
 

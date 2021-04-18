@@ -8,6 +8,7 @@
 #include "UnitTest++.h"
 #include "Teuchos_RCP.hpp"
 
+#include "exceptions.hh"
 #include "VerboseObject.hh"
 
 #include "AqueousEquilibriumComplex.hh"
@@ -15,7 +16,6 @@
 #include "ActivityModelFactory.hh"
 #include "ActivityModelDebyeHuckel.hh"
 #include "ActivityModelUnit.hh"
-#include "ChemistryException.hh"
 #include "Species.hh"
 
 /*!
@@ -117,7 +117,7 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelFactory) {
   */
   TEST_FIXTURE(ActivityModelFactoryTest, ActivityModelFactory_invalid) {
     std::string name("invalid-name");
-    CHECK_THROW(RunTest(name), ac::ChemistryException);
+    CHECK_THROW(RunTest(name), Exceptions::Amanzi_exception);
     CHECK(!activity_model_);
   }  // end TEST_FIXTURE()
 

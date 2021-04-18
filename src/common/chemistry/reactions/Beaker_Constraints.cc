@@ -61,7 +61,7 @@ int Beaker::EnforceConstraint(
       }
       map[i] = im;
       if (!found)
-        Exceptions::amanzi_throw(ChemistryInvalidInput("Unknown mineral in constraint: " + pair.second));
+        Exceptions::amanzi_throw(Errors::Message("Unknown mineral in constraint: " + pair.second));
 
     } else if (name == "gas") {
       int ip(0);
@@ -86,11 +86,11 @@ int Beaker::EnforceConstraint(
       }
 
       if (!found)
-        Exceptions::amanzi_throw(ChemistryInvalidInput("Cannot process gas constraint: " + pair.second));
+        Exceptions::amanzi_throw(Errors::Message("Cannot process gas constraint: " + pair.second));
       if (pair.second != "CO2")
-        Exceptions::amanzi_throw(ChemistryInvalidInput("Missing Henry law for gas constraint: " + pair.second));
+        Exceptions::amanzi_throw(Errors::Message("Missing Henry law for gas constraint: " + pair.second));
     } else {
-      Exceptions::amanzi_throw(ChemistryInvalidInput("Unknown geochemical constraint: " + names[i]));
+      Exceptions::amanzi_throw(Errors::Message("Unknown geochemical constraint: " + names[i]));
     }
 
     // total_.at(i) = state->total.at(i);

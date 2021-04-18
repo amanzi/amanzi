@@ -11,7 +11,6 @@
 #include "ActivityModelUnit.hh"
 #include "ActivityModelDebyeHuckel.hh"
 #include "ActivityModel.hh"
-#include "ChemistryException.hh"
 #include "Species.hh"
 
 /*****************************************************************************

@@ -14,18 +14,16 @@
     with that site!
 */
 
-#include "SurfaceComplexationRxn.hh"
-
 #include <cmath>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
 
-#include "exceptions.hh"
+#include "errors.hh"
 #include "VerboseObject.hh"
 
-#include "ChemistryException.hh"
 #include "MatrixBlock.hh"
+#include "SurfaceComplexationRxn.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -137,7 +135,7 @@ void SurfaceComplexationRxn::Update(const std::vector<Species>& primarySpecies)
     std::ostringstream error_stream;
     error_stream << "SurfaceComplexationRxn::Update(): \n"
                  << "loop reached max_iterations: " << iterations << std::endl;
-    Exceptions::amanzi_throw(ChemistryMaxIterationsReached(error_stream.str()));
+    Exceptions::amanzi_throw(Errors::Message(error_stream.str()));
   }
 }
 

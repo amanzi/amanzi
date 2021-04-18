@@ -18,8 +18,9 @@
 
 #include "VerboseObject.hh"
 
-#include "ChemistryException.hh"
 #include "exceptions.hh"
+#include "errors.hh"
+
 #include "Species.hh"
 
 namespace Amanzi {
@@ -69,7 +70,7 @@ Species::Species(int id, const std::string& name,
     oss << "Invalid species data, id = " << identifier() << std::endl
         << "   gram molecular weight = " << gram_molecular_weight() << std::endl
         << "      ion size parameter = " << ion_size_parameter() << std::endl;
-    Exceptions::amanzi_throw(ChemistryInvalidInput(oss.str()));
+    Exceptions::amanzi_throw(Errors::Message(oss.str()));
   }
 }
 

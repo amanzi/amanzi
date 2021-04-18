@@ -7,7 +7,8 @@
 
 #include <UnitTest++.h>
 
-#include "ChemistryException.hh"
+#include "exceptions.hh"
+
 #include "SecondarySpecies.hh"
 
 SUITE(GeochemistryTestsSecondarySpecies) {
@@ -146,13 +147,13 @@ SUITE(GeochemistryTestsSecondarySpecies) {
     primary_species_.pop_back();
     CHECK_THROW(
         MockSecondarySpecies secondary(name_, secondary_id_, plist_, primary_species_),
-        ac::ChemistryException);
+        Exceptions::Amanzi_exception);
   }
 
   TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_size_names_stoichiometry) {
     primary_species_[1] = primary_species_[0];
     CHECK_THROW(
         MockSecondarySpecies secondary(name_, secondary_id_, plist_, primary_species_),
-        ac::ChemistryException);
+        Exceptions::Amanzi_exception);
   }
 }

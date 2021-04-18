@@ -9,7 +9,6 @@
 #include <UnitTest++.h>
 
 #include "KineticRate.hh"
-#include "ChemistryException.hh"
 
 SUITE(GeochemistryTestsKineticRate) {
   namespace ac = Amanzi::AmanziChemistry;

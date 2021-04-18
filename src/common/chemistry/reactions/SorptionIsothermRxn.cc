@@ -15,7 +15,6 @@
 #include <iostream>
 #include <sstream>
 
-#include "ChemistryException.hh"
 #include "exceptions.hh"
 #include "MatrixBlock.hh"
 #include "SorptionIsothermRxn.hh"

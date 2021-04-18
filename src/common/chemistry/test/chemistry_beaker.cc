@@ -9,21 +9,17 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
+#include "exceptions.hh"
 #include "VerboseObject.hh"
 
 #include "ActivityModelFactory.hh"
 #include "Beaker.hh"
-#include "ChemistryException.hh"
 #include "SimpleThermoDatabase.hh"
 
 SUITE(BeakerTests) {
   using Amanzi::AmanziChemistry::Beaker;
   using Amanzi::AmanziChemistry::SimpleThermoDatabase;
   using Amanzi::AmanziChemistry::ActivityModelFactory;
-  using Amanzi::AmanziChemistry::ChemistryException;
-  using Amanzi::AmanziChemistry::ChemistryUnrecoverableError;
-  using Amanzi::AmanziChemistry::ChemistryMemorySizeError;
-  using Amanzi::AmanziChemistry::ChemistryInvalidInput;
 
   TEST(CheckBadActivityModel) {
     Teuchos::ParameterList plist;
@@ -52,10 +48,8 @@ SUITE(BeakerTests) {
     try {
       // should throw an error
       chem.Initialize(parameters);
-    } catch (ChemistryUnrecoverableError& e) {
-    } catch (ChemistryInvalidInput& e) {
+    } catch (Exceptions::Amanzi_exception& e) {
       correct_exception = true;
-    } catch (ChemistryException& e) {
     } catch (std::exception& e) {
     }
 

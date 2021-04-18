@@ -6,7 +6,8 @@
 
 #include <UnitTest++.h>
 
-#include "ChemistryException.hh"
+#include "exceptions.hh"
+
 #include "Species.hh"
 
 SUITE(GeochemistryTestsSpecies) {
@@ -93,21 +94,21 @@ SUITE(GeochemistryTestsSpecies) {
   //
   TEST_FIXTURE(SpeciesTest, Species_constructor_invalid_id) {
     CHECK_THROW(ac::Species species(-1, name_, plist_),
-                ac::ChemistryException);
+                Exceptions::Amanzi_exception);
   }
 
   TEST_FIXTURE(SpeciesTest, Species_constructor_invalid_molecular_weight) {
     auto plist = plist_;
     plist.set<double>("gram molecular weight", -45.678);
     CHECK_THROW(ac::Species species(id_, name_, plist),
-                ac::ChemistryException);
+                Exceptions::Amanzi_exception);
   }
 
   TEST_FIXTURE(SpeciesTest, Species_constructor_invalid_ion_size) {
     auto plist = plist_;
     plist.set<double>("ion size parameter", -9.0);
     CHECK_THROW(ac::Species species(id_, name_, plist),
-                ac::ChemistryException);
+                Exceptions::Amanzi_exception);
   }
 
   //

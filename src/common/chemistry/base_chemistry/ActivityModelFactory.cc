@@ -13,11 +13,12 @@
 #include <sstream>
 #include <string>
 
+#include "errors.hh"
+
 #include "ActivityModel.hh"
 #include "ActivityModelDebyeHuckel.hh"
 #include "ActivityModelPitzerHWM.hh"
 #include "ActivityModelUnit.hh"
-#include "ChemistryException.hh"
 #include "exceptions.hh"
 #include "Species.hh"
 
@@ -51,7 +52,7 @@ ActivityModel* ActivityModelFactory::Create(
         << "  valid names: " << unit << "\n"
         << "               " << debye_huckel << "\n"
         << "               " << pitzer_hwm << "\n" ;
-    Exceptions::amanzi_throw(ChemistryInvalidInput(oss.str()));
+    Exceptions::amanzi_throw(Errors::Message(oss.str()));
   }
 
   activity_model->set_verbosity(vo);

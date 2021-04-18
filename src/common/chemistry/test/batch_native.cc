@@ -23,7 +23,6 @@
 #include "Beaker.hh"
 #include "ActivityModelFactory.hh"
 #include "ChemistryUtilities.hh"
-#include "ChemistryException.hh"
 #include "SimpleThermoDatabase.hh"
 
 namespace ac = Amanzi::AmanziChemistry;

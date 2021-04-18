@@ -9,7 +9,6 @@
 #include <UnitTest++.h>
 
 #include "AqueousEquilibriumComplex.hh"
-#include "ChemistryException.hh"
 #include "MatrixBlock.hh"
 
 SUITE(GeochemistryTestsAqueousEquilibriumComplex) {

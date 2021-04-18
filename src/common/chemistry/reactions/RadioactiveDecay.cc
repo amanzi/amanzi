@@ -19,9 +19,11 @@
 // TPLs
 #include "boost/algorithm/string.hpp"
 
+// Amanzi
+#include "errors.hh"
+
 // Chemistry
 #include "ChemistryUtilities.hh"
-#include "ChemistryException.hh"
 #include "MatrixBlock.hh"
 #include "RadioactiveDecay.hh"
 
@@ -96,7 +98,7 @@ void RadioactiveDecay::ConvertHalfLifeUnits()
     message << "ERROR: RadioactiveDecay::ConvertHalfLifeUnits(" << parent_name() << "): \n"
             << "Unknown half life units '" << half_life_units_ << "'.\n"
             << "Valid units are: 'years', 'days', 'hours', 'minutes', 'seconds'.\n";
-    Exceptions::amanzi_throw(ChemistryInvalidInput(message.str()));
+    Exceptions::amanzi_throw(Errors::Message(message.str()));
   }
 
   half_life_seconds_ = half_life_user_ * conversion;

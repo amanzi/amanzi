@@ -29,7 +29,6 @@
 // Amanzi
 #include "Mesh.hh"
 #include "Beaker.hh"
-#include "ChemistryException.hh"
 #include "errors.hh"
 #include "exceptions.hh"
 #include "SimpleThermoDatabase.hh"
@@ -225,9 +224,9 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
 
     vo_->Write(Teuchos::VERB_HIGH, "\nTest solution of initial conditions in cell 0:\n");
     chem_->DisplayResults();
-  } catch (ChemistryException& geochem_err) {
+  } catch (Exceptions::Amanzi_exception& geochem_err) {
     ierr = 1;
-    internal_msg = geochem_err.message_;
+    internal_msg = geochem_err.what();
   }
 
   ErrorAnalysis(ierr, internal_msg);
@@ -251,9 +250,9 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
         // chem_->Speciate(&beaker_state_, beaker_parameters_);
         CopyBeakerStructuresToCellState(c, tcc);
       } 
-      catch (ChemistryException& geochem_err) {
+      catch (Exceptions::Amanzi_exception& geochem_err) {
         ierr = 1;
-        internal_msg = geochem_err.message_;
+        internal_msg = geochem_err.what();
       }
     }
   } else {
@@ -291,10 +290,8 @@ void Amanzi_PK::XMLParameters()
 
   } else {
     std::ostringstream msg;
-    msg << AmanziChemistry::kChemistryError;
-    msg << "Amanzi_PK::XMLParameters(): \n";
-    msg << "  'thermodynamic database' sublist must be specified.\n";
-    Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));    
+    msg << "Amanzi_PK: 'thermodynamic database' sublist must be specified.\n";
+    Exceptions::amanzi_throw(Errors::Message(msg.str()));    
   }
 
   // activity model
@@ -305,10 +302,8 @@ void Amanzi_PK::XMLParameters()
       beaker_parameters_.pitzer_database = cp_list_->get<std::string>("Pitzer database file");
     } else {
       std::ostringstream msg;
-      msg << AmanziChemistry::kChemistryError;
-      msg << "Amanzi_PK::XMLParameters():\n";
-      msg << "  Input parameter 'Pitzer database file' must be specified if 'activity model' is 'pitzer-hwm'.\n";
-      Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));
+      msg << "Amanzi_PK: parameter 'Pitzer database file' must be specified if activity model=pitzer-hwm'.\n";
+      Exceptions::amanzi_throw(Errors::Message(msg.str()));
     }
   }
 
@@ -366,11 +361,10 @@ void Amanzi_PK::SetupAuxiliaryOutput()
     if (index == -1) {
       // check to make sure it is not -1, an invalid name/index
       std::stringstream message;
-      message << "ChemistryPK::SetupAuxiliaryOutput() : "
-              << "Output was requested for '" << aux_names_.at(i) 
+      message << "ChemistryPK: Output was requested for '" << aux_names_.at(i) 
               << "' (" << name 
               << ") but no chemistry varibles of this name were found.\n";
-      Exceptions::amanzi_throw(ChemistryInvalidInput(message.str()));
+      Exceptions::amanzi_throw(Errors::Message(message.str()));
     } else {
       aux_index_.push_back(index);
     }
@@ -689,9 +683,9 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
           min_itrs = num_itrs;
         }
         avg_itrs += num_itrs;
-      } catch (ChemistryException& geochem_err) {
+      } catch (Exceptions::Amanzi_exception& geochem_err) {
         ierr = 1;
-        internal_msg = AmanziChemistry::kChemistryError;
+        internal_msg = geochem_err.what();
         break;
       }
 

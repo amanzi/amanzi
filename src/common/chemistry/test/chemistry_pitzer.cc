@@ -6,11 +6,12 @@
 
 #include <UnitTest++.h>
 
+#include "exceptions.hh"
+
 #include "ActivityModel.hh"
 #include "ActivityModelFactory.hh"
 #include "ActivityModelPitzerHWM.hh"
 #include "AqueousEquilibriumComplex.hh"
-#include "ChemistryException.hh"
 #include "Species.hh"
 
 SUITE(TestPitzer) {
@@ -325,7 +326,7 @@ SUITE(TestPitzer) {
     sp_.clear();
     sp_.push_back(Cl);
     sp_.push_back(Na);
-    CHECK_THROW(am_ = amfac_.Create("invalid activity model", parameters, sp_, aqx_, vo_.ptr()), ac::ChemistryException);
+    CHECK_THROW(am_ = amfac_.Create("invalid activity model", parameters, sp_, aqx_, vo_.ptr()), Exceptions::Amanzi_exception);
   }
 
   /*!
@@ -360,7 +361,7 @@ SUITE(TestPitzer) {
 
     am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_, vo_.ptr());
     am_->Display();
-    CHECK_THROW(am_->CalculateActivityCoefficients(&sp_, &aqx_, &H2O), ac::ChemistryException);
+    CHECK_THROW(am_->CalculateActivityCoefficients(&sp_, &aqx_, &H2O), Exceptions::Amanzi_exception);
   }
 
   /*!
@@ -401,7 +402,7 @@ SUITE(TestPitzer) {
     am_->Display();
 
     sp_.pop_back();
-    CHECK_THROW(am_->CalculateActivityCoefficients(&sp_, &aqx_, &H2O), ac::ChemistryException);
+    CHECK_THROW(am_->CalculateActivityCoefficients(&sp_, &aqx_, &H2O), Exceptions::Amanzi_exception);
   }
 }  // end SUITE(TestPitzer)
 

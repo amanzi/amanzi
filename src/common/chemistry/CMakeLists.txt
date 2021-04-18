@@ -79,7 +79,6 @@ if (BUILD_TESTS)
                   KIND unit
                   SOURCE test/Main.cc   
                          test/chemistry_utilities.cc
-                         test/chemistry_exceptions.cc
                          test/chemistry_species.cc
                          test/chemistry_surface_site.cc           
                          test/chemistry_activity_model_factory.cc

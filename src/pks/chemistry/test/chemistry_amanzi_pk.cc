@@ -23,7 +23,6 @@
 #include "XMLParameterListWriter.hh"
 
 #include "dbc.hh"
-#include "ChemistryException.hh"
 #include "errors.hh"
 #include "exceptions.hh"
 #include "GenerationSpec.hh"
@@ -123,7 +122,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     // up a chemistry process kernel....
     try {
       cpk_ = new ac::Amanzi_PK(pk_tree_, glist_, state_, Teuchos::null);
-    } catch (ac::ChemistryException chem_error) {
+    } catch (Exceptions::Amanzi_exception chem_error) {
       std::cout << "ERROR test1 "<< chem_error.what() << std::endl;
     } catch (std::exception e) {
       std::cout << "ERROR test1a " << e.what() << std::endl;

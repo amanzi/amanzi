@@ -313,7 +313,7 @@ AmanziChemHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       
         stat = TheChemSolve.status();
         fcnCnt(iv,sFunc) = stat.num_rhs_evaluations;        
       }
-      catch (const Amanzi::AmanziChemistry::ChemistryException& geochem_error)
+      catch (const Amanzi::Exceptions::Amanzi_exception& geochem_error)
       {
         if (chem_verbose>=0) {
           std::cout << "CHEMISTRY FAILED on level at " << iv << " : ";
@@ -529,7 +529,7 @@ AmanziChemHelper_Structured::Initialize(const FArrayBox& aqueous_saturation,    
         stat = TheChemSolve.status();
         fcnCnt(iv,sFunc) = stat.num_rhs_evaluations;        
       }
-      catch (const Amanzi::AmanziChemistry::ChemistryException& geochem_error)
+      catch (const Amanzi::Exceptions::Amanzi_exception& geochem_error)
       {
 	std::cout << "CHEMISTRY SPECIATION FAILED on level at " << iv << " : ";
 	TheComponent.Display("components: ", vo_);

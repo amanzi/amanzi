@@ -14,7 +14,6 @@
 #include <iomanip>
 #include <sstream>
 
-#include "ChemistryException.hh"
 #include "MatrixBlock.hh"
 
 #include "exceptions.hh"

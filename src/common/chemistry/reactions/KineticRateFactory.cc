@@ -13,8 +13,8 @@
 #include <string>
 #include <sstream>
 
-#include "ChemistryException.hh"
-#include "exceptions.hh"
+#include "errors.hh"
+
 #include "KineticRate.hh"
 #include "KineticRateFactory.hh"
 #include "KineticRateTST.hh"
@@ -39,7 +39,7 @@ KineticRate* KineticRateFactory::Create(const Teuchos::ParameterList& plist,
   } else {
     std::ostringstream oss;
     oss << "Unknown kinetic rate model: " << model << ", valid names: TST\n";
-    Exceptions::amanzi_throw(ChemistryInvalidInput(oss.str()));
+    Exceptions::amanzi_throw(Errors::Message(oss.str()));
   }
 
   return NULL;

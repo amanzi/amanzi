@@ -10,7 +10,7 @@
 
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "ChemistryException.hh"
+#include "errors.hh"
 #include "exceptions.hh"
 #include "VirialCoefficient.hh"
 
@@ -152,7 +152,7 @@ void ActivityModelPitzerHWM::EvaluateVector(
   if (number_species_ != number_species) {
     std::ostringstream error_stream;
     error_stream << "Error, different number of aqueous species" << "\n";
-    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+    Exceptions::amanzi_throw(Errors::Message(error_stream.str()));
   }
   double gcl(1.0);
   double gclm(1.0);
@@ -164,7 +164,7 @@ void ActivityModelPitzerHWM::EvaluateVector(
   if (I_ == 0.0 || Z_ == 0.0 || M_ == 0.0) {
     std::ostringstream error_stream;
     error_stream << "Error, zero concentrations" << "\n";
-    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+    Exceptions::amanzi_throw(Errors::Message(error_stream.str()));
   }
   int isp(-1);
   for (auto it = primary_species.begin(); it != primary_species.end(); ++it) {
@@ -427,7 +427,7 @@ void ActivityModelPitzerHWM::ComputeQmatrices()
   if ((nz + 1) != number_non_zero_q) {
     std::ostringstream error_stream;
     error_stream << "Warning different number non-zero terms in Q's matrices\n";
-    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+    Exceptions::amanzi_throw(Errors::Message(error_stream.str()));
   }
 }
 
@@ -491,7 +491,7 @@ void ActivityModelPitzerHWM::ComputeJFunctions()
   } else {
     std::ostringstream error_stream;
     error_stream << "Name for the J's functions approach not recognized" << "\n";
-    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+    Exceptions::amanzi_throw(Errors::Message(error_stream.str()));
   }
 }
 
@@ -750,7 +750,7 @@ void ActivityModelPitzerHWM::SetVirialCoefficient(
   } else {
     std::ostringstream error_stream;
     error_stream << "Type virial coefficient not defined" << typevirial;
-    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+    Exceptions::amanzi_throw(Errors::Message(error_stream.str()));
   }
 }
 

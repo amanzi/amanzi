@@ -72,7 +72,6 @@
 #include "boost/algorithm/string.hpp"
 
 // Chemistry
-#include "ChemistryException.hh"
 #include "ChemistryUtilities.hh"
 #include "MatrixBlock.hh"
 #include "SecondarySpecies.hh"

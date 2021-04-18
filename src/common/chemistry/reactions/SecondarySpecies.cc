@@ -14,7 +14,8 @@
 #include <iomanip>
 #include <sstream>
 
-#include "ChemistryException.hh"
+#include "errors.hh"
+
 #include "ChemistryUtilities.hh"
 #include "exceptions.hh"
 #include "MatrixBlock.hh"
@@ -64,7 +65,7 @@ SecondarySpecies::SecondarySpecies(int id, const std::string& name,
     oss << "SecondarySpecies::SecondarySpecies(): \n"
         << "Invalid data for secondary species: ncomp = " << ncomp() << std::endl
         << "   species_names.size != stoichiometries.size != species_ids.size" << std::endl;
-    Exceptions::amanzi_throw(ChemistryInvalidInput(oss.str()));
+    Exceptions::amanzi_throw(Errors::Message(oss.str()));
   }
 }
 
@@ -106,7 +107,7 @@ void SecondarySpecies::ParseReaction_(const std::string& reaction,
         std::stringstream msg;
         msg << "Reaction primary species \'" << primary_name 
             << "\' was not found in the primary species list\n";
-        Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));
+        Exceptions::amanzi_throw(Errors::Message(msg.str()));
       }
 
       species->push_back(primary_name);

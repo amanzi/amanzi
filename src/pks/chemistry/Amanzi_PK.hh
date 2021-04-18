@@ -20,7 +20,6 @@
 
 // Amanzi
 #include "Beaker.hh"
-#include "ChemistryException.hh"
 #include "Chemistry_PK.hh"
 #include "PK_Factory.hh"
 #include "Mesh.hh"

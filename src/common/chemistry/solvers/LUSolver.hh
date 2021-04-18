@@ -15,7 +15,8 @@
 #include <ostream>
 #include <vector>
 
-#include "ChemistryException.hh"
+#include "errors.hh"
+
 #include "MatrixBlock.hh"
 
 namespace Amanzi {
@@ -54,7 +55,7 @@ class LUSolver {
 
     if (ierr != 0) {
       std::string msg("LUSolver::Decomposition() : Singular matrix.");
-      Exceptions::amanzi_throw(ChemistryUnrecoverableError(msg));
+      Exceptions::amanzi_throw(Errors::Message(msg));
     }
   }
 

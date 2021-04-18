@@ -28,7 +28,6 @@
 #include "ActivityModelFactory.hh"
 #include "AqueousEquilibriumComplex.hh"
 #include "ChemistryUtilities.hh"
-#include "ChemistryException.hh"
 #include "GeneralRxn.hh"
 #include "IonExchangeRxn.hh"
 #include "KineticRate.hh"
@@ -276,16 +275,15 @@ int Beaker::ReactionStep(BeakerState* state, double dt)
   if (num_iterations >= max_iterations_) {
     // TODO(bandre): should this be an error to the driver...?
     // code eventually produces nans when this isn't an error.
-    std::ostringstream error_stream;
-    error_stream << "Warning: The maximum number Netwon iterations reached in Beaker::ReactionStep()." << std::endl;
-    error_stream << "Warning: Results may not have the desired accuracy." << std::endl;
-    error_stream << "Warning: max relative change = " << max_rel_change << std::endl;
-    error_stream << "Warning: max relative index = " << max_rel_index << std::endl;
-    error_stream << "Warning: tolerance = " << tolerance_ << std::endl;
-    error_stream << "Warning: max iterations = " << max_iterations_ << std::endl;
+    std::ostringstream oss;
+    oss << "\nWarning: The maximum number of Netwon iterations reached in Beaker.\n"
+        << "\n   max relative change = " << max_rel_change
+        << "\n   max relative index = " << max_rel_index
+        << "\n   tolerance = " << tolerance_
+        << "\n   max iterations = " << max_iterations_ << std::endl;
     // update before leaving so that we can see the erroneous values!
     CopyBeakerToState(state);
-    Exceptions::amanzi_throw(ChemistryMaxIterationsReached(error_stream.str()));
+    Exceptions::amanzi_throw(Errors::Message(oss.str()));
   }
 
   status_.num_newton_iterations = num_iterations;
@@ -743,7 +741,7 @@ void Beaker::VerifyState(const Beaker::BeakerState& state) const {
   }
 
   if (error) {
-    Exceptions::amanzi_throw(ChemistryMemorySizeError(error_stream.str()));
+    Exceptions::amanzi_throw(Errors::Message(error_stream.str()));
   }
 }
 
@@ -790,7 +788,7 @@ void Beaker::CopyStateToBeaker(const Beaker::BeakerState& state)
     oss << "\nMinerals.size(" << minerals().size()
         << ") and state.mineral_volume_fraction.size(" << size
         << ") do not match.\n";
-    Exceptions::amanzi_throw(ChemistryUnrecoverableError(oss.str()));
+    Exceptions::amanzi_throw(Errors::Message(oss.str()));
   }
 
   size = state.mineral_specific_surface_area.size();
@@ -813,7 +811,7 @@ void Beaker::CopyStateToBeaker(const Beaker::BeakerState& state)
     oss << "\nIon_exchange_sites.size(" << ion_exchange_rxns().size()
         << ") and state.ion_exchange_sites.size(" << size 
         << ") do not match.\n";
-    Exceptions::amanzi_throw(ChemistryUnrecoverableError(oss.str()));
+    Exceptions::amanzi_throw(Errors::Message(oss.str()));
   }
 
   size = ion_exchange_rxns().size();
@@ -1023,7 +1021,7 @@ void Beaker::InitializeMolalities(const std::vector<double>& initial_molalities)
     error_stream << "   Mismatch in size of initial_molalities array (" 
                  << initial_molalities.size() << ") and the number of "
                  << "primary species (" << primary_species().size() << ")\n";
-    Exceptions::amanzi_throw(ChemistryMemorySizeError(error_stream.str()));
+    Exceptions::amanzi_throw(Errors::Message(error_stream.str()));
   }
 
   // iterator doesnt seem to work then passing a vector entry - geh
@@ -1394,7 +1392,7 @@ void Beaker::ValidateSolution() {
       error_stream << "   mineral " << minerals_.at(m).name()
                    << " volume_fraction is negative: " 
                    << minerals_.at(m).volume_fraction() << std::endl;
-      Exceptions::amanzi_throw(ChemistryInvalidSolution(error_stream.str()));
+      Exceptions::amanzi_throw(Errors::Message(error_stream.str()));
     }
   }
 }

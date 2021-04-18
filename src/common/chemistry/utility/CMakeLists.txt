@@ -12,8 +12,7 @@ set(geochemutil_src_files MatrixBlock.cc
 	                  ChemistryUtilities.cc
 )
 
-set(geochemutil_inc_files matrix_block.hh
-                          ChemistryException.hh
+set(geochemutil_inc_files MatrixBlock.hh
                           ChemistryUtilities.hh)
 
 add_amanzi_library(geochemutil SOURCE ${geochemutil_src_files}
