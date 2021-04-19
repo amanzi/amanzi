@@ -1071,6 +1071,23 @@ void State::InitializeFields() {
           Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(f_it->first);
           f_it->second->Initialize(sublist);
         }
+        else {
+          // check for domain set
+          KeyTriple split;
+          bool is_ds = Keys::splitDomainSet(f_it->first, split);
+          Key ds_name = std::get<0>(split);
+          if (is_ds) {
+            Key lifted_key = Keys::getKey(ds_name, "*", std::get<2>(split));
+            if (state_plist_.sublist("initial conditions").isSublist(lifted_key)) {
+              Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(lifted_key);
+              sublist.set("evaluator name", f_it->first);
+              sublist.setName(f_it->first);
+              state_plist_.sublist("initial conditions").set(f_it->first, sublist);
+              sublist = state_plist_.sublist("initial conditions").sublist(f_it->first);
+              f_it->second->Initialize(sublist);
+            }
+          }
+        }
       }
     }
   }
