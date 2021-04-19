@@ -14,10 +14,12 @@
 
 #include "ActivityModelFactory.hh"
 #include "Beaker.hh"
+#include "BeakerState.hh"
 #include "SimpleThermoDatabase.hh"
 
 SUITE(BeakerTests) {
   using Amanzi::AmanziChemistry::Beaker;
+  using Amanzi::AmanziChemistry::BeakerState;
   using Amanzi::AmanziChemistry::SimpleThermoDatabase;
   using Amanzi::AmanziChemistry::ActivityModelFactory;
 
@@ -28,7 +30,7 @@ SUITE(BeakerTests) {
     auto bgd_list = Teuchos::getParametersFromXmlFile("test/chemistry_beaker_carbonate.xml");
     SimpleThermoDatabase chem(bgd_list, vo);
 
-    Beaker::BeakerState state;
+    BeakerState state;
     state.free_ion.clear();
     state.mineral_volume_fraction.clear();
     state.ion_exchange_sites.clear();
@@ -47,7 +49,7 @@ SUITE(BeakerTests) {
 
     try {
       // should throw an error
-      chem.Initialize(parameters);
+      chem.Initialize(state, parameters);
     } catch (Exceptions::Amanzi_exception& e) {
       correct_exception = true;
     } catch (std::exception& e) {

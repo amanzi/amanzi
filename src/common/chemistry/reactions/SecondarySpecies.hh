@@ -15,6 +15,8 @@
 
 #include <vector>
 
+#include "FunctionTabular.hh"
+
 #include "Species.hh"
 
 namespace Amanzi {
@@ -66,6 +68,8 @@ class SecondarySpecies : public Species {
   double lnK_;  // log value of equlibrium constant
   double lnQK_;  // store lnQK for derivatives later
   double logK_;
+
+  Teuchos::RCP<FunctionTabular> func_;
 };
 
 }  // namespace AmanziChemistry

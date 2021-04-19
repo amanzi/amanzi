@@ -38,7 +38,8 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 set(CHEM_INCLUDES_DIR "${CHEM_SOURCE_DIR}/utility"
                       "${CHEM_SOURCE_DIR}/base_chemistry"
                       "${CHEM_SOURCE_DIR}/reactions"
-                      "${CHEM_SOURCE_DIR}/solvers")
+                      "${CHEM_SOURCE_DIR}/solvers"
+                      "${FUNCS_SOURCE_DIR}")
 set_property(GLOBAL PROPERTY CHEM_INCLUDES_DIR "${CHEM_INCLUDES_DIR}")
 include_directories(${CHEM_INCLUDES_DIR})
 

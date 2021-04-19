@@ -48,7 +48,16 @@ SecondarySpecies::SecondarySpecies(int id, const std::string& name,
     lnK_(0.0),
     lnQK_(0.0)
 {
-  logK_ = plist.get<double>("equilibrium constant");
+  if (plist.isSublist("equilibrium constant")) {
+    auto x = plist.sublist("equilibrium constant").get<Teuchos::Array<double> >("x").toVector();
+    auto y = plist.sublist("equilibrium constant").get<Teuchos::Array<double> >("y").toVector();
+    func_ = Teuchos::rcp(new FunctionTabular(x, y, 0));
+
+    double T = plist.get<double>("temperature");
+    logK_ = (*func_)({T});
+  } else {
+    logK_ = plist.get<double>("equilibrium constant");
+  }
   std::string reaction = plist.get<std::string>("reaction");
 
   ParseReaction_(reaction, &species_names_, &species_ids_, &stoichiometry_, &h2o_stoich_, primary_species);

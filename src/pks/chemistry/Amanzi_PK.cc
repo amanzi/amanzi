@@ -73,25 +73,26 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   saturation_key_ = cp_list_->get<std::string>("saturation key", Keys::getKey(domain_, "saturation_liquid"));
   fluid_den_key_ = cp_list_->get<std::string>("fluid density key", Keys::getKey(domain_, "mass_density_liquid"));
 
-  min_vol_frac_key_ = Keys::getKey(domain_,"mineral_volume_fractions");
-  min_ssa_key_ = Keys::getKey(domain_,"mineral_specific_surface_area");
-  sorp_sites_key_ = Keys::getKey(domain_,"sorption_sites");
-  surf_cfsc_key_ = Keys::getKey(domain_,"surface_complex_free_site_conc");
-  total_sorbed_key_ = Keys::getKey(domain_,"total_sorbed");
-  isotherm_kd_key_ = Keys::getKey(domain_,"isotherm_kd");
-  isotherm_freundlich_n_key_ = Keys::getKey(domain_,"isotherm_freundlich_n");
-  isotherm_langmuir_b_key_ = Keys::getKey(domain_,"isotherm_langmuir_b");
-  free_ion_species_key_ = Keys::getKey(domain_,"free_ion_species");
-  primary_activity_coeff_key_ = Keys::getKey(domain_,"primary_activity_coeff");
+  temperature_key_ = Keys::getKey(domain_, "temperature");
+  min_vol_frac_key_ = Keys::getKey(domain_, "mineral_volume_fractions");
+  min_ssa_key_ = Keys::getKey(domain_, "mineral_specific_surface_area");
+  sorp_sites_key_ = Keys::getKey(domain_, "sorption_sites");
+  surf_cfsc_key_ = Keys::getKey(domain_, "surface_complex_free_site_conc");
+  total_sorbed_key_ = Keys::getKey(domain_, "total_sorbed");
+  isotherm_kd_key_ = Keys::getKey(domain_, "isotherm_kd");
+  isotherm_freundlich_n_key_ = Keys::getKey(domain_, "isotherm_freundlich_n");
+  isotherm_langmuir_b_key_ = Keys::getKey(domain_, "isotherm_langmuir_b");
+  free_ion_species_key_ = Keys::getKey(domain_, "free_ion_species");
+  primary_activity_coeff_key_ = Keys::getKey(domain_, "primary_activity_coeff");
 
-  ion_exchange_sites_key_ = Keys::getKey(domain_,"ion_exchange_sites");
+  ion_exchange_sites_key_ = Keys::getKey(domain_, "ion_exchange_sites");
   //ion_exchange_sites_key_ = "ion_exchange_sites";
 
-  ion_exchange_ref_cation_conc_key_ = Keys::getKey(domain_,"ion_exchange_ref_cation_conc");
-  secondary_activity_coeff_key_ = Keys::getKey(domain_,"secondary_activity_coeff");
-  alquimia_aux_data_key_ = Keys::getKey(domain_,"alquimia_aux_data");
-  mineral_rate_constant_key_ = Keys::getKey(domain_,"mineral_rate_constant");
-  first_order_decay_constant_key_ = Keys::getKey(domain_,"first_order_decay_constant");  
+  ion_exchange_ref_cation_conc_key_ = Keys::getKey(domain_, "ion_exchange_ref_cation_conc");
+  secondary_activity_coeff_key_ = Keys::getKey(domain_, "secondary_activity_coeff");
+  alquimia_aux_data_key_ = Keys::getKey(domain_, "alquimia_aux_data");
+  mineral_rate_constant_key_ = Keys::getKey(domain_, "mineral_rate_constant");
+  first_order_decay_constant_key_ = Keys::getKey(domain_, "first_order_decay_constant");  
   
   // collect high-level information about the problem
   Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "state", true);
@@ -140,8 +141,7 @@ void Amanzi_PK::Setup(const Teuchos::Ptr<State>& S)
 /* ******************************************************************
 * Can this be done during Setup phase?
 ******************************************************************* */
-void Amanzi_PK::AllocateAdditionalChemistryStorage_(
-    const Beaker::BeakerState& state)
+void Amanzi_PK::AllocateAdditionalChemistryStorage_(const BeakerState& state)
 {
   int n_secondary_comps = state.secondary_activity_coeff.size();
   if (n_secondary_comps > 0) {
@@ -179,7 +179,7 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   SizeBeakerState_();
   CopyCellStateToBeakerState(0, tcc);
-  chem_->Initialize(beaker_parameters_);
+  chem_->Initialize(beaker_state_, beaker_parameters_);
   chem_->CopyStateToBeaker(beaker_state_);
   // chem_->VerifyState(beaker_state_);
 
@@ -537,6 +537,11 @@ void Amanzi_PK::CopyCellStateToBeakerState(
   beaker_state_.porosity = porosity[0][c];
   beaker_state_.saturation = water_saturation[0][c];
   beaker_state_.volume = mesh_->cell_volume(c);
+
+  if (S_->HasField(temperature_key_)) {
+    const auto& temp = *S_->GetFieldData(temperature_key_)->ViewComponent("cell");
+    beaker_state_.temperature = temp[0][c];
+  }
 }
 
 

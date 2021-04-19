@@ -35,6 +35,7 @@ set(geochemrxns_src_files AqueousEquilibriumComplex.cc
 
 set(geochemrxns_inc_files AqueousEquilibriumComplex.hh
 	                  Beaker.hh
+	                  BeakerState.hh
 	                  GeneralRxn.hh
 	                  RadioactiveDecay.hh
 	                  IonExchangeComplex.hh
@@ -55,6 +56,7 @@ set(geochemrxns_inc_files AqueousEquilibriumComplex.hh
 	                  SorptionIsothermRxn.hh)
 
 add_amanzi_library(geochemrxns SOURCE ${geochemrxns_src_files}
-                               LINK_LIBS geochembase geochemsolvers geochemutil atk)
+                               LINK_LIBS geochembase geochemsolvers geochemutil
+                                         atk functions)
 
 add_install_include_file(${geochemrxns_inc_files})

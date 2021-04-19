@@ -16,23 +16,26 @@
 #include <string>
 #include <vector>
 
+// TPLs
 #include "Teuchos_RCP.hpp"
 
+// Amanzi
 #include "VerboseObject.hh"
 
 #include "ActivityModel.hh"
 #include "AqueousEquilibriumComplex.hh"
+#include "BeakerState.hh"
 #include "ChemistryUtilities.hh"
 #include "GeneralRxn.hh"
 #include "IonExchangeRxn.hh"
 #include "KineticRate.hh"
+#include "LUSolver.hh"
+#include "MatrixBlock.hh"
 #include "Mineral.hh"
 #include "RadioactiveDecay.hh"
 #include "Species.hh"
 #include "SorptionIsothermRxn.hh"
 #include "SurfaceComplexationRxn.hh"
-#include "LUSolver.hh"
-#include "MatrixBlock.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -43,34 +46,6 @@ class Beaker {
  public:
   Beaker(const Teuchos::Ptr<VerboseObject> vo);
   virtual ~Beaker();
-
-  struct BeakerState {
-    BeakerState() 
-      : porosity(1.0),
-        saturation(1.0),
-        water_density(1000.0),
-        volume(1.0) {};
-
-    std::vector<double> total;  // molarity
-    std::vector<double> total_sorbed;
-    std::vector<double> free_ion;  // molality
-    std::vector<double> primary_activity_coeff;
-    std::vector<double> secondary_activity_coeff;
-    std::vector<double> mineral_volume_fraction;  // volume fractions
-    std::vector<double> mineral_specific_surface_area;  // [m^2 mineral/ m^3 bulk]
-    std::vector<double> ion_exchange_sites;  // CEC
-    std::vector<double> ion_exchange_ref_cation_conc;  // [?]
-    std::vector<double> surface_site_density;
-    std::vector<double> surface_complex_free_site_conc;  // [moles sites / m^3 bulk]
-    std::vector<double> isotherm_kd;
-    std::vector<double> isotherm_freundlich_n;
-    std::vector<double> isotherm_langmuir_b;
-
-    double porosity;  // [-]
-    double saturation;  // [-]
-    double water_density;  // [kg/m^3]
-    double volume;  // [m^3]
-  };
 
   struct BeakerParameters {
     BeakerParameters()
@@ -99,7 +74,8 @@ class Beaker {
   };
 
   // inheriting classes setup the species, etc
-  virtual void Initialize(const BeakerParameters& parameters);
+  virtual void Initialize(const BeakerState& state,
+                          const BeakerParameters& parameters);
 
   // we only copy data allocate by Amanzi state
   void CopyStateToBeaker(const BeakerState& state);
@@ -332,7 +308,7 @@ class Beaker {
 
 // non-member functions
 inline
-void Display(const Beaker::BeakerState& state,
+void Display(const BeakerState& state,
              const std::string& message,
              const Teuchos::RCP<VerboseObject>& vo) {
   vo->Write(Teuchos::VERB_HIGH, message);

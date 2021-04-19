@@ -56,7 +56,8 @@ SimpleThermoDatabase::SimpleThermoDatabase(Teuchos::RCP<Teuchos::ParameterList> 
 /* *******************************************************************
 * Setup
 ******************************************************************* */
-void SimpleThermoDatabase::Initialize(const BeakerParameters& parameters)
+void SimpleThermoDatabase::Initialize(const BeakerState& state,
+                                      const BeakerParameters& parameters)
 {
   // primary species
   const auto& pslist = plist_->sublist("primary species");
@@ -82,7 +83,8 @@ void SimpleThermoDatabase::Initialize(const BeakerParameters& parameters)
   for (auto it = aqlist.begin(); it != aqlist.end(); ++it, ++id) {
     std::string name = it->first;
     if (aqlist.isSublist(name)) {
-      const auto& tmp = aqlist.sublist(name);
+      auto tmp = aqlist.sublist(name);
+      tmp.set<double>("temperature", state.temperature);
 
       double h2o_stoich(0.0);
 
@@ -363,7 +365,7 @@ void SimpleThermoDatabase::Initialize(const BeakerParameters& parameters)
   surface_complexation_reactions_.clear();
 
   // this will allocate internal memory
-  Beaker::Initialize(parameters);
+  Beaker::Initialize(state, parameters);
 }
 
 

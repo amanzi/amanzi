@@ -101,7 +101,8 @@ Beaker::~Beaker() {
 /* ******************************************************************
 * public setup related
 ****************************************************************** */
-void Beaker::Initialize(const BeakerParameters& parameters)
+void Beaker::Initialize(const BeakerState& state,
+                        const BeakerParameters& parameters)
 {
   set_tolerance(parameters.tolerance);
   set_max_iterations(parameters.max_iterations);
@@ -314,7 +315,7 @@ int Beaker::ReactionStep(BeakerState* state, double dt)
 * Copy the beaker state into variables are be returned to the
 * driver for long term storage.
 ****************************************************************** */
-void Beaker::CopyBeakerToState(Beaker::BeakerState* state)
+void Beaker::CopyBeakerToState(BeakerState* state)
 {
   // NOTE: The state struct may have been only partially
   // initialized be the driver (it doesn't know about the size of
@@ -461,7 +462,11 @@ void Beaker::Display() const {
 }
 
 
-void Beaker::DisplayComponents(const Beaker::BeakerState& state) const {
+/* ******************************************************************
+* i/o
+****************************************************************** */
+void Beaker::DisplayComponents(const BeakerState& state) const
+{
   std::stringstream message;
   message << "--- Input Components -------------------------------------------------"
           << std::endl;
@@ -680,7 +685,7 @@ void Beaker::ResizeInternalMemory()
 /* ******************************************************************
 * some helpful error checking goes here...
 ****************************************************************** */
-void Beaker::VerifyState(const Beaker::BeakerState& state) const {
+void Beaker::VerifyState(const BeakerState& state) const {
   bool error = false;
   std::ostringstream error_stream;
   error_stream << "Beaker::VerifyState():\ndatabase input and component initial conditions do not match:\n";
@@ -749,7 +754,7 @@ void Beaker::VerifyState(const Beaker::BeakerState& state) const {
 /* ******************************************************************
 * NOTE: Do not copy total and total_sorbed here!
 ****************************************************************** */
-void Beaker::CopyStateToBeaker(const Beaker::BeakerState& state)
+void Beaker::CopyStateToBeaker(const BeakerState& state)
 {
   // free ion
   int size = state.free_ion.size();

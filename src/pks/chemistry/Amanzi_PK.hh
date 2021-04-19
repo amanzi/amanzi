@@ -20,6 +20,7 @@
 
 // Amanzi
 #include "Beaker.hh"
+#include "BeakerState.hh"
 #include "Chemistry_PK.hh"
 #include "PK_Factory.hh"
 #include "Mesh.hh"
@@ -63,10 +64,10 @@ class Amanzi_PK : public Chemistry_PK {
   // access
   Beaker* get_engine() { return chem_; }
   const Beaker::BeakerParameters& beaker_parameters() const { return beaker_parameters_; }
-  Beaker::BeakerState beaker_state() { return beaker_state_; }
+  BeakerState beaker_state() { return beaker_state_; }
 
  private:
-  void AllocateAdditionalChemistryStorage_(const Beaker::BeakerState& state);
+  void AllocateAdditionalChemistryStorage_(const BeakerState& state);
 
   void XMLParameters();
   void SetupAuxiliaryOutput();
@@ -81,7 +82,7 @@ class Amanzi_PK : public Chemistry_PK {
  private:
   Beaker* chem_;
   Beaker::BeakerParameters beaker_parameters_;
-  Beaker::BeakerState beaker_state_, beaker_state_copy_;
+  BeakerState beaker_state_, beaker_state_copy_;
 
   std::string dt_control_method_;
   double current_time_, saved_time_;

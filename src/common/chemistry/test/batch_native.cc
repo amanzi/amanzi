@@ -95,7 +95,7 @@ void RunBatchNative(const std::string& filexml,
   auto plist = Teuchos::getParametersFromXmlFile(filexml);
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Beaker", *plist));
 
-  ac::Beaker::BeakerState state;
+  ac::BeakerState state;
 
   ac::Beaker* chem = new ac::SimpleThermoDatabase(plist, vo);
 
@@ -109,7 +109,7 @@ void RunBatchNative(const std::string& filexml,
   state.water_density = 997.16;
   state.volume = volume;
 
-  chem->Initialize(parameters);
+  chem->Initialize(state, parameters);
 
   state.mineral_volume_fraction = ic_mineral;
   state.ion_exchange_sites = ic_ion_exchange;

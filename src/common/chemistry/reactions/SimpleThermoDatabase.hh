@@ -25,7 +25,8 @@ class SimpleThermoDatabase : public Beaker {
                        Teuchos::RCP<VerboseObject> vo);
   virtual ~SimpleThermoDatabase() {};
 
-  virtual void Initialize(const BeakerParameters& parameters);
+  virtual void Initialize(const BeakerState& state,
+                          const BeakerParameters& parameters);
 
  private:
   void ParseReaction_(const std::string& reactants,
