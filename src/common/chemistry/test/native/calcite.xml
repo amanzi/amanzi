@@ -23,7 +23,12 @@
     <Parameter name="charge" type="int" value="-1"/>
     <Parameter name="gram molecular weight" type="double" value="1.70073000000000008e+01"/>
     <Parameter name="reaction" type="string" value="1.0 H2O  -1.0 H+"/>
-    <Parameter name="equilibrium constant" type="double" value="1.39951000000000008e+01"/>
+    <!--Parameter name="equilibrium constant" type="double" value="1.39951000000000008e+01"/-->
+    <Parameter name="temperature" type="double" value="298.15"/>
+    <ParameterList name="equilibrium constant">
+      <Parameter name="T" type="Array(double)" value="{273.15,  298.15,  333.15,  373.15,  423.15,  473.15,  523.15,  573.15}"/>
+      <Parameter name="Keq" type="Array(double)" value="{14.9398, 13.9951, 13.0272, 12.2551, 11.6308, 11.2836, 11.1675, 11.3002}"/>
+    </ParameterList>
   </ParameterList>
   <ParameterList name="CO3--">
     <Parameter name="ion size parameter" type="double" value="4.50000000000000000e+00"/>

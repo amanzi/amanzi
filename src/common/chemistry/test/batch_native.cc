@@ -44,10 +44,10 @@ int CompareFiles(const std::string& file1, const std::string& file2)
     std::streamsize count2 = ifs2.gcount();
     if (count1 != count2) return 2;
 
-    std::string word1, word2;
     std::istringstream iss1(buffer1);
     std::istringstream iss2(buffer2);
     do {
+      std::string word1, word2;
       iss1 >> word1;
       iss2 >> word2;
       if (iss1.eof() || iss2.eof()) break;

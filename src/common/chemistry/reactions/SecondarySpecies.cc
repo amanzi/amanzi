@@ -49,8 +49,8 @@ SecondarySpecies::SecondarySpecies(int id, const std::string& name,
     lnQK_(0.0)
 {
   if (plist.isSublist("equilibrium constant")) {
-    auto x = plist.sublist("equilibrium constant").get<Teuchos::Array<double> >("x").toVector();
-    auto y = plist.sublist("equilibrium constant").get<Teuchos::Array<double> >("y").toVector();
+    auto x = plist.sublist("equilibrium constant").get<Teuchos::Array<double> >("T").toVector();
+    auto y = plist.sublist("equilibrium constant").get<Teuchos::Array<double> >("Keq").toVector();
     func_ = Teuchos::rcp(new FunctionTabular(x, y, 0));
 
     double T = plist.get<double>("temperature");
@@ -71,9 +71,8 @@ SecondarySpecies::SecondarySpecies(int id, const std::string& name,
       species_names_.size() != stoichiometry_.size() || 
       species_names_.size() != species_ids_.size()) {
     std::ostringstream oss;
-    oss << "SecondarySpecies::SecondarySpecies(): \n"
-        << "Invalid data for secondary species: ncomp = " << ncomp() << std::endl
-        << "   species_names.size != stoichiometries.size != species_ids.size" << std::endl;
+    oss << "Invalid data for secondary species: ncomp = " << ncomp() << std::endl
+        << ", species_names.size != stoichiometries.size != species_ids.size" << std::endl;
     Exceptions::amanzi_throw(Errors::Message(oss.str()));
   }
 }
