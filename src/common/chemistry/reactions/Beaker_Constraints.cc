@@ -214,6 +214,8 @@ int Beaker::EnforceConstraint(
   if (max_rel_change < tolerance_) {
     status_.converged = true;
   }
+
+  return num_iterations;
 }
 
 }  // namespace AmanziChemistry
