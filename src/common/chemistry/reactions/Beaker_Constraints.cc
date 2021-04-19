@@ -28,6 +28,8 @@ int Beaker::EnforceConstraint(
     const std::vector<std::string>& names,
     const std::vector<double>& values)
 {
+  Errors::Message msg;
+
   ResetStatus();
 
   std::vector<int> map(ncomp_, -1), map_aqx(ncomp_, -1);
@@ -60,8 +62,10 @@ int Beaker::EnforceConstraint(
         }
       }
       map[i] = im;
-      if (!found)
-        Exceptions::amanzi_throw(Errors::Message("Unknown mineral in constraint: " + pair.second));
+      if (!found) {
+        msg << "Unknown mineral in constraint: " << pair.second << "\n";
+        Exceptions::amanzi_throw(msg);
+      }
 
     } else if (name == "gas") {
       int ip(0);
@@ -85,12 +89,17 @@ int Beaker::EnforceConstraint(
         }
       }
 
-      if (!found)
-        Exceptions::amanzi_throw(Errors::Message("Cannot process gas constraint: " + pair.second));
-      if (pair.second != "CO2")
-        Exceptions::amanzi_throw(Errors::Message("Missing Henry law for gas constraint: " + pair.second));
+      if (!found) {
+        msg << "Cannot process gas constraint: " << pair.second << "\n";
+        Exceptions::amanzi_throw(msg);
+      }
+      if (pair.second != "CO2") {
+        msg << "Missing Henry law for gas constraint: " << pair.second << "\n";
+        Exceptions::amanzi_throw(msg);
+      }
     } else {
-      Exceptions::amanzi_throw(Errors::Message("Unknown geochemical constraint: " + names[i]));
+      msg << "Unknown geochemical constraint: " << names[i] << "\n";
+      Exceptions::amanzi_throw(msg);
     }
 
     // total_.at(i) = state->total.at(i);
