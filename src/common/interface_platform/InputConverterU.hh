@@ -174,8 +174,6 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateEnergy_(const std::string& domain);
   Teuchos::ParameterList TranslateEnergyBCs_(const std::string& domain);
 
-  Teuchos::ParameterList TranslateThermodynamicDatabase_();
-
   // -- multiphase
   bool multiphase_;
   Teuchos::ParameterList TranslateMultiphase_(const std::string& domain,

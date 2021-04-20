@@ -96,10 +96,10 @@ void RunBatchNative(const std::string& filexml,
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Beaker", *plist));
 
   ac::BeakerState state;
+  ac::BeakerParameters parameters;
 
   ac::Beaker* chem = new ac::SimpleThermoDatabase(plist, vo);
 
-  ac::Beaker::BeakerParameters parameters;
   parameters.tolerance = 1e-12;
   parameters.max_iterations = 250;
   parameters.activity_model_name = activity_model;

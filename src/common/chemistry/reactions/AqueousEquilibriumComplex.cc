@@ -58,10 +58,8 @@ void AqueousEquilibriumComplex::AddContributionToDTotal(
     const std::vector<Species>& primary_species,
     MatrixBlock* dtotal)
 {
-  // taking derivative of contribution to residual in row i with respect
+  // derivative of contribution to residual in row i with respect
   // to species in column j
-
-  // TODO(bandre): because of memory layout, c loops should be for(i) {for(j)}...?
 
   // column loop
   for (int j = 0; j < ncomp(); j++) {
@@ -76,36 +74,9 @@ void AqueousEquilibriumComplex::AddContributionToDTotal(
 }
 
 
-void AqueousEquilibriumComplex::display(const Teuchos::Ptr<VerboseObject> vo) const
-{
-  std::stringstream message;
-  message << "    " << name() << " = ";
-  // TODO(bandre): uncomment and update test output
-  //   if (h2o_stoichiometry_ > 0) {
-  //     message << h2o_stoichiometry_ << " " << "H2O" << " + ";
-  //   }
-  for (unsigned int i = 0; i < species_names_.size(); i++) {
-    message << stoichiometry_.at(i) << " " << species_names_.at(i);
-    if (i < species_names_.size() - 1) {
-      message << " + ";
-    }
-  }
-  if (SecondarySpecies::h2o_stoich_!=0.0) {
-    message << " + ";
-    message << std::setprecision(2) << h2o_stoich_ << " " << "H2O";
-  }
-  message << std::endl;
-  message << "        logK = " << logK_ << std::endl;
-  message << "        charge = " << charge() << std::endl;
-  message << "        mol wt = " << gram_molecular_weight() << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message.str());
-}
-
-
 void AqueousEquilibriumComplex::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
-  message << "    " << name() << " = "
-          << std::fixed << std::setprecision(3);
+  message << "    " << name() << " = " << std::fixed << std::setprecision(3);
   // TODO(bandre): uncomment and update test output
   // if (h2o_stoichiometry_ > 0) {
   //   message << h2o_stoichiometry_ << " " << "H2O" << " + ";
@@ -116,9 +87,9 @@ void AqueousEquilibriumComplex::Display(const Teuchos::Ptr<VerboseObject> vo) co
       message << " + ";
     }
   }
-  if (SecondarySpecies::h2o_stoich_!=0.0) {
-    	  message << " + ";
-    	  message << std::setprecision(2) << h2o_stoich_ << " " << "H2O";
+  if (SecondarySpecies::h2o_stoich_ != 0.0) {
+    message << " + ";
+    message << std::setprecision(2) << h2o_stoich_ << " " << "H2O";
   }
   message << std::endl;
   message << std::setw(40) << " " << std::fixed

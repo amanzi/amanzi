@@ -59,7 +59,6 @@ class SurfaceComplex {
   void AddContributionToDTotal(const std::vector<Species>& primarySpecies,
                                MatrixBlock* dtotal);
 
-  void display(const Teuchos::Ptr<VerboseObject> vo) const;
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;

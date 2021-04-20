@@ -49,15 +49,15 @@ public:
                   const Box& box);
 
 protected:
-  void DumpChemStructures(std::ostream&                                      os,
-			  Amanzi::AmanziChemistry::SimpleThermoDatabase&     TheChemSolve,
-			  Amanzi::AmanziChemistry::Beaker::BeakerState&      TheComponent,
-			  Amanzi::AmanziChemistry::Beaker::BeakerParameters& TheParameter);
+  void DumpChemStructures(std::ostream&                                  os,
+			  Amanzi::AmanziChemistry::SimpleThermoDatabase& TheChemSolve,
+			  Amanzi::AmanziChemistry::BeakerState&      TheComponent,
+			  Amanzi::AmanziChemistry::BeakerParameters& TheParameter);
 
   int nthreads;
   PArray<Amanzi::AmanziChemistry::SimpleThermoDatabase> chemSolve;
-  Array<Amanzi::AmanziChemistry::Beaker::BeakerState> components;
-  Array<Amanzi::AmanziChemistry::Beaker::BeakerParameters> parameters;
+  Array<Amanzi::AmanziChemistry::BeakerState> components;
+  Array<Amanzi::AmanziChemistry::BeakerParameters> parameters;
 
 
   std::string thermo_database_file, thermo_database_format, activity_model;

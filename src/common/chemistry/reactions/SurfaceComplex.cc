@@ -143,26 +143,6 @@ void SurfaceComplex::Display(const Teuchos::Ptr<VerboseObject> vo) const {
 }
 
 
-void SurfaceComplex::display(const Teuchos::Ptr<VerboseObject> vo) const {
-  std::stringstream message;
-  message << "    " << name() << " = ";
-  message << free_site_stoichiometry_ << " " << free_site_name_ << " + ";
-  if (h2o_stoichiometry_ > 0) {
-    message << h2o_stoichiometry_ << " " << "H2O" << " + ";
-  }
-  for (unsigned int i = 0; i < species_names_.size(); i++) {
-    message << stoichiometry_[i] << " " << species_names_[i];
-    if (i < species_names_.size() - 1) {
-      message << " + ";
-    }
-  }
-  message << std::endl;
-  message << "     log K: " << logK_
-            << "\n     charge: " << charge() << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message.str());
-}
-
-
 void SurfaceComplex::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(15) << "Complex Name"

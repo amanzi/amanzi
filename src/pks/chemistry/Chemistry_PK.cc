@@ -321,71 +321,30 @@ void Chemistry_PK::ErrorAnalysis(int ierr, std::string& internal_msg)
   }  
 }
 
-void Chemistry_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next) {
 
-  if (S_->HasField(min_vol_frac_key_)&& S_next->HasField(min_vol_frac_key_)) {
-    *S_next->GetFieldData(min_vol_frac_key_, passwd_)->ViewComponent("cell", false) =
-        *S_->GetFieldData(min_vol_frac_key_, passwd_)->ViewComponent("cell", false);
+void Chemistry_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next)
+{
+  std::vector<std::string> fields = {
+    min_vol_frac_key_,
+    min_ssa_key_,
+    sorp_sites_key_,
+    surf_cfsc_key_,
+    total_sorbed_key_,
+    isotherm_kd_key_,
+    isotherm_freundlich_n_key_,
+    isotherm_langmuir_b_key_,
+    free_ion_species_key_,
+    primary_activity_coeff_key_,
+    ion_exchange_sites_key_,
+    ion_exchange_ref_cation_conc_key_
+  };
+
+  for (int i = 0; i < fields.size(); ++i) {
+    if (S_->HasField(fields[i]) && S_next->HasField(fields[i])) {
+      *S_next->GetFieldData(fields[i], passwd_)->ViewComponent("cell", false) =
+        *S_->GetFieldData(fields[i], passwd_)->ViewComponent("cell", false);
+    }
   }
-
-  if (S_->HasField(min_ssa_key_)&& S_next->HasField(min_ssa_key_)) {
-    *S_next->GetFieldData(min_ssa_key_, passwd_)->ViewComponent("cell", false) =
-        *S_->GetFieldData(min_ssa_key_, passwd_)->ViewComponent("cell", false);
-  }
-
-  if (S_->HasField(sorp_sites_key_)&& S_next->HasField(sorp_sites_key_)) {
-    *S_next->GetFieldData(sorp_sites_key_, passwd_)->ViewComponent("cell", false) =
-        *S_->GetFieldData(sorp_sites_key_, passwd_)->ViewComponent("cell", false);
-  }
-
-  if (S_->HasField(surf_cfsc_key_)&& S_next->HasField(surf_cfsc_key_)) {
-    *S_next->GetFieldData(surf_cfsc_key_, passwd_)->ViewComponent("cell", false) =
-      *S_->GetFieldData(surf_cfsc_key_, passwd_)->ViewComponent("cell", false);
-  }
-
-  if (S_->HasField(total_sorbed_key_)&& S_next->HasField(total_sorbed_key_)) {
-    *S_next->GetFieldData(total_sorbed_key_, passwd_)->ViewComponent("cell", false) =
-      *S_->GetFieldData(total_sorbed_key_, passwd_)->ViewComponent("cell", false);
-  }
-
-  if (S_->HasField(isotherm_kd_key_)&& S_next->HasField(isotherm_kd_key_)) {
-    *S_next->GetFieldData(isotherm_kd_key_, passwd_)->ViewComponent("cell", false) =
-      *S_->GetFieldData(isotherm_kd_key_, passwd_)->ViewComponent("cell", false);
-  }
-
-  if (S_->HasField(isotherm_freundlich_n_key_)&& S_next->HasField(isotherm_freundlich_n_key_)) {
-    *S_next->GetFieldData(isotherm_freundlich_n_key_, passwd_)->ViewComponent("cell", false) =
-      *S_->GetFieldData(isotherm_freundlich_n_key_, passwd_)->ViewComponent("cell", false);
-  }
-    
-  if (S_->HasField(isotherm_langmuir_b_key_)&& S_next->HasField(isotherm_langmuir_b_key_)) {
-    *S_next->GetFieldData(isotherm_langmuir_b_key_, passwd_)->ViewComponent("cell", false) =
-      *S_->GetFieldData(isotherm_langmuir_b_key_, passwd_)->ViewComponent("cell", false);
-  }
-
-  if (S_->HasField(free_ion_species_key_)&& S_next->HasField(free_ion_species_key_)) {
-    *S_next->GetFieldData(free_ion_species_key_, passwd_)->ViewComponent("cell", false) =
-      *S_->GetFieldData(free_ion_species_key_, passwd_)->ViewComponent("cell", false);
-  }
-
-  if (S_->HasField(primary_activity_coeff_key_)&& S_next->HasField(primary_activity_coeff_key_)) {
-    *S_next->GetFieldData(primary_activity_coeff_key_, passwd_)->ViewComponent("cell", false) =
-      *S_->GetFieldData(primary_activity_coeff_key_, passwd_)->ViewComponent("cell", false);
-  }
-    
-  if (S_->HasField(ion_exchange_sites_key_)&& S_next->HasField(ion_exchange_sites_key_)) {
-    *S_next->GetFieldData(ion_exchange_sites_key_, passwd_)->ViewComponent("cell", false) =
-      *S_->GetFieldData(ion_exchange_sites_key_, passwd_)->ViewComponent("cell", false);
-  }
-
-  if (S_->HasField(ion_exchange_ref_cation_conc_key_)&& S_next->HasField(ion_exchange_ref_cation_conc_key_)) {
-    *S_next->GetFieldData(ion_exchange_ref_cation_conc_key_, passwd_)->ViewComponent("cell", false) =
-      *S_->GetFieldData(ion_exchange_ref_cation_conc_key_, passwd_)->ViewComponent("cell", false);
-  }
-
-
- 
-
 }
 
 }  // namespace AmanziChemistry

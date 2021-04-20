@@ -122,6 +122,7 @@ class InputConverter {
   // auto-generated input files
   // -- Pflotran input file
   std::string CreateINFile_(std::string& filename, int rank);
+  Teuchos::ParameterList TranslateThermodynamicDatabase_();
 
  protected:
   // Useful tools wrapping low-level DOM commands

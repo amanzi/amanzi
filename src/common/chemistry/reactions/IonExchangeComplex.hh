@@ -31,7 +31,6 @@ class IonExchangeComplex {
                      double K);
   virtual ~IonExchangeComplex() {};
 
-  void display(const Teuchos::Ptr<VerboseObject> vo) const;
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayReaction(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;

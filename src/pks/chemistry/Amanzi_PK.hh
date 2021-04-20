@@ -63,7 +63,7 @@ class Amanzi_PK : public Chemistry_PK {
 
   // access
   Beaker* get_engine() { return chem_; }
-  const Beaker::BeakerParameters& beaker_parameters() const { return beaker_parameters_; }
+  const BeakerParameters& beaker_parameters() const { return beaker_parameters_; }
   BeakerState beaker_state() { return beaker_state_; }
 
  private:
@@ -81,7 +81,7 @@ class Amanzi_PK : public Chemistry_PK {
 
  private:
   Beaker* chem_;
-  Beaker::BeakerParameters beaker_parameters_;
+  BeakerParameters beaker_parameters_;
   BeakerState beaker_state_, beaker_state_copy_;
 
   std::string dt_control_method_;

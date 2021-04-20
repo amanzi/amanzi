@@ -45,6 +45,9 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
+/* ******************************************************************
+* constructor
+****************************************************************** */
 Beaker::Beaker(const Teuchos::Ptr<VerboseObject> vo)
   : vo_(vo),
     tolerance_(1.0e-12),

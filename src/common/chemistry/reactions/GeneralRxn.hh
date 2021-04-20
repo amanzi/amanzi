@@ -45,7 +45,6 @@ class GeneralRxn {
   void AddContributionToJacobian(MatrixBlock* J,
                                  const std::vector<Species> primarySpecies,
                                  double por_den_sat_vol);
-  void display(const Teuchos::Ptr<VerboseObject> vo) const;
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
 
  private:

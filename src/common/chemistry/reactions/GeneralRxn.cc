@@ -149,21 +149,6 @@ void GeneralRxn::AddContributionToJacobian(
 }
 
 
-void GeneralRxn::display(const Teuchos::Ptr<VerboseObject> vo) const {
-  std::stringstream message;
-  for (unsigned int i = 0; i < species_names_.size(); i++) {
-    message << stoichiometry_.at(i) << " " << species_names_.at(i);
-    if (i < species_names_.size() - 1) {
-      message << " + ";
-    }
-  }
-  message << std::endl;
-  message << "        forward_rate = " << std::exp(lnQkf_) << std::endl;
-  message << "        backward_rate = " << std::exp(lnQkb_) << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message.str());
-}
-
-
 void GeneralRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   // convention for this reaction is that reactants have negative
   // stoichiometries, products have positive stoichiometries....

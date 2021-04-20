@@ -37,7 +37,8 @@ VirialCoefficient::VirialCoefficient()
     @details Update the virial coefficient as a function of the temperature
     and liquid pressure (last wasn't implemented yet)
 */
-void VirialCoefficient::UpdateVirial(const double& temp, const double& pressure) {
+void VirialCoefficient::UpdateVirial(const double& temp, const double& pressure)
+{
   for (int i = 0; i < npol; i++) {
     if (i == 0) { virial = pol[i]; }
     else if (i == 1) { virial += pol[i] * temp; }

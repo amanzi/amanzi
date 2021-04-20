@@ -85,12 +85,6 @@ IonExchangeComplex::IonExchangeComplex(
 }
 
 
-void IonExchangeComplex::display(const Teuchos::Ptr<VerboseObject> vo) const {
-  DisplayReaction(vo);
-  *vo->os() << "      K: " << K() << std::endl;
-}
-
-
 void IonExchangeComplex::Display(const Teuchos::Ptr<VerboseObject> vo) const
 {
   DisplayReaction(vo);

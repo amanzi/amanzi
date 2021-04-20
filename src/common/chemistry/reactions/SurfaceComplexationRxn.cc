@@ -225,12 +225,6 @@ void SurfaceComplexationRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const
 }
 
 
-void SurfaceComplexationRxn::display(const Teuchos::Ptr<VerboseObject> vo) const {
-  DisplaySite(vo);
-  DisplayComplexes(vo);
-}
-
-
 void SurfaceComplexationRxn::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const {
   std::stringstream message;
   message << std::setw(7) << "---" << std::endl;

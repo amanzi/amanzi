@@ -25,6 +25,7 @@
 #include "ActivityModel.hh"
 #include "AqueousEquilibriumComplex.hh"
 #include "BeakerState.hh"
+#include "BeakerParameters.hh"
 #include "ChemistryUtilities.hh"
 #include "GeneralRxn.hh"
 #include "IonExchangeRxn.hh"
@@ -46,25 +47,6 @@ class Beaker {
  public:
   Beaker(const Teuchos::Ptr<VerboseObject> vo);
   virtual ~Beaker();
-
-  struct BeakerParameters {
-    BeakerParameters()
-      : tolerance(1.0e-12),
-        max_iterations(250),
-        activity_model_name("unit") {};
-
-    // solver parameters
-    double tolerance;
-    unsigned int max_iterations;
-
-    // models
-    std::string activity_model_name;
-
-    // Name of the Pitzer virial coefficients database
-    std::string pitzer_database;
-    // Name of the approach for J's functions for the Pitzer model
-    std::string jfunction_pitzer;
-  };
 
   struct SolverStatus {
     unsigned int num_rhs_evaluations;

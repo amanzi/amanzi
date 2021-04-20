@@ -20,6 +20,7 @@
 SUITE(BeakerTests) {
   using Amanzi::AmanziChemistry::Beaker;
   using Amanzi::AmanziChemistry::BeakerState;
+  using Amanzi::AmanziChemistry::BeakerParameters;
   using Amanzi::AmanziChemistry::SimpleThermoDatabase;
   using Amanzi::AmanziChemistry::ActivityModelFactory;
 
@@ -40,7 +41,7 @@ SUITE(BeakerTests) {
     state.total.push_back(1.0e-3);  // H+
     state.total.push_back(1.0e-3);  // HCO3-
 
-    Beaker::BeakerParameters parameters;
+    BeakerParameters parameters;
 
     parameters.activity_model_name = "bad activity model name";
     parameters.tolerance = 1.0e-12;

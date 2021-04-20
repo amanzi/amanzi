@@ -41,7 +41,6 @@ class AqueousEquilibriumComplex : public SecondarySpecies {
           const std::vector<Species>& primary_species, MatrixBlock* dtotal);
 
   using SecondarySpecies::Display;
-  void display(const Teuchos::Ptr<VerboseObject> vo) const;
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;

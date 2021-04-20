@@ -35,7 +35,7 @@ set(geochemrxns_src_files AqueousEquilibriumComplex.cc
 
 set(geochemrxns_inc_files AqueousEquilibriumComplex.hh
 	                  Beaker.hh
-	                  BeakerState.hh
+	                  BeakerState.hh BeakerParameters.hh
 	                  GeneralRxn.hh
 	                  RadioactiveDecay.hh
 	                  IonExchangeComplex.hh

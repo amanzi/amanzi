@@ -439,7 +439,6 @@ void InputConverterS::ParseDefinitions_()
         cycle_macro_names.push_back(macro_name);
         vector<string> cycles;
 
-        bool found;
         string start = GetChildValueS_(cycle_macro, "start", found, true);
         string timestep_interval = GetChildValueS_(cycle_macro, "timestep_interval", found, true);
         string stop = GetChildValueS_(cycle_macro, "stop", found, true);

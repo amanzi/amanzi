@@ -24,8 +24,7 @@
 #include "exceptions.hh"
 #include "dbc.hh"
 
-#include "InputConverterU.hh"
-#include "InputConverterU_Defs.hh"
+#include "InputConverter.hh"
 
 namespace Amanzi {
 namespace AmanziInput {
@@ -35,12 +34,9 @@ XERCES_CPP_NAMESPACE_USE
 /* ******************************************************************
 * Create thermodynamic database
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateThermodynamicDatabase_() 
+Teuchos::ParameterList InputConverter::TranslateThermodynamicDatabase_() 
 {
   Teuchos::ParameterList out_list;
-
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-    *vo_->os() << "Translating thermodynamic database" << std::endl;
 
   MemoryManager mm;
   char* text;
