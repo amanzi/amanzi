@@ -39,7 +39,9 @@ include_guard(GLOBAL)
 
 macro(CHECK_FORTRAN_FUNCTION_EXISTS FUNCTION VARIABLE)
   if(NOT DEFINED ${VARIABLE})
-    message(CHECK_START "Looking for Fortran ${FUNCTION}")
+    if (TPL_DEBUG_FIND_BLAS)
+      message(CHECK_START "Looking for Fortran ${FUNCTION}")
+    endif()
     if(CMAKE_REQUIRED_LINK_OPTIONS)
       set(CHECK_FUNCTION_EXISTS_ADD_LINK_OPTIONS
         LINK_OPTIONS ${CMAKE_REQUIRED_LINK_OPTIONS})
@@ -70,12 +72,16 @@ macro(CHECK_FORTRAN_FUNCTION_EXISTS FUNCTION VARIABLE)
     )
     if(${VARIABLE})
       set(${VARIABLE} 1 CACHE INTERNAL "Have Fortran function ${FUNCTION}")
-      message(CHECK_PASS "found")
+      if (TPL_DEBUG_FIND_BLAS )
+        message(CHECK_PASS "found")
+      endif()
       file(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeOutput.log
         "Determining if the Fortran ${FUNCTION} exists passed with the following output:\n"
         "${OUTPUT}\n\n")
     else()
-      message(CHECK_FAIL "not found")
+      if (TPL_DEBUG_FIND_BLAS)
+        message(CHECK_FAIL "not found")
+      endif()
       set(${VARIABLE} "" CACHE INTERNAL "Have Fortran function ${FUNCTION}")
       file(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log
         "Determining if the Fortran ${FUNCTION} exists failed with the following output:\n"

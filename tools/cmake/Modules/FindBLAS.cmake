@@ -77,7 +77,11 @@ The following variables may be set to influence this module's behavior:
     ``FlexiBLAS`` support.
 
   .. versionadded:: 3.20
-    Elbrus Math Library support (``EML``, ``EML_mt``).
+     Elbrus Math Library support (``EML``, ``EML_mt``).
+
+  .. versionadded:: 3.20 - Amanzi-ATS customization
+     Cray Scientific Library at NERSC support (``CRAYSCI``)   
+  
 
 ``BLA_F95``
   if ``ON`` tries to find the BLAS95 interfaces
@@ -89,6 +93,10 @@ The following variables may be set to influence this module's behavior:
   and if one is found that is preferred
 
 ``BLA_DIR``
+  .. versionadded:: 3.20 - Amanzi-ATS customization
+
+  if set, then the search will be limited to ``BLA_DIR``.
+
   
 Imported targets
 ^^^^^^^^^^^^^^^^
