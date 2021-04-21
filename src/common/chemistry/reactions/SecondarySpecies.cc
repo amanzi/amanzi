@@ -48,6 +48,7 @@ SecondarySpecies::SecondarySpecies(int id, const std::string& name,
     lnK_(0.0),
     lnQK_(0.0)
 {
+  // two ways to initialize the reaction equilibrium constant
   if (plist.isSublist("equilibrium constant")) {
     auto x = plist.sublist("equilibrium constant").get<Teuchos::Array<double> >("T").toVector();
     auto y = plist.sublist("equilibrium constant").get<Teuchos::Array<double> >("Keq").toVector();
@@ -124,7 +125,6 @@ void SecondarySpecies::ParseReaction_(const std::string& reaction,
     }
   }
 }
-
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

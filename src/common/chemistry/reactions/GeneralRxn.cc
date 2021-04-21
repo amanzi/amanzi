@@ -66,37 +66,39 @@ GeneralRxn::GeneralRxn(const std::string& name,
 
 
 // temporary location for member functions
-void GeneralRxn::update_rates(const std::vector<Species> primarySpecies) {
+void GeneralRxn::update_rates(const std::vector<Species> primarySpecies)
+{
   // forward rate expression
-  lnQkf_ = 0.;
-  if (kf_ > 0.) {
+  lnQkf_ = 0.0;
+  if (kf_ > 0.0) {
     lnQkf_ = std::log(kf_);
     for (int i = 0; i < ncomp_forward_; i++) {
       lnQkf_ += forward_stoichiometry_[i] *
           primarySpecies[ forward_species_ids_[i] ].ln_activity();
-    }  // end forward species
-  }  // end forward expression
+    }
+  }
 
   // backward rate expression
-  lnQkb_ = 0.;
-  if (kb_ > 0.) {
+  lnQkb_ = 0.0;
+  if (kb_ > 0.0) {
     lnQkb_ = std::log(kb_);
     for (int i = 0; i < ncomp_backward_; i++) {
       lnQkb_ += backward_stoichiometry_[i] *
           primarySpecies[ backward_species_ids_[i] ].ln_activity();
-    }  // end backward species
-  }  // end backward expression
+    }
+  }
 }
 
 
 void GeneralRxn::AddContributionToResidual(std::vector<double> *residual,
-                                           double por_den_sat_vol) {
+                                           double por_den_sat_vol)
+{
   // por_den_sat_vol = porosity*water_density*saturation*volume
-  double effective_rate = 0.;
-  if (kf_ > 0.) {
+  double effective_rate = 0.0;
+  if (kf_ > 0.0) {
     effective_rate += std::exp(lnQkf_);
   }
-  if (kb_ > 0.) {
+  if (kb_ > 0.0) {
     effective_rate -= std::exp(lnQkb_);
   }
   effective_rate *= por_den_sat_vol;
@@ -112,13 +114,13 @@ void GeneralRxn::AddContributionToResidual(std::vector<double> *residual,
 void GeneralRxn::AddContributionToJacobian(
     MatrixBlock* J,
     const std::vector<Species> primarySpecies,
-    double por_den_sat_vol) {
-
+    double por_den_sat_vol)
+{
   // taking derivative of contribution to residual in row i with respect
   // to species in column j
 
   // forward rate expression
-  if (kf_ > 0.) {
+  if (kf_ > 0.0) {
     // column loop
     for (int j = 0; j < ncomp_forward_; j++) {
       int jcomp = forward_species_ids_[j];
@@ -129,8 +131,8 @@ void GeneralRxn::AddContributionToJacobian(
       for (int i = 0; i < ncomp_; i++) {
         J->AddValue(species_ids_[i], jcomp, stoichiometry_[i]*tempd);
       }
-    }  // end columns
-  }  // end forward expression
+    }
+  }
 
   // backward rate expression
   if (kb_ > 0.) {
@@ -144,12 +146,13 @@ void GeneralRxn::AddContributionToJacobian(
       for (int i = 0; i < ncomp_; i++) {
         J->AddValue(species_ids_[i], jcomp, stoichiometry_[i]*tempd);
       }
-    }  // end columns
-  }  // end backward expression
+    }
+  }
 }
 
 
-void GeneralRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const {
+void GeneralRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const
+{
   // convention for this reaction is that reactants have negative
   // stoichiometries, products have positive stoichiometries....
   // write them in standard chemistry notation by printing -stoich
@@ -170,7 +173,7 @@ void GeneralRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   
   message << " <---> ";
   // products
-  for (unsigned int i = 0; i < species_names_.size(); i++) {
+  for (int i = 0; i < species_names_.size(); i++) {
     if (stoichiometry_.at(i) > 0) { 
       message << stoichiometry_.at(i) << " " << species_names_.at(i);
       if (i < species_names_.size() - 1) {
@@ -186,7 +189,7 @@ void GeneralRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const {
   if (forward_species_ids_.size() > 0 && this->kf_ > 0.0) {
     message << " * ";
     
-    for (unsigned int i = 0; i < forward_species_ids_.size(); i++) {
+    for (int i = 0; i < forward_species_ids_.size(); i++) {
       message << "a_(" << species_names_[i] << ")^("
               << -stoichiometry_[i] << ")";
       if (i < forward_species_ids_.size() - 1) {
@@ -198,7 +201,7 @@ void GeneralRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const {
           << std::scientific << this->kb_ << std::fixed;
   if (backward_species_ids_.size() > 0 && this->kb_ > 0.0) {
     message << " * ";
-    for (unsigned int i = 0; i < backward_species_ids_.size(); i++) {
+    for (int i = 0; i < backward_species_ids_.size(); i++) {
       message << "a_(" << species_names_[i] << ")^("
               << -stoichiometry_[i] << ")";
       if (i < backward_species_ids_.size() - 1) {

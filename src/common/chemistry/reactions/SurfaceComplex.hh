@@ -53,6 +53,7 @@ class SurfaceComplex {
   // update molalities
   void Update(const std::vector<Species>& primarySpecies,
               const SurfaceSite& surface_site);
+
   // add stoichiometric contribution of complex to total
   void AddContributionToTotal(std::vector<double> *total);
   // add derivative of total with respect to free-ion to dtotal
@@ -64,11 +65,11 @@ class SurfaceComplex {
   void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 
   void set_identifier(int id) { identifier_ = id; }
-  void set_charge(double d) { this->charge_ = d; }
+  void set_charge(double d) { charge_ = d; }
 
-  void set_free_site_stoichiometry(const double d) { this->free_site_stoichiometry_ = d; }
+  void set_free_site_stoichiometry(double d) { free_site_stoichiometry_ = d; }
   void set_ncomp(const int i) { ncomp_ = i; };
-  void set_surface_concentration(const double d) { this->surface_concentration_ = d; };
+  void set_surface_concentration(double d) { surface_concentration_ = d; };
 
   std::string name() const { return name_; }
   int identifier() const { return identifier_; }
@@ -80,7 +81,7 @@ class SurfaceComplex {
   double logK() const { return logK_; };
   int ncomp() const { return ncomp_; };
   int species_id(int i) const { return species_ids_[i]; };
-  double surface_concentration() const { return this->surface_concentration_; };
+  double surface_concentration() const { return surface_concentration_; };
 
  private:
   std::string name_;

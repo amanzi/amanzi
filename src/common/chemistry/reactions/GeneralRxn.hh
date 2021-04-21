@@ -58,8 +58,8 @@ class GeneralRxn {
   std::vector<double> forward_stoichiometry_;  // forward stoich of primary species in rxn
   std::vector<int> backward_species_ids_;      // ids species used in backward rate calc
   std::vector<double> backward_stoichiometry_;  // backward stoich of primary species in rxn
-  double kf_;     // forward rate constant
-  double kb_;     // backward rate constant
+  double kf_;  // forward rate constant
+  double kb_;  // backward rate constant
 
   double lnQkf_;  // forward rate storage
   double lnQkb_;  // backward rate storage
@@ -67,4 +67,5 @@ class GeneralRxn {
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
+
 #endif

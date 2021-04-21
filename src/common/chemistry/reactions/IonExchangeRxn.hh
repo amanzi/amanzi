@@ -38,19 +38,20 @@ class IonExchangeRxn {
 
   // update sorbed concentrations
   void Update(const std::vector<Species>& primary_species);
+
   // add stoichiometric contribution of complex to sorbed total
   void AddContributionToTotal(std::vector<double> *total);
   // add derivative of total with respect to free-ion to sorbed dtotal
   void AddContributionToDTotal(const std::vector<Species>& primary_species,
                                MatrixBlock* dtotal);
+
   void CheckUniformZ(const std::vector<Species>& primary_species);
   void set_uniform_z(const bool flag) { uniform_z_ = flag; };
   bool uniform_z() const { return uniform_z_; };
   bool uniform_z_set() const { return uniform_z_set_; };
 
   IonExchangeSite site() const { return ionx_site_[0]; };
-  std::vector<IonExchangeSite> ionx_sites() const { return ionx_site_; };
-  std::vector<IonExchangeComplex>  ionx_complexes() const { return ionx_complexes_; };
+  std::vector<IonExchangeComplex> ionx_complexes() const { return ionx_complexes_; };
 
   void set_cation_exchange_capacity(const double d) { ionx_site_[0].set_cation_exchange_capacity(d); };
 
@@ -59,7 +60,6 @@ class IonExchangeRxn {
 
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplaySite(const Teuchos::Ptr<VerboseObject> vo) const;
-  void DisplayComplexes(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResultsHeader() const;
   void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 

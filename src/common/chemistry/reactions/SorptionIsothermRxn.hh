@@ -47,11 +47,12 @@ class SorptionIsothermRxn {
   int species_id() const { return species_id_; }
 
   void Update(const std::vector<Species>& primarySpecies);
+
   // add sorbed concentration to sorbed total
   void AddContributionToTotal(std::vector<double> *total);
-  // add sorbed concentration to sorbed total
   void AddContributionToDTotal(const std::vector<Species>& primary_species,
                                MatrixBlock* dtotal);
+
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
 
  private:

@@ -65,10 +65,7 @@ class Beaker {
   void CopyBeakerToState(BeakerState* state);
   void CopyState(const BeakerState& from, BeakerState* to) { *to = from; }
 
-  void GetPrimaryNames(std::vector<std::string>* names) const;
   int GetPrimaryIndex(const std::string& name) const;
-
-  bool HaveKinetics() const;
 
   // speciate for free-ion concentrations
   int Speciate(BeakerState* state);
@@ -89,9 +86,6 @@ class Beaker {
                            const BeakerState& total,
                            const bool display_free) const;
   void DisplayResults() const;
-
-  void print_results() const;
-  void print_results(double time) const;
 
   // access
   // int ncomp() const { return ncomp_; }

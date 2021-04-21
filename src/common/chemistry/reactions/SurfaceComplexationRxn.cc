@@ -60,11 +60,11 @@ void SurfaceComplexationRxn::AddSurfaceComplex(SurfaceComplex surface_complex) {
 }
 
 
-void SurfaceComplexationRxn::SetNewtonSolveFlag() {
-  std::vector<SurfaceComplex>::const_iterator srfcplx = surface_complexes_.begin();
-  const double tolerance = 1.e-20;
-  for (; srfcplx != surface_complexes_.end(); srfcplx++) {
-    if (std::fabs(srfcplx->free_site_stoichiometry() - 1.) > tolerance) {
+void SurfaceComplexationRxn::SetNewtonSolveFlag()
+{
+  double tolerance(1.0e-20);
+  for (auto srfcplx = surface_complexes_.begin(); srfcplx != surface_complexes_.end(); srfcplx++) {
+    if (std::fabs(srfcplx->free_site_stoichiometry() - 1.0) > tolerance) {
       use_newton_solve_ = true;
       break;
     }
@@ -212,31 +212,33 @@ void SurfaceComplexationRxn::DisplaySite(const Teuchos::Ptr<VerboseObject> vo) c
 }
 
 
-void SurfaceComplexationRxn::DisplayComplexes(const Teuchos::Ptr<VerboseObject> vo) const {
+void SurfaceComplexationRxn::DisplayComplexes(const Teuchos::Ptr<VerboseObject> vo) const
+{
   for (auto it = surface_complexes_.begin(); it != surface_complexes_.end(); ++it) {
     it->Display(vo);
   }
 }
 
 
-void SurfaceComplexationRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const {
+void SurfaceComplexationRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const
+{
   DisplaySite(vo);
   DisplayComplexes(vo);
 }
 
 
-void SurfaceComplexationRxn::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const {
+void SurfaceComplexationRxn::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const
+{
   std::stringstream message;
   message << std::setw(7) << "---" << std::endl;
   vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 
 
-void SurfaceComplexationRxn::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const {
+void SurfaceComplexationRxn::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const
+{
   surface_site_[0].DisplayResultsHeader(vo);
-  std::vector<SurfaceSite>::const_iterator site;
-  for (site = surface_site_.begin();
-       site != surface_site_.end(); site++) {
+  for (auto site = surface_site_.begin(); site != surface_site_.end(); site++) {
     site->DisplayResults(vo);
   }
   vo->Write(Teuchos::VERB_HIGH, "\n");
