@@ -129,7 +129,7 @@ class MPCPermafrost : public MPCSubsurface {
   Key subsurf_mass_source_key_;
   Key adj_surf_mass_source_key_;
   Key adj_subsurf_mass_source_key_;
-  Key surf_rel_perm_key_;
+  // Key surf_rel_perm_key_;
   Key surf_molar_dens_key_;
   Key surf_cv_key_;
   Key subsurf_cv_key_;

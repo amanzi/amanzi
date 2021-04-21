@@ -1,6 +1,6 @@
 /*
-  ATS is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
@@ -14,7 +14,7 @@ snowpack.  In the case of snow on the ground, this solves for a snow
 temperature, given a skin temperature, that satisfies a energy balance
 equation.  In the case of no-snow, this calculates a conductive heat flux to
 the ground from the atmosphere.
-  
+
 
 .. _seb_evaluator-spec:
 .. admonition:: seb_evaluator-spec
@@ -36,13 +36,13 @@ the ground from the atmosphere.
    * `"minimum relative humidity [-]`" **1.0** Sets a floor on relative
      humidity for potential wierd data.  Models have trouble with no
      humidity.
-  
+
    * `"save diagnostic data`" ``[bool]`` **false** Saves a suite of diagnostic variables to vis.
 
    * `"surface domain name`" ``[string]`` **DEFAULT** Default set by parameterlist name.
    * `"subsurface domain name`" ``[string]`` **DEFAULT** Default set relative to surface domain name.
    * `"snow domain name`" ``[string]`` **DEFAULT** Default set relative to surface domain name.
- 
+
     KEYS:
     * `"surface mass source`" **DOMAIN-mass_source**  [m s^-1]
     * `"surface energy source`" **DOMAIN-total_energy_source** [MW m^-2]
@@ -69,8 +69,8 @@ the ground from the atmosphere.
     * `"wind speed`" [m s^-1]
     * `"precipitation rain`" [m s^-1]
     * `"precipitation snow`" [m_SWE s^-1]
-    
-    
+
+
     * `"snow depth`" [m]
     * `"snow density`" [kg m^-3]
     * `"snow death rate`" [m s^-1]  Snow "death" refers to the last bit of snowmelt that we want to remove discretely.
@@ -85,7 +85,7 @@ the ground from the atmosphere.
     * `"gas saturation`" **DOMAIN_SS-saturation_gas** [-] subsurface gas saturation
     * `"porosity`" [-] subsurface porosity
     * `"subsurface pressure`" **DOMAIN_SS-pressure** [Pa]
-    
+
 */
 #pragma once
 
@@ -120,7 +120,7 @@ class SEBEvaluator : public SecondaryVariablesFieldEvaluator {
   // override the default chain rule behavior, instead doing a numerical
   // finite difference
   virtual void UpdateFieldDerivative_(const Teuchos::Ptr<State>& S, Key wrt_key);
-  
+
  protected:
   Key mass_source_key_, energy_source_key_;
   Key ss_mass_source_key_, ss_energy_source_key_;
@@ -137,7 +137,7 @@ class SEBEvaluator : public SecondaryVariablesFieldEvaluator {
   Key snow_temp_key_;
   Key qE_sh_key_, qE_lh_key_, qE_sm_key_, qE_lw_out_key_, qE_cond_key_;
   Key albedo_key_;
-  
+
   Key domain_;
   Key domain_ss_;
   Key domain_snow_;
@@ -157,12 +157,12 @@ class SEBEvaluator : public SecondaryVariablesFieldEvaluator {
                                      // A limiter on evaporation as the water
                                      // table drops below the surface.
 
-  
-  bool diagnostics_, ss_topcell_based_evap_;
+
+  bool diagnostics_;
   Teuchos::RCP<Debugger> db_;
   Teuchos::RCP<Debugger> db_ss_;
   Teuchos::ParameterList plist_;
-  
+
  private:
   static Utils::RegisteredFactory<FieldEvaluator,SEBEvaluator> reg_;
 };

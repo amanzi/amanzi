@@ -165,11 +165,9 @@ SEBEvaluator::SEBEvaluator(Teuchos::ParameterList& plist) :
   min_rel_hum_ = plist.get<double>("minimum relative humidity [-]", 0.1);
   min_wind_speed_ = plist.get<double>("minimum wind speed [m s^-1]", 1.0);
   wind_speed_ref_ht_ = plist.get<double>("wind speed reference height [m]", 2.0);
+
   dessicated_zone_thickness_ = plist.get<double>("dessicated zone thickness [m]", 0.1);
   AMANZI_ASSERT(dessicated_zone_thickness_ > 0.);
-
-  // developer parameter -- this should likely go away
-  ss_topcell_based_evap_ = plist.get<bool>("subsurface top cell based evaporation", false);
 
   roughness_bare_ground_ = plist.get<double>("roughness length of bare ground [m]", 0.04);
   roughness_snow_covered_ground_ = plist.get<double>("roughness length of snow-covered ground [m]", 0.004);

@@ -69,7 +69,7 @@ double OutgoingRadiation(double temp, double emissivity, double c_stephan_boltzm
 
 double WindFactor(double Us, double Z_Us, double Z_rough, double c_von_Karman)
 {
-  // Calculate D_h, D_e, 
+  // Calculate D_h, D_e,
   return std::pow(c_von_Karman,2) * Us / std::pow(std::log(Z_Us / Z_rough), 2);
 }
 
@@ -118,7 +118,7 @@ double VaporPressureGround(const GroundProperties& surf, const ModelParams& para
 
 double EvaporativeResistanceGround(const GroundProperties& surf,
         const MetData& met,
-        const ModelParams& params, 
+        const ModelParams& params,
         double vapor_pressure_air, double vapor_pressure_ground)
 {
   // calculate evaporation prefactors
@@ -136,7 +136,7 @@ double EvaporativeResistanceCoef(double saturation_gas,
     Rsoil = 0.; // ponded water
   } else {
     // Equation for reduced vapor diffusivity
-    // See Sakagucki and Zeng 2009 eqaution (9) and Moldrup et al., 2004. 
+    // See Sakagucki and Zeng 2009 eqaution (9) and Moldrup et al., 2004.
     double vp_diffusion = 0.000022 * (std::pow(porosity,2))
                           * std::pow((1-(0.0556/porosity)),(2+3*Clapp_Horn_b));
     // Sakagucki and Zeng 2009 eqaution (10)
@@ -217,7 +217,7 @@ EnergyBalance UpdateEnergyBalanceWithSnow(const GroundProperties& surf,
         SnowProperties& snow)
 {
   EnergyBalance eb;
-  
+
   // snow on the ground, solve for snow temperature
   std::tie(eb.fQswIn, eb.fQlwIn) = IncomingRadiation(met, snow.albedo);
   snow.temp = DetermineSnowTemperature(surf, met, params, snow, eb);
@@ -284,7 +284,7 @@ EnergyBalance UpdateEnergyBalanceWithoutSnow(const GroundProperties& surf,
 // Snow temperature calculation.
 double DetermineSnowTemperature(const GroundProperties& surf,
         const MetData& met,
-        const ModelParams& params, 
+        const ModelParams& params,
         SnowProperties& snow,
         EnergyBalance& eb,
         std::string method)
@@ -323,7 +323,7 @@ double DetermineSnowTemperature(const GroundProperties& surf,
   }
 
   //  std::cout << "Determining snow temp in interval (" << left << "," << right << ")" << std::endl;
-  
+
   std::pair<double,double> result;
   auto my_max_it = max_it;
   if (method == "bisection") {
@@ -369,42 +369,21 @@ FluxBalance UpdateFluxesWithoutSnow(const GroundProperties& surf,
 {
   FluxBalance flux;
 
-  // mass to surface is precip and melting first
-  flux.M_surf = met.Pr + mb.Mm;
+  // mass to surface is precip, melting, and evaporation
+  flux.M_surf = met.Pr + mb.Mm + mb.Me;
 
   // Energy to surface.
   double Train = std::max(0., met.air_temp - 273.15);
   flux.E_surf = eb.fQswIn + eb.fQlwIn - eb.fQlwOut + eb.fQh // purely energy fluxes
                 - eb.fQm   // energy put into melting snow
-                + surf.density_w * met.Pr * Train * params.Cv_water; // energy advected in by rainfall
+                + surf.density_w * met.Pr * Train * params.Cv_water // energy advected in by rainfall
+                + eb.fQe;
 
-  // zero subsurf values
+  // zero subsurf values -- these should be refactored and removed eventually,
+  // as the distribution of the flux between surface and subsurface has moved
+  // to the mpc_permafrost
   flux.M_subsurf = 0.;
   flux.E_subsurf = 0.;
-
-  // At this point we have Mass and Energy fluxes but not including
-  // evaporation, which we have to allocate to surface or subsurface.
-  double evap_to_subsurface_fraction = 0.;
-  if (mb.Me < 0 && surf.ponded_depth == 0) {
-    evap_to_subsurface_fraction = 1.;
-  }
-  //   if (surf.pressure >= 1000.*params.Apa + params.evap_transition_width) {
-  //     evap_to_subsurface_fraction = 0.;
-  //   } else if (surf.pressure < 1000.*params.Apa) {
-  //     evap_to_subsurface_fraction = 1.;
-  //   } else {
-  //     evap_to_subsurface_fraction = (1000.*params.Apa + params.evap_transition_width - surf.pressure) / (params.evap_transition_width);
-  //   }
-  // }
-  // AMANZI_ASSERT(evap_to_subsurface_fraction >= 0. && evap_to_subsurface_fraction <= 1.);
-  flux.M_surf += (1. - evap_to_subsurface_fraction) * mb.Me;
-  flux.M_subsurf += evap_to_subsurface_fraction * mb.Me;
-
-  // enthalpy of evap/condensation always goes entirely to surface
-  //
-  // This is fine because diffusion of energy always works, and doing otherwise
-  // sets up local minima for energy in the top cell, which breaks code.
-  flux.E_surf += eb.fQe; // v1.0
 
   // snow mass change
   flux.M_snow = met.Ps - mb.Mm;
@@ -418,8 +397,10 @@ FluxBalance UpdateFluxesWithSnow(const GroundProperties& surf,
 {
   FluxBalance flux;
 
-  // mass to surface is precip and evaporation
+  // mass to surface is precip and snowmelt
   flux.M_surf = met.Pr + mb.Mm;
+
+  // mass to snow is precip, melt, and evaporation
   if (mb.Mm > 0.) AMANZI_ASSERT(snow.density > 99.);
   flux.M_snow = met.Ps + mb.Me - mb.Mm;
 

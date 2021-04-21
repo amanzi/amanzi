@@ -62,10 +62,10 @@ MPCPermafrost::MPCPermafrost(Teuchos::ParameterList& pk_tree,
   // surface rel perm and the timestep size.
   surf_mass_source_key_ = Keys::readKey(*plist_, domain_surf_, "surface mass source", "mass_source");
   subsurf_mass_source_key_ = Keys::readKey(*plist_, domain_subsurf_, "subsurface mass source", "mass_source");
-  surf_rel_perm_key_ = Keys::readKey(*plist_, domain_surf_, "relative permeability", "relative_permeability");
+  // surf_rel_perm_key_ = Keys::readKey(*plist_, domain_surf_, "relative permeability", "relative_permeability");
   surf_molar_dens_key_ = Keys::readKey(*plist_, domain_surf_, "molar density liquid", "molar_density_liquid");
-  surf_cv_key_ = Keys::readKey(*plist_, domain_surf_, "cell volume", "cell_volume");
-  subsurf_cv_key_ = Keys::readKey(*plist_, domain_subsurf_, "cell volume", "cell_volume");
+  surf_cv_key_ = Keys::readKey(*plist_, domain_surf_, "surface cell volume", "cell_volume");
+  subsurf_cv_key_ = Keys::readKey(*plist_, domain_subsurf_, "subsurface cell volume", "cell_volume");
 
   adj_surf_mass_source_key_ = Keys::readKey(*plist_, domain_surf_, "adjusted surface mass source", "source_sink");
   adj_subsurf_mass_source_key_ = Keys::readKey(*plist_, domain_subsurf_, "adjusted subsurface mass source", "source_sink");
@@ -175,10 +175,10 @@ MPCPermafrost::Setup(const Teuchos::Ptr<State>& S) {
       ->SetMesh(domain_mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(subsurf_mass_source_key_);
-  S->RequireField(surf_rel_perm_key_)
-      ->SetMesh(surf_mesh_)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator(surf_rel_perm_key_);
+  // S->RequireField(surf_rel_perm_key_)
+  //     ->SetMesh(surf_mesh_)
+  //     ->AddComponent("cell", AmanziMesh::CELL, 1);
+  // S->RequireFieldEvaluator(surf_rel_perm_key_);
   S->RequireField(surf_molar_dens_key_)
       ->SetMesh(surf_mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -362,16 +362,15 @@ MPCPermafrost::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeV
   // propagate updated info into state
   Solution_to_State(*u_new, S_next_);
 
-  int cycle = S_next_->cycle();
-  if (cycle == 1844) {
-    std::cout << "we is here" << std::endl;
-  }
-
   // adjust the sources, dealing with difficulties in evaporating ice on the surface
   {
     double dt = t_new - t_old;
     // these are at the old time, because at the new time they are 0 and 1 respectively
     const auto& surf_wc = *S_inter_->GetFieldData(surf_wc_key_)->ViewComponent("cell",false);
+
+    S_next_->GetFieldEvaluator(surf_wc_key_)->HasFieldChanged(S_next_.ptr(), name_);
+    const auto& surf_wc_next = *S_next_->GetFieldData(surf_wc_key_)->ViewComponent("cell",false);
+
     const auto& surf_rel_perm = *S_inter_->GetFieldData(surf_rel_perm_key_)->ViewComponent("cell",false);
 
     S_next_->GetFieldEvaluator(surf_mass_source_key_)->HasFieldChanged(S_next_.ptr(), name_);
@@ -389,8 +388,8 @@ MPCPermafrost::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeV
     adj_subsurf_src = subsurf_src;
     adj_surf_src = surf_src;
 
-    for (int sc=0; sc!=surf_rel_perm.MyLength(); ++sc) {
-      if (adj_surf_src[0][sc] < 0 && surf_rel_perm[0][sc] < 1.e-4) {
+    for (int sc=0; sc!=adj_surf_src.MyLength(); ++sc) {
+      if (adj_surf_src[0][sc] < 0 && surf_wc_next[0][sc] == 0) {
         const double water_loss_mols = -adj_surf_src[0][sc] * surf_cv[0][sc] * surf_molar_dens[0][sc] * dt;
         const double water_avail_mols = surf_wc[0][sc];
         if (water_loss_mols > water_avail_mols) {
@@ -422,6 +421,11 @@ MPCPermafrost::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeV
   source = *g->SubVector(2)->Data()->ViewComponent("cell",false);
   mass_exchange_pvfe_->SetFieldAsChanged(S_next_.ptr());
 
+  // write exchange flux
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    surf_db_->WriteVector("surf-sub water flux", g->SubVector(2)->Data().ptr(), false);
+  }
+
   // Evaluate the subsurface residual, which uses this flux as a Neumann BC.
   domain_flow_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(0),
           u_new->SubVector(0), g->SubVector(0));
@@ -440,6 +444,11 @@ MPCPermafrost::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeV
       *S_next_->GetFieldData(energy_exchange_key_, name_)->ViewComponent("cell",false);
   esource = *g->SubVector(3)->Data()->ViewComponent("cell",false);
   energy_exchange_pvfe_->SetFieldAsChanged(S_next_.ptr());
+
+  // write exchange flux
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    surf_db_->WriteVector("surf-sub energy flux", g->SubVector(3)->Data().ptr(), false);
+  }
 
   // Evaluate the subsurface energy residual.
   domain_energy_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(1),
