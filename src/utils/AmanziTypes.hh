@@ -34,6 +34,15 @@
 #include "Epetra_SerialComm.h"
 #endif
 
+namespace Teuchos {
+template<typename T>
+inline
+Teuchos::RCP<T>
+rcp(std::unique_ptr<T>&& in) {
+  return Teuchos::rcp(in.release());
+}
+} // namespace Teuchos
+
 namespace Amanzi {
 
 #ifdef TRILINOS_TPETRA_STACK

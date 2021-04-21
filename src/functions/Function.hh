@@ -1,12 +1,11 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! Function: base class for all functions of space and time.
-
 /*
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-202X held jointly by LANL, ORNL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 */
+//! Function: base class for all functions of space and time.
 
 /*!
 Analytic, algabraic functions of space and time are used for a variety of
@@ -86,18 +85,19 @@ Note, this does not follow the `"typed`" format for legacy reasons.
   END
 
 */
-  
+
 #ifndef AMANZI_FUNCTION_HH_
 #define AMANZI_FUNCTION_HH_
 
 #include <vector>
+#include "UniqueHelpers.hh"
 
 namespace Amanzi {
 
 class Function {
  public:
   virtual ~Function() {}
-  virtual Function* Clone() const = 0;
+  virtual std::unique_ptr<Function> Clone() const = 0;
   virtual double operator()(const std::vector<double>& ) const = 0;
 };
 

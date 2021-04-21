@@ -54,7 +54,9 @@ class FunctionComposition : public Function {
   FunctionComposition(const FunctionComposition& source)
      : f1_(source.f1_->Clone()), f2_(source.f2_->Clone()) {}
   ~FunctionComposition() {} //{ if (f1_) delete f1_; if (f2_) delete f2_; }
-  FunctionComposition* Clone() const { return new FunctionComposition(*this); }
+  std::unique_ptr<Function> Clone() const {
+    return std::make_unique<FunctionComposition>(*this);
+  }
   double operator()(const std::vector<double>& x) const {
     std::vector<double> y(x);
     y[0] = (*f2_)(x);
@@ -63,7 +65,6 @@ class FunctionComposition : public Function {
 
  private:
   std::unique_ptr<Function> f1_, f2_;
-  //Function *f1_, *f2_;
 };
 
 } // namespace Amanzi
