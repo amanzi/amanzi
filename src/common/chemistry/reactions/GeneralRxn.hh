@@ -26,16 +26,8 @@ class MatrixBlock;
 class GeneralRxn {
  public:
   GeneralRxn();
-  explicit GeneralRxn(std::string s) {};
-  GeneralRxn(const std::string& name,
-             const std::vector<std::string>& species,
-             const std::vector<double>& stoichiometries,
-             const std::vector<int>& species_ids,
-             const std::vector<double>& forward_stoichiometries,
-             const std::vector<int>& forward_species_ids,
-             const std::vector<double>& backward_stoichiometries,
-             const std::vector<int>& backward_species_ids,
-             double kf, double kb);
+  GeneralRxn(const Teuchos::ParameterList& plist,
+             const std::map<std::string, int>& name_to_id);
   ~GeneralRxn() {};
 
   // update forward and reverse effective reaction rates

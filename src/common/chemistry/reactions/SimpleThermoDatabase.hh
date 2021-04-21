@@ -29,11 +29,6 @@ class SimpleThermoDatabase : public Beaker {
                           const BeakerParameters& parameters);
 
  private:
-  void ParseReaction_(const std::string& reactants,
-                      const std::string& products,
-                      std::vector<std::string>* species,
-                      std::vector<double>* stoichiometries);
-
   void ParseReaction_(const std::string& reaction,
                       std::vector<std::string>* primary_name,
                       std::vector<double>* primary_stoichiometry,

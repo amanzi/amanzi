@@ -29,6 +29,7 @@
 #include "KineticRateFactory.hh"
 #include "Mineral.hh"
 #include "RadioactiveDecay.hh"
+#include "ReactionString.hh"
 #include "Species.hh"
 #include "SorptionIsotherm.hh"
 #include "SorptionIsothermFactory.hh"
@@ -120,49 +121,7 @@ void SimpleThermoDatabase::Initialize(const BeakerState& state,
     if (gklist.isSublist(name)) {
       const auto& tmp = gklist.sublist(name);
 
-      // parse main reaction string
-      std::string reactants = tmp.get<std::string>("reactants");
-      std::string products = tmp.get<std::string>("products");
-
-      std::vector<std::string> species;
-      std::vector<double> stoichiometries;
-      ParseReaction_(reactants, products, &species, &stoichiometries);
-
-      std::vector<int> species_ids;
-      for (auto s = species.begin(); s != species.end(); s++) {
-        species_ids.push_back(name_to_id.at(*s));
-      }
-
-      // parse forward rates
-      double coeff;
-      std::vector<double> forward_stoichiometries;
-      std::vector<int> forward_species_ids;
-
-      std::istringstream iss1(reactants);
-      while (iss1 >> coeff || !iss1.eof()) {
-        iss1 >> name;
-        forward_species_ids.push_back(name_to_id.at(name));
-        forward_stoichiometries.push_back(coeff);
-      }
-
-      // parse backward rates
-      std::vector<double> backward_stoichiometries;
-      std::vector<int> backward_species_ids;
-
-      std::istringstream iss2(reactants);
-      while (iss2 >> coeff || !iss2.eof()) {
-        iss2 >> name;
-        backward_species_ids.push_back(name_to_id.at(name));
-        backward_stoichiometries.push_back(coeff);
-      }
-
-      double forward_rate_constant = tmp.get<double>("forward rate");
-      double backward_rate_constant = tmp.get<double>("backward rate");
-
-      GeneralRxn general("", species, stoichiometries, species_ids,
-                         forward_stoichiometries, forward_species_ids,
-                         backward_stoichiometries, backward_species_ids,
-                         forward_rate_constant, backward_rate_constant);
+      GeneralRxn general(tmp, name_to_id);
       AddGeneralRxn(general);
     }
   }
@@ -431,47 +390,6 @@ void SimpleThermoDatabase::ParseReaction_(const std::string& reaction,
                   << " species list or the surface site list.\n";
       }
     }
-  }
-}
-
-
-/* *******************************************************************
-* Reads in a reaction string of format: reactants -> products
-* Example:
-*   30 A(aq) + 2 B(aq) <-> C(aq) + .3 D(aq) + -4 E(aq)
-* returns 
-*   species = [5]("A(aq)","B(aq)","C(aq)","D(aq)","E(aq)")
-*   stoichiometries = [5](-30.,-2.,1.,0.3,-4.)
-* NOTE: Reactants and products have negative and positive 
-* stoichiometries, respectively.
-******************************************************************* */
-void SimpleThermoDatabase::ParseReaction_(const std::string& reactants,
-                                          const std::string& products,
-                                          std::vector<std::string>* species,
-                                          std::vector<double>* stoichiometries)
-{
-  double coeff;
-  std::string name;
-
-  species->clear();
-  stoichiometries->clear();
-
-  // reactants
-  std::istringstream iss1(reactants);
-  while (iss1 >> coeff || !iss1.eof()) {
-    iss1 >> name;
-
-    species->push_back(name);
-    stoichiometries->push_back(-coeff);
-  }
-
-  // products
-  std::istringstream iss2(products);
-  while (iss2 >> coeff || !iss2.eof()) {
-    iss2 >> name;
-
-    species->push_back(name);
-    stoichiometries->push_back(coeff);
   }
 }
 

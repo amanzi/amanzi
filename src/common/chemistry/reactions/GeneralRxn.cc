@@ -16,6 +16,7 @@
 
 #include "GeneralRxn.hh"
 #include "MatrixBlock.hh"
+#include "ReactionString.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -39,29 +40,49 @@ GeneralRxn::GeneralRxn() {
 }
 
 
-GeneralRxn::GeneralRxn(const std::string& name,
-                       const std::vector<std::string>& species,
-                       const std::vector<double>& stoichiometries,
-                       const std::vector<int>& species_ids,
-                       const std::vector<double>& forward_stoichiometries,
-                       const std::vector<int>& forward_species_ids,
-                       const std::vector<double>& backward_stoichiometries,
-                       const std::vector<int>& backward_species_ids,
-                       double kf, double kb) 
-  : species_names_(species),
-    stoichiometry_(stoichiometries),
-    species_ids_(species_ids),
-    forward_stoichiometry_(forward_stoichiometries),
-    forward_species_ids_(forward_species_ids),
-    backward_stoichiometry_(backward_stoichiometries),
-    backward_species_ids_(backward_species_ids) {
+GeneralRxn::GeneralRxn(const Teuchos::ParameterList& plist,
+                       const std::map<std::string, int>& name_to_id)
+{
+  std::string reactants = plist.get<std::string>("reactants");
+  std::string products = plist.get<std::string>("products");
 
-  ncomp_ = species_ids.size();
-  ncomp_forward_ = forward_species_ids.size();
-  ncomp_backward_ = backward_species_ids.size();
+  ParseReaction(reactants, products, &species_names_, &stoichiometry_);
 
-  kf_ = kf;
-  kb_ = kb;
+  species_ids_.clear();
+  for (auto s = species_names_.begin(); s != species_names_.end(); s++) {
+    species_ids_.push_back(name_to_id.at(*s));
+  }
+
+  // parse forward rates
+  double coeff;
+  std::string name;
+  forward_species_ids_.clear();
+  forward_stoichiometry_.clear();
+
+  std::istringstream iss1(reactants);
+  while (iss1 >> coeff || !iss1.eof()) {
+    iss1 >> name;
+    forward_species_ids_.push_back(name_to_id.at(name));
+    forward_stoichiometry_.push_back(coeff);
+  }
+
+  // parse backward rates
+  backward_species_ids_.clear();
+  backward_stoichiometry_.clear();
+
+  std::istringstream iss2(reactants);
+  while (iss2 >> coeff || !iss2.eof()) {
+    iss2 >> name;
+    backward_species_ids_.push_back(name_to_id.at(name));
+    backward_stoichiometry_.push_back(coeff);
+  }
+
+  kf_ = plist.get<double>("forward rate");
+  kb_ = plist.get<double>("backward rate");
+
+  ncomp_ = species_ids_.size();
+  ncomp_forward_ = forward_species_ids_.size();
+  ncomp_backward_ = backward_species_ids_.size();
 }
 
 
