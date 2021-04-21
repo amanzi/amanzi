@@ -377,7 +377,7 @@ FluxBalance UpdateFluxesWithoutSnow(const GroundProperties& surf,
   flux.E_surf = eb.fQswIn + eb.fQlwIn - eb.fQlwOut + eb.fQh // purely energy fluxes
                 - eb.fQm   // energy put into melting snow
                 + surf.density_w * met.Pr * Train * params.Cv_water // energy advected in by rainfall
-                + eb.fQe;
+                + eb.fQe; // energy from evaporation
 
   // zero subsurf values -- these should be refactored and removed eventually,
   // as the distribution of the flux between surface and subsurface has moved

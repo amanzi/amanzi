@@ -371,7 +371,7 @@ MPCPermafrost::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeV
     S_next_->GetFieldEvaluator(surf_wc_key_)->HasFieldChanged(S_next_.ptr(), name_);
     const auto& surf_wc_next = *S_next_->GetFieldData(surf_wc_key_)->ViewComponent("cell",false);
 
-    const auto& surf_rel_perm = *S_inter_->GetFieldData(surf_rel_perm_key_)->ViewComponent("cell",false);
+    // const auto& surf_rel_perm = *S_inter_->GetFieldData(surf_rel_perm_key_)->ViewComponent("cell",false);
 
     S_next_->GetFieldEvaluator(surf_mass_source_key_)->HasFieldChanged(S_next_.ptr(), name_);
     const auto& surf_src = *S_next_->GetFieldData(surf_mass_source_key_)->ViewComponent("cell",false);
