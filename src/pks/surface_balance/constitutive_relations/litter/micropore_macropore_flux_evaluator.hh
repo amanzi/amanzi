@@ -1,25 +1,50 @@
 /*
-  The micropore-macropore flux evaluator is an algebraic evaluator of a given model.
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-  Generated via evaluator_generator with:
-    evalName = micropore_macropore_flux
-    modelMethodDeclaration =   double MicroporeMacroporeFlux(double pm, double pM, double krM, double krm, double K) const;
-    namespaceCaps = SURFACEBALANCE
-    namespace = SurfaceBalance
-    evalNameCaps = MICROPORE_MACROPORE_FLUX
-    myMethodArgs = pm_v[0][i], pM_v[0][i], krM_v[0][i], krm_v[0][i], K_v[0][i]
-    myKeyMethod = MicroporeMacroporeFlux
-    myKeyFirst = micropore
-    evalNameString = micropore-macropore flux
-    myMethodDeclarationArgs = double pm, double pM, double krM, double krm, double K
-    evalClassName = MicroporeMacroporeFlux
-    myKey = micropore_macropore_flux
-    
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
+//! Exchange flux between multiple continua.
 
-#ifndef AMANZI_SURFACEBALANCE_MICROPORE_MACROPORE_FLUX_EVALUATOR_HH_
-#define AMANZI_SURFACEBALANCE_MICROPORE_MACROPORE_FLUX_EVALUATOR_HH_
+/*!
+
+Evaluates the following exchange flux model:
+
+.. math::
+   q_{exchange} = k_r K \frac{\Gamma}{\delta} (p_M - p_m)
+
+where :math:`p` is the pressure of the Macro and micro porespaces,
+respectively, K is some measure of an absolute permeability, :math:`\Gamma [-]`
+is the exchange coefficient, :math:`\delta [m]` is a unit of distance
+characterizing the typical distance between pore, and :math:`k_r` is the
+relative permeability, which is upwinded based on the larger of the two
+pressures.
+
+Note that the expected domain for this is the micropore domain, but may be
+changed on the input line.
+
+.. _micropore-macropore-flux-evaluator-spec:
+.. admonition:: micropore-micropore-flux-evaluator
+
+   * `"micropore domain`" ``[string]`` **""** Defaults to the domain of the flux's
+     variable name.
+
+   * `"macropore domain`" ``[string]`` **macropore**
+
+   * `"micropore macropore flux model parameters`" ``[micropore-macropore-flux-model-spec]``
+
+   KEYS:
+
+   * `"micropore pressure`" **pressure**
+   * `"macropore pressure`" **MACROPORE_DOMAIN-pressure**
+   * `"micropore relative permeability`" **relative_permeability**
+   * `"macropore relative permeability`" **MACROPORE_DOMAIN-relative_permeability**
+   * `"permeability`" **permeability**
+
+*/
+
+#pragma once
 
 #include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
@@ -67,4 +92,4 @@ class MicroporeMacroporeFluxEvaluator : public SecondaryVariableFieldEvaluator {
 } //namespace
 } //namespace
 
-#endif
+
