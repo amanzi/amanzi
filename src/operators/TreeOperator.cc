@@ -57,7 +57,7 @@ TreeOperator::TreeOperator(Teuchos::ParameterList& plist)
   vo_ = Teuchos::rcp(new VerboseObject("TreeOperator", plist));
   if (plist.isSublist("inverse")) set_inverse_parameters(plist.sublist("inverse"));
   shift_ = plist.get<double>("diagonal shift", 0.0);
-  shift_min_ = plist.get<double>("diagonal shift mininum", 0.0);
+  shift_min_ = plist.get<double>("diagonal shift minimum", 0.0);
 }
 
 

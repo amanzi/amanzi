@@ -148,7 +148,7 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
 
   vo_ = Teuchos::rcp(new VerboseObject("Operator", plist));
   shift_ = plist.get<double>("diagonal shift", 0.0);
-  shift_min_ = plist.get<double>("diagonal shift mininum", 0.0);
+  shift_min_ = plist.get<double>("diagonal shift minimum", 0.0);
   apply_calls_ = 0;
 }
 
