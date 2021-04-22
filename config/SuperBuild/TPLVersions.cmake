@@ -97,8 +97,8 @@
 #   0.94.10      - update Alquimia to 1.0.5 (critical bug fixes)
 #   0.94.11      - update MSTK to 3.0.3 (critical bug fixes)
 #                - update NetCDF to 4.5.0
-#	         - update NetCDF-Fortran to 4.4.4
-#	         - update curl to 7.56.1
+#                - update NetCDF-Fortran to 4.4.4
+#                - update curl to 7.56.1
 #   0.94.12      - update xerces-c to 3.2.0 (CMake build)
 
 #   0.95.0       - update Trilinos 12.12.1
@@ -120,7 +120,7 @@
 #   0.95.8       - update NetCDF-Fortran to 4.4.5
 #   0.95.9       - update NetCDF-C to 4.7.0
 #   0.95.10      - update OpenMPI to 3.1.4
-#
+
 #   0.96.0       - update Trilinos to 12.14.0bf557717e-Jun17
 #   0.96.1       - update NetCDF-C to 4.7.1 
 #                - update MOAB to 5.1.0
@@ -130,6 +130,7 @@
 #                - update Alquimia to 1.0.6-rc
 #   0.96.3       - update HDF5 to 1.10.5
 #   0.96.4       - update MSTK to 3.2.1
+#
 #   0.97.0       - update HDF5 to 1.10.6
 #                - update Nanoflann to 1.3.1
 #                - update Trilinos to 55a7599733 (Nov11, 2019, also 12.18.1)
@@ -156,7 +157,8 @@
 #   0.97.12      - update Trilinos to afc4e525 (Nov 14, 2020)
 #   0.97.13      - update Alquimia to 1.0.8
 #   0.97.14      - update MSTK to 3.3.6
-#   0.97.15      - configuration updates fixing CamelCase names.
+
+#   0.98.0       - configuration updates fixing CamelCase names (required changes in Amanzi build as well)
 
 include(CMakeParseArguments)
 
@@ -208,8 +210,8 @@ endmacro(amanzi_tpl_version_write)
 # TPLs and XSDK versions 
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
-set(AMANZI_TPLS_VERSION_MINOR 97)
-set(AMANZI_TPLS_VERSION_PATCH 15)
+set(AMANZI_TPLS_VERSION_MINOR 98)
+set(AMANZI_TPLS_VERSION_PATCH 0)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
