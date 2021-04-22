@@ -58,7 +58,7 @@ ExternalProject_Add(${HDF5_BUILD_TARGET}
                     PATCH_COMMAND ${HDF5_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR    ${HDF5_source_dir} 
-		    CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}      # Ensure unifom build
+            CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}      # Ensure unifom build
                                   ${HDF5_CMAKE_CACHE_ARGS}
                                   -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                   -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}

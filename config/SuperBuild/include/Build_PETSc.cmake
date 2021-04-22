@@ -183,7 +183,7 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                               --prefix=${PETSc_install_dir}
                               ${petsc_mpi_compilers}
                               --without-x
-					          --with-ssl=0
+                              --with-ssl=0
                               --with-debugging=${petsc_debug_flag}
                               --without-valgrind
                               --with-cxx-dialect=C++11

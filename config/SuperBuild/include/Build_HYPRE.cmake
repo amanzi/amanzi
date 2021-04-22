@@ -102,7 +102,7 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
                     # -- Configure
                     SOURCE_DIR    ${HYPRE_source_dir}
                     SOURCE_SUBDIR src                          # cmake 3.7+ feature 
-		    CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
+            CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
                                   ${hypre_openmp_opt} 
                                   ${hypre_lapack_opt} ${hypre_blas_opt}
                                   ${hypre_superlu_opt} ${hypre_shared_opt}
@@ -121,7 +121,7 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
                     BUILD_COMMAND    ${MAKE} 
                     # -- Install
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}     # Install directory
-      		    INSTALL_COMMAND  $(MAKE) install
+                INSTALL_COMMAND  $(MAKE) install
                     # -- Output control
                     ${HYPRE_logging_args})
 
