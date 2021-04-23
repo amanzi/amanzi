@@ -391,8 +391,7 @@ void TreeOperator::AssembleMatrix() {
 
   if (shift_ != 0.0) {
     Amat_->DiagonalShift(shift_);
-  }
-  else if (shift_min_ != 0.0) {
+  } else if (shift_min_ != 0.0) {
     Amat_->DiagonalShiftMin(shift_min_);
   }
 
