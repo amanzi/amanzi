@@ -371,7 +371,7 @@ MPCPermafrost::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeV
     S_next_->GetFieldEvaluator(surf_wc_key_)->HasFieldChanged(S_next_.ptr(), name_);
     const auto& surf_wc_next = *S_next_->GetFieldData(surf_wc_key_)->ViewComponent("cell",false);
 
-    // const auto& surf_rel_perm = *S_inter_->GetFieldData(surf_rel_perm_key_)->ViewComponent("cell",false);
+    const auto& subsurf_mass_flux = *S_next_->GetFieldData("mass_flux")->ViewComponent("face", false);
 
     S_next_->GetFieldEvaluator(surf_mass_source_key_)->HasFieldChanged(S_next_.ptr(), name_);
     const auto& surf_src = *S_next_->GetFieldData(surf_mass_source_key_)->ViewComponent("cell",false);
@@ -392,18 +392,20 @@ MPCPermafrost::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeV
       if (adj_surf_src[0][sc] < 0 && surf_wc_next[0][sc] == 0) {
         const double water_loss_mols = -adj_surf_src[0][sc] * surf_cv[0][sc] * surf_molar_dens[0][sc] * dt;
         const double water_avail_mols = surf_wc[0][sc];
-        if (water_loss_mols > water_avail_mols) {
-          adj_surf_src[0][sc] = -water_avail_mols / surf_molar_dens[0][sc] / surf_cv[0][sc] / dt;
+        const double water_inc_mols = 0.;// std::max(subsurf_mass_flux[0][surf_mesh_->entity_get_parent(AmanziMesh::Entity_kind::CELL, sc)] * dt, 0.0);
+        if (water_loss_mols > water_avail_mols + water_inc_mols) {
+          adj_surf_src[0][sc] = -(water_avail_mols + water_inc_mols) / surf_molar_dens[0][sc] / surf_cv[0][sc] / dt;
           int c = domain_mesh_->cells_of_column(sc)[0];
           adj_subsurf_src[0][c] = adj_subsurf_src[0][c]
-            - (water_loss_mols - water_avail_mols) / subsurf_cv[0][c] / dt;
-          // std::cout << "ADJUSTING sc: " << sc << std::endl
-          //           << "  old surf sink = " << surf_src[0][sc] << std::endl
-          //           << "  water loss mols = " << water_loss_mols << std::endl
-          //           << "  water avail mols = " << water_avail_mols << std::endl
-          //           << "  new surf sink = " << adj_surf_src[0][sc] << std::endl
-          //           << "  old subsurf src/sink = " << subsurf_src[0][c] << std::endl
-          //           << "  new subsurf src/sink = " << adj_subsurf_src[0][c] << std::endl;
+            - (water_loss_mols - water_avail_mols - water_inc_mols) / subsurf_cv[0][c] / dt;
+          std::cout << "ADJUSTING sc: " << sc << std::endl
+                    << "  old surf sink = " << surf_src[0][sc] << std::endl
+                    << "  water loss mols = " << water_loss_mols << std::endl
+                    << "  water avail mols = " << water_avail_mols << std::endl
+                    << "  water in mols = " << water_inc_mols << std::endl
+                    << "  new surf sink = " << adj_surf_src[0][sc] << std::endl
+                    << "  old subsurf src/sink = " << subsurf_src[0][c] << std::endl
+                    << "  new subsurf src/sink = " << adj_subsurf_src[0][c] << std::endl;
         }
       }
     }
