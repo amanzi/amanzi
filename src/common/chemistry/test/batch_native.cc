@@ -102,6 +102,7 @@ void RunBatchNative(const std::string& filexml,
 
   parameters.tolerance = 1e-12;
   parameters.max_iterations = 250;
+  parameters.update_activity_newton = false;
   parameters.activity_model_name = activity_model;
 
   state.porosity = porosity;
@@ -168,7 +169,7 @@ void RunBatchNative(const std::string& filexml,
     double time(0.0);
 
     for (int n = 0; n < max_dt_steps; ++n) {
-      chem->ReactionStep(&state, dt);
+      chem->ReactionStep(&state, parameters, dt);
       // chem->CopyBeakerToState(&state);
       time += dt;
       if ((n + 1) % frequency == 0) chem->DisplayTotalColumns(time, state, false);

@@ -22,11 +22,13 @@ struct BeakerParameters {
   BeakerParameters()
     : tolerance(1.0e-12),
       max_iterations(250),
+      update_activity_newton(false),
       activity_model_name("unit") {};
 
   // solver parameters
   double tolerance;
-  unsigned int max_iterations;
+  int max_iterations;
+  bool update_activity_newton;
 
   // models
   std::string activity_model_name;

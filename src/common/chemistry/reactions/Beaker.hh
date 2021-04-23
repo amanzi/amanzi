@@ -49,9 +49,9 @@ class Beaker {
   virtual ~Beaker();
 
   struct SolverStatus {
-    unsigned int num_rhs_evaluations;
-    unsigned int num_jacobian_evaluations;
-    unsigned int num_newton_iterations;
+    int num_rhs_evaluations;
+    int num_jacobian_evaluations;
+    int num_newton_iterations;
     bool converged;
   };
 
@@ -71,7 +71,8 @@ class Beaker {
   int Speciate(BeakerState* state);
 
   // solve a chemistry step
-  int ReactionStep(BeakerState* state, double dt);
+  int ReactionStep(BeakerState* state,
+                   const BeakerParameters& parameters, double dt);
 
   // enforce constraint
   int EnforceConstraint(BeakerState* state, const BeakerParameters& parameters,

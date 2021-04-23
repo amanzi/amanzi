@@ -209,7 +209,8 @@ int Beaker::Speciate(BeakerState* state)
 * Initially it contains the initial component concentrations.
 * On return it contains the modified values of the state.
 ****************************************************************** */
-int Beaker::ReactionStep(BeakerState* state, double dt)
+int Beaker::ReactionStep(BeakerState* state, 
+                         const BeakerParameters& parameters, double dt)
 {
   // update class parameters
   ResetStatus();
@@ -237,8 +238,8 @@ int Beaker::ReactionStep(BeakerState* state, double dt)
                              &fixed_accumulation_);
 
   do {
-    // update equilibrium and kinetic chemistry (rates, ion activity
-    // products, etc.)
+    // update equilibrium and kinetic chemistry (rates, ion activity, etc.)
+    // if (parameters.update_activity_newton) UpdateActivityCoefficients();
     UpdateEquilibriumChemistry();
     UpdateKineticChemistry();
 

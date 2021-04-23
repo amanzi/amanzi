@@ -678,7 +678,7 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         chem_->CopyState(beaker_state_, &beaker_state_copy_);
 
         // chemistry computations for this cell
-        num_itrs = chem_->ReactionStep(&beaker_state_, dt);
+        num_itrs = chem_->ReactionStep(&beaker_state_, beaker_parameters_, dt);
 
         if (max_itrs < num_itrs) {
           max_itrs = num_itrs;
