@@ -35,6 +35,7 @@ The following variables may be set to influence this module's behavior:
   * ``DXML``
   * ``SunPerf``
   * ``SCSL``
+  * ``CRAYSCI``
   * ``SGIMATH``
   * ``IBMESSL``
   * ``Intel10_32`` (intel mkl v10 32 bit, threaded code)

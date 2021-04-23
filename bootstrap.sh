@@ -425,7 +425,9 @@ and are provided on the system.  Some of these libraries may be in nonstandard l
                                  [default is blank so CMake searches in system directories] 
 
   --tpl-blas-vendor=VENDOR       Specify the vendor (usually the system name) for the BLAS and LAPACK libraries
-                                 [default All is implicit in findBLAS.cmake]
+                                 [default All] is implicit in findBLAS.cmake and will search all supported names.
+                                 To focus the search and simplify debegging, specify a VENDOR name. Supported
+                                 VENDOR names include, Generic, OpenBLAS, CRAYSCI, Apple, FLAME, and NAS.
 
   --with-lapack=DIR              Search for the LAPACK libraries only in DIR
                                  [default is blank so CMake searches in system directories] 
@@ -488,6 +490,18 @@ OSX C and C++ compilers and Fortran compiler from MacPorts:
                  --enable-alquimia --enable-pflotran --enable-crunchtope 
                  --enable-petsc
                  --tools-mpi=openmpi
+
+Example that uses the system MPI, provides a path (/usr/local/lib) and
+turns on debugging to find BLAS and LAPACK libraries, builds the TPLs
+(with geochemistry libraries enabled), and finally Amanzi:
+
+  ./bootstrap.sh --tpl-install-prefix=$HOME/TPLs-0.98.0-gcc-9.3.0-openmpi-4.0.3
+                 --with-mpi=/usr
+                 --with-blas=/usr/local/lib
+                 --with-lapack=/usr/local/lib
+                 --debug_find_blas
+                 --parallel=8 
+                 --enable-geochemistry
 '
 }
 
@@ -601,7 +615,7 @@ List of INPUT parameters
 
       --arch=*)
                  amanzi_arch=`parse_option_with_equal "${opt}" 'arch'`
-		 ;;
+                 ;;
 
       --parallel=[0-9]*)
                  parallel_jobs=`parse_option_with_equal "${opt}" 'parallel'`
