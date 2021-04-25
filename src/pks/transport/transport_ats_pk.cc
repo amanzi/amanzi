@@ -439,7 +439,7 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
   // source term initialization: so far only "concentration" is available.
   if (plist_->isSublist("source terms")) {
     PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_);
-    Teuchos::ParameterList& conc_sources_list = plist_->sublist("source terms").sublist("concentration");
+    Teuchos::ParameterList& conc_sources_list = plist_->sublist("source terms").sublist("component mass source");
 
     for (const auto& it : conc_sources_list) {
       std::string name = it.first;
@@ -476,6 +476,31 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
         }
       }
     }
+
+
+    // Teuchos::ParameterList& conc_sources_list = plist_->sublist("source terms").sublist("component concentration source");
+    // for (const auto& it : conc_sources_list) {
+    //   std::string name = it.first;
+    //   if (conc_sources_list.isSublist(name)) {
+    //     Teuchos::ParameterList& src_list = conc_sources_list.sublist(name);
+    //     std::string src_type = src_list.get<std::string>("spatial distribution method", "none");
+
+    //       Teuchos::RCP<TransportDomainFunction> src =
+    //           factory.Create(src_list, "source function", AmanziMesh::CELL, Kxy);
+
+    //       std::vector<std::string> tcc_names = src_list.get<Teuchos::Array<std::string>>("component names").toVector();
+    //       src->set_tcc_names(tcc_names);
+
+    //       // set the component indicies
+    //       for (const auto& n : src->tcc_names()) {
+    //         src->tcc_index().push_back(FindComponentNumber(n));
+    //       }
+
+    //       src->set_state(S_);
+    //       srcs_.push_back(src);
+    //     }
+    //   }
+    // }
 
 #ifdef ALQUIMIA_ENABLED
     // -- try geochemical conditions
