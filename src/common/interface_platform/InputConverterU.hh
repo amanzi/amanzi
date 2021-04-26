@@ -233,6 +233,8 @@ class InputConverterU : public InputConverter {
   std::map<std::string, std::string> pk_model_;
   std::map<std::string, bool> pk_master_;
   std::map<std::string, double> dt_cut_, dt_inc_;
+  
+  std::string eos_lookup_table_;
 
   // global physical constants prefixed with "const"
   double const_gravity_;

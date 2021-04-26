@@ -44,7 +44,6 @@
 
   <phases>
     <liquid_phase name="water">
-      <eos>false</eos>
       <viscosity>1.002E-03</viscosity>
       <density>998.2</density>
       <dissolved_components>

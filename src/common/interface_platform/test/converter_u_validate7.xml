@@ -464,6 +464,8 @@
     <ParameterList name="coupled flow">
       <Parameter name="PKs order" type="Array(string)" value="{flow matrix, flow fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
+      <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
+
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
@@ -513,6 +515,7 @@
     </ParameterList>
 
     <ParameterList name="flow matrix">
+      <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="absolute permeability">
         <Parameter name="coordinate system" type="string" value="cartesian"/>
@@ -607,6 +610,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="flow fracture">
+      <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       <Parameter name="domain name" type="string" value="fracture"/>
       <ParameterList name="fracture permeability models">
         <ParameterList name="FPM for fracture">
@@ -667,9 +671,11 @@
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
+
     <ParameterList name="coupled flow and energy">
       <Parameter name="PKs order" type="Array(string)" value="{flow and energy, flow and energy fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
+      <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{pressure, temperature}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
@@ -719,6 +725,7 @@
       <Parameter name="PKs order" type="Array(string)" value="{flow, energy}"/>
       <Parameter name="master PK index" type="int" value="0"/>
       <Parameter name="domain name" type="string" value="domain"/>
+      <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{pressure, temperature}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
@@ -735,6 +742,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="flow">
+      <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="absolute permeability">
         <Parameter name="coordinate system" type="string" value="cartesian"/>
@@ -831,6 +839,7 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="energy">
+      <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
@@ -905,10 +914,12 @@
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
+
     <ParameterList name="flow and energy fracture">
       <Parameter name="PKs order" type="Array(string)" value="{flow fracture, energy fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
       <Parameter name="domain name" type="string" value="fracture"/>
+      <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{pressure, temperature}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
@@ -926,6 +937,7 @@
     </ParameterList>
 
     <ParameterList name="energy fracture">
+      <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       <Parameter name="domain name" type="string" value="fracture"/>
       <ParameterList name="operators">
         <ParameterList name="diffusion operator">
