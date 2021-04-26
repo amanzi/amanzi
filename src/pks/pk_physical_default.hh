@@ -37,11 +37,8 @@ all leaves of the PK tree will inherit from `PKPhysicalBase`.
     - ``[debugger-spec]`` Uses a Debugger_
 
 */
-
 #ifndef ATS_PK_PHYSICAL_BASE_HH_
 #define ATS_PK_PHYSICAL_BASE_HH_
-
-
 
 #include "Teuchos_ParameterList.hpp"
 #include "TreeVector.hh"
@@ -51,7 +48,6 @@ all leaves of the PK tree will inherit from `PKPhysicalBase`.
 #include "primary_variable_field_evaluator.hh"
 #include "PK.hh"
 #include "PK_Physical.hh"
-
 
 namespace Amanzi {
 
@@ -66,35 +62,16 @@ class PK_Physical_Default : public PK_Physical {
   // Virtual destructor
   virtual ~PK_Physical_Default() = default;
 
-  // Default implementations of PK methods.
-  // -- transfer operators -- pointer copies only
-  virtual void State_to_Solution(const Teuchos::RCP<State>& S,
-                                 TreeVector& soln);
-  virtual void Solution_to_State(TreeVector& soln,
-                                 const Teuchos::RCP<State>& S);
-  virtual void Solution_to_State(const TreeVector& soln,
-                                 const Teuchos::RCP<State>& S);
-
-
-  // new virtual set_states() to also get the primary field evaulator.
-  virtual void set_states(const Teuchos::RCP<State>& S,
-          const Teuchos::RCP<State>& S_inter,
-          const Teuchos::RCP<State>& S_next);
-
   virtual bool ValidStep();
 
   // Tag the primary variable as changed in the DAG
   virtual void ChangedSolutionPK(const Teuchos::Ptr<State>& S);
-  
+
   // -- setup
   virtual void Setup(const Teuchos::Ptr<State>& S);
 
   // -- initialize
   virtual void Initialize(const Teuchos::Ptr<State>& S);
-
- protected: // methods
-
-  void DeriveFaceValuesFromCellValues_(const Teuchos::Ptr<CompositeVector>& cv);
 
  protected: // data
 

@@ -55,7 +55,9 @@ std::pair<double,double> IncomingRadiation(const MetData& met, double albedo)
 double CalcIncomingLongwave(double air_temp, double relative_humidity, double c_stephan_boltzmann) {
   double e_air = std::pow(10 * VaporPressureAir(air_temp, relative_humidity), air_temp / 2016.);
   e_air = 1.08 * (1 - std::exp(-e_air));
-  return e_air * c_stephan_boltzmann * std::pow(air_temp,4);
+  double longwave = e_air * c_stephan_boltzmann * std::pow(air_temp,4);
+  AMANZI_ASSERT(longwave > 0.);
+  return longwave;
 }
 
 
@@ -389,8 +391,6 @@ FluxBalance UpdateFluxesWithoutSnow(const GroundProperties& surf,
 
   // At this point we have Mass and Energy fluxes but not including
   // evaporation, which we have to allocate to surface or subsurface.
-  
-  // Now put evap in the right place
   double evap_to_subsurface_fraction = 0.;
   if (mb.Me < 0) {
     if (surf.pressure >= 1000.*params.Apa + params.evap_transition_width) {
@@ -405,10 +405,17 @@ FluxBalance UpdateFluxesWithoutSnow(const GroundProperties& surf,
   flux.M_surf += (1. - evap_to_subsurface_fraction) * mb.Me;
   flux.M_subsurf += evap_to_subsurface_fraction * mb.Me;
 
-  // enthalpy of evap/condensation
-  flux.E_surf += (1-evap_to_subsurface_fraction) * eb.fQe;
-  flux.E_subsurf += evap_to_subsurface_fraction * eb.fQe;
+  // enthalpy of evap/condensation always goes entirely to surface
+  //
+  // This is fine because diffusion of energy always works, and doing otherwise
+  // sets up local minima for energy in the top cell, which breaks code.
+  flux.E_surf += eb.fQe; // v1.0
 
+  // // enthalpy of evap/condensation -- v0.88
+  // flux.E_surf += (1-evap_to_subsurface_fraction) * eb.fQe;
+  // flux.E_subsurf += evap_to_subsurface_fraction * eb.fQe;
+
+  // snow mass change
   flux.M_snow = met.Ps - mb.Mm;
   return flux;
 }

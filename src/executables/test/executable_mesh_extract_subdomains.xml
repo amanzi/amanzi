@@ -1,0 +1,52 @@
+<ParameterList name="Main" type="ParameterList">
+  <ParameterList name="mesh" type="ParameterList">
+    <ParameterList name="verbose object" type="ParameterList">
+      <Parameter name="verbosity level" type="string" value="high" />
+    </ParameterList>
+
+    <ParameterList name="domain" type="ParameterList">
+      <Parameter name="mesh type" type="string" value="read mesh file" />
+      <ParameterList name="read mesh file parameters" type="ParameterList">
+        <Parameter name="file" type="string" value="test/double_open_book.exo" />
+        <Parameter name="format" type="string" value="Exodus II" />
+      </ParameterList>
+    </ParameterList>
+    
+    <ParameterList name="watershed:*" type="ParameterList">
+      <Parameter name="mesh type" type="string" value="domain set regions" />
+      <ParameterList name="domain set regions parameters" type="ParameterList">
+        <Parameter name="indexing parent domain" type="string" value="domain" />
+        <Parameter name="referencing parent domain" type="string" value="domain" />
+        <Parameter name="regions" type="Array(string)" value="{upstream,downstream}" />
+        <ParameterList name="watershed:*" type="ParameterList">
+          <Parameter name="mesh type" type="string" value="extracted" />
+          <ParameterList name="extracted parameters" type="ParameterList">
+            <Parameter name="parent domain" type="string" value="domain" />
+            <ParameterList name="verbose object" type="ParameterList">
+              <Parameter name="verbosity level" type="string" value="high" />
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+  </ParameterList>
+
+  <ParameterList name="regions" type="ParameterList">
+
+    <ParameterList name="upstream" type="ParameterList">
+      <ParameterList name="region: enumerated set" type="ParameterList">
+        <Parameter name="file" type="string" value="test/subdomain_coloring.h5" />
+        <Parameter name="entity" type="string" value="cell" />
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="downstream" type="ParameterList">
+      <ParameterList name="region: enumerated set" type="ParameterList">
+        <Parameter name="file" type="string" value="test/subdomain_coloring.h5" />
+        <Parameter name="entity" type="string" value="cell" />
+      </ParameterList>
+    </ParameterList>
+    
+  </ParameterList>
+</ParameterList>

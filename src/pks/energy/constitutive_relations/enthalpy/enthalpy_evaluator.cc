@@ -23,7 +23,7 @@ EnthalpyEvaluator::EnthalpyEvaluator(Teuchos::ParameterList& plist) :
 
   // Set up my dependencies.
   std::string domain_name = Keys::getDomain(my_key_);
-  include_work_ = plist_.get<bool>("include work term", true);
+  include_work_ = plist_.get<bool>("include work term", false);
 
   // -- pressure
   if (include_work_) {

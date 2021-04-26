@@ -13,21 +13,23 @@ add_subdirectory(constitutive_relations)
 include_directories(${GEOCHEM_SOURCE_DIR})
 include_directories(${CHEMPK_SOURCE_DIR})
 include_directories(${MPC_TREE_SOURCE_DIR})
-include_directories(${ATS_SOURCE_DIR}/pks)
-include_directories(${ATS_SOURCE_DIR}/constitutive_relations/eos)
-include_directories(${ATS_SOURCE_DIR}/pks/flow)
-include_directories(${ATS_SOURCE_DIR}/pks/energy)
-include_directories(${ATS_SOURCE_DIR}/pks/transport)
-include_directories(${ATS_SOURCE_DIR}/constitutive_relations/generic_evaluators)
-include_directories(${ATS_SOURCE_DIR}/pks/flow/constitutive_relations/wrm)
-include_directories(${ATS_SOURCE_DIR}/pks/flow/constitutive_relations/porosity)
-include_directories(${ATS_SOURCE_DIR}/operators/upwinding)
-include_directories(${ATS_SOURCE_DIR}/operators/advection)
+include_directories(${TRANSPORT_SOURCE_DIR})
+include_directories(${ATS_SOURCE_DIR}/src/pks)
+include_directories(${ATS_SOURCE_DIR}/src/constitutive_relations/eos)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow)
+include_directories(${ATS_SOURCE_DIR}/src/pks/energy)
+include_directories(${ATS_SOURCE_DIR}/src/pks/transport)
+include_directories(${ATS_SOURCE_DIR}/src/constitutive_relations/generic_evaluators)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/wrm)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/porosity)
+include_directories(${ATS_SOURCE_DIR}/src/operators/upwinding)
+include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/constitutive_relations)
 
 set(ats_mpc_src_files
   weak_mpc.cc
+  DomainSetMPC.cc
   operator_split_mpc.cc
   weak_mpc_semi_coupled.cc
   weak_mpc_semi_coupled_deform.cc
@@ -36,10 +38,13 @@ set(ats_mpc_src_files
   mpc_surface_subsurface_helpers.cc
   weak_mpc_semi_coupled_helper.cc
   mpc_weak_subgrid.cc
+  mpc_weak_domain_decomposition.cc
   mpc_delegate_ewc.cc
   mpc_reactivetransport_pk.cc
   mpc_flowreactivetransport_pk.cc
+  mpc_coupled_reactive_transport_pk.cc
   mpc_delegate_ewc_subsurface.cc
+  mpc_delegate_ewc_surface.cc
   mpc_delegate_water.cc
   mpc_coupled_water.cc
   mpc_coupled_water_split_flux.cc
@@ -58,6 +63,7 @@ set(ats_mpc_inc_files
   mpc.hh
   weak_mpc.hh
   strong_mpc.hh
+  DomainSetMPC.hh
   operator_split_mpc.hh
   weak_mpc_semi_coupled.hh
   weak_mpc_semi_coupled_deform.hh
@@ -66,10 +72,13 @@ set(ats_mpc_inc_files
   mpc_surface_subsurface_helpers.hh
   weak_mpc_semi_coupled_helper.hh
   mpc_weak_subgrid.hh
+  mpc_weak_domain_decomposition.hh
   mpc_delegate_ewc.hh
   mpc_reactivetransport_pk.hh
   mpc_flowreactivetransport_pk.hh
+  mpc_coupled_reactive_transport_pk.hh
   mpc_delegate_ewc_subsurface.hh
+  mpc_delegate_ewc_surface.hh
   mpc_delegate_water.hh
   mpc_coupled_water.hh
   mpc_coupled_transport.hh
@@ -81,6 +90,7 @@ set(ats_mpc_inc_files
   mpc_surface.hh
   mpc_permafrost.hh
   biomass_evaluator.hh
+  mpc_weak_domain_decomposition.hh
   )
 
 set(ats_mpc_link_libs
@@ -123,6 +133,11 @@ register_evaluator_with_factory(
   )
 
 register_evaluator_with_factory(
+  HEADERFILE DomainSetMPC_reg.hh
+  LISTNAME   ATS_MPC_REG
+  )
+
+register_evaluator_with_factory(
   HEADERFILE mpc_predictor_corrector_reg.hh
   LISTNAME   ATS_MPC_REG
   )
@@ -146,6 +161,11 @@ register_evaluator_with_factory(
    HEADERFILE mpc_reactivetransport_pk_reg.hh
    LISTNAME   ATS_MPC_REG
    )
+ 
+register_evaluator_with_factory(
+  HEADERFILE mpc_coupled_reactive_transport_pk_reg.hh
+  LISTNAME   ATS_MPC_REG
+  )
 
 register_evaluator_with_factory(
    HEADERFILE mpc_morphology_reg.hh
@@ -214,6 +234,11 @@ register_evaluator_with_factory(
   )
 
 register_evaluator_with_factory(
+  HEADERFILE mpc_weak_domain_decomposition_reg.hh
+  LISTNAME   ATS_MPC_REG
+  )
+
+register_evaluator_with_factory(
   HEADERFILE weak_mpc_semi_coupled_deform_reg.hh
   LISTNAME   ATS_MPC_REG
   )
@@ -228,7 +253,5 @@ generate_evaluators_registration_header(
   LISTNAME   ATS_MPC_REG
   INSTALL    True
 )
-
-
 
 

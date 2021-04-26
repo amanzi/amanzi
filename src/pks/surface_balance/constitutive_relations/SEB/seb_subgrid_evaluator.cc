@@ -5,7 +5,7 @@ ATS
 
 License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon (coonet @ ornl.gov)
-   
+
  ------------------------------------------------------------------------- */
 
 //! SubgridEvaluator: evaluates the Surface Energy Balance model on subgrid units.
@@ -22,7 +22,6 @@ to first cover water (likely ice), then cover land, as both water and snow
 prefer low-lying depressions due to gravity- and wind-driven redistributions,
 respectively.
 
-* 
 
 */
 
@@ -68,6 +67,9 @@ SubgridEvaluator::SubgridEvaluator(Teuchos::ParameterList& plist) :
     domain_ = std::string("surface_") + domain;
     domain_snow_ = std::string("snow_") + domain;
   }
+  domain_ = plist.get<std::string>("surface domain name", domain_);
+  domain_ss_ = plist.get<std::string>("subsurface domain name", domain_ss_);
+  domain_snow_ = plist.get<std::string>("snow domain name", domain_snow_);
 
   // my keys
   // -- sources
@@ -84,7 +86,7 @@ SubgridEvaluator::SubgridEvaluator(Teuchos::ParameterList& plist) :
 
   new_snow_key_ = Keys::readKey(plist, domain_snow_, "new snow source", "source");
   my_keys_.push_back(new_snow_key_);
-  
+
   // diagnostics and debugging
   diagnostics_ = plist.get<bool>("save diagnostic data", false);
   if (diagnostics_) {
@@ -92,6 +94,7 @@ SubgridEvaluator::SubgridEvaluator(Teuchos::ParameterList& plist) :
     albedo_key_ = Keys::readKey(plist, domain_, "albedo", "albedo");
     melt_key_ = Keys::readKey(plist, domain_, "snowmelt", "snowmelt");
     evap_key_ = Keys::readKey(plist, domain_, "evaporation", "evaporative_flux");
+    my_keys_.push_back(evap_key_);
     snow_temp_key_ = Keys::readKey(plist, domain_snow_, "snow temperature", "temperature");
     qE_sh_key_ = Keys::readKey(plist, domain_, "sensible heat flux", "qE_sensible_heat");
     qE_lh_key_ = Keys::readKey(plist, domain_, "latent heat of evaporation", "qE_latent_heat");
@@ -99,8 +102,8 @@ SubgridEvaluator::SubgridEvaluator(Teuchos::ParameterList& plist) :
     qE_lw_out_key_ = Keys::readKey(plist, domain_, "outgoing longwave radiation", "qE_lw_out");
     qE_cond_key_ = Keys::readKey(plist, domain_, "conducted energy flux", "qE_conducted");
   }
-  
-  // dependencies  
+
+  // dependencies
   // -- met data
   met_sw_key_ = Keys::readKey(plist, domain_,"incoming shortwave radiation", "incoming_shortwave_radiation");
   dependencies_.insert(met_sw_key_);
@@ -125,9 +128,7 @@ SubgridEvaluator::SubgridEvaluator(Teuchos::ParameterList& plist) :
   snow_death_rate_key_ = Keys::readKey(plist, domain_snow_, "snow death rate", "death_rate");
   dependencies_.insert(snow_death_rate_key_);
 
-  // -- skin properties  
-  ponded_depth_key_ = Keys::readKey(plist, domain_, "ponded depth", "ponded_depth");
-  dependencies_.insert(ponded_depth_key_);
+  // -- skin properties
   unfrozen_fraction_key_ = Keys::readKey(plist, domain_, "unfrozen fraction", "unfrozen_fraction");
   dependencies_.insert(unfrozen_fraction_key_);
   sg_albedo_key_ = Keys::readKey(plist, domain_, "subgrid albedos", "subgrid_albedos");
@@ -146,21 +147,21 @@ SubgridEvaluator::SubgridEvaluator(Teuchos::ParameterList& plist) :
   dependencies_.insert(sat_gas_key_);
   poro_key_ = Keys::readKey(plist, domain_ss_, "porosity", "porosity");
   dependencies_.insert(poro_key_);
+  ss_pres_key_ = Keys::readKey(plist, domain_ss_, "subsurface pressure", "pressure");
+  dependencies_.insert(ss_pres_key_);
 
   // parameters
-  min_wind_speed_ = plist.get<double>("minimum wind speed [m/s]?", 1.0);
+  min_rel_hum_ = plist.get<double>("minimum relative humidity [-]", 0.1);
+  min_wind_speed_ = plist.get<double>("minimum wind speed [m s^-1]", 1.0);
   wind_speed_ref_ht_ = plist.get<double>("wind speed reference height [m]", 2.0);
+  AMANZI_ASSERT(wind_speed_ref_ht_ > 0.);
   dessicated_zone_thickness_ = plist.get<double>("dessicated zone thickness [m]", 0.1);
   AMANZI_ASSERT(dessicated_zone_thickness_ > 0.);
 
+  ss_topcell_based_evap_ = plist.get<bool>("subsurface top cell based evaporation", false);
+
   roughness_bare_ground_ = plist.get<double>("roughness length of bare ground [m]", 0.04);
   roughness_snow_covered_ground_ = plist.get<double>("roughness length of snow-covered ground [m]", 0.004);
-  snow_ground_trans_ = plist.get<double>("snow-ground transitional depth [m]", 0.02);
-  min_snow_trans_ = plist.get<double>("minimum snow transitional depth", 1.e-8);
-  if (min_snow_trans_ < 0. || snow_ground_trans_ < min_snow_trans_) {
-    Errors::Message message("Invalid parameters: snow-ground transitional depth or minimum snow transitional depth.");
-    Exceptions::amanzi_throw(message);
-  }
 }
 
 void
@@ -182,9 +183,8 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const auto& snow_volumetric_depth = *S->GetFieldData(snow_depth_key_)->ViewComponent("cell",false);
   const auto& snow_dens = *S->GetFieldData(snow_dens_key_)->ViewComponent("cell",false);
   const auto& snow_death_rate = *S->GetFieldData(snow_death_rate_key_)->ViewComponent("cell",false);
-  
+
   // collect skin properties
-  const auto& ponded_depth = *S->GetFieldData(ponded_depth_key_)->ViewComponent("cell",false);
   const auto& unfrozen_fraction = *S->GetFieldData(unfrozen_fraction_key_)->ViewComponent("cell",false);
   const auto& sg_albedo = *S->GetFieldData(sg_albedo_key_)->ViewComponent("cell",false);
   const auto& emissivity = *S->GetFieldData(sg_emissivity_key_)->ViewComponent("cell",false);
@@ -195,6 +195,7 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   // collect subsurface properties
   const auto& sat_gas = *S->GetFieldData(sat_gas_key_)->ViewComponent("cell",false);
   const auto& poro = *S->GetFieldData(poro_key_)->ViewComponent("cell",false);
+  const auto& ss_pres = *S->GetFieldData(ss_pres_key_)->ViewComponent("cell",false);
 
   // collect output vecs
   auto& mass_source = *results[0]->ViewComponent("cell",false);
@@ -236,7 +237,7 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     qE_cond = S->GetFieldData(qE_cond_key_, qE_cond_key_)->ViewComponent("cell",false).get();
     qE_cond->PutScalar(0.);
   }
-  
+
   unsigned int ncells = mass_source.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
     // get the top cell
@@ -252,36 +253,24 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     met.QswIn = qSW_in[0][c];
     met.QlwIn = qLW_in[0][c];
     met.air_temp = air_temp[0][c];
-    met.relative_humidity = rel_hum[0][c];
+    met.relative_humidity = std::max(rel_hum[0][c], min_rel_hum_);
     met.Pr = Prain[0][c];
-    
+
     // bare ground column
     if (area_fracs[0][c] > 0.) {
       SEBPhysics::GroundProperties surf;
       surf.temp = surf_temp[0][c];
-      surf.pressure = surf_pres[0][c];
+      surf.pressure = std::min<double>(surf_pres[0][c], 101325.);
+      if (ss_topcell_based_evap_)
+        surf.pressure = ss_pres[0][cells[0]];
       surf.roughness = roughness_bare_ground_;
       surf.density_w = params.density_water; // NOTE: could update this to use true density! --etc
       surf.dz = dessicated_zone_thickness_;
       surf.albedo = sg_albedo[0][c];
       surf.emissivity = emissivity[0][c];
 
-      if (area_fracs[1][c] == 0) {
-        if (ponded_depth[0][c] > params.water_ground_transition_depth) {
-          surf.porosity = 1.;
-          surf.saturation_gas = 0.;
-          surf.ponded_depth = ponded_depth[0][c];
-        } else {
-          double factor = std::max(ponded_depth[0][c],0.)/params.water_ground_transition_depth;
-          surf.porosity = 1. * factor + poro[0][cells[0]] * (1-factor);
-          surf.saturation_gas = (1-factor) * sat_gas[0][cells[0]];
-          surf.ponded_depth = ponded_depth[0][c];
-        }
-      } else {
-        surf.porosity = poro[0][cells[0]];
-        surf.saturation_gas = sat_gas[0][cells[0]];
-        surf.ponded_depth = 0.;
-      }
+      surf.porosity = poro[0][cells[0]];
+      surf.saturation_gas = sat_gas[0][cells[0]];
       surf.unfrozen_fraction = unfrozen_fraction[0][c];
 
       // must ensure that energy is put into melting snow precip, even if it
@@ -304,11 +293,19 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       energy_source[0][c] += area_fracs[0][c] * flux.E_surf * 1.e-6; // convert to MW/m^2
 
       double area_to_volume = mesh.cell_volume(c) / mesh_ss.cell_volume(cells[0]);
-      ss_mass_source[0][cells[0]] += area_fracs[0][c] * flux.M_subsurf * area_to_volume * params.density_water / 0.0180153; // convert from m/m^2/s to mol/m^3/s
-      ss_energy_source[0][cells[0]] += area_fracs[0][c] * flux.E_subsurf * area_to_volume * 1.e-6; // convert from W/m^2 to MW/m^3
+      double ss_mass_source_l = flux.M_subsurf * area_to_volume * params.density_water / 0.0180153; // convert from m/m^2/s to mol/m^3/s
+      ss_mass_source[0][cells[0]] += area_fracs[0][c] * ss_mass_source_l;
+      double ss_energy_source_l = flux.E_subsurf * area_to_volume * 1.e-6; // convert from W/m^2 to MW/m^3
+      ss_energy_source[0][cells[0]] += area_fracs[0][c] * ss_energy_source_l;
 
       snow_source[0][c] += area_fracs[0][c] * flux.M_snow;
       new_snow[0][c] += area_fracs[0][c] * met.Ps;
+
+      if (vo_->os_OK(Teuchos::VERB_EXTREME))
+        *vo_->os() << "CELL " << c << " BARE"
+                    << ": Ms = " << flux.M_surf << ", Es = " << flux.E_surf * 1.e-6
+                    << ", Mss = " << ss_mass_source_l << ", Ess = " << ss_energy_source_l
+                    << ", Sn = " << flux.M_snow << std::endl;
 
       // diagnostics
       if (diagnostics_) {
@@ -318,12 +315,12 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         (*qE_lw_out)[0][c] += area_fracs[0][c] * eb.fQlwOut;
         (*qE_cond)[0][c] += area_fracs[0][c] * eb.fQc;
         (*albedo)[0][c] += area_fracs[0][c] * surf.albedo;
-        
+
         if (area_fracs[2][c] == 0.) {
           (*qE_sm)[0][c] += area_fracs[0][c] * eb.fQm;
           (*melt_rate)[0][c] += area_fracs[0][c] * mb.Mm;
           (*snow_temp)[0][c] = 273.15;
-        }          
+        }
       }
     }
 
@@ -332,21 +329,16 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       SEBPhysics::GroundProperties surf;
       surf.temp = surf_temp[0][c];
       surf.pressure = surf_pres[0][c];
+      if (ss_topcell_based_evap_)
+        surf.pressure = ss_pres[0][cells[0]];
       surf.roughness = roughness_bare_ground_;
       surf.density_w = params.density_water; // NOTE: could update this to use true density! --etc
       surf.dz = dessicated_zone_thickness_;
       surf.emissivity = emissivity[1][c];
       surf.albedo = sg_albedo[1][c];
 
-      if (ponded_depth[0][c] > params.water_ground_transition_depth) {
-        surf.porosity = 1.;
-        surf.saturation_gas = 0.;
-      } else {
-        double factor = std::max(ponded_depth[0][c],0.)/params.water_ground_transition_depth;
-        surf.porosity = 1. * factor + poro[0][cells[0]] * (1-factor);
-        surf.saturation_gas = (1-factor) * sat_gas[0][cells[0]];
-      }
-      surf.ponded_depth = ponded_depth[0][c];
+      surf.porosity = 1.;
+      surf.saturation_gas = 0.;
       surf.unfrozen_fraction = unfrozen_fraction[0][c];
 
       // must ensure that energy is put into melting snow precip, even if it
@@ -369,11 +361,19 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       energy_source[0][c] += area_fracs[1][c] * flux.E_surf * 1.e-6;
 
       double area_to_volume = mesh.cell_volume(c) / mesh_ss.cell_volume(cells[0]);
-      ss_mass_source[0][cells[0]] += area_fracs[1][c] * flux.M_subsurf * area_to_volume * params.density_water / 0.0180153; // convert from m/m^2/s to mol/m^3/s
-      ss_energy_source[0][cells[0]] += area_fracs[1][c] * flux.E_subsurf * area_to_volume * 1.e-6; // convert from W/m^2 to MW/m^3
+      double ss_mass_source_l = flux.M_subsurf * area_to_volume * params.density_water / 0.0180153; // convert from m/m^2/s to mol/m^3/s
+      ss_mass_source[0][cells[0]] += area_fracs[1][c] * ss_mass_source_l;
+      double ss_energy_source_l = flux.E_subsurf * area_to_volume * 1.e-6; // convert from W/m^2 to MW/m^3
+      ss_energy_source[0][cells[0]] += area_fracs[1][c] * ss_energy_source_l;
 
       snow_source[0][c] += area_fracs[1][c] * flux.M_snow;
       new_snow[0][c] += area_fracs[1][c] * met.Ps;
+
+      if (vo_->os_OK(Teuchos::VERB_EXTREME))
+        *vo_->os() << "CELL " << c << " WATER"
+                    << ": Ms = " << flux.M_surf << ", Es = " << flux.E_surf * 1.e-6
+                    << ", Mss = " << ss_mass_source_l << ", Ess = " << ss_energy_source_l
+                    << ", Sn = " << flux.M_snow << std::endl;
 
       // diagnostics
       if (diagnostics_) {
@@ -383,12 +383,12 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         (*qE_lw_out)[0][c] += area_fracs[1][c] * eb.fQlwOut;
         (*qE_cond)[0][c] += area_fracs[1][c] * eb.fQc;
         (*albedo)[0][c] += area_fracs[1][c] * surf.albedo;
-        
+
         if (area_fracs[2][c] == 0.) {
           (*qE_sm)[0][c] += area_fracs[1][c] * eb.fQm;
           (*melt_rate)[0][c] += area_fracs[1][c] * mb.Mm;
           (*snow_temp)[0][c] = 273.15;
-        }          
+        }
       }
     }
 
@@ -397,6 +397,7 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       SEBPhysics::GroundProperties surf;
       surf.temp = surf_temp[0][c];
       surf.pressure = surf_pres[0][c];
+      if (ss_topcell_based_evap_) surf.pressure = ss_pres[0][cells[0]];
       surf.roughness = roughness_bare_ground_;
       surf.density_w = params.density_water; // NOTE: could update this to use true density! --etc
       surf.dz = dessicated_zone_thickness_;
@@ -405,21 +406,19 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
       surf.saturation_gas = 0.;
       surf.porosity = 1.;
-      surf.ponded_depth = 0.;
       surf.unfrozen_fraction = unfrozen_fraction[0][c];
 
       met.Ps = Psnow[0][c] / area_fracs[2][c];
-      
+
       SEBPhysics::SnowProperties snow;
       // take the snow height to be some measure of average thickness -- use
       // volumetric snow depth divided by the area fraction of snow
       snow.height = snow_volumetric_depth[0][c] / area_fracs[2][c];
 
-      AMANZI_ASSERT(snow.height >= snow_ground_trans_ - 1.e-6);
-       // area_fracs may have been set to 1 for snow depth < snow_ground_trans
-       // due to min fractional area option in area_fractions evaluator.
-       // Decreasing the tol by 1e-6 is about equivalent to a min fractional
-       // area of 1e-5 (the default)
+      // area_fracs may have been set to 1 for snow depth < snow_ground_trans
+      // due to min fractional area option in area_fractions evaluator.
+      // Decreasing the tol by 1e-6 is about equivalent to a min fractional
+      // area of 1e-5 (the default)
       snow.density = snow_dens[0][c];
       snow.albedo = surf.albedo;
       snow.emissivity = surf.emissivity;
@@ -435,6 +434,12 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       snow_source[0][c] += area_fracs[2][c] * flux.M_snow;
       new_snow[0][c] += (met.Ps + std::max(mb.Me, 0.)) * area_fracs[2][c];
 
+      if (vo_->os_OK(Teuchos::VERB_EXTREME))
+        *vo_->os() << "CELL " << c << " SNOW"
+                    << ": Ms = " << flux.M_surf << ", Es = " << flux.E_surf * 1.e-6
+                    << ", Mss = " << 0. << ", Ess = " << 0.
+                    << ", Sn = " << flux.M_snow << std::endl;
+
       // diagnostics
       if (diagnostics_) {
         (*evap_rate)[0][c] -= area_fracs[2][c] * mb.Me;
@@ -447,7 +452,7 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         (*melt_rate)[0][c] = area_fracs[2][c] * mb.Mm;
         (*snow_temp)[0][c] = snow.temp;
         (*albedo)[0][c] += area_fracs[2][c] * surf.albedo;
-      }          
+      }
     }
   }
 
@@ -464,14 +469,14 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     vnames.clear();
     vecs.clear();
-    
+
     vnames.clear();
     vecs.clear();
-    vnames.push_back("air_temp"); 
+    vnames.push_back("air_temp");
     vecs.push_back(S->GetFieldData(met_air_temp_key_).ptr());
-    vnames.push_back("rel_hum"); 
+    vnames.push_back("rel_hum");
     vecs.push_back(S->GetFieldData(met_rel_hum_key_).ptr());
-    vnames.push_back("precip_rain"); 
+    vnames.push_back("precip_rain");
     vecs.push_back(S->GetFieldData(met_prain_key_).ptr());
     vnames.push_back("precip_snow");
     vecs.push_back(S->GetFieldData(met_psnow_key_).ptr());
@@ -481,15 +486,13 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     vnames.clear();
     vecs.clear();
 
-    vnames.push_back("p_ground"); 
+    vnames.push_back("p_ground");
     vecs.push_back(S->GetFieldData(surf_pres_key_).ptr());
-    vnames.push_back("ponded_depth"); 
-    vecs.push_back(S->GetFieldData(ponded_depth_key_).ptr());
-    vnames.push_back("unfrozen_fraction"); 
+    vnames.push_back("unfrozen_fraction");
     vecs.push_back(S->GetFieldData(unfrozen_fraction_key_).ptr());
-    vnames.push_back("vol_snow_depth"); 
+    vnames.push_back("vol_snow_depth");
     vecs.push_back(S->GetFieldData(snow_depth_key_).ptr());
-    vnames.push_back("snow_death"); 
+    vnames.push_back("snow_death");
     vecs.push_back(S->GetFieldData(snow_death_rate_key_).ptr());
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
@@ -497,9 +500,9 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     vnames.clear();
     vecs.clear();
 
-    vnames.push_back("T_ground"); 
+    vnames.push_back("T_ground");
     vecs.push_back(S->GetFieldData(surf_temp_key_).ptr());
-    vnames.push_back("snow_temp"); 
+    vnames.push_back("snow_temp");
     vecs.push_back(S->GetFieldData(snow_temp_key_).ptr());
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
@@ -507,19 +510,19 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     vnames.clear();
     vecs.clear();
 
-    vnames.push_back("inc shortwave radiation"); 
+    vnames.push_back("inc shortwave radiation");
     vecs.push_back(S->GetFieldData(met_sw_key_).ptr());
     vnames.push_back("inc longwave radiation");
     vecs.push_back(S->GetFieldData(met_lw_key_).ptr());
-    vnames.push_back("inc latent heat"); 
+    vnames.push_back("inc latent heat");
     vecs.push_back(S->GetFieldData(qE_lh_key_).ptr());
-    vnames.push_back("inc sensible heat"); 
+    vnames.push_back("inc sensible heat");
     vecs.push_back(S->GetFieldData(qE_sh_key_).ptr());
-    vnames.push_back("out longwave radiation"); 
+    vnames.push_back("out longwave radiation");
     vecs.push_back(S->GetFieldData(qE_lw_out_key_).ptr());
-    vnames.push_back("out conducted energy"); 
+    vnames.push_back("out conducted energy");
     vecs.push_back(S->GetFieldData(qE_cond_key_).ptr());
-    vnames.push_back("out melting energy"); 
+    vnames.push_back("out melting energy");
     vecs.push_back(S->GetFieldData(qE_sm_key_).ptr());
 
     db_->WriteVectors(vnames, vecs, true);
@@ -527,30 +530,40 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     vnames.clear();
     vecs.clear();
-    
-    vnames.push_back("water_src"); 
+
+    vnames.push_back("water_src");
     vecs.push_back(S->GetFieldData(mass_source_key_).ptr());
-    vnames.push_back("evap flux"); 
+    vnames.push_back("evap flux");
     vecs.push_back(S->GetFieldData(evap_key_).ptr());
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
+
+
+    *vo_->os() << "CELL " << 0 << " TOTAL"
+                    << ": Ms = " << mass_source[0][0] << ", Es = " << energy_source[0][0]
+                    << ", Mss = " << ss_mass_source[0][99] << ", Ess = " << ss_energy_source[0][99]
+                    << ", Sn = " << snow_source[0][0] << std::endl;
+
 
     vnames.clear();
     vecs.clear();
     vnames.push_back("mass src");
     vnames.push_back("energy src");
-    vnames.push_back("sub mass src");
-    vnames.push_back("sub energy src");
     vnames.push_back("snow src");
     vnames.push_back("new snow");
     vecs.push_back(results[0]);
     vecs.push_back(results[1]);
-    vecs.push_back(results[2]);
-    vecs.push_back(results[3]);
     vecs.push_back(results[4]);
     vecs.push_back(results[5]);
-
     db_->WriteVectors(vnames, vecs, true);
+
+    vnames.clear();
+    vecs.clear();
+    vnames.push_back("sub mass src");
+    vnames.push_back("sub energy src");
+    vecs.push_back(results[2]);
+    vecs.push_back(results[3]);
+    db_ss_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
   }
 }
@@ -568,9 +581,21 @@ SubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
     // update the vo?
     if (plist_.isSublist(domain_ + " verbose object")) {
       plist_.set("verbose object", plist_.sublist(domain_ + " verbose object"));
-      vo_ = Teuchos::rcp(new VerboseObject(*S->GetMesh(domain_)->get_comm(), plist_.name(), plist_));
+      vo_ = Teuchos::rcp(new VerboseObject(*S->GetMesh(domain_)->get_comm(), Keys::cleanPListName(plist_.name()), plist_));
     }
     db_ = Teuchos::rcp(new Debugger(S->GetMesh(domain_), my_keys_[0], plist_));
+  }
+  if (db_ss_ == Teuchos::null) {
+    Teuchos::ParameterList plist(plist_);
+    plist.remove("debug cells", false);
+    plist.remove("debug faces", false);
+    if (plist.isParameter("subsurface debug cells")) {
+      plist.set("debug cells", plist.get<Teuchos::Array<int>>("subsurface debug cells"));
+    } else {
+    }
+    if (plist.isParameter("subsurface debug faces"))
+      plist.set("debug faces", plist.get<Teuchos::Array<int>>("subsurface debug faces"));
+    db_ss_ = Teuchos::rcp(new Debugger(S->GetMesh(domain_ss_), my_keys_[0], plist));
   }
 
   // see if we can find a master fac
@@ -593,7 +618,7 @@ SubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
   domain_fac_owned_ss.SetMesh(S->GetMesh(domain_ss_))
       ->SetGhosted()
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  
+
   CompositeVectorSpace domain_fac_3;
   domain_fac_3.SetMesh(S->GetMesh(domain_))
       ->SetGhosted()
@@ -608,7 +633,7 @@ SubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
   domain_fac_snow.SetMesh(S->GetMesh(domain_snow_))
       ->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  
+
   for (auto my_key : my_keys_) {
     auto my_fac = S->RequireField(my_key, my_key);
     if (Keys::getDomain(my_key) == domain_snow_) {
@@ -649,7 +674,7 @@ SubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
     S->GetField(qE_lw_out_key_, qE_lw_out_key_)->set_initialized(true);
     S->GetField(qE_cond_key_, qE_cond_key_)->set_initialized(true);
   }
-  
+
   for (auto dep_key : dependencies_) {
     auto fac = S->RequireField(dep_key);
     if (Keys::getDomain(dep_key) == domain_ss_) {

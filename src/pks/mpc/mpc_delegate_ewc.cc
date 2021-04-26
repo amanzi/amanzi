@@ -34,7 +34,6 @@ void MPCDelegateEWC::setup(const Teuchos::Ptr<State>& S) {
   std::string name = plist_->get<std::string>("PK name")+std::string(" EWC");
 
   // Get the mesh
-
   Key domain = plist_->get<std::string>("domain name", "");
 
   if (domain.size() != 0) {
@@ -47,13 +46,13 @@ void MPCDelegateEWC::setup(const Teuchos::Ptr<State>& S) {
   db_ = Teuchos::rcp(new Debugger(mesh_, name, *plist_));
 
   // Process the parameter list for data Keys
-  pres_key_ = plist_->get<std::string>("pressure key", Keys::getKey(domain, "pressure"));
-  temp_key_ = plist_->get<std::string>("temperature key", Keys::getKey(domain,"temperature"));
- 
-  e_key_ = plist_->get<std::string>("energy key", Keys::getKey(domain, "energy"));
-  wc_key_ = plist_->get<std::string>("water content key", Keys::getKey(domain,"water_content"));
-  cv_key_ = plist_->get<std::string>("cell volume key", Keys::getKey(domain, "cell_volume"));
-  
+  pres_key_ = Keys::readKey(*plist_, domain, "pressure", "pressure");
+  temp_key_ = Keys::readKey(*plist_, domain, "temperature", "temperature");
+
+  e_key_ = Keys::readKey(*plist_, domain, "energy", "energy");
+  wc_key_ = Keys::readKey(*plist_, domain, "water content", "water_content");
+  cv_key_ = Keys::readKey(*plist_, domain, "cell volume", "cell_volume");
+
   // Process the parameter list for methods
   std::string precon_string = plist_->get<std::string>("preconditioner type", "none");
   if (precon_string == "none") {
@@ -204,25 +203,25 @@ int MPCDelegateEWC::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
 
 
 void MPCDelegateEWC::update_precon_ewc_(double t, Teuchos::RCP<const TreeVector> up, double h) {
-  Key dedT_key = std::string("d")+e_key_+std::string("_d")+temp_key_;
+  Key dedT_key = Keys::getKey(e_key_, temp_key_);
   S_next_->GetFieldEvaluator(e_key_)
       ->HasFieldDerivativeChanged(S_next_.ptr(), "ewc", temp_key_);
   const Epetra_MultiVector& dedT = *S_next_->GetFieldData(dedT_key)
       ->ViewComponent("cell",false);
 
-  Key dedp_key = std::string("d")+e_key_+std::string("_d")+pres_key_;
+  Key dedp_key = Keys::getKey(e_key_, pres_key_);
   S_next_->GetFieldEvaluator(e_key_)
       ->HasFieldDerivativeChanged(S_next_.ptr(), "ewc", pres_key_);
   const Epetra_MultiVector& dedp = *S_next_->GetFieldData(dedp_key)
       ->ViewComponent("cell",false);
 
-  Key dwcdT_key = std::string("d")+wc_key_+std::string("_d")+temp_key_;
+  Key dwcdT_key = Keys::getKey(wc_key_, temp_key_);
   S_next_->GetFieldEvaluator(wc_key_)
       ->HasFieldDerivativeChanged(S_next_.ptr(), "ewc", temp_key_);
   const Epetra_MultiVector& dwcdT = *S_next_->GetFieldData(dwcdT_key)
       ->ViewComponent("cell",false);
 
-  Key dwcdp_key = std::string("d")+wc_key_+std::string("_d")+pres_key_;
+  Key dwcdp_key = Keys::getKey(wc_key_, pres_key_);
   S_next_->GetFieldEvaluator(wc_key_)
       ->HasFieldDerivativeChanged(S_next_.ptr(), "ewc", pres_key_);
   const Epetra_MultiVector& dwcdp = *S_next_->GetFieldData(dwcdp_key)

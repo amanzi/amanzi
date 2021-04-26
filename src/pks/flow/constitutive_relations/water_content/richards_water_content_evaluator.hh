@@ -1,32 +1,27 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  ATS is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
 */
-//! The Richards water content evaluator is an algebraic evaluator for liquid only water content
-
+//! Richards water content evaluator: the standard form as a function of liquid saturation.
 /*!
-  Generated via evaluator_generator with:
-Richards water content evaluator: the standard form as a function of liquid saturation.
 
 .. math::
-  Theta = n * s * phi * cell volume
+  \Theta = n s \phi V
 
-``[field-evaluator-type-richards-water-content-spec]``
+Specified with evaluator type: `"richards water content`"
 
-* `"porosity key`" ``[string]`` **DOMAIN-porosity** 
-* `"molar density liquid key`" ``[string]`` **DOMAIN-molar_density_liquid** 
-* `"saturation liquid key`" ``[string]`` **DOMAIN-saturation_liquid** 
-* `"cell volume key`" ``[string]`` **DOMAIN-cell_volume**
+.. _field-evaluator-type-richards-water-content-spec:
+.. admonition:: field-evaluator-type-richards-water-content-spec
 
-EVALUATORS:
-- `"porosity`"
-- `"molar density liquid`"
-- `"saturation liquid`"
-- `"cell volume`"
+   DEPENDENCIES:
+
+   - `"porosity`"
+   - `"molar density liquid`"
+   - `"saturation liquid`"
+   - `"cell volume`"
 
 */
 

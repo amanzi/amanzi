@@ -29,21 +29,36 @@ void StandaloneElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr
 
   Teuchos::Ptr<CompositeVector> elev = results[0];
   Teuchos::Ptr<CompositeVector> slope = results[1];
+  Teuchos::Ptr<CompositeVector> aspect = results[2];
 
   // If necessary, create the functions from paramater lists.
   if (elevation_function_ == Teuchos::null) {
     Teuchos::ParameterList plist = plist_.sublist("elevation function");
-    elevation_function_ = Functions::CreateCompositeVectorFunction(plist, elev->Map());
+    std::vector<std::string> compnames;
+    elevation_function_ = Functions::CreateCompositeVectorFunction(plist, elev->Map(), compnames);
+    // note, should check that cells exist?
   }
 
   if (slope_function_ == Teuchos::null) {
     Teuchos::ParameterList slope_plist = plist_.sublist("slope function");
-    slope_function_ = Functions::CreateCompositeVectorFunction(slope_plist, slope->Map());
+    std::vector<std::string> compnames;
+    slope_function_ = Functions::CreateCompositeVectorFunction(slope_plist, slope->Map(), compnames);
+    // note, should check that cells exist?
   }
 
+  if (aspect_function_ == Teuchos::null) {
+    if (plist_.isSublist("aspect function")) {
+      Teuchos::ParameterList aspect_plist = plist_.sublist("aspect function");
+      std::vector<std::string> compnames;
+      aspect_function_ = Functions::CreateCompositeVectorFunction(aspect_plist, aspect->Map(), compnames);
+      // note, should check that cells exist?
+    }
+  }
+  
   // Evaluate the functions.
   elevation_function_->Compute(S->time(), elev);
   slope_function_->Compute(S->time(), slope);
+  if (aspect_function_.get()) aspect_function_->Compute(S->time(), aspect);
 };
 
 

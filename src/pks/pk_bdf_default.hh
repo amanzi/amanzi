@@ -25,11 +25,11 @@ PKs.
     * `"assemble preconditioner`" ``[bool]`` **true** A flag, typically not set
       by user but by an MPC.
 
-    * `"time integrator`" ``[implicit-time-integrator-typed-spec]`` **optional**
-      A TimeIntegrator_.  Note that this is only provided if this PK is not
+    * `"time integrator`" ``[bdf1-ti-spec]`` **optional**
+      A TimeIntegrator_.  Note that this is only required if this PK is not
       strongly coupled to other PKs.
 
-    * `"preconditioner`" ``[preconditioner-typed-spec]`` **optional** A Preconditioner_.
+    * `"inverse`" ``[inverse-typed-spec]`` **optional** A Preconditioner_.
       Note that this is only used if this PK is not strongly coupled to other PKs.
 
     INCLUDES:
@@ -54,17 +54,14 @@ PKs.
 namespace Amanzi {
 
 class PK_BDF_Default : public PK_BDF {
-
  public:
-
-
   PK_BDF_Default(Teuchos::ParameterList& pk_tree,
                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
                  const Teuchos::RCP<State>& S,
                  const Teuchos::RCP<TreeVector>& solution) :
-    PK_BDF(pk_tree, glist, S, solution),
-    PK(pk_tree, glist, S, solution) {}
-  
+    PK(pk_tree, glist, S, solution),
+    PK_BDF(pk_tree, glist, S, solution) {}
+
   // Virtual destructor
   virtual ~PK_BDF_Default() {}
 
@@ -122,7 +119,6 @@ class PK_BDF_Default : public PK_BDF {
   virtual void ChangedSolution() = 0;
   virtual void ChangedSolution(const Teuchos::Ptr<State>& S) = 0;
 
- 
  protected: // data
   // preconditioner assembly control
   bool assemble_preconditioner_;

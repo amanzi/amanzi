@@ -1,6 +1,11 @@
 /*
-  Distributes transpiration based upon a rooting depth and a wilting-point water-potential factor.
+  ATS is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Ethan Coon (ecoon@lanl.gov)
 */
+//! Distributes and downregulates potential transpiration to the rooting zone.
 
 #include "Function.hh"
 #include "FunctionFactory.hh"
@@ -12,7 +17,7 @@ namespace Relations {
 
 // Constructor from ParameterList
 TranspirationDistributionEvaluator::TranspirationDistributionEvaluator(Teuchos::ParameterList& plist) :
-    SecondaryVariableFieldEvaluator(plist)
+  SecondaryVariableFieldEvaluator(plist)
 {
   InitializeFromPlist_();
 }
@@ -50,7 +55,7 @@ TranspirationDistributionEvaluator::InitializeFromPlist_()
   } else {
     limiter_local_ = plist_.get<bool>("water limiter local", true);
   }
-  
+
   // - pull Keys from plist
   // dependency: pressure
   f_wp_key_ = Keys::readKey(plist_, domain_name, "plant wilting factor", "plant_wilting_factor");
@@ -71,10 +76,26 @@ TranspirationDistributionEvaluator::InitializeFromPlist_()
   dependencies_.insert(surf_cv_key_);
 
   npfts_ = plist_.get<int>("number of PFTs", 1);
-  trans_on_date_ = plist_.get<double>("transpiration turn on date",111.) //days after winter solstice, PRMS defaults
-                   - 10; // converted to days after Jan 1
-  trans_off_date_ = plist_.get<double>("transpiration turn off date",264) // days after winter solstice, PRMS defaults
-                    - 10; // converted to days after Jan 1
+  if (npfts_ > 1) {
+    Errors::Message message("TranspirationDistributionEvaluator: it is unclear whether this evaluator works for >1 PFT.  Contact developers if you need this.");
+    Exceptions::amanzi_throw(message);
+  }
+
+  leaf_on_time_ = plist_.get<double>("leaf on time", 0);
+  std::string leaf_on_units = plist_.get<std::string>("leaf on time units", "d");
+
+  leaf_off_time_ = plist_.get<double>("leaf off time",366);
+  std::string leaf_off_units = plist_.get<std::string>("leaf on time units", "d");
+
+  year_duration_ = plist_.get<double>("year duration", 1.0);
+  std::string year_duration_units = plist_.get<std::string>("year duration units", "noleap");
+
+  // deal with units
+  Amanzi::Utils::Units units;
+  bool flag;
+  leaf_on_time_ = units.ConvertTime(leaf_on_time_, leaf_on_units, "s", flag);
+  leaf_off_time_ = units.ConvertTime(leaf_off_time_, leaf_off_units, "s", flag);
+  year_duration_ = units.ConvertTime(year_duration_, year_duration_units, "s", flag);
 }
 
 
@@ -94,11 +115,11 @@ TranspirationDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   double p_atm = *S->GetScalarData("atmospheric_pressure");
 
   // check for winter (FIXME -- evergreens!)
-  if (!TranspirationPeriod(S->time())) {
+  if (!TranspirationPeriod_(S->time())) {
     result->PutScalar(0.);
     return;
   }
-    
+
   // result, on the subsurface
   const AmanziMesh::Mesh& subsurf_mesh = *result->Mesh();
   Epetra_MultiVector& result_v = *result->ViewComponent("cell", false);
@@ -112,14 +133,10 @@ TranspirationDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       for (auto c : subsurf_mesh.cells_of_column(sc)) {
         column_total += f_wp[0][c] * f_root[pft][c] * cv[0][c];
         result_v[pft][c] = f_wp[0][c] * f_root[pft][c];
-	if (f_wp[0][c] * f_root[pft][c] > 0)
-	  var_dz += cv[0][c];
+        if (f_wp[0][c] * f_root[pft][c] > 0)
+          var_dz += cv[0][c];
       }
-      // if (column_total <= 0. && potential_trans[pft][sc] > 0.) {
-      //   Errors::Message message("TranspirationDistributionEvaluator: Broken run, non-zero transpiration draw but no cells with some roots are above the wilting point.");
-      //   Exceptions::amanzi_throw(message);
-      // }
-    
+
       if (column_total > 0.) {
         double coef = potential_trans[pft][sc] * surf_cv[0][sc] / column_total;
         if (limiter_.get()) {
@@ -129,29 +146,19 @@ TranspirationDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
           AMANZI_ASSERT(limiting_factor <= 1.);
           coef *= limiting_factor;
         }
-        
+
         for (auto c : subsurf_mesh.cells_of_column(sc)) {
-          result_v[pft][c] = result_v[pft][c] * coef;
+          result_v[pft][c] *= coef;
           if (limiter_local_) {
             result_v[pft][c] *= f_wp[0][c];
           }
-	}
-	
+        }
+
       } else {
         for (auto c : subsurf_mesh.cells_of_column(sc)) {
           result_v[pft][c] = 0.;
         }
       }
-
-      //assert (result_v[0][0] <= potential_trans[0][0]);
-// THIS ENFORCES no limiter
-// #ifdef ENABLE_DBC
-//       double new_col_total = 0.;
-//       for (auto c : subsurf_mesh.cells_of_column(sc)) {
-//         new_col_total += result_v[pft][c] * cv[0][c];
-//       }
-//       AMANZI_ASSERT(std::abs(new_col_total - trans_total[pft][sc]*surf_cv[0][sc]) < 1.e-8);
-// #endif
     }
   }
 
@@ -167,7 +174,8 @@ TranspirationDistributionEvaluator::EvaluateFieldPartialDerivative_(const Teucho
 
 
 void
-TranspirationDistributionEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
+TranspirationDistributionEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
+{
   // Ensure my field exists.  Requirements should be already set.
   AMANZI_ASSERT(!my_key_.empty());
   auto my_fac = S->RequireField(my_key_, my_key_);
@@ -180,8 +188,8 @@ TranspirationDistributionEvaluator::EnsureCompatibility(const Teuchos::Ptr<State
 
   Key domain = Keys::getDomain(my_key_);
   my_fac->SetMesh(S->GetMesh(domain))
-      ->SetComponent("cell", AmanziMesh::CELL, npfts_)
-      ->SetGhosted(true);
+    ->SetComponent("cell", AmanziMesh::CELL, npfts_)
+    ->SetGhosted(true);
 
   // Create an unowned factory to check my dependencies.
   // -- first those on the subsurface mesh
@@ -191,24 +199,24 @@ TranspirationDistributionEvaluator::EnsureCompatibility(const Teuchos::Ptr<State
 
   CompositeVectorSpace dep_fac_one;
   dep_fac_one.SetMesh(my_fac->Mesh())
-      ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+    ->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireField(f_wp_key_)->Update(dep_fac_one);
   S->RequireField(cv_key_)->Update(dep_fac_one);
 
   // -- next those on the surface mesh
   CompositeVectorSpace surf_fac;
   surf_fac.SetMesh(S->GetMesh(Keys::getDomain(surf_cv_key_)))
-      ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, npfts_);
+    ->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, npfts_);
   S->RequireField(potential_trans_key_)->Update(surf_fac);
 
   CompositeVectorSpace surf_fac_one;
   surf_fac_one.SetMesh(S->GetMesh(Keys::getDomain(surf_cv_key_)))
-      ->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+    ->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireField(surf_cv_key_)->Update(surf_fac_one);
-  
+
   // Recurse into the tree to propagate info to leaves.
   for (KeySet::const_iterator key=dependencies_.begin();
        key!=dependencies_.end(); ++key) {
@@ -217,11 +225,28 @@ TranspirationDistributionEvaluator::EnsureCompatibility(const Teuchos::Ptr<State
 }
 
 bool
-TranspirationDistributionEvaluator::TranspirationPeriod(double time) {
-  double doy = fmod(time/86400.,365.);
-  if (doy >= trans_on_date_  && doy <= trans_off_date_) return true;
-  else return false;
+TranspirationDistributionEvaluator::TranspirationPeriod_(double time)
+{
+  double time_of_year = fmod(time, year_duration_);
+  if (leaf_on_time_ < leaf_off_time_) {
+    // northern hemisphere
+    if ((leaf_on_time_ <= time_of_year) && (time_of_year < leaf_off_time_)) {
+      //summer
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    // southern hemisphere
+    if ((leaf_off_time_ <= time_of_year) && (time_of_year < leaf_on_time_)) {
+      // southern hemisphere summer
+      return true;
+    } else {
+      return false;
+    }
+  }
 }
+
 
 } //namespace
 } //namespace

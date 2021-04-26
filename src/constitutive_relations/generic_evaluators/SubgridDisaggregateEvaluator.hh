@@ -59,7 +59,6 @@ class SubgridDisaggregateEvaluator : public SecondaryVariableFieldEvaluator {
   Key source_domain_;
   Key domain_;
   Key source_key_;
-  int source_gid_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,SubgridDisaggregateEvaluator> factory_;

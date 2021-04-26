@@ -1,7 +1,6 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "EpetraExt_RowMatrixOut.h"
 
-#include "LinearOperatorFactory.hh"
 
 #include "mpc_surface_subsurface_helpers.hh"
 #include "mpc_coupled_water.hh"
@@ -30,17 +29,17 @@ MPCCoupledWater::Setup(const Teuchos::Ptr<State>& S) {
   pks_list_->sublist(names[1]).sublist("diffusion preconditioner").set("surface operator", true);
   pks_list_->sublist(names[1]).sublist("accumulation preconditioner").set("surface operator", true);
 
-  
-  domain_ss_ = plist_->get<std::string>("subsurface domain name","domain");
-  domain_surf_ = plist_->get<std::string>("surface domain name","surface");
-  // grab the meshes 
+  domain_ss_ = plist_->get<std::string>("domain name","domain");
+  domain_surf_ = (domain_ss_.empty() || domain_ss_ == "domain") ? "surface" : std::string("surface_")+domain_ss_;
+  domain_surf_ = plist_->get<std::string>("surface domain name",domain_surf_);
+  // grab the meshes
   surf_mesh_ = S->GetMesh(domain_surf_);
   domain_mesh_ = S->GetMesh(domain_ss_);
-  
+
   // cast the PKs
   domain_flow_pk_ = sub_pks_[0];
   surf_flow_pk_ = sub_pks_[1];
-  
+
   // call the MPC's setup, which calls the sub-pk's setups
   StrongMPC<PK_PhysicalBDF_Default>::Setup(S);
 
@@ -50,9 +49,14 @@ MPCCoupledWater::Setup(const Teuchos::Ptr<State>& S) {
 
   // Create the preconditioner.
   // -- collect the preconditioners
- 
   precon_ = domain_flow_pk_->preconditioner();
   precon_surf_ = surf_flow_pk_->preconditioner();
+
+  // -- set parameters for an inverse
+  Teuchos::ParameterList inv_list = plist_->sublist("inverse");
+  inv_list.setParameters(plist_->sublist("preconditioner"));
+  inv_list.setParameters(plist_->sublist("linear solver"));
+  precon_->set_inverse_parameters(inv_list);
 
   // -- push the surface local ops into the subsurface global operator
   for (Operators::Operator::op_iterator op = precon_surf_->begin();
@@ -60,20 +64,6 @@ MPCCoupledWater::Setup(const Teuchos::Ptr<State>& S) {
     precon_->OpPushBack(*op);
   }
 
-  // -- must re-symbolic assemble subsurf operators, now that they have a surface operator
-  precon_->SymbolicAssembleMatrix();
-  precon_->InitializePreconditioner(plist_->sublist("preconditioner"));
-
-
-  // Potentially create a linear solver
-  if (plist_->isSublist("linear solver")) {
-    Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
-    AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeVectorSpace> fac;
-    lin_solver_ = fac.Create(linsolve_sublist, precon_);
-  } else {
-    lin_solver_ = precon_;
-  }
-  
   // set up the Water delegate
   Teuchos::RCP<Teuchos::ParameterList> water_list = Teuchos::sublist(plist_, "water delegate");
   water_ = Teuchos::rcp(new MPCDelegateWater(water_list, domain_ss_));
@@ -152,7 +142,7 @@ int MPCCoupledWater::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
   // call the precon's inverse
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Precon applying subsurface operator." << std::endl;
-  int ierr = lin_solver_->ApplyInverse(*u->SubVector(0)->Data(), *Pu->SubVector(0)->Data());
+  int ierr = precon_->ApplyInverse(*u->SubVector(0)->Data(), *Pu->SubVector(0)->Data());
 
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Precon applying  CopySubsurfaceToSurface." << std::endl;
@@ -198,10 +188,6 @@ MPCCoupledWater::UpdatePreconditioner(double t,
   // doing the subsurface 2nd re-inits the surface matrices (and doesn't
   // refill them).  This is why subsurface is first
   StrongMPC<PK_PhysicalBDF_Default>::UpdatePreconditioner(t, up, h);
-  
-  precon_->AssembleMatrix();
-  precon_->UpdatePreconditioner();
-  
 }
 
 // -- Modify the predictor.
@@ -221,7 +207,7 @@ MPCCoupledWater::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
     MergeSubsurfaceAndSurfacePressure(*h_prev, u->SubVector(0)->Data().ptr(),
             u->SubVector(1)->Data().ptr());
   }
-  
+
 
   // Hack surface faces
   bool newly_modified = false;
@@ -270,7 +256,7 @@ MPCCoupledWater::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
   // modify correction using sub-pk approaches
   AmanziSolvers::FnBaseDefs::ModifyCorrectionResult modified_res =
     StrongMPC<PK_PhysicalBDF_Default>::ModifyCorrection(h, res, u, du);
-  
+
   // modify correction using water approaches
   int n_modified = 0;
   n_modified += water_->ModifyCorrection_WaterFaceLimiter(h, res, u, du);

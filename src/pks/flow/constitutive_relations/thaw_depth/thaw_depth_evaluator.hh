@@ -1,15 +1,31 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
-
 /*
-  The thaw depth evaluator gets the subsurface temperature.
-  This computes the thaw depth over time.
-  This is SecondaryVariablesFieldEvaluator and depends on the subsurface temperature, 
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-  Authors: Ahmad Jan (jana@ornl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_FLOWRELATIONS_THAWDEPTH_EVALUATOR_
-#define AMANZI_FLOWRELATIONS_THAWDEPTH_EVALUATOR_
+//! An evaluator for calculating the depth to frozen soil/permafrost, relative to the surface.
+
+/*!
+
+Note that postive values are below the surface, and negative values
+are not possible. 
+
+Evaluator name: `"thaw depth`"
+
+.. _thaw-depth-spec:
+.. admonition:: thaw-depth-spec
+
+    * `"transition width [K]`" ``[double]`` Width of the freeze curtain transition.
+
+    KEYS:
+      `"temperature`"
+
+*/
+
+#pragma once
 
 #include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
@@ -19,33 +35,36 @@ namespace Flow {
 
 class ThawDepthEvaluator : public SecondaryVariableFieldEvaluator {
 
-public:
-  explicit
-  ThawDepthEvaluator(Teuchos::ParameterList& plist);
-  ThawDepthEvaluator(const ThawDepthEvaluator& other);
-  Teuchos::RCP<FieldEvaluator> Clone() const;
+ public:
+  explicit ThawDepthEvaluator(Teuchos::ParameterList& plist);
+  ThawDepthEvaluator(const ThawDepthEvaluator& other) = default;
+
+  Teuchos::RCP<FieldEvaluator> Clone() const override {
+    return Teuchos::rcp(new ThawDepthEvaluator(*this));
+  }
+
+  // Custom HasFieldChanged forces this to be updated once.
+  virtual bool HasFieldChanged(const Teuchos::Ptr<State>& S, Key request) override;
+  // Custom EnsureCompatibility deals with multiple meshes
+  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S) override;
   
-protected:
+ protected:
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-                              const Teuchos::Ptr<CompositeVector>& result);
+                              const Teuchos::Ptr<CompositeVector>& result) override;
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-               Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
-  
-    
-  virtual bool HasFieldChanged(const Teuchos::Ptr<State>& S, Key request);
-  
-  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
+               Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) override {}
 
-
+ protected:    
   bool updated_once_;
+  double trans_width_;
+  Key domain_, domain_ss_;
+  Key temp_key_;
 
-private:
+ private:
   static Utils::RegisteredFactory<FieldEvaluator,ThawDepthEvaluator> reg_;
 
 };
   
 } //namespace
 } //namespace 
-
-#endif

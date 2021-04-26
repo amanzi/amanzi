@@ -1,0 +1,36 @@
+<ParameterList name="Main" type="ParameterList">
+  <ParameterList name="mesh" type="ParameterList">
+    <ParameterList name="verbose object" type="ParameterList">
+      <Parameter name="verbosity level" type="string" value="high" />
+    </ParameterList>
+
+    <ParameterList name="surface" type="ParameterList">
+      <Parameter name="mesh type" type="string" value="surface" />
+      <ParameterList name="surface parameters" type="ParameterList">
+        <Parameter name="surface sideset name" type="string" value="surface" />
+      </ParameterList>
+      <ParameterList name="surface">
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="domain" type="ParameterList">
+      <Parameter name="mesh type" type="string" value="read mesh file" />
+      <Parameter name="build columns from set" type="string" value="surface" />
+      <ParameterList name="read mesh file parameters" type="ParameterList">
+        <Parameter name="file" type="string" value="test/double_open_book.exo" />
+        <Parameter name="format" type="string" value="Exodus II" />
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="regions" type="ParameterList">
+    <ParameterList name="surface" type="ParameterList">
+      <ParameterList name="region: labeled set" type="ParameterList">
+        <Parameter name="label" type="string" value="2" />
+        <Parameter name="file" type="string" value="test/double_open_book.exo" />
+        <Parameter name="format" type="string" value="Exodus II" />
+        <Parameter name="entity" type="string" value="face" />
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

@@ -37,7 +37,6 @@ struct GroundProperties {
   double emissivity;                    // [-]
   double saturation_gas;                // [-]
   double roughness;                     // [m] surface roughness of a bare domain
-  double ponded_depth;                  // [m] thickness of ponded water
   double fractional_area;               // [-] not used by SEB, but useful for later bookkeeping
   double snow_death_rate;               // [kg/m^2/s] snow that must die this timestep, make it melt!
   double unfrozen_fraction;		// [-] fraction of ground water that is unfrozen
@@ -126,17 +125,18 @@ struct ModelParams {
       water_ground_transition_depth(0.02),
       evap_transition_width(100.), // transition on evaporation from surface to evaporation from subsurface [m]
       gravity(9.807),
-      Clapp_Horn_b(1.),          // Clapp and Hornberger "b" [-]
+      Clapp_Horn_b(1.),         // Clapp and Hornberger "b" [-]
       R_ideal_gas(461.52)       // ideal gas law R? [Pa m^3 kg^-1 K^-1]
   {}         // gravity [kg m / s^2]
-  
+
   ModelParams(Teuchos::ParameterList& plist) :
       ModelParams() {
     thermalK_freshsnow = plist.get<double>("thermal conductivity of fresh snow [W m^-1 K^-1]", thermalK_freshsnow);
     thermalK_snow_exp = plist.get<double>("thermal conductivity of snow aging exponent [-]", thermalK_snow_exp);
     density_snow_max = plist.get<double>("max density of snow [kg m^-3]", density_snow_max);
+    evap_transition_width = plist.get<double>("evaporation transition width [Pa]", evap_transition_width);
   }
-  
+
   double density_air;
   double density_water;
   double density_freshsnow;
@@ -144,7 +144,6 @@ struct ModelParams {
   double density_snow_max;
   double thermalK_freshsnow;
   double thermalK_snow_exp;
-  
   double Hf, Ls, Le, Cp_air, Cv_water;
   double R_ideal_gas;
 
@@ -152,7 +151,7 @@ struct ModelParams {
   double VKc;
   double stephB;
   double Clapp_Horn_b;
-  
+
   // other constants
   double Apa;
   double evap_transition_width;
@@ -208,6 +207,13 @@ struct FluxBalance {
   double M_subsurf; // [m/s], mass to/from subsurface system
   double E_subsurf; // [W/m^2], energy to/from subsurface system
   double M_snow; // [m/s], mass swe to snow system
+
+  FluxBalance() :
+      M_surf(0.),
+      E_surf(0.),
+      M_subsurf(0.),
+      E_subsurf(0.),
+      M_snow(0.) {}
 };
 
 
@@ -224,8 +230,8 @@ struct SurfaceParams {
       e_snow(0.98),             // [-] emissivity for snow, From P. ReVelle (Thesis)
       e_tundra(0.92),           // [-] emissivity for tundra, From P. ReVelle
                                 //         (Thesis), Ling & Zhang, 2004
-      e_water(0.995),           // [-] emissivity of water >> tundra, this is from Wiki
-      e_ice(0.98),              // [-] emissivity of ice >> tundra, this is from Wiki
+      e_water(0.995),           // [-] emissivity of water, EngineeringToolbox.com
+      e_ice(0.98),              // [-] emissivity of ice, EngineeringToolbox.com
       Zsmooth(0.005),           // [m]? roughness coef of smooth
       Zrough(0.03) {}           // [m]? roughness coef of rough
 };

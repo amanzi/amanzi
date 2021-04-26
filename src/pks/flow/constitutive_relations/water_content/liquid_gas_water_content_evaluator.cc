@@ -1,6 +1,6 @@
 /*
   The liquid + gas water content evaluator is an algebraic evaluator of a given model.
-Water content for a two-phase, liquid+water vapor evaluator.  
+Water content for a two-phase, liquid+water vapor evaluator.
   Generated via evaluator_generator.
 */
 
@@ -30,7 +30,7 @@ LiquidGasWaterContentEvaluator::LiquidGasWaterContentEvaluator(const LiquidGasWa
     sg_key_(other.sg_key_),
     ng_key_(other.ng_key_),
     omega_key_(other.omega_key_),
-    cv_key_(other.cv_key_),    
+    cv_key_(other.cv_key_),
     model_(other.model_) {}
 
 
@@ -52,38 +52,31 @@ LiquidGasWaterContentEvaluator::InitializeFromPlist_()
 
   // - pull Keys from plist
   // dependency: porosity
-  phi_key_ = plist_.get<std::string>("porosity key",
-          domain_name+"porosity");
+  phi_key_ = Keys::readKey(plist_, domain_name, "porosity", "porosity");
   dependencies_.insert(phi_key_);
 
   // dependency: saturation_liquid
-  sl_key_ = plist_.get<std::string>("saturation liquid key",
-          domain_name+"saturation_liquid");
+  sl_key_ = Keys::readKey(plist_, domain_name, "saturation liquid", "saturation_liquid");
   dependencies_.insert(sl_key_);
 
   // dependency: molar_density_liquid
-  nl_key_ = plist_.get<std::string>("molar density liquid key",
-          domain_name+"molar_density_liquid");
+  nl_key_ = Keys::readKey(plist_, domain_name, "molar density liquid", "molar_density_liquid");
   dependencies_.insert(nl_key_);
 
   // dependency: saturation_gas
-  sg_key_ = plist_.get<std::string>("saturation gas key",
-          domain_name+"saturation_gas");
+  sg_key_ = Keys::readKey(plist_, domain_name, "saturation gas", "saturation_gas");
   dependencies_.insert(sg_key_);
 
   // dependency: molar_density_gas
-  ng_key_ = plist_.get<std::string>("molar density gas key",
-          domain_name+"molar_density_gas");
+  ng_key_ = Keys::readKey(plist_, domain_name, "molar density gas", "molar_density_gas");
   dependencies_.insert(ng_key_);
 
   // dependency: mol_frac_gas
-  omega_key_ = plist_.get<std::string>("mol frac gas key",
-          domain_name+"mol_frac_gas");
+  omega_key_ = Keys::readKey(plist_, domain_name, "mol frac gas", "mol_frac_gas");
   dependencies_.insert(omega_key_);
 
   // dependency: cell_volume
-  cv_key_ = plist_.get<std::string>("cell volume key",
-          domain_name+"cell_volume");
+  cv_key_ = Keys::readKey(plist_, domain_name, "cell volume", "cell_volume");
   dependencies_.insert(cv_key_);
 }
 

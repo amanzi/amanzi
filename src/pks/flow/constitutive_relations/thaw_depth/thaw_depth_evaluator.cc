@@ -1,72 +1,68 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
-
 /*
-  The elevation evaluator gets the subsurface temperature and computes the thaw depth 
-  over time.
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-  Authors: Ahmad Jan (jana@ornl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
 */
+
+//! An evaluator for calculating the depth to frozen soil/permafrost, relative to the surface.
 
 #include "thaw_depth_evaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-
-
 ThawDepthEvaluator::ThawDepthEvaluator(Teuchos::ParameterList& plist)
     : SecondaryVariableFieldEvaluator(plist)
 {
-  std::string domain_name=Keys::getDomain(my_key_);
-  my_key_ = plist_.get<std::string>("thaw depth key", Keys::getKey(domain_name, "thaw_depth"));
+  domain_ = Keys::getDomain(my_key_);
+
+  domain_ss_ = "";
+  if (Keys::starts_with(domain_, "surface_")) {
+    domain_ss_ = domain_.substr(0, std::string("surface_").size());
+  }
+  domain_ss_ = plist.get<std::string>("subsurface domain", domain_ss_);
+
+  temp_key_ = Keys::readKey(plist, domain_ss_, "temperature", "temperature");
+  dependencies_.insert(temp_key_);
+
+  trans_width_ =  plist.get<double>("transition width [K]", 0.2);
 }
   
-
-ThawDepthEvaluator::ThawDepthEvaluator(const ThawDepthEvaluator& other)
-    : SecondaryVariableFieldEvaluator(other)
-{}
-  
-Teuchos::RCP<FieldEvaluator>
-ThawDepthEvaluator::Clone() const
-{
-  return Teuchos::rcp(new ThawDepthEvaluator(*this));
-}
-
 
 void
 ThawDepthEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 { 
   Epetra_MultiVector& res_c = *result->ViewComponent("cell",false);
-  
-  int ncells = res_c.MyLength();
-  for (int c=0; c!=ncells; c++){
-    int id = S->GetMesh("surface_star")->cell_map(false).GID(c);
-    std::stringstream domain;
-    domain << "column_" << id;
+  const auto& temp_c = *S->GetFieldData(temp_key_)->ViewComponent("cell", false);
 
-    const auto& top_z_centroid = S->GetMesh(domain.str())->face_centroid(0);
-    AmanziGeometry::Point z_centroid(top_z_centroid);
+  // search through the column and find the first frozen cell
+  const auto& surf_mesh = S->GetMesh(domain_);
+  const auto& subsurf_mesh = S->GetMesh(domain_ss_);
+  int z_dim = subsurf_mesh->space_dimension() - 1;
 
-    // search through the column and find the deepest unfrozen cell
-    const auto& temp_c = *S->GetFieldData(Keys::getKey(domain.str(),"temperature"))
-                         ->ViewComponent("cell", false);
-    int col_cells = temp_c.MyLength();
-    for (int i=0; i!=col_cells; ++i) {
-      if (temp_c[0][i] >= 273.25) { // this hard codes in the transition width to 0.2 K
-        z_centroid = S->GetMesh(domain.str())->face_centroid(i+1);
+  double trans_temp = 273.15 + 0.5*trans_width_;
+
+  for (AmanziMesh::Entity_ID sc=0; sc!=res_c.MyLength(); ++sc) {
+    AmanziMesh::Entity_ID top_f = surf_mesh->entity_get_parent(AmanziMesh::CELL, sc);
+    double top_z = subsurf_mesh->face_centroid(top_f)[z_dim];
+    
+    double thaw_z = std::numeric_limits<double>::quiet_NaN();
+    for (int i=0; i!=subsurf_mesh->cells_of_column(sc).size(); ++i) {
+      AmanziMesh::Entity_ID c = subsurf_mesh->cells_of_column(sc)[i];
+      if (temp_c[0][c] < trans_temp) {
+        // find the face above
+        AmanziMesh::Entity_ID f_up = subsurf_mesh->faces_of_column(sc)[i];
+        thaw_z = subsurf_mesh->face_centroid(f_up)[z_dim];
+        break;
       }
     }
-    
-    res_c[0][c] = top_z_centroid[2] - z_centroid[2];
+    res_c[0][sc] = top_z - thaw_z;
   }
 }
   
-void
-ThawDepthEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-               Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
-{}
-
  
 // Custom EnsureCompatibility forces this to be updated once.
 bool
@@ -83,34 +79,18 @@ ThawDepthEvaluator::HasFieldChanged(const Teuchos::Ptr<State>& S,
   return changed;
 }
 
+
 void
 ThawDepthEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
-{  
-  Key domain = Keys::getDomain(my_key_);
-  AMANZI_ASSERT(domain == "surface_star");
-  
-  int ncells = S->GetMesh("surface_star")->num_entities(AmanziMesh::CELL,
-          AmanziMesh::Parallel_type::OWNED);
-  
-  if (domain == "surface_star") {
-    for (int c =0; c < ncells; c++){
-      std::stringstream name;
-      int id = S->GetMesh("surface_star")->cell_map(false).GID(c);
-      name << "column_"<< id;
-      Key temp_key = Keys::getKey(name.str(),"temperature");
-      dependencies_.insert(temp_key);
-    }
-  } 
-  
-  // Ensure my field exists.  Requirements should be already set.
+{
   AMANZI_ASSERT(my_key_ != std::string(""));
-  
+   
   Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_, my_key_);
   
   // check plist for vis or checkpointing control
   bool io_my_key = plist_.get<bool>(std::string("visualize ")+my_key_, true);
   S->GetField(my_key_, my_key_)->set_io_vis(io_my_key);
-  bool checkpoint_my_key = plist_.get<bool>(std::string("checkpoint ")+my_key_, false);
+  bool checkpoint_my_key = plist_.get<bool>(std::string("checkpoint ")+my_key_, true);
   S->GetField(my_key_, my_key_)->set_io_checkpoint(checkpoint_my_key);
   
   if (my_fac->Mesh() != Teuchos::null) {
