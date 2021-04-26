@@ -52,7 +52,7 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --disable-amanzi_physics \
    --enable-ats_physics \
    --enable-reg_tests \
-   && cd /home/amanzi_user/amanzi_builddir/ats \\
+   && cd /home/amanzi_user/amanzi_builddir/ats \
    && make test
    
 #   && rm -r /home/amanzi_user/amanzi_builddir/
