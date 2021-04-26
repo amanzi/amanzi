@@ -17,16 +17,16 @@
 
 // explicity instantitate the static data of Factory<Viscosity>
 template<> 
-Amanzi::Utils::Factory<Amanzi::AmanziEOS::Viscosity_Base>::map_type* 
-    Amanzi::Utils::Factory<Amanzi::AmanziEOS::Viscosity_Base>::map_;
+Amanzi::Utils::Factory<Amanzi::AmanziEOS::ViscosityBase>::map_type* 
+    Amanzi::Utils::Factory<Amanzi::AmanziEOS::ViscosityBase>::map_;
 
 namespace Amanzi {
 namespace AmanziEOS {
 
 // method for instantiating Viscosity implementations
-Teuchos::RCP<Viscosity_Base> ViscosityBaseFactory::CreateViscosity(Teuchos::ParameterList& plist) {
-  std::string visc_typename = plist.get<std::string>("viscosity relation type");
-  return Teuchos::rcp(CreateInstance(visc_typename, plist));
+Teuchos::RCP<ViscosityBase> ViscosityBaseFactory::CreateViscosity(Teuchos::ParameterList& plist) {
+  std::string type = plist.get<std::string>("viscosity relation type");
+  return Teuchos::rcp(CreateInstance(type, plist));
 };
 
 }  // namespace AmanziEOS

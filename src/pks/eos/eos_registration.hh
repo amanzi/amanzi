@@ -11,19 +11,21 @@
   Self-registering factory of EOS models.
 */
 
-#include "EOSFactory.hh"
-#include "EOSEvaluator.hh"
-#include "EOS_Constant.hh"
-#include "EOS_IdealGas.hh"
-#include "EOS_VaporInGas.hh"
-#include "EOS_Water.hh"
-#include "EOS_WaterFEHM.hh"
+#include "EOSDensityEvaluator.hh"
+#include "EOSDensityFactory.hh"
+#include "EOS_DensityIdealGas.hh"
+#include "EOS_DensityVaporInGas.hh"
+#include "EOS_DensityWater.hh"
+#include "EOS_DensityWaterFEHM.hh"
+#include "EOS_DensityWaterTabular.hh"
 #include "IsobaricEOSEvaluator.hh"
 #include "MolarFractionGasEvaluator.hh"
 #include "SaturatedVaporPressure_Water.hh"
 #include "SaturatedVaporPressureFactory.hh"
-#include "Viscosity_Constant.hh"
-#include "Viscosity_Water.hh"
+#include "ViscosityConstant.hh"
+#include "ViscosityWater.hh"
+#include "ViscosityWaterFEHM.hh"
+#include "ViscosityWaterTabular.hh"
 #include "ViscosityBaseFactory.hh"
 #include "ViscosityEvaluator.hh"
 
@@ -31,21 +33,23 @@ namespace Amanzi {
 namespace AmanziEOS {
 
 // registry of method
-Utils::RegisteredFactory<FieldEvaluator, EOSEvaluator> EOSEvaluator::factory_("eos");
+Utils::RegisteredFactory<FieldEvaluator, EOSDensityEvaluator> EOSDensityEvaluator::factory_("eos");
 Utils::RegisteredFactory<FieldEvaluator, IsobaricEOSEvaluator> IsobaricEOSEvaluator::factory_("isobaric eos");
 Utils::RegisteredFactory<FieldEvaluator, MolarFractionGasEvaluator> MolarFractionGasEvaluator::factory_("molar fraction gas");
 Utils::RegisteredFactory<FieldEvaluator, ViscosityEvaluator> ViscosityEvaluator::factory_("viscosity");
 
-Utils::RegisteredFactory<EOS, EOS_Constant> EOS_Constant::factory_("constant");
-Utils::RegisteredFactory<EOS, EOS_IdealGas> EOS_IdealGas::factory_("ideal gas");
-Utils::RegisteredFactory<EOS, EOS_VaporInGas> EOS_VaporInGas::factory_("vapor in gas");
-Utils::RegisteredFactory<EOS, EOS_Water> EOS_Water::factory_("liquid water 0-30C");
-Utils::RegisteredFactory<EOS, EOS_WaterFEHM> EOS_WaterFEHM::factory_("liquid water FEHM");
+Utils::RegisteredFactory<EOS_Density, EOS_DensityIdealGas> EOS_DensityIdealGas::factory_("ideal gas");
+Utils::RegisteredFactory<EOS_Density, EOS_DensityVaporInGas> EOS_DensityVaporInGas::factory_("vapor in gas");
+Utils::RegisteredFactory<EOS_Density, EOS_DensityWater> EOS_DensityWater::factory_("liquid water 0-30C");
+Utils::RegisteredFactory<EOS_Density, EOS_DensityWaterFEHM> EOS_DensityWaterFEHM::factory_("liquid water FEHM");
+Utils::RegisteredFactory<EOS_Density, EOS_DensityWaterTabular> EOS_DensityWaterTabular::factory_("liquid water tabular");
 
 Utils::RegisteredFactory<SaturatedVaporPressure, SaturatedVaporPressure_Water> SaturatedVaporPressure_Water::factory_("water vapor over water/ice");
 
-Utils::RegisteredFactory<Viscosity_Base, Viscosity_Constant> Viscosity_Constant::factory_("constant");
-Utils::RegisteredFactory<Viscosity_Base, Viscosity_Water> Viscosity_Water::factory_("liquid water");
+Utils::RegisteredFactory<ViscosityBase, ViscosityConstant> ViscosityConstant::factory_("constant");
+Utils::RegisteredFactory<ViscosityBase, ViscosityWater> ViscosityWater::factory_("liquid water 0-30C");
+Utils::RegisteredFactory<ViscosityBase, ViscosityWaterFEHM> ViscosityWaterFEHM::factory_("liquid water FEHM");
+Utils::RegisteredFactory<ViscosityBase, ViscosityWaterTabular> ViscosityWaterTabular::factory_("liquid water tabular");
 
 }  // namespace AmanziEOS
 }  // namespace Amanzi

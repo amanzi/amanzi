@@ -172,7 +172,7 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
          .set<std::string>("field evaluator type", "viscosity")
          .set<std::string>("viscosity key", viscosity_liquid_key_)
          .sublist("viscosity model parameters")
-         .set<std::string>("viscosity relation type", "liquid water");
+         .set<std::string>("viscosity relation type", "liquid water 0-30C");
     elist.sublist("viscosity_liquid")
          .sublist("verbose object").set<std::string>("verbosity level", "high");
 

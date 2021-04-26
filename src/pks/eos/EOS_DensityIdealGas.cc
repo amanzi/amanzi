@@ -8,35 +8,36 @@
 
   Author: Ethan Coon (ecoon@lanl.gov)
 
-  EOS for an ideal gas. It does not implement viscosity at this point!
+  EOS for an ideal gas.
 */
 
-#include "EOS_IdealGas.hh"
+#include "EOS_DensityIdealGas.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-EOS_IdealGas::EOS_IdealGas(Teuchos::ParameterList& eos_plist) : eos_plist_(eos_plist) {
+EOS_DensityIdealGas::EOS_DensityIdealGas(Teuchos::ParameterList& eos_plist)
+  : EOS_Density(eos_plist) {
   InitializeFromPlist_();
 };
 
 
-double EOS_IdealGas::MolarDensity(double T, double p) {
+double EOS_DensityIdealGas::MolarDensity(double T, double p) {
   return p / (R_ * T);
 };
 
 
-double EOS_IdealGas::DMolarDensityDT(double T, double p) {
+double EOS_DensityIdealGas::DMolarDensityDT(double T, double p) {
   return -p / (R_ * T * T);
 };
 
 
-double EOS_IdealGas::DMolarDensityDp(double T, double p) {
+double EOS_DensityIdealGas::DMolarDensityDp(double T, double p) {
   return 1.0 / (R_ * T);
 };
 
 
-void EOS_IdealGas::InitializeFromPlist_()
+void EOS_DensityIdealGas::InitializeFromPlist_()
 {
   R_ = 8.31446261815324;
   M_ = eos_plist_.get<double>("molar mass of gas");

@@ -11,34 +11,37 @@
   EOS for the ideal gas.
 */
 
-#ifndef AMANZI_EOS_IDEAL_GAS_HH_
-#define AMANZI_EOS_IDEAL_GAS_HH_
+#ifndef AMANZI_EOS_DENSITY_IDEAL_GAS_HH_
+#define AMANZI_EOS_DENSITY_IDEAL_GAS_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
 #include "Factory.hh"
-#include "EOS_ConstantMolarMass.hh"
+#include "EOS_Density.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
  
 // Equation of State model
-class EOS_IdealGas : public EOS_ConstantMolarMass {
+class EOS_DensityIdealGas : public EOS_Density {
  public:
-  explicit EOS_IdealGas(Teuchos::ParameterList& eos_plist);
+  explicit EOS_DensityIdealGas(Teuchos::ParameterList& eos_plist);
 
   virtual double MolarDensity(double T, double p);
   virtual double DMolarDensityDT(double T, double p);
   virtual double DMolarDensityDp(double T, double p);
 
+  virtual double Density(double T, double p) { return MolarDensity(T, p) * M_; }
+  virtual double DDensityDT(double T, double p) { return DMolarDensityDT(T, p) * M_; }
+  virtual double DDensityDp(double T, double p) { return DMolarDensityDp(T, p) * M_; }
+
  protected:
   virtual void InitializeFromPlist_();
 
-  Teuchos::ParameterList eos_plist_;
   double R_;
 
  private:
-  static Utils::RegisteredFactory<EOS, EOS_IdealGas> factory_;
+  static Utils::RegisteredFactory<EOS_Density, EOS_DensityIdealGas> factory_;
 };
 
 }  // namespace AmanziEOS

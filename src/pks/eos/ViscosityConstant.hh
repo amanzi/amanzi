@@ -19,27 +19,26 @@
 #include "dbc.hh"
 #include "Factory.hh"
 
-#include "Viscosity_Base.hh"
+#include "ViscosityBase.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-class Viscosity_Constant : public Viscosity_Base {
+class ViscosityConstant : public ViscosityBase {
  public:
-  explicit
-  Viscosity_Constant(Teuchos::ParameterList& visc_plist);
+  explicit ViscosityConstant(Teuchos::ParameterList& visc_plist);
 
-  virtual double Viscosity(double T) { return visc_; }
-  virtual double DViscosityDT(double T) { return 0.; }
+  virtual double Viscosity(double T, double p) override { return visc_; }
+  virtual double DViscosityDT(double T, double p) override { return 0.0; }
+  virtual double DViscosityDp(double T, double p) override { return 0.0; }
 
  protected:
   virtual void InitializeFromPlist_();
 
-  Teuchos::ParameterList visc_plist_;
   double visc_;
 
  private:
-  static Utils::RegisteredFactory<Viscosity_Base, Viscosity_Constant> factory_;
+  static Utils::RegisteredFactory<ViscosityBase, ViscosityConstant> factory_;
 };
 
 }  // namespace AmanziEOS
