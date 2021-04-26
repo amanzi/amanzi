@@ -115,6 +115,23 @@ The advection-diffusion equation for component *i* may be written as
       * `"aqueous tortuosity`" [double] Defines tortuosity for calculating diffusivity of liquid solutes, [-].
       * `"gaseous tortuosity`" [double] Defines tortuosity for calculating diffusivity of gas solutes, [-].
 
+   
+    Source terms:
+
+      * `"source terms`" [list] Provides solute source.
+        * `"concentration`" [list]  Defines solute source injection rate.       
+           * `"spatial distribution method`" [string]  
+              If *volume*, source is considered as extensive quantity. [moles/s]  
+	      If *none*, source is considered as intensive quantity. [moles/m^2*s] in surface and [moles/m^3*s] in subsurface  
+
+      * `"geochemical`" [list]  Defines solute source through Alquimia by providing solute concentration through PFLOTRAN (moles/L) and injection rate through `"water_source`".       
+        * `"geochemical conditions`" [Array(string)] List of PFLOTRAN constraints providing concentration for solute injection.   
+     
+      * `"water_source`" [list] Defines the solute injection rate by providing water source (moles/m^2*s in surface and moles/m^3*s in subsurface) that gets multiplied by concentrations in `"geochemical conditions`". 
+          The injection rate of solute in moles/s is evaluated as: 
+	  Concentration provided in PFLOTRAN (moles of solute/L of water) * 1000(L/m^3 of water) * water source (moles of water/m^3*s) * volume of injection domain (m^3) * 1/[molar density of water (moles of water/m^3 of water)] 
+
+
     Physical model and assumptions:
 
     * `"physical models and assumptions`" [list] Defines material properties.
@@ -153,6 +170,7 @@ The advection-diffusion equation for component *i* may be written as
 
     * `"transport subcycling`" ``[boolean]`` **true** The code will default to subcycling for transport within
       the master PK if there is one. 
+
 
     Developer parameters:
 
