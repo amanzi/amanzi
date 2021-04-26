@@ -1073,8 +1073,7 @@ void State::InitializeFields() {
         if (state_plist_.sublist("initial conditions").isSublist(f_it->first)) {
           Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(f_it->first);
           f_it->second->Initialize(sublist);
-        }
-        else {
+        } else {
           // check for domain set
           KeyTriple split;
           bool is_ds = Keys::splitDomainSet(f_it->first, split);

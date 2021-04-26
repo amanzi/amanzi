@@ -297,13 +297,14 @@ void Chemistry_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> 
     using_sorption_ = true;
     using_sorption_isotherms_ = true;
   }
-  else {
-    KeyTriple split;
-    bool is_ds = Keys::splitDomainSet(isotherm_kd_key_, split);
-    if (is_ds) {
-      using_sorption_ = true;
-      using_sorption_isotherms_ = true;
-    }
+
+  KeyTriple split;
+  bool is_ds = Keys::splitDomainSet(isotherm_kd_key_, split);
+  Key lifted_key = Keys::getKey(std::get<0>(split), "*", std::get<2>(split));
+
+  if (ic_list->isSublist(lifted_key)) {
+    using_sorption_ = true;
+    using_sorption_isotherms_ = true;
   }
 
   if (ic_list->isSublist(sorp_sites_key_)) {
