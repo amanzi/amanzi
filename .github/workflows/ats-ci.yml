@@ -9,8 +9,9 @@ jobs:
     steps:
     - name: Check out the Amanzi repo
       uses: actions/checkout@v2
-      with: repository: https://github.com/amanzi/amanzi
-            submodules: true
+      with:
+        repository: https://github.com/amanzi/amanzi
+        submodules: true
     - name: Extract the branch name
       id: branch
       working-directory: Docker
