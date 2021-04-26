@@ -36,6 +36,9 @@ RUN git checkout $ats_branch
 RUN git pull
 RUN git rev-parse --short HEAD
 WORKDIR /home/amanzi_user/amanzi
+
+ENV AMANZI_SRC_DIR=/home/amanzi_user/amanzi \
+    ATS_SRC_DIR=/home/amanzi_user/amanzi/src/physics/ats 
   
 RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/ats \
