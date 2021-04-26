@@ -21,7 +21,6 @@
 #include "boost/filesystem.hpp"
 
 #include "Checkpoint.hh"
-#include "UniqueHelpers.hh"
 #include "InputFactory.hh"
 #include "OutputFactory.hh"
 

@@ -14,8 +14,6 @@
 #include "AmanziMap.hh"
 #include "AmanziVector.hh"
 
-#include "UniqueHelpers.hh"
-
 #include "BlockSpace.hh"
 #include "BlockVector.hh"
 #include "TreeVectorSpace.hh"

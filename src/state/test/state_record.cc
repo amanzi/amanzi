@@ -12,7 +12,6 @@
 
 // Tests the Record and RecordSet objects, which store meta-data about data.
 
-#include "UniqueHelpers.hh"
 #include "UnitTest++.h"
 #include "data/RecordSet.hh"
 #include "errors.hh"

@@ -13,8 +13,6 @@
 
 */
 
-
-#include "UniqueHelpers.hh"
 #include "Operator_Factory.hh"
 #include "Operator_Cell.hh"
 #include "Operator_FaceCell.hh"
