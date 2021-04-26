@@ -1,7 +1,7 @@
 ARG amanzi_tpls_ver=latest
 ARG mpi_flavor=mpich
 FROM metsi/amanzi-tpls:${amanzi_tpls_ver}-${mpi_flavor}
-LABEL Description="Amanzi: Build and install Amanzi in a Docker image."
+LABEL Description="ATS CI: Build ATS in a Docker image."
 
 # Switch to amanzi_user
 USER amanzi_user
@@ -11,6 +11,7 @@ RUN echo "${AMANZI_TPLS_DIR}"
 
 # Arguments
 ARG amanzi_branch=master
+ARG ats_branch=master
 
 # Change the Working Directory and update amanzi
 WORKDIR /home/amanzi_user/amanzi
@@ -22,21 +23,34 @@ ENV https_proxy=proxyout.lanl.gov:8080 \
 RUN echo "Amanzi branch = $amanzi_branch"
 RUN git pull
 RUN git branch --list
+
 # Checkout the branch and update it
 RUN git checkout $amanzi_branch
 RUN git pull
 RUN git rev-parse --short HEAD
+
+# Checkout/update the submodules
+RUN git submodule update --init --recursive
+WORKDIR /home/amanzi_user/amanzi/src/physics/ats
+RUN git checkout $ats_branch
+RUN git pull
+RUN git rev-parse --short HEAD
+WORKDIR /home/amanzi_user/amanzi
   
 RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
-   --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
+   --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/ats \
    --tpl-config-file=${AMANZI_TPLS_DIR}/share/cmake/amanzi-tpl-config.cmake \
-   --parallel=4 --opt \
-   --disable-structured \
-   --disable-build_user_guide \
-   --disable-geochemistry \
-   --disable-amanzi_physics --enable-ats_physics \
+   --branch=$amanzi_branch \
+   --branch_ats=$ats_branch \
+   --parallel=4 \
+   --opt \
    --with-mpi=/usr \
    --enable-shared \
+   --disable-structured \
+   --disable-build_user_guide \
+   --enable-geochemistry \
+   --disable-amanzi_physics \
+   --enable-ats_physics \
    && cd /home/amanzi_user/amanzi_builddir/amanzi 
 #   && rm -r /home/amanzi_user/amanzi_builddir/
 
