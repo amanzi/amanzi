@@ -16,8 +16,8 @@ ARG ats_branch=master
 # Change the Working Directory and update amanzi
 WORKDIR /home/amanzi_user/amanzi
 
-ENV https_proxy=proxyout.lanl.gov:8080 \
-    http_proxy=proxyout.lanl.gov:8080
+# ENV https_proxy=proxyout.lanl.gov:8080 \
+#     http_proxy=proxyout.lanl.gov:8080
 
 # Make sure we have updated branch information
 RUN echo "Amanzi branch = $amanzi_branch"
@@ -62,5 +62,5 @@ RUN echo $PATH
 RUN mkdir /home/amanzi_user/work
 
 # Unset proxy
-ENV https_proxy= \
-    http_proxy= 
+# ENV https_proxy= \
+#     http_proxy= 
