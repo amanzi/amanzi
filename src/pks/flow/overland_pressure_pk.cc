@@ -1186,12 +1186,11 @@ void OverlandPressureFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S,
           values[f] = h0;
         }
 
-        if (vo_->os_OK(Teuchos::VERB_HIGH)){
+        if (vo_->os_OK(Teuchos::VERB_EXTREME)){
           *vo_->os() << "Tidal BC2: f="<<f<<" type "<<markers[f]<<" val "<<values[f]<<
             " Aff "<< Aff[f](0,0) << "\n";
         }
       }
-
     }
 
   }

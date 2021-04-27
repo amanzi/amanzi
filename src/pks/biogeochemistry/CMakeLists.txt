@@ -23,8 +23,6 @@ if (ENABLE_FATES)
   list (APPEND ats_bgc_src_files fates/fates_pk.cc)
 endif()
 
-
-
 set(ats_bgc_inc_files
   bgc_simple/utils.hh
   bgc_simple/PFT.hh

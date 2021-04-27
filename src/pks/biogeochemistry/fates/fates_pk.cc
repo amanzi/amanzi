@@ -207,7 +207,7 @@ void FATES_PK::Setup(const Teuchos::Ptr<State>& S){
     suc_key_ = Keys::readKey(*plist_, "domain", "suction", "suction_head");
     if (!S->HasField(suc_key_)){    
       S->RequireField(suc_key_, "state")->SetMesh(mesh_)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
       S->RequireFieldEvaluator(suc_key_);
     }            
 

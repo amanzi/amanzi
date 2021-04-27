@@ -94,7 +94,6 @@ public:
 
   virtual std::string name() { return "transport_ats"; }
 
-
   // main transport members
   // -- calculation of a stable time step needs saturations and darcy flux
   double StableTimeStep();

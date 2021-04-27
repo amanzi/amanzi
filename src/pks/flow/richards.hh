@@ -427,7 +427,6 @@ protected:
   Key sat_key_;
   Key sat_gas_key_;
   Key sat_ice_key_;
-  Key suction_key_;
 
   // evaluator for flux, which is needed by other pks
   Teuchos::RCP<PrimaryVariableFieldEvaluator> flux_pvfe_;

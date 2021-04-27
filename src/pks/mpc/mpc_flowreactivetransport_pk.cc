@@ -83,8 +83,7 @@ bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool 
   local_flow_monitor = Teuchos::null;
   
   if (fail) {
-
-    if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
       *vo_->os()<<"Master step is failed\n";
     }
     return fail;
@@ -100,12 +99,12 @@ bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool 
   Teuchos::RCP<Epetra_MultiVector> flux_copy = S_->GetFieldCopyData("mass_flux", "next_timestep", copy_owner)->ViewComponent("face", true);
   *flux_copy = *S_next_->GetFieldData("mass_flux")->ViewComponent("face", true);
  
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) *vo_->os()<<"Master step is successful\n";
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) *vo_->os()<<"Master step is successful\n";
 
 
   slave_dt_ = sub_pks_[slave_]->get_dt(); 
   if (slave_dt_ > master_dt_) slave_dt_ = master_dt_;
-  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) *vo_->os()<<"Slave dt="<<slave_dt_<<"\n";
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) *vo_->os()<<"Slave dt="<<slave_dt_<<"\n";
 
 
   // advance the slave, subcycling if needed

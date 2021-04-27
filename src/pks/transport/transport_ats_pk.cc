@@ -59,9 +59,7 @@ Transport_ATS::Transport_ATS(Teuchos::ParameterList& pk_tree,
   tcc_key_ = key_;
   
   // set up the primary variable solution, and its evaluator
-  Teuchos::ParameterList& FElist = S->FEList();
-  Teuchos::ParameterList& pv_sublist = FElist.sublist(key_);
-  pv_sublist.set("evaluator name", key_);
+  Teuchos::ParameterList& pv_sublist = S->GetEvaluatorList(key_);
   pv_sublist.set("field evaluator type", "primary variable");
 
   if (plist_->isParameter("component names")) {
@@ -141,8 +139,6 @@ void Transport_ATS::Setup(const Teuchos::Ptr<State>& S)
   water_tolerance_ = plist_->get<double>("water tolerance", 1e-6);
   dissolution_ = plist_->get<bool>("allow dissolution", false);
   max_tcc_ = plist_->get<double>("maximum concentration", 0.9);
-
-
   dim = mesh_->space_dimension();
 
   // cross-coupling of PKs
@@ -1375,9 +1371,6 @@ void Transport_ATS::AdvanceDonorUpwind(double dt_cycle)
         tcc_next[i][c] = 0.;
       }
     }
-    // if ((domain_name_=="surface")&&(rank==1)&&(c > 47)&&(c<53)){
-    //   std::cout<<c<<" : "<< vol_phi_ws_den<<" "<<(*ws_end)[0][c]<<" "<< (*mol_dens_end)[0][c]<<" "<<(*conserve_qty_)[0][c]<<" tcc "<<tcc_next[0][c]<<"\n";
-    // }
   }
   db_->WriteCellVector("tcc_new", tcc_next);
 

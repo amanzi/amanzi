@@ -85,7 +85,7 @@ Richards::Richards(Teuchos::ParameterList& pk_tree,
   sat_key_ = Keys::readKey(*plist_, domain_, "saturation", "saturation_liquid");
   sat_gas_key_ = Keys::readKey(*plist_, domain_, "saturation gas", "saturation_gas");
   sat_ice_key_ = Keys::readKey(*plist_, domain_, "saturation ice", "saturation_ice");
-  suction_key_ = Keys::readKey(*plist_, domain_, "suction head", "suction_head");
+
   
   // set up an additional primary variable evaluator for flux
   Teuchos::ParameterList& pv_sublist = S->GetEvaluatorList(flux_key_);
@@ -420,20 +420,6 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     auto& wrm_plist = S->GetEvaluatorList(sat_key_);
     wrm_plist.setParameters(plist_->sublist("water retention evaluator"));
     wrm_plist.set("field evaluator type", "WRM");
-
-    
-    if (!S->HasFieldEvaluator(suction_key_)) {
-      Teuchos::ParameterList wrm_plist(plist_->sublist("water retention evaluator"));
-      wrm_plist.setName(suction_key_);
-      wrm_plist.set("field evaluator type", "WRM suction head");
-      S->FEList().set(suction_key_, wrm_plist);
-
-      //-- suction
-      S->RequireField(suction_key_)->SetMesh(mesh_)->SetGhosted()
-        ->AddComponent("cell", AmanziMesh::CELL, 1);
-      S->RequireFieldEvaluator(suction_key_);
-    }
-
   }
 
   if (!S->HasFieldEvaluator(coef_key_) && (S->GetEvaluatorList(coef_key_).numParams() == 0)) {
