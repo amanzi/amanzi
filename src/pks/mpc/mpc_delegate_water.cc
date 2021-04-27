@@ -176,6 +176,8 @@ MPCDelegateWater::ModifyCorrection_WaterSpurtCap(double h, Teuchos::RCP<const Tr
                     << ", p_new = " << p_new << ", p_capped = " << p_old - p_corrected << std::endl;
       } else if ((p_new < patm) && (p_old > patm)) {
         // strange attempt to kick NKA when it goes back under?
+        // double p_corrected = p_old - (patm - cap_size_);
+        // SetDomainFaceValue(*domain_Pu, f, p_corrected);
         n_modified++;
         if (vo_->os_OK(Teuchos::VERB_HIGH))
           std::cout << "  INVERSE SPURT (sc=" << surf_mesh->cell_map(false).GID(cs) << "): p_old = " << p_old

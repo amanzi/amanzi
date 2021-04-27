@@ -322,8 +322,6 @@ double DetermineSnowTemperature(const GroundProperties& surf,
     }
   }
 
-  //  std::cout << "Determining snow temp in interval (" << left << "," << right << ")" << std::endl;
-
   std::pair<double,double> result;
   auto my_max_it = max_it;
   if (method == "bisection") {
@@ -369,21 +367,42 @@ FluxBalance UpdateFluxesWithoutSnow(const GroundProperties& surf,
 {
   FluxBalance flux;
 
-  // mass to surface is precip, melting, and evaporation
-  flux.M_surf = met.Pr + mb.Mm + mb.Me;
+  // mass to surface is precip and melting first
+  // partition all fluxes?
+  // double mass_flux = met.Pr + mb.Mm + mb.Me;
+  // flux.M_surf = 0.;
+
+  // or just partition evaporation?
+  double mass_flux = mb.Me;
+  flux.M_surf = met.Pr + mb.Mm;
 
   // Energy to surface.
   double Train = std::max(0., met.air_temp - 273.15);
   flux.E_surf = eb.fQswIn + eb.fQlwIn - eb.fQlwOut + eb.fQh // purely energy fluxes
                 - eb.fQm   // energy put into melting snow
-                + surf.density_w * met.Pr * Train * params.Cv_water // energy advected in by rainfall
-                + eb.fQe; // energy from evaporation
+                + surf.density_w * met.Pr * Train * params.Cv_water; // energy advected in by rainfall
 
-  // zero subsurf values -- these should be refactored and removed eventually,
-  // as the distribution of the flux between surface and subsurface has moved
-  // to the mpc_permafrost
+  // zero subsurf values
   flux.M_subsurf = 0.;
   flux.E_subsurf = 0.;
+
+  // allocate mass_flux to surface or subsurface
+  double evap_to_subsurface_fraction = 1 - std::min(1.0,
+          surf.ponded_depth / params.water_ground_transition_depth);
+  AMANZI_ASSERT(evap_to_subsurface_fraction >= 0. && evap_to_subsurface_fraction <= 1.);
+
+  flux.M_surf += (1 - evap_to_subsurface_fraction) * mass_flux;
+  flux.M_subsurf += evap_to_subsurface_fraction * mass_flux;
+
+  // enthalpy of evap/condensation always goes entirely to surface
+  //
+  // This is fine because diffusion of energy always works, and doing otherwise
+  // sets up local minima for energy in the top cell, which breaks code.
+  flux.E_surf += eb.fQe; // v1.0
+
+  // // enthalpy of evap/condensation -- v0.88
+  // flux.E_surf += (1-evap_to_subsurface_fraction) * eb.fQe;
+  // flux.E_subsurf += evap_to_subsurface_fraction * eb.fQe;
 
   // snow mass change
   flux.M_snow = met.Ps - mb.Mm;
@@ -397,10 +416,8 @@ FluxBalance UpdateFluxesWithSnow(const GroundProperties& surf,
 {
   FluxBalance flux;
 
-  // mass to surface is precip and snowmelt
+  // mass to surface is precip and evaporation
   flux.M_surf = met.Pr + mb.Mm;
-
-  // mass to snow is precip, melt, and evaporation
   if (mb.Mm > 0.) AMANZI_ASSERT(snow.density > 99.);
   flux.M_snow = met.Ps + mb.Me - mb.Mm;
 

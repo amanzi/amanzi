@@ -389,15 +389,15 @@ MPCPermafrost::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeV
     adj_surf_src = surf_src;
 
     for (int sc=0; sc!=adj_surf_src.MyLength(); ++sc) {
-      if (adj_surf_src[0][sc] < 0 && surf_wc_next[0][sc] == 0) {
+      // if (adj_surf_src[0][sc] < 0 && surf_wc_next[0][sc] == 0) {
         const double water_loss_mols = -adj_surf_src[0][sc] * surf_cv[0][sc] * surf_molar_dens[0][sc] * dt;
         const double water_avail_mols = surf_wc[0][sc];
         const double water_inc_mols = 0.;// std::max(subsurf_mass_flux[0][surf_mesh_->entity_get_parent(AmanziMesh::Entity_kind::CELL, sc)] * dt, 0.0);
-        if (water_loss_mols > water_avail_mols + water_inc_mols) {
-          adj_surf_src[0][sc] = -(water_avail_mols + water_inc_mols) / surf_molar_dens[0][sc] / surf_cv[0][sc] / dt;
-          int c = domain_mesh_->cells_of_column(sc)[0];
-          adj_subsurf_src[0][c] = adj_subsurf_src[0][c]
-            - (water_loss_mols - water_avail_mols - water_inc_mols) / subsurf_cv[0][c] / dt;
+        // if (water_loss_mols > water_avail_mols + water_inc_mols) {
+        //   adj_surf_src[0][sc] = -(water_avail_mols + water_inc_mols) / surf_molar_dens[0][sc] / surf_cv[0][sc] / dt;
+        int c = domain_mesh_->cells_of_column(sc)[0];
+        //   adj_subsurf_src[0][c] = adj_subsurf_src[0][c]
+        //     - (water_loss_mols - water_avail_mols - water_inc_mols) / subsurf_cv[0][c] / dt;
           std::cout << "ADJUSTING sc: " << sc << std::endl
                     << "  old surf sink = " << surf_src[0][sc] << std::endl
                     << "  water loss mols = " << water_loss_mols << std::endl
@@ -406,8 +406,8 @@ MPCPermafrost::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeV
                     << "  new surf sink = " << adj_surf_src[0][sc] << std::endl
                     << "  old subsurf src/sink = " << subsurf_src[0][c] << std::endl
                     << "  new subsurf src/sink = " << adj_subsurf_src[0][c] << std::endl;
-        }
-      }
+        // }
+      // }
     }
     surf_mass_source_pvfe_->SetFieldAsChanged(S_next_.ptr());
     subsurf_mass_source_pvfe_->SetFieldAsChanged(S_next_.ptr());

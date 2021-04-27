@@ -139,6 +139,7 @@ class SubgridEvaluator : public SecondaryVariablesFieldEvaluator {
   Key sg_albedo_key_, sg_emissivity_key_, area_frac_key_;
   Key surf_temp_key_, surf_pres_key_;
   Key sat_gas_key_, poro_key_,ss_pres_key_;
+  Key mol_dens_key_;
 
   Key melt_key_, evap_key_;
   Key snow_temp_key_;

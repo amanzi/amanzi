@@ -92,15 +92,23 @@ SubgridEvaluator::SubgridEvaluator(Teuchos::ParameterList& plist) :
   if (diagnostics_) {
     // -- diagnostics
     albedo_key_ = Keys::readKey(plist, domain_, "albedo", "albedo");
+    my_keys_.push_back(albedo_key_);
     melt_key_ = Keys::readKey(plist, domain_, "snowmelt", "snowmelt");
+    my_keys_.push_back(melt_key_);
     evap_key_ = Keys::readKey(plist, domain_, "evaporation", "evaporative_flux");
     my_keys_.push_back(evap_key_);
     snow_temp_key_ = Keys::readKey(plist, domain_snow_, "snow temperature", "temperature");
+    my_keys_.push_back(snow_temp_key_);
     qE_sh_key_ = Keys::readKey(plist, domain_, "sensible heat flux", "qE_sensible_heat");
+    my_keys_.push_back(qE_sh_key_);
     qE_lh_key_ = Keys::readKey(plist, domain_, "latent heat of evaporation", "qE_latent_heat");
+    my_keys_.push_back(qE_lh_key_);
     qE_sm_key_ = Keys::readKey(plist, domain_, "latent heat of snowmelt", "qE_snowmelt");
+    my_keys_.push_back(qE_sm_key_);
     qE_lw_out_key_ = Keys::readKey(plist, domain_, "outgoing longwave radiation", "qE_lw_out");
+    my_keys_.push_back(qE_lw_out_key_);
     qE_cond_key_ = Keys::readKey(plist, domain_, "conducted energy flux", "qE_conducted");
+    my_keys_.push_back(qE_cond_key_);
   }
 
   // dependencies
@@ -129,6 +137,10 @@ SubgridEvaluator::SubgridEvaluator(Teuchos::ParameterList& plist) :
   dependencies_.insert(snow_death_rate_key_);
 
   // -- skin properties
+  mol_dens_key_ = Keys::readKey(plist, domain_, "molar density liquid", "molar_density_liquid");
+  dependencies_.insert(mol_dens_key_);
+  ponded_depth_key_ = Keys::readKey(plist, domain_, "ponded depth", "ponded_depth");
+  dependencies_.insert(ponded_depth_key_);
   unfrozen_fraction_key_ = Keys::readKey(plist, domain_, "unfrozen fraction", "unfrozen_fraction");
   dependencies_.insert(unfrozen_fraction_key_);
   sg_albedo_key_ = Keys::readKey(plist, domain_, "subgrid albedos", "subgrid_albedos");
@@ -158,8 +170,6 @@ SubgridEvaluator::SubgridEvaluator(Teuchos::ParameterList& plist) :
   dessicated_zone_thickness_ = plist.get<double>("dessicated zone thickness [m]", 0.1);
   AMANZI_ASSERT(dessicated_zone_thickness_ > 0.);
 
-  ss_topcell_based_evap_ = plist.get<bool>("subsurface top cell based evaporation", false);
-
   roughness_bare_ground_ = plist.get<double>("roughness length of bare ground [m]", 0.04);
   roughness_snow_covered_ground_ = plist.get<double>("roughness length of snow-covered ground [m]", 0.004);
 }
@@ -185,6 +195,8 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const auto& snow_death_rate = *S->GetFieldData(snow_death_rate_key_)->ViewComponent("cell",false);
 
   // collect skin properties
+  const auto& mol_dens = *S->GetFieldData(mol_dens_key_)->ViewComponent("cell",false);
+  const auto& ponded_depth = *S->GetFieldData(ponded_depth_key_)->ViewComponent("cell",false);
   const auto& unfrozen_fraction = *S->GetFieldData(unfrozen_fraction_key_)->ViewComponent("cell",false);
   const auto& sg_albedo = *S->GetFieldData(sg_albedo_key_)->ViewComponent("cell",false);
   const auto& emissivity = *S->GetFieldData(sg_emissivity_key_)->ViewComponent("cell",false);
@@ -260,15 +272,13 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     if (area_fracs[0][c] > 0.) {
       SEBPhysics::GroundProperties surf;
       surf.temp = surf_temp[0][c];
-      surf.pressure = std::min<double>(surf_pres[0][c], 101325.);
-      if (ss_topcell_based_evap_)
-        surf.pressure = ss_pres[0][cells[0]];
+      surf.pressure = ss_pres[0][cells[0]];
       surf.roughness = roughness_bare_ground_;
       surf.density_w = params.density_water; // NOTE: could update this to use true density! --etc
       surf.dz = dessicated_zone_thickness_;
       surf.albedo = sg_albedo[0][c];
       surf.emissivity = emissivity[0][c];
-
+      surf.ponded_depth = 0.; // by definition
       surf.porosity = poro[0][cells[0]];
       surf.saturation_gas = sat_gas[0][cells[0]];
       surf.unfrozen_fraction = unfrozen_fraction[0][c];
@@ -293,7 +303,7 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       energy_source[0][c] += area_fracs[0][c] * flux.E_surf * 1.e-6; // convert to MW/m^2
 
       double area_to_volume = mesh.cell_volume(c) / mesh_ss.cell_volume(cells[0]);
-      double ss_mass_source_l = flux.M_subsurf * area_to_volume * params.density_water / 0.0180153; // convert from m/m^2/s to mol/m^3/s
+      double ss_mass_source_l = flux.M_subsurf * area_to_volume * mol_dens[0][c]; // convert from m/m^2/s to mol/m^3/s
       ss_mass_source[0][cells[0]] += area_fracs[0][c] * ss_mass_source_l;
       double ss_energy_source_l = flux.E_subsurf * area_to_volume * 1.e-6; // convert from W/m^2 to MW/m^3
       ss_energy_source[0][cells[0]] += area_fracs[0][c] * ss_energy_source_l;
@@ -301,11 +311,11 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       snow_source[0][c] += area_fracs[0][c] * flux.M_snow;
       new_snow[0][c] += area_fracs[0][c] * met.Ps;
 
-      if (vo_->os_OK(Teuchos::VERB_EXTREME))
-        *vo_->os() << "CELL " << c << " BARE"
-                    << ": Ms = " << flux.M_surf << ", Es = " << flux.E_surf * 1.e-6
-                    << ", Mss = " << ss_mass_source_l << ", Ess = " << ss_energy_source_l
-                    << ", Sn = " << flux.M_snow << std::endl;
+      //      if (vo_->os_OK(Teuchos::VERB_EXTREME))
+      *vo_->os() << "CELL " << c << " BARE"
+                 << ": Ms = " << flux.M_surf << ", Es = " << flux.E_surf * 1.e-6
+                 << ", Mss = " << ss_mass_source_l << ", Ess = " << ss_energy_source_l
+                 << ", Sn = " << flux.M_snow << std::endl;
 
       // diagnostics
       if (diagnostics_) {
@@ -329,14 +339,13 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       SEBPhysics::GroundProperties surf;
       surf.temp = surf_temp[0][c];
       surf.pressure = surf_pres[0][c];
-      if (ss_topcell_based_evap_)
-        surf.pressure = ss_pres[0][cells[0]];
       surf.roughness = roughness_bare_ground_;
       surf.density_w = params.density_water; // NOTE: could update this to use true density! --etc
       surf.dz = dessicated_zone_thickness_;
       surf.emissivity = emissivity[1][c];
       surf.albedo = sg_albedo[1][c];
-
+      surf.ponded_depth = std::max(params.water_ground_transition_depth,
+              ponded_depth[0][c]);
       surf.porosity = 1.;
       surf.saturation_gas = 0.;
       surf.unfrozen_fraction = unfrozen_fraction[0][c];
@@ -361,7 +370,7 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       energy_source[0][c] += area_fracs[1][c] * flux.E_surf * 1.e-6;
 
       double area_to_volume = mesh.cell_volume(c) / mesh_ss.cell_volume(cells[0]);
-      double ss_mass_source_l = flux.M_subsurf * area_to_volume * params.density_water / 0.0180153; // convert from m/m^2/s to mol/m^3/s
+      double ss_mass_source_l = flux.M_subsurf * area_to_volume * mol_dens[0][c]; // convert from m/m^2/s to mol/m^3/s
       ss_mass_source[0][cells[0]] += area_fracs[1][c] * ss_mass_source_l;
       double ss_energy_source_l = flux.E_subsurf * area_to_volume * 1.e-6; // convert from W/m^2 to MW/m^3
       ss_energy_source[0][cells[0]] += area_fracs[1][c] * ss_energy_source_l;
@@ -369,11 +378,11 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       snow_source[0][c] += area_fracs[1][c] * flux.M_snow;
       new_snow[0][c] += area_fracs[1][c] * met.Ps;
 
-      if (vo_->os_OK(Teuchos::VERB_EXTREME))
-        *vo_->os() << "CELL " << c << " WATER"
-                    << ": Ms = " << flux.M_surf << ", Es = " << flux.E_surf * 1.e-6
-                    << ", Mss = " << ss_mass_source_l << ", Ess = " << ss_energy_source_l
-                    << ", Sn = " << flux.M_snow << std::endl;
+      // if (vo_->os_OK(Teuchos::VERB_EXTREME))
+      *vo_->os() << "CELL " << c << " WATER"
+                 << ": Ms = " << flux.M_surf << ", Es = " << flux.E_surf * 1.e-6
+                 << ", Mss = " << ss_mass_source_l << ", Ess = " << ss_energy_source_l
+                 << ", Sn = " << flux.M_snow << std::endl;
 
       // diagnostics
       if (diagnostics_) {
@@ -403,10 +412,10 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       surf.dz = dessicated_zone_thickness_;
       surf.emissivity = emissivity[2][c];
       surf.albedo = sg_albedo[2][c];
-
-      surf.saturation_gas = 0.;
-      surf.porosity = 1.;
-      surf.unfrozen_fraction = unfrozen_fraction[0][c];
+      surf.ponded_depth = 0; // does not matter
+      surf.saturation_gas = 0.; // does not matter
+      surf.porosity = 1.; // does not matter
+      surf.unfrozen_fraction = unfrozen_fraction[0][c]; // does not matter
 
       met.Ps = Psnow[0][c] / area_fracs[2][c];
 
@@ -541,7 +550,7 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     *vo_->os() << "CELL " << 0 << " TOTAL"
                     << ": Ms = " << mass_source[0][0] << ", Es = " << energy_source[0][0]
-                    << ", Mss = " << ss_mass_source[0][99] << ", Ess = " << ss_energy_source[0][99]
+                    << ", Mss = " << ss_mass_source[0][51] << ", Ess = " << ss_energy_source[0][51]
                     << ", Sn = " << snow_source[0][0] << std::endl;
 
 
@@ -664,15 +673,6 @@ SubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
     S->RequireField(qE_sm_key_, qE_sm_key_)->Update(domain_fac_owned);
     S->RequireField(qE_lw_out_key_, qE_lw_out_key_)->Update(domain_fac_owned);
     S->RequireField(qE_cond_key_, qE_cond_key_)->Update(domain_fac_owned);
-    S->GetField(albedo_key_, albedo_key_)->set_initialized(true);
-    S->GetField(melt_key_, melt_key_)->set_initialized(true);
-    S->GetField(evap_key_, evap_key_)->set_initialized(true);
-    S->GetField(snow_temp_key_, snow_temp_key_)->set_initialized(true);
-    S->GetField(qE_sh_key_, qE_sh_key_)->set_initialized(true);
-    S->GetField(qE_lh_key_, qE_lh_key_)->set_initialized(true);
-    S->GetField(qE_sm_key_, qE_sm_key_)->set_initialized(true);
-    S->GetField(qE_lw_out_key_, qE_lw_out_key_)->set_initialized(true);
-    S->GetField(qE_cond_key_, qE_cond_key_)->set_initialized(true);
   }
 
   for (auto dep_key : dependencies_) {
