@@ -180,10 +180,10 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
          .set<std::string>("field evaluator type", "viscosity")
          .set<std::string>("viscosity key", viscosity_liquid_key_)
          .sublist("EOS parameters")
-         .set<std::string>("viscosity relation type", "liquid water 0-30C");
+         .set<std::string>("eos type", "liquid water 0-30C");
     if (eos_table_.size() > 0) {
       elist.sublist(viscosity_liquid_key_).sublist("EOS parameters")
-           .set<std::string>("viscosity relation type", "liquid water tabular")
+           .set<std::string>("eos type", "liquid water tabular")
            .set<std::string>("table name", eos_table_)
            .set<std::string>("field name", "viscosity");
     }

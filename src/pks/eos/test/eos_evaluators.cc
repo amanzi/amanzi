@@ -136,7 +136,7 @@ TEST(FactoryEOS) {
     Teuchos::ParameterList plist;
     plist.set<std::string>("table name", "test/h2o.eos")
          .set<std::string>("field name", "viscosity")
-         .set<std::string>("viscosity relation type", "liquid water " + name);
+         .set<std::string>("eos type", "liquid water " + name);
 
     ViscosityBaseFactory factory;
     auto eos = factory.CreateViscosity(plist);

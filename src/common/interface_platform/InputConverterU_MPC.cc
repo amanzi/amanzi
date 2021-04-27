@@ -1075,7 +1075,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
 
       // lookup table
       if (eos_lookup_table_ != "") {
-        out_list.sublist(it->first)
+        out_list.sublist(it->first).sublist("physical models and assumptions")
             .set<std::string>("eos lookup table", eos_lookup_table_);
       }
     }

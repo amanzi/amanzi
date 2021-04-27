@@ -25,7 +25,7 @@ namespace AmanziEOS {
 
 // method for instantiating Viscosity implementations
 Teuchos::RCP<ViscosityBase> ViscosityBaseFactory::CreateViscosity(Teuchos::ParameterList& plist) {
-  std::string type = plist.get<std::string>("viscosity relation type");
+  std::string type = plist.get<std::string>("eos type");
   return Teuchos::rcp(CreateInstance(type, plist));
 };
 

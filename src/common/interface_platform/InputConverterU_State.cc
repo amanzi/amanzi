@@ -64,7 +64,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   out_ic.sublist("gravity").set<Teuchos::Array<double> >("value", gravity);
 
   // --- constant viscosities
-  node = GetUniqueElementByTagsString_("phases, liquid_phase, viscosity", flag);
+  node = GetUniqueElementByTagsString_("phases, liquid_phase, viscosity", flag, true);
   double viscosity = GetTextContentD_(node, "Pa*s");
   out_ic.sublist("const_fluid_viscosity").set<double>("value", viscosity);
 
@@ -76,7 +76,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   }
 
   // --- constant density
-  node = GetUniqueElementByTagsString_("phases, liquid_phase, density", flag);
+  node = GetUniqueElementByTagsString_("phases, liquid_phase, density", flag, true);
   rho_ = GetTextContentD_(node, "kg/m^3");
   out_ic.sublist("const_fluid_density").set<double>("value", rho_);
 
