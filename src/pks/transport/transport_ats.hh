@@ -119,7 +119,7 @@ The advection-diffusion equation for component *i* may be written as
     Source terms:
 
       * `"source terms`" [list] Provides solute source.
-        * `"concentration`" [list]  Defines solute source injection rate.       
+        * `"component mass source`" [list]  Defines solute source injection rate.       
            * `"spatial distribution method`" [string]  
               If *volume*, source is considered as extensive quantity. [moles/s]  
 	      If *none*, source is considered as intensive quantity. [moles/m^2*s] in surface and [moles/m^3*s] in subsurface  
@@ -128,7 +128,8 @@ The advection-diffusion equation for component *i* may be written as
         * `"geochemical conditions`" [Array(string)] List of PFLOTRAN constraints providing concentration for solute injection.   
      
       * `"water_source`" [list] Defines the solute injection rate by providing water source (moles/m^2*s in surface and moles/m^3*s in subsurface) that gets multiplied by concentrations in `"geochemical conditions`". 
-          The injection rate of solute in moles/s is evaluated as: 
+          
+      The injection rate of solute in moles/s is evaluated as: 
 	  Concentration provided in PFLOTRAN (moles of solute/L of water) * 1000(L/m^3 of water) * water source (moles of water/m^3*s) * volume of injection domain (m^3) * 1/[molar density of water (moles of water/m^3 of water)] 
 
 
