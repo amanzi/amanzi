@@ -122,7 +122,6 @@ register_evaluator_with_factory(
   LISTNAME ATS_RELATIONS_REG
   )
 
-
 register_evaluator_with_factory(
   HEADERFILE generic_evaluators/SubgridDisaggregateEvaluator_reg.hh
   LISTNAME ATS_RELATIONS_REG

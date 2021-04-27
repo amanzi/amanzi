@@ -113,9 +113,7 @@ bool CoupledTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   const Epetra_MultiVector& tcc = *S_inter_->GetFieldCopyData("total_component_concentration", "subcycling")->ViewComponent("cell",false);
 
   const std::vector<std::string>&  component_names_sub = subsurf_pk_->component_names();
-
   int num_components =  subsurf_pk_->num_aqueous_component();
-
   std::vector<double> mass_subsurface(num_components, 0.), mass_surface(num_components, 0.);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM){
@@ -149,17 +147,11 @@ void CoupledTransport_PK::InterpolateCellVector(
   v_int.Update(b, v0, a, v1, 0.);
 }
 
-
-
 void CoupledTransport_PK::SetupCouplingConditions()
 {
   Teuchos::ParameterList& bc_list = subsurface_transport_list_->sublist("boundary conditions").sublist("concentration");
   Teuchos::ParameterList& src_list = surface_transport_list_->sublist("source terms").sublist("component mass source");
-  
-  std::cout<<"initial bc\n"<<bc_list<<"\n";
-  std::cout<<"initial source\n"<<src_list<<"\n";
-
-  
+    
   if (!bc_list.isSublist("BC coupling")){
     Teuchos::ParameterList& bc_coupling = bc_list.sublist("BC coupling");
     bc_coupling.set<std::string>("spatial distribution method", "domain coupling");
@@ -174,7 +166,6 @@ void CoupledTransport_PK::SetupCouplingConditions()
 
   if (!src_list.isSublist("surface coupling")){
     Teuchos::ParameterList& src_coupling = src_list.sublist("surface coupling");
-
     src_coupling.set<std::string>("spatial distribution method", "domain coupling");
     src_coupling.set<std::string>("submodel", "rate");
     std::vector<std::string> regs(1);
@@ -188,11 +179,6 @@ void CoupledTransport_PK::SetupCouplingConditions()
     tmp.set<std::string>("copy_field_out_key", "default");
     tmp.set<std::string>("copy_field_in_key", "default");
   }
-
-
-
 }
-
-
-    
+ 
 }  // namespace Amanzi
