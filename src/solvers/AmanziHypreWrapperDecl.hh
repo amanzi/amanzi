@@ -2,7 +2,8 @@
 #define AMANZI_HYPRE_DECL_HPP
 
 #include "Ifpack2_ConfigDefs.hpp"
-//#if defined(HAVE_HYPRE) && defined(HAVE_IFPACK2_MPI)
+
+#if defined(HAVE_HYPRE) && defined(HAVE_IFPACK2_MPI)
 
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
@@ -625,5 +626,5 @@ private:
 
 }//end Ifpack2 namespace
 
-//#endif // HAVE_IFPACK2_HYPRE && HAVE_IFPACK2_MPI
+#endif // HAVE_IFPACK2_HYPRE && HAVE_IFPACK2_MPI
 #endif /* IFPACK2_HYPRE_DECL_HPP */

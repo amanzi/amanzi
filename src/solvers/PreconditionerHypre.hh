@@ -97,6 +97,8 @@ This is provided when using the `"preconditioning method`"=`"euclid`" or
 #define AMANZI_PRECONDITIONER_BOOMERAMG_HH_
 
 
+#define HAVE_HYPRE
+
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Tpetra_RowMatrix_decl.hpp"

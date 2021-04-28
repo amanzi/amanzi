@@ -3,7 +3,7 @@
 #define AMANZI_HYPRE_DEF_HH
 
 #include "AmanziHypreWrapperDecl.hh"
-//#if defined(HAVE_HYPRE) && defined(HAVE_IFPACK2_MPI)
+#if defined(HAVE_HYPRE) && defined(HAVE_IFPACK2_MPI)
 #include <stdexcept>
 
 #include "Tpetra_Import.hpp"
@@ -1056,5 +1056,5 @@ bool Hypre<MatrixType>::hasTransposeApply() const {
   template class Amanzi::Hypre< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 
-//#endif // HAVE_HYPRE && HAVE_MPI
+#endif // HAVE_HYPRE && HAVE_MPI
 #endif // AMANZI_HYPRE_DEF_HPP
