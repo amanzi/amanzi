@@ -140,10 +140,17 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
     elist.sublist(ie_liquid_key_)
          .set<std::string>("field evaluator type", "iem")
          .set<std::string>("internal energy key", ie_liquid_key_);
-    elist.sublist("internal_energy_liquid").sublist("IEM parameters").sublist("Material 1")
-         .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters")
-         .set<std::string>("iem type", "linear")
+    auto& tmp = elist.sublist(ie_liquid_key_)
+         .sublist("IEM parameters").sublist("Material 1")
+         .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters");
+    if (eos_table_.size() > 0) {
+      tmp.set<std::string>("iem type", "tabular")
+         .set<std::string>("table name", eos_table_)
+         .set<std::string>("field name", "internal_energy");
+    } else {
+      tmp.set<std::string>("iem type", "linear")
          .set<double>("molar heat capacity", 76.0);
+    }
   }
 
   S->RequireField(ie_liquid_key_, ie_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)

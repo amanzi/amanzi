@@ -36,7 +36,7 @@ class EnthalpyEvaluator : public SecondaryVariableFieldEvaluator {
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
   // Required for boundary conditions
-  virtual double EvaluateFieldSingle(const Teuchos::Ptr<State>& S, int c, double T);
+  virtual double EvaluateFieldSingle(const Teuchos::Ptr<State>& S, int c, double T, double p);
 
  protected:
   Key pressure_key_, mol_density_liquid_key_, ie_liquid_key_;
