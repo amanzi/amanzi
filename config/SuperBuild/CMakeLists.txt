@@ -73,8 +73,6 @@ endif()
 if(CMAKE_Fortran_COMPILER_ID MATCHES GNU)
   if (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL "10")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-argument-mismatch")
-    set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -fallow-argument-mismatch")
-    set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -fallow-argument-mismatch")
   endif()
 endif()
 
