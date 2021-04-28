@@ -56,6 +56,10 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
   auto physical_models = Teuchos::sublist(my_list_, "physical models and assumptions");
   bool vapor_diff = physical_models->get<bool>("vapor diffusion", true);
 
+  if (my_list_->isParameter("eos lookup table")) {
+    eos_table_ = my_list_->get<std::string>("eos lookup table");
+  }
+
   // keys
   particle_density_key_ = Keys::getKey(domain_, "particle_density");
   ie_rock_key_ = Keys::getKey(domain_, "internal_energy_rock");
@@ -136,10 +140,17 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
     elist.sublist(ie_liquid_key_)
          .set<std::string>("field evaluator type", "iem")
          .set<std::string>("internal energy key", ie_liquid_key_);
-    elist.sublist("internal_energy_liquid").sublist("IEM parameters").sublist("Material 1")
-         .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters")
-         .set<std::string>("iem type", "linear")
+    auto& tmp = elist.sublist(ie_liquid_key_)
+         .sublist("IEM parameters").sublist("Material 1")
+         .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters");
+    if (eos_table_.size() > 0) {
+      tmp.set<std::string>("iem type", "tabular")
+         .set<std::string>("table name", eos_table_)
+         .set<std::string>("field name", "internal_energy");
+    } else {
+      tmp.set<std::string>("iem type", "linear")
          .set<double>("molar heat capacity", 76.0);
+    }
   }
 
   S->RequireField(ie_liquid_key_, ie_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
@@ -157,8 +168,12 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
          .set<std::string>("mass density key", mass_density_liquid_key_);
     elist.sublist(mol_density_liquid_key_).sublist("EOS parameters")
          .set<std::string>("eos type", "liquid water 0-30C");
-    elist.sublist(mol_density_liquid_key_)
-         .sublist("verbose object").set<std::string>("verbosity level", "medium");
+    if (eos_table_.size() > 0) {
+      elist.sublist(mol_density_liquid_key_).sublist("EOS parameters")
+           .set<std::string>("eos type", "liquid water tabular")
+           .set<std::string>("table name", eos_table_)
+           .set<std::string>("field name", "density");
+    }
   }
 
   S->RequireField(mol_density_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
@@ -171,10 +186,14 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
     elist.sublist(viscosity_liquid_key_)
          .set<std::string>("field evaluator type", "viscosity")
          .set<std::string>("viscosity key", viscosity_liquid_key_)
-         .sublist("viscosity model parameters")
-         .set<std::string>("viscosity relation type", "liquid water");
-    elist.sublist("viscosity_liquid")
-         .sublist("verbose object").set<std::string>("verbosity level", "high");
+         .sublist("EOS parameters")
+         .set<std::string>("eos type", "liquid water 0-30C");
+    if (eos_table_.size() > 0) {
+      elist.sublist(viscosity_liquid_key_).sublist("EOS parameters")
+           .set<std::string>("eos type", "liquid water tabular")
+           .set<std::string>("table name", eos_table_)
+           .set<std::string>("field name", "viscosity");
+    }
 
     S->RequireField(viscosity_liquid_key_, viscosity_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);

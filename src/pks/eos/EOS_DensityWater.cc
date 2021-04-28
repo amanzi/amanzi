@@ -12,41 +12,38 @@
   q3 and q1 are cubic and linear polynomials, respectively.
 */
 
-#include "EOS_Water.hh"
+#include "EOS_DensityWater.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-EOS_Water::EOS_Water(Teuchos::ParameterList& eos_plist) :
-    EOS_ConstantMolarMass(0.0180153),
-    eos_plist_(eos_plist),
-
+EOS_DensityWater::EOS_DensityWater(Teuchos::ParameterList& eos_plist)
+  : EOS_Density(eos_plist),
     ka_(999.915),
     kb_(0.0416516),
     kc_(-0.0100836),
     kd_(0.000206355),
     kT0_(273.15),
-
     kalpha_(5.0e-10),
     kp0_(1.0e5) {
 };
 
 
-double EOS_Water::MassDensity(double T, double p) {
+double EOS_DensityWater::Density(double T, double p) {
   double dT = T - kT0_;
   double rho1bar = ka_ + (kb_ + (kc_ + kd_*dT)*dT)*dT;
   return rho1bar * (1.0 + kalpha_*(p - kp0_));
 };
 
 
-double EOS_Water::DMassDensityDT(double T, double p) {
+double EOS_DensityWater::DDensityDT(double T, double p) {
   double dT = T - kT0_;
   double rho1bar = kb_ + (2.0*kc_ + 3.0*kd_*dT)*dT;
   return rho1bar * (1.0 + kalpha_*(p - kp0_));
 };
 
 
-double EOS_Water::DMassDensityDp(double T, double p) {
+double EOS_DensityWater::DDensityDp(double T, double p) {
   double dT = T - kT0_;
   double rho1bar = ka_ + (kb_ + (kc_ + kd_*dT)*dT)*dT;
   return rho1bar * kalpha_;

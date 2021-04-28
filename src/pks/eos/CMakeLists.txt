@@ -21,21 +21,24 @@ include_directories(${ATK_SOURCE_DIR})
 # Library: eos
 #
 set(eos_src_files 
-    EOSEvaluator.cc
-    EOSFactory.cc 
-    EOS_Constant.cc
-    EOS_IdealGas.cc
-    EOS_VaporInGas.cc
-    EOS_Water.cc
-    EOS_WaterFEHM.cc
+    EOSDensityEvaluator.cc
+    EOSDensityFactory.cc 
+    EOS_DensityIdealGas.cc
+    EOS_DensityVaporInGas.cc
+    EOS_DensityWater.cc
+    EOS_DensityWaterFEHM.cc
+    EOS_DensityWaterTabular.cc
     Henry_Solubility.cc
     IsobaricEOSEvaluator.cc
+    LookupTable.cc
     MolarFractionGasEvaluator.cc
     ThermalConductivity_Water.cc
     SaturatedVaporPressure_Water.cc
     SaturatedVaporPressureFactory.cc
-    Viscosity_Water.cc
-    Viscosity_Constant.cc
+    ViscosityConstant.cc
+    ViscosityWater.cc
+    ViscosityWaterFEHM.cc
+    ViscosityWaterTabular.cc
     ViscosityBaseFactory.cc
     ViscosityEvaluator.cc
    )
@@ -52,26 +55,28 @@ endif()
 #
 set(eos_inc_files 
     EOS.hh
-    EOSEvaluator.hh
-    EOSFactory.hh
-    EOS_Constant.hh
-    EOS_ConstantMolarMass.hh
-    EOS_IdealGas.hh
-    EOS_VaporInGas.hh
-    EOS_Water.hh
-    EOS_WaterFEHM.hh
+    EOSDensityEvaluator.hh
+    EOSDensityFactory.hh
+    EOS_DensityIdealGas.hh
+    EOS_DensityVaporInGas.hh
+    EOS_DensityWater.hh
+    EOS_DensityWaterFEHM.hh
+    EOS_DensityWaterTabular.hh
     eos_registration.hh
     Henry_Solubility.hh
     IsobaricEOSEvaluator.hh
+    LookupTable.hh
     MolarFractionGasEvaluator.hh
     ThermalConductivity_Water.hh
     SaturatedVaporPressure.hh
     SaturatedVaporPressure_Water.hh
     SaturatedVaporPressureFactory.hh
-    Viscosity_Base.hh
-    Viscosity_Constant.hh
-    Viscosity_Water.hh
+    ViscosityBase.hh
     ViscosityBaseFactory.hh
+    ViscosityConstant.hh
+    ViscosityWater.hh
+    ViscosityWaterFEHM.hh
+    ViscosityWaterTabular.hh
     ViscosityEvaluator.hh)
 
 # install headers into a subdirectory
@@ -83,7 +88,8 @@ if (BUILD_TESTS)
 
     # Copy test directory files if any out of source build
     if (NOT (${EOS_SOURCE_DIR} EQUAL ${EOS_BINARY_DIR}) )
-        file(GLOB DataFiles "${EOS_SOURCE_DIR}/test/*.xml")
+        file(GLOB DataFiles "${EOS_SOURCE_DIR}/test/*.xml"
+                            "${EOS_SOURCE_DIR}/test/*.eos")
         file(COPY ${DataFiles} DESTINATION ${EOS_BINARY_DIR}/test/)
     endif()
 

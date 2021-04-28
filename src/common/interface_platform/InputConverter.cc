@@ -350,6 +350,25 @@ DOMNode* InputConverter::GetUniqueElementByTagsString_(
 
 
 /* ******************************************************************
+* Returns node specified by the list of consequtive names tags 
+* separated by commas. Only the first tag may be not unique.
+****************************************************************** */
+xercesc::DOMNode* InputConverter::GetUniqueElementByTagsString_(
+    const std::string& tags, bool& flag, bool exception)
+{
+  xercesc::DOMNode* node = GetUniqueElementByTagsString_(tags, flag);
+
+  if (!flag && exception) {
+    Errors::Message msg;
+    msg << "No unique element for tags \"" << tags << "\"\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  return node;
+}
+
+
+/* ******************************************************************
 * Return node described by the list of consequtive names tags 
 * separated by commas.
 ****************************************************************** */

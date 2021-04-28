@@ -23,8 +23,13 @@ IEM_Linear::IEM_Linear(Teuchos::ParameterList& plist) : plist_(plist) {
 }
 
 
-double IEM_Linear::InternalEnergy(double temp) {
-  return cv_ * (temp - Tref_);
+double IEM_Linear::InternalEnergy(double T, double p) {
+  return cv_ * (T - Tref_);
+}
+
+
+double IEM_Linear::DInternalEnergyDT(double T, double p) {
+  return cv_;
 }
 
 

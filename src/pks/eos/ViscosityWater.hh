@@ -19,29 +19,27 @@
 #include "dbc.hh"
 #include "Factory.hh"
 
-#include "Viscosity_Base.hh"
+#include "ViscosityBase.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-// Equation of State model
-class Viscosity_Water : public Viscosity_Base {
+class ViscosityWater : public ViscosityBase {
  public:
   explicit
-  Viscosity_Water(Teuchos::ParameterList& eos_plist);
+  ViscosityWater(Teuchos::ParameterList& eos_plist);
 
-  virtual double Viscosity(double T);
-  virtual double DViscosityDT(double T);
+  virtual double Viscosity(double T, double p);
+  virtual double DViscosityDT(double T, double p);
+  virtual double DViscosityDp(double T, double p);
 
  protected:
-  Teuchos::ParameterList eos_plist_;
-
   // constants for water, hard-coded 
   const double kav1_, kbv1_, kcv1_;
   const double kbv2_, kcv2_, kT1_;
 
  private:
-  static Utils::RegisteredFactory<Viscosity_Base, Viscosity_Water> factory_;
+  static Utils::RegisteredFactory<ViscosityBase, ViscosityWater> factory_;
 };
 
 }  // namespace AmanziEOS

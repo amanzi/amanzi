@@ -49,6 +49,13 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   Errors::Message msg;
   char* tagname;
   char* text_content;
+
+  // --- eos lookup table
+  bool flag;
+  DOMNode* node = GetUniqueElementByTagsString_("phases, liquid_phase, eos", flag);
+  if (flag) {
+    eos_lookup_table_ = GetTextContentS_(node, "", false);
+  }
   
   // --- gravity
   Teuchos::Array<double> gravity(dim_);
@@ -57,8 +64,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   out_ic.sublist("gravity").set<Teuchos::Array<double> >("value", gravity);
 
   // --- constant viscosities
-  bool flag;
-  DOMNode* node = GetUniqueElementByTagsString_("phases, liquid_phase, viscosity", flag);
+  node = GetUniqueElementByTagsString_("phases, liquid_phase, viscosity", flag, true);
   double viscosity = GetTextContentD_(node, "Pa*s");
   out_ic.sublist("const_fluid_viscosity").set<double>("value", viscosity);
 
@@ -70,7 +76,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   }
 
   // --- constant density
-  node = GetUniqueElementByTagsString_("phases, liquid_phase, density", flag);
+  node = GetUniqueElementByTagsString_("phases, liquid_phase, density", flag, true);
   rho_ = GetTextContentD_(node, "kg/m^3");
   out_ic.sublist("const_fluid_density").set<double>("value", rho_);
 
