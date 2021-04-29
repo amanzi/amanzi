@@ -131,7 +131,7 @@ TEST(PRECONDITIONERS_OMP) {
 
 #pragma omp parallel for shared(map) num_threads(2)
   for (const auto& prec_name : {"identity", "diagonal"}) {
-    auto m = matrix(map);
+    auto m = matrix(*map);
 
     Epetra_Vector u(*map), v(*map);
     for (int i = 0; i < N; i++) u[i] = 1.0 / (i + 2.0);
@@ -152,7 +152,7 @@ TEST(PRECONDITIONERS_OMP) {
   // serial run
   cpu0 = omp_get_wtime();
   for (const auto& prec_name : {"identity", "diagonal"}) {
-    auto m = matrix(map);
+    auto m = matrix(*map);
 
     Epetra_Vector u(*map), v(*map);
     for (int i = 0; i < N; i++) u[i] = 1.0 / (i + 2.0);
@@ -166,8 +166,8 @@ TEST(PRECONDITIONERS_OMP) {
   }
 
 
-  int nthreads = omp_get_max_threads();
-  double cpu1 = omp_get_wtime();
+  nthreads = omp_get_max_threads();
+  cpu1 = omp_get_wtime();
   std::cout << "CPU (serial): " << cpu1 - cpu0 << " [sec]  threads=" << nthreads << std::endl;
   
 };
