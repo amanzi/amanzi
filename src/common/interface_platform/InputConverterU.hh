@@ -167,7 +167,8 @@ class InputConverterU : public InputConverter {
   void TranslateTransportBCsAmanziGeochemistry_(Teuchos::ParameterList& out_list);
   void TranslateStateICsAmanziGeochemistry_(Teuchos::ParameterList& out_list,
                                             std::string& constraint,
-                                            std::vector<std::string>& regions);
+                                            std::vector<std::string>& regions,
+                                            const std::string& domain);
 
   // -- chemistry and energy
   Teuchos::ParameterList TranslateChemistry_(const std::string& domain);

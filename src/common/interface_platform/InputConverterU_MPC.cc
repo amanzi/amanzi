@@ -284,7 +284,10 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
         PopulatePKTree_(pk_tree_list, "coupled flow and transport");
       break;
     case 7:
-      PopulatePKTree_(pk_tree_list, "flow and reactive transport");
+      if (!coupled_flow_)
+        PopulatePKTree_(pk_tree_list, "flow and reactive transport");
+      else
+        PopulatePKTree_(pk_tree_list, "coupled flow and reactive transport");
       break;
     default:
       Exceptions::amanzi_throw(Errors::Message("This model is not supported by the MPC."));
@@ -726,6 +729,17 @@ void InputConverterU::PopulatePKTree_(
     tmp_list.sublist("reactive transport").sublist("chemistry").set<std::string>("PK type", submodel);
     tmp_list.sublist("flow").set<std::string>("PK type", pk_model_["flow"]);
   }
+  else if (pk_name == "coupled flow and reactive transport") {
+    Teuchos::ParameterList& tmp_list = pk_tree.sublist("coupled flow and reactive transport");
+    tmp_list.set<std::string>("PK type", "flow reactive transport");  // same as for single domain
+    PopulatePKTree_(tmp_list, "coupled flow");
+    PopulatePKTree_(tmp_list, "coupled reactive transport");
+  }
+  else {
+    Errors::Message msg;
+    msg << "Internal error: cannot add \"" << pk_name << "\" to the PK tree.\n";
+    Exceptions::amanzi_throw(msg);
+  }
 }
 
 
@@ -1059,6 +1073,13 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
         out_list.sublist(it->first).set<int>("master PK index", 0);
 
         err_options = "pressure, temperature";
+      }
+      else if (it->first == "coupled flow and reactive transport") {
+        Teuchos::Array<std::string> pk_names;
+        pk_names.push_back("coupled flow");
+        pk_names.push_back("coupled reactive transport");
+        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
+        out_list.sublist(it->first).set<int>("master PK index", 0);
       }
 
       // add time integrator to PKs that have no transport and chemistry sub-PKs.
