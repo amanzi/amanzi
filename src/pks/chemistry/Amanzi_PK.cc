@@ -141,9 +141,9 @@ void Amanzi_PK::Setup(const Teuchos::Ptr<State>& S)
 /* ******************************************************************
 * Can this be done during Setup phase?
 ******************************************************************* */
-void Amanzi_PK::AllocateAdditionalChemistryStorage_(const BeakerState& state)
+void Amanzi_PK::AllocateAdditionalChemistryStorage_()
 {
-  int n_secondary_comps = state.secondary_activity_coeff.size();
+  int n_secondary_comps = chem_->secondary_species().size();
   if (n_secondary_comps > 0) {
     Teuchos::RCP<CompositeVectorSpace> fac = S_->RequireField(secondary_activity_coeff_key_, passwd_);
     fac->SetMesh(mesh_)->SetGhosted(false)
@@ -183,6 +183,23 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
   chem_->CopyStateToBeaker(beaker_state_);
   // chem_->VerifyState(beaker_state_);
 
+  // check names of primary species
+  int nprimary = chem_->primary_species().size(); 
+  if (nprimary == comp_names_.size()) {
+    for (int i = 0; i < nprimary; ++i) {
+      std::string species_name = chem_->primary_species().at(i).name();
+      if (comp_names_[i] != species_name) {
+        Errors::Message msg;
+        msg << "Amanzi PK: mismatch of name: \"" << comp_names_[i] << "\" and \"" 
+            << species_name << "\". Compare XML and BGD lists.";
+        Exceptions::amanzi_throw(msg);
+      }
+    }
+  }
+
+  AllocateAdditionalChemistryStorage_();
+  SetupAuxiliaryOutput();
+
   // copy the cell data into the beaker storage for initialization purposes
   // but first ensure dependencies are filled
   S->GetFieldEvaluator(poro_key_)->HasFieldChanged(S_.ptr(), name_);
@@ -190,37 +207,21 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
   S->GetFieldEvaluator(saturation_key_)->HasFieldChanged(S_.ptr(), name_);
 
   // finish setting up & testing the chemistry object
-  int nprimary, ierr(0);
+  int ierr(0);
   std::string internal_msg;
-  std::vector<double> values;
+  std::vector<double> values(nprimary);
 
   const auto& iclist = glist_->sublist("state").sublist("initial conditions").sublist(tcc_key_);
   auto constraints = iclist.get<Teuchos::Array<std::string> >("names").toVector();
 
+  // print statistics
   try {
     vo_->Write(Teuchos::VERB_HIGH, "Initializing chemistry in cell 0...\n");
     chem_->Display();
-
-    // check names of primary species
-    nprimary = chem_->primary_species().size(); 
-    if (nprimary == comp_names_.size()) {
-      for (int i = 0; i < nprimary; ++i) {
-        std::string species_name = chem_->primary_species().at(i).name();
-        if (comp_names_[i] != species_name) {
-          Errors::Message msg;
-          msg << "Amanzi PK: mismatch of name: \"" << comp_names_[i] << "\" and \"" 
-              << species_name << "\". Compare XML and BGD lists.";
-          Exceptions::amanzi_throw(msg);
-        }
-      }
-    }
-
-    // solve for initial free-ion concentrations
     vo_->Write(Teuchos::VERB_HIGH, "Initial speciation calculations in cell 0...\n");
 
-    for (int i = 0; i < nprimary; ++i) values.push_back((*tcc)[i][0]);
+    for (int i = 0; i < nprimary; ++i) values[i] = (*tcc)[i][0];
     chem_->EnforceConstraint(&beaker_state_, beaker_parameters_, constraints, values);
-    // chem_->Speciate(&beaker_state_, beaker_parameters_);
 
     vo_->Write(Teuchos::VERB_HIGH, "\nTest solution of initial conditions in cell 0:\n");
     chem_->DisplayResults();
@@ -231,13 +232,7 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   ErrorAnalysis(ierr, internal_msg);
 
-  // TODO(bandre): at this point we should know about any additional
-  // storage that chemistry needs...
-  AllocateAdditionalChemistryStorage_(beaker_state_);
-
-  SetupAuxiliaryOutput();
-
-  // solve for initial free-ion concentrations
+  // compute the equilibrium state
   int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   ierr = 0;
   if (fabs(initial_conditions_time_ - S->time()) <= 1e-8 * fabs(S->time())) {
@@ -247,7 +242,6 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
       try {
         for (int i = 0; i < nprimary; ++i) values[i] = (*tcc)[i][c];
         chem_->EnforceConstraint(&beaker_state_, beaker_parameters_, constraints, values);
-        // chem_->Speciate(&beaker_state_, beaker_parameters_);
         CopyBeakerStructuresToCellState(c, tcc);
       } 
       catch (Exceptions::Amanzi_exception& geochem_err) {

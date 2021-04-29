@@ -67,7 +67,7 @@ class Amanzi_PK : public Chemistry_PK {
   BeakerState beaker_state() { return beaker_state_; }
 
  private:
-  void AllocateAdditionalChemistryStorage_(const BeakerState& state);
+  void AllocateAdditionalChemistryStorage_();
 
   void XMLParameters();
   void SetupAuxiliaryOutput();

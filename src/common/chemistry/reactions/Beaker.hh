@@ -89,7 +89,6 @@ class Beaker {
   void DisplayResults() const;
 
   // access
-  // int ncomp() const { return ncomp_; }
   void set_porosity(double porosity) { porosity_ = porosity; }
   double get_porosity() { return porosity_; }
 
@@ -97,12 +96,12 @@ class Beaker {
   double water_density_kg_L() const { return water_density_kg_L_; }
 
   double sorbed_accumulation_coef() const { return sorbed_accumulation_coef_; }
-  double por_sat_den_vol() const { return por_sat_den_vol_; }
 
   SolverStatus status() const { return status_; }
 
   const std::vector<Mineral>& minerals() const { return minerals_; }
   const std::vector<Species>& primary_species() const { return primary_species_; }
+  const std::vector<AqueousEquilibriumComplex>& secondary_species() { return aqComplexRxns_; }
   const std::vector<IonExchangeRxn>& ion_exchange_rxns() const { return ion_exchange_rxns_; }
 
   const std::vector<double>& total() const { return total_; }
@@ -128,10 +127,6 @@ class Beaker {
 
   void set_saturation(double value) { saturation_ = value; }
 
-  void set_ncomp(int i) { ncomp_ = i; }
-  void set_tolerance(double value) { tolerance_ = value; }
-  void set_max_iterations(int value) { max_iterations_ = value; }
-
   // updates both water density variables
   void water_density_kg_m3(double d) {
     water_density_kg_m3_ = d;
@@ -146,7 +141,6 @@ class Beaker {
   void set_dt(double dt) { dt_ = dt; }
   void set_aqueous_accumulation_coef(double coef) { aqueous_accumulation_coef_ = coef; }
   void set_sorbed_accumulation_coef(double coef) { sorbed_accumulation_coef_ = coef; }
-  void por_sat_den_vol(double coef) { por_sat_den_vol_ = coef; }
 
   void set_use_log_formulation(bool value) { use_log_formulation_ = value; }
 
@@ -244,7 +238,6 @@ class Beaker {
   double aqueous_accumulation_coef_;
   // sorbed_accumulation_coef_ = volume/dt [m^3 bulk/sec]
   double sorbed_accumulation_coef_;
-  // por_sat_den_vol_ = porosity * saturation * water_density * volume [kg water]
   double por_sat_den_vol_;
 
   ActivityModel* activity_model_;

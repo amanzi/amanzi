@@ -107,8 +107,8 @@ Beaker::~Beaker() {
 void Beaker::Initialize(const BeakerState& state,
                         const BeakerParameters& parameters)
 {
-  set_tolerance(parameters.tolerance);
-  set_max_iterations(parameters.max_iterations);
+  tolerance_ = parameters.tolerance;
+  max_iterations_ = parameters.max_iterations;
 
   SetupActivityModel(parameters.activity_model_name,
                      parameters.pitzer_database, parameters.jfunction_pitzer);
@@ -653,7 +653,7 @@ void Beaker::ResizeInternalMemory()
 {
   int size = primary_species_.size();
 
-  set_ncomp(size);
+  ncomp_ = size;
   total_.resize(size);
   dtotal_.Resize(size);
 
@@ -892,7 +892,7 @@ void Beaker::CopyStateToBeaker(const BeakerState& state)
   set_sorbed_accumulation_coef(volume_ / dt_);
 
   // calculates product of porosity,saturation,water_density[kg/m^3],volume
-  por_sat_den_vol(porosity_ * saturation_ * water_density_kg_m3() * volume_);
+  por_sat_den_vol_ = porosity_ * saturation_ * water_density_kg_m3() * volume_;
 } 
 
 
@@ -1161,7 +1161,7 @@ void Beaker::AddKineticChemistryToResidual()
 {
   // loop over general kinetic reactions and add rates
   for (auto it = generalKineticRxns_.begin(); it != generalKineticRxns_.end(); ++it) {
-    it->AddContributionToResidual(&residual_, por_sat_den_vol());
+    it->AddContributionToResidual(&residual_, por_sat_den_vol_);
   }
 
   // loop over radioactive decay reactions and add rates
@@ -1182,7 +1182,7 @@ void Beaker::AddKineticChemistryToJacobian()
 {
   // loop over general kinetic reactions and add rates
   for (auto it = generalKineticRxns_.begin(); it != generalKineticRxns_.end(); ++it) {
-    it->AddContributionToJacobian(&jacobian_, primary_species(), por_sat_den_vol());
+    it->AddContributionToJacobian(&jacobian_, primary_species(), por_sat_den_vol_);
   }
 
   // loop over radioactive decay reactions and add rates
