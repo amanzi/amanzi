@@ -69,10 +69,17 @@ endif()
 # ############################################################################ #
 
 # Check for GNU compilers and add special option for gfortran version 10 and above
-
-if(CMAKE_Fortran_COMPILER_ID MATCHES GNU)
+if (CMAKE_Fortran_COMPILER_ID MATCHES GNU)
   if (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL "10")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-argument-mismatch")
+  endif()
+endif()
+
+# check for Apple CLANG compilers and add special option to allow
+# HDF5, others to compile.
+if (CMAKE_C_COMPILER_ID MATCHES AppleClang)
+  if (CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL "11")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error-implicit-function-declaration")
   endif()
 endif()
 
