@@ -1083,9 +1083,9 @@ void State::InitializeFields() {
             if (state_plist_.sublist("initial conditions").isSublist(lifted_key)) {
               Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(lifted_key);
               sublist.set("evaluator name", f_it->first);
-              sublist.setName(f_it->first);
-              state_plist_.sublist("initial conditions").set(f_it->first, sublist);
-              sublist = state_plist_.sublist("initial conditions").sublist(f_it->first);
+              //sublist.setName(f_it->first);
+              //state_plist_.sublist("initial conditions").set(f_it->first, sublist);
+              //sublist = state_plist_.sublist("initial conditions").sublist(f_it->first);
               f_it->second->Initialize(sublist);
             }
           }
