@@ -424,7 +424,7 @@ and are provided on the system.  Some of these libraries may be in nonstandard l
   --with-blas=DIR                Search for the BLAS libraries only in DIR
                                  [default is blank so CMake searches in system directories] 
 
-  --blas-vendor=VENDOR       Specify the vendor (usually the system name) for the BLAS and LAPACK libraries
+  --blas-vendor=VENDOR           Specify the vendor (usually the system name) for the BLAS and LAPACK libraries
                                  [default All] is implicit in findBLAS.cmake and will search all supported names.
                                  To focus the search and simplify debegging, specify a VENDOR name. Supported
                                  VENDOR names include, Generic, OpenBLAS, CRAYSCI, Apple, FLAME, and NAS.
@@ -942,9 +942,9 @@ List of INPUT parameters
 
   # Debug FindBLAS.cmake
   if [ "${debug_find_blas}" -eq "${TRUE}" ]; then
-      tpl_debug_find_blas=-DTPL_DEBUG_FIND_BLAS:BOOL=${TRUE}
+      debug_find_blas_tmp=-DTPL_DEBUG_FIND_BLAS:BOOL=${TRUE}
   else
-      tpl_debug_find_blas=-DTPL_DEBUG_FIND_BLAS:BOOL=${FALSE}
+      debug_find_blas_tmp=-DTPL_DEBUG_FIND_BLAS:BOOL=${FALSE}
   fi
   
   # LAPACK
@@ -952,7 +952,7 @@ List of INPUT parameters
       lapack_opts=-DTPL_LAPACK_DIR:FILEPATH=${lapack_dir}
   fi
 
-  blas_lapack_opts="${blas_opts} ${blas_vendor_opts} ${tpl_debug_find_blas} ${lapack_opts}"
+  blas_lapack_opts="${blas_opts} ${blas_vendor_opts} ${debug_find_blas_tmp} ${lapack_opts}"
   
   # deprecated options
   if [ "${tpls_only}" ]; then
