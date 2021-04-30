@@ -39,9 +39,6 @@
 
 #include "transport_ats.hh"
 
-#define  CONCENTRATION_SOURCE 1
-
-
 namespace Amanzi {
 namespace Transport {
 
@@ -488,38 +485,6 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
       }
     }
 
-    PK_DomainFunctionFactory<TransportSourceFunction_Concentrations> factory_conv(mesh_);
-    conc_sources_list = plist_->sublist("source terms").sublist("component concentration source");
-    for (const auto& it : conc_sources_list) {
-      std::string name = it.first;
-      if (conc_sources_list.isSublist(name)) {
-        Teuchos::ParameterList& src_list = conc_sources_list.sublist(name);
-        std::string src_type = src_list.get<std::string>("spatial distribution method", "none");
-
-        Teuchos::RCP<TransportSourceFunction_Concentrations> src =
-          factory_conv.Create(src_list, "source function", AmanziMesh::CELL, Kxy);
-
-        std::vector<std::string> tcc_names = src_list.get<Teuchos::Array<std::string>>("component names").toVector();
-        src->set_tcc_names(tcc_names);
-        //src->set_name("component concentration source");
-        if (S->HasField(water_src_key_)){
-          auto water_src = S->GetFieldData(water_src_key_)->ViewComponent("cell",false);
-          src->set_conversion(1., water_src, false);
-        }else{
-          Errors::Message msg("Water source field is not defined in State\n");
-          Exceptions::amanzi_throw(msg);
-        }
-          
-        // set the component indicies
-        for (const auto& n : src->tcc_names()) {
-          src->tcc_index().push_back(FindComponentNumber(n));
-        }
-
-        src->set_marker(CONCENTRATION_SOURCE);
-        src->set_state(S_);
-        srcs_.push_back(src);
-      }
-    }
 
 #ifdef ALQUIMIA_ENABLED
     // -- try geochemical conditions
@@ -819,16 +784,7 @@ bool Transport_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
     }
   }
 #endif
-  
-  for (auto& src : srcs_) {
-    if (src->marker() == CONCENTRATION_SOURCE){
-      auto water_src = S_next_->GetFieldData(water_src_key_)->ViewComponent("cell",false);
-      Teuchos::RCP<TransportSourceFunction_Concentrations> src_comp =
-        Teuchos::rcp_dynamic_cast<TransportSourceFunction_Concentrations>(src);
-      src_comp->set_conversion(1., water_src, false);
-    }
-  }
-    
+      
   // We use original tcc and make a copy of it later if needed.
   tcc = S_inter_->GetFieldData(tcc_key_, name_);
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
@@ -1691,14 +1647,6 @@ void Transport_ATS::ComputeAddSourceTerms(double tp, double dtp,
   
   for (int m = 0; m < nsrcs; m++) {
     double t0 = tp - dtp;
-    // if (srcs_[m]->marker() == CONCENTRATION_SOURCE){
-    //   Teuchos::RCP<TransportSourceFunction_Concentrations> src_comp =
-    //     Teuchos::rcp_dynamic_cast<TransportSourceFunction_Concentrations>(srcs_[m]);
-    //   src_comp->Compute(t0, tp);
-    // }else{
-    //   srcs_[m]->Compute(t0, tp);
-    // }
-
     srcs_[m]->Compute(t0, tp);
     std::vector<int> tcc_index = srcs_[m]->tcc_index();
 
