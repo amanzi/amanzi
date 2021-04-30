@@ -60,16 +60,16 @@ SurfaceBalanceCLM::SurfaceBalanceCLM(Teuchos::ParameterList& pk_tree,
 
   // set up primary variables for surface/subsurface sources.  CLM keeps its
   // own internal state, violating most ATS principles, but for now we'll hack it in.
-  // -- surface mass sources
+  // -- surface water sources
   Teuchos::ParameterList& wsource_sublist =
-    FElist.sublist(Keys::getKey(domain_,"mass_source"));
-  wsource_sublist.set("evaluator name", Keys::getKey(domain_,"mass_source"));
+    FElist.sublist(Keys::getKey(domain_,"water_source"));
+  wsource_sublist.set("evaluator name", Keys::getKey(domain_,"water_source"));
   wsource_sublist.set("field evaluator type", "primary variable");
 
-  // -- subsurface mass source transpiration
+  // -- subsurface water source transpiration
   Teuchos::ParameterList& w_v_source_sublist =
-    FElist.sublist(Keys::getKey(domain_ss_,"mass_source"));
-  w_v_source_sublist.set("evaluator name", Keys::getKey(domain_ss_,"mass_source"));
+    FElist.sublist(Keys::getKey(domain_ss_,"water_source"));
+  w_v_source_sublist.set("evaluator name", Keys::getKey(domain_ss_,"water_source"));
   w_v_source_sublist.set("field evaluator type", "primary variable");
 
   // CLM timestep
@@ -89,20 +89,20 @@ SurfaceBalanceCLM::Setup(const Teuchos::Ptr<State>& S) {
 
   // requirements: other primary variables
   Teuchos::RCP<FieldEvaluator> fm;
-  S->RequireField(Keys::getKey(domain_,"mass_source"), name_)->SetMesh(mesh_)
+  S->RequireField(Keys::getKey(domain_,"water_source"), name_)->SetMesh(mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator(Keys::getKey(domain_,"mass_source"));
-  fm = S->GetFieldEvaluator(Keys::getKey(domain_,"mass_source"));
+  S->RequireFieldEvaluator(Keys::getKey(domain_,"water_source"));
+  fm = S->GetFieldEvaluator(Keys::getKey(domain_,"water_source"));
   pvfe_wsource_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
   if (pvfe_wsource_ == Teuchos::null) {
     Errors::Message message("SurfaceBalanceCLM: error, failure to initialize primary variable");
     Exceptions::amanzi_throw(message);
   }
 
-  S->RequireField(Keys::getKey(domain_ss_,"mass_source"), name_)->SetMesh(subsurf_mesh_)
+  S->RequireField(Keys::getKey(domain_ss_,"water_source"), name_)->SetMesh(subsurf_mesh_)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator(Keys::getKey(domain_ss_,"mass_source"));
-  fm = S->GetFieldEvaluator(Keys::getKey(domain_ss_,"mass_source"));
+  S->RequireFieldEvaluator(Keys::getKey(domain_ss_,"water_source"));
+  fm = S->GetFieldEvaluator(Keys::getKey(domain_ss_,"water_source"));
   pvfe_w_sub_source_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
   if (pvfe_w_sub_source_ == Teuchos::null) {
     Errors::Message message("SurfaceBalanceCLM: error, failure to initialize primary variable");
@@ -274,10 +274,10 @@ SurfaceBalanceCLM::Initialize(const Teuchos::Ptr<State>& S) {
   ATS::CLM::set_dz(dz);
 
   // set as intialized the sources
-  S->GetFieldData(Keys::getKey(domain_,"mass_source"),name_)->PutScalar(0.);
-  S->GetField(Keys::getKey(domain_,"mass_source"),name_)->set_initialized();
-  S->GetFieldData(Keys::getKey(domain_ss_,"mass_source"),name_)->PutScalar(0.);
-  S->GetField(Keys::getKey(domain_ss_,"mass_source"),name_)->set_initialized();
+  S->GetFieldData(Keys::getKey(domain_,"water_source"),name_)->PutScalar(0.);
+  S->GetField(Keys::getKey(domain_,"water_source"),name_)->set_initialized();
+  S->GetFieldData(Keys::getKey(domain_ss_,"water_source"),name_)->PutScalar(0.);
+  S->GetField(Keys::getKey(domain_ss_,"water_source"),name_)->set_initialized();
   S->GetFieldData(Keys::getKey(domain_,"snow_depth"),name_)->PutScalar(snow_depth);
   S->GetField(Keys::getKey(domain_,"snow_depth"),name_)->set_initialized();
 
@@ -401,15 +401,15 @@ SurfaceBalanceCLM::AdvanceStep(double t_old, double t_new, bool reinit) {
   
   // get output
   Epetra_MultiVector& surf_source = *S_next_->GetFieldData(Keys::getKey(domain_,
-          "mass_source"), name_)->ViewComponent("cell", false);
+          "water_source"), name_)->ViewComponent("cell", false);
   Epetra_MultiVector& sub_source = *S_next_->GetFieldData(Keys::getKey(domain_ss_,
-          "mass_source"), name_)->ViewComponent("cell", false);
+          "water_source"), name_)->ViewComponent("cell", false);
   ATS::CLM::get_total_mass_fluxes(surf_source, sub_source);
 
   Epetra_MultiVector& surf_source_old = *S_inter_->GetFieldData(Keys::getKey(domain_,
-          "mass_source"), name_)->ViewComponent("cell", false);
+          "water_source"), name_)->ViewComponent("cell", false);
   Epetra_MultiVector& sub_source_old = *S_inter_->GetFieldData(Keys::getKey(domain_ss_,
-          "mass_source"), name_)->ViewComponent("cell", false);
+          "water_source"), name_)->ViewComponent("cell", false);
   surf_source_old = surf_source;
   sub_source_old = sub_source;
 
@@ -441,7 +441,7 @@ SurfaceBalanceCLM::AdvanceStep(double t_old, double t_new, bool reinit) {
     vecs.clear();
     
     vnames.push_back("surface water source [m/s]"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"mass_source")).ptr());
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"water_source")).ptr());
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
 

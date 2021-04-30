@@ -365,7 +365,7 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
 
             Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe1 =
               Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>
-              (S_inter_->GetFieldEvaluator(Keys::getKey(name.str(),"mass_source_temperature")));
+              (S_inter_->GetFieldEvaluator(Keys::getKey(name.str(),"water_source_temperature")));
 
             pfe1->SetFieldAsChanged(S_inter_.ptr());
 
@@ -377,13 +377,13 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
 
             Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe3 =
               Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>
-              (S_inter_->GetFieldEvaluator(Keys::getKey(name.str(),"mass_source")));
+              (S_inter_->GetFieldEvaluator(Keys::getKey(name.str(),"water_source")));
 
             pfe3->SetFieldAsChanged(S_inter_.ptr());
 
             Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe4 =
               Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>
-              (S_inter_->GetFieldEvaluator(Keys::getKey(name_ss.str(),"mass_source")));
+              (S_inter_->GetFieldEvaluator(Keys::getKey(name_ss.str(),"water_source")));
 
             pfe4->SetFieldAsChanged(S_inter_.ptr());
 
@@ -403,7 +403,7 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
 
           Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe1 =
             Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>
-            (S_next_->GetFieldEvaluator(Keys::getKey(name.str(),"mass_source_temperature")));
+            (S_next_->GetFieldEvaluator(Keys::getKey(name.str(),"water_source_temperature")));
 
           pfe1->SetFieldAsChanged(S_next_.ptr());
 
@@ -415,13 +415,13 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
 
           Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe3 =
             Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>
-            (S_next_->GetFieldEvaluator(Keys::getKey(name.str(),"mass_source")));
+            (S_next_->GetFieldEvaluator(Keys::getKey(name.str(),"water_source")));
 
           pfe3->SetFieldAsChanged(S_next_.ptr());
 
           Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe4 =
             Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>
-            (S_next_->GetFieldEvaluator(Keys::getKey(name_ss.str(),"mass_source")));
+            (S_next_->GetFieldEvaluator(Keys::getKey(name_ss.str(),"water_source")));
 
           pfe4->SetFieldAsChanged(S_next_.ptr());
 

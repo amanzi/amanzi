@@ -36,7 +36,7 @@ class AdvectedEnergySourceEvaluator : public SecondaryVariableFieldEvaluator {
 
   Key internal_enthalpy_key_;
   Key external_enthalpy_key_;
-  Key mass_source_key_;
+  Key water_source_key_;
   Key internal_density_key_;
   Key external_density_key_;
   Key conducted_source_key_;

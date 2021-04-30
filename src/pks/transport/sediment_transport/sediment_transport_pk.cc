@@ -1,3 +1,4 @@
+
 /*
   Transport PK 
 
@@ -119,7 +120,7 @@ void SedimentTransport_PK::Setup(const Teuchos::Ptr<State>& S)
 
   water_tolerance_ = tp_list_->get<double>("water tolerance", 1e-1);
   max_tcc_ = tp_list_->get<double>("maximal concentration", 0.9);
-  sediment_density_ = tp_list_->get<double>("sediment density [kg/m^3]");
+  sediment_density_ = tp_list_->get<double>("sediment density [kg m^-3]");
 
 
   mesh_ = S->GetMesh(domain_name_);

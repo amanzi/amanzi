@@ -26,7 +26,7 @@ SettlementRateEvaluator :: SettlementRateEvaluator(Teuchos::ParameterList& plist
   tau_d_ = plist_.get<double>("critical shear stress");
   ws_ = plist_.get<double>("settling velocity");
   gamma_ = plist_.get<double>("specific weight of water");
-  sediment_density_ = plist_.get<double>("sediment density [kg/m^3]");
+  sediment_density_ = plist_.get<double>("sediment density [kg m^-3]");
 
   
   umax_ = plist_.get<double>("max current");

@@ -436,11 +436,11 @@ MPCDelegateWater::ModifyPredictor_TempFromSource(double h, const Teuchos::RCP<Tr
 
     const Epetra_MultiVector& Told = *S_inter_->GetFieldData("surface_temperature")
         ->ViewComponent("cell",false);
-    const Epetra_MultiVector& Tsource = *S_next_->GetFieldData("surface_mass_source_temperature")
+    const Epetra_MultiVector& Tsource = *S_next_->GetFieldData("surface_water_source_temperature")
         ->ViewComponent("cell",false);
     const Epetra_MultiVector& hold = *S_inter_->GetFieldData("ponded_depth")
         ->ViewComponent("cell",false);
-    const Epetra_MultiVector& dhsource = *S_inter_->GetFieldData("surface_mass_source")
+    const Epetra_MultiVector& dhsource = *S_inter_->GetFieldData("surface_water_source")
         ->ViewComponent("cell",false);
 
     Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh =

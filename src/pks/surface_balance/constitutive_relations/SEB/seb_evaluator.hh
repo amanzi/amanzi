@@ -44,9 +44,9 @@ the ground from the atmosphere.
    * `"snow domain name`" ``[string]`` **DEFAULT** Default set relative to surface domain name.
  
     KEYS:
-    * `"surface mass source`" **DOMAIN-mass_source**  [m s^-1]
+    * `"surface water source`" **DOMAIN-water_source**  [m s^-1]
     * `"surface energy source`" **DOMAIN-total_energy_source** [MW m^-2]
-    * `"subsurface mass source`" **DOMAIN-mass_source**  [mol s^-1]
+    * `"subsurface water source`" **DOMAIN-water_source**  [mol s^-1]
     * `"subsurface energy source`" **DOMAIN-total_energy_source** [MW m^-3]
     * `"snow mass source - sink`" **DOMAIN-source_sink** [m_SWE s^-1]
     * `"new snow source`" **DOMAIN-source** [m_SWE s^-1]
@@ -122,8 +122,8 @@ class SEBEvaluator : public SecondaryVariablesFieldEvaluator {
   virtual void UpdateFieldDerivative_(const Teuchos::Ptr<State>& S, Key wrt_key);
   
  protected:
-  Key mass_source_key_, energy_source_key_;
-  Key ss_mass_source_key_, ss_energy_source_key_;
+  Key water_source_key_, energy_source_key_;
+  Key ss_water_source_key_, ss_energy_source_key_;
   Key snow_source_key_, new_snow_key_;
   Key met_sw_key_, met_lw_key_, met_air_temp_key_, met_rel_hum_key_;
   Key met_wind_speed_key_, met_prain_key_, met_psnow_key_;

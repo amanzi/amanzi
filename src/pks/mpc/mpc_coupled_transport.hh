@@ -49,6 +49,7 @@ namespace Amanzi {
                                double dt_int, double dt, Epetra_MultiVector& v_int) ;
 
     void ComputeVolumeDarcyFlux(const Teuchos::Ptr<State>& S);
+    void SetupCouplingConditions();
 
     Teuchos::RCP<const AmanziMesh::Mesh> mesh_, surf_mesh_;
     std::string passwd_;
@@ -57,6 +58,7 @@ namespace Amanzi {
     Teuchos::RCP<Teuchos::ParameterList> subsurface_transport_list_;
     int subsurf_id_, surf_id_;
 
+    Key subsurface_tcc_key_, surface_tcc_key_;
     Key subsurface_flux_key_, surface_flux_key_;
     Key surface_name_, subsurface_name_;
     Key mass_darcy_key, surf_mass_darcy_key;
