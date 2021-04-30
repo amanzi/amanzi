@@ -86,7 +86,6 @@ Richards::Richards(Teuchos::ParameterList& pk_tree,
   sat_gas_key_ = Keys::readKey(*plist_, domain_, "saturation gas", "saturation_gas");
   sat_ice_key_ = Keys::readKey(*plist_, domain_, "saturation ice", "saturation_ice");
 
-  
   // set up an additional primary variable evaluator for flux
   Teuchos::ParameterList& pv_sublist = S->GetEvaluatorList(flux_key_);
   pv_sublist.set("field evaluator type", "primary variable");
@@ -107,7 +106,6 @@ void Richards::Setup(const Teuchos::Ptr<State>& S)
 // Pieces of the construction process that are common to all
 // Richards-like PKs.
 // -------------------------------------------------------------
-
 void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S)
 {
   // Get data for special-case entities.
@@ -315,7 +313,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S)
   is_source_term_ = plist_->get<bool>("source term", false);
   if (is_source_term_) {
     if (source_key_.empty())
-      source_key_ = Keys::readKey(*plist_, domain_, "source", "mass_source");
+      source_key_ = Keys::readKey(*plist_, domain_, "source", "water_source");
     source_term_is_differentiable_ =
         plist_->get<bool>("source term is differentiable", true);
     explicit_source_ = plist_->get<bool>("explicit source term", false);
@@ -421,13 +419,12 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     wrm_plist.setParameters(plist_->sublist("water retention evaluator"));
     wrm_plist.set("field evaluator type", "WRM");
   }
-
   if (!S->HasFieldEvaluator(coef_key_) && (S->GetEvaluatorList(coef_key_).numParams() == 0)) {
     Teuchos::ParameterList& kr_plist = S->GetEvaluatorList(coef_key_);
     kr_plist.setParameters(S->GetEvaluatorList(sat_key_));
     kr_plist.set("field evaluator type", "WRM rel perm");
   }
-  
+
   // -- saturation
   S->RequireField(sat_key_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);

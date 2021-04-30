@@ -172,6 +172,7 @@ int OverlandPressureFlow::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
   return (ierr > 0) ? 0 : 1;
 };
 
+
 // -----------------------------------------------------------------------------
 // Update the preconditioner at time t and u = up
 // -----------------------------------------------------------------------------
@@ -325,7 +326,6 @@ void OverlandPressureFlow::UpdatePreconditioner(double t,
   // increment the iterator count
   iter_++;
 };
-
 
 }  // namespace Flow
 }  // namespace Amanzi
