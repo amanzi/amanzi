@@ -30,6 +30,10 @@ set(CMAKE_Fortran_FLAGS_RELEASE "@CMAKE_Fortran_FLAGS_RELEASE@" CACHE STRING "Su
 set(CMAKE_Fortran_FLAGS_MINSIZEREL "@CMAKE_Fortran_FLAGS_MINSIZEREL@" CACHE STRING "SuperBuild Fortran compiler flags")
 set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO "@CMAKE_Fortran_FLAGS_RELWITHDEBINFO@" CACHE STRING "SuperBuild Fortran compiler flags")
 
+# TPL Compiler Flags (preserve base flags for Amanzi and ATS builds)
+set(TPL_CMAKE_C_FLAGS "@CMAKE_C_FLAGS@" CACHE STRING "SuperBuild C compiler flags")
+set(TPL_CMAKE_CXX_FLAGS "@CMAKE_CXX_FLAGS@" CACHE STRING "SuperBuild CXX compiler flags")
+set(TPL_CMAKE_Fortran_FLAGS "@CMAKE_Fortran_FLAGS@" CACHE STRING "SuperBuild Fortran compiler flags")
 
 # Mesh type settings
 set(ENABLE_Structured @ENABLE_Structured@ CACHE BOOL "Enable structured mesh capability")
