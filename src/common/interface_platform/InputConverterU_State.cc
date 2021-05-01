@@ -21,6 +21,7 @@
 #include "errors.hh"
 #include "exceptions.hh"
 #include "dbc.hh"
+#include "Key.hh"
 
 #include "InputConverterU.hh"
 #include "InputConverterU_Defs.hh"
@@ -581,7 +582,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         out_ic.sublist("geochemical conditions").sublist(name)
             .set<Teuchos::Array<std::string> >("regions", regions);
 
-        TranslateStateICsAmanziGeochemistry_(out_ic, name, regions);
+        TranslateStateICsAmanziGeochemistry_(out_ic, name, regions, "domain");
       }
 
       // surface fields
@@ -654,6 +655,17 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           dof_str << "dof " << k + 1 << " function";
           dof_list.sublist(dof_str.str()).sublist("function-constant").set<double>("value", vals[k]);
         }
+      }
+
+      // -- geochemical condition
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, geochemistry_component, constraint", flag);
+      if (flag) {
+        std::string name = GetAttributeValueS_(node, "name");
+
+        out_ic.sublist("geochemical conditions").sublist(name)
+            .set<Teuchos::Array<std::string> >("regions", regions);
+
+        TranslateStateICsAmanziGeochemistry_(out_ic, name, regions, "fracture");
       }
 
       // -- uniform temperature
@@ -818,7 +830,7 @@ Teuchos::ParameterList InputConverterU::TranslateMaterialsPartition_()
 ****************************************************************** */
 void InputConverterU::TranslateStateICsAmanziGeochemistry_(
     Teuchos::ParameterList& out_list, std::string& constraint,
-    std::vector<std::string>& regions)
+    std::vector<std::string>& regions, const std::string& domain)
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -829,7 +841,7 @@ void InputConverterU::TranslateStateICsAmanziGeochemistry_(
   DOMNode* node;
   DOMElement* element;
 
-  node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
+  node = GetPKChemistryPointer_(flag);
   std::string engine = GetAttributeValueS_(node, "engine");
 
   node = GetUniqueElementByTagsString_("geochemistry, constraints", flag);
@@ -844,7 +856,7 @@ void InputConverterU::TranslateStateICsAmanziGeochemistry_(
       Exceptions::amanzi_throw(msg);
     }
 
-    Teuchos::ParameterList& ic_list = out_list.sublist("total_component_concentration")
+    Teuchos::ParameterList& ic_list = out_list.sublist(Keys::getKey(domain, "total_component_concentration"))
         .sublist("function").sublist("All");
 
     ic_list.set<Teuchos::Array<std::string> >("regions", regions)

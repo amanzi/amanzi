@@ -54,9 +54,9 @@ endif()
 # Install Targets
 #
 set(eos_inc_files 
-    EOS.hh
     EOSDensityEvaluator.hh
     EOSDensityFactory.hh
+    EOS_Density.hh
     EOS_DensityIdealGas.hh
     EOS_DensityVaporInGas.hh
     EOS_DensityWater.hh

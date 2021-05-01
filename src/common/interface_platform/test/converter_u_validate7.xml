@@ -519,6 +519,7 @@
     <ParameterList name="flow matrix">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="physical models and assumptions">
+        <Parameter name="water content model" type="string" value="constant density"/>
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       </ParameterList>
       <ParameterList name="absolute permeability">
@@ -606,13 +607,11 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="physical models and assumptions">
-        <Parameter name="water content model" type="string" value="constant density"/>
-      </ParameterList>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
+
     <ParameterList name="flow fracture">
       <Parameter name="domain name" type="string" value="fracture"/>
       <ParameterList name="fracture permeability models">
@@ -727,6 +726,7 @@
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
+
     <ParameterList name="flow and energy">
       <Parameter name="PKs order" type="Array(string)" value="{flow, energy}"/>
       <Parameter name="master PK index" type="int" value="0"/>
@@ -753,6 +753,7 @@
     <ParameterList name="flow">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="physical models and assumptions">
+        <Parameter name="water content model" type="string" value="constant density"/>
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       </ParameterList>
       <ParameterList name="absolute permeability">
@@ -842,13 +843,11 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="physical models and assumptions">
-        <Parameter name="water content model" type="string" value="constant density"/>
-      </ParameterList>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
+
     <ParameterList name="energy">
       <ParameterList name="physical models and assumptions">
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
@@ -1030,7 +1029,7 @@
         <Parameter name="controller training start" type="int" value="0"/>
         <Parameter name="controller training end" type="int" value="3"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -1050,7 +1049,7 @@
         <Parameter name="error tolerance" type="double" value="1.0e-20"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -1062,7 +1061,7 @@
         <Parameter name="controller training start" type="int" value="0"/>
         <Parameter name="controller training end" type="int" value="3"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
