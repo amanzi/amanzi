@@ -908,13 +908,14 @@ void State::Setup() {
     if (!f_it->second->initialized()) {
       f_it->second->CreateData();
     }
-    // std::cout<<"Field "<<f_it->first<<": ";
-    // if (f_it->second->type() == Amanzi::COMPOSITE_VECTOR_FIELD) {
-    //   auto com_vec = f_it->second->GetFieldData();
-    //     for (CompositeVector::name_iterator comp=com_vec->begin();
-    //          comp!=com_vec->end(); ++comp) std::cout<<*comp<<" ";
-    //   std::cout<<"\n";
-    // }
+    if (vo->os_OK(Teuchos::VERB_HIGH)) {
+      *vo->os() << "Field " << f_it->first << ": ";
+      if (f_it->second->type() == Amanzi::COMPOSITE_VECTOR_FIELD) {
+        auto cv = f_it->second->GetFieldData();
+        for (auto comp=cv->begin(); comp!=cv->end(); ++comp) *vo->os() << *comp << " ";
+      }
+      *vo->os() << "\n";
+    }
   }
 };
 

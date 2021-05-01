@@ -1818,7 +1818,8 @@ Fracture_permeability
 
 Fracture permeability is specified as constant values, using three parameters: ``model``, ``aperture``, and ``normal``. 
 The parameter ``model`` has only one admissible value ``cubic law``.
-The parameter ``aperture`` defines a constant fracture aperture.
+The parameter ``aperture`` defines either a constant fracture aperture or variable aperture using
+``type=h5file`` and ``filename``
 The parameter ``normal`` defines a constant normal permeability.
 
 .. code-block:: xml
@@ -1846,7 +1847,7 @@ The ``thermal_properties`` has two elements.
 Fracture_conductivity
 +++++++++++++++++++++
 
-Fracture thermal conductivity has only one parameter ``normal`` that defined the normal conductivity.
+Fracture thermal conductivity has only one parameter ``normal`` that defines the normal conductivity.
 
 .. code-block:: xml
 

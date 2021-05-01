@@ -14,7 +14,7 @@
 #ifndef AMANZI_EOS_VISC_EVALUATOR_HH_
 #define AMANZI_EOS_VISC_EVALUATOR_HH_
 
-#include "Viscosity_Base.hh"
+#include "ViscosityBase.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
@@ -37,11 +37,11 @@ class ViscosityEvaluator : public SecondaryVariableFieldEvaluator {
 
  protected:
   // the actual model
-  Teuchos::RCP<Viscosity_Base> visc_;
+  Teuchos::RCP<ViscosityBase> visc_;
 
   // Keys for fields
   // dependencies
-  Key temp_key_;
+  Key temp_key_, pres_key_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator, ViscosityEvaluator> factory_;

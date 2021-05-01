@@ -17,23 +17,25 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "Factory.hh"
-#include "EOS_ConstantMolarMass.hh"
+#include "EOS_Density.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
 // Equation of State model
-class EOS_WaterFEHM : public EOS_ConstantMolarMass {
+class EOS_DensityWaterFEHM : public EOS_Density {
  public:
-  explicit EOS_WaterFEHM(Teuchos::ParameterList& eos_plist);
+  explicit EOS_DensityWaterFEHM(Teuchos::ParameterList& eos_plist);
 
-  virtual double MassDensity(double T, double p);
-  virtual double DMassDensityDT(double T, double p);
-  virtual double DMassDensityDp(double T, double p);
+  virtual double Density(double T, double p) override;
+  virtual double DDensityDT(double T, double p) override;
+  virtual double DDensityDp(double T, double p) override;
+
+  virtual double MolarDensity(double T, double p) override { return Density(T, p) / M_; }
+  virtual double DMolarDensityDT(double T, double p) override { return DDensityDT(T, p) / M_; }
+  virtual double DMolarDensityDp(double T, double p) override { return DDensityDp(T, p) / M_; }
 
  private:
-  Teuchos::ParameterList eos_plist_;
-
   // constants for water, hard-coded because it would be crazy to try to come
   // up with names for these in a parameter list...
   // -- temperature dependence of density
@@ -41,7 +43,7 @@ class EOS_WaterFEHM : public EOS_ConstantMolarMass {
   double z0_, z1_, z2_, z3_, z4_, z5_, z6_, z7_, z8_, z9_;
   double T0_;
 
-  static Utils::RegisteredFactory<EOS, EOS_WaterFEHM> factory_;
+  static Utils::RegisteredFactory<EOS_Density, EOS_DensityWaterFEHM> factory_;
 };
 
 }  // namespace AmanziEOS

@@ -1236,8 +1236,8 @@ Since hydraulic heads are needed for both regions, this equation requires
 retention curves for both regions and therefore is nonlinear.
  
 
-Model specifications and assumptions
-....................................
+Physical models and assumptions
+...............................
 
 This list is used to summarize physical models and assumptions, such as
 coupling with other PKs.
@@ -1271,6 +1271,8 @@ Combination of both approaches may lead to a more efficient code.
 * `"coupled matrix fracture flow`" [string] specifies PK's role in the strong 
   coupling of two flow PKs. The value is either `"matrix`" or `"fracture`".
 
+* `"eos lookup table`" [string] provides the name for optional EOS lookup table.
+
 .. code-block:: xml
 
   <ParameterList name="flow">  <!-- parent list -->
@@ -1281,6 +1283,7 @@ Combination of both approaches may lead to a more efficient code.
     <Parameter name="porosity model" type="string" value="compressible: pressure function"/>
     <Parameter name="multiscale model" type="string" value="single porosity"/>
     <Parameter name="coupled matrix fracture flow" type="string" value="matrix"/>
+    <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
   </ParameterList>
   </ParameterList>
 
@@ -2165,8 +2168,8 @@ where
 :math:`WR` is the Warren-Root coefficient that estimates the poro-space geometry, [-]
 
 
-Model specifications and assumptions
-....................................
+Physical models and assumptions
+...............................
 
 This list is used to summarize physical models and assumptions, such as
 coupling with other PKs.
@@ -2185,6 +2188,8 @@ This list is often generated or extended by a high-level MPC PK.
   will be used by dispersive-diffusive fluxes instead of total porosity. 
   Default is *false*.
 
+* `"eos lookup table`" [string] provides the name for optional EOS lookup table.
+
 .. code-block:: xml
 
   <ParameterList name="_TRANSPORT">  <!-- parent list -->
@@ -2193,6 +2198,7 @@ This list is often generated or extended by a high-level MPC PK.
     <Parameter name="permeability field is required" type="bool" value="false"/>
     <Parameter name="multiscale model" type="string" value="single porosity"/>
     <Parameter name="effective transport porosity" type="bool" value="false"/>
+    <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
   </ParameterList>
   </ParameterList>
 
@@ -3230,6 +3236,8 @@ This list is often generated on a fly by a high-level MPC PK.
 * `"water content model`" [string] changes the evaluator for water
   content. Available options are `"generic`" and `"constant density`" (default).
 
+* `"eos lookup table`" [string] provides the name for optional EOS lookup table.
+
 .. code-block:: xml
 
   <ParameterList>  <!-- parent list -->
@@ -3237,6 +3245,7 @@ This list is often generated on a fly by a high-level MPC PK.
     <ParameterList name="physical models and assumptions">
       <Parameter name="vapor diffusion" type="bool" value="false"/>
       <Parameter name="water content model" type="string" value="constant density"/>
+      <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
     </ParameterList>
   </ParameterList>
   </ParameterList>
@@ -6827,6 +6836,68 @@ This list contains data collected by the input parser of a higher-level spec.
   </ParameterList>
   </ParameterList>
   
+
+Tabulated EOS format
+--------------------
+
+The tabulated equation of state uses a free format for integres, doubles and text string; 
+however, the order of block is fixed and string cannot have spaces. 
+The first two line have the following format:
+
+.. code-block:: text
+
+  N scale shift field_name
+
+where *N* is the number of data points in either T or p directions,
+*scale* and *shift* are the scale factor and shift required to convert data
+to SI units, and *field_name* is either `"temperature`" or `"pressure`"
+
+The second block has seven lines and the above format, except for *N* which
+is now the total number of data points in the T-p table.
+
+The third block provides data for physical fields using the following order:
+
+.. code-block:: text
+
+ T p rho internal_energy enthalpy Cv Cp viscosity thermal_conductivity phase
+
+where *phase* is the first letter of phase, `"l`" or `"g`".
+
+
+Example for liquid water
+........................
+
+In this example the following units are used for *3x3* tabulated data: 
+temperature [K], pressure [bar], density [kg/m3], internal energy [kJ/mol], 
+enthalpy [kJ/mol], Cv [J/mol*K], Cp [J/mol*K], viscosity [Pa*s], and thermal conductivity [W/m*K].
+Thus, to convert these data to SI units, we specify non-unity factors for pressure, internal energy,
+and enthalpy.
+
+.. code-block:: text
+
+  3 1.0000  0.0 temperature
+  3 1.0e+5 0.0 pressure
+
+  9 1.0000 0.0 density
+  9 1.0e+3 0.0 internal_energy
+  9 1000.0 0.0 enthalpy 
+  9 1.0 0.0 cv
+  9 1.0 0.0 cp
+  9 1.0 0.0 viscosity
+  9 1.0 0.0 thermal_conductivity
+
+  280.15 0.5  999.879 0.530097 0.530997 75.6574 75.6793 0.00142708 0.574347  l
+  290.15 0.5  998.754  1.28544  1.28634  75.0821  75.4233 0.00107982 0.593025  l
+  300.15  0.5  996.493  2.03905  2.03995  74.3983 75.3170  0.000851  0.610549  l
+
+  280.15  1.0  999.904  0.530085 0.531887 75.6536  75.6756  0.00142701 0.574372  l
+  290.15 1.0  998.777  1.28540  1.28720  75.0787  75.4203  0.00107979  0.593048  l
+  300.15 1.0  996.515  2.03898  2.04078  74.3954  75.3145  0.000850991  0.610572  l
+
+  280.15  1.2 999.913  0.53008 0.532242 75.6521  75.6741  0.00142699  0.574382  l
+  290.15  1.2 998.787  1.28538 1.28754 75.0774  75.4191  0.00107978 0.593058  l
+  300.15 1.2 996.524  2.03895 2.04112 74.3942  75.3135  0.000850987  0.610581 l
+
 
 Tabulated function file format
 ------------------------------

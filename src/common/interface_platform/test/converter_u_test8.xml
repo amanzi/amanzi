@@ -35,7 +35,6 @@
 
   <phases>
     <liquid_phase name="water">
-      <eos>false</eos>
       <viscosity>1.0e-03</viscosity>
       <density>998.2</density>
       <dissolved_components>
@@ -45,7 +44,6 @@
       </dissolved_components>
     </liquid_phase>
     <gas_phase name="air">
-      <eos>false</eos>
       <viscosity>9.0e-06</viscosity>
       <dissolved_components>
         <primaries>

@@ -17,7 +17,7 @@
 
 // Amanzi
 #include "BDF1_TI.hh"
-#include "EOS.hh"
+#include "EOS_Density.hh"
 #include "IEM.hh"
 #include "PK_Factory.hh"
 
@@ -67,7 +67,7 @@ public:
 
  protected:
   // models for evaluating total energy
-  Teuchos::RCP<AmanziEOS::EOS> eos_liquid_;
+  Teuchos::RCP<AmanziEOS::EOS_Density> eos_liquid_;
   Teuchos::RCP<IEM> iem_liquid_;
 
  private:

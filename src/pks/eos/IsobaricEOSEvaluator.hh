@@ -17,7 +17,7 @@
 #include "Factory.hh"
 #include "secondary_variables_field_evaluator.hh"
 
-#include "EOS.hh"
+#include "EOS_Density.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
@@ -39,11 +39,11 @@ class IsobaricEOSEvaluator : public SecondaryVariablesFieldEvaluator {
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> >& results);
 
-  Teuchos::RCP<EOS> get_EOS() { return eos_; }
+  Teuchos::RCP<EOS_Density> get_EOS() { return eos_; }
 
  protected:
   // the actual model
-  Teuchos::RCP<EOS> eos_;
+  Teuchos::RCP<EOS_Density> eos_;
   EOSMode mode_;
 
   // Keys for fields

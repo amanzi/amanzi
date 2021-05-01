@@ -284,7 +284,10 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
         PopulatePKTree_(pk_tree_list, "coupled flow and transport");
       break;
     case 7:
-      PopulatePKTree_(pk_tree_list, "flow and reactive transport");
+      if (!coupled_flow_)
+        PopulatePKTree_(pk_tree_list, "flow and reactive transport");
+      else
+        PopulatePKTree_(pk_tree_list, "coupled flow and reactive transport");
       break;
     default:
       Exceptions::amanzi_throw(Errors::Message("This model is not supported by the MPC."));
@@ -405,6 +408,14 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
 
   dt_cut_["transient"] = 0.8;
   dt_inc_["transient"] = 1.2;
+
+  // global transport properties (should it be here?)
+  node = GetUniqueElementByTagsString_(
+      "numerical_controls, unstructured_controls, unstr_transport_controls, algorithm", flag);
+  if (flag) {
+    std::string algorithm = TrimString_(mm.transcode(node->getTextContent()));
+    transport_implicit_ = (algorithm == "implicit");
+  }
 
   // parse execution_control
   std::string unit;
@@ -575,7 +586,10 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
         PopulatePKTree_(pk_tree_list, "coupled flow and transport");
       break;
     case 7:
-      PopulatePKTree_(pk_tree_list, "flow and reactive transport");
+      if (!coupled_flow_)
+        PopulatePKTree_(pk_tree_list, "flow and reactive transport");
+      else 
+        PopulatePKTree_(pk_tree_list, "coupled flow and reactive transport");
       break;
     case 8:
       PopulatePKTree_(pk_tree_list, "energy");
@@ -586,6 +600,13 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
         PopulatePKTree_(pk_tree_list, "flow and energy");
       else 
         PopulatePKTree_(pk_tree_list, "coupled flow and energy");
+      break;
+    case 15: 
+      pk_master_["thermal flow"] = true;
+      if (!coupled_flow_)
+        PopulatePKTree_(pk_tree_list, "thermal flow and reactive transport");
+      else 
+        PopulatePKTree_(pk_tree_list, "coupled thermal flow and reactive transport");
       break;
     case 16:
       PopulatePKTree_(pk_tree_list, "shallow water");
@@ -706,7 +727,7 @@ void InputConverterU::PopulatePKTree_(
     tmp_list.sublist("energy fracture").set<std::string>("PK type", pk_model_["energy"]);
   }
   else if (pk_name == "coupled flow and energy") {
-    Teuchos::ParameterList& tmp_list = pk_tree.sublist("coupled flow and energy");
+    Teuchos::ParameterList& tmp_list = pk_tree.sublist(pk_name);
     tmp_list.set<std::string>("PK type", "thermal flow matrix fracture");
     PopulatePKTree_(tmp_list, "flow and energy");
     PopulatePKTree_(tmp_list, "flow and energy fracture");
@@ -725,6 +746,23 @@ void InputConverterU::PopulatePKTree_(
     tmp_list.sublist("reactive transport").sublist("transport").set<std::string>("PK type", "transport");
     tmp_list.sublist("reactive transport").sublist("chemistry").set<std::string>("PK type", submodel);
     tmp_list.sublist("flow").set<std::string>("PK type", pk_model_["flow"]);
+  }
+  else if (pk_name == "coupled flow and reactive transport") {
+    Teuchos::ParameterList& tmp_list = pk_tree.sublist(pk_name);
+    tmp_list.set<std::string>("PK type", "flow reactive transport");  // same as for single domain
+    PopulatePKTree_(tmp_list, "coupled flow");
+    PopulatePKTree_(tmp_list, "coupled reactive transport");
+  }
+  else if (pk_name == "coupled thermal flow and reactive transport") {
+    Teuchos::ParameterList& tmp_list = pk_tree.sublist(pk_name);
+    tmp_list.set<std::string>("PK type", "flow reactive transport");
+    PopulatePKTree_(tmp_list, "coupled flow and energy");
+    PopulatePKTree_(tmp_list, "coupled reactive transport");
+  }
+  else {
+    Errors::Message msg;
+    msg << "Internal error: cannot add \"" << pk_name << "\" to the PK tree.\n";
+    Exceptions::amanzi_throw(msg);
   }
 }
 
@@ -1060,6 +1098,20 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
 
         err_options = "pressure, temperature";
       }
+      else if (it->first == "coupled flow and reactive transport") {
+        Teuchos::Array<std::string> pk_names;
+        pk_names.push_back("coupled flow");
+        pk_names.push_back("coupled reactive transport");
+        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
+        out_list.sublist(it->first).set<int>("master PK index", 0);
+      }
+      else if (it->first == "coupled thermal flow and reactive transport") {
+        Teuchos::Array<std::string> pk_names;
+        pk_names.push_back("coupled flow and energy");
+        pk_names.push_back("coupled reactive transport");
+        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
+        out_list.sublist(it->first).set<int>("master PK index", 0);
+      }
 
       // add time integrator to PKs that have no transport and chemistry sub-PKs.
       if (it->first.find("transport") == std::string::npos &&
@@ -1071,6 +1123,12 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
               dt_cut_[mode], dt_inc_[mode]);
           out_list.sublist(it->first).sublist("verbose object") = verb_list_.sublist("verbose object");
         }
+      }
+
+      // lookup table
+      if (eos_lookup_table_ != "") {
+        out_list.sublist(it->first).sublist("physical models and assumptions")
+            .set<std::string>("eos lookup table", eos_lookup_table_);
       }
     }
   }

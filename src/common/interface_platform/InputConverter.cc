@@ -279,7 +279,7 @@ void InputConverter::ParseGeochemistry_()
 
 
 /* ******************************************************************
-* Returns node specified by the list of consequtive names tags 
+* Returns node specified by the list of consequitive namestags 
 * separated by commas. Only the first tag may be not unique.
 ****************************************************************** */
 DOMNode* InputConverter::GetUniqueElementByTagsString_(
@@ -346,6 +346,25 @@ DOMNode* InputConverter::GetUniqueElementByTagsString_(
 
   flag = (icnt == 1);
   return node_good;
+}
+
+
+/* ******************************************************************
+* Returns node specified by the list of consequtive names tags 
+* separated by commas. Only the first tag may be not unique.
+****************************************************************** */
+xercesc::DOMNode* InputConverter::GetUniqueElementByTagsString_(
+    const std::string& tags, bool& flag, bool exception)
+{
+  xercesc::DOMNode* node = GetUniqueElementByTagsString_(tags, flag);
+
+  if (!flag && exception) {
+    Errors::Message msg;
+    msg << "No unique element for tags \"" << tags << "\"\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  return node;
 }
 
 
