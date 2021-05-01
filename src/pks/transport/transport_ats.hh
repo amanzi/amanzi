@@ -12,10 +12,21 @@
 
 /*!
 
-The advection-diffusion equation for component *i* may be written as
+The advection-diffusion equation for component *i* in partially saturated porous media may be written as
 
 .. math::
-  \frac{\partial \theta S_l C_i}{\partial t} - \nabla \cdot \frac{k_r n_l}{\mu} K ( \nabla p + \rho g z ) = Q_w
+  \frac{\partial (\phi s_l C_i)}{\partial t} 
+  =
+  - \boldsymbol{\nabla} \cdot (\boldsymbol{q} C_i) 
+  + \boldsymbol{\nabla} \cdot (\phi s_l\, (\boldsymbol{D^*}_l + \tau \boldsymbol{D}_i) \boldsymbol{\nabla} C_i) + Q_s,
+
+The advection-diffusion equation for component *i* in the surface may be written as
+
+.. math::
+  \frac{\partial (C_i)}{\partial t} 
+  =
+  - \boldsymbol{\nabla} \cdot (\boldsymbol{q_s} C_i) 
+  + \boldsymbol{\nabla} \cdot ( (\boldsymbol{D^*}_l + \tau \boldsymbol{D}_i) \boldsymbol{\nabla} C_i) + Q_s,
 
 .. _transport-spec:
 .. admonition:: transport-spec
@@ -124,13 +135,16 @@ The advection-diffusion equation for component *i* may be written as
               If *volume*, source is considered as extensive quantity. [moles/s]  
 	      If *none*, source is considered as intensive quantity. [moles/m^2*s] in surface and [moles/m^3*s] in subsurface  
 
-      * `"geochemical`" [list]  Defines solute source through Alquimia by providing solute concentration through PFLOTRAN (moles/L) and injection rate through `"water_source`".       
-        * `"geochemical conditions`" [Array(string)] List of PFLOTRAN constraints providing concentration for solute injection.   
+      * `"geochemical`" [list]  Defines a source by setting solute concentration for all components (in moles/L) and an injection 
+        rate given by `"water_source`". Currently, this option is only available for Alquimia provided geochemical conditions. 
+        * `"geochemical conditions`" [Array(string)] List of geochemical constraints providing concentration for solute injection. 
      
-      * `"water_source`" [list] Defines the solute injection rate by providing water source (moles/m^2*s in surface and moles/m^3*s in subsurface) that gets multiplied by concentrations in `"geochemical conditions`". 
+      * `"water_source`" [list] Defines the water injection rate (moles/m^2*s in surface and moles/m^3*s in subsurface) which applies 
+        to concentrations specified by the `"geochemical conditions`". 
           
-      The injection rate of solute in moles/s is evaluated as: 
-	  Concentration provided in PFLOTRAN (moles of solute/L of water) * 1000(L/m^3 of water) * water source (moles of water/m^3*s) * volume of injection domain (m^3) * 1/[molar density of water (moles of water/m^3 of water)] 
+      The injection rate of a solute in moles/s, when given as the product of a concentration and a water source, is evaluated as: 
+	  Concentration (moles of solute/L of water) * 1000(L/m^3 of water) * water source (moles of water/m^3*s) * volume of injection 
+          domain (m^3) * 1/[molar density of water (moles of water/m^3 of water)] 
 
 
     Physical model and assumptions:
