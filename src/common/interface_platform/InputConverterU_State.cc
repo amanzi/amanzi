@@ -248,6 +248,15 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters")
             .set<std::string>("iem type", model)
             .set<double>("heat capacity", cv);
+
+        if (eos_lookup_table_.size() > 0) {
+          field_ev.sublist("IEM parameters").sublist(reg_str)
+              .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters")
+              .set<std::string>("iem type", "tabular")
+              .set<std::string>("table name", eos_lookup_table_)
+              .set<std::string>("field name", "internal_energy");
+        }
+    } else {
       }
 
       // -- rock heat capacity
@@ -356,6 +365,14 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters")
             .set<std::string>("iem type", model)
             .set<double>("heat capacity", cv);
+
+        if (eos_lookup_table_.size() > 0) {
+          field_ev.sublist("IEM parameters").sublist(reg_str)
+              .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters")
+              .set<std::string>("iem type", "tabular")
+              .set<std::string>("table name", eos_lookup_table_)
+              .set<std::string>("field name", "internal_energy");
+        }
       }
     }
   }

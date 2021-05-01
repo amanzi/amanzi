@@ -81,7 +81,7 @@ double LookupTable::Function(double T, double p)
   if (T < axisT_[0] || T > axisT_[nT - 1] ||
       p < axisP_[0] || p > axisP_[nP - 1]) {
     Errors::Message msg;
-    msg << "\nOut of bounds input values of T=" << T << " or P=" << p;
+    msg << "\nOut of bounds input values: T=" << T << " or p=" << p;
     amanzi_throw(msg);
   }
 

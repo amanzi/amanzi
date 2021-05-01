@@ -143,15 +143,19 @@
           <ParameterList name="TopRegion">
             <Parameter name="regions" type="Array(string)" value="{TopRegion}"/>
             <ParameterList name="IEM parameters">
-              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="iem type" type="string" value="tabular"/>
               <Parameter name="heat capacity" type="double" value="7.60999999999999943e+01"/>
+              <Parameter name="table name" type="string" value="h2o.eos"/>
+              <Parameter name="field name" type="string" value="internal_energy"/>
             </ParameterList>
           </ParameterList>
           <ParameterList name="BottomRegion">
             <Parameter name="regions" type="Array(string)" value="{BottomRegion}"/>
             <ParameterList name="IEM parameters">
-              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="iem type" type="string" value="tabular"/>
               <Parameter name="heat capacity" type="double" value="7.62000000000000028e+01"/>
+              <Parameter name="table name" type="string" value="h2o.eos"/>
+              <Parameter name="field name" type="string" value="internal_energy"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
