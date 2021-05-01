@@ -406,7 +406,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         Teuchos::ParameterList& pressure_ic = out_ic.sublist("pressure");
         pressure_ic.sublist("function").sublist(reg_str)
             .set<Teuchos::Array<std::string> >("regions", regions)
-            .set<std::string>("component", "cell")
+            .set<std::string>("component", "*")
             .sublist("function").sublist("function-constant")
             .set<double>("value", p);
       }
@@ -632,7 +632,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         Teuchos::ParameterList& pressure_ic = out_ic.sublist("fracture-pressure");
         pressure_ic.sublist("function").sublist(reg_str)
             .set<Teuchos::Array<std::string> >("regions", regions)
-            .set<std::string>("component", "cell")
+            .set<std::string>("component", "*")
             .sublist("function").sublist("function-constant")
             .set<double>("value", p);
       }
