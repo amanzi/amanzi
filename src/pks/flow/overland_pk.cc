@@ -249,7 +249,7 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   is_source_term_ = plist_->get<bool>("source term");
   if (is_source_term_) {
     // source term itself [m/s]
-    source_key_ = plist_->get<std::string>("source key", "surface-mass_source");
+    source_key_ = Keys::readKey(*plist_, domain_, "source", "water_source");
     S->RequireField(source_key_)->SetMesh(mesh_)
         ->AddComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(source_key_);
