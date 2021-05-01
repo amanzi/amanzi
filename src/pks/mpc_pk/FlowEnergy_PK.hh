@@ -63,6 +63,9 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
   Key wc_key_, prev_wc_key_;
   Key viscosity_liquid_key_;
 
+  // eos
+  std::string eos_table_;
+
   // factory registration
   static RegisteredPKFactory<FlowEnergy_PK> reg_;
 };

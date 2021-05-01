@@ -59,7 +59,6 @@ void ReactiveTransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
     *S->RequireField("fracture-darcy_flux", "transport")->SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs;
   }
 
-
   tcc_matrix_key_="total_component_concentration";
   tcc_fracture_key_="fracture-total_component_concentration";
   
