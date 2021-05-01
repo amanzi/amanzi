@@ -484,7 +484,7 @@
         <Parameter name="error tolerance" type="double" value="1.0e-14"/>
         <Parameter name="maximum number of iterations" type="int" value="20"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -494,7 +494,7 @@
         <Parameter name="error tolerance" type="double" value="1e-14"/>
         <Parameter name="maximum number of iterations" type="int" value="20"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -504,7 +504,7 @@
         <Parameter name="error tolerance" type="double" value="9.99999999999999999e-15"/>
         <Parameter name="maximum number of iterations" type="int" value="20"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

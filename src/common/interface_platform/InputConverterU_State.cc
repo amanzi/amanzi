@@ -841,7 +841,7 @@ void InputConverterU::TranslateStateICsAmanziGeochemistry_(
   DOMNode* node;
   DOMElement* element;
 
-  node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
+  node = GetPKChemistryPointer_(flag);
   std::string engine = GetAttributeValueS_(node, "engine");
 
   node = GetUniqueElementByTagsString_("geochemistry, constraints", flag);
