@@ -41,6 +41,24 @@ set(CMAKE_MODULE_PATH
     ${AMANZI_MODULE_PATH}/Modules
     ${AMANZI_MODULE_PATH}/Utils)
 
+# Append user supplied flags to base CMAKE_<LANL>_FLAGS and remove duplicates
+
+string(CONCAT CMAKE_C_FLAGS_TMP ${TPL_CMAKE_C_FLAGS} " " ${CMAKE_C_FLAGS})
+string(CONCAT CMAKE_CXX_FLAGS_TMP ${TPL_CMAKE_CXX_FLAGS} " " ${CMAKE_CXX_FLAGS})
+string(CONCAT CMAKE_Fortran_FLAGS_TMP ${TPL_CMAKE_Fortran_FLAGS} " " ${CMAKE_Fortran_FLAGS})
+
+separate_arguments(CMAKE_C_FLAGS_TMP)
+separate_arguments(CMAKE_CXX_FLAGS_TMP)
+separate_arguments(CMAKE_Fortran_FLAGS_TMP)
+
+list(REMOVE_DUPLICATES CMAKE_C_FLAGS_TMP)
+list(REMOVE_DUPLICATES CMAKE_CXX_FLAGS_TMP)
+list(REMOVE_DUPLICATES CMAKE_Fortran_FLAGS_TMP)
+
+string(JOIN " " CMAKE_C_FLAGS ${CMAKE_C_FLAGS_TMP})
+string(JOIN " " CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS_TMP})
+string(JOIN " " CMAKE_Fortran_FLAGS ${CMAKE_Fortran_FLAGS_TMP})
+
 # Code version defined
 include(AmanziVersion)
 
@@ -133,6 +151,29 @@ add_subdirectory(tools/py_lib)
 # Define a list of all enabled TPLs. Must do this AFTER all the 
 # CMakelist.txt files have been processed!
 get_property(AMANZI_ENABLED_TPLS GLOBAL PROPERTY PACKAGES_FOUND)
+
+
+# Show TPL and current CMake_<LANG>_FLAGS
+#
+string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UC)
+
+message(STATUS "------------------------------------------------")
+message(STATUS "CMake Compiler Configuration for TPLs ... ")
+message(STATUS "TPL_CMAKE_C_FLAGS       = ${TPL_CMAKE_C_FLAGS}")
+message(STATUS "TPL_CMAKE_CXX_FLAGS     = ${TPL_CMAKE_CXX_FLAGS}")
+message(STATUS "TPL_CMAKE_Fortran_FLAGS = ${TPL_CMAKE_Fortran_FLAGS}")
+message(STATUS "------------------------------------------------")
+message(STATUS "")
+message(STATUS "CMake Compiler Configuration ... ")
+message(STATUS "")
+message(STATUS "CMAKE_C_FLAGS       = ${CMAKE_C_FLAGS}")
+message(STATUS "CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE_UC} = ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE_UC}}")
+message(STATUS "CMAKE_CXX_FLAGS     = ${CMAKE_CXX_FLAGS}")
+message(STATUS "CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE_UC} = ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE_UC}}")
+message(STATUS "CMAKE_Fortran_FLAGS = ${CMAKE_Fortran_FLAGS}")
+message(STATUS "CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE_UC} = ${CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE_UC}}")
+message(STATUS "CMAKE_BUILD_TYPE    = ${CMAKE_BUILD_TYPE}")
+message(STATUS "------------------------------------------------")
 
 # Make the exports only _after_ doing the build
 create_exports()
