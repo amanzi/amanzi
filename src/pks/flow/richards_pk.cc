@@ -96,9 +96,15 @@ Richards::Richards(Teuchos::ParameterList& pk_tree,
 // -------------------------------------------------------------
 void Richards::Setup(const Teuchos::Ptr<State>& S)
 {
+
+  std::cout << "setup richards START" << std::endl;
+
   PK_PhysicalBDF_Default::Setup(S);
   SetupRichardsFlow_(S);
   SetupPhysicalEvaluators_(S);
+
+  std::cout << "setup richards DONE" << std::endl;
+
 };
 
 

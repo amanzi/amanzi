@@ -81,14 +81,19 @@ Soil_Thermo_PK::Soil_Thermo_PK(Teuchos::ParameterList& FElist,
 void Soil_Thermo_PK::Setup(const Teuchos::Ptr<State>& S) {
   PK_PhysicalBDF_Default::Setup(S);
 
+  std::cout << "setup soil_thermo START" << std::endl;
+  std::cout << "soil domain_ = " << domain_ << std::endl;
+
   SetupSoilThermo_(S);
   SetupPhysicalEvaluators_(S);
+
+  std::cout << "setup soil_thermo DONE" << std::endl;
 };
 
 
 void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
   // Set up keys if they were not already set.
-  temperature_key_ = Keys::readKey(*plist_, domain_, "soil temperature", "soil_temperature");
+  temperature_key_ = Keys::readKey(*plist_, domain_, "temperature", "temperature");
   water_content_key_ = Keys::readKey(*plist_, domain_, "soil water content", "soil_water_content");
   ice_content_key_ = Keys::readKey(*plist_, domain_, "soil ice content", "soil_ice_content");
   density_key_ = Keys::readKey(*plist_, domain_, "soil density", "soil density");
@@ -102,6 +107,8 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
   heat_capacity_key_ = Keys::readKey(*plist_, domain_, "soil heat capacity", "soil_heat_capacity");
   uw_conductivity_key_ = Keys::readKey(*plist_, domain_, "soil upwinded thermal conductivity", "soil_upwind_thermal_conductivity");
   cell_is_ice_key_ = Keys::readKey(*plist_, domain_, "soil ice", "soil_ice");
+
+  std::cout << "temperature_key_ = " << temperature_key_ << std::endl;
 
   // Get data for special-case entities.
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
@@ -358,7 +365,7 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
       plist_->get<bool>("coupled to surface via flux", false);
   if (coupled_to_surface_via_flux_) {
     std::string domain_surf;
-    if (domain_ == "domain" || domain_ == "") {
+    if (domain_ == "soil" || domain_ == "") {
       domain_surf = plist_->get<std::string>("surface domain name", "surface");
     } else {
       domain_surf = plist_->get<std::string>("surface domain name", "surface_"+domain_);

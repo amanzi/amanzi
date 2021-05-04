@@ -26,7 +26,7 @@ namespace SoilThermo {
   std::string domain_name = Keys::getDomain(my_key_);
 
   // -- temperature
-  temperature_key_ = Keys::readKey(plist_, domain_name, "soil temperature", "soil_temperature");
+  temperature_key_ = Keys::readKey(plist_, domain_name, "temperature", "temperature");
   dependencies_.insert(temperature_key_);
 
   AMANZI_ASSERT(plist_.isSublist("soil heat flux bc parameters"));

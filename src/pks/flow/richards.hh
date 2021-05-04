@@ -220,6 +220,7 @@ namespace Amanzi {
 
 // forward declarations
 class MPCSubsurface;
+class MPCCoupledSoil;
 class PredictorDelegateBCFlux;
 class PrimaryVariableFieldEvaluator;
 namespace WhetStone { class Tensor; }
@@ -437,6 +438,9 @@ private:
 
   // Richards has a friend in couplers...
   friend class Amanzi::MPCSubsurface;
+
+  // Richards has another friend in couplers...
+  friend class Amanzi::MPCCoupledSoil;
 
 };
 

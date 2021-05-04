@@ -59,6 +59,7 @@ set(ats_mpc_src_files
   mpc_morphology_pk.cc
   mpc_lake_1D.cc
   biomass_evaluator.cc
+  mpc_coupled_soil.cc
   )
 
 set(ats_mpc_inc_files
@@ -94,6 +95,7 @@ set(ats_mpc_inc_files
   mpc_lake_1D.hh
   biomass_evaluator.hh
   mpc_weak_domain_decomposition.hh
+  mpc_coupled_soil.hh
   )
 
 set(ats_mpc_link_libs
@@ -256,6 +258,11 @@ register_evaluator_with_factory(
   HEADERFILE biomass_evaluator_reg.hh
   LISTNAME ATS_MPC_REG
   )
+  
+register_evaluator_with_factory(
+    HEADERFILE mpc_coupled_soil_reg.hh
+    LISTNAME   ATS_MPC_REG
+   )  
 
 generate_evaluators_registration_header(
   HEADERFILE ats_mpc_registration.hh

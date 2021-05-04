@@ -5,26 +5,26 @@
 
   Authors: Svetlana Tokareva (tokareva@lanl.gov)
 */
-//! Coupling of Snow PK, Lake PK and Richards PK
-
+//! A coupler which integrates temperature models in soil and lake
 
 #ifndef PKS_MPC_LAKE_1D_HH_
 #define PKS_MPC_LAKE_1D_HH_
 
-#include "mpc_delegate_ewc.hh"
-#include "mpc_delegate_water.hh"
-#include "mpc_subsurface.hh"
+#include "Operator.hh"
+#include "pk_physical_bdf_default.hh"
+
+#include "strong_mpc.hh"
 
 namespace Amanzi {
 
-class MPCLake1D : public MPCSubsurface {
+class MPCLake1D : public StrongMPC<PK_PhysicalBDF_Default> {
  public:
 
 
   MPCLake1D(Teuchos::ParameterList& FElist,
-                 const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                 const Teuchos::RCP<State>& S,
-                 const Teuchos::RCP<TreeVector>& soln);
+                  const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                  const Teuchos::RCP<State>& S,
+                  const Teuchos::RCP<TreeVector>& soln);
 
   virtual void Setup(const Teuchos::Ptr<State>& S);
   virtual void Initialize(const Teuchos::Ptr<State>& S);
@@ -38,8 +38,8 @@ class MPCLake1D : public MPCSubsurface {
   virtual void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
            Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
 
-  // -- Apply preconditioner to r and returns the result in Pr.
-  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> r, Teuchos::RCP<TreeVector> Pr);
+  // -- Apply preconditioner to u and returns the result in Pu.
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 
   // -- Update the preconditioner.
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
@@ -50,48 +50,37 @@ class MPCLake1D : public MPCSubsurface {
 
   // -- Modify the correction.
   virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-      ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
-                       Teuchos::RCP<const TreeVector> u, 
-                       Teuchos::RCP<TreeVector> du);
+      ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+                       Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
 
  protected:
+  // void
+  // UpdateConsistentFaceCorrectionWater_(const Teuchos::RCP<const TreeVector>& u,
+  //         const Teuchos::RCP<TreeVector>& Pu);
+
+ protected:
+  std::string domain_lake_, domain_soil_;
+
   // sub PKs
-  Teuchos::RCP<PK_PhysicalBDF_Default> domain_flow_pk_;
-  Teuchos::RCP<PK_PhysicalBDF_Default> domain_energy_pk_;
-  Teuchos::RCP<PK_PhysicalBDF_Default> surf_flow_pk_;
-  Teuchos::RCP<PK_PhysicalBDF_Default> surf_energy_pk_;
+  Teuchos::RCP<PK_PhysicalBDF_Default> lake_pk_;
+  Teuchos::RCP<PK_PhysicalBDF_Default> soil_pk_;
 
   // sub meshes
-  Key domain_surf_;
-  Key domain_subsurf_;
-  Teuchos::RCP<const AmanziMesh::Mesh> domain_mesh_;
-  Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> lake_mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> soil_mesh_;
 
-  // Primary variable evaluators for exchange fluxes
-  Key mass_exchange_key_;
-  Key energy_exchange_key_;
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> mass_exchange_pvfe_;
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> energy_exchange_pvfe_;
+  // coupled preconditioner
+  Teuchos::RCP<Operators::Operator> precon_lake_;
+  Teuchos::RCP<Operators::Operator> precon_soil_;
   
-  // off-diagonal terms
-  Teuchos::RCP<Operators::PDE_Accumulation> dE_dp_surf_;
-
-  
-  // EWC delegate for the surface
-  //  Teuchos::RCP<MPCDelegateEWC> surf_ewc_;
-
-  // Water delegate
-  Teuchos::RCP<MPCDelegateWater> water_;
-
   // debugger for dumping vectors
-  Teuchos::RCP<Debugger> domain_db_;
-  Teuchos::RCP<Debugger> surf_db_;
+  Teuchos::RCP<Debugger> lake_db_;
+  Teuchos::RCP<Debugger> soil_db_;
 
  private:
   // factory registration
   static RegisteredPKFactory<MPCLake1D> reg_;
 
-  Key domain_surf, domain_ss;
 
 };
 
