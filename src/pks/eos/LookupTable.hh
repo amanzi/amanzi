@@ -31,13 +31,16 @@ class LookupTable {
   double DFunctionDp(double T, double p);
 
  private:
-  double FindValue_(const std::vector<std::vector<double> >& data, double T, double p);
-
   void ReadMetaData_(std::ifstream& ifs, const std::string& label,
                      int* n, double* scale, double* shift);
 
   void ReadBlock_(std::ifstream& ifs, const std::string& field,
                   int nP, int nT, double scale, double shift);
+
+  void FindBox_(double T, double p, int* ip, int* jp);
+
+  double DerivativeP_(int i, int j);
+  double DerivativeT_(int i, int j);
 
  private:
   double shiftP_, shiftT_;

@@ -99,13 +99,11 @@ TEST(TabularEOS) {
 
   // verify derivatives
   double T(293.15), p(101325), dT(10.0), dp(100.0);
-  /*
   double dFdT = eos.DFunctionDT(T + dT/2, p);
   CHECK_CLOSE((eos.Function(T + dT, p) - eos.Function(T, p)) / dT, dFdT, fabs(dFdT) * 5e-2); 
 
   double dFdP = eos.DFunctionDp(T, p + dp / 2);
-  CHECK_CLOSE((eos.Function(T, p + dp) - eos.Function(T, p)) / dp, dFdP, fabs(dFdP) * 1e-2); 
-  */
+  CHECK_CLOSE((eos.Function(T, p + dp) - eos.Function(T, p)) / dp, dFdP, fabs(dFdP) * 5e-2); 
 
   std::cout << "water density at 20C  and 1atm  = " << eos.Function(293.15, 101325.0)
             << ", derivatives: " << eos.DFunctionDT(293.15, 101325.0) 
