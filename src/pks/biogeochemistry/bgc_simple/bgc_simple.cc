@@ -96,7 +96,7 @@ void BGCSimple::Setup(const Teuchos::Ptr<State>& S) {
   pfts_.resize(ncols);
   for (unsigned int col=0; col!=ncols; ++col) {
     int f = mesh_surf_->entity_get_parent(AmanziMesh::CELL, col);
-    ColIterator col_iter(*mesh_, f);
+    auto& col_iter = mesh_->cells_of_column(col);
     std::size_t ncol_cells = col_iter.size();
 
     // unclear which this should be:
@@ -127,8 +127,10 @@ void BGCSimple::Setup(const Teuchos::Ptr<State>& S) {
   soil_carbon_pools_.resize(ncols);
   for (unsigned int col=0; col!=ncols; ++col) {
     soil_carbon_pools_[col].resize(ncells_per_col_);
-    ColIterator col_iter(*mesh_, mesh_surf_->entity_get_parent(AmanziMesh::CELL, col), ncells_per_col_);
 
+    auto& col_iter = mesh_->cells_of_column(col);
+    ncells_per_col_ = col_iter.size();
+        
     for (std::size_t i=0; i!=col_iter.size(); ++i) {
       // col_iter[i] = cell id, mp[cell_id] = index into partition list, sc_params_[index] = correct params
       soil_carbon_pools_[col][i] = Teuchos::rcp(new SoilCarbon(sc_params_[mp[col_iter[i]]]));
@@ -441,7 +443,9 @@ bool BGCSimple::AdvanceStep(double t_old, double t_new, bool reinit) {
     ColDepthDz_(col, depth_c.ptr(), dz_c.ptr());
 
     // copy over the soil carbon arrays
-    ColIterator col_iter(*mesh_, mesh_surf_->entity_get_parent(AmanziMesh::CELL, col), ncells_per_col_);
+    auto& col_iter = mesh_->cells_of_column(col);
+    ncells_per_col_ = col_iter.size();
+    
     // -- serious cache thrash... --etc
     for (std::size_t i=0; i!=col_iter.size(); ++i) {
       AmanziGeometry::Point centroid = mesh_->cell_centroid(col_iter[i]);
@@ -511,7 +515,7 @@ void BGCSimple::FieldToColumn_(AmanziMesh::Entity_ID col, const Epetra_Vector& v
     col_vec = Teuchos::ptr(new Epetra_SerialDenseVector(ncells_per_col_));
   }
 
-  ColIterator col_iter(*mesh_, mesh_surf_->entity_get_parent(AmanziMesh::CELL, col), ncells_per_col_);
+  auto& col_iter = mesh_->cells_of_column(col);
   for (std::size_t i=0; i!=col_iter.size(); ++i) {
     (*col_vec)[i] = vec[col_iter[i]];
   }
@@ -520,7 +524,7 @@ void BGCSimple::FieldToColumn_(AmanziMesh::Entity_ID col, const Epetra_Vector& v
 // helper function for pushing field to column
 void BGCSimple::FieldToColumn_(AmanziMesh::Entity_ID col, const Epetra_Vector& vec,
                                double* col_vec, int ncol) {
-  ColIterator col_iter(*mesh_, mesh_surf_->entity_get_parent(AmanziMesh::CELL, col), ncol);
+  auto& col_iter = mesh_->cells_of_column(col);
   for (std::size_t i=0; i!=col_iter.size(); ++i) {
     col_vec[i] = vec[col_iter[i]];
   }
@@ -532,8 +536,9 @@ void BGCSimple::ColDepthDz_(AmanziMesh::Entity_ID col,
                             Teuchos::Ptr<Epetra_SerialDenseVector> depth,
                             Teuchos::Ptr<Epetra_SerialDenseVector> dz) {
   AmanziMesh::Entity_ID f_above = mesh_surf_->entity_get_parent(AmanziMesh::CELL, col);
-  ColIterator col_iter(*mesh_, f_above, ncells_per_col_);
-
+  auto& col_iter = mesh_->cells_of_column(col);
+  ncells_per_col_ = col_iter.size();
+  
   AmanziGeometry::Point surf_centroid = mesh_->face_centroid(f_above);
   AmanziGeometry::Point neg_z(3);
   neg_z.set(0.,0.,-1);

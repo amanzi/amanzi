@@ -253,7 +253,8 @@ void FATES_PK::Initialize(const Teuchos::Ptr<State>& S){
       // ColDepthDz_(col, col_depth.ptr(), col_dz.ptr());
       
       int f = mesh_surf_->entity_get_parent(AmanziMesh::CELL, col);
-      BGC::ColIterator col_iter(*mesh_, f);
+
+      auto& col_iter = mesh_->cells_of_column(col);
       std::size_t ncol_cells = col_iter.size();
       if (ncells_per_col_ < 0) {
         ncells_per_col_ = ncol_cells;
@@ -579,7 +580,8 @@ void FATES_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>&
 // helper function for pushing field to column
 void FATES_PK::FieldToColumn_(AmanziMesh::Entity_ID col, const Epetra_Vector& vec,
                                double* col_vec, int ncol) {
-  ColIterator col_iter(*mesh_, mesh_surf_->entity_get_parent(AmanziMesh::CELL, col), ncol);
+
+  auto& col_iter = mesh_->cells_of_column(col);
   for (std::size_t i=0; i!=col_iter.size(); ++i) {
     col_vec[i] = vec[col_iter[i]];
   }
@@ -590,7 +592,9 @@ void FATES_PK::ColDepthDz_(AmanziMesh::Entity_ID col,
                             Teuchos::Ptr<Epetra_SerialDenseVector> depth,
                             Teuchos::Ptr<Epetra_SerialDenseVector> dz) {
   AmanziMesh::Entity_ID f_above = mesh_surf_->entity_get_parent(AmanziMesh::CELL, col);
-  ColIterator col_iter(*mesh_, f_above, ncells_per_col_);
+
+  auto& col_iter = mesh_->cells_of_column(col);
+  ncells_per_col_ = col_iter.size();
 
   AmanziGeometry::Point surf_centroid = mesh_->face_centroid(f_above);
   AmanziGeometry::Point neg_z(3);
