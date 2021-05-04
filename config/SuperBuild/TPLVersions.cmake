@@ -97,8 +97,8 @@
 #   0.94.10      - update Alquimia to 1.0.5 (critical bug fixes)
 #   0.94.11      - update MSTK to 3.0.3 (critical bug fixes)
 #                - update NetCDF to 4.5.0
-#	         - update NetCDF-Fortran to 4.4.4
-#	         - update curl to 7.56.1
+#                - update NetCDF-Fortran to 4.4.4
+#                - update curl to 7.56.1
 #   0.94.12      - update xerces-c to 3.2.0 (CMake build)
 
 #   0.95.0       - update Trilinos 12.12.1
@@ -120,7 +120,7 @@
 #   0.95.8       - update NetCDF-Fortran to 4.4.5
 #   0.95.9       - update NetCDF-C to 4.7.0
 #   0.95.10      - update OpenMPI to 3.1.4
-#
+
 #   0.96.0       - update Trilinos to 12.14.0bf557717e-Jun17
 #   0.96.1       - update NetCDF-C to 4.7.1 
 #                - update MOAB to 5.1.0
@@ -130,6 +130,7 @@
 #                - update Alquimia to 1.0.6-rc
 #   0.96.3       - update HDF5 to 1.10.5
 #   0.96.4       - update MSTK to 3.2.1
+#
 #   0.97.0       - update HDF5 to 1.10.6
 #                - update Nanoflann to 1.3.1
 #                - update Trilinos to 55a7599733 (Nov11, 2019, also 12.18.1)
@@ -156,6 +157,8 @@
 #   0.97.12      - update Trilinos to afc4e525 (Nov 14, 2020)
 #   0.97.13      - update Alquimia to 1.0.8
 #   0.97.14      - update MSTK to 3.3.6
+
+#   0.98.0       - configuration updates fixing CamelCase names (required changes in Amanzi build as well)
 
 include(CMakeParseArguments)
 
@@ -207,8 +210,8 @@ endmacro(amanzi_tpl_version_write)
 # TPLs and XSDK versions 
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
-set(AMANZI_TPLS_VERSION_MINOR 97)
-set(AMANZI_TPLS_VERSION_PATCH 14)
+set(AMANZI_TPLS_VERSION_MINOR 98)
+set(AMANZI_TPLS_VERSION_PATCH 0)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -495,7 +498,7 @@ set(SEACAS_SAVEAS_FILE    ${SEACAS_ARCHIVE_FILE})
 set(SEACAS_MD5_SUM        3235d1b885ee8e1a04408382f50bd0f0)
 
 #
-# TPL: PFlotran
+# TPL: PFLOTRAN
 #
 set(PFLOTRAN_VERSION_MAJOR 0)
 set(PFLOTRAN_VERSION_MINOR 0)
@@ -511,14 +514,14 @@ set(PFLOTRAN_GIT_TAG        "1ba735f1a64a12315c52a64107a75571c53492b3")
 #
 # TPL: Alquimia
 #
-set(ALQUIMIA_VERSION_MAJOR 1)
-set(ALQUIMIA_VERSION_MINOR 0)
-set(ALQUIMIA_VERSION_PATCH 8)
-set(ALQUIMIA_VERSION ${ALQUIMIA_VERSION_MAJOR}.${ALQUIMIA_VERSION_MINOR}.${ALQUIMIA_VERSION_PATCH})
-set(ALQUIMIA_URL_STRING     https://github.com/LBL-EESA/alquimia-dev/archive)
-set(ALQUIMIA_ARCHIVE_FILE   v${ALQUIMIA_VERSION}.tar.gz)
-set(ALQUIMIA_SAVEAS_FILE    alquimia-dev-${ALQUIMIA_VERSION}.tar.gz)
-set(ALQUIMIA_MD5_SUM        20c9d27ba6dd00e56b7deaeab903ccbe)
+set(Alquimia_VERSION_MAJOR 1)
+set(Alquimia_VERSION_MINOR 0)
+set(Alquimia_VERSION_PATCH 8)
+set(Alquimia_VERSION ${Alquimia_VERSION_MAJOR}.${Alquimia_VERSION_MINOR}.${Alquimia_VERSION_PATCH})
+set(Alquimia_URL_STRING     https://github.com/LBL-EESA/alquimia-dev/archive)
+set(Alquimia_ARCHIVE_FILE   v${Alquimia_VERSION}.tar.gz)
+set(Alquimia_SAVEAS_FILE    alquimia-dev-${Alquimia_VERSION}.tar.gz)
+set(Alquimia_MD5_SUM        20c9d27ba6dd00e56b7deaeab903ccbe)
 
 #
 # TPL: Silo
@@ -535,14 +538,14 @@ set(Silo_MD5_SUM 9ceac777a2f2469ac8cef40f4fab49c8)
 #
 # TPL: CrunchTope
 #
-set(CRUNCHTOPE_VERSION_MAJOR 020420)
-set(CRUNCHTOPE_VERSION_MINOR 906e164)
-set(CRUNCHTOPE_VERSION_PATCH 0)
-set(CRUNCHTOPE_VERSION  ${CRUNCHTOPE_VERSION_MAJOR}.${CRUNCHTOPE_VERSION_MINOR}.${CRUNCHTOPE_VERSION_PATCH})
-set(CRUNCHTOPE_URL_STRING    ${AMANZI_TPLS_DOWNLOAD_URL})
-set(CRUNCHTOPE_ARCHIVE_FILE  CrunchTope_020420-906e164.0.tgz)
-set(CRUNCHTOPE_SAVEAS_FILE   ${CRUNCHTOPE_ARCHIVE_FILE})
-set(CRUNCHTOPE_MD5_SUM       059766e149e2a47c754ecf9815641d71)
+set(CrunchTope_VERSION_MAJOR 020420)
+set(CrunchTope_VERSION_MINOR 906e164)
+set(CrunchTope_VERSION_PATCH 0)
+set(CrunchTope_VERSION  ${CrunchTope_VERSION_MAJOR}.${CrunchTope_VERSION_MINOR}.${CrunchTope_VERSION_PATCH})
+set(CrunchTope_URL_STRING    ${AMANZI_TPLS_DOWNLOAD_URL})
+set(CrunchTope_ARCHIVE_FILE  CrunchTope_020420-906e164.0.tgz)
+set(CrunchTope_SAVEAS_FILE   ${CrunchTope_ARCHIVE_FILE})
+set(CrunchTope_MD5_SUM       059766e149e2a47c754ecf9815641d71)
 
 #
 # TPL: Nanoflann

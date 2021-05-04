@@ -90,11 +90,11 @@ ExternalProject_Add(${CCSE_BUILD_TARGET}
                     # -- Update (one way to skip this step is use null command)
                     UPDATE_COMMAND ""
                     # -- Patch
-		    PATCH_COMMAND ${CCSE_PATCH_COMMAND}                    
+                    PATCH_COMMAND ${CCSE_PATCH_COMMAND}                    
                     # -- Configure
                     SOURCE_DIR       ${CCSE_source_dir}           # Source directory
-		    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
-		                     ${CCSE_CMAKE_CACHE_ARGS}     
+                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
+                                     ${CCSE_CMAKE_CACHE_ARGS}     
                     # -- Build
                     BINARY_DIR       ${CCSE_build_dir}            # Build directory 
                     BUILD_COMMAND    $(MAKE)                      # $(MAKE) enables parallel builds through make
