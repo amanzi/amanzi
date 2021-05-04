@@ -1,5 +1,5 @@
 /*
-  ReciprocalEvaluator is the generic evaluator for multipying two vectors.
+  ReciprocalEvaluator is the generic evaluator for dividing two vectors.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 
@@ -19,12 +19,20 @@ ReciprocalEvaluator::ReciprocalEvaluator(Teuchos::ParameterList& plist) :
       Key domain = Keys::getDomain(my_key_);
       for (const auto& name : names) {
         dependencies_.insert(Keys::getKey(domain, name));
-      }
+      }      
     } else {
       Errors::Message msg;
       msg << "ReciprocalEvaluator for: \"" << my_key_ << "\" has no dependencies.";
       Exceptions::amanzi_throw(msg);
     }
+  }
+
+  if (plist.isParameter("reciprocal")){
+    reciprocal_key_ = plist_.get<std::string>("reciprocal");
+  }else{
+    Errors::Message msg;                                                                       
+    msg << "ReciprocalEvaluator for: \"" <<my_key_ << "\" reciprocal is not defined. No reciprocal parameter.";
+    Exceptions::amanzi_throw(msg);
   }
 
   coef_ = plist_.get<double>("coefficient", 1.0);
@@ -44,23 +52,44 @@ ReciprocalEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 {
   AMANZI_ASSERT(dependencies_.size() == 2);
-  KeySet::const_iterator key = dependencies_.begin();
-  *result = *S->GetFieldData(*key);
-  result->Scale(coef_);
-  key++;
+  //  KeySet::const_iterator key = dependencies_.begin();
+  // for (auto key : dependencies_) {
+  //   if (key != reciprocal_key_
+  // std::cout<<*key<<"\n";
+  // *result = *S->GetFieldData(*key);
+  result->PutScalar(coef_);
+  // key++;
+  // std::cout<<*key<<"\n";  
 
-  for (auto lcv_name : *result) {
-    auto& res_c = *result->ViewComponent(lcv_name, false);
-    const auto& dep_c = *S->GetFieldData(*key)->ViewComponent(lcv_name, false);
-    for (int c=0; c!=res_c.MyLength(); ++c) {
-      if (std::abs(dep_c[0][c]) < 1e-15){
-        Errors::Message msg;
-        msg << "ReciprocalEvaluator for: \"" << my_key_ << "\" has zeros in the denominator.";
-        Exceptions::amanzi_throw(msg);
+
+  for (auto key : dependencies_) {
+    if (key == reciprocal_key_){
+      for (auto lcv_name : *result) {
+        auto& res_c = *result->ViewComponent(lcv_name, false);
+        const auto& dep_c = *S->GetFieldData(key)->ViewComponent(lcv_name, false);
+        for (int c=0; c!=res_c.MyLength(); ++c) {
+          if (std::abs(dep_c[0][c]) < 1e-15){
+            Errors::Message msg;
+            msg << "ReciprocalEvaluator for: \"" << my_key_ << "\" has zeros in the denominator. Problem field "<<key<<"\n";
+            Exceptions::amanzi_throw(msg);
+          }
+          res_c[0][c] /= dep_c[0][c];
+        }
       }
-      res_c[0][c] /= dep_c[0][c];      
+    }else{
+      for (auto lcv_name : *result) {
+        auto& res_c = *result->ViewComponent(lcv_name, false);
+        const auto& dep_c = *S->GetFieldData(key)->ViewComponent(lcv_name, false);
+        for (int c=0; c!=res_c.MyLength(); ++c) {
+          res_c[0][c] *= dep_c[0][c];
+        }
+      }
     }
-    if (positive_) {
+  }
+
+  if (positive_) {
+    for (auto lcv_name : *result) {
+      auto& res_c = *result->ViewComponent(lcv_name, false);    
       for (int c=0; c!=res_c.MyLength(); ++c) {
         res_c[0][c] = std::max(res_c[0][c], 0.);
       }
@@ -76,7 +105,7 @@ ReciprocalEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& 
 
   KeySet::const_iterator key = dependencies_.begin();
 
-  if (*key == wrt_key){
+  if ((*key == wrt_key)&&(*key!=reciprocal_key_)){
     key++;
     Teuchos::RCP<const CompositeVector> dep = S->GetFieldData(*key);
     for (CompositeVector::name_iterator lcv=result->begin(); lcv!=result->end(); ++lcv) {
@@ -88,7 +117,7 @@ ReciprocalEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& 
     *result = *S->GetFieldData(*key);
     result->Scale(coef_);
     key++;
-    if (*key == wrt_key){
+    if ((*key == wrt_key)&&(*key==reciprocal_key_)){
       Teuchos::RCP<const CompositeVector> dep = S->GetFieldData(*key);
       for (CompositeVector::name_iterator lcv=result->begin(); lcv!=result->end(); ++lcv) {
         Epetra_MultiVector& res_c = *result->ViewComponent(*lcv, false);

@@ -211,7 +211,10 @@ void Transport_ATS::Setup(const Teuchos::Ptr<State>& S)
     wc_eval.set<std::string>("field evaluator type", "reciprocal evaluator");
     std::vector<std::string> dep(2);
     dep[0] = water_src_key_; dep[1] = molar_density_key_;
-    wc_eval.set<Teuchos::Array<std::string> >("evaluator dependencies", dep);   
+    
+    wc_eval.set<Teuchos::Array<std::string> >("evaluator dependencies", dep);
+    wc_eval.set<std::string>("reciprocal", dep[1]);
+      
     S->RequireFieldEvaluator(geochem_src_factor_key_);
   }
 
