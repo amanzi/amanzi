@@ -9,6 +9,205 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
+
+/*!
+
+The advection-diffusion equation for component *i* in partially saturated porous media may be written as
+
+.. math::
+  \frac{\partial (\phi s_l C_i)}{\partial t} 
+  =
+  - \boldsymbol{\nabla} \cdot (\boldsymbol{q} C_i) 
+  + \boldsymbol{\nabla} \cdot (\phi s_l\, (\boldsymbol{D^*}_l + \tau \boldsymbol{D}_i) \boldsymbol{\nabla} C_i) + Q_s,
+
+The advection-diffusion equation for component *i* in the surface may be written as
+
+.. math::
+  \frac{\partial (C_i)}{\partial t} 
+  =
+  - \boldsymbol{\nabla} \cdot (\boldsymbol{q_s} C_i) 
+  + \boldsymbol{\nabla} \cdot ( (\boldsymbol{D^*}_l + \tau \boldsymbol{D}_i) \boldsymbol{\nabla} C_i) + Q_s,
+
+.. _transport-spec:
+.. admonition:: transport-spec
+
+    * `"PK type`" ``[string]`` **"transport ats"** 
+
+    * `"PK origin`" ``[string]`` **"Amanzi"** This PK uses Amanzi 
+
+    * `"domain name`" [string] specifies mesh name that defined domain of this PK.
+      Default is `"domain`".
+
+    * `"number of liquid components`" [int] is the number of liquid components. 
+
+    * `"number of aqueous components`" [int] The total number of aqueous components. 
+      Default value is the total number of liquid components.
+
+    * `"number of gaseous components`" [int] The total number of gaseous components. 
+      Default value is 0.
+
+    * `"boundary conditions`" ``[transport-bc-spec]`` Boundary conditions for
+      transport are dependent on the boundary conditions for flow. See 
+      `Flow-specific Boundary Conditions`_ and `Transport-specific Boundary Conditions`_
+
+    * `"saturation liquid key`" ``[string]`` This variable is a multiplier in 
+      in the accumulation term. For subsurface transport, this will typically 
+      be the saturation (`"saturation_liquid`"). For surface transport, this 
+      will typically be the ponded depth (`"ponded_depth`").
+
+    * `"previous saturation liquid key`" ``[string]`` 
+
+    * `"molar_density_key`" ``[string]`` **"molar_density_liquid"** Transport is solved
+      for concentrations in units of mol fractions. Molar density is needed for conversion.
+
+    * `"mass flux key suffix`" ``[string]`` **"mass_flux"** 
+
+    * `"number of liquid components`" ``[int]`` No default. Indicates how many 
+      components will be transported.
+
+    * `"number of aqueous components`" ``[int]`` No default. Indicates the number of
+      aqueous components.
+
+    * `"number of gaseous components`" ``[int]`` No default. Indicates the number of
+      gaseous components.
+
+    * `"component names`" ``[Array(string)]`` No default. Provides the names of the 
+      components that will be transported.
+
+    * `"component molar masses`" ``[Array(double)]`` No default. Molar mass of each component. 
+
+    Molecular diffusion and material properties:
+
+    * `"molecular diffusion`" [list] defines names of solutes in aqueous and gaseous phases and related
+      diffusivity values.
+
+.. code-block:: xml
+
+      <ParameterList name="molecular diffusion">
+         <Parameter name="aqueous names" type=Array(string)" value="{CO2(l),Tc-99}"/>
+         <Parameter name="aqueous values" type=Array(double)" value="{1e-8,1e-9}"/>
+      </ParameterList>
+
+    * _SOIL [list] Defines material properties.
+  
+      * `"region`" [Array(string)] Defines geometric regions for material SOIL.
+      * `"model`" [string] Defines dispersivity model, choose exactly one of the following: `"scalar`", `"Bear`",
+        `"Burnett-Frind`", or `"Lichtner-Kelkar-Robinson`".
+      * `"parameters for MODEL`" [list] where `"MODEL`" is the model name.
+        For model `"scalar`", *only* one of the following options must be specified:
+
+          * `"alpha`" [double] defines dispersivity in all directions, [m].
+          * `"dispersion coefficient`" [double] defines dispersion coefficient [m^2/s].
+
+        For model `"Bear`", the following options must be specified:
+
+          * `"alpha_l`" [double] defines dispersion in the direction of Darcy velocity, [m].
+          * `"alpha_t`" [double] defines dispersion in the orthogonal direction, [m].
+    
+        For model `"Burnett-Frind`", the following options must be specified:
+
+          * `"alphaL`" [double] defines the longitudinal dispersion in the direction of Darcy velocity, [m].
+          * `"alpha_th`" [double] Defines the transverse dispersion in the horizonla direction orthogonal directions, [m].
+          * `"alpha_tv`" [double] Defines dispersion in the orthogonal directions, [m].
+            When `"alpha_th`" equals to `"alpha_tv`", we obtain dispersion in the direction of the Darcy velocity.
+            This and the above parameters must be defined for `"Burnett-Frind`" and `"Lichtner-Kelkar-Robinson`" models.
+
+        For model `"Lichtner-Kelker-Robinson`", the following options must be specified:
+
+          * `"alpha_lh`" [double] defines the longitudinal dispersion in the horizontal direction, [m].
+          * `"alpha_lv`" [double] Defines the longitudinal dispersion in the vertical direction, [m].
+            When `"alpha_lh`" equals to `"alpha_lv`", we obtain dispersion in the direction of the Darcy velocity.
+            This and the above parameters must be defined for `"Burnett-Frind`" and `"Lichtner-Kelker-Robinson`" models.
+          * `"alpha_th`" [double] Defines the transverse dispersion in the horizontal direction orthogonal directions, [m].
+          * `"alpha_tv" [double] Defines dispersion in the orthogonal directions.
+            When `"alpha_th`" equals to `"alpha_tv`", we obtain dispersion in the direction of the Darcy velocity.
+            This and the above parameters must be defined for `"Burnett-Frind`" and `"Lichtner-Kelker-Robinson`" models.
+
+      * `"aqueous tortuosity`" [double] Defines tortuosity for calculating diffusivity of liquid solutes, [-].
+      * `"gaseous tortuosity`" [double] Defines tortuosity for calculating diffusivity of gas solutes, [-].
+
+   
+    Source terms:
+
+      * `"source terms`" [list] Provides solute source.
+        * `"component mass source`" [list]  Defines solute source injection rate.       
+           * `"spatial distribution method`" [string]  
+              If *volume*, source is considered as extensive quantity. [moles/s]  
+	      If *none*, source is considered as intensive quantity. [moles/m^2*s] in surface and [moles/m^3*s] in subsurface  
+
+      * `"geochemical`" [list]  Defines a source by setting solute concentration for all components (in moles/L) and an injection 
+        rate given by `"water_source`". Currently, this option is only available for Alquimia provided geochemical conditions. 
+        * `"geochemical conditions`" [Array(string)] List of geochemical constraints providing concentration for solute injection. 
+     
+      * `"water_source`" [list] Defines the water injection rate (moles/m^2*s in surface and moles/m^3*s in subsurface) which applies 
+        to concentrations specified by the `"geochemical conditions`". 
+          
+      The injection rate of a solute in moles/s, when given as the product of a concentration and a water source, is evaluated as: 
+	  Concentration (moles of solute/L of water) * 1000(L/m^3 of water) * water source (moles of water/m^3*s) * volume of injection 
+          domain (m^3) * 1/[molar density of water (moles of water/m^3 of water)] 
+
+
+    Physical model and assumptions:
+
+    * `"physical models and assumptions`" [list] Defines material properties.
+
+      * `"effective transport porosity`" [bool] If *true*, effective transport porosity
+      will be used by dispersive-diffusive fluxes instead of total porosity. 
+      Default is *false*.
+
+    Math and solver algorithm options:
+
+    * `"diffusion`" ``[pde-diffusion-spec]`` Diffusion drives the distribution.
+      Typically we use finite volume here.  See PDE_Diffusion_
+
+    * `"diffusion preconditioner`" ``[pde-diffusion-spec]`` Inverse of the
+      above.  Likely only Jacobian term options are needed here, as the others
+      default to the same as the `"diffusion`" list.  See PDE_Diffusion_.
+
+    * `"inverse`" ``[inverse-typed-spec]`` Inverse_ method for the solve.
+
+    * `"cfl`" [double] Time step limiter, a number less than 1. Default value is 1.
+   
+    * `"spatial discretization order`" [int] defines accuracy of spatial discretization.
+      It permits values 1 or 2. Default value is 1. 
+  
+    * `"temporal discretization order`" [int] defines accuracy of temporal discretization.
+      It permits values 1 or 2 and values 3 or 4 when expert parameter 
+      `"generic RK implementation`" is set to true. Note that RK3 is not monotone.
+      Default value is 1.
+
+    * `"reconstruction`" [list] collects reconstruction parameters. The available options are
+      describe in the separate section below.
+
+    * `"solver`" [string] Specifies the dispersion/diffusion solver.
+
+    * `"preconditioner`" [string] specifies preconditioner for dispersion solver.
+
+    * `"transport subcycling`" ``[boolean]`` **true** The code will default to subcycling for transport within
+      the master PK if there is one. 
+
+
+    Developer parameters:
+
+    * `"enable internal tests`" [bool] turns on various internal tests during
+      run time. Default value is `"false`".
+   
+    * `"generic RK implementation`" [bool] leads to generic implementation of 
+      all Runge-Kutta methods. Default value is `"false`".
+   
+    * `"internal tests tolerance`" [double] tolerance for internal tests such as the 
+      divergence-free condition. The default value is 1e-6.
+
+    * `"runtime diagnostics: solute names`" [Array(string)] defines solutes that will be 
+      tracked closely each time step if verbosity `"high`". Default value is the first 
+      solute in the global list of `"aqueous names`" and the first gas in the global list 
+      of `"gaseous names`".
+
+    * `"runtime diagnostics: regions`" [Array(string)] defines a boundary region for 
+      tracking solutes. Default value is a seepage face boundary, see Flow PK.
+
+*/
+
 #ifndef AMANZI_ATS_TRANSPORT_PK_HH_
 #define AMANZI_ATS_TRANSPORT_PK_HH_
 
@@ -232,7 +431,8 @@ protected:
   Key molar_density_key_;
   Key solid_residue_mass_key_;
   Key water_content_key_;
-  Key mass_src_key_;
+  Key water_src_key_;
+  Key geochem_src_factor_key_;
   Key conserve_qty_key_;
   Key cv_key_;
 

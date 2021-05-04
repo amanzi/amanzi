@@ -31,17 +31,17 @@ UpdateIntermediateStateParameters(Teuchos::RCP<Amanzi::State>& S_next_, Teuchos:
 				   S_inter_->GetField(Keys::getKey(name.str(),"conducted_energy_source"))->owner()) = 
 	     *S_next_->GetFieldData(Keys::getKey(name.str(),"conducted_energy_source"));
 	  
-	   *S_inter_->GetFieldData(Keys::getKey(name.str(),"mass_source"), 
-				   S_inter_->GetField(Keys::getKey(name.str(),"mass_source"))->owner()) = 
-	     *S_next_->GetFieldData(Keys::getKey(name.str(),"mass_source"));
+	   *S_inter_->GetFieldData(Keys::getKey(name.str(),"water_source"), 
+				   S_inter_->GetField(Keys::getKey(name.str(),"water_source"))->owner()) = 
+	     *S_next_->GetFieldData(Keys::getKey(name.str(),"water_source"));
 
-	   *S_inter_->GetFieldData(Keys::getKey(name_ss.str(),"mass_source"), 
-				   S_inter_->GetField(Keys::getKey(name_ss.str(),"mass_source"))->owner()) = 
-	     *S_next_->GetFieldData(Keys::getKey(name_ss.str(),"mass_source"));
+	   *S_inter_->GetFieldData(Keys::getKey(name_ss.str(),"water_source"), 
+				   S_inter_->GetField(Keys::getKey(name_ss.str(),"water_source"))->owner()) = 
+	     *S_next_->GetFieldData(Keys::getKey(name_ss.str(),"water_source"));
 
-	   *S_inter_->GetFieldData(Keys::getKey(name.str(),"mass_source_temperature"), 
-				   S_inter_->GetField(Keys::getKey(name.str(),"mass_source_temperature"))->owner()) = 
-	    *S_next_->GetFieldData(Keys::getKey(name.str(),"mass_source_temperature"));
+	   *S_inter_->GetFieldData(Keys::getKey(name.str(),"water_source_temperature"), 
+				   S_inter_->GetField(Keys::getKey(name.str(),"water_source_temperature"))->owner()) = 
+	    *S_next_->GetFieldData(Keys::getKey(name.str(),"water_source_temperature"));
 
 	    *S_inter_->GetFieldData(Keys::getKey(name.str(),"snow_temperature"), 
 				   S_inter_->GetField(Keys::getKey(name.str(),"snow_temperature"))->owner()) = 
@@ -115,17 +115,17 @@ UpdateNextStateParameters(Teuchos::RCP<Amanzi::State>& S_next_, Teuchos::RCP<Ama
 				   S_next_->GetField(Keys::getKey(name.str(),"conducted_energy_source"))->owner()) = 
 	     *S_inter_->GetFieldData(Keys::getKey(name.str(),"conducted_energy_source"));
 	  
-	   *S_next_->GetFieldData(Keys::getKey(name.str(),"mass_source"), 
-				   S_next_->GetField(Keys::getKey(name.str(),"mass_source"))->owner()) = 
-	     *S_inter_->GetFieldData(Keys::getKey(name.str(),"mass_source"));
+	   *S_next_->GetFieldData(Keys::getKey(name.str(),"water_source"), 
+				   S_next_->GetField(Keys::getKey(name.str(),"water_source"))->owner()) = 
+	     *S_inter_->GetFieldData(Keys::getKey(name.str(),"water_source"));
 
-	   *S_next_->GetFieldData(Keys::getKey(name_ss.str(),"mass_source"), 
-				   S_next_->GetField(Keys::getKey(name_ss.str(),"mass_source"))->owner()) = 
-	     *S_inter_->GetFieldData(Keys::getKey(name_ss.str(),"mass_source"));
+	   *S_next_->GetFieldData(Keys::getKey(name_ss.str(),"water_source"), 
+				   S_next_->GetField(Keys::getKey(name_ss.str(),"water_source"))->owner()) = 
+	     *S_inter_->GetFieldData(Keys::getKey(name_ss.str(),"water_source"));
 
-	   *S_next_->GetFieldData(Keys::getKey(name.str(),"mass_source_temperature"), 
-				   S_next_->GetField(Keys::getKey(name.str(),"mass_source_temperature"))->owner()) = 
-	    *S_inter_->GetFieldData(Keys::getKey(name.str(),"mass_source_temperature"));
+	   *S_next_->GetFieldData(Keys::getKey(name.str(),"water_source_temperature"), 
+				   S_next_->GetField(Keys::getKey(name.str(),"water_source_temperature"))->owner()) = 
+	    *S_inter_->GetFieldData(Keys::getKey(name.str(),"water_source_temperature"));
 
 	    *S_next_->GetFieldData(Keys::getKey(name.str(),"snow_temperature"), 
 				   S_next_->GetField(Keys::getKey(name.str(),"snow_temperature"))->owner()) = 

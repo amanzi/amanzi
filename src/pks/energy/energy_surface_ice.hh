@@ -88,9 +88,9 @@ protected:
   // flags
   bool standalone_mode_;
   bool is_energy_source_term_;
-  bool is_mass_source_term_;
+  bool is_water_source_term_;
   bool is_air_conductivity_;
-  bool mass_source_only_if_unfrozen_;
+  bool water_source_only_if_unfrozen_;
 
   // keys
   Key domain_ss_;

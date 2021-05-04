@@ -73,12 +73,12 @@ SubgridEvaluator::SubgridEvaluator(Teuchos::ParameterList& plist) :
 
   // my keys
   // -- sources
-  mass_source_key_ = Keys::readKey(plist, domain_, "surface mass source", "mass_source");
-  my_keys_.push_back(mass_source_key_);
+  water_source_key_ = Keys::readKey(plist, domain_, "surface water source", "water_source");
+  my_keys_.push_back(water_source_key_);
   energy_source_key_ = Keys::readKey(plist, domain_, "surface energy source", "total_energy_source");
   my_keys_.push_back(energy_source_key_);
-  ss_mass_source_key_ = Keys::readKey(plist, domain_ss_, "subsurface mass source", "mass_source");
-  my_keys_.push_back(ss_mass_source_key_);
+  ss_water_source_key_ = Keys::readKey(plist, domain_ss_, "subsurface water source", "water_source");
+  my_keys_.push_back(ss_water_source_key_);
   ss_energy_source_key_ = Keys::readKey(plist, domain_ss_, "subsurface energy source", "total_energy_source");
   my_keys_.push_back(ss_energy_source_key_);
   snow_source_key_ = Keys::readKey(plist, domain_snow_, "snow mass source - sink", "source_sink");
@@ -198,15 +198,15 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const auto& ss_pres = *S->GetFieldData(ss_pres_key_)->ViewComponent("cell",false);
 
   // collect output vecs
-  auto& mass_source = *results[0]->ViewComponent("cell",false);
+  auto& water_source = *results[0]->ViewComponent("cell",false);
   auto& energy_source = *results[1]->ViewComponent("cell",false);
-  auto& ss_mass_source = *results[2]->ViewComponent("cell",false);
+  auto& ss_water_source = *results[2]->ViewComponent("cell",false);
   auto& ss_energy_source = *results[3]->ViewComponent("cell",false);
   auto& snow_source = *results[4]->ViewComponent("cell",false);
   auto& new_snow = *results[5]->ViewComponent("cell",false);
-  mass_source.PutScalar(0.);
+  water_source.PutScalar(0.);
   energy_source.PutScalar(0.);
-  ss_mass_source.PutScalar(0.);
+  ss_water_source.PutScalar(0.);
   ss_energy_source.PutScalar(0.);
   snow_source.PutScalar(0.);
   new_snow.PutScalar(0.);
@@ -238,7 +238,7 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     qE_cond->PutScalar(0.);
   }
 
-  unsigned int ncells = mass_source.MyLength();
+  unsigned int ncells = water_source.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
     // get the top cell
     AmanziMesh::Entity_ID subsurf_f = mesh.entity_get_parent(AmanziMesh::CELL, c);
@@ -289,12 +289,12 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       SEBPhysics::FluxBalance flux = SEBPhysics::UpdateFluxesWithoutSnow(surf, met, params, eb, mb);
 
       // fQe, Me positive is condensation, water flux positive to surface
-      mass_source[0][c] += area_fracs[0][c] * flux.M_surf;
+      water_source[0][c] += area_fracs[0][c] * flux.M_surf;
       energy_source[0][c] += area_fracs[0][c] * flux.E_surf * 1.e-6; // convert to MW/m^2
 
       double area_to_volume = mesh.cell_volume(c) / mesh_ss.cell_volume(cells[0]);
-      double ss_mass_source_l = flux.M_subsurf * area_to_volume * params.density_water / 0.0180153; // convert from m/m^2/s to mol/m^3/s
-      ss_mass_source[0][cells[0]] += area_fracs[0][c] * ss_mass_source_l;
+      double ss_water_source_l = flux.M_subsurf * area_to_volume * params.density_water / 0.0180153; // convert from m/m^2/s to mol/m^3/s
+      ss_water_source[0][cells[0]] += area_fracs[0][c] * ss_water_source_l;
       double ss_energy_source_l = flux.E_subsurf * area_to_volume * 1.e-6; // convert from W/m^2 to MW/m^3
       ss_energy_source[0][cells[0]] += area_fracs[0][c] * ss_energy_source_l;
 
@@ -304,7 +304,7 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       if (vo_->os_OK(Teuchos::VERB_EXTREME))
         *vo_->os() << "CELL " << c << " BARE"
                     << ": Ms = " << flux.M_surf << ", Es = " << flux.E_surf * 1.e-6
-                    << ", Mss = " << ss_mass_source_l << ", Ess = " << ss_energy_source_l
+                    << ", Mss = " << ss_water_source_l << ", Ess = " << ss_energy_source_l
                     << ", Sn = " << flux.M_snow << std::endl;
 
       // diagnostics
@@ -357,12 +357,12 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       SEBPhysics::FluxBalance flux = SEBPhysics::UpdateFluxesWithoutSnow(surf, met, params, eb, mb);
 
       // fQe, Me positive is condensation, water flux positive to surface
-      mass_source[0][c] += area_fracs[1][c] * flux.M_surf;
+      water_source[0][c] += area_fracs[1][c] * flux.M_surf;
       energy_source[0][c] += area_fracs[1][c] * flux.E_surf * 1.e-6;
 
       double area_to_volume = mesh.cell_volume(c) / mesh_ss.cell_volume(cells[0]);
-      double ss_mass_source_l = flux.M_subsurf * area_to_volume * params.density_water / 0.0180153; // convert from m/m^2/s to mol/m^3/s
-      ss_mass_source[0][cells[0]] += area_fracs[1][c] * ss_mass_source_l;
+      double ss_water_source_l = flux.M_subsurf * area_to_volume * params.density_water / 0.0180153; // convert from m/m^2/s to mol/m^3/s
+      ss_water_source[0][cells[0]] += area_fracs[1][c] * ss_water_source_l;
       double ss_energy_source_l = flux.E_subsurf * area_to_volume * 1.e-6; // convert from W/m^2 to MW/m^3
       ss_energy_source[0][cells[0]] += area_fracs[1][c] * ss_energy_source_l;
 
@@ -372,7 +372,7 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       if (vo_->os_OK(Teuchos::VERB_EXTREME))
         *vo_->os() << "CELL " << c << " WATER"
                     << ": Ms = " << flux.M_surf << ", Es = " << flux.E_surf * 1.e-6
-                    << ", Mss = " << ss_mass_source_l << ", Ess = " << ss_energy_source_l
+                    << ", Mss = " << ss_water_source_l << ", Ess = " << ss_energy_source_l
                     << ", Sn = " << flux.M_snow << std::endl;
 
       // diagnostics
@@ -429,7 +429,7 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       SEBPhysics::FluxBalance flux = SEBPhysics::UpdateFluxesWithSnow(surf, met, params, snow, eb, mb);
 
       // fQe, Me positive is condensation, water flux positive to surface.  Subsurf is 0 because of snow
-      mass_source[0][c] += area_fracs[2][c] * flux.M_surf;
+      water_source[0][c] += area_fracs[2][c] * flux.M_surf;
       energy_source[0][c] += area_fracs[2][c] * flux.E_surf * 1.e-6; // convert to MW/m^2 from W/m^2
       snow_source[0][c] += area_fracs[2][c] * flux.M_snow;
       new_snow[0][c] += (met.Ps + std::max(mb.Me, 0.)) * area_fracs[2][c];
@@ -532,7 +532,7 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     vecs.clear();
 
     vnames.push_back("water_src");
-    vecs.push_back(S->GetFieldData(mass_source_key_).ptr());
+    vecs.push_back(S->GetFieldData(water_source_key_).ptr());
     vnames.push_back("evap flux");
     vecs.push_back(S->GetFieldData(evap_key_).ptr());
     db_->WriteVectors(vnames, vecs, true);
@@ -540,8 +540,8 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
 
     *vo_->os() << "CELL " << 0 << " TOTAL"
-                    << ": Ms = " << mass_source[0][0] << ", Es = " << energy_source[0][0]
-                    << ", Mss = " << ss_mass_source[0][99] << ", Ess = " << ss_energy_source[0][99]
+                    << ": Ms = " << water_source[0][0] << ", Es = " << energy_source[0][0]
+                    << ", Mss = " << ss_water_source[0][99] << ", Ess = " << ss_energy_source[0][99]
                     << ", Sn = " << snow_source[0][0] << std::endl;
 
 

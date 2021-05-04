@@ -1,6 +1,6 @@
 /*
-  ATS is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
@@ -18,8 +18,6 @@ sinks.
 
 .. _balance-pk-spec:
 .. admonition:: balance-pk-spec
-
-    * `"domain`" ``[string]`` Mesh on which the balance is to be done.
 
     * `"primary variable key`" ``[string]`` The primary variable associated with
       this PK.  Note there is no default -- this must be provided by the user.
@@ -43,7 +41,7 @@ sinks.
     INCLUDES:
 
     - ``[pk-physical-bdf-default-spec]``
-      
+
 */
 
 #ifndef PK_SURFACE_BALANCE_BASE_HH_
@@ -88,7 +86,6 @@ class SurfaceBalanceBase : public PK_PhysicalBDF_Default {
 
  protected:
 
-  Key layer_;
   bool conserved_quantity_;
   bool is_source_, is_source_differentiable_, source_finite_difference_;
   Key source_key_;
@@ -99,7 +96,7 @@ class SurfaceBalanceBase : public PK_PhysicalBDF_Default {
   bool modify_predictor_positivity_preserving_;
 
   Teuchos::RCP<Operators::PDE_Accumulation> preconditioner_acc_;
-  
+
  private:
   // factory registration
   static RegisteredPKFactory<SurfaceBalanceBase> reg_;

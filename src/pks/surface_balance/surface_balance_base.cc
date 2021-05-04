@@ -26,12 +26,10 @@ SurfaceBalanceBase::SurfaceBalanceBase(Teuchos::ParameterList& pk_tree,
     PK(pk_tree, global_list,  S, solution),
     PK_PhysicalBDF_Default(pk_tree, global_list,  S, solution)
 {
-  // name the layer
-  layer_ = plist_->get<std::string>("layer name", domain_);
   // source terms
   is_source_ = plist_->get<bool>("source term", true);
   if (is_source_) {
-    source_key_ = Keys::readKey(*plist_, layer_, "source", "source_sink");
+    source_key_ = Keys::readKey(*plist_, domain_, "source", "source_sink");
   }
   is_source_differentiable_ = plist_->get<bool>("source term is differentiable", true);
   source_finite_difference_ = plist_->get<bool>("source term finite difference", false);

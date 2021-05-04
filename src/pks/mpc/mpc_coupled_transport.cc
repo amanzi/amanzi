@@ -35,11 +35,13 @@ CoupledTransport_PK::CoupledTransport_PK(Teuchos::ParameterList& pk_tree_or_fe_l
       subsurface_name_ = dom_name;
       mesh_ = S->GetMesh(subsurface_name_);
       subsurf_id_ = i;
+      subsurface_tcc_key_ = Keys::readKey(*list, dom_name, "concentration", "total_component_concentration");
     }else{
       surface_transport_list_ = list;
       surface_name_ = dom_name;
       surf_mesh_ = S->GetMesh(surface_name_);
       surf_id_ = i;
+      surface_tcc_key_ = Keys::readKey(*list, dom_name, "concentration", "total_component_concentration");
     }
   }
 
@@ -77,6 +79,8 @@ void CoupledTransport_PK::Setup(const Teuchos::Ptr<State>& S)
   AMANZI_ASSERT(subsurf_pk_ != Teuchos::null);
   surf_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_ATS>(sub_pks_[surf_id_]);
   AMANZI_ASSERT(surf_pk_ != Teuchos::null);
+
+  SetupCouplingConditions();
 }
 
 int CoupledTransport_PK::num_aqueous_component()
@@ -109,9 +113,7 @@ bool CoupledTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   const Epetra_MultiVector& tcc = *S_inter_->GetFieldCopyData("total_component_concentration", "subcycling")->ViewComponent("cell",false);
 
   const std::vector<std::string>&  component_names_sub = subsurf_pk_->component_names();
-
   int num_components =  subsurf_pk_->num_aqueous_component();
-
   std::vector<double> mass_subsurface(num_components, 0.), mass_surface(num_components, 0.);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM){
@@ -145,6 +147,38 @@ void CoupledTransport_PK::InterpolateCellVector(
   v_int.Update(b, v0, a, v1, 0.);
 }
 
+void CoupledTransport_PK::SetupCouplingConditions()
+{
+  Teuchos::ParameterList& bc_list = subsurface_transport_list_->sublist("boundary conditions").sublist("concentration");
+  Teuchos::ParameterList& src_list = surface_transport_list_->sublist("source terms").sublist("component mass source");
+    
+  if (!bc_list.isSublist("BC coupling")){
+    Teuchos::ParameterList& bc_coupling = bc_list.sublist("BC coupling");
+    bc_coupling.set<std::string>("spatial distribution method", "domain coupling");
+    bc_coupling.set<std::string>("submodel", "conserved quantity");
+    std::vector<std::string> regs(1);
+    regs[0] = "surface";
+    bc_coupling.set<Teuchos::Array<std::string> >("regions", regs);
+    Teuchos::ParameterList& tmp = bc_coupling.sublist("fields");
+    tmp.set<std::string>("conserved_quantity_key", "surface-total_component_quantity");
+    tmp.set<std::string>("field_out_key", surface_tcc_key_);
+  }
 
-
+  if (!src_list.isSublist("surface coupling")){
+    Teuchos::ParameterList& src_coupling = src_list.sublist("surface coupling");
+    src_coupling.set<std::string>("spatial distribution method", "domain coupling");
+    src_coupling.set<std::string>("submodel", "rate");
+    std::vector<std::string> regs(1);
+    regs[0] = surface_name_;
+    src_coupling.set<Teuchos::Array<std::string> >("regions", regs);
+    Teuchos::ParameterList& tmp = src_coupling.sublist("fields");
+    tmp.set<std::string>("flux_key", subsurface_flux_key_);
+    tmp.set<std::string>("copy_flux_key", "next_timestep");
+    tmp.set<std::string>("field_in_key", surface_tcc_key_);
+    tmp.set<std::string>("field_out_key", subsurface_tcc_key_);
+    tmp.set<std::string>("copy_field_out_key", "default");
+    tmp.set<std::string>("copy_field_in_key", "default");
+  }
+}
+ 
 }  // namespace Amanzi

@@ -43,7 +43,7 @@ Solves Richards equation:
 
     THEN
 
-    * `"source key`" ``[string]`` **DOMAIN-mass_source** Typically
+    * `"source key`" ``[string]`` **DOMAIN-water_source** Typically
       not set, as the default is good. ``[mol s^-1]``
     * `"source term is differentiable`" ``[bool]`` **true** Can the source term
       be differentiated with respect to the primary variable?
