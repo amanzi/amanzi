@@ -32,6 +32,7 @@ class ReciprocalEvaluator : public SecondaryVariableFieldEvaluator {
  protected:
   double coef_;
   bool positive_;
+  Key reciprocal_key_;
   
  private:
   static Utils::RegisteredFactory<FieldEvaluator,ReciprocalEvaluator> factory_;
