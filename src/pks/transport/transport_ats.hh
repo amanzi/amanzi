@@ -437,6 +437,7 @@ protected:
   Key cv_key_;
 
  private:
+
   bool subcycling_, water_source_in_meters_;
   int dim;
   int saturation_name_;
