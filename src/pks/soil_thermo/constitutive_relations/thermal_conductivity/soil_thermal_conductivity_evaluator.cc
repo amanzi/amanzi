@@ -70,9 +70,9 @@ void SoilThermalConductivityEvaluator::EvaluateField_(
 //  // get temperature
 //  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
 
-//  // get water content
-//  Teuchos::RCP<const CompositeVector> wc = S->GetFieldData(water_content_key_);
-//
+  // get water content
+  Teuchos::RCP<const CompositeVector> wc = S->GetFieldData(water_content_key_);
+
 //  // get ice content
 //  Teuchos::RCP<const CompositeVector> ic = S->GetFieldData(ice_content_key_);
 
@@ -85,7 +85,7 @@ void SoilThermalConductivityEvaluator::EvaluateField_(
          comp!=result->end(); ++comp) {
       // much more efficient to pull out vectors first
 //      const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
-//      const Epetra_MultiVector& wc_v = *wc->ViewComponent(*comp,false);
+      const Epetra_MultiVector& wc_v = *wc->ViewComponent(*comp,false);
 //      const Epetra_MultiVector& ic_v = *ic->ViewComponent(*comp,false);
       Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
 
@@ -95,9 +95,9 @@ void SoilThermalConductivityEvaluator::EvaluateField_(
 
         // read these parameters from states
         double por = 0.;
-        double wl = 0.;
+//        double wl = 0.;
         double wi = 0.;
-//        double wl = wc_v[0][i];
+        double wl = wc_v[0][i];
 //        double wi = ic_v[0][i];
 
         double lambda_sat;
@@ -166,6 +166,9 @@ void SoilThermalConductivityEvaluator::EvaluateField_(
         lambda_dry = CK_const1*pow(10.,(-CK_const2*por));
 
         result_v[0][i] = (lambda_sat - lambda_dry)*Kersten + lambda_dry;
+
+        std::cout << "lambda_sat = " << lambda_sat << ", lambda_dry = " << lambda_dry << ", Kersten = " << Kersten << std::endl;
+        std::cout << "i = " << i << ", wl[i] = " << wl << ", lambda = " << result_v[0][i] << std::endl;
 
       } // i
     }
