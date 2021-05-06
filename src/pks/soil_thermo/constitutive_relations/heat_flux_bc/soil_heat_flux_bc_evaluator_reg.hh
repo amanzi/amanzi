@@ -4,7 +4,7 @@ namespace Amanzi {
 namespace SoilThermo {
 
 // registry of method
-Utils::RegisteredFactory<FieldEvaluator,SoilHeatFluxBCEvaluator> SoilHeatFluxBCEvaluator::factory_("soil heat flux bc");
+Utils::RegisteredFactory<FieldEvaluator,SoilHeatFluxBCEvaluator> SoilHeatFluxBCEvaluator::factory_("heat flux bc");
 
 } //namespace
 } //namespace

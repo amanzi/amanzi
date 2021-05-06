@@ -37,15 +37,15 @@ SoilThermalConductivityEvaluator::SoilThermalConductivityEvaluator(
 //  dependencies_.insert(cell_vol_key_);
 
   // -- water content
-  water_content_key_ = Keys::readKey(plist_, domain_name, "soil water content", "soil_water_content");
+  water_content_key_ = Keys::readKey(plist_, domain_name, "water content", "water_content");
   dependencies_.insert(water_content_key_);
 
   // -- ice content
-  ice_content_key_ = Keys::readKey(plist_, domain_name, "soil ice content", "soil_ice_content");
+  ice_content_key_ = Keys::readKey(plist_, domain_name, "ice content", "ice_content");
   dependencies_.insert(ice_content_key_);
 
-  AMANZI_ASSERT(plist_.isSublist("soil thermal conductivity parameters"));
-  Teuchos::ParameterList sublist = plist_.sublist("soil thermal conductivity parameters");
+//  AMANZI_ASSERT(plist_.isSublist("soil thermal conductivity parameters"));
+//  Teuchos::ParameterList sublist = plist_.sublist("soil thermal conductivity parameters");
 
 }
 
@@ -176,9 +176,10 @@ void SoilThermalConductivityEvaluator::EvaluateField_(
 void SoilThermalConductivityEvaluator::EvaluateFieldPartialDerivative_(
       const Teuchos::Ptr<State>& S, Key wrt_key,
       const Teuchos::Ptr<CompositeVector>& result) {
-  std::cout<<"SOIL THERMAL CONDUCITIVITY: Derivative not implemented yet!"<<wrt_key<<"\n";
-  AMANZI_ASSERT(0); // not implemented, not yet needed
-  result->Scale(1.e-6); // convert to MJ
+//  std::cout<<"SOIL THERMAL CONDUCITIVITY: Derivative not implemented yet!"<<wrt_key<<"\n";
+//  AMANZI_ASSERT(0); // not implemented, not yet needed
+//  result->Scale(1.e-6); // convert to MJ
+  result->PutScalar(0.);
 }
 
 } //namespace

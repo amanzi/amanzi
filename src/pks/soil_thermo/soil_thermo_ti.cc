@@ -30,6 +30,8 @@ void Soil_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
                        Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
+  std::cout << "Soil_Thermo_PK::FunctionalResidual START" << std::endl;
+
 
   bool ice_cover_ = false; // first always assume that there is no ice
 
@@ -149,6 +151,8 @@ void Soil_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   }
 #endif
 
+  std::cout << "Soil_Thermo_PK::FunctionalResidual DONE" << std::endl;
+
 };
 
 
@@ -163,6 +167,8 @@ int Soil_Thermo_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
   db_->WriteVector("T_res", u->Data().ptr(), true);
 #endif
 
+std::cout << "Soil_Thermo_PK::ApplyPreconditioner START" << std::endl;
+
 //  preconditioner_->PrintDiagnostics();
 
   // apply the preconditioner
@@ -173,6 +179,8 @@ int Soil_Thermo_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
 #endif
   
   Pu->Data()->ViewComponent("boundary_face")->PutScalar(0.0); // correction 01/22/21
+
+  std::cout << "Soil_Thermo_PK::ApplyPreconditioner DONE" << std::endl;
 
   return (ierr > 0) ? 0 : 1;
 };
@@ -185,6 +193,8 @@ void Soil_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "Precon update at t = " << t << std::endl;
+
+  std::cout << "Soil_Thermo_PK::UpdatePreconditioner START" << std::endl;
 
   // update state with the solution up.
 
@@ -201,6 +211,7 @@ void Soil_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
 
   // div K_e grad u
   UpdateConductivityData_(S_next_.ptr());
+  std::cout << "jacobian_ = " << jacobian_ << std::endl;
   if (jacobian_) UpdateConductivityDerivativeData_(S_next_.ptr());
 
   Teuchos::RCP<const CompositeVector> conductivity =
@@ -293,6 +304,9 @@ void Soil_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
 
   // Apply boundary conditions.
   preconditioner_diff_->ApplyBCs(true, true, true);
+
+  std::cout << "Soil_Thermo_PK::UpdatePreconditioner DONE" << std::endl;
+
 };
 
 double Soil_Thermo_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,

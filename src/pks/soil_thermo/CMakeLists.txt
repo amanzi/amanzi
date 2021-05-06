@@ -10,6 +10,7 @@ add_subdirectory(constitutive_relations)
 
 # ATS include directories
 include_directories(${ATS_SOURCE_DIR}/src/pks)
+include_directories(${ATS_SOURCE_DIR}/src/pks/energy)
 include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
 include_directories(${ATS_SOURCE_DIR}/src/operators/upwinding)
 include_directories(${ATS_SOURCE_DIR}/src/pks/soil_thermo/constitutive_relations/density)

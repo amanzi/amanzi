@@ -38,6 +38,7 @@ class SoilEnergyEvaluator : public SecondaryVariableFieldEvaluator {
  protected:
 
   Key temperature_key_;
+  Key pres_key_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,SoilEnergyEvaluator> factory_;
