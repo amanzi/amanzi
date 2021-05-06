@@ -37,6 +37,7 @@ ReciprocalEvaluator::ReciprocalEvaluator(Teuchos::ParameterList& plist) :
 
   coef_ = plist_.get<double>("coefficient", 1.0);
   positive_ = plist_.get<bool>("enforce positivity", false);
+  positive_ = plist_.get<bool>("enforce positivity", false);
 }
 
 Teuchos::RCP<FieldEvaluator>

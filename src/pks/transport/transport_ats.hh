@@ -50,18 +50,6 @@ The advection-diffusion equation for component *i* in the surface may be written
       transport are dependent on the boundary conditions for flow. See
       `Flow-specific Boundary Conditions`_ and `Transport-specific Boundary Conditions`_
 
-    * `"saturation liquid key`" ``[string]`` This variable is a multiplier in
-      in the accumulation term. For subsurface transport, this will typically
-      be the saturation (`"saturation_liquid`"). For surface transport, this
-      will typically be the ponded depth (`"ponded_depth`").
-
-    * `"previous saturation liquid key`" ``[string]``
-
-    * `"molar_density_key`" ``[string]`` **"molar_density_liquid"** Transport is solved
-      for concentrations in units of mol fractions. Molar density is needed for conversion.
-
-    * `"mass flux key suffix`" ``[string]`` **"mass_flux"**
-
     * `"number of liquid components`" ``[int]`` No default. Indicates how many
       components will be transported.
 
@@ -88,40 +76,48 @@ The advection-diffusion equation for component *i* in the surface may be written
          <Parameter name="aqueous values" type=Array(double)" value="{1e-8,1e-9}"/>
       </ParameterList>
 
-    * _SOIL [list] Defines material properties.
+    * "material properties" [material-properties-spec-list] Defines material properties.
 
       * `"region`" [Array(string)] Defines geometric regions for material SOIL.
       * `"model`" [string] Defines dispersivity model, choose exactly one of the following: `"scalar`", `"Bear`",
         `"Burnett-Frind`", or `"Lichtner-Kelkar-Robinson`".
       * `"parameters for MODEL`" [list] where `"MODEL`" is the model name.
-        For model `"scalar`", *only* one of the following options must be specified:
 
-          * `"alpha`" [double] defines dispersivity in all directions, [m].
-          * `"dispersion coefficient`" [double] defines dispersion coefficient [m^2 s^-1].
+      IF model == scalar
 
-        For model `"Bear`", the following options must be specified:
+      ONE OF
 
-          * `"alpha_l`" [double] defines dispersion in the direction of Darcy velocity, [m].
-          * `"alpha_t`" [double] defines dispersion in the orthogonal direction, [m].
+      * `"alpha`" [double] defines dispersivity in all directions, [m].
 
-        For model `"Burnett-Frind`", the following options must be specified:
+      OR
 
-          * `"alphaL`" [double] defines the longitudinal dispersion in the direction of Darcy velocity, [m].
-          * `"alpha_th`" [double] Defines the transverse dispersion in the horizonla direction orthogonal directions, [m].
-          * `"alpha_tv`" [double] Defines dispersion in the orthogonal directions, [m].
-            When `"alpha_th`" equals to `"alpha_tv`", we obtain dispersion in the direction of the Darcy velocity.
-            This and the above parameters must be defined for `"Burnett-Frind`" and `"Lichtner-Kelkar-Robinson`" models.
+      * `"dispersion coefficient`" [double] defines dispersion coefficient [m^2 s^-1].
 
-        For model `"Lichtner-Kelker-Robinson`", the following options must be specified:
+      END
 
-          * `"alpha_lh`" [double] defines the longitudinal dispersion in the horizontal direction, [m].
-          * `"alpha_lv`" [double] Defines the longitudinal dispersion in the vertical direction, [m].
-            When `"alpha_lh`" equals to `"alpha_lv`", we obtain dispersion in the direction of the Darcy velocity.
-            This and the above parameters must be defined for `"Burnett-Frind`" and `"Lichtner-Kelker-Robinson`" models.
-          * `"alpha_th`" [double] Defines the transverse dispersion in the horizontal direction orthogonal directions, [m].
-          * `"alpha_tv" [double] Defines dispersion in the orthogonal directions.
-            When `"alpha_th`" equals to `"alpha_tv`", we obtain dispersion in the direction of the Darcy velocity.
-            This and the above parameters must be defined for `"Burnett-Frind`" and `"Lichtner-Kelker-Robinson`" models.
+      ELSE IF model == Bear
+
+      * `"alpha_l`" [double] defines dispersion in the direction of Darcy velocity, [m].
+      * `"alpha_t`" [double] defines dispersion in the orthogonal direction, [m].
+
+      ELSE IF model == Burnett-Frind
+
+      * `"alphaL`" [double] defines the longitudinal dispersion in the direction of Darcy velocity, [m].
+      * `"alpha_th`" [double] Defines the transverse dispersion in the horizonla direction orthogonal directions, [m].
+      * `"alpha_tv`" [double] Defines dispersion in the orthogonal directions, [m].
+         When `"alpha_th`" equals to `"alpha_tv`", we obtain dispersion in the direction of the Darcy velocity.
+         This and the above parameters must be defined for `"Burnett-Frind`" and `"Lichtner-Kelkar-Robinson`" models.
+
+      ELSE IF model == `"Lichtner-Kelker-Robinson`"
+
+      * `"alpha_lh`" [double] defines the longitudinal dispersion in the horizontal direction, [m].
+      * `"alpha_lv`" [double] Defines the longitudinal dispersion in the vertical direction, [m].
+         When `"alpha_lh`" equals to `"alpha_lv`", we obtain dispersion in the direction of the Darcy velocity.
+      * `"alpha_th`" [double] Defines the transverse dispersion in the horizontal direction orthogonal directions, [m].
+      * `"alpha_tv" [double] Defines dispersion in the orthogonal directions.
+         When `"alpha_th`" equals to `"alpha_tv`", we obtain dispersion in the direction of the Darcy velocity.
+
+      END
 
       * `"aqueous tortuosity`" [double] Defines tortuosity for calculating diffusivity of liquid solutes, [-].
       * `"gaseous tortuosity`" [double] Defines tortuosity for calculating diffusivity of gas solutes, [-].
@@ -129,34 +125,47 @@ The advection-diffusion equation for component *i* in the surface may be written
 
     Source terms:
 
-      * `"source terms`" [list] Provides solute source.
-        * `"component mass source`" [list]  Defines solute source injection rate.
-           * `"spatial distribution method`" [string] One of:
-              - `"volume`", source is considered as extensive quantity [molC s^-1] and is evenly distributed across the region.
-              - `"none`", source is considered as intensive quantity. [molC m^-2 s^-1] in surface and [molC m^-3 s^-1] in subsurface
+    * `"source terms`" [list] Provides solute source.
+       * `"component mass source`" [list]  Defines solute source injection rate.
+          * `"spatial distribution method`" [string] One of:
+             - `"volume`", source is considered as extensive quantity [molC s^-1] and is evenly distributed across the region.
+             - `"none`", source is considered as intensive quantity. [molC m^-2 s^-1] in surface and [molC m^-3 s^-1] in subsurface
 
-        * `"geochemical`" [list]  Defines a source by setting solute concentration for all components (in moles/L) and an injection
-           rate given by `"water_source`". Currently, this option is only available for Alquimia provided geochemical conditions.
+       * `"geochemical`" [list]  Defines a source by setting solute concentration for all components (in moles/L) and an injection
+           rate given by the water source.  Currently, this option is only available for Alquimia provided geochemical conditions.
 
            - `"geochemical conditions`" [Array(string)] List of geochemical constraints providing concentration for solute injection.
 
-           - `"water_source`" [list] Defines the water injection rate [mol H2O m^-2 s^-1]
-              in surface and [mol H2O m^-3 s^-1] in subsurface) which applies to
-              concentrations specified by the `"geochemical conditions`".  Note that
-              if this PK is coupled to a surface flow PK, the unit of the water
-              source there *must* be in [mol m^-2 s^-1], *not* in [m s^-1] as is an
-              option for that PK (e.g. `"mass source in meters`" must be set to `"false`"
-              in the overland flow PK).
+    Keys:
 
-           The injection rate of a solute [molC s^-1], when given as the
-           product of a concentration and a water source, is evaluated as:
+    * `"saturation liquid`" This variable is a multiplier in in the
+      accumulation term. For subsurface transport, this will typically be the
+      saturation (`"saturation_liquid`"). For surface transport, this will
+      typically be the ponded depth (`"ponded_depth`").
 
-           Concentration [mol C L^-1] *
-             1000 [L m^-3] of water *
-             water source [mol H2O m^-3 s^-1] *
-             volume of injection domain [m^3] /
-             molar density of water [mol H2O m^-3]
+    * `"previous saturation liquid`"
 
+    * `"molar density liquid`"  Transport is solved
+      for concentrations in units of mol fractions. Molar density is needed for conversion.
+
+    * `"water flux`"
+
+    * `"water source`" Defines the water injection rate [mol H2O m^-2 s^-1] in
+      surface and [mol H2O m^-3 s^-1] in subsurface) which applies to
+      concentrations specified by the `"geochemical conditions`".  Note that if
+      this PK is coupled to a surface flow PK, the unit of the water source
+      there *must* be in [mol m^-2 s^-1], *not* in [m s^-1] as is an option for
+      that PK (e.g. `"water source in meters`" must be set to `"false`" in the
+      overland flow PK).
+
+      The injection rate of a solute [molC s^-1], when given as the product of
+      a concentration and a water source, is evaluated as:
+
+          Concentration [mol C L^-1] *
+            1000 [L m^-3] of water *
+            water source [mol H2O m^-3 s^-1] *
+            volume of injection domain [m^3] /
+            molar density of water [mol H2O m^-3]
 
     Physical model and assumptions:
 
@@ -440,6 +449,7 @@ protected:
   Key water_content_key_;
   Key water_src_key_;
   bool has_water_src_key_;
+  bool water_src_in_meters_;
   Key geochem_src_factor_key_;
   Key conserve_qty_key_;
   Key cv_key_;

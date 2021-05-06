@@ -122,7 +122,7 @@ void Transport_ATS::Setup(const Teuchos::Ptr<State>& S)
 {
   saturation_key_ = Keys::readKey(*plist_, domain_, "saturation liquid", "saturation_liquid");
   prev_saturation_key_ = Keys::readKey(*plist_, domain_, "previous saturation liquid", "prev_saturation_liquid");
-  flux_key_ = Keys::readKey(*plist_, domain_, "mass flux", "mass_flux");
+  flux_key_ = Keys::readKey(*plist_, domain_, "mass flux", "mass_flux"); // FIXME!
   permeability_key_ = Keys::readKey(*plist_, domain_, "permeability", "permeability");
   tcc_key_ = Keys::readKey(*plist_, domain_, "concentration", "total_component_concentration");
   conserve_qty_key_ = Keys::readKey(*plist_, domain_, "conserved quantity", "total_component_quantity");
@@ -213,25 +213,32 @@ void Transport_ATS::Setup(const Teuchos::Ptr<State>& S)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(water_src_key_);
     has_water_src_key_ = true;
+    water_src_in_meters_ = plist_->get<bool>("water source in meters", false);
 
-    // set the coefficient (which is in the denominator) as density / water source.
-    S->RequireField(geochem_src_factor_key_, geochem_src_factor_key_)
-      ->SetMesh(mesh_)->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+    if (water_src_in_meters_) {
+      geochem_src_factor_key_ = water_src_key_;
+    } else {
+      // set the coefficient as water source / water density
+      S->RequireField(geochem_src_factor_key_, geochem_src_factor_key_)
+        ->SetMesh(mesh_)->SetGhosted(true)
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-    Teuchos::ParameterList& wc_eval = S->GetEvaluatorList(geochem_src_factor_key_);
-    wc_eval.set<std::string>("field evaluator type", "reciprocal evaluator");
-    std::vector<std::string> dep{ water_src_key_, molar_density_key_ };
-    wc_eval.set<Teuchos::Array<std::string> >("evaluator dependencies", dep);
-    wc_eval.set<std::string>("reciprocal", dep[1]);
-    S->RequireFieldEvaluator(geochem_src_factor_key_);
+      Teuchos::ParameterList& wc_eval = S->GetEvaluatorList(geochem_src_factor_key_);
+      wc_eval.set<std::string>("field evaluator type", "reciprocal evaluator");
+      std::vector<std::string> dep{ water_src_key_, molar_density_key_ };
+      wc_eval.set<Teuchos::Array<std::string> >("evaluator dependencies", dep);
+      wc_eval.set<std::string>("reciprocal", dep[1]);
+      S->RequireFieldEvaluator(geochem_src_factor_key_);
+    }
   }
 
+  // this is the not-yet-existing source, and is dead code currently!
   if (plist_->sublist("source terms").isSublist("component concentration source")) {
     S->RequireField(water_src_key_, water_src_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(water_src_key_);
     has_water_src_key_ = true;
+    water_src_in_meters_ = plist_->get<bool>("water source in meters", false);
   }
 
   // require multiscale fields
