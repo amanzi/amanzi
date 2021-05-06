@@ -101,6 +101,7 @@ bool CoupledTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   bool fail = false;
   double dt_MPC = S_inter_->final_time() - S_inter_->initial_time();
 
+
   AMANZI_ASSERT(subsurf_pk_ != Teuchos::null);
   AMANZI_ASSERT(surf_pk_ != Teuchos::null);
 
@@ -117,6 +118,7 @@ bool CoupledTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   std::vector<double> mass_subsurface(num_components, 0.), mass_surface(num_components, 0.);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM){
+
     for (int i=0; i<num_components; i++){
       *vo_->os() << component_names_sub[i]<< ":";
       mass_subsurface[i] = Teuchos::rcp_dynamic_cast<Transport::Transport_ATS>(sub_pks_[subsurf_id_])

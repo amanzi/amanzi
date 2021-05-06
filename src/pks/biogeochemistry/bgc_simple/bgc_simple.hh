@@ -95,7 +95,7 @@ that build_columns in the subsurface Mesh_ spec has been supplied.
 
 namespace Amanzi {
 namespace BGC {
-
+  
 class BGCSimple : public PK_Physical_Default {
 
  public:
@@ -132,40 +132,18 @@ class BGCSimple : public PK_Physical_Default {
 
   virtual std::string name(){return "BGC simple";};
 
+  friend class FATES_PK;
+
+  
  protected:
   void FieldToColumn_(AmanziMesh::Entity_ID col, const Epetra_Vector& vec,
                      Teuchos::Ptr<Epetra_SerialDenseVector> col_vec,
                      bool copy=true);
+  void FieldToColumn_(AmanziMesh::Entity_ID col, const Epetra_Vector& vec,
+                      double* col_vec, int ncol);
   void ColDepthDz_(AmanziMesh::Entity_ID col,
                    Teuchos::Ptr<Epetra_SerialDenseVector> depth,
                    Teuchos::Ptr<Epetra_SerialDenseVector> dz);
-
-  class ColIterator {
-   public:
-    ColIterator(const AmanziMesh::Mesh& mesh,
-                AmanziMesh::Entity_ID col_face, int ncells=0) {
-      if (ncells > 0) cells_.reserve(ncells);
-      AmanziMesh::Entity_ID_List facecells;
-      mesh.face_get_cells(col_face, AmanziMesh::Parallel_type::ALL, &facecells);
-      AMANZI_ASSERT(facecells.size() == 1);
-
-      AmanziMesh::Entity_ID c = facecells[0];
-      while (c >= 0) {
-        cells_.push_back(c);
-        c = mesh.cell_get_cell_below(c);
-      }
-    }
-
-    typedef std::vector<AmanziMesh::Entity_ID>::const_iterator const_iterator;
-
-    const_iterator begin() { return cells_.begin(); }
-    const_iterator end() { return cells_.end(); }
-    std::size_t size() { return cells_.size(); }
-    AmanziMesh::Entity_ID operator[](std::size_t i) { return cells_[i]; }
-
-   private:
-    std::vector<AmanziMesh::Entity_ID> cells_;
-  };
 
 
  protected:
@@ -195,7 +173,8 @@ class BGCSimple : public PK_Physical_Default {
   Key trans_key_;
   Key shaded_sw_key_;
   Key total_lai_key_;
-  
+
+
  private:
   // factory registration
   static RegisteredPKFactory<BGCSimple> reg_;

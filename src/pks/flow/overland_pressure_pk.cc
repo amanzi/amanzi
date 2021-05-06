@@ -978,12 +978,8 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
     Teuchos::RCP<const CompositeVector> elev = S->GetFieldData(elev_key_);
     Teuchos::RCP<const CompositeVector> ponded_depth = S->GetFieldData(pd_key_);
 
-    elev->ScatterMasterToGhosted();
-    ponded_depth->ScatterMasterToGhosted();
-
     const Epetra_MultiVector& elevation_f = *elev->ViewComponent("face",false);
-    const Epetra_MultiVector& elevation_c = *elev->ViewComponent("cell",false);
-    const Epetra_MultiVector& ponded_c = *ponded_depth->ViewComponent("cell",false);
+    
     Teuchos::RCP<const CompositeVector> flux =
       S->GetFieldData(flux_key_);
     const Epetra_MultiVector& flux_f = *flux->ViewComponent("face",false);
@@ -1009,7 +1005,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
           Exceptions::amanzi_throw(message);
         }
         double h0 = bc.second;
-
+      
         if ((h0 - elevation_f[0][f]  < min_tidal_bc_ponded_depth_) ) {
           markers[f] = Operators::OPERATOR_BC_NEUMANN;
           values[f] = 0.;
@@ -1021,10 +1017,11 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
         if (vo_->os_OK(Teuchos::VERB_HIGH)){
           *vo_->os() << "Tidal BC: f="<<f<<" type "<<markers[f]<<" val "<<values[f]<<"\n";
         }
+
       }
     }
   }
-
+  
   // check that there are no internal faces and mark all remaining boundary
   // conditions as the default, zero flux conditions
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
@@ -1056,6 +1053,8 @@ OverlandPressureFlow::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVecto
   auto& markers = bc_markers();
   auto& values = bc_values();
 
+
+  
   if (u->HasComponent("face")) {
     const Epetra_MultiVector& elevation = *elev->ViewComponent("face");
 
@@ -1098,6 +1097,7 @@ void OverlandPressureFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S,
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "    Tweaking BCs for the Operator." << std::endl;
+
 
   auto& markers = bc_markers();
   auto& values = bc_values();
@@ -1178,7 +1178,7 @@ void OverlandPressureFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S,
         if ((h0 - elevation_f[0][f] < min_tidal_bc_ponded_depth_)) {
           double dp = elevation_f[0][f] - elevation_c[0][c];
           double bc_val = -dp * Aff[f](0,0);
-
+  
           markers[f] = Operators::OPERATOR_BC_NEUMANN;
           values[f] = bc_val / mesh_->face_area(f);
         } else {
@@ -1186,12 +1186,13 @@ void OverlandPressureFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S,
           values[f] = h0;
         }
 
-        if (vo_->os_OK(Teuchos::VERB_HIGH)){
+        if (vo_->os_OK(Teuchos::VERB_EXTREME)){
           *vo_->os() << "Tidal BC2: f="<<f<<" type "<<markers[f]<<" val "<<values[f]<<
             " Aff "<< Aff[f](0,0) << "\n";
         }
       }
     }
+
   }
 };
 

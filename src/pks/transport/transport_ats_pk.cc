@@ -31,6 +31,7 @@
 #include "PK_DomainFunctionFactory.hh"
 #include "PK_Utils.hh"
 
+
 #include "MultiscaleTransportPorosityFactory.hh"
 #include "TransportDomainFunction.hh"
 #include "TransportBoundaryFunction_Alquimia.hh"
@@ -52,6 +53,15 @@ Transport_ATS::Transport_ATS(Teuchos::ParameterList& pk_tree,
   PK(pk_tree, glist, S, solution),
   PK_PhysicalExplicit<Epetra_Vector>(pk_tree, glist, S, solution)
 {
+
+
+  key_ = Keys::readKey(*plist_, domain_, "primary variable", "total_component_concentration");
+  tcc_key_ = key_;
+  
+  // set up the primary variable solution, and its evaluator
+  Teuchos::ParameterList& pv_sublist = S->GetEvaluatorList(key_);
+  pv_sublist.set("field evaluator type", "primary variable");
+
   if (plist_->isParameter("component names")) {
     component_names_ = plist_->get<Teuchos::Array<std::string> >("component names").toVector();
     mol_masses_ = plist_->get<Teuchos::Array<double> >("component molar masses").toVector();
@@ -61,7 +71,7 @@ Transport_ATS::Transport_ATS(Teuchos::ParameterList& pk_tree,
   }
 
   subcycling_ = plist_->get<bool>("transport subcycling", false);
-
+  
   water_source_in_meters_ = plist_->get<bool>("water source in meters", true);
 
   // initialize io
@@ -129,7 +139,6 @@ void Transport_ATS::Setup(const Teuchos::Ptr<State>& S)
   water_tolerance_ = plist_->get<double>("water tolerance", 1e-6);
   dissolution_ = plist_->get<bool>("allow dissolution", false);
   max_tcc_ = plist_->get<double>("maximum concentration", 0.9);
-
   dim = mesh_->space_dimension();
 
   // cross-coupling of PKs
@@ -224,8 +233,11 @@ void Transport_ATS::Setup(const Teuchos::Ptr<State>& S)
     S->RequireFieldEvaluator(water_src_key_);
   }
   
+  if (!S->HasField(solid_residue_mass_key_)){
+    S->RequireField(solid_residue_mass_key_,  name_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
+  }
 
-  
   // require multiscale fields
   multiscale_porosity_ = false;
   if (multiscale_model == "dual porosity") {
@@ -277,7 +289,6 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
   S->RequireFieldCopy(tcc_key_, "subcycling", name_);
   tcc_tmp = S->GetFieldCopyData(tcc_key_,"subcycling", name_);
 
-  
   S->RequireFieldCopy(saturation_key_, "subcycle_start", name_);
   ws_subcycle_start = S->GetFieldCopyData(saturation_key_, "subcycle_start",name_)
     ->ViewComponent("cell");
@@ -375,7 +386,6 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
           }
           bc->set_state(S_);
           bcs_.push_back(bc);
-
         } else if (bc_type == "subgrid") {
           // subgrid domains take a BC from a single entity of a parent mesh --
           // find the GID of that entity.
@@ -469,7 +479,6 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
           }
           src->set_state(S_);
           srcs_.push_back(src);
-
         } else {
           Teuchos::RCP<TransportDomainFunction> src =
               factory.Create(src_list, "source function", AmanziMesh::CELL, Kxy);
@@ -487,7 +496,6 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
         }
       }
     }
-
 
 #ifdef ALQUIMIA_ENABLED
     // -- try geochemical conditions
@@ -516,7 +524,6 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
     }
 #endif
   }
-
   // Temporarily Transport hosts Henry law.
   PrepareAirWaterPartitioning_();
 
@@ -527,7 +534,6 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
     *vo_->os() << vo_->color("green") << "Initalization of PK is complete."
                << vo_->reset() << std::endl << std::endl;
   }
-
 }
 
 
@@ -549,7 +555,6 @@ void Transport_ATS::InitializeFields_(const Teuchos::Ptr<State>& S)
             *vo_->os() << "initilized saturation_liquid to value 1.0" << std::endl;
       }
       InitializeFieldFromField_(prev_saturation_key_, saturation_key_, S, true, true);
-
     } else {
       if (S->GetField(prev_saturation_key_)->owner() == name_) {
         if (!S->GetField(prev_saturation_key_, name_)->initialized()) {
@@ -567,7 +572,6 @@ void Transport_ATS::InitializeFields_(const Teuchos::Ptr<State>& S)
   S->GetField(solid_residue_mass_key_, name_)->set_initialized();
   S->GetField(conserve_qty_key_, name_)->set_initialized();
 }
-
 
 /* ****************************************************************
 * Auxiliary initialization technique.
@@ -600,7 +604,6 @@ void Transport_ATS::InitializeFieldFromField_(const std::string& field0,
     }
   }
 }
-
 
 /* *******************************************************************
 * Estimation of the time step based on T.Barth (Lecture Notes
@@ -662,7 +665,6 @@ double Transport_ATS::StableTimeStep()
       dt_cell = vol * (*mol_dens_)[0][c] * (*phi_)[0][c] * std::min( (*ws_prev_)[0][c], (*ws_)[0][c] ) / outflux;
     }
     if (dt_cell < dt_) {
-      // *vo_->os()<<"Stable step: "<<flux_key_<<" cell "<<c<<" out "<<outflux<<"  dt= "<<dt_cell<<"\n";
       dt_ = dt_cell;
       cmin_dt = c;
       ws_min_dt = std::min( (*ws_prev_)[0][c], (*ws_)[0][c] );
@@ -703,7 +705,6 @@ double Transport_ATS::StableTimeStep()
       if (p.dim() == 3) tmp_package[4] = p[2];
       else tmp_package[4] = 0.;
       tmp_package[5] = p.dim();
-
     }
 
     int min_pid_tmp = min_pid;
@@ -756,8 +757,13 @@ bool Transport_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
                << "----------------------------------------------------------------" << std::endl;
 
   flux_ = S_next_->GetFieldData(flux_key_)->ViewComponent("face", true);
-  *flux_copy_ = *flux_; // copy flux vector from S_next_ to S_;
 
+  *flux_copy_ = *flux_; // copy flux vector from S_next_ to S_; 
+
+  if (S_next_->HasFieldEvaluator(molar_density_key_)){
+    S_next_->GetFieldEvaluator(molar_density_key_)->HasFieldChanged(S_next_.ptr(), molar_density_key_);
+  }
+   
   ws_ = S_next_->GetFieldData(saturation_key_)->ViewComponent("cell", false);
   mol_dens_ = S_next_->GetFieldData(molar_density_key_)->ViewComponent("cell", false);
   solid_qty_ = S_next_->GetFieldData(solid_residue_mass_key_, name_)->ViewComponent("cell", false);
@@ -812,7 +818,6 @@ bool Transport_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
 
   if ((t_old > S_inter_->initial_time())||(t_new < S_inter_->final_time())) interpolate_ws = 1;
 
-  // start subcycling
   double dt_sum = 0.0;
   double dt_cycle;
   if (interpolate_ws) {
@@ -1129,7 +1134,6 @@ void Transport_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new)
                  << " itrs=" << num_itrs / num_components << std::endl;
     }
   }
-
 }
 
 
@@ -1216,18 +1220,13 @@ void Transport_ATS::AddMultiscalePorosity_(
 ******************************************************************* */
 void Transport_ATS::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
+
   Teuchos::RCP<CompositeVector> tcc_vec_S = S->GetFieldData(tcc_key_, name_);
         
   *tcc_vec_S = *tcc_tmp;
   InitializeFieldFromField_(prev_saturation_key_, saturation_key_, S.ptr(), false, true);
   ChangedSolutionPK(S.ptr());
 
-  // Copy to S_ as well
-  //
-  // WHY?  is this required for subcycling?  this used to be S, which was a
-  // bug as it duplicates the above line of code. --etc
-  //Teuchos::RCP<CompositeVector> tcc_vec_Sold = S_->GetFieldData(tcc_key_, name_);
-  //*tcc_vec_Sold = *tcc_tmp;
   //WriteStateStatistics(*S, *vo_); 
 }
 
@@ -1251,6 +1250,7 @@ void Transport_ATS::AdvanceDonorUpwind(double dt_cycle)
 
   // We advect only aqueous components.
   int num_advect = num_aqueous;
+
   int num_components = tcc_next.NumVectors();
   conserve_qty_->PutScalar(0.);
 
@@ -1351,6 +1351,7 @@ void Transport_ATS::AdvanceDonorUpwind(double dt_cycle)
 
   // recover concentration from new conservative state
   for (int c = 0; c < ncells_owned; c++) {
+
     double water_new = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_end)[0][c] * (*mol_dens_end)[0][c];
     double water_sink = (*conserve_qty_)[num_components][c]; // water at the new time + outgoing domain coupling source
     double water_total = water_new + water_sink;
@@ -1401,6 +1402,7 @@ void Transport_ATS::AdvanceDonorUpwind(double dt_cycle)
   if (internal_tests) {
     VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
   }
+
 }
 
 
@@ -1568,17 +1570,8 @@ void Transport_ATS::AdvanceSecondOrderUpwindRK2(double dt_cycle)
         (*solid_qty_)[i][c] += abs(tcc_next[i][c])*vol_phi_ws_den;
         tcc_next[i][c] = 0.;
       }
-
     }
   }
-
-  // f_component2.Update(-1, f_component, 1.);
-  // double diff_norm;
-  // f_component2.NormInf(&diff_norm);
-  // *vo_->os()<<domain_<<" difference "<<diff_norm<<"\n";
-  //if (domain_ == "surface") {
-  //*vo_->os()<<"after corrector ToTaL "<<domain_<<" :"<<std::setprecision(10)<<ComputeSolute( tcc_next, 0)<<"\n";
-  //}
 
   // update mass balance
   for (int i = 0; i < num_aqueous + num_gaseous; i++) {
