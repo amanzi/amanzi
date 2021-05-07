@@ -8,7 +8,7 @@
 
   Author: Ethan Coon (ecoon@lanl.gov)
 
-  Basic interface of a Viscosity.
+  Basic interface of viscosity.
 */
 
 #ifndef AMANZI_EOS_VISCOSITY_BASE_HH_
@@ -18,13 +18,17 @@ namespace Amanzi {
 namespace AmanziEOS {
 
 // Equation of State model
-class Viscosity_Base {
+class ViscosityBase {
  public:
-  virtual ~Viscosity_Base() {};
+  ViscosityBase(Teuchos::ParameterList& eos_plist) : eos_plist_(eos_plist) {};
+  virtual ~ViscosityBase() {};
 
-  // Virtual methods that form the Viscosity
-  virtual double Viscosity(double T) = 0;
-  virtual double DViscosityDT(double T) = 0;
+  virtual double Viscosity(double T, double p) = 0;
+  virtual double DViscosityDT(double T, double p) = 0;
+  virtual double DViscosityDp(double T, double p) = 0;
+
+ protected:
+  Teuchos::ParameterList eos_plist_;
 };
 
 }  // namespace AmanziEOS

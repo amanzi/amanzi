@@ -208,24 +208,7 @@ void SolverNKA<Vector, VectorSpace>::Init_()
   modify_correction_ = plist_.get<bool>("modify correction", false);
 
   std::string monitor_name = plist_.get<std::string>("monitor", "monitor update");
-  norm_type_ = SOLVER_NORM_LINF;
-  if (monitor_name == "monitor residual") {
-    monitor_ = SOLVER_MONITOR_RESIDUAL;
-  } else if (monitor_name == "monitor l2 residual") {
-    monitor_ = SOLVER_MONITOR_RESIDUAL;
-    norm_type_ = SOLVER_NORM_L2;
-  } else if (monitor_name == "monitor preconditioned residual") {
-    monitor_ = SOLVER_MONITOR_PCED_RESIDUAL;
-  } else if (monitor_name == "monitor preconditioned l2 residual") {
-    monitor_ = SOLVER_MONITOR_PCED_RESIDUAL;
-    norm_type_ = SOLVER_NORM_L2;
-  } else if (monitor_name == "monitor update") {
-    monitor_ = SOLVER_MONITOR_UPDATE;  // default value
-  } else {
-    Errors::Message m;
-    m << "SolverNKA: Invalid monitor \"" << monitor_name << "\"";
-    Exceptions::amanzi_throw(m);
-  }
+  ParseConvergenceCriteria(monitor_name, &monitor_, &norm_type_);
 
   nka_dim_ = plist_.get<int>("max nka vectors", 10);
   nka_dim_ = std::min<int>(nka_dim_, max_itrs_ - 1);

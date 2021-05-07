@@ -64,6 +64,24 @@ if (BUILD_SHARED_LIBS)
   set(BUILD_STATIC_LIBS FALSE)
 endif()
 
+# ############################################################################ #
+# Compiler Specific Flags
+# ############################################################################ #
+
+# Check for GNU compilers and add special option for gfortran version 10 and above
+if (CMAKE_Fortran_COMPILER_ID MATCHES GNU)
+  if (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL "10")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-argument-mismatch")
+  endif()
+endif()
+
+# check for Apple CLANG compilers and add special option to allow
+# HDF5, others to compile.
+if (CMAKE_C_COMPILER_ID MATCHES AppleClang)
+  if (CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL "11")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error-implicit-function-declaration")
+  endif()
+endif()
 
 # ############################################################################ #
 # Compiler Definition Warnings
@@ -404,13 +422,35 @@ endif()
 # LAPACK/BLAS Configuration 
 # ############################################################################ #
 
+option(TPL_BLAS_VENDOR "Identifies the vendor for BLAS and LAPACK library search" All)
+set(BLA_VENDOR ${TPL_BLAS_VENDOR})
+
+if ( DEFINED ENV{NERSC_HOST} )
+   
+   set(BLA_VENDOR "CRAYSCI")
+   string(TOLOWER ${CMAKE_Fortran_COMPILER_ID} _lib_compiler_id)
+   set(LIBBLAS_BASE_NAME "sci_${_lib_compiler_id}")
+   set(LIBLAPACK_BASE_NAME "sci_${_lib_compiler_id}")
+   string (REPLACE "-" "_" CRAY_CPU_TEMP $ENV{CRAY_CPU_TARGET})
+   string (REPLACE "x86_64" "${CRAY_CPU_TEMP}/lib" BLA_DIR $ENV{CRAY_LIBSCI_PREFIX_DIR})
+   set(LAPCK_DIR ${BLA_DIR})
+   
+   message(STATUS ">>> Amanzi: On NERSC system BLA_DIR = ${BLA_DIR}")
+   message(STATUS ">>> Amanzi: On NERSC system LAPCK_DIR = ${LAPCK_DIR}")
+   
+endif()
+
 # Search for BLAS (Basic Linear Algebra Subprograms) http://www.netlib.org/blas
+
+message(STATUS ">>> Amanzi: Starting Search for BLAS")
 find_package(BLAS REQUIRED)
-message(STATUS ">>>  BLAS_LIBRARIES = ${BLAS_LIBRARIES}") 
+message(STATUS ">>> Amanzi: BLAS_LIBRARIES = ${BLAS_LIBRARIES}") 
 
 # Search for LAPACK (Linear Algebra PACKage) http://www/netlib.org/lapack
+
+message(STATUS ">>> Amanzi: Starting Search for LAPACK")
 find_package(LAPACK REQUIRED)
-message(STATUS ">>>  LAPACK_LIBRARIES = ${LAPACK_LIBRARIES}") 
+message(STATUS ">>> Amanzi: LAPACK_LIBRARIES = ${LAPACK_LIBRARIES}") 
 
 
 # ############################################################################ #

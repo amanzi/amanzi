@@ -48,8 +48,8 @@ FunctionBilinearAndTime::FunctionBilinearAndTime(const FunctionBilinearAndTime& 
       t_before_(other.t_before_),
       t_after_(other.t_after_),
       current_interval_(other.current_interval_),
-      val_before_(std::unique_ptr<FunctionBilinear>(other.val_before_->Clone())),
-      val_after_(std::unique_ptr<FunctionBilinear>(other.val_after_->Clone()))
+      val_before_(other.val_before_->Clone()),
+      val_after_(other.val_after_->Clone())
 {}
 
 

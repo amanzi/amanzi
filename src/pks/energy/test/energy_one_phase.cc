@@ -115,6 +115,6 @@ TEST(ENERGY_ONE_PHASE) {
 
   auto temp = *S->GetFieldData("temperature")->ViewComponent("cell");
   for (int c = 0; c < 20; ++c) { 
-    CHECK_CLOSE(1.5, temp[0][c], 1e-8);
+    CHECK_CLOSE(1.5, temp[0][c], 2e-8);
   }
 }

@@ -17,15 +17,15 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "EOS.hh"
+#include "EOS_Density.hh"
 #include "Factory.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-class EOSFactory : public Utils::Factory<EOS> {
+class EOSDensityFactory : public Utils::Factory<EOS_Density> {
  public:
-  Teuchos::RCP<EOS> CreateEOS(Teuchos::ParameterList& plist);
+  Teuchos::RCP<EOS_Density> CreateEOS(Teuchos::ParameterList& plist);
 };
 
 }  // namespace AmanziEOS

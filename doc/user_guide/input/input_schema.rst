@@ -712,8 +712,10 @@ Logical regions are compound regions formed from other primitive type regions us
 
 .. code-block:: xml
 
-    <logical name="logical name" operation="union | intersection | subtraction | complement"
-             region_list="region1, region2, region3"/>
+    <logical name="logical name">
+      <operation>union|intersection|subtraction|complement</operation>
+      <region_list>region1, region2, region3<region_list/>
+    </logical>
 
 
 Polygonal_Surface (unstructured only)

@@ -14,8 +14,8 @@
 
 #include "errors.hh"
 
-#include "EOSFactory.hh"
-#include "EOSEvaluator.hh"
+#include "EOSDensityEvaluator.hh"
+#include "EOSDensityFactory.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
@@ -23,7 +23,7 @@ namespace AmanziEOS {
 /* ******************************************************************
 * Constructor
 ****************************************************************** */
-EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& plist) :
+EOSDensityEvaluator::EOSDensityEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariablesFieldEvaluator(plist)
 {
   // Process the list for my provided field.
@@ -68,7 +68,7 @@ EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& plist) :
 
   // Construct my EOS model
   AMANZI_ASSERT(plist_.isSublist("EOS parameters"));
-  EOSFactory eos_fac;
+  EOSDensityFactory eos_fac;
   eos_ = eos_fac.CreateEOS(plist_.sublist("EOS parameters"));
 };
 
@@ -76,8 +76,8 @@ EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& plist) :
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-EOSEvaluator::EOSEvaluator(const EOSEvaluator& other) :
-    SecondaryVariablesFieldEvaluator(other),
+EOSDensityEvaluator::EOSDensityEvaluator(const EOSDensityEvaluator& other)
+  : SecondaryVariablesFieldEvaluator(other),
     eos_(other.eos_),
     mode_(other.mode_),
     temp_key_(other.temp_key_),
@@ -87,15 +87,15 @@ EOSEvaluator::EOSEvaluator(const EOSEvaluator& other) :
 /* ******************************************************************
 * Clone.
 ****************************************************************** */
-Teuchos::RCP<FieldEvaluator> EOSEvaluator::Clone() const {
-  return Teuchos::rcp(new EOSEvaluator(*this));
+Teuchos::RCP<FieldEvaluator> EOSDensityEvaluator::Clone() const {
+  return Teuchos::rcp(new EOSDensityEvaluator(*this));
 }
 
 
 /* ******************************************************************
 * TBW.
 ****************************************************************** */
-void EOSEvaluator::EvaluateField_(
+void EOSDensityEvaluator::EvaluateField_(
     const Teuchos::Ptr<State>& S,
     const std::vector<Teuchos::Ptr<CompositeVector> >& results)
 {
@@ -132,25 +132,16 @@ void EOSEvaluator::EvaluateField_(
 
   if (mass_dens != Teuchos::null) {
     for (auto comp = mass_dens->begin(); comp != mass_dens->end(); ++comp) {
-      if (mode_ == EOS_MODE_BOTH && eos_->IsConstantMolarMass() &&
-          molar_dens->HasComponent(*comp)) {
-        // calculate MassDensity from MolarDensity and molar mass.
-        double M = eos_->MolarMass();
+      const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp);
+      const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp);
+      Epetra_MultiVector& dens_v = *mass_dens->ViewComponent(*comp);
 
-        mass_dens->ViewComponent(*comp)->Update(M, *molar_dens->ViewComponent(*comp), 0.0);
-      } else {
-        // evaluate MassDensity() directly
-        const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp);
-        const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp);
-        Epetra_MultiVector& dens_v = *mass_dens->ViewComponent(*comp);
-
-        int count = dens_v.MyLength();
-        for (int i = 0; i != count; ++i) {
-          double tmp = std::max<double>(pres_v[0][i], p_atm);
-          dens_v[0][i] = eos_->MassDensity(temp_v[0][i], tmp);
-          if (dens_v[0][i] < 0.0)
-            Exceptions::amanzi_throw(Errors::CutTimeStep());
-        }
+      int count = dens_v.MyLength();
+      for (int i = 0; i != count; ++i) {
+        double tmp = std::max<double>(pres_v[0][i], p_atm);
+        dens_v[0][i] = eos_->Density(temp_v[0][i], tmp);
+        if (dens_v[0][i] < 0.0)
+          Exceptions::amanzi_throw(Errors::CutTimeStep());
       }
     }
   }
@@ -160,7 +151,7 @@ void EOSEvaluator::EvaluateField_(
 /* ******************************************************************
 * TBW.
 ****************************************************************** */
-void EOSEvaluator::EvaluateFieldPartialDerivative_(
+void EOSDensityEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> >& results)
 {
@@ -195,21 +186,13 @@ void EOSEvaluator::EvaluateFieldPartialDerivative_(
 
     if (mass_dens != Teuchos::null) {
       for (auto comp = mass_dens->begin(); comp != mass_dens->end(); ++comp) {
-        if (mode_ == EOS_MODE_BOTH && eos_->IsConstantMolarMass() &&
-            molar_dens->HasComponent(*comp)) {
-          // calculate MassDensity from MolarDensity and molar mass.
-          double M = eos_->MolarMass();
-          mass_dens->ViewComponent(*comp)->Update(M, *molar_dens->ViewComponent(*comp), 0.0);
-        } else {
-          // evaluate MassDensity() directly
-          const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp));
-          const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp));
-          Epetra_MultiVector& dens_v = *(mass_dens->ViewComponent(*comp));
+        const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp));
+        const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp));
+        Epetra_MultiVector& dens_v = *(mass_dens->ViewComponent(*comp));
 
-          int count = dens_v.MyLength();
-          for (int i = 0; i != count; ++i) {
-            dens_v[0][i] = (pres_v[0][i] > p_atm) ? dens_v[0][i] = eos_->DMassDensityDp(temp_v[0][i], pres_v[0][i]) : 0.0;
-          }
+        int count = dens_v.MyLength();
+        for (int i = 0; i != count; ++i) {
+          dens_v[0][i] = (pres_v[0][i] > p_atm) ? dens_v[0][i] = eos_->DDensityDp(temp_v[0][i], pres_v[0][i]) : 0.0;
         }
       }
     }
@@ -218,11 +201,10 @@ void EOSEvaluator::EvaluateFieldPartialDerivative_(
 
     if (molar_dens != Teuchos::null) {
       // evaluate MolarDensity()
-      for (CompositeVector::name_iterator comp=molar_dens->begin();
-           comp!=molar_dens->end(); ++comp) {
-        const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
-        const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp,false));
-        Epetra_MultiVector& dens_v = *(molar_dens->ViewComponent(*comp,false));
+      for (auto comp = molar_dens->begin(); comp != molar_dens->end(); ++comp) {
+        const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp));
+        const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp));
+        Epetra_MultiVector& dens_v = *(molar_dens->ViewComponent(*comp));
 
         int count = dens_v.MyLength();
         for (int id = 0; id != count; ++id) {
@@ -232,25 +214,14 @@ void EOSEvaluator::EvaluateFieldPartialDerivative_(
     }
 
     if (mass_dens != Teuchos::null) {
-      for (CompositeVector::name_iterator comp=mass_dens->begin();
-           comp!=mass_dens->end(); ++comp) {
-        if (mode_ == EOS_MODE_BOTH && eos_->IsConstantMolarMass() &&
-            molar_dens->HasComponent(*comp)) {
-          // calculate MassDensity from MolarDensity and molar mass.
-          double M = eos_->MolarMass();
+      for (auto comp = mass_dens->begin(); comp != mass_dens->end(); ++comp) {
+        const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp));
+        const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp));
+        Epetra_MultiVector& dens_v = *(mass_dens->ViewComponent(*comp));
 
-          mass_dens->ViewComponent(*comp,false)->Update(M,
-                  *molar_dens->ViewComponent(*comp,false), 0.);
-        } else {
-          // evaluate MassDensity() directly
-          const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
-          const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp,false));
-          Epetra_MultiVector& dens_v = *(mass_dens->ViewComponent(*comp,false));
-
-          int count = dens_v.MyLength();
-          for (int id = 0; id != count; ++id) {
-            dens_v[0][id] = eos_->DMassDensityDT(temp_v[0][id], pres_v[0][id]);
-          }
+        int count = dens_v.MyLength();
+        for (int id = 0; id != count; ++id) {
+          dens_v[0][id] = eos_->DDensityDT(temp_v[0][id], pres_v[0][id]);
         }
       }
     }

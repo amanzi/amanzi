@@ -133,6 +133,7 @@ class SolverAA : public Solver<Vector,VectorSpace> {
   bool modify_correction_;
   double residual_;  // defined by convergence criterion
   ConvergenceMonitor monitor_;
+  int norm_type_;
 };
 
 
@@ -172,13 +173,7 @@ void SolverAA<Vector, VectorSpace>::Init_()
   aa_beta_ = plist_.get<double>("relaxation parameter", 0.7);
 
   std::string monitor_name = plist_.get<std::string>("monitor", "monitor update");
-  if (monitor_name == "monitor residual") {
-    monitor_ = SOLVER_MONITOR_RESIDUAL;
-  } else if (monitor_name == "monitor preconditioned residual") {
-    monitor_ = SOLVER_MONITOR_PCED_RESIDUAL;
-  } else {
-    monitor_ = SOLVER_MONITOR_UPDATE;  // default value
-  }
+  ParseConvergenceCriteria(monitor_name, &monitor_, &norm_type_);
 
   aa_dim_ = plist_.get<int>("max aa vectors", 10);
   aa_dim_ = std::min<int>(aa_dim_, max_itrs_ - 1);

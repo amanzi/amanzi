@@ -32,8 +32,9 @@ initialized (as independent variables are owned by state, not by any PK).
 #include "FieldEvaluator_Factory.hh"
 #include "cell_volume_evaluator.hh"
 #include "rank_evaluator.hh"
-
+#include "primary_variable_field_evaluator.hh"
 #include "State.hh"
+#include "StateDefs.hh"
 
 namespace Amanzi {
 
@@ -58,6 +59,7 @@ State::State(const State& other, StateConstructMode mode) :
     field_factories_(other.field_factories_),
     time_(other.time_),
     position_in_tp_(other.position_in_tp_),
+    domain_sets_(other.domain_sets_),
     cycle_(other.cycle_) {
 
   if (mode == STATE_CONSTRUCT_MODE_COPY_DATA) {
@@ -906,13 +908,14 @@ void State::Setup() {
     if (!f_it->second->initialized()) {
       f_it->second->CreateData();
     }
-    // std::cout<<"Field "<<f_it->first<<": ";
-    // if (f_it->second->type() == Amanzi::COMPOSITE_VECTOR_FIELD) {
-    //   auto com_vec = f_it->second->GetFieldData();
-    //     for (CompositeVector::name_iterator comp=com_vec->begin();
-    //          comp!=com_vec->end(); ++comp) std::cout<<*comp<<" ";
-    //   std::cout<<"\n";
-    // }
+    if (vo->os_OK(Teuchos::VERB_HIGH)) {
+      *vo->os() << "Field " << f_it->first << ": ";
+      if (f_it->second->type() == Amanzi::COMPOSITE_VECTOR_FIELD) {
+        auto cv = f_it->second->GetFieldData();
+        for (auto comp=cv->begin(); comp!=cv->end(); ++comp) *vo->os() << *comp << " ";
+      }
+      *vo->os() << "\n";
+    }
   }
 };
 
@@ -1005,8 +1008,10 @@ void State::InitializeEvaluators() {
     *vo.os() << "initializing evaluators..." << std::endl;
   }
   for (evaluator_iterator f_it = field_evaluator_begin(); f_it != field_evaluator_end(); ++f_it) {
-    f_it->second->HasFieldChanged(Teuchos::Ptr<State>(this), "state");
-    fields_[f_it->first]->set_initialized();
+    if (f_it->second->get_type() != EvaluatorType::PRIMARY) {
+      f_it->second->HasFieldChanged(Teuchos::Ptr<State>(this), "state");
+      fields_[f_it->first]->set_initialized();
+    }
   }
 };
 
@@ -1040,8 +1045,18 @@ void State::InitializeFields() {
     for (FieldMap::iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
       if (f_it->second->type() == COMPOSITE_VECTOR_FIELD) {
         bool read_complete = f_it->second->ReadCheckpoint(file_input);
-        if (read_complete)
+        if (read_complete){
+          if (HasFieldEvaluator(f_it->first)) {
+            Teuchos::RCP<FieldEvaluator> fm = GetFieldEvaluator(f_it->first);
+            Teuchos::RCP<PrimaryVariableFieldEvaluator> solution_evaluator =
+              Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
+            if (solution_evaluator != Teuchos::null){
+              Teuchos::Ptr<State> S_ptr(this);
+              solution_evaluator->SetFieldAsChanged(S_ptr);
+            }
+          }          
           f_it->second->set_initialized();
+        }
       }
     }
     file_input.close_h5file();
@@ -1059,6 +1074,22 @@ void State::InitializeFields() {
         if (state_plist_.sublist("initial conditions").isSublist(f_it->first)) {
           Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(f_it->first);
           f_it->second->Initialize(sublist);
+        } else {
+          // check for domain set
+          KeyTriple split;
+          bool is_ds = Keys::splitDomainSet(f_it->first, split);
+          Key ds_name = std::get<0>(split);
+          if (is_ds) {
+            Key lifted_key = Keys::getKey(ds_name, "*", std::get<2>(split));
+            if (state_plist_.sublist("initial conditions").isSublist(lifted_key)) {
+              Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(lifted_key);
+              sublist.set("evaluator name", f_it->first);
+              //sublist.setName(f_it->first);
+              //state_plist_.sublist("initial conditions").set(f_it->first, sublist);
+              //sublist = state_plist_.sublist("initial conditions").sublist(f_it->first);
+              f_it->second->Initialize(sublist);
+            }
+          }
         }
       }
     }
@@ -1311,10 +1342,7 @@ void WriteVis(Visualization& vis,
 
 // Non-member function for checkpointing.
 double ReadCheckpoint(State& S, const std::string& filename) {
-  bool old = false;
-  if (Keys::ends_with(filename, ".h5")) old = true;
-
-  Checkpoint chkp(old);
+  Checkpoint chkp;
   return chkp.Read(S, filename);
 };
 

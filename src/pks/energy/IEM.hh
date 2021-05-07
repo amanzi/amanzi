@@ -25,8 +25,9 @@ class IEM {
   virtual ~IEM() {}
 
   // IEM(Teuchos::ParameterList& plist);
-  virtual double InternalEnergy(double temp) = 0;
-  virtual double DInternalEnergyDT(double temp) = 0;
+  virtual double InternalEnergy(double T, double p) = 0;
+  virtual double DInternalEnergyDT(double T, double p) = 0;
+  virtual double DInternalEnergyDp(double T, double p) = 0;
 };
 
 }  // namespace Energy

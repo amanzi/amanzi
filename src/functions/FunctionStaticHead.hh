@@ -58,7 +58,9 @@ class FunctionStaticHead : public Function {
   FunctionStaticHead(const FunctionStaticHead& src)
       : patm_(src.patm_), rho_g_(src.rho_g_), h_(src.h_->Clone()), dim_(src.dim_) {}
   ~FunctionStaticHead() {}
-  FunctionStaticHead* Clone() const { return new FunctionStaticHead(*this); }
+  std::unique_ptr<Function> Clone() const {
+    return std::make_unique<FunctionStaticHead>(*this);
+  }
   // The array (t,x,y,z) is passed as *x, so that x[dim_] is z in 3D, y in 2D
   double operator()(const std::vector<double>& x) const { return patm_+rho_g_ * ((*h_)(x)-x[dim_]); }
  

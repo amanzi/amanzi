@@ -13,8 +13,8 @@
   upon omega. It's not really needed, and if it were, would not fit the 
 */
 
-#include "EOSFactory.hh"
-#include "EOS_VaporInGas.hh"
+#include "EOSDensityFactory.hh"
+#include "EOS_DensityVaporInGas.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
@@ -22,31 +22,17 @@ namespace AmanziEOS {
 /* *******************************************************************
 * Constructor takes a parameter list with EOS parameters.
 ******************************************************************* */
-EOS_VaporInGas::EOS_VaporInGas(Teuchos::ParameterList& eos_plist) :
-    eos_plist_(eos_plist) {
+EOS_DensityVaporInGas::EOS_DensityVaporInGas(Teuchos::ParameterList& eos_plist)
+  : EOS_Density(eos_plist) {
   InitializeFromPlist_();
 }
 
 
-double EOS_VaporInGas::MolarDensity(double T, double p) {
-  return gas_eos_->MolarDensity(T,p);
-}
-
-
-double EOS_VaporInGas::DMolarDensityDT(double T, double p) {
-  return gas_eos_->DMolarDensityDT(T,p);
-}
-
-
-double EOS_VaporInGas::DMolarDensityDp(double T, double p) {
-  return gas_eos_->DMolarDensityDp(T,p);
-}
-
-
-void EOS_VaporInGas::InitializeFromPlist_() {
-  Teuchos::ParameterList gas_eos_plist = eos_plist_.sublist("gas EOS parameters");
-  EOSFactory eos_factory;
-  gas_eos_ = eos_factory.CreateEOS(gas_eos_plist);
+void EOS_DensityVaporInGas::InitializeFromPlist_()
+{
+  Teuchos::ParameterList gas_plist = eos_plist_.sublist("gas EOS parameters");
+  EOSDensityFactory eos_factory;
+  gas_eos_ = eos_factory.CreateEOS(gas_plist);
 }
 
 }  // namespace AmanziEOS

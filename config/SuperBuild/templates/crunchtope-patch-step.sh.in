@@ -3,9 +3,9 @@
 # CMake generates this file 
 
 # Source and build locations
-crunchtope_src_dir=@CRUNCHTOPE_source_dir@
+crunchtope_src_dir=@CrunchTope_source_dir@
 
-patch_file=@SuperBuild_SOURCE_DIR@/templates/@CRUNCHTOPE_patch_file@
+patch_file=@SuperBuild_SOURCE_DIR@/templates/@CrunchTope_patch_file@
 
 if [ ! -e "${patch_file}" ] ; then
   echo "Patch file ${patch_file} does not exist"

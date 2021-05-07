@@ -11,7 +11,7 @@
   The interface between state/data and the model, an EOS.
 */
 
-#include "EOSFactory.hh"
+#include "EOSDensityFactory.hh"
 #include "IsobaricEOSEvaluator.hh"
 
 namespace Amanzi {
@@ -58,7 +58,7 @@ IsobaricEOSEvaluator::IsobaricEOSEvaluator(Teuchos::ParameterList& plist) :
 
   // Construct my EOS model
   AMANZI_ASSERT(plist_.isSublist("EOS parameters"));
-  EOSFactory eos_fac;
+  EOSDensityFactory eos_fac;
   eos_ = eos_fac.CreateEOS(plist_.sublist("EOS parameters"));
 };
 
@@ -86,36 +86,32 @@ void IsobaricEOSEvaluator::EvaluateField_(
 
   int index = 0; // index to the results list
   if (mode_ == EOS_MODE_MOLAR || mode_ == EOS_MODE_BOTH) {
-    // evaluate MolarDensity()
     Teuchos::Ptr<CompositeVector> result = results[index];
-    for (CompositeVector::name_iterator comp=result->begin();
-         comp!=result->end(); ++comp) {
-      const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
-      Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+    for (auto comp = result->begin(); comp != result->end(); ++comp) {
+      const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp));
+      Epetra_MultiVector& result_v = *(result->ViewComponent(*comp));
 
       int count = result->size(*comp);
-      for (int id=0; id!=count; ++id) {
+      for (int id = 0; id != count; ++id) {
         result_v[0][id] = eos_->MolarDensity(temp_v[0][id], *pres);
       }
     }
     index++;
   }
 
-  if (mode_ == EOS_MODE_BOTH && eos_->IsConstantMolarMass()) {
-    // calculate MassDensity from MolarDensity and molar mass.
+  if (mode_ == EOS_MODE_BOTH) {
+    // calculate density from MolarDensity and molar mass.
     double M = eos_->MolarMass();
     results[1]->Update(M, *(results[0]), 0.0);
   } else if (mode_ == EOS_MODE_MASS || mode_ == EOS_MODE_BOTH) {
-    // evaluate MassDensity()
     Teuchos::Ptr<CompositeVector> result = results[index];
-    for (CompositeVector::name_iterator comp=result->begin();
-         comp!=result->end(); ++comp) {
-      const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
-      Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+    for (auto comp = result->begin(); comp != result->end(); ++comp) {
+      const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp));
+      Epetra_MultiVector& result_v = *(result->ViewComponent(*comp));
 
       int count = result->size(*comp);
-      for (int id=0; id!=count; ++id) {
-        result_v[0][id] = eos_->MassDensity(temp_v[0][id], *pres);
+      for (int id = 0; id != count; ++id) {
+        result_v[0][id] = eos_->Density(temp_v[0][id], *pres);
       }
     }
   }
@@ -149,12 +145,7 @@ void IsobaricEOSEvaluator::EvaluateFieldPartialDerivative_(
       index++;
     }
 
-    if (mode_ == EOS_MODE_BOTH && eos_->IsConstantMolarMass()) {
-      // calculate DMassDensityDT from DMolarDensityDT and molar mass.
-      double M = eos_->MolarMass();
-      results[1]->Update(M, *results[0], 0.0);
-    } else if (mode_ == EOS_MODE_MASS || mode_ == EOS_MODE_BOTH) {
-      // evaluate DMassDensityDT()
+    if (mode_ == EOS_MODE_MASS || mode_ == EOS_MODE_BOTH) {
       Teuchos::Ptr<CompositeVector> result = results[index];
       for (CompositeVector::name_iterator comp=result->begin();
            comp!=result->end(); ++comp) {
@@ -163,7 +154,7 @@ void IsobaricEOSEvaluator::EvaluateFieldPartialDerivative_(
 
         int count = result->size(*comp);
         for (int id=0; id!=count; ++id) {
-          result_v[0][id] = eos_->DMassDensityDT(temp_v[0][id], *pres);
+          result_v[0][id] = eos_->DDensityDT(temp_v[0][id], *pres);
         }
       }
     }

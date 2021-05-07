@@ -31,18 +31,20 @@ set(hypre_openmp_opt "-DHYPRE_USING_OPENMP:BOOL=FALSE")
 #endif()
 
 # Locate LAPACK and BLAS
-set(hypre_blas_opt)
-find_package(BLAS)
+#find_package(BLAS)
 if (BLAS_FOUND)
   set(hypre_blas_opt "-DHYPRE_USING_HYPRE_BLAS:BOOL=FALSE"
                      "-DTPL_BLAS_LIBRARIES:STRING=${BLAS_LIBRARIES}")
+else()
+  set(hypre_blas_opt)
 endif()
 
-set(hypre_lapack_opt)
-find_package(LAPACK)
+#find_package(LAPACK)
 if (LAPACK_FOUND)
   set(hypre_lapack_opt "-DHYPRE_USING_HYPRE_LAPACK:BOOL=FALSE"
                        "-DTPL_LAPACK_LIBRARIES:STRING=${LAPACK_LIBRARIES}")
+else()
+  set(hypre_lapack_opt)
 endif()
 
 # set(hypre_fortran_opt -"--disable-fortran)
@@ -100,7 +102,7 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
                     # -- Configure
                     SOURCE_DIR    ${HYPRE_source_dir}
                     SOURCE_SUBDIR src                          # cmake 3.7+ feature 
-		    CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
+            CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
                                   ${hypre_openmp_opt} 
                                   ${hypre_lapack_opt} ${hypre_blas_opt}
                                   ${hypre_superlu_opt} ${hypre_shared_opt}
@@ -119,7 +121,7 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
                     BUILD_COMMAND    ${MAKE} 
                     # -- Install
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}     # Install directory
-      		    INSTALL_COMMAND  $(MAKE) install
+                INSTALL_COMMAND  $(MAKE) install
                     # -- Output control
                     ${HYPRE_logging_args})
 

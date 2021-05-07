@@ -19,6 +19,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "ResidualDebugger.hh"
+#include "SolverDefs.hh"
 #include "SolverFnBase.hh"
 
 namespace Amanzi {
@@ -48,6 +49,32 @@ class Solver {
   virtual int pc_calls() = 0;
   virtual int pc_updates() = 0;
 };
+
+
+// non-member functions for parsing input plist
+inline
+void ParseConvergenceCriteria(const std::string& monitor_name,
+                              ConvergenceMonitor* monitor, int* norm_type)
+{
+  *norm_type = SOLVER_NORM_LINF;
+  if (monitor_name == "monitor residual") {
+    *monitor = SOLVER_MONITOR_RESIDUAL;
+  } else if (monitor_name == "monitor l2 residual") {
+    *monitor = SOLVER_MONITOR_RESIDUAL;
+    *norm_type = SOLVER_NORM_L2;
+  } else if (monitor_name == "monitor preconditioned residual") {
+    *monitor = SOLVER_MONITOR_PCED_RESIDUAL;
+  } else if (monitor_name == "monitor preconditioned l2 residual") {
+    *monitor = SOLVER_MONITOR_PCED_RESIDUAL;
+    *norm_type = SOLVER_NORM_L2;
+  } else if (monitor_name == "monitor update") {
+    *monitor = SOLVER_MONITOR_UPDATE;  // default value
+  } else {
+    Errors::Message m;
+    m << "Invalid monitor name for nonlinear solver: \"" << monitor_name << "\"";
+    Exceptions::amanzi_throw(m);
+  }
+}
 
 }  // namespace AmanziSolvers
 }  // namespace Amanzi

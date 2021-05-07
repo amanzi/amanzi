@@ -77,6 +77,7 @@ set(flow_inc_files
   pks_energy_registration.hh
   IEM.hh
   IEM_Linear.hh
+  IEM_Tabular.hh
   IEM_WaterVapor.hh
   IEM_WaterVaporEvaluator.hh
   IEMFactory.hh

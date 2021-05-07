@@ -12,7 +12,7 @@
 */
 
 #include <string>
-#include "EOSFactory.hh"
+#include "EOSDensityFactory.hh"
 
 // explicity instantitate the static data of Factory<EOS>
 // template<> 
@@ -23,7 +23,7 @@ namespace Amanzi {
 namespace AmanziEOS {
 
 // method for instantiating EOS implementations
-Teuchos::RCP<EOS> EOSFactory::CreateEOS(Teuchos::ParameterList& plist) {
+Teuchos::RCP<EOS_Density> EOSDensityFactory::CreateEOS(Teuchos::ParameterList& plist) {
   std::string eos_typename = plist.get<std::string>("eos type");
   return Teuchos::rcp(CreateInstance(eos_typename, plist));
 };
