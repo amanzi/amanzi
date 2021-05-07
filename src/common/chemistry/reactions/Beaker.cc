@@ -854,6 +854,7 @@ void Beaker::CopyStateToBeaker(const BeakerState& state)
 
   porosity_ = state.porosity;
   water_density_kg_m3_ = state.water_density;
+  water_density_kg_L_ = state.water_density / 1000.0;
   saturation_ = state.saturation;
   volume_ = state.volume;
 

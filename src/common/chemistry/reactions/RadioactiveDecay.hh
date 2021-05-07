@@ -32,8 +32,7 @@ class RadioactiveDecay {
   RadioactiveDecay(const std::vector<std::string>& species_names,
                    const std::vector<int>& species_ids,
                    const std::vector<double>& stoichiometries,
-                   const double half_life,
-                   const std::string half_life_units);
+                   double half_life);
   ~RadioactiveDecay() {};
 
   // update forward and reverse effective reaction rates
@@ -57,16 +56,13 @@ class RadioactiveDecay {
   double rate_constant() const { return rate_constant_; }
 
  private:
-  void ConvertHalfLifeUnits();
   void ConvertHalfLifeToRateConstant();
   std::vector<std::string> species_names_;
   std::vector<int> species_ids_;  // ids of primary species in rxn
   std::vector<double> stoichiometry_;  // stoich of primary species in rxn
 
   double rate_constant_;  // rate constant [1/sec]
-  double half_life_user_;  // user specified units
-  std::string half_life_units_;
-  double half_life_seconds_;
+  double half_life_;
   double rate_;
 };
 

@@ -40,12 +40,9 @@ RadioactiveDecay::RadioactiveDecay()
     species_ids_(),
     stoichiometry_(),
     rate_constant_(0.0),
-    half_life_user_(1.0),
-    half_life_units_("seconds"),
-    half_life_seconds_(0.0),
+    half_life_(0.0),
     rate_(0.0)
 {
-  ConvertHalfLifeUnits();
   ConvertHalfLifeToRateConstant();
 }
 
@@ -53,15 +50,12 @@ RadioactiveDecay::RadioactiveDecay()
 RadioactiveDecay::RadioactiveDecay(const std::vector<std::string>& species_names,
                                    const std::vector<int>& species_ids,
                                    const std::vector<double>& stoichiometries,
-                                   const double half_life,
-                                   const std::string half_life_units)
+                                   double half_life)
   : species_names_(species_names),
     species_ids_(species_ids),
     stoichiometry_(stoichiometries),      
     rate_constant_(0.0),
-    half_life_user_(half_life),
-    half_life_units_(half_life_units),
-    half_life_seconds_(0.0),
+    half_life_(half_life),
     rate_(0.0)
 {
   // we assume that species_names[0] etc is for the parent, any
@@ -71,37 +65,7 @@ RadioactiveDecay::RadioactiveDecay(const std::vector<std::string>& species_names
   assert(species_ids_.size() > 0);
   assert(stoichiometry_.size() > 0);
   assert(stoichiometry_.at(0) < 0);
-  ConvertHalfLifeUnits();
   ConvertHalfLifeToRateConstant();
-}
-
-
-// this should go away, dince we use SI
-void RadioactiveDecay::ConvertHalfLifeUnits()
-{
-  double conversion = 1.0;
-  std::string units = half_life_units_;
-  utilities::RemoveLeadingAndTrailingWhitespace(&units);
-
-  if (boost::iequals(units, "years") || boost::iequals(units, "y")) {
-    conversion = 365.0 * 24.0 * 60.0 * 60.0; 
-  } else if (boost::iequals(units, "days") || boost::iequals(units, "d")) {
-    conversion = 24.0 * 60.0 * 60.0;
-  } else if (boost::iequals(units, "hours") || boost::iequals(units, "h")) {
-    conversion = 60.0 * 60.0;
-  } else if (boost::iequals(units, "minutes") || boost::iequals(units, "m")) {
-    conversion = 60.0;
-  } else if (boost::iequals(units, "seconds") || boost::iequals(units, "s")) {
-    conversion = 1.0;
-  } else {
-    std::stringstream message;
-    message << "ERROR: RadioactiveDecay::ConvertHalfLifeUnits(" << parent_name() << "): \n"
-            << "Unknown half life units '" << half_life_units_ << "'.\n"
-            << "Valid units are: 'years', 'days', 'hours', 'minutes', 'seconds'.\n";
-    Exceptions::amanzi_throw(Errors::Message(message.str()));
-  }
-
-  half_life_seconds_ = half_life_user_ * conversion;
 }
 
 
@@ -112,7 +76,7 @@ void RadioactiveDecay::ConvertHalfLifeToRateConstant() {
   **    k = -ln(0.5) / half_life
   **  The reaction rate constant will be positive (-k is decay)!
   */
-  rate_constant_ = -std::log(0.5) / half_life_seconds_;
+  rate_constant_ = -std::log(0.5) / half_life_;
   assert(rate_constant_ > 0.0);
 }
 
@@ -200,8 +164,7 @@ void RadioactiveDecay::Display(const Teuchos::Ptr<VerboseObject> vo) const
   message << std::setprecision(6);
   // write the rate data
   message << std::setw(20) << "Half Life : ";
-  message << std::setw(10) << half_life_user_ << " [" << half_life_units_ << "]    ";
-  message << std::setw(10) << std::scientific << half_life_seconds_ << std::fixed << " [seconds]" << std::endl;
+  message << std::setw(10) << half_life_ << " [s]\n";
   message << std::setw(20) << " k : " << std::scientific << rate_constant() << std::fixed << std::endl;
   vo->Write(Teuchos::VERB_HIGH, message.str());
 }

@@ -9,7 +9,6 @@
 include_directories(${CHEM_INCLUDES_DIR})
 
 set(geochemutil_src_files MatrixBlock.cc 
-                          ChemistryUtilities.cc
                           ReactionString.cc
 )
 

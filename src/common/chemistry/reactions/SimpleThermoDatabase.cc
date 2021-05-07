@@ -308,9 +308,7 @@ void SimpleThermoDatabase::Initialize(const BeakerState& state,
       }
 
       double half_life = tmp.get<double>("half life");
-      std::string units("seconds");
-  
-      RadioactiveDecay rxn(species, species_ids, stoichiometry, half_life, units);
+      RadioactiveDecay rxn(species, species_ids, stoichiometry, half_life);
       AddRadioactiveDecayRxn(rxn);
     }
   }

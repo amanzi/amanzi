@@ -26,8 +26,6 @@ namespace AmanziChemistry {
 
 namespace utilities {
 
-void RemoveLeadingAndTrailingWhitespace(std::string* line);
-
 inline double log_to_ln(double d) { return d * 2.30258509299405; }
 inline double ln_to_log(double d) { return d * 0.434294481903252; }
 

@@ -20,13 +20,13 @@
  ---- Radioactive Decay
      Reaction
       A --> 1.00 B
-         Half Life : 394470000.000000 [seconds]    3.944700e+08 [seconds]
+         Half Life : 394470000.000000 [s]
                  k : 1.757161e-09
       B --> 1.00 C
-         Half Life : 788940000.000000 [seconds]    7.889400e+08 [seconds]
+         Half Life : 788940000.000000 [s]
                  k : 8.785803e-10
       C --> 
-         Half Life : 157790000.000000 [seconds]    1.577900e+08 [seconds]
+         Half Life : 157790000.000000 [s]
                  k : 4.392846e-09
  
  ---- Equilibrium Sorption Isotherms

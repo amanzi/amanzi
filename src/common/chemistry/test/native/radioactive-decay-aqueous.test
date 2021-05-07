@@ -21,16 +21,16 @@
  ---- Radioactive Decay
      Reaction
       A --> 1.00 B
-         Half Life : 43200.000000 [seconds]    4.320000e+04 [seconds]
+         Half Life : 43200.000000 [s]
                  k : 1.604507e-05
       B --> 1.00 C
-         Half Life : 172800.000000 [seconds]    1.728000e+05 [seconds]
+         Half Life : 172800.000000 [s]
                  k : 4.011268e-06
       C --> 
-         Half Life : 15778800.000000 [seconds]    1.577880e+07 [seconds]
+         Half Life : 15778800.000000 [s]
                  k : 4.392902e-08
       D --> 
-         Half Life : 43200.000000 [seconds]    4.320000e+04 [seconds]
+         Half Life : 43200.000000 [s]
                  k : 1.604507e-05
  
  ------------------------------------------------ Beaker description --
