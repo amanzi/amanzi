@@ -183,6 +183,11 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_coupled_reactive_transport.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+    add_amanzi_test(mpc_coupled_flow_reactive_transport mpc_coupled_flow_reactive_transport
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_coupled_flow_reactive_transport.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                  
+
     add_amanzi_test(mpc_coupled_thermal_flow mpc_coupled_thermal_flow
                     KIND      int
                     NPROCS    2

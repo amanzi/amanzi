@@ -53,8 +53,9 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& d
 
   // chemical engine
   bool flag;
-  node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
+  node = GetPKChemistryPointer_(flag);
   std::string engine = GetAttributeValueS_(node, "engine");
+  std::string bgdfilename = GetAttributeValueS_(node, "input_filename", TYPE_NONE, false, "");
 
   // process engine
   if (engine ==  "amanzi") {
@@ -70,14 +71,11 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& d
       *vo_->os() << " using file:" << bgdfilename << std::endl;
   } else {
     bool valid_engine(true);
-    std::string file_location;
 
     if (engine == "pflotran") {
       out_list.set<std::string>("engine", "PFloTran");
-      file_location = "process_kernels, chemistry";
     } else if (engine == "crunchflow") {
       out_list.set<std::string>("engine", "CrunchFlow");
-      file_location = "process_kernels, chemistry";
     } else {
       valid_engine = false;
     }
@@ -87,7 +85,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& d
       out_list.set<std::string>("chemistry model", "Alquimia");
 
       // Find the name of the engine-specific input file.
-      node = GetUniqueElementByTagsString_(file_location, flag);
+      node = GetPKChemistryPointer_(flag);
       if (flag) {
         std::string inpfilename;
         element = static_cast<DOMElement*>(node);
@@ -103,7 +101,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& d
           *vo_->os() << " using file:" << inpfilename << std::endl;
       } else {
         Errors::Message msg;
-        msg << "Unique tag string \"" << file_location << "\" must exists.\n";
+        msg << "Chemical process kernel has not been found.\n";
         Exceptions::amanzi_throw(msg);
       }
     }
@@ -441,6 +439,29 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& d
 
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
   return out_list;
+}
+
+
+/* ******************************************************************
+* Helper utility for two stuctures of process_kernel lists
+****************************************************************** */
+DOMNode* InputConverterU::GetPKChemistryPointer_(bool& flag)
+{
+  MemoryManager mm;
+  DOMNode* node = NULL;
+  DOMNodeList *children;
+
+  node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
+  if (!flag) {
+    node = GetUniqueElementByTagsString_("process_kernels", flag);
+    children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode("pk"));
+    for (int i = 0; i < children->getLength(); ++i) {
+      node = GetUniqueElementByTagsString_(children->item(i), "chemistry", flag);
+      if (flag) break;
+    }
+  }
+
+  return node;
 }
 
 }  // namespace AmanziInput

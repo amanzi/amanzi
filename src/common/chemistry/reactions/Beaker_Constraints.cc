@@ -47,7 +47,7 @@ int Beaker::EnforceConstraint(
     } else if (name == "charge") {
       state->free_ion.at(i) = values[i];
     } else if (name == "free") {
-      state->free_ion.at(i) = values[i] / water_density_kg_L();
+      state->free_ion.at(i) = values[i] / water_density_kg_L_;
     } else if (name == "pH") {
       state->free_ion.at(i) = std::pow(10.0, -values[i]);
     } else if (name == "mineral") {

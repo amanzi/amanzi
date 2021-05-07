@@ -56,8 +56,8 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
   auto physical_models = Teuchos::sublist(my_list_, "physical models and assumptions");
   bool vapor_diff = physical_models->get<bool>("vapor diffusion", true);
 
-  if (my_list_->isParameter("eos lookup table")) {
-    eos_table_ = my_list_->get<std::string>("eos lookup table");
+  if (physical_models->isParameter("eos lookup table")) {
+    eos_table_ = physical_models->get<std::string>("eos lookup table");
   }
 
   // keys
@@ -135,24 +135,6 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // Fields for liquid
   // -- internal energy
-  if (!S->HasField(ie_liquid_key_) && !elist.isSublist(ie_liquid_key_)) {
-    Teuchos::Array<std::string> regions({ "All" });
-    elist.sublist(ie_liquid_key_)
-         .set<std::string>("field evaluator type", "iem")
-         .set<std::string>("internal energy key", ie_liquid_key_);
-    auto& tmp = elist.sublist(ie_liquid_key_)
-         .sublist("IEM parameters").sublist("Material 1")
-         .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters");
-    if (eos_table_.size() > 0) {
-      tmp.set<std::string>("iem type", "tabular")
-         .set<std::string>("table name", eos_table_)
-         .set<std::string>("field name", "internal_energy");
-    } else {
-      tmp.set<std::string>("iem type", "linear")
-         .set<double>("molar heat capacity", 76.0);
-    }
-  }
-
   S->RequireField(ie_liquid_key_, ie_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);

@@ -126,7 +126,7 @@ int Beaker::Speciate(BeakerState* state)
   double residual_tolerance = 1.e-12;
   ResetStatus();
   set_dt(1.0);  // NOTE: need dt=1 to avoid divide by zero
-  CheckChargeBalance(state->total);
+  CheckChargeBalance_(state->total);
 
   CopyStateToBeaker(*state);
 
@@ -215,7 +215,7 @@ int Beaker::ReactionStep(BeakerState* state,
   // update class parameters
   ResetStatus();
   set_dt(dt);
-  CheckChargeBalance(state->total);
+  CheckChargeBalance_(state->total);
   CopyStateToBeaker(*state);
 
   // store current molalities
@@ -475,7 +475,7 @@ void Beaker::DisplayComponents(const BeakerState& state) const
   for (int i = 0; i < ncomp_; i++) {
     message << std::setw(15) << primary_species().at(i).name()
             << std::scientific << std::setprecision(5)
-            << std::setw(15) << state.total.at(i) / water_density_kg_L()
+            << std::setw(15) << state.total.at(i) / water_density_kg_L_
             << std::setw(15) << state.total.at(i)
             // << std::setw(15) << state.free_ion.at(i) // TODO(bandre): uncomment and update test results
             << std::endl;
@@ -518,7 +518,7 @@ void Beaker::DisplayResults() const {
   for (int i = 0; i < ncomp_; i++) {
     message << std::setw(15) << primary_species().at(i).name()
             << std::scientific << std::setprecision(5)
-            << std::setw(15) << total_.at(i) / water_density_kg_L()
+            << std::setw(15) << total_.at(i) / water_density_kg_L_
             << std::setw(15) << total_.at(i)
             << std::endl;
   }
@@ -588,35 +588,6 @@ void Beaker::DisplayResults() const {
 }
 
 
-void Beaker::DisplayTotalColumnHeaders(const bool display_free) const {
-  std::stringstream message;
-  message << std::setw(15) << "Time (s)";
-  for (int i = 0; i < ncomp_; i++) {
-    message << std::setw(15) << primary_species().at(i).name();
-  }
-  if (display_free) {
-    for (int i = 0; i < ncomp_; i++) {
-      std::string temp = primary_species().at(i).name() + "_free";
-      message << std::setw(15) << temp;
-    }
-  }
-  if (total_sorbed_.size() > 0) {
-    for (int i = 0; i < total_sorbed_.size(); i++) {
-      std::string temp = primary_species().at(i).name() + "_sorbed";
-      message << std::setw(15) << temp;
-    }
-  }
-  if (minerals().size() > 0) {
-    for (int m = 0; m < minerals().size(); ++m) {
-      std::string temp =  minerals().at(m).name() + "_vf";
-      message << std::setw(15) << temp;
-    }
-  }
-  message << std::endl;
-  vo_->Write(Teuchos::VERB_HIGH, message.str());
-}
-
-
 void Beaker::DisplayTotalColumns(const double time,
                                  const BeakerState& state,
                                  const bool display_free) const {
@@ -664,8 +635,7 @@ void Beaker::ResizeInternalMemory()
     dtotal_sorbed_.Resize(size);
     dtotal_sorbed_.Zero();
   } else {
-    total_sorbed_.resize(0);
-    // dtotal_sorbed_.Resize(0);
+    total_sorbed_.clear();
   }
 
   fixed_accumulation_.resize(size);
@@ -755,9 +725,9 @@ void Beaker::CopyStateToBeaker(const BeakerState& state)
   // free ion
   int size = state.free_ion.size();
   if (size > 0) {
-    InitializeMolalities(state.free_ion);
+    InitializeMolalities_(state.free_ion);
   } else {
-    InitializeMolalities(1.e-9);
+    InitializeMolalities_(1.e-9);
   }
 
   // activity coefficients
@@ -882,17 +852,17 @@ void Beaker::CopyStateToBeaker(const BeakerState& state)
     }
   }
 
-  set_porosity(state.porosity);
-  water_density_kg_m3(state.water_density);
-  set_saturation(state.saturation);
-  set_volume(state.volume);
+  porosity_ = state.porosity;
+  water_density_kg_m3_ = state.water_density;
+  saturation_ = state.saturation;
+  volume_ = state.volume;
 
   // calculates the coefficient in aqueous portion of accumulation term
-  set_aqueous_accumulation_coef(porosity_ * saturation_ * volume_ * 1000.0 / dt_);
-  set_sorbed_accumulation_coef(volume_ / dt_);
+  aqueous_accumulation_coef_ = porosity_ * saturation_ * volume_ * 1000.0 / dt_;
+  sorbed_accumulation_coef_ = volume_ / dt_;
 
   // calculates product of porosity,saturation,water_density[kg/m^3],volume
-  por_sat_den_vol_ = porosity_ * saturation_ * water_density_kg_m3() * volume_;
+  por_sat_den_vol_ = porosity_ * saturation_ * water_density_kg_m3_ * volume_;
 } 
 
 
@@ -1000,7 +970,10 @@ void Beaker::UpdateKineticMinerals()
 }
 
 
-void Beaker::InitializeMolalities(double initial_molality)
+/* ******************************************************************
+* Molalities
+****************************************************************** */
+void Beaker::InitializeMolalities_(double initial_molality)
 {
   for (auto it = primary_species_.begin(); it != primary_species_.end(); ++it) {
     it->update(initial_molality);
@@ -1008,7 +981,7 @@ void Beaker::InitializeMolalities(double initial_molality)
 }
 
 
-void Beaker::InitializeMolalities(const std::vector<double>& initial_molalities)
+void Beaker::InitializeMolalities_(const std::vector<double>& initial_molalities)
 {
   if (initial_molalities.size() != primary_species().size()) {
     std::ostringstream error_stream;
@@ -1076,7 +1049,7 @@ void Beaker::CalculateTotal()
 
   // scale by water density to convert to molarity
   for (int i = 0; i < total_.size(); i++) {
-    total_.at(i) *= water_density_kg_L();
+    total_.at(i) *= water_density_kg_L_;
   }
 
   // calculate sorbed totals
@@ -1115,7 +1088,7 @@ void Beaker::CalculateDTotal()
   }
 
   // scale by density of water ( = molarity / molality)
-  dtotal_.Scale(water_density_kg_L());
+  dtotal_.Scale(water_density_kg_L_);
 
   // calculate sorbed derivatives
   if (total_sorbed_.size() > 0) {
@@ -1220,7 +1193,7 @@ void Beaker::AddAccumulation(const std::vector<double>& total,
   // units = (mol solute/m^3 bulk)*(m^3 bulk)/(sec) = mol/sec
   // all residual entries should be in mol/sec
   for (unsigned int i = 0; i < total_sorbed.size(); i++) {
-    residual->at(i) += sorbed_accumulation_coef() * total_sorbed.at(i);
+    residual->at(i) += sorbed_accumulation_coef_ * total_sorbed.at(i);
   }
 }
 
@@ -1240,7 +1213,7 @@ void Beaker::AddAccumulationDerivative(MatrixBlock* J,
   // sorbed_accumulation_coef = volume/dt
   // units = (kg water/m^3 bulk)*(m^3 bulk)/(sec) = kg water/sec
   if (total_sorbed_.size()) {
-    J->AddValues(dtotal_sorbed, sorbed_accumulation_coef());
+    J->AddValues(dtotal_sorbed, sorbed_accumulation_coef_);
   }
 }
 
@@ -1364,7 +1337,7 @@ void Beaker::CalculateMaxRelChangeInMolality(double* max_rel_change, int* max_re
 } 
 
 
-void Beaker::CheckChargeBalance(const std::vector<double>& aqueous_totals) const
+void Beaker::CheckChargeBalance_(const std::vector<double>& aqueous_totals) const
 {
   double charge_balance = 0.0;
   for (int i = 0; i < aqueous_totals.size(); i++) {
@@ -1387,7 +1360,7 @@ void Beaker::ValidateSolution()
   // TODO(bandre): negative total's (H+) are OK...
 
   // charge balance is error or warning...?
-  CheckChargeBalance(total_);
+  CheckChargeBalance_(total_);
 
   // negative mineral volume fractions are bad...
   for (int m = 0; m < minerals_.size(); m++) {
@@ -1419,7 +1392,7 @@ void Beaker::DisplayParameters() const
 
   message << "    porosity: " << porosity_ << " [-]" << std::endl;
   message << "    water saturation: " << saturation_ << " [-]" << std::endl;
-  message << "    water density: " << water_density_kg_m3() << " [kg m^-3]" << std::endl;
+  message << "    water density: " << water_density_kg_m3_ << " [kg m^-3]" << std::endl;
   message << "    volume: " << volume_ << " [m^3]" << std::endl;
   message << std::endl;
   vo_->Write(Teuchos::VERB_HIGH, message.str());

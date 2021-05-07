@@ -143,15 +143,19 @@
           <ParameterList name="TopRegion">
             <Parameter name="regions" type="Array(string)" value="{TopRegion}"/>
             <ParameterList name="IEM parameters">
-              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="iem type" type="string" value="tabular"/>
               <Parameter name="heat capacity" type="double" value="7.60999999999999943e+01"/>
+              <Parameter name="table name" type="string" value="h2o.eos"/>
+              <Parameter name="field name" type="string" value="internal_energy"/>
             </ParameterList>
           </ParameterList>
           <ParameterList name="BottomRegion">
             <Parameter name="regions" type="Array(string)" value="{BottomRegion}"/>
             <ParameterList name="IEM parameters">
-              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="iem type" type="string" value="tabular"/>
               <Parameter name="heat capacity" type="double" value="7.62000000000000028e+01"/>
+              <Parameter name="table name" type="string" value="h2o.eos"/>
+              <Parameter name="field name" type="string" value="internal_energy"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -341,7 +345,7 @@
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
             <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="1.01325e+05"/>
@@ -1029,7 +1033,7 @@
         <Parameter name="controller training start" type="int" value="0"/>
         <Parameter name="controller training end" type="int" value="3"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -1049,7 +1053,7 @@
         <Parameter name="error tolerance" type="double" value="1.0e-20"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -1061,7 +1065,7 @@
         <Parameter name="controller training start" type="int" value="0"/>
         <Parameter name="controller training end" type="int" value="3"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

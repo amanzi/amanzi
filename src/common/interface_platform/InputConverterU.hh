@@ -167,7 +167,8 @@ class InputConverterU : public InputConverter {
   void TranslateTransportBCsAmanziGeochemistry_(Teuchos::ParameterList& out_list);
   void TranslateStateICsAmanziGeochemistry_(Teuchos::ParameterList& out_list,
                                             std::string& constraint,
-                                            std::vector<std::string>& regions);
+                                            std::vector<std::string>& regions,
+                                            const std::string& domain);
 
   // -- chemistry and energy
   Teuchos::ParameterList TranslateChemistry_(const std::string& domain);
@@ -215,6 +216,7 @@ class InputConverterU : public InputConverter {
   Iterator SelectUniqueEntries(Iterator first, Iterator last);
 
   // -- miscalleneous
+  DOMNode* GetPKChemistryPointer_(bool& flag);
   bool FindNameInVector_(const std::string& name, const std::vector<std::string>& list); 
   std::string CreateNameFromVector_(const std::vector<std::string>& list); 
   bool WeightVolumeSubmodel_(const std::vector<std::string>& regions);

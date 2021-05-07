@@ -9,7 +9,7 @@ petsc_src_dir=@PETSc_source_dir@
 OIFS=$IFS
 IFS=";"
 
-patch_files="@PETSC_patch_file@"
+patch_files="@PETSc_patch_file@"
 patch_files_array=(${patch_files})
 
 for ((i=0; i<${#patch_files_array[@]}; ++i)); do

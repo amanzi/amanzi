@@ -279,7 +279,7 @@ void InputConverter::ParseGeochemistry_()
 
 
 /* ******************************************************************
-* Returns node specified by the list of consequtive names tags 
+* Returns node specified by the list of consequitive namestags 
 * separated by commas. Only the first tag may be not unique.
 ****************************************************************** */
 DOMNode* InputConverter::GetUniqueElementByTagsString_(

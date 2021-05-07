@@ -44,15 +44,15 @@ set(mstk_ldflags_list -L${TPL_INSTALL_PREFIX}/lib ${MPI_C_LIBRARIES})
 build_whitespace_string(mstk_ldflags ${mstk_ldflags_list})
 
 set(MSTK_CMAKE_CACHE_ARGS
-		    -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+            -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                     -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                     -DCMAKE_C_FLAGS:STRING=${mstk_cflags}
                     -DCMAKE_EXE_LINKER_FLAGS:STRING=${mstk_ldflags}
-		    -DPREFER_STATIC_LIBRARIES:BOOL=${PREFER_STATIC_LIBRARIES}
+            -DPREFER_STATIC_LIBRARIES:BOOL=${PREFER_STATIC_LIBRARIES}
                     -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
                     -DMPI_CXX_COMPILER:FILEPATH=${MPI_CXX_COMPILER}
                     -DMPI_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
-                    -DMSTK_USE_MARKERS:BOOL=TRUE		    
+                    -DMSTK_USE_MARKERS:BOOL=TRUE            
                     -DENABLE_PARALLEL:BOOL=TRUE
                     -DENABLE_ExodusII:BOOL=TRUE
                     -DENABLE_ZOLTAN:BOOL=TRUE

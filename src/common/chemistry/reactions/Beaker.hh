@@ -82,21 +82,12 @@ class Beaker {
   // i/o
   void Display() const;
   void DisplayComponents(const BeakerState& state) const;
-  void DisplayTotalColumnHeaders(const bool display_free) const;
   void DisplayTotalColumns(const double time, 
                            const BeakerState& total,
                            const bool display_free) const;
   void DisplayResults() const;
 
   // access
-  void set_porosity(double porosity) { porosity_ = porosity; }
-  double get_porosity() { return porosity_; }
-
-  double water_density_kg_m3() const { return water_density_kg_m3_; }
-  double water_density_kg_L() const { return water_density_kg_L_; }
-
-  double sorbed_accumulation_coef() const { return sorbed_accumulation_coef_; }
-
   SolverStatus status() const { return status_; }
 
   const std::vector<Mineral>& minerals() const { return minerals_; }
@@ -125,32 +116,15 @@ class Beaker {
   void AddSurfaceComplexationRxn(const SurfaceComplexationRxn& r);
   void AddSorptionIsothermRxn(const SorptionIsothermRxn& r);
 
-  void set_saturation(double value) { saturation_ = value; }
-
-  // updates both water density variables
-  void water_density_kg_m3(double d) {
-    water_density_kg_m3_ = d;
-    water_density_kg_L_ = d / 1000.;
-  }
-  void water_density_kg_L(double d) {
-    water_density_kg_m3_ = d * 1000.;
-    water_density_kg_L_ = d;
-  }
-
-  void set_volume(double vol) { volume_ = vol; }
   void set_dt(double dt) { dt_ = dt; }
-  void set_aqueous_accumulation_coef(double coef) { aqueous_accumulation_coef_ = coef; }
-  void set_sorbed_accumulation_coef(double coef) { sorbed_accumulation_coef_ = coef; }
-
-  void set_use_log_formulation(bool value) { use_log_formulation_ = value; }
 
  private:
-  void CheckChargeBalance(const std::vector<double>& aqueous_totals) const;
+  void CheckChargeBalance_(const std::vector<double>& aqueous_totals) const;
 
   void UpdateActivityCoefficients();
   void UpdateKineticMinerals();
-  void InitializeMolalities(double initial_molality);
-  void InitializeMolalities(const std::vector<double>& initial_molalities);
+  void InitializeMolalities_(double initial_molality);
+  void InitializeMolalities_(const std::vector<double>& initial_molalities);
 
   // equilibrium chemistry
   // update activities, equilibrium complex concentrations, etc.
@@ -186,6 +160,8 @@ class Beaker {
   // solvers
   void ScaleRHSAndJacobian();
 
+  void ResetStatus();
+
   // output
   void DisplayParameters() const;
   void DisplayPrimary() const;
@@ -211,19 +187,14 @@ class Beaker {
  private:
   double tolerance_;
   unsigned int max_iterations_;
-  int ncomp_;                   // # basis species
+  int ncomp_;  // numabe of primaryspecies
 
-  // Aqueous phase total component concentrations for basis species
-  std::vector<double> total_;  // [mol/L]
-  // Matrix block containing derivative of total concentration w/respec to
-  // free-ion
-  MatrixBlock dtotal_;  // [kg water/sec]
+  std::vector<double> total_;  // aqueous tcc for primaries [mol/L]
+  MatrixBlock dtotal_;  // derivaties wrt free-ion [kg water/sec]
 
   // Sorbed phase total component concentrations for basis species
   std::vector<double> total_sorbed_;  // [mol/m^3 bulk]
-  // Matrix block containing derivative of total sorbed concentration
-  // w/respec to free-ion
-  MatrixBlock dtotal_sorbed_;  // [kg water/sec]
+  MatrixBlock dtotal_sorbed_;  // derivaties wrt free-ion [kg water/sec]
 
   // common parameters among reactions
   double porosity_;  // [m^3 pore / m^3 bulk]
@@ -236,8 +207,7 @@ class Beaker {
   // units = (m^3 por/m^3 bulk)*(m^3 water/m^3 por)*
   //         (m^3 bulk)*(1000L water/m^3 water)/(sec) = (L water/sec)
   double aqueous_accumulation_coef_;
-  // sorbed_accumulation_coef_ = volume/dt [m^3 bulk/sec]
-  double sorbed_accumulation_coef_;
+  double sorbed_accumulation_coef_;  // [m^3 bulk/sec]
   double por_sat_den_vol_;
 
   ActivityModel* activity_model_;
@@ -260,14 +230,6 @@ class Beaker {
   MatrixBlock jacobian_;  // Jacobian [kg water/sec]
 
   SolverStatus status_;
-  void ResetStatus();
-  static const double tolerance_default_;
-  static const unsigned int max_iterations_default_;
-  static const double porosity_default_;
-  static const double saturation_default_;
-  static const double water_density_kg_m3_default_;
-  static const double volume_default_;
-
   LUSolver lu_solver_;
 
   bool use_log_formulation_;

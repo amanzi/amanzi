@@ -1,19 +1,19 @@
 # -*- mode: cmake -*-
 
 #
-# Amanzi CRUNCHTOPE Find Module
+# Amanzi CrunchTope Find Module
 #
 # Usage:
-#    Control the search through CRUNCHTOPE_DIR installation prefix.
+#    Control the search through CrunchTope_DIR installation prefix.
 #
 #    This module does not search default paths! 
 #
 #    Following variables are set:
-#    CRUNCHTOPE_FOUND          (BOOL)    Flag indicating if CRUNCHTOPE was found
-#    CRUNCHTOPE_INCLUDE_DIR    (PATH)    Path to the CRUNCHTOPE include file
-#    CRUNCHTOPE_INCLUDE_DIRS   (LIST)    List of all required include files
-#    CRUNCHTOPE_LIBRARY_DIR    (PATH)    Path to the CRUNCHTOPE library
-#    CRUNCHTOPE_LIBRARIES      (LIST)    List of all required CRUNCHTOPE libraries
+#    CrunchTope_FOUND          (BOOL)    Flag indicating if CrunchTope was found
+#    CrunchTope_INCLUDE_DIR    (PATH)    Path to the CrunchTope include file
+#    CrunchTope_INCLUDE_DIRS   (LIST)    List of all required include files
+#    CrunchTope_LIBRARY_DIR    (PATH)    Path to the CrunchTope library
+#    CrunchTope_LIBRARIES      (LIST)    List of all required CrunchTope libraries
 #
 # #############################################################################
 
@@ -24,47 +24,47 @@ include(FindPackageHandleStandardArgs)
 include(PrintVariable)
 include(AddPackageDependency)
 
-if (CRUNCHTOPE_LIBRARIES AND CRUNCHTOPE_INCLUDE_DIRS)
+if (CrunchTope_LIBRARIES AND CrunchTope_INCLUDE_DIRS)
 
   # Do nothing. Variables are set. No need to search again
 
-elseif (CRUNCHTOPE_DIR)
+elseif (CrunchTope_DIR)
 
-  set(CRUNCHTOPE_INCLUDE_DIR ${CRUNCHTOPE_DIR}/include)
-  set(CRUNCHTOPE_LIBRARY_DIR ${CRUNCHTOPE_DIR}/lib)
-  set(CRUNCHTOPE_TARGET crunchchem)
+  set(CrunchTope_INCLUDE_DIR ${CrunchTope_DIR}/include)
+  set(CrunchTope_LIBRARY_DIR ${CrunchTope_DIR}/lib)
+  set(CrunchTope_TARGET crunchchem)
 
-  find_library(_CRUNCHTOPE_LIBRARY
+  find_library(_CrunchTope_LIBRARY
                NAMES crunchchem
-               PATHS ${CRUNCHTOPE_DIR}/lib)
+               PATHS ${CrunchTope_DIR}/lib)
 
-  if (_CRUNCHTOPE_LIBRARY)
-    add_imported_library(${CRUNCHTOPE_TARGET}
-                         LOCATION ${_CRUNCHTOPE_LIBRARY}
+  if (_CrunchTope_LIBRARY)
+    add_imported_library(${CrunchTope_TARGET}
+                         LOCATION ${_CrunchTope_LIBRARY}
                          LINK_LANGUAGES "Fortran")
-    set(CRUNCHTOPE_LIBRARY ${CRUNCHTOPE_TARGET})
+    set(CrunchTope_LIBRARY ${CrunchTope_TARGET})
   endif()    
     
   # Define the LIBRARIES and INCLUDE_DIRS
-  set(CRUNCHTOPE_INCLUDE_DIRS ${CRUNCHTOPE_INCLUDE_DIR})
-  set(CRUNCHTOPE_LIBRARIES ${CRUNCHTOPE_LIBRARY})
+  set(CrunchTope_INCLUDE_DIRS ${CrunchTope_INCLUDE_DIR})
+  set(CrunchTope_LIBRARIES ${CrunchTope_LIBRARY})
 
-endif (CRUNCHTOPE_LIBRARIES AND CRUNCHTOPE_INCLUDE_DIRS)
+endif (CrunchTope_LIBRARIES AND CrunchTope_INCLUDE_DIRS)
 
 # Send useful message if everything is found
-find_package_handle_standard_args(CRUNCHTOPE DEFAULT_MSG
-                                  CRUNCHTOPE_INCLUDE_DIRS
-                                  CRUNCHTOPE_LIBRARIES)
+find_package_handle_standard_args(CrunchTope DEFAULT_MSG
+                                  CrunchTope_INCLUDE_DIRS
+                                  CrunchTope_LIBRARIES)
 
-# find_package should set CRUNCHTOPE_FOUND but it does not!
-if (CRUNCHTOPE_LIBRARIES AND CRUNCHTOPE_INCLUDE_DIRS)
-  set(CRUNCHTOPE_FOUND TRUE)
+# find_package should set CrunchTope_FOUND but it does not!
+if (CrunchTope_LIBRARIES AND CrunchTope_INCLUDE_DIRS)
+  set(CrunchTope_FOUND TRUE)
 else()
-  set(CRUNCHTOPE_FOUND FALSE)
+  set(CrunchTope_FOUND FALSE)
 endif()
 
 mark_as_advanced(
-  CRUNCHTOPE_INCLUDE_DIR
-  CRUNCHTOPE_LIBRARY_DIR
-  CRUNCHTOPE_LIBRARIES
+  CrunchTope_INCLUDE_DIR
+  CrunchTope_LIBRARY_DIR
+  CrunchTope_LIBRARIES
 )

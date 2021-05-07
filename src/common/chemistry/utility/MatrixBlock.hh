@@ -13,8 +13,6 @@
 #define AMANZI_CHEMISTRY_MATRIXBLOCK_HH_
 
 
-// Boost may provide us with a more optimal matrix implementation - Glenn
-
 #include "VerboseObject.hh"
 
 namespace Amanzi {

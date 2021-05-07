@@ -31,7 +31,7 @@ PK_MPCSubcycled::PK_MPCSubcycled(Teuchos::ParameterList& pk_tree,
   master_ = my_list_->get<int>("master PK index", 0);
   slave_ = master_ == 1 ? 0 : 1;
 
-  if (sub_pks_.size() != 2 || master_ > 1) {
+  if (sub_pks_.size() != 2) {
     Errors::Message message("PK_MPCSubcycled: only MPCs with two sub-PKs can currently be subcycled.");
     Exceptions::amanzi_throw(message);
   }

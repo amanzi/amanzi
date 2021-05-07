@@ -703,11 +703,6 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
      << avg_itrs / num_cells << ", maximum in gid=" << mesh_->GID(cmax, AmanziMesh::CELL) << std::endl;
   vo_->Write(Teuchos::VERB_HIGH, ss.str());
 
-  // dumping the values of the final cell. not very helpful by itself,
-  // but can be move up into the loops....
-  // chem_->DisplayTotalColumnHeaders(true);
-  // chem_->DisplayTotalColumns(current_time_, beaker_state_, true);
-
   // update time control parameters
   num_successful_steps_++;
   num_iterations_ = max_itrs;
