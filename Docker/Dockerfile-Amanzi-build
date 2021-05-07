@@ -1,19 +1,53 @@
-FROM metsi/amanzi-tpls:latest
-LABEL Description="This image builds Amanzi from the latest version of the Amanzi TPLs contained in a Docker image"
+ARG amanzi_tpls_ver=latest
+FROM metsi/amanzi-tpls:${amanzi_tpls_ver}-mpich
+LABEL Description="Amanzi: Build and install Amanzi in a Docker image."
 
 # Switch to amanzi_user
 USER amanzi_user
 
+RUN echo "${AMANZI_PREFIX}"
+RUN echo "${AMANZI_TPLS_DIR}"
+
+# Arguments
+ARG amanzi_branch=master
+ARG https_proxy=
+ARG http_proxy=
+
 # Change the Working Directory and update amanzi
 WORKDIR /home/amanzi_user/amanzi
+
+ENV https_proxy=$https_proxy \
+    http_proxy=$http_proxy
+
+# Make sure we have updated branch information
+RUN echo "Amanzi branch = $amanzi_branch"
 RUN git pull
+RUN git branch --list
+# Checkout the branch and update it
+RUN git checkout $amanzi_branch
+RUN git pull
+RUN git rev-parse --short HEAD
   
 RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
    --tpl-config-file=${AMANZI_TPLS_DIR}/share/cmake/amanzi-tpl-config.cmake \
    --parallel=4 --opt \
    --disable-structured \
+   --disable-build_user_guide \
    --enable-alquimia --enable-pflotran --enable-crunchtope \
    --with-mpi=/usr \
-   --enable-shared 
+   --enable-shared \
+   && cd /home/amanzi_user/amanzi_builddir/amanzi 
 
+#  && rm -r /home/amanzi_user/amanzi_builddir/
+
+# Set path to make it easier to run amanzi
+ENV PATH=/home/amanzi_user/install/bin:${PATH}
+RUN echo $PATH
+
+# Create mount point for work on the host
+RUN mkdir /home/amanzi_user/work
+
+# Unset proxy
+ENV https_proxy= \
+    http_proxy= 
