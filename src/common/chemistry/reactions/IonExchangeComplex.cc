@@ -70,18 +70,30 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 IonExchangeComplex::IonExchangeComplex(
-    const std::string& in_name,
-    int in_id,
-    const std::string& in_primary_name,
-    int in_primary_id,
-    const double in_K)
-  : name_(in_name),
-    id_(in_id),
-    primary_name_(in_primary_name),
-    primary_id_(in_primary_id),
-    K_(in_K),
-    concentration_(0.),
-    X_(0.) {
+    const std::string& name, int id,
+    const Teuchos::ParameterList& plist,
+    const std::vector<Species>& primary_species)
+  : name_(name),
+    id_(id),
+    concentration_(0.0),
+    X_(0.0)
+{
+  double coeff;
+
+  K_ = plist.get<double>("equilibrium constant");
+  std::istringstream iss(plist.get<std::string>("reaction"));
+  iss >> coeff;
+  iss >> primary_name_;
+  iss >> coeff;
+  iss >> site_name_;
+
+  primary_id_ = -999;
+  for (int i = 0; i < primary_species.size(); ++i) {
+    if (primary_name_ == primary_species[i].name()) {
+      primary_id_ = i;
+      break;
+    }
+  }
 }
 
 

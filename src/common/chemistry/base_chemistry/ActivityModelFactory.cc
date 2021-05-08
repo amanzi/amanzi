@@ -10,6 +10,7 @@
            Sergio A Bea
 */
 
+#include <memory>
 #include <sstream>
 #include <string>
 
@@ -31,21 +32,21 @@ const std::string ActivityModelFactory::debye_huckel = "debye-huckel";
 const std::string ActivityModelFactory::pitzer_hwm = "pitzer-hwm";
 const std::string ActivityModelFactory::unit = "unit";
 
-ActivityModel* ActivityModelFactory::Create(
+std::shared_ptr<ActivityModel> ActivityModelFactory::Create(
     const std::string& model,
     const ActivityModel::ActivityModelParameters& parameters,
     const std::vector<Species>& primary_species,
     const std::vector<AqueousEquilibriumComplex>& secondary_species,
     const Teuchos::Ptr<VerboseObject> vo)
 {
-  ActivityModel* activity_model = nullptr;
+  std::shared_ptr<ActivityModel> activity_model = nullptr;
 
   if (model == debye_huckel) {
-    activity_model = new ActivityModelDebyeHuckel();
+    activity_model = std::make_shared<ActivityModelDebyeHuckel>();
   } else if (model == pitzer_hwm) {
-    activity_model = new ActivityModelPitzerHWM();
+    activity_model = std::make_shared<ActivityModelPitzerHWM>();
   } else if (model == unit) {
-    activity_model = new ActivityModelUnit();
+    activity_model = std::make_shared<ActivityModelUnit>();
   } else {
     std::ostringstream oss;
     oss << "Unknown activity model name: " << model << "\n"

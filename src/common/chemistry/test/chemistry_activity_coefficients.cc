@@ -21,7 +21,6 @@ namespace ac = Amanzi::AmanziChemistry;
 class ActivityModelTest {
  public:
   ActivityModelTest();
-  ~ActivityModelTest();
 
   void RunTest(const std::string& name, double* gamma);
 
@@ -43,7 +42,7 @@ class ActivityModelTest {
 
  private:
   double tolerance_;
-  ac::ActivityModel* activity_model_;
+  std::shared_ptr<ac::ActivityModel> activity_model_;
   std::string activity_model_name_;
   ac::SpeciesArray species_;
   ac::Species H_p;
@@ -111,10 +110,6 @@ ActivityModelTest::ActivityModelTest()
   aqueous_complexes_.clear();
 
   vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry", plist));
-}
-
-ActivityModelTest::~ActivityModelTest() {
-  delete activity_model_;
 }
 
 void ActivityModelTest::RunTest(const std::string& name, double* gamma) {

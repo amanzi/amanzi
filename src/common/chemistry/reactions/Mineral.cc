@@ -95,9 +95,8 @@ void Mineral::Display(const Teuchos::Ptr<VerboseObject> vo) const {
     }
   }
 
-  if (SecondarySpecies::h2o_stoich_!=0.0) {
-    message << " + ";
-    message << std::setprecision(2) << h2o_stoich_ << " " << "H2O";
+  if (SecondarySpecies::h2o_stoich_ != 0.0) {
+    message << " + " << std::setprecision(2) << h2o_stoich_ << " " << "H2O";
   }
   message << std::endl;
   message << std::setw(40) << " "
@@ -111,7 +110,8 @@ void Mineral::Display(const Teuchos::Ptr<VerboseObject> vo) const {
 }
 
 
-void Mineral::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const {
+void Mineral::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const
+{
   std::stringstream message;
   message << std::setw(15) << name()
           << std::scientific << std::setprecision(5)

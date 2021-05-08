@@ -138,12 +138,8 @@ void SimpleThermoDatabase::Initialize(const BeakerState& state,
     if (islist.isSublist(name)) {
       const auto& tmp = islist.sublist(name);
 
-      double charge = tmp.get<int>("charge");
-      std::string location = tmp.get<std::string>("location");
-
-      IonExchangeSite exchanger(name, charge, location);
+      IonExchangeSite exchanger(name, tmp);
       IonExchangeRxn ionx_rxn(exchanger);
-
       AddIonExchangeRxn(ionx_rxn);
     }
   }
@@ -160,28 +156,9 @@ void SimpleThermoDatabase::Initialize(const BeakerState& state,
     if (iclist.isSublist(name)) {
       const auto& tmp = iclist.sublist(name);
 
-      double coeff;
-      std::string primary_name, site_name;
+      IonExchangeComplex ion_complex(name, id, tmp, primary_species());
 
-      double lnKeq = tmp.get<double>("equilibrium constant");
-      std::istringstream iss(tmp.get<std::string>("reaction"));
-      iss >> coeff;
-      iss >> primary_name;
-      iss >> coeff;
-      iss >> site_name;
-
-      int primary_id(-999);
-      for (int i = 0; i < primary_species().size(); ++i) {
-        if (primary_name == primary_species().at(i).name()) {
-          primary_id = i;
-          break;
-        }
-      }
-
-      IonExchangeComplex ion_complex(name, id,
-                                     primary_name, primary_id,
-                                     lnKeq);
-
+      const std::string& site_name = ion_complex.site_name();
       for (int i = 0; i < ion_exchange_rxns().size(); i++) {
         if (site_name == ion_exchange_rxns().at(i).site().get_name()) {
           AddIonExchangeComplex(i, ion_complex);

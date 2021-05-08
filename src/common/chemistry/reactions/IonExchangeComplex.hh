@@ -26,9 +26,8 @@ class IonExchangeComplex {
   IonExchangeComplex() {};
   IonExchangeComplex(const std::string& complex_name,
                      int complex_id,
-                     const std::string& primary_name,
-                     int primary_id,
-                     double K);
+                     const Teuchos::ParameterList& plist,
+                     const std::vector<Species>& primary_species);
   virtual ~IonExchangeComplex() {};
 
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
@@ -37,8 +36,9 @@ class IonExchangeComplex {
   void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 
   // setters and getters
-  std::string name() const { return name_; };
-  std::string primary_name() const { return primary_name_; };
+  std::string name() const { return name_; }
+  std::string primary_name() const { return primary_name_; }
+  std::string site_name() const { return site_name_; }
 
   int primary_id() const { return primary_id_; };
   double K() const { return K_; };
@@ -49,12 +49,12 @@ class IonExchangeComplex {
   void set_concentration(double d) { concentration_ = d; };
 
  private:
-  std::string name_, primary_name_;
+  std::string name_, primary_name_, site_name_;
   int id_, primary_id_;
-
   double concentration_, K_, X_;
 };
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
+
 #endif

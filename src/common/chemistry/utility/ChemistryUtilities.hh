@@ -40,8 +40,7 @@ void PrintVector(const std::string& name,
     output << std::setprecision(precision);
   }
   output << name << " : { ";
-  for (typename std::vector<T>::const_iterator i = data.begin();
-       i != data.end(); ++i) {
+  for (auto i = data.begin(); i != data.end(); ++i) {
     output << *i;
     if (i != --data.end()) {
       if (comma_seperated) {

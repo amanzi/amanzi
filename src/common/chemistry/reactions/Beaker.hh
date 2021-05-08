@@ -92,7 +92,7 @@ class Beaker {
 
   const std::vector<Mineral>& minerals() const { return minerals_; }
   const std::vector<Species>& primary_species() const { return primary_species_; }
-  const std::vector<AqueousEquilibriumComplex>& secondary_species() { return aqComplexRxns_; }
+  const std::vector<AqueousEquilibriumComplex>& secondary_species() const { return aqComplexRxns_; }
   const std::vector<IonExchangeRxn>& ion_exchange_rxns() const { return ion_exchange_rxns_; }
 
   const std::vector<double>& total() const { return total_; }
@@ -210,7 +210,7 @@ class Beaker {
   double sorbed_accumulation_coef_;  // [m^3 bulk/sec]
   double por_sat_den_vol_;
 
-  ActivityModel* activity_model_;
+  std::shared_ptr<ActivityModel> activity_model_;
 
   std::vector<AqueousEquilibriumComplex> aqComplexRxns_;  // list of aqueous equilibrium complexation reactions
   std::vector<GeneralRxn> generalKineticRxns_;  // list of general kinetic reactions

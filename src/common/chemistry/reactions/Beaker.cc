@@ -89,9 +89,8 @@ Beaker::Beaker(const Teuchos::Ptr<VerboseObject> vo)
 }
 
 
-Beaker::~Beaker() {
-  delete activity_model_;
-
+Beaker::~Beaker()
+{
   if (mineral_rates_.size() != 0) {
     for (std::vector<KineticRate*>::iterator rate = mineral_rates_.begin();
          rate != mineral_rates_.end(); rate++) {
@@ -867,12 +866,13 @@ void Beaker::CopyStateToBeaker(const BeakerState& state)
 } 
 
 
+/* ******************************************************************
+* Setup
+****************************************************************** */
 void Beaker::SetupActivityModel(std::string model,
                                 std::string pitzer_database,
                                 std::string jfunction_pitzer)
 {
-  delete activity_model_;
-
   ActivityModel::ActivityModelParameters parameters;
   parameters.database_filename = pitzer_database;
   parameters.pitzer_jfunction = jfunction_pitzer;

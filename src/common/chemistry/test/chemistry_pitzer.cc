@@ -26,7 +26,7 @@ SUITE(TestPitzer) {
 
     ac::ActivityModel::ActivityModelParameters parameters;
     ac::ActivityModelFactory amfac_;
-    ac::ActivityModel* am_;
+    std::shared_ptr<ac::ActivityModel> am_;
     std::vector<ac::Species> sp_;
     std::vector<ac::AqueousEquilibriumComplex> aqx_;
 
