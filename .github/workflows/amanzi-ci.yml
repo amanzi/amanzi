@@ -18,7 +18,7 @@ jobs:
       id: filter2
       working-directory: Docker
       run:
-        echo "::set-output name=AMANZI_BRANCH_F::$(echo ${{steps.branch.outputs.AMANZI_BRANCH}} | 's/\//-/g')"
+        echo "::set-output name=AMANZI_BRANCH_F::$(echo ${{steps.branch.outputs.AMANZI_BRANCH}} | sed -e 's/\//-/g')"
     - name: Filter the branch name
       id: filter
       uses: frabert/replace-string-action@v1.2
