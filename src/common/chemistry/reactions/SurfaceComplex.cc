@@ -23,43 +23,6 @@ namespace AmanziChemistry {
 
 namespace acu = Amanzi::AmanziChemistry::utilities;
 
-SurfaceComplex::SurfaceComplex()
-{
-  species_names_.clear();
-  species_ids_.clear();
-  stoichiometry_.clear();
-  logK_array_.clear();
-}
-
-
-SurfaceComplex::SurfaceComplex(const std::string& name, int id,
-                               const std::vector<std::string>& species,
-                               const std::vector<double>& stoichiometries,
-                               const std::vector<int>& species_ids,
-                               const double h2o_stoich,
-                               const double free_site_stoich,
-                               const double charge,
-                               const double logK)
-  : name_(name),
-    identifier_(id),
-    charge_(charge),
-    species_names_(species),
-    stoichiometry_(stoichiometries),
-    species_ids_(species_ids),
-    surface_concentration_(0.),
-    free_site_name_("Unknown"),
-    free_site_stoichiometry_(free_site_stoich),
-    free_site_id_(-1),
-    h2o_stoichiometry_(h2o_stoich),
-    lnK_(acu::log_to_ln(logK)),
-    lnQK_(0.),
-    logK_(logK)
-{
-  logK_array_.clear();
-  set_ncomp(stoichiometries.size());
-}
-
-
 SurfaceComplex::SurfaceComplex(const std::string& name, int id,
                                const std::vector<Species>& primary_species,
                                const std::vector<SurfaceSite>& surface_sites,
@@ -82,8 +45,7 @@ SurfaceComplex::SurfaceComplex(const std::string& name, int id,
                 &free_site_name_, &free_site_stoichiometry_, &free_site_id_,
                 &h2o_stoichiometry_);
 
-  logK_array_.clear();
-  set_ncomp(stoichiometry_.size());
+  ncomp_ = stoichiometry_.size();
 }
 
 
@@ -100,7 +62,7 @@ void SurfaceComplex::Update(const std::vector<Species>& primarySpecies,
     lnQK_temp += stoichiometry_[i] * primarySpecies[species_ids_[i]].ln_activity();
   }
   lnQK_ = lnQK_temp;
-  set_surface_concentration(std::exp(lnQK_));
+  surface_concentration_ = std::exp(lnQK_);
 }
 
 
@@ -135,7 +97,7 @@ void SurfaceComplex::Display(const Teuchos::Ptr<VerboseObject> vo) const
   message << std::endl;
   message << std::setw(40) << " "
             << std::setw(10) << logK_
-            << std::setw(10) << charge()
+            << std::setw(10) << charge_
             << std::endl;
   vo->Write(Teuchos::VERB_HIGH, message.str());
 }

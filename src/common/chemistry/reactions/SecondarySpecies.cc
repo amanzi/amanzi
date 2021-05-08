@@ -37,7 +37,6 @@ SecondarySpecies::SecondarySpecies()
   species_names_.clear();
   species_ids_.clear();
   stoichiometry_.clear();
-  logK_array_.clear();
 }
 
 

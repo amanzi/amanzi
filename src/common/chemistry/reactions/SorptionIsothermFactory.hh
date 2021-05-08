@@ -13,6 +13,8 @@
 #include <memory>
 #include <string>
 
+#include "Teuchos_ParameterList.hpp"
+
 #include "Species.hh"
 
 namespace Amanzi {
@@ -25,8 +27,7 @@ class SorptionIsothermFactory {
   SorptionIsothermFactory() {};
   ~SorptionIsothermFactory() {};
 
-  std::shared_ptr<SorptionIsotherm> Create(const std::string& model, 
-                                           const std::vector<double>& parameters);
+  std::shared_ptr<SorptionIsotherm> Create(const Teuchos::ParameterList& plist);
 
   int VerifySpeciesName(const std::string& species_name,
                         const std::vector<Species>& species) const;

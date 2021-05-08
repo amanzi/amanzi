@@ -80,7 +80,7 @@ int Beaker::EnforceConstraint(
 
       if (!found) {
         ip = 0;
-        for (auto it = aqComplexRxns_.begin(); it != aqComplexRxns_.end(); ++it, ip++) {
+        for (auto it = aq_complex_rxns_.begin(); it != aq_complex_rxns_.end(); ++it, ip++) {
           if (it->name() == pair.second + "(aq)") {
             found = true;
             map_aqx[i] = ip;
@@ -168,16 +168,16 @@ int Beaker::EnforceConstraint(
           jacobian_(i, ip) = 1.0;
         } else {
           ip = map_aqx[i];
-          double lnQK = aqComplexRxns_[ip].lnQK();
+          double lnQK = aq_complex_rxns_[ip].lnQK();
  
           double KH = 29.4375;
           double conc = std::pow(10.0, values[i]) / KH;
           residual_[i] = lnQK - std::log(conc);
 
-          const auto& pri_ids = aqComplexRxns_[ip].species_ids();
+          const auto& pri_ids = aq_complex_rxns_[ip].species_ids();
           for (int n = 0; n < pri_ids.size(); ++n) {
             int jds = pri_ids[n];
-            jacobian_(i, jds) = aqComplexRxns_[ip].stoichiometry().at(n) / primary_species_.at(jds).molality();
+            jacobian_(i, jds) = aq_complex_rxns_[ip].stoichiometry().at(n) / primary_species_.at(jds).molality();
           }
         }
       }

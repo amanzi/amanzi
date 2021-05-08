@@ -27,12 +27,8 @@ class MatrixBlock;
 class RadioactiveDecay {
  public:
   RadioactiveDecay();
-  explicit RadioactiveDecay(std::string s) {};
-
-  RadioactiveDecay(const std::vector<std::string>& species_names,
-                   const std::vector<int>& species_ids,
-                   const std::vector<double>& stoichiometries,
-                   double half_life);
+  RadioactiveDecay(const Teuchos::ParameterList& plist,
+                   const std::map<std::string, int>& name_to_id);
   ~RadioactiveDecay() {};
 
   // update forward and reverse effective reaction rates

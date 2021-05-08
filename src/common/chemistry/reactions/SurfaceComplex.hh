@@ -28,16 +28,7 @@ class MatrixBlock;
 
 class SurfaceComplex {
  public:
-  SurfaceComplex();
-  SurfaceComplex(const std::string& name, int id,
-                 const std::vector<std::string>& species,
-                 const std::vector<double>& stoichiometries,
-                 const std::vector<int>& species_ids,
-                 const double h2o_stoich,
-                 const double free_site_stoichiometry,
-                 const double charge,
-                 const double logK);
-
+  SurfaceComplex() {};
   SurfaceComplex(const std::string& name, int id,
                  const std::vector<Species>& primary_species,
                  const std::vector<SurfaceSite>& surface_sites,
@@ -58,22 +49,12 @@ class SurfaceComplex {
   void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 
-  void set_identifier(int id) { identifier_ = id; }
-  void set_charge(double d) { charge_ = d; }
-
-  void set_free_site_stoichiometry(double d) { free_site_stoichiometry_ = d; }
-  void set_ncomp(const int i) { ncomp_ = i; };
-  void set_surface_concentration(double d) { surface_concentration_ = d; };
-
   std::string name() const { return name_; }
-  int identifier() const { return identifier_; }
-  double charge() const { return charge_; }
 
   int free_site_id() const { return free_site_id_; }
   double free_site_stoichiometry() const { return free_site_stoichiometry_; }
   double stoichiometry(int i) const { return stoichiometry_[i]; }
-  double lnQK() const { return lnQK_; };
-  double logK() const { return logK_; };
+
   int ncomp() const { return ncomp_; };
   int species_id(int i) const { return species_ids_[i]; };
   double surface_concentration() const { return surface_concentration_; };
@@ -96,7 +77,6 @@ class SurfaceComplex {
 
   double h2o_stoichiometry_;
 
-  std::vector<double> logK_array_;  // for temperature dep. logK
   double lnK_;  // log value of equlibrium constant
   double lnQK_;  // store lnQK for derivatives later
   double logK_;

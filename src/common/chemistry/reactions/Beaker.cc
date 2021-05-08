@@ -78,8 +78,8 @@ Beaker::Beaker(const Teuchos::Ptr<VerboseObject> vo)
 {
   primary_species_.clear();
   minerals_.clear();
-  aqComplexRxns_.clear();
-  generalKineticRxns_.clear();
+  aq_complex_rxns_.clear();
+  general_kinetic_rxns_.clear();
   radioactive_decay_rxns_.clear();
   mineral_rates_.clear();
   ion_exchange_rxns_.clear();
@@ -341,11 +341,11 @@ void Beaker::CopyBeakerToState(BeakerState* state)
     state->primary_activity_coeff[i] = primary_species()[i].act_coef();
   }
 
-  int size = aqComplexRxns_.size();
+  int size = aq_complex_rxns_.size();
   if (size > 0) {
     state->secondary_activity_coeff.resize(size);
     for (int i = 0; i < size; ++i) {
-      state->secondary_activity_coeff[i] = aqComplexRxns_[i].act_coef();
+      state->secondary_activity_coeff[i] = aq_complex_rxns_[i].act_coef();
     }
   }
 
@@ -377,18 +377,18 @@ void Beaker::CopyBeakerToState(BeakerState* state)
   }
 
   // surface complexation
-  size = surfaceComplexationRxns_.size();
+  size = surface_complexation_rxns_.size();
   if (size > 0) {
     state->surface_complex_free_site_conc.resize(size);
     for (unsigned int i = 0; i < size; ++i) {
-      state->surface_complex_free_site_conc[i] = surfaceComplexationRxns_[i].free_site_concentration();
+      state->surface_complex_free_site_conc[i] = surface_complexation_rxns_[i].free_site_concentration();
     }
   }
 
   if (size > 0) {
     state->surface_site_density.resize(size);
     for (int i = 0; i < size; ++i) {
-      state->surface_site_density[i] = surfaceComplexationRxns_[i].GetSiteDensity();
+      state->surface_site_density[i] = surface_complexation_rxns_[i].GetSiteDensity();
     }
   }
 
@@ -544,8 +544,8 @@ void Beaker::DisplayResults() const {
   }
 
   // same header info as primaries....
-  for (unsigned int i = 0; i < aqComplexRxns_.size(); i++) {
-    aqComplexRxns_.at(i).DisplayResults(vo_);
+  for (unsigned int i = 0; i < aq_complex_rxns_.size(); i++) {
+    aq_complex_rxns_.at(i).DisplayResults(vo_);
   }
 
   if (minerals_.size() > 0) {
@@ -575,11 +575,11 @@ void Beaker::DisplayResults() const {
     }
   }
 
-  if (surfaceComplexationRxns_.size() > 0) {
+  if (surface_complexation_rxns_.size() > 0) {
     vo_->Write(Teuchos::VERB_HIGH, "---- Surface Complexation Reactions\n");
-    for (unsigned int i = 0; i < surfaceComplexationRxns_.size(); i++) {
-      surfaceComplexationRxns_.at(i).DisplayResultsHeader(vo_);
-      surfaceComplexationRxns_.at(i).DisplayResults(vo_);
+    for (unsigned int i = 0; i < surface_complexation_rxns_.size(); i++) {
+      surface_complexation_rxns_.at(i).DisplayResultsHeader(vo_);
+      surface_complexation_rxns_.at(i).DisplayResults(vo_);
     }
   }
 
@@ -627,7 +627,7 @@ void Beaker::ResizeInternalMemory()
   total_.resize(size);
   dtotal_.Resize(size);
 
-  if (surfaceComplexationRxns_.size() > 0 ||
+  if (surface_complexation_rxns_.size() > 0 ||
       sorption_isotherm_rxns_.size() > 0 ||
       ion_exchange_rxns_.size() > 0) {
     total_sorbed_.resize(size, 0.0);
@@ -740,10 +740,10 @@ void Beaker::CopyStateToBeaker(const BeakerState& state)
   }
   size = state.secondary_activity_coeff.size();
   if (size > 0) {
-    assert(size == aqComplexRxns_.size());
+    assert(size == aq_complex_rxns_.size());
     for (int i = 0; i < size; ++i) {
       double value = state.secondary_activity_coeff.at(i);
-      aqComplexRxns_.at(i).set_act_coef(value);
+      aq_complex_rxns_.at(i).set_act_coef(value);
     }
   }
 
@@ -804,10 +804,10 @@ void Beaker::CopyStateToBeaker(const BeakerState& state)
   // surface complexation
   size = state.surface_site_density.size();
   if (size > 0) {
-    assert(size == surfaceComplexationRxns_.size());
+    assert(size == surface_complexation_rxns_.size());
     for (int i = 0; i < size; ++i) {
       double value = state.surface_site_density.at(i);
-      surfaceComplexationRxns_.at(i).UpdateSiteDensity(value);
+      surface_complexation_rxns_.at(i).UpdateSiteDensity(value);
     }
   }
 
@@ -816,14 +816,14 @@ void Beaker::CopyStateToBeaker(const BeakerState& state)
       // we have a value from a previous solve, restore it.
       for (int r = 0; r < size; ++r) {
         double value = state.surface_complex_free_site_conc.at(r);
-        surfaceComplexationRxns_.at(r).set_free_site_concentration(value);
+        surface_complexation_rxns_.at(r).set_free_site_concentration(value);
       }
     } else {
       // no previous value, provide a guess
       for (int r = 0; r < size; ++r) {
-        // double value = 0.1 * surfaceComplexationRxns_.at(r).GetSiteDensity();
+        // double value = 0.1 * surface_complexation_rxns_.at(r).GetSiteDensity();
         double value = 1.0e-9;
-        surfaceComplexationRxns_.at(r).set_free_site_concentration(value);
+        surface_complexation_rxns_.at(r).set_free_site_concentration(value);
       }
     }
   }
@@ -880,7 +880,7 @@ void Beaker::SetupActivityModel(std::string model,
   ActivityModelFactory amf;
 
   activity_model_ = amf.Create(model, parameters,
-                               primary_species(), aqComplexRxns_,
+                               primary_species(), aq_complex_rxns_,
                                vo_);
 }
 
@@ -896,7 +896,7 @@ void Beaker::AddIonExchangeComplex(int irxn, const IonExchangeComplex& ionx_comp
 
 
 void Beaker::AddAqueousEquilibriumComplex(const AqueousEquilibriumComplex& c) {
-  aqComplexRxns_.push_back(c);
+  aq_complex_rxns_.push_back(c);
 }
 
 
@@ -911,7 +911,7 @@ void Beaker::AddMineralKineticRate(KineticRate* rate) {
 
 
 void Beaker::AddGeneralRxn(const GeneralRxn& r) {
-  generalKineticRxns_.push_back(r);
+  general_kinetic_rxns_.push_back(r);
 }
 
 
@@ -921,7 +921,7 @@ void Beaker::AddRadioactiveDecayRxn(const RadioactiveDecay& r) {
 
 
 void Beaker::AddSurfaceComplexationRxn(const SurfaceComplexationRxn& r) {
-  surfaceComplexationRxns_.push_back(r);
+  surface_complexation_rxns_.push_back(r);
 }
 
 
@@ -943,9 +943,9 @@ void Beaker::ResetStatus() {
 ****************************************************************** */
 void Beaker::UpdateActivityCoefficients()
 {
-  activity_model_->CalculateIonicStrength(primary_species_, aqComplexRxns_);
+  activity_model_->CalculateIonicStrength(primary_species_, aq_complex_rxns_);
   activity_model_->CalculateActivityCoefficients(&primary_species_,
-                                                 &aqComplexRxns_,
+                                                 &aq_complex_rxns_,
                                                  &water_);
   for (auto it = primary_species_.begin(); it != primary_species_.end(); ++it) {
     it->update();
@@ -1007,7 +1007,7 @@ void Beaker::UpdateEquilibriumChemistry()
   }
 
   // calculated secondary aqueous complex concentrations
-  for (auto it = aqComplexRxns_.begin(); it != aqComplexRxns_.end(); ++it) {
+  for (auto it = aq_complex_rxns_.begin(); it != aq_complex_rxns_.end(); ++it) {
     it->Update(primary_species(), water_);
   }
 
@@ -1017,7 +1017,7 @@ void Beaker::UpdateEquilibriumChemistry()
   }
 
   // surface complexation
-  for (auto it = surfaceComplexationRxns_.begin(); it != surfaceComplexationRxns_.end(); ++it) {
+  for (auto it = surface_complexation_rxns_.begin(); it != surface_complexation_rxns_.end(); ++it) {
     it->Update(primary_species());
   }
 
@@ -1044,7 +1044,7 @@ void Beaker::CalculateTotal()
   }
 
   // add in aqueous complexes
-  for (auto it = aqComplexRxns_.begin(); it != aqComplexRxns_.end(); ++it) {
+  for (auto it = aq_complex_rxns_.begin(); it != aq_complex_rxns_.end(); ++it) {
     it->AddContributionToTotal(&total_);
   }
 
@@ -1060,7 +1060,7 @@ void Beaker::CalculateTotal()
   }
 
   // add in surface complex contributions
-  for (auto it = surfaceComplexationRxns_.begin(); it != surfaceComplexationRxns_.end(); ++it) {
+  for (auto it = surface_complexation_rxns_.begin(); it != surface_complexation_rxns_.end(); ++it) {
     it->AddContributionToTotal(&total_sorbed_);
   }
 
@@ -1084,7 +1084,7 @@ void Beaker::CalculateDTotal()
   dtotal_.SetDiagonal(1.0);
 
   // add in derviative of complex contribution with respect to free-ion
-  for (auto it = aqComplexRxns_.begin(); it != aqComplexRxns_.end(); ++it) {
+  for (auto it = aq_complex_rxns_.begin(); it != aq_complex_rxns_.end(); ++it) {
     it->AddContributionToDTotal(primary_species(), &dtotal_);
   }
 
@@ -1094,7 +1094,7 @@ void Beaker::CalculateDTotal()
   // calculate sorbed derivatives
   if (total_sorbed_.size() > 0) {
     dtotal_sorbed_.Zero();
-    for (auto it = surfaceComplexationRxns_.begin(); it != surfaceComplexationRxns_.end(); ++it) {
+    for (auto it = surface_complexation_rxns_.begin(); it != surface_complexation_rxns_.end(); ++it) {
       it->AddContributionToDTotal(primary_species(), &dtotal_sorbed_);
     }
     for (auto it = sorption_isotherm_rxns_.begin(); it != sorption_isotherm_rxns_.end(); ++it) {
@@ -1111,7 +1111,7 @@ void Beaker::CalculateDTotal()
 void Beaker::UpdateKineticChemistry()
 {
   // loop over general kinetic reactions and update effective rates
-  for (auto it = generalKineticRxns_.begin(); it != generalKineticRxns_.end(); ++it) {
+  for (auto it = general_kinetic_rxns_.begin(); it != general_kinetic_rxns_.end(); ++it) {
     it->update_rates(primary_species());
   }
 
@@ -1134,7 +1134,7 @@ void Beaker::UpdateKineticChemistry()
 void Beaker::AddKineticChemistryToResidual()
 {
   // loop over general kinetic reactions and add rates
-  for (auto it = generalKineticRxns_.begin(); it != generalKineticRxns_.end(); ++it) {
+  for (auto it = general_kinetic_rxns_.begin(); it != general_kinetic_rxns_.end(); ++it) {
     it->AddContributionToResidual(&residual_, por_sat_den_vol_);
   }
 
@@ -1155,7 +1155,7 @@ void Beaker::AddKineticChemistryToResidual()
 void Beaker::AddKineticChemistryToJacobian()
 {
   // loop over general kinetic reactions and add rates
-  for (auto it = generalKineticRxns_.begin(); it != generalKineticRxns_.end(); ++it) {
+  for (auto it = general_kinetic_rxns_.begin(); it != general_kinetic_rxns_.end(); ++it) {
     it->AddContributionToJacobian(&jacobian_, primary_species(), por_sat_den_vol_);
   }
 
@@ -1428,7 +1428,7 @@ void Beaker::DisplayAqueousEquilibriumComplexes() const
           << std::setw(8) << "D-H a0"
           << std::endl;
   vo_->Write(Teuchos::VERB_HIGH, message.str());
-  for (auto aec = aqComplexRxns_.begin(); aec != aqComplexRxns_.end(); aec++) {
+  for (auto aec = aq_complex_rxns_.begin(); aec != aq_complex_rxns_.end(); aec++) {
     aec->Display(vo_);
   }
   vo_->Write(Teuchos::VERB_HIGH, "\n");
@@ -1437,12 +1437,12 @@ void Beaker::DisplayAqueousEquilibriumComplexes() const
 
 void Beaker::DisplayGeneralKinetics() const
 {
-  if (generalKineticRxns_.size() > 0) {
+  if (general_kinetic_rxns_.size() > 0) {
     std::stringstream message;
     message << "---- General Kinetics" << std::endl;
     message << std::setw(12) << "Reaction" << std::endl;
     vo_->Write(Teuchos::VERB_HIGH, message.str());
-    for (auto rxn = generalKineticRxns_.begin(); rxn != generalKineticRxns_.end(); rxn++) {
+    for (auto rxn = general_kinetic_rxns_.begin(); rxn != general_kinetic_rxns_.end(); rxn++) {
       rxn->Display(vo_);
     }
     vo_->Write(Teuchos::VERB_HIGH, "\n");
@@ -1545,7 +1545,7 @@ void Beaker::DisplayIonExchangeComplexes() const
 
 void Beaker::DisplaySurfaceSites() const
 { 
-  if (surfaceComplexationRxns_.size() > 0) {
+  if (surface_complexation_rxns_.size() > 0) {
     std::stringstream message;
     message << "---- Surface Sites" << std::endl;
     message << std::setw(15) << "Species"
@@ -1555,7 +1555,7 @@ void Beaker::DisplaySurfaceSites() const
             << std::setw(15) << "[mol/m^3]"
             << std::endl;
     vo_->Write(Teuchos::VERB_HIGH, message.str());
-    for (auto s = surfaceComplexationRxns_.begin(); s != surfaceComplexationRxns_.end(); s++) {
+    for (auto s = surface_complexation_rxns_.begin(); s != surface_complexation_rxns_.end(); s++) {
       s->DisplaySite(vo_);
     }
     vo_->Write(Teuchos::VERB_HIGH, "\n");
@@ -1565,7 +1565,7 @@ void Beaker::DisplaySurfaceSites() const
 
 void Beaker::DisplaySurfaceComplexes() const
 {
-  if (surfaceComplexationRxns_.size() > 0) {
+  if (surface_complexation_rxns_.size() > 0) {
     std::stringstream message;
     message << "---- Surface Complexes" << std::endl;
     message << std::setw(12) << "Reaction"
@@ -1573,7 +1573,7 @@ void Beaker::DisplaySurfaceComplexes() const
             << std::setw(10) << "charge"
             << std::endl;
     vo_->Write(Teuchos::VERB_HIGH, message.str());
-    for (auto s = surfaceComplexationRxns_.begin(); s != surfaceComplexationRxns_.end(); s++) {
+    for (auto s = surface_complexation_rxns_.begin(); s != surface_complexation_rxns_.end(); s++) {
       s->DisplayComplexes(vo_);
     }
     vo_->Write(Teuchos::VERB_HIGH, "\n");

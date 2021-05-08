@@ -28,9 +28,11 @@ const std::string SorptionIsothermFactory::langmuir = "langmuir";
 const std::string SorptionIsothermFactory::freundlich = "freundlich";
 
 std::shared_ptr<SorptionIsotherm> SorptionIsothermFactory::Create( 
-    const std::string& isotherm_type,
-    const std::vector<double>& parameters)
+    const Teuchos::ParameterList& plist)
 {
+  std::string isotherm_type = plist.get<std::string>("model");
+  std::vector<double> parameters = plist.get<Teuchos::Array<double> >("parameters").toVector();
+      
   std::shared_ptr<SorptionIsotherm> sorption_isotherm = nullptr;
 
   if (isotherm_type == linear) {

@@ -47,23 +47,49 @@ RadioactiveDecay::RadioactiveDecay()
 }
 
 
-RadioactiveDecay::RadioactiveDecay(const std::vector<std::string>& species_names,
-                                   const std::vector<int>& species_ids,
-                                   const std::vector<double>& stoichiometries,
-                                   double half_life)
-  : species_names_(species_names),
-    species_ids_(species_ids),
-    stoichiometry_(stoichiometries),      
-    rate_constant_(0.0),
-    half_life_(half_life),
+RadioactiveDecay::RadioactiveDecay(const Teuchos::ParameterList& plist,
+                                   const std::map<std::string, int>& name_to_id)
+  : rate_constant_(0.0),
     rate_(0.0)
 {
+  species_names_.clear();
+  species_ids_.clear();
+  stoichiometry_.clear();
+
+  half_life_ = plist.get<double>("half life");
+
+  std::string parent = plist.get<std::string>("reactant");
+  int parent_id = name_to_id.at(parent);
+  if (parent_id < 0) {
+    std::stringstream ss;
+    ss << "Unknown parent species '" << parent << "'.\n"
+       << "Parent species must be in the primary species list.\n";
+    Exceptions::amanzi_throw(Errors::Message(ss.str()));
+  }
+  species_names_.push_back(parent);
+  species_ids_.push_back(parent_id);
+  stoichiometry_.push_back(-1.0);
+
+  std::string progeny = plist.get<std::string>("product");
+
+  // NOTE: we allow zero progeny
+  if (progeny.size() > 0) {
+    int id2 = name_to_id.at(progeny);
+    if (id2 < 0) {
+      std::stringstream ss;
+      ss << "Unknown progeny species '" << progeny << "'.\n"
+         << "Progeny species must be in the primary species list.\n";
+      Exceptions::amanzi_throw(Errors::Message(ss.str()));
+    }
+    species_names_.push_back(progeny);
+    species_ids_.push_back(id2);
+    stoichiometry_.push_back(1.0);
+  }
+
   // we assume that species_names[0] etc is for the parent, any
   // following species are the progeny. The stoichiometry of the
   // parent should be negative!
   assert(species_names_.size() > 0);
-  assert(species_ids_.size() > 0);
-  assert(stoichiometry_.size() > 0);
   assert(stoichiometry_.at(0) < 0);
   ConvertHalfLifeToRateConstant();
 }

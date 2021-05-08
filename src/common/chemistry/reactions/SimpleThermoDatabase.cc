@@ -207,11 +207,8 @@ void SimpleThermoDatabase::Initialize(const BeakerState& state,
     if (silist.isSublist(name)) {
       const auto& tmp = silist.sublist(name);
 
-      std::string model = tmp.get<std::string>("model");
-      std::vector<double> params = tmp.get<Teuchos::Array<double> >("parameters").toVector();
-      
       SorptionIsothermFactory sif;
-      auto sorption_isotherm = sif.Create(model, params);
+      auto sorption_isotherm = sif.Create(tmp);
 
       SorptionIsothermRxn rxn(name, name_to_id.at(name), sorption_isotherm);
       AddSorptionIsothermRxn(rxn);
@@ -228,40 +225,7 @@ void SimpleThermoDatabase::Initialize(const BeakerState& state,
     if (rdlist.isSublist(name)) {
       const auto& tmp = rdlist.sublist(name);
 
-      std::vector<std::string> species;
-      std::vector<double> stoichiometry;
-      std::vector<int> species_ids;
-
-      std::string parent = tmp.get<std::string>("reactant");
-      int parent_id = name_to_id.at(parent);
-      if (parent_id < 0) {
-        std::stringstream ss;
-        ss << "Unknown parent species '" << parent << "'.\n"
-           << "Parent species must be in the primary species list.\n";
-        Exceptions::amanzi_throw(Errors::Message(ss.str()));
-      }
-      species.push_back(parent);
-      species_ids.push_back(parent_id);
-      stoichiometry.push_back(-1.0);
-
-      std::string progeny = tmp.get<std::string>("product");
-
-      // NOTE: we allow zero progeny
-      if (progeny.size() > 0) {
-        int id2 = name_to_id.at(progeny);
-        if (id2 < 0) {
-          std::stringstream ss;
-          ss << "Unknown progeny species '" << name << "'.\n"
-             << "Progeny species must be in the primary species list.\n";
-          Exceptions::amanzi_throw(Errors::Message(ss.str()));
-        }
-        species.push_back(progeny);
-        species_ids.push_back(id2);
-        stoichiometry.push_back(1.0);
-      }
-
-      double half_life = tmp.get<double>("half life");
-      RadioactiveDecay rxn(species, species_ids, stoichiometry, half_life);
+      RadioactiveDecay rxn(tmp, name_to_id);
       AddRadioactiveDecayRxn(rxn);
     }
   }

@@ -63,7 +63,6 @@ class SecondarySpecies : public Species {
   std::vector<std::string> species_names_;
   std::vector<int> species_ids_;  // ids of primary species in rxn
   std::vector<double> stoichiometry_;  // stoich of primary species in rxn
-  std::vector<double> logK_array_;  // for temperature dep. logK
   double h2o_stoich_;  // stoichiometry of water in equation
   double lnK_;  // log value of equlibrium constant
   double lnQK_;  // store lnQK for derivatives later
