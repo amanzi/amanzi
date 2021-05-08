@@ -11,27 +11,17 @@ jobs:
       uses: actions/checkout@v2
     - name: Extract the branch name
       id: branch
-      working-directory: Docker
       run:
         echo "::set-output name=AMANZI_BRANCH::$(echo $GITHUB_REF | sed -e 's/refs\/heads\///')"
-    - name: Filter2 the branch name
-      id: filter2
-      working-directory: Docker
+    - name: Filter the branch name to generate a tag for Docker
+      id: tag
       run:
-        echo "::set-output name=AMANZI_BRANCH_F::$(echo ${{steps.branch.outputs.AMANZI_BRANCH}} | sed -e 's/\//-/g')"
-    - name: Filter the branch name
-      id: filter
-      uses: frabert/replace-string-action@v1.2
-      with:
-        pattern: '\/'
-        string: "${{steps.branch.outputs.AMANZI_BRANCH}}"
-        replace-with: '-'
+        echo "::set-output name=AMANZI_BRANCH_TAG::$(echo ${{steps.branch.outputs.AMANZI_BRANCH}} | sed -e 's/\//-/g')"
     - name: Output the branch name
       run:
-        echo "Branch or Tag reference = ${{steps.branch.outputs.AMANZI_BRANCH}}"
+        echo "Amanzi Branch = ${{steps.branch.outputs.AMANZI_BRANCH}}"
     - name: Get TPLs version
       id: version 
-      working-directory: Docker
       run:
         echo "::set-output name=AMANZI_TPLS_VER::$(./get_tpls_version.sh)"
     - name: Output the TPLs version
@@ -40,16 +30,16 @@ jobs:
     - name: Login to Docker Hub
       uses: docker/login-action@v1
       with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}      
+        username: ${{secrets.DOCKERHUB_USERNAME}}
+        password: ${{secrets.DOCKERHUB_PASSWORD}}      
     - name: Docker build
       id: docker
       working-directory: Docker
       run:
-        docker build --build-arg amanzi_branch=${{steps.branch.outputs.AMANZI_BRANCH}} --build-arg amanzi_tpls_ver=${{steps.version.outputs.AMANZI_TPLS_VER}} -t metsi/amanzi:${{steps.filter2.outputs.AMANZI_BRANCH_F}}-latest -f Dockerfile-Amanzi-build .
+        docker build --build-arg amanzi_branch=${{steps.branch.outputs.AMANZI_BRANCH}} --build-arg amanzi_tpls_ver=${{steps.version.outputs.AMANZI_TPLS_VER}} -t metsi/amanzi:${{steps.tag.outputs.AMANZI_BRANCH_TAG}}-latest -f Dockerfile-Amanzi-build .
     - name: Docker push
       working-directory: Docker
       run:
-        docker push ${{ secrets.DOCKERHUB_USERNAME }}/amanzi:${{steps.filter.outputs.replaced}}-latest
+        docker push ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{steps.tag.outputs.AMANZI_BRANCH_TAG}}-latest
 
 
