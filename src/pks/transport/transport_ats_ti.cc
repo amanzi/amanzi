@@ -124,6 +124,7 @@ void Transport_ATS::FunctionalTimeDerivative(double t,
     ComputeAddSourceTerms(t, 1., f_component, current_component_, current_component_);
   }
 
+
   for (int c = 0; c < ncells_owned; c++) {  // calculate conservative quantatity
     double vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_start)[0][c] * (*mol_dens_start)[0][c];
     if ((*ws_start)[0][c] < 1e-12)

@@ -1,13 +1,12 @@
 # -*- mode: cmake -*-
+
 include_directories(${ATS_SOURCE_DIR}/src/pks)
+#include_directories(${ATS_SOURCE_DIR}/src/pks/biogeochemistry/bgc_simple/)
+
 
 # ATS Surface balance PKs describe Evaporation, energy fluxes from
 #  long/showtwave radiation, precip, etc etc etc
 
-
-if (ENABLE_FATES)
-  add_subdirectory(fates)
-endif()
 
 set(ats_bgc_src_files
   bgc_simple/utils.cc
@@ -20,6 +19,10 @@ set(ats_bgc_src_files
   constitutive_models/carbon/bioturbation_evaluator.cc  
   )
 
+if (ENABLE_FATES)
+  list (APPEND ats_bgc_src_files fates/fates_pk.cc)
+endif()
+
 set(ats_bgc_inc_files
   bgc_simple/utils.hh
   bgc_simple/PFT.hh
@@ -30,6 +33,10 @@ set(ats_bgc_inc_files
   carbon/simple/CarbonSimple.hh
   constitutive_models/carbon/bioturbation_evaluator.hh
   )
+
+if (ENABLE_FATES)
+  list (APPEND ats_bgc_inc_files fates/fates_pk.hh)
+endif()
 
 
 set(ats_bgc_link_libs

@@ -47,14 +47,6 @@ include_directories(${ATS_SOURCE_DIR}/src/operators/deformation)
 include_directories(${AMANZI_BINARY_DIR}) # required to pick up amanzi_version.hh
 include_directories(${ATS_BINARY_DIR})
 
-if (ENABLE_FATES)
-  link_directories(/nh/u/dasvyat/Coastal/ats-fates-new/install/lib/)
-  link_directories(/nh/u/dasvyat/Coastal/ParallelIO/install/lib/)
-  link_directories(/nh/u/dasvyat/Coastal/pnetcdf-1.11.2/install/lib)
-  set (VEG_LIB pk_veg)
-endif()
-
-
 include_evaluators_directories(LISTNAME REGISTER_AMANZI_STATE_EVALUATORS_INCLUDES)
 include_evaluators_directories(LISTNAME ATS_RELATIONS_REG_INCLUDES)
 include_evaluators_directories(LISTNAME ATS_TRANSPORT_REG_INCLUDES)
@@ -149,11 +141,6 @@ add_amanzi_library(ats_executable
 if (APPLE AND BUILD_SHARED_LIBS)
   set_target_properties(ats_executable PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
 endif()			  
-
-if (ENABLE_FATES)
-  set(fates_link_libs -lfates -lparteh -lshared  -lpiof -lpioc -lpnetcdf -lgptl)
-#  link_directories(ats /nh/u/dasvyat/Coastal/ats-fates-new/install/lib/)
-endif()
 
 if (BUILD_TESTS)
   # Add UnitTest includes
