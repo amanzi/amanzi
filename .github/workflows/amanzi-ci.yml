@@ -24,8 +24,6 @@ jobs:
         string: "${{steps.branch.outputs.AMANZI_BRANCH}}"
         replace-with: '-'
         replaced: amanzi_branch_tag
-      run:
-        echo "Filtered ${{steps.filter.replaced.amanzi_branch_tag}}"
     - name: Get TPLs version
       id: version 
       working-directory: Docker
