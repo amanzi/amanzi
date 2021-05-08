@@ -22,6 +22,7 @@ jobs:
         echo "Amanzi Branch = ${{steps.branch.outputs.AMANZI_BRANCH}}"
     - name: Get TPLs version
       id: version 
+      working-directory: Docker
       run:
         echo "::set-output name=AMANZI_TPLS_VER::$(./get_tpls_version.sh)"
     - name: Output the TPLs version
