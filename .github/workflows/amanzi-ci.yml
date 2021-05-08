@@ -16,8 +16,16 @@ jobs:
     - name: Output the branch name
       run:
         echo "Branch or Tag reference = ${{steps.branch.outputs.AMANZI_BRANCH}}"
-        amanzi_branch_tag="${steps.branch.outputs.AMANZI_BRANCH//\//-}"
-        echo "::set-env name=amanzi_branch_tag::$amanzi_branch_tag"
+    - name: Filter the branch name
+      id: filter
+      uses: frabert/replace-string-action@v1.2
+      with:
+        pattern: '\/'
+        string: "${{steps.branch.outputs.AMANZI_BRANCH}}"
+        replace-with: '-'
+        replaced: amanzi_branch_tag
+      run:
+        echo "Filtered ${{steps.filter.replaced.amanzi_branch_tag}}"
     - name: Get TPLs version
       id: version 
       working-directory: Docker
