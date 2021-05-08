@@ -42,5 +42,10 @@ jobs:
       working-directory: Docker
       run:
         docker push ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{steps.tag.outputs.AMANZI_BRANCH_TAG}}-latest
+    - name: Run tests
+      id: tests
+      working-directory: Docker
+      run:      
+        docker run --rm ${{secrets.DOCKERHUB_USERNAME}}/amanzi:${{steps.tag.outputs.AMANZI_BRANCH_TAG}}-latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest"
 
 
