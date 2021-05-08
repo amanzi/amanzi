@@ -15,6 +15,7 @@
 
 #include "ChemistryUtilities.hh"
 #include "MatrixBlock.hh"
+#include "ReactionString.hh"
 #include "SurfaceComplex.hh"
 
 namespace Amanzi {
@@ -31,8 +32,7 @@ SurfaceComplex::SurfaceComplex()
 }
 
 
-SurfaceComplex::SurfaceComplex(const std::string& name,
-                               const int id,
+SurfaceComplex::SurfaceComplex(const std::string& name, int id,
                                const std::vector<std::string>& species,
                                const std::vector<double>& stoichiometries,
                                const std::vector<int>& species_ids,
@@ -60,34 +60,30 @@ SurfaceComplex::SurfaceComplex(const std::string& name,
 }
 
 
-SurfaceComplex::SurfaceComplex(const std::string& name,
-                               const int id,
-                               const std::vector<std::string>& species,
-                               const std::vector<double>& stoichiometries,
-                               const std::vector<int>& species_ids,
-                               const double h2o_stoich,
-                               const std::string& free_site_name,
-                               const double free_site_stoich,
-                               const int free_site_id,
-                               const double charge,
-                               const double logK)
+SurfaceComplex::SurfaceComplex(const std::string& name, int id,
+                               const std::vector<Species>& primary_species,
+                               const std::vector<SurfaceSite>& surface_sites,
+                               const Teuchos::ParameterList& plist)
   : name_(name),
     identifier_(id),
-    charge_(charge),
-    species_names_(species),
-    stoichiometry_(stoichiometries),
-    species_ids_(species_ids),
     surface_concentration_(0.0),
-    free_site_name_(free_site_name),
-    free_site_stoichiometry_(free_site_stoich),
-    free_site_id_(free_site_id),
-    h2o_stoichiometry_(h2o_stoich),
-    lnK_(acu::log_to_ln(logK)),
-    lnQK_(0.0),
-    logK_(logK)
+    lnQK_(0.0)
 {
+  std::string reaction = plist.get<std::string>("reaction");
+  charge_ = plist.get<int>("charge");
+  logK_ = plist.get<double>("equilibrium constant");
+  lnK_ = acu::log_to_ln(logK_);
+
+  h2o_stoichiometry_ = 0.0;
+
+  ParseReaction(reaction,
+                primary_species, surface_sites,
+                &species_names_, &stoichiometry_, &species_ids_,
+                &free_site_name_, &free_site_stoichiometry_, &free_site_id_,
+                &h2o_stoichiometry_);
+
   logK_array_.clear();
-  set_ncomp(stoichiometries.size());
+  set_ncomp(stoichiometry_.size());
 }
 
 

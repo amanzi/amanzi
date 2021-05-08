@@ -18,6 +18,7 @@
 
 // TPLs
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 // Amanzi
 #include "VerboseObject.hh"

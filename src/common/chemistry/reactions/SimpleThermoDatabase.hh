@@ -13,6 +13,8 @@
 #include <vector>
 #include <string>
 
+#include "Teuchos_ParameterList.hpp"
+
 #include "Beaker.hh"
 #include "Species.hh"
 
@@ -27,16 +29,6 @@ class SimpleThermoDatabase : public Beaker {
 
   virtual void Initialize(const BeakerState& state,
                           const BeakerParameters& parameters);
-
- private:
-  void ParseReaction_(const std::string& reaction,
-                      std::vector<std::string>* primary_name,
-                      std::vector<double>* primary_stoichiometry,
-                      std::vector<int>* primary_id,
-                      std::string* surface_name,
-                      double* surface_stoichiometry,
-                      int* surface_id,
-                      double* h2o_stoich);
 
  private:
   Teuchos::RCP<Teuchos::ParameterList> plist_;

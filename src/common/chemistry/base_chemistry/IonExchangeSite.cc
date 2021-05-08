@@ -16,6 +16,7 @@
 #include <sstream>
 #include <iomanip>
 
+#include "Teuchos_ParameterList.hpp"
 #include "VerboseObject.hh"
 
 #include "IonExchangeSite.hh"

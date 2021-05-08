@@ -27,9 +27,8 @@ class Block;
 class SurfaceSite {
  public:
   SurfaceSite();
-  SurfaceSite(const std::string& name,
-              int id,
-              double molar_density);
+  SurfaceSite(const std::string& name, int id,
+              const Teuchos::ParameterList& plist);
   ~SurfaceSite() {};
 
   // adds a pointer to mineral list

@@ -15,6 +15,7 @@
 #include <iostream>
 #include <iomanip>
 
+#include "Teuchos_ParameterList.hpp"
 #include "VerboseObject.hh"
 
 #include "SurfaceSite.hh"
@@ -33,18 +34,18 @@ SurfaceSite::SurfaceSite()
   // minerals_.clear();
 }
 
-SurfaceSite::SurfaceSite(const std::string& name,
-                         int id,
-                         double molar_density)
+SurfaceSite::SurfaceSite(const std::string& name, int id,
+                         const Teuchos::ParameterList& plist)
   : name_(name),
     identifier_(id),
-    charge_(0.),
-    molar_density_(molar_density),
-    molar_surface_density_(0.),
-    // initialize to 10% of molar_density
-    free_site_concentration_(0.1 * molar_density),
-    ln_free_site_concentration_(std::log(0.1 * molar_density)) {
-  // minerals_.clear();
+    charge_(0.0),
+    molar_surface_density_(0.0)
+{
+  molar_density_ = plist.get<double>("density");
+
+  // initialize to 10% of molar_density
+  free_site_concentration_ = 0.1 * molar_density_;
+  ln_free_site_concentration_ = std::log(0.1 * molar_density_);
 }
 
 

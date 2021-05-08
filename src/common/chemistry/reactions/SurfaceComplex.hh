@@ -15,6 +15,8 @@
 #include <string>
 #include <vector>
 
+#include "Teuchos_ParameterList.hpp"
+
 #include "Species.hh"
 #include "SurfaceSite.hh"
 
@@ -27,8 +29,7 @@ class MatrixBlock;
 class SurfaceComplex {
  public:
   SurfaceComplex();
-  SurfaceComplex(const std::string& name,
-                 const int id,
+  SurfaceComplex(const std::string& name, int id,
                  const std::vector<std::string>& species,
                  const std::vector<double>& stoichiometries,
                  const std::vector<int>& species_ids,
@@ -37,17 +38,10 @@ class SurfaceComplex {
                  const double charge,
                  const double logK);
 
-  SurfaceComplex(const std::string& name,
-                 const int id,
-                 const std::vector<std::string>& species,
-                 const std::vector<double>& stoichiometries,
-                 const std::vector<int>& species_ids,
-                 const double h2o_stoich,
-                 const std::string& free_site_name,
-                 const double free_site_stoichiometry,
-                 int free_site_id,
-                 const double charge,
-                 const double logK);
+  SurfaceComplex(const std::string& name, int id,
+                 const std::vector<Species>& primary_species,
+                 const std::vector<SurfaceSite>& surface_sites,
+                 const Teuchos::ParameterList& plist);
   ~SurfaceComplex() {};
 
   // update molalities
@@ -75,6 +69,7 @@ class SurfaceComplex {
   int identifier() const { return identifier_; }
   double charge() const { return charge_; }
 
+  int free_site_id() const { return free_site_id_; }
   double free_site_stoichiometry() const { return free_site_stoichiometry_; }
   double stoichiometry(int i) const { return stoichiometry_[i]; }
   double lnQK() const { return lnQK_; };
@@ -90,15 +85,18 @@ class SurfaceComplex {
 
   double surface_concentration_;  // units? ?[mol/m^3 bulk]?
 
-  int ncomp_;  // # components in reaction
+  int ncomp_;  // numebr components in reaction
   std::vector<std::string> species_names_;
   std::vector<int> species_ids_;  // ids of primary species in rxn
   std::vector<double> stoichiometry_;  // stoich of primary species in rxn
+
   std::string free_site_name_;
   double free_site_stoichiometry_;  // stoichiometry of free site in rxn
   int free_site_id_;
+
+  double h2o_stoichiometry_;
+
   std::vector<double> logK_array_;  // for temperature dep. logK
-  double h2o_stoichiometry_;  // stoichiometry of water in equation
   double lnK_;  // log value of equlibrium constant
   double lnQK_;  // store lnQK for derivatives later
   double logK_;

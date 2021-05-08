@@ -177,10 +177,8 @@ void SimpleThermoDatabase::Initialize(const BeakerState& state,
     if (sslist.isSublist(name)) {
       const auto& tmp = sslist.sublist(name);
 
-      double density = tmp.get<double>("density");
-
-      SurfaceSite site(name, id, density);
-      surface_sites_.push_back(site);  // local storage to make parsing reactions easier...
+      SurfaceSite site(name, id, tmp);
+      surface_sites_.push_back(site);  // local storage to make parsing reactions easier
 
       SurfaceComplexationRxn rxn(site);
       surface_complexation_reactions_.push_back(rxn);
@@ -196,30 +194,8 @@ void SimpleThermoDatabase::Initialize(const BeakerState& state,
     if (sclist.isSublist(name)) {
       const auto& tmp = sclist.sublist(name);
 
-      std::string reaction = tmp.get<std::string>("reaction");
-      double lnKeq = tmp.get<double>("equilibrium constant");
-      double charge = tmp.get<int>("charge");
-
-      std::vector<std::string> primary_name;
-      std::vector<double> primary_stoichiometry;
-      std::vector<int> primary_id;
-      std::string surface_site_name;
-      double surface_site_stoichiometry, h2o_stoich(0.0);
-      int surface_site_id;
-
-      ParseReaction_(reaction,
-                     &primary_name, &primary_stoichiometry, &primary_id,
-                     &surface_site_name, &surface_site_stoichiometry, &surface_site_id,
-                     &h2o_stoich);
-
-      SurfaceComplex surf_complex(name, id,
-                                  primary_name, primary_stoichiometry, primary_id,
-                                  h2o_stoich,
-                                  surface_site_name, surface_site_stoichiometry, surface_site_id,
-                                  charge,
-                                  lnKeq);
-
-      surface_complexation_reactions_[surface_site_id].AddSurfaceComplex(surf_complex);
+      SurfaceComplex surf_complex(name, id, primary_species(), surface_sites_, tmp);
+      surface_complexation_reactions_[surf_complex.free_site_id()].AddSurfaceComplex(surf_complex);
     }
   }
 
@@ -300,72 +276,6 @@ void SimpleThermoDatabase::Initialize(const BeakerState& state,
 
   // this will allocate internal memory
   Beaker::Initialize(state, parameters);
-}
-
-
-/* *******************************************************************
-* Parse surface complex reaction, reaction products are an array of
-* primary species and a single surface site. The order of
-* primary species and surface sites does not matter.
-*
-*  SpeciesName = coeff PrimaryName coeff SurfaceSite ...
-******************************************************************* */
-void SimpleThermoDatabase::ParseReaction_(const std::string& reaction,
-                                          std::vector<std::string>* primaries,
-                                          std::vector<double>* primary_stoichiometries,
-                                          std::vector<int>* primary_ids,
-                                          std::string* surface_site_name,
-                                          double* surface_site_stoichiometry,
-                                          int* surface_site_id,
-                                          double* h2o_stoich)
-{
-  double coeff;
-  std::string search_name;
-  std::vector<Species> primary_species = this->primary_species();
-
-  std::istringstream iss(reaction);
-  while (iss >> coeff || !iss.eof()) {
-    iss >> search_name;
-
-    if (search_name == "H2O") {
-      *h2o_stoich = coeff;
-    } else {
-      // check to see if we have a primary species
-      int id = -1;
-      for (auto it = primary_species.begin(); it != primary_species.end(); ++it) {
-        if (it->name() == search_name) {
-          id = it->identifier();
-          break;
-        }
-      }
-
-      if (id >= 0) {
-        primaries->push_back(search_name);
-        primary_stoichiometries->push_back(coeff);
-        primary_ids->push_back(id);
-
-      } else if (id < 0) {
-        // did not match a primary. check to see if it is an surface site
-        for (auto it = surface_sites_.begin(); it != surface_sites_.end(); ++it) {
-          if (it->name() == search_name) {
-            id = it->identifier();
-            break;
-          }
-        }
-
-        if (id >= 0) {
-          *surface_site_name = search_name;
-          *surface_site_stoichiometry = coeff;
-          *surface_site_id = id;
-        }
-
-      } else {
-        // did not match an surface site or primary species
-        std::cout << "Reaction species \'" << search_name << "\' was not found in the primary"
-                  << " species list or the surface site list.\n";
-      }
-    }
-  }
 }
 
 }  // namespace AmanziChemistry

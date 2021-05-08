@@ -36,20 +36,21 @@ SUITE(GeochemistryTestsSurfaceSite) {
   };  // end class SurfaceSiteTest
 
   SurfaceSiteTest::SurfaceSiteTest()
-      : id_(5),
+    : id_(5),
       name_(">FeOH"),
-      molar_density_(1.23456),
-      site_(name_, id_, molar_density_) {
+      molar_density_(1.23456)
+  {
+    Teuchos::ParameterList plist;
+    plist.set<double>("density", molar_density_);
+    site_ = ac::SurfaceSite(name_, id_, plist);
   }
 
   SurfaceSiteTest::~SurfaceSiteTest() {
   }
 
   /*****************************************************************************
-   **
-   **  Setup test problems
-   **
-   *****************************************************************************/
+  *  Setup test problems
+  *****************************************************************************/
   //
   // create a SurfaceSite object by specifing parameters to the
   // constructor, the primary use of the object. check that the
