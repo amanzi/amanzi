@@ -13,9 +13,6 @@ jobs:
       id: branch
       working-directory: Docker
       run: echo "::set-output name=AMANZI_BRANCH::$(echo $GITHUB_REF | sed -e 's/refs\/heads\///')"
-    - name: Output the branch name
-      run:
-        echo "Branch or Tag reference = ${{steps.branch.outputs.AMANZI_BRANCH}}"
     - name: Filter the branch name
       id: filter
       uses: frabert/replace-string-action@v1.2
@@ -23,7 +20,10 @@ jobs:
         pattern: '\/'
         string: "${{steps.branch.outputs.AMANZI_BRANCH}}"
         replace-with: '-'
-        replaced: amanzi_branch_tag
+    - name: Output the branch name
+      run:
+        echo "Branch or Tag reference = ${{steps.branch.outputs.AMANZI_BRANCH}}"
+        echo "   - filtered reference = ${{steps.filter.outputs.replaced}}"
     - name: Get TPLs version
       id: version 
       working-directory: Docker
