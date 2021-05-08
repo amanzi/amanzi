@@ -12,7 +12,13 @@ jobs:
     - name: Extract the branch name
       id: branch
       working-directory: Docker
-      run: echo "::set-output name=AMANZI_BRANCH::$(echo $GITHUB_REF | sed -e 's/refs\/heads\///')"
+      run:
+        echo "::set-output name=AMANZI_BRANCH::$(echo $GITHUB_REF | sed -e 's/refs\/heads\///')"
+    - name: Filter2 the branch name
+      id: filter2
+      working-directory: Docker
+      run:
+        echo "::set-output name=AMANZI_BRANCH_F::$(echo ${{steps.branch.outputs.AMANZI_BRANCH}} | 's/\//-/g')"
     - name: Filter the branch name
       id: filter
       uses: frabert/replace-string-action@v1.2
@@ -23,13 +29,14 @@ jobs:
     - name: Output the branch name
       run:
         echo "Branch or Tag reference = ${{steps.branch.outputs.AMANZI_BRANCH}}"
-        echo "   - filtered reference = ${{steps.filter.outputs.replaced}}"
     - name: Get TPLs version
       id: version 
       working-directory: Docker
-      run: echo "::set-output name=AMANZI_TPLS_VER::$(./get_tpls_version.sh)"
+      run:
+        echo "::set-output name=AMANZI_TPLS_VER::$(./get_tpls_version.sh)"
     - name: Output the TPLs version
-      run: echo "TPLs version = ${{steps.version.outputs.AMANZI_TPLS_VER}}"
+      run:
+        echo "TPLs version = ${{steps.version.outputs.AMANZI_TPLS_VER}}"
     - name: Login to Docker Hub
       uses: docker/login-action@v1
       with:
@@ -38,9 +45,11 @@ jobs:
     - name: Docker build
       id: docker
       working-directory: Docker
-      run: docker build --build-arg amanzi_branch=${{steps.branch.outputs.AMANZI_BRANCH}} --build-arg amanzi_tpls_ver=${{steps.version.outputs.AMANZI_TPLS_VER}} -t metsi/amanzi:$amanzi_branch_tag-latest -f Dockerfile-Amanzi-build .
+      run:
+        docker build --build-arg amanzi_branch=${{steps.branch.outputs.AMANZI_BRANCH}} --build-arg amanzi_tpls_ver=${{steps.version.outputs.AMANZI_TPLS_VER}} -t metsi/amanzi:${{steps.filter2.output.AMANZI_BRANCH_F}}-latest -f Dockerfile-Amanzi-build .
     - name: Docker push
       working-directory: Docker
-      run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/amanzi:${{steps.branch.outputs.AMANZI_BRANCH}}-latest
+      run:
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/amanzi:${{steps.filter.outputs.replaced}}-latest
 
 
