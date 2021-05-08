@@ -46,7 +46,7 @@ jobs:
       id: docker
       working-directory: Docker
       run:
-        docker build --build-arg amanzi_branch=${{steps.branch.outputs.AMANZI_BRANCH}} --build-arg amanzi_tpls_ver=${{steps.version.outputs.AMANZI_TPLS_VER}} -t metsi/amanzi:${{steps.filter2.output.AMANZI_BRANCH_F}}-latest -f Dockerfile-Amanzi-build .
+        docker build --build-arg amanzi_branch=${{steps.branch.outputs.AMANZI_BRANCH}} --build-arg amanzi_tpls_ver=${{steps.version.outputs.AMANZI_TPLS_VER}} -t metsi/amanzi:${{steps.filter2.outputs.AMANZI_BRANCH_F}}-latest -f Dockerfile-Amanzi-build .
     - name: Docker push
       working-directory: Docker
       run:
