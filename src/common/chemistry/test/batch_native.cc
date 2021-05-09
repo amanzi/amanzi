@@ -26,43 +26,27 @@
 #include "SimpleThermoDatabase.hh"
 
 namespace ac = Amanzi::AmanziChemistry;
-int BUFFER_SIZE = 100000;
 
 int CompareFiles(const std::string& file1, const std::string& file2)
 {
-  std::ifstream ifs1(file1.c_str(), std::ios::in | std::ios::binary);
-  std::ifstream ifs2(file2.c_str(), std::ios::in | std::ios::binary);
+  std::ifstream ifs1(file1.c_str(), std::ios::in);
+  std::ifstream ifs2(file2.c_str(), std::ios::in);
   if(!ifs1.good() || !ifs2.good()) return 1;
 
-  char *buffer1 = new char[BUFFER_SIZE + 1];
-  char *buffer2 = new char[BUFFER_SIZE + 1];
-
   do {
-    ifs1.read(buffer1, BUFFER_SIZE);
-    ifs2.read(buffer2, BUFFER_SIZE);
-    std::streamsize count1 = ifs1.gcount();
-    std::streamsize count2 = ifs2.gcount();
-    if (count1 != count2) return 2;
+    std::string word1, word2;
+    ifs1 >> word1;
+    ifs2 >> word2;
+    if (ifs1.fail() || ifs2.fail()) break;
+    if (ifs1.eof() || ifs2.eof()) break;
 
-    std::istringstream iss1(buffer1);
-    std::istringstream iss2(buffer2);
-    do {
-      std::string word1, word2;
-      iss1 >> word1;
-      iss2 >> word2;
-      if (iss1.eof() || iss2.eof()) break;
-
-      // first check that the words match
-      if (std::memcmp(word1.c_str(), word2.c_str(), word1.size()) != 0) {
-        double val1 = std::atof(word1.c_str());
-        double val2 = std::atof(word2.c_str());
-        if (std::fabs(val1 - val2) > 1e-12 * std::max(1.0, std::fabs(val1))) return 3;
-      }
-    } while(true);
-  } while (ifs1.good() || ifs2.good());
-
-  delete [] buffer1;
-  delete [] buffer2;
+    // first check that the words match
+    if (std::memcmp(word1.c_str(), word2.c_str(), word1.size()) != 0) {
+      double val1 = std::atof(word1.c_str());
+      double val2 = std::atof(word2.c_str());
+      if (std::fabs(val1 - val2) > 1e-12 * std::max(1.0, std::fabs(val1))) return 3;
+    }
+  } while(true);
 
   return 0;
 }
