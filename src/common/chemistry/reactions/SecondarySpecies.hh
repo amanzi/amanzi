@@ -35,13 +35,17 @@ class SecondarySpecies : public Species {
 
   // update molalities
   virtual void Update(const std::vector<Species>& primary_species, const Species& water_species) = 0;
-  // add stoichiometric contribution of complex to totalmembermember
+
+  // update temperature dependent quantities
+  void UpdateTemperatureDependentCoefs(double T);
+
+  // add stoichiometric contribution of complex to total
   virtual void AddContributionToTotal(std::vector<double> *total) = 0;
+
   // add derivative of total with respect to free-ion to dtotal
   virtual void AddContributionToDTotal(const std::vector<Species>& primary_species, MatrixBlock* dtotal) = 0;
 
   int ncomp() const { return ncomp_; };
-
   double logK() const { return logK_; };
   double lnK() const { return lnK_; };
   double lnQK() const { return lnQK_; };

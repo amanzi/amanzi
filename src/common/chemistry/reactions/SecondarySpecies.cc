@@ -26,6 +26,9 @@ namespace AmanziChemistry {
 
 namespace acu = Amanzi::AmanziChemistry::utilities;
 
+/* *******************************************************************
+* Trivial constructor
+******************************************************************* */
 SecondarySpecies::SecondarySpecies()
   : Species(),
     ncomp_(0),  // # components in reaction
@@ -40,6 +43,9 @@ SecondarySpecies::SecondarySpecies()
 }
 
 
+/* *******************************************************************
+* Actual contructor
+******************************************************************* */
 SecondarySpecies::SecondarySpecies(int id, const std::string& name,
                                    const Teuchos::ParameterList& plist,
                                    const std::vector<Species>& primary_species)
@@ -74,6 +80,17 @@ SecondarySpecies::SecondarySpecies(int id, const std::string& name,
     oss << "Invalid data for secondary species: ncomp = " << ncomp() << std::endl
         << ", species_names.size != stoichiometries.size != species_ids.size" << std::endl;
     Exceptions::amanzi_throw(Errors::Message(oss.str()));
+  }
+}
+
+
+/* *******************************************************************
+* Recalculates equilibrium constant
+******************************************************************* */
+void SecondarySpecies::UpdateTemperatureDependentCoefs(double T)
+{
+  if (func_.get() != nullptr) {
+    logK_ = (*func_)({T});
   }
 }
 

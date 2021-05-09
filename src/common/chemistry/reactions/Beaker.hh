@@ -122,7 +122,8 @@ class Beaker {
  private:
   void CheckChargeBalance_(const std::vector<double>& aqueous_totals) const;
 
-  void UpdateActivityCoefficients();
+  void UpdateTemperatureDependentCoefs_();
+  void UpdateActivityCoefficients_();
   void UpdateKineticMinerals();
   void InitializeMolalities_(double initial_molality);
   void InitializeMolalities_(const std::vector<double>& initial_molalities);
@@ -198,12 +199,14 @@ class Beaker {
   MatrixBlock dtotal_sorbed_;  // derivaties wrt free-ion [kg water/sec]
 
   // common parameters among reactions
+  double temperature_;  // constant for the Newton solver [K]
   double porosity_;  // [m^3 pore / m^3 bulk]
   double saturation_;  // [m^3 water / m^3 pore]
   double water_density_kg_m3_;  // [kg water / m^3 water]
   double water_density_kg_L_;  // [kg water / L water]
   double volume_;  // cell volume [m^3 bulk]
   double dt_; 
+
   // aqueous_accumulation_coef_ = porosity * saturation * volume * 1000 / dt [L water/sec]
   // units = (m^3 por/m^3 bulk)*(m^3 water/m^3 por)*
   //         (m^3 bulk)*(1000L water/m^3 water)/(sec) = (L water/sec)

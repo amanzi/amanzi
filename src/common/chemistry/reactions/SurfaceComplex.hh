@@ -17,6 +17,8 @@
 
 #include "Teuchos_ParameterList.hpp"
 
+#include "FunctionTabular.hh"
+
 #include "Species.hh"
 #include "SurfaceSite.hh"
 
@@ -36,14 +38,17 @@ class SurfaceComplex {
   ~SurfaceComplex() {};
 
   // update molalities
-  void Update(const std::vector<Species>& primarySpecies,
+  void Update(const std::vector<Species>& primary_species,
               const SurfaceSite& surface_site);
+
+  // update temperature dependent quantities
+  void UpdateTemperatureDependentCoefs(double T);
 
   // add stoichiometric contribution of complex to total
   void AddContributionToTotal(std::vector<double> *total);
+
   // add derivative of total with respect to free-ion to dtotal
-  void AddContributionToDTotal(const std::vector<Species>& primarySpecies,
-                               MatrixBlock* dtotal);
+  void AddContributionToDTotal(const std::vector<Species>& primarySpecies, MatrixBlock* dtotal);
 
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
@@ -80,6 +85,7 @@ class SurfaceComplex {
   double lnK_;  // log value of equlibrium constant
   double lnQK_;  // store lnQK for derivatives later
   double logK_;
+  Teuchos::RCP<FunctionTabular> func_;
 };
 
 }  // namespace AmanziChemistry

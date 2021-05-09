@@ -56,16 +56,18 @@ Mineral::Mineral(int id, const std::string& name,
 * zero if they go negative, introducing mass balance errors! Need
 * to adjust time step or reaction rate in the N-R solve!
 ******************************************************************* */
-void Mineral::UpdateVolumeFraction(double rate, double delta_time) {
+void Mineral::UpdateVolumeFraction(double rate, double dt)
+{
   // delta_vf = [m^3/mole] * [moles/m^3/sec] * [sec]
-  volume_fraction_ -= molar_volume_ * rate * delta_time;
+  volume_fraction_ -= molar_volume_ * rate * dt;
   if (volume_fraction_ < 0.0) {
     volume_fraction_ = 0.0;
   }
 }
 
 
-void Mineral::Update(const std::vector<Species>& primary_species, const Species& water_species) {
+void Mineral::Update(const std::vector<Species>& primary_species, const Species& water_species)
+{
   double lnQK = -lnK_;
   for (int i = 0; i < ncomp(); i++) {
     lnQK += stoichiometry_.at(i) * primary_species.at(species_ids_.at(i)).ln_activity();
@@ -85,7 +87,8 @@ void Mineral::AddContributionToDTotal(const std::vector<Species>& primary_specie
 {}
 
 
-void Mineral::Display(const Teuchos::Ptr<VerboseObject> vo) const {
+void Mineral::Display(const Teuchos::Ptr<VerboseObject> vo) const
+{
   std::stringstream message;
   message << "    " << name() << " = ";
   for (unsigned int i = 0; i < species_names_.size(); i++) {

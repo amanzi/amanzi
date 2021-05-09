@@ -106,13 +106,14 @@ int Beaker::EnforceConstraint(
   }
 
   CopyStateToBeaker(*state);
+  UpdateTemperatureDependentCoefs_();
 
   // initialize to a large number (not necessary, but safe)
   double max_residual, max_rel_change(1.0e+20), tolerance(1.0e-14);
   int max_rel_index, num_iterations(0);
 
   do {
-    UpdateActivityCoefficients();
+    UpdateActivityCoefficients_();
     UpdateEquilibriumChemistry();
     UpdateKineticChemistry();
     CalculateDTotal();

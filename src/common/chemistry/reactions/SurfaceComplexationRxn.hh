@@ -38,17 +38,14 @@ class SurfaceComplexationRxn {
 
   // add complexes to the reaction
   void AddSurfaceComplex(SurfaceComplex surface_complex);
+
   void UpdateSiteDensity(double d);
   double GetSiteDensity() const { return surface_site_.at(0).molar_density(); }
-  int SiteId() const { return surface_site_.at(0).identifier(); }
 
-  double free_site_concentration() const {
-    return surface_site_.at(0).free_site_concentration();
-  }
-
-  void set_free_site_concentration(const double value) {
-    surface_site_.at(0).set_free_site_concentration(value);
-  }
+  // access
+  SurfaceComplex get_surface_complex() { return surface_complexes_.at(0); }
+  double free_site_concentration() const { return surface_site_.at(0).free_site_concentration(); }
+  void set_free_site_concentration(double value) { surface_site_.at(0).set_free_site_concentration(value); }
 
   // update sorbed concentrations
   void Update(const std::vector<Species>& primarySpecies);
@@ -58,6 +55,7 @@ class SurfaceComplexationRxn {
   // add derivative of total with respect to free-ion to sorbed dtotal
   void AddContributionToDTotal(const std::vector<Species>& primarySpecies,
                                MatrixBlock* dtotal);
+
   // If the free site stoichiometry in any of the surface complexes
   // is not equal to 1., we must use Newton's method to solve for
   // the free site concentration.  This function determines if this

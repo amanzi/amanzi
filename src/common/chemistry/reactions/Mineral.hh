@@ -62,7 +62,7 @@ class Mineral : public SecondarySpecies {
   double volume_fraction() const { return volume_fraction_; }
   void set_volume_fraction(double d) { volume_fraction_ = d; }
 
-  void UpdateVolumeFraction(double rate, double delta_time);
+  void UpdateVolumeFraction(double rate, double dt);
 
  private:
   double molar_volume_;  // [m^3 / moles]

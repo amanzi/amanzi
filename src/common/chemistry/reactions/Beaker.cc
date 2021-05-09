@@ -139,7 +139,7 @@ int Beaker::Speciate(BeakerState* state)
   bool calculate_activity_coefs = false;
 
   do {
-    UpdateActivityCoefficients();
+    UpdateActivityCoefficients_();
     UpdateEquilibriumChemistry();
     CalculateDTotal();
 
@@ -215,7 +215,9 @@ int Beaker::ReactionStep(BeakerState* state,
   ResetStatus();
   set_dt(dt);
   CheckChargeBalance_(state->total);
+
   CopyStateToBeaker(*state);
+  UpdateTemperatureDependentCoefs_();
 
   // store current molalities
   for (int i = 0; i < ncomp_; i++) {
@@ -230,7 +232,7 @@ int Beaker::ReactionStep(BeakerState* state,
   // set_use_log_formulation(false);
 
   // lagging activity coefficients by a time step in this case
-  // UpdateActivityCoefficients();
+  // UpdateActivityCoefficients_();
 
   // calculate portion of residual at time level t
   CalculateFixedAccumulation(state->total, state->total_sorbed,
@@ -238,7 +240,7 @@ int Beaker::ReactionStep(BeakerState* state,
 
   do {
     // update equilibrium and kinetic chemistry (rates, ion activity, etc.)
-    // if (parameters.update_activity_newton) UpdateActivityCoefficients();
+    // if (parameters.update_activity_newton) UpdateActivityCoefficients_();
     UpdateEquilibriumChemistry();
     UpdateKineticChemistry();
 
@@ -305,7 +307,7 @@ int Beaker::ReactionStep(BeakerState* state,
   // results and I need to look more closely at what is going on.
 
   // lagging activity coefficients by a time step
-  UpdateActivityCoefficients();
+  UpdateActivityCoefficients_();
 
   CopyBeakerToState(state);
   ValidateSolution();
@@ -851,6 +853,7 @@ void Beaker::CopyStateToBeaker(const BeakerState& state)
     }
   }
 
+  temperature_ = state.temperature;
   porosity_ = state.porosity;
   water_density_kg_m3_ = state.water_density;
   water_density_kg_L_ = state.water_density / 1000.0;
@@ -941,7 +944,7 @@ void Beaker::ResetStatus() {
 /* ******************************************************************
 * Recalculate activity coefficients
 ****************************************************************** */
-void Beaker::UpdateActivityCoefficients()
+void Beaker::UpdateActivityCoefficients_()
 {
   activity_model_->CalculateIonicStrength(primary_species_, aq_complex_rxns_);
   activity_model_->CalculateActivityCoefficients(&primary_species_,
@@ -949,6 +952,25 @@ void Beaker::UpdateActivityCoefficients()
                                                  &water_);
   for (auto it = primary_species_.begin(); it != primary_species_.end(); ++it) {
     it->update();
+  }
+}
+
+
+/* ******************************************************************
+* Recalculate equilibrium constants
+****************************************************************** */
+void Beaker::UpdateTemperatureDependentCoefs_()
+{
+  for (auto it = aq_complex_rxns_.begin(); it != aq_complex_rxns_.end(); ++it) {
+    it->UpdateTemperatureDependentCoefs(temperature_);
+  }
+
+  for (auto it = minerals_.begin(); it != minerals_.end(); ++it) {
+    it->UpdateTemperatureDependentCoefs(temperature_);
+  }
+
+  for (auto it = surface_complexation_rxns_.begin(); it != surface_complexation_rxns_.end(); ++it) {
+    it->get_surface_complex().UpdateTemperatureDependentCoefs(temperature_);
   }
 }
 
@@ -1391,6 +1413,7 @@ void Beaker::DisplayParameters() const
 
   message << "    activity model: " << activity_model_->name() << std::endl;
 
+  message << "    temperature: " << temperature_ << " [K]" << std::endl;
   message << "    porosity: " << porosity_ << " [-]" << std::endl;
   message << "    water saturation: " << saturation_ << " [-]" << std::endl;
   message << "    water density: " << water_density_kg_m3_ << " [kg m^-3]" << std::endl;

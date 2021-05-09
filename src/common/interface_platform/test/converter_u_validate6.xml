@@ -657,7 +657,7 @@
       <Parameter name="domain name" type="string" value="domain"/>
       <Parameter name="chemistry model" type="string" value="Amanzi"/>
       <ParameterList name="thermodynamic database">
-        <Parameter name="file" type="string" value=""/>
+        <Parameter name="file" type="string" value="tritium.bgd"/>
       </ParameterList>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="100"/>
@@ -682,7 +682,7 @@
       <Parameter name="domain name" type="string" value="fracture"/>
       <Parameter name="chemistry model" type="string" value="Amanzi"/>
       <ParameterList name="thermodynamic database">
-        <Parameter name="file" type="string" value=""/>
+        <Parameter name="file" type="string" value="tritium.bgd"/>
       </ParameterList>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="100"/>

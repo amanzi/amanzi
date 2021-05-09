@@ -34,7 +34,17 @@ SurfaceComplex::SurfaceComplex(const std::string& name, int id,
 {
   std::string reaction = plist.get<std::string>("reaction");
   charge_ = plist.get<int>("charge");
-  logK_ = plist.get<double>("equilibrium constant");
+
+  if (plist.isSublist("equilibrium constant")) {
+    auto x = plist.sublist("equilibrium constant").get<Teuchos::Array<double> >("T").toVector();
+    auto y = plist.sublist("equilibrium constant").get<Teuchos::Array<double> >("Keq").toVector();
+    func_ = Teuchos::rcp(new FunctionTabular(x, y, 0));
+
+    double T = plist.get<double>("temperature");
+    logK_ = (*func_)({T});
+  } else {
+    logK_ = plist.get<double>("equilibrium constant");
+  }
   lnK_ = acu::log_to_ln(logK_);
 
   h2o_stoichiometry_ = 0.0;
@@ -49,19 +59,33 @@ SurfaceComplex::SurfaceComplex(const std::string& name, int id,
 }
 
 
-void SurfaceComplex::Update(const std::vector<Species>& primarySpecies,
+/* *******************************************************************
+* Recalculates equilibrium constant
+******************************************************************* */
+void SurfaceComplex::UpdateTemperatureDependentCoefs(double T)
+{
+  if (func_.get() != nullptr) {
+    logK_ = (*func_)({T});
+  }
+}
+
+
+/* *******************************************************************
+* Recalculate internal data
+******************************************************************* */
+void SurfaceComplex::Update(const std::vector<Species>& primary_species,
                             const SurfaceSite& surface_site)
 {
-  double lnQK_temp = -lnK_;
+  double lnQK_tmp = -lnK_;
 
   // Need to consider activity of water
 
-  lnQK_temp += free_site_stoichiometry() * surface_site.ln_free_site_concentration();
+  lnQK_tmp += free_site_stoichiometry() * surface_site.ln_free_site_concentration();
 
   for (int i = 0; i < ncomp_; i++) {
-    lnQK_temp += stoichiometry_[i] * primarySpecies[species_ids_[i]].ln_activity();
+    lnQK_tmp += stoichiometry_[i] * primary_species[species_ids_[i]].ln_activity();
   }
-  lnQK_ = lnQK_temp;
+  lnQK_ = lnQK_tmp;
   surface_concentration_ = std::exp(lnQK_);
 }
 
@@ -75,7 +99,7 @@ void SurfaceComplex::AddContributionToTotal(std::vector<double> *total)
 
 
 void SurfaceComplex::AddContributionToDTotal(
-    const std::vector<Species>& primarySpecies,
+    const std::vector<Species>& primary_species,
     MatrixBlock* dtotal) {
 }
 
