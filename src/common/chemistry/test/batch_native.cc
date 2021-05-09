@@ -104,6 +104,10 @@ void RunBatchNative(const std::string& filexml,
   parameters.max_iterations = 250;
   parameters.update_activity_newton = false;
   parameters.activity_model_name = activity_model;
+  if (activity_model == "pitzer-hwm") {
+    parameters.pitzer_database = "test/chemistry_pitzer";
+    parameters.pitzer_jfunction = "pitzer1975";
+  }
 
   state.porosity = porosity;
   state.saturation = saturation;
@@ -339,6 +343,22 @@ TEST(NATIVE_FAREA17_DEBYE_HUCKEL_CONSTANT_FREE_ION) {
                  2592000.0, 12);  // porosity, saturation, cell volume
 }
 
+TEST(NATIVE_FAREA17_PITZEL) {
+  std::vector<double> ict = { 1.3132E-04, 1.0000E-05, 1.0000E-12, 1.0000E-06,
+                              1.0000E-12, 1.0716E-05, 1.0000E-05, 1.0000E-05,
+                              6.0081E-05, 1.0000E-05, 1.0000E-06, 1.0000E-06,
+                              7.8954E-05, 1.0000E-05, 1.0000E-15, 2.5277E-04, 1.0000E-15 };
+  std::vector<double> icm = { 0.0, 0.21, 0.15,
+                              0.0, 0.1,  0.15,
+                              0.0, 0.0,  0.0,
+                              0.0, 0.0};
+  std::vector<double> icie, icfi;
+  RunBatchNative("test/native/fbasin-17.xml",
+                 "test/native/fbasin-17-pitzel-hwm.test",
+                 "pitzer-hwm",
+                 ict, icm, icie, icfi,  // initial conditions
+                 0.5, 1.0, 1.0);  // porosity, saturation, cell volume
+}
 
 TEST(NATIVE_GENERAL_KINETICS) {
   std::vector<double> ict = { 1.0e-4, 2.0e-5 };

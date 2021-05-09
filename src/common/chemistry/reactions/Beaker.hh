@@ -104,7 +104,7 @@ class Beaker {
   // resizes matrix and vectors for nonlinear system
   void ResizeInternalMemory();
 
-  void SetupActivityModel(std::string model, std::string pitzer_database, std::string jfunction_pitzer);
+  void SetupActivityModel(std::string model, std::string pitzer_database, std::string pitzer_jfunction);
   void VerifyState(const BeakerState& state) const;
 
   void AddIonExchangeRxn(const IonExchangeRxn& ionx_rxn);

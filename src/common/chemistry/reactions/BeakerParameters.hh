@@ -36,7 +36,7 @@ struct BeakerParameters {
   // Name of the Pitzer virial coefficients database
   std::string pitzer_database;
   // Name of the approach for J's functions for the Pitzer model
-  std::string jfunction_pitzer;
+  std::string pitzer_jfunction;
 };
 
 }  // namespace AmanziChemistry

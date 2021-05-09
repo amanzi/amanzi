@@ -272,9 +272,17 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
 ******************************************************************* */
 void Amanzi_PK::XMLParameters()
 {
-  // thermo file name and format, then create the database!
+  // search for thermodynamic database
   if (cp_list_->isSublist("thermodynamic database")) {
-    Teuchos::RCP<Teuchos::ParameterList> tdb_list = Teuchos::sublist(glist_, "thermodynamic database", true);
+    Teuchos::RCP<Teuchos::ParameterList> tdb_list;
+    // -- search by the name
+    if (cp_list_->sublist("thermodynamic database").isParameter("file")) {
+      // check extension and read
+    }
+    // -- search as a sublist of the global list
+    if (tdb_list == Teuchos::null) {
+      tdb_list = Teuchos::sublist(glist_, "thermodynamic database", true);
+    }
 
     // currently we only support the simple format.
     chem_ = new SimpleThermoDatabase(tdb_list, vo_);

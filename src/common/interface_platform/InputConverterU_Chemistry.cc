@@ -61,7 +61,6 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& d
   if (engine ==  "amanzi") {
     out_list.set<std::string>("chemistry model", "Amanzi");
 
-    std::string bgdfilename;
     node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
 
     Teuchos::ParameterList& bgd_list = out_list.sublist("thermodynamic database");
@@ -354,7 +353,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& d
   double ion_value;
   bool ion_guess(false);
 
-  std::string activity_model("unit"), dt_method("fixed");
+  std::string activity_model("unit"), dt_method("fixed"), pitzer_database;
   std::vector<std::string> aux_data;
 
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_chemistry_controls", flag);
@@ -366,7 +365,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& d
 
       text = mm.transcode(inode->getNodeName());
       if (strcmp(text, "activity_model") == 0) {
-        activity_model = GetTextContentS_(inode, "unit, debye-huckel");
+        activity_model = GetTextContentS_(inode, "unit, debye-huckel, pitzer-hwm");
       } else if (strcmp(text, "maximum_newton_iterations") == 0) {
         max_itrs = strtol(mm.transcode(inode->getTextContent()), NULL, 10);
       } else if (strcmp(text, "tolerance") == 0) {
@@ -392,10 +391,14 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& d
       } else if (strcmp(text, "free_ion_guess") == 0) {
         ion_guess = true;
         ion_value = strtod(mm.transcode(inode->getTextContent()), NULL);
+      } else if (strcmp(text, "pitzer_database") == 0) {
+        pitzer_database = mm.transcode(inode->getTextContent());
       }
     }
   }
   out_list.set<std::string>("activity model", activity_model);
+  if (pitzer_database.size() > 0)
+    out_list.set<std::string>("Pitzer database file", pitzer_database);
   out_list.set<int>("maximum Newton iterations", max_itrs);
   out_list.set<double>("tolerance", tol);
   out_list.set<double>("max time step (s)", dt_max);

@@ -110,7 +110,7 @@ void Beaker::Initialize(const BeakerState& state,
   max_iterations_ = parameters.max_iterations;
 
   SetupActivityModel(parameters.activity_model_name,
-                     parameters.pitzer_database, parameters.jfunction_pitzer);
+                     parameters.pitzer_database, parameters.pitzer_jfunction);
 
   ResizeInternalMemory();
 }
@@ -871,11 +871,11 @@ void Beaker::CopyStateToBeaker(const BeakerState& state)
 ****************************************************************** */
 void Beaker::SetupActivityModel(std::string model,
                                 std::string pitzer_database,
-                                std::string jfunction_pitzer)
+                                std::string pitzer_jfunction)
 {
   ActivityModel::ActivityModelParameters parameters;
   parameters.database_filename = pitzer_database;
-  parameters.pitzer_jfunction = jfunction_pitzer;
+  parameters.pitzer_jfunction = pitzer_jfunction;
 
   ActivityModelFactory amf;
 
