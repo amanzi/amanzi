@@ -50,25 +50,28 @@ void SorptionIsothermLinear::SetParameters(const std::vector<double>& params) {
 }
 
 
-double SorptionIsothermLinear::Evaluate(const Species& primarySpecies) {
+double SorptionIsothermLinear::Evaluate(const Species& primary_species)
+{
   // Csorb = KD * activity
   // Units:
   // sorbed_concentration [mol/m^3 bulk] = KD [kg water/m^3 bulk] * 
   //   activity [mol/kg water]
-  return KD_ * primarySpecies.activity();
+  return KD_ * primary_species.activity();
 }
 
 
-double SorptionIsothermLinear::EvaluateDerivative(const Species& primarySpecies) {
+double SorptionIsothermLinear::EvaluateDerivative(const Species& primary_species)
+{
   // Csorb = KD * activity
   // dCsorb/dCaq = KD * activity_coef
   // Units:
   //  KD [kg water/m^3 bulk]
-  return KD_ * primarySpecies.act_coef();
+  return KD_ * primary_species.act_coef();
 }
 
 
-void SorptionIsothermLinear::Display(const Teuchos::Ptr<VerboseObject> vo) const {
+void SorptionIsothermLinear::Display(const Teuchos::Ptr<VerboseObject> vo) const
+{
   std::stringstream message;
   message << std::setw(5) << "KD:"
           << std::scientific << std::setprecision(5)

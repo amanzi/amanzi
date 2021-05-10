@@ -57,6 +57,9 @@ double ActivityModelDebyeHuckel::Evaluate(const Species& species)
 }
 
 
+/* ******************************************************************
+* 
+****************************************************************** */
 void ActivityModelDebyeHuckel::EvaluateVector(
     const std::vector<Species>& primary_species,
     const std::vector<AqueousEquilibriumComplex>& secondary_species,

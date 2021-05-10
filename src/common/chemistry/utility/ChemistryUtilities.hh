@@ -34,7 +34,8 @@ void PrintVector(const std::string& name,
                  const std::vector<T>& data,
                  const Teuchos::RCP<VerboseObject>& vo,
                  const int precision = -1,
-                 const bool comma_seperated = false) {
+                 const bool comma_seperated = false)
+{
   std::stringstream output;
   if (precision > 0) {
     output << std::setprecision(precision);

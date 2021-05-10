@@ -65,8 +65,8 @@ void SorptionIsothermLangmuir::SetParameters(const std::vector<double>& params) 
 * here. Looking at Langmuir (1997), would lead one to expect:
 * Csorb = K * b * activity / (1 + b * activity)
 ******************************************************************* */
-double SorptionIsothermLangmuir::Evaluate(const Species& primarySpecies) {
-  double K_activity = K_ * primarySpecies.activity();
+double SorptionIsothermLangmuir::Evaluate(const Species& primary_species) {
+  double K_activity = K_ * primary_species.activity();
   return K_activity * b_ / (1.0 + K_activity);
 }
 

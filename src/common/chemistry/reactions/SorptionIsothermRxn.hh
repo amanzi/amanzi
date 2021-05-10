@@ -46,7 +46,7 @@ class SorptionIsothermRxn {
 
   int species_id() const { return species_id_; }
 
-  void Update(const std::vector<Species>& primarySpecies);
+  void Update(const std::vector<Species>& primary_species);
 
   // add sorbed concentration to sorbed total
   void AddContributionToTotal(std::vector<double> *total);

@@ -48,12 +48,12 @@ class SurfaceComplexationRxn {
   void set_free_site_concentration(double value) { surface_site_.at(0).set_free_site_concentration(value); }
 
   // update sorbed concentrations
-  void Update(const std::vector<Species>& primarySpecies);
+  void Update(const std::vector<Species>& primary_species);
 
   // add stoichiometric contribution of complex to sorbed total
   void AddContributionToTotal(std::vector<double> *total);
   // add derivative of total with respect to free-ion to sorbed dtotal
-  void AddContributionToDTotal(const std::vector<Species>& primarySpecies,
+  void AddContributionToDTotal(const std::vector<Species>& primary_species,
                                MatrixBlock* dtotal);
 
   // If the free site stoichiometry in any of the surface complexes

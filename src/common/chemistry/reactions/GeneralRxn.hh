@@ -31,11 +31,11 @@ class GeneralRxn {
   ~GeneralRxn() {};
 
   // update forward and reverse effective reaction rates
-  void update_rates(const std::vector<Species> primarySpecies);
+  void update_rates(const std::vector<Species> primary_species);
   void AddContributionToResidual(std::vector<double> *residual,
                                  double por_den_sat_vol);
   void AddContributionToJacobian(MatrixBlock* J,
-                                 const std::vector<Species> primarySpecies,
+                                 const std::vector<Species> primary_species,
                                  double por_den_sat_vol);
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
 

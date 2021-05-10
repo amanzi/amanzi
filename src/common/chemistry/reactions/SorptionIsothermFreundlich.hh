@@ -26,8 +26,8 @@ class SorptionIsothermFreundlich : public SorptionIsotherm {
   ~SorptionIsothermFreundlich() {};
 
   // returns sorbed concentration
-  double Evaluate(const Species& primarySpecies);
-  double EvaluateDerivative(const Species& primarySpecies);
+  double Evaluate(const Species& primary_species);
+  double EvaluateDerivative(const Species& primary_species);
 
   // stters and getters
   const std::vector<double>& GetParameters();

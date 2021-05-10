@@ -52,14 +52,15 @@ void SorptionIsothermRxn::AddContributionToTotal(std::vector<double> *total) {
 
 
 void SorptionIsothermRxn::AddContributionToDTotal(
-    const std::vector<Species>& primarySpecies,
+    const std::vector<Species>& primary_species,
     MatrixBlock* dtotal) {
   dtotal->AddValue(species_id_,species_id_,
-                   isotherm_->EvaluateDerivative(primarySpecies.at(species_id_)));
+                   isotherm_->EvaluateDerivative(primary_species.at(species_id_)));
 }
 
 
-void SorptionIsothermRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const {
+void SorptionIsothermRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const
+{
   std::stringstream message;
   message << std::setw(12) << species_name_
           << std::setw(15) << isotherm_->name()

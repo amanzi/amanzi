@@ -87,7 +87,7 @@ GeneralRxn::GeneralRxn(const Teuchos::ParameterList& plist,
 
 
 // temporary location for member functions
-void GeneralRxn::update_rates(const std::vector<Species> primarySpecies)
+void GeneralRxn::update_rates(const std::vector<Species> primary_species)
 {
   // forward rate expression
   lnQkf_ = 0.0;
@@ -95,7 +95,7 @@ void GeneralRxn::update_rates(const std::vector<Species> primarySpecies)
     lnQkf_ = std::log(kf_);
     for (int i = 0; i < ncomp_forward_; i++) {
       lnQkf_ += forward_stoichiometry_[i] *
-          primarySpecies[ forward_species_ids_[i] ].ln_activity();
+          primary_species[ forward_species_ids_[i] ].ln_activity();
     }
   }
 
@@ -105,7 +105,7 @@ void GeneralRxn::update_rates(const std::vector<Species> primarySpecies)
     lnQkb_ = std::log(kb_);
     for (int i = 0; i < ncomp_backward_; i++) {
       lnQkb_ += backward_stoichiometry_[i] *
-          primarySpecies[ backward_species_ids_[i] ].ln_activity();
+          primary_species[ backward_species_ids_[i] ].ln_activity();
     }
   }
 }
@@ -134,7 +134,7 @@ void GeneralRxn::AddContributionToResidual(std::vector<double> *residual,
 
 void GeneralRxn::AddContributionToJacobian(
     MatrixBlock* J,
-    const std::vector<Species> primarySpecies,
+    const std::vector<Species> primary_species,
     double por_den_sat_vol)
 {
   // taking derivative of contribution to residual in row i with respect
@@ -146,7 +146,7 @@ void GeneralRxn::AddContributionToJacobian(
     for (int j = 0; j < ncomp_forward_; j++) {
       int jcomp = forward_species_ids_[j];
       double tempd = -forward_stoichiometry_[j] *
-          std::exp(lnQkf_ - primarySpecies[jcomp].ln_molality()) *
+          std::exp(lnQkf_ - primary_species[jcomp].ln_molality()) *
           por_den_sat_vol;
       // row loop
       for (int i = 0; i < ncomp_; i++) {
@@ -156,13 +156,12 @@ void GeneralRxn::AddContributionToJacobian(
   }
 
   // backward rate expression
-  if (kb_ > 0.) {
+  if (kb_ > 0.0) {
     // column loop
     for (int j = 0; j < ncomp_backward_; j++) {
       int jcomp = backward_species_ids_[j];
       double tempd = backward_stoichiometry_[j] *
-          std::exp(lnQkb_ - primarySpecies[jcomp].ln_molality()) *
-          por_den_sat_vol;
+          std::exp(lnQkb_ - primary_species[jcomp].ln_molality()) * por_den_sat_vol;
       // row loop
       for (int i = 0; i < ncomp_; i++) {
         J->AddValue(species_ids_[i], jcomp, stoichiometry_[i]*tempd);

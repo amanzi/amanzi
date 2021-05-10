@@ -44,7 +44,7 @@ void VirialCoefficient::UpdateVirial(const double& temp, const double& pressure)
     else if (i == 1) { virial += pol[i] * temp; }
     else if (i == 2) { virial += pol[i] / temp; }
     else if (i == 3) { virial += pol[i] * std::log10(temp); }
-    else if (i == 4) { virial += pol[i] / (temp*temp); }
+    else if (i == 4) { virial += pol[i] / (temp * temp); }
   }
 }
 

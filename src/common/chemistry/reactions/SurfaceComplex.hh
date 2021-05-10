@@ -48,7 +48,7 @@ class SurfaceComplex {
   void AddContributionToTotal(std::vector<double> *total);
 
   // add derivative of total with respect to free-ion to dtotal
-  void AddContributionToDTotal(const std::vector<Species>& primarySpecies, MatrixBlock* dtotal);
+  void AddContributionToDTotal(const std::vector<Species>& primary_species, MatrixBlock* dtotal);
 
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;

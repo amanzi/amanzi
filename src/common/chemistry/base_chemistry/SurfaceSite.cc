@@ -55,9 +55,9 @@ void SurfaceSite::AddMineral(Mineral* mineral) {
 }
 
 
-void SurfaceSite::UpdateSiteDensity(const double site_density) {
+void SurfaceSite::UpdateSiteDensity(double site_density) {
   // needs to change for minerals....
-  set_molar_density(site_density);
+  molar_density_  = site_density;
 } 
 
 

@@ -68,12 +68,8 @@ class Species {
   void ln_molality(double d) { ln_molality_ = d; }
   void ln_activity(double d) { ln_activity_ = d; }
 
-  double molality_;
-  double activity_;
-  double act_coef_;
-  double ln_molality_;
-  double ln_activity_;
-  double ln_act_coef_;
+  double molality_, activity_, act_coef_;
+  double ln_molality_, ln_activity_, ln_act_coef_;
 
  private:
   int identifier_;

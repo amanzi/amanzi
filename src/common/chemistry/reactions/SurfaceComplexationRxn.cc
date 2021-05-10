@@ -77,7 +77,7 @@ void SurfaceComplexationRxn::UpdateSiteDensity(double site_density) {
 }
 
 
-void SurfaceComplexationRxn::Update(const std::vector<Species>& primarySpecies)
+void SurfaceComplexationRxn::Update(const std::vector<Species>& primary_species)
 {
   // see pflotran source: surface_complexation.F90:694, subroutine RTotalSorbEqSurfCplx1
   const double site_density = (surface_site_[0]).SiteDensity();
@@ -95,7 +95,7 @@ void SurfaceComplexationRxn::Update(const std::vector<Species>& primarySpecies)
     // Update surface complex concentrations; Add to total
     double total = free_site_concentration;
     for (auto it = surface_complexes_.begin(); it != surface_complexes_.end(); ++it) {
-      it->Update(primarySpecies, (surface_site_[0]));
+      it->Update(primary_species, (surface_site_[0]));
       total += it->free_site_stoichiometry() * it->surface_concentration();
     }
 
@@ -149,7 +149,7 @@ void SurfaceComplexationRxn::AddContributionToTotal(std::vector<double> *total) 
 
 
 void SurfaceComplexationRxn::AddContributionToDTotal(
-    const std::vector<Species>& primarySpecies,
+    const std::vector<Species>& primary_species,
     MatrixBlock* dtotal) {
   // see pflotran source: surface_complexation.F90:773, subroutine RTotalSorbEqSurfCplx1
 
@@ -157,7 +157,7 @@ void SurfaceComplexationRxn::AddContributionToDTotal(
   // document by Peter Lichtner
 
   // Eq. 2.3-47c
-  unsigned int num_primary_species = primarySpecies.size();
+  unsigned int num_primary_species = primary_species.size();
   std::vector<double> nu_li_nu_i_Si(num_primary_species, 0.0);
 
   double sum_nu_i_sq_Si = 0.;
@@ -178,7 +178,7 @@ void SurfaceComplexationRxn::AddContributionToDTotal(
     nu_li_nu_i_Si.at(i) *= -1.0;
     nu_li_nu_i_Si.at(i) /= Sx_plus_sum_nu_i_sq_Si;
     // convert from dlogm to dm
-    nu_li_nu_i_Si.at(i) /= primarySpecies.at(i).molality();
+    nu_li_nu_i_Si.at(i) /= primary_species.at(i).molality();
   }
 
   for (auto srfcplx = surface_complexes_.begin();
@@ -191,7 +191,7 @@ void SurfaceComplexationRxn::AddContributionToDTotal(
       int primary_species_id_i = srfcplx->species_id(icomp);
       // 2.3-47c converted to non-log form
       double dSi_mi = (srfcplx->stoichiometry(icomp) * surface_concentration /
-                                primarySpecies.at(primary_species_id_i).molality()) +
+          primary_species.at(primary_species_id_i).molality()) +
           nu_li_nu_i_Si.at(icomp) * nui_Si_over_Sx;
       for (int jcomp = 0; jcomp < srfcplx->ncomp(); jcomp++) {
         // 2.3-48a converted to non-log form
