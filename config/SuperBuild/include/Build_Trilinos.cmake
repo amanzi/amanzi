@@ -151,7 +151,8 @@ list(APPEND Trilinos_CMAKE_TPL_ARGS
             "-DTPL_Netcdf_LIBRARIES:STRING=${NetCDF_C_LIBRARIES}")
 
 # HYPRE
-if (ENABLE_HYPRE)
+if ((NOT ENABLE_KOKKOS) AND (ENABLE_HYPRE))
+  message(STATUS "Enabling support for Hypre in Trilinos")
   list(APPEND Trilinos_CMAKE_TPL_ARGS
               "-DTPL_ENABLE_HYPRE:BOOL=ON"
               "-DTPL_HYPRE_LIBRARIES:STRING=${HYPRE_LIBRARIES}"
