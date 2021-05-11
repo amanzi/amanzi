@@ -40,11 +40,20 @@ void Soil_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   const Epetra_MultiVector& rho =
   *S_inter_->GetFieldData(density_key_)->ViewComponent("cell",false);
 
-  // Update the residual with the accumulation of energy over the
-  // timestep, on cells.
-  g->ViewComponent("cell", false)
-    ->Update(cp_*rho0/dt, *T1->ViewComponent("cell", false),
-          -cp_*rho0/dt, *T0->ViewComponent("cell", false), 1.0);
+  S_inter_->GetFieldEvaluator(heat_capacity_key_)->HasFieldChanged(S_inter_.ptr(), name_);
+
+  // evaluate heat capacity
+  const Epetra_MultiVector& cp =
+  *S_inter_->GetFieldData(heat_capacity_key_)->ViewComponent("cell",false);
+
+  double rho0 = 1200.;
+  double cp0 = 800./rho0;
+
+//  // Update the residual with the accumulation of energy over the
+//  // timestep, on cells.
+//  g->ViewComponent("cell", false)
+//    ->Update(cp0*rho0/dt, *T1->ViewComponent("cell", false),
+//          -cp0*rho0/dt, *T0->ViewComponent("cell", false), 1.0);
 
 
   const Epetra_MultiVector& T1_c = *S_next_->GetFieldData(temperature_key_)->ViewComponent("cell", false);
@@ -53,6 +62,15 @@ void Soil_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   const Epetra_MultiVector& g_c = *g->ViewComponent("cell", false);
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
+//   Update the residual with the accumulation of energy over the
+//   timestep, on cells.
+  for (int c = 0; c < ncells_owned; c++) {
+      g_c[0][c] += cp[0][c]*rho[0][c]/dt*(T1_c[0][c] - T0_c[0][c]);
+//      double rho0 = 1200.;
+//      double cp0 = 800./rho0;
+//      g_c[0][c] += cp0*rho0/dt*(T1_c[0][c] - T0_c[0][c]);
+  }
 
 };
 

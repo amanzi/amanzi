@@ -39,6 +39,8 @@ class SoilEnergyEvaluator : public SecondaryVariableFieldEvaluator {
 
   Key temperature_key_;
   Key pres_key_;
+  Key density_key_;
+  Key heat_capacity_key_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,SoilEnergyEvaluator> factory_;

@@ -28,6 +28,14 @@ SoilEnergyEvaluator::SoilEnergyEvaluator(Teuchos::ParameterList& plist) :
   temperature_key_ = Keys::readKey(plist_, domain_name, "temperature", "temperature");
   dependencies_.insert(temperature_key_);
 
+  // -- density
+  density_key_ = Keys::readKey(plist_, domain_name, "density", "density");
+  dependencies_.insert(density_key_);
+
+  // -- heat capacity
+  heat_capacity_key_ = Keys::readKey(plist_, domain_name, "heat capacity", "heat_capacity");
+  dependencies_.insert(heat_capacity_key_);
+
   // -- pressure
   pres_key_ = Keys::readKey(plist_, domain_name, "pressure", "pressure");
   dependencies_.insert(pres_key_);
@@ -36,7 +44,9 @@ SoilEnergyEvaluator::SoilEnergyEvaluator(Teuchos::ParameterList& plist) :
 
 SoilEnergyEvaluator::SoilEnergyEvaluator(const SoilEnergyEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
-    temperature_key_(other.temperature_key_) {};
+    temperature_key_(other.temperature_key_),
+    density_key_(other.density_key_),
+    heat_capacity_key_(other.heat_capacity_key_){};
 
 Teuchos::RCP<FieldEvaluator>
 SoilEnergyEvaluator::Clone() const {
@@ -49,7 +59,23 @@ void SoilEnergyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
 
   double rho0 = 1200.;
-  double cp = 800./rho0;
+  double cp0 = 800./rho0;
+
+  S->GetFieldEvaluator(density_key_)->HasFieldChanged(S.ptr(), "soil thermo");
+
+  std::cout << "before rho" << ", density_key_ = " << density_key_ << std::endl;
+  // evaluate density
+  const Epetra_MultiVector& rho =
+  *S->GetFieldData(density_key_)->ViewComponent("cell",false);
+  std::cout << "after rho" << std::endl;
+
+  S->GetFieldEvaluator(heat_capacity_key_)->HasFieldChanged(S.ptr(), "soil thermo");
+
+  std::cout << "before cp" << std::endl;
+  // evaluate heat capacity
+  const Epetra_MultiVector& cp =
+  *S->GetFieldData(heat_capacity_key_)->ViewComponent("cell",false);
+  std::cout << "after cp" << std::endl;
 
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {
@@ -59,7 +85,8 @@ void SoilEnergyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     int ncomp = result->size(*comp, false);
     for (int i=0; i!=ncomp; ++i) {
       double T = temp_v[0][i];
-      result_v[0][i] = rho0*cp*T;
+      result_v[0][i] = rho[0][i]*cp[0][i]*T;
+//      result_v[0][i] = rho0*cp0*T;
     }
   }
 };
@@ -74,7 +101,15 @@ void SoilEnergyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<Sta
     Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
 
     double rho0 = 1200.;
-    double cp = 4184./rho0;
+    double cp0 = 800./rho0;
+
+    // evaluate density
+    const Epetra_MultiVector& rho =
+    *S->GetFieldData(density_key_)->ViewComponent("cell",false);
+
+    // evaluate heat capacity
+    const Epetra_MultiVector& cp =
+    *S->GetFieldData(heat_capacity_key_)->ViewComponent("cell",false);
 
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
@@ -84,7 +119,8 @@ void SoilEnergyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<Sta
       int ncomp = result->size(*comp, false);
       for (int i=0; i!=ncomp; ++i) {
         double T = temp_v[0][i];
-        result_v[0][i] = rho0*cp;
+        result_v[0][i] = rho[0][i]*cp[0][i];
+//        result_v[0][i] = rho0*cp0;
       }
     }
   }

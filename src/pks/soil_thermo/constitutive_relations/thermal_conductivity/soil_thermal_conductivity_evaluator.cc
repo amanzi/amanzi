@@ -97,7 +97,7 @@ void SoilThermalConductivityEvaluator::EvaluateField_(
         double por = 0.;
 //        double wl = 0.;
         double wi = 0.;
-        double wl = wc_v[0][i];
+        double wl = wc_v[0][i] * 1.8e-5; // CONVERTED UNITS
 //        double wi = ic_v[0][i];
 
         double lambda_sat;

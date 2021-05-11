@@ -492,8 +492,8 @@ void Soil_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
 
   // read model parameters
 
-  rho0 = 1200.;
-  cp_ = 800./rho0; // ?????
+//  rho0 = 1200.;
+//  cp_ = 800./rho0; // ?????
 
   Teuchos::ParameterList& param_list = plist_->sublist("parameters");
 

@@ -29,9 +29,9 @@ SoilHeatCapacityEvaluator::SoilHeatCapacityEvaluator(
 //  temperature_key_ = Keys::readKey(plist_, domain_name, "temperature", "temperature");
 //  dependencies_.insert(temperature_key_);
 
-//  // -- water content
-//  water_content_key_ = Keys::readKey(plist_, domain_name, "soil water content", "soil_water_content");
-//  dependencies_.insert(water_content_key_);
+  // -- water content
+  water_content_key_ = Keys::readKey(plist_, domain_name, "water content", "water_content");
+  dependencies_.insert(water_content_key_);
 
 //  // -- ice content
 //  ice_content_key_ = Keys::readKey(plist_, domain_name, "soil ice content", "soil_ice_content");
@@ -42,10 +42,11 @@ SoilHeatCapacityEvaluator::SoilHeatCapacityEvaluator(
 
   double row  = 1000.; // density of water
   double roi  = 917.;  // density of ice
+  double ros  = 1200.; // density of soil
 
   cw    = 3990./row;    // specific heat of water
   ci    = 2150./roi;    // specific heat of ice
-  cg    = 800.;         // specific heat of dry soils
+  cg    = 800.; ///ros;     // specific heat of dry soils
 
 }
 
@@ -69,8 +70,8 @@ void SoilHeatCapacityEvaluator::EvaluateField_(
       const Teuchos::Ptr<State>& S,
       const Teuchos::Ptr<CompositeVector>& result) {
 
-//  // get water content
-//  Teuchos::RCP<const CompositeVector> wc = S->GetFieldData(water_content_key_);
+  // get water content
+  Teuchos::RCP<const CompositeVector> wc = S->GetFieldData(water_content_key_);
 //
 //  // get ice content
 //  Teuchos::RCP<const CompositeVector> ic = S->GetFieldData(ice_content_key_);
@@ -81,7 +82,7 @@ void SoilHeatCapacityEvaluator::EvaluateField_(
   for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       // much more efficient to pull out vectors first
-//      const Epetra_MultiVector& wc_v = *wc->ViewComponent(*comp,false);
+      const Epetra_MultiVector& wc_v = *wc->ViewComponent(*comp,false);
 //      const Epetra_MultiVector& ic_v = *ic->ViewComponent(*comp,false);
       Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
 
@@ -89,10 +90,13 @@ void SoilHeatCapacityEvaluator::EvaluateField_(
 
       for (int i=0; i!=ncomp; ++i) {
 
-//          double W = wc_v[0][i];
-//          double I = ic_v[0][i];
+          double W = wc_v[0][i] * 1.8e-5; // CONVERTED UNITS from mol/m^3 to volume ratio
+          double I = 0.;//= ic_v[0][i] * 1.8e-5;
 
-          result_v[0][i] = cg; // + cw*W + ci*I;
+          result_v[0][i] = cg + cw*W + ci*I;
+
+          std::cout << "W = " << W << std::endl;
+          std::cout << "i = " << i << ", heat capacity = " << result_v[0][i] << std::endl;
 
       } // i
     }
@@ -103,9 +107,32 @@ void SoilHeatCapacityEvaluator::EvaluateField_(
 void SoilHeatCapacityEvaluator::EvaluateFieldPartialDerivative_(
       const Teuchos::Ptr<State>& S, Key wrt_key,
       const Teuchos::Ptr<CompositeVector>& result) {
-  std::cout<<"SOIL HEAT CAPACITY: Derivative not implemented yet!"<<wrt_key<<"\n";
-  AMANZI_ASSERT(0); // not implemented, not yet needed
-  result->Scale(1.e-6); // convert to MJ
+  result->PutScalar(0.0);
+  if (wrt_key == water_content_key_) {
+
+    for (CompositeVector::name_iterator comp=result->begin();
+         comp!=result->end(); ++comp) {
+      Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
+
+      int ncomp = result->size(*comp, false);
+      for (int i=0; i!=ncomp; ++i) {
+        result_v[0][i] = cw * 1.8e-5;
+      }
+    }
+  }
+  if (wrt_key == ice_content_key_) {
+
+    for (CompositeVector::name_iterator comp=result->begin();
+         comp!=result->end(); ++comp) {
+      Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
+
+      int ncomp = result->size(*comp, false);
+      for (int i=0; i!=ncomp; ++i) {
+        result_v[0][i] = ci * 1.8e-5;
+      }
+    }
+  }
+
 }
 
 } //namespace
