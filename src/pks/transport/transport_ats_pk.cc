@@ -255,10 +255,9 @@ void Transport_ATS::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // Create verbosity object.
-  Teuchos::ParameterList vlist;
-  vlist.sublist("verbose object") = plist_->sublist("verbose object");
-  vo_ = Teuchos::rcp(new VerboseObject(name_, vlist));
-  db_ = Teuchos::rcp(new Debugger(mesh_, name_, *plist_));
+  auto pk_name = Keys::cleanPListName(plist_->name());
+  vo_ = Teuchos::rcp(new VerboseObject(pk_name, *plist_));
+  db_ = Teuchos::rcp(new Debugger(mesh_, pk_name, *plist_));
 }
 
 
@@ -451,7 +450,7 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
 #endif
 
   } else {
-    if (vo_->getVerbLevel() > Teuchos::VERB_NONE) {
+    if (vo_->os_OK(Teuchos::VERB_NONE)) {
       *vo_->os() << vo_->color("yellow") << "No BCs were specified." << vo_->reset() << std::endl;
     }
   }
@@ -553,8 +552,8 @@ void Transport_ATS::InitializeFields_(const Teuchos::Ptr<State>& S)
         S->GetFieldData(saturation_key_, name_)->PutScalar(1.0);
         S->GetField(saturation_key_, name_)->set_initialized();
 
-        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-            *vo_->os() << "initilized saturation_liquid to value 1.0" << std::endl;
+        if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+          *vo_->os() << "initialized saturation_liquid to value 1.0" << std::endl;
       }
       InitializeFieldFromField_(prev_saturation_key_, saturation_key_, S, true, true);
     } else {
@@ -563,8 +562,8 @@ void Transport_ATS::InitializeFields_(const Teuchos::Ptr<State>& S)
           InitializeFieldFromField_(prev_saturation_key_, saturation_key_, S, true, true);
           S->GetField(prev_saturation_key_, name_)->set_initialized();
 
-          if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-            *vo_->os() << "initilized prev_saturation_liquid from saturation" << std::endl;
+          if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+            *vo_->os() << "initialized prev_saturation_liquid from saturation" << std::endl;
         }
       }
     }
@@ -599,7 +598,7 @@ void Transport_ATS::InitializeFieldFromField_(const std::string& field0,
         f0 = f1;
 
         S->GetField(field0, name_)->set_initialized();
-        if ((vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)&&(!overwrite)) {
+        if (vo_->os_OK(Teuchos::VERB_MEDIUM) && (!overwrite)) {
           *vo_->os() << "initiliazed " << field0 << " to " << field1 << std::endl;
         }
       }
@@ -686,7 +685,7 @@ double Transport_ATS::StableTimeStep()
   dt_ *= cfl_;
 
   // print optional diagnostics using maximum cell id as the filter
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     int cmin_dt_unique = (fabs(dt_tmp * cfl_ - dt_) < 1e-6 * dt_) ? cell_map->GID(cmin_dt) : -2;
 
     int cmin_dt_tmp = cmin_dt_unique;
@@ -715,7 +714,6 @@ double Transport_ATS::StableTimeStep()
     comm.Broadcast(tmp_package, 6, min_pid);
 
     Teuchos::OSTab tab = vo_->getOSTab();
-
     *vo_->os() << "Stable time step "<<dt_<< " is computed at ("<< tmp_package[2]<<", " <<tmp_package[3];
     if (fabs(3 - tmp_package[5]) <1e-10) *vo_->os()<<", "<<tmp_package[4];
     *vo_->os() <<")"<<std::endl;

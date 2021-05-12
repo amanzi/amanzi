@@ -239,7 +239,7 @@ the volume of water. In the subsurface, the volume of water is set by the
 porosity and saturation of the porous medium, while in the surface it is set 
 by the ponded depth.
 
-{transport_pk}
+{transport_ats}
 
 Energy PKs
 -----------
@@ -534,23 +534,23 @@ Multiplicative evaluator for `canopy-water_content`:
 
 Richards energy
 ^^^^^^^^^^^^^^^
-{ richards_energy }
+{ richards_energy_evaluator }
 
 Liquid+Gas energy
 ^^^^^^^^^^^^^^^^^
-{ liquid_gas_energy }
+{ liquid_gas_energy_evaluator }
 
 Liquid+Ice energy
 ^^^^^^^^^^^^^^^^^
-{ liquid_ice_energy }
+{ liquid_ice_energy_evaluator }
 
 Liquid+Ice+Gas energy
 ^^^^^^^^^^^^^^^^^^^^^
-{ three_phase_energy }
+{ three_phase_energy_evaluator }
 
 Surface water+ice energy
 ^^^^^^^^^^^^^^^^^^^^^^^^
-{ surface_ice_energy }
+{ surface_ice_energy_evaluator }
 
 
 Subsurface flow evaluators
@@ -575,6 +575,7 @@ Capillary pressure of liquid on ice
 Water Retention Model and Relative Permeability
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 { wrm_evaluator }
+{ wrm_partition }
 { rel_perm_evaluator }
 
 Van Genuchten Model
@@ -732,7 +733,7 @@ Peters-Lidard Model
 { thermal_conductivity_twophase_peterslidard }
 
 Thermal Conductivity, three phases
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 { thermal_conductivity_threephase_evaluator }
 
 Wet-Dry Model
@@ -744,7 +745,7 @@ Peters-Lidard Model
 { thermal_conductivity_threephase_peterslidard }
 
 Volume-averaged Model
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 { thermal_conductivity_threephase_volume_averaged }
 
 Sutra-ICE model
@@ -1098,7 +1099,7 @@ Column summation
 
 Top cell
 ^^^^^^^^
-{ top_cell_evaluator }
+{ top_cells_surface_evaluator }
 
 Arbitrary function
 ^^^^^^^^^^^^^^^^^^
@@ -1202,7 +1203,7 @@ Transport-specific Boundary Conditions
 
 
 Energy-specific Boundary Conditions
-----------------------------------
+-----------------------------------
 
 { energy_bc_factory }
 

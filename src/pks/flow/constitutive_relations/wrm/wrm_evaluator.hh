@@ -6,6 +6,7 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
+//! Evaluates saturation through water retention models.
 /*!
 
 Water Retention Models (WRMs) determine the saturation as a function of
@@ -15,7 +16,7 @@ commonly used in practice is the van Genuchten model, but others are available.
 .. _wrm-evaluator-spec
 .. admonition:: wrm-evaluator-spec
 
-   * `"WRM parameters`" ``[wrm-partition-typed-spec-list]`` 
+   * `"WRM parameters`" ``[wrm-partition-typed-spec-list]``
 
    KEYS:
 

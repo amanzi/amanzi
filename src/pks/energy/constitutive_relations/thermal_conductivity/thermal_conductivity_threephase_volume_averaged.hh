@@ -1,28 +1,34 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/*
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-/* -------------------------------------------------------------------------
-ATS
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+//! A volume-averaged thermal conductivity based on TCs of raw components.
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+/*!
 
-Simple model of three-phase thermal conductivity, based upon volume-averaging
+A simple model of three-phase thermal conductivity, based upon volume-averaging
 of four consitutive components.
 
-Usage:
+See Atchley et al GMD 2015 Supplementary Material for equations.
 
-  <ParameterList name="thermal_conductivity">
-    <Parameter name="thermal conductivity type" type="string" value="three-phase volume averaged"/>
-    <Parameter name="thermal conductivity of soil [W m^-1 K^-1]" type="double" value=""/>
-    <Parameter name="thermal conductivity of liquid [W m^-1 K^-1]" type="double" value=""/>
-    <Parameter name="thermal conductivity of gas [W m^-1 K^-1]" type="double" value=""/>
-    <Parameter name="thermal conductivity of ice [W m^-1 K^-1]" type="double" value=""/>
-  </ParameterList>
+.. _thermal-conductivity-volume-averaged-spec:
+.. admonition:: thermal-conductivity-volume-averaged-spec
 
-------------------------------------------------------------------------- */
+    * `"thermal conductivity of soil [W m^-1 K^-1]`" ``[double]`` Thermal
+      conductivity of soil **grains**
+    * `"thermal conductivity of liquid [W m^-1 K^-1]`" ``[double]`` Thermal
+      conductivity of liquid water.
+    * `"thermal conductivity of gas [W m^-1 K^-1]`" ``[double]`` Thermal
+      conductivity of air.
+    * `"thermal conductivity of ice [W m^-1 K^-1]`" ``[double]`` Thermal
+      conductivity of frozen water.
 
-#ifndef PK_ENERGY_RELATIONS_THERMAL_CONDUCTIVITY_THREEPHASE_VOLUME_AVERAGED_HH_
-#define PK_ENERGY_RELATIONS_THERMAL_CONDUCTIVITY_THREEPHASE_VOLUME_AVERAGED_HH_
+*/
+
+#pragma once
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -34,12 +40,12 @@ namespace Energy {
 
 class ThermalConductivityThreePhaseVolumeAveraged : public ThermalConductivityThreePhase {
 
-public:
+ public:
   ThermalConductivityThreePhaseVolumeAveraged(Teuchos::ParameterList& plist);
 
   double ThermalConductivity(double porosity, double sat_liq, double sat_ice, double temp);
 
-private:
+ private:
   void InitializeFromPlist_();
 
   Teuchos::ParameterList plist_;
@@ -49,13 +55,12 @@ private:
   double k_liquid_;
   double k_gas_;
 
-private:
+ private:
   static Utils::RegisteredFactory<ThermalConductivityThreePhase,
                                   ThermalConductivityThreePhaseVolumeAveraged> factory_;
-
 };
 
-}
-}
+} // namespace Energy
+} // namespace Amanzi
 
-#endif
+

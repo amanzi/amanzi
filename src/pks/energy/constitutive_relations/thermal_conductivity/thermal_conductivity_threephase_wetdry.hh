@@ -25,20 +25,8 @@ See Atchley et al GMD 2015 Supplementary Material for equations.
     * `"unsaturated alpha unfrozen [-]`" ``[double]`` Interpolating exponent
     * `"unsaturated alpha frozen [-]`" ``[double]`` Interpolating exponent
     * `"unsaturated alpha frozen [-]`" ``[double]`` Interpolating exponent
-    * `"unsaturated beta frozen [-]`" ``[double]`` **1.0** Interpolating exponent
+    * `"saturated beta frozen [-]`" ``[double]`` **1.0** Interpolating exponent
     * `"epsilon`" ``[double]`` **1e-10** Epsilon to keep saturations bounded away from 0.
-
-Usage:
-
-  <ParameterList name="thermal_conductivity">
-    <Parameter name="thermal conductivity type" type="string" value="three-phase wet/dry"/>
-    <Parameter name="thermal conductivity, saturated (unfrozen) [W m^-1 K^-1]" type="double" value=""/>
-    <Parameter name="thermal conductivity, dry [W m^-1 K^-1]" type="double" value=""/>
-    <Parameter name="unsaturated alpha frozen [-]" type="double" value=""/>
-    <Parameter name="unsaturated alpha unfrozen [-]" type="double" value=""/>
-    <Parameter name="saturated beta frozen [-]" type="double" value="1.0"/>
-    <Parameter name="epsilon" type="double" value="1.e-10"/>
-  </ParameterList>
 
 */
 
@@ -74,8 +62,9 @@ private:
   double alpha_u_;
   double k_sat_u_;
   double k_dry_;
-  double beta_sat_f_; 
-private:
+  double beta_sat_f_;
+
+ private:
   static Utils::RegisteredFactory<ThermalConductivityThreePhase,
                                   ThermalConductivityThreePhaseWetDry> factory_;
 

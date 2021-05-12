@@ -1,14 +1,36 @@
 /*
-  The surface ice energy evaluator is an algebraic evaluator of a given model.
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-  Generated via evaluator_generator with:
-Energy evaulator for ice+liquid surface water.
-    
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Author: Ethan Coon (ecoon@lanl.gov)
+*/
+//! Energy content for a surface water, partially frozen system.
+/*!
+
+The energy associated with ponded water, in [KJ], given by:
+
+.. math::
+  E = V * ( \eta h u_l n_l + (1 - \eta) h u_i n_i )
+
+Specified with evaluator type: `"surface ice energy`"
+
+.. _field-evaluator-type-surface-ice-energy-spec:
+.. admonition:: field-evaluator-type-surface-ice-energy-spec
+
+   DEPENDENCIES:
+
+   - `"ponded depth`"  Height of water above the land surface [m]
+   - `"unfrozen fraction`"  The fraction of unfrozen water ranges from 0 to 1. [-]
+   - `"molar density liquid`" [mol m^-3]
+   - `"internal energy liquid`" [KJ mol^-1]
+   - `"molar density ice`" [mol m^-3]
+   - `"internal energy ice`" [KJ mol^-1]
+   - `"cell volume`" [m^2]
+
 */
 
-#ifndef AMANZI_ENERGY_SURFACE_ICE_ENERGY_EVALUATOR_HH_
-#define AMANZI_ENERGY_SURFACE_ICE_ENERGY_EVALUATOR_HH_
+#pragma once
 
 #include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
@@ -58,4 +80,3 @@ class SurfaceIceEnergyEvaluator : public SecondaryVariableFieldEvaluator {
 } //namespace
 } //namespace
 
-#endif

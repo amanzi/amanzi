@@ -455,7 +455,6 @@ protected:
   Key cv_key_;
 
  private:
-
   bool subcycling_;
   int dim;
   int saturation_name_;
