@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""ATS input converter from 0.88 to master"""
+"""ATS input converter from 1.0 to 1.1"""
 
 import sys, os
 try:
@@ -72,7 +72,7 @@ def commonSupressOptions(xml):
     
             
 def checkManning(xml):
-    fe_list = asearch.gen_by_path(xml, ["state","field evaluators"])
+    fe_list = asearch.find_path(xml, ["state","field evaluators"])
     for eval in fe_list:
         if eval.get("name").endswith('manning_coefficient'):
             eval_type = eval.getElement('field evaluator type')
@@ -94,7 +94,7 @@ def checkManning(xml):
                             pass
                         else:
                             reg.pop('component')
-                            assert not any(el.getName() == 'component' for el in reg)
+                            assert len(asearch.findall_name(reg, 'components')) == 0
                             reg.append(parameter.ArrayStringParameter('components', ['cell', 'boundary_face']))
                             fixed = True
 
@@ -105,7 +105,7 @@ def checkManning(xml):
                             pass
                         else:
                             reg.pop('components')
-                            assert not any(el.getName() == 'components' for el in reg)
+                            assert len(asearch.findall_name(reg, 'components')) == 0
                             reg.append(parameter.ArrayStringParameter('components', ['cell', 'boundary_face']))
                             fixed = True
 
@@ -192,6 +192,40 @@ def updateObservations(xml):
                 func.setValue(func_val[len("observation data: "):])
             
 
+def fixMassSource(xml):
+    # find all pks
+    pks = asearch.find_name(xml, "PKs")
+    for pk in pks:
+        pk_type = asearch.find_name(pk, "PK type")
+        if pk_type.getValue() in ["richards",
+                                  "overland flow, pressure basis",
+                                  "overland flow",
+                                  "overland flow with ice",
+                                  "snow distribution",
+                                  "richards steady state",
+                                  "permafrost flow"]:
+            # has source?
+            try:
+                has_source = asearch.find_name(pk, "source term")
+            except aerrors.MissingXMLError:
+                continue
+
+            if has_source.getValue():
+                # check for the default key
+                try:
+                    source_name = asearch.find_name(pk, "source key")
+                except aerrors.MissingXMLError:
+                    try:
+                        source_name_suffix = asearch.find_name(pk, "source key suffix")
+                    except aerrors.MissingXMLError:
+                        # is using the default, set the default suffix to the OLD suffix
+                        pk.append(parameter.StringParameter("source key suffix", "mass_source"))
+
+    # changes "mass source in meters" to "water source".  Note this
+    # can be in transport, not only in flow.
+    for ws_in_meters in asearch.findall_name(xml, "mass source in meters"):
+        ws_in_meters.setName("water source in meters")
+    
 def update(xml):
     vanGenuchtenParams(xml)
     thermalConductivityParams(xml)
@@ -204,6 +238,7 @@ def update(xml):
     mergePreconditionerLinearSolver(xml)
     fixOverlandConductivity(xml)
     updateObservations(xml)
+    fixMassSource(xml)
 
 if __name__ == "__main__":
     import argparse
