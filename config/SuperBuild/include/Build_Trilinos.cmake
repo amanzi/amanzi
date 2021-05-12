@@ -152,12 +152,14 @@ list(APPEND Trilinos_CMAKE_TPL_ARGS
 
 # HYPRE
 if (ENABLE_HYPRE)
-  list(APPEND Trilinos_CMAKE_TPL_ARGS
+  if(NOT ENABLE_KOKKOS)
+  	list(APPEND Trilinos_CMAKE_TPL_ARGS
               "-DTPL_ENABLE_HYPRE:BOOL=ON"
               "-DTPL_HYPRE_LIBRARIES:STRING=${HYPRE_LIBRARIES}"
               "-DHYPRE_LIBRARY_DIRS:FILEPATH=${HYPRE_DIR}/lib"
               "-DHYPRE_INCLUDE_DIRS:FILEPATH=${HYPRE_DIR}/include"
               "-DTPL_HYPRE_INCLUDE_DIRS:FILEPATH=${HYPRE_DIR}/include")
+  endif()
 endif()
 
 # SuperLUDist
