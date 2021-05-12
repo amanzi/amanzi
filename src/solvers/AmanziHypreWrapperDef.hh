@@ -49,6 +49,10 @@ Hypre(const Teuchos::RCP<const row_matrix_type>& A):
   UsePreconditioner_(false),
   Dump_(false)
 {
+
+  HYPRE_Init(); 
+  hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_DEVICE;
+
   MPI_Comm comm = * (Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(A->getRowMap()->getComm())->getRawMpiComm());
 
   // Check that RowMap and RangeMap are the same.  While this could handle the
