@@ -1328,6 +1328,7 @@ Transport
 The ``transport`` has the following attributes,
       
       * ``state`` = "on | off"
+      * ``algorithm`` "explicit first-order | explicit second-order | explicit | implicit"
 
 For ``transport`` the ``state`` must be specified.  
 
