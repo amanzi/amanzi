@@ -74,7 +74,8 @@ def commonSupressOptions(xml):
 def checkManning(xml):
     fe_list = asearch.find_path(xml, ["state","field evaluators"])
     for eval in fe_list:
-        if eval.get("name").endswith('manning_coefficient'):
+        ename = eval.getName()
+        if ename.endswith('manning_coefficient') and not ename.startswith('snow'):
             eval_type = eval.getElement('field evaluator type')
             if eval_type.getValue() == 'independent variable':
                 func_reg = eval.getElement("function")
@@ -115,11 +116,24 @@ def checkManning(xml):
 
 
 def fixSnow(xml):
-    # todo: remove "include dt factor"
-    # todo: rename "dt factor" --> "dt factor [s]"
-    # todo: add "swe density factor [-]" (default is 10)
-    # todo: rename "include density factor" --> "include density"
-    raise NotImplementedError("fix snow")
+    # remove "include dt factor"
+    # rename "dt factor" --> "dt factor [s]"
+    try:
+        snow_cond = asearch.find_path(xml, ["state", "field evaluators", "snow-conductivity"])
+    except aerrors.MissingXMLError:
+        pass
+    else:
+        snow_cond.pop("include dt factor")
+
+        dtf = asearch.find_name(snow_cond, "dt factor")
+        dtf.setName("dt factor [s]")
+
+        # rename "include density factor" --> "include density"
+        inc_dens = asearch.find_name(snow_cond, "include density factor")
+        inc_dens.setName("include density")
+
+        # add "swe density factor [-]" (default is 10)
+        snow_cond.append(parameter.DoubleParameter("swe density factor [-]", 10.0))
 
 def fixSubgrid(xml):
     # todo: ponded_depth_minus_depression_depth --> mobile_depth
@@ -192,7 +206,22 @@ def updateObservations(xml):
                 func.setValue(func_val[len("observation data: "):])
             
 
+def _get_prefixed_name(pk, name):
+    try:
+        domain = asearch.find_name(pk, "domain name").getValue()
+    except aerrors.MissingXMLError:
+        domain = "domain"
+
+    if domain == "domain":
+        default_val = name
+    else:
+        default_val = domain+"-"+name
+    return default_val    
+
+                
 def fixMassSource(xml):
+    # a few helper functions for use later on...
+
     # find all pks
     pks = asearch.find_name(xml, "PKs")
     for pk in pks:
@@ -218,9 +247,60 @@ def fixMassSource(xml):
                     try:
                         source_name_suffix = asearch.find_name(pk, "source key suffix")
                     except aerrors.MissingXMLError:
-                        # is using the default, set the default suffix to the OLD suffix
-                        pk.append(parameter.StringParameter("source key suffix", "mass_source"))
+                        # if we are using the default, check to see if
+                        # the old default is in the list of evaluators
+                        default_val = _get_prefixed_name(pk, "mass_source")
+                        
+                        try:
+                            source_eval = asearch.find_path(xml, ["state","field evaluators",default_val])
+                        except aerrors.MissingXMLError:
+                            # likely this is a Arctic run, and the
+                            # source name is now changed to the new
+                            # default, do nothing
+                            pass
+                        else:
+                            # we are using the default, change it to the new default
+                            if domain == "domain":
+                                new_default = "water_source"
+                            else:
+                                new_default = domain+"-water_source"
+                            source_eval.setName(default_val)
+                    else:
+                        if source_name_suffix.getValue() == "mass_source":
+                            # if we found source key suffix, and it is mass_source...
+                            default_val = _get_prefixed_name(pk, "mass_source")
+                            try:
+                                source_eval = asearch.find_path(xml, ["state","field evaluators",default_val])
+                            except aerrors.MissingXMLError:
+                                # likely this is an Arctic run, and
+                                # the source name is now changed to
+                                # the new default.  Change the suffix
+                                source_name_suffix.setValue("water_source")
+                            else:
+                                # change both the suffix and the evaluator
+                                source_name_suffix.setValue("water_source")
+                                prefix_name = _get_prefixed_name(pk, "water_source")
+                                source_eval.setName(_get_prefixed_name(pk, "water_source"))
 
+                        
+                else:
+                    if source_name.getValue().endswith("mass_source"):
+                        # we found a source key, and its suffix is mass source...
+                        try:
+                            source_eval = asearch.find_path(xml, ["state","field evaluators",source_name.getValue()])
+                        except aerrors.MissingXMLError:
+                            # likely Arctic
+                            if '-' in source_name.getValue():
+                                source_domain = source_name.getValue().split('-')[0]
+                                source_name.setValue(source_domain+'-water_source')
+                            else:
+                                source_name.setValue('water_source')
+                        else:
+                            source_domain = source_name.getValue().split('-')[0]
+                            source_name.setValue(source_domain+'-water_source')
+                            source_eval.setName(source_domain+'-water_source')
+
+                    
     # changes "mass source in meters" to "water source".  Note this
     # can be in transport, not only in flow.
     for ws_in_meters in asearch.findall_name(xml, "mass source in meters"):
@@ -233,7 +313,7 @@ def update(xml):
     
     checkManning(xml)
     # NOTE: these will get added when subgrid pull request is done
-    #fixSnow(xml)
+    fixSnow(xml)
     #fixSubgrid(xml)
     mergePreconditionerLinearSolver(xml)
     fixOverlandConductivity(xml)
