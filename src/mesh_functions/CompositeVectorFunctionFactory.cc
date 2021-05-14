@@ -92,6 +92,13 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
         Exceptions::amanzi_throw(msg);
       }
 
+      // parse special case: initialize all existing components
+      if (components.size() == 1 && components[0] == "*") {
+        components.clear();
+        for (auto it = sample.begin(); it != sample.end(); ++it)
+          components.push_back(*it);
+      }
+
       // get the function
       Teuchos::RCP<MultiFunction> func;
       if (sublist.isSublist("function")) {
@@ -120,12 +127,10 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
         AmanziMesh::Entity_kind kind = sample.Location(*component);
 
         // -- Create the domain,
-        Teuchos::RCP<MeshFunction::Domain> domain =
-          Teuchos::rcp(new MeshFunction::Domain(regions, kind));
+        auto domain = Teuchos::rcp(new MeshFunction::Domain(regions, kind));
 
         // -- and the spec,
-        Teuchos::RCP<MeshFunction::Spec> spec =
-          Teuchos::rcp(new MeshFunction::Spec(domain, func));
+        auto spec = Teuchos::rcp(new MeshFunction::Spec(domain, func));
 
         mesh_func->AddSpec(spec);
         componentname_list.push_back(*component);
@@ -139,8 +144,7 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
   }
 
   // create the function
-  return Teuchos::rcp(new CompositeVectorFunction(mesh_func,
-          componentname_list));
+  return Teuchos::rcp(new CompositeVectorFunction(mesh_func, componentname_list));
 };
 
 } // namespace

@@ -69,10 +69,17 @@ endif()
 # ############################################################################ #
 
 # Check for GNU compilers and add special option for gfortran version 10 and above
-
-if(CMAKE_Fortran_COMPILER_ID MATCHES GNU)
+if (CMAKE_Fortran_COMPILER_ID MATCHES GNU)
   if (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL "10")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-argument-mismatch")
+  endif()
+endif()
+
+# check for Apple CLANG compilers and add special option to allow
+# HDF5, others to compile.
+if (CMAKE_C_COMPILER_ID MATCHES AppleClang)
+  if (CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL "11")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error-implicit-function-declaration")
   endif()
 endif()
 
@@ -415,18 +422,8 @@ endif()
 # LAPACK/BLAS Configuration 
 # ############################################################################ #
 
-# set(BLA_VENDOR "Generic")
-# set(BLA_VENDOR "OpenBLAS")
-# set(BLA_DIR "/usr/lib/x86_64-linux-gnu/openblas")
-# set(BLA_DIR ${TPL_BLAS_DIR})
-# set(LAPCK_DIR ${TPL_LAPACK_DIR})
-
 option(TPL_BLAS_VENDOR "Identifies the vendor for BLAS and LAPACK library search" All)
 set(BLA_VENDOR ${TPL_BLAS_VENDOR})
-
-# message(STATUS ">>>>>>>> JDM: BLA_VENDOR = ${BLA_VENDOR}")
-# message(STATUS ">>>>>>>> JDM: TPL_DEBUG_FIND_BLAS = ${TPL_DEBUG_FIND_BLAS}")
-
 
 if ( DEFINED ENV{NERSC_HOST} )
    

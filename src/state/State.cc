@@ -908,13 +908,14 @@ void State::Setup() {
     if (!f_it->second->initialized()) {
       f_it->second->CreateData();
     }
-    // std::cout<<"Field "<<f_it->first<<": ";
-    // if (f_it->second->type() == Amanzi::COMPOSITE_VECTOR_FIELD) {
-    //   auto com_vec = f_it->second->GetFieldData();
-    //     for (CompositeVector::name_iterator comp=com_vec->begin();
-    //          comp!=com_vec->end(); ++comp) std::cout<<*comp<<" ";
-    //   std::cout<<"\n";
-    // }
+    if (vo->os_OK(Teuchos::VERB_HIGH)) {
+      *vo->os() << "Field " << f_it->first << ": ";
+      if (f_it->second->type() == Amanzi::COMPOSITE_VECTOR_FIELD) {
+        auto cv = f_it->second->GetFieldData();
+        for (auto comp=cv->begin(); comp!=cv->end(); ++comp) *vo->os() << *comp << " ";
+      }
+      *vo->os() << "\n";
+    }
   }
 };
 
@@ -1073,6 +1074,22 @@ void State::InitializeFields() {
         if (state_plist_.sublist("initial conditions").isSublist(f_it->first)) {
           Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(f_it->first);
           f_it->second->Initialize(sublist);
+        } else {
+          // check for domain set
+          KeyTriple split;
+          bool is_ds = Keys::splitDomainSet(f_it->first, split);
+          Key ds_name = std::get<0>(split);
+          if (is_ds) {
+            Key lifted_key = Keys::getKey(ds_name, "*", std::get<2>(split));
+            if (state_plist_.sublist("initial conditions").isSublist(lifted_key)) {
+              Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(lifted_key);
+              sublist.set("evaluator name", f_it->first);
+              //sublist.setName(f_it->first);
+              //state_plist_.sublist("initial conditions").set(f_it->first, sublist);
+              //sublist = state_plist_.sublist("initial conditions").sublist(f_it->first);
+              f_it->second->Initialize(sublist);
+            }
+          }
         }
       }
     }

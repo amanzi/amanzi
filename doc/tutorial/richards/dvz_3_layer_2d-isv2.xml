@@ -79,7 +79,7 @@
     <comments>This is a proposed comment field for process_kernels</comments>
     <flow state = "on" model = "richards"/>
     <transport state = "on" algorithm = "explicit first-order" sub_cycling = "on"/>
-    <chemistry state = "off" process_model="none"/>
+    <chemistry state = "off" engine = "none"/>
   </process_kernels>
 
   <phases>

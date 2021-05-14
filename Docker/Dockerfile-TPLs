@@ -1,13 +1,18 @@
 #FROM ubuntu:latest
 #FROM ubuntu:artful
-FROM ubuntu:bionic
+#FROM ubuntu:bionic
+FROM ubuntu:focal
+
 
 LABEL Description="This image contains all of the third-party libraries needed by Amanzi (based on the specified branch, default branch is master)."
 
 # MPI flavor (mpich|openmpi)
 ARG mpi_flavor=mpich
 
-RUN apt-get -q update -y && apt-get -qq install -y \
+# Set timezone:
+RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONTAINER_TIMEZONE > /etc/timezone
+
+RUN apt-get -q update -y && apt-get install -y tzdata && apt-get -q install -y \
   apt-utils \
   cmake \
   curl \
@@ -17,7 +22,6 @@ RUN apt-get -q update -y && apt-get -qq install -y \
   gfortran \
   git \
   groff \
-  libblas3 \
   libblas-dev \
   liblapacke-dev \
   liblapack-dev \
@@ -25,13 +29,19 @@ RUN apt-get -q update -y && apt-get -qq install -y \
   libssl-dev \
   m4 \
   make \
-  mercurial \
   openssl \
-  python2.7 \
+  python3 \
+  python3-distutils \
+  python3-pip \
+  python-is-python3 \
   rsync \
   wget \
-  zlib1g-dev
-  
+  zlib1g-dev \
+  && apt-get clean
+
+# Note this installs numpy as well
+RUN pip3 install --no-cache-dir --upgrade pip && \
+    pip3 install --no-cache-dir install h5py
 
 # Versions change and we cannot set environment variables from command output.
 ARG petsc_ver
@@ -57,8 +67,8 @@ USER amanzi_user
 # (creates teh directory if it doesn't exist)
 WORKDIR /home/amanzi_user
 
-ENV https_proxy=proxyout.lanl.gov:8080 \
-    http_proxy=proxyout.lanl.gov:8080
+# ENV https_proxy=proxyout.lanl.gov:8080 \
+#     http_proxy=proxyout.lanl.gov:8080
 
 # Clone the amanzi git repo.
 RUN git clone https://github.com/amanzi/amanzi.git
@@ -96,7 +106,7 @@ ENV PATH=/home/amanzi_user/amanzi/install/tools/bin:${PATH}
 RUN echo $PATH
 
 # Unset proxy
-ENV https_proxy= \
-    http_proxy= 
+# ENV https_proxy= \
+#    http_proxy= 
 
 

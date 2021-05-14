@@ -101,7 +101,6 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   VerboseObject(const Comm_type& comm, const std::string& name,
                 Teuchos::ParameterList plist) :
       VerboseObject(Teuchos::rcpFromRef(comm), name, plist) {}
-      
 
   // NOTE: Default destructor, copy construct should be ok.
 

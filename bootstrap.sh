@@ -89,9 +89,9 @@ mpi_exec_args=
 
 # TPL (Third Party Libraries)
 # BLAS / LAPACK
-tpl_blas_dir=
-tpl_blas_vendor=
-tpl_lapack_dir=
+blas_dir=
+blas_vendor=
+lapack_dir=
 
 # Debugging options for CMake configuration phase
 debug_find_blas=$FALSE
@@ -424,7 +424,7 @@ and are provided on the system.  Some of these libraries may be in nonstandard l
   --with-blas=DIR                Search for the BLAS libraries only in DIR
                                  [default is blank so CMake searches in system directories] 
 
-  --tpl-blas-vendor=VENDOR       Specify the vendor (usually the system name) for the BLAS and LAPACK libraries
+  --blas-vendor=VENDOR           Specify the vendor (usually the system name) for the BLAS and LAPACK libraries
                                  [default All] is implicit in findBLAS.cmake and will search all supported names.
                                  To focus the search and simplify debegging, specify a VENDOR name. Supported
                                  VENDOR names include, Generic, OpenBLAS, CRAYSCI, Apple, FLAME, and NAS.
@@ -532,9 +532,9 @@ Build configuration:
     trilinos_build_type = '"${trilinos_build_type}"'
     tpls_build_type     = '"${tpls_build_type}"'
     tpl_config_file     = '"${tpl_config_file}"'
-    tpl_blas_dir        = '"${tpl_blas_dir}"'
-    tpl_lapack_dir      = '"${tpl_lapack_dir}"'
-    tpl_blas_vendor     = '"${tpl_blas_vendor}"'
+    blas_dir        = '"${blas_dir}"'
+    lapack_dir      = '"${lapack_dir}"'
+    blas_vendor     = '"${blas_vendor}"'
     debug_find_blas     = '"${debug_find_blas}"'
     amanzi_arch         = '"${amanzi_arch}"'
 
@@ -753,17 +753,17 @@ List of INPUT parameters
 
       --with-blas=*)
                  tmp=`parse_option_with_equal "${opt}" 'with-blas'`
-                 tpl_blas_dir=$tmp
+                 blas_dir=$tmp
                  ;;
 
-      --tpl-blas-vendor=*)
-                 tmp=`parse_option_with_equal "${opt}" 'tpl-blas-vendor'`
-                 tpl_blas_vendor=$tmp
+      --blas-vendor=*)
+                 tmp=`parse_option_with_equal "${opt}" 'blas-vendor'`
+                 blas_vendor=$tmp
                  ;;
 
       --with-lapack=*)
                  tmp=`parse_option_with_equal "${opt}" 'with-lapack'`
-                 tpl_lapack_dir=$tmp
+                 lapack_dir=$tmp
                  ;;
 
       --amanzi-build-dir=*)
@@ -931,28 +931,28 @@ List of INPUT parameters
   fi
 
   # BLAS
-  if [ ! -z "${tpl_blas_dir}" ]; then
-      tpl_blas_opts=-DTPL_BLAS_DIR:FILEPATH=${tpl_blas_dir}
+  if [ ! -z "${blas_dir}" ]; then
+      blas_opts=-DTPL_BLAS_DIR:FILEPATH=${blas_dir}
   fi
 
   # BLAS Vendor (Generic, All, Apple, etc.)
-  if [ ! -z "${tpl_blas_vendor}" ]; then
-      tpl_blas_vendor_opts=-DTPL_BLAS_VENDOR:STRING=${tpl_blas_vendor}
+  if [ ! -z "${blas_vendor}" ]; then
+      blas_vendor_opts=-DTPL_BLAS_VENDOR:STRING=${blas_vendor}
   fi
 
   # Debug FindBLAS.cmake
   if [ "${debug_find_blas}" -eq "${TRUE}" ]; then
-      tpl_debug_find_blas=-DTPL_DEBUG_FIND_BLAS:BOOL=${TRUE}
+      debug_find_blas_tmp=-DTPL_DEBUG_FIND_BLAS:BOOL=${TRUE}
   else
-      tpl_debug_find_blas=-DTPL_DEBUG_FIND_BLAS:BOOL=${FALSE}
+      debug_find_blas_tmp=-DTPL_DEBUG_FIND_BLAS:BOOL=${FALSE}
   fi
   
   # LAPACK
-  if [ ! -z "${tpl_lapack_dir}" ]; then
-      tpl_lapack_opts=-DTPL_LAPACK_DIR:FILEPATH=${tpl_lapack_dir}
+  if [ ! -z "${lapack_dir}" ]; then
+      lapack_opts=-DTPL_LAPACK_DIR:FILEPATH=${lapack_dir}
   fi
 
-  tpl_blas_lapack_opts="${tpl_blas_opts} ${tpl_blas_vendor_opts} ${tpl_debug_find_blas} ${tpl_lapack_opts}"
+  blas_lapack_opts="${blas_opts} ${blas_vendor_opts} ${debug_find_blas_tmp} ${lapack_opts}"
   
   # deprecated options
   if [ "${tpls_only}" ]; then
@@ -1788,7 +1788,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DBUILD_SHARED_LIBS:BOOL=${shared} \
       -DTPL_DOWNLOAD_DIR:FILEPATH=${tpl_download_dir} \
       -DDISABLE_EXTERNAL_DOWNLOAD=${disable_external_downloads} \
-      ${tpl_blas_lapack_opts} \
+      ${blas_lapack_opts} \
       ${arch_tpl_opts} \
       ${tpl_build_src_dir}"
 

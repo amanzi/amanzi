@@ -46,7 +46,7 @@ class IEMEvaluator : public SecondaryVariableFieldEvaluator {
 
   Teuchos::RCP<IEMPartition> iem_partition() { return iem_; }
 
-  double EvaluateFieldSingle(int c, double T);
+  double EvaluateFieldSingle(int c, double T, double p);
 
  protected:
   void InitializeFromPlist_();
@@ -58,7 +58,7 @@ class IEMEvaluator : public SecondaryVariableFieldEvaluator {
   AmanziMesh::Entity_ID MyModel_(AmanziMesh::Entity_kind kind, AmanziMesh::Entity_ID id);
 
  protected:
-  Key temp_key_;
+  Key temperature_key_, pressure_key_;
   Key domain_;
   Teuchos::RCP<IEMPartition> iem_;
 

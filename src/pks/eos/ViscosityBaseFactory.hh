@@ -17,15 +17,15 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "Viscosity_Base.hh"
+#include "ViscosityBase.hh"
 #include "Factory.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-class ViscosityBaseFactory : public Utils::Factory<Viscosity_Base> {
+class ViscosityBaseFactory : public Utils::Factory<ViscosityBase> {
  public:
-  Teuchos::RCP<Viscosity_Base> CreateViscosity(Teuchos::ParameterList& plist);
+  Teuchos::RCP<ViscosityBase> CreateViscosity(Teuchos::ParameterList& plist);
 };
 
 }  // namespace AmanziEOS

@@ -31,10 +31,13 @@ ViscosityEvaluator::ViscosityEvaluator(Teuchos::ParameterList& plist) :
   temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
   dependencies_.insert(temp_key_);
 
+  pres_key_ = plist_.get<std::string>("pressure key", Keys::getKey(domain, "pressure"));
+  dependencies_.insert(pres_key_);
+
   // Construct my Viscosity model
-  AMANZI_ASSERT(plist_.isSublist("viscosity model parameters"));
+  AMANZI_ASSERT(plist_.isSublist("EOS parameters"));
   ViscosityBaseFactory visc_fac;
-  visc_ = visc_fac.CreateViscosity(plist_.sublist("viscosity model parameters"));
+  visc_ = visc_fac.CreateViscosity(plist_.sublist("EOS parameters"));
 }
 
 
@@ -54,17 +57,18 @@ void ViscosityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 {
   // Pull dependencies out of state.
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);
 
   // evaluate p_s / p_atm
-  for (CompositeVector::name_iterator comp=result->begin();
-       comp!=result->end(); ++comp) {
-    const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
-    Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+  for (auto comp = result->begin(); comp != result->end(); ++comp) {
+    const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp));
+    const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp));
+    Epetra_MultiVector& result_v = *(result->ViewComponent(*comp));
 
     int count = result->size(*comp);
     for (int id=0; id!=count; ++id) {
       AMANZI_ASSERT(temp_v[0][id] > 200.);
-      result_v[0][id] = visc_->Viscosity(temp_v[0][id]);
+      result_v[0][id] = visc_->Viscosity(temp_v[0][id], pres_v[0][id]);
     }
   }
 }
@@ -78,16 +82,17 @@ void ViscosityEvaluator::EvaluateFieldPartialDerivative_(
 
   // Pull dependencies out of state.
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);
 
   // evaluate d/dT( p_s / p_atm )
-  for (CompositeVector::name_iterator comp=result->begin();
-       comp!=result->end(); ++comp) {
-    const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
-    Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+  for (auto comp = result->begin(); comp != result->end(); ++comp) {
+    const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp));
+    const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp));
+    Epetra_MultiVector& result_v = *(result->ViewComponent(*comp));
 
     int count = result->size(*comp);
     for (int id=0; id!=count; ++id) {
-      result_v[0][id] = visc_->DViscosityDT(temp_v[0][id]);
+      result_v[0][id] = visc_->DViscosityDT(temp_v[0][id], pres_v[0][id]);
     }
   }
 }
