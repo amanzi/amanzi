@@ -16,6 +16,7 @@ from amanzi_xml.utils import io as aio
 from amanzi_xml.utils import errors as aerrors
 from amanzi_xml.common import parameter
 
+
 def change_name(xml, old, new, allow_multiple=False):
     try:
         asearch.change_name(xml, old, new, allow_multiple)
@@ -33,6 +34,7 @@ def vanGenuchtenParams(xml):
             change_name(region, "van Genuchten residual saturation", "residual saturation [-]")
             change_name(region, "residual saturation", "residual saturation [-]")
 
+            
 def thermalConductivityParams(xml):
     change_name(xml, "thermal conductivity of soil [W/(m-K)]", "thermal conductivity of soil [W m^-1 K^-1]", allow_multiple=True)
     change_name(xml, "thermal conductivity of ice [W/(m-K)]", "thermal conductivity of ice [W m^-1 K^-1]", allow_multiple=True)
@@ -67,10 +69,11 @@ def thermalConductivityParams(xml):
     change_name(xml, "heat of fusion of water [J/kg]", "latent heat [J kg^-1]", True)
     change_name(xml, "smoothing length [K]", "smoothing width [K]", True)
 
+    
 def commonSupressOptions(xml):
     change_name(xml, "supress Jacobian terms: div hq / dp,T", "supress Jacobian terms: d div hq / dp,T")
-    
-            
+
+
 def checkManning(xml):
     fe_list = asearch.find_path(xml, ["state","field evaluators"])
     for eval in fe_list:
@@ -86,7 +89,6 @@ def checkManning(xml):
                         for entry in comp_entries[1:]:
                             reg.remove(entry)
                         
-
                     fixed = False
                     if not fixed:
                         try:
@@ -123,21 +125,35 @@ def fixSnow(xml):
     except aerrors.MissingXMLError:
         pass
     else:
-        snow_cond.pop("include dt factor")
+        try:
+            snow_cond.pop("include dt factor")
+        except aerrors.MissingXMLError:
+            pass
 
-        dtf = asearch.find_name(snow_cond, "dt factor")
-        dtf.setName("dt factor [s]")
+        try:
+            dtf = asearch.find_name(snow_cond, "dt factor")
+        except aerrors.MissingXMLError:
+            pass
+        else:
+            dtf.setName("dt factor [s]")
 
         # rename "include density factor" --> "include density"
-        inc_dens = asearch.find_name(snow_cond, "include density factor")
-        inc_dens.setName("include density")
+        try:
+            inc_dens = asearch.find_name(snow_cond, "include density factor")
+        except aerrors.MissingXMLError:
+            pass
+        else:
+            inc_dens.setName("include density")
 
         # add "swe density factor [-]" (default is 10)
-        snow_cond.append(parameter.DoubleParameter("swe density factor [-]", 10.0))
+        if len(asearch.findall_name(snow_cond, "swe density factor [-]")) == 0:
+            snow_cond.append(parameter.DoubleParameter("swe density factor [-]", 10.0))
 
+            
 def fixSubgrid(xml):
     # todo: ponded_depth_minus_depression_depth --> mobile_depth
     raise NotImplementedError("fix subgrid")
+
 
 def mergePreconditionerLinearSolver(xml):
     pc_list = xml.getElement("PKs")
@@ -161,6 +177,7 @@ def mergePreconditionerLinearSolver(xml):
             pc = pk.getElement("inverse")
             change_name(pc, "preconditioner type", "preconditioning method")
             change_name(pc, "preconditioner method", "preconditioning method") 
+
 
 def fixOverlandConductivity(xml):
     pm = asearch.parent_map(xml)
@@ -194,6 +211,7 @@ def fixOverlandConductivity(xml):
         oc.setParameter("field evaluator type", "string", "overland conductivity")
         fe.append(oc)
 
+
 def updateObservations(xml):
     try:
         obs = asearch.findall_path(xml, ["observations", "functional"])
@@ -220,8 +238,6 @@ def _get_prefixed_name(pk, name):
 
                 
 def fixMassSource(xml):
-    # a few helper functions for use later on...
-
     # find all pks
     pks = asearch.find_name(xml, "PKs")
     for pk in pks:
@@ -260,11 +276,8 @@ def fixMassSource(xml):
                             pass
                         else:
                             # we are using the default, change it to the new default
-                            if domain == "domain":
-                                new_default = "water_source"
-                            else:
-                                new_default = domain+"-water_source"
-                            source_eval.setName(default_val)
+                            prefix_name = _get_prefixed_name(pk, "water_source")
+                            source_eval.setName(prefix_name)
                     else:
                         if source_name_suffix.getValue() == "mass_source":
                             # if we found source key suffix, and it is mass_source...
@@ -305,7 +318,19 @@ def fixMassSource(xml):
     # can be in transport, not only in flow.
     for ws_in_meters in asearch.findall_name(xml, "mass source in meters"):
         ws_in_meters.setName("water source in meters")
-    
+
+    # changes "mass source units" to "water source units" in total energy sources
+    fe_list = asearch.find_path(xml, ["state","field evaluators"])
+    for eval in fe_list:
+        if asearch.find_name(eval, "field evaluator type").getValue() == "advected energy source":
+            try:
+                units = asearch.find_name(eval, "mass source units")
+            except aerrors.MissingXMLError:
+                pass
+            else:
+                units.setName("water source units")
+
+        
 def update(xml):
     vanGenuchtenParams(xml)
     thermalConductivityParams(xml)
