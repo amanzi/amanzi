@@ -21,7 +21,7 @@
     * `"observation output filename`" ``[string]`` user-defined name for the file
       that the observations are written to.
 
-    * `"delimiter`" ``[string]`` **, ** Delimiter to split columns of the file
+    * `"delimiter`" ``[string]`` **\, ** Delimiter to split columns of the file
 
     *  `"write interval`" ``[int]`` **1** Interval of observations on which to flush IO files.
 
