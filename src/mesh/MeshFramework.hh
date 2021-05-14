@@ -331,8 +331,9 @@ class MeshFramework  {
           const Parallel_type ptype,
           Entity_ID_List& entids) const;
 
- protected:
-  void hasEdgesOrThrow_() const;
+  void hasEdgesOrThrow() const;
+
+protected:
   void throwNotImplemented_(const std::string& fname) const;
   Cell_type getCellType_(const Entity_ID c, const Entity_ID_List& faces) const;
 

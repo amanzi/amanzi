@@ -18,6 +18,57 @@ namespace Amanzi {
 namespace AmanziMesh {
 namespace MeshAlgorithms {
 
+
+template<class Mesh_type>
+Cell_type getCellType(const Mesh_type& mesh, const Entity_ID c)
+{
+  auto faces = mesh.getCellFaces(c);
+  if (mesh.get_manifold_dimension() == 2) {
+    switch (faces.size()) {
+    case 3:
+      return Cell_type::TRI;
+      break;
+    case 4:
+      return Cell_type::QUAD;
+      break;
+    default:
+      return Cell_type::POLYGON;
+    }
+  } else if (mesh.get_manifold_dimension() == 3) {
+    int nquads = 0;
+    for (const auto& f : faces) {
+      Entity_ID_List fnodes;
+      mesh.getFaceNodes(f, fnodes);
+      if (fnodes.size() == 4) nquads++;
+    }
+
+    switch (faces.size()) {
+      case 4:
+        if (nquads == 0) return Cell_type::TET;
+        else return Cell_type::POLYHED;
+        break;
+      case 5:
+        if (nquads == 1) return Cell_type::PYRAMID;
+        else if (nquads == 3) return Cell_type::PRISM;
+        else return Cell_type::POLYHED;
+        break;
+      case 6:
+        if (nquads == 6) return Cell_type::HEX;
+        else return Cell_type::POLYHED;
+        break;
+      default:
+        return Cell_type::POLYHED;
+    }
+  } else {
+    Errors::Message msg;
+    msg << "Mesh of manifold_dimension = " << mesh.get_manifold_dimension() << " not supported";
+    Exceptions::amanzi_throw(msg);
+  }
+  return Cell_type::UNKNOWN;
+}
+
+
+
 template<class Mesh_type>
 int getFaceDirectionInCell(const Mesh_type& mesh, const Entity_ID f, const Entity_ID c)
 {
@@ -95,6 +146,11 @@ computeFaceGeometry(const Mesh_type& mesh, const Entity_ID f)
     Entity_ID_List fcells;
     mesh.getFaceCells(f, Parallel_type::ALL, fcells);
     Point_List normals(fcells.size(), normal);
+
+    for (int i=0; i!=fcells.size(); ++i) {
+      int dir = MeshAlgorithms::getFaceDirectionInCell(mesh, f, fcells[i]);
+      normals[i] = dir * normals[i];
+    }
     return std::make_tuple(area, centroid, normals);
 
   } else if (mesh.get_manifold_dimension() == 2) {
@@ -113,6 +169,10 @@ computeFaceGeometry(const Mesh_type& mesh, const Entity_ID f)
       Entity_ID_List fcells;
       mesh.getFaceCells(f, Parallel_type::ALL, fcells);
       Point_List normals(fcells.size(), normal);
+      for (int i=0; i!=fcells.size(); ++i) {
+        int dir = MeshAlgorithms::getFaceDirectionInCell(mesh, f, fcells[i]);
+        normals[i] = dir * normals[i];
+      }
       return std::make_tuple(area, centroid, normals);
 
     } else {
@@ -138,10 +198,6 @@ computeFaceGeometry(const Mesh_type& mesh, const Entity_ID f)
 
         double len = norm(normal);
         normal *= (area/len);
-
-        // Always an outward normal as calculated, so must negate for negative dir
-        int dir = getFaceDirectionInCell(mesh, f, cellids[i]);
-        normals[i] = (dir == 1) ? normal : -normal;
       }
       return std::make_tuple(area, centroid, normals);
     }

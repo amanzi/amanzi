@@ -5,6 +5,8 @@
   provided in the top-level COPYRIGHT file.
 */
 
+#pragma once
+
 #include <algorithm>
 #include <iostream>
 #include <iomanip>

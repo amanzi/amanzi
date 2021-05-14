@@ -33,6 +33,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 add_amanzi_library(mesh SOURCE GenerationSpec.cc
                                MeshFramework.cc
                                MeshSets_Helpers.cc
+                               MeshCache.cc
                                #DomainSet.cc
                         LINK_LIBS geometry atk ${Epetra_LIBRARIES})
 
@@ -91,12 +92,18 @@ if (BUILD_TESTS)
       list(APPEND test_link_libs mstk_mesh)
     endif()    
 
-    # Test: mesh geometry
-    add_amanzi_test(mesh_geometry mesh_geometry
+    # Test: tests framework geometry on a variety of meshes
+    add_amanzi_test(mesh_framework_geometry mesh_framework_geometry
                     KIND unit
-                    SOURCE test/Main.cc test/test_mesh_geometry.cc
+                    SOURCE test/Main.cc test/mesh_framework_geometry.cc
                     LINK_LIBS ${test_link_libs})
 
+    # Test: tests mesh cache geometry on a variety of meshes
+    add_amanzi_test(mesh_cache_geometry mesh_cache_geometry
+                    KIND unit
+                    SOURCE test/Main.cc test/mesh_cache_geometry.cc
+                    LINK_LIBS ${test_link_libs})
+                  
                   
     # Test: mesh deformation
     # add_amanzi_test(mesh_deform mesh_deform

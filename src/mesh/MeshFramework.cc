@@ -219,20 +219,30 @@ AmanziGeometry::Point
 MeshFramework::getFaceNormal(const Entity_ID f, const Entity_ID c, int * const orientation) const
 {
   auto geom = computeFaceGeometry(f);
-  if (c >= 0) {
-    Entity_ID_List cells;
-    getFaceCells(f, Parallel_type::ALL, cells);
 
-    for (int i=0; i!=cells.size(); ++i) {
-      if (c == cells[i]) {
-        int dir = MeshAlgorithms::getFaceDirectionInCell(*this, f, c);
-        if (orientation) *orientation = dir;
-        return dir * std::get<2>(geom)[i];
+  Entity_ID_List fcells;
+  getFaceCells(f, Parallel_type::ALL, fcells);
+  if (orientation) *orientation = 0;
+
+  Entity_ID cc = (c < 0) ? fcells[0] : c;
+  int i;
+  for (i=0; i!=fcells.size(); ++i) {
+    if (cc == fcells[i]) {
+      if (orientation && (get_space_dimension() == get_manifold_dimension())) {
+        *orientation = MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
+      } else if (c < 0) {
+        if (get_space_dimension() == get_manifold_dimension()) {
+          int dir = MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
+          std::get<2>(geom)[i] *= dir;
+        } else {
+          Errors::Message msg("MeshFramework: asking for the natural normal of a submanifold mesh is not valid.");
+          Exceptions::amanzi_throw(msg);
+        }
       }
+      break;
     }
   }
-  // called with a negative argument, returns the natural normal
-  return std::get<2>(geom)[0];
+  return std::get<2>(geom)[i];
 }
 
 
@@ -297,7 +307,7 @@ MeshFramework::getCellFacesAndBisectors(const Entity_ID cellid,
 void
 MeshFramework::getCellEdges(const Entity_ID c, Entity_ID_List& edges) const
 {
-  hasEdgesOrThrow_();
+  hasEdgesOrThrow();
 
   edges.resize(0);
   Entity_ID_List faces, fedges;
@@ -332,7 +342,7 @@ void
 MeshFramework::getFaceEdgesAndDirs(const Entity_ID f,
         Entity_ID_List& edges,
         Entity_Direction_List * const dirs) const {
-  hasEdgesOrThrow_();
+  hasEdgesOrThrow();
   throwNotImplemented_("getFaceEdgesAndDirs");
 }
 
@@ -340,7 +350,7 @@ MeshFramework::getFaceEdgesAndDirs(const Entity_ID f,
 void
 MeshFramework::getEdgeNodes(const Entity_ID e, Entity_ID_List& nodes) const
 {
-  hasEdgesOrThrow_();
+  hasEdgesOrThrow();
   throwNotImplemented_("getEdgeNodes");
 }
 
@@ -348,14 +358,14 @@ MeshFramework::getEdgeNodes(const Entity_ID e, Entity_ID_List& nodes) const
 void
 MeshFramework::getEdgeCells(const Entity_ID e, const Parallel_type ptype, Entity_ID_List& cells) const
 {
-  hasEdgesOrThrow_();
+  hasEdgesOrThrow();
   throwNotImplemented_("getEdgeCells");
 }
 
 void
 MeshFramework::getEdgeFaces(const Entity_ID e, const Parallel_type ptype, Entity_ID_List& faces) const
 {
-  hasEdgesOrThrow_();
+  hasEdgesOrThrow();
   throwNotImplemented_("getEdgeFaces");
 }
 
@@ -378,7 +388,7 @@ MeshFramework::getNodeCells(const Entity_ID n, const Parallel_type ptype, Entity
 void
 MeshFramework::getNodeEdges(const Entity_ID nodeid, const Parallel_type ptype, Entity_ID_List& edgeids) const
 {
-  hasEdgesOrThrow_();
+  hasEdgesOrThrow();
   throwNotImplemented_("getNodeEdges");
 }
 
@@ -391,7 +401,7 @@ MeshFramework::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
 
 
 void
-MeshFramework::hasEdgesOrThrow_() const
+MeshFramework::hasEdgesOrThrow() const
 {
   if (!has_edges()) {
     Errors::Message msg("MeshFramework does not include edges.");

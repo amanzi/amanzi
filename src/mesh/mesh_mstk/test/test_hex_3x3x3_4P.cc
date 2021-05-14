@@ -30,7 +30,7 @@ TEST(MSTK_HEX_3x3x3_4P)
   std::stringstream fname;
   fname << "test/mstk_hex_3x3x3_4P." << rank << ".out";
   std::ofstream fout(fname.str().c_str());
-  Amanzi::MeshAudit auditor(mesh,fout);
+  Amanzi::AmanziMesh::MeshAudit auditor(mesh,fout);
   auditor.Verify();
 }
 
