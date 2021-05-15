@@ -3462,7 +3462,7 @@ Capillary pressure of liquid on ice
 
 Water Retention Model and Relative Permeability
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
+ Evaluates saturation through water retention models.
 
 Water Retention Models (WRMs) determine the saturation as a function of
 pressure and the relative permeability as a function of saturation.  Most
@@ -3471,7 +3471,7 @@ commonly used in practice is the van Genuchten model, but others are available.
 .. _wrm-evaluator-spec
 .. admonition:: wrm-evaluator-spec
 
-   * `"WRM parameters`" ``[wrm-partition-typed-spec-list]`` 
+   * `"WRM parameters`" ``[wrm-partition-typed-spec-list]``
 
    KEYS:
 
@@ -3486,43 +3486,64 @@ commonly used in practice is the van Genuchten model, but others are available.
 
 
 
- RelPermEvaluator: evaluates relative permeability using water retention models.
+ A collection of WRMs along with a Mesh Partition.
+
+A WRM partition is a list of (region, WRM) pairs, where the regions partition
+the mesh.
+
+.. _wrm-partition-spec
+.. admonition:: wrm-partition-spec
+
+   * `"region`" ``[string]`` Region on which the WRM is valid.
+   * `"WRM type`" ``[string]`` Name of the WRM type.
+   * `"_WRM_type_ parameters`" ``[_WRM_type_-spec]`` See below for the required
+      parameter spec for each type.
+
+
+
+ Evaluates relative permeability using water retention models.
 
 Uses a list of regions and water retention models on those regions to evaluate
 relative permeability, typically as a function of liquid saturation.
 
 Most of the parameters are provided to the WRM model, and not the evaluator.
+Typically these share lists to ensure the same water retention curves, and this
+one is updated with the parameters of the WRM evaluator.  This is handled by
+flow PKs.
 
-* `"use density on viscosity in rel perm`" ``[bool]`` **true** Include 
+Some additional parameters are available.
 
-* `"boundary rel perm strategy`" ``[string]`` **boundary pressure** Controls
-  how the rel perm is calculated on boundary faces.  Note, this may be
-  overwritten by upwinding later!  One of:
+.. _rel-perm-evaluator-spec
+.. admonition:: rel-perm-evaluator-spec
 
-  * `"boundary pressure`" Evaluates kr of pressure on the boundary face, upwinds normally.
-  * `"interior pressure`" Evaluates kr of the pressure on the interior cell (bad idea).
-  * `"harmonic mean`" Takes the harmonic mean of kr on the boundary face and kr on the interior cell.
-  * `"arithmetic mean`" Takes the arithmetic mean of kr on the boundary face and kr on the interior cell.
-  * `"one`" Sets the boundary kr to 1.
-  * `"surface rel perm`" Looks for a field on the surface mesh and uses that.
+   * `"use density on viscosity in rel perm`" ``[bool]`` **true** Include
 
-* `"minimum rel perm cutoff`" ``[double]`` **0.** Provides a lower bound on rel perm.
+   * `"boundary rel perm strategy`" ``[string]`` **boundary pressure** Controls
+     how the rel perm is calculated on boundary faces.  Note, this may be
+     overwritten by upwinding later!  One of:
 
-* `"permeability rescaling`" ``[double]`` Typically rho * kr / mu is very big
-  and K_sat is very small.  To avoid roundoff propagation issues, rescaling
-  this quantity by offsetting and equal values is encourage.  Typically 10^7 or so is good.
+      * `"boundary pressure`" Evaluates kr of pressure on the boundary face, upwinds normally.
+      * `"interior pressure`" Evaluates kr of the pressure on the interior cell (bad idea).
+      * `"harmonic mean`" Takes the harmonic mean of kr on the boundary face and kr on the interior cell.
+      * `"arithmetic mean`" Takes the arithmetic mean of kr on the boundary face and kr on the interior cell.
+      * `"one`" Sets the boundary kr to 1.
+      * `"surface rel perm`" Looks for a field on the surface mesh and uses that.
 
-* `"WRM parameters`" ``[wrm-spec-list]``  List (by region) of WRM specs.
+   * `"minimum rel perm cutoff`" ``[double]`` **0.** Provides a lower bound on rel perm.
 
+   * `"permeability rescaling`" ``[double]`` Typically rho * kr / mu is very big
+     and K_sat is very small.  To avoid roundoff propagation issues, rescaling
+     this quantity by offsetting and equal values is encourage.  Typically 10^7 or so is good.
 
-Keys:
+   * `"WRM parameters`" ``[wrm-spec-list]``  List (by region) of WRM specs.
 
-* `"rel perm`"
-* `"saturation`"
-* `"density`" (if `"use density on viscosity in rel perm`" == true)
-* `"viscosity`" (if `"use density on viscosity in rel perm`" == true)
-* `"surface relative permeability`" (if `"boundary rel perm strategy`" == `"surface rel perm`")
+   KEYS:
 
+   * `"rel perm`"
+   * `"saturation`"
+   * `"density`" (if `"use density on viscosity in rel perm`" == true)
+   * `"viscosity`" (if `"use density on viscosity in rel perm`" == true)
+   * `"surface relative permeability`" (if `"boundary rel perm strategy`" == `"surface rel perm`")
 
 
 
@@ -3876,7 +3897,7 @@ Peters-Lidard Model
 
 
 Thermal Conductivity, three phases
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
  Thermal conductivity based on a three-phase (air,liquid,ice) composition of the porous media.
 
 Wet-Dry Model
@@ -3899,20 +3920,8 @@ See Atchley et al GMD 2015 Supplementary Material for equations.
     * `"unsaturated alpha unfrozen [-]`" ``[double]`` Interpolating exponent
     * `"unsaturated alpha frozen [-]`" ``[double]`` Interpolating exponent
     * `"unsaturated alpha frozen [-]`" ``[double]`` Interpolating exponent
-    * `"unsaturated beta frozen [-]`" ``[double]`` **1.0** Interpolating exponent
+    * `"saturated beta frozen [-]`" ``[double]`` **1.0** Interpolating exponent
     * `"epsilon`" ``[double]`` **1e-10** Epsilon to keep saturations bounded away from 0.
-
-Usage:
-
-  <ParameterList name="thermal_conductivity">
-    <Parameter name="thermal conductivity type" type="string" value="three-phase wet/dry"/>
-    <Parameter name="thermal conductivity, saturated (unfrozen) [W m^-1 K^-1]" type="double" value=""/>
-    <Parameter name="thermal conductivity, dry [W m^-1 K^-1]" type="double" value=""/>
-    <Parameter name="unsaturated alpha frozen [-]" type="double" value=""/>
-    <Parameter name="unsaturated alpha unfrozen [-]" type="double" value=""/>
-    <Parameter name="saturated beta frozen [-]" type="double" value="1.0"/>
-    <Parameter name="epsilon" type="double" value="1.e-10"/>
-  </ParameterList>
 
 
 
@@ -3958,7 +3967,27 @@ Usage:
 
 
 Volume-averaged Model
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+ A volume-averaged thermal conductivity based on TCs of raw components.
+
+A simple model of three-phase thermal conductivity, based upon volume-averaging
+of four consitutive components.
+
+See Atchley et al GMD 2015 Supplementary Material for equations.
+
+.. _thermal-conductivity-volume-averaged-spec:
+.. admonition:: thermal-conductivity-volume-averaged-spec
+
+    * `"thermal conductivity of soil [W m^-1 K^-1]`" ``[double]`` Thermal
+      conductivity of soil **grains**
+    * `"thermal conductivity of liquid [W m^-1 K^-1]`" ``[double]`` Thermal
+      conductivity of liquid water.
+    * `"thermal conductivity of gas [W m^-1 K^-1]`" ``[double]`` Thermal
+      conductivity of air.
+    * `"thermal conductivity of ice [W m^-1 K^-1]`" ``[double]`` Thermal
+      conductivity of frozen water.
+
+
 
 
 Sutra-ICE model
@@ -5372,7 +5401,7 @@ Transport-specific Boundary Conditions
 
 
 Energy-specific Boundary Conditions
-----------------------------------
+-----------------------------------
 
 
 

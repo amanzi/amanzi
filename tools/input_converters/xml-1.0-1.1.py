@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""ATS input converter from 0.88 to master"""
+"""ATS input converter from 1.0 to 1.1"""
 
 import sys, os
 try:
@@ -15,6 +15,7 @@ from amanzi_xml.utils import search as asearch
 from amanzi_xml.utils import io as aio
 from amanzi_xml.utils import errors as aerrors
 from amanzi_xml.common import parameter
+
 
 def change_name(xml, old, new, allow_multiple=False):
     try:
@@ -33,6 +34,7 @@ def vanGenuchtenParams(xml):
             change_name(region, "van Genuchten residual saturation", "residual saturation [-]")
             change_name(region, "residual saturation", "residual saturation [-]")
 
+            
 def thermalConductivityParams(xml):
     change_name(xml, "thermal conductivity of soil [W/(m-K)]", "thermal conductivity of soil [W m^-1 K^-1]", allow_multiple=True)
     change_name(xml, "thermal conductivity of ice [W/(m-K)]", "thermal conductivity of ice [W m^-1 K^-1]", allow_multiple=True)
@@ -67,14 +69,16 @@ def thermalConductivityParams(xml):
     change_name(xml, "heat of fusion of water [J/kg]", "latent heat [J kg^-1]", True)
     change_name(xml, "smoothing length [K]", "smoothing width [K]", True)
 
+    
 def commonSupressOptions(xml):
     change_name(xml, "supress Jacobian terms: div hq / dp,T", "supress Jacobian terms: d div hq / dp,T")
-    
-            
+
+
 def checkManning(xml):
-    fe_list = asearch.gen_by_path(xml, ["state","field evaluators"])
+    fe_list = asearch.find_path(xml, ["state","field evaluators"])
     for eval in fe_list:
-        if eval.get("name").endswith('manning_coefficient'):
+        ename = eval.getName()
+        if ename.endswith('manning_coefficient') and not ename.startswith('snow'):
             eval_type = eval.getElement('field evaluator type')
             if eval_type.getValue() == 'independent variable':
                 func_reg = eval.getElement("function")
@@ -85,7 +89,6 @@ def checkManning(xml):
                         for entry in comp_entries[1:]:
                             reg.remove(entry)
                         
-
                     fixed = False
                     if not fixed:
                         try:
@@ -94,7 +97,7 @@ def checkManning(xml):
                             pass
                         else:
                             reg.pop('component')
-                            assert not any(el.getName() == 'component' for el in reg)
+                            assert len(asearch.findall_name(reg, 'components')) == 0
                             reg.append(parameter.ArrayStringParameter('components', ['cell', 'boundary_face']))
                             fixed = True
 
@@ -105,7 +108,7 @@ def checkManning(xml):
                             pass
                         else:
                             reg.pop('components')
-                            assert not any(el.getName() == 'components' for el in reg)
+                            assert len(asearch.findall_name(reg, 'components')) == 0
                             reg.append(parameter.ArrayStringParameter('components', ['cell', 'boundary_face']))
                             fixed = True
 
@@ -115,15 +118,42 @@ def checkManning(xml):
 
 
 def fixSnow(xml):
-    # todo: remove "include dt factor"
-    # todo: rename "dt factor" --> "dt factor [s]"
-    # todo: add "swe density factor [-]" (default is 10)
-    # todo: rename "include density factor" --> "include density"
-    raise NotImplementedError("fix snow")
+    # remove "include dt factor"
+    # rename "dt factor" --> "dt factor [s]"
+    try:
+        snow_cond = asearch.find_path(xml, ["state", "field evaluators", "snow-conductivity"])
+    except aerrors.MissingXMLError:
+        pass
+    else:
+        try:
+            snow_cond.pop("include dt factor")
+        except aerrors.MissingXMLError:
+            pass
 
+        try:
+            dtf = asearch.find_name(snow_cond, "dt factor")
+        except aerrors.MissingXMLError:
+            pass
+        else:
+            dtf.setName("dt factor [s]")
+
+        # rename "include density factor" --> "include density"
+        try:
+            inc_dens = asearch.find_name(snow_cond, "include density factor")
+        except aerrors.MissingXMLError:
+            pass
+        else:
+            inc_dens.setName("include density")
+
+        # add "swe density factor [-]" (default is 10)
+        if len(asearch.findall_name(snow_cond, "swe density factor [-]")) == 0:
+            snow_cond.append(parameter.DoubleParameter("swe density factor [-]", 10.0))
+
+            
 def fixSubgrid(xml):
     # todo: ponded_depth_minus_depression_depth --> mobile_depth
     raise NotImplementedError("fix subgrid")
+
 
 def mergePreconditionerLinearSolver(xml):
     pc_list = xml.getElement("PKs")
@@ -147,6 +177,7 @@ def mergePreconditionerLinearSolver(xml):
             pc = pk.getElement("inverse")
             change_name(pc, "preconditioner type", "preconditioning method")
             change_name(pc, "preconditioner method", "preconditioning method") 
+
 
 def fixOverlandConductivity(xml):
     pm = asearch.parent_map(xml)
@@ -180,6 +211,7 @@ def fixOverlandConductivity(xml):
         oc.setParameter("field evaluator type", "string", "overland conductivity")
         fe.append(oc)
 
+
 def updateObservations(xml):
     try:
         obs = asearch.findall_path(xml, ["observations", "functional"])
@@ -191,24 +223,114 @@ def updateObservations(xml):
             if func_val.startswith("observation data: "):
                 func.setValue(func_val[len("observation data: "):])
             
-def aliasMesh(xml):
-    for mesh in asearch.findall_path(xml, ["mesh", "aliased parameters", "alias"]):
-        mesh.setName("target")
-        
-def landCover(xml):
-    for evaluator in asearch.findall_path(xml, ["state", "field evaluators", "field evaluator type"]):
-        if evaluator.getValue() == "surface balance area fractions":
-            evaluator.setValue("snow area fraction")
-    for evaluator in asearch.findall_path(xml, ["state", "field evaluators", "surface-fractional_areas"]):
-        evaluator.setName("snow-area_fraction")
-    for evaluator in asearch.findall_path(xml, ["state", "field evaluators", "field evaluator type"]):
-        if evaluator.getValue() == "albedo":
-            evaluator.setValue("ground albedo")
-    for evaluator in asearch.findall_path(xml, ["state", "field evaluators", "surface-subgrid_albedos"]):
-        evaluator.setName("surface-albedos")
-            
+
+def _get_prefixed_name(pk, name):
+    try:
+        domain = asearch.find_name(pk, "domain name").getValue()
+    except aerrors.MissingXMLError:
+        domain = "domain"
+
+    if domain == "domain":
+        default_val = name
+    else:
+        default_val = domain+"-"+name
+    return default_val    
 
                 
+def fixMassSource(xml):
+    # find all pks
+    pks = asearch.find_name(xml, "PKs")
+    for pk in pks:
+        pk_type = asearch.find_name(pk, "PK type")
+        if pk_type.getValue() in ["richards",
+                                  "overland flow, pressure basis",
+                                  "overland flow",
+                                  "overland flow with ice",
+                                  "snow distribution",
+                                  "richards steady state",
+                                  "permafrost flow"]:
+            # has source?
+            try:
+                has_source = asearch.find_name(pk, "source term")
+            except aerrors.MissingXMLError:
+                continue
+
+            if has_source.getValue():
+                # check for the default key
+                try:
+                    source_name = asearch.find_name(pk, "source key")
+                except aerrors.MissingXMLError:
+                    try:
+                        source_name_suffix = asearch.find_name(pk, "source key suffix")
+                    except aerrors.MissingXMLError:
+                        # if we are using the default, check to see if
+                        # the old default is in the list of evaluators
+                        default_val = _get_prefixed_name(pk, "mass_source")
+                        
+                        try:
+                            source_eval = asearch.find_path(xml, ["state","field evaluators",default_val])
+                        except aerrors.MissingXMLError:
+                            # likely this is a Arctic run, and the
+                            # source name is now changed to the new
+                            # default, do nothing
+                            pass
+                        else:
+                            # we are using the default, change it to the new default
+                            prefix_name = _get_prefixed_name(pk, "water_source")
+                            source_eval.setName(prefix_name)
+                    else:
+                        if source_name_suffix.getValue() == "mass_source":
+                            # if we found source key suffix, and it is mass_source...
+                            default_val = _get_prefixed_name(pk, "mass_source")
+                            try:
+                                source_eval = asearch.find_path(xml, ["state","field evaluators",default_val])
+                            except aerrors.MissingXMLError:
+                                # likely this is an Arctic run, and
+                                # the source name is now changed to
+                                # the new default.  Change the suffix
+                                source_name_suffix.setValue("water_source")
+                            else:
+                                # change both the suffix and the evaluator
+                                source_name_suffix.setValue("water_source")
+                                prefix_name = _get_prefixed_name(pk, "water_source")
+                                source_eval.setName(_get_prefixed_name(pk, "water_source"))
+
+                        
+                else:
+                    if source_name.getValue().endswith("mass_source"):
+                        # we found a source key, and its suffix is mass source...
+                        try:
+                            source_eval = asearch.find_path(xml, ["state","field evaluators",source_name.getValue()])
+                        except aerrors.MissingXMLError:
+                            # likely Arctic
+                            if '-' in source_name.getValue():
+                                source_domain = source_name.getValue().split('-')[0]
+                                source_name.setValue(source_domain+'-water_source')
+                            else:
+                                source_name.setValue('water_source')
+                        else:
+                            source_domain = source_name.getValue().split('-')[0]
+                            source_name.setValue(source_domain+'-water_source')
+                            source_eval.setName(source_domain+'-water_source')
+
+                    
+    # changes "mass source in meters" to "water source".  Note this
+    # can be in transport, not only in flow.
+    for ws_in_meters in asearch.findall_name(xml, "mass source in meters"):
+        ws_in_meters.setName("water source in meters")
+
+    # changes "mass source units" to "water source units" in total energy sources
+    fe_list = asearch.find_path(xml, ["state","field evaluators"])
+    for eval in fe_list:
+        if asearch.find_name(eval, "field evaluator type").getValue() == "advected energy source":
+            try:
+                units = asearch.find_name(eval, "mass source units")
+            except aerrors.MissingXMLError:
+                pass
+            else:
+                units.setName("water source units")
+
+        
 def update(xml):
     vanGenuchtenParams(xml)
     thermalConductivityParams(xml)
@@ -216,13 +338,12 @@ def update(xml):
     
     checkManning(xml)
     # NOTE: these will get added when subgrid pull request is done
-    #fixSnow(xml)
+    fixSnow(xml)
     #fixSubgrid(xml)
     mergePreconditionerLinearSolver(xml)
     fixOverlandConductivity(xml)
     updateObservations(xml)
-    aliasMesh(xml)
-    landCover(xml)
+    fixMassSource(xml)
 
 if __name__ == "__main__":
     import argparse
