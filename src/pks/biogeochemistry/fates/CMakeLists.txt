@@ -4,7 +4,8 @@
 #  long/showtwave radiation, precip, etc etc etc
 
 
-include_directories(${ATS_SOURCE_DIR}/src/pks)
+include_directories(${ATS_SOURCE_DIR}/pks)
+include_directories(${ATS_SOURCE_DIR}/pks/biogeochemistry/bgc_simple/)
 
 add_library(pk_veg
   fates_pk.cc

@@ -6,6 +6,7 @@
 set(ats_generic_evals_src_files
     MultiplicativeEvaluator.cc
     AdditiveEvaluator.cc
+    ReciprocalEvaluator.cc
     SubgridDisaggregateEvaluator.cc
     SubgridAggregateEvaluator.cc
     ColumnSumEvaluator.cc	

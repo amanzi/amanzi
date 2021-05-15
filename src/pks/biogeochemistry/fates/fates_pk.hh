@@ -23,7 +23,7 @@ Authors: Daniil Svyatsky (dasvyat@lanl.gov), Xu Chonggang
 #include <string.h>
 
 namespace Amanzi {
-namespace Vegetation {
+namespace BGC {
 
   typedef struct {  
     int nlevbed;
@@ -33,6 +33,22 @@ namespace Vegetation {
     double temp_veg24_patch;
     double latdeg, londeg;
   } site_info;
+
+  typedef struct {  
+    double dayl_factor;  // scalar (0-1) for daylength
+    double esat_tv;      // saturation vapor pressure at t_veg (Pa)
+    double eair;         // vapor pressure of canopy air (Pa)
+    double oair;         // Atmospheric O2 partial pressure (Pa)
+    double cair;         // Atmospheric CO2 partial pressure (Pa)
+    double rb;           // boundary layer resistance (s/m)
+    double t_veg;        // vegetation temperature (Kelvin)
+    double tgcm;         // air temperature at agcm reference height (Kelvin)
+    double solad[2]; //direct radiation (W/m**2); 1=visible lights; 2=near infrared radition
+    double solai[2]; //diffuse radiation (W/m**2); 1=visible lights; 2=near infrared radition
+    double albgrd[2]; //!ground albedo (direct) 1=visiable; 2=near infrared (nir)
+    double albgri[2]; //ground albedo (diffuse) 1=visiable; 2=near infrared (nir)    
+  } PhotoSynthesisInput;
+
 
 #ifdef __cplusplus
   extern "C"
@@ -50,6 +66,12 @@ namespace Vegetation {
     void dynamics_driv_per_site(int*, int*, site_info*, double*,
                                 double*, double*, double*, double*,
                                 double*);
+
+    void wrap_btran(int*, double*, double*, double*, double*, double*);
+    void wrap_photosynthesis(double*, double*, int*, double*, PhotoSynthesisInput*);
+    void wrap_sunfrac(int* array_size, double *forc_solad, double *forc_solai);
+    void wrap_canopy_radiation(double* jday, int* array_size, double* albgrd, double *albgri);    
+    
     void calculate_biomass(double*  ats_biomass_array, int nsites, int num_scls);
   
 #ifdef __cplusplus
@@ -85,10 +107,9 @@ namespace Vegetation {
     // -- Commit any secondary (dependent) variables.
     virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
 
-      // -- provide a timestep size
-    virtual double get_dt() {
-      return dt_;
-    }
+    // -- provide a timestep size
+    virtual double get_dt();
+
     virtual void set_dt(double dt) {
       dt_ = dt;
     }
@@ -96,19 +117,30 @@ namespace Vegetation {
   protected:
 
 
-    // void FieldToColumn_(AmanziMesh::Entity_ID col, const Epetra_Vector& vec,
-    //                     Teuchos::Ptr<Epetra_SerialDenseVector> col_vec, bool copy);
-    // void ColDepthDz_(AmanziMesh::Entity_ID col,
-    //                  Teuchos::Ptr<Epetra_SerialDenseVector> depth,
-    //                  Teuchos::Ptr<Epetra_SerialDenseVector> dz);
+    void FieldToColumn_(AmanziMesh::Entity_ID col, const Epetra_Vector& vec,
+                      double* col_vec, int ncol);
+    void ColDepthDz_(AmanziMesh::Entity_ID col,
+                     Teuchos::Ptr<Epetra_SerialDenseVector> depth,
+                     Teuchos::Ptr<Epetra_SerialDenseVector> dz);
 
+
+    double dt_, dt_photosynthesis_, dt_site_dym_;
+    double t_photosynthesis_, t_site_dym_;
     
-    double dt_;
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh_surf_;
+    bool surface_only_;
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh_surf_, mesh_domain_;
     Key domain_surf_;
     Key trans_key_;
-    Key precip_key_, temp_key_, humidity_key_, wind_key_;
+    Key precip_key_, air_temp_key_, humidity_key_, wind_key_, co2a_key_;
+    Key poro_key_, sat_key_, suc_key_, soil_temp_key_;
     Key met_decomp_key_, cel_decomp_key_, lig_decomp_key_;
+    Key longwave_key_, incident_rad_key_;
+
+    std::vector<double> t_soil_;  // soil temperature
+    std::vector<double> vsm_; // volumetric soil moisture vsm_ = S * poro;
+    std::vector<double> poro_; // porosity
+    std::vector<double> eff_poro_; //effective porosity  = porosity - vol_ice 
+    std::vector<double> suc_; //suction head
 
     int patchno_, nlevdecomp_, nlevsclass_;
     int ncells_owned_, ncells_per_col_, clump_;

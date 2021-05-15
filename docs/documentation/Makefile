@@ -11,6 +11,17 @@ BUILDDIR      = build
 
 all: input_spec html
 
+help:
+	@echo "Builds ATS documentation and user guide"
+	@echo "---------------------------------------"
+	@echo "To build ATS documentation from scratch (new repo setup, do this once):"
+	@echo "  > make worktree"
+	@echo ""
+	@echo "To build input spec/user guide:"
+	@echo "  > make"
+	@echo ""
+	@echo "To deploy to github:"
+	@echo "  > make deploy"
 
 sphinx_help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
