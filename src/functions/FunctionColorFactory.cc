@@ -10,10 +10,11 @@
 
 namespace Amanzi {
 
-FunctionColor* FunctionColorFactory::Create(std::string &filename, const Comm_type &comm) const
+std::unique_ptr<FunctionColor>
+FunctionColorFactory::Create(std::string &filename, const Comm_type &comm) const
 {
   int error;
-  FunctionColor* f(0);
+  std::unique_ptr<FunctionColor> f;
 
   // Open the input file.
   std::fstream infile;
@@ -88,7 +89,8 @@ FunctionColor* FunctionColorFactory::Create(std::string &filename, const Comm_ty
   return f;
 }
 
-FunctionColor* FunctionColorFactory::create_grid_color_function(int dim, std::fstream &infile, const Comm_type& comm) const
+std::unique_ptr<FunctionColor>
+FunctionColorFactory::create_grid_color_function(int dim, std::fstream &infile, const Comm_type& comm) const
 {
   int error;
 
@@ -236,8 +238,7 @@ FunctionColor* FunctionColorFactory::create_grid_color_function(int dim, std::fs
   }
   comm.Broadcast(&array[0], n, 0);
 
-  FunctionColor *f = new FunctionGridColor(dim, count, x0, dx, array);
-  return f;
+  return std::make_unique<FunctionGridColor>(dim, count, x0, dx, array);
 }
 
 } // namespace Amanzi

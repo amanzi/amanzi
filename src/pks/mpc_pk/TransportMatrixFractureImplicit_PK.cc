@@ -102,8 +102,25 @@ void TransportMatrixFractureImplicit_PK::Initialize(const Teuchos::Ptr<State>& S
 
   AMANZI_ASSERT(pk_matrix->domain() == "domain");
 
-  auto tvs = Teuchos::rcp(new TreeVectorSpace(my_solution_->Map()));
-  op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
+  // in the case of multiple components, we need an auxiliary map corresponding
+  // to one component.
+  auto tvs_new = Teuchos::rcp(new TreeVectorSpace());
+  auto tvs_old = Teuchos::rcp(new TreeVectorSpace(my_solution_->Map()));
+  for (auto it = tvs_old->begin(); it != tvs_old->end(); ++it) {
+    auto cvs_old = (*it)->Data();
+    auto cvs_new = Teuchos::rcp(new CompositeVectorSpace());
+
+    cvs_new->SetMesh(cvs_old->Mesh())->SetGhosted(true);
+    cvs_new->SetOwned(false);
+
+    for (auto kt = cvs_old->begin(); kt != cvs_old->end(); ++kt) {
+      cvs_new->AddComponent(*kt, cvs_old->Location(*kt), 1);
+    }
+    auto tvs_tmp = Teuchos::rcp(new TreeVectorSpace());
+    tvs_tmp->SetData(cvs_new);
+    tvs_new->PushBack(tvs_tmp);
+  }
+  op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs_new));
 
   op_tree_matrix_->set_operator_block(0, 0, pk_matrix->op());
   op_tree_matrix_->set_operator_block(1, 1, pk_fracture->op());

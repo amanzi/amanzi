@@ -56,7 +56,9 @@ class FunctionSeparable : public Function {
   FunctionSeparable(const FunctionSeparable& source)
      : f1_(source.f1_->Clone()), f2_(source.f2_->Clone()) {}
   ~FunctionSeparable() {} //{ if (f1_) delete f1_; if (f2_) delete f2_; }
-  FunctionSeparable* Clone() const { return new FunctionSeparable(*this); }
+  std::unique_ptr<Function> Clone() const {
+    return std::make_unique<FunctionSeparable>(*this);
+  }
   double operator()(const std::vector<double>& x) const {
     std::vector<double>::const_iterator xb = x.begin(); xb++;
     std::vector<double> y(xb, x.end());
@@ -65,7 +67,6 @@ class FunctionSeparable : public Function {
 
  private:
   std::unique_ptr<Function> f1_, f2_;
-  //Function *f1_, *f2_;
 };
 
 } // namespace Amanzi

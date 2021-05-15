@@ -55,12 +55,13 @@ class FunctionMultiplicative : public Function {
   FunctionMultiplicative(const FunctionMultiplicative& source)
      : f1_(source.f1_->Clone()), f2_(source.f2_->Clone()) {}
   ~FunctionMultiplicative() {} //{ if (f1_) delete f1_; if (f2_) delete f2_; }
-  FunctionMultiplicative* Clone() const { return new FunctionMultiplicative(*this); }
+  std::unique_ptr<Function> Clone() const {
+    return std::make_unique<FunctionMultiplicative>(*this);
+  }
   double operator()(const std::vector<double>& x) const { return (*f1_)(x) * (*f2_)(x); }
 
  private:
   std::unique_ptr<Function> f1_, f2_;
-  //Function *f1_, *f2_;
 };
 
 } // namespace Amanzi

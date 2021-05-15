@@ -54,8 +54,8 @@ SecondaryVariableFieldEvaluatorFromFunction::SecondaryVariableFieldEvaluatorFrom
 
 SecondaryVariableFieldEvaluatorFromFunction::SecondaryVariableFieldEvaluatorFromFunction(const SecondaryVariableFieldEvaluatorFromFunction& other) :
     SecondaryVariableFieldEvaluator(other),
-    func_(other.func_->Clone()) {}
-    
+    func_(Teuchos::rcp(other.func_->Clone())) {}
+
 Teuchos::RCP<FieldEvaluator>
 SecondaryVariableFieldEvaluatorFromFunction::Clone() const
 {

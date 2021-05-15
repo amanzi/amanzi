@@ -53,7 +53,6 @@ add_amanzi_library(atk
                            XMLParameterListWriter.hh
                            VerboseObject.hh
                            VerboseObject_objs.hh
-                           GlobalVerbosity.hh
                            IOEvent.hh
                            Iterators.hh
                            Factory.hh

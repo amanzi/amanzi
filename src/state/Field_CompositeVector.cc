@@ -366,7 +366,7 @@ void Field_CompositeVector::InitializeFromColumn_(Teuchos::ParameterList& plist)
   func_sublist.set("y header", f_str);
   FunctionFactory fac;
   Teuchos::RCP<Function> func = Teuchos::rcp(fac.Create(func_list));
-      
+
   // orientation
   std::string orientation = plist.get<std::string>("coordinate orientation", "standard");
   if (orientation != "standard" && orientation != "depth") {
