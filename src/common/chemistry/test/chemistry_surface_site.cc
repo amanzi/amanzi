@@ -87,24 +87,6 @@ SUITE(GeochemistryTestsSurfaceSite) {
   //
   // check that updating the individual parameters works correctly
   //
-  TEST_FIXTURE(SurfaceSiteTest, SurfaceSite_set_name) {
-    std::string new_name("Foo");
-    site_.set_name(new_name);
-    CHECK_EQUAL(new_name, site_.name());
-  }
-
-  TEST_FIXTURE(SurfaceSiteTest, SurfaceSite_set_id) {
-    int new_id(543);
-    site_.set_identifier(new_id);
-    CHECK_EQUAL(new_id, site_.identifier());
-  }
-
-  TEST_FIXTURE(SurfaceSiteTest, SurfaceSite_set_charge) {
-    double charge(-3.456);
-    site_.set_charge(charge);
-    CHECK_EQUAL(charge, site_.charge());
-  }
-
   TEST_FIXTURE(SurfaceSiteTest, SurfaceSite_set_molar_density) {
     double molar_density(0.12345);
     site_.set_molar_density(molar_density);

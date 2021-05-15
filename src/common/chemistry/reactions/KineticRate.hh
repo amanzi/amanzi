@@ -50,9 +50,6 @@ class KineticRate {
 
   void DisplayReaction(const Teuchos::Ptr<VerboseObject> vo) const;
 
-  void set_debug(const bool value) { debug_ = value; };
-  bool debug() const { return debug_; };
-
   std::string name() const { return name_; };
   int identifier() const { return identifier_; };
 
@@ -70,7 +67,6 @@ class KineticRate {
   std::vector<int> reactant_ids;
 
  private:
-  bool debug_;
   std::string name_;
   int identifier_;  // the index identifier of the associated mineral!
   double reaction_rate_;  // volumetric rate: [moles/sec/m^3 bulk]

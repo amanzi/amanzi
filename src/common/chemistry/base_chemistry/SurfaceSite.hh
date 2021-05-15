@@ -40,15 +40,7 @@ class SurfaceSite {
   void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 
-  // TODO(bandre): should all these really be public? should not be changing the
-  // name, id, etc after creation!
-  void set_name(const std::string& name) { name_ = name; }
-  void set_identifier(int id) { identifier_ = id; }
-  void set_charge(double d) { charge_ = d; }
-
-  // TODO(bandre): I'd like to keep set_xyz just as a mutator for a single
-  // variable. Since these are changing two variables, can we call
-  // them update_free_site_concentration, update_ln_free_site....?
+  // These are changing two variables.
   void set_free_site_concentration(double d) {
     free_site_concentration_ = d;
     ln_free_site_concentration_ = std::log(d);

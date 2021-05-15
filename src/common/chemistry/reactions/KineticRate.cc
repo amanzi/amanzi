@@ -14,14 +14,15 @@
 #include <iomanip>
 #include <sstream>
 
+#include "errors.hh"
+
 #include "KineticRate.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
 
 KineticRate::KineticRate()
-  : debug_(false),
-    name_("KineticRate"),
+  : name_("KineticRate"),
     identifier_(0),
     reaction_rate_(0.0)
 {
@@ -36,42 +37,37 @@ void KineticRate::SetSpeciesIds(const SpeciesArray& species,
                                 const std::vector<std::string>& in_names,
                                 const std::vector<double>& in_stoichiometry,
                                 std::vector<int>* out_ids,
-                                std::vector<double>* out_stoichiometry) {
-  /*
-  ** loop through a list of input names. Compare the names to the
-  ** names of the species. When a match is found, set the output id to
-  ** match the identifier of the speciess and possibly set the
-  ** corresponding _location_ in the output stoichiometry list to the
-  ** correct value.
-  */
+                                std::vector<double>* out_stoichiometry)
+{
+  // loop through a list of input names. Compare the names to the
+  // names of the species. When a match is found, set the output id to
+  // match the identifier of the speciess and possibly set the
+  // corresponding _location_ in the output stoichiometry list to the
+  // correct value.
   out_ids->clear();
   if (out_stoichiometry != NULL) {
     out_stoichiometry->clear();
     out_stoichiometry->resize(species.size(), 0.0);
   }
+
   for (int current = 0; current < in_names.size(); current++) {
-    bool species_found = false;
-    // check primary species
-    SpeciesArray::const_iterator s;
-    for (s = species.begin(); s != species.end(); s++) {
-      if (in_names.at(current) == (*s).name()) {
-        species_found = true;
-        out_ids->push_back((*s).identifier());
+    bool found = false;
+    for (auto s = species.begin(); s != species.end(); s++) {
+      if (in_names.at(current) == s->name()) {
+        found = true;
+        out_ids->push_back(s->identifier());
         if (out_stoichiometry != NULL) {
-          // geh          (*out_stoichiometry)[current] = in_stoichiometry.at(current);
-          (*out_stoichiometry)[(*s).identifier()] = in_stoichiometry.at(current);
-        }
-        if (debug()) {
-          std::cout << "    KineticRate::SetSpeciesIds: Found " << species_type
-                    << " species " << (*s).name() << std::endl;
+          (*out_stoichiometry)[s->identifier()] = in_stoichiometry.at(current);
         }
       }
     }
-    if (species_found == false && debug()) {
-      // TODO(bandre): is this actually a runtime error?
-      std::cout << "    KineticRate::SetSpeciesIds: Did not find species \'"
-                << in_names.at(current) << "\' in " << species_type
-                << " species list! " << std::endl;
+
+    if (found == false) {
+      Errors::Message msg;
+      msg << "    KineticRate::SetSpeciesIds: Did not find species \'"
+          << in_names.at(current) << "\' in " << species_type
+          << " species list!\n";
+      amanzi_throw(msg);
     }
   }
 }

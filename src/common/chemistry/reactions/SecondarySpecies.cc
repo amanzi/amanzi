@@ -92,7 +92,6 @@ void SecondarySpecies::UpdateTemperatureDependentCoefs(double T)
   if (func_.get() != nullptr) {
     logK_ = (*func_)({T});
   }
-std::cout << T << " " << logK_ << std::endl; 
 }
 
 

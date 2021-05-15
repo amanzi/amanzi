@@ -35,7 +35,6 @@ class MatrixBlock {
 
   double GetRowAbsMax(int irow);
 
-  // TODO(bandre): can we make some of these pointers const refs?
   void AddValue(int i, int j, double value);
   void AddValues(MatrixBlock* b);
   void AddValues(MatrixBlock* b, double scale);

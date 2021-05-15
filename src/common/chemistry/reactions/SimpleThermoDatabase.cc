@@ -128,9 +128,6 @@ void SimpleThermoDatabase::Initialize(const BeakerState& state,
 
   // ion excange sites
   // location is the mineral where the exchanger is located, i.e. kaolinite
-  // TODO(bandre): eventually something like "bulk" will be used as a dummy
-  // mineral for bulk soil rather than a specific mineral. need to
-  // coordinate this with surface complexation.
   const auto& islist = plist_->sublist("ion exchange sites");
 
   for (auto it = islist.begin(); it != islist.end(); ++it) {

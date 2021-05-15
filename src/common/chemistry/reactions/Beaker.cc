@@ -10,7 +10,6 @@
   single computational node
 
   TODO(bandre): update mineral volume fractions to state.minerals after kinetics...
-  TODO(bandre): finish implementing ion exchange jacobian
 */
 
 #include <cstdlib>
@@ -279,8 +278,6 @@ int Beaker::ReactionStep(BeakerState* state,
            num_iterations < max_iterations_);
 
   if (num_iterations >= max_iterations_) {
-    // TODO(bandre): should this be an error to the driver...?
-    // code eventually produces nans when this isn't an error.
     std::ostringstream oss;
     oss << "\nWarning: The maximum number of Netwon iterations reached in Beaker.\n"
         << "\n   max relative change = " << max_rel_change
@@ -471,14 +468,14 @@ void Beaker::DisplayComponents(const BeakerState& state) const
   message << std::setw(15) << "Name"
           << std::setw(15) << "Molality"
           << std::setw(15) << "Molarity"
-          // << std::setw(15) << "Free Ion" // TODO(bandre): uncomment and update test results
+          // << std::setw(15) << "Free Ion"
           << std::endl;
   for (int i = 0; i < ncomp_; i++) {
     message << std::setw(15) << primary_species().at(i).name()
             << std::scientific << std::setprecision(5)
             << std::setw(15) << state.total.at(i) / water_density_kg_L_
             << std::setw(15) << state.total.at(i)
-            // << std::setw(15) << state.free_ion.at(i) // TODO(bandre): uncomment and update test results
+            // << std::setw(15) << state.free_ion.at(i)
             << std::endl;
   }
 
@@ -1377,23 +1374,18 @@ void Beaker::CheckChargeBalance_(const std::vector<double>& aqueous_totals) cons
 
 void Beaker::ValidateSolution()
 {
-  // TODO(bandre): what checks can we to to verify that the current solution is good?
-  // TODO(bandre): check for nan or inf's as a sign that the step was too big?
-
-  // TODO(bandre): negative total's (H+) are OK...
-
   // charge balance is error or warning...?
   CheckChargeBalance_(total_);
 
   // negative mineral volume fractions are bad...
   for (int m = 0; m < minerals_.size(); m++) {
     if (minerals_.at(m).volume_fraction() < 0.0) {
-      std::ostringstream error_stream;
-      error_stream << "Beaker::ValidateSolution(): \n";
-      error_stream << "   mineral " << minerals_.at(m).name()
-                   << " volume_fraction is negative: " 
-                   << minerals_.at(m).volume_fraction() << std::endl;
-      Exceptions::amanzi_throw(Errors::Message(error_stream.str()));
+      Errors::Message msg;
+      msg << "Beaker::ValidateSolution(): \n"
+          << "   mineral " << minerals_.at(m).name()
+          << " volume_fraction is negative: " 
+          << minerals_.at(m).volume_fraction() << "\n";
+      Exceptions::amanzi_throw(msg);
     }
   }
 }

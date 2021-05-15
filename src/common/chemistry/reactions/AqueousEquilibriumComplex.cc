@@ -29,7 +29,8 @@ AqueousEquilibriumComplex::AqueousEquilibriumComplex(
 
 
 void AqueousEquilibriumComplex::Update(
-    const std::vector<Species>& primary_species, const Species& water_species) {
+    const std::vector<Species>& primary_species, const Species& water_species)
+{
   /* This is not the true Q/K for the reaction, but is instead
   **   BC <==> cC + bB
   **   K = a_C^c * a_B^b / a_BC^1
@@ -74,13 +75,10 @@ void AqueousEquilibriumComplex::AddContributionToDTotal(
 }
 
 
-void AqueousEquilibriumComplex::Display(const Teuchos::Ptr<VerboseObject> vo) const {
+void AqueousEquilibriumComplex::Display(const Teuchos::Ptr<VerboseObject> vo) const
+{
   std::stringstream message;
   message << "    " << name() << " = " << std::fixed << std::setprecision(3);
-  // TODO(bandre): uncomment and update test output
-  // if (h2o_stoichiometry_ > 0) {
-  //   message << h2o_stoichiometry_ << " " << "H2O" << " + ";
-  // }
   for (int i = 0; i < species_names_.size(); i++) {
     message << stoichiometry_.at(i) << " " << species_names_.at(i);
     if (i < species_names_.size() - 1) {
@@ -102,7 +100,8 @@ void AqueousEquilibriumComplex::Display(const Teuchos::Ptr<VerboseObject> vo) co
 }
 
 
-void AqueousEquilibriumComplex::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const {
+void AqueousEquilibriumComplex::DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const
+{
   std::stringstream message;
   message << std::setw(15) << "Name"
           << std::setw(15) << "Molality"
@@ -113,7 +112,8 @@ void AqueousEquilibriumComplex::DisplayResultsHeader(const Teuchos::Ptr<VerboseO
 }
 
 
-void AqueousEquilibriumComplex::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const {
+void AqueousEquilibriumComplex::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const
+{
   std::stringstream message;
   message << std::setw(15) << name()
           << std::scientific << std::setprecision(5)

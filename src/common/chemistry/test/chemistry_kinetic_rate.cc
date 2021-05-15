@@ -131,16 +131,7 @@ SUITE(GeochemistryTestsKineticRate) {
     CHECK_EQUAL(rate.name(), "abc123");
   }
 
-  // can we set the debug flag?
-  TEST_FIXTURE(KineticRateTest, MockKineticRate_set_debug) {
-    MockKineticRate rate;
-    rate.set_debug(true);
-    CHECK_EQUAL(rate.debug(), true);
-  }
-
   // does SetSpeciesIds function work?
-  // TODO(bandre): what about testing for dummy/unknown species foo...?
-  // TODO(bandre): is SetSpecesIds with a null out_stoichimontery used? needed?
   TEST_FIXTURE(KineticRateTest, MockKineticRate_SetSpeciesIds_test_id) {
     MockKineticRate rate;
 
