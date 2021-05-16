@@ -44,7 +44,7 @@ SUITE(GeochemistryTestsKineticRateFactory) {
     ac::Species H_p;
     ac::Species OH_m;
     ac::Species Ca_pp;
-    ac::Species CO3_mm;
+    ac::Species HCO3_m;
     ac::Species Al_ppp;
     ac::Species PO4_mmm;
   };
@@ -69,10 +69,10 @@ SUITE(GeochemistryTestsKineticRateFactory) {
          .set<double>("ion size parameter", 6.0);
     Ca_pp = ac::Species(2, "Ca++", plist);
 
-    plist.set<int>("charge", -2)
-         .set<double>("gram molecular weight", 96.0636)
+    plist.set<int>("charge", -1)
+         .set<double>("gram molecular weight", 60.1)
          .set<double>("ion size parameter", 4.0);
-    CO3_mm = ac::Species(3, "CO3--", plist);
+    HCO3_m = ac::Species(3, "HCO3-", plist);
 
     plist.set<int>("charge", 3)
          .set<double>("gram molecular weight", 26.9815)
@@ -88,13 +88,13 @@ SUITE(GeochemistryTestsKineticRateFactory) {
     H_p.update(0.0005);
     OH_m.update(0.0015);
     Ca_pp.update(0.001);
-    CO3_mm.update(0.002);
+    HCO3_m.update(0.002);
     Al_ppp.update(0.003);
     PO4_mmm.update(0.001);
     species_.push_back(H_p);
     species_.push_back(OH_m);
     species_.push_back(Ca_pp);
-    species_.push_back(CO3_mm);
+    species_.push_back(HCO3_m);
     species_.push_back(Al_ppp);
     species_.push_back(PO4_mmm);
 
@@ -105,24 +105,11 @@ SUITE(GeochemistryTestsKineticRateFactory) {
     double logK(1.8487);
     double molar_volume(36.9340);
     double specific_surface_area(0.987654);
-    std::vector<std::string> species_names;
-    std::vector<double> stoichiometry;
-    std::vector<int> species_ids;
-    species_names.clear();
-    stoichiometry.clear();
-    species_ids.clear();
 
-    species_names.push_back("H+");
-    stoichiometry.push_back(-1.0);
-    species_ids.push_back(0);
+    std::vector<std::string> species_names({"H+", "HCO3-", "Ca++"});
+    std::vector<double> stoichiometry({-1.0, 1.0, 1.0});
+    std::vector<int> species_ids({0, 1, 2});
 
-    species_names.push_back("HCO3-");
-    stoichiometry.push_back(1.0);
-    species_ids.push_back(1);
-
-    species_names.push_back("Ca++");
-    stoichiometry.push_back(1.0);
-    species_ids.push_back(2);
     minerals_.clear();
 
     std::vector<ac::Species> primary_species;

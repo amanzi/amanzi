@@ -136,14 +136,8 @@ SUITE(GeochemistryTestsKineticRate) {
     MockKineticRate rate;
 
     std::string species_type("primary");
-    std::vector<std::string> in_names;
-    in_names.push_back("Ca++");
-    in_names.push_back("OH-");
-    in_names.push_back("foo");
-    std::vector<double> in_stoichiometry;
-    in_stoichiometry.push_back(3.45);
-    in_stoichiometry.push_back(0.12);
-    in_stoichiometry.push_back(6.78);
+    std::vector<std::string> in_names({"Ca++", "OH-", "Al+++"});
+    std::vector<double> in_stoichiometry({3.45, 0.12, 6.78});
 
     std::vector<int> out_ids;
     std::vector<double>* out_stoichiometry = NULL;
@@ -156,20 +150,14 @@ SUITE(GeochemistryTestsKineticRate) {
     expeced_ids.push_back(2);
     expeced_ids.push_back(1);
     CHECK_ARRAY_EQUAL(expeced_ids, out_ids, 2);
-  }  // end TEST_FIXTURE(MockKineticRate_SetSpeciesIds_test_id)
+  }
 
   TEST_FIXTURE(KineticRateTest, MockKineticRate_SetSpeciesIds_test_stoich) {
     MockKineticRate rate;
 
     std::string species_type("primary");
-    std::vector<std::string> in_names;
-    in_names.push_back("Ca++");
-    in_names.push_back("OH-");
-    in_names.push_back("foo");
-    std::vector<double> in_stoichiometry;
-    in_stoichiometry.push_back(3.45);
-    in_stoichiometry.push_back(0.12);
-    in_stoichiometry.push_back(6.78);
+    std::vector<std::string> in_names({"Ca++", "OH-", "Al+++"});
+    std::vector<double> in_stoichiometry({3.45, 0.12, 6.78});
 
     std::vector<int> out_ids;
     std::vector<double> out_stoichiometry;
@@ -182,6 +170,8 @@ SUITE(GeochemistryTestsKineticRate) {
     std::vector<double> expected_stoich(species_.size());
     expected_stoich[1] = 0.12;
     expected_stoich[2] = 3.45;
+    expected_stoich[4] = 6.78;
     CHECK_ARRAY_EQUAL(expected_stoich, out_stoichiometry, species_.size());
-  }  // end TEST_FIXTURE(MockKineticRate_SetSpeciesIds_test_stoich)
-}  // end SUITE(GeochemistryTestKineticRate)
+  }
+}
+
