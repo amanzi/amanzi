@@ -1,0 +1,423 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Transient Flow in a 2D Confined Aquifer with a Disc Embedded in A Matrix &mdash; Amanzi 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/fix_eq_position.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Transient Flow in a 2D Confined Aquifer with a Linear Strip" href="../butler_strip_2d/amanzi_butler_strip_2d.html" />
+    <link rel="prev" title="Transient One-Dimensional Confined Flow to a Pumping Well (Theis)" href="../theis_isotropic_1d/amanzi_theis_isotropic_1d.html" /> 
+ <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: {
+        extensions: ["mhchem.js"]
+    }
+  });
+</script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Amanzi
+          
+
+          
+            
+            <img src="../../../_static/Amanzi-draft-logo-5-trans.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../background/index.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../background/getting_started.html">Getting Started with Amanzi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../capabilities/index.html">Amanzi Features and Capabilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../input/index.html">Amanzi Input Description</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/index.html">Building Amanzi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/index.html">Tutorial</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Verification Testing</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">Confined Flow Tests</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../linear_head_head_1d/amanzi_linear_head_head_1d.html">Steady-State One-Dimensional Flow with Head Boundary Conditions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../linear_flux_head_1d/amanzi_linear_flux_head_1d.html">Steady-State One-Dimensional Flow with Flux and Head Boundary Conditions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../linear_materials_serial_1d/amanzi_linear_materials_serial_1d.html">Steady-State One-Dimensional Flow: Materials in Serial</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../linear_materials_parallel_1d/amanzi_linear_materials_parallel_1d.html">Steady-State One-Dimensional Flow: Materials in Parallel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../theis_isotropic_1d/amanzi_theis_isotropic_1d.html">Transient One-Dimensional Confined Flow to a Pumping Well (Theis)</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Transient Flow in a 2D Confined Aquifer with a Disc Embedded in A Matrix</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#capabilities-tested">Capabilities Tested</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#background">Background</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#model">Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#problem-specification">Problem Specification</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#results-and-comparison">Results and Comparison</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#references">References</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#about">About</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../butler_strip_2d/amanzi_butler_strip_2d.html">Transient Flow in a 2D Confined Aquifer with a Linear Strip</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../hantush_anisotropic_2d/amanzi_hantush_anisotropic_2d.html">Transient Flow to a Pumping Well in an Anisotropic Aquifer (Hantush)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../boundedDomain_2d/amanzi_boundedDomain_2d.html">Transient Drawdown due to Pumping Wells in a Bounded Domain</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../unconfined_flow/index.html">Unconfined Flow Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../infiltration/index.html">Infiltration Flow Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../transport/index.html">Transport of Solutes: Advection, Dispersion and Diffusion</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../benchmarking/index.html">Benchmark Testing</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Amanzi</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Verification Testing</a> &raquo;</li>
+        
+          <li><a href="../index.html">Confined Flow Tests</a> &raquo;</li>
+        
+      <li>Transient Flow in a 2D Confined Aquifer with a Disc Embedded in A Matrix</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../_sources/verification/confined_flow/butler_pod_2d/amanzi_butler_pod_2d.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="transient-flow-in-a-2d-confined-aquifer-with-a-disc-embedded-in-a-matrix">
+<h1>Transient Flow in a 2D Confined Aquifer with a Disc Embedded in A Matrix<a class="headerlink" href="#transient-flow-in-a-2d-confined-aquifer-with-a-disc-embedded-in-a-matrix" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="capabilities-tested">
+<h2>Capabilities Tested<a class="headerlink" href="#capabilities-tested" title="Permalink to this headline">¶</a></h2>
+<p>This transient two-dimensional flow problem — with a constant pumping rate in a heterogenous confined aquifer — tests the Amanzi saturated flow process kernel.
+Capabilities tested include:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>single-phase, two-dimensional flow</p></li>
+<li><p>transient flow</p></li>
+<li><p>saturated flow</p></li>
+<li><p>constant-rate pumping well</p></li>
+<li><p>constant-head (Dirichlet) boundary conditions</p></li>
+<li><p>heterogeneous isotropic porous medium</p></li>
+<li><p>uniform mesh</p></li>
+</ul>
+</div></blockquote>
+<p>For details on this test, see <a class="reference internal" href="#about-butler-pod-2d"><span class="std std-ref">About</span></a>.</p>
+</div>
+<div class="section" id="background">
+<h2>Background<a class="headerlink" href="#background" title="Permalink to this headline">¶</a></h2>
+<p>Butler and Liu  <a class="bibtex reference internal" href="#pod-butler-liu-radially-asymmetric-1993" id="id1">[BL93]</a> developed a semi-analytical solution for calculating drawdown in an aquifer system, in which a disc of one material is embedded in a matrix of different hydraulic properties. The problem is interested in drawdown as a function of location and time due to pumping from a fully penetrating well located either in the disc or the matrix. The differences in hydraulic properties between the disc and the matrix can be of any magnitude. The problem is solved analytically in Laplace space and the drawdown is solved numerically by inversion from the Laplace space to the real space.</p>
+</div>
+<div class="section" id="model">
+<h2>Model<a class="headerlink" href="#model" title="Permalink to this headline">¶</a></h2>
+<p>Flow within the circular disc (<span class="math notranslate nohighlight">\(i =1\)</span>) and surrounding matrix (<span class="math notranslate nohighlight">\(i =2\)</span>)  can be described mathematically by the polar-coordinate form of groundwater flow equations:</p>
+<div class="math notranslate nohighlight">
+\[\frac{\partial ^2 s_i}{\partial r^2}
++ \frac{1}{r} \frac{\partial s_i}{\partial r}
++ \frac{1}{r^2} \frac{\partial^2 s_i}{\partial \theta^2}
+= \frac{S_i}{T_i} \frac{\partial s_i}{\partial t},\]</div>
+<p>where
+<span class="math notranslate nohighlight">\(s_i\)</span> is the drawdown [L] in material <span class="math notranslate nohighlight">\(i\)</span>,
+<span class="math notranslate nohighlight">\(t\)</span> is the time [T],
+<span class="math notranslate nohighlight">\(T_i\)</span> is the transmissivity [L<sup>2</sup>/T] of material <span class="math notranslate nohighlight">\(i\)</span>, and
+<span class="math notranslate nohighlight">\(S_i\)</span> is the storage coefficient [-] of material <span class="math notranslate nohighlight">\(i\)</span>.</p>
+<p>The initial conditions are the same for the disc and the matrix:</p>
+<div class="math notranslate nohighlight">
+\[s_i(r, \theta,0) =0,\  0 \le r &lt; \infty.\]</div>
+<p>The boundary condition at infinite distance is:</p>
+<div class="math notranslate nohighlight">
+\[s_2(\infty, \theta, t) =  0.\]</div>
+<p>A pumping well discharging at a constant rate <span class="math notranslate nohighlight">\(Q\)</span> [L<sup>3</sup>/T] is assumed at location <span class="math notranslate nohighlight">\((r_{pw}, \theta_{pw})\)</span></p>
+<div class="math notranslate nohighlight">
+\[\lim_{R \rightarrow 0} 2 \pi R T_2 \frac{\partial s_2(R,t)}{\partial R} = -Q,\;\; t&gt;0,\]</div>
+<p>where <span class="math notranslate nohighlight">\(R\)</span> is the distance between the pumping and observation wells. To ensure flow continuity, the auxiliary conditions at the matrix-disc interfaces (<span class="math notranslate nohighlight">\(r = a\)</span>) must be met:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}s_1(a,\theta,t) = s_2(a,\theta,t),\\\end{split}\]</div>
+<div class="math notranslate nohighlight">
+\[\begin{split}T_1\frac{\partial s_1(a,\theta,t)}{\partial r} = T_2\frac{\partial s_2(a,\theta,t)}{\partial r}.\\\end{split}\]</div>
+</div>
+<div class="section" id="problem-specification">
+<h2>Problem Specification<a class="headerlink" href="#problem-specification" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="schematic">
+<h3>Schematic<a class="headerlink" href="#schematic" title="Permalink to this headline">¶</a></h3>
+<p>The problem configuration is illustrated in the following schematic figure:</p>
+<div class="align-center figure align-default" id="id5">
+<a class="reference internal image-reference" href="../../../_images/butler_pod_schematic.jpg"><img alt="../../../_images/butler_pod_schematic.jpg" src="../../../_images/butler_pod_schematic.jpg" style="width: 600px;" /></a>
+<p class="caption"><span class="caption-text"><strong>Schematic of the Butler and Liu pod verification problem</strong></span><a class="headerlink" href="#id5" title="Permalink to this image">¶</a></p>
+</div>
+</div>
+<div class="section" id="mesh">
+<h3>Mesh<a class="headerlink" href="#mesh" title="Permalink to this headline">¶</a></h3>
+<p>A non-uniform mesh was used to better represent the disc in numerical simulations (Fig. 2), where the central part of the domain is refined to better represent the disc. The grid spacing increases geometrically toward the domain boundaries.</p>
+<div class="align-center figure align-default" id="id6">
+<a class="reference internal image-reference" href="../../../_images/pod_mesh.jpg"><img alt="../../../_images/pod_mesh.jpg" src="../../../_images/pod_mesh.jpg" style="width: 600px;" /></a>
+<p class="caption"><span class="caption-text"><strong>Mesh of the Butler and Liu’s pod verification problem</strong></span><a class="headerlink" href="#id6" title="Permalink to this image">¶</a></p>
+</div>
+</div>
+<div class="section" id="variables">
+<h3>Variables<a class="headerlink" href="#variables" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>Domain:</p>
+<ul>
+<li><p><span class="math notranslate nohighlight">\(x_{min} = y_{min} = z_{min} = 0 \text{ [m]}\)</span> (in mesh/cartesian coordinates)</p></li>
+<li><p><span class="math notranslate nohighlight">\(x_{max} = y_{max} = 20200, z_{max} = 1 \text{ [m]}\)</span> (in mesh/cartesian coordinates)</p></li>
+<li><p>aquifer thickness:    <span class="math notranslate nohighlight">\(b=z_{max}-z_{min} = 1 \text{ [m]}\)</span></p></li>
+<li><p>pumping well location:    <span class="math notranslate nohighlight">\((r_{pw}, \theta_{pw}) = (600 \text{m}, 0^{\circ})\)</span></p></li>
+<li><p>observation well locations:</p>
+<ul>
+<li><p><span class="math notranslate nohighlight">\((r_{obs40},\theta_{obs40}) = (40 \text{m},360^{\circ})\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\((r_{obs360},\theta_{obs360}) = (60 \text{m},120^{\circ})\)</span></p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Material properties:</p>
+<ul>
+<li><p>transmissivity (all isotropic):  <span class="math notranslate nohighlight">\(T_1 = 0.0011574 \text{ [m}^2 \text{/s]}\)</span>,
+<span class="math notranslate nohighlight">\(T_2 = 0.011574 \text{ [m}^2 \text{/s]}\)</span>, derived from <span class="math notranslate nohighlight">\(T=Kb\)</span>, where <span class="math notranslate nohighlight">\(K=\frac{k \rho g}{\mu}\)</span>
+and intrinsic permeability is <span class="math notranslate nohighlight">\(k_1 = 1.187 \times 10^{-10}, \: k_2 = 1.187 \times 10^{-9} \text{ [m}^2 \text{]}\)</span></p></li>
+<li><p>storativity: <span class="math notranslate nohighlight">\(S_1= S_2 = 2.0\times 10^{-4} \: \text{[-]}\)</span>, derived
+from  <span class="math notranslate nohighlight">\(S=S_s b\)</span>, where <span class="math notranslate nohighlight">\(b=1 \: \text{[m]}\)</span></p></li>
+<li><p>porosity:    <span class="math notranslate nohighlight">\(\phi_{1,2} = 0.25\)</span></p></li>
+<li><p>fluid density:    <span class="math notranslate nohighlight">\(\rho = 1000.0 \: \text{[kg/m}^3\text{]}\)</span></p></li>
+<li><p>dynamic viscosity:    <span class="math notranslate nohighlight">\(\mu = 1.002 \times 10^{-3} \: \text{[Pa} \cdot \text{s]}\)</span></p></li>
+<li><p>gravitational acceleration:    <span class="math notranslate nohighlight">\(g = 9.807 \: \text{[m/s}^2\text{]}\)</span></p></li>
+</ul>
+</li>
+<li><p>Boundary and initial conditions:</p>
+<ul>
+<li><p>initial condition:    <span class="math notranslate nohighlight">\(s(r,\theta,0)=0\)</span></p></li>
+<li><p>constant-head (Dirichlet) boundary conditions:  <span class="math notranslate nohighlight">\(s(x_{min,max},y_{min,max},z_{min,max},t) = 0 \text{ [m]}\)</span></p></li>
+<li><p>well-head pumping rate:    <span class="math notranslate nohighlight">\(Q = -11.5485 \text{ [m}^3 \text{/s]} = 1000 \text{ [m}^3 \text{/d]}\)</span></p></li>
+<li><p>duration of pumping:    <span class="math notranslate nohighlight">\(t_{max} = 31.7 \text{ [y]}\)</span></p></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="results-and-comparison">
+<h2>Results and Comparison<a class="headerlink" href="#results-and-comparison" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="plot-analytic-solution-and-amanzi-results">
+<span id="plot-butlerpod2d"></span><h3>Plot  Analytic Solution and Amanzi Results<a class="headerlink" href="#plot-analytic-solution-and-amanzi-results" title="Permalink to this headline">¶</a></h3>
+<p>(<a class="reference external" href="../../../verification/confined_flow/butler_pod_2d/amanzi_butler_pod_2d.py">Source code</a>, <a class="reference external" href="../../../verification/confined_flow/butler_pod_2d/amanzi_butler_pod_2d.png">png</a>, <a class="reference external" href="../../../verification/confined_flow/butler_pod_2d/amanzi_butler_pod_2d.hires.png">hires.png</a>, <a class="reference external" href="../../../verification/confined_flow/butler_pod_2d/amanzi_butler_pod_2d.pdf">pdf</a>)</p>
+<div class="figure align-center">
+<img alt="../../../_images/amanzi_butler_pod_2d.png" src="../../../_images/amanzi_butler_pod_2d.png" />
+</div>
+<p>The comparison shows that the results from the Amanzi model match the analytical solution very well at early time, and deviate when the effect of pumping hits the constant head boundary of the domain. Note that the analytical solution was developed for an unbounded domain, so it is therefore expected that the two solutions will deviate from each other at later time.
+To show that such a deviation is indeed caused by the boundary effect, we also conducted numerical simulations using
+FEHM, a widely used numerical simulator for simulating heat and mass flow in subsurface environment <a class="bibtex reference internal" href="#pod-zyvoloski-fehm-summary-1997" id="id2">[ZRDT97]</a>. It is showed that the results from Amanzi are almost the same as those from FEHM, see <a class="bibtex reference internal" href="#pod-lu-harp-birdsell-benchmarking-2014" id="id3">[LHB14]</a> for detailed comparison.</p>
+</div>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<p id="bibtex-bibliography-verification/confined_flow/butler_pod_2d/amanzi_butler_pod_2d-0"><dl class="citation">
+<dt class="bibtex label" id="pod-butler-liu-radially-asymmetric-1993"><span class="brackets"><a class="fn-backref" href="#id1">BL93</a></span></dt>
+<dd><p>J. J. Butler and W. Liu. Pumping tests in nonuniform aquifers: the radially asymmetric case. <em>WaterResourcesResearch</em>, 29(2):259–269, 1993.</p>
+</dd>
+<dt class="bibtex label" id="pod-lu-harp-birdsell-benchmarking-2014"><span class="brackets"><a class="fn-backref" href="#id3">LHB14</a></span></dt>
+<dd><p>Z. Lu, D. Harp, and K. Birdsell. Comparison of the amanzi model against analytical solutions and the fehm model. Technical Report, Los Alamos National Laboratory, Los Alamos, NM, 2014.</p>
+</dd>
+<dt class="bibtex label" id="pod-zyvoloski-fehm-summary-1997"><span class="brackets"><a class="fn-backref" href="#id2">ZRDT97</a></span></dt>
+<dd><p>G. A. Zyvoloski, B. A. Robinson, Z. V. Dash, and L. L. Trease. Summary of the models and methods for the fehm application-a finite-element heat-and mass-transfer code. Technical Report, Los Alamos National Laboratory, Los Alamos, NM, 1997.</p>
+</dd>
+</dl>
+</p>
+</div>
+<div class="section" id="about">
+<span id="about-butler-pod-2d"></span><h2>About<a class="headerlink" href="#about" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Directory: testing/verification/flow/transient/butler_pod_2d</p></li>
+<li><p>Authors:  Zhiming Lu (<a class="reference external" href="mailto:zhiming&#37;&#52;&#48;lanl&#46;gov">zhiming<span>&#64;</span>lanl<span>&#46;</span>gov</a>),  Dylan Harp (<a class="reference external" href="mailto:dharp&#37;&#52;&#48;lanl&#46;gov">dharp<span>&#64;</span>lanl<span>&#46;</span>gov</a>)</p></li>
+<li><p>Maintainer(s):  Zhiming Lu,  Dylan Harp</p></li>
+<li><p>Input Files:</p>
+<ul>
+<li><p>amanzi_butler_pod_2d-u.xml, Spec, Version 2.3, unstructured mesh framework</p></li>
+<li><p>mesh_cylinder.exo</p></li>
+</ul>
+</li>
+<li><p>Analytical Solutions</p>
+<ul>
+<li><p>Directory: analytic/</p></li>
+<li><p>Executable: butler_pod.x, compiled from FORTRAN code under the Linux environment.</p></li>
+<li><p>Input Files:</p>
+<ul>
+<li><p>obs.dat,  specifying parameters for observation wells.</p></li>
+<li><p>anal.dat, specifying other parameters such as the number of time steps, and so on.</p></li>
+</ul>
+</li>
+<li><p>Output Files:</p>
+<ul>
+<li><p>drdn.res,  drawdown as a function of time for all observation wells.</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../butler_strip_2d/amanzi_butler_strip_2d.html" class="btn btn-neutral float-right" title="Transient Flow in a 2D Confined Aquifer with a Linear Strip" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../theis_isotropic_1d/amanzi_theis_isotropic_1d.html" class="btn btn-neutral float-left" title="Transient One-Dimensional Confined Flow to a Pumping Well (Theis)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Amanzi Development Team
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

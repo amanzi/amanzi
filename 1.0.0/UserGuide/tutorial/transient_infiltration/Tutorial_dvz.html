@@ -1,0 +1,746 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Transient vadose zone flow and Tc-99 transport &mdash; Amanzi 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/fix_eq_position.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Verification Testing" href="../../verification/index.html" />
+    <link rel="prev" title="One-dimensional, steady-state, saturated flow" href="../steady_confined/Tutorial_steady_linear.html" /> 
+ <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: {
+        extensions: ["mhchem.js"]
+    }
+  });
+</script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Amanzi
+          
+
+          
+            
+            <img src="../../_static/Amanzi-draft-logo-5-trans.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../background/index.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background/getting_started.html">Getting Started with Amanzi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../capabilities/index.html">Amanzi Features and Capabilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../input/index.html">Amanzi Input Description</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install/index.html">Building Amanzi</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Tutorial</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../steady_confined/Tutorial_steady_linear.html">One-dimensional, steady-state, saturated flow</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Transient vadose zone flow and Tc-99 transport</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#bc-cribs-and-trenches-site">BC Cribs and Trenches site</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#amanzi-input-specifications"><em>Amanzi</em> input specifications</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#amanzi-execution"><em>Amanzi</em> execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#amanzi-results"><em>Amanzi</em> results</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#amanzi-xml-input-file"><em>Amanzi</em> XML input file</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../verification/index.html">Verification Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../benchmarking/index.html">Benchmark Testing</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Amanzi</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Tutorial</a> &raquo;</li>
+        
+      <li>Transient vadose zone flow and Tc-99 transport</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/tutorial/transient_infiltration/Tutorial_dvz.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="transient-vadose-zone-flow-and-tc-99-transport">
+<h1>Transient vadose zone flow and Tc-99 transport<a class="headerlink" href="#transient-vadose-zone-flow-and-tc-99-transport" title="Permalink to this headline">¶</a></h1>
+<p>This tutorial illustrates <em>Amanzi</em> simulation of transient vadose zone flow and
+non-reactive (tracer) transport in the context of Tc-99 migration at the DOE
+Hanford BC Cribs and Trenches site.
+The tutorial involves a two-dimensional heterogeneous three-layer subsurface
+system with time- and space-varying infiltration at the ground surface.</p>
+<div class="section" id="bc-cribs-and-trenches-site">
+<h2>BC Cribs and Trenches site<a class="headerlink" href="#bc-cribs-and-trenches-site" title="Permalink to this headline">¶</a></h2>
+<p>The two-dimensional geometry and salient features of the Hanford BC Cribs and
+Trenches site, as represented in this simplified tutorial, are defined in the
+following schematic diagram:</p>
+<blockquote>
+<div><a class="reference internal image-reference" href="../../_images/Schematic.png"><img alt="../../_images/Schematic.png" class="align-center" src="../../_images/Schematic.png" style="width: 562.5px; height: 319.5px;" /></a>
+</div></blockquote>
+<p>General recharge at the site (<span class="math notranslate nohighlight">\(U\)</span>) increased following development of the Hanford
+facility in 1956, and Cribs B-17 and B-18 represent localized sources of water
+infiltration and Tc-99 contamination (<span class="math notranslate nohighlight">\(C_{Tc-99}\)</span>) to the subsurface:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 28%" />
+<col style="width: 22%" />
+<col style="width: 49%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>ID</p></th>
+<th class="head"><p><span class="math notranslate nohighlight">\(U\)</span> (mm/yr)</p></th>
+<th class="head"><p><span class="math notranslate nohighlight">\(C_{Tc-99}\)</span> (mol/m<sup>3</sup>)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>General site, pre-1956</p></td>
+<td><p>3.5</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>General site, post-1956</p></td>
+<td><p>47</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-even"><td><p>B-17, Jan 1956</p></td>
+<td><p>8025</p></td>
+<td><p>1.88e-6</p></td>
+</tr>
+<tr class="row-odd"><td><p>B-18, Feb-Mar 1956</p></td>
+<td><p>10439</p></td>
+<td><p>2.27e-6</p></td>
+</tr>
+</tbody>
+</table>
+<p>The three facies underlying the site have the following material properties:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 52%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Material property</p></th>
+<th class="head"><p>Facies 1</p></th>
+<th class="head"><p>Facies 2</p></th>
+<th class="head"><p>Facies 3</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Porosity</p></td>
+<td><p>0.4082</p></td>
+<td><p>0.2206</p></td>
+<td><p>0.2340</p></td>
+</tr>
+<tr class="row-odd"><td><p>Particle density (kg/m<sup>3</sup>)</p></td>
+<td><p>2720.0</p></td>
+<td><p>2720.0</p></td>
+<td><p>2720.0</p></td>
+</tr>
+<tr class="row-even"><td><p>Horizontal permeability (m<sup>2</sup>)</p></td>
+<td><p>1.9976e-12</p></td>
+<td><p>6.9365e-11</p></td>
+<td><p>2.0706e-09</p></td>
+</tr>
+<tr class="row-odd"><td><p>Vertical permeability (m<sup>2</sup>)</p></td>
+<td><p>1.9976e-13</p></td>
+<td><p>6.9365e-12</p></td>
+<td><p>2.0706e-09</p></td>
+</tr>
+<tr class="row-even"><td><p>Capillary pressure model</p></td>
+<td><p>van Genuchten</p></td>
+<td><p>van Genuchten</p></td>
+<td><p>Brooks-Corey</p></td>
+</tr>
+<tr class="row-odd"><td><p>Relative permeability model</p></td>
+<td><p>Mualem</p></td>
+<td><p>Mualem</p></td>
+<td><p>Mualem</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\alpha\)</span> (Pa<sup>-1</sup>)</p></td>
+<td><p>1.9467e-04</p></td>
+<td><p>2.0260e-03</p></td>
+<td><p>2.0674e-03</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(S_r\)</span></p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>van Genuchten <span class="math notranslate nohighlight">\(m\)</span></p></td>
+<td><p>0.2294</p></td>
+<td><p>0.2136</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>Brooks-Corey <span class="math notranslate nohighlight">\(\lambda\)</span></p></td>
+<td><p>N/A</p></td>
+<td><p>N/A</p></td>
+<td><p>0.3006</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="amanzi-input-specifications">
+<h2><em>Amanzi</em> input specifications<a class="headerlink" href="#amanzi-input-specifications" title="Permalink to this headline">¶</a></h2>
+<p>A working <em>Amanzi</em> input file for this tutorial simulation is listed in a
+separate section below.
+<em>Amanzi</em> input file structure and XML element names are intended to be reasonably
+self-explanatory; however, selective commentary is provided here for further guidance.
+Currently <em>Amanzi</em> requires the SI units indicated in the <code class="docutils literal notranslate"><span class="pre">model_description/units</span></code>
+element. The corresponding units of density, viscosity, pressure,
+hydraulic conductivity, and permeability  are thus
+kg/m<sup>3</sup>, Pa <span class="math notranslate nohighlight">\(\cdot\)</span> s, Pa, m/s, and m<sup>2</sup>, respectively.
+Simulation outputs also use these dimensional units.
+The use of named constants in the  <code class="docutils literal notranslate"><span class="pre">definitions</span></code> element, e.g.,</p>
+<p><code class="docutils literal notranslate"><span class="pre">&lt;constant</span> <span class="pre">name=&quot;pre_1956_recharge&quot;</span> <span class="pre">type=&quot;area_mass_flux&quot;</span> <span class="pre">value=&quot;1.1071E-7&quot;/&gt;</span></code></p>
+<p>allows the user to use a fixed name throughout the input file, but change its
+numerical value in only one location. Here the time- and space-varying infiltration
+parameters are input as defined constants. <code class="docutils literal notranslate"><span class="pre">time_macro</span> <span class="pre">name=&quot;Macro</span> <span class="pre">1&quot;</span></code> defines the
+output times for visualization in seconds; for example, the last time is
+<code class="docutils literal notranslate"><span class="pre">6.33834396E10</span></code> seconds or year 2008.5 for a 365.25 day year.
+<code class="docutils literal notranslate"><span class="pre">Macro</span> <span class="pre">2</span></code> is defined but not used in this
+example. Under <code class="docutils literal notranslate"><span class="pre">process_kernels</span></code> the chemistry kernel is turned off because the
+simulation involves only non-reactive transport. In the <code class="docutils literal notranslate"><span class="pre">phases</span></code>
+element, equation-of-state (eos) computations are turned off in favor of direct
+specification of fluid density and viscosity. Under the <code class="docutils literal notranslate"><span class="pre">mesh</span></code> element
+a three-dimensional grid is specified, however, only one cell is specified
+for the <span class="math notranslate nohighlight">\(y\)</span>-coordinate (<code class="docutils literal notranslate"><span class="pre">ny</span> <span class="pre">=</span> <span class="pre">&quot;1&quot;</span></code>) making the simulation effectively
+2D in the <span class="math notranslate nohighlight">\((x,z)\)</span> coordinates. The grid spacing is 0.5 meters
+horizontally and 0.42 meters in the vertical dimension. In the
+<code class="docutils literal notranslate"><span class="pre">initial_conditions</span></code> element, a hydrostatic profile is specified through a
+linear pressure profile with slope/gradient = <span class="math notranslate nohighlight">\(- \rho g\)</span> = -9789 Pa/m.
+The reference point for <span class="math notranslate nohighlight">\(P = P_{atm}\)</span> = 101325 Pa is set to
+<span class="math notranslate nohighlight">\(z\)</span> = 0.5 meters rather than the water table elevation of
+<span class="math notranslate nohighlight">\(z\)</span> = 0.0 meters to be compatible with a prior benchmarking comparison to
+a STOMP code model. The boundary conditions
+at the top surface are defined in the problem statement as a volumetric fluxes
+[m<sup>3</sup>/m<sup>2</sup>d = m/d]. <em>Amanzi</em> currently requires boundary
+conditions of this type to be specified as mass fluxes,
+<span class="math notranslate nohighlight">\(\rho U\)</span> [kg<sup>3</sup>/m<sup>2</sup>s]. The <code class="docutils literal notranslate"><span class="pre">inward_mass_flux</span></code> values
+in the XML input have these units.</p>
+</div>
+<div class="section" id="amanzi-execution">
+<h2><em>Amanzi</em> execution<a class="headerlink" href="#amanzi-execution" title="Permalink to this headline">¶</a></h2>
+<p><em>Amanzi</em> is executed from the command-line using this or analogous command for
+the user’s specific installation:</p>
+<p><code class="docutils literal notranslate"><span class="pre">mpirun</span> <span class="pre">-n</span> <span class="pre">4</span> <span class="pre">/ascem/amanzi/install/current/bin/amanzi</span> <span class="pre">--xml_schema=/ascem/amanzi/install/current/bin/amanzi.xsd</span> <span class="pre">--xml_file=dvz_3_layer_2d-isv2.xml</span></code></p>
+<p>Here execution using 4 processor cores is specified by <code class="docutils literal notranslate"><span class="pre">-n</span> <span class="pre">4</span></code>. Successful completion
+is marked by <code class="docutils literal notranslate"><span class="pre">SIMULATION_SUCCESSFUL</span></code> followed by a timing summary</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Amanzi</span><span class="p">::</span><span class="n">SIMULATION_SUCCESSFUL</span>
+
+<span class="o">**********************************************************</span>
+<span class="o">***</span>                   <span class="n">Timing</span> <span class="n">Summary</span>                   <span class="o">***</span>
+<span class="o">**********************************************************</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="amanzi-results">
+<h2><em>Amanzi</em> results<a class="headerlink" href="#amanzi-results" title="Permalink to this headline">¶</a></h2>
+<p>The figure shows saturation dynamics. Saturation grows underneath the
+left and right cribs during their operational cycles. Note it takes time
+for two moving plumes to penetrate into the middle soil which leads to saturation
+increase on the interface between soils.</p>
+<blockquote>
+<div><a class="reference internal image-reference" href="../../_images/saturation.png"><img alt="../../_images/saturation.png" class="align-center" src="../../_images/saturation.png" style="width: 483.0px; height: 871.5px;" /></a>
+</div></blockquote>
+<p>The next figure shows concentration of Tc-99. The concentration plumes are moving
+almost vertically with slight latter interaction due to a non-zero pressure gradient in this direction.
+The speed of the plumes is reduced significantly in the middle soil.
+The concentration satisfies the maximum principle.</p>
+<blockquote>
+<div><a class="reference internal image-reference" href="../../_images/concentration.png"><img alt="../../_images/concentration.png" class="align-center" src="../../_images/concentration.png" style="width: 512.0px; height: 875.0px;" /></a>
+</div></blockquote>
+</div>
+<div class="section" id="amanzi-xml-input-file">
+<h2><em>Amanzi</em> XML input file<a class="headerlink" href="#amanzi-xml-input-file" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;amanzi_input</span> <span class="na">version=</span><span class="s">&quot;2.3.0&quot;</span> <span class="na">type=</span><span class="s">&quot;unstructured&quot;</span><span class="nt">&gt;</span>
+
+  <span class="nt">&lt;model_description</span> <span class="na">name=</span><span class="s">&quot;BC Cribs&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;comments&gt;</span>Three homogeneous layers in 2D with two cribs discharging Tc-99<span class="nt">&lt;/comments&gt;</span>
+    <span class="nt">&lt;model_id&gt;</span>dvz_3_layer_2d<span class="nt">&lt;/model_id&gt;</span>
+    <span class="nt">&lt;author&gt;</span>Vicky Freedman, David Mouton, Erin Barker<span class="nt">&lt;/author&gt;</span>
+    <span class="nt">&lt;units&gt;</span>
+      <span class="nt">&lt;length_unit&gt;</span>m<span class="nt">&lt;/length_unit&gt;</span>
+      <span class="nt">&lt;time_unit&gt;</span>s<span class="nt">&lt;/time_unit&gt;</span>
+      <span class="nt">&lt;mass_unit&gt;</span>kg<span class="nt">&lt;/mass_unit&gt;</span>
+      <span class="nt">&lt;conc_unit&gt;</span>molar<span class="nt">&lt;/conc_unit&gt;</span>
+    <span class="nt">&lt;/units&gt;</span>
+  <span class="nt">&lt;/model_description&gt;</span>
+
+  <span class="nt">&lt;definitions&gt;</span>
+    <span class="nt">&lt;constants&gt;</span>
+      <span class="nt">&lt;constant</span> <span class="na">name=</span><span class="s">&quot;zero&quot;</span> <span class="na">type=</span><span class="s">&quot;none&quot;</span> <span class="na">value=</span><span class="s">&quot;0.000&quot;</span><span class="nt">/&gt;</span>
+
+      <span class="nt">&lt;constant</span> <span class="na">name =</span><span class="s">&quot;start&quot;</span>               <span class="na">type=</span><span class="s">&quot;time&quot;</span> <span class="na">value=</span><span class="s">&quot;1956.0;y&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;constant</span> <span class="na">name =</span><span class="s">&quot;B-17_release_begin&quot;</span>  <span class="na">type=</span><span class="s">&quot;time&quot;</span> <span class="na">value=</span><span class="s">&quot;1956.0;y&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;constant</span> <span class="na">name =</span><span class="s">&quot;B-17_release_end&quot;</span>    <span class="na">type=</span><span class="s">&quot;time&quot;</span> <span class="na">value =</span><span class="s">&quot;1956.0822;y&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;constant</span> <span class="na">name =</span><span class="s">&quot;B-18_release_begin&quot;</span>  <span class="na">type=</span><span class="s">&quot;time&quot;</span> <span class="na">value =</span><span class="s">&quot;1956.1644;y&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;constant</span> <span class="na">name =</span><span class="s">&quot;B-18_release_end&quot;</span>    <span class="na">type=</span><span class="s">&quot;time&quot;</span> <span class="na">value =</span><span class="s">&quot;1956.3288;y&quot;</span><span class="nt">/&gt;</span>
+
+      <span class="nt">&lt;numerical_constant</span> <span class="na">name=</span><span class="s">&quot;pre_1956_recharge&quot;</span>  <span class="na">type=</span><span class="s">&quot;area_mass_flux&quot;</span> <span class="na">value=</span><span class="s">&quot;1.1071E-7&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;numerical_constant</span> <span class="na">name=</span><span class="s">&quot;post_1956_recharge&quot;</span> <span class="na">type=</span><span class="s">&quot;area_mass_flux&quot;</span> <span class="na">value=</span><span class="s">&quot;1.48666E-6&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;numerical_constant</span> <span class="na">name=</span><span class="s">&quot;future_recharge&quot;</span>    <span class="na">type=</span><span class="s">&quot;area_mass_flux&quot;</span> <span class="na">value=</span><span class="s">&quot;1.48666E-6&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;/constants&gt;</span>
+
+    <span class="nt">&lt;macros&gt;</span>
+      <span class="nt">&lt;time_macro</span> <span class="na">name=</span><span class="s">&quot;Macro 1&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.17266656E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.172982136E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.173297712E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.173613288E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.173928864E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.17424444E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.174560016E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.174875592E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.175191168E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.175506744E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.17582232E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.176453472E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.177084624E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.177715776E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.178346928E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.17897808E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.18213384E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.1852896E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.2010684E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.2168472E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.232626E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.2484048E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.2641836E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.2799624E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.2957412E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.31152E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.3272988E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.3372710016E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.33834396E10<span class="nt">&lt;/time&gt;</span>
+      <span class="nt">&lt;/time_macro&gt;</span>
+
+      <span class="nt">&lt;time_macro</span> <span class="na">name =</span> <span class="s">&quot;Macro 2&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.17266656E10<span class="nt">&lt;/time&gt;</span>
+        <span class="nt">&lt;time&gt;</span>6.33834396E10<span class="nt">&lt;/time&gt;</span>
+      <span class="nt">&lt;/time_macro&gt;</span>
+
+      <span class="nt">&lt;cycle_macro</span> <span class="na">name =</span> <span class="s">&quot;Every_1000_timesteps&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;start&gt;</span>0<span class="nt">&lt;/start&gt;</span>
+        <span class="nt">&lt;timestep_interval&gt;</span>1000<span class="nt">&lt;/timestep_interval&gt;</span>
+        <span class="nt">&lt;stop&gt;</span>-1 <span class="nt">&lt;/stop&gt;</span>
+      <span class="nt">&lt;/cycle_macro&gt;</span>
+    <span class="nt">&lt;/macros&gt;</span>
+  <span class="nt">&lt;/definitions&gt;</span>
+
+
+  <span class="c">&lt;!--  if flow,transport,chemistry are missing, this implies that state == off --&gt;</span>
+  <span class="nt">&lt;process_kernels&gt;</span>
+    <span class="nt">&lt;comments&gt;</span>This is a proposed comment field for process_kernels<span class="nt">&lt;/comments&gt;</span>
+    <span class="nt">&lt;flow</span> <span class="na">state =</span> <span class="s">&quot;on&quot;</span> <span class="na">model =</span> <span class="s">&quot;richards&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;transport</span> <span class="na">state =</span> <span class="s">&quot;on&quot;</span> <span class="na">algorithm =</span> <span class="s">&quot;explicit first-order&quot;</span> <span class="na">sub_cycling =</span> <span class="s">&quot;on&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;chemistry</span> <span class="na">state =</span> <span class="s">&quot;off&quot;</span> <span class="na">process_model=</span><span class="s">&quot;none&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;/process_kernels&gt;</span>
+
+  <span class="nt">&lt;phases&gt;</span>
+    <span class="nt">&lt;comments&gt;</span>Eliminated term &quot;Uniform&quot; from viscosity and density input. Designed for additional phases to be included.<span class="nt">&lt;/comments&gt;</span>
+    <span class="nt">&lt;liquid_phase</span> <span class="na">name =</span> <span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;eos&gt;</span>false<span class="nt">&lt;/eos&gt;</span>  <span class="c">&lt;!-- default is false; and can be left out --&gt;</span>
+      <span class="nt">&lt;viscosity&gt;</span>1.002E-03<span class="nt">&lt;/viscosity&gt;</span>
+      <span class="nt">&lt;density&gt;</span>998.2<span class="nt">&lt;/density&gt;</span>
+      <span class="nt">&lt;dissolved_components&gt;</span> 
+        <span class="nt">&lt;solutes&gt;</span>
+          <span class="nt">&lt;solute</span> <span class="na">coefficient_of_diffusion=</span><span class="s">&quot;1.0e-9&quot;</span><span class="nt">&gt;</span>Tc-99<span class="nt">&lt;/solute&gt;</span>
+        <span class="nt">&lt;/solutes&gt;</span> 
+      <span class="nt">&lt;/dissolved_components&gt;</span>
+    <span class="nt">&lt;/liquid_phase&gt;</span>
+  <span class="nt">&lt;/phases&gt;</span>
+
+  <span class="nt">&lt;execution_controls&gt;</span>
+    <span class="nt">&lt;verbosity</span> <span class="na">level=</span><span class="s">&quot;high&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;execution_control_defaults</span> <span class="na">init_dt=</span><span class="s">&quot;10&quot;</span>  <span class="na">max_dt=</span><span class="s">&quot;20 y&quot;</span> <span class="na">reduction_factor=</span><span class="s">&quot;0.8&quot;</span> 
+                                <span class="na">increase_factor=</span><span class="s">&quot;1.25&quot;</span> <span class="na">mode=</span><span class="s">&quot;transient&quot;</span> <span class="na">method=</span><span class="s">&quot;bdf1&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;execution_control</span> <span class="na">start=</span><span class="s">&quot;0.0;y&quot;</span>  <span class="na">end=</span><span class="s">&quot;1956.0,y&quot;</span> <span class="na">init_dt=</span> <span class="s">&quot;1000&quot;</span> <span class="na">max_dt=</span><span class="s">&quot;500.0 y&quot;</span> <span class="na">reduction_factor=</span><span class="s">&quot;0.8&quot;</span> <span class="na">mode=</span><span class="s">&quot;steady&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;execution_control</span> <span class="na">start=</span><span class="s">&quot;B-17_release_begin&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;execution_control</span> <span class="na">start=</span><span class="s">&quot;B-17_release_end&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;execution_control</span> <span class="na">start=</span><span class="s">&quot;B-18_release_begin&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;execution_control</span> <span class="na">start=</span><span class="s">&quot;B-18_release_end&quot;</span> <span class="na">end=</span><span class="s">&quot;3000.0;y&quot;</span> <span class="nt">/&gt;</span>
+  <span class="nt">&lt;/execution_controls&gt;</span>
+
+  <span class="c">&lt;!-- There are few different ways to iterate to steady-state -</span>
+<span class="c">       most use pseudo-time. But what may complicate this is that two different PKs </span>
+<span class="c">       may have different needs here or in transient.--&gt;</span>
+
+  <span class="nt">&lt;numerical_controls&gt;</span>
+    <span class="nt">&lt;comments&gt;</span>Numerical controls comments here<span class="nt">&lt;/comments&gt;</span>
+    <span class="nt">&lt;steady-state_controls&gt;</span>
+      <span class="nt">&lt;comments&gt;</span>Note that this section contained data on timesteps, which was moved into the execution control section.<span class="nt">&lt;/comments&gt;</span>
+      <span class="nt">&lt;min_iterations&gt;</span>10<span class="nt">&lt;/min_iterations&gt;</span>
+      <span class="nt">&lt;max_iterations&gt;</span>15<span class="nt">&lt;/max_iterations&gt;</span>
+      <span class="nt">&lt;max_preconditioner_lag_iterations&gt;</span>30<span class="nt">&lt;/max_preconditioner_lag_iterations&gt;</span>
+      <span class="nt">&lt;nonlinear_tolerance&gt;</span>1.0e-5<span class="nt">&lt;/nonlinear_tolerance&gt;</span>
+    <span class="nt">&lt;/steady-state_controls&gt;</span>
+    <span class="nt">&lt;transient_controls&gt;</span>
+      <span class="nt">&lt;comments&gt;</span>Proposed comments section.<span class="nt">&lt;/comments&gt;</span>
+      <span class="nt">&lt;bdf1_integration_method</span> <span class="na">min_iterations=</span><span class="s">&quot;10&quot;</span> <span class="na">max_iterations=</span><span class="s">&quot;15&quot;</span> <span class="na">max_preconditioner_lag_iterations=</span><span class="s">&quot;5&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;/transient_controls&gt;</span>
+    <span class="nt">&lt;linear_solver&gt;</span>
+      <span class="nt">&lt;comments&gt;</span>Proposed comment section.<span class="nt">&lt;/comments&gt;</span>
+      <span class="nt">&lt;method&gt;</span>gmres<span class="nt">&lt;/method&gt;</span>
+      <span class="nt">&lt;max_iterations&gt;</span>50<span class="nt">&lt;/max_iterations&gt;</span>
+      <span class="nt">&lt;tolerance&gt;</span>1.0e-18<span class="nt">&lt;/tolerance&gt;</span>
+      <span class="nt">&lt;preconditioner</span> <span class="na">name =</span> <span class="s">&quot;hypre_amg&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;hypre_cycle_applications&gt;</span>10<span class="nt">&lt;/hypre_cycle_applications&gt;</span>
+        <span class="nt">&lt;hypre_smoother_sweeps&gt;</span>3<span class="nt">&lt;/hypre_smoother_sweeps&gt;</span>
+        <span class="nt">&lt;hypre_tolerance&gt;</span>0.1<span class="nt">&lt;/hypre_tolerance&gt;</span>
+        <span class="nt">&lt;hypre_strong_threshold&gt;</span>0.4<span class="nt">&lt;/hypre_strong_threshold&gt;</span>
+      <span class="nt">&lt;/preconditioner&gt;</span>
+    <span class="nt">&lt;/linear_solver&gt;</span>
+  <span class="nt">&lt;/numerical_controls&gt;</span>
+
+  <span class="nt">&lt;regions&gt;</span>
+    <span class="nt">&lt;box</span> <span class="na">name=</span><span class="s">&quot;All&quot;</span>                           <span class="na">low_coordinates=</span> <span class="s">&quot;0.0,0.0,0.0&quot;</span>       <span class="na">high_coordinates=</span><span class="s">&quot;216.0,1.0,107.52&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;box</span> <span class="na">name=</span><span class="s">&quot;Between_Planes_0_and_1&quot;</span>        <span class="na">low_coordinates=</span> <span class="s">&quot;0.0,0.0,0.0&quot;</span>       <span class="na">high_coordinates=</span><span class="s">&quot;216.0,1.0,39.9&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;box</span> <span class="na">name=</span><span class="s">&quot;Between_Planes_1_and_2&quot;</span>        <span class="na">low_coordinates=</span> <span class="s">&quot;0.0,0.0,39.9&quot;</span>      <span class="na">high_coordinates=</span><span class="s">&quot;216.0,1.0,80.22&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;box</span> <span class="na">name=</span><span class="s">&quot;Between_Planes_2_and_3&quot;</span>        <span class="na">low_coordinates=</span> <span class="s">&quot;0.0,0.0,80.22&quot;</span>     <span class="na">high_coordinates=</span><span class="s">&quot;216.0,1.0,107.52&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;box</span> <span class="na">name=</span><span class="s">&quot;Crib_216-B-17&quot;</span>                 <span class="na">low_coordinates=</span> <span class="s">&quot;74.5,0.0,107.52&quot;</span>   <span class="na">high_coordinates=</span><span class="s">&quot;78.5,1.0,107.52&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;box</span> <span class="na">name=</span><span class="s">&quot;Crib_216-B-18&quot;</span>                 <span class="na">low_coordinates=</span> <span class="s">&quot;143.5,0.0,107.52&quot;</span>  <span class="na">high_coordinates=</span><span class="s">&quot;147.5,1.0,107.52&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;box</span> <span class="na">name=</span><span class="s">&quot;Recharge_Boundary_WestofCribs&quot;</span> <span class="na">low_coordinates=</span> <span class="s">&quot;0.0,0.0,107.52&quot;</span>    <span class="na">high_coordinates=</span><span class="s">&quot;74.5,1.0,107.52&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;box</span> <span class="na">name=</span><span class="s">&quot;Recharge_Boundary_btwnCribs&quot;</span>   <span class="na">low_coordinates=</span> <span class="s">&quot;78.5,0.0,107.52&quot;</span>   <span class="na">high_coordinates=</span><span class="s">&quot;143.5,1.0,107.52&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;box</span> <span class="na">name=</span><span class="s">&quot;Recharge_Boundary_EastofCribs&quot;</span> <span class="na">low_coordinates=</span> <span class="s">&quot;147.5,0.0,107.52&quot;</span>  <span class="na">high_coordinates=</span><span class="s">&quot;216.0,1.0,107.52&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;box</span> <span class="na">name=</span><span class="s">&quot;Water Table&quot;</span>                   <span class="na">low_coordinates=</span> <span class="s">&quot;0.0,0.0,0.0&quot;</span>       <span class="na">high_coordinates=</span><span class="s">&quot;216.0,1.0,0.0&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;/regions&gt;</span>
+
+  <span class="nt">&lt;mesh</span> <span class="na">framework=</span><span class="s">&quot;mstk&quot;</span><span class="nt">&gt;</span> <span class="c">&lt;!-- default is MSTK for unstructured --&gt;</span>
+    <span class="nt">&lt;comments&gt;</span>Pseudo 2D<span class="nt">&lt;/comments&gt;</span>
+    <span class="nt">&lt;dimension&gt;</span>3<span class="nt">&lt;/dimension&gt;</span>
+    <span class="nt">&lt;generate&gt;</span>
+      <span class="nt">&lt;number_of_cells</span> <span class="na">nx=</span><span class="s">&quot;432&quot;</span>  <span class="na">ny=</span><span class="s">&quot;1&quot;</span>  <span class="na">nz=</span><span class="s">&quot;256&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;box</span>  <span class="na">low_coordinates=</span><span class="s">&quot;0.0,0.0,0.0&quot;</span> <span class="na">high_coordinates=</span><span class="s">&quot;216.0,1.0,107.52&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;/generate&gt;</span>
+  <span class="nt">&lt;/mesh&gt;</span>
+
+  <span class="nt">&lt;materials&gt;</span>
+    <span class="nt">&lt;material</span> <span class="na">name=</span><span class="s">&quot;Facies_1&quot;</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;comments&gt;</span>Material corresponds to region facies1<span class="nt">&lt;/comments&gt;</span>
+      <span class="nt">&lt;mechanical_properties&gt;</span>
+        <span class="nt">&lt;porosity</span> <span class="na">value=</span><span class="s">&quot;0.4082&quot;</span><span class="nt">/&gt;</span>
+        <span class="nt">&lt;particle_density</span> <span class="na">value=</span><span class="s">&quot;2720.0&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;/mechanical_properties&gt;</span>
+      <span class="nt">&lt;permeability</span> <span class="na">x=</span><span class="s">&quot;1.9976E-12&quot;</span> <span class="na">y=</span><span class="s">&quot;1.9976E-12&quot;</span> <span class="na">z=</span><span class="s">&quot;1.9976E-13&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;cap_pressure</span> <span class="na">model=</span><span class="s">&quot;van_genuchten&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;parameters</span> <span class="na">m=</span><span class="s">&quot;0.2294&quot;</span> <span class="na">alpha=</span><span class="s">&quot;1.9467E-04&quot;</span> <span class="na">sr=</span><span class="s">&quot;0.0&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;/cap_pressure&gt;</span>
+      <span class="nt">&lt;rel_perm</span> <span class="na">model=</span><span class="s">&quot;mualem&quot;</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;/rel_perm&gt;</span>
+      <span class="nt">&lt;assigned_regions&gt;</span>Between_Planes_1_and_2<span class="nt">&lt;/assigned_regions&gt;</span>
+    <span class="nt">&lt;/material&gt;</span>
+
+    <span class="nt">&lt;material</span> <span class="na">name =</span><span class="s">&quot;Facies_2&quot;</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;comments&gt;</span>Material corresponds to region facies2<span class="nt">&lt;/comments&gt;</span>
+      <span class="nt">&lt;mechanical_properties&gt;</span>
+        <span class="nt">&lt;porosity</span> <span class="na">value=</span><span class="s">&quot;0.2206&quot;</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;particle_density</span> <span class="na">value=</span><span class="s">&quot;2720.0&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;/mechanical_properties&gt;</span>
+      <span class="nt">&lt;permeability</span> <span class="na">x=</span><span class="s">&quot;6.9365E-11&quot;</span> <span class="na">y=</span><span class="s">&quot;6.9365E-11&quot;</span> <span class="na">z=</span><span class="s">&quot;6.9365E-12&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;cap_pressure</span> <span class="na">model=</span><span class="s">&quot;van_genuchten&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;parameters</span> <span class="na">m=</span><span class="s">&quot;0.2136&quot;</span> <span class="na">alpha=</span><span class="s">&quot;2.0260E-03&quot;</span> <span class="na">sr=</span><span class="s">&quot;0.0&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;/cap_pressure&gt;</span>
+      <span class="nt">&lt;rel_perm</span> <span class="na">model=</span><span class="s">&quot;mualem&quot;</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;/rel_perm&gt;</span>
+      <span class="nt">&lt;assigned_regions&gt;</span>Between_Planes_0_and_1<span class="nt">&lt;/assigned_regions&gt;</span>
+    <span class="nt">&lt;/material&gt;</span>
+
+    <span class="nt">&lt;material</span> <span class="na">name =</span><span class="s">&quot;Facies_3&quot;</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;comments&gt;</span>Material corresponds to region facies3<span class="nt">&lt;/comments&gt;</span>
+      <span class="nt">&lt;mechanical_properties&gt;</span>
+        <span class="nt">&lt;porosity</span> <span class="na">value=</span><span class="s">&quot;0.234&quot;</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;particle_density</span> <span class="na">value=</span><span class="s">&quot;2720.0&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;/mechanical_properties&gt;</span>
+      <span class="nt">&lt;permeability</span> <span class="na">x=</span><span class="s">&quot;2.0706E-09&quot;</span> <span class="na">y=</span><span class="s">&quot;2.0706E-09&quot;</span> <span class="na">z=</span><span class="s">&quot;2.0706E-09&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;cap_pressure</span> <span class="na">model=</span><span class="s">&quot;brooks_corey&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;parameters</span> <span class="na">lambda=</span><span class="s">&quot;0.3006&quot;</span> <span class="na">alpha=</span><span class="s">&quot;2.0674E-03&quot;</span> <span class="na">sr=</span><span class="s">&quot;0.0&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;/cap_pressure&gt;</span>
+      <span class="nt">&lt;rel_perm</span> <span class="na">model=</span><span class="s">&quot;mualem&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;optional_krel_smoothing_interval&gt;</span>0.0<span class="nt">&lt;/optional_krel_smoothing_interval&gt;</span>
+      <span class="nt">&lt;/rel_perm&gt;</span>
+      <span class="nt">&lt;assigned_regions&gt;</span>Between_Planes_2_and_3<span class="nt">&lt;/assigned_regions&gt;</span>
+    <span class="nt">&lt;/material&gt;</span>
+  <span class="nt">&lt;/materials&gt;</span>
+
+  <span class="nt">&lt;initial_conditions&gt;</span>
+    <span class="nt">&lt;initial_condition</span> <span class="na">name=</span><span class="s">&quot;Pressure and concentration for entire domain&quot;</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;comments&gt;</span>Initial Conditions Comments<span class="nt">&lt;/comments&gt;</span>
+      <span class="nt">&lt;assigned_regions&gt;</span>All<span class="nt">&lt;/assigned_regions&gt;</span>
+      <span class="nt">&lt;liquid_phase</span> <span class="na">name =</span> <span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;liquid_component</span> <span class="na">name =</span> <span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+          <span class="nt">&lt;linear_pressure</span> <span class="na">value =</span> <span class="s">&quot;101325&quot;</span> <span class="na">reference_coord =</span><span class="s">&quot;0.0,0.0,0.5&quot;</span> <span class="na">gradient=</span><span class="s">&quot;0.0,0.0,-9793.5192&quot;</span><span class="nt">/&gt;</span>
+        <span class="nt">&lt;/liquid_component&gt;</span>
+        <span class="nt">&lt;solute_component</span> <span class="na">name =</span> <span class="s">&quot;Tc-99&quot;</span> <span class="na">value =</span> <span class="s">&quot;0&quot;</span> <span class="na">function=</span><span class="s">&quot;uniform&quot;</span><span class="nt">/&gt;</span>
+      <span class="nt">&lt;/liquid_phase&gt;</span>
+    <span class="nt">&lt;/initial_condition&gt;</span>
+  <span class="nt">&lt;/initial_conditions&gt;</span>
+
+  <span class="nt">&lt;boundary_conditions&gt;</span>
+    <span class="nt">&lt;comments&gt;</span>Format was changed because it is more readable for long time series<span class="nt">&lt;/comments&gt;</span>
+    <span class="nt">&lt;boundary_condition</span> <span class="na">name =</span> <span class="s">&quot;Recharge at top of the domain&quot;</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;comments&gt;</span>Would be nice to have comments section for each boundary_condition but its not clear how it maps to UI<span class="nt">&lt;/comments&gt;</span>
+      <span class="nt">&lt;assigned_regions&gt;</span>Recharge_Boundary_WestofCribs,Recharge_Boundary_btwnCribs,Recharge_Boundary_EastofCribs<span class="nt">&lt;/assigned_regions&gt;</span>
+      <span class="nt">&lt;liquid_phase</span> <span class="na">name =</span> <span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;liquid_component</span> <span class="na">name =</span> <span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+          <span class="nt">&lt;inward_mass_flux</span> <span class="na">start=</span><span class="s">&quot;0.0&quot;</span>    <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>  <span class="na">value=</span><span class="s">&quot;pre_1956_recharge&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;inward_mass_flux</span> <span class="na">start=</span><span class="s">&quot;1956.0,y&quot;</span> <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>  <span class="na">value=</span><span class="s">&quot;post_1956_recharge&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;inward_mass_flux</span> <span class="na">start=</span><span class="s">&quot;2012.0,y&quot;</span> <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>  <span class="na">value=</span><span class="s">&quot;future_recharge&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;inward_mass_flux</span> <span class="na">start=</span><span class="s">&quot;3000.0,y&quot;</span> <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>  <span class="na">value=</span><span class="s">&quot;future_recharge&quot;</span><span class="nt">/&gt;</span>
+        <span class="nt">&lt;/liquid_component&gt;</span>
+        <span class="nt">&lt;solute_component</span> <span class="na">name =</span> <span class="s">&quot;solute&quot;</span><span class="nt">&gt;</span>
+          <span class="nt">&lt;aqueous_conc</span> <span class="na">name =</span> <span class="s">&quot;Tc-99&quot;</span> <span class="na">start=</span><span class="s">&quot;0.0&quot;</span>     <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>  <span class="na">value=</span><span class="s">&quot;zero&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;aqueous_conc</span> <span class="na">name =</span> <span class="s">&quot;Tc-99&quot;</span> <span class="na">start=</span><span class="s">&quot;1956.0,y&quot;</span>  <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>  <span class="na">value=</span><span class="s">&quot;zero&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;aqueous_conc</span> <span class="na">name =</span> <span class="s">&quot;Tc-99&quot;</span> <span class="na">start=</span><span class="s">&quot;2012.0,y&quot;</span>  <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>  <span class="na">value=</span><span class="s">&quot;zero&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;aqueous_conc</span> <span class="na">name =</span> <span class="s">&quot;Tc-99&quot;</span> <span class="na">start=</span><span class="s">&quot;3000.0,y&quot;</span>  <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>  <span class="na">value=</span><span class="s">&quot;zero&quot;</span><span class="nt">/&gt;</span>
+        <span class="nt">&lt;/solute_component&gt;</span>
+      <span class="nt">&lt;/liquid_phase&gt;</span>
+    <span class="nt">&lt;/boundary_condition&gt;</span>
+
+    <span class="nt">&lt;boundary_condition</span> <span class="na">name =</span> <span class="s">&quot;B-17&quot;</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;assigned_regions&gt;</span>Crib_216-B-17<span class="nt">&lt;/assigned_regions&gt;</span>
+      <span class="nt">&lt;liquid_phase</span> <span class="na">name =</span> <span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;liquid_component</span> <span class="na">name =</span> <span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+          <span class="nt">&lt;inward_mass_flux</span> <span class="na">start=</span><span class="s">&quot;0.0&quot;</span>                <span class="na">function=</span><span class="s">&quot;constant&quot;</span> <span class="na">value=</span><span class="s">&quot;pre_1956_recharge&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;inward_mass_flux</span> <span class="na">start=</span><span class="s">&quot;B-17_release_begin&quot;</span> <span class="na">function=</span><span class="s">&quot;constant&quot;</span> <span class="na">value=</span><span class="s">&quot;0.00254022&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;inward_mass_flux</span> <span class="na">start=</span><span class="s">&quot;B-17_release_end&quot;</span>   <span class="na">function=</span><span class="s">&quot;constant&quot;</span> <span class="na">value=</span><span class="s">&quot;post_1956_recharge&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;inward_mass_flux</span> <span class="na">start=</span><span class="s">&quot;2012.0,y&quot;</span>           <span class="na">function=</span><span class="s">&quot;constant&quot;</span> <span class="na">value=</span><span class="s">&quot;future_recharge&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;inward_mass_flux</span> <span class="na">start=</span><span class="s">&quot;3000.0,y&quot;</span>           <span class="na">function=</span><span class="s">&quot;constant&quot;</span> <span class="na">value=</span><span class="s">&quot;future_recharge&quot;</span><span class="nt">/&gt;</span>
+        <span class="nt">&lt;/liquid_component&gt;</span>
+        <span class="nt">&lt;solute_component</span> <span class="na">name =</span> <span class="s">&quot;solute&quot;</span><span class="nt">&gt;</span>
+          <span class="nt">&lt;aqueous_conc</span> <span class="na">name=</span><span class="s">&quot;Tc-99&quot;</span> <span class="na">start=</span><span class="s">&quot;0.0&quot;</span>                <span class="na">function=</span><span class="s">&quot;constant&quot;</span> <span class="na">value=</span><span class="s">&quot;0.0&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;aqueous_conc</span> <span class="na">name=</span><span class="s">&quot;Tc-99&quot;</span> <span class="na">start=</span><span class="s">&quot;B-17_release_begin&quot;</span> <span class="na">function=</span><span class="s">&quot;constant&quot;</span> <span class="na">value=</span><span class="s">&quot;1.881389E-06&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;aqueous_conc</span> <span class="na">name=</span><span class="s">&quot;Tc-99&quot;</span> <span class="na">start=</span><span class="s">&quot;B-17_release_end&quot;</span>   <span class="na">function=</span><span class="s">&quot;constant&quot;</span> <span class="na">value=</span><span class="s">&quot;0.0&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;aqueous_conc</span> <span class="na">name=</span><span class="s">&quot;Tc-99&quot;</span> <span class="na">start=</span><span class="s">&quot;2012.0,y&quot;</span>           <span class="na">function=</span><span class="s">&quot;constant&quot;</span> <span class="na">value=</span><span class="s">&quot;0.0&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;aqueous_conc</span> <span class="na">name=</span><span class="s">&quot;Tc-99&quot;</span> <span class="na">start=</span><span class="s">&quot;3000.0,y&quot;</span>           <span class="na">function=</span><span class="s">&quot;constant&quot;</span> <span class="na">value=</span><span class="s">&quot;0.0&quot;</span><span class="nt">/&gt;</span>
+        <span class="nt">&lt;/solute_component&gt;</span>
+      <span class="nt">&lt;/liquid_phase&gt;</span>
+    <span class="nt">&lt;/boundary_condition&gt;</span>
+
+    <span class="nt">&lt;boundary_condition</span> <span class="na">name =</span> <span class="s">&quot;B-18&quot;</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;assigned_regions&gt;</span>Crib_216-B-18<span class="nt">&lt;/assigned_regions&gt;</span>
+      <span class="nt">&lt;liquid_phase</span> <span class="na">name =</span> <span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;liquid_component</span> <span class="na">name =</span> <span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+          <span class="nt">&lt;inward_mass_flux</span> <span class="na">start=</span><span class="s">&quot;0.0&quot;</span>                <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>    <span class="na">value=</span><span class="s">&quot;pre_1956_recharge&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;inward_mass_flux</span> <span class="na">start=</span><span class="s">&quot;1956.0,y&quot;</span>           <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>    <span class="na">value=</span><span class="s">&quot;post_1956_recharge&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;inward_mass_flux</span> <span class="na">start=</span><span class="s">&quot;B-18_release_begin&quot;</span> <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>    <span class="na">value=</span><span class="s">&quot;0.00330423&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;inward_mass_flux</span> <span class="na">start=</span><span class="s">&quot;B-18_release_end&quot;</span>   <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>    <span class="na">value=</span><span class="s">&quot;post_1956_recharge&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;inward_mass_flux</span> <span class="na">start=</span><span class="s">&quot;2012.0,y&quot;</span>           <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>    <span class="na">value=</span><span class="s">&quot;future_recharge&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;inward_mass_flux</span> <span class="na">start=</span><span class="s">&quot;3000.0,y&quot;</span>           <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>    <span class="na">value=</span><span class="s">&quot;future_recharge&quot;</span><span class="nt">/&gt;</span>
+        <span class="nt">&lt;/liquid_component&gt;</span>
+        <span class="nt">&lt;solute_component</span> <span class="na">name =</span> <span class="s">&quot;solute&quot;</span><span class="nt">&gt;</span>
+          <span class="nt">&lt;aqueous_conc</span> <span class="na">name =</span> <span class="s">&quot;Tc-99&quot;</span> <span class="na">start=</span><span class="s">&quot;0.0&quot;</span>                <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>    <span class="na">value=</span><span class="s">&quot;0.0&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;aqueous_conc</span> <span class="na">name =</span> <span class="s">&quot;Tc-99&quot;</span> <span class="na">start=</span><span class="s">&quot;1956.0,y&quot;</span>           <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>    <span class="na">value=</span><span class="s">&quot;0.0&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;aqueous_conc</span> <span class="na">name =</span> <span class="s">&quot;Tc-99&quot;</span> <span class="na">start=</span><span class="s">&quot;B-18_release_begin&quot;</span> <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>    <span class="na">value=</span><span class="s">&quot;2.266885E-06&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;aqueous_conc</span> <span class="na">name =</span> <span class="s">&quot;Tc-99&quot;</span> <span class="na">start=</span><span class="s">&quot;B-18_release_end&quot;</span>   <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>    <span class="na">value=</span><span class="s">&quot;0.0&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;aqueous_conc</span> <span class="na">name =</span> <span class="s">&quot;Tc-99&quot;</span> <span class="na">start=</span><span class="s">&quot;2012.0,y&quot;</span>           <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>    <span class="na">value=</span><span class="s">&quot;0.0&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;aqueous_conc</span> <span class="na">name =</span> <span class="s">&quot;Tc-99&quot;</span> <span class="na">start=</span><span class="s">&quot;3000.0,y&quot;</span>           <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>    <span class="na">value=</span><span class="s">&quot;0.0&quot;</span><span class="nt">/&gt;</span>
+        <span class="nt">&lt;/solute_component&gt;</span>
+      <span class="nt">&lt;/liquid_phase&gt;</span>
+    <span class="nt">&lt;/boundary_condition&gt;</span>
+
+    <span class="nt">&lt;boundary_condition</span> <span class="na">name =</span> <span class="s">&quot;Bottom of Domain&quot;</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;assigned_regions&gt;</span>Water Table<span class="nt">&lt;/assigned_regions&gt;</span>
+      <span class="nt">&lt;liquid_phase</span> <span class="na">name =</span> <span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;liquid_component</span> <span class="na">name =</span> <span class="s">&quot;water&quot;</span><span class="nt">&gt;</span>
+          <span class="nt">&lt;uniform_pressure</span> <span class="na">name =</span> <span class="s">&quot;1&quot;</span> <span class="na">start=</span><span class="s">&quot;0.0&quot;</span>       <span class="na">function=</span> <span class="s">&quot;constant&quot;</span> <span class="na">value=</span><span class="s">&quot;101325.0&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;uniform_pressure</span> <span class="na">name =</span> <span class="s">&quot;2&quot;</span> <span class="na">start=</span><span class="s">&quot;3000.0,y&quot;</span>  <span class="na">function=</span> <span class="s">&quot;constant&quot;</span> <span class="na">value=</span><span class="s">&quot;101325.0&quot;</span><span class="nt">/&gt;</span>
+        <span class="nt">&lt;/liquid_component&gt;</span>
+        <span class="nt">&lt;solute_component</span> <span class="na">name =</span> <span class="s">&quot;solute&quot;</span><span class="nt">&gt;</span>
+          <span class="nt">&lt;aqueous_conc</span> <span class="na">name =</span> <span class="s">&quot;Tc-99&quot;</span> <span class="na">start=</span><span class="s">&quot;0.0&quot;</span>       <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>    <span class="na">value=</span><span class="s">&quot;0.0&quot;</span><span class="nt">/&gt;</span>
+          <span class="nt">&lt;aqueous_conc</span> <span class="na">name =</span> <span class="s">&quot;Tc-99&quot;</span> <span class="na">start=</span><span class="s">&quot;3000.0,y&quot;</span>  <span class="na">function=</span> <span class="s">&quot;constant&quot;</span>    <span class="na">value=</span><span class="s">&quot;0.0&quot;</span><span class="nt">/&gt;</span>
+        <span class="nt">&lt;/solute_component&gt;</span>
+      <span class="nt">&lt;/liquid_phase&gt;</span>
+    <span class="nt">&lt;/boundary_condition&gt;</span>
+  <span class="nt">&lt;/boundary_conditions&gt;</span>
+
+  <span class="nt">&lt;output&gt;</span>
+    <span class="nt">&lt;vis&gt;</span>
+      <span class="nt">&lt;base_filename&gt;</span>plot<span class="nt">&lt;/base_filename&gt;</span>
+      <span class="nt">&lt;num_digits&gt;</span>5<span class="nt">&lt;/num_digits&gt;</span>
+      <span class="nt">&lt;time_macro&gt;</span>Macro 1<span class="nt">&lt;/time_macro&gt;</span>
+    <span class="nt">&lt;/vis&gt;</span>
+
+    <span class="nt">&lt;checkpoint&gt;</span>
+      <span class="nt">&lt;base_filename&gt;</span>chk<span class="nt">&lt;/base_filename&gt;</span>
+      <span class="nt">&lt;num_digits&gt;</span>5<span class="nt">&lt;/num_digits&gt;</span>
+      <span class="nt">&lt;cycle_macro&gt;</span>Every_1000_timesteps<span class="nt">&lt;/cycle_macro&gt;</span>
+    <span class="nt">&lt;/checkpoint&gt;</span>
+  <span class="nt">&lt;/output&gt;</span>
+<span class="nt">&lt;/amanzi_input&gt;</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../../verification/index.html" class="btn btn-neutral float-right" title="Verification Testing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../steady_confined/Tutorial_steady_linear.html" class="btn btn-neutral float-left" title="One-dimensional, steady-state, saturated flow" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Amanzi Development Team
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

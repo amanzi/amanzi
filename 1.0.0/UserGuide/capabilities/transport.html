@@ -1,0 +1,361 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Transport Models &mdash; Amanzi 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/fix_eq_position.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Chemistry Models" href="chemistry.html" />
+    <link rel="prev" title="Flow Models" href="flow.html" /> 
+ <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: {
+        extensions: ["mhchem.js"]
+    }
+  });
+</script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Amanzi
+          
+
+          
+            
+            <img src="../_static/Amanzi-draft-logo-5-trans.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../background/index.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background/getting_started.html">Getting Started with Amanzi</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Amanzi Features and Capabilities</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="features.html">Amanzi Features</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="process.html">Amanzi Process Capabilities</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="flow.html">Flow Models</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Transport Models</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#advective-flux">Advective Flux</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dispersive-flux">Dispersive Flux</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#diffusive-flux">Diffusive Flux</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#boundary-conditions">Boundary Conditions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#initial-conditions">Initial Conditions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#source-terms">Source Terms</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="chemistry.html">Chemistry Models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mpc.html">Multiphysics Models</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../input/index.html">Amanzi Input Description</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install/index.html">Building Amanzi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial/index.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../verification/index.html">Verification Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking/index.html">Benchmark Testing</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Amanzi</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Amanzi Features and Capabilities</a> &raquo;</li>
+        
+          <li><a href="process.html">Amanzi Process Capabilities</a> &raquo;</li>
+        
+      <li>Transport Models</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/capabilities/transport.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="transport-models">
+<h1>Transport Models<a class="headerlink" href="#transport-models" title="Permalink to this headline">¶</a></h1>
+<p>The transport component of <em>Amanzi</em> models a set of physical processes
+that lead to movement of dissolved and solid contaminants in the subsurface,
+treating the chemical and microbiological reactions that can affect the transport
+rate through a retardation effect as a separate set of processes.
+The governing PDE for the component <span class="math notranslate nohighlight">\(C_i\)</span> reads</p>
+<div class="math notranslate nohighlight">
+\[\frac{\partial (\phi s_l C_i)}{\partial t}
++ \nabla \cdot \boldsymbol{J}_i^{\text{adv}}
+= Q_i
+- \nabla \cdot \boldsymbol{J}_i^{\text{disp}}
+- \nabla \cdot \boldsymbol{J}_i^{\text{diff}}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\phi\)</span> is the porosity, <span class="math notranslate nohighlight">\(s_l\)</span> is the liquid saturation,
+<span class="math notranslate nohighlight">\(\boldsymbol{J}_i^\text{adv}\)</span> is the advective flux,
+<span class="math notranslate nohighlight">\(\boldsymbol{J}_i^\text{disp}\)</span> is the dispersive flux,
+<span class="math notranslate nohighlight">\(\boldsymbol{J}_i^\text{diff}\)</span> is the diffusive flux (often grouped
+with the dispersive flux), and  <span class="math notranslate nohighlight">\(Q_i\)</span> is the
+summation of the various source terms.</p>
+<div class="section" id="advective-flux">
+<h2>Advective Flux<a class="headerlink" href="#advective-flux" title="Permalink to this headline">¶</a></h2>
+<p>Advection involves the translation in space of dissolved or suspended material at the
+rate of movement of the bulk fluid phase.
+The advective flux of a dissolved species <span class="math notranslate nohighlight">\(C_i\)</span> in porous
+media can be described mathematically as</p>
+<div class="math notranslate nohighlight">
+\[\boldsymbol{J}_i^\text{adv} = \boldsymbol{q}_l C_{i},\]</div>
+<p>where <span class="math notranslate nohighlight">\(\boldsymbol{q}_l\)</span> is the Darcy velocity.</p>
+</div>
+<div class="section" id="dispersive-flux">
+<h2>Dispersive Flux<a class="headerlink" href="#dispersive-flux" title="Permalink to this headline">¶</a></h2>
+<p>Dispersion of a dissolved species involves its spreading along tortuous pathways
+in a porous medium caused by mixing effects.
+Dispersion takes place in the direction of the flow (longitudinal) and normal to the
+flow (transverse).
+A conventional Eulerian Fickian representation of dispersion is assumed, which may be
+taken as the asymptotic limiting form of the dispersion tensor.
+The dispersive flux has the form</p>
+<div class="math notranslate nohighlight">
+\[\boldsymbol{J}_i^\text{disp} = - \phi s_l \boldsymbol{D} \nabla C_i,\]</div>
+<p>where <span class="math notranslate nohighlight">\(\boldsymbol{D}\)</span> denotes the dispersion tensor.
+The dispersion tensor takes different forms depending on whether the media
+is isotropic or anisotropic.
+For an isotropic medium with no preferred axis of symmetry the dispersion
+tensor has the well-known form:</p>
+<div class="math notranslate nohighlight">
+\[\boldsymbol{D}
+= \alpha_T \|\boldsymbol{v}\| \boldsymbol{I}
++ \left(\alpha_L-\alpha_T \right)
+  \frac{\boldsymbol{v} \boldsymbol{v}}{\|\boldsymbol{v}\|},\]</div>
+<p>characterized by the two parameters <span class="math notranslate nohighlight">\(\alpha_L\)</span> [m] and <span class="math notranslate nohighlight">\(\alpha_T\)</span> [m]
+referred to as the longitudinal and transverse dispersivity, respectively.
+The vector <span class="math notranslate nohighlight">\(\boldsymbol{v}\)</span> [m/s] denotes the average pore velocity,
+and <span class="math notranslate nohighlight">\(\boldsymbol{I}\)</span> is the identity matrix.</p>
+</div>
+<div class="section" id="diffusive-flux">
+<h2>Diffusive Flux<a class="headerlink" href="#diffusive-flux" title="Permalink to this headline">¶</a></h2>
+<p>Molecular diffusion is often indistinguishable from mechanical dispersion
+as a process operating in porous media, and thus the two are often lumped
+together to form a hydrodynamic dispersion term.
+Molecular diffusion is an entropy-producing process in which the random motion
+of molecules causes spreading or homogenization of a concentration field.
+Atomistic representations of molecular diffusion capture this random motion,
+but continuum models of the kind considered here typically represent only
+the average behavior of the molecules.</p>
+<p>Molecular diffusion is usually described in terms of Fick’s First Law, which
+states that the diffusive flux is proportional to the concentration gradient.
+Since water-rock interaction commonly takes place in porous materials, it is
+important to account for the effect of tortuosity, which is defined as the ratio
+of the path length the solute would follow in water alone, <span class="math notranslate nohighlight">\(L\)</span>, relative
+to the tortuous path length it would follow in porous media, <span class="math notranslate nohighlight">\(L_e\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\tau_{L} = (L/L_e)^2.\]</div>
+<p>The diffusive flux, then, is given by</p>
+<div class="math notranslate nohighlight">
+\[\boldsymbol{J}_{i}^\text{diff}
+= - \phi s_l D_i \tau_{L} \nabla C_i.\]</div>
+<p>where <span class="math notranslate nohighlight">\(D_i\)</span> is referred to as the diffusion coefficient and
+is specific to the chemical component considered as indicated by the subscript <span class="math notranslate nohighlight">\(i\)</span>.</p>
+</div>
+<div class="section" id="boundary-conditions">
+<h2>Boundary Conditions<a class="headerlink" href="#boundary-conditions" title="Permalink to this headline">¶</a></h2>
+<p>A first-type or Dirichlet condition involves specification of a fixed value of the concentration,
+<span class="math notranslate nohighlight">\(C_i\)</span> at the boundary location:</p>
+<div class="math notranslate nohighlight">
+\[C_i(\boldsymbol{x}, t) = C_{i,0}(\boldsymbol{x}, t)
+\qquad \boldsymbol{x} \in \Gamma^{in},\quad t &gt; 0,\]</div>
+<p>where <span class="math notranslate nohighlight">\(C_0\)</span> is a given function.
+Pure advective transport requires to set up the Dirichlet boundary conditions only on
+the inflow boundary of the computational domain.</p>
+<p>A second-type or Neumann boundary condition involves specification of the flux</p>
+<div class="math notranslate nohighlight">
+\[J_i(\boldsymbol{x}, t) = J_{i,0}(\boldsymbol{x}, t),
+\qquad \boldsymbol{x} \in \partial \Omega,\quad t &gt; 0,\]</div>
+<p>where <span class="math notranslate nohighlight">\(J_{i,0}\)</span> is a given flux function.
+The Dirichlet boundary condition on the outflow part of the computational domain may
+result in parabolic and/or exponential boundary layers; therefore it should be used
+with caution.</p>
+</div>
+<div class="section" id="initial-conditions">
+<h2>Initial Conditions<a class="headerlink" href="#initial-conditions" title="Permalink to this headline">¶</a></h2>
+<p>An initial condition specifies concentration at time <span class="math notranslate nohighlight">\(T=0\)</span> inside the
+computational domain:</p>
+<div class="math notranslate nohighlight">
+\[C_i(\boldsymbol{x}, 0) = C_{i,0}(\boldsymbol{x})
+\qquad \boldsymbol{x} \in \Omega.\]</div>
+</div>
+<div class="section" id="source-terms">
+<h2>Source Terms<a class="headerlink" href="#source-terms" title="Permalink to this headline">¶</a></h2>
+<p>The source term <span class="math notranslate nohighlight">\(Q_i\)</span> is a given function specifying usually location of
+wells inside the computational domain:</p>
+<div class="math notranslate nohighlight">
+\[Q_i(\boldsymbol{x}, t) = Q_{i,0}(\boldsymbol{x},t),
+\qquad \boldsymbol{x} \in \Omega,\quad t &gt; 0.\]</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="chemistry.html" class="btn btn-neutral float-right" title="Chemistry Models" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="flow.html" class="btn btn-neutral float-left" title="Flow Models" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Amanzi Development Team
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,661 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Amanzi Third Party Library (TPL) Build System &mdash; Amanzi 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/fix_eq_position.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Building and Installing Amanzi Using CMake" href="build_instructions.html" />
+    <link rel="prev" title="Quickstart Using Bootstrap" href="building_bootstrap.html" /> 
+ <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: {
+        extensions: ["mhchem.js"]
+    }
+  });
+</script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Amanzi
+          
+
+          
+            
+            <img src="../_static/Amanzi-draft-logo-5-trans.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../background/index.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background/getting_started.html">Getting Started with Amanzi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../capabilities/index.html">Amanzi Features and Capabilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../input/index.html">Amanzi Input Description</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Building Amanzi</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="building_bootstrap.html">Quickstart Using Bootstrap</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Amanzi Third Party Library (TPL) Build System</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#obtaining-a-supported-compiler">Obtaining A Supported Compiler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#obtaining-mpi">Obtaining MPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#obtaining-lapack-blas">Obtaining LAPACK/BLAS</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#building-tpls-and-amanzi-using-bootstrap-sh">Building TPLs and Amanzi Using <code class="docutils literal notranslate"><span class="pre">Bootstrap.sh</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#building-tpls-from-the-command-line-using-cmake">Building TPLs From The Command Line using CMake</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#known-issues">Known Issues</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#netcdf-fails-to-configure-on-mac-osx">NetCDF fails to configure on Mac OSX</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#library-parallelio-ascem-io-missing-archive-index-macosx">Library parallelio (ASCEM-IO) missing archive index (MacOSX)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#trilinos-configuration">Trilinos Configuration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#trilinos-build-configuration-files">Trilinos Build Configuration Files</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="build_instructions.html">Building and Installing Amanzi Using CMake</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial/index.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../verification/index.html">Verification Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking/index.html">Benchmark Testing</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Amanzi</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Building Amanzi</a> &raquo;</li>
+        
+      <li>Amanzi Third Party Library (TPL) Build System</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/install/building_tpls.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="amanzi-third-party-library-tpl-build-system">
+<span id="tpls"></span><h1>Amanzi Third Party Library (TPL) Build System<a class="headerlink" href="#amanzi-third-party-library-tpl-build-system" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>This project builds the required and optional TPL software for the Amanzi code
+project. The build system is designed to configure and build TPLs to the
+requirements documented here <a class="reference external" href="https://software.lanl.gov/ascem/trac/wiki/Amanzi/Building/SoftwareRequirements">https://software.lanl.gov/ascem/trac/wiki/Amanzi/Building/SoftwareRequirements</a>.</p>
+<p>Users are required to provide the following to build:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>A recent and stable GCC or Intel compiler. We have successfully built with
+GNU versions 4.x to 9.x and Intel versions 11 through 17.</p></li>
+<li><p>Mercurial version 1.8 or higher.</p></li>
+<li><p>CMake version 3.11.4 or higher.</p></li>
+<li><p>MPI installation with compiler wrappers. (mpicc, mpicxx, etc.)</p></li>
+<li><p>BLAS/LAPACK built and tuned to the target architecture. See the
+Trilinos Configuration section for more information.</p></li>
+<li><p>A location to install all the TPLs. The entire software stack
+will be installed in directories rooted to this directory. Since the
+download–patch-build-install cycle for each TPL is tied to a single
+target, the user must have read and write permission for this location.</p></li>
+<li><p>The build directory will need approximately 2.1 Gb of space and the
+install directory tree requires 300 Mb.</p></li>
+</ul>
+</div></blockquote>
+<p>On most UNIX-like OS (including Mac OSX) systems, the entire TPL software stack can be built using the <code class="docutils literal notranslate"><span class="pre">bootstrap.sh</span></code> shell script found in the config directory. The script searches for CMake and will download and build CMake 2.8.8, if it does not locate the cmake command. The script also searches for a working mpi installation and will download and build OpenMPI 1.4.4 if it does not locate mpi.  At this time, the script does not build compilers, <code class="docutils literal notranslate"><span class="pre">LAPACK</span></code> or <code class="docutils literal notranslate"><span class="pre">BLAS</span></code>. See the <a class="reference internal" href="#compilers">compilers</a> section on how to obtain a supported compiler and <a class="reference internal" href="#lapack">LAPACK</a> for <code class="docutils literal notranslate"><span class="pre">LAPACK</span></code> and <code class="docutils literal notranslate"><span class="pre">BLAS</span></code> suggestions. See the <a class="reference internal" href="#mpi">MPI</a> section on how to obtain and install other mpi implementations.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">bootstrap.sh</span></code> script will create two build directories, one for the TPLs, TPL_BUILD, and one for amanzi, amanzi-build, in the directory the script is called from. Users can control the install location of the TPLs and Amanzi through command line arguments.  The command</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">amanzi</span> <span class="n">source</span> <span class="n">root</span><span class="o">&gt;/</span><span class="n">bootstrap</span><span class="o">.</span><span class="n">sh</span> <span class="o">--</span><span class="n">help</span>
+</pre></div>
+</div>
+<p>will print all the available options and default values.</p>
+<p>If a TPL fails to download, configure, build or install,  check the log files
+stored under a directory labeled:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">TPL</span> <span class="n">name</span> <span class="n">lowercase</span><span class="o">&gt;/&lt;</span><span class="n">TPL</span> <span class="n">name</span> <span class="n">lowercase</span><span class="o">&gt;-</span><span class="n">timestamps</span><span class="o">.</span>
+</pre></div>
+</div>
+<p>Each step step is recorded with <code class="docutils literal notranslate"><span class="pre">STDOUT</span></code> and <code class="docutils literal notranslate"><span class="pre">STDERR</span></code> outputs stored
+in separate files. Any bug report related to the TPLs should include these log files.</p>
+<div class="section" id="obtaining-a-supported-compiler">
+<span id="compilers"></span><h3>Obtaining A Supported Compiler<a class="headerlink" href="#obtaining-a-supported-compiler" title="Permalink to this headline">¶</a></h3>
+<p>At this time, Amanzi can be built with recent versions of GCC, 4.x through 9.x, and
+Intel versions 11.* and 17.*. Since GCC is widely used by the development team
+and it is free, we recommend using one of the supported GCC compilers.</p>
+<div class="section" id="gcc-on-mac-osx">
+<h4>GCC On Mac OSX<a class="headerlink" href="#gcc-on-mac-osx" title="Permalink to this headline">¶</a></h4>
+<p>The default GCC install on Mac OSX does not include a Fortran compiler. Mac users
+should use the MacPorts software <a class="reference external" href="http://www.macports.org/">http://www.macports.org/</a> to install GCC. Once
+MacPorts is installed,</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">port</span> <span class="n">install</span> <span class="n">gcc</span>
+</pre></div>
+</div>
+<p>will install GCC in the /opt/local directory. Be aware that Apple requires these
+compiler names to be gcc-mp-x.x, g++-mp-x.x and gfortran-mp-x.x, not the standard names
+gcc, g++ and gfortran.</p>
+</div>
+<div class="section" id="gcc-on-ubuntu">
+<h4>GCC On Ubuntu<a class="headerlink" href="#gcc-on-ubuntu" title="Permalink to this headline">¶</a></h4>
+<p>Use the apt-get utility,</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="n">gcc</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="building-gcc-from-source">
+<h4>Building GCC From Source<a class="headerlink" href="#building-gcc-from-source" title="Permalink to this headline">¶</a></h4>
+<p>Please contact your local IT support before attempting to build GCC from source. The binaries may be
+available in a non-standard location.</p>
+<p>Building GCC requires several precision libraries that must be installed before building GCC.
+See <a class="reference external" href="http://gcc.gnu.org/install/prerequisites.html">http://gcc.gnu.org/install/prerequisites.html</a> for more information. Once these
+packages are installed, GCC must be configured with C, C++ and Fortran enabled. Documentation
+of the available configure options is here <a class="reference external" href="http://gcc.gnu.org/install/configure.html">http://gcc.gnu.org/install/configure.html</a>.
+The quickest way to determine the best configure options is to find a similar
+machine with a matching OS that has the target GCC already installed, and look at
+the verbose version output. The command</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gcc</span> <span class="o">-</span><span class="n">v</span>
+</pre></div>
+</div>
+<p>will print out the configure options used to build that GCC compiler. One important note to
+remember: DO NOT BUILD GCC IN THE SOURCE DIRECTORY. Create a separate build directory.
+The GCC build time is long. On most systems it will need more than 2 hours to complete.</p>
+</div>
+</div>
+<div class="section" id="obtaining-mpi">
+<span id="mpi"></span><h3>Obtaining MPI<a class="headerlink" href="#obtaining-mpi" title="Permalink to this headline">¶</a></h3>
+<p>Amanzi has been built against both MPICH2 and OpenMPI. Both are easy to build and install,
+but on clusters, users should contact their local support before building either one. Many
+vendors provide tuned and optimized MPI libraries that should be used to maximize performance.
+Otherwise, install either MPICH2 or OpenMPI.</p>
+<div class="section" id="mpich2">
+<h4>MPICH2<a class="headerlink" href="#mpich2" title="Permalink to this headline">¶</a></h4>
+<p>We recommend that users install a stable version of MPICH2. MPICH even minor versions
+(Ex: 1.4.1 minor version is 4) are stable. Odd minor versions are beta releases.</p>
+<p>Steps to build and install MPICH2 are</p>
+<blockquote>
+<div><ol class="arabic">
+<li><p>Download <a class="reference external" href="http://www.mcs.anl.gov/research/projects/mpich2/downloads/index.php?s=downloads">MPICH2</a></p></li>
+<li><p>Unpack the tar file and create a separate build directory. In this build directory,
+configure MPICH2 with:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">configure</span> <span class="o">--</span><span class="n">prefix</span><span class="o">=&lt;</span><span class="n">install</span> <span class="n">prefix</span><span class="o">&gt;</span> \
+          <span class="o">--</span><span class="n">enable</span><span class="o">-</span><span class="n">f77</span> \
+          <span class="o">--</span><span class="n">enable</span><span class="o">-</span><span class="n">fc</span> \
+          <span class="o">--</span><span class="n">enable</span><span class="o">-</span><span class="n">cxx</span> \
+          <span class="o">--</span><span class="n">enable</span><span class="o">-</span><span class="n">romio</span> \
+          <span class="o">--</span><span class="n">enable</span><span class="o">-</span><span class="n">shared</span> \
+          <span class="o">--</span><span class="n">enable</span><span class="o">-</span><span class="n">static</span> \
+          <span class="n">CC</span><span class="o">=&lt;</span><span class="n">full</span> <span class="n">path</span> <span class="n">to</span> <span class="n">C</span> <span class="n">compiler</span><span class="o">&gt;</span>
+          <span class="n">CXX</span><span class="o">=&lt;</span><span class="n">full</span> <span class="n">path</span> <span class="n">to</span> <span class="n">C</span><span class="o">++</span> <span class="n">compiler</span><span class="o">&gt;</span>
+          <span class="n">FC</span><span class="o">=&lt;</span><span class="n">full</span> <span class="n">path</span> <span class="n">to</span> <span class="n">Fortran</span> <span class="n">compiler</span><span class="o">&gt;</span>
+          <span class="n">F77</span><span class="o">=&lt;</span><span class="n">full</span> <span class="n">path</span> <span class="n">to</span> <span class="n">Fortran</span> <span class="n">compiler</span> <span class="n">that</span> <span class="n">support</span> <span class="n">F77</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><p>Build, test and install. MPICH does not support parallel builds.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="nb">all</span><span class="p">;</span> <span class="n">make</span> <span class="n">test</span><span class="p">;</span> <span class="n">make</span> <span class="n">install</span>
+</pre></div>
+</div>
+</li>
+<li><p>Set environment variables, PATH, LD_LIBRARY_PATH on UNIX/Linux system:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>setenv PATH &lt;install prefix&gt;/bin:${PATH}
+setenv LD_LIBRARY_PATH &lt;install prefix&gt;/lib:${LD_LIBRARY_PATH}
+</pre></div>
+</div>
+<p>or for <code class="docutils literal notranslate"><span class="pre">bash</span></code> shells:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>export PATH=&lt;install prefix&gt;/bin:${PATH}
+export LD_LIBRARY_PATH=&lt;install prefix&gt;/lib:${LD_LIBRARY_PATH}
+</pre></div>
+</div>
+<p>For  Mac OSX, set PATH and DYLD_LIBRARY_PATH environment variables:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>setenv PATH &lt;install prefix&gt;/bin:${PATH}
+setenv DYLD_LIBRARY_PATH &lt;install prefix&gt;/lib:${DYLD_LIBRARY_PATH}
+</pre></div>
+</div>
+<p>or for <code class="docutils literal notranslate"><span class="pre">bash</span></code> shells:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>export PATH=&lt;install prefix&gt;/bin:${PATH}
+export DYLD_LIBRARY_PATH=&lt;install prefix&gt;/lib:${DYLD_LIBRARY_PATH}
+</pre></div>
+</div>
+</li>
+<li><p>Set environment variable MPI_ROOT. The <code class="docutils literal notranslate"><span class="pre">bootstrap.sh</span></code> script searches for compiler wrappers in this
+directory when this is set.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">setenv</span> <span class="n">MPI_ROOT</span> <span class="o">&lt;</span><span class="n">install</span> <span class="n">prefix</span><span class="o">&gt;</span> <span class="ow">or</span> <span class="n">export</span> <span class="n">MPI_ROOT</span><span class="o">=&lt;</span><span class="n">install</span> <span class="n">prefix</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</div></blockquote>
+</div>
+<div class="section" id="openmpi">
+<h4>OpenMPI<a class="headerlink" href="#openmpi" title="Permalink to this headline">¶</a></h4>
+<p>Steps to build and install OpenMPI are</p>
+<blockquote>
+<div><ol class="arabic">
+<li><p>Download OpenMPI <a class="reference external" href="http://www.open-mpi.org">http://www.open-mpi.org</a></p></li>
+<li><p>Unpack the tar file in a directory and create a separate build directory. In this build directory
+configure OpenMPI with</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">configure</span> \
+          <span class="o">--</span><span class="n">prefix</span><span class="o">=&lt;</span><span class="n">install</span> <span class="n">prefix</span><span class="o">&gt;</span> \
+          <span class="o">--</span><span class="n">enable</span><span class="o">-</span><span class="n">mpi</span><span class="o">-</span><span class="n">f77</span> \
+          <span class="o">--</span><span class="n">enable</span><span class="o">-</span><span class="n">mpi</span><span class="o">-</span><span class="n">f90</span> \
+          <span class="o">--</span><span class="n">enable</span><span class="o">-</span><span class="n">mpi</span><span class="o">-</span><span class="n">cxx</span> \
+          <span class="o">--</span><span class="n">enable</span><span class="o">-</span><span class="n">shared</span> \
+          <span class="o">--</span><span class="n">enable</span><span class="o">-</span><span class="n">static</span> \
+          <span class="n">CC</span><span class="o">=&lt;</span><span class="n">full</span> <span class="n">path</span> <span class="n">to</span> <span class="n">C</span> <span class="n">compiler</span><span class="o">&gt;</span>
+          <span class="n">CXX</span><span class="o">=&lt;</span><span class="n">full</span> <span class="n">path</span> <span class="n">to</span> <span class="n">C</span><span class="o">++</span> <span class="n">compiler</span><span class="o">&gt;</span>
+          <span class="n">FC</span><span class="o">=&lt;</span><span class="n">full</span> <span class="n">path</span> <span class="n">to</span> <span class="n">Fortran</span> <span class="n">compiler</span><span class="o">&gt;</span>
+          <span class="n">F77</span><span class="o">=&lt;</span><span class="n">full</span> <span class="n">path</span> <span class="n">to</span> <span class="n">Fortran</span> <span class="n">compiler</span> <span class="n">that</span> <span class="n">support</span> <span class="n">F77</span><span class="o">&gt;</span><span class="p">,</span>
+</pre></div>
+</div>
+<p>where the compilers are defined explicitly on the command line.</p>
+</li>
+<li><p>Build, test and install. OpenMPI does support parallel builds.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="nb">all</span><span class="p">;</span> <span class="n">make</span> <span class="n">test</span><span class="p">;</span> <span class="n">make</span> <span class="n">install</span>
+</pre></div>
+</div>
+</li>
+<li><p>Set environment variables, PATH, LD_LIBRARY_PATH on UNIX/Linux system:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>setenv PATH &lt;install prefix&gt;/bin:${PATH}
+setenv LD_LIBRARY_PATH &lt;install prefix&gt;/lib:${LD_LIBRARY_PATH}
+</pre></div>
+</div>
+<p>or for <code class="docutils literal notranslate"><span class="pre">bash</span></code> shells:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>export PATH=&lt;install prefix&gt;/bin:${PATH}
+export LD_LIBRARY_PATH=&lt;install prefix&gt;/lib:${LD_LIBRARY_PATH}
+</pre></div>
+</div>
+<p>For  Mac OSX, set PATH and DYLD_LIBRARY_PATH environment variables:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>setenv PATH &lt;install prefix&gt;/bin:${PATH}
+setenv DYLD_LIBRARY_PATH &lt;install prefix&gt;/lib:${DYLD_LIBRARY_PATH}
+</pre></div>
+</div>
+<p>or for <code class="docutils literal notranslate"><span class="pre">bash</span></code> shells:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>export PATH=&lt;install prefix&gt;/bin:${PATH}
+export DYLD_LIBRARY_PATH=&lt;install prefix&gt;/lib:${DYLD_LIBRARY_PATH}
+</pre></div>
+</div>
+</li>
+<li><p>Set environment variable MPI_ROOT. The bootstrap.sh script searches for compiler wrappers in this
+directory when this is set.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">setenv</span> <span class="n">MPI_ROOT</span> <span class="o">&lt;</span><span class="n">install</span> <span class="n">prefix</span><span class="o">&gt;</span> <span class="ow">or</span> <span class="n">export</span> <span class="n">MPI_ROOT</span><span class="o">=&lt;</span><span class="n">install</span> <span class="n">prefix</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="obtaining-lapack-blas">
+<span id="lapack"></span><h3>Obtaining LAPACK/BLAS<a class="headerlink" href="#obtaining-lapack-blas" title="Permalink to this headline">¶</a></h3>
+<p>Most systems have <code class="docutils literal notranslate"><span class="pre">LAPACK</span></code> and <code class="docutils literal notranslate"><span class="pre">BLAS</span></code> installed in system directories.
+Building these libraries from source and optimizing for the target machine is difficult.
+We recommend that users attempt to build Amanzi before building <code class="docutils literal notranslate"><span class="pre">LAPACK</span></code> and <code class="docutils literal notranslate"><span class="pre">BLAS</span></code> from
+source. Trilnos, the package that requires both, detects the libraries in their build system
+and in many cases finds them automatically. If the Trilinos build system fails to find the
+libraries or if the user wants to build against non-standard <code class="docutils literal notranslate"><span class="pre">LAPACK</span></code>/<code class="docutils literal notranslate"><span class="pre">BLAS</span></code> distributions,
+please read the <a class="reference internal" href="#trilinos">Trilinos</a> configuration section.</p>
+<p>If the user must build <code class="docutils literal notranslate"><span class="pre">LAPACK</span></code> and <code class="docutils literal notranslate"><span class="pre">BLAS</span></code> from source, we recommend <code class="docutils literal notranslate"><span class="pre">ATLAS</span></code>, a sofware package
+that automatically builds tuned <code class="docutils literal notranslate"><span class="pre">BLAS</span></code> libraries and a small subset of <code class="docutils literal notranslate"><span class="pre">LAPACK</span></code>. By default
+<code class="docutils literal notranslate"><span class="pre">ATLAS</span></code> does not build a full <code class="docutils literal notranslate"><span class="pre">LAPACK</span></code> distribution, but Amanzi requires a full <code class="docutils literal notranslate"><span class="pre">LAPACK</span></code> library.
+Read the <code class="docutils literal notranslate"><span class="pre">ATLAS</span></code> documentation on how to build <code class="docutils literal notranslate"><span class="pre">ATLAS</span></code> with a full <code class="docutils literal notranslate"><span class="pre">LAPACK</span></code> installation.
+<code class="docutils literal notranslate"><span class="pre">ATLAS</span></code> downloads are available at <a class="reference external" href="http://math-atlas.sourceforge.net">http://math-atlas.sourceforge.net</a>.</p>
+</div>
+</div>
+<div class="section" id="building-tpls-and-amanzi-using-bootstrap-sh">
+<h2>Building TPLs and Amanzi Using <code class="docutils literal notranslate"><span class="pre">Bootstrap.sh</span></code><a class="headerlink" href="#building-tpls-and-amanzi-using-bootstrap-sh" title="Permalink to this headline">¶</a></h2>
+<p>The script <code class="docutils literal notranslate"><span class="pre">bootstrap.sh</span></code> is located in the <code class="docutils literal notranslate"><span class="pre">config</span></code> directory.  See <code class="docutils literal notranslate"><span class="pre">bootstrap.sh</span> <span class="pre">--help</span></code> for a full list of options and default settings.  The script will create two subdirectories in the currect directory.  The first is TPL_BUILD used for downloading and builing the TPLs.  The second is amanzi-build used for building Amanzi.  The TPLs and Amanzi will be installed in the directory specified by the option <code class="docutils literal notranslate"><span class="pre">--prefix</span></code>.</p>
+<p>See the <a class="reference internal" href="building_bootstrap.html#bootstrap"><span class="std std-ref">Quickstart Using Bootstrap</span></a> section for instructions building using <code class="docutils literal notranslate"><span class="pre">Bootstrap.sh</span></code>.</p>
+</div>
+<div class="section" id="building-tpls-from-the-command-line-using-cmake">
+<h2>Building TPLs From The Command Line using CMake<a class="headerlink" href="#building-tpls-from-the-command-line-using-cmake" title="Permalink to this headline">¶</a></h2>
+<p>We recommend that users run the provided <code class="docutils literal notranslate"><span class="pre">bootstrap.sh</span></code> script in the <code class="docutils literal notranslate"><span class="pre">config</span></code> directory, to build
+the TPLs. The instructions in this section are for advanced users and developers.</p>
+<p>The steps to build entire suite of TPL software from the command line are</p>
+<blockquote>
+<div><ol class="arabic">
+<li><p>Configure with cmake:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cmake</span>  \
+       <span class="o">-</span><span class="n">D</span> <span class="n">CMAKE_C_COMPILER</span><span class="o">=/</span><span class="n">full</span><span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">mpicc</span> \
+       <span class="o">-</span><span class="n">D</span> <span class="n">CMAKE_CXX_COMPILER</span><span class="o">=/</span><span class="n">full</span><span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">mpicxx</span> \
+       <span class="o">-</span><span class="n">D</span> <span class="n">CMAKE_Fortran_COMPILER</span><span class="o">=/</span><span class="n">full</span><span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">mpif90</span> \
+       <span class="o">-</span><span class="n">D</span> <span class="n">TPL_INSTALL_PREFIX</span><span class="o">=/</span><span class="n">full</span><span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">tpls</span>
+       <span class="o">/</span><span class="n">full</span><span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">amanzi</span><span class="o">/</span><span class="n">config</span><span class="o">/</span><span class="n">SuperBuild</span>
+</pre></div>
+</div>
+</li>
+<li><p>Build with make (in parallel if desired):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="o">-</span><span class="n">j</span> <span class="n">n</span>
+</pre></div>
+</div>
+<p>where n is the number of make jobs.</p>
+</li>
+<li><p>Install with make:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">install</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</div></blockquote>
+<p>The final step, make install, copies a CMake configuration file,amanzi-tpl-config.cmake,
+to the install location under share/cmake that is useful when building Amanzi.
+Passing this configuration to cmake using the -C option defines all the TPL locations
+needed to build amanzi.</p>
+<p>For example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cmake</span> <span class="o">-</span><span class="n">C</span> <span class="o">/</span><span class="n">full</span><span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">amanzi</span><span class="o">-</span><span class="n">tpl</span><span class="o">-</span><span class="n">config</span><span class="o">.</span><span class="n">cmake</span> \
+  <span class="p">[</span><span class="n">Additional</span> <span class="n">CMake</span> <span class="n">opts</span><span class="p">]</span> <span class="o">/</span><span class="n">full</span><span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">amanzi</span>
+</pre></div>
+</div>
+<p>will build and link amanzi linked against the TPLs built with this
+project, reducing the need for complicated build scripts.</p>
+</div>
+<div class="section" id="known-issues">
+<h2>Known Issues<a class="headerlink" href="#known-issues" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="netcdf-fails-to-configure-on-mac-osx">
+<h3>NetCDF fails to configure on Mac OSX<a class="headerlink" href="#netcdf-fails-to-configure-on-mac-osx" title="Permalink to this headline">¶</a></h3>
+<p>This problem occurs when a user has HDF5 installed through MacPorts and uses
+the MacPorts OpenMPI. This is an issue with NetCDF’s configure script which
+does not allow the user to control the HDF5 prefix installation. Users can either
+install OpenMPI in another directory and use the wrappers in that directory (RECOMMENDED)
+or set ENABLE_NetCDF4:BOOL=FALSE while configuring SuperBuild from the command line.</p>
+</div>
+<div class="section" id="library-parallelio-ascem-io-missing-archive-index-macosx">
+<h3>Library parallelio (ASCEM-IO) missing archive index (MacOSX)<a class="headerlink" href="#library-parallelio-ascem-io-missing-archive-index-macosx" title="Permalink to this headline">¶</a></h3>
+<p>This bug has only been reported on Macs. Users will experience this bug
+when linking the HDF5 test binaries in the Amanzi test suite. Despite a kludge
+in the shell script to address this when building ASCEM-IO, this problem persists.
+The work-around is to run ranlib on the installed libparallelio.a library.</p>
+</div>
+</div>
+<div class="section" id="trilinos-configuration">
+<span id="trilinos"></span><h2>Trilinos Configuration<a class="headerlink" href="#trilinos-configuration" title="Permalink to this headline">¶</a></h2>
+<p>Amanzi relies on Trilinos for basic distributed data structures, input file
+handling and non-linear solvers. It is critical, for performance reasons, that
+the Trilinos build point to tuned BLAS and LAPACK libraries. On most systems,
+the BLAS and LAPACK libraries are found in standard system libraries
+(/usr/lib or /usr/lib64).  However on large scale clusters these libraries
+are typically generic implementations and will not provide optimal performance.
+Such machines have tuned BLAS/LAPACK libraries. Please consult the support
+documentation for these machines to find the recommended libraries.</p>
+<p>To guide the search for BLAS/LAPACK libraries, add <code class="docutils literal notranslate"><span class="pre">-D</span> <span class="pre">ENABLE_BLA_Search:BOOL=TRUE</span></code>
+to your cmake options. The CMake mechanism (FindBLAS and FindLAPACK) searches through
+a list of known vendor supplied BLAS/LAPACK libraries.
+Unless, <code class="docutils literal notranslate"><span class="pre">BLA_VENDOR</span></code> is set, all possible vendors
+are searched, and the search ceases once a valid BLAS/LAPACK library is found. For the
+search to be successful, the library must be located in a standard installation location or
+defined in the user’s environment variables <code class="docutils literal notranslate"><span class="pre">LD_LIBRARY_PATH</span></code> or <code class="docutils literal notranslate"><span class="pre">DYLD_LIBRARY_PATH</span></code>.</p>
+<p>Supported BLAS/LAPACK Vendors:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 77%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>Vendor</p></td>
+<td><p>Description</p></td>
+</tr>
+<tr class="row-even"><td><p>ATLAS</p></td>
+<td><p>Automatically Tuned Linear Algebra Software</p></td>
+</tr>
+<tr class="row-odd"><td><p>PhiPACK</p></td>
+<td><p>PHiPAC (Portable High Performance ANSI C)</p></td>
+</tr>
+<tr class="row-even"><td><p>CXML</p></td>
+<td><p>HP Libraries</p></td>
+</tr>
+<tr class="row-odd"><td><p>DXML</p></td>
+<td><p>??</p></td>
+</tr>
+<tr class="row-even"><td><p>SunPerf</p></td>
+<td><p>Sun Performance Libraries</p></td>
+</tr>
+<tr class="row-odd"><td><p>SCSL</p></td>
+<td><p>SGI/Cray Performance Libraries</p></td>
+</tr>
+<tr class="row-even"><td><p>SGIMATH</p></td>
+<td><p>??</p></td>
+</tr>
+<tr class="row-odd"><td><p>IBMESSL</p></td>
+<td><p>??</p></td>
+</tr>
+<tr class="row-even"><td><p>ACML</p></td>
+<td><p>AMD Core Math Library</p></td>
+</tr>
+<tr class="row-odd"><td><p>ACML_MP</p></td>
+<td><p>AMD Core Math Library multi-threaded</p></td>
+</tr>
+<tr class="row-even"><td><p>Apple</p></td>
+<td><p>Mac OSX Accelerate Framework</p></td>
+</tr>
+<tr class="row-odd"><td><p>NAS</p></td>
+<td><p>??</p></td>
+</tr>
+<tr class="row-even"><td><p>Intel10_32</p></td>
+<td><p>Intel MKL with 32bit int</p></td>
+</tr>
+<tr class="row-odd"><td><p>Intel10_64lp</p></td>
+<td><p>Intel MKL with 64bit int</p></td>
+</tr>
+<tr class="row-even"><td><p>Intel</p></td>
+<td><p>Older versions of MKL</p></td>
+</tr>
+<tr class="row-odd"><td><p>Generic</p></td>
+<td><p>Generic BLAS</p></td>
+</tr>
+</tbody>
+</table>
+<p>If the search fails during the TPL configuration or if the Trilinos configuration
+fails to locate these libraries, the user can override the search by explicitly
+defining the libraries with <code class="docutils literal notranslate"><span class="pre">BLAS_LIBRARIES</span></code> and <code class="docutils literal notranslate"><span class="pre">LAPACK_LIBRARIES</span></code> at
+configuration time. Multiple library names should be
+separated with a semi-colon. In some cases, Intel’s MKL libraries, require
+additional link flags when building Amanzi. Use the <code class="docutils literal notranslate"><span class="pre">CMAKE_EXE_LINKER_FLAGS</span></code>
+configuration variable to define these additional link flags when building Amanzi.
+Consult the documentation for the particular library for more information.</p>
+<div class="section" id="trilinos-build-configuration-files">
+<h3>Trilinos Build Configuration Files<a class="headerlink" href="#trilinos-build-configuration-files" title="Permalink to this headline">¶</a></h3>
+<p>SuperBuild contains Trilinos CMake configuration files for specific platforms and
+compilers. The files are located under the tpl-build/cmake directory.
+The file name should be defined while configuring tpl-build with the option
+<code class="docutils literal notranslate"><span class="pre">-D</span> <span class="pre">Trilinos_Build_Config_File:STRING=&lt;file&gt;</span></code>. This configuration file will
+be the last CMake configuration variable passed to Trilinos, thus all the
+definitions in this file will override previous configuration definitions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Hopper (NERSC)</dt>
+<dd class="field-odd"><dl class="field-list simple">
+<dt class="field-odd">Compiler</dt>
+<dd class="field-odd"><p>Intel</p>
+</dd>
+<dt class="field-even">Config File</dt>
+<dd class="field-even"><p>trilinos-build-libsci-intel.cmake</p>
+</dd>
+<dt class="field-odd">Description</dt>
+<dd class="field-odd"><p>Defines the LibSci libraries as BLAS/LAPACK
+libraries.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Hopper (NERSC)</dt>
+<dd class="field-even"><dl class="field-list simple">
+<dt class="field-odd">Compiler</dt>
+<dd class="field-odd"><p>GNU</p>
+</dd>
+<dt class="field-even">Config File</dt>
+<dd class="field-even"><p>trilinos-build-libsci-gnu.cmake</p>
+</dd>
+<dt class="field-odd">Description</dt>
+<dd class="field-odd"><p>Defines the LibSci libraries as BLAS/LAPACK
+libraries.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="build_instructions.html" class="btn btn-neutral float-right" title="Building and Installing Amanzi Using CMake" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="building_bootstrap.html" class="btn btn-neutral float-left" title="Quickstart Using Bootstrap" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Amanzi Development Team
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
