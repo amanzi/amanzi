@@ -851,7 +851,7 @@ void InputConverterU::TranslateStateICsAmanziGeochemistry_(
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Compatibility mode: translating ICs for native chemistry" << std::endl;
+    *vo_->os() << "Compatibility mode: translating ICs for native chemistry: " << domain << std::endl;
   }
 
   bool flag;
@@ -873,7 +873,8 @@ void InputConverterU::TranslateStateICsAmanziGeochemistry_(
       Exceptions::amanzi_throw(msg);
     }
 
-    Teuchos::ParameterList& ic_list = out_list.sublist(Keys::getKey(domain, "total_component_concentration"))
+    Key tcc_key = Keys::getKey(domain, "total_component_concentration");
+    Teuchos::ParameterList& ic_list = out_list.sublist(tcc_key)
         .sublist("function").sublist("All");
 
     ic_list.set<Teuchos::Array<std::string> >("regions", regions)
@@ -906,7 +907,7 @@ void InputConverterU::TranslateStateICsAmanziGeochemistry_(
                                      .set<double>("value", val);
     }
 
-    out_list.sublist("total_component_concentration")
+    out_list.sublist(tcc_key)
         .set<Teuchos::Array<std::string> >("names", types);
   }
 }

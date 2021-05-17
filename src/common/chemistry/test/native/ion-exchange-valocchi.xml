@@ -30,8 +30,8 @@
     <Parameter name="gram molecular weight" type="double" value=" 5.84425E+01"/>
     <Parameter name="reaction" type="string" value="1.00 Na+  1.00 Cl-"/>
     <Parameter name="equilibrium constant" type="double" value="1.58550E+00"/>
-    <Parameter name="molar volume" type="double" value="2.70150E+01"/>
-    <Parameter name="specific surface area" type="double" value="1.0"/>
+    <Parameter name="molar volume" type="double" value="2.70150e-05"/>
+    <Parameter name="specific surface area" type="double" value="100.0"/>
   </ParameterList>
 </ParameterList>
 

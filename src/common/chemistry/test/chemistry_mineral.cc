@@ -50,8 +50,8 @@ SUITE(GeochemistryTestsMineral) {
       gram_molecular_weight_(100.0872),
       ion_size_parameter_(0.0),
       logK_(1.8487),
-      molar_volume_(36.9340 * 1e+6),
-      specific_surface_area_(0.987654 / 1e+2)
+      molar_volume_(36.9340),
+      specific_surface_area_(0.987654)
   {
     Teuchos::ParameterList plist;
     plist.set<int>("charge", 0)

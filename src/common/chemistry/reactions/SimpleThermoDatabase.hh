@@ -32,9 +32,6 @@ class SimpleThermoDatabase : public Beaker {
 
  private:
   Teuchos::RCP<Teuchos::ParameterList> plist_;
-
-  std::vector<SurfaceSite> surface_sites_;
-  std::vector<SurfaceComplexationRxn> surface_complexation_reactions_;
 };
 
 }  // namespace AmanziChemistry

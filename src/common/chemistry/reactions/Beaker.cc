@@ -1131,7 +1131,7 @@ void Beaker::UpdateKineticChemistry()
 {
   // loop over general kinetic reactions and update effective rates
   for (auto it = general_kinetic_rxns_.begin(); it != general_kinetic_rxns_.end(); ++it) {
-    it->update_rates(primary_species());
+    it->UpdateRates(primary_species());
   }
 
   // loop over radioactive decay reactions and update effective rates
@@ -1403,7 +1403,7 @@ void Beaker::DisplayParameters() const
   message << "    tolerance: " << tolerance_ << std::endl;
   message << "    max_iterations: " << max_iterations_ << std::endl;
 
-  message << "    activity model: " << activity_model_->name() << std::endl;
+  message << "    activity model: " << activity_model_->get_name() << std::endl;
 
   message << "    temperature: " << temperature_ << " [K]" << std::endl;
   message << "    porosity: " << porosity_ << " [-]" << std::endl;

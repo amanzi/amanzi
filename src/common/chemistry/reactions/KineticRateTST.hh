@@ -47,17 +47,20 @@ class KineticRateTST : public KineticRate {
              double rate,
              const std::string& modifiers,
              const SpeciesArray& primary_species);
-  void Update(const SpeciesArray& primary_species,
-              const std::vector<Mineral>& minerals);
-  void AddContributionToResidual(const std::vector<Mineral>& minerals,
-                                 double bulk_volume,
-                                 std::vector<double> *residual);
 
-  void AddContributionToJacobian(const SpeciesArray& primary_species,
-                                 const std::vector<Mineral>& minerals,
-                                 double bulk_volume_vol,
-                                 MatrixBlock* J);
-  void Display(const Teuchos::Ptr<VerboseObject> vo) const;
+  virtual void Update(const SpeciesArray& primary_species,
+                      const std::vector<Mineral>& minerals) override;
+
+  virtual void AddContributionToResidual(const std::vector<Mineral>& minerals,
+                                         double bulk_volume,
+                                         std::vector<double> *residual) override;
+
+  virtual void AddContributionToJacobian(const SpeciesArray& primary_species,
+                                         const std::vector<Mineral>& minerals,
+                                         double bulk_volume_vol,
+                                         MatrixBlock* J) override;
+
+  virtual void Display(const Teuchos::Ptr<VerboseObject> vo) const override;
 
  private:
   double area_;  // surface area [m^2]

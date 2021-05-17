@@ -37,13 +37,9 @@ Mineral::Mineral(int id, const std::string& name,
   : SecondarySpecies(id, name, plist, primary_species),
     volume_fraction_(0.0)
 {
-  molar_volume_ = plist.get<double>("molar volume");
-  // convert: [cm^3/mole] --> [m^3/mole]
-  molar_volume_ /= 1000000.0;
+  molar_volume_ = plist.get<double>("molar volume");  // SI units!
 
   specific_surface_area_ = plist.get<double>("specific surface area");
-  // convert: [cm^2 mineral / cm^3 bulk] --> [m^2 mineral / m^3 bulk]
-  specific_surface_area_ *= 100.0;
 }
 
 

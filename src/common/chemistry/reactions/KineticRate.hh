@@ -32,14 +32,15 @@ class KineticRate {
 
   virtual void Update(const SpeciesArray& primary_species,
                       const std::vector<Mineral>& minerals) = 0;
+
   virtual void AddContributionToResidual(const std::vector<Mineral>& minerals,
                                          const double bulk_volume,
                                          std::vector<double> *residual) = 0;
+
   virtual void AddContributionToJacobian(const SpeciesArray& primary_species,
                                          const std::vector<Mineral>& minerals,
                                          const double bulk_volume,
                                          MatrixBlock* J) = 0;
-  virtual void Display(const Teuchos::Ptr<VerboseObject> vo) const = 0;
 
   void SetSpeciesIds(const SpeciesArray& species,
                      const std::string& species_type,
@@ -48,18 +49,19 @@ class KineticRate {
                      std::vector<int>* out_ids,
                      std::vector<double>* out_stoichiometry);
 
-  void DisplayReaction(const Teuchos::Ptr<VerboseObject> vo) const;
-
   std::string name() const { return name_; };
   int identifier() const { return identifier_; };
 
   double reaction_rate() const { return reaction_rate_; }
 
+  virtual void Display(const Teuchos::Ptr<VerboseObject> vo) const = 0;
+  void DisplayReaction(const Teuchos::Ptr<VerboseObject> vo) const;
+
  protected:
   KineticRate();
 
-  void set_name(const std::string& in_name) { name_ = in_name; }
-  void set_identifier(int in_id) { identifier_ = in_id; }
+  void set_name(const std::string& name) { name_ = name; }
+  void set_identifier(int id) { identifier_ = id; }
   void set_reaction_rate(double rate) { reaction_rate_ = rate; }
 
   std::vector<std::string> reactant_names;

@@ -70,8 +70,8 @@ class ActivityModel {
   // access
   double ionic_strength() const { return I_; }
 
-  void name(const std::string& name) { name_ = name; }
-  std::string name() { return name_; }
+  void set_name(const std::string& name) { name_ = name; }
+  std::string get_name() { return name_; }
 
   // i/o
   virtual void Display() const = 0;

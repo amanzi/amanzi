@@ -510,16 +510,13 @@ void ActivityModelPitzerHWM::Display() const {
   std::cout << "--------------------------------------------------------------------" << std::endl;
   std::cout << " Virial coefficients" << std::endl;
   std::cout << "--------------------------------------------------------------------" << std::endl;
-  int isp1(-1);
-  int isp2(-1);
-  int isp3(-1);
   int nvirial(0);
 
   if (number_non_zero_beta > 0) {
     std::cout << "=================> Beta0 ==============>" << std::endl;
     for (int i = 0; i < number_non_zero_beta; i++) {
-      isp1 = beta0_virial.at(i).GetIsp1();
-      isp2 = beta0_virial.at(i).GetIsp2();
+      int isp1 = beta0_virial.at(i).GetIsp1();
+      int isp2 = beta0_virial.at(i).GetIsp2();
       if (beta0_virial.at(i).GetVirial() != 0.0) {
         nvirial++;
         std::cout << name_species.at(isp1) << "  " << name_species.at(isp2) << "  " << beta0_virial.at(i).GetVirial() << std::endl;
@@ -528,8 +525,8 @@ void ActivityModelPitzerHWM::Display() const {
 
     std::cout << "=================> Beta1 ==============>" << std::endl;
     for (int i = 0; i < number_non_zero_beta; i++) {
-      isp1 = beta1_virial.at(i).GetIsp1();
-      isp2 = beta1_virial.at(i).GetIsp2();
+      int isp1 = beta1_virial.at(i).GetIsp1();
+      int isp2 = beta1_virial.at(i).GetIsp2();
       if (beta1_virial.at(i).GetVirial() != 0.0) {
         nvirial++;
         std::cout << name_species.at(isp1) << "  " << name_species.at(isp2) << "  " << beta1_virial.at(i).GetVirial() << std::endl;
@@ -538,8 +535,8 @@ void ActivityModelPitzerHWM::Display() const {
 
     std::cout << "=================> Beta2 ==============>" << std::endl;
     for (int i = 0; i < number_non_zero_beta; i++) {
-      isp1 = beta2_virial.at(i).GetIsp1();
-      isp2 = beta2_virial.at(i).GetIsp2();
+      int isp1 = beta2_virial.at(i).GetIsp1();
+      int isp2 = beta2_virial.at(i).GetIsp2();
       if (beta2_virial.at(i).GetVirial() != 0.0) {
         nvirial++;
         std::cout << name_species.at(isp1) << "  " << name_species.at(isp2) << "  " << beta2_virial.at(i).GetVirial() << std::endl;
@@ -550,8 +547,8 @@ void ActivityModelPitzerHWM::Display() const {
   if (number_non_zero_cphi > 0) {
     std::cout << "=================> Cphi ==============>" << std::endl;
     for (int i = 0; i < number_non_zero_cphi; i++) {
-      isp1 = cphi_virial.at(i).GetIsp1();
-      isp2 = cphi_virial.at(i).GetIsp2();
+      int isp1 = cphi_virial.at(i).GetIsp1();
+      int isp2 = cphi_virial.at(i).GetIsp2();
       if (cphi_virial.at(i).GetVirial() != 0.0) {
         nvirial++;
         std::cout << name_species.at(isp1) << "  " << name_species.at(isp2) << "  " << cphi_virial.at(i).GetVirial() << std::endl;
@@ -562,8 +559,8 @@ void ActivityModelPitzerHWM::Display() const {
   if (number_non_zero_theta > 0) {
     std::cout << "=================> Theta ==============>" << std::endl;
     for (int i = 0; i < number_non_zero_theta; i++) {
-      isp1 = theta_virial.at(i).GetIsp1();
-      isp2 = theta_virial.at(i).GetIsp2();;
+      int isp1 = theta_virial.at(i).GetIsp1();
+      int isp2 = theta_virial.at(i).GetIsp2();;
       if (theta_virial.at(i).GetVirial() != 0.0) {
         nvirial++;
         std::cout << name_species.at(isp1) << "  " << name_species.at(isp2) << "  " << theta_virial.at(i).GetVirial() << std::endl;
@@ -574,8 +571,8 @@ void ActivityModelPitzerHWM::Display() const {
   if (number_non_zero_lamda > 0) {
     std::cout << "=================> Lamda ==============>" << std::endl;
     for (int i = 0; i < number_non_zero_lamda; i++) {
-      isp1 = lamda_virial.at(i).GetIsp1();
-      isp2 = lamda_virial.at(i).GetIsp2();
+      int isp1 = lamda_virial.at(i).GetIsp1();
+      int isp2 = lamda_virial.at(i).GetIsp2();
       if (lamda_virial.at(i).GetVirial() != 0.0) {
         nvirial++;
         std::cout << name_species.at(isp1) << "  " << name_species.at(isp2) << "  " << lamda_virial.at(i).GetVirial() << std::endl;
@@ -586,9 +583,9 @@ void ActivityModelPitzerHWM::Display() const {
   if (number_non_zero_psi > 0) {
     std::cout << "=================> Psi ==============>" << std::endl;
     for (int i = 0; i < number_non_zero_psi; i++) {
-      isp1 = psi_virial.at(i).GetIsp1();
-      isp2 = psi_virial.at(i).GetIsp2();
-      isp3 = psi_virial.at(i).GetIsp3();
+      int isp1 = psi_virial.at(i).GetIsp1();
+      int isp2 = psi_virial.at(i).GetIsp2();
+      int isp3 = psi_virial.at(i).GetIsp3();
       if (psi_virial.at(i).GetVirial() != 0.0) {
         nvirial++;
         std::cout << name_species.at(isp1) << "  " << name_species.at(isp2) << "  " 

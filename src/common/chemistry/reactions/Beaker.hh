@@ -33,7 +33,6 @@
 #include "KineticRate.hh"
 #include "LUSolver.hh"
 #include "MatrixBlock.hh"
-#include "Mineral.hh"
 #include "RadioactiveDecay.hh"
 #include "Species.hh"
 #include "SorptionIsothermRxn.hh"
@@ -43,6 +42,7 @@ namespace Amanzi {
 namespace AmanziChemistry {
 
 class KineticRate;
+class Mineral;
 
 class Beaker {
  public:

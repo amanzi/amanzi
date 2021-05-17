@@ -31,7 +31,7 @@ class GeneralRxn {
   ~GeneralRxn() {};
 
   // update forward and reverse effective reaction rates
-  void update_rates(const std::vector<Species> primary_species);
+  void UpdateRates(const std::vector<Species> primary_species);
   void AddContributionToResidual(std::vector<double> *residual,
                                  double por_den_sat_vol);
   void AddContributionToJacobian(MatrixBlock* J,
@@ -40,9 +40,10 @@ class GeneralRxn {
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
 
  private:
-  unsigned int ncomp_;  // # components in reaction
-  unsigned int ncomp_forward_;  // # components in forward reaction
-  unsigned int ncomp_backward_;  // # components in backward reaction
+  int ncomp_;  // # components in reaction
+  int ncomp_forward_;  // # components in forward reaction
+  int ncomp_backward_;  // # components in backward reaction
+
   std::vector<std::string> species_names_;
   std::vector<int> species_ids_;       // ids of primary species in rxn
   std::vector<double> stoichiometry_;  // stoich of primary species in rxn
@@ -50,6 +51,7 @@ class GeneralRxn {
   std::vector<double> forward_stoichiometry_;  // forward stoich of primary species in rxn
   std::vector<int> backward_species_ids_;      // ids species used in backward rate calc
   std::vector<double> backward_stoichiometry_;  // backward stoich of primary species in rxn
+
   double kf_;  // forward rate constant
   double kb_;  // backward rate constant
 

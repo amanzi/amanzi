@@ -25,18 +25,12 @@ GeneralRxn::GeneralRxn() {
   ncomp_ = 0;
   ncomp_forward_ = 0;
   ncomp_backward_ = 0;
-  species_names_.clear();
-  species_ids_.clear();
-  stoichiometry_.clear();
-  forward_species_ids_.clear();
-  forward_stoichiometry_.clear();
-  backward_species_ids_.clear();
-  backward_stoichiometry_.clear();
-  kf_ = 0.;
-  kb_ = 0.;
 
-  lnQkf_ = 0.;
-  lnQkb_ = 0.;
+  kf_ = 0.0;
+  kb_ = 0.0;
+
+  lnQkf_ = 0.0;
+  lnQkb_ = 0.0;
 }
 
 
@@ -87,7 +81,7 @@ GeneralRxn::GeneralRxn(const Teuchos::ParameterList& plist,
 
 
 // temporary location for member functions
-void GeneralRxn::update_rates(const std::vector<Species> primary_species)
+void GeneralRxn::UpdateRates(const std::vector<Species> primary_species)
 {
   // forward rate expression
   lnQkf_ = 0.0;

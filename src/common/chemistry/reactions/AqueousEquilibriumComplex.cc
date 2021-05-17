@@ -34,8 +34,7 @@ void AqueousEquilibriumComplex::Update(
   /* This is not the true Q/K for the reaction, but is instead
   **   BC <==> cC + bB
   **   K = a_C^c * a_B^b / a_BC^1
-  **   a_BC = a_C^c * a_B^b / K
-  **   a_BC = QK = a_C^c * a_B^b / K
+  **   QK = a_BC = a_C^c * a_B^b / K
   */
   double lnQK = -lnK();
   for (int i = 0; i < ncomp(); i++) {
@@ -48,7 +47,8 @@ void AqueousEquilibriumComplex::Update(
 }
 
 
-void AqueousEquilibriumComplex::AddContributionToTotal(std::vector<double> *total) {
+void AqueousEquilibriumComplex::AddContributionToTotal(std::vector<double> *total)
+{
   for (int i = 0; i < ncomp(); i++) {
     (*total)[species_ids_.at(i)] += stoichiometry_.at(i) * molality();
   }
@@ -107,19 +107,6 @@ void AqueousEquilibriumComplex::DisplayResultsHeader(const Teuchos::Ptr<VerboseO
           << std::setw(15) << "Molality"
           << std::setw(15) << "Activity Coeff"
           << std::setw(15) << "Activity"
-          << std::endl;
-  vo->Write(Teuchos::VERB_HIGH, message.str());
-}
-
-
-void AqueousEquilibriumComplex::DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const
-{
-  std::stringstream message;
-  message << std::setw(15) << name()
-          << std::scientific << std::setprecision(5)
-          << std::setw(15) << molality()
-          << std::setw(15) << act_coef()
-          << std::setw(15) << activity()
           << std::endl;
   vo->Write(Teuchos::VERB_HIGH, message.str());
 }

@@ -111,9 +111,7 @@ void IonExchangeComplex::Display(const Teuchos::Ptr<VerboseObject> vo) const
 void IonExchangeComplex::DisplayReaction(const Teuchos::Ptr<VerboseObject> vo) const
 {
   std::stringstream message;
-  message << "    " << name() << " = "
-          << primary_name()
-          << std::endl;
+  message << "    " << name() << " = " << primary_name() << std::endl;
   vo->Write(Teuchos::VERB_HIGH, message.str());
 }
 

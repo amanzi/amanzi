@@ -80,7 +80,7 @@ void IonExchangeRxn::Update(const std::vector<Species>& primary_species)
   bool one_more;
   double tol = 1.e-12;
 
-  if (!uniform_z_set()) {
+  if (!uniform_z_set_) {
     CheckUniformZ(primary_species);
   }
 
@@ -89,7 +89,7 @@ void IonExchangeRxn::Update(const std::vector<Species>& primary_species)
   }
 
   double omega = ionx_site_[0].get_cation_exchange_capacity();
-  if (!uniform_z()) { // Z_i /= Z_j for all i,j
+  if (!uniform_z_) { // Z_i /= Z_j for all i,j
     int interation_count = 0;
     int ref_cation = ionx_complexes_[0].primary_id();
     double ref_cation_act = primary_species[ref_cation].activity();
@@ -196,18 +196,18 @@ void IonExchangeRxn::AddContributionToDTotal(
 
 void IonExchangeRxn::CheckUniformZ(const std::vector<Species>& primary_species)
 {
-  bool uniform_z = true;
-  for (unsigned int i = 0; i < ionx_complexes_.size(); i++) {
-    for (unsigned int j = i+1; j < ionx_complexes_.size(); j++) {
+  bool flag = true;
+  for (int i = 0; i < ionx_complexes_.size(); i++) {
+    for (int j = i+1; j < ionx_complexes_.size(); j++) {
       if (primary_species[ionx_complexes_[i].primary_id()].charge() != 
           primary_species[ionx_complexes_[j].primary_id()].charge()) {
-        uniform_z = false;
+        flag = false;
         i = ionx_complexes_.size();
         break;
       }
     }
   }
-  set_uniform_z(uniform_z);
+  uniform_z_ = flag;
   uniform_z_set_ = true;
 }
 

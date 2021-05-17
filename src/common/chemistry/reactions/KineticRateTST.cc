@@ -88,17 +88,8 @@ KineticRateTST::KineticRateTST()
     rate_constant_(0.0),
     log10_rate_constant_(0.0),
     Q_over_Keq_(1.0),
-    modifying_term_(1.0)
-{
-  modifying_species_names.clear();
-  modifying_exponents.clear();
-  modifying_primary_ids.clear();
-  modifying_secondary_ids.clear();
-
-  primary_stoichiometry.clear();
-  modifying_primary_exponents.clear();
-  modifying_secondary_exponents.clear();
-}
+    modifying_term_(1.0) 
+{};
 
 
 void KineticRateTST::Setup(const Mineral& reaction,

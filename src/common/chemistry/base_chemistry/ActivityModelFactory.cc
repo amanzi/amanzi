@@ -57,7 +57,7 @@ std::shared_ptr<ActivityModel> ActivityModelFactory::Create(
   }
 
   activity_model->set_verbosity(vo);
-  activity_model->name(model);
+  activity_model->set_name(model);
   activity_model->Setup(parameters, primary_species, secondary_species);
 
   return activity_model;

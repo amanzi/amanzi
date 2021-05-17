@@ -16,13 +16,11 @@
 
 #include <vector>
 
-#include "Mineral.hh"
-
 namespace Amanzi {
 namespace AmanziChemistry {
 
 // forward declarations
-class Block;
+class Mineral;
 
 class SurfaceSite {
  public:

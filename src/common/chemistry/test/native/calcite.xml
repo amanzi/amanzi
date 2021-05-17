@@ -75,8 +75,8 @@
     <Parameter name="gram molecular weight" type="double" value="1.00087e+02"/>
     <Parameter name="reaction" type="string" value="-1.0 H+  1.0 HCO3-  1.0 Ca++"/>
     <Parameter name="equilibrium constant" type="double" value="1.84870"/>
-    <Parameter name="molar volume" type="double" value="3.69339999999999975e+01"/>
-    <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+    <Parameter name="molar volume" type="double" value="3.69339999999999975e-5"/>
+    <Parameter name="specific surface area" type="double" value="100.0"/>
   </ParameterList>
 </ParameterList>
 

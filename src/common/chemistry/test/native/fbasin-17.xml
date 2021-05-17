@@ -819,8 +819,8 @@
     <Parameter name="gram molecular weight" type="double" value="78.0036"/>
     <Parameter name="reaction" type="string" value="3.0 H2O  -3.0 H+  1.0 Al+++"/>
     <Parameter name="equilibrium constant" type="double" value="7.756"/>
-    <Parameter name="molar volume" type="double" value="3.19559999999999995e+01"/>
-    <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+    <Parameter name="molar volume" type="double" value="3.19559999999999995e-05"/>
+    <Parameter name="specific surface area" type="double" value="100.0"/>
   </ParameterList>
   <ParameterList name="Quartz">
     <Parameter name="rate model" type="string" value="TST"/>
@@ -829,8 +829,8 @@
     <Parameter name="gram molecular weight" type="double" value="6.00842999999999989e+01"/>
     <Parameter name="reaction" type="string" value="1.0 SiO2(aq)"/>
     <Parameter name="equilibrium constant" type="double" value="-3.9993"/>
-    <Parameter name="molar volume" type="double" value="2.26879999999999988e+01"/>
-    <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+    <Parameter name="molar volume" type="double" value="2.26879999999999988e-05"/>
+    <Parameter name="specific surface area" type="double" value="100.0"/>
   </ParameterList>
   <ParameterList name="K-Feldspar">
     <Parameter name="rate model" type="string" value="TST"/>
@@ -839,8 +839,8 @@
     <Parameter name="gram molecular weight" type="double" value="278.332 "/>
     <Parameter name="reaction" type="string" value="2.00 H2O  1.00 K+  1.00 Al+++  -4.00 H+  3.00 SiO2(aq)"/>
     <Parameter name="equilibrium constant" type="double" value="-0.2753"/>
-    <Parameter name="molar volume" type="double" value="108.87"/>
-    <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+    <Parameter name="molar volume" type="double" value="108.87e-06"/>
+    <Parameter name="specific surface area" type="double" value="100.0"/>
   </ParameterList>
   <ParameterList name="Jurbanite">
     <Parameter name="rate model" type="string" value="TST"/>
@@ -849,8 +849,8 @@
     <Parameter name="gram molecular weight" type="double" value="2.30063999999999993e+02"/>
     <Parameter name="reaction" type="string" value="6.0 H2O  -1.0 H+  1.0 Al+++  1.0 SO4--"/>
     <Parameter name="equilibrium constant" type="double" value="-3.79999999999999982e+00"/>
-    <Parameter name="molar volume" type="double" value="1.26000000000000000e+02"/>
-    <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+    <Parameter name="molar volume" type="double" value="1.260e-04"/>
+    <Parameter name="specific surface area" type="double" value="100.0"/>
   </ParameterList>
   <ParameterList name="Ferrihydrite">
     <Parameter name="rate model" type="string" value="TST"/>
@@ -859,8 +859,8 @@
     <Parameter name="gram molecular weight" type="double" value="106.869"/>
     <Parameter name="reaction" type="string" value="2.50 H2O  1.00 Fe++  -2.00 H+  0.25 O2(aq)"/>
     <Parameter name="equilibrium constant" type="double" value="-3.594"/>
-    <Parameter name="molar volume" type="double" value="23.99"/>
-    <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+    <Parameter name="molar volume" type="double" value="23.99e-06"/>
+    <Parameter name="specific surface area" type="double" value="100.0"/>
   </ParameterList>
   <ParameterList name="Kaolinite">
     <Parameter name="rate model" type="string" value="TST"/>
@@ -869,8 +869,8 @@
     <Parameter name="gram molecular weight" type="double" value="2.58160000000000025e+02"/>
     <Parameter name="reaction" type="string" value="5.0 H2O  -6.0 H+  2.0 Al+++  2.0 SiO2(aq)"/>
     <Parameter name="equilibrium constant" type="double" value="7.57000000000000028e+00"/>
-    <Parameter name="molar volume" type="double" value="9.95199999999999960e+01"/>
-    <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+    <Parameter name="molar volume" type="double" value="9.95199999999999960e-05"/>
+    <Parameter name="specific surface area" type="double" value="100.0"/>
   </ParameterList>
   <ParameterList name="Schoepite">
     <Parameter name="rate model" type="string" value="TST"/>
@@ -879,8 +879,8 @@
     <Parameter name="gram molecular weight" type="double" value="3.22057999999999993e+02"/>
     <Parameter name="reaction" type="string" value="3.0 H2O  -2.0 H+  1.0 UO2++"/>
     <Parameter name="equilibrium constant" type="double" value="4.8333"/>
-    <Parameter name="molar volume" type="double" value="6.60799999999999983e+01"/>
-    <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+    <Parameter name="molar volume" type="double" value="6.60799999999999983e-05"/>
+    <Parameter name="specific surface area" type="double" value="100.0"/>
   </ParameterList>
   <ParameterList name="(UO2)3(PO4)2.4H2O">
     <Parameter name="rate model" type="string" value="TST"/>
@@ -889,8 +889,8 @@
     <Parameter name="gram molecular weight" type="double" value="1072.09"/>
     <Parameter name="reaction" type="string" value="4.00 H2O  -2.00 H+  2.00 HPO4--  3.00 UO2++"/>
     <Parameter name="equilibrium constant" type="double" value="-27.0349"/>
-    <Parameter name="molar volume" type="double" value="500.0"/>
-    <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+    <Parameter name="molar volume" type="double" value="500.0e-06"/>
+    <Parameter name="specific surface area" type="double" value="100.0"/>
   </ParameterList>
   <ParameterList name="Soddyite">
     <Parameter name="rate model" type="string" value="TST"/>
@@ -899,8 +899,8 @@
     <Parameter name="gram molecular weight" type="double" value="668.169"/>
     <Parameter name="reaction" type="string" value="4.00 H2O  -4.00 H+  1.00 SiO2(aq)  2.00 UO2++"/>
     <Parameter name="equilibrium constant" type="double" value="0.392"/>
-    <Parameter name="molar volume" type="double" value="131.27"/>
-    <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+    <Parameter name="molar volume" type="double" value="131.27e-06"/>
+    <Parameter name="specific surface area" type="double" value="100.0"/>
   </ParameterList>
   <ParameterList name="Calcite">
     <Parameter name="rate model" type="string" value="TST"/>
@@ -909,8 +909,8 @@
     <Parameter name="gram molecular weight" type="double" value="100.087"/>
     <Parameter name="reaction" type="string" value="1.00 Ca++  -1.00 H+  1.00 HCO3-"/>
     <Parameter name="equilibrium constant" type="double" value="1.8487"/>
-    <Parameter name="molar volume" type="double" value="36.934"/>
-    <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+    <Parameter name="molar volume" type="double" value="36.934e-06"/>
+    <Parameter name="specific surface area" type="double" value="100.0"/>
   </ParameterList>
   <ParameterList name="Chalcedony">
     <Parameter name="rate model" type="string" value="TST"/>
@@ -919,8 +919,8 @@
     <Parameter name="gram molecular weight" type="double" value="60.0843"/>
     <Parameter name="reaction" type="string" value="1.00 SiO2(aq)"/>
     <Parameter name="equilibrium constant" type="double" value="-3.7281"/>
-    <Parameter name="molar volume" type="double" value="22.688"/>
-    <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+    <Parameter name="molar volume" type="double" value="22.688e-06"/>
+    <Parameter name="specific surface area" type="double" value="100.0"/>
   </ParameterList>
 </ParameterList>
 

@@ -30,11 +30,9 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-/*
-**  Simple class for radioactive decay of aqueous and sorbed
-**  components. This class is not general enough to handle the decay
-**  of elements that are incorporated into minerals.
-*/
+/*************************************************************
+* Radioactive decay of aqueous and sorbed components. 
+****************************************************************** */
 RadioactiveDecay::RadioactiveDecay()
   : species_names_(),
     species_ids_(),
@@ -57,6 +55,7 @@ RadioactiveDecay::RadioactiveDecay(const Teuchos::ParameterList& plist,
   stoichiometry_.clear();
 
   half_life_ = plist.get<double>("half life");
+  assert(half_life_ > 0.0);
 
   std::string parent = plist.get<std::string>("reactant");
   int parent_id = name_to_id.at(parent);
@@ -95,19 +94,20 @@ RadioactiveDecay::RadioactiveDecay(const Teuchos::ParameterList& plist,
 }
 
 
+/* ******************************************************************
+* Solve:
+*    C = C_0 * exp(-k*t) for k where C = 0.5*C_0 and t = half life > 0
+*    k = -ln(0.5) / half_life
+*  The reaction rate constant will be positive (-k is decay) !
+****************************************************************** */
 void RadioactiveDecay::ConvertHalfLifeToRateConstant() {
-  /*
-  **  Solve:
-  **    C = C_0 * exp(-k*t) for k where C = 0.5*C_0 and t = half life > 0
-  **    k = -ln(0.5) / half_life
-  **  The reaction rate constant will be positive (-k is decay)!
-  */
   rate_constant_ = -std::log(0.5) / half_life_;
-  assert(rate_constant_ > 0.0);
 }
 
 
-// temporary location for member functions
+/* ******************************************************************
+*
+****************************************************************** */
 void RadioactiveDecay::UpdateRate(const std::vector<double>& total,
                                   const std::vector<double>& total_sorbed,
                                   const double porosity,

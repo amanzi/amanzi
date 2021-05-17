@@ -40,10 +40,8 @@ class AqueousEquilibriumComplex : public SecondarySpecies {
   virtual void AddContributionToDTotal(
           const std::vector<Species>& primary_species, MatrixBlock* dtotal);
 
-  using SecondarySpecies::Display;
   void Display(const Teuchos::Ptr<VerboseObject> vo) const;
   void DisplayResultsHeader(const Teuchos::Ptr<VerboseObject> vo) const;
-  void DisplayResults(const Teuchos::Ptr<VerboseObject> vo) const;
 };
 
 }  // namespace AmanziChemistry

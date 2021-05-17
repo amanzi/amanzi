@@ -48,10 +48,7 @@ namespace AmanziChemistry {
 SimpleThermoDatabase::SimpleThermoDatabase(Teuchos::RCP<Teuchos::ParameterList> plist,
                                            Teuchos::RCP<VerboseObject> vo)
   : plist_(plist),
-    Beaker(vo.ptr()) {
-  surface_sites_.clear();
-  surface_complexation_reactions_.clear();
-}
+    Beaker(vo.ptr()) {};
 
 
 /* *******************************************************************
@@ -166,6 +163,9 @@ void SimpleThermoDatabase::Initialize(const BeakerState& state,
   }
 
   // surface complex sites
+  std::vector<SurfaceSite> surface_sites;
+  std::vector<SurfaceComplexationRxn> surface_complexation_reactions;
+
   const auto& sslist = plist_->sublist("surface complex sites");
 
   id = 0;
@@ -175,10 +175,10 @@ void SimpleThermoDatabase::Initialize(const BeakerState& state,
       const auto& tmp = sslist.sublist(name);
 
       SurfaceSite site(name, id, tmp);
-      surface_sites_.push_back(site);  // local storage to make parsing reactions easier
+      surface_sites.push_back(site);  // local storage to make parsing reactions easier
 
       SurfaceComplexationRxn rxn(site);
-      surface_complexation_reactions_.push_back(rxn);
+      surface_complexation_reactions.push_back(rxn);
     }
   }
 
@@ -191,8 +191,8 @@ void SimpleThermoDatabase::Initialize(const BeakerState& state,
     if (sclist.isSublist(name)) {
       const auto& tmp = sclist.sublist(name);
 
-      SurfaceComplex surf_complex(name, id, primary_species(), surface_sites_, tmp);
-      surface_complexation_reactions_[surf_complex.free_site_id()].AddSurfaceComplex(surf_complex);
+      SurfaceComplex surf_complex(name, id, primary_species(), surface_sites, tmp);
+      surface_complexation_reactions[surf_complex.free_site_id()].AddSurfaceComplex(surf_complex);
     }
   }
 
@@ -228,12 +228,9 @@ void SimpleThermoDatabase::Initialize(const BeakerState& state,
   }
 
   // cleaning
-  for (auto rxn = surface_complexation_reactions_.begin();
-       rxn != surface_complexation_reactions_.end(); rxn++) {
+  for (auto rxn = surface_complexation_reactions.begin(); rxn != surface_complexation_reactions.end(); rxn++) {
     this->AddSurfaceComplexationRxn(*rxn);
   }
-  surface_sites_.clear();
-  surface_complexation_reactions_.clear();
 
   // this will allocate internal memory
   Beaker::Initialize(state, parameters);

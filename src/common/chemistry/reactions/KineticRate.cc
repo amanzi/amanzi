@@ -73,7 +73,8 @@ void KineticRate::SetSpeciesIds(const SpeciesArray& species,
 }
 
 
-void KineticRate::DisplayReaction(const Teuchos::Ptr<VerboseObject> vo) const {
+void KineticRate::DisplayReaction(const Teuchos::Ptr<VerboseObject> vo) const
+{
   std::stringstream message;
   message << "    Reaction: " << std::endl;
   message << "      ";
