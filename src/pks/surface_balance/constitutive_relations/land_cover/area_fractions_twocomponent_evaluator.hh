@@ -36,15 +36,15 @@ namespace Amanzi {
 namespace SurfaceBalance {
 namespace Relations {
 
-class AreaFractionsEvaluator : public SecondaryVariableFieldEvaluator {
+class AreaFractionsTwoComponentEvaluator : public SecondaryVariableFieldEvaluator {
 
  public:
   explicit
-  AreaFractionsEvaluator(Teuchos::ParameterList& plist);
-  AreaFractionsEvaluator(const AreaFractionsEvaluator& other) = default;
+  AreaFractionsTwoComponentEvaluator(Teuchos::ParameterList& plist);
+  AreaFractionsTwoComponentEvaluator(const AreaFractionsTwoComponentEvaluator& other) = default;
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const override {
-    return Teuchos::rcp(new AreaFractionsEvaluator(*this));
+    return Teuchos::rcp(new AreaFractionsTwoComponentEvaluator(*this));
   }
 
  protected:
@@ -64,7 +64,7 @@ class AreaFractionsEvaluator : public SecondaryVariableFieldEvaluator {
   LandCoverMap land_cover_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,AreaFractionsEvaluator> reg_;
+  static Utils::RegisteredFactory<FieldEvaluator,AreaFractionsTwoComponentEvaluator> reg_;
 
 };
 

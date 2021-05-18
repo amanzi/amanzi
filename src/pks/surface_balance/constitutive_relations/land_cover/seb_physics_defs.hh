@@ -1,4 +1,12 @@
 /*
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*
   Data structures and parameters for calculating the snow / surface energy balance.
 
   Nomenclature: A few names are used which imply various surface processes.
@@ -11,15 +19,7 @@
 #ifndef SURFACEBALANCE_SEB_PHYSICS_DEFS_HH_
 #define SURFACEBALANCE_SEB_PHYSICS_DEFS_HH_
 
-#include <limits>
-#include "Teuchos_ParameterList.hpp"
-#if 0
-#define MY_LOCAL_NAN std::numeric_limits<double>::signaling_NaN()
-#else
-#define MY_LOCAL_NAN std::numeric_limits<double>::quiet_NaN()
-#endif
-
-
+#include "seb_nan.hh" // defines NAN
 
 namespace Amanzi {
 namespace SurfaceBalance {
@@ -47,15 +47,15 @@ struct GroundProperties {
   double unfrozen_fraction;		// [-] fraction of ground water that is unfrozen
 
   GroundProperties() :
-      temp(MY_LOCAL_NAN),
-      pressure(MY_LOCAL_NAN),
-      porosity(MY_LOCAL_NAN),
-      density_w(MY_LOCAL_NAN),
-      dz(MY_LOCAL_NAN),
-      albedo(MY_LOCAL_NAN),
-      emissivity(MY_LOCAL_NAN),
-      saturation_gas(MY_LOCAL_NAN),
-      roughness(MY_LOCAL_NAN),
+      temp(NAN),
+      pressure(NAN),
+      porosity(NAN),
+      density_w(NAN),
+      dz(NAN),
+      albedo(NAN),
+      emissivity(NAN),
+      saturation_gas(NAN),
+      roughness(NAN),
       fractional_area(0.),
       snow_death_rate(0.),
       unfrozen_fraction(0.)
@@ -75,12 +75,12 @@ struct SnowProperties {
   double roughness;             // [m] surface roughness of a snow-covered domain
 
   SnowProperties() :
-      height(MY_LOCAL_NAN),
-      density(MY_LOCAL_NAN),
-      temp(MY_LOCAL_NAN),
-      albedo(MY_LOCAL_NAN),
-      emissivity(MY_LOCAL_NAN),
-      roughness(MY_LOCAL_NAN)
+      height(NAN),
+      density(NAN),
+      temp(NAN),
+      albedo(NAN),
+      emissivity(NAN),
+      roughness(NAN)
   {}
 };
 
@@ -97,14 +97,14 @@ struct MetData {
   double relative_humidity;     // relative humidity [-]
 
   MetData() :
-      Us(MY_LOCAL_NAN),
-      Z_Us(MY_LOCAL_NAN),
-      QswIn(MY_LOCAL_NAN),
-      QlwIn(MY_LOCAL_NAN),
-      Ps(MY_LOCAL_NAN),
-      Pr(MY_LOCAL_NAN),
-      air_temp(MY_LOCAL_NAN),
-      relative_humidity(MY_LOCAL_NAN) {}
+      Us(NAN),
+      Z_Us(NAN),
+      QswIn(NAN),
+      QlwIn(NAN),
+      Ps(NAN),
+      Pr(NAN),
+      air_temp(NAN),
+      relative_humidity(NAN) {}
 };
 
 
@@ -180,14 +180,14 @@ struct EnergyBalance {
   double error;         // imbalance!
 
   EnergyBalance() :
-      fQswIn(MY_LOCAL_NAN),
-      fQlwIn(MY_LOCAL_NAN),
-      fQlwOut(MY_LOCAL_NAN),
-      fQh(MY_LOCAL_NAN),
-      fQe(MY_LOCAL_NAN),
-      fQc(MY_LOCAL_NAN),
-      fQm(MY_LOCAL_NAN),
-      error(MY_LOCAL_NAN)
+      fQswIn(NAN),
+      fQlwIn(NAN),
+      fQlwOut(NAN),
+      fQh(NAN),
+      fQe(NAN),
+      fQc(NAN),
+      fQm(NAN),
+      error(NAN)
   {}
 };
 
@@ -200,8 +200,8 @@ struct MassBalance {    // all are in [m/s] of WATER, i.e. snow are in SWE
   double dt;    // max dt that may be taken to conserve snow swe
 
   MassBalance() :
-      Me(MY_LOCAL_NAN),
-      Mm(MY_LOCAL_NAN) {}
+      Me(NAN),
+      Mm(NAN) {}
 };
 
 

@@ -14,7 +14,7 @@ namespace Amanzi {
 namespace SurfaceBalance {
 
 // Constructor from ParameterList
-AreaFractionsSubgridEvaluator::AreaFractionsSubgridEvaluator(Teuchos::ParameterList& plist) :
+AreaFractionsThreeComponentEvaluator::AreaFractionsThreeComponentEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist)
 {
   //
@@ -26,7 +26,7 @@ AreaFractionsSubgridEvaluator::AreaFractionsSubgridEvaluator(Teuchos::ParameterL
   snow_subgrid_transition_ = plist_.get<double>("snow transition height [m]", 0.02);
   min_area_ = plist_.get<double>("minimum fractional area [-]", 1.e-5);
   if (min_area_ < 0.) {
-    Errors::Message message("AreaFractionsEvaluator: Minimum fractional area should be >= 0.");
+    Errors::Message message("AreaFractionsTwoComponentEvaluator: Minimum fractional area should be >= 0.");
     Exceptions::amanzi_throw(message);
   }
 
@@ -53,7 +53,7 @@ AreaFractionsSubgridEvaluator::AreaFractionsSubgridEvaluator(Teuchos::ParameterL
 
 
 void
-AreaFractionsSubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
+AreaFractionsThreeComponentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 {
   Epetra_MultiVector& res = *result->ViewComponent("cell",false);
@@ -122,7 +122,7 @@ AreaFractionsSubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 }
 
 void
-AreaFractionsSubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
+AreaFractionsThreeComponentEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   // see if we can find a master fac
   auto my_fac = S->RequireField(my_key_, my_key_);
   my_fac->SetMesh(S->GetMesh(domain_))

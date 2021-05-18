@@ -41,7 +41,7 @@ Utils::RegisteredFactory<FieldEvaluator,RadiationBalanceEvaluator> RadiationBala
 
 Utils::RegisteredFactory<FieldEvaluator,AlbedoEvaluator> AlbedoEvaluator::reg_("ground albedo");
 
-Utils::RegisteredFactory<FieldEvaluator,AreaFractionsEvaluator> AreaFractionsEvaluator::reg_("snow area fraction");
+Utils::RegisteredFactory<FieldEvaluator,AreaFractionsTwoComponentEvaluator> AreaFractionsTwoComponentEvaluator::reg_("snow area fraction");
 
 
 } // namespace

@@ -5,13 +5,16 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
-//! Evaluates albedos and emissivities in a three-area subgrid model.
+//! Evaluates albedos and emissivities in a three-component subgrid model.
 /*!
+
 Evaluates the albedo and emissivity as an interpolation on the surface
-properties and cover.  This allows for three channels -- water/ice, land, and
+properties and cover.  This allows for three components -- water/ice, land, and
 snow.  Note this internally calculates albedo of snow based upon snow density.
 
-Channels are: 0 = land, 1 = ice/water, 2 = snow.
+Components are: 0 = land, 1 = ice/water, 2 = snow.
+
+Requires the use of LandCover types, for ground albedo and emissivity.
 
 .. _albedo-evaluator-subgrid-spec:
 .. admonition:: albedo-evaluator-subgrid-spec
@@ -27,6 +30,7 @@ Channels are: 0 = land, 1 = ice/water, 2 = snow.
    * `"subgrid albedos`" **DOMAIN-subgrid_albedos**
    * `"subgrid emissivities`" **DOMAIN-subgrid_emissivities**
 
+   DEPENDENCIES:
    * `"snow density`" **SNOW_DOMAIN-density**
    * `"unfrozen fraction`" **DOMAIN-unfrozen_fraction**
 
@@ -39,15 +43,16 @@ Channels are: 0 = land, 1 = ice/water, 2 = snow.
 
 namespace Amanzi {
 namespace SurfaceBalance {
+namespace Relations {
 
-class AlbedoSubgridEvaluator : public SecondaryVariablesFieldEvaluator {
+class AlbedoThreeComponentEvaluator : public SecondaryVariablesFieldEvaluator {
  public:
   explicit
-  AlbedoSubgridEvaluator(Teuchos::ParameterList& plist);
-  AlbedoSubgridEvaluator(const AlbedoSubgridEvaluator& other) = default;
+  AlbedoThreeComponentEvaluator(Teuchos::ParameterList& plist);
+  AlbedoThreeComponentEvaluator(const AlbedoThreeComponentEvaluator& other) = default;
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const {
-    return Teuchos::rcp(new AlbedoSubgridEvaluator(*this));
+    return Teuchos::rcp(new AlbedoThreeComponentEvaluator(*this));
   }
 
   virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
@@ -68,14 +73,15 @@ class AlbedoSubgridEvaluator : public SecondaryVariablesFieldEvaluator {
   Key snow_dens_key_;
   Key unfrozen_fraction_key_;
 
-  double a_water_, a_ice_, a_tundra_;
-  double e_water_, e_ice_, e_tundra_, e_snow_;
+  double a_water_, a_ice_;
+  double e_water_, e_ice_, e_snow_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,AlbedoSubgridEvaluator> reg_;
+  static Utils::RegisteredFactory<FieldEvaluator,AlbedoThreeComponentEvaluator> reg_;
 };
 
-}  // namespace AmanziFlow
-}  // namespace Amanzi
+} // namespace Relations
+} // namespace SurfaceBalance
+} // namespace Amanzi
 
 

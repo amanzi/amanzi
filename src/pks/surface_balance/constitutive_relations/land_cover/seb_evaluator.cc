@@ -306,7 +306,7 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
       double area_to_volume = mesh.cell_volume(c) / mesh_ss.cell_volume(cells[0]);
       double ss_water_source_l = flux.M_subsurf * area_to_volume * params.density_water / 0.0180153; // convert from m/s to mol/m^3/s
-      ss_water_source[0][cells[0]] += (1-area_fracs[0][c]) * ss_mass_source_l;
+      ss_water_source[0][cells[0]] += (1-area_fracs[0][c]) * ss_water_source_l;
       double ss_energy_source_l = flux.E_subsurf * area_to_volume * 1.e-6; // convert from W/m^2 to MW/m^3
       ss_energy_source[0][cells[0]] += (1-area_fracs[0][c]) * ss_energy_source_l;
 

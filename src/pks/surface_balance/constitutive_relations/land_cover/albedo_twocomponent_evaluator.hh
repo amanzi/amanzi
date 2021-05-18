@@ -3,16 +3,17 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (coonet@ornl.gov)
 */
-//! Evaluates albedos and emissivities in a two-area model.
+//! Evaluates albedos and emissivities in a two-component subgrid model.
 /*!
 
 Evaluates the albedo and emissivity as an interpolation on the surface
-properties and cover.  This allows for two channels -- water/ice/land and
-snow.  Note this internally calculates albedo of snow based upon snow density.
+properties and cover.  This allows for two components -- snow and not snow
+(water/ice/land).  Note this internally calculates albedo of snow based upon
+snow density.
 
-Channels are: 0 = land/ice/water, 1 = snow.
+Components are indexed by: 0 = land/ice/water, 1 = snow.
 
 Requires the use of LandCover types, for ground albedo and emissivity.
 
@@ -27,9 +28,10 @@ Requires the use of LandCover types, for ground albedo and emissivity.
    * `"emissivity snow [-]`" ``[double]`` **0.98**
 
    KEYS:
-   * `"albedos`" **DOMAIN-albedos**
-   * `"emissivities`" **DOMAIN-emissivities**
+   * `"subgrid albedos`" **DOMAIN-subgrid_albedos**
+   * `"subgrid emissivities`" **DOMAIN-subgrid_emissivities**
 
+   DEPENDENCIES:
    * `"snow density`" **SNOW_DOMAIN-density**
    * `"ponded depth`" **DOMAIN-ponded_depth**
    * `"unfrozen fraction`" **DOMAIN-unfrozen_fraction**
@@ -46,14 +48,14 @@ namespace Amanzi {
 namespace SurfaceBalance {
 namespace Relations {
 
-class AlbedoEvaluator : public SecondaryVariablesFieldEvaluator {
+class AlbedoTwoComponentEvaluator : public SecondaryVariablesFieldEvaluator {
  public:
   explicit
-  AlbedoEvaluator(Teuchos::ParameterList& plist);
-  AlbedoEvaluator(const AlbedoEvaluator& other) = default;
+  AlbedoTwoComponentEvaluator(Teuchos::ParameterList& plist);
+  AlbedoTwoComponentEvaluator(const AlbedoTwoComponentEvaluator& other) = default;
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const override {
-    return Teuchos::rcp(new AlbedoEvaluator(*this));
+    return Teuchos::rcp(new AlbedoTwoComponentEvaluator(*this));
   }
 
   virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S) override;
@@ -81,7 +83,7 @@ class AlbedoEvaluator : public SecondaryVariablesFieldEvaluator {
   LandCoverMap land_cover_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,AlbedoEvaluator> reg_;
+  static Utils::RegisteredFactory<FieldEvaluator,AlbedoTwoComponentEvaluator> reg_;
 };
 
 }  // namespace Relations

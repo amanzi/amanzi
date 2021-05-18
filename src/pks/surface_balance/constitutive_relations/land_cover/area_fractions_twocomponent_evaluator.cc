@@ -15,7 +15,7 @@ namespace SurfaceBalance {
 namespace Relations {
 
 // Constructor from ParameterList
-AreaFractionsEvaluator::AreaFractionsEvaluator(Teuchos::ParameterList& plist) :
+AreaFractionsTwoComponentEvaluator::AreaFractionsTwoComponentEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist)
 {
   //
@@ -26,7 +26,7 @@ AreaFractionsEvaluator::AreaFractionsEvaluator(Teuchos::ParameterList& plist) :
   // the subsurface) really don't matter much. --etc
   min_area_ = plist_.get<double>("minimum fractional area [-]", 1.e-5);
   if (min_area_ <= 0.) {
-    Errors::Message message("AreaFractionsEvaluator: Minimum fractional area should be > 0.");
+    Errors::Message message("AreaFractionsTwoComponentEvaluator: Minimum fractional area should be > 0.");
     Exceptions::amanzi_throw(message);
   }
 
@@ -40,7 +40,7 @@ AreaFractionsEvaluator::AreaFractionsEvaluator(Teuchos::ParameterList& plist) :
 
 
 void
-AreaFractionsEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
+AreaFractionsTwoComponentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 {
   if (land_cover_.size() == 0)
@@ -76,10 +76,10 @@ AreaFractionsEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 }
 
 void
-AreaFractionsEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
+AreaFractionsTwoComponentEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
-  Exceptions::amanzi_throw("NotImplemented: AreaFractionsEvaluator currently does not provide derivatives.");
+  Exceptions::amanzi_throw("NotImplemented: AreaFractionsTwoComponentEvaluator currently does not provide derivatives.");
 }
 
 } //namespace

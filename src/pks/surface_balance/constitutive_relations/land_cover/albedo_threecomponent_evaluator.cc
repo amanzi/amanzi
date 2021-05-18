@@ -5,9 +5,10 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
-//! AlbedoEvaluator: evaluates albedos and emissivities in a two-area model.
+//! Evaluates albedos and emissivities in a three-region subgrid model.
 
-#include "albedo_evaluator.hh"
+#include "Key.hh"
+#include "albedo_threeecomponent_evaluator.hh"
 #include "seb_physics_defs.hh"
 #include "seb_physics_funcs.hh"
 
@@ -15,18 +16,18 @@ namespace Amanzi {
 namespace SurfaceBalance {
 namespace Relations {
 
-AlbedoEvaluator::AlbedoEvaluator(Teuchos::ParameterList& plist) :
+AlbedoThreeComponentEvaluator::AlbedoThreeComponentEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariablesFieldEvaluator(plist)
 {
   // determine the domain
-  domain_ = Keys::getDomain(Keys::cleanPListName(plist_));
+  domain_ = Keys::getDomain(Keys::cleanPListName(plist_.name()));
   domain_snow_ = Keys::readDomainHint(plist_, domain_, "surface", "snow");
 
   // my keys
   // -- sources
-  albedo_key_ = Keys::readKey(plist, domain_, "surface albedos", "albedos");
+  albedo_key_ = Keys::readKey(plist, domain_, "subgrid albedos", "subgrid_albedos");
   my_keys_.push_back(albedo_key_);
-  emissivity_key_ = Keys::readKey(plist, domain_, "surface emissivities", "emissivities");
+  emissivity_key_ = Keys::readKey(plist, domain_, "subgrid emissivities", "subgrid_emissivities");
   my_keys_.push_back(emissivity_key_);
 
   // dependencies
@@ -35,8 +36,6 @@ AlbedoEvaluator::AlbedoEvaluator(Teuchos::ParameterList& plist) :
   dependencies_.insert(snow_dens_key_);
 
   // -- skin properties
-  ponded_depth_key_ = Keys::readKey(plist, domain_, "ponded depth", "ponded_depth");
-  dependencies_.insert(ponded_depth_key_);
   unfrozen_fraction_key_ = Keys::readKey(plist, domain_, "unfrozen fraction", "unfrozen_fraction");
   dependencies_.insert(unfrozen_fraction_key_);
 
@@ -51,20 +50,20 @@ AlbedoEvaluator::AlbedoEvaluator(Teuchos::ParameterList& plist) :
 
 // Required methods from SecondaryVariableFieldEvaluator
 void
-AlbedoEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
+AlbedoThreeComponentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const std::vector<Teuchos::Ptr<CompositeVector> >& results)
 {
   auto mesh = S->GetMesh(domain_);
 
   // collect dependencies
   const auto& snow_dens = *S->GetFieldData(snow_dens_key_)->ViewComponent("cell",false);
-  const auto& ponded_depth = *S->GetFieldData(ponded_depth_key_)->ViewComponent("cell",false);
   const auto& unfrozen_fraction = *S->GetFieldData(unfrozen_fraction_key_)->ViewComponent("cell",false);
 
   // collect output vecs
   auto& albedo = *results[0]->ViewComponent("cell",false);
   auto& emissivity = *results[1]->ViewComponent("cell",false);
-  emissivity(1)->PutScalar(e_snow_);
+
+  emissivity(2)->PutScalar(e_snow_);
 
   for (const auto& lc : land_cover_) {
     AmanziMesh::Entity_ID_List lc_ids;
@@ -73,39 +72,24 @@ AlbedoEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     for (auto c : lc_ids) {
       // albedo of the snow
-      albedo[1][c] = SEBPhysics::CalcAlbedoSnow(snow_dens[0][c]);
+      albedo[2][c] = SEBPhysics::CalcAlbedoSnow(snow_dens[0][c]);
 
-      double albedo_water = unfrozen_fraction[0][c] * a_water_ + (1-unfrozen_fraction[0][c]) * a_ice_;
-      if (ponded_depth[0][c] > 0.1) {
-        albedo[0][c] = albedo_water;
-      } else {
-        double frac = ponded_depth[0][c] / 0.1;
-        albedo[0][c] =  frac * albedo_water + (1-frac) * lc.second.albedo_ground;
-      }
-
-      double emissivity_water = unfrozen_fraction[0][c] * e_water_ + (1-unfrozen_fraction[0][c]) * e_ice_;
-      if (ponded_depth[0][c] > 0.02) {
-        emissivity[0][c] = emissivity_water;
-      } else {
-        double frac = ponded_depth[0][c] / 0.02;
-        emissivity[0][c] =  frac * emissivity_water + (1-frac) * lc.second.emissivity_ground;
-      }
+      // a and e of water
+      albedo[1][c] = unfrozen_fraction[0][c] * a_water_ + (1-unfrozen_fraction[0][c]) * a_ice_;
+      emissivity[1][c] = unfrozen_fraction[0][c] * e_water_ + (1-unfrozen_fraction[0][c]) * e_ice_;
+      // a and e of soil
+      albedo[0][c] = lc.second.albedo_ground;
+      emissivity[0][c] = lc.second.emissivity_ground;
     }
   }
 }
 
 void
-AlbedoEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
+AlbedoThreeComponentEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> > & results) {}
 
 
-void
-AlbedoEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
-{
-  // new state!
-  if (land_cover_.size() == 0)
-    land_cover_ = getLandCover(S->ICList().sublist("land cover types"));
-
+void AlbedoThreeComponentEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   CompositeVectorSpace domain_fac;
   domain_fac.SetMesh(S->GetMesh(domain_))
       ->SetGhosted()
@@ -119,7 +103,7 @@ AlbedoEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
   CompositeVectorSpace domain_fac_owned;
   domain_fac_owned.SetMesh(S->GetMesh(domain_))
       ->SetGhosted()
-      ->SetComponent("cell", AmanziMesh::CELL, 2);
+      ->SetComponent("cell", AmanziMesh::CELL, 3);
 
   // see if we can find a master fac
   for (auto my_key : my_keys_) {
@@ -137,7 +121,7 @@ AlbedoEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
   // Loop over dependencies, making sure they are the same mesh
   for (auto key : dependencies_) {
     auto fac = S->RequireField(key);
-    if (boost::starts_with(key, domain_snow_)) {
+    if (Keys::starts_with(key, domain_snow_)) {
       fac->Update(domain_fac_snow);
     } else {
       fac->Update(domain_fac);
@@ -149,5 +133,5 @@ AlbedoEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
 }
 
 }  // namespace Relations
-}  // namespace SurfaceBalance
+}  // namespace AmanziFlow
 }  // namespace Amanzi

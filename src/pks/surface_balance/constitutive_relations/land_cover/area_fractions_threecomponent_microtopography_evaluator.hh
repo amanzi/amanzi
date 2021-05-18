@@ -51,15 +51,15 @@ matter much. --etc
 namespace Amanzi {
 namespace SurfaceBalance {
 
-class AreaFractionsSubgridEvaluator : public SecondaryVariableFieldEvaluator {
+class AreaFractionsThreeComponentEvaluator : public SecondaryVariableFieldEvaluator {
 
  public:
   explicit
-  AreaFractionsSubgridEvaluator(Teuchos::ParameterList& plist);
-  AreaFractionsSubgridEvaluator(const AreaFractionsSubgridEvaluator& other) = default;
+  AreaFractionsThreeComponentEvaluator(Teuchos::ParameterList& plist);
+  AreaFractionsThreeComponentEvaluator(const AreaFractionsThreeComponentEvaluator& other) = default;
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const {
-    return Teuchos::rcp(new AreaFractionsSubgridEvaluator(*this));
+    return Teuchos::rcp(new AreaFractionsThreeComponentEvaluator(*this));
   }
 
   virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
@@ -70,7 +70,7 @@ class AreaFractionsSubgridEvaluator : public SecondaryVariableFieldEvaluator {
           const Teuchos::Ptr<CompositeVector>& result);
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-    Exceptions::amanzi_throw("NotImplemented: AreaFractionsSubgridEvaluator currently does not provide derivatives.");
+    Exceptions::amanzi_throw("NotImplemented: AreaFractionsThreeComponentEvaluator currently does not provide derivatives.");
   }
 
  protected:
@@ -83,7 +83,7 @@ class AreaFractionsSubgridEvaluator : public SecondaryVariableFieldEvaluator {
   double min_area_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,AreaFractionsSubgridEvaluator> reg_;
+  static Utils::RegisteredFactory<FieldEvaluator,AreaFractionsThreeComponentEvaluator> reg_;
 
 };
 
