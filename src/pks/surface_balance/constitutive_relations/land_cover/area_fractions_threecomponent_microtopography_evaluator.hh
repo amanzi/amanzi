@@ -12,8 +12,8 @@ Uses the subgrid equation from Jan et al WRR 2018 for volumetric or effective
 ponded depth to determine the area of water, then heuristically places snow on
 top of that surface.
 
-.. _area-fractions-subgrid-evaluator-spec:
-.. admonition:: area-fractions-subgrid-evaluator-spec
+.. _area-fractions-threecomponent-microtopography-evaluator-spec:
+.. admonition:: area-fractions-threecomponent-microtopography-evaluator-spec
 
    * `"snow transitional height [m]`" ``[double]`` **0.02**
      Minimum thickness for specifying the snow gradient.
@@ -50,16 +50,17 @@ matter much. --etc
 
 namespace Amanzi {
 namespace SurfaceBalance {
+namespace Relations {
 
-class AreaFractionsThreeComponentEvaluator : public SecondaryVariableFieldEvaluator {
+class AreaFractionsThreeComponentMicrotopographyEvaluator : public SecondaryVariableFieldEvaluator {
 
  public:
   explicit
-  AreaFractionsThreeComponentEvaluator(Teuchos::ParameterList& plist);
-  AreaFractionsThreeComponentEvaluator(const AreaFractionsThreeComponentEvaluator& other) = default;
+  AreaFractionsThreeComponentMicrotopographyEvaluator(Teuchos::ParameterList& plist);
+  AreaFractionsThreeComponentMicrotopographyEvaluator(const AreaFractionsThreeComponentMicrotopographyEvaluator& other) = default;
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const {
-    return Teuchos::rcp(new AreaFractionsThreeComponentEvaluator(*this));
+    return Teuchos::rcp(new AreaFractionsThreeComponentMicrotopographyEvaluator(*this));
   }
 
   virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
@@ -70,7 +71,7 @@ class AreaFractionsThreeComponentEvaluator : public SecondaryVariableFieldEvalua
           const Teuchos::Ptr<CompositeVector>& result);
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-    Exceptions::amanzi_throw("NotImplemented: AreaFractionsThreeComponentEvaluator currently does not provide derivatives.");
+    Exceptions::amanzi_throw("NotImplemented: AreaFractionsThreeComponentMicrotopographyEvaluator currently does not provide derivatives.");
   }
 
  protected:
@@ -83,9 +84,10 @@ class AreaFractionsThreeComponentEvaluator : public SecondaryVariableFieldEvalua
   double min_area_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,AreaFractionsThreeComponentEvaluator> reg_;
+  static Utils::RegisteredFactory<FieldEvaluator,AreaFractionsThreeComponentMicrotopographyEvaluator> reg_;
 
 };
 
+} //namespace
 } //namespace
 } //namespace

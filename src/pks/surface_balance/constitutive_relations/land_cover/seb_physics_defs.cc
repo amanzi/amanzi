@@ -9,7 +9,7 @@
 
 namespace Amanzi {
 namespace SurfaceBalance {
-namespace SEBPhysics {
+namespace Relations {
 
 
 Partition Partitioner::CalcPartition(double ht_snow,

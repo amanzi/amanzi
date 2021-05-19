@@ -81,7 +81,7 @@ class DrainageEvaluator : public SecondaryVariablesFieldEvaluator {
   double n_liq_;
 
  private:
-  static Amanzi::Utils::RegisteredFactory<FieldEvaluator,DrainageEvaluator> factory_;
+  static Amanzi::Utils::RegisteredFactory<FieldEvaluator,DrainageEvaluator> reg_;
 
 };
 

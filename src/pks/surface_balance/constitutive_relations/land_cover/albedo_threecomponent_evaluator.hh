@@ -40,6 +40,7 @@ Requires the use of LandCover types, for ground albedo and emissivity.
 
 #include "Factory.hh"
 #include "secondary_variables_field_evaluator.hh"
+#include "LandCover.hh"
 
 namespace Amanzi {
 namespace SurfaceBalance {
@@ -75,6 +76,10 @@ class AlbedoThreeComponentEvaluator : public SecondaryVariablesFieldEvaluator {
 
   double a_water_, a_ice_;
   double e_water_, e_ice_, e_snow_;
+
+  // this is horrid, because this cannot yet live in state
+  // bring on new state!
+  LandCoverMap land_cover_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,AlbedoThreeComponentEvaluator> reg_;

@@ -13,7 +13,7 @@
 
 namespace Amanzi {
 namespace SurfaceBalance {
-namespace SEBPhysics {
+namespace Relations {
 
 // Main SEB functions
 
@@ -197,7 +197,7 @@ FluxBalance UpdateFluxesWithSnow(const GroundProperties& surf,
 // ------------------------------------------------------------------------------------------
 FluxBalance UpdateFluxesWithoutSnow(const GroundProperties& surf,
         const MetData& met, const ModelParams& params, const EnergyBalance& eb,
-        const MassBalance& mb);
+        const MassBalance& mb, bool model_1p1=false);
 
 
 

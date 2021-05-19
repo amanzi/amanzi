@@ -1,6 +1,6 @@
 /*
-  ATS is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
@@ -15,10 +15,10 @@
     * `"minimum relative humidity [-]`" ``[double]`` **0.1** Sets a minimum rel humidity, RH=0 breaks the model.
 
     DEPENDENCIES:
-    
+
     * `"air temperature key`" ``[string]`` **DOMAIN-air_temperature**
     * `"relative humidity key`" ``[string]`` **DOMAIN-relative_humidity**
-         
+
 */
 
 #ifndef AMANZI_SURFACE_BALANCE_LONGWAVE_EVALUATOR_HH_
@@ -29,6 +29,7 @@
 
 namespace Amanzi {
 namespace SurfaceBalance {
+namespace Relations {
 
 class LongwaveEvaluator : public SecondaryVariableFieldEvaluator {
 
@@ -59,6 +60,7 @@ class LongwaveEvaluator : public SecondaryVariableFieldEvaluator {
 
 };
 
+} //namespace
 } //namespace
 } //namespace
 

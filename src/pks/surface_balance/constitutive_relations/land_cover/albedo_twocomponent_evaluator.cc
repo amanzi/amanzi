@@ -25,9 +25,9 @@ AlbedoTwoComponentEvaluator::AlbedoTwoComponentEvaluator(Teuchos::ParameterList&
 
   // my keys
   // -- sources
-  albedo_key_ = Keys::readKey(plist, domain_, "subgrid albedos", "subgrid_albedos");
+  albedo_key_ = Keys::readKey(plist, domain_, "albedos", "albedos");
   my_keys_.push_back(albedo_key_);
-  emissivity_key_ = Keys::readKey(plist, domain_, "subgrid emissivities", "subgrid_emissivities");
+  emissivity_key_ = Keys::readKey(plist, domain_, "emissivities", "emissivities");
   my_keys_.push_back(emissivity_key_);
 
   // dependencies
@@ -74,7 +74,7 @@ AlbedoTwoComponentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     for (auto c : lc_ids) {
       // albedo of the snow
-      albedo[1][c] = SEBPhysics::CalcAlbedoSnow(snow_dens[0][c]);
+      albedo[1][c] = Relations::CalcAlbedoSnow(snow_dens[0][c]);
 
       double albedo_water = unfrozen_fraction[0][c] * a_water_ + (1-unfrozen_fraction[0][c]) * a_ice_;
       if (ponded_depth[0][c] > 0.1) {

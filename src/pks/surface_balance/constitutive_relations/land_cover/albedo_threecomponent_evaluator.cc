@@ -8,7 +8,7 @@
 //! Evaluates albedos and emissivities in a three-region subgrid model.
 
 #include "Key.hh"
-#include "albedo_threeecomponent_evaluator.hh"
+#include "albedo_threecomponent_evaluator.hh"
 #include "seb_physics_defs.hh"
 #include "seb_physics_funcs.hh"
 
@@ -25,9 +25,9 @@ AlbedoThreeComponentEvaluator::AlbedoThreeComponentEvaluator(Teuchos::ParameterL
 
   // my keys
   // -- sources
-  albedo_key_ = Keys::readKey(plist, domain_, "subgrid albedos", "subgrid_albedos");
+  albedo_key_ = Keys::readKey(plist, domain_, "albedos", "albedos");
   my_keys_.push_back(albedo_key_);
-  emissivity_key_ = Keys::readKey(plist, domain_, "subgrid emissivities", "subgrid_emissivities");
+  emissivity_key_ = Keys::readKey(plist, domain_, "emissivities", "emissivities");
   my_keys_.push_back(emissivity_key_);
 
   // dependencies
@@ -72,7 +72,7 @@ AlbedoThreeComponentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     for (auto c : lc_ids) {
       // albedo of the snow
-      albedo[2][c] = SEBPhysics::CalcAlbedoSnow(snow_dens[0][c]);
+      albedo[2][c] = Relations::CalcAlbedoSnow(snow_dens[0][c]);
 
       // a and e of water
       albedo[1][c] = unfrozen_fraction[0][c] * a_water_ + (1-unfrozen_fraction[0][c]) * a_ice_;
@@ -89,7 +89,12 @@ AlbedoThreeComponentEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Pt
         Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> > & results) {}
 
 
-void AlbedoThreeComponentEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
+void AlbedoThreeComponentEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
+{
+  // new state!
+  if (land_cover_.size() == 0)
+    land_cover_ = getLandCover(S->ICList().sublist("land cover types"));
+
   CompositeVectorSpace domain_fac;
   domain_fac.SetMesh(S->GetMesh(domain_))
       ->SetGhosted()

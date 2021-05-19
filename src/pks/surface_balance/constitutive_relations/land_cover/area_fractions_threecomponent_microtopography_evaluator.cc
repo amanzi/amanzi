@@ -8,13 +8,14 @@
 //! A subgrid model for determining the area fraction of land, water, and snow within a grid cell with subgrid microtopography.
 
 #include "subgrid_microtopography.hh"
-#include "area_fractions_subgrid_evaluator.hh"
+#include "area_fractions_threecomponent_microtopography_evaluator.hh"
 
 namespace Amanzi {
 namespace SurfaceBalance {
+namespace Relations {
 
 // Constructor from ParameterList
-AreaFractionsThreeComponentEvaluator::AreaFractionsThreeComponentEvaluator(Teuchos::ParameterList& plist) :
+AreaFractionsThreeComponentMicrotopographyEvaluator::AreaFractionsThreeComponentMicrotopographyEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist)
 {
   //
@@ -53,7 +54,7 @@ AreaFractionsThreeComponentEvaluator::AreaFractionsThreeComponentEvaluator(Teuch
 
 
 void
-AreaFractionsThreeComponentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
+AreaFractionsThreeComponentMicrotopographyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 {
   Epetra_MultiVector& res = *result->ViewComponent("cell",false);
@@ -122,7 +123,7 @@ AreaFractionsThreeComponentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& 
 }
 
 void
-AreaFractionsThreeComponentEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
+AreaFractionsThreeComponentMicrotopographyEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   // see if we can find a master fac
   auto my_fac = S->RequireField(my_key_, my_key_);
   my_fac->SetMesh(S->GetMesh(domain_))
@@ -153,6 +154,7 @@ AreaFractionsThreeComponentEvaluator::EnsureCompatibility(const Teuchos::Ptr<Sta
   }
 }
 
+} //namespace
 } //namespace
 } //namespace
 

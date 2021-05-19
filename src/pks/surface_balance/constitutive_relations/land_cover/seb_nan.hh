@@ -13,13 +13,15 @@
 
 namespace Amanzi {
 namespace SurfaceBalance {
+namespace Relations {
 
-#if 0
-#define NAN std::numeric_limits<double>::signaling_NaN()
+#ifdef AMANZI_NAN_SIGNALING
+static const double NaN = std::numeric_limits<double>::signaling_NaN();
 #else
-#define NAN std::numeric_limits<double>::quiet_NaN()
+static const double NaN = std::numeric_limits<double>::quiet_NaN();
 #endif
 
+} // namespace
 } // namespace
 } // namespace
 

@@ -1,6 +1,6 @@
 /*
-  ATS is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  ATS is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
@@ -15,10 +15,10 @@
     * `"minimum relative humidity [-]`" ``[double]`` **0.1** Sets a minimum rel humidity, RH=0 breaks the model.
 
     DEPENDENCIES:
-    
+
     * `"air temperature key`" ``[string]`` **DOMAIN-air_temperature**
     * `"relative humidity key`" ``[string]`` **DOMAIN-relative_humidity**
-         
+
 */
 
 #include "Key.hh"
@@ -29,6 +29,7 @@
 
 namespace Amanzi {
 namespace SurfaceBalance {
+namespace Relations {
 
 LongwaveEvaluator::LongwaveEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist)
@@ -53,10 +54,11 @@ LongwaveEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   auto& res = *result->ViewComponent("cell", false);
 
   for (int c=0; c!=res.MyLength(); ++c) {
-    res[0][c] = scale_ * SEBPhysics::IncomingLongwaveRadiation(air_temp[0][c], std::max(min_rel_hum_, rel_hum[0][c]));
+    res[0][c] = scale_ * Relations::IncomingLongwaveRadiation(air_temp[0][c], std::max(min_rel_hum_, rel_hum[0][c]));
   }
 }
 
+} //namespace
 } //namespace
 } //namespace
 

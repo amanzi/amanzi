@@ -109,7 +109,7 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S)
   tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(Teuchos::rcpFromRef(pcA->DomainMap()))));
   tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(Teuchos::rcpFromRef(pcB->DomainMap()))));
 
-  preconditioner_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
+  preconditioner_ = Teuchos::rcp(new Operators::TreeOperator(tvs, plist_->sublist("operator")));
   preconditioner_->set_operator_block(0, 0, pcA);
   preconditioner_->set_operator_block(1, 1, pcB);
 

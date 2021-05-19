@@ -11,8 +11,6 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/elevat
 set(ats_surface_balance_src_files
   constitutive_relations/land_cover/seb_physics_defs.cc
   constitutive_relations/land_cover/seb_physics_funcs.cc
-  constitutive_relations/land_cover/seb_evaluator.cc
-  constitutive_relations/land_cover/seb_subgrid_evaluator.cc
   constitutive_relations/land_cover/longwave_evaluator.cc
   constitutive_relations/land_cover/incident_shortwave_radiation_model.cc
   constitutive_relations/land_cover/incident_shortwave_radiation_evaluator.cc
@@ -29,11 +27,14 @@ set(ats_surface_balance_src_files
   constitutive_relations/land_cover/rooting_depth_fraction_model.cc
   constitutive_relations/land_cover/snow_meltrate_evaluator.cc
   constitutive_relations/land_cover/transpiration_distribution_evaluator.cc  
-  constitutive_relations/land_cover/albedo_evaluator.cc
-  constitutive_relations/land_cover/albedo_subgrid_evaluator.cc
-  constitutive_relations/land_cover/area_fractions_evaluator.cc
-  constitutive_relations/land_cover/area_fractions_subgrid_evaluator.cc
+  constitutive_relations/land_cover/albedo_twocomponent_evaluator.cc
+  constitutive_relations/land_cover/albedo_threecomponent_evaluator.cc
+  constitutive_relations/land_cover/area_fractions_twocomponent_evaluator.cc
+  constitutive_relations/land_cover/area_fractions_threecomponent_evaluator.cc
+  constitutive_relations/land_cover/area_fractions_threecomponent_microtopography_evaluator.cc
   constitutive_relations/land_cover/radiation_balance_evaluator.cc
+  constitutive_relations/land_cover/seb_twocomponent_evaluator.cc
+  constitutive_relations/land_cover/seb_threecomponent_evaluator.cc
   constitutive_relations/litter/interception_evaluator.cc
   constitutive_relations/litter/latent_heat_evaluator.cc
   constitutive_relations/litter/latent_heat_model.cc       
@@ -58,11 +59,11 @@ endif()
 set(ats_surface_balance_inc_files
   constitutive_relations/land_cover/seb_physics_defs.hh
   constitutive_relations/land_cover/seb_physics_funcs.hh
-  constitutive_relations/land_cover/seb_evaluator.hh
-  constitutive_relations/land_cover/seb_subgrid_evaluator.hh
   constitutive_relations/land_cover/longwave_evaluator.hh
   constitutive_relations/land_cover/incident_shortwave_radiation_model.hh
   constitutive_relations/land_cover/incident_shortwave_radiation_evaluator.hh
+  constitutive_relations/land_cover/evaporation_downregulation_model.hh
+  constitutive_relations/land_cover/evaporation_downregulation_evaluator.hh
   constitutive_relations/land_cover/LandCover.hh
   constitutive_relations/land_cover/drainage_evaluator.hh
   constitutive_relations/land_cover/interception_fraction_evaluator.hh
@@ -74,11 +75,14 @@ set(ats_surface_balance_inc_files
   constitutive_relations/land_cover/rooting_depth_fraction_model.hh
   constitutive_relations/land_cover/snow_meltrate_evaluator.hh
   constitutive_relations/land_cover/transpiration_distribution_evaluator.hh  
-  constitutive_relations/land_cover/albedo_evaluator.hh
-  constitutive_relations/land_cover/albedo_subgrid_evaluator.hh
-  constitutive_relations/land_cover/area_fractions_evaluator.hh
-  constitutive_relations/land_cover/area_fractions_subgrid_evaluator.hh
+  constitutive_relations/land_cover/albedo_twocomponent_evaluator.hh
+  constitutive_relations/land_cover/albedo_threecomponent_evaluator.hh
+  constitutive_relations/land_cover/area_fractions_twocomponent_evaluator.hh
+  constitutive_relations/land_cover/area_fractions_threecomponent_evaluator.hh
+  constitutive_relations/land_cover/area_fractions_threecomponent_microtopography_evaluator.hh
   constitutive_relations/land_cover/radiation_balance_evaluator.hh
+  constitutive_relations/land_cover/seb_twocomponent_evaluator.hh
+  constitutive_relations/land_cover/seb_threecomponent_evaluator.hh
   constitutive_relations/litter/interception_evaluator.hh
   constitutive_relations/litter/latent_heat_evaluator.hh
   constitutive_relations/litter/latent_heat_model.hh       
@@ -130,32 +134,6 @@ add_amanzi_library(ats_surface_balance
 
 # land_cover evalutors
 register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/land_cover/seb_evaluator_reg.hh
-  LISTNAME ATS_SURFACE_BALANCE_REG
-)
-
-register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/land_cover/seb_subgrid_evaluator_reg.hh
-  LISTNAME ATS_SURFACE_BALANCE_REG
-)
-
-register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/land_cover/longwave_evaluator_reg.hh
-  LISTNAME ATS_SURFACE_BALANCE_REG
-)
-
-register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/land_cover/evaporation_downregulation_evaluator_reg.hh
-  LISTNAME ATS_SURFACE_BALANCE_REG
-)
-
-
-register_evaluator_with_factory(
-  HEADERFILE constitutive_relations/land_cover/incident_shortwave_radiation_evaluator_reg.hh
-  LISTNAME ATS_SURFACE_BALANCE_REG
-)
-
-register_evaluator_with_factory(
   HEADERFILE constitutive_relations/land_cover/land_cover_evaluator_reg.hh
   LISTNAME ATS_SURFACE_BALANCE_REG
 )
@@ -206,4 +184,3 @@ generate_evaluators_registration_header(
   LISTNAME   ATS_SURFACE_BALANCE_REG
   INSTALL    True
   )
-

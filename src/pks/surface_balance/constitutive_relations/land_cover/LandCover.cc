@@ -7,6 +7,9 @@
 */
 //! Basic land cover/plant function type
 
+#include "exceptions.hh"
+#include "errors.hh"
+
 #include "LandCover.hh"
 #include "seb_nan.hh"
 
@@ -45,6 +48,10 @@ LandCoverMap getLandCover(Teuchos::ParameterList& plist)
     if (plist.isSublist(item.first)) {
       lc.insert({item.first, LandCover{plist.sublist(item.first)}});
     }
+  }
+  if (lc.size() == 0) {
+    Errors::Message message("LandCover is used, but no entries were found in the 'state->initial conditions->land cover types' list.");
+    Exceptions::amanzi_throw(message);
   }
   return lc;
 }

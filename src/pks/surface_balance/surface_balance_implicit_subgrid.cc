@@ -15,7 +15,6 @@
    ------------------------------------------------------------------------- */
 
 #include <algorithm>
-#include "boost/algorithm/string/predicate.hpp"
 
 #include "seb_physics_defs.hh"
 #include "seb_physics_funcs.hh"
@@ -35,20 +34,11 @@ ImplicitSubgrid::ImplicitSubgrid(Teuchos::ParameterList& pk_tree,
     plist_->set("conserved quantity key suffix", "snow_water_equivalent");
 
   // set up keys
-  Key domain_surf;
-  if (domain_ == "snow") {
-    domain_surf = "surface";
-  } else if (boost::starts_with(domain_, "snow_")) {
-    domain_surf = std::string("surface_") + domain_.substr(5,domain_.size());
-  } else {
-    Errors::Message message("SurfaceBalance::ImplicitSubgrid PK cannot deduce surface domain name.");
-    Exceptions::amanzi_throw(message);
-  }
-
+  Key domain_surf = Keys::readDomainHint(*plist_, domain_, "snow", "surface");
   snow_dens_key_ = Keys::readKey(*plist_, domain_, "snow density", "density");
   snow_age_key_ = Keys::readKey(*plist_, domain_, "snow age", "age");
   new_snow_key_ = Keys::readKey(*plist_, domain_, "new snow source", "source");
-  area_frac_key_ = Keys::readKey(*plist_, domain_, "area fraction", "area_fraction");
+  area_frac_key_ = Keys::readKey(*plist_, domain_surf, "area fractions", "area_fractions");
   snow_death_rate_key_ = Keys::readKey(*plist_, domain_, "snow death rate", "death_rate");
 
   // set up additional primary variables -- this is very hacky, and can become an evaluator in new-state
@@ -129,7 +119,7 @@ ImplicitSubgrid::Initialize(const Teuchos::Ptr<State>& S) {
       S->GetField(snow_dens_key_, name_)->Initialize(plist_->sublist("initial condition snow density"));
     } else {
       // initialize density to fresh powder, age to 0
-      SEBPhysics::ModelParams params;
+      Relations::ModelParams params;
       S->GetFieldData(snow_dens_key_,name_)->PutScalar(params.density_freshsnow);
       S->GetField(snow_dens_key_, name_)->set_initialized();
     }
@@ -234,7 +224,7 @@ ImplicitSubgrid::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<Tre
   S_next_->GetFieldEvaluator(source_key_)->HasFieldChanged(S_next_.ptr(), name_);
   const auto& source = *S_next_->GetFieldData(source_key_)->ViewComponent("cell",false);
 
-  SEBPhysics::ModelParams params;
+  Relations::ModelParams params;
   double dt_days = (t_new - t_old) / 86400.;
   for (int c=0; c!=snow_dens_new.MyLength(); ++c) {
     double swe_added = new_snow[0][c] * (t_new - t_old) * cell_vol[0][c];

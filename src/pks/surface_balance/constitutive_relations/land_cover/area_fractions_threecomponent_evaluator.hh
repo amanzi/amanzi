@@ -3,23 +3,24 @@
   Authors: Ethan Coon (ecoon@ornl.gov)
 */
 
-//! A subgrid model for determining the area fraction of snow vs not snow within a grid cell.
+//! A subgrid model for determining the area fraction of land, water, and snow within a grid cell.
 /*!
 
 Uses a simple linear transition to vary between liquid and bare ground, and
 another linear transition to vary between snow-covered and not-snow-covered.
 
-Ordering of the area fractions calculated are: [bare ground/water, snow].
+Ordering of the area fractions calculated are: [bare ground, water, snow].
 
-.. _area-fractions-twocomponent-evaluator-spec:
-.. admonition:: area-fractions-twocomponent-evaluator-spec:
+.. _area-fractions-threecomponent-evaluator-spec:
+.. admonition:: area-fractions-threecomponent-evaluator-spec:
 
    * `"minimum fractional area [-]`" ``[double]`` **1.e-5**
-         Mimimum area fraction allowed, less than this is rebalanced as zero.
+      Mimimum area fraction allowed, less than this is rebalanced as zero.
 
    DEPENDENCIES:
 
    * `"snow depth`" ``[string]``
+   * `"ponded depth`" ``[string]``
 
 .. note:
 
@@ -28,6 +29,8 @@ Ordering of the area fractions calculated are: [bare ground/water, snow].
 
    * `"snow transition height [m]`" ``[double]`` **0.02**
       Minimum thickness for specifying the snow gradient.
+   * `"water transition height [m]`" ``[double]`` **0.02**
+         Minimum thickness for specifying the water gradient.
 
 .. note:
 
@@ -49,15 +52,15 @@ namespace Amanzi {
 namespace SurfaceBalance {
 namespace Relations {
 
-class AreaFractionsTwoComponentEvaluator : public SecondaryVariableFieldEvaluator {
+class AreaFractionsThreeComponentEvaluator : public SecondaryVariableFieldEvaluator {
 
  public:
   explicit
-  AreaFractionsTwoComponentEvaluator(Teuchos::ParameterList& plist);
-  AreaFractionsTwoComponentEvaluator(const AreaFractionsTwoComponentEvaluator& other) = default;
+  AreaFractionsThreeComponentEvaluator(Teuchos::ParameterList& plist);
+  AreaFractionsThreeComponentEvaluator(const AreaFractionsThreeComponentEvaluator& other) = default;
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const override {
-    return Teuchos::rcp(new AreaFractionsTwoComponentEvaluator(*this));
+    return Teuchos::rcp(new AreaFractionsThreeComponentEvaluator(*this));
   }
 
   virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S) override;
@@ -67,11 +70,15 @@ class AreaFractionsTwoComponentEvaluator : public SecondaryVariableFieldEvaluato
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& result) override;
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) override;
+          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) override {
+    Exceptions::amanzi_throw("NotImplemented: AreaFractionsThreeComponentEvaluator currently does not provide derivatives.");
+  }
 
  protected:
+
   Key domain_, domain_snow_;
   Key snow_depth_key_;
+  Key ponded_depth_key_;
   double min_area_;
 
   // this is horrid, because this cannot yet live in state
@@ -79,10 +86,12 @@ class AreaFractionsTwoComponentEvaluator : public SecondaryVariableFieldEvaluato
   LandCoverMap land_cover_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,AreaFractionsTwoComponentEvaluator> reg_;
+  static Utils::RegisteredFactory<FieldEvaluator,AreaFractionsThreeComponentEvaluator> reg_;
 
 };
 
 } //namespace
 } //namespace
 } //namespace
+
+

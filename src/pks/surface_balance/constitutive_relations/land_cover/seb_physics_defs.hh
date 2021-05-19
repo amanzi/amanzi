@@ -3,7 +3,7 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (coonet@ornl.gov)
 */
 
 /*
@@ -15,26 +15,85 @@
     -- ground indicates whatever is below any snow -- ice or water or tundra
 */
 
-
 #ifndef SURFACEBALANCE_SEB_PHYSICS_DEFS_HH_
 #define SURFACEBALANCE_SEB_PHYSICS_DEFS_HH_
 
-#include "seb_nan.hh" // defines NAN
+#include "Teuchos_ParameterList.hpp"
+#include "seb_nan.hh"
 
 namespace Amanzi {
 namespace SurfaceBalance {
-namespace SEBPhysics {
+namespace Relations {
 
-static const double c_stephan_boltzmann = 0.00000005670373;
-static const double c_p_atm = 101325.;
+// needed constants
+static const double c_stephan_boltzmann = 0.00000005670373; // Stephan-Boltzmann constant
+static const double c_von_Karman = 0.41; // [-] Von Karman constant
+static const double c_R_ideal_gas = 461.52; // [Pa m^3 kg^-1 K^-1]
 
+// Catch-all of leftover parameters.
+//
+// Typically these are thought of as constants in this model, but they may
+// change, may be set by the user, or otherwise could vary conceptually.
+//
+// In particular, we set these in other parts of ATS's input spec, so they can
+// be overridden, in which case they really _should_ change to be consistent
+// with their usage across the code.  For instance, gravity can be set in ATS's
+// input file, so it should be overwritten with that value.  And density_water
+// is a field in most of ATS, so this value should be overwritten on a
+// grid-cell by grid-cell basis.
+struct ModelParams {
+  ModelParams() :
+      density_air(1.275),       // [kg/m^3]
+      density_freshsnow(100.),  // [kg/m^3]
+      density_frost(200.),      // [kg/m^3]
+      density_snow_max(325.),   // [kg/m^3] // based on observations at Barrow, AK
+      thermalK_freshsnow(0.029),// thermal conductivity of fresh snow [W/m K]
+      thermalK_snow_exp(2),     // exponent in thermal conductivity of snow model [-]
+      H_fusion(333500.0),       // Heat of fusion for melting snow -- [J/kg]
+      H_sublimation(2834000.),  // Latent heat of sublimation ------- [J/kg]
+      H_vaporization(2497848.), // Latent heat of vaporization ------ [J/kg]
+      Cp_air(1004.0),           // Specific heat of air @ const pres- [J/K kg]
+      Cv_water(4218.636),       // Specific heat of water ----------- [J/K kg]
+      P_atm(101325.),           // atmospheric pressure ------------- [Pa]
+      gravity(9.807),           // gravity [kg m / s^2]
+      evap_transition_width(100.), // transition on evaporation from surface to
+                                   // evaporation from subsurface [m],
+                                   // THIS IS DEPRECATED
+      Clapp_Horn_b(1.)          // Clapp and Hornberger "b" [-]
+  {}
 
+  ModelParams(Teuchos::ParameterList& plist) :
+      ModelParams() {
+    thermalK_freshsnow = plist.get<double>("thermal conductivity of fresh snow [W m^-1 K^-1]", thermalK_freshsnow);
+    thermalK_snow_exp = plist.get<double>("thermal conductivity of snow aging exponent [-]", thermalK_snow_exp);
+    density_snow_max = plist.get<double>("max density of snow [kg m^-3]", density_snow_max);
+    evap_transition_width = plist.get<double>("evaporation transition width [Pa]", evap_transition_width);
+  }
+
+  // likely constants
+  double gravity;
+  double P_atm;
+  double density_air;
+  double density_freshsnow;
+  double density_frost;
+  double density_snow_max;
+  double thermalK_freshsnow;
+  double thermalK_snow_exp;
+  double H_fusion, H_sublimation, H_vaporization;
+  double Cp_air, Cv_water;
+  double Clapp_Horn_b;
+
+  // other parameters
+  double evap_transition_width;
+  double water_ground_transition_depth;
+};
 
 
 // Struct of skin data
 struct GroundProperties {
   double temp;                          // temperature [K]
   double pressure;                      // [Pa]
+  double ponded_depth;                  // [m]
   double porosity;                      // [-]
   double density_w;                     // density [kg/m^3]
   double dz;                            // [m]
@@ -47,15 +106,15 @@ struct GroundProperties {
   double unfrozen_fraction;		// [-] fraction of ground water that is unfrozen
 
   GroundProperties() :
-      temp(NAN),
-      pressure(NAN),
-      porosity(NAN),
-      density_w(NAN),
-      dz(NAN),
-      albedo(NAN),
-      emissivity(NAN),
-      saturation_gas(NAN),
-      roughness(NAN),
+      temp(NaN),
+      pressure(NaN),
+      porosity(NaN),
+      density_w(NaN),
+      dz(NaN),
+      albedo(NaN),
+      emissivity(NaN),
+      saturation_gas(NaN),
+      roughness(NaN),
       fractional_area(0.),
       snow_death_rate(0.),
       unfrozen_fraction(0.)
@@ -75,12 +134,12 @@ struct SnowProperties {
   double roughness;             // [m] surface roughness of a snow-covered domain
 
   SnowProperties() :
-      height(NAN),
-      density(NAN),
-      temp(NAN),
-      albedo(NAN),
-      emissivity(NAN),
-      roughness(NAN)
+      height(NaN),
+      density(NaN),
+      temp(NaN),
+      albedo(NaN),
+      emissivity(NaN),
+      roughness(NaN)
   {}
 };
 
@@ -97,74 +156,15 @@ struct MetData {
   double relative_humidity;     // relative humidity [-]
 
   MetData() :
-      Us(NAN),
-      Z_Us(NAN),
-      QswIn(NAN),
-      QlwIn(NAN),
-      Ps(NAN),
-      Pr(NAN),
-      air_temp(NAN),
-      relative_humidity(NAN) {}
+      Us(NaN),
+      Z_Us(NaN),
+      QswIn(NaN),
+      QlwIn(NaN),
+      Ps(NaN),
+      Pr(NaN),
+      air_temp(NaN),
+      relative_humidity(NaN) {}
 };
-
-
-// Catch-all of leftover parameters.
-struct ModelParams {
-
-  ModelParams() :
-      density_air(1.275),       // [kg/m^3]
-      density_water(1000.),     // [kg/m^3]
-      density_freshsnow(100.),  // [kg/m^3]
-      density_frost(200.),      // [kg/m^3]
-      density_snow_max(325.),   // [kg/m^3] // based on observations at Barrow, AK
-      thermalK_freshsnow(0.029),// thermal conductivity of fresh snow [W/m K]
-      thermalK_snow_exp(2),     // exponent in thermal conductivity of snow model [-]
-      Hf(333500.0),             // Heat of fusion for melting snow -- [J/kg]
-      Ls(2834000.0),            // Latent heat of sublimation ------- [J/kg]
-      Le(2497848.),             // Latent heat of vaporization ------ [J/kg]
-      Cp_air(1004.0),           // Specific heat of air @ const pres- [J/K kg]
-      Cv_water(4218.636),       // Specific heat of water ----------- [J/K kg]
-      VKc(0.41),                // Von Karman Constant -------------- [-]
-      stephB(0.00000005670373), // Stephan-Boltzmann constant ------- [W/m^2 K^4]
-      Apa(101.325),             // atmospheric pressure ------------- [kPa]
-      water_ground_transition_depth(0.02),
-      evap_transition_width(100.), // transition on evaporation from surface to evaporation from subsurface [m]
-      gravity(9.807),
-      Clapp_Horn_b(1.),         // Clapp and Hornberger "b" [-]
-      R_ideal_gas(461.52)       // ideal gas law R? [Pa m^3 kg^-1 K^-1]
-  {}         // gravity [kg m / s^2]
-
-  ModelParams(Teuchos::ParameterList& plist) :
-      ModelParams() {
-    thermalK_freshsnow = plist.get<double>("thermal conductivity of fresh snow [W m^-1 K^-1]", thermalK_freshsnow);
-    thermalK_snow_exp = plist.get<double>("thermal conductivity of snow aging exponent [-]", thermalK_snow_exp);
-    density_snow_max = plist.get<double>("max density of snow [kg m^-3]", density_snow_max);
-    evap_transition_width = plist.get<double>("evaporation transition width [Pa]", evap_transition_width);
-  }
-
-  double density_air;
-  double density_water;
-  double density_freshsnow;
-  double density_frost;
-  double density_snow_max;
-  double thermalK_freshsnow;
-  double thermalK_snow_exp;
-  double Hf, Ls, Le, Cp_air, Cv_water;
-  double R_ideal_gas;
-
-  // constants for energy equations
-  double VKc;
-  double stephB;
-  double Clapp_Horn_b;
-
-  // other constants
-  double Apa;
-  double evap_transition_width;
-  double water_ground_transition_depth;
-  double gravity;
-
-};
-
 
 
 // Struct collecting energy balance terms.
@@ -180,14 +180,14 @@ struct EnergyBalance {
   double error;         // imbalance!
 
   EnergyBalance() :
-      fQswIn(NAN),
-      fQlwIn(NAN),
-      fQlwOut(NAN),
-      fQh(NAN),
-      fQe(NAN),
-      fQc(NAN),
-      fQm(NAN),
-      error(NAN)
+      fQswIn(NaN),
+      fQlwIn(NaN),
+      fQlwOut(NaN),
+      fQh(NaN),
+      fQe(NaN),
+      fQc(NaN),
+      fQm(NaN),
+      error(NaN)
   {}
 };
 
@@ -200,8 +200,8 @@ struct MassBalance {    // all are in [m/s] of WATER, i.e. snow are in SWE
   double dt;    // max dt that may be taken to conserve snow swe
 
   MassBalance() :
-      Me(NAN),
-      Mm(NAN) {}
+      Me(NaN),
+      Mm(NaN) {}
 };
 
 

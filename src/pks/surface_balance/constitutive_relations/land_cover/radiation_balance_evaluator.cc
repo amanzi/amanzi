@@ -124,18 +124,18 @@ RadiationBalanceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     for (auto c : lc_ids) {
       // Beer's law to find attenuation of radiation to surface in sw
-      double sw_atm_surf = SEBPhysics::BeersLaw(sw_in[0][c], lc.second.beers_k_sw, lai[0][c]);
+      double sw_atm_surf = Relations::BeersLaw(sw_in[0][c], lc.second.beers_k_sw, lai[0][c]);
       double sw_atm_can = sw_in[0][c] - sw_atm_surf;
 
       // Beer's law to find attenuation of radiation to surface in lw -- note
       // this should be almost 0 for any LAI
-      double lw_atm_surf = SEBPhysics::BeersLaw(lw_in[0][c], lc.second.beers_k_lw, lai[0][c]);
+      double lw_atm_surf = Relations::BeersLaw(lw_in[0][c], lc.second.beers_k_lw, lai[0][c]);
       double lw_atm_can = lw_in[0][c] - lw_atm_surf;
 
       // black-body radiation for LW out
-      double lw_surf = SEBPhysics::OutgoingLongwaveRadiation(temp_surf[0][c], emiss[0][c]);
-      double lw_snow = SEBPhysics::OutgoingLongwaveRadiation(temp_snow[0][c], emiss[1][c]);
-      double lw_can = SEBPhysics::OutgoingLongwaveRadiation(temp_canopy[0][c],
+      double lw_surf = Relations::OutgoingLongwaveRadiation(temp_surf[0][c], emiss[0][c]);
+      double lw_snow = Relations::OutgoingLongwaveRadiation(temp_snow[0][c], emiss[1][c]);
+      double lw_can = Relations::OutgoingLongwaveRadiation(temp_canopy[0][c],
               lc.second.emissivity_canopy);
 
       rad_bal_surf[0][c] = (1-albedo[0][c])*sw_atm_surf + lw_atm_surf + lw_can - lw_surf;
