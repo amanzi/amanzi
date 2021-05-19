@@ -814,7 +814,7 @@
 <ParameterList name="mineral kinetics">
   <ParameterList name="Gibbsite">
     <Parameter name="rate model" type="string" value="TST"/>
-    <Parameter name="rate constant" type="double" value="-14.0"/>
+    <Parameter name="rate constant" type="double" value="-10.0"/>
     <Parameter name="modifiers" type="string" value=""/>
     <Parameter name="gram molecular weight" type="double" value="78.0036"/>
     <Parameter name="reaction" type="string" value="3.0 H2O  -3.0 H+  1.0 Al+++"/>
@@ -824,7 +824,7 @@
   </ParameterList>
   <ParameterList name="Quartz">
     <Parameter name="rate model" type="string" value="TST"/>
-    <Parameter name="rate constant" type="double" value="-18.0"/>
+    <Parameter name="rate constant" type="double" value="-14.0"/>
     <Parameter name="modifiers" type="string" value=""/>
     <Parameter name="gram molecular weight" type="double" value="6.00842999999999989e+01"/>
     <Parameter name="reaction" type="string" value="1.0 SiO2(aq)"/>
@@ -834,7 +834,7 @@
   </ParameterList>
   <ParameterList name="K-Feldspar">
     <Parameter name="rate model" type="string" value="TST"/>
-    <Parameter name="rate constant" type="double" value="-16.699"/>
+    <Parameter name="rate constant" type="double" value="-12.699"/>
     <Parameter name="modifiers" type="string" value=""/>
     <Parameter name="gram molecular weight" type="double" value="278.332 "/>
     <Parameter name="reaction" type="string" value="2.00 H2O  1.00 K+  1.00 Al+++  -4.00 H+  3.00 SiO2(aq)"/>
@@ -844,7 +844,7 @@
   </ParameterList>
   <ParameterList name="Jurbanite">
     <Parameter name="rate model" type="string" value="TST"/>
-    <Parameter name="rate constant" type="double" value="-14.0"/>
+    <Parameter name="rate constant" type="double" value="-10.0"/>
     <Parameter name="modifiers" type="string" value=""/>
     <Parameter name="gram molecular weight" type="double" value="2.30063999999999993e+02"/>
     <Parameter name="reaction" type="string" value="6.0 H2O  -1.0 H+  1.0 Al+++  1.0 SO4--"/>
@@ -854,7 +854,7 @@
   </ParameterList>
   <ParameterList name="Ferrihydrite">
     <Parameter name="rate model" type="string" value="TST"/>
-    <Parameter name="rate constant" type="double" value="-14.0"/>
+    <Parameter name="rate constant" type="double" value="-10.0"/>
     <Parameter name="modifiers" type="string" value=""/>
     <Parameter name="gram molecular weight" type="double" value="106.869"/>
     <Parameter name="reaction" type="string" value="2.50 H2O  1.00 Fe++  -2.00 H+  0.25 O2(aq)"/>
@@ -864,7 +864,7 @@
   </ParameterList>
   <ParameterList name="Kaolinite">
     <Parameter name="rate model" type="string" value="TST"/>
-    <Parameter name="rate constant" type="double" value="-16.699"/>
+    <Parameter name="rate constant" type="double" value="-12.699"/>
     <Parameter name="modifiers" type="string" value="H+  7.77000E-01"/>
     <Parameter name="gram molecular weight" type="double" value="2.58160000000000025e+02"/>
     <Parameter name="reaction" type="string" value="5.0 H2O  -6.0 H+  2.0 Al+++  2.0 SiO2(aq)"/>
@@ -874,7 +874,7 @@
   </ParameterList>
   <ParameterList name="Schoepite">
     <Parameter name="rate model" type="string" value="TST"/>
-    <Parameter name="rate constant" type="double" value="-10.0"/>
+    <Parameter name="rate constant" type="double" value="-6.0"/>
     <Parameter name="modifiers" type="string" value=""/>
     <Parameter name="gram molecular weight" type="double" value="3.22057999999999993e+02"/>
     <Parameter name="reaction" type="string" value="3.0 H2O  -2.0 H+  1.0 UO2++"/>
@@ -884,7 +884,7 @@
   </ParameterList>
   <ParameterList name="(UO2)3(PO4)2.4H2O">
     <Parameter name="rate model" type="string" value="TST"/>
-    <Parameter name="rate constant" type="double" value="-10.0"/>
+    <Parameter name="rate constant" type="double" value="-6.0"/>
     <Parameter name="modifiers" type="string" value=""/>
     <Parameter name="gram molecular weight" type="double" value="1072.09"/>
     <Parameter name="reaction" type="string" value="4.00 H2O  -2.00 H+  2.00 HPO4--  3.00 UO2++"/>
@@ -894,7 +894,7 @@
   </ParameterList>
   <ParameterList name="Soddyite">
     <Parameter name="rate model" type="string" value="TST"/>
-    <Parameter name="rate constant" type="double" value="-10.0"/>
+    <Parameter name="rate constant" type="double" value="-6.0"/>
     <Parameter name="modifiers" type="string" value=""/>
     <Parameter name="gram molecular weight" type="double" value="668.169"/>
     <Parameter name="reaction" type="string" value="4.00 H2O  -4.00 H+  1.00 SiO2(aq)  2.00 UO2++"/>
@@ -904,7 +904,7 @@
   </ParameterList>
   <ParameterList name="Calcite">
     <Parameter name="rate model" type="string" value="TST"/>
-    <Parameter name="rate constant" type="double" value="-10.0"/>
+    <Parameter name="rate constant" type="double" value="-6.0"/>
     <Parameter name="modifiers" type="string" value=""/>
     <Parameter name="gram molecular weight" type="double" value="100.087"/>
     <Parameter name="reaction" type="string" value="1.00 Ca++  -1.00 H+  1.00 HCO3-"/>
@@ -914,7 +914,7 @@
   </ParameterList>
   <ParameterList name="Chalcedony">
     <Parameter name="rate model" type="string" value="TST"/>
-    <Parameter name="rate constant" type="double" value="-14.0"/>
+    <Parameter name="rate constant" type="double" value="-10.0"/>
     <Parameter name="modifiers" type="string" value=""/>
     <Parameter name="gram molecular weight" type="double" value="60.0843"/>
     <Parameter name="reaction" type="string" value="1.00 SiO2(aq)"/>

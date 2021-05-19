@@ -113,7 +113,7 @@ void KineticRateTST::Setup(const Mineral& reaction,
 
   // extract the rate parameters from the data string, including the
   // modifying species data. adds data to the mineral species!
-  log10_rate_constant_ = rate + 4.0;
+  log10_rate_constant_ = rate;  // SI units!
   rate_constant_ = std::pow(10.0, log10_rate_constant_);
 
   double coeff;

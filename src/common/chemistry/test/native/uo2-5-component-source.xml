@@ -180,7 +180,7 @@
 <ParameterList name="mineral kinetics">
   <ParameterList name="Kaolinite">
     <Parameter name="rate model" type="string" value="TST"/>
-    <Parameter name="rate constant" type="double" value="-16.699"/>
+    <Parameter name="rate constant" type="double" value="-12.699"/>
     <Parameter name="modifiers" type="string" value=""/>
     <Parameter name="gram molecular weight" type="double" value="258.16"/>
     <Parameter name="reaction" type="string" value="5.00 H2O  2.00 Al+++  -6.00 H+  2.00 SiO2(aq)"/>
@@ -190,7 +190,7 @@
   </ParameterList>
   <ParameterList name="Quartz">
     <Parameter name="rate model" type="string" value="TST"/>
-    <Parameter name="rate constant" type="double" value="-18.0"/>
+    <Parameter name="rate constant" type="double" value="-14.0"/>
     <Parameter name="modifiers" type="string" value=""/>
     <Parameter name="gram molecular weight" type="double" value="6.00842999999999989e+01"/>
     <Parameter name="reaction" type="string" value="1.0 SiO2(aq)"/>
@@ -200,7 +200,7 @@
   </ParameterList>
   <ParameterList name="(UO2)3(PO4)2.4H2O">
     <Parameter name="rate model" type="string" value="TST"/>
-    <Parameter name="rate constant" type="double" value="-10.0"/>
+    <Parameter name="rate constant" type="double" value="-6.0"/>
     <Parameter name="modifiers" type="string" value=""/>
     <Parameter name="gram molecular weight" type="double" value="1072.09"/>
     <Parameter name="reaction" type="string" value="4.00 H2O  -2.00 H+  2.00 HPO4--  3.00 UO2++"/>

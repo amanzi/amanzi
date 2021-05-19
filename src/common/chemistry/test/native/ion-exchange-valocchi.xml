@@ -25,7 +25,7 @@
 <ParameterList name="mineral kinetics">
   <ParameterList name="Halite">
     <Parameter name="rate model" type="string" value="TST"/>
-    <Parameter name="rate constant" type="double" value="-4.0e+01"/>
+    <Parameter name="rate constant" type="double" value="-36.0"/>
     <Parameter name="modifiers" type="string" value=""/>
     <Parameter name="gram molecular weight" type="double" value=" 5.84425E+01"/>
     <Parameter name="reaction" type="string" value="1.00 Na+  1.00 Cl-"/>

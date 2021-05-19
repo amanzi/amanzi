@@ -186,16 +186,73 @@
     <verbosity>silent</verbosity>
     <constraints>
       <constraint name="initial">
-        <primary mineral="Calcite" name="Ca++" type="mineral" value="5.2258e-4"/>
-        <primary name="HCO3-" type="gas" value="1.7384e-3" gas="CO2(g)"/>
-        <primary name="H+" type="free_ion" value="1.6288e-5"/>
+        <primary name="H+" type="free" value="1.0e-8"/>
+        <primary name="HCO3-" type="gas@CO2" value="-3"/>
+        <primary name="Ca++" type="mineral@Calcite" value="5.0e-4"/>
       </constraint>
       <constraint name="west">
-        <primary name="Ca++" type="charge" value="1.6787E-05"/>
-        <primary name="HCO3-" type="total" value="1e-3"/>
-        <primary name="H+" type="pH" value="9.6643E-04"/>
+        <primary name="H+" type="pH" value="5.1"/>
+        <primary name="HCO3-" type="total" value="1.0e-3"/>
+        <primary name="Ca++" type="charge" value="1.0e-6"/>
       </constraint>
     </constraints>
+
+    <thermodynamic_database>
+      <primary_species>
+        <primary name="H+">
+          <species_data ion_size="9.0" z="1" weight="1.01"/>
+        </primary>
+        <primary name="HCO3-">
+          <species_data ion_size="4.0" z="-1" weight="61.02"/>
+        </primary>
+        <primary name="Ca++">
+          <species_data ion_size="6.0" z="2" weight="40.08"/>
+        </primary>
+      </primary_species>
+
+      <aqueous_equilibrium_complexes>
+        <complex name="OH-">
+          <species_data ion_size="3.5" z="-1" weight="17.00730"/>
+          <reaction>1.0 H2O  -1.0 H+</reaction>
+          <equilibrium_constant>13.99510</equilibrium_constant>
+        </complex>
+        <complex name="CO3--">
+          <species_data ion_size="4.5" z="-2" weight="60.00920"/>
+          <reaction>-1.0 H+  1.0 HCO3-</reaction>
+          <equilibrium_constant>10.32880</equilibrium_constant>
+        </complex>
+        <complex name="CO2(aq)">
+          <species_data ion_size="3.0" z="0" weight="44.00980"/>
+          <reaction>-1.0 H2O  1.0 H+  1.0 HCO3-</reaction>
+          <equilibrium_constant>-6.34470</equilibrium_constant>
+        </complex>
+        <complex name="CaOH+">
+          <species_data ion_size="4.0" z="1" weight="57.08530"/>
+          <reaction>1.0 H2O  -1.0 H+  1.0 Ca++</reaction>
+          <equilibrium_constant>12.85000</equilibrium_constant>
+        </complex>
+        <complex name="CaHCO3+">
+          <species_data ion_size="4.0" z="1" weight="101.09510"/>
+          <reaction>1.0 HCO3-  1.0 Ca++</reaction>
+          <equilibrium_constant>-1.04670</equilibrium_constant>
+        </complex>
+        <complex name="CaCO3(aq)">
+          <species_data ion_size="3.0" z="0" weight="100.08720"/>
+          <reaction>-1.0 H+  1.0 HCO3-  1.0 Ca++</reaction>
+          <equilibrium_constant>7.00170</equilibrium_constant>
+        </complex>
+      </aqueous_equilibrium_complexes>
+
+      <mineral_kinetics>
+        <mineral name="Calcite">
+          <species_data weight="100.08720"/>
+          <!--rate is on log10 scale and in SI units -->
+          <kinetics_data model="TST" rate="-9.0" modifiers="" molar_volume="3.69340e+01 cm^3/mol" specific_surface_area="1.0 cm^-1"/>
+          <reaction>-1.0 H+  1.0 HCO3-  1.0 Ca++</reaction>
+          <equilibrium_constant>1.84870e+00</equilibrium_constant>
+        </mineral>
+      </mineral_kinetics>
+    </thermodynamic_database>
   </geochemistry>
 
   <output>
