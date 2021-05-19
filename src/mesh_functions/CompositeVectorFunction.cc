@@ -68,7 +68,7 @@ void CompositeVectorFunction::Compute(double time,
     Teuchos::RCP<MeshFunction::Spec> spec = (*cv_spec)->second;
 
     AmanziMesh::Entity_kind kind = spec->first->second;
-    if (vo && vo->os_OK(Teuchos::VERB_HIGH)) {
+    if (vo && vo->os_OK(Teuchos::VERB_EXTREME)) {
       *vo->os() << "Writing function on component: " << compname
                 << " and entity " << AmanziMesh::entity_kind_string(kind) << std::endl;
     }
@@ -115,7 +115,7 @@ void CompositeVectorFunction::Compute(double time,
       } else {
 
         bool valid = mesh->valid_set_name(*region, kind);
-        if (vo && vo->os_OK(Teuchos::VERB_HIGH)) {
+        if (vo && vo->os_OK(Teuchos::VERB_EXTREME)) {
           if (!valid) *vo->os() << "  region: " << *region << " not valid!" << std::endl;
         }
         if (valid) {
@@ -124,7 +124,7 @@ void CompositeVectorFunction::Compute(double time,
           mesh->get_set_entities(*region, kind, AmanziMesh::Parallel_type::OWNED, &id_list);
           auto map = cv->Map().Map(compname, false);
 
-          if (vo && vo->os_OK(Teuchos::VERB_HIGH)) {
+          if (vo && vo->os_OK(Teuchos::VERB_EXTREME)) {
             *vo->os() << "  region: " << *region << " contains " << id_list.size() << " local entities" << std::endl;
           }
 
