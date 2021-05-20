@@ -43,9 +43,13 @@
   * ':' is used in domain sets, between the DSET name and the INDEX,
      e.g. "column:0" or "subdomain:upstream"
   * '|' is used in derivative names, e.g. "dwater_content|dpressure"
+  * '.' is used in a fully qualified name, such as for components of a
+     MultiVector or CompositeVector, e.g. saturation.cell.0 or
+     free_ion_concentration.cell.NO3-
   * ' ' should be avoided as it causes confusion, but names with spaces are
      still valid and do not break the code (though they may break visualization
-     and other scripts).  Prefer to use '_' instead, which may appear in any name.
+     and other scripts).  Prefer to use '_' instead, which may appear in any
+     part of a name.
 
   All of the following are valid KEYs:
 
