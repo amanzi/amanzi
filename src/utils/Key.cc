@@ -111,11 +111,13 @@ Key getKey(const Key& domain, const Key& variable)
     msg << domain << "\"";
     Exceptions::amanzi_throw(msg);
   }
-  if (in(variable, name_delimiter)) {
-    Errors::Message msg("Keys::getKey() called with invalid variable \"");
-    msg << variable << "\"";
-    Exceptions::amanzi_throw(msg);
-  }
+  // there are times this is valid, e.g if the merged thing is a derivative
+  // that has the delimiter in the wrt variable.
+  // if (in(variable, name_delimiter)) {
+  //   Errors::Message msg("Keys::getKey() called with invalid variable \"");
+  //   msg << variable << "\"";
+  //   Exceptions::amanzi_throw(msg);
+  // }
   if (standardize(domain) == "domain") return variable;
   return merge(domain, variable, name_delimiter);
 }

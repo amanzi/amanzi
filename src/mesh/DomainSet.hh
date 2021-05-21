@@ -84,6 +84,8 @@ class DomainSet {
                          const Teuchos::RCP<const std::vector<int>>& map) {
     maps_[subdomain] = map;
   }
+  const std::map<std::string, Teuchos::RCP<const std::vector<int>>>&
+  get_subdomain_maps() const { return maps_; }
 
   // import from subdomain to parent domain
   void DoImport(const std::string& subdomain,
