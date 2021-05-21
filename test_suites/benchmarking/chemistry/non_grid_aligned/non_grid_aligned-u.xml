@@ -198,6 +198,32 @@
     </boundary_condition>
   </boundary_conditions>
 
+  <geochemistry>
+    <verbosity>verbose</verbosity>
+    <thermodynamic_database>
+      <primary_species>
+        <primary name="CO3--">
+          <species_data ion_size="4.5" z="-2" weight="60.0092"/>
+        </primary>
+        <primary name="Ca++">
+          <species_data ion_size="6.0" z="2" weight="40.08"/>
+        </primary>
+        <primary name="Tracer">
+          <species_data ion_size="1.0" z="0" weight="1.0"/>
+        </primary>
+      </primary_species>
+
+      <mineral_kinetics>
+        <mineral name="Calcite">
+          <species_data weight="100.087"/>
+          <kinetics_data model="TST" rate="-7.0" modifiers="" molar_volume="3.69340e+01 cm^3/mol" specific_surface_area="1.0 cm^-1"/>
+          <reaction>1.0 CO3--  1.0 Ca++</reaction>
+          <equilibrium_constant>-8.4801</equilibrium_constant>
+        </mineral>
+      </mineral_kinetics>
+    </thermodynamic_database>
+  </geochemistry>
+
   <output>
     <vis>
       <base_filename>non_grid_aligned</base_filename>

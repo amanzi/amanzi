@@ -212,7 +212,12 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
   std::vector<double> values(nprimary);
 
   const auto& iclist = glist_->sublist("state").sublist("initial conditions").sublist(tcc_key_);
-  auto constraints = iclist.get<Teuchos::Array<std::string> >("names").toVector();
+  std::vector<std::string> constraints;
+  if (iclist.isParameter("names")) {
+    constraints = iclist.get<Teuchos::Array<std::string> >("names").toVector();
+  } else {
+    for (int i = 0; i < nprimary; ++i) constraints.push_back("total");
+  }
 
   // print statistics
   try {
