@@ -30,9 +30,9 @@ namespace Amanzi {
 namespace SurfaceBalance {
 namespace Relations {
 
-Utils::RegisteredFactory<FieldEvaluator,AlbedoTwoComponentEvaluator> AlbedoTwoComponentEvaluator::reg_("two-component subgrid albedos");
+Utils::RegisteredFactory<FieldEvaluator,AlbedoTwoComponentEvaluator> AlbedoTwoComponentEvaluator::reg_("subgrid albedos, two components");
 
-Utils::RegisteredFactory<FieldEvaluator,AlbedoThreeComponentEvaluator> AlbedoThreeComponentEvaluator::reg_("three-component subgrid albedos");
+Utils::RegisteredFactory<FieldEvaluator,AlbedoThreeComponentEvaluator> AlbedoThreeComponentEvaluator::reg_("subgrid albedos, three components");
 
 Utils::RegisteredFactory<FieldEvaluator,AreaFractionsTwoComponentEvaluator> AreaFractionsTwoComponentEvaluator::reg_("area fractions, two components");
 

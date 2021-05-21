@@ -177,7 +177,7 @@ WeakMPCSemiCoupledDeform::Initialize(const Teuchos::Ptr<State>& S)
 {
   MPC<PK>::SubPKList::iterator pk = sub_pks_.begin();
   ++pk;
-  for (pk; pk!=sub_pks_.end(); ++pk){
+  for (; pk!=sub_pks_.end(); ++pk){
     (*pk)->Initialize(S);
   }
   MPC<PK>::Initialize(S);

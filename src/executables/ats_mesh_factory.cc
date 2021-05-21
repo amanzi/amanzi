@@ -189,6 +189,16 @@ createMeshAliased(const std::string& mesh_name,
   if (alias_plist.isParameter("target")) {
     target = alias_plist.get<std::string>("target");
 
+    // if both are domain set, construct the target from alias's index and
+    // target's prefix
+    KeyTriple ds_target, ds_alias;
+    if (Keys::splitDomainSet(target, ds_target) &&
+        Keys::splitDomainSet(mesh_name, ds_alias)) {
+      if (std::get<1>(ds_target) == "*") {
+        target = Keys::getDomainInSet(std::get<0>(ds_target), std::get<1>(ds_alias));
+      }
+    }
+
     if (S.HasMesh(target)) {
       mesh = S.GetMesh(target);
     } else {
@@ -197,11 +207,13 @@ createMeshAliased(const std::string& mesh_name,
           << "  Ensure it appears in the \"mesh\" list prior to the aliased mesh.";
       Exceptions::amanzi_throw(msg);
     }
+
   } else {
     Errors::Message msg("Aliased mesh \"");
     msg << mesh_name << "\" is missing parameter \"target\"";
     Exceptions::amanzi_throw(msg);
   }
+
   if (mesh != Teuchos::null) S.AliasMesh(target, mesh_name);
   if (vo.os_OK(Teuchos::VERB_HIGH)) {
     *vo.os() << "  Aliased mesh \"" << mesh_name << "\" to \"" << target << "\"." << std::endl;
@@ -502,6 +514,9 @@ createDomainSetIndexed(const std::string& mesh_name_pristine,
     std::vector<int> lids;
     std::map<std::string, Teuchos::RCP<const std::vector<int>>> reference_maps;
 
+    // if aliased, we deal with domain sets specially
+    std::string alias_target;
+
     // create the subdomains, indexed over entities
     for (const auto& region : regions) {
       AmanziMesh::Entity_ID_List region_ents;
@@ -549,6 +564,12 @@ createDomainSetIndexed(const std::string& mesh_name_pristine,
                      subdomain_mesh_type == "column surface") {
             AMANZI_ASSERT(reference_mesh != Teuchos::null);
             reference_maps[full_subdomain_name] = AmanziMesh::createMapSurfaceToSurface(*subdomain_mesh, *reference_mesh);
+          } else if (subdomain_mesh_type == "aliased") {
+            // use the reference map from the target mesh, but first we have to determine the target mesh name
+            alias_target = subdomain_param_list.get<std::string>("target");
+            KeyTriple dset;
+            bool is_ds = Keys::splitDomainSet(alias_target, dset);
+            if (is_ds) alias_target = std::get<0>(dset);
           } else {
             Errors::Message msg;
             msg << "Mesh \"" << mesh_name << "\" domain set cannot create reference map to mesh of type \"" << subdomain_mesh_type << "\".";
@@ -561,8 +582,24 @@ createDomainSetIndexed(const std::string& mesh_name_pristine,
     // construct and register the domain set
     Teuchos::RCP<AmanziMesh::DomainSet> ds = Teuchos::null;
     if (is_reference_mesh) {
-      ds = Teuchos::rcp(new AmanziMesh::DomainSet(mesh_name, indexing_parent_mesh, subdomains,
-              reference_mesh, reference_maps));
+      if (alias_target.empty()) {
+        ds = Teuchos::rcp(new AmanziMesh::DomainSet(mesh_name, indexing_parent_mesh, subdomains,
+                reference_mesh, reference_maps));
+      } else {
+        auto ref_domain_set = S.GetDomainSet(alias_target);
+        AMANZI_ASSERT(ref_domain_set->get_referencing_parent() == reference_mesh);
+        auto reference_maps = ref_domain_set->get_subdomain_maps();
+
+        // these maps are all indexed by the target name, update to the aliased name.
+        std::map<std::string, Teuchos::RCP<const std::vector<int>>> new_reference_maps;
+        for (const auto& key_val : reference_maps) {
+          KeyTriple old_ds;
+          Keys::splitDomainSet(key_val.first, old_ds);
+          new_reference_maps[Keys::getDomainInSet(mesh_name, std::get<1>(old_ds))] = key_val.second;
+        }
+        ds = Teuchos::rcp(new AmanziMesh::DomainSet(mesh_name, indexing_parent_mesh, subdomains,
+                reference_mesh, new_reference_maps));
+      }
     } else {
       ds = Teuchos::rcp(new AmanziMesh::DomainSet(mesh_name, indexing_parent_mesh, subdomains));
     }

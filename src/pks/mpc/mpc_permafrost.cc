@@ -255,6 +255,7 @@ MPCPermafrost::Initialize(const Teuchos::Ptr<State>& S)
   } else {
     CopySubsurfaceToSurface(*S->GetFieldData(pres_key_, domain_flow_pk_->name()),
                             S->GetFieldData(surf_pres_key_, surf_flow_pk_->name()).ptr());
+    S->GetField(surf_pres_key_, surf_flow_pk_->name())->set_initialized();
   }
   if (S->GetField(surf_temp_key_)->initialized()) {
     CopySurfaceToSubsurface(*S->GetFieldData(surf_temp_key_, surf_energy_pk_->name()),
@@ -262,6 +263,7 @@ MPCPermafrost::Initialize(const Teuchos::Ptr<State>& S)
   } else {
     CopySubsurfaceToSurface(*S->GetFieldData(temp_key_, domain_energy_pk_->name()),
                             S->GetFieldData(surf_temp_key_, surf_energy_pk_->name()).ptr());
+    S->GetField(surf_temp_key_, surf_energy_pk_->name())->set_initialized();
   }
 
   if (surf_ewc_ != Teuchos::null) surf_ewc_->initialize(S);

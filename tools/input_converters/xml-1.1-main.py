@@ -37,19 +37,19 @@ def seb_twocomponent(xml, eval_name):
     except aerrors.MissingXMLError:
         pass
     else:
-        frac_area.setName("surface-area_fractions")
-        frac_area_type = asearch.child_by_name(frac_area, "field evaluator type")
-        if frac_area_type.getValue() == "surface balance area fractions":
-            frac_area_type.setValue("area fractions, two components")
-    try:
-        frac_area = asearch.find_path(xml, ["state","field evaluators", "surface-fractional_areas"])
-    except aerrors.MissingXMLError:
-        pass
-    else:
-        frac_area.setName("surface-area_fractions")
-        frac_area_type = asearch.child_by_name(frac_area, "field evaluator type")
-        if frac_area_type.getValue() == "surface balance area fractions":
-            frac_area_type.setValue("area fractions, two components")
+        frac_area.setName("surface-fractional_areas")
+
+    for name in ['surface-fractional_areas', 'surface_column:*-fractional_areas']:
+        try:
+            frac_area = asearch.find_path(xml, ["state","field evaluators", name])
+        except aerrors.MissingXMLError:
+            pass
+        else:
+            domain = frac_area.getName().split('-')[0]
+            frac_area.setName(domain+"-area_fractions")
+            frac_area_type = asearch.child_by_name(frac_area, "field evaluator type")
+            if frac_area_type.getValue() == "surface balance area fractions":
+                frac_area_type.setValue("area fractions, two components")
 
     # water source
     try:
@@ -67,15 +67,17 @@ def seb_twocomponent(xml, eval_name):
                 water_source.append(parameter.BoolParameter("use model from ATS 1.1", True))
 
     # subgrid albedos
-    try:
-        albedo = asearch.find_path(xml, ['state', 'field evaluators', 'surface-subgrid_albedos'])
-    except aerrors.MissingXMLError:
-        pass
-    else:
-        albedo.setName('surface-albedos')
-        albedo_type = asearch.child_by_name(albedo, "field evaluator type")
-        if albedo_type.getValue() == "albedo":
-            albedo_type.setValue("two-component subgrid albedos")
+    for name in ['surface-subgrid_albedos', 'surface_column:*-subgrid_albedos']:
+        try:
+            albedo = asearch.find_path(xml, ['state', 'field evaluators', name])
+        except aerrors.MissingXMLError:
+            pass
+        else:
+            dname = name.split('-')[0]
+            albedo.setName(dname+'-albedos')
+            albedo_type = asearch.child_by_name(albedo, "field evaluator type")
+            if albedo_type.getValue() == "albedo":
+                albedo_type.setValue("two-component subgrid albedos")
 
 
 
@@ -87,19 +89,19 @@ def seb_threecomponent(xml, eval_name):
     except aerrors.MissingXMLError:
         pass
     else:
-        frac_area.setName("surface-area_fractions")
-        frac_area_type = asearch.child_by_name(frac_area, "field evaluator type")
-        if frac_area_type.getValue() == "surface balance area fractions":
-            frac_area_type.setValue("area fractions, three components")
-    try:
-        frac_area = asearch.find_path(xml, ["state","field evaluators", "surface-fractional_areas"])
-    except aerrors.MissingXMLError:
-        pass
-    else:
-        frac_area.setName("surface-area_fractions")
-        frac_area_type = asearch.child_by_name(frac_area, "field evaluator type")
-        if frac_area_type.getValue() == "surface balance area fractions":
-            frac_area_type.setValue("area fractions, three components")
+        frac_area.setName("surface-fractional_areas")
+
+    for name in ['surface-fractional_areas', 'surface_column:*-fractional_areas']:
+        try:
+            frac_area = asearch.find_path(xml, ["state","field evaluators", name])
+        except aerrors.MissingXMLError:
+            pass
+        else:
+            domain = frac_area.getName().split('-')[0]
+            frac_area.setName(domain+"-area_fractions")
+            frac_area_type = asearch.child_by_name(frac_area, "field evaluator type")
+            if frac_area_type.getValue() == "surface balance area fractions":
+                frac_area_type.setValue("area fractions, three components")
 
     # water source
     try:
@@ -112,15 +114,17 @@ def seb_threecomponent(xml, eval_name):
             water_source_type.setValue("surface energy balance, three components")
 
     # subgrid albedos
-    try:
-        albedo = asearch.find_path(xml, ['state', 'field evaluators', 'surface-subgrid_albedos'])
-    except aerrors.MissingXMLError:
-        pass
-    else:
-        albedo.setName('surface-albedos')
-        albedo_type = asearch.child_by_name(albedo, "field evaluator type")
-        if albedo_type.getValue() == "albedo":
-            albedo_type.setValue("three-component subgrid albedos")
+    for name in ['surface-subgrid_albedos', 'surface_column:*-subgrid_albedos']:
+        try:
+            albedo = asearch.find_path(xml, ['state', 'field evaluators', name])
+        except aerrors.MissingXMLError:
+            pass
+        else:
+            dname = name.split('-')[0]
+            albedo.setName(dname+'-albedos')
+            albedo_type = asearch.child_by_name(albedo, "field evaluator type")
+            if albedo_type.getValue() == "albedo":
+                albedo_type.setValue("three-component subgrid albedos")
 
 def create_landcover(xml, eval_name='water_source', water_transition_depth=0.02):
     """Adds a default land-cover section that will be the same as the Arctic defaults."""
@@ -167,40 +171,25 @@ def create_landcover(xml, eval_name='water_source', water_transition_depth=0.02)
 
 def arctic_seb(xml, seb_new=False):
     if seb_new:
-        try:
-            # check for water source
-            asearch.find_path(xml, ['state', 'field evaluators', 'water_source'])
-        except aerrors.MissingXMLError:
+        for name in ['snow-source_sink', 'snow_column:*-source_sink', 'water_source', 'column:*-water_source']:
             try:
                 # check for water source
-                asearch.find_path(xml, ['state', 'field evaluators', 'snow-source_sink'])
+                asearch.find_path(xml, ['state', 'field evaluators', name])
             except aerrors.MissingXMLError:
                 pass
             else:
-                seb_threecomponent(xml, 'snow-source_sink')
-                create_landcover(xml, 'snow-source_sink', 0.002)
-
-        else:
-            seb_threecomponent(xml, 'water_source')
-            create_landcover(xml, 'water_source', 0.002)
-        
+                seb_threecomponent(xml, name)
+                create_landcover(xml, name, 0.002)
     else:
-        try:
-            # check for water source
-            asearch.find_path(xml, ['state', 'field evaluators', 'water_source'])
-        except aerrors.MissingXMLError:
+        for name in ['snow-source_sink', 'snow_column:*-source_sink', 'water_source', 'column:*-water_source']:
             try:
                 # check for water source
-                asearch.find_path(xml, ['state', 'field evaluators', 'snow-source_sink'])
+                asearch.find_path(xml, ['state', 'field evaluators', name])
             except aerrors.MissingXMLError:
                 pass
             else:
-                seb_twocomponent(xml, 'snow-source_sink')
-                create_landcover(xml, 'snow-source_sink', 0.02)
-
-        else:
-            seb_twocomponent(xml, 'water_source')
-            create_landcover(xml, 'water_source', 0.02)
+                seb_twocomponent(xml, name)
+                create_landcover(xml, name, 0.02)
 
 
     
