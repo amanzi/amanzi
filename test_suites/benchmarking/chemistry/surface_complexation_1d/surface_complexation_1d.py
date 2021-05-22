@@ -7,7 +7,7 @@ import sys
 import h5py
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 
@@ -139,7 +139,8 @@ if __name__ == "__main__":
         comp = 'free_ion_species.cell.H+'
         for i, time in enumerate(times):
             x_amanzi_native, c_amanzi_native = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
-            pH_amanzi_native[i] = -np.log10(c_amanzi_native)
+            x_tmp_native, c_tmp_native = GetXY_AmanziU_1D(path_to_amanzi,root,"primary_activity_coeff.cell.H+",1)
+            pH_amanzi_native[i] = -np.log10(c_amanzi_native * c_tmp_native)
 
         native = True
 
@@ -499,7 +500,7 @@ if __name__ == "__main__":
 
     plt.subplots_adjust(left=0.10,bottom=0.15,right=0.90,top=0.95)
 
-    # pyplot.show()
+    # plt.show()
     plt.savefig(root+"_1d.png",format="png")
     # plt.close()
 
