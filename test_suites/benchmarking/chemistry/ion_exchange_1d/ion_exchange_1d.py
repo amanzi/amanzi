@@ -312,7 +312,7 @@ if __name__ == "__main__":
     if native:
         i = 0  # hardwired for time '71'
         for j, comp in enumerate(components):
-            ax[j].plot(x_amanzi_native, u_amanzi_native[i][j],'rx',c=PFLOTRAN_LINE_COLOR)
+            ax[j].plot(x_amanzi_native, u_amanzi_native[i][j],'rx',label='AmanziU Native Chem',c=PFLOTRAN_LINE_COLOR)
             bx[j].plot(x_amanzi_native, v_amanzi_native[i][j],'rx',label='AmanziU Native Chem')
 
     if crunch:
@@ -397,7 +397,7 @@ if __name__ == "__main__":
 
     plt.subplots_adjust(left=0.10,bottom=0.15,right=0.90,top=0.95)
 
-    # pyplot.show()
+    # plt.show()
     plt.savefig(root+"_1d.png",format="png")
     # plt.close()
 
