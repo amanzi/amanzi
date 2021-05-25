@@ -58,14 +58,14 @@ class MPCPermafrostSplitFluxColumnsSubcycled : public MPCPermafrostSplitFluxColu
   // Virtual destructor
   virtual ~MPCPermafrostSplitFluxColumnsSubcycled() = default;
 
-  virtual double get_dt();
+  virtual double get_dt() override;
   // -- advance each sub pk dt.
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit) override;
 
-  virtual bool ValidStep();
+  virtual bool ValidStep() override;
 
   virtual void CommitStep(double t_old, double t_new,
-                          const Teuchos::RCP<State>& S);
+                          const Teuchos::RCP<State>& S) override;
 
  protected:
   std::string subcycled_timestep_type_;

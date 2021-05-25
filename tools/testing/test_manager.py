@@ -525,7 +525,12 @@ class RegressionTest(object):
 
                 # -- checkpoint by list of cycles
                 filenames = self.filenames(gold_dir)
-                chp_cycles = [int(os.path.split(f)[-1][10:-3]) for f in filenames]
+                chp_cycles = set()
+                for f in filenames:
+                    chp_loc = f.find('checkpoint')
+                    digits = f[chp_loc+len('checkpoint'):chp_loc+len('checkpoint')+5]
+                    chp_cycles.add(int(digits))
+                chp_cycles = list(sorted(chp_cycles))
                 try:
                     chp = asearch.child_by_name(xml, "checkpoint")
                 except aerrors.MissingXMLError:

@@ -282,7 +282,7 @@ void Coordinator::initialize() {
   // we know it has succeeded.
   S_next_ = Teuchos::rcp(new Amanzi::State(*S_));
   *S_next_ = *S_;
-  if (parameter_list_->get<bool>("support subcycling", false)) {
+  if (subcycled_ts_) {
     S_inter_ = Teuchos::rcp(new Amanzi::State(*S_));
     *S_inter_ = *S_;
   } else {
@@ -291,9 +291,13 @@ void Coordinator::initialize() {
 
   // set the states in the PKs Passing null for S_ allows for safer subcycling
   // -- PKs can't use it, so it is guaranteed to be pristinely the old
-  // timestep.  This comes at the expense of an increase in memory footprint.
-  pk_->set_states(Teuchos::null, S_inter_, S_next_);
+  // timestep.  This code is useful for testing that PKs don't use S.
+  // pk_->set_states(Teuchos::null, S_inter_, S_next_);
 
+  // That said, S is required to be valid, since it is valid for all time
+  // (e.g. from construction), whereas S_inter and S_next are only valid after
+  // set_states() is called.  This allows for standard interfaces.
+  pk_->set_states(S_, S_inter_, S_next_);
 }
 
 void Coordinator::finalize() {
@@ -418,8 +422,8 @@ void Coordinator::read_parameter_list() {
   cycle0_ = coordinator_list_->get<int>("start cycle",0);
   cycle1_ = coordinator_list_->get<int>("end cycle",-1);
   duration_ = coordinator_list_->get<double>("wallclock duration [hrs]", -1.0);
-  
-  subcycled_ts_ = coordinator_list_->get<bool>("subcycled timestep", false); //this is only valid for subcycling intermediate-scale model
+  subcycled_ts_ = coordinator_list_->get<bool>("subcycled timestep", false);
+
   // restart control
   restart_ = coordinator_list_->isParameter("restart from checkpoint file");
   if (restart_) restart_filename_ = coordinator_list_->get<std::string>("restart from checkpoint file");
@@ -434,7 +438,6 @@ double Coordinator::get_dt(bool after_fail) {
   // get the physical step size
   double dt = pk_->get_dt();
   double dt_pk = dt;
-  
   if (dt < 0.) return dt;
 
   // check if the step size has gotten too small
@@ -451,7 +454,6 @@ double Coordinator::get_dt(bool after_fail) {
   // ask the step manager if this step is ok
   dt = tsm_->TimeStep(S_next_->time(), dt, after_fail);
   if (subcycled_ts_) dt = std::min(dt, dt_pk);
-  
   return dt;
 }
 
