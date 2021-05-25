@@ -122,6 +122,7 @@ KeyPair splitKey(const Key& name);
 
 // Get the domain prefix of a DOMAIN-VARNAME key.  Does not return empty string.
 Key getDomain(const Key& name);
+Key getDomainPrefix(const Key& name);
 
 // Grab the varname suffix of a DOMAIN-VARNAME Key
 Key getVarName(const Key& name);

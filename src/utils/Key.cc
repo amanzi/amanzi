@@ -158,6 +158,15 @@ Key getDomain(const Key& name)
   }
 }
 
+// Gets a prefix that can simply be "+" with the varname.  This is deprecated.
+Key getDomainPrefix(const Key& name)
+{
+  auto domain = getDomain(name);
+  if (domain == "domain") return "";
+  else return merge(domain, "", name_delimiter);
+}
+
+
 // Grab the varname suffix of a DOMAIN-VARNAME Key
 Key getVarName(const Key& name)
 {

@@ -56,7 +56,8 @@ TEST(KEY_OPERATIONS) {
   CHECK_EQUAL("temp", getKey("domain", "temp"));
   CHECK_THROW(getKey("domain", ""), Errors::Message);
   CHECK_THROW(getKey("bad-name",""), Errors::Message);
-  CHECK_THROW(getKey("", "bad-name"), Errors::Message);
+  // this can't throw because of things like getVarName("dsurface-energy|dsurface-temp") which must return "surface"
+  //  CHECK_THROW(getKey("", "bad-name"), Errors::Message);
 
   auto result1 = KeyPair{"surface", "temp"};
   CHECK(result1 == splitKey("surface-temp"));
