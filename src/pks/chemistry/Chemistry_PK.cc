@@ -74,9 +74,9 @@ void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
     std::vector<std::vector<std::string> > mrc_names_cv(1);
 
     for (it = mineral_names_.begin(); it != mineral_names_.end(); ++it) {
-      vf_names_cv[0].push_back(*it + std::string(" vol frac"));
-      ssa_names_cv[0].push_back(*it + std::string(" spec surf area"));
-      mrc_names_cv[0].push_back(*it + std::string(" min rate cnst"));
+      vf_names_cv[0].push_back(*it);
+      ssa_names_cv[0].push_back(*it);
+      mrc_names_cv[0].push_back(*it);
     }
 
     // -- register two fields
