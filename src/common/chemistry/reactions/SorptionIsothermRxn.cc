@@ -42,7 +42,7 @@ void SorptionIsothermRxn::SetIsothermParameters(const std::vector<double>& param
 
 
 void SorptionIsothermRxn::Update(const std::vector<Species>& primary_species) {
-  sorbed_concentration_= isotherm_->Evaluate(primary_species.at(species_id_));
+  sorbed_concentration_ = isotherm_->Evaluate(primary_species.at(species_id_));
 }
 
 

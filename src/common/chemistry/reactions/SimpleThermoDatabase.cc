@@ -12,11 +12,13 @@
 #include <cassert>
 #include <cstdlib>
 #include <fstream>
+#include <iterator>
 #include <iostream>
 #include <vector>
 #include <string>
 #include <sstream>
 
+#include "dbc.hh"
 #include "exceptions.hh"
 #include "errors.hh"
 
@@ -75,7 +77,8 @@ void SimpleThermoDatabase::Initialize(const BeakerState& state,
   }
 
   // aqueous complexes
-  const auto& aqlist = plist_->sublist("aqueous equilibrium complexes");
+  const auto& tmp = plist_->sublist("aqueous equilibrium complexes");
+  auto aqlist = RebuildAqueousComplexes_(tmp);
 
   id = 0;
   for (auto it = aqlist.begin(); it != aqlist.end(); ++it, ++id) {
@@ -234,6 +237,116 @@ void SimpleThermoDatabase::Initialize(const BeakerState& state,
 
   // this will allocate internal memory
   Beaker::Initialize(state, parameters);
+}
+
+
+/* *******************************************************************
+* Setup
+******************************************************************* */
+Teuchos::ParameterList SimpleThermoDatabase::RebuildAqueousComplexes_(
+    const Teuchos::ParameterList& plist)
+{
+  Teuchos::ParameterList aqlist = plist;
+  if (plist.numParams() == 0) return aqlist;
+
+  std::vector<std::string> primaries;
+  std::vector<std::string> secondaries;
+
+  for (int i = 0; i < this->primary_species().size(); ++i) {
+    primaries.push_back(primary_species()[i].name());
+  }
+  primaries.push_back("H2O");
+
+  for (auto it = plist.begin(); it != plist.end(); ++it) {
+    std::string name = it->first;
+    if (plist.isSublist(name)) secondaries.push_back(name);
+  }
+
+  std::string empty("");
+  int npri = primaries.size();
+  int nsec = secondaries.size();
+
+  MatrixBlock A(nsec, nsec), B(nsec, npri), Bnew(nsec, npri);
+  A.Zero();
+  B.Zero();
+
+  // two ways to provide the equilibrium constant are reduced to one
+  int nT(1);
+  for (int i = 0; i < secondaries.size(); ++i) {
+    auto& tmp = plist.sublist(secondaries[i]);
+    if (tmp.isSublist("equilibrium constant")) {
+      int n = tmp.sublist("equilibrium constant").get<Teuchos::Array<double> >("Keq").toVector().size();
+      nT = std::max(nT, n);
+    }
+  }
+  MatrixBlock logK(nsec, nT), logKnew(nsec, nT);
+
+  for (int i = 0; i < secondaries.size(); ++i) {
+    auto& tmp = plist.sublist(secondaries[i]);
+
+    std::vector<double> stoich;
+    std::vector<std::string> names;
+
+    std::string reaction = tmp.get<std::string>("reaction");
+    ParseReaction(reaction, empty, &names, &stoich);
+
+    // two ways to provide the equilibrium constant
+    if (!tmp.isSublist("equilibrium constant")) {
+      double Keq = tmp.get<double>("equilibrium constant");
+      for (int k = 0; k < nT; ++k) logK(i, k) = Keq;
+    } else {
+      auto Keq = tmp.sublist("equilibrium constant").get<Teuchos::Array<double> >("Keq").toVector();
+      if (Keq.size() != nT) {
+        AMANZI_ASSERT(false);
+      }
+      for (int k = 0; k < nT; ++k) logK(i, k) = Keq[k];
+    }
+
+    A(i, i) = 1.0;
+    for (int k = 0; k < names.size(); ++k) {
+      auto pos = std::find(secondaries.begin(), secondaries.end(), names[k]);
+      if (pos != secondaries.end()) {
+        int n = std::distance(secondaries.begin(), pos);
+        A(i, n) = -stoich[k];
+      }
+    }
+
+    for (int k = 0; k < names.size(); ++k) {
+      auto pos = std::find(primaries.begin(), primaries.end(), names[k]);
+      if (pos != primaries.end()) {
+        int n = std::distance(primaries.begin(), pos);
+        B(i, n) = -stoich[k];
+      }
+    }
+  }
+
+  // calculate new aqueous reactions
+  A.Inverse();
+  Multiply(A, B, Bnew);
+  Multiply(A, logK, logKnew);
+
+  for (int i = 0; i < secondaries.size(); ++i) {
+    auto& tmp = aqlist.sublist(secondaries[i]);
+
+    std::stringstream ss;
+    for (int k = 0; k < npri; ++k) {
+      if (Bnew(i, k) != 0.0) {
+        ss << Bnew(i, k) << " " << primaries[k] << " ";
+      }
+    }
+    tmp.set<std::string>("reaction", ss.str());
+
+    // two ways to provide the equilibrium constant
+    if (tmp.isSublist("equilibrium constant")) {
+      Teuchos::Array<double> Keq(nT);
+      for (int k = 0; k < nT; ++k) Keq[k] = logKnew(i, k);
+      tmp.sublist("equilibrium constant").set<Teuchos::Array<double> >("Keq", Keq);
+    } else {
+      tmp.set<double>("equilibrium constant", logKnew(i, 0));
+    }
+  }
+
+  return aqlist;
 }
 
 }  // namespace AmanziChemistry

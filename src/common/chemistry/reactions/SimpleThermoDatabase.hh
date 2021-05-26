@@ -31,6 +31,9 @@ class SimpleThermoDatabase : public Beaker {
                           const BeakerParameters& parameters);
 
  private:
+  Teuchos::ParameterList RebuildAqueousComplexes_(const Teuchos::ParameterList& aqlist);
+
+ private:
   Teuchos::RCP<Teuchos::ParameterList> plist_;
 };
 
