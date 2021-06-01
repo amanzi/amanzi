@@ -228,6 +228,13 @@ public:
                    Teuchos::RCP<const TreeVector> u,
                    Teuchos::RCP<TreeVector> du) override;
 
+  // -- access methods
+  virtual Teuchos::RCP<Operators::Operator>
+      my_operator(const Operators::OperatorType& type) override;
+
+  virtual Teuchos::RCP<Operators::PDE_HelperDiscretization>
+      my_pde(const Operators::PDEType& type) override { return matrix_diff_; }
+
  protected:
   // These must be provided by the deriving PK.
   // -- setup the evaluators
@@ -317,6 +324,8 @@ public:
   bool coupled_to_surface_via_temp_;
   bool coupled_to_surface_via_flux_;
 
+  bool coupled_to_lake_via_temp_;
+
   // Keys
   Key temperature_key_;
   Key water_content_key_;
@@ -327,6 +336,7 @@ public:
   Key dconductivity_key_;
   Key duw_conductivity_key_;
   Key heat_capacity_key_;
+  Key pressure_key_;
 
   // precipitation and evaporation rates
   double r_;

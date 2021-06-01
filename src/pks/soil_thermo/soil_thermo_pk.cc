@@ -96,11 +96,11 @@ void Soil_Thermo_PK::Setup(const Teuchos::Ptr<State>& S) {
 void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
   // Set up keys if they were not already set.
   temperature_key_ = Keys::readKey(*plist_, domain_, "temperature", "temperature");
-  water_content_key_ = Keys::readKey(*plist_, domain_, "soil water content", "soil_water_content");
+  water_content_key_ = Keys::readKey(*plist_, domain_, "water content", "water_content");
   ice_content_key_ = Keys::readKey(*plist_, domain_, "ice content", "ice_content");
   density_key_ = Keys::readKey(*plist_, domain_, "density", "density");
   energy_key_ = Keys::readKey(*plist_, domain_, "energy", "energy");
-  wc_key_ = Keys::readKey(*plist_, domain_, "soil water content", "soil_water_content");
+  wc_key_ = Keys::readKey(*plist_, domain_, "water content", "water_content");
   enthalpy_key_ = Keys::readKey(*plist_, domain_, "enthalpy", "enthalpy");
   flux_key_ = Keys::readKey(*plist_, domain_, "soil mass flux", "soil_mass_flux");
   energy_flux_key_ = Keys::readKey(*plist_, domain_, "diffusive energy flux", "diffusive_energy_flux");
@@ -109,6 +109,7 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
   heat_capacity_key_ = Keys::readKey(*plist_, domain_, "heat capacity", "heat_capacity");
   uw_conductivity_key_ = Keys::readKey(*plist_, domain_, "upwinded thermal conductivity", "upwind_thermal_conductivity");
   cell_is_ice_key_ = Keys::readKey(*plist_, domain_, "ice", "ice");
+  pressure_key_ = Keys::readKey(*plist_, domain_, "pressure", "pressure");
 
   std::cout << "temperature_key_ = " << temperature_key_ << std::endl;
 
@@ -117,6 +118,22 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(cell_vol_key_);
 //  S->RequireScalar("atmospheric_pressure");
+
+
+//  // Set primary evaluator for pressure
+//
+  S->RequireField(pressure_key_)->SetMesh(mesh_)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+
+  Teuchos::ParameterList elist_pre;
+  elist_pre.set<std::string>("evaluator name", pressure_key_);
+  auto eval_pre = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist_pre));
+  AMANZI_ASSERT(S != Teuchos::null);
+  S->SetFieldEvaluator(pressure_key_, eval_pre);
+
+  S->RequireFieldEvaluator(pressure_key_);
+
+  std::cout << "pressure eval DONE" << std::endl;
 
   // Set primary evaluator for water content
 
@@ -343,6 +360,10 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
   // Require a field for soil ice content
   S->RequireField(ice_content_key_, name_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
+
+  // Require a field for pressure
+   S->RequireField(pressure_key_, name_)->SetMesh(mesh_)->SetGhosted()
+       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   // -- heat capacity evaluator
   S->RequireField(heat_capacity_key_)->SetMesh(mesh_)
@@ -592,6 +613,11 @@ void Soil_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   S->GetField(ice_content_key_, name_)->set_initialized();
 
   std::cout << "Initialized I" << std::endl;
+
+  S->GetFieldData(pressure_key_, name_)->PutScalar(0.);
+  S->GetField(pressure_key_, name_)->set_initialized();
+
+  std::cout << "Initialized p" << std::endl;
 
   // summary of initialization
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -1098,6 +1124,17 @@ Soil_Thermo_PK::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
     return AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED;
   }
   return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
+}
+
+/* ******************************************************************
+* Return a pointer to a local operator
+****************************************************************** */
+Teuchos::RCP<Operators::Operator> Soil_Thermo_PK::my_operator(
+    const Operators::OperatorType& type)
+{
+  if (type == Operators::OPERATOR_MATRIX) return matrix_;
+  else if (type == Operators::OPERATOR_PRECONDITIONER_RAW) return preconditioner_;
+  return Teuchos::null;
 }
 
 } // namespace SoilThermo

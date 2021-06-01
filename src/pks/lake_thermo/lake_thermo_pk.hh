@@ -228,6 +228,15 @@ public:
                    Teuchos::RCP<const TreeVector> u,
                    Teuchos::RCP<TreeVector> du) override;
 
+  // -- access methods
+  virtual Teuchos::RCP<Operators::Operator>
+      my_operator(const Operators::OperatorType& type) override;
+
+  virtual Teuchos::RCP<Operators::PDE_HelperDiscretization>
+      my_pde(const Operators::PDEType& type) override {
+        std::cout << "In lake_pk_->my_pde " << matrix_diff_ << std::endl;
+        return matrix_diff_; }
+
  protected:
   // These must be provided by the deriving PK.
   // -- setup the evaluators
@@ -316,6 +325,8 @@ public:
   bool coupled_to_subsurface_via_flux_;
   bool coupled_to_surface_via_temp_;
   bool coupled_to_surface_via_flux_;
+
+  bool coupled_to_soil_via_temp_;
 
   // Keys
   Key temperature_key_;

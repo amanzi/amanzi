@@ -10,6 +10,6 @@ MPC for the 1D lake model.
 
 namespace Amanzi {
 
-RegisteredPKFactory<MPCLake1D> MPCLake1D::reg_("lake model");
+RegisteredPKFactory<MPCLake1D> MPCLake1D::reg_("coupled lake-soil model");
 
 } // namespace

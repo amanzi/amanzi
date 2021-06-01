@@ -1,6 +1,9 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "EpetraExt_RowMatrixOut.h"
-
+#include "TreeOperator.hh"
+#include "PDE_CouplingFlux.hh"
+#include "InverseFactory.hh"
+#include "PDE_Diffusion.hh"
 
 #include "mpc_lake_1D.hh"
 
@@ -20,65 +23,74 @@ MPCLake1D::Setup(const Teuchos::Ptr<State>& S) {
   // tweak the sub-PK parameter lists
   Teuchos::Array<std::string> names = plist_->get<Teuchos::Array<std::string> >("PKs order");
 
-//  // -- turn on coupling
-//  pks_list_->sublist(names[0]).set("coupled to surface via flux", true);
-//  pks_list_->sublist(names[1]).set("coupled to subsurface via flux", true);
-//
+  // -- turn on coupling
+  pks_list_->sublist(names[0]).set("coupled to soil via temp", true);
+  pks_list_->sublist(names[1]).set("coupled to lake via temp", true);
+
+  std::cout << "names[0] = " << names[0] << std::endl;
+  std::cout << "names[1] = " << names[1] << std::endl;
+
 //  // -- ensure local ops are suface ops
 //  pks_list_->sublist(names[1]).sublist("diffusion preconditioner").set("surface operator", true);
 //  pks_list_->sublist(names[1]).sublist("accumulation preconditioner").set("surface operator", true);
-//
-//  domain_ss_ = plist_->get<std::string>("domain name","domain");
-//  domain_surf_ = (domain_ss_.empty() || domain_ss_ == "domain") ? "surface" : std::string("surface_")+domain_ss_;
-//  domain_surf_ = plist_->get<std::string>("surface domain name",domain_surf_);
-//  // grab the meshes
-//  surf_mesh_ = S->GetMesh(domain_surf_);
-//  domain_mesh_ = S->GetMesh(domain_ss_);
-//
-//  // cast the PKs
-//  domain_flow_pk_ = sub_pks_[0];
-//  surf_flow_pk_ = sub_pks_[1];
-//
-//  // call the MPC's setup, which calls the sub-pk's setups
-//  StrongMPC<PK_PhysicalBDF_Default>::Setup(S);
-//
-//  // require the coupling fields, claim ownership
-//  S->RequireField(Keys::getKey(domain_surf_,"surface_subsurface_flux"), name_)
-//    ->SetMesh(surf_mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
-//
-//  // Create the preconditioner.
-//  // -- collect the preconditioners
-//  precon_ = domain_flow_pk_->preconditioner();
-//  precon_surf_ = surf_flow_pk_->preconditioner();
-//
+
+  domain_lake_ = pks_list_->sublist(names[0]).get<std::string>("domain name","domain");
+  domain_soil_ = pks_list_->sublist(names[1]).get<std::string>("domain name","domain");
+
+  std::cout << "domain_lake_ = " << domain_lake_ << std::endl;
+  std::cout << "domain_soil_ = " << domain_soil_ << std::endl;
+
+  // grab the meshes
+  lake_mesh_ = S->GetMesh(domain_lake_);
+  soil_mesh_ = S->GetMesh(domain_soil_);
+
+  // cast the PKs
+  lake_pk_ = sub_pks_[0];
+  soil_pk_ = sub_pks_[1];
+
+  // require the coupling fields, claim ownership
+  S->RequireField(Keys::getKey(domain_lake_,"lake_soil_temperature"), name_)
+    ->SetMesh(lake_mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
+
+  // Create the preconditioner.
+  // -- collect the preconditioners
+  precon_lake_ = lake_pk_->preconditioner();
+  precon_soil_ = soil_pk_->preconditioner();
+
+  ti_list_ = Teuchos::sublist(plist_, "time integrator", true);
+
 //  // -- set parameters for an inverse
 //  Teuchos::ParameterList inv_list = plist_->sublist("inverse");
 //  inv_list.setParameters(plist_->sublist("preconditioner"));
 //  inv_list.setParameters(plist_->sublist("linear solver"));
-//  precon_->set_inverse_parameters(inv_list);
-//
+//  precon_lake_->set_inverse_parameters(inv_list);
+
 //  // -- push the surface local ops into the subsurface global operator
 //  for (Operators::Operator::op_iterator op = precon_surf_->begin();
 //       op != precon_surf_->end(); ++op) {
-//    precon_->OpPushBack(*op);
+//    precon_lake_->OpPushBack(*op);
 //  }
-//
-//  // grab the debuggers
-//  domain_db_ = domain_flow_pk_->debugger();
-//  surf_db_ = surf_flow_pk_->debugger();
+
+  // grab the debuggers
+  lake_db_ = lake_pk_->debugger();
+  soil_db_ = soil_pk_->debugger();
 //  water_->set_db(domain_db_);
+
+  // call the MPC's setup, which calls the sub-pk's setups
+  StrongMPC<PK_PhysicalBDF_Default>::Setup(S);
+
 }
 
-void
+void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
 
-MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
-//   // initialize coupling terms
-//  S->GetFieldData(Keys::getKey(domain_surf_,"surface_subsurface_flux"), name_)->PutScalar(0.);
-//  S->GetField(Keys::getKey(domain_surf_,"surface_subsurface_flux"), name_)->set_initialized();
-//  // Initialize all sub PKs.
-//
-//  MPC<PK_PhysicalBDF_Default>::Initialize(S);
-//
+   // initialize coupling terms
+  S->GetFieldData(Keys::getKey(domain_lake_,"lake_soil_temperature"), name_)->PutScalar(0.);
+  S->GetField(Keys::getKey(domain_lake_,"lake_soil_temperature"), name_)->set_initialized();
+
+  // Initialize all sub PKs.
+
+  StrongMPC<PK_PhysicalBDF_Default>::Initialize(S);
+
 //  // // ensure continuity of ICs... surface takes precedence.
 //  // CopySurfaceToSubsurface(*S->GetFieldData(Keys::getKey(domain_surf_,"pressure"), sub_pks_[1]->name()),
 //  //       		  S->GetFieldData(Keys::getKey(domain_ss_,"pressure"), sub_pks_[0]->name()).ptr());
@@ -86,8 +98,138 @@ MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
 //  CopySubsurfaceToSurface(*S->GetFieldData(Keys::getKey(domain_ss_,"pressure"), sub_pks_[0]->name()),
 //			  S->GetFieldData(Keys::getKey(domain_surf_,"pressure"), sub_pks_[1]->name()).ptr());
 
-  // Initialize my timestepper.
-  PK_BDF_Default::Initialize(S);
+//  // Initialize my timestepper.
+//  PK_BDF_Default::Initialize(S);
+
+  auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
+  op_tree_lake_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
+
+  auto op0 = lake_pk_->my_operator(Operators::OPERATOR_MATRIX)->Clone();
+  auto op1 = soil_pk_->my_operator(Operators::OPERATOR_MATRIX)->Clone();
+
+  op_tree_lake_->set_operator_block(0, 0, op0);
+  op_tree_lake_->set_operator_block(1, 1, op1);
+
+  std::cout << "CHECK op_tree_lake_ :" << op_tree_lake_->get_operator() << std::endl;
+
+  // off-diagonal blocks are coupled PDEs
+  // -- minimum composite vector spaces containing the coupling term
+  auto mesh_lake = S_->GetMesh("lake");
+  auto mesh_soil = S_->GetMesh("soil");
+
+  auto& mmap = solution_->SubVector(0)->Data()->ViewComponent("cell", false)->Map();
+  auto& gmap = solution_->SubVector(0)->Data()->ViewComponent("cell", true)->Map();
+  int npoints_owned = mmap.NumMyPoints();
+
+  auto cvs_lake = Teuchos::rcp(new CompositeVectorSpace());
+  auto cvs_soil = Teuchos::rcp(new CompositeVectorSpace());
+
+  cvs_lake->SetMesh(mesh_lake)->SetGhosted(true)
+              ->AddComponent("cell", AmanziMesh::CELL, 1);
+
+  cvs_soil->SetMesh(mesh_soil)->SetGhosted(true)
+              ->AddComponent("cell", AmanziMesh::CELL, 1);
+
+
+//  // -- indices transmissibimility coefficients for matrix-fracture flux
+//  const auto& kn = *S_->GetFieldData("fracture-normal_permeability")->ViewComponent("cell");
+//  double gravity;
+//  S->GetConstantVectorData("gravity")->Norm2(&gravity);
+
+  int ncells_owned_f = mesh_soil->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  auto inds_lake = std::make_shared<std::vector<std::vector<int> > >(npoints_owned);
+  auto inds_soil = std::make_shared<std::vector<std::vector<int> > >(npoints_owned);
+  auto values = std::make_shared<std::vector<double> >(npoints_owned);
+
+  int np(0);
+  for (int c = 0; c < ncells_owned_f; ++c) {
+    int f = mesh_soil->entity_get_parent(AmanziMesh::CELL, c);
+    double area = mesh_soil->cell_volume(c);
+    int first = mmap.FirstPointInElement(f);
+    int ndofs = mmap.ElementSize(f);
+
+    for (int k = 0; k < ndofs; ++k) {
+      (*inds_lake)[np].resize(1);
+      (*inds_soil)[np].resize(1);
+      (*inds_lake)[np][0] = first + k;
+      (*inds_soil)[np][0] = c;
+
+      (*values)[np] = 1.*c * area; //kn[0][c] * area / gravity;
+      np++;
+    }
+  }
+
+  inds_lake->resize(np);
+  inds_soil->resize(np);
+  values->resize(np);
+
+  // -- operators
+  Teuchos::ParameterList oplist;
+
+  auto op_coupling00 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
+      oplist, cvs_lake, cvs_lake, inds_lake, inds_lake, op0));
+  op_coupling00->Setup(values, 1.0);
+  op_coupling00->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  auto op_coupling01 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
+      oplist, cvs_lake, cvs_soil, inds_lake, inds_soil));
+  op_coupling01->Setup(values, -1.0);
+  op_coupling01->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  auto op_coupling10 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
+      oplist, cvs_soil, cvs_lake, inds_soil, inds_lake));
+  op_coupling10->Setup(values, -1.0);
+  op_coupling10->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  auto op_coupling11 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
+      oplist, cvs_soil, cvs_soil, inds_soil, inds_soil, op1));
+  op_coupling11->Setup(values, 1.0);
+  op_coupling11->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  op_tree_lake_->set_operator_block(0, 1, op_coupling01->global_operator());
+  op_tree_lake_->set_operator_block(1, 0, op_coupling10->global_operator());
+
+  // create a global problem
+//  lake_pk_->my_pde(Operators::PDE_DIFFUSION)->ApplyBCs(true, true, true);
+
+  preconditioner_list_ = Teuchos::sublist(plist_, "preconditioners", true);
+  linear_operator_list_ = Teuchos::sublist(plist_, "solvers", true);
+  ti_list_ = Teuchos::sublist(plist_, "time integrator", true);
+
+  std::string name = ti_list_->get<std::string>("preconditioner");
+  std::string ls_name = ti_list_->get<std::string>("preconditioner enhancement", "none");
+  auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(name, *preconditioner_list_,
+                        ls_name, *linear_operator_list_,
+                        true);
+
+
+  std::cout << "plist_ = " << plist_ << std::endl;
+  std::cout << "plist_->sublist('inverse') = " << plist_->sublist("inverse") << std::endl;
+  op_tree_lake_->set_inverse_parameters(plist_->sublist("inverse"));
+  op_tree_lake_->InitializeInverse();
+//  std::cout << "inv_list = " << inv_list << std::endl;
+//  op_tree_lake_->set_inverse_parameters(inv_list);
+//  op_tree_lake_->InitializeInverse();
+
+  // stationary solve is modelled with large dt. To pick the correct
+  // boundary conditions, dt is negative. This assumes that we are at
+  // the beginning of simulation.
+//  if (ti_list_->isSublist("initialization")) {
+//    // bool wells_on = ti_list_->sublist("initialization").get<bool>("active wells", false);
+//    double dt(-1e+98), dt_solver;
+//    bool fail = time_stepper_->TimeStep(dt, dt_solver, solution_);
+//    if (fail) Exceptions::amanzi_throw("Solver for coupled Darcy flow did not converge.");
+//  }
+
+//  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+  if (true) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "MPC lake:" << std::endl
+               << op_tree_lake_->PrintDiagnostics() << std::endl
+               << vo_->color("green") << "Initialization of PK is complete: my dT=" << get_dt()
+               << vo_->reset() << std::endl << std::endl;
+  }
+
 }
 
 void
@@ -103,77 +245,108 @@ MPCLake1D::set_states(const Teuchos::RCP<State>& S,
 //    By default this just calls each sub pk FunctionalResidual().
 void
 MPCLake1D::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
-                            Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
+                            Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) {
+
+  std::cout << "FunctionalResidual START" << std::endl;
+
+  // generate local matrices and apply sources and boundary conditions
+  StrongMPC<PK_PhysicalBDF_Default>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
+
+  // although, residual calculation can be completed using off-diagonal
+  // blocks, we use global matrix-vector multiplication instead.
+  op_tree_lake_->AssembleMatrix();
+  int ierr = op_tree_lake_->ApplyAssembled(*u_new, *f);
+  AMANZI_ASSERT(!ierr);
+
+  // diagonal blocks in tree operator must be lake and soil
+  for (int i = 0; i < 2; ++i) {
+    AMANZI_ASSERT(sub_pks_[i]->name() == "lake thermo" ||
+                  sub_pks_[i]->name() == "soil thermo");
+  }
+  auto op0 = sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX);
+  auto op1 = sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX);
+
+  f->SubVector(0)->Data()->Update(-1.0, *op0->rhs(), 1.0);
+  f->SubVector(1)->Data()->Update(-1.0, *op1->rhs(), 1.0);
+
+//  lake_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(0),
+//            u_new->SubVector(0), f->SubVector(0));
+//  soil_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(1),
+//            u_new->SubVector(1), f->SubVector(1));
+
 //  // propagate updated info into state
 //  Solution_to_State(*u_new, S_next_);
 //
 //  // Evaluate the surface flow residual
-//  surf_flow_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(1),
+//  soil_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(1),
 //                            u_new->SubVector(1), g->SubVector(1));
 //
-//  // The residual of the surface flow equation provides the mass flux from
-//  // subsurface to surface.
-//
-//  Epetra_MultiVector& source = *S_next_->GetFieldData(Keys::getKey(domain_surf_,"surface_subsurface_flux"),
-//          name_)->ViewComponent("cell",false);
-//  source = *g->SubVector(1)->Data()->ViewComponent("cell",false);
-//
+////
+////  // The residual of the surface flow equation provides the mass flux from
+////  // subsurface to surface.
+////
+////  Epetra_MultiVector& source = *S_next_->GetFieldData(Keys::getKey(domain_surf_,"surface_subsurface_flux"),
+////          name_)->ViewComponent("cell",false);
+////  source = *g->SubVector(1)->Data()->ViewComponent("cell",false);
+////
 //  // Evaluate the subsurface residual, which uses this flux as a Neumann BC.
-//  domain_flow_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(0),
+//  lake_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(0),
 //          u_new->SubVector(0), g->SubVector(0));
 //
-//  // All surface to subsurface fluxes have been taken by the subsurface.
-//  g->SubVector(1)->Data()->ViewComponent("cell",false)->PutScalar(0.);
+////  // All surface to subsurface fluxes have been taken by the subsurface.
+////  g->SubVector(1)->Data()->ViewComponent("cell",false)->PutScalar(0.);
+
+  std::cout << "FunctionalResidual DONE" << std::endl;
 }
 
 // -- Apply preconditioner to u and returns the result in Pu.
 int MPCLake1D::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu) {
-  Teuchos::OSTab tab = vo_->getOSTab();
-//  if (vo_->os_OK(Teuchos::VERB_EXTREME))
-//    *vo_->os() << "Precon application:" << std::endl;
-//
-//  // call the precon's inverse
-//  if (vo_->os_OK(Teuchos::VERB_EXTREME))
-//    *vo_->os() << "Precon applying subsurface operator." << std::endl;
-//  int ierr = precon_->ApplyInverse(*u->SubVector(0)->Data(), *Pu->SubVector(0)->Data());
-//
-//  if (vo_->os_OK(Teuchos::VERB_EXTREME))
-//    *vo_->os() << "Precon applying  CopySubsurfaceToSurface." << std::endl;
-//  // Copy subsurface face corrections to surface cell corrections
-//  CopySubsurfaceToSurface(*Pu->SubVector(0)->Data(),
-//                          Pu->SubVector(1)->Data().ptr());
-//
-//  // // Derive surface face corrections.
-//  // UpdateConsistentFaceCorrectionWater_(u, Pu);
-//
-//  // dump to screen
-//  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-//    std::vector<std::string> vnames;
-//    vnames.push_back("p");
-//    vnames.push_back("PC*p");
-//
-//    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
-//    vecs.push_back(u->SubVector(0)->Data().ptr());
-//    vecs.push_back(Pu->SubVector(0)->Data().ptr());
-//
-//    *vo_->os() << " Subsurface precon:" << std::endl;
-//    domain_db_->WriteVectors(vnames, vecs, true);
-//
-//    vecs[0] = u->SubVector(1)->Data().ptr();
-//    vecs[1] = Pu->SubVector(1)->Data().ptr();
-//
-//    *vo_->os() << " Surface precon:" << std::endl;
-//    surf_db_->WriteVectors(vnames, vecs, true);
+
+  Pu->PutScalar(0.0);
+  return op_tree_lake_->ApplyInverse(*u, *Pu);
+
+  /*
+  int ierr = 0;
+//  if (precon_type_ == PRECON_NONE) {
+//    *Pu = *u;
+//    ierr = 1;
+//  } else if (precon_type_ == PRECON_BLOCK_DIAGONAL) {
+//    ierr = StrongMPC::ApplyPreconditioner(u,Pu);
+//  } else if (precon_type_ == PRECON_PICARD) {
+//    ierr = op_tree_lake_->ApplyInverse(*u, *Pu);
+//  } else if (precon_type_ == PRECON_EWC) {
+//    ierr = op_tree_lake_->ApplyInverse(*u, *Pu);
 //  }
 
-//  return (ierr > 0) ? 0 : 1;
+//  std::cout << "before ApplyInverse" << std::endl;
+//  ierr = op_tree_lake_->ApplyInverse(*u, *Pu);
+//  std::cout << "after ApplyInverse" << std::endl;
+
+//  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+//    *vo_->os() << "PC * residuals:" << std::endl;
+//    std::vector<std::string> vnames;
+//    vnames.push_back("  PC*r_p"); vnames.push_back("  PC*r_T");
+//    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+//    vecs.push_back(Pu->SubVector(0)->Data().ptr());
+//    vecs.push_back(Pu->SubVector(1)->Data().ptr());
+//    db_->WriteVectors(vnames, vecs, true);
+//  }
+
+  ierr = StrongMPC::ApplyPreconditioner(u,Pu);
+
+  return (ierr > 0) ? 0 : 1;
+  */
+
 }
 
 // -- Update the preconditioner.
 void
 MPCLake1D::UpdatePreconditioner(double t,
         Teuchos::RCP<const TreeVector> up, double h) {
+
+  std::cout << "UpdatePreconditioner START" << std::endl;
+
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "Precon update at t = " << t << std::endl;
@@ -181,43 +354,55 @@ MPCLake1D::UpdatePreconditioner(double t,
   // order important -- subsurface's pk includes the surface's local ops, so
   // doing the subsurface 2nd re-inits the surface matrices (and doesn't
   // refill them).  This is why subsurface is first
-  StrongMPC<PK_PhysicalBDF_Default>::UpdatePreconditioner(t, up, h);
+//  StrongMPC<PK_PhysicalBDF_Default>::UpdatePreconditioner(t, up, h);
+  op_tree_lake_->ComputeInverse();
+
+  std::cout << "UpdatePreconditioner DONE" << std::endl;
+
+
 }
 
 // -- Modify the predictor.
 bool
 MPCLake1D::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
         Teuchos::RCP<TreeVector> u) {
-  bool modified = false;
-
+//  bool modified = false;
+//
 //  // Calculate consistent faces
-//  modified = domain_flow_pk_->ModifyPredictor(h, u0->SubVector(0), u->SubVector(0));
+//  modified = soil_pk_->ModifyPredictor(h, u0->SubVector(0), u->SubVector(0));
 //
-//  // Merge surface cells with subsurface faces
-//  if (modified) {
-//
-//    S_next_->GetFieldEvaluator(Keys::getKey(domain_surf_,"relative_permeability"))->HasFieldChanged(S_next_.ptr(),name_);
-//    Teuchos::RCP<const CompositeVector> h_prev = S_inter_->GetFieldData(Keys::getKey(domain_surf_,"ponded_depth"));
-//    MergeSubsurfaceAndSurfacePressure(*h_prev, u->SubVector(0)->Data().ptr(),
-//            u->SubVector(1)->Data().ptr());
-//  }
-//
-//
-//  // Hack surface faces
-//  bool newly_modified = false;
-//  newly_modified |= water_->ModifyPredictor_Heuristic(h, u);
-//  newly_modified |= water_->ModifyPredictor_WaterSpurtDamp(h, u);
-//  modified |= newly_modified;
-//
-//  // -- copy surf --> sub
-//  if (newly_modified) {
-//    CopySurfaceToSubsurface(*u->SubVector(1)->Data(), u->SubVector(0)->Data().ptr());
-//  }
+////  // Merge surface cells with subsurface faces
+////  if (modified) {
+////
+////    S_next_->GetFieldEvaluator(Keys::getKey(domain_surf_,"relative_permeability"))->HasFieldChanged(S_next_.ptr(),name_);
+////    Teuchos::RCP<const CompositeVector> h_prev = S_inter_->GetFieldData(Keys::getKey(domain_surf_,"ponded_depth"));
+////    MergeSubsurfaceAndSurfacePressure(*h_prev, u->SubVector(0)->Data().ptr(),
+////            u->SubVector(1)->Data().ptr());
+////  }
+////
+////
+////  // Hack surface faces
+////  bool newly_modified = false;
+////  newly_modified |= water_->ModifyPredictor_Heuristic(h, u);
+////  newly_modified |= water_->ModifyPredictor_WaterSpurtDamp(h, u);
+////  modified |= newly_modified;
+////
+////  // -- copy surf --> sub
+////  if (newly_modified) {
+////    CopySurfaceToSubsurface(*u->SubVector(1)->Data(), u->SubVector(0)->Data().ptr());
+////  }
 //
 //  // Calculate consistent surface faces
-//  modified |= surf_flow_pk_->ModifyPredictor(h, u0->SubVector(1), u->SubVector(1));
+//  modified |= lake_pk_->ModifyPredictor(h, u0->SubVector(1), u->SubVector(1));
+//
+//  return modified;
 
+  bool modified(false);
+
+  // potentially update faces
+  modified |= StrongMPC<PK_PhysicalBDF_Default>::ModifyPredictor(h, u0, u);
   return modified;
+
 }
 
 // -- Modify the correction.
@@ -225,6 +410,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 MPCLake1D::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
         Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
   Teuchos::OSTab tab = vo_->getOSTab();
+
 //  // dump to screen
 //  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
 //    *vo_->os() << "NKA'd, PC'd correction." << std::endl;
@@ -246,22 +432,22 @@ MPCLake1D::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
 //    *vo_->os() << " Surface precon:" << std::endl;
 //    surf_db_->WriteVectors(vnames, vecs, true);
 //  }
-//
-//  // modify correction using sub-pk approaches
-//  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult modified_res =
-//    StrongMPC<PK_PhysicalBDF_Default>::ModifyCorrection(h, res, u, du);
-//
+
+  // modify correction using sub-pk approaches
+  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult modified_res =
+    StrongMPC<PK_PhysicalBDF_Default>::ModifyCorrection(h, res, u, du);
+
 //  // modify correction using water approaches
 //  int n_modified = 0;
 //  n_modified += water_->ModifyCorrection_WaterFaceLimiter(h, res, u, du);
 //  double damping = water_->ModifyCorrection_WaterSpurtDamp(h, res, u, du);
 //  n_modified += water_->ModifyCorrection_WaterSpurtCap(h, res, u, du, damping);
-//
+
 //  // -- accumulate globally
 //  int n_modified_l = n_modified;
 //  u->SubVector(0)->Data()->Comm()->SumAll(&n_modified_l, &n_modified, 1);
 //  bool modified = (n_modified > 0) || (damping < 1.);
-//
+
 //  // -- calculate consistent subsurface cells
 //  if (modified) {
 //    // if (consistent_cells_) {
@@ -275,12 +461,12 @@ MPCLake1D::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
 //    CopySubsurfaceToSurface(*du->SubVector(0)->Data(),
 //                            du->SubVector(1)->Data().ptr());
 //  }
-//
-//  // if (modified) {
-//  //   // Derive surface face corrections.
-//  //   UpdateConsistentFaceCorrectionWater_(res, du);
-//  // }
-//
+
+  // if (modified) {
+  //   // Derive surface face corrections.
+  //   UpdateConsistentFaceCorrectionWater_(res, du);
+  // }
+
 //  // dump to screen
 //  if (modified && vo_->os_OK(Teuchos::VERB_HIGH)) {
 //    *vo_->os() << "Modified correction." << std::endl;
@@ -302,6 +488,8 @@ MPCLake1D::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
 //    *vo_->os() << " Surface precon:" << std::endl;
 //    surf_db_->WriteVectors(vnames, vecs, true);
 //  }
+
+  return modified_res;
 
 //  return (modified_res || modified) ? AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED_LAG_BACKTRACKING :
 //      AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;

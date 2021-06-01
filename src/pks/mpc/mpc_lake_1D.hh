@@ -12,6 +12,7 @@
 
 #include "Operator.hh"
 #include "pk_physical_bdf_default.hh"
+#include "TreeOperator.hh"
 
 #include "strong_mpc.hh"
 
@@ -53,6 +54,10 @@ class MPCLake1D : public StrongMPC<PK_PhysicalBDF_Default> {
       ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
                        Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
 
+  Teuchos::RCP<const Teuchos::ParameterList> linear_operator_list_;
+  Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
+  Teuchos::RCP<Teuchos::ParameterList> ti_list_;
+
  protected:
   // void
   // UpdateConsistentFaceCorrectionWater_(const Teuchos::RCP<const TreeVector>& u,
@@ -76,6 +81,9 @@ class MPCLake1D : public StrongMPC<PK_PhysicalBDF_Default> {
   // debugger for dumping vectors
   Teuchos::RCP<Debugger> lake_db_;
   Teuchos::RCP<Debugger> soil_db_;
+
+  Teuchos::RCP<Operators::TreeOperator> op_tree_lake_, op_tree_soil_, op_tree_pc_;
+  Teuchos::RCP<TreeVector> op_tree_rhs_;
 
  private:
   // factory registration

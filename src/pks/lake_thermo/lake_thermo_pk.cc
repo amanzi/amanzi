@@ -83,6 +83,8 @@ void Lake_Thermo_PK::Setup(const Teuchos::Ptr<State>& S) {
   SetupLakeThermo_(S);
   SetupPhysicalEvaluators_(S);
 
+  std::cout << "setup lake_thermo DONE" << std::endl;
+
 };
 
 
@@ -994,6 +996,17 @@ Lake_Thermo_PK::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
     return AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED;
   }
   return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
+}
+
+/* ******************************************************************
+* Return a pointer to a local operator
+****************************************************************** */
+Teuchos::RCP<Operators::Operator> Lake_Thermo_PK::my_operator(
+    const Operators::OperatorType& type)
+{
+  if (type == Operators::OPERATOR_MATRIX) return matrix_;
+  else if (type == Operators::OPERATOR_PRECONDITIONER_RAW) return preconditioner_;
+  return Teuchos::null;
 }
 
 } // namespace LakeThermo
