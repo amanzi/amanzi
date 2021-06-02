@@ -161,7 +161,7 @@ void CompositeVector::InitMap_(const CompositeVectorSpace& space) {
   // generate the master's maps
   std::vector<Teuchos::RCP<const Epetra_BlockMap> > mastermaps;
   for (CompositeVectorSpace::name_iterator name = space.begin(); name != space.end(); ++name) {
-    mastermaps.push_back(space.Map(*name, false));
+    mastermaps.emplace_back(space.Map(*name, false));
   }
 
   // create the master BlockVector
@@ -172,7 +172,7 @@ void CompositeVector::InitMap_(const CompositeVectorSpace& space) {
     // generate the ghost's maps
     std::vector<Teuchos::RCP<const Epetra_BlockMap> > ghostmaps;
     for (CompositeVectorSpace::name_iterator name=space.begin(); name!=space.end(); ++name) {
-      ghostmaps.push_back(space.Map(*name, true));
+      ghostmaps.emplace_back(space.Map(*name, true));
     }
     // create the ghost BlockVector
     ghostvec_ = Teuchos::rcp(new BlockVector(Comm(), names_, ghostmaps, space.num_dofs_));
