@@ -44,13 +44,6 @@ same region-based partitioning.
     * `"rooting profile beta [-]`" ``[double]`` beta in the rooting profile
       function [-] Note that these are from the CLM 4.5 Technical Note.
 
-    * `"mannings n`" ``[double]`` Manning's n [??]  THIS IS NOT CURRENTLY USED.
-
-    * `"leaf on time [doy]`" ``[double]`` Day of year, relative to time 0, when leaves
-       begin transpiring.  Note that -1 implies evergreen. [doy]
-    * `"leaf off time [doy]`" ``[double]`` Day of year, relative to time 0, when leaves
-       stop transpiring.  Note that -1 implies evergreen. [doy]
-
     * `"mafic potential at fully closed stomata [Pa]`" ``[double]``
     * `"mafic potential at fully open stomata [Pa]`" ``[double]`` Transpiration
       is typically multipled by a limiter that is empirically modeling stomata
@@ -58,12 +51,26 @@ same region-based partitioning.
       mafic potential (soil pore capillary pressure), between these two
       values. [Pa]
 
+    * `"leaf on time [doy]`" ``[double]`` Day of year, relative to time 0, when leaves
+       begin transpiring.  Note that -1 implies evergreen. [doy]
+    * `"leaf off time [doy]`" ``[double]`` Day of year, relative to time 0, when leaves
+       stop transpiring.  Note that -1 implies evergreen. [doy]
+
+    * `"Priestley-Taylor alpha of snow [-]`" ``[double]`` Evaporation coefficient
+      in the Priestley-Taylor model, used in sublimation of snow.
+    * `"Priestley-Taylor alpha of bare ground [-]`" ``[double]`` Evaporation coefficient
+      in the Priestley-Taylor model, used in bare soil
+    * `"Priestley-Taylor alpha of canopy [-]`" ``[double]`` Evaporation coefficient
+      in the Priestley-Taylor model, used in sublimation of snow.
+    * `"Priestley-Taylor alpha of transpiration [-]`" ``[double]`` Evaporation coefficient
+      in the Priestley-Taylor model, used in transpiration.
+
     * `"interception coefficient [-]`" ``[double]`` Fraction, per unit LAI, of
        water intercepted by the canopy.
 
-    * `"albedo of ground surface [-]`" ``[double]`` Albedo of the land cover
+    * `"albedo of bare ground [-]`" ``[double]`` Albedo of the land cover
       type, ranging from [0,1]
-    * `"emissivity of ground surface [-]`" ``[double]`` Emissivity of the land
+    * `"emissivity of bare ground [-]`" ``[double]`` Emissivity of the land
       cover type's bare ground, ranging from [0,1]
     * `"albedo of canopy [-]`" ``[double]`` Albedo of the land cover type's
       canopy, ranging from [0,1]
@@ -108,9 +115,11 @@ same region-based partitioning.
     * `"roughness length of bare ground [m]`" ``[double]`` Roughness length of
       the bare soil, used in calculating sensible/latent heat in the
       physics-based SEB model.  A typical value is 0.04.
-    * `"roughness length of snow-covered ground [m]`" ``[double]`` Roughness
+    * `"roughness length of snow [m]`" ``[double]`` Roughness
       length of the snow-covered soil, used in calculating sensible/latent heat
       in the physics-based SEB model.  A typical value is 0.004.
+
+    * `"Manning's n [?]`" ``[double]`` Manning's n [??]  THIS IS NOT CURRENTLY USED.
 
 */
 
@@ -144,6 +153,12 @@ struct LandCover {
   double leaf_on_doy;
   double leaf_off_doy;
 
+  // priestley-taylor model parameters
+  double pt_alpha_snow;
+  double pt_alpha_canopy;
+  double pt_alpha_ground;
+  double pt_alpha_transpiration;
+
   // radiation parameters
   double albedo_ground;
   double albedo_canopy;
@@ -162,12 +177,22 @@ struct LandCover {
   double dessicated_zone_thickness; // [m] Thickness over which vapor must diffuse
       //  when the soil is dry.
   double clapp_horn_b; // [-] exponent of the WRM, Clapp & Hornberger eqn 1
-  double bare_ground_surface_roughness; // [m] Fetch length for latent/sensible heat fluxes.
-  double snow_surface_roughness; // [m] Fetch length for latent/sensible heat fluxes.
+  double roughness_ground; // [m] Fetch length for latent/sensible heat fluxes.
+  double roughness_snow; // [m] Fetch length for latent/sensible heat fluxes.
 };
 
+// this one includes error checking for NaNs
 using LandCoverMap = std::map<std::string, LandCover>;
+LandCoverMap getLandCover(Teuchos::ParameterList& plist,
+                          const std::vector<std::string>& required_pars);
+
+namespace Impl {
+
+void checkValid(const std::string& region, const LandCover& lc, const std::string& parname);
 LandCoverMap getLandCover(Teuchos::ParameterList& plist);
+
+
+} // namespace Impl
 
 
 } // namespace SurfaceBalance

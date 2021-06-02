@@ -50,7 +50,7 @@ Utils::RegisteredFactory<FieldEvaluator,DrainageEvaluator> DrainageEvaluator::re
 
 Utils::RegisteredFactory<FieldEvaluator,PETPriestleyTaylorEvaluator> PETPriestleyTaylorEvaluator::reg_("potential evapotranspiration, Priestley-Taylor");
 
-Utils::RegisteredFactory<FieldEvaluator,EvaporationDownregulationEvaluator> EvaporationDownregulationEvaluator::reg_("evaporative resistance");
+Utils::RegisteredFactory<FieldEvaluator,EvaporationDownregulationEvaluator> EvaporationDownregulationEvaluator::reg_("evaporation downregulation via soil resistance");
 
 Utils::RegisteredFactory<FieldEvaluator,PlantWiltingFactorEvaluator> PlantWiltingFactorEvaluator::reg_("plant wilting factor");
 

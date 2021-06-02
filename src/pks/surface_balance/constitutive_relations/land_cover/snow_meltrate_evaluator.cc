@@ -35,7 +35,8 @@ void
 SnowMeltRateEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
 {
   // new state!
-  land_cover_ = getLandCover(S->ICList().sublist("land cover types"));
+  land_cover_ = getLandCover(S->ICList().sublist("land cover types"),
+                             {"snow_transition_depth"});
   SecondaryVariableFieldEvaluator::EnsureCompatibility(S);
 }
 

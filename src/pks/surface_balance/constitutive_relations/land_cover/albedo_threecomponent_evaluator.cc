@@ -93,7 +93,8 @@ void AlbedoThreeComponentEvaluator::EnsureCompatibility(const Teuchos::Ptr<State
 {
   // new state!
   if (land_cover_.size() == 0)
-    land_cover_ = getLandCover(S->ICList().sublist("land cover types"));
+    land_cover_ = getLandCover(S->ICList().sublist("land cover types"),
+            {"albedo_ground", "emissivity_ground"});
 
   CompositeVectorSpace domain_fac;
   domain_fac.SetMesh(S->GetMesh(domain_))

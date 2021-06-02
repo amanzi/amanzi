@@ -167,6 +167,7 @@ class SEBTwoComponentEvaluator : public SecondaryVariablesFieldEvaluator {
   Teuchos::RCP<Debugger> db_ss_;
   Teuchos::ParameterList plist_;
 
+  bool compatible_;
   bool model_1p1_;
  private:
   static Utils::RegisteredFactory<FieldEvaluator,SEBTwoComponentEvaluator> reg_;

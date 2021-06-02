@@ -59,40 +59,51 @@ groundHeatFlux(double temp_ground, double temp_air)
 
 
 PETPriestleyTaylorEvaluator::PETPriestleyTaylorEvaluator(Teuchos::ParameterList& plist) :
-    SecondaryVariableFieldEvaluator(plist)
+  SecondaryVariableFieldEvaluator(plist),
+  compatible_(false)
 {
-  pt_alpha_ = plist.get<double>("adjustment factor alpha [-]", 1.26);
+  domain_ = Keys::getDomain(my_key_);
 
-  auto domain = Keys::getDomain(my_key_);
+  evap_type_ = plist.get<std::string>("evaporation type");
+  if (!(evap_type_ == "bare ground" ||
+        evap_type_ == "snow" ||
+        evap_type_ == "canopy" ||
+        evap_type_ == "transpiration")) {
+    Errors::Message msg;
+    msg << "Priestley-Taylor does not currently support evapoation of type \"" << evap_type_ << "\".";
+    Exceptions::amanzi_throw(msg);
+  } else if (evap_type_ == "bare ground") {
+    evap_type_ = "ground";
+  }
 
-  air_temp_key_ = Keys::readKey(plist, domain, "air temperature", "air_temperature");
+  air_temp_key_ = Keys::readKey(plist, domain_, "air temperature", "air_temperature");
   dependencies_.insert(air_temp_key_);
 
-  ground_temp_key_ = Keys::readKey(plist, domain, "ground temperature", "temperature");
-  dependencies_.insert(ground_temp_key_);
+  surf_temp_key_ = Keys::readKey(plist, domain_, "surface temperature", "temperature");
+  dependencies_.insert(surf_temp_key_);
 
-  rel_hum_key_ = Keys::readKey(plist, domain, "relative humidity", "relative_humidity");
+  rel_hum_key_ = Keys::readKey(plist, domain_, "relative humidity", "relative_humidity");
   dependencies_.insert(rel_hum_key_);
 
-  elev_key_ = Keys::readKey(plist, domain, "elevation", "elevation");
+  elev_key_ = Keys::readKey(plist, domain_, "elevation", "elevation");
   dependencies_.insert(elev_key_);
 
-  rad_key_ = Keys::readKey(plist, domain, "net radiation", "net_radiation");
+  rad_key_ = Keys::readKey(plist, domain_, "net radiation", "net_radiation");
   dependencies_.insert(rad_key_);
 
   limiter_ = plist.get<bool>("include limiter", false);
   if (limiter_) {
-    limiter_key_ = Keys::readKey(plist, domain, "limiter");
+    limiter_key_ = Keys::readKey(plist, domain_, "limiter");
     dependencies_.insert(limiter_key_);
+    limiter_nvecs_ = plist.get<int>("limiter number of dofs", 1);
+    limiter_dof_ = plist.get<int>("limiter dof", 0);
   }
 
   one_minus_limiter_ = plist.get<bool>("include 1 - limiter", false);
   if (one_minus_limiter_) {
-    one_minus_limiter_key_ = Keys::readKey(plist, domain, "1 - limiter");
+    one_minus_limiter_key_ = Keys::readKey(plist, domain_, "1 - limiter");
     dependencies_.insert(one_minus_limiter_key_);
   }
-
-  is_snow_ = plist.get<bool>("sublimate snow", false);
 }
 
 // Required methods from SecondaryVariableFieldEvaluator
@@ -101,45 +112,105 @@ PETPriestleyTaylorEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 {
   const auto& air_temp = *S->GetFieldData(air_temp_key_)->ViewComponent("cell", false);
-  const auto& air_temp_inter = *S->GetFieldData(ground_temp_key_)->ViewComponent("cell", false);
+  const auto& surf_temp = *S->GetFieldData(surf_temp_key_)->ViewComponent("cell", false);
   const auto& rel_hum = *S->GetFieldData(rel_hum_key_)->ViewComponent("cell", false);
   const auto& elev = *S->GetFieldData(elev_key_)->ViewComponent("cell", false);
   const auto& rad = *S->GetFieldData(rad_key_)->ViewComponent("cell",false);
 
+  auto mesh = result->Mesh();
   auto& res = *result->ViewComponent("cell", false);
 
-  for (int c=0; c!=res.MyLength(); ++c) {
-    double lh_vap;
-    if (is_snow_)
-      lh_vap = PriestleyTaylor::latentHeatVaporization_snow(air_temp[0][c]);
-    else
-      lh_vap = PriestleyTaylor::latentHeatVaporization_water(air_temp[0][c]);
-    double ps_const = PriestleyTaylor::psychrometricConstant(lh_vap, elev[0][c]);
+  for (const auto& lc : land_cover_) {
+    AmanziMesh::Entity_ID_List lc_ids;
+    mesh->get_set_entities(lc.first, AmanziMesh::Entity_kind::CELL,
+                           AmanziMesh::Parallel_type::OWNED, &lc_ids);
 
-    double lh_vap_si = lh_vap * 4.184 * 1000.; // converts cal/gm to J/kg
+    double alpha = 0.;
+    bool is_snow = false;
+    if (evap_type_ == "snow") {
+      alpha = lc.second.pt_alpha_snow;
+      is_snow = true;
+    } else if (evap_type_ == "ground") {
+      alpha = lc.second.pt_alpha_ground;
+    } else if (evap_type_ == "canopy") {
+      alpha = lc.second.pt_alpha_canopy;
+    } else if (evap_type_ == "transpiration") {
+      alpha = lc.second.pt_alpha_transpiration;
+    }
 
-    double vp_slope = PriestleyTaylor::vaporPressureSlope(air_temp[0][c]);
-    double hf_ground = PriestleyTaylor::groundHeatFlux(air_temp_inter[0][c], air_temp[0][c]);
+    for (auto c : lc_ids) {
+      double lh_vap;
+      if (is_snow)
+        lh_vap = PriestleyTaylor::latentHeatVaporization_snow(air_temp[0][c]);
+      else
+        lh_vap = PriestleyTaylor::latentHeatVaporization_water(air_temp[0][c]);
 
-    double s1 = vp_slope / (vp_slope + ps_const);
-    double s2 = rad[0][c] - hf_ground; // net radiation balance in W/m^2
+      double ps_const = PriestleyTaylor::psychrometricConstant(lh_vap, elev[0][c]);
+      double lh_vap_si = lh_vap * 4.184 * 1000.; // converts cal/gm to J/kg
 
-    res[0][c] = pt_alpha_ / lh_vap_si * s1 * s2 / 1000.;  // 1000, density of
+      double vp_slope = PriestleyTaylor::vaporPressureSlope(air_temp[0][c]);
+      double hf_ground = PriestleyTaylor::groundHeatFlux(surf_temp[0][c], air_temp[0][c]);
+
+      double s1 = vp_slope / (vp_slope + ps_const);
+      double s2 = rad[0][c] - hf_ground; // net radiation balance in W/m^2
+
+      res[0][c] = alpha / lh_vap_si * s1 * s2 / 1000.;  // 1000, density of
                                                        // water converts from
                                                        // kg/m^2/s --> m/s
-    res[0][c] = std::max(res[0][c],0.0);
+      res[0][c] = std::max(res[0][c],0.0);
+    }
   }
 
   // apply a limiter if requested
   if (limiter_) {
     const auto& limiter = *S->GetFieldData(limiter_key_)->ViewComponent("cell", false);
-    res.Multiply(1, limiter, res, 0);
+    res(0)->Multiply(1, *limiter(limiter_dof_), *res(0), 0);
   }
   if (one_minus_limiter_) {
     const auto& limiter = *S->GetFieldData(one_minus_limiter_key_)->ViewComponent("cell", false);
     res.Multiply(-1, limiter, res, 1);
   }
 }
+
+
+void
+PETPriestleyTaylorEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
+{
+  if (!compatible_) {
+    land_cover_ = getLandCover(S->ICList().sublist("land cover types"),
+            {"pt_alpha_"+evap_type_});
+
+    // see if we can find a master fac
+    auto my_fac = S->RequireField(my_key_, my_key_);
+    my_fac->SetMesh(S->GetMesh(domain_))
+      ->SetGhosted()
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+    // Check plist for vis or checkpointing control.
+    bool io_my_key = plist_.get<bool>("visualize", true);
+    S->GetField(my_key_, my_key_)->set_io_vis(io_my_key);
+    bool checkpoint_my_key = plist_.get<bool>("checkpoint", false);
+    S->GetField(my_key_, my_key_)->set_io_checkpoint(checkpoint_my_key);
+
+    for (auto dep_key : dependencies_) {
+      auto fac = S->RequireField(dep_key);
+      if (dep_key == limiter_key_) {
+        fac->SetMesh(S->GetMesh(domain_))
+          ->SetGhosted()
+          ->AddComponent("cell", AmanziMesh::CELL, limiter_nvecs_);
+      } else {
+        fac->SetMesh(S->GetMesh(domain_))
+          ->SetGhosted()
+          ->AddComponent("cell", AmanziMesh::CELL, 1);
+      }
+
+      // Recurse into the tree to propagate info to leaves.
+      S->RequireFieldEvaluator(dep_key)->EnsureCompatibility(S);
+    }
+  }
+  compatible_ = true;
+}
+
 
 
 } //namespace

@@ -74,6 +74,11 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
   std::vector<int> fdirs;
   int nfaces_local = flux.size("face",false);
 
+  bool has_cells = face_coef->HasComponent("cell");
+  Teuchos::RCP<Epetra_MultiVector> face_cell_coef;
+  if (has_cells)
+    face_cell_coef = face_coef->ViewComponent("cell", true);
+
   int ncells = cell_coef.size("cell",true);
   for (int c=0; c!=ncells; ++c) {
     mesh->cell_get_faces_and_dirs(c, &faces, &fdirs);   
@@ -81,9 +86,7 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
     for (unsigned int n=0; n!=faces.size(); ++n) {
       int f = faces[n];
 
-      if  (face_coef->HasComponent("cell")) {        
-        (*face_coef->ViewComponent("cell",true))[0][c] = coef_cells[0][c];
-      }
+      if (has_cells) (*face_cell_coef)[0][c] = coef_cells[0][c];
 
       if (f < nfaces_local) {
         if (flux_v[0][f] * fdirs[n] > 0) {

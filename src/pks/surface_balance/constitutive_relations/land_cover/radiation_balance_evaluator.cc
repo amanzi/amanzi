@@ -67,7 +67,8 @@ void
 RadiationBalanceEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
 {
   if (!compatible_) {
-    land_cover_ = getLandCover(S->ICList().sublist("land cover types"));
+    land_cover_ = getLandCover(S->ICList().sublist("land cover types"),
+            {"beers_law_lw", "beers_law_sw", "emissivity_canopy", "albedo_canopy"});
 
     for (const auto& my_key : my_keys_) {
       // require all domains are the same

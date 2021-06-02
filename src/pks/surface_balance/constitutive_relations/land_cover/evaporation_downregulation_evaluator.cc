@@ -106,7 +106,8 @@ void
 EvaporationDownregulationEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
 {
   if (!consistent_) {
-    land_cover_ = getLandCover(S->ICList().sublist("land cover types"));
+    land_cover_ = getLandCover(S->ICList().sublist("land cover types"),
+            {"dessicated_zone_thickness", "clapp_horn_b"});
     for (const auto& lc : land_cover_) {
       models_[lc.first] = Teuchos::rcp(new EvaporationDownregulationModel(lc.second));
     }

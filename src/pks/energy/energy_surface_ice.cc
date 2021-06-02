@@ -82,16 +82,6 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_ ) {
     // -- ensure mass source from subsurface exists
-
-    /*
-    Key domain_ss;
-    if (boost::starts_with(domain_, "surface") && domain_.find("column") != std::string::npos) {
-      domain_ss = plist_->get<std::string>("subsurface domain name",
-              domain_.substr(8,domain_.size()));
-    } else {
-      domain_ss = plist_->get<std::string>("subsurface domain name", "domain");
-      } */
-
     Key key_ss = Keys::getKey(domain_,"surface_subsurface_flux");
 
     S->RequireField(key_ss)

@@ -19,6 +19,10 @@ Requires the following dependencies:
 
    * `"include limiter`" ``[bool]`` If true, multiply potential ET by a limiter
      to get an actual ET.
+   * `"limiter number of dofs`" ``[int]`` **1** Area fractions are often used
+     as limiters, and these have multiple dofs.  This provides how many.
+   * `"limiter dof`" ``[int]`` **0** Area fractions are often used
+     as limiters, and these have multiple dofs.  This provides which one to use.
    * `"include 1 - limiter`" ``[bool]`` If true, multiply potential ET by
      1 - a limiter (e.g. a limiter that partitions between two pools) to get
      actual ET.
@@ -41,6 +45,7 @@ Requires the following dependencies:
 
 #include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
+#include "LandCover.hh"
 
 namespace Amanzi {
 namespace SurfaceBalance {
@@ -92,22 +97,27 @@ class PETPriestleyTaylorEvaluator : public SecondaryVariableFieldEvaluator {
   PETPriestleyTaylorEvaluator(Teuchos::ParameterList& plist);
   PETPriestleyTaylorEvaluator(const PETPriestleyTaylorEvaluator& other) = default;
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const {
+  virtual Teuchos::RCP<FieldEvaluator> Clone() const override {
     return Teuchos::rcp(new PETPriestleyTaylorEvaluator(*this));
   }
 
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& result);
+          const Teuchos::Ptr<CompositeVector>& result) override;
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
+          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) override {
     Exceptions::amanzi_throw("NotImplemented: PETPriestleyTaylorEvaluator currently does not provide derivatives.");
   }
 
  protected:
+  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S) override;
 
+ protected:
+
+  Key domain_;
+  Key evap_type_;
   Key air_temp_key_;
-  Key ground_temp_key_;
+  Key surf_temp_key_;
   Key rel_hum_key_;
   Key elev_key_;
   Key rad_key_;
@@ -116,8 +126,12 @@ class PETPriestleyTaylorEvaluator : public SecondaryVariableFieldEvaluator {
 
   double pt_alpha_;
   bool limiter_;
+  int limiter_nvecs_;
+  int limiter_dof_;
   bool one_minus_limiter_;
-  bool is_snow_;
+  bool compatible_;
+
+  LandCoverMap land_cover_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,PETPriestleyTaylorEvaluator> reg_;

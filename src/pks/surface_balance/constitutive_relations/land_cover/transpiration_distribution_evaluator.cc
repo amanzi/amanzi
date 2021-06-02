@@ -151,7 +151,8 @@ TranspirationDistributionEvaluator::EnsureCompatibility(const Teuchos::Ptr<State
 {
   // new state!
   if (land_cover_.size() == 0)
-    land_cover_ = getLandCover(S->ICList().sublist("land cover types"));
+    land_cover_ = getLandCover(S->ICList().sublist("land cover types"),
+            {"leaf_on_doy", "leaf_off_doy"});
 
   // Ensure my field exists.  Requirements should be already set.
   AMANZI_ASSERT(!my_key_.empty());

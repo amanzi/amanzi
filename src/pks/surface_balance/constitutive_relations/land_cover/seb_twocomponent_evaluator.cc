@@ -37,6 +37,7 @@ namespace Relations {
 SEBTwoComponentEvaluator::SEBTwoComponentEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariablesFieldEvaluator(plist),
     plist_(plist),
+    compatible_(false),
     model_1p1_(false)
 {
   // determine the domain
@@ -85,7 +86,7 @@ SEBTwoComponentEvaluator::SEBTwoComponentEvaluator(Teuchos::ParameterList& plist
     // -- diagnostics
     albedo_key_ = Keys::readKey(plist, domain_, "albedo", "albedo");
     my_keys_.push_back(albedo_key_);
-    melt_key_ = Keys::readKey(plist, domain_, "snowmelt", "snowmelt");
+    melt_key_ = Keys::readKey(plist, domain_snow_, "snowmelt", "melt");
     my_keys_.push_back(melt_key_);
     evap_key_ = Keys::readKey(plist, domain_, "evaporation", "evaporative_flux");
     my_keys_.push_back(evap_key_);
@@ -142,6 +143,7 @@ SEBTwoComponentEvaluator::SEBTwoComponentEvaluator(Teuchos::ParameterList& plist
   sg_emissivity_key_ = Keys::readKey(plist, domain_, "emissivities", "emissivities");
   dependencies_.insert(sg_emissivity_key_);
   area_frac_key_ = Keys::readKey(plist, domain_, "area fractions", "area_fractions");
+  // explicitly excluded to allow snow_death algorithm to work, see #8
   dependencies_.insert(area_frac_key_);
 
   surf_temp_key_ = Keys::readKey(plist, domain_, "temperature", "temperature");
@@ -281,7 +283,7 @@ SEBTwoComponentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         if (model_1p1_) surf.pressure = surf_pres[0][c];
         surf.ponded_depth = ponded_depth[0][c];
         surf.unfrozen_fraction = unfrozen_fraction[0][c];
-        surf.roughness = lc.second.bare_ground_surface_roughness;
+        surf.roughness = lc.second.roughness_ground;
         if (model_1p1_) surf.density_w = 1000.;
         else surf.density_w = mass_dens[0][c];
         surf.dz = lc.second.dessicated_zone_thickness;
@@ -350,7 +352,7 @@ SEBTwoComponentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         surf.porosity = 1.;
         surf.saturation_gas = 0.;
         surf.unfrozen_fraction = unfrozen_fraction[0][c];
-        surf.roughness = lc.second.bare_ground_surface_roughness;
+        surf.roughness = lc.second.roughness_ground;
         if (model_1p1_) surf.density_w = 1000;
         else surf.density_w = mass_dens[0][c];
         surf.dz = lc.second.dessicated_zone_thickness;
@@ -369,7 +371,7 @@ SEBTwoComponentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         snow.density = snow_dens[0][c];
         snow.albedo = surf.albedo;
         snow.emissivity = surf.emissivity;
-        snow.roughness = lc.second.snow_surface_roughness;
+        snow.roughness = lc.second.roughness_snow;
 
         const Relations::EnergyBalance eb = Relations::UpdateEnergyBalanceWithSnow(surf, met, params, snow);
         const Relations::MassBalance mb = Relations::UpdateMassBalanceWithSnow(surf, params, eb);
@@ -520,111 +522,118 @@ SEBTwoComponentEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<Sta
 void
 SEBTwoComponentEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
 {
-  if (db_ == Teuchos::null)
-    db_ = Teuchos::rcp(new Debugger(S->GetMesh(domain_), my_keys_[0], plist_));
-  if (db_ss_ == Teuchos::null) {
-    Teuchos::ParameterList plist(plist_);
-    plist.remove("debug cells", false);
-    plist.remove("debug faces", false);
-    if (plist.isParameter("subsurface debug cells")) {
-      plist.set("debug cells", plist.get<Teuchos::Array<int>>("subsurface debug cells"));
-    } else {
+  if (!compatible_) {
+    if (db_ == Teuchos::null)
+      db_ = Teuchos::rcp(new Debugger(S->GetMesh(domain_), my_keys_[0], plist_));
+    if (db_ss_ == Teuchos::null) {
+      Teuchos::ParameterList plist(plist_);
+      plist.remove("debug cells", false);
+      plist.remove("debug faces", false);
+      if (plist.isParameter("subsurface debug cells")) {
+        plist.set("debug cells", plist.get<Teuchos::Array<int>>("subsurface debug cells"));
+      } else {
+      }
+      if (plist.isParameter("subsurface debug faces"))
+        plist.set("debug faces", plist.get<Teuchos::Array<int>>("subsurface debug faces"));
+      db_ss_ = Teuchos::rcp(new Debugger(S->GetMesh(domain_ss_), my_keys_[0], plist));
     }
-    if (plist.isParameter("subsurface debug faces"))
-      plist.set("debug faces", plist.get<Teuchos::Array<int>>("subsurface debug faces"));
-    db_ss_ = Teuchos::rcp(new Debugger(S->GetMesh(domain_ss_), my_keys_[0], plist));
-  }
 
-  if (land_cover_.size() == 0)
-    land_cover_ = getLandCover(S->ICList().sublist("land cover types"));
+    if (land_cover_.size() == 0)
+      land_cover_ = getLandCover(S->ICList().sublist("land cover types"),
+              {"roughness_snow", "roughness_ground",
+               "water_transition_depth", "snow_transition_depth",
+               "dessicated_zone_thickness"});
 
-  CompositeVectorSpace domain_fac;
-  domain_fac.SetMesh(S->GetMesh(domain_))
+    CompositeVectorSpace domain_fac;
+    domain_fac.SetMesh(S->GetMesh(domain_))
       ->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  CompositeVectorSpace domain_fac_owned;
-  domain_fac_owned.SetMesh(S->GetMesh(domain_))
+    CompositeVectorSpace domain_fac_owned;
+    domain_fac_owned.SetMesh(S->GetMesh(domain_))
       ->SetGhosted()
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
-  CompositeVectorSpace domain_fac_owned_ss;
-  domain_fac_owned_ss.SetMesh(S->GetMesh(domain_ss_))
+    CompositeVectorSpace domain_fac_owned_ss;
+    domain_fac_owned_ss.SetMesh(S->GetMesh(domain_ss_))
       ->SetGhosted()
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
-  CompositeVectorSpace domain_fac_owned_snow;
-  domain_fac_owned_snow.SetMesh(S->GetMesh(domain_snow_))
+    CompositeVectorSpace domain_fac_owned_snow;
+    domain_fac_owned_snow.SetMesh(S->GetMesh(domain_snow_))
       ->SetGhosted()
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
-  CompositeVectorSpace domain_fac_2;
-  domain_fac_2.SetMesh(S->GetMesh(domain_))
+    CompositeVectorSpace domain_fac_2;
+    domain_fac_2.SetMesh(S->GetMesh(domain_))
       ->SetGhosted()
       ->SetComponent("cell", AmanziMesh::CELL, 2);
 
-  CompositeVectorSpace domain_fac_ss;
-  domain_fac_ss.SetMesh(S->GetMesh(domain_ss_))
+    CompositeVectorSpace domain_fac_ss;
+    domain_fac_ss.SetMesh(S->GetMesh(domain_ss_))
       ->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  CompositeVectorSpace domain_fac_snow;
-  domain_fac_snow.SetMesh(S->GetMesh(domain_snow_))
+    CompositeVectorSpace domain_fac_snow;
+    domain_fac_snow.SetMesh(S->GetMesh(domain_snow_))
       ->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  for (auto my_key : my_keys_) {
-    auto my_fac = S->RequireField(my_key, my_key);
-    if (Keys::getDomain(my_key) == domain_snow_) {
-      my_fac->Update(domain_fac_owned_snow);
-    } else if (Keys::getDomain(my_key) == domain_) {
-      my_fac->Update(domain_fac_owned);
-    } else if (Keys::getDomain(my_key) == domain_ss_) {
-      my_fac->Update(domain_fac_owned_ss);
-    } else {
-      Errors::Message message("SEBTwoComponentEvaluator: Key requested with unrecognizable domain name.");
-      Exceptions::amanzi_throw(message);
+    for (auto my_key : my_keys_) {
+      auto my_fac = S->RequireField(my_key, my_key);
+      if (Keys::getDomain(my_key) == domain_snow_) {
+        my_fac->Update(domain_fac_owned_snow);
+      } else if (Keys::getDomain(my_key) == domain_) {
+        my_fac->Update(domain_fac_owned);
+      } else if (Keys::getDomain(my_key) == domain_ss_) {
+        my_fac->Update(domain_fac_owned_ss);
+      } else {
+        Errors::Message message("SEBTwoComponentEvaluator: Key requested with unrecognizable domain name.");
+        Exceptions::amanzi_throw(message);
+      }
+
+      // Check plist for vis or checkpointing control.
+      bool io_my_key = plist_.get<bool>("visualize", true);
+      S->GetField(my_key, my_key)->set_io_vis(io_my_key);
+      bool checkpoint_my_key = plist_.get<bool>("checkpoint", false);
+      S->GetField(my_key, my_key)->set_io_checkpoint(checkpoint_my_key);
     }
 
-    // Check plist for vis or checkpointing control.
-    bool io_my_key = plist_.get<bool>("visualize", true);
-    S->GetField(my_key, my_key)->set_io_vis(io_my_key);
-    bool checkpoint_my_key = plist_.get<bool>("checkpoint", false);
-    S->GetField(my_key, my_key)->set_io_checkpoint(checkpoint_my_key);
-  }
-
-  if (diagnostics_) {
-    S->RequireField(albedo_key_, albedo_key_)->Update(domain_fac_owned);
-    S->RequireField(melt_key_, melt_key_)->Update(domain_fac_owned);
-    S->RequireField(evap_key_, evap_key_)->Update(domain_fac_owned);
-    S->RequireField(snow_temp_key_, snow_temp_key_)->Update(domain_fac_owned);
-    S->RequireField(qE_sh_key_, qE_sh_key_)->Update(domain_fac_owned);
-    S->RequireField(qE_lh_key_, qE_lh_key_)->Update(domain_fac_owned);
-    S->RequireField(qE_sm_key_, qE_sm_key_)->Update(domain_fac_owned);
-    S->RequireField(qE_lw_out_key_, qE_lw_out_key_)->Update(domain_fac_owned);
-    S->RequireField(qE_cond_key_, qE_cond_key_)->Update(domain_fac_owned);
-  }
-
-  for (auto dep_key : dependencies_) {
-    auto fac = S->RequireField(dep_key);
-    if (Keys::getDomain(dep_key) == domain_ss_) {
-      fac->Update(domain_fac_ss);
-    } else if (dep_key == sg_albedo_key_ ||
-               dep_key == sg_emissivity_key_ ||
-               dep_key == area_frac_key_) {
-      fac->Update(domain_fac_2);
-    } else if (Keys::getDomain(dep_key) == domain_snow_) {
-      fac->Update(domain_fac_snow);
-    } else {
-      fac->Update(domain_fac);
+    if (diagnostics_) {
+      S->RequireField(albedo_key_, albedo_key_)->Update(domain_fac_owned);
+      S->RequireField(melt_key_, melt_key_)->Update(domain_fac_owned);
+      S->RequireField(evap_key_, evap_key_)->Update(domain_fac_owned);
+      S->RequireField(snow_temp_key_, snow_temp_key_)->Update(domain_fac_owned);
+      S->RequireField(qE_sh_key_, qE_sh_key_)->Update(domain_fac_owned);
+      S->RequireField(qE_lh_key_, qE_lh_key_)->Update(domain_fac_owned);
+      S->RequireField(qE_sm_key_, qE_sm_key_)->Update(domain_fac_owned);
+      S->RequireField(qE_lw_out_key_, qE_lw_out_key_)->Update(domain_fac_owned);
+      S->RequireField(qE_cond_key_, qE_cond_key_)->Update(domain_fac_owned);
     }
 
-    S->RequireFieldEvaluator(dep_key)->EnsureCompatibility(S);
-  }
+    for (auto dep_key : dependencies_) {
+      auto fac = S->RequireField(dep_key);
+      if (Keys::getDomain(dep_key) == domain_ss_) {
+        fac->Update(domain_fac_ss);
+      } else if (dep_key == sg_albedo_key_ ||
+                 dep_key == sg_emissivity_key_ ||
+                 dep_key == area_frac_key_) {
+        fac->Update(domain_fac_2);
+      } else if (Keys::getDomain(dep_key) == domain_snow_) {
+        fac->Update(domain_fac_snow);
+      } else {
+        fac->Update(domain_fac);
+      }
 
-  // additionally MANUALLY require the area frac, because it is not in the
-  // list of dependencies :ISSUE:#8
-  // S->RequireField(area_frac_key_)->Update(domain_fac_2);
+      S->RequireFieldEvaluator(dep_key)->EnsureCompatibility(S);
+    }
+
+    // additionally MANUALLY require the area frac, because it is not in the
+    // list of dependencies :ISSUE:#8
+    //S->RequireField(area_frac_key_)->Update(domain_fac_2);
+
+    compatible_ = true;
+  }
 }
 
 

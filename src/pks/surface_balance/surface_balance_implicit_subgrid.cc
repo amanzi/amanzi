@@ -41,7 +41,8 @@ ImplicitSubgrid::ImplicitSubgrid(Teuchos::ParameterList& pk_tree,
   area_frac_key_ = Keys::readKey(*plist_, domain_surf, "area fractions", "area_fractions");
   snow_death_rate_key_ = Keys::readKey(*plist_, domain_, "snow death rate", "death_rate");
 
-  // set up additional primary variables -- this is very hacky, and can become an evaluator in new-state
+  // set up additional primary variables -- this is very hacky, and can become
+  // an evaluator in new-state
   // -- snow density
   Teuchos::ParameterList& snow_dens_sublist = S->GetEvaluatorList(snow_dens_key_);
   snow_dens_sublist.set("field evaluator type", "primary variable");
@@ -98,7 +99,7 @@ ImplicitSubgrid::Setup(const Teuchos::Ptr<State>& S) {
   // comments out the dependency) and us (which manage when we update it to
   // not do it until commit state when we update to the new value.
   // :ISSUE:#8
-  S->RequireFieldEvaluator(area_frac_key_);
+  // S->RequireFieldEvaluator(area_frac_key_);
 }
 
 // -- Initialize owned (dependent) variables.
@@ -270,7 +271,7 @@ void
 ImplicitSubgrid::CommitStep(double t_old, double t_new,  const Teuchos::RCP<State>& S)
 {
   // now update area frac
-  S->GetFieldEvaluator(area_frac_key_)->HasFieldChanged(S.ptr(), name_);
+  // S->GetFieldEvaluator(area_frac_key_)->HasFieldChanged(S.ptr(), name_);
   SurfaceBalanceBase::CommitStep(t_old, t_new, S);
 }
 

@@ -15,6 +15,7 @@ namespace Amanzi {
 namespace SurfaceBalance {
 namespace Relations {
 
+#define AMANZI_NAN_SIGNALING
 #ifdef AMANZI_NAN_SIGNALING
 static const double NaN = std::numeric_limits<double>::signaling_NaN();
 #else

@@ -103,7 +103,8 @@ void
 RootingDepthFractionEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
 {
   if (models_.size() == 0) {
-    land_cover_ = getLandCover(S->ICList().sublist("land cover types"));
+    land_cover_ = getLandCover(S->ICList().sublist("land cover types"),
+            {"rooting_profile_alpha", "rooting_profile_beta", "rooting_depth_max"});
     for (const auto& lc : land_cover_) {
       models_[lc.first] = Teuchos::rcp(new RootingDepthFractionModel(lc.second));
     }

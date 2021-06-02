@@ -43,7 +43,8 @@ PlantWiltingFactorEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 {
   if (models_.size() == 0) {
-    land_cover_ = getLandCover(S->ICList().sublist("land cover types"));
+    land_cover_ = getLandCover(S->ICList().sublist("land cover types"),
+            {"stomata_closed_mafic_potential", "stomata_open_mafic_potential"});
     for (const auto& lc : land_cover_) {
       models_[lc.first] = Teuchos::rcp(new PlantWiltingFactorModel(lc.second));
     }

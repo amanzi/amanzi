@@ -165,6 +165,7 @@ class SEBThreeComponentEvaluator : public SecondaryVariablesFieldEvaluator {
 
   LandCoverMap land_cover_;
 
+  bool compatible_;
   bool diagnostics_;
   Teuchos::RCP<Debugger> db_;
   Teuchos::RCP<Debugger> db_ss_;

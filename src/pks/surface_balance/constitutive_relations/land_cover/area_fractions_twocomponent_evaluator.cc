@@ -97,7 +97,8 @@ void
 AreaFractionsTwoComponentEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
 {
   if (land_cover_.size() == 0)
-    land_cover_ = getLandCover(S->ICList().sublist("land cover types"));
+    land_cover_ = getLandCover(S->ICList().sublist("land cover types"),
+            {"snow_transition_depth"});
 
   // see if we can find a master fac
   auto my_fac = S->RequireField(my_key_, my_key_);
