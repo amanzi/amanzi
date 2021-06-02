@@ -56,11 +56,10 @@ RadiationBalanceEvaluator::RadiationBalanceEvaluator(Teuchos::ParameterList& pli
   dependencies_.insert(temp_snow_key_);
   temp_canopy_key_ = Keys::readKey(plist_, domain_canopy_, "canopy temperature", "temperature");
   dependencies_.insert(temp_canopy_key_);
-  frac_snow_key_ = Keys::readKey(plist_, domain_snow_, "snow area fraction", "area_fraction");
+  area_frac_key_ = Keys::readKey(plist_, domain_surf_, "area fractions", "area_fractions");
   dependencies_.insert(temp_canopy_key_);
   lai_key_ = Keys::readKey(plist_, domain_canopy_, "leaf area index", "leaf_area_index");
   dependencies_.insert(lai_key_);
-
 }
 
 void
@@ -80,7 +79,9 @@ RadiationBalanceEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
 
     for (const auto& dep : dependencies_) {
       // dependencies on same mesh, but some have two
-      if (dep == albedo_surf_key_ || dep == emissivity_surf_key_) {
+      if (dep == albedo_surf_key_ ||
+          dep == emissivity_surf_key_ ||
+          dep == area_frac_key_) {
         S->RequireField(dep)
           ->SetMesh(S->GetMesh(domain_surf_))
           ->SetGhosted(false)
@@ -113,7 +114,7 @@ RadiationBalanceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const Epetra_MultiVector& temp_surf = *S->GetFieldData(temp_surf_key_)->ViewComponent("cell",false);
   const Epetra_MultiVector& temp_snow = *S->GetFieldData(temp_snow_key_)->ViewComponent("cell",false);
   const Epetra_MultiVector& temp_canopy = *S->GetFieldData(temp_canopy_key_)->ViewComponent("cell",false);
-  const Epetra_MultiVector& frac_snow = *S->GetFieldData(frac_snow_key_)->ViewComponent("cell",false);
+  const Epetra_MultiVector& area_frac = *S->GetFieldData(area_frac_key_)->ViewComponent("cell",false);
   const Epetra_MultiVector& lai = *S->GetFieldData(lai_key_)->ViewComponent("cell",false);
 
   auto mesh = results[0]->Mesh();
@@ -142,7 +143,7 @@ RadiationBalanceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       rad_bal_surf[0][c] = (1-albedo[0][c])*sw_atm_surf + lw_atm_surf + lw_can - lw_surf;
       rad_bal_snow[0][c] = (1-albedo[1][c])*sw_atm_surf + lw_atm_surf + lw_can - lw_snow;
       rad_bal_can[0][c] = (1-lc.second.albedo_canopy)*sw_atm_can + lw_atm_can
-        + frac_snow[0][c]*lw_snow + (1-frac_snow[0][c])*lw_surf - 2*lw_can;
+        + area_frac[1][c]*lw_snow + area_frac[0][c]*lw_surf - 2*lw_can;
     }
   }
 }

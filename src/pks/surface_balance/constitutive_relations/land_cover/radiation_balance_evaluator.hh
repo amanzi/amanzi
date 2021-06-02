@@ -27,14 +27,13 @@ Requires the use of LandCover types, for canopy albedo and emissivity.
    KEYS:
    * `"surface albedos`" **SURFACE_DOMAIN-albedos**
    * `"surface emissivities`" **SURFACE_DOMAIN-emissivities**
-   * `"ground area fractions`" **SURFACE_DOMAIN-area_fractions**
    * `"incoming shortwave radiation`" **SURFACE_DOMAIN-incoming_shortwave_radiation**
    * `"incoming longwave radiation`" **SURFACE_DOMAIN-incoming_longwave_radiation**
    * `"surface temperature`" **SURFACE_DOMAIN-temperature**
    * `"snow temperature`" **SNOW_DOMAIN-temperature**
    * `"canopy temperature`" **CANOPY_DOMAIN-temperature**
    * `"leaf area index`" **CANOPY_DOMAIN-leaf_area_index**
-   * `"snow area fraction`" **SNOW_DOMAIN-area_fraction**
+   * `"area fractions`" **SURFACE_DOMAIN-area_fractions**
 
 */
 
@@ -81,7 +80,7 @@ class RadiationBalanceEvaluator : public SecondaryVariablesFieldEvaluator {
   Key albedo_surf_key_, emissivity_surf_key_;
   Key sw_in_key_, lw_in_key_;
   Key temp_surf_key_, temp_canopy_key_, temp_snow_key_;
-  Key frac_snow_key_;
+  Key area_frac_key_;
   Key lai_key_;
 
   bool compatible_;
