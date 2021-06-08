@@ -159,6 +159,7 @@ if ((NOT ENABLE_KOKKOS) AND (ENABLE_HYPRE))
               "-DHYPRE_LIBRARY_DIRS:FILEPATH=${HYPRE_DIR}/lib"
               "-DHYPRE_INCLUDE_DIRS:FILEPATH=${HYPRE_DIR}/include"
               "-DTPL_HYPRE_INCLUDE_DIRS:FILEPATH=${HYPRE_DIR}/include")
+  endif()
 endif()
 
 # SuperLUDist
