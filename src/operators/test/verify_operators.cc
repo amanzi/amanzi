@@ -46,14 +46,16 @@ int main(int argc, char *argv[])
       "  verify_operators \"Amesos1: KLU\" unstructured2d mymesh.exo mfd 1e-10\n";
     return 1;
   }
-  for (int i = 1; i < argc; ++i) argv_copy.push_back(argv[i]);
+  for (int i = 1; i < 4; ++i) argv_copy.push_back(argv[i]);
 
   argv[0] = new char[40];
   strcpy(argv[0], "--teuchos-suppress-startup-banner");
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  Kokkos::initialize(argc,argv); 
   MyPID = mpiSession.getRank();
-
-  return UnitTest::RunAllTests();
+  auto res = UnitTest::RunAllTests();
+  Kokkos::finalize(); 
+  return res; 
 }
 
 
@@ -108,7 +110,7 @@ TEST(Verify_Mesh_and_Operators) {
   AmanziMesh::Entity_kind scalar_coef(AmanziMesh::Entity_kind::UNKNOWN);
 
   // other parameters
-  bool symmetric(true);
+  bool symmetric(false);
   int order(1);
   std::string ana("00");
 
@@ -174,11 +176,11 @@ TEST(Verify_Mesh_and_Operators) {
 
   plist->sublist("preconditioners").sublist("Hypre: AMG")
       .set<std::string>("preconditioning method", "hypre: boomer amg").sublist("hypre: boomer amg parameters")
-      .set<int>("cycle applications", 2)
-      .set<int>("smoother sweeps", 3)
-      .set<double>("strong threshold", 0.5)
+      .set<int>("cycle applications", 1)
+      .set<int>("smoother sweeps", 1)
+      //.set<double>("strong threshold", 0.5)
       .set<double>("tolerance", 0.0)
-      .set<int>("relaxation type", 6);
+      .set<int>("relaxation type", 7);
 
   // -- Trilinos
   plist->sublist("preconditioners").sublist("Trilinos: ML")
@@ -217,7 +219,7 @@ TEST(Verify_Mesh_and_Operators) {
   // -- ILU
   plist->sublist("preconditioners").sublist("ifpack2: ILUT")
       .set<std::string>("preconditioning method", "ifpack2: ILUT").sublist("ifpack2: ILUT parameters")
-      .set<double>("fact: ilut level-of-fill", 10)
+      .set<double>("fact: ilut level-of-fill", 1)
       .set<double>("fact: drop tolerance", 0.0);
 
   // -- RILUK: a modified variant of the ILU(k) factorization

@@ -18,6 +18,8 @@
 #include "HYPRE_parcsr_mv.h"
 #include "HYPRE.h"
 
+#include "omp.h"
+
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcpFromRef;
@@ -66,16 +68,16 @@ Hypre(const Teuchos::RCP<const row_matrix_type>& A):
     GloballyContiguousRowMap_ = A_->getRowMap();
     GloballyContiguousColMap_ = A_->getColMap();
   } else {  
+    throw std::runtime_error("Ifpack_Hypre: RowMap should be contiguous");
     // Must create GloballyContiguous Maps for Hypre
-    if(A_->getDomainMap()->isSameAs(*A_->getRowMap())) {
-      Teuchos::RCP<const crs_matrix_type> Aconst = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_);
-      GloballyContiguousColMap_ = MakeContiguousColumnMap(Aconst);
-      GloballyContiguousRowMap_ = rcp(new map_type(A_->getRowMap()->getGlobalNumElements(),
-                                                   A_->getRowMap()->getNodeNumElements(), 0, A_->getRowMap()->getComm()));
-    }
-    else {
-      throw std::runtime_error("Ifpack_Hypre: Unsupported map configuration: Row/Domain maps do not match");
-    }
+    //if(A_->getDomainMap()->isSameAs(*A_->getRowMap())) {
+    //  Teuchos::RCP<const crs_matrix_type> Aconst = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_);
+    //  GloballyContiguousColMap_ = MakeContiguousColumnMap(Aconst);
+    //  GloballyContiguousRowMap_ = rcp(new map_type(A_->getRowMap()->getGlobalNumElements(),
+    //                                               A_->getRowMap()->getNodeNumElements(), 0, A_->getRowMap()->getComm()));
+    //} else {
+    //  throw std::runtime_error("Ifpack_Hypre: Unsupported map configuration: Row/Domain maps do not match");
+    //}
   }
   // Next create vectors that will be used when ApplyInverse() is called
   global_ordinal_type ilower = GloballyContiguousRowMap_->getMinGlobalIndex();
@@ -490,6 +492,7 @@ void Hypre<MatrixType>::compute(){
     AMANZI_CHK_ERR(HYPRE_IJMatrixSetObjectType(HypreA_, HYPRE_PARCSR));
     AMANZI_CHK_ERR(HYPRE_IJMatrixInitialize(HypreA_));
     CopyTpetraToHypre();
+
     if(SolveOrPrec_ == Hypre_Is_Solver) {
       AMANZI_CHK_ERR(SetSolverType(SolverType_));
       if (SolverPrecondPtr_ != NULL && UsePreconditioner_) {
@@ -512,7 +515,7 @@ void Hypre<MatrixType>::compute(){
     if (!Coords_.is_null()) {
       SetCoordinates(Coords_);
     }
-           
+
     // Hypre Setup must be called after matrix has values
     if(SolveOrPrec_ == Hypre_Is_Solver){
       AMANZI_CHK_ERR(SolverSetupPtr_(Solver_, ParMatrix_, ParX_, ParY_));
@@ -851,23 +854,29 @@ int Hypre<MatrixType>::CopyTpetraToHypre(){
   if(Matrix.is_null()) 
     throw std::runtime_error("Hypre<MatrixType>: Unsupported matrix configuration: Tpetra::CrsMatrix required");
 
-  std::vector<GO> new_indices(Matrix->getNodeMaxNumRowEntries());
-  for(LO i = 0; i < (LO) Matrix->getNodeNumRows(); i++){
-    Teuchos::ArrayView<const SC> values;
-    Teuchos::ArrayView<const LO> indices;
-    Matrix->getLocalRowView(i, indices, values);
-    for(LO j = 0; j < (LO)indices.size(); j++){
-      new_indices[j] = GloballyContiguousColMap_->getGlobalElement(indices[j]);
-    }
-    GO GlobalRow[1];
-    GO numEntries = (GO) indices.size();
-    GlobalRow[0] = GloballyContiguousRowMap_->getGlobalElement(i);    
-    AMANZI_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, new_indices.data(), values.getRawPtr()));
-  }
+  LO nrows = Matrix->getNodeNumRows(); 
+  Kokkos::View<LO*,Amanzi::DeviceOnlyMemorySpace> colsperrow("ColsPerRow",nrows); 
+  auto rowPtrs = Matrix->getCrsGraph()->getLocalGraph().row_map; 
+  Kokkos::parallel_for(nrows,
+    KOKKOS_LAMBDA(const int i){
+      colsperrow(i) = rowPtrs[i+1]-rowPtrs[i]; 
+  }); 
+
+  auto rowindices = Matrix->getRowMap()->getMyGlobalIndices();
+
+  Kokkos::View<SC*,Amanzi::DeviceOnlyMemorySpace> 
+    values = Matrix->getLocalValuesView(); 
+  Kokkos::View<LO*,Amanzi::DeviceOnlyMemorySpace> 
+    colindices = Matrix->getCrsGraph()->getLocalGraph().entries; 
+
+  AMANZI_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_,nrows,colsperrow.data(),
+                                        rowindices.data(),colindices.data(),values.data()));
+
   AMANZI_CHK_ERR(HYPRE_IJMatrixAssemble(HypreA_));
   AMANZI_CHK_ERR(HYPRE_IJMatrixGetObject(HypreA_, (void**)&ParMatrix_));
+
   if (Dump_)
-    HYPRE_ParCSRMatrixPrint(ParMatrix_,"A.mat");
+    AMANZI_CHK_ERR(HYPRE_ParCSRMatrixPrint(ParMatrix_,"ParA.mat"));
   return 0;
 } //CopyTpetraToHypre()
 

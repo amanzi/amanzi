@@ -472,9 +472,12 @@ private:
   //! Create the Preconditioner.
   int CreatePrecond();
 
+// Function needs to be public to use Kokkos 
+public:  
   //! Copies matrix data from Tpetra matrix to Hypre matrix.
   int CopyTpetraToHypre();
 
+private: 
   //! Add a function to be called in Compute()
   int AddFunToList(Teuchos::RCP<FunctionParameter> NewFun);
 

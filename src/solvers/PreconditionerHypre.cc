@@ -19,12 +19,19 @@
 #include "VerboseObject.hh"
 #include "PreconditionerHypre.hh"
 
+#if 0 
+#include <nvToolsExt.h> 
+#else
+void nvtxRangePush(const char*){}
+void nvtxRangePop(){}
+#endif 
+
 namespace Amanzi {
 
   #include "AmanziHypreWrapperParametersMap.hh"
 
   void AMANZI_CHK_ERRV(int code) {
-    if(code<0) {
+    if(code>0) {
       std::ostringstream ofs;
       ofs << "Amanzi::Hypre: Error with code "<<code<<std::endl;
       throw std::runtime_error(ofs.str());
@@ -32,7 +39,7 @@ namespace Amanzi {
   }
 
   void AMANZI_CHK_ERR(int code) {
-    if(code<0) {
+    if(code>0) {
       std::ostringstream ofs;
       ofs << "Amanzi::Hypre: Error with code "<<code<<std::endl;
       throw std::runtime_error(ofs.str());
@@ -46,9 +53,11 @@ namespace AmanziSolvers {
 ****************************************************************** */
 int PreconditionerHypre::applyInverse(const Vector_type& v, Vector_type& hv) const
 {
+  nvtxRangePush(__FUNCTION__);
   IfpHypre_->apply(v, hv);
   returned_code_ = 0;
   return returned_code_;
+  nvtxRangePop();
 }
 
 
@@ -57,10 +66,12 @@ int PreconditionerHypre::applyInverse(const Vector_type& v, Vector_type& hv) con
 ****************************************************************** */
 void PreconditionerHypre::set_inverse_parameters(Teuchos::ParameterList& list)
 {
+  nvtxRangePush(__FUNCTION__);
   plist_ = list;
 
   std::string vo_name = this->name()+" ("+plist_.get<std::string>("method")+")";
   vo_ = Teuchos::rcp(new VerboseObject(vo_name, plist_));
+  nvtxRangePop();
 }
 
 void PreconditionerHypre::Init_()
@@ -71,6 +82,7 @@ void PreconditionerHypre::Init_()
 
 void PreconditionerHypre::InitBoomer_()
 {
+  nvtxRangePush(__FUNCTION__);
   Init_();
 
 #ifdef HAVE_HYPRE
@@ -193,6 +205,7 @@ void PreconditionerHypre::InitBoomer_()
   Errors::Message msg("Hypre (BoomerAMG) is not available in this installation of Amanzi.  To use Hypre, please reconfigure.");
   Exceptions::amanzi_throw(msg);
 #endif
+  nvtxRangePop();
 }
 
 
@@ -228,6 +241,8 @@ void PreconditionerHypre::InitEuclid_()
 
 void PreconditionerHypre::initializeInverse()
 {
+  nvtxRangePush(__FUNCTION__);
+
   // must be row matrix
   Teuchos::RCP<RowMatrix_type> h_row = h_;
   IfpHypre_ = Teuchos::rcp(new Amanzi::Hypre<RowMatrix_type>(h_row));
@@ -263,6 +278,7 @@ void PreconditionerHypre::initializeInverse()
   }
 
   IfpHypre_->initialize();
+  nvtxRangePop();
 }
 
 
@@ -271,10 +287,13 @@ void PreconditionerHypre::initializeInverse()
 ****************************************************************** */
 void PreconditionerHypre::computeInverse()
 {
+  nvtxRangePush(__FUNCTION__);
+
 #ifdef HAVE_HYPRE
   AMANZI_ASSERT(IfpHypre_.get());
   IfpHypre_->compute();
 #endif
+  nvtxRangePop();
 }
 
 }  // namespace AmanziSolvers
