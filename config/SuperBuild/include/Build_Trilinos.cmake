@@ -82,10 +82,13 @@ if (ENABLE_KOKKOS)
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_INT_LONG_LONG:BOOL=OFF")
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DXpetra_Epetra_NO_64BIT_GLOBAL_INDICIES:BOOL=ON")
   if(ENABLE_KOKKOS_OPENMP)
+    message(STATUS "OpenMP enabled")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTrilinos_ENABLE_OpenMP:BOOL=ON")
     list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DXpetra_CAN_USE_SERIAL:BOOL=OFF")
     list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_SERIAL:BOOL=OFF")
     list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_OPENMP:BOOL=ON")
   else()
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTrilinos_ENABLE_OpenMP:BOOL=OFF")
     list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_SERIAL:BOOL=ON") 
     list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_OPENMP:BOOL=OFF") 
   endif()
@@ -159,7 +162,6 @@ if ((NOT ENABLE_KOKKOS) AND (ENABLE_HYPRE))
               "-DHYPRE_LIBRARY_DIRS:FILEPATH=${HYPRE_DIR}/lib"
               "-DHYPRE_INCLUDE_DIRS:FILEPATH=${HYPRE_DIR}/include"
               "-DTPL_HYPRE_INCLUDE_DIRS:FILEPATH=${HYPRE_DIR}/include")
-  endif()
 endif()
 
 # SuperLUDist
