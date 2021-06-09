@@ -23,7 +23,7 @@ on its own mesh entity).  Initializing these components may be done in avariety
 of ways:
 
 
-``[initial-conditions-compositevector-spec]``
+``[initial-conditions-spec]``
 
 * `"restart file`" ``[string]`` **optional** If provided, read IC value from a
   checkpoint file of this name.

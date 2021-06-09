@@ -41,6 +41,7 @@ Note, this always monitors the residual.
 
     * `"diverged tolerance`" ``[double]`` **1.e10** defines the error level
       indicating divergence of the solver. The error is calculated by a PK.
+      Set to a negative value to ignore this check.
 
     * `"max error growth factor`" ``[double]`` **1.e5** defines another way to
       identify divergence pattern on earlier iterations. If the PK-specific
@@ -350,7 +351,7 @@ int SolverBT<Vector, VectorSpace>::BT_ErrorControl_(
     if (vo_->os_OK(Teuchos::VERB_HIGH))
       *vo_->os() << "Solver converged: " << num_itrs_ << " itrs, error=" << error << std::endl;
     return SOLVER_CONVERGED;
-  } else if (error > overflow_tol_) {
+  } else if (overflow_tol_ > 0 && error > overflow_tol_) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
       *vo_->os() << "Solve failed, error " << error << " > "
                  << overflow_tol_ << " (overflow)" << std::endl;

@@ -274,7 +274,7 @@ int SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector
   }
 
   // Check divergence
-  if (error > overflow_tol_) {
+  if (overflow_tol_ > 0 && error > overflow_tol_) {
     if (vo_->os_OK(Teuchos::VERB_LOW)) {
       *vo_->os() << "Solve failed, error " << error << " > " << overflow_tol_
                  << " (dtol)" << std::endl;
@@ -559,7 +559,7 @@ int SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector
     }
 
     // Check divergence
-    if (error > overflow_tol_) {
+    if (overflow_tol_ > 0 && error > overflow_tol_) {
       if (vo_->os_OK(Teuchos::VERB_LOW)) {
         *vo_->os() << "Solve failed, error " << error << " > " << overflow_tol_
                    << " (dtol)" << std::endl;
