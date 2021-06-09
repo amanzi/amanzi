@@ -67,8 +67,8 @@ of number of cells in each direction.
 
 Specified by `"mesh type`" of `"generate mesh`".
 
-.. _mesh-type-generate-mesh-spec:
-.. admonition:: mesh-type-generate-mesh-spec
+.. _mesh-generate-mesh-spec:
+.. admonition:: mesh-generate-mesh-spec
 
     * `"domain low coordinate`" ``[Array(double)]`` Location of low corner of domain
     * `"domain high coordinate`" ``[Array(double)]`` Location of high corner of domain
@@ -105,8 +105,8 @@ suffix is .exo, the code will partition automatically the serial file.
 
 Specified by `"mesh type`" of `"read mesh file`".
 
-.. _mesh-type-read-mesh-file-spec:
-.. admonition:: mesh-type-read-mesh-file-spec
+.. _mesh-read-mesh-file-spec:
+.. admonition:: mesh-read-mesh-file-spec
 
     * `"file`" ``[string]`` filename of a pre-generated mesh file
     * `"format`" ``[string]`` format of pre-generated mesh file. One of:
@@ -148,8 +148,8 @@ Specified by `"mesh type`" of `"logical`".
 .. todo::
    WIP: add spec!
 
-.. _mesh-type-logical-spec:
-.. admonition:: mesh-type-logical-spec
+.. _mesh-logical-spec:
+.. admonition:: mesh-logical-spec
 
     Not yet completed...
    
@@ -167,8 +167,8 @@ computation.
 
 Specified by `"mesh type`" of `"surface`".
 
-.. _mesh-type-surface-spec:
-.. admonition:: mesh-type-surface-spec
+.. _mesh-surface-spec:
+.. admonition:: mesh-surface-spec
 
     ONE OF
 
@@ -220,8 +220,8 @@ entity local ID, in a provided region of the provided entity type.
 
 Specified by `"mesh type`" of `"subgrid`".
 
-.. _mesh-type-subgrid-spec:
-.. admonition:: mesh-type-subgrid-spec
+.. _mesh-subgrid-spec:
+.. admonition:: mesh-subgrid-spec
 
     * `"subgrid region name`" ``[string]`` Region on which each subgrid mesh will be associated.
     * `"entity kind`" ``[string]`` One of `"cell`", `"face`", etc.  Entity of the
@@ -233,7 +233,7 @@ Specified by `"mesh type`" of `"subgrid`".
 .. todo::
    WIP: Add examples (intermediate scale model, transport subgrid model)
 
-  
+
 Column Meshes
 =============
 
@@ -244,8 +244,8 @@ Column Meshes
 
 Specified by `"mesh type`" of `"column`".
 
-.. _mesh-type-column-spec:
-.. admonition:: mesh-type-column-spec
+.. _mesh-column-spec:
+.. admonition:: mesh-column-spec
 
     * `"parent domain`" ``[string]`` The name of the 3D mesh from which columns are generated.
       Note that the `"build columns from set`" parameter must be set in that mesh.

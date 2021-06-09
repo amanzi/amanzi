@@ -49,48 +49,48 @@ depressions due to gravity- and wind-driven redistributions, respectively.
    * `"subsurface domain name`" ``[string]`` **DEFAULT** Default set relative to surface domain name.
    * `"snow domain name`" ``[string]`` **DEFAULT** Default set relative to surface domain name.
  
-    KEYS:
-    * `"surface water source`" **DOMAIN-water_source**  [m s^-1]
-    * `"surface energy source`" **DOMAIN-total_energy_source** [MW m^-2]
-    * `"subsurface water source`" **DOMAIN-water_source**  [mol s^-1]
-    * `"subsurface energy source`" **DOMAIN-total_energy_source** [MW m^-3]
-    * `"snow mass source - sink`" **DOMAIN-source_sink** [m_SWE s^-1]
-    * `"new snow source`" **DOMAIN-source** [m_SWE s^-1]
+   KEYS:
+    - `"surface water source`" **DOMAIN-water_source**  [m s^-1]
+    - `"surface energy source`" **DOMAIN-total_energy_source** [MW m^-2]
+    - `"subsurface water source`" **DOMAIN-water_source**  [mol s^-1]
+    - `"subsurface energy source`" **DOMAIN-total_energy_source** [MW m^-3]
+    - `"snow mass source - sink`" **DOMAIN-source_sink** [m_SWE s^-1]
+    - `"new snow source`" **DOMAIN-source** [m_SWE s^-1]
 
-    * `"albedo`"  [-]
-    * `"snowmelt`" [m_SWE s^-1]
-    * `"evaporation`" [m s^-1]
-    * `"snow temperature`" [K]
-    * `"sensible heat flux`" **DOMAIN-qE_sensible_heat** [W m^-2]
-    * `"latent heat of evaporation`" **DOMAIN-qE_latent_heat** [W m^-2]
-    * `"latent heat of snowmelt`" **DOMAIN-qE_snowmelt** [W m^-2]
-    * `"outgoing longwave radiation`" **DOMAIN-qE_lw_out** [W m^-2]
-    * `"conducted energy flux`" **DOMAIN-qE_conducted** [W m^-2]
+    - `"albedo`"  [-]
+    - `"snowmelt`" [m_SWE s^-1]
+    - `"evaporation`" [m s^-1]
+    - `"snow temperature`" [K]
+    - `"sensible heat flux`" **DOMAIN-qE_sensible_heat** [W m^-2]
+    - `"latent heat of evaporation`" **DOMAIN-qE_latent_heat** [W m^-2]
+    - `"latent heat of snowmelt`" **DOMAIN-qE_snowmelt** [W m^-2]
+    - `"outgoing longwave radiation`" **DOMAIN-qE_lw_out** [W m^-2]
+    - `"conducted energy flux`" **DOMAIN-qE_conducted** [W m^-2]
 
-    DEPENDENCIES:
-    * `"incoming shortwave radiation`" [W m^-2]
-    * `"incoming longwave radiation`" [W m^-2]
-    * `"air temperature`" [K]
-    * `"relative humidity`" [-]
-    * `"wind speed`" [m s^-1]
-    * `"precipitation rain`" [m s^-1]
-    * `"precipitation snow`" [m_SWE s^-1]
-    
-    * `"volumetric snow depth`" [m] Area-averaged snow depth.
-    * `"snow density`" [kg m^-3]
-    * `"snow death rate`" [m s^-1] Snow "death" refers to the last bit of
+   EVALUATORS:
+    - `"incoming shortwave radiation`" [W m^-2]
+    - `"incoming longwave radiation`" [W m^-2]
+    - `"air temperature`" [K]
+    - `"relative humidity`" [-]
+    - `"wind speed`" [m s^-1]
+    - `"precipitation rain`" [m s^-1]
+    - `"precipitation snow`" [m_SWE s^-1]
+
+    - `"volumetric snow depth`" [m] Area-averaged snow depth.
+    - `"snow density`" [kg m^-3]
+    - `"snow death rate`" [m s^-1] Snow "death" refers to the last bit of
        snowmelt that we want to remove discretely.
-    * `"unfrozen fraction`" [-]  1 --> all surface water, 0 --> all surface ice
-    * `"subgrid albedos`" [-] Dimension 3 field of (bare ground, water-covered, snow-covered) albedos.
-    * `"subgrid emissivity`" [-] Dimension 3 field of (bare ground, water-covered, snow-covered) emissivities.
-    * `"area fractions`" **DOMAIN-fractional_areas** Dimension 3 field of (bare
+    - `"unfrozen fraction`" [-]  1 --> all surface water, 0 --> all surface ice
+    - `"subgrid albedos`" [-] Dimension 3 field of (bare ground, water-covered, snow-covered) albedos.
+    - `"subgrid emissivity`" [-] Dimension 3 field of (bare ground, water-covered, snow-covered) emissivities.
+    - `"area fractions`" **DOMAIN-fractional_areas** Dimension 3 field of (bare
       ground, water-covered, snow-covered) area fractions (sum to 1).
 
-    * `"temperature`" **DOMAIN-temperature**  [K] surface skin temperature.
-    * `"pressure`" **DOMAIN-pressure** [Pa] surface skin pressure.
-    * `"gas saturation`" **DOMAIN_SS-saturation_gas** [-] subsurface gas saturation
-    * `"porosity`" [-] subsurface porosity
-    * `"subsurface pressure`" **DOMAIN_SS-pressure** [Pa]
+    - `"temperature`" **DOMAIN-temperature**  [K] surface skin temperature.
+    - `"pressure`" **DOMAIN-pressure** [Pa] surface skin pressure.
+    - `"gas saturation`" **DOMAIN_SS-saturation_gas** [-] subsurface gas saturation
+    - `"porosity`" [-] subsurface porosity
+    - `"subsurface pressure`" **DOMAIN_SS-pressure** [Pa]
 
 */
 

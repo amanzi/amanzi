@@ -19,21 +19,21 @@ the ground from the atmosphere.
 .. _seb_evaluator-spec:
 .. admonition:: seb_evaluator-spec
 
-   * `"roughness length of bare ground [m]`" **0.04** Defines a fetch controlling
+   * `"roughness length of bare ground [m]`" ``[double]`` **0.04** Defines a fetch controlling
      latent and sensible heat fluxes.
-   * `"roughness length of snow-covered ground [m]`" **0.004** Defines a
+   * `"roughness length of snow-covered ground [m]`" ``[double]`` **0.004** Defines a
      fetch controlling latent and sensible heat fluxes.
-   * `"snow-ground transitional depth [m]`" **0.02** Snow height at which bare
+   * `"snow-ground transitional depth [m]`" ``[double]`` **0.02** Snow height at which bare
      ground starts to stick out due to subgrid topography, vegetation, etc.
      Defines a transitional zone between "snow-covered" and "bare ground".
-   * `"dessicated zone thickness [m]`" Thickness of the immediate surface
+   * `"dessicated zone thickness [m]`" ``[double]`` **0.1** Thickness of the immediate surface
      layer over which vapor pressure diffusion must move water to evaporate
      from dry soil.  More implies less evaporation.
-   * `"wind speed reference height [m]`" **2.0** Reference height at which
+   * `"wind speed reference height [m]`" ``[double]`` **2.0** Reference height at which
      wind speed is measured.
-   * `"minimum wind speed [m s^-1]`" **1.0** Sets a floor on wind speed for
+   * `"minimum wind speed [m s^-1]`" ``[double]`` **1.0** Sets a floor on wind speed for
      potential wierd data.  Models have trouble with no wind.
-   * `"minimum relative humidity [-]`" **1.0** Sets a floor on relative
+   * `"minimum relative humidity [-]`" ``[double]`` **1.0** Sets a floor on relative
      humidity for potential wierd data.  Models have trouble with no
      humidity.
   
@@ -44,47 +44,47 @@ the ground from the atmosphere.
    * `"snow domain name`" ``[string]`` **DEFAULT** Default set relative to surface domain name.
  
     KEYS:
-    * `"surface water source`" **DOMAIN-water_source**  [m s^-1]
-    * `"surface energy source`" **DOMAIN-total_energy_source** [MW m^-2]
-    * `"subsurface water source`" **DOMAIN-water_source**  [mol s^-1]
-    * `"subsurface energy source`" **DOMAIN-total_energy_source** [MW m^-3]
-    * `"snow mass source - sink`" **DOMAIN-source_sink** [m_SWE s^-1]
-    * `"new snow source`" **DOMAIN-source** [m_SWE s^-1]
+    - `"surface water source`" **DOMAIN-water_source**  [m s^-1]
+    - `"surface energy source`" **DOMAIN-total_energy_source** [MW m^-2]
+    - `"subsurface water source`" **DOMAIN-water_source**  [mol s^-1]
+    - `"subsurface energy source`" **DOMAIN-total_energy_source** [MW m^-3]
+    - `"snow mass source - sink`" **DOMAIN-source_sink** [m_SWE s^-1]
+    - `"new snow source`" **DOMAIN-source** [m_SWE s^-1]
 
-    * `"albedo`"  [-]
-    * `"snowmelt`" [m_SWE s^-1]
-    * `"evaporation`" [m s^-1]
-    * `"snow temperature`" [K]
-    * `"sensible heat flux`" **DOMAIN-qE_sensible_heat** [W m^-2]
-    * `"latent heat of evaporation`" **DOMAIN-qE_latent_heat** [W m^-2]
-    * `"latent heat of snowmelt`" **DOMAIN-qE_snowmelt** [W m^-2]
-    * `"outgoing longwave radiation`" **DOMAIN-qE_lw_out** [W m^-2]
-    * `"conducted energy flux`" **DOMAIN-qE_conducted** [W m^-2]
+    - `"albedo`"  [-]
+    - `"snowmelt`" [m_SWE s^-1]
+    - `"evaporation`" [m s^-1]
+    - `"snow temperature`" [K]
+    - `"sensible heat flux`" **DOMAIN-qE_sensible_heat** [W m^-2]
+    - `"latent heat of evaporation`" **DOMAIN-qE_latent_heat** [W m^-2]
+    - `"latent heat of snowmelt`" **DOMAIN-qE_snowmelt** [W m^-2]
+    - `"outgoing longwave radiation`" **DOMAIN-qE_lw_out** [W m^-2]
+    - `"conducted energy flux`" **DOMAIN-qE_conducted** [W m^-2]
 
     DEPENDENCIES:
-    * `"incoming shortwave radiation`" [W m^-2]
-    * `"incoming longwave radiation`" [W m^-2]
-    * `"air temperature`" [K]
-    * `"relative humidity`" [-]
-    * `"wind speed`" [m s^-1]
-    * `"precipitation rain`" [m s^-1]
-    * `"precipitation snow`" [m_SWE s^-1]
+    - `"incoming shortwave radiation`" [W m^-2]
+    - `"incoming longwave radiation`" [W m^-2]
+    - `"air temperature`" [K]
+    - `"relative humidity`" [-]
+    - `"wind speed`" [m s^-1]
+    - `"precipitation rain`" [m s^-1]
+    - `"precipitation snow`" [m_SWE s^-1]
     
     
-    * `"snow depth`" [m]
-    * `"snow density`" [kg m^-3]
-    * `"snow death rate`" [m s^-1]  Snow "death" refers to the last bit of snowmelt that we want to remove discretely.
-    * `"ponded depth`" [m]
-    * `"unfrozen fraction`" [-]  1 --> all surface water, 0 --> all surface ice
-    * `"subgrid albedos`" [-] Dimension 2 field of (no-snow, snow) albedos.
-    * `"subgrid emissivity`" [-] Dimension 2 field of (no-snow, snow) emissivities.
-    * `"area fractions`" **DOMAIN-fractional_areas** Dimension 2 field of (no-snow, snow) area fractions (sum to 1).
+    - `"snow depth`" [m]
+    - `"snow density`" [kg m^-3]
+    - `"snow death rate`" [m s^-1]  Snow "death" refers to the last bit of snowmelt that we want to remove discretely.
+    - `"ponded depth`" [m]
+    - `"unfrozen fraction`" [-]  1 --> all surface water, 0 --> all surface ice
+    - `"subgrid albedos`" [-] Dimension 2 field of (no-snow, snow) albedos.
+    - `"subgrid emissivity`" [-] Dimension 2 field of (no-snow, snow) emissivities.
+    - `"area fractions`" **DOMAIN-fractional_areas** Dimension 2 field of (no-snow, snow) area fractions (sum to 1).
 
-    * `"temperature`" **DOMAIN-temperature**  [K] surface skin temperature.
-    * `"pressure`" **DOMAIN-pressure** [Pa] surface skin pressure.
-    * `"gas saturation`" **DOMAIN_SS-saturation_gas** [-] subsurface gas saturation
-    * `"porosity`" [-] subsurface porosity
-    * `"subsurface pressure`" **DOMAIN_SS-pressure** [Pa]
+    - `"temperature`" **DOMAIN-temperature**  [K] surface skin temperature.
+    - `"pressure`" **DOMAIN-pressure** [Pa] surface skin pressure.
+    - `"gas saturation`" **DOMAIN_SS-saturation_gas** [-] subsurface gas saturation
+    - `"porosity`" [-] subsurface porosity
+    - `"subsurface pressure`" **DOMAIN_SS-pressure** [Pa]
     
 */
 #pragma once
