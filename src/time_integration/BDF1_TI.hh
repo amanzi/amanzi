@@ -62,14 +62,13 @@ via the time discretization scheme:
       max(1.0, factor * d ** n)". Reasonable values are between 0 and 1.
 
     INCLUDES
-
-    - ``[bdf1-solver-fnbase-spec]`` *Uses a* `BDF1 Solver Interface`_.
-
     - ``[solver-typed-spec]`` *Uses a* Solver_.
-
     - ``[timestep-controller-typed-spec]`` *Uses a* `Timestep Controller`_
-    
- */
+
+
+Note this also accepts an object that provides the `BDF1 Solver Interface`_.
+
+*/
 
 
 #ifndef AMANZI_BDF1_TIME_INTEGRATOR_HH_
