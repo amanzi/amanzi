@@ -37,20 +37,22 @@ through providing a "verify mesh" option.
 .. admonition:: mesh-typed-spec
 
     * `"mesh type`" ``[string]`` One of:
-    
+
       - `"generate mesh`" See `Generated Mesh`_.
       - `"read mesh file`" See `Read Mesh File`_.
       - `"logical`" See `Logical Mesh`_.
       - `"surface`" See `Surface Mesh`_.
       - `"subgrid`" See `Subgrid Meshes`_.
       - `"column`" See `Column Meshes`_.
+
     * `"_mesh_type_ parameters`" ``[_mesh_type_-spec]`` List of parameters
       associated with the type.
     * `"verify mesh`" ``[bool]`` **false** Perform a mesh audit.
     * `"deformable mesh`" ``[bool]`` **false** Will this mesh be deformed?
+
     * `"partitioner`" ``[string]`` **zoltan_rcb** Method to partition the
       mesh.  Note this only makes sense on the domain mesh.  One of:
-      
+
       - `"zoltan_rcb`" a "map view" partitioning that keeps columns of cells together
       - `"metis`" uses the METIS graph partitioner
       - `"zoltan`" uses the default Zoltan graph-based partitioner.
@@ -65,8 +67,8 @@ of number of cells in each direction.
 
 Specified by `"mesh type`" of `"generate mesh`".
 
-.. _mesh-generate-mesh-spec:
-.. admonition:: mesh-generate-mesh-spec
+.. _mesh-type-generate-mesh-spec:
+.. admonition:: mesh-type-generate-mesh-spec
 
     * `"domain low coordinate`" ``[Array(double)]`` Location of low corner of domain
     * `"domain high coordinate`" ``[Array(double)]`` Location of high corner of domain
@@ -103,8 +105,8 @@ suffix is .exo, the code will partition automatically the serial file.
 
 Specified by `"mesh type`" of `"read mesh file`".
 
-.. _mesh-read-mesh-file-spec:
-.. admonition:: mesh-read-mesh-file-spec
+.. _mesh-type-read-mesh-file-spec:
+.. admonition:: mesh-type-read-mesh-file-spec
 
     * `"file`" ``[string]`` filename of a pre-generated mesh file
     * `"format`" ``[string]`` format of pre-generated mesh file. One of:
@@ -146,8 +148,8 @@ Specified by `"mesh type`" of `"logical`".
 .. todo::
    WIP: add spec!
 
-.. _mesh-logical-spec:
-.. admonition:: mesh-logical-spec
+.. _mesh-type-logical-spec:
+.. admonition:: mesh-type-logical-spec
 
     Not yet completed...
    
@@ -165,8 +167,8 @@ computation.
 
 Specified by `"mesh type`" of `"surface`".
 
-.. _mesh-surface-spec:
-.. admonition:: mesh-surface-spec
+.. _mesh-type-surface-spec:
+.. admonition:: mesh-type-surface-spec
 
     ONE OF
 
@@ -218,8 +220,8 @@ entity local ID, in a provided region of the provided entity type.
 
 Specified by `"mesh type`" of `"subgrid`".
 
-.. _mesh-subgrid-spec:
-.. admonition:: mesh-subgrid-spec
+.. _mesh-type-subgrid-spec:
+.. admonition:: mesh-type-subgrid-spec
 
     * `"subgrid region name`" ``[string]`` Region on which each subgrid mesh will be associated.
     * `"entity kind`" ``[string]`` One of `"cell`", `"face`", etc.  Entity of the
@@ -242,8 +244,8 @@ Column Meshes
 
 Specified by `"mesh type`" of `"column`".
 
-.. _mesh-column-spec:
-.. admonition:: mesh-column-spec
+.. _mesh-type-column-spec:
+.. admonition:: mesh-type-column-spec
 
     * `"parent domain`" ``[string]`` The name of the 3D mesh from which columns are generated.
       Note that the `"build columns from set`" parameter must be set in that mesh.
