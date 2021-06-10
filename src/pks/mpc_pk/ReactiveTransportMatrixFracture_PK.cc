@@ -31,7 +31,6 @@ ReactiveTransportMatrixFracture_PK::ReactiveTransportMatrixFracture_PK(
     PK_MPCAdditive<PK>(pk_tree, global_list, S, soln)
 {
   coupled_chemistry_pk_ = Teuchos::rcp_dynamic_cast<ChemistryMatrixFracture_PK>(sub_pks_[0]);
-  coupled_transport_pk_ = Teuchos::rcp_dynamic_cast<PK_MPC<PK_BDF> >(sub_pks_[1]);
 }
 
 
@@ -77,10 +76,21 @@ void ReactiveTransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // communicate chemistry engine to transport.
   auto ic = coupled_chemistry_pk_->begin();
-  for (auto it = coupled_transport_pk_->begin(); it != coupled_transport_pk_->end(); ++it, ++ic) {
-    auto it1 = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(*it);
-    auto ic1 = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(*ic);
-    it1->SetupChemistry(ic1);
+
+  auto mpc_implicit = Teuchos::rcp_dynamic_cast<PK_MPC<PK_BDF> >(sub_pks_[1]);
+  if (mpc_implicit.get() != NULL) {
+    for (auto it = mpc_implicit->begin(); it != mpc_implicit->end(); ++it, ++ic) {
+      auto it1 = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(*it);
+      auto ic1 = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(*ic);
+      it1->SetupChemistry(ic1);
+    }
+  } else {
+    auto mpc_explicit = Teuchos::rcp_dynamic_cast<PK_MPC<PK> >(sub_pks_[1]);
+    for (auto it = mpc_explicit->begin(); it != mpc_explicit->end(); ++it, ++ic) {
+      auto it1 = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(*it);
+      auto ic1 = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(*ic);
+      it1->SetupChemistry(ic1);
+    }
   }
 
   Amanzi::PK_MPCAdditive<PK>::Setup(S);

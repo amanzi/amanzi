@@ -23,15 +23,12 @@ This is a variation of the GMRES solver for nonlinear problems.
 
     * `"diverged tolerance`" ``[double]`` **1.e10** Defines the error level
       indicating divergence of the solver. The error is calculated by a PK.
+      Set to a negative value to ignore this check.
 
     * `"diverged l2 tolerance`" ``[double]`` **1.e10** Defines another way to
       identify divergence of the solver. If the relative L2 norm of the
       solution increment is above this value, the solver is terminated.
-
-    * `"diverged pc tolerance`" ``[double]`` **1e10** Defines another way to
-      identify divergence of the solver. If the relative maximum norm of the
-      solution increment (with respect to the initial increment) is above this
-      value, the solver is terminated.
+      Set to a negative value to ignore this check.
 
     * `"max du growth factor`" ``[double]`` **1e5** Allows the solver to
       identify divergence pattern on earlier iterations. If the maximum norm of
@@ -162,8 +159,8 @@ template<class Vector, class VectorSpace>
 void SolverAA<Vector, VectorSpace>::Init_()
 {
   tol_ = plist_.get<double>("nonlinear tolerance", 1.e-6);
-  overflow_tol_ = plist_.get<double>("diverged tolerance", 1.0e10);
-  overflow_l2_tol_ = plist_.get<double>("diverged l2 tolerance", 1.0e10);
+  overflow_tol_ = plist_.get<double>("diverged tolerance", 1.e10);
+  overflow_l2_tol_ = plist_.get<double>("diverged l2 tolerance", -1.0);
   max_itrs_ = plist_.get<int>("limit iterations", 20);
   max_du_growth_factor_ = plist_.get<double>("max du growth factor", 1.0e5);
   max_error_growth_factor_ = plist_.get<double>("max error growth factor", 1.0e5);
@@ -300,7 +297,7 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
       double u_norm2, du_norm2;
       u->Norm2(&u_norm2);
       du->Norm2(&du_norm2);
-      if (u_norm2 > 0 && du_norm2 > overflow_l2_tol_ * u_norm2) {
+      if (overflow_l2_tol_ > 0 && u_norm2 > 0 && du_norm2 > overflow_l2_tol_ * u_norm2) {
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) 
            *vo_->os() << "terminating due to L2-norm overflow ||du||=" << du_norm2
                       << ", ||u||=" << u_norm2 << std::endl;
@@ -395,7 +392,7 @@ int SolverAA<Vector, VectorSpace>::AA_ErrorControl_(
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
       *vo_->os() << "Solver converged: " << num_itrs_ << " itrs, error=" << error << std::endl;
     return SOLVER_CONVERGED;
-  } else if (error > overflow_tol_) {
+  } else if (overflow_tol_ > 0 && error > overflow_tol_) {
     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) 
       *vo_->os() << "Solve failed, error " << error << " > "
                  << overflow_tol_ << " (overflow)" << std::endl;

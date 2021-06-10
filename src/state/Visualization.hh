@@ -32,8 +32,7 @@ DOMAIN-NAME`".
       into for output files.  One of `"s`", `"d`", `"y`", or `"yr 365`"
 
     INCLUDES:
-
-    * ``[io-event-spec]`` An IOEvent_ spec
+    - ``[io-event-spec]`` An IOEvent_ spec
 
 
 Example:
@@ -42,7 +41,7 @@ Example:
 
   <ParameterList name="visualization">
     <Parameter name="file name base" type="string" value="visdump_data"/>
-  
+
     <Parameter name="cycles start period stop" type="Array(int)" value="{{0, 100, -1}}" />
     <Parameter name="cycles" type="Array(int)" value="{{999, 1001}}" />
 
