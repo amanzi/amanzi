@@ -25,9 +25,9 @@ Note that the expected domain for this is the micropore domain, but may be
 changed on the input line.
 
 .. _micropore-macropore-flux-evaluator-spec:
-.. admonition:: micropore-micropore-flux-evaluator
+.. admonition:: micropore-macropore-flux-evaluator-spec
 
-   * `"micropore domain`" ``[string]`` **""** Defaults to the domain of the flux's
+   * `"micropore domain`" ``[string]`` **DOMAIN** Defaults to the domain of the flux's
      variable name.
 
    * `"macropore domain`" ``[string]`` **macropore**
@@ -35,12 +35,11 @@ changed on the input line.
    * `"micropore macropore flux model parameters`" ``[micropore-macropore-flux-model-spec]``
 
    KEYS:
-
-   * `"micropore pressure`" **pressure**
-   * `"macropore pressure`" **MACROPORE_DOMAIN-pressure**
-   * `"micropore relative permeability`" **relative_permeability**
-   * `"macropore relative permeability`" **MACROPORE_DOMAIN-relative_permeability**
-   * `"permeability`" **permeability**
+   - `"micropore pressure`" **pressure**
+   - `"macropore pressure`" **MACROPORE_DOMAIN-pressure**
+   - `"micropore relative permeability`" **relative_permeability**
+   - `"macropore relative permeability`" **MACROPORE_DOMAIN-relative_permeability**
+   - `"permeability`" **permeability**
 
 */
 
