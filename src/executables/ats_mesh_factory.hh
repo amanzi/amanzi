@@ -109,10 +109,6 @@ Specified by `"mesh type`" of `"read mesh file`".
 .. admonition:: mesh-read-mesh-file-spec
 
     * `"file`" ``[string]`` filename of a pre-generated mesh file
-    * `"format`" ``[string]`` format of pre-generated mesh file. One of:
-    
-      - `"MSTK`"
-      - `"Exodus II`"
 
 Example:
 
@@ -123,8 +119,7 @@ Example:
        <Parameter name="mesh type" type="string" value="read mesh file"/>
        <ParameterList name="read mesh file parameters">
          <Parameter name="file" type="string" value="mesh_filename.exo"/>
-         <Parameter name="format" type="string" value="Exodus II"/>
-       </ParameterList>   
+       </ParameterList>
        <Parameter name="verify mesh" type="bool" value="true" />
      </ParameterList>
    </ParameterList>
@@ -205,6 +200,23 @@ Example:
         </ParameterList>
       </ParameterList>
     </ParameterList>
+
+
+Aliased Mesh
+============
+
+Aliased domains are simply domains that share a mesh with another domain.  For
+instance, one might find it useful to define both a "surface water" and a
+"snow" domain that share a common "surface" mesh.  In that case, typically the
+"surface" domain would point to the "surface" mesh, and the "snow" domain would
+be an "aliased" domain whose target is the "surface" mesh.
+
+Specified by `"mesh type`" of `"aliased`".
+
+.. _mesh-aliased-spec:
+.. admonition:: mesh-aliased-spec
+
+    * `"target`" ``[string]`` Mesh that this alias points to.
 
 
 Subgrid Meshes
