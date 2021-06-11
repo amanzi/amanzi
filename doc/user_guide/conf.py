@@ -11,7 +11,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os, subprocess
+import sys, os, subprocess, re
 
 assert sys.version_info.major >= 3, "Python 3.x is required to build documentation"
 
@@ -83,7 +83,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Amanzi'
-copyright = u'2020, Contributing National Laboratories (LANL, LBNL, ORNL, PNNL)'
+copyright = u'2021, Contributing National Laboratories (LANL, LBNL, ORNL, PNNL)'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -93,8 +93,13 @@ decode = lambda x : x.decode(sys.stdout.encoding) if isinstance(x,bytes) else x
 
 amanzi_branch=decode(subprocess.check_output('git symbolic-ref --short HEAD',shell=True).rstrip())
 amanzi_global_id=decode(subprocess.check_output('git rev-parse --short HEAD',shell=True).rstrip())
-amanzi_latest_tag=decode(subprocess.check_output('git tag -l \'amanzi-*\'', shell=True)).split()[-1].rstrip()
-amanzi_latest_tag_ver=amanzi_latest_tag.replace('amanzi-','')
+# Tags are different on release branch
+if ( re.search('amanzi-(\d+)\.(\d+)',amanzi_branch) ):
+    amanzi_latest_tag=decode(subprocess.check_output('git tag -l \'amanzi-*\' | grep -v dev', shell=True)).split()[-1].rstrip()
+    amanzi_latest_tag_ver=amanzi_latest_tag.replace('amanzi-','Version ')
+else:
+    amanzi_latest_tag=decode(subprocess.check_output('git tag -l \'amanzi-*\'', shell=True)).split()[-1].rstrip()
+    amanzi_latest_tag_ver=amanzi_latest_tag.replace('amanzi-','Version ')+'_'+amanzi_global_id
 
 # The short X.Y version.
 version = amanzi_latest_tag_ver
@@ -148,7 +153,10 @@ html_theme = 'sphinx_rtd_theme'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#html_theme_options = {}
+html_theme_options = {
+    'logo_only': True,
+    'prev_next_buttons_location': 'both',
+}
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
@@ -162,7 +170,7 @@ html_theme = 'sphinx_rtd_theme'
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo = None
+html_logo = '_static/Amanzi-color.png'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
