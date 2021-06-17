@@ -15,9 +15,9 @@
 #ifndef AMANZI_MESH_DEFS_HH_
 #define AMANZI_MESH_DEFS_HH_
 
-#include <vector>
+#include <algorithm>
 #include <string>
-#include "boost/algorithm/string.hpp"
+#include <vector>
 
 #include "errors.hh"
 
@@ -63,7 +63,7 @@ inline
 Entity_kind entity_kind(const std::string& instring)
 {
   std::string estring = instring; // note not done in signature to throw a better error
-  boost::algorithm::to_lower(estring);
+  transform(estring.begin(), estring.end(), estring.begin(), ::tolower);
   if (estring == "cell") return CELL;
   else if (estring == "face") return FACE;
   else if (estring == "boundary_face") return BOUNDARY_FACE;
