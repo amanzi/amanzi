@@ -23,67 +23,6 @@ function of time:
 
 Note, this does not follow the `"typed`" format for legacy reasons.
 
-.. function-spec:
-.. admonition:: function-spec
-
-  ONE OF:
-
-  * `"function: constant`" ``[function-constant-spec]``
-
-  OR:
-
-  * `"function: tabular`" ``[function-tabular-spec]``
-
-  OR:
-
-  * `"function: smooth step`" ``[function-smooth-step-spec]``
-
-  OR:
-
-  * `"function: polynomial`" ``[function-polynomial-spec]``
-
-  OR:
-
-  * `"function: monomial`" ``[function-monomial-spec]``
-
-  OR:
-
-  * `"function: linear`" ``[function-linear-spec]``
-
-  OR:
-
-  * `"function: separable`" ``[function-separable-spec]``
-
-  OR:
-
-  * `"function: additive`" ``[function-additive-spec]``
-
-  OR:
-
-  * `"function: multiplicative`" ``[function-multiplicative-spec]``
-
-  OR:
-
-  * `"function: composition`" ``[function-composition-spec]``
-
-  OR:
-
-  * `"function: static head`" ``[function-static-head-spec]``
-
-  OR:
-
-  * `"function: standard math`" ``[function-standard-math-spec]``
-
-  OR:
-
-  * `"function: bilinear`" ``[function-bilinear-spec]``
-
-  OR:
-
-  * `"function: distance`" ``[function-distance-spec]``
-
-  END
-
 */
 
 #ifndef AMANZI_FUNCTION_HH_
