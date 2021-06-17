@@ -57,7 +57,7 @@ this is the case if simulation time zero is mid-summer.  These parameters come
 from the LandCover type.
 
 .. _transpiration-distribution-evaluator-spec:
-.. admonition:: transpiration-distribution-evaluator
+.. admonition:: transpiration-distribution-evaluator-spec
 
     * `"year duration`" ``[double]`` **1**
     * `"year duration units`" ``[string]`` **noleap**
@@ -68,11 +68,11 @@ from the LandCover type.
 
     KEYS:
 
-    * `"plant wilting factor`"
-    * `"rooting depth fraction`"
-    * `"potential transpiration`"
-    * `"cell volume`"
-    * `"surface cell volume`"
+    - `"plant wilting factor`" **DOMAIN-plant_wilting_factor**
+    - `"rooting depth fraction`" **DOMAIN-rooting_depth_fraction**
+    - `"potential transpiration`" **DOMAIN_SURF-potential_transpiration**
+    - `"cell volume`" **DOMAIN-cell_volume**
+    - `"surface cell volume`" **DOMAIN_SURF-cell_volume**
 
 */
 

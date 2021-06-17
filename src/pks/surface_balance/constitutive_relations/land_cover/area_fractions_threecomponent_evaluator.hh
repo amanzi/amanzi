@@ -17,19 +17,19 @@ Ordering of the area fractions calculated are: [bare ground, water, snow].
    * `"minimum fractional area [-]`" ``[double]`` **1.e-5**
       Mimimum area fraction allowed, less than this is rebalanced as zero.
 
+   KEYS:
    DEPENDENCIES:
-
-   * `"snow depth`" ``[string]``
-   * `"ponded depth`" ``[string]``
+   - `"snow depth`" **DOMAIN_SNOW-depth**
+   - `"ponded depth`" **DOMAIN-ponded_depth**
 
 .. note:
 
    This evaluator also uses the LandCover_ types.  From that struct, it
    requires the value of the following parameters:
 
-   * `"snow transition height [m]`" ``[double]`` **0.02**
+   - `"snow transition height [m]`" ``[double]`` **0.02**
       Minimum thickness for specifying the snow gradient.
-   * `"water transition height [m]`" ``[double]`` **0.02**
+   - `"water transition height [m]`" ``[double]`` **0.02**
          Minimum thickness for specifying the water gradient.
 
 .. note:

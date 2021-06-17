@@ -19,7 +19,7 @@ the ground from the atmosphere.
 .. _seb_evaluator-spec:
 .. admonition:: seb_evaluator-spec
 
-   * `"wind speed reference height [m]`" **2.0** Reference height at which
+   * `"wind speed reference height [m]`" ``[double]`` **2.0** Reference height at which
      wind speed is measured.
    * `"minimum wind speed [m s^-1]`" ``[double]`` **1.0** Sets a floor on wind speed for
      potential wierd data.  Models have trouble with no wind.
@@ -77,7 +77,6 @@ the ground from the atmosphere.
     - `"molar density liquid`" **DOMAIN-molar_density_liquid** [mol m^-3]
     - `"mass density liquid`" **DOMAIN-mass_density_liquid** [kg m^-3]
 
-    END
 
 .. note:
 

@@ -25,15 +25,15 @@ Requires the use of LandCover types, for canopy albedo and emissivity.
    * `"emissivity snow [-]`" ``[double]`` **0.98**
 
    KEYS:
-   * `"surface albedos`" **SURFACE_DOMAIN-albedos**
-   * `"surface emissivities`" **SURFACE_DOMAIN-emissivities**
-   * `"incoming shortwave radiation`" **SURFACE_DOMAIN-incoming_shortwave_radiation**
-   * `"incoming longwave radiation`" **SURFACE_DOMAIN-incoming_longwave_radiation**
-   * `"surface temperature`" **SURFACE_DOMAIN-temperature**
-   * `"snow temperature`" **SNOW_DOMAIN-temperature**
-   * `"canopy temperature`" **CANOPY_DOMAIN-temperature**
-   * `"leaf area index`" **CANOPY_DOMAIN-leaf_area_index**
-   * `"area fractions`" **SURFACE_DOMAIN-area_fractions**
+   - `"surface albedos`" **SURFACE_DOMAIN-albedos**
+   - `"surface emissivities`" **SURFACE_DOMAIN-emissivities**
+   - `"incoming shortwave radiation`" **SURFACE_DOMAIN-incoming_shortwave_radiation**
+   - `"incoming longwave radiation`" **SURFACE_DOMAIN-incoming_longwave_radiation**
+   - `"surface temperature`" **SURFACE_DOMAIN-temperature**
+   - `"snow temperature`" **SNOW_DOMAIN-temperature**
+   - `"canopy temperature`" **CANOPY_DOMAIN-temperature**
+   - `"leaf area index`" **CANOPY_DOMAIN-leaf_area_index**
+   - `"area fractions`" **SURFACE_DOMAIN-area_fractions**
 
 */
 

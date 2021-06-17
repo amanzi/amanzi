@@ -30,14 +30,14 @@ Requires the following dependencies:
       vaporization of snow, not water.
 
    KEYS:
-   * `"air temperature`" Air temp, in [K]
-   * `"ground temperature`" Ground or leaf temp, in [K].  Note this may be the
+   - `"air temperature`" **DOMAIN-air_temperature** Air temp, in [K]
+   - `"surface temperature`" **DOMAIN-temperature** Ground or leaf temp, in [K].  Note this may be the
       same as air temperature.
-   * `"relative humidity`" [-]
-   * `"elevation`" Elevation [m]
-   * `"net radiation`" [W m^-2] Net radiation balance, positive to the ground.
-   * `"limiter`" [-] See `"include limiter`" above.
-   * `"1 - limiter`" [-] See `"include 1 - limiter`" above.
+   - `"relative humidity`" **DOMAIN-relative_humidity** [-]
+   - `"elevation`" **DOMAIN-elevation** Elevation [m]
+   - `"net radiation`" **DOMAIN-net_radiation** [W m^-2] Net radiation balance, positive to the ground.
+   - `"limiter`" [-] See `"include limiter`" above.
+   - `"1 - limiter`" [-] See `"include 1 - limiter`" above.
 
 */
 

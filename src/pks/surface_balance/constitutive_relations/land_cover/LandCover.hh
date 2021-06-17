@@ -37,56 +37,56 @@ same region-based partitioning.
 .. _land-cover-spec:
 .. admonition:: land-cover-spec
 
-    * `"rooting depth max [m]`" ``[double]`` Below this the rooting fraction is
+    * `"rooting depth max [m]`" ``[double]`` **NaN** Below this the rooting fraction is
       set to 0. [m]
-    * `"rooting profile alpha [-]`" ``[double]`` alpha in the rooting profile
+    * `"rooting profile alpha [-]`" ``[double]``  **NaN** alpha in the rooting profile
       function [-]
-    * `"rooting profile beta [-]`" ``[double]`` beta in the rooting profile
+    * `"rooting profile beta [-]`" ``[double]``  **NaN** beta in the rooting profile
       function [-] Note that these are from the CLM 4.5 Technical Note.
 
-    * `"mafic potential at fully closed stomata [Pa]`" ``[double]``
-    * `"mafic potential at fully open stomata [Pa]`" ``[double]`` Transpiration
+    * `"mafic potential at fully closed stomata [Pa]`" ``[double]``  **NaN** 
+    * `"mafic potential at fully open stomata [Pa]`" ``[double]``  **NaN** Transpiration
       is typically multipled by a limiter that is empirically modeling stomata
       closure.  Typically it varies linearly from 0 to 1 as a function of
       mafic potential (soil pore capillary pressure), between these two
       values. [Pa]
 
-    * `"leaf on time [doy]`" ``[double]`` Day of year, relative to time 0, when leaves
+    * `"leaf on time [doy]`" ``[double]``  **NaN** Day of year, relative to time 0, when leaves
        begin transpiring.  Note that -1 implies evergreen. [doy]
-    * `"leaf off time [doy]`" ``[double]`` Day of year, relative to time 0, when leaves
+    * `"leaf off time [doy]`" ``[double]``  **NaN** Day of year, relative to time 0, when leaves
        stop transpiring.  Note that -1 implies evergreen. [doy]
 
-    * `"Priestley-Taylor alpha of snow [-]`" ``[double]`` Evaporation coefficient
+    * `"Priestley-Taylor alpha of snow [-]`" ``[double]``  **NaN** Evaporation coefficient
       in the Priestley-Taylor model, used in sublimation of snow.
-    * `"Priestley-Taylor alpha of bare ground [-]`" ``[double]`` Evaporation coefficient
+    * `"Priestley-Taylor alpha of bare ground [-]`" ``[double]``  **NaN** Evaporation coefficient
       in the Priestley-Taylor model, used in bare soil
-    * `"Priestley-Taylor alpha of canopy [-]`" ``[double]`` Evaporation coefficient
+    * `"Priestley-Taylor alpha of canopy [-]`" ``[double]``  **NaN** Evaporation coefficient
       in the Priestley-Taylor model, used in sublimation of snow.
-    * `"Priestley-Taylor alpha of transpiration [-]`" ``[double]`` Evaporation coefficient
+    * `"Priestley-Taylor alpha of transpiration [-]`" ``[double]``  **NaN** Evaporation coefficient
       in the Priestley-Taylor model, used in transpiration.
 
-    * `"interception coefficient [-]`" ``[double]`` Fraction, per unit LAI, of
+    * `"interception coefficient [-]`" ``[double]``  **NaN** Fraction, per unit LAI, of
        water intercepted by the canopy.
 
-    * `"albedo of bare ground [-]`" ``[double]`` Albedo of the land cover
+    * `"albedo of bare ground [-]`" ``[double]``  **NaN** Albedo of the land cover
       type, ranging from [0,1]
-    * `"emissivity of bare ground [-]`" ``[double]`` Emissivity of the land
+    * `"emissivity of bare ground [-]`" ``[double]``  **NaN** Emissivity of the land
       cover type's bare ground, ranging from [0,1]
-    * `"albedo of canopy [-]`" ``[double]`` Albedo of the land cover type's
+    * `"albedo of canopy [-]`" ``[double]``  **NaN** Albedo of the land cover type's
       canopy, ranging from [0,1]
-    * `"emissivity of canopy [-]`" ``[double]`` Emissivity of the land
+    * `"emissivity of canopy [-]`" ``[double]``  **NaN** Emissivity of the land
       cover type's canopy, ranging from [0,1]
 
-    * `"Beer's law extinction coefficient, shortwave [-]`"  ``[double]``
-    * `"Beer's law extinction coefficient, longwave [-]`" ``[double]`` Beer's
-      law provides the attenuation of light through a diffuse medium (in this
-      case leaves) as a function of concentration/density (in this case LAI)
-      and an extinction coefficient, sometimes called the absorptivity, which
-      is usually a function of wavelength, but here is split into long and
-      shortwave constants.
+    * `"Beer's law extinction coefficient, shortwave [-]`"  ``[double]``  **NaN**
+    * `"Beer's law extinction coefficient, longwave [-]`" ``[double]`` **NaN**
+      Beer's law provides the attenuation of light through a diffuse medium (in
+      this case leaves) as a function of concentration/density (in this case
+      LAI) and an extinction coefficient, sometimes called the absorptivity,
+      which is usually a function of wavelength, but here is split into long
+      and shortwave constants.
 
-    * `"snow transition depth [m]`" ``[double]``  See below.
-    * `"water transition depth [m]`" ``[double]`` Due to the need for smooth
+    * `"snow transition depth [m]`" ``[double]`` **NaN** See below.
+    * `"water transition depth [m]`" ``[double]`` **NaN** Due to the need for smooth
       transitions (numerically) between various surface balance conditions,
       frequently a subgrid-scale model is used that, rather than trying to
       smooth each model, varies an area fraction between 1 and 0 for multiple
@@ -98,12 +98,12 @@ same region-based partitioning.
       calculated, one assuming the ponded depth is this thick, and the various
       components of the SEB are averaged by that area fraction.
 
-    * `"dessicated zone thickness [m]`" ``[double]`` The thickness of soil
+    * `"dessicated zone thickness [m]`" ``[double]`` **NaN** The thickness of soil
       across which water vapor must diffuse to reach the free atmosphere.
       Effectively, the bigger this value, the faster that bare-soil evaporation
       shuts off as a function of pressure/liquid saturation.
 
-    * `"Clapp and Hornberger b [-]`" ``[double]`` This is unfortunate, and
+    * `"Clapp and Hornberger b [-]`" ``[double]`` **NaN** This is unfortunate, and
       should go away at some point.  Clapp & Hornberger is a soil retention
       curve, and this WRM is hard-coded into a few CLM models that we use here.
       It would be much better to refactor this out, as we almost never use C&H
@@ -112,14 +112,15 @@ same region-based partitioning.
       and/or refactored, we must provide this value.  When in doubt, just use
       1.
 
-    * `"roughness length of bare ground [m]`" ``[double]`` Roughness length of
+    * `"roughness length of bare ground [m]`" ``[double]`` **NaN** Roughness length of
       the bare soil, used in calculating sensible/latent heat in the
       physics-based SEB model.  A typical value is 0.04.
-    * `"roughness length of snow [m]`" ``[double]`` Roughness
+    * `"roughness length of snow [m]`" ``[double]`` **NaN** Roughness
       length of the snow-covered soil, used in calculating sensible/latent heat
       in the physics-based SEB model.  A typical value is 0.004.
 
-    * `"Manning's n [?]`" ``[double]`` Manning's n [??]  THIS IS NOT CURRENTLY USED.
+
+    - `"Manning's n [?]`" ``[double]`` **NaN** Manning's n [??]  THIS IS NOT CURRENTLY USED.
 
 */
 

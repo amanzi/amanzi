@@ -19,9 +19,9 @@ Hornberger b.
 .. admonition:: evaporation-downregulation-evaluator-spec
 
    KEYS:
-   * `"saturation gas`" **SUBSURFACE_DOMAIN-saturation_gas**
-   * `"porosity`" **SUBSURFACE_DOMAIN-porosity**
-   * `"potential evaporation`" **SURFACE_DOMAIN-potential_evaporation**
+   - `"saturation gas`" **DOMAIN_SUB-saturation_gas**
+   - `"porosity`" **DOMAIN_SUB-porosity**
+   - `"potential evaporation`" **DOMAIN_SUB-potential_evaporation**
 
 */
 

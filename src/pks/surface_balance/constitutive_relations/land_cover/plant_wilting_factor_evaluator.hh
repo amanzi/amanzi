@@ -22,11 +22,16 @@ closed (the wilting point).
 Note this makes use of LandCover objects for mafic potential of fully open and
 fully closed stomata.
 
+Note the challenges of using this model with arbitrary van Genuchten WRMs.  See
+Verhoef & Egea, Ag. & Forest Meteorology, 2014
+https://doi.org/10.1016/j.agrformet.2014.02.009
+
+
 .. _plant-wilting-factor-evaluator-spec:
 .. admonition:: plant-wilting-factor-evaluator-spec
 
    KEYS:
-   * `"capillary pressure`" **DOMAIN-capillary_pressure_gas_liq**
+   - `"capillary pressure`" **DOMAIN-capillary_pressure_gas_liq**
 
 
 */

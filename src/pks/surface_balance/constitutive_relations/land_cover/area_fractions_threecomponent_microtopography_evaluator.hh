@@ -23,15 +23,15 @@ top of that surface.
      by replacing `"surface`" with `"snow`" in the this's domain.
 
    KEYS:
-   * `"microtopographic relief`" **DOMAIN-microtopographic_relief**
+   - `"microtopographic relief`" **DOMAIN-microtopographic_relief**
      The name of del_max, the max microtopography value.
-   * `"excluded volume`" **DOMAIN-excluded_volume**
+   - `"excluded volume`" **DOMAIN-excluded_volume**
      The name of del_excluded, the integral of the microtopography.
-   * `"ponded depth`" **DOMAIN-pressure**
+   - `"ponded depth`" **DOMAIN-pressure**
      The name of the surface water ponded depth.
-   * `"snow depth`" **DOMAIN_SNOW-depth**
+   - `"snow depth`" **DOMAIN_SNOW-depth**
      The name of the snow depth.
-   * `"volumetric snow depth`" **DOMAIN_SNOW-volumetric_depth**
+   - `"volumetric snow depth`" **DOMAIN_SNOW-volumetric_depth**
      The name of the snow depth.
 
 
