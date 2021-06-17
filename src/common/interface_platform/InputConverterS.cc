@@ -12,6 +12,7 @@
 #ifdef ENABLE_Structured
 
 #include <boost/algorithm/string.hpp>  // For string trimming
+
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -20,6 +21,7 @@
 
 #include "errors.hh"
 #include "exceptions.hh"
+#include "StringExt.hh"
 #include "InputConverterS.hh"
 
 namespace Amanzi {
@@ -27,7 +29,6 @@ namespace AmanziInput {
 
 // For saving a bit of typing.
 using namespace std;
-using namespace boost::algorithm;
 using namespace xercesc;
 
 // Internally-used stuff.
@@ -37,7 +38,7 @@ namespace {
 string ConvertTimeToSeconds(const string& time_string)
 {
   vector<string> tokens;
-  split(tokens, time_string, is_any_of(" ,;"));
+  split(tokens, time_string, boost::algorithm::is_any_of(" ,;"));
   if (tokens.size() == 1)
     return tokens[0];
   else
