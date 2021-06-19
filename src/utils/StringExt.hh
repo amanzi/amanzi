@@ -11,7 +11,7 @@
 
 #include <iostream>
 #include <string>
-
+#include <vector>
 
 namespace Amanzi {
 
@@ -42,6 +42,28 @@ void replace_all_copies(std::string& str,
     str.replace(pos, n, sub_new);
     pos += n;
   }
+}
+
+
+// split string using multiple delimeters and ignoring empty strings
+inline
+std::vector<std::string> split(const std::string& str,
+                         const std::string& delimiters)
+{
+  std::vector<std::string> result;
+  size_t current, next(-1);
+  do {
+    next = str.find_first_not_of(delimiters, next + 1);
+    if (next == std::string::npos) break;
+
+    next -= 1;
+    current = next + 1;
+    next = str.find_first_of(delimiters, current);
+    result.push_back(str.substr(current, next - current));
+  }
+  while (next != std::string::npos);
+
+  return result;
 }
 
 }  // namespace Amanzi

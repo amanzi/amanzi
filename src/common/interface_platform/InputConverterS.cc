@@ -37,12 +37,10 @@ namespace {
 // This converts a time (contained in a string) to its value in seconds.
 string ConvertTimeToSeconds(const string& time_string)
 {
-  vector<string> tokens;
-  split(tokens, time_string, boost::algorithm::is_any_of(" ,;"));
-  if (tokens.size() == 1)
+  vector<string> tokens = split(time_string, " ,;");
+  if (tokens.size() == 1) {
     return tokens[0];
-  else
-  {
+  } else {
     double value = atof(tokens[0].c_str());
     double factor;
     switch(tokens[1][0])
