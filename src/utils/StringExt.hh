@@ -29,18 +29,26 @@ void trim(std::string& str)
 
 // out
 inline 
-void replace_all_copies(std::string& str,
-                        const std::string& sub_old, const std::string& sub_new)
+void replace_all(std::string& str,
+                 const std::string& sub_old, const std::string& sub_new)
 {
   size_t pos(0);
-  int n = sub_old.size();
+  int n0 = sub_old.size();
+  int n1 = sub_new.size();
 
   while (true) {
     pos = str.find(sub_old, pos);
     if (pos == std::string::npos) break;
 
-    str.replace(pos, n, sub_new);
-    pos += n;
+    if (n0 == n1) {
+      str.replace(pos, n0, sub_new);
+    } else {
+      str.insert(pos, sub_new, 0, n1);
+      pos += n1;
+      str.erase(pos, n0);
+    }
+
+    pos += n0;
   }
 }
 
