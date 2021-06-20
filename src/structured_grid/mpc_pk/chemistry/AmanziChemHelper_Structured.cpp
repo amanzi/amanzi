@@ -306,7 +306,7 @@ AmanziChemHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       
       try
       { 
 #ifndef DEBUG_NO_CHEM 
-        TheChemSolve.ReactionStep(&TheComponent,dt);
+        TheChemSolve.ReactionStep(&TheComponent,TheParameter,dt);
 #endif
         stat = TheChemSolve.status();
         fcnCnt(iv,sFunc) = stat.num_rhs_evaluations;        
