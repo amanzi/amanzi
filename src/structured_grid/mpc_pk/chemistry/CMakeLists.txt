@@ -1,4 +1,4 @@
-m# -*- mode: cmake -*-
+# -*- mode: cmake -*-
 #
 # Define a project name
 # After this command the following varaibles are defined

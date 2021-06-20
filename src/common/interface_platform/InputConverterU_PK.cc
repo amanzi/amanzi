@@ -14,13 +14,13 @@
 #include <string>
 
 //TPLs
-#include <boost/algorithm/string.hpp>
 #include <xercesc/dom/DOM.hpp>
 
 // Amanzi's
 #include "errors.hh"
 #include "exceptions.hh"
 #include "dbc.hh"
+#include "StringExt.hh"
 
 #include "InputConverterU.hh"
 #include "InputConverterU_Defs.hh"
@@ -351,7 +351,8 @@ Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
   // process primary and secondary discretization methods
   std::vector<std::string> methods = CharToStrings_(disc_methods.c_str());
   for (int i = 0; i < methods.size(); ++i) {
-    std::string tmp = boost::replace_all_copy(methods[i], "-", ": ");
+    std::string tmp(methods[i]);
+    Amanzi::replace_all(tmp, "-", ": ");
     replace(tmp.begin(), tmp.end(), '_', ' ');
     if (tmp == "mfd: two point flux approximation") tmp = "mfd: two-point flux approximation";
     methods[i] = tmp;

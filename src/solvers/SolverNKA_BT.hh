@@ -352,7 +352,7 @@ int SolverNKA_BT<Vector, VectorSpace>::NKA_ErrorControl_(
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
       *vo_->os() << "Solver converged: " << num_itrs_ << " itrs, error=" << error << std::endl;
     return SOLVER_CONVERGED;
-  } else if (error > overflow_tol_) {
+  } else if (overflow_tol_ > 0 && error > overflow_tol_) {
     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) 
       *vo_->os() << "Solve failed, error " << error << " > "
                  << overflow_tol_ << " (overflow)" << std::endl;

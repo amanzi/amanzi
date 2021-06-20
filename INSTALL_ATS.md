@@ -84,9 +84,9 @@ All instructions assume you use bash.  Change as needed for other shells.
     cd ${ATS_BASE}
     ```
 
-  * Clone the Amanzi source for the latest commit.
+  * Clone the Amanzi source for the latest release, or for the main branch if you need the latest commits.
     ```
-    git clone -b master http://github.com/amanzi/amanzi $AMANZI_SRC_DIR
+    git clone -b amanzi-MAJOR.MINOR http://github.com/amanzi/amanzi $AMANZI_SRC_DIR
     ```
 
 2. Configure and build the Amanzi TPLs, Amanzi, and ATS.
@@ -112,7 +112,9 @@ All instructions assume you use bash.  Change as needed for other shells.
     ```
     cd ats-demos
     cd 01_richards_steadystate
-    ats --xml_file=richards_steadystate.xml &> out.log
+    mkdir richards_steadystate.demo
+    cd richards_steadystate.demo
+    ats --xml_file=../richards_steadystate.xml &> out.log
     ```
 
   * Visualize the results

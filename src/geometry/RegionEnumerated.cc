@@ -9,7 +9,8 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
-#include "boost/algorithm/string.hpp"
+#include <locale>
+#include <string>
 
 #include "dbc.hh"
 #include "errors.hh"
@@ -25,8 +26,10 @@ RegionEnumerated::RegionEnumerated(const std::string& name,
                                    const std::vector<Entity_ID>& ents,
                                    const LifeCycleType lifecycle)
   : Region(name, id, false, ENUMERATED, 0, 0, lifecycle),
-    entity_str_(boost::to_upper_copy<std::string>(entity_str)),
+    entity_str_(entity_str),
     entities_(ents) {
+  std::transform(entity_str_.begin(), entity_str_.end(), entity_str_.begin(),
+                 [](unsigned char c) { return std::toupper(c); });
   // Region dimension is set arbitrarily as 0 since the set of
   // entities in the mesh will determine the dimension
 }

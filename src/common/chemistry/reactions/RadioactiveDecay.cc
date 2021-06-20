@@ -16,9 +16,6 @@
 #include <iostream>
 #include <iomanip>
 
-// TPLs
-#include "boost/algorithm/string.hpp"
-
 // Amanzi
 #include "errors.hh"
 

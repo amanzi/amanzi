@@ -24,7 +24,7 @@ are out of those bounds, and constant at the corner value if both are out of
 bounds.
  
 * `"file`" ``[string]`` HDF5 filename of the data
-* `"time header`" ``[Array(string)]`` **time** Name of the temporal dimension indices, the :math:`t_i`.
+* `"time header`" ``[string]`` **time** Name of the temporal dimension indices, the :math:`t_i`.
 * `"row header`" ``[string]`` **x** name of the row dataset, the :math:`x_i`
 * `"row coordinate`" ``[string]`` **x** one of `"x`",`"y`",`"z`"
 * `"column header`" ``[string]`` **y** name of the column dataset, the :math:`y_i`
