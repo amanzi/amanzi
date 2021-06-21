@@ -1,6 +1,7 @@
 #ifndef _RichardSolver_H_
 #define _RichardSolver_H_
 
+#include <petsc.h>
 #include <MFTower.H>
 #include <NLScontrol.H>
 #include <RSdata.H>

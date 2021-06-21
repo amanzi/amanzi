@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 {
   if (argc < 4) {
     std::cout <<
-      "Usage: verify_operators  with_pc|direct  mesh_type  mesh_size|mesh_file  scheme  tol\n\n"
+      "Usage: verify_operators  with_pc|direct  mesh_type  mesh_size|mesh_file  scheme  tol  nloops  linsolver\n\n"
       "  (req) with_pc   = identity|diagonal|ifpack: ILUT\n"
       "                    Hypre: AMG|Hypre: Euclid\n"
       "                    Trilinos: ML|Trilinos: MueLu\n"
@@ -40,10 +40,12 @@ int main(int argc, char *argv[])
       "  (req) mesh_size = positive integer\n"
       "  (req) mesh_file = file containing mesh\n\n"
       "  (opt) scheme    = mfd|fv  (default mfd)\n"
-      "  (opt) tol       = positive double  (default 1e-10)\n\n"
+      "  (opt) tol       = positive double  (default 1e-10)\n"
+      "  (opt) nloops    = number of iterations  (default is 1 for linear solvers)\n"
+      "  (opr) libsolver = linear solver: pcg (default) or gmres\n\n"
       "Examples:\n"
       "  verify_operators \"Hypre: AMG\" structured3d 10 fv 1e-10\n"
-      "  verify_operators \"Amesos1: KLU\" unstructured2d mymesh.exo mfd 1e-10\n";
+      "  verify_operators \"Amesos1: KLU\" unstructured2d mymesh.exo mfd 1e-10 1 gmres\n";
     return 1;
   }
   for (int i = 1; i < argc; ++i) argv_copy.push_back(argv[i]);
@@ -104,11 +106,18 @@ TEST(Verify_Mesh_and_Operators) {
     nloops = std::stoi(argv_copy[5]);
   }
 
+  std::string linsolver("pcg");
+  if (argc > 6) {
+    linsolver = argv_copy[6];
+  }
+
   // little_k
   AmanziMesh::Entity_kind scalar_coef(AmanziMesh::Entity_kind::UNKNOWN);
 
   // other parameters
   bool symmetric(true);
+  if (linsolver != "pcg") symmetric = false;
+
   int order(1);
   std::string ana("00");
 
@@ -145,7 +154,9 @@ TEST(Verify_Mesh_and_Operators) {
   plist->sublist("solvers").sublist("GMRES")
       .set<std::string>("iterative method", "gmres").sublist("gmres parameters")
       .set<int>("maximum number of iterations", 5000)
-      .set<double>("error tolerance", tol);
+      .set<double>("error tolerance", tol)
+      .set<int>("size of Krylov space", 20)
+      .set<bool>("release Krylov vectors", "false");
 
   plist->sublist("solvers").sublist("Amesos1: KLU")
       .set<std::string>("direct method", "amesos").sublist("amesos parameters")

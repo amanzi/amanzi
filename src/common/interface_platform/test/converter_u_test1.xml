@@ -308,7 +308,8 @@
 
     <boundary_condition name="BC Rest">
       <assigned_regions>Recharge_Boundary_WestOfCribs,
-                        Recharge_Boundary_EastOfCribs</assigned_regions>
+                        Recharge_Boundary_EastOfCribs  
+      </assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
           <inward_volumetric_flux value="1.1071E-10" function="constant" start="0.0" />
