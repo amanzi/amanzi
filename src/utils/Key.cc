@@ -334,7 +334,8 @@ Key readDomainHint(Teuchos::ParameterList& plist,
       default_domain = prefix + hint.substr(hint_prefix.size(), std::string::npos);
     }
     return standardize(plist.get<std::string>(param, default_domain));
-  } else if (standardize(hint_prefix) == "domain") {
+  } else if (standardize(hint_prefix) == "domain" ||
+             hint_prefix == "subsurface") {
     return standardize(plist.get<std::string>(param, prefix+"_"+hint));
   }
   return standardize(plist.get<std::string>(param));
