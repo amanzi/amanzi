@@ -136,9 +136,15 @@ def plot(wrm, ax=None, color='b', format='-', label=None, y_units='Pa'):
 
     if ax is None:
         fig,ax = plt.subplots(1,1,squeeze=True)
+    else:
+        try:
+            ax1 = ax[1]
+        except AttributeError:
+            ax1 = None
+        else:
+            ax = ax[0]
 
     s = np.array([wrm.saturation(apc) for apc in pc])
-
     if y_units == 'hPa':
         pc = pc / 100.
     elif y_units == 'm':
@@ -150,9 +156,17 @@ def plot(wrm, ax=None, color='b', format='-', label=None, y_units='Pa'):
     else:
         raise ValueError("Invalid units for yaxis, must be one of [Pa, m, cm, hPa]")
 
-    ax.semilogy(s, pc, color=color, label=label)
+    ax.semilogy(s, pc, format, color=color, label=label)
     ax.set_xlabel("saturation [-]")
     ax.set_ylabel("capillary pressure [{}]".format(y_units))
+
+    if ax1 is not None:
+        ax1.plot(s, pc/1000/9.8, format, color=color)
+        ax1.set_xlabel('saturation [-]')
+        ax1.set_ylabel('elevation above water table [m]')
+        ax1.set_ylim([0,5])
+        ax = [ax, ax1]
+
     return ax
 
 def plot_kr(wrm, ax=None, color='b', format='-', label=None):

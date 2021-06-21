@@ -162,11 +162,11 @@ def create_landcover(xml, eval_name='water_source', water_transition_depth=0.02)
     lc = ic_list.sublist('land cover types').sublist('surface domain')
     add_to_lc('water_source', 'dessicated zone thickness [m]', 0.1, lc)
     add_to_lc('water_source', 'roughness length of bare ground [m]', 0.04, lc)
-    add_to_lc('water_source', 'roughness length of snow-covered ground [m]', 0.004, lc)
+    add_to_lc('water_source', 'roughness length of snow-covered ground [m]', 0.004, lc, 'roughness length of snow [m]')
     add_to_lc('water_source', 'snow-ground transitional depth [m]', 0.02, lc, 'snow transition depth [m]')
     add_to_lc('water_source', 'water-ground transitional depth [m]', water_transition_depth, lc, 'water transition depth [m]')
-    add_to_lc('surface-subgrid_albedos', 'albedo ground surface [-]', 0.135, lc, 'albedo of ground surface [-]')
-    add_to_lc('surface-subgrid_albedos', 'emissivity tundra [-]', 0.92, lc, 'emissivity of ground surface [-]')
+    add_to_lc('surface-subgrid_albedos', 'albedo ground surface [-]', 0.135, lc, 'albedo of bare ground [-]')
+    add_to_lc('surface-subgrid_albedos', 'emissivity tundra [-]', 0.92, lc, 'emissivity of bare ground [-]')
 
 
 def arctic_seb(xml, seb_new=False):

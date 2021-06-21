@@ -493,8 +493,6 @@ bool Coordinator::advance(double t_old, double t_new) {
     // check whether meshes are deformable, and if so, recover the old coordinates
     for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
          mesh!=S_->mesh_end(); ++mesh) {
-      bool surf = boost::starts_with(mesh->first, "surface_");
-
       if (S_->IsDeformableMesh(mesh->first) && !S_->IsAliasedMesh(mesh->first)) {
         // collect the old coordinates
         std::string node_key;

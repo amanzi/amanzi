@@ -427,16 +427,8 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S)
       Epetra_MultiVector& pres = *pres_cv->ViewComponent("cell",false);
 
       // figure out the subsurface domain's pressure
-      Key key_ss;
-      if (boost::starts_with(domain_, "surface")) {
-        Key domain_ss;
-        if (domain_ == "surface") domain_ss = "domain";
-        else domain_ss = domain_.substr(8,domain_.size());
-        key_ss = ic_plist.get<std::string>("subsurface pressure key",
-                Keys::getKey(domain_ss, "pressure"));
-      } else {
-        key_ss = ic_plist.get<std::string>("subsurface pressure key", "pressure");
-      }
+      Key domain_ss = Keys::readDomainHint(*plist_, domain_, "surface", "subsurface");
+      Key key_ss = Keys::readKey(*plist_, domain_ss, "subsurface pressure", "pressure");
 
       // copy subsurface face pressure to surface cell pressure
       Teuchos::RCP<const CompositeVector> subsurf_pres = S->GetFieldData(key_ss);
