@@ -93,6 +93,9 @@ blas_dir=
 blas_vendor=
 lapack_dir=
 
+# python for regression tests
+python_exec=
+
 # Debugging options for CMake configuration phase
 debug_find_blas=$FALSE
 
@@ -417,6 +420,9 @@ Tool definitions:
   --with-xsdk=DIR            use libraries already available in xSDK installation in lieu of
                              downloading and installing them individually. ['"${xsdk_root_dir}"']
 
+  --with-python=FILE         FILE is the python executable, must be python3 and include numpy and h5py, for
+                             use with ATS regression testing.
+
 System/Vendor Supported Third Party Libraries (TPLs):
 Bootstrap builds community supported TPLs, however, some TPLs have vendor or compiler optimized versions
 and are provided on the system.  Some of these libraries may be in nonstandard locations.
@@ -574,6 +580,7 @@ Tools and Tests:
     reg_tests    = '"${reg_tests}"'
     test_suite   = '"${test_suite}"'
     tools_mpi    = '"${tools_mpi}"'
+    python_exec  = '"${python_exec}"'
 
 Directories:
     prefix                = '"${prefix}"'
@@ -745,6 +752,11 @@ List of INPUT parameters
                  mpi_root_dir=$tmp
                  ;;
 
+      --with-python=*)
+                 tmp=`parse_option_with_equal "${opt}" 'with-python'`
+                 python_exec=$tmp
+                 ;;
+      
       --with-xsdk=*)
                  tmp=`parse_option_with_equal "${opt}" 'with-xsdk'`
                  xsdk_root_dir=`make_fullpath $tmp`
@@ -1911,7 +1923,8 @@ cmd_configure="${cmake_binary} \
     -DBUILD_SHARED_LIBS:BOOL=${shared} \
     -DCCSE_BL_SPACEDIM:INT=${spacedim} \
     -DENABLE_Regression_Tests:BOOL=${reg_tests} \
-    -DMPI_EXEC_GLOBAL_ARGS:STRING=${mpi_exec_args}\
+    -DMPI_EXEC_GLOBAL_ARGS:STRING=${mpi_exec_args} \
+    -DPYTHON_EXECUTABLE:STRING=${python_exec} \
     ${arch_amanzi_opts} \
     ${amanzi_source_dir}"
 
