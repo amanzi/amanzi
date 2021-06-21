@@ -1,5 +1,4 @@
 /*
-Author: Ethan Coon
 
 McKenzie et al. (2007)'s soil freezing curve
 
@@ -24,14 +23,11 @@ class WRMMCKPermafrostModel : public WRMPermafrostModel {
   WRMMCKPermafrostModel(Teuchos::ParameterList& plist) :
       WRMPermafrostModel(plist) {
     T0_ = plist.get<double>("freezing point [K]", 273.15);
-  //  sr_ = plist.get<double>("residual saturation [-]");
     w_  = plist.get<double>("sfc fitting coefficient", 3.0);
-  //  AMANZI_ASSERT(sr_ >= 0.); AMANZI_ASSERT(sr_ < 1.);
   }
 
 
   // required methods from the base class
-  // sats[0] = sg, sats[1] = sl, sats[2] = si
   virtual bool freezing(double T, double pc_liq, double pc_ice) { 
     return T < T0_;
   }
@@ -43,7 +39,6 @@ class WRMMCKPermafrostModel : public WRMPermafrostModel {
  protected:
   double T0_;
   double w_;
-  double sr_;
 
  private:
   // factory registration

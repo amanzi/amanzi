@@ -1,5 +1,4 @@
 /*
-Author: Ethan Coon
 
 McKenzie et al. (2007)'s soil freezing curve
 
