@@ -225,7 +225,7 @@ TEST(Verify_Mesh_and_Operators) {
   // -- RILUK: a modified variant of the ILU(k) factorization
   plist->sublist("preconditioners").sublist("ifpack2: RILUK")
       .set<std::string>("preconditioning method", "ifpack2: RILUK").sublist("ifpack2: RILUK parameters")
-      .set<int>("fact: iluk level-of-fill", 10)
+      .set<int>("fact: iluk level-of-fill", 1)
       .set<double>("fact: drop tolerance", 0.0)
       .set<std::string>("fact: type", "KSPILUK");
 
