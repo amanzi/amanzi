@@ -135,23 +135,19 @@ void WRMPermafrostEvaluator::InitializeFromPlist_() {
       }
     }
   }
-  
 
   // liquid-gas capillary pressure
   pc_liq_key_ = plist_.get<std::string>("gas-liquid capillary pressure key",
                                         Keys::getKey(domain_name,"capillary_pressure_gas_liq"));
   dependencies_.insert(pc_liq_key_);
 
-  // liquid-ice capillary pressure
-  is_temp_depend_ = plist_.get<bool>("use temperature as pc_ice for sfc");
-  if (!is_temp_depend_) {
-    pc_ice_key_ = plist_.get<std::string>("liquid-ice capillary pressure key",
-                                          Keys::getKey(domain_name,"capillary_pressure_liq_ice"));
-  } else {
-    pc_ice_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain_name,"temperature"));
-  }
+  // liquid-gas capillary pressure
+  pc_ice_key_ = plist_.get<std::string>("liquid-ice capillary pressure key",
+                                        Keys::getKey(domain_name,"capillary_pressure_liq_ice"));
   dependencies_.insert(pc_ice_key_);
 }
+
+
 
 void WRMPermafrostEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const std::vector<Teuchos::Ptr<CompositeVector> >& results) {
