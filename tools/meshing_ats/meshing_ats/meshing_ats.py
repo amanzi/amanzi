@@ -32,18 +32,16 @@ your PYTHONPATH.
 
 """
 
-from __future__ import print_function
-
 import sys,os
 import numpy as np
 import collections
 import argparse
 
 try:
-    import exodus
+    import exodus3 as exodus
 except ImportError:
     sys.path.append(os.path.join(os.environ["SEACAS_DIR"],"lib"))
-    import exodus
+    import exodus3 as exodus
 
 
 class SideSet(object):
@@ -510,14 +508,14 @@ class Mesh3D(object):
         # -- first pass, form all elem blocks and make the map from old-to-new
         new_to_old_elems = []
         elem_blks = []
-        for i_m,m_id in enumerate(self.material_id_list):
+        for i_m,m_id in enumerate(self.material_ids_list):
             # split out elems of this material, save new_to_old map
             elems_tuple = [(i,c) for (i,c) in enumerate(self.elem_to_face_conn) if self.material_ids[i] == m_id]
             new_to_old_elems.extend([i for (i,c) in elems_tuple])
             elems = [c for (i,c) in elems_tuple]
             elem_blks.append(elems)
 
-        old_to_new_elems = sorted([(old,i) for (i,old) in enumerate(new_to_old_elems)], lambda a,b: int.__cmp__(a[0],b[0]))
+        old_to_new_elems = sorted([(old,i) for (i,old) in enumerate(new_to_old_elems)], key=lambda a: a[0])
 
         # -- deal with faces, form all face blocks and make the map from old-to-new
         face_blks = []
@@ -528,7 +526,7 @@ class Mesh3D(object):
         elif face_block_mode == "n blocks, not duplicated":
             used_faces = np.zeros((len(self.face_to_node_conn),),'bool')
             new_to_old_faces = []
-            for i_m,m_id in enumerate(self.material_id_list):
+            for i_m,m_id in enumerate(self.material_ids_list):
                 # split out faces of this material, save new_to_old map
                 def used(f):
                     result = used_faces[f]
@@ -542,13 +540,13 @@ class Mesh3D(object):
                 face_blks.append(faces)
 
             # get the renumbering in the elems
-            old_to_new_faces = sorted([(old,j) for (j,old) in enumerate(new_to_old_faces)], lambda a,b: int.__cmp__(a[0],b[0]))
+            old_to_new_faces = sorted([(old,j) for (j,old) in enumerate(new_to_old_faces)], key=lambda a: a[0])
             elem_blks = [[[old_to_new_faces[f][1] for f in c] for c in elem_blk] for elem_blk in elem_blks]
 
         elif face_block_mode == "n blocks, duplicated":
             elem_blks_new = []
             offset = 0
-            for i_m, m_id in enumerate(self.material_id_list):
+            for i_m, m_id in enumerate(self.material_ids_list):
                 used_faces = np.zeros((len(self.face_to_node_conn),),'bool')
                 def used(f):
                     result = used_faces[f]
@@ -581,7 +579,9 @@ class Mesh3D(object):
         # open the mesh file
         num_elems = sum(len(elem_blk) for elem_blk in elem_blks)
         num_faces = sum(len(face_blk) for face_blk in face_blks)
-        ep = exodus.ex_init_params(title=filename,
+
+        filename_base = os.path.split(filename)[-1]
+        ep = exodus.ex_init_params(title=filename_base.encode('ascii'),
                                    num_dim=3,
                                    num_nodes=self.num_nodes(),
                                    num_face=num_faces,
@@ -603,12 +603,12 @@ class Mesh3D(object):
             e.put_face_node_conn(i_blk+1, np.array(face_raveled)+1)
 
         # put the elem blocks
-        assert len(elem_blks) == len(self.material_id_list)
-        for i_blk, (m_id, elem_blk) in enumerate(zip(self.material_id_list, elem_blks)):
+        assert len(elem_blks) == len(self.material_ids_list)
+        for i_blk, (m_id, elem_blk) in enumerate(zip(self.material_ids_list, elem_blks)):
             elems_raveled = [f for c in elem_blk for f in c]
 
             e.put_polyhedra_elem_blk(m_id, len(elem_blk), len(elems_raveled), 0)
-            e.put_elem_blk_name(m_id, "MATERIAL_ID_%d"%m_id)
+            e.put_elem_blk_name(m_id, 'MATERIAL_ID_%d'%m_id)
             e.put_face_count_per_polyhedra(m_id, np.array([len(c) for c in elem_blk]))
             e.put_elem_face_conn(m_id, np.array(elems_raveled)+1)
 
@@ -845,7 +845,7 @@ class Mesh3D(object):
         assert len(bottom) == mesh2D.num_cells()
 
         # -- len of vertical sides sideset is number of external edges * number of cells, no pinchouts here
-        num_sides = ncells_tall * sum(1 for e,c in mesh2D.edge_counts().iteritems() if c == 1)
+        num_sides = ncells_tall * sum(1 for e,c in mesh2D.edge_counts().items() if c == 1)
         assert num_sides == len(vertical_side_cells)
         assert num_sides == len(vertical_side_indices)
 

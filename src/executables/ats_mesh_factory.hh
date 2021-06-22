@@ -50,6 +50,9 @@ through providing a "verify mesh" option.
     * `"verify mesh`" ``[bool]`` **false** Perform a mesh audit.
     * `"deformable mesh`" ``[bool]`` **false** Will this mesh be deformed?
 
+    * `"build columns from set`" ``[string]`` **optional** If provided, build
+       columnar structures from the provided set.
+
     * `"partitioner`" ``[string]`` **zoltan_rcb** Method to partition the
       mesh.  Note this only makes sense on the domain mesh.  One of:
 

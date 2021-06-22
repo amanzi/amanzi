@@ -1,4 +1,3 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
   ATS is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
@@ -22,7 +21,7 @@ Some additional parameters are available.
 .. _rel-perm-evaluator-spec
 .. admonition:: rel-perm-evaluator-spec
 
-   * `"use density on viscosity in rel perm`" ``[bool]`` **true** Include
+   * `"use density on viscosity in rel perm`" ``[bool]`` **true**
 
    * `"boundary rel perm strategy`" ``[string]`` **boundary pressure** Controls
      how the rel perm is calculated on boundary faces.  Note, this may be
@@ -41,7 +40,7 @@ Some additional parameters are available.
      and K_sat is very small.  To avoid roundoff propagation issues, rescaling
      this quantity by offsetting and equal values is encourage.  Typically 10^7 or so is good.
 
-   * `"WRM parameters`" ``[wrm-typed-spec-list]``  List (by region) of WRM specs.
+   * `"WRM parameters`" ``[wrm-typedinline-spec-list]``  List (by region) of WRM specs.
 
    KEYS:
 

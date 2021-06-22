@@ -29,17 +29,14 @@ namespace Flow {
 VolumetricSnowPondedDepthEvaluator::VolumetricSnowPondedDepthEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariablesFieldEvaluator(plist)
 {
-  Key a_key = Keys::cleanPListName(plist.name());
-  Key domain = Keys::getDomain(a_key);
-  if (domain == "surface" || domain == "snow") {
-    domain_surf_ = "surface";
-    domain_snow_ = "snow";
-  } else if (boost::starts_with(domain, "surface_")) {
+  Key domain = Keys::getDomain(Keys::cleanPListName(plist_.name()));
+  Key dtype = Keys::guessDomainType(domain);
+  if (dtype == "surface") {
     domain_surf_ = domain;
-    domain_snow_ = std::string("snow_") + domain.substr(8,domain.size());
-  } else if (boost::starts_with(domain, "snow_")) {
+    domain_snow_ = Keys::readDomainHint(plist_, domain_surf_, "surface", "snow");
+  } else if (dtype == "snow") {
     domain_snow_ = domain;
-    domain_surf_ = std::string("surface_") + domain.substr(5,domain.size());
+    domain_surf_ = Keys::readDomainHint(plist_, domain_snow_, "snow", "surface");
   } else {
     Errors::Message msg("VolumetricSnowPondedDepthEvaluator: not sure how to interpret domain.");
     Exceptions::amanzi_throw(msg);
@@ -141,7 +138,7 @@ VolumetricSnowPondedDepthEvaluator::EnsureCompatibility(const Teuchos::Ptr<State
 
   for (auto dep_key : dependencies_) {
     auto fac = S->RequireField(dep_key);
-    if (boost::starts_with(dep_key, domain_snow_)) {
+    if (Keys::getDomain(dep_key) == domain_snow_) {
       fac->SetMesh(S->GetMesh(domain_snow_))
         ->SetGhosted()
         ->AddComponent("cell", AmanziMesh::CELL, 1);

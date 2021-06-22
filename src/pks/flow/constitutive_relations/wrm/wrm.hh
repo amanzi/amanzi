@@ -11,12 +11,13 @@
 
 WRMs are available in a collection of types:
 
-.. _wrm-typed-spec:
-.. admonition:: wrm-typed-spec
+.. _wrm-typedinline-spec:
+.. admonition:: wrm-typedinline-spec
 
+   * `"region`" ``[string]`` Region to which this applies
    * `"wrm type`" ``[string]`` Type of the WRM.  One of:
 
-     - `"van Genucten`"
+     - `"van Genuchten`"
      - `"linear system`" saturation a linear function of pressure
 
 */

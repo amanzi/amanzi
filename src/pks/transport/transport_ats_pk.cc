@@ -162,9 +162,19 @@ void Transport_ATS::Setup(const Teuchos::Ptr<State>& S)
   S->RequireField(tcc_key_, name_, subfield_names)
       ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
 
-  // we may not use this, but having it in vis makes life so much easier
+  // CellVolume is required here -- it may not be used in this PK, but having
+  // it makes vis nicer
   S->RequireField(cv_key_);
   S->RequireFieldEvaluator(cv_key_);
+
+  // other things that I own
+  S->RequireField(prev_saturation_key_, name_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->GetField(prev_saturation_key_, name_)->set_io_vis(false);
+
+  S->RequireField(solid_residue_mass_key_,  name_, subfield_names)
+    ->SetMesh(mesh_)->SetGhosted(true)
+    ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
 
   // This vector stores the conserved amount (in mols) of ncomponent
   // transported components, plus two for water.  The first water component is
@@ -173,16 +183,11 @@ void Transport_ATS::Setup(const Teuchos::Ptr<State>& S)
   // content at the new time plus dt * all fluxes treated implicitly (notably
   // just DomainCoupling fluxes, which must be able to take all the transported
   // quantity.)
-  S->RequireField(conserve_qty_key_, name_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, ncomponents+2);
-
-  // other things that I own
-  S->RequireField(prev_saturation_key_, name_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->GetField(prev_saturation_key_, name_)->set_io_vis(false);
-
-  S->RequireField(solid_residue_mass_key_,  name_)->SetMesh(mesh_)->SetGhosted(true)
-    ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
+  subfield_names[0].emplace_back("H2O_old");
+  subfield_names[0].emplace_back("H2O_new");
+  S->RequireField(conserve_qty_key_, name_, subfield_names)
+    ->SetMesh(mesh_)->SetGhosted(true)
+    ->SetComponent("cell", AmanziMesh::CELL, ncomponents+2);
 
   // require state fields
   if (abs_perm) {
