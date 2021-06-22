@@ -251,39 +251,53 @@ int ChemistryEngine::NumFreeIonSpecies() const
   return sizes_.num_primary;
 }
 
-void ChemistryEngine::GetAuxiliaryOutputNames(std::vector<std::string>& aux_names) const
+void ChemistryEngine::GetAuxiliaryOutputNames(std::vector<std::string>& aux_names,
+        std::vector<std::vector<std::string>>& subfield_names) const
 {
   aux_names.clear();
-  aux_names.push_back("pH");
+  subfield_names.clear();
+  aux_names.emplace_back("pH");
+  subfield_names.emplace_back(std::vector<std::string>{"0"});
+
+  const AlquimiaProblemMetaData* metadata = &chem_metadata_;
 
   // Mineral data -- one per mineral.
-  const AlquimiaProblemMetaData* metadata = &chem_metadata_;
   int N = metadata->mineral_names.size;
-  for (int i = 0; i < N; ++i) {
-    std::string sat_index = std::string("mineral_saturation_index_") + std::string(metadata->mineral_names.data[i]);
-    aux_names.push_back(sat_index);
-    std::string rxn_rate = std::string("mineral_reaction_rate_") + std::string(metadata->mineral_names.data[i]);
-    aux_names.push_back(rxn_rate);
+  if (N > 0) {
+    std::vector<std::string> mineral_names;
+    for (int i = 0; i < N; ++i) {
+      mineral_names.emplace_back(metadata->mineral_names.data[i]);
+    }
+    aux_names.emplace_back("mineral_saturation_index");
+    subfield_names.emplace_back(mineral_names);
+    aux_names.emplace_back("mineral_reaction_rate");
+    subfield_names.emplace_back(std::move(mineral_names));
   }
 
   // Auxiliary data per primary species.
   N = metadata->primary_names.size;
-  for (int i = 0; i < N; ++i) {
-    std::string free_ion = std::string("primary_free_ion_concentration_") + std::string(metadata->primary_names.data[i]);
-    aux_names.push_back(free_ion);
-    std::string activity_coeff = std::string("primary_activity_coeff_") + std::string(metadata->primary_names.data[i]);
-    aux_names.push_back(activity_coeff);
+  if (N > 0) {
+    std::vector<std::string> primary_names;
+    for (int i = 0; i < N; ++i) {
+      primary_names.emplace_back(metadata->primary_names.data[i]);
+    }
+    aux_names.emplace_back("primary_free_ion_concentration");
+    subfield_names.emplace_back(primary_names);
+    aux_names.emplace_back("primary_activity_coeff");
+    subfield_names.emplace_back(std::move(primary_names));
   }
 
   // Secondary auxiliary data.
   N = this->NumAqueousComplexes();
-  for (int i = 0; i < N; ++i) {
-    char num_str[16];
-    std::snprintf(num_str, 15, "%d", i);
-    std::string free_ion = std::string("secondary_free_ion_concentration_") + std::string(num_str);
-    aux_names.push_back(free_ion);
-    std::string activity_coeff = std::string("secondary_activity_coeff_") + std::string(num_str);
-    aux_names.push_back(activity_coeff);
+  if (N > 0) {
+    std::vector<std::string> secondary_names;
+    for (int i = 0; i < N; ++i) {
+      secondary_names.emplace_back(std::to_string(i));
+    }
+    aux_names.emplace_back("secondary_free_ion_concentration");
+    subfield_names.emplace_back(secondary_names);
+    aux_names.emplace_back("secondary_activity_coeff");
+    subfield_names.emplace_back(std::move(secondary_names));
   }
 }
 

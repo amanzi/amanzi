@@ -24,14 +24,16 @@ various fields.
 .. _state-spec:
 .. admonition:: state-spec
 
-   * `"field evaluators`" ``[evaluator-typedinline-spec-list]`` A list of evaluators.
+   * `"field evaluators`" ``[field-evaluator-typedinline-spec-list]`` A list of evaluators.
+      Note this will eventually be an [evaluator-typedinline-spec-list] but the
+      evaluators themselves do not include the type info.
 
    * `"initial conditions`" ``[list]`` A list of constant-in-time variables :
        `"initial conditions`" is a terrible name and will go away in the next
        iteration of state.
 
-.. _evaluator-typedinline-spec:
-.. admonition:: evaluator-typedinline-spec
+.. _field-evaluator-typedinline-spec:
+.. admonition:: field-evaluator-typedinline-spec
 
    * `"field evaluator type`" ``[string]`` Type of the evaluator Included for
       convenience in defining data that is not in the dependency graph,

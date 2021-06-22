@@ -33,8 +33,8 @@ keys they provide.
 All evaluator lists must provide an evaluator type, which is one of the types
 registered with the evaluator factory.
 
-.. _field-evaluator-spec:
-.. admonition:: field-evaluator-spec
+.. _evaluator-typedinline-spec:
+.. admonition:: evaluator-typedinline-spec
 
    * `"field evaluator type`" ``[string]`` Type registered in evaluator factory.
    * `"write checkpoint`" ``[bool]`` **true** Write this data when checkpointing.
