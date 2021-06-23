@@ -70,7 +70,7 @@ PETPriestleyTaylorEvaluator::PETPriestleyTaylorEvaluator(Teuchos::ParameterList&
         evap_type_ == "canopy" ||
         evap_type_ == "transpiration")) {
     Errors::Message msg;
-    msg << "Priestley-Taylor does not currently support evapoation of type \"" << evap_type_ << "\".";
+    msg << "Priestley-Taylor does not currently support evaporation of type \"" << evap_type_ << "\".";
     Exceptions::amanzi_throw(msg);
   } else if (evap_type_ == "bare ground") {
     evap_type_ = "ground";
@@ -157,6 +157,7 @@ PETPriestleyTaylorEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       res[0][c] = alpha / lh_vap_si * s1 * s2 / 1000.;  // 1000, density of
                                                        // water converts from
                                                        // kg/m^2/s --> m/s
+      // do not allow condensation in P-T
       res[0][c] = std::max(res[0][c],0.0);
     }
   }
@@ -164,10 +165,24 @@ PETPriestleyTaylorEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   // apply a limiter if requested
   if (limiter_) {
     const auto& limiter = *S->GetFieldData(limiter_key_)->ViewComponent("cell", false);
+#ifdef ENABLE_DBC
+    double limiter_max, limiter_min;
+    limiter(limiter_dof_)->MaxValue(&limiter_max);
+    limiter(limiter_dof_)->MinValue(&limiter_min);
+    AMANZI_ASSERT(limiter_max <= 1 + 1e-10);
+    AMANZI_ASSERT(limiter_min >= -1e-10);
+#endif
     res(0)->Multiply(1, *limiter(limiter_dof_), *res(0), 0);
   }
   if (one_minus_limiter_) {
     const auto& limiter = *S->GetFieldData(one_minus_limiter_key_)->ViewComponent("cell", false);
+#ifdef ENABLE_DBC
+    double limiter_max, limiter_min;
+    limiter.MaxValue(&limiter_max);
+    limiter.MinValue(&limiter_min);
+    AMANZI_ASSERT(limiter_max <= 1 + 1e-10);
+    AMANZI_ASSERT(limiter_min >= -1e-10);
+#endif
     res.Multiply(-1, limiter, res, 1);
   }
 }

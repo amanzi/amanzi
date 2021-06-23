@@ -35,7 +35,12 @@ DrainageEvaluator::DrainageEvaluator(Teuchos::ParameterList& plist) :
   tau_ = plist_.get<double>("drainage timescale [s]", 864);
 
   // default from Dickinson et al 93, CLM 4.5 Tech note eqn 7.8
+  // NOTE: put this in land cover!
   wc_sat_ = plist_.get<double>("saturated specific water content [m^3 H2O / m^2 leaf area]", 1.e-4);
+  if (wc_sat_ < 0) {
+    Errors::Message message("\"saturated specific water content\" must be greater than 0.");
+    Exceptions::amanzi_throw(message);
+  }
 };
 
 
@@ -59,8 +64,13 @@ void DrainageEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
   // evaluate the model
   for (int c=0; c!=res_drainage_c.MyLength(); ++c) {
+    AMANZI_ASSERT(wc[0][c] > -1); // idiot check!
+    AMANZI_ASSERT(ai[0][c] >= 0); // idiot check!
     double wc_sat = ai[0][c] * wc_sat_;
+    AMANZI_ASSERT(wc_sat >= 0); // idiot check!
     res_fracwet_c[0][c] = wc_sat > 0. ? wc[0][c] / wc_sat : 0.;
+    // must be in [0,1]
+    res_fracwet_c[0][c] = std::max(std::min(res_fracwet_c[0][c], 1.0), 0.0);
     if (wc[0][c] > wc_sat) {
       //  is oversaturated and draining
       res_drainage_c[0][c] = (wc[0][c] - wc_sat) / tau_;
