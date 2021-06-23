@@ -57,7 +57,7 @@ RadiationBalanceEvaluator::RadiationBalanceEvaluator(Teuchos::ParameterList& pli
   temp_canopy_key_ = Keys::readKey(plist_, domain_canopy_, "canopy temperature", "temperature");
   dependencies_.insert(temp_canopy_key_);
   area_frac_key_ = Keys::readKey(plist_, domain_surf_, "area fractions", "area_fractions");
-  dependencies_.insert(temp_canopy_key_);
+  dependencies_.insert(area_frac_key_);
   lai_key_ = Keys::readKey(plist_, domain_canopy_, "leaf area index", "leaf_area_index");
   dependencies_.insert(lai_key_);
 }
