@@ -229,6 +229,8 @@ TEST(Verify_Mesh_and_Operators) {
       .set<double>("fact: drop tolerance", 0.0)
       .set<std::string>("fact: type", "KSPILUK");
 
+  //TODO : Add Shylu ifpack2 for ILU and RILUK here for testing
+
   // summary of options
   if (MyPID == 0) {
     std::cout << "================================================================================\n";
