@@ -139,7 +139,7 @@ def plot(wrm, ax=None, color='b', format='-', label=None, y_units='Pa'):
     else:
         try:
             ax1 = ax[1]
-        except AttributeError:
+        except TypeError:
             ax1 = None
         else:
             ax = ax[0]
