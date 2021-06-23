@@ -51,7 +51,7 @@ endif()
 
 if(ENABLE_KOKKOS_CUDA)
   find_package(CUDA REQUIRED)
-  set(CUDA_HOME ${CUDA_INCLUDE_DIRS}/..)
+  set(CUDA_HOME ${CUDA_TOOLKIT_ROOT_DIR})
   message(STATUS "CUDA_HOME: ${CUDA_HOME}")
   set(Hypre_CUDA_SM 70)
   set(hypre_kokkos_cuda "--with-cuda" "--enable-cusparse" "--enable-unified-memory")
@@ -96,17 +96,23 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hypre-patch-step.cmake.in
 # --- Set the patch command
 set(HYPRE_PATCH_COMMAND ${CMAKE_COMMAND} -P ${HYPRE_cmake_patch})     
 
+# --- If downloads are disabled point to local repository
+if ( DISABLE_EXTERNAL_DOWNLOAD )
+  STRING(REGEX REPLACE ".*\/" "" HYPRE_GIT_REPOSITORY_LOCAL_DIR ${HYPRE_GIT_REPOSITORY})
+  set (HYPRE_GIT_REPOSITORY_TEMP ${TPL_DOWNLOAD_DIR}/${HYPRE_GIT_REPOSITORY_LOCAL_DIR})
+else()
+  set (HYPRE_GIT_REPOSITORY_TEMP ${HYPRE_GIT_REPOSITORY})
+endif()
+message(STATUS "HYPRE git repository = ${HYPRE_GIT_REPOSITORY_TEMP}")
 
 # --- Add external project build and tie to the ZLIB build target
 ExternalProject_Add(${HYPRE_BUILD_TARGET}
                     DEPENDS   ${HYPRE_PACKAGE_DEPENDS}         # Package dependency target
                     TMP_DIR   ${HYPRE_tmp_dir}                 # Temporary files directory
                     STAMP_DIR ${HYPRE_stamp_dir}               # Timestamp and log directory
-                    # -- Download and URL definitions
-                    DOWNLOAD_DIR   ${TPL_DOWNLOAD_DIR}          
-                    URL            ${HYPRE_URL}                # URL may be a web site OR a local file
-                    URL_MD5        ${HYPRE_MD5_SUM}            # md5sum of the archive file
-                    DOWNLOAD_NAME  ${HYPRE_SAVEAS_FILE}        # file name to store (if not end of URL)
+                    # -- Download and GIT definition
+                    GIT_REPOSITORY ${HYPRE_GIT_REPOSITORY_TEMP}              
+                    GIT_TAG        ${HYPRE_GIT_TAG}   
                     # -- Patch 
                     PATCH_COMMAND  ${HYPRE_PATCH_COMMAND}
                     # -- Configure
