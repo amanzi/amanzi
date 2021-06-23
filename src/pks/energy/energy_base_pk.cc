@@ -219,6 +219,12 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S)
   //  -- advection terms
   is_advection_term_ = plist_->get<bool>("include thermal advection");
   if (is_advection_term_) {
+
+    // -- create the forward operator for the advection term
+    Teuchos::ParameterList advect_plist = plist_->sublist("advection");
+    matrix_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(advect_plist, mesh_));
+    matrix_adv_->SetBCs(bc_adv_, bc_adv_);
+
     implicit_advection_ = !plist_->get<bool>("explicit advection",false);
     if (implicit_advection_) {
       implicit_advection_in_pc_ = !plist_->get<bool>("supress advective terms in preconditioner", false);
@@ -391,12 +397,6 @@ void EnergyBase::CommitStep(double t_old, double t_new, const Teuchos::RCP<State
 
     // calculate the advected energy as a diagnostic
     if (is_advection_term_) {
-    // -- create the forward operator for the advection term
-      Teuchos::ParameterList advect_plist = plist_->sublist("advection");
-      matrix_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(advect_plist, mesh_));
-      matrix_adv_->SetBCs(bc_adv_, bc_adv_);
-
-    // calculate the advected energy as a diagnostic
       Teuchos::RCP<const CompositeVector> flux = S->GetFieldData(flux_key_);
       matrix_adv_->Setup(*flux);
       S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S.ptr(), name_);
