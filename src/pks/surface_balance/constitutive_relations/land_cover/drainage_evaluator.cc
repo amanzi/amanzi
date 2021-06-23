@@ -64,16 +64,16 @@ void DrainageEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
   // evaluate the model
   for (int c=0; c!=res_drainage_c.MyLength(); ++c) {
-    AMANZI_ASSERT(wc[0][c] > -1); // idiot check!
+    double wc = std::max(wc[0][c], 0.);
     AMANZI_ASSERT(ai[0][c] >= 0); // idiot check!
     double wc_sat = ai[0][c] * wc_sat_;
     AMANZI_ASSERT(wc_sat >= 0); // idiot check!
-    res_fracwet_c[0][c] = wc_sat > 0. ? wc[0][c] / wc_sat : 0.;
+    res_fracwet_c[0][c] = wc_sat > 0. ? wc / wc_sat : 0.;
     // must be in [0,1]
     res_fracwet_c[0][c] = std::max(std::min(res_fracwet_c[0][c], 1.0), 0.0);
-    if (wc[0][c] > wc_sat) {
+    if (wc > wc_sat) {
       //  is oversaturated and draining
-      res_drainage_c[0][c] = (wc[0][c] - wc_sat) / tau_;
+      res_drainage_c[0][c] = (wc - wc_sat) / tau_;
     } else {
       res_drainage_c[0][c] = 0.;
     }
