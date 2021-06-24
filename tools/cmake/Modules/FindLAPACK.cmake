@@ -340,8 +340,8 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
       AND (CMAKE_C_COMPILER_LOADED OR CMAKE_CXX_COMPILER_LOADED))
     # System-specific settings
     if(NOT WIN32)
-      set(LAPACK_mkl_LM "-lm")
-      set(LAPACK_mkl_LDL "-ldl")
+      #set(LAPACK_mkl_LM "-lm")
+      #set(LAPACK_mkl_LDL "-ldl")
     endif()
 
     _lapack_find_dependency(Threads)
