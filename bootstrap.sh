@@ -64,6 +64,7 @@ parallel_jobs=2
 build_type=Release
 trilinos_build_type=Release
 tpls_build_type=Release
+dbc=${TRUE}
 
 # Compiler definitions
 build_c_compiler=
@@ -378,6 +379,8 @@ Value in brackets indicates default setting.
   ats_physics             build ATS physics package (currently mutually exclusive) ['"${ats_physics}"']
   clm                     build CLM library for surface processes (currently only ATS) ['"${clm}"']
 
+  dbc                     design-by-contract.  Extra (potentially time-consuming) error-checking
+                          intended for developers ['"${dbc}"']
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
   reg_tests               build regression tests into Amanzi or ATS Test Suite ['"${reg_tests}"']
   shared                  build Amanzi and tpls using shared libraries ['"${shared}"']
@@ -529,6 +532,7 @@ Compilers and Flags:
 
 Build configuration:
     build_type          = '"${build_type}"'
+    dbc                 = '"${dbc}"'
     build_stage_1       = '"${build_stage_1}"'
     build_stage_2       = '"${build_stage_2}"'
     parallel            = '"${parallel_jobs}"'
@@ -1920,6 +1924,7 @@ cmd_configure="${cmake_binary} \
     -DENABLE_KOKKOS_OPENMP:BOOL=${kokkos_openmp} \
     -DENABLE_AmanziPhysicsModule:BOOL=${amanzi_physics} \
     -DENABLE_ATSPhysicsModule:BOOL=${ats_physics} \
+    -DENABLE_DBC:BOOL=${dbc} \
     -DBUILD_SHARED_LIBS:BOOL=${shared} \
     -DCCSE_BL_SPACEDIM:INT=${spacedim} \
     -DENABLE_Regression_Tests:BOOL=${reg_tests} \
