@@ -40,7 +40,7 @@ OR:
   initialization.  The array with the single entry "*" could be used to initialize all existing components.
 END
 
-* `"function`" ``[function-spec]`` The spec to provide the actual algebraic function.  
+* `"function`" ``[function-typedsublistdash-spec]`` The spec to provide the actual algebraic function.
 
  */
 

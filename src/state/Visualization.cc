@@ -1,9 +1,9 @@
 /*
   State
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Markus Berndt
@@ -62,13 +62,31 @@ Visualization::Visualization ()
 {}
 
 
+void Visualization::set_name(const std::string& name) {
+  name_ = name;
+  domains_.push_back(name);
+}
+
+bool Visualization::WritesDomain(const std::string& name) const {
+  if (std::find(domains_.begin(), domains_.end(), name) != domains_.end())
+    return true;
+  if (Keys::isDomainSet(name) && WritesDomain(Keys::getDomainSetName(name)))
+    return true;
+  return false;
+}
+
+void Visualization::AddDomain(const std::string& name) {
+  domains_.push_back(name);
+}
+
+
 // -----------------------------------------------------------------------------
 // Set up control from parameter list.
 // -----------------------------------------------------------------------------
 void Visualization::ReadParameters_() {
   Teuchos::Array<std::string> no_regions(0);
   Teuchos::ParameterList& tmp = plist_.sublist("write regions");
-    
+
   regions_.clear();
   for (Teuchos::ParameterList::ConstIterator it = tmp.begin(); it != tmp.end(); ++it) {
     regions_[it->first] = tmp.get<Teuchos::Array<std::string> >(it->first, no_regions);
@@ -77,6 +95,13 @@ void Visualization::ReadParameters_() {
 
   dynamic_mesh_ = plist_.get<bool>("dynamic mesh", false);
   write_mesh_exo_ = plist_.get<bool>("write mesh to Exodus II", false);
+
+  if (plist_.isParameter("aliased domains")) {
+    auto aliases = plist_.get<Teuchos::Array<std::string>>("aliased domains");
+    for (const auto& alias : aliases) {
+      domains_.push_back(alias);
+    }
+  }
 }
 
 
@@ -121,7 +146,7 @@ void Visualization::WriteRegions() {
           }
         }
       }
-      std::vector<std::string> name; 
+      std::vector<std::string> name;
       name.push_back(it->first);
       WriteVector(reg, name);
     }
@@ -139,8 +164,8 @@ void Visualization::WritePartition() {
     // loop over the regions and initialize the reg array
     double part_index = static_cast<double>(mesh_->get_comm()->MyPID());
     reg.PutScalar(part_index);
-  
-    std::vector<std::string> name; 
+
+    std::vector<std::string> name;
     name.push_back("partition");
     WriteVector(reg,name);
   }

@@ -365,7 +365,10 @@ void Checkpoint::WriteObservations(ObservationData* obs_data)
     free(nobs);
   }
 
-  // write data only on the root
+  // write data only on the root. This requires global data size.
+  int ndata_tmp(ndata);
+  output->Comm()->MaxAll(&ndata_tmp, &ndata, 1);
+
   if (ndata > 0) {
     int ndata_glb = 2 * ndata;
     ndata = (output->Comm()->MyPID() == 0) ? ndata_glb : 0;

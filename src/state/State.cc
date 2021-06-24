@@ -268,10 +268,9 @@ bool State::IsDeformableMesh(const Key& key) const {
   if (lb != meshes_.end() && !(meshes_.key_comp()(key, lb->first))) {
     return lb->second.second;
   } else {
-    std::stringstream messagestream;
-    messagestream << "Mesh " << key << " does not exist in the state.";
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
+    Errors::Message msg;
+    msg << "Mesh " << key << " does not exist in the state.";
+    Exceptions::amanzi_throw(msg);
   }
   return false;
 };
@@ -530,7 +529,7 @@ Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition_(Key key) {
 
 void State::WriteDependencyGraph() const {
   auto vo = Teuchos::rcp(new VerboseObject("State", state_plist_)); 
-  if (vo->os_OK(Teuchos::VERB_HIGH)) {
+  if (vo->os_OK(Teuchos::VERB_EXTREME)) {
     std::ofstream os("dependency_graph.txt", std::ios::out);
     for (auto fe=field_evaluator_begin(); fe!=field_evaluator_end(); ++fe) {
       os << *fe->second;
@@ -889,7 +888,7 @@ void State::Setup() {
       Errors::Message message(messagestream.str());
       Exceptions::amanzi_throw(message);
     }
-    if (vo->os_OK(Teuchos::VERB_HIGH)) {
+    if (vo->os_OK(Teuchos::VERB_EXTREME)) {
       Teuchos::OSTab tab1 = vo->getOSTab();
       *vo->os() << "checking compatibility: " << *evaluator->second;
     }
@@ -908,7 +907,7 @@ void State::Setup() {
     if (!f_it->second->initialized()) {
       f_it->second->CreateData();
     }
-    if (vo->os_OK(Teuchos::VERB_HIGH)) {
+    if (vo->os_OK(Teuchos::VERB_EXTREME)) {
       *vo->os() << "Field " << f_it->first << ": ";
       if (f_it->second->type() == Amanzi::COMPOSITE_VECTOR_FIELD) {
         auto cv = f_it->second->GetFieldData();
@@ -944,7 +943,7 @@ void State::Initialize() {
 void State::Initialize(Teuchos::RCP<State> S) {
   auto vo = Teuchos::rcp(new VerboseObject("State", state_plist_)); 
   Teuchos::OSTab tab = vo->getOSTab();
-  if (vo->os_OK(Teuchos::VERB_HIGH)) {
+  if (vo->os_OK(Teuchos::VERB_EXTREME)) {
     Teuchos::OSTab tab1 = vo->getOSTab();
     *vo->os() << "copying fields to new state.." << std::endl;
   }
@@ -1003,7 +1002,7 @@ void State::Initialize(Teuchos::RCP<State> S) {
 
 void State::InitializeEvaluators() {
   VerboseObject vo("State", state_plist_); 
-  if (vo.os_OK(Teuchos::VERB_HIGH)) {
+  if (vo.os_OK(Teuchos::VERB_EXTREME)) {
     Teuchos::OSTab tab = vo.getOSTab();
     *vo.os() << "initializing evaluators..." << std::endl;
   }
@@ -1017,7 +1016,7 @@ void State::InitializeEvaluators() {
 
 void State::InitializeFieldCopies() {
   VerboseObject vo("State", state_plist_); 
-  if (vo.os_OK(Teuchos::VERB_HIGH)) {
+  if (vo.os_OK(Teuchos::VERB_EXTREME)) {
     Teuchos::OSTab tab = vo.getOSTab();
     *vo.os() << "initializing field copies..." << std::endl;
   }
@@ -1327,10 +1326,10 @@ void WriteVis(Visualization& vis,
 
     // Write all fields to the visualization file, the fields know if they
     // need to be written.
+    Key vis_domain = vis.get_name();
     for (State::field_iterator field=S.field_begin(); field!=S.field_end(); ++field) {
       field->second->WriteVis(vis);
     }
-    
     vis.WriteRegions();
     vis.WritePartition();
 
