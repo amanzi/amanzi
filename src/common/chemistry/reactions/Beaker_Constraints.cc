@@ -36,7 +36,7 @@ int Beaker::EnforceConstraint(
 
   // initial guess
   for (int i = 0; i < ncomp_; i++) {
-    auto pair = Keys::splitKey(names[i], '@');
+    auto pair = Keys::split(names[i], '@');
     std::string name = (pair.first.size() > 0) ? pair.first : pair.second;
 
     state->total.at(i) = 0.0;
@@ -121,7 +121,7 @@ int Beaker::EnforceConstraint(
     jacobian_.Zero();
 
     for (int i = 0; i < ncomp_; i++) {
-      auto pair = Keys::splitKey(names[i], '@');
+      auto pair = Keys::split(names[i], '@');
       std::string name = (pair.first.size() > 0) ? pair.first : pair.second;
 
       if (name == "total") {
