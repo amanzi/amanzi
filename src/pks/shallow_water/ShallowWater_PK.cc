@@ -572,8 +572,8 @@ std::vector<double> ShallowWater_PK::PhysicalSource(const std::vector<double>& U
 std::vector<double> ShallowWater_PK::NumericalFlux_x(
     std::vector<double>& UL, std::vector<double>& UR)
 {
-//  return NumericalFlux_x_Rusanov(UL, UR);
-    return NumericalFlux_x_CentralUpwind(UL, UR);
+  return NumericalFlux_x_Rusanov(UL, UR);
+//    return NumericalFlux_x_CentralUpwind(UL, UR);
 }
 
 
