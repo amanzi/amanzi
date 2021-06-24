@@ -418,7 +418,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       
     
       
-//    if (c == 40) // Looking at values at a chosen cell
+//    if (c == 40*21 + 20) // Looking at values at a chosen cell
 //    {
 //        for (int n1 = 0; n1 < cfaces.size(); ++n1) {
 //          int f1 = cfaces[n1];
@@ -713,7 +713,6 @@ std::vector<double> ShallowWater_PK::NumericalSource(
       S1 += -U[0] * B_rec  * normal[0]; // Kurganov (Acta Numerica 2018, pg 322)
       S2 += -U[0] * B_rec  * normal[1];
       
-
   }
     
   std::vector<double> S(3);
