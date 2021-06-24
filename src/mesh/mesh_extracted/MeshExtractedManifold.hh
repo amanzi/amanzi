@@ -48,7 +48,8 @@ class MeshExtractedManifold : public Mesh {
                         const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
                         const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
                         bool request_faces = true,
-                        bool request_edges = false);
+                        bool request_edges = false,
+                        bool flattened = false);
   ~MeshExtractedManifold() {};
 
   // initialization
@@ -259,6 +260,9 @@ class MeshExtractedManifold : public Mesh {
   // sets
   mutable std::map<std::string, Entity_ID_List> sets_;
   mutable std::map<std::string, Entity_ID_List> parent_labeledsets_;
+
+  // deformation
+  mutable bool flattened_;
 };
 
 }  // namespace AmanziMesh

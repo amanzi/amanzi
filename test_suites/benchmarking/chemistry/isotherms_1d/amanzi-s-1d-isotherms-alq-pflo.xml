@@ -50,8 +50,8 @@
   <execution_controls>
     <comments> </comments>
     <verbosity level="extreme"/>
-    <execution_control_defaults init_dt= "1.5768e+5"   max_dt="6.0e+10"  reduction_factor="0.8"  increase_factor="1.25" mode="transient" method="bdf1"/>
-    <execution_control  start="0.0 y" end="0.0 y" init_dt= "1.5768e+5" max_dt="6.0e+10"  reduction_factor="0.8"  increase_factor="1.25" mode="steady" method="bdf1"/>
+    <execution_control_defaults init_dt= "1.5768e+5"   max_dt="3.154e7"  reduction_factor="0.8"  increase_factor="1.25" mode="transient" method="bdf1"/>
+    <execution_control  start="0.0 y" end="0.0 y" init_dt= "1.5768e+5" max_dt="3.154e7"  reduction_factor="0.8"  increase_factor="1.25" mode="steady" method="bdf1"/>
     <execution_control  start="0.0 y" end="1.5778463e9" mode = "transient" />
   </execution_controls>
 

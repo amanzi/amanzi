@@ -217,6 +217,7 @@ double Checkpoint::Read(State& S, const std::string& file_or_dirname)
         field->second->io_checkpoint()) {
       Key domain = Keys::getDomain(field->first);
       if (domain.empty()) domain = "domain";      
+      if (output_.find(domain) == output_.end()) domain = "domain";
       
       bool read_complete = field->second->ReadCheckpoint(*output_[domain]);
       if (read_complete) {
