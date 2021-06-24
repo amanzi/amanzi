@@ -271,6 +271,11 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   discharge_y_grad_->ComputeGradient(tmp6, 1);
   limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_->gradient());
   limiter_->gradient()->ScatterMasterToGhosted("cell");
+    
+  auto tmp2 = S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("cell", true);
+    bathymetry_grad_->ComputeGradient(tmp2);
+//    limiter_->ApplyLimiter(tmp2, 0, bathymetry_grad_->gradient());
+//    limiter_->gradient()->ScatterMasterToGhosted("cell");
 
   // update boundary conditions
   if (bcs_.size() > 0)
@@ -410,6 +415,26 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     factor = 2.0 * h / (h * h + std::fmax(h * h, eps2));
     vel_c_tmp[0][c] = factor * qx;
     vel_c_tmp[1][c] = factor * qy;
+      
+    
+      
+//    if (c == 40) // Looking at values at a chosen cell
+//    {
+//        for (int n1 = 0; n1 < cfaces.size(); ++n1) {
+//          int f1 = cfaces[n1];
+//          const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+//          const AmanziGeometry::Point& xcf1 = mesh_->face_centroid(f1);
+//
+//       double B_rec1 = bathymetry_grad_->getValue(c, xcf1);
+//       double B_rec2 = bathymetry_grad_->getValue(c, xc);
+//        std::cout<<"Face: "<<xcf1<<", B_rec1: "<<B_rec1<<std::endl;
+//        std::cout<<"Centroid: "<<xc<<", B_rec2: "<<B_rec2<<std::endl;
+//        std::cout<<"B[0][c] "<<B_c[0][c]<<std::endl;
+//
+//    }
+//    }
+      
+      
   } // c
 
   h_c = h_c_tmp;
@@ -547,8 +572,8 @@ std::vector<double> ShallowWater_PK::PhysicalSource(const std::vector<double>& U
 std::vector<double> ShallowWater_PK::NumericalFlux_x(
     std::vector<double>& UL, std::vector<double>& UR)
 {
-  return NumericalFlux_x_Rusanov(UL, UR);
-  // return NumericalFlux_x_CentralUpwind(UL, UR);
+//  return NumericalFlux_x_Rusanov(UL, UR);
+    return NumericalFlux_x_CentralUpwind(UL, UR);
 }
 
 
@@ -655,6 +680,7 @@ std::vector<double> ShallowWater_PK::NumericalSource(
 {
   Epetra_MultiVector& B_c = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("cell", true);
   Epetra_MultiVector& ht_c = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
+  Epetra_MultiVector& h_c = *S_->GetFieldData(ponded_depth_key_, passwd_)->ViewComponent("cell", true);
 
   AmanziMesh::Entity_ID_List cfaces;
   mesh_->cell_get_faces(c, &cfaces);
@@ -667,6 +693,7 @@ std::vector<double> ShallowWater_PK::NumericalSource(
     int f = cfaces[n];
     const auto& normal = mesh_->face_normal(f, false, c, &orientation);
     const auto& xcf = mesh_->face_centroid(f);
+    double farea = mesh_->face_area(f);
 
     double ht_rec = total_depth_grad_->getValue(c, xcf);
     double B_rec = bathymetry_grad_->getValue(c, xcf);
@@ -676,8 +703,17 @@ std::vector<double> ShallowWater_PK::NumericalSource(
       B_rec = B_c[0][c];
     }
 
-    S1 += (-B_rec * ht_rec + B_rec * B_rec / 2) * normal[0];
-    S2 += (-B_rec * ht_rec + B_rec * B_rec / 2) * normal[1];
+//    S1 += (-B_rec * ht_rec + B_rec * B_rec / 2) * normal[0]; // original
+//    S2 += (-B_rec * ht_rec + B_rec * B_rec / 2) * normal[1];
+      
+      
+//      S1 += -(ht_c[0][c] - B_c[0][c]) * B_rec * farea * normal[0]; // Kurganov (Acta Numerica 2018, pg 322)
+//      S2 += -(ht_c[0][c] - B_c[0][c]) * B_rec * farea * normal[1];
+      
+      S1 += -U[0] * B_rec  * normal[0]; // Kurganov (Acta Numerica 2018, pg 322)
+      S2 += -U[0] * B_rec  * normal[1];
+      
+
   }
     
   std::vector<double> S(3);
@@ -687,6 +723,7 @@ std::vector<double> ShallowWater_PK::NumericalSource(
 
   return S;
 }
+
 
 
 //--------------------------------------------------------------
