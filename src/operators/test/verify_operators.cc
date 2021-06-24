@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
       "  verify_operators \"Amesos1: KLU\" unstructured2d mymesh.exo mfd 1e-10 1 gmres\n";
     return 1;
   }
-  for (int i = 1; i < 4; ++i) argv_copy.push_back(argv[i]);
+  for (int i = 1; i < argc; ++i) argv_copy.push_back(argv[i]);
 
   argv[0] = new char[40];
   strcpy(argv[0], "--teuchos-suppress-startup-banner");
