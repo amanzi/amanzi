@@ -8,8 +8,7 @@
 
   Base class for chemical process kernels.
 */
- 
-// Amanzi
+
 #include "message.hh"
 
 // Chemistry
@@ -27,7 +26,7 @@ Chemistry_PK::Chemistry_PK() :
     number_ion_exchange_sites_(0),
     number_sorption_sites_(0),
     using_sorption_(false),
-    using_sorption_isotherms_(false),    
+    using_sorption_isotherms_(false),
     number_aqueous_kinetics_(0)
     {};
 
@@ -40,7 +39,7 @@ void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
   mesh_ = S->GetMesh(domain_);
 
   saturation_tolerance_ = cp_list_->get<double>("saturation tolerance", 1e-14);
-  
+
   // Require data from flow
   S->RequireField(poro_key_, passwd_)->SetMesh(mesh_)->SetGhosted(false)
     ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -56,11 +55,11 @@ void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // require transport fields
   std::vector<std::string>::const_iterator it;
-  if (!S->HasField(tcc_key_)) {    
+  if (!S->HasField(tcc_key_)) {
     // set the names for vis
     std::vector<std::vector<std::string> > conc_names_cv(1);
     for (it = comp_names_.begin(); it != comp_names_.end(); ++it) {
-      conc_names_cv[0].push_back(*it + std::string(" conc"));
+      conc_names_cv[0].push_back(*it);
     }
     S->RequireField(tcc_key_, passwd_, conc_names_cv)
       ->SetMesh(mesh_)->SetGhosted(true)
@@ -75,9 +74,9 @@ void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
     std::vector<std::vector<std::string> > mrc_names_cv(1);
 
     for (it = mineral_names_.begin(); it != mineral_names_.end(); ++it) {
-      vf_names_cv[0].push_back(*it + std::string(" vol frac"));
-      ssa_names_cv[0].push_back(*it + std::string(" spec surf area"));
-      mrc_names_cv[0].push_back(*it + std::string(" min rate cnst"));
+      vf_names_cv[0].push_back(*it);
+      ssa_names_cv[0].push_back(*it);
+      mrc_names_cv[0].push_back(*it);
     }
 
     // -- register two fields
@@ -298,6 +297,17 @@ void Chemistry_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> 
     using_sorption_isotherms_ = true;
   }
 
+  KeyTriple split;
+  bool is_ds = Keys::splitDomainSet(isotherm_kd_key_, split);
+  if (is_ds) {
+    Key lifted_key = Keys::getKey(std::get<0>(split), "*", std::get<2>(split));
+    
+    if (ic_list->isSublist(lifted_key)) {
+      using_sorption_ = true;
+      using_sorption_isotherms_ = true;
+    }
+  }
+  
   if (ic_list->isSublist(sorp_sites_key_)) {
     using_sorption_ = true;
   }

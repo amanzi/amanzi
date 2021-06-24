@@ -69,9 +69,6 @@
 #include <iostream>
 #include <sstream>
 
-// TPLs
-#include "boost/algorithm/string.hpp"
-
 // Chemistry
 #include "secondary_species.hh"
 #include "matrix_block.hh"
@@ -335,10 +332,10 @@ void KineticRateTST::ParseParameters(const StringTokenizer& reaction_data) {
       // what units do we have [moles/cm^2/sec] or [moles/m^2/sec]? We
       // need to set [moles/m^2/sec]!
       std::string units = st.at(2);
-      if (boost::iequals(units, "moles/cm^2/sec")) {
+      if (units == "moles/cm^2/sec") {
         // add 4 in log10 space to convert cm^-2 m^-2
         value += 4.0;
-      } else if (boost::iequals(units, "moles/m^2/sec")) {
+      } else if (units == "moles/m^2/sec") {
         // no change
       } else {
         std::ostringstream error_stream;

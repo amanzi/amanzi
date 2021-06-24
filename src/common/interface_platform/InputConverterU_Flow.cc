@@ -15,13 +15,13 @@
 #include <string>
 
 //TPLs
-#include <boost/algorithm/string.hpp>
 #include <xercesc/dom/DOM.hpp>
 
 // Amanzi's
 #include "errors.hh"
 #include "exceptions.hh"
 #include "dbc.hh"
+#include "StringExt.hh"
 
 #include "InputConverterU.hh"
 #include "InputConverterU_Defs.hh"
@@ -56,8 +56,9 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, 
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_flow_controls, rel_perm_method", flag);
   if (flag) rel_perm = mm.transcode(node->getTextContent());
  
-  rel_perm_out = boost::replace_all_copy(rel_perm, "-", ": ");
-  replace(rel_perm_out.begin(), rel_perm_out.end(), '_', ' ');
+  rel_perm_out = rel_perm;
+  Amanzi::replace_all(rel_perm_out, "-", ": ");
+  std::replace(rel_perm_out.begin(), rel_perm_out.end(), '_', ' ');
 
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_flow_controls, update_upwind_frequency", flag);
   if (flag) update_upwind = mm.transcode(node->getTextContent());

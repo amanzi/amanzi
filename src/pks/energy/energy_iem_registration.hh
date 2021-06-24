@@ -14,6 +14,7 @@
 #include "IEMFactory.hh"
 #include "IEMEvaluator.hh"
 #include "IEM_Linear.hh"
+#include "IEM_Tabular.hh"
 #include "IEM_WaterVaporEvaluator.hh"
 
 // explicity instantitate the static data of Factory<IEM>
@@ -25,9 +26,10 @@ namespace Amanzi {
 namespace Energy {
 
 Utils::RegisteredFactory<FieldEvaluator,IEMEvaluator> IEMEvaluator::factory_("iem");
+Utils::RegisteredFactory<FieldEvaluator,IEM_WaterVaporEvaluator> IEM_WaterVaporEvaluator::factory_("iem water vapor");
 
 Utils::RegisteredFactory<IEM,IEM_Linear> IEM_Linear::factory_("linear");
-Utils::RegisteredFactory<FieldEvaluator,IEM_WaterVaporEvaluator> IEM_WaterVaporEvaluator::factory_("iem water vapor");
+Utils::RegisteredFactory<IEM,IEM_Tabular> IEM_Tabular::factory_("tabular");
 
 }  // namespace Energy
 }  // namespace Amanzi

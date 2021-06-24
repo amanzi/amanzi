@@ -53,7 +53,6 @@ add_amanzi_library(atk
                            XMLParameterListWriter.hh
                            VerboseObject.hh
                            VerboseObject_objs.hh
-                           GlobalVerbosity.hh
                            IOEvent.hh
                            Iterators.hh
                            Factory.hh
@@ -63,6 +62,7 @@ add_amanzi_library(atk
                            SplinedCurve.hh
                            Key.hh
                            ExprTK.hh
+                           StringExt.hh
                     LINK_LIBS error_handling ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${HDF5_LIBRARIES})
 
 if (APPLE AND BUILD_SHARED_LIBS)
@@ -82,6 +82,11 @@ if (BUILD_TESTS)
     # Add the utils directory to the include paths
     include_directories(${ATK_SOURCE_DIR})
 
+    ADD_AMANZI_TEST(utils_keys utils_keys
+                    KIND unit
+                    SOURCE test/Main.cc test/utils_keys.cc
+                    LINK_LIBS atk ${UnitTest_LIBRARIES})
+    
     ADD_AMANZI_TEST(utils_time_step_manager utils_time_step_manager
                     KIND unit
                     SOURCE test/Main.cc test/utils_time_step_manager.cc

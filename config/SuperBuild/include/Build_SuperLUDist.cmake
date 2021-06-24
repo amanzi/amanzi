@@ -29,18 +29,20 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 # set the patch command
 #set(SuperLUDist_PATCH_COMMAND ${CMAKE_COMMAND} -P ${SuperLUDist_cmake_patch})
 
+if(BUILD_SHARED_LIBS)
+  set(SLU_BUILD_STATIC_LIBS FALSE)
+else()
+  set(SLU_BUILD_STATIC_LIBS TRUE)
+endif()  
+
 # --- Define the arguments passed to CMake.
 set(SuperLUDist_CMAKE_ARGS 
       "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
       "-DCMAKE_INSTALL_LIBDIR:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
+      "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
       "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
-      "-Denable_blaslib:BOOL=FALSE")
-
-# --- Location of TPLs
-string(REPLACE ";" "|" ParMetis_LIBRARIES_TMP "${ParMetis_LIBRARIES}")
-set(SuperLUDist_TPLS_ARGS 
-      "-DTPL_PARMETIS_INCLUDE_DIRS=${TPL_INSTALL_PREFIX}/include"
-      "-DTPL_PARMETIS_LIBRARIES:STRING=${ParMetis_LIBRARIES_TMP}")
+      "-DBUILD_STATIC_LIBS:BOOL=${SLU_BUILD_STATIC_LIBS}"
+      "-DTPL_ENABLE_BLASLIB:BOOL=FALSE")
 
 # --- Add external project build and tie to the SuperLU build target
 ExternalProject_Add(${SuperLUDist_BUILD_TARGET}
@@ -55,22 +57,26 @@ ExternalProject_Add(${SuperLUDist_BUILD_TARGET}
                     # -- Patch
                     # PATCH_COMMAND ${SuperLUDist_PATCH_COMMAND}  # Mods to source
                     # -- Configure
-                    LIST_SEPARATOR |                           # Use the alternate list separator
-                    SOURCE_DIR    ${SuperLUDist_source_dir}    # Source directory
-                    CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
-                                  ${SuperLUDist_CMAKE_ARGS}
-                                  ${SuperLUDist_TPLS_ARGS}
-                                  -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
-                                  -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-                                  -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
-                                  -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
-                                  -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
-                                  -DMPI_CXX_COMPILER:FILEPATH=${MPI_CXX_COMPILER}
-                                  -DMPI_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
-                                  -DMPI_Fortran_COMPILER:FILEPATH=${MPI_Fortran_COMPILER}
-                                  -DOpenMP_C_FLAGS:STRING=                        # Workaround to avoid OpenMP
-                                  -DOpenMP_Fortran_FLAGS:STRING=
-
+                    LIST_SEPARATOR |                             # Use the alternate list separator
+                    SOURCE_DIR      ${SuperLUDist_source_dir}    # Source directory
+                    CMAKE_ARGS      ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
+                                    ${SuperLUDist_CMAKE_ARGS}
+                                    -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
+                                    -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                                    -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
+                                    -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
+                                    -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
+                                    -DMPI_CXX_COMPILER:FILEPATH=${MPI_CXX_COMPILER}
+                                    -DMPI_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
+                                    -DMPI_Fortran_COMPILER:FILEPATH=${MPI_Fortran_COMPILER}
+                                    -DOpenMP_C_FLAGS:STRING=                        # Workaround to avoid OpenMP
+                                    -DOpenMP_Fortran_FLAGS:STRING=
+		   # -- CMake Cache
+	           CMAKE_CACHE_ARGS -DCMAKE_MODULE_PATH:STRING=${superlu_module_opt}
+		                    -DTPL_PARMETIS_INCLUDE_DIRS:STRING=${TPL_INSTALL_PREFIX}/include
+                                    -DTPL_PARMETIS_LIBRARIES:STRING=${ParMetis_LIBRARIES}
+                                    -DTPL_BLAS_LIBRARIES:STRING=${BLAS_LIBRARIES_TMP}
+                                    -DTPL_LAPACK_LIBRARIES:STRING=${LAPACK_LIBRARIES_TMP}
                     # -- Build
                     BINARY_DIR      ${SuperLUDist_build_dir}   # Build directory 
                     BUILD_COMMAND   $(MAKE)

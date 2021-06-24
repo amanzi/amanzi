@@ -2659,7 +2659,11 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         else {
           MSet_ptr mset2;
 
-          // Build set on a fly. This should be moved to build_set().
+          // Build set on a fly.
+          // -- first request the set on the parent to make sure it was constructed in MSTK in all cases.
+          AmanziMesh::Entity_ID_List parent_ids;
+          parent_mesh_->get_set_entities(region->name(), FACE, Parallel_type::ALL, &parent_ids);
+
           int ival;
           double rval;
           void *pval = nullptr;
@@ -2667,7 +2671,6 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
 
           std::string internal_parent_name = internal_name_of_set(region,FACE);
           mset2 = MESH_MSetByName(parent_mesh_->mesh_, internal_parent_name.c_str());
-          mset = MSet_New(mesh_, internal_name.c_str(),MREGION);
 
           for (int c = 0; c < num_entities(CELL, Parallel_type::ALL); ++c) {
             auto ment = cell_id_to_handle[c];

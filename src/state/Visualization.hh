@@ -32,8 +32,7 @@ DOMAIN-NAME`".
       into for output files.  One of `"s`", `"d`", `"y`", or `"yr 365`"
 
     INCLUDES:
-
-    * ``[io-event-spec]`` An IOEvent_ spec
+    - ``[io-event-spec]`` An IOEvent_ spec
 
 
 Example:
@@ -42,7 +41,7 @@ Example:
 
   <ParameterList name="visualization">
     <Parameter name="file name base" type="string" value="visdump_data"/>
-  
+
     <Parameter name="cycles start period stop" type="Array(int)" value="{{0, 100, -1}}" />
     <Parameter name="cycles" type="Array(int)" value="{{999, 1001}}" />
 
@@ -83,8 +82,10 @@ class Visualization : public IOEvent {
     mesh_ = mesh;
   }
 
-  std::string name() const { return name_; }
-  void set_name(const std::string& name) { name_ = name; }
+  std::string get_name() const { return name_; }
+  void set_name(const std::string& name);
+  void AddDomain(const std::string& name);
+  bool WritesDomain(const std::string& name) const;
 
   std::string get_tag() const { return tag_; }
   void set_tag(const std::string& tag) { tag_ = tag; }
@@ -103,6 +104,7 @@ class Visualization : public IOEvent {
  protected:
   virtual void ReadParameters_();
 
+  std::vector<std::string> domains_;
   std::string my_units_;
   std::string name_, tag_;
   bool time_unit_written_;

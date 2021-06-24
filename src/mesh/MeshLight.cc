@@ -186,6 +186,7 @@ void MeshLight::face_get_cells(const Entity_ID faceid,
 #if AMANZI_MESH_CACHE_VARS != 0
   if (!face2cell_info_cached_) cache_cell2face_info_();
 
+  cellids->reserve(2);
   cellids->clear();
   int n = face_cell_ptype_[faceid].size();
 
@@ -197,8 +198,8 @@ void MeshLight::face_get_cells(const Entity_ID faceid,
     if (std::signbit(c)) c = ~c;  // strip dir info by taking 1s complement
 
     if (ptype == Parallel_type::ALL || ptype == cell_ptype)
-      cellids->push_back(c);
-  } 
+      cellids->emplace_back(c);
+  }
 
 #else  // Non-cached version
   Entity_ID_List fcells;

@@ -88,6 +88,16 @@ mpi_root_dir=
 mpi_exec_args=
 
 # TPL (Third Party Libraries)
+# BLAS / LAPACK
+blas_dir=
+blas_vendor=
+lapack_dir=
+
+# python for regression tests
+python_exec=
+
+# Debugging options for CMake configuration phase
+debug_find_blas=$FALSE
 
 # Spack
 Spack=$FALSE
@@ -251,6 +261,8 @@ function download_file()
   else
     curl_opts="--remote-name"
   fi
+  # Problems with self-signed certificate from cmake
+  # curl_opts="--insecure ${curl_opts}"
   cmd="${curl_binary} ${curl_opts} $url/$file"
   echo $cmd
   ${curl_binary} $curl_opts $url/$file
@@ -408,6 +420,26 @@ Tool definitions:
   --with-xsdk=DIR            use libraries already available in xSDK installation in lieu of
                              downloading and installing them individually. ['"${xsdk_root_dir}"']
 
+  --with-python=FILE         FILE is the python executable, must be python3 and include numpy and h5py, for
+                             use with ATS regression testing.
+
+System/Vendor Supported Third Party Libraries (TPLs):
+Bootstrap builds community supported TPLs, however, some TPLs have vendor or compiler optimized versions
+and are provided on the system.  Some of these libraries may be in nonstandard locations.
+
+  --with-blas=DIR                Search for the BLAS libraries only in DIR
+                                 [default is blank so CMake searches in system directories] 
+
+  --blas-vendor=VENDOR           Specify the vendor (usually the system name) for the BLAS and LAPACK libraries
+                                 [default All] is implicit in findBLAS.cmake and will search all supported names.
+                                 To focus the search and simplify debegging, specify a VENDOR name. Supported
+                                 VENDOR names include, Generic, OpenBLAS, CRAYSCI, Apple, FLAME, and NAS.
+
+  --with-lapack=DIR              Search for the LAPACK libraries only in DIR
+                                 [default is blank so CMake searches in system directories] 
+
+  --debug_find_blas              Turn on additional CMake messages to help resolve system configuration
+                                 problems that cause the automatic search mechanism to fail [default: '"${debug_find_blas}"']
 
 Directories and file names: 
 
@@ -464,6 +496,18 @@ OSX C and C++ compilers and Fortran compiler from MacPorts:
                  --enable-alquimia --enable-pflotran --enable-crunchtope 
                  --enable-petsc
                  --tools-mpi=openmpi
+
+Example that uses the system MPI, provides a path (/usr/local/lib) and
+turns on debugging to find BLAS and LAPACK libraries, builds the TPLs
+(with geochemistry libraries enabled), and finally Amanzi:
+
+  ./bootstrap.sh --tpl-install-prefix=$HOME/TPLs-0.98.0-gcc-9.3.0-openmpi-4.0.3
+                 --with-mpi=/usr
+                 --with-blas=/usr/local/lib
+                 --with-lapack=/usr/local/lib
+                 --debug_find_blas
+                 --parallel=8 
+                 --enable-geochemistry
 '
 }
 
@@ -494,6 +538,10 @@ Build configuration:
     trilinos_build_type = '"${trilinos_build_type}"'
     tpls_build_type     = '"${tpls_build_type}"'
     tpl_config_file     = '"${tpl_config_file}"'
+    blas_dir        = '"${blas_dir}"'
+    lapack_dir      = '"${lapack_dir}"'
+    blas_vendor     = '"${blas_vendor}"'
+    debug_find_blas     = '"${debug_find_blas}"'
     amanzi_arch         = '"${amanzi_arch}"'
 
 Amanzi Components:   
@@ -532,6 +580,7 @@ Tools and Tests:
     reg_tests    = '"${reg_tests}"'
     test_suite   = '"${test_suite}"'
     tools_mpi    = '"${tools_mpi}"'
+    python_exec  = '"${python_exec}"'
 
 Directories:
     prefix                = '"${prefix}"'
@@ -573,7 +622,7 @@ List of INPUT parameters
 
       --arch=*)
                  amanzi_arch=`parse_option_with_equal "${opt}" 'arch'`
-		 ;;
+                 ;;
 
       --parallel=[0-9]*)
                  parallel_jobs=`parse_option_with_equal "${opt}" 'parallel'`
@@ -607,10 +656,12 @@ List of INPUT parameters
       --debug_trilinos)
                  trilinos_build_type=Debug
                  ;;
+      --debug_find_blas)
+                 debug_find_blas=${TRUE}
+                 ;;
       --dry_run)
                  dry_run=${TRUE}
                  ;;
-
       --disable-*)
                  feature=`parse_feature "${opt}"`
                  set_feature ${feature} 'disable'
@@ -701,10 +752,30 @@ List of INPUT parameters
                  mpi_root_dir=$tmp
                  ;;
 
+      --with-python=*)
+                 tmp=`parse_option_with_equal "${opt}" 'with-python'`
+                 python_exec=$tmp
+                 ;;
+      
       --with-xsdk=*)
                  tmp=`parse_option_with_equal "${opt}" 'with-xsdk'`
                  xsdk_root_dir=`make_fullpath $tmp`
                  XSDK=TRUE
+                 ;;
+
+      --with-blas=*)
+                 tmp=`parse_option_with_equal "${opt}" 'with-blas'`
+                 blas_dir=$tmp
+                 ;;
+
+      --blas-vendor=*)
+                 tmp=`parse_option_with_equal "${opt}" 'blas-vendor'`
+                 blas_vendor=$tmp
+                 ;;
+
+      --with-lapack=*)
+                 tmp=`parse_option_with_equal "${opt}" 'with-lapack'`
+                 lapack_dir=$tmp
                  ;;
 
       --amanzi-build-dir=*)
@@ -870,6 +941,30 @@ List of INPUT parameters
       superlu=${TRUE}
     fi
   fi
+
+  # BLAS
+  if [ ! -z "${blas_dir}" ]; then
+      blas_opts=-DTPL_BLAS_DIR:FILEPATH=${blas_dir}
+  fi
+
+  # BLAS Vendor (Generic, All, Apple, etc.)
+  if [ ! -z "${blas_vendor}" ]; then
+      blas_vendor_opts=-DTPL_BLAS_VENDOR:STRING=${blas_vendor}
+  fi
+
+  # Debug FindBLAS.cmake
+  if [ "${debug_find_blas}" -eq "${TRUE}" ]; then
+      debug_find_blas_tmp=-DTPL_DEBUG_FIND_BLAS:BOOL=${TRUE}
+  else
+      debug_find_blas_tmp=-DTPL_DEBUG_FIND_BLAS:BOOL=${FALSE}
+  fi
+  
+  # LAPACK
+  if [ ! -z "${lapack_dir}" ]; then
+      lapack_opts=-DTPL_LAPACK_DIR:FILEPATH=${lapack_dir}
+  fi
+
+  blas_lapack_opts="${blas_opts} ${blas_vendor_opts} ${debug_find_blas_tmp} ${lapack_opts}"
   
   # deprecated options
   if [ "${tpls_only}" ]; then
@@ -1452,8 +1547,6 @@ function define_install_directories
   status_message "TPL installation: ${tpl_install_prefix}"
 }    
 
-
-
 # ---------------------------------------------------------------------------- #
 # Arch-specific functions
 # ---------------------------------------------------------------------------- #
@@ -1471,8 +1564,8 @@ function define_nersc_options
                    -DMPI_EXEC:STRING=srun \
                    -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
                    -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
-                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static} \
-                   -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
+                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static}" 
+#                   -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
   
    arch_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=${TRUE} \
                      -DTESTS_REQUIRE_FULLPATH:BOOL=${TRUE}"
@@ -1488,8 +1581,8 @@ function define_nersc_options
                    -DMPI_EXEC:STRING=srun \
                    -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
                    -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
-                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static} \
-                   -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
+                   -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static}"
+#                   -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
   
     arch_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=${TRUE} \
                       -DTESTS_REQUIRE_FULLPATH:BOOL=${TRUE}"
@@ -1707,6 +1800,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DBUILD_SHARED_LIBS:BOOL=${shared} \
       -DTPL_DOWNLOAD_DIR:FILEPATH=${tpl_download_dir} \
       -DDISABLE_EXTERNAL_DOWNLOAD=${disable_external_downloads} \
+      ${blas_lapack_opts} \
       ${arch_tpl_opts} \
       ${tpl_build_src_dir}"
 
@@ -1829,7 +1923,8 @@ cmd_configure="${cmake_binary} \
     -DBUILD_SHARED_LIBS:BOOL=${shared} \
     -DCCSE_BL_SPACEDIM:INT=${spacedim} \
     -DENABLE_Regression_Tests:BOOL=${reg_tests} \
-    -DMPI_EXEC_GLOBAL_ARGS:STRING=${mpi_exec_args}\
+    -DMPI_EXEC_GLOBAL_ARGS:STRING=${mpi_exec_args} \
+    -DPYTHON_EXECUTABLE:STRING=${python_exec} \
     ${arch_amanzi_opts} \
     ${amanzi_source_dir}"
 

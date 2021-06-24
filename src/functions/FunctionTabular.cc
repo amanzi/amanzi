@@ -1,3 +1,10 @@
+/*
+  Copyright 2010-202X held jointly by LANL, ORNL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+*/
+
 #include "FunctionTabular.hh"
 #include "errors.hh"
 
@@ -20,11 +27,26 @@ FunctionTabular::FunctionTabular(
 
 FunctionTabular::FunctionTabular(
     const std::vector<double>& x, const std::vector<double>& y,
-    const int xi, const std::vector<Form>& form, const std::vector<Function*>& func) 
-  : x_(x), y_(y), xi_(xi), form_(form), func_(func)
+    const int xi, const std::vector<Form>& form,
+    std::vector<std::unique_ptr<Function>> func)
+  : x_(x), y_(y), xi_(xi), form_(form), func_(std::move(func))
 {
   check_args(x, y, form);
 }
+
+
+FunctionTabular::FunctionTabular(const FunctionTabular& other)
+  : x_(other.x_),
+    y_(other.y_),
+    form_(other.form_),
+    func_(),
+    xi_(other.xi_)
+{
+  for (const auto& f : other.func_) {
+    func_.emplace_back(f->Clone());
+  }
+}
+
 
 void FunctionTabular::check_args(const std::vector<double>& x, const std::vector<double>& y,
                                  const std::vector<Form>& form) const

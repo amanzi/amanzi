@@ -58,7 +58,6 @@ class ReactiveTransportMatrixFracture_PK : public PK_MPCAdditive<PK> {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
 
   Teuchos::RCP<ChemistryMatrixFracture_PK> coupled_chemistry_pk_;
-  Teuchos::RCP<PK_MPC<PK> > coupled_transport_pk_;
 
   Key tcc_matrix_key_, tcc_fracture_key_;
 

@@ -33,8 +33,8 @@ keys they provide.
 All evaluator lists must provide an evaluator type, which is one of the types
 registered with the evaluator factory.
 
-.. _field-evaluator-spec:
-.. admonition:: field-evaluator-spec
+.. _evaluator-typedinline-spec:
+.. admonition:: evaluator-typedinline-spec
 
    * `"field evaluator type`" ``[string]`` Type registered in evaluator factory.
    * `"write checkpoint`" ``[bool]`` **true** Write this data when checkpointing.
@@ -54,6 +54,7 @@ registered with the evaluator factory.
 #include "Teuchos_RCP.hpp"
 
 #include "State.hh"
+#include "StateDefs.hh"
 
 namespace Amanzi {
 
@@ -86,10 +87,10 @@ class FieldEvaluator {
           Key requester, Key wrt_key) = 0;
 
   // Update the field if needed.
-  //  virtual UpdateField(const Teuchos::Ptr<State>& S) = 0;
+  // virtual UpdateField(const Teuchos::Ptr<State>& S) = 0;
 
   // Update the field's derivative with respect to wrt_key if needed.
-  //  virtual UpdateFieldDerivative(const Teuchos::Ptr<State>& S, Key wrt_key) = 0;
+  // virtual UpdateFieldDerivative(const Teuchos::Ptr<State>& S, Key wrt_key) = 0;
 
 
   virtual bool IsDependency(const Teuchos::Ptr<State>& S, Key key) const = 0;
@@ -101,7 +102,12 @@ class FieldEvaluator {
 
   friend std::ostream& operator<<(std::ostream&, const FieldEvaluator&);
 
+  // special flags
+  EvaluatorType get_type() const { return type_; }
+
  protected:
+  EvaluatorType type_;
+
   // parameter list for the object
   Teuchos::ParameterList plist_;
 

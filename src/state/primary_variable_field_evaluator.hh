@@ -64,6 +64,9 @@ class PrimaryVariableFieldEvaluator : public FieldEvaluator {
 
   virtual std::string WriteToString() const;
 
+  // special flags
+  virtual bool IsPrimary() { return true; }
+
  protected:
   Key my_key_;
   KeySet requests_;

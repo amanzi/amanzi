@@ -20,21 +20,15 @@
 
     * `"observation output filename`" ``[string]`` user-defined name for the file
       that the observations are written to.
-
-    * `"delimiter`" ``[string]`` **, ** Delimiter to split columns of the file
-
+    * `"delimiter`" ``[string]`` **\, ** Delimiter to split columns of the file
     *  `"write interval`" ``[int]`` **1** Interval of observations on which to flush IO files.
-
     * `"time units`" ``[string]`` **s** Controls the unit of the time column in the observation file.
-
     * `"domain`" ``[string]`` **""** Can be used to set the communicator which writes (usually not needed).
-
-    * `"observed quantities`" ``[observable-spec-list]`` A list of Observable_ objects that are all put in the same file.
+    * `"observed quantities`" ``[observable-spec-list]`` A list of Observable_
+       objects that are all put in the same file.
 
     INCLUDES:
-
-    * ``[io-event-spec]`` An IOEvent_ spec
-
+    - ``[io-event-spec]`` An IOEvent_ spec
 
 Note, for backwards compatibility, an ``observable-spec`` may be directly
 included within the `observation-spec` if it is the only variable to be

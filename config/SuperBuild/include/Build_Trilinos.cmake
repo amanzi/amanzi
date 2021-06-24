@@ -329,7 +329,7 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     CMAKE_ARGS        ${Trilinos_Config_File_ARGS}
                     CMAKE_CACHE_ARGS  ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
                                       ${Trilinos_CMAKE_ARGS} 
-			              -DCMAKE_CXX_COMPILER:STRING=${Trilinos_CXX_COMPILER}
+                                      -DCMAKE_CXX_COMPILER:STRING=${Trilinos_CXX_COMPILER}
                                       -DCMAKE_CXX_FLAGS:STRING=${Trilinos_CMAKE_CXX_FLAGS}
                                       -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                                       -DCMAKE_C_FLAGS:STRING=${Trilinos_CMAKE_C_FLAGS}
@@ -348,7 +348,7 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     INSTALL_DIR      ${Trilinos_install_dir}      # Install directory
                     # -- Output control
                     ${Trilinos_logging_args}
-		    )
+            )
 
 # --- Useful variables for packages that depends on Trilinos
 global_set(Trilinos_INSTALL_PREFIX "${Trilinos_install_dir}")

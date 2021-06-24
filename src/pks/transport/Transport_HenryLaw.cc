@@ -9,8 +9,8 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-// TPLs
-#include <boost/algorithm/string.hpp>
+// Amanzi
+#include "StringExt.hh"
 
 #include "Transport_PK.hh"
 
@@ -25,7 +25,8 @@ void Transport_PK::PrepareAirWaterPartitioning_()
   henry_law_ = true;
   for (int i = 0; i < num_gaseous; i++) {
     int ig = num_aqueous + i;
-    std::string name_l = boost::replace_all_copy(component_names_[ig], "(g)", "(l)");
+    std::string name_l(component_names_[ig]);
+    Amanzi::replace_all(name_l, "(g)", "(l)");
 
     int il = FindComponentNumber(name_l);
     air_water_map_.push_back(il);

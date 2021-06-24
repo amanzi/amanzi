@@ -16,9 +16,6 @@
 #include <iostream>
 #include <iomanip>
 
-// TPLs
-#include "boost/algorithm/string.hpp"
-
 // Chemistry
 #include "chemistry_utilities.hh"
 #include "chemistry_exception.hh"
@@ -76,15 +73,15 @@ void RadioactiveDecay::ConvertHalfLifeUnits(void) {
   double conversion = 1.0;
   std::string units = half_life_units_;
   utilities::RemoveLeadingAndTrailingWhitespace(&units);
-  if (boost::iequals(units, "years") || boost::iequals(units, "y")) {
+  if (units == "years" || units == "y") {
     conversion = 365.0 * 24.0 * 60.0 * 60.0; 
-  } else if (boost::iequals(units, "days") || boost::iequals(units, "d")) {
+  } else if (units == "days" || units == "d") {
     conversion = 24.0 * 60.0 * 60.0;
-  } else if (boost::iequals(units, "hours") || boost::iequals(units, "h")) {
+  } else if (units == "hours" || units == "h") {
     conversion = 60.0 * 60.0;
-  } else if (boost::iequals(units, "minutes") || boost::iequals(units, "m")) {
+  } else if (units == "minutes" || units == "m") {
     conversion = 60.0;
-  } else if (boost::iequals(units, "seconds") || boost::iequals(units, "s")) {
+  } else if (units == "seconds" || units == "s") {
     conversion = 1.0;
   } else {
     std::stringstream message;

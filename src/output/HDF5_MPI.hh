@@ -88,7 +88,7 @@ class HDF5_MPI {
   
   // before writing data to the h5 file, the user must open the
   // file, and after writing is done, he must close it
-  void open_h5file();
+  void open_h5file(bool read_only=false);
   void close_h5file();
 
 

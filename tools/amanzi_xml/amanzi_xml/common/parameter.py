@@ -57,7 +57,7 @@ def _valid_parameter_from_type(ptype, value):
     # ensure types
     retval = None
     if ptype == "double":
-        retval = str(float(value))
+        retval = '%2.8g'%float(value)
     elif ptype == "int":
         retval = str(int(value))
     elif ptype == "bool":

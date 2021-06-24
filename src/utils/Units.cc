@@ -11,20 +11,10 @@
 
 #include <string>
 
-#include <boost/algorithm/string.hpp>
-#include <boost/units/base_units/imperial/foot.hpp>
-#include <boost/units/base_units/imperial/inch.hpp>
-#include <boost/units/base_units/imperial/pound.hpp>
-#include <boost/units/base_units/imperial/yard.hpp>
-#include <boost/units/base_units/imperial/gallon.hpp>
-#include <boost/units/base_units/metric/liter.hpp>
-
 #include "Units.hh"
 
 namespace Amanzi {
 namespace Utils {
-
-namespace bu = boost::units;
 
 /* ******************************************************************
 * Constructor creates known units.
@@ -32,52 +22,52 @@ namespace bu = boost::units;
 void Units::Init()
 {
   // supported units of time (extendable list)
-  time_["y"] = 365.25 * 24.0 * 3600.0 * bu::si::second;
-  time_["noleap"] = 365. * 24.0 * 3600.0 * bu::si::second;
-  time_["d"] = 24.0 * 3600.0 * bu::si::second;
-  time_["h"] = 3600.0 * bu::si::second;
-  time_["min"] = 60.0 * bu::si::second;
-  time_["s"] = 1.0 * bu::si::second;
+  time_["y"] = 365.25 * 24.0 * 3600.0;
+  time_["noleap"] = 365. * 24.0 * 3600.0;
+  time_["d"] = 24.0 * 3600.0;
+  time_["h"] = 3600.0;
+  time_["min"] = 60.0;
+  time_["s"] = 1.0;
 
   // supported units of mass (extendable list)
-  mass_["ton"] = 1000.0 * bu::si::kilogram;
-  mass_["kg"] = 1.0 * bu::si::kilogram;
-  mass_["g"] = 0.001 * bu::si::kilogram;
-  mass_["lb"] = conversion_factor(bu::imperial::pound_base_unit::unit_type(), bu::si::kilogram) * bu::si::kilogram;
+  mass_["ton"] = 1000.0;
+  mass_["kg"] = 1.0;
+  mass_["g"] = 0.001;
+  mass_["lb"] = 0.45359237;
 
   // supported units of lenght (extendable list)
-  length_["km"] = 1000.0 * bu::si::meters;
-  length_["m"] = 1.0 * bu::si::meters;
-  length_["yd"] = conversion_factor(bu::imperial::yard_base_unit::unit_type(), bu::si::meter) * bu::si::meter;
-  length_["ft"] = conversion_factor(bu::imperial::foot_base_unit::unit_type(), bu::si::meter) * bu::si::meter;
-  length_["in"] = conversion_factor(bu::imperial::inch_base_unit::unit_type(), bu::si::meter) * bu::si::meter;
-  length_["cm"] = 0.01 * bu::si::meters;
+  length_["km"] = 1000.0;
+  length_["m"] = 1.0;
+  length_["yd"] = 0.9144;
+  length_["ft"] = 0.3048;
+  length_["in"] = 0.0254;
+  length_["cm"] = 0.01;
 
   // supported units of volume (extendable list)
-  volume_["m3"] = 1.0 * bu::si::volume();
-  volume_["gal"] = conversion_factor(bu::imperial::gallon_base_unit::unit_type(), bu::si::volume()) * bu::si::volume();
-  volume_["L"] = conversion_factor(bu::metric::liter_base_unit::unit_type(), bu::si::volume()) * bu::si::volume();
+  volume_["m3"] = 1.0;
+  volume_["gal"] = 0.0037854117840007;
+  volume_["L"] = 0.001;
 
   // supported units of concentration (extendable list)
-  concentration_["SI"] = 1.0 * concentration();
-  concentration_["molar"] = conversion_factor(bu::si::volume(), bu::metric::liter_base_unit::unit_type()) * concentration();
-  concentration_["ppm"] = 1.0e-3 * concentration();
-  concentration_["ppb"] = 1.0e-6 * concentration();
+  concentration_["SI"] = 1.0;
+  concentration_["molar"] = 1000.0;
+  concentration_["ppm"] = 1.0e-3;
+  concentration_["ppb"] = 1.0e-6;
 
   // supported units of amount of substance (extendable list)
-  amount_["mol"] = 1.0 * bu::si::amount();
+  amount_["mol"] = 1.0;
 
   // supported units of temperature (extendable list)
-  temperature_["K"] = 1.0 * bu::si::temperature();
-  temperature_["C"] = 1.0 * bu::si::temperature();
-  temperature_["F"] = 1.0 * bu::si::temperature();
+  temperature_["K"] = 1.0;
+  temperature_["C"] = 1.0;
+  temperature_["F"] = 1.0;
 
   // supported derived units (simple map is suffient)
   derived_["Pa"] = AtomicUnitForm("kg", 1, "m", -1, "s", -2);
   derived_["J"] = AtomicUnitForm("m", 2, "kg", 1, "s", -2);
 
   // static convertion factor
-  concentration_factor_ = concentration_[system_.concentration].value() / concentration_["SI"].value();
+  concentration_factor_ = concentration_[system_.concentration] / concentration_["SI"];
 }
 
 
@@ -97,7 +87,7 @@ double Units::ConvertTime(double val,
   }
 
   double tmp(val);
-  tmp *= time_[in_unit].value() / time_[out_unit].value();
+  tmp *= time_[in_unit] / time_[out_unit];
   return tmp;
 }
 
@@ -118,7 +108,7 @@ double Units::ConvertMass(double val,
   }
 
   double tmp(val);
-  tmp *= mass_[in_unit].value() / mass_[out_unit].value();
+  tmp *= mass_[in_unit] / mass_[out_unit];
   return tmp;
 }
 
@@ -139,7 +129,7 @@ double Units::ConvertLength(double val,
   }
 
   double tmp(val);
-  tmp *= length_[in_unit].value() / length_[out_unit].value();
+  tmp *= length_[in_unit] / length_[out_unit];
   return tmp;
 }
 
@@ -166,7 +156,7 @@ double Units::ConvertConcentration(double val,
   }
 
   double tmp(val);
-  tmp *= concentration_[in_unit].value() / concentration_[out_unit].value();
+  tmp *= concentration_[in_unit] / concentration_[out_unit];
 
   // It is not clear how to deal properly with dimentionless units.
   if (in_unit == "ppm" || in_unit == "ppb") tmp /= mol_mass;
@@ -207,23 +197,23 @@ double Units::ConvertUnitD(double val,
   UnitData::const_iterator it;
   for (it = in_data.begin(); it != in_data.end(); ++it) {
     if (time_.find(it->first) != time_.end()) {
-      tmp *= std::pow(time_[it->first].value(), it->second);
+      tmp *= std::pow(time_[it->first], it->second);
       ntime += it->second;
     }
     else if (mass_.find(it->first) != mass_.end()) {
-      tmp *= std::pow(mass_[it->first].value(), it->second);
+      tmp *= std::pow(mass_[it->first], it->second);
       nmass += it->second;
     }
     else if (length_.find(it->first) != length_.end()) {
-      tmp *= std::pow(length_[it->first].value(), it->second);
+      tmp *= std::pow(length_[it->first], it->second);
       nlength += it->second;
     } 
     else if (volume_.find(it->first) != volume_.end()) {
-      tmp *= std::pow(volume_[it->first].value(), it->second);
+      tmp *= std::pow(volume_[it->first], it->second);
       nlength += 3 * it->second;
     }
     else if (concentration_.find(it->first) != concentration_.end()) {
-      tmp *= std::pow(concentration_[it->first].value(), it->second);
+      tmp *= std::pow(concentration_[it->first], it->second);
       if (it->first == "ppm" || it->first == "ppb") tmp /= mol_mass;
       tmp /= concentration_factor_;  // for non-SI unit "molar"
       nconcentration += it->second;
@@ -250,23 +240,23 @@ double Units::ConvertUnitD(double val,
 
   for (it = out_data.begin(); it != out_data.end(); ++it) {
     if (time_.find(it->first) != time_.end()) {
-      tmp /= std::pow(time_[it->first].value(), it->second);
+      tmp /= std::pow(time_[it->first], it->second);
       ntime -= it->second;
     }
     else if (mass_.find(it->first) != mass_.end()) {
-      tmp /= std::pow(mass_[it->first].value(), it->second);
+      tmp /= std::pow(mass_[it->first], it->second);
       nmass -= it->second;
     } 
     else if (length_.find(it->first) != length_.end()) {
-      tmp /= std::pow(length_[it->first].value(), it->second);
+      tmp /= std::pow(length_[it->first], it->second);
       nlength -= it->second;
     } 
     else if (volume_.find(it->first) != volume_.end()) {
-      tmp /= std::pow(volume_[it->first].value(), it->second);
+      tmp /= std::pow(volume_[it->first], it->second);
       nlength -= 3 * it->second;
     }
     else if (concentration_.find(it->first) != concentration_.end()) {
-      tmp /= std::pow(concentration_[it->first].value(), it->second);
+      tmp /= std::pow(concentration_[it->first], it->second);
       if (it->first == "ppm" || it->first == "ppb") tmp *= mol_mass;
       tmp *= concentration_factor_;
       nconcentration -= it->second;
@@ -474,9 +464,8 @@ std::string Units::OutputTime(double val)
   if (val > 0.0) {
     dmin = fabs(log10(val));
  
-    std::map<std::string, bu::quantity<bu::si::time> >::const_iterator it;
-    for (it = time_.begin(); it != time_.end(); ++it) { 
-      tmp = val / it->second.value();
+    for (auto it = time_.begin(); it != time_.end(); ++it) { 
+      tmp = val / it->second;
       dtry = fabs(log10(tmp));
       if (dtry < dmin) {
         dmin = dtry;
@@ -506,9 +495,8 @@ std::string Units::OutputMass(double val) const
   if (val > 0.0) {
     dmin = fabs(log10(val));
  
-    std::map<std::string, bu::quantity<bu::si::mass> >::const_iterator it;
-    for (it = mass_.begin(); it != mass_.end(); ++it) {
-      tmp = val / it->second.value();
+    for (auto it = mass_.begin(); it != mass_.end(); ++it) {
+      tmp = val / it->second;
       dtry = fabs(log10(tmp));
       if (dtry < dmin) {
         dmin = dtry;
@@ -538,9 +526,8 @@ std::string Units::OutputLength(double val) const
   if (val > 0.0) {
     dmin = fabs(log10(val));
  
-    std::map<std::string, bu::quantity<bu::si::length> >::const_iterator it;
-    for (it = length_.begin(); it != length_.end(); ++it) {
-      tmp = val / it->second.value();
+    for (auto it = length_.begin(); it != length_.end(); ++it) {
+      tmp = val / it->second;
       dtry = fabs(log10(tmp));
       if (dtry < dmin) {
         dmin = dtry;

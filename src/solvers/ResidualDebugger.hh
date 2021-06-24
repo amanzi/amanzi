@@ -20,8 +20,7 @@ process for use with vis tools.
     * `"file name base`" ``[string]`` **amanzi_dbg** Prefix for output filenames.
 
     INCLUDES:
-
-    * ``[io-event-spec]`` An IOEvent_ spec
+    - ``[io-event-spec]`` An IOEvent_ spec
 
 */
 

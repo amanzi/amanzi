@@ -20,7 +20,6 @@
 // TPLs
 #include <boost/lambda/lambda.hpp>
 #include <boost/bind.hpp>
-#include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/filesystem/operations.hpp>
 
@@ -29,7 +28,6 @@
 #include "dbc.hh"
 
 #define  BOOST_FILESYTEM_NO_DEPRECATED
-#include "boost/format.hpp"
 
 #include "xercesc/dom/DOM.hpp"
 #include "xercesc/util/XMLString.hpp"
@@ -41,10 +39,12 @@
 
 // Amanzi's
 #include "ErrorHandler.hpp"
+#include "StringExt.hh"
 #include "InputConverter.hh"
 
 namespace Amanzi {
 namespace AmanziInput {
+
 
 /* ******************************************************************
 * Non-member function: returns parser.
@@ -279,7 +279,7 @@ void InputConverter::ParseGeochemistry_()
 
 
 /* ******************************************************************
-* Returns node specified by the list of consequtive names tags 
+* Returns node specified by the list of consequitive namestags 
 * separated by commas. Only the first tag may be not unique.
 ****************************************************************** */
 DOMNode* InputConverter::GetUniqueElementByTagsString_(
@@ -346,6 +346,25 @@ DOMNode* InputConverter::GetUniqueElementByTagsString_(
 
   flag = (icnt == 1);
   return node_good;
+}
+
+
+/* ******************************************************************
+* Returns node specified by the list of consequtive names tags 
+* separated by commas. Only the first tag may be not unique.
+****************************************************************** */
+xercesc::DOMNode* InputConverter::GetUniqueElementByTagsString_(
+    const std::string& tags, bool& flag, bool exception)
+{
+  xercesc::DOMNode* node = GetUniqueElementByTagsString_(tags, flag);
+
+  if (!flag && exception) {
+    Errors::Message msg;
+    msg << "No unique element for tags \"" << tags << "\"\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  return node;
 }
 
 
@@ -686,7 +705,7 @@ std::string InputConverter::GetAttributeValueS_(
   std::string text, found_type;
   if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
     text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
-    boost::algorithm::trim(text);
+    trim(text);
 
     // check the list of global constants
     found_type = GetConstantType_(text, val);
@@ -956,7 +975,7 @@ std::string InputConverter::GetConstantType_(
     const std::string& val_in, std::string& parsed_val)
 {
   std::string val(val_in);
-  boost::algorithm::trim(val);
+  trim(val);
 
   std::string type;
   if (constants_time_.find(val) != constants_time_.end()) {
@@ -1016,7 +1035,7 @@ std::vector<std::string> InputConverter::CharToStrings_(const char* namelist)
 
   while (tmp2 != NULL) {
     std::string str(tmp2);
-    boost::algorithm::trim(str);
+    trim(str);
     regs.push_back(str);
     tmp2 = strtok(NULL, ",");
   }
@@ -1052,7 +1071,7 @@ double InputConverter::ConvertUnits_(
   unit = "";
   if (data != NULL) {
     unit = std::string(data);
-    boost::algorithm::trim(unit);
+    trim(unit);
     out = units_.ConvertUnitD(out, unit, "SI", mol_mass, flag);
 
     if (!flag) {
@@ -1112,7 +1131,7 @@ std::vector<double> InputConverter::MakeCoordinates_(const std::string& array)
 
   while (tmp2 != NULL) {
     std::string str(tmp2), parsed_str;
-    boost::algorithm::trim(str);
+    trim(str);
 
     GetConstantType_(str, parsed_str);
     coords.push_back(std::strtod(parsed_str.c_str(), NULL));
@@ -1153,7 +1172,7 @@ std::vector<double> InputConverter::MakeVector_(
 std::string InputConverter::TrimString_(char* tmp)
 {
   std::string str(tmp);
-  boost::algorithm::trim(str);
+  trim(str);
   return str;
 }
 

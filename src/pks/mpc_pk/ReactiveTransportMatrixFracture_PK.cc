@@ -14,10 +14,6 @@
 
 #include "Chemistry_PK.hh"
 
-#ifdef ALQUIMIA_ENABLED
-#include "Alquimia_PK.hh"
-#endif
-
 #include "ReactiveTransportMatrixFracture_PK.hh"
 #include "Transport_PK.hh"
 #include "TransportMatrixFracture_PK.hh"
@@ -35,7 +31,6 @@ ReactiveTransportMatrixFracture_PK::ReactiveTransportMatrixFracture_PK(
     PK_MPCAdditive<PK>(pk_tree, global_list, S, soln)
 {
   coupled_chemistry_pk_ = Teuchos::rcp_dynamic_cast<ChemistryMatrixFracture_PK>(sub_pks_[0]);
-  coupled_transport_pk_ = Teuchos::rcp_dynamic_cast<PK_MPC<PK> >(sub_pks_[1]);
 }
 
 
@@ -63,7 +58,6 @@ void ReactiveTransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
     *S->RequireField("fracture-darcy_flux", "transport")->SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs;
   }
 
-
   tcc_matrix_key_="total_component_concentration";
   tcc_fracture_key_="fracture-total_component_concentration";
   
@@ -81,16 +75,23 @@ void ReactiveTransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
         .set<std::string>("field evaluator type", "independent variable");
 
   // communicate chemistry engine to transport.
-#ifdef ALQUIMIA_ENABLED
   auto ic = coupled_chemistry_pk_->begin();
-  if ((*ic)->name() == "chemistry alquimia") {
-    for (auto it = coupled_transport_pk_->begin(); it != coupled_transport_pk_->end(); ++it, ++ic) {
+
+  auto mpc_implicit = Teuchos::rcp_dynamic_cast<PK_MPC<PK_BDF> >(sub_pks_[1]);
+  if (mpc_implicit.get() != NULL) {
+    for (auto it = mpc_implicit->begin(); it != mpc_implicit->end(); ++it, ++ic) {
       auto it1 = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(*it);
-      auto ic1 = Teuchos::rcp_dynamic_cast<AmanziChemistry::Alquimia_PK>(*ic);
-      it1->SetupAlquimia(ic1, ic1->chem_engine());
+      auto ic1 = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(*ic);
+      it1->SetupChemistry(ic1);
+    }
+  } else {
+    auto mpc_explicit = Teuchos::rcp_dynamic_cast<PK_MPC<PK> >(sub_pks_[1]);
+    for (auto it = mpc_explicit->begin(); it != mpc_explicit->end(); ++it, ++ic) {
+      auto it1 = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(*it);
+      auto ic1 = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(*ic);
+      it1->SetupChemistry(ic1);
     }
   }
-#endif
 
   Amanzi::PK_MPCAdditive<PK>::Setup(S);
 }

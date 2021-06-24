@@ -96,7 +96,7 @@ void DirectMethodAmesos::ComputeInverse() {
       returned_code_ = ierr;
 
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-        *vo_->os() << "SymbolicFactorization() failed with error code: " <<
+        *vo_->os() << "DirectMethodAmesos: SymbolicFactorization() failed with error code: " <<
             this->returned_code_string() << std::endl;
 
       // throw on this error?
@@ -119,12 +119,12 @@ void DirectMethodAmesos::ComputeInverse() {
       returned_code_ = ierr;
 
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-        *vo_->os() << "SymbolicFactorization() failed with error code: " <<
+        *vo_->os() << "DirectMethodAmesos: NumericFactorization() failed with error code: " <<
             this->returned_code_string() << std::endl;
 
       // throw on this error?
-      Errors::Message msg("DirectMethodAmesos: NumericFactorization failed");
-      Exceptions::amanzi_throw(msg);
+      // Errors::Message msg("DirectMethodAmesos: NumericFactorization failed");
+      // Exceptions::amanzi_throw(msg);
     }
   }
   // END COMPUTE
@@ -147,12 +147,12 @@ int DirectMethodAmesos::ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) 
       returned_code_ = ierr;
 
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-        *vo_->os() << "ApplyInverse() failed with error code: " <<
+        *vo_->os() << "DirectMethodAmesos::ApplyInverse() failed with error code: " <<
             this->returned_code_string() << std::endl;
     } else {
       returned_code_ = ierr;
       if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-        *vo_->os() << "ApplyInverse() succeeded." << std::endl;
+        *vo_->os() << "DirectMethodAmesos::ApplyInverse() succeeded." << std::endl;
     }
   }
   if (returned_code_ != 0) return 1;

@@ -28,7 +28,6 @@ class PK, which is inherited and included by each actual PK, and lives in the
 .. admonition:: pk-typed-spec
 
     * `"PK type`" ``[string]`` One of the registered PK types
-    * `"sub PKs`" ``[pk-typed-spec-list]`` **optional** If there are sub pks, list them.
     * `"verbose object`" ``[verbose-object-spec]`` **optional** See `Verbose Object`_
 
 .. _pk-spec:

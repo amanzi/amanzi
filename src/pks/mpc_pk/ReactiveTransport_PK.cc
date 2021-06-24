@@ -34,10 +34,7 @@ ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
   AMANZI_ASSERT(chemistry_pk_ != Teuchos::null);
 
   // communicate chemistry engine to transport.
-#ifdef ALQUIMIA_ENABLED
-  transport_pk_->SetupAlquimia(Teuchos::rcp_static_cast<AmanziChemistry::Alquimia_PK>(chemistry_pk_),
-                              chemistry_pk_->chem_engine());
-#endif
+  transport_pk_->SetupChemistry(chemistry_pk_);
 
   // master_ = 1;  // Transport;
   // slave_ = 0;  // Chemistry;

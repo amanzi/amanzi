@@ -66,8 +66,12 @@ TEST(INTERFACE_LIBRARY_INIT) {
   CHECK(species.size() == 0);
 
   std::vector<std::string> aux;
-  engine->GetAuxiliaryOutputNames(aux);
-  CHECK(aux.size() == 119);
+  std::vector<std::vector<std::string>> aux_subfields;
+  engine->GetAuxiliaryOutputNames(aux, aux_subfields);
+  CHECK(aux.size() == 7);
+  int count = 0;
+  for (const auto& sf : aux_subfields) count += sf.size();
+  CHECK(count == 119);
   CHECK(aux[0] == "pH");
 
   std::vector<std::string> names;

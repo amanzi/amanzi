@@ -21,6 +21,7 @@
 #include "errors.hh"
 #include "exceptions.hh"
 #include "dbc.hh"
+#include "Key.hh"
 
 #include "InputConverterU.hh"
 #include "InputConverterU_Defs.hh"
@@ -49,6 +50,13 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   Errors::Message msg;
   char* tagname;
   char* text_content;
+
+  // --- eos lookup table
+  bool flag;
+  DOMNode* node = GetUniqueElementByTagsString_("phases, liquid_phase, eos", flag);
+  if (flag) {
+    eos_lookup_table_ = GetTextContentS_(node, "", false);
+  }
   
   // --- gravity
   Teuchos::Array<double> gravity(dim_);
@@ -57,8 +65,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   out_ic.sublist("gravity").set<Teuchos::Array<double> >("value", gravity);
 
   // --- constant viscosities
-  bool flag;
-  DOMNode* node = GetUniqueElementByTagsString_("phases, liquid_phase, viscosity", flag);
+  node = GetUniqueElementByTagsString_("phases, liquid_phase, viscosity", flag, true);
   double viscosity = GetTextContentD_(node, "Pa*s");
   out_ic.sublist("const_fluid_viscosity").set<double>("value", viscosity);
 
@@ -70,7 +77,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   }
 
   // --- constant density
-  node = GetUniqueElementByTagsString_("phases, liquid_phase, density", flag);
+  node = GetUniqueElementByTagsString_("phases, liquid_phase, density", flag, true);
   rho_ = GetTextContentD_(node, "kg/m^3");
   out_ic.sublist("const_fluid_density").set<double>("value", rho_);
 
@@ -241,6 +248,15 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters")
             .set<std::string>("iem type", model)
             .set<double>("heat capacity", cv);
+
+        if (eos_lookup_table_.size() > 0) {
+          field_ev.sublist("IEM parameters").sublist(reg_str)
+              .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters")
+              .set<std::string>("iem type", "tabular")
+              .set<std::string>("table name", eos_lookup_table_)
+              .set<std::string>("field name", "internal_energy");
+        }
+    } else {
       }
 
       // -- rock heat capacity
@@ -349,6 +365,14 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters")
             .set<std::string>("iem type", model)
             .set<double>("heat capacity", cv);
+
+        if (eos_lookup_table_.size() > 0) {
+          field_ev.sublist("IEM parameters").sublist(reg_str)
+              .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters")
+              .set<std::string>("iem type", "tabular")
+              .set<std::string>("table name", eos_lookup_table_)
+              .set<std::string>("field name", "internal_energy");
+        }
       }
     }
   }
@@ -382,7 +406,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         Teuchos::ParameterList& pressure_ic = out_ic.sublist("pressure");
         pressure_ic.sublist("function").sublist(reg_str)
             .set<Teuchos::Array<std::string> >("regions", regions)
-            .set<std::string>("component", "cell")
+            .set<std::string>("component", "*")
             .sublist("function").sublist("function-constant")
             .set<double>("value", p);
       }
@@ -575,7 +599,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         out_ic.sublist("geochemical conditions").sublist(name)
             .set<Teuchos::Array<std::string> >("regions", regions);
 
-        TranslateStateICsAmanziGeochemistry_(out_ic, name, regions);
+        TranslateStateICsAmanziGeochemistry_(out_ic, name, regions, "domain");
       }
 
       // surface fields
@@ -608,7 +632,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         Teuchos::ParameterList& pressure_ic = out_ic.sublist("fracture-pressure");
         pressure_ic.sublist("function").sublist(reg_str)
             .set<Teuchos::Array<std::string> >("regions", regions)
-            .set<std::string>("component", "cell")
+            .set<std::string>("component", "*")
             .sublist("function").sublist("function-constant")
             .set<double>("value", p);
       }
@@ -648,6 +672,17 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           dof_str << "dof " << k + 1 << " function";
           dof_list.sublist(dof_str.str()).sublist("function-constant").set<double>("value", vals[k]);
         }
+      }
+
+      // -- geochemical condition
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, geochemistry_component, constraint", flag);
+      if (flag) {
+        std::string name = GetAttributeValueS_(node, "name");
+
+        out_ic.sublist("geochemical conditions").sublist(name)
+            .set<Teuchos::Array<std::string> >("regions", regions);
+
+        TranslateStateICsAmanziGeochemistry_(out_ic, name, regions, "fracture");
       }
 
       // -- uniform temperature
@@ -812,7 +847,7 @@ Teuchos::ParameterList InputConverterU::TranslateMaterialsPartition_()
 ****************************************************************** */
 void InputConverterU::TranslateStateICsAmanziGeochemistry_(
     Teuchos::ParameterList& out_list, std::string& constraint,
-    std::vector<std::string>& regions)
+    std::vector<std::string>& regions, const std::string& domain)
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -823,7 +858,7 @@ void InputConverterU::TranslateStateICsAmanziGeochemistry_(
   DOMNode* node;
   DOMElement* element;
 
-  node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
+  node = GetPKChemistryPointer_(flag);
   std::string engine = GetAttributeValueS_(node, "engine");
 
   node = GetUniqueElementByTagsString_("geochemistry, constraints", flag);
@@ -838,7 +873,7 @@ void InputConverterU::TranslateStateICsAmanziGeochemistry_(
       Exceptions::amanzi_throw(msg);
     }
 
-    Teuchos::ParameterList& ic_list = out_list.sublist("total_component_concentration")
+    Teuchos::ParameterList& ic_list = out_list.sublist(Keys::getKey(domain, "total_component_concentration"))
         .sublist("function").sublist("All");
 
     ic_list.set<Teuchos::Array<std::string> >("regions", regions)

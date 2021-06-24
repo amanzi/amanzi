@@ -19,8 +19,7 @@ and visualizing on that mesh.
 .. admonition:: visualization-domain-set-spec
 
     INCLUDES:
-
-    * ``[visualization-spec]`` A Visualization_ spec
+    - ``[visualization-spec]`` A Visualization_ spec
 
 
 Example:

@@ -69,8 +69,10 @@ using namespace Amanzi::AmanziGeometry;
   glist->sublist("cycle driver").sublist("restart").set<std::string>("file name", "chk_rt00005.h5");
   glist->sublist("state").sublist("initial conditions").remove("geochemical conditions", false);
   S = Teuchos::null;
-  /*
   avg2 = 0.;
+
+  /*
+  state_plist = glist->sublist("state");
   S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
   
@@ -93,6 +95,9 @@ TEST(MPC_DRIVER_REACTIVE_TRANSPORT_NATIVE) {
   RunTestReactiveTransport("test/mpc_reactive_transport.xml", 6);
 }
 
+#ifdef ENABLE_ALQUIMIA
 TEST(MPC_DRIVER_REACTIVE_TRANSPORT_ALQUIMIA) {
   RunTestReactiveTransport("test/mpc_alquimia_transport.xml", 12);
 }
+#endif
+
