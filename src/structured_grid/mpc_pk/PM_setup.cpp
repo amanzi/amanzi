@@ -39,9 +39,8 @@
 #include <AlquimiaHelper_Structured.H>
 #include <AmanziChemHelper_Structured.H>
 
-#include "SimpleThermoDatabase.hh"
 #include "ActivityModelFactory.hh"
-#include "beaker.hh"
+#include "SimpleThermoDatabase.hh"
 
 #include <TabularFunction.H>
 
