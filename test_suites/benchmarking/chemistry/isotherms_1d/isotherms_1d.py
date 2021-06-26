@@ -51,7 +51,7 @@ if __name__ == "__main__":
     pflotran_sorb = [pflotran_sorb_templ.format(x) for x in components]
 
     # amanzi output
-    amanzi_totc_templ = "total_component_concentration.cell.{} conc" #Component {0} conc"
+    amanzi_totc_templ = "total_component_concentration.cell.{}" #Component {0} conc"
     amanzi_totc = [amanzi_totc_templ.format(x) for x in components] #range(len(components))]
     amanzi_totc_crunch = [amanzi_totc_templ.format(x) for x in compcrunch] #range(len(components))]
 

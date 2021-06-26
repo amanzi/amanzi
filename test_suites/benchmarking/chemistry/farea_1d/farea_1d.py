@@ -34,13 +34,13 @@ if __name__ == "__main__":
     minerals =['Quartz', 'Goethite', 'Kaolinite', 'Schoepite', 'Gibbsite', 'Jurbanite', 'Basaluminite', 'Opal']
 
     # amanzi output
-    amanzi_totc_templ = "total_component_concentration.cell.%s conc"
+    amanzi_totc_templ = "total_component_concentration.cell.%s"
     amanzi_totc = [amanzi_totc_templ%comp for comp in components]
 
     amanzi_sorb_templ = "total_sorbed.cell.{0}"
     amanzi_sorb = [amanzi_sorb_templ.format(x) for x in range(len(components))]
 
-    amanzi_vf_templ = "mineral_volume_fractions.cell.{0} vol frac"
+    amanzi_vf_templ = "mineral_volume_fractions.cell.{0}"
     amanzi_vf = [amanzi_vf_templ.format(x) for x in minerals]
 
     # pflotran output

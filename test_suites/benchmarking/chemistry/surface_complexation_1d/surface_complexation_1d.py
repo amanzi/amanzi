@@ -47,7 +47,7 @@ if __name__ == "__main__":
     times_CF_pH = ['pH5.out']
 
 # amanzi output (unstructured - native and alquimia)
-    amanzi_totc_templ = "total_component_concentration.cell.{0} conc" #Component {0} conc"
+    amanzi_totc_templ = "total_component_concentration.cell.{0}" #Component {0} conc"
     amanzi_totc = [amanzi_totc_templ.format(x) for x in components] #range(len(components))]
     amanzi_totc_crunch = [amanzi_totc_templ.format(x) for x in compcrunch] #range(len(components))]
 
