@@ -25,6 +25,7 @@
 #include "Epetra_SerialDenseVector.h"
 #include "Teuchos_RCPDecl.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 // Amanzi
 #include "Mesh.hh"
@@ -278,24 +279,28 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
 void Amanzi_PK::XMLParameters()
 {
   // search for thermodynamic database
+  Teuchos::RCP<Teuchos::ParameterList> tdb_list;
   if (cp_list_->isSublist("thermodynamic database")) {
-    Teuchos::RCP<Teuchos::ParameterList> tdb_list;
     // -- search by the name
     if (cp_list_->sublist("thermodynamic database").isParameter("file")) {
       // check extension and read
+      std::string filename = cp_list_->sublist("thermodynamic database").get<std::string>("file");
+      tdb_list = Teuchos::getParametersFromXmlFile(filename);
     }
-    // -- search as a sublist of the global list
-    if (tdb_list == Teuchos::null) {
-      tdb_list = Teuchos::sublist(glist_, "thermodynamic database", true);
-    }
+  }
 
-    // currently we only support the simple format.
-    chem_ = new SimpleThermoDatabase(tdb_list, vo_);
-    beaker_parameters_.tolerance = 1e-12;
-    beaker_parameters_.max_iterations = 250;
-    beaker_parameters_.activity_model_name = "unit";
+  // search as a sublist of the global list
+  if (tdb_list == Teuchos::null) {
+    tdb_list = Teuchos::sublist(glist_, "thermodynamic database", true);
+  }
 
-  } else {
+  // currently we only support the simple format.
+  chem_ = new SimpleThermoDatabase(tdb_list, vo_);
+  beaker_parameters_.tolerance = 1e-12;
+  beaker_parameters_.max_iterations = 250;
+  beaker_parameters_.activity_model_name = "unit";
+
+  if (tdb_list == Teuchos::null) {
     std::ostringstream msg;
     msg << "Amanzi_PK: 'thermodynamic database' sublist must be specified.\n";
     Exceptions::amanzi_throw(Errors::Message(msg.str()));    

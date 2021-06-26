@@ -69,8 +69,7 @@ if (BUILD_TESTS)
   add_install_include_file(${chem_inc})
 
   if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
-    file(GLOB DataFiles "${CHEM_SOURCE_DIR}/test/*.bgd"
-                        "${CHEM_SOURCE_DIR}/test/*.xml"
+    file(GLOB DataFiles "${CHEM_SOURCE_DIR}/test/*.xml"
                         "${CHEM_SOURCE_DIR}/test/*.dat"
                         "${CHEM_SOURCE_DIR}/test/native")
     file(COPY ${DataFiles} DESTINATION ${CHEM_BINARY_DIR}/test/)

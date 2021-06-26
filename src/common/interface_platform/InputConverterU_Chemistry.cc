@@ -23,6 +23,7 @@
 #include "errors.hh"
 #include "exceptions.hh"
 #include "dbc.hh"
+#include "Key.hh"
 
 #include "InputConverterU.hh"
 #include "InputConverterU_Defs.hh"
@@ -63,11 +64,18 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& d
 
     node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
 
-    Teuchos::ParameterList& bgd_list = out_list.sublist("thermodynamic database");
-    bgd_list.set<std::string>("file", bgdfilename);
-
-    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-      *vo_->os() << " using file:" << bgdfilename << std::endl;
+    if (bgdfilename != "") {
+      auto pair = Keys::split(bgdfilename, '.');
+      if (pair.second != "xml") {
+        Errors::Message msg;
+        msg << "Incorect suffix for optional XML file with a thermodynamic database.\n";
+        Exceptions::amanzi_throw(msg);
+      }
+      Teuchos::ParameterList& bgd_list = out_list.sublist("thermodynamic database");
+      bgd_list.set<std::string>("file", bgdfilename);
+      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+        *vo_->os() << " using file:" << bgdfilename << std::endl;
+    }
   } else {
     bool valid_engine(true);
 

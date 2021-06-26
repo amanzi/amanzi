@@ -37,7 +37,7 @@
   <process_kernels>
     <flow model="constant" state="on"/>
     <transport state="on" />
-    <chemistry input_filename="tritium.bgd" engine="amanzi" state="on"/>
+    <chemistry engine="amanzi" state="on"/>
   </process_kernels>
 
   <phases>

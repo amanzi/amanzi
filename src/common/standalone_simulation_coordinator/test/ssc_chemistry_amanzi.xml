@@ -17,7 +17,7 @@
   <process_kernels>
     <flow model="saturated" state="on"/>
     <transport state="on"/>
-    <chemistry input_filename="test/ssc_chemistry_amanzi.bgd" engine="amanzi" state="on" />
+    <chemistry engine="amanzi" state="on" />
   </process_kernels>
 
   <phases>

@@ -91,10 +91,6 @@
       <Parameter name="verbosity level" type="string" value="low" />
     </ParameterList>
 
-    <ParameterList name="thermodynamic database">
-      <Parameter name="format" type="string" value="simple"/>
-      <Parameter name="file" type="string" value="test/chemistry_amanzi_pk.bgd"/>
-    </ParameterList>
     <Parameter name="activity model" type="string" value="debye-huckel"/>
     <Parameter name="tolerance" type="double" value="1.50000000000000007e-12"/>
     <Parameter name="maximum Newton iterations" type="int" value="150"/>

@@ -592,10 +592,7 @@
     <ParameterList name="chemistry matrix">
       <Parameter name="domain name" type="string" value="domain"/>
       <Parameter name="component names" type="Array(string)" value="{Tritium}"/>
-      <ParameterList name="thermodynamic database">
-        <Parameter name="file" type="string" value="test/tritium.bgd"/>
-        <Parameter name="format" type="string" value="simple"/>
-      </ParameterList>
+
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="100"/>
       <Parameter name="tolerance" type="double" value="1.0e-12"/>
@@ -618,10 +615,6 @@
     <ParameterList name="chemistry fracture">
       <Parameter name="domain name" type="string" value="fracture"/>      
       <Parameter name="component names" type="Array(string)" value="{Tritium}"/>
-      <ParameterList name="thermodynamic database">
-        <Parameter name="file" type="string" value="test/tritium.bgd"/>
-        <Parameter name="format" type="string" value="simple"/>
-      </ParameterList>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="100"/>
       <Parameter name="tolerance" type="double" value="1.0e-12"/>

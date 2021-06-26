@@ -1192,10 +1192,6 @@
     <ParameterList name="chemistry matrix">
       <Parameter isUsed="true" name="domain name" type="string" value="domain"/>
       <Parameter name="chemistry model" type="string" value="Amanzi"/>
-      <ParameterList name="thermodynamic database">
-        <Parameter name="file" type="string" value="test/mpc_coupled_flow_reactive_transport.bgd"/>
-        <Parameter name="format" type="string" value="simple"/>
-      </ParameterList>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="100"/>
       <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
@@ -1219,10 +1215,6 @@
     <ParameterList name="chemistry fracture">
       <Parameter isUsed="true" name="domain name" type="string" value="fracture"/>
       <Parameter name="chemistry model" type="string" value="Amanzi"/>
-      <ParameterList name="thermodynamic database">
-        <Parameter name="file" type="string" value="test/mpc_coupled_flow_reactive_transport.bgd"/>
-        <Parameter name="format" type="string" value="simple"/>
-      </ParameterList>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="100"/>
       <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>

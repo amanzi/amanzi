@@ -100,10 +100,6 @@
       <Parameter name="PK type" type="string" value="chemistry pk"/>
       <Parameter name="component names" type="Array(string)" value="{Na+, Ca++, Mg++, Cl-}"/>
       <Parameter name="initial time step (s)" type="double" value="20.0"/>
-      <ParameterList name="thermodynamic database">
-	<Parameter name="format" type="string" value="simple"/>
-	<Parameter name="file" type="string" value="test/mpc_reactive_transport.bgd"/>
-      </ParameterList>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="50"/>
       <ParameterList name="initial conditions">
