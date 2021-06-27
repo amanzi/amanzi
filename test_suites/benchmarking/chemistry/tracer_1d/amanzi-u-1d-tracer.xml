@@ -133,14 +133,6 @@
 
   <geochemistry>
     <verbosity>silent</verbosity>
-    <constraints>
-      <constraint name="initial">
-        <primary name="tracer" type="total" value="1.0e-20"/>
-      </constraint>
-      <constraint name="west_constraint">
-        <primary name="tracer" type="total" value="1.0e-3"/>
-      </constraint>
-    </constraints>
   </geochemistry>
 
   <initial_conditions>  

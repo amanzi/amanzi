@@ -206,14 +206,6 @@
   </boundary_conditions>
 
   <geochemistry>
-    <constraints>
-      <constraint name="initial">
-        <primary name="A" type="total" value="1.0e-20"/>
-        <primary name="B" type="total" value="1.0e-20"/>
-        <primary name="C" type="total" value="1.0e-20"/>
-      </constraint>
-    </constraints>
-
     <thermodynamic_database>
       <primary_species>
         <primary name="A">
