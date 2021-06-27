@@ -88,7 +88,7 @@ if (BUILD_TESTS)
         file(COPY ${DataFiles} DESTINATION ${DATA_STRUCTURES_BINARY_DIR}/test/)
     endif()
 
-    set(amanzi_libs data_structures geometry mstk_mesh mesh_factory mesh)
+    set(amanzi_libs data_structures geometry mesh_mstk mesh_factory mesh)
 
     add_amanzi_test(data_structures test_data_structures 
                     KIND unit

@@ -23,10 +23,10 @@
 // Amanzi::Mesh
 #include "MeshAudit.hh"
 #include "MeshExtractedManifold.hh"
-#ifdef HAVE_MOAB_MESH
+#ifdef HAVE_MESH_MOAB
 #include "Mesh_MOAB.hh"
 #endif
-#ifdef HAVE_MSTK_MESH
+#ifdef HAVE_MESH_MSTK
 #include "Mesh_MSTK.hh"
 #endif
 #include "Mesh_simple.hh"
@@ -53,7 +53,7 @@ void RunTest(const std::string regname, int* cells, int* edges) {
   for (int i = 0; i < 3; ++i) {
     RCP<const Mesh> mesh3D;
     if (i == 0) {
-#ifdef HAVE_MSTK_MESH
+#ifdef HAVE_MESH_MSTK
       std::cout << "\nMesh framework: MSTK (" << regname << ")\n";
       // mesh3D = Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, comm, gm, mesh_list, true, true));
       mesh3D = Teuchos::rcp(new Mesh_MSTK("test/mesh_extracted_fracture.exo", comm, gm, mesh_list, true, true));
@@ -62,7 +62,7 @@ void RunTest(const std::string regname, int* cells, int* edges) {
       std::cout << "\nMesh framework: simple\n";
       mesh3D = Teuchos::rcp(new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, comm, gm, mesh_list, true, true));
     } else if (i == 2) {
-#ifdef HAVE_MOAB_MESH
+#ifdef HAVE_MESH_MOAB
       if (comm->NumProc() > 1) continue;
       std::cout << "\nMesh framework: MOAB\n";
       mesh3D = Teuchos::rcp(new Mesh_MOAB("test/mesh_extracted_fracture.exo", comm, gm, mesh_list, true, true));
