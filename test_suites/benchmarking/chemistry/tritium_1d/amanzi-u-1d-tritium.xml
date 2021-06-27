@@ -28,7 +28,7 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" />
-    <chemistry engine="amanzi" state="on" input_filename="tritium.bgd" format="simple"/>
+    <chemistry engine="amanzi" state="on" format="simple"/>
   </process_kernels>
 
   <phases>

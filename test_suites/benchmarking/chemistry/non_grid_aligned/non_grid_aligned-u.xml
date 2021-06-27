@@ -29,7 +29,7 @@
   <process_kernels>
     <flow model="constant" state="on"/>
     <transport state="on" />
-    <chemistry engine="amanzi" process_model="none" state="on" input_filename="calcite_dbs.bgd"/>
+    <chemistry engine="amanzi" process_model="none" state="on" />
   </process_kernels>
 
   <phases>

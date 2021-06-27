@@ -161,7 +161,7 @@ if __name__ == "__main__":
     try:
         input_file = os.path.join("amanzi-u-1d-calcite.xml")
         path_to_amanzi = "output-u"
-        run_amanzi_standard.run_amanzi(input_file, 1, ["calcite.bgd",input_file], path_to_amanzi)
+        run_amanzi_standard.run_amanzi(input_file, 1, [input_file], path_to_amanzi)
         
         comp = 'total_component_concentration.cell.Ca++'
         Ca_amanzi_native = []

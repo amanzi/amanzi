@@ -15,7 +15,7 @@
   <process_kernels>
     <flow model="saturated" state="on"/>
     <transport state="on"/>
-    <chemistry input_filename="farea-full.xxx" engine="amanzi" state="on" />
+    <chemistry engine="amanzi" state="on" />
   </process_kernels>
   <phases>
     <liquid_phase name="water">

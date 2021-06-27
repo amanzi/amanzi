@@ -26,7 +26,7 @@
   <process_kernels>
     <flow model="saturated" state="on" />
     <transport state="on" />
-    <chemistry engine="amanzi" state="on" input_filename="calcite.bgd"/>
+    <chemistry engine="amanzi" state="on"/>
   </process_kernels>
 
   <phases>

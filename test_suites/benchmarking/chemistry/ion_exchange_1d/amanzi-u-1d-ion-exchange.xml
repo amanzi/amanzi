@@ -27,7 +27,7 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" />
-    <chemistry state="on" engine="amanzi" input_filename="ion-exchange.bgd" format="simple" />
+    <chemistry state="on" engine="amanzi" format="simple" />
   </process_kernels>
 
   <phases>

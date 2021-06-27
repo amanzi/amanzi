@@ -26,7 +26,7 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" />
-    <chemistry state="on" engine="amanzi" input_filename="surface-complexation.bgd"/>
+    <chemistry state="on" engine="amanzi"/>
   </process_kernels>
   
   <phases>

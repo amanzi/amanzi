@@ -36,7 +36,7 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" />
-    <chemistry engine="amanzi" state="on" input_filename="isotherms.bgd"/>
+    <chemistry engine="amanzi" state="on" />
   </process_kernels>
 
   <phases>

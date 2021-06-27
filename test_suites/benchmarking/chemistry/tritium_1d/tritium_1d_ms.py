@@ -107,7 +107,7 @@ if __name__ == "__main__":
         comp = 'total_component_concentration.cell.Tritium conc'
         input_file = os.path.join("amanzi-u-1d-"+root+".xml")
         path_to_amanzi = "output-u"
-        run_amanzi_standard.run_amanzi(input_file, 1, [root+".bgd",input_file], path_to_amanzi)
+        run_amanzi_standard.run_amanzi(input_file, 1, [input_file], path_to_amanzi)
 
         x_amanziU_native, c_amanziU_native = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
         native = len(x_amanziU_native)
