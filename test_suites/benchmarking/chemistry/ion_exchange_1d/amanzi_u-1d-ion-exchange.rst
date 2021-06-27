@@ -102,7 +102,7 @@ About
 * Benchmark simulator: PFlotran 
 * Files:
 
-  * Amanzi input file/s (native chemistry):  amanzi-u-1d-ion-exchange.xml, ion-exchange.bgd
+  * Amanzi input file/s (native chemistry):  amanzi-u-1d-ion-exchange.xml
   * Amanzi input file/s (Alquimia chemistry): amanzi-1d-ion-exchange-alq.xml, 1d-ion-exchange.in, ion-exchange.dat 
   * Benchmark simulator input file: 1d-ion-exchange.in, ion-exchange.dat
 

@@ -135,7 +135,7 @@ About
 * Benchmark simulators: PFlotran, CrunchFlow
 * Files
 
-  * Amanzi input file/s (native chemistry): amanzi-1d-calcite.xml, calcite.bgd
+  * Amanzi input file/s (native chemistry): amanzi-1d-calcite.xml
   * Amanzi input file/s (Alquimia chemistry): amanzi-1d-calcite-alq.xml, 1d-calcite.in, calcite.dat 
   * Benchmark simulator input and output file/s: 
 

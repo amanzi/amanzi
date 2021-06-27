@@ -120,10 +120,9 @@ class InputConverter {
   void FilterNodes(const std::string& filter);
 
   // auto-generated input files
-  // -- native chemistry
-  std::string CreateBGDFile_(std::string& filename, int rank, int& status);
   // -- Pflotran input file
   std::string CreateINFile_(std::string& filename, int rank);
+  Teuchos::ParameterList TranslateThermodynamicDatabase_();
 
  protected:
   // Useful tools wrapping low-level DOM commands

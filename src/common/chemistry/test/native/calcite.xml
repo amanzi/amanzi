@@ -1,0 +1,90 @@
+<ParameterList>
+<ParameterList name="primary species">
+  <ParameterList name="H+">
+    <Parameter name="ion size parameter" type="double" value="9.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="1.01"/>
+  </ParameterList>
+  <ParameterList name="HCO3-">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="61.02"/>
+  </ParameterList>
+  <ParameterList name="Ca++">
+    <Parameter name="ion size parameter" type="double" value="6.0"/>
+    <Parameter name="charge" type="int" value="2"/>
+    <Parameter name="gram molecular weight" type="double" value="40.08"/>
+  </ParameterList>
+</ParameterList>
+
+<ParameterList name="aqueous equilibrium complexes">
+  <ParameterList name="OH-">
+    <Parameter name="ion size parameter" type="double" value="3.50000000000000000e+00"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="1.70073000000000008e+01"/>
+    <Parameter name="reaction" type="string" value="1.0 H2O  -1.0 H+"/>
+    <!--Parameter name="equilibrium constant" type="double" value="1.39951000000000008e+01"/-->
+    <Parameter name="temperature" type="double" value="298.15"/>
+    <ParameterList name="equilibrium constant">
+      <Parameter name="T" type="Array(double)" value="{273.15,  298.15,  333.15,  373.15,  423.15,  473.15,  523.15,  573.15}"/>
+      <Parameter name="Keq" type="Array(double)" value="{14.9398, 13.9951, 13.0272, 12.2551, 11.6308, 11.2836, 11.1675, 11.3002}"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="CO3--">
+    <Parameter name="ion size parameter" type="double" value="4.50000000000000000e+00"/>
+    <Parameter name="charge" type="int" value="-2"/>
+    <Parameter name="gram molecular weight" type="double" value="60.0092"/>
+    <Parameter name="reaction" type="string" value="-1.0 H+  1.0 HCO3-"/>
+    <Parameter name="equilibrium constant" type="double" value="1.03287999999999993e+01"/>
+  </ParameterList>
+  <ParameterList name="CO2(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.00000000000000000e+00"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="4.40097999999999985e+01"/>
+    <Parameter name="reaction" type="string" value="-1.0 H2O  1.0 H+  1.0 HCO3-"/>
+    <Parameter name="equilibrium constant" type="double" value="-6.34469999999999956e+00"/>
+  </ParameterList>
+  <ParameterList name="CaOH+">
+    <Parameter name="ion size parameter" type="double" value="4.00000000000000000e+00"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="5.70852999999999966e+01"/>
+    <Parameter name="reaction" type="string" value="1.0 H2O  -1.0 H+  1.0 Ca++"/>
+    <Parameter name="equilibrium constant" type="double" value="1.28499999999999996e+01"/>
+  </ParameterList>
+  <ParameterList name="CaHCO3+">
+    <Parameter name="ion size parameter" type="double" value="4.00000000000000000e+00"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="1.01095100000000002e+02"/>
+    <Parameter name="reaction" type="string" value="1.0 HCO3-  1.0 Ca++"/>
+    <Parameter name="equilibrium constant" type="double" value="-1.04669999999999996e+00"/>
+  </ParameterList>
+  <ParameterList name="CaCO3(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.00000000000000000e+00"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="1.00087199999999996e+02"/>
+    <Parameter name="reaction" type="string" value="-1.0 H+  1.0 HCO3-  1.0 Ca++"/>
+    <Parameter name="equilibrium constant" type="double" value="7.00169999999999959e+00"/>
+  </ParameterList>
+</ParameterList>
+
+<ParameterList name="mineral kinetics">
+  <ParameterList name="Calcite">
+    <Parameter name="rate model" type="string" value="TST"/>
+    <Parameter name="rate constant" type="double" value="-9.0"/>
+    <Parameter name="modifiers" type="string" value=""/>
+    <Parameter name="gram molecular weight" type="double" value="1.00087e+02"/>
+    <Parameter name="reaction" type="string" value="-1.0 H+  1.0 HCO3-  1.0 Ca++"/>
+    <Parameter name="equilibrium constant" type="double" value="1.84870"/>
+    <Parameter name="molar volume" type="double" value="3.69339999999999975e-5"/>
+    <Parameter name="specific surface area" type="double" value="100.0"/>
+  </ParameterList>
+</ParameterList>
+
+<ParameterList name="verbose object">
+  <Parameter name="verbosity level" type="string" value="high"/>
+  <Parameter name="hide line prefix" type="bool" value="true"/>
+  <Parameter name="output filename" type="string" value="batch_native.test"/>
+</ParameterList>
+</ParameterList>
+
+

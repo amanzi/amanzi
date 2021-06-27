@@ -28,7 +28,7 @@ namespace Amanzi {
 
 template <class FunctionBase>
 class PK_DomainFunctionFirstOrderExchange : public FunctionBase,
-                                public Functions::UniqueMeshFunction {
+                                            public Functions::UniqueMeshFunction {
  public:
   PK_DomainFunctionFirstOrderExchange(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                           const Teuchos::ParameterList& plist,

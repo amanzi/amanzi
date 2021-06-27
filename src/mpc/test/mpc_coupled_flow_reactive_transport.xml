@@ -292,6 +292,7 @@
       </ParameterList>
 
       <ParameterList name="total_component_concentration">
+        <Parameter name="names" type="Array(string)" value="{total, total, total}"/>
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
@@ -332,6 +333,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="fracture-total_component_concentration">
+        <Parameter name="names" type="Array(string)" value="{total, total, total}"/>
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
@@ -1190,10 +1192,6 @@
     <ParameterList name="chemistry matrix">
       <Parameter isUsed="true" name="domain name" type="string" value="domain"/>
       <Parameter name="chemistry model" type="string" value="Amanzi"/>
-      <ParameterList name="thermodynamic database">
-        <Parameter name="file" type="string" value="test/mpc_coupled_flow_reactive_transport.bgd"/>
-        <Parameter name="format" type="string" value="simple"/>
-      </ParameterList>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="100"/>
       <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
@@ -1217,10 +1215,6 @@
     <ParameterList name="chemistry fracture">
       <Parameter isUsed="true" name="domain name" type="string" value="fracture"/>
       <Parameter name="chemistry model" type="string" value="Amanzi"/>
-      <ParameterList name="thermodynamic database">
-        <Parameter name="file" type="string" value="test/mpc_coupled_flow_reactive_transport.bgd"/>
-        <Parameter name="format" type="string" value="simple"/>
-      </ParameterList>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="100"/>
       <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
@@ -1552,6 +1546,40 @@
         <Parameter name="fact: level-of-fill" type="int" value="0"/>
         <Parameter name="overlap" type="int" value="0"/>
         <Parameter name="schwarz: combine mode" type="string" value="Add"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="thermodynamic database">
+    <ParameterList name="primary species">
+      <ParameterList name="A">
+        <Parameter name="ion size parameter" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="charge" type="int" value="0"/>
+        <Parameter name="gram molecular weight" type="double" value="1.00000000000000000e+00"/>
+      </ParameterList>
+      <ParameterList name="B">
+        <Parameter name="ion size parameter" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="charge" type="int" value="0"/>
+        <Parameter name="gram molecular weight" type="double" value="1.00000000000000000e+00"/>
+      </ParameterList>
+      <ParameterList name="C">
+        <Parameter name="ion size parameter" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="charge" type="int" value="0"/>
+        <Parameter name="gram molecular weight" type="double" value="1.00000000000000000e+00"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="isotherms">
+      <ParameterList name="A">
+        <Parameter name="model" type="string" value="linear"/>
+        <Parameter name="parameters" type="Array(double)" value="{1.20000000000000000e+08}"/>
+      </ParameterList>
+      <ParameterList name="B">
+        <Parameter name="model" type="string" value="langmuir"/>
+        <Parameter name="parameters" type="Array(double)" value="{3.40000000000000000e+09, 1.23000000000000005e-11}"/>
+      </ParameterList>
+      <ParameterList name="C">
+        <Parameter name="model" type="string" value="freundlich"/>
+        <Parameter name="parameters" type="Array(double)" value="{4.50000000000000000e+10, 4.55999999999999996e-12}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

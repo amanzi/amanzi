@@ -20,6 +20,8 @@
 namespace Amanzi {
 namespace AmanziInput {
 
+static Teuchos::RCP<Teuchos::ParameterList> tdb_list;
+
 class InputConverterS : public InputConverter {
  public:
 

@@ -31,7 +31,7 @@ static std::map<std::string,std::string>& AMR_to_Amanzi_label_map = Amanzi::Aman
 #include "errors.hh"
 #ifdef ALQUIMIA_ENABLED
 #else
-#include "simple_thermo_database.hh"
+#include "SimpleThermoDatabase.hh"
 #include "chemistry_verbosity.hh"
 #include "chemistry_exception.hh"
 #endif
