@@ -55,21 +55,12 @@ add_subdirectory(mesh_simple)
 
 # MOAB Mesh framework
 if (ENABLE_MESH_MOAB)
-  message(ERROR "==================================================")
-  message(ERROR, "MESH_MOAB ENABLED!")
-  message(ERROR "==================================================")
   add_subdirectory(mesh_moab)
-  message(ERROR "MESH_MOAB_INC = ${MESH_MOAB_SOURCE_DIR}")
-  message(ERROR "==================================================")
 endif(ENABLE_MESH_MOAB)    
 
 # MSTK Mesh framework
 if (ENABLE_MESH_MSTK)
-  message(ERROR "==================================================")
-  message(ERROR, "MESH_MSTK ENABLED!")
   add_subdirectory(mesh_mstk)
-  message(ERROR "MESH_MSTK_INC = ${MESH_MSTK_SOURCE_DIR}")
-  message(ERROR "==================================================")
 endif(ENABLE_MESH_MSTK)    
 
 add_subdirectory(mesh_extracted)

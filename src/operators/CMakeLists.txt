@@ -391,7 +391,7 @@ if (BUILD_TESTS)
                     KIND unit
                     NPROCS 3
                     SOURCE test/Main.cc test/operator_advection_dg.cc
-                                        test/operator_advection_dg_transient
+                                        test/operator_advection_dg_transient.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: mini PDEs
