@@ -28,7 +28,7 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" />
-    <chemistry engine="amanzi" state="on" input_filename="tritium.bgd" format="simple"/>
+    <chemistry engine="amanzi" state="on" format="simple"/>
   </process_kernels>
 
   <phases>
@@ -176,11 +176,26 @@
 
   <geochemistry>
     <verbosity>verbose</verbosity>
+    <thermodynamic_database>
+      <primary_species>
+        <primary name="Tritium">
+          <species_data ion_size="9.0" z="0" weight="1.01"/>
+        </primary>
+      </primary_species>
+
+      <general_kinetics>
+        <general>
+          <reaction reactants="1.0 Tritium" products="" />
+          <kinetics_data forward_rate="1.78577E-09" backward_rate="0.0"/>
+        </general>
+      </general_kinetics>
+
 <!-- option 2
-		<radioactive_decay>
-			<solute name="Tritium" rate_constant="1.78577e-09"/>
-		</radioactive_decay>
+    <radioactive_decay>
+      <solute name="Tritium" rate_constant="1.78577e-09"/>
+    </radioactive_decay>
 -->
+    </thermodynamic_database>
   </geochemistry>
 
   <output>

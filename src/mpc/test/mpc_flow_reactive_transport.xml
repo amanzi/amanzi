@@ -203,14 +203,15 @@
     <ParameterList name="chemistry">
       <Parameter name="PK type" type="string" value="chemistry pk"/>
       <Parameter name="component names" type="Array(string)" value="{Na+, Ca++, Mg++, Cl-}"/>
-      <ParameterList name="thermodynamic database">
-	<Parameter name="format" type="string" value="simple"/>
-	<Parameter name="file" type="string" value="test/mpc_reactive_transport.bgd"/>
-      </ParameterList>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="50"/>
       <Parameter name="minerals" type="Array(string)" value="{Halite}"/>
       <Parameter name="number of component concentrations" type="int" value="4"/>
+
+      <ParameterList name="thermodynamic database">
+        <Parameter name="file" type="string" value="test/mpc_flow_reactive_transport_bgd.xml"/>
+      </ParameterList>
+
       <ParameterList name="verbose object">
 	<Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
@@ -662,6 +663,7 @@
 	</ParameterList>
       </ParameterList>
       <ParameterList name="total_component_concentration">
+        <Parameter name="names" type="Array(string)" value="{total, total, total, total}"/>
         <ParameterList name="function">
           <ParameterList name="Entire DomainSoil_1Soil_2">
             <Parameter name="regions" type="Array(string)" value="{Entire Domain, Soil_1, Soil_2}"/>
@@ -819,7 +821,6 @@
       <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1, -1}" />
     </ParameterList>
   </ParameterList>
-
 
   <ParameterList name="analysis">
     <ParameterList name="domain">

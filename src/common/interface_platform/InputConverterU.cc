@@ -155,6 +155,10 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
     }
   }
 
+  if (pk_model_["chemistry"] == "amanzi") {
+    out_list.sublist("thermodynamic database") = TranslateThermodynamicDatabase_();
+  }
+
   // -- final I/O
   PrintStatistics_();
 

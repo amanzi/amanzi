@@ -95,7 +95,7 @@ About
 * Benchmark simulator: PFlotran 
 * Files:
 
-  * Amanzi input file/s (native chemistry):  amanzi-u-1d-isotherms.xml, isotherms.bgd
+  * Amanzi input file/s (native chemistry):  amanzi-u-1d-isotherms.xml
   * Amanzi input file/s (Alquimia chemistry): amanzi-1d-isotherms-alq.xml, 1d-isotherms.in, isotherms.dat 
   * Benchmark simulator input file: 1d-isotherms.in, isotherms.dat
 

@@ -36,7 +36,7 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" />
-    <chemistry engine="amanzi" state="on" input_filename="isotherms.bgd"/>
+    <chemistry engine="amanzi" state="on" />
   </process_kernels>
 
   <phases>
@@ -205,6 +205,29 @@
     </boundary_condition-->
   </boundary_conditions>
 
+  <geochemistry>
+    <thermodynamic_database>
+      <primary_species>
+        <primary name="A">
+          <species_data ion_size="0.0" z="0" weight="1.0"/>
+        </primary>
+        <primary name="B">
+          <species_data ion_size="0.0" z="0" weight="1.0"/>
+        </primary>
+        <primary name="C">
+          <species_data ion_size="0.0" z="0" weight="1.0"/>
+        </primary>
+      </primary_species>
+
+      <isotherms>
+        <!-- we put garbage parameters here to verify they get overwritten by the xml file -->
+        <isotherm species="A" model="linear" parameters="1.2e8" />
+        <isotherm species="B" model="langmuir" parameters="3.4e9, 1.23e-11" />
+        <isotherm species="C" model="freundlich" parameters="4.5e10, 4.56e-12" />
+      </isotherms>
+    </thermodynamic_database>
+  </geochemistry>
+
   <output>
     <vis>
       <base_filename>isotherms</base_filename>
@@ -212,5 +235,4 @@
         <time_macros>every_year</time_macros>
     </vis>
   </output>
-
 </amanzi_input>

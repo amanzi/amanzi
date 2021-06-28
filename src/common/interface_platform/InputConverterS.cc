@@ -343,7 +343,6 @@ void InputConverterS::ParseDefinitions_()
   DOMNode* constants_block = GetUniqueElementByTagsString_("definitions, constants", found);
   if (found)
   {
-    bool found;
     vector<DOMNode*> constants = GetChildren_(constants_block, "constant", found);
     if (found)
     {
@@ -366,7 +365,6 @@ void InputConverterS::ParseDefinitions_()
   DOMNode* macros = GetUniqueElementByTagsString_("definitions, macros", found);
   if (found)
   {
-    bool found;
     vector<DOMNode*> time_macros = GetChildren_(macros, "time_macro", found);
     vector<string> time_macro_names;
     if (found)
@@ -379,7 +377,6 @@ void InputConverterS::ParseDefinitions_()
         vector<string> times;
 
         // Before we look for specific times, check for other stuff.
-        bool found;
         string start = GetChildValueS_(time_macro, "start", found);
         if (found)
         {
@@ -414,7 +411,6 @@ void InputConverterS::ParseDefinitions_()
         else
         {
           // We're just looking for times.
-          bool found;
           vector<DOMNode*> time_nodes = GetChildren_(time_macro, "time", found, true);
           vector<string> times;
           for (size_t j = 0; j < time_nodes.size(); ++j)
@@ -442,7 +438,6 @@ void InputConverterS::ParseDefinitions_()
         cycle_macro_names.push_back(macro_name);
         vector<string> cycles;
 
-        bool found;
         string start = GetChildValueS_(cycle_macro, "start", found, true);
         string timestep_interval = GetChildValueS_(cycle_macro, "timestep_interval", found, true);
         string stop = GetChildValueS_(cycle_macro, "stop", found, true);
@@ -1338,7 +1333,8 @@ void InputConverterS::ParseGeochemistry_()
 	format = GetAttributeValueS_(element, "format", TYPE_NONE, false, format);
       } else {
         int status;
-	bgdfilename = CreateBGDFile_(xmlfilename_, rank_, status);
+        Exceptions::amanzi_throw(Errors::Message("BGD file is no longer created. Aborting."));
+	// bgdfilename = CreateBGDFile_(xmlfilename_, rank_, status);
       }
 
       AddToTable(table, MakePPPrefix("Chemistry", "Thermodynamic_Database_File"), MakePPEntry(bgdfilename));

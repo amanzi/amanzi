@@ -656,10 +656,6 @@
     <ParameterList name="chemistry matrix">
       <Parameter name="domain name" type="string" value="domain"/>
       <Parameter name="chemistry model" type="string" value="Amanzi"/>
-      <ParameterList name="thermodynamic database">
-        <Parameter name="file" type="string" value="tritium.bgd"/>
-        <Parameter name="format" type="string" value="simple"/>
-      </ParameterList>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="100"/>
       <Parameter name="tolerance" type="double" value="1.0e-12"/>
@@ -682,10 +678,6 @@
     <ParameterList name="chemistry fracture">
       <Parameter name="domain name" type="string" value="fracture"/>
       <Parameter name="chemistry model" type="string" value="Amanzi"/>
-      <ParameterList name="thermodynamic database">
-        <Parameter name="file" type="string" value="tritium.bgd"/>
-        <Parameter name="format" type="string" value="simple"/>
-      </ParameterList>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="100"/>
       <Parameter name="tolerance" type="double" value="1.0e-12"/>
@@ -922,6 +914,57 @@
         <Parameter name="fact: level-of-fill" type="int" value="0"/>
         <Parameter name="overlap" type="int" value="0"/>
         <Parameter name="schwarz: combine mode" type="string" value="Add"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="thermodynamic database">
+    <ParameterList name="primary species">
+      <ParameterList name="A">
+        <Parameter name="ion size parameter" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="charge" type="int" value="0"/>
+        <Parameter name="gram molecular weight" type="double" value="1.00000000000000000e+00"/>
+      </ParameterList>
+      <ParameterList name="B">
+        <Parameter name="ion size parameter" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="charge" type="int" value="0"/>
+        <Parameter name="gram molecular weight" type="double" value="1.00000000000000000e+00"/>
+      </ParameterList>
+      <ParameterList name="C">
+        <Parameter name="ion size parameter" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="charge" type="int" value="0"/>
+        <Parameter name="gram molecular weight" type="double" value="1.00000000000000000e+00"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="isotherms">
+      <ParameterList name="A">
+        <Parameter name="model" type="string" value="linear"/>
+        <Parameter name="parameters" type="Array(double)" value="{1.20000000000000000e+08}"/>
+      </ParameterList>
+      <ParameterList name="B">
+        <Parameter name="model" type="string" value="langmuir"/>
+        <Parameter name="parameters" type="Array(double)" value="{3.40000000000000000e+09, 1.23000000000000005e-11}"/>
+      </ParameterList>
+      <ParameterList name="C">
+        <Parameter name="model" type="string" value="freundlich"/>
+        <Parameter name="parameters" type="Array(double)" value="{4.50000000000000000e+10, 4.55999999999999996e-12}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="radioactive decay">
+      <ParameterList name="complex_0">
+        <Parameter name="reactant" type="string" value="A"/>
+        <Parameter name="product" type="string" value="B"/>
+        <Parameter name="half life" type="double" value="3.94470000000000000e+08"/>
+      </ParameterList>
+      <ParameterList name="complex_1">
+        <Parameter name="reactant" type="string" value="B"/>
+        <Parameter name="product" type="string" value="C"/>
+        <Parameter name="half life" type="double" value="7.88940000000000000e+08"/>
+      </ParameterList>
+      <ParameterList name="complex_2">
+        <Parameter name="reactant" type="string" value="C"/>
+        <Parameter name="product" type="string" value=""/>
+        <Parameter name="half life" type="double" value="1.57788000000000000e+08"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
