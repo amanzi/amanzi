@@ -64,6 +64,7 @@ parallel_jobs=2
 build_type=Release
 trilinos_build_type=Release
 tpls_build_type=Release
+dbc=${TRUE}
 
 # Compiler definitions
 build_c_compiler=
@@ -92,6 +93,9 @@ mpi_exec_args=
 blas_dir=
 blas_vendor=
 lapack_dir=
+
+# python for regression tests
+python_exec=
 
 # Debugging options for CMake configuration phase
 debug_find_blas=$FALSE
@@ -375,6 +379,8 @@ Value in brackets indicates default setting.
   ats_physics             build ATS physics package (currently mutually exclusive) ['"${ats_physics}"']
   clm                     build CLM library for surface processes (currently only ATS) ['"${clm}"']
 
+  dbc                     design-by-contract.  Extra (potentially time-consuming) error-checking
+                          intended for developers ['"${dbc}"']
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
   reg_tests               build regression tests into Amanzi or ATS Test Suite ['"${reg_tests}"']
   shared                  build Amanzi and tpls using shared libraries ['"${shared}"']
@@ -416,6 +422,9 @@ Tool definitions:
 
   --with-xsdk=DIR            use libraries already available in xSDK installation in lieu of
                              downloading and installing them individually. ['"${xsdk_root_dir}"']
+
+  --with-python=FILE         FILE is the python executable, must be python3 and include numpy and h5py, for
+                             use with ATS regression testing.
 
 System/Vendor Supported Third Party Libraries (TPLs):
 Bootstrap builds community supported TPLs, however, some TPLs have vendor or compiler optimized versions
@@ -523,6 +532,7 @@ Compilers and Flags:
 
 Build configuration:
     build_type          = '"${build_type}"'
+    dbc                 = '"${dbc}"'
     build_stage_1       = '"${build_stage_1}"'
     build_stage_2       = '"${build_stage_2}"'
     parallel            = '"${parallel_jobs}"'
@@ -574,6 +584,7 @@ Tools and Tests:
     reg_tests    = '"${reg_tests}"'
     test_suite   = '"${test_suite}"'
     tools_mpi    = '"${tools_mpi}"'
+    python_exec  = '"${python_exec}"'
 
 Directories:
     prefix                = '"${prefix}"'
@@ -745,6 +756,11 @@ List of INPUT parameters
                  mpi_root_dir=$tmp
                  ;;
 
+      --with-python=*)
+                 tmp=`parse_option_with_equal "${opt}" 'with-python'`
+                 python_exec=$tmp
+                 ;;
+      
       --with-xsdk=*)
                  tmp=`parse_option_with_equal "${opt}" 'with-xsdk'`
                  xsdk_root_dir=`make_fullpath $tmp`
@@ -1908,10 +1924,12 @@ cmd_configure="${cmake_binary} \
     -DENABLE_KOKKOS_OPENMP:BOOL=${kokkos_openmp} \
     -DENABLE_AmanziPhysicsModule:BOOL=${amanzi_physics} \
     -DENABLE_ATSPhysicsModule:BOOL=${ats_physics} \
+    -DENABLE_DBC:BOOL=${dbc} \
     -DBUILD_SHARED_LIBS:BOOL=${shared} \
     -DCCSE_BL_SPACEDIM:INT=${spacedim} \
     -DENABLE_Regression_Tests:BOOL=${reg_tests} \
-    -DMPI_EXEC_GLOBAL_ARGS:STRING=${mpi_exec_args}\
+    -DMPI_EXEC_GLOBAL_ARGS:STRING=${mpi_exec_args} \
+    -DPYTHON_EXECUTABLE:STRING=${python_exec} \
     ${arch_amanzi_opts} \
     ${amanzi_source_dir}"
 
