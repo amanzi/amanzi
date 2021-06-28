@@ -34,13 +34,13 @@ if __name__ == "__main__":
     minerals =['Quartz', 'Goethite', 'Kaolinite', 'Schoepite', 'Gibbsite', 'Jurbanite', 'Basaluminite', 'Opal']
 
     # amanzi output
-    amanzi_totc_templ = "total_component_concentration.cell.%s conc"
+    amanzi_totc_templ = "total_component_concentration.cell.%s"
     amanzi_totc = [amanzi_totc_templ%comp for comp in components]
 
     amanzi_sorb_templ = "total_sorbed.cell.{0}"
     amanzi_sorb = [amanzi_sorb_templ.format(x) for x in range(len(components))]
 
-    amanzi_vf_templ = "mineral_volume_fractions.cell.{0} vol frac"
+    amanzi_vf_templ = "mineral_volume_fractions.cell.{0}"
     amanzi_vf = [amanzi_vf_templ.format(x) for x in minerals]
 
     # pflotran output
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     try:
         input_file = os.path.join("amanzi-u-1d-"+root+".xml")
         path_to_amanzi = "output-u"
-        run_amanzi_standard.run_amanzi(input_file, 1, [root+".bgd",input_file], path_to_amanzi)
+        run_amanzi_standard.run_amanzi(input_file, 1, [input_file], path_to_amanzi)
 
         time = timesama[0]
 

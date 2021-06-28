@@ -7,7 +7,7 @@ import sys
 import h5py
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     times_CF_pH = ['pH5.out']
 
 # amanzi output (unstructured - native and alquimia)
-    amanzi_totc_templ = "total_component_concentration.cell.{0} conc" #Component {0} conc"
+    amanzi_totc_templ = "total_component_concentration.cell.{0}" #Component {0} conc"
     amanzi_totc = [amanzi_totc_templ.format(x) for x in components] #range(len(components))]
     amanzi_totc_crunch = [amanzi_totc_templ.format(x) for x in compcrunch] #range(len(components))]
 
@@ -119,9 +119,7 @@ if __name__ == "__main__":
     try:
         input_file = os.path.join("amanzi-u-1d-"+root+".xml")
         path_to_amanzi = "output-u"
-        run_amanzi_standard.run_amanzi(input_file, 1,
-                                       [root+".bgd",input_file],
-                                       path_to_amanzi)
+        run_amanzi_standard.run_amanzi(input_file, 1, [input_file], path_to_amanzi)
         
         u_amanzi_native = [[[] for x in range(len(amanzi_totc))] for x in range(len(times))]
         for i, time in enumerate(times):
@@ -139,7 +137,8 @@ if __name__ == "__main__":
         comp = 'free_ion_species.cell.H+'
         for i, time in enumerate(times):
             x_amanzi_native, c_amanzi_native = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
-            pH_amanzi_native[i] = -np.log10(c_amanzi_native)
+            x_tmp_native, c_tmp_native = GetXY_AmanziU_1D(path_to_amanzi,root,"primary_activity_coeff.cell.H+",1)
+            pH_amanzi_native[i] = -np.log10(c_amanzi_native * c_tmp_native)
 
         native = True
 
@@ -499,7 +498,7 @@ if __name__ == "__main__":
 
     plt.subplots_adjust(left=0.10,bottom=0.15,right=0.90,top=0.95)
 
-    # pyplot.show()
+    # plt.show()
     plt.savefig(root+"_1d.png",format="png")
     # plt.close()
 

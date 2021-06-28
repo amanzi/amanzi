@@ -851,7 +851,7 @@ void InputConverterU::TranslateStateICsAmanziGeochemistry_(
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Compatibility mode: translating ICs for native chemistry" << std::endl;
+    *vo_->os() << "Compatibility mode: translating ICs for native chemistry: " << domain << std::endl;
   }
 
   bool flag;
@@ -873,7 +873,8 @@ void InputConverterU::TranslateStateICsAmanziGeochemistry_(
       Exceptions::amanzi_throw(msg);
     }
 
-    Teuchos::ParameterList& ic_list = out_list.sublist(Keys::getKey(domain, "total_component_concentration"))
+    Key tcc_key = Keys::getKey(domain, "total_component_concentration");
+    Teuchos::ParameterList& ic_list = out_list.sublist(tcc_key)
         .sublist("function").sublist("All");
 
     ic_list.set<Teuchos::Array<std::string> >("regions", regions)
@@ -883,9 +884,13 @@ void InputConverterU::TranslateStateICsAmanziGeochemistry_(
         .set<int>("number of dofs", children.size())
         .set<std::string>("function type", "composite function");
 
+    int nsolutes = children.size();
+    Teuchos::Array<std::string> types(nsolutes);
+
     for (int i = 0; i < children.size(); ++i) {
       std::string species = GetAttributeValueS_(children[i], "name");
       double val = GetAttributeValueD_(children[i], "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX);
+      types[i] = GetAttributeValueS_(children[i], "type");
 
       // find position of species in the list of component names
       int k(-1);
@@ -901,6 +906,9 @@ void InputConverterU::TranslateStateICsAmanziGeochemistry_(
       tmp_list.sublist(dof_str.str()).sublist("function-constant")
                                      .set<double>("value", val);
     }
+
+    out_list.sublist(tcc_key)
+        .set<Teuchos::Array<std::string> >("names", types);
   }
 }
 

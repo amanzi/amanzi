@@ -12,7 +12,6 @@
 #include <iostream>
 #include <fstream>
 
-
 #include "Epetra_MpiComm.h"
 #include "Epetra_SerialComm.h"
 #include "Teuchos_ParameterList.hpp"

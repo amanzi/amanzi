@@ -221,6 +221,7 @@ bool TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     time = t_physics_ + dt_cycle / 2;
     for (int i = 0; i < bcs_.size(); i++) {
       bcs_[i]->Compute(time, time);
+      bcs_[i]->ComputeSubmodel(mesh_, tcc);
     }
     
     double dt_try = dt_MPC - dt_sum;
@@ -591,6 +592,7 @@ void TransportExplicit_PK::AdvanceDonorUpwind(double dt_cycle)
       if (f >= nfaces_owned) continue;
 
       std::vector<double>& values = it->second;       
+
       if (downwind_cells_[f].size() > 0) {
         for (int j = 0; j < downwind_cells_[f].size(); j++) {
           int c2 = downwind_cells_[f][j];

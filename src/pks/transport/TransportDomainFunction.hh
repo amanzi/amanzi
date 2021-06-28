@@ -36,6 +36,8 @@ class TransportDomainFunction {
 
   // source term on time interval (t0, t1]
   virtual void Compute(double t0, double t1) { AMANZI_ASSERT(false); }
+  virtual void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                               Teuchos::RCP<CompositeVector> tcc) {};
 
   // model name
   virtual std::string name() const { return "undefined"; } 

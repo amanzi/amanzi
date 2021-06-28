@@ -133,7 +133,7 @@ if __name__ == "__main__":
     try:   
         input_file = os.path.join("amanzi-u-1d-"+root+".xml")
         path_to_amanzi = "output-u"
-        run_amanzi_standard.run_amanzi(input_file, 1, [root+".bgd",input_file], path_to_amanzi)
+        run_amanzi_standard.run_amanzi(input_file, 1, [input_file], path_to_amanzi)
 
         u_amanzi_native = [[[] for x in range(len(amanzi_components))] for x in range(len(times))]
         for i, time in enumerate(times):

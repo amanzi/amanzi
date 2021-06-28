@@ -68,6 +68,11 @@ VerboseObject::VerboseObject(const std::string& name, Teuchos::ParameterList pli
         plist.sublist("verbose object").get<std::string>("verbosity level"));
   }
 
+  if (plist.sublist("verbose object").isParameter("output filename")) {
+    plist_out.sublist("VerboseObject").set("Output File",
+        plist.sublist("verbose object").get<std::string>("output filename"));
+  }
+
   Teuchos::readVerboseObjectSublist(&plist_out, this);
 
   // out, tab

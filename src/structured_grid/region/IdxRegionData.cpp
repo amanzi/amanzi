@@ -113,8 +113,8 @@ std::vector<Real>
 IdxRegionData::IdxRDEval::operator()(int i, Real t) const
 {
   mRetData.resize(NComp());
-  for (int i=0; i<NComp(); ++i) {
-    mRetData[i] = mFunc(t);
+  for (int n=0; n<NComp(); ++n) {
+    mRetData[n] = mFunc(t);
   }
   return mRetData; // Copied
 }

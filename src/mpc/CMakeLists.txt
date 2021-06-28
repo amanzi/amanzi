@@ -106,7 +106,6 @@ if (BUILD_TESTS)
     if (NOT (MPC_SOURCE_DIR STREQUAL MPC_BINARY_DIR))
       file(GLOB DataFiles "${MPC_SOURCE_DIR}/test/*.xml"
                           "${MPC_SOURCE_DIR}/test/*.in"
-                          "${MPC_SOURCE_DIR}/test/*.bgd"
                           "${MPC_SOURCE_DIR}/test/*.dat"
                           "${MPC_SOURCE_DIR}/test/*.exo"
                           "${MPC_SOURCE_DIR}/test/*.h5")

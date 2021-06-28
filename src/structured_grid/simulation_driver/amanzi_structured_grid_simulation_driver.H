@@ -8,9 +8,7 @@
 
 XERCES_CPP_NAMESPACE_USE
 
-struct AmanziStructuredGridSimulationDriver
-  : Amanzi::Simulator
-{
+struct AmanziStructuredGridSimulationDriver : Amanzi::Simulator {
  public:
 
   // v2 constructor
@@ -20,7 +18,7 @@ struct AmanziStructuredGridSimulationDriver
   // Destructor
   ~AmanziStructuredGridSimulationDriver();
 
-  ReturnType Run(const MPI_Comm&               mpi_comm,
-                 Amanzi::ObservationData&      output_observations);
+  ReturnType Run(const MPI_Comm& mpi_comm,
+                 Amanzi::ObservationData& output_observations);
 };
 #endif

@@ -2,7 +2,6 @@
 
 #include <iostream>
 
-
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
 

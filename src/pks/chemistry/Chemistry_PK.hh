@@ -89,11 +89,9 @@ class Chemistry_PK : public PK_Physical {
 
   // names of state fields 
   Key tcc_key_;
-  Key poro_key_;
-  Key saturation_key_;
+  Key poro_key_, saturation_key_, temperature_key_;
   Key fluid_den_key_, molar_fluid_den_key_;
-  Key min_vol_frac_key_;
-  Key min_ssa_key_;
+  Key min_vol_frac_key_, min_ssa_key_;
   Key sorp_sites_key_;
   Key surf_cfsc_key_;
   Key total_sorbed_key_;

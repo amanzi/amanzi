@@ -152,8 +152,8 @@ About
 * Benchmark simulators: N/A
 * Files
 
-  * Amanzi input file/s (native chemistry): non_grid_aligned-u.xml, calcite_dbs.bgd
-  * Amanzi input file/s (Alquimia chemistry): non_grid_aligned-u-alq.xml, calcite_dbs.bgd
+  * Amanzi input file/s (native chemistry): non_grid_aligned-u.xml
+  * Amanzi input file/s (Alquimia chemistry): non_grid_aligned-u-alq.xml, calcite_pflotran.in
 
 * Location: testing/benchmark/chemistry/non_grid_aligned_dispersion/
 * Author: K. Lipnikov, M. Day, S. Molins 

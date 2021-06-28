@@ -1,0 +1,259 @@
+<ParameterList>
+<ParameterList name="b0">
+  <Parameter name="l01" type="string" value="Na+   Cl-  0.0765  -777.03  -4.4706  0.008946  -3.3158E-6"/>
+  <Parameter name="l02" type="string" value="K+    Cl-  0.04835  0.0  0.0   5.794E-4"/>
+  <Parameter name="l03" type="string" value="Mg+2  Cl-  0.35235  0.0  0.0  -1.943E-4"/>
+  <Parameter name="l04" type="string" value="Ca+2  Cl-  0.3159   0.0  0.0  -1.725E-4"/>
+  <Parameter name="l05" type="string" value="MgOH+ Cl- -0.1"/>
+  <Parameter name="l06" type="string" value="H+    Cl-  0.1775   0.0  0.0  -3.081E-4"/>
+  <Parameter name="l07" type="string" value="Li+   Cl-  0.1494   0.0  0.0  -1.685E-4"/>
+  <Parameter name="l08" type="string" value="Sr+2  Cl-  0.2858   0.0  0.0   0.717E-3"/>
+  <Parameter name="l09" type="string" value="Fe+2  Cl-  0.335925"/>
+  <Parameter name="l10" type="string" value="Mn+2  Cl-  0.327225"/>
+  <Parameter name="l11" type="string" value="Ba+2  Cl-  0.2628   0.0  0.0   0.6405E-3"/>
+  <Parameter name="l12" type="string" value="CaB(OH)4+  Cl-  0.12"/>
+  <Parameter name="l13" type="string" value="MgB(OH)4+  Cl-  0.16"/>
+  <Parameter name="l14" type="string" value="Na+   Br-  0.0973   0.0  0.0   7.692E-4"/>
+  <Parameter name="l15" type="string" value="K+    Br-  0.0569   0.0  0.0   7.39E-4"/>
+  <Parameter name="l16" type="string" value="H+    Br-  0.1960   0.0  0.0  -2.049E-4"/>
+  <Parameter name="l17" type="string" value="Mg+2  Br-  0.4327   0.0  0.0  -5.625E-5"/>
+  <Parameter name="l18" type="string" value="Ca+2  Br-  0.3816   0.0  0.0  -5.2275E-4"/>
+  <Parameter name="l19" type="string" value="Li+   Br-  0.1748   0.0  0.0  -1.819E-4"/>
+  <Parameter name="l20" type="string" value="Sr+2  Br-  0.331125 0.0  0.0  -0.32775E-3"/>
+  <Parameter name="l21" type="string" value="Ba+2  Br-  0.31455  0.0  0.0  -0.33825E-3"/>
+  <Parameter name="l22" type="string" value="Na+   SO4-2  0.01958  0.0  0.0  2.367E-3"/>
+  <Parameter name="l23" type="string" value="K+    SO4-2  0.04995  0.0  0.0  1.44E-3"/>
+  <Parameter name="l24" type="string" value="Mg+2  SO4-2  0.221    0.0  0.0 -0.69E-3"/>
+  <Parameter name="l25" type="string" value="Ca+2  SO4-2  0.2"/>
+  <Parameter name="l26" type="string" value="H+    SO4-2  0.0298"/>
+  <Parameter name="l27" type="string" value="Li+   SO4-2  0.136275 0.0  0.0  0.5055E-3"/>
+  <Parameter name="l28" type="string" value="Sr+2  SO4-2  0.200.0  0.0  0.0  -2.9E-3"/>
+  <Parameter name="l29" type="string" value="Fe+2  SO4-2  0.2568"/>
+  <Parameter name="l30" type="string" value="Mn+2  SO4-2  0.2065"/>
+  <Parameter name="l31" type="string" value="Na+   HSO4-  0.0454"/>
+  <Parameter name="l32" type="string" value="K+    HSO4- -0.03"/>
+  <Parameter name="l33" type="string" value="Mg+2  HSO4-  0.4746"/>
+  <Parameter name="l34" type="string" value="Ca+2  HSO4-  0.2145"/>
+  <Parameter name="l35" type="string" value="H+    HSO4-  0.2065"/>
+  <Parameter name="l36" type="string" value="Fe+2  HSO4-  0.4273"/>
+  <Parameter name="l37" type="string" value="Na+   OH-  0.0864  0.0  0.0  7.00E-4"/>
+  <Parameter name="l38" type="string" value="K+    OH-  0.1298"/>
+  <Parameter name="l39" type="string" value="Ca+2  OH- -0.1747"/>
+  <Parameter name="l40" type="string" value="Li+   OH-  0.015"/>
+  <Parameter name="l41" type="string" value="Ba+2  OH-  0.17175"/>
+  <Parameter name="l42" type="string" value="Na+   HCO3-  0.0277  0.0  0.0  1.00E-3"/>
+  <Parameter name="l43" type="string" value="K+    HCO3-  0.0296  0.0  0.0  0.996E-3"/>
+  <Parameter name="l44" type="string" value="Mg+2  HCO3-  0.329"/>
+  <Parameter name="l45" type="string" value="Ca+2  HCO3-  0.4"/>
+  <Parameter name="l46" type="string" value="Sr+2  HCO3-  0.12"/>
+  <Parameter name="l47" type="string" value="Na+   CO3-2  0.0399  0.0  0.0  1.79E-3"/>
+  <Parameter name="l48" type="string" value="K+    CO3-2  0.1488  0.0  0.0  1.788E-3"/>
+  <Parameter name="l49" type="string" value="Na+   B(OH)4-     -0.0427"/>
+  <Parameter name="l50" type="string" value="Na+   B3O3(OH)4-  -0.056"/>
+  <Parameter name="l51" type="string" value="Na+   B4O5(OH)4-2 -0.11"/>
+  <Parameter name="l52" type="string" value="K+    B(OH)4-      0.035"/>
+  <Parameter name="l53" type="string" value="K+    B3O3(OH)4-  -0.13"/>
+</ParameterList>
+<ParameterList name="b1">
+  <Parameter name="l01" type="string" value="Na+   Cl-    0.2664   0.0  0.0  6.1608E-5  1.0715E-6"/>
+  <Parameter name="l02" type="string" value="K+    Cl-    0.2122   0.0  0.0  10.71E-4"/>
+  <Parameter name="l03" type="string" value="Mg+2  Cl-    1.6815   0.0  0.0  3.6525E-3"/>
+  <Parameter name="l04" type="string" value="Ca+2  Cl-    1.614    0.0  0.0  3.9E-3"/>
+  <Parameter name="l05" type="string" value="MgOH+ Cl-    1.658"/>        
+  <Parameter name="l06" type="string" value="H+    Cl-    0.2945   0.0  0.0  1.419E-4"/>
+  <Parameter name="l07" type="string" value="Li+   Cl-    0.3074   0.0  0.0  5.366E-4"/>
+  <Parameter name="l08" type="string" value="Sr+2  Cl-    1.667    0.0  0.0  2.8425E-3"/>
+  <Parameter name="l09" type="string" value="Fe+2  Cl-    1.53225"/>
+  <Parameter name="l10" type="string" value="Mn+2  Cl-    1.55025"/>    
+  <Parameter name="l11" type="string" value="Ba+2  Cl-    1.49625  0.0  0.0  3.2325E-3"/>
+  <Parameter name="l12" type="string" value="Na+   Br-    0.2791   0.0  0.0  10.79E-4"/>
+  <Parameter name="l13" type="string" value="K+    Br-    0.2212   0.0  0.0  17.40E-4"/>
+  <Parameter name="l14" type="string" value="H+    Br-    0.3564   0.0  0.0  4.467E-4"/>
+  <Parameter name="l15" type="string" value="Mg+2  Br-    1.753    0.0  0.0  3.8625E-3"/>
+  <Parameter name="l16" type="string" value="Ca+2  Br-    1.613    0.0  0.0  6.0375E-3"/>
+  <Parameter name="l17" type="string" value="Li+   Br-    0.2547   0.0  0.0  6.636E-4"/>
+  <Parameter name="l18" type="string" value="Sr+2  Br-    1.7115   0.0  0.0  6.5325E-3"/>
+  <Parameter name="l19" type="string" value="Ba+2  Br-    1.56975  0.0  0.0  6.78E-3"/>
+  <Parameter name="l20" type="string" value="Na+   SO4-2  1.113    0.0  0.0  5.6325E-3"/>
+  <Parameter name="l21" type="string" value="K+    SO4-2  0.7793   0.0  0.0  6.6975E-3"/>
+  <Parameter name="l22" type="string" value="Mg+2  SO4-2  3.343    0.0  0.0  1.53E-2"/>
+  <Parameter name="l23" type="string" value="Ca+2  SO4-2  3.1973   0.0  0.0  5.46E-2"/>
+  <Parameter name="l24" type="string" value="Li+   SO4-2  1.2705   0.0  0.0  1.41E-3"/>
+  <Parameter name="l25" type="string" value="Sr+2  SO4-2  3.1973   0.0  0.0  27.0E-3"/>
+  <Parameter name="l26" type="string" value="Fe+2  SO4-2  3.063"/> 
+  <Parameter name="l27" type="string" value="Mn+2  SO4-2  2.9511"/> 
+  <Parameter name="l28" type="string" value="Na+   HSO4-  0.398"/>    
+  <Parameter name="l29" type="string" value="K+    HSO4-  0.1735"/>      
+  <Parameter name="l30" type="string" value="Mg+2  HSO4-  1.729"/>     
+  <Parameter name="l31" type="string" value="Ca+2  HSO4-  2.53"/>          
+  <Parameter name="l32" type="string" value="H+    HSO4-  0.5556"/>       
+  <Parameter name="l33" type="string" value="Fe+2  HSO4-  3.48"/>          
+  <Parameter name="l34" type="string" value="Na+   OH-    0.253    0.0  0.0  1.34E-4"/>
+  <Parameter name="l35" type="string" value="K+    OH-    0.32"/>
+  <Parameter name="l36" type="string" value="Ca+2  OH-   -0.2303"/>       
+  <Parameter name="l37" type="string" value="Li+   OH-    0.14"/>     
+  <Parameter name="l38" type="string" value="Ba+2  OH-    1.2"/>       
+  <Parameter name="l39" type="string" value="Na+   HCO3-  0.0411   0.0  0.0  1.10E-3"/>
+  <Parameter name="l40" type="string" value="K+    HCO3- -0.013    0.0  0.0  1.104E-3"/>
+  <Parameter name="l41" type="string" value="Mg+2  HCO3-  0.6072"/>
+  <Parameter name="l42" type="string" value="Ca+2  HCO3-  2.977"/>     
+  <Parameter name="l43" type="string" value="Na+   CO3-2  1.389    0.0  0.0  2.05E-3"/>
+  <Parameter name="l44" type="string" value="K+    CO3-2  1.43     0.0  0.0  2.051E-3"/>
+  <Parameter name="l45" type="string" value="Na+   B(OH)4-      0.089"/>
+  <Parameter name="l46" type="string" value="Na+   B3O3(OH)4-  -0.910"/>    
+  <Parameter name="l47" type="string" value="Na+   B4O5(OH)4-2 -0.40"/>   
+  <Parameter name="l48" type="string" value="K+    B(OH)4-      0.14"/>       
+</ParameterList>
+<ParameterList name="b2">
+  <Parameter name="l01" type="string" value="Mg+2  SO4-2  -37.23  0.0  0.0  -0.253"/>
+  <Parameter name="l02" type="string" value="Ca+2  SO4-2  -54.24  0.0  0.0  -0.516"/>
+  <Parameter name="l03" type="string" value="Sr+2  SO4-2  -54.24  0.0  0.0  -0.42"/>
+  <Parameter name="l04" type="string" value="Fe+2  SO4-2  -42.0"/>
+  <Parameter name="l05" type="string" value="Mn+2  SO4-2  -40.0"/>
+  <Parameter name="l06" type="string" value="Ca+2  OH-    -5.72"/>
+</ParameterList>
+
+<ParameterList name="cfi">
+  <Parameter name="l01" type="string" value="Na+   Cl-     0.00127   33.317  0.09421  -4.655E-5"/>
+  <Parameter name="l02" type="string" value="K+    Cl-    -0.00084   0.0     0.0      -5.095E-5"/>
+  <Parameter name="l03" type="string" value="Mg+2  Cl-     0.00519   0.0     0.0      -1.64933E-4"/>
+  <Parameter name="l04" type="string" value="Ca+2  Cl-    -0.00034"/>
+  <Parameter name="l05" type="string" value="H+    Cl-     0.0008    0.0     0.0       6.213E-5"/>
+  <Parameter name="l06" type="string" value="Li+   Cl-     0.00359   0.0     0.0      -4.520E-5"/>
+  <Parameter name="l07" type="string" value="Sr+2  Cl-    -0.00130"/>
+  <Parameter name="l08" type="string" value="Fe+2  Cl-    -0.00860725"/>
+  <Parameter name="l09" type="string" value="Mn+2  Cl-    -0.0204972"/> 
+  <Parameter name="l10" type="string" value="Ba+2  Cl-    -0.0193782 0.0     0.0      -1.53796E-4"/>
+  <Parameter name="l11" type="string" value="Na+   Br-     0.00116   0.0     0.0      -9.30E-5"/>
+  <Parameter name="l12" type="string" value="K+    Br-    -0.00180   0.0     0.0      -7.004E-5"/>
+  <Parameter name="l13" type="string" value="H+    Br-     0.00827   0.0     0.0      -5.685E-5"/>
+  <Parameter name="l14" type="string" value="Mg+2  Br-     0.00312"/>
+  <Parameter name="l15" type="string" value="Ca+2  Br-    -0.00257"/>
+  <Parameter name="l16" type="string" value="Li+   Br-     0.0053    0.0     0.0      -2.813E-5"/>
+  <Parameter name="l17" type="string" value="Sr+2  Br-     0.00122506"/>
+  <Parameter name="l18" type="string" value="Ba+2  Br-    -0.0159576"/>
+  <Parameter name="l19" type="string" value="Na+   SO4-2   0.00497   0.0     0.0      -4.87904E-4"/>
+  <Parameter name="l20" type="string" value="Mg+2  SO4-2   0.025     0.0     0.0       0.523E-3"/>
+  <Parameter name="l21" type="string" value="H+    SO4-2   0.0438"/>
+  <Parameter name="l22" type="string" value="Li+   SO4-2  -0.00399338  0.0   0.0      -2.33345E-4"/>
+  <Parameter name="l23" type="string" value="Fe+2  SO4-2   0.0209"/>
+  <Parameter name="l24" type="string" value="Mn+2  SO4-2   0.01636"/>
+  <Parameter name="l25" type="string" value="Na+   OH-     0.0044     0.0    0.0      -18.94E-5"/>
+  <Parameter name="l26" type="string" value="K+    OH-     0.0041"/>
+  <Parameter name="l27" type="string" value="K+    HCO3-  -0.008"/>
+  <Parameter name="l28" type="string" value="Na+   CO3-2   0.0044"/>
+  <Parameter name="l29" type="string" value="K+    CO3-2  -0.0015"/>
+  <Parameter name="l30" type="string" value="Na+   B(OH)4- 0.0114"/>
+</ParameterList>
+<ParameterList name="theta">
+  <Parameter name="l01" type="string" value="K+      Na+  -0.012"/>
+  <Parameter name="l02" type="string" value="Mg+2    Na+   0.07"/>
+  <Parameter name="l03" type="string" value="Ca+2    Na+   0.07"/>
+  <Parameter name="l04" type="string" value="Sr+2    Na+   0.051"/>
+  <Parameter name="l05" type="string" value="H+      Na+   0.036"/>
+  <Parameter name="l06" type="string" value="Ca+2    K+    0.032"/>
+  <Parameter name="l07" type="string" value="H+      K+    0.005"/>
+  <Parameter name="l08" type="string" value="Ca+2    Mg+2  0.007"/>
+  <Parameter name="l09" type="string" value="H+      Mg+2  0.1"/>
+  <Parameter name="l10" type="string" value="H+      Ca+2  0.092"/>
+  <Parameter name="l11" type="string" value="SO4-2   Cl-   0.02"/>
+  <Parameter name="l12" type="string" value="HSO4-   Cl-  -0.006"/>
+  <Parameter name="l13" type="string" value="OH-     Cl-  -0.05"/>
+  <Parameter name="l14" type="string" value="HCO3-   Cl-   0.03"/>
+  <Parameter name="l15" type="string" value="CO3-2   Cl-  -0.02"/>
+  <Parameter name="l16" type="string" value="B(OH)4- Cl-  -0.065"/>
+  <Parameter name="l17" type="string" value="B3O3(OH)4-  Cl-  0.12"/>
+  <Parameter name="l18" type="string" value="B4O5(OH)4-2 Cl-  0.074"/>
+  <Parameter name="l19" type="string" value="OH-       Br-   -0.065"/>
+  <Parameter name="l20" type="string" value="OH-       SO4-2 -0.013"/>
+  <Parameter name="l21" type="string" value="HCO3-     SO4-2  0.01"/>
+  <Parameter name="l22" type="string" value="CO3-2     SO4-2  0.02"/>
+  <Parameter name="l23" type="string" value="B(OH)4-   SO4-2 -0.012"/>
+  <Parameter name="l24" type="string" value="B3O3(OH)4-   SO4-2  0.10"/>
+  <Parameter name="l25" type="string" value="B4O5(OH)4-2  SO4-2  0.12"/>
+  <Parameter name="l26" type="string" value="CO3-2        OH-    0.1"/>
+  <Parameter name="l27" type="string" value="CO3-2        HCO3- -0.04"/>
+  <Parameter name="l28" type="string" value="B3O3(OH)4-   HCO3- -0.10"/>
+  <Parameter name="l29" type="string" value="B4O5(OH)4-2  HCO3- -0.087"/>
+</ParameterList>
+
+<ParameterList name="lamda">
+  <Parameter name="l01" type="string" value="Na+    CO2      0.1"/>
+  <Parameter name="l02" type="string" value="K+     CO2      0.051"/>
+  <Parameter name="l03" type="string" value="Mg+2   CO2      0.183"/>
+  <Parameter name="l04" type="string" value="Ca+2   CO2      0.183"/>
+  <Parameter name="l05" type="string" value="Cl-    CO2     -0.005"/>
+  <Parameter name="l06" type="string" value="SO4-2  CO2      0.097"/>
+  <Parameter name="l07" type="string" value="HSO4-  CO2     -0.003"/>
+  <Parameter name="l08" type="string" value="Na+    B(OH)3  -0.097"/>
+  <Parameter name="l09" type="string" value="K+     B(OH)3  -0.14"/>
+  <Parameter name="l10" type="string" value="Cl-    B(OH)3   0.091"/>
+  <Parameter name="l11" type="string" value="SO4-2  B(OH)3   0.018"/>
+  <Parameter name="l12" type="string" value="B3O3(OH)4-  B(OH)3  -0.20"/>
+</ParameterList>
+
+<ParameterList name="zeta">
+  <Parameter name="l01" type="string" value="H+   Cl-    B(OH)3  -0.0102"/>
+  <Parameter name="l02" type="string" value="Na+  SO4-2  B(OH)3   0.046"/>
+</ParameterList>
+
+<ParameterList name="psi">
+ <Parameter name="l01" type="string" value="Na+   K+    Cl-    -0.0018"/>
+ <Parameter name="l02" type="string" value="Na+   K+    Br-    -0.0022"/>
+ <Parameter name="l03" type="string" value="Na+   K+    SO4-2  -0.010"/>
+ <Parameter name="l04" type="string" value="Na+   K+    HCO3-  -0.003"/>
+ <Parameter name="l05" type="string" value="Na+   K+    CO3-2   0.003"/>
+ <Parameter name="l06" type="string" value="Na+   Ca+2  Cl-    -0.007"/>
+ <Parameter name="l07" type="string" value="Na+   Sr+2  Cl-    -0.0021"/>
+ <Parameter name="l09" type="string" value="Na+   Ca+2  SO4-2  -0.055"/>
+ <Parameter name="l10" type="string" value="Na+   Mg+2  Cl-    -0.012"/>
+ <Parameter name="l11" type="string" value="Na+   Mg+2  SO4-2  -0.015"/>
+ <Parameter name="l12" type="string" value="Na+   H+    Cl-    -0.004"/>
+ <Parameter name="l13" type="string" value="Na+   H+    Br-    -0.012"/>
+ <Parameter name="l14" type="string" value="Na+   H+    HSO4-  -0.0129"/>
+ <Parameter name="l15" type="string" value="K+    Ca+2  Cl-    -0.025"/>
+ <Parameter name="l16" type="string" value="K+    Mg+2  Cl-    -0.022"/>
+ <Parameter name="l17" type="string" value="K+    Mg+2  SO4-2  -0.048"/>
+ <Parameter name="l18" type="string" value="K+    H+    Cl-    -0.011"/>
+ <Parameter name="l19" type="string" value="K+    H+    Br-    -0.021"/>
+ <Parameter name="l20" type="string" value="K+    H+    SO4-2   0.197"/>
+ <Parameter name="l21" type="string" value="K+    H+    HSO4-  -0.0265"/>
+ <Parameter name="l22" type="string" value="Ca+2  Mg+2  Cl-    -0.012"/>
+ <Parameter name="l23" type="string" value="Ca+2  Mg+2  SO4-2   0.024"/>
+ <Parameter name="l24" type="string" value="Ca+2  H+    Cl-    -0.015"/>
+ <Parameter name="l25" type="string" value="Mg+2  MgOH+ Cl-     0.028"/>
+ <Parameter name="l26" type="string" value="Mg+2  H+    Cl-    -0.011"/>
+ <Parameter name="l27" type="string" value="Mg+2  H+    HSO4-  -0.0178"/>
+ <Parameter name="l28" type="string" value="Cl-   Br-   K+      0.0000"/>
+ <Parameter name="l29" type="string" value="Cl-   SO4-2 Na+     0.0014"/>
+ <Parameter name="l30" type="string" value="Cl-   SO4-2 Ca+2   -0.018"/>
+ <Parameter name="l31" type="string" value="Cl-   SO4-2 Mg+2   -0.004"/>
+ <Parameter name="l32" type="string" value="Cl-   HSO4- Na+    -0.006"/>
+ <Parameter name="l33" type="string" value="Cl-   HSO4- H+      0.013"/>
+ <Parameter name="l34" type="string" value="Cl-   OH-   Na+    -0.006"/>
+ <Parameter name="l35" type="string" value="Cl-   OH-   K+     -0.006"/>
+ <Parameter name="l36" type="string" value="Cl-   OH-   Ca+2   -0.025"/>
+ <Parameter name="l37" type="string" value="Cl-   HCO3-   Na+   -0.015"/>
+ <Parameter name="l38" type="string" value="Cl-   HCO3-   Mg+2  -0.096"/>
+ <Parameter name="l39" type="string" value="Cl-   CO3-2   Na+    0.0085"/>
+ <Parameter name="l40" type="string" value="Cl-   CO3-2   K+     0.004"/>
+ <Parameter name="l41" type="string" value="Cl-   B(OH)4-     Na+  -0.0073"/>
+ <Parameter name="l42" type="string" value="Cl-   B3O3(OH)4-  Na+  -0.024"/>
+ <Parameter name="l43" type="string" value="Cl-   B4O5(OH)4-2 Na+   0.026"/>
+ <Parameter name="l44" type="string" value="SO4-2  HSO4-  Na+   -0.0094"/>
+ <Parameter name="l45" type="string" value="SO4-2  HSO4-  K+    -0.0677"/>
+ <Parameter name="l46" type="string" value="SO4-2  HSO4-  Mg+2  -0.0425"/>
+ <Parameter name="l47" type="string" value="SO4-2  OH-    Na+   -0.009"/>
+ <Parameter name="l48" type="string" value="SO4-2  OH-    K+    -0.050"/>
+ <Parameter name="l49" type="string" value="SO4-2  HCO3-  Na+   -0.005"/>
+ <Parameter name="l50" type="string" value="SO4-2  HCO3-  Mg+2  -0.161"/>
+ <Parameter name="l51" type="string" value="SO4-2  CO3-2  Na+   -0.005"/>
+ <Parameter name="l52" type="string" value="SO4-2  CO3-2  K+    -0.009"/>
+ <Parameter name="l53" type="string" value="OH-    CO3-2  Na+   -0.017"/>
+ <Parameter name="l54" type="string" value="OH-    CO3-2  K+    -0.01"/>
+ <Parameter name="l55" type="string" value="OH-    Br-    Na+   -0.018"/>
+ <Parameter name="l56" type="string" value="OH-    Br-    K+    -0.014"/>
+ <Parameter name="l57" type="string" value="HCO3-  CO3-2  Na+    0.002"/>
+ <Parameter name="l58" type="string" value="HCO3-  CO3-2  K+     0.012"/>
+</ParameterList>
+</ParameterList>
