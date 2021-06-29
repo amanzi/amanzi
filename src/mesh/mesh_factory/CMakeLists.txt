@@ -84,7 +84,7 @@ if (BUILD_TESTS)
    include_directories(${UnitTest_INCLUDE_DIRS})
 
    # Test: mesh_test_factory
-   add_amanzi_test(mesh_factory_test mesh_factory_test
+   add_amanzi_test(mesh_factory_create mesh_factory_create
                    KIND unit
 		   SOURCE
                          test/Main.cc
@@ -99,7 +99,7 @@ if (BUILD_TESTS)
 
    # Do not call add_amanzi_test again with SOURCE and LINK_LIBS since the
    # previous call carries instructions to build the executable
-   add_amanzi_test(mesh_factory_np2 mesh_factory NPROCS 2 KIND uint)
+   add_amanzi_test(mesh_factory_create_np2 mesh_factory_create NPROCS 2 KIND uint)
 
    # Test: test_mesh_factory
    add_amanzi_test(mesh_factory_extract_comms_np5 mesh_factory_extract_comms
