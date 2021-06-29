@@ -294,7 +294,7 @@ void Mesh_MOAB::init_id_handle_maps()
 void Mesh_MOAB::init_global_ids() {
   int result;
     
-  if (!serial_run) {
+  if (mbcomm_) {
     // Ask Parallel Communicator to assign global IDs to entities
     bool largest_dim_only=false;
     int start_id = 0;
@@ -311,7 +311,7 @@ void Mesh_MOAB::init_global_ids() {
     mbcomm_->exchange_tags(gid_tag, AllCells);
   }
   else {
-    // Serial case - we assign global IDs ourselves
+    // Case without MPI - we assign global IDs ourselves
     int tagval = 0;
     result = mbcore_->tag_get_handle("GLOBAL_ID", 1,
                                     MB_TYPE_INTEGER, gid_tag,

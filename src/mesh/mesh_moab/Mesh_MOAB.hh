@@ -245,7 +245,8 @@ class Mesh_MOAB : public Mesh {
   void ErrorCheck_(int result, std::string msg) const {
     if (result != moab::MB_SUCCESS) {
       std::cerr << msg << std::endl;
-      assert(false);
+      Errors::Message err(msg);
+      Exceptions::amanzi_throw(err);
      }
    }
 
