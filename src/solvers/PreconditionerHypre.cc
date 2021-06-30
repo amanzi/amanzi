@@ -116,11 +116,18 @@ void PreconditionerHypre::InitBoomer_()
     IfpHypre_->SetParameter((Amanzi::Hypre_Chooser)1, &HYPRE_BoomerAMGSetCycleRelaxType, plist_.get<int>("relaxation type down"), 1);
     IfpHypre_->SetParameter((Amanzi::Hypre_Chooser)1, &HYPRE_BoomerAMGSetCycleRelaxType, plist_.get<int>("relaxation type up"), 2);
   } else if (plist_.isParameter("relaxation type")) {
-    IfpHypre_->SetParameter((Amanzi::Hypre_Chooser)1, &HYPRE_BoomerAMGSetRelaxType, plist_.get<int>("relaxation type"));
-  } else {
+    IfpHypre_->SetParameter((Amanzi::Hypre_Chooser)1, &HYPRE_BoomerAMGSetRelaxType, plist_.get<int>("relaxation type")); 
+    IfpHypre_->SetParameter((Amanzi::Hypre_Chooser)1, &HYPRE_BoomerAMGSetRelaxType, plist_.get<int>("relaxation type coarse"));
+  } else { 
     // use Hypre's defaults
   }
 
+  if (plist_.isParameter("coarsening type")) 
+    IfpHypre_->SetParameter((Amanzi::Hypre_Chooser)1, &HYPRE_BoomerAMGSetCoarsenType, plist_.get<int>("coarsening type"));
+  if (plist_.isParameter("interpolation type")) 
+    IfpHypre_->SetParameter((Amanzi::Hypre_Chooser)1, &HYPRE_BoomerAMGSetInterpType, plist_.get<int>("interpolation type"));
+  if (plist_.isParameter("relaxation order")) 
+    IfpHypre_->SetParameter((Amanzi::Hypre_Chooser)1, &HYPRE_BoomerAMGSetRelaxOrder, plist_.get<int>("relaxation order"));
   if (plist_.isParameter("max multigrid levels"))
     IfpHypre_->SetParameter((Amanzi::Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxLevels, plist_.get<int>("max multigrid levels"));
   if (plist_.isParameter("max coarse size"))

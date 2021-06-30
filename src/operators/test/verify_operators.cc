@@ -43,9 +43,10 @@ int main(int argc, char *argv[])
       "  (opt) tol       = positive double  (default 1e-10)\n"
       "  (opt) nloops    = number of iterations  (default is 1 for linear solvers)\n"
       "  (opr) libsolver = linear solver: pcg (default) or gmres\n\n"
+      "  (opr) device    = device type: serial (default), omp or gpu\n\n"
       "Examples:\n"
       "  verify_operators \"Hypre: AMG\" structured3d 10 fv 1e-10\n"
-      "  verify_operators \"Amesos1: KLU\" unstructured2d mymesh.exo mfd 1e-10 1 gmres\n";
+      "  verify_operators \"Amesos1: KLU\" unstructured2d mymesh.exo mfd 1e-10 1 gmres gpu\n";
     return 1;
   }
   for (int i = 1; i < argc; ++i) argv_copy.push_back(argv[i]);
@@ -111,6 +112,11 @@ TEST(Verify_Mesh_and_Operators) {
   std::string linsolver("pcg");
   if (argc > 6) {
     linsolver = argv_copy[6];
+  }
+
+  std::string device("serial");
+  if(argc > 7){
+    device = argv_copy[7]; 
   }
 
   // little_k
@@ -185,13 +191,68 @@ TEST(Verify_Mesh_and_Operators) {
       .set<bool>("rescale rows", false)
       .set<double>("ilut drop tolerance", 1e-6);
 
-  plist->sublist("preconditioners").sublist("Hypre: AMG")
-      .set<std::string>("preconditioning method", "hypre: boomer amg").sublist("hypre: boomer amg parameters")
-      .set<int>("cycle applications", 1)
-      .set<int>("smoother sweeps", 1)
-      //.set<double>("strong threshold", 0.5)
-      .set<double>("tolerance", 0.0)
-      .set<int>("relaxation type", 7);
+  if(device == "gpu"){
+    std::cout<<"Using Hypre: AMG with GPU parameters"<<std::endl;
+    plist->sublist("preconditioners").sublist("Hypre: AMG")
+        .set<std::string>("preconditioning method", "hypre: boomer amg").sublist("hypre: boomer amg parameters")
+        .set<double>("strong threshold", 0.5)
+        .set<int>("cycle applications", 1)
+        .set<int>("smoother sweeps", 2)
+        //.set<double>("tolerance", 1e-5)
+        .set<int>("verbosity", 3)
+        .set<int>("coarsening type", 8) /* 8: PMIS */
+        .set<int>("interpolation type", 3) 
+        /*3:  direct
+          15: BAMG-direct
+          6: extended+i
+          14: extended
+          18: ? */
+        .set<int>("relaxation order", 0) /* must be false */
+        .set<int>("relaxation type", 3); 
+        /*3: Hybrid Gauss Seidel 
+          4: ''
+          6: '' 
+          7: Jacobi  
+          18: l1-jacobi
+          11: two-stage Gauss-Seidel 
+          12: ''
+           */
+
+        //HYPRE_BoomerAMGSetAggNumLevels(precon, agg_num_levels);
+        //HYPRE_BoomerAMGSetAggInterpType(precon, agg_interp_type); /* 5 or 7 */
+        //HYPRE_BoomerAMGSetKeepTranspose(precon, TRUE); /* keep transpose to avoid SpMTV */
+        //HYPRE_BoomerAMGSetRAP2(precon, FALSE); /* RAP in two multiplications (default: FALSE) */
+  
+  }else if(device == "omp"){
+    std::cout<<"Using Hypre: AMG with OMP parameters"<<std::endl;
+    plist->sublist("preconditioners").sublist("Hypre: AMG")
+        .set<std::string>("preconditioning method", "hypre: boomer amg").sublist("hypre: boomer amg parameters")
+        .set<double>("strong threshold", 0.5)
+        .set<int>("cycle applications", 1)
+        .set<int>("smoother sweeps", 1)
+        //.set<double>("tolerance", 1e-6)
+        .set<int>("verbosity", 3)
+        .set<int>("max multigrid levels", 1)
+        //.set<int>("max coarse size", 10000000) 
+        .set<int>("coarsening type", 8)
+        //.set<int>("interpolation type", 15)
+        //.set<int>("relaxation order", 0)
+        .set<int>("relaxation type coarse", 9)
+        .set<int>("relaxation type", 6);
+
+
+  } else {
+    assert(device == "serial" && "Unrecognized device type");
+    std::cout<<"Using Hypre: AMG with serial parameters"<<std::endl;
+    plist->sublist("preconditioners").sublist("Hypre: AMG")
+        .set<std::string>("preconditioning method", "hypre: boomer amg").sublist("hypre: boomer amg parameters")
+        //.set<double>("strong threshold", 0.5)
+        .set<int>("cycle applications", 1)
+        .set<int>("smoother sweeps", 1)
+        .set<double>("tolerance", 0.0)
+        .set<int>("verbosity", 1)
+        .set<int>("relaxation type", 18);     
+  }
 
   // -- Trilinos
   plist->sublist("preconditioners").sublist("Trilinos: ML")
