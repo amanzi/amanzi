@@ -29,8 +29,8 @@ project(MESH_MSTK)
 # INCLUDE_DIRECTORIES property for will end up with
 # c;b;a;whatever_existed_before
 
-list(REVERSE MSTK_INCLUDE_DIRS)
-include_directories(BEFORE ${MSTK_INCLUDE_DIRS})
+list(REVERSE MESH_MSTK_INCLUDE_DIRS)
+include_directories(BEFORE ${MESH_MSTK_INCLUDE_DIRS})
 
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
