@@ -33,6 +33,7 @@ void test(const std::string& prec_solver,
       << "================================================================================" << std::endl
       << "Diffusion Test (np=" << fix.comm->NumProc() << "): " << disc_type 
       << ",  " << prec_solver << ",  mesh=" << mesh_type << std::endl
+      << "  bc type=" << bc_type << ", problem=Analytic" << ana << std::endl
       << "--------------------------------------------------------------------------------"
       << std::endl;
   }
@@ -92,6 +93,7 @@ void testWGravity(double gravity,
       << "================================================================================" << std::endl
       << "DiffusionWithGravity Test (np=" << fix.comm->NumProc() << "): "
       << disc_type << ", PC: " << pc_type << ", mesh=" << mesh_type << std::endl
+      << "  bc type=" << bc_type << ", problem=Analytic" << ana << std::endl
       << "--------------------------------------------------------------------------------"
       << std::endl;
   }

@@ -70,9 +70,10 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
     plist_(plist),
     num_colors_(0),
     coloring_(Teuchos::null),
-    inited_(false),
-    updated_(false),
-    computed_(false)
+    inverse_pars_set_(false),
+    initialize_complete_(false),
+    compute_complete_(false),
+    assembly_complete_(false)
 {
   mesh_ = cvs_col_->Mesh();
   rhs_ = Teuchos::rcp(new CompositeVector(*cvs_row_, true));
@@ -125,7 +126,10 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
     plist_(plist),
     num_colors_(0),
     coloring_(Teuchos::null),
-    inited_(false)
+    inverse_pars_set_(false),
+    initialize_complete_(false),
+    compute_complete_(false),
+    assembly_complete_(false)
 {
   mesh_ = cvs_col_->Mesh();
   rhs_ = Teuchos::rcp(new CompositeVector(*cvs_row_, true));
@@ -161,7 +165,8 @@ void Operator::Init()
   rhs_->PutScalarMasterAndGhosted(0.0);
   int nops = ops_.size();
   for (int i = 0; i < nops; ++i) ops_[i]->Init();
-  computed_ = false;
+  compute_complete_ = false;
+  assembly_complete_ = false;
 }
 
 
@@ -189,6 +194,7 @@ void Operator::SymbolicAssembleMatrix()
   // create global matrix
   Amat_ = Teuchos::rcp(new MatrixFE(graph));
   A_ = Amat_->Matrix();
+  assembly_complete_ = false;
 }
 
 
@@ -256,6 +262,10 @@ void Operator::AssembleMatrix()
     Exceptions::amanzi_throw(msg);
   }
 
+  // note, this is called prior to AssembleMatrix() because Schur complements
+  // override this because ApplyAssembled is not valid for them.
+  assembly_complete_ = true;
+
   Amat_->Zero();
   AssembleMatrix(*smap_, *Amat_, 0, 0);
   Amat_->FillComplete();
@@ -267,6 +277,7 @@ void Operator::AssembleMatrix()
     Amat_->DiagonalShiftMin(shift_min_);
   }
 
+  compute_complete_ = false;
   // std::stringstream filename_s2;
   // filename_s2 << "assembled_matrix" << 0 << ".txt";
   // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Amat_ ->Matrix());
@@ -373,9 +384,27 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar)
   AMANZI_ASSERT(DomainMap().SubsetOf(X.Map()));
   AMANZI_ASSERT(RangeMap().SubsetOf(Y.Map()));
 #endif
+  if (assembly_complete_) {
+    if (shift_ != 0.0) {
+      // must "un-shift", but even still this is probably faster!
+      Amat_->DiagonalShift(-shift_);
+      int ierr = ApplyAssembled(X,Y,scalar);
+      Amat_->DiagonalShift(shift_);
+      return ierr;
+    } else if (shift_min_ != 0.0) {
+      // cannot "unshift" a min shift
+      return ApplyUnassembled(X,Y,scalar);
+    } else {
+      return ApplyAssembled(X,Y,scalar);
+    }
+  } else {
+    return ApplyUnassembled(X,Y,scalar);
+  }
+}
 
+int Operator::ApplyUnassembled(const CompositeVector& X, CompositeVector& Y, double scalar) const
+{
   X.ScatterMasterToGhosted();
-
   // initialize ghost elements
   if (scalar == 0.0) {
     Y.PutScalarMasterAndGhosted(0.0);
@@ -387,9 +416,7 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar)
   }
 
   apply_calls_++;
-
   for (auto& it : *this) it->ApplyMatrixFreeOp(this, X, Y);
-
   Y.GatherGhostedToMaster(Add);
   return 0;
 }
@@ -401,8 +428,6 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar)
 ******************************************************************* */
 int Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar) const
 {
-  X.ScatterMasterToGhosted();
-
   // initialize ghost elements
   if (scalar == 0.0) {
     Y.PutScalarMasterAndGhosted(0.0);
@@ -413,8 +438,8 @@ int Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y, doubl
     Y.PutScalarGhosted(0.0);
   }
 
-  Epetra_Vector Xcopy(A_->RowMap());
-  Epetra_Vector Ycopy(A_->RowMap());
+  Epetra_Vector Xcopy(A_->DomainMap());
+  Epetra_Vector Ycopy(A_->RangeMap());
 
   int ierr = copyToSuperVector(*smap_, X, Xcopy);
   ierr |= A_->Apply(Xcopy, Ycopy);
@@ -427,7 +452,6 @@ int Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y, doubl
   }
 
   apply_calls_++;
-
   return ierr;
 }
 
@@ -437,7 +461,7 @@ int Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y, doubl
 ******************************************************************* */
 int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
-  if (!computed_) const_cast<Operator*>(this)->ComputeInverse();
+  if (!compute_complete_) const_cast<Operator*>(this)->ComputeInverse();
 #if TEST_MAPS
   AMANZI_ASSERT(DomainMap().SubsetOf(Y.Map()));
   AMANZI_ASSERT(RangeMap().SubsetOf(X.Map()));
@@ -499,7 +523,9 @@ void Operator::set_inverse_parameters(Teuchos::ParameterList& plist)
   // delay pc construction until we know we have structure and can create the
   // coloring.
   inv_plist_ = plist;
-  inited_ = true; updated_ = false; computed_ = false;
+  inverse_pars_set_ = true;
+  initialize_complete_ = false;
+  compute_complete_ = false;
 }
 
 /* ******************************************************************
@@ -509,7 +535,7 @@ void Operator::set_inverse_parameters(Teuchos::ParameterList& plist)
 ****************************************************************** */
 void Operator::InitializeInverse()
 {
-  if (!inited_) {
+  if (!inverse_pars_set_) {
     Errors::Message msg("No inverse parameter list.  Provide a sublist \"inverse\" or ensure set_inverse_parameters() is called.");
     msg << " In: " << typeid(*this).name() << "\n";
     Exceptions::amanzi_throw(msg);
@@ -531,19 +557,19 @@ void Operator::InitializeInverse()
   }
   preconditioner_ = AmanziSolvers::createInverse(inv_plist_, Teuchos::rcpFromRef(*this));
   preconditioner_->InitializeInverse(); // NOTE: calls this->SymbolicAssembleMatrix()
-  updated_ = true;
-  computed_ = false;
+  initialize_complete_ = true;
+  compute_complete_ = false;
 }
 
 void Operator::ComputeInverse()
 {
-  if (!updated_) {
+  if (!initialize_complete_) {
     InitializeInverse();
   }
   // assembly must be possible now
   AMANZI_ASSERT(preconditioner_.get());
   preconditioner_->ComputeInverse(); // NOTE: calls this->AssembleMatrix()
-  computed_ = true;
+  compute_complete_ = true;
 }
 
 /* ******************************************************************
@@ -565,6 +591,8 @@ void Operator::UpdateRHS(const CompositeVector& source, bool volume_included) {
 void Operator::Rescale(double scaling)
 {
   for (auto& it : *this) it->Rescale(scaling);
+  assembly_complete_ = false;
+  compute_complete_ = false;
 }
 
 
@@ -575,6 +603,8 @@ void Operator::Rescale(const CompositeVector& scaling)
 {
   scaling.ScatterMasterToGhosted();
   for (auto& it : *this) it->Rescale(scaling);
+  assembly_complete_ = false;
+  compute_complete_ = false;
 }
 
 
@@ -586,6 +616,8 @@ void Operator::Rescale(const CompositeVector& scaling, int iops)
   AMANZI_ASSERT(iops < ops_.size());
   scaling.ScatterMasterToGhosted();
   ops_[iops]->Rescale(scaling);
+  assembly_complete_ = false;
+  compute_complete_ = false;
 }
 
 
@@ -624,6 +656,8 @@ int Operator::CopyShadowToMaster(int iops)
   int nops = ops_.size();
   AMANZI_ASSERT(iops < nops);
   ops_[iops]->CopyShadowToMaster();
+  assembly_complete_ = false;
+  compute_complete_ = false;
 
   return 0;
 }

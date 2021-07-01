@@ -795,7 +795,7 @@ std::pair<double,double> RunForwardProblem_Assembled(
   // apply
   problem->op->SymbolicAssembleMatrix();
   problem->op->AssembleMatrix();
-  problem->op->ApplyAssembled(X,AX);
+  problem->op->ApplyAssembled(X,AX,0.0);
 
   // subtract off true RHS
   AX.Update(-1., B, 1.);
