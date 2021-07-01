@@ -194,7 +194,6 @@ option(ENABLE_CCSE_TOOLS "Enable building CCSE post processing tools" FALSE)
 
 # Amanzi unstructured mesh API and frameworks
 option(ENABLE_Unstructured "Enable Amanzi unstructured mesh capability" TRUE)
-option(ENABLE_STK_Mesh "Enable the Unstructured STK Mesh Toolkit" FALSE)
 option(ENABLE_MSTK_Mesh "Enable the Unstructured MSTK Mesh Toolkit" TRUE)
 option(ENABLE_MOAB_Mesh "Enable the Unstructured MOAB Mesh Toolkit" FALSE)
 
@@ -224,7 +223,6 @@ endif()
 
 # If unstructured is not enabled, there is no reason to have these mesh frameworks
 if (NOT ENABLE_Unstructured)
-  set(ENABLE_STK_Mesh FALSE)
   set(ENABLE_MSTK_Mesh FALSE)
   set(ENABLE_MOAB_Mesh FALSE)
 endif()
@@ -724,7 +722,6 @@ else()
 
 endif()
 append_set(Amanzi_TPL_CMAKE_ARGS
-           -DENABLE_STK_Mesh:BOOL=${ENABLE_STK_Mesh}
            -DTrilinos_INSTALL_PREFIX:PATH=${Trilinos_INSTALL_PREFIX})
 
 # MSTK
