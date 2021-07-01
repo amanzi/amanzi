@@ -2,7 +2,7 @@
 
 #
 #  Amanzi
-#    MSTK Mesh frameworks
+#    MESH_MSTK frameworks
 #
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
@@ -12,8 +12,8 @@ include(TestManager)
 #
 # Define a project name
 # After this command the following varaibles are defined
-#   MSTK_SOURCE_DIR
-#   MSTK_BINARY_DIR
+#   MESH_MSTK_SOURCE_DIR
+#   MESH_MSTK_BINARY_DIR
 # Other projects (subdirectories) can reference this directory
 # through these variables.
 project(MESH_MSTK)

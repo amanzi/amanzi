@@ -104,14 +104,14 @@ ENABLE_Config_Report:
       - Description: Print out configuration report to the terminal.
       - Dependencies:
 
-ENABLE_MSTK_Mesh:
+ENABLE_MESH_MSTK:
 
       - Default: OFF
       - Description: Build the MSTK mesh frame work.
       - Dependencies: MSTK
 
 
-ENABLE_MOAB_Mesh:
+ENABLE_MESH_MOAB:
 
        - Default: OFF
        - Description: Build the MOAB mesh frame work.

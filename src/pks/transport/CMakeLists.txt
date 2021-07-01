@@ -163,7 +163,7 @@ if (BUILD_TESTS AND ENABLE_AmanziPhysicsModule)
                     SOURCE test/Main.cc test/transport_subcycling.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    if (ENABLE_MSTK_Mesh)
+    if (ENABLE_MESH_MSTK)
        add_amanzi_test(transport_parallel_mstk transport_parallel_mstk
                        KIND int
                        NPROCS 4 
