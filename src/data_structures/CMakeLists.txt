@@ -79,7 +79,6 @@ if (BUILD_TESTS)
     include_directories(${MESH_SOURCE_DIR})
     include_directories(${MESH_SIMPLE_SOURCE_DIR})
     include_directories(${MESH_FACTORY_SOURCE_DIR})
-    include_directories(${MSTK_SOURCE_DIR})
 
     # Copy test subdirectory for out of source builds
     if (NOT (DATA_STRUCTURES_SOURCE_DIR STREQUAL DATA_STRUCTURES_BINARY_DIR))

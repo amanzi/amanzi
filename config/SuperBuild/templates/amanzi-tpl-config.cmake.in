@@ -40,8 +40,8 @@ set(ENABLE_Structured @ENABLE_Structured@ CACHE BOOL "Enable structured mesh cap
 set(ENABLE_Unstructured @ENABLE_Unstructured@ CACHE BOOL "Enable unstructured mesh capability")
 
 set(ENABLE_STK_Mesh  @ENABLE_STK_Mesh@ CACHE BOOL "Enable STK Unstructured Mesh Toolkit")
-set(ENABLE_MSTK_Mesh @ENABLE_MSTK_Mesh@ CACHE BOOL "Enable MSTK Unstructured Mesh Toolkit")
-set(ENABLE_MOAB_Mesh @ENABLE_MOAB_Mesh@ CACHE BOOL "Enable MOAB Unstructured Mesh Toolkit")
+set(ENABLE_MESH_MSTK @ENABLE_MESH_MSTK@ CACHE BOOL "Enable MSTK Unstructured Mesh Toolkit")
+set(ENABLE_MESH_MOAB @ENABLE_MESH_MOAB@ CACHE BOOL "Enable MOAB Unstructured Mesh Toolkit")
 
 
 # Language standard

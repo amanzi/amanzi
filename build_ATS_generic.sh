@@ -31,7 +31,7 @@ ${AMANZI_SRC_DIR}/bootstrap.sh \
    --enable-shared \
    --enable-clm \
    --disable-structured  --enable-unstructured \
-   --disable-stk_mesh --enable-mstk_mesh \
+   --enable-mesh_mstk --disable-mesh_moab \
    --enable-hypre \
    --enable-silo \
    --disable-petsc \
