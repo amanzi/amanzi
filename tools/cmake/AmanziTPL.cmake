@@ -239,7 +239,7 @@ if (Trilinos_FOUND)
   endforeach()
 
   # Zoltan - required by MSTK mesh class 
-  if (ENABLE_MSTK_Mesh)
+  if (ENABLE_MESH_MSTK)
     find_package(Zoltan
                  NO_MODULE
                  HINTS ${Trilinos_INSTALL_PREFIX}
@@ -254,8 +254,8 @@ if (Trilinos_FOUND)
         list(APPEND ZOLTAN_INCLUDE_DIRS "${_inc}")
       endforeach()
     else()  
-      message(WARNING "Could not locate Zoltan in ${Trilinos_DIR}. Will not enable MSTK_Mesh")
-      set(ENABLE_MSTK_Mesh OFF CACHE BOOL "Disable MSTK Mesh capability" FORCE)
+      message(WARNING "Could not locate Zoltan in ${Trilinos_DIR}. Will not enable MESH_MSTK")
+      set(ENABLE_MESH_MSTK OFF CACHE BOOL "Disable MSTK Mesh capability" FORCE)
     endif()
   endif()
 
@@ -423,13 +423,13 @@ endif()
 ##############################################################################
 
 # Enable ALL possible mesh frameworks
-#option(ENABLE_ALL_Mesh "Build all Amanzi mesh frameworks" OFF)
-#if(ENABLE_ALL_Mesh)
-#   set(ENABLE_MOAB_Mesh ON)
-#   set(ENABLE_MSTK_Mesh ON)
+#option(ENABLE_MESH_ALL "Build all Amanzi mesh frameworks" OFF)
+#if(ENABLE_MESH_ALL)
+#   set(ENABLE_MESH_MOAB ON)
+#   set(ENABLE_MESH_MSTK ON)
 #endif()    
-#set_feature_info(ALL_Mesh
-#                 ENABLE_ALL_Mesh
+#set_feature_info(MESH_ALL
+#                 ENABLE_MESH_ALL
 #                 "Build all available mesh frameworks"
 #                )    
 
@@ -437,12 +437,12 @@ endif()
 ##############################################################################
 # MOAB - svn co https://svn.mcs.anl.gov/repos/ITAPS/MOAB/trunk MOAB
 ##############################################################################
-option(ENABLE_MOAB_Mesh "Build Amanzi with the MOAB mesh framework" OFF)
-add_feature_info(MOAB_Mesh
-                 ENABLE_MOAB_Mesh
+option(ENABLE_MESH_MOAB "Build Amanzi with the MOAB mesh framework" OFF)
+add_feature_info(MESH_MOAB
+                 ENABLE_MESH_MOAB
                  "A Mesh-Oriented datABase"
                  )
-if (ENABLE_MOAB_Mesh)
+if (ENABLE_MESH_MOAB)
   find_package(MOAB REQUIRED)
 
   if (MOAB_FOUND)
@@ -462,12 +462,12 @@ endif()
 ##############################################################################
 # MSTK - https://software.lanl.gov/MeshTools/trac/raw-attachment/wiki/WikiStart/mstk-1.80.tar.gz
 ##############################################################################
-option(ENABLE_MSTK_Mesh "Build Amanzi with the MSTK mesh framework" OFF)
-add_feature_info(MSTK_Mesh
-                 ENABLE_MSTK_Mesh
+option(ENABLE_MESH_MSTK "Build Amanzi with the MSTK mesh framework" OFF)
+add_feature_info(MESH_MSTK
+                 ENABLE_MESH_MSTK
                  "A mesh framework"
                  )
-if (ENABLE_MSTK_Mesh)
+if (ENABLE_MESH_MSTK)
   find_package(MSTK REQUIRED)
 
   if (MSTK_FOUND)

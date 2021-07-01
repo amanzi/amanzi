@@ -23,7 +23,7 @@ project(DATA_STRUCTURES)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
-include_directories(${MSTK_SOURCE_DIR})
+include_directories(${MESH_MSTK_SOURCE_DIR})
 include_directories(${MESH_SIMPLE_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
@@ -88,7 +88,7 @@ if (BUILD_TESTS)
         file(COPY ${DataFiles} DESTINATION ${DATA_STRUCTURES_BINARY_DIR}/test/)
     endif()
 
-    set(amanzi_libs data_structures geometry mstk_mesh mesh_factory mesh)
+    set(amanzi_libs data_structures geometry mesh_mstk mesh_factory mesh)
 
     add_amanzi_test(data_structures test_data_structures 
                     KIND unit

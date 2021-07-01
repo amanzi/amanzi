@@ -212,7 +212,7 @@ TEST(MESH_GEOMETRY_SURFACE)
   std::vector<Amanzi::AmanziMesh::Framework> frameworks;
   std::vector<std::string> framework_names;
 
-#ifdef HAVE_MSTK_MESH
+#ifdef HAVE_MESH_MSTK
   frameworks.push_back(Amanzi::AmanziMesh::Framework::MSTK);
   framework_names.push_back("MSTK");
 #endif
@@ -386,7 +386,7 @@ TEST(MESH_GEOMETRY_SOLID)
   frameworks.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
   framework_names.push_back("Simple");
   
-#ifdef HAVE_MSTK_MESH
+#ifdef HAVE_MESH_MSTK
   frameworks.push_back(Amanzi::AmanziMesh::Framework::MSTK);
   framework_names.push_back("MSTK");
 #endif
