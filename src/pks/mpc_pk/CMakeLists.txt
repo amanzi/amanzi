@@ -20,7 +20,6 @@ project(MPC_TREE)
 
 # Get the includes directory for chemistry
 get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
-message(DEBUG "Including GEOCHEM_SOURCE_DIR = ${GEOCHEM_SOURCE_DIR} ")
 
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})

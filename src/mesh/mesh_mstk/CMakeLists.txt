@@ -19,19 +19,7 @@ include(TestManager)
 project(MESH_MSTK)
 
 # External (TPL) include directories
-
-# Reverse the items in MSTK_INCLUDE_DIRS because when we ask the
-# include_directories command to prepend a set of directories using
-# the BEFORE keyword, it prepends each item in the MSTK_INCLUDE_DIRS
-# list, thereby effectively reversing the order of the
-# directories. For example, if we had MYDIRS=a;b;c and we specified
-# MYDIRS in the include_directories command, then the
-# INCLUDE_DIRECTORIES property for will end up with
-# c;b;a;whatever_existed_before
-
-list(REVERSE MESH_MSTK_INCLUDE_DIRS)
-include_directories(BEFORE ${MESH_MSTK_INCLUDE_DIRS})
-
+include_directories(${MSTK_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 
