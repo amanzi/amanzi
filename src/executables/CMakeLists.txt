@@ -40,7 +40,7 @@ include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${MPC_SOURCE_DIR})
 include_directories(${MPC_TREE_SOURCE_DIR})
 include_directories(${MULTIPHASE_SOURCE_DIR})
-include_directories(${MSTK_SOURCE_DIR})
+include_directories(${MESH_MSTK_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${PKS_SOURCE_DIR})
@@ -59,9 +59,6 @@ include_directories(${CHEM_INCLUDES_DIR})
 # The mesh frameworks
 set(amanzi_mesh_libs "")
 list(APPEND amanzi_mesh_libs stk_mesh exodus_reader)
-if(ENABLE_STK_Mesh)
-  add_definitions("-DHAVE_STK_MESH")
-endif()
 if(ENABLE_MOAB_Mesh)
   add_definitions("-DHAVE_MOAB_MESH")
 endif()
@@ -76,11 +73,7 @@ include_directories(${Epetra_INCLUDE_DIRS})
 if(ENABLE_MOAB_Mesh)
     include_directories(${MOAB_INCLUDE_DIRS})
     include_directories(${MOAB_SOURCE_DIR})
-    list(APPEND amanzi_mesh_libs moab_mesh)
-endif()
-if(ENABLE_STK_Mesh)
-    include_directories(${STK_INCLUDE_DIRS})
-    include_directories(${STK_SOURCE_DIR})
+    list(APPEND amanzi_mesh_libs mesh_moab)
 endif()
 include_directories(${HDF5_C_INCLUDE_DIR})
 include_directories(${HDF5_INCLUDE_DIRS})
@@ -119,21 +112,6 @@ add_amanzi_executable(verify_hex
                                 output ${Boost_LIBRARIES} ${HDF5_LIBRARIES})
 set_target_properties(verify_hex PROPERTIES
                       COMPILE_DEFINES "${Boost_FILESYSTEM_DEFINES}")
-
-#
-# Binary: verify_deform
-#
-if (ENABLE_STK_Mesh)
-  add_amanzi_executable(verify_deform
-                        SOURCE VerifyDeform.cc
-                        LINK_LIBS mesh_factory
-                                  mesh
-                                  ${amanzi_mesh_libs}
-                                  output
-                                  ${Epetra_LIBRARIES}
-                                  ${Teuchos_LIBRARIES}
-                                  ${HDF5_LIBRARIES})
-endif()                                
 
 #
 # Binary: concat

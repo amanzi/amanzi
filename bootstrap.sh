@@ -144,8 +144,8 @@ clm=${FALSE}
 
 # -- mesh frameworks
 #    stk framewotk was deprecated and removed
-mstk_mesh=$TRUE
-moab_mesh=$FALSE
+mesh_mstk=$TRUE
+mesh_moab=$FALSE
 
 # -- tools
 amanzi_branch=
@@ -363,8 +363,8 @@ Value in brackets indicates default setting.
   ccse_tools              build structured AMR tools for post processing and tecplot ['"${ccse_tools}"']
 
   unstructured            build unstructured mesh capability ['"${unstructured}"']
-  mstk_mesh               build the MSTK Mesh Toolkit ['"${mstk_mesh}"']
-  moab_mesh               build the MOAB Mesh Toolkit ['"${moab_mesh}"']
+  mesh_mstk               build the MSTK Mesh Toolkit ['"${mesh_mstk}"']
+  mesh_moab               build the MOAB Mesh Toolkit ['"${mesh_moab}"']
 
   hypre                   build the HYPRE solver APIs ['"${hypre}"']
   superlu                 build the SuperLU solver ['"${superlu}"']
@@ -560,8 +560,8 @@ Amanzi Components:
 Amanzi TPLs:
     alquimia     = '"${alquimia}"'
     crunchtope   = '"${crunchtope}"'
-    mstk_mesh    = '"${mstk_mesh}"'
-    moab_mesh    = '"${moab_mesh}"'
+    mesh_mstk    = '"${mesh_mstk}"'
+    mesh_moab    = '"${mesh_moab}"'
     netcdf4      = '"${netcdf4}"'
     hypre        = '"${hypre}"'
     superlu      = '"${superlu}"'
@@ -863,8 +863,8 @@ List of INPUT parameters
   fi
 
   if [ "${unstructured}" -eq "${FALSE}" ]; then
-    mstk_mesh=${FALSE}
-    moab_mesh=${FALSE}
+    mesh_mstk=${FALSE}
+    mesh_moab=${FALSE}
     stk_mesh=${FALSE}
   else
     if [ "${epetra}" -eq "${FALSE}" ]; then
@@ -1782,8 +1782,8 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_Unstructured:BOOL=${unstructured} \
       -DENABLE_CCSE_TOOLS:BOOL=${ccse_tools} \
       -DCCSE_BL_SPACEDIM:INT=${spacedim} \
-      -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
-      -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
+      -DENABLE_MESH_MOAB:BOOL=${mesh_moab} \
+      -DENABLE_MESH_MSTK:BOOL=${mesh_mstk} \
       -DENABLE_NetCDF4:BOOL=${netcdf4} \
       -DENABLE_HYPRE:BOOL=${hypre} \
       -DENABLE_SUPERLU:BOOL=${superlu} \
@@ -1908,8 +1908,8 @@ cmd_configure="${cmake_binary} \
     -DCMAKE_BUILD_TYPE:STRING=${build_type} \
     -DENABLE_Structured:BOOL=${structured} \
     -DENABLE_Unstructured:BOOL=${unstructured} \
-    -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
-    -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
+    -DENABLE_MESH_MOAB:BOOL=${mesh_moab} \
+    -DENABLE_MESH_MSTK:BOOL=${mesh_mstk} \
     -DENABLE_SUPERLU:BOOL=${superlu} \
     -DENABLE_HYPRE:BOOL=${hypre} \
     -DENABLE_PETSC:BOOL=${petsc} \

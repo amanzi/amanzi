@@ -159,6 +159,7 @@
 #   0.97.14      - update MSTK to 3.3.6
 
 #   0.98.0       - configuration updates fixing CamelCase names (required changes in Amanzi build as well)
+#   0.98.1       - configuratoin updates fixing consistency of meshing options (required changes in Amanzi build as well).
 
 include(CMakeParseArguments)
 
@@ -211,7 +212,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
-set(AMANZI_TPLS_VERSION_PATCH 0)
+set(AMANZI_TPLS_VERSION_PATCH 1)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
