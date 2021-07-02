@@ -113,6 +113,7 @@ void Beaker::Initialize(BeakerState& state,
 
   // allocate work memory
   ncomp_ = primary_species_.size();
+  int nminerals = minerals_.size();
 
   total_.resize(ncomp_);
   dtotal_.Resize(ncomp_);
@@ -133,7 +134,7 @@ void Beaker::Initialize(BeakerState& state,
   state.total.resize(ncomp_, 0.0);
   state.free_ion.resize(ncomp_, 1.0e-9);
 
-  // resize isotherms
+  // resize and initialize isotherms
   int size = sorption_isotherm_rxns_.size();
   if (size > 0) {
     state.isotherm_kd.resize(ncomp_, 0.0);
@@ -154,6 +155,42 @@ void Beaker::Initialize(BeakerState& state,
     }
   }
 
+  // resize and initialize minerals
+  if (nminerals > 0) {
+    state.mineral_volume_fraction.resize(nminerals, 0.0);
+    state.mineral_specific_surface_area.resize(nminerals, 0.0);
+
+    for (int m = 0; m < nminerals; ++m) {
+      state.mineral_volume_fraction[m] = minerals_[m].volume_fraction();
+      state.mineral_specific_surface_area[m] = minerals_[m].specific_surface_area();
+    }
+  }
+
+  // ion exchange
+  int nion_sites = ion_exchange_rxns_.size();
+  if (nion_sites > 0) {
+    state.ion_exchange_sites.resize(nion_sites, 0.0);
+    state.ion_exchange_ref_cation_conc.resize(nion_sites, 0.0);
+
+    for (int i = 0; i < nion_sites; ++i) {
+      state.ion_exchange_sites[i] = ion_exchange_rxns_[i].site().get_cation_exchange_capacity();
+      state.ion_exchange_ref_cation_conc[i] = ion_exchange_rxns_[i].ref_cation_sorbed_conc();
+    }
+  }
+
+  // resize and initialize surface sorption sites
+  int nsurf_sites = surface_complexation_rxns_.size(); 
+  if (nsurf_sites > 0) {
+    state.surface_site_density.resize(nsurf_sites, 0.0);
+    state.surface_complex_free_site_conc.resize(nsurf_sites, 0.0);
+
+    for (int i = 0; i < nsurf_sites; ++i) {
+      state.surface_site_density[i] = surface_complexation_rxns_[i].GetSiteDensity();
+      state.surface_complex_free_site_conc[i] = surface_complexation_rxns_[i].free_site_concentration();
+    }
+  }
+
+  // other
   fixed_accumulation_.resize(ncomp_);
   residual_.resize(ncomp_);
   prev_molal_.resize(ncomp_);
@@ -400,8 +437,6 @@ void Beaker::CopyBeakerToState(BeakerState* state)
   // minerals
   size = minerals_.size();
   if (size > 0) {
-    state->mineral_volume_fraction.resize(size);
-    state->mineral_specific_surface_area.resize(size);
     for (int m = 0; m < size; ++m) {
       state->mineral_volume_fraction[m] = minerals_[m].volume_fraction();
       state->mineral_specific_surface_area[m] = minerals_[m].specific_surface_area();
@@ -411,15 +446,8 @@ void Beaker::CopyBeakerToState(BeakerState* state)
   // ion exchange
   size = ion_exchange_rxns_.size();
   if (size > 0) {
-    state->ion_exchange_sites.resize(size);
     for (int i = 0; i < size; ++i) {
       state->ion_exchange_sites[i] = ion_exchange_rxns_[i].site().get_cation_exchange_capacity();
-    }
-  }
-
-  if (size > 0) {
-    state->ion_exchange_ref_cation_conc.resize(size);
-    for (int i = 0; i < size; ++i) {
       state->ion_exchange_ref_cation_conc[i] = ion_exchange_rxns_[i].ref_cation_sorbed_conc();
     }
   }
@@ -427,15 +455,8 @@ void Beaker::CopyBeakerToState(BeakerState* state)
   // surface complexation
   size = surface_complexation_rxns_.size();
   if (size > 0) {
-    state->surface_complex_free_site_conc.resize(size);
-    for (unsigned int i = 0; i < size; ++i) {
-      state->surface_complex_free_site_conc[i] = surface_complexation_rxns_[i].free_site_concentration();
-    }
-  }
-
-  if (size > 0) {
-    state->surface_site_density.resize(size);
     for (int i = 0; i < size; ++i) {
+      state->surface_complex_free_site_conc[i] = surface_complexation_rxns_[i].free_site_concentration();
       state->surface_site_density[i] = surface_complexation_rxns_[i].GetSiteDensity();
     }
   }
