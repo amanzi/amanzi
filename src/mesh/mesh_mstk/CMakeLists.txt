@@ -2,7 +2,7 @@
 
 #
 #  Amanzi
-#    MSTK Mesh frameworks
+#    MESH_MSTK frameworks
 #
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
@@ -12,26 +12,14 @@ include(TestManager)
 #
 # Define a project name
 # After this command the following varaibles are defined
-#   MSTK_SOURCE_DIR
-#   MSTK_BINARY_DIR
+#   MESH_MSTK_SOURCE_DIR
+#   MESH_MSTK_BINARY_DIR
 # Other projects (subdirectories) can reference this directory
 # through these variables.
 project(MESH_MSTK)
 
 # External (TPL) include directories
-
-# Reverse the items in MSTK_INCLUDE_DIRS because when we ask the
-# include_directories command to prepend a set of directories using
-# the BEFORE keyword, it prepends each item in the MSTK_INCLUDE_DIRS
-# list, thereby effectively reversing the order of the
-# directories. For example, if we had MYDIRS=a;b;c and we specified
-# MYDIRS in the include_directories command, then the
-# INCLUDE_DIRECTORIES property for will end up with
-# c;b;a;whatever_existed_before
-
-list(REVERSE MESH_MSTK_INCLUDE_DIRS)
-include_directories(BEFORE ${MESH_MSTK_INCLUDE_DIRS})
-
+include_directories(${MSTK_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 

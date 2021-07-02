@@ -127,13 +127,13 @@ if (BUILD_TESTS)
    
     # Example: Adding a unit test
     # Use add_parallel_test if the test needs to be run in parallel  
-    if ( ENABLE_MOAB_Mesh )
-        include_directories(${MOAB_SOURCE_DIR})
+    if ( ENABLE_MESH_MOAB )
+        include_directories(${MESH_MOAB_SOURCE_DIR})
         include_directories(${MOAB_INCLUDE_DIRS})
 
         # Test: xxx-moab
         add_executable(test_xxx_moab test/Main.cc test/test_driver.cpp)
-        target_link_libraries(test_xxx_moab xxx moab_mesh chemistry transport flow ${UnitTest_LIBRARIES})
+        target_link_libraries(test_xxx_moab xxx mesh_moab chemistry transport flow ${UnitTest_LIBRARIES})
         add_test(xxx-moab test_xxx_moab)
     
     endif()
