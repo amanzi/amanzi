@@ -12,7 +12,7 @@ diff -Naur alquimia-dev-1.0.8/cmake/Modules/FindPETSc.cmake alquimia-dev-1.0.8-n
 +    if ( DEFINED ENV{SLURM_SUBMIT_HOST} )
 +       string(REGEX REPLACE "-fe[0-9].lanl.gov" "" SLURM_HOST_BASENAME $ENV{SLURM_SUBMIT_HOST})
 +    else ( ) 
-+       set (SLURM_HOST_BASENAME "" )
++       set (SLURM_HOST_BASENAME "undefined" )
 +    endif ( )		      
 +    if ( (${${runs}}) OR (DEFINED ENV{NERSC_HOST}) OR (${SLURM_HOST_BASENAME} STREQUAL "darwin") )
        set (PETSC_EXECUTABLE_RUNS "YES" CACHE BOOL
