@@ -10,7 +10,7 @@ diff -Naur alquimia-dev-1.0.8/cmake/Modules/FindPETSc.cmake alquimia-dev-1.0.8-n
 +    #    * Darwin   - experimental heterogenous cluster at LANL
 +    #    * NERSC    - DOE HPC system with no mpi execution on the front end.
 +    if ( DEFINED ENV{SLURM_SUBMIT_HOST} )
-+       string(REGEX REPLACE "-fe[0-9].lanl.gov" "" SLURM_HOST_BASENAME $ENV{SLURM_SUBMIT_HOST})
++       string(REGEX REPLACE "-.*[0-9].lanl.gov" "" SLURM_HOST_BASENAME $ENV{SLURM_SUBMIT_HOST})
 +    else ( ) 
 +       set (SLURM_HOST_BASENAME "undefined" )
 +    endif ( )		      
