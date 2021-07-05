@@ -38,9 +38,10 @@ namespace Operators {
 * Constructors
 ****************************************************************** */
 TreeOperator::TreeOperator()
-  : inited_(false),
-    updated_(false),
-    computed_(false),
+  : inverse_pars_set_(false),
+    initialize_complete_(false),
+    compute_complete_(false),
+    assembly_complete_(false),
     block_diagonal_(false),
     num_colors_(0),
     coloring_(Teuchos::null),
@@ -126,14 +127,14 @@ TreeOperator::TreeOperator(const TreeOperator& other)
 void TreeOperator::set_block(std::size_t i, std::size_t j, const Teuchos::RCP<TreeOperator>& op)
 {
   blocks_[i][j] = op;
-  updated_ = false;
+  initialize_complete_ = false;
 }
 
 
 void TreeOperator::set_operator(const Teuchos::RCP<Operator>& op)
 {
   data_ = op;
-  updated_ = false;
+  initialize_complete_ = false;
 }
 
 
@@ -167,7 +168,35 @@ int TreeOperator::Apply(const TreeVector& X, TreeVector& Y, double scalar) const
   AMANZI_ASSERT(get_domain_map().SubsetOf(X.Map()));
   AMANZI_ASSERT(get_range_map().SubsetOf(Y.Map()));
 #endif
+  if (assembly_complete_) {
+    if (shift_ != 0.0) {
+      // shift_ != 0 implies a diagonal shift is being applied.  That diagonal
+      // shift applies to all diagonal "blocks" in the TreeOperator, and is
+      // done at assemble-time.  This is used to ensure that the matrix is
+      // non-singular, which often happens with zero rows.  When it is used to
+      // make the operator non-singular, the intent is to allow it to be
+      // invertible, but not to change the meaning of the forward operator.
+      // Therefore we have to unshift the assembled matrix prior to doing the
+      // forward apply.
+      Amat_->DiagonalShift(-shift_);
+      int ierr = ApplyAssembled(X,Y,scalar);
+      Amat_->DiagonalShift(shift_);
+      return ierr;
+    } else if (shift_min_ != 0.0) {
+      // A shift_min_ is lossy -- we cannot "unshift" it because we cannot know
+      // what the original diagonal value was.  Therefore must use the
+      // unassembled forward apply (or re-assemble without the shift_min).
+      return ApplyUnassembled(X,Y,scalar);
+    } else {
+      return ApplyAssembled(X,Y,scalar);
+    }
+  } else {
+    return ApplyUnassembled(X,Y,scalar);
+  }
+}
 
+int TreeOperator::ApplyUnassembled(const TreeVector& X, TreeVector& Y, double scalar) const
+{
   int ierr(0);
   if (scalar == 0.0) {
     Y.PutScalarMasterAndGhosted(0.0);
@@ -205,7 +234,6 @@ int TreeOperator::Apply(const TreeVector& X, TreeVector& Y, double scalar) const
       }
     }
   }
-
   return ierr;
 }
 
@@ -213,16 +241,30 @@ int TreeOperator::Apply(const TreeVector& X, TreeVector& Y, double scalar) const
 /* ******************************************************************
 * Calculate Y = A * X using matrix-free matvec on blocks of operators.
 ****************************************************************** */
-int TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y) const
+int TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y, double scalar) const
 {
-  Y.PutScalar(0.0);
-  Epetra_Vector Xcopy(A_->RangeMap());
-  Epetra_Vector Ycopy(A_->DomainMap());
+  // initialize ghost elements
+  if (scalar == 0.0) {
+    Y.PutScalarMasterAndGhosted(0.0);
+  } else if (scalar == 1.0) {
+    Y.PutScalarGhosted(0.0);
+  } else {
+    Y.Scale(scalar);
+    Y.PutScalarGhosted(0.0);
+  }
+
+  Epetra_Vector Xcopy(A_->DomainMap());
+  Epetra_Vector Ycopy(A_->RangeMap());
 
   int ierr = copyToSuperVector(*get_col_supermap(), X, Xcopy);
   ierr |= A_->Apply(Xcopy, Ycopy);
-  ierr |= copyFromSuperVector(*get_row_supermap(), Ycopy, Y);
-  AMANZI_ASSERT(!ierr);
+  ierr |= addFromSuperVector(*get_row_supermap(), Ycopy, Y);
+
+  if (ierr) {
+    Errors::Message msg;
+    msg << "TreeOperator: ApplyAssemble failed.\n";
+    Exceptions::amanzi_throw(msg);
+  }
   return ierr;
 }
 
@@ -242,7 +284,7 @@ int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
     // this is a leaf
     ierr = get_operator()->ApplyInverse(*X.Data(), *Y.Data());
   } else {
-    if (!computed_) const_cast<TreeOperator*>(this)->ComputeInverse();
+    if (!compute_complete_) const_cast<TreeOperator*>(this)->ComputeInverse();
     if (preconditioner_.get()) {
       ierr = preconditioner_->ApplyInverse(X,Y);
     } else {
@@ -368,7 +410,6 @@ void TreeOperator::SymbolicAssembleMatrix()
 ****************************************************************** */
 void TreeOperator::AssembleMatrix() {
   AMANZI_ASSERT(leaves_.size() != 0);
-  computed_ = false;
   Amat_->Zero();
 
   // check that each row has at least one non-null operator block
@@ -395,6 +436,8 @@ void TreeOperator::AssembleMatrix() {
     Amat_->DiagonalShiftMin(shift_min_);
   }
 
+  assembly_complete_ = true;
+  compute_complete_ = false;
   // std::stringstream filename_s2;
   // filename_s2 << "assembled_matrix" << 0 << ".txt";
   // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *A_);
@@ -405,7 +448,8 @@ void TreeOperator::AssembleMatrix() {
 * Zero all operators
 ****************************************************************** */
 void TreeOperator::Init() {
-  computed_ = false;
+  assembly_complete_ = false;
+  compute_complete_ = false;
   for (int i=0; i!=row_size_; ++i) {
     for (int j=0; j!=col_size_; ++j) {
       if (get_block(i,j) != Teuchos::null) get_block(i,j)->Init();
@@ -418,7 +462,8 @@ void TreeOperator::Init() {
 * Zero off-diagonal operators
 ****************************************************************** */
 void TreeOperator::InitOffdiagonals() {
-  computed_ = false;
+  assembly_complete_ = false;
+  compute_complete_ = false;
   for (int i=0; i!=row_size_; ++i) {
     for (int j=0; j!=col_size_; ++j) {
       if (i != j && get_block(i,j) != Teuchos::null) get_block(i,j)->Init();
@@ -439,7 +484,7 @@ void TreeOperator:: set_inverse_parameters(const std::string& prec_name,
 
 void TreeOperator:: set_inverse_parameters(Teuchos::ParameterList& inv_plist) {
   inv_plist_ = inv_plist;
-  inited_ = true;
+  inverse_pars_set_ = true;
 }
 
 
@@ -457,8 +502,8 @@ void TreeOperator::InitializeInverse()
   AMANZI_ASSERT(get_row_map()->SameAs(*get_col_map()));
 #endif
 
-  // and inited
-  if (!inited_) {
+  // and inverse_pars_set
+  if (!inverse_pars_set_) {
     Errors::Message msg("Developer error: set_inverse_parameters() has not been called.");
     msg << " ref: " << typeid(*this).name() << "\n";
     Exceptions::amanzi_throw(msg);
@@ -525,14 +570,15 @@ void TreeOperator::InitializeInverse()
       block->InitializeInverse();
     }
   }
-  updated_ = true;
-  computed_ = false;
+
+  initialize_complete_ = true;
+  compute_complete_ = false;
 }
 
 
 void TreeOperator::ComputeInverse()
 {
-  if (!updated_) InitializeInverse();
+  if (!initialize_complete_) InitializeInverse();
   if (get_operator() != Teuchos::null) {
     // leaf operator
     get_operator()->ComputeInverse();
@@ -545,7 +591,7 @@ void TreeOperator::ComputeInverse()
       }
     }
   }
-  computed_ = true;
+  compute_complete_ = true;
 }
 
 

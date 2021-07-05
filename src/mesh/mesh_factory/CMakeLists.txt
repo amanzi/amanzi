@@ -56,8 +56,6 @@ if (ENABLE_MESH_MOAB)
 endif()
 
 if (ENABLE_MESH_MSTK)
-  message(ERROR "MSTK_INC AT: ${MSTK_INCLUDE_DIR}")
-  message(ERROR "MESH_MSTK_INC AT: ${MESH_MSTK_SOURCE_DIR}")  
   include_directories(${MSTK_INCLUDE_DIR})
   include_directories(${MESH_MSTK_SOURCE_DIR})
   list(APPEND mesh_factory_frameworks mesh_mstk)
