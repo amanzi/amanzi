@@ -194,8 +194,8 @@ option(ENABLE_CCSE_TOOLS "Enable building CCSE post processing tools" FALSE)
 
 # Amanzi unstructured mesh API and frameworks
 option(ENABLE_Unstructured "Enable Amanzi unstructured mesh capability" TRUE)
-option(ENABLE_MSTK_Mesh "Enable the Unstructured MSTK Mesh Toolkit" TRUE)
-option(ENABLE_MOAB_Mesh "Enable the Unstructured MOAB Mesh Toolkit" FALSE)
+option(ENABLE_MESH_MSTK "Enable the Unstructured MSTK Mesh Toolkit" TRUE)
+option(ENABLE_MESH_MOAB "Enable the Unstructured MOAB Mesh Toolkit" FALSE)
 
 # Amanzi output formats
 option(ENABLE_Silo "Enable the Silo output specification for visualization" FALSE)
@@ -223,8 +223,8 @@ endif()
 
 # If unstructured is not enabled, there is no reason to have these mesh frameworks
 if (NOT ENABLE_Unstructured)
-  set(ENABLE_MSTK_Mesh FALSE)
-  set(ENABLE_MOAB_Mesh FALSE)
+  set(ENABLE_MESH_MSTK FALSE)
+  set(ENABLE_MESH_MOAB FALSE)
 endif()
 
 # Amanzi Test Suite
@@ -626,10 +626,10 @@ append_set(Amanzi_TPL_CMAKE_ARGS
           -DNetCDF_FORTRAN_DIR:FILEPATH=${NetCDF_FORTRAN_DIR})
 
 # MOAB
-if (ENABLE_MOAB_Mesh)
+if (ENABLE_MESH_MOAB)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_MOAB.cmake)
   append_set(Amanzi_TPL_CMAKE_ARGS
-             -DENABLE_MOAB_Mesh:BOOL=${ENABLE_MOAB_Mesh}
+             -DENABLE_MESH_MOAB:BOOL=${ENABLE_MESH_MOAB}
              -DMOAB_DIR:PATH=${TPL_INSTALL_PREFIX})
 endif()
  
@@ -725,10 +725,10 @@ append_set(Amanzi_TPL_CMAKE_ARGS
            -DTrilinos_INSTALL_PREFIX:PATH=${Trilinos_INSTALL_PREFIX})
 
 # MSTK
-if (ENABLE_MSTK_Mesh)
+if (ENABLE_MESH_MSTK)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_MSTK.cmake) 
   append_set(Amanzi_TPL_CMAKE_ARGS
-             -DENABLE_MSTK_Mesh:BOOL=${ENABLE_MSTK_Mesh}
+             -DENABLE_MESH_MSTK:BOOL=${ENABLE_MESH_MSTK}
              -DMSTK_INCLUDE_DIR:PATH=${MSTK_INCLUDE_DIR}
              -DMSTK_LIBRARY_DIR:PATH=${MSTK_LIBRARY_DIR})
 endif()
@@ -813,7 +813,7 @@ else()
 endif()
 
 # Nanoflann is used by MSTK only
-if (ENABLE_MSTK_Mesh)
+if (ENABLE_MESH_MSTK)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_Nanoflann.cmake)
   set(Nanoflann_INSTALL_PREFIX ${TPL_INSTALL_PREFIX})
   set(Nanoflann_INCLUDE_DIRS "${Nanoflann_INSTALL_PREFIX}/include")
