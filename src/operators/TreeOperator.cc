@@ -170,13 +170,22 @@ int TreeOperator::Apply(const TreeVector& X, TreeVector& Y, double scalar) const
 #endif
   if (assembly_complete_) {
     if (shift_ != 0.0) {
-      // must "un-shift", but even still this is probably faster!
+      // shift_ != 0 implies a diagonal shift is being applied.  That diagonal
+      // shift applies to all diagonal "blocks" in the TreeOperator, and is
+      // done at assemble-time.  This is used to ensure that the matrix is
+      // non-singular, which often happens with zero rows.  When it is used to
+      // make the operator non-singular, the intent is to allow it to be
+      // invertible, but not to change the meaning of the forward operator.
+      // Therefore we have to unshift the assembled matrix prior to doing the
+      // forward apply.
       Amat_->DiagonalShift(-shift_);
       int ierr = ApplyAssembled(X,Y,scalar);
       Amat_->DiagonalShift(shift_);
       return ierr;
     } else if (shift_min_ != 0.0) {
-      // cannot "unshift" a min shift
+      // A shift_min_ is lossy -- we cannot "unshift" it because we cannot know
+      // what the original diagonal value was.  Therefore must use the
+      // unassembled forward apply (or re-assemble without the shift_min).
       return ApplyUnassembled(X,Y,scalar);
     } else {
       return ApplyAssembled(X,Y,scalar);
