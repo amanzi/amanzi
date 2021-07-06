@@ -75,28 +75,81 @@ void lake_at_rest_setIC (Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuc
     int ncells_owned = mesh -> num_entities (Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
     std::string passwd = "state";
     
+    int nnodes = mesh -> num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    
     Epetra_MultiVector &B_c = *S -> GetFieldData ("surface-bathymetry", passwd) -> ViewComponent ("cell");
+    Epetra_MultiVector &B_n = *S -> GetFieldData ("surface-bathymetry_node", passwd) -> ViewComponent ("node");
     Epetra_MultiVector &h_c = *S -> GetFieldData ("surface-ponded_depth", passwd) -> ViewComponent ("cell");
     Epetra_MultiVector &ht_c = *S -> GetFieldData ("surface-total_depth", passwd) -> ViewComponent ("cell");
     Epetra_MultiVector &vel_c = *S -> GetFieldData ("surface-velocity", passwd) -> ViewComponent ("cell");
     Epetra_MultiVector &q_c = *S -> GetFieldData ("surface-discharge", "surface-discharge") -> ViewComponent ("cell");
+
+    
+    for (int n = 0; n < nnodes; ++n) // Define Bn at the cell vertices
+    {
+        
+    Amanzi::AmanziGeometry::Point node_crd;
+        
+    mesh -> node_get_coordinates(n, &node_crd); // coordinate of current node
+        
+    double x = node_crd[0], y = node_crd[1];
+        
+ 
+//        B_n[0][n] = 0.0;
+    B_n[0][n] = std::max(0.0, 0.25 - 5 * ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))); // non-smooth bathymetry
+//      B_n[0][n] = x*(1-x)*y*(1-y); // smooth bathymetry
+//        B_n[0][n] = x/4.0; // linear bathymetry
+
+    }
     
     for (int c = 0; c < ncells_owned; ++c)
     {
         const Amanzi::AmanziGeometry::Point &xc = mesh -> cell_centroid(c);
         
-        B_c[0][c] = std::max(0.0, 0.25 - 5 * ((xc[0] - 0.5) * (xc[0] - 0.5) + (xc[1] - 0.5) * (xc[1] - 0.5)));
-//        B_c[0][c] = 0.0;
-//        B_c[0][c] = 0.8 * std::exp( -5*(xc[0] - 0.9)*(xc[0] - 0.9) - 50*(xc[1] - 0.5)*(xc[1] - 0.5) );
-//        if (  (xc[0] - 0.3)*(xc[0] - 0.3) + (xc[1] - 0.3)*(xc[1] - 0.3) < 0.1 * 0.1   ) // Perturb the solution
-//        if ( std::abs(xc[0] - 0.1) < 0.05 )
+        Amanzi::AmanziMesh::Entity_ID_List cfaces, cnodes, cedges;
+        mesh->cell_get_faces(c, &cfaces);
+        mesh->cell_get_nodes(c, &cnodes);
+        mesh->cell_get_edges(c, &cedges);
+        
+        int nedges_cell = cedges.size();
+        int nfaces_cell = cfaces.size();
+        
+        B_c[0][c] = 0;
+        
+        for (int f = 0; f < nfaces_cell; ++f) // calculate the area of the triangle joining edge nodes and the centroid
+        {
+            Amanzi::AmanziGeometry::Point x0, x1;
+            int n0, n1;
+            int edge = cfaces[f];
+            
+            Amanzi::AmanziMesh::Entity_ID_List face_nodes;
+            mesh->face_get_nodes(edge, &face_nodes); // get the two nodes of the edge
+                        
+            mesh->node_get_coordinates(face_nodes[0], &x0); // get coordinates of the edge nodes
+            mesh->node_get_coordinates(face_nodes[1], &x1);
+
+            Amanzi::AmanziGeometry::Point tria_edge0, tria_edge1;
+
+            tria_edge0 = xc - x0;
+            tria_edge1 = xc - x1;
+
+            Amanzi::AmanziGeometry::Point area_cross_product = (0.5) * tria_edge0^tria_edge1;
+
+            double area = norm(area_cross_product); // area of the triangle
+            
+            B_c[0][c] += ( area / mesh -> cell_volume(c) ) * ( B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]] ) / 2;
+
+        }
+        
+//        if (  (xc[0] - 0.3)*(xc[0] - 0.3) + (xc[1] - 0.3)*(xc[1] - 0.3) < 0.1 * 0.1   ) // Perturb the solution; change time period t_new to at least 10.0
 //        {
-//            ht_c[0][c] = H_inf + 0.01;
+//            ht_c[0][c] = H_inf + 0.1;
 //        }
 //        else
 //        {
 //            ht_c[0][c] = H_inf;
 //        }
+        
         ht_c[0][c] = H_inf;
         h_c[0][c] = ht_c[0][c] - B_c[0][c];
         vel_c[0][c] = 0.0;
@@ -122,12 +175,24 @@ void error (Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     err_L1 = 0.0;
     hmax = 0.0;
     
+    double err_max_u = 0.0, err_max_v = 0.0, err_L1_u = 0.0, err_L1_v = 0.0, tmp_hmax = 0.0;
+    
     for (int c = 0; c < ncells_owned; ++c)
     {
         double tmp = std::abs (ht_ex[0][c] - ht[0][c]);
         err_max = std::max (err_max, tmp);
         err_L1 += tmp * ( mesh -> cell_volume(c) );
-        hmax = std::sqrt(mesh -> cell_volume(c));
+        tmp_hmax = std::sqrt(mesh -> cell_volume(c));
+        
+        tmp = std::abs (vel_ex[0][c] - vel[0][c]);
+        err_max_u = std::max (err_max_u, tmp);
+        err_L1_u += tmp * ( mesh -> cell_volume(c) );
+        
+        tmp = std::abs (vel_ex[1][c] - vel[1][c]);
+        err_max_v = std::max (err_max_v, tmp);
+        err_L1_v += tmp * ( mesh -> cell_volume(c) );
+        
+        hmax = std::max (tmp_hmax, hmax);
     }
     
     double err_max_tmp, err_L1_tmp;
@@ -137,8 +202,27 @@ void error (Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     
     err_max = err_max_tmp; err_L1 = err_L1_tmp;
     
-    std::cout<<"err_max: "<<err_max<<std::endl;
-    std::cout<<"err_L1: "<<err_L1<<std::endl;
+    mesh -> get_comm() -> MaxAll(&err_max_u, &err_max_tmp, 1);
+    mesh -> get_comm() -> SumAll(&err_L1_u, &err_L1_tmp, 1);
+    
+    err_max_u = err_max_tmp; err_L1_u = err_L1_tmp;
+    
+    mesh -> get_comm() -> MaxAll(&err_max_v, &err_max_tmp, 1);
+    mesh -> get_comm() -> SumAll(&err_L1_v, &err_L1_tmp, 1);
+    
+    err_max_v = err_max_tmp; err_L1_v = err_L1_tmp;
+    
+    std::cout.precision(6);
+    
+    std::cout<<std::scientific<<"H err_max: "<<err_max<<std::endl;
+    std::cout<<std::scientific<<"H err_L1: "<<err_L1<<std::endl;
+    
+    std::cout<<std::scientific<<"u err_max: "<<err_max_u<<std::endl;
+    std::cout<<std::scientific<<"u err_L1: "<<err_L1_u<<std::endl;
+    
+    std::cout<<std::scientific<<"v err_max: "<<err_max_v<<std::endl;
+    std::cout<<std::scientific<<"v err_L1: "<<err_L1_v<<std::endl;
+    
 }
 
 // ---- ---- ---- ---- ---- ---- ---- ----
@@ -180,9 +264,12 @@ TEST(SHALLOW_WATER_LAKE_AT_REST)
     
     std::vector<double> dx, Linferror, L1error, L2error;
     
-    for (int NN = 10; NN <= 40; NN *= 2)
-    {
-        RCP<Mesh> mesh = meshfactory.create (0.0, 0.0, 1.0, 1.0, NN, NN, request_faces, request_edges);
+    
+    
+        RCP<Mesh> mesh = meshfactory.create (0.0, 0.0, 1.0, 1.0, 20, 20, request_faces, request_edges);
+//       RCP<Mesh> mesh = meshfactory.create ("test/median15x16.exo");
+//        RCP<Mesh> mesh = meshfactory.create ("test/random40.exo");
+//          RCP<Mesh> mesh = meshfactory.create ("test/triangular16.exo");
         
         // Create a state
         
@@ -192,20 +279,24 @@ TEST(SHALLOW_WATER_LAKE_AT_REST)
         S -> set_time(0.0);
         
         Teuchos::RCP<TreeVector> soln = Teuchos::rcp (new TreeVector());
-        
-        Teuchos::ParameterList pk_tree = plist -> sublist ("PK tree").sublist("shallow water");
+          
+        Teuchos::ParameterList sw_list = plist->sublist("PKs").sublist("shallow water");
         
         // Create a shallow water PK
-        
-        ShallowWater_PK SWPK (pk_tree, plist, S, soln);
+
+        ShallowWater_PK SWPK (sw_list, plist, S, soln);
         SWPK.Setup(S.ptr());
         S -> Setup();
         S -> InitializeFields();
         S -> InitializeEvaluators();
         SWPK.Initialize(S.ptr());
+
+        
         lake_at_rest_setIC (mesh, S);
         
+        
         const Epetra_MultiVector &B = *S -> GetFieldData ("surface-bathymetry") -> ViewComponent ("cell");
+        const Epetra_MultiVector &Bn = *S -> GetFieldData("surface-bathymetry_node") -> ViewComponent ("node");
         const Epetra_MultiVector &hh = *S -> GetFieldData ("surface-ponded_depth") -> ViewComponent ("cell");
         const Epetra_MultiVector &ht = *S -> GetFieldData ("surface-total_depth") -> ViewComponent ("cell");
         const Epetra_MultiVector &vel = *S -> GetFieldData ("surface-velocity") -> ViewComponent ("cell");
@@ -241,7 +332,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST)
         
         int iter = 0;
         
-        while (t_new < 0.48)
+        while (t_new < 1.0)
         {
             double t_out = t_new;
             
@@ -261,9 +352,10 @@ TEST(SHALLOW_WATER_LAKE_AT_REST)
                 io.WriteVector(*q(0), "qx", AmanziMesh::CELL);
                 io.WriteVector(*q(1), "qy", AmanziMesh::CELL);
                 io.WriteVector(*B(0), "B", AmanziMesh::CELL);
+                io.WriteVector(*Bn(0), "B_n", AmanziMesh::NODE);
                 io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
                 
-                io.WriteVector(*ht_ex(0), "hh_ex", AmanziMesh::CELL);
+                io.WriteVector(*ht_ex(0), "ht_ex", AmanziMesh::CELL);
                 io.WriteVector(*vel_ex(0), "vx_ex", AmanziMesh::CELL);
                 io.WriteVector(*vel_ex(1), "vy_ex", AmanziMesh::CELL);
                 
@@ -309,6 +401,9 @@ TEST(SHALLOW_WATER_LAKE_AT_REST)
         dx.push_back (hmax);
         Linferror.push_back (err_max);
         L1error.push_back (err_L1);
+    
+        CHECK_CLOSE (0.0, L1error[0], 1e-12);
+        CHECK_CLOSE (0.0, Linferror[0], 1e-12);
         
         io.InitializeCycle(t_out, iter, "");
         
@@ -319,29 +414,22 @@ TEST(SHALLOW_WATER_LAKE_AT_REST)
         io.WriteVector(*q(0), "qx", AmanziMesh::CELL);
         io.WriteVector(*q(1), "qy", AmanziMesh::CELL);
         io.WriteVector(*B(0), "B", AmanziMesh::CELL);
+        io.WriteVector(*Bn(0), "B_n", AmanziMesh::NODE);
         io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
         
-        io.WriteVector(*ht_ex(0), "hh_ex", AmanziMesh::CELL);
+        io.WriteVector(*ht_ex(0), "ht_ex", AmanziMesh::CELL);
         io.WriteVector(*vel_ex(0), "vx_ex", AmanziMesh::CELL);
         io.WriteVector(*vel_ex(1), "vy_ex", AmanziMesh::CELL);
         
         io.FinalizeCycle();
-        
-    } // NN loop
-    
     
     std::cout<<"* ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- *"<<std::endl;
     
-    double L1_order = Amanzi::Utils::bestLSfit (dx, L1error);
+    std::cout<<"Computed error H (L_1): "<<L1error[0]<<std::endl;
     
-    std::cout<<"computed order (L_1): "<<L1_order<<std::endl;
+    std::cout<<"Computed error H (L_inf): "<<Linferror[0]<<std::endl;
     
-    double Linf_order = Amanzi::Utils::bestLSfit (dx, Linferror);
-    
-    std::cout<<"computed order (L_inf): "<<Linf_order<<std::endl;
-    
-    // CHECK_CLOSE (1.5, L1_order, 0.2);
-    // CHECK_CLOSE (1.5, Linf_order, 0.2);
+
 }
 
 

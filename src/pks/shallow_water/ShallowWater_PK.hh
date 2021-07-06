@@ -75,6 +75,10 @@ class ShallowWater_PK : public PK_Physical,
   virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override {};
 
   virtual std::string name() override { return "Shallow water PK"; }
+                            
+  // Bathymetry on cell nodes
+  double B(int, const AmanziGeometry::Point& ) ;
+  double B2(int, int, const AmanziGeometry::Point& ) ;
 
   // due to rotational invariance of SW equations, we need flux in the x-direction only.
   std::vector<double> PhysicalFlux_x(const std::vector<double>&);
@@ -102,6 +106,7 @@ class ShallowWater_PK : public PK_Physical,
   Key ponded_depth_key_;
   Key total_depth_key_;
   Key bathymetry_key_;
+  Key bathymetry_node_key_;
 
   std::string passwd_;
 
@@ -118,6 +123,7 @@ class ShallowWater_PK : public PK_Physical,
 
   // limited reconstruction
   Teuchos::RCP<Operators::ReconstructionCell> total_depth_grad_, bathymetry_grad_;
+  Teuchos::RCP<Operators::ReconstructionCell> bathymetry_node_grad_;
   Teuchos::RCP<Operators::ReconstructionCell> velocity_x_grad_, velocity_y_grad_;
   Teuchos::RCP<Operators::ReconstructionCell> discharge_x_grad_, discharge_y_grad_;
   Teuchos::RCP<Operators::LimiterCell> limiter_;
