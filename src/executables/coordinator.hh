@@ -32,6 +32,9 @@ simulation, including starting and ending times and restart options.
 
       END
 
+    * `"subcycled timestep`" ``[bool]`` **false**  If true, this coordinator creates
+      a third State object to store intermediate solutions, allowing for failed
+      steps.
     * `"restart from checkpoint file`" ``[string]`` **optional** If provided,
       specifies a path to the checkpoint file to continue a stopped simulation.
     * `"wallclock duration [hrs]`" ``[double]`` **optional** After this time, the
@@ -162,7 +165,7 @@ private:
   Teuchos::RCP<Teuchos::Time> timer_;
   double duration_;
   bool subcycled_ts_;
-  
+
   // fancy OS
   Teuchos::RCP<Amanzi::VerboseObject> vo_;
 };

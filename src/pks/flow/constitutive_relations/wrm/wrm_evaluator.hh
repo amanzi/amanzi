@@ -6,6 +6,7 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
+//! Evaluates saturation through water retention models.
 /*!
 
 Water Retention Models (WRMs) determine the saturation as a function of
@@ -15,17 +16,16 @@ commonly used in practice is the van Genuchten model, but others are available.
 .. _wrm-evaluator-spec
 .. admonition:: wrm-evaluator-spec
 
-   * `"WRM parameters`" ``[wrm-partition-typed-spec-list]`` 
+   * `"WRM parameters`" ``[wrm-partition-typedinline-spec-list]``
 
    KEYS:
-
-   * `"saturation`" **determined from evaluator name** The name
+   - `"saturation`" **determined from evaluator name** The name
        of the liquid saturation -- typically this is determined from
        the evaluator name and need not be set.
-   * `"other saturation`"  **determined from evaluator name**
+   - `"other saturation`"  **determined from evaluator name**
        The name of the other saturation, usually gas -- typically this is determined
        from the evaluator name and need not be set.
-   * `"capillary pressure`"` **DOMAIN-capillary_pressure_gas_liq**
+   - `"capillary pressure`"` **DOMAIN-capillary_pressure_gas_liq**
        The name of the capillary pressure.
 
 */
@@ -71,6 +71,7 @@ class WRMEvaluator : public SecondaryVariablesFieldEvaluator {
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,WRMEvaluator> factory_;
+  static Utils::RegisteredFactory<FieldEvaluator,WRMEvaluator> factory2_;
 
 };
 

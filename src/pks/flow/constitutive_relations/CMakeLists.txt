@@ -16,7 +16,7 @@ generate_evaluators_registration_header(
   )
 
 # collect all sources
-list(APPEND subdirs elevation overland_conductivity porosity sources thaw_depth water_content wrm)
+list(APPEND subdirs elevation overland_conductivity porosity thaw_depth water_content wrm)
 set(ats_flow_relations_src_files "")
 set(ats_flow_relations_inc_files "")
 

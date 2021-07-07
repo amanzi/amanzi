@@ -32,6 +32,9 @@ import traceback
 import distutils.spawn
 import numpy
 import collections
+import configparser
+
+
 
 aliases = dict()
 
@@ -67,12 +70,6 @@ def version(executable):
 class NoCatchException(Exception):
     def __init__(self,*args,**kwargs):
         Exception.__init__(self,*args,**kwargs)
-
-if sys.version_info[0] == 2:
-    from ConfigParser import SafeConfigParser as config_parser
-else:
-    from configparser import ConfigParser as config_parser
-
 
 class TestStatus(object):
     """
@@ -232,11 +229,21 @@ class RegressionTest(object):
         return self.name() + suffix        
 
     def filenames(self, dirname):
+        # filenames in the standard form, e.g. 0X_suite/test.regression/checkpoint00000.h5
         fname_list = sorted(glob.glob(os.path.join(dirname, self._file_prefix+"*"+self._file_suffix)))
         final_name = os.path.join(dirname, 'checkpoint_final.h5')
         if final_name in fname_list:
             fname_list.remove(final_name)
-        return fname_list
+
+        # filenames in the new-style directory based form, e.g.
+        #   0X_suite/test.regression/checkpoint00000/domain.h5
+        fname_list2_tmp = sorted(glob.glob(os.path.join(dirname, self._file_prefix+"*", "*"+self._file_suffix)))
+        fname_list2 = [f for f in fname_list2_tmp if 'checkpoint_final' not in f]
+
+        all_fnames = fname_list + fname_list2
+        #print(f'Files in {dirname}: {len(all_fnames)}')
+        #print(all_fnames)
+        return all_fnames
 
     def run(self, dry_run, status, testlog):
         """
@@ -518,7 +525,12 @@ class RegressionTest(object):
 
                 # -- checkpoint by list of cycles
                 filenames = self.filenames(gold_dir)
-                chp_cycles = [int(os.path.split(f)[-1][10:-3]) for f in filenames]
+                chp_cycles = set()
+                for f in filenames:
+                    chp_loc = f.find('checkpoint')
+                    digits = f[chp_loc+len('checkpoint'):chp_loc+len('checkpoint')+5]
+                    chp_cycles.add(int(digits))
+                chp_cycles = list(sorted(chp_cycles))
                 try:
                     chp = asearch.child_by_name(xml, "checkpoint")
                 except aerrors.MissingXMLError:
@@ -635,7 +647,7 @@ class RegressionTest(object):
         """Check that output hdf5 file has not changed from the baseline.
         """
         for key, tolerance in self._criteria.items():
-            if key == self._TIME:
+            if key == self._TIME and 'time' in h5_gold.attrs:
                 self._check_tolerance(h5_current.attrs['time'], h5_gold.attrs['time'],
                                       self._TIME, tolerance, status, testlog)
 
@@ -1133,7 +1145,7 @@ class RegressionTestManager(object):
         if config_file is None:
             raise RuntimeError("Error, must provide a config filename")
         self._config_filename = config_file
-        config = config_parser()
+        config = configparser.ConfigParser(delimiters=['=',])
         config.read(self._config_filename)
 
         if config.has_section("default-test-criteria"):

@@ -102,9 +102,10 @@ class MPCPermafrostSplitFluxColumns : public MPC<PK> {
   Key cv_key_;
   std::vector<Teuchos::RCP<PrimaryVariableFieldEvaluator> > p_eval_pvfes_;
   std::vector<Teuchos::RCP<PrimaryVariableFieldEvaluator> > T_eval_pvfes_;
-  std::vector<std::string> col_domains_;
-
   std::string coupling_;
+
+  std::string domain_col_;
+  std::string domain_star_;
 
  private:
   // factory registration

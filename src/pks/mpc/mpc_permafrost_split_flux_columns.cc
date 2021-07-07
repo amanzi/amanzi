@@ -24,71 +24,65 @@ MPCPermafrostSplitFluxColumns::MPCPermafrostSplitFluxColumns(Teuchos::ParameterL
       MPC<PK>(FElist, plist, S, solution)
 {
   // collect keys and names
-  std::string domain_star = plist_->get<std::string>("star domain name");
-  std::string col_dset_name = plist_->get<std::string>("column domain set name", "column");
-  
+  domain_star_ = plist_->get<std::string>("star domain name", "surface_star");
+
   // generate a list of sub-pks, based upon the star system + a list of columns
   // -- get the original PKs order -- the column must be the last one
   auto subpks = plist_->get<Teuchos::Array<std::string> >("PKs order");
-  std::string colname = subpks[subpks.size()-1];
+  std::string col_pk_name = subpks[subpks.size()-1];
   subpks.pop_back();
 
-  // subcycle or not
+  // -- iterate over the domain set to get the PK names
+  KeyTriple col_pk_triple;
+  bool is_ds = Keys::splitDomainSet(col_pk_name, col_pk_triple);
+  if (!is_ds) {
+    Errors::Message msg;
+    msg << "WeakMPCSemiCoupled subpk: \"" << col_pk_name << "\" should be a domain-set PK of the form column:*-NAME";
+    Exceptions::amanzi_throw(msg);
+  }
+  domain_col_ = std::get<0>(col_pk_triple);
+  std::string pk_name = std::get<2>(col_pk_triple);
+  const auto& col_domain_set = *S_->GetDomainSet(domain_col_);
+  for (const auto& col_domain : col_domain_set) {
+    subpks.push_back(Keys::getKey(col_domain, pk_name));
+  }
+  plist_->set("PKs order", subpks);
+
+  // coupling strategy: "pressure" passes the pressure field, "flux" the flux
+  // field, while "hybrid" passes one or the other depending upon conditions.
+  // "hybrid" is the most robust.
   coupling_ = plist_->get<std::string>("coupling type", "pressure");
   if (coupling_ != "pressure" && coupling_ != "flux" && coupling_ != "hybrid") {
     Errors::Message msg("WeakMPCSemiCoupled: \"coupling type\" must be one of \"pressure\", \"flux\", or \"hybrid\".");
     Exceptions::amanzi_throw(msg);
   }
 
-  // -- generate the column triple domain set
-  KeyTriple col_triple;
-  bool is_ds = Keys::splitDomainSet(colname, col_triple);
-  if (!is_ds) {
-    Errors::Message msg;
-    msg << "WeakMPCSemiCoupled subpk: \"" << colname << "\" should be a domain-set PK of the form column:*-NAME";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  std::string domain_col = std::get<0>(col_triple);
-  std::string domain_surf = "surface_"+domain_col;
-  
-  // -- add for the various columns based on GIDs of the surface system
-  auto surf_mesh = S->GetMesh(domain_star);
-  int ncols = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  for (int i=0; i!=ncols; ++i) {
-    int gid = surf_mesh->cell_map(false).GID(i);
-    Key col_domain_ss = Keys::getDomainInSet(col_dset_name, gid);
-    subpks.push_back(Keys::getKey(col_domain_ss, std::get<2>(col_triple)));
-    col_domains_.push_back(col_domain_ss);
-  }
-
   // set up keys
   p_primary_variable_suffix_ = plist_->get<std::string>("pressure primary variable suffix", "pressure");
   T_primary_variable_suffix_ = plist_->get<std::string>("temperature primary variable suffix", "temperature");
 
-  p_primary_variable_star_ = Keys::readKey(*plist_, domain_star, "pressure primary variable star", Keys::getVarName(p_primary_variable_suffix_));
-  T_primary_variable_star_ = Keys::readKey(*plist_, domain_star, "temperature primary variable star", Keys::getVarName(T_primary_variable_suffix_));
+  p_primary_variable_star_ = Keys::readKey(*plist_, domain_star_, "pressure primary variable star", Keys::getVarName(p_primary_variable_suffix_));
+  T_primary_variable_star_ = Keys::readKey(*plist_, domain_star_, "temperature primary variable star", Keys::getVarName(T_primary_variable_suffix_));
 
   if (coupling_ != "pressure") {
     p_lateral_flow_source_suffix_ = plist_->get<std::string>("mass lateral flow source suffix", "mass_lateral_flow_source");
     T_lateral_flow_source_suffix_ = plist_->get<std::string>("energy lateral flow source suffix", "energy_lateral_flow_source");
 
-    p_conserved_variable_star_ = Keys::readKey(*plist_, domain_star, "mass conserved quantity star", "water_content");
-    T_conserved_variable_star_ = Keys::readKey(*plist_, domain_star, "energy conserved quantity star", "energy");
+    p_conserved_variable_star_ = Keys::readKey(*plist_, domain_star_, "mass conserved quantity star", "water_content");
+    T_conserved_variable_star_ = Keys::readKey(*plist_, domain_star_, "energy conserved quantity star", "energy");
 
-    cv_key_ = Keys::readKey(*plist_, domain_star, "cell volume", "cell_volume");
-  
+    cv_key_ = Keys::readKey(*plist_, domain_star_, "cell volume", "cell_volume");
+
     // set up for a primary variable field evaluator for the flux
-    Key primary_pkey = Keys::getKey(domain_surf, "*", p_lateral_flow_source_suffix_);
+    Key primary_pkey = Keys::getKey("surface_"+domain_col_, "*", p_lateral_flow_source_suffix_);
     auto& p_sublist = S->FEList().sublist(primary_pkey);
     p_sublist.set("field evaluator type", "primary variable");
-    Key primary_Tkey = Keys::getKey(domain_surf,"*", T_lateral_flow_source_suffix_);
+    Key primary_Tkey = Keys::getKey("surface_"+domain_col_,"*", T_lateral_flow_source_suffix_);
     auto& T_sublist = S->FEList().sublist(primary_Tkey);
     T_sublist.set("field evaluator type", "primary variable");
   }
 
   // init sub-pks
-  plist_->set("PKs order", subpks);
   init_(S);
 };
 
@@ -114,8 +108,8 @@ void MPCPermafrostSplitFluxColumns::Setup(const Teuchos::Ptr<State>& S)
 
   if (coupling_ != "pressure") {
     // require the coupling sources
-    for (const auto& col_domain : col_domains_) {
-      std::string col_surf_domain = "surface_" + col_domain;
+    for (const auto& col_domain : *S->GetDomainSet(domain_col_)) {
+      std::string col_surf_domain = "surface_" + domain_col_;
       Key pkey = Keys::getKey(col_surf_domain, p_lateral_flow_source_suffix_);
       S->RequireField(pkey, pkey)
           ->SetMesh(S->GetMesh(col_surf_domain))
@@ -139,14 +133,14 @@ double MPCPermafrostSplitFluxColumns::get_dt()
   double dt_l = 1.e99;
   for (auto pk : sub_pks_) {
     dt_l = std::min(pk->get_dt(), dt_l);
-  }    
+  }
   double dt_g;
   S_next_->GetMesh(Keys::getDomain(p_primary_variable_star_))->get_comm()->MinAll(&dt_l, &dt_g, 1);
   return dt_g;
 };
 
 // -----------------------------------------------------------------------------
-// Set timestep for sub PKs 
+// Set timestep for sub PKs
 // -----------------------------------------------------------------------------
 void MPCPermafrostSplitFluxColumns::set_dt( double dt)
 {
@@ -164,7 +158,7 @@ void MPCPermafrostSplitFluxColumns::set_dt( double dt)
 bool MPCPermafrostSplitFluxColumns::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
-  // Advance the star system 
+  // Advance the star system
   bool fail = false;
   fail = sub_pks_[0]->AdvanceStep(t_old, t_new, reinit);
   fail |= !sub_pks_[0]->ValidStep();
@@ -188,7 +182,7 @@ bool MPCPermafrostSplitFluxColumns::AdvanceStep(double t_old, double t_new, bool
 };
 
 
-bool MPCPermafrostSplitFluxColumns::ValidStep() 
+bool MPCPermafrostSplitFluxColumns::ValidStep()
 {
   return MPC<PK>::ValidStep();
 }
@@ -216,11 +210,14 @@ void
 MPCPermafrostSplitFluxColumns::CopyPrimaryToStar(const Teuchos::Ptr<const State>& S,
                                     const Teuchos::Ptr<State>& S_star)
 {
+  const auto& col_domain_set = *S_->GetDomainSet(domain_col_);
+
   // copy p primary variables into star primary variable
   auto& p_star = *S_star->GetFieldData(p_primary_variable_star_, S_star->GetField(p_primary_variable_star_)->owner())
                   ->ViewComponent("cell",false);
+  auto ds_iter = col_domain_set.begin();
   for (int c=0; c!=p_star.MyLength(); ++c) {
-    Key pkey = Keys::getKey("surface_"+col_domains_[c], p_primary_variable_suffix_);
+    Key pkey = Keys::getKey("surface_"+(*ds_iter), p_primary_variable_suffix_);
     const auto& p = *S->GetFieldData(pkey)->ViewComponent("cell",false);
     AMANZI_ASSERT(p.MyLength() == 1);
     if (p[0][0] <= 101325.0) {
@@ -228,6 +225,7 @@ MPCPermafrostSplitFluxColumns::CopyPrimaryToStar(const Teuchos::Ptr<const State>
     } else {
       p_star[0][c] = p[0][0];
     }
+    ++ds_iter;
   }
 
   auto peval = S_star->GetFieldEvaluator(p_primary_variable_star_);
@@ -237,11 +235,13 @@ MPCPermafrostSplitFluxColumns::CopyPrimaryToStar(const Teuchos::Ptr<const State>
   // copy T primary variable
   auto& T_star = *S_star->GetFieldData(T_primary_variable_star_, S_star->GetField(T_primary_variable_star_)->owner())
                   ->ViewComponent("cell",false);
+  ds_iter = col_domain_set.begin();
   for (int c=0; c!=p_star.MyLength(); ++c) {
-    Key Tkey = Keys::getKey("surface_"+col_domains_[c], T_primary_variable_suffix_);
+    Key Tkey = Keys::getKey("surface_"+ (*ds_iter), T_primary_variable_suffix_);
     const auto& T = *S->GetFieldData(Tkey)->ViewComponent("cell",false);
     AMANZI_ASSERT(T.MyLength() == 1);
     T_star[0][c] = T[0][0];
+    ++ds_iter;
   }
 
   auto Teval = S_star->GetFieldEvaluator(T_primary_variable_star_);
@@ -250,7 +250,7 @@ MPCPermafrostSplitFluxColumns::CopyPrimaryToStar(const Teuchos::Ptr<const State>
 }
 
 
-void 
+void
 MPCPermafrostSplitFluxColumns::CopyStarToPrimary(double dt) {
   if (coupling_ == "pressure") CopyStarToPrimaryPressure_(dt);
   else if (coupling_ == "flux") CopyStarToPrimaryFlux_(dt);
@@ -264,12 +264,16 @@ MPCPermafrostSplitFluxColumns::CopyStarToPrimary(double dt) {
 void
 MPCPermafrostSplitFluxColumns::CopyStarToPrimaryPressure_(double dt)
 {
+  const auto& col_domain_set = *S_->GetDomainSet(domain_col_);
+
   // copy p primary variables into star primary variable
   const auto& p_star = *S_next_->GetFieldData(p_primary_variable_star_)
                        ->ViewComponent("cell",false);
+
+  auto ds_iter = col_domain_set.begin();
   for (int c=0; c!=p_star.MyLength(); ++c) {
     if (p_star[0][c] > 101325.0000001) {
-      Key pkey = Keys::getKey("surface_"+col_domains_[c], p_primary_variable_suffix_);
+      Key pkey = Keys::getKey("surface_" + (*ds_iter), p_primary_variable_suffix_);
       auto& p = *S_inter_->GetFieldData(pkey, S_inter_->GetField(pkey)->owner())->ViewComponent("cell",false);
       AMANZI_ASSERT(p.MyLength() == 1);
       p[0][0] = p_star[0][c];
@@ -280,16 +284,18 @@ MPCPermafrostSplitFluxColumns::CopyStarToPrimaryPressure_(double dt)
       eval_pv->SetFieldAsChanged(S_inter_.ptr());
 
       CopySurfaceToSubsurface(*S_inter_->GetFieldData(pkey),
-              S_inter_->GetFieldData(Keys::getKey(col_domains_[c], p_primary_variable_suffix_),
-                      S_inter_->GetField(Keys::getKey(col_domains_[c], p_primary_variable_suffix_))->owner()).ptr());
+              S_inter_->GetFieldData(Keys::getKey(*ds_iter, p_primary_variable_suffix_),
+                      S_inter_->GetField(Keys::getKey(*ds_iter, p_primary_variable_suffix_))->owner()).ptr());
     }
+    ++ds_iter;
   }
 
   // copy p primary variables into star primary variable
+  ds_iter = col_domain_set.begin();
   const auto& T_star = *S_next_->GetFieldData(T_primary_variable_star_)
                        ->ViewComponent("cell",false);
   for (int c=0; c!=T_star.MyLength(); ++c) {
-    Key Tkey = Keys::getKey("surface_"+col_domains_[c], T_primary_variable_suffix_);
+    Key Tkey = Keys::getKey("surface_"+ (*ds_iter), T_primary_variable_suffix_);
     auto& T = *S_inter_->GetFieldData(Tkey, S_inter_->GetField(Tkey)->owner())->ViewComponent("cell",false);
     AMANZI_ASSERT(T.MyLength() == 1);
     T[0][0] = T_star[0][c];
@@ -298,10 +304,11 @@ MPCPermafrostSplitFluxColumns::CopyStarToPrimaryPressure_(double dt)
     auto eval_pv = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(eval_p);
     AMANZI_ASSERT(eval_pv.get());
     eval_pv->SetFieldAsChanged(S_inter_.ptr());
-    
+
     CopySurfaceToSubsurface(*S_inter_->GetFieldData(Tkey),
-                            S_inter_->GetFieldData(Keys::getKey(col_domains_[c], T_primary_variable_suffix_),
-                                    S_inter_->GetField(Keys::getKey(col_domains_[c], T_primary_variable_suffix_))->owner()).ptr());
+                            S_inter_->GetFieldData(Keys::getKey(*ds_iter, T_primary_variable_suffix_),
+                                    S_inter_->GetField(Keys::getKey(*ds_iter, T_primary_variable_suffix_))->owner()).ptr());
+    ++ds_iter;
   }
 }
 
@@ -312,9 +319,11 @@ MPCPermafrostSplitFluxColumns::CopyStarToPrimaryPressure_(double dt)
 void
 MPCPermafrostSplitFluxColumns::CopyStarToPrimaryHybrid_(double dt)
 {
+  const auto& col_domain_set = *S_->GetDomainSet(domain_col_);
+
   // make sure we have the evaluator at the new state timestep
   if (p_eval_pvfes_.size() == 0) {
-    for (const auto& col_domain : col_domains_) {
+    for (const auto& col_domain : col_domain_set) {
       Key p_lf_key = Keys::getKey("surface_"+col_domain, p_lateral_flow_source_suffix_);
       Teuchos::RCP<FieldEvaluator> fe = S_next_->GetFieldEvaluator(p_lf_key);
       p_eval_pvfes_.push_back(Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fe));
@@ -323,7 +332,7 @@ MPCPermafrostSplitFluxColumns::CopyStarToPrimaryHybrid_(double dt)
   }
 
   if (T_eval_pvfes_.size() == 0) {
-    for (const auto& col_domain : col_domains_) {
+    for (const auto& col_domain : col_domain_set) {
       Key T_lf_key = Keys::getKey("surface_"+col_domain, T_lateral_flow_source_suffix_);
       Teuchos::RCP<FieldEvaluator> fe = S_next_->GetFieldEvaluator(T_lf_key);
       T_eval_pvfes_.push_back(Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fe));
@@ -357,8 +366,6 @@ MPCPermafrostSplitFluxColumns::CopyStarToPrimaryHybrid_(double dt)
   // scale by cell volume as this will get rescaled in the source calculation
   qE_div.ReciprocalMultiply(1.0, *S_next_->GetFieldData(cv_key_)->ViewComponent("cell",false), qE_div, 0.);
 
-
-
   // grab the pressure from the star system as well
   const auto& p_star = *S_next_->GetFieldData(p_primary_variable_star_)
                        ->ViewComponent("cell",false);
@@ -366,15 +373,16 @@ MPCPermafrostSplitFluxColumns::CopyStarToPrimaryHybrid_(double dt)
                        ->ViewComponent("cell",false);
 
   // in the case of water loss, use pressure.  in the case of water gain, use flux.
+  auto ds_iter = col_domain_set.begin();
   for (int c=0; c!=p_star.MyLength(); ++c) {
     if (p_star[0][c] > 101325. && q_div[0][c] < 0.) {
       // use the Dirichlet
-      Key pkey = Keys::getKey("surface_"+col_domains_[c], p_primary_variable_suffix_);
+      Key pkey = Keys::getKey("surface_"+ (*ds_iter), p_primary_variable_suffix_);
       auto& p = *S_inter_->GetFieldData(pkey, S_inter_->GetField(pkey)->owner())->ViewComponent("cell",false);
       AMANZI_ASSERT(p.MyLength() == 1);
       p[0][0] = p_star[0][c];
 
-      Key Tkey = Keys::getKey("surface_"+col_domains_[c], T_primary_variable_suffix_);
+      Key Tkey = Keys::getKey("surface_"+ (*ds_iter), T_primary_variable_suffix_);
       auto& T = *S_inter_->GetFieldData(Tkey, S_inter_->GetField(Tkey)->owner())->ViewComponent("cell",false);
       AMANZI_ASSERT(T.MyLength() == 1);
       T[0][0] = T_star[0][c];
@@ -392,31 +400,32 @@ MPCPermafrostSplitFluxColumns::CopyStarToPrimaryHybrid_(double dt)
 
       // copy from surface to subsurface to ensure consistency
       CopySurfaceToSubsurface(*S_inter_->GetFieldData(pkey),
-                              S_inter_->GetFieldData(Keys::getKey(col_domains_[c], p_primary_variable_suffix_),
-                                                     S_inter_->GetField(Keys::getKey(col_domains_[c], p_primary_variable_suffix_))->owner()).ptr());
+                              S_inter_->GetFieldData(Keys::getKey(*ds_iter, p_primary_variable_suffix_),
+                                                     S_inter_->GetField(Keys::getKey(*ds_iter, p_primary_variable_suffix_))->owner()).ptr());
       CopySurfaceToSubsurface(*S_inter_->GetFieldData(Tkey),
-                              S_inter_->GetFieldData(Keys::getKey(col_domains_[c], T_primary_variable_suffix_),
-                                                     S_inter_->GetField(Keys::getKey(col_domains_[c], T_primary_variable_suffix_))->owner()).ptr());
+                              S_inter_->GetFieldData(Keys::getKey(*ds_iter, T_primary_variable_suffix_),
+                                                     S_inter_->GetField(Keys::getKey(*ds_iter, T_primary_variable_suffix_))->owner()).ptr());
 
       // set the lateral flux to 0
-      Key p_lf_key = Keys::getKey("surface_"+col_domains_[c], p_lateral_flow_source_suffix_);
+      Key p_lf_key = Keys::getKey("surface_"+ (*ds_iter), p_lateral_flow_source_suffix_);
       (*S_next_->GetFieldData(p_lf_key, p_lf_key)->ViewComponent("cell",false))[0][0] = 0.;
       p_eval_pvfes_[c]->SetFieldAsChanged(S_next_.ptr());
 
-      Key T_lf_key = Keys::getKey("surface_"+col_domains_[c], T_lateral_flow_source_suffix_);
+      Key T_lf_key = Keys::getKey("surface_"+ (*ds_iter), T_lateral_flow_source_suffix_);
       (*S_next_->GetFieldData(T_lf_key, T_lf_key)->ViewComponent("cell",false))[0][0] = 0.;
       T_eval_pvfes_[c]->SetFieldAsChanged(S_next_.ptr());
 
-    } else { 
+    } else {
       // use flux
-      Key p_lf_key = Keys::getKey("surface_"+col_domains_[c], p_lateral_flow_source_suffix_);
+      Key p_lf_key = Keys::getKey("surface_"+ (*ds_iter), p_lateral_flow_source_suffix_);
       (*S_next_->GetFieldData(p_lf_key, p_lf_key)->ViewComponent("cell",false))[0][0] = q_div[0][c];
       p_eval_pvfes_[c]->SetFieldAsChanged(S_next_.ptr());
 
-      Key T_lf_key = Keys::getKey("surface_"+col_domains_[c], T_lateral_flow_source_suffix_);
+      Key T_lf_key = Keys::getKey("surface_"+ (*ds_iter), T_lateral_flow_source_suffix_);
       (*S_next_->GetFieldData(T_lf_key, T_lf_key)->ViewComponent("cell",false))[0][0] = qE_div[0][c];
       T_eval_pvfes_[c]->SetFieldAsChanged(S_next_.ptr());
     }
+    ++ds_iter;
   }
 }
 
@@ -427,18 +436,20 @@ MPCPermafrostSplitFluxColumns::CopyStarToPrimaryHybrid_(double dt)
 void
 MPCPermafrostSplitFluxColumns::CopyStarToPrimaryFlux_(double dt)
 {
+  const auto& col_domain_set = *S_->GetDomainSet(domain_col_);
+
   // make sure we have the evaluator at the new state timestep
   if (p_eval_pvfes_.size() == 0) {
-    for (const auto& col_domain : col_domains_) {
+    for (const auto& col_domain : col_domain_set) {
       Key pkey = Keys::getKey("surface_"+col_domain, p_lateral_flow_source_suffix_);
       Teuchos::RCP<FieldEvaluator> fe = S_next_->GetFieldEvaluator(pkey);
       p_eval_pvfes_.push_back(Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fe));
       AMANZI_ASSERT(p_eval_pvfes_.back() != Teuchos::null);
     }
   }
-  
+
   if (T_eval_pvfes_.size() == 0) {
-    for (const auto& col_domain : col_domains_) {
+    for (const auto& col_domain : col_domain_set) {
       Key pkey = Keys::getKey("surface_"+col_domain, T_lateral_flow_source_suffix_);
       Teuchos::RCP<FieldEvaluator> fe = S_next_->GetFieldEvaluator(pkey);
       T_eval_pvfes_.push_back(Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fe));
@@ -463,12 +474,14 @@ MPCPermafrostSplitFluxColumns::CopyStarToPrimaryFlux_(double dt)
   q_div.ReciprocalMultiply(1.0, *S_next_->GetFieldData(cv_key_)->ViewComponent("cell",false), q_div, 0.);
 
   // copy into columns
+  auto ds_iter = col_domain_set.begin();
   for (int c=0; c!=q_div.MyLength(); ++c) {
-    Key pkey = Keys::getKey("surface_"+col_domains_[c], p_lateral_flow_source_suffix_);
+    Key pkey = Keys::getKey("surface_"+ (*ds_iter), p_lateral_flow_source_suffix_);
     (*S_next_->GetFieldData(pkey, pkey)->ViewComponent("cell",false))[0][0] = q_div[0][c];
     p_eval_pvfes_[c]->SetFieldAsChanged(S_next_.ptr());
+    ++ds_iter;
   }
-  
+
   // grab the data, difference
   Epetra_MultiVector qE_div(*S_next_->GetFieldData(T_conserved_variable_star_)->ViewComponent("cell",false));
   qE_div.Update(1.0/dt,
@@ -481,10 +494,12 @@ MPCPermafrostSplitFluxColumns::CopyStarToPrimaryFlux_(double dt)
   qE_div.ReciprocalMultiply(1.0, *S_next_->GetFieldData(cv_key_)->ViewComponent("cell",false), qE_div, 0.);
 
   // copy into columns
+  ds_iter = col_domain_set.begin();
   for (int c=0; c!=qE_div.MyLength(); ++c) {
-    Key Tkey = Keys::getKey("surface_"+col_domains_[c], T_lateral_flow_source_suffix_);
+    Key Tkey = Keys::getKey("surface_"+ (*ds_iter), T_lateral_flow_source_suffix_);
     (*S_next_->GetFieldData(Tkey, Tkey)->ViewComponent("cell",false))[0][0] = qE_div[0][c];
     T_eval_pvfes_[c]->SetFieldAsChanged(S_next_.ptr());
+    ++ds_iter;
   }
 }
 

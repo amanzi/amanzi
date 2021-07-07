@@ -36,8 +36,10 @@ MPCPermafrost::MPCPermafrost(Teuchos::ParameterList& pk_tree,
   }
 
   // propagate domain information down to delegates
-  plist_->sublist("surface ewc delegate").set("domain name", domain_surf_);
-  plist_->sublist("ewc delegate").set("domain name", domain_subsurf_);
+  if (plist_->isSublist("surface ewc delegate"))
+    plist_->sublist("surface ewc delegate").set("domain name", domain_surf_);
+  if (plist_->isSublist("ewc delegate"))
+    plist_->sublist("ewc delegate").set("domain name", domain_subsurf_);
 
   // exchange flux keys and evaluators
   mass_exchange_key_ = Keys::readKey(*plist_, domain_surf_, "mass exchange flux", "surface_subsurface_flux");
@@ -255,6 +257,7 @@ MPCPermafrost::Initialize(const Teuchos::Ptr<State>& S)
   } else {
     CopySubsurfaceToSurface(*S->GetFieldData(pres_key_, domain_flow_pk_->name()),
                             S->GetFieldData(surf_pres_key_, surf_flow_pk_->name()).ptr());
+    S->GetField(surf_pres_key_, surf_flow_pk_->name())->set_initialized();
   }
   if (S->GetField(surf_temp_key_)->initialized()) {
     CopySurfaceToSubsurface(*S->GetFieldData(surf_temp_key_, surf_energy_pk_->name()),
@@ -262,6 +265,7 @@ MPCPermafrost::Initialize(const Teuchos::Ptr<State>& S)
   } else {
     CopySubsurfaceToSurface(*S->GetFieldData(temp_key_, domain_energy_pk_->name()),
                             S->GetFieldData(surf_temp_key_, surf_energy_pk_->name()).ptr());
+    S->GetField(surf_temp_key_, surf_energy_pk_->name())->set_initialized();
   }
 
   if (surf_ewc_ != Teuchos::null) surf_ewc_->initialize(S);
@@ -529,7 +533,8 @@ MPCPermafrost::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   sub_u->PushBack(u->SubVector(1));
 
   // Subsurface EWC, modifies cells
-  modified |= ewc_->ModifyPredictor(h,sub_u);
+  if (ewc_ != Teuchos::null)
+    modified |= ewc_->ModifyPredictor(h,sub_u);
 
   // write predictor
   if (modified && vo_->os_OK(Teuchos::VERB_HIGH)) {

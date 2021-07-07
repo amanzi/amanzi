@@ -42,12 +42,7 @@ MPCSubsurface::MPCSubsurface(Teuchos::ParameterList& pk_tree_list,
 
   auto pk_order = plist_->get<Teuchos::Array<std::string>>("PKs order");
   global_list->sublist("PKs").sublist(pk_order[0]).set("scale preconditioner to pressure", false);
-
-  if (plist_->isParameter("domain name")) {
-    domain_name_ = plist_->get<std::string>("domain name");
-  } else {
-    domain_name_ =  plist_->sublist("ewc delegate").get<std::string>("domain name", "domain");
-  }
+  domain_name_ = plist_->get<std::string>("domain name", "domain");
 
   temp_key_ = Keys::readKey(*plist_, domain_name_, "temperature", "temperature");
   pres_key_ = Keys::readKey(*plist_, domain_name_, "pressure", "pressure");
@@ -109,7 +104,7 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S)
   tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(Teuchos::rcpFromRef(pcA->DomainMap()))));
   tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(Teuchos::rcpFromRef(pcB->DomainMap()))));
 
-  preconditioner_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
+  preconditioner_ = Teuchos::rcp(new Operators::TreeOperator(tvs, plist_->sublist("operator")));
   preconditioner_->set_operator_block(0, 0, pcA);
   preconditioner_->set_operator_block(1, 1, pcB);
 

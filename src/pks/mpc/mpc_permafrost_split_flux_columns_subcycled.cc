@@ -25,7 +25,6 @@ MPCPermafrostSplitFluxColumnsSubcycled::MPCPermafrostSplitFluxColumnsSubcycled(T
 {
   subcycled_timestep_type_ = plist_->get<std::string>("subcycling timestep type","surface star timestep");
   subcycled_target_time_ = plist_->get<double>("subcycling timestep target",3600);
-  surface_star_subcycling_ = false;
 };
 
 double MPCPermafrostSplitFluxColumnsSubcycled::get_dt()
@@ -48,11 +47,16 @@ double MPCPermafrostSplitFluxColumnsSubcycled::get_dt()
     dt_l = std::max(dt_l,subcycled_target_time_);
 
     S_next_->GetMesh(Keys::getDomain(p_primary_variable_star_))->get_comm()->MinAll(&dt_l, &dt_g, 1);
-
     return dt_g;
 
-  } else {
+  } else if (subcycled_timestep_type_ == "surface star timestep") {
     return sub_pks_[0]->get_dt();
+
+  } else {
+    Errors::Message msg;
+    msg << "MPCPermafrostSplitFluxColumnsSubcycled: unknown \"subcycling timestep type\" : \""
+        << subcycled_timestep_type_ << "\"";
+    Exceptions::amanzi_throw(msg);
   }
 }
 
@@ -67,24 +71,16 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_
   bool fail = false;
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Beginning timestepping on surface star system" << std::endl;
-  
-  // Now advance the primary
+
+  // Advance the surface star system
   double t_inner = t_old;
   bool done_sf = false;
 
   S_inter_->set_time(t_old);
-  surface_star_subcycling_ = false;
-  int subcycling_surf = 0;
-  int count=0;
-  bool sf_star_subcycling_ = false;
 
+  int count_sf = 0;
   while (!done_sf) {
-
     double dt_inner = std::min(sub_pks_[0]->get_dt(), t_new - t_inner);
-
-
-    if (count >=1) sf_star_subcycling_ = true;
-    count++;
 
     *S_next_->GetScalarData("dt", "coordinator") = dt_inner;
     S_next_->set_time(t_inner + dt_inner);
@@ -125,16 +121,17 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_
       msg << "Surface_star crashing timestep in subcycling: dt = " << dt_inner;
       Exceptions::amanzi_throw(msg);
     }
-
   }
   S_inter_->set_time(t_old);
 
   // Copy star's new value into primary's old value
   CopyStarToPrimary(t_new - t_old);
 
-  // Now advance the primary
+  // Now advance the columns
+  const auto& col_domain_set = *S_->GetDomainSet(domain_col_);
+  auto ds_iter = col_domain_set.begin();
   for (int i=1; i!=sub_pks_.size(); ++i) {
-    auto col_domain = col_domains_[i-1];
+    auto col_domain = *ds_iter;
     double t_inner = t_old;
     bool done = false;
     if (vo_->os_OK(Teuchos::VERB_EXTREME))
@@ -163,10 +160,8 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_
         S_next_->AssignDomain(*S_inter_, col_domain);
         S_next_->AssignDomain(*S_inter_, "surface_"+col_domain);
         S_next_->AssignDomain(*S_inter_, "snow_"+col_domain);
-        //S_next_->AssignDomain(*S_inter_, "surface_star");
         S_next_->set_time(S_inter_->time());
         S_next_->set_cycle(S_inter_->cycle());
-        //*S_next_ = *S_inter_;
 
         if (vo_->os_OK(Teuchos::VERB_EXTREME))
           *vo_->os() << "  failed, new timestep is " << dt_inner << std::endl;
@@ -174,17 +169,13 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_
       } else {
         sub_pks_[i]->CommitStep(t_inner, t_inner + dt_inner, S_next_);
         t_inner += dt_inner;
-        if (t_inner >= t_new - 1.e-10) {
-          done = true;
-        }
+        if (t_inner >= t_new - 1.e-10) done = true;
 
         S_inter_->AssignDomain(*S_next_, col_domain);
         S_inter_->AssignDomain(*S_next_, "surface_"+col_domain);
         S_inter_->AssignDomain(*S_next_, "snow_"+col_domain);
-        //        S_inter_->AssignDomain(*S_next_, "surface_star");
         S_inter_->set_time(S_next_->time());
         S_inter_->set_cycle(S_next_->cycle());
-        // *S_inter_ = *S_next_;
         dt_inner = sub_pks_[i]->get_dt();
         if (vo_->os_OK(Teuchos::VERB_EXTREME))
           *vo_->os() << "  success, new timestep is " << dt_inner << std::endl;
@@ -195,36 +186,34 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_
         msg << "Column " << col_domain << " on PID " << my_pid << " crashing timestep in subcycling: dt = " << dt_inner;
         Exceptions::amanzi_throw(msg);
       }
-
     }
+    ++ds_iter;
   }
   S_inter_->set_time(t_old);
 
   // Copy the primary into the star to advance
   CopyPrimaryToStar(S_next_.ptr(), S_next_.ptr());
 
-  if (sf_star_subcycling_) subcycling_surf++;
-  int subcycling_local_sf = subcycling_surf;
-  S_next_->GetMesh("surface_star")->get_comm()->SumAll(&subcycling_local_sf, &subcycling_surf, 1);
-
-  if (subcycling_surf > 0) {
-    surface_star_subcycling_ = true;
-  }
-  else {
-    surface_star_subcycling_ = false;
-  }
+  // this can never fail without error, because we always subcycle to ensure
+  // the full timestep.
   return false;
 }
 
 bool MPCPermafrostSplitFluxColumnsSubcycled::ValidStep()
 {
+  // this is always valid, because the inner steps were valid
   return true;
 }
 
-
-
-void MPCPermafrostSplitFluxColumnsSubcycled::CommitStep(double t_old, double t_new,
+void
+MPCPermafrostSplitFluxColumnsSubcycled::CommitStep(double t_old, double t_new,
         const Teuchos::RCP<State>& S)
-{}
+{
+  // the sub-PKs would call Commit a second time -- it was already called when
+  // the inner step was successful and commited.  Calling it a second time is
+  // bad because it messes up the nonlinear solver's inner solution history.
+  return;
+}
+
 
 } // namespace

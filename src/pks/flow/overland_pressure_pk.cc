@@ -137,6 +137,25 @@ void OverlandPressureFlow::Setup(const Teuchos::Ptr<State>& S)
 
   SetupOverlandFlow_(S);
   SetupPhysicalEvaluators_(S);
+
+#if DEBUG_RES_FLAG
+  for (int i=1; i!=23; ++i) {
+    std::stringstream namestream;
+    namestream << "surface-flow_residual_" << i;
+    S->RequireField(namestream.str(),name_)
+      ->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+
+    std::stringstream solnstream;
+    solnstream << "surface-flow_solution_" << i;
+    S->RequireField(solnstream.str(),name_)
+      ->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+  }
+#endif
+
 }
 
 
@@ -374,12 +393,12 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S)
 #if DEBUG_RES_FLAG
   for (int i=1; i!=23; ++i) {
     std::stringstream namestream;
-    namestream << "flow_residual_" << i;
+    namestream << "surface-flow_residual_" << i;
     S->GetFieldData(namestream.str(),name_)->PutScalar(0.);
     S->GetField(namestream.str(),name_)->set_initialized();
 
     std::stringstream solnstream;
-    solnstream << "flow_solution_" << i;
+    solnstream << "surface-flow_solution_" << i;
     S->GetFieldData(solnstream.str(),name_)->PutScalar(0.);
     S->GetField(solnstream.str(),name_)->set_initialized();
   }
@@ -408,16 +427,8 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S)
       Epetra_MultiVector& pres = *pres_cv->ViewComponent("cell",false);
 
       // figure out the subsurface domain's pressure
-      Key key_ss;
-      if (boost::starts_with(domain_, "surface")) {
-        Key domain_ss;
-        if (domain_ == "surface") domain_ss = "domain";
-        else domain_ss = domain_.substr(8,domain_.size());
-        key_ss = ic_plist.get<std::string>("subsurface pressure key",
-                Keys::getKey(domain_ss, "pressure"));
-      } else {
-        key_ss = ic_plist.get<std::string>("subsurface pressure key", "pressure");
-      }
+      Key domain_ss = Keys::readDomainHint(*plist_, domain_, "surface", "subsurface");
+      Key key_ss = Keys::readKey(*plist_, domain_ss, "subsurface pressure", "pressure");
 
       // copy subsurface face pressure to surface cell pressure
       Teuchos::RCP<const CompositeVector> subsurf_pres = S->GetFieldData(key_ss);

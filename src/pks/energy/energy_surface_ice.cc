@@ -82,16 +82,6 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_ ) {
     // -- ensure mass source from subsurface exists
-
-    /*
-    Key domain_ss;
-    if (boost::starts_with(domain_, "surface") && domain_.find("column") != std::string::npos) {
-      domain_ss = plist_->get<std::string>("subsurface domain name",
-              domain_.substr(8,domain_.size()));
-    } else {
-      domain_ss = plist_->get<std::string>("subsurface domain name", "domain");
-      } */
-
     Key key_ss = Keys::getKey(domain_,"surface_subsurface_flux");
 
     S->RequireField(key_ss)
@@ -131,13 +121,8 @@ void EnergySurfaceIce::Initialize(const Teuchos::Ptr<State>& S) {
       Epetra_MultiVector& surf_temp = *surf_temp_cv->ViewComponent("cell",false);
 
 
-      Key key_ss;
-      if (boost::starts_with(domain_, "surface") && domain_.find("column") != std::string::npos) {
-        key_ss = ic_plist.get<std::string>("subsurface temperature key",
-                Keys::getKey(domain_.substr(8,domain_.size()), "temperature"));
-      } else {
-        key_ss = ic_plist.get<std::string>("subsurface temperature key", "temperature");
-      }
+      Key domain_ss = Keys::readDomainHint(*plist_, domain_, "surface", "subsurface");
+      Key key_ss = Keys::readKey(*plist_, domain_ss, "subsurface temperature", "temperature");
 
       Teuchos::RCP<const CompositeVector> subsurf_temp = S->GetFieldData(key_ss);
       unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
@@ -264,8 +249,9 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
   // -- advection source
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_) {
 
+    // FIXME -- remove this in favor of adding Keys::readDomainHint calls!
     Key domain_ss;
-    if (boost::starts_with(domain_, "surface")  && domain_.find("column") != std::string::npos) {
+    if (Keys::starts_with(domain_, "surface")  && domain_.find("column") != std::string::npos) {
       domain_ss = plist_->get<std::string>("subsurface domain name",
               domain_.substr(8,domain_.size()));
     } else {

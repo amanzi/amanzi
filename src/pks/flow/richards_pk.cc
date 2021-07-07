@@ -1116,7 +1116,8 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr)
     AMANZI_ASSERT(cells.size() == 1);
 #endif
 
-    double boundary_pressure = getFaceOnBoundaryValue(f, *u, *bc_);
+    //double boundary_pressure = std::max(getFaceOnBoundaryValue(f, *u, *bc_), 101325.); // does not make sense to seep from nonsaturated cells
+    double boundary_pressure = getFaceOnBoundaryValue(f, *u, *bc_); // does not make sense to seep from nonsaturated cells
     double boundary_flux = flux[0][f]*getBoundaryDirection(*mesh_, f);
     if (boundary_pressure > bc.second) {
       markers[f] = Operators::OPERATOR_BC_DIRICHLET;
