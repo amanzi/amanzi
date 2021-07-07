@@ -137,12 +137,12 @@ void Lake_Thermo_PK::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   Teuchos::RCP<const CompositeVector> conductivity =
       S_next_->GetFieldData(uw_conductivity_key_);
 
-//  const Epetra_MultiVector& uw_cond_c = *S_next_->GetFieldData(uw_conductivity_key_)->ViewComponent("face", false);
-//  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  const Epetra_MultiVector& uw_cond_c = *S_next_->GetFieldData(uw_conductivity_key_)->ViewComponent("face", false);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
-//  for (int f = 0; f < nfaces_owned; f++) {
-//      std::cout << uw_cond_c[0][f] << std::endl;
-//  }
+  for (int f = 0; f < nfaces_owned; f++) {
+      std::cout << "lake cond = " << uw_cond_c[0][f] << std::endl;
+  }
 
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
 

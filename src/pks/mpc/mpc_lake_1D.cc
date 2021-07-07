@@ -4,6 +4,7 @@
 #include "PDE_CouplingFlux.hh"
 #include "InverseFactory.hh"
 #include "PDE_Diffusion.hh"
+#include "Operator_Schema.hh"
 
 #include "mpc_lake_1D.hh"
 
@@ -34,8 +35,8 @@ MPCLake1D::Setup(const Teuchos::Ptr<State>& S) {
 //  pks_list_->sublist(names[1]).sublist("diffusion preconditioner").set("surface operator", true);
 //  pks_list_->sublist(names[1]).sublist("accumulation preconditioner").set("surface operator", true);
 
-  domain_lake_ = pks_list_->sublist(names[0]).get<std::string>("domain name","domain");
-  domain_soil_ = pks_list_->sublist(names[1]).get<std::string>("domain name","domain");
+  domain_lake_ = pks_list_->sublist(names[0]).get<std::string>("domain name","lake");
+  domain_soil_ = pks_list_->sublist(names[1]).get<std::string>("domain name","soil");
 
   std::cout << "domain_lake_ = " << domain_lake_ << std::endl;
   std::cout << "domain_soil_ = " << domain_soil_ << std::endl;
@@ -117,9 +118,11 @@ void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
   auto mesh_lake = S_->GetMesh("lake");
   auto mesh_soil = S_->GetMesh("soil");
 
-  auto& mmap = solution_->SubVector(0)->Data()->ViewComponent("cell", false)->Map();
-  auto& gmap = solution_->SubVector(0)->Data()->ViewComponent("cell", true)->Map();
+  auto& mmap = solution_->SubVector(1)->Data()->ViewComponent("cell", false)->Map();
+  auto& gmap = solution_->SubVector(1)->Data()->ViewComponent("cell", true)->Map();
   int npoints_owned = mmap.NumMyPoints();
+
+  std::cout << "npoints_owned = " << npoints_owned << std::endl;
 
   auto cvs_lake = Teuchos::rcp(new CompositeVectorSpace());
   auto cvs_soil = Teuchos::rcp(new CompositeVectorSpace());
@@ -136,10 +139,101 @@ void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
 //  double gravity;
 //  S->GetConstantVectorData("gravity")->Norm2(&gravity);
 
+  S_->GetFieldEvaluator("soil-thermal_conductivity")->HasFieldChanged(S_.ptr(), "soil thermo");
+  const auto& lambda_s = *S_->GetFieldData("soil-thermal_conductivity")->ViewComponent("cell");
+
+  S_->GetFieldEvaluator("lake-thermal_conductivity")->HasFieldChanged(S_.ptr(), "lake thermo");
+  const auto& lambda_l = *S_->GetFieldData("lake-thermal_conductivity")->ViewComponent("cell");
+
+//<---
+
+//---> lake "0"
+
+  auto& mmap1 = solution_->SubVector(0)->Data()->ViewComponent("cell", false)->Map();
+  auto& gmap1 = solution_->SubVector(0)->Data()->ViewComponent("cell", true)->Map();
+  int npoints_owned1 = mmap1.NumMyPoints();
+
+  int ncells_owned_f1 = mesh_lake->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  auto inds_lake1 = std::make_shared<std::vector<std::vector<int> > >(npoints_owned1);
+  auto inds_soil1 = std::make_shared<std::vector<std::vector<int> > >(npoints_owned1);
+  auto values1 = std::make_shared<std::vector<double> >(npoints_owned1);
+
+  auto values00 = std::make_shared<std::vector<double> >(npoints_owned1);
+
+  auto inds_lake10 = std::make_shared<std::vector<std::vector<int> > >(1);
+  auto inds_soil10 = std::make_shared<std::vector<std::vector<int> > >(1);
+  auto values10 = std::make_shared<std::vector<double> >(1);
+
+  std::cout << "ncells_owned_f1 = " << ncells_owned_f1 << std::endl;
+
+  int np1(0);
+  for (int c = 0; c < ncells_owned_f1; ++c) {
+    int f = mesh_lake->entity_get_parent(AmanziMesh::CELL, c);
+    double area = mesh_lake->cell_volume(c);
+    int first = mmap1.FirstPointInElement(f);
+    int ndofs = mmap1.ElementSize(f);
+
+    std::cout << "first = " << first << std::endl;
+    std::cout << "ndofs = " << ndofs << std::endl;
+
+    std::cout << "np1 = " << np1 << std::endl;
+
+    for (int k = 0; k < ndofs; ++k) {
+      (*inds_lake1)[np1].resize(1);
+      (*inds_soil1)[np1].resize(1);
+
+      (*values1)[np1] = 0.;
+      (*values00)[np1] = 0.; //(lambda_l[0][c]+lambda_l[0][c]);
+      if (c == 0) {
+          (*values1)[np1] = -lambda_l[0][c]/area;
+          (*values10)[0] = -lambda_l[0][c]/area;
+          (*inds_lake10)[0].resize(1);
+          (*inds_soil10)[0].resize(1);
+          (*inds_soil10)[0][0] = ncells_owned_f1-1;
+          (*inds_lake10)[0][0] = c;
+      }   // normal??
+      if (c == ncells_owned_f1-1) { (*values00)[np1] = 0.;
+      (*inds_lake1)[np1][0] = c;
+      (*inds_soil1)[np1][0] = 0;} //lambda_l[0][c]/area; }
+      if (c == 0) { (*values00)[np1] = 0.;
+      (*inds_lake1)[np1][0] = c;
+      (*inds_soil1)[np1][0] = 0;} //(lambda_l[0][c]+lambda_s[0][c])/area;}
+//      if (c == 1) { (*values00)[np1] = -lambda_l[0][c]/area;}
+//      std::cout << "lambda_l[0][c] = " << lambda_l[0][c] << std::endl;}
+      np1++;
+    }
+  }
+
+  for (int c = 0; c < ncells_owned_f1; c++) {
+      std::cout << (*values00)[c] << std::endl;
+  }
+
+  inds_lake1->resize(np1);
+  inds_soil1->resize(np1);
+  values1->resize(np1);
+
+  values00->resize(np1);
+
+  inds_lake10->resize(1);
+  inds_soil10->resize(1);
+  values10->resize(1);
+
+//<---
+
+  //---> soil "1"
+
   int ncells_owned_f = mesh_soil->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   auto inds_lake = std::make_shared<std::vector<std::vector<int> > >(npoints_owned);
   auto inds_soil = std::make_shared<std::vector<std::vector<int> > >(npoints_owned);
   auto values = std::make_shared<std::vector<double> >(npoints_owned);
+
+  auto values11 = std::make_shared<std::vector<double> >(npoints_owned);
+
+  auto inds_lake01 = std::make_shared<std::vector<std::vector<int> > >(1);
+  auto inds_soil01 = std::make_shared<std::vector<std::vector<int> > >(1);
+  auto values01 = std::make_shared<std::vector<double> >(1);
+
+  std::cout << "ncells_owned_f = " << ncells_owned_f << std::endl;
 
   int np(0);
   for (int c = 0; c < ncells_owned_f; ++c) {
@@ -148,13 +242,33 @@ void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
     int first = mmap.FirstPointInElement(f);
     int ndofs = mmap.ElementSize(f);
 
+    std::cout << "first = " << first << std::endl;
+    std::cout << "ndofs = " << ndofs << std::endl;
+
+    std::cout << "np = " << np << std::endl;
+
     for (int k = 0; k < ndofs; ++k) {
       (*inds_lake)[np].resize(1);
       (*inds_soil)[np].resize(1);
-      (*inds_lake)[np][0] = first + k;
-      (*inds_soil)[np][0] = c;
 
-      (*values)[np] = 1.*c * area; //kn[0][c] * area / gravity;
+      (*values)[np] = 0.;
+      (*values11)[np] = 0.;
+      if (c == ncells_owned_f-1) {
+          (*values)[np] = -lambda_s[0][c]/area;
+          (*values01)[0] = -lambda_s[0][c]/area;
+          (*inds_lake01)[0].resize(1);
+          (*inds_soil01)[0].resize(1);
+          (*inds_lake01)[0][0] = 0;
+          (*inds_soil01)[0][0] = c;
+      } // normal???
+      if (c == 0) { (*values11)[np] = 0.;
+            (*inds_lake)[np][0] = 0;
+            (*inds_soil)[np][0] = c;}
+      if (c == ncells_owned_f-1) { (*values11)[np] = 0.;
+            (*inds_lake)[np][0] = 0;
+            (*inds_soil)[np][0] = c;} //lambda_s[0][c]/area;}//(lambda_l[0][c]+lambda_s[0][c])/area;}
+//      if (c == ncells_owned_f-2) { (*values11)[np] = -lambda_s[0][c]/area;}
+//      std::cout << "lambda_s[0][c] = " << lambda_s[0][c] << std::endl;}
       np++;
     }
   }
@@ -163,34 +277,64 @@ void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
   inds_soil->resize(np);
   values->resize(np);
 
+  values11->resize(np);
+
+  inds_lake01->resize(1);
+  inds_soil01->resize(1);
+  values01->resize(1);
+
   // -- operators
   Teuchos::ParameterList oplist;
 
+//  auto op_coupling00 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
+//      oplist, cvs_lake, cvs_lake, inds_lake, inds_lake, op0));
+//  op_coupling00->Setup(values, 1.0);
+//  op_coupling00->UpdateMatrices(Teuchos::null, Teuchos::null);
+
   auto op_coupling00 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-      oplist, cvs_lake, cvs_lake, inds_lake, inds_lake, op0));
-  op_coupling00->Setup(values, 1.0);
+      oplist, cvs_lake, cvs_lake, inds_lake1, inds_lake1, op0));
+  op_coupling00->Setup(values00, 0.0);                            // values00 will be ADDED (with factor)
   op_coupling00->UpdateMatrices(Teuchos::null, Teuchos::null);
 
+//  auto op_coupling01 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
+//      oplist, cvs_lake, cvs_soil, inds_lake, inds_soil));
+//  op_coupling01->Setup(values, -1.0);
+//  op_coupling01->UpdateMatrices(Teuchos::null, Teuchos::null);  //
+
   auto op_coupling01 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-      oplist, cvs_lake, cvs_soil, inds_lake, inds_soil));
-  op_coupling01->Setup(values, -1.0);
+      oplist, cvs_lake, cvs_soil, inds_lake01, inds_soil01));
+  op_coupling01->Setup(values01, 1.0);
   op_coupling01->UpdateMatrices(Teuchos::null, Teuchos::null);
 
+//  auto op_coupling10 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
+//      oplist, cvs_soil, cvs_lake, inds_soil1, inds_lake1));
+//  op_coupling10->Setup(values1, -1.0);
+//  op_coupling10->UpdateMatrices(Teuchos::null, Teuchos::null);
+
   auto op_coupling10 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-      oplist, cvs_soil, cvs_lake, inds_soil, inds_lake));
-  op_coupling10->Setup(values, -1.0);
+      oplist, cvs_soil, cvs_lake, inds_soil10, inds_lake10)); // cvs defines the block size
+  op_coupling10->Setup(values10, 1.0);
   op_coupling10->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+//  auto op_coupling11 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
+//      oplist, cvs_soil, cvs_soil, inds_soil1, inds_soil1, op1));
+//  op_coupling11->Setup(values1, 1.0);
+//  op_coupling11->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   auto op_coupling11 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
       oplist, cvs_soil, cvs_soil, inds_soil, inds_soil, op1));
-  op_coupling11->Setup(values, 1.0);
+  op_coupling11->Setup(values11, 0.0);
   op_coupling11->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   op_tree_lake_->set_operator_block(0, 1, op_coupling01->global_operator());
   op_tree_lake_->set_operator_block(1, 0, op_coupling10->global_operator());
 
+  op_tree_lake_->set_operator_block(0, 0, op_coupling00->global_operator());
+  op_tree_lake_->set_operator_block(1, 1, op_coupling11->global_operator());
+
   // create a global problem
 //  lake_pk_->my_pde(Operators::PDE_DIFFUSION)->ApplyBCs(true, true, true);
+//  soil_pk_->my_pde(Operators::PDE_DIFFUSION)->ApplyBCs(true, true, true);
 
   preconditioner_list_ = Teuchos::sublist(plist_, "preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(plist_, "solvers", true);
@@ -258,11 +402,12 @@ MPCLake1D::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVecto
   int ierr = op_tree_lake_->ApplyAssembled(*u_new, *f);
   AMANZI_ASSERT(!ierr);
 
+  std::cout << *op_tree_lake_->A() << std::endl;
+
   // diagonal blocks in tree operator must be lake and soil
-  for (int i = 0; i < 2; ++i) {
-    AMANZI_ASSERT(sub_pks_[i]->name() == "lake thermo" ||
-                  sub_pks_[i]->name() == "soil thermo");
-  }
+  AMANZI_ASSERT(sub_pks_[0]->name() == "lake thermo" &&
+                  sub_pks_[1]->name() == "soil thermo");
+
   auto op0 = sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX);
   auto op1 = sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX);
 
@@ -274,7 +419,7 @@ MPCLake1D::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVecto
 //  soil_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(1),
 //            u_new->SubVector(1), f->SubVector(1));
 
-//  // propagate updated info into state
+  // propagate updated info into state
 //  Solution_to_State(*u_new, S_next_);
 //
 //  // Evaluate the surface flow residual
@@ -400,7 +545,7 @@ MPCLake1D::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   bool modified(false);
 
   // potentially update faces
-  modified |= StrongMPC<PK_PhysicalBDF_Default>::ModifyPredictor(h, u0, u);
+  modified = StrongMPC<PK_PhysicalBDF_Default>::ModifyPredictor(h, u0, u);
   return modified;
 
 }

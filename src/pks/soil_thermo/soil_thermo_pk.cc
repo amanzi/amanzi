@@ -111,7 +111,8 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
   cell_is_ice_key_ = Keys::readKey(*plist_, domain_, "ice", "ice");
   pressure_key_ = Keys::readKey(*plist_, domain_, "pressure", "pressure");
 
-  std::cout << "temperature_key_ = " << temperature_key_ << std::endl;
+  std::cout << "temperature_key_ soil = " << temperature_key_ << std::endl;
+  std::cout << "uw_conductivity_key_ soil = " << uw_conductivity_key_ << std::endl;
 
   // Get data for special-case entities.
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
@@ -202,6 +203,8 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
     Errors::Message message("Unknown upwind coefficient location in energy.");
     Exceptions::amanzi_throw(message);
   }
+
+  std::cout << "coef_location soil " << coef_location << std::endl;
 
   S->GetField(uw_conductivity_key_,name_)->set_io_vis(false);
   
@@ -561,6 +564,17 @@ void Soil_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
     S->GetField(duw_conductivity_key_, name_)->set_initialized();
   }
   
+  UpdateConductivityData_(S.ptr());
+  Teuchos::RCP<const CompositeVector> conductivity =
+      S->GetFieldData(uw_conductivity_key_);
+
+  const Epetra_MultiVector& uw_cond_c = *S->GetFieldData(uw_conductivity_key_)->ViewComponent("face", false);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+
+  for (int f = 0; f < nfaces_owned; f++) {
+      std::cout << "soil cond 11 = " << uw_cond_c[0][f] << std::endl;
+  }
+
   // potentially initialize mass flux
 //  if (!flux_exists_) {
 //    S->GetField(flux_key_, name_)->Initialize(plist_->sublist(flux_key_));
@@ -726,6 +740,7 @@ bool Soil_Thermo_PK::UpdateConductivityData_(const Teuchos::Ptr<State>& S) {
     if (uw_cond->HasComponent("face"))
       uw_cond->ScatterMasterToGhosted("face");
   }
+  std::cout << "uw_conductivity_key_ soil = " << uw_conductivity_key_ << std::endl;
   return update;
 }
 

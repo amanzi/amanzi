@@ -30,7 +30,6 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
                        Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-
   bool ice_cover_ = false; // first always assume that there is no ice
 
   // get temperature
@@ -55,13 +54,13 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
     } // i
 
 
-    // if melting occured at the top, swap cells
-    for (int i=0; i!=ncomp; ++i) {
-      if (ice_cover_ && i < i_ice_max && temp_v[0][i] >= 273.15 ) {
-        temp_v[0][i] = temp_v[0][i+1];
-        temp_v[0][i+i_ice_max] = temp_v[0][i+i_ice_max+1];
-      }
-    } // i
+//    // if melting occured at the top, swap cells
+//    for (int i=0; i!=ncomp; ++i) {
+//      if (ice_cover_ && i < i_ice_max && temp_v[0][i] >= 273.15 ) {
+//        temp_v[0][i] = temp_v[0][i+1];
+//        temp_v[0][i+i_ice_max] = temp_v[0][i+i_ice_max+1];
+//      }
+//    } // i
 
   }
 
@@ -202,7 +201,7 @@ int Lake_Thermo_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
   
   Pu->Data()->ViewComponent("boundary_face")->PutScalar(0.0); // correction 01/22/21
 
-//  std::cout << "ApplyPreconditioner" << std::endl;
+//  std::cout << "Lake ApplyPreconditioner" << std::endl;
 //  Pu->Data()->Print(std::cout);
 
 //  std::cout << *Pu->Data()->ViewComponent("cell") << std::endl;

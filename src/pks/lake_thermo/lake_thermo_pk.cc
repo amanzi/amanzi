@@ -102,6 +102,9 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   uw_conductivity_key_ = Keys::readKey(*plist_, domain_, "upwinded thermal conductivity", "upwind_thermal_conductivity");
   cell_is_ice_key_ = Keys::readKey(*plist_, domain_, "ice", "ice");
 
+  std::cout << "temperature_key_  lake= " << temperature_key_ << std::endl;
+  std::cout << "uw_conductivity_key_ lake = " << uw_conductivity_key_ << std::endl;
+
   // Get data for special-case entities.
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -146,7 +149,7 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
     Exceptions::amanzi_throw(message);
   }
 
-  std::cout << "coef_location " << coef_location << std::endl;
+  std::cout << "coef_location lake " << coef_location << std::endl;
 
   S->GetField(uw_conductivity_key_,name_)->set_io_vis(false);
   
@@ -464,6 +467,17 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
     S->GetField(duw_conductivity_key_, name_)->set_initialized();
   }
   
+  UpdateConductivityData_(S.ptr());
+  Teuchos::RCP<const CompositeVector> conductivity =
+      S->GetFieldData(uw_conductivity_key_);
+
+  const Epetra_MultiVector& uw_cond_c = *S->GetFieldData(uw_conductivity_key_)->ViewComponent("face", false);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+
+  for (int f = 0; f < nfaces_owned; f++) {
+      std::cout << "lake cond 11 = " << uw_cond_c[0][f] << std::endl;
+  }
+
   // potentially initialize mass flux
 //  if (!flux_exists_) {
 //    S->GetField(flux_key_, name_)->Initialize(plist_->sublist(flux_key_));
@@ -607,6 +621,7 @@ bool Lake_Thermo_PK::UpdateConductivityData_(const Teuchos::Ptr<State>& S) {
     if (uw_cond->HasComponent("face"))
       uw_cond->ScatterMasterToGhosted("face");
   }
+  std::cout << "uw_conductivity_key_ lake = " << uw_conductivity_key_ << std::endl;
   return update;
 }
 

@@ -172,9 +172,10 @@ void ThermalConductivityEvaluator::EvaluateField_(
         }
       } // i
 
-//      for (int i=0; i!=ncomp; ++i) {
-//          result_v[0][i] = 4.;
-//      }
+      // no ice
+      for (int i=0; i!=ncomp; ++i) {
+          result_v[0][i] = 1. ; //lambda_w;
+      }
 
     }
 
