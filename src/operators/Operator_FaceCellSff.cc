@@ -180,6 +180,7 @@ void Operator_FaceCellSff::SymbolicAssembleMatrix()
   // create global matrix
   Amat_ = Teuchos::rcp(new MatrixFE(graph));
   A_ = Amat_->Matrix();
+  assembly_complete_ = false;
 }
 
 
@@ -197,7 +198,12 @@ void Operator_FaceCellSff::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
 
 void Operator_FaceCellSff::InitializeInverse()
 {
-  AMANZI_ASSERT(inited_);
+  if (!inverse_pars_set_) {
+    Errors::Message msg("No inverse parameter list.  Provide a sublist \"inverse\" or ensure set_inverse_parameters() is called.");
+    msg << " In: " << typeid(*this).name() << "\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
   schur_inv_ = Teuchos::rcp(new AmanziSolvers::InverseSchurComplement());
   schur_inv_->set_inverse_parameters(inv_plist_);
   schur_inv_->set_matrix(Teuchos::rcpFromRef(*this));
@@ -208,8 +214,8 @@ void Operator_FaceCellSff::InitializeInverse()
     preconditioner_ = schur_inv_;
   }
   preconditioner_->InitializeInverse();
-  updated_ = true;
-  computed_ = false;
+  initialize_complete_ = true;
+  compute_complete_ = false;
 }
 
 /* ******************************************************************

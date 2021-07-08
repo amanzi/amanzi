@@ -17,7 +17,7 @@
   <process_kernels>
     <flow model="saturated" state="on"/>
     <transport state="on"/>
-    <chemistry input_filename="test/ssc_chemistry_amanzi.bgd" engine="amanzi" state="on" />
+    <chemistry engine="amanzi" state="on" />
   </process_kernels>
 
   <phases>
@@ -217,39 +217,366 @@
   <geochemistry>
     <verbosity>silent</verbosity>
     <constraints>
-      <constraint name="background">
-        <primary name="H+"       type="total" value="2.9578630770689822E-06"/>
-        <primary name="Al+++"    type="total" value="2.2134319178343449E-08" />
-        <primary name="Ca++"     type="total" value="1.0000000000000001E-05"/>
-        <primary name="Cl-"      type="total" value="9.9892245160353443E-03"/>
-        <primary name="Fe+++"    type="total" value="2.5231281704019796E-16"/>
-        <primary name="CO2(aq)"  type="total" value="1.2146187645233065E-05"/>
-        <primary name="K+"       type="total" value="3.32e-05"/>
-        <primary name="Mg++"     type="total" value="5.35e-03"/>
-        <primary name="Na+"      type="total" value="2.78e-04"/>
-        <primary name="SiO2(aq)" type="total" value="1.7728213902597242E-04"/>
-        <primary name="SO4--"    type="total" value="2.25e-05"/>
-        <primary name="Tritium"  type="total" value="1.e-15"/>
-        <primary name="NO3-"     type="total" value="1.0e-3"/>
-        <primary name="UO2++"    type="total" value="1.25e-10"/>
-      </constraint>
       <constraint name="seepage">
-        <primary name="H+"       type="total" value="9.7317820303283020E-03"/>
-        <primary name="Al+++"    type="total" value="1.0e-08" />
-        <primary name="Ca++"     type="total" value="1.00e-05"/>
-        <primary name="Cl-"      type="total" value="3.39e-05"/>
-        <primary name="Fe+++"    type="total"  value="2.4142508014351454E-06"/>
-        <primary name="CO2(aq)"  type="total"  value="1.0712465873417377E-05"/>
-        <primary name="K+"       type="total"  value="1.72e-06"/>
-        <primary name="Mg++"     type="total"  value="2.47e-06"/>
-        <primary name="Na+"      type="total"  value="3.0398521726429520E-04"/>
-        <primary name="SiO2(aq)" type="total"  value="1.18e-04"/>
-        <primary name="SO4--"    type="total"  value="4.80e-05"/>
-        <primary name="Tritium"  type="total"  value="2.17e-09"/>
-        <primary name="NO3-"     type="total"  value="1.0e-2"/>
-        <primary name="UO2++"    type="total"  value="3.01e-05"/>
+        <primary name="H+" type="pH" value="2.05"/>
+        <primary name="Al+++" type="total" value="1.0e-8"/>
+        <primary name="Ca++" type="total" value="1.0e-5"/>
+        <primary name="Cl-" type="total" value="3.39e-5"/>
+        <primary name="Fe+++" type="mineral@Goethite" value="2.75e-6"/>
+        <primary name="CO2(aq)" type="gas@CO2" value="-3.5"/>
+        <primary name="K+" type="total" value="1.72e-6"/>
+        <primary name="Mg++" type="total" value="2.47e-6"/>
+        <primary name="Na+" type="charge" value="6.82e-5"/>
+        <primary name="SiO2(aq)" type="total" value="1.18e-4"/>
+        <primary name="SO4--" type="total" value="4.80e-5"/>
+        <primary name="Tritium" type="total" value="2.17e-9"/>
+        <primary name="NO3-" type="total" value="1.0e-2"/>
+        <primary name="UO2++" type="total" value="3.01e-5"/>
+      </constraint>
+      <constraint name="background">
+        <primary name="H+" type="pH" value="5.4"/>
+        <primary name="Al+++" type="mineral@Kaolinite" value="3.09e-08" />
+        <primary name="Ca++" type="total" value="1.0000000000000001E-05"/>
+        <primary name="Cl-" type="charge" value="9.98e-03"/>
+        <primary name="Fe+++" type="mineral@Goethite" value="2.92E-16"/>
+        <primary name="CO2(aq)" type="gas@CO2" value="-3.5"/>
+        <primary name="K+" type="total" value="3.32e-05"/>
+        <primary name="Mg++" type="total" value="5.35e-03"/>
+        <primary name="Na+" type="total" value="2.78e-04"/>
+        <primary name="SiO2(aq)" type="mineral@Quartz" value="1.77e-04"/>
+        <primary name="SO4--" type="total"  value="2.25e-05"/>
+        <primary name="Tritium" type="total" value="1.e-15"/>
+        <primary name="NO3-" type="total" value="1.0e-3"/>
+        <primary name="UO2++" type="total" value="1.25e-10"/>
       </constraint>
     </constraints>
+
+    <thermodynamic_database>
+      <primary_species>
+        <primary name="H+">
+          <species_data ion_size="9.0" z="1" weight="1.01"/>
+        </primary>
+        <primary name="Al+++">
+          <species_data ion_size="9.0" z="3" weight="26.9815"/>
+        </primary>
+        <primary name="Ca++">
+          <species_data ion_size="6.0" z="2" weight="40.08"/>
+        </primary>
+        <primary name="Cl-">
+          <species_data ion_size="3.0" z="-1" weight="35.45"/>
+        </primary>
+        <primary name="Fe+++">
+          <species_data ion_size="9.0" z="3" weight="55.85"/>
+        </primary>
+        <primary name="CO2(aq)">
+          <species_data ion_size="3.0" z="0" weight="44.0098"/>
+        </primary>
+        <primary name="K+">
+          <species_data ion_size="3.0" z="1" weight="39.10"/>
+        </primary>
+        <primary name="Mg++">
+          <species_data ion_size="8.0" z="2" weight="24.30"/>
+        </primary>
+        <primary name="Na+">
+          <species_data ion_size="4.0" z="1" weight="22.9898"/>
+        </primary>
+        <primary name="SiO2(aq)">
+          <species_data ion_size="3.0" z="0" weight="60.08"/>
+        </primary>
+        <primary name="SO4--">
+          <species_data ion_size="4.0" z="-2" weight="96.06"/>
+        </primary>
+        <primary name="Tritium">
+          <species_data ion_size="9.0" z="0" weight="1.01"/>
+        </primary>
+        <primary name="NO3-">
+          <species_data ion_size="3.0" z="-1" weight="62.00"/>
+        </primary>
+        <primary name="UO2++">
+          <species_data ion_size="4.5" z="2" weight="270.0277"/>
+        </primary>
+      </primary_species>
+
+      <aqueous_equilibrium_complexes>
+        <complex name="OH-">
+          <species_data ion_size="3.5" z="-1" weight="17.00730"/>
+          <reaction>1.0 H2O  -1.0 H+</reaction>
+          <equilibrium_constant>13.99510</equilibrium_constant>
+        </complex>
+        <complex name="HCO3-">
+          <species_data ion_size="4.0" z="-1" weight="61.01710"/>
+          <reaction>1.0 H2O  -1.0 H+  1.0 CO2(aq)</reaction>
+          <equilibrium_constant>6.34470</equilibrium_constant>
+        </complex>
+        <complex name="CO3--">
+          <species_data ion_size="4.5" z="-2" weight="60.00920"/>
+          <reaction>1.0 H2O  -2.0 H+  1.0 CO2(aq)</reaction>
+          <equilibrium_constant>16.67350</equilibrium_constant>
+        </complex>
+        <complex name="NaHCO3(aq)">
+          <species_data ion_size="3.0" z="0" weight="84.00690"/>
+          <reaction>1.0 H2O  -1.0 H+  1.0 CO2(aq)  1.0 Na+</reaction>
+          <equilibrium_constant>6.19060</equilibrium_constant>
+        </complex>
+        <complex name="NaCO3-">
+          <species_data ion_size="4.0" z="-1" weight="82.999"/>
+          <reaction>1.0 H2O  -2.0 H+  1.0 CO2(aq)  1.0 Na+</reaction>
+          <equilibrium_constant>16.15910</equilibrium_constant>
+        </complex>
+        <complex name="NaOH(aq)">
+          <species_data ion_size="3.0" z="0" weight="39.99710"/>
+          <reaction>1.0 H2O  -1.0 H+  1.0 Na+</reaction>
+          <equilibrium_constant>14.79480</equilibrium_constant>
+        </complex>
+        <complex name="AlOH++">
+          <species_data ion_size="4.5" z="2" weight="43.98890"/>
+          <reaction>1.0 H2O  -1.0 H+  1.0 Al+++</reaction>
+          <equilibrium_constant>4.95710</equilibrium_constant>
+        </complex>
+        <complex name="Al(OH)2+">
+          <species_data ion_size="4.0" z="1" weight="60.99620"/>
+          <reaction>2.0 H2O  -2.0 H+  1.0 Al+++</reaction>
+          <equilibrium_constant>10.59450</equilibrium_constant>
+        </complex>
+        <complex name="Al(OH)3(aq)">
+          <species_data ion_size="3.0" z="0" weight="78.00340"/>
+          <reaction>3.0 H2O  -3.0 H+  1.0 Al+++</reaction>
+          <equilibrium_constant>16.15770</equilibrium_constant>
+        </complex>
+        <complex name="Al(OH)4-">
+          <species_data ion_size="4.0" z="-1" weight="95.01070"/>
+          <reaction>4.0 H2O  -4.0 H+  1.0 Al+++</reaction>
+          <equilibrium_constant>22.88330</equilibrium_constant>
+        </complex>
+        <complex name="CaOH+">
+          <species_data ion_size="4.0" z="1" weight="57.08530"/>
+          <reaction>1.0 H2O  -1.0 H+  1.0 Ca++</reaction>
+          <equilibrium_constant>12.8500</equilibrium_constant>
+        </complex>
+        <complex name="CaHCO3+">
+          <species_data ion_size="4.0" z="1" weight="101.09510"/>
+          <reaction>1.0 H2O  -1.0 H+  1.0 Ca++  1.0 CO2(aq)</reaction>
+          <equilibrium_constant>5.29800</equilibrium_constant>
+        </complex>
+        <complex name="CaCO3(aq)">
+          <species_data ion_size="3.0" z="0" weight="100.08720"/>
+          <reaction>1.0 H2O  -2.0 H+  1.0 Ca++  1.0 CO2(aq)</reaction>
+          <equilibrium_constant>13.34640</equilibrium_constant>
+        </complex>
+        <complex name="MgOH+">
+          <species_data ion_size="4.0" z="1" weight="41.31230"/>
+          <reaction>1.0 H2O  -1.0 H+  1.0 Mg++</reaction>
+          <equilibrium_constant>11.78510</equilibrium_constant>
+        </complex>
+        <complex name="MgHCO3+">
+          <species_data ion_size="4.0" z="1" weight="85.32210"/>
+          <reaction>1.0 H2O  -1.0 H+  1.0 CO2(aq)  1.0 Mg++</reaction>
+          <equilibrium_constant>5.30900</equilibrium_constant>
+        </complex>
+        <complex name="MgCO3(aq)">
+          <species_data ion_size="3.0" z="0" weight="84.31420"/>
+          <reaction>1.0 H2O  -2.0 H+  1.0 CO2(aq)  1.0 Mg++</reaction>
+          <equilibrium_constant>13.69460</equilibrium_constant>
+        </complex>
+        <complex name="(UO2)2(OH)2++">
+          <species_data ion_size="4.5" z="2" weight="574.07010"/>
+          <reaction>2.0 H2O  -2.0 H+  2.0 UO2++</reaction>
+          <equilibrium_constant>5.63460</equilibrium_constant>
+        </complex>
+        <complex name="(UO2)2CO3(OH)3-">
+          <species_data ion_size="4.0" z="-1" weight="651.08660"/>
+          <reaction>4.0 H2O  -5.0 H+  1.0 CO2(aq)  2.0 UO2++</reaction>
+          <equilibrium_constant>17.56760</equilibrium_constant>
+        </complex>
+        <complex name="(UO2)2OH+++">
+          <species_data ion_size="5.0" z="3" weight="557.06270"/>
+          <reaction>1.0 H2O  -1.0 H+  2.0 UO2++</reaction>
+          <equilibrium_constant>2.70720</equilibrium_constant>
+        </complex>
+        <complex name="(UO2)3(CO3)6(6-)">
+          <species_data ion_size="4.0" z="-6" weight="1170.13830"/>
+          <reaction>6.0 H2O  -12.0 H+  6.0 CO2(aq)  3.0 UO2++</reaction>
+          <equilibrium_constant>46.12830</equilibrium_constant>
+        </complex>
+        <complex name="(UO2)3(OH)4++">
+          <species_data ion_size="4.5" z="2" weight="878.11250"/>
+          <reaction>4.0 H2O  -4.0 H+  3.0 UO2++</reaction>
+          <equilibrium_constant>11.92900</equilibrium_constant>
+        </complex>
+        <complex name="UO2(OH)4--">
+          <species_data ion_size="4.0" z="-2" weight="338.05710"/>
+          <reaction>4.0 H2O  -4.0 H+  1.0 UO2++</reaction>
+          <equilibrium_constant>33.02910</equilibrium_constant>
+        </complex>
+        <complex name="(UO2)3(OH)5+">
+          <species_data ion_size="4.0" z="1" weight="895.11980"/>
+          <reaction>5.0 H2O  -5.0 H+  3.0 UO2++</reaction>
+          <equilibrium_constant>15.58620</equilibrium_constant>
+        </complex>
+        <complex name="(UO2)3(OH)7-">
+          <species_data ion_size="4.0" z="-1" weight="929.13450"/>
+          <reaction>7.0 H2O  -7.0 H+  3.0 UO2++</reaction>
+          <equilibrium_constant>31.05080</equilibrium_constant>
+        </complex>
+        <complex name="(UO2)3O(OH)2(HCO3)+">
+          <species_data ion_size="4.0" z="1" weight="921.11430"/>
+          <reaction>4.0 H2O  -5.0 H+  1.0 CO2(aq)  3.0 UO2++</reaction>
+          <equilibrium_constant>16.05760</equilibrium_constant>
+        </complex>
+        <complex name="(UO2)4(OH)7+">
+          <species_data ion_size="4.0" z="1" weight="1199.16220"/>
+          <reaction>7.0 H2O  -7.0 H+  4.0 UO2++</reaction>
+          <equilibrium_constant>21.95080</equilibrium_constant>
+        </complex>
+        <complex name="UO2NO3+">
+          <species_data ion_size="4.0" z="1" weight="332.03260"/>
+          <reaction>1.0 NO3-  1.0 UO2++</reaction>
+          <equilibrium_constant>-0.28050</equilibrium_constant>
+        </complex>
+        <complex name="UO2OH+">
+          <species_data ion_size="4.0" z="1" weight="287.03500"/>
+          <reaction>1.0 H2O  -1.0 H+  1.0 UO2++</reaction>
+          <equilibrium_constant>5.20730</equilibrium_constant>
+        </complex>
+        <complex name="UO2(OH)2(aq)">
+          <species_data ion_size="3.0" z="0" weight="304.04240"/>
+          <reaction>2.0 H2O  -2.0 H+  1.0 UO2++</reaction>
+          <equilibrium_constant>10.31460</equilibrium_constant>
+        </complex>
+        <complex name="UO2(OH)3-">
+          <species_data ion_size="4.0" z="-1" weight="321.04970"/>
+          <reaction>3.0 H2O  -3.0 H+  1.0 UO2++</reaction>
+          <equilibrium_constant>19.22180</equilibrium_constant>
+        </complex>
+        <complex name="UO2CO3(aq)">
+          <species_data ion_size="3.0" z="0" weight="330.03690"/>
+          <reaction>1.0 H2O  -2.0 H+  1.0 CO2(aq)  1.0 UO2++</reaction>
+          <equilibrium_constant>7.00810</equilibrium_constant>
+        </complex>
+        <complex name="UO2(CO3)2--">
+          <species_data ion_size="4.0" z="-2" weight="390.04610"/>
+          <reaction>2.0 H2O  -4.0 H+  2.0 CO2(aq)  1.0 UO2++</reaction>
+          <equilibrium_constant>16.43610</equilibrium_constant>
+        </complex>
+        <complex name="UO2(CO3)3----">
+          <species_data ion_size="4.0" z="-4" weight="450.05530"/>
+          <reaction>3.0 H2O  -6.0 H+  3.0 CO2(aq)  1.0 UO2++</reaction>
+          <equilibrium_constant>28.46430</equilibrium_constant>
+        </complex>
+        <complex name="CaUO2(CO3)3--">
+          <species_data ion_size="4.0" z="-2" weight="530.21500"/>
+          <reaction>3.0 H2O  -6.0 H+  1.0 Ca++  3.0 CO2(aq)  1.0 UO2++</reaction>
+          <equilibrium_constant>22.84050</equilibrium_constant>
+        </complex>
+        <complex name="Ca2UO2(CO3)3(aq)">
+          <species_data ion_size="4.0" z="0" weight="530.21500"/>
+          <reaction>3.0 H2O  -6.0 H+  2.0 Ca++  3.0 CO2(aq)  1.0 UO2++</reaction>
+          <equilibrium_constant>19.32050</equilibrium_constant>
+        </complex>
+        <complex name="MgUO2(CO3)3--">
+          <species_data ion_size="3.0" z="-2" weight="500.0"/>
+          <reaction>3.0 H2O  -6.0 H+  3.0 CO2(aq)  1.0 Mg++  1.0 UO2++</reaction>
+          <equilibrium_constant>23.91050</equilibrium_constant>
+        </complex>
+        <complex name="UO2OSi(OH)3+">
+          <species_data ion_size="9.0" z="1" weight="365.13500"/>
+          <reaction>2.0 H2O  -1.0 H+  1.0 SiO2(aq)  1.0 UO2++</reaction>
+          <equilibrium_constant>2.48100</equilibrium_constant>
+        </complex>
+      </aqueous_equilibrium_complexes>
+
+      <mineral_kinetics>
+        <mineral name="Quartz">
+          <species_data weight="60.0843"/>
+          <kinetics_data model="TST" rate="-1.33450E+01" modifiers="" molar_volume=" 2.26880E+01" specific_surface_area="1.0"/>
+          <reaction>1.0 SiO2(aq)</reaction>
+          <equilibrium_constant>-3.75010E+00</equilibrium_constant>
+        </mineral>
+        <mineral name="Kaolinite">
+          <species_data weight="258.160"/>
+          <kinetics_data model="TST" rate="-12.967" modifiers="H+  7.77000E-01" molar_volume="99.52" specific_surface_area="1.0"/>
+          <reaction>5.0 H2O  -6.0 H+  2.0 Al+++  2.0 SiO2(aq)</reaction>
+          <equilibrium_constant> 7.57000E+00</equilibrium_constant>
+        </mineral>
+        <mineral name="Goethite">
+          <species_data weight="8.88537E+01"/>
+          <kinetics_data model="TST" rate="-7.9400" modifiers="" molar_volume="2.08200E+01" specific_surface_area="1.0"/>
+          <reaction>2.0 H2O  -3.0 H+  1.0 Fe+++</reaction>
+          <equilibrium_constant>1.75800E-01</equilibrium_constant>
+        </mineral>
+        <mineral name="Schoepite">
+          <species_data weight="3.22058E+02"/>
+          <kinetics_data model="TST" rate="3.01030E-01" modifiers="" molar_volume="6.60800E+01" specific_surface_area="1.0"/>
+          <reaction>3.0 H2O  -2.0 H+  1.0 UO2++</reaction>
+          <equilibrium_constant>4.84430E+00</equilibrium_constant>
+        </mineral>
+        <mineral name="Gibbsite">
+          <species_data weight="7.80036E+01"/>
+          <kinetics_data model="TST" rate="-11.5000" modifiers="" molar_volume="3.19560E+01" specific_surface_area="1.0"/>
+          <reaction>3.0 H2O  -3.0 H+  1.0 Al+++</reaction>
+          <equilibrium_constant>7.73800E+00</equilibrium_constant>
+        </mineral>
+        <mineral name="Jurbanite">
+          <species_data weight="2.30064E+02"/>
+          <kinetics_data model="TST" rate="-8.00" modifiers="" molar_volume="1.26000E+02" specific_surface_area="1.0"/>
+          <reaction>6.0 H2O  -1.0 H+  1.0 Al+++  1.0 SO4--</reaction>
+          <equilibrium_constant>-3.80000E+00</equilibrium_constant>
+        </mineral>
+        <mineral name="Basaluminite">
+          <species_data weight="4.64140E+02"/>
+          <kinetics_data model="TST" rate="-8.00" modifiers="" molar_volume="2.18934E+02" specific_surface_area="1.0"/>
+          <reaction>15.0 H2O -10.0 H+  4.0 Al+++  1.0 SO4--</reaction>
+          <equilibrium_constant>2.22510E+01</equilibrium_constant>
+        </mineral>
+        <mineral name="Opal">
+          <species_data weight="6.00840E+01"/>
+          <kinetics_data model="TST" rate="-12.1350" modifiers="" molar_volume="2.90000E+01" specific_surface_area="1.0"/>
+          <reaction>1.0 SiO2(aq)</reaction>
+          <equilibrium_constant>-3.00500E+00</equilibrium_constant>
+        </mineral>
+      </mineral_kinetics>
+
+      <general_kinetics>
+        <general>
+          <reaction reactants="1.0 Tritium" products="" />
+          <kinetics_data forward_rate="1.78577E-09" backward_rate="0.0"/>
+        </general>
+      </general_kinetics>
+
+      <ion_exchange_sites>
+        <site name="X-" z="-1" location="Bulk"/>
+      </ion_exchange_sites>
+
+      <ion_exchange_complexes>
+        <complex name="Na+X">
+          <reaction>1.0 Na+  1.0 X-</reaction>
+          <equilibrium_constant>1.0</equilibrium_constant>
+        </complex>
+        <complex name="Ca++X">
+          <reaction>1.0 Ca++  2.0 X-</reaction>
+          <equilibrium_constant>0.316228</equilibrium_constant>
+        </complex>
+        <complex name="Al+++X">
+          <reaction>1.0 Al+++  3.0 X-</reaction>
+          <equilibrium_constant>1.71133</equilibrium_constant>
+        </complex>
+        <complex name="H+X">
+          <reaction>1.0 H+  1.0 X-</reaction>
+          <equilibrium_constant>2.51189E-02</equilibrium_constant>
+        </complex>
+      </ion_exchange_complexes>
+
+      <surface_complex_sites>
+        <site name=">davis_OH" density="1.56199E-01"/>
+      </surface_complex_sites>
+
+      <surface_complexes>
+        <complex name="(>davis_O)UO2+" z="1">
+          <reaction>1.0 >davis_OH  -1.0 H+  1.0 UO2++</reaction>
+          <equilibrium_constant>-4.44000E-01</equilibrium_constant>
+        </complex>
+      </surface_complexes>
+    </thermodynamic_database>
   </geochemistry>
 
   <initial_conditions>

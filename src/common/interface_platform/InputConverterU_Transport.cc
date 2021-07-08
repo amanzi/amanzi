@@ -707,19 +707,25 @@ void InputConverterU::TranslateTransportBCsAmanziGeochemistry_(
 
     node = GetUniqueElementByTagsString_("geochemistry, constraints", flag);
 
-    Teuchos::ParameterList& bc_new = out_list.sublist("concentration");
+    Teuchos::ParameterList& bc_new = out_list.sublist("constraints");
     Teuchos::ParameterList& bc_old = out_list.sublist("geochemical");
 
     for (auto it = bc_old.begin(); it != bc_old.end(); ++it) {
       name = it->first;
  
       Teuchos::ParameterList& bco = bc_old.sublist(name);
+      Teuchos::ParameterList& bcn = bc_new.sublist(name);
+
       std::vector<std::string> solutes = bco.get<Teuchos::Array<std::string> >("solutes").toVector();
+      int nsolutes = solutes.size();
+      Teuchos::Array<std::string> types(nsolutes);
 
-      for (int n = 0; n < solutes.size(); ++n) {
-        Teuchos::ParameterList& bcn = bc_new.sublist(solutes[n]).sublist(name);
-        Teuchos::ParameterList& fnc = bcn.sublist("boundary concentration").sublist("function-tabular");
+      bcn.sublist("boundary constraints").set<int>("number of dofs", nsolutes);
 
+      for (int n = 0; n < nsolutes; ++n) {
+        std::stringstream dof;
+        dof << "dof " << n + 1 << " function";
+        Teuchos::ParameterList& fnc = bcn.sublist("boundary constraints").sublist(dof.str()).sublist("function-tabular");
 
         bcn.set("regions", bco.get<Teuchos::Array<std::string> >("regions"))
            .set<std::string>("spatial distribution method", "none")
@@ -736,9 +742,11 @@ void InputConverterU::TranslateTransportBCsAmanziGeochemistry_(
           element = GetUniqueChildByAttribute_(node, "name", constraints[i], flag, true);
           element = GetUniqueChildByAttribute_(element, "name", solutes[n], flag, true);
           values.push_back(GetAttributeValueD_(element, "value"));
+          types[n] = GetAttributeValueS_(element, "type");  // FIXME
         }
         fnc.set("y values", values);
       }
+      bcn.set<Teuchos::Array<std::string> >("names", types);
     }
 
     out_list.remove("geochemical");

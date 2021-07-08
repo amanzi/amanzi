@@ -1,0 +1,112 @@
+<ParameterList name="thermodynamic database">
+<ParameterList name="primary species">
+  <ParameterList name="H+">
+    <Parameter name="ion size parameter" type="double" value="9.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="1.01"/>
+  </ParameterList>
+  <ParameterList name="Na+">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="22.99"/>
+  </ParameterList>
+  <ParameterList name="NO3-">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="62.0"/>
+  </ParameterList>
+  <ParameterList name="Zn++">
+    <Parameter name="ion size parameter" type="double" value="6.0"/>
+    <Parameter name="charge" type="int" value="2"/>
+    <Parameter name="gram molecular weight" type="double" value="65.39"/>
+  </ParameterList>
+</ParameterList>
+
+<ParameterList name="aqueous equilibrium complexes">
+  <ParameterList name="OH-">
+    <Parameter name="ion size parameter" type="double" value="3.5"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="1.70073000000000008e+01"/>
+    <Parameter name="reaction" type="string" value="1.0 H2O  -1.0 H+"/>
+    <Parameter name="equilibrium constant" type="double" value="1.39951000000000008e+01"/>
+  </ParameterList>
+  <ParameterList name="Zn(OH)2(aq)">
+    <Parameter name="ion size parameter" type="double" value="3.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value=" 99.40470"/>
+    <Parameter name="reaction" type="string" value="2.00 H2O  -2.00 H+  1.00 Zn++"/>
+    <Parameter name="equilibrium constant" type="double" value="17.32820"/>
+  </ParameterList>
+  <ParameterList name="Zn(OH)3-">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="gram molecular weight" type="double" value="116.41200"/>
+    <Parameter name="reaction" type="string" value="3.00 H2O  -3.00 H+  1.00 Zn++"/>
+    <Parameter name="equilibrium constant" type="double" value="28.83690"/>
+  </ParameterList>
+  <ParameterList name="Zn(OH)4--">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="-2"/>
+    <Parameter name="gram molecular weight" type="double" value="133.41940"/>
+    <Parameter name="reaction" type="string" value="4.00 H2O  -4.00 H+  1.00 Zn++"/>
+    <Parameter name="equilibrium constant" type="double" value="41.60520"/>
+  </ParameterList>
+  <ParameterList name="ZnOH+">
+    <Parameter name="ion size parameter" type="double" value="4.0"/>
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="gram molecular weight" type="double" value="82.39730"/>
+    <Parameter name="reaction" type="string" value="1.00 H2O  -1.00 H+  1.00 Zn++"/>
+    <Parameter name="equilibrium constant" type="double" value=" 8.96000"/>
+  </ParameterList>
+</ParameterList>
+
+<ParameterList name="surface complex sites">
+  <ParameterList name=">FeOH_w">
+    <Parameter name="density" type="double" value="7.63550E+04"/>
+  </ParameterList>
+  <ParameterList name=">FeOH_s">
+    <Parameter name="density" type="double" value="1.90800E+03"/>
+  </ParameterList>
+</ParameterList>
+
+<ParameterList name="surface complexes">
+  <ParameterList name=">FeOH2+_w">
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="reaction" type="string" value="1.0 >FeOH_w  1.0 H+"/>
+    <Parameter name="equilibrium constant" type="double" value="-7.18000E+00"/>
+  </ParameterList>
+  <ParameterList name=">FeO-_w">
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="reaction" type="string" value="1.0 >FeOH_w  -1.0 H+"/>
+    <Parameter name="equilibrium constant" type="double" value="8.82000"/>
+  </ParameterList>
+  <ParameterList name=">FeOHZn+_w">
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="reaction" type="string" value="1.0 >FeOH_w -1.0 H+  1.0 Zn++"/>
+    <Parameter name="equilibrium constant" type="double" value="2.32000"/>
+  </ParameterList>
+  <ParameterList name=">FeOH2+_s">
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="reaction" type="string" value="1.00 >FeOH_s  1.00 H+"/>
+    <Parameter name="equilibrium constant" type="double" value="-7.1800"/>
+  </ParameterList>
+  <ParameterList name=">FeO-_s">
+    <Parameter name="charge" type="int" value="-1"/>
+    <Parameter name="reaction" type="string" value="1.00 >FeOH_s -1.00 H+"/>
+    <Parameter name="equilibrium constant" type="double" value="8.8200"/>
+  </ParameterList>
+  <ParameterList name=">FeOHZn+_s">
+    <Parameter name="charge" type="int" value="1"/>
+    <Parameter name="reaction" type="string" value="1.00 >FeOH_s -1.00 H+  1.00 Zn++ "/>
+    <Parameter name="equilibrium constant" type="double" value="-6.60000E-01"/>
+  </ParameterList>
+</ParameterList>
+
+<ParameterList name="verbose object">
+  <Parameter name="verbosity level" type="string" value="high"/>
+  <Parameter name="hide line prefix" type="bool" value="true"/>
+  <Parameter name="output filename" type="string" value="batch_native.test"/>
+</ParameterList>
+</ParameterList>
+
+

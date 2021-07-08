@@ -65,7 +65,7 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   domain_ = cp_list_->get<std::string>("domain name", "domain");
   
   // obtain key of fields
-  tcc_key_ = Keys::readKey(*cp_list_,domain_, "total component concentration", "total_component_concentration"); 
+  tcc_key_ = Keys::readKey(*cp_list_, domain_, "total component concentration", "total_component_concentration"); 
 
   poro_key_ = Keys::readKey(*cp_list_, domain_, "porosity", "porosity");
   saturation_key_ = Keys::readKey(*cp_list_, domain_, "saturation liquid", "saturation_liquid");

@@ -64,6 +64,7 @@ parallel_jobs=2
 build_type=Release
 trilinos_build_type=Release
 tpls_build_type=Release
+dbc=${TRUE}
 
 # Compiler definitions
 build_c_compiler=
@@ -143,8 +144,8 @@ clm=${FALSE}
 
 # -- mesh frameworks
 #    stk framewotk was deprecated and removed
-mstk_mesh=$TRUE
-moab_mesh=$FALSE
+mesh_mstk=$TRUE
+mesh_moab=$FALSE
 
 # -- tools
 amanzi_branch=
@@ -362,8 +363,8 @@ Value in brackets indicates default setting.
   ccse_tools              build structured AMR tools for post processing and tecplot ['"${ccse_tools}"']
 
   unstructured            build unstructured mesh capability ['"${unstructured}"']
-  mstk_mesh               build the MSTK Mesh Toolkit ['"${mstk_mesh}"']
-  moab_mesh               build the MOAB Mesh Toolkit ['"${moab_mesh}"']
+  mesh_mstk               build the MSTK Mesh Toolkit ['"${mesh_mstk}"']
+  mesh_moab               build the MOAB Mesh Toolkit ['"${mesh_moab}"']
 
   hypre                   build the HYPRE solver APIs ['"${hypre}"']
   superlu                 build the SuperLU solver ['"${superlu}"']
@@ -378,6 +379,8 @@ Value in brackets indicates default setting.
   ats_physics             build ATS physics package (currently mutually exclusive) ['"${ats_physics}"']
   clm                     build CLM library for surface processes (currently only ATS) ['"${clm}"']
 
+  dbc                     design-by-contract.  Extra (potentially time-consuming) error-checking
+                          intended for developers ['"${dbc}"']
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
   reg_tests               build regression tests into Amanzi or ATS Test Suite ['"${reg_tests}"']
   shared                  build Amanzi and tpls using shared libraries ['"${shared}"']
@@ -529,6 +532,7 @@ Compilers and Flags:
 
 Build configuration:
     build_type          = '"${build_type}"'
+    dbc                 = '"${dbc}"'
     build_stage_1       = '"${build_stage_1}"'
     build_stage_2       = '"${build_stage_2}"'
     parallel            = '"${parallel_jobs}"'
@@ -556,8 +560,8 @@ Amanzi Components:
 Amanzi TPLs:
     alquimia     = '"${alquimia}"'
     crunchtope   = '"${crunchtope}"'
-    mstk_mesh    = '"${mstk_mesh}"'
-    moab_mesh    = '"${moab_mesh}"'
+    mesh_mstk    = '"${mesh_mstk}"'
+    mesh_moab    = '"${mesh_moab}"'
     netcdf4      = '"${netcdf4}"'
     hypre        = '"${hypre}"'
     superlu      = '"${superlu}"'
@@ -859,8 +863,8 @@ List of INPUT parameters
   fi
 
   if [ "${unstructured}" -eq "${FALSE}" ]; then
-    mstk_mesh=${FALSE}
-    moab_mesh=${FALSE}
+    mesh_mstk=${FALSE}
+    mesh_moab=${FALSE}
     stk_mesh=${FALSE}
   else
     if [ "${epetra}" -eq "${FALSE}" ]; then
@@ -1778,8 +1782,8 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_Unstructured:BOOL=${unstructured} \
       -DENABLE_CCSE_TOOLS:BOOL=${ccse_tools} \
       -DCCSE_BL_SPACEDIM:INT=${spacedim} \
-      -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
-      -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
+      -DENABLE_MESH_MOAB:BOOL=${mesh_moab} \
+      -DENABLE_MESH_MSTK:BOOL=${mesh_mstk} \
       -DENABLE_NetCDF4:BOOL=${netcdf4} \
       -DENABLE_HYPRE:BOOL=${hypre} \
       -DENABLE_SUPERLU:BOOL=${superlu} \
@@ -1904,8 +1908,8 @@ cmd_configure="${cmake_binary} \
     -DCMAKE_BUILD_TYPE:STRING=${build_type} \
     -DENABLE_Structured:BOOL=${structured} \
     -DENABLE_Unstructured:BOOL=${unstructured} \
-    -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
-    -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
+    -DENABLE_MESH_MOAB:BOOL=${mesh_moab} \
+    -DENABLE_MESH_MSTK:BOOL=${mesh_mstk} \
     -DENABLE_SUPERLU:BOOL=${superlu} \
     -DENABLE_HYPRE:BOOL=${hypre} \
     -DENABLE_PETSC:BOOL=${petsc} \
@@ -1920,6 +1924,7 @@ cmd_configure="${cmake_binary} \
     -DENABLE_KOKKOS_OPENMP:BOOL=${kokkos_openmp} \
     -DENABLE_AmanziPhysicsModule:BOOL=${amanzi_physics} \
     -DENABLE_ATSPhysicsModule:BOOL=${ats_physics} \
+    -DENABLE_DBC:BOOL=${dbc} \
     -DBUILD_SHARED_LIBS:BOOL=${shared} \
     -DCCSE_BL_SPACEDIM:INT=${spacedim} \
     -DENABLE_Regression_Tests:BOOL=${reg_tests} \

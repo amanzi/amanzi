@@ -49,10 +49,7 @@ if (ENABLE_KOKKOS)
   list(APPEND Trilinos_PACKAGE_LIST Kokkos KokkosKernels Tpetra Ifpack2 MueLu Xpetra)
 endif()
 
-if (ENABLE_STK_Mesh)
-  list(APPEND Trilinos_PACKAGE_LIST STK)
-endif()
-if (ENABLE_MSTK_Mesh)
+if (ENABLE_MESH_MSTK)
   list(APPEND Trilinos_PACKAGE_LIST Zoltan)
 endif()
 

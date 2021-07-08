@@ -38,7 +38,7 @@ include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${MESH_EXTRACTED_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MPC_TREE_SOURCE_DIR})
-include_directories(${MSTK_SOURCE_DIR})
+include_directories(${MESH_MSTK_SOURCE_DIR})
 include_directories(${MULTIPHASE_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
@@ -106,7 +106,6 @@ if (BUILD_TESTS)
     if (NOT (MPC_SOURCE_DIR STREQUAL MPC_BINARY_DIR))
       file(GLOB DataFiles "${MPC_SOURCE_DIR}/test/*.xml"
                           "${MPC_SOURCE_DIR}/test/*.in"
-                          "${MPC_SOURCE_DIR}/test/*.bgd"
                           "${MPC_SOURCE_DIR}/test/*.dat"
                           "${MPC_SOURCE_DIR}/test/*.exo"
                           "${MPC_SOURCE_DIR}/test/*.h5")

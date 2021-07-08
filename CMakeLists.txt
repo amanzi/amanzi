@@ -88,14 +88,12 @@ endif()
 
 # Check the mesh framework choice
 if ((ENABLE_Unstructured)  AND
-    (NOT ENABLE_STK_Mesh)  AND
-    (NOT ENABLE_MOAB_Mesh) AND
-    (NOT ENABLE_MSTK_Mesh))
+    (NOT ENABLE_MESH_MOAB) AND
+    (NOT ENABLE_MESH_MSTK))
   message(FATAL_ERROR "Missing a mesh framework\n"
                       "Please enable at least one of the following mesh frameworks\n"
-                      "-D ENABLE_MOAB_Mesh:BOOL=ON\n"
-                      "-D ENABLE_STK_Mesh:BOOL=ON\n"
-                      "-D ENABLE_MSTK_Mesh:BOOL=ON\n")
+                      "-D ENABLE_MESH_MOAB:BOOL=ON\n"
+                      "-D ENABLE_MESH_MSTK:BOOL=ON\n")
 endif()    
 
 if(ENABLE_KOKKOS_OPENMP)

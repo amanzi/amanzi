@@ -865,6 +865,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
               (S_->cycle() - start_cycle_num < tp_max_cycle_[time_period_id_])))
       {
         if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+          // if (S_->cycle() % 100 == 0 && S_->cycle() > 0) {
           if (S_->cycle() % 100 == 0 && S_->cycle() > 0) {
             WriteStateStatistics(*S_, *vo_);
             Teuchos::OSTab tab = vo_->getOSTab();
