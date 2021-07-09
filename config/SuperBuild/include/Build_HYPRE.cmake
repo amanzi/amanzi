@@ -113,6 +113,8 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
                     # -- Download and GIT definition
                     GIT_REPOSITORY ${HYPRE_GIT_REPOSITORY_TEMP}              
                     GIT_TAG        ${HYPRE_GIT_TAG}   
+                    # -- Update (one way to skip this step is use null command)
+                    UPDATE_COMMAND ""
                     # -- Patch 
                     PATCH_COMMAND  ${HYPRE_PATCH_COMMAND}
                     # -- Configure
