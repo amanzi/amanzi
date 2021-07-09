@@ -157,10 +157,11 @@
 #   0.97.12      - update Trilinos to afc4e525 (Nov 14, 2020)
 #   0.97.13      - update Alquimia to 1.0.8
 #   0.97.14      - update MSTK to 3.3.6
-#   0.97.15      - update Hypre to 2.22.0
 
 #   0.98.0       - configuration updates fixing CamelCase names (required changes in Amanzi build as well)
 #   0.98.1       - configuratoin updates fixing consistency of meshing options (required changes in Amanzi build as well).
+#   0.98.2      - update Hypre to 2.22.0
+
 
 include(CMakeParseArguments)
 
