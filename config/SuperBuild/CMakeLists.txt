@@ -221,9 +221,6 @@ if (ENABLE_Structured)
   endif()
 endif()
 
-message(STATUS ">>>>>> JDM: CMAKE_C_COMPILER_ID    = ${CMAKE_C_COMPILER_ID}")
-message(STATUS ">>>>>> JDM: CMAKE_CXX_COMPILER_ID  = ${CMAKE_CXX_COMPILER_ID}")
-
 if(ENABLE_KOKKOS_OPENMP)
   find_package(OpenMP)
   if (OpenMP_FOUND)
@@ -236,10 +233,6 @@ if(ENABLE_KOKKOS_OPENMP)
   #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
   #set(CMAKE_LINK_FLAGS "${CMAKE_LINK_FLAGS} -lpthread")
 endif()
-
-message(STATUS ">>>>>> JDM: CMAKE_C_FLAGS       = ${CMAKE_C_FLAGS}")
-message(STATUS ">>>>>> JDM: CMAKE_CXX_FLAGS     = ${CMAKE_CXX_FLAGS}")
-message(STATUS ">>>>>> JDM: CMAKE_Fortran_FLAGS = ${CMAKE_Fortran_FLAGS}")
 
 # If unstructured is not enabled, there is no reason to have these mesh frameworks
 if (NOT ENABLE_Unstructured)

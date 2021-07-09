@@ -139,7 +139,7 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
                     BUILD_COMMAND    $(MAKE)  
                     # -- Install
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}     # Install directory
-      		          INSTALL_COMMAND  $(MAKE) install
+                    INSTALL_COMMAND  $(MAKE) install
                     # -- Output control
                     ${HYPRE_logging_args})
 
