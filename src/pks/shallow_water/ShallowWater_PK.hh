@@ -75,6 +75,10 @@ class ShallowWater_PK : public PK_Physical,
   virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override {};
 
   virtual std::string name() override { return "Shallow water PK"; }
+                            
+  // Bathymetry reconstruction on cell edge midpoints
+  double Bathymetry_rectangular_cell_value(int, const AmanziGeometry::Point&, Epetra_MultiVector&);
+  double Bathymetry_edge_value(int, int, const AmanziGeometry::Point&, Epetra_MultiVector&);
 
   // due to rotational invariance of SW equations, we need flux in the x-direction only.
   std::vector<double> PhysicalFlux_x(const std::vector<double>&);
@@ -110,7 +114,7 @@ class ShallowWater_PK : public PK_Physical,
 
  private:
   // boundary conditions
-  std::vector<Teuchos::RCP<ShallowWaterBoundaryFunction> > bcs_; 
+  std::vector<Teuchos::RCP<ShallowWaterBoundaryFunction> > bcs_;
   std::vector<Teuchos::RCP<Operators::BCs> > op_bcs_;
 
   // gravity magnitude
@@ -133,4 +137,3 @@ class ShallowWater_PK : public PK_Physical,
 }  // namespace Amanzi
 
 #endif
-

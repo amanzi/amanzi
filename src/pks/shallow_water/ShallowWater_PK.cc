@@ -15,6 +15,8 @@
 
 #include "PK_DomainFunctionFactory.hh"
 
+#include "CompositeVector.hh"
+
 // Amanzi::ShallowWater
 #include "ShallowWater_PK.hh"
 #include "DischargeEvaluator.hh"
@@ -50,7 +52,7 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
 
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = sw_list_->sublist("verbose object");
-  vo_ = Teuchos::rcp(new VerboseObject("ShallowWater", vlist)); 
+  vo_ = Teuchos::rcp(new VerboseObject("ShallowWater", vlist));
 }
 
 
@@ -76,7 +78,7 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
 
   if (!S->HasField("gravity")) {
     S->RequireConstantVector("gravity", passwd_, 2);
-  } 
+  }
 
   //-------------------------------
   // primary fields
@@ -114,9 +116,13 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // bathymetry
   if (!S->HasField(bathymetry_key_)) {
-    S->RequireField(bathymetry_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
+  std::vector<std::string> names({"cell", "node"});
+  std::vector<int> ndofs(2, 1);
+  std::vector<AmanziMesh::Entity_kind> locations({AmanziMesh::CELL, AmanziMesh::NODE});
+    
+  S->RequireField(bathymetry_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+    ->SetComponents(names, locations, ndofs);
+    }
 }
 
 
@@ -160,9 +166,6 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   total_depth_grad_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
   total_depth_grad_->Init(plist);
 
-  bathymetry_grad_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
-  bathymetry_grad_->Init(plist);
-
   velocity_x_grad_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
   velocity_x_grad_->Init(plist);
 
@@ -202,11 +205,6 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   // static fields
   S_->GetFieldData(bathymetry_key_)->ScatterMasterToGhosted("cell");
 
-  auto tmp2 = S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("cell", true);
-  bathymetry_grad_->ComputeGradient(tmp2);
-  limiter_->ApplyLimiter(tmp2, 0, bathymetry_grad_->gradient());
-  limiter_->gradient()->ScatterMasterToGhosted("cell");
-
   // summary of initialization
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -229,10 +227,11 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // save a copy of primary and conservative fields
   Epetra_MultiVector& B_c = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("cell", true);
+  Epetra_MultiVector& B_n = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("node", true);
   Epetra_MultiVector& h_c = *S_->GetFieldData(ponded_depth_key_, passwd_)->ViewComponent("cell", true);
   Epetra_MultiVector& ht_c = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
   Epetra_MultiVector& vel_c = *S_->GetFieldData(velocity_key_, passwd_)->ViewComponent("cell", true);
-
+    
   S_->GetFieldEvaluator(discharge_key_)->HasFieldChanged(S_.ptr(), passwd_);
   Epetra_MultiVector& q_c = *S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
 
@@ -280,7 +279,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // U_t + F_x(U) + G_y(U) = S(U)
 
   int orientation;
-  AmanziMesh::Entity_ID_List cfaces;
+  AmanziMesh::Entity_ID_List cfaces, cnodes;
 
   std::vector<double> FL, FR, FNum(3), FNum_rot, FS(3);  // fluxes
   std::vector<double> S;                                 // source term
@@ -290,10 +289,14 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // U_i^{n+1} = U_i^n - dt/vol * (F_{i+1/2}^n - F_{i-1/2}^n) + dt * S_i
 
   for (int c = 0; c < ncells_owned; c++) {
+      
+    const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+
     double vol = mesh_->cell_volume(c);
 
     mesh_->cell_get_faces(c, &cfaces);
-
+    mesh_->cell_get_nodes(c, &cnodes);
+    
     for (int i = 0; i < 3; i++) FS[i] = 0.0;
 
     for (int n = 0; n < cfaces.size(); ++n) {
@@ -304,14 +307,17 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       normal /= farea;
 
       double ht_rec = total_depth_grad_->getValue(c, xcf);
-      double B_rec = bathymetry_grad_->getValue(c, xcf);
+  
+      int edge = cfaces[n];
+      double B_rec = Bathymetry_edge_value(c, edge, xcf, B_n);
+        
 
       if (ht_rec < B_rec) {
         ht_rec = ht_c[0][c];
         B_rec = B_c[0][c];
       }
       double h_rec = ht_rec - B_rec;
-      ErrorDiagnostics_(c, h_rec, ht_rec, B_rec); 
+      ErrorDiagnostics_(c, h_rec, ht_rec, B_rec);
 
       double vx_rec = velocity_x_grad_->getValue(c, xcf);
       double vy_rec = velocity_y_grad_->getValue(c, xcf);
@@ -335,21 +341,28 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       int cn = WhetStone::cell_get_face_adj_cell(*mesh_, c, f);
 
       if (cn == -1) {
-        if (bcs_.size() > 0 && bcs_[0]->bc_find(f))
-          for (int i = 0; i < 3; ++i) UR[i] = bcs_[0]->bc_value(f)[i];
+          if (bcs_.size() > 0 && bcs_[0]->bc_find(f)){
+              for (int i = 0; i < 3; ++i){ UR[i] = bcs_[0]->bc_value(f)[i]; } }
+
         else
           UR = UL;
 
-      } else {
+      }
+      else {
+          
+        const Amanzi::AmanziGeometry::Point& xcn = mesh_->cell_centroid(cn);
+          
         ht_rec = total_depth_grad_->getValue(cn, xcf);
-        B_rec = bathymetry_grad_->getValue(cn, xcf);
-
+          
+        B_rec = Bathymetry_edge_value(cn, edge, xcf, B_n);
+          
         if (ht_rec < B_rec) {
+            std::cout<<"ht_rec < B_rec"<<std::endl;
           ht_rec = ht_c[0][cn];
           B_rec = B_c[0][cn];
         }
         h_rec = ht_rec - B_rec;
-        ErrorDiagnostics_(cn, h_rec, ht_rec, B_rec); 
+        ErrorDiagnostics_(cn, h_rec, ht_rec, B_rec);
 
         vx_rec = velocity_x_grad_->getValue(cn, xcf);
         vy_rec = velocity_y_grad_->getValue(cn, xcf);
@@ -374,6 +387,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       FNum[0] = FNum_rot[0];
       FNum[1] = FNum_rot[1] * normal[0] - FNum_rot[2] * normal[1];
       FNum[2] = FNum_rot[1] * normal[1] + FNum_rot[2] * normal[0];
+        
 
       // update accumulated cell-based flux
       for (int i = 0; i < 3; i++) {
@@ -385,6 +399,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     U.resize(3);
 
     h  = h_c[0][c];
+      
     qx = q_c[0][c];
     qy = q_c[1][c];
     double factor = 2.0 * h / (h * h + std::fmax(h * h, eps2));
@@ -400,7 +415,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     for (int i = 0; i < 3; i++) {
       U_new[i] = U[i] - dt / vol * FS[i] + dt * S[i];
     }
-
+      
     // transform to conservative variables
     h  = U_new[0];
     qx = U_new[1];
@@ -410,6 +425,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     factor = 2.0 * h / (h * h + std::fmax(h * h, eps2));
     vel_c_tmp[0][c] = factor * qx;
     vel_c_tmp[1][c] = factor * qy;
+      
   } // c
 
   h_c = h_c_tmp;
@@ -487,7 +503,7 @@ std::vector<double> ShallowWater_PK::PhysicalFlux_x(const std::vector<double>& U
 
 
 //--------------------------------------------------------------
-// Physical flux G(U) in the y-direction. Since the SW system has 
+// Physical flux G(U) in the y-direction. Since the SW system has
 // rotational invariance, this flux is not used.
 // G(U) = (hv, huv, hv^2 + 1/2 gh^2)
 //--------------------------------------------------------------
@@ -495,21 +511,17 @@ std::vector<double> ShallowWater_PK::PhysicalFlux_x(const std::vector<double>& U
 std::vector<double> ShallowWater_PK::PhysicalFlux_y(const std::vector<double>& U)
 {
   std::vector<double> G(3);
-
   double h, u, v, qx, qy;
   double eps = 1.e-6;
-
   // transform from conservative (h, hu, hv) to primary (h, u, v) variables
   h  = U[0];
   qx = U[1];
   qy = U[2];
   u  = 2.*h*qx/(h*h + std::fmax(h*h,eps*eps));
   v  = 2.*h*qy/(h*h + std::fmax(h*h,eps*eps));
-
   G[0] = h*v;
   G[1] = h*u*v;
   G[2] = h*v*v+0.5*g_*h*h;
-
   return G;
 }
 */
@@ -548,7 +560,7 @@ std::vector<double> ShallowWater_PK::NumericalFlux_x(
     std::vector<double>& UL, std::vector<double>& UR)
 {
   return NumericalFlux_x_Rusanov(UL, UR);
-  // return NumericalFlux_x_CentralUpwind(UL, UR);
+//  return NumericalFlux_x_CentralUpwind(UL, UR);
 }
 
 
@@ -594,7 +606,7 @@ std::vector<double> ShallowWater_PK::NumericalFlux_x_Rusanov(
 
 
 //--------------------------------------------------------------
-// Central-upwind numerical flux (Kurganov, Acta Numerica 2018)
+//Central-upwind numerical flux (Kurganov, Acta Numerica 2018)
 //--------------------------------------------------------------
 std::vector<double> ShallowWater_PK::NumericalFlux_x_CentralUpwind(
     const std::vector<double>& UL, const std::vector<double>& UR)
@@ -646,7 +658,7 @@ std::vector<double> ShallowWater_PK::NumericalFlux_x_CentralUpwind(
   return F;
 }
 
-
+ 
 //--------------------------------------------------------------------
 // discretization of the source term (well-balanced for lake at rest)
 //--------------------------------------------------------------------
@@ -654,8 +666,12 @@ std::vector<double> ShallowWater_PK::NumericalSource(
     const std::vector<double>& U, int c)
 {
   Epetra_MultiVector& B_c = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("cell", true);
+  Epetra_MultiVector& B_n = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("node", true);
   Epetra_MultiVector& ht_c = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
+  Epetra_MultiVector& h_c = *S_->GetFieldData(ponded_depth_key_, passwd_)->ViewComponent("cell", true);
 
+    
+  const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
   AmanziMesh::Entity_ID_List cfaces;
   mesh_->cell_get_faces(c, &cfaces);
 
@@ -667,9 +683,12 @@ std::vector<double> ShallowWater_PK::NumericalSource(
     int f = cfaces[n];
     const auto& normal = mesh_->face_normal(f, false, c, &orientation);
     const auto& xcf = mesh_->face_centroid(f);
+    double farea = mesh_->face_area(f);
 
     double ht_rec = total_depth_grad_->getValue(c, xcf);
-    double B_rec = bathymetry_grad_->getValue(c, xcf);
+      
+    int e = cfaces[n];
+    double B_rec = Bathymetry_edge_value(c, e, xcf, B_n);
 
     if (ht_rec < B_rec) {
       ht_rec = ht_c[0][c];
@@ -726,16 +745,65 @@ double ShallowWater_PK::get_dt()
 
 
 //--------------------------------------------------------------
+// Bathymetry (Linear construction for a rectangular cell)
+//--------------------------------------------------------------
+/*
+double ShallowWater_PK::Bathymetry_rectangular_cell_value(int c, const AmanziGeometry::Point& xp, Epetra_MultiVector& B_n)
+{
+  double x = xp[0], y = xp[1];
+    
+  AmanziMesh::Entity_ID_List nodes, faces;
+    
+  mesh_->cell_get_faces(c, &faces);
+  mesh_ -> cell_get_nodes(c, &nodes);
+    
+  double dx = mesh_->face_area(faces[0]), dy = mesh_->face_area(faces[1]);
+    
+  Amanzi::AmanziGeometry::Point xl;
+  mesh_->node_get_coordinates(nodes[0], &xl); // Lower left corner of the cell (for rectangular cell)
+ 
+  // Values of B at the corners of the cell
+  double B1 = B_n[0][nodes[0]];
+  double B2 = B_n[0][nodes[1]];
+  double B3 = B_n[0][nodes[3]];
+  double B4 = B_n[0][nodes[2]];
+    
+  double xln = xl[0], yln = xl[1];
+
+  double B_rec = B1 + (B2 - B1)*(xp[0] - xln)/dx + (B3 - B1)*(xp[1] - yln)/dy + (B4 - B2 - B3 + B1)*(xp[0] - xln)*(xp[1] - yln)/(dx*dy) ;
+
+  return B_rec;
+}
+*/
+
+
+//--------------------------------------------------------------
+// Bathymetry (Evaluate value at edge midpoint for a polygonal cell)
+//--------------------------------------------------------------
+
+double ShallowWater_PK::Bathymetry_edge_value(int c, int e, const AmanziGeometry::Point& xp, Epetra_MultiVector& B_n)
+{
+  double x = xp[0], y = xp[1];
+  AmanziMesh::Entity_ID_List face_nodes;
+  mesh_ ->face_get_nodes(e, &face_nodes);
+
+  double B_rec = ( B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]] ) /2.0;
+    
+  return B_rec;
+}
+
+
+//--------------------------------------------------------------
 // Error diagnostics
 //--------------------------------------------------------------
-void ShallowWater_PK::ErrorDiagnostics_(int c, double h, double B, double ht) 
+void ShallowWater_PK::ErrorDiagnostics_(int c, double h, double B, double ht)
 {
   if (h < 0.0) {
     Errors::Message msg;
     msg << "Shallow water PK: negative height: "
         << "\n  c = " << c
-        << "\n  ht_rec = " << ht 
-        << "\n  B_rec  = " << B 
+        << "\n  ht_rec = " << ht
+        << "\n  B_rec  = " << B
         << "\n  h_rec  = " << h << "\n";
     Exceptions::amanzi_throw(msg);
   }
@@ -743,4 +811,3 @@ void ShallowWater_PK::ErrorDiagnostics_(int c, double h, double B, double ht)
 
 }  // namespace ShallowWater
 }  // namespace Amanzi
-
