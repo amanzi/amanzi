@@ -122,7 +122,7 @@ if (BUILD_TESTS)
 
     # Test: lake at rest with variable bathymetry
     add_amanzi_test(shallow_water_lake_at_rest shallow_water_lake_at_rest
-                   KIND int
+                    KIND int
                     NPROCS 3
                     SOURCE test/Main.cc test/shallow_water_lake_at_rest.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
