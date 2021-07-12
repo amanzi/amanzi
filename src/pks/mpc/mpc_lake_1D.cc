@@ -192,10 +192,10 @@ void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
           (*inds_soil10)[0][0] = ncells_owned_f1-1;
           (*inds_lake10)[0][0] = c;
       }   // normal??
-      if (c == ncells_owned_f1-1) { (*values00)[np1] = 0.;
+      if (c == ncells_owned_f1-1) { (*values00)[np1] = -4.;
       (*inds_lake1)[np1][0] = c;
       (*inds_soil1)[np1][0] = 0;} //lambda_l[0][c]/area; }
-      if (c == 0) { (*values00)[np1] = 0.;
+      if (c == 0) { (*values00)[np1] = 4.;
       (*inds_lake1)[np1][0] = c;
       (*inds_soil1)[np1][0] = 0;} //(lambda_l[0][c]+lambda_s[0][c])/area;}
 //      if (c == 1) { (*values00)[np1] = -lambda_l[0][c]/area;}
@@ -261,10 +261,10 @@ void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
           (*inds_lake01)[0][0] = 0;
           (*inds_soil01)[0][0] = c;
       } // normal???
-      if (c == 0) { (*values11)[np] = 0.;
+      if (c == 0) { (*values11)[np] = -4.;
             (*inds_lake)[np][0] = 0;
             (*inds_soil)[np][0] = c;}
-      if (c == ncells_owned_f-1) { (*values11)[np] = 0.;
+      if (c == ncells_owned_f-1) { (*values11)[np] = 4.;
             (*inds_lake)[np][0] = 0;
             (*inds_soil)[np][0] = c;} //lambda_s[0][c]/area;}//(lambda_l[0][c]+lambda_s[0][c])/area;}
 //      if (c == ncells_owned_f-2) { (*values11)[np] = -lambda_s[0][c]/area;}
@@ -293,7 +293,7 @@ void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
 
   auto op_coupling00 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
       oplist, cvs_lake, cvs_lake, inds_lake1, inds_lake1, op0));
-  op_coupling00->Setup(values00, 0.0);                            // values00 will be ADDED (with factor)
+  op_coupling00->Setup(values00, 1.0);                            // values00 will be ADDED (with factor)
   op_coupling00->UpdateMatrices(Teuchos::null, Teuchos::null);
 
 //  auto op_coupling01 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
@@ -303,7 +303,7 @@ void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
 
   auto op_coupling01 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
       oplist, cvs_lake, cvs_soil, inds_lake01, inds_soil01));
-  op_coupling01->Setup(values01, 1.0);
+  op_coupling01->Setup(values01,1.0);
   op_coupling01->UpdateMatrices(Teuchos::null, Teuchos::null);
 
 //  auto op_coupling10 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
@@ -323,7 +323,7 @@ void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
 
   auto op_coupling11 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
       oplist, cvs_soil, cvs_soil, inds_soil, inds_soil, op1));
-  op_coupling11->Setup(values11, 0.0);
+  op_coupling11->Setup(values11, 1.0);
   op_coupling11->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   op_tree_lake_->set_operator_block(0, 1, op_coupling01->global_operator());
