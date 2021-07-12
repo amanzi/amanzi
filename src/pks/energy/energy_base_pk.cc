@@ -217,7 +217,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S)
   preconditioner_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(acc_pc_plist, preconditioner_));
 
   //  -- advection terms
-  is_advection_term_ = plist_->get<bool>("include thermal advection");
+  is_advection_term_ = plist_->get<bool>("include thermal advection", true);
   if (is_advection_term_) {
 
     // -- create the forward operator for the advection term
