@@ -192,10 +192,10 @@ void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
           (*inds_soil10)[0][0] = ncells_owned_f1-1;
           (*inds_lake10)[0][0] = c;
       }   // normal??
-      if (c == ncells_owned_f1-1) { (*values00)[np1] = -4.;
+      if (c == ncells_owned_f1-1) { (*values00)[np1] = 0.; //-lambda_l[0][c]/area; //-40.;
       (*inds_lake1)[np1][0] = c;
       (*inds_soil1)[np1][0] = 0;} //lambda_l[0][c]/area; }
-      if (c == 0) { (*values00)[np1] = 4.;
+      if (c == 0) { (*values00)[np1] = lambda_l[0][c]/area; //40.;
       (*inds_lake1)[np1][0] = c;
       (*inds_soil1)[np1][0] = 0;} //(lambda_l[0][c]+lambda_s[0][c])/area;}
 //      if (c == 1) { (*values00)[np1] = -lambda_l[0][c]/area;}
@@ -261,10 +261,10 @@ void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
           (*inds_lake01)[0][0] = 0;
           (*inds_soil01)[0][0] = c;
       } // normal???
-      if (c == 0) { (*values11)[np] = -4.;
+      if (c == 0) { (*values11)[np] = 0.; //-lambda_s[0][c]/area; //-40.;
             (*inds_lake)[np][0] = 0;
             (*inds_soil)[np][0] = c;}
-      if (c == ncells_owned_f-1) { (*values11)[np] = 4.;
+      if (c == ncells_owned_f-1) { (*values11)[np] = lambda_s[0][c]/area; //40.;
             (*inds_lake)[np][0] = 0;
             (*inds_soil)[np][0] = c;} //lambda_s[0][c]/area;}//(lambda_l[0][c]+lambda_s[0][c])/area;}
 //      if (c == ncells_owned_f-2) { (*values11)[np] = -lambda_s[0][c]/area;}
