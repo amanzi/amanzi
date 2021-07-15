@@ -69,16 +69,20 @@ Evaluator_PDE_Accumulation::Evaluate_(
   double dt = S.Get<double>("time", tag_new_) - S.Get<double>("time", tag_old_);
   if (vo_.os_OK(Teuchos::VERB_EXTREME))
     *vo_.os() << "Evaluating PDE_Accumulation with dt = " << dt << std::endl;
-  results[0]->elementWiseMultiply(
-    1. / dt,
-    S.Get<CompositeVector>(conserved_key_, tag_new_),
-    S.Get<CompositeVector>(cv_key_, tag_new_),
-    0.);
-  results[0]->elementWiseMultiply(
-    -1. / dt,
-    S.Get<CompositeVector>(conserved_key_, tag_old_),
-    S.Get<CompositeVector>(cv_key_, tag_old_),
-    1.);
+
+  // dt is often zero, either prior to vis or in initialize.
+  if (dt != 0) {
+    results[0]->elementWiseMultiply(
+      1. / dt,
+      S.Get<CompositeVector>(conserved_key_, tag_new_),
+      S.Get<CompositeVector>(cv_key_, tag_new_),
+      0.);
+    results[0]->elementWiseMultiply(
+      -1. / dt,
+      S.Get<CompositeVector>(conserved_key_, tag_old_),
+      S.Get<CompositeVector>(cv_key_, tag_old_),
+      1.);
+  }
   Debug_(S);
 }
 
