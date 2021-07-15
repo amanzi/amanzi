@@ -6414,6 +6414,37 @@ file and _OUTFLOW PLANE is a planar region. _BLOODY SAND is a volumetric
 region defined by the value 25 in color function file.
 
 
+Databases
+=========
+
+
+Thermodynamic database
+----------------------
+
+A
+
+* `"primary species`" [list] List of primary species, one sublist for a species 
+  The sublist is named after the species and contains the following parameters:
+  `"ion size parameter`", `"charge`" and `"gram molecular weight`".
+
+.. code-block:: xml
+
+  <ParameterList name="thermodynamic database">
+    <ParameterList name="primary species">
+      <ParameterList name="H+">
+        <Parameter name="ion size parameter" type="double" value="9.0"/>
+        <Parameter name="charge" type="int" value="1"/>
+        <Parameter name="gram molecular weight" type="double" value="1.01"/>
+      </ParameterList>
+      <ParameterList name="Ca++">
+        <Parameter name="ion size parameter" type="double" value="6.0"/>
+        <Parameter name="charge" type="int" value="2"/>
+        <Parameter name="gram molecular weight" type="double" value="40.08"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+
 Output data
 ===========
 

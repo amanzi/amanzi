@@ -116,13 +116,13 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // bathymetry
   if (!S->HasField(bathymetry_key_)) {
-  std::vector<std::string> names({"cell", "node"});
-  std::vector<int> ndofs(2, 1);
-  std::vector<AmanziMesh::Entity_kind> locations({AmanziMesh::CELL, AmanziMesh::NODE});
+    std::vector<std::string> names({"cell", "node"});
+    std::vector<int> ndofs(2, 1);
+    std::vector<AmanziMesh::Entity_kind> locations({AmanziMesh::CELL, AmanziMesh::NODE});
     
-  S->RequireField(bathymetry_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-    ->SetComponents(names, locations, ndofs);
-    }
+    S->RequireField(bathymetry_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponents(names, locations, ndofs);
+  }
 }
 
 

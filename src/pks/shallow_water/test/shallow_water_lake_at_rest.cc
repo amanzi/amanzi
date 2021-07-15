@@ -330,20 +330,19 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
       io.FinalizeCycle();
     }
             
-  dt = SWPK.get_dt();
+    dt = SWPK.get_dt();
             
-  if (iter < 10) {
-    dt = 0.01 * dt;
-  }
+    if (iter < 10) {
+      dt = 0.01 * dt;
+    }
             
-  t_new = t_old + dt;
+    t_new = t_old + dt;
             
-  SWPK.AdvanceStep(t_old, t_new);
-  SWPK.CommitStep(t_old, t_new, S);
+    SWPK.AdvanceStep(t_old, t_new);
+    SWPK.CommitStep(t_old, t_new, S);
             
-  t_old = t_new;
-            
-  iter += 1;
+    t_old = t_new;
+    iter += 1;
   } // time loop
         
   if (MyPID == 0) {
