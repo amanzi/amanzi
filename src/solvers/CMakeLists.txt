@@ -56,6 +56,9 @@ set(kokkos_cuda_libs)
 if(ENABLE_KOKKOS_CUDA)
   set(kokkos_cuda_libs curand cusparse)
 endif()
+if(ENABLE_KOKKOS_OPENMP)
+  add_definitions("-DHAVE_OPENMP")
+endif()
 
 set(solvers_tpl_libs ${DBC_LIBRARIES}
 		     ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}

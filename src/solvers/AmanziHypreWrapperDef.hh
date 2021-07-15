@@ -18,7 +18,9 @@
 #include "HYPRE_parcsr_mv.h"
 #include "HYPRE.h"
 
+#if defined(HAVE_OPENMP)
 #include "omp.h"
+#endif
 
 using Teuchos::RCP;
 using Teuchos::rcp;
