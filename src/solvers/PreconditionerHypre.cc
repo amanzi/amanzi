@@ -11,7 +11,6 @@
 //! Hypre based preconditioners include Algebraic MultiGrid and global ILU
 
 #include "HYPRE_parcsr_ls.h"
-#include "Ifpack2_Hypre_decl.hpp"
 #include "Teuchos_RCP.hpp"
 
 #include "dbc.hh"
