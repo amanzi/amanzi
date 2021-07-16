@@ -290,7 +290,9 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
         PopulatePKTree_(pk_tree_list, "coupled flow and reactive transport");
       break;
     default:
-      Exceptions::amanzi_throw(Errors::Message("This model is not supported by the MPC."));
+      Errors::Message msg;
+      msg << "The model with id=" << transient_model << " is not supported by the MPC.\n";
+      Exceptions::amanzi_throw(msg);
     }
 
     std::ostringstream ss;
@@ -611,12 +613,17 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
     case 16:
       PopulatePKTree_(pk_tree_list, "shallow water");
       break;
+    case 20:
+      PopulatePKTree_(pk_tree_list, "flow and shallow water");
+      break;
     case 32: 
       pk_master_["multiphase"] = true;
       PopulatePKTree_(pk_tree_list, "multiphase");
       break;
     default:
-      Exceptions::amanzi_throw(Errors::Message("This model is not supported by the MPC."));
+      Errors::Message msg;
+      msg << "The model with id=" << transient_model << " is not supported by the MPC.\n";
+      Exceptions::amanzi_throw(msg);
     }
 
     Teuchos::ParameterList& tmp_list = out_list.sublist("time periods").sublist(ss.str());
@@ -719,6 +726,12 @@ void InputConverterU::PopulatePKTree_(
     tmp_list.set<std::string>("PK type", "thermal flow");
     tmp_list.sublist("flow").set<std::string>("PK type", pk_model_["flow"]);
     tmp_list.sublist("energy").set<std::string>("PK type", pk_model_["energy"]);
+  }
+  else if (pk_name == "flow and shallow water") {
+    Teuchos::ParameterList& tmp_list = pk_tree.sublist("flow and shallow water");
+    tmp_list.set<std::string>("PK type", "flow and shallow water");
+    tmp_list.sublist("flow").set<std::string>("PK type", pk_model_["flow"]);
+    tmp_list.sublist("shallow water").set<std::string>("PK type", "shallow water");
   }
   else if (pk_name == "flow and energy fracture") {
     Teuchos::ParameterList& tmp_list = pk_tree.sublist("flow and energy fracture");
@@ -976,7 +989,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
       // -- surface PKs
       else if (it->first == "shallow water") {
         // temporarily, we run only stand-along SW
-        out_list.sublist(it->first) = TranslateShallowWater_("matrix");
+        out_list.sublist(it->first) = TranslateShallowWater_("surface");
       }
       // -- multiphase PKs
       else if (it->first == "multiphase") {
@@ -1062,6 +1075,14 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
             .set<std::string>("domain name", "domain");
 
         err_options = "pressure, temperature";
+      }
+      else if (it->first == "flow and shallow water") {
+        Teuchos::Array<std::string> pk_names;
+        pk_names.push_back("flow");
+        pk_names.push_back("shallow water");
+        out_list.sublist(it->first)
+            .set<Teuchos::Array<std::string> >("PKs order", pk_names)
+            .set<int>("master PK index", 0);
       }
       else if (it->first == "flow and energy fracture") {
         Teuchos::Array<std::string> pk_names;
@@ -1177,6 +1198,10 @@ void InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
                                   .set<std::string>("extraction method", "manifold mesh");
 
       if (dim_ == 3) mesh_list.sublist("expert").set<bool>("request edges", true);
+    }
+
+    if (name == "flow and shallow water") {
+      mesh_list.sublist("expert").set<bool>("request edges", true);
     }
 
     if (name == "coupled transport" && transport_implicit_) {

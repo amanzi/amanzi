@@ -9,6 +9,8 @@
   Registration of MPC PKs.
 */
 
+#include "PK_MPCSubcycled.hh"
+
 #ifndef DISABLE_PHYSICS
 #include "FlowEnergy_PK.hh"
 #include "FlowEnergyMatrixFracture_PK.hh"
@@ -23,6 +25,8 @@
 #include "TransportMatrixFractureImplicit_PK.hh"
 
 namespace Amanzi {
+
+RegisteredPKFactory<PK_MPCSubcycled> PK_MPCSubcycled::reg_("mpc subcycled");
 
 #ifndef DISABLE_PHYSICS
 RegisteredPKFactory<FlowEnergy_PK> FlowEnergy_PK::reg_("thermal flow");
