@@ -148,7 +148,7 @@ void IonExchangeRxn::Update(const std::vector<Species>& primary_species)
   for (auto ionx = ionx_complexes_.begin(); ionx != ionx_complexes_.end(); ionx++) {
     int icomp = ionx->primary_id();
     // NOTE: pflotran is doing a += here, but the array was zeroed out.
-    ionx->set_concentration(ionx->X()*omega/primary_species[icomp].charge());
+    ionx->set_concentration(ionx->X() * omega / primary_species[icomp].charge());
   }
 }
 
