@@ -71,7 +71,6 @@ class Amanzi_PK : public Chemistry_PK {
 
   void XMLParameters();
   void SetupAuxiliaryOutput();
-  void SizeBeakerState_();
 
   void CopyBeakerStructuresToCellState(
       int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components);

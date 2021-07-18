@@ -30,12 +30,16 @@ struct BeakerState {
   std::vector<double> free_ion;  // molality
   std::vector<double> primary_activity_coeff;
   std::vector<double> secondary_activity_coeff;
+
   std::vector<double> mineral_volume_fraction;  // volume fractions
   std::vector<double> mineral_specific_surface_area;  // [m^2 mineral/ m^3 bulk]
+
   std::vector<double> ion_exchange_sites;  // CEC
   std::vector<double> ion_exchange_ref_cation_conc;  // [?]
+
   std::vector<double> surface_site_density;
   std::vector<double> surface_complex_free_site_conc;  // [moles sites / m^3 bulk]
+
   std::vector<double> isotherm_kd;
   std::vector<double> isotherm_freundlich_n;
   std::vector<double> isotherm_langmuir_b;

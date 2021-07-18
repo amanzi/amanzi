@@ -56,7 +56,7 @@ SimpleThermoDatabase::SimpleThermoDatabase(Teuchos::RCP<Teuchos::ParameterList> 
 /* *******************************************************************
 * Setup
 ******************************************************************* */
-void SimpleThermoDatabase::Initialize(const BeakerState& state,
+void SimpleThermoDatabase::Initialize(BeakerState& state,
                                       const BeakerParameters& parameters)
 {
   // primary species
