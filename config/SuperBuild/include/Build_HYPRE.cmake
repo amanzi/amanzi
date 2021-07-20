@@ -65,6 +65,7 @@ endif()
 
 set(Hypre_CC_FLAGS ${CMAKE_C_FLAGS})
 set(Hypre_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+set(Hypre_LINK_FLAGS ${CMAKE_LINK_FLAGS})
 
 # Locate SuperLU and SuperLUDist
 set(hypre_superlu_opt "--with-superlu" 
@@ -134,6 +135,7 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
                          CFLAGS=${Hypre_CC_FLAGS}
                          CXX=${CMAKE_CXX_COMPILER}
                          CXXFLAGS=${Hypre_CXX_FLAGS}
+                         LDFLAGS=${Hypre_LINK_FLAGS}
                          CUDA_HOME=${CUDA_HOME}
                          HYPRE_CUDA_SM=${Hypre_CUDA_SM}               
                     # -- Build
