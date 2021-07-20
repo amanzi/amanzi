@@ -281,12 +281,20 @@ macro(_lapack_find_dependency dep)
   if(LAPACK_FIND_REQUIRED)
     set(_lapack_required_arg REQUIRED)
   endif()
+  if (TPL_DEBUG_FIND_BLAS)
+    message(STATUS "    >>> FindLAPACK: Finding dependency - package = ${dep}, arguments=${ARGN}")
+  endif()
   find_package(${dep} ${ARGN}
     ${_lapack_quiet_arg}
     ${_lapack_required_arg}
   )
   if (NOT ${dep}_FOUND)
     set(LAPACK_NOT_FOUND_MESSAGE "LAPACK could not be found because dependency ${dep} could not be found.")
+  else()
+    if (TPL_DEBUG_FIND_BLAS)
+      message(STATUS "    >>> FindLAPACK: ${dep}_FOUND = ${${dep}_FOUND}")
+      message(STATUS "    >>> FindLAPACK: ${dep}_LIBRARIES = ${${dep}_LIBRARIES}")
+    endif()
   endif()
 
   set(_lapack_required_arg)
@@ -307,7 +315,19 @@ endif()
 
 # Load BLAS
 if(NOT LAPACK_NOT_FOUND_MESSAGE)
+  if (TPL_DEBUG_FIND_BLAS)
+    message(STATUS "    >>> FindLAPACK: calling _lapack_find_dependency(BLAS).")
+  endif()
   _lapack_find_dependency(BLAS)
+  if (NOT BLA_VENDOR OR ${BLA_VENDOR} STREQUAL "All")
+    # Guard against mismatch between BLAS and LAPACK. In addition, some
+    # BLAS libraries contain all the LAPACK libraries as well (e.g., OpenBLAS)
+    # so false positives result if we don't set BLA_VENDOR.
+    if (TPL_DEBUG_FIND_BLAS)
+      message(STATUS "    >>> FindLAPACK: setting BLA_VENDOR = ${BLA_VENDOR_FOUND}")
+    endif()
+    set(BLA_VENDOR ${BLA_VENDOR_FOUND})
+  endif()
 endif()
 
 # Search with pkg-config if specified
@@ -334,14 +354,16 @@ if(NOT LAPACK_NOT_FOUND_MESSAGE)
     set(BLA_VENDOR "All")
   endif()
 
+
   # LAPACK in the Intel MKL 10+ library?
   if(NOT LAPACK_LIBRARIES
       AND (BLA_VENDOR MATCHES "Intel" OR BLA_VENDOR STREQUAL "All")
       AND (CMAKE_C_COMPILER_LOADED OR CMAKE_CXX_COMPILER_LOADED))
+
     # System-specific settings
     if(NOT WIN32)
-      #set(LAPACK_mkl_LM "-lm")
-      #set(LAPACK_mkl_LDL "-ldl")
+      set(LAPACK_mkl_LM "-lm")
+      set(LAPACK_mkl_LDL "-ldl")
     endif()
 
     _lapack_find_dependency(Threads)
