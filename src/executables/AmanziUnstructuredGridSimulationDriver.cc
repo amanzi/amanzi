@@ -351,14 +351,17 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
       return Amanzi::Simulator::FAIL;
     }
     const auto& extract_plist = unstr_mesh_params.sublist("submesh");
+    std::string domain = extract_plist.get<std::string>("domain name");
+    AMANZI_ASSERT(domain == "fracture" || domain == "surface");
+
     std::vector<std::string> names = extract_plist.get<Teuchos::Array<std::string> >("regions").toVector();
 
-    auto mesh_fracture = meshfactory.create(mesh, names, Amanzi::AmanziMesh::FACE);
-    mesh_fracture->PrintMeshStatistics();
-    S->RegisterMesh("fracture", mesh_fracture);
+    auto submesh = meshfactory.create(mesh, names, Amanzi::AmanziMesh::FACE);
+    submesh->PrintMeshStatistics();
+    S->RegisterMesh(domain, submesh);
 
     {
-      Amanzi::InputAnalysis analysis(mesh_fracture, "fracture");
+      Amanzi::InputAnalysis analysis(submesh, domain);
       analysis.Init(*plist_);
       analysis.RegionAnalysis();
     }
