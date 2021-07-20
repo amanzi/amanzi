@@ -220,6 +220,11 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   double dt = t_new - t_old;
 
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "times: " << t_old << " " << t_new << std::endl;
+  }
+
   bool failed = false;
   double eps2 = 1e-12;
 

@@ -912,7 +912,6 @@ void MeshExtractedManifold::TryExtension_(
     const std::string& setname,
     Entity_kind kind_p, Entity_kind kind_d, Entity_ID_List* setents) const
 {
-std::cout << setname << std::endl;
   // labeled set: extract edges
   setents->clear();
 

@@ -22,6 +22,7 @@
       <ParameterList name="submesh">
         <Parameter name="regions" type="Array(string)" value="{FRACTURE_NETWORK_INTERNAL}"/>
         <Parameter name="extraction method" type="string" value="manifold mesh"/>
+        <Parameter name="domain name" type="string" value="fracture"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="verbose object">
