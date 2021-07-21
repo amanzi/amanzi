@@ -140,7 +140,7 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- velocity
   if (bc_list->isSublist("velocity")) {
-    PK_DomainFunctionFactory<ShallowWaterBoundaryFunction > bc_factory(mesh_);
+    PK_DomainFunctionFactory<ShallowWaterBoundaryFunction > bc_factory(mesh_, S_);
 
     Teuchos::ParameterList& tmp_list = bc_list->sublist("velocity");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
@@ -171,8 +171,9 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   // gravity
-  Epetra_Vector& gvec = *S_->GetConstantVectorData("gravity", "state");
-  g_ = std::fabs(gvec[1]);
+  double tmp[1];
+  S_->GetConstantVectorData("gravity", "state")->Norm2(tmp);
+  g_ = tmp[0];;
 
   // reconstruction
   Teuchos::ParameterList plist = sw_list_->sublist("reconstruction");
@@ -233,11 +234,6 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
 bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   double dt = t_new - t_old;
-
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "times: " << t_old << " " << t_new << std::endl;
-  }
 
   bool failed = false;
   double eps2 = 1e-12;
@@ -345,7 +341,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   
       int edge = cfaces[n];
       double B_rec = Bathymetry_edge_value(c, edge, xcf, B_n);
-        
 
       if (ht_rec < B_rec) {
         ht_rec = ht_c[0][c];
@@ -392,7 +387,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         B_rec = Bathymetry_edge_value(cn, edge, xcf, B_n);
           
         if (ht_rec < B_rec) {
-            std::cout<<"ht_rec < B_rec"<<std::endl;
           ht_rec = ht_c[0][cn];
           B_rec = B_c[0][cn];
         }

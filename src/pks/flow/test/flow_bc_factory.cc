@@ -77,7 +77,7 @@ TEST_FIXTURE(bits_and_pieces, empty_parameter_list)
   MeshFactory meshfactory(comm,gm);
   // Teuchos::RCP<Mesh> mesh(meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2));
 
-  PK_DomainFunctionFactory<PK_DomainFunction> bc_fact(mesh);
+  PK_DomainFunctionFactory<PK_DomainFunction> bc_fact(mesh, Teuchos::null);
 
   Teuchos::ParameterList plist;
   CHECK_THROW(bc_fact.Create(plist, "boundary pressure", AmanziMesh::FACE, Teuchos::null), Errors::Message);
@@ -89,7 +89,7 @@ TEST_FIXTURE(bits_and_pieces, pressure_not_list)
   Teuchos::ParameterList plist;
   plist.set("pressure", 0);  // wrong -- this should be a sublist
 
-  PK_DomainFunctionFactory<PK_DomainFunction> bc_fact(mesh);
+  PK_DomainFunctionFactory<PK_DomainFunction> bc_fact(mesh, Teuchos::null);
   CHECK_THROW(bc_fact.Create(plist, "boundary pressure", AmanziMesh::FACE, Teuchos::null), Errors::Message);
 }
 
@@ -100,7 +100,7 @@ TEST_FIXTURE(bits_and_pieces, bad_region)
   Teuchos::ParameterList& foo = plist.sublist("pressure").sublist("foo");
   foo.sublist("boundary pressure").sublist("function-constant").set("value", 0.0);
   // wrong - missing regions parameter
-  PK_DomainFunctionFactory<PK_DomainFunction> bc_fact(mesh);
+  PK_DomainFunctionFactory<PK_DomainFunction> bc_fact(mesh, Teuchos::null);
 
   CHECK_THROW(bc_fact.Create(plist, "boundary pressure", AmanziMesh::FACE, Teuchos::null), Errors::Message);
 
@@ -119,7 +119,7 @@ TEST_FIXTURE(bits_and_pieces, bad_function)
   foo.set("regions", foo_reg);
   // wrong - missing boundary pressure list
   
-  PK_DomainFunctionFactory<PK_DomainFunction> bc_fact(mesh);
+  PK_DomainFunctionFactory<PK_DomainFunction> bc_fact(mesh, Teuchos::null);
   CHECK_THROW(bc_fact.Create(plist, "boundary pressure", AmanziMesh::FACE, Teuchos::null), Errors::Message);
 
   foo.set("boundary pressure", 0);  // wrong - not a sublist
@@ -141,7 +141,7 @@ TEST_FIXTURE(bits_and_pieces, pressure)
        .sublist("boundary pressure")
        .sublist("function-constant").set("value", 1.0);
 
-  PK_DomainFunctionFactory<PK_DomainFunction> bc_fact(mesh);
+  PK_DomainFunctionFactory<PK_DomainFunction> bc_fact(mesh, Teuchos::null);
   Teuchos::RCP<PK_DomainFunction> bc = bc_fact.Create(plist, "boundary pressure", AmanziMesh::FACE, Teuchos::null);
 
   bc->Compute(0.0, 0.0);
@@ -154,7 +154,7 @@ TEST_FIXTURE(bits_and_pieces, static_head_empty)
   Teuchos::ParameterList plist;
   AmanziGeometry::Point gravity(0.0, 0.0, -1.0);
 
-  PK_DomainFunctionFactory<PK_DomainFunction> bc_fact(mesh);
+  PK_DomainFunctionFactory<PK_DomainFunction> bc_fact(mesh, Teuchos::null);
   CHECK_THROW(bc_fact.Create(plist, "static head", AmanziMesh::FACE, Teuchos::null), Errors::Message);
 }
 
@@ -179,7 +179,7 @@ TEST_FIXTURE(bits_and_pieces, static_head)
      .sublist("water table elevation").sublist("function-constant")
      .set("value", 2.0);
 
-  PK_DomainFunctionFactory<FlowBoundaryFunction> bc_fact(mesh);
+  PK_DomainFunctionFactory<FlowBoundaryFunction> bc_fact(mesh, Teuchos::null);
 
   Teuchos::RCP<FlowBoundaryFunction> bc0 = bc_fact.Create(foo, "static head", AmanziMesh::FACE, Teuchos::null);
   Teuchos::RCP<FlowBoundaryFunction> bc1 = bc_fact.Create(bar, "static head", AmanziMesh::FACE, Teuchos::null);

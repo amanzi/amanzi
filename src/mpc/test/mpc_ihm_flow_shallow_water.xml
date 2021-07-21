@@ -128,14 +128,29 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="ponded_depth">
+      <ParameterList name="surface-ponded_depth">
         <ParameterList name="function">
           <ParameterList name="TopSurface">
             <Parameter name="regions" type="Array(string)" value="{TopSurface}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="10.0"/>
+              <ParameterList name="function-exprtk">
+                <Parameter name="number of arguments" type="int" value="3"/>
+                <Parameter name="formula" type="string" value="0.01 * x + 0.02 * y"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="surface-bathymetry">
+        <ParameterList name="function">
+          <ParameterList name="TopSurface">
+            <Parameter name="regions" type="Array(string)" value="{TopSurface}"/>
+            <Parameter name="components" type="Array(string)" value="{cell, node}"/>
+            <ParameterList name="function">
+              <ParameterList name="function-exprtk">
+                <Parameter name="number of arguments" type="int" value="2"/>
+                <Parameter name="formula" type="string" value="0.00 * x"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -174,7 +189,7 @@
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="40.0"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1.0e-02"/>
+        <Parameter name="initial time step" type="double" value="0.1"/>
         <Parameter name="maximum time step" type="double" value="9.99e+98"/>
       </ParameterList>
     </ParameterList>
@@ -245,6 +260,10 @@
 
     <ParameterList name="flow">
       <Parameter name="domain name" type="string" value="domain"/>
+      <ParameterList name="initialization">
+        <Parameter name="method" type="string" value="saturated solver"/>
+        <Parameter name="linear solver" type="string" value="AztecOO"/>
+      </ParameterList>
       <ParameterList name="relative permeability">
         <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
         <Parameter name="upwind frequency" type="string" value="every timestep"/>
@@ -259,13 +278,13 @@
         <ParameterList name="WRM_0">
           <Parameter name="water retention model" type="string" value="van Genuchten"/>
           <Parameter name="regions" type="Array(string)" value="{All}"/>
-          <Parameter name="van Genuchten m" type="double" value="2.29399999999999993e-01"/>
-          <Parameter name="van Genuchten n" type="double" value="1.29769011160134973e+00"/>
-          <Parameter name="van Genuchten l" type="double" value="5.00000000000000000e-01"/>
-          <Parameter name="van Genuchten alpha" type="double" value="1.94670000000000005e-04"/>
-          <Parameter name="residual saturation liquid" type="double" value="0.00000000000000000e+00"/>
+          <Parameter name="van Genuchten m" type="double" value="0.23"/>
+          <Parameter name="van Genuchten n" type="double" value="1.29769011160134973"/>
+          <Parameter name="van Genuchten l" type="double" value="0.5"/>
+          <Parameter name="van Genuchten alpha" type="double" value="1.9467e-05"/>
+          <Parameter name="residual saturation liquid" type="double" value="0.1"/>
           <Parameter name="relative permeability model" type="string" value="Mualem"/>
-          <Parameter name="regularization interval" type="double" value="0.00000000000000000e+00"/>
+          <Parameter name="regularization interval" type="double" value="500.0"/>
           <ParameterList name="output">
             <Parameter name="file" type="string" value="WRM_0.txt"/>
             <Parameter name="number of points" type="int" value="1000"/>
@@ -337,16 +356,16 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="boundary conditions">
-        <ParameterList name="pressure">
+        <ParameterList name="static head">
           <ParameterList name="BC 0">
             <Parameter name="regions" type="Array(string)" value="{TopSurface}"/>
-            <ParameterList name="boundary pressure">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.00000000000000000e+05"/>
-              </ParameterList>
+            <ParameterList name="static head">
+              <Parameter name="flux_key" type="string" value="darcy_flux"/>
+              <Parameter name="field_in_key" type="string" value="hydraulic_head" />
+              <Parameter name="field_out_key" type="string" value="surface-total_depth"/>                
             </ParameterList>
-            <Parameter name="spatial distribution method" type="string" value="none"/>
-            <Parameter name="use area fractions" type="bool" value="false"/>
+            <Parameter name="spatial distribution method" type="string" value="domain coupling"/>
+            <Parameter name="submodel" type="string" value="field"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>

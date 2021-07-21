@@ -38,8 +38,9 @@ namespace Amanzi {
 template <class FunctionBase>
 class PK_DomainFunctionCoupling : public FunctionBase {
  public:
-  PK_DomainFunctionCoupling(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      mesh_(mesh) {};
+  PK_DomainFunctionCoupling(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                            const Teuchos::RCP<const State>& S) :
+      mesh_(mesh), S_(S) {};
   virtual ~PK_DomainFunctionCoupling() = default;
 
   typedef std::vector<std::string> RegionList;
@@ -51,9 +52,8 @@ class PK_DomainFunctionCoupling : public FunctionBase {
             AmanziMesh::Entity_kind kind);
 
   // required member functions
-  virtual void Compute(double t0, double t1);
-  virtual std::string name() const { return "domain coupling"; }
-  virtual void set_state(const Teuchos::RCP<State>& S) { S_ = S; }
+  virtual void Compute(double t0, double t1) override;
+  virtual std::string name() const override { return "domain coupling"; }
 
  protected:
   using FunctionBase::value_;
@@ -110,6 +110,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
 
     flux_key_ = slist.get<std::string>("flux_key");
     copy_flux_key_ = slist.get<std::string>("copy_flux_key", "default");
+
   } else if (submodel_ == "field") {
     field_in_key_ = slist.get<std::string>("field_in_key");
     copy_field_in_key_ = slist.get<std::string>("copy_field_in_key", "default");
@@ -195,7 +196,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
       }
 
       double linear(0.0);
-      std::vector<double> val(num_vec+1, 0.0); // extra is for water
+      std::vector<double> val(num_vec + 1, 0.0);  // extra is for water
       int pos = Operators::UniqueIndexFaceToCells(*mesh_out, f, cells[0]);
 
       for (int j = 0; j != cells.size(); ++j) {

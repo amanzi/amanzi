@@ -51,7 +51,7 @@ class TransportDomainFunction {
   std::vector<std::string>& tcc_names() { return tcc_names_; }
   void set_tcc_names(const std::vector<std::string>& tcc_names){ tcc_names_ = tcc_names; }
   std::vector<int>& tcc_index() { return tcc_index_; }
-  virtual void set_state(const Teuchos::RCP<State>& S) {S_ = S;}
+  virtual void set_state(const Teuchos::RCP<State>& S) { S_ = S; }
 
   // iterator methods
   typedef std::map<int, std::vector<double> >::iterator Iterator;
