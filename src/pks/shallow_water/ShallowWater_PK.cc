@@ -158,7 +158,7 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   
   // source term
   if (sw_list_->isSublist("source terms")) {
-    PK_DomainFunctionFactory<PK_DomainFunction> factory(mesh_);
+    PK_DomainFunctionFactory<PK_DomainFunction> factory(mesh_, S_);
     auto src_list = sw_list_->sublist("source terms");
     for (auto it = src_list.begin(); it != src_list.end(); ++it) {
       std::string name = it->first;
