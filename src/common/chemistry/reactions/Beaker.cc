@@ -559,7 +559,7 @@ void Beaker::DisplayResults() const {
   if (ion_exchange_rxns_.size() > 0) {
     vo_->Write(Teuchos::VERB_HIGH, "---- Ion Exchange Sites\n");
     ion_exchange_rxns_.at(0).site().DisplayResultsHeader(vo_);
-    for (unsigned int i = 0; i < ion_exchange_rxns_.size(); i++) {
+    for (int i = 0; i < ion_exchange_rxns_.size(); i++) {
       ion_exchange_rxns_.at(i).site().DisplayResults(vo_);
     }
   }
@@ -567,8 +567,8 @@ void Beaker::DisplayResults() const {
   if (ion_exchange_rxns_.size() > 0) {
     vo_->Write(Teuchos::VERB_HIGH, "---- Ion Exchange Complexes\n");
     ion_exchange_rxns_.at(0).ionx_complexes().at(0).DisplayResultsHeader(vo_);
-    for (unsigned int i = 0; i < ion_exchange_rxns_.size(); i++) {
-      for (unsigned int j = 0; j < ion_exchange_rxns_.at(i).ionx_complexes().size(); j++) {
+    for (int i = 0; i < ion_exchange_rxns_.size(); i++) {
+      for (int j = 0; j < ion_exchange_rxns_.at(i).ionx_complexes().size(); j++) {
         (ion_exchange_rxns_.at(i).ionx_complexes())[j].DisplayResults(vo_);
       }
     }

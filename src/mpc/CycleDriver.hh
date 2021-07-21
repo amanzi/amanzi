@@ -77,7 +77,6 @@ class CycleDriver {
 
   // states
   Teuchos::RCP<State> S_, S_old_;
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<TreeVector> soln_;
 
   // time step manager

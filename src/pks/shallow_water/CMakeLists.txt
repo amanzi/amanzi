@@ -37,21 +37,6 @@ include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 
 #
-# Shallow water registrations
-#
-# -- pk registration
-register_evaluator_with_factory(
-  HEADERFILE ShallowWater_PK_reg.hh
-  LISTNAME   PKS_SHALLOW_WATER_REGISTRATIONS
-  )
-
-generate_evaluators_registration_header( 
-  HEADERFILE pks_shallow_water_registration.hh   
-  LISTNAME   PKS_SHALLOW_WATER_REGISTRATIONS
-  INSTALL    True
-  )
-
-#
 # Library: shallow_water
 #
 set(sw_src_files ShallowWater_PK.cc
@@ -118,6 +103,14 @@ if (BUILD_TESTS)
                     KIND int
                     NPROCS 3
                     SOURCE test/Main.cc test/shallow_water_bathymetry.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                   
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})      
+
+    # Test: lake at rest with variable bathymetry
+    add_amanzi_test(shallow_water_lake_at_rest shallow_water_lake_at_rest
+                    KIND int
+                    NPROCS 3
+                    SOURCE test/Main.cc test/shallow_water_lake_at_rest.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+               
 endif()
 

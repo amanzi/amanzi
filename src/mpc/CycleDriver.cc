@@ -82,8 +82,6 @@ CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
     observations_data_(observations_data),
     restart_requested_(false) {
 
-  mesh_ = S_->GetMesh("domain");
-  
   // create and start the global timer
   CoordinatorInit_();
 
@@ -176,7 +174,7 @@ void CycleDriver::Setup() {
 
   // vis successful steps
   bool surface_done = false;
-  for (auto mesh=S_->mesh_begin(); mesh!=S_->mesh_end(); ++mesh) {
+  for (auto mesh = S_->mesh_begin(); mesh != S_->mesh_end(); ++mesh) {
     if (mesh->first == "surface_3d") {
       // pass
     } else if ((mesh->first == "surface") && surface_done) {
