@@ -60,8 +60,8 @@ using namespace Amanzi::AmanziGeometry;
   names.push_back("surface");
 
   // auto mesh_surface = Teuchos::rcp(new MeshExtractedManifold(
-  //     mesh, "TopSurface", AmanziMesh::FACE, comm, gm, mesh_list, true, true));
-  auto mesh_surface = factory.create(mesh, { "TopSurface" }, AmanziMesh::FACE);
+  //     mesh, "TopSurface", AmanziMesh::FACE, comm, gm, mesh_list, true, true, true));
+  auto mesh_surface = factory.create(mesh, { "TopSurface" }, AmanziMesh::FACE, true, true, true);
 
   S->RegisterMesh("surface", mesh_surface);
 

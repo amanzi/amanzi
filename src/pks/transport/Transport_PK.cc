@@ -385,7 +385,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   // create boundary conditions
   if (tp_list_->isSublist("boundary conditions")) {
     // -- try simple Dirichlet conditions for species
-    PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_);
+    PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_, S_);
     Teuchos::ParameterList& clist = tp_list_->sublist("boundary conditions").sublist("concentration");
 
     for (auto it = clist.begin(); it != clist.end(); ++it) {
@@ -422,7 +422,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
       }
     }
     // -- try geochemical Dirichlet conditions for species
-    PK_DomainFunctionFactory<TransportBoundaryFunction_Chemistry> factory2(mesh_);
+    PK_DomainFunctionFactory<TransportBoundaryFunction_Chemistry> factory2(mesh_, S_);
     Teuchos::ParameterList& cvlist = tp_list_->sublist("boundary conditions").sublist("constraints");
 
     for (auto it = cvlist.begin(); it != cvlist.end(); ++it) {
@@ -481,7 +481,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // source term initialization: so far only "concentration" is available.
   if (tp_list_->isSublist("source terms")) {
-    PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_);
+    PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_, S_);
     PKUtils_CalculatePermeabilityFactorInWell(S_.ptr(), Kxy);
 
     Teuchos::ParameterList& clist = tp_list_->sublist("source terms").sublist("concentration");

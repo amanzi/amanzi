@@ -32,8 +32,6 @@ namespace Amanzi {
 template <class FunctionBase>
 class PK_DomainFunctionFactory : public FunctionBase {
  public:
-  PK_DomainFunctionFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : mesh_(mesh) {};
   PK_DomainFunctionFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                            const Teuchos::RCP<const State>& S)
     : mesh_(mesh), S_(S) {};
@@ -105,7 +103,7 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
   }
   else if (model == "domain coupling") {
     Teuchos::RCP<PK_DomainFunctionCoupling<FunctionBase> >
-       func = Teuchos::rcp(new PK_DomainFunctionCoupling<FunctionBase>(mesh_));
+       func = Teuchos::rcp(new PK_DomainFunctionCoupling<FunctionBase>(mesh_, S_));
     func->Init(plist, keyword, kind);
     return func;
   }

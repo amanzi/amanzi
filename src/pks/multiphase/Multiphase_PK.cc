@@ -327,7 +327,7 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- pressure 
   if (bc_list.isSublist("pressure liquid")) {
-    PK_DomainFunctionFactory<MultiphaseBoundaryFunction> bc_factory(mesh_);
+    PK_DomainFunctionFactory<MultiphaseBoundaryFunction> bc_factory(mesh_, S_);
 
     Teuchos::ParameterList& tmp_list = bc_list.sublist("pressure liquid");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
@@ -343,7 +343,7 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- total injected mass flux
   if (bc_list.isSublist("mass flux total")) {
-    PK_DomainFunctionFactory<MultiphaseBoundaryFunction> bc_factory(mesh_);
+    PK_DomainFunctionFactory<MultiphaseBoundaryFunction> bc_factory(mesh_, S_);
 
     Teuchos::ParameterList& tmp_list = bc_list.sublist("mass flux total");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
@@ -359,7 +359,7 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- saturation
   if (bc_list.isSublist("saturation")) {
-    PK_DomainFunctionFactory<MultiphaseBoundaryFunction> bc_factory(mesh_);
+    PK_DomainFunctionFactory<MultiphaseBoundaryFunction> bc_factory(mesh_, S_);
 
     Teuchos::ParameterList& tmp_list = bc_list.sublist("saturation");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {

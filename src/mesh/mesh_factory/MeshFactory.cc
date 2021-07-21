@@ -381,7 +381,7 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
 
     auto mesh = Teuchos::rcp(new MeshExtractedManifold(
         inmesh, setnames[0], setkind,
-        comm, gm, plist_, request_faces, request_edges));
+        comm, gm, plist_, request_faces, request_edges, flatten));
 
     mesh->BuildCache();
     return mesh;
