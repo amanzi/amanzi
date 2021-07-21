@@ -59,6 +59,34 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+      
+      <ParameterList name="source terms">
+        <ParameterList name="source">
+          <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
+          <Parameter name="spatial distribution method" type="string" value="none"/>
+          <ParameterList name="source">
+            <Parameter name="number of dofs" type="int" value="3"/>
+            <Parameter name="function type" type="string" value="composite function"/>
+            <ParameterList name="dof 1 function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.0"/>
+              </ParameterList>
+            </ParameterList>
+            <ParameterList name="dof 2 function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.0"/>
+              </ParameterList>
+            </ParameterList>
+            <ParameterList name="dof 3 function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+        
+      
     </ParameterList>
   </ParameterList>
 

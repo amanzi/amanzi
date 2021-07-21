@@ -155,6 +155,20 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
       }
     }
   }
+  
+  // source term
+  if (sw_list_->isSublist("source terms")) {
+    PK_DomainFunctionFactory<PK_DomainFunction> factory(mesh_);
+    auto src_list = sw_list_->sublist("source terms");
+    for (auto it = src_list.begin(); it != src_list.end(); ++it) {
+      std::string name = it->first;
+      if (src_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = src_list.sublist(name);
+        
+        srcs_.push_back(factory.Create(spec, "source", AmanziMesh::CELL, Teuchos::null));
+      }
+    }
+  }
 
   // gravity
   Epetra_Vector& gvec = *S_->GetConstantVectorData("gravity", "state");
@@ -279,6 +293,22 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // update boundary conditions
   if (bcs_.size() > 0)
       bcs_[0]->Compute(t_old, t_new);
+  
+  // update source (external) terms
+  for (int i = 0; i < srcs_.size(); ++i) {
+    srcs_[i]->Compute(t_old, t_new);
+  }
+  
+  // compute source (external) values
+  std::vector<std::vector<double> > ext_S_cell(3, std::vector<double>(ncells_owned));
+  for (int  i = 0; i < srcs_.size(); ++i) {
+    for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
+      int c = it->first;
+      for (int j = 0; j < (it->second).size(); ++j) {
+        ext_S_cell[j][c] = mesh_->cell_volume(c) * it->second[j];
+      }
+    }
+  }
 
   // Shallow water equations have the form
   // U_t + F_x(U) + G_y(U) = S(U)
@@ -287,7 +317,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   AmanziMesh::Entity_ID_List cfaces, cnodes;
 
   std::vector<double> FL, FR, FNum(3), FNum_rot, FS(3);  // fluxes
-  std::vector<double> S;                                 // source term
+  std::vector<double> S;                          // source term
   std::vector<double> UL(3), UR(3), U, U_new(3);         // numerical fluxes
 
   // Simplest first-order form
@@ -416,9 +446,9 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     U[2] = h * v;
 
     S = NumericalSource(U, c);
-
+    
     for (int i = 0; i < 3; i++) {
-      U_new[i] = U[i] - dt / vol * FS[i] + dt * S[i];
+      U_new[i] = U[i] - dt / vol * FS[i] + dt * S[i] + dt * ext_S_cell[i][c];
     }
       
     // transform to conservative variables
@@ -665,7 +695,7 @@ std::vector<double> ShallowWater_PK::NumericalFlux_x_CentralUpwind(
 
  
 //--------------------------------------------------------------------
-// discretization of the source term (well-balanced for lake at rest)
+// Discretization of the source term (well-balanced for lake at rest)
 //--------------------------------------------------------------------
 std::vector<double> ShallowWater_PK::NumericalSource(
     const std::vector<double>& U, int c)
@@ -711,6 +741,7 @@ std::vector<double> ShallowWater_PK::NumericalSource(
 
   return S;
 }
+
 
 
 //--------------------------------------------------------------
@@ -816,3 +847,17 @@ void ShallowWater_PK::ErrorDiagnostics_(int c, double h, double B, double ht)
 
 }  // namespace ShallowWater
 }  // namespace Amanzi
+
+
+
+//<ParameterList name="source terms">
+//  <ParameterList name="source">
+//    <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
+//    <Parameter name="spatial distribution method" type="string" value="none"/>
+//    <ParameterList name="source">
+//      <ParameterList name="function-constant">
+//        <Parameter name="value" type="double" value="-0.2"/>
+//      </ParameterList>
+//    </ParameterList>
+//  </ParameterList>
+//</ParameterList>

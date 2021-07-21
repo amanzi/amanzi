@@ -29,6 +29,7 @@
 #include "PK_Explicit.hh"
 #include "PK_Factory.hh"
 #include "PK_Physical.hh"
+#include "PK_DomainFunction.hh"
 #include "ReconstructionCell.hh"
 #include "State.hh"
 #include "Tensor.hh"
@@ -111,6 +112,9 @@ class ShallowWater_PK : public PK_Physical,
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim_;
+                            
+  // source terms
+  std::vector<Teuchos::RCP<PK_DomainFunction> > srcs_;
 
  private:
   // boundary conditions
