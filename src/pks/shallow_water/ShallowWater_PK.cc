@@ -75,7 +75,6 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
   //-------------------------------
   // constant fields
   //-------------------------------
-
   if (!S->HasField("gravity")) {
     S->RequireConstantVector("gravity", passwd_, 2);
   }
@@ -173,7 +172,7 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   // gravity
   double tmp[1];
   S_->GetConstantVectorData("gravity", "state")->Norm2(tmp);
-  g_ = tmp[0];;
+  g_ = tmp[0];
 
   // reconstruction
   Teuchos::ParameterList plist = sw_list_->sublist("reconstruction");
@@ -371,15 +370,14 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       int cn = WhetStone::cell_get_face_adj_cell(*mesh_, c, f);
 
       if (cn == -1) {
-          if (bcs_.size() > 0 && bcs_[0]->bc_find(f)){
-              for (int i = 0; i < 3; ++i){ UR[i] = bcs_[0]->bc_value(f)[i]; } }
-
-        else
+        if (bcs_.size() > 0 && bcs_[0]->bc_find(f)) {
+          for (int i = 0; i < 3; ++i) UR[i] = bcs_[0]->bc_value(f)[i];
+        }
+        else {
           UR = UL;
+        }
 
-      }
-      else {
-          
+      } else {
         const Amanzi::AmanziGeometry::Point& xcn = mesh_->cell_centroid(cn);
           
         ht_rec = total_depth_grad_->getValue(cn, xcf);
@@ -417,7 +415,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       FNum[1] = FNum_rot[1] * normal[0] - FNum_rot[2] * normal[1];
       FNum[2] = FNum_rot[1] * normal[1] + FNum_rot[2] * normal[0];
         
-
       // update accumulated cell-based flux
       for (int i = 0; i < 3; i++) {
         FS[i] += FNum[i] * farea;
@@ -737,7 +734,6 @@ std::vector<double> ShallowWater_PK::NumericalSource(
 }
 
 
-
 //--------------------------------------------------------------
 // Calculation of time step limited by the CFL condition
 //--------------------------------------------------------------
@@ -767,7 +763,7 @@ double ShallowWater_PK::get_dt()
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "dt = " << dt << ", dt_min = " << dt_min << std::endl;
+    *vo_->os() << "stable dt=" << dt << ", cfl=" << cfl_ << std::endl;
   }
 
   return cfl_ * dt_min;
@@ -810,12 +806,11 @@ double ShallowWater_PK::Bathymetry_rectangular_cell_value(int c, const AmanziGeo
 //--------------------------------------------------------------
 // Bathymetry (Evaluate value at edge midpoint for a polygonal cell)
 //--------------------------------------------------------------
-
 double ShallowWater_PK::Bathymetry_edge_value(int c, int e, const AmanziGeometry::Point& xp, Epetra_MultiVector& B_n)
 {
   double x = xp[0], y = xp[1];
   AmanziMesh::Entity_ID_List face_nodes;
-  mesh_ ->face_get_nodes(e, &face_nodes);
+  mesh_->face_get_nodes(e, &face_nodes);
 
   double B_rec = ( B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]] ) /2.0;
     
