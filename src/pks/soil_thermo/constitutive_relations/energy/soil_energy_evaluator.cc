@@ -36,9 +36,9 @@ SoilEnergyEvaluator::SoilEnergyEvaluator(Teuchos::ParameterList& plist) :
   heat_capacity_key_ = Keys::readKey(plist_, domain_name, "heat capacity", "heat_capacity");
   dependencies_.insert(heat_capacity_key_);
 
-  // -- pressure
-  pres_key_ = Keys::readKey(plist_, domain_name, "pressure", "pressure");
-  dependencies_.insert(pres_key_);
+//  // -- pressure
+//  pres_key_ = Keys::readKey(plist_, domain_name, "pressure", "pressure");
+//  dependencies_.insert(pres_key_);
 
 };
 
@@ -46,8 +46,8 @@ SoilEnergyEvaluator::SoilEnergyEvaluator(const SoilEnergyEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     temperature_key_(other.temperature_key_),
     density_key_(other.density_key_),
-    heat_capacity_key_(other.heat_capacity_key_),
-    pres_key_(other.pres_key_){};
+    heat_capacity_key_(other.heat_capacity_key_){};//,
+//    pres_key_(other.pres_key_){};
 
 Teuchos::RCP<FieldEvaluator>
 SoilEnergyEvaluator::Clone() const {
@@ -98,6 +98,8 @@ void SoilEnergyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<Sta
 
   std::cout << "SoilEnergyEvaluator::EvaluateFieldPartialDerivative_ START" << std::endl;
 
+  result->PutScalar(0.);
+
   if (wrt_key == temperature_key_) {
     Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
 
@@ -126,9 +128,9 @@ void SoilEnergyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<Sta
     }
   }
 
-  if (wrt_key == pres_key_) {
-      result->PutScalar(0.);
-  }
+//  if (wrt_key == pres_key_) {
+//      result->PutScalar(0.);
+//  }
 
   std::cout << "SoilEnergyEvaluator::EvaluateFieldPartialDerivative_ DONE" << std::endl;
 

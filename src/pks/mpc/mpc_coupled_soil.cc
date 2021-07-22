@@ -64,6 +64,9 @@ MPCCoupledSoil::MPCCoupledSoil(Teuchos::ParameterList& pk_tree_list,
   mass_flux_dir_key_ = Keys::readKey(*plist_, domain_name_, "mass flux direction", "mass_flux_direction");
   rho_key_ = Keys::readKey(*plist_, domain_name_, "mass density liquid", "mass_density_liquid");
 
+  std::cout << "domain_name_ = " << domain_name_ << std::endl;
+  std::cout << "enth_key_ = " << enth_key_ << std::endl;
+
   std::cout << "MPCCoupledSoil DONE" << std::endl;
 
 }
