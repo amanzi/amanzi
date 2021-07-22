@@ -21,15 +21,22 @@ SurfaceSubsurface_PK::SurfaceSubsurface_PK(
     const Teuchos::RCP<Teuchos::ParameterList>& global_list,
     const Teuchos::RCP<State>& S,
     const Teuchos::RCP<TreeVector>& soln) :
-    Amanzi::PK_MPCSubcycled(pk_tree, global_list, S, soln) {
+    Amanzi::PK_MPCSubcycled(pk_tree, global_list, S, soln)
+{
+  mesh_domain_ = S->GetMesh();
+  mesh_surface_ = S->GetMesh("surface");
+  
+  Teuchos::ParameterList vlist;
+  vo_ = Teuchos::rcp(new VerboseObject("SurfaceSubsurface_PK", vlist)); 
 }
 
 
 // -----------------------------------------------------------------------------
 // Calculate the min of sub PKs timestep sizes.
 // -----------------------------------------------------------------------------
-double SurfaceSubsurface_PK::get_dt() {
-  //double dt = Amanzi::PK_MPCSubcycled::get_dt();
+double SurfaceSubsurface_PK::get_dt()
+{
+  // double dt = Amanzi::PK_MPCSubcycled::get_dt();
   double dt = sub_pks_[master_]->get_dt();
   return dt;
 }
@@ -40,10 +47,6 @@ double SurfaceSubsurface_PK::get_dt() {
 // -----------------------------------------------------------------------------
 void SurfaceSubsurface_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
-  
-  mesh_domain_ = S->GetMesh();
-  mesh_surface_ = S->GetMesh("surface");
-  
   int nsurf_nodes = mesh_surface_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
   int nsurf_cells = mesh_surface_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   
@@ -51,24 +54,23 @@ void SurfaceSubsurface_PK::Initialize(const Teuchos::Ptr<State>& S)
   Epetra_MultiVector &B_c = *S->GetFieldData("surface-bathymetry", "state")->ViewComponent("cell");
   
   // Bathymetry node values
+  AmanziGeometry::Point node_crd;
+
   for (int n = 0; n < nsurf_nodes; ++n) {
-    int  v = mesh_surface_->entity_get_parent(AmanziMesh::Entity_kind::NODE, n);
+    int v = mesh_surface_->entity_get_parent(AmanziMesh::Entity_kind::NODE, n);
     
-    AmanziGeometry::Point node_crd;
     mesh_domain_->node_get_coordinates(v, &node_crd); // coordinate of surface node in 3D mesh
     
-//    std::cout<<"z value: "<<node_crd[2]<<std::endl;
     B_n[0][n] = node_crd[2]; // z value of the surface
   }
   
-  // Bathymetry cell values (compute from node values later)
+  // Bathymetry cell values (compute from face centroids of the parent mesh)
   for (int c = 0; c < nsurf_cells; ++c) {
-    int  cc = mesh_surface_->entity_get_parent(AmanziMesh::Entity_kind::CELL, c);
+    int f = mesh_surface_->entity_get_parent(AmanziMesh::Entity_kind::CELL, c);
 
-    const Amanzi::AmanziGeometry::Point &xc = mesh_domain_->cell_centroid(cc); // coordinate of surface node centroid in 3D mesh
+    const Amanzi::AmanziGeometry::Point &xf = mesh_domain_->face_centroid(f);
     
-//    std::cout<<"z cell value: "<<xc[2]<<std::endl;
-    B_c[0][c] = xc[2]; // z value of the surface
+    B_c[0][c] = xf[2]; // z value of the surface
   }
   
   S->GetField("surface-bathymetry", "state")->set_initialized();
@@ -97,7 +99,8 @@ void SurfaceSubsurface_PK::CommitStep(double t_old, double t_new, const Teuchos:
 // -----------------------------------------------------------------------------
 // Advance each sub-PK individually, returning a failure as soon as possible.
 // -----------------------------------------------------------------------------
-bool SurfaceSubsurface_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
+bool SurfaceSubsurface_PK::AdvanceStep(double t_old, double t_new, bool reinit)
+{
   bool fail = false;
 
   // advance the master PK using the full step size

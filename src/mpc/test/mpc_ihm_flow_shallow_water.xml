@@ -204,7 +204,7 @@
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
           <ParameterList name="flow and shallow water">
-            <Parameter name="PK type" type="string" value="mpc subcycled"/>
+            <Parameter name="PK type" type="string" value="surface subsurface"/>
             <ParameterList name="flow">
               <Parameter name="PK type" type="string" value="richards"/>
             </ParameterList>
