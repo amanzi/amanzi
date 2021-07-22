@@ -799,9 +799,7 @@ double ShallowWater_PK::Bathymetry_rectangular_cell_value(int c, const AmanziGeo
   double B4 = B_n[0][nodes[2]];
     
   double xln = xl[0], yln = xl[1];
-
   double B_rec = B1 + (B2 - B1)*(xp[0] - xln)/dx + (B3 - B1)*(xp[1] - yln)/dy + (B4 - B2 - B3 + B1)*(xp[0] - xln)*(xp[1] - yln)/(dx*dy) ;
-
   return B_rec;
 }
 */
@@ -843,15 +841,3 @@ void ShallowWater_PK::ErrorDiagnostics_(int c, double h, double B, double ht)
 }  // namespace Amanzi
 
 
-
-//<ParameterList name="source terms">
-//  <ParameterList name="source">
-//    <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
-//    <Parameter name="spatial distribution method" type="string" value="none"/>
-//    <ParameterList name="source">
-//      <ParameterList name="function-constant">
-//        <Parameter name="value" type="double" value="-0.2"/>
-//      </ParameterList>
-//    </ParameterList>
-//  </ParameterList>
-//</ParameterList>
