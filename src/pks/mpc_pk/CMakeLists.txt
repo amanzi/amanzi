@@ -67,7 +67,8 @@ if (ENABLE_AmanziPhysicsModule)
       TransportMatrixFractureImplicit_PK.hh
       FlowReactiveTransport_PK.hh
       ReactiveTransport_PK.hh
-      ReactiveTransportMatrixFracture_PK.hh)
+      ReactiveTransportMatrixFracture_PK.hh
+      SurfaceSubsurface_PK.hh)
 
   set(mpc_tree_src_files 
       PK_MPCWeak.cc 
@@ -81,7 +82,8 @@ if (ENABLE_AmanziPhysicsModule)
       TransportMatrixFractureImplicit_PK.cc
       FlowReactiveTransport_PK.cc
       ReactiveTransport_PK.cc
-      ReactiveTransportMatrixFracture_PK.cc)
+      ReactiveTransportMatrixFracture_PK.cc
+      SurfaceSubsurface_PK.cc)
 
   set(mpc_tree_link_libs pks flow transport time_integration data_structures state)
 

@@ -23,6 +23,7 @@
 #include "ReactiveTransportMatrixFracture_PK.hh"
 #include "TransportMatrixFracture_PK.hh"
 #include "TransportMatrixFractureImplicit_PK.hh"
+#include "SurfaceSubsurface_PK.hh"
 
 namespace Amanzi {
 
@@ -41,7 +42,8 @@ RegisteredPKFactory<TransportMatrixFracture_PK> TransportMatrixFracture_PK::reg_
 RegisteredPKFactory<ChemistryMatrixFracture_PK> ChemistryMatrixFracture_PK::reg_("chemistry matrix fracture");  
 
 RegisteredPKFactory<TransportMatrixFractureImplicit_PK> TransportMatrixFractureImplicit_PK::reg_("transport matrix fracture implicit");
-RegisteredPKFactory<ReactiveTransportMatrixFracture_PK> ReactiveTransportMatrixFracture_PK::reg_("reactive transport matrix fracture");    
+RegisteredPKFactory<ReactiveTransportMatrixFracture_PK> ReactiveTransportMatrixFracture_PK::reg_("reactive transport matrix fracture");
+RegisteredPKFactory<SurfaceSubsurface_PK> SurfaceSubsurface_PK::reg_("surface subsurface");
 
 }  // namespace Amanzi
 
