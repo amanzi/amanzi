@@ -101,7 +101,7 @@ if (BUILD_TESTS)
     # Test: smooth 2D equilibrium
     add_amanzi_test(shallow_water_bathymetry shallow_water_bathymetry
                     KIND int
-                    NPROCS 3
+                    NPROCS 1
                     SOURCE test/Main.cc test/shallow_water_bathymetry.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})      
 

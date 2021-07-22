@@ -43,7 +43,7 @@ void dam_break_1D_exact(double hL, double x0, double t, double x, double &h, dou
     }
     else {
       h = 0.;
-        u = 0.;
+      u = 0.;
     }
   }
 
