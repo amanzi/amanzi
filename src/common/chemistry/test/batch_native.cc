@@ -355,7 +355,7 @@ TEST(NATIVE_GENERAL_KINETICS) {
                  8640.0, 500, 5);
 }
 
-
+/*
 TEST(NATIVE_GENERAL_KINETICSi_QUADRATIC) {
   std::vector<double> ict = { 1.0e-4, 2.0e-5, 1e-20};
   std::vector<double> icm, icie, icfi;
@@ -366,6 +366,7 @@ TEST(NATIVE_GENERAL_KINETICSi_QUADRATIC) {
                  0.25, 1.0, 1.0,  // porosity, saturation, cell volume
                  8640.0, 500, 5);
 }
+*/
 
 
 TEST(NATIVE_VALOCCHI_INITIAL) {
