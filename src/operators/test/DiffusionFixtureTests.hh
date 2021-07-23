@@ -56,12 +56,17 @@ void test(const std::string& prec_solver,
   }     
   fix.Setup(prec_solver, symmetric);
 
+
+  auto start = std::chrono::high_resolution_clock::now();
   if (prec_solver == "mat-vec") {
     fix.MatVec(niters);
   } else {
     for (int i = 0; i < niters - 1; ++i) fix.Go(0.0);
     fix.Go(tol);
   }
+  auto stop = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+  std::cout<<"Solver time: "<<double(duration.count() * 1e-6)<<" sec"<<std::endl;
 
   if (fix.get_comm()->getRank() == 0) {
     std::cout << "================================================================================" 

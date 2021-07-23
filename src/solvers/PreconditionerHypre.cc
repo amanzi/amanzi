@@ -117,7 +117,6 @@ void PreconditionerHypre::InitBoomer_()
     IfpHypre_->SetParameter((Amanzi::Hypre_Chooser)1, &HYPRE_BoomerAMGSetCycleRelaxType, plist_.get<int>("relaxation type up"), 2);
   } else if (plist_.isParameter("relaxation type")) {
     IfpHypre_->SetParameter((Amanzi::Hypre_Chooser)1, &HYPRE_BoomerAMGSetRelaxType, plist_.get<int>("relaxation type")); 
-    IfpHypre_->SetParameter((Amanzi::Hypre_Chooser)1, &HYPRE_BoomerAMGSetRelaxType, plist_.get<int>("relaxation type coarse"));
   } else { 
     // use Hypre's defaults
   }

@@ -119,6 +119,16 @@ TEST(Verify_Mesh_and_Operators) {
     device = argv_copy[7]; 
   }
 
+  int relaxation = 1; 
+  if(argc > 8){
+    relaxation = std::stoi(argv_copy[8]);
+  }
+
+  int interpolation = 3; 
+  if(argc > 9){
+    interpolation = std::stoi(argv_copy[9]); 
+  }
+
   // little_k
   AmanziMesh::Entity_kind scalar_coef(AmanziMesh::Entity_kind::UNKNOWN);
 
@@ -199,16 +209,17 @@ TEST(Verify_Mesh_and_Operators) {
         .set<int>("cycle applications", 1)
         .set<int>("smoother sweeps", 2)
         //.set<double>("tolerance", 1e-5)
-        .set<int>("verbosity", 3)
+        .set<int>("verbosity", 1)
         .set<int>("coarsening type", 8) /* 8: PMIS */
-        .set<int>("interpolation type", 3) 
+        .set<int>("interpolation type", interpolation) 
+        /* From Hypre 2.22.0 Manual */
         /*3:  direct
           15: BAMG-direct
           6: extended+i
           14: extended
           18: ? */
         .set<int>("relaxation order", 0) /* must be false */
-        .set<int>("relaxation type", 3); 
+        .set<int>("relaxation type", relaxation); 
         /*3: Hybrid Gauss Seidel 
           4: ''
           6: '' 
@@ -217,28 +228,22 @@ TEST(Verify_Mesh_and_Operators) {
           11: two-stage Gauss-Seidel 
           12: ''
            */
-
-        //HYPRE_BoomerAMGSetAggNumLevels(precon, agg_num_levels);
-        //HYPRE_BoomerAMGSetAggInterpType(precon, agg_interp_type); /* 5 or 7 */
-        //HYPRE_BoomerAMGSetKeepTranspose(precon, TRUE); /* keep transpose to avoid SpMTV */
-        //HYPRE_BoomerAMGSetRAP2(precon, FALSE); /* RAP in two multiplications (default: FALSE) */
-  
   }else if(device == "omp"){
     std::cout<<"Using Hypre: AMG with OMP parameters"<<std::endl;
     plist->sublist("preconditioners").sublist("Hypre: AMG")
         .set<std::string>("preconditioning method", "hypre: boomer amg").sublist("hypre: boomer amg parameters")
-        .set<double>("strong threshold", 0.5)
+        //.set<double>("strong threshold", 0.5)
         .set<int>("cycle applications", 1)
         .set<int>("smoother sweeps", 1)
-        //.set<double>("tolerance", 1e-6)
-        .set<int>("verbosity", 3)
-        .set<int>("max multigrid levels", 1)
+        .set<double>("tolerance", 0.0)
+        .set<int>("verbosity", 1)
+        //.set<int>("max multigrid levels", 1)
         //.set<int>("max coarse size", 10000000) 
-        .set<int>("coarsening type", 8)
-        //.set<int>("interpolation type", 15)
+        //.set<int>("coarsening type", coarsening)
+        //.set<int>("interpolation type", interpolation)
         //.set<int>("relaxation order", 0)
-        .set<int>("relaxation type coarse", 9)
-        .set<int>("relaxation type", 6);
+        //.set<int>("relaxation type coarse", 9)
+        .set<int>("relaxation type", relaxation);
 
 
   } else {

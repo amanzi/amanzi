@@ -30,8 +30,8 @@ SUITE(COMMON_CSR)
   {
     // Create Matrix CSR 
     const int nmatrices = 100000; 
-    const int nrows = 100; 
-    const int ncols = 100; 
+    const int nrows = 10; 
+    const int ncols = 10; 
     CSR<double,2,Amanzi::DeviceOnlyMemorySpace> csr_mat(nmatrices); 
 
     // Fill the matrices on the host 
