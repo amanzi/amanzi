@@ -36,9 +36,11 @@
 
   (B) submodel="field". The computed data are given by the formula:
 
-      value[i][f] = field[i][c]; 
+      value[i][f] = F(field[i][c]); 
 
-  (C) submodel="conserved quantity"
+  where F is function.
+
+  (C) submodel="conserved quantity". Not used in Amanzi.
 */
 
 #ifndef AMANZI_PK_DOMAIN_FUNCTION_COUPLING_HH_
@@ -54,6 +56,7 @@
 // Amanzi
 #include "CommonDefs.hh"
 #include "DenseVector.hh"
+#include "FunctionFactory.hh"
 #include "Mesh.hh"
 #include "State.hh"
 #include "UniqueLocalIndex.hh"
@@ -95,6 +98,8 @@ class PK_DomainFunctionCoupling : public FunctionBase {
   std::string field_cons_key_, copy_field_cons_key_;
   std::string field_out_key_, copy_field_out_key_;
   std::string field_in_key_, copy_field_in_key_;
+
+  std::unique_ptr<Function> f_;
 
   Teuchos::RCP<MeshIDs> entity_ids_;
   std::map<AmanziMesh::Entity_ID, AmanziMesh::Entity_ID> reverse_map_;
@@ -188,6 +193,13 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
       Exceptions::amanzi_throw(message);
     }
   }
+
+  // create a function
+  if (slist.isSublist("function")) {
+    auto flist = slist.sublist("function");
+    FunctionFactory factory;
+    f_ = factory.Create(flist);
+  }
 }
 
 
@@ -201,21 +213,13 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
   if (submodel_ == "rate") {
     const auto& flux = *S_->GetFieldCopyData(flux_key_, copy_flux_key_)->ViewComponent("face", true);
     const auto& field_out = *S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ViewComponent("cell", true);
-    const auto& field_in = *S_->GetFieldCopyData(field_in_key_, copy_field_in_key_)->ViewComponent("cell", true);
 
     const auto& flux_map = S_->GetFieldData(flux_key_)->Map().Map("face", true);
     const auto& source_mesh = S_->GetMesh(Keys::getDomain(field_in_key_));
 
     S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ScatterMasterToGhosted("cell");
-    S_->GetFieldCopyData(field_in_key_, copy_field_in_key_)->ScatterMasterToGhosted("cell");
 
-    if (field_in.NumVectors() != field_out.NumVectors()) {
-      std::stringstream m;
-      m << "Mismatch of numbers of vectors in coupled fields.\n";
-      Errors::Message message(m.str());
-      Exceptions::amanzi_throw(message);
-    }
-    int num_vec = field_in.NumVectors();
+    int num_vec = field_out.NumVectors();
 
     AmanziMesh::Entity_ID_List cells, faces;
     std::vector<int> dirs;
@@ -247,6 +251,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
             int g = flux_map->FirstPointInElement(f);
             double fln = flux[0][g + (pos + j)%2] * dirs[i];
 
+std::cout << f << " " << mesh_out->face_centroid(f) << fln << std::endl;
             if (fln >= 0) {
               linear += fln;
               for (int k = 0; k < num_vec; ++k) {
@@ -283,12 +288,21 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
 
     // Loop over faces (owned + ghosted) in the space restricted to the manifold.
     // The set of these faces could be bigger then the set of manifold cells (owned + ghosted)
+    std::vector<double> args(1);
+
     for (auto f = entity_ids_->begin(); f != entity_ids_->end(); ++f) {
       auto it = reverse_map_.find(*f);
       if (it == reverse_map_.end()) continue;
 
       int c = it->second;
       for (int k = 0; k < num_vec; ++k) val[k] = field_out[k][c]; 
+
+      if (f_ != nullptr) {
+        for (int k = 0; k < num_vec; ++k) {
+          args[0] = val[k];
+          val[k] = (*f_)(args);
+        }
+      }
       value_[*f] = val;     
     }
 

@@ -302,8 +302,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   for (int  i = 0; i < srcs_.size(); ++i) {
     for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
       int c = it->first;
-      ext_S_cell[c] = it->second[1];  // 1 is for water, data units is [m^3]
-      total_source_ += it->second[1];
+      ext_S_cell[c] = -it->second[1];  // 1 is for water, data units is [m^3]
+      total_source_ -= it->second[1];
     }
   }
 
