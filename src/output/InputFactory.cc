@@ -17,7 +17,6 @@
 #include <string>
 
 #include "errors.hh"
-#include "UniqueHelpers.hh"
 #include "Input.hh"
 #include "InputOutputHDF5.hh"
 

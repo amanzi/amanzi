@@ -17,7 +17,6 @@
 
 #include "OutputFactory.hh"
 #include "Mesh.hh"
-#include "UniqueHelpers.hh"
 
 #include "Visualization.hh"
 

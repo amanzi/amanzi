@@ -11,7 +11,6 @@
 //! An evaluator with no dependencies, solved for by a PK.
 
 #include "EvaluatorPrimary.hh"
-#include "UniqueHelpers.hh"
 
 namespace Amanzi {
 

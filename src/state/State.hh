@@ -35,7 +35,6 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
-#include "UniqueHelpers.hh"
 
 #if (!STATE_OLD_INTERFACE_DEPRECATED)
 #  include "CompositeVector.hh"

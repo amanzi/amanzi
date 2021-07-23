@@ -18,7 +18,6 @@
 */
 
 #include "EvaluatorIndependentFunction.hh"
-#include "UniqueHelpers.hh"
 
 namespace Amanzi {
 

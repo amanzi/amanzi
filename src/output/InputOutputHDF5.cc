@@ -14,7 +14,6 @@
   Input/Output via HDF5 file for checkpoint/restart.
 */
 
-#include "UniqueHelpers.hh"
 #include "InputOutputHDF5.hh"
 
 namespace Amanzi {

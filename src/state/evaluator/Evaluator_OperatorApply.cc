@@ -515,7 +515,7 @@ Evaluator_OperatorApply::Update_(State& S)
     result.update(rhs_scalars_[j],
                   S.Get<CompositeVector>(rhs_key, my_tag),
                   1.0);
-    db_->WriteVector(rhs_key, result);
+    db_->WriteVector("res + "+rhs_key, result);
     ++j;
   }
 }

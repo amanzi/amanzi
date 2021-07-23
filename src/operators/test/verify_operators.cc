@@ -43,9 +43,10 @@ int main(int argc, char *argv[])
       "  (opt) tol       = positive double  (default 1e-10)\n"
       "  (opt) nloops    = number of iterations  (default is 1 for linear solvers)\n"
       "  (opr) libsolver = linear solver: pcg (default) or gmres\n\n"
+      "  (opr) device    = device type: serial (default), omp or gpu\n\n"
       "Examples:\n"
       "  verify_operators \"Hypre: AMG\" structured3d 10 fv 1e-10\n"
-      "  verify_operators \"Amesos1: KLU\" unstructured2d mymesh.exo mfd 1e-10 1 gmres\n";
+      "  verify_operators \"Amesos1: KLU\" unstructured2d mymesh.exo mfd 1e-10 1 gmres gpu\n";
     return 1;
   }
   for (int i = 1; i < argc; ++i) argv_copy.push_back(argv[i]);
@@ -53,9 +54,11 @@ int main(int argc, char *argv[])
   argv[0] = new char[40];
   strcpy(argv[0], "--teuchos-suppress-startup-banner");
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  Kokkos::initialize(argc,argv); 
   MyPID = mpiSession.getRank();
-
-  return UnitTest::RunAllTests();
+  auto res = UnitTest::RunAllTests();
+  Kokkos::finalize(); 
+  return res; 
 }
 
 
@@ -109,6 +112,21 @@ TEST(Verify_Mesh_and_Operators) {
   std::string linsolver("pcg");
   if (argc > 6) {
     linsolver = argv_copy[6];
+  }
+
+  std::string device("serial");
+  if(argc > 7){
+    device = argv_copy[7]; 
+  }
+
+  int relaxation = 1; 
+  if(argc > 8){
+    relaxation = std::stoi(argv_copy[8]);
+  }
+
+  int interpolation = 3; 
+  if(argc > 9){
+    interpolation = std::stoi(argv_copy[9]); 
   }
 
   // little_k
@@ -183,13 +201,63 @@ TEST(Verify_Mesh_and_Operators) {
       .set<bool>("rescale rows", false)
       .set<double>("ilut drop tolerance", 1e-6);
 
-  plist->sublist("preconditioners").sublist("Hypre: AMG")
-      .set<std::string>("preconditioning method", "hypre: boomer amg").sublist("hypre: boomer amg parameters")
-      .set<int>("cycle applications", 2)
-      .set<int>("smoother sweeps", 3)
-      .set<double>("strong threshold", 0.5)
-      .set<double>("tolerance", 0.0)
-      .set<int>("relaxation type", 6);
+  if(device == "gpu"){
+    std::cout<<"Using Hypre: AMG with GPU parameters"<<std::endl;
+    plist->sublist("preconditioners").sublist("Hypre: AMG")
+        .set<std::string>("preconditioning method", "hypre: boomer amg").sublist("hypre: boomer amg parameters")
+        .set<double>("strong threshold", 0.5)
+        .set<int>("cycle applications", 1)
+        .set<int>("smoother sweeps", 2)
+        //.set<double>("tolerance", 1e-5)
+        .set<int>("verbosity", 1)
+        .set<int>("coarsening type", 8) /* 8: PMIS */
+        .set<int>("interpolation type", interpolation) 
+        /* From Hypre 2.22.0 Manual */
+        /*3:  direct
+          15: BAMG-direct
+          6: extended+i
+          14: extended
+          18: ? */
+        .set<int>("relaxation order", 0) /* must be false */
+        .set<int>("relaxation type", relaxation); 
+        /*3: Hybrid Gauss Seidel 
+          4: ''
+          6: '' 
+          7: Jacobi  
+          18: l1-jacobi
+          11: two-stage Gauss-Seidel 
+          12: ''
+           */
+  }else if(device == "omp"){
+    std::cout<<"Using Hypre: AMG with OMP parameters"<<std::endl;
+    plist->sublist("preconditioners").sublist("Hypre: AMG")
+        .set<std::string>("preconditioning method", "hypre: boomer amg").sublist("hypre: boomer amg parameters")
+        //.set<double>("strong threshold", 0.5)
+        .set<int>("cycle applications", 1)
+        .set<int>("smoother sweeps", 1)
+        .set<double>("tolerance", 0.0)
+        .set<int>("verbosity", 1)
+        //.set<int>("max multigrid levels", 1)
+        //.set<int>("max coarse size", 10000000) 
+        //.set<int>("coarsening type", coarsening)
+        //.set<int>("interpolation type", interpolation)
+        //.set<int>("relaxation order", 0)
+        //.set<int>("relaxation type coarse", 9)
+        .set<int>("relaxation type", relaxation);
+
+
+  } else {
+    assert(device == "serial" && "Unrecognized device type");
+    std::cout<<"Using Hypre: AMG with serial parameters"<<std::endl;
+    plist->sublist("preconditioners").sublist("Hypre: AMG")
+        .set<std::string>("preconditioning method", "hypre: boomer amg").sublist("hypre: boomer amg parameters")
+        //.set<double>("strong threshold", 0.5)
+        .set<int>("cycle applications", 1)
+        .set<int>("smoother sweeps", 1)
+        .set<double>("tolerance", 0.0)
+        .set<int>("verbosity", 1)
+        .set<int>("relaxation type", 18);     
+  }
 
   // -- Trilinos
   plist->sublist("preconditioners").sublist("Trilinos: ML")
@@ -228,13 +296,13 @@ TEST(Verify_Mesh_and_Operators) {
   // -- ILU
   plist->sublist("preconditioners").sublist("ifpack2: ILUT")
       .set<std::string>("preconditioning method", "ifpack2: ILUT").sublist("ifpack2: ILUT parameters")
-      .set<double>("fact: ilut level-of-fill", 10)
+      .set<double>("fact: ilut level-of-fill", 1)
       .set<double>("fact: drop tolerance", 0.0);
 
   // -- RILUK: a modified variant of the ILU(k) factorization
   plist->sublist("preconditioners").sublist("ifpack2: RILUK")
       .set<std::string>("preconditioning method", "ifpack2: RILUK").sublist("ifpack2: RILUK parameters")
-      .set<int>("fact: iluk level-of-fill", 10)
+      .set<int>("fact: iluk level-of-fill", 1)
       .set<double>("fact: drop tolerance", 0.0)
       .set<std::string>("fact: type", "KSPILUK");
 

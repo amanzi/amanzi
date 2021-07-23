@@ -11,7 +11,6 @@
 //!
 
 #include "RecordSet.hh"
-#include "UniqueHelpers.hh"
 #include "errors.hh"
 
 namespace Amanzi {
