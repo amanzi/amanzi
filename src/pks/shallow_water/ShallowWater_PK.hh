@@ -78,8 +78,8 @@ class ShallowWater_PK : public PK_Physical,
   virtual std::string name() override { return "Shallow water PK"; }
                             
   // Bathymetry reconstruction on cell edge midpoints
-  double Bathymetry_rectangular_cell_value(int, const AmanziGeometry::Point&, Epetra_MultiVector&);
-  double Bathymetry_edge_value(int, int, const AmanziGeometry::Point&, Epetra_MultiVector&);
+  double BathymetryRectangularCellValue(int c, const AmanziGeometry::Point& xp, const Epetra_MultiVector& Bn);
+  double BathymetryEdgeValue(int e, const Epetra_MultiVector& Bn);
 
   // due to rotational invariance of SW equations, we need flux in the x-direction only.
   std::vector<double> PhysicalFlux_x(const std::vector<double>&);
@@ -90,6 +90,9 @@ class ShallowWater_PK : public PK_Physical,
 
   std::vector<double> PhysicalSource(const std::vector<double>&);
   std::vector<double> NumericalSource(const std::vector<double>&, int);
+
+  // access
+  double get_total_source() const { return total_source_; }
 
  private:
   void ErrorDiagnostics_(int c, double h, double B, double ht);
@@ -115,6 +118,7 @@ class ShallowWater_PK : public PK_Physical,
                             
   // source terms
   std::vector<Teuchos::RCP<PK_DomainFunction> > srcs_;
+  double total_source_;
 
  private:
   // boundary conditions

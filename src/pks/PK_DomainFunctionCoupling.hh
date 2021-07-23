@@ -8,12 +8,37 @@
 
   Author: Daniil Svyatsky (dasvyat@lanl.gov)
 
-  This provide coupling of consistent fields located on manifold and
-  in space. For the space, the coupling creates a list of boundary
+  This provide coupling of fields located on matching manifold and
+  space meshes. For the space, the coupling creates a list of boundary
   conditions. For the manifold, the coupling creates a list of sources.
 
-  Typically the mesh provide the map manifold (cell) -> space (face).
+  Typically, the manifold mesh provides map manifold (cell) -> space (face).
   In space, we need the reverse map.
+
+  The following parameter names were changed:
+    "flux_key" -> "flux key"
+
+    "field_in_key" -> 
+    "copy_field_in_key" -> 
+
+    "field_out_key" -> "field key"
+    "copy_field_out_key" -> "field copy key"
+
+  There are three submodels.
+  (A) submodel="rate". The computed data are given by formulas: 
+
+      value[i][c] += flux[f] * field[i][cc] / |c|
+      value[N][c] -= dt * flux[f] 
+
+  where cc is the space cell attached to face f, and N is the auxiliary 
+  value added to the result. Note that internal face f (resp., boundary 
+  face f) is shared by two (resp. one) space cells.
+
+  (B) submodel="field". The computed data are given by the formula:
+
+      value[i][f] = field[i][c]; 
+
+  (C) submodel="conserved quantity"
 */
 
 #ifndef AMANZI_PK_DOMAIN_FUNCTION_COUPLING_HH_
@@ -102,6 +127,21 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
     m << "error in domain coupling sublist : " << msg.what();
     Exceptions::amanzi_throw(m);
   }
+
+  // deprecated
+  /*
+  std::vector<std::string> deprecated = { "flux_key", "copy_flux_key",
+                                          "field_in_key", "copy_field_in_key",
+                                          "field_out_key", "copy_field_out_key" };
+
+  for (auto name : deprecated) {
+    if (slist.isParameter(name) {
+      Errors::Message msg;
+      msg << "deprecated name : " << name << ", see PK_DomainFunctionCoupling.hh";
+      Exceptions::amanzi_throw(msg);
+    }
+  }
+  */
 
   // get keys of owned (in) and exterior (out) fields
   if (submodel_ == "rate") {

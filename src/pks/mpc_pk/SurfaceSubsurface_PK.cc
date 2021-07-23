@@ -9,6 +9,7 @@
   Process kernel for coupling of Flow_PK and ShallowWater_PK.
 */
 
+#include "ShallowWater_PK.hh"
 #include "SurfaceSubsurface_PK.hh"
 
 namespace Amanzi {
@@ -27,7 +28,9 @@ SurfaceSubsurface_PK::SurfaceSubsurface_PK(
   mesh_surface_ = S->GetMesh("surface");
   
   Teuchos::ParameterList vlist;
-  vo_ = Teuchos::rcp(new VerboseObject("SurfaceSubsurface_PK", vlist)); 
+  auto pk_list = Teuchos::sublist(global_list, "PKs", true)->sublist(name_);
+  vlist.sublist("verbose object") = pk_list.sublist("verbose object");
+  vo_ = Teuchos::rcp(new VerboseObject("SurfaceSubsurface", vlist)); 
 }
 
 
@@ -117,10 +120,12 @@ bool SurfaceSubsurface_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // advance the slave, subcycling if needed
   S_->set_intermediate_time(t_old);
-  bool done = false;
 
+  int nsubcycles(0);
+  bool done = false;
   double dt_next = slave_dt_;
-  double dt_done = 0.;
+  double dt_done(0.0), water_exchange(0.0);
+
   while (!done) {
     // do not overstep
     if (t_old + dt_done + dt_next > t_new) {
@@ -135,11 +140,16 @@ bool SurfaceSubsurface_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       dt_next /= 2;
     } else {
       // if success, commit the state and increment to next intermediate
-      // -- etc: unclear if state should be commited or not?
-      // set the intermediate time
       S_->set_intermediate_time(t_old + dt_done + dt_next);
       sub_pks_[slave_]->CommitStep(t_old + dt_done, t_old + dt_done + dt_next, S_);
+
       dt_done += dt_next;
+      nsubcycles++;
+
+      // collect statistics
+      auto sw_pk = Teuchos::rcp_dynamic_cast<ShallowWater::ShallowWater_PK>(sub_pks_[slave_]);
+      water_exchange += sw_pk->get_total_source();
+
       // allow dt to grow only when success
       dt_next = sub_pks_[slave_]->get_dt();
     }
@@ -154,6 +164,12 @@ bool SurfaceSubsurface_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // we reach this point when subcycling has been completed
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "shallow water PK made " << nsubcycles << " subcycles,  water exchange=" 
+               << water_exchange << " m^3" << std::endl;
+  }
+
   return false;
 }
 

@@ -217,7 +217,7 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   InitializeField_(S_.ptr(), passwd_, discharge_key_, 0.0);
 
   // static fields
-  S_->GetFieldData(bathymetry_key_)->ScatterMasterToGhosted("cell");
+  S_->GetFieldData(bathymetry_key_)->ScatterMasterToGhosted();
 
   // summary of initialization
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -295,13 +295,15 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
   
   // compute source (external) values
-  std::vector<std::vector<double> > ext_S_cell(3, std::vector<double>(ncells_owned));
+  // coupling submodel="rate" returns volumetric flux [m^3/s] integrated over
+  // the time step in the last (the second) component of local data vector
+  total_source_ = 0.0;
+  std::vector<double> ext_S_cell(ncells_owned, 0.0);
   for (int  i = 0; i < srcs_.size(); ++i) {
     for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
       int c = it->first;
-      for (int j = 0; j < (it->second).size(); ++j) {
-        ext_S_cell[j][c] = mesh_->cell_volume(c) * it->second[j];
-      }
+      ext_S_cell[c] = it->second[1];  // 1 is for water, data units is [m^3]
+      total_source_ += it->second[1];
     }
   }
 
@@ -339,7 +341,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       double ht_rec = total_depth_grad_->getValue(c, xcf);
   
       int edge = cfaces[n];
-      double B_rec = Bathymetry_edge_value(c, edge, xcf, B_n);
+      double B_rec = BathymetryEdgeValue(edge, B_n);
 
       if (ht_rec < B_rec) {
         ht_rec = ht_c[0][c];
@@ -382,7 +384,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
           
         ht_rec = total_depth_grad_->getValue(cn, xcf);
           
-        B_rec = Bathymetry_edge_value(cn, edge, xcf, B_n);
+        B_rec = BathymetryEdgeValue(edge, B_n);
           
         if (ht_rec < B_rec) {
           ht_rec = ht_c[0][cn];
@@ -439,8 +441,9 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     S = NumericalSource(U, c);
     
     for (int i = 0; i < 3; i++) {
-      U_new[i] = U[i] - dt / vol * FS[i] + dt * S[i] + dt * ext_S_cell[i][c];
+      U_new[i] = U[i] - dt / vol * FS[i] + dt * S[i];
     }
+    U_new[0] += ext_S_cell[c];
       
     // transform to conservative variables
     h  = U_new[0];
@@ -714,7 +717,7 @@ std::vector<double> ShallowWater_PK::NumericalSource(
     double ht_rec = total_depth_grad_->getValue(c, xcf);
       
     int e = cfaces[n];
-    double B_rec = Bathymetry_edge_value(c, e, xcf, B_n);
+    double B_rec = BathymetryEdgeValue(e, B_n);
 
     if (ht_rec < B_rec) {
       ht_rec = ht_c[0][c];
@@ -763,7 +766,7 @@ double ShallowWater_PK::get_dt()
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "stable dt=" << dt << ", cfl=" << cfl_ << std::endl;
+    *vo_->os() << "stable dt=" << dt_min << ", cfl=" << cfl_ << std::endl;
   }
 
   return cfl_ * dt_min;
@@ -774,7 +777,8 @@ double ShallowWater_PK::get_dt()
 // Bathymetry (Linear construction for a rectangular cell)
 //--------------------------------------------------------------
 /*
-double ShallowWater_PK::Bathymetry_rectangular_cell_value(int c, const AmanziGeometry::Point& xp, Epetra_MultiVector& B_n)
+double ShallowWater_PK::BathymetryRectangularCellValue(
+    int c, const AmanziGeometry::Point& xp, const Epetra_MultiVector& B_n)
 {
   double x = xp[0], y = xp[1];
     
@@ -804,15 +808,12 @@ double ShallowWater_PK::Bathymetry_rectangular_cell_value(int c, const AmanziGeo
 //--------------------------------------------------------------
 // Bathymetry (Evaluate value at edge midpoint for a polygonal cell)
 //--------------------------------------------------------------
-double ShallowWater_PK::Bathymetry_edge_value(int c, int e, const AmanziGeometry::Point& xp, Epetra_MultiVector& B_n)
+double ShallowWater_PK::BathymetryEdgeValue(int e, const Epetra_MultiVector& B_n)
 {
-  double x = xp[0], y = xp[1];
-  AmanziMesh::Entity_ID_List face_nodes;
-  mesh_->face_get_nodes(e, &face_nodes);
+  AmanziMesh::Entity_ID_List nodes;
+  mesh_->face_get_nodes(e, &nodes);
 
-  double B_rec = ( B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]] ) /2.0;
-    
-  return B_rec;
+  return (B_n[0][nodes[0]] + B_n[0][nodes[1]]) / 2;
 }
 
 
