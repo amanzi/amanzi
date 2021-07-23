@@ -18,7 +18,7 @@
     <Parameter name="products" type="string" value="1.0 B(aq)"/>
     <Parameter name="forward rate" type="double" value="1.15741e-6"/>
     <Parameter name="backward rate" type="double" value="0.0"/>
-    <Parameter name="reaction orders (reactants/products)" type="Array(double)" value="{1.0}"/>
+    <Parameter name="reaction orders (reactants/products)" type="Array(double)" value="{1.0, 0.0}"/>
   </ParameterList>
 </ParameterList>
 

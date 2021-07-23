@@ -55,7 +55,7 @@ GeneralRxn::GeneralRxn(const Teuchos::ParameterList& plist,
   species_ids_b_.clear();
   stoichiometry_b_.clear();
 
-  std::istringstream iss2(reactants);
+  std::istringstream iss2(products);
   while (iss2 >> coeff || !iss2.eof()) {
     iss2 >> name;
     species_ids_b_.push_back(name_to_id.at(name));
@@ -67,7 +67,7 @@ GeneralRxn::GeneralRxn(const Teuchos::ParameterList& plist,
   kb_ = plist.get<double>("backward rate");
 
   lnkf_ = std::log(kf_);
-  lnkb_ = std::log(kb_);
+  lnkb_ = (kb_ > 0.0) ? std::log(kb_) : 0.0;
 
   ncomp_ = species_ids_.size();
   ncomp_forward_ = species_ids_f_.size();
