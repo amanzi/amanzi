@@ -19,6 +19,9 @@
 #include "VerboseObject.hh"
 #include "PreconditionerHypre.hh"
 
+
+// Temporary
+// Useful functions to trace NVIDIA calls 
 #if 0 
 #include <nvToolsExt.h> 
 #else
@@ -32,17 +35,15 @@ namespace Amanzi {
 
   void AMANZI_CHK_ERRV(int code) {
     if(code>0) {
-      std::ostringstream ofs;
-      ofs << "Amanzi::Hypre: Error with code "<<code<<std::endl;
-      throw std::runtime_error(ofs.str());
+      std::cout << "Amanzi::Hypre: Error with code "<<code<<std::endl;
+      throw Exceptions::Amanzi_exception();
     }
   }
 
   void AMANZI_CHK_ERR(int code) {
     if(code>0) {
-      std::ostringstream ofs;
-      ofs << "Amanzi::Hypre: Error with code "<<code<<std::endl;
-      throw std::runtime_error(ofs.str());
+      std::cout << "Amanzi::Hypre: Error with code "<<code<<std::endl;
+      throw Exceptions::Amanzi_exception();
     }
   }
 
