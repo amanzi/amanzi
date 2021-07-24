@@ -63,11 +63,17 @@ void lake_at_rest_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos::RCP<Amanzi::State> &S)
 {
   double pi = M_PI;
+  const double rho = *S->GetScalarData("const_fluid_density");
+  const double patm = *S->GetScalarData("atmospheric_pressure");
+  
+  double tmp[1];
+  S->GetConstantVectorData("gravity", "state")->Norm2(tmp);
+  double g = tmp[0];
     
-  int ncells_owned = mesh->num_entities (Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
   std::string passwd = "state";
     
-  int nnodes = mesh -> num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
     
   Epetra_MultiVector &B_c = *S->GetFieldData("surface-bathymetry", passwd)->ViewComponent ("cell");
   Epetra_MultiVector &B_n = *S->GetFieldData("surface-bathymetry", passwd)->ViewComponent ("node");
@@ -75,6 +81,7 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
   Epetra_MultiVector &ht_c = *S->GetFieldData("surface-total_depth", passwd)->ViewComponent ("cell");
   Epetra_MultiVector &vel_c = *S->GetFieldData("surface-velocity", passwd)->ViewComponent ("cell");
   Epetra_MultiVector &q_c = *S->GetFieldData("surface-discharge", "surface-discharge")->ViewComponent ("cell");
+  Epetra_MultiVector &p_c = *S->GetFieldData("surface-ponded_depth_pressure", "surface-ponded_depth_pressure")->ViewComponent ("cell");
 
   // Define bathymetry at the cell vertices (Bn)
   for (int n = 0; n < nnodes; ++n) {
@@ -140,6 +147,7 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
     vel_c[1][c] = 0.0;
     q_c[0][c] = 0.0;
     q_c[1][c] = 0.0;
+    p_c[0][c] = patm + rho * g * h_c[0][c];
   }
 }
 
@@ -274,6 +282,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
   const Epetra_MultiVector &ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
   const Epetra_MultiVector &vel = *S->GetFieldData("surface-velocity")->ViewComponent("cell");
   const Epetra_MultiVector &q = *S->GetFieldData("surface-discharge")->ViewComponent("cell");
+  const Epetra_MultiVector &p = *S->GetFieldData("surface-ponded_depth_pressure")->ViewComponent("cell");
         
   // Create a pid vector
   Epetra_MultiVector pid(B);
@@ -320,6 +329,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
       io.WriteVector(*q(0), "qx", AmanziMesh::CELL);
       io.WriteVector(*q(1), "qy", AmanziMesh::CELL);
       io.WriteVector(*B(0), "B", AmanziMesh::CELL);
+      io.WriteVector(*p(0), "hyd pressure", AmanziMesh::CELL);
       io.WriteVector(*Bn(0), "B_n", AmanziMesh::NODE);
       io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
                 
@@ -379,6 +389,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
   io.WriteVector(*q(1), "qy", AmanziMesh::CELL);
   io.WriteVector(*B(0), "B", AmanziMesh::CELL);
   io.WriteVector(*Bn(0), "B_n", AmanziMesh::NODE);
+  io.WriteVector(*p(0), "hyd pressure", AmanziMesh::CELL);
   io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
         
   io.WriteVector(*ht_ex(0), "ht_ex", AmanziMesh::CELL);
