@@ -375,8 +375,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   for (int  i = 0; i < srcs_.size(); ++i) {
     for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
       int c = it->first;
-      ext_S_cell[c] = -it->second[1];  // 1 is for water, data units is [m^3]
-      total_source_ -= it->second[1];
+      ext_S_cell[c] = it->second[0];  // data units is [m^3]
+      total_source_ += it->second[0];
     }
   }
 
@@ -387,7 +387,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   AmanziMesh::Entity_ID_List cfaces, cnodes;
 
   std::vector<double> FL, FR, FNum(3), FNum_rot, FS(3);  // fluxes
-  std::vector<double> S;                          // source term
+  std::vector<double> S;                                 // source term
   std::vector<double> UL(3), UR(3), U, U_new(3);         // numerical fluxes
 
   // Simplest first-order form

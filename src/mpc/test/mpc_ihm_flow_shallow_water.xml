@@ -369,13 +369,11 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="boundary conditions">
-        <ParameterList name="static head">
+        <ParameterList name="pressure">
           <ParameterList name="BC 0">
             <Parameter name="regions" type="Array(string)" value="{TopSurface}"/>
-            <ParameterList name="static head">
-              <Parameter name="flux_key" type="string" value="darcy_flux"/>
-              <Parameter name="field_in_key" type="string" value="hydraulic_head" />
-              <Parameter name="field_out_key" type="string" value="surface-total_depth"/>                
+            <ParameterList name="boundary pressure">
+              <Parameter name="external field key" type="string" value="surface-total_depth"/>
             </ParameterList>
             <Parameter name="spatial distribution method" type="string" value="domain coupling"/>
             <Parameter name="submodel" type="string" value="field"/>
@@ -434,11 +432,10 @@
         <ParameterList name="SRC 0">
           <Parameter name="regions" type="Array(string)" value="{TopSurface}"/>
           <Parameter name="spatial distribution method" type="string" value="domain coupling"/>
-          <Parameter name="submodel" type="string" value="rate"/>
+          <Parameter name="submodel" type="string" value="flux exchange"/>
           <ParameterList name="source">
-            <Parameter name="flux_key" type="string" value="darcy_flux"/>
-            <Parameter name="field_out_key" type="string" value="molar_density_liquid" />
-            <Parameter name="field_in_key" type="string" value="surface-ponded_depth"/>
+            <Parameter name="flux key" type="string" value="darcy_flux"/>
+            <Parameter name="external field key" type="string" value="molar_density_liquid"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>

@@ -72,8 +72,7 @@ void TransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
          .set<Teuchos::Array<std::string> >("regions", regs);
 
    bclist.sublist("boundary concentration")
-         .set<std::string>("field_in_key", "total_component_concentration")
-         .set<std::string>("field_out_key", "fracture-total_component_concentration");
+         .set<std::string>("external field key", "fracture-total_component_concentration");
 
   // add source term to transport in fracture list
   Teuchos::ParameterList& srclist = glist_->sublist("PKs")
@@ -87,9 +86,8 @@ void TransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
           .set<Teuchos::Array<std::string> >("regions", regs);
 
    srclist.sublist("sink")
-         .set<std::string>("field_in_key", "fracture-total_component_concentration")
-         .set<std::string>("field_out_key", "total_component_concentration")
-         .set<std::string>("flux_key", "darcy_flux");
+         .set<std::string>("external field key", "total_component_concentration")
+         .set<std::string>("flux key", "darcy_flux");
 
   // setup the sub-PKs
   PK_MPCWeak::Setup(S);
