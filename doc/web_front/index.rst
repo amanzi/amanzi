@@ -51,10 +51,11 @@ Release Schedule
 
 The current version of Amanzi is |version|
 
-Older Versions
+Older Releases
 ~~~~~~~~~~~~~~
 
  * Amanzi 1.1
+ * Amanzi 1.0
 
 Future Releases
 ~~~~~~~~~~~~~~~
