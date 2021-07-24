@@ -151,6 +151,13 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
     flux_key_ = slist.get<std::string>("flux_key");
     copy_flux_key_ = slist.get<std::string>("copy_flux_key", "default");
 
+  } else if (submodel_ == "rate_Darcy") {
+    field_in_key_ = slist.get<std::string>("field_in_key");
+    copy_field_in_key_ = slist.get<std::string>("copy_field_in_key", "default");
+
+    flux_key_ = slist.get<std::string>("flux_key");
+    copy_flux_key_ = slist.get<std::string>("copy_flux_key", "default");
+
   } else if (submodel_ == "field") {
     field_in_key_ = slist.get<std::string>("field_in_key");
     copy_field_in_key_ = slist.get<std::string>("copy_field_in_key", "default");
@@ -256,6 +263,71 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
             } else {
               val[num_vec] += -fln * (t1 - t0);
             }
+            break;
+          }
+        }
+      }
+      value_[c] = val;
+      linear_term_[c] = linear;
+    }
+
+  } else if (submodel_ == "rate_Darcy") {
+    const auto& flux = *S_->GetFieldCopyData(flux_key_, copy_flux_key_)->ViewComponent("face", true);
+    const auto& field_out = *S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ViewComponent("cell", true);
+    const auto& field_in = *S_->GetFieldCopyData(field_in_key_, copy_field_in_key_)->ViewComponent("cell", true);
+
+    const auto& flux_map = S_->GetFieldData(flux_key_)->Map().Map("face", true);
+    const auto& source_mesh = S_->GetMesh(Keys::getDomain(field_in_key_));
+
+    S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ScatterMasterToGhosted("cell");
+    S_->GetFieldCopyData(field_in_key_, copy_field_in_key_)->ScatterMasterToGhosted("cell");
+
+    if (field_in.NumVectors() != field_out.NumVectors()) {
+      std::stringstream m;
+      m << "Mismatch of numbers of vectors in coupled fields.\n";
+      Errors::Message message(m.str());
+      Exceptions::amanzi_throw(message);
+    }
+    int num_vec = field_in.NumVectors();
+
+    AmanziMesh::Entity_ID_List cells, faces;
+    std::vector<int> dirs;
+    auto mesh_out = S_->GetFieldData(field_out_key_)->Mesh();
+
+    // loop over cells on the manifold
+    for (auto c : *entity_ids_) {
+      AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+
+      mesh_out->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+
+      if (cells.size() != flux_map->ElementSize(f)) {
+        std::stringstream m;
+        m << "Number of flux DOFs doesn't equal to the number of cells sharing a face: "
+          << cells.size() << " != " << flux_map->ElementSize(f) << std::endl;
+        Errors::Message message(m.str());
+        Exceptions::amanzi_throw(message);
+      }
+
+      double linear(0.0);
+      std::vector<double> val(num_vec + 1, 0.0);  // val(end) is for water
+      int pos = Operators::UniqueIndexFaceToCells(*mesh_out, f, cells[0]);
+
+      for (int j = 0; j != cells.size(); ++j) {
+        mesh_out->cell_get_faces_and_dirs(cells[j], &faces, &dirs);
+
+        for (int i = 0; i < faces.size(); i++) {
+          if (f == faces[i]) {
+            int g = flux_map->FirstPointInElement(f);
+            double fln = flux[0][g + (pos + j)%2] * dirs[i];
+            
+            linear += fln;
+            for (int k = 0; k < num_vec; ++k) {
+              // flux is water flux * Conc
+              val[k] += field_out[k][cells[j]] * fln / source_mesh->cell_volume(c);
+            }
+              
+            val[num_vec] += fln * (t1 - t0);
+            
             break;
           }
         }
