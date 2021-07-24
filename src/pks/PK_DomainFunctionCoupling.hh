@@ -201,7 +201,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
   mesh_out_ = S_->GetFieldData(field_out_key_)->Mesh();
 
   if (submodel_ == "field" || submodel_ == "conserved quantity") {
-    if (mesh_->space_dimension() == mesh_->manifold_dimension()) {
+    if (mesh_->space_dimension() == mesh_->manifold_dimension() && reverse_map_.size() == 0) {
       const Epetra_Map& cell_map = mesh_out_->cell_map(true);
       for (int c = 0 ; c < cell_map.NumMyElements(); ++c) {
         AmanziMesh::Entity_ID f = mesh_out_->entity_get_parent(AmanziMesh::CELL, c);

@@ -373,7 +373,7 @@
           <ParameterList name="BC 0">
             <Parameter name="regions" type="Array(string)" value="{TopSurface}"/>
             <ParameterList name="boundary pressure">
-              <Parameter name="external field key" type="string" value="surface-total_depth"/>
+              <Parameter name="external field key" type="string" value="surface-ponded_pressure"/>
             </ParameterList>
             <Parameter name="spatial distribution method" type="string" value="domain coupling"/>
             <Parameter name="submodel" type="string" value="field"/>
