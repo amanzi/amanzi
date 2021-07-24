@@ -72,7 +72,7 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
   ponded_depth_key_ = Keys::getKey(domain_, "ponded_depth");
   total_depth_key_ = Keys::getKey(domain_, "total_depth");
   bathymetry_key_ = Keys::getKey(domain_, "bathymetry");
-  hydrostatic_pressure_key_ = Keys::getKey(domain_, "ponded_depth_pressure");
+  hydrostatic_pressure_key_ = Keys::getKey(domain_, "ponded_pressure");
 
   //-------------------------------
   // constant fields

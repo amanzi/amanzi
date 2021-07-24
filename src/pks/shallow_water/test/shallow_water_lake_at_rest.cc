@@ -81,7 +81,7 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
   Epetra_MultiVector &ht_c = *S->GetFieldData("surface-total_depth", passwd)->ViewComponent ("cell");
   Epetra_MultiVector &vel_c = *S->GetFieldData("surface-velocity", passwd)->ViewComponent ("cell");
   Epetra_MultiVector &q_c = *S->GetFieldData("surface-discharge", "surface-discharge")->ViewComponent ("cell");
-  Epetra_MultiVector &p_c = *S->GetFieldData("surface-ponded_depth_pressure", "surface-ponded_depth_pressure")->ViewComponent ("cell");
+  Epetra_MultiVector &p_c = *S->GetFieldData("surface-ponded_pressure", "surface-ponded_pressure")->ViewComponent ("cell");
 
   // Define bathymetry at the cell vertices (Bn)
   for (int n = 0; n < nnodes; ++n) {
@@ -282,7 +282,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
   const Epetra_MultiVector &ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
   const Epetra_MultiVector &vel = *S->GetFieldData("surface-velocity")->ViewComponent("cell");
   const Epetra_MultiVector &q = *S->GetFieldData("surface-discharge")->ViewComponent("cell");
-  const Epetra_MultiVector &p = *S->GetFieldData("surface-ponded_depth_pressure")->ViewComponent("cell");
+  const Epetra_MultiVector &p = *S->GetFieldData("surface-ponded_pressure")->ViewComponent("cell");
         
   // Create a pid vector
   Epetra_MultiVector pid(B);
