@@ -20,6 +20,7 @@
 // Amanzi::ShallowWater
 #include "ShallowWater_PK.hh"
 #include "DischargeEvaluator.hh"
+#include "HydrostaticPressureEvaluator.hh"
 
 namespace Amanzi {
 namespace ShallowWater {
@@ -71,12 +72,22 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
   ponded_depth_key_ = Keys::getKey(domain_, "ponded_depth");
   total_depth_key_ = Keys::getKey(domain_, "total_depth");
   bathymetry_key_ = Keys::getKey(domain_, "bathymetry");
+  hydrostatic_pressure_key_ = Keys::getKey(domain_, "ponded_depth_pressure");
 
   //-------------------------------
   // constant fields
   //-------------------------------
   if (!S->HasField("gravity")) {
     S->RequireConstantVector("gravity", passwd_, 2);
+  }
+  
+  // required for calculating hydrostatic pressure
+  if (!S->HasField("const_fluid_density")) {
+    S->RequireScalar("const_fluid_density", passwd_);
+  }
+  
+  if (!S->HasField("atmospheric_pressure")) {
+    S->RequireScalar("atmospheric_pressure", passwd_);
   }
 
   //-------------------------------
@@ -122,6 +133,21 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField(bathymetry_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
   }
+
+  //-------------------------------
+  // secondary fields
+  //-------------------------------
+
+  // hydrostatic pressure
+  if (!S->HasField(hydrostatic_pressure_key_)) {
+    S->RequireField(hydrostatic_pressure_key_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    
+    Teuchos::ParameterList elist;
+    auto eval = Teuchos::rcp(new HydrostaticPressureEvaluator(elist));
+    S->SetFieldEvaluator(hydrostatic_pressure_key_, eval);
+  }
+  
 }
 
 
@@ -198,12 +224,57 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   // default
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-  InitializeField_(S_.ptr(), passwd_, bathymetry_key_, 0.0);
+  if (!S_->GetField(bathymetry_key_, passwd_)->initialized()) {
+    InitializeField_(S_.ptr(), passwd_, bathymetry_key_, 0.0);
+  }
+  
+  const auto& B_n = *S_->GetFieldData(bathymetry_key_)->ViewComponent("node");
+  const auto& B_c = *S_->GetFieldData(bathymetry_key_)->ViewComponent("cell");
+  
+  // compute B_c from B_n for well balanced scheme (Beljadid et. al. 2016)
+  for (int c = 0; c < ncells_owned; ++c) {
+    
+    const Amanzi::AmanziGeometry::Point &xc = mesh_->cell_centroid(c);
+        
+    Amanzi::AmanziMesh::Entity_ID_List cfaces, cnodes, cedges;
+    mesh_->cell_get_faces(c, &cfaces);
+    mesh_->cell_get_nodes(c, &cnodes);
+    mesh_->cell_get_edges(c, &cedges);
+        
+    int nedges_cell = cedges.size();
+    int nfaces_cell = cfaces.size();
+        
+    B_c[0][c] = 0;
+        
+    // compute cell averaged bathymery (Bc)
+    for (int f = 0; f < nfaces_cell; ++f) {
+    
+      Amanzi::AmanziGeometry::Point x0, x1;
+      int edge = cfaces[f];
+            
+      Amanzi::AmanziMesh::Entity_ID_List face_nodes;
+      mesh_->face_get_nodes(edge, &face_nodes);
+                        
+      mesh_->node_get_coordinates(face_nodes[0], &x0);
+      mesh_->node_get_coordinates(face_nodes[1], &x1);
+
+      Amanzi::AmanziGeometry::Point tria_edge0, tria_edge1;
+
+      tria_edge0 = xc - x0;
+      tria_edge1 = xc - x1;
+
+      Amanzi::AmanziGeometry::Point area_cross_product = (0.5) * tria_edge0^tria_edge1;
+
+      double area = norm(area_cross_product);
+            
+      B_c[0][c] += ( area / mesh_ -> cell_volume(c) ) * ( B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]] ) / 2;
+    }
+  }
+  
   InitializeField_(S_.ptr(), passwd_, ponded_depth_key_, 1.0);
 
   if (!S_->GetField(total_depth_key_, passwd_)->initialized()) {
     const auto& h_c = *S_->GetFieldData(ponded_depth_key_)->ViewComponent("cell");
-    const auto& B_c = *S_->GetFieldData(bathymetry_key_)->ViewComponent("cell");
     auto& ht_c = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell");
 
     for (int c = 0; c < ncells_owned; c++) {
@@ -249,6 +320,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   S_->GetFieldEvaluator(discharge_key_)->HasFieldChanged(S_.ptr(), passwd_);
   Epetra_MultiVector& q_c = *S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
 
+  S_->GetFieldEvaluator(hydrostatic_pressure_key_)->HasFieldChanged(S_.ptr(), passwd_);
+  
   // create copies of primary fields
   Epetra_MultiVector h_c_tmp(h_c);
   Epetra_MultiVector vel_c_tmp(vel_c);

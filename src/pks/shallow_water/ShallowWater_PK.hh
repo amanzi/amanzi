@@ -110,6 +110,7 @@ class ShallowWater_PK : public PK_Physical,
   Key ponded_depth_key_;
   Key total_depth_key_;
   Key bathymetry_key_;
+  Key hydrostatic_pressure_key_;
 
   std::string passwd_;
 

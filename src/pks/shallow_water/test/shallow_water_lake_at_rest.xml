@@ -122,6 +122,14 @@
         <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
       </ParameterList>
       
+      <ParameterList name="const_fluid_density">
+        <Parameter name="value" type="double" value="9.98200000000000045e+02"/>
+      </ParameterList>
+      
+      <ParameterList name="atmospheric_pressure">
+        <Parameter name="value" type="double" value="1.01325000000000000e+05"/>
+      </ParameterList>
+      
       <ParameterList name="surface-bathymetry">
         <ParameterList name="function">
           <ParameterList name="domain">
