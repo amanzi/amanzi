@@ -1,0 +1,412 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Infiltration 1D &mdash; Amanzi Version 1.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/fix_eq_position.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Transport of Solutes: Advection, Dispersion and Diffusion" href="../../transport/index.html" />
+    <link rel="prev" title="Infiltration Flow Tests" href="../index.html" /> 
+ <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: {
+        extensions: ["mhchem.js"]
+    }
+  });
+</script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Amanzi
+          
+
+          
+            
+            <img src="../../../_static/Amanzi-color.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                Version 1.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../background/index.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../background/getting_started.html">Getting Started with Amanzi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../capabilities/index.html">Amanzi Features and Capabilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../input/index.html">Amanzi Input Description</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/index.html">Building Amanzi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/index.html">Tutorial</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Verification Testing</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/index.html">Confined Flow Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../unconfined_flow/index.html">Unconfined Flow Tests</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">Infiltration Flow Tests</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Infiltration 1D</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#capabilities-tested">Capabilities Tested</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#background">Background</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#model">Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#problem-specification">Problem Specification</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#case-1-sand-clay-layers">Case #1: Sand Clay Layers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#case-2-loam-sand-layers">Case #2 Loam Sand Layers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#case-3-sand-loam-layers">Case #3: Sand Loam Layers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#references">References</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#about">About</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../transport/index.html">Transport of Solutes: Advection, Dispersion and Diffusion</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../benchmarking/index.html">Benchmark Testing</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Amanzi</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Verification Testing</a> &raquo;</li>
+        
+          <li><a href="../index.html">Infiltration Flow Tests</a> &raquo;</li>
+        
+      <li>Infiltration 1D</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../../_sources/verification/infiltration/infiltration_1d/amanzi_infiltration_1d.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="infiltration-1d">
+<h1>Infiltration 1D<a class="headerlink" href="#infiltration-1d" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="capabilities-tested">
+<h2>Capabilities Tested<a class="headerlink" href="#capabilities-tested" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li><p>partially saturated one-dimensional flow</p></li>
+<li><p>steady-state flow</p></li>
+<li><p>pressure and flux boundary conditions</p></li>
+<li><p>porous medium with discontinuous properties (permeability, van Genuchten parameters)</p></li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="background">
+<h2>Background<a class="headerlink" href="#background" title="Permalink to this headline">¶</a></h2>
+<p>Verification problems from the literature have been identified to test
+isothermal, single-phase, variably saturated flow.  We initially focus
+on test problems that address the two most widely used k-s-p
+functions, Mualem-van Genuchten <span id="id1">[<a class="reference internal" href="#id33" title="Y. Mualem. A new model for predicting the hydraulic conductivity of unsaturated porous media. Water Resour. Res, 12(3):513–522, 1976.">Mua76</a>]</span> <span id="id2">[<a class="reference internal" href="#id35" title="M.T. van Genuchten. A closed-form equation for predicting the hydraulic conductivity of unsaturated soils. Soil Sci. Soc. Am. J, 44(5):892–898, 1980.">vG80</a>]</span> and Brooks-Corey <span id="id3">[<a class="reference internal" href="#id32" title="R.H. Brooks and A.T. Corey. Hydraulic properties of porous media. Hydrology Papers, Colorado State University, 1964.">BC64</a>]</span>.  These include
+steady-state and transient tests with Dirichlet and Neumann boundary
+conditions.</p>
+<p>This documentation is intended to compare
+the results from Amanzi against the semi-analytical results documented
+in “A set of Analytical Benchmarks to Test Numerical Models of Flow
+and Transport in Soils.” by J. Vanderborght,
+et. al. <a class="reference external" href="http://vzj.geoscienceworld.org/content/4/1/206.abstract">http://vzj.geoscienceworld.org/content/4/1/206.abstract</a> <span id="id4">[<a class="reference internal" href="#id38" title="J. Vanderborght, R. Kasteel, M. Herbst, M. Javaux, D. Thiery, M. Vanclooster, C. Mouvet, and H. Vereecken. A set of analytical benchmarks to test numerical models of flow and transport in soils. Vadose Zone J., 4(1):206–221, 2005.">VKH+05</a>]</span>,
+see the first line in Table 3 of that paper.
+We consider three cases of the steady-state flux in a layered soil profile.
+The presure profiles should match that in the Vanderborght paper.
+The difference between the cases is as follows:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>case #1 is 0.5 m of clay and 1.5 m of sand;</p></li>
+<li><p>case #2 is 0.5 m of loam and 1.5 m of sand;</p></li>
+<li><p>case #3 is 1.5 m of loam and 0.5 m of sand.</p></li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="model">
+<h2>Model<a class="headerlink" href="#model" title="Permalink to this headline">¶</a></h2>
+<p>Initial condition.
+Pressure <span class="math notranslate nohighlight">\(p\)</span> as the function of depths z and time t=0 is 81747 Pa.</p>
+<p>Boundary conditions.
+The pressure at z=0m, the left end in the Figures below, is 99630.6336 Pa.
+The outflow at the opposite end, z=2m, is fixed at 0.5 cm/d = 5.78703704E-8 m/s.</p>
+<p>The absolute permeability tensor is isotropic but discontinuous.
+The porosity is constant in all tests, <span class="math notranslate nohighlight">\(\phi=0.43\)</span>.</p>
+<a class="reference internal image-reference" href="../../../_images/geometry.png"><img alt="../../../_images/geometry.png" class="align-center" src="../../../_images/geometry.png" style="width: 200px;" /></a>
+</div>
+<div class="section" id="problem-specification">
+<h2>Problem Specification<a class="headerlink" href="#problem-specification" title="Permalink to this headline">¶</a></h2>
+<p>The problem is solved in a box domain with hight 2 m. The other box dimenstions are equal to 1 m.</p>
+<div class="section" id="mesh">
+<h3>Mesh<a class="headerlink" href="#mesh" title="Permalink to this headline">¶</a></h3>
+<p>We consider a column mesh with 200 cells in the vertical direction.</p>
+</div>
+</div>
+<div class="section" id="case-1-sand-clay-layers">
+<h2>Case #1: Sand Clay Layers<a class="headerlink" href="#case-1-sand-clay-layers" title="Permalink to this headline">¶</a></h2>
+<p>The steady-state solution is shown below.
+The sand region corresponds to the left part of the pressure profile.
+The van Genuchten parameters are <span class="math notranslate nohighlight">\(\alpha=1.532333\cdot 10^{-3}\)</span>, <span class="math notranslate nohighlight">\(m=0.6666667\)</span>, and
+residual saturation is <span class="math notranslate nohighlight">\(s_r=0.104651\)</span>.
+The absolute permeability is given by the isotropic tensor <span class="math notranslate nohighlight">\(K=1.18472\cdot 10^{-11} [m^2]\)</span>.</p>
+<p>The clay region corresponds to the right part of the pressure profile.
+The van Genuchten parameters are <span class="math notranslate nohighlight">\(\alpha=1.02 \cdot 10^{-4}\)</span>, <span class="math notranslate nohighlight">\(m=0.0909\)</span>, and
+residual saturation is <span class="math notranslate nohighlight">\(s_r=0.25\)</span>.
+The absolute permeability is given by the isotropic tensor <span class="math notranslate nohighlight">\(K=1.18\cdot 10^{-13} [m^2]\)</span>.</p>
+<div class="section" id="results-and-comparison">
+<h3>Results and Comparison<a class="headerlink" href="#results-and-comparison" title="Permalink to this headline">¶</a></h3>
+<p>We compare with the Amanzi’s golden data that were verified against the Vanderborght paper.</p>
+<p>(<a class="reference external" href="../../../verification/infiltration/infiltration_1d/amanzi_infiltration_1d-c.py">Source code</a>, <a class="reference external" href="../../../verification/infiltration/infiltration_1d/amanzi_infiltration_1d-c.png">png</a>, <a class="reference external" href="../../../verification/infiltration/infiltration_1d/amanzi_infiltration_1d-c.hires.png">hires.png</a>, <a class="reference external" href="../../../verification/infiltration/infiltration_1d/amanzi_infiltration_1d-c.pdf">pdf</a>)</p>
+<div class="figure align-center">
+<img alt="../../../_images/amanzi_infiltration_1d-c.png" src="../../../_images/amanzi_infiltration_1d-c.png" />
+</div>
+</div>
+</div>
+<div class="section" id="case-2-loam-sand-layers">
+<h2>Case #2 Loam Sand Layers<a class="headerlink" href="#case-2-loam-sand-layers" title="Permalink to this headline">¶</a></h2>
+<p>The steady-state solution is shown below.
+The sand region corresponds to the left part of the pressure profile.
+The van Genuchten parameters are <span class="math notranslate nohighlight">\(\alpha=1.532333\cdot 10^{-3}\)</span>, <span class="math notranslate nohighlight">\(m=0.6666667\)</span>, and
+residual saturation is <span class="math notranslate nohighlight">\(s_r=0.104651\)</span>.
+The absolute permeability is given by the isotropic tensor <span class="math notranslate nohighlight">\(K=1.18472E-11 [m^2]\)</span>.</p>
+<p>The loam region corresponds to the right part of the pressure profile.
+The van Genuchten parameters are <span class="math notranslate nohighlight">\(\alpha=4.08622\cdot 10^{-4}\)</span>, <span class="math notranslate nohighlight">\(m=0.375\)</span>, and
+residual saturation is <span class="math notranslate nohighlight">\(s_r=0.186047\)</span>.
+The absolute permeability is given by the isotropic tensor <span class="math notranslate nohighlight">\(K=5.9236 \cdot 10^{-13} [m^2]\)</span>.</p>
+<div class="section" id="id5">
+<h3>Results and Comparison<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
+<p>We compare with the Amanzi’s golden data that were verified against the Vanderborght paper.</p>
+<p>(<a class="reference external" href="../../../verification/infiltration/infiltration_1d/amanzi_infiltration_1d-a.py">Source code</a>, <a class="reference external" href="../../../verification/infiltration/infiltration_1d/amanzi_infiltration_1d-a.png">png</a>, <a class="reference external" href="../../../verification/infiltration/infiltration_1d/amanzi_infiltration_1d-a.hires.png">hires.png</a>, <a class="reference external" href="../../../verification/infiltration/infiltration_1d/amanzi_infiltration_1d-a.pdf">pdf</a>)</p>
+<div class="figure align-center">
+<img alt="../../../_images/amanzi_infiltration_1d-a.png" src="../../../_images/amanzi_infiltration_1d-a.png" />
+</div>
+</div>
+</div>
+<div class="section" id="case-3-sand-loam-layers">
+<h2>Case #3: Sand Loam Layers<a class="headerlink" href="#case-3-sand-loam-layers" title="Permalink to this headline">¶</a></h2>
+<p>The steady-state solution is shown below.
+Now, we swap the sand is loam regions.
+The van Genuchten parameters are <span class="math notranslate nohighlight">\(\alpha=4.08622\cdot 10^{-4}\)</span>, <span class="math notranslate nohighlight">\(m=0.375\)</span>, and
+residual saturation is <span class="math notranslate nohighlight">\(s_r=0.186047\)</span>.
+The absolute permeability is given by the isotropic tensor <span class="math notranslate nohighlight">\(K=5.9236 \cdot 10^{-13} [m^2]\)</span>.</p>
+<p>The sand region corresponds to the right part of the pressure profile.
+The van Genuchten parameters are <span class="math notranslate nohighlight">\(\alpha=1.532333\cdot 10^{-3}\)</span>, <span class="math notranslate nohighlight">\(m=0.6666667\)</span>, and
+residual saturation is <span class="math notranslate nohighlight">\(s_r=0.104651\)</span>.
+The absolute permeability is given by the isotropic tensor <span class="math notranslate nohighlight">\(K=1.18472 \cdot 10^{-11} [m^2]\)</span>.</p>
+<div class="section" id="id6">
+<h3>Results and Comparison<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
+<p>We compare with the Amanzi’s golden data that were verified against the Vanderborght paper.</p>
+<p>(<a class="reference external" href="../../../verification/infiltration/infiltration_1d/amanzi_infiltration_1d-b.py">Source code</a>, <a class="reference external" href="../../../verification/infiltration/infiltration_1d/amanzi_infiltration_1d-b.png">png</a>, <a class="reference external" href="../../../verification/infiltration/infiltration_1d/amanzi_infiltration_1d-b.hires.png">hires.png</a>, <a class="reference external" href="../../../verification/infiltration/infiltration_1d/amanzi_infiltration_1d-b.pdf">pdf</a>)</p>
+<div class="figure align-center">
+<img alt="../../../_images/amanzi_infiltration_1d-b.png" src="../../../_images/amanzi_infiltration_1d-b.png" />
+</div>
+</div>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<p id="id7"><dl class="citation">
+<dt class="label" id="id32"><span class="brackets"><a class="fn-backref" href="#id3">BC64</a></span></dt>
+<dd><p>R.H. Brooks and A.T. Corey. Hydraulic properties of porous media. <em>Hydrology Papers, Colorado State University</em>, 1964.</p>
+</dd>
+<dt class="label" id="id33"><span class="brackets"><a class="fn-backref" href="#id1">Mua76</a></span></dt>
+<dd><p>Y. Mualem. A new model for predicting the hydraulic conductivity of unsaturated porous media. <em>Water Resour. Res</em>, 12(3):513–522, 1976.</p>
+</dd>
+<dt class="label" id="id35"><span class="brackets"><a class="fn-backref" href="#id2">vG80</a></span></dt>
+<dd><p>M.T. van Genuchten. A closed-form equation for predicting the hydraulic conductivity of unsaturated soils. <em>Soil Sci. Soc. Am. J</em>, 44(5):892–898, 1980.</p>
+</dd>
+<dt class="label" id="id38"><span class="brackets"><a class="fn-backref" href="#id4">VKH+05</a></span></dt>
+<dd><p>J. Vanderborght, R. Kasteel, M. Herbst, M. Javaux, D. Thiery, M. Vanclooster, C. Mouvet, and H. Vereecken. A set of analytical benchmarks to test numerical models of flow and transport in soils. <em>Vadose Zone J.</em>, 4(1):206–221, 2005.</p>
+</dd>
+</dl>
+</p>
+</div>
+<div class="section" id="about">
+<span id="about-sand-clay"></span><h2>About<a class="headerlink" href="#about" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Directory:  testing/verification/flow/richards/steady-state/infiltration_1d</p></li>
+<li><p>Author:</p></li>
+<li><p>Maintainer:  David Moulton (<a class="reference external" href="mailto:moulton&#37;&#52;&#48;lanl&#46;gov">moulton<span>&#64;</span>lanl<span>&#46;</span>gov</a>)</p></li>
+<li><p>Input Files:</p>
+<ul>
+<li><p>amanzi_infiltration_clay_sand_1d-u.xml</p></li>
+<li><p>amanzi_infiltration_loam_sand_1d-u.xml</p></li>
+<li><p>amanzi_infiltration_sand_loam_1d-u.xml</p>
+<ul>
+<li><p>Spec 2.3, unstructured mesh framework</p></li>
+<li><p>mesh is generated internally</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="../../transport/index.html" class="btn btn-neutral float-right" title="Transport of Solutes: Advection, Dispersion and Diffusion" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="../index.html" class="btn btn-neutral float-left" title="Infiltration Flow Tests" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Contributing National Laboratories (LANL, LBNL, ORNL, PNNL).
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

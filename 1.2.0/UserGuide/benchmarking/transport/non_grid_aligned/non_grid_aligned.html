@@ -1,0 +1,417 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Non-grid-aligned transport with calcite precipitation along mixing interface &mdash; Amanzi 1.2.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/fix_eq_position.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="prev" title="Coupled Matrix-Fracture Flow and Transport" href="../single_fracture/amanzi_single_fracture.html" /> 
+ <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: {
+        extensions: ["mhchem.js"]
+    }
+  });
+</script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/Amanzi-color.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                Version 1.2.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../background/index.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../background/getting_started.html">Getting Started with Amanzi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../capabilities/index.html">Amanzi Features and Capabilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../input/index.html">Amanzi Input Description</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/index.html">Building Amanzi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/index.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../verification/index.html">Verification Testing</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Benchmark Testing</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../chemistry/index.html">Chemistry</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">Transport</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../single_fracture/amanzi_single_fracture.html">Coupled Matrix-Fracture Flow and Transport</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Non-grid-aligned transport with calcite precipitation along mixing interface</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#overview-and-capabilities-tested">Overview and Capabilities tested</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#background">Background</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#model">Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#problem-specification">Problem Specification</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#results-and-comparison">Results and Comparison</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#references">References</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#about">About</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Amanzi</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Benchmark Testing</a> &raquo;</li>
+        
+          <li><a href="../index.html">Transport</a> &raquo;</li>
+        
+      <li>Non-grid-aligned transport with calcite precipitation along mixing interface</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../../_sources/benchmarking/transport/non_grid_aligned/non_grid_aligned.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <div class="rst-breadcrumbs-buttons" role="navigation" aria-label="breadcrumb navigation">
+      
+      
+        <a href="../single_fracture/amanzi_single_fracture.html" class="btn btn-neutral float-left" title="Coupled Matrix-Fracture Flow and Transport" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+      
+  </div>
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="non-grid-aligned-transport-with-calcite-precipitation-along-mixing-interface">
+<h1>Non-grid-aligned transport with calcite precipitation along mixing interface<a class="headerlink" href="#non-grid-aligned-transport-with-calcite-precipitation-along-mixing-interface" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="overview-and-capabilities-tested">
+<h2>Overview and Capabilities tested<a class="headerlink" href="#overview-and-capabilities-tested" title="Permalink to this headline">¶</a></h2>
+<p>This test example performs the simulation of calcite precipitation in a 2D rectangular flow domain. In this domain, two different solutions are injected at different flow rates at top and bottom half of the inlet face. As a result of the different flow rates, the directions of flow and transport are not aligned with the rectangluar grid, and the mixing zone that develops is curved. Along the curved interface, geochemical disequilibrium drives precipitation of calcite. This example tests the following capabilities:</p>
+<ul>
+<li><p>2D flow</p></li>
+<li><p>2D advective transport</p></li>
+<li><p>2D dispersive transport</p></li>
+<li><p>Geochemical reactions</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Mineral precipitation</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+<p>For details on this test, see <a class="reference internal" href="#about-non-grid-aligned"><span class="std std-ref">About</span></a>.</p>
+</div>
+<div class="section" id="background">
+<h2>Background<a class="headerlink" href="#background" title="Permalink to this headline">¶</a></h2>
+<p>Mixing-induced precipitation is a problem that has recently received some attention in the literature, especially in pore scale studies <span id="id1">[<a class="reference internal" href="#id43" title="H. Yoon, A. J. Valocchi, C. J. Werth, and T. Dewers. Pore-scale simulation of mixing-induced calcium carbonate precipitation and dissolution in a microfluidic pore network. Water Resour. Res., 2012.">YVWD12</a>]</span>, <span id="id2">[<a class="reference internal" href="#id44" title="A. M. Tartakovsky, G. Redden, P. C. Lichtner, T. D. Scheibe, and P. Meakin. Mixing-induced precipitation: experimental study and multiscale numerical analysis. Water Resour. Res., 2008.">TRL+08</a>]</span>. To accurately predict precipitation along mixing interfaces, accurate prediction of diffusive transport is required. This is especially true, when these transport processes are not aligned with the grid that is used to discretize the domain. Amanzi uses numerical schemes that accurately simulate non-grid-aligned advective and diffusive transport.  In this release, the advection-diffusion equation is solved using an operator splitting framework with an explicit scheme for the advection operator and an implicit scheme for diffusion. A simple operator-split approach is used; future releases will include options for higher-order schemes to couple the processes temporally.</p>
+<p>The spatial discretization schemes available in Amanzi for advective and diffusive processes are optimized for the selected mesh framework (structured AMR or unstructured).  For unstructured meshes, Amanzi provides a second-order approximation of advective fluxes with a MUSCL-type (Monotonic Upstream-Centered Scheme for Conservation Laws) scheme <span id="id3">[<a class="reference internal" href="#id45" title="T. Barth. Aspects of unstructured grids and finite-volume solvers for the euler and navier-stokes equations. Lecture Notes presented at VKI Lecture Series, 1994.">Bar94</a>]</span> that combines local linear reconstruction of solute concentrations with a tensorial slope limiter.  The tensorial slope limiter adds robustness to the scheme and reduces numerical diffusion compared to the more conventional (scalar) Barth-Jesperson limiter.  The tensor diffusion fluxes are computed with either standard central differencing or a second-order MFD (Mimetic Finite Difference) method <span id="id4">[<a class="reference internal" href="#id46" title="L. Beirao da Veiga, K. Lipnikov, and G. Manzini. The Mimetic Finite Difference Method for Elliptic PDEs. Springer, 2014.">dVLM14</a>]</span> optimized to guarantee solution monotonicity.  For structured AMR meshes, Amanzi implements an unsplit Godunov scheme <span id="id5">[<a class="reference internal" href="#id47" title="J.B. Bell, C.N. Dawson, and G.R. Shubin. An unsplit higher order godunov method for scalar conservation laws in multiple dimensions. J. Comput. Phys., 74:1–24, 1988.">BDS88</a>]</span>, <span id="id6">[<a class="reference internal" href="#id48" title="A. Nonaka, S. May, A. S. Almgren, and J. B. Bell. A three-dimensional, unsplit godunov method ofr scalar conservation laws. SIAM J. Sci. Comput, 33(4):2039–2062, 2011.">NMAB11</a>]</span> for advection, and a standard 9-point (2D) or 27-point (3D) tensor diffusion scheme.  The Godunov scheme robustly guarantees monontonicity for non-grid-aligned advection.</p>
+</div>
+<div class="section" id="model">
+<h2>Model<a class="headerlink" href="#model" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="flow-and-transport">
+<h3>Flow and transport<a class="headerlink" href="#flow-and-transport" title="Permalink to this headline">¶</a></h3>
+<p>For this test, the domain is fully saturated.  The velocity field satisfies the
+mass conservation equation with a Darcy approximation for volumetric fluxes:</p>
+<div class="math notranslate nohighlight">
+\[\left(\frac{S_s}{g} + \frac{S_y}{Lg}\right)
+  \frac{\partial p}{\partial t}
++ \boldsymbol{\nabla}\cdot(\rho \boldsymbol{q}) = Q.\]</div>
+<p>Solutes are advected with the velocity field given above, and are subject to diffusion fluxes arising
+from the properties of the solutes in the fluid medium, as well as dispersion terms due to the
+fluid flow field.  The following expresses conservation of the molar density of the i-th solute</p>
+<div class="math notranslate nohighlight">
+\[\frac{\partial (\phi s_l C_i)}{\partial t}
++ \nabla \cdot \boldsymbol{J}_i^{\text{adv}}
+= Q_i
+- \nabla \cdot \boldsymbol{J}_i^{\text{disp}}\]</div>
+<p>where the transport flux has the form</p>
+<div class="math notranslate nohighlight">
+\[\boldsymbol{J}_i^\text{disp} = - \phi s_l \boldsymbol{D} \nabla C_i,\]</div>
+<p>with the dispersion tensor <span class="math notranslate nohighlight">\(boldsymbol{D}\)</span> and liquid saturation <span class="math notranslate nohighlight">\(s_l\)</span>.</p>
+</div>
+<div class="section" id="calcite-precipitation">
+<h3>Calcite precipitation<a class="headerlink" href="#calcite-precipitation" title="Permalink to this headline">¶</a></h3>
+<p>Calcite precipitation can be described as</p>
+<p><span class="math notranslate nohighlight">\(Ca^{2+} + CO_3^{2-} \rightarrow CaCO_3(s)\)</span></p>
+<p>The rate expression is</p>
+<p><span class="math notranslate nohighlight">\(r = S \cdot k \cdot (1 - \displaystyle\frac{Q}{K_{sp}})\)</span></p>
+<p>where
+<span class="math notranslate nohighlight">\(S\)</span>
+is the reactive surface area,
+<span class="math notranslate nohighlight">\(k\)</span>
+is the intrinsic rate constant,
+<span class="math notranslate nohighlight">\(Q\)</span>
+is the ion activity product, and
+<span class="math notranslate nohighlight">\(K_{sp}\)</span>
+is the solubility constant of calcite.</p>
+</div>
+</div>
+<div class="section" id="problem-specification">
+<h2>Problem Specification<a class="headerlink" href="#problem-specification" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id7">
+<h3>Flow and transport<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h3>
+<p>The domain is a 2D dimensional rectangle, 60x50 cm in size. Material properties are homogeneous in the domain:</p>
+<ul class="simple">
+<li><p>Porosity = 0.38</p></li>
+<li><p>Hydraulic conductivity = 0.38 cm/s</p></li>
+</ul>
+<p>The inlet face is divided in two equal halves. The top half is subject to the following conditions:</p>
+<ul class="simple">
+<li><p>flow rate = 0.50 cm/s</p></li>
+<li><p><span class="math notranslate nohighlight">\([Ca^{2+}] = 0.05 M\)</span></p></li>
+</ul>
+<p>The bottom half is subject to the following conditions:</p>
+<ul class="simple">
+<li><p>flow rate = 0.26 cm/s</p></li>
+<li><p><span class="math notranslate nohighlight">\([CO_3^{2-}] = 0.05 M\)</span></p></li>
+</ul>
+<p>The initial concentration of all species in the domain is <span class="math notranslate nohighlight">\(10^{-10} M\)</span></p>
+<p>The dispersion coefficients for longitudinal and transverse component (relative to the local velocity vector) are:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\alpha_{L} = \alpha_{T} = 0.0001 m\)</span></p></li>
+</ul>
+<p>The molecular diffusivities for all species are zeros.</p>
+</div>
+<div class="section" id="geochemistry">
+<h3>Geochemistry<a class="headerlink" href="#geochemistry" title="Permalink to this headline">¶</a></h3>
+<p>The calcite mineral surface area is:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(S = 250 \text{ m}^2 \text{/m}^3\)</span></p></li>
+</ul>
+<p>While the instrinsic rate constant for calcite dissolution is:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(k = 10^{-11} \text{ mol/cm}^2 \text{s}\)</span></p></li>
+</ul>
+<p>With calcite solubility being:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\text{log}(K_{sp}) = -8.4801\)</span></p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="results-and-comparison">
+<h2>Results and Comparison<a class="headerlink" href="#results-and-comparison" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="expected-results">
+<h3>Expected results<a class="headerlink" href="#expected-results" title="Permalink to this headline">¶</a></h3>
+<p>Precipitation of calcite is expected to occur in the zone where the two solutions mix. Because the flow rate in the top half is faster, the mixing zone curves downwards, into the bottom half of the domain. Since the precipitation of calcite is fast relative to transport, the mixing zone is narrow; the effective reaction rate is transport-limited.  We do not have an analytic solution for this problem. Due to the discontinuous boundary condition, we cannot expect formal convergence of either the structured AMR or unstructured algorithms to their second-order design rate.  However, we anticipate a robust, monotonic solution with minimal cross-stream diffusion/dispersion.</p>
+</div>
+<div class="section" id="simulation-results">
+<h3>Simulation results<a class="headerlink" href="#simulation-results" title="Permalink to this headline">¶</a></h3>
+<p>Simulation results show a good agreement with expected results. Precipitation of calcite is indicated by its volume fraction at time 72 seconds (see Figure). For the structured and unstructured discretizations, the solution profiles for the precipitated calcite are similar narrow bands between the inflowing solutes.  In both case, the solute profiles are monotonic and well-behaved at all mesh resolutions.  With additional refinement (not shown), the magnitude of the peak calcite volume fraction increases (due the increased vertical gradients of precipitating solutes at the inflow boundary condition), but its concentration stays properly confined to a narrow zone at the interface. These results demonstrate that Amanzi is capable of robustly capturing non-grid-aligned processes in both the structured and unstructured mesh frameworks.</p>
+<p>(<a class="reference external" href="../../../benchmarking/transport/non_grid_aligned/non_grid_aligned.py">Source code</a>)</p>
+</div>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<p id="id8"><dl class="citation">
+<dt class="label" id="id45"><span class="brackets"><a class="fn-backref" href="#id3">Bar94</a></span></dt>
+<dd><p>T. Barth. Aspects of unstructured grids and finite-volume solvers for the euler and navier-stokes equations. Lecture Notes presented at VKI Lecture Series, 1994.</p>
+</dd>
+<dt class="label" id="id47"><span class="brackets"><a class="fn-backref" href="#id5">BDS88</a></span></dt>
+<dd><p>J.B. Bell, C.N. Dawson, and G.R. Shubin. An unsplit higher order godunov method for scalar conservation laws in multiple dimensions. <em>J. Comput. Phys.</em>, 74:1–24, 1988.</p>
+</dd>
+<dt class="label" id="id46"><span class="brackets"><a class="fn-backref" href="#id4">dVLM14</a></span></dt>
+<dd><p>L. Beirao da Veiga, K. Lipnikov, and G. Manzini. <em>The Mimetic Finite Difference Method for Elliptic PDEs</em>. Springer, 2014.</p>
+</dd>
+<dt class="label" id="id48"><span class="brackets"><a class="fn-backref" href="#id6">NMAB11</a></span></dt>
+<dd><p>A. Nonaka, S. May, A. S. Almgren, and J. B. Bell. A three-dimensional, unsplit godunov method ofr scalar conservation laws. <em>SIAM J. Sci. Comput</em>, 33(4):2039–2062, 2011.</p>
+</dd>
+<dt class="label" id="id44"><span class="brackets"><a class="fn-backref" href="#id2">TRL+08</a></span></dt>
+<dd><p>A. M. Tartakovsky, G. Redden, P. C. Lichtner, T. D. Scheibe, and P. Meakin. Mixing-induced precipitation: experimental study and multiscale numerical analysis. <em>Water Resour. Res.</em>, 2008.</p>
+</dd>
+<dt class="label" id="id43"><span class="brackets"><a class="fn-backref" href="#id1">YVWD12</a></span></dt>
+<dd><p>H. Yoon, A. J. Valocchi, C. J. Werth, and T. Dewers. Pore-scale simulation of mixing-induced calcium carbonate precipitation and dissolution in a microfluidic pore network. <em>Water Resour. Res.</em>, 2012.</p>
+</dd>
+</dl>
+</p>
+</div>
+<div class="section" id="about">
+<span id="about-non-grid-aligned"></span><h2>About<a class="headerlink" href="#about" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Benchmark simulators: N/A</p></li>
+<li><p>Files</p>
+<ul>
+<li><p>Amanzi input file/s (native chemistry): non_grid_aligned-u.xml</p></li>
+<li><p>Amanzi input file/s (Alquimia chemistry): non_grid_aligned-u-alq.xml, calcite_pflotran.in</p></li>
+</ul>
+</li>
+<li><p>Location: testing/benchmark/chemistry/non_grid_aligned_dispersion/</p></li>
+<li><p>Author: K. Lipnikov, M. Day, S. Molins</p></li>
+<li><p>Documentation: S. Molins</p></li>
+<li><p>Created on: March 10, 2014</p></li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="../single_fracture/amanzi_single_fracture.html" class="btn btn-neutral float-left" title="Coupled Matrix-Fracture Flow and Transport" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Contributing National Laboratories (LANL, LBNL, ORNL, PNNL).
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

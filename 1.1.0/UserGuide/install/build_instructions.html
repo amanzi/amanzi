@@ -1,0 +1,403 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Building and Installing Amanzi Using CMake &mdash; Amanzi Version 1.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/fix_eq_position.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Tutorial" href="../tutorial/index.html" />
+    <link rel="prev" title="Amanzi Third Party Library (TPL) Build System" href="building_tpls.html" /> 
+ <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: {
+        extensions: ["mhchem.js"]
+    }
+  });
+</script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Amanzi
+          
+
+          
+            
+            <img src="../_static/Amanzi-color.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                Version 1.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../background/index.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../background/getting_started.html">Getting Started with Amanzi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../capabilities/index.html">Amanzi Features and Capabilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../input/index.html">Amanzi Input Description</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Building Amanzi</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="building_bootstrap.html">Quickstart Using Bootstrap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="building_tpls.html">Amanzi Third Party Library (TPL) Build System</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Building and Installing Amanzi Using CMake</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#building-amanzi">Building Amanzi</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#amanzi-tpl-configuration-settings">Amanzi TPL Configuration Settings</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#amanzi-build-configuration-settings">Amanzi Build Configuration Settings</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#installing-amanzi">Installing Amanzi</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial/index.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../verification/index.html">Verification Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking/index.html">Benchmark Testing</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Amanzi</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Building Amanzi</a> &raquo;</li>
+        
+      <li>Building and Installing Amanzi Using CMake</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/install/build_instructions.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="building-and-installing-amanzi-using-cmake">
+<h1>Building and Installing Amanzi Using CMake<a class="headerlink" href="#building-and-installing-amanzi-using-cmake" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="building-amanzi">
+<h2>Building Amanzi<a class="headerlink" href="#building-amanzi" title="Permalink to this headline">¶</a></h2>
+<p>Amanzi depends on several external software packages or third party libraries
+(TPL) to build. Before building Amanzi a user must either build each of these
+TPLs, provide an installation path for each TPL or define the include directories
+and libraries needed for each TPL. We recommend that users build Amanzi and all the
+TPLs using the <code class="docutils literal notranslate"><span class="pre">boostrap.sh</span></code> shell script found in the <code class="docutils literal notranslate"><span class="pre">config</span></code> directory.
+The script can be run from the source directory. On most
+UNIX flavored systems, this script will build and install Amanzi and all the required
+TPLs with little information from the user. The script has prerequisites for
+compilers, <code class="docutils literal notranslate"><span class="pre">LAPACK</span></code>/<code class="docutils literal notranslate"><span class="pre">BLAS</span></code> and <code class="docutils literal notranslate"><span class="pre">MPI</span></code>. Please read
+<a class="reference internal" href="building_tpls.html#tpls"><span class="std std-ref">Amanzi Third Party Library (TPL) Build System</span></a> section for more information and <a class="reference internal" href="building_bootstrap.html#bootstrap"><span class="std std-ref">Quickstart Using Bootstrap</span></a> for installing using the <code class="docutils literal notranslate"><span class="pre">bootstrap.sh</span></code>.</p>
+<p>We recommended that users install the TPLs in separate directory, since a full TPL build
+should be an infrequent task. This is the default behavior of the <code class="docutils literal notranslate"><span class="pre">bootstrap.sh</span></code>
+script. See <code class="docutils literal notranslate"><span class="pre">bootstrap.sh</span> <span class="pre">--help</span></code> for more information on how to
+control the installation paths. The TPL build will generate a CMake configuration file
+that defines all the required TPL directories and CMake variables to build Amanzi.
+Once the user has installed all the required TPLs, the process to build
+Amanzi from the command line is:</p>
+<blockquote>
+<div><ol class="arabic">
+<li><p>Generate build files (Makefile, XCode project files, etc.) using CMake</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cmake</span> <span class="o">-</span><span class="n">C</span> <span class="o">&lt;</span><span class="n">TPL</span> <span class="n">install</span> <span class="n">prefix</span><span class="o">&gt;/</span><span class="n">share</span><span class="o">/</span><span class="n">cmake</span><span class="o">/</span><span class="n">amanzi</span><span class="o">-</span><span class="n">tpl</span><span class="o">-</span><span class="n">config</span><span class="o">.</span><span class="n">cmake</span> \
+      <span class="o">-</span><span class="n">D</span> <span class="n">CMAKE_C_COMPILER</span><span class="o">=/</span><span class="n">full</span><span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">mpicc</span> \
+      <span class="o">-</span><span class="n">D</span> <span class="n">CMAKE_CXX_COMPILER</span><span class="o">=/</span><span class="n">full</span><span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">mpicxx</span> \
+      <span class="o">-</span><span class="n">D</span> <span class="n">CMAKE_Fortran_COMPILER</span><span class="o">=/</span><span class="n">full</span><span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">mpif90</span> \
+      <span class="p">[</span><span class="n">Addtional</span> <span class="n">CMake</span> <span class="n">variable</span> <span class="n">definitions</span><span class="p">]</span>
+      <span class="o">&lt;</span><span class="n">Amanzi</span> <span class="n">source</span> <span class="n">directory</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><p>Use the build files to build Amanzi, i.e. <code class="docutils literal notranslate"><span class="pre">make</span></code>,</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="p">[</span><span class="o">-</span><span class="n">j</span> <span class="n">n</span><span class="p">]</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</div></blockquote>
+<p>or the user can run <code class="docutils literal notranslate"><span class="pre">bootstrap.sh</span></code> defining a previously built TPL configuration with</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">bootstrap</span><span class="o">.</span><span class="n">sh</span> <span class="o">--</span><span class="n">tpl</span><span class="o">-</span><span class="n">config</span><span class="o">-</span><span class="n">file</span><span class="o">=&lt;</span><span class="n">TPL</span> <span class="n">install</span> <span class="n">prefix</span><span class="o">&gt;/</span><span class="n">share</span><span class="o">/</span><span class="n">cmake</span><span class="o">/</span><span class="n">amanzi</span><span class="o">-</span><span class="n">tpl</span><span class="o">-</span><span class="n">config</span><span class="o">.</span><span class="n">cmake</span>
+</pre></div>
+</div>
+<div class="section" id="amanzi-tpl-configuration-settings">
+<h3>Amanzi TPL Configuration Settings<a class="headerlink" href="#amanzi-tpl-configuration-settings" title="Permalink to this headline">¶</a></h3>
+<p>We recommend that users build all the TPLs using the Amanzi SuperBuild project.
+This will create a CMake file that will initialize the cache settings for all
+the TPLs. Instructions in this section are designed for advanced users.</p>
+<p>The Amanzi CMake files search for each TPL through the CMake find_package function.
+Each TPL has a search path defined by the variable <code class="docutils literal notranslate"><span class="pre">&lt;TPL_Name&gt;_DIR</span></code> where
+TPL_Name is the name of the package. The Amanzi CMake files search for the
+appropriate include directories and libraries for this package. The search
+also includes searching for dependent packages. For example, searching for
+ASCEM-IO also triggers a search for HDF5 since ASCEM-IO depends on HDF5.
+The exceptions to this variable naming convention are Boost and HDF5. For these
+packages, Amanzi uses the CMake FindBoost module found in the CMake installation
+and the FindHDF5 module found in the <code class="docutils literal notranslate"><span class="pre">tools/cmake/Modules</span></code> directory.</p>
+<p>Users can bypass the package search by defining the <code class="docutils literal notranslate"><span class="pre">&lt;TPL_Name&gt;_INCLUDE_DIRS</span></code>
+and <code class="docutils literal notranslate"><span class="pre">&lt;TPL_Name&gt;_LIBRARIES</span></code> variables. These variables should contain the full
+path name of the include directories and libraries for that TPL and ANY
+dependent package the TPL requires to build and link against. For example,
+if you want to bypass the ExodusII search logic, then define
+<code class="docutils literal notranslate"><span class="pre">ExodusII_INCLUDE_DIRS</span></code> and <code class="docutils literal notranslate"><span class="pre">ExodusII_LIBRARIES</span></code> and these variables must
+also contain the NetCDF include directories and libraries. These variables
+are CMake list types. Each directory or filename should be separated with
+a semicolon.</p>
+</div>
+<div class="section" id="amanzi-build-configuration-settings">
+<h3>Amanzi Build Configuration Settings<a class="headerlink" href="#amanzi-build-configuration-settings" title="Permalink to this headline">¶</a></h3>
+<p>The naming convention for Amanzi build options is ENABLE_&lt;Feature_Name&gt;
+and is a boolean type (ON,OFF). The current build options with the default values
+are documented here.</p>
+<p>ENABLE_Structured:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Default: OFF</p></li>
+<li><p>Description: Build structured mesh capability.</p></li>
+<li><p>Dependencies: CCSE</p></li>
+</ul>
+</div></blockquote>
+<p>ENABLE_Unstructured:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Default: OFF</p></li>
+<li><p>Description: Build unstructured mesh capability.</p></li>
+<li><p>Dependencies: At leat one of the mesh frame works, STK, MSTK or MOAB.</p></li>
+</ul>
+</div></blockquote>
+<p>ENABLE_DBC:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Default: ON</p></li>
+<li><p>Description: Enable design by contract build.</p></li>
+<li><p>Dependencies:</p></li>
+</ul>
+</div></blockquote>
+<p>ENABLE_Config_Report:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Default: ON</p></li>
+<li><p>Description: Print out configuration report to the terminal.</p></li>
+<li><p>Dependencies:</p></li>
+</ul>
+</div></blockquote>
+<p>ENABLE_MSTK_Mesh:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Default: OFF</p></li>
+<li><p>Description: Build the MSTK mesh frame work.</p></li>
+<li><p>Dependencies: MSTK</p></li>
+</ul>
+</div></blockquote>
+<p>ENABLE_MOAB_Mesh:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Default: OFF</p></li>
+<li><p>Description: Build the MOAB mesh frame work.</p></li>
+<li><p>Dependencies: MOAB, requires a specific version. See Software Requires for more information.</p></li>
+</ul>
+</div></blockquote>
+<p>ENABLE_CCSE_TOOLS:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Default: OFF</p></li>
+<li><p>Description: Build structured AMR post processing tools</p></li>
+<li><p>Dependencies: python, f2py, gfortran compatible with mpif90</p></li>
+</ul>
+</div></blockquote>
+<p>ENABLE_UnitTest:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Default: ON</p></li>
+<li><p>Description: Build the unit test test suite.</p></li>
+<li><p>Dependencies: UnitTest++</p></li>
+</ul>
+</div></blockquote>
+<p>ENABLE_OpenMP:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Default: OFF</p></li>
+<li><p>Description: Build Amanzi executables with OpenMP support.</p></li>
+<li><p>Dependencies: OpenMP</p></li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="installing-amanzi">
+<h2>Installing Amanzi<a class="headerlink" href="#installing-amanzi" title="Permalink to this headline">¶</a></h2>
+<p>CMake will generate an <code class="docutils literal notranslate"><span class="pre">install</span></code> target in build files. For Makefiles,
+<code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">install</span></code> will install Amanzi under the directory defined by
+<code class="docutils literal notranslate"><span class="pre">CMAKE_INSTALL_PREFIX</span></code>. The default install location is <code class="docutils literal notranslate"><span class="pre">/usr/local</span></code>.</p>
+<p>Once installed, other CMake software projects can build and link against Amanzi
+as a library.
+See <a class="reference external" href="https://software.lanl.gov/ascem/trac/wiki/Amanzi/BuildSystemIntegration">https://software.lanl.gov/ascem/trac/wiki/Amanzi/BuildSystemIntegration</a> for a simple example.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="../tutorial/index.html" class="btn btn-neutral float-right" title="Tutorial" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="building_tpls.html" class="btn btn-neutral float-left" title="Amanzi Third Party Library (TPL) Build System" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Contributing National Laboratories (LANL, LBNL, ORNL, PNNL).
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

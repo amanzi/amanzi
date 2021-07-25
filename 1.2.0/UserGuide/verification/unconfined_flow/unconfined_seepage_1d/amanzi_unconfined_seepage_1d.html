@@ -1,0 +1,544 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Steady-State Unconfined Flow with a Seepage Boundary Condition &mdash; Amanzi 1.2.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/fix_eq_position.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Steady-State Flow in an Unconfined Multi-Aquifer System" href="../unconfined_layered_2d/amanzi_unconfined_layered_2d.html" />
+    <link rel="prev" title="Steady-State Flow in an Unconfined Aquifer: Head, and Flux Boundary Conditions" href="../unconfined_no_recharge_1d/amanzi_unconfined_no_recharge_1d.html" /> 
+ <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: {
+        extensions: ["mhchem.js"]
+    }
+  });
+</script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/Amanzi-color.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                Version 1.2.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../background/index.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../background/getting_started.html">Getting Started with Amanzi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../capabilities/index.html">Amanzi Features and Capabilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../input/index.html">Amanzi Input Description</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/index.html">Building Amanzi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/index.html">Tutorial</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Verification Testing</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../confined_flow/index.html">Confined Flow Tests</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">Unconfined Flow Tests</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../unconfined_no_recharge_1d/amanzi_unconfined_no_recharge_1d.html">Steady-State Flow in an Unconfined Aquifer: Head, and Flux Boundary Conditions</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Steady-State Unconfined Flow with a Seepage Boundary Condition</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#capabilities-tested">Capabilities Tested</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#background">Background</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#model">Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#problem-specification">Problem Specification</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#results-and-comparison">Results and Comparison</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#references">References</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#about">About</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../unconfined_layered_2d/amanzi_unconfined_layered_2d.html">Steady-State Flow in an Unconfined Multi-Aquifer System</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../infiltration/index.html">Infiltration Flow Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../transport/index.html">Transport of Solutes: Advection, Dispersion and Diffusion</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../benchmarking/index.html">Benchmark Testing</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Amanzi</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Verification Testing</a> &raquo;</li>
+        
+          <li><a href="../index.html">Unconfined Flow Tests</a> &raquo;</li>
+        
+      <li>Steady-State Unconfined Flow with a Seepage Boundary Condition</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../../_sources/verification/unconfined_flow/unconfined_seepage_1d/amanzi_unconfined_seepage_1d.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <div class="rst-breadcrumbs-buttons" role="navigation" aria-label="breadcrumb navigation">
+      
+        <a href="../unconfined_layered_2d/amanzi_unconfined_layered_2d.html" class="btn btn-neutral float-right" title="Steady-State Flow in an Unconfined Multi-Aquifer System" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+      
+      
+        <a href="../unconfined_no_recharge_1d/amanzi_unconfined_no_recharge_1d.html" class="btn btn-neutral float-left" title="Steady-State Flow in an Unconfined Aquifer: Head, and Flux Boundary Conditions" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+      
+  </div>
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="steady-state-unconfined-flow-with-a-seepage-boundary-condition">
+<h1>Steady-State Unconfined Flow with a Seepage Boundary Condition<a class="headerlink" href="#steady-state-unconfined-flow-with-a-seepage-boundary-condition" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="capabilities-tested">
+<h2>Capabilities Tested<a class="headerlink" href="#capabilities-tested" title="Permalink to this headline">¶</a></h2>
+<p>This one-dimensional flow problem tests the Amanzi unsaturated (Richards) flow process kernel with spatially-varying recharge and drain boundary
+conditions in an unconfined aquifer.
+Capabilities tested include:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>single-phase, one-dimensional flow</p></li>
+<li><p>steady-state flow</p></li>
+<li><p>variably-saturated (both saturated and unsaturated) flow</p></li>
+<li><p>constant-head (Dirichlet) boundary conditions</p></li>
+<li><p>no-flow (Neumann) boundary conditions</p></li>
+<li><p>spatially-varying recharge/drain (Cauchy) boundary conditions</p></li>
+<li><p>homogeneous porous medium</p></li>
+<li><p>isotropic porous medium</p></li>
+<li><p>non-uniform, non-orthogonal mesh</p></li>
+</ul>
+</div></blockquote>
+<p>For details on this test, see <a class="reference internal" href="#about-unconfined-seepage"><span class="std std-ref">About</span></a>.</p>
+</div>
+<div class="section" id="background">
+<h2>Background<a class="headerlink" href="#background" title="Permalink to this headline">¶</a></h2>
+<p>Unconfined aquifers are often fed by surface recharge (e.g. precipitation), which can be
+represented in numerical models as a Cauchy boundary condition. Similarly, if the water table
+intersects the surface topography, perhaps due to slope of the ground surface, a seepage
+face develops that can likewise be represented with the Cauchy boundary condition.</p>
+<p>Flow in an unconfined aquifer is inherently multi-dimensional, which generally precludes
+simple closed-form analytic solutions. In many practical applications however, vertical
+gradients and velocities are small relative to their horizontal components and can be
+neglected following Dupuit <span id="id1">[<a class="reference internal" href="#id33" title="J. Dupuit. Études théoriques et pratiques sur le mouvement des eaux dans les canaux découverts et à travers les terrains perméables. Dunod, Paris, 1863.">Dup63</a>]</span> and Forchheimer <span id="id2">[<a class="reference internal" href="#id34" title="P. Forchheimer. Hydraulik. Teubner, Leipzig, Berlin, third edition, 1930.">For30</a>]</span>.
+The Dupuit-Forchheimer theory of free-surface flow assumes that <span id="id3">[<a class="reference internal" href="#id38" title="R. A. Freeze and J. A. Cherry. Groundwater. Prentice-Hall, Inc., Englewood Cliffs, NJ, 1979.">FC79</a>]</span>:</p>
+<ol class="arabic simple">
+<li><p>flow is horizontal and equipotential lines are vertical, and</p></li>
+<li><p>hydraulic gradient is equal to the slope of the free surface.</p></li>
+</ol>
+<p>In this problem, we present an analytical solution for the elevation of the water table in an
+unconfined aquifer where the upper bounds are at once draining along a seepage face and being
+fed by areal recharge. Analytical solution results are compared to those generated using <em>Amanzi</em>.</p>
+</div>
+<div class="section" id="model">
+<h2>Model<a class="headerlink" href="#model" title="Permalink to this headline">¶</a></h2>
+<p>An analytic solution for the elevation of the water table can be
+readily derived if we make Dupuit-Forchheimer assumptions of free-surface flow — that is,
+that flow is horizontal and the hydraulic gradient is equal to the slope of the free surface
+<span id="id4">[<a class="reference internal" href="#id38" title="R. A. Freeze and J. A. Cherry. Groundwater. Prentice-Hall, Inc., Englewood Cliffs, NJ, 1979.">FC79</a>]</span>.</p>
+<p>Let <span class="math notranslate nohighlight">\(L_s\)</span> [m] denote the unknown location of the seepline, and
+<span class="math notranslate nohighlight">\(h_s\)</span> [m] denote the hydraulic head or height of the water table at this
+location. Between the left boundary and seepline, the analytic
+solution for hydraulic head in the saturated zone (<span id="id5">[<a class="reference internal" href="#id26" title="S. Aleman. Porflow testing and verification. Technical Report, Savannah River National Laboratory, 2007.">Ale07</a>]</span>, Equation 4.3.5) <span class="math notranslate nohighlight">\(h\)</span> is
+analogous to <em>Amanzi</em> unconfined aquifer test case #1 (<a class="reference internal" href="../unconfined_no_recharge_1d/amanzi_unconfined_no_recharge_1d.html#amanzi-unconfined-no-recharge-1d"><span class="std std-ref">Steady-State Flow in an Unconfined Aquifer: Head, and Flux Boundary Conditions</span></a>), with
+<span class="math notranslate nohighlight">\((L_s,h_s)\)</span> taking the place of <span class="math notranslate nohighlight">\((L,h_L)\)</span>:</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-unconfinedleft">
+<span class="eqno">(1)<a class="headerlink" href="#equation-unconfinedleft" title="Permalink to this equation">¶</a></span>\[h^2 = h_0^2 + (h_s^2 - h_0^2) \frac{x}{L_s} + \frac{Q_{src}L_s^2}{K}\left( \frac{x}{L_s} \right) \left(1 - \frac{x}{L_s} \right),\: 0 \leqslant x \leqslant L_s,\]</div>
+</div></blockquote>
+<p>where <span class="math notranslate nohighlight">\(Q_{src}=-Q\)</span> the seepline is position at <span class="math notranslate nohighlight">\(x=L_s\)</span> [m].</p>
+<p>The hydraulic head, <span class="math notranslate nohighlight">\(h\)</span> [m], is also the height of the water table. To
+the right of the seepline, any surface water is assumed to readily
+drain off such that the hydraulic head or water table elevation
+coincides exactly with the ground elevation, that is,</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-unconfinedright">
+<span class="eqno">(2)<a class="headerlink" href="#equation-unconfinedright" title="Permalink to this equation">¶</a></span>\[h = 50 \text{ ft} \left(2 - \frac{x}{L}  \right),\: L_s \leqslant x \leqslant L\]</div>
+</div></blockquote>
+<p>The location of the seepline is obtained by recognizing that Darcy’s law and
+mass conservation across the vertical line <span class="math notranslate nohighlight">\(x=L_s\)</span> requires
+(<span id="id6">[<a class="reference internal" href="#id26" title="S. Aleman. Porflow testing and verification. Technical Report, Savannah River National Laboratory, 2007.">Ale07</a>]</span>, Equations 4.4.3 and 4.4.4)</p>
+<blockquote>
+<div><div class="math notranslate nohighlight" id="equation-massconstraint">
+<span class="eqno">(3)<a class="headerlink" href="#equation-massconstraint" title="Permalink to this equation">¶</a></span>\[\frac{dh}{dx} \vert_{x=L_s^-} = \frac{1}{h_s} \left[ \frac{h_s^2 - h_0^2}{2L_s} - \frac{Q_{src} L_s}{2K} \right] = \frac{h_L - h_s}{L - L_s} = \frac{dh}{dx} \vert_{x=L_s^+},\]</div>
+</div></blockquote>
+<p>where</p>
+<dl>
+<dt>where</dt><dd><div class="math notranslate nohighlight" id="equation-elevationconstraint">
+<span class="eqno">(4)<a class="headerlink" href="#equation-elevationconstraint" title="Permalink to this equation">¶</a></span>\[h_s = 50 \text{ ft} \left(2 - \frac{L_s}{L}  \right)\]</div>
+</dd>
+</dl>
+<p>Simultaneous solution of Equations <a class="reference internal" href="#equation-massconstraint">(3)</a> and
+<a class="reference internal" href="#equation-elevationconstraint">(4)</a> for the specific parameters defined in the
+test problem schematic yields <span class="math notranslate nohighlight">\(L_s = 829 ft\)</span>.</p>
+</div>
+<div class="section" id="problem-specification">
+<h2>Problem Specification<a class="headerlink" href="#problem-specification" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="schematic">
+<h3>Schematic<a class="headerlink" href="#schematic" title="Permalink to this headline">¶</a></h3>
+<p>Consider the following scenario involving steady-state groundwater
+flow in an unconfined aquifer that discharges to a sloped ground
+surface along a seepage face (<span id="id7">[<a class="reference internal" href="#id26" title="S. Aleman. Porflow testing and verification. Technical Report, Savannah River National Laboratory, 2007.">Ale07</a>]</span>, Section 4.4):</p>
+<div class="align-center figure align-default" id="id67">
+<a class="reference internal image-reference" href="../../../_images/porflow_4.4.1.png"><img alt="../../../_images/porflow_4.4.1.png" src="../../../_images/porflow_4.4.1.png" style="width: 5in;" /></a>
+<p class="caption"><span class="caption-text"><strong>Schematic of the model domain and boundary conditions.</strong></span><a class="headerlink" href="#id67" title="Permalink to this image">¶</a></p>
+</div>
+<p>The ground elevation slopes from 100 ft at <span class="math notranslate nohighlight">\(x=0\)</span> to 50 ft at
+<span class="math notranslate nohighlight">\(x=L\)</span>, and the location of the seepline is unknown <em>a priori</em>.</p>
+</div>
+<div class="section" id="mesh">
+<h3>Mesh<a class="headerlink" href="#mesh" title="Permalink to this headline">¶</a></h3>
+<p>The mesh uses constant grid discretization in the x-direction (<span class="math notranslate nohighlight">\(\Delta x = 25\)</span> ft) and variable discretization in the y-direction (<span class="math notranslate nohighlight">\(2.5\)</span> ft <span class="math notranslate nohighlight">\(\leqslant \Delta y \leqslant 5\)</span> ft).
+To conform to the physical domain depicted in the test problem
+schematic, a conformal grid is used for the <em>Amanzi</em> simulation:</p>
+<div class="align-center figure align-default" id="id68">
+<a class="reference internal image-reference" href="../../../_images/porflow_4.4.3.png"><img alt="../../../_images/porflow_4.4.3.png" src="../../../_images/porflow_4.4.3.png" style="width: 5in;" /></a>
+<p class="caption"><span class="caption-text"><strong>Unstructured two-dimensional mesh with upper bounds conforming to ground surface.</strong></span><a class="headerlink" href="#id68" title="Permalink to this image">¶</a></p>
+</div>
+</div>
+<div class="section" id="variables">
+<h3>Variables<a class="headerlink" href="#variables" title="Permalink to this headline">¶</a></h3>
+<p>With the Dupuit approximation the analytic solution given by Equation
+<a class="reference internal" href="#equation-unconfinedleft">(1)</a> is one-dimensional in the horizontal coordinate
+and describes only the saturated zone. Because <em>Amanzi</em> does not
+directly solve a reduced governing equation set based on the Dupuit
+assumption, a two-dimensional <span class="math notranslate nohighlight">\((x,\,y)\)</span> simulation of the combined
+saturated and unsaturated zones using the <span id="id8">[<a class="reference internal" href="#id35" title="L. A. Richards. Capillary conduction of liquids through porous mediums. Physics, 1(5):318-333, 1931.">Ric31</a>]</span> equation is
+required. Thus a vertical hydraulic conductivity and parameters
+defining moisture characteristic curves for the unsaturated zone are
+required beyond the material properties implied by Equation
+<a class="reference internal" href="#equation-unconfinedleft">(1)</a>.  Input parameters for the numerical simulation
+are summarized as:</p>
+<ul class="simple">
+<li><p>Domain (2D)</p>
+<ul>
+<li><p><span class="math notranslate nohighlight">\(x_{min} = y_{min} = 0 \text{ [ft]}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(x_{max} = L = 1000 \text{ [ft]}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(y_{max} = 100\)</span> at <span class="math notranslate nohighlight">\(x = 0\)</span> and <span class="math notranslate nohighlight">\(50\)</span> at <span class="math notranslate nohighlight">\(x = L \text{ [ft]}\)</span></p></li>
+</ul>
+</li>
+<li><p>Material properties</p>
+<ul>
+<li><p>isotropic hydraulic conductivity:     <span class="math notranslate nohighlight">\(K = 1 \text{ [ft/d]} =  3.528 \times 10^{-6} \text{ [m/s]}\)</span></p>
+<ul>
+<li><p>derived from:    <span class="math notranslate nohighlight">\(K=\frac{k \rho g}{\mu}\)</span>, where permeability <span class="math notranslate nohighlight">\(k = 3.6098 \times 10^{-13} \text{ [m}^2\text{]}\)</span> (1 ft = 0.3048 m)</p></li>
+</ul>
+</li>
+<li><p>porosity:    <span class="math notranslate nohighlight">\(\phi = 0.3\)</span></p></li>
+<li><p>fluid density:    <span class="math notranslate nohighlight">\(\rho = 998.2 \: \text{[kg/m}^3\text{]}\)</span></p></li>
+<li><p>dynamic viscosity:    <span class="math notranslate nohighlight">\(\mu = 1.002 \times 10^{-3} \: \text{[Pa} \cdot \text{s]}\)</span></p></li>
+<li><p>gravitational acceleration:    <span class="math notranslate nohighlight">\(g = 9.807 \: \text{[m/s}^2\text{]}\)</span></p></li>
+<li><p>van Genuchten <span id="id9">[<a class="reference internal" href="#id39" title="M.T. van Genuchten. A closed-form equation for predicting the hydraulic conductivity of unsaturated soils. Soil Sci. Soc. Am. J, 44(5):892–898, 1980.">vG80</a>]</span> - Mualem <span id="id10">[<a class="reference internal" href="#id37" title="Y. Mualem. A new model for predicting the hydraulic conductivity of unsaturated porous media. Water Resour. Res, 12(3):513–522, 1976.">Mua76</a>]</span> parameters</p>
+<ul>
+<li><p><span class="math notranslate nohighlight">\(\alpha = 1.0212 \times 10^{-4} \text{ [Pa}^{-1} \text{]}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(S_r = 0.25\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(m = 0.09090\)</span></p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Boundary conditions</p>
+<ul>
+<li><p>no-flow (Neumann) boundary condition prescribed at <span class="math notranslate nohighlight">\(y_{min}\)</span></p></li>
+<li><p>prescribed hydraulic head (Dirichlet): <span class="math notranslate nohighlight">\(h(0) = 80,\: h(L) = 50 \text{ [ft]}\)</span></p></li>
+<li><p>recharge along the top surface = 1 ft/y for <span class="math notranslate nohighlight">\(0 \leqslant x \leqslant L_s\)</span></p></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="results-and-comparison">
+<h2>Results and Comparison<a class="headerlink" href="#results-and-comparison" title="Permalink to this headline">¶</a></h2>
+<p>(<a class="reference external" href="../../../verification/unconfined_flow/unconfined_seepage_1d/amanzi_unconfined_seepage_1d.py">Source code</a>, <a class="reference external" href="../../../verification/unconfined_flow/unconfined_seepage_1d/amanzi_unconfined_seepage_1d.png">png</a>, <a class="reference external" href="../../../verification/unconfined_flow/unconfined_seepage_1d/amanzi_unconfined_seepage_1d.hires.png">hires.png</a>, <a class="reference external" href="../../../verification/unconfined_flow/unconfined_seepage_1d/amanzi_unconfined_seepage_1d.pdf">pdf</a>)</p>
+<div class="figure align-center">
+<a class="reference internal image-reference" href="../../../_images/amanzi_unconfined_seepage_1d.png"><img alt="../../../_images/amanzi_unconfined_seepage_1d.png" src="../../../_images/amanzi_unconfined_seepage_1d.png" style="width: 6in;" /></a>
+</div>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 19%" />
+<col style="width: 19%" />
+<col style="width: 33%" />
+<col style="width: 29%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>x [m]</p></th>
+<th class="head"><p>z [m]</p></th>
+<th class="head"><p>Analytic [m]</p></th>
+<th class="head"><p>Amanzi [m]</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>7.6</p></td>
+<td><p>0.524</p></td>
+<td><p>24.3183</p></td>
+<td><p>24.3126</p></td>
+</tr>
+<tr class="row-odd"><td><p>38.1</p></td>
+<td><p>0.524</p></td>
+<td><p>23.9865</p></td>
+<td><p>23.9714</p></td>
+</tr>
+<tr class="row-even"><td><p>68.6</p></td>
+<td><p>0.524</p></td>
+<td><p>23.5421</p></td>
+<td><p>23.5228</p></td>
+</tr>
+<tr class="row-odd"><td><p>99.1</p></td>
+<td><p>0.524</p></td>
+<td><p>22.9784</p></td>
+<td><p>22.9546</p></td>
+</tr>
+<tr class="row-even"><td><p>129.5</p></td>
+<td><p>0.524</p></td>
+<td><p>22.2889</p></td>
+<td><p>22.2572</p></td>
+</tr>
+<tr class="row-odd"><td><p>160.0</p></td>
+<td><p>0.524</p></td>
+<td><p>21.4567</p></td>
+<td><p>21.4302</p></td>
+</tr>
+<tr class="row-even"><td><p>190.5</p></td>
+<td><p>0.524</p></td>
+<td><p>20.4667</p></td>
+<td><p>20.4307</p></td>
+</tr>
+<tr class="row-odd"><td><p>221.0</p></td>
+<td><p>0.524</p></td>
+<td><p>19.2947</p></td>
+<td><p>19.2685</p></td>
+</tr>
+<tr class="row-even"><td><p>251.5</p></td>
+<td><p>0.524</p></td>
+<td><p>17.9048</p></td>
+<td><p>17.8894</p></td>
+</tr>
+<tr class="row-odd"><td><p>282.0</p></td>
+<td><p>0.524</p></td>
+<td><p>16.3800</p></td>
+<td><p>16.3845</p></td>
+</tr>
+<tr class="row-even"><td><p>297.2</p></td>
+<td><p>0.524</p></td>
+<td><p>15.6200</p></td>
+<td><p>15.6238</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<p id="id11"><dl class="citation">
+<dt class="label" id="id26"><span class="brackets">Ale07</span><span class="fn-backref">(<a href="#id5">1</a>,<a href="#id6">2</a>,<a href="#id7">3</a>)</span></dt>
+<dd><p>S. Aleman. Porflow testing and verification. Technical Report, Savannah River National Laboratory, 2007.</p>
+</dd>
+<dt class="label" id="id33"><span class="brackets"><a class="fn-backref" href="#id1">Dup63</a></span></dt>
+<dd><p>J. Dupuit. <em>Études théoriques et pratiques sur le mouvement des eaux dans les canaux découverts et à travers les terrains perméables</em>. Dunod, Paris, 1863.</p>
+</dd>
+<dt class="label" id="id34"><span class="brackets"><a class="fn-backref" href="#id2">For30</a></span></dt>
+<dd><p>P. Forchheimer. <em>Hydraulik</em>. Teubner, Leipzig, Berlin, third edition, 1930.</p>
+</dd>
+<dt class="label" id="id38"><span class="brackets">FC79</span><span class="fn-backref">(<a href="#id3">1</a>,<a href="#id4">2</a>)</span></dt>
+<dd><p>R. A. Freeze and J. A. Cherry. <em>Groundwater</em>. Prentice-Hall, Inc., Englewood Cliffs, NJ, 1979.</p>
+</dd>
+<dt class="label" id="id37"><span class="brackets"><a class="fn-backref" href="#id10">Mua76</a></span></dt>
+<dd><p>Y. Mualem. A new model for predicting the hydraulic conductivity of unsaturated porous media. <em>Water Resour. Res</em>, 12(3):513–522, 1976.</p>
+</dd>
+<dt class="label" id="id35"><span class="brackets"><a class="fn-backref" href="#id8">Ric31</a></span></dt>
+<dd><p>L. A. Richards. Capillary conduction of liquids through porous mediums. <em>Physics</em>, 1(5):318–333, 1931.</p>
+</dd>
+<dt class="label" id="id39"><span class="brackets"><a class="fn-backref" href="#id9">vG80</a></span></dt>
+<dd><p>M.T. van Genuchten. A closed-form equation for predicting the hydraulic conductivity of unsaturated soils. <em>Soil Sci. Soc. Am. J</em>, 44(5):892–898, 1980.</p>
+</dd>
+</dl>
+</p>
+</div>
+<div class="section" id="about">
+<span id="about-unconfined-seepage"></span><h2>About<a class="headerlink" href="#about" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Directory:  testing/verification/flow/richards/steady-state/unconfined_seepage_1d</p></li>
+<li><p>Authors:  Markus Berndt</p></li>
+<li><p>Maintainer:  David Moulton (<a class="reference external" href="mailto:moulton&#37;&#52;&#48;lanl&#46;gov">moulton<span>&#64;</span>lanl<span>&#46;</span>gov</a>)</p></li>
+<li><p>Input Files:</p>
+<ul>
+<li><p>amanzi_unconfined_seepage_1d-u.xml (Spec Version 2.3)</p></li>
+<li><p>mesh:  porflow4_4.exo (two-dimensional mesh with conformal (non-orthogonal) grid)</p></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="../unconfined_layered_2d/amanzi_unconfined_layered_2d.html" class="btn btn-neutral float-right" title="Steady-State Flow in an Unconfined Multi-Aquifer System" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="../unconfined_no_recharge_1d/amanzi_unconfined_no_recharge_1d.html" class="btn btn-neutral float-left" title="Steady-State Flow in an Unconfined Aquifer: Head, and Flux Boundary Conditions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Contributing National Laboratories (LANL, LBNL, ORNL, PNNL).
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

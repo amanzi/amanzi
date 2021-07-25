@@ -1,0 +1,408 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>1D Calcite dissolution &mdash; Amanzi 1.2.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/fix_eq_position.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="1D Sorption Isotherms" href="../isotherms_1d/amanzi_u-1d-isotherms.html" />
+    <link rel="prev" title="1D Tritium first-order decay" href="../tritium_1d/amanzi_u-1d-tritium.html" /> 
+ <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: {
+        extensions: ["mhchem.js"]
+    }
+  });
+</script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/Amanzi-color.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                Version 1.2.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../background/index.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../background/getting_started.html">Getting Started with Amanzi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../capabilities/index.html">Amanzi Features and Capabilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../input/index.html">Amanzi Input Description</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/index.html">Building Amanzi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/index.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../verification/index.html">Verification Testing</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Benchmark Testing</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">Chemistry</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../tracer_1d/amanzi_u-1d-tracer.html">1D Conservative tracer transport</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tritium_1d/amanzi_u-1d-tritium.html">1D Tritium first-order decay</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">1D Calcite dissolution</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#overview-and-capabilities-tested">Overview and Capabilities tested</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#background">Background</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#model">Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#problem-specification">Problem Specification</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#results-and-comparison">Results and Comparison</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#about">About</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../isotherms_1d/amanzi_u-1d-isotherms.html">1D Sorption Isotherms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ion_exchange_1d/amanzi_u-1d-ion-exchange.html">1D Ion exchange</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../surface_complexation_1d/amanzi_u-1d-surface-complexation.html">1D Surface complexation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../farea_1d/amanzi_u-1d-farea.html">1D F-Area Full Geochemistry</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../transport/index.html">Transport</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Amanzi</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Benchmark Testing</a> &raquo;</li>
+        
+          <li><a href="../index.html">Chemistry</a> &raquo;</li>
+        
+      <li>1D Calcite dissolution</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../../_sources/benchmarking/chemistry/calcite_1d/amanzi_u-1d-calcite.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <div class="rst-breadcrumbs-buttons" role="navigation" aria-label="breadcrumb navigation">
+      
+        <a href="../isotherms_1d/amanzi_u-1d-isotherms.html" class="btn btn-neutral float-right" title="1D Sorption Isotherms" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+      
+      
+        <a href="../tritium_1d/amanzi_u-1d-tritium.html" class="btn btn-neutral float-left" title="1D Tritium first-order decay" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+      
+  </div>
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="d-calcite-dissolution">
+<h1>1D Calcite dissolution<a class="headerlink" href="#d-calcite-dissolution" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="overview-and-capabilities-tested">
+<h2>Overview and Capabilities tested<a class="headerlink" href="#overview-and-capabilities-tested" title="Permalink to this headline">¶</a></h2>
+<p>This test example performs the simulation of calcite dissolution in a 1D flow domain, testing the following capabilities:</p>
+<ul>
+<li><p>1D flow</p></li>
+<li><p>1D advective transport</p></li>
+<li><p>Geochemical reactions</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Aqueous complexation reactions (equilibrium)</p></li>
+<li><p>Mineral dissolution</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+<p>For details on this test, see <a class="reference internal" href="#about-calcite"><span class="std std-ref">About</span></a>.</p>
+</div>
+<div class="section" id="background">
+<h2>Background<a class="headerlink" href="#background" title="Permalink to this headline">¶</a></h2>
+<p>Carbonate minerals are present in many subsurface environments and contribute to their buffering capacity. Under common subsurface flow conditons, calcite dissolution is a relatively fast geochemical reaction leading often to local geochemical equilibrium and sharp dissolution fronts. Calcite dissolution is represented here with a kinetic rate expression based on the transition state theory. In this test example, a solution under saturated with calcite is injected at x=0 into a 100-m porous domain containing calcite; as a result, calcite dissolves raising the pH and the concentration of Ca in the effluent end of the domain.</p>
+</div>
+<div class="section" id="model">
+<h2>Model<a class="headerlink" href="#model" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="flow-and-transport">
+<h3>Flow and transport<a class="headerlink" href="#flow-and-transport" title="Permalink to this headline">¶</a></h3>
+<p>See the <a class="reference internal" href="../tracer_1d/amanzi_u-1d-tracer.html"><span class="doc">1D Conservative tracer transport</span></a> example.</p>
+</div>
+<div class="section" id="aqueous-complexation">
+<h3>Aqueous complexation<a class="headerlink" href="#aqueous-complexation" title="Permalink to this headline">¶</a></h3>
+<p>Six reactions equilibrium reactions are considered in aqueous phase (by convention, secondary species are given in the left hand side, while primary species are in the right hand side):</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\ce{OH^- &lt;=&gt; H2O - H^+}\)</span>,
+<span class="math notranslate nohighlight">\(\text{ } \log(K)=13.9951\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\ce{CO3^{--} &lt;=&gt;  -H^+ + HCO3^-}\)</span>,
+<span class="math notranslate nohighlight">\(\text{ } \log(K)=10.3288\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\ce{CO2_{(aq)} &lt;=&gt; - H2O + H^+ + HCO3^-}\)</span>,
+<span class="math notranslate nohighlight">\(\text{ } \log(K)=-6.3447\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\ce{CaOH_+ &lt;=&gt; H2O - H^+ + Ca^{++}}\)</span>,
+<span class="math notranslate nohighlight">\(\text{ } log(K)=12.85000\)</span>,</p></li>
+<li><p><span class="math notranslate nohighlight">\(\ce{CaHCO3^+ &lt;=&gt; HCO3^- + Ca^{++}}\)</span>,
+<span class="math notranslate nohighlight">\(\text{ } \log(K)=-1.0467\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\ce{CaCO3_{(aq)} &lt;=&gt; - H^+ + HCO3^- + Ca^{++}}\)</span>,
+<span class="math notranslate nohighlight">\(\text{ } \log(K)=7.0017\)</span></p></li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="calcite-dissolution">
+<h3>Calcite dissolution<a class="headerlink" href="#calcite-dissolution" title="Permalink to this headline">¶</a></h3>
+<p>Calcite dissolution can be expressed as</p>
+<p><span class="math notranslate nohighlight">\(CaCO_3(s) \rightarrow Ca^{2+} + CO_3^{2-}\)</span></p>
+<p>The rate expression is</p>
+<p><span class="math notranslate nohighlight">\(r = S \cdot k \cdot (1 - \frac{Q}{K_{sp}})\)</span></p>
+<p>where
+<span class="math notranslate nohighlight">\(S\)</span>
+is the reactive surface area,
+<span class="math notranslate nohighlight">\(k\)</span>
+is the intrinsic rate constant,
+<span class="math notranslate nohighlight">\(Q\)</span>
+is the ion activity product, and
+<span class="math notranslate nohighlight">\(K_{sp}\)</span>
+is the solubility constant of calcite.</p>
+</div>
+</div>
+<div class="section" id="problem-specification">
+<h2>Problem Specification<a class="headerlink" href="#problem-specification" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id1">
+<h3>Flow and transport<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<p>See the <a class="reference internal" href="../tracer_1d/amanzi_u-1d-tracer.html"><span class="doc">1D Conservative tracer transport</span></a> example. In this example, a solution at pH 5, out of equilibrium with respect to calcite, is injected at the left boundary causing calcite dissolution in the domain as it flows down gradient a 1D flow domain. The simulation is run to 50 years.</p>
+</div>
+<div class="section" id="geochemistry">
+<h3>Geochemistry<a class="headerlink" href="#geochemistry" title="Permalink to this headline">¶</a></h3>
+<p>Infiltration Solution:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(pH = 5.0\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(u_{\ce{HCO3^-}}=1.0028 \cdot 10^{-3} \text{ mol/Kg}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(u_{\ce{Ca^{++}}}=1.684 \cdot 10^{-5} \text{ mol/Kg}\)</span></p></li>
+</ul>
+<p>Solution initially in the domain:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(pH = 8.0184\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(u_{\ce{HCO3^-}}=1.7398 \cdot 10^{-3} \text{ mol/Kg}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(u_{\ce{Ca^{++}}}=5.2461 \cdot 10^{-4} \text{ mol/Kg}\)</span></p></li>
+</ul>
+<p>Initial calcite volume fraction:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(V_m(Calcite) = 10^{-5} \text{ m}^3 \text{ mineral/m}^3 \text{ bulk}\)</span></p></li>
+</ul>
+<p>Calcite mineral surface area:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(S = 100 \text{ m}^2 \text{/m}^3 = 1 \text{ cm}^2 \text{/cm}^3\)</span></p></li>
+</ul>
+<p>Intrinsic rate constant for calcite dissolution:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(k = 10^{-9} \text{ mol/m}^2 \text{s} = 10^{-13} \text{ mol/cm}^2 \text{s}\)</span></p></li>
+</ul>
+<p>Calcite solubility:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\text{log}(K_{sp}) = 1.8487\)</span></p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="results-and-comparison">
+<h2>Results and Comparison<a class="headerlink" href="#results-and-comparison" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="expected-results">
+<h3>Expected results<a class="headerlink" href="#expected-results" title="Permalink to this headline">¶</a></h3>
+<p>A solution with pH 5 infiltrating from the left of the domain displaces the initial solution (pH 8) and drives dissolution of calcite. Because the dissolution is relatively fast the geochemical front is sharp. In other words, as long as calcite is present the solution is near equilibrium conditions with respect to calcite. The movement of the front is dictated by how much calcite is in the domain initially  (as shown by the volume fraction of calcite in the domain). Therefore, a lag is observed between the conservative tracer front and the dissolution front (see <a class="reference internal" href="../tracer_1d/amanzi_u-1d-tracer.html"><span class="doc">1D Conservative tracer transport</span></a>). At the dissolution a sharp increase in calcium concentration (above background levels) and a sharp increase of pH are observed, leading to near equilibrium conditions.</p>
+</div>
+<div class="section" id="simulation-results">
+<h3>Simulation results<a class="headerlink" href="#simulation-results" title="Permalink to this headline">¶</a></h3>
+<p>The figure shows the concentration of total calcium, pH and Calcite volume fraction along the length of the column at the end of the simulation at 10, 20, 30, 40 and 50 years for Amanzi (run with native geochemistry and, if enabled, using the the Alquimia API with PFloTran as geochemical engine), PFloTran and CrunchFlow. PFloTran and CrunchFlow are run using the a global implicit approach and an operator splitting approach. The reader should note that CrunchFlow OS3D employs a TVD scheme for advection that minimizes numerical dispersion. A good agreement is observed between the codes. Some differences are attributable to the numerical dispersion added in the code using implicit methods for advective fluxes. Additional, differences are attributable to the implementation of the boundary conditions in the different codes.</p>
+<p>(<a class="reference external" href="../../../benchmarking/chemistry/calcite_1d/calcite_1d.py">Source code</a>, <a class="reference external" href="../../../benchmarking/chemistry/calcite_1d/calcite_1d.png">png</a>, <a class="reference external" href="../../../benchmarking/chemistry/calcite_1d/calcite_1d.hires.png">hires.png</a>, <a class="reference external" href="../../../benchmarking/chemistry/calcite_1d/calcite_1d.pdf">pdf</a>)</p>
+<div class="figure align-default">
+<img alt="../../../_images/calcite_1d.png" src="../../../_images/calcite_1d.png" />
+</div>
+</div>
+</div>
+<div class="section" id="about">
+<span id="about-calcite"></span><h2>About<a class="headerlink" href="#about" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Benchmark simulators: PFlotran, CrunchFlow</p></li>
+<li><p>Files</p>
+<ul>
+<li><p>Amanzi input file/s (native chemistry): amanzi-1d-calcite.xml</p></li>
+<li><p>Amanzi input file/s (Alquimia chemistry): amanzi-1d-calcite-alq.xml, 1d-calcite.in, calcite.dat</p></li>
+<li><p>Benchmark simulator input and output file/s:</p>
+<ul>
+<li><p>PFloTran: 1d-calcite.in, calcite.dat, pflotran/1d-calcite.h5, pflotran/os/1d-calcite.h5</p></li>
+<li><p>CrunchFlow: crunchflow/calcite_1d_CF.in, crunchflow/calcite_1d_CF.dbs, crunchflow/gimrt/, crunchflow/os3d/</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Location: testing/benchmark/chemistry/calcite_1d/</p></li>
+<li><p>Author: B. Andre, G. Hammond</p></li>
+<li><p>Testing and Documentation: S. Molins</p></li>
+<li><p>Last tested on: Oct 3, 2013</p></li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="../isotherms_1d/amanzi_u-1d-isotherms.html" class="btn btn-neutral float-right" title="1D Sorption Isotherms" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="../tritium_1d/amanzi_u-1d-tritium.html" class="btn btn-neutral float-left" title="1D Tritium first-order decay" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Contributing National Laboratories (LANL, LBNL, ORNL, PNNL).
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

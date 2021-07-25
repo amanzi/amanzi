@@ -1,0 +1,417 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Coupled Matrix-Fracture Flow and Transport &mdash; Amanzi 1.2.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/fix_eq_position.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Non-grid-aligned transport with calcite precipitation along mixing interface" href="../non_grid_aligned/non_grid_aligned.html" />
+    <link rel="prev" title="Transport" href="../index.html" /> 
+ <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: {
+        extensions: ["mhchem.js"]
+    }
+  });
+</script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/Amanzi-color.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                Version 1.2.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../background/index.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../background/getting_started.html">Getting Started with Amanzi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../capabilities/index.html">Amanzi Features and Capabilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../input/index.html">Amanzi Input Description</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install/index.html">Building Amanzi</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/index.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../verification/index.html">Verification Testing</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Benchmark Testing</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../chemistry/index.html">Chemistry</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">Transport</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Coupled Matrix-Fracture Flow and Transport</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#capabilties-tested">Capabilties Tested</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#background">Background</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#model">Model</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#problem-specification">Problem Specification</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#results-and-comparison">Results and Comparison</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#references">References</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#about">About</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../non_grid_aligned/non_grid_aligned.html">Non-grid-aligned transport with calcite precipitation along mixing interface</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Amanzi</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Benchmark Testing</a> &raquo;</li>
+        
+          <li><a href="../index.html">Transport</a> &raquo;</li>
+        
+      <li>Coupled Matrix-Fracture Flow and Transport</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../../_sources/benchmarking/transport/single_fracture/amanzi_single_fracture.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <div class="rst-breadcrumbs-buttons" role="navigation" aria-label="breadcrumb navigation">
+      
+        <a href="../non_grid_aligned/non_grid_aligned.html" class="btn btn-neutral float-right" title="Non-grid-aligned transport with calcite precipitation along mixing interface" accesskey="n">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+      
+      
+        <a href="../index.html" class="btn btn-neutral float-left" title="Transport" accesskey="p"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+      
+  </div>
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="coupled-matrix-fracture-flow-and-transport">
+<h1>Coupled Matrix-Fracture Flow and Transport<a class="headerlink" href="#coupled-matrix-fracture-flow-and-transport" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="capabilties-tested">
+<h2>Capabilties Tested<a class="headerlink" href="#capabilties-tested" title="Permalink to this headline">¶</a></h2>
+<p>This three-dimensional transport problem, with a constant contaminant
+boundary condition and a steady-state flow field, tests the Amanzi
+coupled flow and transport model.
+Capabilties tested include</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>coupled steady-state velocity field in matrix and fracture network</p></li>
+<li><p>constant boundary condition for tracer</p></li>
+<li><p>transport in coupled matrix and fracture network system</p></li>
+<li><p>implicit time integration for transport</p></li>
+<li><p>single fracture case</p></li>
+</ul>
+</div></blockquote>
+<p>For details on this test, see <a class="reference internal" href="#about-single-fracture"><span class="std std-ref">About</span></a>.</p>
+</div>
+<div class="section" id="background">
+<h2>Background<a class="headerlink" href="#background" title="Permalink to this headline">¶</a></h2>
+<p>This test problem is motivated by confined flow applications with
+transport through fractured rock. A typical fracture network provides
+a fast path for flow and transport and is a reasonable model for short
+term predictions. However, long term predictions require to consider
+interaction of fracture network with the surrounding rock.
+The dominant transport process considered in this benchmark is
+advection.
+Accuracy of the concentration in matrix and at outlet regions are
+compared against other codes.</p>
+</div>
+<div class="section" id="model">
+<h2>Model<a class="headerlink" href="#model" title="Permalink to this headline">¶</a></h2>
+<p>The models for for steady-state flow include two coupled Darcy law equations.
+Let subscripts <span class="math notranslate nohighlight">\(m\)</span> and <span class="math notranslate nohighlight">\(f\)</span> correspond to matrix and fracture, respectively.
+Then,</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{array}{l}
+- \boldsymbol{\nabla} \cdot (\rho \boldsymbol{q}_m) = 0,
+\quad
+\boldsymbol{q}_m = -\displaystyle\frac{K_m}{\mu}
+(\boldsymbol{\nabla} p_m - \rho \boldsymbol{g}) \\
+%
+-\boldsymbol{\nabla} \cdot (\rho \boldsymbol{q}_f) =
+  -[[ \widetilde{\boldsymbol{q}}_m \cdot \boldsymbol{n} ]],
+\quad
+\boldsymbol{q}_f = -\displaystyle\frac{K_f}{\mu}
+(\boldsymbol{\nabla} p_f - \rho \boldsymbol{g}) \\
+%
+\widetilde{\boldsymbol{q}}_m \cdot \boldsymbol{n} = k (p_f - p_m)
+\end{array}\end{split}\]</div>
+<p>subject to conventional boundary conditions for both matrix and fracture domains expect for
+the matrix-fracture interface where the flux continuity condition is imposed:</p>
+<div class="math notranslate nohighlight">
+\[\boldsymbol{q}_m \cdot \boldsymbol{n} = \widetilde{\boldsymbol{q}}_m \cdot \boldsymbol{n}.\]</div>
+<p>Here
+<span class="math notranslate nohighlight">\(\rho\)</span> is fluid density [kg/m^3],
+<span class="math notranslate nohighlight">\(\mu\)</span> is fluid viscosity,
+<span class="math notranslate nohighlight">\(p\)</span> is aqueous pressure [Pa],
+<span class="math notranslate nohighlight">\(K\)</span> is absolute permeability [m^2] for matrix domain and [m^3] for fracture domain,
+<span class="math notranslate nohighlight">\(\boldsymbol{q}\)</span> is the Darcy velocity [m/s] for matrix domain and [m^2/s] for fracture domain,
+<span class="math notranslate nohighlight">\(k\)</span> is effective normal permeability [m/s/Pa],
+and
+<span class="math notranslate nohighlight">\(\boldsymbol{g}\)</span> is gravity.</p>
+<p>The conceptual model of the coupled matrix-fracture advective transport is</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{array}{l}
+\displaystyle\frac{\partial(\phi_m C_m)}{\partial t} =
+  -\boldsymbol{\nabla} \cdot (\boldsymbol{q}_m C_m) = Q_m,\\
+%
+\displaystyle \frac{\partial(\varepsilon_f\phi_f C_f)}{\partial t} =
+  -\boldsymbol{\nabla} \cdot (\boldsymbol{q}_f C_f)
+  +[[ \tilde{C} (\boldsymbol{q}_m \cdot \boldsymbol{n}) ]] + Q_f,
+\end{array}\end{split}\]</div>
+<p>subject to the Dirichlet boundary conditions on the inflow part of the computational domain.
+Here
+<span class="math notranslate nohighlight">\(\phi\)</span> is porosity [-],
+<span class="math notranslate nohighlight">\(Q\)</span> is source or sink term,
+<span class="math notranslate nohighlight">\(\varepsilon_f\)</span> is fracture cross-sectional length [m],
+and
+<span class="math notranslate nohighlight">\(\tilde{C}\)</span> is concentration in fracture for outflow and in matrix for inflow.</p>
+</div>
+<div class="section" id="problem-specification">
+<h2>Problem Specification<a class="headerlink" href="#problem-specification" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="schematic">
+<h3>Schematic<a class="headerlink" href="#schematic" title="Permalink to this headline">¶</a></h3>
+<p>The domain, fracture location, and boundary conditions are shown in the schematic below.
+The solute enters domain through a narrow band on the left side marked with
+yellow color and leaves the domain through outlet marked with orange color.
+The flow is driven by the pressure gradient between the inlet and outlet, see data below.</p>
+<div class="align-center figure align-default" id="id58">
+<a class="reference internal image-reference" href="../../../_images/single_fracture_schematic.png"><img alt="../../../_images/single_fracture_schematic.png" src="../../../_images/single_fracture_schematic.png" style="width: 400px;" /></a>
+<p class="caption"><span class="caption-text"><em>Conceptual model and geometric description of fracture, inlet and outlet.</em></span><a class="headerlink" href="#id58" title="Permalink to this image">¶</a></p>
+</div>
+</div>
+<div class="section" id="mesh">
+<h3>Mesh<a class="headerlink" href="#mesh" title="Permalink to this headline">¶</a></h3>
+<p>The mesh in matrix consists of 8000 hexahedral cells with average size <span class="math notranslate nohighlight">\(h=5\)</span> m.
+The mesh in fracture is the trace of the hexahedral mesh.
+It has 400 quadrilateral cells.</p>
+</div>
+<div class="section" id="variables">
+<h3>Variables<a class="headerlink" href="#variables" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\rho_l=1000.0\)</span> constant fluid density,</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mu_l=0.001\)</span> constant fluid viscosity,</p></li>
+<li><p><span class="math notranslate nohighlight">\(K_{3,1} = K_{3,2} = 10^{-13}\)</span> constant absolute permeability in top subdomain [m^2],</p></li>
+<li><p><span class="math notranslate nohighlight">\(K_{3,3} = 10^{-12}\)</span> constant absolute permeability in bottom subdomain [m^2],</p></li>
+<li><p><span class="math notranslate nohighlight">\(k = 2 \cdot 10^{-3}\)</span> constant effective normal permeability [m/s/Pa],</p></li>
+<li><p><span class="math notranslate nohighlight">\(\phi_f=0.4\)</span> constant fracture porosity [-],</p></li>
+<li><p><span class="math notranslate nohighlight">\(\varepsilon_f=0.01\)</span> constant fracture porosity [m],</p></li>
+<li><p><span class="math notranslate nohighlight">\(T=10^9\)</span> simulation time [sec]</p></li>
+</ul>
+<p>Initial condition: <span class="math notranslate nohighlight">\(C_m(x,0)=C_f(x,0) = 0\)</span> [mol/m^3]</p>
+<p>Boundary conditions: <span class="math notranslate nohighlight">\(h(x,t)=4\)</span> [m] and <span class="math notranslate nohighlight">\(C_f(x,t)=0.01\)</span> [kg/m^3] at the
+inlet, and <span class="math notranslate nohighlight">\(h(x,t)=1\)</span> [m] at the outlet.</p>
+</div>
+</div>
+<div class="section" id="results-and-comparison">
+<h2>Results and Comparison<a class="headerlink" href="#results-and-comparison" title="Permalink to this headline">¶</a></h2>
+<p>The benchmark data used in this test were provided by the benchmark project “Verification
+benchmarks for single-phase flow in three-dimentional fractured porous media”.
+We compare dynamics of the solute flux at the bottom outlet boundary with two other codes
+from the University of Bergen (UiB) and the University of Stuttgard (USTUTT).
+The first code is based on the the lower-order Raviart-Thomas mixed finite element method.
+The second code uses the multi-point flux approximation method.
+Recall that Amanzi employes the mimetic finite difference method for flow.
+The results are in excellent agreement.</p>
+<p>The benchmark setup is to use the fixed time step of <span class="math notranslate nohighlight">\(10^7\)</span> seconds and run simulation
+for 100 times steps.
+For this problem, the conventional two-point flux approximation method underestimates
+the solute flux by about 20%.</p>
+<p>(<a class="reference external" href="../../../benchmarking/transport/single_fracture/single_fracture.py">Source code</a>, <a class="reference external" href="../../../benchmarking/transport/single_fracture/single_fracture.png">png</a>, <a class="reference external" href="../../../benchmarking/transport/single_fracture/single_fracture.hires.png">hires.png</a>, <a class="reference external" href="../../../benchmarking/transport/single_fracture/single_fracture.pdf">pdf</a>)</p>
+<div class="figure align-center">
+<img alt="../../../_images/single_fracture.png" src="../../../_images/single_fracture.png" />
+</div>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="id1"></span></div>
+<div class="section" id="about">
+<span id="about-single-fracture"></span><h2>About<a class="headerlink" href="#about" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Directory: testing/benchmarking/transport/coupled_flow_transport/single_fracture</p></li>
+<li><p>Authors:  Konstantin Lipnikov, Daniil Svyatsky</p></li>
+<li><p>Maintainer(s): Konstantin Lipnikov</p></li>
+<li><p>Input Files:</p>
+<ul>
+<li><p>amanzi_single_fracture.xml</p></li>
+<li><p>Spec Version 2.3, unstructured mesh framework</p></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="../non_grid_aligned/non_grid_aligned.html" class="btn btn-neutral float-right" title="Non-grid-aligned transport with calcite precipitation along mixing interface" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="../index.html" class="btn btn-neutral float-left" title="Transport" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Contributing National Laboratories (LANL, LBNL, ORNL, PNNL).
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
