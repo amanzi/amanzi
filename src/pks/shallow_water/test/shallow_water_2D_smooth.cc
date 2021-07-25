@@ -180,7 +180,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
 
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
 
-    Teuchos::ParameterList pk_tree = plist->sublist("PK tree").sublist("shallow water");
+    Teuchos::ParameterList pk_tree = plist->sublist("PKs").sublist("shallow water");
 
     // create a shallow water PK
     ShallowWater_PK SWPK(pk_tree,plist,S,soln);
@@ -189,7 +189,9 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
     S->InitializeFields();
     S->InitializeEvaluators();
     SWPK.Initialize(S.ptr());
+
     vortex_2D_setIC(mesh, S);
+    S->CheckAllFieldsInitialized();
 
     const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth")->ViewComponent("cell");
     const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
@@ -202,7 +204,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
     for (int c = 0; c < pid.MyLength(); c++) pid[0][c] = MyPID;
 
     // create screen io
-    auto vo = Teuchos::rcp(new Amanzi::VerboseObject("ShallowWater", *plist));
+    auto vo = Teuchos::rcp(new Amanzi::VerboseObject("ShallowWater", pk_tree));
     WriteStateStatistics(*S, *vo);
 
     // advance in time

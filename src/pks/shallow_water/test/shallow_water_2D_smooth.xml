@@ -23,7 +23,7 @@
       <Parameter name="domain name" type="string" value="surface"/>
 
       <ParameterList name="verbose object">
-        <Parameter name="verbosity level" type="string" value="high"/>
+        <Parameter name="verbosity level" type="string" value="low"/>
       </ParameterList>
 
       <ParameterList name="reconstruction">
@@ -58,12 +58,12 @@
     </ParameterList>
 
     <ParameterList name="initial conditions">
-      <ParameterList name="fluid_density">
+      <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="1000.0"/>
       </ParameterList>
 
-      <ParameterList name="fluid_viscosity">
-        <Parameter name="value" type="double" value="0.001"/>
+      <ParameterList name="atmospheric_pressure">
+        <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
 
       <ParameterList name="gravity">

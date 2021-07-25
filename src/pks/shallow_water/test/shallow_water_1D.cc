@@ -194,7 +194,9 @@ TEST(SHALLOW_WATER_1D) {
   S->InitializeFields();
   S->InitializeEvaluators();
   SWPK.Initialize(S.ptr());
+
   dam_break_1D_setIC(mesh, S);
+  S->CheckAllFieldsInitialized();
 
   const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth")->ViewComponent("cell");
   const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
@@ -308,4 +310,5 @@ TEST(SHALLOW_WATER_1D) {
   }
   myfile.close();
   */
+  WriteStateStatistics(*S, *vo);
 }

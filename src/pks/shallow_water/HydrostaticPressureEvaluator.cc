@@ -23,7 +23,7 @@ HydrostaticPressureEvaluator::HydrostaticPressureEvaluator(Teuchos::ParameterLis
   my_key_ = "surface-ponded_pressure";
   ponded_depth_key_ = plist_.get<std::string>("ponded depth key", "surface-ponded_depth");
 
-  dependencies_.insert(std::string(ponded_depth_key_));
+  dependencies_.insert(ponded_depth_key_);
 }
 
 

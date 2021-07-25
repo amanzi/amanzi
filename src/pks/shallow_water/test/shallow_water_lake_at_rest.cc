@@ -275,6 +275,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
   SWPK.Initialize(S.ptr());
     
   lake_at_rest_setIC(mesh, S);
+  S->CheckAllFieldsInitialized();
         
   const Epetra_MultiVector &B = *S->GetFieldData("surface-bathymetry")->ViewComponent("cell");
   const Epetra_MultiVector &Bn = *S->GetFieldData("surface-bathymetry")->ViewComponent("node");

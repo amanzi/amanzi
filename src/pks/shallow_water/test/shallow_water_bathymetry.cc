@@ -71,6 +71,7 @@ Epetra_MultiVector RunTest(int ntest) {
   S->InitializeFields();
   S->InitializeEvaluators();
   SWPK.Initialize(S.ptr());
+  S->CheckAllFieldsInitialized();
 
   const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth")->ViewComponent("cell");
   const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
