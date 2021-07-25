@@ -46,21 +46,34 @@ integrated hydrology coupling surface and subsurface processes; and an
 intermediate scale thermal hydrology model of polygonal tundra based
 on one-dimensional columns coupled to the two-dimensional surface.
 
-Release Schedule
-================
+Releases and Documentation
+==========================
 
-The current version of Amanzi is |version|
+Current Release:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Older Releases
-~~~~~~~~~~~~~~
+ * Amanzi |release|: `<UserGuide>`_
+   | `Branch on Github <https://github.com/amanzi/amanzi/tree/amanzi-1.2>`_
+   | `amanzi-1.2.0.tar.gz <https://github.com/amanzi/amanzi/archive/refs/tags/amanzi-1.2.0.tar.gz>`_
 
- * Amanzi 1.1
- * Amanzi 1.0
+   
+Previous Release
+~~~~~~~~~~~~~~~~
 
-Future Releases
-~~~~~~~~~~~~~~~
+ * Amanzi 1.1.0:
+   `UserGuide <1.1.0/UserGuide>`_
+   | `Branch on Github <https://github.com/amanzi/amanzi/tree/amanzi-1.1>`_
+   | `amanzi-1.1.0.tar.gz <https://github.com/amanzi/amanzi/archive/refs/tags/amanzi-1.1.0.tar.gz>`_
 
- * Coming soon: Prototype of Non-isothermal Multiphase flow with phase disappearence
+
+Ongoing Development
+~~~~~~~~~~~~~~~~~~~
+
+You can track and contribute to development of the next release.  Capabilities we are working on include a prototype of non-isothermal multiphase flow with phase disappearence.  
+
+ * Amanzi 1.3-dev:
+   `UserGuide <dev/UserGuide>`_
+   | `Branch on Github <https://github.com/amanzi/amanzi/>`_
  
 
 User Guide
