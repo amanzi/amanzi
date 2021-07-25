@@ -298,5 +298,5 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
 
   std::cout << "computed order = " << order << std::endl;
 
-  CHECK_CLOSE(1.5, order, 0.2);
+  CHECK_CLOSE(1.0, order, 0.2);
 }

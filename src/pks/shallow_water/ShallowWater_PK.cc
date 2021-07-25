@@ -24,6 +24,9 @@
 
 namespace Amanzi {
 namespace ShallowWater {
+
+// max of local propogation speeds over all cells (needed to calculate dt)
+double am_cell = 0.0, ap_cell = 0.0;
     
 //--------------------------------------------------------------
 // Standard constructor
@@ -661,8 +664,8 @@ std::vector<double> ShallowWater_PK::PhysicalSource(const std::vector<double>& U
 std::vector<double> ShallowWater_PK::NumericalFlux_x(
     std::vector<double>& UL, std::vector<double>& UR)
 {
-  return NumericalFlux_x_Rusanov(UL, UR);
-//  return NumericalFlux_x_CentralUpwind(UL, UR);
+//  return NumericalFlux_x_Rusanov(UL, UR);
+  return NumericalFlux_x_CentralUpwind(UL, UR);
 }
 
 
@@ -716,8 +719,7 @@ std::vector<double> ShallowWater_PK::NumericalFlux_x_CentralUpwind(
   std::vector<double> FL, FR, F(3), U_star(3), dU(3);
 
   double hL, uL, vL, hR, uR, vR, qxL, qyL, qxR, qyR;
-  double apx, amx, apy, amy;
-  double ap, am;
+  double apx, amx;
   double eps = 1.e-6;
 
   // SW conservative variables: (h, hu, hv)
@@ -734,19 +736,19 @@ std::vector<double> ShallowWater_PK::NumericalFlux_x_CentralUpwind(
   uR  = 2.*hR*qxR/(hR*hR + std::fmax(hR*hR,eps*eps));
   vR  = 2.*hR*qyR/(hR*hR + std::fmax(hR*hR,eps*eps));
 
-  apx = std::max(std::max(std::fabs(uL)+std::sqrt(g_*hL),std::fabs(uR)+std::sqrt(g_*hR)),0.);
-  apy = std::max(std::max(std::fabs(vL)+std::sqrt(g_*hL),std::fabs(vR)+std::sqrt(g_*hR)),0.);
-  ap  = std::max(apx,apy);
+  apx = std::max(std::max(uL + std::sqrt(g_*hL), uR + std::sqrt(g_*hR)), 0.);
+  ap_cell = std::max(ap_cell, apx);
 
-  amx = std::min(std::min(std::fabs(uL)-std::sqrt(g_*hL),std::fabs(uR)-std::sqrt(g_*hR)),0.);
-  amy = std::min(std::min(std::fabs(vL)-std::sqrt(g_*hL),std::fabs(vR)-std::sqrt(g_*hR)),0.);
-  am  = std::min(amx,amy);
+  amx = std::min(std::min(uL - std::sqrt(g_*hL), uR-std::sqrt(g_*hR)), 0.);
+  am_cell = std::min(am_cell, amx);
 
   FL = PhysicalFlux_x(UL);
   FR = PhysicalFlux_x(UR);
+  
+  double eps_1 = 1.e-14;
 
   for (int i = 0; i < 3; i++) {
-    U_star[i] = (ap*UR[i] - am*UL[i] - (FR[i] - FL[i])) / (ap - am + eps);
+    U_star[i] = (apx*UR[i] - amx*UL[i] - (FR[i] - FL[i])) / (apx - amx + eps_1);
   }
 
   for (int i = 0; i < 3; i++) {
@@ -754,7 +756,7 @@ std::vector<double> ShallowWater_PK::NumericalFlux_x_CentralUpwind(
   }
 
   for (int i = 0; i < 3; i++) {
-    F[i] = (ap*FL[i] - am*FR[i] + ap*am*(UR[i] - UL[i] - dU[i])) / (ap - am + eps);
+    F[i] = (apx*FL[i] - amx*FR[i] + apx*amx*(UR[i] - UL[i] - dU[i])) / (apx - amx + eps_1);
   }
 
   return F;
@@ -799,6 +801,7 @@ std::vector<double> ShallowWater_PK::NumericalSource(
 
     S1 += (-B_rec * ht_rec + B_rec * B_rec / 2) * normal[0];
     S2 += (-B_rec * ht_rec + B_rec * B_rec / 2) * normal[1];
+    
   }
     
   std::vector<double> S(3);
@@ -831,7 +834,8 @@ double ShallowWater_PK::get_dt()
     S = std::max(std::fabs(u), std::fabs(v)) + std::sqrt(g_*h) + eps;
     vol = mesh_->cell_volume(c);
     dx = std::sqrt(vol);
-    dt = std::min(dt, dx/S);
+    dt = std::min(dt, dx/(4*std::max(ap_cell, -am_cell) + 1e-14) );
+    dt = std::min(dt, dx/S); // for the first time step/ or when using Rusanov flux
   }
 
   double dt_min;
