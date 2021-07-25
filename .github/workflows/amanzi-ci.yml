@@ -2,6 +2,8 @@ name: Amanzi CI
 
 on:
   push:
+    branches:
+      - amanzi-*
     tags-ignore:
       - amanzi-*
 
