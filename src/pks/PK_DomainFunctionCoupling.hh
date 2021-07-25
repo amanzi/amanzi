@@ -293,7 +293,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
           if (f == faces[i]) {
             int g = flux_map->FirstPointInElement(f);
             double fln = flux[0][g + (pos + j)%2] * dirs[i];
-            val[0] += fln * (t1 - t0);
+            val[0] += fln * (t1 - t0) / mesh_->cell_volume(c);
             break;
           }
         }
