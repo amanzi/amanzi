@@ -3,7 +3,7 @@ name: Amanzi CI
 on:
   push:
     branches:
-      - *
+      - '**'
     tags-ignore:
       - amanzi-*
 
