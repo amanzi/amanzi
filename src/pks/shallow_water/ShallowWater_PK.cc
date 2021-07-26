@@ -27,6 +27,7 @@ namespace ShallowWater {
 
 // max of local propogation speeds over all cells (needed to calculate dt when using central upwind flux)
 double am_cell = 0.0, ap_cell = 0.0;
+double d_min = 0.0; // min_{cell} {minimum distance between cell centroid and corresponding cell faces}
     
 //--------------------------------------------------------------
 // Standard constructor
@@ -205,7 +206,7 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // reconstruction
   Teuchos::ParameterList plist = sw_list_->sublist("reconstruction");
-
+  
   total_depth_grad_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
   total_depth_grad_->Init(plist);
 
@@ -233,6 +234,8 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   
   const auto& B_n = *S_->GetFieldData(bathymetry_key_)->ViewComponent("node");
   const auto& B_c = *S_->GetFieldData(bathymetry_key_)->ViewComponent("cell");
+  
+  d_min = 1.e10; // initialize value (needed for central upwind flux time step)
   
   // compute B_c from B_n for well balanced scheme (Beljadid et. al. 2016)
   for (int c = 0; c < ncells_owned; ++c) {
@@ -271,6 +274,8 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
       double area = norm(area_cross_product);
             
       B_c[0][c] += ( area / mesh_ -> cell_volume(c) ) * ( B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]] ) / 2;
+      
+      d_min = std::min(d_min, norm(xc - (x0 + x1)/2.0)); // needed for central upwind flux time step
     }
   }
   
@@ -292,6 +297,48 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // secondary fields
   S_->GetFieldEvaluator(hydrostatic_pressure_key_)->HasFieldChanged(S.ptr(), passwd_);
+  
+  // calculate local propogation speed for the first time step (when AdvanceStep() has not been called) for central upwind flux
+  const Epetra_MultiVector& h_c = *S_->GetFieldData(ponded_depth_key_)->ViewComponent("cell");
+  const Epetra_MultiVector& q_c = *S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
+  
+  for (int c = 0; c < ncells_owned; ++c) {
+    double hL, uL, vL, hR, uR, vR;
+    double apx, apy, amx, amy;
+    
+    AmanziMesh::Entity_ID_List cfaces;
+    mesh_->cell_get_faces(c, &cfaces);
+    for (int n = 0; n < cfaces.size(); ++n) {
+      int f = cfaces[n];
+      double farea = mesh_->face_area(f);
+      const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
+
+      hL  = h_c[0][c];
+      uL = q_c[0][c] / (hL + 1.e-14);
+      vL = q_c[1][c] / (hL + 1.e-14);
+
+      int cn = WhetStone::cell_get_face_adj_cell(*mesh_, c, f);
+
+      if (cn == -1) {
+        hR = hL;
+        uR = uL;
+        vR = uR;
+      }
+      else {
+        hR  = h_c[0][cn];
+        uR = q_c[0][cn] / (hR + 1.e-14);
+        vR = q_c[1][cn] / (hR + 1.e-14);
+
+        apx = std::max(std::max(uL + std::sqrt(g_*hL), uR + std::sqrt(g_*hR)), 0.);
+        apy = std::max(std::max(vL + std::sqrt(g_*hL), vR + std::sqrt(g_*hR)), 0.);
+        ap_cell = std::max(std::max(apx, apy), ap_cell);
+
+        amx = std::min(std::min(uL - std::sqrt(g_*hL), uR-std::sqrt(g_*hR)), 0.);
+        amy = std::min(std::min(vL - std::sqrt(g_*hL), vR-std::sqrt(g_*hR)), 0.);
+        am_cell = std::min(std::min(amx, amy), am_cell);
+      }
+    }
+  }
   
   // static fields
   S_->GetFieldData(bathymetry_key_)->ScatterMasterToGhosted();
@@ -667,8 +714,8 @@ std::vector<double> ShallowWater_PK::PhysicalSource(const std::vector<double>& U
 std::vector<double> ShallowWater_PK::NumericalFlux_x(
     std::vector<double>& UL, std::vector<double>& UR)
 {
-  return NumericalFlux_x_Rusanov(UL, UR);
-//  return NumericalFlux_x_CentralUpwind(UL, UR);
+//  return NumericalFlux_x_Rusanov(UL, UR);
+  return NumericalFlux_x_CentralUpwind(UL, UR);
 }
 
 
@@ -821,31 +868,41 @@ std::vector<double> ShallowWater_PK::NumericalSource(
 //--------------------------------------------------------------
 double ShallowWater_PK::get_dt()
 {
-  double h, u, v, vol, dx, dy, dt;
-  double Sx = 0.0, Sy = 0.0;
+  double h, u, v, vol, dt, dx_min;
+  double Sx = 0.0, Sy = 0.0, Smax = 0.0;
   double eps = 1.e-6;
 
   auto& h_c = *S_->GetFieldData(ponded_depth_key_)->ViewComponent("cell");
   auto& vel_c = *S_->GetFieldData(velocity_key_)->ViewComponent("cell");
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-
-  dx = mesh_->face_area(0); // for rectangular meshes only
-  dy = mesh_->face_area(1);
+  AmanziMesh::Entity_ID_List cfaces;
   
+  dx_min = 1.e10; // initialize value
   dt = 1.e10;
+  
+  double sum_inverse_max = 0.0;
   for (int c = 0; c < ncells_owned; c++) {
     h = h_c[0][c];
     u = vel_c[0][c];
     v = vel_c[1][c];
+    
     Sx = std::max(std::fabs(u) + std::sqrt(g_*h), Sx);
     Sy = std::max(std::fabs(v) + std::sqrt(g_*h), Sy);
+    Smax = std::max(std::max(Sx, Sy), Smax);
+    
     vol = mesh_->cell_volume(c);
-//    dx = std::sqrt(vol);
-//    dt = std::min(dt, dx/(4*std::max(ap_cell, -am_cell) + 1.e-14) ); // for central upwind flux
-    dt = std::min(dt, 1.0/(Sx/dx + Sy/dy + 1.e-14)); // for Rusanov flux/ or first time step when using central upwind flux
+    mesh_->cell_get_faces(c, &cfaces);
+    double cell_perimeter = 0.0;
+    for (int f = 0; f < cfaces.size(); ++f) {
+      cell_perimeter += mesh_->face_area(f);
+    }
+    dx_min = std::min(vol/cell_perimeter, dx_min);
   }
 
+  dt = d_min/(2*std::max(ap_cell, -am_cell) + 1.e-14); // Central upwind flux
+//  dt = dx_min / Smax; // Rusanov flux
+  
   double dt_min;
   mesh_->get_comm()->MinAll(&dt, &dt_min, 1);
 
