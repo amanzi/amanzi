@@ -25,7 +25,7 @@
 namespace Amanzi {
 namespace ShallowWater {
 
-// max of local propogation speeds over all cells (needed to calculate dt)
+// max of local propogation speeds over all cells (needed to calculate dt when using central upwind flux)
 double am_cell = 0.0, ap_cell = 0.0;
     
 //--------------------------------------------------------------
@@ -290,6 +290,9 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   InitializeField_(S_.ptr(), passwd_, velocity_key_, 0.0);
   InitializeField_(S_.ptr(), passwd_, discharge_key_, 0.0);
 
+  // secondary fields
+  S_->GetFieldEvaluator(hydrostatic_pressure_key_)->HasFieldChanged(S.ptr(), passwd_);
+  
   // static fields
   S_->GetFieldData(bathymetry_key_)->ScatterMasterToGhosted();
 
@@ -424,7 +427,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         B_rec = B_c[0][c];
       }
       double h_rec = ht_rec - B_rec;
-      ErrorDiagnostics_(c, h_rec, ht_rec, B_rec);
+      ErrorDiagnostics_(c, h_rec, B_rec, ht_rec);
 
       double vx_rec = velocity_x_grad_->getValue(c, xcf);
       double vy_rec = velocity_y_grad_->getValue(c, xcf);
@@ -467,7 +470,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
           B_rec = B_c[0][cn];
         }
         h_rec = ht_rec - B_rec;
-        ErrorDiagnostics_(cn, h_rec, ht_rec, B_rec);
+        ErrorDiagnostics_(cn, h_rec, B_rec, ht_rec);
 
         vx_rec = velocity_x_grad_->getValue(cn, xcf);
         vy_rec = velocity_y_grad_->getValue(cn, xcf);
@@ -664,8 +667,8 @@ std::vector<double> ShallowWater_PK::PhysicalSource(const std::vector<double>& U
 std::vector<double> ShallowWater_PK::NumericalFlux_x(
     std::vector<double>& UL, std::vector<double>& UR)
 {
-//  return NumericalFlux_x_Rusanov(UL, UR);
-  return NumericalFlux_x_CentralUpwind(UL, UR);
+  return NumericalFlux_x_Rusanov(UL, UR);
+//  return NumericalFlux_x_CentralUpwind(UL, UR);
 }
 
 
@@ -697,8 +700,8 @@ std::vector<double> ShallowWater_PK::NumericalFlux_x_Rusanov(
 
   double SL, SR, Smax;
 
-  SL = std::max(std::fabs(uL) + std::sqrt(g_*hL),std::fabs(vL) + std::sqrt(g_*hL));
-  SR = std::max(std::fabs(uR) + std::sqrt(g_*hR),std::fabs(vR) + std::sqrt(g_*hR));
+  SL = std::fabs(uL) + std::sqrt(g_*hL);
+  SR = std::fabs(uR) + std::sqrt(g_*hR);
 
   Smax = std::max(SL,SR);
 
@@ -818,7 +821,8 @@ std::vector<double> ShallowWater_PK::NumericalSource(
 //--------------------------------------------------------------
 double ShallowWater_PK::get_dt()
 {
-  double h, u, v, S, vol, dx, dt;
+  double h, u, v, vol, dx, dy, dt;
+  double Sx = 0.0, Sy = 0.0;
   double eps = 1.e-6;
 
   auto& h_c = *S_->GetFieldData(ponded_depth_key_)->ViewComponent("cell");
@@ -826,16 +830,20 @@ double ShallowWater_PK::get_dt()
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
+  dx = mesh_->face_area(0); // for rectangular meshes only
+  dy = mesh_->face_area(1);
+  
   dt = 1.e10;
   for (int c = 0; c < ncells_owned; c++) {
     h = h_c[0][c];
     u = vel_c[0][c];
     v = vel_c[1][c];
-    S = std::max(std::fabs(u), std::fabs(v)) + std::sqrt(g_*h) + eps;
+    Sx = std::max(std::fabs(u) + std::sqrt(g_*h), Sx);
+    Sy = std::max(std::fabs(v) + std::sqrt(g_*h), Sy);
     vol = mesh_->cell_volume(c);
-    dx = std::sqrt(vol);
-    dt = std::min(dt, dx/(4*std::max(ap_cell, -am_cell) + 1e-14) );
-    dt = std::min(dt, dx/S); // for the first time step/ or when using Rusanov flux
+//    dx = std::sqrt(vol);
+//    dt = std::min(dt, dx/(4*std::max(ap_cell, -am_cell) + 1.e-14) ); // for central upwind flux
+    dt = std::min(dt, 1.0/(Sx/dx + Sy/dy + 1.e-14)); // for Rusanov flux/ or first time step when using central upwind flux
   }
 
   double dt_min;
