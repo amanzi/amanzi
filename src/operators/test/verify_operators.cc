@@ -229,7 +229,14 @@ TEST(Verify_Mesh_and_Operators) {
       .set<double>("fact: drop tolerance", 0.0)
       .set<std::string>("fact: type", "KSPILUK");
 
-  //TODO : Add Shylu ifpack2 for ILU and RILUK here for testing
+  //ShyLU pakcagke
+  #if 1
+  // -- ShyLu FastILU
+  plist->sublist("preconditioners").sublist("ifpack2: FIlu")
+      .set<std::string>("preconditioning method", "ifpack2: FIlu").sublist("ifpack2: FIlu parameters")
+      .set<double>("fact: ilut level-of-fill", 1)
+      .set<double>("fact: drop tolerance", 0.0);
+  #endif
 
   // summary of options
   if (MyPID == 0) {
