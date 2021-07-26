@@ -44,6 +44,8 @@ set(sw_src_files ShallowWater_PK.cc
                  ShallowWaterBoundaryFunction.cc
                  DischargeEvaluator.cc
                  HydrostaticPressureEvaluator.cc
+                 NumericalFlux_Rusanov.cc
+                 NumericalFlux_CentralUpwind.cc
                  )
 set(sw_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
 if (Ifpack_ENABLE_HYPRE)
@@ -60,6 +62,10 @@ add_amanzi_library(shallow_water SOURCE ${sw_src_files}
 # Install Targets
 #
 set(sw_inc_files 
+  NumericalFlux.hh
+  NumericalFlux_Rusanov.hh
+  NumericalFlux_CentralUpwind.hh
+  NumericalFluxFactory.hh
   ShallowWater_PK.hh
   ShallowWaterBoundaryFunction.hh)
 

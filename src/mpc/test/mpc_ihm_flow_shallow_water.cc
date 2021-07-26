@@ -18,6 +18,7 @@
 #include "MeshExtractedManifold.hh"
 #include "MeshFactory.hh"
 #include "mpc_pks_registration.hh"
+#include "numerical_flux_registration.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
 #include "pks_flow_registration.hh"

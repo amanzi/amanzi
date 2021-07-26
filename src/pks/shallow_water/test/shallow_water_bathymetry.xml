@@ -30,6 +30,7 @@
     <ParameterList name="shallow water">
       <Parameter name="domain name" type="string" value="surface"/>
       <Parameter name="cfl" type="double" value="0.1"/>
+      <Parameter name="numerical flux" type="string" value="Rusanov"/>
 
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>

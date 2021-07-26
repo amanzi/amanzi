@@ -45,6 +45,7 @@
 #include "multiscale_flow_registration.hh"
 #include "multiscale_transport_registration.hh"
 #include "mpc_pks_registration.hh"
+#include "numerical_flux_registration.hh"
 #include "pks_chemistry_registration.hh"
 #include "pks_flow_registration.hh"
 #include "pks_transport_registration.hh"

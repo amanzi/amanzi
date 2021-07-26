@@ -399,6 +399,7 @@
         <Parameter name="limiter cfl" type="double" value="0.5"/>
       </ParameterList>
       <Parameter name="cfl" type="double" value="0.3"/>
+      <Parameter name="numerical flux" type="string" value="central upwind"/>
 
       <ParameterList name="boundary conditions">
         <ParameterList name="velocity">

@@ -12,6 +12,8 @@
 #ifndef AMANZI_SHALLOW_WATER_PK_HH_
 #define AMANZI_SHALLOW_WATER_PK_HH_
 
+#include <memory>
+
 // TPLs
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
@@ -25,6 +27,7 @@
 #include "DenseVector.hh"
 #include "Key.hh"
 #include "LimiterCell.hh"
+#include "NumericalFlux.hh"
 #include "PK.hh"
 #include "PK_Explicit.hh"
 #include "PK_Factory.hh"
@@ -104,6 +107,9 @@ class ShallowWater_PK : public PK_Physical,
   Teuchos::RCP<State> S_;
 
   Key domain_;
+
+  // numerical flux
+  std::shared_ptr<NumericalFlux> numerical_flux_;
 
   // names of state fields
   Key velocity_key_, discharge_key_;
