@@ -43,8 +43,10 @@ namespace AmanziMesh {
 
 class Mesh_MSTK : public Mesh {
  public:
+
+  // copy construction not supported
   Mesh_MSTK(const Mesh_MSTK& other) = delete;
-  
+
   // Constructors that read the mesh from a file
   // The request_faces and request_edges arguments have to be at the
   // end and not in the middle because if we omit them and specify a
@@ -270,7 +272,11 @@ class Mesh_MSTK : public Mesh {
   //
   // Boundary Conditions or Sets
   //----------------------------
-    
+  virtual
+  bool valid_set_type(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const {
+    return true; // MSTK supports all region types
+  }
+
   // Get list of entities of type 'category' in set
   using Mesh::get_set_entities;
 
