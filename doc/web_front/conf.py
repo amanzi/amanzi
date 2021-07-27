@@ -74,7 +74,8 @@ amanzi_latest_tag=decode(subprocess.check_output('git tag -l \'amanzi-*\' | grep
 amanzi_latest_tag_ver=amanzi_latest_tag.replace('amanzi-','')
 
 # The short X.Y version.
-version = amanzi_latest_tag
+version = 'Version '+amanzi_latest_tag_ver
+version_number=amanzi_latest_tag_ver
 # The full version, including alpha/beta/rc tags.
 #release = '0.80-dev'
 #release = amanzi_latest_tag_ver+"\_"+amanzi_global_id
