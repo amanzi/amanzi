@@ -54,7 +54,8 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --branch_ats=$ats_branch \
    --parallel=4 \
    --opt \
-   --with-mpi=/usr \
+   --with-mpi=/usr
+   --with-python=`which python` \
    --enable-shared \
    --disable-structured \
    --disable-build_user_guide \
