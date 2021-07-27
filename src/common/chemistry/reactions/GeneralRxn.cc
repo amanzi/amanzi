@@ -89,7 +89,7 @@ void GeneralRxn::UpdateRates(const std::vector<Species> primary_species)
     lnQkf_ = std::log(kf_);
     for (int i = 0; i < ncomp_forward_; i++) {
       lnQkf_ += forward_stoichiometry_[i] *
-          primary_species[ forward_species_ids_[i] ].ln_activity();
+          primary_species[forward_species_ids_[i]].ln_activity();
     }
   }
 
@@ -99,7 +99,7 @@ void GeneralRxn::UpdateRates(const std::vector<Species> primary_species)
     lnQkb_ = std::log(kb_);
     for (int i = 0; i < ncomp_backward_; i++) {
       lnQkb_ += backward_stoichiometry_[i] *
-          primary_species[ backward_species_ids_[i] ].ln_activity();
+          primary_species[backward_species_ids_[i]].ln_activity();
     }
   }
 }

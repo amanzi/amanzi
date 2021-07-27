@@ -46,6 +46,7 @@ include_directories(${PKS_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${TRANSPORT_SOURCE_DIR})
+include_directories(${SHALLOW_WATER_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 
@@ -112,8 +113,8 @@ if (BUILD_TESTS)
       file(COPY ${DataFiles} DESTINATION ${MPC_BINARY_DIR}/test/)
     endif()
 
-    set(amanzi_libs mpc pks mpc_tree flow transport chemistry_pk energy dummy pks eos 
-                    state operators mesh_extracted mesh_factory mesh_audit 
+    set(amanzi_libs mpc pks mpc_tree flow transport chemistry_pk energy shallow_water 
+                    dummy pks eos state operators mesh_extracted mesh_factory mesh_audit 
                     geometry whetstone mesh_functions functions)
 
     # Test: mpc driver for flow
@@ -128,6 +129,13 @@ if (BUILD_TESTS)
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_transport.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # Test: mpc driver for shallow water
+    add_amanzi_test(mpc_shallow_water mpc_shallow_water
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_shallow_water.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
 
     # Test: mpc driver for reactive transport
     add_amanzi_test(mpc_reactive_transport mpc_reactive_transport
@@ -147,7 +155,6 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_thermal_darcy_dfn.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: mpc driver for flow and reactive transport
     # Test: mpc driver for flow and reactive transport
     add_amanzi_test(mpc_flow_reactive_transport mpc_flow_reactive_transport
                     KIND      int

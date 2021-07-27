@@ -6,14 +6,12 @@
     <ParameterList name="Computational domain">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{2000.0,50.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Left">
-      <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{-1.0,0.0}"/>
-      </ParameterList>
+    <ParameterList name="Boundary">
+        <ParameterList name="region: boundary">
+        </ParameterList>
     </ParameterList>
   </ParameterList>
 
@@ -37,14 +35,14 @@
       <ParameterList name="boundary conditions">
         <ParameterList name="velocity">
           <ParameterList name="BC 0">
-            <Parameter name="regions" type="Array(string)" value="{Left}"/>
+            <Parameter name="regions" type="Array(string)" value="{Boundary}"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="velocity">
               <Parameter name="number of dofs" type="int" value="3"/>
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="10.0"/>
+                  <Parameter name="value" type="double" value="0.5"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">
@@ -95,7 +93,7 @@
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
       </ParameterList>
-
+      
       <ParameterList name="surface-bathymetry">
         <ParameterList name="function">
           <ParameterList name="domain">
@@ -149,6 +147,9 @@
     </ParameterList>
   </ParameterList>
 </ParameterList>
+
+
+
 
 
 
