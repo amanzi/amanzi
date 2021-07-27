@@ -52,8 +52,8 @@ std::vector<double> NumericalFlux_Rusanov::Compute(
 
   double SL, SR, Smax;
 
-  SL = std::max(std::fabs(uL) + std::sqrt(g_*hL),std::fabs(vL) + std::sqrt(g_*hL));
-  SR = std::max(std::fabs(uR) + std::sqrt(g_*hR),std::fabs(vR) + std::sqrt(g_*hR));
+  SL = std::fabs(uL) + std::sqrt(g_*hL);
+  SR = std::fabs(uR) + std::sqrt(g_*hR);
 
   Smax = std::max(SL, SR);
   lambda_max_ = Smax;  // FIXME, we probably need only max speed
