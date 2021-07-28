@@ -44,7 +44,7 @@ SUITE(SOLVERS)
     Vector x_itr = Vector(x, Teuchos::Copy);
     Vector y_c = Vector(y, Teuchos::Copy);
     Vector y_itr = Vector(y, Teuchos::Copy);
-    x_c.putScalar(0);
+    x_approx.putScalar(0);
     x_itr.putScalar(0);
     std::string xml_plist = "preconditioner_muelu_plist.xml";
     Teuchos::RCP<toperator> op_A = A; 

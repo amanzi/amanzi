@@ -41,7 +41,7 @@ namespace Amanzi {
 template <class Base_t, class PK_Contained_t>
 class PK_MixinMPCImplicit : public PK_MixinMPC<Base_t, PK_Contained_t> {
  public:
-  using PK_MixinMPC<Base_t, PK_Contained_t>::template PK_MixinMPC;
+  using PK_MixinMPC<Base_t, PK_Contained_t>::PK_MixinMPC;
 
 
   // PK methods
