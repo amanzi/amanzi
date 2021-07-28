@@ -27,7 +27,8 @@ Lots of options here, document me!
 namespace Amanzi {
 
 Evaluator_PDE_Diffusion::Evaluator_PDE_Diffusion(Teuchos::ParameterList& plist)
-  : EvaluatorSecondary(plist)
+  : EvaluatorSecondary(plist),
+    newton_correction_primary_(false)
 {
   my_tag_ = plist.get<std::string>("tag");
 
