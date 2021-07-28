@@ -240,8 +240,6 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   const auto& B_n = *S_->GetFieldData(bathymetry_key_)->ViewComponent("node");
   const auto& B_c = *S_->GetFieldData(bathymetry_key_)->ViewComponent("cell");
   
-  d_ = 1.e10; // initialize value (needed for central upwind flux time step)
-  
   // compute B_c from B_n for well balanced scheme (Beljadid et. al. 2016)
   for (int c = 0; c < ncells_owned; ++c) {
     
@@ -279,8 +277,6 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
       double area = norm(area_cross_product);
             
       B_c[0][c] += ( area / mesh_ -> cell_volume(c) ) * ( B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]] ) / 2;
-      
-      d_ = std::min(d_, norm(xc - (x0 + x1)/2.0)); // needed for time step
     }
   }
   
@@ -302,10 +298,6 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // secondary fields
   S_->GetFieldEvaluator(hydrostatic_pressure_key_)->HasFieldChanged(S.ptr(), passwd_);
-  
-  // initialize max/min wave speeds
-  ap_ = 0.0;
-  am_ = 0.0;
   
   // static fields
   S_->GetFieldData(bathymetry_key_)->ScatterMasterToGhosted();
@@ -506,8 +498,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       }
 
       FNum_rot = numerical_flux_->Compute(UL, UR);
-      ap_ = std::max(ap_, numerical_flux_->MaxSpeed());
-      am_ = std::min(am_, numerical_flux_->MinSpeed());
       // FNum_rot = NumericalFlux_x(UL, UR);
 
       FNum[0] = FNum_rot[0];
@@ -655,7 +645,7 @@ std::vector<double> ShallowWater_PK::NumericalSource(
 //--------------------------------------------------------------
 double ShallowWater_PK::get_dt()
 {
-  double vol, dt;
+  double vol, dt = 1.e10;
   double eps = 1.e-6, eps2 = 1.e-12;
   std::vector<double> UL(3), UR(3);
   
@@ -679,14 +669,16 @@ double ShallowWater_PK::get_dt()
   Epetra_MultiVector& B_n = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("node", true);
   Epetra_MultiVector& h_c = *S_->GetFieldData(ponded_depth_key_, passwd_)->ViewComponent("cell", true);
   Epetra_MultiVector& ht_c = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
+  Epetra_MultiVector& vel_c = *S_->GetFieldData(velocity_key_, passwd_)->ViewComponent("cell", true);
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int orientation;
   AmanziMesh::Entity_ID_List cfaces, cnodes;
   
-  // --------
-  
   for (int c = 0; c < ncells_owned; c++) {
+    
+    double d = 1.e10;
+    double ap, am;
       
     const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
@@ -770,13 +762,22 @@ double ShallowWater_PK::get_dt()
       }
 
       numerical_flux_->Compute(UL, UR);
-      ap_ = std::max(ap_, numerical_flux_->MaxSpeed());
-      am_ = std::min(am_, numerical_flux_->MinSpeed());
+      ap = numerical_flux_->MaxSpeed();
+      am = numerical_flux_->MinSpeed();
+      
+      Amanzi::AmanziGeometry::Point x0, x1;
+      Amanzi::AmanziMesh::Entity_ID_List face_nodes;
+      mesh_->face_get_nodes(f, &face_nodes);
+                        
+      mesh_->node_get_coordinates(face_nodes[0], &x0);
+      mesh_->node_get_coordinates(face_nodes[1], &x1);
+      
+      d = std::min(d, norm(xc - (x0 + x1)/2.0)); // minimum distance between cell centroid and edge midpoints
     }
+    dt = std::min(d/(2*std::max(ap, am) + 1.e-14), dt);
+//    dt = std::min((2*d)/(std::max(std::abs(vel_c[0][c]), std::abs(vel_c[1][c]) ) + std::sqrt(g_ * h_c[0][c]) + 1.e-14), dt);
   }
-
-  dt = d_/(2*std::max(ap_, -am_) + 1.e-14);
-
+  
   double dt_min;
   mesh_->get_comm()->MinAll(&dt, &dt_min, 1);
 

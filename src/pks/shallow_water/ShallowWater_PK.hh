@@ -122,16 +122,11 @@ class ShallowWater_PK : public PK_Physical,
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim_;
-  // minimum distance between centroid and cell interfaces
-  double d_;
                             
   // source terms
   std::vector<Teuchos::RCP<PK_DomainFunction> > srcs_;
   double total_source_;
-                          
-  // maximum/ minimum wave speeds
-  double ap_, am_;
-  
+
   // time step iterations
   int iter_;
 
