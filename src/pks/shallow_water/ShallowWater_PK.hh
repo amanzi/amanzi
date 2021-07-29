@@ -127,9 +127,6 @@ class ShallowWater_PK : public PK_Physical,
   std::vector<Teuchos::RCP<PK_DomainFunction> > srcs_;
   double total_source_;
 
-  // time step iterations
-  int iter_;
-
  private:
   // boundary conditions
   std::vector<Teuchos::RCP<ShallowWaterBoundaryFunction> > bcs_;
@@ -144,7 +141,9 @@ class ShallowWater_PK : public PK_Physical,
   Teuchos::RCP<Operators::ReconstructionCell> discharge_x_grad_, discharge_y_grad_;
   Teuchos::RCP<Operators::LimiterCell> limiter_;
 
+  // advanced cfl control
   double cfl_;
+  int iters_, max_iters_;
 
  private:
   // factory registration

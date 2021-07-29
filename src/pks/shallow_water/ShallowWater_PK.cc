@@ -36,7 +36,8 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
     S_(S),
     soln_(soln),
     glist_(glist),
-    passwd_("state")
+    passwd_("state"),
+    iters_(0)
 {
   std::string pk_name = pk_tree.name();
   auto found = pk_name.rfind("->");
@@ -50,6 +51,7 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
   domain_ = sw_list_->template get<std::string>("domain name", "surface");
 
   cfl_ = sw_list_->get<double>("cfl", 0.1);
+  max_iters_ = sw_list_->get<int>("number of reduced cfl cycles", 10);
 
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = sw_list_->sublist("verbose object");
@@ -156,8 +158,6 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
 //--------------------------------------------------------------
 void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
-  iter_ = 0;
-  
   // Create BC objects
   Teuchos::RCP<ShallowWaterBoundaryFunction> bc;
   Teuchos::RCP<Teuchos::ParameterList>
@@ -316,7 +316,7 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
 bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   double dt = t_new - t_old;
-  iter_++;
+  iters_++;
 
   bool failed = false;
   double eps2 = 1e-12;
@@ -645,54 +645,33 @@ std::vector<double> ShallowWater_PK::NumericalSource(
 //--------------------------------------------------------------
 double ShallowWater_PK::get_dt()
 {
-  double vol, dt = 1.e10;
+  double d, vn, dt = 1.e10;
 
   Epetra_MultiVector& h_c = *S_->GetFieldData(ponded_depth_key_, passwd_)->ViewComponent("cell", true);
   Epetra_MultiVector& vel_c = *S_->GetFieldData(velocity_key_, passwd_)->ViewComponent("cell", true);
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int orientation;
-  AmanziMesh::Entity_ID_List cfaces, cnodes;
+  AmanziMesh::Entity_ID_List cfaces;
   
   for (int c = 0; c < ncells_owned; c++) {
-    
-    double d;
-      
     const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
-    double vol = mesh_->cell_volume(c);
-
     mesh_->cell_get_faces(c, &cfaces);
-    mesh_->cell_get_nodes(c, &cnodes);
 
     for (int n = 0; n < cfaces.size(); ++n) {
       int f = cfaces[n];
       double farea = mesh_->face_area(f);
-      const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
-      AmanziGeometry::Point normal = mesh_->face_normal(f, false, c, &orientation);
-      normal /= farea;
+      const auto& xf = mesh_->face_centroid(f);
+      const auto& normal = mesh_->face_normal(f);
   
-      int edge = cfaces[n];
-      
       double h = h_c[0][c];
-
       double vx = vel_c[0][c];
       double vy = vel_c[1][c];
 
-      // rotating velovity to the face-based coordinate system
-      double vn, vt;
-      vn =  vx * normal[0] + vy * normal[1];
-      
-      Amanzi::AmanziGeometry::Point x0, x1;
-      Amanzi::AmanziMesh::Entity_ID_List face_nodes;
-      mesh_->face_get_nodes(f, &face_nodes);
-      
-      mesh_->node_get_coordinates(face_nodes[0], &x0);
-      mesh_->node_get_coordinates(face_nodes[1], &x1);
-      
-      d = norm(xc - (x0 + x1)/2.0); // minimum distance between cell centroid and edge midpoints
-      
-      dt = std::min((2*d) / (std::abs(vn) + std::sqrt(g_ * h) + 1.e-14), dt);
+      // computing local (cell, face) time step using Kurganov's estimate d / (2a)
+      vn = (vx * normal[0] + vy * normal[1]) / farea;
+      d = norm(xc - xf);
+      dt = std::min(d / (2 * (std::abs(vn) + std::sqrt(g_ * h))), dt);
     }
   }
   
@@ -704,12 +683,15 @@ double ShallowWater_PK::get_dt()
     *vo_->os() << "stable dt=" << dt_min << ", cfl=" << cfl_ << std::endl;
   }
 
-  if (iter_ < 10) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH && iters_ == max_iters_) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "switching from reduced to regular cfl=" << cfl_ << std::endl;
+  }
+
+  if (iters_ < max_iters_)
     return 0.1 * cfl_ * dt_min;
-  }
-  else {
+  else
     return cfl_ * dt_min;
-  }
 }
 
 

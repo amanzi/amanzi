@@ -21,6 +21,7 @@
   <ParameterList name="PKs">
     <ParameterList name="shallow water">
       <Parameter name="domain name" type="string" value="surface"/>
+      <Parameter name="cfl" type="double" value="0.2"/>
 
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
