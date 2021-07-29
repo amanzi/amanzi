@@ -241,19 +241,16 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   const auto& B_c = *S_->GetFieldData(bathymetry_key_)->ViewComponent("cell");
   
   // compute B_c from B_n for well balanced scheme (Beljadid et. al. 2016)
+  S_->GetFieldData(bathymetry_key_)->ScatterMasterToGhosted("node");
+
   for (int c = 0; c < ncells_owned; ++c) {
-    
     const Amanzi::AmanziGeometry::Point &xc = mesh_->cell_centroid(c);
         
-    Amanzi::AmanziMesh::Entity_ID_List cfaces, cnodes, cedges;
+    Amanzi::AmanziMesh::Entity_ID_List cfaces;
     mesh_->cell_get_faces(c, &cfaces);
-    mesh_->cell_get_nodes(c, &cnodes);
-    mesh_->cell_get_edges(c, &cedges);
-        
-    int nedges_cell = cedges.size();
     int nfaces_cell = cfaces.size();
         
-    B_c[0][c] = 0;
+    B_c[0][c] = 0.0;
         
     // compute cell averaged bathymery (Bc)
     for (int f = 0; f < nfaces_cell; ++f) {
@@ -261,24 +258,20 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
       Amanzi::AmanziGeometry::Point x0, x1;
       int edge = cfaces[f];
             
-      Amanzi::AmanziMesh::Entity_ID_List face_nodes;
+      AmanziMesh::Entity_ID_List face_nodes;
       mesh_->face_get_nodes(edge, &face_nodes);
                         
       mesh_->node_get_coordinates(face_nodes[0], &x0);
       mesh_->node_get_coordinates(face_nodes[1], &x1);
 
-      Amanzi::AmanziGeometry::Point tria_edge0, tria_edge1;
-
-      tria_edge0 = xc - x0;
-      tria_edge1 = xc - x1;
-
-      Amanzi::AmanziGeometry::Point area_cross_product = (0.5) * tria_edge0^tria_edge1;
-
-      double area = norm(area_cross_product);
+      AmanziGeometry::Point area_cross_product = (xc - x0) ^ (xc - x1);
+      double area = norm(area_cross_product) / 2;
             
-      B_c[0][c] += ( area / mesh_ -> cell_volume(c) ) * ( B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]] ) / 2;
+      B_c[0][c] += (area / mesh_->cell_volume(c)) * (B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]]) / 2;
     }
   }
+  // redistribute the result
+  S_->GetFieldData(bathymetry_key_)->ScatterMasterToGhosted("cell");
   
   InitializeField_(S_.ptr(), passwd_, ponded_depth_key_, 1.0);
 
@@ -299,9 +292,6 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   // secondary fields
   S_->GetFieldEvaluator(hydrostatic_pressure_key_)->HasFieldChanged(S.ptr(), passwd_);
   
-  // static fields
-  S_->GetFieldData(bathymetry_key_)->ScatterMasterToGhosted();
-
   // summary of initialization
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
