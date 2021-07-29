@@ -646,29 +646,8 @@ std::vector<double> ShallowWater_PK::NumericalSource(
 double ShallowWater_PK::get_dt()
 {
   double vol, dt = 1.e10;
-  double eps = 1.e-6, eps2 = 1.e-12;
-  std::vector<double> UL(3), UR(3);
-  
-  // limited reconstructions
-  auto tmp1 = S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
-  total_depth_grad_->ComputeGradient(tmp1);
-  limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_->gradient());
-  limiter_->gradient()->ScatterMasterToGhosted("cell");
 
-  auto tmp5 = S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
-  discharge_x_grad_->ComputeGradient(tmp5, 0);
-  limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_->gradient());
-  limiter_->gradient()->ScatterMasterToGhosted("cell");
-
-  auto tmp6 = S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
-  discharge_y_grad_->ComputeGradient(tmp6, 1);
-  limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_->gradient());
-  limiter_->gradient()->ScatterMasterToGhosted("cell");
-
-  Epetra_MultiVector& B_c = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("cell", true);
-  Epetra_MultiVector& B_n = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("node", true);
   Epetra_MultiVector& h_c = *S_->GetFieldData(ponded_depth_key_, passwd_)->ViewComponent("cell", true);
-  Epetra_MultiVector& ht_c = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
   Epetra_MultiVector& vel_c = *S_->GetFieldData(velocity_key_, passwd_)->ViewComponent("cell", true);
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -677,8 +656,7 @@ double ShallowWater_PK::get_dt()
   
   for (int c = 0; c < ncells_owned; c++) {
     
-    double d = 1.e10;
-    double ap, am;
+    double d;
       
     const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
@@ -693,89 +671,29 @@ double ShallowWater_PK::get_dt()
       const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
       AmanziGeometry::Point normal = mesh_->face_normal(f, false, c, &orientation);
       normal /= farea;
-
-      double ht_rec = total_depth_grad_->getValue(c, xcf);
   
       int edge = cfaces[n];
-      double B_rec = BathymetryEdgeValue(edge, B_n);
+      
+      double h = h_c[0][c];
 
-      if (ht_rec < B_rec) {
-        ht_rec = ht_c[0][c];
-        B_rec = B_c[0][c];
-      }
-      double h_rec = ht_rec - B_rec;
-
-      double qx_rec = discharge_x_grad_->getValue(c, xcf);
-      double qy_rec = discharge_y_grad_->getValue(c, xcf);
-
-      double h2 = h_rec * h_rec;
-      double factor = 2.0 * h_rec / (h2 + std::fmax(h2, eps2));
-      double vx_rec = factor * qx_rec;
-      double vy_rec = factor * qy_rec;
+      double vx = vel_c[0][c];
+      double vy = vel_c[1][c];
 
       // rotating velovity to the face-based coordinate system
       double vn, vt;
-      vn =  vx_rec * normal[0] + vy_rec * normal[1];
-      vt = -vx_rec * normal[1] + vy_rec * normal[0];
-
-      UL[0] = h_rec;
-      UL[1] = h_rec * vn;
-      UL[2] = h_rec * vt;
-
-      int cn = WhetStone::cell_get_face_adj_cell(*mesh_, c, f);
-
-      if (cn == -1) {
-        if (bcs_.size() > 0 && bcs_[0]->bc_find(f)) {
-          for (int i = 0; i < 3; ++i) UR[i] = bcs_[0]->bc_value(f)[i];
-        }
-        else {
-          UR = UL;
-        }
-
-      } else {
-        const Amanzi::AmanziGeometry::Point& xcn = mesh_->cell_centroid(cn);
-          
-        ht_rec = total_depth_grad_->getValue(cn, xcf);
-          
-        B_rec = BathymetryEdgeValue(edge, B_n);
-          
-        if (ht_rec < B_rec) {
-          ht_rec = ht_c[0][cn];
-          B_rec = B_c[0][cn];
-        }
-        h_rec = ht_rec - B_rec;
-
-        qx_rec = discharge_x_grad_->getValue(cn, xcf);
-        qy_rec = discharge_y_grad_->getValue(cn, xcf);
-
-        h2 = h_rec * h_rec;
-        factor = 2.0 * h_rec / (h2 + std::fmax(h2, eps2));
-        vx_rec = factor * qx_rec;
-        vy_rec = factor * qy_rec;
-
-        vn =  vx_rec * normal[0] + vy_rec * normal[1];
-        vt = -vx_rec * normal[1] + vy_rec * normal[0];
-
-        UR[0] = h_rec;
-        UR[1] = h_rec * vn;
-        UR[2] = h_rec * vt;
-      }
-
-      numerical_flux_->Compute(UL, UR);
-      ap = numerical_flux_->MaxSpeed();
-      am = numerical_flux_->MinSpeed();
+      vn =  vx * normal[0] + vy * normal[1];
       
       Amanzi::AmanziGeometry::Point x0, x1;
       Amanzi::AmanziMesh::Entity_ID_List face_nodes;
       mesh_->face_get_nodes(f, &face_nodes);
-                        
+      
       mesh_->node_get_coordinates(face_nodes[0], &x0);
       mesh_->node_get_coordinates(face_nodes[1], &x1);
       
-      d = std::min(d, norm(xc - (x0 + x1)/2.0)); // minimum distance between cell centroid and edge midpoints
+      d = norm(xc - (x0 + x1)/2.0); // minimum distance between cell centroid and edge midpoints
+      
+      dt = std::min((2*d) / (std::abs(vn) + std::sqrt(g_ * h) + 1.e-14), dt);
     }
-    dt = std::min(d/(2*std::max(ap, am) + 1.e-14), dt);
-//    dt = std::min((2*d)/(std::max(std::abs(vel_c[0][c]), std::abs(vel_c[1][c]) ) + std::sqrt(g_ * h_c[0][c]) + 1.e-14), dt);
   }
   
   double dt_min;
