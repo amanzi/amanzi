@@ -1,24 +1,28 @@
---- alquimia-dev-1.0.5/cmake/Modules/FindPETSc.cmake	2017-09-20 11:18:31.000000000 -0600
-+++ alquimia-1.0.5-source/cmake/Modules/FindPETSc.cmake	2018-02-28 16:43:17.000000000 -0700
-@@ -262,14 +262,14 @@
-   return 0;
- }
+diff -Naur alquimia-dev-1.0.8/cmake/Modules/FindPETSc.cmake alquimia-dev-1.0.8-new/cmake/Modules/FindPETSc.cmake
+--- alquimia-dev-1.0.8/cmake/Modules/FindPETSc.cmake	2020-11-05 19:30:17.000000000 -0700
++++ alquimia-dev-1.0.8-new/cmake/Modules/FindPETSc.cmake	2021-06-30 21:06:19.621669995 -0600
+@@ -264,10 +264,18 @@
  ")
-+
-     multipass_source_runs ("${includes}" "${libraries}" "${_PETSC_TEST_SOURCE}" ${runs} "${PETSC_LANGUAGE_BINDINGS}")
+     #    multipass_source_runs ("${includes}" "${libraries}" "${_PETSC_TEST_SOURCE}" ${runs} "${PETSC_LANGUAGE_BINDINGS}")
+     multipass_source_runs ("${includes}" "${libraries}" "${_PETSC_TEST_SOURCE}" ${runs} "CXX")
 -    if (${${runs}})
-+    if ( (${${runs}}) OR (DEFINED ENV{NERSC_HOST}) )
++    #  Override on systems that cannot run the binary on the build node, or using the command CMake generates.
++    #    * Darwin   - experimental heterogenous cluster at LANL
++    #    * NERSC    - DOE HPC system with no mpi execution on the front end.
++    if ( DEFINED ENV{SLURM_SUBMIT_HOST} )
++       string(REGEX REPLACE "-.*[0-9].lanl.gov" "" SLURM_HOST_BASENAME $ENV{SLURM_SUBMIT_HOST})
++    else ( ) 
++       set (SLURM_HOST_BASENAME "undefined" )
++    endif ( )		      
++    if ( (${${runs}}) OR (DEFINED ENV{NERSC_HOST}) OR (${SLURM_HOST_BASENAME} STREQUAL "darwin") )
        set (PETSC_EXECUTABLE_RUNS "YES" CACHE BOOL
          "Can the system successfully run a PETSc executable?  This variable can be manually set to \"YES\" to force CMake to accept a given PETSc configuration, but this will almost always result in a broken build.  If you change PETSC_DIR, PETSC_ARCH, or PETSC_CURRENT you would have to reset this variable." FORCE)
 -    endif (${${runs}})
-+    endif ( (${${runs}}) OR (DEFINED ENV{NERSC_HOST}) )
++    endif ( )
    endmacro (PETSC_TEST_RUNS)
  
--
-   find_path (PETSC_INCLUDE_DIR petscts.h HINTS "${PETSC_DIR}" PATH_SUFFIXES include NO_DEFAULT_PATH)
-   find_path (PETSC_INCLUDE_CONF petscconf.h HINTS "${PETSC_DIR}" PATH_SUFFIXES "${PETSC_ARCH}/include" "bmake/${PETSC_ARCH}" NO_DEFAULT_PATH)
-   mark_as_advanced (PETSC_INCLUDE_DIR PETSC_INCLUDE_CONF)
-@@ -286,6 +286,9 @@
+ 
+@@ -287,6 +295,9 @@
        set (petsc_includes_needed ${petsc_includes_all})
      else (petsc_works_allincludes) # We are going to need to link the external libs explicitly
        resolve_libraries (petsc_libraries_external "${petsc_libs_external}")

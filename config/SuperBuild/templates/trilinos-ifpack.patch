@@ -1,0 +1,26 @@
+diff --git a/packages/ifpack/src/Ifpack_Hypre.cpp b/packages/ifpack/src/Ifpack_Hypre.cpp
+index d70f232946b..a7beafea8de 100644
+--- a/packages/ifpack/src/Ifpack_Hypre.cpp
++++ b/packages/ifpack/src/Ifpack_Hypre.cpp
+@@ -784,6 +784,7 @@ int Ifpack_Hypre::Compute(){
+     IFPACK_CHK_ERR(Initialize());
+   }
+   Time_.ResetStartTime();
++  CopyEpetraToHypre();
+ 
+   // Hypre Setup must be called after matrix has values
+   if(SolveOrPrec_ == Solver){
+diff --git a/packages/ifpack2/src/Ifpack2_Hypre_def.hpp b/packages/ifpack2/src/Ifpack2_Hypre_def.hpp
+index 39567505393..32235dbb8f1 100644
+--- a/packages/ifpack2/src/Ifpack2_Hypre_def.hpp
++++ b/packages/ifpack2/src/Ifpack2_Hypre_def.hpp
+@@ -844,7 +844,8 @@ void Hypre<MatrixType>::compute(){
+     if(isInitialized() == false){
+       initialize();
+     }
+-           
++    CopyTpetraToHypre();
++
+     // Hypre Setup must be called after matrix has values
+     if(SolveOrPrec_ == Hypre_Is_Solver){
+       IFPACK2_CHK_ERR(SolverSetupPtr_(Solver_, ParMatrix_, ParX_, ParY_));
