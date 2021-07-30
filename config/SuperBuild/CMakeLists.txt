@@ -196,49 +196,43 @@ option(ENABLE_CCSE_TOOLS "Enable building CCSE post processing tools" FALSE)
 option(ENABLE_Unstructured "Enable Amanzi unstructured mesh capability" TRUE)
 option(ENABLE_MESH_MSTK "Enable the Unstructured MSTK Mesh Toolkit" TRUE)
 option(ENABLE_MESH_MOAB "Enable the Unstructured MOAB Mesh Toolkit" FALSE)
-
-# Amanzi output formats
-option(ENABLE_Silo "Enable the Silo output specification for visualization" FALSE)
-
-# OpenMP Search - ENABLED ONLY WHEN STRUCTURED IS ON BECAUSE
-# WE SUSPECT THAT IT MAY NOT BE WORKING WELL WITH HYPRE ON
-# THE UNSTRUCTURED SIDE
-if (ENABLE_Structured)
-  # option(ENABLE_OpenMP "Add OpenMP directives to the build" TRUE)
-  set(ENABLE_OpenMP FALSE)
-  if (ENABLE_OpenMP)
-    find_package(OpenMP)
-    find_package(OpenMP_Fortran)
-    if (OPENMP_FOUND)
-      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
-      set(CMAKE_LINK_FLAGS "${CMAKE_LINK_FLAGS} ${OpenMP_LINK_FLAGS}")
-    else()  
-      message(SEND_ERROR "Failed to determine the OpenMP compiler flags. Will deactivate.")
-      set(ENABLE_OpenMP FALSE CACHE BOOL "Enable OpenMP compile directives" FORCE)
-    endif()
-  endif()
-endif()
-
-if(ENABLE_KOKKOS_OPENMP)
-  find_package(OpenMP)
-  if (OpenMP_FOUND)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
-  endif()
-  # These might be needed for intel, seems like FindOpenMP packages is a bit broken.
-  #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
-  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-  #set(CMAKE_LINK_FLAGS "${CMAKE_LINK_FLAGS} -lpthread")
-endif()
-
-# If unstructured is not enabled, there is no reason to have these mesh frameworks
+# turn off frameworks if unstructured not enabled
 if (NOT ENABLE_Unstructured)
   set(ENABLE_MESH_MSTK FALSE)
   set(ENABLE_MESH_MOAB FALSE)
 endif()
+
+# Amanzi output formats
+option(ENABLE_Silo "Enable the Silo output specification for visualization" FALSE)
+
+# options for using MPI+X strategies
+option(ENABLE_OpenMP "Use OpenMP directives in TPLs that support it" FALSE)
+if (ENABLE_OpenMP)
+  find_package(OpenMP REQUIRED)
+  if (OpenMP_FOUND REQUIRED)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+  endif()
+
+  if (ENABLE_Structured)
+    find_package(OpenMP_Fortran REQUIRED)
+    if (OpenMP_Fortran_FOUND)
+      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
+      set(CMAKE_LINK_FLAGS "${CMAKE_LINK_FLAGS} ${OpenMP_LINK_FLAGS}")
+    endif()
+  endif()
+endif()
+
+option(ENABLE_CUDA "Use CUDA in TPLs that support it" FALSE)
+if (ENABLE_CUDA)
+  find_package(CUDA REQUIRED)
+endif()
+
+# build with Tpetra or Epetra line.  Note that both enabled is valid
+# here, but not in Amanzi, allowing a common set of TPLs to support
+# two builds of Amanzi.
+option(ENABLE_Epetra "Build TPLs with Epetra line of Trilinos packages" TRUE)
+option(ENABLE_Tpetra "Build TPLs with Tpetra line of Trilinos packages" TRUE)
 
 # Amanzi Test Suite
 option(ENABLE_TESTS "Build the Amanzi Test Suite" TRUE)
@@ -840,7 +834,7 @@ include(${SuperBuild_BUILD_FILES_DIR}/Build_exprtk.cmake)
 #  Final steps
 # ############################################################################ #
 # -- override compiler with nvccwrapper
-if (ENABLE_KOKKOS_CUDA)
+if (ENABLE_CUDA)
   set(NVCC_WRAPPER_DEFAULT_COMPILER ${CMAKE_CXX_COMPILER})
   set(CMAKE_CXX_COMPILER ${Trilinos_INSTALL_PREFIX}/bin/nvcc_wrapper)
 else()
