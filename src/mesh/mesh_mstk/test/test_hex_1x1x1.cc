@@ -26,7 +26,6 @@
 TEST(MSTK_HEX1)
 {
   int i, j, k, err, nc, nv;
-  std::vector<Amanzi::AmanziMesh::Entity_ID> expfacenodes(4);
   Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> faces("", 6);
   Amanzi::AmanziMesh::Entity_ID_List cellnodes(8), facenodes(4);
   Kokkos::View<int*> facedirs("", 6);
@@ -37,12 +36,6 @@ TEST(MSTK_HEX1)
   int NC = 1;
   double xyz[12][3] = { { 0, 0, 0 }, { 1, 0, 0 }, { 0, 1, 0 }, { 1, 1, 0 },
                         { 0, 0, 1 }, { 1, 0, 1 }, { 0, 1, 1 }, { 1, 1, 1 } };
-  Amanzi::AmanziMesh::Entity_ID local_cellnodes[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };
-  Amanzi::AmanziMesh::Entity_ID local_facenodes[6][4] = {
-    { 0, 1, 5, 4 }, { 1, 2, 6, 5 }, { 2, 3, 7, 6 },
-    { 3, 0, 4, 7 }, { 0, 3, 2, 1 }, { 4, 5, 6, 7 }
-  };
-
 
   auto comm = Amanzi::getDefaultComm();
 
@@ -84,41 +77,22 @@ TEST(MSTK_HEX1)
     CHECK_ARRAY_EQUAL(xyz[cellnodes[j]], ccoords[j], 3);
   }
 
-
   mesh->cell_get_faces_and_dirs(0, faces, facedirs);
 
   for (j = 0; j < 6; j++) {
     mesh->face_get_nodes(faces(j), facenodes);
-    mesh->face_get_coordinates(faces(j), fcoords);
 
+    int f0 = facenodes[0];
+    int f1 = facenodes[1];
+    for (k = 2; k < 4; k++) {
+      int f2 = facenodes[k];
+      Amanzi::AmanziGeometry::Point p0(xyz[f0][0], xyz[f0][1], xyz[f0][2]);
+      Amanzi::AmanziGeometry::Point p1(xyz[f1][0], xyz[f1][1], xyz[f1][2]);
+      Amanzi::AmanziGeometry::Point p2(xyz[f2][0], xyz[f2][1], xyz[f2][2]);
 
-    for (k = 0; k < 4; k++) expfacenodes[k] = cellnodes[local_facenodes[j][k]];
-
-    // The order of nodes returned may be different from what we expected
-    // So make sure we have a matching node to start with
-
-    int k0 = -1;
-    int found = 0;
-    for (k = 0; k < 4; k++) {
-      if (expfacenodes[k] == facenodes[0]) {
-        k0 = k;
-        found = 1;
-        break;
-      }
-    }
-
-    CHECK_EQUAL(found, 1);
-
-    if (facedirs(j) == 1) {
-      for (k = 0; k < 4; k++) {
-        CHECK_EQUAL(expfacenodes[(k0 + k) % 4], facenodes[k]);
-        CHECK_ARRAY_EQUAL(xyz[expfacenodes[(k0 + k) % 4]], fcoords[k], 3);
-      }
-    } else {
-      for (k = 0; k < 4; k++) {
-        CHECK_EQUAL(expfacenodes[(k0 + 4 - k) % 4], facenodes[k]);
-        CHECK_ARRAY_EQUAL(xyz[expfacenodes[(k0 + 4 - k) % 4]], fcoords[k], 3);
-      }
+      Amanzi::AmanziGeometry::Point cross = (p1 - p0) ^ (p2 - p0);
+      double area = Amanzi::AmanziGeometry::norm(cross);
+      CHECK_CLOSE(area, 1.0, 1e-10);
     }
   }
 }
