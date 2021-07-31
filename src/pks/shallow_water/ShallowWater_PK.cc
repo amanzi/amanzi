@@ -273,8 +273,18 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   // redistribute the result
   S_->GetFieldData(bathymetry_key_)->ScatterMasterToGhosted("cell");
   
-  InitializeField_(S_.ptr(), passwd_, ponded_depth_key_, 1.0);
+  // initialize h from ht or ht from h
+  if (!S_->GetField(ponded_depth_key_, passwd_)->initialized()) {
+    const auto& h_c = *S_->GetFieldData(ponded_depth_key_)->ViewComponent("cell");
+    auto& ht_c = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell");
 
+    for (int c = 0; c < ncells_owned; c++) {
+      h_c[0][c] = ht_c[0][c] - B_c[0][c];
+    }
+
+    S_->GetField(ponded_depth_key_, passwd_)->set_initialized();
+  }
+  
   if (!S_->GetField(total_depth_key_, passwd_)->initialized()) {
     const auto& h_c = *S_->GetFieldData(ponded_depth_key_)->ViewComponent("cell");
     auto& ht_c = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell");
@@ -379,7 +389,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
       int c = it->first;
       ext_S_cell[c] = it->second[0];  // data units is [m]
-      total_source_ += it->second[0];
+      total_source_ += it->second[0] * mesh_->cell_volume(c); // data units are [m^3]
     }
   }
 
@@ -747,5 +757,4 @@ void ShallowWater_PK::ErrorDiagnostics_(int c, double h, double B, double ht)
 
 }  // namespace ShallowWater
 }  // namespace Amanzi
-
 

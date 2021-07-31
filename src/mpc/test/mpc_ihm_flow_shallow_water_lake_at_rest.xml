@@ -56,6 +56,18 @@
         <Parameter name="high coordinate" type="Array(double)" value="{100.0, 100.0, 10.0}"/>
       </ParameterList>
     </ParameterList>
+    <ParameterList name="FrontTopEdge">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0, 10.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{100.0, 0.0, 10.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="BackTopEdge">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 100.0, 10.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{100.0, 100.0, 10.0}"/>
+      </ParameterList>
+    </ParameterList>
     <!-- Faces to "Pick out" TopSurface-->
     <ParameterList name="Face0">
       <ParameterList name="region: box">
@@ -63,21 +75,18 @@
         <Parameter name="high coordinate" type="Array(double)" value="{0.0, 100.0, 10.0}"/>
       </ParameterList>
     </ParameterList>
-    
     <ParameterList name="Face1">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{100.0, 0.0, 10.0}"/>
       </ParameterList>
     </ParameterList>
-    
     <ParameterList name="Face2">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{100.0, 0.0, 0.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{100.0, 100.0, 10.0}"/>
       </ParameterList>
     </ParameterList>
-    
     <ParameterList name="Face3">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{0.0, 100.0, 0.0}"/>
@@ -89,21 +98,24 @@
         <ParameterList name="region: boundary">
         </ParameterList>
     </ParameterList>
-    
     <ParameterList name="Bottom+Faces">
       <ParameterList name="region: logical">
         <Parameter name="operation" type="string" value="union"/>
         <Parameter name="regions" type="Array(string)" value="{Bottom, Face0, Face1, Face2, Face3}"/>
       </ParameterList>
     </ParameterList>
-    
     <ParameterList name="TopSurface">
       <ParameterList name="region: logical">
         <Parameter name="operation" type="string" value="subtract"/>
         <Parameter name="regions" type="Array(string)" value="{Boundary, Bottom+Faces}"/>
       </ParameterList>
     </ParameterList>
-    
+    <ParameterList name="TopSurface2">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{100.0, 100.0}"/>
+      </ParameterList>
+    </ParameterList>
     <ParameterList name="All">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{-9.99e+98, -9.99e+98, -9.99+98}"/>
@@ -183,15 +195,15 @@
         </ParameterList>
       </ParameterList>
       
-      <ParameterList name="surface-ponded_depth">
+      <ParameterList name="surface-total_depth">
         <ParameterList name="function">
           <ParameterList name="TopSurface">
-            <Parameter name="regions" type="Array(string)" value="{TopSurface}"/>
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="3"/>
-                <Parameter name="formula" type="string" value="1.0"/>
+                <Parameter name="formula" type="string" value="11.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -201,7 +213,7 @@
       <ParameterList name="surface-velocity">
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="region" type="string" value="TopSurface"/>
+            <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <Parameter name="number of dofs" type="int" value="2"/>
@@ -256,9 +268,9 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="start period time" type="double" value="0.0"/>
-        <Parameter name="end period time" type="double" value="400.0"/>
+        <Parameter name="end period time" type="double" value="1200.0"/>
         <Parameter name="maximum cycle number" type="int" value="100"/>
-        <Parameter name="initial time step" type="double" value="1.0"/>
+        <Parameter name="initial time step" type="double" value="10.0"/>
         <Parameter name="maximum time step" type="double" value="9.99e+98"/>
       </ParameterList>
     </ParameterList>
@@ -426,6 +438,7 @@
       </ParameterList>
       <ParameterList name="boundary conditions">
         <ParameterList name="pressure">
+          
           <ParameterList name="BC 0">
             <Parameter name="regions" type="Array(string)" value="{TopSurface}"/>
             <ParameterList name="boundary pressure">
@@ -434,7 +447,6 @@
             <Parameter name="spatial distribution method" type="string" value="domain coupling"/>
             <Parameter name="submodel" type="string" value="field"/>
           </ParameterList>
-
         </ParameterList>
       </ParameterList>
       <ParameterList name="physical models and assumptions">
@@ -462,7 +474,7 @@
       <ParameterList name="boundary conditions">
         <ParameterList name="velocity">
           <ParameterList name="BC 0">
-            <Parameter name="regions" type="Array(string)" value="{LeftTopEdge, RightTopEdge}"/>
+            <Parameter name="regions" type="Array(string)" value="{LeftTopEdge, RightTopEdge, FrontTopEdge, BackTopEdge}"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="velocity">
               <Parameter name="number of dofs" type="int" value="3"/>
@@ -489,7 +501,7 @@
 
       <ParameterList name="source terms">
         <ParameterList name="SRC 0">
-          <Parameter name="regions" type="Array(string)" value="{TopSurface}"/>
+          <Parameter name="regions" type="Array(string)" value="{All}"/>
           <Parameter name="spatial distribution method" type="string" value="domain coupling"/>
           <Parameter name="submodel" type="string" value="flux exchange"/>
           <ParameterList name="source">

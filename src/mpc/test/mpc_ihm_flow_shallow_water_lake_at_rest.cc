@@ -25,6 +25,7 @@
 #include "pks_shallow_water_registration.hh"
 #include "State.hh"
 #include "wrm_flow_registration.hh"
+#include "InputAnalysis.hh"
 
 // General
 #define _USE_MATH_DEFINES
@@ -160,8 +161,8 @@ using namespace Amanzi::AmanziGeometry;
     double x = node_crd[0], y = node_crd[1], z = node_crd[2];
     
     if (std::abs(z - 10) < 1.e-12) {
-      node_crd[2] += (1.0/500)*std::max(0.0, 100 - ((x - 50) * (x - 50) + (y - 50) * (y - 50)));
-//      node_crd[2] += 0.0;
+      node_crd[2] += (1.0/200)*std::max(0.0, 100 - ((x - 50) * (x - 50) + (y - 50) * (y - 50)));
+
     }
     new_positions.push_back(node_crd);
   }
@@ -178,19 +179,24 @@ using namespace Amanzi::AmanziGeometry;
   std::vector<std::string> names;
   names.push_back("surface");
 
-  // auto mesh_surface = Teuchos::rcp(new MeshExtractedManifold(
-  //     mesh, "TopSurface", AmanziMesh::FACE, comm, gm, mesh_list, true, true, true));
+//   auto mesh_surface = Teuchos::rcp(new MeshExtractedManifold(
+//       mesh, "TopSurface", AmanziMesh::FACE, comm, gm, mesh_list, true, true, true));
   auto mesh_surface = factory.create(mesh, { "TopSurface" }, AmanziMesh::FACE, true, true, true);
 
   S->RegisterMesh("surface", mesh_surface);
 
+  Amanzi::InputAnalysis analysis(mesh, "domain");
+  analysis.Init(*plist);
+  analysis.RegionAnalysis();
+  analysis.OutputBCs();
+  
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
   cycle_driver.Go();
     
-  // compute error
   const Epetra_MultiVector &ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
   const Epetra_MultiVector &vel = *S->GetFieldData("surface-velocity")->ViewComponent("cell");
   
+  // compute error
   Epetra_MultiVector ht_ex(ht);
   Epetra_MultiVector vel_ex(vel);
         
@@ -203,9 +209,9 @@ using namespace Amanzi::AmanziGeometry;
   std::cout<<"hmax: "<<hmax<<std::endl;
   std::cout<<"Computed error H (L_1): "<<err_L1<<std::endl;
   std::cout<<"Computed error H (L_inf): "<<err_max<<std::endl;
-
+    
   // tests will go here
-  // CHECK(a < 0.0);
+  CHECK(err_max < 1.e-6);
 }
 
 
