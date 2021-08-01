@@ -59,7 +59,7 @@ using namespace Amanzi;
 class AnalyticBase { //: public WhetStone::WhetStoneFunction {
  public:
   AnalyticBase(int d) 
-    : d_(d) {};
+    : d_(d), K_(d,1) {};
   virtual ~AnalyticBase() {};
 
   virtual std::string name() const = 0;
@@ -67,11 +67,9 @@ class AnalyticBase { //: public WhetStone::WhetStoneFunction {
 
   // analytic solution for diffusion problem with gravity
   // -- tensorial diffusion coefficient
-  virtual WhetStone::Tensor<Kokkos::HostSpace>
+  virtual const WhetStone::Tensor<Kokkos::HostSpace>&
   TensorDiffusivity(const AmanziGeometry::Point& p, double t) const {
-    WhetStone::Tensor<Kokkos::HostSpace> K(d_, 1);
-    K(0,0) = 1.0;
-    return K;
+    return K_;
   }
     
 
@@ -110,6 +108,7 @@ class AnalyticBase { //: public WhetStone::WhetStoneFunction {
 
  protected:
   int d_;
+  WhetStone::Tensor<Kokkos::HostSpace> K_;
 };
 
 //

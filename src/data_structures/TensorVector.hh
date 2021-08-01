@@ -56,6 +56,39 @@ struct TensorVector {
   }
 
   /**
+   * @brief Init CSR based on lambda function provided by user 
+   * The lamba function provides a way to access a const ref 
+   * to the i-th element 
+   * */
+  template<typename F_ELEMENT> 
+  void Init(
+    int size,  
+    F_ELEMENT&& f_e)
+  {
+    if(data.size() != size) 
+      data.set_size(size); 
+
+    std::size_t total_size = 0; 
+    // 1 compute total size: 
+    for(int i = 0 ; i < size; ++i){
+      const auto& t = f_e(i); 
+      data.set_row_map_host(i,t.mem()); 
+      data.set_sizes_host(i,0,t.dimension()); 
+      data.set_sizes_host(i,1,t.rank()); 
+      data.set_sizes_host(i,2,t.size()); 
+    } 
+    data.prefix_sum(); 
+    for(int i = 0 ; i < size ; ++i){
+      int idx = data.row_map_host(i); 
+      const auto& t = f_e(i).data(); 
+      for(int j = 0 ; j < t.size(); ++j){
+        data.set_entries_host(idx+j,t(j)); 
+      }
+    }
+    data.update_entries_device();
+  }
+
+  /**
     * Init the CSR based on a Host vector 
   */
   void Init(const std::vector<WhetStone::Tensor<Kokkos::HostSpace>>& ht){

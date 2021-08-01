@@ -78,8 +78,6 @@ class DenseVector {
     data_ = other.data_; 
   }
 
-
-
   // Default assigment implies view semantics
   KOKKOS_INLINE_FUNCTION DenseVector& operator=(const DenseVector&& other){
     m_ = other.m_;

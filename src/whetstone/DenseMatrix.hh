@@ -127,7 +127,7 @@ class DenseMatrix {
       //const double* tmpB = dataB + j * mB + m1;
       //double* tmpA = data_ + (j - n1) * m_;
       for (int i = 0; i < m_; ++i) {
-        data_((j-n1)*m_+i) = j*mB+m1+i;
+        data_((j-n1)*m_+i) = B.data_(j*mB+m1+i);
         //*tmpA = *tmpB;
         //tmpA++;
         //tmpB++;
@@ -248,9 +248,9 @@ class DenseMatrix {
    * Matrix-vector product. The matrix is ordered by columns.
   ****************************************************************** */
   // calculates B = *this * A
-  template<class DV_MEMSPACE>
   KOKKOS_INLINE_FUNCTION 
-  int Multiply(const DenseVector<DV_MEMSPACE>& A, DenseVector<DV_MEMSPACE>& B, bool transpose) const
+  int Multiply(
+    const DenseVector<MEMSPACE>& A, DenseVector<MEMSPACE>& B, bool transpose) const
   {
     auto dataA = A.Values();
     auto dataB = B.Values();

@@ -31,7 +31,7 @@ class Analytic01 : public AnalyticBase {
       g_(g) {};
   ~Analytic01() {};
 
-  Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) {
+  const Amanzi::WhetStone::Tensor& TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) {
     Amanzi::WhetStone::Tensor K(2, 2);
     K(0, 0) = Kxx_(p, t);
     K(1, 1) = Kyy_(p, t);

@@ -28,8 +28,6 @@ SUITE(COMMON_CSR)
 {
   TEST_FIXTURE(TestHarness, CSR_TEST)
   {
-    const int ncells = 100; 
-
     // Create Matrix CSR 
     const int nmatrices = 100000; 
     const int nrows = 10; 
@@ -43,14 +41,13 @@ SUITE(COMMON_CSR)
       int vals[] = {nrows, ncols}; 
       csr_mat.set_shape_host(i,vals,nrows*ncols); 
     }
-    csr_mat.prefix_sum();
 
-    // access and modify the matrices on device 
+    csr_mat.prefix_sum();
+    // access and modify the matrices on device
     Kokkos::parallel_for(
       "data_structures_CSR::test",
       csr_mat.size(),
       KOKKOS_LAMBDA(const int f) {
-
         WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm = getFromCSR<WhetStone::DenseMatrix>(csr_mat,f); 
         for(int i = 0 ; i < nrows; ++i){
           for(int j = 0 ; j < ncols; ++j){
@@ -59,7 +56,6 @@ SUITE(COMMON_CSR)
         }
       });
     csr_mat.update_entries_host();
-
     for(int f = 0 ; f < csr_mat.size(); ++f){
       WhetStone::DenseMatrix<Kokkos::HostSpace> lm = getFromCSR_host<WhetStone::DenseMatrix>(csr_mat,f); 
       for(int i = 0 ; i < nrows; ++i){
@@ -69,26 +65,24 @@ SUITE(COMMON_CSR)
         }
       }
     }
-    // Create vector CSR based on matrix sizes 
-    CSR<double,1,Amanzi::DeviceOnlyMemorySpace> csr_v = csr_mat.size();
-    CSR<double,1,Amanzi::DeviceOnlyMemorySpace> csr_Av =csr_mat.size(); 
 
-    int total1 = 0; 
-    int total2 = 0; 
+    // Create vector CSR based on matrix sizes 
+    CSR<double,1,Amanzi::DeviceOnlyMemorySpace> csr_v(nmatrices);
+    CSR<double,1,Amanzi::DeviceOnlyMemorySpace> csr_Av(nmatrices); 
+
     // CSR version 
     // 1. Compute size 
-    for(int i = 0 ; i < csr_mat.size(); ++i){
+    for(int i = 0 ; i < nmatrices; ++i){
       csr_v.sizes_.view_host()(i,0) = csr_mat.size_host(i,0);
       csr_v.row_map_.view_host()(i) = csr_mat.size_host(i,0);
       csr_Av.sizes_.view_host()(i,0) = csr_mat.size_host(i,1);
       csr_Av.row_map_.view_host()(i) = csr_mat.size_host(i,1);
-   }
-
+    }
     csr_v.prefix_sum(); 
     csr_Av.prefix_sum();
-    Kokkos::DualView<double*,DeviceOnlyMemorySpace> res; 
-    res.realloc(ncells);
 
+    Kokkos::DualView<double*,DeviceOnlyMemorySpace> res; 
+    res.realloc(nrows);
     // Test on device 
     Kokkos::parallel_for(
       "data_structures_CSR::test",
@@ -98,21 +92,18 @@ SUITE(COMMON_CSR)
         WhetStone::DenseVector<DeviceOnlyMemorySpace> vv = getFromCSR<WhetStone::DenseVector>(csr_v,f); 
         WhetStone::DenseVector<DeviceOnlyMemorySpace> Avv = getFromCSR<WhetStone::DenseVector>(csr_Av,f); 
 
-        for (int n = 0; n != ncells; ++n) {
+        for (int n = 0; n != nrows; ++n) {
           vv(n) = f+n;
         }
 
         WhetStone::DenseMatrix<DeviceOnlyMemorySpace> lm = getFromCSR<WhetStone::DenseMatrix>(csr_mat,f); 
         lm.Multiply(vv,Avv,false);
 
-        for (int n = 0; n != ncells; ++n) {
+        for (int n = 0; n != nrows; ++n) {
           Kokkos::atomic_add(&res.view_device()(n), Avv(n));
         }
       });
     res.modify_device(); 
     res.sync_host(); 
-    //for(int i = 0 ; i < ncells; ++i){
-    //  std::cout<<res.view_host()(i)<<std::endl;
-    //}
   }
 }

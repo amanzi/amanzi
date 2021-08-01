@@ -17,6 +17,8 @@
 #ifndef AMANZI_OUTPUT_FACTORY_HH_
 #define AMANZI_OUTPUT_FACTORY_HH_
 
+#include <memory>
+
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 

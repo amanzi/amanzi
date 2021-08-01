@@ -31,21 +31,24 @@
 
   <!-- SOLVERS -->
   <ParameterList name="solvers">
-    <ParameterList name="AztecOO CG">
+    <ParameterList name="PCG">
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
-        <Parameter name="maximum number of iterations" type="int" value="600"/>
+        <Parameter name="maximum number of iterations" type="int" value="2000"/>
         <Parameter name="error tolerance" type="double" value="1e-14"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="medium"/>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="GMRES">
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
-        <Parameter name="maximum number of iterations" type="int" value="600"/>
+        <Parameter name="maximum number of iterations" type="int" value="2000"/>
         <Parameter name="error tolerance" type="double" value="1e-12"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="low"/>
+          <Parameter name="verbosity level" type="string" value="medium"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -53,10 +56,10 @@
     <ParameterList name="NKA">
       <Parameter name="iterative method" type="string" value="nka"/>
       <ParameterList name="nka parameters">
-        <Parameter name="maximum number of iterations" type="int" value="600"/>
+        <Parameter name="maximum number of iterations" type="int" value="2000"/>
         <Parameter name="error tolerance" type="double" value="1e-12"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="low"/>
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -64,19 +67,27 @@
     <ParameterList name="Belos GMRES">
       <Parameter name="iterative method" type="string" value="belos gmres"/>
       <ParameterList name="belos gmres parameters">
-        <Parameter name="maximum number of iterations" type="int" value="20"/>
+        <Parameter name="maximum number of iterations" type="int" value="2000"/>
         <Parameter name="error tolerance" type="double" value="1e-12"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="low"/>
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="Amesos1">
+    <ParameterList name=" Amesos1">
       <Parameter name="direct method" type="string" value="amesos"/>
       <ParameterList name="amesos parameters">
         <Parameter name="solver name" type="string" value="Klu"/>
         <Parameter name="amesos version" type="int" value="1"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Amesos2: KLU">
+      <Parameter name="direct method" type="string" value="amesos"/>
+      <ParameterList name="amesos parameters">
+        <Parameter name="solver name" type="string" value="basker"/>
+        <Parameter name="amesos version" type="int" value="2"/>
       </ParameterList>
     </ParameterList>
 
@@ -99,35 +110,69 @@
 
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
-    <ParameterList name="HypreAMG">
-      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
-      <ParameterList name="boomer amg parameters">
+
+    <ParameterList name="hypre: boomer amg">
+      <Parameter name="preconditioning method" type="string" value="hypre: boomer amg"/>
+      <ParameterList name="hypre: boomer amg parameters">
         <Parameter name="cycle applications" type="int" value="2"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
         <Parameter name="strong threshold" type="double" value="0.5"/>
         <Parameter name="tolerance" type="double" value="0.0"/>
         <Parameter name="relaxation type" type="int" value="6"/>
-        <Parameter name="verbosity" type="int" value="0"/>
+        <Parameter name="verbosity" type="int" value="3"/>
       </ParameterList>
     </ParameterList>
 
+    <ParameterList name="MueLu">
+      <Parameter name="preconditioning method" type="string" value="muelu"/>
+      
+      <ParameterList name="MueLu parameters">
+        <Parameter name="verbosity" type="string" value="extreme"/>
+        <Parameter name="coarse: max size" type="int" value="2000"/>
+        <Parameter name="coarse: type" type="string" value="SuperLU_dist"/>
+        <!-- <Parameter name="refmaxwell: mode" type="string" value="none"/>-->
+        <!--<Parameter name="smoother: type" type="string" value="RELAXATION"/>-->
+        <ParameterList name="smoother: params">
+          <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
+          <!--<Parameter name="relaxation: sweeps" type="int" value="2"/>-->
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    
     <ParameterList name="ifpack2: ILUT">
-      <Parameter name="preconditioner type" type="string" value="ifpack2: ILUT"/>
+      <Parameter name="preconditioning method" type="string" value="ifpack2: ILUT"/>
       <ParameterList name="ifpack2: ILUT parameters">
-       <Parameter name="fact: ilut level-of-fill" type="double" value="10.0"/>
+       <Parameter name="fact: ilut level-of-fill" type="double" value="1.0"/>
        <Parameter name="fact: drop tolerance" type="double" value="0.0"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="medium"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
 
+    <ParameterList name="ifpack2: RILUK">
+      <Parameter name="preconditioning method" type="string" value="ifpack2: RILUK"/>
+      <ParameterList name="ifpack2: RILUK parameters">
+        <Parameter name="fact: iluk level-of-fill" type="int" value="10"/>
+        <Parameter name="fact: type" type="string" value="KSPILUK"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="medium"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    
     <ParameterList name="ifpack2: SCHWARZ">
-      <Parameter name="preconditioner type" type="string" value="ifpack2: SCHWARZ"/>
+      <Parameter name="preconditioning method" type="string" value="ifpack2: SCHWARZ"/>
       <ParameterList name="ifpack2: SCHWARZ parameters">
         <Parameter name="schwarz: combine mode" type="string" value="add"/>
         <Parameter name="schwarz: overlap level" type="int" value="1"/>
         <Parameter name="schwarz: use reordering" type="bool" value="false"/>-->
         <Parameter name="schwarz: inner preconditioner name" type="string" value="ILUT"/>
         <ParameterList name="schwarz: inner preconditioner parameters">
-          <Parameter name="fact: ilut level-of-fill" type="double" value="10.0"/>
+          <Parameter name="fact: ilut level-of-fill" type="double" value="1.0"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="verbose object">
@@ -136,17 +181,17 @@
     </ParameterList>
     
     <ParameterList name="identity">
-      <Parameter name="preconditioner type" type="string" value="identity"/>
+      <Parameter name="preconditioning method" type="string" value="identity"/>
     </ParameterList>
 
     <ParameterList name="diagonal">
-      <Parameter name="preconditioner type" type="string" value="diagonal"/>
+      <Parameter name="preconditioning method" type="string" value="diagonal"/>
     </ParameterList>
   </ParameterList>
 
   <!--  OPERATORS  -->
   <ParameterList name="PK operator">
-    <Parameter name="preconditioner" type="string" value="HypreAMG"/>
+    <Parameter name="preconditioner method" type="string" value="HypreAMG"/>
 
     <!-- NODAL (conformal) MFD schemes -->
     <ParameterList name="nodal">

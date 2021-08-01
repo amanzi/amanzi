@@ -39,7 +39,8 @@ struct PatchSpace {
   int n_dofs;
   int flag_type;
 
-  PatchSpace() {}
+  PatchSpace() :
+    ghosted(false) {}
   PatchSpace(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_,
              bool ghosted_,
              const std::string& region_,
@@ -53,7 +54,6 @@ struct PatchSpace {
         n_dofs(n_dofs_),
         flag_type(flag_type_) {}
 
-  
   int size() const {
     if (entity_kind == AmanziMesh::BOUNDARY_FACE) {
       Errors::Message msg("Patch cannot handle BOUNDARY_FACE entities, because Mesh does not support sets on these types of entities.  Instead use FACE and filter as needed.");
@@ -76,7 +76,8 @@ struct MultiPatchSpace {
   int flag_type;
   AmanziMesh::Entity_kind flag_entity;
 
-  MultiPatchSpace() {}
+  MultiPatchSpace() : ghosted(false) {}
+  MultiPatchSpace(bool ghosted_) : ghosted(ghosted_) {}
   MultiPatchSpace(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_,
                   bool ghosted_,
                   int flag_type_=-1)
@@ -85,7 +86,7 @@ struct MultiPatchSpace {
         flag_type(flag_type_),
         flag_entity(AmanziMesh::UNKNOWN)
   {}
-  
+
   Teuchos::RCP<MultiPatch> Create() const;
 
   const PatchSpace& operator[](const int& i) const {
@@ -107,7 +108,7 @@ struct MultiPatchSpace {
   using iterator = std::vector<PatchSpace>::iterator;
   iterator begin() { return subspaces_.begin(); }
   iterator end() { return subspaces_.end(); }
-  
+
   void AddPatch(const std::string& region,
                 AmanziMesh::Entity_kind entity_kind,
                 int n_dofs) {
@@ -129,8 +130,8 @@ struct Patch {
     Kokkos::resize(data, space.size(), space.n_dofs);
   }
 
-  KOKKOS_INLINE_FUNCTION ~Patch(){}; 
-  
+  KOKKOS_INLINE_FUNCTION ~Patch(){};
+
   PatchSpace space;
   // note, this layout is required to ensure that function is slowest-varying,
   // and so can be used with MultiFunction::apply(). See note in
@@ -159,7 +160,7 @@ struct MultiPatch {
   using const_iterator = typename std::vector<Patch>::const_iterator;
   const_iterator begin() const { return patches_.begin(); }
   const_iterator end() const { return patches_.end(); }
-  
+
   Patch& operator[](const int& i) {
     return patches_[i];
   }
@@ -167,13 +168,13 @@ struct MultiPatch {
   const Patch& operator[](const int& i) const {
     return patches_[i];
   }
-  
+
   MultiPatchSpace space;
-  
+
  protected:
   std::vector<Patch> patches_;
-  
-};  
+
+};
 
 
 
@@ -225,7 +226,7 @@ patchToCompositeVector(const Patch& p,
         KOKKOS_LAMBDA(const int& i, const int& j) {
           cv_c(ids(i),j) = p.data(i,j);
         });
-  }    
+  }
 }
 
 inline void
@@ -273,7 +274,7 @@ patchToCompositeVector(const Patch& p,
     //       cv_c(ids(i),0) = p.data(i,0);
     //       flag_c(ids(i), 0) = p.space.flag_type;
     //     });
-  }    
+  }
 }
 
 

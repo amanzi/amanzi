@@ -74,11 +74,11 @@ TreeVector::putScalar(double scalar)
 }
 
 void
-TreeVector::random()
+TreeVector::randomize()
 {
   // Set all data of this node and all child nodes to random.
-  if (data_ != Teuchos::null) { data_->random(); }
-  for (const auto& subvec : subvecs_) { subvec->random(); }
+  if (data_ != Teuchos::null) { data_->randomize(); }
+  for (const auto& subvec : subvecs_) { subvec->randomize(); }
 }
 
 double
@@ -139,16 +139,16 @@ TreeVector::norm2() const
 };
 
 void
-TreeVector::Print(std::ostream& os) const
+TreeVector::print(std::ostream& os) const
 {
   // Print data to ostream for this node and all children.
-  if (data_ != Teuchos::null) data_->Print(os);
+  if (data_ != Teuchos::null) data_->print(os);
 
   for (std::vector<Teuchos::RCP<TreeVector>>::const_iterator subvec =
          subvecs_.begin();
        subvec != subvecs_.end();
        ++subvec) {
-    (*subvec)->Print(os);
+    (*subvec)->print(os);
   }
 };
 

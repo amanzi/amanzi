@@ -23,7 +23,7 @@
 #include "MatrixMarket_Tpetra.hpp"
 
 // Amanzi
-#include "LinearOperatorGMRES.hh"
+//#include "LinearOperatorGMRES.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
 #include "Tensor.hh"
@@ -142,7 +142,7 @@ void writeMarshakMatrix(std::string op_list_name, double floor, bool jac) {
     }
   }
   solution->ScatterMasterToGhosted();
-  solution->Print(std::cout);
+  solution->print(std::cout);
 
   // scalar coefficient
   knc->UpdateValues(*solution, *bc);
@@ -248,7 +248,7 @@ void writeMarshakMatrix(std::string op_list_name, double floor, bool jac) {
     Tpetra::MatrixMarket::Reader<Matrix_type> reader;
     auto comm_self = Amanzi::getCommSelf();
 
-    auto test_mat = reader.readSparseFile(filename_test.c_str(), comm_self);
+    auto test_mat = reader.readSparseFile((filename_test+".dat").c_str(), comm_self);
     auto gold_mat = reader.readSparseFile(filename_gold.c_str(), comm_self);
 
     auto test_map = test_mat->getRowMap();

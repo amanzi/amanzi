@@ -1,0 +1,171 @@
+<ParameterList name="Main">
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+
+  <!--  REGIONS  -->
+  <ParameterList name="regions">
+    <ParameterList name="Left side">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{-1.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Right side">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{1.0,1.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Bottom side">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,-1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Top side">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{1.0,1.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- SOLVERS -->
+  <ParameterList name="solvers">
+    <ParameterList name="AztecOO CG">
+      <Parameter name="iterative method" type="string" value="pcg"/>
+      <ParameterList name="pcg parameters">
+        <Parameter name="maximum number of iterations" type="int" value="1000"/>
+        <Parameter name="error tolerance" type="double" value="1e-14"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="GMRES">
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+        <Parameter name="maximum number of iterations" type="int" value="1000"/>
+        <Parameter name="error tolerance" type="double" value="1e-12"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="low"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="NKA">
+      <Parameter name="iterative method" type="string" value="nka"/>
+      <ParameterList name="nka parameters">
+        <Parameter name="maximum number of iterations" type="int" value="1000"/>
+        <Parameter name="error tolerance" type="double" value="1e-12"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="low"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    
+    <ParameterList name="Belos GMRES">
+      <Parameter name="iterative method" type="string" value="belos gmres"/>
+      <ParameterList name="belos gmres parameters">
+        <Parameter name="maximum number of iterations" type="int" value="1000"/>
+        <Parameter name="error tolerance" type="double" value="1e-12"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="low"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Amesos1">
+      <Parameter name="direct method" type="string" value="amesos"/>
+      <ParameterList name="amesos parameters">
+        <Parameter name="solver name" type="string" value="Klu"/>
+        <Parameter name="amesos version" type="int" value="1"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Amesos2: basker">
+      <Parameter name="direct method" type="string" value="amesos"/>
+      <ParameterList name="amesos parameters">
+        <Parameter name="solver name" type="string" value="basker"/>
+        <Parameter name="amesos version" type="int" value="2"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Amesos2: superludist">
+      <Parameter name="direct method" type="string" value="amesos"/>
+      <ParameterList name="amesos parameters">
+        <Parameter name="solver name" type="string" value="superludist"/>
+        <Parameter name="amesos version" type="int" value="2"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- PRECONDITIONERS -->
+  <ParameterList name="preconditioners">
+    <ParameterList name="HypreAMG">
+      <Parameter name="preconditioning method" type="string" value="boomer amg"/>
+      <ParameterList name="boomer amg parameters">
+        <Parameter name="cycle applications" type="int" value="2"/>
+        <Parameter name="smoother sweeps" type="int" value="3"/>
+        <Parameter name="strong threshold" type="double" value="0.5"/>
+        <Parameter name="tolerance" type="double" value="0.0"/>
+        <Parameter name="relaxation type" type="int" value="6"/>
+        <Parameter name="verbosity" type="int" value="0"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="ifpack2: ILUT">
+      <Parameter name="preconditioning method" type="string" value="ifpack2: ILUT"/>
+      <ParameterList name="ifpack2: ILUT parameters">
+       <Parameter name="fact: ilut level-of-fill" type="double" value="10.0"/>
+       <Parameter name="fact: drop tolerance" type="double" value="0.0"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="ifpack2: RILUK">
+      <Parameter name="preconditioning method" type="string" value="ifpack2: RILUK"/>
+      <ParameterList name="ifpack2: RILUK parameters">
+       <Parameter name="fact: ilut level-of-fill" type="double" value="10.0"/>
+       <Parameter name="fact: drop tolerance" type="double" value="0.0"/>
+       <Parameter name="fact: type" type="string" value="KSPILUK"/>
+      </ParameterList>
+    </ParameterList>
+    
+    <ParameterList name="ifpack2: SCHWARZ">
+      <Parameter name="preconditioning method" type="string" value="ifpack2: SCHWARZ"/>
+      <ParameterList name="ifpack2: SCHWARZ parameters">
+        <Parameter name="schwarz: combine mode" type="string" value="add"/>
+        <Parameter name="schwarz: overlap level" type="int" value="1"/>
+        <Parameter name="schwarz: use reordering" type="bool" value="false"/>-->
+        <Parameter name="schwarz: inner preconditioner name" type="string" value="ILUT"/>
+        <ParameterList name="schwarz: inner preconditioner parameters">
+          <Parameter name="fact: ilut level-of-fill" type="double" value="10.0"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
+    </ParameterList>
+    
+    <ParameterList name="identity">
+      <Parameter name="preconditioning method" type="string" value="identity"/>
+    </ParameterList>
+
+    <ParameterList name="diagonal">
+      <Parameter name="preconditioning method" type="string" value="diagonal"/>
+    </ParameterList>
+  </ParameterList>
+
+  <!--  OPERATORS  -->
+  <ParameterList name="PK operator">
+    <Parameter name="preconditioner method" type="string" value="HypreAMG"/>
+
+    <!-- FV schemes -->
+    <ParameterList name="fv">
+      <Parameter name="discretization primary" type="string" value="fv: default"/>
+      <Parameter name="discretization secondary" type="string" value="fv: default"/>
+      <Parameter name="schema" type="Array(string)" value="{cell}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
+      <Parameter name="diagonal shift" type="double" value="1.e-8"/>
+    </ParameterList>
+    
+  </ParameterList>
+</ParameterList>
+

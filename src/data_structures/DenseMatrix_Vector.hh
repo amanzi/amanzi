@@ -81,11 +81,9 @@ public:
   // The operator[] return the value on device 
   KOKKOS_INLINE_FUNCTION
   type_t<DeviceOnlyMemorySpace> operator[](const int& i) const {
-    assert(inited);
     return std::move(type_t<DeviceOnlyMemorySpace>(data.at(i), data.size(i,0), data.size(i,1)));
   }
 
-  KOKKOS_INLINE_FUNCTION
   type_t<Kokkos::HostSpace> at_host(const int& i) const {
     // FIXME -- not const correct, but to do so needs a const-correct WhetStone::Tensor,
     // e.g. a WhetStone::Tensor that takes a Kokkos::View<const double*> --etc

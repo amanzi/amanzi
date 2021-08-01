@@ -88,9 +88,8 @@ class Tensor {
   ****************************************************************** */
   int Init(int d, int rank)
   {
-    int mem;
     if (d <= 0 || rank <= 0) {
-      d_ = rank_ = size_ = mem = 0;
+      d_ = rank_ = size_ = 0;
       return 0;
     } else if (d > 3) {
       Errors::Message msg("Tensor dimension exceeds limit (3).");
@@ -102,7 +101,7 @@ class Tensor {
     d_ = d;
     rank_ = rank;
     size_ = WHETSTONE_TENSOR_SIZE[d_ - 1][rank_ - 1];
-    mem = size_ * size_;
+    int mem = size_ * size_;
     Kokkos::resize(data_, mem); 
     Kokkos::deep_copy(data_, 0.);
     return mem;

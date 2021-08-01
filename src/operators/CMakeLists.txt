@@ -217,7 +217,6 @@ add_amanzi_library(operators
   HEADERS ${operators_inc_files}
   LINK_LIBS ${operators_link_libs})
 
-
 if (BUILD_TESTS)
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
@@ -233,7 +232,12 @@ if (BUILD_TESTS)
 
     message(DEBUG "KokkosKernels_LIBRARIES = ${KokkosKernels_LIBRARIES}")
     set(operators_test_link_libs geometry atk mesh mesh_factory  data_structures operators whetstone output atk ${KokkosKernels_LIBRARIES})
-#mesh_logical
+
+    if(ENABLE_KOKKOS_CUDA)
+      set(operators_test_link_libs ${operators_test_link_libs} "-lnvToolsExt")
+    endif()
+    
+    #mesh_logical
     
     # Tests: diffusion
     # add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
@@ -270,6 +274,12 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion_discretizations.cc
                     LINK_LIBS ${UnitTest_LIBRARIES} ${operators_test_link_libs})
+
+    add_amanzi_test(operators_solvers operators_solvers
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_solvers.cc
+                    LINK_LIBS ${UnitTest_LIBRARIES} ${operators_test_link_libs})
+
 
     add_amanzi_test(operators_diffusion_disc_3pe operators_diffusion_discretization NPROCS 3 KIND unit)
                   
@@ -440,5 +450,10 @@ if (BUILD_TESTS)
     #                                     test/operator_advection_dg_transient
     #                 LINK_LIBS ${operators_test_link_libs})
 
-endif()
+add_amanzi_executable(verify_operators
+                      SOURCE test/verify_operators.cc
+                      LINK_LIBS ${operators_test_link_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                      OUTPUT_NAME verify_operators
+                      OUTPUT_DIRECTORY ${OPERATORS_BINARY_DIR}/test)
 
+endif()

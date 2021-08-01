@@ -112,7 +112,7 @@ Evaluator_OperatorApply::Evaluator_OperatorApply(Teuchos::ParameterList& plist)
   global_operator_key_ = Keys::readKey(plist_, domain,
           x0_key_suffix + " global operator",
           x0_key_suffix + "_global_operator");
-  
+
   // push dependencies
   dependencies_.emplace_back(std::make_pair(x0_key_, my_keys_[0].second));
   for (const auto& x_key : x_keys_)
@@ -326,7 +326,7 @@ Evaluator_OperatorApply::UpdateDerivative(State& S, const Key& requestor,
 
   Key wrt = Keys::getKeyTag(wrt_key, wrt_tag);
   auto& deriv_request_set = deriv_requests_[wrt];
-  
+
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
     *vo_.os() << "Evaluator_OperatorApply Derivative d" << my_keys_[0].first << "_d" << wrt_key
@@ -458,7 +458,7 @@ Evaluator_OperatorApply::Update_(State& S)
       // fix const correctness sometime?  Likely this would require a redesign...
       global_operator.OpPushBack(S.GetPtrW<Operators::Op>(op_key, my_tag, op_key));
     }
-  }    
+  }
 
   // This is still a bit ugly -- each op has its own RHS vector, because BCs
   // were not applied globally.  So we have to call the forward apply, then
@@ -470,7 +470,7 @@ Evaluator_OperatorApply::Update_(State& S)
   AMANZI_ASSERT(global_operator.size() == op0_keys_.size());
   global_operator.apply(x, result);
   db_->WriteVector(std::string("A * ")+x0_key_, result);
-  
+
   for (const auto& op_rhs_key : op0_rhs_keys_) {
     // Ax - b
     result.update(-1.0, S.Get<CompositeVector>(op_rhs_key, my_tag), 1.0);
@@ -486,7 +486,7 @@ Evaluator_OperatorApply::Update_(State& S)
     for (const auto& op_key : op_list) {
       // FIX ME BEFORE USING -- store a Global operator for each in the same
       // way we did for x0 --etc
-      
+
       // create the global operator
       Operators::Operator_Factory global_op_fac;
       global_op_fac.set_mesh(xj.Mesh());
@@ -578,9 +578,9 @@ Evaluator_OperatorApply::UpdateDerivative_(State& S, const Key& wrt_key,
     }
 
     // symbolic assemble the first time
-    //    global_op->SymbolicAssembleMatrix();
-    
-    global_op->InitializePreconditioner(Teuchos::parameterList(plist_.sublist("preconditioner")));
+    auto plist = Teuchos::parameterList(plist_.sublist("inverse"));
+    global_op->set_inverse_parameters(*plist);
+    global_op->initializeInverse();
   }
 
   // push values
@@ -597,7 +597,7 @@ Evaluator_OperatorApply::UpdateDerivative_(State& S, const Key& wrt_key,
     int j = 0;
     for (const auto& rhs_key : rhs_keys_) {
       if (S.GetEvaluator(rhs_key, my_keys_[0].second).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
-          
+
         // FIX ME AND MAKE THIS LESS HACKY AND CONST CORRECT --etc
         CompositeVector drhs = S.GetDerivativeW<CompositeVector>(
             rhs_key, my_keys_[0].second, wrt_key, wrt_tag, rhs_key);
@@ -610,7 +610,7 @@ Evaluator_OperatorApply::UpdateDerivative_(State& S, const Key& wrt_key,
             op_cell->diag->assign(*drhs.GetComponent(comp, false));
             op_cell->diag->scale(rhs_scalars_[j]);
             i++;
-            
+
           } else {
             AMANZI_ASSERT(0);
           }
@@ -618,15 +618,14 @@ Evaluator_OperatorApply::UpdateDerivative_(State& S, const Key& wrt_key,
       }
       j++;
     }
-    
+
   } else {
     // off diagonal
     throw("OperatorApply not implemented yet for offdiagonals!");
   }
 
   // assemble
-  //global_op->AssembleMatrix();
-  global_op->UpdatePreconditioner();
+  global_op->computeInverse();
 }
 
 

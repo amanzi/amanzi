@@ -41,7 +41,7 @@ computeMeshFunction(const MultiFunction& f, double time, Patch& p)
       Kokkos::View<int*, DefaultHost, Kokkos::MemoryTraits<Kokkos::Unmanaged>> ids_host(ids_list.data(), ids_list.size());
       Kokkos::deep_copy(ids, ids_host);
     }
-  
+
     if (p.space.entity_kind == AmanziMesh::NODE) {
       Errors::Message msg("computeMeshFunction on NODE not yet implemented (Mesh::node_get_coordinates() is not accessible on device)");
       throw(msg);
@@ -101,7 +101,7 @@ computeMeshFunction(const std::vector<Teuchos::RCP<const MultiFunction>>& f,
   AMANZI_ASSERT(f.size() == mp.size());
   for (size_t i=0; i!=f.size(); ++i) {
     computeMeshFunction(*f[i], time, mp[i]);
-  }  
+  }
 }
 
 //
@@ -173,9 +173,10 @@ processSpecWithFunction(Teuchos::ParameterList& list,
 std::pair<MultiPatchSpace,
           std::vector<Teuchos::RCP<const MultiFunction>>>
 processListWithFunction(Teuchos::ParameterList& list,
-                        std::string function_name)
+                        std::string function_name,
+                        bool ghosted)
 {
-  MultiPatchSpace space;
+  MultiPatchSpace space(ghosted);
   std::vector<Teuchos::RCP<const MultiFunction>> functions;
 
   // All are expected to be sublists of identical structure.
@@ -183,7 +184,6 @@ processListWithFunction(Teuchos::ParameterList& list,
     std::string name = sublist.first;
     if (list.isSublist(name)) {
       Teuchos::ParameterList spec_plist = list.sublist(name);
-
 
       Spec spec;
       try {

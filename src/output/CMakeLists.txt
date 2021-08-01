@@ -57,6 +57,7 @@ set(output_inc_files OutputUtils.hh
                      InputOutputHDF5.hh
                      OutputFactory.hh
                      InputFactory.hh
+                     HDF5_MPI.hh
                      )
 set(output_source_files OutputUtils.cc
                         FileHDF5.cc
@@ -65,6 +66,7 @@ set(output_source_files OutputUtils.cc
                         InputOutputHDF5.cc
                         OutputFactory.cc
                         InputFactory.cc
+                        HDF5_MPI.cc
                         )
 
 

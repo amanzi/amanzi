@@ -889,6 +889,10 @@ public:
   #endif
   }
 
+  MeshCache& getMeshCache() const{
+    return mesh_cache_; 
+  }
+
  public:
   void PrintMeshStatistics() const;
 
@@ -906,7 +910,7 @@ public:
   bool logical_;
   Teuchos::RCP<const Mesh> parent_;
 
-  MeshCache mesh_cache_; 
+  mutable MeshCache mesh_cache_; 
 };
 
 // Get a coordinate

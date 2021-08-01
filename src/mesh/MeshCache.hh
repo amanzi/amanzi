@@ -169,12 +169,9 @@ class MeshCache {
       }
       if (stop == -1) { stop = i; }
     }
-    // Generte the subview
+    // Generate the subview
     cellids =
       Kokkos::subview(face_cell_ids_dirs_, Kokkos::make_pair(start, stop));
-
-    // Revert eventual cells
-    for (int i = 0; i < cellids.extent(0); ++i) { assert(cellids(i) >= 0); }
   }
 
 

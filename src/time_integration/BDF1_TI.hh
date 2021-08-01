@@ -35,6 +35,8 @@ solver types.
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
+#include "AmanziDebug.hh"
+
 #include "errors.hh"
 #include "VerboseObject.hh"
 #include "Solver.hh"
@@ -240,7 +242,9 @@ BDF1_TI<Vector, VectorSpace>::TimeStep(double dt,
       fn_->ChangedSolution();
 
       if (fn_->IsAdmissible(u)) {
+        std::cout << "BDF1_TI::TimeStep u = " << Debug::get0(*u) << std::endl;
         bool changed = fn_->ModifyPredictor(dt, u_prev, u);
+        std::cout << "BDF1_TI::TimeStep u = " << Debug::get0(*u) << std::endl;
         if (changed) fn_->ChangedSolution();
       } else {
         u->assign(*u_prev);
@@ -272,8 +276,9 @@ BDF1_TI<Vector, VectorSpace>::TimeStep(double dt,
   // Solve the nonlinear BCE system.
   int ierr, code, itr;
   try {
+    std::cout << "BDF1_TI::TimeStep u solve = " << Debug::get0(*u) << std::endl;
     ierr = solver_->Solve(u);
-    itr = solver_->num_iterations();
+    itr = solver_->num_itrs();
     code = solver_->returned_code();
   } catch (const Errors::CutTimeStep& e) {
     ierr = 1;
@@ -284,8 +289,8 @@ BDF1_TI<Vector, VectorSpace>::TimeStep(double dt,
   if (ierr == 0) {
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << "success: " << itr << " nonlinear itrs"
-                 << " residual=" << solver_->residual()
-                 << " error=" << solver_->error() << std::endl;
+                 << " residual=" << solver_->residual() << std::endl;
+                 //<< " error=" << solver_->error() << std::endl;
     }
   } else {
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
@@ -315,7 +320,7 @@ BDF1_TI<Vector, VectorSpace>::TimeStep(double dt,
   solver_->set_pc_lag(state_->pc_lag);
 
   // update performance statistics
-  state_->solve_itrs += solver_->num_iterations();
+  state_->solve_itrs += solver_->num_itrs();
   state_->pc_updates += solver_->pc_updates();
   state_->pc_calls += solver_->pc_calls();
 

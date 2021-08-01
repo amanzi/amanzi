@@ -68,7 +68,7 @@ SUITE(SolutionHistoryTests)
 
     // check that the most recent vector in fact is the
     // one that contains  9.0
-    Teuchos::RCP<Vector_type> y = Teuchos::rcp(new Vector_type(*x));
+    Teuchos::RCP<Vector_type> y = Teuchos::rcp(new Vector_type(x->getMap()));
     SH->MostRecentSolution(*y);
 
     double norminf =
