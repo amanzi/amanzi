@@ -23,7 +23,7 @@
 using namespace Amanzi;
 
 inline
-Teuchos::RCP<AmanziMesh::Mesh> createFrameworkStructuredUnitSquare(
+Teuchos::RCP<AmanziMesh::Mesh> createFrameworkStructuredUnitQuad(
   const AmanziMesh::Preference& pref, int nx, int ny,
   Comm_ptr_type comm=Teuchos::null,
   const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm=Teuchos::null,
@@ -37,7 +37,7 @@ Teuchos::RCP<AmanziMesh::Mesh> createFrameworkStructuredUnitSquare(
 
 
 inline
-Teuchos::RCP<AmanziMesh::Mesh> createFrameworkStructuredUnitCube(
+Teuchos::RCP<AmanziMesh::Mesh> createFrameworkStructuredUnitHex(
   const AmanziMesh::Preference& pref, int nx, int ny, int nz,
   Comm_ptr_type comm=Teuchos::null,
   const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm=Teuchos::null,

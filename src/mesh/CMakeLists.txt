@@ -125,7 +125,14 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/mesh_sets.cc
                     LINK_LIBS ${mesh_test_link_libs})
     add_amanzi_test(mesh_sets_np2 mesh_sets NPROCS 2 KIND unit)
-                  
+
+    # Test: extracted mesh
+    add_amanzi_test(mesh_extracted_surface mesh_extracted_surface
+                    KIND unit
+                    SOURCE test/Main.cc test/mesh_extracted_surface.cc
+                    LINK_LIBS ${mesh_test_link_libs})
+    add_amanzi_test(mesh_extracted_np2 mesh_extracted NPROCS 2 KIND unit)
+    
     # # Test: mesh deformation
     # add_amanzi_test(mesh_deform mesh_deform
     #                 KIND unit

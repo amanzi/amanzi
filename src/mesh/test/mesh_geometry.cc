@@ -33,11 +33,11 @@ TEST(MESH_GEOMETRY_PLANAR)
               << "Testing 2D geometry with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
 
-    auto mesh = createFrameworkStructuredUnitSquare(Preference{frm}, 2,2);
+    auto mesh = createFrameworkStructuredUnitQuad(Preference{frm}, 2,2);
     testMeshAudit<MeshAudit, Mesh>(mesh);
-    testGeometryBox(mesh,2,2);
+    testGeometryQuad(mesh,2,2);
     if (frm == Framework::MSTK)
-      testExteriorMapsUnitCube(mesh, 2, 2);
+      testExteriorMapsUnitBox(mesh, 2, 2);
   }
 }
 
@@ -60,11 +60,11 @@ TEST(MESH_GEOMETRY_1CUBE_GENERATED)
     std::cout << std::endl
               << "Testing 3D geometry with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createFrameworkStructuredUnitCube(Preference{frm}, 1,1,1);
+    auto mesh = createFrameworkStructuredUnitHex(Preference{frm}, 1,1,1);
     testMeshAudit<MeshAudit, Mesh>(mesh);
     testGeometryCube<Mesh>(mesh,1,1,1);
     if (frm == Framework::MSTK)
-      testExteriorMapsUnitCube(mesh, 1,1,1);
+      testExteriorMapsUnitBox(mesh, 1,1,1);
   }
 }
 
@@ -92,7 +92,7 @@ TEST(MESH_GEOMETRY_1CUBE_EXO)
     testMeshAudit<MeshAudit, Mesh>(mesh);
     testGeometryCube<Mesh>(mesh,1,1,1);
     if (frm == Framework::MSTK)
-      testExteriorMapsUnitCube(mesh, 1,1,1);
+      testExteriorMapsUnitBox(mesh, 1,1,1);
   }
 }
 
@@ -112,11 +112,11 @@ TEST(MESH_GEOMETRY_3CUBE)
     std::cout << std::endl
               << "Testing 3D Box 3x3x3 with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createFrameworkStructuredUnitCube(Preference{frm}, 3,3,3);
+    auto mesh = createFrameworkStructuredUnitHex(Preference{frm}, 3,3,3);
     testMeshAudit<MeshAudit, Mesh>(mesh);
     testGeometryCube<Mesh>(mesh,3,3,3);
     if (frm == Framework::MSTK) {
-      testExteriorMapsUnitCube(mesh,3,3,3);
+      testExteriorMapsUnitBox(mesh,3,3,3);
     }
   }
 }
@@ -144,7 +144,7 @@ TEST(MESH_GEOMETRY_3CUBE_EXO)
     testMeshAudit<MeshAudit, Mesh>(mesh);
     testGeometryCube<Mesh>(mesh,3,3,3);
     if (frm == Framework::MSTK) {
-      testExteriorMapsUnitCube(mesh,3,3,3);
+      testExteriorMapsUnitBox(mesh,3,3,3);
     }
   }
 }
@@ -176,7 +176,7 @@ TEST(MESH_GEOMETRY_3CUBE_EXO)
 //     testMeshAudit<MeshAudit, Mesh>(mesh);
 //     testGeometryCube<Mesh>(mesh,3,3,3);
 //     if (frm == Framework::MSTK) {
-//       testExteriorMapsUnitCube(mesh,3,3,3);
+//       testExteriorMapsUnitBox(mesh,3,3,3);
 //     }
 //   }
 // }
@@ -198,12 +198,12 @@ TEST(MESH_GEOMETRY_2x3CUBE)
     std::cout << std::endl
               << "Testing 3D Box 2x2x3 with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createFrameworkStructuredUnitCube(Preference{frm}, 2,2,3);
+    auto mesh = createFrameworkStructuredUnitHex(Preference{frm}, 2,2,3);
     testMeshAudit<MeshAudit, Mesh>(mesh);
     testGeometryCube<Mesh>(mesh,2,2,3);
 
     if (frm == Framework::MSTK)
-      testExteriorMapsUnitCube(mesh,2,2,3);
+      testExteriorMapsUnitBox(mesh,2,2,3);
   }
 }
 

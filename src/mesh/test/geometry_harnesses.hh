@@ -192,7 +192,7 @@ testMeshGeometry(const Teuchos::RCP<Mesh_type>& mesh,
 //
 template<class Mesh_type>
 void
-testGeometryBox(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny)
+testGeometryQuad(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny)
 {
   // test the basic dimensionality
   CHECK_EQUAL(2, mesh->space_dimension());
@@ -331,7 +331,7 @@ testGeometryCube(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int nz)
 
 
 //
-// Test the exterior face and node maps for a unit (2D or 3D) cube.
+// Test the exterior face and node maps for a unit (2D quad or 3D hex) box.
 //
 // consistency checks on maps for cells/faces/nodes are done in MeshAudit.
 // Here are are simply checking that boundary faces and nodes are actually on
@@ -341,7 +341,7 @@ testGeometryCube(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int nz)
 //
 template<class Mesh_type>
 void
-testExteriorMapsUnitCube(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int nz=-1)
+testExteriorMapsUnitBox(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int nz=-1)
 {
   // check faces are on the boundary
   int nbfaces = mesh->exterior_face_map(false).NumGlobalElements();

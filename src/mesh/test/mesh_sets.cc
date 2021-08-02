@@ -41,7 +41,7 @@ TEST(MESH_SETS_3CUBE)
     std::cout << std::endl
               << "Testing 3D Box 3x3x3 with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createFrameworkStructuredUnitCube(Preference{frm}, 3,3,3, comm, gm);
+    auto mesh = createFrameworkStructuredUnitHex(Preference{frm}, 3,3,3, comm, gm);
     testHexMeshSets3x3x3(mesh, false, frm);
   }
 }
@@ -72,7 +72,7 @@ TEST(MESH_SETS_3CUBE_EXO)
     std::cout << std::endl
               << "Testing 3D Box 3x3x3 Exo with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createFrameworkUnstructured(Preference{frm}, "test/hex_3x3x3_sets.exo",comm,gm);
+    auto mesh = createFrameworkUnstructured(Preference{frm}, "test/hex_3x3x3_sets.exo", comm, gm);
     testHexMeshSets3x3x3(mesh, true, frm);
   }
 }
@@ -110,4 +110,29 @@ TEST(MESH_SETS_3CUBE_EXO)
 //   }
 // }
 
+
+TEST(MESH_SETS_3QUAD)
+{
+  // create the comm and gm
+  auto comm = Amanzi::getDefaultComm();
+  std::string infilename = "test/quad_3x3.xml";
+  Teuchos::ParameterXMLFileReader xmlreader(infilename);
+  Teuchos::ParameterList reg_spec(xmlreader.getParameters());
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, reg_spec, *comm));
+
+  // a 2D, generated, structured hex on the unit cube, NX=NY=3
+  // works in MSTK
+  std::vector<Framework> frameworks;
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
+
+  for (const auto& frm : frameworks) {
+    std::cout << std::endl
+              << "Testing 2D Box 3x3 with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "------------------------------------------------" << std::endl;
+    auto mesh = createFrameworkStructuredUnitQuad(Preference{frm}, 3,3, comm, gm);
+    testQuadMeshSets3x3(mesh, false, frm, false);
+  }
+}
 
