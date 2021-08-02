@@ -406,3 +406,73 @@ testExteriorMapsUnitBox(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int
 }
 
 
+//
+// Test a columnar system
+//
+template<class Mesh_type>
+void
+testColumnsUniformDz(const Teuchos::RCP<Mesh_type>& mesh, double dz)
+{
+  // tests the columnar structure of cells
+  int n_columns = mesh->num_columns(true);
+
+  // also tests that cols with ghost entities are listed first
+  int ncells_owned = mesh->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  bool owned = true;
+
+  for (int col=0; col!=n_columns; ++col) {
+    const auto& cells = mesh->cells_of_column(col);
+
+    // check all owned cells first, then all ghosted
+    if (owned) {
+      if (cells[0] < ncells_owned) {
+        for (const auto& c : cells) {
+          CHECK(c < ncells_owned);
+        }
+      } else {
+        owned = false;
+      }
+    }
+    if (!owned) {
+      for (const auto& c : cells) {
+        CHECK(c >= ncells_owned);
+      }
+    }
+
+    // check geometry
+    const auto& faces = mesh->faces_of_column(col);
+    CHECK(faces.size() == (cells.size() + 1));
+    for (int i=0; i!=cells.size(); ++i) {
+      Entity_ID c = cells[i];
+      AmanziGeometry::Point cc = mesh->cell_centroid(c);
+      AmanziGeometry::Point fd = mesh->face_centroid(faces[i+1]);
+      AmanziGeometry::Point fu = mesh->face_centroid(faces[i]);
+      CHECK_CLOSE(cc[0], fu[0], 1e-10);
+      CHECK_CLOSE(cc[1], fu[1], 1e-10);
+      CHECK_CLOSE(cc[0], fd[0], 1e-10);
+      CHECK_CLOSE(cc[1], fd[1], 1e-10);
+      CHECK_CLOSE(cc[2], fd[2] + dz/2.0, 1e-10);
+      CHECK_CLOSE(cc[2], fu[2] - dz/2.0, 1e-10);
+
+      if (i != 0) CHECK_EQUAL(cells[i-1], mesh->cell_get_cell_above(c));
+      if (i != cells.size()-1) CHECK_EQUAL(cells[i+1], mesh->cell_get_cell_below(c));
+    }
+  }
+
+  // test the columnar structure of nodes
+  int nnodes = mesh->num_entities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
+  for (int n=0; n!=nnodes; ++n) {
+    AmanziGeometry::Point nc;
+    mesh->node_get_coordinates(n, &nc);
+
+    int nu = mesh->node_get_node_above(n);
+    if (nu >= 0) {
+      AmanziGeometry::Point nuc;
+      mesh->node_get_coordinates(nu, &nuc);
+      CHECK_CLOSE(nc[0], nuc[0], 1.e-10);
+      CHECK_CLOSE(nc[1], nuc[1], 1.e-10);
+      CHECK_CLOSE(nc[2], nuc[2]-dz, 1.e-10);
+    }
+  }
+
+}

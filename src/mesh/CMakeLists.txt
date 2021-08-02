@@ -133,18 +133,18 @@ if (BUILD_TESTS)
                     LINK_LIBS ${mesh_test_link_libs})
     add_amanzi_test(mesh_extracted_np2 mesh_extracted NPROCS 2 KIND unit)
     
-    # # Test: mesh deformation
-    # add_amanzi_test(mesh_deform mesh_deform
-    #                 KIND unit
-    #     	    SOURCE test/Main.cc test/mesh_deform.cc
-    #     	    LINK_LIBS ${mesh_test_link_libs})
+    # Test: mesh deformation
+    add_amanzi_test(mesh_deform mesh_deform
+                    KIND unit
+        	    SOURCE test/Main.cc test/mesh_deform.cc
+        	    LINK_LIBS ${mesh_test_link_libs})
 
-    # # Test: mesh columns
-    # add_amanzi_test(mesh_columns mesh_columns
-    #                 KIND unit
-    #     	    SOURCE test/Main.cc test/mesh_columns.cc
-    #     	    LINK_LIBS ${mesh_test_link_libs})
-    # add_amanzi_test(mesh_columns_np2 mesh_columns NPROCS 2 KIND unit)
+    # Test: mesh columns
+    add_amanzi_test(mesh_columns mesh_columns
+                    KIND unit
+        	    SOURCE test/Main.cc test/mesh_columns.cc
+        	    LINK_LIBS ${mesh_test_link_libs})
+    add_amanzi_test(mesh_columns_np2 mesh_columns NPROCS 2 KIND unit)
 
     # # Test: mesh KD search
     # add_amanzi_test(mesh_nanoflann mesh_nanoflann

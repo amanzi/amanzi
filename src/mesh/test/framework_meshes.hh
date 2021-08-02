@@ -27,26 +27,29 @@ Teuchos::RCP<AmanziMesh::Mesh> createFrameworkStructuredUnitQuad(
   const AmanziMesh::Preference& pref, int nx, int ny,
   Comm_ptr_type comm=Teuchos::null,
   const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm=Teuchos::null,
-  const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null)
+  const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null,
+  double dx=1.0, double dy=1.0)
 {
   if (comm == Teuchos::null) comm = getDefaultComm();
   AmanziMesh::MeshFactory fac(comm, gm, plist);
   fac.set_preference(pref);
-  return fac.create(0.0,0.0,1.0,1.0,nx,ny);
+  return fac.create(0.0,0.0, dx,dy, nx,ny);
 }
 
 
 inline
 Teuchos::RCP<AmanziMesh::Mesh> createFrameworkStructuredUnitHex(
-  const AmanziMesh::Preference& pref, int nx, int ny, int nz,
+  const AmanziMesh::Preference& pref,
+  int nx, int ny, int nz,
   Comm_ptr_type comm=Teuchos::null,
   const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm=Teuchos::null,
-  const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null)
+  const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null,
+  double dx=1.0, double dy=1.0, double dz=1.0)
 {
   if (comm == Teuchos::null) comm = getDefaultComm();
   AmanziMesh::MeshFactory fac(comm, gm, plist);
   fac.set_preference(pref);
-  return fac.create(0.0,0.0,0.0,1.0,1.0,1.0,nx,ny,nz);
+  return fac.create(0.0,0.0,0.0,dx,dy,dz,nx,ny,nz);
 }
 
 
