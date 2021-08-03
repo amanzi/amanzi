@@ -246,6 +246,11 @@ class MeshEmbeddedLogical : public Mesh {
   //
   // Mesh Sets for ICs, BCs, Material Properties and whatever else
   //--------------------------------------------------------------
+  virtual
+  bool valid_set_type(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const override {
+    return log_mesh_->valid_set_type(rtype, kind) ||
+      bg_mesh_->valid_set_type(rtype, kind);
+  }
 
   // Get list of entities of type 'category' in set
   virtual

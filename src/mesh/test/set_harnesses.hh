@@ -34,7 +34,7 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
                      bool labeled, Framework f)
 {
   auto gm = mesh->geometric_model();
-  CHECK_EQUAL(32, gm->size());
+  CHECK(32 == gm->size() || 33 == gm->size()); // some tests add an extra set
   CHECK_EQUAL(3, mesh->space_dimension());
   CHECK_EQUAL(3, mesh->manifold_dimension());
   for (const auto& r : *gm) {
@@ -408,6 +408,9 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
         CHECK_CLOSE(1.0, nc[2], 1.e-10);
       }
 
+    } else if (r_name == "Unit Hex") {
+      // pass -- this is used for extraction method
+      continue;
     } else {
       std::cout << "Bad set name: \"" << r_name << "\"" << std::endl;
       CHECK(false);

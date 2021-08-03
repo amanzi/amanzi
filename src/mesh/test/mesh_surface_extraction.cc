@@ -21,7 +21,7 @@
 #include "geometry_harnesses.hh"
 #include "set_harnesses.hh"
 
-TEST(MESH_GENERATED_EXTRACTED)
+TEST(MESH_SURFACE_EXTRACTION_GENERATED)
 {
   // create the comm and gm
   auto comm = Amanzi::getDefaultComm();
@@ -72,7 +72,7 @@ TEST(MESH_GENERATED_EXTRACTED)
 }
 
 
-TEST(MESH_EXO_EXTRACTED)
+TEST(MESH_SURFACE_EXTRACTION_EXO)
 {
   // create the comm and gm
   auto comm = Amanzi::getDefaultComm();

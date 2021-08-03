@@ -12,19 +12,16 @@ namespace Amanzi {
 namespace AmanziMesh {
 
 // -----------------------------------------------------------------------------
-// Constructor: instantiates base MSTK mesh, generates new nodal coordiantes,
+// Constructor: instantiates base mesh, generates new nodal coordinates,
 //              fixes faces, and makes maps.
 // -----------------------------------------------------------------------------
-MeshColumn::MeshColumn(const Teuchos::RCP<const Mesh>& parent_mesh,
-                       const int column_id,
+MeshColumn::MeshColumn(const Teuchos::RCP<Mesh>& parent_mesh,
                        const Teuchos::RCP<const Teuchos::ParameterList>& plist) :
-    Mesh(getCommSelf(), parent_mesh->geometric_model(), plist, true, false),
-    parent_mesh_(parent_mesh),
-    column_id_(column_id),
-    extracted_(Teuchos::rcp(new Mesh_MSTK(parent_mesh, parent_mesh->cells_of_column(column_id), CELL, false,
-            getCommSelf(), parent_mesh->geometric_model(), plist, true, false)))
+  Mesh(parent_mesh->get_comm(), parent_mesh->geometric_model(), plist, true, false),
+  parent_mesh_(parent_mesh)
 {
-  AMANZI_ASSERT(column_id_ >= 0 && column_id_ < parent_mesh->num_columns());
+  AMANZI_ASSERT(parent_mesh_->space_dimension() == 3);
+  AMANZI_ASSERT(parent_mesh_->manifold_dimension() == 3);
 
   // set supporting subclasses
   set_space_dimension(3);
@@ -57,7 +54,7 @@ MeshColumn::deform(const Entity_ID_List& nodeids,
                    const AmanziGeometry::Point_List& new_positions,
                    const bool keep_valid,
                    AmanziGeometry::Point_List *final_positions) {
-  int ierr = extracted_->deform(nodeids, new_positions, keep_valid, final_positions);
+  int ierr = parent_mesh_->deform(nodeids, new_positions, keep_valid, final_positions);
 
   // recompute all geometric quantities
   compute_cell_geometric_quantities_();
@@ -75,7 +72,7 @@ MeshColumn::deform(const std::vector<double>& target_cell_volumes_in,
        const std::vector<double>& min_cell_volumes_in,
        const Entity_ID_List& fixed_nodes,
        const bool move_vertical) {
-  int ierr = extracted_->deform(target_cell_volumes_in, min_cell_volumes_in,
+  int ierr = parent_mesh_->deform(target_cell_volumes_in, min_cell_volumes_in,
           fixed_nodes, move_vertical);
   // recompute all geometric quantities
   compute_cell_geometric_quantities_();
@@ -103,18 +100,18 @@ void MeshColumn::compute_special_node_coordinates_() {
   // error will be zero.
 
   // First build info about column topology
-  extracted_->build_columns();
+  parent_mesh_->build_columns();
 
   // Get the ordered face indexes of the column
-  const Entity_ID_List& colfaces = extracted_->faces_of_column(0);
+  const Entity_ID_List& colfaces = parent_mesh_->faces_of_column(0);
   column_faces_ = colfaces;
 
   // mask for face index in the column of faces
-  face_in_column_.resize(extracted_->num_entities(FACE, AmanziMesh::Parallel_type::ALL), -1);
+  face_in_column_.resize(parent_mesh_->num_entities(FACE, AmanziMesh::Parallel_type::ALL), -1);
 
   // How many nodes each "horizontal" face has in the column
   Entity_ID_List face_nodes;
-  extracted_->face_get_nodes(column_faces_[0],&face_nodes);
+  parent_mesh_->face_get_nodes(column_faces_[0],&face_nodes);
   nfnodes_ = face_nodes.size();
 
   // Set up the new node coordinates This is done in two passes, which may be
@@ -132,10 +129,10 @@ void MeshColumn::compute_special_node_coordinates_() {
 
     // calculate node coordinates
     std::vector<AmanziGeometry::Point> face_coordinates;
-    extracted_->face_get_nodes(column_faces_[j], &face_nodes);
-    extracted_->face_get_coordinates(column_faces_[j], &face_coordinates);
+    parent_mesh_->face_get_nodes(column_faces_[j], &face_nodes);
+    parent_mesh_->face_get_coordinates(column_faces_[j], &face_coordinates);
 
-    AmanziGeometry::Point fcen = extracted_->face_centroid(column_faces_[j]);
+    AmanziGeometry::Point fcen = parent_mesh_->face_centroid(column_faces_[j]);
 
     for (int i=0; i!=nfnodes_; ++i) {
       AmanziGeometry::Point coords(space_dim);

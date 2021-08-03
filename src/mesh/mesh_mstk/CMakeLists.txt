@@ -49,7 +49,7 @@ endif ()
 #
 # Library: mesh_mstk
 #
-set(mesh_mstk_files Mesh_MSTK.cc Mesh_MSTK_deform.cc MeshColumn.cc MeshSurfaceCell.cc) 
+set(mesh_mstk_files Mesh_MSTK.cc Mesh_MSTK_deform.cc) 
 file(GLOB mesh_mstk_inc_files "*.hh")
 add_amanzi_library(mesh_mstk
                    SOURCE ${mesh_mstk_files} HEADERS ${mesh_mstk_inc_files}
@@ -94,58 +94,6 @@ if (BUILD_TESTS)
 		    NPROCS 4
                     SOURCE test/Main.cc test/mesh_mstk_degen_prepart.cc
                     LINK_LIBS mesh_mstk mesh_factory mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
-    # Test: mesh_mstk
-    add_amanzi_test(mesh_mstk_basis mesh_mstk_basis
-                    KIND int
-                    SOURCE
-                         test/Main.cc 
-                         test/mesh_mstk_hex_1x1x1.cc
-                         test/mesh_mstk_hex_2x2x1.cc
-                         test/mesh_mstk_hex_3x3x3.cc
-                         test/mesh_mstk_hex_3x3x3_sets.cc
-                         test/mesh_mstk_hex_gen_3x3x3.cc
-                         test/mesh_mstk_quad_gen_3x3.cc
-                         test/mesh_mstk_extract_surface.cc
- 			 test/mesh_mstk_extract_column.cc
-                         test/mesh_mstk_deform_vols.cc
-		         test/mesh_mstk_extnode_map.cc
-                    LINK_LIBS mesh_mstk mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}) 
-
-
-    # Test: mesh_mstk_parallel
-    add_amanzi_test(mesh_mstk_parallel mesh_mstk_parallel
-                    KIND unit
-                    NPROCS 4
-                    SOURCE
-                         test/Main.cc
-                         test/mesh_mstk_hex_3x3x3_4P.cc
-                         test/mesh_mstk_hex_3x3x3_sets_4P.cc
-                         test/mesh_mstk_hex_3x3x3_par_read_4P.cc
-                         test/mesh_mstk_quad_gen_3x3_4P.cc
-                         test/mesh_mstk_hex_gen_3x3x3_4P.cc
-                         test/mesh_mstk_edges_4P.cc
-                         test/mesh_mstk_extract_surface_4P.cc
-		         test/mesh_mstk_extface_map_4P.cc
-		         test/mesh_mstk_extnode_map.cc
-                         test/mesh_mstk_deform_vols.cc
-                    LINK_LIBS mesh_mstk mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
-    # Test: column_mesh
-    add_amanzi_test(mesh_mstk_column mesh_mstk_column
-                    KIND unit
-                    SOURCE
-                          test/Main.cc 
-                          test/mesh_mstk_column.cc 
-			  LINK_LIBS mesh_mstk geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
-    # Test: extracted surface from column_mesh
-    add_amanzi_test(mesh_mstk_surface_column mesh_mstk_surface_column
-                    KIND unit
-                    SOURCE
-                          test/Main.cc 
-                          test/mesh_mstk_surface_column.cc 
-                    LINK_LIBS mesh_mstk geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: extract fracture test
     add_amanzi_test(mesh_mstk_fracture mesh_mstk_fracture

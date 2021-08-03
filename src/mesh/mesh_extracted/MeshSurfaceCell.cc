@@ -118,7 +118,6 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
 
 // Number of entities of any kind (cell, face, node) and in a
 // particular category (OWNED, GHOST, ALL)
-
 unsigned int MeshSurfaceCell::num_entities(const Entity_kind kind,
         const Parallel_type ptype) const {
   int count;
@@ -142,7 +141,6 @@ unsigned int MeshSurfaceCell::num_entities(const Entity_kind kind,
 
 // Downward Adjacencies
 //---------------------
-
 // Get nodes of a cell
 void MeshSurfaceCell::cell_get_nodes(const Entity_ID cellid,
         Entity_ID_List *nodeids) const {
@@ -253,6 +251,15 @@ int MeshSurfaceCell::deform(const std::vector<double>& target_cell_volumes_in,
 // Mesh Sets for ICs, BCs, Material Properties and whatever else
 //--------------------------------------------------------------
 //
+bool MeshSurfaceCell::valid_set_type(const AmanziGeometry::RegionType rtype,
+        const Entity_kind kind) const {
+  if (rtype == AmanziGeometry::LABELEDSET && kind == CELL) return true;
+  if (rtype == AmanziGeometry::ENUMERATED && kind == CELL) return true;
+  if (rtype == AmanziGeometry::BOX) return true;
+  if (rtype == AmanziGeometry::PLANE) return true;
+  if (rtype == AmanziGeometry::POINT) return true;
+  return false;
+}
 
 // Get number of entities of type 'category' in set
 unsigned int

@@ -43,6 +43,8 @@ set(mesh_extracted_inc_files
 add_amanzi_library(mesh_extracted
                    SOURCE BlockMapUtils.cc
                           MeshExtractedManifold.cc
+                          MeshColumn.cc
+                          MeshSurfaceCell.cc
                    HEADERS ${mesh_extracted_inc_files}
                    LINK_LIBS mesh geometry ${Epetra_LIBRARIES})
 
@@ -87,5 +89,19 @@ if (BUILD_TESTS)
                   SOURCE test/Main.cc test/mesh_surface_flattened.cc
                   LINK_LIBS ${mesh_frameworks} mesh_extracted geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+  # note: this requires volumetric extraction, which is only supported by MSTK for now...
+  if (ENABLE_MESH_MSTK)
+    # Test: column_mesh
+    add_amanzi_test(mesh_extracted_column mesh_extracted_column
+                  KIND unit
+                  SOURCE test/Main.cc test/mesh_extracted_column.cc 
+		  LINK_LIBS mesh_extracted mesh_mstk geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # Test: extracted surface from column_mesh
+    add_amanzi_test(mesh_extracted_surface_cell mesh_extracted_surface_cell
+                  KIND unit
+                  SOURCE test/Main.cc test/mesh_extracted_surface_cell.cc 
+                  LINK_LIBS mesh_extracted mesh_mstk geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+  endif()          
 endif()
   
