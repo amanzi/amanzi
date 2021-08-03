@@ -86,16 +86,24 @@ endif()
 # ############################################################################ #
 # Compiler Definition Warnings
 # ############################################################################ #
+
+message(STATUS "Compilers ... ")
 if (NOT CMAKE_C_COMPILER)
   message(WARNING "C compiler not specified. CMake will guess!")
+else()
+  message(STATUS "CMAKE_C_COMPILER = ${CMAKE_C_COMPILER}")
 endif()
 
 if (NOT CMAKE_CXX_COMPILER)
   message(WARNING "C++ compiler not specified. CMake will guess!")
+else()
+  message(STATUS "CMAKE_CXX_COMPILER = ${CMAKE_CXX_COMPILER}")
 endif()
 
 if (NOT CMAKE_Fortran_COMPILER)
   message(WARNING "Fortran compiler not specified. CMake will guess!")
+else()
+  message(STATUS "CMAKE_Fortran_COMPILER) = ${CMAKE_Fortran_COMPILER}")
 endif()
 
 #if (NOT SPACK_BINARY)
@@ -221,6 +229,19 @@ if (ENABLE_Structured)
   endif()
 endif()
 
+if(ENABLE_KOKKOS_OPENMP)
+  find_package(OpenMP)
+  if (OpenMP_FOUND)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
+  endif()
+  # These might be needed for intel, seems like FindOpenMP packages is a bit broken.
+  #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
+  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+  #set(CMAKE_LINK_FLAGS "${CMAKE_LINK_FLAGS} -lpthread")
+endif()
+
 # If unstructured is not enabled, there is no reason to have these mesh frameworks
 if (NOT ENABLE_Unstructured)
   set(ENABLE_MESH_MSTK FALSE)
@@ -241,6 +262,9 @@ option(BUILD_SPACK "Clone spack from git and treat as a TPL that needs to be bui
 # ############################################################################ #
 # MPI Configuration 
 # ############################################################################ #
+
+message(STATUS "Pre-FindMPI-DEBUGGING:  MPIEXEC = ${MPIEXEC}")
+
 
 # --- The FindMPI package for CMake for versions 2.8.6> use compiler wrappers
 #     to determine include paths, link flags and libraries for each language.
@@ -279,11 +303,27 @@ endif()
 #     MPI_<lang>_LINK_FLAGS
 #     MPI_<lang>_LIBRARIES
 #
-#     MPIEXEC
+#     MPIEXEC_EXECUTABLE
 #     MPIEXEC_NUMPROC_FLAG
 #     MPIEXEC_PREFLAGS
 #     MPIEXEC_POSTFLAGS
+
 find_package(MPI)
+
+message(STATUS "FindMPI-DEBUGGING:  Languages --------------------------")
+message(STATUS "FindMPI-DEBUGGING:  MPI_C_FOUND = ${MPI_C_FOUND}")
+message(STATUS "FindMPI-DEBUGGING:  MPI_CXX_FOUND = ${MPI_CXX_FOUND}")
+message(STATUS "FindMPI-DEBUGGING:  MPI_Fortran_FOUND = ${MPI_Fortran_FOUND}")
+message(STATUS "FindMPI-DEBUGGING:  Compilers --------------------------")
+message(STATUS "FindMPI-DEBUGGING:  MPI_Fortran_HAVE_F90_MODULE = ${MPI_Fortran_HAVE_F90_MODULE}")
+message(STATUS "FindMPI-DEBUGGING:  MPI_MPICXX_FOUND = ${MPI_MPICXX_FOUND}")
+message(STATUS "FindMPI-DEBUGGING:  ----------")
+message(STATUS "FindMPI-DEBUGGING:  MPI_C_COMPILER = ${MPI_C_COMPILER}")
+message(STATUS "FindMPI-DEBUGGING:  MPI_CXX_COMPILER = ${MPI_CXX_COMPILER}")
+message(STATUS "FindMPI-DEBUGGING:  MPI_Fortran_COMPILER = ${MPI_Fortran_COMPILER}")
+message(STATUS "FindMPI-DEBUGGING:  Runtime Environment --------------------")
+message(STATUS "FindMPI-DEBUGGING:  MPIEXEC_EXECUTABLE = ${MPIEXEC_EXECUTABLE}")
+message(STATUS "FindMPI-DEBUGGING:  MPIEXEC = ${MPIEXEC} - is defined for compatability")
 
 
 # The FindMPI package uses FindPackageHandleStandardArgs
@@ -365,8 +405,8 @@ endif()
 
 # - MPI execute binary
 if (NOT MPI_EXEC)
-  if (MPIEXEC)
-    set(MPI_EXEC "${MPIEXEC}" CACHE STRING "Select MPI executable from FindMPI results")
+  if (MPIEXEC_EXECUTABLE)
+    set(MPI_EXEC "${MPIEXEC_EXECUTABLE}" CACHE STRING "Select MPI executable from FindMPI results")
   else()
     find_program(MPI_EXEC
                  NAMES mpirun mpiexec aprun openmpirun

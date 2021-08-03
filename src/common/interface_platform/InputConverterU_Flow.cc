@@ -612,7 +612,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
       unit = "Pa";
     } else if (bctype_in == "hydrostatic" || bctype_in == "linear_hydrostatic") {
       unit = "m";
-    } else if (bctype_in == "inward_mass_flux") {
+    } else if (bctype_in == "inward_mass_flux" || bctype_in == "seepage_face") {
       unit = "kg/s/m^2";
     } else {  // not flow BCs 
       inode = inode->getNextSibling();

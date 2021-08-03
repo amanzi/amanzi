@@ -1,11 +1,16 @@
 <ParameterList>
 <ParameterList name="primary species">
-  <ParameterList name="A(aq)">
+  <ParameterList name="HO2(g)">
     <Parameter name="ion size parameter" type="double" value="0.0"/>
     <Parameter name="charge" type="int" value="0"/>
     <Parameter name="gram molecular weight" type="double" value="1.0"/>
   </ParameterList>
-  <ParameterList name="B(aq)">
+  <ParameterList name="H2O2(g)">
+    <Parameter name="ion size parameter" type="double" value="0.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="1.0"/>
+  </ParameterList>
+  <ParameterList name="O2(g)">
     <Parameter name="ion size parameter" type="double" value="0.0"/>
     <Parameter name="charge" type="int" value="0"/>
     <Parameter name="gram molecular weight" type="double" value="1.0"/>
@@ -14,11 +19,11 @@
 
 <ParameterList name="general kinetics">
   <ParameterList name="general_0">
-    <Parameter name="reactants" type="string" value="1.0 A(aq)"/>
-    <Parameter name="products" type="string" value="1.0 B(aq)"/>
-    <Parameter name="forward rate" type="double" value="1.15741e-6"/>
+    <Parameter name="reactants" type="string" value="1.0 HO2(g)"/>
+    <Parameter name="products" type="string" value="0.5 H2O2(g)  0.5 O2(g)"/>
+    <Parameter name="forward rate" type="double" value="1.4e-5"/>
     <Parameter name="backward rate" type="double" value="0.0"/>
-    <Parameter name="reaction orders (reactants/products)" type="Array(double)" value="{1.0, 0.0}"/>
+    <Parameter name="reaction orders (reactants/products)" type="Array(double)" value="{2.0, 0.0, 0.0}"/>
   </ParameterList>
 </ParameterList>
 
