@@ -144,7 +144,7 @@ if (BUILD_TESTS)
                     KIND unit
         	    SOURCE test/Main.cc test/mesh_build_columns.cc
         	    LINK_LIBS ${mesh_test_link_libs})
-    add_amanzi_test(mesh_columns_np2 mesh_columns NPROCS 2 KIND unit)
+    add_amanzi_test(mesh_build_columns_np2 mesh_build_columns NPROCS 2 KIND unit)
 
     # Test: surface extracted mesh
     #   Tests a surface mesh generated using the mesh framework
