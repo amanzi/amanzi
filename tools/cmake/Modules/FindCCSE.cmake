@@ -166,7 +166,7 @@ else(CCSE_LIBRARIES AND CCSE_INCLUDE_DIRS AND CCSE_PERL_DIR)
   endif()
 
   # Now, make sure the rest are in the same place
-  set(CCSE_LIBRARIES cboxlib;fboxlib;cfboxlib;box_camrdata;;gslib)
+  set(CCSE_LIBRARIES cboxlib;fboxlib;cfboxlib;box_camrdata;cboxlib;gslib)
 
   foreach (L ${CCSE_LIBRARIES})
 
@@ -225,17 +225,17 @@ else(CCSE_LIBRARIES AND CCSE_INCLUDE_DIRS AND CCSE_PERL_DIR)
   endif()
 
   if (ENABLE_PETSC)
-    set(PETSC_DIR $ENV{PETSC_DIR})
-    if ("${PETSC_DIR}" STREQUAL "")
+    set(PETSc_DIR $ENV{PETSc_DIR})
+    if ("${PETSc_DIR}" STREQUAL "")
       message(SEND_ERROR "Must define env variable PETSC_DIR if ENABLE_PETSC=ON")
     endif()
 
     message(STATUS "CCSE requires PETSc and X11 since ENABLE_PETSC=ON")
-    message(STATUS "     using PETSC_DIR=${PETSC_DIR}")
+    message(STATUS "     using PETSc_DIR=${PETSc_DIR}")
 
     # NOTE: Not sure why we have to explicitly include X11 stuff, since FindX11 was supposed to do it...
     set(CCSE_EXT_LIBRARIES petsc ${X11_LIBRARIES})
-    list(APPEND CCSE_INCLUDE_DIRS ${PETSC_DIR}/include ${X11_INCLUDE_DIR})
+    list(APPEND CCSE_INCLUDE_DIRS ${PETSc_DIR}/include ${X11_INCLUDE_DIR})
 
   else()
     set(CCSE_EXT_LIBRARIES "")

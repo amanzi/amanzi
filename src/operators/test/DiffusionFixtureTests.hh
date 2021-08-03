@@ -61,8 +61,10 @@ void test(const std::string& prec_solver,
   if (prec_solver == "mat-vec") {
     fix.MatVec(niters);
   } else {
-    for (int i = 0; i < niters - 1; ++i) fix.Go(0.0);
-    fix.Go(tol);
+    // use initial guess as the last iteration
+    bool initial_guess = (disc_type == "nlfv") ? true : false;
+    for (int i = 0; i < niters - 1; ++i) fix.Go(0.0, initial_guess);
+    fix.Go(tol, initial_guess);
   }
   auto stop = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);

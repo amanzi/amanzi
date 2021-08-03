@@ -1,7 +1,8 @@
-diff -ruNbB hypre-2.20.0-orig/src/parcsr_ls/dsuperlu.c hypre-2.20.0-source/src/parcsr_ls/dsuperlu.c
---- hypre-2.20.0-orig/src/parcsr_ls/dsuperlu.c	2020-09-24 11:56:42.000000000 -0600
-+++ hypre-2.20.0-source/src/parcsr_ls/dsuperlu.c	2020-10-15 21:27:31.000000000 -0600
-@@ -113,9 +113,9 @@
+diff --git a/src/parcsr_ls/dsuperlu.c b/src/parcsr_ls/dsuperlu.c
+index 535fe33..b1818da 100644
+--- a/src/parcsr_ls/dsuperlu.c
++++ b/src/parcsr_ls/dsuperlu.c
+@@ -113,9 +113,9 @@ HYPRE_Int hypre_SLUDistSetup( HYPRE_Solver *solver, hypre_ParCSRMatrix *A, HYPRE
     dslu_data->dslu_options.DiagPivotThresh = 1.0;
     dslu_data->dslu_options.ReplaceTinyPivot = NO; */
  
@@ -13,7 +14,7 @@ diff -ruNbB hypre-2.20.0-orig/src/parcsr_ls/dsuperlu.c hypre-2.20.0-source/src/p
  
     PStatInit(&(dslu_data->dslu_data_stat));
  
-@@ -158,9 +158,9 @@
+@@ -158,9 +158,9 @@ HYPRE_Int hypre_SLUDistDestroy( void* solver)
  
     PStatFree(&(dslu_data->dslu_data_stat));
     Destroy_CompRowLoc_Matrix_dist(&(dslu_data->A_dslu));
@@ -26,10 +27,11 @@ diff -ruNbB hypre-2.20.0-orig/src/parcsr_ls/dsuperlu.c hypre-2.20.0-source/src/p
     if (dslu_data->dslu_options.SolveInitialized)
        dSolveFinalize(&(dslu_data->dslu_options), &(dslu_data->dslu_solve));
     superlu_gridexit(&(dslu_data->dslu_data_grid));
-diff -ruNbB hypre-2.20.0-orig/src/parcsr_ls/dsuperlu.h hypre-2.20.0-source/src/parcsr_ls/dsuperlu.h
---- hypre-2.20.0-orig/src/parcsr_ls/dsuperlu.h	2020-09-24 11:56:42.000000000 -0600
-+++ hypre-2.20.0-source/src/parcsr_ls/dsuperlu.h	2020-10-15 21:12:08.000000000 -0600
-@@ -17,12 +17,12 @@
+diff --git a/src/parcsr_ls/dsuperlu.h b/src/parcsr_ls/dsuperlu.h
+index 4f2e40c..4d4929a 100644
+--- a/src/parcsr_ls/dsuperlu.h
++++ b/src/parcsr_ls/dsuperlu.h
+@@ -17,12 +17,12 @@ typedef struct
     HYPRE_BigInt global_num_rows;
     SuperMatrix A_dslu;
     HYPRE_Real *berr;
@@ -45,10 +47,11 @@ diff -ruNbB hypre-2.20.0-orig/src/parcsr_ls/dsuperlu.h hypre-2.20.0-source/src/p
  }
  hypre_DSLUData;
  
-diff -ruNbB hypre-2.20.0-orig/src/parcsr_ls/par_mgr.c hypre-2.20.0-source/src/parcsr_ls/par_mgr.c
---- hypre-2.20.0-orig/src/parcsr_ls/par_mgr.c	2020-09-24 11:56:42.000000000 -0600
-+++ hypre-2.20.0-source/src/parcsr_ls/par_mgr.c	2020-10-15 21:27:04.000000000 -0600
-@@ -5436,9 +5436,9 @@
+diff --git a/src/parcsr_ls/par_mgr.c b/src/parcsr_ls/par_mgr.c
+index b7af5bf..d3a3e19 100644
+--- a/src/parcsr_ls/par_mgr.c
++++ b/src/parcsr_ls/par_mgr.c
+@@ -5401,9 +5401,9 @@ hypre_MGRDirectSolverSetup( void                *solver,
     dslu_data->dslu_options.DiagPivotThresh = 1.0;
     dslu_data->dslu_options.ReplaceTinyPivot = NO; */
  

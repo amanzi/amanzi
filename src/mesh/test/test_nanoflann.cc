@@ -27,7 +27,6 @@ typedef nanoflann::KDTreeSingleIndexAdaptor<
 
 TEST(NANOFLANN)
 {
-  Kokkos::initialize();
   // generate points
   const int d(2), n(10);
   double range(1.0);
@@ -93,6 +92,4 @@ TEST(NANOFLANN)
               << std::endl;
     CHECK_CLOSE(dist, Amanzi::AmanziGeometry::norm(points(n) - p), 1e-14);
   }
-
-  Kokkos::finalize();
 }

@@ -81,19 +81,20 @@ ExternalProject_Add(${CCSE_BUILD_TARGET}
                     TMP_DIR   ${CCSE_tmp_dir}                     # Temporary files directory
                     STAMP_DIR ${CCSE_stamp_dir}                   # Timestamp and log directory
                     # -- Download and URL definitions
-                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}              # Download directory
-                    URL          ${CCSE_URL}                      # URL may be a web site OR a local file
-                    URL_MD5      ${CCSE_MD5_SUM}                  # md5sum of the archive file
+                    DOWNLOAD_DIR   ${TPL_DOWNLOAD_DIR}            # Download directory
+                    URL            ${CCSE_URL}                    # URL may be a web site OR a local file
+                    URL_MD5        ${CCSE_MD5_SUM}                # md5sum of the archive file
+                    DOWNLOAD_NAME  ${CCSE_SAVEAS_FILE}            # file name to store (if not end of URL)
                     # GIT_REPOSITORY ${CCSE_GIT_REPOSITORY}              
                     # GIT_TAG        ${CCSE_GIT_TAG}      
                     # -- Update (one way to skip this step is use null command)
                     UPDATE_COMMAND ""
                     # -- Patch
-		    PATCH_COMMAND ${CCSE_PATCH_COMMAND}                    
+                    PATCH_COMMAND ${CCSE_PATCH_COMMAND}                    
                     # -- Configure
                     SOURCE_DIR       ${CCSE_source_dir}           # Source directory
-		    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
-		                     ${CCSE_CMAKE_CACHE_ARGS}     
+                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
+                                     ${CCSE_CMAKE_CACHE_ARGS}     
                     # -- Build
                     BINARY_DIR       ${CCSE_build_dir}            # Build directory 
                     BUILD_COMMAND    $(MAKE)                      # $(MAKE) enables parallel builds through make

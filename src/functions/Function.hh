@@ -63,9 +63,9 @@ END
 #define AMANZI_FUNCTION_HH_
 
 #include <vector>
-#include <Kokkos_Core.hpp>
 #include <cassert>
 
+#include "Kokkos_Core.hpp"
 
 namespace Amanzi {
 

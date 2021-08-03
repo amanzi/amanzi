@@ -61,7 +61,10 @@ struct DiffusionFixture {
   void SetBCsDirichletNeumann() {};
   void SetBCsDirichletNeumannRobin() {};
 
-  void Go(double tol = 1.e-14);
+  // main loop:
+  //   tolerance of a Krylov solver
+  //   if initial_guess=true, solution from last iteration is used as the initial guess
+  void Go(double tol = 1.0e-12, bool initial_guess = true);
   void MatVec(int nloops);
 
   // access
@@ -228,7 +231,7 @@ void DiffusionFixture::SetBCsDirichlet()
 /* ******************************************************************
 * Run the solvers
 ****************************************************************** */
-void DiffusionFixture::Go(double tol)
+void DiffusionFixture::Go(double tol, bool initial_guess)
 {
   global_op->Zero();
   op->UpdateMatrices(Teuchos::null, solution.ptr());
@@ -243,6 +246,7 @@ void DiffusionFixture::Go(double tol)
 
   op->ApplyBCs(true, true, true);
   global_op->computeInverse();
+  if (!initial_guess) solution->putScalar(0.0);
 
   auto start = std::chrono::high_resolution_clock::now();
   global_op->applyInverse(*global_op->rhs(), *solution);

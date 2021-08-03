@@ -59,7 +59,7 @@ using namespace Amanzi;
 class AnalyticBase { //: public WhetStone::WhetStoneFunction {
  public:
   AnalyticBase(int d) 
-    : d_(d), K_(d_,1) {};
+    : d_(d), K_(d,1) {};
   virtual ~AnalyticBase() {};
 
   virtual std::string name() const = 0;

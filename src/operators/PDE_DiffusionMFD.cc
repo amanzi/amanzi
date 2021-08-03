@@ -1080,7 +1080,7 @@ void PDE_DiffusionMFD::CreateMassMatrices_()
   K_->update_entries_host(); 
 
   for (int c = 0; c < ncells_owned; c++) {
-    int ok;
+    int ok(WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED);
     if (K_.get()) Kc = K_->at_host(c);
 
     // For problems with degenerate coefficients we should skip WhetStone.
@@ -1171,47 +1171,36 @@ void PDE_DiffusionMFD::ParsePList_()
   K_symmetric_ = (plist_.get<std::string>("diffusion tensor", "symmetric") == "symmetric");
 
   // Primary discretization methods
-  // if (primary == "mfd: monotone for hex") {
-  //   mfd_primary_ = WhetStone::DIFFUSION_HEXAHEDRA_MONOTONE;
-  // } else if (primary == "mfd: optimized for monotonicity") {
-  //   mfd_primary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_MONOTONICITY;
-  // } else if (primary == "mfd: two-point flux approximation") {
-  //   mfd_primary_ = WhetStone::DIFFUSION_TPFA;
+  if (primary == "mfd: two-point flux approximation") {
+    mfd_primary_ = WhetStone::DIFFUSION_TPFA;
+  } else if (primary == "mfd: default") {
+     mfd_primary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
   // } else if (primary == "mfd: optimized for sparsity") {
   //   mfd_primary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY;
   // } else if (primary == "mfd: support operator") {
   //   mfd_primary_ = WhetStone::DIFFUSION_SUPPORT_OPERATOR;
-  // } else if (primary == "mfd: default") {
-  //   mfd_primary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
-  // } else {
+  } else {
+    AMANZI_ASSERT(false);
   //   Errors::Message msg;
   //   msg << "PDE_DiffusionMFD: primary discretization method \"" << primary << "\" is not supported.";
   //   Exceptions::amanzi_throw(msg);
-  // }
-
-  if (primary != "mfd: two-point flux approximation" &&
-      primary != "mfd: default") {
-    AMANZI_ASSERT(false);
-  } else {
-    mfd_primary_ = WhetStone::DIFFUSION_TPFA;
-    mfd_secondary_ = WhetStone::DIFFUSION_TPFA;
   }
-    
-  
-  // // Secondary discretization methods
-  // if (secondary == "mfd: two-point flux approximation") {
-  //   mfd_secondary_ = WhetStone::DIFFUSION_TPFA;
+
+  // Secondary discretization methods
+  if (secondary == "mfd: two-point flux approximation") {
+    mfd_secondary_ = WhetStone::DIFFUSION_TPFA;
+  } else if (secondary == "mfd: default") {
+    mfd_secondary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
   // } else if (secondary == "mfd: optimized for sparsity") {
   //   mfd_secondary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY;
   // } else if (secondary == "mfd: support operator") {
   //   mfd_secondary_ = WhetStone::DIFFUSION_SUPPORT_OPERATOR;
-  // } else if (secondary == "mfd: default") {
-  //   mfd_secondary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
-  // } else {
-  //   Errors::Message msg;
-  //   msg << "PDE_DiffusionMFD: secondary discretization method \"" << secondary << "\" is not supported.";
-  //   Exceptions::amanzi_throw(msg);
-  // }
+  } else {
+    AMANZI_ASSERT(false);
+    // Errors::Message msg;
+    // msg << "PDE_DiffusionMFD: secondary discretization method \"" << secondary << "\" is not supported.";
+    // Exceptions::amanzi_throw(msg);
+  }
 
   // Define stencil for the MFD diffusion method.
   std::vector<std::string> names;
