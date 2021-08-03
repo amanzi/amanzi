@@ -315,6 +315,7 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
 //--------------------------------------------------------------
 bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
+  double pi = 3.141592653589793;
   double dt = t_new - t_old;
   iters_++;
 
@@ -464,7 +465,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         else {
           UR = UL;
         }
-
+        
       } else {
         const Amanzi::AmanziGeometry::Point& xcn = mesh_->cell_centroid(cn);
           
@@ -530,8 +531,9 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     for (int i = 0; i < 3; i++) {
       U_new[i] = U[i] - dt / vol * FS[i] + dt * S[i];
     }
-    U_new[0] += ext_S_cell[c];
-      
+    U_new[0] += dt * ext_S_cell[c];
+    U_new[1] += dt * ( -pi*(xc[0]+1.0)*std::exp(-t_old) + (pi*std::exp(-t_old) + 1.0)*(pi*std::exp(-t_old) + 1.0) + g_*(xc[0]+1.0) ) ;
+    
     // transform to conservative variables
     h  = U_new[0];
     qx = U_new[1];
