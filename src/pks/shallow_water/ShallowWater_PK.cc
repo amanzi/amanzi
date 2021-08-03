@@ -462,8 +462,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         if (bcs_.size() > 0 && bcs_[0]->bc_find(f)) {
           for (int i = 0; i < 3; ++i) UR[i] = bcs_[0]->bc_value(f)[i];
             double vn, vt;
-            vn =  vx_rec * normal[0] + vy_rec * normal[1];
-            vt = -vx_rec * normal[1] + vy_rec * normal[0];
+            vn =  UR[1] * normal[0] + UR[2] * normal[1];
+            vt = -UR[1] * normal[1] + UR[2] * normal[0];
             UR[1] = UR[0] * vn;
             UR[2] = UR[0] * vt;
         }
