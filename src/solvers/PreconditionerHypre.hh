@@ -103,8 +103,8 @@ This is provided when using the `"preconditioning method`"=`"euclid`" or
 #include "Teuchos_ParameterList.hpp"
 #include "Tpetra_RowMatrix_decl.hpp"
 
-#include "AmanziHypreFunctionParametersWrapper.hh"
-#include "AmanziHypreWrapperDef.hh"
+#include "Ifpack2_Hypre_decl.hpp"
+
 
 #include "exceptions.hh"
 #include "Preconditioner.hh"
@@ -148,12 +148,12 @@ class PreconditionerHypre : public Preconditioner {
   Teuchos::ParameterList plist_;
   Teuchos::RCP<VerboseObject> vo_;
 
-  Amanzi::Hypre_Solver method_;
+  Ifpack2::Hypre_Solver method_;
   Teuchos::RCP<std::vector<int> > block_indices_;
   int num_blocks_;
 
   mutable int returned_code_;
-  Teuchos::RCP<Amanzi::Hypre<RowMatrix_type> > IfpHypre_;
+  Teuchos::RCP<Ifpack2::Hypre<RowMatrix_type> > IfpHypre_;
 };
 
 }  // namespace AmanziSolvers
