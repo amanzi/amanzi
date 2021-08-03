@@ -96,15 +96,11 @@ This is provided when using the `"preconditioning method`"=`"euclid`" or
 #ifndef AMANZI_PRECONDITIONER_BOOMERAMG_HH_
 #define AMANZI_PRECONDITIONER_BOOMERAMG_HH_
 
-
-#define HAVE_HYPRE
-
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Tpetra_RowMatrix_decl.hpp"
 
 #include "Ifpack2_Hypre_decl.hpp"
-
 
 #include "exceptions.hh"
 #include "Preconditioner.hh"
