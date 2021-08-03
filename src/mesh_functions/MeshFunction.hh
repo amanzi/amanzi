@@ -49,10 +49,13 @@ computeMeshFunction(const std::vector<Teuchos::RCP<const MultiFunction>>& f,
                          double time, const MultiPatchSpace& mp, CompositeVector& cv);
 
 
+//
+// tuple( list_of_regions_names, list_of_component_names, function )
+//
 using Spec = std::tuple<Teuchos::Array<std::string>,
                         Teuchos::Array<std::string>,
                         Teuchos::RCP<MultiFunction>>;
-             
+
 
 //
 // process a list for regions, components, and functions
@@ -66,7 +69,8 @@ processSpecWithFunction(Teuchos::ParameterList& list,
 std::pair<MultiPatchSpace,
           std::vector<Teuchos::RCP<const MultiFunction>>>
 processListWithFunction(Teuchos::ParameterList& list,
-                        std::string function_name="function");
+                        std::string function_name="function",
+                        bool ghosted=false);
 
 } // namespace Functions
 } // namespace Amanzi

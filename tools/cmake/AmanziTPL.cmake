@@ -178,7 +178,7 @@ if ( NOT Trilinos_INSTALL_PREFIX )
                   " to define the Trilinos installation location"
 		  "\n-DTrilinos_INSTALL_PREFIX:PATH=<trilinos directory>\n")
 endif()
-set(Trilinos_MINIMUM_VERSION 13.0)
+set(Trilinos_MINIMUM_VERSION 13.0.0)
 message(STATUS "Searching for Trilinos at: ${Trilinos_INSTALL_PREFIX}")
 find_package(Trilinos ${Trilinos_MINIMUM_VERSION} REQUIRED
              PATHS ${Trilinos_INSTALL_PREFIX}
@@ -216,6 +216,7 @@ if (Trilinos_FOUND)
   # ML      - multilevel preconditioner (Unstructured ONLY)
   set(Trilinos_REQUIRED_PACKAGE_LIST Teuchos Epetra) 
   if (ENABLE_Unstructured)
+    # list(APPEND Trilinos_REQUIRED_PACKAGE_LIST NOX ML Amesos2 MueLu)
     list(APPEND Trilinos_REQUIRED_PACKAGE_LIST NOX ML Amesos2)
   endif()
 
@@ -238,7 +239,7 @@ if (Trilinos_FOUND)
   endforeach()
 
   # Zoltan - required by MSTK mesh class 
-  if (ENABLE_MSTK_Mesh)
+  if (ENABLE_MESH_MSTK)
     find_package(Zoltan
                  NO_MODULE
                  HINTS ${Trilinos_INSTALL_PREFIX}
@@ -253,8 +254,8 @@ if (Trilinos_FOUND)
         list(APPEND ZOLTAN_INCLUDE_DIRS "${_inc}")
       endforeach()
     else()  
-      message(WARNING "Could not locate Zoltan in ${Trilinos_DIR}. Will not enable MSTK_Mesh")
-      set(ENABLE_MSTK_Mesh OFF CACHE BOOL "Disable MSTK Mesh capability" FORCE)
+      message(WARNING "Could not locate Zoltan in ${Trilinos_DIR}. Will not enable MESH_MSTK")
+      set(ENABLE_MESH_MSTK OFF CACHE BOOL "Disable MSTK Mesh capability" FORCE)
     endif()
   endif()
 
@@ -424,13 +425,13 @@ endif()
 ##############################################################################
 
 # Enable ALL possible mesh frameworks
-#option(ENABLE_ALL_Mesh "Build all Amanzi mesh frameworks" OFF)
-#if(ENABLE_ALL_Mesh)
-#   set(ENABLE_MOAB_Mesh ON)
-#   set(ENABLE_MSTK_Mesh ON)
+#option(ENABLE_MESH_ALL "Build all Amanzi mesh frameworks" OFF)
+#if(ENABLE_MESH_ALL)
+#   set(ENABLE_MESH_MOAB ON)
+#   set(ENABLE_MESH_MSTK ON)
 #endif()    
-#set_feature_info(ALL_Mesh
-#                 ENABLE_ALL_Mesh
+#set_feature_info(MESH_ALL
+#                 ENABLE_MESH_ALL
 #                 "Build all available mesh frameworks"
 #                )    
 
@@ -438,12 +439,12 @@ endif()
 ##############################################################################
 # MOAB - svn co https://svn.mcs.anl.gov/repos/ITAPS/MOAB/trunk MOAB
 ##############################################################################
-option(ENABLE_MOAB_Mesh "Build Amanzi with the MOAB mesh framework" OFF)
-add_feature_info(MOAB_Mesh
-                 ENABLE_MOAB_Mesh
+option(ENABLE_MESH_MOAB "Build Amanzi with the MOAB mesh framework" OFF)
+add_feature_info(MESH_MOAB
+                 ENABLE_MESH_MOAB
                  "A Mesh-Oriented datABase"
                  )
-if (ENABLE_MOAB_Mesh)
+if (ENABLE_MESH_MOAB)
   find_package(MOAB REQUIRED)
 
   if (MOAB_FOUND)
@@ -463,12 +464,12 @@ endif()
 ##############################################################################
 # MSTK - https://software.lanl.gov/MeshTools/trac/raw-attachment/wiki/WikiStart/mstk-1.80.tar.gz
 ##############################################################################
-option(ENABLE_MSTK_Mesh "Build Amanzi with the MSTK mesh framework" OFF)
-add_feature_info(MSTK_Mesh
-                 ENABLE_MSTK_Mesh
+option(ENABLE_MESH_MSTK "Build Amanzi with the MSTK mesh framework" OFF)
+add_feature_info(MESH_MSTK
+                 ENABLE_MESH_MSTK
                  "A mesh framework"
                  )
-if (ENABLE_MSTK_Mesh)
+if (ENABLE_MESH_MSTK)
   find_package(MSTK REQUIRED)
 
   if (MSTK_FOUND)
@@ -585,16 +586,16 @@ endif()
 option(ENABLE_PETSC "Enable PETSc APIs in the structured mesh" ON)
 if (ENABLE_Structured OR ENABLE_ALQUIMIA OR ENABLE_PETSC) # FIXME: Sloppy.
   find_package(PETSc)
-  if (NOT PETSC_FOUND)
+  if (NOT PETSc_FOUND)
     message(WARNING "Failed to locate PETSc")
   else()
     message(STATUS "PETSc Package information")
-    message(STATUS "\tPETSC_VERSION      = ${PETSC_VERSION}")
-    message(STATUS "\tPETSC_INCLUDE_DIR  = ${PETSC_INCLUDE_DIR}")
-    message(STATUS "\tPETSC_INCLUDE_DIRS = ${PETSC_INCLUDE_DIRS}")
-    message(STATUS "\tPETSC_LIBRARY      = ${PETSC_LIBRARY}")
-    message(STATUS "\tPETSC_LIBRARIES    = ${PETSC_LIBRARIES}")
-    print_link_libraries(${PETSC_LIBRARY})
+    message(STATUS "\tPETSc_VERSION      = ${PETSc_VERSION}")
+    message(STATUS "\tPETSc_INCLUDE_DIR  = ${PETSc_INCLUDE_DIR}")
+    message(STATUS "\tPETSc_INCLUDE_DIRS = ${PETSc_INCLUDE_DIRS}")
+    message(STATUS "\tPETSc_LIBRARY      = ${PETSc_LIBRARY}")
+    message(STATUS "\tPETSc_LIBRARIES    = ${PETSc_LIBRARIES}")
+    print_link_libraries(${PETSc_LIBRARY})
     message(STATUS "")
   endif()
 endif()
@@ -625,33 +626,33 @@ if (ENABLE_ALQUIMIA)
 
 #  if (ENABLE_CRUNCHTOPE)
      find_package(CrunchTope)
-     if (CRUNCHTOPE_FOUND)
-        message(STATUS "CRUNCHTOPE Package information")
-        message(STATUS "\tCRUNCHTOPE_INCLUDE_DIR  = ${CRUNCHTOPE_INCLUDE_DIR}")
-        message(STATUS "\tCRUNCHTOPE_INCLUDE_DIRS = ${CRUNCHTOPE_INCLUDE_DIRS}")
-        message(STATUS "\tCRUNCHTOPE_LIBRARY_DIR  = ${CRUNCHTOPE_LIBRARY_DIR}")
-        message(STATUS "\tCRUNCHTOPE_LIBRARY      = ${CRUNCHTOPE_LIBRARY}")
-        message(STATUS "\tCRUNCHTOPE_LIBRARIES    = ${CRUNCHTOPE_LIBRARIES}")
-        print_link_libraries(${CRUNCHTOPE_LIBRARY})
+     if (CrunchTope_FOUND)
+        message(STATUS "CrunchTope Package information")
+        message(STATUS "\tCrunchTope_INCLUDE_DIR  = ${CrunchTope_INCLUDE_DIR}")
+        message(STATUS "\tCrunchTope_INCLUDE_DIRS = ${CrunchTope_INCLUDE_DIRS}")
+        message(STATUS "\tCrunchTope_LIBRARY_DIR  = ${CrunchTope_LIBRARY_DIR}")
+        message(STATUS "\tCrunchTope_LIBRARY      = ${CrunchTope_LIBRARY}")
+        message(STATUS "\tCrunchTope_LIBRARIES    = ${CrunchTope_LIBRARIES}")
+        print_link_libraries(${CrunchTope_LIBRARY})
         message(STATUS "")
      endif()
 #  endif()
 
-  if ((NOT PFLOTRAN_FOUND) AND (NOT CRUNCHTOPE_FOUND))
-    message(WARNING "Failed to locate either PFLOTRAN or CRUCHTOPE")
+  if ((NOT PFLOTRAN_FOUND) AND (NOT CrunchTope_FOUND))
+    message(WARNING "Failed to locate either PFLOTRAN or CrunchTope")
   endif()
 
   find_package(Alquimia)
-  if (NOT ALQUIMIA_FOUND)
-    message(WARNING "Failed to locate ALQUIMIA")
+  if (NOT Alquimia_FOUND)
+    message(WARNING "Failed to locate Alquimia")
   else()
-    message(STATUS "ALQUIMIA Package information")
-    message(STATUS "\tALQUIMIA_INCLUDE_DIR  = ${ALQUIMIA_INCLUDE_DIR}")
-    message(STATUS "\tALQUIMIA_INCLUDE_DIRS = ${ALQUIMIA_INCLUDE_DIRS}")
-    message(STATUS "\tALQUIMIA_LIBRARY_DIR  = ${ALQUIMIA_LIBRARY_DIR}")
-    message(STATUS "\tALQUIMIA_LIBRARY      = ${ALQUIMIA_LIBRARY}")
-    message(STATUS "\tALQUIMIA_LIBRARIES    = ${ALQUIMIA_LIBRARIES}")
-    print_link_libraries(${ALQUIMIA_LIBRARY})
+    message(STATUS "Alquimia Package information")
+    message(STATUS "\tAlquimia_INCLUDE_DIR  = ${Alquimia_INCLUDE_DIR}")
+    message(STATUS "\tAlquimia_INCLUDE_DIRS = ${Alquimia_INCLUDE_DIRS}")
+    message(STATUS "\tAlquimia_LIBRARY_DIR  = ${Alquimia_LIBRARY_DIR}")
+    message(STATUS "\tAlquimia_LIBRARY      = ${Alquimia_LIBRARY}")
+    message(STATUS "\tAlquimia_LIBRARIES    = ${Alquimia_LIBRARIES}")
+    print_link_libraries(${Alquimia_LIBRARY})
     message(STATUS "")
   endif()
 endif()

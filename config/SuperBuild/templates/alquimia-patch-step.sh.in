@@ -3,11 +3,11 @@
 # CMake generates this file 
 
 # Source and build locations
-alquimia_src_dir=@ALQUIMIA_source_dir@
+alquimia_src_dir=@Alquimia_source_dir@
 
 OIFS=$IFS
 IFS=";"
-patch_files="@ALQUIMIA_patch_file@"
+patch_files="@Alquimia_patch_file@"
 
 for i in ${patch_files}; do
 
