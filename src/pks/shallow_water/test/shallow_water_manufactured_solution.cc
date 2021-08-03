@@ -15,7 +15,6 @@
 
 // Amanzi
 #include "LeastSquare.hh"
-#include "GMVMesh.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "ShallowWater_PK.hh"

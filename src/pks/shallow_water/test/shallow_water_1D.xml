@@ -22,6 +22,7 @@
     <ParameterList name="shallow water">
       <Parameter name="domain name" type="string" value="surface"/>
       <Parameter name="cfl" type="double" value="0.2"/>
+      <Parameter name="numerical flux" type="string" value="Rusanov"/>
 
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
@@ -32,7 +33,7 @@
         <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
         <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
         <Parameter name="limiter location" type="string" value="node"/>
-        <Parameter name="limiter cfl" type="double" value="0.1"/>
+        <Parameter name="limiter cfl" type="double" value="0.5"/>
       </ParameterList>
 
       <ParameterList name="boundary conditions">

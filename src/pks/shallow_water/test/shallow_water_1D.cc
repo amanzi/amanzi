@@ -16,7 +16,6 @@
 #include "UnitTest++.h"
 
 // Amanzi
-#include "GMVMesh.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
@@ -174,7 +173,7 @@ TEST(SHALLOW_WATER_1D) {
   MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
 
-  RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 2000.0, 50.0, 1000, 1, request_faces, request_edges);
+  RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 2000.0, 5.0, 1000, 1, request_faces, request_edges);
   // mesh = meshfactory.create("test/median63x64.exo",request_faces,request_edges); // works only with first order, no reconstruction
 
   // create a state
