@@ -71,7 +71,7 @@ class MeshColumn : public Mesh {
 
   // reference for vis.
   virtual const Mesh& vis_mesh() const override {
-    return *parent_mesh_;
+    return *col3D_mesh_;
   }
 
   // Get parallel type of entity - OWNED, GHOST, ALL (See MeshDefs.hh)
@@ -84,14 +84,14 @@ class MeshColumn : public Mesh {
   // Parent entity in the source mesh if mesh was derived from another mesh
   virtual
   Entity_ID entity_get_parent(const Entity_kind kind, const Entity_ID entid) const override {
-    Entity_ID ent;
+    Entity_ID ent = -1;
     switch (kind) {
       case FACE:
-        ent = parent_mesh_->entity_get_parent(kind, column_faces_[entid]);
+        ent = col3D_mesh_->entity_get_parent(kind, column_faces_[entid]);
         break;
 
       default:
-        ent = parent_mesh_->entity_get_parent(kind, entid);
+        ent = col3D_mesh_->entity_get_parent(kind, entid);
         break;
     }
     return ent;
@@ -100,7 +100,7 @@ class MeshColumn : public Mesh {
   // Get cell type - UNKNOWN, TRI, QUAD, ... See MeshDefs.hh
   virtual
   Cell_type cell_get_type(const Entity_ID cellid) const override {
-    return parent_mesh_->cell_get_type(cellid);
+    return col3D_mesh_->cell_get_type(cellid);
   }
 
 
@@ -125,7 +125,7 @@ class MeshColumn : public Mesh {
         break;
 
       default:
-        count = parent_mesh_->num_entities(kind, ptype);
+        count = col3D_mesh_->num_entities(kind, ptype);
         break;
     }
     return count;
@@ -150,7 +150,7 @@ class MeshColumn : public Mesh {
   virtual
   void cell_get_nodes(const Entity_ID cellid,
                       Entity_ID_List *nodeids) const override {
-    parent_mesh_->cell_get_nodes(cellid, nodeids);
+    col3D_mesh_->cell_get_nodes(cellid, nodeids);
   }
 
 
@@ -163,7 +163,7 @@ class MeshColumn : public Mesh {
   virtual
   void face_get_nodes(const Entity_ID faceid,
                       Entity_ID_List *nodeids) const override {
-    parent_mesh_->face_get_nodes(column_faces_[faceid], nodeids);
+    col3D_mesh_->face_get_nodes(column_faces_[faceid], nodeids);
   }
 
 
@@ -186,7 +186,7 @@ class MeshColumn : public Mesh {
   void node_get_cells(const Entity_ID nodeid,
                       const Parallel_type ptype,
                       Entity_ID_List *cellids) const override {
-    parent_mesh_->node_get_cells(nodeid, ptype, cellids);
+    col3D_mesh_->node_get_cells(nodeid, ptype, cellids);
   }
 
 
@@ -228,7 +228,7 @@ class MeshColumn : public Mesh {
   void cell_get_face_adj_cells(const Entity_ID cellid,
                                const Parallel_type ptype,
                                Entity_ID_List *fadj_cellids) const override {
-    parent_mesh_->cell_get_face_adj_cells(cellid, ptype, fadj_cellids);
+    col3D_mesh_->cell_get_face_adj_cells(cellid, ptype, fadj_cellids);
   }
 
 
@@ -239,7 +239,7 @@ class MeshColumn : public Mesh {
   void cell_get_node_adj_cells(const Entity_ID cellid,
                                const Parallel_type ptype,
                                Entity_ID_List *nadj_cellids) const override {
-    parent_mesh_->cell_get_node_adj_cells(cellid, ptype, nadj_cellids);
+    col3D_mesh_->cell_get_node_adj_cells(cellid, ptype, nadj_cellids);
   }
 
 
@@ -252,7 +252,7 @@ class MeshColumn : public Mesh {
   virtual
   void node_get_coordinates(const Entity_ID nodeid,
                             AmanziGeometry::Point *ncoord) const override {
-    parent_mesh_->node_get_coordinates(nodeid, ncoord);
+    col3D_mesh_->node_get_coordinates(nodeid, ncoord);
   }
 
 
@@ -261,7 +261,7 @@ class MeshColumn : public Mesh {
   virtual
   void face_get_coordinates(const Entity_ID faceid,
                             std::vector<AmanziGeometry::Point> *fcoords) const override {
-    parent_mesh_->face_get_coordinates(column_faces_[faceid], fcoords);
+    col3D_mesh_->face_get_coordinates(column_faces_[faceid], fcoords);
   }
 
   // Coordinates of cells in standard order (Exodus II convention)
@@ -272,7 +272,7 @@ class MeshColumn : public Mesh {
   virtual
   void cell_get_coordinates(const Entity_ID cellid,
                             std::vector<AmanziGeometry::Point> *ccoords) const override {
-    parent_mesh_->cell_get_coordinates(cellid, ccoords);
+    col3D_mesh_->cell_get_coordinates(cellid, ccoords);
   }
 
 
@@ -284,14 +284,14 @@ class MeshColumn : public Mesh {
   virtual
   void node_set_coordinates(const Entity_ID nodeid,
                             const AmanziGeometry::Point ncoord) override {
-    parent_mesh_->node_set_coordinates(nodeid, ncoord);
+    col3D_mesh_->node_set_coordinates(nodeid, ncoord);
   }
 
 
   virtual
   void node_set_coordinates(const Entity_ID nodeid,
                             const double *ncoord) override {
-    parent_mesh_->node_set_coordinates(nodeid, ncoord);
+    col3D_mesh_->node_set_coordinates(nodeid, ncoord);
   }
 
 
@@ -321,7 +321,7 @@ class MeshColumn : public Mesh {
   //------------
   virtual
   const Epetra_Map& cell_map(const bool include_ghost) const override {
-    return parent_mesh_->cell_map(include_ghost);
+    return col3D_mesh_->cell_map(include_ghost);
   }
 
   virtual
@@ -339,7 +339,7 @@ class MeshColumn : public Mesh {
 
   virtual
   const Epetra_Map& node_map(const bool include_ghost) const override {
-    return parent_mesh_->node_map(include_ghost);
+    return col3D_mesh_->node_map(include_ghost);
   }
 
   virtual
@@ -369,7 +369,7 @@ class MeshColumn : public Mesh {
   //--------------------------------------------------------------
   virtual
   bool valid_set_type(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const override {
-    return parent_mesh_->valid_set_type(rtype, kind);
+    return col3D_mesh_->valid_set_type(rtype, kind);
   }
 
   // Get list of entities of type 'category' in set
@@ -384,7 +384,7 @@ class MeshColumn : public Mesh {
     switch (kind) {
       case FACE: {
         Entity_ID_List faces;
-        parent_mesh_->get_set_entities(setname, kind, ptype, &faces);
+        col3D_mesh_->get_set_entities(setname, kind, ptype, &faces);
 
         for (Entity_ID_List::const_iterator f=faces.begin();
              f!=faces.end(); ++f) {
@@ -394,7 +394,7 @@ class MeshColumn : public Mesh {
       }
 
       default: {
-        parent_mesh_->get_set_entities(setname, kind, ptype, entids);
+        col3D_mesh_->get_set_entities(setname, kind, ptype, entids);
         break;
       }
     }
@@ -404,7 +404,7 @@ class MeshColumn : public Mesh {
   // Miscellaneous functions
   virtual
   void write_to_exodus_file(const std::string filename) const override {
-    parent_mesh_->write_to_exodus_file(filename);
+    col3D_mesh_->write_to_exodus_file(filename);
   }
 
 
@@ -428,7 +428,7 @@ class MeshColumn : public Mesh {
     // consistent - so we think everything will work as it should
     Entity_ID_List faceids_extracted;
     std::vector<int> face_dirs_extracted;
-    parent_mesh_->cell_get_faces_and_dirs(cellid, &faceids_extracted,
+    col3D_mesh_->cell_get_faces_and_dirs(cellid, &faceids_extracted,
             &face_dirs_extracted, ordered);
 
     int count = 0;
@@ -448,7 +448,7 @@ class MeshColumn : public Mesh {
   void face_get_cells_internal_(const Entity_ID faceid,
                                 const Parallel_type ptype,
                                 Entity_ID_List *cellids) const override {
-    parent_mesh_->face_get_cells(column_faces_[faceid], ptype, cellids);
+    col3D_mesh_->face_get_cells(column_faces_[faceid], ptype, cellids);
   }
 
 
@@ -477,7 +477,7 @@ class MeshColumn : public Mesh {
   void compute_special_node_coordinates_();
 
  protected:
-  Teuchos::RCP<Mesh> parent_mesh_;
+  Teuchos::RCP<Mesh> col3D_mesh_;
   int nfnodes_;
   int column_id_;
   Entity_ID_List column_faces_;
