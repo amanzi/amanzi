@@ -7,6 +7,11 @@
   Authors: Ethan Coon (coonet@ornl.gov)
 */
 
+/*
+  This test extracts surface faces -- a set of faces on the boundary of a 3D
+  mesh -- and creates a (flattened) 2D mesh from these faces.
+*/
+
 #include "UnitTest++.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"

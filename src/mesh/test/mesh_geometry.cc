@@ -231,3 +231,21 @@ TEST(MESH_GEOMETRY_FRACTURE_EXO)
     testMeshAudit<MeshAudit, Mesh>(mesh);
   }
 }
+
+
+TEST(MESH_GEOMETRY_PINCHOUTS)
+{
+  // only MSTK can handle this mesh -- it has pinchouts
+  std::vector<Framework> frameworks;
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
+
+  for (const auto& frm : frameworks) {
+    std::cout << std::endl
+              << "Testing 3D Pinchout with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "------------------------------------------------" << std::endl;
+    auto mesh = createFrameworkUnstructured(Preference{frm}, "test/test_pri_pinchout_mesh.exo");
+    testMeshAudit<MeshAudit, Mesh>(mesh);
+  }
+}

@@ -69,38 +69,10 @@ if (BUILD_TESTS)
         file(COPY ${DataFiles} DESTINATION ${MESH_MSTK_BINARY_DIR}/test/)
     endif()
 
-    #Test: eliminate degeneracies for serial mesh
-    add_amanzi_test(mesh_mstk_pinchout_test mesh_mstk_pinchout_test
-                    KIND int
-                    SOURCE test/Main.cc test/mesh_mstk_pinchouts.cc
-                    LINK_LIBS mesh_mstk mesh_factory mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
     #Test: extracted surface from cell from volumetric face label
     add_amanzi_test(mesh_mstk_surface_face_inheritance mesh_mstk_surface_face_inheritance
                     KIND unit
                     SOURCE test/Main.cc test/mesh_mstk_label_inheritance.cc
-                    LINK_LIBS mesh_mstk geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
-    #Test: eliminate degeneracies in parallel mesh created from inline partitioning
-    add_amanzi_test(mesh_mstk_pinchout_par mesh_mstk_pinchout_par
-                    KIND int
-		    NPROCS 4
-                    SOURCE test/Main.cc test/mesh_mstk_pinchouts.cc
-                    LINK_LIBS mesh_mstk mesh_factory mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
-    #Test: eliminate degeneracies in pre-partitioned parallel mesh
-    add_amanzi_test(mesh_mstk_pinchout_prepart mesh_mstk_pinchout_prepart
-                    KIND int
-		    NPROCS 4
-                    SOURCE test/Main.cc test/mesh_mstk_degen_prepart.cc
-                    LINK_LIBS mesh_mstk mesh_factory mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
-    # Test: extract fracture test
-    add_amanzi_test(mesh_mstk_fracture mesh_mstk_fracture
-                    KIND unit
-                    SOURCE
-                          test/Main.cc 
-                          test/mesh_mstk_fracture.cc 
                     LINK_LIBS mesh_mstk geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 endif()
 

@@ -1,6 +1,3 @@
-<ParameterList name="main">
-  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-
   <ParameterList name="regions">
     <ParameterList name="Computational domain">
       <ParameterList name="region: box">
@@ -28,5 +25,4 @@
     </ParameterList>
   </ParameterList>
 
-</ParameterList>
 

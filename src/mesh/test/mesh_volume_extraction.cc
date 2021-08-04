@@ -7,6 +7,11 @@
   Authors: Ethan Coon (coonet@ornl.gov)
 */
 
+/*
+  This test extracts volume cells -- a set of cells in a 3D
+  mesh -- and creates a new mesh on this (subset) of cells.
+*/
+
 #include <UnitTest++.h>
 #include <fstream>
 

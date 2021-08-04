@@ -166,6 +166,17 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/mesh_volume_extraction.cc
                     LINK_LIBS ${mesh_test_link_libs})
+    
+    # Test: fracture extracted mesh
+    #   Tests a fracture mesh generated using the mesh framework
+    #   extraction constructor on FACES but not flattened, currently
+    #   only supported by MSTK.  This extracts a set of faces and
+    #   should recognize the shared edges between two intersecting
+    #   planes.
+    add_amanzi_test(mesh_fracture_extraction mesh_fracture_extraction
+                    KIND unit
+                    SOURCE test/Main.cc test/mesh_fracture_extraction.cc
+                    LINK_LIBS ${mesh_test_link_libs})
 
     # Test: mesh KD search
     add_amanzi_test(mesh_nanoflann mesh_nanoflann
