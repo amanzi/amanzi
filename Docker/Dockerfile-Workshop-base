@@ -12,6 +12,7 @@ RUN apt-get update --fix-missing && \
 
     # Shared
     apt-utils \
+    patch \
     g++ \
     gfortran \
     git \
@@ -98,28 +99,28 @@ ENV AMANZI_PREFIX=${DIR_INSTALL} \
 
 RUN git clone https://github.com/amanzi/amanzi.git ${DIR_BUILD}/amanzi --depth 1 && \
     cd ${DIR_BUILD}/amanzi/
-#RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
-#   --parallel=4 \
-#   # --opt \
-#   --amanzi-build-dir=${DIR_BUILD}/amanzi \
-#   --tpl-build-dir=${DIR_BUILD}/tpls \
-#   --tpl-download-dir=${DIR_BUILD}/tpls/Downloads \
-#   # --disable-build_amanzi \
-#   # --disable-build_user_guide \
-#   # --enable-shared \
-#   # --enable-structured \
-#   # --enable-unstructured \
-#   # --enable-silo \
-#   # --enable-alquimia \
-#   # --enable-pflotran \
-#   # --enable-crunchtope \
-#   # --enable-pf_clm \
-#   --with-mpi=/usr \
-#   --with-c-compiler=$(which mpicc) \
-#   --with-cxx-compiler=$(which mpicxx) \
-#   --with-fort-compiler=$(which mpif90) \
-#   && git checkout master \
-#   && rm -r ${DIR_BUILD}
+RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
+   --parallel=4 \
+   # --opt \
+   --amanzi-build-dir=${DIR_BUILD}/amanzi \
+   --tpl-build-dir=${DIR_BUILD}/tpls \
+   --tpl-download-dir=${DIR_BUILD}/tpls/Downloads \
+   # --disable-build_amanzi \
+   # --disable-build_user_guide \
+   # --enable-shared \
+   # --enable-structured \
+   # --enable-unstructured \
+   # --enable-silo \
+   # --enable-alquimia \
+   # --enable-pflotran \
+   # --enable-crunchtope \
+   # --enable-pf_clm \
+   --with-mpi=/usr \
+   --with-c-compiler=$(which mpicc) \
+   --with-cxx-compiler=$(which mpicxx) \
+   --with-fort-compiler=$(which mpif90) \
+   && git checkout master \
+   && rm -r ${DIR_BUILD}
 
 ENV PATH=${DIR_INSTALL}/install/tools/bin:${PATH}
 CMD ["/bin/bash"]
