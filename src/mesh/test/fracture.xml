@@ -23,6 +23,12 @@
         <Parameter name="normal" type="Array(double)" value="{0.0,1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
+    <ParameterList name="fractures">
+      <ParameterList name="region: logical">
+        <Parameter name="operation" type="string" value="union"/>
+        <Parameter name="regions" type="Array(string)" value="{fracture 1,fracture 2}"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 
 
