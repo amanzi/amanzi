@@ -87,7 +87,8 @@ if (BUILD_TESTS)
       list(APPEND mesh_factory_frameworks mesh_mstk)
       add_definitions("-DHAVE_MESH_MSTK -DMSTK_HAVE_MPI")
     endif()
-    
+
+    include_directories(${MESH_EXTRACTED_SOURCE_DIR})
     include_directories(${MESH_FACTORY_SOURCE_DIR})
     include_directories(${GEOMETRY_SOURCE_DIR})
     include_directories(${Epetra_INCLUDE_DIRS})
@@ -113,6 +114,9 @@ if (BUILD_TESTS)
     endif()    
 
     # Test: mesh geometry
+    #   Tests geometry of multiple constructed and exodus meshes
+    #   using all available frameworks.  Checks MeshAudit, known
+    #   geometry, and mesh maps.
     add_amanzi_test(mesh_geometry mesh_geometry
                     KIND unit
                     SOURCE test/Main.cc test/mesh_geometry.cc
@@ -120,36 +124,65 @@ if (BUILD_TESTS)
     add_amanzi_test(mesh_geometry_np2 mesh_geometry NPROCS 2 KIND unit)
 
     # Test: mesh sets
+    #   Tests the use of mesh sets on the above meshes and frameworks.
     add_amanzi_test(mesh_sets mesh_sets
                     KIND unit
                     SOURCE test/Main.cc test/mesh_sets.cc
                     LINK_LIBS ${mesh_test_link_libs})
     add_amanzi_test(mesh_sets_np2 mesh_sets NPROCS 2 KIND unit)
 
-    # Test: extracted mesh
-    add_amanzi_test(mesh_extracted_surface mesh_extracted_surface
-                    KIND unit
-                    SOURCE test/Main.cc test/mesh_extracted_surface.cc
-                    LINK_LIBS ${mesh_test_link_libs})
-    add_amanzi_test(mesh_extracted_np2 mesh_extracted NPROCS 2 KIND unit)
-    
     # Test: mesh deformation
+    #   A basic test of deforming volumetric and surface meshes and
+    #   making sure geometric quantities get updated correctly.
     add_amanzi_test(mesh_deform mesh_deform
                     KIND unit
         	    SOURCE test/Main.cc test/mesh_deform.cc
         	    LINK_LIBS ${mesh_test_link_libs})
 
     # Test: mesh columns
-    add_amanzi_test(mesh_columns mesh_columns
+    #   Tests the buidl_columns() capability for semi-structured meshes.              
+    add_amanzi_test(mesh_build_columns mesh_build_columns
                     KIND unit
-        	    SOURCE test/Main.cc test/mesh_columns.cc
+        	    SOURCE test/Main.cc test/mesh_build_columns.cc
         	    LINK_LIBS ${mesh_test_link_libs})
-    add_amanzi_test(mesh_columns_np2 mesh_columns NPROCS 2 KIND unit)
+    add_amanzi_test(mesh_build_columns_np2 mesh_build_columns NPROCS 2 KIND unit)
 
-    # # Test: mesh KD search
-    # add_amanzi_test(mesh_nanoflann mesh_nanoflann
-    #                 KIND unit
-    #     	    SOURCE test/Main.cc test/mesh_nanoflann.cc
-    #     	    LINK_LIBS ${mesh_test_link_libs})
+    # Test: surface extracted mesh
+    #   Tests a surface mesh generated using the mesh framework
+    #   extraction constructor on FACEs with the flatten parameter,
+    #   currently only supported by MSTK.  This extracts a surface
+    #   mesh and checks MeshAudit, geometry, sets, and maps.
+    add_amanzi_test(mesh_surface_extraction mesh_surface_extraction
+                    KIND unit
+                    SOURCE test/Main.cc test/mesh_surface_extraction.cc
+                    LINK_LIBS ${mesh_test_link_libs})
+    add_amanzi_test(mesh_surface_extraction_np2 mesh_surface_extraction NPROCS 2 KIND unit)
+    
+    # Test: volume extracted mesh
+    #   Tests a volumetric mesh generated using the mesh framework
+    #   extraction constructor on CELLs, currently only supported by
+    #   MSTK.  This extracts a set of cells, forms a mesh, and
+    #   checks MeshAudit, geometry, sets, and maps.
+    add_amanzi_test(mesh_volume_extraction mesh_volume_extraction
+                    KIND unit
+                    SOURCE test/Main.cc test/mesh_volume_extraction.cc
+                    LINK_LIBS ${mesh_test_link_libs})
+    
+    # Test: fracture extracted mesh
+    #   Tests a fracture mesh generated using the mesh framework
+    #   extraction constructor on FACES but not flattened, currently
+    #   only supported by MSTK.  This extracts a set of faces and
+    #   should recognize the shared edges between two intersecting
+    #   planes.
+    add_amanzi_test(mesh_fracture_extraction mesh_fracture_extraction
+                    KIND unit
+                    SOURCE test/Main.cc test/mesh_fracture_extraction.cc
+                    LINK_LIBS ${mesh_test_link_libs})
+
+    # Test: mesh KD search
+    add_amanzi_test(mesh_nanoflann mesh_nanoflann
+                    KIND unit
+        	    SOURCE test/Main.cc test/mesh_nanoflann.cc
+        	    LINK_LIBS ${mesh_test_link_libs})
 endif()
   

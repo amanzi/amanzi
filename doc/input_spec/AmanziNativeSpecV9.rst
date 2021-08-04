@@ -6347,18 +6347,22 @@ The `"general kinetics`" section describes kinetic (slow) reactions in the form
 
 .. code-block:: txt
 
-  30 A(aq) + 2 B(aq) <-> C(aq) + .3 D(aq) +- 4 E(aq)
+  3 A(aq) + 2 B(aq) <-> C(aq) + 3 D(aq) + 4 E(aq)
 
 where a number (stoichiometic coefficient) is followed by a species name. 
 The list of parameters for each reaction includes
 
-* `"reactants`" [string] is the lefti-hand side of the above equation.
+* `"reactants`" [string] is the left-hand side of the above equation.
 
 * `"products`" [string] is the right-hand side of the above equation.
 
-* `"forward rate`" [double] is the forward reactino rate.
+* `"forward rate`" [double] is the forward reaction rate.
 
 * `"backward rate`" [double] is the reverse reaction rate.
+
+* `"reaction orders (reactants/products)`" [Array(double)] is the list of 
+  reaction orders with respect to activies of dissolved species. The list 
+  includes orders for reactants (first) and products (second).
 
 .. code-block:: xml
 
@@ -6368,6 +6372,7 @@ The list of parameters for each reaction includes
       <Parameter name="products" type="string" value=""/>
       <Parameter name="forward rate" type="double" value="1.78577e-09"/>
       <Parameter name="backward rate" type="double" value="0.0"/>
+      <Parameter name="reaction orders (reactants/products)" type="Array(double)" value="{3.0, 2.0, 0.0, 0.0, 0.0}"/>
     </ParameterList>
   </ParameterList>
 
@@ -6554,8 +6559,8 @@ Each line has three fields: reaction, logarithm of equailibrium coefficient, and
    >FeOHUO3      = 1.0 >FeOH     1.0 H2O  -2.0 H+  1.0 UO2++    3.05   0.0
 
 
-Radiactive decay
-................
+Radioactive decay
+.................
 
 The `"radiaoctive decay`" section is the list of decay reactions for aqueous and 
 sorbed species.  

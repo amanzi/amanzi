@@ -34,7 +34,7 @@
 #include "errors.hh"
 
 #include "Region.hh"
-#include "Mesh_MSTK.hh"
+#include "Mesh.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -44,8 +44,8 @@ class MeshSurfaceCell : public Mesh {
   MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
                   const std::string& setname,
                   bool flatten=true);
-  
-  ~MeshSurfaceCell() = default;
+
+  virtual ~MeshSurfaceCell() = default;
 
   // Get parallel type of entity - OWNED, GHOST, ALL (See MeshDefs.hh)
   virtual
@@ -277,7 +277,10 @@ class MeshSurfaceCell : public Mesh {
   unsigned int get_set_size(const std::string& setname,
                             const Entity_kind kind,
                             const Parallel_type ptype) const override;
-  
+
+  virtual
+  bool valid_set_type(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const override;
+
   // Get list of entities of type 'category' in set
   virtual
   void get_set_entities_and_vofs(const std::string& setname,

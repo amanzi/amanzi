@@ -14,25 +14,14 @@
 #include <iomanip>
 #include <sstream>
 
+#include "dbc.hh"
+
 #include "GeneralRxn.hh"
 #include "MatrixBlock.hh"
 #include "ReactionString.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
-
-GeneralRxn::GeneralRxn() {
-  ncomp_ = 0;
-  ncomp_forward_ = 0;
-  ncomp_backward_ = 0;
-
-  kf_ = 0.0;
-  kb_ = 0.0;
-
-  lnQkf_ = 0.0;
-  lnQkb_ = 0.0;
-}
-
 
 GeneralRxn::GeneralRxn(const Teuchos::ParameterList& plist,
                        const std::map<std::string, int>& name_to_id)
@@ -50,33 +39,47 @@ GeneralRxn::GeneralRxn(const Teuchos::ParameterList& plist,
   // parse forward rates
   double coeff;
   std::string name;
-  forward_species_ids_.clear();
-  forward_stoichiometry_.clear();
+  species_ids_f_.clear();
+  stoichiometry_f_.clear();
+  orders_oc_.clear();
 
   std::istringstream iss1(reactants);
   while (iss1 >> coeff || !iss1.eof()) {
     iss1 >> name;
-    forward_species_ids_.push_back(name_to_id.at(name));
-    forward_stoichiometry_.push_back(coeff);
+    species_ids_f_.push_back(name_to_id.at(name));
+    stoichiometry_f_.push_back(coeff);
+    orders_oc_.push_back(coeff);
   }
 
   // parse backward rates
-  backward_species_ids_.clear();
-  backward_stoichiometry_.clear();
+  species_ids_b_.clear();
+  stoichiometry_b_.clear();
 
-  std::istringstream iss2(reactants);
+  std::istringstream iss2(products);
   while (iss2 >> coeff || !iss2.eof()) {
     iss2 >> name;
-    backward_species_ids_.push_back(name_to_id.at(name));
-    backward_stoichiometry_.push_back(coeff);
+    species_ids_b_.push_back(name_to_id.at(name));
+    stoichiometry_b_.push_back(coeff);
+    orders_oc_.push_back(coeff);
   }
 
   kf_ = plist.get<double>("forward rate");
   kb_ = plist.get<double>("backward rate");
 
+  lnkf_ = std::log(kf_);
+  lnkb_ = (kb_ > 0.0) ? std::log(kb_) : 0.0;
+
   ncomp_ = species_ids_.size();
-  ncomp_forward_ = forward_species_ids_.size();
-  ncomp_backward_ = backward_species_ids_.size();
+  ncomp_forward_ = species_ids_f_.size();
+  ncomp_backward_ = species_ids_b_.size();
+
+  // fractional order in C
+  flag_oc_ = false; 
+  if (plist.isParameter("reaction orders (reactants/products)")) {
+    orders_oc_ = plist.get<Teuchos::Array<double>>("reaction orders (reactants/products)").toVector();
+    flag_oc_ = true; 
+    AMANZI_ASSERT(orders_oc_.size() == ncomp_);
+  }
 }
 
 
@@ -85,21 +88,37 @@ void GeneralRxn::UpdateRates(const std::vector<Species> primary_species)
 {
   // forward rate expression
   lnQkf_ = 0.0;
+  lnOcf_ = 0.0;
   if (kf_ > 0.0) {
-    lnQkf_ = std::log(kf_);
     for (int i = 0; i < ncomp_forward_; i++) {
-      lnQkf_ += forward_stoichiometry_[i] *
-          primary_species[forward_species_ids_[i]].ln_activity();
+      lnQkf_ += stoichiometry_f_[i] * primary_species[species_ids_f_[i]].ln_activity();
     }
+    lnOcf_ += lnQkf_;
+    lnQkf_ += lnkf_;
   }
 
   // backward rate expression
   lnQkb_ = 0.0;
+  lnOcb_ = 0.0;
   if (kb_ > 0.0) {
-    lnQkb_ = std::log(kb_);
     for (int i = 0; i < ncomp_backward_; i++) {
-      lnQkb_ += backward_stoichiometry_[i] *
-          primary_species[backward_species_ids_[i]].ln_activity();
+      lnQkb_ += stoichiometry_b_[i] * primary_species[species_ids_b_[i]].ln_activity();
+    }
+    lnOcb_ += lnQkb_;
+    lnQkb_ += lnkb_;
+  }
+
+  // fractinal order in C (primary concentrations)
+  if (flag_oc_) {
+    lnOcf_ = 0.0;
+    for (int i = 0; i < ncomp_forward_; i++) {
+      lnOcf_ += orders_oc_[i] * primary_species[species_ids_f_[i]].ln_activity();
+    }
+
+    lnOcb_ = 0.0;
+    for (int i = 0; i < ncomp_backward_; i++) {
+      int k = ncomp_forward_ + i;
+      lnOcb_ += orders_oc_[k] * primary_species[species_ids_b_[i]].ln_activity();
     }
   }
 }
@@ -111,10 +130,10 @@ void GeneralRxn::AddContributionToResidual(std::vector<double> *residual,
   // por_den_sat_vol = porosity*water_density*saturation*volume
   double effective_rate = 0.0;
   if (kf_ > 0.0) {
-    effective_rate += std::exp(lnQkf_);
+    effective_rate += kf_ * std::exp(lnOcf_ + lnOcb_);
   }
   if (kb_ > 0.0) {
-    effective_rate -= std::exp(lnQkb_);
+    effective_rate -= kf_ * std::exp(lnOcf_ + lnOcb_ + lnQkb_ - lnQkf_);
   }
   effective_rate *= por_den_sat_vol;
 
@@ -138,13 +157,13 @@ void GeneralRxn::AddContributionToJacobian(
   if (kf_ > 0.0) {
     // column loop
     for (int j = 0; j < ncomp_forward_; j++) {
-      int jcomp = forward_species_ids_[j];
-      double tempd = -forward_stoichiometry_[j] *
-          std::exp(lnQkf_ - primary_species[jcomp].ln_molality()) *
-          por_den_sat_vol;
+      int jcomp = species_ids_f_[j];
+      // double tempd = -stoichiometry_[j] *
+      double tempd = orders_oc_[j] *
+          std::exp(lnQkf_ - primary_species[jcomp].ln_molality()) * por_den_sat_vol;
       // row loop
       for (int i = 0; i < ncomp_; i++) {
-        J->AddValue(species_ids_[i], jcomp, stoichiometry_[i]*tempd);
+        J->AddValue(species_ids_[i], jcomp, stoichiometry_[i] * tempd);
       }
     }
   }
@@ -153,12 +172,12 @@ void GeneralRxn::AddContributionToJacobian(
   if (kb_ > 0.0) {
     // column loop
     for (int j = 0; j < ncomp_backward_; j++) {
-      int jcomp = backward_species_ids_[j];
-      double tempd = backward_stoichiometry_[j] *
+      int jcomp = species_ids_b_[j];
+      double tempd = orders_oc_[ncomp_forward_ + j] *
           std::exp(lnQkb_ - primary_species[jcomp].ln_molality()) * por_den_sat_vol;
       // row loop
       for (int i = 0; i < ncomp_; i++) {
-        J->AddValue(species_ids_[i], jcomp, stoichiometry_[i]*tempd);
+        J->AddValue(species_ids_[i], jcomp, stoichiometry_[i] * tempd);
       }
     }
   }
@@ -179,7 +198,7 @@ void GeneralRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const
   for (unsigned int i = 0; i < species_names_.size(); i++) {
     if (stoichiometry_.at(i) < 0) { 
       message << -stoichiometry_.at(i) << " " << species_names_.at(i);
-      if (i < forward_species_ids_.size() - 1) {
+      if (i < species_ids_f_.size() - 1) {
         message << " + ";
       }
     }
@@ -200,25 +219,23 @@ void GeneralRxn::Display(const Teuchos::Ptr<VerboseObject> vo) const
   // write the forward rate expression....
   message << std::setw(12) << "    R_f = "
           << std::scientific << this->kf_ << std::fixed;
-  if (forward_species_ids_.size() > 0 && this->kf_ > 0.0) {
+  if (species_ids_f_.size() > 0 && this->kf_ > 0.0) {
     message << " * ";
     
-    for (int i = 0; i < forward_species_ids_.size(); i++) {
-      message << "a_(" << species_names_[i] << ")^("
-              << -stoichiometry_[i] << ")";
-      if (i < forward_species_ids_.size() - 1) {
+    for (int i = 0; i < species_ids_f_.size(); i++) {
+      message << "a_(" << species_names_[i] << ")^(" << orders_oc_[i] << ")";
+      if (i < species_ids_f_.size() - 1) {
         message << " * ";
       }
     }
   }
   message << std::endl << std::setw(12) << "    R_b = "
           << std::scientific << this->kb_ << std::fixed;
-  if (backward_species_ids_.size() > 0 && this->kb_ > 0.0) {
+  if (species_ids_b_.size() > 0 && this->kb_ > 0.0) {
     message << " * ";
-    for (int i = 0; i < backward_species_ids_.size(); i++) {
-      message << "a_(" << species_names_[i] << ")^("
-              << -stoichiometry_[i] << ")";
-      if (i < backward_species_ids_.size() - 1) {
+    for (int i = 0; i < species_ids_b_.size(); i++) {
+      message << "a_(" << species_names_[i] << ")^(" << orders_oc_[ncomp_forward_ + i] << ")";
+      if (i < species_ids_b_.size() - 1) {
         message << " * ";
       }
     }

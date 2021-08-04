@@ -96,6 +96,10 @@ if ((ENABLE_Unstructured)  AND
                       "-D ENABLE_MESH_MSTK:BOOL=ON\n")
 endif()    
 
+if(ENABLE_KOKKOS_OPENMP)
+  set(CMAKE_CXX_FLAGS "-fopenmp")
+endif()
+
 if(ENABLE_KOKKOS_CUDA) 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
     -Wno-deprecated-declarations \

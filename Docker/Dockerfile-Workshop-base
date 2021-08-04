@@ -1,3 +1,78 @@
-FROM ubuntu:20.04
+ARG build_dir=/amanzi/
+FROM continuumio/miniconda3
+LABEL Description="Amanzi/ATS/WatershedWorkflow/TINerator Docker container"
+ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 
+WORKDIR ${build_dir}
+
+RUN apt-get update --fix-missing && \
+    apt-get install -y \
+
+    # Shared
+    apt-utils \
+    g++ \
+    gfortran \
+    git \
+    make \
+    cmake \
+    emacs \
+    vim \
+    curl \
+    wget \
+    libz-dev \
+    openssl \
+    m4 \
+
+    # Amanzi/ATS
+    groff \
+    libblas-dev \
+    liblapack-dev \
+    libmpich-dev \
+    libssl-dev \
+    zlib1g-dev \
+    libcurl4-openssl-dev \
+
+    # TINerator/Watershed Workflow
+    libgdal-dev \
+    unzip \
+    bison \
+    libgl1-mesa-glx \
+    xvfb \
+    && apt-get clean
+
+RUN pip install GDAL==`gdal-config --version`
+
+ENV https_proxy=$https_proxy \
+    http_proxy=$http_proxy \
+    AMANZI_PREFIX=${build_dir}/install \
+    AMANZI_INSTALL_DIR=${build_dir}/install/amanzi \
+    AMANZI_TPLS_DIR=${build_dir}/install/tpls \
+    AMANZI_SRC_DIR=${build_dir}/amanzi \
+    ATS_SRC_DIR=${build_dir}/amanzi/src/physics/ats
+    #AMANZI_PETSC_LIBS=$AMANZI_TPLS_DIR/petsc-${petsc_ver}/lib \
+    #AMANZI_TRILINOS_LIBS=$AMANZI_TPLS_DIR/trilinos-${trilinos_ver}/lib \
+    #AMANZI_SEACAS_LIBS=$AMANZI_TPLS_DIR/SEACAS/lib
+
+RUN git clone https://github.com/amanzi/amanzi.git ${build_dir}/amanzi && \
+    cd ${build_dir}/amanzi/ && \
+   ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
+   --parallel=4 \
+   --opt \
+   --amanzi-build-dir=${build_dir}/build/amanzi \
+   --tpl-build-dir=${build_dir}/build/tpls \
+   --tpl-download-dir=${build_dir}/build/tpls/Downloads \
+   --disable-build_amanzi \
+   --disable-build_user_guide \
+   --enable-shared \
+   --enable-structured \
+   --enable-silo \
+   --enable-alquimia \
+   --enable-pflotran \
+   --enable-crunchtope \
+   --enable-pf_clm \
+   --with-mpi=/usr \
+   && git checkout master \
+   && rm -r ${build_dir}/build
+
+ENV PATH=${build_dir}/amanzi/install/tools/bin:${PATH}
 CMD ["bash"]

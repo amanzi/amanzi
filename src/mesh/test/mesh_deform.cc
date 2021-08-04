@@ -41,7 +41,7 @@ TEST(MESH_DEFORM2D)
 
     // Create the mesh
     Teuchos::RCP<AmanziMesh::Mesh> mesh = createFrameworkStructuredUnitQuad({frm}, 10, 10, comm,
-            Teuchos::null, Teuchos::null, 10.0, 10.0);
+            Teuchos::null, Teuchos::null, false, 10.0, 10.0);
 
     // Deform the mesh
     AmanziMesh::Entity_ID_List nodeids;
@@ -99,7 +99,7 @@ TEST(MESH_GENERATED_DEFORM3D)
 
     // start with a mesh that will be deformed into the known mesh coordinates
     auto mesh = createFrameworkStructuredUnitHex({frm}, 3, 3, 3,
-            comm, Teuchos::null, Teuchos::null, 1.0, 1.0, 2.0);
+            comm, Teuchos::null, Teuchos::null, false, 1.0, 1.0, 2.0);
 
     // Deform the mesh
     AmanziMesh::Entity_ID_List nodeids;

@@ -45,33 +45,3 @@ add_amanzi_library(mesh_moab
                    LINK_LIBS geometry mesh atk
                              ${MOAB_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES}) 
 
-if (BUILD_TESTS)
-    # Add UnitTest include
-    include_directories(${UnitTest_INCLUDE_DIRS})
-
-    # Need to copy files for the tests 
-    if (NOT (${MESH_MOAB_SOURCE_DIR} EQUAL ${MESH_MOAB_BINARY_DIR}))
-      file(GLOB DataFiles "${MESH_MOAB_SOURCE_DIR}/test/*.exo"
-                          "${MESH_MOAB_SOURCE_DIR}/test/*.h5m")
-      file(COPY ${DataFiles} DESTINATION ${MESH_MOAB_BINARY_DIR}/test/)
-    endif()
-
-    # Test: serial
-    add_amanzi_test(mesh_moab_serial mesh_moab_serial
-      KIND unit
-      SOURCE  test/Main.cc
-	      test/mesh_moab_hex_1x1x1.cc
-              test/mesh_moab_hex_2x2x1.cc
-              test/mesh_moab_hex_3x3x3.cc
-      LINK_LIBS mesh_moab mesh_audit ${UnitTest_LIBRARIES})
- 
-    # Test: parallel
-    add_amanzi_test(mesh_moab_parallel mesh_moab_parallel
-      KIND unit
-      NPROCS 4 
-      SOURCE  test/Main.cc
-              test/mesh_moab_hex_3x3x3_4P.cc
-      LINK_LIBS mesh_moab mesh_audit ${UnitTest_LIBRARIES})
-
-endif()
-

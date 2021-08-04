@@ -1,3 +1,19 @@
+/*
+  Copyright 2010- held jointly by LANL, ORNL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Konstantin Lipnikov
+*/
+
+/*
+  The nanoflann library is used for kd-tree implementations of k-nearest
+  neighbors with mesh coordinates.
+
+  This tests that capability.
+*/
+
 #include <ctime>
 #include <cstdlib>
 #include <iostream>

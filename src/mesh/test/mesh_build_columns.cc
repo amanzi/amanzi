@@ -1,10 +1,26 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010- held jointly by LANL, ORNL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Rao Garimella, others
+*/
+
+/*
+  build_columns() insantiates extra data structures in a Mesh that provide
+  semi-structured functionality, specifically around meshes whose vertical
+  structure consists of stacks of cells, or columns.  Fully unstructured in x
+  and y, nodes and cells are vertically structured.
+
+  Note that pinchouts and variances in dz cause cell centroids to not be
+  vertically stacked!  But nodes will always be vertically stacked.  In fact,
+  this can be extreme enough that a cell's centroid may have a larger z
+  coordinate than the face above its centroid.
+
+  This test works with an extruded mesh, where the dz is uniform across the
+  layer of cells, in which case cell centroids are also vertically stacked.
+
 */
 
 #include <vector>
@@ -46,7 +62,7 @@ TEST(MESH_COLUMNS)
     std::cerr << "Testing columns with " << AmanziMesh::framework_names.at(frm) << std::endl;
 
     // Create the mesh
-    auto mesh = createFrameworkStructuredUnitHex({frm}, 3,3,10, comm, Teuchos::null, mesh_pars, 2,3,2);
+    auto mesh = createFrameworkStructuredUnitHex({frm}, 3,3,10, comm, Teuchos::null, mesh_pars, false, 2,3,2);
 
     // Explicitly call build columns method
     mesh->build_columns();
