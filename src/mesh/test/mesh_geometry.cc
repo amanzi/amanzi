@@ -36,8 +36,7 @@ TEST(MESH_GEOMETRY_PLANAR)
     auto mesh = createFrameworkStructuredUnitQuad(Preference{frm}, 2,2);
     testMeshAudit<MeshAudit, Mesh>(mesh);
     testGeometryQuad(mesh,2,2);
-    if (frm == Framework::MSTK)
-      testExteriorMapsUnitBox(mesh, 2, 2);
+    testExteriorMapsUnitBox(mesh, 2, 2);
   }
 }
 
@@ -63,8 +62,9 @@ TEST(MESH_GEOMETRY_1CUBE_GENERATED)
     auto mesh = createFrameworkStructuredUnitHex(Preference{frm}, 1,1,1);
     testMeshAudit<MeshAudit, Mesh>(mesh);
     testGeometryCube<Mesh>(mesh,1,1,1);
-    if (frm == Framework::MSTK)
-      testExteriorMapsUnitBox(mesh, 1,1,1);
+
+    // Exterior maps not supported by SIMPLE
+    if (frm != Framework::SIMPLE) testExteriorMapsUnitBox(mesh, 1,1,1);
   }
 }
 
@@ -235,7 +235,7 @@ TEST(MESH_GEOMETRY_FRACTURE_EXO)
 
 TEST(MESH_GEOMETRY_PINCHOUTS)
 {
-  // only MSTK can handle this mesh -- it has pinchouts
+  // only MSTK can handle this mesh -- it has degeneracies
   std::vector<Framework> frameworks;
   if (framework_enabled(Framework::MSTK)) {
     frameworks.push_back(Framework::MSTK);

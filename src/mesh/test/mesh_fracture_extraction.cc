@@ -106,6 +106,9 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
 
     // extract the fractures
     auto fac_plist = Teuchos::rcp(new Teuchos::ParameterList());
+
+    // Extracting multiple sets not supported by MeshExtractedManifold, see #596 part 4
+    // std::vector<std::string> setnames{"fracture 1", "fracture 2"};
     std::vector<std::string> setnames{"fractures"};
     fac_plist->sublist("unstructured").sublist("submesh").set<std::string>("extraction method", "manifold mesh");
     MeshFactory fac(comm, gm, fac_plist);

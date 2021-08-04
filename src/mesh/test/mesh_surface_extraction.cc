@@ -129,10 +129,6 @@ TEST(MESH_SURFACE_EXTRACTION_EXO)
 }
 
 
-#if 0 // NOTE: these tests are commented out because MeshExtractedManifold does
-      // not support getting an outward normal with respect to a cell.  This
-      // should be fixed and these tests re-enabled.
-
 TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
 {
   // Unlike the above tests, which call the framework's extraction constructor,
@@ -166,7 +162,7 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "MeshExtractedManifold from surface of 3D Box with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "MeshExtractedManifold from surface of 3D Generated Box with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto parent_mesh = createFrameworkStructuredUnitHex(Preference{frm}, 3,3,3, comm, gm, Teuchos::null, true);
 
@@ -188,10 +184,13 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
     testMeshAudit<MeshAudit, Mesh>(mesh);
     // -- geometry
     testGeometryQuad(mesh, 3,3);
-    // -- exterior maps
-    testExteriorMapsUnitBox(mesh,3,3);
+
+    // -- exterior maps -- NOT SUPPORTED BY SIMPLE
+    if (frm != Framework::SIMPLE) testExteriorMapsUnitBox(mesh,3,3);
+
     // -- sets, which should inherit from the parent mesh
-    testQuadMeshSets3x3(mesh, false, frm, true);
+    // NOT SUPPORTED BY MeshExtractedManifold with flattened == True, see #596 part 5
+    //testQuadMeshSets3x3(mesh, false, frm, true);
   }
 }
 
@@ -222,13 +221,15 @@ TEST(MESH_SURFACE_EXTRACTION_EXO_EXTRACTED_MANIFOLD)
   if (framework_enabled(Framework::MSTK)) {
     frameworks.push_back(Framework::MSTK);
   }
-  if (framework_enabled(Framework::MOAB)) {
-    frameworks.push_back(Framework::MOAB);
-  }
+
+  // MOAB does not support edges, so cannot work with MeshExtractedManifold.  See #596 part 3
+  // if (framework_enabled(Framework::MOAB)) {
+  //   frameworks.push_back(Framework::MOAB);
+  // }
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "MeshExtractedManifold from surface of 3D Box with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "MeshExtractedManifold from surface of 3D EXO Box with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto parent_mesh = createFrameworkUnstructured(Preference{frm}, "test/hex_3x3x3_sets.exo", comm, gm, Teuchos::null, true);
 
@@ -253,9 +254,11 @@ TEST(MESH_SURFACE_EXTRACTION_EXO_EXTRACTED_MANIFOLD)
     testGeometryQuad(mesh, 3,3);
     // -- exterior maps
     testExteriorMapsUnitBox(mesh,3,3);
+
     // -- sets, which should inherit from the parent mesh
-    testQuadMeshSets3x3(mesh, false, frm, true);
+    // NOT SUPPORTED BY MeshExtractedManifold with flattened == True, see #596 part 5
+    //testQuadMeshSets3x3(mesh, false, frm, true);
   }
 }
 
-#endif
+
