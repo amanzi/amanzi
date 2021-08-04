@@ -19,7 +19,6 @@
 */
 
 #include "EvaluatorIndependentTensorFunction.hh"
-#include "UniqueHelpers.hh"
 
 namespace Amanzi {
 

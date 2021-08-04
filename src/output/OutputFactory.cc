@@ -20,7 +20,6 @@
 #include "Output.hh"
 #include "OutputXDMF.hh"
 #include "InputOutputHDF5.hh"
-#include "UniqueHelpers.hh"
 
 #include "OutputFactory.hh"
 

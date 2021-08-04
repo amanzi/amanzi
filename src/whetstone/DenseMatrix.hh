@@ -596,9 +596,7 @@ class DenseMatrix {
  private:
 
   int m_, n_, mem_; 
-  //access_;
   Kokkos::View<double*,MEMSPACE> data_; 
-  //double* data_;
 };
 
 // non-member functions

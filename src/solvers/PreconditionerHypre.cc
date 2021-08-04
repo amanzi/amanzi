@@ -19,7 +19,18 @@
 #include "VerboseObject.hh"
 #include "PreconditionerHypre.hh"
 
+
+// Temporary
+// Useful functions to trace NVIDIA calls 
+#if 0 
+#include <nvToolsExt.h> 
+#else
+void nvtxRangePush(const char*){}
+void nvtxRangePop(){}
+#endif 
+
 namespace Amanzi {
+
 namespace AmanziSolvers {
 
 /* ******************************************************************
@@ -27,9 +38,11 @@ namespace AmanziSolvers {
 ****************************************************************** */
 int PreconditionerHypre::applyInverse(const Vector_type& v, Vector_type& hv) const
 {
+  nvtxRangePush(__FUNCTION__);
   IfpHypre_->apply(v, hv);
   returned_code_ = 0;
   return returned_code_;
+  nvtxRangePop();
 }
 
 
@@ -38,10 +51,12 @@ int PreconditionerHypre::applyInverse(const Vector_type& v, Vector_type& hv) con
 ****************************************************************** */
 void PreconditionerHypre::set_inverse_parameters(Teuchos::ParameterList& list)
 {
+  nvtxRangePush(__FUNCTION__);
   plist_ = list;
 
   std::string vo_name = this->name()+" ("+plist_.get<std::string>("method")+")";
   vo_ = Teuchos::rcp(new VerboseObject(vo_name, plist_));
+  nvtxRangePop();
 }
 
 void PreconditionerHypre::Init_()
@@ -52,6 +67,7 @@ void PreconditionerHypre::Init_()
 
 void PreconditionerHypre::InitBoomer_()
 {
+  nvtxRangePush(__FUNCTION__);
   Init_();
 
 #ifdef HAVE_IFPACK2_HYPRE
@@ -85,11 +101,17 @@ void PreconditionerHypre::InitBoomer_()
     IfpHypre_->SetParameter((Ifpack2::Hypre_Chooser)1, &HYPRE_BoomerAMGSetCycleRelaxType, plist_.get<int>("relaxation type down"), 1);
     IfpHypre_->SetParameter((Ifpack2::Hypre_Chooser)1, &HYPRE_BoomerAMGSetCycleRelaxType, plist_.get<int>("relaxation type up"), 2);
   } else if (plist_.isParameter("relaxation type")) {
-    IfpHypre_->SetParameter((Ifpack2::Hypre_Chooser)1, &HYPRE_BoomerAMGSetRelaxType, plist_.get<int>("relaxation type"));
-  } else {
+    IfpHypre_->SetParameter((Ifpack2::Hypre_Chooser)1, &HYPRE_BoomerAMGSetRelaxType, plist_.get<int>("relaxation type")); 
+  } else { 
     // use Hypre's defaults
   }
 
+  if (plist_.isParameter("coarsening type")) 
+    IfpHypre_->SetParameter((Ifpack2::Hypre_Chooser)1, &HYPRE_BoomerAMGSetCoarsenType, plist_.get<int>("coarsening type"));
+  if (plist_.isParameter("interpolation type")) 
+    IfpHypre_->SetParameter((Ifpack2::Hypre_Chooser)1, &HYPRE_BoomerAMGSetInterpType, plist_.get<int>("interpolation type"));
+  if (plist_.isParameter("relaxation order")) 
+    IfpHypre_->SetParameter((Ifpack2::Hypre_Chooser)1, &HYPRE_BoomerAMGSetRelaxOrder, plist_.get<int>("relaxation order"));
   if (plist_.isParameter("max multigrid levels"))
     IfpHypre_->SetParameter((Ifpack2::Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxLevels, plist_.get<int>("max multigrid levels"));
   if (plist_.isParameter("max coarse size"))
@@ -174,6 +196,7 @@ void PreconditionerHypre::InitBoomer_()
   Errors::Message msg("Hypre (BoomerAMG) is not available in this installation of Amanzi.  To use Hypre, please reconfigure.");
   Exceptions::amanzi_throw(msg);
 #endif
+  nvtxRangePop();
 }
 
 
@@ -209,6 +232,8 @@ void PreconditionerHypre::InitEuclid_()
 
 void PreconditionerHypre::initializeInverse()
 {
+  nvtxRangePush(__FUNCTION__);
+
   // must be row matrix
   Teuchos::RCP<RowMatrix_type> h_row = h_;
   IfpHypre_ = Teuchos::rcp(new Ifpack2::Hypre<RowMatrix_type>(h_row));
@@ -244,6 +269,7 @@ void PreconditionerHypre::initializeInverse()
   }
 
   IfpHypre_->initialize();
+  nvtxRangePop();
 }
 
 
@@ -252,10 +278,13 @@ void PreconditionerHypre::initializeInverse()
 ****************************************************************** */
 void PreconditionerHypre::computeInverse()
 {
+  nvtxRangePush(__FUNCTION__);
+
 #ifdef HAVE_IFPACK2_HYPRE
   AMANZI_ASSERT(IfpHypre_.get());
   IfpHypre_->compute();
 #endif
+  nvtxRangePop();
 }
 
 }  // namespace AmanziSolvers

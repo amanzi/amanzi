@@ -25,7 +25,6 @@
 
 #include "AmanziVector.hh"
 
-#include "UniqueHelpers.hh"
 #include "MeshDefs.hh"
 #include "Mesh.hh"
 #include "BlockSpace.hh"

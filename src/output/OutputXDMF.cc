@@ -15,7 +15,6 @@
   needs a mesh and cannot handle face DoFs.
 */
 
-#include "UniqueHelpers.hh"
 #include "OutputUtils.hh"
 #include "OutputXDMF.hh"
 

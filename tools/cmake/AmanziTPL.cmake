@@ -284,13 +284,12 @@ if (Trilinos_FOUND)
       message(SEND_ERROR "Trilinos in ${Trilinos_DIR} does not have the Ifpack package")
     endif()
 
-    if (NOT Ifpack_ENABLE_HYPRE AND NOT ENABLE_KOKKOS)
+    if (NOT Ifpack_ENABLE_HYPRE)
       message(WARNING "ENABLE_HYPRE requires the Trilinos package Ifpack with enabled HYPRE."
                       " Deactivating HYPRE APIs")
       set(ENABLE_HYPRE OFF CACHE BOOL "Disable the HYPRE APIs" FORCE)                 
     endif()
   endif()
-       
   # Now update the Trilinos_LIBRARIES and INCLUDE_DIRS
   foreach( _inc "${Trilinos_TPL_INCLUDE_DIRS}")
     list(APPEND Trilinos_INCLUDE_DIRS "${_inc}")
