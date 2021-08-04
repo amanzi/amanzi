@@ -87,7 +87,8 @@ if (BUILD_TESTS)
       list(APPEND mesh_factory_frameworks mesh_mstk)
       add_definitions("-DHAVE_MESH_MSTK -DMSTK_HAVE_MPI")
     endif()
-    
+
+    include_directories(${MESH_EXTRACTED_SOURCE_DIR})
     include_directories(${MESH_FACTORY_SOURCE_DIR})
     include_directories(${GEOMETRY_SOURCE_DIR})
     include_directories(${Epetra_INCLUDE_DIRS})

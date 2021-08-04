@@ -62,7 +62,7 @@ TEST(MESH_COLUMNS)
     std::cerr << "Testing columns with " << AmanziMesh::framework_names.at(frm) << std::endl;
 
     // Create the mesh
-    auto mesh = createFrameworkStructuredUnitHex({frm}, 3,3,10, comm, Teuchos::null, mesh_pars, 2,3,2);
+    auto mesh = createFrameworkStructuredUnitHex({frm}, 3,3,10, comm, Teuchos::null, mesh_pars, false, 2,3,2);
 
     // Explicitly call build columns method
     mesh->build_columns();

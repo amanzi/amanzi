@@ -28,12 +28,13 @@ Teuchos::RCP<AmanziMesh::Mesh> createFrameworkStructuredUnitQuad(
   Comm_ptr_type comm=Teuchos::null,
   const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm=Teuchos::null,
   const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null,
+  bool request_edges=false,
   double dx=1.0, double dy=1.0)
 {
   if (comm == Teuchos::null) comm = getDefaultComm();
   AmanziMesh::MeshFactory fac(comm, gm, plist);
   fac.set_preference(pref);
-  return fac.create(0.0,0.0, dx,dy, nx,ny);
+  return fac.create(0.0,0.0, dx,dy, nx,ny, true, request_edges);
 }
 
 
@@ -44,12 +45,13 @@ Teuchos::RCP<AmanziMesh::Mesh> createFrameworkStructuredUnitHex(
   Comm_ptr_type comm=Teuchos::null,
   const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm=Teuchos::null,
   const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null,
+  bool request_edges=false,
   double dx=1.0, double dy=1.0, double dz=1.0)
 {
   if (comm == Teuchos::null) comm = getDefaultComm();
   AmanziMesh::MeshFactory fac(comm, gm, plist);
   fac.set_preference(pref);
-  return fac.create(0.0,0.0,0.0,dx,dy,dz,nx,ny,nz);
+  return fac.create(0.0,0.0,0.0,dx,dy,dz,nx,ny,nz, true, request_edges);
 }
 
 
@@ -59,12 +61,13 @@ Teuchos::RCP<AmanziMesh::Mesh> createFrameworkUnstructured(
   const std::string& filename,
   Comm_ptr_type comm=Teuchos::null,
   const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm=Teuchos::null,
-  const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null)
+  const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null,
+  bool request_edges=false)
 {
   if (comm == Teuchos::null) comm = getDefaultComm();
   AmanziMesh::MeshFactory fac(comm, gm, plist);
   fac.set_preference(pref);
-  return fac.create(filename);
+  return fac.create(filename, true, request_edges);
 }
 
 

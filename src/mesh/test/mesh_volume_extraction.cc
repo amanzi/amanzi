@@ -60,7 +60,7 @@ TEST(MESH_VOLUME_EXTRACTION_GENERATED)
     std::cout << std::endl
               << "Testing 3D Box 3x3x3 with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto parent_mesh = createFrameworkStructuredUnitHex(Preference{frm}, 6,6,3, comm, gm, Teuchos::null, 2,2,1);
+    auto parent_mesh = createFrameworkStructuredUnitHex(Preference{frm}, 6,6,3, comm, gm, Teuchos::null, false, 2,2,1);
 
     // extract the volume
     MeshFactory fac(comm, gm);
