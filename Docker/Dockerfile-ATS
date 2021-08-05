@@ -67,8 +67,9 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --enable-ats_physics \
    --enable-reg_tests \
    && cd /home/amanzi_user/amanzi_builddir/ats \
-   && make test \
    && rm -r /home/amanzi_user/amanzi_builddir/
+
+#  && make test \
 
 # Set path to make it easier to run amanzi
 ENV PATH=/home/amanzi_user/install/bin:${PATH}
