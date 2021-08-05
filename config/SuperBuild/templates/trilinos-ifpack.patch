@@ -11,7 +11,7 @@ index d70f232946b..a7beafea8de 100644
    // Hypre Setup must be called after matrix has values
    if(SolveOrPrec_ == Solver){
 diff --git a/packages/ifpack2/src/Ifpack2_Hypre_def.hpp b/packages/ifpack2/src/Ifpack2_Hypre_def.hpp
-index 3956750..ff9644e 100644
+index 39567505393..47d11a7b5f8 100644
 --- a/packages/ifpack2/src/Ifpack2_Hypre_def.hpp
 +++ b/packages/ifpack2/src/Ifpack2_Hypre_def.hpp
 @@ -844,7 +844,7 @@ void Hypre<MatrixType>::compute(){
@@ -23,7 +23,7 @@ index 3956750..ff9644e 100644
      // Hypre Setup must be called after matrix has values
      if(SolveOrPrec_ == Hypre_Is_Solver){
        IFPACK2_CHK_ERR(SolverSetupPtr_(Solver_, ParMatrix_, ParX_, ParY_));
-@@ -1187,23 +1187,28 @@ int Hypre<MatrixType>::CopyTpetraToHypre(){
+@@ -1187,23 +1187,31 @@ int Hypre<MatrixType>::CopyTpetraToHypre(){
    if(Matrix.is_null()) 
      throw std::runtime_error("Hypre<MatrixType>: Unsupported matrix configuration: Tpetra::CrsMatrix required");
  
@@ -40,24 +40,27 @@ index 3956750..ff9644e 100644
 -    GlobalRow[0] = GloballyContiguousRowMap_->getGlobalElement(i);    
 -    IFPACK2_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, new_indices.data(), values.getRawPtr()));
 -  }
-+  LO nrows = Matrix->getNodeNumRows(); 
-+  Kokkos::View<LO*,Kokkos::DefaultExecutionSpace> colsperrow("ColsPerRow",nrows); 
-+  auto rowPtrs = Matrix->getCrsGraph()->getLocalGraph().row_map; 
++  LO nrows = Matrix->getNodeNumRows();
++  Kokkos::View<LO*,Kokkos::DefaultExecutionSpace> colsperrow("ColsPerRow",nrows);
++  auto rowPtrs = Matrix->getCrsGraph()->getLocalGraph().row_map;
 +  Kokkos::parallel_for(nrows,
 +    KOKKOS_LAMBDA(const int i){
-+      colsperrow(i) = rowPtrs[i+1]-rowPtrs[i]; 
-+  }); 
-+
++      colsperrow(i) = rowPtrs[i+1]-rowPtrs[i];
++  });
 +  auto rowindices = Matrix->getRowMap()->getMyGlobalIndices();
-+
-+  Kokkos::View<SC*,Kokkos::DefaultExecutionSpace> 
-+    values = Matrix->getLocalValuesView(); 
-+  Kokkos::View<LO*,Kokkos::DefaultExecutionSpace> 
-+    colindices = Matrix->getCrsGraph()->getLocalGraph().entries; 
++  Kokkos::View<SC*,Kokkos::DefaultExecutionSpace>
++    values = Matrix->getLocalValuesView();
++  Kokkos::View<LO*,Kokkos::DefaultExecutionSpace>
++    colindices = Matrix->getCrsGraph()->getLocalGraph().entries;
++  Kokkos::View<GO*,Kokkos::DefaultExecutionSpace>
++    new_colindices("nci",colindices.size());
++  Kokkos::parallel_for(colindices.size(),
++  KOKKOS_LAMBDA(const int i){
++    new_colindices[i] = GloballyContiguousColMap_->getGlobalElement(colindices[i]);
++  });
 +
 +  IFPACK2_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_,nrows,colsperrow.data(),
-+                                        rowindices.data(),colindices.data(),values.data()));
-+
++                                        rowindices.data(),new_colindices.data(),values.data()));
    IFPACK2_CHK_ERR(HYPRE_IJMatrixAssemble(HypreA_));
    IFPACK2_CHK_ERR(HYPRE_IJMatrixGetObject(HypreA_, (void**)&ParMatrix_));
    if (Dump_)
