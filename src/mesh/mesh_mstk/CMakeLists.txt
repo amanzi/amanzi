@@ -56,23 +56,4 @@ add_amanzi_library(mesh_mstk
                    LINK_LIBS geometry mesh atk ${MSTK_LIBRARIES} ${Epetra_LIBRARIES}
 		             ${Teuchos_LIBRARIES} ${Zoltan_LIBRARIES} ${HDF5_LIBRARIES})
 
-if (BUILD_TESTS)
-    
-    include_directories(${UnitTest_INCLUDE_DIRS})
-
-    # Need to copy files for the tests 
-    if (NOT (${MESH_MSTK_SOURCE_DIR} EQUAL ${MESH_MSTK_BINARY_DIR}))
-        file(GLOB DataFiles "${MESH_MSTK_SOURCE_DIR}/test/*.xml"
-                            "${MESH_MSTK_SOURCE_DIR}/test/*.txt"
-                            "${MESH_MSTK_SOURCE_DIR}/test/*.exo"
-                            "${MESH_MSTK_SOURCE_DIR}/test/*.par.*")
-        file(COPY ${DataFiles} DESTINATION ${MESH_MSTK_BINARY_DIR}/test/)
-    endif()
-
-    #Test: extracted surface from cell from volumetric face label
-    add_amanzi_test(mesh_mstk_surface_face_inheritance mesh_mstk_surface_face_inheritance
-                    KIND unit
-                    SOURCE test/Main.cc test/mesh_mstk_label_inheritance.cc
-                    LINK_LIBS mesh_mstk geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-endif()
 
