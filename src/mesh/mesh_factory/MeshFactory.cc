@@ -11,6 +11,7 @@
 
 #include <boost/format.hpp>
 
+#include "RegionLogical.hh"
 #include "MeshException.hh"
 #include "MeshFactory.hh"
 #include "FileFormat.hh"
@@ -398,12 +399,20 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
                     const bool request_faces,
                     const bool request_edges)
 {
-  if (extraction_method_ == "manifold mesh" && setnames.size() == 1) {
+  if (extraction_method_ == "manifold mesh") {
     const auto& comm = inmesh->get_comm();
     const auto& gm = inmesh->geometric_model();
 
+    // greedy solution for more than one sets. A new region is forced into GM
+    std::string setname(setnames[0]);
+    if (setnames.size() > 1) {
+      for (int i = 1; i < setnames.size(); ++i) setname += "_" + setnames[i];
+      auto rgn = Teuchos::rcp(new AmanziGeometry::RegionLogical(setname, -1, "union", setnames));
+      Teuchos::rcp_const_cast<AmanziGeometry::GeometricModel>(gm)->AddRegion(rgn);
+    }
+
     auto mesh = Teuchos::rcp(new MeshExtractedManifold(
-        inmesh, setnames[0], setkind,
+        inmesh, setname, setkind,
         comm, gm, plist_, request_faces, request_edges, flatten));
 
     mesh->BuildCache();
