@@ -47,19 +47,23 @@ index 3956750..ff9644e 100644
 +    KOKKOS_LAMBDA(const int i){
 +      colsperrow(i) = rowPtrs[i+1]-rowPtrs[i]; 
 +  }); 
-+
 +  auto rowindices = Matrix->getRowMap()->getMyGlobalIndices();
-+
 +  Kokkos::View<SC*,Kokkos::DefaultExecutionSpace> 
 +    values = Matrix->getLocalValuesView(); 
 +  Kokkos::View<LO*,Kokkos::DefaultExecutionSpace> 
 +    colindices = Matrix->getCrsGraph()->getLocalGraph().entries; 
++  Kokkos::View<GO*,Kokkos::DefaultExecutionSpace> 
++    new_colindices("nci",colindices.size()); 
++  Kokkos::parallel_for(colindices.size(),
++  KOKKOS_LAMBDA(const int i){
++    new_colindices[i] = GloballyContiguousColMap_->getGlobalElement(colindices[i]); 
++  });
 +
 +  IFPACK2_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_,nrows,colsperrow.data(),
-+                                        rowindices.data(),colindices.data(),values.data()));
-+
++                                        rowindices.data(),new_colindices.data(),values.data()));
    IFPACK2_CHK_ERR(HYPRE_IJMatrixAssemble(HypreA_));
    IFPACK2_CHK_ERR(HYPRE_IJMatrixGetObject(HypreA_, (void**)&ParMatrix_));
++
    if (Dump_)
 -    HYPRE_ParCSRMatrixPrint(ParMatrix_,"A.mat");
 +    IFPACK2_CHK_ERR(HYPRE_ParCSRMatrixPrint(ParMatrix_,"A.mat"));
