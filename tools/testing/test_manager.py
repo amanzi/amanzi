@@ -327,7 +327,7 @@ class RegressionTest(object):
                                         stderr=run_stdout)
 
             while proc.poll() is None:
-                time.sleep(0.1)
+                time.sleep(1)
                 if time.time() - start > self._timeout:
                     proc.kill()
                     time.sleep(0.1)
@@ -1307,7 +1307,7 @@ def generate_config_file_list(options):
     """
     config_file_list = []
     # loop through the list, adding files and searching through directories
-    for f in options.configs:
+    for f in sorted(options.configs):
         if not os.path.isabs(f):
             f = os.path.abspath(f)
 
