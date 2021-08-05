@@ -478,7 +478,7 @@ Entity_ID_List MeshExtractedManifold::build_set_(
   bool missing(false);
 
   // check if this set exists in parent mesh
-  if (flattened_) {
+  if (flattened_ && rgn->type() != AmanziGeometry::LOGICAL) {
     mset = build_from_parent_(rgn->name(), kind);
     if (mset.size() > 0) return mset;
   }
@@ -491,7 +491,7 @@ Entity_ID_List MeshExtractedManifold::build_set_(
     mset = build_set_nodes_(rgn, &missing);
 
   // check if this set exists in parent mesh
-  if (missing && !flattened_) {
+  if (missing && !flattened_ && rgn->type() != AmanziGeometry::LOGICAL) {
     mset = build_from_parent_(rgn->name(), kind);
     if (mset.size() == 0) missing = true;
   }
@@ -555,9 +555,10 @@ Entity_ID_List MeshExtractedManifold::build_set_(
       for (int n = 1; n < msets.size(); ++n) {
         for (auto it = msets[n].begin(); it != msets[n].end(); ++it)
           msets[0].insert(*it);
-      }
+      } 
 
       auto tmp = msets[0];
+      msets[0].clear();
       for (int n = 0; n < nents_wghost; ++n)
         if (tmp.find(n) == tmp.end()) msets[0].insert(n);
     } 
@@ -757,13 +758,17 @@ Entity_ID_List MeshExtractedManifold::build_from_parent_(
   else 
     return mset;
 
-  parent_mesh_->get_set_entities(rgnname, kind_p, Parallel_type::ALL, &mset_tmp);
+  try {
+    parent_mesh_->get_set_entities(rgnname, kind_p, Parallel_type::ALL, &mset_tmp);
 
-  for (int i = 0; i < mset_tmp.size(); ++i) {
-    int f = mset_tmp[i];
-    auto it = parent_to_entid_[kind_d].find(f);
-    if (it == parent_to_entid_[kind_d].end()) continue;
-    mset.push_back(it->second);
+    for (int i = 0; i < mset_tmp.size(); ++i) {
+      int f = mset_tmp[i];
+      auto it = parent_to_entid_[kind_d].find(f);
+      if (it == parent_to_entid_[kind_d].end()) continue;
+      mset.push_back(it->second);
+    }
+  } catch (...) {
+    // pass
   }
   return mset;
 }
