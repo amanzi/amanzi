@@ -113,24 +113,24 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
     try {
       S->RequireFieldEvaluator(variable_);
       has_eval_ = true;
-    } catch(...) {
+     } catch(...) {
       has_eval_ = false;
     }
   }
 
-  auto cvs = S->RequireField(variable_);
-  if (num_vectors_ > 0) {
-    // we got the parameter for num_vectors, require the component
+  // try to set requirements on the field, if they are not already set
+  if (!S->HasField(variable_)) {
+    // require the field
+    auto cvs = S->RequireField(variable_);
+
+    // we have to set the mesh now -- assume it is provided by the domain
+    cvs->SetMesh(S->GetMesh(Keys::getDomain(variable_)));
+
+    // was num_vectors set?  if not use default of 1
+    if (num_vectors_ < 0) num_vectors_ = 1;
+
+    // require the component on location_ with num_vectors_
     cvs->AddComponent(location_, AmanziMesh::entity_kind(location_), num_vectors_);
-  } else {
-    // we did not get the parameter for num_vectors and will infer it from
-    // the PK's requirement
-    if (cvs->HasComponent(location_)) {
-      num_vectors_ = cvs->NumVectors(location_);
-    } else {
-      // a PK has required the field, but either not this component or the
-      // component is not yet set... hope we can recover later?
-    }
   }
 }
 
