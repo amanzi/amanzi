@@ -15,12 +15,13 @@ ARG ats_branch=master
 ARG https_proxy=
 ARG http_proxy=
 
-# Change the Working Directory and update amanzi
-WORKDIR /home/amanzi_user/amanzi
-
-
+# Optional: User can specify a proxy
 ENV https_proxy=$https_proxy \
     http_proxy=$http_proxy
+
+
+# Change the Working Directory and update amanzi
+WORKDIR /home/amanzi_user/amanzi
 
 # Make sure we have updated branch information
 RUN echo "Amanzi branch = $amanzi_branch"
