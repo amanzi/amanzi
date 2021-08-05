@@ -189,8 +189,7 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
     if (frm != Framework::SIMPLE) testExteriorMapsUnitBox(mesh,3,3);
 
     // -- sets, which should inherit from the parent mesh
-    // NOT SUPPORTED BY MeshExtractedManifold with flattened == True, see #596 part 5
-    //testQuadMeshSets3x3(mesh, false, frm, true);
+    testQuadMeshSets3x3(mesh, false, frm, true);
   }
 }
 
@@ -256,8 +255,7 @@ TEST(MESH_SURFACE_EXTRACTION_EXO_EXTRACTED_MANIFOLD)
     testExteriorMapsUnitBox(mesh,3,3);
 
     // -- sets, which should inherit from the parent mesh
-    // NOT SUPPORTED BY MeshExtractedManifold with flattened == True, see #596 part 5
-    //testQuadMeshSets3x3(mesh, false, frm, true);
+    testQuadMeshSets3x3(mesh, false, frm, true);
   }
 }
 
