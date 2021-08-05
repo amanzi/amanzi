@@ -154,7 +154,8 @@ class State {
   // -----------------------------------------------------------------------------
   void AssignDomain(const State& other, const std::string& domain);
 
-  // Create data structures, finalizing the structure of the state.
+  // Set requirements from all evaluators, calling EnsureCompatibility and
+  // allocating all memory.
   void Setup();
 
   // Sub-steps in the initialization process. (Used by Amanzi)
@@ -402,6 +403,9 @@ class State {
   Teuchos::RCP<Field> CheckConsistent_or_die_(Key fieldname,
           FieldType type, Key owner);
 
+private:
+  Teuchos::RCP<VerboseObject> vo_;
+
   // Containers
   MeshMap meshes_;
   std::map<Key,Key> mesh_aliases_;
@@ -419,8 +423,6 @@ class State {
   double last_time_;
   double initial_time_;
   std::vector<Key> copy_tag_;
-
-
   int cycle_;
   int position_in_tp_;
 

@@ -147,7 +147,8 @@ TEST_FIXTURE(obs_test, ObservePoint) {
   obs_list.set<std::string>("location name", "cell");
   obs_list.set<std::string>("functional", "point");
 
-  Observable obs(obs_list, S.ptr());
+  Observable obs(obs_list);
+  obs.Setup(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
@@ -163,7 +164,8 @@ TEST_FIXTURE(obs_test, ObserveIntensiveIntegral) {
   obs_list.set<std::string>("location name", "cell");
   obs_list.set<std::string>("functional", "integral");
 
-  Observable obs(obs_list, S.ptr());
+  Observable obs(obs_list);
+  obs.Setup(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
@@ -180,7 +182,8 @@ TEST_FIXTURE(obs_test, ObserveExtensiveIntegral) {
   obs_list.set<std::string>("location name", "cell");
   obs_list.set<std::string>("functional", "extensive integral");
 
-  Observable obs(obs_list, S.ptr());
+  Observable obs(obs_list);
+  obs.Setup(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
@@ -197,7 +200,8 @@ TEST_FIXTURE(obs_test, ObserveAverage) {
   obs_list.set<std::string>("location name", "cell");
   obs_list.set<std::string>("functional", "average");
 
-  Observable obs(obs_list, S.ptr());
+  Observable obs(obs_list);
+  obs.Setup(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
@@ -213,7 +217,8 @@ TEST_FIXTURE(obs_test, ObserveMin) {
   obs_list.set<std::string>("location name", "cell");
   obs_list.set<std::string>("functional", "minimum");
 
-  Observable obs(obs_list, S.ptr());
+  Observable obs(obs_list);
+  obs.Setup(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
@@ -229,7 +234,8 @@ TEST_FIXTURE(obs_test, ObserveMax) {
   obs_list.set<std::string>("location name", "cell");
   obs_list.set<std::string>("functional", "maximum");
 
-  Observable obs(obs_list, S.ptr());
+  Observable obs(obs_list);
+  obs.Setup(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
@@ -248,7 +254,8 @@ TEST_FIXTURE(obs_test, Face) {
   obs_list.set<std::string>("functional", "extensive integral");
   obs_list.set("direction normalized flux", true);
 
-  Observable obs(obs_list, S.ptr());
+  Observable obs(obs_list);
+  obs.Setup(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
@@ -269,7 +276,8 @@ TEST_FIXTURE(obs_test, FileOne) {
   obs_list.set<std::string>("functional", "average");
 
   {
-    UnstructuredObservations obs(obs_list, S.ptr());
+    UnstructuredObservations obs(obs_list);
+    obs.Setup(S.ptr());
     obs.MakeObservations(S.ptr());
     advance(1.0);
     obs.MakeObservations(S.ptr());
@@ -300,7 +308,8 @@ TEST_FIXTURE(obs_test, FileTwo) {
   obsB_list.set<std::string>("functional", "average");
 
   {
-    UnstructuredObservations obs(obs_list, S.ptr());
+    UnstructuredObservations obs(obs_list);
+    obs.Setup(S.ptr());
     obs.MakeObservations(S.ptr());
     advance(1.0);
     obs.MakeObservations(S.ptr());
@@ -334,7 +343,8 @@ TEST_FIXTURE(obs_test, TimeIntegrated) {
   obsB_list.set<std::string>("functional", "average");
 
   {
-    UnstructuredObservations obs(obs_list, S.ptr());
+    UnstructuredObservations obs(obs_list);
+    obs.Setup(S.ptr());
     obs.MakeObservations(S.ptr());
     advance(0.5);
     obs.MakeObservations(S.ptr());
@@ -362,7 +372,8 @@ TEST_FIXTURE(obs_test, WritesNaN) {
   obsA_list.set<std::string>("functional", "extensive integral");
 
   {
-    UnstructuredObservations obs(obs_list, S.ptr());
+    UnstructuredObservations obs(obs_list);
+    obs.Setup(S.ptr());
     obs.MakeObservations(S.ptr());
     advance(0.5);
     obs.MakeObservations(S.ptr());

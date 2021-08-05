@@ -102,8 +102,7 @@ class Observable {
  public:
   static const double nan;
 
-  Observable(Teuchos::ParameterList& plist,
-             const Teuchos::Ptr<State>& S);
+  Observable(Teuchos::ParameterList& plist);
 
   const std::string& get_name() { return name_; }
   const std::string& get_variable() { return variable_; }
@@ -113,6 +112,8 @@ class Observable {
   bool is_time_integrated() { return time_integrated_; }
   int get_num_vectors() { return num_vectors_; }
 
+  void Setup(const Teuchos::Ptr<State>& S);
+  void FinalizeStructure(const Teuchos::Ptr<State>& S);
   void Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int start_loc);
 
  protected:
@@ -125,9 +126,9 @@ class Observable {
   std::string functional_;
   std::string location_;
   int num_vectors_;
-  bool has_eval_;
   bool time_integrated_;
   double old_time_;
+  bool has_eval_;
 
   double (*function_)(double a, double b, double vol);
 };
