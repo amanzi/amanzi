@@ -209,7 +209,7 @@ option(ENABLE_Silo "Enable the Silo output specification for visualization" FALS
 option(ENABLE_OpenMP "Use OpenMP directives in TPLs that support it" FALSE)
 if (ENABLE_OpenMP)
   find_package(OpenMP REQUIRED)
-  if (OpenMP_FOUND REQUIRED)
+  if (OpenMP_FOUND)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
   endif()

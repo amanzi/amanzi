@@ -106,7 +106,7 @@ if (BUILD_TESTS)
   # OpenMP test program
   #
   if (${OPENMP_FOUND})
-    add_executable(beaker-threads beaker-threads.cc)
+    add_executable(beaker-threads test/beaker-threads.cc)
     target_link_libraries(beaker-threads ${GEOCHEM_LIBS} error_handling ${OpenMP_CXX_FLAGS})
     set_target_properties(beaker-threads PROPERTIES COMPILE_FLAGS ${OpenMP_CXX_FLAGS})
   endif()

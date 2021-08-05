@@ -102,7 +102,6 @@ if (ENABLE_Tpetra)
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTrilinos_ENABLE_OpenMP:BOOL=ON")
     list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_OPENMP:BOOL=ON") 
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_OPENMP:BOOL=ON")
-
     #list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DXpetra_CAN_USE_SERIAL:BOOL=OFF")
   else()
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTPL_ENABLE_OpenMP:BOOL=OFF")
@@ -125,7 +124,6 @@ if (ENABLE_Tpetra)
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTPL_ENABLE_CUDA:BOOL=OFF")
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTrilinos_ENABLE_CUDA:BOOL=OFF")
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_CUDA:BOOL=OFF")
-    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_OPENMP:BOOL=OFF") 
   endif()
 
   if (ENABLE_OpenMP OR ENABLE_CUDA)
@@ -273,28 +271,29 @@ message(DEBUG "Trilinos_CMAKE_CXX_FLAGS = ${Trilinos_CMAKE_CXX_FLAGS}")
 # By default compiler with the standard mpi compiler 
 set(Trilinos_CXX_COMPILER ${CMAKE_CXX_COMPILER})
 if (ENABLE_CUDA)
-   set(NVCC_WRAPPER_DEFAULT_COMPILER "${CMAKE_CXX_COMPILER}")
-   set(NVCC_WRAPPER_PATH "${Trilinos_source_dir}/packages/kokkos/bin/nvcc_wrapper")
-   message(STATUS "NVCC_WRAPPER_DEFAULT_COMPILER ${NVCC_WRAPPER_DEFAULT_COMPILER}")
+  if(NOT DEFINED ENV{CUDA_LAUNCH_BLOCKING}) 
+    message(FATAL_ERROR "Environment variable CUDA_LAUNCH_BLOCKING has to be set to 1 to continue") 
+  endif() 
+  set(NVCC_WRAPPER_DEFAULT_COMPILER "${CMAKE_CXX_COMPILER}")
+  set(NVCC_WRAPPER_PATH "${Trilinos_source_dir}/packages/kokkos/bin/nvcc_wrapper")
+  message(STATUS "NVCC_WRAPPER_DEFAULT_COMPILER ${NVCC_WRAPPER_DEFAULT_COMPILER}")
+  set(Trilinos_CMAKE_CXX_FLAGS "${Trilinos_CMAKE_CXX_FLAGS} \
+  -Wno-deprecated-declarations -lineinfo \
+  -Xcudafe --diag_suppress=conversion_function_not_usable \
+  -Xcudafe --diag_suppress=cc_clobber_ignored \
+  -Xcudafe --diag_suppress=code_is_unreachable")
+  list(APPEND Trilinos_CMAKE_ARCH_ARGS
+    "-DKokkos_ENABLE_CUDA_UVM:BOOL=ON"
+    "-DKokkos_ENABLE_CUDA_LAMBDA:BOOL=ON") 
+  # Change the default compiler for Trilinos to use nvcc_wrapper 
+  set(Trilinos_CXX_COMPILER ${NVCC_WRAPPER_PATH})
 endif()
 
 # Set ARCH-specific options
 if ( "${AMANZI_ARCH}" STREQUAL "Summit" )
   if (ENABLE_CUDA) 
-    if(NOT DEFINED ENV{CUDA_LAUNCH_BLOCKING}) 
-      message(FATAL_ERROR "Environment variable CUDA_LAUNCH_BLOCKING has to be set to 1 to continue")
-    endif() 
-    set(Trilinos_CMAKE_CXX_FLAGS "${Trilinos_CMAKE_CXX_FLAGS} \
-         -Wno-deprecated-declarations -lineinfo \
-         -Xcudafe --diag_suppress=conversion_function_not_usable \
-         -Xcudafe --diag_suppress=cc_clobber_ignored \
-         -Xcudafe --diag_suppress=code_is_unreachable")
     list(APPEND Trilinos_CMAKE_ARCH_ARGS
-         "-DKokkos_ENABLE_CUDA_UVM:BOOL=ON"
-         "-DKokkos_ENABLE_CUDA_LAMBDA:BOOL=ON"
-         "-DKOKKOS_ARCH:STRING=Power9;Volta70") 
-    # Change the default compiler for Trilinos to use nvcc_wrapper 
-    set(Trilinos_CXX_COMPILER ${NVCC_WRAPPER_PATH})
+      "-DKOKKOS_ARCH:STRING=Power9;Volta70") 
   endif()
 endif()
 
