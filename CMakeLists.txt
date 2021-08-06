@@ -87,7 +87,8 @@ if(ENABLE_OpenMP)
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
 endif()
 
-if(ENABLE_KOKKOS_CUDA) 
+
+if(ENABLE_CUDA) 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
     -Wno-deprecated-declarations -lineinfo \
     -arch=sm_70 \
