@@ -88,8 +88,8 @@ public:
       ->SetComponent("face", AmanziMesh::FACE, 1);
     S->set_time(0.);
     S->set_cycle(0);
-    S->Setup();
 
+    S->Setup();
     S->GetFieldData("constant", "state")->PutScalar(2.0);
     S->GetFieldData("linear", "state")->PutScalar(0.);
 
@@ -149,6 +149,7 @@ TEST_FIXTURE(obs_test, ObservePoint) {
 
   Observable obs(obs_list);
   obs.Setup(S.ptr());
+  obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
@@ -166,6 +167,7 @@ TEST_FIXTURE(obs_test, ObserveIntensiveIntegral) {
 
   Observable obs(obs_list);
   obs.Setup(S.ptr());
+  obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
@@ -184,6 +186,7 @@ TEST_FIXTURE(obs_test, ObserveExtensiveIntegral) {
 
   Observable obs(obs_list);
   obs.Setup(S.ptr());
+  obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
@@ -202,6 +205,7 @@ TEST_FIXTURE(obs_test, ObserveAverage) {
 
   Observable obs(obs_list);
   obs.Setup(S.ptr());
+  obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
@@ -219,6 +223,7 @@ TEST_FIXTURE(obs_test, ObserveMin) {
 
   Observable obs(obs_list);
   obs.Setup(S.ptr());
+  obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
@@ -236,6 +241,7 @@ TEST_FIXTURE(obs_test, ObserveMax) {
 
   Observable obs(obs_list);
   obs.Setup(S.ptr());
+  obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
@@ -256,6 +262,7 @@ TEST_FIXTURE(obs_test, Face) {
 
   Observable obs(obs_list);
   obs.Setup(S.ptr());
+  obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
