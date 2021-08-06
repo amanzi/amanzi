@@ -44,7 +44,7 @@ set(flow_src_files Flow_PK.cc
                    Richards_Picard.cc Richards_LinearOperator.cc Richards_CNLS.cc
                    PorosityModelPartition.cc PorosityModelEvaluator.cc
                    RelPerm.cc RelPermEvaluator.cc
-                   WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
+                   WRM_vanGenuchten.cc WRM_BrooksCorey.cc 
                    WRMPartition.cc WRMFactory.cc WRMEvaluator.cc 
                    VWContentEvaluator.cc VWContentEvaluator_ConstDensity.cc
                    DarcyVelocityEvaluator.cc
@@ -88,7 +88,6 @@ set(flow_inc_files
   Richards_PK.hh
   WRM.hh
   WRM_BrooksCorey.hh
-  WRM_fake.hh
   WRM_saturated.hh
   WRM_vanGenuchten.hh
   WRMEvaluator.hh

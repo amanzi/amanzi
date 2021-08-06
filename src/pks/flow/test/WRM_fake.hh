@@ -25,16 +25,38 @@ namespace Flow {
 
 class WRM_fake : public WRM {
  public:
-  explicit WRM_fake(Teuchos::ParameterList& plist);
+  explicit WRM_fake(Teuchos::ParameterList& plist) {
+    alpha = 1.0;
+    n = 2.0;
+    m = 1.0;
+  }
   ~WRM_fake() {};
   
   // required methods from the base class
-  double k_relative(double pc) const;
-  double saturation(double pc) const;
-  double dSdPc(double pc) const;  
-  double capillaryPressure(double saturation) const;
+  // -- relative permeability formula
+  double k_relative(double pc) const {
+    if (pc < 0.0)
+      return 1.0 / (1.0 + pc * pc);
+    else
+      return 1.0;
+  }
+
+  // -- analytic solution was designed for stationary PDE
+  double saturation(double pc) const { return -pc; }
+  double dSdPc(double pc) const { return -1.0; }
+
+  double capillaryPressure(double saturation) const { return -saturation; }
   double residualSaturation() const { return 0.0; }
-  double dKdPc(double pc) const;
+
+  // -- derivative of rel_perm  w.r.t. capillary pressure.                                     
+  double dKdPc(double pc) const {
+    if (pc < 0.0) {
+      double tmp = 1.0 + pc * pc;
+      return -2 * pc / (tmp * tmp);
+    } else {
+      return 0.0;
+    }
+  }
 
  private:
   double m, n, alpha;

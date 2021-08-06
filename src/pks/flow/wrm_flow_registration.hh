@@ -13,7 +13,6 @@
 
 #include "WRMFactory.hh"
 #include "WRM_BrooksCorey.hh"
-#include "WRM_fake.hh"
 #include "WRM_saturated.hh"
 #include "WRM_vanGenuchten.hh"
 
@@ -32,7 +31,6 @@ namespace Flow {
 
 Utils::RegisteredFactory<WRM, WRM_BrooksCorey> WRM_BrooksCorey::factory_("Brooks Corey");
 Utils::RegisteredFactory<WRM, WRM_vanGenuchten> WRM_vanGenuchten::factory_("van Genuchten");
-Utils::RegisteredFactory<WRM, WRM_fake> WRM_fake::factory_("fake");
 Utils::RegisteredFactory<WRM, WRM_saturated> WRM_saturated::factory_("saturated");
 
 }  // namespace Flow
