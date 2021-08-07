@@ -428,7 +428,7 @@ void MeshExtractedManifold::get_set_entities_and_vofs(
   
   if (mglob == 0) {
     std::stringstream ss;
-    ss << "Could not retrieve any mesh entities of kind=" << kind << " for set \"" << setname << "\"" << std::endl;
+    ss << "Could not retrieve mesh entities of kind=" << kind << " for set \"" << setname << "\"" << std::endl;
     Errors::Message msg(ss.str());
     Exceptions::amanzi_throw(msg);
   }
@@ -476,12 +476,24 @@ Entity_ID_List MeshExtractedManifold::build_set_(
 
   bool missing(false);
 
+  // check if this set exists in parent mesh
+  if (flattened_) {
+    mset = build_from_parent_(rgn->name(), kind);
+    if (mset.size() > 0) return mset;
+  }
+
   if (kind == CELL)
     mset = build_set_cells_(rgn, &missing);
   else if (kind == FACE) 
     mset = build_set_faces_(rgn, &missing);
   else if (kind == NODE) 
     mset = build_set_nodes_(rgn, &missing);
+
+  // check if this set exists in parent mesh
+  if (missing && !flattened_) {
+    mset = build_from_parent_(rgn->name(), kind);
+    if (mset.size() == 0) missing = true;
+  }
 
   if (missing) {
     if (vo_.get() && vo_->os_OK(Teuchos::VERB_HIGH)) {
@@ -722,6 +734,36 @@ Entity_ID_List MeshExtractedManifold::build_set_nodes_(
     *missing = true;
   }
 
+  return mset;
+}
+
+
+/* ******************************************************************
+* Create from a parent mesh
+****************************************************************** */
+Entity_ID_List MeshExtractedManifold::build_from_parent_(
+  const std::string& rgnname, const Entity_kind kind_d) const
+{
+  Entity_ID_List mset, mset_tmp;
+  Entity_kind kind_p;
+
+  if (kind_d == CELL) 
+    kind_p = FACE;
+  else if (kind_d == FACE) 
+    kind_p = EDGE;
+  else if (kind_d == NODE)
+    kind_p = NODE;
+  else 
+    return mset;
+
+  parent_mesh_->get_set_entities(rgnname, kind_p, Parallel_type::ALL, &mset_tmp);
+
+  for (int i = 0; i < mset_tmp.size(); ++i) {
+    int f = mset_tmp[i];
+    auto it = parent_to_entid_[kind_d].find(f);
+    if (it == parent_to_entid_[kind_d].end()) continue;
+    mset.push_back(it->second);
+  }
   return mset;
 }
 

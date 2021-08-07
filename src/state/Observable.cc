@@ -39,16 +39,19 @@ double ObservableMax(double a, double b, double vol) { return std::max(a,b); }
 
 const double Observable::nan = std::numeric_limits<double>::quiet_NaN();
 
-Observable::Observable(Teuchos::ParameterList& plist,
-                       const Teuchos::Ptr<State>& S)
-  : old_time_(nan)
+Observable::Observable(Teuchos::ParameterList& plist)
+  : old_time_(nan),
+    has_eval_(false)
 {
   // process the spec
   name_ = Keys::cleanPListName(plist.name());
   variable_ = plist.get<std::string>("variable");
   region_ = plist.get<std::string>("region");
   location_ = plist.get<std::string>("location name", "cell");
-  num_vectors_ = plist.get<int>("number of vectors", 1);
+
+  // Note: -1 here means either take it from the physics if possible, or if
+  // this variable is not in the physics, instead will default to 1.
+  num_vectors_ = plist.get<int>("number of vectors", -1);
   time_integrated_ = plist.get<bool>("time integrated", false);
 
   functional_ = plist.get<std::string>("functional");
@@ -93,21 +96,59 @@ Observable::Observable(Teuchos::ParameterList& plist,
       Exceptions::amanzi_throw(msg);
     }
   }
+}
 
-  // ensure the field exists, and require on location with num_vectors
-  S->RequireField(variable_)
-    ->SetMesh(S->GetMesh(Keys::getDomain(variable_)))
-    ->AddComponent(location_, AmanziMesh::entity_kind(location_), num_vectors_);
 
-  // try to get a field evaluator -- note, this isn't especially well supported
-  // by State
-  if (S->HasFieldEvaluator(variable_)) {
-    has_eval_ = true;
-  } else if (S->FEList().isSublist(variable_)) {
-    has_eval_ = true;
+void Observable::Setup(const Teuchos::Ptr<State>& S)
+{
+  // does the observed quantity have an evaluator?  Or can we make one? Note
+  // that a non-evaluator based observation must already have been created by
+  // PKs by now, because PK->Setup() has already been run.
+  if (!S->HasField(variable_)) {
+    // not yet created, require the eval
     S->RequireFieldEvaluator(variable_);
+    has_eval_ = true;
   } else {
-    has_eval_ = false;
+    // does it have an evaluator or can we make one?
+    try {
+      S->RequireFieldEvaluator(variable_);
+      has_eval_ = true;
+     } catch(...) {
+      has_eval_ = false;
+    }
+  }
+
+  // try to set requirements on the field, if they are not already set
+  if (!S->HasField(variable_)) {
+    // require the field
+    auto cvs = S->RequireField(variable_);
+
+    // we have to set the mesh now -- assume it is provided by the domain
+    cvs->SetMesh(S->GetMesh(Keys::getDomain(variable_)));
+
+    // was num_vectors set?  if not use default of 1
+    if (num_vectors_ < 0) num_vectors_ = 1;
+
+    // require the component on location_ with num_vectors_
+    cvs->AddComponent(location_, AmanziMesh::entity_kind(location_), num_vectors_);
+  }
+}
+
+
+void Observable::FinalizeStructure(const Teuchos::Ptr<State>& S)
+{
+  // one last check that the structure is all set up and consistent
+  if (num_vectors_ < 0) {
+    const auto& field = *S->GetFieldData(variable_);
+    if (!field.HasComponent(location_)) {
+      Errors::Message msg;
+      msg << "Observable: \"" << name_ << "\" uses variable \""
+          << variable_ << "\" but this field does not have the observed component \""
+          << location_ << "\"";
+      Exceptions::amanzi_throw(msg);
+    } else {
+      num_vectors_ = field.NumVectors(location_);
+    }
   }
 }
 
@@ -122,9 +163,8 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
   }
 
   // update the variable
-  if (has_eval_) {
+  if (has_eval_)
     S->GetFieldEvaluator(variable_)->HasFieldChanged(S, "observation");
-  }
 
   Teuchos::RCP<const Field> field = S->GetField(variable_);
   if (field->type() == CONSTANT_SCALAR) {
