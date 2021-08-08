@@ -536,6 +536,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       U_new[i] = U[i] - dt / vol * FS[i] + dt * S[i];
     }
 
+    U_new[0] += dt * ext_S_cell[c];
+    
     // transform to conservative variables
     h  = U_new[0];
     qx = U_new[1];
