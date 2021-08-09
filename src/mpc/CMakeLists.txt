@@ -220,6 +220,13 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_ihm_flow_shallow_water.cc
         	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})   
 
+    # Test: mpc driver for integrated hydrologic models test
+    add_amanzi_test(mpc_ihm_flow_shallow_water_test mpc_ihm_flow_shallow_water_test
+                    KIND      int
+                    NPROC     3
+                    SOURCE    test/Main.cc test/mpc_ihm_flow_shallow_water_test.cc
+        	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})   
+
     # Test: mpc driver for integrated hydrologic models: steady state lake at rest 
     add_amanzi_test(mpc_ihm_flow_shallow_water_lake_at_rest mpc_ihm_flow_shallow_water_lake_at_rest
                     KIND      int
