@@ -232,11 +232,13 @@ TEST(Verify_Mesh_and_Operators) {
   //ShyLU pakcagke
   #if 1
   // -- ShyLu FastILU
-  plist->sublist("preconditioners").sublist("ifpack2: FIlu")
+  plist->sublist("preconditioners").sublist("ifpack2: Details::FIlu")
       .set<std::string>("preconditioning method", "ifpack2: FIlu").sublist("ifpack2: FIlu parameters")
-      .set<double>("fact: ilut level-of-fill", 1)
+      .set<double>("fact: filu level-of-fill", 1)
       .set<double>("fact: drop tolerance", 0.0);
   #endif
+  // HL : There is also base class called FastILU_Base which is part of Details namespace
+  //      It contains FIlu, FIldl, Flc and they are part of ShyLU
 
   // summary of options
   if (MyPID == 0) {
