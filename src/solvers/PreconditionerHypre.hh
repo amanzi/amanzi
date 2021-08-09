@@ -144,7 +144,7 @@ class PreconditionerHypre : public Preconditioner {
   Teuchos::ParameterList plist_;
   Teuchos::RCP<VerboseObject> vo_;
 
-  Ifpack2::Hypre_Solver method_;
+  Hypre_Solver method_;
   Teuchos::RCP<std::vector<int> > block_indices_;
   int num_blocks_;
 
