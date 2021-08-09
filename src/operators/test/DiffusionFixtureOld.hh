@@ -77,9 +77,13 @@ struct DiffusionFixture {
     op->Init();
 
     // modify diffusion coefficient
+    const AmanziGeometry::Point& xc0 = mesh->cell_centroid(0);
+    int rank = ana->TensorDiffusivity(xc0, 0.0).rank();
+    int mem = ana->TensorDiffusivity(xc0, 0.0).mem();
+
     CompositeVectorSpace K_map;
     K_map.SetMesh(mesh);
-    K_map.AddComponent("cell", AmanziMesh::CELL, 1);
+    K_map.AddComponent("cell", AmanziMesh::CELL, mem);
     auto K = Teuchos::rcp(new TensorVector(K_map));
 
     std::vector<WhetStone::Tensor<DefaultHostMemorySpace>> host_tensors(K->size());

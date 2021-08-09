@@ -34,15 +34,15 @@ ExternalProject_Add(${SPACK_BUILD_TARGET}
 
 #ExternalProject_add_step(Spack CLONE_CD
 #                         COMMAND cd ${TPL_INSTALL_PREFIX}
-#			 DEPENDERS download
+#            DEPENDERS download
 #)
 #ExternalProject_add_step(Spack CHECKOUT_CD
 #                         COMMAND cd ${TPL_INSTALL_PREFIX}/spack
-#			 DEPENDERS build
+#            DEPENDERS build
 #)
 #ExternalProject_add_step(Spack PULL_CD
 #                         COMMAND cd ${TPL_INSTALL_PREFIX}/spack
-#			 DEPENDERS install
+#            DEPENDERS install
 #)
 
 #set (SPACK_BINARY ${TPL_INSTALL_PREFIX}/spack/bin/spack)
@@ -52,7 +52,7 @@ if ( FALSE )
 # clone the repo
 set(GIT_ARGS clone https://github.com/LLNL/spack.git)
 execute_process(COMMAND git ${GIT_ARGS}
-	        WORKING_DIRECTORY ${TPL_INSTALL_PREFIX}
+            WORKING_DIRECTORY ${TPL_INSTALL_PREFIX}
                 RESULT_VARIABLE err_occurred 
                 OUTPUT_VARIABLE SPACK_GIT_STATUS
                 ERROR_VARIABLE err
@@ -72,7 +72,7 @@ if ( ENABLE_XSDK )
     # checkout the correct branch
     set(GIT_ARGS checkout barry/xsdk)
     execute_process(COMMAND git ${GIT_ARGS}
-	            WORKING_DIRECTORY ${TPL_INSTALL_PREFIX}/spack
+                WORKING_DIRECTORY ${TPL_INSTALL_PREFIX}/spack
                     RESULT_VARIABLE err_occurred 
                     OUTPUT_VARIABLE SPACK_GIT_STATUS
                     ERROR_VARIABLE err
@@ -80,9 +80,9 @@ if ( ENABLE_XSDK )
                     ERROR_STRIP_TRAILING_WHITESPACE
                     )
     if(err_occurred)
-	message(WARNING "Error executing git:\n ${cmd}\n${err}")
-	set(cmd_output cmd_output-NOTFOUND)
-	exit()
+    message(WARNING "Error executing git:\n ${cmd}\n${err}")
+    set(cmd_output cmd_output-NOTFOUND)
+    exit()
     endif()
     
     message(STATUS ">>>> JDM: SPACK_GIT_STATUS:      ${SPACK_GIT_STATUS}")
@@ -91,7 +91,7 @@ if ( ENABLE_XSDK )
     # do a git pull
     set(GIT_ARGS pull)
     execute_process(COMMAND git ${GIT_ARGS}
-	            WORKING_DIRECTORY ${TPL_INSTALL_PREFIX}/spack
+                WORKING_DIRECTORY ${TPL_INSTALL_PREFIX}/spack
                     RESULT_VARIABLE err_occurred 
                     OUTPUT_VARIABLE SPACK_GIT_STATUS
                     ERROR_VARIABLE err
@@ -99,9 +99,9 @@ if ( ENABLE_XSDK )
                     ERROR_STRIP_TRAILING_WHITESPACE
                     )
     if(err_occurred)
-	message(WARNING "Error executing git:\n ${cmd}\n${err}")
-	set(cmd_output cmd_output-NOTFOUND)
-	exit()
+    message(WARNING "Error executing git:\n ${cmd}\n${err}")
+    set(cmd_output cmd_output-NOTFOUND)
+    exit()
     endif()
     
     message(STATUS ">>>> JDM: SPACK_GIT_STATUS:      ${SPACK_GIT_STATUS}")

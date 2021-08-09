@@ -67,34 +67,35 @@ if (compiler_id_lc)
       # On Mac OS 10.10, we don't know what to do yet
       if (${OS_VERSION_MAJOR} GREATER 13) # OSX 10.9.x -> Darwin-13.x.y
         # Check if it looks like an mpi wrapper
-	if (CMAKE_CXX_COMPILER MATCHES "mpi")
+        if (CMAKE_CXX_COMPILER MATCHES "mpi")
           execute_process(COMMAND ${CMAKE_CXX_COMPILER} -show
                           OUTPUT_VARIABLE  COMPILE_CMDLINE OUTPUT_STRIP_TRAILING_WHITESPACE
                           ERROR_VARIABLE   COMPILE_CMDLINE ERROR_STRIP_TRAILING_WHITESPACE
                           RESULT_VARIABLE  COMPILER_RETURN)
 
           # Extract the name of the compiler
-	  if (COMPILER_RETURN EQUAL 0)
-	    string(REPLACE " " ";" COMPILE_CMDLINE_LIST ${COMPILE_CMDLINE})
-	    list(GET COMPILE_CMDLINE_LIST 0 RAW_CXX_COMPILER)
+      if (COMPILER_RETURN EQUAL 0)
+        string(REPLACE " " ";" COMPILE_CMDLINE_LIST ${COMPILE_CMDLINE})
+        list(GET COMPILE_CMDLINE_LIST 0 RAW_CXX_COMPILER)
             message (STATUS "BOOST: RAW_CXX_COMPILER=${RAW_CXX_COMPILER}")
-	  else()
-	    message (FATAL_ERROR "BOOST: Unable to determine the compiler command")
+      else()
+        message (FATAL_ERROR "BOOST: Unable to determine the compiler command")
           endif()
-	else()
+    else()
           set(RAW_CXX_COMPILER ${CMAKE_CXX_COMPILER})
         endif()
 
-        # Extract the version of the compiler
-	execute_process(
-	  COMMAND ${RAW_CXX_COMPILER} --version 
-	  OUTPUT_VARIABLE  _version_string OUTPUT_STRIP_TRAILING_WHITESPACE
-	  ERROR_VARIABLE   _version_string_error ERROR_STRIP_TRAILING_WHITESPACE
-	  RESULT_VARIABLE  _version_return
+    # Extract the version of the compiler
+    execute_process(
+      COMMAND ${RAW_CXX_COMPILER} --version 
+      OUTPUT_VARIABLE  _version_string OUTPUT_STRIP_TRAILING_WHITESPACE
+      ERROR_VARIABLE   _version_string_error ERROR_STRIP_TRAILING_WHITESPACE
+      RESULT_VARIABLE  _version_return
         )
 
         # Test to see if it is macports or clang
         if (_version_string MATCHES "MacPorts" OR _version_string MATCHES "Homebrew")
+
           message(STATUS "BOOST: compiler is MacPorts or Homebrew" )
           message(STATUS "BOOST: compiler version: ${CMAKE_CXX_COMPILER_VERSION}")
 
@@ -102,18 +103,19 @@ if (compiler_id_lc)
             #set(shared_special "hardcode-dll-paths=true dll-path=${TPL_INSTALL_PREFIX}/lib")
             set(shared_special "linkflags=\"-Wl,-rpath,${TPL_INSTALL_PREFIX}/lib\"")
           else()
-	    set(shared_special )
+            set(shared_special )
           endif()
-          set(Boost_user_key darwin)
+          set(Boost_user_key gcc)
+          # darwin)
 
           set(BOOST_using "using ${Boost_user_key} : ${CMAKE_CXX_COMPILER_VERSION} : ${RAW_CXX_COMPILER} \;")
           file (MAKE_DIRECTORY ${Boost_build_dir})
-	  file (WRITE ${Boost_build_dir}/user-config.jam ${BOOST_using} \n)
-	  set(Boost_bjam_args "${Boost_bjam_args} --user-config=${Boost_build_dir}/user-config.jam ${shared_special}")
+          file (WRITE ${Boost_build_dir}/user-config.jam ${BOOST_using} \n)
+          set(Boost_bjam_args "${Boost_bjam_args} --user-config=${Boost_build_dir}/user-config.jam ${shared_special}")
           set(Boost_bootstrap_args)
-	  set(Boost_toolset ${Boost_user_key})
+          set(Boost_toolset ${Boost_user_key})
         elseif ( _version_string MATCHES "LLVM")
-	  message(STATUS "BOOST: compiler is Clang")
+          message(STATUS "BOOST: compiler is Clang")
         endif()
       endif()
     endif()
@@ -174,4 +176,4 @@ ExternalProject_Add(${Boost_BUILD_TARGET}
 # --- Useful variables for other packages that depend on Boost
 set(BOOST_ROOT ${TPL_INSTALL_PREFIX})
 set(BOOST_INCLUDEDIR ${TPL_INSTALL_PREFIX}/include/boost)
-		  
+          

@@ -64,6 +64,24 @@ if (BUILD_SHARED_LIBS)
   set(BUILD_STATIC_LIBS FALSE)
 endif()
 
+# ############################################################################ #
+# Compiler Specific Flags
+# ############################################################################ #
+
+# Check for GNU compilers and add special option for gfortran version 10 and above
+if (CMAKE_Fortran_COMPILER_ID MATCHES GNU)
+  if (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL "10")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-argument-mismatch")
+  endif()
+endif()
+
+# check for Apple CLANG compilers and add special option to allow
+# HDF5, others to compile.
+if (CMAKE_C_COMPILER_ID MATCHES AppleClang)
+  if (CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL "11")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error-implicit-function-declaration")
+  endif()
+endif()
 
 # ############################################################################ #
 # Compiler Definition Warnings
@@ -176,9 +194,8 @@ option(ENABLE_CCSE_TOOLS "Enable building CCSE post processing tools" FALSE)
 
 # Amanzi unstructured mesh API and frameworks
 option(ENABLE_Unstructured "Enable Amanzi unstructured mesh capability" TRUE)
-option(ENABLE_STK_Mesh "Enable the Unstructured STK Mesh Toolkit" FALSE)
-option(ENABLE_MSTK_Mesh "Enable the Unstructured MSTK Mesh Toolkit" TRUE)
-option(ENABLE_MOAB_Mesh "Enable the Unstructured MOAB Mesh Toolkit" FALSE)
+option(ENABLE_MESH_MSTK "Enable the Unstructured MSTK Mesh Toolkit" TRUE)
+option(ENABLE_MESH_MOAB "Enable the Unstructured MOAB Mesh Toolkit" FALSE)
 
 # Amanzi output formats
 option(ENABLE_Silo "Enable the Silo output specification for visualization" FALSE)
@@ -204,11 +221,23 @@ if (ENABLE_Structured)
   endif()
 endif()
 
+if(ENABLE_KOKKOS_OPENMP)
+  find_package(OpenMP)
+  if (OpenMP_FOUND)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
+  endif()
+  # These might be needed for intel, seems like FindOpenMP packages is a bit broken.
+  #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
+  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+  #set(CMAKE_LINK_FLAGS "${CMAKE_LINK_FLAGS} -lpthread")
+endif()
+
 # If unstructured is not enabled, there is no reason to have these mesh frameworks
 if (NOT ENABLE_Unstructured)
-  set(ENABLE_STK_Mesh FALSE)
-  set(ENABLE_MSTK_Mesh FALSE)
-  set(ENABLE_MOAB_Mesh FALSE)
+  set(ENABLE_MESH_MSTK FALSE)
+  set(ENABLE_MESH_MOAB FALSE)
 endif()
 
 # Amanzi Test Suite
@@ -404,13 +433,35 @@ endif()
 # LAPACK/BLAS Configuration 
 # ############################################################################ #
 
+option(TPL_BLAS_VENDOR "Identifies the vendor for BLAS and LAPACK library search" All)
+set(BLA_VENDOR ${TPL_BLAS_VENDOR})
+
+if ( DEFINED ENV{NERSC_HOST} )
+   
+   set(BLA_VENDOR "CRAYSCI")
+   string(TOLOWER ${CMAKE_Fortran_COMPILER_ID} _lib_compiler_id)
+   set(LIBBLAS_BASE_NAME "sci_${_lib_compiler_id}")
+   set(LIBLAPACK_BASE_NAME "sci_${_lib_compiler_id}")
+   string (REPLACE "-" "_" CRAY_CPU_TEMP $ENV{CRAY_CPU_TARGET})
+   string (REPLACE "x86_64" "${CRAY_CPU_TEMP}/lib" BLA_DIR $ENV{CRAY_LIBSCI_PREFIX_DIR})
+   set(LAPCK_DIR ${BLA_DIR})
+   
+   message(STATUS ">>> Amanzi: On NERSC system BLA_DIR = ${BLA_DIR}")
+   message(STATUS ">>> Amanzi: On NERSC system LAPCK_DIR = ${LAPCK_DIR}")
+   
+endif()
+
 # Search for BLAS (Basic Linear Algebra Subprograms) http://www.netlib.org/blas
+
+message(STATUS ">>> Amanzi: Starting Search for BLAS")
 find_package(BLAS REQUIRED)
-message(STATUS ">>>  BLAS_LIBRARIES = ${BLAS_LIBRARIES}") 
+message(STATUS ">>> Amanzi: BLAS_LIBRARIES = ${BLAS_LIBRARIES}") 
 
 # Search for LAPACK (Linear Algebra PACKage) http://www/netlib.org/lapack
+
+message(STATUS ">>> Amanzi: Starting Search for LAPACK")
 find_package(LAPACK REQUIRED)
-message(STATUS ">>>  LAPACK_LIBRARIES = ${LAPACK_LIBRARIES}") 
+message(STATUS ">>> Amanzi: LAPACK_LIBRARIES = ${LAPACK_LIBRARIES}") 
 
 
 # ############################################################################ #
@@ -588,10 +639,10 @@ append_set(Amanzi_TPL_CMAKE_ARGS
           -DNetCDF_FORTRAN_DIR:FILEPATH=${NetCDF_FORTRAN_DIR})
 
 # MOAB
-if (ENABLE_MOAB_Mesh)
+if (ENABLE_MESH_MOAB)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_MOAB.cmake)
   append_set(Amanzi_TPL_CMAKE_ARGS
-             -DENABLE_MOAB_Mesh:BOOL=${ENABLE_MOAB_Mesh}
+             -DENABLE_MESH_MOAB:BOOL=${ENABLE_MESH_MOAB}
              -DMOAB_DIR:PATH=${TPL_INSTALL_PREFIX})
 endif()
  
@@ -684,14 +735,13 @@ else()
 
 endif()
 append_set(Amanzi_TPL_CMAKE_ARGS
-           -DENABLE_STK_Mesh:BOOL=${ENABLE_STK_Mesh}
            -DTrilinos_INSTALL_PREFIX:PATH=${Trilinos_INSTALL_PREFIX})
 
 # MSTK
-if (ENABLE_MSTK_Mesh)
+if (ENABLE_MESH_MSTK)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_MSTK.cmake) 
   append_set(Amanzi_TPL_CMAKE_ARGS
-             -DENABLE_MSTK_Mesh:BOOL=${ENABLE_MSTK_Mesh}
+             -DENABLE_MESH_MSTK:BOOL=${ENABLE_MESH_MSTK}
              -DMSTK_INCLUDE_DIR:PATH=${MSTK_INCLUDE_DIR}
              -DMSTK_LIBRARY_DIR:PATH=${MSTK_LIBRARY_DIR})
 endif()
@@ -776,7 +826,7 @@ else()
 endif()
 
 # Nanoflann is used by MSTK only
-if (ENABLE_MSTK_Mesh)
+if (ENABLE_MESH_MSTK)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_Nanoflann.cmake)
   set(Nanoflann_INSTALL_PREFIX ${TPL_INSTALL_PREFIX})
   set(Nanoflann_INCLUDE_DIRS "${Nanoflann_INSTALL_PREFIX}/include")

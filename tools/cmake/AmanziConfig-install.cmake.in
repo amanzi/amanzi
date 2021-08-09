@@ -49,8 +49,8 @@ set(Amanzi_ENABLE_UNSTRUCTURED    @ENABLE_Unstructured@)
 
 # Mesh frameworks
 set(Amanzi_ENABLE_STK_Mesh        @ENABLE_STK_Mesh@)
-set(Amanzi_ENABLE_MOAB_Mesh       @ENABLE_MOAB_Mesh@)
-set(Amanzi_ENABLE_MSTK_Mesh       @ENABLE_MSTK_Mesh@)
+set(Amanzi_ENABLE_MESH_MOAB       @ENABLE_MESH_MOAB@)
+set(Amanzi_ENABLE_MESH_MSTK       @ENABLE_MESH_MSTK@)
 
 # CCSE Options
 set(Amanzi_CCSE_ENABLE_MPI        @ENABLE_MPI@)

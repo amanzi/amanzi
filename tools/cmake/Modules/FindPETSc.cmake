@@ -1,24 +1,24 @@
 # -*- mode: cmake -*-
 
 #
-# Amanzi PETSC Find Module
+# Amanzi PETSc Find Module
 #
 # Usage:
-#    Control the search through PETSC_DIR or setting environment variable
-#    PETSC_ROOT to the PETSC installation prefix.
+#    Control the search through PETSc_DIR or setting environment variable
+#    PETSc_ROOT to the PETSc installation prefix.
 #
 #    This module does not search default paths! 
 #
 #    Following variables are set:
-#    PETSC_FOUND            (BOOL)       Flag indicating if PETSC was found
-#    PETSC_INCLUDE_DIR      (PATH)       Path to the PETSC include file
-#    PETSC_INCLUDE_DIRS     (LIST)       List of all required include files
-#    PETSC_LIBRARY_DIR      (PATH)       Path to the PETSC library
-#    PETSC_LIBRARY          (FILE)       PETSC library
-#    PETSC_LIBRARIES        (LIST)       List of all required PETSC libraries
+#    PETSc_FOUND            (BOOL)       Flag indicating if PETSc was found
+#    PETSc_INCLUDE_DIR      (PATH)       Path to the PETSc include file
+#    PETSc_INCLUDE_DIRS     (LIST)       List of all required include files
+#    PETSc_LIBRARY_DIR      (PATH)       Path to the PETSc library
+#    PETSc_LIBRARY          (FILE)       PETSc library
+#    PETSc_LIBRARIES        (LIST)       List of all required PETSc libraries
 #
 #    Additional variables
-#    PETSC_VERSION          (STRING)     PETSC Version string
+#    PETSc_VERSION          (STRING)     PETSc Version string
 #
 # #############################################################################
 
@@ -31,183 +31,184 @@ include(AddImportedLibrary)
 include(PrintVariable)
 include(AddPackageDependency)
 
-if (PETSC_LIBRARIES AND PETSC_INCLUDE_DIRS)
+if (PETSc_LIBRARIES AND PETSc_INCLUDE_DIRS)
 
   # Do nothing. Variables are set. No need to search again
 
-else(PETSC_LIBRARIES AND PETSC_INCLUDE_DIRS)
+else(PETSc_LIBRARIES AND PETSc_INCLUDE_DIRS)
 
   # Cache variables
-  if (PETSC_DIR)
-    set(PETSC_DIR "${PETSC_DIR}" CACHE PATH "Path to search for PETSC include and library files")
+  if (PETSc_DIR)
+    set(PETSc_DIR "${PETSc_DIR}" CACHE PATH "Path to search for PETSc include and library files")
   endif()
 
-  if (PETSC_INCLUDE_DIR)
-    set(PETSC_INCLUDE_DIR "${PETSC_INCLUDE_DIR}" CACHE PATH "Path to search for PETSC include files")
+  if (PETSc_INCLUDE_DIR)
+    set(PETSc_INCLUDE_DIR "${PETSc_INCLUDE_DIR}" CACHE PATH "Path to search for PETSc include files")
   endif()
 
-  if (PETSC_LIBRARY_DIR)
-    set(PETSC_LIBRARY_DIR "${PETSC_LIBRARY_DIR}" CACHE PATH "Path to search for PETSC library files")
+  if (PETSc_LIBRARY_DIR)
+    set(PETSc_LIBRARY_DIR "${PETSc_LIBRARY_DIR}" CACHE PATH "Path to search for PETSc library files")
   endif()
 
     
   # Search for include files
   # Search order preference:
-  #  (1) PETSC_INCLUDE_DIR - check existence of path AND if the include files exist
-  #  (2) PETSC_DIR/<include>
+  #  (1) PETSc_INCLUDE_DIR - check existence of path AND if the include files exist
+  #  (2) PETSc_DIR/<include>
   #  (3) Default CMake paths See cmake --html-help=out.html file for more information.
   #
   set(petsc_inc_names "petsc.h")
-  if (PETSC_INCLUDE_DIR)
-    if (EXISTS "${PETSC_INCLUDE_DIR}")
+  if (PETSc_INCLUDE_DIR)
+    if (EXISTS "${PETSc_INCLUDE_DIR}")
 
       find_path(petsc_test_include_path
                 NAMES ${petsc_inc_names}
-                HINTS ${PETSC_INCLUDE_DIR}
+                HINTS ${PETSc_INCLUDE_DIR}
                 NO_DEFAULT_PATH)
 
       if (NOT petsc_test_include_path)
-        message(SEND_ERROR "Can not locate ${petsc_inc_names} in ${PETSC_INCLUDE_DIR}")
+        message(SEND_ERROR "Can not locate ${petsc_inc_names} in ${PETSc_INCLUDE_DIR}")
       endif()
-      set(PETSC_INCLUDE_DIR "${petsc_test_include_path}")
+      set(PETSc_INCLUDE_DIR "${petsc_test_include_path}")
 
     else()
-      message(SEND_ERROR "PETSC_INCLUDE_DIR=${PETSC_INCLUDE_DIR} does not exist")
-      set(PETSC_INCLUDE_DIR "PETSC_INCLUDE_DIR-NOTFOUND")
+      message(SEND_ERROR "PETSc_INCLUDE_DIR=${PETSc_INCLUDE_DIR} does not exist")
+      set(PETSc_INCLUDE_DIR "PETSc_INCLUDE_DIR-NOTFOUND")
     endif()
 
   else() 
 
     set(petsc_inc_suffixes "include")
-    if (PETSC_DIR)
-      if (EXISTS "${PETSC_DIR}")
+    if (PETSc_DIR)
+      if (EXISTS "${PETSc_DIR}")
 
-        find_path(PETSC_INCLUDE_DIR
+        find_path(PETSc_INCLUDE_DIR
                   NAMES ${petsc_inc_names}
-                  HINTS ${PETSC_DIR}
+                  HINTS ${PETSc_DIR}
                   PATH_SUFFIXES ${petsc_inc_suffixes}
                   NO_DEFAULT_PATH)
-
+                
       else()
-        message(SEND_ERROR "PETSC_DIR=${PETSC_DIR} does not exist")
-        set(PETSC_INCLUDE_DIR "PETSC_INCLUDE_DIR-NOTFOUND")
+        message(SEND_ERROR "PETSc_DIR=${PETSc_DIR} does not exist")
+        set(PETSc_INCLUDE_DIR "PETSc_INCLUDE_DIR-NOTFOUND")
       endif()    
 
     else()
 
-      find_path(PETSC_INCLUDE_DIR
+      find_path(PETSc_INCLUDE_DIR
                 NAMES ${petsc_inc_names}
                 PATH_SUFFIXES ${petsc_inc_suffixes})
 
     endif()
   endif()
 
-  if (NOT PETSC_INCLUDE_DIR)
-    message(SEND_ERROR "Can not locate PETSC include directory")
+  if (NOT PETSc_INCLUDE_DIR)
+    message(SEND_ERROR "Can not locate PETSc include directory")
   endif()
 
   # Search for libraries 
   # Search order preference:
-  #  (1) PETSC_LIBRARY_DIR - check existence of path AND if the library file exists
-  #  (2) PETSC_DIR/<lib,Lib>
+  #  (1) PETSc_LIBRARY_DIR - check existence of path AND if the library file exists
+  #  (2) PETSc_DIR/<lib,Lib>
   #  (3) Default CMake paths See cmake --html-help=out.html file for more information.
   #
   set(petsc_lib_names "petsc")
-  if (PETSC_LIBRARY_DIR)
-    if (EXISTS "${PETSC_LIBRARY_DIR}")
+  if (PETSc_LIBRARY_DIR)
+    if (EXISTS "${PETSc_LIBRARY_DIR}")
 
-      find_library(_PETSC_LIBRARY
+      find_library(_PETSc_LIBRARY
                    NAMES ${petsc_lib_names}
-                   HINTS ${PETSC_LIBRARY_DIR}
+                   HINTS ${PETSc_LIBRARY_DIR}
                    NO_DEFAULT_PATH)
 
     else()
-      message(SEND_ERROR "PETSC_LIBRARY_DIR=${PETSC_LIBRARY_DIR} does not exist")
-      set(_PETSC_LIBRARY "PETSC_LIBRARY-NOTFOUND")
-      set(_PETSC_Fortran_LIBRARY "PETSC_Fortran_LIBRARY-NOTFOUND")
+      message(SEND_ERROR "PETSc_LIBRARY_DIR=${PETSc_LIBRARY_DIR} does not exist")
+      set(_PETSc_LIBRARY "PETSc_LIBRARY-NOTFOUND")
+      set(_PETSc_Fortran_LIBRARY "PETSc_Fortran_LIBRARY-NOTFOUND")
     endif()
 
   else() 
 
     list(APPEND petsc_lib_suffixes "lib" "Lib")
-    if (PETSC_DIR)
-      if (EXISTS "${PETSC_DIR}")
+    if (PETSc_DIR)
+      if (EXISTS "${PETSc_DIR}")
 
-        find_library(_PETSC_LIBRARY
+        find_library(_PETSc_LIBRARY
                      NAMES ${petsc_lib_names}
-                     HINTS ${PETSC_DIR}
+                     HINTS ${PETSc_DIR}
                      PATH_SUFFIXES ${petsc_lib_suffixes}
                      NO_DEFAULT_PATH)
                 
       else()
-        message(SEND_ERROR "PETSC_DIR=${PETSC_DIR} does not exist")
-        set(PETSC_LIBRARY "PETSC_LIBRARY-NOTFOUND")
-        set(PETSC_Fortran_LIBRARY "PETSC_Fortran_LIBRARY-NOTFOUND")
+        message(SEND_ERROR "PETSc_DIR=${PETSc_DIR} does not exist")
+        set(PETSc_LIBRARY "PETSc_LIBRARY-NOTFOUND")
+        set(PETSc_Fortran_LIBRARY "PETSc_Fortran_LIBRARY-NOTFOUND")
       endif()    
 
     else()
 
-      find_library(_PETSC_LIBRARY
+      find_library(_PETSc_LIBRARY
                    NAMES ${petsc_lib_names}
                    PATH_SUFFIXES ${petsc_lib_suffixes})
 
     endif()
   endif()
 
-  # Create the library target store the name in PETSC_LIBRARY
-  if ( _PETSC_LIBRARY )
-    set(PETSC_LIBRARY petsc)
-    add_imported_library(${PETSC_LIBRARY}
-                        LOCATION ${_PETSC_LIBRARY})
+  # Create the library target store the name in PETSc_LIBRARY
+  if ( _PETSc_LIBRARY )
+    set(PETSc_LIBRARY petsc)
+    add_imported_library(${PETSc_LIBRARY}
+                        LOCATION ${_PETSc_LIBRARY})
   else()
-    message(SEND_ERROR "Can not locate PETSC library")
+    message(SEND_ERROR "Can not locate PETSc library")
   endif()
 
   # Define prerequisite packages
-  set(PETSC_INCLUDE_DIRS ${PETSC_INCLUDE_DIR})
-  set(PETSC_LIBRARIES    ${PETSC_LIBRARY})
+  set(PETSc_INCLUDE_DIRS ${PETSc_INCLUDE_DIR})
+  set(PETSc_LIBRARIES    ${PETSc_LIBRARY})
 
   # PETSc generates a CMake configuration file that contains the
   # required TPLs. I use an include here instead of find_package
   # to prevent a recursive call.
-  if (PETSC_DIR)
-    set(PETSC_CMAKE_CONFIG_FILE ${PETSC_DIR}/lib/petsc/conf/PETScBuildInternal.cmake)
-    if (EXISTS ${PETSC_CMAKE_CONFIG_FILE})
-      include(${PETSC_CMAKE_CONFIG_FILE})
+  if (PETSc_DIR)
+    set(PETSc_CMAKE_CONFIG_FILE ${PETSc_DIR}/lib/petsc/conf/PETScBuildInternal.cmake)
+    if (EXISTS ${PETSc_CMAKE_CONFIG_FILE})
+      include(${PETSc_CMAKE_CONFIG_FILE})
 
       # Include paths
       if (PETSC_PACKAGE_INCLUDES)
-	list(APPEND PETSC_INCLUDE_DIRS ${PETSC_PACKAGE_INCLUDES})
-	list(REMOVE_DUPLICATES PETSC_INCLUDE_DIRS)
+        list(APPEND PETSc_INCLUDE_DIRS ${PETSC_PACKAGE_INCLUDES})
+        list(REMOVE_DUPLICATES PETSc_INCLUDE_DIRS)
       endif()
 
       # TPL libraries, some of the items in this list are not defined!
       if (PETSC_PACKAGE_LIBS)
-	foreach(lib ${PETSC_PACKAGE_LIBS})
-	  if (lib)
-	    list(APPEND PETSC_LIBRARIES ${lib})
-	  endif()
+	    foreach(lib ${PETSC_PACKAGE_LIBS})
+	      if (lib)
+	        list(APPEND PETSc_LIBRARIES ${lib})
+	      endif()
         endforeach()
       endif()  
 
       # set target properties   
       set(petsc_deps HYPRE SUPERLU_DIST SUPERLU PARMETIS METIS)
       foreach(lib ${petsc_deps})
+        message(STATUS ">>>>> JDM: ${lib} ${PETSC_HAVE_${lib}}")
         if (PETSC_HAVE_${lib})
-          set_target_properties(${PETSC_LIBRARY} PROPERTIES
+          set_target_properties(${PETSc_LIBRARY} PROPERTIES
                                 INTERFACE_LINK_LIBRARIES "${PETSC_${lib}_LIB}")
         endif()
       endforeach()
     endif()
   endif()  
    
-endif(PETSC_LIBRARIES AND PETSC_INCLUDE_DIRS)
+endif(PETSc_LIBRARIES AND PETSc_INCLUDE_DIRS)
 
 # Define the version
-if (NOT PETSC_VERSION)
-  set(PETSC_VERSION "")
-  if (PETSC_INCLUDE_DIR)
-    set(petscversion_h ${PETSC_INCLUDE_DIR}/petscversion.h)
+if (NOT PETSc_VERSION)
+  set(PETSc_VERSION "")
+  if (PETSc_INCLUDE_DIR)
+    set(petscversion_h ${PETSc_INCLUDE_DIR}/petscversion.h)
     if (EXISTS ${petscversion_h})
       set(version_labels MAJOR MINOR PATCH)
       foreach(label ${version_labels})
@@ -216,10 +217,10 @@ if (NOT PETSC_VERSION)
         string(REGEX REPLACE "${regexp_target}\([0-9]+\)[ \t\n\r]*" "\\1" ver_num ${version_string})
 
         if (ver_num)
-	  if (PETSC_VERSION)
-	    set(PETSC_VERSION "${PETSC_VERSION}.${ver_num}")
+	  if (PETSc_VERSION)
+	    set(PETSc_VERSION "${PETSc_VERSION}.${ver_num}")
           else()
-    	    set(PETSC_VERSION ${ver_num})
+    	    set(PETSc_VERSION ${ver_num})
 	  endif()
         endif()  
       endforeach()  
@@ -229,14 +230,14 @@ if (NOT PETSC_VERSION)
 endif()    
 
 # Send useful message if everything is found
-find_package_handle_standard_args(PETSC DEFAULT_MSG
-                                  PETSC_INCLUDE_DIR
-                                  PETSC_LIBRARIES)
+find_package_handle_standard_args(PETSc DEFAULT_MSG
+                                  PETSc_INCLUDE_DIR
+                                  PETSc_LIBRARIES)
 
 mark_as_advanced(
-  PETSC_INCLUDE_DIR
-  PETSC_INCLUDE_DIRS
-  PETSC_LIBRARY
-  PETSC_LIBRARIES
-  PETSC_LIBRARY_DIR
+  PETSc_INCLUDE_DIR
+  PETSc_INCLUDE_DIRS
+  PETSc_LIBRARY
+  PETSc_LIBRARIES
+  PETSc_LIBRARY_DIR
 )

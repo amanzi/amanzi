@@ -35,8 +35,8 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     decimal_width_(7)
 {
   vo_ = Teuchos::rcp(new VerboseObject(name, plist, mesh->get_comm()));
-  Teuchos::ParameterList vo_plist(plist);
-  vo_plist.sublist("verbose object").set("write on all", true);
+  Teuchos::ParameterList vo_plist(plist.sublist("verbose object"));
+  vo_plist.set("write on all", true);
   dcvo_ = Teuchos::rcp(new VerboseObject(name, plist, mesh->get_comm()));
 
   // cells to debug
