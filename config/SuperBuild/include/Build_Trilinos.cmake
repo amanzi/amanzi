@@ -116,22 +116,17 @@ if (ENABLE_Tpetra)
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTrilinos_ENABLE_CUDA:BOOL=ON")
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_CUDA:BOOL=ON")
     list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DAmesos2_ENABLE_CUSPARSE:BOOL=ON")
-
-    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_SERIAL:BOOL=OFF")
     list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_CUDA:BOOL=ON")
-
   else()
+    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_CUDA:BOOL=OFF")
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTPL_ENABLE_CUDA:BOOL=OFF")
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTrilinos_ENABLE_CUDA:BOOL=OFF")
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_CUDA:BOOL=OFF")
   endif()
 
-  if (ENABLE_OpenMP OR ENABLE_CUDA)
-    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_SERIAL:BOOL=OFF")
-  else()
-    message(STATUS "Kokkos Serial enabled")
-    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_SERIAL:BOOL=ON")
-  endif()
+  message(STATUS "Kokkos Serial enabled")
+  list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_SERIAL:BOOL=ON")
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_SERIAL:BOOL=ON")
     
 else() 
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DMueLu_ENABLE_Tpetra:BOOL=OFF")
@@ -318,6 +313,7 @@ if (ENABLE_Trilinos_Patch)
     trilinos-duplicate-parameters.patch
     trilinos-superludist.patch
     trilinos-ifpack.patch
+    trilinos-ifpack2.patch
     )
   configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
                  ${Trilinos_prefix_dir}/trilinos-patch-step.sh
