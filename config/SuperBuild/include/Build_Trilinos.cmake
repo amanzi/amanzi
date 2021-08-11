@@ -95,6 +95,7 @@ if (ENABLE_Tpetra)
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DAmesos2_ENABLE_ShyLU_NodeBasker:BOOL=ON")
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DAmesos2_ENABLE_TIMERS:BOOL=ON")
 
+  list(APPEND Trilinos_CMAKE_PAKCGAE_ARGS "-DTrilinos_ENABLE_ShyLU_NodeFastILU=ON")
 
   if (ENABLE_OpenMP)
     message(STATUS "Kokkos OpenMP enabled")
