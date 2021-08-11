@@ -315,6 +315,7 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
 //--------------------------------------------------------------
 bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
+  double pi = 3.141592653589793;
   double dt = t_new - t_old;
   iters_++;
 
@@ -348,8 +349,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // limited reconstructions
   auto tmp1 = S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
   total_depth_grad_->ComputeGradient(tmp1);
-  limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_->gradient());
-  limiter_->gradient()->ScatterMasterToGhosted("cell");
+//  limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_->gradient());
+//  limiter_->gradient()->ScatterMasterToGhosted("cell");
 
   auto tmp3 = S_->GetFieldData(velocity_key_, passwd_)->ViewComponent("cell", true);
   velocity_x_grad_->ComputeGradient(tmp3, 0);
@@ -389,7 +390,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
       int c = it->first;
       ext_S_cell[c] = it->second[0];  // data units is [m]
-      total_source_ += it->second[0] * mesh_->cell_volume(c); // data units are [m^3]
+      total_source_ += it->second[0] * mesh_->cell_volume(c) * dt; // data units are [m^3]
     }
   }
 
@@ -535,8 +536,9 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     for (int i = 0; i < 3; i++) {
       U_new[i] = U[i] - dt / vol * FS[i] + dt * S[i];
     }
-
-    U_new[0] += dt * ext_S_cell[c];
+    
+    U_new[0] += dt * ext_S_cell[c] - dt * 1.0;
+    U_new[1] += dt * (g_ * (xc[0] + 1) );
     
     // transform to conservative variables
     h  = U_new[0];
@@ -633,8 +635,11 @@ std::vector<double> ShallowWater_PK::NumericalSource(
       B_rec = B_c[0][c];
     }
 
-    S1 += (-B_rec * ht_rec + B_rec * B_rec / 2) * normal[0];
-    S2 += (-B_rec * ht_rec + B_rec * B_rec / 2) * normal[1];
+//    S1 += (-B_rec * ht_rec + B_rec * B_rec / 2) * normal[0];
+//    S2 += (-B_rec * ht_rec + B_rec * B_rec / 2) * normal[1];
+    
+    S1 += (-B_rec * h_c[0][c] ) * normal[0];
+    S2 += (-B_rec * h_c[0][c] ) * normal[1];
   }
     
   std::vector<double> S(3);
@@ -763,4 +768,3 @@ void ShallowWater_PK::ErrorDiagnostics_(int c, double h, double B, double ht)
 
 }  // namespace ShallowWater
 }  // namespace Amanzi
-
