@@ -8,6 +8,12 @@
         <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
+    <ParameterList name="Top side">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,1.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
     <ParameterList name="Left side">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>

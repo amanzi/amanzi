@@ -48,10 +48,8 @@ void dam_break_1D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     ht_vec_c[0][c] = h_vec_c[0][c] + B_vec_c[0][c];
   }
 
-  S->GetFieldData("surface-velocity-x", passwd)->PutScalar(0.0);
-  S->GetFieldData("surface-velocity-y", passwd)->PutScalar(0.0);
-  S->GetFieldData("surface-discharge-x", passwd)->PutScalar(0.0);
-  S->GetFieldData("surface-discharge-y", passwd)->PutScalar(0.0);
+  S->GetFieldData("surface-velocity", passwd)->PutScalar(0.0);
+  S->GetFieldData("surface-discharge", "surface-discharge")->PutScalar(0.0);
 }
 
 
@@ -87,7 +85,6 @@ void dam_break_1D_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
-
     Amanzi::AmanziGeometry::Point xc = mesh->cell_centroid(c);
 
     x = xc[0];
@@ -111,9 +108,11 @@ void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   hmax = 0.;
 
   for (int c = 0; c < ncells_owned; c++) {
-    err_max = std::max(err_max,std::abs(hh_ex[0][c]-hh[0][c]));
-    err_L1 += std::abs(hh_ex[0][c]-hh[0][c])*mesh->cell_volume(c);
-    hmax = std::sqrt(mesh->cell_volume(c));
+    double vol = mesh->cell_volume(c);
+    double tmp = std::abs(hh_ex[0][c] - hh[0][c]);
+    err_max = std::max(err_max, tmp);
+    err_L1 += tmp * vol;
+    hmax = std::sqrt(vol);
   }
 
   double err_max_tmp(err_max);
@@ -131,7 +130,7 @@ void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 
 void ConservationCheck(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, const Epetra_MultiVector& hh,
                        const Epetra_MultiVector& ht,
-                       const Epetra_MultiVector& vx, const Epetra_MultiVector& vy,
+                       const Epetra_MultiVector& vel,
                        const Epetra_MultiVector& B, double& TE)
 {
   int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
@@ -141,11 +140,11 @@ void ConservationCheck(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, const 
 
   for (int c = 0; c < ncells_owned; c++) {
     double volume = mesh->cell_volume(c);
-    KE += 0.5*hh[0][c]*(vx[0][c]*vx[0][c] + vy[0][c]*vy[0][c])*volume;
-    IE += 0.5*g*hh[0][c]*hh[0][c]*volume;
+    KE += hh[0][c] * (vel[0][c] * vel[0][c] + vel[1][c] * vel[1][c]) * volume;
+    IE += g * hh[0][c] * hh[0][c] * volume;
   }
 
-  double TE_tmp = KE + IE;
+  double TE_tmp = (KE + IE) / 2;
   mesh->get_comm()->SumAll(&TE_tmp, &TE, 1);
 }
 
@@ -199,11 +198,9 @@ TEST(SHALLOW_WATER_1D) {
 
   const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth")->ViewComponent("cell");
   const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
-  const Epetra_MultiVector& vx = *S->GetFieldData("surface-velocity-x")->ViewComponent("cell");
-  const Epetra_MultiVector& vy = *S->GetFieldData("surface-velocity-y")->ViewComponent("cell");
-  const Epetra_MultiVector& qx = *S->GetFieldData("surface-discharge-x")->ViewComponent("cell");
-  const Epetra_MultiVector& qy = *S->GetFieldData("surface-discharge-y")->ViewComponent("cell");
-  const Epetra_MultiVector& B  = *S->GetFieldData("surface-bathymetry")->ViewComponent("cell");
+  const Epetra_MultiVector& vel = *S->GetFieldData("surface-velocity")->ViewComponent("cell");
+  const Epetra_MultiVector& q = *S->GetFieldData("surface-discharge")->ViewComponent("cell");
+  const Epetra_MultiVector& B = *S->GetFieldData("surface-bathymetry")->ViewComponent("cell");
 
   // create pid vector
   Epetra_MultiVector pid(B);
@@ -233,22 +230,23 @@ TEST(SHALLOW_WATER_1D) {
     double t_out = t_new;
 
     Epetra_MultiVector hh_ex(hh);
-    Epetra_MultiVector vx_ex(vx);
+    Epetra_MultiVector vel_ex(vel);
 
-    dam_break_1D_exact_field(mesh, hh_ex, vx_ex, t_out);
+    dam_break_1D_exact_field(mesh, hh_ex, vel_ex, t_out);
 
     if (iter % 5 == 0) {
       io.InitializeCycle(t_out, iter, "");
       io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
       io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
-      io.WriteVector(*vx(0), "vx", AmanziMesh::CELL);
-      io.WriteVector(*vy(0), "vy", AmanziMesh::CELL);
-      io.WriteVector(*qx(0), "qx", AmanziMesh::CELL);
-      io.WriteVector(*qy(0), "qy", AmanziMesh::CELL);
+      io.WriteVector(*vel(0), "vx", AmanziMesh::CELL);
+      io.WriteVector(*vel(1), "vy", AmanziMesh::CELL);
+      io.WriteVector(*q(0), "qx", AmanziMesh::CELL);
+      io.WriteVector(*q(1), "qy", AmanziMesh::CELL);
       io.WriteVector(*B(0), "B", AmanziMesh::CELL);
       io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
+
       io.WriteVector(*hh_ex(0), "hh_ex", AmanziMesh::CELL);
-      io.WriteVector(*vx_ex(0), "vx_ex", AmanziMesh::CELL);
+      io.WriteVector(*vel_ex(0), "vx_ex", AmanziMesh::CELL);
       io.FinalizeCycle();
     }
 
@@ -264,22 +262,24 @@ TEST(SHALLOW_WATER_1D) {
     t_old = t_new;
     iter++;
 
-    ConservationCheck(mesh, hh, ht, vx, vy, B, TEini);
-    if (MyPID == 0 && iter == 1) std::cout << "cycle= " << iter << "  initial TE=" << TEini << "  dt=" << dt << std::endl;
+    if (iter == 1) {
+      ConservationCheck(mesh, hh, ht, vel, B, TEini);
+      if (MyPID == 0) std::cout << "cycle= " << iter << "  initial TE=" << TEini << "  dt=" << dt << std::endl;
+    }
   }
 
-  ConservationCheck(mesh, hh, ht, vx, vy, B, TEfin);
+  ConservationCheck(mesh, hh, ht, vel, B, TEfin);
   if (MyPID == 0) std::cout << "cycle= " << iter << "  final TE=" << TEfin << "  dt=" << dt << std::endl;
-  CHECK_CLOSE(TEini, TEfin, 2e-5 * TEini);
+  CHECK_CLOSE(TEini, TEfin, 6e-3 * TEini);
 
   // error calculation at the time time
   double t_out = t_new;
   double err_max, err_L1, hmax;
-  Epetra_MultiVector hh_ex(hh), vx_ex(vx);
+  Epetra_MultiVector hh_ex(hh), vel_ex(vel);
 
-  dam_break_1D_exact_field(mesh, hh_ex, vx_ex, t_out);
+  dam_break_1D_exact_field(mesh, hh_ex, vel_ex, t_out);
 
-  error(mesh, hh_ex, vx_ex, hh, vx, err_max, err_L1, hmax);
+  error(mesh, hh_ex, vel_ex, hh, vel, err_max, err_L1, hmax);
 
   CHECK_CLOSE(1./hmax, err_max, 0.5);
 
@@ -287,14 +287,15 @@ TEST(SHALLOW_WATER_1D) {
   io.InitializeCycle(t_out, iter, "");
   io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
   io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
-  io.WriteVector(*vx(0), "vx", AmanziMesh::CELL);
-  io.WriteVector(*vy(0), "vy", AmanziMesh::CELL);
-  io.WriteVector(*qx(0), "qx", AmanziMesh::CELL);
-  io.WriteVector(*qy(0), "qy", AmanziMesh::CELL);
+  io.WriteVector(*vel(0), "vx", AmanziMesh::CELL);
+  io.WriteVector(*vel(1), "vy", AmanziMesh::CELL);
+  io.WriteVector(*q(0), "qx", AmanziMesh::CELL);
+  io.WriteVector(*q(1), "qy", AmanziMesh::CELL);
   io.WriteVector(*B(0), "B", AmanziMesh::CELL);
   io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
+
   io.WriteVector(*hh_ex(0), "hh_ex", AmanziMesh::CELL);
-  io.WriteVector(*vx_ex(0), "vx_ex", AmanziMesh::CELL);
+  io.WriteVector(*vel_ex(0), "vx_ex", AmanziMesh::CELL);
   io.FinalizeCycle();
 
   /*

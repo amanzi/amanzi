@@ -33,6 +33,7 @@ Note this always monitors the residual, and the correction is always modified.
 
     * `"diverged tolerance`" ``[double]`` **1.e10** Defines the error level
       indicating divergence of the solver. The error is calculated by a PK.
+      Set to a negative value to ignore this check.
 
     * `"nka lag iterations`" ``[int]`` **0** Delays the NKA acceleration, but
       updates the Krylov space.
@@ -329,7 +330,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
   }
 
   // Check divergence
-  if (error > overflow_tol_) {
+  if (overflow_tol_ > 0 && error > overflow_tol_) {
     if (vo_->os_OK(Teuchos::VERB_LOW)) {
       *vo_->os() << "Solve failed, error " << error << " > " << overflow_tol_
                  << " (dtol)" << std::endl;
@@ -611,7 +612,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
         
         residual_ = error;
         res->Norm2(&l2_error);
-        if (vo_->os_OK(Teuchos::VERB_LOW)) {
+        if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
           *vo_->os() << num_itrs_ << (nka_applied ? ": NKA " : ": PIC ")
                      << ": error(res) = " << error << std::endl
                      << num_itrs_ << (nka_applied ? ": NKA " : ": PIC ")
@@ -630,7 +631,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
     }
 
     // Check divergence
-    if (error > overflow_tol_) {
+    if (overflow_tol_ > 0 && error > overflow_tol_) {
       if (vo_->os_OK(Teuchos::VERB_LOW)) {
         *vo_->os() << "Solve failed, error " << error << " > " << overflow_tol_
                    << " (dtol)" << std::endl;

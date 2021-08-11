@@ -1,14 +1,21 @@
 /*
-  State
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
+  ATS is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Author: Ethan Coon (ecoon@lanl.gov)
+*/
+//! A field evaluator providing user-supplied data as a leaf node.
+/*!
 
-  A field evaluator with no dependencies specified by a function.
+Independent variables are data provided by the user.  Independent variable
+evaluators are therefore leaf nodes in the dependency graph (they have no
+dependencies themselves) but do know how to update their data with values as a
+function of space and time.
+
+There are three ways for the user to provide that data: as static, constant
+values, from an Amanzi Function_, or from file.
+
 */
 
 #ifndef AMANZI_INDEPENDENT_FIELD_EVALUATOR_

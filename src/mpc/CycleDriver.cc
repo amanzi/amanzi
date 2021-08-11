@@ -82,8 +82,6 @@ CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
     observations_data_(observations_data),
     restart_requested_(false) {
 
-  mesh_ = S_->GetMesh("domain");
-  
   // create and start the global timer
   CoordinatorInit_();
 
@@ -159,7 +157,7 @@ void CycleDriver::Setup() {
   // create the checkpointing
   if (glist_->isSublist("checkpoint data")) {
     Teuchos::ParameterList& chkp_plist = glist_->sublist("checkpoint data");
-    checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
+    checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, *S_));
   }
   else {
     checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint());
@@ -168,7 +166,7 @@ void CycleDriver::Setup() {
   // create the walkabout
   if (glist_->isSublist("walkabout data")) {
     Teuchos::ParameterList& walk_plist = glist_->sublist("walkabout data");
-    walkabout_ = Teuchos::rcp(new Amanzi::WalkaboutCheckpoint(walk_plist, comm_));
+    walkabout_ = Teuchos::rcp(new Amanzi::WalkaboutCheckpoint(walk_plist, *S_));
   }
   else {
     walkabout_ = Teuchos::rcp(new Amanzi::WalkaboutCheckpoint());
@@ -176,7 +174,7 @@ void CycleDriver::Setup() {
 
   // vis successful steps
   bool surface_done = false;
-  for (auto mesh=S_->mesh_begin(); mesh!=S_->mesh_end(); ++mesh) {
+  for (auto mesh = S_->mesh_begin(); mesh != S_->mesh_end(); ++mesh) {
     if (mesh->first == "surface_3d") {
       // pass
     } else if ((mesh->first == "surface") && surface_done) {
@@ -221,8 +219,8 @@ void CycleDriver::Setup() {
     }
     if (glist_->isSublist(plist_name)) {
       auto& mesh_info_list = glist_->sublist(plist_name);
-      Teuchos::RCP<Amanzi::MeshInfo> mesh_info = Teuchos::rcp(new Amanzi::MeshInfo(mesh_info_list, comm_));
-      mesh_info->WriteMeshCentroids(*(mesh->second.first));
+      Teuchos::RCP<Amanzi::MeshInfo> mesh_info = Teuchos::rcp(new Amanzi::MeshInfo(mesh_info_list, *S_));
+      mesh_info->WriteMeshCentroids(mesh->first, *(mesh->second.first));
     }
   }
 
@@ -284,6 +282,7 @@ void CycleDriver::Initialize() {
   S_->CheckAllFieldsInitialized();
 
   // S_->WriteDependencyGraph();
+  S_->InitializeIOFlags(); 
 
   // commit the initial conditions.
   // pk_->CommitStep(t0_-get_dt(), get_dt());
@@ -302,7 +301,7 @@ void CycleDriver::Initialize() {
 void CycleDriver::Finalize() {
   if (!checkpoint_->DumpRequested(S_->cycle(), S_->time())) {
     pk_->CalculateDiagnostics(S_);
-    Amanzi::WriteCheckpoint(*checkpoint_, *S_, 0.0, true, &observations_data_);
+    checkpoint_->Write(*S_, 0.0, true, &observations_data_);
   }
 }
 
@@ -714,7 +713,7 @@ void CycleDriver::WriteCheckpoint(double dt, bool force) {
       final = true;
     }
 
-    Amanzi::WriteCheckpoint(*checkpoint_, *S_, dt, final, &observations_data_);
+    checkpoint_->Write(*S_, dt, final, &observations_data_);
     
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "writing checkpoint file" << std::endl;
@@ -789,7 +788,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
     S_->GetMeshPartition("materials");
     
     // re-initialize the state object
-    restart_dT = ReadCheckpoint(comm_, *S_, restart_filename_);
+    restart_dT = ReadCheckpoint(*S_, restart_filename_);
 
     cycle0_ = S_->cycle();
     for (std::vector<std::pair<double,double> >::iterator it = reset_info_.begin();
@@ -834,6 +833,9 @@ Teuchos::RCP<State> CycleDriver::Go() {
 
   // visualization at IC
   // Amanzi::timer_manager.start("I/O");
+  // after initialization of State and PK we know all fields and clean of
+  S_->InitializeIOFlags(); 
+
   pk_->CalculateDiagnostics(S_);
   Visualize();
   Observations();
@@ -861,6 +863,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
               (S_->cycle() - start_cycle_num < tp_max_cycle_[time_period_id_])))
       {
         if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+          // if (S_->cycle() % 100 == 0 && S_->cycle() > 0) {
           if (S_->cycle() % 100 == 0 && S_->cycle() > 0) {
             WriteStateStatistics(*S_, *vo_);
             Teuchos::OSTab tab = vo_->getOSTab();
@@ -904,7 +907,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
     // catch errors to dump two checkpoints -- one as a "last good" checkpoint
     // and one as a "debugging data" checkpoint.
     checkpoint_->set_filebasename("error_checkpoint");
-    WriteCheckpoint(*checkpoint_, *S_, dt);
+    checkpoint_->Write(*S_, dt);
     throw e;
   }
 #endif

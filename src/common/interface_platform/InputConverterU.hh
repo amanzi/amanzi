@@ -135,6 +135,10 @@ class InputConverterU : public InputConverter {
       Teuchos::ParameterList& out_ev,
       const std::string& field, const std::string& region, double val);
 
+  void AddConstantFieldInitialization_(
+      Teuchos::ParameterList& out_ev,
+      const std::string& field, const std::string& region, double val);
+
   // -- flow
   Teuchos::ParameterList TranslateFlow_(const std::string& mode, const std::string& domain);
   Teuchos::ParameterList TranslateWRM_(const std::string& pk_name);
@@ -163,7 +167,8 @@ class InputConverterU : public InputConverter {
   void TranslateTransportBCsAmanziGeochemistry_(Teuchos::ParameterList& out_list);
   void TranslateStateICsAmanziGeochemistry_(Teuchos::ParameterList& out_list,
                                             std::string& constraint,
-                                            std::vector<std::string>& regions);
+                                            std::vector<std::string>& regions,
+                                            const std::string& domain);
 
   // -- chemistry and energy
   Teuchos::ParameterList TranslateChemistry_(const std::string& domain);
@@ -211,6 +216,7 @@ class InputConverterU : public InputConverter {
   Iterator SelectUniqueEntries(Iterator first, Iterator last);
 
   // -- miscalleneous
+  DOMNode* GetPKChemistryPointer_(bool& flag);
   bool FindNameInVector_(const std::string& name, const std::vector<std::string>& list); 
   std::string CreateNameFromVector_(const std::vector<std::string>& list); 
   bool WeightVolumeSubmodel_(const std::vector<std::string>& regions);
@@ -229,6 +235,8 @@ class InputConverterU : public InputConverter {
   std::map<std::string, std::string> pk_model_;
   std::map<std::string, bool> pk_master_;
   std::map<std::string, double> dt_cut_, dt_inc_;
+  
+  std::string eos_lookup_table_;
 
   // global physical constants prefixed with "const"
   double const_gravity_;

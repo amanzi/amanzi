@@ -42,20 +42,17 @@ Teuchos::RCP<FieldEvaluator> IndependentVariableFieldEvaluatorFromFunction::Clon
 // Update the value in the state.
 // ---------------------------------------------------------------------------
 void IndependentVariableFieldEvaluatorFromFunction::UpdateField_(const Teuchos::Ptr<State>& S) {
-  if (!computed_once_) {
+  if (!func_.get()) {
     // Create the function.
     Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(my_key_);
     AMANZI_ASSERT(plist_.isSublist("function"));
-    func_ = Functions::CreateCompositeVectorFunction(plist_.sublist("function"), cv->Map());
+    std::vector<std::string> complist;
+    func_ = Functions::CreateCompositeVectorFunction(plist_.sublist("function"), cv->Map(), complist);
   }
 
-  if (temporally_variable_ || !computed_once_) {
-    // NOTE: IndependentVariableFieldEvaluatorFromFunctions own their own data.
-    Teuchos::RCP<CompositeVector> cv = S->GetFieldData(my_key_, my_key_);
-    time_ = S->time();
-    func_->Compute(time_, cv.ptr());
-    computed_once_ = true;
-  }
+  // NOTE: IndependentVariableFieldEvaluatorFromFunctions own their own data.
+  Teuchos::RCP<CompositeVector> cv = S->GetFieldData(my_key_, my_key_);
+  func_->Compute(time_, cv.ptr(), vo_.get());
 }
 
 

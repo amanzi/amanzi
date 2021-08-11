@@ -419,7 +419,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   relperm_ = Teuchos::rcp(new RelPerm(*upw_list, mesh_, atm_pressure_, wrm_));
 
   Operators::UpwindFactory<RelPerm> upwind_factory;
-  upwind_ = upwind_factory.Create(mesh_, relperm_, *upw_list);
+  upwind_ = upwind_factory.Create(mesh_, *upw_list, relperm_);
 
   std::string upw_upd = upw_list->get<std::string>("upwind frequency", "every timestep");
   if (upw_upd == "every nonlinear iteration") upwind_frequency_ = FLOW_UPWIND_UPDATE_ITERATION;
@@ -515,6 +515,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   if (ti_list_->isSublist("pressure-lambda constraints") && pressure.HasComponent("face")) {
     DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
                                    *pressure.ViewComponent("face"));
+    Teuchos::rcp_dynamic_cast<Field_CompositeVector>(S->GetField(pressure_key_, passwd_))->set_initialized("face");
   }
 
   // error control options
@@ -707,6 +708,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Verbose output of initialization statistics.
   InitializeStatistics_();
+
 }
 
 

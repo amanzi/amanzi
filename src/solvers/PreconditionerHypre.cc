@@ -45,16 +45,12 @@ void PreconditionerHypre::set_inverse_parameters(Teuchos::ParameterList& list)
   vo_ = Teuchos::rcp(new VerboseObject(vo_name, plist_));
 }
 
-void PreconditionerHypre::Init_()
-{
-#ifdef HAVE_HYPRE
-#endif
-}
 
+/* ******************************************************************
+* Initialize AMG preconditioner.
+****************************************************************** */
 void PreconditionerHypre::InitBoomer_()
 {
-  Init_();
-
 #ifdef HAVE_HYPRE
   method_ = BoomerAMG;
 
@@ -179,12 +175,10 @@ void PreconditionerHypre::InitBoomer_()
 
 
 /* ******************************************************************
- * Initialize the preconditioner.
- ****************************************************************** */
+* Initialize modified ILU preconditioner.
+****************************************************************** */
 void PreconditionerHypre::InitEuclid_()
 {
-  Init_();
-
 #ifdef HAVE_HYPRE
   method_ = Euclid;
 
@@ -208,6 +202,76 @@ void PreconditionerHypre::InitEuclid_()
 }
 
 
+/* ******************************************************************
+* Initialize specialized AMS preconditioner.
+****************************************************************** */
+void PreconditionerHypre::InitAMS_()
+{
+#ifdef HAVE_HYPRE
+  method_ = AMS;
+
+  if (plist_.isParameter("verbosity"))
+    IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_AMSSetPrintLevel, plist_.get<int>("verbosity"));
+
+  // additional data: parallel vector with coordinates and gradient matrix
+  // G_ * xyz_ should be the valid operation
+  Teuchos::RCP<Epetra_MultiVector> xyz;
+  Teuchos::RCP<Epetra_CrsMatrix> G;
+
+  if (plist_.isParameter("graph coordinates") &&
+      plist_.isType<Teuchos::RCP<Epetra_MultiVector> >("graph coordinates")) {
+    xyz = plist_.get<Teuchos::RCP<Epetra_MultiVector> >("graph coordinates");
+  }
+
+  if (plist_.isParameter("discrete gradient operator") && 
+      plist_.isType<Teuchos::RCP<Epetra_CrsMatrix> >("discrete gradient operator")) {
+    G = plist_.get<Teuchos::RCP<Epetra_CrsMatrix> >("discrete gradient operator");
+  }
+
+  if (!xyz.get() || !G.get()) {
+    Errors::Message msg("Hypre (AMS) needs additional data: gradient matrix and graph coordinates");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  // PList must go first
+  Teuchos::ParameterList tmp;
+  tmp.set<std::string>("hypre: Preconditioner", "AMS")
+     .set<std::string>("hypre: SolveOrPrecondition", "Preconditioner");
+  tmp.sublist("Coordinates").set<Teuchos::RCP<Epetra_MultiVector> >("Coordinates", xyz);
+  tmp.sublist("Operators").set<Teuchos::RCP<const Epetra_CrsMatrix> >("G", G);
+  tmp.sublist("HYPRE_AMSSetAlphaAMGOptions")
+     .set<int>("arg 0", 6)  // 10
+     .set<int>("arg 1", 0)  // 1
+     .set<int>("arg 2", 6)
+     .set<double>("arg 3", 0.25)
+     .set<int>("arg 4", 0)
+     .set<int>("arg 5", 0);
+  tmp.sublist("HYPRE_AMSSetBetaAMGOptions")
+     .set<int>("arg 0", 6)  // 10
+     .set<int>("arg 1", 0)  // 1
+     .set<int>("arg 2", 6)
+     .set<double>("arg 3", 0.25)
+     .set<int>("arg 4", 0)
+     .set<int>("arg 5", 0);
+  IfpHypre_->SetParameters(tmp);
+
+  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_AMSSetTol, plist_.get<double>("tolerance", 0.0));
+  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_AMSSetPrintLevel, plist_.get<int>("verbosity", 0));
+  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_AMSSetMaxIter, plist_.get<int>("cycle applications", 5));
+  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_AMSSetCycleType, plist_.get<int>("cycle type", 1));
+  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_AMSSetAlphaAMGCoarseRelaxType, plist_.get<int>("coarse level relaxation", 9));
+  IfpHypre_->SetParameter((Hypre_Chooser)1, &HYPRE_AMSSetBetaAMGCoarseRelaxType, plist_.get<int>("coarse level relaxation", 9));
+
+#else
+  Errors::Message msg("Hypre (AMS) is not available in this installation of Amanzi. To use Hypre, please reconfigure.");
+  Exceptions::amanzi_throw(msg);
+#endif
+}
+
+
+/* ******************************************************************
+* Amanzi preconditioner initialization
+****************************************************************** */
 void PreconditionerHypre::InitializeInverse()
 {
   IfpHypre_ = Teuchos::rcp(new Ifpack_Hypre(&*h_));
@@ -216,11 +280,16 @@ void PreconditionerHypre::InitializeInverse()
   // Teuchos::ParameterList plist;
   // IfpHypre_->SetParameters(plist);
 
+  IfpHypre_->SetParameter((Hypre_Chooser)1);
+  IfpHypre_->SetParameter(true);
+
   std::string method_name = plist_.get<std::string>("method");
   if (method_name == "boomer amg") {
     InitBoomer_();
   } else if (method_name == "euclid") {
     InitEuclid_();
+  } else if (method_name == "ams") {
+    InitAMS_();
   } else {
     Errors::Message msg;
     msg << "PreconditionerHypre: unknown method name \"" << method_name << "\"";
@@ -229,8 +298,6 @@ void PreconditionerHypre::InitializeInverse()
 
   // must reset the parameters every time to reset the block index
   IfpHypre_->SetParameter((Hypre_Chooser)1, method_);
-  IfpHypre_->SetParameter((Hypre_Chooser)1);
-  IfpHypre_->SetParameter(true);
 
   if (block_indices_.get()) {
     // must NEW the index array EVERY time, as it gets freed every time by

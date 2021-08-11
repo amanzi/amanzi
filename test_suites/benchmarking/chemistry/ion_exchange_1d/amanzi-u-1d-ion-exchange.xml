@@ -27,7 +27,7 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" />
-    <chemistry state="on" engine="amanzi" input_filename="ion-exchange.bgd" format="simple" />
+    <chemistry state="on" engine="amanzi" format="simple" />
   </process_kernels>
 
   <phases>
@@ -117,6 +117,41 @@
 
   <geochemistry>
     <verbosity>verbose</verbosity>
+    <thermodynamic_database>
+      <primary_species>
+        <primary name="Na+">
+          <species_data ion_size="4.0" z="1" weight="22.99"/>
+        </primary>
+        <primary name="Ca++">
+          <species_data ion_size="6.0" z="2" weight="40.08"/>
+        </primary>
+        <primary name="Mg++">
+          <species_data ion_size="8.0" z="2" weight="24.30"/>
+        </primary>
+        <primary name="Cl-">
+          <species_data ion_size="3.0" z="-1" weight="35.45"/>
+        </primary>
+      </primary_species>
+
+      <ion_exchange_sites>
+        <site name="X-" z="-1" location="Bulk"/>
+      </ion_exchange_sites>
+
+      <ion_exchange_complexes>
+        <complex name="Na+X">
+          <reaction>1.0 Na+  1.0 X-</reaction>
+          <equilibrium_constant>1.0</equilibrium_constant>
+        </complex>
+        <complex name="Ca++X">
+          <reaction>1.0 Ca++  2.0 X-</reaction>
+          <equilibrium_constant>0.29530</equilibrium_constant>
+        </complex>
+        <complex name="Mg++X">
+          <reaction>1.0 Mg++  2.0 X-</reaction>
+          <equilibrium_constant>1.666e-01</equilibrium_constant>
+        </complex>
+      </ion_exchange_complexes>
+    </thermodynamic_database>
   </geochemistry>
 
   <materials>

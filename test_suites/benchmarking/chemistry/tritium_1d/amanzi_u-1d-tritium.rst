@@ -88,7 +88,7 @@ About
 * Benchmark simulator: PFlotran
 * Files
 
-  * Amanzi input file/s (native chemistry): amanzi-1d-tritium.xml, tritium.bgd
+  * Amanzi input file/s (native chemistry): amanzi-1d-tritium.xml
   * Amanzi input file/s (Alquimia chemistry): amanzi-1d-tritium-alq.xml, 1d-tritium.in, tritium.dat  
   * Benchmark simulator input file: 1d-tritium.in, tritium.dat, output file = pflotran/1d-tritium.h5
 

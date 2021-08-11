@@ -41,7 +41,9 @@
 * **************************************************************** */
 template<class Analytic>
 void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
-              const std::string& disc_method = "electromagnetics") {
+              const std::string& disc_method = "electromagnetics",
+              const std::string& pc_method = "Hypre AMG",
+              const std::string& iter_solver = "GMRES") {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -72,6 +74,7 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
     mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, request_faces, request_edges);
   else
     mesh = meshfactory.create("test/hex_split_faces5.exo", request_faces, request_edges);
+    // mesh = meshfactory.create("test/hexes.exo", request_faces, request_edges);
 
   // create resistivity coefficient
   double time = 1.0;
@@ -125,6 +128,11 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   Teuchos::RCP<PDE_Electromagnetics> op_curlcurl = Teuchos::rcp(new PDE_Electromagnetics(olist, mesh));
   op_curlcurl->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op_curlcurl->global_operator()->DomainMap();
+
+  // extension for AMS solver
+  auto& tmp = plist.sublist("preconditioners").sublist("Hypre AMS").sublist("ams parameters");
+  tmp.set<Teuchos::RCP<Epetra_MultiVector> >("graph coordinates", op_curlcurl->GraphGeometry());
+  tmp.set<Teuchos::RCP<Epetra_CrsMatrix> >("discrete gradient operator", op_curlcurl->GradientOperator());
 
   // create source for a manufactured solution.
   CompositeVector source(cvs);
@@ -180,17 +188,18 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   op_curlcurl->ApplyBCs(true, true, true);
   global_op->UpdateRHS(source, false);
 
-  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"));
+  global_op->set_inverse_parameters(pc_method, plist.sublist("preconditioners"));
   global_op->InitializeInverse();
   global_op->ComputeInverse();
 
   // Test SPD properties of the matrix and preconditioner.
   VerificationCV ver(global_op);
   ver.CheckMatrixSPD(true, true);
-  ver.CheckPreconditionerSPD(1e-12, true, true);
+  if (iter_solver != "GMRES") ver.CheckPreconditionerSPD(1e-12, true, true);
 
   // re init with a solver...
-  global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "default", plist.sublist("solvers"));
+  global_op->set_inverse_parameters(pc_method, plist.sublist("preconditioners"),
+                                    iter_solver, plist.sublist("solvers"));
   global_op->InitializeInverse();
   global_op->ComputeInverse();
   
@@ -203,7 +212,7 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   CHECK(num_itrs < 100);
 
   if (MyPID == 0) {
-    std::cout << "electric solver (pcg): ||r||=" << global_op->residual() 
+    std::cout << "electric solver (" << iter_solver << "): ||r||=" << global_op->residual() 
               << " itr=" << global_op->num_itrs()
               << " code=" << global_op->returned_code() << std::endl;
   }
@@ -224,15 +233,15 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
 
 
 TEST(CURL_CURL_LINEAR) {
-  CurlCurl<AnalyticElectromagnetics01>(1.0e-5, 0, 1e-4, false);
-  // CurlCurl<AnalyticElectromagnetics01>(1.0e-5, 0, 1e-4, false, "mfd: generalized");
+  CurlCurl<AnalyticElectromagnetics01>(1.0e-5, 0, 1e-4, false, "electromagnetics", "Hypre AMS");
 }
 
 TEST(CURL_CURL_NONLINEAR) {
-  CurlCurl<AnalyticElectromagnetics02>(1.0e-1, 0, 2e-1, false);
+  CurlCurl<AnalyticElectromagnetics02>(1.0e-1, 0, 2e-1, false, "electromagnetics", "Hypre AMS");
+  // CurlCurl<AnalyticElectromagnetics02>(1.0e-1, 0, 2e-1, false, "electromagnetics", "Hypre AMG", "silent");
 }
 
 TEST(CURL_CURL_TIME_DEPENDENT) {
-  CurlCurl<AnalyticElectromagnetics03>(1.0, 0, 2e-3, true);
+  CurlCurl<AnalyticElectromagnetics03>(1.0, 0, 2e-3, true, "electromagnetics", "Hypre AMS");
   // CurlCurl<AnalyticElectromagnetics03>(1.0, 0, 2e-3, true, "mfd: generalized");
 }

@@ -23,6 +23,8 @@
 #include "dbc.hh"
 #include "errors.hh"
 
+#include "HDF5Reader.hh"
+
 #include "Region.hh"
 #include "RegionAll.hh"
 #include "RegionBoundary.hh"
@@ -204,11 +206,19 @@ createRegion(const std::string reg_name,
 
   } else if (shape == "region: enumerated set") {
     std::string entity_str = plist.get<std::string>("entity");
-    auto entity_list = plist.get< Teuchos::Array<int> >("entity gids");
+    std::vector<int> gids;
 
-    region = Teuchos::rcp(new RegionEnumerated(reg_name, reg_id, entity_str,
-                                               entity_list.toVector(),
-                                               lifecycle));
+    if (plist.isParameter("file")) {
+      std::string filename = plist.get<std::string>("file");
+      HDF5Reader reader(filename);
+      reader.ReadData(reg_name, gids);
+    } else {
+      auto entity_list = plist.get< Teuchos::Array<int> >("entity gids");
+      gids = entity_list.toVector();
+    }
+
+    region = Teuchos::rcp(new RegionEnumerated(reg_name,
+            reg_id, entity_str, gids, lifecycle));
 
   } else if (shape == "region: enumerated set from file") {
     Teuchos::ParameterList enum_params = reg_spec.sublist(shape);

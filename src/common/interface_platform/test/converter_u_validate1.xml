@@ -168,9 +168,9 @@
     <Parameter name="component molar masses" type="Array(double)" value="{9.89062549999999985e-02}"/>
     <Parameter name="number of liquid components" type="int" value="1"/>
     <ParameterList name="time period control">
-      <Parameter name="start times" type="Array(double)" value="{6.1729344e+10, 6.173178481e+10, 6.173705521e+10, 9.4672798e+10}"/>
-      <Parameter name="initial time step" type="Array(double)" value="{1.0, 1.0, 1.0, 1.0}"/>
-      <Parameter name="maximum time step" type="Array(double)" value="{4.32340e+17, 4.32340e+17, 4.32340e+17, 4.32340e+17}"/>
+      <Parameter name="start times" type="Array(double)" value="{6.1729344e+10, 9.4672798e+10}"/>
+      <Parameter name="initial time step" type="Array(double)" value="{1.0, 1.0}"/>
+      <Parameter name="maximum time step" type="Array(double)" value="{4.3234e+17, 4.3234e+17}"/>
     </ParameterList>
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="high"/>
@@ -358,7 +358,7 @@
         <Parameter name="error tolerance" type="double" value="9.99999999999999945e-21"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -368,7 +368,7 @@
         <Parameter name="error tolerance" type="double" value="1.0e-11"/>
         <Parameter name="maximum number of iterations" type="int" value="111"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -380,7 +380,7 @@
         <Parameter name="controller training start" type="int" value="0"/>
         <Parameter name="controller training end" type="int" value="3"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -518,19 +518,6 @@
               </ParameterList>
             </ParameterList>
           </ParameterList>
-          <ParameterList name="BC 2">
-            <Parameter name="regions" type="Array(string)" value="{Crib_216-B-18}"/>
-            <Parameter name="rainfall" type="bool" value="false"/>
-            <Parameter name="spatial distribution method" type="string" value="none"/>
-            <Parameter name="use area fractions" type="bool" value="false"/>
-            <ParameterList name="outward mass flux">
-              <ParameterList name="function-tabular">
-                <Parameter name="x values" type="Array(double)" value="{0.0, 6.17266656e+10, 6.173178481e+10, 6.173705521e+10, 9.4672798e+10}"/>
-                <Parameter name="y values" type="Array(double)" value="{-1.10510722e-07, -1.483984012e-06, -3.298282386e-03, -1.483984012e-06, -1.483984012e-06}"/>
-                <Parameter name="forms" type="Array(string)" value="{constant, constant, constant, constant}"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
           <ParameterList name="BC 3">
             <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_btwnCribs}"/>
             <ParameterList name="outward mass flux">
@@ -576,12 +563,26 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
+        <ParameterList name="seepage face">
+          <ParameterList name="BC 2">
+            <Parameter name="regions" type="Array(string)" value="{Crib_216-B-18}"/>
+            <ParameterList name="outward mass flux">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="-9.64109999999999990e-06"/>
+              </ParameterList>
+            </ParameterList>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <Parameter name="use area fractions" type="bool" value="false"/>
+            <Parameter name="rainfall" type="bool" value="false"/>
+            <Parameter name="submodel" type="string" value="PFloTran"/>
+            <Parameter name="seepage flux threshold" type="double" value="1.00000000000000002e-02"/>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <Parameter name="preconditioner enhancement" type="string" value="none"/>
         <ParameterList name="pressure-lambda constraints">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>
@@ -732,33 +733,22 @@
                 </ParameterList>
               </ParameterList>
             </ParameterList>
-            <ParameterList name="BC For Crib_216-B-18">
-              <Parameter name="regions" type="Array(string)" value="{Crib_216-B-18}"/>
-              <Parameter name="spatial distribution method" type="string" value="none"/>
-              <Parameter name="use area fractions" type="bool" value="false"/>
-              <ParameterList name="boundary concentration">
-                <ParameterList name="function-tabular">
-                  <Parameter name="y values" type="Array(double)" value="{0.0, 2.266885e-06, 0.0}"/>
-                  <Parameter name="x values" type="Array(double)" value="{0.0, 6.173178481e+10, 6.173705521e+10}"/>
-                  <Parameter name="forms" type="Array(string)" value="{constant, constant}"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
             <ParameterList name="BC Rest">
-              <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_WestOfCribs,Recharge_Boundary_EastOfCribs}"/>
-              <Parameter name="spatial distribution method" type="string" value="none"/>
-              <Parameter name="use area fractions" type="bool" value="false"/>
+              <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_WestOfCribs, Recharge_Boundary_EastOfCribs}"/>
               <ParameterList name="boundary concentration">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.0"/>
+                  <Parameter name="value" type="double" value="0.00000000000000000e+00"/>
                 </ParameterList>
               </ParameterList>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <Parameter name="use area fractions" type="bool" value="false"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
       <Parameter name="number of aqueous components" type="int" value="1"/>
       <Parameter name="number of gaseous components" type="int" value="0"/>
+      <Parameter name="runtime diagnostics: regions" type="Array(string)" value="{Crib_216-B-18, Crib_216-B-18}"/>
     </ParameterList>
     <ParameterList name="flow">
       <Parameter name="domain name" type="string" value="domain"/>
@@ -872,19 +862,6 @@
               </ParameterList>
             </ParameterList>
           </ParameterList>
-          <ParameterList name="BC 2">
-            <Parameter name="regions" type="Array(string)" value="{Crib_216-B-18}"/>
-            <Parameter name="rainfall" type="bool" value="false"/>
-            <Parameter name="spatial distribution method" type="string" value="none"/>
-            <Parameter name="use area fractions" type="bool" value="false"/>
-            <ParameterList name="outward mass flux">
-              <ParameterList name="function-tabular">
-                <Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10, 6.173178481e+10, 6.173705521e+10, 9.4672798e+10}"/>
-                <Parameter name="y values" type="Array(double)" value="{-1.10510722e-07, -1.483984012e-06, -3.298282386e-03, -1.483984012e-06, -1.483984012e-06}"/>
-                <Parameter name="forms" type="Array(string)" value="{constant, constant, constant, constant}"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
           <ParameterList name="BC 3">
             <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_btwnCribs}"/>
             <ParameterList name="outward mass flux">
@@ -930,12 +907,26 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
+        <ParameterList name="seepage face">
+          <ParameterList name="BC 2">
+            <Parameter name="regions" type="Array(string)" value="{Crib_216-B-18}"/>
+            <ParameterList name="outward mass flux">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="-9.64109999999999990e-06"/>
+              </ParameterList>
+            </ParameterList>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <Parameter name="use area fractions" type="bool" value="false"/>
+            <Parameter name="rainfall" type="bool" value="false"/>
+            <Parameter name="submodel" type="string" value="PFloTran"/>
+            <Parameter name="seepage flux threshold" type="double" value="1.00000000000000002e-02"/>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <Parameter name="preconditioner enhancement" type="string" value="none"/>
         <ParameterList name="pressure-lambda constraints">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>

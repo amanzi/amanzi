@@ -4,8 +4,6 @@ project(CHEMISTRY_1D_SURFACE_COMPLEXATION_TEST)
     if (NOT (${CHEMISTRY_1D_SURFACE_COMPLEXATION_TEST_SOURCE_DIR} EQUAL ${CHEMISTRY_1D_SURFACE_COMPLEXATION_TEST_BINARY_DIR}) )
         execute_process(COMMAND ${CMAKE_COMMAND} -E 
           copy ${CHEMISTRY_1D_SURFACE_COMPLEXATION_TEST_SOURCE_DIR}/amanzi-u-1d-surface-complexation.xml ${CHEMISTRY_1D_SURFACE_COMPLEXATION_TEST_BINARY_DIR}/amanzi-u-1d-surface-complexation.xml) 
-        execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy ${CHEMISTRY_1D_SURFACE_COMPLEXATION_TEST_SOURCE_DIR}/surface-complexation.bgd ${CHEMISTRY_1D_SURFACE_COMPLEXATION_TEST_BINARY_DIR}/surface-complexation.bgd) 
     endif()
 
     add_amanzi_test(examples-phase2-chemistry-1d-surface-complexation amanzi "--xml_file=amanzi-u-1d-surface-complexation.xml" KIND int)

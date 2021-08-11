@@ -106,6 +106,20 @@
         </ParameterList>
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
       </ParameterList>
+      <ParameterList name="fracture-mass_density_liquid">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="FRACTURE_NETWORK_INTERNAL"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.00000000000000000e+00"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+      </ParameterList>
       <ParameterList name="fracture-porosity">
         <ParameterList name="function">
           <ParameterList name="fracture">
@@ -114,6 +128,34 @@
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="4.00000000000000008e-03"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+      </ParameterList>
+      <ParameterList name="saturation_liquid">
+        <ParameterList name="function">
+          <ParameterList name="ALL">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+      </ParameterList>
+      <ParameterList name="fracture-saturation_liquid">
+        <ParameterList name="function">
+          <ParameterList name="ALL">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -215,7 +257,7 @@
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
             <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="1.7"/>
@@ -245,7 +287,7 @@
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
             <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="1.8"/>
@@ -409,7 +451,6 @@
         <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <Parameter name="preconditioner enhancement" type="string" value="none"/>
         <ParameterList name="pressure-lambda constraints">
           <Parameter name="method" type="string" value="projection"/>
           <Parameter name="inflow krel correction" type="bool" value="true"/>
@@ -500,7 +541,6 @@
 	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 	<Parameter name="linear solver" type="string" value="AztecOO"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-	<Parameter name="preconditioner enhancement" type="string" value="none"/>
 	<ParameterList name="pressure-lambda constraints">
 	  <Parameter name="method" type="string" value="projection"/>
 	  <Parameter name="inflow krel correction" type="bool" value="true"/>
@@ -591,7 +631,6 @@
 	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 	<Parameter name="linear solver" type="string" value="AztecOO"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-	<Parameter name="preconditioner enhancement" type="string" value="none"/>
 	<ParameterList name="pressure-lambda constraints">
 	  <Parameter name="method" type="string" value="projection"/>
 	  <Parameter name="inflow krel correction" type="bool" value="true"/>
@@ -617,10 +656,6 @@
     <ParameterList name="chemistry matrix">
       <Parameter name="domain name" type="string" value="domain"/>
       <Parameter name="chemistry model" type="string" value="Amanzi"/>
-      <ParameterList name="thermodynamic database">
-        <Parameter name="file" type="string" value="tritium.bgd"/>
-        <Parameter name="format" type="string" value="simple"/>
-      </ParameterList>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="100"/>
       <Parameter name="tolerance" type="double" value="1.0e-12"/>
@@ -643,10 +678,6 @@
     <ParameterList name="chemistry fracture">
       <Parameter name="domain name" type="string" value="fracture"/>
       <Parameter name="chemistry model" type="string" value="Amanzi"/>
-      <ParameterList name="thermodynamic database">
-        <Parameter name="file" type="string" value="tritium.bgd"/>
-        <Parameter name="format" type="string" value="simple"/>
-      </ParameterList>
       <Parameter name="activity model" type="string" value="unit"/>
       <Parameter name="maximum Newton iterations" type="int" value="100"/>
       <Parameter name="tolerance" type="double" value="1.0e-12"/>
@@ -796,7 +827,7 @@
         <Parameter name="error tolerance" type="double" value="1.0e-14"/>
         <Parameter name="maximum number of iterations" type="int" value="20"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -816,7 +847,7 @@
         <Parameter name="error tolerance" type="double" value="1.0e-14"/>
         <Parameter name="maximum number of iterations" type="int" value="20"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -826,7 +857,7 @@
         <Parameter name="error tolerance" type="double" value="1.0e-14"/>
         <Parameter name="maximum number of iterations" type="int" value="20"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -883,6 +914,57 @@
         <Parameter name="fact: level-of-fill" type="int" value="0"/>
         <Parameter name="overlap" type="int" value="0"/>
         <Parameter name="schwarz: combine mode" type="string" value="Add"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="thermodynamic database">
+    <ParameterList name="primary species">
+      <ParameterList name="A">
+        <Parameter name="ion size parameter" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="charge" type="int" value="0"/>
+        <Parameter name="gram molecular weight" type="double" value="1.00000000000000000e+00"/>
+      </ParameterList>
+      <ParameterList name="B">
+        <Parameter name="ion size parameter" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="charge" type="int" value="0"/>
+        <Parameter name="gram molecular weight" type="double" value="1.00000000000000000e+00"/>
+      </ParameterList>
+      <ParameterList name="C">
+        <Parameter name="ion size parameter" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="charge" type="int" value="0"/>
+        <Parameter name="gram molecular weight" type="double" value="1.00000000000000000e+00"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="isotherms">
+      <ParameterList name="A">
+        <Parameter name="model" type="string" value="linear"/>
+        <Parameter name="parameters" type="Array(double)" value="{1.20000000000000000e+08}"/>
+      </ParameterList>
+      <ParameterList name="B">
+        <Parameter name="model" type="string" value="langmuir"/>
+        <Parameter name="parameters" type="Array(double)" value="{3.40000000000000000e+09, 1.23000000000000005e-11}"/>
+      </ParameterList>
+      <ParameterList name="C">
+        <Parameter name="model" type="string" value="freundlich"/>
+        <Parameter name="parameters" type="Array(double)" value="{4.50000000000000000e+10, 4.55999999999999996e-12}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="radioactive decay">
+      <ParameterList name="complex_0">
+        <Parameter name="reactant" type="string" value="A"/>
+        <Parameter name="product" type="string" value="B"/>
+        <Parameter name="half life" type="double" value="3.94470000000000000e+08"/>
+      </ParameterList>
+      <ParameterList name="complex_1">
+        <Parameter name="reactant" type="string" value="B"/>
+        <Parameter name="product" type="string" value="C"/>
+        <Parameter name="half life" type="double" value="7.88940000000000000e+08"/>
+      </ParameterList>
+      <ParameterList name="complex_2">
+        <Parameter name="reactant" type="string" value="C"/>
+        <Parameter name="product" type="string" value=""/>
+        <Parameter name="half life" type="double" value="1.57788000000000000e+08"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

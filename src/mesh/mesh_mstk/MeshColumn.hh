@@ -68,7 +68,6 @@ class MeshColumn : public Mesh {
   MeshColumn(const Teuchos::RCP<const Mesh>& parent_mesh,
              const int column_id,
              const Teuchos::RCP<const Teuchos::ParameterList>& plist=Teuchos::null);
-             
 
   ~MeshColumn();
 
@@ -467,17 +466,6 @@ class MeshColumn : public Mesh {
   virtual
   void cell_get_edges_internal_(const Entity_ID cellid,
                                 Entity_ID_List *edgeids) const override {
-    Errors::Message mesg("Not implemented");
-    Exceptions::amanzi_throw(mesg);
-  }
-
-
-  // edges and directions of a 2D cell - this function is implemented
-  // in each mesh framework. The results are cached in the base class.
-  virtual
-  void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
-                                            Entity_ID_List *edgeids,
-                                            std::vector<int> *edge_dirs) const override {
     Errors::Message mesg("Not implemented");
     Exceptions::amanzi_throw(mesg);
   }

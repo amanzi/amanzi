@@ -96,6 +96,7 @@ class MatrixFE {
   // hack the diagonal
   int DiagonalShift(double shift);
 
+  int DiagonalShiftMin(double shift_min);
   // Passthroughs.
   // --
   // NOTE that currently many of these cannot work on an offproc -- the Export is

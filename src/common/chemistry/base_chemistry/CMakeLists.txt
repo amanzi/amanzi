@@ -5,25 +5,25 @@
 #    Chemistry Base
 #
 
-set(geochembase_src_files activity_model_factory.cc
-	                  activity_model.cc
-	                  activity_model_debye_huckel.cc
-	                  activity_model_pitzer_hwm.cc 
-	                  activity_model_unit.cc
-	                  virial_coefficient.cc
-	                  ion_exchange_site.cc
-	                  species.cc
-	                  surface_site.cc)
+set(geochembase_src_files ActivityModelFactory.cc
+	                  ActivityModel.cc
+	                  ActivityModelDebyeHuckel.cc
+	                  ActivityModelPitzerHWM.cc 
+	                  ActivityModelUnit.cc
+	                  VirialCoefficient.cc
+	                  IonExchangeSite.cc
+	                  Species.cc
+	                  SurfaceSite.cc)
 
-set(geochembase_inc_files activity_model_factory.hh
-	                  activity_model.hh
-	                  activity_model_debye_huckel.hh
-	                  activity_model_pitzer_hwm.hh
-	                  activity_model_unit.hh
-	                  virial_coefficient.hh
-	                  ion_exchange_site.hh
-	                  species.hh
-	                  surface_site.hh)
+set(geochembase_inc_files ActivityModelFactory.hh
+	                  ActivityModel.hh
+	                  ActivityModelDebyeHuckel.hh
+	                  ActivityModelPitzerHWM.hh
+	                  ActivityModelUnit.hh
+	                  VirialCoefficient.hh
+	                  IonExchangeSite.hh
+	                  Species.hh
+	                  SurfaceSite.hh)
 
 add_amanzi_library(geochembase SOURCE ${geochembase_src_files}
 	                       LINK_LIBS geochemutil) 

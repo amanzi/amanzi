@@ -1,9 +1,9 @@
 /*
-  This is the state component of the Amanzi code. 
+  This is the state component of the Amanzi code.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Markus Berndt
@@ -26,12 +26,12 @@
 namespace Amanzi {
 
 UnstructuredObservations::UnstructuredObservations(
-    Teuchos::ParameterList& plist,
-    const Teuchos::Ptr<State>& S)
+      Teuchos::ParameterList& plist)
   : write_(false),
     count_(0),
     time_integrated_(false),
     num_total_(0),
+    observed_once_(false),
     IOEvent(plist)
 {
   // interpret parameter list
@@ -40,9 +40,8 @@ UnstructuredObservations::UnstructuredObservations(
     Teuchos::ParameterList& oq_list = plist.sublist("observed quantities");
     for (auto it : oq_list) {
       if (oq_list.isSublist(it.first)) {
-        auto obs = Teuchos::rcp(new Observable(oq_list.sublist(it.first), S));
+        auto obs = Teuchos::rcp(new Observable(oq_list.sublist(it.first)));
         observables_.emplace_back(obs);
-        num_total_ += obs->get_num_vectors();
         time_integrated_ |= obs->is_time_integrated();
       } else {
         Errors::Message msg;
@@ -59,41 +58,60 @@ UnstructuredObservations::UnstructuredObservations(
 
   } else {
     // old style, single list/single entry
-    auto obs = Teuchos::rcp(new Observable(plist, S));
+    auto obs = Teuchos::rcp(new Observable(plist));
     observables_.emplace_back(obs);
-    num_total_ += obs->get_num_vectors();
     time_integrated_ |= obs->is_time_integrated();
   }
 
-  integrated_observation_.resize(num_total_);
-
   // file format
   filename_ = plist.get<std::string>("observation output filename");
-  delimiter_ = plist.get<std::string>("delimiter", ", ");
+  delimiter_ = plist.get<std::string>("delimiter", ",");
   interval_ = plist.get<int>("write interval", 1);
   time_unit_ = plist.get<std::string>("time units", "s");
   Utils::Units unit;
   bool flag = false;
   time_unit_factor_ = unit.ConvertTime(1., "s", time_unit_, flag);
+  writing_domain_ = plist.get<std::string>("domain", "NONE");
+}
 
-  std::string domain = plist.get<std::string>("domain", "none");
-  if (domain == "none") {
-    // write on MPI_COMM_WORLD rank 0
-    if (getDefaultComm()->MyPID() == 0) {
-      write_ = true;
-      Init_();
+void UnstructuredObservations::Setup(const Teuchos::Ptr<State>& S)
+{
+  // require fields, evaluators
+  for (auto& obs : observables_) obs->Setup(S);
+
+  // what rank writes the file?
+  write_ = false;
+  if (writing_domain_ == "NONE") {
+    if (observables_.size() > 0) {
+      writing_domain_ = Keys::getDomain(observables_[0]->get_variable());
+    } else {
+      if (getDefaultComm()->MyPID() == 0) {
+        write_ = true;
+      }
     }
-  } else {
-    if (S->GetMesh(domain)->get_comm()->MyPID() == 0) {
+  }
+  if (writing_domain_ != "NONE") {
+    if (S->GetMesh(writing_domain_)->get_comm()->MyPID() == 0) {
       write_ = true;
-      Init_();
     }
   }
 }
 
-
 void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
 {
+  if (!observed_once_) {
+    // final setup, open file handle, etc
+    for (auto& obs : observables_) {
+      obs->FinalizeStructure(S);
+    }
+    num_total_ = 0;
+    for (const auto& obs : observables_) num_total_ += obs->get_num_vectors();
+    integrated_observation_.resize(num_total_);
+    observed_once_ = true;
+
+    if (write_) InitFile_();
+  }
+
   bool dump_requested = DumpRequested(S->cycle(), S->time());
   if (time_integrated_) {
     if (dump_requested) {
@@ -149,7 +167,7 @@ void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
 // Note also that this (along with Write_) may become a separate class for
 // different file types (e.g. text vs netcdf)
 //
-void UnstructuredObservations::Init_()
+void UnstructuredObservations::InitFile_()
 {
   if (boost::filesystem::portable_file_name(filename_)) {
     fid_ = std::make_unique<std::ofstream>(filename_.c_str());
@@ -166,7 +184,12 @@ void UnstructuredObservations::Init_()
             << "# Variable: " << obs->get_variable() << std::endl
             << "# Number of Vectors: " << obs->get_num_vectors() << std::endl;
     }
-    *fid_ << "# =============================================================================" << std::endl
+    *fid_ << "# =============================================================================" << std::endl;
+    *fid_ << "\"time [" << time_unit_ << "]\"";
+    for (const auto& obs : observables_) {
+      *fid_ << delimiter_ << "\"" << obs->get_name() << "\"";
+    }
+    *fid_ << std::endl
           << std::scientific;
     fid_->precision(12);
   } else {
@@ -183,9 +206,9 @@ void UnstructuredObservations::Write_(double time, const std::vector<double>& ob
     *fid_ << time;
     for (auto val : obs) *fid_ << delimiter_ << val;
     *fid_ << std::endl;
+    ++count_;
+    if (count_ % interval_ == 0) fid_->flush();
   }
-  ++count_;
-  if (count_ % interval_ == 0) fid_->flush();
 }
 
 

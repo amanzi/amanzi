@@ -5,8 +5,6 @@
 using namespace Amanzi;
 using namespace Amanzi::Utils;
 
-using namespace boost::units;
-
 TEST(UNITS_TIME) 
 {
   Units units("molar");

@@ -47,13 +47,14 @@ ExternalProject_Add(${SuperLU_BUILD_TARGET}
                     # -- Patch 
                     PATCH_COMMAND ${SuperLU_PATCH_COMMAND}     # Mods to source
                     # -- Configure
-                    SOURCE_DIR    ${SuperLU_source_dir}        # Source directory
-                    CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
-                                  ${SuperLU_CMAKE_ARGS}
-                                  -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
-                                  -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-                                  -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
+                    SOURCE_DIR       ${SuperLU_source_dir}        # Source directory
+                    CMAKE_ARGS       ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
+                                     ${SuperLU_CMAKE_ARGS}
+                                     -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
+                                     -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                                     -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
                     CMAKE_CACHE_ARGS -DCMAKE_MODULE_PATH:STRING=${superlu_module_opt}
+                                     -DTPL_BLAS_LIBRARIES:STRING=${BLAS_LIBRARIES}
 
                     # -- Build
                     BINARY_DIR      ${SuperLU_build_dir}       # Build directory 

@@ -283,6 +283,7 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- iniailize boundary conditions (memory allocation)
   UpdateSourceBoundaryData_(t_ini, t_ini);
+  op_matrix_elas_->EnforceBCs(*soln_u_);
 
   // -- assemble phase
   op_matrix_elas_->UpdateMatrices();

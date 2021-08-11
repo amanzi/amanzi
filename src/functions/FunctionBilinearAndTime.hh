@@ -24,7 +24,7 @@ are out of those bounds, and constant at the corner value if both are out of
 bounds.
  
 * `"file`" ``[string]`` HDF5 filename of the data
-* `"time header`" ``[Array(string)]`` **time** Name of the temporal dimension indices, the :math:`t_i`.
+* `"time header`" ``[string]`` **time** Name of the temporal dimension indices, the :math:`t_i`.
 * `"row header`" ``[string]`` **x** name of the row dataset, the :math:`x_i`
 * `"row coordinate`" ``[string]`` **x** one of `"x`",`"y`",`"z`"
 * `"column header`" ``[string]`` **y** name of the column dataset, the :math:`y_i`
@@ -76,18 +76,19 @@ class FunctionBilinearAndTime : public Function {
                           const std::string& column_coordinate,
                           const std::string& val_header);
 
-  FunctionBilinearAndTime(const FunctionBilinearAndTime& other);    
+  FunctionBilinearAndTime(const FunctionBilinearAndTime& other);
 
   ~FunctionBilinearAndTime() {};
-  FunctionBilinearAndTime* Clone() const { return new FunctionBilinearAndTime(*this); }
+  std::unique_ptr<Function> Clone() const {
+    return std::make_unique<FunctionBilinearAndTime>(*this);
+  }
 
   double operator()(const std::vector<double>& x) const;
 
  private:
   std::unique_ptr<FunctionBilinear> Load_(const int i) const;
-  
- private:
 
+ private:
   std::string row_header_, col_header_, val_header_;
   int row_index_, col_index_;
   std::vector<double> times_;
@@ -96,8 +97,8 @@ class FunctionBilinearAndTime : public Function {
   mutable double t_after_;
   mutable int current_interval_;
 
-  mutable std::unique_ptr<FunctionBilinear> val_before_;
-  mutable std::unique_ptr<FunctionBilinear> val_after_;
+  mutable std::unique_ptr<Function> val_before_;
+  mutable std::unique_ptr<Function> val_after_;
 
 };
 

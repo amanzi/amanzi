@@ -120,6 +120,7 @@ AmanziStructuredGridSimulationDriver::AmanziStructuredGridSimulationDriver(const
 
   Amanzi::AmanziInput::InputConverterS converter(input_file, input);
   converter.Translate(0); // Called before mpi setup, pass rank=0
+  Amanzi::AmanziInput::tdb_list = Teuchos::RCP<Teuchos::ParameterList>(new Teuchos::ParameterList(converter.TranslateThermodynamicDatabase_()));
 }
 
 AmanziStructuredGridSimulationDriver::~AmanziStructuredGridSimulationDriver()

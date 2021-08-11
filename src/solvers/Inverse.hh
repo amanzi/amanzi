@@ -74,7 +74,7 @@ class Inverse : public Matrix<Vector,VectorSpace> {
   virtual ~Inverse() = default;
 
   virtual void set_matrices(const Teuchos::RCP<Operator>& m,
-                    const Teuchos::RCP<Preconditioner>& h) {
+                            const Teuchos::RCP<Preconditioner>& h) {
     m_ = m;
     h_ = h;
   }
@@ -85,17 +85,16 @@ class Inverse : public Matrix<Vector,VectorSpace> {
     set_matrices(m,m);
   }
 
-  virtual const VectorSpace& DomainMap() const { return m_->DomainMap(); }
-  virtual const VectorSpace& RangeMap() const { return m_->RangeMap(); }
+  virtual const VectorSpace& DomainMap() const override { return m_->DomainMap(); }
+  virtual const VectorSpace& RangeMap() const override { return m_->RangeMap(); }
 
-  int Apply(const Vector& x, Vector& y) const {
+  virtual int Apply(const Vector& x, Vector& y) const override {
     return m_->Apply(x,y);
   }
-  virtual void set_inverse_parameters(Teuchos::ParameterList& plist) = 0;
-  virtual void InitializeInverse() = 0;
-  virtual void ComputeInverse() = 0;
-
-  virtual int ApplyInverse(const Vector& X, Vector& Y) const = 0;
+  virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override = 0;
+  virtual void InitializeInverse() override = 0;
+  virtual void ComputeInverse() override = 0;
+  virtual int ApplyInverse(const Vector& X, Vector& Y) const override = 0;
 
   // This ensures that anything that is an Inverse can be used as a
   // preconditioner.
@@ -115,14 +114,14 @@ class Inverse : public Matrix<Vector,VectorSpace> {
 
   // control and statistics -- must be valid for both iterative and
   // non-iterative methods, approximate and exact methods.
-  virtual double residual() const { return 0.; }
-  virtual int num_itrs() const { return 0; }
+  virtual double residual() const override { return 0.; }
+  virtual int num_itrs() const override { return 0; }
   virtual void add_criteria(int criteria) {}
 
-  virtual int returned_code() const = 0;
-  virtual std::string returned_code_string() const = 0;
+  virtual int returned_code() const override = 0;
+  virtual std::string returned_code_string() const override = 0;
 
-  std::string name() const { return name_; }
+  virtual std::string name() const override { return name_; }
   void set_name(const std::string& name) { name_ = name; }
 
  protected:

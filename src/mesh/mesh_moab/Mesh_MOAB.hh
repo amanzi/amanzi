@@ -245,7 +245,8 @@ class Mesh_MOAB : public Mesh {
   void ErrorCheck_(int result, std::string msg) const {
     if (result != moab::MB_SUCCESS) {
       std::cerr << msg << std::endl;
-      assert(false);
+      Errors::Message err(msg);
+      Exceptions::amanzi_throw(err);
      }
    }
 
@@ -375,15 +376,6 @@ class Mesh_MOAB : public Mesh {
                                 Entity_ID_List *edgeids) const 
   { 
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
-    Exceptions::amanzi_throw(mesg);
-  }
-
-  // Edges and edge directions of a 2D cell
-  void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
-                                            Entity_ID_List *edgeids,
-                                            std::vector<int> *edgedirs) const 
-  { 
-    Errors::Message mesg("Edges not implemented in this interface. Use MSTK");
     Exceptions::amanzi_throw(mesg);
   }
 

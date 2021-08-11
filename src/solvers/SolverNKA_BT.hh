@@ -91,6 +91,7 @@ class SolverNKA_BT : public Solver<Vector, VectorSpace> {
   bool modify_correction_;
   double residual_;  // defined by convergence criterion
   ConvergenceMonitor monitor_;
+  int norm_type_;
 };
 
 
@@ -128,13 +129,7 @@ void SolverNKA_BT<Vector, VectorSpace>::Init_()
   modify_correction_ = plist_.get<bool>("modify correction", false);
 
   std::string monitor_name = plist_.get<std::string>("monitor", "monitor update");
-  if (monitor_name == "monitor residual") {
-    monitor_ = SOLVER_MONITOR_RESIDUAL;
-  } else if (monitor_name == "monitor preconditioned residual") {
-    monitor_ = SOLVER_MONITOR_PCED_RESIDUAL;
-  } else {
-    monitor_ = SOLVER_MONITOR_UPDATE;  // default value
-  }
+  ParseConvergenceCriteria(monitor_name, &monitor_, &norm_type_);
 
   nka_dim_ = plist_.get<int>("max nka vectors", 10);
   nka_dim_ = std::min<int>(nka_dim_, max_itrs_ - 1);
@@ -357,7 +352,7 @@ int SolverNKA_BT<Vector, VectorSpace>::NKA_ErrorControl_(
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
       *vo_->os() << "Solver converged: " << num_itrs_ << " itrs, error=" << error << std::endl;
     return SOLVER_CONVERGED;
-  } else if (error > overflow_tol_) {
+  } else if (overflow_tol_ > 0 && error > overflow_tol_) {
     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) 
       *vo_->os() << "Solve failed, error " << error << " > "
                  << overflow_tol_ << " (overflow)" << std::endl;

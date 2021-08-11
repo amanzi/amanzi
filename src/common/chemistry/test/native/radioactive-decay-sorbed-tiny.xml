@@ -1,0 +1,32 @@
+<ParameterList>
+<ParameterList name="primary species">
+  <ParameterList name="C(aq)">
+    <Parameter name="ion size parameter" type="double" value="0.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="0.0"/>
+  </ParameterList>
+</ParameterList>
+
+<ParameterList name="radioactive decay">
+  <ParameterList name="complex_0">
+    <Parameter name="reactant" type="string" value="C(aq)"/>
+    <Parameter name="product" type="string" value=""/>
+    <Parameter name="half life" type="double" value="1.5779e+08"/>
+  </ParameterList>
+</ParameterList>
+
+<ParameterList name="isotherms">
+  <ParameterList name="C(aq)">
+    <Parameter name="model" type="string" value="linear"/>
+    <Parameter name="parameters" type="Array(double)" value="{ 62.5 }"/>
+  </ParameterList>
+</ParameterList>
+
+<ParameterList name="verbose object">
+  <Parameter name="verbosity level" type="string" value="high"/>
+  <Parameter name="hide line prefix" type="bool" value="true"/>
+  <Parameter name="output filename" type="string" value="batch_native.test"/>
+  </ParameterList>
+</ParameterList>
+
+

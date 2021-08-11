@@ -57,10 +57,6 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Cell_Schema& op,
                                        const CompositeVector& X, CompositeVector& Y) const
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
-
-  X.ScatterMasterToGhosted();
-  Y.PutScalarGhosted(0.0);
-
   for (int c = 0; c != ncells_owned; ++c) {
     const WhetStone::DenseMatrix& A = op.matrices[c];
     int ncols = A.NumCols();
@@ -71,8 +67,6 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Cell_Schema& op,
     A.Multiply(v, av, false);
     AssembleVectorCellOp(c, *mesh_, op.schema_row(), av, Y);
   }
-
-  Y.GatherGhostedToMaster(Add);
   return 0;
 }
 
@@ -86,9 +80,6 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Face_Schema& op,
 {
   AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
 
-  X.ScatterMasterToGhosted();
-  Y.PutScalarGhosted(0.0);
-
   for (int f = 0; f != nfaces_owned; ++f) {
     const WhetStone::DenseMatrix& A = op.matrices[f];
     int ncols = A.NumCols();
@@ -99,8 +90,6 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Face_Schema& op,
     A.Multiply(v, av, false);
     AssembleVectorFaceOp(f, *mesh_, op.schema_row(), av, Y);
   }
-
-  Y.GatherGhostedToMaster(Add);
   return 0;
 }
 
@@ -114,9 +103,6 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Node_Schema& op,
 {
   AMANZI_ASSERT(op.matrices.size() == nnodes_owned);
 
-  X.ScatterMasterToGhosted();
-  Y.PutScalarGhosted(0.0);
-
   for (int n = 0; n != nnodes_owned; ++n) {
     const WhetStone::DenseMatrix& A = op.matrices[n];
     int ncols = A.NumCols();
@@ -128,7 +114,6 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Node_Schema& op,
     AssembleVectorNodeOp(n, *mesh_, op.schema_row(), av, Y);
   }
 
-  Y.GatherGhostedToMaster(Add);
   return 0;
 }
 

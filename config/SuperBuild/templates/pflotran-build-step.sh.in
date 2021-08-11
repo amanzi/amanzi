@@ -10,7 +10,7 @@ export CXX=@CMAKE_CXX_COMPILER@
 #export CXXFLAGS='@hypre_cxxflags@'
 export F77=@CMAKE_Fortran_COMPILER@
 export FFLAGS='@Amanzi_COMMON_FCFLAGS@'
-export PETSC_DIR='@PETSC_DIR@'
+export PETSC_DIR='@PETSc_DIR@'
 
 # pflotran in-source build under src 
 # NOTE: PFlotran doesn't seem parallel-build safe, since it has F90 

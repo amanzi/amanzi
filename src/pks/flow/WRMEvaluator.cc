@@ -13,9 +13,6 @@
 */
 
 #include "FlowDefs.hh"
-#include "WRM_BrooksCorey.hh"
-#include "WRM_fake.hh"
-#include "WRM_vanGenuchten.hh"
 #include "WRMEvaluator.hh"
 #include "WRMPartition.hh"
 

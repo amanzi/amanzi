@@ -130,9 +130,10 @@ void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
   S->RequireFieldEvaluator(mol_density_liquid_key_);
 
-  // S->RequireField(mass_density_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
-  //   ->AddComponent("cell", AmanziMesh::CELL, 1)
-  //   ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+  S->RequireField(mass_density_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1)
+    ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+  S->RequireFieldEvaluator(mass_density_liquid_key_);
 
   // -- darcy flux
   if (!S->HasField(darcy_flux_key_)) {

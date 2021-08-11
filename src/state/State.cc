@@ -19,6 +19,7 @@ initialized (as independent variables are owned by state, not by any PK).
 #include <regex>
 
 #include "boost/algorithm/string/predicate.hpp"
+#include "boost/filesystem.hpp"
 
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Epetra_Vector.h"
@@ -31,19 +32,24 @@ initialized (as independent variables are owned by state, not by any PK).
 #include "FieldEvaluator_Factory.hh"
 #include "cell_volume_evaluator.hh"
 #include "rank_evaluator.hh"
-
+#include "primary_variable_field_evaluator.hh"
 #include "State.hh"
+#include "StateDefs.hh"
 
 namespace Amanzi {
 
-State::State() {};
+State::State() {
+  vo_ = Teuchos::rcp(new VerboseObject("State", "none"));
+};
 
 State::State(Teuchos::ParameterList& state_plist) :
     state_plist_(state_plist),
     time_(0.0),
     cycle_(0),
     position_in_tp_(TIME_PERIOD_START)
-{};
+{
+  vo_ = Teuchos::rcp(new VerboseObject("State", state_plist_));
+};
 
 
 // copy constructor:
@@ -57,7 +63,10 @@ State::State(const State& other, StateConstructMode mode) :
     field_factories_(other.field_factories_),
     time_(other.time_),
     position_in_tp_(other.position_in_tp_),
-    cycle_(other.cycle_) {
+    domain_sets_(other.domain_sets_),
+    cycle_(other.cycle_),
+    vo_(other.vo_)
+{
 
   if (mode == STATE_CONSTRUCT_MODE_COPY_DATA) {
     for (FieldMap::const_iterator f_it=other.fields_.begin();
@@ -160,12 +169,14 @@ void State::AssignDomain(const State& other, const std::string& domain)
         auto myfield = GetField_(f_it.first);
         auto otherfield = f_it.second;
 
-        if (myfield->type() == COMPOSITE_VECTOR_FIELD) {
-          myfield->SetData(*otherfield->GetFieldData());
-        } else if (myfield->type() == CONSTANT_VECTOR) {
-          myfield->SetData(*otherfield->GetConstantVectorData());
-        } else if (myfield->type() == CONSTANT_SCALAR) {
-          myfield->SetData(*otherfield->GetScalarData());
+        if (myfield != Teuchos::null) {
+          if (myfield->type() == COMPOSITE_VECTOR_FIELD) {
+            myfield->SetData(*otherfield->GetFieldData());
+          } else if (myfield->type() == CONSTANT_VECTOR) {
+            myfield->SetData(*otherfield->GetConstantVectorData());
+          } else if (myfield->type() == CONSTANT_SCALAR) {
+            myfield->SetData(*otherfield->GetScalarData());
+          }
         }
       }
     }
@@ -263,10 +274,9 @@ bool State::IsDeformableMesh(const Key& key) const {
   if (lb != meshes_.end() && !(meshes_.key_comp()(key, lb->first))) {
     return lb->second.second;
   } else {
-    std::stringstream messagestream;
-    messagestream << "Mesh " << key << " does not exist in the state.";
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
+    Errors::Message msg;
+    msg << "Mesh " << key << " does not exist in the state.";
+    Exceptions::amanzi_throw(msg);
   }
   return false;
 };
@@ -295,6 +305,11 @@ bool State::HasDomainSet(const Key& name) const {
 
 Teuchos::RCP<const AmanziMesh::DomainSet>
 State::GetDomainSet(const Key& name) const {
+  if (!domain_sets_.count(name)) {
+    Errors::Message msg;
+    msg << "DomainSet \"" << name << "\" does not exist in State.";
+    Exceptions::amanzi_throw(msg);
+  }
   return domain_sets_.at(name);
 }
 
@@ -357,7 +372,7 @@ State::RequireFieldEvaluator(Key key) {
         // of that name.  Grab the parameter list for the set's list and use
         // that to construct the evaluator.
         // -- Get this evaluator's plist.
-        Key lifted_key = Keys::getKey(ds_name+"_*",std::get<2>(split));
+        Key lifted_key = Keys::getKey(ds_name, "*", std::get<2>(split));
 
         Teuchos::ParameterList& fm_plist = FEList();
         if (fm_plist.isSublist(lifted_key)) {
@@ -392,9 +407,9 @@ State::RequireFieldEvaluator(Key key) {
           fm_plist.set(key, sublist);
           FieldEvaluator_Factory evaluator_factory;
           evaluator = evaluator_factory.createFieldEvaluator(sublist);
-            
+
           SetFieldEvaluator(key, evaluator);
-        }            
+        }
       } else {
         Errors::Message msg;
         msg << "Model for field \"" << key << "\" is on a DomainSet, but no DomainSet of name \"" << ds_name << "\" exists in State.";
@@ -519,8 +534,7 @@ Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition_(Key key) {
 
 
 void State::WriteDependencyGraph() const {
-  auto vo = Teuchos::rcp(new VerboseObject("State", state_plist_)); 
-  if (vo->os_OK(Teuchos::VERB_HIGH)) {
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
     std::ofstream os("dependency_graph.txt", std::ios::out);
     for (auto fe=field_evaluator_begin(); fe!=field_evaluator_end(); ++fe) {
       os << *fe->second;
@@ -849,8 +863,7 @@ State::GetModelParameters(std::string modelname) {
 // Initialize data, allowing values to be specified here or in the owning PK.
 // All independent variables must be initialized here.
 void State::Setup() {
-  auto vo = Teuchos::rcp(new VerboseObject("State", state_plist_)); 
-  Teuchos::OSTab tab = vo->getOSTab();
+  Teuchos::OSTab tab = vo_->getOSTab();
   // State-required data
   if (state_plist_.isParameter("visualize mesh ranks")) {
     for (mesh_iterator mesh_it=meshes_.begin();
@@ -879,9 +892,9 @@ void State::Setup() {
       Errors::Message message(messagestream.str());
       Exceptions::amanzi_throw(message);
     }
-    if (vo->os_OK(Teuchos::VERB_HIGH)) {
-      Teuchos::OSTab tab1 = vo->getOSTab();
-      *vo->os() << "checking compatibility: " << *evaluator->second;
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+      Teuchos::OSTab tab1 = vo_->getOSTab();
+      *vo_->os() << "checking compatibility: " << *evaluator->second;
     }
     evaluator->second->EnsureCompatibility(Teuchos::ptr(this));
   }
@@ -898,13 +911,14 @@ void State::Setup() {
     if (!f_it->second->initialized()) {
       f_it->second->CreateData();
     }
-    // std::cout<<"Field "<<f_it->first<<": ";
-    // if (f_it->second->type() == Amanzi::COMPOSITE_VECTOR_FIELD) {
-    //   auto com_vec = f_it->second->GetFieldData();
-    //     for (CompositeVector::name_iterator comp=com_vec->begin();
-    //          comp!=com_vec->end(); ++comp) std::cout<<*comp<<" ";
-    //   std::cout<<"\n";
-    // }
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+      *vo_->os() << "Field " << f_it->first << ": ";
+      if (f_it->second->type() == Amanzi::COMPOSITE_VECTOR_FIELD) {
+        auto cv = f_it->second->GetFieldData();
+        for (auto comp=cv->begin(); comp!=cv->end(); ++comp) *vo_->os() << *comp << " ";
+      }
+      *vo_->os() << "\n";
+    }
   }
 };
 
@@ -926,18 +940,17 @@ void State::Initialize() {
   WriteDependencyGraph();
 
   // Reset io_vis flags using blacklist and whitelist
-  InitializeIOFlags_();
+  InitializeIOFlags();
 };
 
 
 void State::Initialize(Teuchos::RCP<State> S) {
-  auto vo = Teuchos::rcp(new VerboseObject("State", state_plist_)); 
-  Teuchos::OSTab tab = vo->getOSTab();
-  if (vo->os_OK(Teuchos::VERB_HIGH)) {
-    Teuchos::OSTab tab1 = vo->getOSTab();
-    *vo->os() << "copying fields to new state.." << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+    Teuchos::OSTab tab1 = vo_->getOSTab();
+    *vo_->os() << "copying fields to new state.." << std::endl;
   }
-  
+
   for (FieldMap::iterator f_it = fields_.begin();
        f_it != fields_.end(); ++f_it) {
     Teuchos::RCP<Field> field = f_it->second;
@@ -986,20 +999,39 @@ void State::Initialize(Teuchos::RCP<State> S) {
   WriteDependencyGraph();
 
   // Reset io_vis flags using blacklist and whitelist
-  InitializeIOFlags_();
+  InitializeIOFlags();
 };
 
 
 void State::InitializeEvaluators() {
   VerboseObject vo("State", state_plist_); 
-  if (vo.os_OK(Teuchos::VERB_HIGH)) {
+  if (vo.os_OK(Teuchos::VERB_EXTREME)) {
     Teuchos::OSTab tab = vo.getOSTab();
     *vo.os() << "initializing evaluators..." << std::endl;
   }
   for (evaluator_iterator f_it = field_evaluator_begin(); f_it != field_evaluator_end(); ++f_it) {
-    f_it->second->HasFieldChanged(Teuchos::Ptr<State>(this), "state");
-    fields_[f_it->first]->set_initialized();
+    if (f_it->second->get_type() != EvaluatorType::PRIMARY) {
+      f_it->second->HasFieldChanged(Teuchos::Ptr<State>(this), "state");
+      fields_[f_it->first]->set_initialized();
+    }
   }
+};
+
+void State::InitializeFieldCopies() {
+  VerboseObject vo("State", state_plist_); 
+  if (vo.os_OK(Teuchos::VERB_EXTREME)) {
+    Teuchos::OSTab tab = vo.getOSTab();
+    *vo.os() << "initializing field copies..." << std::endl;
+  }
+
+  for (FieldMap::iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
+    Teuchos::RCP<Field> field = f_it->second;
+    for (Amanzi::Field::copy_iterator cp_it = field->copy_begin(); cp_it != field->copy_end(); ++cp_it){
+      Key owner_key = field->GetCopy(cp_it->first)->owner();
+      *field->GetCopy(cp_it->first,owner_key)->GetFieldData() = *field->GetFieldData();
+    } 
+  }
+
 };
 
 
@@ -1015,8 +1047,18 @@ void State::InitializeFields() {
     for (FieldMap::iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
       if (f_it->second->type() == COMPOSITE_VECTOR_FIELD) {
         bool read_complete = f_it->second->ReadCheckpoint(file_input);
-        if (read_complete)
+        if (read_complete){
+          if (HasFieldEvaluator(f_it->first)) {
+            Teuchos::RCP<FieldEvaluator> fm = GetFieldEvaluator(f_it->first);
+            Teuchos::RCP<PrimaryVariableFieldEvaluator> solution_evaluator =
+              Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
+            if (solution_evaluator != Teuchos::null){
+              Teuchos::Ptr<State> S_ptr(this);
+              solution_evaluator->SetFieldAsChanged(S_ptr);
+            }
+          }          
           f_it->second->set_initialized();
+        }
       }
     }
     file_input.close_h5file();
@@ -1034,6 +1076,22 @@ void State::InitializeFields() {
         if (state_plist_.sublist("initial conditions").isSublist(f_it->first)) {
           Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(f_it->first);
           f_it->second->Initialize(sublist);
+        } else {
+          // check for domain set
+          KeyTriple split;
+          bool is_ds = Keys::splitDomainSet(f_it->first, split);
+          Key ds_name = std::get<0>(split);
+          if (is_ds) {
+            Key lifted_key = Keys::getKey(ds_name, "*", std::get<2>(split));
+            if (state_plist_.sublist("initial conditions").isSublist(lifted_key)) {
+              Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(lifted_key);
+              sublist.set("evaluator name", f_it->first);
+              //sublist.setName(f_it->first);
+              //state_plist_.sublist("initial conditions").set(f_it->first, sublist);
+              //sublist = state_plist_.sublist("initial conditions").sublist(f_it->first);
+              f_it->second->Initialize(sublist);
+            }
+          }
         }
       }
     }
@@ -1231,7 +1289,7 @@ void State::set_time( double new_time ) {
 
 
 // Utility for setting vis flags
-void State::InitializeIOFlags_() {
+void State::InitializeIOFlags() {
   Teuchos::Array<std::string> empty;
 
   // removing fields from vis dump
@@ -1271,10 +1329,10 @@ void WriteVis(Visualization& vis,
 
     // Write all fields to the visualization file, the fields know if they
     // need to be written.
+    Key vis_domain = vis.get_name();
     for (State::field_iterator field=S.field_begin(); field!=S.field_end(); ++field) {
       field->second->WriteVis(vis);
     }
-    
     vis.WriteRegions();
     vis.WritePartition();
 
@@ -1285,82 +1343,19 @@ void WriteVis(Visualization& vis,
 
 
 // Non-member function for checkpointing.
-void WriteCheckpoint(Checkpoint& chk,
-                     State& S,
-                     double dt,
-                     bool final,
-                     Amanzi::ObservationData* obs_data) {
-  if ( !chk.is_disabled() ) {
-    chk.CreateFile(S.cycle());
-
-    // create hard link to the final file
-    if (final && S.GetMesh()->get_comm()->MyPID() == 0)
-      chk.CreateFinalFile(S.cycle());
-
-    for (State::field_iterator field=S.field_begin(); field!=S.field_end(); ++field) {
-      field->second->WriteCheckpoint(chk);
-    }
-
-    chk.WriteAttributes(S.time(), dt, S.cycle(), S.position());
-    chk.WriteObservations(obs_data);
-    
-    chk.Finalize();
-  }
-};
-
-
-// Non-member function for checkpointing.
-double ReadCheckpoint(const Comm_ptr_type& comm,
-                      State& S,
-                      std::string filename) {
-  HDF5_MPI checkpoint(comm, filename);
-  checkpoint.open_h5file();
-
-  // load the attributes
-  double time(0.);
-  checkpoint.readAttrReal(time, "time");
-  S.set_time(time);
-
-  double dt(0.);
-  checkpoint.readAttrReal(dt, "dt");
-
-  int cycle(0);
-  checkpoint.readAttrInt(cycle, "cycle");
-  S.set_cycle(cycle);
-
-  int pos(0);
-  checkpoint.readAttrInt(pos, "position");
-  S.set_position(pos);
-
-  // load the number of processes and ensure they are the same -- otherwise
-  // the below just gives crap.
-  int rank(-1);
-  checkpoint.readAttrInt(rank, "mpi_comm_world_rank");
-  if (comm->NumProc() != rank) {
-    std::stringstream messagestream;
-    messagestream << "Requested checkpoint file " << filename << " was created on "
-                  << rank << " processes, making it incompatible with this run on "
-                  << comm->NumProc() << " process.";
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
-  }
-
-  // load the data
-  for (State::field_iterator field=S.field_begin(); field!=S.field_end(); ++field) {
-    if (field->second->type() == COMPOSITE_VECTOR_FIELD &&
-        field->second->io_checkpoint()) {
-      bool read_complete = field->second->ReadCheckpoint(checkpoint);
-      if (read_complete) field->second->set_initialized();
-    }
-  }
-  
-  checkpoint.close_h5file();
-  return dt;
+double ReadCheckpoint(State& S, const std::string& filename) {
+  Checkpoint chkp;
+  return chkp.Read(S, filename);
 };
 
 // Non-member function for checkpointing.
 double ReadCheckpointInitialTime(const Comm_ptr_type& comm,
-                                 const std::string& filename) {
+                                 std::string filename) {
+  if (!Keys::ends_with(filename, ".h5")) {
+    // new style checkpoint
+    boost::filesystem::path filepath = boost::filesystem::path(filename) / "domain.h5";
+    filename = filepath.string();
+  }
   HDF5_MPI checkpoint(comm, filename);
 
   // load the attributes
@@ -1373,7 +1368,12 @@ double ReadCheckpointInitialTime(const Comm_ptr_type& comm,
 
 // Non-member function for checkpointing position.
 int ReadCheckpointPosition(const Comm_ptr_type& comm,
-                           const std::string& filename) {
+                           std::string filename) {
+  if (!Keys::ends_with(filename, ".h5")) {
+    // new style checkpoint
+    boost::filesystem::path filepath = boost::filesystem::path(filename) / "domain.h5";
+    filename = filepath.string();
+  }
   HDF5_MPI checkpoint(comm, filename);
 
   // load the attributes
@@ -1386,8 +1386,14 @@ int ReadCheckpointPosition(const Comm_ptr_type& comm,
 
 // Non-member function for checkpointing observations.
 void ReadCheckpointObservations(const Comm_ptr_type& comm,
-                                const std::string& filename,
+                                std::string filename,
                                 Amanzi::ObservationData& obs_data) {
+  if (!Keys::ends_with(filename, ".h5")) {
+    // new style checkpoint
+    boost::filesystem::path filepath = boost::filesystem::path(filename) / "domain.h5";
+    filename = filepath.string();
+  }
+
   HDF5_MPI checkpoint(comm, filename);
   checkpoint.open_h5file();
 
@@ -1434,10 +1440,11 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
 
 // Non-member function for deforming the mesh after reading a checkpoint file
 // that contains the vertex coordinate field (this is written by deformation pks)
-  void DeformCheckpointMesh(State& S, Key domain) {
-    if (S.HasField(Keys::getKey(domain,"vertex_coordinate"))) { 
-      // only deform mesh if vertex coordinate field exists
+void DeformCheckpointMesh(State& S, Key domain) {
+  if (S.HasField(Keys::getKey(domain,"vertex_coordinate"))) { 
+    // only deform mesh if vertex coordinate field exists
     AmanziMesh::Mesh * write_access_mesh_ =  const_cast<AmanziMesh::Mesh*>(&*S.GetMesh(domain));
+
     // get vertex coordinates state
     Teuchos::RCP<const CompositeVector> vc = S.GetFieldData(Keys::getKey(domain,"vertex_coordinate"));
     vc->ScatterMasterToGhosted("node");
@@ -1463,7 +1470,6 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
       write_access_mesh_->deform( nodeids, new_pos, false, &final_pos); // deforms the mesh
     else
       write_access_mesh_->deform( nodeids, new_pos, true, &final_pos); // deforms the mesh
-
   }
 }
 
@@ -1511,7 +1517,7 @@ State::GetEvaluatorList(const Key& key)
     KeyTriple split;
     bool is_ds = Keys::splitDomainSet(key, split);
     if (is_ds) {
-      Key lifted_key = Keys::getKey(std::get<0>(split)+"_*", std::get<2>(split));
+      Key lifted_key = Keys::getKey(std::get<0>(split), "*", std::get<2>(split));
       if (FEList().isParameter(lifted_key)) {
         return FEList().sublist(lifted_key);
       }

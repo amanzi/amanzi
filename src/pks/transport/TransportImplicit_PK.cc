@@ -228,6 +228,7 @@ void TransportImplicit_PK::UpdateBoundaryData(double t_old, double t_new, int co
 {
   for (int i = 0; i < bcs_.size(); i++) {
     bcs_[i]->Compute(t_old, t_new);
+    bcs_[i]->ComputeSubmodel(mesh_, tcc);
   }
 
   auto& values = op_bc_->bc_value();

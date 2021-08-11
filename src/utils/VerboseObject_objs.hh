@@ -1,4 +1,3 @@
-#include "GlobalVerbosity.hh"
 #include "VerboseObject.hh"
 
 // The default global verbosity level.

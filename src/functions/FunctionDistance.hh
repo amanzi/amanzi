@@ -48,7 +48,9 @@ class FunctionDistance : public Function {
  public:
   FunctionDistance(const std::vector<double>& x0, const std::vector<double>& metric);
   ~FunctionDistance() {}
-  FunctionDistance* Clone() const { return new FunctionDistance(*this); }
+  std::unique_ptr<Function> Clone() const {
+    return std::make_unique<FunctionDistance>(*this);
+  }
   double operator()(const std::vector<double>& x) const;
 
  private:

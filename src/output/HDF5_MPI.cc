@@ -665,19 +665,31 @@ void HDF5_MPI::createDataFile(const std::string& base_filename)
 }
 
 
-void HDF5_MPI::open_h5file()
+void HDF5_MPI::open_h5file(bool read_only)
 {
-  data_file_ = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_,
-                                    FILE_READWRITE);
-  if (data_file_ < 0) {
-    Errors::Message message("HDF5_MPI::writeFieldData_ - error opening data file to write field data");
-    Exceptions::amanzi_throw(message);
+  if (read_only) {
+    data_file_ = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_,
+             FILE_READWRITE);
+    if (data_file_ < 0) {
+      Errors::Message msg;
+      msg << "HDF5_MPI: error opening file \"" << H5DataFilename_ << "\" with READ_WRITE access.";
+      Exceptions::amanzi_throw(msg);
+    }
+  } else {
+    data_file_ = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_,
+             FILE_READWRITE);
+    if (data_file_ < 0) {
+      Errors::Message msg;
+      msg << "HDF5_MPI: error opening file \"" << H5DataFilename_ << "\" with READ_ONLY access.";
+      Exceptions::amanzi_throw(msg);
+    }
   }
 }
 
 
 void HDF5_MPI::close_h5file() {
-  parallelIO_close_file(data_file_, &IOgroup_); 
+  parallelIO_close_file(data_file_, &IOgroup_);
+  data_file_ = -1;
 }
 
 
@@ -713,7 +725,7 @@ void HDF5_MPI::endTimestep()
     // channel if they differ
     auto fields = extractFields_(xmlStep_);
     auto fields_prev = extractFields_(xmlStep_prev_);
-    if (fields != fields_prev && fields_prev.size() != 0) {
+    if (fields != fields_prev && !xmlStep_prev_.isEmpty()) {
       createXdmfVisit_();
     }
 
@@ -1206,7 +1218,7 @@ bool HDF5_MPI::checkFieldData_(const std::string& varname)
     exists = parallelIO_name_exists(currfile->fid, h5path);
 
     if (!exists) {
-      std::cout<< "Field "<<h5path<<" is not found in hdf5 file.\n";
+      std::cout << "Field " << h5path << " is not found in hdf5 file.\n";
     }
 
     MPI_Bcast(&exists, 1, MPI_C_BOOL, 0, viz_comm_->Comm()); 
@@ -1221,10 +1233,10 @@ bool HDF5_MPI::checkFieldData_(const std::string& varname)
 bool HDF5_MPI::readFieldData_(Epetra_Vector &x, const std::string& varname,
                               datatype_t type)
 {
+  if (!checkFieldData_(varname)) return false;
+
   char *h5path = new char[varname.size() + 1];
   strcpy(h5path, varname.c_str());
-
-  if (!checkFieldData_(varname)) return false;
 
   int ndims;
   parallelIO_get_dataset_ndims(&ndims, data_file_, h5path, &IOgroup_);

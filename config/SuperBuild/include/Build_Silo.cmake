@@ -105,7 +105,7 @@ ExternalProject_Add(${Silo_BUILD_TARGET}
                                           CXX=${CMAKE_CXX_COMPILER}
                                           CFLAGS=${silo_cflags}
                                           CXXFLAGS=${silo_cxxflags}
-					  LIBS=-ldl ${LIBTOOL_STATIC}
+                      LIBS=-ldl ${LIBTOOL_STATIC}
                     # -- Build
                     BINARY_DIR        ${Silo_build_dir}           # Build directory 
                     BUILD_COMMAND     $(MAKE) -j 1 SILO_DIR=${Silo_source_dir} # Run the CMake script to build

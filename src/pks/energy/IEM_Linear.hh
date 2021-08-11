@@ -27,8 +27,9 @@ class IEM_Linear : public IEM {
  public:
   explicit IEM_Linear(Teuchos::ParameterList& plist);
 
-  double InternalEnergy(double temp);
-  double DInternalEnergyDT(double temp) { return cv_; }
+  virtual double InternalEnergy(double T, double p) override;
+  virtual double DInternalEnergyDT(double T, double p) override;
+  virtual double DInternalEnergyDp(double T, double p) override { return 0.0; }
 
  private:
   virtual void InitializeFromPlist_();

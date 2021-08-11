@@ -199,15 +199,6 @@ class Mesh : public MeshLight {
 
   using MeshLight::cell_get_edges;
 
-  // Get edges and dirs of a 2D cell.
-  //
-  // This is to make the code cleaner for integrating over the cell in 2D
-  // where faces and edges are identical but integrating over the cells using
-  // face information is more cumbersome (one would have to take the face
-  // normals, rotate them and then get a consistent edge vector)
-  void cell_2D_get_edges_and_dirs(const Entity_ID cellid,
-                                  Entity_ID_List *edgeids,
-                                  std::vector<int> *edge_dirs) const;
 
   //-------------------
   // Upward adjacencies
@@ -220,6 +211,15 @@ class Mesh : public MeshLight {
           const Entity_ID edgeid,
           const Parallel_type ptype,
           Entity_ID_List *cellids) const = 0;
+
+  // Edges of type 'ptype' connected to a node
+  //
+  // The order of edges is not guaranteed to be the same for corresponding
+  // node on different processors
+  virtual void node_get_edges(
+          const Entity_ID nodeid,
+          const Parallel_type ptype,
+          Entity_ID_List *edgeids) const { AMANZI_ASSERT(false); }
 
 
   //-----------------------
@@ -284,6 +284,12 @@ class Mesh : public MeshLight {
     Errors::Message mesg("No such map type.");
     Exceptions::amanzi_throw(mesg);
     throw(mesg);
+  }
+  const Epetra_Import& importer(Entity_kind kind) const {
+    if (!importers_.count(kind)) {
+      importers_[kind] = Teuchos::rcp(new Epetra_Import(map(kind, true), map(kind, false)));
+    }
+    return *importers_.at(kind);
   }
 
   // Epetra importers that will allow apps to import values from a
@@ -543,6 +549,9 @@ class Mesh : public MeshLight {
 
   // column information, only created if columns are requested
   mutable bool columns_built_;
+
+  // importer for scatter/gather
+  mutable std::map<Entity_kind, Teuchos::RCP<Epetra_Import>> importers_;
 
   mutable Entity_ID_List cell_cellabove_, cell_cellbelow_, node_nodeabove_;
   mutable std::vector<Entity_ID_List> columns_cells_;

@@ -15,9 +15,9 @@ software interface called Alquimia that allows Amanzi to interface
 with a variety of powerful geochemistry engines including PFLOTRAN and
 CrunchFlow. 
 
-.. image:: figures/UO2+Tracer-17_0036.jpeg   
-   :width: 32%                               
-.. image:: figures/fig-5_0050.png            
+.. image:: figures/farea-composite-white-2006.png
+   :width: 35%                               
+.. image:: figures/amanzi-dfn-fig2a-cropped.png
    :width: 30% 
 .. image:: figures/WasteTank-AMR.png
    :width: 30%
@@ -54,7 +54,7 @@ The current version of Amanzi is |version|
 Older Versions
 ~~~~~~~~~~~~~~
 
- * Not Yet
+ * Amanzi 1.0
 
 Future Releases
 ~~~~~~~~~~~~~~~
@@ -86,9 +86,9 @@ Libraries that it uses, so to make the build process easier Amanzi's
 build system will download and build all the TPLs for you.  To get
 started you will need a modern Linux/Unix/OSX system with
 
- * CMake (version >= 3.11.4), 
+ * CMake (version >= 3.13.3), 
  * A recent GNU or Intel compiler suporting the C++11 standard
- * MPI (e.g., OpenMPI version > 1.4)
+ * MPI (e.g., OpenMPI version > 3.1)
 
 Details are provided in the Installation Instructions in the User Guide.
 

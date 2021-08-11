@@ -15,13 +15,13 @@
 #include <string>
 
 //TPLs
-#include <boost/algorithm/string.hpp>
 #include <xercesc/dom/DOM.hpp>
 
 // Amanzi's
 #include "errors.hh"
 #include "exceptions.hh"
 #include "dbc.hh"
+#include "StringExt.hh"
 
 #include "InputConverterU.hh"
 #include "InputConverterU_Defs.hh"
@@ -56,8 +56,9 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, 
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_flow_controls, rel_perm_method", flag);
   if (flag) rel_perm = mm.transcode(node->getTextContent());
  
-  rel_perm_out = boost::replace_all_copy(rel_perm, "-", ": ");
-  replace(rel_perm_out.begin(), rel_perm_out.end(), '_', ' ');
+  rel_perm_out = rel_perm;
+  Amanzi::replace_all(rel_perm_out, "-", ": ");
+  std::replace(rel_perm_out.begin(), rel_perm_out.end(), '_', ' ');
 
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_flow_controls, update_upwind_frequency", flag);
   if (flag) update_upwind = mm.transcode(node->getTextContent());
@@ -534,6 +535,10 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
 {
   Teuchos::ParameterList out_list;
 
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+    *vo_->os() << "Translating boundary conditions" << std::endl;
+
   MemoryManager mm;
 
   char *text;
@@ -566,8 +571,6 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
     node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
     text = mm.transcode(node->getTextContent());
     std::vector<std::string> regions = CharToStrings_(text);
-
-    vv_bc_regions_.insert(vv_bc_regions_.end(), regions.begin(), regions.end());
 
     node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component", flag);
     if (!flag) {
@@ -609,6 +612,11 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
       unit = "Pa";
     } else if (bctype_in == "hydrostatic" || bctype_in == "linear_hydrostatic") {
       unit = "m";
+    } else if (bctype_in == "inward_mass_flux" || bctype_in == "seepage_face") {
+      unit = "kg/s/m^2";
+    } else {  // not flow BCs 
+      inode = inode->getNextSibling();
+      continue;
     }
 
     // -- process global and local BC separately
@@ -763,6 +771,8 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
           element, "submodel", TYPE_NONE, false, "none");
       bc.set<bool>("no flow above water table", (tmp == "no_flow_above_water_table"));
     }
+
+    vv_bc_regions_.insert(vv_bc_regions_.end(), regions.begin(), regions.end());
 
     inode = inode->getNextSibling();
   }

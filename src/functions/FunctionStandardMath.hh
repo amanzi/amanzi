@@ -70,7 +70,9 @@ class FunctionStandardMath : public Function {
 public:
   FunctionStandardMath(std::string op, double amplitude, double parameter, double shift);
   ~FunctionStandardMath() {}
-  FunctionStandardMath* Clone() const { return new FunctionStandardMath(*this); }
+  std::unique_ptr<Function> Clone() const {
+    return std::make_unique<FunctionStandardMath>(*this);
+  }
   double operator()(const std::vector<double>& x) const;
 
 private:

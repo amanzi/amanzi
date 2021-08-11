@@ -327,9 +327,11 @@ void HeatConduction::UpdateValues(const CompositeVector& u)
   // add boundary face component
   Epetra_MultiVector& k_df = *k->ViewComponent("dirichlet_faces", true);
   Epetra_MultiVector& dkdT_df = *dkdT->ViewComponent("dirichlet_faces", true);
+
   const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
   const Epetra_Map& face_map = mesh_->face_map(true);
-  for (int f=0; f!=face_map.NumMyElements(); ++f) {
+
+  for (int f = 0; f != face_map.NumMyElements(); ++f) {
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
       AmanziMesh::Entity_ID_List cells;
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);

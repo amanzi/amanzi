@@ -55,10 +55,11 @@ class TestEnthalpyEvaluator : public EnthalpyEvaluator {
           const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& result) {
     for (auto comp = result->begin(); comp != result->end(); ++comp) {
+      const auto& temp_c = *S->GetFieldData("temperature")->ViewComponent(*comp);
       auto& result_c = *result->ViewComponent(*comp);
       int ncomp = result->size(*comp, false);
       for (int i = 0; i != ncomp; ++i) {
-        result_c[0][i] = 0.0;
+        result_c[0][i] = temp_c[0][i];
       }
     }
   }
@@ -70,7 +71,7 @@ class TestEnthalpyEvaluator : public EnthalpyEvaluator {
       auto& result_c = *result->ViewComponent(*comp);
       int ncomp = result->size(*comp, false);
       for (int i = 0; i != ncomp; ++i) {
-        result_c[0][i] = 0.0;
+        result_c[0][i] = 1.0;
       }
     }
   }
@@ -95,7 +96,7 @@ TEST(ENERGY_CONVERGENCE_SRC) {
   Teuchos::RCP<VerboseObject> vo_ = Teuchos::rcp(new VerboseObject("", *plist));
 
   int nx(20);
-  double dt(0.04);
+  double dt(5.0);
   for (int n = 0; n < nmeshes; n++, nx *= 2) {
     dt /= 2.0;
 
@@ -111,13 +112,13 @@ TEST(ENERGY_CONVERGENCE_SRC) {
     meshfactory.set_preference(pref);
     Teuchos::RCP<const Mesh> mesh;
     if (n == 0) {
-      mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 20, 10);
+      mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 20, 5);
       // mesh = meshfactory.create("test/random_mesh1.exo");
     } else if (n == 1) {
-      mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 40, 10);
+      mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 40, 5);
       // mesh = meshfactory.create("test/random_mesh2.exo");
     } else if (n == 2) {
-      mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 80, 10);
+      mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 80, 5);
       // mesh = meshfactory.create("test/random_mesh3.exo");
     }
 
@@ -150,7 +151,7 @@ TEST(ENERGY_CONVERGENCE_SRC) {
        
     // constant time stepping 
     int itrs(0);
-    double t(0.0), t1(0.5), dt_next;
+    double t(0.0), t1(100), dt_next;
     while (t < t1) {
       // swap conserved quntity (no backup, we check dt_next instead)
       const CompositeVector& e = *S->GetFieldData("energy");
@@ -201,7 +202,7 @@ TEST(ENERGY_CONVERGENCE_SRC) {
   // check convergence rate
   double l2_rate = Amanzi::Utils::bestLSfit(h, error);
   printf("convergence rate: %10.2f\n", l2_rate);
-  CHECK(l2_rate > 1.81);
+  CHECK(l2_rate > 0.91);
 }
 
 

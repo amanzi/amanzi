@@ -1,4 +1,3 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /*
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -6,14 +5,23 @@
 
   Author: Ethan Coon (ecoon@lanl.gov)
 */
+// Interface for a Field containing a CompositeVector.
 
-//! Interface for a Field containing a CompositeVector.
+/*
+
+  Field_CompositeVector is metadata for a CompositeVector, but also includes
+functionality to initialize, restart, visualize, etc the data.  Parameters
+available here are provided for use in InitialConditions_ specs.
+
+*/
 
 /*!
 
-Field_CompositeVector is metadata for a CompositeVector, but also includes
-functionality to initialize, restart, visualize, etc the data.  Parameters
-available here are provided for use in InitialConditions_ specs.
+The vast majority of Fields are vectors of data on a mesh entity.  This is a
+CompositeVector in Amanzi-ATS (as it may consist of multiple components, each
+on its own mesh entity).  Initializing these components may be done in avariety
+of ways:
+
 
 ``[initial-conditions-spec]``
 
@@ -35,22 +43,13 @@ available here are provided for use in InitialConditions_ specs.
 * `"function`" ``[composite-vector-function-spec-list]`` **optional** If
    provided, a region-based list of functions to evaluate piecewise over the
    domain.
-   
+
 * `"initialize faces from cell`" ``[bool]`` **false** In the case of mimetic
    or other face-inclusive discretizations, calculate initial face data by
    averages of the neighboring cells.
 
 * `"write checkpoint`" ``[bool]`` **true** Write this data when checkpointing.
 
-* `"write vis`" ``[bool]`` **true** Write this data when visualizing.
-
-
-
-   
-Also, parameters here control visualization and checkpointing at finer granularity.
-
-``[field-composite-vector-evaluator-spec]``
-* `"write checkpoint`" ``[bool]`` **true** Write this data when checkpointing.
 * `"write vis`" ``[bool]`` **true** Write this data when visualizing.
 
 
@@ -133,6 +132,19 @@ public:
 
   long int GetLocalElementCount();
 
+  // initialization
+  // -- this function assumes that all components of the data vector
+  //    were initialized. If component is missing, it returns false
+  virtual bool initialized() const;
+  // -- sets all components of the data vector to the given flag
+  virtual void set_initialized(bool initialized=true);
+
+  // component-wise initialization
+  // -- returns false if component is either missing or not initialized
+  bool initialized(const std::string& comp) const;
+  // -- does nothing if component does not exist in the data vector
+  void set_initialized(const std::string& comp, bool initialized=true);
+
 protected:
   bool ReadCheckpoint_(std::string filename);
   void ReadCellsFromCheckpoint_(const std::string& filename); // for ICs
@@ -150,7 +162,9 @@ private:
   // check to ensure subfield names are set
   void EnsureSubfieldNames_();
 
-}; // class Field
+  // component information
+  std::map<std::string, bool> initialized_comp_;
+};
 
 } // namespace Amanzi
 

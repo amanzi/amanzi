@@ -30,7 +30,7 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
     : Mesh(getCommSelf(), parent_mesh->geometric_model(), parent_mesh->parameter_list(), true, false)
 {
   parent_ = parent_mesh;
-  
+
   // set dimensions
   if (flatten) {
     set_space_dimension(2);
@@ -45,7 +45,7 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
   parent_->get_set_entities(setname, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED, &my_cells);
   AMANZI_ASSERT(my_cells.size() == 1);
   parent_face_ = my_cells[0];
-  
+
   // set my nodes
   Entity_ID_List my_nodes;
   parent_->face_get_nodes(parent_face_, &my_nodes);
@@ -77,7 +77,7 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
   for (auto& r : *gm) {
     // set to false as default
     sets_[r->id()] = false;
-      
+
     // determine if true
     if ((r->type() == AmanziGeometry::LABELEDSET ||
          r->type() == AmanziGeometry::ENUMERATED) &&
@@ -97,7 +97,7 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
       } else if (r->space_dimension() == 2 && flatten) {
         sets_[r->id()] = r->inside(cell_centroid(0));
       }
-    }      
+    }
   }
 
   // set the cell type
@@ -118,7 +118,7 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
 
 // Number of entities of any kind (cell, face, node) and in a
 // particular category (OWNED, GHOST, ALL)
-  
+
 unsigned int MeshSurfaceCell::num_entities(const Entity_kind kind,
         const Parallel_type ptype) const {
   int count;
@@ -334,18 +334,6 @@ void MeshSurfaceCell::cell_get_edges_internal_(const Entity_ID cellid,
   Errors::Message mesg("Not implemented");
   Exceptions::amanzi_throw(mesg);
 }
-
-
-// edges and directions of a 2D cell - this function is implemented
-// in each mesh framework. The results are cached in the base class.
-void MeshSurfaceCell::cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
-        Entity_ID_List *edgeids,
-        std::vector<int> *edge_dirs) const {
-  Errors::Message mesg("Not implemented");
-  Exceptions::amanzi_throw(mesg);
-}
-
-
 
 } // close namespace AmanziMesh
 } // close namespace Amanzi

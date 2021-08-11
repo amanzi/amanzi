@@ -32,9 +32,6 @@ int Operator_ConsistentFace::ApplyMatrixFreeOp(
     const Op_Cell_FaceCell& op, const CompositeVector& X, CompositeVector& Y) const
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
-
-  Y.PutScalarGhosted(0.);
-  X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
 
   {
@@ -63,7 +60,6 @@ int Operator_ConsistentFace::ApplyMatrixFreeOp(
       }
     } 
   }
-  Y.GatherGhostedToMaster("face", Add);
   return 0;
 }
 
@@ -77,8 +73,8 @@ void Operator_ConsistentFace::SymbolicAssembleMatrixOp(
     const SuperMap& map, GraphFE& graph,
     int my_block_row, int my_block_col) const
 {
-  std::vector<int> lid_r(cell_max_faces);
-  std::vector<int> lid_c(cell_max_faces);
+  std::vector<int> lid_r(cell_max_faces_);
+  std::vector<int> lid_c(cell_max_faces_);
 
   // ELEMENT: cell, DOFS: cell and face
   const std::vector<int>& face_row_inds = map.GhostIndices(my_block_row, "face", 0);
@@ -111,9 +107,9 @@ void Operator_ConsistentFace::AssembleMatrixOp(
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
-  std::vector<int> lid_r(cell_max_faces);
-  std::vector<int> lid_c(cell_max_faces);
-  std::vector<double> vals(cell_max_faces);
+  std::vector<int> lid_r(cell_max_faces_);
+  std::vector<int> lid_c(cell_max_faces_);
+  std::vector<double> vals(cell_max_faces_);
 
   // ELEMENT: cell, DOFS: face and cell
   const std::vector<int>& face_row_inds = map.GhostIndices(my_block_row, "face", 0);

@@ -161,7 +161,7 @@ void CompositeVector::InitMap_(const CompositeVectorSpace& space) {
   // generate the master's maps
   std::vector<Teuchos::RCP<const Epetra_BlockMap> > mastermaps;
   for (CompositeVectorSpace::name_iterator name = space.begin(); name != space.end(); ++name) {
-    mastermaps.push_back(space.Map(*name, false));
+    mastermaps.emplace_back(space.Map(*name, false));
   }
 
   // create the master BlockVector
@@ -172,7 +172,7 @@ void CompositeVector::InitMap_(const CompositeVectorSpace& space) {
     // generate the ghost's maps
     std::vector<Teuchos::RCP<const Epetra_BlockMap> > ghostmaps;
     for (CompositeVectorSpace::name_iterator name=space.begin(); name!=space.end(); ++name) {
-      ghostmaps.push_back(space.Map(*name, true));
+      ghostmaps.emplace_back(space.Map(*name, true));
     }
     // create the ghost BlockVector
     ghostvec_ = Teuchos::rcp(new BlockVector(Comm(), names_, ghostmaps, space.num_dofs_));
@@ -202,10 +202,6 @@ void CompositeVector::CreateData_() {
   if (NumComponents() == 0) {
     Errors::Message message("CompositeVector: construction called with no components.");
     Exceptions::amanzi_throw(message);
-  }
-
-  if (importers_.size() == 0) {
-    importers_.resize(NumComponents(), Teuchos::null);
   }
 
   ghost_are_current_.resize(NumComponents(), false);
@@ -349,17 +345,10 @@ CompositeVector::ScatterMasterToGhosted(std::string name, bool force) const {
 #else
   if (ghosted_) {
 #endif
-    // check for and create the importer if needed
-    if (importers_[Index_(name)] == Teuchos::null) {
-      Teuchos::RCP<const Epetra_BlockMap> target_map = ghostvec_->ComponentMap(name);
-      Teuchos::RCP<const Epetra_BlockMap> source_map = mastervec_->ComponentMap(name);
-      importers_[Index_(name)] = Teuchos::rcp(new Epetra_Import(*target_map, *source_map));
-    }
-
     // communicate
     Teuchos::RCP<Epetra_MultiVector> g_comp = ghostvec_->ViewComponent(name);
     Teuchos::RCP<const Epetra_MultiVector> m_comp = mastervec_->ViewComponent(name);
-    g_comp->Import(*m_comp, *importers_[Index_(name)], Insert);
+    g_comp->Import(*m_comp, importer(name), Insert);
 
 #if MANAGED_COMMUNICATION
     // mark as communicated
@@ -404,18 +393,10 @@ CompositeVector::ScatterMasterToGhosted(std::string name,
 
 #ifdef HAVE_MPI
   if (ghosted_) {
-    // check for and create the importer if needed
-    if (importers_[Index_(name)] == Teuchos::null) {
-      Teuchos::RCP<const Epetra_BlockMap> target_map = ghostvec_->ComponentMap(name);
-      Teuchos::RCP<const Epetra_BlockMap> source_map = mastervec_->ComponentMap(name);
-      importers_[Index_(name)] =
-        Teuchos::rcp(new Epetra_Import(*target_map, *source_map));
-    }
-
     // communicate
     Teuchos::RCP<Epetra_MultiVector> g_comp = ghostvec_->ViewComponent(name);
     Teuchos::RCP<const Epetra_MultiVector> m_comp = mastervec_->ViewComponent(name);
-    g_comp->Import(*m_comp, *importers_[Index_(name)], Insert);
+    g_comp->Import(*m_comp, importer(name), Insert);
 
     // mark as communicated
     ghost_are_current_[Index_(name)] = true;
@@ -441,48 +422,33 @@ void CompositeVector::GatherGhostedToMaster(std::string name,
   ChangedValue(name);
 #ifdef HAVE_MPI
   if (ghosted_) {
-    // check for and create the importer if needed
-    if (importers_[Index_(name)] == Teuchos::null) {
-      Teuchos::RCP<const Epetra_BlockMap> target_map = ghostvec_->ComponentMap(name);
-      Teuchos::RCP<const Epetra_BlockMap> source_map = mastervec_->ComponentMap(name);
-      importers_[Index_(name)] =
-        Teuchos::rcp(new Epetra_Import(*target_map, *source_map));
-    }
-
     // communicate
     Teuchos::RCP<const Epetra_MultiVector> g_comp =
       ghostvec_->ViewComponent(name);
     Teuchos::RCP<Epetra_MultiVector> m_comp =
       mastervec_->ViewComponent(name);
-    m_comp->Export(*g_comp, *importers_[Index_(name)], mode);
+    m_comp->Export(*g_comp, importer(name), mode);
   }
 #endif
 };
 
 
-// Vandelay operations
-void CompositeVector::CreateVandelay_() const {
-  vandelay_importer_ = Teuchos::rcp(new Epetra_Import(Mesh()->exterior_face_importer()));
+void CompositeVector::CreateVandelayVector_() const {
   vandelay_vector_ = Teuchos::rcp(new Epetra_MultiVector(Mesh()->exterior_face_map(false),
           mastervec_->NumVectors("face"), false));
 }
 
 void CompositeVector::ApplyVandelay_() const {
-  if (vandelay_importer_ == Teuchos::null) {
-    CreateVandelay_();
+  if (vandelay_vector_ == Teuchos::null) {
+    CreateVandelayVector_();
   }
-  vandelay_vector_->Import(*ViewComponent("face",false), *vandelay_importer_, Insert);
+  vandelay_vector_->Import(*ViewComponent("face",false), Mesh()->exterior_face_importer(), Insert);
 }
 
 
 // return non-empty importer
-const Teuchos::RCP<Epetra_Import>& CompositeVector::importer(std::string name) {
-  if (importers_[Index_(name)] == Teuchos::null) {
-    Teuchos::RCP<const Epetra_BlockMap> target_map = ghostvec_->ComponentMap(name);
-    Teuchos::RCP<const Epetra_BlockMap> source_map = mastervec_->ComponentMap(name);
-    importers_[Index_(name)] = Teuchos::rcp(new Epetra_Import(*target_map, *source_map));
-  }
-  return importers_[Index_(name)];
+const Epetra_Import& CompositeVector::importer(std::string name) const {
+  return Mesh()->importer(Location(name));
 }
 
 

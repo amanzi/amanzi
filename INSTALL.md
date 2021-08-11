@@ -18,7 +18,7 @@ In addition, Amanzi, depends on several Third Party Libraries (TPLs),
 including Trilinos and PETSc, and so special instructions for our 
 TPL metabuilder "bootstrap.sh" can be found in
 
-[doc/building_instructions/building_bootstrap.rst](doc/building_instructions/building_bootstrap.rst)
+[doc/build_instructions/building_bootstrap.rst](doc/build_instructions/building_bootstrap.rst)
 
 Also, you can get help by typing
 

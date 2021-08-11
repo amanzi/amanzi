@@ -12,18 +12,20 @@ project(SCHEM)
 get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
 
 include_directories(${PMAMR_INCLUDE_DIRS})
-include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
+include_directories(${DBC_SOURCE_DIR})
+include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CCSE_INCLUDE_DIRS})
 include_directories(${GEOCHEM_STATE_DIR}) 
 include_directories(${GEOCHEM_SOURCE_DIR}) 
 include_directories(${CHEM_INCLUDES_DIR})
 include_directories(${ALQUIMIA_INCLUDE_DIRS})
+add_definitions("-DENABLE_Structured")
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
-include_directories(${PETSC_INCLUDE_DIRS})
+include_directories(${PETSc_INCLUDE_DIRS})
 
 set(CXX_header_files AlquimiaHelper_Structured.H AmanziChemHelper_Structured.H)
 
@@ -46,7 +48,7 @@ if (BUILD_TESTS)
   include_directories(${CCSE_INCLUDE_DIRS})
   link_directories(${CCSE_LIBRARY_DIR})
 
-  set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES} ${PETSC_LIBRARIES})
+  set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES} ${PETSc_LIBRARIES})
   if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU) 
     if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
       list(APPEND structured_grid_libs gfortran)

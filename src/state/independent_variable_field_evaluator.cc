@@ -25,6 +25,7 @@ IndependentVariableFieldEvaluator::IndependentVariableFieldEvaluator(Teuchos::Pa
     temporally_variable_(true),
     computed_once_(false) {
 
+  type_ = EvaluatorType::INDEPENDENT;
   my_key_ = plist_.get<std::string>("evaluator name");
   temporally_variable_ = !plist_.get<bool>("constant in time", false);
 }
@@ -55,6 +56,9 @@ void IndependentVariableFieldEvaluator::operator=(const FieldEvaluator& other) {
 #endif
   AMANZI_ASSERT(my_key_ == other_p->my_key_);
 
+  time_ = other_p->time_;
+  computed_once_ = other_p->computed_once_;
+  temporally_variable_ = other_p->temporally_variable_;
   requests_ = other_p->requests_;
 }
 
@@ -90,6 +94,7 @@ bool IndependentVariableFieldEvaluator::HasFieldChanged(const Teuchos::Ptr<State
     }
 
     // field DOES have to be computed at least once, even if it never changes.
+    time_ = S->time();
     UpdateField_(S);
     computed_once_ = true;
     requests_.insert(request);
@@ -102,6 +107,7 @@ bool IndependentVariableFieldEvaluator::HasFieldChanged(const Teuchos::Ptr<State
                  << time_ << " requested by " << request 
                  << " is updating at time = " << S->time() << std::endl;
     }
+    time_ = S->time();
     UpdateField_(S);
     requests_.clear();
     requests_.insert(request);

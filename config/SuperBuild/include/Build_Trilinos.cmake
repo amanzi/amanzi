@@ -49,10 +49,7 @@ if (ENABLE_KOKKOS)
   list(APPEND Trilinos_PACKAGE_LIST Kokkos KokkosKernels Tpetra Ifpack2 MueLu Xpetra)
 endif()
 
-if (ENABLE_STK_Mesh)
-  list(APPEND Trilinos_PACKAGE_LIST STK)
-endif()
-if (ENABLE_MSTK_Mesh)
+if (ENABLE_MESH_MSTK)
   list(APPEND Trilinos_PACKAGE_LIST Zoltan)
 endif()
 
@@ -71,16 +68,30 @@ list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_Stratimikos:BOOL=FALS
 # have already built SEACAS
 list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_SEACAS:BOOL=FALSE")
 
+# use MueLu on master and Tpetra branches
+
 # we use ints for GOs in Tpetra only (for now)
 if (ENABLE_KOKKOS)
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DMueLu_ENABLE_Epetra:BOOL=OFF")
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DMueLu_ENABLE_Tpetra:BOOL=ON")
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_INT_INT:BOOL=ON")
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_INT_LONG:BOOL=OFF")
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_INT_LONG_LONG:BOOL=OFF")
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DXpetra_Epetra_NO_64BIT_GLOBAL_INDICIES:BOOL=ON")
-  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DMueLu_ENABLE_Epetra:BOOL=OFF")
-  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_SERIAL:BOOL=ON") 
+  if(ENABLE_KOKKOS_OPENMP)
+    message(STATUS "OpenMP enabled")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTrilinos_ENABLE_OpenMP:BOOL=ON")
+    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DXpetra_CAN_USE_SERIAL:BOOL=OFF")
+    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_SERIAL:BOOL=OFF")
+    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_OPENMP:BOOL=ON")
+  else()
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTrilinos_ENABLE_OpenMP:BOOL=OFF")
+    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_SERIAL:BOOL=ON") 
+    list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTpetra_INST_OPENMP:BOOL=OFF") 
+  endif()
+else() 
+  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DMueLu_ENABLE_Epetra:BOOL=ON")
 endif()
-
 
 
 # Build PyTrilinos if shared
@@ -141,6 +152,7 @@ list(APPEND Trilinos_CMAKE_TPL_ARGS
 
 # HYPRE
 if (ENABLE_HYPRE)
+  message(STATUS "Enabling support for Hypre in Trilinos")
   list(APPEND Trilinos_CMAKE_TPL_ARGS
               "-DTPL_ENABLE_HYPRE:BOOL=ON"
               "-DTPL_HYPRE_LIBRARIES:STRING=${HYPRE_LIBRARIES}"
@@ -208,7 +220,6 @@ message(DEBUG "Trilinos_CMAKE_CXX_FLAGS = ${Trilinos_CMAKE_CXX_FLAGS}")
 # - Architecture Args.... these will need work.
 set(Trilinos_CMAKE_ARCH_ARGS "")
 if (ENABLE_KOKKOS)
-  list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_SERIAL:BOOL=ON")
   if (ENABLE_KOKKOS_CUDA)
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTPL_ENABLE_CUDA:BOOL=ON")
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_CUDA:BOOL=ON")
@@ -218,8 +229,11 @@ if (ENABLE_KOKKOS)
   if (ENABLE_KOKKOS_OPENMP)
     # NOTE: This is not yet tested and may need more flags set
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_OPENMP:BOOL=ON")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DTrilinos_ENABLE_OpenMP:BOOL=ON")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_SERIAL:BOOL=OFF")
   else()
     list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_OPENMP:BOOL=OFF")
+    list(APPEND Trilinos_CMAKE_ARCH_ARGS "-DKokkos_ENABLE_SERIAL:BOOL=ON")
   endif()
 endif()
 
@@ -286,14 +300,22 @@ endif()
 # --- Define the Trilinos location
 set(Trilinos_install_dir ${TPL_INSTALL_PREFIX}/${Trilinos_BUILD_TARGET}-${Trilinos_VERSION})
 
+# --- If downloads are disabled point to local repository
+if ( DISABLE_EXTERNAL_DOWNLOAD )
+  STRING(REGEX REPLACE ".*\/" "" Trilinos_GIT_REPOSITORY_LOCAL_DIR ${Trilinos_GIT_REPOSITORY})
+  set (Trilinos_GIT_REPOSITORY_TEMP ${TPL_DOWNLOAD_DIR}/${Trilinos_GIT_REPOSITORY_LOCAL_DIR})
+else()
+  set (Trilinos_GIT_REPOSITORY_TEMP ${Trilinos_GIT_REPOSITORY})
+endif()
+message(STATUS "Trilinos git repository = ${Trilinos_GIT_REPOSITORY_TEMP}")
+
 # --- Add external project build and tie to the Trilinos build target
 ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     DEPENDS   ${Trilinos_PACKAGE_DEPENDS}             # Package dependency target
                     TMP_DIR   ${Trilinos_tmp_dir}                     # Temporary files directory
                     STAMP_DIR ${Trilinos_stamp_dir}                   # Timestamp and log directory
                     # -- Download and URL definitions
-                    DOWNLOAD_DIR   ${TPL_DOWNLOAD_DIR}                # Download directory
-                    GIT_REPOSITORY ${Trilinos_GIT_REPOSITORY}              
+                    GIT_REPOSITORY ${Trilinos_GIT_REPOSITORY_TEMP}              
                     GIT_TAG        ${Trilinos_GIT_TAG}      
                     # -- Update (one way to skip this step is use null command)
                     UPDATE_COMMAND ""
@@ -304,7 +326,7 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     CMAKE_ARGS        ${Trilinos_Config_File_ARGS}
                     CMAKE_CACHE_ARGS  ${AMANZI_CMAKE_CACHE_ARGS}   # Ensure uniform build
                                       ${Trilinos_CMAKE_ARGS} 
-			              -DCMAKE_CXX_COMPILER:STRING=${Trilinos_CXX_COMPILER}
+                                      -DCMAKE_CXX_COMPILER:STRING=${Trilinos_CXX_COMPILER}
                                       -DCMAKE_CXX_FLAGS:STRING=${Trilinos_CMAKE_CXX_FLAGS}
                                       -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                                       -DCMAKE_C_FLAGS:STRING=${Trilinos_CMAKE_C_FLAGS}
@@ -323,7 +345,7 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     INSTALL_DIR      ${Trilinos_install_dir}      # Install directory
                     # -- Output control
                     ${Trilinos_logging_args}
-		    )
+            )
 
 # --- Useful variables for packages that depends on Trilinos
 global_set(Trilinos_INSTALL_PREFIX "${Trilinos_install_dir}")

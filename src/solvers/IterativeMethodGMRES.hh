@@ -124,6 +124,7 @@ class IterativeMethodGMRES :
   bool left_pc_;
   int deflation_;
   mutable int num_ritz_;
+  bool clean_work_memory_;
 };
 
 
@@ -148,7 +149,9 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRESRestart
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // allocate memory for Krylov space
-  v_.resize(krylov_dim_ + 1, Teuchos::null);
+  if (v_.size() != krylov_dim_ + 1) {
+    v_.resize(krylov_dim_ + 1, Teuchos::null);
+  }
 
   num_itrs_ = 0;
   rnorm0_ = -1.0;
@@ -170,6 +173,9 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRESRestart
       *vo_->os() << "Not converged (max iterations), ||r||=" << residual_
                  << " ||f||=" << fnorm_ << std::endl;
   }
+
+  // release work memory for Krylov vectors
+  if (clean_work_memory_) v_.clear();
 
   return ierr;
 }
@@ -230,8 +236,12 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
     if (ierr != 0) return ierr;
   }
 
-  v_[0] = Teuchos::rcp(new Vector(r));
-  v_[0]->Update(0.0, r, 1.0 / rnorm0);
+  if (v_[0].get()) {
+    v_[0]->Update(1.0 / rnorm0, r, 0.0);
+  } else {
+    v_[0] = Teuchos::rcp(new Vector(r));
+    v_[0]->Scale(1.0 / rnorm0);
+  }
 
   s[0] = rnorm0;
 
@@ -300,9 +310,14 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
     }
 
     if (i < krylov_dim_ - 1) {
-      v_[i + 1] = Teuchos::rcp(new Vector(w));
-      if (tmp != 0.0) {  // zero occurs in exact arithmetic
-        v_[i + 1]->Update(0.0, r, 1.0 / tmp);
+      if (v_[i+1].get()) {
+        if (tmp != 0.0) v_[i+1]->Update(1.0 / tmp, w, 0.0);
+        else *v_[i+1] = w;
+      } else {
+        v_[i + 1] = Teuchos::rcp(new Vector(w));
+        if (tmp != 0.0) {  // zero occurs in exact arithmetic
+          v_[i + 1]->Update(0.0, r, 1.0 / tmp);
+        }
       }
     }
   }
@@ -361,8 +376,12 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_Deflat
   double tmp;
   d.PutScalar(0.0);
   if (num_ritz_ == 0) {
-    v_[0] = Teuchos::rcp(new Vector(r));
-    v_[0]->Update(0.0, r, 1.0 / rnorm0);
+    if (v_[0].get()) {
+      v_[0]->Update(1.0 / rnorm0, r, 0.0);
+    } else {
+      v_[0] = Teuchos::rcp(new Vector(r));
+      v_[0]->Update(0.0, r, 1.0 / rnorm0);
+    }
     d(0) = rnorm0;
   } else {
     for (int i = 0 ; i <= num_ritz_; ++i) {
@@ -401,8 +420,12 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_Deflat
     T(i + 1, i) = beta;
     if (beta == 0.0) break;
 
-    v_[i + 1] = Teuchos::rcp(new Vector(w));
-    v_[i + 1]->Update(0.0, r, 1.0 / beta);
+    if (v_[i+1].get()) {
+      v_[i+1]->Update(1.0 / beta, w, 0.0);
+    } else {
+      v_[i + 1] = Teuchos::rcp(new Vector(w));
+      v_[i + 1]->Update(0.0, r, 1.0 / beta);
+    }
   }
 
   // Solve the least-square problem min_d ||T d - c||.
@@ -520,6 +543,8 @@ void IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::set_inverse
   left_pc_ = (plist.get<std::string>("preconditioning strategy", "left") == "left");
   deflation_ = plist.get<int>("maximum size of deflation space", 0);
   num_ritz_ = 0;
+
+  clean_work_memory_ = plist.get<bool>("release Krylov vectors", false);
 }
 
 

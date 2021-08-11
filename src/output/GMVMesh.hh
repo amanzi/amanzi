@@ -38,7 +38,7 @@ void open_data_file(std::string mesh_fromfile, std::string filename,
                     unsigned int cycleno, unsigned int digits);
 
 // Opens and initializes a GMV file which contains mesh data, i.e. doesn't use a "fromfile".
-void open_data_file(const AmanziMesh::Mesh &meshs, std::string filename);
+void open_data_file(const AmanziMesh::Mesh& mesh, const std::string& filename);
 
 // Opens and initializes a GMV file which contains mesh data, i.e. doesn't use a "fromfile"
 // adds a suffix of the type .000302 with, in this case, cycleno=302 and digits= 6

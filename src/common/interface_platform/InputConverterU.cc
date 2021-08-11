@@ -90,22 +90,31 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   }
 
   // -- additional saturated flow fields
+  //    various data flow scenarios require both ic and ev to be defined FIXME
   if (pk_model_["flow"] == "darcy") {
     Teuchos::Array<std::string> regions(1, "All");
-    out_list.sublist("state").sublist("initial conditions").sublist("saturation_liquid")
-        .sublist("function").sublist("ALL")
+    auto& ic_m = out_list.sublist("state").sublist("initial conditions").sublist("saturation_liquid");
+    ic_m.sublist("function").sublist("ALL")
         .set<Teuchos::Array<std::string> >("regions", regions)
         .set<std::string>("component", "cell")
         .sublist("function").sublist("function-constant")
         .set<double>("value", 1.0);
 
+    auto& ev_m = out_list.sublist("state").sublist("field evaluators").sublist("saturation_liquid");
+    ev_m = ic_m;
+    ev_m.set<std::string>("field evaluator type", "independent variable");
+
     if (fracture_regions_.size() > 0) {
-      out_list.sublist("state").sublist("initial conditions").sublist("fracture-saturation_liquid")
-        .sublist("function").sublist("ALL")
-        .set<Teuchos::Array<std::string> >("regions", regions)
-        .set<std::string>("component", "cell")
-        .sublist("function").sublist("function-constant")
-        .set<double>("value", 1.0);
+      auto& ic_f = out_list.sublist("state").sublist("initial conditions").sublist("fracture-saturation_liquid");
+      ic_f.sublist("function").sublist("ALL")
+          .set<Teuchos::Array<std::string> >("regions", regions)
+          .set<std::string>("component", "cell")
+          .sublist("function").sublist("function-constant")
+          .set<double>("value", 1.0);
+
+      auto& ev_f = out_list.sublist("state").sublist("field evaluators").sublist("fracture-saturation_liquid");
+      ev_f = ic_f;
+      ev_f.set<std::string>("field evaluator type", "independent variable");
     }
   }
 
@@ -144,6 +153,10 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
       std::string filename = out_list.sublist("mesh info").get<std::string>("filename");
       out_list.sublist("mesh info fracture").set<std::string>("filename", filename + "_fracture");
     }
+  }
+
+  if (pk_model_["chemistry"] == "amanzi") {
+    out_list.sublist("thermodynamic database") = TranslateThermodynamicDatabase_();
   }
 
   // -- final I/O
@@ -521,7 +534,7 @@ void InputConverterU::SaveXMLFile(
 
   if (filename == "") {
     filename = xmlfilename;
-    std::string new_extension("_native_v8.xml");
+    std::string new_extension("_native_v9.xml");
     size_t pos = filename.find(".xml");
     filename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)14);
   }

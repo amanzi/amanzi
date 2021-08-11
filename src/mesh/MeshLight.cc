@@ -162,10 +162,9 @@ void MeshLight::cache_cell2edge_info_() const
   cell_edge_ids_.resize(ncells);
 
   if (space_dim_ == 2) {
-    cell_2D_edge_dirs_.resize(ncells);
+    std::vector<int> dirs;
     for (int c = 0; c < ncells; c++)
-      cell_2D_get_edges_and_dirs_internal_(c, &(cell_edge_ids_[c]),
-              &(cell_2D_edge_dirs_[c]));
+      cell_get_faces_and_dirs_internal_(c, &(cell_edge_ids_[c]), &dirs);
   }
   else
     for (int c = 0; c < ncells; c++)
@@ -187,6 +186,7 @@ void MeshLight::face_get_cells(const Entity_ID faceid,
 #if AMANZI_MESH_CACHE_VARS != 0
   if (!face2cell_info_cached_) cache_cell2face_info_();
 
+  cellids->reserve(2);
   cellids->clear();
   int n = face_cell_ptype_[faceid].size();
 
@@ -198,8 +198,8 @@ void MeshLight::face_get_cells(const Entity_ID faceid,
     if (std::signbit(c)) c = ~c;  // strip dir info by taking 1s complement
 
     if (ptype == Parallel_type::ALL || ptype == cell_ptype)
-      cellids->push_back(c);
-  } 
+      cellids->emplace_back(c);
+  }
 
 #else  // Non-cached version
   Entity_ID_List fcells;

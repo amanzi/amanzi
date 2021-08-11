@@ -12,6 +12,7 @@
 #ifndef AMANZI_DIFFUSION_FIXTURE_HH_
 #define AMANZI_DIFFUSION_FIXTURE_HH_
 
+#include <chrono>
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
@@ -35,17 +36,23 @@
 #include "Verification.hh"
 #include "WhetStoneMeshUtils.hh"
 
+#include "AnalyticBase.hh"
+
 using namespace Amanzi;
 
 struct DiffusionFixture {
-  DiffusionFixture(int d, const std::string& mesh_file);
+  DiffusionFixture(Teuchos::RCP<Teuchos::ParameterList> plist_)
+    : plist(plist_),
+      comm(Amanzi::getDefaultComm()) {};
 
   void Discretize(const std::string& name, AmanziMesh::Entity_kind kind);
   void DiscretizeWithGravity(const std::string& name, double gravity, AmanziMesh::Entity_kind kind);
 
   // set up the problem
+  void Init(int d, int nx, const std::string& mesh_file);
+
   // -- general parameters
-  void Setup(const std::string& pc_name_, bool symmetric_);
+  void Setup(const std::string& prec_solver_, bool symmetric_);
 
   // -- coefficients
   void SetScalarCoefficient(Operators::PDE_DiffusionFactory& opfactory,
@@ -57,7 +64,12 @@ struct DiffusionFixture {
   void SetBCsDirichletNeumannRobin();
 
   void Go(double tol = 1.e-14);
+  void MatVec(int nloops);
+
+  // access
+  Comm_ptr_type get_comm() const { return comm; }
   
+ public:
   Comm_ptr_type comm;
   Teuchos::RCP<Teuchos::ParameterList> plist;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh;
@@ -67,7 +79,7 @@ struct DiffusionFixture {
   bool symmetric;
   Teuchos::RCP<Operators::BCs> bc;
   Teuchos::RCP<CompositeVector> solution, flux;
-  std::string pc_name;
+  std::string prec_solver;
   
   Teuchos::RCP<Operators::PDE_Diffusion> op;
   Teuchos::RCP<Operators::Operator> global_op;
@@ -75,23 +87,22 @@ struct DiffusionFixture {
 
 
 /* ******************************************************************
-* Constructor
+* Initialization
 ****************************************************************** */
-DiffusionFixture::DiffusionFixture(int d, const std::string& mesh_file)
-  : comm(Amanzi::getDefaultComm())
+void DiffusionFixture::Init(int d, int nx, const std::string& mesh_file)
 {
-  plist = Teuchos::getParametersFromXmlFile("test/operator_diffusion_low_order.xml");
+  if (!plist.get())
+    plist = Teuchos::getParametersFromXmlFile("test/operator_diffusion_low_order.xml");
 
   auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(d, plist->sublist("regions"), *comm));
   AmanziMesh::MeshFactory meshfactory(comm, gm);
-  if (mesh_file == "Generate1D") {
+
+  if (mesh_file == "structured1d") {
     mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 100, 1);
-  } else if (mesh_file == "Generate2D") {
-    mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 10, 10);
-  } else if (mesh_file == "Generate2D_HiRes") {
-      mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 50, 50);
-  } else if (mesh_file == "Generate3D") {
-    mesh = meshfactory.create(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 4, 5, 6);
+  } else if (mesh_file == "structured2d") {
+    mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, nx, nx);
+  } else if (mesh_file == "structured3d") {
+    mesh = meshfactory.create(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0, nx, nx, nx);
   } else {
     mesh = meshfactory.create(mesh_file);
   }
@@ -162,30 +173,27 @@ void DiffusionFixture::DiscretizeWithGravity(
 /* ******************************************************************
 * Set coefficients
 ****************************************************************** */
-void DiffusionFixture::Setup(const std::string& pc_name_, bool symmetric_)
+void DiffusionFixture::Setup(const std::string& prec_solver_, bool symmetric_)
 {
   symmetric = symmetric_;
-  pc_name = pc_name_;
+  prec_solver = prec_solver_;
   global_op = op->global_operator();
   solution = Teuchos::rcp(new CompositeVector(global_op->DomainMap()));
   solution->PutScalar(0.0);
     
-  // get and assemble the global operator
-  // if (pc_name != "identity") {
-  //   global_op->SymbolicAssembleMatrix();
-  // }
-
   // create preconditoner using the base operator class
-
-  if (symmetric) {
-    global_op->set_inverse_parameters(pc_name, plist->sublist("preconditioners"),
-                                      "AztecOO CG", plist->sublist("solvers"));
-    global_op->InitializeInverse();
+  if (prec_solver.substr(0, 6) == "Amesos") {
+    global_op->set_inverse_parameters(prec_solver, plist->sublist("solvers"));
   } else {
-    global_op->set_inverse_parameters(pc_name, plist->sublist("preconditioners"),
+    if (symmetric) {
+      global_op->set_inverse_parameters(prec_solver, plist->sublist("preconditioners"),
+                                        "AztecOO CG", plist->sublist("solvers"));
+    } else {
+      global_op->set_inverse_parameters(prec_solver, plist->sublist("preconditioners"),
                                       "GMRES", plist->sublist("solvers"));
-    global_op->InitializeInverse();
+    } 
   }
+  global_op->InitializeInverse();
 
   CompositeVectorSpace flux_space;
   flux_space.SetMesh(mesh)->SetGhosted(true)->SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
@@ -337,15 +345,11 @@ void DiffusionFixture::Go(double tol)
     
   op->ApplyBCs(true, true, true);
   global_op->ComputeInverse();
-  global_op->ApplyInverse(*global_op->rhs(), *solution);
 
-  auto MyPID = comm->MyPID();
-  if (MyPID == 0) {
-    std::cout << "pressure solve: ||r||=" << global_op->residual() 
-              << " itr=" << global_op->num_itrs()
-              << " code=" << global_op->returned_code() << std::endl;
-  }
-      
+  auto start = std::chrono::high_resolution_clock::now();
+  global_op->ApplyInverse(*global_op->rhs(), *solution);
+  auto stop = std::chrono::high_resolution_clock::now();
+
   if (tol > 0.0) {
     // compute pressure error
     Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
@@ -357,22 +361,22 @@ void DiffusionFixture::Go(double tol)
 
     op->UpdateMatrices(Teuchos::null, solution.ptr());
     op->UpdateFlux(solution.ptr(), flux.ptr());
-    {
-      auto fv = flux->ViewComponent("face", false);
-    }
 
     Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
     ana->ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
+    auto MyPID = comm->MyPID();
     if (MyPID == 0) {
+      auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+      printf("solution time only = %g sec\n", double(duration.count() * 1e-6));
       pl2_err /= pnorm; 
       ul2_err /= unorm;
-      printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f itr=%3d\n",
-             pl2_err, pinf_err, ul2_err, uinf_err, global_op->num_itrs());
+      printf("L2(p)=%9.6g  Inf(p)=%9.6g  L2(u)=%9.6g  Inf(u)=%9.6g\ndofs=%d  itr=%d  ||r||=%10.5g\n",
+             pl2_err, pinf_err, ul2_err, uinf_err,
+             rhs.GlobalLength(), global_op->num_itrs(), global_op->residual());
        
       CHECK(pl2_err < tol);
       CHECK(ul2_err < 10*tol);
-      //if (pc_name != "identity" && pc_name != "diagonal") CHECK(solver->num_itrs() < 10);
     }
 
     if (symmetric) {
@@ -380,6 +384,30 @@ void DiffusionFixture::Go(double tol)
       ver.CheckMatrixSPD();
     }
   }
+}
+
+
+/* ******************************************************************
+* Run the mat-vec
+****************************************************************** */
+void DiffusionFixture::MatVec(int nloops)
+{
+  global_op->Init();
+  op->UpdateMatrices(Teuchos::null, solution.ptr());
+
+  op->ApplyBCs(true, true, true);
+  global_op->ComputeInverse();
+
+  auto sol(*solution);
+
+  auto start = std::chrono::high_resolution_clock::now();
+  for (int i = 0; i < nloops; ++i) {
+    global_op->Apply(sol, *solution);
+  }
+  auto stop = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+
+  printf("iterative loop time = %g sec\n", double(duration.count() * 1e-6));
 }
 
 #endif

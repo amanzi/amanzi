@@ -24,6 +24,8 @@ namespace Amanzi {
 // Fields
 typedef enum { NULL_FIELD_TYPE, COMPOSITE_VECTOR_FIELD, CONSTANT_VECTOR, CONSTANT_SCALAR } FieldType;
 
+typedef enum { UNKNOWN, PRIMARY, SECONDARY, INDEPENDENT } EvaluatorType;
+
 } // namespace
 
 #endif

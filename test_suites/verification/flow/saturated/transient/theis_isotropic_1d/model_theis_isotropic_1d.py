@@ -95,31 +95,29 @@ def createFromXML(filename):
         params["r"].append(coord[0]) 
     
     params["times"] = []
-    for i in search.getElementByTags(xml, "/amanzi_input/definitions/macros/time_macro"):
+    for i in search.find_tag_path(xml, ["amanzi_input","definitions","macros","time_macro",]):
         params["times"].append(float(i.text))
 
     params.setdefault("g", 9.80665)
     params.setdefault("pi", math.pi)
 
-    for i in search.getElementByTags(xml, "/amanzi_input/regions"):
+    for i in search.find_tag_path(xml, ["amanzi_input","regions",]):
         if (i.get("name") == "Well"):
             params["z"] = float(i.find("box").get("high_coordinates").split(',')[2])
 
-    strK = search.getElementByTags(xml, "/amanzi_input/materials/material/permeability").get('x')
+    strK = search.find_tag_path(xml, ["amanzi_input","materials","material","permeability",]).get('x')
     params["K"] = float(strK)
 
-    strMu = search.getElementByTags(xml, "/amanzi_input/phases/liquid_phase/viscosity").text
+    strMu = search.find_tag_path(xml, ["amanzi_input","phases","liquid_phase","viscosity",]).text
     params["mu"] = float(strMu)
 
-    strRho = search.getElementByTags(xml, "/amanzi_input/phases/liquid_phase/density").text
+    strRho = search.find_tag_path(xml, ["amanzi_input","phases","liquid_phase","density",]).text
     params["rho"] = float(strRho)
 
-    strQ = search.getElementByTags(xml, "/amanzi_input/sources/source/liquid_phase" + 
-                                        "/liquid_component/volume_weighted").get("value")
+    strQ = search.find_tag_path(xml, ["amanzi_input","sources","source","liquid_phase","liquid_component","volume_weighted",]).get("value")
     params["Q"] = float(strQ)
 
-    strSs = search.getElementByTags(xml, "/amanzi_input/materials/material" + 
-                                         "/mechanical_properties/specific_storage").get("value")
+    strSs = search.find_tag_path(xml, ["amanzi_input","materials","material","mechanical_properties","specific_storage",]).get("value")
     params["S_s"] = float(strSs)
     
     return TransientTheis(params)

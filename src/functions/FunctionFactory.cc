@@ -25,17 +25,17 @@
 
 namespace Amanzi {
 
-Function* FunctionFactory::Create(Teuchos::ParameterList& list) const
+std::unique_ptr<Function>
+FunctionFactory::Create(Teuchos::ParameterList& list) const
 {
   // Iterate through the parameters in the list.  There should be exactly
   // one, a sublist, whose name matches one of the known function types.
   // Anything else is a syntax error and we throw an exception.
-  Function *f = 0;
+  std::unique_ptr<Function> f;
   for (auto it = list.begin(); it != list.end(); ++it) {
     std::string function_type = list.name(it);
     if (list.isSublist(function_type)) { // process the function sublist
-      if (f) { // error: already processed a function sublist
-	delete f;
+      if (f.get()) { // error: already processed a function sublist
         Errors::Message m;
         m << "FunctionFactory: extraneous function sublist: " << function_type.c_str();
         Exceptions::amanzi_throw(m);
@@ -76,13 +76,11 @@ Function* FunctionFactory::Create(Teuchos::ParameterList& list) const
       else if (function_type == "function-exprtk")
         f = create_exprtk(function_params);
       else {  // I don't recognize this function type
-        if (f) delete f;
         Errors::Message m;
         m << "FunctionFactory: unknown function type: " << function_type.c_str();
         Exceptions::amanzi_throw(m);
       }
     } else { // not the expected function sublist
-      if (f) delete f;
       Errors::Message m;
       m << "FunctionFactory: unknown parameter: " << function_type.c_str();
       Exceptions::amanzi_throw(m);
@@ -94,16 +92,16 @@ Function* FunctionFactory::Create(Teuchos::ParameterList& list) const
     m << "FunctionFactory: missing function sublist.";
     Exceptions::amanzi_throw(m);
   }
-
   return f;
 }
 
-Function* FunctionFactory::create_constant(Teuchos::ParameterList& params) const
+std::unique_ptr<Function>
+FunctionFactory::create_constant(Teuchos::ParameterList& params) const
 {
-  Function *f;
+  std::unique_ptr<Function> f;
   try {
     double value = params.get<double>("value");
-    f = new FunctionConstant(value);
+    f = std::make_unique<FunctionConstant>(value);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-constant parameter error: " << msg.what();
@@ -112,9 +110,10 @@ Function* FunctionFactory::create_constant(Teuchos::ParameterList& params) const
   return f;
 }
 
-Function* FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
+std::unique_ptr<Function>
+FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
 {
-  Function *f;
+  std::unique_ptr<Function> f;
 
   if (params.isParameter("file")) {
     //    try {
@@ -124,10 +123,10 @@ Function* FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
     int xi = 0;
     std::string x = params.get<std::string>("x header");
     std::string xc = params.get<std::string>("x coordinate", "t");
-    if (xc.compare(0,1,"t") == 0) xi = 0;  
-    else if (xc.compare(0,1,"x") == 0) xi = 1;  
-    else if (xc.compare(0,1,"y") == 0) xi = 2;  
-    else if (xc.compare(0,1,"z") == 0) xi = 3;  
+    if (xc.compare(0,1,"t") == 0) xi = 0;
+    else if (xc.compare(0,1,"x") == 0) xi = 1;
+    else if (xc.compare(0,1,"y") == 0) xi = 2;
+    else if (xc.compare(0,1,"z") == 0) xi = 3;
     std::string y = params.get<std::string>("y header");
 
     std::vector<double> vec_x;
@@ -135,22 +134,40 @@ Function* FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
     reader.ReadData(x, vec_x);
     reader.ReadData(y, vec_y);
     if (params.isParameter("forms")) {
-      Teuchos::Array<std::string> form_strings(params.get<Teuchos::Array<std::string> >("forms"));
-      std::vector<FunctionTabular::Form> form(form_strings.size());
-      for (int i = 0; i < form_strings.size(); ++i) {
-        if (form_strings[i] == "linear")
-          form[i] = FunctionTabular::LINEAR;
-        else if (form_strings[i] == "constant")
-          form[i] = FunctionTabular::CONSTANT;
-        else {
+      std::vector<FunctionTabular::Form> form;
+      if (params.isType<Teuchos::Array<std::string>>("forms")) {
+        Teuchos::Array<std::string> form_strings(params.get<Teuchos::Array<std::string> >("forms"));
+        form.resize(form_strings.size());
+        for (int i = 0; i < form_strings.size(); ++i) {
+          if (form_strings[i] == "linear")
+            form[i] = FunctionTabular::LINEAR;
+          else if (form_strings[i] == "constant")
+            form[i] = FunctionTabular::CONSTANT;
+          else {
+            Errors::Message m;
+            m << "unknown form \"" << form_strings[i].c_str() << "\"";
+            Exceptions::amanzi_throw(m);
+          }
+        }
+      } else if (params.isType<std::string>("forms")) {
+        std::string form_string = params.get<std::string>("forms");
+
+        if (form_string == "linear") {
+          form.resize(vec_x.size()-1, FunctionTabular::LINEAR);
+        } else if (form_string == "constant") {
+          form.resize(vec_x.size()-1, FunctionTabular::CONSTANT);
+        } else {
           Errors::Message m;
-          m << "unknown form \"" << form_strings[i].c_str() << "\"";
+          m << "unknown form \"" << form_string << "\"";
           Exceptions::amanzi_throw(m);
         }
+      } else {
+        Errors::Message m("Parameter \"forms\" in \"function-tabular\" passed of invalid type.");
+        Exceptions::amanzi_throw(m);
       }
-      f = new FunctionTabular(vec_x, vec_y, xi, form);
+      f = std::make_unique<FunctionTabular>(vec_x, vec_y, xi, form);
     } else {
-      f = new FunctionTabular(vec_x, vec_y, xi);
+      f = std::make_unique<FunctionTabular>(vec_x, vec_y, xi);
     }
 
     // }
@@ -169,19 +186,20 @@ Function* FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
       std::vector<double> x(params.get<Teuchos::Array<double> >("x values").toVector());
       std::string xc = params.get<std::string>("x coordinate", "t");
       int xi = 0;
-      if (xc.compare(0,1,"t") == 0) xi = 0;  
-      else if (xc.compare(0,1,"x") == 0) xi = 1;  
-      else if (xc.compare(0,1,"y") == 0) xi = 2;  
+      if (xc.compare(0,1,"t") == 0) xi = 0;
+      else if (xc.compare(0,1,"x") == 0) xi = 1;
+      else if (xc.compare(0,1,"y") == 0) xi = 2;
       else if (xc.compare(0,1,"z") == 0) xi = 3;
 
       std::vector<double> y(params.get<Teuchos::Array<double> >("y values").toVector());
       if (params.isParameter("forms")) {
+
         Teuchos::Array<std::string> form_strings(params.get<Teuchos::Array<std::string> >("forms"));
         int nforms = form_strings.size();
         std::vector<FunctionTabular::Form> form(nforms);
 
         bool flag_func(false);
-        std::vector<Function* > func(nforms);
+        std::vector<std::unique_ptr<Function>> func(nforms);
 
         for (int i = 0; i < nforms; ++i) {
           if (form_strings[i] == "linear")
@@ -193,11 +211,11 @@ Function* FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
             if (params.isSublist(form_strings[i])) {
               Teuchos::ParameterList& f1_params = params.sublist(form_strings[i]);
 
-              Function* f1;
+              std::unique_ptr<Function> f1;
               FunctionFactory factory;
               f1 = factory.Create(f1_params);
 
-              func[i] = f1;
+              func[i] = std::move(f1);
               flag_func = true;
             } else {
               Errors::Message m;
@@ -207,12 +225,12 @@ Function* FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
           }
         }
         if (flag_func) {
-          f = new FunctionTabular(x, y, xi, form, func);
+          f = std::make_unique<FunctionTabular>(x, y, xi, form, std::move(func));
         } else {
-          f = new FunctionTabular(x, y, xi, form);
-        } 
+          f = std::make_unique<FunctionTabular>(x, y, xi, form);
+        }
       } else {
-        f = new FunctionTabular(x, y, xi);
+        f = std::make_unique<FunctionTabular>(x, y, xi);
       }
     }
     catch (Teuchos::Exceptions::InvalidParameter& msg) {
@@ -229,15 +247,16 @@ Function* FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
   return f;
 }
 
-Function* FunctionFactory::create_smooth_step(Teuchos::ParameterList& params) const
+std::unique_ptr<Function>
+FunctionFactory::create_smooth_step(Teuchos::ParameterList& params) const
 {
-  Function *f;
+  std::unique_ptr<Function> f;
   try {
     double x0 = params.get<double>("x0");
     double x1 = params.get<double>("x1");
     double y0 = params.get<double>("y0");
     double y1 = params.get<double>("y1");
-    f = new FunctionSmoothStep(x0, y0, x1, y1);
+    f = std::make_unique<FunctionSmoothStep>(x0, y0, x1, y1);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-smooth-step parameter error: " << msg.what();
@@ -250,14 +269,15 @@ Function* FunctionFactory::create_smooth_step(Teuchos::ParameterList& params) co
   return f;
 }
 
-Function* FunctionFactory::create_polynomial(Teuchos::ParameterList& params) const
+std::unique_ptr<Function>
+FunctionFactory::create_polynomial(Teuchos::ParameterList& params) const
 {
-  Function *f;
+  std::unique_ptr<Function> f;
   try {
     std::vector<double> c(params.get<Teuchos::Array<double> >("coefficients").toVector());
     std::vector<int> p(params.get<Teuchos::Array<int> >("exponents").toVector());
     double x0 = params.get<double>("reference point", 0.0);
-    f = new FunctionPolynomial(c, p, x0);
+    f = std::make_unique<FunctionPolynomial>(c, p, x0);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-polynomial parameter error: " << msg.what();
@@ -271,14 +291,15 @@ Function* FunctionFactory::create_polynomial(Teuchos::ParameterList& params) con
   return f;
 }
 
-Function* FunctionFactory::create_monomial(Teuchos::ParameterList& params) const
+std::unique_ptr<Function>
+FunctionFactory::create_monomial(Teuchos::ParameterList& params) const
 {
-  Function *f;
+  std::unique_ptr<Function> f;
   try {
     double c = params.get<double>("c");
     std::vector<double> x0(params.get<Teuchos::Array<double> >("x0").toVector());
     std::vector<int> p(params.get<Teuchos::Array<int> >("exponents").toVector());
-    f = new FunctionMonomial(c, x0, p);
+    f = std::make_unique<FunctionMonomial>(c, x0, p);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-monomial parameter error: " << msg.what();
@@ -292,15 +313,16 @@ Function* FunctionFactory::create_monomial(Teuchos::ParameterList& params) const
   return f;
 }
 
-Function* FunctionFactory::create_linear(Teuchos::ParameterList& params) const
+std::unique_ptr<Function>
+FunctionFactory::create_linear(Teuchos::ParameterList& params) const
 {
-  Function *f;
+  std::unique_ptr<Function> f;
   try {
     double y0 = params.get<double>("y0");
     std::vector<double> grad(params.get<Teuchos::Array<double> >("gradient").toVector());
     Teuchos::Array<double> zero(grad.size(),0.0);
     std::vector<double> x0(params.get<Teuchos::Array<double> >("x0", zero).toVector());
-    f = new FunctionLinear(y0, grad, x0);
+    f = std::make_unique<FunctionLinear>(y0, grad, x0);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-linear parameter error: " << msg.what();
@@ -314,15 +336,16 @@ Function* FunctionFactory::create_linear(Teuchos::ParameterList& params) const
   return f;
 }
 
-Function* FunctionFactory::create_separable(Teuchos::ParameterList& params) const
+std::unique_ptr<Function>
+FunctionFactory::create_separable(Teuchos::ParameterList& params) const
 {
-  Function *f;
+  std::unique_ptr<Function> f;
   std::unique_ptr<Function> f1, f2;
   FunctionFactory factory;
   try {
     if (params.isSublist("function1")) {
       Teuchos::ParameterList& f1_params = params.sublist("function1");
-      f1 = std::unique_ptr<Function>(factory.Create(f1_params));
+      f1 = factory.Create(f1_params);
     } else {
       Errors::Message m;
       m << "missing sublist function1";
@@ -330,13 +353,13 @@ Function* FunctionFactory::create_separable(Teuchos::ParameterList& params) cons
     }
     if (params.isSublist("function2")) {
       Teuchos::ParameterList& f2_params = params.sublist("function2");
-      f2 = std::unique_ptr<Function>(factory.Create(f2_params));
+      f2 = factory.Create(f2_params);
     } else {
       Errors::Message m;
       m << "missing sublist function2";
       Exceptions::amanzi_throw(m);
     }
-    f = new FunctionSeparable(std::move(f1), std::move(f2));
+    f = std::make_unique<FunctionSeparable>(std::move(f1), std::move(f2));
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-separable parameter error: " << msg.what();
@@ -345,15 +368,16 @@ Function* FunctionFactory::create_separable(Teuchos::ParameterList& params) cons
   return f;
 }
 
-Function* FunctionFactory::create_additive(Teuchos::ParameterList& params) const
+std::unique_ptr<Function>
+FunctionFactory::create_additive(Teuchos::ParameterList& params) const
 {
-  Function *f;
+  std::unique_ptr<Function> f;
   std::unique_ptr<Function> f1, f2;
   FunctionFactory factory;
   try {
     if (params.isSublist("function1")) {
       Teuchos::ParameterList& f1_params = params.sublist("function1");
-      f1 = std::unique_ptr<Function>(factory.Create(f1_params));
+      f1 = factory.Create(f1_params);
     } else {
       Errors::Message m;
       m << "missing sublist function1";
@@ -361,13 +385,13 @@ Function* FunctionFactory::create_additive(Teuchos::ParameterList& params) const
     }
     if (params.isSublist("function2")) {
       Teuchos::ParameterList& f2_params = params.sublist("function2");
-      f2 = std::unique_ptr<Function>(factory.Create(f2_params));
+      f2 = factory.Create(f2_params);
     } else {
       Errors::Message m;
       m << "missing sublist function2";
       Exceptions::amanzi_throw(m);
     }
-    f = new FunctionAdditive(std::move(f1), std::move(f2));
+    f = std::make_unique<FunctionAdditive>(std::move(f1), std::move(f2));
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-additive parameter error: " << msg.what();
@@ -376,15 +400,16 @@ Function* FunctionFactory::create_additive(Teuchos::ParameterList& params) const
   return f;
 }
 
-Function* FunctionFactory::create_multiplicative(Teuchos::ParameterList& params) const
+std::unique_ptr<Function>
+FunctionFactory::create_multiplicative(Teuchos::ParameterList& params) const
 {
-  Function *f;
+  std::unique_ptr<Function> f;
   std::unique_ptr<Function> f1, f2;
   FunctionFactory factory;
   try {
     if (params.isSublist("function1")) {
       Teuchos::ParameterList& f1_params = params.sublist("function1");
-      f1 = std::unique_ptr<Function>(factory.Create(f1_params));
+      f1 = factory.Create(f1_params);
     } else {
       Errors::Message m;
       m << "missing sublist function1";
@@ -392,13 +417,13 @@ Function* FunctionFactory::create_multiplicative(Teuchos::ParameterList& params)
     }
     if (params.isSublist("function2")) {
       Teuchos::ParameterList& f2_params = params.sublist("function2");
-      f2 = std::unique_ptr<Function>(factory.Create(f2_params));
+      f2 = factory.Create(f2_params);
     } else {
       Errors::Message m;
       m << "missing sublist function2";
       Exceptions::amanzi_throw(m);
     }
-    f = new FunctionMultiplicative(std::move(f1), std::move(f2));
+    f = std::make_unique<FunctionMultiplicative>(std::move(f1), std::move(f2));
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-multiplicative parameter error: " << msg.what();
@@ -407,15 +432,16 @@ Function* FunctionFactory::create_multiplicative(Teuchos::ParameterList& params)
   return f;
 }
 
-Function* FunctionFactory::create_composition(Teuchos::ParameterList& params) const
+std::unique_ptr<Function>
+FunctionFactory::create_composition(Teuchos::ParameterList& params) const
 {
-  Function *f;
+  std::unique_ptr<Function> f;
   std::unique_ptr<Function> f1, f2;
   FunctionFactory factory;
   try {
     if (params.isSublist("function1")) {
       Teuchos::ParameterList& f1_params = params.sublist("function1");
-      f1 = std::unique_ptr<Function>(factory.Create(f1_params));
+      f1 = factory.Create(f1_params);
     } else {
       Errors::Message m;
       m << "missing sublist function1";
@@ -423,13 +449,13 @@ Function* FunctionFactory::create_composition(Teuchos::ParameterList& params) co
     }
     if (params.isSublist("function2")) {
       Teuchos::ParameterList& f2_params = params.sublist("function2");
-      f2 = std::unique_ptr<Function>(factory.Create(f2_params));
+      f2 = factory.Create(f2_params);
     } else {
       Errors::Message m;
       m << "missing sublist function2";
       Exceptions::amanzi_throw(m);
     }
-    f = new FunctionComposition(std::move(f1), std::move(f2));
+    f = std::make_unique<FunctionComposition>(std::move(f1), std::move(f2));
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-composition parameter error: " << msg.what();
@@ -438,9 +464,10 @@ Function* FunctionFactory::create_composition(Teuchos::ParameterList& params) co
   return f;
 }
 
-Function* FunctionFactory::create_static_head(Teuchos::ParameterList& params) const
+std::unique_ptr<Function>
+FunctionFactory::create_static_head(Teuchos::ParameterList& params) const
 {
-  Function *f = nullptr;
+  std::unique_ptr<Function> f;
   FunctionFactory factory;
   try {
     double p0 = params.get<double>("p0");
@@ -449,8 +476,8 @@ Function* FunctionFactory::create_static_head(Teuchos::ParameterList& params) co
     int dim = params.get<int>("space dimension");
     if (params.isSublist("water table elevation")) {
       Teuchos::ParameterList& sublist = params.sublist("water table elevation");
-      std::unique_ptr<Function> water_table(factory.Create(sublist));
-      f = new FunctionStaticHead(p0, density, gravity, std::move(water_table), dim);
+      auto water_table = factory.Create(sublist);
+      f = std::make_unique<FunctionStaticHead>(p0, density, gravity, std::move(water_table), dim);
     } else {
       Errors::Message m;
       m << "missing sublist \"water table elevation\"";
@@ -468,16 +495,17 @@ Function* FunctionFactory::create_static_head(Teuchos::ParameterList& params) co
   return f;
 }
 
-Function* FunctionFactory::create_standard_math(Teuchos::ParameterList& params) const
+std::unique_ptr<Function>
+FunctionFactory::create_standard_math(Teuchos::ParameterList& params) const
 {
-  Function *f;
+  std::unique_ptr<Function> f;
   FunctionFactory factory;
   try {
     std::string op = params.get<std::string>("operator");
     double amplitude = params.get<double>("amplitude", 1.0);
     double param = params.get<double>("parameter", 1.0);
     double shift = params.get<double>("shift", 0.0);
-    f = new FunctionStandardMath(op, amplitude, param, shift);
+    f = std::make_unique<FunctionStandardMath>(op, amplitude, param, shift);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-standard-math parameter error: " << msg.what();
@@ -490,9 +518,10 @@ Function* FunctionFactory::create_standard_math(Teuchos::ParameterList& params) 
   return f;
 }
 
-Function* FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
+std::unique_ptr<Function>
+FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
 {
-  Function *f = nullptr;
+  std::unique_ptr<Function> f;
 
   if (params.isParameter("file")) {
     try {
@@ -502,10 +531,10 @@ Function* FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
       int xi, yi(0);  // input indices
       std::string x = params.get<std::string>("row header");
       std::string xdim = params.get<std::string>("row coordinate");
-      if (xdim.compare(0, 1, "t") == 0) xi = 0;  
-      else if (xdim.compare(0, 1, "x") == 0) xi = 1;  
-      else if (xdim.compare(0, 1, "y") == 0) xi = 2;  
-      else if (xdim.compare(0, 1, "z") == 0) xi = 3;  
+      if (xdim.compare(0, 1, "t") == 0) xi = 0;
+      else if (xdim.compare(0, 1, "x") == 0) xi = 1;
+      else if (xdim.compare(0, 1, "y") == 0) xi = 2;
+      else if (xdim.compare(0, 1, "z") == 0) xi = 3;
       else {
         Errors::Message m;
         m << "FunctionFactory: function-bilinear parameter error: invalid \"row coordinate\" \""
@@ -516,10 +545,10 @@ Function* FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
 
       std::string y = params.get<std::string>("column header");
       std::string ydim = params.get<std::string>("column coordinate");
-      if (ydim.compare(0, 1, "t") == 0) yi = 0;  
-      else if (ydim.compare(0, 1, "x") == 0) yi = 1;  
-      else if (ydim.compare(0, 1, "y") == 0) yi = 2;  
-      else if (ydim.compare(0, 1, "z") == 0) yi = 3;  
+      if (ydim.compare(0, 1, "t") == 0) yi = 0;
+      else if (ydim.compare(0, 1, "x") == 0) yi = 1;
+      else if (ydim.compare(0, 1, "y") == 0) yi = 2;
+      else if (ydim.compare(0, 1, "z") == 0) yi = 3;
       else {
         Errors::Message m;
         m << "FunctionFactory: function-bilinear parameter error: invalid \"column coordinate\" \""
@@ -527,15 +556,15 @@ Function* FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
         Exceptions::amanzi_throw(m);
         yi = 0;
       }
-      
+
       std::vector<double> vec_x;
       std::vector<double> vec_y;
       std::string v = params.get<std::string>("value header");
-      Epetra_SerialDenseMatrix mat_v; 
+      Epetra_SerialDenseMatrix mat_v;
       reader.ReadData(x, vec_x);
       reader.ReadData(y, vec_y);
       reader.ReadMatData(v, mat_v);
-      f = new FunctionBilinear(vec_x, vec_y, mat_v, xi, yi);
+      f = std::make_unique<FunctionBilinear>(vec_x, vec_y, mat_v, xi, yi);
     } catch (Teuchos::Exceptions::InvalidParameter& msg) {
       Errors::Message m;
       m << "FunctionFactory: function-bilinear parameter error: " << msg.what();
@@ -549,17 +578,18 @@ Function* FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
     Errors::Message m;
     m << "missing parameter \"file\"";
     Exceptions::amanzi_throw(m);
-  }   
+  }
   return f;
 }
 
-Function* FunctionFactory::create_distance(Teuchos::ParameterList& params) const
+std::unique_ptr<Function>
+FunctionFactory::create_distance(Teuchos::ParameterList& params) const
 {
-  Function *f;
+  std::unique_ptr<Function> f;
   try {
     std::vector<double> x0(params.get<Teuchos::Array<double> >("x0").toVector());
     std::vector<double> metric(params.get<Teuchos::Array<double> >("metric").toVector());
-    f = new FunctionDistance(x0, metric);
+    f = std::make_unique<FunctionDistance>(x0, metric);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-distance parameter error: " << msg.what();
@@ -573,13 +603,14 @@ Function* FunctionFactory::create_distance(Teuchos::ParameterList& params) const
   return f;
 }
 
-Function* FunctionFactory::create_squaredistance(Teuchos::ParameterList& params) const
+std::unique_ptr<Function>
+FunctionFactory::create_squaredistance(Teuchos::ParameterList& params) const
 {
-  Function *f;
+  std::unique_ptr<Function> f;
   try {
     std::vector<double> x0(params.get<Teuchos::Array<double> >("x0").toVector());
     std::vector<double> metric(params.get<Teuchos::Array<double> >("metric").toVector());
-    f = new FunctionSquareDistance(x0, metric);
+    f = std::make_unique<FunctionSquareDistance>(x0, metric);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-squaredistance parameter error: " << msg.what();
@@ -594,7 +625,8 @@ Function* FunctionFactory::create_squaredistance(Teuchos::ParameterList& params)
 }
 
 
-Function* FunctionFactory::create_bilinear_and_time(Teuchos::ParameterList& params) const
+std::unique_ptr<Function>
+FunctionFactory::create_bilinear_and_time(Teuchos::ParameterList& params) const
 {
   std::string filename = params.get<std::string>("file");
   std::string row_header = params.get<std::string>("row header");
@@ -602,27 +634,28 @@ Function* FunctionFactory::create_bilinear_and_time(Teuchos::ParameterList& para
   if (row_coordinate != "x" && row_coordinate != "y" && row_coordinate != "z") {
     Errors::Message m("FunctionFactory: function-bilinear_and_time does not do bilinear in time.");
     Exceptions::amanzi_throw(m);
-  }  
+  }
   std::string col_header = params.get<std::string>("column header");
   std::string col_coordinate = params.get<std::string>("column coordinate", "y");
   if (col_coordinate != "x" && col_coordinate != "y" && col_coordinate != "z") {
     Errors::Message m("FunctionFactory: function-bilinear_and_time does not do bilinear in time.");
     Exceptions::amanzi_throw(m);
-  }  
+  }
   std::string time_header = params.get<std::string>("time header");
   std::string value_header = params.get<std::string>("value header");
-  return new FunctionBilinearAndTime(filename, time_header, row_header, row_coordinate,
+  return std::make_unique<FunctionBilinearAndTime>(filename, time_header, row_header, row_coordinate,
           col_header, col_coordinate, value_header);
 }
 
 
-Function* FunctionFactory::create_exprtk(Teuchos::ParameterList& params) const
+std::unique_ptr<Function>
+FunctionFactory::create_exprtk(Teuchos::ParameterList& params) const
 {
-  Function *f;
+  std::unique_ptr<Function> f;
   try {
     int n = params.get<int>("number of arguments");
     std::string formula = params.get<std::string>("formula");
-    f = new FunctionExprTK(n, formula);
+    f = std::make_unique<FunctionExprTK>(n, formula);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-exprtk parameter error: " << msg.what();

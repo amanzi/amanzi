@@ -1,8 +1,4 @@
 <amanzi_input version="2.3.0" type="unstructured">
-  <misc>
-    <echo_translated_input file_name="oldspec.xml"/>
-  </misc>
-
   <model_description name="1D Flow and Transport w/ ion exchange">
     <units>
       <length_unit>m</length_unit>
@@ -30,7 +26,7 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on" />
-    <chemistry state="on" engine="amanzi" input_filename="surface-complexation.bgd"/>
+    <chemistry state="on" engine="amanzi"/>
   </process_kernels>
   
   <phases>
@@ -76,6 +72,7 @@
       </unstr_transport_controls>
       
       <unstr_chemistry_controls>
+        <activity_model>debye-huckel</activity_model>
         <auxiliary_data>pH</auxiliary_data>
         <time_step_control_method>simple</time_step_control_method>
         <maximum_newton_iterations>250</maximum_newton_iterations>
@@ -159,12 +156,9 @@
         <liquid_component name="water">
           <uniform_pressure value="201325.0"/>
         </liquid_component>
-        <solute_component name="solute">
-          <uniform_conc name="H+" value="1.1973159693019762E-05"/>
-          <uniform_conc name="Na+" value="9.9987826840306909E-02"/>
-          <uniform_conc name="NO3-" value="1.0000000000000001E-01"/>
-          <uniform_conc name="Zn++" value="9.9999999999999995E-08"/>
-        </solute_component>
+        <geochemistry_component>
+          <constraint name="background"/>
+        </geochemistry_component>
       </liquid_phase>
     </initial_condition>
   </initial_conditions>
@@ -176,12 +170,15 @@
         <liquid_component name="water">
           <inward_mass_flux value="7.91317859e-6" start="0" function="constant"/>
         </liquid_component>
-        <solute_component>
+        <geochemistry_component>
+          <constraint function="constant" name="west" start="0.0 s"/>
+        </geochemistry_component>
+        <!--solute_component>
           <aqueous_conc name="H+" value="1.1837457310400665E-06" start="0" function="constant"/>
           <aqueous_conc name="Na+" value="9.9996816254528526E-02" start="0" function="constant"/>
           <aqueous_conc name="NO3-" value="1.0000000000000001E-01" start="0" function="constant"/>
           <aqueous_conc name="Zn++" value="1.0000000066975248E-06" start="0" function="constant"/>
-        </solute_component>
+        </solute_component-->
       </liquid_phase>
     </boundary_condition>
     <boundary_condition name="east_bc">
@@ -190,10 +187,113 @@
         <liquid_component name="water">
           <uniform_pressure value="201325.0" start="0" function="constant"/>
         </liquid_component>
+        <geochemistry_component>
+          <constraint function="constant" name="east" start="0.0 s"/>
+        </geochemistry_component>
       </liquid_phase>
     </boundary_condition>
   </boundary_conditions>
   
+  <geochemistry>
+    <constraints>
+      <constraint name="background">
+        <primary name="H+" type="pH" value="5"/>
+        <primary name="Na+" type="charge" value="1.0e-5"/>
+        <primary name="NO3-" type="total" value="1.0e-1"/>
+        <primary name="Zn++" type="total" value="1.0e-7"/>
+      </constraint>
+      <constraint name="west">
+        <primary name="H+" type="pH" value="6"/>
+        <primary name="Na+" type="charge" value="1.0e-5"/>
+        <primary name="NO3-" type="total" value="1.0e-1"/>
+        <primary name="Zn++" type="total" value="1.0e-6"/>
+      </constraint>
+      <constraint name="east">
+        <primary name="H+" type="pH" value="5"/>
+        <primary name="Na+" type="charge" value="1.0e-5"/>
+        <primary name="NO3-" type="total" value="1.0e-1"/>
+        <primary name="Zn++" type="total" value="1.0e-7"/>
+      </constraint>
+    </constraints>
+
+    <thermodynamic_database>
+      <primary_species>
+        <primary name="H+">
+          <species_data ion_size="9.0" z="1" weight="1.01"/>
+        </primary>
+        <primary name="Na+">
+          <species_data ion_size="4.0" z="1" weight="22.99"/>
+        </primary>
+        <primary name="NO3-">
+          <species_data ion_size="3.0" z="-1" weight="62.0"/>
+        </primary>
+        <primary name="Zn++">
+          <species_data ion_size="6.0" z="2" weight="65.39"/>
+        </primary>
+      </primary_species>
+
+      <aqueous_equilibrium_complexes>
+        <complex name="OH-">
+          <species_data ion_size="3.5" z="-1" weight="17.00730"/>
+          <reaction>1.0 H2O  -1.0 H+</reaction>
+          <equilibrium_constant>13.99510</equilibrium_constant>
+        </complex>
+        <complex name="Zn(OH)2(aq)">
+          <species_data ion_size="3.0" z="0" weight="99.40470"/>
+          <reaction>2.0 H2O  -2.0 H+  1.0 Zn++</reaction>
+          <equilibrium_constant>17.3282</equilibrium_constant>
+        </complex>
+        <complex name="Zn(OH)3-">
+          <species_data ion_size="4.0" z="-1" weight="116.41200"/>
+          <reaction>3.0 H2O  -3.0 H+  1.0 Zn++</reaction>
+          <equilibrium_constant>28.8369</equilibrium_constant>
+        </complex>
+        <complex name="Zn(OH)4--">
+          <species_data ion_size="4.0" z="-2" weight="133.41940"/>
+          <reaction>4.0 H2O  -4.0 H+  1.0 Zn++</reaction>
+          <equilibrium_constant>41.60520</equilibrium_constant>
+        </complex>
+        <complex name="ZnOH+">
+          <species_data ion_size="4.0" z="1" weight="82.39730"/>
+          <reaction>1.0 H2O  -1.0 H+  1.0 Zn++</reaction>
+          <equilibrium_constant>8.96</equilibrium_constant>
+        </complex>
+      </aqueous_equilibrium_complexes>
+
+      <surface_complex_sites>
+        <site name=">FeOH_w" density="7.6355e-02"/>
+        <site name=">FeOH_s" density="1.9080e-03"/>
+      </surface_complex_sites>
+
+      <surface_complexes>
+        <complex name=">FeOH2+_w" z="1">
+          <reaction>1.0 >FeOH_w  1.0 H+</reaction>
+          <equilibrium_constant>-7.18</equilibrium_constant>
+        </complex>
+        <complex name=">FeO-_w" z="-1">
+          <reaction>1.0 >FeOH_w  -1.0 H+</reaction>
+          <equilibrium_constant>8.82</equilibrium_constant>
+        </complex>
+        <complex name=">FeOHZn+_w" z="1">
+          <reaction>1.0 >FeOH_w  -1.0 H+  1.0 Zn++</reaction>
+          <equilibrium_constant>2.32</equilibrium_constant>
+        </complex>
+        <complex name=">FeOH2+_s" z="1">
+          <reaction>1.0 >FeOH_s  1.0 H+</reaction>
+          <equilibrium_constant>-7.18</equilibrium_constant>
+        </complex>
+        <complex name=">FeO-_s" z="-1">
+          <reaction>1.0 >FeOH_s  -1.0 H+</reaction>
+          <equilibrium_constant>8.82</equilibrium_constant>
+        </complex>
+        <complex name=">FeOHZn+_s" z="1">
+          <reaction>1.0 >FeOH_s  -1.0 H+  1.0 Zn++</reaction>
+          <equilibrium_constant>-0.66</equilibrium_constant>
+        </complex>
+      </surface_complexes>
+    </thermodynamic_database>
+  </geochemistry>
+
   <output>
     <vis>
       <base_filename>surface-complexation</base_filename>

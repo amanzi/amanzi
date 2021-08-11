@@ -16,27 +16,10 @@
 #include <cstdio>
 #include <iomanip>
 
-#include "boost/units/scaled_base_unit.hpp"
-#include "boost/units/derived_dimension.hpp"
-#include "boost/units/io.hpp"
-#include "boost/units/make_scaled_unit.hpp"
-#include "boost/units/make_system.hpp"
-#include "boost/units/systems/si.hpp"
-#include "boost/units/quantity.hpp"
-#include "boost/units/unit.hpp"
-
 #include "Teuchos_ParameterList.hpp"
 
 namespace Amanzi {
 namespace Utils {
-
-typedef boost::units::derived_dimension<
-    boost::units::amount_base_dimension, 1,
-    boost::units::length_base_dimension, -3>::type concentration_dimension;
-
-typedef boost::units::unit<
-    concentration_dimension, boost::units::si::system> concentration;
-
 
 // ------------------------------------------------------------------
 // Auxiliary class: atomic representation of a derived unit. 
@@ -192,7 +175,7 @@ class Units {
     std::stringstream valids;
     for (auto v : time_) valids << "\"" << v.first << "\",";
     auto valids_str = valids.str();
-    valids_str.pop_back(); // remove the last comma
+    valids_str.pop_back();  // remove the last comma
     return valids_str;
   }
       
@@ -203,7 +186,7 @@ class Units {
     std::stringstream valids;
     for (auto v : mass_) valids << "\"" << v.first << "\",";
     auto valids_str = valids.str();
-    valids_str.pop_back(); // remove the last comma
+    valids_str.pop_back();  // remove the last comma
     return valids_str;
   }
 
@@ -214,7 +197,7 @@ class Units {
     std::stringstream valids;
     for (auto v : length_) valids << "\"" << v.first << "\",";
     auto valids_str = valids.str();
-    valids_str.pop_back(); // remove the last comma
+    valids_str.pop_back();  // remove the last comma
     return valids_str;
   }
 
@@ -250,13 +233,13 @@ class Units {
  private:
   double concentration_factor_;
 
-  std::map<std::string, boost::units::quantity<boost::units::si::time> > time_;
-  std::map<std::string, boost::units::quantity<boost::units::si::mass> > mass_;
-  std::map<std::string, boost::units::quantity<boost::units::si::length> > length_;
-  std::map<std::string, boost::units::quantity<boost::units::si::volume> > volume_;
-  std::map<std::string, boost::units::quantity<concentration> > concentration_;
-  std::map<std::string, boost::units::quantity<boost::units::si::amount> > amount_;
-  std::map<std::string, boost::units::quantity<boost::units::si::temperature> > temperature_;
+  std::map<std::string, double> time_;
+  std::map<std::string, double> mass_;
+  std::map<std::string, double> length_;
+  std::map<std::string, double> volume_;
+  std::map<std::string, double> concentration_;
+  std::map<std::string, double> amount_;
+  std::map<std::string, double> temperature_;
 
   std::map<std::string, AtomicUnitForm> derived_;
 

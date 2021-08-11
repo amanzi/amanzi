@@ -158,6 +158,7 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
 
   // ------ Set values using a function -----
   if (plist.isSublist("function")) {
+    std::vector<std::string> complist;
     Teuchos::ParameterList func_plist = plist.sublist("function");
  
     // -- potential use of a mapping operator first -- 
@@ -179,7 +180,7 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
 
       // evaluate the full xD velocity function 
       Teuchos::RCP<Functions::CompositeVectorFunction> func = 
-          Functions::CreateCompositeVectorFunction(func_plist, vel_vec->Map()); 
+          Functions::CreateCompositeVectorFunction(func_plist, vel_vec->Map(), complist);
       func->Compute(0.0, vel_vec.ptr()); 
  
       // CV's map may differ from the regular mesh face map 
@@ -204,17 +205,25 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
  
     } else { 
       // no map, just evaluate the function 
-      Teuchos::RCP<Functions::CompositeVectorFunction> func = 
-          Functions::CreateCompositeVectorFunction(func_plist, data_->Map()); 
+      auto func = Functions::CreateCompositeVectorFunction(func_plist, data_->Map(), complist); 
       func->Compute(0.0, data_.ptr()); 
-      set_initialized(); 
+
+      for (const auto& comp : complist) set_initialized(comp);
     }
   }
 
   // ------ Set face values by interpolation -----
-  if ((data_->HasComponent("face") || data_->HasComponent("boundary_face"))  && data_->HasComponent("cell") &&
+  if (data_->HasComponent("face") &&
+      data_->HasComponent("cell") &&
       plist.get<bool>("initialize faces from cells", false)) {
     DeriveFaceValuesFromCellValues(*data_);
+    set_initialized("face");
+  }
+  if (data_->HasComponent("boundary_face") &&
+      data_->HasComponent("cell") &&
+      plist.get<bool>("initialize faces from cells", false)) {
+    DeriveFaceValuesFromCellValues(*data_);
+    set_initialized("boundary_face");
   }
 
   return;
@@ -222,9 +231,8 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
 
 
 void Field_CompositeVector::WriteVis(Visualization& vis) {
-  Key name = vis.name();
-  if (name == "domain") name = "";
-  if (io_vis_ && (name == Keys::getDomain(fieldname_))) {
+  if (io_vis_ &&
+      ((vis.WritesDomain(Keys::getDomain(fieldname_))))) {
     EnsureSubfieldNames_();
 
     // loop over the components and dump them to the vis file if possible
@@ -358,7 +366,7 @@ void Field_CompositeVector::InitializeFromColumn_(Teuchos::ParameterList& plist)
   func_sublist.set("y header", f_str);
   FunctionFactory fac;
   Teuchos::RCP<Function> func = Teuchos::rcp(fac.Create(func_list));
-      
+
   // orientation
   std::string orientation = plist.get<std::string>("coordinate orientation", "standard");
   if (orientation != "standard" && orientation != "depth") {
@@ -621,8 +629,34 @@ long int Field_CompositeVector::GetLocalElementCount() {
   return count;
 }
 
-// void Field_CompositeVector::CopyFace2BndFace(const Epetra_MultiVector& vec_face, Epetra_MultiVector& vec_bndface) {
-//   for (int bf=0   
-// }
+
+bool Field_CompositeVector::initialized() const {
+  bool flag(true);
+  for (auto name = data_->begin(); name != data_->end(); ++name) {
+    if (*name != "boundary_face") {
+      if (initialized_comp_.find(*name) == initialized_comp_.end()) return false;
+      flag &= initialized_comp_.at(*name);
+    }
+  }
+  return flag;
+}
+
+
+void Field_CompositeVector::set_initialized(bool flag) {
+  for (auto name = data_->begin(); name != data_->end(); ++name) {
+    initialized_comp_[*name] = flag;
+  }
+}
   
+
+bool Field_CompositeVector::initialized(const std::string& comp) const {
+  if (initialized_comp_.find(comp) == initialized_comp_.end()) return false;
+  return initialized_comp_.at(comp);
+}
+
+
+void Field_CompositeVector::set_initialized(const std::string& comp, bool flag) {
+  if (data_->HasComponent(comp)) initialized_comp_[comp] = flag;
+}
+
 } // namespace Amanzi

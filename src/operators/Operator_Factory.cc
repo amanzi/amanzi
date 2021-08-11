@@ -13,6 +13,7 @@
 
 */
 
+#include <sstream>
 #include <tuple>
 
 #include "UniqueHelpers.hh"
@@ -138,8 +139,10 @@ Operator_Factory::CreateFromSchema()
     return Teuchos::rcp(new Operator_Schema(cvs1, cvs2, *plist_, schema_row_, schema_col_));
   }
   
-  Errors::Message msg;
-  msg << "Operator factory failed: unsupported combination of schema parameters";
+  std::stringstream ss;
+  ss << "Operator factory failed: unsupported/incorrect combination of schema parameters" 
+     << "\nrows: " << schema_row_ <<"\ncols: " << schema_col_ << std::endl;
+  Errors::Message msg(ss.str());
   Exceptions::amanzi_throw(msg);
   return Teuchos::null;
 }

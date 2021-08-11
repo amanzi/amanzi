@@ -18,7 +18,6 @@
 
 // TPLs
 #include "boost/bind.hpp"
-#include "boost/algorithm/string.hpp"
 
 #define  BOOST_FILESYTEM_NO_DEPRECATED
 #include "boost/filesystem/operations.hpp"
@@ -147,9 +146,9 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
         if (flag1) {
           std::string format = GetTextContentS_(node, "exodus ii, exodus II, Exodus II, Exodus ii, H5M, h5m");
 
-          if (boost::iequals(format, "exodus ii")) {
+          if (format == "exodus ii") {
             mesh_list.set<std::string>("format", "Exodus II");
-          } else if (boost::iequals(format, "h5m")) {
+          } else if (format == "h5m") {
             mesh_list.set<std::string>("format", "H5M");
           }
         }

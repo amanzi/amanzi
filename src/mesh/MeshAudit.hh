@@ -15,7 +15,7 @@ namespace Amanzi {
 class MeshAudit {
 public:
 
-  MeshAudit(Teuchos::RCP<AmanziMesh::Mesh> &mesh_, std::ostream& os=std::cout);
+  MeshAudit(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh_, std::ostream& os=std::cout);
 
   // This is the main method.
   int Verify() const;
@@ -68,7 +68,7 @@ public:
 
 private:
 
-  Teuchos::RCP<AmanziMesh::Mesh> mesh;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh;
   Comm_ptr_type comm_;
 
   const int MyPID;
