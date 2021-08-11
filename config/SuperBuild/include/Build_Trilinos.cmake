@@ -55,7 +55,7 @@ if (ENABLE_Unstructured)
     # MueLu   - multilevel preconditioner
     # Ifpack2 - wrappers to external solvers (Hypre) and also block
     #           solvers (block ILU, additive Schwarz, etc)
-    list(APPEND Trilinos_REQUIRED_PACKAGE_LIST Ifpack2 Amesos2 Basker MueLu ShyLU ShyLU_Node)
+    list(APPEND Trilinos_REQUIRED_PACKAGE_LIST Ifpack2 Amesos2 Basker MueLu ShyLU ShyLU_Node ShyLU_NodeFastILU)
     # Xpetra?
   endif()
 endif()
@@ -94,8 +94,6 @@ if (ENABLE_Tpetra)
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DAmesos2_ENABLE_KLU2:BOOL=ON")
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DAmesos2_ENABLE_ShyLU_NodeBasker:BOOL=ON")
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DAmesos2_ENABLE_TIMERS:BOOL=ON")
-
-  list(APPEND Trilinos_CMAKE_PAKCGAE_ARGS "-DTrilinos_ENABLE_ShyLU_NodeFastILU=ON")
 
   if (ENABLE_OpenMP)
     message(STATUS "Kokkos OpenMP enabled")
