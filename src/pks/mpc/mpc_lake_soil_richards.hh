@@ -5,10 +5,10 @@
 
   Authors: Svetlana Tokareva (tokareva@lanl.gov)
 */
-//! A coupler which integrates temperature models in soil and lake
+//! A coupler which integrates temperature models in coupled soil+richards and lake
 
-#ifndef PKS_MPC_LAKE_1D_HH_
-#define PKS_MPC_LAKE_1D_HH_
+#ifndef PKS_MPC_LAKE_SOIL_RICHARDS_HH_
+#define PKS_MPC_LAKE_SOIL_RICHARDS_HH_
 
 #include "Operator.hh"
 #include "pk_physical_bdf_default.hh"
@@ -16,16 +16,18 @@
 
 #include "strong_mpc.hh"
 
+#include "mpc_coupled_soil.hh"
+
 namespace Amanzi {
 
-class MPCLake1D : public StrongMPC<PK_BDF_Default> {
+class MPCLakeSoilRichards : public StrongMPC<PK_BDF_Default> {
  public:
 
 
-  MPCLake1D(Teuchos::ParameterList& FElist,
-                  const Teuchos::RCP<Teuchos::ParameterList>& plist,
-                  const Teuchos::RCP<State>& S,
-                  const Teuchos::RCP<TreeVector>& soln);
+  MPCLakeSoilRichards(Teuchos::ParameterList& FElist,
+				  const Teuchos::RCP<Teuchos::ParameterList>& plist,
+				  const Teuchos::RCP<State>& S,
+				  const Teuchos::RCP<TreeVector>& soln);
 
   virtual void Setup(const Teuchos::Ptr<State>& S);
   virtual void Initialize(const Teuchos::Ptr<State>& S);
@@ -68,7 +70,7 @@ class MPCLake1D : public StrongMPC<PK_BDF_Default> {
 
   // sub PKs
   Teuchos::RCP<PK_BDF_Default> lake_pk_;
-  Teuchos::RCP<PK_BDF_Default> soil_pk_;
+  Teuchos::RCP<MPCCoupledSoil> soil_pk_;
 
   // sub meshes
   Teuchos::RCP<const AmanziMesh::Mesh> lake_mesh_;
@@ -87,7 +89,7 @@ class MPCLake1D : public StrongMPC<PK_BDF_Default> {
 
  private:
   // factory registration
-  static RegisteredPKFactory<MPCLake1D> reg_;
+  static RegisteredPKFactory<MPCLakeSoilRichards> reg_;
 
 };
 

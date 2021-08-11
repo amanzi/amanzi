@@ -44,6 +44,10 @@ SoilThermalConductivityEvaluator::SoilThermalConductivityEvaluator(
   ice_content_key_ = Keys::readKey(plist_, domain_name, "ice content", "ice_content");
   dependencies_.insert(ice_content_key_);
 
+  // -- ice content
+  pressure_key_ = Keys::readKey(plist_, domain_name, "pressure", "pressure");
+  dependencies_.insert(pressure_key_);
+
 //  AMANZI_ASSERT(plist_.isSublist("soil thermal conductivity parameters"));
 //  Teuchos::ParameterList sublist = plist_.sublist("soil thermal conductivity parameters");
 
@@ -55,7 +59,8 @@ SoilThermalConductivityEvaluator::SoilThermalConductivityEvaluator(
     SecondaryVariableFieldEvaluator(other),
     temperature_key_(other.temperature_key_),
     water_content_key_(other.water_content_key_),
-    ice_content_key_(other.ice_content_key_){}
+    ice_content_key_(other.ice_content_key_),
+	pressure_key_(other.pressure_key_){}
 
 
 Teuchos::RCP<FieldEvaluator>

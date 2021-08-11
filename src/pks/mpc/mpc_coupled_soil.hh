@@ -186,6 +186,10 @@ class MPCCoupledSoil : public StrongMPC<PK_PhysicalBDF_Default> {
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
   Teuchos::RCP<Operators::TreeOperator> preconditioner() { return preconditioner_; }
 
+  // -- access methods
+  virtual Teuchos::RCP<Operators::Operator>
+      my_operator(const Operators::OperatorType& type) override;
+
  protected:
 
   enum PreconditionerType {

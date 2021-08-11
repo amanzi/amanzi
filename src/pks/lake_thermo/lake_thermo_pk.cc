@@ -93,7 +93,7 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   temperature_key_ = Keys::readKey(*plist_, domain_, "temperature", "temperature");
   density_key_ = Keys::readKey(*plist_, domain_, "density", "density");
   energy_key_ = Keys::readKey(*plist_, domain_, "energy", "energy");
-  wc_key_ = Keys::readKey(*plist_, domain_, "water content", "water_content");
+//  wc_key_ = Keys::readKey(*plist_, domain_, "water content", "water_content");
   enthalpy_key_ = Keys::readKey(*plist_, domain_, "enthalpy", "enthalpy");
   flux_key_ = Keys::readKey(*plist_, domain_, "mass flux", "mass_flux");
   energy_flux_key_ = Keys::readKey(*plist_, domain_, "diffusive energy flux", "diffusive_energy_flux");
@@ -359,8 +359,8 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
       ->AddComponent("face", AmanziMesh::FACE, 1);
 
   // Require a field for water content
-  S->RequireField(wc_key_, name_)->SetMesh(mesh_)->SetGhosted()
-        ->AddComponent("cell", AmanziMesh::CELL, 1);
+//  S->RequireField(wc_key_, name_)->SetMesh(mesh_)->SetGhosted()
+//        ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   // Require a field for the energy fluxes.
   S->RequireField(energy_flux_key_, name_)->SetMesh(mesh_)->SetGhosted()
@@ -485,8 +485,8 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   S->GetFieldData(flux_key_, name_)->PutScalar(0.0);
   S->GetField(flux_key_, name_)->set_initialized();
 
-  S->GetFieldData(wc_key_, name_)->PutScalar(1.0);
-  S->GetField(wc_key_, name_)->set_initialized();
+//  S->GetFieldData(wc_key_, name_)->PutScalar(1.0);
+//  S->GetField(wc_key_, name_)->set_initialized();
 
   Teuchos::ParameterList& ic_list = plist_->sublist("initial condition");
   double temp = ic_list.get<double>("initial temperature [K]");

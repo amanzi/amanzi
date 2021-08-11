@@ -72,7 +72,7 @@ void SoilHeatCapacityEvaluator::EvaluateField_(
 
   // get water content
   Teuchos::RCP<const CompositeVector> wc = S->GetFieldData(water_content_key_);
-//
+
 //  // get ice content
 //  Teuchos::RCP<const CompositeVector> ic = S->GetFieldData(ice_content_key_);
 

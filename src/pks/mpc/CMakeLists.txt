@@ -56,6 +56,7 @@ set(ats_mpc_src_files
   mpc_permafrost.cc
   mpc_morphology_pk.cc
   mpc_lake_1D.cc
+  mpc_lake_soil_richards.cc
   biomass_evaluator.cc
   mpc_coupled_soil.cc
   )
@@ -88,6 +89,7 @@ set(ats_mpc_inc_files
   mpc_surface.hh
   mpc_permafrost.hh
   mpc_lake_1D.hh
+  mpc_lake_soil_richards.hh
   biomass_evaluator.hh
   mpc_weak_domain_decomposition.hh
   mpc_coupled_soil.hh
@@ -195,6 +197,11 @@ register_evaluator_with_factory(
   
 register_evaluator_with_factory(
   HEADERFILE mpc_lake_1D_reg.hh
+  LISTNAME   ATS_MPC_REG
+  )  
+
+register_evaluator_with_factory(
+  HEADERFILE mpc_lake_soil_richards_reg.hh
   LISTNAME   ATS_MPC_REG
   )  
 

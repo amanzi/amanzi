@@ -91,7 +91,9 @@ void MPCCoupledSoil::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // set up the sub-pks
+  std::cout << "before StrongMPC<PK_PhysicalBDF_Default>::Setup(S)" << std::endl;
   StrongMPC<PK_PhysicalBDF_Default>::Setup(S);
+  std::cout << "after StrongMPC<PK_PhysicalBDF_Default>::Setup(S)" << std::endl;
   mesh_ = S->GetMesh(domain_name_);
 
   // set up debugger
@@ -111,8 +113,11 @@ void MPCCoupledSoil::Setup(const Teuchos::Ptr<State>& S)
     is_fv_ = false;
   }
 
+//  State_to_Solution(Teuchos::rcpFromPtr(S), *solution_);
+
   // Create the combined operator
   Teuchos::RCP<TreeVectorSpace> tvs = Teuchos::rcp(new TreeVectorSpace());
+//  auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
   tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(Teuchos::rcpFromRef(pcA->DomainMap()))));
   tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(Teuchos::rcpFromRef(pcB->DomainMap()))));
 
@@ -355,6 +360,8 @@ void MPCCoupledSoil::Setup(const Teuchos::Ptr<State>& S)
 
     // set up sparsity structure
     preconditioner_->set_inverse_parameters(plist_->sublist("inverse"));
+    preconditioner_->InitializeInverse();
+    preconditioner_->SymbolicAssembleMatrix();
 
 
   }
@@ -375,6 +382,9 @@ void MPCCoupledSoil::Setup(const Teuchos::Ptr<State>& S)
     ewc_->set_model(model);
     ewc_->setup(S);
   }
+
+  std::cout << "preconditioner_ = " << preconditioner_ << std::endl;
+  std::cout << "preconditioner_->get_operator() = " << preconditioner_->get_operator() << std::endl;
 
   std::cout << "MPCCoupledSoil::Setup DONE" << std::endl;
 }
@@ -570,6 +580,7 @@ void MPCCoupledSoil::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
 
       Teuchos::RCP<const CompositeVector> dkappa_dp;
       if (is_fv_) {
+    	std::cout << "tc_key_ = " << tc_key_ << std::endl;
         dkappa_dp = S_next_->GetFieldData(Keys::getDerivKey(tc_key_, pres_key_));
       } else {
         S_next_->GetFieldData(Keys::getDerivKey(uw_tc_key_, pres_key_), name_)
@@ -765,6 +776,17 @@ int MPCCoupledSoil::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
   }
 
   return (ierr > 0) ? 0 : 1;
+}
+
+/* ******************************************************************
+* Return a pointer to a local operator
+****************************************************************** */
+Teuchos::RCP<Operators::Operator> MPCCoupledSoil::my_operator(
+    const Operators::OperatorType& type)
+{
+  if (type == Operators::OPERATOR_MATRIX) return preconditioner_->get_operator();
+  else if (type == Operators::OPERATOR_PRECONDITIONER_RAW) return preconditioner_->get_operator();
+  return Teuchos::null;
 }
 
 } // namespace

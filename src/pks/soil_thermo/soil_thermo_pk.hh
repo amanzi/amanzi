@@ -373,6 +373,8 @@ public:
 
   Key cell_is_ice_key_;
 
+  bool coupled_soil = false;
+
 private:
   // factory registration
   static RegisteredPKFactory<Soil_Thermo_PK> reg_;

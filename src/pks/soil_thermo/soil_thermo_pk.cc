@@ -82,6 +82,8 @@ Soil_Thermo_PK::Soil_Thermo_PK(Teuchos::ParameterList& FElist,
 void Soil_Thermo_PK::Setup(const Teuchos::Ptr<State>& S) {
   PK_PhysicalBDF_Default::Setup(S);
 
+  coupled_soil = plist_->get<bool>("coupled with richards", false);
+
   std::cout << "setup soil_thermo START" << std::endl;
   std::cout << "soil domain_ = " << domain_ << std::endl;
 
@@ -108,9 +110,10 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
   heat_capacity_key_ = Keys::readKey(*plist_, domain_, "heat capacity", "heat_capacity");
   uw_conductivity_key_ = Keys::readKey(*plist_, domain_, "upwinded thermal conductivity", "upwind_thermal_conductivity");
   cell_is_ice_key_ = Keys::readKey(*plist_, domain_, "ice", "ice");
-//  pressure_key_ = Keys::readKey(*plist_, domain_, "pressure", "pressure");
+  pressure_key_ = Keys::readKey(*plist_, domain_, "pressure", "pressure");
 
   std::cout << "temperature_key_ soil = " << temperature_key_ << std::endl;
+  std::cout << "conductivity_key_ = " << conductivity_key_ << std::endl;
   std::cout << "uw_conductivity_key_ soil = " << uw_conductivity_key_ << std::endl;
 
   // Get data for special-case entities.
@@ -137,20 +140,22 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
 //
 //  std::cout << "pressure eval DONE" << std::endl;
 
-  // Set primary evaluator for water content
+  // Set primary evaluator for water content -- for mpc_lake_1D
 
-//  S->RequireField(water_content_key_)->SetMesh(mesh_)
-//      ->AddComponent("cell", AmanziMesh::CELL, 1);
-//
-//  Teuchos::ParameterList elist_wc;
-//  elist_wc.set<std::string>("evaluator name", water_content_key_);
-//  auto eval_wc = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist_wc));
-//  AMANZI_ASSERT(S != Teuchos::null);
-//  S->SetFieldEvaluator(water_content_key_, eval_wc);
-//
-//  S->RequireFieldEvaluator(water_content_key_);
-//
-//  std::cout << "water content eval DONE" << std::endl;
+  if (!coupled_soil) {
+	  S->RequireField(water_content_key_)->SetMesh(mesh_)
+		  ->AddComponent("cell", AmanziMesh::CELL, 1);
+
+	  Teuchos::ParameterList elist_wc;
+	  elist_wc.set<std::string>("evaluator name", water_content_key_);
+	  auto eval_wc = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist_wc));
+	  AMANZI_ASSERT(S != Teuchos::null);
+	  S->SetFieldEvaluator(water_content_key_, eval_wc);
+
+	  S->RequireFieldEvaluator(water_content_key_);
+
+	  std::cout << "water content eval DONE" << std::endl;
+  }
 
   // Set primary evaluator for ice content
 
@@ -357,9 +362,11 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
     Teuchos::rcp(new SoilThermo::SoilThermalConductivityEvaluator(tcm_plist));
   S->SetFieldEvaluator(conductivity_key_, tcm);
 
-  // Require a field for soil water content
-//  S->RequireField(water_content_key_, name_)->SetMesh(mesh_)->SetGhosted()
-//      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  // Require a field for soil water content -- for mpc_lake_1D
+  if (!coupled_soil) {
+	  S->RequireField(water_content_key_, name_)->SetMesh(mesh_)->SetGhosted()
+		  ->AddComponent("cell", AmanziMesh::CELL, 1);
+  }
 
   // Require a field for soil ice content
   S->RequireField(ice_content_key_, name_)->SetMesh(mesh_)->SetGhosted()
@@ -619,10 +626,12 @@ void Soil_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
 
   std::cout << "Initialized T" << std::endl;
 
-//  S->GetFieldData(water_content_key_, name_)->PutScalar(0.);
-//  S->GetField(water_content_key_, name_)->set_initialized();
-
-  std::cout << "Initialized W" << std::endl;
+  // for mpc_lake_1D
+  if (!coupled_soil) {
+	  S->GetFieldData(water_content_key_, name_)->PutScalar(0.);
+	  S->GetField(water_content_key_, name_)->set_initialized();
+	  std::cout << "Initialized W" << std::endl;
+  }
 
   S->GetFieldData(ice_content_key_, name_)->PutScalar(0.);
   S->GetField(ice_content_key_, name_)->set_initialized();

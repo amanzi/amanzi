@@ -42,6 +42,7 @@ class SoilThermalConductivityEvaluator :
   Key ice_content_key_;
   Key cell_is_ice_key_;
   Key cell_vol_key_;
+  Key pressure_key_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,SoilThermalConductivityEvaluator> factory_;

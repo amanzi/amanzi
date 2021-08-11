@@ -360,7 +360,7 @@ public:
   double rho0;
 
   Key energy_key_;
-  Key wc_key_;
+//  Key wc_key_;
   Key enthalpy_key_;
   Key flux_key_;
   Key energy_flux_key_;
