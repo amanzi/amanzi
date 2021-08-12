@@ -32,6 +32,7 @@ MPCCoupledWater::Setup(const Teuchos::Ptr<State>& S) {
   domain_ss_ = plist_->get<std::string>("domain name","domain");
   domain_surf_ = (domain_ss_.empty() || domain_ss_ == "domain") ? "surface" : std::string("surface_")+domain_ss_;
   domain_surf_ = plist_->get<std::string>("surface domain name",domain_surf_);
+
   // grab the meshes
   surf_mesh_ = S->GetMesh(domain_surf_);
   domain_mesh_ = S->GetMesh(domain_ss_);
@@ -81,13 +82,10 @@ MPCCoupledWater::Initialize(const Teuchos::Ptr<State>& S) {
    // initialize coupling terms
   S->GetFieldData(Keys::getKey(domain_surf_,"surface_subsurface_flux"), name_)->PutScalar(0.);
   S->GetField(Keys::getKey(domain_surf_,"surface_subsurface_flux"), name_)->set_initialized();
-  // Initialize all sub PKs.
 
+  // Initialize all sub PKs.
   MPC<PK_PhysicalBDF_Default>::Initialize(S);
 
-  // // ensure continuity of ICs... surface takes precedence.
-  // CopySurfaceToSubsurface(*S->GetFieldData(Keys::getKey(domain_surf_,"pressure"), sub_pks_[1]->name()),
-  //       		  S->GetFieldData(Keys::getKey(domain_ss_,"pressure"), sub_pks_[0]->name()).ptr());
   // ensure continuity of ICs... subsurface takes precedence.
   CopySubsurfaceToSurface(*S->GetFieldData(Keys::getKey(domain_ss_,"pressure"), sub_pks_[0]->name()),
 			  S->GetFieldData(Keys::getKey(domain_surf_,"pressure"), sub_pks_[1]->name()).ptr());
@@ -119,7 +117,6 @@ MPCCoupledWater::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<Tre
 
   // The residual of the surface flow equation provides the mass flux from
   // subsurface to surface.
-
   Epetra_MultiVector& source = *S_next_->GetFieldData(Keys::getKey(domain_surf_,"surface_subsurface_flux"),
           name_)->ViewComponent("cell",false);
   source = *g->SubVector(1)->Data()->ViewComponent("cell",false);
@@ -258,8 +255,11 @@ MPCCoupledWater::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
   // modify correction using water approaches
   int n_modified = 0;
   n_modified += water_->ModifyCorrection_WaterFaceLimiter(h, res, u, du);
-  double damping = water_->ModifyCorrection_WaterSpurtDamp(h, res, u, du);
+  double damping1 = water_->ModifyCorrection_WaterSpurtDamp(h, res, u, du);
+  double damping2 = water_->ModifyCorrection_DesaturatedSpurtDamp(h, res, u, du);
+  double damping = std::min(damping1, damping2);
   n_modified += water_->ModifyCorrection_WaterSpurtCap(h, res, u, du, damping);
+  n_modified += water_->ModifyCorrection_DesaturatedSpurtCap(h, res, u, du, damping);
 
   // -- accumulate globally
   int n_modified_l = n_modified;
