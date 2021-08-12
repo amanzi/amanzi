@@ -584,7 +584,7 @@ void Coordinator::cycle_driver() {
            ((cycle1_ == -1) || (S_->cycle() <= cycle1_)) &&
            (duration_ < 0 || timer_->totalElapsedTime(true) < duration) &&
            dt > 0.) {
-      if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      if (vo_->os_OK(Teuchos::VERB_LOW)) {
         Teuchos::OSTab tab = vo_->getOSTab();
         *vo_->os() << "======================================================================"
                   << std::endl << std::endl;
