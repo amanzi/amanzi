@@ -60,15 +60,14 @@ MPCDelegateWater::ModifyCorrection_WaterFaceLimiter(double h, Teuchos::RCP<const
   if (face_limiter_ > 0.) {
 
     std::string face_entity;
-    if (Pu->SubVector(i_domain_)->Data()->HasComponent("face")){
+    if (Pu->SubVector(i_domain_)->Data()->HasComponent("face")) {
       face_entity = "face";
-    }else if (Pu->SubVector(i_domain_)->Data()->HasComponent("boundary_face")){
+    } else if (Pu->SubVector(i_domain_)->Data()->HasComponent("boundary_face")) {
       face_entity = "boundary_face";
-    }else{
+    } else {
       Errors::Message message("Subsurface vector does not have face component.");
       Exceptions::amanzi_throw(message);
     }
-
 
     Epetra_MultiVector& domain_Pu_f = *Pu->SubVector(i_domain_)->Data()
         ->ViewComponent(face_entity,false);
@@ -89,8 +88,6 @@ MPCDelegateWater::ModifyCorrection_WaterFaceLimiter(double h, Teuchos::RCP<const
 
 // Approach 2: damping of the spurt -- limit the max oversaturated pressure
 //  using a global damping term.
-// Approach 3: capping of the spurt -- limit the max oversaturated pressure
-//  if coming from undersaturated.
 double
 MPCDelegateWater::ModifyCorrection_WaterSpurtDamp(double h, Teuchos::RCP<const TreeVector> res,
         Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
@@ -99,9 +96,9 @@ MPCDelegateWater::ModifyCorrection_WaterSpurtDamp(double h, Teuchos::RCP<const T
   std::string face_entity;
   if (Pu->SubVector(i_domain_)->Data()->HasComponent("face")){
     face_entity = "face";
-  }else if (Pu->SubVector(i_domain_)->Data()->HasComponent("boundary_face")){
+  } else if (Pu->SubVector(i_domain_)->Data()->HasComponent("boundary_face")) {
     face_entity = "boundary_face";
-  }else{
+  } else {
     Errors::Message message("Subsurface vector does not have face component.");
     Exceptions::amanzi_throw(message);
   }
@@ -144,6 +141,8 @@ MPCDelegateWater::ModifyCorrection_WaterSpurtDamp(double h, Teuchos::RCP<const T
 }
 
 
+// Approach 3: capping of the spurt -- limit the max oversaturated pressure
+//  if coming from undersaturated.
 int
 MPCDelegateWater::ModifyCorrection_WaterSpurtCap(double h, Teuchos::RCP<const TreeVector> res,
         Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu, double damp) {
@@ -185,15 +184,12 @@ MPCDelegateWater::ModifyCorrection_WaterSpurtCap(double h, Teuchos::RCP<const Tr
       }
     }
   }
-
   return n_modified;
 }
 
 
 // Approach 2: damping of the spurt -- limit the max oversaturated pressure
 //  using a global damping term.
-// Approach 3: capping of the spurt -- limit the max oversaturated pressure
-//  if coming from undersaturated.
 double
 MPCDelegateWater::ModifyCorrection_SaturatedSpurtDamp(double h, Teuchos::RCP<const TreeVector> res,
         Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
@@ -234,6 +230,8 @@ MPCDelegateWater::ModifyCorrection_SaturatedSpurtDamp(double h, Teuchos::RCP<con
 }
 
 
+// Approach 3: capping of the spurt -- limit the max oversaturated pressure
+//  if coming from undersaturated.
 int
 MPCDelegateWater::ModifyCorrection_SaturatedSpurtCap(double h, Teuchos::RCP<const TreeVector> res,
         Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu, double damp) {

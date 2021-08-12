@@ -1307,7 +1307,7 @@ def generate_config_file_list(options):
     """
     config_file_list = []
     # loop through the list, adding files and searching through directories
-    for f in sorted(options.configs):
+    for f in options.configs:
         if not os.path.isabs(f):
             f = os.path.abspath(f)
 
@@ -1329,7 +1329,7 @@ def generate_config_file_list(options):
         raise RuntimeError("ERROR: no config files were found. Please specify a "
                            "config file or search directory containing config files.")
 
-    return config_file_list
+    return sorted(config_file_list)
 
 
 def search_for_config_files(base_dir, config_file_list):
