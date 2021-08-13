@@ -32,7 +32,6 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     cellnum_width_(5),
     decimal_width_(7)
 {
-
   vo_ = Teuchos::rcp(new VerboseObject(name, plist));
 
   AmanziMesh::Entity_ID_List cells;
@@ -47,6 +46,7 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
   if (plist_.isParameter("debug faces")) {
     auto dfs = plist_.get<Teuchos::Array<int> >("debug faces");
     const auto& face_map = mesh->face_map(true);
+    const auto& cell_map = mesh->cell_map(false);
 
     for (const auto& f : dfs) {
       AmanziMesh::Entity_ID lf = face_map.LID(f);
@@ -54,7 +54,8 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
         // debug the neighboring cells
         AmanziMesh::Entity_ID_List fcells;
         mesh->face_get_cells(lf, AmanziMesh::Parallel_type::OWNED, &fcells);
-        cells.insert(cells.end(), fcells.begin(), fcells.end());
+        for (const auto& c : fcells)
+          cells.emplace_back(cell_map.GID(c));
       }
     }
   }
