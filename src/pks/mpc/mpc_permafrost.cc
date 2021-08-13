@@ -238,7 +238,8 @@ MPCPermafrost::Setup(const Teuchos::Ptr<State>& S) {
         AmanziMesh::Entity_ID_List fcells;
         domain_mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &fcells);
         AMANZI_ASSERT(fcells.size() == 1);
-        surf_debug_cells.emplace_back(domain_cell_map.GID(fcells[0]));
+        if (std::find(debug_cells.begin(), debug_cells.end(), fcells[0]) != debug_cells.end())
+          surf_debug_cells.emplace_back(domain_cell_map.GID(fcells[0]));
       }
     }
     surf_db_->add_cells(surf_debug_cells);
@@ -257,7 +258,8 @@ MPCPermafrost::Setup(const Teuchos::Ptr<State>& S) {
         AmanziMesh::Entity_ID_List fcells;
         domain_mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &fcells);
         AMANZI_ASSERT(fcells.size() == 1);
-        surf_debug_cells.emplace_back(domain_cell_map.GID(fcells[0]));
+        if (std::find(debug_cells.begin(), debug_cells.end(), fcells[0]) != debug_cells.end())
+          surf_debug_cells.emplace_back(domain_cell_map.GID(fcells[0]));
       }
     }
     surf_energy_pk_->debugger()->add_cells(surf_debug_cells);
