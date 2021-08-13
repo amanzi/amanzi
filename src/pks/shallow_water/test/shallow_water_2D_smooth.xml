@@ -33,6 +33,9 @@
         <Parameter name="limiter location" type="string" value="node"/>
         <Parameter name="limiter cfl" type="double" value="0.5"/>
       </ParameterList>
+      <Parameter name="cfl" type="double" value="0.1"/>
+      <Parameter name="number of reduced cfl cycles" type="int" value="10"/>
+      <Parameter name="numerical flux" type="string" value="central upwind"/>
 
       <ParameterList name="boundary conditions"/>
     </ParameterList>

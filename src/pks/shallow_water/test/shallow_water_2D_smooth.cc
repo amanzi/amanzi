@@ -107,7 +107,7 @@ void vortex_2D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos:
 }
 
 void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
-           Epetra_MultiVector& hh_ex, Epetra_MultiVector& vel_ex, 
+           Epetra_MultiVector& hh_ex, Epetra_MultiVector& vel_ex,
            const Epetra_MultiVector& hh, const Epetra_MultiVector& vel,
            double& err_max, double& err_L1, double& hmax)
 {
@@ -165,10 +165,10 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
 
   std::vector<double> dx, Linferror, L1error, L2error;
 
-  for (int NN = 10; NN <= 80; NN *= 2) {
+  for (int NN = 20; NN <= 80; NN *= 2) {
 
     RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 10.0, 10.0, NN, NN, request_faces, request_edges);
-    // mesh = meshfactory.create("test/median63x64.exo",request_faces,request_edges); 
+    // mesh = meshfactory.create("test/median63x64.exo",request_faces,request_edges);
     // works only with first order, no reconstruction
 
     // create a state
@@ -247,8 +247,6 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
       }
 
       dt = SWPK.get_dt();
-
-      if (iter < 10) dt = 0.01*dt;
 
       t_new = t_old + dt;
 
