@@ -147,7 +147,8 @@ void UpwindFluxSplitDenominator::CalculateCoefficientsOnFaces(
       AMANZI_ASSERT(denominator > 0);
 
       coefs[0] = coef_cells[0][uw] * denominator;
-      coefs[1] = coef_faces[0][f] * denominator;
+      coefs[1] = coef_cells[0][uw] * denominator; // downwind boundary face not defined always
+      //coefs[1] = coef_faces[0][f] * denominator;
 
       dist[0] = AmanziGeometry::norm(mesh->face_centroid(f) - mesh->cell_centroid(uw));
       dist[1] = dist[0];
