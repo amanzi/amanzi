@@ -31,7 +31,7 @@
 #include "math.h"
 
 
-TEST(MPC_DRIVER_IHM_FLOW_SHALLOW_WATER_TEST) {
+TEST(MPC_DRIVER_IHM_FLOW_SHALLOW_WATER_DAM_BREAK) {
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -78,12 +78,10 @@ using namespace Amanzi::AmanziGeometry;
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
   
-  //create additional mesh for SW
+  // create additional mesh for SW
   std::vector<std::string> names;
   names.push_back("surface");
   
-  //   auto mesh_surface = Teuchos::rcp(new MeshExtractedManifold(
-  //       mesh, "TopSurface", AmanziMesh::FACE, comm, gm, mesh_list, true, true, true));
   auto mesh_surface = factory.create(mesh, { "TopSurface" }, AmanziMesh::FACE, true, true, true);
   
   S->RegisterMesh("surface", mesh_surface);
@@ -97,7 +95,7 @@ using namespace Amanzi::AmanziGeometry;
   double p_top_avg = 0.0, top_surface_area = 0.0;
   
   for (int f = 0; f < nfaces; ++f) {
-    const Amanzi::AmanziGeometry::Point &xf = mesh -> face_centroid(f);
+    const AmanziGeometry::Point &xf = mesh->face_centroid(f);
     if (std::abs(xf[2] - 1.0) < 1.e-12 ) {
       p_top_avg += (p[0][f]) * mesh->face_area(f);
       top_surface_area += mesh->face_area(f);

@@ -461,29 +461,6 @@
             <Parameter name="spatial distribution method" type="string" value="domain coupling"/>
             <Parameter name="submodel" type="string" value="field"/>
           </ParameterList>
-          
-<!--          <ParameterList name="BC 0">-->
-<!--            <Parameter name="regions" type="Array(string)" value="{TopSurface}"/>-->
-<!--            <Parameter name="spatial distribution method" type="string" value="none"/>-->
-<!--            <ParameterList name="boundary pressure">-->
-<!--              <ParameterList name="function-exprtk">-->
-<!--                <Parameter name="number of arguments" type="int" value="3"/>-->
-<!--                <Parameter name="formula" type="string" value="1.111173420000000e+05"/>-->
-<!--              </ParameterList>-->
-<!--            </ParameterList>-->
-<!--          </ParameterList>-->
-
-<!--          <ParameterList name="BC 1">-->
-<!--            <Parameter name="regions" type="Array(string)" value="{Bottom}"/>-->
-<!--            <Parameter name="spatial distribution method" type="string" value="none"/>-->
-<!--            <ParameterList name="boundary pressure">-->
-<!--              <ParameterList name="function-exprtk">-->
-<!--                <Parameter name="number of arguments" type="int" value="3"/>-->
-<!--                <Parameter name="formula" type="string" value="1.209096840000000e+05"/>-->
-<!--              </ParameterList>-->
-<!--            </ParameterList>-->
-<!--          </ParameterList>-->
-          
         </ParameterList>
       </ParameterList>
       
@@ -609,21 +586,11 @@
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="coarsen type" type="int" value="0"/>
         <Parameter name="verbosity" type="int" value="0"/>
-        <Parameter name="relaxation type" type="int" value="3"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Block ILU">
-      <Parameter name="preconditioning method" type="string" value="block ilu"/>
-      <ParameterList name="block ilu parameters">
-        <Parameter name="fact: relax value" type="double" value="1.00000000000000000e+00"/>
-        <Parameter name="fact: absolute threshold" type="double" value="0.00000000000000000e+00"/>
-        <Parameter name="fact: relative threshold" type="double" value="1.00000000000000000e+00"/>
-        <Parameter name="fact: level-of-fill" type="int" value="0"/>
-        <Parameter name="overlap" type="int" value="0"/>
-        <Parameter name="schwarz: combine mode" type="string" value="Add"/>
+        <!--Parameter name="relaxation type" type="int" value="3"/-->
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
   <ParameterList name="analysis">
     <ParameterList name="domain">
       <Parameter name="used boundary condition regions" type="Array(string)" value="{TopSurface}"/>

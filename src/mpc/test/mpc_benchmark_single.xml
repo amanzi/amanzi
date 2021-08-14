@@ -461,7 +461,7 @@
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="coarsen type" type="int" value="0"/>
         <Parameter name="verbosity" type="int" value="0"/>
-        <Parameter name="relaxation type" type="int" value="6"/>
+        <!--Parameter name="relaxation type" type="int" value="6"/-->
       </ParameterList>
     </ParameterList>
     <ParameterList name="Block ILU">
