@@ -220,26 +220,12 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_ihm_flow_shallow_water.cc
         	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})   
 
-    # Test: mpc driver for integrated hydrologic models test
-    add_amanzi_test(mpc_ihm_flow_shallow_water_test mpc_ihm_flow_shallow_water_test
+    # Test: mpc driver for integrated hydrologic models test: 1D dam break over saturated subsurface
+    add_amanzi_test(mpc_ihm_flow_shallow_water_dam_break mpc_ihm_flow_shallow_water_dam_break
                     KIND      int
                     NPROC     3
-                    SOURCE    test/Main.cc test/mpc_ihm_flow_shallow_water_test.cc
-        	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})   
-
-    # Test: mpc driver for integrated hydrologic models test 2
-    add_amanzi_test(mpc_ihm_flow_shallow_water_test_2 mpc_ihm_flow_shallow_water_test_2
-                    KIND      int
-                    NPROC     3
-                    SOURCE    test/Main.cc test/mpc_ihm_flow_shallow_water_test_2.cc
-        	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})   
-
-    # Test: mpc driver for integrated hydrologic models: steady state lake at rest 
-    add_amanzi_test(mpc_ihm_flow_shallow_water_lake_at_rest mpc_ihm_flow_shallow_water_lake_at_rest
-                    KIND      int
-                    NPROC     3
-                    SOURCE    test/Main.cc test/mpc_ihm_flow_shallow_water_lake_at_rest.cc
-        	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                  
+                    SOURCE    test/Main.cc test/mpc_ihm_flow_shallow_water_dam_break.cc
+        	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                
 
     # Test: mpc-new driver dummy
     add_amanzi_test(mpc_dummy mpc_dummy
