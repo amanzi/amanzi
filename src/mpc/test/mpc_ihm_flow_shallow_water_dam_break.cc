@@ -30,7 +30,6 @@
 #define _USE_MATH_DEFINES
 #include "math.h"
 
-double pi = 3.141592653589793;
 
 TEST(MPC_DRIVER_IHM_FLOW_SHALLOW_WATER_TEST) {
 
