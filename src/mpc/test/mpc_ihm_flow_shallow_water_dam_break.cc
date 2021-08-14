@@ -91,26 +91,37 @@ using namespace Amanzi::AmanziGeometry;
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);
   cycle_driver.Go();
   
-  // check the fluid pressure at the bottom of the subsurface at final time
+  // calculate the fluid pressure at the top of the subsurface at final time
   const Epetra_MultiVector &p = *S->GetFieldData("pressure")->ViewComponent("face");
-  int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  double p_bottom_avg = 0.0, bottom_area = 0.0;
+  double p_top_avg = 0.0, top_surface_area = 0.0;
   
   for (int f = 0; f < nfaces; ++f) {
     const Amanzi::AmanziGeometry::Point &xf = mesh -> face_centroid(f);
-    if (std::abs(xf[2] - 0) < 1.e-12 ) {
-      p_bottom_avg += (p[0][f]) * mesh->face_area(f);
-      bottom_area += mesh->face_area(f);
+    if (std::abs(xf[2] - 1.0) < 1.e-12 ) {
+      p_top_avg += (p[0][f]) * mesh->face_area(f);
+      top_surface_area += mesh->face_area(f);
     }
   }
   
-  p_bottom_avg = p_bottom_avg/bottom_area;
+  p_top_avg = p_top_avg/top_surface_area;
   
-  std::cout<<"bottom avg p: "<<p_bottom_avg<<std::endl;
+  std::cout<<"average subsurface pressure at surface: "<<p_top_avg<<std::endl;
   
-  // tests will go here
-  CHECK(p_bottom_avg < 1.600790520000000e+05);
+  // calculate the average ponded depth at final time
+  double h_avg;
+  S->GetFieldData("surface-ponded_depth")->MeanValue(&h_avg);
+  const double rho = *S->GetScalarData("const_fluid_density");
+  const double patm = *S->GetScalarData("atmospheric_pressure");
+  double tmp[1];
+  S->GetConstantVectorData("gravity")->Norm2(tmp);
+  double g = tmp[0];
+  
+  std::cout<<"average surface ponded height: "<<h_avg<<std::endl;
+  std::cout<<"average hydrostatic pressure at surface: "<<patm + rho*g*h_avg<<std::endl;
+  
+  // compare the values
+  CHECK(std::abs(p_top_avg - (patm + rho*g*h_avg))/(patm + rho*g*h_avg) < 1.e-2);
 }
 
 
