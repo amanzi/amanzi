@@ -725,7 +725,7 @@ void HDF5_MPI::endTimestep()
     // channel if they differ
     auto fields = extractFields_(xmlStep_);
     auto fields_prev = extractFields_(xmlStep_prev_);
-    if (fields != fields_prev && fields_prev.size() != 0) {
+    if (fields != fields_prev && !xmlStep_prev_.isEmpty()) {
       createXdmfVisit_();
     }
 
