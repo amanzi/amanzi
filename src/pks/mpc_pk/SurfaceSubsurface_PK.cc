@@ -71,7 +71,7 @@ void SurfaceSubsurface_PK::Initialize(const Teuchos::Ptr<State>& S)
   for (int c = 0; c < nsurf_cells; ++c) {
     int f = mesh_surface_->entity_get_parent(AmanziMesh::Entity_kind::CELL, c);
 
-    const Amanzi::AmanziGeometry::Point &xf = mesh_domain_->face_centroid(f);
+    const AmanziGeometry::Point &xf = mesh_domain_->face_centroid(f);
     
     B_c[0][c] = xf[2]; // z value of the surface
   }

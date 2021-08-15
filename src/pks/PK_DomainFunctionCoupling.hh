@@ -138,12 +138,20 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
                                           "field_in_key", "copy_field_in_key",
                                           "field_out_key", "copy_field_out_key",
                                           "conserved_quantity_key", "copy_conserved_quantity_key" };
+  std::vector<std::string> newstyle = { "flux key", "flux copy key",
+                                        "removed1", "removed2",
+                                        "external field key", "external field copy key",
+                                        "conserved quantity key", "conserved quantity copy key" };
 
-  for (auto name : deprecated) {
+  for (int i = 0; i < deprecated.size(); ++i) {
+    std::string name = deprecated[i];
     if (slist.isParameter(name)) {
+      slist.set<std::string>(newstyle[i], slist.get<std::string>(name)); 
+      /*
       Errors::Message msg;
       msg << "deprecated name : " << name << ", see PK_DomainFunctionCoupling.hh";
       Exceptions::amanzi_throw(msg);
+      */
     }
   }
 

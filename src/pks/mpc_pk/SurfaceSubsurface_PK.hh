@@ -20,7 +20,6 @@
 #include "Flow_PK.hh"
 #include "PK_Factory.hh"
 #include "PK_MPCSubcycled.hh"
-#include "Units.hh"
 
 namespace Amanzi {
 
@@ -51,9 +50,6 @@ class SurfaceSubsurface_PK : public PK_MPCSubcycled {
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_surface_;
-
- private:
-  Utils::Units units_;
 
  private:
   // factory registration

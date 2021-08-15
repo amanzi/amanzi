@@ -98,7 +98,7 @@ class ShallowWater_PK : public PK_Physical,
   double get_total_source() const { return total_source_; }
 
  private:
-  void ErrorDiagnostics_(int c, double h, double B, double ht);
+  bool ErrorDiagnostics_(int c, double h, double B, double ht);
 
  protected:
   Teuchos::RCP<Teuchos::ParameterList> glist_;

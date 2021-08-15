@@ -43,7 +43,7 @@ void lake_at_rest_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
     
   for (int c = 0; c < ncells_owned; ++c) {
-    const Amanzi::AmanziGeometry::Point &xc = mesh -> cell_centroid(c);
+    const Amanzi::AmanziGeometry::Point &xc = mesh->cell_centroid(c);
         
     x = xc[0]; y = xc[1];
         
@@ -95,7 +95,7 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
     
   for (int c = 0; c < ncells_owned; ++c) {
     
-    const Amanzi::AmanziGeometry::Point &xc = mesh -> cell_centroid(c);
+    const Amanzi::AmanziGeometry::Point &xc = mesh->cell_centroid(c);
         
     Amanzi::AmanziMesh::Entity_ID_List cfaces, cnodes, cedges;
     mesh->cell_get_faces(c, &cfaces);
@@ -128,16 +128,16 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
 
       double area = norm(area_cross_product);
             
-      B_c[0][c] += ( area / mesh -> cell_volume(c) ) * ( B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]] ) / 2;
+      B_c[0][c] += (area / mesh->cell_volume(c)) * (B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]]) / 2;
     }
         
     // Perturb the solution; change time period t_new to at least 10.0
-//    if ((xc[0] - 0.3)*(xc[0] - 0.3) + (xc[1] - 0.3)*(xc[1] - 0.3) < 0.1 * 0.1) {
-//      ht_c[0][c] = H_inf + 0.01;
-//    }
-//    else {
-//      ht_c[0][c] = H_inf;
-//    }
+    //  if ((xc[0] - 0.3)*(xc[0] - 0.3) + (xc[1] - 0.3)*(xc[1] - 0.3) < 0.1 * 0.1) {
+    //    ht_c[0][c] = H_inf + 0.01;
+    //  }
+    //  else {
+    //    ht_c[0][c] = H_inf;
+    //  }
         
     ht_c[0][c] = H_inf;
     h_c[0][c] = ht_c[0][c] - B_c[0][c];
@@ -167,19 +167,18 @@ void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   double err_max_u = 0.0, err_max_v = 0.0, err_L1_u = 0.0, err_L1_v = 0.0, tmp_hmax = 0.0;
     
   for (int c = 0; c < ncells_owned; ++c) {
-    
     double tmp = std::abs (ht_ex[0][c] - ht[0][c]);
     err_max = std::max (err_max, tmp);
-    err_L1 += tmp * ( mesh -> cell_volume(c) );
-    tmp_hmax = std::sqrt(mesh -> cell_volume(c));
+    err_L1 += tmp * mesh->cell_volume(c);
+    tmp_hmax = std::sqrt(mesh->cell_volume(c));
         
     tmp = std::abs (vel_ex[0][c] - vel[0][c]);
     err_max_u = std::max (err_max_u, tmp);
-    err_L1_u += tmp * ( mesh -> cell_volume(c) );
+    err_L1_u += tmp * mesh->cell_volume(c);
         
     tmp = std::abs (vel_ex[1][c] - vel[1][c]);
     err_max_v = std::max (err_max_v, tmp);
-    err_L1_v += tmp * ( mesh -> cell_volume(c) );
+    err_L1_v += tmp * mesh->cell_volume(c);
         
     hmax = std::max (tmp_hmax, hmax);
   }
@@ -224,7 +223,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
     
   Comm_ptr_type comm = Amanzi::getDefaultComm();
     
-  int MyPID = comm -> MyPID();
+  int MyPID = comm->MyPID();
     
   if (MyPID == 0) {
     std::cout<<"Test: 2D Shallow water: Lake at rest"<<std::endl;
@@ -235,7 +234,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFilename);
     
   // Create a mesh framework
-  ParameterList regions_list = plist -> get<Teuchos::ParameterList>("regions");
+  ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
     
   // Creat a mesh
@@ -255,7 +254,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
   
   // Create a state
         
-  Teuchos::ParameterList state_list = plist -> sublist ("state");
+  Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterMesh("surface", mesh);
   S->set_time(0.0);

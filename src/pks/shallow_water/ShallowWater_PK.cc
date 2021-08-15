@@ -434,7 +434,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         B_rec = B_c[0][c];
       }
       double h_rec = ht_rec - B_rec;
-      ErrorDiagnostics_(c, h_rec, B_rec, ht_rec);
+      failed = ErrorDiagnostics_(c, h_rec, B_rec, ht_rec);
+      if (failed) return failed;
 
       double vx_rec = velocity_x_grad_->getValue(c, xcf);
       double vy_rec = velocity_y_grad_->getValue(c, xcf);
@@ -460,7 +461,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       if (cn == -1) {
         if (bcs_.size() > 0 && bcs_[0]->bc_find(f)) {
           for (int i = 0; i < 3; ++i) UR[i] = bcs_[0]->bc_value(f)[i];
-            double vn, vt;
             vn =  UR[1] * normal[0] + UR[2] * normal[1];
             vt = -UR[1] * normal[1] + UR[2] * normal[0];
             UR[1] = UR[0] * vn;
@@ -482,7 +482,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
           B_rec = B_c[0][cn];
         }
         h_rec = ht_rec - B_rec;
-        ErrorDiagnostics_(cn, h_rec, B_rec, ht_rec);
+        failed = ErrorDiagnostics_(cn, h_rec, B_rec, ht_rec);
+        if (failed) return failed;
 
         vx_rec = velocity_x_grad_->getValue(cn, xcf);
         vy_rec = velocity_y_grad_->getValue(cn, xcf);
@@ -549,7 +550,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     
     vel_c_tmp[0][c] = factor * qx;
     vel_c_tmp[1][c] = factor * qy;
-      
   } // c
 
   h_c = h_c_tmp;
@@ -716,7 +716,7 @@ double ShallowWater_PK::BathymetryRectangularCellValue(
   AmanziMesh::Entity_ID_List nodes, faces;
     
   mesh_->cell_get_faces(c, &faces);
-  mesh_ -> cell_get_nodes(c, &nodes);
+  mesh_->cell_get_nodes(c, &nodes);
     
   double dx = mesh_->face_area(faces[0]), dy = mesh_->face_area(faces[1]);
     
@@ -751,17 +751,17 @@ double ShallowWater_PK::BathymetryEdgeValue(int e, const Epetra_MultiVector& B_n
 //--------------------------------------------------------------
 // Error diagnostics
 //--------------------------------------------------------------
-void ShallowWater_PK::ErrorDiagnostics_(int c, double h, double B, double ht)
+bool ShallowWater_PK::ErrorDiagnostics_(int c, double h, double B, double ht)
 {
   if (h < 0.0) {
-    Errors::Message msg;
-    msg << "Shallow water PK: negative height: "
-        << "\n  c = " << c
-        << "\n  ht_rec = " << ht
-        << "\n  B_rec  = " << B
-        << "\n  h_rec  = " << h << "\n";
-    Exceptions::amanzi_throw(msg);
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "negative height in cell " << c 
+               << ", total=" << ht 
+               << ", bathymetry=" << B
+               << ", height=" << h << std::endl;
+    return true;
   }
+  return false;
 }
 
 }  // namespace ShallowWater

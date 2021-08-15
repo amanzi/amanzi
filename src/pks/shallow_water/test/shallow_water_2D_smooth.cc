@@ -295,5 +295,5 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
 
   std::cout << "computed order = " << order << std::endl;
 
-  CHECK(order >= 1.0-0.2); // first order scheme
+  CHECK(order > 0.9);  // first order scheme
 }
