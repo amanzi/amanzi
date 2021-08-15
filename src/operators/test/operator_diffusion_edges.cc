@@ -143,7 +143,7 @@ void TestDiffusionEdges(int dim, double tol, std::string filename)
 
   // Test SPD properties of the preconditioner.
   VerificationCV ver(global_op);
-  ver.CheckPreconditionerSPD();
+  ver.CheckPreconditionerSPD(1.0e-11);
 
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs);
