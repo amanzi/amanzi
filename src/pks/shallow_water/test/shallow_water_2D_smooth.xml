@@ -23,7 +23,7 @@
       <Parameter name="domain name" type="string" value="surface"/>
 
       <ParameterList name="verbose object">
-        <Parameter name="verbosity level" type="string" value="high"/>
+        <Parameter name="verbosity level" type="string" value="low"/>
       </ParameterList>
 
       <ParameterList name="reconstruction">
@@ -33,6 +33,9 @@
         <Parameter name="limiter location" type="string" value="node"/>
         <Parameter name="limiter cfl" type="double" value="0.5"/>
       </ParameterList>
+      <Parameter name="cfl" type="double" value="0.1"/>
+      <Parameter name="number of reduced cfl cycles" type="int" value="10"/>
+      <Parameter name="numerical flux" type="string" value="central upwind"/>
 
       <ParameterList name="boundary conditions"/>
     </ParameterList>
@@ -58,12 +61,12 @@
     </ParameterList>
 
     <ParameterList name="initial conditions">
-      <ParameterList name="fluid_density">
+      <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="1000.0"/>
       </ParameterList>
 
-      <ParameterList name="fluid_viscosity">
-        <Parameter name="value" type="double" value="0.001"/>
+      <ParameterList name="atmospheric_pressure">
+        <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
 
       <ParameterList name="gravity">

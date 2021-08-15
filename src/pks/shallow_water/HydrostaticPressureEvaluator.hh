@@ -5,12 +5,10 @@
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
-
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_DISCHARGE_EVALUATOR_HH_
-#define AMANZI_DISCHARGE_EVALUATOR_HH_
+#ifndef AMANZI_HYDROSTATICPRESSURE_EVALUATOR_HH_
+#define AMANZI_HYDROSTATICPRESSURE_EVALUATOR_HH_
 
 #include <string>
 #include <vector>
@@ -24,9 +22,9 @@
 namespace Amanzi {
 namespace ShallowWater {
 
-class DischargeEvaluator : public SecondaryVariableFieldEvaluator {
+class HydrostaticPressureEvaluator : public SecondaryVariableFieldEvaluator {
  public:
-  DischargeEvaluator(Teuchos::ParameterList& plist);
+  HydrostaticPressureEvaluator(Teuchos::ParameterList& plist);
 
   // interface methods from FieldEvaluator
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
@@ -38,7 +36,7 @@ class DischargeEvaluator : public SecondaryVariableFieldEvaluator {
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
  private:
-  std::string velocity_key_, ponded_depth_key_;
+  std::string ponded_depth_key_;
 };
 
 }  // namespace ShallowWater
