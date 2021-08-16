@@ -128,8 +128,9 @@ void UpwindFluxSplitDenominator::CalculateCoefficientsOnFaces(
 
     double denominator = 0.0;
     double coefs[2] = {0.,0.};
-    double dist[2] = {0.,0.};
+    double weight[2] = {0.,0.};
     double pd[2] = {0.,0.};
+    double denom[2] = {0.,0.};
 
     // uw coef
     if (uw == -1) {
@@ -139,8 +140,9 @@ void UpwindFluxSplitDenominator::CalculateCoefficientsOnFaces(
       coefs[0] = coef_faces[0][f] * denominator;
       coefs[1] = coef_cells[0][dw] * denominator;
 
-      dist[1] = AmanziGeometry::norm(mesh->face_centroid(f) - mesh->cell_centroid(dw));
-      dist[0] = dist[1];
+      // weighted by path length
+      weight[1] = AmanziGeometry::norm(mesh->face_centroid(f) - mesh->cell_centroid(dw));
+      weight[0] = weight[1];
 
     } else if (dw == -1) {
       denominator = manning_coef_v[0][uw] * std::sqrt(std::max(slope_v[0][uw], slope_regularization));
@@ -150,11 +152,10 @@ void UpwindFluxSplitDenominator::CalculateCoefficientsOnFaces(
       coefs[1] = coef_cells[0][uw] * denominator; // downwind boundary face not defined always
       //coefs[1] = coef_faces[0][f] * denominator;
 
-      dist[0] = AmanziGeometry::norm(mesh->face_centroid(f) - mesh->cell_centroid(uw));
-      dist[1] = dist[0];
+      weight[0] = AmanziGeometry::norm(mesh->face_centroid(f) - mesh->cell_centroid(uw));
+      weight[1] = weight[0];
 
     } else {
-      double denom[2];
       AMANZI_ASSERT(manning_coef_v[0][uw] > 0);
       AMANZI_ASSERT(manning_coef_v[0][dw] > 0);
       denom[0] = manning_coef_v[0][uw] * std::sqrt(std::max(slope_v[0][uw], slope_regularization));
@@ -164,13 +165,13 @@ void UpwindFluxSplitDenominator::CalculateCoefficientsOnFaces(
       coefs[1] = coef_cells[0][dw] * denom[1];
 
       // harmonic mean of the denominator
-      dist[0] = AmanziGeometry::norm(mesh->face_centroid(f) - mesh->cell_centroid(uw));
-      dist[1] = AmanziGeometry::norm(mesh->face_centroid(f) - mesh->cell_centroid(dw));
+      weight[0] = AmanziGeometry::norm(mesh->face_centroid(f) - mesh->cell_centroid(uw));
+      weight[1] = AmanziGeometry::norm(mesh->face_centroid(f) - mesh->cell_centroid(dw));
       AMANZI_ASSERT(denom[0] > 0);
       AMANZI_ASSERT(denom[1] > 0);
-      AMANZI_ASSERT(dist[0] > 0);
-      AMANZI_ASSERT(dist[1] > 0);
-      denominator = (dist[0] + dist[1])/(dist[0]/denom[0] + dist[1]/denom[1]);
+      AMANZI_ASSERT(weight[0] > 0);
+      AMANZI_ASSERT(weight[1] > 0);
+      denominator = (weight[0] + weight[1])/(weight[0]/denom[0] + weight[1]/denom[1]);
       AMANZI_ASSERT(denominator > 0);
     }
 
@@ -182,22 +183,29 @@ void UpwindFluxSplitDenominator::CalculateCoefficientsOnFaces(
     if (coefs[1] > coefs[0]) {
       // downwind ponded depth is larger
       if ((coefs[0] != 0.0)) {
-        coef_faces[0][f] = (dist[0] + dist[1])/(dist[0]/coefs[0] + dist[1]/coefs[1]);
+        coef_faces[0][f] = (weight[0] + weight[1])/(weight[0]/coefs[0] + weight[1]/coefs[1]);
       } else {
         coef_faces[0][f] = 0.0;
       }
     } else if (std::abs(flux_v[0][f]) >= flow_eps) {
-      coef_faces[0][f] = (dist[0]*coefs[0] + dist[1]*coefs[1])/(dist[0] + dist[1]);
+      coef_faces[0][f] = (weight[0]*coefs[0] + weight[1]*coefs[1])/(weight[0] + weight[1]);
     } else {
       double param = std::abs(flux_v[0][f]) / flow_eps;
-      double amean = (dist[0]*coefs[0] + dist[1]*coefs[1])/(dist[0] + dist[1]);
+      double amean = (weight[0]*coefs[0] + weight[1]*coefs[1])/(weight[0] + weight[1]);
       double hmean = 0.0;
       if ((coefs[0] != 0.0) && (coefs[1] != 0.0))
-        hmean = (dist[0] + dist[1])/(dist[0]/coefs[0] + dist[1]/coefs[1]);
+        hmean = (weight[0] + weight[1])/(weight[0]/coefs[0] + weight[1]/coefs[1]);
       coef_faces[0][f] = param*amean + (1 - param)*hmean;
     }
     coef_faces[0][f] /= denominator;
+
+    // NOTE: this does not necessarily hold!
+    // if (uw >= 0 && dw >= 0) {
+    //   AMANZI_ASSERT( coef_faces[0][f] <= std::max(coef_cells[0][uw], coef_cells[0][dw])+1e-10 );
+    //   AMANZI_ASSERT( coef_faces[0][f] >= std::min(coef_cells[0][uw], coef_cells[0][dw])-1e-10 );
+    // }
   }
+
 };
 
 
