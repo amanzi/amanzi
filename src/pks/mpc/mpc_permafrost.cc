@@ -228,41 +228,45 @@ MPCPermafrost::Setup(const Teuchos::Ptr<State>& S) {
   // top layer of cells, we add the corresponding face's surface cell.
   {
     AmanziMesh::Entity_ID_List debug_cells = domain_db_->get_cells();
-    AmanziMesh::Entity_ID_List surf_debug_cells;
     int ncells_surf = surf_mesh_->num_entities(AmanziMesh::Entity_kind::CELL,
             AmanziMesh::Parallel_type::OWNED);
     if (debug_cells.size() > 0) {
       const auto& domain_cell_map = domain_mesh_->cell_map(false);
+      const auto& surf_cell_map = surf_mesh_->cell_map(false);
+      AmanziMesh::Entity_ID_List surf_debug_cells;
       for (int sc=0; sc!=ncells_surf; ++sc) {
         int f = surf_mesh_->entity_get_parent(AmanziMesh::Entity_kind::CELL, sc);
         AmanziMesh::Entity_ID_List fcells;
         domain_mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &fcells);
         AMANZI_ASSERT(fcells.size() == 1);
-        if (std::find(debug_cells.begin(), debug_cells.end(), fcells[0]) != debug_cells.end())
-          surf_debug_cells.emplace_back(domain_cell_map.GID(fcells[0]));
+        auto gid = domain_cell_map.GID(fcells[0]);
+        if (std::find(debug_cells.begin(), debug_cells.end(), gid) != debug_cells.end())
+          surf_debug_cells.emplace_back(surf_cell_map.GID(sc));
       }
+      if (surf_debug_cells.size() > 0) surf_db_->add_cells(surf_debug_cells);
     }
-    surf_db_->add_cells(surf_debug_cells);
   }
   // do the same for energy
   {
     AmanziMesh::Entity_ID_List debug_cells =
       domain_energy_pk_->debugger()->get_cells();
-    AmanziMesh::Entity_ID_List surf_debug_cells;
     int ncells_surf = surf_mesh_->num_entities(AmanziMesh::Entity_kind::CELL,
             AmanziMesh::Parallel_type::OWNED);
     if (debug_cells.size() > 0) {
       const auto& domain_cell_map = domain_mesh_->cell_map(false);
+      const auto& surf_cell_map = surf_mesh_->cell_map(false);
+      AmanziMesh::Entity_ID_List surf_debug_cells;
       for (int sc=0; sc!=ncells_surf; ++sc) {
         int f = surf_mesh_->entity_get_parent(AmanziMesh::Entity_kind::CELL, sc);
         AmanziMesh::Entity_ID_List fcells;
         domain_mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &fcells);
         AMANZI_ASSERT(fcells.size() == 1);
-        if (std::find(debug_cells.begin(), debug_cells.end(), fcells[0]) != debug_cells.end())
-          surf_debug_cells.emplace_back(domain_cell_map.GID(fcells[0]));
+        auto gid = domain_cell_map.GID(fcells[0]);
+        if (std::find(debug_cells.begin(), debug_cells.end(), gid) != debug_cells.end())
+          surf_debug_cells.emplace_back(surf_cell_map.GID(sc));
       }
+      if (surf_debug_cells.size() > 0) surf_db_->add_cells(surf_debug_cells);
     }
-    surf_energy_pk_->debugger()->add_cells(surf_debug_cells);
   }
 
   // create the surf EWC delegate
