@@ -215,12 +215,6 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   total_depth_grad_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
   total_depth_grad_->Init(plist);
 
-  velocity_x_grad_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
-  velocity_x_grad_->Init(plist);
-
-  velocity_y_grad_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
-  velocity_y_grad_->Init(plist);
-
   discharge_x_grad_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
   discharge_x_grad_->Init(plist);
 
@@ -323,6 +317,12 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
+  // distribute data to ghost cells
+  S_->GetFieldData(total_depth_key_)->ScatterMasterToGhosted("cell");
+  S_->GetFieldData(ponded_depth_key_)->ScatterMasterToGhosted("cell");
+  S_->GetFieldData(velocity_key_)->ScatterMasterToGhosted("cell");
+  S_->GetFieldData(discharge_key_)->ScatterMasterToGhosted("cell");
+
   // save a copy of primary and conservative fields
   Epetra_MultiVector& B_c = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("cell", true);
   Epetra_MultiVector& B_n = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("node", true);
@@ -339,26 +339,10 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   Epetra_MultiVector h_c_tmp(h_c);
   Epetra_MultiVector vel_c_tmp(vel_c);
 
-  // distribute data to ghost cells
-  S_->GetFieldData(total_depth_key_)->ScatterMasterToGhosted("cell");
-  S_->GetFieldData(ponded_depth_key_)->ScatterMasterToGhosted("cell");
-  S_->GetFieldData(velocity_key_)->ScatterMasterToGhosted("cell");
-  S_->GetFieldData(discharge_key_)->ScatterMasterToGhosted("cell");
-
   // limited reconstructions
   auto tmp1 = S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
   total_depth_grad_->ComputeGradient(tmp1);
   limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_->gradient());
-  limiter_->gradient()->ScatterMasterToGhosted("cell");
-
-  auto tmp3 = S_->GetFieldData(velocity_key_, passwd_)->ViewComponent("cell", true);
-  velocity_x_grad_->ComputeGradient(tmp3, 0);
-  limiter_->ApplyLimiter(tmp3, 0, velocity_x_grad_->gradient());
-  limiter_->gradient()->ScatterMasterToGhosted("cell");
-
-  auto tmp4 = S_->GetFieldData(velocity_key_, passwd_)->ViewComponent("cell", true);
-  velocity_y_grad_->ComputeGradient(tmp4, 1);
-  limiter_->ApplyLimiter(tmp4, 1, velocity_y_grad_->gradient());
   limiter_->gradient()->ScatterMasterToGhosted("cell");
 
   auto tmp5 = S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
@@ -437,15 +421,13 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       failed = ErrorDiagnostics_(c, h_rec, B_rec, ht_rec);
       if (failed) return failed;
 
-      double vx_rec = velocity_x_grad_->getValue(c, xcf);
-      double vy_rec = velocity_y_grad_->getValue(c, xcf);
       double qx_rec = discharge_x_grad_->getValue(c, xcf);
       double qy_rec = discharge_y_grad_->getValue(c, xcf);
 
       double h2 = h_rec * h_rec;
       double factor = 2.0 * h_rec / (h2 + std::fmax(h2, eps2));
-      vx_rec = factor * qx_rec;
-      vy_rec = factor * qy_rec;
+      double vx_rec = factor * qx_rec;
+      double vy_rec = factor * qy_rec;
 
       // rotating velocity to the face-based coordinate system
       double vn, vt;
@@ -485,8 +467,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         failed = ErrorDiagnostics_(cn, h_rec, B_rec, ht_rec);
         if (failed) return failed;
 
-        vx_rec = velocity_x_grad_->getValue(cn, xcf);
-        vy_rec = velocity_y_grad_->getValue(cn, xcf);
         qx_rec = discharge_x_grad_->getValue(cn, xcf);
         qy_rec = discharge_y_grad_->getValue(cn, xcf);
 
