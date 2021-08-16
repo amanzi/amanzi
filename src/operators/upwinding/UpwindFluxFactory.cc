@@ -66,7 +66,7 @@ UpwindFluxFactory::Create(Teuchos::ParameterList& oplist,
     Key domain = Keys::getDomain(cell_coef);
     std::string slope = Keys::readKey(oplist, domain, "slope", "slope_magnitude");
     std::string manning_coef = Keys::readKey(oplist, domain, "coefficient", "manning_coefficient");
-    double slope_regularization = oplist.get<double>("slope regularization epsilon", 1.e-8);
+    double slope_regularization = oplist.get<double>("slope regularization epsilon", 1.e-2);
 
     S->RequireField(flux)->SetGhosted()->SetMesh(S->GetMesh(domain))
       ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
@@ -109,6 +109,7 @@ UpwindFluxFactory::Create(Teuchos::ParameterList& oplist,
     msg << "Unknown \"upwind type\" value \"" << model_type << ",\" must be one of \"manning upwind\", \"manning harmonic mean\", or \"manning ponded depth passthrough.\"";
     Exceptions::amanzi_throw(msg);
   }
+  return Teuchos::null;
 }
   
 }  // namespace Operators
