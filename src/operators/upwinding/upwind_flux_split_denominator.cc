@@ -183,13 +183,19 @@ void UpwindFluxSplitDenominator::CalculateCoefficientsOnFaces(
     if (coefs[1] > coefs[0]) {
       // downwind ponded depth is larger
       if ((coefs[0] != 0.0)) {
+        // harmonic mean (smoothly approaches zero for upwind coef = 0)
         coef_faces[0][f] = (weight[0] + weight[1])/(weight[0]/coefs[0] + weight[1]/coefs[1]);
       } else {
+        // harmonic mean of zero is zero
         coef_faces[0][f] = 0.0;
       }
     } else if (std::abs(flux_v[0][f]) >= flow_eps) {
+      // upwind ponded depth is larger, flux potential is nonzero
+      // arithmetic mean (smoothly stays nonzero as downwind coef approches zero)
       coef_faces[0][f] = (weight[0]*coefs[0] + weight[1]*coefs[1])/(weight[0] + weight[1]);
     } else {
+      // upwind ponded depth is larger, flux potential approaches zero
+      // smoothly vary between harmonic and arithmetic means
       double param = std::abs(flux_v[0][f]) / flow_eps;
       double amean = (weight[0]*coefs[0] + weight[1]*coefs[1])/(weight[0] + weight[1]);
       double hmean = 0.0;
@@ -197,13 +203,9 @@ void UpwindFluxSplitDenominator::CalculateCoefficientsOnFaces(
         hmean = (weight[0] + weight[1])/(weight[0]/coefs[0] + weight[1]/coefs[1]);
       coef_faces[0][f] = param*amean + (1 - param)*hmean;
     }
-    coef_faces[0][f] /= denominator;
 
-    // NOTE: this does not necessarily hold!
-    // if (uw >= 0 && dw >= 0) {
-    //   AMANZI_ASSERT( coef_faces[0][f] <= std::max(coef_cells[0][uw], coef_cells[0][dw])+1e-10 );
-    //   AMANZI_ASSERT( coef_faces[0][f] >= std::min(coef_cells[0][uw], coef_cells[0][dw])-1e-10 );
-    // }
+    // divide by harmonic mean denominator
+    coef_faces[0][f] /= denominator;
   }
 
 };
