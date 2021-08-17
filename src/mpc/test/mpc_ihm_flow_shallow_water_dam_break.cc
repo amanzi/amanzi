@@ -118,7 +118,7 @@ using namespace Amanzi::AmanziGeometry;
   std::cout<<"average hydrostatic pressure at surface: "<<patm + rho*g*h_avg<<std::endl;
   
   // compare the values
-  std::cout << std::abs(p_top_avg - (patm + rho*g*h_avg))/(patm + rho*g*h_avg) << std::endl;
+  CHECK(std::abs(p_top_avg - (patm + rho*g*h_avg))/(patm + rho*g*h_avg) < 1.0e-2);
 }
 
 

@@ -216,7 +216,7 @@ if (BUILD_TESTS)
     # Test: mpc driver for integrated hydrologic models test: 1D dam break over saturated subsurface
     add_amanzi_test(mpc_ihm_flow_shallow_water_dam_break mpc_ihm_flow_shallow_water_dam_break
                     KIND      int
-                    NPROCS    3
+                    NPROCS    2
                     SOURCE    test/Main.cc test/mpc_ihm_flow_shallow_water_dam_break.cc
         	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                
 
