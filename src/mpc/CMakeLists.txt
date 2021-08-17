@@ -209,14 +209,14 @@ if (BUILD_TESTS)
     # Test: mpc driver for coupled matrix-fracture flow and transport: benchmark
     add_amanzi_test(mpc_benchmark_single mpc_benchmark_single
                     KIND      int
-                    NPROC     3
+                    NPROCS    3
                     SOURCE    test/Main.cc test/mpc_benchmark_single.cc
         	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                  
 
     # Test: mpc driver for integrated hydrologic models test: 1D dam break over saturated subsurface
     add_amanzi_test(mpc_ihm_flow_shallow_water_dam_break mpc_ihm_flow_shallow_water_dam_break
                     KIND      int
-                    NPROC     3
+                    NPROCS    3
                     SOURCE    test/Main.cc test/mpc_ihm_flow_shallow_water_dam_break.cc
         	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                
 

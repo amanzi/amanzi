@@ -382,12 +382,12 @@
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
-          <ParameterList name="coupled flow steady">
+          <ParameterList name="steady:coupled flow">
             <Parameter name="PK type" type="string" value="darcy matrix fracture"/>
-            <ParameterList name="flow matrix steady">
+            <ParameterList name="steady:flow matrix">
               <Parameter name="PK type" type="string" value="darcy"/>
             </ParameterList>
-            <ParameterList name="flow fracture steady">
+            <ParameterList name="steady:flow fracture">
               <Parameter name="PK type" type="string" value="darcy"/>
             </ParameterList>
           </ParameterList>
@@ -400,23 +400,23 @@
       </ParameterList>
       <ParameterList name="TP 1">
         <ParameterList name="PK tree">
-          <ParameterList name="coupled reactive transport">
+          <ParameterList name="transient:coupled reactive transport">
             <Parameter name="PK type" type="string" value="reactive transport matrix fracture"/>
-            <ParameterList name="coupled chemistry">
+            <ParameterList name="transient:coupled chemistry">
               <Parameter name="PK type" type="string" value="chemistry matrix fracture"/>
-              <ParameterList name="chemistry matrix">
+              <ParameterList name="transient:chemistry matrix">
                 <Parameter name="PK type" type="string" value="chemistry amanzi"/>
               </ParameterList>
-              <ParameterList name="chemistry fracture">
+              <ParameterList name="transient:chemistry fracture">
                 <Parameter name="PK type" type="string" value="chemistry amanzi"/>
               </ParameterList>
             </ParameterList>
-            <ParameterList name="coupled transport">
+            <ParameterList name="transient:coupled transport">
               <Parameter name="PK type" type="string" value="transport matrix fracture"/>
-              <ParameterList name="transport matrix">
+              <ParameterList name="transient:transport matrix">
                 <Parameter name="PK type" type="string" value="transport"/>
               </ParameterList>
-              <ParameterList name="transport fracture">
+              <ParameterList name="transient:transport fracture">
                 <Parameter name="PK type" type="string" value="transport"/>
               </ParameterList>
             </ParameterList>
@@ -444,8 +444,8 @@
   </ParameterList>
 
   <ParameterList name="PKs">
-    <ParameterList name="coupled flow steady">
-      <Parameter name="PKs order" type="Array(string)" value="{flow matrix steady, flow fracture steady}"/>
+    <ParameterList name="steady:coupled flow">
+      <Parameter name="PKs order" type="Array(string)" value="{steady:flow matrix, steady:flow fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
 
       <ParameterList name="time integrator">
@@ -501,7 +501,7 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="flow matrix steady">
+    <ParameterList name="steady:flow matrix">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="absolute permeability">
 	<Parameter name="coordinate system" type="string" value="cartesian"/>
@@ -581,7 +581,7 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="flow fracture steady">
+    <ParameterList name="steady:flow fracture">
       <Parameter name="domain name" type="string" value="fracture"/>
       <ParameterList name="fracture permeability models">
 	<ParameterList name="FPM for fracture">
@@ -644,17 +644,17 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="coupled reactive transport">
-      <Parameter name="PKs order" type="Array(string)" value="{coupled chemistry, coupled transport}"/>
+    <ParameterList name="transient:coupled reactive transport">
+      <Parameter name="PKs order" type="Array(string)" value="{transient:coupled chemistry, transient:coupled transport}"/>
       <Parameter name="master PK index" type="int" value="0"/>
     </ParameterList>
 
-    <ParameterList name="coupled chemistry">
-      <Parameter name="PKs order" type="Array(string)" value="{chemistry matrix, chemistry fracture}"/>
+    <ParameterList name="transient:coupled chemistry">
+      <Parameter name="PKs order" type="Array(string)" value="{transient:chemistry matrix, transient:chemistry fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
     </ParameterList>
 
-    <ParameterList name="chemistry matrix">
+    <ParameterList name="transient:chemistry matrix">
       <Parameter name="domain name" type="string" value="domain"/>
       <Parameter name="chemistry model" type="string" value="Amanzi"/>
       <Parameter name="activity model" type="string" value="unit"/>
@@ -676,7 +676,7 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="chemistry fracture">
+    <ParameterList name="transient:chemistry fracture">
       <Parameter name="domain name" type="string" value="fracture"/>
       <Parameter name="chemistry model" type="string" value="Amanzi"/>
       <Parameter name="activity model" type="string" value="unit"/>
@@ -698,12 +698,12 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="coupled transport">
-      <Parameter name="PKs order" type="Array(string)" value="{transport matrix, transport fracture}"/>
+    <ParameterList name="transient:coupled transport">
+      <Parameter name="PKs order" type="Array(string)" value="{transient:transport matrix, transient:transport fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
     </ParameterList>
 
-    <ParameterList name="transport matrix">
+    <ParameterList name="transient:transport matrix">
       <Parameter name="domain name" type="string" value="domain"/>
       <Parameter name="spatial discretization order" type="int" value="1"/>
       <Parameter name="temporal discretization order" type="int" value="1"/>
@@ -770,7 +770,7 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="transport fracture">
+    <ParameterList name="transient:transport fracture">
       <Parameter name="domain name" type="string" value="fracture"/>
       <Parameter name="spatial discretization order" type="int" value="1"/>
       <Parameter name="temporal discretization order" type="int" value="1"/>

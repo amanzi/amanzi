@@ -451,7 +451,7 @@
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
-          <ParameterList name="flow steady">
+          <ParameterList name="steady:flow">
             <Parameter name="PK type" type="string" value="darcy"/>
           </ParameterList>
         </ParameterList>
@@ -463,18 +463,18 @@
       </ParameterList>
       <ParameterList name="TP 1">
         <ParameterList name="PK tree">
-          <ParameterList name="flow and reactive transport">
+          <ParameterList name="transient:flow and reactive transport">
             <Parameter name="PK type" type="string" value="flow reactive transport"/>
-            <ParameterList name="reactive transport">
+            <ParameterList name="transient:reactive transport">
               <Parameter name="PK type" type="string" value="reactive transport"/>
-              <ParameterList name="transport">
+              <ParameterList name="transient:transport">
                 <Parameter name="PK type" type="string" value="transport"/>
               </ParameterList>
-              <ParameterList name="chemistry">
+              <ParameterList name="transient:chemistry">
                 <Parameter name="PK type" type="string" value="chemistry alquimia"/>
               </ParameterList>
             </ParameterList>
-            <ParameterList name="flow">
+            <ParameterList name="transient:flow">
               <Parameter name="PK type" type="string" value="darcy"/>
             </ParameterList>
           </ParameterList>
@@ -501,7 +501,7 @@
   </ParameterList>
 
   <ParameterList name="PKs">
-    <ParameterList name="flow steady">
+    <ParameterList name="steady:flow">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="absolute permeability">
 	<Parameter name="coordinate system" type="string" value="cartesian"/>
@@ -612,15 +612,15 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="flow and reactive transport">
-      <Parameter name="PKs order" type="Array(string)" value="{flow, reactive transport}"/>
+    <ParameterList name="transient:flow and reactive transport">
+      <Parameter name="PKs order" type="Array(string)" value="{transient:flow, transient:reactive transport}"/>
       <Parameter name="master PK index" type="int" value="0"/>
     </ParameterList>
-    <ParameterList name="reactive transport">
-      <Parameter name="PKs order" type="Array(string)" value="{chemistry, transport}"/>
+    <ParameterList name="transient:reactive transport">
+      <Parameter name="PKs order" type="Array(string)" value="{transient:chemistry, transient:transport}"/>
     </ParameterList>
 
-    <ParameterList name="transport">
+    <ParameterList name="transient:transport">
       <Parameter name="domain name" type="string" value="domain"/>
 
       <Parameter name="spatial discretization order" type="int" value="1"/>
@@ -699,7 +699,7 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="chemistry">
+    <ParameterList name="transient:chemistry">
       <Parameter name="domain name" type="string" value="domain"/>
       <Parameter name="engine" type="string" value="PFloTran"/>
       <Parameter name="chemistry model" type="string" value="Alquimia"/>
@@ -725,7 +725,7 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="flow">
+    <ParameterList name="transient:flow">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="absolute permeability">
 	<Parameter name="coordinate system" type="string" value="cartesian"/>

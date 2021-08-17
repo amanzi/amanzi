@@ -186,7 +186,7 @@ class InputConverterU : public InputConverter {
 
   // -- mpc pks
   bool coupled_flow_, coupled_transport_, coupled_energy_;
-  std::vector<std::string> fracture_regions_;
+  std::vector<std::string> fracture_regions_, surface_regions_;
 
   void ProcessMacros_(const std::string& prefix, char* text_content,
                       Teuchos::ParameterList& mPL, Teuchos::ParameterList& outPL);
@@ -232,7 +232,7 @@ class InputConverterU : public InputConverter {
   Tree phases_;
 
   // global data
-  std::map<std::string, std::string> pk_model_;
+  std::map<std::string, std::string> pk_model_, pk_domain_;
   std::map<std::string, bool> pk_master_;
   std::map<std::string, double> dt_cut_, dt_inc_;
   

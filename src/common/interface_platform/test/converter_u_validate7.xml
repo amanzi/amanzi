@@ -404,12 +404,12 @@
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
-          <ParameterList name="coupled flow">
+          <ParameterList name="steady:coupled flow">
             <Parameter name="PK type" type="string" value="darcy matrix fracture"/>
-            <ParameterList name="flow matrix">
+            <ParameterList name="steady:flow matrix">
               <Parameter name="PK type" type="string" value="darcy"/>
             </ParameterList>
-            <ParameterList name="flow fracture">
+            <ParameterList name="steady:flow fracture">
               <Parameter name="PK type" type="string" value="darcy"/>
             </ParameterList>
           </ParameterList>
@@ -422,23 +422,23 @@
       </ParameterList>
       <ParameterList name="TP 1">
         <ParameterList name="PK tree">
-          <ParameterList name="coupled flow and energy">
+          <ParameterList name="transient:coupled flow and energy">
             <Parameter name="PK type" type="string" value="thermal flow matrix fracture"/>
-            <ParameterList name="flow and energy">
+            <ParameterList name="transient:flow and energy">
               <Parameter name="PK type" type="string" value="thermal flow"/>
-              <ParameterList name="flow">
+              <ParameterList name="transient:flow">
                 <Parameter name="PK type" type="string" value="darcy"/>
               </ParameterList>
-              <ParameterList name="energy">
+              <ParameterList name="transient:energy">
                 <Parameter name="PK type" type="string" value="one-phase energy"/>
               </ParameterList>
             </ParameterList>
-            <ParameterList name="flow and energy fracture">
+            <ParameterList name="transient:flow and energy fracture">
               <Parameter name="PK type" type="string" value="thermal flow"/>
-              <ParameterList name="flow fracture">
+              <ParameterList name="transient:flow fracture">
                 <Parameter name="PK type" type="string" value="darcy"/>
               </ParameterList>
-              <ParameterList name="energy fracture">
+              <ParameterList name="transient:energy fracture">
                 <Parameter name="PK type" type="string" value="one-phase energy"/>
               </ParameterList>
             </ParameterList>
@@ -466,15 +466,15 @@
   </ParameterList>
 
   <ParameterList name="PKs">
-    <ParameterList name="coupled flow">
-      <Parameter name="PKs order" type="Array(string)" value="{flow matrix, flow fracture}"/>
+    <ParameterList name="steady:coupled flow">
+      <Parameter name="PKs order" type="Array(string)" value="{steady:flow matrix, steady:flow fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
       <ParameterList name="physical models and assumptions">
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       </ParameterList>
 
       <ParameterList name="time integrator">
-        <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
+        <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
         <ParameterList name="pressure-lambda constraints">
@@ -515,13 +515,18 @@
             <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
         </ParameterList>
+        <ParameterList name="initialization">
+          <Parameter name="method" type="string" value="saturated solver"/>
+          <Parameter name="linear solver" type="string" value="AztecOO"/>
+          <Parameter name="active wells" type="bool" value="false"/>
+        </ParameterList>
       </ParameterList>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="flow matrix">
+    <ParameterList name="steady:flow matrix">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="physical models and assumptions">
         <Parameter name="water content model" type="string" value="constant density"/>
@@ -562,7 +567,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="time integrator">
-        <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
+        <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
         <ParameterList name="pressure-lambda constraints">
@@ -617,7 +622,7 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="flow fracture">
+    <ParameterList name="steady:flow fracture">
       <Parameter name="domain name" type="string" value="fracture"/>
       <ParameterList name="fracture permeability models">
         <ParameterList name="FPM for fracture">
@@ -665,7 +670,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="time integrator">
-        <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
+        <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
         <ParameterList name="pressure-lambda constraints">
@@ -680,8 +685,8 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="coupled flow and energy">
-      <Parameter name="PKs order" type="Array(string)" value="{flow and energy, flow and energy fracture}"/>
+    <ParameterList name="transient:coupled flow and energy">
+      <Parameter name="PKs order" type="Array(string)" value="{transient:flow and energy, transient:flow and energy fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
       <ParameterList name="physical models and assumptions">
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
@@ -732,8 +737,8 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="flow and energy">
-      <Parameter name="PKs order" type="Array(string)" value="{flow, energy}"/>
+    <ParameterList name="transient:flow and energy">
+      <Parameter name="PKs order" type="Array(string)" value="{transient:flow, transient:energy}"/>
       <Parameter name="master PK index" type="int" value="0"/>
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="physical models and assumptions">
@@ -755,7 +760,7 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="flow">
+    <ParameterList name="transient:flow">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="physical models and assumptions">
         <Parameter name="water content model" type="string" value="constant density"/>
@@ -853,7 +858,7 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="energy">
+    <ParameterList name="transient:energy">
       <ParameterList name="physical models and assumptions">
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       </ParameterList>
@@ -932,8 +937,8 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="flow and energy fracture">
-      <Parameter name="PKs order" type="Array(string)" value="{flow fracture, energy fracture}"/>
+    <ParameterList name="transient:flow and energy fracture">
+      <Parameter name="PKs order" type="Array(string)" value="{transient:flow fracture, transient:energy fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
       <Parameter name="domain name" type="string" value="fracture"/>
       <ParameterList name="physical models and assumptions">
@@ -955,7 +960,69 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="energy fracture">
+    <ParameterList name="transient:flow fracture">
+      <Parameter name="domain name" type="string" value="fracture"/>
+      <ParameterList name="fracture permeability models">
+        <ParameterList name="FPM for fracture">
+          <Parameter name="region" type="string" value="fracture"/>
+          <Parameter name="model" type="string" value="cubic law"/>
+          <Parameter name="aperture" type="double" value="0.00000000000000000e+00"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="physical models and assumptions">
+        <Parameter name="flow in fractures" type="bool" value="true"/>
+        <Parameter name="water content model" type="string" value="constant density"/>
+        <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
+      </ParameterList>
+      <ParameterList name="absolute permeability">
+        <Parameter name="coordinate system" type="string" value="cartesian"/>
+      </ParameterList>
+      <ParameterList name="operators">
+        <ParameterList name="diffusion operator">
+          <ParameterList name="matrix">
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="gravity" type="bool" value="true"/>
+          </ParameterList>
+          <ParameterList name="preconditioner">
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="gravity" type="bool" value="true"/>
+            <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
+          </ParameterList>
+          <ParameterList name="vapor matrix">
+            <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+            <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+            <Parameter name="gravity" type="bool" value="true"/>
+            <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
+            <Parameter name="exclude primary terms" type="bool" value="false"/>
+            <Parameter name="scaled constraint equation" type="bool" value="false"/>
+            <Parameter name="Newton correction" type="string" value="none"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="time integrator">
+        <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
+        <Parameter name="linear solver" type="string" value="AztecOO"/>
+        <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+        <ParameterList name="pressure-lambda constraints">
+          <Parameter name="method" type="string" value="projection"/>
+          <Parameter name="inflow krel correction" type="bool" value="true"/>
+          <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
+        </ParameterList>
+        <Parameter name="time integration method" type="string" value="none"/>
+      </ParameterList>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="transient:energy fracture">
       <Parameter name="domain name" type="string" value="fracture"/>
       <ParameterList name="physical models and assumptions">
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
@@ -1128,7 +1195,7 @@
   <ParameterList name="analysis">
     <ParameterList name="domain">
       <Parameter name="used boundary condition regions" type="Array(string)" value="{Bottom Surface, Crib, Bottom Surface, Crib, Bottom Surface, Crib}"/>
-      <Parameter name="used source regions" type="Array(string)" value="{Well, Well}"/>
+      <Parameter name="used source regions" type="Array(string)" value="{Well, Well, Well}"/>
       <Parameter name="used observation regions" type="Array(string)" value="{}"/>
     </ParameterList>
     <ParameterList name="verbose object">
