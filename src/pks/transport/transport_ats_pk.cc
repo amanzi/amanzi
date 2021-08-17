@@ -373,7 +373,7 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
   // create boundary conditions
   if (plist_->isSublist("boundary conditions")) {
     // -- try tracer-type conditions
-    PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_);
+    PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_, S_);
     Teuchos::ParameterList& conc_bcs_list = plist_->sublist("boundary conditions").sublist("concentration");
 
     for (const auto& it : conc_bcs_list) {
@@ -466,7 +466,7 @@ void Transport_ATS::Initialize(const Teuchos::Ptr<State>& S)
 
   // source term initialization: so far only "concentration" is available.
   if (plist_->isSublist("source terms")) {
-    PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_);
+    PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_, S_);
     Teuchos::ParameterList& conc_sources_list = plist_->sublist("source terms").sublist("component mass source");
 
     for (const auto& it : conc_sources_list) {
