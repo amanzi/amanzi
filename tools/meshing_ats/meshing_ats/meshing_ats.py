@@ -442,10 +442,10 @@ class Mesh3D(object):
             self.side_sets = []
             
         if material_ids is not None:
-            self.material_id_list = collections.Counter(material_ids).keys()
+            self.material_ids_list = collections.Counter(material_ids).keys()
             self.material_ids = material_ids
         else:
-            self.material_id_list = [10000,]
+            self.material_ids_list = [10000,]
             self.material_ids = [10000,]*len(self.elem_to_face_conn)
 
         self.validate()
