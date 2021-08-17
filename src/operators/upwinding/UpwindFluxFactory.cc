@@ -16,6 +16,7 @@
 #include "upwind_total_flux.hh"
 #include "upwind_flux_harmonic_mean.hh"
 #include "upwind_flux_split_denominator.hh"
+#include "upwind_elevation_stabilized.hh"
 #include "upwind_flux_fo_cont.hh"
 #include "upwind_cell_centered.hh"
 
@@ -79,6 +80,26 @@ UpwindFluxFactory::Create(Teuchos::ParameterList& oplist,
 
     return Teuchos::rcp(new UpwindFluxSplitDenominator(pkname, cell_coef, face_coef, flux, flux_eps, slope, manning_coef, slope_regularization));
 
+  } else if (model_type == "manning elevation stabilized") {
+    Key domain = Keys::getDomain(cell_coef);
+    std::string slope = Keys::readKey(oplist, domain, "slope", "slope_magnitude");
+    std::string manning_coef = Keys::readKey(oplist, domain, "coefficient", "manning_coefficient");
+    std::string ponded_depth = Keys::readKey(oplist, domain, "ponded depth", "ponded_depth");
+    std::string elev = Keys::readKey(oplist, domain, "elevation", "elevation");
+    std::string dens = Keys::readKey(oplist, domain, "molar density liquid", "molar_density_liquid");
+    double slope_regularization = oplist.get<double>("slope regularization epsilon", 1.e-2);
+    double manning_exp = oplist.get<double>("Manning exponent", 2.0/3);
+
+    S->RequireField(slope)->SetGhosted()->SetMesh(S->GetMesh(domain))
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    S->RequireField(elev)->SetGhosted()->SetMesh(S->GetMesh(domain))
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    S->RequireField(manning_coef)->SetGhosted()->SetMesh(S->GetMesh(domain))
+      ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
+    // add boundary face components?
+
+    return Teuchos::rcp(new UpwindElevationStabilized(pkname, face_coef, slope, manning_coef, ponded_depth, elev, dens, slope_regularization, manning_exp));
+
   } else if (model_type == "manning ponded depth passthrough") {
     Key domain = Keys::getDomain(cell_coef);
     std::string slope = Keys::readKey(oplist, domain, "slope", "slope_magnitude");
@@ -111,7 +132,7 @@ UpwindFluxFactory::Create(Teuchos::ParameterList& oplist,
   }
   return Teuchos::null;
 }
-  
+
 }  // namespace Operators
 }  // namespace Amanzi
 
