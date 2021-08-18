@@ -317,6 +317,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   double eps2 = 1e-12;
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
 
   // distribute data to ghost cells
   S_->GetFieldData(total_depth_key_)->ScatterMasterToGhosted("cell");
@@ -373,17 +374,103 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   for (int  i = 0; i < srcs_.size(); ++i) {
     for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
       int c = it->first;
-      ext_S_cell[c] = it->second[0];  // data unit is [m]
+      ext_S_cell[c] = it->second[0];  // data unit is [m/s]
       total_source_ += it->second[0] * mesh_->cell_volume(c) * dt; // data unit is [m^3]
     }
   }
-
+  
   // Shallow water equations have the form
   // U_t + F_x(U) + G_y(U) = S(U)
   
-  for (int c = 0; c < ncells_owned; ++c){ // calculate total fluctuations i.e eq(10)
-    
+  std::vector<std::vector<double>> U(3);
+  for (int i = 0; i < nnodes_owned; ++i) {
+    U[0][i] = B_n[0][i]; // place holder
+    U[1][i] = B_n[0][i]; // place holder
+    U[2][i] = B_n[0][i]; // place holder
   }
+  
+  std::vector<std::vector<double>> U_pr(3);
+  U_pr = U;
+  
+  // 1. predictor step
+  
+  // calculate total fluctuations i.e eq(10)
+  for (int i = 0; i < nnodes_owned; ++i){
+    
+    std::vector<double> phi_beta_cell(3, 0.0); // sum used in eq (4)
+    double dual_cell_vol = 0.0;
+    
+    AmanziMesh::Entity_ID_List ncells;
+    mesh_->node_get_cells(i, AmanziMesh::Parallel_type::ALL, &ncells);
+    
+    // loop over cells joined to the vertex i
+    for (int K = 0; K < ncells.size(); ++K) {
+      
+      // boundary conditions
+//      if (ncells[K] == -1) {
+//        if (bcs_.size() > 0 && bcs_[0]->bc_find(f)) {
+//          for (int i = 0; i < 3; ++i) UR[i] = bcs_[0]->bc_value(f)[i];
+//          UR[1] = UR[0] * UR[1];
+//          UR[2] = UR[0] * UR[1];
+//        }
+//        else {
+//          UR = UL;
+//        }
+//      }
+      
+      AmanziMesh::Entity_ID_List cnodes;
+      mesh_->cell_get_nodes(K, &cnodes);
+      
+      std::vector<std::vector<double>> phi(3); // phi[m][j]
+      for (int m = 0; m < 3; ++m) {
+        phi[m].resize(cnodes.size());
+      }
+      
+      std::vector<double> Phi_total(3, 0.0); // Phi_total[m]
+      std::vector<double> phi_tmp(3, 0.0); // phi[m][j] = phi_tmp[m]
+      for (int j = 0; j < cnodes.size(); ++j) {
+        phi_tmp = ResidualsLF(ncells[K], cnodes[j], U); // eq (10)
+        
+        for (int m = 0; m < 3; ++m) {
+          Phi_total[m] += phi_tmp[m];     // eq(8)
+          phi[m][j] = phi_tmp[m]; // eq (10)
+        }
+      }
+      
+      // calculate distribution coefficients beta
+      std::vector<double> beta(3, 0.0); // beta[m]
+      std::vector<double> sum_max(3, 0.0); // sum_max[m]
+      for (int j = 0; j < cnodes.size(); ++j) {
+        for (int m = 0; m < 3; ++m) {
+          
+          if (std::abs(Phi_total[m]) > 0.0) {
+            
+            if (cnodes[j] == i) {
+              beta[m] = std::max(0.0, phi[m][j]/Phi_total[m]);
+            }
+            sum_max[m] += std::max(0.0, std::max(0.0, phi[m][j]/Phi_total[m]) );
+          }
+        }
+      }
+      
+      for (int m = 0; m < 3; ++m) {
+        if (std::abs(sum_max[m]) > 0.0) {
+          beta[m] = beta[m] / sum_max[m];
+        }
+      }
+      
+      // calculate contribution to node i
+      for (int m = 0; m < 3; ++m) {
+        phi_beta_cell[m] += beta[m] * Phi_total[m]; // eq(6)
+      }
+      dual_cell_vol += mesh_->cell_volume(ncells[K]);
+    } // K (cell) loop
+    
+    for (int m = 0; m < 3; ++m) {
+      U_pr[m][i] = -(dt/dual_cell_vol)*phi_beta_cell[m] + U[m][i];
+    }
+    
+  } // i (total DOF) loop
   
   
   
@@ -714,34 +801,52 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
 //--------------------------------------------------------------
 // Time-space residuals for time-stepping scheme
 //--------------------------------------------------------------
-std::vector<double> ShallowWater_PK::ResidualsTimeSpace(int c, int i, std::vector<std::vector<double> >& U, std::vector<std::vector<double> >& U_pr)
+std::vector<double> ShallowWater_PK::ResidualsTimeSpace(int K, int j, std::vector<std::vector<double> >& U, std::vector<std::vector<double> >& U_pr, double dt)
 {
-  std::vector<double> phi_K_j, phi_K_j_star;
-
-  phi_K_j = ResidualsLF(c, i, U);
-  phi_K_j_star = ResidualsLF(c, i, U_pr);
   
   // compute time step integral \int_{K} ((u - u_star)/\Delta t)  * \phi_i dx
   std::vector<double> integral(3, 0.0);
   
   AmanziMesh::Entity_ID_List cnodes; //DOFs of the cell (nodes)
-  mesh_->cell_get_nodes(c, &cnodes);
+  mesh_->cell_get_nodes(K, &cnodes);
+  
+  // 1a. construct volume quadrature points
+  std::vector<AmanziGeometry::Point> quad_nodes_vol(3);
+  std::vector<double> weights_vol(3);
+  std::vector<AmanziGeometry::Point> coords(3);
+  for (int i = 0; i < cnodes.size(); ++i) { // find coordinates of triangle vertices
+    mesh_->node_get_coordinates(cnodes[i], &coords[i]);
+  }
+  // find physical coordinates of quadrature points (3 quadrature points for now; P1 triangle elements)
+  for (int i = 0; i < cnodes.size(); ++i) {
+    quad_nodes_vol[i] = (1 - WhetStone::q2d_points[i+1][0] - WhetStone::q2d_points[i+1][1] )*coords[0] + (WhetStone::q2d_points[i+1][0])*coords[1] + (WhetStone::q2d_points[i+1][1])*coords[2];
+    weights_vol[i] = WhetStone::q2d_weights[i+1];
+  }
+  
+  // 1b. evaluate volume integral using quadrature points
+  for (int qp = 0; qp < quad_nodes_vol.size(); ++qp ) {
     
-    for (int qp = 0; qp < 3; ++qp ) { // quadrature points
-      
-      std::vector<double> Uqp(3);
-      std::vector<double> U_prqp(3);
-      double phi_j;
-      
-//      AmanziGeometry::Point x_qp = quad_nodes_vol[qp];
-//
-//      Uqp = EvalSol(U, x_qp);
-//      U_prqp = EvalSol(U_pr, x_qp);
-//
-//      phi_j = basis_value(j, x_qp);
-      
-//      integral += (1.0/dt) * (Uqp - U_prqp) * phi_j * weight_vol[qp];
+    std::vector<double> Uqp(3);
+    std::vector<double> U_prqp(3);
+    double phi_j;
+    
+    AmanziGeometry::Point x_qp = quad_nodes_vol[qp];
+    
+    Uqp = EvalSol(U, x_qp);
+    U_prqp = EvalSol(U, x_qp);
+
+    phi_j = basis_value(j, K, x_qp);
+
+    for (int m = 0; m < 3; ++m) {
+    integral[m] += (1.0/dt) * (Uqp[m] - U_prqp[m]) * phi_j * weights_vol[qp];
     }
+//    integral += -PhysicalSource(Uqp) * phi_j * weights_vol[qp]; // bathymetry term
+  }
+  
+  std::vector<double> phi_K_j, phi_K_j_star;
+
+  phi_K_j = ResidualsLF(K, j, U);
+  phi_K_j_star = ResidualsLF(K, j, U_pr);
   
   for (int m = 0; m < 3; ++m) {
     integral[m] += 0.5 * (phi_K_j[m] + phi_K_j_star[m]);
