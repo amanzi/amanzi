@@ -4,7 +4,6 @@
 
 #include "OperatorDefs.hh"
 #include "Operator_FaceCell.hh"
-#include "Operator_CellBndFace.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "mpc_delegate_ewc_surface.hh"
 #include "mpc_delegate_ewc_subsurface.hh"

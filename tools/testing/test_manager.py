@@ -327,7 +327,7 @@ class RegressionTest(object):
                                         stderr=run_stdout)
 
             while proc.poll() is None:
-                time.sleep(0.1)
+                time.sleep(1)
                 if time.time() - start > self._timeout:
                     proc.kill()
                     time.sleep(0.1)
@@ -1329,7 +1329,7 @@ def generate_config_file_list(options):
         raise RuntimeError("ERROR: no config files were found. Please specify a "
                            "config file or search directory containing config files.")
 
-    return config_file_list
+    return sorted(config_file_list)
 
 
 def search_for_config_files(base_dir, config_file_list):

@@ -11,8 +11,6 @@ Process kernel for energy equation for overland flow.
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "Debugger.hh"
-#include "eos_evaluator.hh"
-#include "iem_evaluator.hh"
 #include "thermal_conductivity_surface_evaluator.hh"
 #include "enthalpy_evaluator.hh"
 #include "energy_bc_factory.hh"
@@ -172,64 +170,7 @@ void EnergySurfaceIce::Initialize(const Teuchos::Ptr<State>& S) {
     }
   }
 
-  // For the boundary conditions, we currently hack in the enthalpy to
-  // the boundary faces to correctly advect in a Dirichlet temperature
-  // BC.  This requires density and internal energy, which in turn
-  // require a model based on p,T.
-  // This will be removed once boundary faces are implemented.
-  Teuchos::RCP<FieldEvaluator> eos_fe =
-    S->GetFieldEvaluator(Keys::getKey(domain_,"molar_density_liquid"));
-
-  Teuchos::RCP<Relations::EOSEvaluator> eos_eval =
-    Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(eos_fe);
-  AMANZI_ASSERT(eos_eval != Teuchos::null);
-  eos_liquid_ = eos_eval->get_EOS();
-
-  Teuchos::RCP<FieldEvaluator> iem_fe =
-    S->GetFieldEvaluator(Keys::getKey(domain_,"internal_energy_liquid"));
-
-  Teuchos::RCP<Energy::IEMEvaluator> iem_eval =
-    Teuchos::rcp_dynamic_cast<Energy::IEMEvaluator>(iem_fe);
-
-  AMANZI_ASSERT(iem_eval != Teuchos::null);
-  iem_liquid_ = iem_eval->get_IEM();
 }
-
-
-// // -------------------------------------------------------------
-// // Plug enthalpy into the boundary faces manually.
-// // This will be removed once boundary faces exist.
-// // -------------------------------------------------------------
-// void EnergySurfaceIce::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S) {
-
-//   // Since we don't have a surface pressure on faces, this gets a bit uglier.
-//   // Simply grab the internal cell for now.
-//   const Epetra_MultiVector& flux = *S->GetFieldData(flux_key_)
-//       ->ViewComponent("face",false);
-//   const Epetra_MultiVector& pres_c = *S->GetFieldData("surface-pressure")
-//       ->ViewComponent("cell",false);
-
-//   //  Teuchos::writeParameterListToXmlOStream(*plist_, std::cout);
-//   Teuchos::ParameterList& enth_plist = plist_->sublist("enthalpy evaluator", true);
-//   bool include_work = enth_plist.get<bool>("include work term", true);
-
-//   AmanziMesh::Entity_ID_List cells;
-//   unsigned int nfaces = pres_c.MyLength();
-//   for (unsigned int f=0; f!=nfaces; ++f) {
-//     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-//     if (bc_markers_adv_[f] == Operators::OPERATOR_BC_DIRICHLET) {
-//       AMANZI_ASSERT(bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET); // Dirichlet data -- does not yet handle split fluxes here
-//       double T = bc_values_[f];
-//       double p = pres_c[0][cells[0]];
-//       double dens = eos_liquid_->MolarDensity(T,p);
-//       double int_energy = iem_liquid_->InternalEnergy(T);
-//       double enthalpy = include_work ? int_energy + p/dens : int_energy;
-
-//       bc_values_adv_[f] = enthalpy;
-//     }
-//   }
-
-// }
 
 
 // -------------------------------------------------------------

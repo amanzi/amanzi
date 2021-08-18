@@ -201,13 +201,11 @@ MPCCoupledWater::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
 
   // Merge surface cells with subsurface faces
   if (modified) {
-
     S_next_->GetFieldEvaluator(Keys::getKey(domain_surf_,"relative_permeability"))->HasFieldChanged(S_next_.ptr(),name_);
     Teuchos::RCP<const CompositeVector> h_prev = S_inter_->GetFieldData(Keys::getKey(domain_surf_,"ponded_depth"));
     MergeSubsurfaceAndSurfacePressure(*h_prev, u->SubVector(0)->Data().ptr(),
             u->SubVector(1)->Data().ptr());
   }
-
 
   // Hack surface faces
   bool newly_modified = false;

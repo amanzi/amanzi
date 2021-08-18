@@ -186,7 +186,10 @@ double EvaporativeResistanceCoef(double saturation_gas,
     // lot of assumptions here of hard-coded parameters including C&H WRM, a
     // residual water content of 0.0556 (not sure why this was chosen), and
     // more.
-    double s_res = 0.0556 / porosity;
+    //
+    // The result of using this with other WRMs requires some adaptation...
+    // also with arbitrary values.
+    double s_res = std::min(0.0556 / porosity, 0.4);
     double vp_diffusion = 0.000022 * std::pow(porosity,2)
                           * std::pow(1-s_res, 2 + 3*Clapp_Horn_b);
     // Sakagucki and Zeng 2009 eqaution (10)
@@ -442,7 +445,7 @@ FluxBalance UpdateFluxesWithoutSnow(const GroundProperties& surf,
   if (model_1p1) {
     // NOTE: this old model allows indepedent values of evap_transition_width
     // (which governs where the flux goes, in units of Pa) and
-    // water_ground_transition_depth (which governs where the
+    // water_transition_depth (which governs where the
     // saturation/pressure are used to calculate how much water to take, in
     // units of [m]).  This was deprecated because it allowed inconsistencies.
     if (mb.Me < 0) {
@@ -458,7 +461,7 @@ FluxBalance UpdateFluxesWithoutSnow(const GroundProperties& surf,
     }
   } else {
     evap_to_subsurface_fraction = 1 - std::min(1.0,
-          surf.ponded_depth / params.water_ground_transition_depth);
+          surf.ponded_depth / surf.water_transition_depth);
   }
   AMANZI_ASSERT(evap_to_subsurface_fraction >= 0. && evap_to_subsurface_fraction <= 1.);
 
