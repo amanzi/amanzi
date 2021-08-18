@@ -336,10 +336,10 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // create copies of primary fields
   Epetra_MultiVector h_c_tmp(h_c);
-  Epetra_MultiVector vel_c_tmp(vel_c);
+  Epetra_MultiVector q_c_tmp(q_c);
 
   h_c_tmp.PutScalar(0.0);
-  vel_c_tmp.PutScalar(0.0);
+  q_c_tmp.PutScalar(0.0);
 
   // limited reconstructions
   auto tmp1 = S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
@@ -388,7 +388,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   std::vector<double> FNum_rot;  // fluxes
   std::vector<double> S;         // source term
-  std::vector<double> UL(3), UR(3), U;  // numerical fluxes
+  std::vector<double> UL(3), UR(3), U;  // local state vectors
 
   // Simplest first-order form
   // U_i^{n+1} = U_i^n - dt/vol * (F_{i+1/2}^n - F_{i-1/2}^n) + dt * S_i
@@ -485,15 +485,15 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     double vol = mesh_->cell_volume(c1);
     factor = farea * dt / vol;
     h_c_tmp[0][c1] -= h * factor;
-    vel_c_tmp[0][c1] -= qx * factor;
-    vel_c_tmp[1][c1] -= qy * factor;
+    q_c_tmp[0][c1] -= qx * factor;
+    q_c_tmp[1][c1] -= qy * factor;
 
     if (c2 != -1) {
       vol = mesh_->cell_volume(c2);
       factor = farea * dt / vol;
       h_c_tmp[0][c2] += h * factor;
-      vel_c_tmp[0][c2] += qx * factor;
-      vel_c_tmp[1][c2] += qy * factor;
+      q_c_tmp[0][c2] += qx * factor;
+      q_c_tmp[1][c2] += qy * factor;
     }
   }
 
@@ -517,8 +517,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     S = NumericalSource(U, c);
     
     h  = U[0] + h_c_tmp[0][c] + dt * (S[0] + ext_S_cell[c]);
-    qx = U[1] + vel_c_tmp[0][c] + dt * S[1];
-    qy = U[2] + vel_c_tmp[1][c] + dt * S[2];
+    qx = U[1] + q_c_tmp[0][c] + dt * S[1];
+    qy = U[2] + q_c_tmp[1][c] + dt * S[2];
     
     // transform to non-conservative variables
     h_c[0][c] = h;
@@ -528,6 +528,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     vel_c[1][c] = factor * qy;
   }
 
+  // update other fields
   for (int c = 0; c < ncells_owned; c++) {
     ht_c[0][c] = h_c[0][c] + B_c[0][c];
   }
