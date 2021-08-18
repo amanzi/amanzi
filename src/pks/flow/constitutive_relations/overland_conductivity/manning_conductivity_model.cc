@@ -16,7 +16,7 @@ ManningConductivityModel::ManningConductivityModel(Teuchos::ParameterList& plist
 {
   slope_regularization_ = plist.get<double>("slope regularization epsilon", 1.e-8);
   manning_exp_ = plist.get<double>("Manning exponent");
-  depth_max_ = plist.get<double>("maximum ponded depth [m]", 100.0);
+  depth_max_ = plist.get<double>("maximum ponded depth [m]", 1.e8);
 }
 
 double ManningConductivityModel::Conductivity(double depth, double slope, double coef) {
@@ -31,7 +31,7 @@ double ManningConductivityModel::DConductivityDDepth(double depth, double slope,
   if (depth > depth_max_) {
     return std::pow(depth_max_, manning_exp_) / scaling;
   } else {
-    return std::pow(std::max(depth,0.), manning_exp_) * manning_exp_ / scaling;
+    return std::pow(depth, manning_exp_) * (manning_exp_+1) / scaling;
   }
 }
 
