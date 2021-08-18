@@ -354,6 +354,10 @@ TEST(SURFACE_SUBSURFACE_LOTS_OF_DIAGONALS) {
     }
   }
 
+
+  // print capabilities
+  std::cout << "Tree Operator Structure:\n" << op_global.PrintDiagnostics() << std::endl;
+
   // now, can we do something with it?
   op_global.SymbolicAssembleMatrix();
 
@@ -446,7 +450,85 @@ TEST(SURFACE_SUBSURFACE_LOTS_OF_DIAGONALS) {
   double norm2(0.);
   result2.Norm2(&norm2);
   CHECK_CLOSE(0.0, norm2, 1.e-10);
+}
 
+
+TEST(THREE_LEVEL_HIERARCHY) {
+
+  // This tests coupling three block with 1x1, 2x2 and 3x3 diagonal operators.
+  using namespace Amanzi;
+  auto comm = Amanzi::getDefaultComm();
+
+  // create meshes
+  AmanziMesh::MeshFactory meshfactory(comm, Teuchos::null);
+  auto mesh1 = meshfactory.create(0.0,0.0, 1.0,1.0, 2,2);
+  auto mesh2 = meshfactory.create(0.0,0.0, 1.0,1.0, 2,2);
+  auto mesh3 = meshfactory.create(0.0,0.0, 1.0,1.0, 2,2);
+
+  // create primary (diagonal) entries
+  Operators::PDE_Accumulation diff1(AmanziMesh::Entity_kind::CELL, mesh1);
+
+  Operators::PDE_Accumulation diff2a(AmanziMesh::Entity_kind::CELL, mesh2);
+  Operators::PDE_Accumulation diff2b(AmanziMesh::Entity_kind::CELL, mesh2);
+
+  Operators::PDE_Accumulation diff3a(AmanziMesh::Entity_kind::CELL, mesh3);
+  Operators::PDE_Accumulation diff3b(AmanziMesh::Entity_kind::CELL, mesh3);
+  Operators::PDE_Accumulation diff3c(AmanziMesh::Entity_kind::CELL, mesh3);
+
+  // create the TreeOperator
+  // -- note these operators are square
+  auto tv1 = Teuchos::rcp(new TreeVectorSpace(diff1.global_operator()->get_row_map()));
+  auto tv2 = Teuchos::rcp(new TreeVectorSpace(diff2a.global_operator()->get_row_map()));
+  auto tv3 = Teuchos::rcp(new TreeVectorSpace(diff3a.global_operator()->get_row_map()));
+
+  // -- row and col maps for the coupled operator
+  auto tv1all = Teuchos::rcp(new TreeVectorSpace(comm));
+  tv1all->PushBack(tv1);
+
+  auto tv2all = Teuchos::rcp(new TreeVectorSpace(comm));
+  tv2all->PushBack(tv2);
+  tv2all->PushBack(tv2);
+
+  auto tv3all = Teuchos::rcp(new TreeVectorSpace(comm));
+  tv3all->PushBack(tv3);
+  tv3all->PushBack(tv3);
+  tv3all->PushBack(tv3);
+
+  auto tv23 = Teuchos::rcp(new TreeVectorSpace(comm));
+  tv23->PushBack(tv2all);
+  tv23->PushBack(tv3all);
+
+  auto tv123 = Teuchos::rcp(new TreeVectorSpace(comm));
+  tv123->PushBack(tv1all);
+  tv123->PushBack(tv23);
+
+  // -- now the operator
+  tv1all->Print(std::cout);
+  auto op1 = Teuchos::rcp(new Operators::TreeOperator(tv1all, tv1all));
+  op1->set_operator_block(0, 0, diff1.global_operator());
+
+  auto op2 = Teuchos::rcp(new Operators::TreeOperator(tv2all, tv2all));
+  op2->set_operator_block(0, 0, diff2a.global_operator());
+  op2->set_operator_block(1, 1, diff2b.global_operator());
+
+  auto op3 = Teuchos::rcp(new Operators::TreeOperator(tv3all, tv3all));
+  op3->set_operator_block(0, 0, diff3a.global_operator());
+  op3->set_operator_block(1, 1, diff3b.global_operator());
+  op3->set_operator_block(2, 2, diff3c.global_operator());
+
+  auto op23 = Teuchos::rcp(new Operators::TreeOperator(tv23, tv23));
+  op23->set_block(0, 0, op2);
+  op23->set_block(1, 1, op3);
+
+  auto op123 = Teuchos::rcp(new Operators::TreeOperator(tv123, tv123));
+  op123->set_block(0, 0, op1);
+  op123->set_block(1, 1, op23);
+
+  // print capabilities
+  std::cout << "Tree Operator Structure:\n" << op123->PrintDiagnostics() << std::endl;
+
+  // now, can we do something with it?
+  op123->SymbolicAssembleMatrix();
 }
 
 }
