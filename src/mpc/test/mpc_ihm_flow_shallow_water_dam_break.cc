@@ -95,8 +95,8 @@ using namespace Amanzi::AmanziGeometry;
   
   for (int f = 0; f < nfaces; ++f) {
     const AmanziGeometry::Point &xf = mesh->face_centroid(f);
-    if (std::abs(xf[2] - 1.0) < 1.e-12 ) {
-      p_top_avg += (p[0][f]) * mesh->face_area(f);
+    if (std::abs(xf[2] - 1.0) < 1.e-12) {
+      p_top_avg += p[0][f] * mesh->face_area(f);
       top_surface_area += mesh->face_area(f);
     }
   }
@@ -118,7 +118,8 @@ using namespace Amanzi::AmanziGeometry;
   std::cout<<"average hydrostatic pressure at surface: "<<patm + rho*g*h_avg<<std::endl;
   
   // compare the values
-  CHECK(std::abs(p_top_avg - (patm + rho*g*h_avg))/(patm + rho*g*h_avg) < 1.e-2);
+  CHECK(std::abs(p_top_avg - (patm + rho*g*h_avg))/(patm + rho*g*h_avg) < 1.0e-2);
 }
+
 
 

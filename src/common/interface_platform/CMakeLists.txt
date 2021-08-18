@@ -42,15 +42,16 @@ set(interface_inc_files
   InputConverterU.hh
   InputConverterU_Defs.hh)
 
-set(interface_src_files  InputConverter.cc InputConverterU.cc
-                         InputConverterU_State.cc InputConverterU_MPC.cc InputConverterU_PK.cc
-                         InputConverterU_Flow.cc InputConverterU_Transport.cc
-                         InputConverterU_Energy.cc
-                         InputConverterU_Chemistry.cc InputConverter_ThermoDatabase.cc
-                         InputConverterU_ShallowWater.cc
-                         InputConverterU_Multiphase.cc
-                         InputConverterU_Solvers.cc InputConverterU_Mesh.cc
-                         InputConverterU_Output.cc)
+set(interface_src_files InputConverter.cc InputConverterU.cc
+                        InputConverterU_State.cc InputConverterU_PK.cc
+                        InputConverterU_MPC.cc InputConverterU_MPC_deprecated.cc
+                        InputConverterU_Flow.cc InputConverterU_Transport.cc
+                        InputConverterU_Energy.cc
+                        InputConverterU_Chemistry.cc InputConverter_ThermoDatabase.cc
+                        InputConverterU_ShallowWater.cc
+                        InputConverterU_Multiphase.cc
+                        InputConverterU_Solvers.cc InputConverterU_Mesh.cc
+                        InputConverterU_Output.cc)
 
 add_amanzi_library(interface 
                    SOURCE ${interface_src_files}

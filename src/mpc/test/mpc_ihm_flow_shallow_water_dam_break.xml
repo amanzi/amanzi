@@ -214,7 +214,7 @@
             <ParameterList name="function">
               <ParameterList name="function-exprtk">
                 <Parameter name="number of arguments" type="int" value="3"/>
-                <Parameter name="formula" type="string" value="5 - 5*sgn(x-5)"/>
+                <Parameter name="formula" type="string" value="1 - sgn(x-5)"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -258,12 +258,12 @@
 
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot"/>
-    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1, -1}"/>
+    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 10, -1}"/>
   </ParameterList>
 
   <ParameterList name="visualization data surface">
     <Parameter name="file name base" type="string" value="plot_surface"/>
-    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1, -1}"/>
+    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 10, -1}"/>
   </ParameterList>
 
   <ParameterList name="cycle driver">
@@ -282,10 +282,10 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="start period time" type="double" value="0.0"/>
-        <Parameter name="end period time" type="double" value="25.0"/>
+        <Parameter name="end period time" type="double" value="20.0"/>
         <Parameter name="maximum cycle number" type="int" value="1000"/>
         <Parameter name="initial time step" type="double" value="1e-2"/>
-        <Parameter name="maximum time step" type="double" value="1e2"/>
+        <Parameter name="maximum time step" type="double" value="10.0"/>
       </ParameterList>
     </ParameterList>
     
@@ -480,9 +480,9 @@
         <Parameter name="limiter" type="string" value="Kuzmin"/>
         <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
         <Parameter name="limiter location" type="string" value="node"/>
-        <Parameter name="limiter cfl" type="double" value="0.1"/>
+        <Parameter name="limiter cfl" type="double" value="0.5"/>
       </ParameterList>
-      <Parameter name="cfl" type="double" value="0.2"/>
+      <Parameter name="cfl" type="double" value="0.5"/>
       <Parameter name="number of reduced cfl cycles" type="int" value="10"/>
       <Parameter name="numerical flux" type="string" value="Rusanov"/>
 

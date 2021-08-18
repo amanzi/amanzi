@@ -42,14 +42,17 @@ Teuchos::ParameterList InputConverterU::TranslateShallowWater_(const std::string
   MemoryManager mm;
   // DOMNode* node;
 
-  out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
+  out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain)
+      .set<std::string>("numerical flux", pk_model_["shallow_water"])
+      .set<int>("number of reduced cfl cycles", 10)
+      .set<double>("cfl", 0.2);
 
   out_list.sublist("reconstruction")
       .set<int>("polynomial order", 0)
       .set<std::string>("limiter", "Barth-Jespersen")
       .set<std::string>("limiter stencil", "cell to closest cells")
-      .set<std::string>("limiter location", "node")
-      .set<double>("limiter cfl", 0.1);
+      .set<std::string>("limiter location", "face")
+      .set<double>("limiter cfl", 0.5);
 
   // boundary conditions
   out_list.sublist("boundary conditions");

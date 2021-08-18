@@ -17,13 +17,10 @@
 #include <climits>
 
 // TPLs
-#include "boost/bind.hpp"
-
 #define  BOOST_FILESYTEM_NO_DEPRECATED
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 #include "boost/format.hpp"
-#include "boost/lexical_cast.hpp"
 
 #include <xercesc/dom/DOM.hpp>
 #include <xercesc/util/PlatformUtils.hpp>

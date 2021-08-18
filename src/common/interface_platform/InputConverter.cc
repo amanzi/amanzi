@@ -18,8 +18,6 @@
 #include <sys/stat.h>
 
 // TPLs
-#include <boost/lambda/lambda.hpp>
-#include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/filesystem/operations.hpp>
 

@@ -56,8 +56,7 @@
   <execution_controls>
     <verbosity level="high" />
     <!--restart>chk00090.h5</restart-->
-    <execution_control_defaults init_dt="1.0" method="picard" mode="steady" />
-    <execution_control end="1956,y" mode="steady" start="0.0" init_dt="1000.0"/>
+    <execution_control_defaults init_dt="1.0" method="picard" mode="transient" />
     <execution_control end="1980,y" mode="transient" start="1956,y"/>
   </execution_controls>
 
