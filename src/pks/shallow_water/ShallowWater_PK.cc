@@ -16,6 +16,7 @@
 #include "PK_DomainFunctionFactory.hh"
 
 #include "CompositeVector.hh"
+#include "Geometry.hh"
 
 // Amanzi::ShallowWater
 #include "DischargeEvaluator.hh"
@@ -551,6 +552,236 @@ void ShallowWater_PK::CommitStep(
 {
   Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator(velocity_key_))->SetFieldAsChanged(S.ptr());
   Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator(ponded_depth_key_))->SetFieldAsChanged(S.ptr());
+}
+
+
+//--------------------------------------------------------------
+// Lax-Friedrichs residual
+//--------------------------------------------------------------
+std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::vector<double> >& U) // input argument must contain coefficients of the basis expansion. cell c, node i, U[m][] contains the DOFs for mth component
+{
+  // calculate -\int_K F \cdot \nabla \phi_j + \int_{\partial K} (F \cdot n) \phi_j - \int_{K} S \phi_j + \alpha (U_m - Ubar)
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  
+  std::vector<double> integral(3, 0.0); // value to retrun
+    
+  AmanziMesh::Entity_ID_List cnodes; //DOFs of the cell (nodes)
+  mesh_->cell_get_nodes(K, &cnodes);
+  
+  std::vector<AmanziGeometry::Point> quad_nodes_vol(3);
+  std::vector<AmanziGeometry::Point> quad_nodes_face(3);
+  std::vector<AmanziGeometry::Point> coords(3);
+  for (int i = 0; i < cnodes.size(); ++i) { // find coordinates of triangle vertices
+    mesh_->node_get_coordinates(cnodes[i], &coords[i]);
+  }
+  
+  // find physical coordinates of quadrature points
+  
+  
+  for (int qp = 0; qp < 3; ++qp ) { // quadrature points
+    
+    std::vector<double> Uqp(3);
+    std::vector<std::vector<double>> flux(2);
+    std::vector<double> phi_j_grad(2);
+    double phi_j;
+    
+    AmanziGeometry::Point x_qp = quad_nodes_vol[qp];
+    
+    Uqp = EvalSol(U, x_qp);
+//    flux[0] = PhysicalFlux_x(U);
+//    flux[1] = PhysicalFlux_y(U);
+//
+//    phi_j_grad = basis_grad(j, K, x_qp);
+//    phi_j = basis_value(j, K, x_qp);
+//
+//    integral += -(flux[0]*phi_j_grad[0] + flux[1]*phi_j_grad[1]) * weights[qp];
+//    integral += -PhysicalSource(Uqp) * phi_j * weight_vol[qp];
+  }
+    
+  
+  
+  AmanziMesh::Entity_ID_List cfaces;
+  mesh_->cell_get_faces(K, &cfaces);
+  
+  for (int f = 0; f < cfaces.size(); ++f) {
+    
+    int orientation;
+    AmanziGeometry::Point n = mesh_->face_normal(cfaces[f],false, K, &orientation);
+    double farea = mesh_->face_area(cfaces[f]);
+    n /= farea;
+
+    // loop over quadrature points in dK
+    for (int qp = 0; qp < 1; ++qp) {
+      
+      std::vector<double> Uqp;
+      std::vector<std::vector<double>> flux(2);
+      double phi_i;
+
+      AmanziGeometry::Point x_qp = quad_nodes_face[qp];
+
+      Uqp = EvalSol(U,x_qp);
+//
+//      flux[0] = PhysicalFlux_x(U_qp);
+//      flux[1] = PhysicalFlux_y(U_qp);
+//
+//      phi_i = basis(j, x_qp)
+//
+//      integral += (flux[0]*n[0] + flux[1]*n[1]) * phi_i * weight_face[qp];
+    }
+    
+  }
+//
+//  integral += alpha // viscosity term
+  
+  return integral;
+}
+
+
+//--------------------------------------------------------------
+// Time-space residuals for time-stepping scheme
+//--------------------------------------------------------------
+std::vector<double> ShallowWater_PK::ResidualsTimeSpace(int c, int i, std::vector<std::vector<double> >& U, std::vector<std::vector<double> >& U_pr)
+{
+  std::vector<double> phi_K_j, phi_K_j_star;
+
+  phi_K_j = ResidualsLF(c, i, U);
+  phi_K_j_star = ResidualsLF(c, i, U_pr);
+  
+  // compute time step integral \int_{K} ((u - u_star)/\Delta t)  * \phi_i dx
+  std::vector<double> integral(3, 0.0);
+  
+  AmanziMesh::Entity_ID_List cnodes; //DOFs of the cell (nodes)
+  mesh_->cell_get_nodes(c, &cnodes);
+    
+    for (int qp = 0; qp < 3; ++qp ) { // quadrature points
+      
+      std::vector<double> Uqp(3);
+      std::vector<double> U_prqp(3);
+      double phi_j;
+      
+//      AmanziGeometry::Point x_qp = quad_nodes_vol[qp];
+//
+//      Uqp = EvalSol(U, x_qp);
+//      U_prqp = EvalSol(U_pr, x_qp);
+//
+//      phi_j = basis_value(j, x_qp);
+      
+//      integral += (1.0/dt) * (Uqp - U_prqp) * phi_j * weight_vol[qp];
+    }
+  
+  for (int m = 0; m < 3; ++m) {
+    integral[m] += 0.5 * (phi_K_j[m] + phi_K_j_star[m]);
+  }
+  
+  return integral;
+}
+
+
+//--------------------------------------------------------------
+// Evaluate solution at quadrature point
+//--------------------------------------------------------------
+std::vector<double> ShallowWater_PK::EvalSol(std::vector<std::vector<double>> U, AmanziGeometry::Point x_qp)
+{
+  std::vector<double> eval_sol(3, 0.0);
+  
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int c;
+  
+  for (int K = 0; K < ncells_owned; ++K) { // find the cell where the quadrature point is
+    AmanziMesh::Entity_ID_List cnodes;
+    mesh_->cell_get_nodes (K, &cnodes);
+    
+    std::vector<AmanziGeometry::Point> coords(3);
+    for (int i = 0; i < 3; ++i) {
+      mesh_->node_get_coordinates(cnodes[i], &coords[i]);
+    }
+    
+    if (AmanziGeometry::point_in_polygon(x_qp, coords) == true) {
+      c = K;
+      break;
+    }
+  }
+  
+  // find nodes of the cell c and loop over them
+  AmanziMesh::Entity_ID_List cnodes;
+  mesh_->cell_get_nodes(c, &cnodes);
+  for (int m = 0; m < 3; ++m) {
+    for (int i = 0; i < 3; ++i) {
+      eval_sol[m] += U[m][cnodes[i]] * basis_value(cnodes[i], c, x_qp);
+    }
+  }
+  
+  return eval_sol;
+}
+
+
+//--------------------------------------------------------------
+// Basis value (change to barycentric implementation)
+//--------------------------------------------------------------
+double ShallowWater_PK::basis_value(int i, int c, AmanziGeometry::Point x) // DOF (vertex), cell, evaluation point
+{
+  std::vector<AmanziGeometry::Point> x_vertex(3);
+  
+  AmanziMesh::Entity_ID_List cnodes;
+  mesh_->cell_get_nodes(c, &cnodes);
+  
+  for (int j = 0; j < 3; ++j) {
+    mesh_->node_get_coordinates(cnodes[j], &x_vertex[j]);
+    if (cnodes[j] == i) {
+      x_vertex[j][2] = 1.0;
+    }
+    else {
+      x_vertex[j][2] = 0.0;
+    }
+  }
+  
+  AmanziGeometry::Point x0, x1, x2;
+  
+  x0 = x_vertex[0]; // vertices of plane on triangle element
+  x1 = x_vertex[1];
+  x2 = x_vertex[2];
+  
+  AmanziGeometry::Point edge_0 = x0 - x1, edge_1 = x2 - x1;
+  AmanziGeometry::Point n = edge_0^edge_1;
+  
+  return -( (x[0] - x1[0])*n[0] + (x[1] - x1[1])*n[1] )/ (n[2]); // (x1 - x) \cdot n = 0
+}
+
+
+//--------------------------------------------------------------
+// Basis gradient value (change to barycentric implementation)
+//--------------------------------------------------------------
+std::vector<double> ShallowWater_PK::basis_grad(int i, int c, AmanziGeometry::Point x)
+{
+  std::vector<double> grad(2);
+  std::vector<AmanziGeometry::Point> x_vertex(3);
+  
+  AmanziMesh::Entity_ID_List cnodes;
+  mesh_->cell_get_nodes(c, &cnodes);
+  
+  for (int j = 0; j < 3; ++j) {
+    mesh_->node_get_coordinates(cnodes[j], &x_vertex[j]);
+    if (cnodes[j] == i) {
+      x_vertex[j][2] = 1.0;
+    }
+    else {
+      x_vertex[j][2] = 0.0;
+    }
+  }
+  
+  AmanziGeometry::Point x0, x1, x2;
+  
+  x0 = x_vertex[0]; // vertices of plane on triangle element
+  x1 = x_vertex[1];
+  x2 = x_vertex[2];
+  
+  AmanziGeometry::Point edge_0 = x0 - x1, edge_1 = x2 - x1;
+  AmanziGeometry::Point n = edge_0^edge_1;
+  
+  grad[0] = -n[0]/n[2];
+  grad[1] = -n[1]/n[2];
+  
+  return grad;
 }
 
 
