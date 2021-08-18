@@ -93,6 +93,8 @@ class ShallowWater_PK : public PK_Physical,
 
   std::vector<double> PhysicalSource(const std::vector<double>&);
   std::vector<double> NumericalSource(const std::vector<double>&, int);
+  std::vector<double> PhysFlux_x(std::vector<double> U);
+  std::vector<double> PhysFlux_y(std::vector<double> U);
                           
   std::vector<double> ResidualsLF(int K, int j, std::vector<std::vector<double> >& U);
   std::vector<double> ResidualsTimeSpace(int c, int i, std::vector<std::vector<double> >& U, std::vector<std::vector<double> >& U_pr);
