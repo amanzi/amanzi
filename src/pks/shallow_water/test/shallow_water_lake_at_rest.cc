@@ -76,9 +76,12 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
   Epetra_MultiVector &B_c = *S->GetFieldData("surface-bathymetry", passwd)->ViewComponent ("cell");
   Epetra_MultiVector &B_n = *S->GetFieldData("surface-bathymetry", passwd)->ViewComponent ("node");
   Epetra_MultiVector &h_c = *S->GetFieldData("surface-ponded_depth", passwd)->ViewComponent ("cell");
+  Epetra_MultiVector &h_n = *S->GetFieldData("surface-ponded_depth", passwd)->ViewComponent ("node");
   Epetra_MultiVector &ht_c = *S->GetFieldData("surface-total_depth", passwd)->ViewComponent ("cell");
   Epetra_MultiVector &vel_c = *S->GetFieldData("surface-velocity", passwd)->ViewComponent ("cell");
+  Epetra_MultiVector &vel_n = *S->GetFieldData("surface-velocity", passwd)->ViewComponent ("node");
   Epetra_MultiVector &q_c = *S->GetFieldData("surface-discharge", "surface-discharge")->ViewComponent ("cell");
+  Epetra_MultiVector &q_n = *S->GetFieldData("surface-discharge", "surface-discharge")->ViewComponent ("node");
   Epetra_MultiVector &p_c = *S->GetFieldData("surface-ponded_pressure", "surface-ponded_pressure")->ViewComponent ("cell");
 
   // Define bathymetry at the cell vertices (Bn)
@@ -90,7 +93,13 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
         
     double x = node_crd[0], y = node_crd[1];
         
-    B_n[0][n] = std::max(0.0, 0.25 - 5 * ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))); // non-smooth bathymetry
+//    B_n[0][n] = std::max(0.0, 0.25 - 5 * ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))); // non-smooth bathymetry
+    B_n[0][n] = 0.0;
+    h_n[0][n] = H_inf - B_n[0][n];
+    vel_n[0][n] = 0.0;
+    vel_n[1][n] = 0.0;
+    q_n[0][n] = 0.0;
+    q_n[1][n] = 0.0;
   }
     
   for (int c = 0; c < ncells_owned; ++c) {
@@ -145,6 +154,7 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
     vel_c[1][c] = 0.0;
     q_c[0][c] = 0.0;
     q_c[1][c] = 0.0;
+    
     p_c[0][c] = patm + rho * g * h_c[0][c];
   }
 }
@@ -245,12 +255,12 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
   std::vector<double> dx, Linferror, L1error, L2error;
     
   // Rectangular mesh
-  RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 25, 25, request_faces, request_edges);
+//  RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 25, 25, request_faces, request_edges);
     
   // Polygonal meshes
 //  RCP<Mesh> mesh = meshfactory.create ("test/median15x16.exo");
 //  RCP<Mesh> mesh = meshfactory.create ("test/random40.exo");
-//  RCP<Mesh> mesh = meshfactory.create ("test/triangular16.exo");
+  RCP<Mesh> mesh = meshfactory.create ("test/triangular16.exo");
   
   // Create a state
         
@@ -307,7 +317,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
         
   int iter = 0;
         
-  while (t_new < 1.0) {
+  while (iter < 2) {
    
     double t_out = t_new;
             
@@ -316,7 +326,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
             
     lake_at_rest_exact_field(mesh, ht_ex, vel_ex, t_out);
             
-    if (iter % 5 == 0) {
+    if (iter % 1 == 0) {
                
       io.InitializeCycle(t_out, iter, "");
                 
@@ -341,7 +351,6 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
     dt = SWPK.get_dt();
             
     t_new = t_old + dt;
-            
     SWPK.AdvanceStep(t_old, t_new);
     SWPK.CommitStep(t_old, t_new, S);
             
