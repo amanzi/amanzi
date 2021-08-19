@@ -524,17 +524,14 @@ TEST(THREE_LEVEL_HIERARCHY) {
   op123->set_block(0, 0, op1);
   op123->set_block(1, 1, op23);
 
-  // -- add coupling op operator across multiple levels (1 -> 2a)
-  //    we need combine all tree vector map is a single map
-  auto tv23all = Teuchos::rcp(new TreeVectorSpace(comm));
-  tv23all->PushBack(tv2all);
-  tv23all->PushBack(tv3all);
-
-  auto coup12 = Teuchos::rcp(new Operators::TreeOperator(tv1all, tv23all));
+  // -- add coupling of operators across multiple levels (1 -> 2a)
+  //    curently we cannot couple between two levels
+  /*
+  auto coup12 = Teuchos::rcp(new Operators::TreeOperator(tv1all, tv2all));
   op123->set_block(0, 1, coup12);
 
   auto cvs0 = op1->get_row_map()->SubVector(0)->Data();
-  auto cvs1 = op23->get_col_map()->SubVector(0)->SubVector(1)->Data();
+  auto cvs1 = op2->get_col_map()->SubVector(0)->Data();
 
   auto inds_row0 = std::make_shared<std::vector<std::vector<int> > >(4);
   auto inds_col1 = std::make_shared<std::vector<std::vector<int> > >(4);
@@ -544,21 +541,22 @@ TEST(THREE_LEVEL_HIERARCHY) {
     (*inds_col1)[k].resize(1);
 
     (*inds_row0)[k][0] = k;  // local row id for op1
-    (*inds_col1)[k][0] = k;  // local column id for op23 (supermap is needed)
+    (*inds_col1)[k][0] = k;  // local column id for op23
   }
-  // NOTE: due to missing capability, we connect 1 to 2a only!
 
-  Teuchos::ParameterList plist;
   auto op_coupling12 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
       plist, cvs0, cvs1, inds_row0, inds_col1));
   coup12->set_operator_block(0, 0, op_coupling12->global_operator());
+  */
 
-  // -- add coupling of of operators on the same level (2b -> 3c)
-  //    we need to add an off-diagonal block to tree-operator op23
+  // -- add coupling of operators on the same level (2a -> 3a)
+  //    we add one off-diagonal block to 2x2 tree-operator op23.
+  //    currently it is not possible to select components to couple.
   auto coup23 = Teuchos::rcp(new Operators::TreeOperator(tv2all, tv3all));
   op23->set_block(0, 1, coup23);
 
-  auto cvs2 = op23->get_row_map()->SubVector(1)->SubVector(2)->Data();
+  auto cvs1 = op23->get_row_map()->SubVector(0)->SubVector(0)->Data();
+  auto cvs2 = op23->get_col_map()->SubVector(1)->SubVector(0)->Data();
 
   auto inds_row1 = std::make_shared<std::vector<std::vector<int> > >(9);
   auto inds_col2 = std::make_shared<std::vector<std::vector<int> > >(9);
@@ -571,9 +569,10 @@ TEST(THREE_LEVEL_HIERARCHY) {
     (*inds_col2)[k][0] = k;  // local column id for op23
   }
 
+  Teuchos::ParameterList plist;
   auto op_coupling23 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
       plist, cvs1, cvs2, inds_row1, inds_col2));
-  coup23->set_operator_block(1, 2, op_coupling23->global_operator());
+  coup23->set_operator_block(0, 1, op_coupling23->global_operator());
 
   // print capabilities
   std::cout << "Tree Operator Structure:\n" << op123->PrintDiagnostics() << std::endl;
@@ -609,12 +608,10 @@ TEST(THREE_LEVEL_HIERARCHY) {
   val3c.PutScalar(3.3);
   diff3c.AddAccumulationTerm(val3c, "cell");
 
-  auto values12 = std::make_shared<std::vector<double> >(4);
-  for (int k = 0; k < 4; ++k) {
-    (*values12)[k] = 4.1;
-  }
-  op_coupling12->Setup(values12, -1.0);
-  op_coupling12->UpdateMatrices(Teuchos::null, Teuchos::null);
+  // auto values12 = std::make_shared<std::vector<double> >(4);
+  // for (int k = 0; k < 4; ++k) (*values12)[k] = 4.1;
+  // op_coupling12->Setup(values12, -1.0);
+  // op_coupling12->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   auto values23 = std::make_shared<std::vector<double> >(9);
   for (int k = 0; k < 9; ++k) {
@@ -634,8 +631,8 @@ TEST(THREE_LEVEL_HIERARCHY) {
 
   ones.PutScalar(1.0);
   op123->A()->Apply(ones, result);
-  CHECK_CLOSE(result[0], -3.1, 1e-12);
-  CHECK_CLOSE(result[5], -2.0, 1e-12);
+  // CHECK_CLOSE(result[0], -3.1, 1e-12);
+  CHECK_CLOSE(result[4], -2.1, 1e-12);
 }
 
 }
