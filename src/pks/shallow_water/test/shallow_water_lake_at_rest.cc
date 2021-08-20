@@ -95,16 +95,21 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
     double x = node_crd[0], y = node_crd[1];
         
 //    B_n[0][n] = std::max(0.0, 0.25 - 5 * ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))); // non-smooth bathymetry
-    B_n[0][n] = 0.0;
+    B_n[0][n] = x*(1-x)*y*(1-y);
+//    B_n[0][n] = 0.0;
 //    h_n[0][n] = 0.5;
 //    h_n[0][n] = 0.5 + x*(1-x)*y*(1-y);
-      if ((x - 0.5)*(x - 0.5) + (y - 0.5)*(y - 0.5) < 0.2 * 0.2) {
-        h_n[0][n] = H_inf + 0.01;
-      }
-      else {
-        h_n[0][n] = H_inf;
-      }
-    ht_n[0][n] = h_n[0][n] + B_n[0][n];
+    
+//      if ((x - 0.5)*(x - 0.5) + (y - 0.5)*(y - 0.5) < 0.2 * 0.2) {
+//        ht_n[0][n] = H_inf + 0.1;
+//      }
+//      else {
+//        ht_n[0][n] = H_inf;
+//      }
+    
+//    ht_n[0][n] = h_n[0][n] + B_n[0][n];
+    ht_n[0][n] = H_inf;
+    h_n[0][n] = ht_n[0][n] - B_n[0][n];
     vel_n[0][n] = 0.0;
     vel_n[1][n] = 0.0;
     q_n[0][n] = 0.0;
@@ -333,7 +338,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
         
   int iter = 0;
         
-  while (t_new < 0.1) {
+  while (t_new < 0.05) {
    
     double t_out = t_new;
             

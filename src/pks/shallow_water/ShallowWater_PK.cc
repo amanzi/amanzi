@@ -344,6 +344,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   Epetra_MultiVector& h_c = *S_->GetFieldData(ponded_depth_key_, passwd_)->ViewComponent("cell", true);
   Epetra_MultiVector& h_n = *S_->GetFieldData(ponded_depth_key_, passwd_)->ViewComponent("node", true);
   Epetra_MultiVector& ht_c = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
+  Epetra_MultiVector& ht_n = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("node", true);
   Epetra_MultiVector& vel_c = *S_->GetFieldData(velocity_key_, passwd_)->ViewComponent("cell", true);
   Epetra_MultiVector& vel_n = *S_->GetFieldData(velocity_key_, passwd_)->ViewComponent("node", true);
 
@@ -464,6 +465,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
           if (std::abs(sum_max[m]) > 0.0) {
             beta[m] = beta[m] / sum_max[m];
           }
+//          beta[m] = 1.0/3;
         }
         
         // calculate contribution to node i
@@ -537,6 +539,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         if (std::abs(sum_max[m]) > 0.0) {
           beta[m] = beta[m] / sum_max[m];
         }
+//        beta[m] = 1.0/3;
       }
       
       // calculate contribution to node i
@@ -556,6 +559,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     h_n[0][i] = U_new[0][i];
     q_n[0][i] = U_new[1][i];
     q_n[1][i] = U_new[2][i];
+    ht_n[0][i] = h_n[0][i] + B_n[0][i];
     double h = h_n[0][i];
     double factor = (2.0*h)/(h*h + std::max(h*h, 1.e-14));
     vel_n[0][i] = factor * q_n[0][i];
@@ -691,22 +695,26 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
   mesh_->cell_get_nodes(K, &cnodes);
   
   // 1a. construct volume quadrature points
-  std::vector<AmanziGeometry::Point> quad_nodes_vol(3);
-  std::vector<double> weights_vol(3);
+  int order = 5;
+  int n_points, start_position;
+  n_points = WhetStone::q2d_order[order][0];
+  start_position = WhetStone::q2d_order[order][1];
+  std::vector<AmanziGeometry::Point> quad_nodes_vol(n_points);
+  std::vector<double> weights_vol(n_points);
   std::vector<AmanziGeometry::Point> coords(3);
   for (int i = 0; i < cnodes.size(); ++i) { // find coordinates of triangle vertices in mesh
     mesh_->node_get_coordinates(cnodes[i], &coords[i]);
   }
   // find physical coordinates of quadrature points (3 quadrature points for now; P1 triangle elements)
   for (int i = 0; i < quad_nodes_vol.size(); ++i) {
-    quad_nodes_vol[i] = (1.0 - WhetStone::q2d_points[i+1][0] - WhetStone::q2d_points[i+1][1] )*coords[0] + (WhetStone::q2d_points[i+1][0])*coords[1] + (WhetStone::q2d_points[i+1][1])*coords[2];
-    weights_vol[i] = WhetStone::q2d_weights[i+1] * mesh_->cell_volume(K);
+    quad_nodes_vol[i] = (1.0 - WhetStone::q2d_points[i+start_position][0] - WhetStone::q2d_points[i+start_position][1] )*coords[0] + (WhetStone::q2d_points[i+start_position][0])*coords[1] + (WhetStone::q2d_points[i+start_position][1])*coords[2];
+    weights_vol[i] = WhetStone::q2d_weights[i+start_position] * mesh_->cell_volume(K);
   }
   
   // 1b. evaluate volume integral using quadrature points
   for (int qp = 0; qp < quad_nodes_vol.size(); ++qp ) {
     
-    std::vector<double> Uqp(3);
+    std::vector<double> Uqp(3), Sqp(3);
     std::vector<std::vector<double>> flux(2);
     std::vector<double> phi_j_grad(2);
     double phi_j;
@@ -714,23 +722,23 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
     AmanziGeometry::Point x_qp = quad_nodes_vol[qp];
     
     Uqp = EvalSol(U, x_qp, K);
+    Sqp = EvalPhySource(U, x_qp, K);
     
     flux[0] = PhysFlux_x(Uqp);
-
     flux[1] = PhysFlux_y(Uqp);
 
     phi_j_grad = basis_grad(j, K, x_qp);
     phi_j = basis_value(j, K, x_qp);
 
     for (int m = 0; m < 3; ++m) {
-    integral[m] += -(flux[0][m]*phi_j_grad[0] + flux[1][m]*phi_j_grad[1]) * weights_vol[qp];
+      integral[m] += -(flux[0][m]*phi_j_grad[0] + flux[1][m]*phi_j_grad[1]) * weights_vol[qp];
+      integral[m] += Sqp[m] * phi_j * weights_vol[qp]; // bathymetry term
     }
-//    integral += -PhysicalSource(Uqp) * phi_j * weights_vol[qp]; // bathymetry term
   }
     
   // 2a. construct face quadrature points
-  std::vector<AmanziGeometry::Point> quad_nodes_face(2);
-  std::vector<double> weights_face(2);
+  std::vector<AmanziGeometry::Point> quad_nodes_face(3); // 3 points order 2*3 - 1
+  std::vector<double> weights_face(3);
   AmanziMesh::Entity_ID_List cfaces;
   mesh_->cell_get_faces(K, &cfaces);
   
@@ -744,9 +752,9 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
       mesh_->node_get_coordinates(fnodes[i], &edge_coords[i]);
     }
     // find physical coordinates of face quadrature points (2 face quadrature points for now; P1 triangle elements)
-    for (int i = 0; i < fnodes.size(); ++i) {
-      quad_nodes_face[i] = (1 - WhetStone::q1d_points[1][i] )*edge_coords[0] + (WhetStone::q2d_points[1][i])*edge_coords[1];
-      weights_face[i] = WhetStone::q1d_weights[1][i] * mesh_->face_area(cfaces[f]);
+    for (int i = 0; i < quad_nodes_face.size(); ++i) {
+      quad_nodes_face[i] = (1 - WhetStone::q1d_points[2][i] )*edge_coords[0] + (WhetStone::q2d_points[2][i])*edge_coords[1];
+      weights_face[i] = WhetStone::q1d_weights[2][i] * mesh_->face_area(cfaces[f]);
     }
     
     // 2b. evaluate face integral using quadrature points
@@ -831,16 +839,20 @@ std::vector<double> ShallowWater_PK::ResidualsTimeSpace(int K, int j, std::vecto
   mesh_->cell_get_nodes(K, &cnodes);
   
   // 1a. construct volume quadrature points
-  std::vector<AmanziGeometry::Point> quad_nodes_vol(3);
-  std::vector<double> weights_vol(3);
+  int order = 5;
+  int n_points, start_position;
+  n_points = WhetStone::q2d_order[order][0];
+  start_position = WhetStone::q2d_order[order][1];
+  std::vector<AmanziGeometry::Point> quad_nodes_vol(n_points);
+  std::vector<double> weights_vol(n_points);
   std::vector<AmanziGeometry::Point> coords(3);
-  for (int i = 0; i < cnodes.size(); ++i) { // find coordinates of triangle vertices
+  for (int i = 0; i < cnodes.size(); ++i) { // find coordinates of triangle vertices in mesh
     mesh_->node_get_coordinates(cnodes[i], &coords[i]);
   }
   // find physical coordinates of quadrature points (3 quadrature points for now; P1 triangle elements)
-  for (int i = 0; i < cnodes.size(); ++i) {
-    quad_nodes_vol[i] = (1 - WhetStone::q2d_points[i+1][0] - WhetStone::q2d_points[i+1][1] )*coords[0] + (WhetStone::q2d_points[i+1][0])*coords[1] + (WhetStone::q2d_points[i+1][1])*coords[2];
-    weights_vol[i] = WhetStone::q2d_weights[i+1] * mesh_->cell_volume(K);
+  for (int i = 0; i < quad_nodes_vol.size(); ++i) {
+    quad_nodes_vol[i] = (1.0 - WhetStone::q2d_points[i+start_position][0] - WhetStone::q2d_points[i+start_position][1] )*coords[0] + (WhetStone::q2d_points[i+start_position][0])*coords[1] + (WhetStone::q2d_points[i+start_position][1])*coords[2];
+    weights_vol[i] = WhetStone::q2d_weights[i+start_position] * mesh_->cell_volume(K);
   }
   
   // 1b. evaluate volume integral using quadrature points
@@ -860,7 +872,6 @@ std::vector<double> ShallowWater_PK::ResidualsTimeSpace(int K, int j, std::vecto
     for (int m = 0; m < 3; ++m) {
     integral[m] += (1.0/dt) * (U_prqp[m] - Uqp[m]) * phi_j * weights_vol[qp];
     }
-//    integral += -PhysicalSource(Uqp) * phi_j * weights_vol[qp]; // bathymetry term
   }
   
   std::vector<double> phi_K_j, phi_K_j_star;
@@ -894,6 +905,30 @@ std::vector<double> ShallowWater_PK::EvalSol(std::vector<std::vector<double>> U,
   return eval_sol;
 }
 
+
+//--------------------------------------------------------------
+// Evaluate physical source at quadrature point
+//--------------------------------------------------------------
+std::vector<double> ShallowWater_PK::EvalPhySource(std::vector<std::vector<double>> U, AmanziGeometry::Point x_qp, int c) // point x_qp lies in cell c
+{
+  std::vector<double> eval_sol(3, 0.0);
+  
+  Epetra_MultiVector& B_n = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("node", true);
+  
+  // find nodes of the cell c and loop over them to find \sum_{i \in K} U_i(t) \phi_i(x,y)
+  AmanziMesh::Entity_ID_List cnodes;
+  mesh_->cell_get_nodes(c, &cnodes);
+  for (int m = 1; m < 3; ++m) {
+    double h = 0.0, s = 0.0;
+    for (int i = 0; i < cnodes.size(); ++i) {
+      std::vector<double> phi_i_grad = basis_grad(cnodes[i], c, x_qp);
+      h += U[0][cnodes[i]] * basis_value(cnodes[i], c, x_qp);
+      s += B_n[0][cnodes[i]] * phi_i_grad[m-1];
+    }
+    eval_sol[m] += g_ * h * s;
+  }
+  return eval_sol;
+}
 
 //--------------------------------------------------------------
 // Basis value (change to barycentric implementation)
