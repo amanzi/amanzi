@@ -96,14 +96,14 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
         
 //    B_n[0][n] = std::max(0.0, 0.25 - 5 * ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))); // non-smooth bathymetry
     B_n[0][n] = 0.0;
+//    h_n[0][n] = 0.5;
 //    h_n[0][n] = 0.5 + x*(1-x)*y*(1-y);
       if ((x - 0.5)*(x - 0.5) + (y - 0.5)*(y - 0.5) < 0.2 * 0.2) {
-        h_n[0][n] = H_inf + 0.1;
+        h_n[0][n] = H_inf + 0.01;
       }
       else {
         h_n[0][n] = H_inf;
       }
-//    h_n[0][n] = H_inf - B_n[0][n];
     ht_n[0][n] = h_n[0][n] + B_n[0][n];
     vel_n[0][n] = 0.0;
     vel_n[1][n] = 0.0;
@@ -333,7 +333,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
         
   int iter = 0;
         
-  while (t_new < 0.2) {
+  while (t_new < 0.1) {
    
     double t_out = t_new;
             
@@ -406,32 +406,6 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
   CHECK_CLOSE(0.0, L1error[0], 1e-12);
   CHECK_CLOSE(0.0, Linferror[0], 1e-12);
         
-  io.InitializeCycle(t_out, iter, "");
-        
-  io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
-  io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
-  io.WriteVector(*vel(0), "vx", AmanziMesh::CELL);
-  io.WriteVector(*vel(1), "vy", AmanziMesh::CELL);
-  io.WriteVector(*q(0), "qx", AmanziMesh::CELL);
-  io.WriteVector(*q(1), "qy", AmanziMesh::CELL);
-  io.WriteVector(*B(0), "B", AmanziMesh::CELL);
-  io.WriteVector(*Bn(0), "B_n", AmanziMesh::NODE);
-  io.WriteVector(*Bn(0), "B_n", AmanziMesh::NODE);
-  io.WriteVector(*hhn(0), "hh_n", AmanziMesh::NODE);
-  io.WriteVector(*htn(0), "ht_n", AmanziMesh::NODE);
-  io.WriteVector(*veln(0), "vel_n_x", AmanziMesh::NODE);
-  io.WriteVector(*veln(1), "vel_n_y", AmanziMesh::NODE);
-  io.WriteVector(*qn(0), "qn_x", AmanziMesh::NODE);
-  io.WriteVector(*qn(1), "qn_y", AmanziMesh::NODE);
-  io.WriteVector(*p(0), "hyd pressure", AmanziMesh::CELL);
-  io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
-        
-  io.WriteVector(*ht_ex(0), "ht_ex", AmanziMesh::CELL);
-  io.WriteVector(*vel_ex(0), "vx_ex", AmanziMesh::CELL);
-  io.WriteVector(*vel_ex(1), "vy_ex", AmanziMesh::CELL);
-        
-  io.FinalizeCycle();
-    
   std::cout<<"Computed error H (L_1): "<<L1error[0]<<std::endl;
   std::cout<<"Computed error H (L_inf): "<<Linferror[0]<<std::endl;
 }
