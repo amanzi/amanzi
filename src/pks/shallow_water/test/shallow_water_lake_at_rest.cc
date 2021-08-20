@@ -94,8 +94,9 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
         
     double x = node_crd[0], y = node_crd[1];
         
-//    B_n[0][n] = std::max(0.0, 0.25 - 5 * ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))); // non-smooth bathymetry
-    B_n[0][n] = x*(1-x)*y*(1-y);
+    B_n[0][n] = std::max(0.0, 0.25 - 5 * ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))); // non-smooth bathymetry
+//    B_n[0][n] = x*(1-x)*y*(1-y);
+//    B_n[0][n] = x/4.0;
 //    B_n[0][n] = 0.0;
 //    h_n[0][n] = 0.5;
 //    h_n[0][n] = 0.5 + x*(1-x)*y*(1-y);
@@ -130,6 +131,7 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
         
     B_c[0][c] = 0.0;
     h_c[0][c] =0.0;
+    ht_c[0][c] = 0.0;
         
     // Compute cell averaged bathymetrt (Bc)
     for (int f = 0; f < nfaces_cell; ++f) {
@@ -154,6 +156,7 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
             
       B_c[0][c] += (area / mesh->cell_volume(c)) * (B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]]) / 2;
       h_c[0][c] += (area / mesh->cell_volume(c)) * (h_n[0][face_nodes[0]] + h_n[0][face_nodes[1]]) / 2;
+      ht_c[0][c] += (area / mesh->cell_volume(c)) * (ht_n[0][face_nodes[0]] + ht_n[0][face_nodes[1]]) / 2;
     }
         
     // Perturb the solution; change time period t_new to at least 10.0
@@ -164,7 +167,7 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
     //    ht_c[0][c] = H_inf;
     //  }
         
-    ht_c[0][c] = h_c[0][c] + B_c[0][c];
+//    ht_c[0][c] = h_c[0][c] + B_c[0][c];
 //    h_c[0][c] = ht_c[0][c] - B_c[0][c];
     vel_c[0][c] = 0.0;
     vel_c[1][c] = 0.0;

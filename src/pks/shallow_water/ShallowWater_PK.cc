@@ -465,7 +465,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
           if (std::abs(sum_max[m]) > 0.0) {
             beta[m] = beta[m] / sum_max[m];
           }
-//          beta[m] = 1.0/3;
         }
         
         // calculate contribution to node i
@@ -539,7 +538,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         if (std::abs(sum_max[m]) > 0.0) {
           beta[m] = beta[m] / sum_max[m];
         }
-//        beta[m] = 1.0/3;
       }
       
       // calculate contribution to node i
@@ -633,8 +631,8 @@ std::vector<double> ShallowWater_PK::ComputePhiTotal(int K, std::vector<std::vec
   mesh_->cell_get_nodes(K, &cnodes);
     
   // 2a. construct face quadrature points
-  std::vector<AmanziGeometry::Point> quad_nodes_face(2);
-  std::vector<double> weights_face(2);
+  std::vector<AmanziGeometry::Point> quad_nodes_face(3); // 3 points order 2*3 - 1
+  std::vector<double> weights_face(3);
   AmanziMesh::Entity_ID_List cfaces;
   mesh_->cell_get_faces(K, &cfaces);
   
@@ -648,9 +646,9 @@ std::vector<double> ShallowWater_PK::ComputePhiTotal(int K, std::vector<std::vec
       mesh_->node_get_coordinates(fnodes[i], &edge_coords[i]);
     }
     // find physical coordinates of face quadrature points (2 face quadrature points for now; P1 triangle elements)
-    for (int i = 0; i < fnodes.size(); ++i) {
-      quad_nodes_face[i] = (1 - WhetStone::q1d_points[1][i] )*edge_coords[0] + (WhetStone::q2d_points[1][i])*edge_coords[1];
-      weights_face[i] = WhetStone::q1d_weights[1][i] * mesh_->face_area(cfaces[f]);
+    for (int i = 0; i < quad_nodes_face.size(); ++i) {
+      quad_nodes_face[i] = (1 - WhetStone::q1d_points[2][i] )*edge_coords[0] + (WhetStone::q1d_points[2][i])*edge_coords[1];
+      weights_face[i] = WhetStone::q1d_weights[2][i] * mesh_->face_area(cfaces[f]);
     }
     
     // 2b. evaluate face integral using quadrature points
@@ -695,7 +693,7 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
   mesh_->cell_get_nodes(K, &cnodes);
   
   // 1a. construct volume quadrature points
-  int order = 5;
+  int order = 2;
   int n_points, start_position;
   n_points = WhetStone::q2d_order[order][0];
   start_position = WhetStone::q2d_order[order][1];
@@ -753,7 +751,7 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
     }
     // find physical coordinates of face quadrature points (2 face quadrature points for now; P1 triangle elements)
     for (int i = 0; i < quad_nodes_face.size(); ++i) {
-      quad_nodes_face[i] = (1 - WhetStone::q1d_points[2][i] )*edge_coords[0] + (WhetStone::q2d_points[2][i])*edge_coords[1];
+      quad_nodes_face[i] = (1 - WhetStone::q1d_points[2][i] )*edge_coords[0] + (WhetStone::q1d_points[2][i])*edge_coords[1];
       weights_face[i] = WhetStone::q1d_weights[2][i] * mesh_->face_area(cfaces[f]);
     }
     
@@ -839,7 +837,7 @@ std::vector<double> ShallowWater_PK::ResidualsTimeSpace(int K, int j, std::vecto
   mesh_->cell_get_nodes(K, &cnodes);
   
   // 1a. construct volume quadrature points
-  int order = 5;
+  int order = 2;
   int n_points, start_position;
   n_points = WhetStone::q2d_order[order][0];
   start_position = WhetStone::q2d_order[order][1];
