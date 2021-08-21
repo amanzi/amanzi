@@ -1207,8 +1207,10 @@ The available Kd models are `"linear`", `"langmuir`", and `"freundlich`".
 Different models and parameters are assigned per solute in sub-elements through attributes.
 The Kd and molecular diffusion parameters are specified in subelements.
 
-NOTE: Parameter for Kd models may be given either here or as the *global* reaction parameters in the thermodynamic 
-database block. The material data overwrites any global data thus providing fine control of the soil properties. 
+NOTE: Parameters for Kd models may be given either here or as the *global* parameters in the thermodynamic 
+database section (or a stand-alone xml file).
+The Kd models described in the material section overwrite any global data provided here and allows for 
+fine control of the soil properties. 
 It is supported currently by the Amanzi geochemical engine.
 
 .. code-block:: xml
