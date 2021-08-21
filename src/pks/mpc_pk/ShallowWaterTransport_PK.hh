@@ -36,22 +36,6 @@ class ShallowWaterTransport_PK : public PK_MPCWeak {
   static RegisteredPKFactory<ShallowWaterTransport_PK> reg_;
 };
 
-
-// -----------------------------------------------------------------------------
-// Setup of PK
-// -----------------------------------------------------------------------------
-void ShallowWaterTransport_PK::Setup(const Teuchos::Ptr<State>& S)
-{
-  PK_MPCWeak::Setup(S);
-
-  // tell transport to use Riemann velocity
-  std::string domain;
-  Teuchos::ParameterList plist;
-  plist.sublist("physical models and assumptions")
-       .set<std::string>("darcy flux key", Keys::getKey(domain, "riemann_flux"));
-  std::cout << name_ << std::endl;
-}
-
 }  // namespace Amanzi
 
 #endif

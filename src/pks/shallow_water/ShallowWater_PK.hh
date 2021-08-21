@@ -113,10 +113,9 @@ class ShallowWater_PK : public PK_Physical,
 
   // names of state fields
   Key velocity_key_, discharge_key_;
-  Key ponded_depth_key_;
-  Key total_depth_key_;
-  Key bathymetry_key_;
+  Key ponded_depth_key_, total_depth_key_, bathymetry_key_;
   Key hydrostatic_pressure_key_;
+  Key riemann_flux_key_;
 
   std::string passwd_;
 

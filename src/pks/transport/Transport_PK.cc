@@ -161,6 +161,13 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
   mesh_ = S->GetMesh(domain_);
   dim = mesh_->space_dimension();
 
+  // cross-coupling of PKs
+  auto physical_models = Teuchos::sublist(tp_list_, "physical models and assumptions");
+  bool abs_perm = physical_models->get<bool>("permeability field is required", false);
+  std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single continuum");
+  use_transport_porosity_ = physical_models->get<bool>("effective transport porosity", false);
+  bool transport_on_manifold = physical_models->get<bool>("transport in fractures", false);
+
   // generate keys here to be available for setup of the base class
   tcc_key_ = Keys::getKey(domain_, "total_component_concentration"); 
 
@@ -168,21 +175,14 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
   porosity_key_ = Keys::getKey(domain_, "porosity"); 
   transport_porosity_key_ = Keys::getKey(domain_, "transport_porosity"); 
 
-  darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
+  std::string tmp = physical_models->get<std::string>("darcy flux key", "darcy_flux");
+  darcy_flux_key_ = Keys::getKey(domain_, tmp); 
 
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
   prev_saturation_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid"); 
 
   water_content_key_ = Keys::getKey(domain_, "water_content"); 
   prev_water_content_key_ = Keys::getKey(domain_, "prev_water_content"); 
-
-  // cross-coupling of PKs
-  Teuchos::RCP<Teuchos::ParameterList> physical_models =
-      Teuchos::sublist(tp_list_, "physical models and assumptions");
-  bool abs_perm = physical_models->get<bool>("permeability field is required", false);
-  std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single continuum");
-  use_transport_porosity_ = physical_models->get<bool>("effective transport porosity", false);
-  bool transport_on_manifold = physical_models->get<bool>("transport in fractures", false);
 
   // require state fields when Flow PK is off
   if (!S->HasField(permeability_key_) && abs_perm) {

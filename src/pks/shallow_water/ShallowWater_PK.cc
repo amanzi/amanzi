@@ -76,6 +76,8 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
   bathymetry_key_ = Keys::getKey(domain_, "bathymetry");
   hydrostatic_pressure_key_ = Keys::getKey(domain_, "ponded_pressure");
 
+  riemann_flux_key_ = Keys::getKey(domain_, "riemann_flux");
+
   //-------------------------------
   // constant fields
   //-------------------------------
@@ -95,7 +97,6 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
   //-------------------------------
   // primary fields
   //-------------------------------
-
   // ponded_depth_key_
   if (!S->HasField(ponded_depth_key_)) {
     S->RequireField(ponded_depth_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
@@ -150,7 +151,12 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
     auto eval = Teuchos::rcp(new HydrostaticPressureEvaluator(elist));
     S->SetFieldEvaluator(hydrostatic_pressure_key_, eval);
   }
-  
+
+  // riemann flux
+  if (!S->HasField(riemann_flux_key_)) {
+    S->RequireField(riemann_flux_key_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("face", AmanziMesh::FACE, 1);
+  }
 }
 
 
@@ -296,11 +302,13 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // secondary fields
   S_->GetFieldEvaluator(hydrostatic_pressure_key_)->HasFieldChanged(S.ptr(), passwd_);
+
+  InitializeField_(S_.ptr(), passwd_, riemann_flux_key_, 0.0);
   
   // summary of initialization
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Shallow water PK was initialized." << std::endl;
+    *vo_->os() << "Shallow water PK was initialized.\n" << std::endl;
   }
 }
 
@@ -330,6 +338,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   Epetra_MultiVector& h_c = *S_->GetFieldData(ponded_depth_key_, passwd_)->ViewComponent("cell", true);
   Epetra_MultiVector& ht_c = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
   Epetra_MultiVector& vel_c = *S_->GetFieldData(velocity_key_, passwd_)->ViewComponent("cell", true);
+  Epetra_MultiVector& riemann_f = *S_->GetFieldData(riemann_flux_key_, passwd_)->ViewComponent("face", true);
     
   S_->GetFieldEvaluator(discharge_key_)->HasFieldChanged(S_.ptr(), passwd_);
   Epetra_MultiVector& q_c = *S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
@@ -392,7 +401,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // U_i^{n+1} = U_i^n - dt/vol * (F_{i+1/2}^n - F_{i-1/2}^n) + dt * S_i
 
   for (int c = 0; c < ncells_owned; c++) {
-      
     const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
     double vol = mesh_->cell_volume(c);
@@ -485,7 +493,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       }
 
       FNum_rot = numerical_flux_->Compute(UL, UR);
-      // FNum_rot = NumericalFlux_x(UL, UR);
 
       FNum[0] = FNum_rot[0];
       FNum[1] = FNum_rot[1] * normal[0] - FNum_rot[2] * normal[1];
@@ -495,6 +502,9 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       for (int i = 0; i < 3; i++) {
         FS[i] += FNum[i] * farea;
       }
+
+      // save riemann mass flux
+      riemann_f[0][f] = FNum_rot[1] * FNum[0] * farea * orientation;
     }
 
     double h, u, v, qx, qy;
