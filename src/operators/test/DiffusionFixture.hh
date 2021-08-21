@@ -371,7 +371,7 @@ void DiffusionFixture::Go(double tol)
       printf("solution time only = %g sec\n", double(duration.count() * 1e-6));
       pl2_err /= pnorm; 
       ul2_err /= unorm;
-      printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f\ndofs=%d  itr=%d  ||r||=%10.5f\n",
+      printf("L2(p)=%9.6g  Inf(p)=%9.6g  L2(u)=%9.6g  Inf(u)=%9.6g\ndofs=%d  itr=%d  ||r||=%10.5g\n",
              pl2_err, pinf_err, ul2_err, uinf_err,
              rhs.GlobalLength(), global_op->num_itrs(), global_op->residual());
        

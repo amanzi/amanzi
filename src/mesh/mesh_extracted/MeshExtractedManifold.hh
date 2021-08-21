@@ -237,6 +237,8 @@ class MeshExtractedManifold : public Mesh {
   Entity_ID_List build_set_faces_(const Teuchos::RCP<const AmanziGeometry::Region>& rgn, bool* missing) const;
   Entity_ID_List build_set_nodes_(const Teuchos::RCP<const AmanziGeometry::Region>& rgn, bool* missing) const;
 
+  Entity_ID_List build_from_parent_(const std::string& rgnname, const Entity_kind kind_d) const;
+
   void TryExtension_(const std::string& setname,
                      Entity_kind kind_p, Entity_kind kind_d, Entity_ID_List* setents) const;
   std::map<Entity_ID, int> EnforceOneLayerOfGhosts_(const std::string& setname, Entity_kind kind,

@@ -16,7 +16,7 @@
 #include <string>
 #include <fstream>
 
-//#ifdef HAVE_MOAB_MESH
+//#ifdef HAVE_MESH_MOAB
 //#include "Mesh_moab.hh"
 //#endif
 

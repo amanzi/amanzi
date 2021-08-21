@@ -31,7 +31,7 @@ RegionLogical::RegionLogical(const std::string& name,
                              const std::string& operation_str,
                              const std::vector<std::string>& component_regions,
                              const LifeCycleType lifecycle)
-  : Region(name, id, false, LOGICAL, 0, lifecycle),
+  : Region(name, id, false, LOGICAL, 0, 0, lifecycle),
     operation_(NOBOOLEAN),
     component_regions_(component_regions)
 {

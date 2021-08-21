@@ -589,6 +589,9 @@ if(BLA_VENDOR MATCHES "Intel" OR BLA_VENDOR STREQUAL "All")
       unset(BLAS_mkl_OS_NAME)
       unset(BLAS_mkl_LIB_PATH_SUFFIXES)
     endif()
+    if (BLAS_LIBRARIES)
+      set(BLA_VENDOR_FOUND "Intel")
+    endif()
   endif()
 endif()
 
@@ -613,6 +616,9 @@ if(BLA_VENDOR STREQUAL "Goto" OR BLA_VENDOR STREQUAL "All")
       ""
       ""
       )
+    if (BLAS_LIBRARIES)
+      set(BLA_VENDOR_FOUND "Goto")
+    endif()
   endif()
 endif()
 
@@ -629,6 +635,9 @@ if(BLA_VENDOR STREQUAL "FlexiBLAS" OR BLA_VENDOR STREQUAL "All")
       ""
       ""
       )
+    if (BLAS_LIBRARIES)
+      set(BLA_VENDOR_FOUND "FlexiBLAS")
+    endif()
   endif()
 endif()
 
@@ -645,6 +654,9 @@ if(BLA_VENDOR STREQUAL "OpenBLAS" OR BLA_VENDOR STREQUAL "All")
       ""
       ""
       )
+    if (BLAS_LIBRARIES)
+      set(BLA_VENDOR_FOUND "OpenBLAS")
+    endif()
   endif()
   if(NOT BLAS_LIBRARIES AND (CMAKE_C_COMPILER_LOADED OR CMAKE_CXX_COMPILER_LOADED))
     if(BLAS_FIND_QUIETLY OR NOT BLAS_FIND_REQUIRED)
@@ -697,6 +709,11 @@ if(BLA_VENDOR MATCHES "Arm" OR BLA_VENDOR STREQUAL "All")
       ""
       ""
       )
+
+    if (BLAS_LIBRARIES)
+      set(BLA_VENDOR_FOUND "Arm")
+    endif()
+
   endif()
 
 endif()
@@ -714,6 +731,9 @@ if(BLA_VENDOR STREQUAL "FLAME" OR BLA_VENDOR STREQUAL "All")
       ""
       ""
       )
+    if (BLAS_LIBRARIES)
+      set(BLA_VENDOR_FOUND "FLAME")
+    endif()
   endif()
 endif()
 
@@ -730,6 +750,9 @@ if(BLA_VENDOR STREQUAL "ATLAS" OR BLA_VENDOR STREQUAL "All")
       ""
       ""
       )
+    if (BLAS_LIBRARIES)
+      set(BLA_VENDOR_FOUND "ATLAS")
+    endif()
   endif()
 endif()
 
@@ -746,6 +769,9 @@ if(BLA_VENDOR STREQUAL "PhiPACK" OR BLA_VENDOR STREQUAL "All")
       ""
       ""
       )
+    if (BLAS_LIBRARIES)
+      set(BLA_VENDOR_FOUND "PhiPACK")
+    endif()
   endif()
 endif()
 
@@ -762,6 +788,9 @@ if(BLA_VENDOR STREQUAL "CXML" OR BLA_VENDOR STREQUAL "All")
       ""
       ""
       )
+    if (BLAS_LIBRARIES)
+      set(BLA_VENDOR_FOUND "CXML")
+    endif()
   endif()
 endif()
 
@@ -778,6 +807,9 @@ if(BLA_VENDOR STREQUAL "DXML" OR BLA_VENDOR STREQUAL "All")
       ""
       ""
       )
+    if (BLAS_LIBRARIES)
+      set(BLA_VENDOR_FOUND "DXML")
+    endif()
   endif()
 endif()
 
@@ -797,6 +829,9 @@ if(BLA_VENDOR STREQUAL "SunPerf" OR BLA_VENDOR STREQUAL "All")
     if(BLAS_LIBRARIES)
       set(BLAS_LINKER_FLAGS "-xlic_lib=sunperf")
     endif()
+    if (BLAS_LIBRARIES)
+      set(BLA_VENDOR_FOUND "SunPerf")
+    endif()
   endif()
 endif()
 
@@ -813,6 +848,9 @@ if(BLA_VENDOR STREQUAL "SCSL" OR BLA_VENDOR STREQUAL "All")
       ""
       ""
       )
+    if (BLAS_LIBRARIES)
+      set(BLA_VENDOR_FOUND "SCSL")
+    endif()
   endif()
 endif()
 
@@ -829,6 +867,9 @@ if(BLA_VENDOR STREQUAL "CRAYSCI" OR BLA_VENDOR STREQUAL "All")
       ""
       ""
       )
+    if (BLAS_LIBRARIES)
+      set(BLA_VENDOR_FOUND "CRAYSCI")
+    endif()
   endif()
 endif()
 
@@ -845,6 +886,9 @@ if(BLA_VENDOR STREQUAL "SGIMATH" OR BLA_VENDOR STREQUAL "All")
       ""
       ""
       )
+    if (BLAS_LIBRARIES)
+      set(BLA_VENDOR_FOUND "SGIMATH")
+    endif()
   endif()
 endif()
 
@@ -861,6 +905,9 @@ if(BLA_VENDOR STREQUAL "IBMESSL" OR BLA_VENDOR STREQUAL "All")
       ""
       ""
       )
+    if (BLAS_LIBRARIES)
+      set(BLA_VENDOR_FOUND "IBMESSL")
+    endif()
   endif()
 endif()
 
@@ -1008,6 +1055,9 @@ if(NOT BLAS_LIBRARIES)
     ""
     )
 endif()
+# if (BLAS_LIBRARIES)
+#   set(BLA_VENDOR_FOUND "ACML")
+# endif()
 endif() # ACML
 
 # Apple BLAS library?
@@ -1023,6 +1073,9 @@ if(BLA_VENDOR STREQUAL "Apple" OR BLA_VENDOR STREQUAL "All")
       ""
       ""
       )
+    if (BLAS_LIBRARIES)
+      set(BLA_VENDOR_FOUND "Apple")
+    endif()
   endif()
 endif()
 
@@ -1039,6 +1092,9 @@ if(BLA_VENDOR STREQUAL "NAS" OR BLA_VENDOR STREQUAL "All")
       ""
       ""
       )
+    if (BLAS_LIBRARIES)
+      set(BLA_VENDOR_FOUND "NAS")
+    endif()
   endif()
 endif()
 
@@ -1063,6 +1119,11 @@ if(BLA_VENDOR MATCHES "EML" OR BLA_VENDOR STREQUAL "All")
       ""
       ""
       )
+
+    if (BLAS_LIBRARIES)
+      set(BLA_VENDOR_FOUND "EML")
+    endif()
+
   endif()
 
 endif()
@@ -1080,6 +1141,9 @@ if(BLA_VENDOR STREQUAL "Generic" OR BLA_VENDOR STREQUAL "All")
       ""
       ""
       )
+    if (BLAS_LIBRARIES)
+      set(BLA_VENDOR_FOUND "Generic")
+    endif()
   endif()
 endif()
 

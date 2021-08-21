@@ -104,10 +104,16 @@ void TreeVectorSpace::Print(std::ostream& os) const {
   int n(0); 
   for (auto it = begin(); it != end(); ++it) {
     auto cvs = (*it)->Data();
-    os << "SubVector: " << n++ << std::endl;
-    for (auto kt = cvs->begin(); kt != cvs->end(); ++kt) {
-      os << "  component: " << *kt << " (" << cvs->NumVectors(*kt) << ")\n";
+    if (cvs == Teuchos::null) {
+      os << "SubVector: " << n++ << std::endl;
+      (*it)->Print(os);
     }
+    else {
+      os << "SubVector (leaf): " << n++ << std::endl;
+      for (auto kt = cvs->begin(); kt != cvs->end(); ++kt) {
+        os << "  component: " << *kt << " (" << cvs->NumVectors(*kt) << ")\n";
+      }
+   }
   }
 };
 

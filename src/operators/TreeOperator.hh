@@ -112,14 +112,15 @@ class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
   }
 
   // i/o
-  std::string PrintDiagnostics() const;
+  std::string PrintDiagnostics(int prefix = 0) const;
 
   // forward operator
   virtual int Apply(const TreeVector& X, TreeVector& Y) const override {
     return Apply(X,Y,0.0);
   }
-  int Apply(const TreeVector& X, TreeVector& Y, double scalar) const;
-  int ApplyAssembled(const TreeVector& X, TreeVector& Y) const;
+  virtual int Apply(const TreeVector& X, TreeVector& Y, double scalar) const;
+  int ApplyUnassembled(const TreeVector& X, TreeVector& Y, double scalar=0.0) const;
+  int ApplyAssembled(const TreeVector& X, TreeVector& Y, double scalar=0.0) const;
 
   void Init();
   void InitOffdiagonals();
@@ -181,7 +182,11 @@ class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
   int num_colors_;
   Teuchos::RCP<std::vector<int>> coloring_;
   Teuchos::ParameterList inv_plist_;
-  bool inited_, updated_, computed_;
+  bool inverse_pars_set_;
+  bool initialize_complete_;
+  bool compute_complete_;
+  bool assembly_complete_;
+
   Teuchos::RCP<VerboseObject> vo_;
 };
 

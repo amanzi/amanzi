@@ -18,10 +18,10 @@
 #include "MeshExtractedManifold.hh"
 #include "Mesh_simple.hh"
 
-#ifdef HAVE_MSTK_MESH
+#ifdef HAVE_MESH_MSTK
 #include "Mesh_MSTK.hh"
 #endif
-#ifdef HAVE_MOAB_MESH
+#ifdef HAVE_MESH_MOAB
 #include "Mesh_MOAB.hh"
 #endif
 
@@ -104,7 +104,7 @@ MeshFactory::create(const std::string& filename,
   for (auto p : preference_) {
     int nproc = comm_->NumProc();
 
-#ifdef HAVE_MSTK_MESH
+#ifdef HAVE_MESH_MSTK
     if (p == Framework::MSTK) {
       if (vo_->os_OK(Teuchos::VERB_HIGH)) {
         *vo_->os() << "Creating mesh from file \"" << filename << "\" using format \"MSTK\"" << std::endl;
@@ -118,7 +118,7 @@ MeshFactory::create(const std::string& filename,
     }
 #endif
 
-#ifdef HAVE_MOAB_MESH
+#ifdef HAVE_MESH_MOAB
     if (p == Framework::MOAB) {
       if (vo_->os_OK(Teuchos::VERB_HIGH)) {
         *vo_->os() << "Creating mesh from file \"" << filename << "\" using format \"MOAB\"" << std::endl;
@@ -171,7 +171,7 @@ MeshFactory::create(const double x0, const double y0, const double z0,
       return mesh;
     }
 
-#ifdef HAVE_MSTK_MESH
+#ifdef HAVE_MESH_MSTK
     if (p == Framework::MSTK) {
       if (vo_->os_OK(Teuchos::VERB_HIGH)) {
         *vo_->os() << "Creating 3D block mesh using format \"MSTK\"" << std::endl;
@@ -212,7 +212,7 @@ MeshFactory::create(const double x0, const double y0,
                     const bool request_edges)
 {
   for (auto p : preference_) {
-#ifdef HAVE_MSTK_MESH
+#ifdef HAVE_MESH_MSTK
     if (p == Framework::MSTK) {
       if (vo_->os_OK(Teuchos::VERB_HIGH)) {
         *vo_->os() << "Creating 2D block mesh using format \"MSTK\"" << std::endl;
@@ -337,7 +337,7 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
 
   // extract
   for (auto p : preference_) {
-#ifdef HAVE_MSTK_MESH
+#ifdef HAVE_MESH_MSTK
     if (p == Framework::MSTK) {
 
       if (vo_->os_OK(Teuchos::VERB_HIGH)) {
@@ -381,7 +381,7 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
 
     auto mesh = Teuchos::rcp(new MeshExtractedManifold(
         inmesh, setnames[0], setkind,
-        comm, gm, plist_, request_faces, request_edges));
+        comm, gm, plist_, request_faces, request_edges, flatten));
 
     mesh->BuildCache();
     return mesh;

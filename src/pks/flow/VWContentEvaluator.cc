@@ -17,7 +17,8 @@
 
     WC = phi * (s_liquid * n_liquid + X_gas * s_gas * n_gas)
 
-  where X_gas is the molar fraction of water in the gas phase.
+  where X_gas is the molar fraction of water in the gas phase and
+  s_liquid + s_gas = 1
 */
 
 #include "VWContentEvaluator.hh"
@@ -38,17 +39,20 @@ VWContentEvaluator::VWContentEvaluator(Teuchos::ParameterList& plist) :
 void VWContentEvaluator::Init_()
 {
   my_key_ = plist_.get<std::string>("water content key");
+  std::string domain = Keys::getDomain(my_key_);
+
   saturation_key_ = plist_.get<std::string>("saturation key");
   porosity_key_ = plist_.get<std::string>("porosity key");
+  mol_density_liquid_key_ = Keys::getKey(domain, "molar_density_liquid");
 
-  dependencies_.insert(std::string(porosity_key_));
-  dependencies_.insert(std::string(saturation_key_));
-  dependencies_.insert(std::string("molar_density_liquid"));
+  dependencies_.insert(porosity_key_);
+  dependencies_.insert(saturation_key_);
+  dependencies_.insert(mol_density_liquid_key_);
 
   water_vapor_ = plist_.get<bool>("water vapor", false);
   if (water_vapor_) {
-    dependencies_.insert(std::string("molar_density_gas"));
-    dependencies_.insert(std::string("molar_fraction_gas"));
+    dependencies_.insert(Keys::getKey(domain, "molar_density_gas"));
+    dependencies_.insert(Keys::getKey(domain, "molar_fraction_gas"));
   }
 }
 
@@ -104,7 +108,7 @@ void VWContentEvaluator::EvaluateFieldPartialDerivative_(
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
   const Epetra_MultiVector& s_l = *S->GetFieldData(saturation_key_)->ViewComponent("cell");
-  const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell");
+  const Epetra_MultiVector& n_l = *S->GetFieldData(mol_density_liquid_key_)->ViewComponent("cell");
 
   const Epetra_MultiVector& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
   Epetra_MultiVector& result_v = *result->ViewComponent("cell");
@@ -123,7 +127,7 @@ void VWContentEvaluator::EvaluateFieldPartialDerivative_(
       for (int c = 0; c != ncells; ++c) {
         result_v[0][c] = phi[0][c] * n_l[0][c];
       }
-    } else if (wrt_key == "molar_density_liquid") {
+    } else if (wrt_key == mol_density_liquid_key_) {
       for (int c = 0; c != ncells; ++c) {
         result_v[0][c] = phi[0][c] * s_l[0][c];
       }
@@ -144,11 +148,11 @@ void VWContentEvaluator::EvaluateFieldPartialDerivative_(
       for (int c = 0; c != ncells; ++c) {
         result_v[0][c] = s_l[0][c] * n_l[0][c];
       }
-    } else if (wrt_key == "saturation_liquid") {
+    } else if (wrt_key == saturation_key_) {
       for (int c = 0; c != ncells; ++c) {
         result_v[0][c] = phi[0][c] * n_l[0][c];
       }
-    } else if (wrt_key == "molar_density_liquid") {
+    } else if (wrt_key == mol_density_liquid_key_) {
       for (int c = 0; c != ncells; ++c) {
         result_v[0][c] = phi[0][c] * s_l[0][c];
       }

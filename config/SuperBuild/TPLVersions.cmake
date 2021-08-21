@@ -159,6 +159,9 @@
 #   0.97.14      - update MSTK to 3.3.6
 
 #   0.98.0       - configuration updates fixing CamelCase names (required changes in Amanzi build as well)
+#   0.98.1       - configuratoin updates fixing consistency of meshing options (required changes in Amanzi build as well).
+#   0.98.2       - update Hypre to 2.22.0
+
 
 include(CMakeParseArguments)
 
@@ -211,7 +214,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
-set(AMANZI_TPLS_VERSION_PATCH 0)
+set(AMANZI_TPLS_VERSION_PATCH 2)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -402,13 +405,15 @@ set(MOAB_MD5_SUM        dd2cf5c32ede64dfd7e9b04e0387c4b4)
 # TPL: HYPRE
 #
 set(HYPRE_VERSION_MAJOR  2)
-set(HYPRE_VERSION_MINOR  20)
+set(HYPRE_VERSION_MINOR  22)
 set(HYPRE_VERSION_PATCH  0)
 set(HYPRE_VERSION  ${HYPRE_VERSION_MAJOR}.${HYPRE_VERSION_MINOR}.${HYPRE_VERSION_PATCH})
 set(HYPRE_URL_STRING     "https://github.com/hypre-space/hypre/archive/")
 set(HYPRE_ARCHIVE_FILE   v${HYPRE_VERSION}.tar.gz)
 set(HYPRE_SAVEAS_FILE    hypre-${HYPRE_VERSION}.tar.gz)
-set(HYPRE_MD5_SUM        aba74c2f30fdb0188c4328e53b1929f2)
+set(HYPRE_MD5_SUM        0b3abc221b216db97175709aa0bf94d7)
+set(HYPRE_GIT_REPOSITORY "https://github.com/hypre-space/hypre")
+set(HYPRE_GIT_TAG        "09b6b53ca5873573b8c40b78de6a4b531579de68")
 
 #
 # TPL: ParMetis

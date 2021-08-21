@@ -1,6 +1,11 @@
 name: Amanzi CI
 
-on: [push]
+on:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - amanzi-*
 
 jobs:
   build_test:

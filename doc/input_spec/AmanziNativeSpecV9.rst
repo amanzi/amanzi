@@ -2782,409 +2782,6 @@ The Amanzi chemistry process kernel uses the following parameters.
   </ParameterList>
 
 
-Format of chemistry database (.bgd) file
-........................................
-
-A section header starts with token `"<`". 
-A comment line starts with token `"#`". 
-Data fields are separated by semicolumns.
-
-
-Primary species
-```````````````
-
-Each line in this section has four data fields: 
-name of a primary component, ion size parameter, charge, and atomic mass [u].
-
-.. code-block:: txt
-
-   <Primary Species
-   Al+++    ;   9.0 ;   3.0 ;  26.9815
-   Ca++     ;   6.0 ;   2.0 ;  40.078
-   Cl-      ;   3.0 ;  -1.0 ;  35.4527
-   CO2(aq)  ;   3.0 ;   0.0 ;  44.01
-   Cs137    ;   2.5 ;   1.0 ; 132.9054
-   F-       ;   3.5 ;  -1.0 ;  18.9984
-   Fe++     ;   6.0 ;   2.0 ;  55.847
-   H+       ;   9.0 ;   1.0 ;   1.0079
-   HCO3-    ;   4.0 ;  -1.0 ;  61.0171
-   HPO4--   ;   4.0 ;  -2.0 ;  95.9793
-   K+       ;   3.0 ;   1.0 ;  39.0983
-   Mg++     ;   8.0 ;   2.0 ;  24.30
-   Na+      ;   4.0 ;   1.0 ;  22.9898
-   N2(aq)   ;   3.0 ;   0.0 ;  28.0135
-   NO3-     ;   3.0 ;  -1.0 ;  62.0049
-   O2(aq)   ;   3.0 ;   0.0 ;  31.9988
-   Pb_210   ;   1.0 ;   0.0 ; 210.00
-   Pu_238   ;   1.0 ;   0.0 ; 238.00
-   Ra_226   ;   1.0 ;   0.0 ; 226.00
-   SiO2(aq) ;   3.0 ;   0.0 ;  60.0843
-   SO4--    ;   4.0 ;  -2.0 ;  96.0636
-   Sr90     ;   5.0 ;   2.0 ;  87.6200
-   Tc_99    ;   1.0 ;   0.0 ;  99.00
-   Th_230   ;   1.0 ;   0.0 ; 230.00
-   Tritium  ;   9.0 ;   0.0 ;   1.01
-   U_234    ;   1.0 ;   0.0 ; 234.00
-   UO2++    ;   4.5 ;   2.0 ; 270.028
-   Zn++     ;   6.0 ;   2.0 ;  65.39
-
-
-Isotherms
-`````````
-
-Each line in this section has three fields: primary species name, 
-adsorption isotherm model, and parameters. The adsorption model is one of: linear, langmuir, or freundlich.
-The parameters is a space delimited list of numbers. The number of  parameters and 
-their meaning depends on the model; although the first one is always *kd*.
-
-.. code-block:: txt
-
-   <Isotherm
-   B      ; langmuir   ;      30.0 0.1
-   C      ; freundlich ;       1.5 1.25
-   Pu_238 ; linear     ;  461168.4
-   U_234  ; linear     ;  329406.0
-   Th_230 ; linear     ; 1482327.0
-   Ra_226 ; linear     ;   41175.75
-   Pb_210 ; linear     ; 3294060.0
-   Tc_99  ; linear     ;     988.218
-
-
-General kinetics
-````````````````
-
-Each line in this section has five data fields.
-The first field is the reaction string that has format 
-"30 A(aq) + 2 B(aq) <-> C(aq) + .3 D(aq) +- 4 E(aq)"
-where number (stoichiometires) is followed by species name. 
-The second and fourth fields contain information about reactanct and products.
-The fourth and fifth columns contain rate constants.
-
-.. code-block:: txt
-
-   <Primary Species
-   Tritium  ;   9.00 ;   0.00 ;   1.01
-
-   <General Kinetics
-   1.00 Tritium <->  ;   1.00 Tritium ;  1.78577E-09 ; ; 
-
-
-Aqueous equilibrium complexes
-`````````````````````````````
-
-Each line in this section has five 
-fields for secondary species: name = coeff reactant, log Keq, size parameter, charge, and 
-gram molecular weight.
-
-.. code-block:: txt
-
-   <Aqueous Equilibrium Complexes
-   AlHPO4+    =  1.0 Al+++ 1.0 HPO4-- ;  -7.4    ;  4.0 ;   1.0 ; 122.961
-   CaCl+      =  1.0 Ca++  1.0 Cl-    ;   0.6956 ;  4.0 ;   1.0 ;  75.5307
-   CaCl2(aq)  =  1.0 Ca++  2.0 Cl-    ;   0.6436 ;  3.0 ;   0.0 ; 110.9834
-   CaCO3(aq)  =  1.0 Ca+2  1.0 CO3-2  ;  -3.151  ;  3.5 ;   0.0 ;  17.0073
-   CaHCO3+    =  1.0 Ca++  1.0 HCO3-  ;  -1.0467 ;  4.0 ;   1.0 ; 101.0951
-   CaHPO4(aq) =  1.0 Ca++  1.0 HPO4-- ;  -2.7400 ;  3.0 ;   0.0 ; 136.0573
-   CO3--      = -1.0 H+    1.0 HCO3-  ;  10.3288 ;  4.5 ;  -2.0 ;  60.0092
-   FeCl+      =  1.0 Fe++  1.0 Cl-    ;   0.1605 ;  4.0 ;   1.0 ;  91.2997 
-   FeCl2(aq)  =  1.0 Fe++  2.0 Cl-    ;   2.4541 ;  3.0 ;   0.0 ; 126.752 
-   FeCl4--    =  1.0 Fe++  4.0 Cl-    ;  -1.9    ;  4.0 ;  -2.0 ; 197.658 
-   FeHCO3+    =  1.0 Fe++  1.0 HCO3-  ;  -2.72   ;  4.0 ;   1.0 ; 116.864 
-   FeHPO4(aq) =  1.0 Fe++  1.0 HPO4-- ;  -3.6    ;  3.0 ;   0.0 ; 151.826 
-   FeF+       =  1.0 Fe++  1.0 F-     ;  -1.36   ;  4.0 ;   1.0 ;  74.8454 
-   FeSO4(aq)  =  1.0 Fe++  1.0 SO4--  ;  -2.2    ;  3.0 ;   0.0 ; 151.911 
-   H2PO4-     =  1.0 H+    1.0 HPO4-- ;  -7.2054 ;  4.0 ;  -1.0 ;  96.9872
-   H3PO4(aq)  =  2.0 H+    1.0 HPO4-- ;  -9.3751 ;  3.0 ;   0.0 ;  97.9952
-   H2SO4(aq)  =  2.0 H+    1.0 SO4--  ;   1.0209 ;  3.0 ;   0.0 ;  98.0795 
-   HCl(aq)    =  1.0 H+    1.0 Cl-    ;  -0.67   ;  3.0 ;   0.0 ;  36.4606 
-   HNO3(aq)   =  1.0 H+    1.0 NO3-   ;   1.3025 ;  3.0 ;   0.0 ;  63.0129 
-   HSO4-      =  1.0 H+    1.0 SO4--  ;  -1.9791 ;  4.0 ;  -1.0 ;  97.0715 
-   KCl(aq)    =  1.0 K+    1.0 Cl-    ;   1.4946 ;  3.0 ;   0.0 ;  74.551
-   KHPO4-     =  1.0 K+    1.0 HPO4-- ;  -0.78   ;  4.0 ;  -1.0 ; 135.078
-   KSO4-      =  1.0 K+    1.0 SO4--  ;  -0.8796 ;  4.0 ;  -1.0 ; 135.162
-   NaHCO3(aq) =  1.0 Na+   1.0 HCO3-  ;  -0.1541 ;  3.0 ;   0.0 ;  84.0069 
-   NaCl(aq)   =  1.0 Na+   1.0 Cl-    ;   0.777  ;  3.0 ;   0.0 ;  58.4425 
-   NaF(aq)    =  1.0 Na+   1.0 F-     ;   0.9976 ;  3.0 ;   0.0 ;  41.9882  
-   NaHPO4-    =  1.0 Na+   1.0 HPO4-- ;  -0.92   ;  4.0 ;  -1.0 ; 118.969
-   NaNO3(aq)  =  1.0 Na+   1.0 NO3-   ;   1.044  ;  3.0 ;   0.0 ;  84.9947
-   NaSO4-     =  1.0 Na+   1.0 SO4--  ;  -0.82   ;  4.0 ;  -1.0 ; 119.053
-   MgCO3(aq)  =  1.0 Mg+2  1.0 CO3-2  ;  -2.928  ;  3.5 ;   0.0 ;  17.0073
-   OH-        =  1.0 H2O  -1.0 H+     ;  13.9951 ;  3.5 ;  -1.0 ;  17.00730
-   P2O7----   = -1.0 H2O   2.0 HPO4-- ;   3.7463 ;  4.0 ;  -4.0 ; 173.9433
-   PO4---     = -1.0 H+    1.0 HPO4-- ;  12.3218 ;  4.0 ;  -3.0 ;  94.9714
-   UO2Cl+     =  1.0 Cl-   1.0 UO2++  ;  -0.1572 ;  4.0 ;   1.0 ; 305.48 
-   UO2Cl2(aq) =  2.0 Cl-   1.0 UO2++  ;   1.1253 ;  3.0 ;   0.0 ; 340.933 
-   UO2F+      =  1.0 F-    1.0 UO2++  ;  -5.0502 ;  4.0 ;   1.0 ; 289.026 
-   UO2F2(aq)  =  2.0 F-    1.0 UO2++  ;  -8.5403 ;  3.0 ;   0.0 ; 308.024 
-   UO2F3-     =  3.0 F-    1.0 UO2++  ; -10.7806 ;  4.0 ;  -1.0 ; 327.023 
-   UO2F4--    =  4.0 F-    1.0 UO2++  ; -11.5407 ;  4.0 ;  -2.0 ; 346.021 
-   UO2HPO4(aq)= 1.0 HPO4-- 1.0 UO2++  ;  -8.4398 ;  3.0 ;   0.0 ; 366.007 
-   UO2NO3+    =  1.0 NO3-  1.0 UO2++  ;  -0.2805 ;  4.0 ;   1.0 ; 332.033 
-   UO2SO4(aq) =  1.0 SO4-- 1.0 UO2++  ;  -3.0703 ;  3.0 ;   0.0 ; 366.091 
-   UO2(SO4)2-- = 2.0 SO4-- 1.0 UO2++  ;  -3.9806 ;  4.0 ;  -2.0 ; 462.155 
-
-   Al2(OH)2++++	 = -2.0 H+    2.0 Al+++   2.0 H2O     ;   7.6902 ;  5.5	;  4.0 ;  87.9778
-   Al3(OH)4(5+)	 = -4.0 H+    3.0 Al+++   4.0 H2O     ;  13.8803 ;  6.0 ;  5.0 ; 148.9740
-   Al(OH)2+      =  2.0 H2O   1.0 Al+++  -2.0 H+      ;  10.5945 ;  4.0 ;  1.0 ;  60.9962 
-   Al(OH)3(aq)   =  3.0 H2O   1.0 Al+++  -3.0 H+      ;  16.1577 ;  3.0 ;  0.0 ;  78.0034 
-   Al(OH)4-      =  4.0 H2O   1.0 Al+++  -4.0 H+      ;  22.8833 ;  4.0 ; -1.0 ;  95.0107 
-   AlH2PO4++     =  1.0 Al+++ 1.0 H+      1.0 HPO4--  ;  -3.1    ;  4.5 ;  2.0 ; 123.969
-   AlO2-         =  2.0 H2O   1.0 Al+++  -4.0 H+      ;  22.8833 ;  4.0 ; -1.0 ;  58.9803
-   AlOH++        =  1.0 H2O   1.0 Al+++  -1.0 H+      ;   4.9571 ;  4.5 ;  2.0 ;  43.9889 
-   CaCO3(aq)     = -1.0 H+    1.0 Ca++    1.0 HCO3-   ;   7.0017 ;  3.0 ;  0.0 ; 100.0872
-   CaH2PO4+      =  1.0 Ca++  1.0 H+      1.0 HPO4--  ;  -1.4000 ;  4.0 ;  1.0 ; 137.0652
-   CaP2O7--      = -1.0 H2O   1.0 Ca++    2.0 HPO4--  ;  -3.0537 ;  4.0 ; -2.0 ; 214.0213
-   CaPO4-        = -1.0 H+    1.0 Ca++    1.0 HPO4--  ;   5.8618 ;  4.0 ; -1.0 ; 135.0494
-   CaOH+         = -1.0 H+    1.0 Ca++    1.0 H2O     ;  12.8500 ;  4.0 ;  1.0 ;  57.0853
-   CO2(aq)       = -1.0 H2O   1.0 H+      1.0 HCO3-   ;  -6.3447 ;  3.0 ;  0.0 ;  44.0098
-   H2P2O7--      = -1.0 H2O   2.0 H+      2.0 HPO4--  ; -12.0709 ;  4.0 ; -2.0 ; 175.9592
-   H2S(aq)       =  2.0 H+    1.0 SO4--  -2.0 O2(aq)  ; 131.329  ;  3.0 ;  0.0 ;  34.0819 
-   H3P2O7-       = -1.0 H2O   2.0 HPO4--  3.0 H+      ; -14.4165 ;  4.0 ; -1.0 ; 176.9671
-   H4P2O7(aq)    = -1.0 H2O   2.0 HPO4--  4.0 H+      ; -15.9263 ;  3.0 ;  0.0 ; 177.9751
-   HAlO2(aq)     =  2.0 H2O   1.0 Al+++  -3.0 H+      ;  16.4329 ;  3.0 ;  0.0 ;  59.9883
-   HCO3-         =  1.0 H2O  -1.0 H+      1.0 CO2(aq) ;  6.34470 ;  4.0 ; -1.0 ;  61.01710
-   HO2-          =  1.0 H2O  -1.0 H+      0.5 O2(aq)  ;  28.302  ;  4.0 ; -1.0 ;  33.0067 
-   HP2O7---      = -1.0 H2O   1.0 H+      2.0 HPO4--  ;  -5.4498 ;  4.0 ; -3.0 ; 174.9513
-   HS-           =  1.0 H+    1.0 SO4--  -2.0 O2(aq)  ; 138.317  ;  3.5 ; -1.0 ;  33.0739 
-   Fe2(OH)2++++  =  1.0 H2O   2.0 Fe++    0.5 O2(aq)  ; -14.0299 ;  5.5 ;  4.0 ; 145.709 
-   FeCO3(aq)     =  1.0 Fe++ -1.0 H+      1.0 HCO3-   ;   5.5988 ;  3.0 ;  0.0 ; 115.856 
-   FeH2PO4+      =  1.0 Fe++  1.0 H+      1.0 HPO4--  ;  -2.7    ;  4.0 ;  1.0 ; 152.834 
-   Fe(OH)2(aq)   =  2.0 H2O   1.0 Fe++   -2.0 H+      ;  20.6    ;  3.0 ;  0.0 ;  89.8617 
-   Fe(OH)3-      =  3.0 H2O   1.0 Fe++   -3.0 H+      ;  31.0    ;  4.0 ; -1.0 ; 106.869 
-   Fe(OH)4--     =  4.0 H2O   1.0 Fe++   -4.0 H+      ;  46.0    ;  4.0 ; -2.0 ; 123.876 
-   FeOH+         =  1.0 H2O   1.0 Fe++   -1.0 H+      ;   9.5    ;  4.0 ;  1.0 ;  72.8543 
-   FeOH++        =  0.5 H2O   1.0 Fe++    0.25 O2(aq) ;  -6.3    ;  4.5 ;  2.0 ;  72.8543 
-   FePO4-        =  1.0 Fe++ -1.0 H+      1.0 HPO4--  ;   4.3918 ;  4.0 ; -1.0 ; 150.818 
-   KHSO4(aq)     =  1.0 K+    1.0 H+      1.0 SO4--   ;  -0.8136 ;  3.0 ;  0.0 ; 136.17
-   KOH(aq)       =  1.0 H2O   1.0 K+     -1.0 H+      ;  14.46   ;  3.0 ;  0.0 ;  56.1056
-   KP2O7---      = -1.0 H2O   1.0 K+      2.0 HPO4--  ;   1.4286 ;  4.0 ; -3.0 ; 213.042
-   MgOH+         =  1.0 H2O  -1.0 H+      1.0 Mg++    ; 11.78510 ;  4.0 ;  1.0 ;  41.3123
-   NaCO3-        = -1.0 H+    1.0 HCO3-   1.0 Na+     ;   9.8144 ;  4.0 ; -1.0 ;  82.9990
-   NaOH(aq)      =  1.0 H2O   1.0 Na+    -1.0 H+      ;  14.7948 ;  3.0 ;  0.0 ;  39.9971
-   NH3(aq)       =  1.5 H2O   0.5 N2(aq) -0.75 O2(aq) ;  58.2305 ;  3.0 ;  0.0 ;  17.0306 
-   UO2CO3(aq)    = -1.0 H+    1.0 HCO3-   1.0 UO2++   ;   0.6634 ;  3.0 ;  0.0 ; 330.037 
-   UO2(CO3)2--   = -2.0 H+    2.0 HCO3-   1.0 UO2++   ;   3.7467 ;  4.0 ; -2.0 ; 390.046 
-   UO2(CO3)3---- = -3.0 H+    3.0 HCO3-   1.0 UO2++   ;   9.4302 ;  4.0 ; -4.0 ; 450.055 
-   UO2H2PO4+     =  1.0 H+    1.0 HPO4--  1.0 UO2++   ; -11.6719 ;  4.0 ;  1.0 ; 367.015 
-   UO2H3PO4++    =  2.0 H+    1.0 HPO4--  1.0 UO2++   ; -11.3119 ;  4.5 ;  2.0 ; 368.023 
-   UO2OH+        =  1.0 H2O  -1.0 H+      1.0 UO2++   ;   5.2073 ;  4.0 ;  1.0 ; 287.035 
-   UO2PO4-       = -1.0 H+    1.0 HPO4--  1.0 UO2++   ;  -2.0798 ;  4.0 ; -1.0 ; 364.999 
-   UO2(OH)2(aq)  =  2.0 H2O  -2.0 H+      1.0 UO2++   ;  10.3146 ;  3.0 ;  0.0 ; 304.042 
-   UO2(OH)3-     =  3.0 H2O  -3.0 H+      1.0 UO2++   ;  19.2218 ;  4.0 ; -1.0 ; 321.05 
-   UO2(OH)4--    =  4.0 H2O  -4.0 H+      1.0 UO2++   ;  33.0291 ;  4.0 ; -2.0 ; 338.057 
-   (UO2)2OH+++   =  1.0 H2O  -1.0 H+      2.0 UO2++   ;   2.7072 ;  5.0 ;  3.0 ; 557.063 
-   (UO2)2(OH)2++ =  2.0 H2O  -2.0 H+      2.0 UO2++   ;   5.6346 ;  4.5 ;  2.0 ; 574.07 
-   (UO2)3(OH)4++ =  4.0 H2O  -4.0 H+      3.0 UO2++   ;  11.929  ;  4.5 ;  2.0 ; 878.112 
-   (UO2)3(OH)5+  =  5.0 H2O  -5.0 H+      3.0 UO2++   ;  15.5862 ;  4.0 ;  1.0 ; 895.12 
-   (UO2)3(OH)7-  =  7.0 H2O  -7.0 H+      3.0 UO2++   ;  31.0508 ;  4.0 ; -1.0 ; 929.135 
-   (UO2)4(OH)7+  =  7.0 H2O  -7.0 H+      4.0 UO2++   ;  21.9508 ;  4.0 ;  1.0 ; 1199.16 
-   UO2(H2PO4)(H3PO4)+ = 3.0 H+ 2.0 HPO4-- 1.0 UO2++   ; -22.7537 ;  4.0 ;  1.0 ; 465.01 
-   UO2(H2PO4)2(aq) =    2.0 H+ 2.0 HPO4-- 1.0 UO2++   ; -21.7437 ;  3.0 ;  0.0 ; 464.002 
-   Zn(OH)2(aq)   =  2.0 H2O  -2.0 H+      1.0 Zn++    ;  17.3282 ;  3.0 ;  0.0 ;  99.4047
-   Zn(OH)3-      =  3.0 H2O  -3.0 H+      1.0 Zn++    ;  28.8369 ;  4.0 ; -1.0 ; 116.41200
-   Zn(OH)4--     =  4.0 H2O  -4.0 H+      1.0 Zn++    ;  41.6052 ;  4.0 ; -2.0 ; 133.41940
-   ZnOH+         =  1.0 H2O  -1.0 H+      1.0 Zn++    ;   8.9600 ;  4.0 ;  1.0 ;  82.39730
-
-   Ca2UO2(CO3)3(aq) =  2.0 Ca++ -3.0 H+     3.0 HCO3-   1.0 UO2++    ;   0.2864 ; 4.0 ;  0.0 ; 530.215 
-   CaUO2(CO3)3--    =  1.0 Ca++ -3.0 H+     3.0 HCO3-   1.0 UO2++    ;   3.8064 ; 4.0 ; -2.0 ; 530.215 
-   CH4(aq)          =  1.0 H2O   1.0 H+     1.0 HCO3-  -2.0 O2(aq)   ; 144.141  ; 3.0 ;  0.0 ;   0.0
-   NaAlO2(aq)       =  2.0 H2O   1.0 Na+    1.0 Al+++  -4.0 H+       ;  23.6266 ; 3.0 ;  0.0 ;  81.9701
-   NaHP2O7--        = -1.0 H2O   1.0 Na+    1.0 H+      2.0 HPO4--   ;  -6.8498 ; 4.0 ; -2.0 ; 197.941
-   NaHSiO3(aq)      =  1.0 H2O   1.0 Na+   -1.0 H+      1.0 SiO2(aq) ;   8.304  ; 3.0 ;  0.0 ; 100.081
-   Fe+++            = -0.5 H2O   1.0 Fe++   1.0 H+      0.25 O2(aq)  ;  -8.49   ; 9.0 ;  3.0 ;  55.847 
-   Fe3(OH)4(5+)     =  2.5 H2O   3.0 Fe++  -1.0 H+      0.75 O2(aq)  ; -19.1699 ; 6.0 ;  5.0 ; 235.57 
-   Fe(OH)2+         =  1.5 H2O   1.0 Fe++  -1.0 H+      0.25 O2(aq)  ;  -2.82   ; 4.0 ;  1.0 ;  89.8617 
-   Fe(OH)3(aq)      =  2.5 H2O   1.0 Fe++  -2.0 H+      0.25 O2(aq)  ;   3.51   ; 3.0 ;  0.0 ; 106.869 
-   Fe(OH)4-         =  3.5 H2O   1.0 Fe++  -3.0 H+      0.25 O2(aq)  ;  13.11   ; 4.0 ; -1.0 ; 123.876 
-   FeCO3+           = -0.5 H2O   1.0 Fe++   1.0 HCO3-   0.25 O2(aq)  ;  -7.8812 ; 4.0 ;  1.0 ; 115.856 
-   MgHCO3+          =  1.0 H2O  -1.0 H+     1.0 CO2(aq) 1.0 Mg++     ;   5.309  ; 4.0 ;  1.0 ;  85.3221
-   N3-              =  0.5 H2O  -1.0 H+     1.5 N2(aq) -0.25 O2(aq)  ;  77.7234 ; 4.0 ; -1.0 ;  42.0202 
-   NH4+             =  1.5 H2O   1.0 H+     0.5 N2(aq) -0.75 O2(aq)  ;  48.9895 ; 2.5 ;  1.0 ;  18.0385 
-   U+++             = -0.5 H2O   1.0 H+     1.0 UO2++  -0.75 O2(aq)  ;  64.8028 ; 5.0 ;  3.0 ; 238.029 
-   U++++            = -1.0 H2O   2.0 H+     1.0 UO2++  -0.5 O2(aq)   ;  33.949  ; 5.5 ;  4.0 ; 238.029 
-   UO2+             =  0.5 H2O  -1.0 H+     1.0 UO2++  -0.25 O2(aq)  ;  20.0169 ; 4.0 ;  1.0 ; 270.028 
-   UO2OSi(OH)3+     =  2.0 H2O  -1.0 H+     1.0 SiO2(aq) 1.0 UO2++   ;   2.4810 ; 9.0 ;  1.0 ; 365.135
-   (UO2)2CO3(OH)3-  =  3.0 H2O  -4.0 H+     1.0 HCO3-   2.0 UO2++    ;  11.2229 ; 4.0 ; -1.0 ; 651.087 
-
-   Fe(SO4)2- = -0.5 H2O  1.0 Fe++  1.0 H+      2.0 SO4--   0.25 O2(aq) ; -11.7037 ; 4.0 ; -1.0 ; 247.974 
-   FeCl++    = -0.5 H2O  1.0 Fe++  1.0 H+      1.0 Cl-     0.25 O2(aq) ;  -7.6792 ; 4.5 ;  2.0 ;  91.2997 
-   FeCl2+    = -0.5 H2O  1.0 Fe++  1.0 H+      2.0 Cl-     0.25 O2(aq) ; -10.62   ; 4.0 ;  1.0 ; 126.752 
-   FeCl4-    = -0.5 H2O  1.0 Fe++  1.0 H+      4.0 Cl-     0.25 O2(aq) ;  -7.7    ; 4.0 ; -1.0 ; 197.658 
-   FeF++     = -0.5 H2O  1.0 Fe++  1.0 H+      1.0 F-      0.25 O2(aq) ; -12.6265 ; 4.5 ;  2.0 ;  74.8454 
-   FeF2+     = -0.5 H2O  1.0 Fe++  1.0 H+      2.0 F-      0.25 O2(aq) ; -16.8398 ; 4.0 ;  1.0 ;  93.8438 
-   FeH2PO4++ = -0.5 H2O  1.0 Fe++  2.0 H+      1.0 HPO4--  0.25 O2(aq) ; -12.66   ; 4.5 ;  2.0 ; 152.834 
-   FeHPO4+   = -0.5 H2O  1.0 Fe++  1.0 H+      1.0 HPO4--  0.25 O2(aq) ; -18.67   ; 4.0 ;  1.0 ; 151.826 
-   FeNO3++   = -0.5 H2O  1.0 Fe++  1.0 H+      1.0 NO3-    0.25 O2(aq) ;  -9.49   ; 4.5 ;  2.0 ; 117.852 
-   FeSO4+    = -0.5 H2O  1.0 Fe++  1.0 H+      1.0 SO4--   0.25 O2(aq) ; -10.4176 ; 4.0 ;  1.0 ; 151.911 
-   MgUO2(CO3)3-- = 3.0 H2O -6.0 H+ 3.0 CO2(aq) 1.0 Mg++    1.00 UO2++  ;  23.9105 ; 3.0 ; -2.0 ; 500.0
-   NH4SO4-   =  1.5 H2O  1.0 H+    0.5 N2(aq)  1.0 SO4--  -0.75 O2(aq) ;  57.2905 ; 4.0 ; -1.0 ; 114.102
-
-
-Minerals
-````````
-
-Each line in this section has five fields for secondary species:
-Name = coeff reactant, log Keq, gram molecular weight [g/mol], molar volume [cm^3/mol],
-and specific surface area [cm^2 mineral / cm^3 bulk].
-
-.. code-block:: txt
-
-   <Minerals
-   Chalcedony = 1.0 SiO2(aq) ; -3.7281 ; 60.0843 ; 22.688 ; 1.0
-   Opal       = 1.0 SiO2(aq) ; -3.005  ; 60.084  ; 29.0   ; 1.0
-   Quartz     = 1.0 SiO2(aq) ; -3.9993 ; 60.0843 ; 22.688 ; 1.0
-
-   Halite = 1.0 Na+  1.0 Cl- ; 1.58550 ; 58.4425 ; 27.0150 ; 1.0
-
-   Gypsum    =  2.0 H2O   1.0 SO4-2   1.0 Ca++  ; -4.581  ; 172.1722 ; 74.21216 ; 1.0
-   Calcite   = -1.0 H+    1.0 HCO3-   1.0 Ca++  ;  1.8487 ; 100.087  ; 36.934   ; 1.0
-   Gibbsite  =  3.0 H2O   1.0 Al+++  -3.0 H+    ;  7.756  ;  78.0036 ; 31.956   ; 1.0
-   Schoepite =  3.0 H2O  -2.0 H+      1.0 UO2++ ;  4.8333 ; 322.058  ; 66.08    ; 1.0
-
-   Basaluminite = 15.0 H2O -10.0 H+     4.0 Al+++    1.0 SO4--    ;  22.2511 ;  464.140 ; 218.934 ; 1.0
-   Ferrihydrite = 2.5 H2O   1.0 Fe++   -2.0 H+       0.25 O2(aq)  ;  -3.594  ;  106.869 ;  23.99  ; 1.0
-   Jurbanite    = 6.0 H2O   1.0 Al+++  -1.0 H+       1.0 SO4--    ;  -3.23   ;  230.064 ; 126.0   ; 1.0
-   Kaolinite    = 5.0 H2O  -6.0 H+      2.0 Al+++    2.0 SiO2(aq) ;   7.570  ;  258.160 ;  99.520 ; 1.0
-   Soddyite     = 4.0 H2O  -4.0 H+      1.0 SiO2(aq) 2.0 UO2++    ;   0.392  ;  668.169 ; 131.27  ; 1.0
-   (UO2)3(PO4)2.4H2O = 4.0 H2O -2.0 H+  2.0 HPO4--   3.0 UO2++    ; -27.0349 ; 1072.09  ; 500.0   ; 1.0
-
-   K-Feldspar = 2.0 H2O  1.0 K+   1.0 Al+++  -4.0 H+  3.0 SiO2(aq) ;  -0.2753 ; 278.332 ; 108.87   ; 1.0
-   Polyhalite = 2.0 H2O  1.0 Mg++ 2.0 Ca++    2.0 K+  4.0 SO4-2    ; -13.7440 ; 218.1   ; 100.9722 ; 1.0
-
-
-Mineral kinetics
-````````````````
-
-Each line in this section has four fields.
-The first field contains mineral name that is assumed to have the same stoichiometry 
-as the mineral definition.
-The second field is the rate name.
-
-.. code-block:: txt
-
-   <Mineral Kinetics
-   Basaluminite ; TST ; log10_rate_constant    -8.0 moles/cm^2/sec
-   Calcite      ; TST ; log10_rate_constant   -10.0 moles/m^2/sec
-   Chalcedony   ; TST ; log10_rate_constant   -14.0 moles/m^2/sec
-   Ferrihydrite ; TST ; log10_rate_constant   -14.0 moles/m^2/sec
-   Gibbsite     ; TST ; log10_rate_constant   -14.0 moles/m^2/sec
-   Halite       ; TST ; log10_rate_constant   -40.0 moles/cm^2/sec
-   Jurbanite    ; TST ; log10_rate_constant   -14.0 moles/m^2/sec
-   K-Feldspar   ; TST ; log10_rate_constant   -16.699 moles/m^2/sec
-   Kaolinite    ; TST ; log10_rate_constant   -16.699 moles/m^2/sec
-   Opal         ; TST ; log10_rate_constant   -12.135 moles/cm^2/sec
-   Quartz       ; TST ; log10_rate_constant   -18.0 moles/m^2/sec
-   Schoepite    ; TST ; log10_rate_constant   -10.0 moles/m^2/sec
-   Soddyite     ; TST ; log10_rate_constant   -10.0 moles/m^2/sec
-   (UO2)3(PO4)2.4H2O ; TST ; log10_rate_constant  -10.0 moles/m^2/sec
-
-
-Ion exchange sites
-``````````````````
-
-Each line in this section has three fields: 
-exchanger name, exchanger change, and exchanger location. 
-The location is the mineral where the exchanger is located, i.e. kaolinite.
-
-.. code-block:: txt
-
-  <Ion Exchange Sites
-   X- ; -1.0 ; Halite
-
-
-Ion exchange complexes
-``````````````````````
-
-Each line in this section has two fields.
-The first field has format "name = coeffient and primary name followed by coefficient 
-and exchanger name. the second field is Keq.
-The following assumptions are made:
-
-   - The coefficient of the ion exchange complex is one.
-   - Each complexation reaction is written between a single
-     primary species and a single exchange site.
-
-.. code-block:: txt
-
-   <Ion Exchange Complexes
-   Al+++X = 1.0 Al+++ 3.0 X- ;  1.71133
-   Ca++X  = 1.0 Ca++  2.0 X- ;  0.29531
-   Ca0.5X = 0.5 Ca++  1.0 X- ; -0.99
-   H+X    = 1.0 H+    1.0 X- ;  0.0251189
-   Mg++X  = 1.0 Mg++  2.0 X- ;  0.1666
-   Na+X   = 1.0 Na+   1.0 X- ;  1.0
-   NaX    = 1.0 Na+   1.0 X- ;  0.0
-
-
-Surface complex sites
-`````````````````````
-
-Each line in this section has two fields: species name and surface density.
-
-.. code-block:: txt
-
-   <Surface Complex Sites
-   >AlOH   ; 6.3600E-03
-   >FeOH   ; 6.3600E-03
-   >FeOH_w ; 7.6355E+04
-   >FeOH_s ; 1.9080E+03
-   >SiOH   ; 6.3600E-03
-   >davis_OH ; 1.56199E-01
-
-
-Surface complexes
-`````````````````
-
-Each line in this section has three fields
-for secondary species. The first field has format "name = coefficient primary_name coefficient exchanger site".
-The second field is Keq. The third field is charge.
-
-.. code-block:: txt
-
-   <Surface Complexes
-   >FeOH2+_w  = 1.0 >FeOH_w   1.0 H+    ; -7.18 ;  1.0
-   >FeOH2+_s  = 1.0 >FeOH_s   1.0 H+    ; -7.18 ;  1.0
-   >FeO-_w    = 1.0 >FeOH_w  -1.0 H+    ;  8.82 ; -1.0
-   >FeO-_s    = 1.0 >FeOH_s  -1.0 H+    ;  8.82 ; -1.0
-   >FeOHUO2++ = 1.0 >FeOH     1.0 UO2++ ; -6.63 ;  2.0
-   >SiO-      =-1.0 H+        1.0 >SiOH ;  0.0
-   >SiOH2+    = 1.0 H+        1.0 >SiOH ;  0.0
-
-   >AlOUO2+    = 1.0 >AlOH   -1.0 H+   1.0 UO2++ ; -3.13 ; 1.0
-   >FeOHZn+_w  = 1.0 >FeOH_w -1.0 H+   1.0 Zn++  ;  2.32 ; 1.0
-   >FeOHZn+_s  = 1.0 >FeOH_s -1.0 H+   1.0 Zn++  ; -0.66 ; 1.0
-   >SiOUO3H3++ = 1.0 >SiOH    1.0 H2O  1.0 UO2++ ;  5.18 ; 2.0
-   >UO2++      = 1.0 UO2++   -1.0 Ca++ 1.0 >Ca++ ; -5.12 ; 0.0
-   (>davis_O)UO2+ = 1.0 >davis_OH -1.0 H+ 1.0 UO2++; -0.444 ; 1.0
-
-   >SiOUO3H2+    = 1.0 >SiOH  1.0 H2O  -1.0 H+  1.0 UO2++ ;  5.18 ;  1.0
-   >SiOUO3H      = 1.0 >SiOH  1.0 H2O  -2.0 H+  1.0 UO2++ ;  5.18 ;  0.0
-   >SiOUO3-      = 1.0 >SiOH  1.0 H2O  -3.0 H+  1.0 UO2++ ; 12.35 ; -1.0
-   >SiOUO2(OH)2- = 1.0 >SiOH  2.0 H2O  -3.0 H+  1.0 UO2++ ; 12.35 ; -1.0
-   >FeOHUO3      = 1.0 >FeOH  1.0 H2O  -2.0 H+  1.0 UO2++ ;  3.05 ;  0.0
-
-
-Radiactive decay
-````````````````
-
-Each line in this section has two fields.
-The first field has format "parent name --> stoichiometric coefficient and species name.
-The second fields is half-life time with units.
-The stoichiometric coefficient of the parent should always be one.
-The units is one of the following: years, days, hours, minutes, or seconds.
-
-.. code-block:: txt
-
-   <Radioactive Decay
-   Cs137  -->  1.0 Cs137  ; half_life 30.2 years
-   Pb_210 -->             ; half_life 22.2 years
-   Pu_238 -->  1.0 U_234  ; half_life 87.7 years
-   Ra_226 -->  1.0 Pb_210 ; half_life 1.6e3 years
-   Th_230 -->  1.0 Ra_226 ; half_life 7.54e4 years
-   U_234  -->  1.0 Th_230 ; half_life 2.45e5 years
-   Tc_99  -->             ; half_life 2.111e5 years
-   Sr90   -->  1.0 Sr90   ; half_life 28.8 years
-
 
 Energy PK
 ---------
@@ -4618,6 +4215,8 @@ For example, when `a = 1`, we have:
   </ParameterList>
   
 
+.. _tabular function:
+
 Tabular function
 ................
 
@@ -5893,6 +5492,9 @@ This specification format uses and describes the unstructured mesh only.
 
     * `"submesh`" [list] parameters for extracted meshes
 
+      * `"domain name`" [string] specifies name of the domain. Available options are
+        `"fracture`" for the fracture network or `"surface`" for surface models.
+
       * `"extraction method`" [string] specifies the extraction method. The only available option
         is `"manifold mesh`". If this parameter is missing, the parent mesh framework is used 
         for submesh extraction..
@@ -6412,6 +6014,599 @@ are three box-shaped volumetric regions. _INFLOW SURFACE is a
 surface region defined in an Exodus II-formatted labeled set
 file and _OUTFLOW PLANE is a planar region. _BLOODY SAND is a volumetric
 region defined by the value 25 in color function file.
+
+
+Databases
+=========
+
+
+Thermodynamic database
+----------------------
+
+The thermodynamic database has a few sections, some of them are optional
+
+Primary species
+...............
+
+The `"primary species`" section is a list of primary species, one sublist for a species.
+Each sublist is named after the species and contains the following parameters:
+
+* `"ion size parameter`" [double] is an empirical parameter that provides agreement 
+  between measured activity coefficients and ionic strength. In theory, it is the diameter
+  of the hydrated ion.
+
+* `"charge`" [int] is the ion charge. The net charge of an ion is non-zero since the
+  total number of electrons is unequal to the total number of protons.
+
+* `"gram molecular weight`" [double] is amount of a molecular substance whose weight, 
+  in grams, is numerically equal to the molecular weight of that substance. 
+
+.. code-block:: xml
+
+  <ParameterList name="thermodynamic database">
+    <ParameterList name="primary species">
+      <ParameterList name="H+">
+        <Parameter name="ion size parameter" type="double" value="9.0"/>
+        <Parameter name="charge" type="int" value="1"/>
+        <Parameter name="gram molecular weight" type="double" value="1.0079"/>
+      </ParameterList>
+      <ParameterList name="Ca++">
+        <Parameter name="ion size parameter" type="double" value="6.0"/>
+        <Parameter name="charge" type="int" value="2"/>
+        <Parameter name="gram molecular weight" type="double" value="40.078"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+Here is the short list of species that could be used for models.
+Each line has four data fields: name of a species, ion size parameter, charge, and atomic mass [u].
+
+.. code-block:: txt
+
+   Al+++      9.0     3.0    26.9815
+   HCO3-      4.0    -1.0    61.0171
+   HPO4--     4.0    -2.0    95.9793
+   Cl-        3.0    -1.0    35.4527
+   CO2(aq)    3.0     0.0    44.01
+   Cs137      2.5     1.0   132.9054
+   F-         3.5    -1.0    18.9984
+   Fe++       6.0     2.0    55.847
+   K+         3.0     1.0    39.0983
+   Mg++       8.0     2.0    24.30
+   Na+        4.0     1.0    22.9898
+   N2(aq)     3.0     0.0    28.0135
+   NO3-       3.0    -1.0    62.0049
+   O2(aq)     3.0     0.0    31.9988
+   Pb_210     1.0     0.0   210.00
+   Pu_238     1.0     0.0   238.00
+   Ra_226     1.0     0.0   226.00
+   SiO2(aq)   3.0     0.0    60.0843
+   SO4--      4.0    -2.0    96.0636
+   Sr90       5.0     2.0    87.6200
+   Tc_99      1.0     0.0    99.00
+   Th_230     1.0     0.0   230.00
+   Tritium    9.0     0.0     1.01
+   U_234      1.0     0.0   234.00
+   UO2++      4.5     2.0   270.028
+   Zn++       6.0     2.0    65.39
+
+
+Aqueous equilibrium complexes
+.............................
+
+The `"aqueous equilibrium complexes`" section is a list of aqueous equiliblium reactions.
+Each sublist is named after a secondary species and contains the following parameters:
+
+* `"ion size parameter`" [double] is an empirical parameter that provides agreement 
+  between measured activity coefficients and ionic strength. In theory, it is the diameter
+  of the hydrated ion.
+
+* `"charge`" [int] is the ion charge. The net charge of an ion is non-zero since the
+  total number of electrons is unequal to the total number of protons.
+
+* `"gram molecular weight`" [double] is amount of a molecular substance whose weight, 
+  in grams, is numerically equal to the molecular weight of that substance. 
+
+* `"reaction`" [string] is the equilibrium reaction equation.
+
+* `"equilibrium constant`" [double] is the value of reaction quotient at chemical equilibrium.
+  The reaction quotient is defined mathematically as the ratio of the activities of the product 
+  species to that of the reactant species. The stoichiometric coefficients are taken into account 
+  as exponents of activities.
+
+In a non-isothermal simulation, the equlibrium constant is a function of temperature.
+In such a case we have one additional parameter `"temperature`" and  parameter
+`"equilibrium constant`" becomes a list that defines a piecewice linear function logK(T).
+This is the `tabular function`_ with linear forms.
+
+* `"T`" [Array(double)] is the array of temperature points.
+
+* `"Keq`" [Array(double)] is the matching array of equilibroum constant values.
+
+.. code-block:: xml
+
+  <ParameterList name="thermodynamic database">
+    <ParameterList name="aqueous equilibrium complexes">
+      <ParameterList name="OH-">
+        <Parameter name="ion size parameter" type="double" value="3.5"/>
+        <Parameter name="charge" type="int" value="-1"/>
+        <Parameter name="gram molecular weight" type="double" value="17.0073"/>
+        <Parameter name="reaction" type="string" value="1.0 H2O  -1.0 H+"/>
+        <Parameter name="equilibrium constant" type="double" value="13.9951"/>
+        <Parameter name="temperature" type="double" value="298.15"/>
+        <ParameterList name="equilibrium constant">
+          <Parameter name="T" type="Array(double)" value="{273.15,  298.15,  333.15,  373.15,  423.15,  473.15,  523.15,  573.15}"/>
+          <Parameter name="Keq" type="Array(double)" value="{14.9398, 13.9951, 13.0272, 12.2551, 11.6308, 11.2836, 11.1675, 11.3002}"/>
+        </ParameterList>
+      <ParameterList name="HCO3-">
+        <Parameter name="ion size parameter" type="double" value="4.0"/>
+        <Parameter name="charge" type="int" value="-1"/>
+        <Parameter name="gram molecular weight" type="double" value="61.0171"/>
+        <Parameter name="reaction" type="string" value="1.0 H2O  -1.0 H+  1.0 CO2(aq)"/>
+        <Parameter name="equilibrium constant" type="double" value="6.3447"/>
+        <Parameter name="temperature" type="double" value="298.15"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+Below are a few examples of aqueous reaction.
+Each line has five fields: reaction equation, logarithm of the equlibrium constant at 25C, 
+ion size parameter, ion charge, and the gram molecular weight.
+
+.. code-block:: txt
+
+   AlHPO4+    =  1.0 Al+++ 1.0 HPO4--    -7.4       4.0     1.0   122.961
+   CaCl+      =  1.0 Ca++  1.0 Cl-        0.6956    4.0     1.0    75.5307
+   CaCl2(aq)  =  1.0 Ca++  2.0 Cl-        0.6436    3.0     0.0   110.9834
+   CaCO3(aq)  =  1.0 Ca+2  1.0 CO3-2     -3.151     3.5     0.0    17.0073
+   CaHCO3+    =  1.0 Ca++  1.0 HCO3-     -1.0467    4.0     1.0   101.0951
+   CaHPO4(aq) =  1.0 Ca++  1.0 HPO4--    -2.7400    3.0     0.0   136.0573
+   CO3--      = -1.0 H+    1.0 HCO3-     10.3288    4.5    -2.0    60.0092
+   FeCl+      =  1.0 Fe++  1.0 Cl-        0.1605    4.0     1.0    91.2997 
+   FeCl2(aq)  =  1.0 Fe++  2.0 Cl-        2.4541    3.0     0.0   126.752 
+   FeCl4--    =  1.0 Fe++  4.0 Cl-       -1.9       4.0    -2.0   197.658 
+   FeHCO3+    =  1.0 Fe++  1.0 HCO3-     -2.72      4.0     1.0   116.864 
+   FeHPO4(aq) =  1.0 Fe++  1.0 HPO4--    -3.6       3.0     0.0   151.826 
+   FeF+       =  1.0 Fe++  1.0 F-        -1.36      4.0     1.0    74.8454 
+   FeSO4(aq)  =  1.0 Fe++  1.0 SO4--     -2.2       3.0     0.0   151.911 
+   H2PO4-     =  1.0 H+    1.0 HPO4--    -7.2054    4.0    -1.0    96.9872
+   H3PO4(aq)  =  2.0 H+    1.0 HPO4--    -9.3751    3.0     0.0    97.9952
+   H2SO4(aq)  =  2.0 H+    1.0 SO4--      1.0209    3.0     0.0    98.0795 
+   HCl(aq)    =  1.0 H+    1.0 Cl-       -0.67      3.0     0.0    36.4606 
+   HNO3(aq)   =  1.0 H+    1.0 NO3-       1.3025    3.0     0.0    63.0129 
+   HSO4-      =  1.0 H+    1.0 SO4--     -1.9791    4.0    -1.0    97.0715 
+   KCl(aq)    =  1.0 K+    1.0 Cl-        1.4946    3.0     0.0    74.551
+   KHPO4-     =  1.0 K+    1.0 HPO4--    -0.78      4.0    -1.0   135.078
+   KSO4-      =  1.0 K+    1.0 SO4--     -0.8796    4.0    -1.0   135.162
+   NaHCO3(aq) =  1.0 Na+   1.0 HCO3-     -0.1541    3.0     0.0    84.0069 
+   NaCl(aq)   =  1.0 Na+   1.0 Cl-        0.777     3.0     0.0    58.4425 
+   NaF(aq)    =  1.0 Na+   1.0 F-         0.9976    3.0     0.0    41.9882  
+   NaHPO4-    =  1.0 Na+   1.0 HPO4--    -0.92      4.0    -1.0   118.969
+   NaNO3(aq)  =  1.0 Na+   1.0 NO3-       1.044     3.0     0.0    84.9947
+   NaSO4-     =  1.0 Na+   1.0 SO4--     -0.82      4.0    -1.0   119.053
+   MgCO3(aq)  =  1.0 Mg+2  1.0 CO3-2     -2.928     3.5     0.0    17.0073
+   OH-        =  1.0 H2O  -1.0 H+        13.9951    3.5    -1.0    17.00730
+   P2O7----   = -1.0 H2O   2.0 HPO4--     3.7463    4.0    -4.0   173.9433
+   PO4---     = -1.0 H+    1.0 HPO4--    12.3218    4.0    -3.0    94.9714
+   UO2Cl+     =  1.0 Cl-   1.0 UO2++     -0.1572    4.0     1.0   305.48 
+   UO2Cl2(aq) =  2.0 Cl-   1.0 UO2++      1.1253    3.0     0.0   340.933 
+   UO2F+      =  1.0 F-    1.0 UO2++     -5.0502    4.0     1.0   289.026 
+   UO2F2(aq)  =  2.0 F-    1.0 UO2++     -8.5403    3.0     0.0   308.024 
+   UO2F3-     =  3.0 F-    1.0 UO2++    -10.7806    4.0    -1.0   327.023 
+   UO2F4--    =  4.0 F-    1.0 UO2++    -11.5407    4.0    -2.0   346.021 
+   UO2HPO4(aq)= 1.0 HPO4-- 1.0 UO2++     -8.4398    3.0     0.0   366.007 
+   UO2NO3+    =  1.0 NO3-  1.0 UO2++     -0.2805    4.0     1.0   332.033 
+   UO2SO4(aq) =  1.0 SO4-- 1.0 UO2++     -3.0703    3.0     0.0   366.091 
+   UO2(SO4)2-- = 2.0 SO4-- 1.0 UO2++     -3.9806    4.0    -2.0   462.155 
+
+   Al2(OH)2++++	 = -2.0 H+    2.0 Al+++   2.0 H2O         7.6902    5.5	   4.0    87.9778
+   Al3(OH)4(5+)	 = -4.0 H+    3.0 Al+++   4.0 H2O        13.8803    6.0    5.0   148.9740
+   Al(OH)2+      =  2.0 H2O   1.0 Al+++  -2.0 H+         10.5945    4.0    1.0    60.9962 
+   Al(OH)3(aq)   =  3.0 H2O   1.0 Al+++  -3.0 H+         16.1577    3.0    0.0    78.0034 
+   Al(OH)4-      =  4.0 H2O   1.0 Al+++  -4.0 H+         22.8833    4.0   -1.0    95.0107 
+   AlH2PO4++     =  1.0 Al+++ 1.0 H+      1.0 HPO4--     -3.1       4.5    2.0   123.969
+   AlO2-         =  2.0 H2O   1.0 Al+++  -4.0 H+         22.8833    4.0   -1.0    58.9803
+   AlOH++        =  1.0 H2O   1.0 Al+++  -1.0 H+          4.9571    4.5    2.0    43.9889 
+   CaCO3(aq)     = -1.0 H+    1.0 Ca++    1.0 HCO3-       7.0017    3.0    0.0   100.0872
+   CaH2PO4+      =  1.0 Ca++  1.0 H+      1.0 HPO4--     -1.4000    4.0    1.0   137.0652
+   CaP2O7--      = -1.0 H2O   1.0 Ca++    2.0 HPO4--     -3.0537    4.0   -2.0   214.0213
+   CaPO4-        = -1.0 H+    1.0 Ca++    1.0 HPO4--      5.8618    4.0   -1.0   135.0494
+   CaOH+         = -1.0 H+    1.0 Ca++    1.0 H2O        12.8500    4.0    1.0    57.0853
+   CO2(aq)       = -1.0 H2O   1.0 H+      1.0 HCO3-      -6.3447    3.0    0.0    44.0098
+   H2P2O7--      = -1.0 H2O   2.0 H+      2.0 HPO4--    -12.0709    4.0   -2.0   175.9592
+   H2S(aq)       =  2.0 H+    1.0 SO4--  -2.0 O2(aq)    131.329     3.0    0.0    34.0819 
+   H3P2O7-       = -1.0 H2O   2.0 HPO4--  3.0 H+        -14.4165    4.0   -1.0   176.9671
+   H4P2O7(aq)    = -1.0 H2O   2.0 HPO4--  4.0 H+        -15.9263    3.0    0.0   177.9751
+   HAlO2(aq)     =  2.0 H2O   1.0 Al+++  -3.0 H+         16.4329    3.0    0.0    59.9883
+   HCO3-         =  1.0 H2O  -1.0 H+      1.0 CO2(aq)    6.34470    4.0   -1.0    61.01710
+   HO2-          =  1.0 H2O  -1.0 H+      0.5 O2(aq)     28.302     4.0   -1.0    33.0067 
+   HP2O7---      = -1.0 H2O   1.0 H+      2.0 HPO4--     -5.4498    4.0   -3.0   174.9513
+   HS-           =  1.0 H+    1.0 SO4--  -2.0 O2(aq)    138.317     3.5   -1.0    33.0739 
+   Fe2(OH)2++++  =  1.0 H2O   2.0 Fe++    0.5 O2(aq)    -14.0299    5.5    4.0   145.709 
+   FeCO3(aq)     =  1.0 Fe++ -1.0 H+      1.0 HCO3-       5.5988    3.0    0.0   115.856 
+   FeH2PO4+      =  1.0 Fe++  1.0 H+      1.0 HPO4--     -2.7       4.0    1.0   152.834 
+   Fe(OH)2(aq)   =  2.0 H2O   1.0 Fe++   -2.0 H+         20.6       3.0    0.0    89.8617 
+   Fe(OH)3-      =  3.0 H2O   1.0 Fe++   -3.0 H+         31.0       4.0   -1.0   106.869 
+   Fe(OH)4--     =  4.0 H2O   1.0 Fe++   -4.0 H+         46.0       4.0   -2.0   123.876 
+   FeOH+         =  1.0 H2O   1.0 Fe++   -1.0 H+          9.5       4.0    1.0    72.8543 
+   FeOH++        =  0.5 H2O   1.0 Fe++    0.25 O2(aq)    -6.3       4.5    2.0    72.8543 
+   FePO4-        =  1.0 Fe++ -1.0 H+      1.0 HPO4--      4.3918    4.0   -1.0   150.818 
+   KHSO4(aq)     =  1.0 K+    1.0 H+      1.0 SO4--      -0.8136    3.0    0.0   136.17
+   KOH(aq)       =  1.0 H2O   1.0 K+     -1.0 H+         14.46      3.0    0.0    56.1056
+   KP2O7---      = -1.0 H2O   1.0 K+      2.0 HPO4--      1.4286    4.0   -3.0   213.042
+   MgOH+         =  1.0 H2O  -1.0 H+      1.0 Mg++      11.78510    4.0    1.0    41.3123
+   NaCO3-        = -1.0 H+    1.0 HCO3-   1.0 Na+         9.8144    4.0   -1.0    82.9990
+   NaOH(aq)      =  1.0 H2O   1.0 Na+    -1.0 H+         14.7948    3.0    0.0    39.9971
+   NH3(aq)       =  1.5 H2O   0.5 N2(aq) -0.75 O2(aq)    58.2305    3.0    0.0    17.0306 
+   UO2CO3(aq)    = -1.0 H+    1.0 HCO3-   1.0 UO2++       0.6634    3.0    0.0   330.037 
+   UO2(CO3)2--   = -2.0 H+    2.0 HCO3-   1.0 UO2++       3.7467    4.0   -2.0   390.046 
+   UO2(CO3)3---- = -3.0 H+    3.0 HCO3-   1.0 UO2++       9.4302    4.0   -4.0   450.055 
+   UO2H2PO4+     =  1.0 H+    1.0 HPO4--  1.0 UO2++     -11.6719    4.0    1.0   367.015 
+   UO2H3PO4++    =  2.0 H+    1.0 HPO4--  1.0 UO2++     -11.3119    4.5    2.0   368.023 
+   UO2OH+        =  1.0 H2O  -1.0 H+      1.0 UO2++       5.2073    4.0    1.0   287.035 
+   UO2PO4-       = -1.0 H+    1.0 HPO4--  1.0 UO2++      -2.0798    4.0   -1.0   364.999 
+   UO2(OH)2(aq)  =  2.0 H2O  -2.0 H+      1.0 UO2++      10.3146    3.0    0.0   304.042 
+   UO2(OH)3-     =  3.0 H2O  -3.0 H+      1.0 UO2++      19.2218    4.0   -1.0   321.05 
+   UO2(OH)4--    =  4.0 H2O  -4.0 H+      1.0 UO2++      33.0291    4.0   -2.0   338.057 
+   (UO2)2OH+++   =  1.0 H2O  -1.0 H+      2.0 UO2++       2.7072    5.0    3.0   557.063 
+   (UO2)2(OH)2++ =  2.0 H2O  -2.0 H+      2.0 UO2++       5.6346    4.5    2.0   574.07 
+   (UO2)3(OH)4++ =  4.0 H2O  -4.0 H+      3.0 UO2++      11.929     4.5    2.0   878.112 
+   (UO2)3(OH)5+  =  5.0 H2O  -5.0 H+      3.0 UO2++      15.5862    4.0    1.0   895.12 
+   (UO2)3(OH)7-  =  7.0 H2O  -7.0 H+      3.0 UO2++      31.0508    4.0   -1.0   929.135 
+   (UO2)4(OH)7+  =  7.0 H2O  -7.0 H+      4.0 UO2++      21.9508    4.0    1.0   1199.16 
+   UO2(H2PO4)(H3PO4)+ = 3.0 H+ 2.0 HPO4-- 1.0 UO2++     -22.7537    4.0    1.0   465.01 
+   UO2(H2PO4)2(aq) =    2.0 H+ 2.0 HPO4-- 1.0 UO2++     -21.7437    3.0    0.0   464.002 
+   Zn(OH)2(aq)   =  2.0 H2O  -2.0 H+      1.0 Zn++       17.3282    3.0    0.0    99.4047
+   Zn(OH)3-      =  3.0 H2O  -3.0 H+      1.0 Zn++       28.8369    4.0   -1.0   116.41200
+   Zn(OH)4--     =  4.0 H2O  -4.0 H+      1.0 Zn++       41.6052    4.0   -2.0   133.41940
+   ZnOH+         =  1.0 H2O  -1.0 H+      1.0 Zn++        8.9600    4.0    1.0    82.39730
+
+   Ca2UO2(CO3)3(aq) =  2.0 Ca++ -3.0 H+     3.0 HCO3-   1.0 UO2++        0.2864   4.0    0.0   530.215 
+   CaUO2(CO3)3--    =  1.0 Ca++ -3.0 H+     3.0 HCO3-   1.0 UO2++        3.8064   4.0   -2.0   530.215 
+   CH4(aq)          =  1.0 H2O   1.0 H+     1.0 HCO3-  -2.0 O2(aq)     144.141    3.0    0.0     0.0
+   NaAlO2(aq)       =  2.0 H2O   1.0 Na+    1.0 Al+++  -4.0 H+          23.6266   3.0    0.0    81.9701
+   NaHP2O7--        = -1.0 H2O   1.0 Na+    1.0 H+      2.0 HPO4--      -6.8498   4.0   -2.0   197.941
+   NaHSiO3(aq)      =  1.0 H2O   1.0 Na+   -1.0 H+      1.0 SiO2(aq)     8.304    3.0    0.0   100.081
+   Fe+++            = -0.5 H2O   1.0 Fe++   1.0 H+      0.25 O2(aq)     -8.49     9.0    3.0    55.847 
+   Fe3(OH)4(5+)     =  2.5 H2O   3.0 Fe++  -1.0 H+      0.75 O2(aq)    -19.1699   6.0    5.0   235.57 
+   Fe(OH)2+         =  1.5 H2O   1.0 Fe++  -1.0 H+      0.25 O2(aq)     -2.82     4.0    1.0    89.8617 
+   Fe(OH)3(aq)      =  2.5 H2O   1.0 Fe++  -2.0 H+      0.25 O2(aq)      3.51     3.0    0.0   106.869 
+   Fe(OH)4-         =  3.5 H2O   1.0 Fe++  -3.0 H+      0.25 O2(aq)     13.11     4.0   -1.0   123.876 
+   FeCO3+           = -0.5 H2O   1.0 Fe++   1.0 HCO3-   0.25 O2(aq)     -7.8812   4.0    1.0   115.856 
+   MgHCO3+          =  1.0 H2O  -1.0 H+     1.0 CO2(aq) 1.0 Mg++         5.309    4.0    1.0    85.3221
+   N3-              =  0.5 H2O  -1.0 H+     1.5 N2(aq) -0.25 O2(aq)     77.7234   4.0   -1.0    42.0202 
+   NH4+             =  1.5 H2O   1.0 H+     0.5 N2(aq) -0.75 O2(aq)     48.9895   2.5    1.0    18.0385 
+   U+++             = -0.5 H2O   1.0 H+     1.0 UO2++  -0.75 O2(aq)     64.8028   5.0    3.0   238.029 
+   U++++            = -1.0 H2O   2.0 H+     1.0 UO2++  -0.5 O2(aq)      33.949    5.5    4.0   238.029 
+   UO2+             =  0.5 H2O  -1.0 H+     1.0 UO2++  -0.25 O2(aq)     20.0169   4.0    1.0   270.028 
+   UO2OSi(OH)3+     =  2.0 H2O  -1.0 H+     1.0 SiO2(aq) 1.0 UO2++       2.4810   9.0    1.0   365.135
+   (UO2)2CO3(OH)3-  =  3.0 H2O  -4.0 H+     1.0 HCO3-   2.0 UO2++       11.2229   4.0   -1.0   651.087 
+
+   Fe(SO4)2- = -0.5 H2O  1.0 Fe++  1.0 H+      2.0 SO4--   0.25 O2(aq)   -11.7037   4.0   -1.0   247.974 
+   FeCl++    = -0.5 H2O  1.0 Fe++  1.0 H+      1.0 Cl-     0.25 O2(aq)    -7.6792   4.5    2.0    91.2997 
+   FeCl2+    = -0.5 H2O  1.0 Fe++  1.0 H+      2.0 Cl-     0.25 O2(aq)   -10.62     4.0    1.0   126.752 
+   FeCl4-    = -0.5 H2O  1.0 Fe++  1.0 H+      4.0 Cl-     0.25 O2(aq)    -7.7      4.0   -1.0   197.658 
+   FeF++     = -0.5 H2O  1.0 Fe++  1.0 H+      1.0 F-      0.25 O2(aq)   -12.6265   4.5    2.0    74.8454 
+   FeF2+     = -0.5 H2O  1.0 Fe++  1.0 H+      2.0 F-      0.25 O2(aq)   -16.8398   4.0    1.0    93.8438 
+   FeH2PO4++ = -0.5 H2O  1.0 Fe++  2.0 H+      1.0 HPO4--  0.25 O2(aq)   -12.66     4.5    2.0   152.834 
+   FeHPO4+   = -0.5 H2O  1.0 Fe++  1.0 H+      1.0 HPO4--  0.25 O2(aq)   -18.67     4.0    1.0   151.826 
+   FeNO3++   = -0.5 H2O  1.0 Fe++  1.0 H+      1.0 NO3-    0.25 O2(aq)    -9.49     4.5    2.0   117.852 
+   FeSO4+    = -0.5 H2O  1.0 Fe++  1.0 H+      1.0 SO4--   0.25 O2(aq)   -10.4176   4.0    1.0   151.911 
+   MgUO2(CO3)3-- = 3.0 H2O -6.0 H+ 3.0 CO2(aq) 1.0 Mg++    1.00 UO2++     23.9105   3.0   -2.0   500.0
+   NH4SO4-   =  1.5 H2O  1.0 H+    0.5 N2(aq)  1.0 SO4--  -0.75 O2(aq)    57.2905   4.0   -1.0   114.102
+
+
+Isotherms
+.........
+
+The `"isotherms`" section is the list of sorption processes that relate the sorbed concentration at 
+the solid surface to the aqueous concentration in contact with the solid at constant temperature. 
+It is a function of the free ion primary species concentrations, not total conentrations. 
+A sorption isotherm may represent equilibrium or kinetic processes depending on the data used to 
+fit the isotherm.
+Each sublist has two parameters:
+
+* `"model`" [string] specifies the model name. The available options are `"linear", `"langmuir`", and `"freundlich`".
+
+* `"parameters`" [Array(double)] is the list of model parameters. The distribution coefficient 
+  *K* is in the first position.
+
+.. code-block:: xml
+
+  <ParameterList name="isotherms">
+    <ParameterList name="A">
+      <Parameter name="model" type="string" value="linear"/>
+      <Parameter name="parameters" type="Array(double)" value="{10.0}"/>
+    </ParameterList>
+    <ParameterList name="B">
+      <Parameter name="model" type="string" value="langmuir"/>
+      <Parameter name="parameters" type="Array(double)" value="{30.0, 0.1}"/>
+    </ParameterList>
+    <ParameterList name="C">
+      <Parameter name="model" type="string" value="freundlich"/>
+      <Parameter name="parameters" type="Array(double)" value="{1.5, 1.25}"/>
+    </ParameterList>
+  </ParameterList>
+
+A few examples are given below.
+Each line has three fields: primary species name, adsorption isotherm model, and parameters. 
+The number of  parameters and their meaning depends on the model; although the first one 
+is always the distribution coefficient.
+
+.. code-block:: txt
+
+   Pu_238   linear    461168.4
+   U_234    linear    329406.0
+   Th_230   linear   1482327.0
+   Ra_226   linear     41175.75
+   Pb_210   linear   3294060.0
+   Tc_99    linear       988.218
+
+
+General kinetics
+................
+
+The `"general kinetics`" section describes kinetic (slow) reactions in the form
+
+.. code-block:: txt
+
+  3 A(aq) + 2 B(aq) <-> C(aq) + 3 D(aq) + 4 E(aq)
+
+where a number (stoichiometic coefficient) is followed by a species name. 
+The list of parameters for each reaction includes
+
+* `"reactants`" [string] is the left-hand side of the above equation.
+
+* `"products`" [string] is the right-hand side of the above equation.
+
+* `"forward rate`" [double] is the forward reaction rate.
+
+* `"backward rate`" [double] is the reverse reaction rate.
+
+* `"reaction orders (reactants/products)`" [Array(double)] is the list of 
+  reaction orders with respect to activies of dissolved species. The list 
+  includes orders for reactants (first) and products (second).
+
+.. code-block:: xml
+
+  <ParameterList name="general kinetics">
+    <ParameterList name="general_0">
+      <Parameter name="reactants" type="string" value="1.0 Tritium"/>
+      <Parameter name="products" type="string" value=""/>
+      <Parameter name="forward rate" type="double" value="1.78577e-09"/>
+      <Parameter name="backward rate" type="double" value="0.0"/>
+      <Parameter name="reaction orders (reactants/products)" type="Array(double)" value="{3.0, 2.0, 0.0, 0.0, 0.0}"/>
+    </ParameterList>
+  </ParameterList>
+
+This example describes decay of *Tritium*.
+
+
+Mineral thermodynamics and kinetics
+...................................
+
+The `"mineral kinetics`" section includes at the moment both thermodynamic and kinetic data.
+The list of parameters for each reaction includes
+
+* `"rate model`" [string] is the model name for reaction rate [mol/s]. Available option is *TST*.
+
+* `"equilibrium constant`" [double] is logarithm of the equilibrium constant.
+
+* `"rate constant`" [double] is log10 of the reaction rate constant.
+
+* `"modifiers`" [string] is the list of pairs: species name and value of modyfying exponent,
+  so that the string has always even number of words.
+
+* `"gram molecular weight`" [double] is amount of a molecular substance whose weight, 
+  in grams, is numerically equal to the molecular weight of that substance. 
+
+* `"reaction`" [string] is the mineral reaction equation.
+
+* `"molar volume`" [double] is the molar volume, [m^3 / mol].
+
+* `"specific surface area`" [double] is the specific mineral surface area.
+
+The reaction rate is the dissolution rate for the mineral, so it is positive 
+for dissolution and negative for precipitation.
+We assume that the sublist name is the mineral name.
+We also assume that the mineral reaction includes only primary species and that
+the modifying species are only primary species.
+ 
+.. code-block:: xml
+
+  <ParameterList name="mineral kinetics">
+    <ParameterList name="Kaolinite">
+      <Parameter name="rate model" type="string" value="TST"/>
+      <Parameter name="rate constant" type="double" value="-8.967"/>
+      <Parameter name="modifiers" type="string" value="H+  7.77000E-01"/>
+      <Parameter name="gram molecular weight" type="double" value="258.16"/>
+      <Parameter name="reaction" type="string" value="5.0 H2O  -6.0 H+  2.0 Al+++  2.0 SiO2(aq)"/>
+      <Parameter name="equilibrium constant" type="double" value="7.57"/>
+      <Parameter name="molar volume" type="double" value="9.952e-05"/>
+      <Parameter name="specific surface area" type="double" value="100.0"/>
+    </ParameterList>
+  </ParameterList>
+
+A few examples of mineral reactions is beflow.
+Each line in has five columns: mineral reaction, logarithm of equilibrium constant, 
+gram molecular weight [g/mol], molar volume [cm^3/mol],
+and specific surface area [cm^2 mineral / cm^3 bulk].
+
+.. code-block:: txt
+
+   Halite       = 1.0 Na+   1.0 Cl-                                         1.58550   58.4425   27.0150  1.0
+   Gypsum       = 2.0 H2O   1.0 SO4-2   1.0 Ca++                           -4.581    172.1722   74.21216 1.0
+   Calcite      =-1.0 H+    1.0 HCO3-   1.0 Ca++                            1.8487   100.087    36.934   1.0
+   Gibbsite     = 3.0 H2O   1.0 Al+++  -3.0 H+                              7.756     78.0036   31.956   1.0
+   Schoepite    = 3.0 H2O  -2.0 H+      1.0 UO2++                           4.8333   322.058    66.08    1.0
+   Basaluminite =15.0 H2O -10.0 H+      4.0 Al+++    1.0 SO4--             22.2511   464.140   218.934   1.0
+   Ferrihydrite = 2.5 H2O   1.0 Fe++   -2.0 H+       0.25 O2(aq)           -3.594    106.869    23.99    1.0
+   Jurbanite    = 6.0 H2O   1.0 Al+++  -1.0 H+       1.0 SO4--             -3.23     230.064   126.0     1.0
+   Kaolinite    = 5.0 H2O  -6.0 H+      2.0 Al+++    2.0 SiO2(aq)           7.570    258.160    99.520   1.0
+   Soddyite     = 4.0 H2O  -4.0 H+      1.0 SiO2(aq) 2.0 UO2++              0.392    668.169   131.27    1.0
+   K-Feldspar   = 2.0 H2O   1.0 K+      1.0 Al+++   -4.0 H+  3.0 SiO2(aq)  -0.2753   278.332   108.87    1.0
+   Polyhalite   = 2.0 H2O   1.0 Mg++    2.0 Ca++     2.0 K+  4.0 SO4-2    -13.7440   218.1     100.9722  1.0
+
+
+Ion exchange sites
+..................
+
+The `"ion exchange sites`" section is the list of ion exchange reactions.
+Each sublist is named after the exchanger site and has the following parameters:
+
+* `"location`" [string] is the mineral name.
+
+* `"charge`" [int] is the exchanger charge.
+
+.. code-block:: xml
+
+  <ParameterList name="ion exchange sites">
+    <ParameterList name="X-">
+      <Parameter name="location" type="string" value="Bulk"/>
+      <Parameter name="charge" type="int" value="-1"/>
+    </ParameterList>
+  </ParameterList>
+
+
+Ion exchange complexes
+......................
+
+The `"ion exchange complexes`" is the list of ion exchange complexation reactions.
+We assume that the reactions are always written as one complex equals one primary 
+species plus one exchange site.
+Each complex is defined by the following parameters:
+
+* `"reaction`" [string] is the exchange reaction.
+
+* `"equilibrium constant`" [double] is the logarithm of the equilibrium constant.
+
+.. code-block:: xml
+
+  <ParameterList name="ion exchange complexes">
+    <ParameterList name="Na+X">
+      <Parameter name="reaction" type="string" value="1.0 Na+  1.0 X-"/>
+      <Parameter name="equilibrium constant" type="double" value="1.0"/>
+    </ParameterList>
+    <ParameterList name="Ca++X">
+      <Parameter name="reaction" type="string" value="1.0 Ca++  2.0 X-"/>
+      <Parameter name="equilibrium constant" type="double" value="0.316228"/>
+    </ParameterList>
+  </ParameterList>
+
+A few additional examples, reaction equation and the equilibrium coefficient:
+
+.. code-block:: txt
+
+   Al+++X = 1.0 Al+++ 3.0 X-    1.71133
+   Ca0.5X = 0.5 Ca++  1.0 X-   -0.99
+   H+X    = 1.0 H+    1.0 X-    0.0251189
+   Mg++X  = 1.0 Mg++  2.0 X-    0.1666
+
+
+Surface complex sites
+.....................
+
+The `"surface complex sites`" section is the list of surface sites and related data.
+Each site has one parameter `"density`".
+
+.. code-block:: xml
+
+  <ParameterList name="surface complex sites">
+    <ParameterList name=">davis_OH">
+      <Parameter name="density" type="double" value="0.156199"/>
+    </ParameterList>
+  </ParameterList>
+
+
+Surface complexes
+.................
+
+The `"surface complexes`" is the list of surface complexation reactions.
+Each reaction is defined by the following parameters:
+
+* `"reaction`" [string] is a surface complexation reaction involing the complex site 
+  and primary species.
+
+* `"charge`" [int] is the charge of the complex.
+
+* `"equilibrium constant`" [double] is the logarithm of the reaction equilibrium coefficeint.
+
+.. code-block:: xml
+
+  <ParameterList name="surface complexes">
+    <ParameterList name="(>davis_O)UO2+">
+      <Parameter name="charge" type="int" value="1"/>
+      <Parameter name="reaction" type="string" value="1.0 >davis_OH  -1.0 H+  1.0 UO2++"/>
+      <Parameter name="equilibrium constant" type="double" value="-0.444"/>
+    </ParameterList>
+  </ParameterList>
+
+A few additional examples.
+Each line has three fields: reaction, logarithm of equailibrium coefficient, and charge.
+
+.. code-block:: txt
+
+   >FeOH2+_s     = 1.0 >FeOH_s   1.0 H+                        -7.18   1.0
+   >FeO-_w       = 1.0 >FeOH_w  -1.0 H+                         8.82  -1.0
+   >FeOHUO2++    = 1.0 >FeOH     1.0 UO2++                     -6.63   2.0
+   >SiO-         =-1.0 H+        1.0 >SiOH                      0.0
+   >SiOH2+       = 1.0 H+        1.0 >SiOH                      0.0
+   >AlOUO2+      = 1.0 >AlOH    -1.0 H+   1.0 UO2++            -3.13   1.0
+   >FeOHZn+_s    = 1.0 >FeOH_s  -1.0 H+   1.0 Zn++             -0.66   1.0
+   >SiOUO3H3++   = 1.0 >SiOH     1.0 H2O  1.0 UO2++             5.18   2.0
+   >UO2++        = 1.0 UO2++    -1.0 Ca++ 1.0 >Ca++            -5.12   0.0
+   >SiOUO3H2+    = 1.0 >SiOH     1.0 H2O  -1.0 H+  1.0 UO2++    5.18   1.0
+   >SiOUO3H      = 1.0 >SiOH     1.0 H2O  -2.0 H+  1.0 UO2++    5.18   0.0
+   >SiOUO3-      = 1.0 >SiOH     1.0 H2O  -3.0 H+  1.0 UO2++   12.35  -1.0
+   >SiOUO2(OH)2- = 1.0 >SiOH     2.0 H2O  -3.0 H+  1.0 UO2++   12.35  -1.0
+   >FeOHUO3      = 1.0 >FeOH     1.0 H2O  -2.0 H+  1.0 UO2++    3.05   0.0
+
+
+Radioactive decay
+.................
+
+The `"radiaoctive decay`" section is the list of decay reactions for aqueous and 
+sorbed species.  
+Currently, it does not deal with decay of solid phase.
+
+* `"reactant`" [string] is the species name.
+
+* `"product`" [string] is the species name.
+
+* `"half life`" [double] is the half-life time of decay.
+
+.. code-block:: xml
+
+  <ParameterList name="radioactive decay">
+    <ParameterList name="complex_0">
+      <Parameter name="reactant" type="string" value="A"/>
+      <Parameter name="product" type="string" value="B"/>
+      <Parameter name="half life" type="double" value="3.9447e+08"/>
+    </ParameterList>
+    <ParameterList name="complex_1">
+      <Parameter name="reactant" type="string" value="B"/>
+      <Parameter name="product" type="string" value="C"/>
+      <Parameter name="half life" type="double" value="7.8894e+08"/>
+    </ParameterList>
+    <ParameterList name="complex_2">
+      <Parameter name="reactant" type="string" value="C"/>
+      <Parameter name="product" type="string" value=""/>
+      <Parameter name="half life" type="double" value="1.57788e+08"/>
+    </ParameterList>
+  </ParameterList>
+
+A few additionale examples:
+
+.. code-block:: txt
+
+   Cs137  -->  1.0 Cs137    half_life 30.2 years
+   Pb_210 -->               half_life 22.2 years
+   Pu_238 -->  1.0 U_234    half_life 87.7 years
+   Ra_226 -->  1.0 Pb_210   half_life 1.6e3 years
+   Th_230 -->  1.0 Ra_226   half_life 7.54e4 years
+   U_234  -->  1.0 Th_230   half_life 2.45e5 years
+   Tc_99  -->               half_life 2.111e5 years
+   Sr90   -->  1.0 Sr90     half_life 28.8 years
 
 
 Output data

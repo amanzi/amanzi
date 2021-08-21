@@ -184,14 +184,15 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // inform other PKs about strong coupling
   // -- flow
+  auto pks = glist_->sublist("PKs").sublist(name_).get<Teuchos::Array<std::string> >("PKs order").toVector();
   std::string model = (vapor_diff) ? "two-phase" : "one-phase";
-  Teuchos::ParameterList& flow = glist_->sublist("PKs").sublist("flow")
+  Teuchos::ParameterList& flow = glist_->sublist("PKs").sublist(pks[0])
                                         .sublist("physical models and assumptions");
   flow.set<bool>("vapor diffusion", vapor_diff);
   flow.set<std::string>("water content model", model);
 
   // -- energy
-  Teuchos::ParameterList& energy = glist_->sublist("PKs").sublist("energy")
+  Teuchos::ParameterList& energy = glist_->sublist("PKs").sublist(pks[1])
                                           .sublist("physical models and assumptions");
   energy.set<bool>("vapor diffusion", vapor_diff);
 
