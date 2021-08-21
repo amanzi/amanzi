@@ -8,12 +8,43 @@
 
   Author: Daniil Svyatsky (dasvyat@lanl.gov)
 
-  This provide coupling of consistent fields located on manifold and
-  in space. For the space, the coupling creates a list of boundary
+  This provide coupling of fields located on matching manifold and
+  space meshes. For the space, the coupling creates a list of boundary
   conditions. For the manifold, the coupling creates a list of sources.
 
-  Typically the mesh provide the map manifold (cell) -> space (face).
+  Typically, the manifold mesh provides map manifold (cell) -> space (face).
   In space, we need the reverse map.
+
+  The following parameter names were changed:
+    "flux_key" -> "flux key"
+    "copy_flux_key" -> "flux copy key"
+
+    "field_in_key" -> removed
+    "copy_field_in_key" -> removed
+
+    "field_out_key" -> "external field key"
+    "copy_field_out_key" -> "external field copy key"
+
+    "conserved_quantity_key" -> "conserved quantity key"
+    "copy_conserved_quantity_key" -> "conserved quantity copy key"
+
+  There are three submodels.
+  (A) submodel="rate". The computed data are given by formulas: 
+
+      value[i][c] += flux[f] * external_field[i][cc] / |c|
+      value[N][c] -= dt * flux[f] 
+
+  where cc is the space cell attached to face f, and N is the auxiliary 
+  value added to the result. Note that internal face f (resp., boundary 
+  face f) is shared by two (resp. one) space cells.
+
+  (B) submodel="field". The computed data are given by the formula:
+
+      value[i][f] = external_field[i][c]; 
+
+  (C) submodel="conserved quantity". Not used in Amanzi.
+
+  (D) submodel="".
 */
 
 #ifndef AMANZI_PK_DOMAIN_FUNCTION_COUPLING_HH_
@@ -38,8 +69,9 @@ namespace Amanzi {
 template <class FunctionBase>
 class PK_DomainFunctionCoupling : public FunctionBase {
  public:
-  PK_DomainFunctionCoupling(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      mesh_(mesh) {};
+  PK_DomainFunctionCoupling(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                            const Teuchos::RCP<const State>& S) :
+      mesh_(mesh), S_(S) {};
   virtual ~PK_DomainFunctionCoupling() = default;
 
   typedef std::vector<std::string> RegionList;
@@ -51,16 +83,15 @@ class PK_DomainFunctionCoupling : public FunctionBase {
             AmanziMesh::Entity_kind kind);
 
   // required member functions
-  virtual void Compute(double t0, double t1);
-  virtual std::string name() const { return "domain coupling"; }
-  virtual void set_state(const Teuchos::RCP<State>& S) { S_ = S; }
+  virtual void Compute(double t0, double t1) override;
+  virtual std::string name() const override { return "domain coupling"; }
 
  protected:
   using FunctionBase::value_;
   using FunctionBase::linear_term_;
   using FunctionBase::keyword_;
 
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_, mesh_out_;
   Teuchos::RCP<const State> S_;
 
  private:
@@ -69,7 +100,6 @@ class PK_DomainFunctionCoupling : public FunctionBase {
   std::string flux_key_, copy_flux_key_;
   std::string field_cons_key_, copy_field_cons_key_;
   std::string field_out_key_, copy_field_out_key_;
-  std::string field_in_key_, copy_field_in_key_;
 
   Teuchos::RCP<MeshIDs> entity_ids_;
   std::map<AmanziMesh::Entity_ID, AmanziMesh::Entity_ID> reverse_map_;
@@ -84,48 +114,67 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
     const Teuchos::ParameterList& plist, const std::string& keyword,
     AmanziMesh::Entity_kind region_kind)
 {
+  Errors::Message msg;
+
   keyword_ = keyword;
 
   if (plist.isParameter("submodel")) {
     submodel_ = plist.get<std::string>("submodel");
   } else {
-    Errors::Message m;
-    m << "Domain coupling requires parameter \"submodel\"";
-    Exceptions::amanzi_throw(m);
+    msg << "Domain coupling requires parameter \"submodel\"";
+    Exceptions::amanzi_throw(msg);
   }
 
   Teuchos::ParameterList slist;
   try {
     slist = plist.sublist(keyword_);
-  } catch (Errors::Message& msg) {
-    Errors::Message m;
-    m << "error in domain coupling sublist : " << msg.what();
-    Exceptions::amanzi_throw(m);
+  } catch (Errors::Message& msg2) {
+    msg << "error in domain coupling sublist : " << msg2.what();
+    Exceptions::amanzi_throw(msg);
+  }
+
+  //  deprecated
+  std::vector<std::string> deprecated = { "flux_key", "copy_flux_key",
+                                          "field_in_key", "copy_field_in_key",
+                                          "field_out_key", "copy_field_out_key",
+                                          "conserved_quantity_key", "copy_conserved_quantity_key" };
+  std::vector<std::string> newstyle = { "flux key", "flux copy key",
+                                        "removed1", "removed2",
+                                        "external field key", "external field copy key",
+                                        "conserved quantity key", "conserved quantity copy key" };
+
+  for (int i = 0; i < deprecated.size(); ++i) {
+    std::string name = deprecated[i];
+    if (slist.isParameter(name)) {
+      slist.set<std::string>(newstyle[i], slist.get<std::string>(name)); 
+      /*
+      Errors::Message msg;
+      msg << "deprecated name : " << name << ", see PK_DomainFunctionCoupling.hh";
+      Exceptions::amanzi_throw(msg);
+      */
+    }
   }
 
   // get keys of owned (in) and exterior (out) fields
-  if (submodel_ == "rate") {
-    field_in_key_ = slist.get<std::string>("field_in_key");
-    copy_field_in_key_ = slist.get<std::string>("copy_field_in_key", "default");
-
-    flux_key_ = slist.get<std::string>("flux_key");
-    copy_flux_key_ = slist.get<std::string>("copy_flux_key", "default");
-  } else if (submodel_ == "field") {
-    field_in_key_ = slist.get<std::string>("field_in_key");
-    copy_field_in_key_ = slist.get<std::string>("copy_field_in_key", "default");
+  if (submodel_ == "rate" || submodel_ == "flux exchange") {
+    flux_key_ = slist.get<std::string>("flux key");
+    copy_flux_key_ = slist.get<std::string>("flux copy key", "default");
 
   } else if (submodel_ == "conserved quantity") {
-    field_cons_key_ = slist.get<std::string>("conserved_quantity_key");
-    copy_field_cons_key_ = slist.get<std::string>("copy_conserved_quantity_key", "default");
+    field_cons_key_ = slist.get<std::string>("conserved quantity key");
+    copy_field_cons_key_ = slist.get<std::string>("conserved quantity copy key", "default");
+
+  } else if (submodel_ == "field") {
+    // pass
 
   } else {
-    Errors::Message m;
-    m << "unknown DomainFunctionCoupling submodel \"" << submodel_ << "\", valid are: \"field\", \"rate\", and \"conserved quantity\"";
-    Exceptions::amanzi_throw(m);
+    msg << "unknown DomainFunctionCoupling submodel \"" << submodel_ 
+        << "\", valid option: \"field\", \"rate\", \"flux exchange\", and \"conserved quantity\"";
+    Exceptions::amanzi_throw(msg);
   }
 
-  field_out_key_ = slist.get<std::string>("field_out_key");
-  copy_field_out_key_ = slist.get<std::string>("copy_field_out_key", "default");
+  field_out_key_ = slist.get<std::string>("external field key");
+  copy_field_out_key_ = slist.get<std::string>("external field copy key", "default");
 
   // create a list of domain ids
   RegionList regions = plist.get<Teuchos::Array<std::string> >("regions").toVector();
@@ -140,11 +189,9 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
       mesh_->get_set_entities(*region, kind, AmanziMesh::Parallel_type::OWNED, &id_list);
       entity_ids_->insert(id_list.begin(), id_list.end());
     } else {
-      std::stringstream m;
-      m << "Unknown region in processing coupling source: name=" << *region
-        << ", kind=" << kind << "\n";
-      Errors::Message message(m.str());
-      Exceptions::amanzi_throw(message);
+      msg << "Unknown region in processing coupling source: name=" << *region
+          << ", kind=" << kind << "\n";
+      Exceptions::amanzi_throw(msg);
     }
   }
 }
@@ -156,50 +203,52 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
 template <class FunctionBase>
 void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
 {
+  Errors::Message msg;
+
+  // compute reverse map: cannot move this to Init() due to lack 
+  mesh_out_ = S_->GetFieldData(field_out_key_)->Mesh();
+
+  if (submodel_ == "field" || submodel_ == "conserved quantity") {
+    if (mesh_->space_dimension() == mesh_->manifold_dimension() && reverse_map_.size() == 0) {
+      const Epetra_Map& cell_map = mesh_out_->cell_map(true);
+      for (int c = 0 ; c < cell_map.NumMyElements(); ++c) {
+        AmanziMesh::Entity_ID f = mesh_out_->entity_get_parent(AmanziMesh::CELL, c);
+        reverse_map_[f] = c;
+      }
+    }
+  }
+
   // create the input tuple (time + space)
   if (submodel_ == "rate") {
     const auto& flux = *S_->GetFieldCopyData(flux_key_, copy_flux_key_)->ViewComponent("face", true);
-    const auto& field_out = *S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ViewComponent("cell", true);
-    const auto& field_in = *S_->GetFieldCopyData(field_in_key_, copy_field_in_key_)->ViewComponent("cell", true);
-
     const auto& flux_map = S_->GetFieldData(flux_key_)->Map().Map("face", true);
-    const auto& source_mesh = S_->GetMesh(Keys::getDomain(field_in_key_));
 
+    const auto& field_out = *S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ViewComponent("cell", true);
     S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ScatterMasterToGhosted("cell");
-    S_->GetFieldCopyData(field_in_key_, copy_field_in_key_)->ScatterMasterToGhosted("cell");
 
-    if (field_in.NumVectors() != field_out.NumVectors()) {
-      std::stringstream m;
-      m << "Mismatch of numbers of vectors in coupled fields.\n";
-      Errors::Message message(m.str());
-      Exceptions::amanzi_throw(message);
-    }
-    int num_vec = field_in.NumVectors();
+    int num_vec = field_out.NumVectors();
 
     AmanziMesh::Entity_ID_List cells, faces;
     std::vector<int> dirs;
-    auto mesh_out = S_->GetFieldData(field_out_key_)->Mesh();
 
     // loop over cells on the manifold
     for (auto c : *entity_ids_) {
       AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
 
-      mesh_out->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      mesh_out_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 
       if (cells.size() != flux_map->ElementSize(f)) {
-        std::stringstream m;
-        m << "Number of flux DOFs doesn't equal to the number of cells sharing a face: "
-          << cells.size() << " != " << flux_map->ElementSize(f) << std::endl;
-        Errors::Message message(m.str());
-        Exceptions::amanzi_throw(message);
+        msg << "Number of flux DOFs doesn't equal to the number of cells sharing a face: "
+            << cells.size() << " != " << (int)flux_map->ElementSize(f) << "\n";
+        Exceptions::amanzi_throw(msg);
       }
 
       double linear(0.0);
-      std::vector<double> val(num_vec+1, 0.0); // extra is for water
-      int pos = Operators::UniqueIndexFaceToCells(*mesh_out, f, cells[0]);
+      std::vector<double> val(num_vec + 1, 0.0);  // extra vector is for water exchange
+      int pos = Operators::UniqueIndexFaceToCells(*mesh_out_, f, cells[0]);
 
       for (int j = 0; j != cells.size(); ++j) {
-        mesh_out->cell_get_faces_and_dirs(cells[j], &faces, &dirs);
+        mesh_out_->cell_get_faces_and_dirs(cells[j], &faces, &dirs);
 
         for (int i = 0; i < faces.size(); i++) {
           if (f == faces[i]) {
@@ -209,11 +258,11 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
             if (fln >= 0) {
               linear += fln;
               for (int k = 0; k < num_vec; ++k) {
-                // flux is water flux * Conc
-                val[k] += field_out[k][cells[j]] * fln / source_mesh->cell_volume(c);
+                // solute flux is water flux * concentration
+                val[k] += field_out[k][cells[j]] * fln / mesh_->cell_volume(c);
               }
             } else {
-              val[num_vec] += -fln * (t1 - t0);
+              val[num_vec] -= fln * (t1 - t0);
             }
             break;
           }
@@ -223,18 +272,44 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
       linear_term_[c] = linear;
     }
 
-  } else if (submodel_ == "field") {
-    // create reserse map from space (face) onto manifold (cell)
-    auto mesh_out = S_->GetFieldData(field_out_key_)->Mesh();
+  } else if (submodel_ == "flux exchange") {
+    const auto& flux = *S_->GetFieldCopyData(flux_key_, copy_flux_key_)->ViewComponent("face", true);
+    const auto& flux_map = S_->GetFieldData(flux_key_)->Map().Map("face", true);
 
-    if (mesh_->space_dimension() == mesh_->manifold_dimension() && reverse_map_.size() == 0) {
-      const Epetra_Map& cell_map = mesh_out->cell_map(true);
-      for (int c = 0 ; c < cell_map.NumMyElements(); ++c) {
-        AmanziMesh::Entity_ID f = mesh_out->entity_get_parent(AmanziMesh::CELL, c);
-        reverse_map_[f] = c;
+    AmanziMesh::Entity_ID_List cells, faces;
+    std::vector<int> dirs;
+
+    // loop over cells on the manifold
+    for (auto c : *entity_ids_) {
+      AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+
+      mesh_out_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+
+      if (cells.size() != flux_map->ElementSize(f)) {
+        msg << "Number of flux DOFs doesn't equal to the number of cells sharing a face: "
+            << cells.size() << " != " << (int)flux_map->ElementSize(f) << "\n";
+        Exceptions::amanzi_throw(msg);
       }
+
+      std::vector<double> val(1, 0.0);
+      int pos = Operators::UniqueIndexFaceToCells(*mesh_out_, f, cells[0]);
+
+      for (int j = 0; j != cells.size(); ++j) {
+        mesh_out_->cell_get_faces_and_dirs(cells[j], &faces, &dirs);
+
+        for (int i = 0; i < faces.size(); i++) {
+          if (f == faces[i]) {
+            int g = flux_map->FirstPointInElement(f);
+            double fln = flux[0][g + (pos + j)%2] * dirs[i];
+            val[0] += fln / mesh_->cell_volume(c);
+            break;
+          }
+        }
+      }
+      value_[c] = val;
     }
 
+  } else if (submodel_ == "field") {
     const auto& field_out = *S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ViewComponent("cell", true);
 
     int num_vec = field_out.NumVectors();
@@ -252,17 +327,6 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
     }
 
   } else if (submodel_ == "conserved quantity") {
-    // create reverse map from space (face) onto manifold (cell)
-    auto mesh_out = S_->GetFieldData(field_out_key_)->Mesh();
-
-    if (reverse_map_.size() == 0 && mesh_->space_dimension() == mesh_->manifold_dimension()) {
-      const Epetra_Map& cell_map = mesh_out->cell_map(true);
-      for (int c = 0 ; c < cell_map.NumMyElements(); ++c) {
-        AmanziMesh::Entity_ID f = mesh_out->entity_get_parent(AmanziMesh::CELL, c);
-        reverse_map_[f] = c;
-      }
-    }
-
     const auto& field_out = *S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ViewComponent("cell", true);
     const auto& field_cons = *S_->GetFieldCopyData(field_cons_key_, copy_field_cons_key_)->ViewComponent("cell", true);
 

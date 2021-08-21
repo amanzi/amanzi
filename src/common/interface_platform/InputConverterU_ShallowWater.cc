@@ -40,16 +40,33 @@ Teuchos::ParameterList InputConverterU::TranslateShallowWater_(const std::string
     *vo_->os() << "Translating shallow water, domain=" << domain << std::endl;
 
   MemoryManager mm;
-  // DOMNode* node;
+  DOMNode* node;
 
-  out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
+  char *text;
+
+  // set up default values for some expert parameters
+  double cfl(0.5);
+
+  // process expert parameters
+  bool flag;
+  std::string flux("Rusanov");
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_shallow_water_controls, cfl", flag);
+  if (flag) {
+    text = mm.transcode(node->getTextContent());
+    cfl = strtod(text, NULL);
+  }
+
+  out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain)
+      .set<std::string>("numerical flux", pk_model_["shallow_water"])
+      .set<int>("number of reduced cfl cycles", 10)
+      .set<double>("cfl", cfl);
 
   out_list.sublist("reconstruction")
       .set<int>("polynomial order", 0)
       .set<std::string>("limiter", "Barth-Jespersen")
       .set<std::string>("limiter stencil", "cell to closest cells")
-      .set<std::string>("limiter location", "node")
-      .set<double>("limiter cfl", 0.1);
+      .set<std::string>("limiter location", "face")
+      .set<double>("limiter cfl", 0.5);
 
   // boundary conditions
   out_list.sublist("boundary conditions");

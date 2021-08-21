@@ -17,7 +17,6 @@
 
 // Amanzi
 #include "LeastSquare.hh"
-#include "GMVMesh.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
@@ -25,40 +24,8 @@
 
 #include "OutputXDMF.hh"
 
-//--------------------------------------------------------------
-// Initial conditions
-//--------------------------------------------------------------
-void hump_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
-                Teuchos::RCP<Amanzi::State>& S)
-{
-  double H_inf = 0.5;
-
-  int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
-  std::string passwd = "state";
-
-  Epetra_MultiVector& B_c = *S->GetFieldData("surface-bathymetry", passwd)->ViewComponent("cell");
-  Epetra_MultiVector& h_c = *S->GetFieldData("surface-ponded_depth", passwd)->ViewComponent("cell");
-  Epetra_MultiVector& ht_c = *S->GetFieldData("surface-total_depth", passwd)->ViewComponent("cell");
-  Epetra_MultiVector& vel_c = *S->GetFieldData("surface-velocity", passwd)->ViewComponent("cell");
-  Epetra_MultiVector& q_c = *S->GetFieldData("surface-discharge", "surface-discharge")->ViewComponent("cell");
-
-  for (int c = 0; c < ncells_owned; c++) {
-    const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-
-    B_c[0][c] = std::max(0.0, 0.25 - 5 * ((xc[0] - 0.5) * (xc[0] - 0.5) + (xc[1] - 0.5) * (xc[1] - 0.5)));
-    ht_c[0][c] = H_inf;
-    h_c[0][c] = H_inf - B_c[0][c];
-
-    vel_c[0][c] = 0.0;
-    vel_c[1][c] = 0.0;
-    q_c[0][c] = 0.0;
-    q_c[1][c] = 0.0;
-  }
-}
-
-
 /* **************************************************************** */
-TEST(SHALLOW_WATER_BATHYMETRY) {
+Epetra_MultiVector RunTest(int ntest) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -75,11 +42,17 @@ TEST(SHALLOW_WATER_BATHYMETRY) {
 
   // create a mesh
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
-  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 40, 40, true, false);
+  RCP<Mesh> mesh;
+  if (ntest == 1) {
+    mesh = meshfactory.create(0.0, 0.0, 100.0, 100.0, 20, 20, true, true);
+  } else {
+    RCP<Mesh> mesh3D = meshfactory.create(0.0, 0.0, 0.0, 100.0, 100.0, 10.0, 20, 20, 4, true, true);
+    mesh = meshfactory.create(mesh3D, { "TopSurface" }, AmanziMesh::FACE, true, true, true);
+  }
 
   // create a state
   Teuchos::ParameterList state_list = plist->sublist("state");
@@ -97,8 +70,7 @@ TEST(SHALLOW_WATER_BATHYMETRY) {
   S->InitializeFields();
   S->InitializeEvaluators();
   SWPK.Initialize(S.ptr());
-
-  hump_setIC(mesh, S);
+  S->CheckAllFieldsInitialized();
 
   const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth")->ViewComponent("cell");
   const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
@@ -122,7 +94,7 @@ TEST(SHALLOW_WATER_BATHYMETRY) {
   std::string passwd("state");
   int iter = 0;
 
-  while (t_new < 0.1) {
+  while (t_new < 2.0 && iter < 20) {
     double t_out = t_new;
 
     if (iter % 5 == 0) {
@@ -146,4 +118,18 @@ TEST(SHALLOW_WATER_BATHYMETRY) {
     t_old = t_new;
     iter++;
   }
+
+  WriteStateStatistics(*S, *vo);
+  
+  return hh;
+}
+
+TEST(SHALLOW_WATER_BATHYMETRY) {
+  auto fa = RunTest(1);
+  auto fb = RunTest(2);
+
+  double vala[1], valb[1];
+  fa.MeanValue(vala);
+  fb.MeanValue(valb);
+  CHECK_CLOSE(vala[0], valb[0], 1e-10); 
 }

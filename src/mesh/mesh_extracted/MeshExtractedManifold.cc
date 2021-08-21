@@ -150,7 +150,6 @@ void MeshExtractedManifold::cell_get_faces_and_dirs_internal_(
 
   // algorithms on a non-manifold use multiple normals and special continuity
   // equations for fluxes, so that orientation does not play role.
-  //
   // Now if the mesh is flattened, the Mesh class algorithm uses 2D edge
   // orientation. In this case, the result is correct iff the 3D face normal
   // is exterior.

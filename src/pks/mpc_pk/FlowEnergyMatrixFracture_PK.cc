@@ -111,20 +111,24 @@ void FlowEnergyMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // inform dependent PKs about coupling
   // -- flow
-  auto & mflow = glist_->sublist("PKs").sublist("flow matrix")
+  auto pks0 = plist_->get<Teuchos::Array<std::string> >("PKs order").toVector();
+  auto pks1 = glist_->sublist("PKs").sublist(pks0[0]).get<Teuchos::Array<std::string> >("PKs order").toVector();
+  auto pks2 = glist_->sublist("PKs").sublist(pks0[1]).get<Teuchos::Array<std::string> >("PKs order").toVector();
+
+  auto & mflow = glist_->sublist("PKs").sublist(pks1[0])
                         .sublist("physical models and assumptions");
   mflow.set<std::string>("coupled matrix fracture flow", "matrix");
 
-  auto& fflow = glist_->sublist("PKs").sublist("flow fracture")
+  auto& fflow = glist_->sublist("PKs").sublist(pks2[0])
                        .sublist("physical models and assumptions");
   fflow.set<std::string>("coupled matrix fracture flow", "fracture");
 
   // -- energy
-  auto& menergy = glist_->sublist("PKs").sublist("energy matrix")
+  auto& menergy = glist_->sublist("PKs").sublist(pks1[1])
                          .sublist("physical models and assumptions");
   menergy.set<std::string>("coupled matrix fracture energy", "matrix");
 
-  auto& fenergy = glist_->sublist("PKs").sublist("energy fracture")
+  auto& fenergy = glist_->sublist("PKs").sublist(pks2[1])
                          .sublist("physical models and assumptions");
   fenergy.set<std::string>("coupled matrix fracture energy", "fracture");
 

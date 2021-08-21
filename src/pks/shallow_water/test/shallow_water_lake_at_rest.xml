@@ -31,6 +31,9 @@
         <Parameter name="limiter location" type="string" value="node"/>
         <Parameter name="limiter cfl" type="double" value="0.1"/>
       </ParameterList>
+      <Parameter name="cfl" type="double" value="0.1"/>
+      <Parameter name="number of reduced cfl cycles" type="int" value="10"/>
+      <Parameter name="numerical flux" type="string" value="central upwind"/>
 
       <ParameterList name="boundary conditions">
         <ParameterList name="velocity">
@@ -92,6 +95,14 @@
 
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
+      </ParameterList>
+      
+      <ParameterList name="const_fluid_density">
+        <Parameter name="value" type="double" value="9.98200000000000045e+02"/>
+      </ParameterList>
+      
+      <ParameterList name="atmospheric_pressure">
+        <Parameter name="value" type="double" value="1.01325000000000000e+05"/>
       </ParameterList>
       
       <ParameterList name="surface-bathymetry">

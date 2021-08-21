@@ -12,6 +12,8 @@
 #ifndef AMANZI_SHALLOW_WATER_PK_HH_
 #define AMANZI_SHALLOW_WATER_PK_HH_
 
+#include <memory>
+
 // TPLs
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
@@ -25,10 +27,12 @@
 #include "DenseVector.hh"
 #include "Key.hh"
 #include "LimiterCell.hh"
+#include "NumericalFlux.hh"
 #include "PK.hh"
 #include "PK_Explicit.hh"
 #include "PK_Factory.hh"
 #include "PK_Physical.hh"
+#include "PK_DomainFunction.hh"
 #include "ReconstructionCell.hh"
 #include "State.hh"
 #include "Tensor.hh"
@@ -77,8 +81,8 @@ class ShallowWater_PK : public PK_Physical,
   virtual std::string name() override { return "Shallow water PK"; }
                             
   // Bathymetry reconstruction on cell edge midpoints
-  double Bathymetry_rectangular_cell_value(int, const AmanziGeometry::Point&, Epetra_MultiVector&);
-  double Bathymetry_edge_value(int, int, const AmanziGeometry::Point&, Epetra_MultiVector&);
+  double BathymetryRectangularCellValue(int c, const AmanziGeometry::Point& xp, const Epetra_MultiVector& Bn);
+  double BathymetryEdgeValue(int e, const Epetra_MultiVector& Bn);
 
   // due to rotational invariance of SW equations, we need flux in the x-direction only.
   std::vector<double> PhysicalFlux_x(const std::vector<double>&);
@@ -90,8 +94,11 @@ class ShallowWater_PK : public PK_Physical,
   std::vector<double> PhysicalSource(const std::vector<double>&);
   std::vector<double> NumericalSource(const std::vector<double>&, int);
 
+  // access
+  double get_total_source() const { return total_source_; }
+
  private:
-  void ErrorDiagnostics_(int c, double h, double B, double ht);
+  bool ErrorDiagnostics_(int c, double h, double B, double ht);
 
  protected:
   Teuchos::RCP<Teuchos::ParameterList> glist_;
@@ -101,16 +108,24 @@ class ShallowWater_PK : public PK_Physical,
 
   Key domain_;
 
+  // numerical flux
+  std::shared_ptr<NumericalFlux> numerical_flux_;
+
   // names of state fields
   Key velocity_key_, discharge_key_;
   Key ponded_depth_key_;
   Key total_depth_key_;
   Key bathymetry_key_;
+  Key hydrostatic_pressure_key_;
 
   std::string passwd_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim_;
+                            
+  // source terms
+  std::vector<Teuchos::RCP<PK_DomainFunction> > srcs_;
+  double total_source_;
 
  private:
   // boundary conditions
@@ -122,11 +137,12 @@ class ShallowWater_PK : public PK_Physical,
 
   // limited reconstruction
   Teuchos::RCP<Operators::ReconstructionCell> total_depth_grad_, bathymetry_grad_;
-  Teuchos::RCP<Operators::ReconstructionCell> velocity_x_grad_, velocity_y_grad_;
   Teuchos::RCP<Operators::ReconstructionCell> discharge_x_grad_, discharge_y_grad_;
   Teuchos::RCP<Operators::LimiterCell> limiter_;
 
+  // advanced cfl control
   double cfl_;
+  int iters_, max_iters_;
 
  private:
   // factory registration

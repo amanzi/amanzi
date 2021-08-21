@@ -5492,6 +5492,9 @@ This specification format uses and describes the unstructured mesh only.
 
     * `"submesh`" [list] parameters for extracted meshes
 
+      * `"domain name`" [string] specifies name of the domain. Available options are
+        `"fracture`" for the fracture network or `"surface`" for surface models.
+
       * `"extraction method`" [string] specifies the extraction method. The only available option
         is `"manifold mesh`". If this parameter is missing, the parent mesh framework is used 
         for submesh extraction..

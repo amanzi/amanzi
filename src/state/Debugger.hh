@@ -1,7 +1,7 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -29,7 +29,7 @@ from the `"Verbose Object`" spec is set to `"high`" or higher.
       in `"debug cells`".
 
 */
-      
+
 #ifndef AMANZI_DEBUGGER_HH_
 #define AMANZI_DEBUGGER_HH_
 
@@ -57,17 +57,21 @@ class Debugger {
            Teuchos::EVerbosityLevel verb_level=Teuchos::VERB_HIGH
            );
 
+  const AmanziMesh::Entity_ID_List& get_cells() const;
+  void set_cells(const AmanziMesh::Entity_ID_List& dc);
+  void add_cells(const AmanziMesh::Entity_ID_List& dc);
+
   // Write cell + face info
   void WriteCellInfo(bool include_faces=false);
 
   // Write a vector individually.
-  void WriteVector(const std::string& name,
+  void WriteVector(const std::string& vname,
                    const Teuchos::Ptr<const CompositeVector>& vec,
                    bool include_faces=false);
 
   void WriteCellVector(const std::string& name,
                        const Epetra_MultiVector& vec);
-  
+
   // Write boundary condition data.
   void WriteBoundaryConditions(const std::vector<int>& flag,
 			       const std::vector<double>& data);
@@ -95,6 +99,7 @@ class Debugger {
 
  protected:
   Teuchos::EVerbosityLevel verb_level_;
+  Teuchos::ParameterList plist_;
   Teuchos::RCP<VerboseObject> vo_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   std::vector<AmanziMesh::Entity_ID> dc_;
@@ -106,6 +111,7 @@ class Debugger {
   int precision_;
   int cellnum_width_;
   int decimal_width_;
+  std::string name_;
 };
 
 } // namespace Amanzi

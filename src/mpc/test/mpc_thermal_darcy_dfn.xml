@@ -248,7 +248,6 @@
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
       <Parameter name="preconditioning method" type="string" value="boomer amg"/>
-      <Parameter name="discretization method" type="string" value="mfd: optimized for sparsity"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="tolerance" type="double" value="0.001"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
@@ -257,7 +256,7 @@
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="coarsen type" type="int" value="0"/>
         <Parameter name="verbosity" type="int" value="0"/>
-        <Parameter name="relaxation type" type="int" value="3"/>
+        <!--Parameter name="relaxation type" type="int" value="3"/-->
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -279,7 +278,7 @@
         <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

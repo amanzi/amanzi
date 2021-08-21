@@ -603,10 +603,10 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       }
 
       // surface fields
-      // -- ponded_depth 
+      // -- ponded depth 
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, ponded_depth", flag);
       if (flag) {
-        TranslateFieldIC_(node, "ponded_depth", "m", reg_str, regions, out_ic, out_ev);
+        TranslateFieldIC_(node, "surface-ponded_depth", "m", reg_str, regions, out_ic, out_ev);
       }
     }
   }
@@ -788,20 +788,34 @@ void InputConverterU::TranslateFieldIC_(
     Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev,
     std::string data_key)
 {
+  MemoryManager mm;
+
   std::string type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
   if (type == "file") {
     std::string filename = GetAttributeValueS_(node, "filename");
     Teuchos::ParameterList& field_ic = out_ic.sublist(field);
     field_ic.set<std::string>("restart file", filename);
   } else {
-    double val = GetAttributeValueD_(node, data_key.c_str(), TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
-
     Teuchos::ParameterList& field_ic = out_ic.sublist(field);
-    field_ic.sublist("function").sublist(reg_str)
+
+    if (static_cast<DOMElement*>(node)->hasAttribute(mm.transcode("formula"))) {
+      std::string formula = GetAttributeValueS_(node, "formula");
+
+      field_ic.sublist("function").sublist(reg_str)
+        .set<Teuchos::Array<std::string> >("regions", regions)
+        .set<std::string>("component", "cell")
+        .sublist("function").sublist("function-exprtk")
+          .set<int>("number of arguments", dim_ + 1)
+          .set<std::string>("formula", formula);
+    } else {
+      double val = GetAttributeValueD_(node, data_key.c_str(), TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
+
+      field_ic.sublist("function").sublist(reg_str)
         .set<Teuchos::Array<std::string> >("regions", regions)
         .set<std::string>("component", "cell")
         .sublist("function").sublist("function-constant")
         .set<double>("value", val);
+    }
   }
 }
 

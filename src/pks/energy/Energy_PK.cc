@@ -157,7 +157,7 @@ void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- temperature
   if (bc_list->isSublist("temperature")) {
-    PK_DomainFunctionFactory<PK_DomainFunction> bc_factory(mesh_);
+    PK_DomainFunctionFactory<PK_DomainFunction> bc_factory(mesh_, S_);
 
     Teuchos::ParameterList& tmp_list = bc_list->sublist("temperature");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
@@ -172,7 +172,7 @@ void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- energy flux
   if (bc_list->isSublist("energy flux")) {
-    PK_DomainFunctionFactory<PK_DomainFunction> bc_factory(mesh_);
+    PK_DomainFunctionFactory<PK_DomainFunction> bc_factory(mesh_, S_);
 
     Teuchos::ParameterList& tmp_list = bc_list->sublist("energy flux");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
@@ -187,7 +187,7 @@ void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
 
   if (ep_list_->isSublist("source terms")) {
-    PK_DomainFunctionFactory<PK_DomainFunction> factory(mesh_);
+    PK_DomainFunctionFactory<PK_DomainFunction> factory(mesh_, S_);
     auto src_list = ep_list_->sublist("source terms");
     for (auto it = src_list.begin(); it != src_list.end(); ++it) {
       std::string name = it->first;

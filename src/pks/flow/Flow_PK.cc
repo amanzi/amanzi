@@ -303,7 +303,7 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 
   // -- pressure 
   if (bc_list.isSublist("pressure")) {
-    PK_DomainFunctionFactory<FlowBoundaryFunction> bc_factory(mesh_);
+    PK_DomainFunctionFactory<FlowBoundaryFunction> bc_factory(mesh_, S_);
 
     Teuchos::ParameterList& tmp_list = bc_list.sublist("pressure");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
@@ -319,7 +319,7 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 
   // -- hydraulic head
   if (bc_list.isSublist("static head")) {
-    PK_DomainFunctionFactory<FlowBoundaryFunction> bc_factory(mesh_);
+    PK_DomainFunctionFactory<FlowBoundaryFunction> bc_factory(mesh_, S_);
 
     Teuchos::ParameterList& tmp_list = bc_list.sublist("static head");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
@@ -335,7 +335,7 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 
   // -- Darcy velocity
   if (bc_list.isSublist("mass flux")) {
-    PK_DomainFunctionFactory<FlowBoundaryFunction> bc_factory(mesh_);
+    PK_DomainFunctionFactory<FlowBoundaryFunction> bc_factory(mesh_, S_);
 
     Teuchos::ParameterList& tmp_list = bc_list.sublist("mass flux");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
@@ -350,7 +350,7 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 
   // -- seepage face
   if (bc_list.isSublist("seepage face")) {
-    PK_DomainFunctionFactory<FlowBoundaryFunction> bc_factory(mesh_);
+    PK_DomainFunctionFactory<FlowBoundaryFunction> bc_factory(mesh_, S_);
 
     Teuchos::ParameterList& tmp_list = bc_list.sublist("seepage face");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
