@@ -69,6 +69,7 @@ if (ENABLE_AmanziPhysicsModule)
       FlowReactiveTransport_PK.hh
       ReactiveTransport_PK.hh
       ReactiveTransportMatrixFracture_PK.hh
+      ShallowWaterTransport_PK.hh
       SurfaceSubsurface_PK.hh)
 
   set(mpc_tree_src_files 

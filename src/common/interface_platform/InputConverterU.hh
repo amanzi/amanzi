@@ -232,7 +232,7 @@ class InputConverterU : public InputConverter {
   Tree phases_;
 
   // global data
-  std::map<std::string, std::string> pk_model_, pk_domain_;
+  std::map<std::string, std::string> pk_model_, pk_domain_, pk_region_;
   std::map<std::string, bool> pk_master_;
   std::map<std::string, double> dt_cut_, dt_inc_;
   

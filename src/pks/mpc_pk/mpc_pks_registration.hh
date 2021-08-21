@@ -21,6 +21,7 @@
 #include "ChemistryMatrixFracture_PK.hh"
 #include "ReactiveTransport_PK.hh"
 #include "ReactiveTransportMatrixFracture_PK.hh"
+#include "ShallowWaterTransport_PK.hh"
 #include "SurfaceSubsurface_PK.hh"
 #include "TransportMatrixFracture_PK.hh"
 #include "TransportMatrixFractureImplicit_PK.hh"
@@ -28,6 +29,7 @@
 namespace Amanzi {
 
 RegisteredPKFactory<PK_MPCSubcycled> PK_MPCSubcycled::reg_("mpc subcycled");
+RegisteredPKFactory<PK_MPCWeak> PK_MPCWeak::reg_("mpc weak");
 
 #ifndef DISABLE_PHYSICS
 RegisteredPKFactory<FlowEnergy_PK> FlowEnergy_PK::reg_("thermal flow");
@@ -47,6 +49,7 @@ RegisteredPKFactory<ReactiveTransportMatrixFracture_PK> ReactiveTransportMatrixF
 
 // integrated surface-subsurface models
 RegisteredPKFactory<SurfaceSubsurface_PK> SurfaceSubsurface_PK::reg_("surface subsurface");
+RegisteredPKFactory<ShallowWaterTransport_PK> ShallowWaterTransport_PK::reg_("shallow water transport");
 
 }  // namespace Amanzi
 

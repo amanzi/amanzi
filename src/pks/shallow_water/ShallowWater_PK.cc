@@ -122,6 +122,7 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetComponent("cell", AmanziMesh::CELL, 2);
 
     Teuchos::ParameterList elist;
+    elist.set<std::string>("my key", discharge_key_);
     auto eval = Teuchos::rcp(new DischargeEvaluator(elist));
     S->SetFieldEvaluator(discharge_key_, eval);
   }
@@ -139,13 +140,13 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
   //-------------------------------
   // secondary fields
   //-------------------------------
-
   // hydrostatic pressure
   if (!S->HasField(hydrostatic_pressure_key_)) {
     S->RequireField(hydrostatic_pressure_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     
     Teuchos::ParameterList elist;
+    elist.set<std::string>("my key", hydrostatic_pressure_key_);
     auto eval = Teuchos::rcp(new HydrostaticPressureEvaluator(elist));
     S->SetFieldEvaluator(hydrostatic_pressure_key_, eval);
   }

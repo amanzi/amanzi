@@ -20,9 +20,10 @@ namespace ShallowWater {
 HydrostaticPressureEvaluator::HydrostaticPressureEvaluator(Teuchos::ParameterList& plist)
   : SecondaryVariableFieldEvaluator(plist)
 {
-  my_key_ = "surface-ponded_pressure";
-  ponded_depth_key_ = plist_.get<std::string>("ponded depth key", "surface-ponded_depth");
+  my_key_ = plist_.get<std::string>("my key", "surface-ponded_pressure");
+  std::string domain = Keys::getDomain(my_key_);
 
+  ponded_depth_key_ = plist_.get<std::string>("ponded depth key", Keys::getKey(domain, "ponded_depth"));
   dependencies_.insert(ponded_depth_key_);
 }
 
