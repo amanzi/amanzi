@@ -1200,7 +1200,16 @@ Model parameters are listed as attributes to the parameter element.
 Sorption_isotherms
 __________________
 
-The ``sorption_isotherms`` is an optional element for providing Kd models and molecular diffusion values for individual solutes.  All non-reactive primaries or solutes should be listed under each material.  Values of 0 indicate that the primary is not present/active in the current material.  The available Kd models are `"linear`", `"langmuir`", and `"freundlich`".  Different models and parameters are assigned per solute in sub-elements through attributes. The Kd and molecular diffusion parameters are specified in subelements.
+The ``sorption_isotherms`` is an optional element for providing Kd models and molecular diffusion values for individual solutes.
+All non-reactive primaries or solutes should be listed under each material.
+Values of 0 indicate that the primary is not present/active in the current material.  
+The available Kd models are `"linear`", `"langmuir`", and `"freundlich`".
+Different models and parameters are assigned per solute in sub-elements through attributes.
+The Kd and molecular diffusion parameters are specified in subelements.
+
+NOTE: Parameter for Kd models may be given either here or as the *global* reaction parameters in the thermodynamic 
+database block. The material data overwrites any global data thus providing fine control of the soil properties. 
+It is supported currently by the Amanzi geochemical engine.
 
 .. code-block:: xml
 
