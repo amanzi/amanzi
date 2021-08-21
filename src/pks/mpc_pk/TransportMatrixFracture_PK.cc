@@ -61,8 +61,9 @@ void TransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // add boundary condition to transport in matrix list
+  auto pks = glist_->sublist("PKs").sublist(name_).get<Teuchos::Array<std::string> >("PKs order").toVector();
   Teuchos::ParameterList& bclist = glist_->sublist("PKs")
-      .sublist("transport matrix").sublist("boundary conditions")
+      .sublist(pks[0]).sublist("boundary conditions")
       .sublist("concentration").sublist("coupling").sublist("BC coupling");
 
    Teuchos::Array<std::string> regs;
@@ -76,7 +77,7 @@ void TransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // add source term to transport in fracture list
   Teuchos::ParameterList& srclist = glist_->sublist("PKs")
-      .sublist("transport fracture").sublist("source terms")
+      .sublist(pks[1]).sublist("source terms")
       .sublist("concentration").sublist("coupling").sublist("fracture");
 
    regs.clear();

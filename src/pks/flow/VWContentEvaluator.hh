@@ -49,7 +49,7 @@ class VWContentEvaluator : public SecondaryVariableFieldEvaluator {
 
  protected:
   bool water_vapor_;
-  Key saturation_key_, porosity_key_;
+  Key saturation_key_, porosity_key_, mol_density_liquid_key_;
   
  private:
   static Utils::RegisteredFactory<FieldEvaluator,VWContentEvaluator> reg_;
