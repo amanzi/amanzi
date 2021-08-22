@@ -111,11 +111,6 @@
       <mechanical_properties>
         <porosity value="0.25" />
       </mechanical_properties>
-      <sorption_isotherms>
-        <primary name="Co">
-          <kd_model model="linear" kd="2.0" />
-        </primary>
-      </sorption_isotherms>
       <permeability x="1.0e-5" y="1.0e-5" z="1.0e-5" />
       <assigned_regions>EntireDomain</assigned_regions>
     </material>
@@ -203,9 +198,9 @@
       </primary_species>
 
       <isotherms>
-        <isotherm species="A" model="linear" parameters="1.2e8" />
-        <isotherm species="B" model="langmuir" parameters="3.4e9, 1.23e-11" />
-        <isotherm species="C" model="freundlich" parameters="4.5e10, 4.56e-12" />
+        <isotherm species="A" model="linear" parameters="10.0" />
+        <isotherm species="B" model="langmuir" parameters="30.0, 0.1" />
+        <isotherm species="C" model="freundlich" parameters="1.5, 1.25" />
       </isotherms>
 
       <radioactive_decay>
