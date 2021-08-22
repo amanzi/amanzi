@@ -178,8 +178,9 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
   std::string tmp = physical_models->get<std::string>("darcy flux key", "darcy_flux");
   darcy_flux_key_ = Keys::getKey(domain_, tmp); 
 
-  saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
-  prev_saturation_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid"); 
+  tmp = physical_models->get<std::string>("saturation key", "saturation_liquid");
+  saturation_liquid_key_ = Keys::getKey(domain_, tmp); 
+  prev_saturation_liquid_key_ = Keys::getKey(domain_, "prev_" + tmp); 
 
   water_content_key_ = Keys::getKey(domain_, "water_content"); 
   prev_water_content_key_ = Keys::getKey(domain_, "prev_water_content"); 

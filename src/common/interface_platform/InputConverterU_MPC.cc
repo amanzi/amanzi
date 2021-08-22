@@ -328,7 +328,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
       break;
     case 20:
       PopulatePKTree_(pk_tree_list, Keys::merge(mode, "flow and shallow water", delimiter));
-      pk_domain_["shallow_water"] = "surface";
+      pk_domain_["shallow_water"] = "surface";  // for integrated hydrology, SW is defined on manifold
       break;
     case 32: 
       pk_master_["multiphase"] = true;
@@ -870,7 +870,8 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
 
         // ... coupling information 
         out_list.sublist(pk_names[1]).sublist("physical models and assumptions")
-           .set<std::string>("darcy flux key", Keys::getKey(pk_domain_["shallow_water"], "riemann_flux"));
+           .set<std::string>("darcy flux key", Keys::getKey(pk_domain_["shallow_water"], "riemann_flux"))
+           .set<std::string>("saturation key", Keys::getKey(pk_domain_["shallow_water"], "ponded_depth"));
       }
 
       // add time integrator to PKs that have no transport and chemistry sub-PKs.

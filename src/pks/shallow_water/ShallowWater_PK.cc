@@ -71,8 +71,9 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
   // domain name
   velocity_key_ = Keys::getKey(domain_, "velocity");
   discharge_key_ = Keys::getKey(domain_, "discharge");
-  ponded_depth_key_ = Keys::getKey(domain_, "ponded_depth");
   total_depth_key_ = Keys::getKey(domain_, "total_depth");
+  ponded_depth_key_ = Keys::getKey(domain_, "ponded_depth");
+  prev_ponded_depth_key_ = Keys::getKey(domain_, "prev_ponded_depth");
   bathymetry_key_ = Keys::getKey(domain_, "bathymetry");
   hydrostatic_pressure_key_ = Keys::getKey(domain_, "ponded_pressure");
 
@@ -97,27 +98,27 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
   //-------------------------------
   // primary fields
   //-------------------------------
-  // ponded_depth_key_
+  // -- ponded depth 
   if (!S->HasField(ponded_depth_key_)) {
     S->RequireField(ponded_depth_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     AddDefaultPrimaryEvaluator_(ponded_depth_key_);
   }
 
-  // total_depth_key_
+  // -- total depth
   if (!S->HasField(total_depth_key_)) {
     S->RequireField(total_depth_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  // velocity
+  // -- velocity
   if (!S->HasField(velocity_key_)) {
     S->RequireField(velocity_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 2);
     AddDefaultPrimaryEvaluator_(velocity_key_);
   }
 
-  // discharge
+  // -- discharge
   if (!S->HasField(discharge_key_)) {
     S->RequireField(discharge_key_, discharge_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 2);
@@ -128,7 +129,7 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
     S->SetFieldEvaluator(discharge_key_, eval);
   }
 
-  // bathymetry
+  // -- bathymetry
   if (!S->HasField(bathymetry_key_)) {
     std::vector<std::string> names({"cell", "node"});
     std::vector<int> ndofs(2, 1);
@@ -141,7 +142,7 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
   //-------------------------------
   // secondary fields
   //-------------------------------
-  // hydrostatic pressure
+  // -- hydrostatic pressure
   if (!S->HasField(hydrostatic_pressure_key_)) {
     S->RequireField(hydrostatic_pressure_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -152,10 +153,17 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
     S->SetFieldEvaluator(hydrostatic_pressure_key_, eval);
   }
 
-  // riemann flux
+  // -- riemann flux
   if (!S->HasField(riemann_flux_key_)) {
     S->RequireField(riemann_flux_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
+  }
+
+  // -- previous state of ponded depth (for coupling)
+  if (!S->HasField(prev_ponded_depth_key_)) {
+    S->RequireField(prev_ponded_depth_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->GetField(prev_ponded_depth_key_, passwd_)->set_io_vis(false);
   }
 }
 
@@ -304,11 +312,38 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   S_->GetFieldEvaluator(hydrostatic_pressure_key_)->HasFieldChanged(S.ptr(), passwd_);
 
   InitializeField_(S_.ptr(), passwd_, riemann_flux_key_, 0.0);
+  InitializeFieldFromField_(prev_ponded_depth_key_, ponded_depth_key_, false);
   
   // summary of initialization
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Shallow water PK was initialized.\n" << std::endl;
+  }
+}
+
+
+//--------------------------------------------------------------
+// Auxiliary initialization technique.
+//--------------------------------------------------------------
+void ShallowWater_PK::InitializeFieldFromField_(
+    const std::string& field0, const std::string& field1, bool call_evaluator)
+{
+  if (S_->HasField(field0)) {
+    if (S_->GetField(field0)->owner() == passwd_) {
+      if (!S_->GetField(field0, passwd_)->initialized()) {
+        if (call_evaluator)
+            S_->GetFieldEvaluator(field1)->HasFieldChanged(S_.ptr(), passwd_);
+
+        const CompositeVector& f1 = *S_->GetFieldData(field1);
+        CompositeVector& f0 = *S_->GetFieldData(field0, passwd_);
+        f0 = f1;
+
+        S_->GetField(field0, passwd_)->set_initialized();
+
+        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+            *vo_->os() << "initialized " << field0 << " to " << field1 << std::endl;
+      }
+    }
   }
 }
 
@@ -504,14 +539,13 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       }
 
       // save riemann mass flux
-      riemann_f[0][f] = FNum_rot[1] * FNum[0] * farea * orientation;
+      riemann_f[0][f] = FNum[0] * farea * orientation;
     }
 
     double h, u, v, qx, qy;
     U.resize(3);
 
     h  = h_c[0][c];
-      
     qx = q_c[0][c];
     qy = q_c[1][c];
     double factor = 2.0 * h / (h * h + std::fmax(h * h, eps2));
@@ -543,6 +577,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     vel_c_tmp[1][c] = factor * qy;
   } // c
 
+  // copy fields
+  *S_->GetFieldData(prev_ponded_depth_key_, passwd_)->ViewComponent("cell", true) = h_c;
   h_c = h_c_tmp;
   vel_c = vel_c_tmp;
 

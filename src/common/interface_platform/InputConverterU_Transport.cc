@@ -481,10 +481,10 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_(const std::string
   DOMElement* element;
 
   bool flag;
-  if (domain == "matrix")
-    node = GetUniqueElementByTagsString_("boundary_conditions", flag);
-  else
+  if (domain == "fracture")
     node = GetUniqueElementByTagsString_("fracture_network, boundary_conditions", flag);
+  else
+    node = GetUniqueElementByTagsString_("boundary_conditions", flag);
   if (!flag) return out_list;
 
   children = node->getChildNodes();

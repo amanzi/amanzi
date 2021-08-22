@@ -604,9 +604,10 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
       // surface fields
       // -- ponded depth 
+      std::string domain = (dim_ == 2) ? "domain" : "surface";
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, ponded_depth", flag);
       if (flag) {
-        TranslateFieldIC_(node, "surface-ponded_depth", "m", reg_str, regions, out_ic, out_ev);
+        TranslateFieldIC_(node, Keys::getKey(domain, "ponded_depth"), "m", reg_str, regions, out_ic, out_ev);
       }
     }
   }
