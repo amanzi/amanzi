@@ -178,9 +178,9 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
   // state/chemistry_state object before we reach this point. We just
   // resize our local memory for migrating data here.
 
-  SizeBeakerState_();
-  CopyCellStateToBeakerState(0, tcc);
   chem_->Initialize(beaker_state_, beaker_parameters_);
+
+  CopyCellStateToBeakerState(0, tcc);
   chem_->CopyStateToBeaker(beaker_state_);
   // chem_->VerifyState(beaker_state_);
 
@@ -392,57 +392,6 @@ void Amanzi_PK::SetupAuxiliaryOutput()
 
 
 /* *******************************************************************
-* Initialize the beaker component data structure
-******************************************************************* */
-void Amanzi_PK::SizeBeakerState_()
-{
-  // NOTE: The beaker already has data for site density, sorption
-  // isotherms, ssa. If we want to use that single global value, then
-  // we leave these arrays empty as a flag to the beaker to use its
-  // own value. If we want to override the global chemistry value
-  // with cell by cell data, then we resize the containers here.
-
-  beaker_state_.total.resize(number_aqueous_components_, 0.0);
-  beaker_state_.free_ion.resize(number_aqueous_components_, 1.0e-9);
-  beaker_state_.mineral_volume_fraction.resize(number_minerals_, 0.0);
-
-  if (using_sorption_) {
-    beaker_state_.total_sorbed.resize(number_total_sorbed_, 0.0);
-  } else {
-    beaker_state_.total_sorbed.clear();
-  }
-
-  if (number_minerals_ > 0) {
-    beaker_state_.mineral_specific_surface_area.resize(number_minerals_, 0.0);
-  } else {
-    beaker_state_.mineral_specific_surface_area.clear();
-  }
-
-  if (number_ion_exchange_sites_ > 0) {
-    beaker_state_.ion_exchange_sites.resize(number_ion_exchange_sites_, 0.0);
-  } else {
-    beaker_state_.ion_exchange_sites.clear();
-  }
-
-  if (number_sorption_sites_ > 0) {
-    beaker_state_.surface_site_density.resize(number_sorption_sites_, 0.0);
-  } else {
-    beaker_state_.surface_site_density.clear();
-  }
-
-  if (using_sorption_isotherms_) {
-    beaker_state_.isotherm_kd.resize(number_aqueous_components_, 0.0);
-    beaker_state_.isotherm_freundlich_n.resize(number_aqueous_components_, 0.0);
-    beaker_state_.isotherm_langmuir_b.resize(number_aqueous_components_, 0.0);
-  } else {
-    beaker_state_.isotherm_kd.clear();
-    beaker_state_.isotherm_freundlich_n.clear();
-    beaker_state_.isotherm_langmuir_b.clear();
-  }
-}
-
-
-/* *******************************************************************
 * We must use the aqueous totals value calculated from transport
 * (aqueous_components), not the value stored in state!
 ******************************************************************* */
@@ -527,7 +476,7 @@ void Amanzi_PK::CopyCellStateToBeakerState(
     }
   }
 
-  // sorption isotherms
+  // sorption isotherms provided as material-based property must be copied to 
   if (using_sorption_isotherms_) {
     const Epetra_MultiVector& isotherm_kd = *S_->GetFieldData(isotherm_kd_key_)->ViewComponent("cell");
     const Epetra_MultiVector& isotherm_freundlich_n = *S_->GetFieldData(isotherm_freundlich_n_key_)->ViewComponent("cell");
