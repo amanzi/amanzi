@@ -315,58 +315,6 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="isotherm_kd">
-        <ParameterList name="function">
-          <ParameterList name="EntireDomain">
-            <Parameter name="region" type="string" value="EntireDomain"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <Parameter name="number of dofs" type="int" value="1"/>
-              <Parameter name="function type" type="string" value="composite function"/>
-              <ParameterList name="dof 1 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.0"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="isotherm_langmuir_b">
-        <ParameterList name="function">
-          <ParameterList name="EntireDomain">
-            <Parameter name="region" type="string" value="EntireDomain"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <Parameter name="number of dofs" type="int" value="1"/>
-              <Parameter name="function type" type="string" value="composite function"/>
-              <ParameterList name="dof 1 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.0"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="isotherm_freundlich_n">
-        <ParameterList name="function">
-          <ParameterList name="EntireDomain">
-            <Parameter name="region" type="string" value="EntireDomain"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <Parameter name="number of dofs" type="int" value="1"/>
-              <Parameter name="function type" type="string" value="composite function"/>
-              <ParameterList name="dof 1 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.0"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="0.0"/>
       </ParameterList>
@@ -940,15 +888,15 @@
     <ParameterList name="isotherms">
       <ParameterList name="A">
         <Parameter name="model" type="string" value="linear"/>
-        <Parameter name="parameters" type="Array(double)" value="{1.20000000000000000e+08}"/>
+        <Parameter name="parameters" type="Array(double)" value="{10.0}"/>
       </ParameterList>
       <ParameterList name="B">
         <Parameter name="model" type="string" value="langmuir"/>
-        <Parameter name="parameters" type="Array(double)" value="{3.40000000000000000e+09, 1.23000000000000005e-11}"/>
+        <Parameter name="parameters" type="Array(double)" value="{30.0, 0.1}"/>
       </ParameterList>
       <ParameterList name="C">
         <Parameter name="model" type="string" value="freundlich"/>
-        <Parameter name="parameters" type="Array(double)" value="{4.50000000000000000e+10, 4.55999999999999996e-12}"/>
+        <Parameter name="parameters" type="Array(double)" value="{1.5, 1.25}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="radioactive decay">

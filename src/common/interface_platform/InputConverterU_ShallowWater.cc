@@ -69,9 +69,103 @@ Teuchos::ParameterList InputConverterU::TranslateShallowWater_(const std::string
       .set<double>("limiter cfl", 0.5);
 
   // boundary conditions
-  out_list.sublist("boundary conditions");
+  out_list.sublist("boundary conditions") = TranslateShallowWaterBCs_();
 
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
+
+  return out_list;
+}
+
+
+/* ******************************************************************
+* Create list of BCs.
+****************************************************************** */
+Teuchos::ParameterList InputConverterU::TranslateShallowWaterBCs_()
+{
+  Teuchos::ParameterList out_list;
+
+  MemoryManager mm;
+
+  char *text;
+  DOMNodeList *children;
+  DOMNode *node;
+  DOMElement *element;
+
+  // correct list of boundary conditions for given domain
+  bool flag;
+  node = GetUniqueElementByTagsString_("boundary_conditions", flag);
+  if (!flag) return out_list;
+
+  int ibc(0);
+  children = node->getChildNodes();
+  int nchildren = children->getLength();
+
+  for (int i = 0; i < nchildren; ++i) {
+    DOMNode* inode = children->item(i);
+    if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+
+    // read the assigned regions
+    node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
+    text = mm.transcode(node->getTextContent());
+    std::vector<std::string> regions = CharToStrings_(text);
+
+    node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component", flag);
+    if (!flag) continue;
+
+    // process a group of similar elements defined by the first element
+    std::string bctype;
+    std::vector<DOMNode*> same_list = GetSameChildNodes_(node, bctype, flag, true);
+    if (bctype != "ponded_depth") continue;
+
+    std::map<double, double> tp_values;
+    std::map<double, std::string> tp_forms, tp_formulas;
+
+    for (int j = 0; j < same_list.size(); ++j) {
+      DOMNode* jnode = same_list[j];
+      element = static_cast<DOMElement*>(jnode);
+      double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "y");
+
+      tp_forms[t0] = GetAttributeValueS_(element, "function");
+      tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, 0.0, 1000.0, "m", false, 0.0);
+      tp_formulas[t0] = GetAttributeValueS_(element, "formula", TYPE_NONE, false, "");
+    }
+
+    // create vectors of values and forms
+    std::vector<double> times, values;
+    std::vector<std::string> forms, formulas;
+    for (std::map<double, double>::iterator it = tp_values.begin(); it != tp_values.end(); ++it) {
+      times.push_back(it->first);
+      values.push_back(it->second);
+      forms.push_back(tp_forms[it->first]);
+      formulas.push_back(tp_formulas[it->first]);
+    }
+
+    // create names, modify data
+    std::string bcname;
+    if (bctype == "ponded_depth") {
+      bctype = "velocity";
+      bcname = "velocity";
+    }
+    std::stringstream ss;
+    ss << "BC " << ibc++;
+
+    // save in the XML files  
+    Teuchos::ParameterList& tbc_list = out_list.sublist(bctype);
+    Teuchos::ParameterList& bc = tbc_list.sublist(ss.str());
+    bc.set<Teuchos::Array<std::string> >("regions", regions)
+      .set<std::string>("spatial distribution method", "none");
+
+    Teuchos::ParameterList& bcfn = bc.sublist(bcname);
+    bcfn.set<int>("number of dofs", 3)
+        .set<std::string>("function type", "composite function");
+    Teuchos::ParameterList& dofs = bcfn.sublist("dof 1 function");
+ 
+    TranslateGenericMath_(times, values, forms, formulas, dofs);
+
+    // work around (FIXME)
+    bcfn.sublist("dof 2 function").sublist("function-constant").set<double>("value", 0.0);
+    bcfn.sublist("dof 3 function").sublist("function-constant").set<double>("value", 0.0);
+  }
 
   return out_list;
 }

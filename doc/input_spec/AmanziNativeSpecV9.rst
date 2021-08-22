@@ -6342,6 +6342,8 @@ is always the distribution coefficient.
    Pb_210   linear   3294060.0
    Tc_99    linear       988.218
 
+NOTE: The parameters provided here are *global*.
+The state field isotherm_kd overwrites any global data given here.
 
 General kinetics
 ................

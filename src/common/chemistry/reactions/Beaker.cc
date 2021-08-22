@@ -102,7 +102,7 @@ Beaker::~Beaker()
 /* ******************************************************************
 * public setup related
 ****************************************************************** */
-void Beaker::Initialize(const BeakerState& state,
+void Beaker::Initialize(BeakerState& state,
                         const BeakerParameters& parameters)
 {
   tolerance_ = parameters.tolerance;
@@ -111,7 +111,93 @@ void Beaker::Initialize(const BeakerState& state,
   SetupActivityModel(parameters.activity_model_name,
                      parameters.pitzer_database, parameters.pitzer_jfunction);
 
-  ResizeInternalMemory();
+  // allocate work memory
+  ncomp_ = primary_species_.size();
+  int nminerals = minerals_.size();
+
+  total_.resize(ncomp_);
+  dtotal_.Resize(ncomp_);
+
+  if (surface_complexation_rxns_.size() > 0 ||
+      sorption_isotherm_rxns_.size() > 0 ||
+      ion_exchange_rxns_.size() > 0) {
+    total_sorbed_.resize(ncomp_, 0.0);
+    dtotal_sorbed_.Resize(ncomp_);
+    dtotal_sorbed_.Zero();
+
+    state.total_sorbed.resize(ncomp_, 0.0);
+  } else {
+    total_sorbed_.clear();
+  }
+
+  // resize state
+  state.total.resize(ncomp_, 0.0);
+  state.free_ion.resize(ncomp_, 1.0e-9);
+
+  // resize and initialize isotherms
+  int size = sorption_isotherm_rxns_.size();
+  if (size > 0) {
+    state.isotherm_kd.resize(ncomp_, 0.0);
+    state.isotherm_freundlich_n.resize(ncomp_, 0.0);
+    state.isotherm_langmuir_b.resize(ncomp_, 0.0);
+
+    for (auto it = sorption_isotherm_rxns_.begin(); it != sorption_isotherm_rxns_.end(); ++it) {
+      const auto& params = it->GetIsothermParameters();
+      int id = it->species_id();
+      state.isotherm_kd.at(id) = params.at(0);
+
+      auto isotherm_type = it->IsothermType();
+      if (isotherm_type == SorptionIsotherm::FREUNDLICH) {
+        state.isotherm_freundlich_n.at(id) = params.at(1);
+      } else if (isotherm_type == SorptionIsotherm::LANGMUIR) {
+        state.isotherm_langmuir_b.at(id) = params.at(1);
+      }
+    }
+  }
+
+  // resize and initialize minerals
+  if (nminerals > 0) {
+    state.mineral_volume_fraction.resize(nminerals, 0.0);
+    state.mineral_specific_surface_area.resize(nminerals, 0.0);
+
+    for (int m = 0; m < nminerals; ++m) {
+      state.mineral_volume_fraction[m] = minerals_[m].volume_fraction();
+      state.mineral_specific_surface_area[m] = minerals_[m].specific_surface_area();
+    }
+  }
+
+  // ion exchange
+  int nion_sites = ion_exchange_rxns_.size();
+  if (nion_sites > 0) {
+    state.ion_exchange_sites.resize(nion_sites, 0.0);
+    state.ion_exchange_ref_cation_conc.resize(nion_sites, 0.0);
+
+    for (int i = 0; i < nion_sites; ++i) {
+      state.ion_exchange_sites[i] = ion_exchange_rxns_[i].site().get_cation_exchange_capacity();
+      state.ion_exchange_ref_cation_conc[i] = ion_exchange_rxns_[i].ref_cation_sorbed_conc();
+    }
+  }
+
+  // resize and initialize surface sorption sites
+  int nsurf_sites = surface_complexation_rxns_.size(); 
+  if (nsurf_sites > 0) {
+    state.surface_site_density.resize(nsurf_sites, 0.0);
+    state.surface_complex_free_site_conc.resize(nsurf_sites, 0.0);
+
+    for (int i = 0; i < nsurf_sites; ++i) {
+      state.surface_site_density[i] = surface_complexation_rxns_[i].GetSiteDensity();
+      state.surface_complex_free_site_conc[i] = surface_complexation_rxns_[i].free_site_concentration();
+    }
+  }
+
+  // other
+  fixed_accumulation_.resize(ncomp_);
+  residual_.resize(ncomp_);
+  prev_molal_.resize(ncomp_);
+
+  jacobian_.Resize(ncomp_);
+  rhs_.resize(ncomp_);
+  lu_solver_.Initialize(ncomp_);
 }
 
 
@@ -351,8 +437,6 @@ void Beaker::CopyBeakerToState(BeakerState* state)
   // minerals
   size = minerals_.size();
   if (size > 0) {
-    state->mineral_volume_fraction.resize(size);
-    state->mineral_specific_surface_area.resize(size);
     for (int m = 0; m < size; ++m) {
       state->mineral_volume_fraction[m] = minerals_[m].volume_fraction();
       state->mineral_specific_surface_area[m] = minerals_[m].specific_surface_area();
@@ -362,15 +446,8 @@ void Beaker::CopyBeakerToState(BeakerState* state)
   // ion exchange
   size = ion_exchange_rxns_.size();
   if (size > 0) {
-    state->ion_exchange_sites.resize(size);
     for (int i = 0; i < size; ++i) {
       state->ion_exchange_sites[i] = ion_exchange_rxns_[i].site().get_cation_exchange_capacity();
-    }
-  }
-
-  if (size > 0) {
-    state->ion_exchange_ref_cation_conc.resize(size);
-    for (int i = 0; i < size; ++i) {
       state->ion_exchange_ref_cation_conc[i] = ion_exchange_rxns_[i].ref_cation_sorbed_conc();
     }
   }
@@ -378,15 +455,8 @@ void Beaker::CopyBeakerToState(BeakerState* state)
   // surface complexation
   size = surface_complexation_rxns_.size();
   if (size > 0) {
-    state->surface_complex_free_site_conc.resize(size);
-    for (unsigned int i = 0; i < size; ++i) {
-      state->surface_complex_free_site_conc[i] = surface_complexation_rxns_[i].free_site_concentration();
-    }
-  }
-
-  if (size > 0) {
-    state->surface_site_density.resize(size);
     for (int i = 0; i < size; ++i) {
+      state->surface_complex_free_site_conc[i] = surface_complexation_rxns_[i].free_site_concentration();
       state->surface_site_density[i] = surface_complexation_rxns_[i].GetSiteDensity();
     }
   }
@@ -394,8 +464,6 @@ void Beaker::CopyBeakerToState(BeakerState* state)
   // sorption isotherms
   size = sorption_isotherm_rxns_.size();
   if (size > 0) {
-    state->isotherm_kd.resize(ncomp_, 0.0);
-    state->isotherm_langmuir_b.resize(ncomp_, 0.0);
     state->isotherm_freundlich_n.resize(ncomp_, 1.0);
 
     for (int r = 0; r < size; ++r) {
@@ -616,37 +684,6 @@ void Beaker::DisplayTotalColumns(const double time,
 
 
 /* ******************************************************************
-* Allocate work memory
-****************************************************************** */
-void Beaker::ResizeInternalMemory()
-{
-  int size = primary_species_.size();
-
-  ncomp_ = size;
-  total_.resize(size);
-  dtotal_.Resize(size);
-
-  if (surface_complexation_rxns_.size() > 0 ||
-      sorption_isotherm_rxns_.size() > 0 ||
-      ion_exchange_rxns_.size() > 0) {
-    total_sorbed_.resize(size, 0.0);
-    dtotal_sorbed_.Resize(size);
-    dtotal_sorbed_.Zero();
-  } else {
-    total_sorbed_.clear();
-  }
-
-  fixed_accumulation_.resize(size);
-  residual_.resize(size);
-  prev_molal_.resize(size);
-
-  jacobian_.Resize(size);
-  rhs_.resize(size);
-  lu_solver_.Initialize(size);
-}
-
-
-/* ******************************************************************
 * some helpful error checking goes here...
 ****************************************************************** */
 void Beaker::VerifyState(const BeakerState& state) const {
@@ -835,6 +872,7 @@ void Beaker::CopyStateToBeaker(const BeakerState& state)
     assert(state.isotherm_kd.size() == ncomp_);
     assert(state.isotherm_freundlich_n.size() == ncomp_);
     assert(state.isotherm_langmuir_b.size() == ncomp_);
+
     // NOTE(bandre): sorption_isotherm_params_ hard coded size=4,
     // current max parameters is 2
     for (int r = 0; r < size; ++r) {
