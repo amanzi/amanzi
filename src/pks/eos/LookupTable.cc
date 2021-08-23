@@ -210,9 +210,9 @@ void LookupTable::FindBox_(double T, double p, int* ip, int* jp)
 
   if (T < axisT_[0] || T > axisT_[nT - 1] ||
       p < axisP_[0] || p > axisP_[nP - 1]) {
-    Errors::Message msg;
-    msg << "\nOut of bounds input values: T=" << T << " or p=" << p;
-    amanzi_throw(msg);
+    Errors::CutTimeStep msg;
+    msg << "out of bounds values: T=" << T << " or p=" << p;
+    Exceptions::amanzi_throw(msg);
   }
 
   *ip = 0;
