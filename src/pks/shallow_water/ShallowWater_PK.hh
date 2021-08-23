@@ -101,9 +101,13 @@ class ShallowWater_PK : public PK_Physical,
   std::vector<double> ResidualsTimeSpace(int c, int i, std::vector<std::vector<double> >& U, std::vector<std::vector<double> >& U_pr, double dt);
                                                                           
   std::vector<double> EvalSol(std::vector<std::vector<double>> U, AmanziGeometry::Point x_qp, int c);
+  std::vector<double> EvalSol1(std::vector<std::vector<double>> U, int qp, int c);
+  std::vector<double> EvalSol_face1(std::vector<std::vector<double>> U, int qpf, int f);
   std::vector<double> EvalPhySource(std::vector<std::vector<double>> U, AmanziGeometry::Point x_qp, int c);
+  std::vector<double> EvalPhySource1(std::vector<std::vector<double>> U, int x_qp, int c);
   double basis_value(int i, int c, AmanziGeometry::Point x);
   std::vector<double> basis_grad(int i, int c, AmanziGeometry::Point x);
+  std::vector<double> get_barycentric(std::vector<AmanziGeometry::Point> vertices, AmanziGeometry::Point x);
 
   // access
   double get_total_source() const { return total_source_; }
@@ -133,7 +137,19 @@ class ShallowWater_PK : public PK_Physical,
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim_;
-                            
+     
+  // P1 basis, basis gradient
+  std::vector<std::vector<std::vector<double>>> phi_; // evaluated at volume quadrature points
+  std::vector<std::vector<std::vector<double>>> phi_x_;
+  std::vector<std::vector<std::vector<double>>> phi_y_;
+  std::vector<std::vector<std::vector<double>>> phi_face_; // evaluated at face quadrature points
+  std::vector<std::vector<std::vector<double>>> phi_face_x_;
+  std::vector<std::vector<std::vector<double>>> phi_face_y_;
+                          
+  // Volume, face quadrature weights
+  std::vector<std::vector<double>> weights_vol_;
+  std::vector<std::vector<double>> weights_face_;
+                          
   // source terms
   std::vector<Teuchos::RCP<PK_DomainFunction> > srcs_;
   double total_source_;

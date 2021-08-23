@@ -311,6 +311,114 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Shallow water PK was initialized." << std::endl;
   }
+  
+  //--------------------------------------------------------------
+  // Compute P1 element basis values
+  //--------------------------------------------------------------
+
+  // calculate volume quadrature points, values etc.
+  int nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  phi_.resize(ncells_owned);
+  phi_x_.resize(ncells_owned);
+  phi_y_.resize(ncells_owned);
+  weights_vol_.resize(ncells_owned);
+  
+  for (int c = 0; c < ncells_owned; ++c) {
+    
+    AmanziMesh::Entity_ID_List cnodes;
+    mesh_->cell_get_nodes(c, &cnodes);
+    
+    // 1. volume quadrature information.
+    // 1a. calculate weights
+    int order = 2;
+    int n_points, start_position;
+    n_points = WhetStone::q2d_order[order][0];
+    start_position = WhetStone::q2d_order[order][1];
+    weights_vol_[c].resize(n_points);
+    // find weights of quadrature points
+    for (int i = 0; i < n_points; ++i) {
+      weights_vol_[c][i] = WhetStone::q2d_weights[i+start_position] * mesh_->cell_volume(c);
+    }
+    
+    phi_[c].resize(nnodes_owned);
+    phi_x_[c].resize(nnodes_owned);
+    phi_y_[c].resize(nnodes_owned);
+    
+    for (int j = 0; j < cnodes.size(); ++j) {
+
+      // 1b. construct volume quadrature points
+      std::vector<AmanziGeometry::Point> quad_nodes_vol(n_points); // to store physical coordinates of quadrature points
+      std::vector<AmanziGeometry::Point> coords(3); // to store physical coordinates of triangular cell
+      for (int i = 0; i < cnodes.size(); ++i) { // find coordinates of triangle vertices in mesh
+        mesh_->node_get_coordinates(cnodes[i], &coords[i]);
+      }
+      // find physical coordinates of quadrature points
+      for (int i = 0; i < quad_nodes_vol.size(); ++i) {
+        quad_nodes_vol[i] = (1.0 - WhetStone::q2d_points[i+start_position][0] - WhetStone::q2d_points[i+start_position][1] )*coords[0] + (WhetStone::q2d_points[i+start_position][0])*coords[1] + (WhetStone::q2d_points[i+start_position][1])*coords[2];
+      }
+      
+      phi_[c][cnodes[j]].resize(n_points);
+      phi_x_[c][cnodes[j]].resize(n_points);
+      phi_y_[c][cnodes[j]].resize(n_points);
+      
+      // 1c. calculate basis values, grad values at volume quadrature points
+      for (int i = 0; i < quad_nodes_vol.size(); ++i) {
+        
+        phi_[c][cnodes[j]][i] = basis_value(cnodes[j], c, quad_nodes_vol[i]);
+        std::vector<double> grad = basis_grad(cnodes[j], c, quad_nodes_vol[i]);
+        phi_x_[c][cnodes[j]][i] = grad[0];
+        phi_y_[c][cnodes[j]][i] = grad[1];
+        
+      }
+      
+    }
+    
+  }
+  
+  // calculate face quadrature points, values etc.
+  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  phi_face_.resize(nfaces_wghost); // phi_face_[f][j][i] stores the value at the face quadrature point quad_nodes_face[i]. basis is 1 on vertex j and face f.
+  weights_face_.resize(nfaces_wghost);
+  
+  // 2. face quadrature information
+  // 2a. calculate face quadrature weights
+  int n_points_face = 3;
+  for (int f = 0; f < nfaces_wghost; ++f) {
+    weights_face_[f].resize(n_points_face); // 3 points order 2*3 - 1
+  
+    for (int i = 0; i < n_points_face; ++i) {
+      weights_face_[f][i] = WhetStone::q1d_weights[n_points_face-1][i] * mesh_->face_area(f);
+    }
+  }
+  
+  // 2b. construct face quadrature points
+  for (int f = 0; f < nfaces_wghost; ++f) {
+    phi_face_[f].resize(nnodes_owned);
+
+    AmanziMesh::Entity_ID_List fnodes;
+    mesh_->face_get_nodes(f, &fnodes);
+    std::vector<AmanziGeometry::Point> edge_coords(2); // coordinates of face vertices
+    for (int i = 0; i < fnodes.size(); ++i) {
+      mesh_->node_get_coordinates(fnodes[i], &edge_coords[i]);
+    }
+
+    std::vector<AmanziGeometry::Point> quad_nodes_face(n_points_face);
+    for (int i = 0; i < n_points_face; ++i) {
+      quad_nodes_face[i] = (1 - WhetStone::q1d_points[n_points_face-1][i] )*edge_coords[0] + (WhetStone::q1d_points[n_points_face-1][i])*edge_coords[1];
+    }
+
+    // 2c. calculate basis values, grad values at face quadrature points
+    for (int i = 0; i < fnodes.size(); ++i) {
+      phi_face_[f][fnodes[i]].resize(n_points_face);
+
+      int i_2 = (i + 1) % 2;
+
+      for (int qpf = 0; qpf < n_points_face; ++qpf) {
+        phi_face_[f][fnodes[i]][qpf] = 1.0 - (quad_nodes_face[qpf][0] - edge_coords[i][0])/(edge_coords[i_2][0] - edge_coords[i][0]);
+      }
+
+    }
+  }
 }
 
 
@@ -691,46 +799,27 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
     
   AmanziMesh::Entity_ID_List cnodes; //DOFs of the cell (nodes)
   mesh_->cell_get_nodes(K, &cnodes);
-  
-  // 1a. construct volume quadrature points
-  int order = 2;
-  int n_points, start_position;
-  n_points = WhetStone::q2d_order[order][0];
-  start_position = WhetStone::q2d_order[order][1];
-  std::vector<AmanziGeometry::Point> quad_nodes_vol(n_points);
-  std::vector<double> weights_vol(n_points);
-  std::vector<AmanziGeometry::Point> coords(3);
-  for (int i = 0; i < cnodes.size(); ++i) { // find coordinates of triangle vertices in mesh
-    mesh_->node_get_coordinates(cnodes[i], &coords[i]);
-  }
-  // find physical coordinates of quadrature points (3 quadrature points for now; P1 triangle elements)
-  for (int i = 0; i < quad_nodes_vol.size(); ++i) {
-    quad_nodes_vol[i] = (1.0 - WhetStone::q2d_points[i+start_position][0] - WhetStone::q2d_points[i+start_position][1] )*coords[0] + (WhetStone::q2d_points[i+start_position][0])*coords[1] + (WhetStone::q2d_points[i+start_position][1])*coords[2];
-    weights_vol[i] = WhetStone::q2d_weights[i+start_position] * mesh_->cell_volume(K);
-  }
-  
-  // 1b. evaluate volume integral using quadrature points
-  for (int qp = 0; qp < quad_nodes_vol.size(); ++qp ) {
+
+  for (int qp = 0; qp < weights_vol_[K].size(); ++qp ) {
     
     std::vector<double> Uqp(3), Sqp(3);
     std::vector<std::vector<double>> flux(2);
     std::vector<double> phi_j_grad(2);
     double phi_j;
     
-    AmanziGeometry::Point x_qp = quad_nodes_vol[qp];
-    
-    Uqp = EvalSol(U, x_qp, K);
-    Sqp = EvalPhySource(U, x_qp, K);
-    
+    Uqp = EvalSol1(U, qp, K);
+    Sqp = EvalPhySource1(U, qp, K);
+
     flux[0] = PhysFlux_x(Uqp);
     flux[1] = PhysFlux_y(Uqp);
-
-    phi_j_grad = basis_grad(j, K, x_qp);
-    phi_j = basis_value(j, K, x_qp);
+    
+    phi_j_grad[0] = phi_x_[K][j][qp];
+    phi_j_grad[1] = phi_y_[K][j][qp];
+    phi_j = phi_[K][j][qp];
 
     for (int m = 0; m < 3; ++m) {
-      integral[m] += -(flux[0][m]*phi_j_grad[0] + flux[1][m]*phi_j_grad[1]) * weights_vol[qp];
-      integral[m] += Sqp[m] * phi_j * weights_vol[qp]; // bathymetry term
+      integral[m] += -(flux[0][m]*phi_j_grad[0] + flux[1][m]*phi_j_grad[1]) * weights_vol_[K][qp];
+      integral[m] += Sqp[m] * phi_j * weights_vol_[K][qp]; // bathymetry term
     }
   }
     
@@ -771,6 +860,7 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
       AmanziGeometry::Point x_qp = quad_nodes_face[qp];
 
       Uqp = EvalSol(U,x_qp, K);
+//      Uqp = EvalSol_face1(U, qp, cfaces[f]);
       
       flux[0] = PhysFlux_x(Uqp);
       flux[1] = PhysFlux_y(Uqp);
@@ -778,7 +868,7 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
       phi_i = basis_value(j, K, x_qp);
 
       for (int m = 0; m < 3; ++m) {
-        integral[m] += (flux[0][m]*n[0] + flux[1][m]*n[1]) * phi_i * weights_face[qp];
+        integral[m] += (flux[0][m]*n[0] + flux[1][m]*n[1]) * phi_i * weights_face_[cfaces[f]][qp];
       }
     }
     
@@ -835,40 +925,20 @@ std::vector<double> ShallowWater_PK::ResidualsTimeSpace(int K, int j, std::vecto
   
   AmanziMesh::Entity_ID_List cnodes; //DOFs of the cell (nodes)
   mesh_->cell_get_nodes(K, &cnodes);
-  
-  // 1a. construct volume quadrature points
-  int order = 2;
-  int n_points, start_position;
-  n_points = WhetStone::q2d_order[order][0];
-  start_position = WhetStone::q2d_order[order][1];
-  std::vector<AmanziGeometry::Point> quad_nodes_vol(n_points);
-  std::vector<double> weights_vol(n_points);
-  std::vector<AmanziGeometry::Point> coords(3);
-  for (int i = 0; i < cnodes.size(); ++i) { // find coordinates of triangle vertices in mesh
-    mesh_->node_get_coordinates(cnodes[i], &coords[i]);
-  }
-  // find physical coordinates of quadrature points (3 quadrature points for now; P1 triangle elements)
-  for (int i = 0; i < quad_nodes_vol.size(); ++i) {
-    quad_nodes_vol[i] = (1.0 - WhetStone::q2d_points[i+start_position][0] - WhetStone::q2d_points[i+start_position][1] )*coords[0] + (WhetStone::q2d_points[i+start_position][0])*coords[1] + (WhetStone::q2d_points[i+start_position][1])*coords[2];
-    weights_vol[i] = WhetStone::q2d_weights[i+start_position] * mesh_->cell_volume(K);
-  }
-  
-  // 1b. evaluate volume integral using quadrature points
-  for (int qp = 0; qp < quad_nodes_vol.size(); ++qp ) {
+
+  for (int qp = 0; qp < weights_vol_[K].size(); ++qp ) {
     
     std::vector<double> Uqp(3);
     std::vector<double> U_prqp(3);
     double phi_j;
     
-    AmanziGeometry::Point x_qp = quad_nodes_vol[qp];
-    
-    Uqp = EvalSol(U, x_qp, K);
-    U_prqp = EvalSol(U_pr, x_qp, K);
+    Uqp = EvalSol1(U, qp, K);
+    U_prqp = EvalSol1(U_pr, qp, K);
 
-    phi_j = basis_value(j, K, x_qp);
+    phi_j = phi_[K][j][qp];
 
     for (int m = 0; m < 3; ++m) {
-    integral[m] += (1.0/dt) * (U_prqp[m] - Uqp[m]) * phi_j * weights_vol[qp];
+    integral[m] += (1.0/dt) * (U_prqp[m] - Uqp[m]) * phi_j * weights_vol_[K][qp];
     }
   }
   
@@ -905,6 +975,44 @@ std::vector<double> ShallowWater_PK::EvalSol(std::vector<std::vector<double>> U,
 
 
 //--------------------------------------------------------------
+// Evaluate solution at quadrature point (test)
+//--------------------------------------------------------------
+std::vector<double> ShallowWater_PK::EvalSol1(std::vector<std::vector<double>> U, int qp, int c) // point x_qp lies in cell c
+{
+  std::vector<double> eval_sol(3, 0.0);
+  
+  // find nodes of the cell c and loop over them to find \sum_{i \in K} U_i(t) \phi_i(x,y)
+  AmanziMesh::Entity_ID_List cnodes;
+  mesh_->cell_get_nodes(c, &cnodes);
+  for (int m = 0; m < 3; ++m) {
+    for (int i = 0; i < cnodes.size(); ++i) {
+      eval_sol[m] += U[m][cnodes[i]] * phi_[c][cnodes[i]][qp];
+    }
+  }
+  return eval_sol;
+}
+
+
+//--------------------------------------------------------------
+// Evaluate solution at face quadrature point (test)
+//--------------------------------------------------------------
+std::vector<double> ShallowWater_PK::EvalSol_face1(std::vector<std::vector<double>> U, int qpf, int f) // point x_qp lies on face f
+{
+  std::vector<double> eval_sol(3, 0.0);
+  
+  // find nodes of the face and loop over them to calcylate \sum_{i \in f \subset \partial K} U_i(t) \phi_i(x,y)
+  AmanziMesh::Entity_ID_List fnodes;
+  mesh_->face_get_nodes(f, &fnodes);
+  for (int m = 0; m < 3; ++m) {
+    for (int i = 0; i < fnodes.size(); ++i) {
+      eval_sol[m] += U[m][fnodes[i]] * phi_face_[f][fnodes[i]][qpf];
+    }
+  }
+  return eval_sol;
+}
+
+
+//--------------------------------------------------------------
 // Evaluate physical source at quadrature point
 //--------------------------------------------------------------
 std::vector<double> ShallowWater_PK::EvalPhySource(std::vector<std::vector<double>> U, AmanziGeometry::Point x_qp, int c) // point x_qp lies in cell c
@@ -921,6 +1029,34 @@ std::vector<double> ShallowWater_PK::EvalPhySource(std::vector<std::vector<doubl
     for (int i = 0; i < cnodes.size(); ++i) {
       std::vector<double> phi_i_grad = basis_grad(cnodes[i], c, x_qp);
       h += U[0][cnodes[i]] * basis_value(cnodes[i], c, x_qp);
+      s += B_n[0][cnodes[i]] * phi_i_grad[m-1];
+    }
+    eval_sol[m] += g_ * h * s;
+  }
+  return eval_sol;
+}
+
+
+//--------------------------------------------------------------
+// Evaluate physical source at quadrature point (test)
+//--------------------------------------------------------------
+std::vector<double> ShallowWater_PK::EvalPhySource1(std::vector<std::vector<double>> U, int qp, int c) // point x_qp lies in cell c
+{
+  std::vector<double> eval_sol(3, 0.0);
+  
+  Epetra_MultiVector& B_n = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("node", true);
+  
+  // find nodes of the cell c and loop over them to find \sum_{i \in K} U_i(t) \phi_i(x,y)
+  AmanziMesh::Entity_ID_List cnodes;
+  mesh_->cell_get_nodes(c, &cnodes);
+  std::vector<double> phi_i_grad(2);
+  for (int m = 1; m < 3; ++m) {
+    double h = 0.0, s = 0.0;
+    for (int i = 0; i < cnodes.size(); ++i) {
+      
+      phi_i_grad[0] = phi_x_[c][cnodes[i]][qp];
+      phi_i_grad[1] = phi_y_[c][cnodes[i]][qp];
+      h += U[0][cnodes[i]] * phi_[c][cnodes[i]][qp];
       s += B_n[0][cnodes[i]] * phi_i_grad[m-1];
     }
     eval_sol[m] += g_ * h * s;
@@ -1183,6 +1319,29 @@ std::vector<double> ShallowWater_PK::PhysFlux_y(std::vector<double> U)
   G[2] = h*v*v+0.5*g*h*h;
 
   return G;
+}
+
+
+//--------------------------------------------------------------
+// Barycentric coordinates
+//--------------------------------------------------------------
+std::vector<double> ShallowWater_PK::get_barycentric(std::vector<AmanziGeometry::Point> vertices, AmanziGeometry::Point x) // triangle clockwise vertices 0, 1, 2
+{
+  std::vector<double> bary_coords(3, 0.0); // return value
+  AmanziGeometry::Point edge_0, edge_1;
+  edge_0 = vertices[2] - vertices[0];
+  edge_1 = vertices[1] - vertices[0];
+  double area = 0.5 * norm(edge_0^edge_1);
+  
+  for (int m = 0; m < 3; ++m) {
+    edge_0 = x - vertices[m];
+    int n = (m +1) % 3;
+    edge_0 = vertices[n] - vertices[m];
+    edge_1 = x - vertices[m];
+    double sub_area = 0.5 * norm(edge_0 ^ edge_1);
+    bary_coords[m] = sub_area/area;
+  }
+  
 }
 
 
