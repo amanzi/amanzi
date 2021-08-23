@@ -100,11 +100,9 @@ class ShallowWater_PK : public PK_Physical,
   std::vector<double> ResidualsLF(int K, int j, std::vector<std::vector<double> >& U);
   std::vector<double> ResidualsTimeSpace(int c, int i, std::vector<std::vector<double> >& U, std::vector<std::vector<double> >& U_pr, double dt);
                                                                           
-  std::vector<double> EvalSol(std::vector<std::vector<double>> U, AmanziGeometry::Point x_qp, int c);
-  std::vector<double> EvalSol1(std::vector<std::vector<double>> U, int qp, int c);
-  std::vector<double> EvalSol_face1(std::vector<std::vector<double>> U, int qpf, int f);
-  std::vector<double> EvalPhySource(std::vector<std::vector<double>> U, AmanziGeometry::Point x_qp, int c);
-  std::vector<double> EvalPhySource1(std::vector<std::vector<double>> U, int x_qp, int c);
+  std::vector<double> EvalSol_vol(std::vector<std::vector<double>> U, int qp, int c);
+  std::vector<double> EvalSol_face(std::vector<std::vector<double>> U, int qpf, int f);
+  std::vector<double> EvalPhySource_vol(std::vector<std::vector<double>> U, int qp, int c);
   double basis_value(int i, int c, AmanziGeometry::Point x);
   std::vector<double> basis_grad(int i, int c, AmanziGeometry::Point x);
   std::vector<double> get_barycentric(std::vector<AmanziGeometry::Point> vertices, AmanziGeometry::Point x);
@@ -139,12 +137,10 @@ class ShallowWater_PK : public PK_Physical,
   int dim_;
      
   // P1 basis, basis gradient
-  std::vector<std::vector<std::vector<double>>> phi_; // evaluated at volume quadrature points
-  std::vector<std::vector<std::vector<double>>> phi_x_;
-  std::vector<std::vector<std::vector<double>>> phi_y_;
-  std::vector<std::vector<std::vector<double>>> phi_face_; // evaluated at face quadrature points
-  std::vector<std::vector<std::vector<double>>> phi_face_x_;
-  std::vector<std::vector<std::vector<double>>> phi_face_y_;
+  std::vector<std::vector<std::vector<double>>> phi_; // P1 basis evaluated at volume quadrature points
+  std::vector<std::vector<std::vector<double>>> phi_x_; // x partial derivative
+  std::vector<std::vector<std::vector<double>>> phi_y_; // y partial derivative
+  std::vector<std::vector<std::vector<double>>> phi_face_; // P1 basis evaluated at face quadrature points
                           
   // Volume, face quadrature weights
   std::vector<std::vector<double>> weights_vol_;
