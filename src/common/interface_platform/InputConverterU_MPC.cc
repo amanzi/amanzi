@@ -842,7 +842,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
         if (!out_list.sublist(it->first).isSublist("time integrator")) {
           out_list.sublist(it->first).sublist("time integrator") = TranslateTimeIntegrator_(
               err_options, "nka", false,
-              "unstructured_controls, unstr_flow_controls",
+              "unstructured_controls, unstr_transient_controls",
               dt_cut_[mode], dt_inc_[mode]);
           out_list.sublist(it->first).sublist("verbose object") = verb_list_.sublist("verbose object");
         }
