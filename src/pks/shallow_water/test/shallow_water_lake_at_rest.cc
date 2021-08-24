@@ -101,12 +101,12 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
 //    h_n[0][n] = 0.5;
 //    h_n[0][n] = 0.5 + x*(1-x)*y*(1-y);
     
-      if ((x - 0.5)*(x - 0.5) + (y - 0.5)*(y - 0.5) < 0.2 * 0.2) {
-        ht_n[0][n] = H_inf + 0.05;
-      }
-      else {
-        ht_n[0][n] = H_inf;
-      }
+//      if ((x - 0.2)*(x - 0.2) + (y - 0.2)*(y - 0.2) < 0.1 * 0.1) {
+//        ht_n[0][n] = H_inf + 0.01;
+//      }
+//      else {
+//        ht_n[0][n] = H_inf;
+//      }
     
 //    ht_n[0][n] = h_n[0][n] + B_n[0][n];
     ht_n[0][n] = H_inf;
