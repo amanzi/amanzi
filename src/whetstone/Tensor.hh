@@ -376,7 +376,8 @@ class Tensor {
   //Tensor& operator=(const Tensor& T);
   //friend AmanziGeometry::Point
   //operator*(const Tensor& T, const AmanziGeometry::Point& p);
-  friend Tensor operator*(const Tensor& T1, const Tensor& T2);
+  template<class U>
+  friend Tensor<U> operator*(const Tensor<U>& T1, const Tensor<U>& T2);
 
   /* ******************************************************************
   * Dot product of tensors of equal rank.
@@ -444,9 +445,8 @@ class Tensor {
   KOKKOS_INLINE_FUNCTION double* data_ptr() const { return &data_[0];}
 
   // miscaleneous
-  friend std::ostream& operator<<(std::ostream& os, const Tensor& T);
-
-
+  template<class U>
+  friend std::ostream& operator<<(std::ostream& os, const Tensor<U>& T);
 
   void assign(const Tensor& other) {
     if (other.d_ != d_ || other.rank_ != rank_) Init(other.d_, other.rank_);
