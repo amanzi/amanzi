@@ -615,16 +615,24 @@ std::vector<double> ShallowWater_PK::NumericalSource(
       B_rec = B_c[0][c];
     }
     
-    // Kurganov Acta Numerica 2018
-    S1 += (-B_rec * h_c[0][c] ) * normal[0];
-    S2 += (-B_rec * h_c[0][c] ) * normal[1];
+    // Polygonal meshes Beljadid et. al. 2016
+    S1 += (0.5) * (ht_rec - B_rec) * (ht_rec - B_rec) * normal[0];
+    S2 += (0.5) * (ht_rec - B_rec) * (ht_rec - B_rec) * normal[1];
   }
-    
-  std::vector<double> S(3);
-  S[0] = 0.0;
-  S[1] = g_ / vol * S1;
-  S[2] = g_ / vol * S2;
+  
+  Epetra_MultiVector& ht_grad = *total_depth_grad_->gradient()->ViewComponent("cell", true);
+  
+  S1 = S1 / vol;
+  S2 = S2 / vol;
+  S1 = S1 - ht_grad[0][c] * U[0]; S2 = S2 - ht_grad[1][c] * U[0];
+  S1 = g_ * S1; S2 = g_ * S2;
 
+  std::vector<double> S(3);
+  
+  S[0] = 0.0;
+  S[1] = S1;
+  S[2] = S2;
+  
   return S;
 }
 
