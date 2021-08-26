@@ -128,7 +128,6 @@ void ObservableAqueous::ComputeObservation(
   
   const Epetra_MultiVector& porosity = *S.GetFieldData(poro_key)->ViewComponent("cell");    
   const Epetra_MultiVector& ws = *S.GetFieldData(sat_key)->ViewComponent("cell");
-  const Epetra_MultiVector& pressure = *S.GetFieldData(pressure_key)->ViewComponent("cell");
   
   unit = "";
 
@@ -157,6 +156,8 @@ void ObservableAqueous::ComputeObservation(
       *value  += porosity[0][c] * ws[0][c] * tmp / (pd[0][c] * (1.0 - porosity[0][c])) * vol;
     }    
   } else if (variable_ == "aqueous pressure") {
+    const auto& pressure = *S.GetFieldData(pressure_key)->ViewComponent("cell");
+
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
       double vol = mesh_->cell_volume(c);
