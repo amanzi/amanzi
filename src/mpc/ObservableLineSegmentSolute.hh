@@ -48,10 +48,6 @@ void ObservableLineSegmentSolute::ComputeObservation(
     State& S, double* value, double* volume, std::string& unit, double dt) {
   Errors::Message msg;
   int dim = mesh_->space_dimension();
-  // double rho = *S.GetScalarData("const_fluid_density");
-  // const Epetra_MultiVector& porosity = *S.GetFieldData("porosity")->ViewComponent("cell");    
-  // const Epetra_MultiVector& ws = *S.GetFieldData("saturation_liquid")->ViewComponent("cell");
-  // const Epetra_MultiVector& pressure = *S.GetFieldData("pressure")->ViewComponent("cell");
   
   std::vector<double> values(region_size_);
   double weight_corr = 1e-15;
@@ -70,7 +66,7 @@ void ObservableLineSegmentSolute::ComputeObservation(
     }
   } else if (weighting_ == "flux norm") {
     if (S.HasField("darcy_velocity")) {
-      const Epetra_MultiVector& darcy_vel =  *S.GetFieldData("darcy_velocity")->ViewComponent("cell");
+      const auto& darcy_vel =  *S.GetFieldData("darcy_velocity")->ViewComponent("cell");
       for (int i = 0; i < region_size_; i++) {
         int c = entity_ids_[i];
         double norm = 0.0;
