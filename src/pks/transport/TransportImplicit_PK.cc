@@ -96,7 +96,7 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
   auto vo_list = tp_list_->sublist("verbose object"); 
   vo_ = Teuchos::rcp(new VerboseObject("TransportImpl-" + domain, *tp_list_)); 
 
-  // Create pointers to the primary solution field pressure.
+  // Create pointers to the primary solution field tcc.
   const auto& solution = S->GetFieldData(tcc_key_, "state");
   soln_->SetData(solution); 
   

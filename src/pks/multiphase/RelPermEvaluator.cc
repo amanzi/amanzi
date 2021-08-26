@@ -28,7 +28,8 @@ RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist,
     wrm_(wrm)
 {
   my_key_ = plist.get<std::string>("my key");
-  saturation_liquid_key_ = plist.get<std::string>("saturation key", "saturation_liquid");
+  std::string domain = Keys::getDomain(my_key_);
+  saturation_liquid_key_ = plist.get<std::string>("saturation key", Keys::getKey(domain, "saturation_liquid"));
 
   std::string name = plist.get<std::string>("phase name");
   if (name == "liquid")

@@ -265,6 +265,13 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
     if (vo_->os_OK(Teuchos::VERB_EXTREME))
       *vo_->os() << "Applying preconditioner" << std::endl;
     int pc_error = fn_->ApplyPreconditioner(r, du);
+/*
+std::cout <<"AAA rnorm=" << res_l2 << std::endl;
+double aaa;
+du->Norm2(&aaa);
+du->Print(std::cout);
+std::cout <<"AAA rnorm=" << aaa << std::endl;
+*/
     if (pc_error < 0) return SOLVER_LINEAR_SOLVER_ERROR;
 
     du->Norm2(&du_l2);

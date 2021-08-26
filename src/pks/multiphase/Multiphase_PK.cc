@@ -166,7 +166,8 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
     Teuchos::ParameterList elist;
-    elist.set<std::string>("pressure liquid key", pressure_liquid_key_)
+    elist.set<std::string>("my key", pressure_gas_key_)
+         .set<std::string>("pressure liquid key", pressure_liquid_key_)
          .set<std::string>("saturation liquid key", saturation_liquid_key_);
 
     auto eval = Teuchos::rcp(new PressureGasEvaluator(elist, wrm_));
