@@ -94,22 +94,22 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
         
     double x = node_crd[0], y = node_crd[1];
         
-//    B_n[0][n] = std::max(0.0, 0.25 - 5 * ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))); // non-smooth bathymetry
-    B_n[0][n] = x*(1-x)*y*(1-y);
+    B_n[0][n] = std::max(0.0, 0.25 - 5 * ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))); // non-smooth bathymetry
+//    B_n[0][n] = x*(1-x)*y*(1-y);
 //    B_n[0][n] = x/4.0;
 //    B_n[0][n] = 0.0;
 //    h_n[0][n] = 0.5;
 //    h_n[0][n] = 0.5 + x*(1-x)*y*(1-y);
     
-//      if ((x - 0.2)*(x - 0.2) + (y - 0.2)*(y - 0.2) < 0.1 * 0.1) {
-//        ht_n[0][n] = H_inf + 0.01;
-//      }
-//      else {
-//        ht_n[0][n] = H_inf;
-//      }
+      if ((x - 0.4)*(x - 0.4) + (y - 0.4)*(y - 0.4) < 0.1 * 0.1) {
+        ht_n[0][n] = H_inf + 0.001;
+      }
+      else {
+        ht_n[0][n] = H_inf;
+      }
     
 //    ht_n[0][n] = h_n[0][n] + B_n[0][n];
-    ht_n[0][n] = H_inf;
+//    ht_n[0][n] = H_inf;
     h_n[0][n] = ht_n[0][n] - B_n[0][n];
     vel_n[0][n] = 0.0;
     vel_n[1][n] = 0.0;
@@ -155,7 +155,7 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
       double area = norm(area_cross_product);
             
       B_c[0][c] += (area / mesh->cell_volume(c)) * (B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]]) / 2;
-      h_c[0][c] += (area / mesh->cell_volume(c)) * (h_n[0][face_nodes[0]] + h_n[0][face_nodes[1]]) / 2;
+//      h_c[0][c] += (area / mesh->cell_volume(c)) * (h_n[0][face_nodes[0]] + h_n[0][face_nodes[1]]) / 2;
       ht_c[0][c] += (area / mesh->cell_volume(c)) * (ht_n[0][face_nodes[0]] + ht_n[0][face_nodes[1]]) / 2;
     }
         
@@ -168,7 +168,7 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
     //  }
         
 //    ht_c[0][c] = h_c[0][c] + B_c[0][c];
-//    h_c[0][c] = ht_c[0][c] - B_c[0][c];
+    h_c[0][c] = ht_c[0][c] - B_c[0][c];
     vel_c[0][c] = 0.0;
     vel_c[1][c] = 0.0;
     q_c[0][c] = 0.0;
@@ -341,7 +341,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
         
   int iter = 0;
         
-  while (t_new < 0.05) {
+  while (t_new < 2.0) {
    
     double t_out = t_new;
             
@@ -350,7 +350,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
             
     lake_at_rest_exact_field(mesh, ht_ex, vel_ex, t_out);
             
-    if (iter % 5 == 0) {
+    if (iter % 30 == 0) {
                
       io.InitializeCycle(t_out, iter, "");
                 

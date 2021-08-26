@@ -97,8 +97,8 @@ class ShallowWater_PK : public PK_Physical,
   std::vector<double> PhysFlux_y(std::vector<double> U);
     
   std::vector<double> ComputePhiTotal(int K, std::vector<std::vector<double> >& U);
-  std::vector<double> ResidualsLF(int K, int j, std::vector<std::vector<double> >& U);
-  std::vector<double> ResidualsTimeSpace(int c, int i, std::vector<std::vector<double> >& U, std::vector<std::vector<double> >& U_pr, double dt);
+  std::vector<double> ResidualsLF(int K, int j, std::vector<std::vector<double> > U);
+  std::vector<double> ResidualsTimeSpace(int c, int i, std::vector<std::vector<double> > U, std::vector<std::vector<double> > U_pr, double dt);
                                                                           
   std::vector<double> EvalSol_vol(std::vector<std::vector<double>> U, int qp, int c);
   std::vector<double> EvalSol_face(std::vector<std::vector<double>> U, int qpf, int f);
