@@ -185,6 +185,21 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetComponent("face", AmanziMesh::FACE, 1);
   }
 
+  // viscosities
+  if (!S->HasField(viscosity_liquid_key_)) {
+    S->RequireField(viscosity_liquid_key_, viscosity_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+
+    S->RequireFieldEvaluator(viscosity_liquid_key_);
+  }
+
+  if (!S->HasField(viscosity_gas_key_)) {
+    S->RequireField(viscosity_gas_key_, viscosity_gas_key_)->SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+
+    S->RequireFieldEvaluator(viscosity_gas_key_);
+  }
+
   // relative permeability of liquid phase
   if (!S->HasField(relperm_liquid_key_)) {
     S->RequireField(relperm_liquid_key_, relperm_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
@@ -279,7 +294,7 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
   num_primary_ = component_names_.size();
 
   // some defaults
-  flux_names_ = {darcy_flux_liquid_key_, darcy_flux_gas_key_};
+  flux_names_ = { darcy_flux_liquid_key_, darcy_flux_gas_key_ };
 
   auto aux_list = mp_list_->sublist("molecular diffusion");
   mol_diff_l_ = aux_list.get<Teuchos::Array<double> >("aqueous values").toVector();
@@ -562,9 +577,8 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 ****************************************************************** */
 void Multiphase_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
-  // miscalleneous fields
-  // *S_->GetFieldData(prev_tws_key_, passwd_) = *S_->GetFieldData(tws_key_);
-  // *S_->GetFieldData(prev_tcs_key_, passwd_) = *S_->GetFieldData(tcs_key_);
+  // no BC for upwind algorithms
+  std::vector<int> bcnone(nfaces_wghost_, Operators::OPERATOR_BC_NONE);
 
   S_->GetFieldEvaluator(advection_gas_key_)->HasFieldChanged(S_.ptr(), passwd_);
 
@@ -590,8 +604,7 @@ void Multiphase_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<St
     for (int c = 0; c < ncells_owned_; ++c) {
       kr_c[0][c] = relperm_c[0][c] / viscosity_c[0][c];
     }
-    kr->ViewComponent("dirichlet_faces")->PutScalar((1 - phase) / mu_l_);  // FIXME
-    upwind_->Compute(*flux, *kr, op_bcs_[0]->bc_model(), *kr);
+    upwind_->Compute(*flux, *kr, bcnone, *kr);
 
     auto& pdeK = pde_diff_K_;
     pdeK->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_);
