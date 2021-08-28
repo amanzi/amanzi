@@ -101,6 +101,8 @@ class ShallowWater_PK : public PK_Physical,
   std::vector<double> ResidualsTimeSpace(int c, int i, std::vector<std::vector<double> > U, std::vector<std::vector<double> > U_pr, double dt);
                                                                           
   std::vector<double> EvalSol_vol(std::vector<std::vector<double>> U, int qp, int c);
+  std::vector<double> EvalSol_x_vol(std::vector<std::vector<double>> U, int qp, int c);
+  std::vector<double> EvalSol_y_vol(std::vector<std::vector<double>> U, int qp, int c);
   std::vector<double> EvalSol_face(std::vector<std::vector<double>> U, int qpf, int f);
   std::vector<double> EvalPhySource_vol(std::vector<std::vector<double>> U, int qp, int c);
   double basis_value(int i, int c, AmanziGeometry::Point x);

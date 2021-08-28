@@ -94,14 +94,14 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
         
     double x = node_crd[0], y = node_crd[1];
         
-    B_n[0][n] = std::max(0.0, 0.25 - 5 * ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))); // non-smooth bathymetry
+    B_n[0][n] = std::max(0.0, 0.25 - 5 * ((x - 0.35) * (x - 0.35) + (y - 0.35) * (y - 0.35))); // non-smooth bathymetry
 //    B_n[0][n] = x*(1-x)*y*(1-y);
 //    B_n[0][n] = x/4.0;
 //    B_n[0][n] = 0.0;
 //    h_n[0][n] = 0.5;
 //    h_n[0][n] = 0.5 + x*(1-x)*y*(1-y);
     
-      if ((x - 0.4)*(x - 0.4) + (y - 0.4)*(y - 0.4) < 0.1 * 0.1) {
+      if ((x - 0.5)*(x - 0.5) + (y - 0.5)*(y - 0.5) < 0.1 * 0.1) {
         ht_n[0][n] = H_inf + 0.001;
       }
       else {
@@ -340,6 +340,15 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
   std::string passwd("state");
         
   int iter = 0;
+  
+  std::cout.precision(6);
+  // total mass at the start
+  int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  double total_mass_initial = 0.0;
+  for (int c = 0; c < ncells_owned; ++c) {
+    total_mass_initial += (ht[0][c] - B[0][c])*mesh->cell_volume(c);
+  }
+  
         
   while (t_new < 2.0) {
    
@@ -350,7 +359,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
             
     lake_at_rest_exact_field(mesh, ht_ex, vel_ex, t_out);
             
-    if (iter % 30 == 0) {
+    if (iter % 10 == 0) {
                
       io.InitializeCycle(t_out, iter, "");
                 
@@ -377,6 +386,11 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
                 
       io.FinalizeCycle();
       std::cout<<"time: "<<t_new<<std::endl;
+      double total_mass = 0.0;
+      for (int c = 0; c < ncells_owned; ++c) {
+        total_mass += (ht[0][c] - B[0][c])*mesh->cell_volume(c);
+      }
+      std::cout<<"total mass change so far: "<<(total_mass - total_mass_initial)<<std::endl;
     }
             
     dt = SWPK.get_dt();
@@ -395,6 +409,13 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
   }
         
   double t_out  = t_new;
+  
+  double total_mass_final = 0.0;
+  for (int c = 0; c < ncells_owned; ++c) {
+    total_mass_final += (ht[0][c] - B[0][c])*mesh->cell_volume(c);
+  }
+  std::cout<<"total mass change: initial = "<<std::scientific<<total_mass_initial<<", final = "<<total_mass_final<<std::endl;
+  std::cout<<"Change: "<<std::scientific<<(total_mass_final - total_mass_initial)<<std::endl;
         
   Epetra_MultiVector ht_ex(ht);
   Epetra_MultiVector vel_ex(vel);
