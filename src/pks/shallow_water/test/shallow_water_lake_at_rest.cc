@@ -94,15 +94,15 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
         
     double x = node_crd[0], y = node_crd[1];
         
-    B_n[0][n] = std::max(0.0, 0.25 - 5 * ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))); // non-smooth bathymetry
-//    B_n[0][n] = x*(1-x)*y*(1-y);
+//    B_n[0][n] = std::max(0.0, 0.25 - 5 * ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))); // non-smooth bathymetry
+    B_n[0][n] = x*(1-x)*y*(1-y);
 //    B_n[0][n] = x/4.0;
-//    B_n[0][n] = 0.0;
+//    B_n[0][n] = 0.1;
 //    h_n[0][n] = 0.5;
 //    h_n[0][n] = 0.5 + x*(1-x)*y*(1-y);
     
       if ((x - 0.4)*(x - 0.4) + (y - 0.4)*(y - 0.4) < 0.1 * 0.1) {
-        ht_n[0][n] = H_inf + 0.001;
+          ht_n[0][n] = H_inf + 0.01;
       }
       else {
         ht_n[0][n] = H_inf;
@@ -133,7 +133,15 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
     h_c[0][c] =0.0;
     ht_c[0][c] = 0.0;
         
-    // Compute cell averaged bathymetrt (Bc)
+    // Compute cell averaged bathymetry (Bc)
+    for (int j = 0; j < cnodes.size(); ++j) {
+    	B_c[0][c]  += B_n[0][cnodes[j]];
+    	ht_c[0][c] += ht_n[0][cnodes[j]];
+    }
+    B_c[0][c] /= 3.;
+    ht_c[0][c] /= 3.;
+
+    /*
     for (int f = 0; f < nfaces_cell; ++f) {
     
       Amanzi::AmanziGeometry::Point x0, x1;
@@ -158,6 +166,7 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
 //      h_c[0][c] += (area / mesh->cell_volume(c)) * (h_n[0][face_nodes[0]] + h_n[0][face_nodes[1]]) / 2;
       ht_c[0][c] += (area / mesh->cell_volume(c)) * (ht_n[0][face_nodes[0]] + ht_n[0][face_nodes[1]]) / 2;
     }
+    */
         
     // Perturb the solution; change time period t_new to at least 10.0
     //  if ((xc[0] - 0.3)*(xc[0] - 0.3) + (xc[1] - 0.3)*(xc[1] - 0.3) < 0.1 * 0.1) {
@@ -350,7 +359,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
             
     lake_at_rest_exact_field(mesh, ht_ex, vel_ex, t_out);
             
-    if (iter % 30 == 0) {
+    if (iter % 100 == 0) {
                
       io.InitializeCycle(t_out, iter, "");
                 
