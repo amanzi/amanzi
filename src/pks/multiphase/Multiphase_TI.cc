@@ -291,6 +291,9 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
             pde->SetBCs(op_bcs_[solr.var], op_bcs_[solc.var]);
             pde->UpdateMatrices(Teuchos::null, Teuchos::null);
             pde->ApplyBCs(bcflag, false, false);
+
+            double factor = eqns_[row].adv_factors[phase];
+            if (factor != 1.0) pde->local_op()->Rescale(factor);
           }
         }
 
