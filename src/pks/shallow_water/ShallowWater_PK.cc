@@ -519,7 +519,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     U[m].resize(nnodes_owned);
   }
   for (int i = 0; i < nnodes_owned; ++i) {
-    U[0][i] = ht_n[0][i];//-B_n[0][i];
+    U[0][i] = ht_n[0][i]-B_n[0][i];
     U[1][i] = q_n[0][i];
     U[2][i] = q_n[1][i];
   }
@@ -544,9 +544,9 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     
     // boundary conditions (for now manually enforce Dirichlet)
     if (std::abs(node_coordinates[0] - 0.0) < 1.e-12 || std::abs(node_coordinates[0] - 1.0) < 1.e-12 || std::abs(node_coordinates[1] - 0.0) < 1.e-12 || std::abs(node_coordinates[1] - 1.0) < 1.e-12) {
-      U[0][i] = 0.5;
-      U[1][i] = 0.0;
-      U[2][i] = 0.0;
+//      U[0][i] = 0.5;
+//      U[1][i] = 0.0;
+//      U[2][i] = 0.0;
       phi_beta_cell[0] = 0.0;
       phi_beta_cell[1] = 0.0;
       phi_beta_cell[2] = 0.0;
@@ -575,6 +575,10 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
             phi[m][j] = phi_tmp[m];         // eq (10)
           }
         } // j
+
+
+        // IMPLEMENT PROJECTION OF THE RESIDUALS
+        // TO LOCAL CHARACTERISTIC DIRECTIONS
 
         std::fill(beta.begin(), beta.end(), 0.0);
         std::fill(sum_max.begin(), sum_max.end(), 0.0);
@@ -614,11 +618,14 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   
 //          beta[m] = 1./3.;
 
-//          for (int j = 0; j < cnodes.size(); ++j) {
-//        	  if (cnodes[j] == i) phi_beta_cell[m] += phi[m][j];
-//          }
-
           phi_beta_cell[m] += beta[m] * Phi_total[m]; // eq(6)
+//          phi_beta_cell[m] += phi[m][i];
+
+//          double blend = 0.9;
+//          phi_beta_cell[m] += blend*beta[m] * Phi_total[m];
+//          for (int j = 0; j < cnodes.size(); ++j) {
+//        	  if (cnodes[j] == i) phi_beta_cell[m] = (1.-blend)*phi[m][j];
+//          }
 
           std::cout << "node coordinates : " << node_coordinates[0] << " " << node_coordinates[1] << std::endl;
 
@@ -655,17 +662,31 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   std::vector<std::vector<double>> U_new(3);
   U_new = U_pr;
 
+
+/*
   for (int i = 0; i < nnodes_owned; ++i){
     
     AmanziGeometry::Point node_coordinates;
     mesh_->node_get_coordinates(i, &node_coordinates);
     
     // compute on interior nodes only
-    if (std::abs(node_coordinates[0] - 0.0) > 1.e-12 && std::abs(node_coordinates[0] - 1.0) < 1.e-12 && std::abs(node_coordinates[1] - 0.0) < 1.e-12 && std::abs(node_coordinates[1] - 1.0) < 1.e-12) {
+//    if (std::abs(node_coordinates[0] - 0.0) > 1.e-12 && std::abs(node_coordinates[0] - 1.0) < 1.e-12 && std::abs(node_coordinates[1] - 0.0) < 1.e-12 && std::abs(node_coordinates[1] - 1.0) < 1.e-12) {
       
       std::fill(phi_beta_cell.begin(), phi_beta_cell.end(), 0.0);
       dual_cell_vol = 0.0;
       
+      // boundary conditions (for now manually enforce Dirichlet)
+      if (std::abs(node_coordinates[0] - 0.0) < 1.e-12 || std::abs(node_coordinates[0] - 1.0) < 1.e-12 || std::abs(node_coordinates[1] - 0.0) < 1.e-12 || std::abs(node_coordinates[1] - 1.0) < 1.e-12) {
+//        U_pr[0][i] = 0.5;
+//        U_pr[1][i] = 0.0;
+//        U_pr[2][i] = 0.0;
+        phi_beta_cell[0] = 0.0;
+        phi_beta_cell[1] = 0.0;
+        phi_beta_cell[2] = 0.0;
+        dual_cell_vol = 1.0; // dummy value
+      }
+      else {
+
       // loop over cells joined to the vertex i
       AmanziMesh::Entity_ID_List ncells, cnodes;
       mesh_->node_get_cells(i, Amanzi::AmanziMesh::Parallel_type::ALL, &ncells);
@@ -717,16 +738,19 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     }
   }// i (total DOF) loop
   // corrector step ends
+   *
+   *
+   */
   
   for (int i = 0; i < nnodes_owned; ++i) {
-    ht_n[0][i] = U_new[0][i];// + B_n[0][i];
+    ht_n[0][i] = U_new[0][i] + B_n[0][i];
     q_n[0][i] = U_new[1][i];
     q_n[1][i] = U_new[2][i];
     h_n[0][i] = ht_n[0][i] - B_n[0][i];
     double h = h_n[0][i];
-//    double factor = (2.0*h)/(h*h + std::max(h*h, 1.e-14));
-//    vel_n[0][i] = factor * q_n[0][i];
-//    vel_n[1][i] = factor * q_n[1][i];
+    double factor = (2.0*h)/(h*h + std::max(h*h, 1.e-14));
+    vel_n[0][i] = factor * q_n[0][i];
+    vel_n[1][i] = factor * q_n[1][i];
   }
   
   // compute cell averaged quantities
@@ -819,9 +843,9 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
   Epetra_MultiVector& ht_n = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("node", true);
   std::cout << "In residual check 1 U " << U[0][j] << std::endl;
   std::cout << "In residual check 2 B " << B_n[0][j] << std::endl;
-  for (int i = 0; i < cnodes.size(); ++i) {
-    U[0][cnodes[i]] = U[0][cnodes[i]] - B_n[0][cnodes[i]];
-  }
+//  for (int i = 0; i < cnodes.size(); ++i) {
+//    U[0][cnodes[i]] = U[0][cnodes[i]] - B_n[0][cnodes[i]];
+//  }
 
   std::cout << "In residual " << U[0][j] << std::endl;
 
@@ -906,8 +930,8 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
 
     double h_qp = Uqp[0];
     integral[0] += 0.;
-    integral[1] += -g_*h_qp*gradHtot_qp[0] * weights_vol_[K][qp];
-    integral[2] += -g_*h_qp*gradHtot_qp[1] * weights_vol_[K][qp];
+    integral[1] += g_*h_qp*gradHtot_qp[0] * weights_vol_[K][qp];
+    integral[2] += g_*h_qp*gradHtot_qp[1] * weights_vol_[K][qp];
   }
 
   // 2. calculate face integral of [Hu, H*u*u]
@@ -945,9 +969,9 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
 //      std::cout << "vx_qp = " << vx_qp << std::endl;
 //      std::cout << "vy_qp = " << vy_qp << std::endl;
 
-      integral[0] += -h_qp*(vx_qp*n[0] + vy_qp*n[1]) * weights_face_[faces_j[f]][qpf];
-      integral[1] += -h_qp*vx_qp*(vx_qp*n[0] + vy_qp*n[1]) * weights_face_[faces_j[f]][qpf];
-      integral[2] += -h_qp*vy_qp*(vx_qp*n[0] + vy_qp*n[1]) * weights_face_[faces_j[f]][qpf];
+      integral[0] += h_qp*(vx_qp*n[0] + vy_qp*n[1]) * weights_face_[faces_j[f]][qpf];
+      integral[1] += h_qp*vx_qp*(vx_qp*n[0] + vy_qp*n[1]) * weights_face_[faces_j[f]][qpf];
+      integral[2] += h_qp*vy_qp*(vx_qp*n[0] + vy_qp*n[1]) * weights_face_[faces_j[f]][qpf];
 
     }
   }
