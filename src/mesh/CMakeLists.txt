@@ -122,6 +122,7 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/mesh_geometry.cc
                     LINK_LIBS ${mesh_test_link_libs})
     add_amanzi_test(mesh_geometry_np2 mesh_geometry NPROCS 2 KIND unit)
+    add_amanzi_test(mesh_geometry_np4 mesh_geometry NPROCS 4 KIND unit)
 
     # Test: mesh sets
     #   Tests the use of mesh sets on the above meshes and frameworks.
@@ -130,6 +131,7 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/mesh_sets.cc
                     LINK_LIBS ${mesh_test_link_libs})
     add_amanzi_test(mesh_sets_np2 mesh_sets NPROCS 2 KIND unit)
+    add_amanzi_test(mesh_sets_np4 mesh_sets NPROCS 4 KIND unit)
 
     # Test: mesh deformation
     #   A basic test of deforming volumetric and surface meshes and
@@ -157,6 +159,7 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/mesh_surface_extraction.cc
                     LINK_LIBS ${mesh_test_link_libs})
     add_amanzi_test(mesh_surface_extraction_np2 mesh_surface_extraction NPROCS 2 KIND unit)
+    add_amanzi_test(mesh_surface_extraction_np4 mesh_surface_extraction NPROCS 4 KIND unit)
     
     # Test: volume extracted mesh
     #   Tests a volumetric mesh generated using the mesh framework

@@ -58,7 +58,10 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED)
     std::cout << std::endl
               << "Extracting surface from 3D Box with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto parent_mesh = createFrameworkStructuredUnitHex(Preference{frm}, 3,3,3, comm, gm);
+
+    auto fac_list = Teuchos::rcp(new Teuchos::ParameterList("factory list"));
+    fac_list->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "zoltan_rcb");
+    auto parent_mesh = createFrameworkStructuredUnitHex(Preference{frm}, 3,3,3, comm, gm, fac_list);
 
     // extract the surface
     MeshFactory fac(comm, gm);
@@ -109,7 +112,9 @@ TEST(MESH_SURFACE_EXTRACTION_EXO)
     std::cout << std::endl
               << "Extracting surface from 3D Box with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto parent_mesh = createFrameworkUnstructured(Preference{frm}, "test/hex_3x3x3_sets.exo", comm, gm);
+    auto fac_list = Teuchos::rcp(new Teuchos::ParameterList("factory list"));
+    fac_list->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "zoltan_rcb");
+    auto parent_mesh = createFrameworkUnstructured(Preference{frm}, "test/hex_3x3x3_sets.exo", comm, gm, fac_list);
 
     // extract the surface
     MeshFactory fac(comm, gm);
@@ -164,7 +169,9 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
     std::cout << std::endl
               << "MeshExtractedManifold from surface of 3D Generated Box with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto parent_mesh = createFrameworkStructuredUnitHex(Preference{frm}, 3,3,3, comm, gm, Teuchos::null, true);
+    auto fac_list = Teuchos::rcp(new Teuchos::ParameterList("factory list"));
+    fac_list->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "zoltan_rcb");
+    auto parent_mesh = createFrameworkStructuredUnitHex(Preference{frm}, 3,3,3, comm, gm, fac_list, true);
 
     // extract the surface
     auto fac_plist = Teuchos::rcp(new Teuchos::ParameterList());
@@ -230,7 +237,9 @@ TEST(MESH_SURFACE_EXTRACTION_EXO_EXTRACTED_MANIFOLD)
     std::cout << std::endl
               << "MeshExtractedManifold from surface of 3D EXO Box with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto parent_mesh = createFrameworkUnstructured(Preference{frm}, "test/hex_3x3x3_sets.exo", comm, gm, Teuchos::null, true);
+    auto fac_list = Teuchos::rcp(new Teuchos::ParameterList("factory list"));
+    fac_list->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "zoltan_rcb");
+    auto parent_mesh = createFrameworkUnstructured(Preference{frm}, "test/hex_3x3x3_sets.exo", comm, gm, fac_list, true);
 
     // extract the surface
     auto fac_plist = Teuchos::rcp(new Teuchos::ParameterList());
