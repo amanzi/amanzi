@@ -1102,15 +1102,21 @@ void Mesh::PrintMeshStatistics() const
   if (vo_.get() && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
     int ncells = num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     int nfaces = num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+    int nnodes = num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+    int nedges(0);
+    if (edges_requested_) nedges = num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::OWNED);
 
-    int min_out[2], max_out[2], sum_out[2], tmp_in[2] = {ncells, nfaces};
-    get_comm()->MinAll(tmp_in, min_out, 2);
-    get_comm()->MaxAll(tmp_in, max_out, 2);
-    get_comm()->SumAll(tmp_in, sum_out, 2);
+    int min_out[4], max_out[4], sum_out[4], tmp_in[4] = { ncells, nfaces, nedges, nnodes };
+    get_comm()->MinAll(tmp_in, min_out, 4);
+    get_comm()->MaxAll(tmp_in, max_out, 4);
+    get_comm()->SumAll(tmp_in, sum_out, 4);
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "cells, tot/min/max: " << sum_out[0] << "/" << min_out[0] << "/" << max_out[0] << "\n";
-    *vo_->os() << "faces, tot/min/max: " << sum_out[1] << "/" << min_out[1] << "/" << max_out[1] << "\n\n";
+    *vo_->os() << "faces, tot/min/max: " << sum_out[1] << "/" << min_out[1] << "/" << max_out[1] << "\n";
+    if (edges_requested_)
+      *vo_->os() << "edges, tot/min/max: " << sum_out[2] << "/" << min_out[2] << "/" << max_out[2] << "\n";
+    *vo_->os() << "nodes, tot/min/max: " << sum_out[3] << "/" << min_out[3] << "/" << max_out[3] << "\n\n";
   }
 }
 

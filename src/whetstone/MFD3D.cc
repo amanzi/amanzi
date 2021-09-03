@@ -79,6 +79,7 @@ int MFD3D::StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatrix& M)
   double eigmin = M(0, 0);
   // T.spectral_bounds(&lower, &upper);
   for (int k = 1; k < nrows; k++) eigmin = std::min(eigmin, M(k, k));
+  double eigtol(eigmin / 100);
 
   // find null space of N^T
   DenseMatrix U(nrows, nrows);
@@ -166,7 +167,7 @@ int MFD3D::StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatrix& M)
     if (S[0] > eigmin) {
       break;
     } else if (loop == 2) {
-      for (int k = 0; k < mcols; k++) if (P(k, k) == 0.0) P(k, k) = eigmin;
+      for (int k = 0; k < mcols; k++) if (P(k, k) < eigtol) P(k, k) = eigmin;
     }
   }
 
