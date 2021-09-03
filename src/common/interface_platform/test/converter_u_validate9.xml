@@ -366,6 +366,7 @@
           <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
           <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
           <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
+          <Parameter name="nonlinear iteration damping factor" type="double" value="1.0"/>
           <ParameterList name="verbose object">
             <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
@@ -516,6 +517,33 @@
         <Parameter name="limiter location" type="string" value="face"/>
         <Parameter name="limiter cfl" type="double" value="0.5"/>
       </ParameterList>
+      <ParameterList name="boundary conditions">
+        <ParameterList name="velocity">
+          <ParameterList name="BC 0">
+            <Parameter name="regions" type="Array(string)" value="{LeftTopEdge}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <ParameterList name="velocity">
+              <Parameter name="number of dofs" type="int" value="3"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.00000000000000000e+01"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 2 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.00000000000000000e+00"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 3 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.00000000000000000e+00"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
@@ -555,6 +583,7 @@
           <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
           <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
           <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
+          <Parameter name="nonlinear iteration damping factor" type="double" value="1.0"/>
           <ParameterList name="verbose object">
             <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>

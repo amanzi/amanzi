@@ -3208,7 +3208,7 @@ Multiphase PK
 Mathematical models
 ...................
 
-The conceptual PDE model for the isothermal multiphase flow inlcude
+The conceptual PDE model for the isothermal multiphase flow include
 transport equations for components and nonlinear algebraic constraints for the phase presence. 
 At the moment we consider two phases (liquid and gas), multiple components, and one 
 constraint.
@@ -6342,6 +6342,8 @@ is always the distribution coefficient.
    Pb_210   linear   3294060.0
    Tc_99    linear       988.218
 
+NOTE: The parameters provided here are *global*.
+The state field isotherm_kd overwrites any global data given here.
 
 General kinetics
 ................

@@ -118,22 +118,22 @@ void TotalComponentStorage::EvaluateFieldPartialDerivative_(
     }
   }
 
-  else if (wrt_key == "molar_density_liquid") {
+  else if (wrt_key == molar_density_liquid_key_) {
     for (int c = 0; c != ncells; ++c) {
       result_c[0][c] = phi[0][c] * sl[0][c] * xl[0][c];
     }
-  } else if (wrt_key == "molar_density_gas") {
+  } else if (wrt_key == molar_density_gas_key_) {
     for (int c = 0; c != ncells; ++c) {
       result_c[0][c] = phi[0][c] * (1.0 - sl[0][c]) * xg[n_][c];
     }
   }
 
-  else if (wrt_key == "mole_fraction_liquid") {
+  else if (wrt_key == mole_fraction_liquid_key_) {
     for (int c = 0; c != ncells; ++c) {
       result_c[0][c] = phi[0][c] * sl[0][c] * nl[0][c];
     }
   }
-  else if (wrt_key == "mole_fraction_gas") {
+  else if (wrt_key == mole_fraction_gas_key_) {
     for (int c = 0; c != ncells; ++c) {
       result_c[0][c] = phi[0][c] * (1.0 - sl[0][c]) * ng[0][c];
     }

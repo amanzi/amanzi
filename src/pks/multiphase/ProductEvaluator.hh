@@ -10,7 +10,8 @@
 
   Product evaluator computes product of multiple fields:
     Product = f1^a1 * f1^a2 * ... * fn^an
-  the powers ai are either 1 or -1.
+  the powers ai are either 1 or -1. If fi is a multivector, one
+  of its entries is used in the product, see field_n_ variable.
 */
 
 #ifndef AMANZI_MULTIPHASE_PRODUCT_EVALUATOR_HH_

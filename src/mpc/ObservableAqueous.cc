@@ -108,10 +108,18 @@ int ObservableAqueous::ComputeRegionSize()
 void ObservableAqueous::ComputeObservation(
    State& S, double* value, double* volume, std::string& unit, double dt)
 {
-  //double volume, value;
   Errors::Message msg;
+
   int dim = mesh_->space_dimension();
+
+  // separate cases for density
   double rho = *S.GetScalarData("const_fluid_density");
+  Key mol_density_key = Keys::getKey(domain_, "molar_density_liquid");
+
+  Teuchos::RCP<const Epetra_MultiVector> rho_c;
+  if (S.HasField(mol_density_key)) 
+    rho_c = S.GetFieldData(mol_density_key)->ViewComponent("cell");
+
   Key head_key = Keys::getKey(domain_, "hydraulic_head");
   Key poro_key = Keys::getKey(domain_, "porosity");
   Key sat_key = Keys::getKey(domain_, "saturation_liquid");
@@ -120,7 +128,6 @@ void ObservableAqueous::ComputeObservation(
   
   const Epetra_MultiVector& porosity = *S.GetFieldData(poro_key)->ViewComponent("cell");    
   const Epetra_MultiVector& ws = *S.GetFieldData(sat_key)->ViewComponent("cell");
-  const Epetra_MultiVector& pressure = *S.GetFieldData(pressure_key)->ViewComponent("cell");
   
   unit = "";
 
@@ -142,11 +149,15 @@ void ObservableAqueous::ComputeObservation(
   
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
+      double tmp = (rho_c.get()) ? (*rho_c)[0][c] / CommonDefs::MOLAR_MASS_H2O : rho;
+
       double vol = mesh_->cell_volume(c);
       *volume += vol;
-      *value  += porosity[0][c] * ws[0][c] * rho / (pd[0][c] * (1.0 - porosity[0][c])) * vol;
+      *value  += porosity[0][c] * ws[0][c] * tmp / (pd[0][c] * (1.0 - porosity[0][c])) * vol;
     }    
   } else if (variable_ == "aqueous pressure") {
+    const auto& pressure = *S.GetFieldData(pressure_key)->ViewComponent("cell");
+
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
       double vol = mesh_->cell_volume(c);
@@ -221,11 +232,9 @@ void ObservableAqueous::ComputeObservation(
     // }
   } else if (variable_ == "aqueous mass flow rate" || 
              variable_ == "aqueous volumetric flow rate") {
-    double density(1.0);
-    if (variable_ == "aqueous mass flow rate") density = rho;
     Key darcy_flux_key = Keys::getKey(domain_, "darcy_flux");
     Teuchos::RCP<const Epetra_MultiVector> aperture_rcp;
-    const Epetra_MultiVector& darcy_flux = *S.GetFieldData(darcy_flux_key)->ViewComponent("face");
+    const auto& darcy_flux = *S.GetFieldData(darcy_flux_key)->ViewComponent("face");
     if (domain_ == "fracture")
       aperture_rcp = S.GetFieldData("fracture-aperture")->ViewComponent("cell");
     const auto& fmap = *S.GetFieldData(darcy_flux_key)->Map().Map("face", true);
@@ -239,12 +248,15 @@ void ObservableAqueous::ComputeObservation(
 	int sign, c = cells[0];
         mesh_->face_normal(f, false, c, &sign);
         double area = mesh_->face_area(f);
-        double scale = 1.;
-        if (domain_ == "fracture")
-          scale = (*aperture_rcp)[0][c];
+        double scale = 1.0;
+        if (domain_ == "fracture") scale = (*aperture_rcp)[0][c];
             
+        double tmp(1.0);
+        if (variable_ == "aqueous mass flow rate")
+          tmp = (rho_c.get()) ? (*rho_c)[0][c] / CommonDefs::MOLAR_MASS_H2O : rho;
+
         int g = fmap.FirstPointInElement(f);
-        *value  += sign * darcy_flux[0][g] * density * scale;
+        *value  += sign * darcy_flux[0][g] * tmp * scale;
         *volume += area * scale;
       }
     } else if (obs_planar_) {  // observation is on an interior planar set
@@ -253,15 +265,19 @@ void ObservableAqueous::ComputeObservation(
         const AmanziGeometry::Point& face_normal = mesh_->face_normal(f);
         double area = mesh_->face_area(f);
         double sign = (reg_normal_ * face_normal) / area;
-        double scale = 1.;
-        if (domain_ == "fracture") {
-          mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
-          int c = cells[0];
-          scale = (*aperture_rcp)[0][c];
-        }
+
+        mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
+        int c = cells[0];
+
+        double scale = 1.0;
+        if (domain_ == "fracture") scale = (*aperture_rcp)[0][c];
     
+        double tmp(1.0);
+        if (variable_ == "aqueous mass flow rate")
+          tmp = (rho_c.get()) ? (*rho_c)[0][c] / CommonDefs::MOLAR_MASS_H2O : rho;
+
         int g = fmap.FirstPointInElement(f);        
-        *value  += sign * darcy_flux[0][g] * density * scale;
+        *value  += sign * darcy_flux[0][g] * tmp * scale;
         *volume += area * scale;
       }
     } else {

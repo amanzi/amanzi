@@ -185,6 +185,8 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
   bool transport_on_manifold = physical_models->get<bool>("transport in fractures", false);
 
   // require state fields when Flow PK is off
+  S_->RequireScalar("const_fluid_density", passwd_);
+
   if (!S->HasField(permeability_key_) && abs_perm) {
     S->RequireField(permeability_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, dim);

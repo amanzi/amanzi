@@ -32,8 +32,9 @@ SaturatedVaporPressure_Water::SaturatedVaporPressure_Water(
 
 double SaturatedVaporPressure_Water::Pressure(double T) {
   if (T < 100.0 || T > 373.0) {
-    std::cout << "Invalid temperature, T = " << T << std::endl;
-    Exceptions::amanzi_throw(Errors::CutTimeStep());
+    Errors::CutTimeStep msg;
+    msg << "Invalid temperature, T = " << T;
+    Exceptions::amanzi_throw(msg);
   }
   return 100.0 * exp(ka0_ + ka_/T + (kb_ + kc_*T) * T + kd_*log(T));
 }

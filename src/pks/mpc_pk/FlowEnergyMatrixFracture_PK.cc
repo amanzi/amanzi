@@ -321,7 +321,16 @@ bool FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool r
     k += 2;
   }
 
-  bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
+  bool fail;
+  try {
+    fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
+  } catch(Errors::CutTimeStep& e) {
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << e.what() << std::endl;
+    }
+    fail = false;
+  }
 
   if (fail) {
     k = 0;

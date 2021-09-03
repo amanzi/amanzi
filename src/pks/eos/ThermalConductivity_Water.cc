@@ -48,8 +48,9 @@ double ThermalConductivity_Water::ThermalConductivity(double T)
   double k = ka0_ + (ka1_ + ka2_ * Ts) * Ts;
 
   if (k < 1.e-16) {
-    std::cout << "Invalid temperature, T=" << T << " conductivity=" << k << std::endl;
-    Exceptions::amanzi_throw(Errors::CutTimeStep());
+    Errors::CutTimeStep msg;
+    msg << "Invalid temperature, T=" << T << " conductivity=" << k;
+    Exceptions::amanzi_throw(msg);
   }
   return k;
 }

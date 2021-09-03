@@ -278,7 +278,7 @@ void Chemistry_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> 
   if (ic_list->isSublist(isotherm_kd_key_)) {
     using_sorption_ = true;
     using_sorption_isotherms_ = true;
-  }
+  } 
 
   KeyTriple split;
   bool is_ds = Keys::splitDomainSet(isotherm_kd_key_, split);
@@ -299,6 +299,12 @@ void Chemistry_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> 
   if (plist->isParameter("Cation Exchange Capacity")) {
     using_sorption_ = true;
     number_ion_exchange_sites_ = 1;
+  }
+
+  if (glist_->isSublist("thermodynamic database")) {
+    if (glist_->sublist("thermodynamic database").isSublist("isotherms")) {
+      using_sorption_ = true;
+    }
   }
 }
 
