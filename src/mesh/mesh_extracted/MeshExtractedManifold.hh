@@ -190,6 +190,11 @@ class MeshExtractedManifold : public Mesh {
   }
 
   // Mesh Sets for ICs, BCs, Material Properties
+  virtual
+  bool valid_set_type(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const override {
+    return parent_mesh_->valid_set_type(rtype, kind);
+  }
+
   // -- entities
   using Mesh::get_set_entities;
 

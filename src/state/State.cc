@@ -1523,7 +1523,7 @@ State::GetEvaluatorList(const Key& key)
       }
     }
   }
-  // return an empty new lsit
+  // return an empty new list
   return FEList().sublist(key);
 }
 

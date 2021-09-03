@@ -26,7 +26,7 @@
 #include "Mesh_MSTK.hh"
 
 /* **************************************************************** */
-TEST(MESH_SURFACECE_FLATTENED) {
+TEST(MESH_SURFACE_FLATTENED) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
