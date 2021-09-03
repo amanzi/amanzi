@@ -542,23 +542,46 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     std::fill(phi_beta_cell.begin(), phi_beta_cell.end(), 0.0);
     dual_cell_vol = 0.0;
     
+    AmanziMesh::Entity_ID_List ncells, cnodes;
+    mesh_->node_get_cells(i, Amanzi::AmanziMesh::Parallel_type::ALL, &ncells);
+
+    for (int K = 0; K < ncells.size(); ++K) {
+      mesh_->cell_get_nodes(ncells[K], &cnodes);
+
+      // compute dual volume
+      for (int qp = 0; qp < weights_vol_[ncells[K]].size(); ++qp ) {
+		double phi_i = phi_[ncells[K]][i][qp];
+	    dual_cell_vol += phi_i * weights_vol_[ncells[K]][qp];
+	  }
+    }
+
     // boundary conditions (for now manually enforce Dirichlet)
     if (std::abs(node_coordinates[0] - 0.0) < 1.e-12 || std::abs(node_coordinates[0] - 1.0) < 1.e-12 || std::abs(node_coordinates[1] - 0.0) < 1.e-12 || std::abs(node_coordinates[1] - 1.0) < 1.e-12) {
 //      U[0][i] = 0.5;
 //      U[1][i] = 0.0;
 //      U[2][i] = 0.0;
+//      U[0][i] = U[0][i];
+//      U[1][i] = -U[1][i];
+//      U[2][i] = -U[2][i];
       phi_beta_cell[0] = 0.0;
       phi_beta_cell[1] = 0.0;
       phi_beta_cell[2] = 0.0;
-      dual_cell_vol = 1.0; // dummy value
+//      dual_cell_vol = 1.0; // dummy value
     }
     else {
       // loop over cells joined to the vertex i
-      AmanziMesh::Entity_ID_List ncells, cnodes;
-      mesh_->node_get_cells(i, Amanzi::AmanziMesh::Parallel_type::ALL, &ncells);
+//      AmanziMesh::Entity_ID_List ncells, cnodes;
+//      mesh_->node_get_cells(i, Amanzi::AmanziMesh::Parallel_type::ALL, &ncells);
 
       for (int K = 0; K < ncells.size(); ++K) {
         mesh_->cell_get_nodes(ncells[K], &cnodes);
+
+//        // compute dual volume
+//        for (int qp = 0; qp < weights_vol_[ncells[K]].size(); ++qp ) {
+//		  double phi_i = phi_[ncells[K]][i][qp];
+//		  std::cout << "phi_i = " << phi_i << std::endl;
+//		  dual_cell_vol += phi_i * weights_vol_[ncells[K]][qp];
+//	    }
 
         for (int m = 0; m < 3; ++m) {
           phi[m].resize(cnodes.size());
@@ -648,10 +671,24 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
 //        exit(0);
 
-        dual_cell_vol += (1.0/3)*mesh_->cell_volume(ncells[K]);
+//        dual_cell_vol += (1.0/3)*mesh_->cell_volume(ncells[K]);
       } // K (cell) loop
     } // else
+
+//      if (std::abs(node_coordinates[0] - 0.0) < 1.e-12 || std::abs(node_coordinates[0] - 1.0) < 1.e-12 || std::abs(node_coordinates[1] - 0.0) < 1.e-12 || std::abs(node_coordinates[1] - 1.0) < 1.e-12) {
+//      //      U[0][i] = 0.5;
+//      //      U[1][i] = 0.0;
+//      //      U[2][i] = 0.0;
+//      //      U[0][i] = U[0][i];
+//      //      U[1][i] = -U[1][i];
+//      //      U[2][i] = -U[2][i];
+//		phi_beta_cell[0] *= 2.0;
+//		phi_beta_cell[1] *= 2.0;
+//		phi_beta_cell[2] *= 2.0;
+//		dual_cell_vol *= 2.0;
+//	  }
     
+    std::cout << "dual_cell_vol = " << dual_cell_vol << std::endl;
     for (int m = 0; m < 3; ++m) {
       U_pr[m][i] = -(dt/dual_cell_vol)*phi_beta_cell[m] + U[m][i];
     }
@@ -913,7 +950,7 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
   */
 
 
-  //1. calculate volume integral of [0,gH grad (H+B)]
+  // 1a. calculate volume integral of [0,gH grad (H+B)]
   std::vector<double> Uqp(3);
   for (int qp = 0; qp < weights_vol_[K].size(); ++qp ) {
     Uqp = EvalSol_vol(U, qp, K);
@@ -928,11 +965,44 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
 //    std::cout << gradHtot_qp[0] << std::endl;
 //    std::cout << gradHtot_qp[1] << std::endl;
 
+//    double h_qp = Uqp[0];
+//    integral[0] += 0.;
+//    integral[1] += g_*h_qp*gradHtot_qp[0] * weights_vol_[K][qp];
+//    integral[2] += g_*h_qp*gradHtot_qp[1] * weights_vol_[K][qp];
+
+    double phi_j = phi_[K][j][qp];
+
     double h_qp = Uqp[0];
     integral[0] += 0.;
-    integral[1] += g_*h_qp*gradHtot_qp[0] * weights_vol_[K][qp];
-    integral[2] += g_*h_qp*gradHtot_qp[1] * weights_vol_[K][qp];
+    integral[1] += g_*h_qp*gradHtot_qp[0] * phi_j * weights_vol_[K][qp];
+    integral[2] += g_*h_qp*gradHtot_qp[1] * phi_j * weights_vol_[K][qp];
   }
+
+  // 1b. Calculate volume integral of [Hu, Hu*u] times grad phi
+  std::vector<std::vector<double>> flux(2);
+  std::vector<double> phi_j_grad(2);
+  double phi_j;
+  for (int qp = 0; qp < weights_vol_[K].size(); ++qp ) {
+  Uqp = EvalSol_vol(U, qp, K);
+
+  double h_qp = Uqp[0];
+  double qx_qp = Uqp[1];
+  double qy_qp = Uqp[2];
+  double vx_qp = 2.0 * h_qp * qx_qp / (h_qp*h_qp + std::max(h_qp*h_qp, 1.e-14));
+  double vy_qp = 2.0 * h_qp * qy_qp / (h_qp*h_qp + std::max(h_qp*h_qp, 1.e-14));
+
+  double phi_j_x = phi_x_[K][j][qp];
+  double phi_j_y = phi_y_[K][j][qp];
+
+  integral[0] += h_qp*(vx_qp * phi_j_x  + vy_qp * phi_j_y) * weights_vol_[K][qp];
+  integral[1] += h_qp*vx_qp*(vx_qp * phi_j_x  + vy_qp * phi_j_y) * weights_vol_[K][qp];
+  integral[2] += h_qp*vy_qp*(vx_qp * phi_j_x  + vy_qp * phi_j_y) * weights_vol_[K][qp];
+
+ }
+
+  AmanziGeometry::Point node_coordinates;
+  mesh_->node_get_coordinates(j, &node_coordinates);
+
 
   // 2. calculate face integral of [Hu, H*u*u]
   AmanziMesh::Entity_ID_List cfaces;
@@ -969,16 +1039,22 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
 //      std::cout << "vx_qp = " << vx_qp << std::endl;
 //      std::cout << "vy_qp = " << vy_qp << std::endl;
 
-      integral[0] += h_qp*(vx_qp*n[0] + vy_qp*n[1]) * weights_face_[faces_j[f]][qpf];
-      integral[1] += h_qp*vx_qp*(vx_qp*n[0] + vy_qp*n[1]) * weights_face_[faces_j[f]][qpf];
-      integral[2] += h_qp*vy_qp*(vx_qp*n[0] + vy_qp*n[1]) * weights_face_[faces_j[f]][qpf];
+//      integral[0] += h_qp*(vx_qp*n[0] + vy_qp*n[1]) * weights_face_[faces_j[f]][qpf];
+//      integral[1] += h_qp*vx_qp*(vx_qp*n[0] + vy_qp*n[1]) * weights_face_[faces_j[f]][qpf];
+//      integral[2] += h_qp*vy_qp*(vx_qp*n[0] + vy_qp*n[1]) * weights_face_[faces_j[f]][qpf];
+
+      double phi_j = phi_face_[faces_j[f]][j][qpf];
+
+      integral[0] += h_qp*(vx_qp*n[0] + vy_qp*n[1]) * phi_j * weights_face_[faces_j[f]][qpf];
+      integral[1] += h_qp*vx_qp*(vx_qp*n[0] + vy_qp*n[1]) * phi_j * weights_face_[faces_j[f]][qpf];
+      integral[2] += h_qp*vy_qp*(vx_qp*n[0] + vy_qp*n[1]) * phi_j * weights_face_[faces_j[f]][qpf];
 
     }
   }
 
-  for (int m = 0; m < 3; ++m) {
-	  integral[m] /= 3.;
-  }
+//  for (int m = 0; m < 3; ++m) {
+//	  integral[m] /= 3.;
+//  }
 
   // 3. compute viscoisty term
   // 3a. compute U_bar i.e. average
