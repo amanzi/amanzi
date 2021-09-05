@@ -370,7 +370,7 @@
 	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="gravity" type="bool" value="false"/>
-	    <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
+	    <Parameter name="Newton correction" type="string" value="none"/>
 	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
 	  </ParameterList>
 	</ParameterList>

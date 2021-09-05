@@ -278,7 +278,7 @@ TEST(ENERGY_PRECONDITIONER) {
 
     EPK->CommitStep(0.0, 1.0, S);
     num_itrs[loop] = EPK->bdf1_dae()->number_nonlinear_steps();
-    printf("number of nonlinear steps: %d\n", num_itrs[loop]);
+    printf("number of nonlinear steps: %d  enthalphy term=%d\n", num_itrs[loop], 1-loop);
     plist->sublist("PKs").sublist("energy").sublist("operators")
         .set<bool>("include enthalpy in preconditioner", false);
   }

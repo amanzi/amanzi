@@ -49,7 +49,7 @@ double ThermalConductivity_Water::ThermalConductivity(double T)
 
   if (k < 1.e-16) {
     Errors::CutTimeStep msg;
-    msg << "Invalid temperature, T=" << T << " conductivity=" << k;
+    msg << "invalid temperature, T=" << T << " conductivity=" << k;
     Exceptions::amanzi_throw(msg);
   }
   return k;

@@ -81,8 +81,20 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_(const std::string& doma
   } else {
     thermal.set<std::string>("thermal conductivity type", "one-phase polynomial");
   }
-  thermal.set<double>("thermal conductivity of rock", 0.2);
-  thermal.set<double>("thermal conductivity of liquid", 0.1);
+
+  double cv_f(0.606), cv_r(0.2);
+  node = GetUniqueElementByTagsString_("materials", flag);
+  std::vector<DOMNode*> materials = GetChildren_(node, "material", flag);
+
+  node = GetUniqueElementByTagsString_(materials[0], "thermal_properties, rock_conductivity", flag);
+  if (flag) cv_f = GetTextContentD_(node, "W/m/K", true);
+
+  node = GetUniqueElementByTagsString_(materials[0], "thermal_properties, rock_conductivity", flag);
+  if (flag) cv_r = GetTextContentD_(node, "W/m/K", true);
+
+  thermal.set<double>("thermal conductivity of liquid", cv_f);
+  thermal.set<double>("thermal conductivity of rock", cv_r);
+  thermal.set<double>("reference temperature", 298.15);
 
   // insert time integrator
   std::string err_options("energy"), unstr_controls("unstructured_controls, unstr_energy_controls");

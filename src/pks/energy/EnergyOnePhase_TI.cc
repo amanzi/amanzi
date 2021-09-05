@@ -154,7 +154,8 @@ void EnergyOnePhase_PK::UpdatePreconditioner(
     op_preconditioner_advection_->ApplyBCs(false, true, false);
   }
 
-  // finalize preconditioner
+  // verify and finalize preconditioner
+  op_preconditioner_->Verify();
   op_preconditioner_->ComputeInverse();
 }
 

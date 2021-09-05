@@ -195,6 +195,7 @@ int TreeOperator::Apply(const TreeVector& X, TreeVector& Y, double scalar) const
   }
 }
 
+
 int TreeOperator::ApplyUnassembled(const TreeVector& X, TreeVector& Y, double scalar) const
 {
   int ierr(0);
@@ -666,6 +667,20 @@ std::string TreeOperator::PrintDiagnostics(int prefix) const
     }
   }
   return msg.str();
+}
+
+
+/* ******************************************************************
+* Verify quality of underling containers
+****************************************************************** */
+void TreeOperator::Verify() const
+{
+  for (int i = 0; i < row_size_; ++i) {
+    for (int j = 0; j < col_size_; ++j) {
+      auto block = blocks_[i][j];
+      if (block != Teuchos::null) block->Verify();
+    }
+  }
 }
 
 }  // namespace Operators

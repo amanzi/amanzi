@@ -295,8 +295,7 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() 
-               << op_tree_matrix_->PrintDiagnostics() << std::endl
+    *vo_->os() << op_tree_matrix_->PrintDiagnostics() << std::endl
                << "preconditioner:" << std::endl
                << op_tree_pc_->PrintDiagnostics() << std::endl
                << vo_->color("green") << "Initialization of PK is complete: my dT=" << get_dt()
@@ -529,7 +528,6 @@ void FlowEnergyMatrixFracture_PK::UpdateCouplingFluxes_(
   AmanziMesh::Entity_ID_List cells;
   const auto& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
   const auto& mmap = flux.Map();
-
   for (int c = 0; c < ncells_owned_f; ++c) {
     int f = mesh_fracture_->entity_get_parent(AmanziMesh::CELL, c);
     int first = mmap.FirstPointInElement(f);
@@ -542,7 +540,7 @@ void FlowEnergyMatrixFracture_PK::UpdateCouplingFluxes_(
     for (int k = 0; k < ncells; ++k) {
       double tmp = flux[0][first + shift] * dir;
 
-      // since we multiply by temperatur, the model for the flux is
+      // since we multiply by temperature, the model for the flux is
       // q (\eta H / T) * T for both matrix and preconditioner
       if (tmp > 0) {
         int c1 = cells[k];
@@ -630,7 +628,8 @@ int ApplyFlattened(const Operators::TreeOperator& op, const TreeVector& X, TreeV
     for (auto it = Xtv.begin(); it != Xtv.end(); ++it, ++m) {
       auto block = op.get_operator_block(n,m);
       if (block != Teuchos::null) {
-        ierr |= block->Apply(*(*it)->Data(), yN, 1.0);
+        const CompositeVector& xN = *(*it)->Data();
+        ierr |= block->Apply(xN, yN, 1.0);
       }
     }
   }

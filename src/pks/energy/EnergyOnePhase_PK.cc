@@ -155,8 +155,10 @@ void EnergyOnePhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_preconditioner_));
-  op_preconditioner_advection_ = opfactory_adv.Create(oplist_adv, op_preconditioner_);
-  op_preconditioner_advection_->SetBCs(op_bc_enth_, op_bc_enth_);
+  if (prec_include_enthalpy_) {
+    op_preconditioner_advection_ = opfactory_adv.Create(oplist_adv, op_preconditioner_);
+    op_preconditioner_advection_->SetBCs(op_bc_enth_, op_bc_enth_);
+  }
 
   // initialize preconditioner
   AMANZI_ASSERT(ti_list_->isParameter("preconditioner"));
