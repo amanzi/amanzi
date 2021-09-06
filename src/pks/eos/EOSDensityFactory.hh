@@ -25,7 +25,10 @@ namespace AmanziEOS {
 
 class EOSDensityFactory : public Utils::Factory<EOS_Density> {
  public:
-  Teuchos::RCP<EOS_Density> CreateEOS(Teuchos::ParameterList& plist);
+  Teuchos::RCP<EOS_Density> CreateEOS(Teuchos::ParameterList& plist) {
+    std::string eos_typename = plist.get<std::string>("eos type");
+    return Teuchos::rcp(CreateInstance(eos_typename, plist));
+  }
 };
 
 }  // namespace AmanziEOS

@@ -22,7 +22,6 @@ include_directories(${ATK_SOURCE_DIR})
 #
 set(eos_src_files 
     EOSDensityEvaluator.cc
-    EOSDensityFactory.cc 
     EOS_DensityIdealGas.cc
     EOS_DensityVaporInGas.cc
     EOS_DensityWater.cc
