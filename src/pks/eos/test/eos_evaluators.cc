@@ -13,19 +13,19 @@
 
 #include "UnitTest++.h"
 
-#include "EOSDensityFactory.hh"
-#include "EOS_DensityWater.hh"
-#include "EOS_DensityWaterFEHM.hh"
+#include "EOS_Density.hh"
+#include "EOSFactory.hh"
+#include "H2O_Density.hh"
+#include "H2O_DensityFEHM.hh"
+#include "H2O_ViscosityFEHM.hh"
 #include "LookupTable.hh"
-#include "ViscosityBaseFactory.hh"
-#include "ViscosityWaterFEHM.hh"
 
 
 TEST(DensityEOS) {
   using namespace Amanzi::AmanziEOS;
 
   Teuchos::ParameterList plist;
-  EOS_DensityWater eos(plist);
+  H2O_Density eos(plist);
  
   double p(101325.0), T0(273.15), d0, d1;
   for (double T = 0; T < 30; T += 0.1) {
@@ -41,7 +41,7 @@ TEST(DensityEOS) {
   }
 
   // next EOS
-  EOS_DensityWaterFEHM eos_fehm(plist);
+  H2O_DensityFEHM eos_fehm(plist);
  
   p = 101325.0;
   for (int loop = 0; loop < 5; loop++) {
@@ -63,7 +63,7 @@ TEST(ViscosityEOS) {
   using namespace Amanzi::AmanziEOS;
 
   Teuchos::ParameterList plist;
-  ViscosityWaterFEHM eos(plist);
+  H2O_ViscosityFEHM eos(plist);
  
   double p(101325.0), T0(273.15), nu0, nu1;
   for (double T = 1; T < 300; T += 0.5) {
@@ -122,7 +122,7 @@ TEST(FactoryEOS) {
          .set<std::string>("field name", "density")
          .set<std::string>("eos type", "liquid water " + name);
 
-    EOSDensityFactory factory;
+    EOSFactory<EOS_Density> factory;
     auto eos = factory.CreateEOS(plist);
 
     std::cout << name << ": water density at 20C and 1atm = " << eos->Density(293.15, 101325.0) << std::endl;
@@ -136,8 +136,8 @@ TEST(FactoryEOS) {
          .set<std::string>("field name", "viscosity")
          .set<std::string>("eos type", "liquid water " + name);
 
-    ViscosityBaseFactory factory;
-    auto eos = factory.CreateViscosity(plist);
+    EOSFactory<EOS_Viscosity> factory;
+    auto eos = factory.CreateEOS(plist);
 
     std::cout << name << ": water viscosity at 20C and 1atm = " << eos->Viscosity(293.15, 101325.0) << std::endl;
   }

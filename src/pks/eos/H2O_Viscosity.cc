@@ -13,13 +13,13 @@
 */
 
 #include "errors.hh"
-#include "ViscosityWater.hh"
+#include "H2O_Viscosity.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-ViscosityWater::ViscosityWater(Teuchos::ParameterList& eos_plist)
-  : ViscosityBase(eos_plist),
+H2O_Viscosity::H2O_Viscosity(Teuchos::ParameterList& eos_plist)
+  : EOS_Viscosity(eos_plist),
     kav1_(998.333),
     kbv1_(-8.1855),
     kcv1_(0.00585),
@@ -28,7 +28,7 @@ ViscosityWater::ViscosityWater(Teuchos::ParameterList& eos_plist)
     kT1_(293.15) {};
 
 
-double ViscosityWater::Viscosity(double T, double p) {
+double H2O_Viscosity::Viscosity(double T, double p) {
   double dT = kT1_ - T;
   double xi;
   if (T < kT1_) {
@@ -49,14 +49,14 @@ double ViscosityWater::Viscosity(double T, double p) {
 };
 
 
-double ViscosityWater::DViscosityDT(double T, double p) {
+double H2O_Viscosity::DViscosityDT(double T, double p) {
   Errors::Message message("EOS viscosity of water: derivative not implemented");
   Exceptions::amanzi_throw(message);
   return -1.0;
 };
 
 
-double ViscosityWater::DViscosityDp(double T, double p) {
+double H2O_Viscosity::DViscosityDp(double T, double p) {
   Errors::Message message("EOS viscosity of water: derivative not implemented");
   Exceptions::amanzi_throw(message);
   return -1.0;

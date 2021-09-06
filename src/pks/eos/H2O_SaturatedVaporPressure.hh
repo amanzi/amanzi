@@ -11,20 +11,21 @@
   Saturated vapor pressure for vapor over water or ice, Sonntag (1990)
 */
 
-#ifndef AMANZI_EOS_SATURATED_VAPOR_PRESSURE_WATER_HH_
-#define AMANZI_EOS_SATURATED_VAPOR_PRESSURE_WATER_HH_
+#ifndef AMANZI_EOS_H2O_SATURATED_VAPOR_PRESSURE_HH_
+#define AMANZI_EOS_H2O_SATURATED_VAPOR_PRESSURE_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
 #include "Factory.hh"
-#include "SaturatedVaporPressure.hh"
+
+#include "EOS_SaturatedVaporPressure.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-class SaturatedVaporPressure_Water : public SaturatedVaporPressure {
+class H2O_SaturatedVaporPressure : public EOS_SaturatedVaporPressure {
  public:
-  explicit SaturatedVaporPressure_Water(Teuchos::ParameterList& plist);
+  explicit H2O_SaturatedVaporPressure(Teuchos::ParameterList& plist);
 
   virtual double Pressure(double T);
   virtual double DPressureDT(double T);
@@ -34,7 +35,7 @@ class SaturatedVaporPressure_Water : public SaturatedVaporPressure {
   const double ka0_;
   const double ka_, kb_, kc_, kd_;
 
-  static Utils::RegisteredFactory<SaturatedVaporPressure, SaturatedVaporPressure_Water> factory_;
+  static Utils::RegisteredFactory<EOS_SaturatedVaporPressure, H2O_SaturatedVaporPressure> factory_;
 };
 
 }  // namespace AmanziEOS

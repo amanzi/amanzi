@@ -15,7 +15,7 @@
 #include "errors.hh"
 
 #include "EOSDensityEvaluator.hh"
-#include "EOSDensityFactory.hh"
+#include "EOSFactory.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
@@ -68,7 +68,7 @@ EOSDensityEvaluator::EOSDensityEvaluator(Teuchos::ParameterList& plist) :
 
   // Construct my EOS model
   AMANZI_ASSERT(plist_.isSublist("EOS parameters"));
-  EOSDensityFactory eos_fac;
+  EOSFactory<EOS_Density> eos_fac;
   eos_ = eos_fac.CreateEOS(plist_.sublist("EOS parameters"));
 };
 

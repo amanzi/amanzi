@@ -11,8 +11,8 @@
   EOS for the ideal gas.
 */
 
-#ifndef AMANZI_EOS_DENSITY_IDEAL_GAS_HH_
-#define AMANZI_EOS_DENSITY_IDEAL_GAS_HH_
+#ifndef AMANZI_EOS_IDEAL_GAS_DENSITY_HH_
+#define AMANZI_EOS_IDEAL_GAS_DENSITY_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -23,9 +23,9 @@ namespace Amanzi {
 namespace AmanziEOS {
  
 // Equation of State model
-class EOS_DensityIdealGas : public EOS_Density {
+class IdealGas_Density : public EOS_Density {
  public:
-  explicit EOS_DensityIdealGas(Teuchos::ParameterList& eos_plist);
+  explicit IdealGas_Density(Teuchos::ParameterList& eos_plist);
 
   virtual double MolarDensity(double T, double p);
   virtual double DMolarDensityDT(double T, double p);
@@ -41,7 +41,7 @@ class EOS_DensityIdealGas : public EOS_Density {
   double R_;
 
  private:
-  static Utils::RegisteredFactory<EOS_Density, EOS_DensityIdealGas> factory_;
+  static Utils::RegisteredFactory<EOS_Density, IdealGas_Density> factory_;
 };
 
 }  // namespace AmanziEOS

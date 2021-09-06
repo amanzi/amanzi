@@ -11,8 +11,8 @@
   EOS is purely virtual base class for an equation of state.
 */
 
-#ifndef AMANZI_EOS_HH_
-#define AMANZI_EOS_HH_
+#ifndef AMANZI_EOS_DENSITY_HH_
+#define AMANZI_EOS_DENSITY_HH_
 
 #include "Teuchos_ParameterList.hpp"
 

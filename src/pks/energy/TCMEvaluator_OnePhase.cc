@@ -34,7 +34,7 @@ TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(Teuchos::ParameterList& plist) :
 
   AMANZI_ASSERT(plist_.isSublist("thermal conductivity parameters"));
   Teuchos::ParameterList sublist = plist_.sublist("thermal conductivity parameters");
-  tc_ = Teuchos::rcp(new AmanziEOS::ThermalConductivity_Water(sublist));
+  tc_ = Teuchos::rcp(new AmanziEOS::H2O_ThermalConductivity(sublist));
 
   k_rock_ = sublist.get<double>("thermal conductivity of rock");
 }

@@ -11,12 +11,12 @@
   EOS for liquid water for T between 0.001 and 360 C from FEHM manual
 */
 
-#include "EOS_DensityWaterFEHM.hh"
+#include "H2O_DensityFEHM.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-EOS_DensityWaterFEHM::EOS_DensityWaterFEHM(Teuchos::ParameterList& eos_plist)
+H2O_DensityFEHM::H2O_DensityFEHM(Teuchos::ParameterList& eos_plist)
   : EOS_Density(eos_plist),
     y0_(1.0),            z0_(1.0009476e-03),
     y1_(1.7472599e-02),  z1_(1.6812589e-05),
@@ -31,7 +31,7 @@ EOS_DensityWaterFEHM::EOS_DensityWaterFEHM(Teuchos::ParameterList& eos_plist)
     T0_(273.15) {};
 
 
-double EOS_DensityWaterFEHM::Density(double T, double p) {
+double H2O_DensityFEHM::Density(double T, double p) {
   double p1(p / 1e+6), t1(T - T0_);
   double p2(p1 * p1), t2(t1 * t1);
   double p3(p2 * p1), t3(t2 * t1);
@@ -43,7 +43,7 @@ double EOS_DensityWaterFEHM::Density(double T, double p) {
 }
 
 
-double EOS_DensityWaterFEHM::DDensityDT(double T, double p) {
+double H2O_DensityFEHM::DDensityDT(double T, double p) {
   double p1(p / 1e+6), t1(T - T0_);
   double p2(p1 * p1), t2(t1 * t1);
   double p3(p2 * p1), t3(t2 * t1);
@@ -59,7 +59,7 @@ double EOS_DensityWaterFEHM::DDensityDT(double T, double p) {
 }
 
 
-double EOS_DensityWaterFEHM::DDensityDp(double T, double p) {
+double H2O_DensityFEHM::DDensityDp(double T, double p) {
   double p1(p / 1e+6), t1(T - T0_);
   double p2(p1 * p1), t2(t1 * t1);
   double p3(p2 * p1), t3(t2 * t1);

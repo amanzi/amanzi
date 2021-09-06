@@ -8,39 +8,38 @@
 
   Author: Ethan Coon (ecoon@lanl.gov)
 
-  Viscosity for liquid water for T between 0.001 and 360 C from FEHM manual
+  Viscosity for liquid water.
 */
 
-#ifndef AMANZI_EOS_VISCOSITY_WATER_FEHM_HH_
-#define AMANZI_EOS_VISCOSITY_WATER_FEHM_HH_
+#ifndef AMANZI_EOS_H2O_VISCOSITY_HH_
+#define AMANZI_EOS_H2O_VISCOSITY_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
 #include "dbc.hh"
 #include "Factory.hh"
 
-#include "ViscosityBase.hh"
+#include "EOS_Viscosity.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-// Equation of State model
-class ViscosityWaterFEHM : public ViscosityBase {
+class H2O_Viscosity : public EOS_Viscosity {
  public:
   explicit
-  ViscosityWaterFEHM(Teuchos::ParameterList& eos_plist);
+  H2O_Viscosity(Teuchos::ParameterList& eos_plist);
 
   virtual double Viscosity(double T, double p);
   virtual double DViscosityDT(double T, double p);
   virtual double DViscosityDp(double T, double p);
 
  protected:
-  double y0_, y1_, y2_, y3_, y4_, y5_, y6_, y7_, y8_, y9_;
-  double z0_, z1_, z2_, z3_, z4_, z5_, z6_, z7_, z8_, z9_;
-  double T0_;
+  // constants for water, hard-coded 
+  const double kav1_, kbv1_, kcv1_;
+  const double kbv2_, kcv2_, kT1_;
 
  private:
-  static Utils::RegisteredFactory<ViscosityBase, ViscosityWaterFEHM> factory_;
+  static Utils::RegisteredFactory<EOS_Viscosity, H2O_Viscosity> factory_;
 };
 
 }  // namespace AmanziEOS

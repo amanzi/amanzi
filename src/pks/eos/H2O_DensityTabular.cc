@@ -12,13 +12,13 @@
   pressure between 634 Pa and 110 MPa
 */
 
-#include "ViscosityWaterTabular.hh"
+#include "H2O_DensityTabular.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-ViscosityWaterTabular::ViscosityWaterTabular(Teuchos::ParameterList& eos_plist)
-  : ViscosityBase(eos_plist)
+H2O_DensityTabular::H2O_DensityTabular(Teuchos::ParameterList& eos_plist)
+  : EOS_Density(eos_plist)
 {
   table_ = Teuchos::rcp(new LookupTable(eos_plist_));
 }

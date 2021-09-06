@@ -12,8 +12,8 @@
   pressure between 634 Pa and 110 MPa
 */
 
-#ifndef AMANZI_EOS_LIQUID_WATER_TABULAR_HH_
-#define AMANZI_EOS_LIQUID_WATER_TABULAR_HH_
+#ifndef AMANZI_EOS_H2O_DENSITY_TABULAR_HH_
+#define AMANZI_EOS_H2O_DENSITY_TABULAR_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -26,9 +26,9 @@ namespace Amanzi {
 namespace AmanziEOS {
 
 // Equation of State model
-class EOS_DensityWaterTabular : public EOS_Density {
+class H2O_DensityTabular : public EOS_Density {
  public:
-  explicit EOS_DensityWaterTabular(Teuchos::ParameterList& eos_plist);
+  explicit H2O_DensityTabular(Teuchos::ParameterList& eos_plist);
 
   virtual double Density(double T, double p) override { return table_->Function(T, p); }
   virtual double DDensityDT(double T, double p) override { return table_->DFunctionDT(T, p); }
@@ -38,7 +38,7 @@ class EOS_DensityWaterTabular : public EOS_Density {
   virtual double DMolarDensityDT(double T, double p) override { return DDensityDT(T, p) / M_; }
   virtual double DMolarDensityDp(double T, double p) override { return DDensityDp(T, p) / M_; }
 
-  static Utils::RegisteredFactory<EOS_Density, EOS_DensityWaterTabular> factory_;
+  static Utils::RegisteredFactory<EOS_Density, H2O_DensityTabular> factory_;
 
  private:
   Teuchos::RCP<LookupTable> table_;

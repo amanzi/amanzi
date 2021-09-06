@@ -130,7 +130,7 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
          .set<std::string>("molar fraction key", "molar_fraction_gas");
     elist.sublist("molar_fraction_gas")
          .sublist("vapor pressure model parameters")
-         .set<std::string>("vapor pressure model type", "water vapor over water/ice");
+         .set<std::string>("eos type", "water vapor over water/ice");
   }
 
   // Fields for liquid

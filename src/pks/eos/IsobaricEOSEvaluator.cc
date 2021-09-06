@@ -11,7 +11,7 @@
   The interface between state/data and the model, an EOS.
 */
 
-#include "EOSDensityFactory.hh"
+#include "EOSFactory.hh"
 #include "IsobaricEOSEvaluator.hh"
 
 namespace Amanzi {
@@ -58,7 +58,7 @@ IsobaricEOSEvaluator::IsobaricEOSEvaluator(Teuchos::ParameterList& plist) :
 
   // Construct my EOS model
   AMANZI_ASSERT(plist_.isSublist("EOS parameters"));
-  EOSDensityFactory eos_fac;
+  EOSFactory<EOS_Density> eos_fac;
   eos_ = eos_fac.CreateEOS(plist_.sublist("EOS parameters"));
 };
 

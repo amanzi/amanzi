@@ -13,13 +13,13 @@
 */
 
 #include "errors.hh"
-#include "ViscosityWaterFEHM.hh"
+#include "H2O_ViscosityFEHM.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-ViscosityWaterFEHM::ViscosityWaterFEHM(Teuchos::ParameterList& eos_plist)
-  : ViscosityBase(eos_plist),
+H2O_ViscosityFEHM::H2O_ViscosityFEHM(Teuchos::ParameterList& eos_plist)
+  : EOS_Viscosity(eos_plist),
     y0_(0.17409149e-02),  z0_(1.0),
     y1_(0.18894882e-04),  z1_(0.10523153e-01),
     y2_(-0.66439332e-07), z2_(-0.22658391e-05),
@@ -33,7 +33,7 @@ ViscosityWaterFEHM::ViscosityWaterFEHM(Teuchos::ParameterList& eos_plist)
     T0_(273.15) {};
 
 
-double ViscosityWaterFEHM::Viscosity(double T, double p) {
+double H2O_ViscosityFEHM::Viscosity(double T, double p) {
   double p1(p / 1e+6), t1(T - T0_);
   double p2(p1 * p1), t2(t1 * t1);
   double p3(p2 * p1), t3(t2 * t1);
@@ -45,7 +45,7 @@ double ViscosityWaterFEHM::Viscosity(double T, double p) {
 }
 
 
-double ViscosityWaterFEHM::DViscosityDT(double T, double p) {
+double H2O_ViscosityFEHM::DViscosityDT(double T, double p) {
   double p1(p / 1e+6), t1(T - T0_);
   double p2(p1 * p1), t2(t1 * t1);
   double p3(p2 * p1), t3(t2 * t1);
@@ -61,7 +61,7 @@ double ViscosityWaterFEHM::DViscosityDT(double T, double p) {
 };
 
 
-double ViscosityWaterFEHM::DViscosityDp(double T, double p) {
+double H2O_ViscosityFEHM::DViscosityDp(double T, double p) {
   Errors::Message message("EOS viscosity of water: derivative not implemented");
   Exceptions::amanzi_throw(message);
   return -1.0;

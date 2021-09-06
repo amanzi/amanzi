@@ -11,17 +11,17 @@
   Basic interface of viscosity.
 */
 
-#ifndef AMANZI_EOS_VISCOSITY_BASE_HH_
-#define AMANZI_EOS_VISCOSITY_BASE_HH_
+#ifndef AMANZI_EOS_VISCOSITY_HH_
+#define AMANZI_EOS_VISCOSITY_HH_
 
 namespace Amanzi {
 namespace AmanziEOS {
 
 // Equation of State model
-class ViscosityBase {
+class EOS_Viscosity {
  public:
-  ViscosityBase(Teuchos::ParameterList& eos_plist) : eos_plist_(eos_plist) {};
-  virtual ~ViscosityBase() {};
+  EOS_Viscosity(Teuchos::ParameterList& eos_plist) : eos_plist_(eos_plist) {};
+  virtual ~EOS_Viscosity() {};
 
   virtual double Viscosity(double T, double p) = 0;
   virtual double DViscosityDT(double T, double p) = 0;

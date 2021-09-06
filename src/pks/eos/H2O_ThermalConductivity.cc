@@ -14,7 +14,7 @@
 #include "dbc.hh"
 #include "errors.hh"
 
-#include "ThermalConductivity_Water.hh"
+#include "H2O_ThermalConductivity.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
@@ -23,7 +23,7 @@ namespace AmanziEOS {
 * Constructor takes a parameter list to override defaulr values. This
 * may be useful for unit tests.
 ******************************************************************* */
-ThermalConductivity_Water::ThermalConductivity_Water(Teuchos::ParameterList& eos_plist) :
+H2O_ThermalConductivity::H2O_ThermalConductivity(Teuchos::ParameterList& eos_plist) :
     eos_plist_(eos_plist),
     ka0_(-1.48445),
     ka1_(4.12292),
@@ -42,7 +42,7 @@ ThermalConductivity_Water::ThermalConductivity_Water(Teuchos::ParameterList& eos
 /* *******************************************************************
 * Main routine uses pre-computed coefficients.
 ******************************************************************* */
-double ThermalConductivity_Water::ThermalConductivity(double T)
+double H2O_ThermalConductivity::ThermalConductivity(double T)
 {
   double Ts = T / Tref_;
   double k = ka0_ + (ka1_ + ka2_ * Ts) * Ts;
@@ -59,7 +59,7 @@ double ThermalConductivity_Water::ThermalConductivity(double T)
 /* *******************************************************************
 * Main routine uses pre-computed coefficients.
 ******************************************************************* */
-double ThermalConductivity_Water::DThermalConductivityDT(double T)
+double H2O_ThermalConductivity::DThermalConductivityDT(double T)
 {
   double Ts = T / Tref_;
   double dkdT = (ka1_ + 2 * ka2_ * Ts) / Tref_;
@@ -71,7 +71,7 @@ double ThermalConductivity_Water::DThermalConductivityDT(double T)
 /* *******************************************************************
 * Here we can override some parameters.
 ******************************************************************* */
-void ThermalConductivity_Water::InitializeFromPlist_()
+void H2O_ThermalConductivity::InitializeFromPlist_()
 {
   kref_ = eos_plist_.get<double>("thermal conductivity of liquid", kref_);
   Tref_ = eos_plist_.get<double>("reference temperature", Tref_);

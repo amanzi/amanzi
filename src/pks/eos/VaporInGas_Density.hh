@@ -14,22 +14,23 @@
   EOS interface without serious work.
 */
 
-#ifndef AMANZI_EOS_DENSITY_VAPOR_IN_GAS_HH_
-#define AMANZI_EOS_DENSITY_VAPOR_IN_GAS_HH_
+#ifndef AMANZI_EOS_VAPOR_IN_GAS_DENSITY_HH_
+#define AMANZI_EOS_VAPOR_IN_GAS_DENSITY_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
 #include "dbc.hh"
 
 #include "EOS_Density.hh"
+#include "Factory.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
 // Equation of State model
-class EOS_DensityVaporInGas : public EOS_Density {
+class VaporInGas_Density : public EOS_Density {
  public:
-  EOS_DensityVaporInGas(Teuchos::ParameterList& eos_plist);
+  VaporInGas_Density(Teuchos::ParameterList& eos_plist);
 
   double Density(double T, double p) { AMANZI_ASSERT(0); return 0.0; }
   double DDensityDT(double T, double p)  { AMANZI_ASSERT(0); return 0.0; }
@@ -46,7 +47,7 @@ class EOS_DensityVaporInGas : public EOS_Density {
   Teuchos::RCP<EOS_Density> gas_eos_;
 
  private:
-  static Utils::RegisteredFactory<EOS_Density, EOS_DensityVaporInGas> factory_;
+  static Utils::RegisteredFactory<EOS_Density, VaporInGas_Density> factory_;
 };
 
 }  // namespace AmanziEOS

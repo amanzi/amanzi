@@ -11,18 +11,18 @@
   Constant viscosity EOS, defaults to reasonable values for water.
 */
 
-#include "ViscosityConstant.hh"
+#include "H2O_ViscosityConstant.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-ViscosityConstant::ViscosityConstant(Teuchos::ParameterList& eos_plist)
-  : ViscosityBase(eos_plist) {
+H2O_ViscosityConstant::H2O_ViscosityConstant(Teuchos::ParameterList& eos_plist)
+  : EOS_Viscosity(eos_plist) {
   InitializeFromPlist_();
 };
 
 
-void ViscosityConstant::InitializeFromPlist_() {
+void H2O_ViscosityConstant::InitializeFromPlist_() {
   visc_ = eos_plist_.get<double>("viscosity", 8.9e-4);
 };
 

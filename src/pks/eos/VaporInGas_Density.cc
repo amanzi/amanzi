@@ -13,8 +13,9 @@
   upon omega. It's not really needed, and if it were, would not fit the 
 */
 
-#include "EOSDensityFactory.hh"
-#include "EOS_DensityVaporInGas.hh"
+#include "EOS_Density.hh"
+#include "VaporInGas_Density.hh"
+#include "EOSFactory.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
@@ -22,16 +23,16 @@ namespace AmanziEOS {
 /* *******************************************************************
 * Constructor takes a parameter list with EOS parameters.
 ******************************************************************* */
-EOS_DensityVaporInGas::EOS_DensityVaporInGas(Teuchos::ParameterList& eos_plist)
+VaporInGas_Density::VaporInGas_Density(Teuchos::ParameterList& eos_plist)
   : EOS_Density(eos_plist) {
   InitializeFromPlist_();
 }
 
 
-void EOS_DensityVaporInGas::InitializeFromPlist_()
+void VaporInGas_Density::InitializeFromPlist_()
 {
   Teuchos::ParameterList gas_plist = eos_plist_.sublist("gas EOS parameters");
-  EOSDensityFactory eos_factory;
+  EOSFactory<EOS_Density> eos_factory;
   gas_eos_ = eos_factory.CreateEOS(gas_plist);
 }
 

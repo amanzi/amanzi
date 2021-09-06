@@ -22,24 +22,22 @@ include_directories(${ATK_SOURCE_DIR})
 #
 set(eos_src_files 
     EOSDensityEvaluator.cc
-    EOS_DensityIdealGas.cc
-    EOS_DensityVaporInGas.cc
-    EOS_DensityWater.cc
-    EOS_DensityWaterFEHM.cc
-    EOS_DensityWaterTabular.cc
+    EOSViscosityEvaluator.cc
+    H2O_Density.cc
+    H2O_DensityFEHM.cc
+    H2O_ThermalConductivity.cc
+    H2O_SaturatedVaporPressure.cc
+    H2O_Viscosity.cc
+    H2O_ViscosityConstant.cc
+    H2O_ViscosityFEHM.cc
+    H2O_ViscosityTabular.cc
+    H2O_DensityTabular.cc
     Henry_Solubility.cc
+    IdealGas_Density.cc
     IsobaricEOSEvaluator.cc
     LookupTable.cc
     MolarFractionGasEvaluator.cc
-    ThermalConductivity_Water.cc
-    SaturatedVaporPressure_Water.cc
-    SaturatedVaporPressureFactory.cc
-    ViscosityConstant.cc
-    ViscosityWater.cc
-    ViscosityWaterFEHM.cc
-    ViscosityWaterTabular.cc
-    ViscosityBaseFactory.cc
-    ViscosityEvaluator.cc
+    VaporInGas_Density.cc
    )
 
 add_amanzi_library(eos
@@ -54,29 +52,28 @@ endif()
 #
 set(eos_inc_files 
     EOSDensityEvaluator.hh
-    EOSDensityFactory.hh
+    EOSViscosityEvaluator.hh
     EOS_Density.hh
-    EOS_DensityIdealGas.hh
-    EOS_DensityVaporInGas.hh
-    EOS_DensityWater.hh
-    EOS_DensityWaterFEHM.hh
-    EOS_DensityWaterTabular.hh
+    EOS_SaturatedVaporPressure.hh
+    H2O_ThermalConductivity.hh
+    EOS_Viscosity.hh
     eos_registration.hh
+    EOSFactory.hh
+    H2O_Density.hh
+    H2O_DensityFEHM.hh
+    H2O_DensityTabular.hh
+    H2O_SaturatedVaporPressure.hh
+    H2O_Viscosity.hh
+    H2O_ViscosityConstant.hh
+    H2O_ViscosityFEHM.hh
+    H2O_ViscosityTabular.hh
     Henry_Solubility.hh
+    IdealGas_Density.hh
     IsobaricEOSEvaluator.hh
     LookupTable.hh
     MolarFractionGasEvaluator.hh
-    ThermalConductivity_Water.hh
-    SaturatedVaporPressure.hh
-    SaturatedVaporPressure_Water.hh
-    SaturatedVaporPressureFactory.hh
-    ViscosityBase.hh
-    ViscosityBaseFactory.hh
-    ViscosityConstant.hh
-    ViscosityWater.hh
-    ViscosityWaterFEHM.hh
-    ViscosityWaterTabular.hh
-    ViscosityEvaluator.hh)
+    VaporInGas_Density.hh
+   )
 
 # install headers into a subdirectory
 install(FILES ${eos_inc_files} DESTINATION include/amanzi)

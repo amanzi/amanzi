@@ -11,22 +11,22 @@
   EOSFieldEvaluator is the interface between state/data and the model, an EOS.
 */
 
-#ifndef AMANZI_EOS_VISC_EVALUATOR_HH_
-#define AMANZI_EOS_VISC_EVALUATOR_HH_
+#ifndef AMANZI_EOS_VISCOSITY_EVALUATOR_HH_
+#define AMANZI_EOS_VISCOSITY_EVALUATOR_HH_
 
-#include "ViscosityBase.hh"
+#include "EOS_Viscosity.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-class ViscosityEvaluator : public SecondaryVariableFieldEvaluator {
+class EOSViscosityEvaluator : public SecondaryVariableFieldEvaluator {
  public:
   // constructor format for all derived classes
   explicit
-  ViscosityEvaluator(Teuchos::ParameterList& plist);
+  EOSViscosityEvaluator(Teuchos::ParameterList& plist);
 
-  ViscosityEvaluator(const ViscosityEvaluator& other);
+  EOSViscosityEvaluator(const EOSViscosityEvaluator& other);
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
   // Required methods from SecondaryVariableFieldEvaluator
@@ -37,14 +37,14 @@ class ViscosityEvaluator : public SecondaryVariableFieldEvaluator {
 
  protected:
   // the actual model
-  Teuchos::RCP<ViscosityBase> visc_;
+  Teuchos::RCP<EOS_Viscosity> visc_;
 
   // Keys for fields
   // dependencies
   Key temp_key_, pres_key_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator, ViscosityEvaluator> factory_;
+  static Utils::RegisteredFactory<FieldEvaluator, EOSViscosityEvaluator> factory_;
 };
 
 }  // namespace AmanziEOS

@@ -11,8 +11,8 @@
   Thermal conductivity for liquid water.
 */
 
-#ifndef AMANZI_EOS_THERMAL_CONDUCTIVITY_WATER_HH_
-#define AMANZI_EOS_THERMAL_CONDUCTIVITY_WATER_HH_
+#ifndef AMANZI_EOS_H2O_THERMAL_CONDUCTIVITY_HH_
+#define AMANZI_EOS_H2O_THERMAL_CONDUCTIVITY_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -20,10 +20,10 @@ namespace Amanzi {
 namespace AmanziEOS {
 
 // Equation of State model
-class ThermalConductivity_Water {
+class H2O_ThermalConductivity {
  public:
   explicit
-  ThermalConductivity_Water(Teuchos::ParameterList& eos_plist);
+  H2O_ThermalConductivity(Teuchos::ParameterList& eos_plist);
 
   virtual double ThermalConductivity(double T);
   virtual double DThermalConductivityDT(double T);

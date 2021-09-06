@@ -8,11 +8,11 @@
 
   Author: Ethan Coon (ecoon@lanl.gov)
 
-  EOS for liquid water for T between 0 and 30 C. Need a reference.
+  EOS for liquid water for T between 0.001 and 360 C from FEHM manual
 */
 
-#ifndef AMANZI_EOS_LIQUID_WATER_HH_
-#define AMANZI_EOS_LIQUID_WATER_HH_
+#ifndef AMANZI_EOS_H2O_DENSITY_FEHM_HH_
+#define AMANZI_EOS_H2O_DENSITY_FEHM_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -23,9 +23,9 @@ namespace Amanzi {
 namespace AmanziEOS {
 
 // Equation of State model
-class EOS_DensityWater : public EOS_Density {
+class H2O_DensityFEHM : public EOS_Density {
  public:
-  EOS_DensityWater(Teuchos::ParameterList& eos_plist);
+  explicit H2O_DensityFEHM(Teuchos::ParameterList& eos_plist);
 
   virtual double Density(double T, double p) override;
   virtual double DDensityDT(double T, double p) override;
@@ -39,13 +39,11 @@ class EOS_DensityWater : public EOS_Density {
   // constants for water, hard-coded because it would be crazy to try to come
   // up with names for these in a parameter list...
   // -- temperature dependence of density
-  const double ka_, kb_, kc_, kd_;
-  const double kT0_;
+  double y0_, y1_, y2_, y3_, y4_, y5_, y6_, y7_, y8_, y9_;
+  double z0_, z1_, z2_, z3_, z4_, z5_, z6_, z7_, z8_, z9_;
+  double T0_;
 
-  // -- pressure dependence of density
-  const double kalpha_, kp0_;
-
-  static Utils::RegisteredFactory<EOS_Density, EOS_DensityWater> factory_;
+  static Utils::RegisteredFactory<EOS_Density, H2O_DensityFEHM> factory_;
 };
 
 }  // namespace AmanziEOS

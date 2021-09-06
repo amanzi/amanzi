@@ -11,15 +11,15 @@
   Base class for saturated vapor pressure.
 */
 
-#ifndef AMANZI_EOS_SATURATED_VAPOR_PRESSURE_BASE_HH_
-#define AMANZI_EOS_SATURATED_VAPOR_PRESSURE_BASE_HH_
+#ifndef AMANZI_EOS_SATURATED_VAPOR_PRESSURE_HH_
+#define AMANZI_EOS_SATURATED_VAPOR_PRESSURE_HH_
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-class SaturatedVaporPressure {
+class EOS_SaturatedVaporPressure {
  public:
-  virtual ~SaturatedVaporPressure() {};
+  virtual ~EOS_SaturatedVaporPressure() {};
 
   virtual double Pressure(double T) = 0;
   virtual double DPressureDT(double T) = 0;

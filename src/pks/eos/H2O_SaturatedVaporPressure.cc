@@ -15,12 +15,12 @@
 
 #include "errors.hh"
 
-#include "SaturatedVaporPressure_Water.hh"
+#include "H2O_SaturatedVaporPressure.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-SaturatedVaporPressure_Water::SaturatedVaporPressure_Water(
+H2O_SaturatedVaporPressure::H2O_SaturatedVaporPressure(
     Teuchos::ParameterList& plist)
   : plist_(plist),
     ka0_(16.635764),
@@ -30,7 +30,7 @@ SaturatedVaporPressure_Water::SaturatedVaporPressure_Water(
     kd_(2.433502) {};
 
 
-double SaturatedVaporPressure_Water::Pressure(double T) {
+double H2O_SaturatedVaporPressure::Pressure(double T) {
   if (T < 100.0 || T > 373.0) {
     Errors::CutTimeStep msg;
     msg << "Invalid temperature, T = " << T;
@@ -40,7 +40,7 @@ double SaturatedVaporPressure_Water::Pressure(double T) {
 }
 
 
-double SaturatedVaporPressure_Water::DPressureDT(double T) {
+double H2O_SaturatedVaporPressure::DPressureDT(double T) {
   if (T < 100.0 || T > 373.0) {
     std::cout << "Invalid temperature, T = " << T << std::endl;
     Errors::Message msg("Cut time step");

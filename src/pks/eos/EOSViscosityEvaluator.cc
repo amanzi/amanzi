@@ -12,13 +12,13 @@
   model, a VPM.
 */
 
-#include "ViscosityBaseFactory.hh"
-#include "ViscosityEvaluator.hh"
+#include "EOSFactory.hh"
+#include "EOSViscosityEvaluator.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-ViscosityEvaluator::ViscosityEvaluator(Teuchos::ParameterList& plist) :
+EOSViscosityEvaluator::EOSViscosityEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist)
 {
   // my keys
@@ -36,24 +36,24 @@ ViscosityEvaluator::ViscosityEvaluator(Teuchos::ParameterList& plist) :
 
   // Construct my Viscosity model
   AMANZI_ASSERT(plist_.isSublist("EOS parameters"));
-  ViscosityBaseFactory visc_fac;
-  visc_ = visc_fac.CreateViscosity(plist_.sublist("EOS parameters"));
+  EOSFactory<EOS_Viscosity> eos_fac;
+  visc_ = eos_fac.CreateEOS(plist_.sublist("EOS parameters"));
 }
 
 
-ViscosityEvaluator::ViscosityEvaluator(const ViscosityEvaluator& other) :
+EOSViscosityEvaluator::EOSViscosityEvaluator(const EOSViscosityEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     visc_(other.visc_),
     temp_key_(other.temp_key_) {};
 
 
-Teuchos::RCP<FieldEvaluator> ViscosityEvaluator::Clone() const {
-  return Teuchos::rcp(new ViscosityEvaluator(*this));
+Teuchos::RCP<FieldEvaluator> EOSViscosityEvaluator::Clone() const {
+  return Teuchos::rcp(new EOSViscosityEvaluator(*this));
 }
 
 
-void ViscosityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
-                         const Teuchos::Ptr<CompositeVector>& result)
+void EOSViscosityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
+                            const Teuchos::Ptr<CompositeVector>& result)
 {
   // Pull dependencies out of state.
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
@@ -74,7 +74,7 @@ void ViscosityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 }
 
 
-void ViscosityEvaluator::EvaluateFieldPartialDerivative_(
+void EOSViscosityEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S, Key wrt_key,
     const Teuchos::Ptr<CompositeVector>& result)
 {
