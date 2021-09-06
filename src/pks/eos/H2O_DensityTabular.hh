@@ -30,9 +30,23 @@ class H2O_DensityTabular : public EOS_Density {
  public:
   explicit H2O_DensityTabular(Teuchos::ParameterList& eos_plist);
 
-  virtual double Density(double T, double p) override { return table_->Function(T, p); }
-  virtual double DDensityDT(double T, double p) override { return table_->DFunctionDT(T, p); }
-  virtual double DDensityDp(double T, double p) override { return table_->DFunctionDp(T, p); }
+  virtual double Density(double T, double p) override {
+    double val = table_->Function(T, p, &ierr_);
+    if (ierr_ != 0) error_msg_ = table_->ErrorMessage(T, p);
+    return val;
+  }
+
+  virtual double DDensityDT(double T, double p) override {
+    double val = table_->DFunctionDT(T, p, &ierr_);
+    if (ierr_ != 0) error_msg_ = table_->ErrorMessage(T, p);
+    return val;
+  }
+
+  virtual double DDensityDp(double T, double p) override {
+    double val = table_->DFunctionDp(T, p, &ierr_);
+    if (ierr_ != 0) error_msg_ = table_->ErrorMessage(T, p);
+    return val;
+  }
 
   virtual double MolarDensity(double T, double p) override { return Density(T, p) / M_; }
   virtual double DMolarDensityDT(double T, double p) override { return DDensityDT(T, p) / M_; }

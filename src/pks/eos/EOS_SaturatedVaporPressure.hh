@@ -23,6 +23,14 @@ class EOS_SaturatedVaporPressure {
 
   virtual double Pressure(double T) = 0;
   virtual double DPressureDT(double T) = 0;
+
+  // error messages
+  int error_code() { return ierr_; }
+  std::string error_msg() { return error_msg_; }
+
+ protected:
+  int ierr_;
+  std::string error_msg_;
 };
 
 }  // namespace AmanziEOS

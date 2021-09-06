@@ -73,10 +73,11 @@ LookupTable::LookupTable(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Function evaluation
 ****************************************************************** */
-double LookupTable::Function(double T, double p)
+double LookupTable::Function(double T, double p, int* ierr)
 {
   int ip, jp;
-  FindBox_(T, p, &ip, &jp);
+  *ierr = FindBox_(T, p, &ip, &jp);
+  if (*ierr > 0) return 0.0;
 
   // bilinear interpolation
   double a = (axisP_[ip] - p) / (axisP_[ip] - axisP_[ip - 1]);
@@ -91,10 +92,11 @@ double LookupTable::Function(double T, double p)
 /* ******************************************************************
 * Derivative in p evaluation
 ****************************************************************** */
-double LookupTable::DFunctionDp(double T, double p)
+double LookupTable::DFunctionDp(double T, double p, int* ierr)
 {
   int ip, jp;
-  FindBox_(T, p, &ip, &jp);
+  *ierr = FindBox_(T, p, &ip, &jp);
+  if (*ierr > 0) return 0.0;
 
   // bilinear interpolation
   double a = (axisP_[ip] - p) / (axisP_[ip] - axisP_[ip - 1]);
@@ -114,10 +116,11 @@ double LookupTable::DFunctionDp(double T, double p)
 /* ******************************************************************
 * Derivative in T evaluation
 ****************************************************************** */
-double LookupTable::DFunctionDT(double T, double p)
+double LookupTable::DFunctionDT(double T, double p, int* ierr)
 {
   int ip, jp;
-  FindBox_(T, p, &ip, &jp);
+  *ierr = FindBox_(T, p, &ip, &jp);
+  if (*ierr > 0) return 0.0;
 
   // bilinear interpolation
   double a = (axisP_[ip] - p) / (axisP_[ip] - axisP_[ip - 1]);
@@ -203,17 +206,13 @@ void LookupTable::ReadBlock_(std::ifstream& ifs, const std::string& field,
 /* ******************************************************************
 * Returns right-top corner of the table box
 ****************************************************************** */
-void LookupTable::FindBox_(double T, double p, int* ip, int* jp)
+int LookupTable::FindBox_(double T, double p, int* ip, int* jp)
 {
   int nT = axisT_.size();
   int nP = axisP_.size();
 
   if (T < axisT_[0] || T > axisT_[nT - 1] ||
-      p < axisP_[0] || p > axisP_[nP - 1]) {
-    Errors::CutTimeStep msg;
-    msg << "out of bounds values: T=" << T << " or p=" << p;
-    Exceptions::amanzi_throw(msg);
-  }
+      p < axisP_[0] || p > axisP_[nP - 1]) return 1;
 
   *ip = 0;
   *jp = 0;
@@ -229,6 +228,8 @@ void LookupTable::FindBox_(double T, double p, int* ip, int* jp)
       break;
     } 
   } 
+
+  return 0;
 }
 
 
@@ -273,6 +274,17 @@ double LookupTable::DerivativeT_(int i, int j)
   }
 
   return val / n;
+}
+
+
+/* ******************************************************************
+* Create error message
+****************************************************************** */
+std::string LookupTable::ErrorMessage(double T, double p)
+{
+  std::stringstream ss;
+  ss << "out of bounds values: T=" << T << " or p=" << p;
+  return ss.str();
 }
 
 }  // namespace AmanziEOS

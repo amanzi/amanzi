@@ -14,6 +14,7 @@
 
 #include "errors.hh"
 
+#include "EOS_Utils.hh"
 #include "EOSDensityEvaluator.hh"
 #include "EOSFactory.hh"
 
@@ -119,13 +120,15 @@ void EOSDensityEvaluator::EvaluateField_(
       const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp);
       Epetra_MultiVector& dens_v = *molar_dens->ViewComponent(*comp);
 
+      int ierr(0); 
       int count = dens_v.MyLength();
       for (int i = 0; i != count; ++i) {
         double tmp = std::max<double>(pres_v[0][i], p_atm);
         dens_v[0][i] = eos_->MolarDensity(temp_v[0][i], tmp);
-        if (dens_v[0][i] <= 0.0)
-            Exceptions::amanzi_throw(Errors::CutTimeStep());
+        if (dens_v[0][i] <= 0.0) ierr = 1;
       }
+
+      ErrorAnalysis(temp->Comm(), ierr, "negative density");
     }
   }
 
@@ -135,13 +138,15 @@ void EOSDensityEvaluator::EvaluateField_(
       const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp);
       Epetra_MultiVector& dens_v = *mass_dens->ViewComponent(*comp);
 
+      int ierr(0); 
       int count = dens_v.MyLength();
       for (int i = 0; i != count; ++i) {
         double tmp = std::max<double>(pres_v[0][i], p_atm);
         dens_v[0][i] = eos_->Density(temp_v[0][i], tmp);
-        if (dens_v[0][i] < 0.0)
-          Exceptions::amanzi_throw(Errors::CutTimeStep());
+        if (dens_v[0][i] < 0.0) ierr = 1;
       }
+
+      ErrorAnalysis(temp->Comm(), ierr, "negative density");
     }
   }
 }

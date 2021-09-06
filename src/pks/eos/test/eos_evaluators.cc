@@ -13,7 +13,10 @@
 
 #include "UnitTest++.h"
 
+#include "errors.hh"
+
 #include "EOS_Density.hh"
+#include "EOS_SaturatedVaporPressure.hh"
 #include "EOSFactory.hh"
 #include "H2O_Density.hh"
 #include "H2O_DensityFEHM.hh"
@@ -84,6 +87,7 @@ TEST(ViscosityEOS) {
 TEST(TabularEOS) {
   using namespace Amanzi::AmanziEOS;
 
+  int ierr;
   Teuchos::ParameterList plist;
   plist.set<std::string>("table name", "test/h2o.eos")
        .set<std::string>("field name", "density");
@@ -92,22 +96,22 @@ TEST(TabularEOS) {
  
   for (double T = 283.15; T < 320; T += 10.0) {
     for (double p = 1e+5; p < 1.4e+5; p += 1.0e+4) {
-      double d = eos.Function(T, p);
+      double d = eos.Function(T, p, &ierr);
       CHECK_CLOSE(d, 995.0, 5.0);
     }
   }
 
   // verify derivatives
   double T(293.15), p(101325), dT(10.0), dp(100.0);
-  double dFdT = eos.DFunctionDT(T + dT/2, p);
-  CHECK_CLOSE((eos.Function(T + dT, p) - eos.Function(T, p)) / dT, dFdT, fabs(dFdT) * 5e-2); 
+  double dFdT = eos.DFunctionDT(T + dT/2, p, &ierr);
+  CHECK_CLOSE((eos.Function(T + dT, p, &ierr) - eos.Function(T, p, &ierr)) / dT, dFdT, fabs(dFdT) * 5e-2); 
 
-  double dFdP = eos.DFunctionDp(T, p + dp / 2);
-  CHECK_CLOSE((eos.Function(T, p + dp) - eos.Function(T, p)) / dp, dFdP, fabs(dFdP) * 5e-2); 
+  double dFdP = eos.DFunctionDp(T, p + dp / 2, &ierr);
+  CHECK_CLOSE((eos.Function(T, p + dp, &ierr) - eos.Function(T, p, &ierr)) / dp, dFdP, fabs(dFdP) * 5e-2); 
 
-  std::cout << "water density at 20C  and 1atm  = " << eos.Function(293.15, 101325.0)
-            << ", derivatives: " << eos.DFunctionDT(293.15, 101325.0) 
-            << "  " << eos.DFunctionDp(293.15, 101325.0) << std::endl;
+  std::cout << "water density at 20C  and 1atm  = " << eos.Function(293.15, 101325.0, &ierr)
+            << ", derivatives: " << eos.DFunctionDT(293.15, 101325.0, &ierr) 
+            << "  " << eos.DFunctionDp(293.15, 101325.0, &ierr) << std::endl;
 }
 
 
@@ -140,5 +144,59 @@ TEST(FactoryEOS) {
     auto eos = factory.CreateEOS(plist);
 
     std::cout << name << ": water viscosity at 20C and 1atm = " << eos->Viscosity(293.15, 101325.0) << std::endl;
+  }
+}
+
+
+TEST(Exceptions) {
+  using namespace Amanzi::AmanziEOS;
+
+  std::vector<std::string> names = { "0-30C", "FEHM", "tabular" };
+
+  std::cout << std::endl;
+  for (auto& name : names) {
+    Teuchos::ParameterList plist;
+    plist.set<std::string>("table name", "test/h2o.eos")
+         .set<std::string>("field name", "density")
+         .set<std::string>("eos type", "liquid water " + name);
+
+    // density
+    {
+      EOSFactory<EOS_Density> factory;
+      auto eos = factory.CreateEOS(plist);
+
+      try {
+        eos->Density(193.15, -10.0);
+        std::cout << name << ": density (err=" << eos->error_code() << ", \"" << eos->error_msg() << "\")\n";
+      } catch(const Errors::CutTimeStep& e) {
+        std::cout << name << ": density exception: " << e.what() << std::endl;
+      }
+    }
+
+    // viscosity
+    {
+      EOSFactory<EOS_Viscosity> factory;
+      auto eos = factory.CreateEOS(plist);
+
+      try {
+        eos->Viscosity(193.15, 1.0e+10);
+        std::cout << name << ": viscosity (err=" << eos->error_code() << ", \"" << eos->error_msg() << "\")\n";
+      } catch(const Errors::CutTimeStep& e) {
+        std::cout << name << ": viscosity exception: " << e.what() << std::endl;
+      }
+    }
+  }
+
+  // saturated vapor pressure
+  Teuchos::ParameterList plist;
+  plist.set<std::string>("eos type", "water vapor over water/ice");
+  EOSFactory<EOS_SaturatedVaporPressure> factory;
+  auto eos = factory.CreateEOS(plist);
+
+  try {
+    eos->Pressure(93.15);
+    std::cout << "saturated vapor pressure (err=" << eos->error_code() << ", \"" << eos->error_msg() << "\")\n";
+  } catch(const Errors::CutTimeStep& e) {
+    std::cout << "saturated vapor pressure exception: " << e.what() << std::endl;
   }
 }

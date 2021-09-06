@@ -30,23 +30,31 @@ H2O_SaturatedVaporPressure::H2O_SaturatedVaporPressure(
     kd_(2.433502) {};
 
 
-double H2O_SaturatedVaporPressure::Pressure(double T) {
+double H2O_SaturatedVaporPressure::Pressure(double T)
+{
+  ierr_ = 0;
   if (T < 100.0 || T > 373.0) {
-    Errors::CutTimeStep msg;
-    msg << "Invalid temperature, T = " << T;
-    Exceptions::amanzi_throw(msg);
+    ierr_ = 1;
+    std::stringstream ss;
+    ss << "invalid T = " << T;
+    error_msg_ = ss.str();
+  } else {
+    return 100.0 * exp(ka0_ + ka_/T + (kb_ + kc_*T) * T + kd_*log(T));
   }
-  return 100.0 * exp(ka0_ + ka_/T + (kb_ + kc_*T) * T + kd_*log(T));
 }
 
 
-double H2O_SaturatedVaporPressure::DPressureDT(double T) {
+double H2O_SaturatedVaporPressure::DPressureDT(double T)
+{
+  ierr_ = 0;
   if (T < 100.0 || T > 373.0) {
-    std::cout << "Invalid temperature, T = " << T << std::endl;
-    Errors::Message msg("Cut time step");
-    Exceptions::amanzi_throw(msg);
+    ierr_ = 1;
+    std::stringstream ss;
+    ss << "invalid T = " << T;
+    error_msg_ = ss.str();
+  } else {
+    return Pressure(T) * (-ka_/(T * T) + kb_ + 2 * kc_ * T + kd_ / T);
   }
-  return Pressure(T) * (-ka_/(T*T) + kb_ + 2.0*kc_*T + kd_/T);
 }
 
 }  // namespace AmanziEOS

@@ -28,22 +28,29 @@ H2O_Viscosity::H2O_Viscosity(Teuchos::ParameterList& eos_plist)
     kT1_(293.15) {};
 
 
-double H2O_Viscosity::Viscosity(double T, double p) {
-  double dT = kT1_ - T;
-  double xi;
-  if (T < kT1_) {
-    double A = kav1_ + (kbv1_ + kcv1_*dT)*dT;
-    xi = 1301.0 * (1.0/A - 1.0/kav1_);
-  } else {
-    double A = (kbv2_ + kcv2_*dT)*dT;
-    xi = A/(T - 168.15);
-  }
-  double visc = 0.001 * pow(10.0, xi);
+double H2O_Viscosity::Viscosity(double T, double p)
+{
+  double visc(0.0);
 
-  if (visc < 1.e-16) {
-    Errors::CutTimeStep msg;
-    msg << "Invalid temperature, T = " << T;
-    Exceptions::amanzi_throw(msg);
+  if (T > 200.0) {
+    double A, xi, dT(kT1_ - T);
+
+    if (T < kT1_) {
+      A = kav1_ + (kbv1_ + kcv1_ * dT) * dT;
+      xi = 1301.0 * (1.0/A - 1.0/kav1_);
+    } else {
+      A = (kbv2_ + kcv2_ * dT) * dT;
+     xi = A / (T - 168.15);
+    }
+    visc = 0.001 * pow(10.0, xi);
+  }
+
+  ierr_ = 0;
+  if (visc < 1.0e-16) {
+    ierr_ = 1;
+    std::stringstream ss;
+    ss << "Invalid T=" << T << ", viscosity=" << visc;
+    error_msg_ = ss.str();
   }
   return visc;
 };

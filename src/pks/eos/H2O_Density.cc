@@ -31,21 +31,21 @@ H2O_Density::H2O_Density(Teuchos::ParameterList& eos_plist)
 
 double H2O_Density::Density(double T, double p) {
   double dT = T - kT0_;
-  double rho1bar = ka_ + (kb_ + (kc_ + kd_*dT)*dT)*dT;
-  return rho1bar * (1.0 + kalpha_*(p - kp0_));
+  double rho1bar = ka_ + (kb_ + (kc_ + kd_ * dT) * dT) * dT;
+  return rho1bar * (1.0 + kalpha_ * (p - kp0_));
 };
 
 
 double H2O_Density::DDensityDT(double T, double p) {
   double dT = T - kT0_;
-  double rho1bar = kb_ + (2.0*kc_ + 3.0*kd_*dT)*dT;
-  return rho1bar * (1.0 + kalpha_*(p - kp0_));
+  double rho1bar = kb_ + (2 * kc_ + 3 * kd_ * dT) * dT;
+  return rho1bar * (1.0 + kalpha_ * (p - kp0_));
 };
 
 
 double H2O_Density::DDensityDp(double T, double p) {
   double dT = T - kT0_;
-  double rho1bar = ka_ + (kb_ + (kc_ + kd_*dT)*dT)*dT;
+  double rho1bar = ka_ + (kb_ + (kc_ + kd_ * dT) * dT) * dT;
   return rho1bar * kalpha_;
 };
 

@@ -47,10 +47,12 @@ double H2O_ThermalConductivity::ThermalConductivity(double T)
   double Ts = T / Tref_;
   double k = ka0_ + (ka1_ + ka2_ * Ts) * Ts;
 
-  if (k < 1.e-16) {
-    Errors::CutTimeStep msg;
-    msg << "invalid temperature, T=" << T << " conductivity=" << k;
-    Exceptions::amanzi_throw(msg);
+  ierr_ = 0;
+  if (k < 1.0e-16) {
+    ierr_ = 1;
+    std::stringstream ss;
+    ss << "invalid T=" << T << " conductivity=" << k;
+    error_msg_ = ss.str();
   }
   return k;
 }

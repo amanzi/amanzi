@@ -56,6 +56,7 @@ set(eos_inc_files
     EOS_Density.hh
     EOS_SaturatedVaporPressure.hh
     H2O_ThermalConductivity.hh
+    EOS_Utils.hh
     EOS_Viscosity.hh
     eos_registration.hh
     EOSFactory.hh

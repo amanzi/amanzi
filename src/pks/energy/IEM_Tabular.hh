@@ -32,9 +32,23 @@ class IEM_Tabular : public IEM {
     table_ = Teuchos::rcp(new AmanziEOS::LookupTable(plist));
   }
 
-  virtual double InternalEnergy(double T, double p) override { return table_->Function(T, p); }
-  virtual double DInternalEnergyDT(double T, double p) override { return table_->DFunctionDT(T, p); }
-  virtual double DInternalEnergyDp(double T, double p) override { return table_->DFunctionDp(T, p); }
+  virtual double InternalEnergy(double T, double p) override {
+    double val = table_->Function(T, p, &ierr_);
+    if (ierr_ != 0) error_msg_ = table_->ErrorMessage(T, p);
+    return val;
+  }
+
+  virtual double DInternalEnergyDT(double T, double p) override {
+    double val = table_->DFunctionDT(T, p, &ierr_);
+    if (ierr_ != 0) error_msg_ = table_->ErrorMessage(T, p);
+    return val;
+  }
+
+  virtual double DInternalEnergyDp(double T, double p) override {
+    double val = table_->DFunctionDp(T, p, &ierr_);
+    if (ierr_ != 0) error_msg_ = table_->ErrorMessage(T, p);
+    return val;
+  }
 
   static Utils::RegisteredFactory<IEM, IEM_Tabular> factory_;
 

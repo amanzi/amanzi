@@ -12,6 +12,7 @@
   model, a VPM.
 */
 
+#include "EOS_Utils.hh"
 #include "EOSFactory.hh"
 #include "EOSViscosityEvaluator.hh"
 
@@ -65,11 +66,13 @@ void EOSViscosityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp));
     Epetra_MultiVector& result_v = *(result->ViewComponent(*comp));
 
+    int ierr = 0;
     int count = result->size(*comp);
-    for (int id=0; id!=count; ++id) {
-      AMANZI_ASSERT(temp_v[0][id] > 200.);
-      result_v[0][id] = visc_->Viscosity(temp_v[0][id], pres_v[0][id]);
+    for (int i = 0; i != count; ++i) {
+      result_v[0][i] = visc_->Viscosity(temp_v[0][i], pres_v[0][i]);
+      ierr = std::max(ierr, visc_->error_code());
     }
+    ErrorAnalysis(temp->Comm(), ierr, visc_->error_msg()); 
   }
 }
 
@@ -91,8 +94,8 @@ void EOSViscosityEvaluator::EvaluateFieldPartialDerivative_(
     Epetra_MultiVector& result_v = *(result->ViewComponent(*comp));
 
     int count = result->size(*comp);
-    for (int id=0; id!=count; ++id) {
-      result_v[0][id] = visc_->DViscosityDT(temp_v[0][id], pres_v[0][id]);
+    for (int i = 0; i != count; ++i) {
+      result_v[0][i] = visc_->DViscosityDT(temp_v[0][i], pres_v[0][i]);
     }
   }
 }

@@ -29,9 +29,23 @@ class H2O_ViscosityTabular : public EOS_Viscosity {
  public:
   explicit H2O_ViscosityTabular(Teuchos::ParameterList& eos_plist);
 
-  virtual double Viscosity(double T, double p) override { return table_->Function(T, p); }
-  virtual double DViscosityDT(double T, double p) override { return table_->DFunctionDT(T, p); }
-  virtual double DViscosityDp(double T, double p) override { return table_->DFunctionDp(T, p); }
+  virtual double Viscosity(double T, double p) override {
+    double val = table_->Function(T, p, &ierr_);
+    if (ierr_ != 0) error_msg_ = table_->ErrorMessage(T, p);
+    return val;
+  }
+
+  virtual double DViscosityDT(double T, double p) override {
+    double val = table_->DFunctionDT(T, p, &ierr_);
+    if (ierr_ != 0) error_msg_ = table_->ErrorMessage(T, p);
+    return val;
+  }
+
+  virtual double DViscosityDp(double T, double p) override {
+    double val = table_->DFunctionDp(T, p, &ierr_);
+    if (ierr_ != 0) error_msg_ = table_->ErrorMessage(T, p);
+    return val;
+  }
 
   static Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityTabular> factory_;
 
