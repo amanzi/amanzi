@@ -38,6 +38,7 @@ double H2O_SaturatedVaporPressure::Pressure(double T)
     std::stringstream ss;
     ss << "invalid T = " << T;
     error_msg_ = ss.str();
+    return 0.0;
   } else {
     return 100.0 * exp(ka0_ + ka_/T + (kb_ + kc_*T) * T + kd_*log(T));
   }
@@ -52,6 +53,7 @@ double H2O_SaturatedVaporPressure::DPressureDT(double T)
     std::stringstream ss;
     ss << "invalid T = " << T;
     error_msg_ = ss.str();
+    return 0.0;
   } else {
     return Pressure(T) * (-ka_/(T * T) + kb_ + 2 * kc_ * T + kd_ / T);
   }

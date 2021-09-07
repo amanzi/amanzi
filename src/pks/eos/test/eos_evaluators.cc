@@ -170,6 +170,8 @@ TEST(Exceptions) {
         std::cout << name << ": density (err=" << eos->error_code() << ", \"" << eos->error_msg() << "\")\n";
       } catch(const Errors::CutTimeStep& e) {
         std::cout << name << ": density exception: " << e.what() << std::endl;
+      } catch(...) {
+        AMANZI_ASSERT(false);
       }
     }
 
@@ -183,6 +185,8 @@ TEST(Exceptions) {
         std::cout << name << ": viscosity (err=" << eos->error_code() << ", \"" << eos->error_msg() << "\")\n";
       } catch(const Errors::CutTimeStep& e) {
         std::cout << name << ": viscosity exception: " << e.what() << std::endl;
+      } catch(...) {
+        AMANZI_ASSERT(false);
       }
     }
   }
@@ -198,5 +202,7 @@ TEST(Exceptions) {
     std::cout << "saturated vapor pressure (err=" << eos->error_code() << ", \"" << eos->error_msg() << "\")\n";
   } catch(const Errors::CutTimeStep& e) {
     std::cout << "saturated vapor pressure exception: " << e.what() << std::endl;
+  } catch(...) {
+    AMANZI_ASSERT(false);
   }
 }
