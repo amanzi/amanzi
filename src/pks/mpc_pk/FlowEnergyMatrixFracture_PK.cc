@@ -320,6 +320,10 @@ bool FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool r
     k += 2;
   }
 
+  // make copy of primary unknowns
+  // save a copy of solution, i.e. primary variables
+  TreeVector solution_copy(*solution_);
+
   bool fail;
   try {
     fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
@@ -341,9 +345,13 @@ bool FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool r
       k += 2;
     }
 
+    // recover the original solution
+    *solution_ = solution_copy;
+    ChangedSolution();
+
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Step failed. Restored [fracture-]{ " << names[0] << ", "
-               << names[1] << ", " << names[2] << " }" << std::endl;
+               << names[1] << ", " << names[2] << ", pressure, temperature }" << std::endl;
   }
 
   return fail;

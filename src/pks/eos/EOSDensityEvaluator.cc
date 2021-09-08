@@ -125,10 +125,10 @@ void EOSDensityEvaluator::EvaluateField_(
       for (int i = 0; i != count; ++i) {
         double tmp = std::max<double>(pres_v[0][i], p_atm);
         dens_v[0][i] = eos_->MolarDensity(temp_v[0][i], tmp);
-        if (dens_v[0][i] <= 0.0) ierr = 1;
+        ierr = std::max(ierr, eos_->error_code());
       }
 
-      ErrorAnalysis(temp->Comm(), ierr, "negative density");
+      ErrorAnalysis(temp->Comm(), ierr, eos_->error_msg());
     }
   }
 
@@ -143,10 +143,10 @@ void EOSDensityEvaluator::EvaluateField_(
       for (int i = 0; i != count; ++i) {
         double tmp = std::max<double>(pres_v[0][i], p_atm);
         dens_v[0][i] = eos_->Density(temp_v[0][i], tmp);
-        if (dens_v[0][i] < 0.0) ierr = 1;
+        ierr = std::max(ierr, eos_->error_code());
       }
 
-      ErrorAnalysis(temp->Comm(), ierr, "negative density");
+      ErrorAnalysis(temp->Comm(), ierr, eos_->error_msg());
     }
   }
 }

@@ -30,7 +30,7 @@ namespace Flow {
 void Richards_PK::SolveFullySaturatedProblem(
     double t_old, CompositeVector& u, const std::string& solver_name)
 {
-  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
+  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData(viscosity_liquid_key_);
 
   UpdateSourceBoundaryData(t_old, t_old, u);
   krel_->PutScalarMasterAndGhosted(molar_rho_);
@@ -93,7 +93,7 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
   std::vector<int>& bc_model = op_bc_->bc_model();
   std::vector<double>& bc_value = op_bc_->bc_value();
 
-  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
+  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData(viscosity_liquid_key_);
 
   UpdateSourceBoundaryData(t_new, t_new, *u);
 
@@ -170,7 +170,7 @@ void Richards_PK::UpwindInflowBoundary(Teuchos::RCP<const CompositeVector> u)
   std::vector<int>& bc_model = op_bc_->bc_model();
   std::vector<double>& bc_value = op_bc_->bc_value();
 
-  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
+  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData(viscosity_liquid_key_);
   const Epetra_MultiVector& mu_cell = *mu->ViewComponent("cell");
 
   const Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
@@ -209,7 +209,7 @@ void Richards_PK::UpwindInflowBoundary_New(Teuchos::RCP<const CompositeVector> u
   std::vector<int>& bc_model = op_bc_->bc_model();
   std::vector<double>& bc_value = op_bc_->bc_value();
 
-  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
+  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData(viscosity_liquid_key_);
   const Epetra_MultiVector& mu_cell = *mu->ViewComponent("cell");
 
   Epetra_MultiVector& k_face = *krel_->ViewComponent("face", true);

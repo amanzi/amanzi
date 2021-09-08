@@ -389,7 +389,7 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
     int ncomp = u->Data()->size(*comp, false);
     for (int i = 0; i < ncomp; ++i) {
       double tmp0 = uc[0][i] / 20.0;
-      double tmp1 = std::min(tmp0, uc[0][i] - 273.15);
+      double tmp1 = std::min(tmp0, uc[0][i] - 273.65);
       if (duc[0][i] < -tmp0) {
         ntemp_clipped++;
         duc[0][i] = -tmp0;

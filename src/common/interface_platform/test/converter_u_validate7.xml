@@ -743,6 +743,7 @@
       <Parameter name="master PK index" type="int" value="0"/>
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="physical models and assumptions">
+        <Parameter name="vapor diffusion" type="bool" value="false"/>
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       </ParameterList>
       <ParameterList name="time integrator">
@@ -880,7 +881,6 @@
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="false"/>
-            <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
             <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
           </ParameterList>
           <ParameterList name="vapor matrix">
@@ -945,6 +945,7 @@
       <Parameter name="domain name" type="string" value="fracture"/>
       <ParameterList name="physical models and assumptions">
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
+        <Parameter name="vapor diffusion" type="bool" value="false"/>
       </ParameterList>
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{pressure, temperature}"/>
@@ -1024,6 +1025,7 @@
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
+
     <ParameterList name="transient:energy fracture">
       <Parameter name="domain name" type="string" value="fracture"/>
       <ParameterList name="physical models and assumptions">
@@ -1044,7 +1046,6 @@
             <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
             <Parameter name="gravity" type="bool" value="false"/>
-            <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>

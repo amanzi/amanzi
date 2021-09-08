@@ -68,7 +68,7 @@ Teuchos::ParameterList InputConverterU::TranslateEnergy_(const std::string& doma
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_nonlinear_solver, modify_correction", flag);
 
   out_list.sublist("operators") = TranslateDiffusionOperator_(
-      disc_method, pc_method, nonlinear_solver, "", "", false);
+      disc_method, pc_method, nonlinear_solver, "", "", false, "energy");
 
   // insert thermal conductivity evaluator with the default values (no 2.2 support yet)
   Teuchos::ParameterList& thermal = out_list.sublist("thermal conductivity evaluator")

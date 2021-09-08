@@ -343,7 +343,8 @@ Teuchos::ParameterList InputConverterU::TranslateInitialization_(
 Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
     const std::string& disc_methods, const std::string& pc_method,
     const std::string& nonlinear_solver, const std::string& nonlinear_coef,
-    const std::string& extensions, bool gravity)
+    const std::string& extensions, bool gravity,
+    const std::string& pk)
 {
   Teuchos::ParameterList out_list;
   Teuchos::ParameterList tmp_list;
@@ -400,7 +401,7 @@ Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
   }
 
   // fixing miscalleneous scenarious
-  if (pc_method == "linearized_operator") {
+  if (pc_method == "linearized_operator" && pk == "flow") {
     out_list.sublist("diffusion operator").sublist("preconditioner")
         .set<std::string>("Newton correction", "approximate Jacobian");
   }
