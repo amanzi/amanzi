@@ -127,18 +127,20 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
 
   // Set primary evaluator for pressure
 
-//  S->RequireField(pressure_key_)->SetMesh(mesh_)
-//      ->AddComponent("cell", AmanziMesh::CELL, 1);
-//
-//  Teuchos::ParameterList elist_pre;
-//  elist_pre.set<std::string>("evaluator name", pressure_key_);
-//  auto eval_pre = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist_pre));
-//  AMANZI_ASSERT(S != Teuchos::null);
-//  S->SetFieldEvaluator(pressure_key_, eval_pre);
-//
-//  S->RequireFieldEvaluator(pressure_key_);
-//
-//  std::cout << "pressure eval DONE" << std::endl;
+  if (!coupled_soil) {
+	  S->RequireField(pressure_key_)->SetMesh(mesh_)
+		  ->AddComponent("cell", AmanziMesh::CELL, 1);
+
+	  Teuchos::ParameterList elist_pre;
+	  elist_pre.set<std::string>("evaluator name", pressure_key_);
+	  auto eval_pre = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist_pre));
+	  AMANZI_ASSERT(S != Teuchos::null);
+	  S->SetFieldEvaluator(pressure_key_, eval_pre);
+
+	  S->RequireFieldEvaluator(pressure_key_);
+
+	  std::cout << "pressure eval DONE" << std::endl;
+  }
 
   // Set primary evaluator for water content -- for mpc_lake_1D
 

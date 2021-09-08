@@ -167,23 +167,23 @@ class MPCCoupledSoil : public StrongMPC<PK_PhysicalBDF_Default> {
                 const Teuchos::RCP<TreeVector>& soln);
 
   // -- Initialize owned (dependent) variables.
-  virtual void Setup(const Teuchos::Ptr<State>& S);
-  virtual void Initialize(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S) override;
+  virtual void Initialize(const Teuchos::Ptr<State>& S) override;
 
   virtual void set_states(const Teuchos::RCP<State>& S,
                           const Teuchos::RCP<State>& S_inter,
-                          const Teuchos::RCP<State>& S_next);
+                          const Teuchos::RCP<State>& S_next) override;
 
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
 
   // update the predictor to be physically consistent
   virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> up0,
-          Teuchos::RCP<TreeVector> up);
+          Teuchos::RCP<TreeVector> up) override;
 
-  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) override;
 
   // preconditioner application
-  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) override;
   Teuchos::RCP<Operators::TreeOperator> preconditioner() { return preconditioner_; }
 
   // -- access methods

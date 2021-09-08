@@ -38,7 +38,7 @@ MPCLakeSoilRichards::Setup(const Teuchos::Ptr<State>& S) {
 //  pks_list_->sublist(names[1]).sublist("accumulation preconditioner").set("surface operator", true);
 
   domain_lake_ = pks_list_->sublist(names[0]).get<std::string>("domain name","lake");
-  domain_soil_ = pks_list_->sublist(names[1]).get<std::string>("domain name","soil");
+  domain_soil_ = pks_list_->sublist(names[1]).get<std::string>("domain name","domain");
 
   std::cout << "domain_lake_ = " << domain_lake_ << std::endl;
   std::cout << "domain_soil_ = " << domain_soil_ << std::endl;
@@ -86,6 +86,8 @@ MPCLakeSoilRichards::Setup(const Teuchos::Ptr<State>& S) {
 
 void MPCLakeSoilRichards::Initialize(const Teuchos::Ptr<State>& S) {
 
+  auto comm = Amanzi::getDefaultComm();
+
    // initialize coupling terms
   S->GetFieldData(Keys::getKey(domain_lake_,"lake_soil_temperature"), name_)->PutScalar(0.);
   S->GetField(Keys::getKey(domain_lake_,"lake_soil_temperature"), name_)->set_initialized();
@@ -109,6 +111,8 @@ void MPCLakeSoilRichards::Initialize(const Teuchos::Ptr<State>& S) {
 
   std::cout << "op_tree_lake_ = " << op_tree_lake_ << std::endl;
 
+  std::cout << "op_tree_lake_ Structure start:\n" << op_tree_lake_->PrintDiagnostics() << std::endl;
+
   auto op0 = lake_pk_->my_operator(Operators::OPERATOR_MATRIX)->Clone();
 //  std::cout << "lake_pk_->my_operator(Operators::OPERATOR_MATRIX) = " << lake_pk_->my_operator(Operators::OPERATOR_MATRIX) << std::endl;
 //  std::cout << "soil_pk_->my_operator(Operators::OPERATOR_MATRIX) = " << soil_pk_->my_operator(Operators::OPERATOR_MATRIX) << std::endl;
@@ -117,11 +121,24 @@ void MPCLakeSoilRichards::Initialize(const Teuchos::Ptr<State>& S) {
 //  auto op1 = soil_pk_->preconditioner()->Clone();
   auto op1 = soil_pk_->preconditioner();
 
+//  auto tvs = Teuchos::rcp(new TreeVectorSpace(op0->get_row_map()));
+//
+//  auto tvs_all = Teuchos::rcp(new TreeVectorSpace(comm));
+//  tvs_all->PushBack(tvs);
+//  tvs_all->PushBack(tvs);
+//  tvs_all->PushBack(tvs);
+
+//  op_tree_lake_ = Teuchos::rcp(new Operators::TreeOperator(tvs_all,tvs_all));
+
+//  std::cout << "op_tree_lake_ = " << op_tree_lake_ << std::endl;
+
   std::cout << "Check 1 in mpc_lake_soil_richards.cc" << std::endl;
 
   op_tree_lake_->set_operator_block(0, 0, op0);
 //  op_tree_lake_->set_operator_block(1, 1, op1);
   op_tree_lake_->set_block(1, 1, op1);
+
+  std::cout << "op_tree_lake_ Structure with diagonal blocks:\n" << op_tree_lake_->PrintDiagnostics() << std::endl;
 
   std::cout << "Check 2 in mpc_lake_soil_richards.cc" << std::endl;
 
@@ -130,7 +147,7 @@ void MPCLakeSoilRichards::Initialize(const Teuchos::Ptr<State>& S) {
   // off-diagonal blocks are coupled PDEs
   // -- minimum composite vector spaces containing the coupling term
   auto mesh_lake = S_->GetMesh("lake");
-  auto mesh_soil = S_->GetMesh("soil");
+  auto mesh_soil = S_->GetMesh("domain");
 
   std::cout << "Check 3 in mpc_lake_soil_richards.cc" << std::endl;
 
@@ -189,6 +206,8 @@ void MPCLakeSoilRichards::Initialize(const Teuchos::Ptr<State>& S) {
   auto inds_soil10 = std::make_shared<std::vector<std::vector<int> > >(1);
   auto values10 = std::make_shared<std::vector<double> >(1);
 
+  std::cout << "npoints_owned1 = " << npoints_owned1 << std::endl;
+
   std::cout << "ncells_owned_f1 = " << ncells_owned_f1 << std::endl;
 
   int np1(0);
@@ -214,7 +233,7 @@ void MPCLakeSoilRichards::Initialize(const Teuchos::Ptr<State>& S) {
           (*values10)[0] = -lambda_l[0][c]/area;
           (*inds_lake10)[0].resize(1);
           (*inds_soil10)[0].resize(1);
-          (*inds_soil10)[0][0] = ncells_owned_f1-1;
+          (*inds_soil10)[0][0] = ncells_owned_f1-1 + ncells_owned_f1;
           (*inds_lake10)[0][0] = c;
       }   // normal??
       if (c == ncells_owned_f1-1) { (*values00)[np1] = 0.; //-lambda_l[0][c]/area; //-40.;
@@ -225,12 +244,11 @@ void MPCLakeSoilRichards::Initialize(const Teuchos::Ptr<State>& S) {
       (*inds_soil1)[np1][0] = 0;} //(lambda_l[0][c]+lambda_s[0][c])/area;}
 //      if (c == 1) { (*values00)[np1] = -lambda_l[0][c]/area;}
 //      std::cout << "lambda_l[0][c] = " << lambda_l[0][c] << std::endl;}
+      std::cout << "lambda_l[0][c] = " << lambda_l[0][c] << std::endl;
+      std::cout << "lambda_s[0][c] = " << lambda_s[0][c] << std::endl;
+
       np1++;
     }
-  }
-
-  for (int c = 0; c < ncells_owned_f1; c++) {
-      std::cout << (*values00)[c] << std::endl;
   }
 
   inds_lake1->resize(np1);
@@ -264,7 +282,7 @@ void MPCLakeSoilRichards::Initialize(const Teuchos::Ptr<State>& S) {
   for (int c = 0; c < ncells_owned_f; ++c) {
     int f = mesh_soil->entity_get_parent(AmanziMesh::CELL, c);
     double area = mesh_soil->cell_volume(c);
-    int first = mmap10.FirstPointInElement(f);
+    int first = mmap10.FirstPointInElement(f) + mmap11.FirstPointInElement(f);
     int ndofs = mmap10.ElementSize(f);
 
     std::cout << "first = " << first << std::endl;
@@ -284,16 +302,20 @@ void MPCLakeSoilRichards::Initialize(const Teuchos::Ptr<State>& S) {
           (*inds_lake01)[0].resize(1);
           (*inds_soil01)[0].resize(1);
           (*inds_lake01)[0][0] = 0;
-          (*inds_soil01)[0][0] = c;
+          (*inds_soil01)[0][0] = c + ncells_owned_f1;
       } // normal???
       if (c == 0) { (*values11)[np] = 0.; //-lambda_s[0][c]/area; //-40.;
             (*inds_lake)[np][0] = 0;
-            (*inds_soil)[np][0] = c;}
+            (*inds_soil)[np][0] = c + 0;}
       if (c == ncells_owned_f-1) { (*values11)[np] = lambda_l[0][c]/area; //40.;
-            (*inds_lake)[np][0] = 0;
-            (*inds_soil)[np][0] = c;} //lambda_s[0][c]/area;}//(lambda_l[0][c]+lambda_s[0][c])/area;}
+            (*inds_lake)[np][0] = ncells_owned_f1;
+            (*inds_soil)[np][0] = c + ncells_owned_f1;} //lambda_s[0][c]/area;}//(lambda_l[0][c]+lambda_s[0][c])/area;}
 //      if (c == ncells_owned_f-2) { (*values11)[np] = -lambda_s[0][c]/area;}
 //      std::cout << "lambda_s[0][c] = " << lambda_s[0][c] << std::endl;}
+
+      std::cout << "lambda_l[0][c] = " << lambda_l[0][c] << std::endl;
+      std::cout << "lambda_s[0][c] = " << lambda_s[0][c] << std::endl;
+
       np++;
     }
   }
@@ -311,65 +333,152 @@ void MPCLakeSoilRichards::Initialize(const Teuchos::Ptr<State>& S) {
   // -- operators
   Teuchos::ParameterList oplist;
 
-//  auto op_coupling00 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-//      oplist, cvs_lake, cvs_lake, inds_lake, inds_lake, op0));
-//  op_coupling00->Setup(values, 1.0);
-//  op_coupling00->UpdateMatrices(Teuchos::null, Teuchos::null);
-
   auto op_coupling00 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
       oplist, cvs_lake, cvs_lake, inds_lake1, inds_lake1, op0));
   op_coupling00->Setup(values00, 1.0);                            // values00 will be ADDED (with factor)
   op_coupling00->UpdateMatrices(Teuchos::null, Teuchos::null);
-
-//  auto op_coupling01 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-//      oplist, cvs_lake, cvs_soil, inds_lake, inds_soil));
-//  op_coupling01->Setup(values, -1.0);
-//  op_coupling01->UpdateMatrices(Teuchos::null, Teuchos::null);  //
 
   auto op_coupling01 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
       oplist, cvs_lake, cvs_soil, inds_lake01, inds_soil01));
   op_coupling01->Setup(values01,1.0);
   op_coupling01->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-//  auto op_coupling10 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-//      oplist, cvs_soil, cvs_lake, inds_soil1, inds_lake1));
-//  op_coupling10->Setup(values1, -1.0);
-//  op_coupling10->UpdateMatrices(Teuchos::null, Teuchos::null);
+  std::cout << "op_coupling01 = " << op_coupling01 << std::endl;
 
   auto op_coupling10 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
       oplist, cvs_soil, cvs_lake, inds_soil10, inds_lake10)); // cvs defines the block size
   op_coupling10->Setup(values10, 1.0);
   op_coupling10->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-//  auto op_coupling11 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-//      oplist, cvs_soil, cvs_soil, inds_soil1, inds_soil1, op1));
-//  op_coupling11->Setup(values1, 1.0);
-//  op_coupling11->UpdateMatrices(Teuchos::null, Teuchos::null);
+  std::cout << "op_coupling10 = " << op_coupling10 << std::endl;
 
-//  auto op_coupling11 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-//      oplist, cvs_soil, cvs_soil, inds_soil, inds_soil, op1));
-//  op_coupling11->Setup(values11, 1.0);
-//  op_coupling11->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  op_tree_lake_->set_operator_block(0, 1, op_coupling01->global_operator());
-  op_tree_lake_->set_operator_block(1, 0, op_coupling10->global_operator());
+  auto op1_clone = op1->Clone();
 
-//  op_tree_lake_->set_operator_block(0, 0, op_coupling00->global_operator());
-//  op_tree_lake_->set_operator_block(1, 1, op_coupling11->global_operator());
+  // DO COUPLING ON CLONE
 
-  // create a global problem
-//  lake_pk_->my_pde(Operators::PDE_DIFFUSION)->ApplyBCs(true, true, true);
-//  soil_pk_->my_pde(Operators::PDE_DIFFUSION)->ApplyBCs(true, true, true);
+  // ALTERNATIVELY:
+  auto op11 = op1->get_operator_block(1,1)->Clone();
 
-  preconditioner_list_ = Teuchos::sublist(plist_, "preconditioners", true);
+  auto op_coupling11 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
+      oplist, cvs_soil, cvs_soil, inds_soil, inds_soil, op11));
+  op_coupling11->Setup(values11, 1.0);
+  op_coupling11->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  op1->set_operator_block(1, 1, op_coupling11->global_operator());
+
+  op_tree_lake_->set_block(1, 1, op1);
+
+  std::cout << "values00" << std::endl;
+  for (int c = 0; c < (*values00).size(); c++) {
+      std::cout << (*values00)[c] << std::endl;
+  }
+
+  std::cout << "values01" << std::endl;
+  for (int c = 0; c < (*values01).size(); c++) {
+      std::cout << (*values01)[c] << std::endl;
+  }
+
+  std::cout << "values10" << std::endl;
+  for (int c = 0; c < (*values10).size(); c++) {
+      std::cout << (*values10)[c] << std::endl;
+  }
+
+  std::cout << "values11" << std::endl;
+  for (int c = 0; c < (*values11).size(); c++) {
+      std::cout << (*values11)[c] << std::endl;
+  }
+
+
+  std::cout << "op_coupling01->global_operator() = " << op_coupling01->global_operator() << std::endl;
+  std::cout << "op_coupling10->global_operator() = " << op_coupling10->global_operator() << std::endl;
+
+//  auto tvs0 = Teuchos::rcp(new TreeVectorSpace(op0->get_row_map()));
+//  auto tvs1 = Teuchos::rcp(new TreeVectorSpace(op0->get_row_map()));
+
+//  auto op_soil = soil_pk_->sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX)->Clone();
+
+  auto tvs0 = Teuchos::rcp(new TreeVectorSpace(op0->get_row_map()));
+//  auto tvs1 = Teuchos::rcp(new TreeVectorSpace(op1->get_row_map()));
+  auto tvs1 = Teuchos::rcp(new TreeVectorSpace(op1->RangeMap()));
+ //  auto tvs1 = Teuchos::rcp(new TreeVectorSpace(solution_->SubVector(1)->Map()));
+
+  auto tvs00 = Teuchos::rcp(new TreeVectorSpace(comm));
+  tvs00->PushBack(tvs0);
+
+  std::cout << "tvs00" << std::endl;
+  tvs00->Print(std::cout);
+
+  auto tvs01 = Teuchos::rcp(new TreeVectorSpace(comm));
+  tvs01 = tvs1;
+//  tvs01->PushBack(tvs1);
+//  tvs01->PushBack(tvs1);
+
+  std::cout << "tvs01" << std::endl;
+  tvs01->Print(std::cout);
+
+  auto tvs10 = Teuchos::rcp(new TreeVectorSpace(comm));
+  tvs10 = tvs1;
+//  tvs10->PushBack(tvs1);
+//  tvs10->PushBack(tvs1);
+
+  std::cout << "tvs10" << std::endl;
+  tvs10->Print(std::cout);
+
+  auto op01 = Teuchos::rcp(new Operators::TreeOperator(tvs00, tvs01));
+  op01->set_operator_block(0, 1, op_coupling01->global_operator());
+  op_tree_lake_->set_block(0, 1, op01);
+
+  std::cout << "op01 Structure:\n" << op01->PrintDiagnostics() << std::endl;
+
+  auto op10 = Teuchos::rcp(new Operators::TreeOperator(tvs01, tvs00)); // <--- should be tvs10, tvs00 but doesn't work
+  op10->set_operator_block(1, 0, op_coupling10->global_operator());
+  op_tree_lake_->set_block(1, 0, op10);
+
+  std::cout << "op10 Structure:\n" << op10->PrintDiagnostics() << std::endl;
+
+  // print capabilities
+  std::cout << "Tree Operator Structure:\n" << op_tree_lake_->PrintDiagnostics() << std::endl;
+
+  std::cout << "DONE test" << std::endl;
+//  exit(0);
+
+//  preconditioner_list_ = Teuchos::sublist(plist_, "preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(plist_, "solvers", true);
   ti_list_ = Teuchos::sublist(plist_, "time integrator", true);
 
-  std::string name = ti_list_->get<std::string>("preconditioner");
-  std::string ls_name = ti_list_->get<std::string>("preconditioner enhancement", "none");
-  auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(name, *preconditioner_list_,
-                        ls_name, *linear_operator_list_,
-                        true);
+//  std::string name = ti_list_->get<std::string>("preconditioner");
+//  std::string ls_name = ti_list_->get<std::string>("preconditioner enhancement", "none");
+//  auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(name, *preconditioner_list_,
+//                        ls_name, *linear_operator_list_,
+//                        true);
+
+
+  std::cout << "op0 Structure:\n" << op0->PrintDiagnostics() << std::endl;
+
+  std::cout << "op1 Structure:\n" << op1->PrintDiagnostics() << std::endl;
+
+  std::cout << "op0->A()" << std::endl;
+  std::cout << "op0 = " << op0 << std::endl;
+  op0->SymbolicAssembleMatrix();
+  op0->AssembleMatrix();
+  std::cout << *op0->A() << std::endl;
+
+  std::cout << "op1->A()" << std::endl;
+  std::cout << "op1 = " << op1 << std::endl;
+  std::cout << *op1->A() << std::endl;
+
+  std::cout << "PRINT" << std::endl;
+  std::cout << op_tree_lake_->PrintDiagnostics() << std::endl;
+  std::cout << "PRINT DONE" << std::endl;
+
+  op_tree_lake_->SymbolicAssembleMatrix();
+  op_tree_lake_->AssembleMatrix();
+
+  std::cout << "before A" << std::endl;
+  std::cout << *op_tree_lake_->A() << std::endl;
+  std::cout << "after A" << std::endl;
+//  exit(0);
 
 
   std::cout << "plist_ = " << plist_ << std::endl;
@@ -379,6 +488,8 @@ void MPCLakeSoilRichards::Initialize(const Teuchos::Ptr<State>& S) {
 //  std::cout << "inv_list = " << inv_list << std::endl;
 //  op_tree_lake_->set_inverse_parameters(inv_list);
 //  op_tree_lake_->InitializeInverse();
+
+  op_tree_lake_->ComputeInverse();
 
   // stationary solve is modelled with large dt. To pick the correct
   // boundary conditions, dt is negative. This assumes that we are at
@@ -427,22 +538,23 @@ MPCLakeSoilRichards::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   int ierr = op_tree_lake_->ApplyAssembled(*u_new, *f);
   AMANZI_ASSERT(!ierr);
 
-  std::cout << *op_tree_lake_->A() << std::endl;
+//  std::cout << *op_tree_lake_->A() << std::endl;
 
   // diagonal blocks in tree operator must be lake and soil
   AMANZI_ASSERT(sub_pks_[0]->name() == "lake thermo" &&
-                  sub_pks_[1]->name() == "soil thermo");
+                  sub_pks_[1]->name() == "coupled soil");
 
-  auto op0 = sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX);
-  auto op1 = sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX);
+//  auto op0 = sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX);
+//  auto op1 = sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX);
+//  auto op1 = soil_pk_->preconditioner();
 
-  f->SubVector(0)->Data()->Update(-1.0, *op0->rhs(), 1.0);
-  f->SubVector(1)->Data()->Update(-1.0, *op1->rhs(), 1.0);
+//  f->SubVector(0)->Data()->Update(-1.0, *op0->rhs(), 1.0);
+//  f->SubVector(1)->Data()->Update(-1.0, *op1->rhs(), 1.0);
 
-//  lake_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(0),
-//            u_new->SubVector(0), f->SubVector(0));
-//  soil_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(1),
-//            u_new->SubVector(1), f->SubVector(1));
+  sub_pks_[0]->FunctionalResidual(t_old, t_new, u_old->SubVector(0),
+            u_new->SubVector(0), f->SubVector(0));
+  sub_pks_[1]->FunctionalResidual(t_old, t_new, u_old->SubVector(1),
+            u_new->SubVector(1), f->SubVector(1));
 
   // propagate updated info into state
 //  Solution_to_State(*u_new, S_next_);
