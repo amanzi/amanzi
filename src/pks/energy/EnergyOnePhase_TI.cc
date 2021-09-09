@@ -169,10 +169,10 @@ double EnergyOnePhase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // Relative error in cell-centered temperature
-  const Epetra_MultiVector& uc = *u->Data()->ViewComponent("cell", false);
-  const Epetra_MultiVector& duc = *du->Data()->ViewComponent("cell", false);
+  const Epetra_MultiVector& uc = *u->Data()->ViewComponent("cell");
+  const Epetra_MultiVector& duc = *du->Data()->ViewComponent("cell");
 
-  double error_t(0.0);
+  double error(0.0), error_t(0.0);
   double ref_temp(273.0);
   for (int c = 0; c < ncells_owned; c++) {
     double tmp = fabs(duc[0][c]) / (fabs(uc[0][c] - ref_temp) + ref_temp);
@@ -184,8 +184,7 @@ double EnergyOnePhase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   // Cell error is based upon error in energy conservation relative to
   // a characteristic energy
   double error_e(0.0);
-
-  double error = std::max(error_t, error_e);
+  error = std::max(error_t, error_e);
 
 #ifdef HAVE_MPI
   double buf = error;

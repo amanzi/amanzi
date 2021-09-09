@@ -53,6 +53,9 @@ void Darcy_PK::FunctionalResidual(
   CompositeVector& rhs = *op_->rhs();
   AddSourceTerms(rhs);
 
+  // if the matrix was assemble, it will be used in Apply. Due to new
+  // accumulation term, we either have to destroy or reassemble it 
+  op_->ComputeInverse();
   op_->ComputeNegativeResidual(*u_new->Data(), *f->Data());
 }
 
