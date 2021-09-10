@@ -621,10 +621,6 @@ endif()
 # PETSc - http://www.mcs.anl.gov/petsc
 ##############################################################################
 option(ENABLE_PETSC "Enable PETSc for use in structured or Alquimia" FALSE)
-# note, this is a bit off -- Alquimia doesn't require PETSc, PFLOTRAN
-# does.  Eventually Alquimia and Superbuild will both support control
-# of independently turning on/off PFLOTRAN and CrunchFlow, and we will
-# use the ENABLE_PFLOTRAN flag here instead.
 if (ENABLE_Structured OR ENABLE_ALQUIMIA)
   message(STATUS "PETSc required for Structure and/or Alquimia TPLs, turning on.")
   set(ENABLE_PETSC ON)

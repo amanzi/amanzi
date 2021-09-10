@@ -396,6 +396,8 @@ Value in brackets indicates default setting.
                           variants, but will error prior to building Amanzi.
   cuda                    build with Cuda support, currently used by Kokkos and Hypre ['"${cuda}"']
   openmp                  build with OpenMP support, currently used by Kokkos and Hypre ['"${openmp}"']
+                          Note that this option may conflict with structured, so use of --enable-openmp
+                          may require the use of --disable-structured.
 
   build_amanzi            build TPLs and Amanzi ['"${build_amanzi}"']
   build_user_guide        build TPLs, Amanzi, and UserGuide ['"${build_user_guide}"']
@@ -513,6 +515,20 @@ turns on debugging to find BLAS and LAPACK libraries, builds the TPLs
                  --debug_find_blas
                  --parallel=8 
                  --enable-geochemistry
+
+Example that builds a set of TPLs that can support main-branch
+development (Epetra), tpetra-branch development (Tpetra) and
+structured builds.  Note that optionally, the --enable-cuda or
+--enable-openmp flags could be added (though note that --enable-openmp
+currently requires --disable-structured).
+
+  ./bootstrap.sh --tpl-install-prefix=$HOME/TPLs-0.98.0-gcc-9.3.0-openmpi-4.0.3
+                 --with-mpi=/usr
+                 --enable-epetra
+                 --enable-tpetra
+                 --enable-geochemistry
+                 --disable-structured
+                 --enable-openmp
 '
 }
 
