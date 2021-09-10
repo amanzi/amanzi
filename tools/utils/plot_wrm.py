@@ -109,7 +109,6 @@ class WiltingPointLimiter(object):
     def __init__( self, pc_open, pc_closed ):
         self._pc_open = pc_open
         self._pc_closed = pc_closed
-        self._label = label
         assert(pc_open < pc_closed)
 
     def saturation( self, pc ):
