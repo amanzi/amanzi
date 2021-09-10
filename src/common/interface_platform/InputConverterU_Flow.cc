@@ -66,13 +66,14 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, 
 
   // create flow header
   out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
-  if (pk_model_["flow"] == "darcy") {
-    out_list.sublist("fracture permeability models") = TranslateFlowFractures_(domain);
-    if (out_list.sublist("fracture permeability models").numParams() > 0) {
-      out_list.sublist("physical models and assumptions")
-          .set<bool>("flow in fractures", true);
-    }
 
+  out_list.sublist("fracture permeability models") = TranslateFlowFractures_(domain);
+  if (out_list.sublist("fracture permeability models").numParams() > 0) {
+    out_list.sublist("physical models and assumptions")
+        .set<bool>("flow in fractures", true);
+  }
+
+  if (pk_model_["flow"] == "darcy") {
     flow_list = &out_list;
     flow_single_phase_ = true;
 

@@ -1,0 +1,60 @@
+  <ParameterList name="regions">
+    <ParameterList name="ALL">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Top side">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,1.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Left side">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.0,0.5,0.5}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="fracture 1z">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.5,0.5,0.5}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="fracture 1y">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.5,0.5,0.5}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,1.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="fracture 1x">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.5,0.5,0.5}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.0,0.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="fracture 2">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.5,0.5,0.5}"/>
+        <Parameter name="normal" type="Array(double)" value="{-1.0,0.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="fractures-two">
+      <ParameterList name="region: logical">
+        <Parameter name="operation" type="string" value="union"/>
+        <Parameter name="regions" type="Array(string)" value="{fracture 1x, fracture 1y}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="fractures-three">
+      <ParameterList name="region: logical">
+        <Parameter name="operation" type="string" value="union"/>
+        <Parameter name="regions" type="Array(string)" value="{fracture 1x, fracture 1z, fracture 2}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+
+

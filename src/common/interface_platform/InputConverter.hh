@@ -16,10 +16,6 @@
 #include <climits>
 #include <list>
 
-#include "boost/lambda/lambda.hpp"
-#include "boost/bind.hpp"
-#include "boost/lexical_cast.hpp"
-
 #define  BOOST_FILESYTEM_NO_DEPRECATED
 #include "boost/format.hpp"
 

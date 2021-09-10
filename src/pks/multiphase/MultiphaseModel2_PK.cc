@@ -137,7 +137,7 @@ void MultiphaseModel2_PK::Setup(const Teuchos::Ptr<State>& S)
          .set<std::string>("temperature key", temperature_key_)
          .set<std::string>("molar density liquid key", molar_density_liquid_key_)
          .set<std::string>("saturation liquid key", saturation_liquid_key_)
-         .set<std::string>("vapor pressure model type", "water vapor over water/ice");
+         .set<std::string>("eos type", "water vapor over water/ice");
     auto eval = Teuchos::rcp(new VaporPressureEvaluator(elist, wrm_));
     S->SetFieldEvaluator(pressure_vapor_key_, eval);
   }

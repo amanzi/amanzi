@@ -59,8 +59,7 @@ endif(ENABLE_OpenMP)
 
 get_directory_property(defs COMPILE_DEFINITIONS)
 if(defs)
-  list(APPEND defs ${BL_DEFINES})
-  set_directory_properties(PROPERTIES COMPILE_DEFINITIONS $defs)
+  list(APPEND BL_DEFINES ${defs})
 endif()
 
 
@@ -90,5 +89,4 @@ if (ENABLE_PETSC)
 endif()
 
 set_directory_properties(PROPERTIES COMPILE_DEFINITIONS "${BL_DEFINES}")
-
 

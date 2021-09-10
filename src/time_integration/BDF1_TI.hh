@@ -302,6 +302,9 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt,
     ierr = 1;
     itr = -1;  // This should not be summed up into the global counter.
     code = AmanziSolvers::SOLVER_INTERNAL_EXCEPTION;
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      *vo_->os() << e.what() << std::endl;
+    }
   }
 
   if (ierr == 0) {

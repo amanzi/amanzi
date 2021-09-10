@@ -14,8 +14,9 @@
 
 #include "errors.hh"
 
+#include "EOS_Utils.hh"
 #include "EOSDensityEvaluator.hh"
-#include "EOSDensityFactory.hh"
+#include "EOSFactory.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
@@ -68,7 +69,7 @@ EOSDensityEvaluator::EOSDensityEvaluator(Teuchos::ParameterList& plist) :
 
   // Construct my EOS model
   AMANZI_ASSERT(plist_.isSublist("EOS parameters"));
-  EOSDensityFactory eos_fac;
+  EOSFactory<EOS_Density> eos_fac;
   eos_ = eos_fac.CreateEOS(plist_.sublist("EOS parameters"));
 };
 
@@ -114,19 +115,20 @@ void EOSDensityEvaluator::EvaluateField_(
   }
 
   if (molar_dens != Teuchos::null) {
-    // evaluate MolarDensity()
-    for (auto comp=molar_dens->begin(); comp!=molar_dens->end(); ++comp) {
-      const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
-      const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp,false));
-      Epetra_MultiVector& dens_v = *(molar_dens->ViewComponent(*comp,false));
+    for (auto comp = molar_dens->begin(); comp != molar_dens->end(); ++comp) {
+      const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp);
+      const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp);
+      Epetra_MultiVector& dens_v = *molar_dens->ViewComponent(*comp);
 
+      int ierr(0); 
       int count = dens_v.MyLength();
       for (int i = 0; i != count; ++i) {
         double tmp = std::max<double>(pres_v[0][i], p_atm);
         dens_v[0][i] = eos_->MolarDensity(temp_v[0][i], tmp);
-        if (dens_v[0][i] <= 0.0)
-            Exceptions::amanzi_throw(Errors::CutTimeStep());
+        ierr = std::max(ierr, eos_->error_code());
       }
+
+      ErrorAnalysis(temp->Comm(), ierr, eos_->error_msg());
     }
   }
 
@@ -136,13 +138,15 @@ void EOSDensityEvaluator::EvaluateField_(
       const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp);
       Epetra_MultiVector& dens_v = *mass_dens->ViewComponent(*comp);
 
+      int ierr(0); 
       int count = dens_v.MyLength();
       for (int i = 0; i != count; ++i) {
         double tmp = std::max<double>(pres_v[0][i], p_atm);
         dens_v[0][i] = eos_->Density(temp_v[0][i], tmp);
-        if (dens_v[0][i] < 0.0)
-          Exceptions::amanzi_throw(Errors::CutTimeStep());
+        ierr = std::max(ierr, eos_->error_code());
       }
+
+      ErrorAnalysis(temp->Comm(), ierr, eos_->error_msg());
     }
   }
 }
@@ -171,11 +175,10 @@ void EOSDensityEvaluator::EvaluateFieldPartialDerivative_(
 
   if (wrt_key == pres_key_) {
     if (molar_dens != Teuchos::null) {
-      // evaluate MolarDensity()
-      for (auto comp=molar_dens->begin(); comp != molar_dens->end(); ++comp) {
-        const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp));
-        const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp));
-        Epetra_MultiVector& dens_v = *(molar_dens->ViewComponent(*comp));
+      for (auto comp = molar_dens->begin(); comp != molar_dens->end(); ++comp) {
+        const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp);
+        const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp);
+        Epetra_MultiVector& dens_v = *molar_dens->ViewComponent(*comp);
 
         int count = dens_v.MyLength();
         for (int i = 0; i != count; ++i) {
@@ -186,9 +189,9 @@ void EOSDensityEvaluator::EvaluateFieldPartialDerivative_(
 
     if (mass_dens != Teuchos::null) {
       for (auto comp = mass_dens->begin(); comp != mass_dens->end(); ++comp) {
-        const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp));
-        const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp));
-        Epetra_MultiVector& dens_v = *(mass_dens->ViewComponent(*comp));
+        const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp);
+        const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp);
+        Epetra_MultiVector& dens_v = *mass_dens->ViewComponent(*comp);
 
         int count = dens_v.MyLength();
         for (int i = 0; i != count; ++i) {
@@ -198,30 +201,28 @@ void EOSDensityEvaluator::EvaluateFieldPartialDerivative_(
     }
 
   } else if (wrt_key == temp_key_) {
-
     if (molar_dens != Teuchos::null) {
-      // evaluate MolarDensity()
       for (auto comp = molar_dens->begin(); comp != molar_dens->end(); ++comp) {
-        const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp));
-        const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp));
-        Epetra_MultiVector& dens_v = *(molar_dens->ViewComponent(*comp));
+        const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp);
+        const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp);
+        Epetra_MultiVector& dens_v = *molar_dens->ViewComponent(*comp);
 
         int count = dens_v.MyLength();
-        for (int id = 0; id != count; ++id) {
-          dens_v[0][id] = eos_->DMolarDensityDT(temp_v[0][id], pres_v[0][id]);
+        for (int i = 0; i != count; ++i) {
+          dens_v[0][i] = eos_->DMolarDensityDT(temp_v[0][i], pres_v[0][i]);
         }
       }
     }
 
     if (mass_dens != Teuchos::null) {
       for (auto comp = mass_dens->begin(); comp != mass_dens->end(); ++comp) {
-        const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp));
-        const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp));
-        Epetra_MultiVector& dens_v = *(mass_dens->ViewComponent(*comp));
+        const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp);
+        const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp);
+        Epetra_MultiVector& dens_v = *mass_dens->ViewComponent(*comp);
 
         int count = dens_v.MyLength();
-        for (int id = 0; id != count; ++id) {
-          dens_v[0][id] = eos_->DDensityDT(temp_v[0][id], pres_v[0][id]);
+        for (int i = 0; i != count; ++i) {
+          dens_v[0][i] = eos_->DDensityDT(temp_v[0][i], pres_v[0][i]);
         }
       }
     }

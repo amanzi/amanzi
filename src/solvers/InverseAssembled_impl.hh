@@ -150,6 +150,7 @@ template<class Operator,
 void InverseAssembled<Operator,Preconditioner,Vector,VectorSpace>::set_inverse_parameters(
     Teuchos::ParameterList& plist)
 {
+  this->set_name(method_name_);
   solver_ = createAssembledMethod<>(method_name_, plist);
 }
 

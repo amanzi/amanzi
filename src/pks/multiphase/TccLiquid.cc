@@ -26,7 +26,7 @@ TccLiquid::TccLiquid(Teuchos::ParameterList& plist)
 {
   my_key_ = plist_.get<std::string>("my key");
   tcc_gas_key_ = plist_.get<std::string>("tcc gas key");
-  dependencies_.insert(std::string(tcc_gas_key_));
+  dependencies_.insert(tcc_gas_key_);
 }
 
 

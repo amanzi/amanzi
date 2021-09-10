@@ -71,7 +71,6 @@ class Amanzi_PK : public Chemistry_PK {
 
   void XMLParameters();
   void SetupAuxiliaryOutput();
-  void SizeBeakerState_();
 
   void CopyBeakerStructuresToCellState(
       int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
@@ -92,6 +91,8 @@ class Amanzi_PK : public Chemistry_PK {
   std::vector<std::string> aux_names_;
   std::vector<int> aux_index_;
   Teuchos::RCP<Epetra_MultiVector> aux_data_;
+
+  int ncells_owned_;
 
  private:
   // factory registration

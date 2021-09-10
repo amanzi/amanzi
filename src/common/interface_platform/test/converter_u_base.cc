@@ -108,7 +108,7 @@ TEST(CONVERTER_BASE) {
   if (MyPID == 0) std::cout << "Test: convert transport test" << std::endl;
 
   // read parameter list
-  for (int i = 1; i < 9; i++) {
+  for (int i = 1; i < 10; i++) {
     std::stringstream xmlFileName;
     xmlFileName << "test/converter_u_test" << i << ".xml";
 

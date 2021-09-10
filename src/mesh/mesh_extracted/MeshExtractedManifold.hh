@@ -190,6 +190,11 @@ class MeshExtractedManifold : public Mesh {
   }
 
   // Mesh Sets for ICs, BCs, Material Properties
+  virtual
+  bool valid_set_type(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const override {
+    return parent_mesh_->valid_set_type(rtype, kind);
+  }
+
   // -- entities
   using Mesh::get_set_entities;
 
@@ -236,6 +241,8 @@ class MeshExtractedManifold : public Mesh {
   Entity_ID_List build_set_cells_(const Teuchos::RCP<const AmanziGeometry::Region>& rgn, bool* missing) const;
   Entity_ID_List build_set_faces_(const Teuchos::RCP<const AmanziGeometry::Region>& rgn, bool* missing) const;
   Entity_ID_List build_set_nodes_(const Teuchos::RCP<const AmanziGeometry::Region>& rgn, bool* missing) const;
+
+  Entity_ID_List build_from_parent_(const std::string& rgnname, const Entity_kind kind_d) const;
 
   void TryExtension_(const std::string& setname,
                      Entity_kind kind_p, Entity_kind kind_d, Entity_ID_List* setents) const;

@@ -2,7 +2,6 @@
 #include <string>
 
 #include "UnitTest++.h"
-#include "boost/algorithm/string.hpp"
 
 #include "ChemistryUtilities.hh"
 

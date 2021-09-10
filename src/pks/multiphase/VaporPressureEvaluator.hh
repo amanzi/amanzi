@@ -19,7 +19,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 // Amanzi
-#include "SaturatedVaporPressure.hh"
+#include "EOS_SaturatedVaporPressure.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 // Multiphase
@@ -46,7 +46,7 @@ class VaporPressureEvaluator : public SecondaryVariableFieldEvaluator {
 
  private:
   Teuchos::RCP<WRMmpPartition> wrm_;
-  Teuchos::RCP<AmanziEOS::SaturatedVaporPressure> svp_;
+  Teuchos::RCP<AmanziEOS::EOS_SaturatedVaporPressure> svp_;
 
   std::string temperature_key_, molar_density_liquid_key_;
   std::string saturation_liquid_key_;

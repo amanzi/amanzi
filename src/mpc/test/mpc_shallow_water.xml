@@ -1,5 +1,23 @@
 <ParameterList name="main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+  
+  <ParameterList name="mesh">
+    <ParameterList name="unstructured">
+      <ParameterList name="expert">
+        <Parameter name="framework" type="string" value="MSTK"/>
+        <Parameter name="partitioner" type="string" value="NOT_SPECIFIED"/>
+        <Parameter name="request edges" type="bool" value="true"/>
+      </ParameterList>
+      <ParameterList name="generate mesh">
+        <Parameter name="number of cells" type="Array(int)" value="{10, 10}"/>
+        <Parameter name="domain low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="domain high coordinate" type="Array(double)" value="{10.0, 10.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
+    </ParameterList>
+  </ParameterList>
 
   <ParameterList name="regions">
     <ParameterList name="Computational domain">
@@ -61,6 +79,9 @@
         <Parameter name="limiter location" type="string" value="node"/>
         <Parameter name="limiter cfl" type="double" value="0.5"/>
       </ParameterList>
+      <Parameter name="cfl" type="double" value="0.5"/>
+      <Parameter name="number of reduced cfl cycles" type="int" value="10"/>
+      <Parameter name="numerical flux" type="string" value="Rusanov"/>
 
       <ParameterList name="boundary conditions"/>
     </ParameterList>
@@ -85,12 +106,12 @@
     </ParameterList>
 
     <ParameterList name="initial conditions">
-      <ParameterList name="fluid_density">
+      <ParameterList name="const_fluid_density">
         <Parameter name="value" type="double" value="1000.0"/>
       </ParameterList>
 
-      <ParameterList name="fluid_viscosity">
-        <Parameter name="value" type="double" value="0.001"/>
+      <ParameterList name="atmospheric_pressure">
+        <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
 
       <ParameterList name="gravity">

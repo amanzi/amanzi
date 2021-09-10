@@ -17,7 +17,6 @@
 
 // Amanzi
 #include "LeastSquare.hh"
-#include "GMVMesh.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
@@ -108,7 +107,7 @@ void vortex_2D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos:
 }
 
 void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
-           Epetra_MultiVector& hh_ex, Epetra_MultiVector& vel_ex, 
+           Epetra_MultiVector& hh_ex, Epetra_MultiVector& vel_ex,
            const Epetra_MultiVector& hh, const Epetra_MultiVector& vel,
            double& err_max, double& err_L1, double& hmax)
 {
@@ -166,10 +165,10 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
 
   std::vector<double> dx, Linferror, L1error, L2error;
 
-  for (int NN = 10; NN <= 80; NN *= 2) {
+  for (int NN = 20; NN <= 80; NN *= 2) {
 
     RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 10.0, 10.0, NN, NN, request_faces, request_edges);
-    // mesh = meshfactory.create("test/median63x64.exo",request_faces,request_edges); 
+    // mesh = meshfactory.create("test/median63x64.exo",request_faces,request_edges);
     // works only with first order, no reconstruction
 
     // create a state
@@ -180,7 +179,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
 
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
 
-    Teuchos::ParameterList pk_tree = plist->sublist("PK tree").sublist("shallow water");
+    Teuchos::ParameterList pk_tree = plist->sublist("PKs").sublist("shallow water");
 
     // create a shallow water PK
     ShallowWater_PK SWPK(pk_tree,plist,S,soln);
@@ -189,7 +188,9 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
     S->InitializeFields();
     S->InitializeEvaluators();
     SWPK.Initialize(S.ptr());
+
     vortex_2D_setIC(mesh, S);
+    S->CheckAllFieldsInitialized();
 
     const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth")->ViewComponent("cell");
     const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
@@ -202,7 +203,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
     for (int c = 0; c < pid.MyLength(); c++) pid[0][c] = MyPID;
 
     // create screen io
-    auto vo = Teuchos::rcp(new Amanzi::VerboseObject("ShallowWater", *plist));
+    auto vo = Teuchos::rcp(new Amanzi::VerboseObject("ShallowWater", pk_tree));
     WriteStateStatistics(*S, *vo);
 
     // advance in time
@@ -246,8 +247,6 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
       }
 
       dt = SWPK.get_dt();
-
-      if (iter < 10) dt = 0.01*dt;
 
       t_new = t_old + dt;
 
@@ -296,5 +295,5 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
 
   std::cout << "computed order = " << order << std::endl;
 
-  CHECK_CLOSE(1.5, order, 0.2);
+  CHECK(order > 0.9);  // first order scheme
 }

@@ -908,7 +908,7 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string& setname,
     }
 
     else if (rgn->type() != AmanziGeometry::LOGICAL) {
-      std::cerr << "Region type not suitable/applicable for sidesets" << std::endl;
+      std::cerr << "Region \"" << rgn->name() << "\" type not applicable/supported for sidesets";
       throw std::exception();
     }
 
@@ -935,7 +935,7 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string& setname,
       sets_[setname_internal] = *setents;
     }
     else {
-      std::cerr << "Region type not suitable/applicable for cellsets" << std::endl;
+      std::cerr << "Region \"" << rgn->name() << "\" type not applicable/supported for cellsets";
       throw std::exception();
     }
 

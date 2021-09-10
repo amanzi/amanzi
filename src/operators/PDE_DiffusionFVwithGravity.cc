@@ -11,7 +11,6 @@
 */
 
 #include <vector>
-#include <boost/math/tools/roots.hpp>
 
 #include "Op.hh"
 #include "Op_SurfaceFace_SurfaceCell.hh"

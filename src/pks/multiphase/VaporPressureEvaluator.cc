@@ -11,11 +11,12 @@
 
 #include "errors.hh"
 
+#include "EOSFactory.hh"
+#include "EOS_SaturatedVaporPressure.hh"
 #include "CommonDefs.hh"
 
 #include "ModelMeshPartition.hh"
 #include "MultiphaseDefs.hh"
-#include "SaturatedVaporPressureFactory.hh"
 #include "VaporPressureEvaluator.hh"
 
 namespace Amanzi {
@@ -38,8 +39,8 @@ VaporPressureEvaluator::VaporPressureEvaluator(
   dependencies_.insert(molar_density_liquid_key_);
   dependencies_.insert(saturation_liquid_key_);
 
-  AmanziEOS::SaturatedVaporPressureFactory svp_factory;
-  svp_ = svp_factory.CreateVaporPressure(plist);
+  AmanziEOS::EOSFactory<AmanziEOS::EOS_SaturatedVaporPressure> svp_factory;
+  svp_ = svp_factory.CreateEOS(plist);
 }
 
 

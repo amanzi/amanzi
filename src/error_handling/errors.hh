@@ -29,7 +29,7 @@ Message& operator<<(Message &message, double datum);
 Message& operator<<(Message &message, int datum);
 Message& operator<<(Message &message, std::size_t datum);
 
-class CutTimeStep : public Exceptions::Amanzi_exception {};
+class CutTimeStep : public Message {};
 
 }  // namespace Errors
 #endif /* _ERRORS_H_ */

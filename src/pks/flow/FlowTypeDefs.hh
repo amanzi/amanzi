@@ -12,8 +12,6 @@
 #ifndef AMANZI_FLOW_TYPEDEFS_HH_
 #define AMANZI_FLOW_TYPEDEFS_HH_
 
-#include <boost/array.hpp>
-
 namespace Amanzi {
 namespace Flow {
 

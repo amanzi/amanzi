@@ -154,6 +154,8 @@ mergePreconditionerSolverLists(
     bool make_one_iteration=false)
 {
   Teuchos::ParameterList inv_list;
+  std::string list_name;
+
   if (!ls_name.empty() && ls_name != "none") {
     if (!ls_list.isSublist(ls_name)) {
       Errors::Message msg;
@@ -163,6 +165,7 @@ mergePreconditionerSolverLists(
     } else {
       inv_list.setParameters(ls_list.sublist(ls_name));
     }
+    list_name = ls_name + " with ";
   }
   if (!pc_name.empty() && pc_name != "none") {
     if (!pc_list.isSublist(pc_name)) {
@@ -173,8 +176,11 @@ mergePreconditionerSolverLists(
     } else {
       inv_list.setParameters(pc_list.sublist(pc_name));
     }
+    list_name += pc_name;
   }
   if (make_one_iteration) setMakeOneIterationCriteria(inv_list);
+
+  inv_list.setName(list_name);
   return inv_list;
 }
 

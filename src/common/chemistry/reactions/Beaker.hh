@@ -57,7 +57,7 @@ class Beaker {
   };
 
   // inheriting classes setup the species, etc
-  virtual void Initialize(const BeakerState& state,
+  virtual void Initialize(BeakerState& state,
                           const BeakerParameters& parameters);
 
   // we only copy data allocate by Amanzi state
@@ -101,9 +101,6 @@ class Beaker {
   std::vector<SorptionIsothermRxn> sorption_isotherm_rxns() const { return sorption_isotherm_rxns_; }
 
  protected:
-  // resizes matrix and vectors for nonlinear system
-  void ResizeInternalMemory();
-
   void SetupActivityModel(std::string model, std::string pitzer_database, std::string pitzer_jfunction);
   void VerifyState(const BeakerState& state) const;
 

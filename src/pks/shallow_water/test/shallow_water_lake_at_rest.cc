@@ -14,8 +14,6 @@
 #include "UnitTest++.h"
 
 // Amanzi
-#include "LeastSquare.hh"
-#include "GMVMesh.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "ShallowWater_PK.hh"
@@ -45,7 +43,7 @@ void lake_at_rest_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
     
   for (int c = 0; c < ncells_owned; ++c) {
-    const Amanzi::AmanziGeometry::Point &xc = mesh -> cell_centroid(c);
+    const Amanzi::AmanziGeometry::Point &xc = mesh->cell_centroid(c);
         
     x = xc[0]; y = xc[1];
         
@@ -63,11 +61,17 @@ void lake_at_rest_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos::RCP<Amanzi::State> &S)
 {
   double pi = M_PI;
+  const double rho = *S->GetScalarData("const_fluid_density");
+  const double patm = *S->GetScalarData("atmospheric_pressure");
+  
+  double tmp[1];
+  S->GetConstantVectorData("gravity", "state")->Norm2(tmp);
+  double g = tmp[0];
     
-  int ncells_owned = mesh->num_entities (Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
   std::string passwd = "state";
     
-  int nnodes = mesh -> num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
     
   Epetra_MultiVector &B_c = *S->GetFieldData("surface-bathymetry", passwd)->ViewComponent ("cell");
   Epetra_MultiVector &B_n = *S->GetFieldData("surface-bathymetry", passwd)->ViewComponent ("node");
@@ -75,6 +79,7 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
   Epetra_MultiVector &ht_c = *S->GetFieldData("surface-total_depth", passwd)->ViewComponent ("cell");
   Epetra_MultiVector &vel_c = *S->GetFieldData("surface-velocity", passwd)->ViewComponent ("cell");
   Epetra_MultiVector &q_c = *S->GetFieldData("surface-discharge", "surface-discharge")->ViewComponent ("cell");
+  Epetra_MultiVector &p_c = *S->GetFieldData("surface-ponded_pressure", "surface-ponded_pressure")->ViewComponent ("cell");
 
   // Define bathymetry at the cell vertices (Bn)
   for (int n = 0; n < nnodes; ++n) {
@@ -90,7 +95,7 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
     
   for (int c = 0; c < ncells_owned; ++c) {
     
-    const Amanzi::AmanziGeometry::Point &xc = mesh -> cell_centroid(c);
+    const Amanzi::AmanziGeometry::Point &xc = mesh->cell_centroid(c);
         
     Amanzi::AmanziMesh::Entity_ID_List cfaces, cnodes, cedges;
     mesh->cell_get_faces(c, &cfaces);
@@ -123,12 +128,12 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
 
       double area = norm(area_cross_product);
             
-      B_c[0][c] += ( area / mesh -> cell_volume(c) ) * ( B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]] ) / 2;
+      B_c[0][c] += (area / mesh->cell_volume(c)) * (B_n[0][face_nodes[0]] + B_n[0][face_nodes[1]]) / 2;
     }
         
     // Perturb the solution; change time period t_new to at least 10.0
 //    if ((xc[0] - 0.3)*(xc[0] - 0.3) + (xc[1] - 0.3)*(xc[1] - 0.3) < 0.1 * 0.1) {
-//      ht_c[0][c] = H_inf + 0.1;
+//      ht_c[0][c] = H_inf + 0.01;
 //    }
 //    else {
 //      ht_c[0][c] = H_inf;
@@ -140,6 +145,7 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
     vel_c[1][c] = 0.0;
     q_c[0][c] = 0.0;
     q_c[1][c] = 0.0;
+    p_c[0][c] = patm + rho * g * h_c[0][c];
   }
 }
 
@@ -161,19 +167,18 @@ void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   double err_max_u = 0.0, err_max_v = 0.0, err_L1_u = 0.0, err_L1_v = 0.0, tmp_hmax = 0.0;
     
   for (int c = 0; c < ncells_owned; ++c) {
-    
     double tmp = std::abs (ht_ex[0][c] - ht[0][c]);
     err_max = std::max (err_max, tmp);
-    err_L1 += tmp * ( mesh -> cell_volume(c) );
-    tmp_hmax = std::sqrt(mesh -> cell_volume(c));
+    err_L1 += tmp * mesh->cell_volume(c);
+    tmp_hmax = std::sqrt(mesh->cell_volume(c));
         
     tmp = std::abs (vel_ex[0][c] - vel[0][c]);
     err_max_u = std::max (err_max_u, tmp);
-    err_L1_u += tmp * ( mesh -> cell_volume(c) );
+    err_L1_u += tmp * mesh->cell_volume(c);
         
     tmp = std::abs (vel_ex[1][c] - vel[1][c]);
     err_max_v = std::max (err_max_v, tmp);
-    err_L1_v += tmp * ( mesh -> cell_volume(c) );
+    err_L1_v += tmp * mesh->cell_volume(c);
         
     hmax = std::max (tmp_hmax, hmax);
   }
@@ -209,7 +214,8 @@ void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 
 
 /* **************************************************************** */
-TEST(SHALLOW_WATER_LAKE_AT_REST) {
+void RunTest(int icase)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -218,7 +224,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
     
   Comm_ptr_type comm = Amanzi::getDefaultComm();
     
-  int MyPID = comm -> MyPID();
+  int MyPID = comm->MyPID();
     
   if (MyPID == 0) {
     std::cout<<"Test: 2D Shallow water: Lake at rest"<<std::endl;
@@ -229,27 +235,30 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFilename);
     
   // Create a mesh framework
-  ParameterList regions_list = plist -> get<Teuchos::ParameterList>("regions");
+  ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
     
   // Creat a mesh
   bool request_faces = true, request_edges = false;
   MeshFactory meshfactory (comm, gm);
   meshfactory.set_preference(Preference ({Framework::MSTK}));
-    
-  std::vector<double> dx, Linferror, L1error, L2error;
-    
-  // Rectangular mesh
-  RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 20, 20, request_faces, request_edges);
-    
-  // Polygonal meshes
+  
+  RCP<Mesh> mesh;
+  if (icase == 1) {
+    // Rectangular mesh
+    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 25, 25, request_faces, request_edges);
+  }
+  else if (icase == 2) {
+    // Triangular mesh
+    mesh = meshfactory.create ("test/triangular16.exo");
+  }
+  // Other polygonal meshes
 //  RCP<Mesh> mesh = meshfactory.create ("test/median15x16.exo");
 //  RCP<Mesh> mesh = meshfactory.create ("test/random40.exo");
-//  RCP<Mesh> mesh = meshfactory.create ("test/triangular16.exo");
-  
+      
   // Create a state
         
-  Teuchos::ParameterList state_list = plist -> sublist ("state");
+  Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterMesh("surface", mesh);
   S->set_time(0.0);
@@ -267,6 +276,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
   SWPK.Initialize(S.ptr());
     
   lake_at_rest_setIC(mesh, S);
+  S->CheckAllFieldsInitialized();
         
   const Epetra_MultiVector &B = *S->GetFieldData("surface-bathymetry")->ViewComponent("cell");
   const Epetra_MultiVector &Bn = *S->GetFieldData("surface-bathymetry")->ViewComponent("node");
@@ -274,6 +284,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
   const Epetra_MultiVector &ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
   const Epetra_MultiVector &vel = *S->GetFieldData("surface-velocity")->ViewComponent("cell");
   const Epetra_MultiVector &q = *S->GetFieldData("surface-discharge")->ViewComponent("cell");
+  const Epetra_MultiVector &p = *S->GetFieldData("surface-ponded_pressure")->ViewComponent("cell");
         
   // Create a pid vector
   Epetra_MultiVector pid(B);
@@ -299,7 +310,8 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
   std::string passwd("state");
         
   int iter = 0;
-        
+  std::vector<double> dx, Linferror, L1error, L2error;
+  
   while (t_new < 1.0) {
    
     double t_out = t_new;
@@ -320,6 +332,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
       io.WriteVector(*q(0), "qx", AmanziMesh::CELL);
       io.WriteVector(*q(1), "qy", AmanziMesh::CELL);
       io.WriteVector(*B(0), "B", AmanziMesh::CELL);
+      io.WriteVector(*p(0), "hyd pressure", AmanziMesh::CELL);
       io.WriteVector(*Bn(0), "B_n", AmanziMesh::NODE);
       io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
                 
@@ -331,10 +344,6 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
     }
             
     dt = SWPK.get_dt();
-            
-    if (iter < 10) {
-      dt = 0.01 * dt;
-    }
             
     t_new = t_old + dt;
             
@@ -379,6 +388,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
   io.WriteVector(*q(1), "qy", AmanziMesh::CELL);
   io.WriteVector(*B(0), "B", AmanziMesh::CELL);
   io.WriteVector(*Bn(0), "B_n", AmanziMesh::NODE);
+  io.WriteVector(*p(0), "hyd pressure", AmanziMesh::CELL);
   io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
         
   io.WriteVector(*ht_ex(0), "ht_ex", AmanziMesh::CELL);
@@ -389,4 +399,9 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
     
   std::cout<<"Computed error H (L_1): "<<L1error[0]<<std::endl;
   std::cout<<"Computed error H (L_inf): "<<Linferror[0]<<std::endl;
+}
+
+TEST(SHALLOW_WATER_LAKE_AT_REST) {
+  RunTest(1); // rectangular mesh
+  RunTest(2); // triangular mesh
 }

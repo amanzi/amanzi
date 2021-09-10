@@ -271,9 +271,9 @@
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="1.00200000000000007e-03"/>
       </ParameterList>
-      <!-- <ParameterList name="const_fluid_density"> -->
-      <!--   <Parameter name="value" type="double" value="9.98200000000000045e+02"/> -->
-      <!-- </ParameterList> -->
+      <ParameterList name="const_fluid_density">
+        <Parameter name="value" type="double" value="9.982e+02"/>
+      </ParameterList>
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>

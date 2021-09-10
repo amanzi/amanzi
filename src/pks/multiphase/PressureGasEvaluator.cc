@@ -27,7 +27,7 @@ PressureGasEvaluator::PressureGasEvaluator(
   : SecondaryVariableFieldEvaluator(plist),
     wrm_(wrm)
 {
-  my_key_ = "pressure_gas";
+  my_key_ = plist_.get<std::string>("my key");
   pressure_liquid_key_ = plist_.get<std::string>("pressure liquid key");
   saturation_liquid_key_ = plist_.get<std::string>("saturation liquid key");
 

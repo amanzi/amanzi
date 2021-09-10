@@ -135,7 +135,7 @@
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
-          <ParameterList name="flow steady">
+          <ParameterList name="steady:flow">
             <Parameter name="PK type" type="string" value="richards"/>
           </ParameterList>
         </ParameterList>
@@ -147,12 +147,12 @@
       </ParameterList>
       <ParameterList name="TP 1">
         <ParameterList name="PK tree">
-          <ParameterList name="flow and transport">
+          <ParameterList name="transient:flow and transport">
             <Parameter name="PK type" type="string" value="flow reactive transport"/>
-            <ParameterList name="transport">
+            <ParameterList name="transient:transport">
               <Parameter name="PK type" type="string" value="transport"/>
             </ParameterList>
-            <ParameterList name="flow">
+            <ParameterList name="transient:flow">
               <Parameter name="PK type" type="string" value="richards"/>
             </ParameterList>
           </ParameterList>
@@ -403,7 +403,7 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="PKs">
-    <ParameterList name="flow steady">
+    <ParameterList name="steady:flow">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="physical models and assumptions">
         <Parameter name="water content model" type="string" value="constant density"/>
@@ -627,11 +627,11 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="flow and transport">
-      <Parameter name="PKs order" type="Array(string)" value="{flow, transport}"/>
+    <ParameterList name="transient:flow and transport">
+      <Parameter name="PKs order" type="Array(string)" value="{transient:flow, transient:transport}"/>
       <Parameter name="master PK index" type="int" value="0"/>
     </ParameterList>
-    <ParameterList name="transport">
+    <ParameterList name="transient:transport">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="physical models and assumptions">
         <Parameter name="effective transport porosity" type="bool" value="false"/>
@@ -750,7 +750,7 @@
       <Parameter name="number of gaseous components" type="int" value="0"/>
       <Parameter name="runtime diagnostics: regions" type="Array(string)" value="{Crib_216-B-18, Crib_216-B-18}"/>
     </ParameterList>
-    <ParameterList name="flow">
+    <ParameterList name="transient:flow">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="physical models and assumptions">
         <Parameter name="water content model" type="string" value="constant density"/>

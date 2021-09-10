@@ -15,7 +15,7 @@
 #define AMANZI_ENERGY_TCM_EVALUATOR_ONEPHASE_HH_
 
 #include "secondary_variable_field_evaluator.hh"
-#include "ThermalConductivity_Water.hh"
+#include "H2O_ThermalConductivity.hh"
 
 namespace Amanzi {
 namespace Energy {
@@ -37,7 +37,7 @@ class TCMEvaluator_OnePhase : public SecondaryVariableFieldEvaluator {
 
  protected:
   // We have one model so far; hence, no factory is needed.
-  Teuchos::RCP<AmanziEOS::ThermalConductivity_Water> tc_;
+  Teuchos::RCP<AmanziEOS::H2O_ThermalConductivity> tc_;
   double k_rock_;
 
   // Keys for fields dependencies

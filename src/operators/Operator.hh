@@ -283,6 +283,9 @@ class Operator : public Matrix<CompositeVector,CompositeVectorSpace> {
   void OpExtend(op_iterator begin, op_iterator end);
   void OpReplace(const Teuchos::RCP<Op>& op, int index) { ops_[index] = op; }
 
+  // quality control
+  void Verify() const;
+
  public:
   // visit methods for Apply
   virtual int ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,

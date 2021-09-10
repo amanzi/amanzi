@@ -15,7 +15,6 @@
 #include <vector>
 
 // TPLs
-#include "boost/algorithm/string.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include <UnitTest++.h>
 

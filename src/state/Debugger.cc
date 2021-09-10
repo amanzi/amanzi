@@ -23,6 +23,8 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                    Teuchos::ParameterList& plist,
                    Teuchos::EVerbosityLevel verb_level) :
     mesh_(mesh),
+    name_(name),
+    plist_(plist),
     verb_level_(verb_level),
     precision_(10),
     width_(15),
@@ -30,65 +32,88 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     cellnum_width_(5),
     decimal_width_(7)
 {
-
   vo_ = Teuchos::rcp(new VerboseObject(name, plist));
 
-  // cells to debug
-  if (plist.isParameter("debug cells")) {
-    Teuchos::Array<int> dcs = plist.get<Teuchos::Array<int> >("debug cells");
-    for (Teuchos::Array<int>::const_iterator c=dcs.begin();
-         c!=dcs.end(); ++c) {
-      AmanziMesh::Entity_ID lc = mesh->cell_map(false).LID(*c);
-      if (lc >= 0) {
-        // include the LID
-        dc_.push_back(lc);
-        dc_gid_.push_back(*c);
+  AmanziMesh::Entity_ID_List cells;
 
-        // make a verbose object for each case
-        Teuchos::ParameterList vo_plist;
-        vo_plist.sublist("verbose object");
-        vo_plist.sublist("verbose object") = plist.sublist("verbose object");
-        vo_plist.sublist("verbose object").set("write on rank", mesh->get_comm()->MyPID());
-        dcvo_.push_back(Teuchos::rcp(new VerboseObject(*mesh_->get_comm(), name, vo_plist)));
-      }
-    }
+  // cells to debug
+  if (plist_.isParameter("debug cells")) {
+    auto dcs = plist_.get<Teuchos::Array<int> >("debug cells");
+    cells.insert(cells.end(), dcs.begin(), dcs.end());
   }
 
   // faces to debug
-  if (plist.isParameter("debug faces")) {
-    Teuchos::Array<int> dfs = plist.get<Teuchos::Array<int> >("debug faces");
-    for (Teuchos::Array<int>::const_iterator f=dfs.begin();
-         f!=dfs.end(); ++f) {
-      AmanziMesh::Entity_ID lf = mesh->face_map(true).LID(*f);
+  if (plist_.isParameter("debug faces")) {
+    auto dfs = plist_.get<Teuchos::Array<int> >("debug faces");
+    const auto& face_map = mesh->face_map(true);
+    const auto& cell_map = mesh->cell_map(false);
+
+    for (const auto& f : dfs) {
+      AmanziMesh::Entity_ID lf = face_map.LID(f);
       if (lf >= 0) {
         // debug the neighboring cells
-        AmanziMesh::Entity_ID_List cells;
-        mesh->face_get_cells(lf, AmanziMesh::Parallel_type::OWNED, &cells);
-
-        for (AmanziMesh::Entity_ID_List::const_iterator lc=cells.begin();
-             lc!=cells.end(); ++lc) {
-          // include the LID
-          dc_.push_back(*lc);
-          dc_gid_.push_back(mesh->cell_map(false).GID(*lc));
-
-          // make a verbose object for each case
-          Teuchos::ParameterList vo_plist;
-          vo_plist.sublist("verbose object");
-          vo_plist.sublist("verbose object") = plist.sublist("verbose object");
-          vo_plist.sublist("verbose object").set("write on rank", mesh->get_comm()->MyPID());
-          dcvo_.push_back(Teuchos::rcp(new VerboseObject(*mesh_->get_comm(), name, vo_plist)));
-        }
+        AmanziMesh::Entity_ID_List fcells;
+        mesh->face_get_cells(lf, AmanziMesh::Parallel_type::OWNED, &fcells);
+        for (const auto& c : fcells)
+          cells.emplace_back(cell_map.GID(c));
       }
     }
   }
 
+  set_cells(cells);
+
   // formatting
-  cellnum_width_ = plist.get<int>("cell number width", cellnum_width_);
-  decimal_width_ = plist.get<int>("decimal width", decimal_width_);
-  header_width_ = plist.get<int>("header width", header_width_);
-  width_ = plist.get<int>("column width", width_);
-  precision_ = plist.get<int>("precision", precision_);
+  cellnum_width_ = plist_.get<int>("cell number width", cellnum_width_);
+  decimal_width_ = plist_.get<int>("decimal width", decimal_width_);
+  header_width_ = plist_.get<int>("header width", header_width_);
+  width_ = plist_.get<int>("column width", width_);
+  precision_ = plist_.get<int>("precision", precision_);
 }
+
+
+const AmanziMesh::Entity_ID_List&
+Debugger::get_cells() const {
+  return dc_gid_;
+}
+
+
+void
+Debugger::set_cells(const AmanziMesh::Entity_ID_List& dc) {
+  dc_.clear();
+  dc_gid_.clear();
+  dcvo_.clear();
+
+  // make sure they are unique (they may not be because of add_cells()
+  // implementation decisions!
+  std::set<AmanziMesh::Entity_ID> dc_set(dc.begin(), dc.end());
+
+  const auto& cell_map = mesh_->cell_map(false);
+  int my_pid = mesh_->get_comm()->MyPID();
+  for (const auto& c : dc_set) {
+    AmanziMesh::Entity_ID lc = cell_map.LID(c);
+    if (lc >= 0) {
+      // include the LID
+      dc_.emplace_back(lc);
+      dc_gid_.emplace_back(c);
+
+      // make a verbose object for each case
+      Teuchos::ParameterList vo_plist;
+      vo_plist.sublist("verbose object");
+      vo_plist.sublist("verbose object") = plist_.sublist("verbose object");
+      vo_plist.sublist("verbose object").set("write on rank", my_pid);
+      dcvo_.emplace_back(Teuchos::rcp(new VerboseObject(*mesh_->get_comm(), name_, vo_plist)));
+    }
+  }
+}
+
+
+void
+Debugger::add_cells(const AmanziMesh::Entity_ID_List& dc) {
+  AmanziMesh::Entity_ID_List dc_new = get_cells();
+  dc_new.insert(dc_new.end(), dc.begin(), dc.end());
+  set_cells(dc_new);
+}
+
 
 std::string
 Debugger::Format_(double dat) {
@@ -135,9 +160,9 @@ Debugger::Format_(double dat) {
 }
 
 
+ // note: vector name argument taken by value intentionally
 std::string
-Debugger::FormatHeader_(std::string name, int c) {
-  std::string header_prefix(name);
+Debugger::FormatHeader_(std::string header_prefix, int c) {
   int header_prefix_width = header_width_ - cellnum_width_ - 4;
   if (header_prefix.size() > header_prefix_width) {
     header_prefix.erase(header_prefix_width);
@@ -188,7 +213,7 @@ Debugger::WriteCellInfo(bool include_faces) {
 
 // Write a vector individually.
 void
-Debugger::WriteVector(const std::string& name,
+Debugger::WriteVector(const std::string& vname,
                       const Teuchos::Ptr<const CompositeVector>& vec,
                       bool include_faces) {
   int n_vecs = 0;
@@ -221,7 +246,7 @@ Debugger::WriteVector(const std::string& name,
       Teuchos::OSTab tab = dcvo_[i]->getOSTab();
 
       if (dcvo_[i]->os_OK(verb_level_)) {
-        *dcvo_[i]->os() << FormatHeader_(name, c0_gid);
+        *dcvo_[i]->os() << FormatHeader_(vname, c0_gid);
 
         if (vec_c != Teuchos::null)
           *dcvo_[i]->os() << Format_((*vec_c)[j][c0]);

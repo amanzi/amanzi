@@ -38,14 +38,18 @@ initialized (as independent variables are owned by state, not by any PK).
 
 namespace Amanzi {
 
-State::State() {};
+State::State() {
+  vo_ = Teuchos::rcp(new VerboseObject("State", "none"));
+};
 
 State::State(Teuchos::ParameterList& state_plist) :
     state_plist_(state_plist),
     time_(0.0),
     cycle_(0),
     position_in_tp_(TIME_PERIOD_START)
-{};
+{
+  vo_ = Teuchos::rcp(new VerboseObject("State", state_plist_));
+};
 
 
 // copy constructor:
@@ -60,7 +64,9 @@ State::State(const State& other, StateConstructMode mode) :
     time_(other.time_),
     position_in_tp_(other.position_in_tp_),
     domain_sets_(other.domain_sets_),
-    cycle_(other.cycle_) {
+    cycle_(other.cycle_),
+    vo_(other.vo_)
+{
 
   if (mode == STATE_CONSTRUCT_MODE_COPY_DATA) {
     for (FieldMap::const_iterator f_it=other.fields_.begin();
@@ -528,8 +534,7 @@ Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition_(Key key) {
 
 
 void State::WriteDependencyGraph() const {
-  auto vo = Teuchos::rcp(new VerboseObject("State", state_plist_)); 
-  if (vo->os_OK(Teuchos::VERB_EXTREME)) {
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
     std::ofstream os("dependency_graph.txt", std::ios::out);
     for (auto fe=field_evaluator_begin(); fe!=field_evaluator_end(); ++fe) {
       os << *fe->second;
@@ -858,8 +863,7 @@ State::GetModelParameters(std::string modelname) {
 // Initialize data, allowing values to be specified here or in the owning PK.
 // All independent variables must be initialized here.
 void State::Setup() {
-  auto vo = Teuchos::rcp(new VerboseObject("State", state_plist_)); 
-  Teuchos::OSTab tab = vo->getOSTab();
+  Teuchos::OSTab tab = vo_->getOSTab();
   // State-required data
   if (state_plist_.isParameter("visualize mesh ranks")) {
     for (mesh_iterator mesh_it=meshes_.begin();
@@ -888,9 +892,9 @@ void State::Setup() {
       Errors::Message message(messagestream.str());
       Exceptions::amanzi_throw(message);
     }
-    if (vo->os_OK(Teuchos::VERB_EXTREME)) {
-      Teuchos::OSTab tab1 = vo->getOSTab();
-      *vo->os() << "checking compatibility: " << *evaluator->second;
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+      Teuchos::OSTab tab1 = vo_->getOSTab();
+      *vo_->os() << "checking compatibility: " << *evaluator->second;
     }
     evaluator->second->EnsureCompatibility(Teuchos::ptr(this));
   }
@@ -907,13 +911,13 @@ void State::Setup() {
     if (!f_it->second->initialized()) {
       f_it->second->CreateData();
     }
-    if (vo->os_OK(Teuchos::VERB_EXTREME)) {
-      *vo->os() << "Field " << f_it->first << ": ";
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+      *vo_->os() << "Field " << f_it->first << ": ";
       if (f_it->second->type() == Amanzi::COMPOSITE_VECTOR_FIELD) {
         auto cv = f_it->second->GetFieldData();
-        for (auto comp=cv->begin(); comp!=cv->end(); ++comp) *vo->os() << *comp << " ";
+        for (auto comp=cv->begin(); comp!=cv->end(); ++comp) *vo_->os() << *comp << " ";
       }
-      *vo->os() << "\n";
+      *vo_->os() << "\n";
     }
   }
 };
@@ -941,13 +945,12 @@ void State::Initialize() {
 
 
 void State::Initialize(Teuchos::RCP<State> S) {
-  auto vo = Teuchos::rcp(new VerboseObject("State", state_plist_)); 
-  Teuchos::OSTab tab = vo->getOSTab();
-  if (vo->os_OK(Teuchos::VERB_EXTREME)) {
-    Teuchos::OSTab tab1 = vo->getOSTab();
-    *vo->os() << "copying fields to new state.." << std::endl;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+    Teuchos::OSTab tab1 = vo_->getOSTab();
+    *vo_->os() << "copying fields to new state.." << std::endl;
   }
-  
+
   for (FieldMap::iterator f_it = fields_.begin();
        f_it != fields_.end(); ++f_it) {
     Teuchos::RCP<Field> field = f_it->second;
@@ -1520,7 +1523,7 @@ State::GetEvaluatorList(const Key& key)
       }
     }
   }
-  // return an empty new lsit
+  // return an empty new list
   return FEList().sublist(key);
 }
 

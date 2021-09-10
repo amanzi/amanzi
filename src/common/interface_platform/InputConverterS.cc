@@ -11,8 +11,7 @@
 
 #ifdef ENABLE_Structured
 
-#include <boost/algorithm/string.hpp>  // For string trimming
-
+#include <float.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>

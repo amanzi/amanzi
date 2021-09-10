@@ -26,9 +26,12 @@ class LookupTable {
   ~LookupTable() {};
 
   // Virtual methods that form the Viscosity
-  double Function(double T, double p);
-  double DFunctionDT(double T, double p);
-  double DFunctionDp(double T, double p);
+  double Function(double T, double p, int* ierr);
+  double DFunctionDT(double T, double p, int* ierr);
+  double DFunctionDp(double T, double p, int* ierr);
+
+  // error parsing
+  std::string ErrorMessage(double T, double p);
 
  private:
   void ReadMetaData_(std::ifstream& ifs, const std::string& label,
@@ -37,7 +40,7 @@ class LookupTable {
   void ReadBlock_(std::ifstream& ifs, const std::string& field,
                   int nP, int nT, double scale, double shift);
 
-  void FindBox_(double T, double p, int* ip, int* jp);
+  int FindBox_(double T, double p, int* ip, int* jp);
 
   double DerivativeP_(int i, int j);
   double DerivativeT_(int i, int j);

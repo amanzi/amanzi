@@ -195,6 +195,7 @@ int TreeOperator::Apply(const TreeVector& X, TreeVector& Y, double scalar) const
   }
 }
 
+
 int TreeOperator::ApplyUnassembled(const TreeVector& X, TreeVector& Y, double scalar) const
 {
   int ierr(0);
@@ -643,18 +644,19 @@ Impl::collectTreeOperatorLeaves(TreeOperator& tm, std::vector<std::vector<Teucho
 /* ******************************************************************
 * Populates matrix entries.
 ****************************************************************** */
-std::string TreeOperator::PrintDiagnostics() const
+std::string TreeOperator::PrintDiagnostics(int prefix) const
 {
   std::stringstream msg;
-  int n_blocks = blocks_.size();
-  for (int i = 0; i < n_blocks; ++i) {
-    for (int j = 0; j < n_blocks; ++j) {
+  for (int i = 0; i < row_size_; ++i) {
+    for (int j = 0; j < col_size_; ++j) {
       auto block = blocks_[i][j];
       if (block != Teuchos::null) {
-        msg << " block " << i << " " << j << ": ";
+        for (int k = 0; k < prefix + 1; ++k) msg << "  ";
+        msg << "block " << i << " " << j << ": ";
         auto op = block->get_operator();
         if (op == Teuchos::null) {
-           msg << "TreeOperator ";
+           msg << "TreeOperator:\n";
+           msg << block->PrintDiagnostics(prefix + 1);
         } else {
           for (auto it = op->begin(); it != op->end(); ++it) {
             msg << "<" << (*it)->schema_string << "> ";
@@ -665,6 +667,20 @@ std::string TreeOperator::PrintDiagnostics() const
     }
   }
   return msg.str();
+}
+
+
+/* ******************************************************************
+* Verify quality of underling containers
+****************************************************************** */
+void TreeOperator::Verify() const
+{
+  for (int i = 0; i < row_size_; ++i) {
+    for (int j = 0; j < col_size_; ++j) {
+      auto block = blocks_[i][j];
+      if (block != Teuchos::null) block->Verify();
+    }
+  }
 }
 
 }  // namespace Operators

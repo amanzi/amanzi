@@ -12,6 +12,8 @@
 */
 
 #include "dbc.hh"
+#include "EOS_Utils.hh"
+
 #include "TCMEvaluator_OnePhase.hh"
 
 namespace Amanzi {
@@ -34,7 +36,7 @@ TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(Teuchos::ParameterList& plist) :
 
   AMANZI_ASSERT(plist_.isSublist("thermal conductivity parameters"));
   Teuchos::ParameterList sublist = plist_.sublist("thermal conductivity parameters");
-  tc_ = Teuchos::rcp(new AmanziEOS::ThermalConductivity_Water(sublist));
+  tc_ = Teuchos::rcp(new AmanziEOS::H2O_ThermalConductivity(sublist));
 
   k_rock_ = sublist.get<double>("thermal conductivity of rock");
 }
@@ -68,12 +70,16 @@ void TCMEvaluator_OnePhase::EvaluateField_(
   const Epetra_MultiVector& poro_c = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
   Epetra_MultiVector& result_c = *result->ViewComponent("cell");
 
+  int ierr(0);
   int ncomp = result->size("cell", false);
   for (int i = 0; i != ncomp; ++i) {
-    double phi = poro_c[0][i];
     double k_liq = tc_->ThermalConductivity(temp_c[0][i]);
+    ierr = std::max(ierr, tc_->error_code());
+
+    double phi = poro_c[0][i];
     result_c[0][i] = phi * k_liq + (1.0 - phi) * k_rock_;
   }
+  AmanziEOS::ErrorAnalysis(S->GetFieldData(temperature_key_)->Comm(), ierr, tc_->error_msg());
 }
 
 

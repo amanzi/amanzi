@@ -12,7 +12,8 @@
 */
 
 #include "MolarFractionGasEvaluator.hh"
-#include "SaturatedVaporPressureFactory.hh"
+
+#include "EOSFactory.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
@@ -25,8 +26,8 @@ MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& pli
 {
   // set up the actual model
   AMANZI_ASSERT(plist_.isSublist("vapor pressure model parameters"));
-  SaturatedVaporPressureFactory svp_fac;
-  svp_model_ = svp_fac.CreateVaporPressure(plist_.sublist("vapor pressure model parameters"));
+  EOSFactory<EOS_SaturatedVaporPressure> svp_fac;
+  svp_model_ = svp_fac.CreateEOS(plist_.sublist("vapor pressure model parameters"));
 
   // process the list for my provided field.
   if (my_key_ == "")

@@ -157,7 +157,7 @@ void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- temperature
   if (bc_list->isSublist("temperature")) {
-    PK_DomainFunctionFactory<PK_DomainFunction> bc_factory(mesh_);
+    PK_DomainFunctionFactory<PK_DomainFunction> bc_factory(mesh_, S_);
 
     Teuchos::ParameterList& tmp_list = bc_list->sublist("temperature");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
@@ -172,7 +172,7 @@ void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- energy flux
   if (bc_list->isSublist("energy flux")) {
-    PK_DomainFunctionFactory<PK_DomainFunction> bc_factory(mesh_);
+    PK_DomainFunctionFactory<PK_DomainFunction> bc_factory(mesh_, S_);
 
     Teuchos::ParameterList& tmp_list = bc_list->sublist("energy flux");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
@@ -187,7 +187,7 @@ void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
 
   if (ep_list_->isSublist("source terms")) {
-    PK_DomainFunctionFactory<PK_DomainFunction> factory(mesh_);
+    PK_DomainFunctionFactory<PK_DomainFunction> factory(mesh_, S_);
     auto src_list = ep_list_->sublist("source terms");
     for (auto it = src_list.begin(); it != src_list.end(); ++it) {
       std::string name = it->first;
@@ -367,6 +367,41 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
       bc_value_enth_[f] = enth[0][bf] * n_l[0][bf];
     }
   }
+}
+
+
+/* ******************************************************************
+* Return a pointer to a local operator
+****************************************************************** */
+AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+    Energy_PK::ModifyCorrection(
+        double dt, Teuchos::RCP<const TreeVector> res,
+        Teuchos::RCP<const TreeVector> u,
+        Teuchos::RCP<TreeVector> du)
+{
+  int ntemp_clipped(0);
+  
+  // clipping temperature
+  for (auto comp = u->Data()->begin(); comp != u->Data()->end(); ++comp) {
+    const auto& uc = *u->Data()->ViewComponent(*comp);
+    auto& duc = *du->Data()->ViewComponent(*comp);
+
+    int ncomp = u->Data()->size(*comp, false);
+    for (int i = 0; i < ncomp; ++i) {
+      double tmp0 = uc[0][i] / 20.0;
+      double tmp1 = std::min(tmp0, uc[0][i] - 273.65);
+      if (duc[0][i] < -tmp0) {
+        ntemp_clipped++;
+        duc[0][i] = -tmp0;
+      } else if (duc[0][i] > tmp1) {
+        ntemp_clipped++;
+        duc[0][i] = tmp1;
+      } 
+    }
+  }
+
+  return (ntemp_clipped) > 0 ? AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED :
+      AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
 }
 
 

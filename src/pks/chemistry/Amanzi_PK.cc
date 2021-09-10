@@ -164,6 +164,8 @@ void Amanzi_PK::AllocateAdditionalChemistryStorage_()
 ******************************************************************* */
 void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
+  ncells_owned_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
   // initialization using base class
   Chemistry_PK::Initialize(S);
 
@@ -178,11 +180,13 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
   // state/chemistry_state object before we reach this point. We just
   // resize our local memory for migrating data here.
 
-  SizeBeakerState_();
-  CopyCellStateToBeakerState(0, tcc);
   chem_->Initialize(beaker_state_, beaker_parameters_);
-  chem_->CopyStateToBeaker(beaker_state_);
-  // chem_->VerifyState(beaker_state_);
+
+  if (ncells_owned_ > 0) {
+    CopyCellStateToBeakerState(0, tcc);
+    chem_->CopyStateToBeaker(beaker_state_);
+    // chem_->VerifyState(beaker_state_);
+  }
 
   // check names of primary species
   int nprimary = chem_->primary_species().size(); 
@@ -226,11 +230,13 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
     chem_->Display();
     vo_->Write(Teuchos::VERB_HIGH, "Initial speciation calculations in cell 0...\n");
 
-    for (int i = 0; i < nprimary; ++i) values[i] = (*tcc)[i][0];
-    chem_->EnforceConstraint(&beaker_state_, beaker_parameters_, constraints, values);
+    if (ncells_owned_ > 0) {
+      for (int i = 0; i < nprimary; ++i) values[i] = (*tcc)[i][0];
+      chem_->EnforceConstraint(&beaker_state_, beaker_parameters_, constraints, values);
 
-    vo_->Write(Teuchos::VERB_HIGH, "\nTest solution of initial conditions in cell 0:\n");
-    chem_->DisplayResults();
+      vo_->Write(Teuchos::VERB_HIGH, "\nTest solution of initial conditions in cell 0:\n");
+      chem_->DisplayResults();
+    }
   } catch (Exceptions::Amanzi_exception& geochem_err) {
     ierr = 1;
     internal_msg = geochem_err.what();
@@ -392,57 +398,6 @@ void Amanzi_PK::SetupAuxiliaryOutput()
 
 
 /* *******************************************************************
-* Initialize the beaker component data structure
-******************************************************************* */
-void Amanzi_PK::SizeBeakerState_()
-{
-  // NOTE: The beaker already has data for site density, sorption
-  // isotherms, ssa. If we want to use that single global value, then
-  // we leave these arrays empty as a flag to the beaker to use its
-  // own value. If we want to override the global chemistry value
-  // with cell by cell data, then we resize the containers here.
-
-  beaker_state_.total.resize(number_aqueous_components_, 0.0);
-  beaker_state_.free_ion.resize(number_aqueous_components_, 1.0e-9);
-  beaker_state_.mineral_volume_fraction.resize(number_minerals_, 0.0);
-
-  if (using_sorption_) {
-    beaker_state_.total_sorbed.resize(number_total_sorbed_, 0.0);
-  } else {
-    beaker_state_.total_sorbed.clear();
-  }
-
-  if (number_minerals_ > 0) {
-    beaker_state_.mineral_specific_surface_area.resize(number_minerals_, 0.0);
-  } else {
-    beaker_state_.mineral_specific_surface_area.clear();
-  }
-
-  if (number_ion_exchange_sites_ > 0) {
-    beaker_state_.ion_exchange_sites.resize(number_ion_exchange_sites_, 0.0);
-  } else {
-    beaker_state_.ion_exchange_sites.clear();
-  }
-
-  if (number_sorption_sites_ > 0) {
-    beaker_state_.surface_site_density.resize(number_sorption_sites_, 0.0);
-  } else {
-    beaker_state_.surface_site_density.clear();
-  }
-
-  if (using_sorption_isotherms_) {
-    beaker_state_.isotherm_kd.resize(number_aqueous_components_, 0.0);
-    beaker_state_.isotherm_freundlich_n.resize(number_aqueous_components_, 0.0);
-    beaker_state_.isotherm_langmuir_b.resize(number_aqueous_components_, 0.0);
-  } else {
-    beaker_state_.isotherm_kd.clear();
-    beaker_state_.isotherm_freundlich_n.clear();
-    beaker_state_.isotherm_langmuir_b.clear();
-  }
-}
-
-
-/* *******************************************************************
 * We must use the aqueous totals value calculated from transport
 * (aqueous_components), not the value stored in state!
 ******************************************************************* */
@@ -527,7 +482,7 @@ void Amanzi_PK::CopyCellStateToBeakerState(
     }
   }
 
-  // sorption isotherms
+  // sorption isotherms provided as material-based property must be copied to 
   if (using_sorption_isotherms_) {
     const Epetra_MultiVector& isotherm_kd = *S_->GetFieldData(isotherm_kd_key_)->ViewComponent("cell");
     const Epetra_MultiVector& isotherm_freundlich_n = *S_->GetFieldData(isotherm_freundlich_n_key_)->ViewComponent("cell");
@@ -680,9 +635,8 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   S_->GetFieldEvaluator(saturation_key_)->HasFieldChanged(S_.ptr(), name_);
 
   const Epetra_MultiVector& sat_vec = *S_->GetFieldData(saturation_key_)->ViewComponent("cell");
-  int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-  for (int c = 0; c < num_cells; ++c) {
+  for (int c = 0; c < ncells_owned_; ++c) {
     if (sat_vec[0][c] > saturation_tolerance_) {
       CopyCellStateToBeakerState(c, aqueous_components_);
       try {
@@ -717,10 +671,12 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   int tmp(max_itrs);
   mesh_->get_comm()->MaxAll(&tmp, &max_itrs, 1);
 
-  std::stringstream ss;
-  ss << "Newton iterations: " << min_itrs << "/" << max_itrs << "/" 
-     << avg_itrs / num_cells << ", maximum in gid=" << mesh_->GID(cmax, AmanziMesh::CELL) << std::endl;
-  vo_->Write(Teuchos::VERB_HIGH, ss.str());
+  if (ncells_owned_ > 0) {
+    std::stringstream ss;
+    ss << "Newton iterations: " << min_itrs << "/" << max_itrs << "/" 
+       << avg_itrs / ncells_owned_ << ", maximum in gid=" << mesh_->GID(cmax, AmanziMesh::CELL) << std::endl;
+    vo_->Write(Teuchos::VERB_HIGH, ss.str());
+  }
 
   // update time control parameters
   num_successful_steps_++;
@@ -765,9 +721,8 @@ Teuchos::RCP<Epetra_MultiVector> Amanzi_PK::extra_chemistry_output_data() {
   if (aux_data_ != Teuchos::null) {
     const Epetra_MultiVector& free_ion = *S_->GetFieldData(free_ion_species_key_)->ViewComponent("cell");
     const Epetra_MultiVector& activity = *S_->GetFieldData(primary_activity_coeff_key_)->ViewComponent("cell");
-    int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-    for (int cell = 0; cell < num_cells; cell++) {
+    for (int cell = 0; cell < ncells_owned_; cell++) {
       // populate aux_data_ by copying from the appropriate internal storage
       for (unsigned int i = 0; i < aux_names_.size(); i++) {
         if (aux_names_.at(i) == "pH") {
@@ -792,8 +747,7 @@ Teuchos::RCP<Epetra_MultiVector> Amanzi_PK::extra_chemistry_output_data() {
 void Amanzi_PK::set_chemistry_output_names(std::vector<std::string>* names) {
   names->clear();
   
-  for (std::vector<std::string>::const_iterator name = aux_names_.begin();
-       name != aux_names_.end(); name++) {
+  for (auto name = aux_names_.begin(); name != aux_names_.end(); name++) {
     names->push_back(*name);
   }
 }

@@ -111,20 +111,24 @@ void FlowEnergyMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // inform dependent PKs about coupling
   // -- flow
-  auto & mflow = glist_->sublist("PKs").sublist("flow matrix")
+  auto pks0 = plist_->get<Teuchos::Array<std::string> >("PKs order").toVector();
+  auto pks1 = glist_->sublist("PKs").sublist(pks0[0]).get<Teuchos::Array<std::string> >("PKs order").toVector();
+  auto pks2 = glist_->sublist("PKs").sublist(pks0[1]).get<Teuchos::Array<std::string> >("PKs order").toVector();
+
+  auto & mflow = glist_->sublist("PKs").sublist(pks1[0])
                         .sublist("physical models and assumptions");
   mflow.set<std::string>("coupled matrix fracture flow", "matrix");
 
-  auto& fflow = glist_->sublist("PKs").sublist("flow fracture")
+  auto& fflow = glist_->sublist("PKs").sublist(pks2[0])
                        .sublist("physical models and assumptions");
   fflow.set<std::string>("coupled matrix fracture flow", "fracture");
 
   // -- energy
-  auto& menergy = glist_->sublist("PKs").sublist("energy matrix")
+  auto& menergy = glist_->sublist("PKs").sublist(pks1[1])
                          .sublist("physical models and assumptions");
   menergy.set<std::string>("coupled matrix fracture energy", "matrix");
 
-  auto& fenergy = glist_->sublist("PKs").sublist("energy fracture")
+  auto& fenergy = glist_->sublist("PKs").sublist(pks2[1])
                          .sublist("physical models and assumptions");
   fenergy.set<std::string>("coupled matrix fracture energy", "fracture");
 
@@ -291,8 +295,7 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() 
-               << op_tree_matrix_->PrintDiagnostics() << std::endl
+    *vo_->os() << op_tree_matrix_->PrintDiagnostics() << std::endl
                << "preconditioner:" << std::endl
                << op_tree_pc_->PrintDiagnostics() << std::endl
                << vo_->color("green") << "Initialization of PK is complete: my dT=" << get_dt()
@@ -317,7 +320,20 @@ bool FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool r
     k += 2;
   }
 
-  bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
+  // make copy of primary unknowns
+  // save a copy of solution, i.e. primary variables
+  TreeVector solution_copy(*solution_);
+
+  bool fail;
+  try {
+    fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
+  } catch(Errors::CutTimeStep& e) {
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << e.what() << std::endl;
+    }
+    fail = false;
+  }
 
   if (fail) {
     k = 0;
@@ -329,9 +345,13 @@ bool FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool r
       k += 2;
     }
 
+    // recover the original solution
+    *solution_ = solution_copy;
+    ChangedSolution();
+
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Step failed. Restored [fracture-]{ " << names[0] << ", "
-               << names[1] << ", " << names[2] << " }" << std::endl;
+               << names[1] << ", " << names[2] << ", pressure, temperature }" << std::endl;
   }
 
   return fail;
@@ -516,7 +536,6 @@ void FlowEnergyMatrixFracture_PK::UpdateCouplingFluxes_(
   AmanziMesh::Entity_ID_List cells;
   const auto& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
   const auto& mmap = flux.Map();
-
   for (int c = 0; c < ncells_owned_f; ++c) {
     int f = mesh_fracture_->entity_get_parent(AmanziMesh::CELL, c);
     int first = mmap.FirstPointInElement(f);
@@ -529,7 +548,7 @@ void FlowEnergyMatrixFracture_PK::UpdateCouplingFluxes_(
     for (int k = 0; k < ncells; ++k) {
       double tmp = flux[0][first + shift] * dir;
 
-      // since we multiply by temperatur, the model for the flux is
+      // since we multiply by temperature, the model for the flux is
       // q (\eta H / T) * T for both matrix and preconditioner
       if (tmp > 0) {
         int c1 = cells[k];
@@ -617,7 +636,8 @@ int ApplyFlattened(const Operators::TreeOperator& op, const TreeVector& X, TreeV
     for (auto it = Xtv.begin(); it != Xtv.end(); ++it, ++m) {
       auto block = op.get_operator_block(n,m);
       if (block != Teuchos::null) {
-        ierr |= block->Apply(*(*it)->Data(), yN, 1.0);
+        const CompositeVector& xN = *(*it)->Data();
+        ierr |= block->Apply(xN, yN, 1.0);
       }
     }
   }

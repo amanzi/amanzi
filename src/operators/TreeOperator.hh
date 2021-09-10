@@ -112,7 +112,7 @@ class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
   }
 
   // i/o
-  std::string PrintDiagnostics() const;
+  std::string PrintDiagnostics(int prefix = 0) const;
 
   // forward operator
   virtual int Apply(const TreeVector& X, TreeVector& Y) const override {
@@ -159,6 +159,9 @@ class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
     return "TreeOperator: block diagonal";
   }
 
+  // quality control
+  void Verify() const;
+
  protected:
   int ApplyInverseBlockDiagonal_(const TreeVector& X, TreeVector& Y) const;
 
@@ -186,6 +189,7 @@ class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
   bool initialize_complete_;
   bool compute_complete_;
   bool assembly_complete_;
+
   Teuchos::RCP<VerboseObject> vo_;
 };
 

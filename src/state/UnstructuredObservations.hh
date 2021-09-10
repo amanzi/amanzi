@@ -53,19 +53,21 @@ namespace Amanzi {
 class UnstructuredObservations : public IOEvent {
 
  public:
-  UnstructuredObservations(Teuchos::ParameterList& obs_list,
-                           const Teuchos::Ptr<State>& S);
+  UnstructuredObservations(Teuchos::ParameterList& obs_list);
 
+  void Setup(const Teuchos::Ptr<State>& S);
   void MakeObservations(const Teuchos::Ptr<State>& S);
   void Flush();
 
  private:
-  void Init_();
+  // NOTE: this should only be called on one rank
+  void InitFile_();
   void Write_(double time, const std::vector<double>& obs);
 
  private:
   std::vector<Teuchos::RCP<Observable>> observables_;
 
+  std::string writing_domain_;
   bool write_;
   int num_total_;
   std::string filename_;
@@ -74,6 +76,7 @@ class UnstructuredObservations : public IOEvent {
   int count_;
   bool time_integrated_;
   std::vector<double> integrated_observation_;
+  bool observed_once_;
 
   double time_unit_factor_;
   std::string time_unit_;
