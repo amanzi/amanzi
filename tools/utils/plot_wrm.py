@@ -255,6 +255,11 @@ if __name__ == "__main__":
     parser.add_argument('--kr', action='store_true', help='Plot relative permeability curve')
 
     args = parser.parse_args()
+    if args.wrm is None:
+        args.wrm = []
+    if args.wp is None:
+        args.wp = []
+    
     color_list = colors.enumerated_colors(len(args.wrm)+len(args.wp))
 
     fig = plt.figure()
