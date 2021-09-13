@@ -344,7 +344,6 @@ template<class PK_Base>
 void PK_MPCStrong<PK_Base>::UpdatePreconditioner(
     double t, Teuchos::RCP<const TreeVector> up, double h)
 {
-  // loop over sub-PKs
   for (unsigned int i = 0; i != sub_pks_.size(); ++i) {
     // pull out the up sub-vector
     Teuchos::RCP<const TreeVector> pk_up = up->SubVector(i);

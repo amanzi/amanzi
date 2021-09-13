@@ -400,6 +400,9 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
     }
   }
 
+  int tmp(ntemp_clipped);
+  u->Data()->Comm()->SumAll(&tmp, &ntemp_clipped, 1);  // find the global clipping
+
   return (ntemp_clipped) > 0 ? AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED :
       AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
 }
