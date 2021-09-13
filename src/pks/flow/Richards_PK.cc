@@ -476,6 +476,11 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
     opfactory.SetVariableScalarCoefficient(krel_, dKdP_);
     opfactory.SetConstantGravitationalTerm(gravity_, rho_);
   } else {
+    // double mu = *S_->GetScalarData("const_fluid_viscosity");
+    // WhetStone::Tensor Ktmp(dim, 1);
+    // Ktmp(0, 0) = rho_;
+    // opfactory.SetConstantTensorCoefficient(Ktmp);
+
     S_->GetFieldEvaluator(permeability_key_)->HasFieldChanged(S_.ptr(), permeability_key_);
     auto kptr = S_->GetFieldData(permeability_key_);
     opfactory.SetVariableScalarCoefficient(kptr);

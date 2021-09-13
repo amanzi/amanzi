@@ -657,6 +657,9 @@ void Operator::RestoreCheckPoint()
   for (auto& it : *this) {
     it->RestoreCheckPoint();
   }
+
+  assembly_complete_ = false;
+  compute_complete_ = false;
 }
 
 

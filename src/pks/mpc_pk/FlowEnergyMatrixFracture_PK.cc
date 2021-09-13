@@ -332,7 +332,7 @@ bool FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool r
       Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << e.what() << std::endl;
     }
-    fail = false;
+    fail = true;
   }
 
   if (fail) {
@@ -511,13 +511,14 @@ std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux> >
 void FlowEnergyMatrixFracture_PK::UpdateCouplingFluxes_(
     const std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux> >& adv_coupling)
 {
+  S_->GetFieldEvaluator("enthalpy")->HasFieldChanged(S_.ptr(), "enthalpy");
   S_->GetFieldData("enthalpy")->ScatterMasterToGhosted("cell");
+
   S_->GetFieldData("molar_density_liquid")->ScatterMasterToGhosted("cell");
   S_->GetFieldData("temperature")->ScatterMasterToGhosted("cell");
   S_->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
 
   // extract enthalpy fields
-  S_->GetFieldEvaluator("enthalpy")->HasFieldChanged(S_.ptr(), "enthalpy");
   const auto& H_m = *S_->GetFieldData("enthalpy", "enthalpy")->ViewComponent("cell", true);
   const auto& T_m = *S_->GetFieldData("temperature")->ViewComponent("cell", true);
   const auto& n_l_m = *S_->GetFieldData("molar_density_liquid")->ViewComponent("cell", true);
@@ -616,6 +617,44 @@ void FlowEnergyMatrixFracture_PK::SwapEvaluatorField_(
     fdf_copy = Teuchos::rcp(new CompositeVector(fd));
     fd = ev;
   }
+}
+
+
+/* ******************************************************************
+* Check solution and fields for convergence  
+****************************************************************** */
+double FlowEnergyMatrixFracture_PK::ErrorNorm(
+    Teuchos::RCP<const TreeVector> u, 
+    Teuchos::RCP<const TreeVector> du,
+    Teuchos::RCP<const TreeVector> res,
+    const AmanziSolvers::ConvergenceMonitor& monitor)
+{
+  double error = PK_MPCStrong<PK_BDF>::ErrorNorm(u, du);
+
+  // residual control for energy (note that we cannot do it at
+  // the lower level due to coupling terms.
+  const auto mesh_f = S_->GetMesh("fracture");
+  const auto& mol_fc = *S_->GetFieldData("fracture-molar_density_liquid")->ViewComponent("cell");
+
+  double error_r(0.0), denergy, energy;
+  const auto& res_fc = *res->SubVector(1)->SubVector(1)->Data()->ViewComponent("cell");
+  int ncells = res_fc.MyLength();
+
+  for (int c = 0; c < ncells; ++c) {
+    denergy = res_fc[0][c] * dt_;  // [J] 
+    energy = 76.0 * mol_fc[0][c] * mesh_f->cell_volume(c);  // reference cell energy
+    error_r = std::max(error_r, res_fc[0][c] / energy);
+  }
+
+std::cout << error << " " << error_r << std::endl;
+  error = std::max(error, error_r);
+
+#ifdef HAVE_MPI
+    double tmp = error;
+    u->Comm()->MaxAll(&tmp, &error, 1);
+#endif
+
+  return error;
 }
 
 

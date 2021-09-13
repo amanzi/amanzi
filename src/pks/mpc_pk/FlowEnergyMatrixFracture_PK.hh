@@ -51,11 +51,15 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
       Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new,
       Teuchos::RCP<TreeVector> f);
   
-  // updates the preconditioner
+  // -- update and application of preconditioner
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt);
-  
-  // preconditioner application
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+
+  // -- convergence control
+  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
+                           Teuchos::RCP<const TreeVector> du,
+                           Teuchos::RCP<const TreeVector> res,
+                           const AmanziSolvers::ConvergenceMonitor& monitor);
 
   std::string name() { return "thermal flow matrix fracture"; } 
 

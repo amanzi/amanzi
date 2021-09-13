@@ -41,6 +41,11 @@ class SolverFnBase {
   virtual double ErrorNorm(const Teuchos::RCP<const Vector>& u,
                            const Teuchos::RCP<const Vector>& du) = 0;
 
+  virtual double ErrorNorm(const Teuchos::RCP<const Vector>& u,
+                           const Teuchos::RCP<const Vector>& du,
+                           const Teuchos::RCP<const Vector>& res, 
+                           const AmanziSolvers::ConvergenceMonitor& monitor) = 0;
+
   // allow PK to modify a correction
   virtual FnBaseDefs::ModifyCorrectionResult 
       ModifyCorrection(const Teuchos::RCP<const Vector>& r,

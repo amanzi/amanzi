@@ -71,6 +71,12 @@ class MultiscaleFlowPorosity_GDPM : public MultiscaleFlowPorosity,
   virtual double ErrorNorm(const Teuchos::RCP<const WhetStone::DenseVector>& u,
                            const Teuchos::RCP<const WhetStone::DenseVector>& du) override;
 
+  virtual double ErrorNorm(const Teuchos::RCP<const WhetStone::DenseVector>& u,
+                           const Teuchos::RCP<const WhetStone::DenseVector>& du,
+                           const Teuchos::RCP<const WhetStone::DenseVector>& res,
+                           const AmanziSolvers::ConvergenceMonitor& monitor) override { return 0.0; }
+
+
   // -- calculate preconditioner
   virtual void UpdatePreconditioner(const Teuchos::RCP<const WhetStone::DenseVector>& u) override;
 

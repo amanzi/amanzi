@@ -59,6 +59,13 @@ class SolverFnBaseJF : public SolverFnBase<Vector> {
     return fn_->ErrorNorm(u, du);
   }
 
+  virtual double ErrorNorm(const Teuchos::RCP<const Vector>& u,
+                           const Teuchos::RCP<const Vector>& du,
+                           const Teuchos::RCP<const Vector>& res, 
+                           const AmanziSolvers::ConvergenceMonitor& monitor) {
+    return fn_->ErrorNorm(u, du, res, monitor);
+  }
+
   // Check the admissibility of an inner iterate (ensures preconditions for
   // F(u) to be defined).
   virtual bool IsAdmissible(const Teuchos::RCP<const Vector>& up) {
