@@ -79,9 +79,9 @@ build_link_flags=
 
 # Accelerators
 epetra=${TRUE}
-kokkos=${FALSE}
-kokkos_cuda=${FALSE}
-kokkos_openmp=${FALSE}
+tpetra=${FALSE}
+cuda=${FALSE}
+openmp=${FALSE}
 
 # MPI installation
 tools_mpi=openmpi
@@ -390,10 +390,14 @@ Value in brackets indicates default setting.
   xsdk                    build TPLs available in xSDK first, then supplement with additional 
                           individual TPL builds ['"${xsdk}"']
 
-  epetra                  build the Epetra stack of TPLs ['"${epetra}"']
-  kokkos                  build the Tpetra/Kokkos stack of TPLs ['"${kokkos}"']
-  kokkos_cuda             build Kokkos with Cuda node support (currently only Kokkos) ['"${kokkos_cuda}"']
-  kokkos_openmp           build Kokkos with OpenMP node support (currently only Kokkos) ['"${kokkos_openmp}"']
+  epetra                  build Amanzi using the Epetra stack of TPLs ['"${epetra}"']
+  tpetra                  build Amanzi using the Tpetra/Kokkos stack of TPLs ['"${tpetra}"']
+                          NOTE: enabling both builds TPLs that are compatible with both Amanzi
+                          variants, but will error prior to building Amanzi.
+  cuda                    build with Cuda support, currently used by Kokkos and Hypre ['"${cuda}"']
+  openmp                  build with OpenMP support, currently used by Kokkos and Hypre ['"${openmp}"']
+                          Note that this option may conflict with structured, so use of --enable-openmp
+                          may require the use of --disable-structured.
 
   build_amanzi            build TPLs and Amanzi ['"${build_amanzi}"']
   build_user_guide        build TPLs, Amanzi, and UserGuide ['"${build_user_guide}"']
@@ -511,6 +515,20 @@ turns on debugging to find BLAS and LAPACK libraries, builds the TPLs
                  --debug_find_blas
                  --parallel=8 
                  --enable-geochemistry
+
+Example that builds a set of TPLs that can support main-branch
+development (Epetra), tpetra-branch development (Tpetra) and
+structured builds.  Note that optionally, the --enable-cuda or
+--enable-openmp flags could be added (though note that --enable-openmp
+currently requires --disable-structured).
+
+  ./bootstrap.sh --tpl-install-prefix=$HOME/TPLs-0.98.0-gcc-9.3.0-openmpi-4.0.3
+                 --with-mpi=/usr
+                 --enable-epetra
+                 --enable-tpetra
+                 --enable-geochemistry
+                 --disable-structured
+                 --enable-openmp
 '
 }
 
@@ -567,7 +585,9 @@ Amanzi TPLs:
     superlu      = '"${superlu}"'
     petsc        = '"${petsc}"'
     epetra       = '"${epetra}"'
-    kokkos       = '"${kokkos}"' (Cuda='"${kokkos_cuda}"', OpenMP='"${kokkos_openmp}"')
+    tpetra       = '"${tpetra}"'
+    cuda         = '"${cuda}"'
+    openmp       = '"${openmp}"'
     pflotran     = '"${pflotran}"'
     silo         = '"${silo}"'
     Spack        = '"${Spack}"'
@@ -868,17 +888,20 @@ List of INPUT parameters
     stk_mesh=${FALSE}
   else
     if [ "${epetra}" -eq "${FALSE}" ]; then
-      warning_message "Disabling all of 'geochemistry', 'hypre', and 'superlu' as they are not required when disabling 'epetra'"
+      warning_message "Disabling all of 'geochemistry' as it is not yet supported when disabling 'epetra'"
       geochemistry=${FALSE}
-      hypre=${FALSE}
-      superlu=${FALSE}
       alquimia=${FALSE}
       pflotran=${FALSE}
       crunchtope=${FALSE}
       petsc=${FALSE}
 
-      if [ "${kokkos}" -eq "${FALSE}" ]; then
-        error_message "One of 'epetra' or 'kokkos' must be enabled"
+      if [ "${hypre}" -eq "${FALSE}" ]; then
+          warning_message "Disabling 'superlu' as it is not used when disabling 'epetra' and 'hypre'"
+          superlu=${FALSE}
+      fi
+      
+      if [ "${tpetra}" -eq "${FALSE}" ]; then
+        error_message "One of 'epetra' or 'tpetra' must be enabled"
         exit_now 30
       fi
     fi
@@ -1603,9 +1626,9 @@ function define_nersc_options
 
 function define_summit_options
 {
-  if [ "${kokkos_cuda}" -eq "${TRUE}" ]; then
+  if [ "${cuda}" -eq "${TRUE}" ]; then
     mpi_exec_args="-a 1 -c 1 -g 1" # 1 gpu per mpi rank, max 6 ranks
-  elif [ "${kokkos_openmp}" -eq "${TRUE}" ]; then
+  elif [ "${openmp}" -eq "${TRUE}" ]; then
     mpi_exec_args="-a 1 -c 7" # 7 cpus per mpi rank, max 6 ranks
   fi
   
@@ -1794,10 +1817,10 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_Silo:BOOL=${silo} \
       -DENABLE_CLM:BOOL=${clm} \
       -DENABLE_SPACK:BOOL=${Spack} \
-      -DENABLE_EPETRA:BOOL=${epetra} \
-      -DENABLE_KOKKOS:BOOL=${kokkos} \
-      -DENABLE_KOKKOS_CUDA:BOOL=${kokkos_cuda} \
-      -DENABLE_KOKKOS_OPENMP:BOOL=${kokkos_openmp} \
+      -DENABLE_Epetra:BOOL=${epetra} \
+      -DENABLE_Tpetra:BOOL=${tpetra} \
+      -DENABLE_CUDA:BOOL=${cuda} \
+      -DENABLE_OpenMP:BOOL=${openmp} \
       -DSPACK_BINARY:STRING=${Spack_binary} \
       -DBUILD_SPACK:BOOL=${build_Spack} \
       -DENABLE_XSDK:BOOL=${xsdk} \
@@ -1918,10 +1941,10 @@ cmd_configure="${cmake_binary} \
     -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
     -DENABLE_CLM:BOOL=${clm} \
     -DENABLE_Silo:BOOL=${silo} \
-    -DENABLE_EPETRA:BOOL=${epetra} \
-    -DENABLE_KOKKOS:BOOL=${kokkos} \
-    -DENABLE_KOKKOS_CUDA:BOOL=${kokkos_cuda} \
-    -DENABLE_KOKKOS_OPENMP:BOOL=${kokkos_openmp} \
+    -DENABLE_Epetra:BOOL=${epetra} \
+    -DENABLE_Tpetra:BOOL=${tpetra} \
+    -DENABLE_CUDA:BOOL=${cuda} \
+    -DENABLE_OpenMP:BOOL=${openmp} \
     -DENABLE_AmanziPhysicsModule:BOOL=${amanzi_physics} \
     -DENABLE_ATSPhysicsModule:BOOL=${ats_physics} \
     -DENABLE_DBC:BOOL=${dbc} \

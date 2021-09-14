@@ -22,7 +22,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 # if (ENABLE_OpenMP)
 #   find_package(OpenMP)
 
-if (ENABLE_KOKKOS_OPENMP)
+if (ENABLE_OpenMP)
   set(hypre_openmp_opt "--with-openmp" "--with-LDFLAGS=${OpenMP_C_LIBRARIES}")
 else()
   set(hypre_openmp_opt)
@@ -49,8 +49,7 @@ else()
   set(hypre_lapack_opt)
 endif()
 
-if(ENABLE_KOKKOS_CUDA)
-  find_package(CUDA REQUIRED)
+if (ENABLE_CUDA)
   set(CUDA_HOME ${CUDA_TOOLKIT_ROOT_DIR})
   message(STATUS "CUDA_HOME: ${CUDA_HOME}")
   set(Hypre_CUDA_SM 70)
