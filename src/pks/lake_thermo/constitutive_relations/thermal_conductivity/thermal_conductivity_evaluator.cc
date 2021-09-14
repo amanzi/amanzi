@@ -90,12 +90,14 @@ void ThermalConductivityEvaluator::EvaluateField_(
       Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
 
       int ncomp = result->size(*comp, false);
+      std::cout << "ncomp = " << ncomp << std::endl;
 
-      int i_ice_max;
+      int i_ice_max = 0;
 
 
       for (int i=0; i!=ncomp; ++i) {
         if (temp_v[0][i] < 273.15) { // check if there is ice cover
+          std::cout << "temp_v[0][" << i << "] = " << temp_v[0][i] << std::endl;
           ice_cover_ = true;
           i_ice_max = i;
         }
@@ -106,7 +108,6 @@ void ThermalConductivityEvaluator::EvaluateField_(
 
       const AmanziGeometry::Point& zcw = mesh->cell_centroid(i_ice_max+1);
       z_w = zcw[2];
-
 
       /*
       for (int i=0; i!=ncomp; ++i) {
@@ -174,7 +175,7 @@ void ThermalConductivityEvaluator::EvaluateField_(
 
       // no ice
       for (int i=0; i!=ncomp; ++i) {
-          result_v[0][i] = lambda_w;
+          result_v[0][i] = 1.5; //lambda_w;
       }
 
     }

@@ -374,9 +374,11 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
   S->RequireField(ice_content_key_, name_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-//  // Require a field for pressure
-//   S->RequireField(pressure_key_, name_)->SetMesh(mesh_)->SetGhosted()
-//       ->AddComponent("cell", AmanziMesh::CELL, 1);
+  // Require a field for pressure
+  if (!coupled_soil) {
+	  S->RequireField(pressure_key_, name_)->SetMesh(mesh_)->SetGhosted()
+		  ->AddComponent("cell", AmanziMesh::CELL, 1);
+  }
 
   // -- heat capacity evaluator
   S->RequireField(heat_capacity_key_)->SetMesh(mesh_)
@@ -640,10 +642,12 @@ void Soil_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
 
   std::cout << "Initialized I" << std::endl;
 
-//  S->GetFieldData(pressure_key_, name_)->PutScalar(0.);
-//  S->GetField(pressure_key_, name_)->set_initialized();
-//
-//  std::cout << "Initialized p" << std::endl;
+  if (!coupled_soil) {
+	  S->GetFieldData(pressure_key_, name_)->PutScalar(0.);
+	  S->GetField(pressure_key_, name_)->set_initialized();
+
+	  std::cout << "Initialized p" << std::endl;
+  }
 
   // summary of initialization
   Teuchos::OSTab tab = vo_->getOSTab();

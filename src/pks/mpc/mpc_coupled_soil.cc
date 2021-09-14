@@ -103,6 +103,17 @@ void MPCCoupledSoil::Setup(const Teuchos::Ptr<State>& S)
   Teuchos::RCP<Operators::Operator> pcA = sub_pks_[0]->preconditioner();
   Teuchos::RCP<Operators::Operator> pcB = sub_pks_[1]->preconditioner();
 
+//  std::cout << "MPC Soil pcA" << std::endl;
+//  pcA->SymbolicAssembleMatrix();
+//  pcA->AssembleMatrix();
+//  std::cout << *pcA->A() << std::endl;
+//  std::cout << "MPC Soil pcB" << std::endl;
+//  pcB->SymbolicAssembleMatrix();
+//  pcB->AssembleMatrix();
+//  std::cout << *pcB->A() << std::endl;
+
+//  exit(0);
+
   Teuchos::ParameterList& diff0_list = pks_list_->sublist(pk_order[0]).sublist("diffusion");
   Teuchos::ParameterList& diff1_list = pks_list_->sublist(pk_order[1]).sublist("diffusion");
 
@@ -127,7 +138,7 @@ void MPCCoupledSoil::Setup(const Teuchos::Ptr<State>& S)
 
   // select the method used for preconditioning
   std::string precon_string = plist_->get<std::string>("preconditioner type",
-                                                       "picard");
+                                                       "block diagonal");
   if (precon_string == "none") {
     precon_type_ = PRECON_NONE;
   } else if (precon_string == "block diagonal") {
@@ -362,7 +373,10 @@ void MPCCoupledSoil::Setup(const Teuchos::Ptr<State>& S)
     preconditioner_->set_inverse_parameters(plist_->sublist("inverse"));
     preconditioner_->InitializeInverse();
     preconditioner_->SymbolicAssembleMatrix();
+    preconditioner_->AssembleMatrix();
 
+//    std::cout << *preconditioner_->A() << std::endl;
+//    exit(0);
 
   }
 
@@ -500,6 +514,45 @@ void MPCCoupledSoil::CommitStep(double t_old, double t_new, const Teuchos::RCP<S
   }
   update_pcs_ = 0;
 }
+
+/*
+// -- computes the non-linear functional g = g(t,u,udot)
+//    By default this just calls each sub pk FunctionalResidual().
+void
+MPCCoupledSoil::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+                            Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) {
+
+  std::cout << "FunctionalResidual MPC Soil START" << std::endl;
+
+  // generate local matrices and apply sources and boundary conditions
+  StrongMPC<PK_PhysicalBDF_Default>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
+
+  // although, residual calculation can be completed using off-diagonal
+  // blocks, we use global matrix-vector multiplication instead.
+  preconditioner_->AssembleMatrix();
+  int ierr = preconditioner_->ApplyAssembled(*u_new, *f);
+  AMANZI_ASSERT(!ierr);
+
+  // diagonal blocks in tree operator must be lake and soil
+  AMANZI_ASSERT(sub_pks_[0]->name() == "flow" &&
+                  sub_pks_[1]->name() == "soil thermo");
+
+  auto op0 = sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX);
+  auto op1 = sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX);
+
+//  f->SubVector(0)->Data()->Update(-1.0, *op0->rhs(), 1.0);
+//  f->SubVector(1)->Data()->Update(-1.0, *op1->rhs(), 1.0);
+
+  sub_pks_[0]->FunctionalResidual(t_old, t_new, u_old->SubVector(0),
+            u_new->SubVector(0), f->SubVector(0));
+  sub_pks_[1]->FunctionalResidual(t_old, t_new, u_old->SubVector(1),
+            u_new->SubVector(1), f->SubVector(1));
+
+  std::cout << *preconditioner_->A() << std::endl;
+
+  std::cout << "FunctionalResidual MPC Soil DONE" << std::endl;
+}
+*/
 
 
 // update the predictor to be physically consistent
@@ -738,6 +791,12 @@ void MPCCoupledSoil::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
 int MPCCoupledSoil::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu)
 {
+
+  std::cout << "MPCCoupledSoil::ApplyPreconditioner START" << std::endl;
+
+  std::cout << "u:" << std::endl;
+  u->Print(std::cout);
+
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Precon application:" << std::endl;
@@ -755,13 +814,17 @@ int MPCCoupledSoil::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
 
   int ierr = 0;
   if (precon_type_ == PRECON_NONE) {
+	std::cout << "PRECON_NONE" << std::endl;
     *Pu = *u;
     ierr = 1;
   } else if (precon_type_ == PRECON_BLOCK_DIAGONAL) {
+	  std::cout << "PRECON_BLOCK_DIAGONAL" << std::endl;
     ierr = StrongMPC::ApplyPreconditioner(u,Pu);
   } else if (precon_type_ == PRECON_PICARD) {
+	  std::cout << "PRECON_PICARD" << std::endl;
     ierr = preconditioner_->ApplyInverse(*u, *Pu);
   } else if (precon_type_ == PRECON_EWC) {
+	  std::cout << "PRECON_EWC" << std::endl;
     ierr = preconditioner_->ApplyInverse(*u, *Pu);
   }
 
@@ -774,6 +837,13 @@ int MPCCoupledSoil::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
     vecs.push_back(Pu->SubVector(1)->Data().ptr());
     db_->WriteVectors(vnames, vecs, true);
   }
+
+  std::cout << "precon_type_ = " << precon_type_ << std::endl;
+
+  std::cout << "Pu:" << std::endl;
+  Pu->Print(std::cout);
+
+  std::cout << "MPCCoupledSoil::ApplyPreconditioner END" << std::endl;
 
   return (ierr > 0) ? 0 : 1;
 }

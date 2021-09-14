@@ -176,6 +176,9 @@ class MPCCoupledSoil : public StrongMPC<PK_PhysicalBDF_Default> {
 
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
 
+//  void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+//                              Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) override;
+
   // update the predictor to be physically consistent
   virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> up0,
           Teuchos::RCP<TreeVector> up) override;

@@ -213,6 +213,7 @@ namespace Amanzi {
 // forward declarations
 class MPCSubsurface;
 class MPCCoupledSoil;
+class MPCLakeSoilRichards;
 class PredictorDelegateBCFlux;
 class PrimaryVariableFieldEvaluator;
 namespace WhetStone { class Tensor; }
@@ -267,6 +268,10 @@ public:
 
   // evaluating consistent faces for given BCs and cell values
   virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
+
+  // -- access methods
+  virtual Teuchos::RCP<Operators::Operator>
+      my_operator(const Operators::OperatorType& type) override;
 
 protected:
   // Create of physical evaluators.
@@ -433,6 +438,9 @@ private:
 
   // Richards has another friend in couplers...
   friend class Amanzi::MPCCoupledSoil;
+
+  // Richards has another friend in couplers...
+  friend class Amanzi::MPCLakeSoilRichards;
 
 };
 

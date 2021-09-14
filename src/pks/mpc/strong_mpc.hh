@@ -100,8 +100,10 @@ public:
                        Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<TreeVector> du);
 
-protected:
   using MPC<PK_t>::sub_pks_;
+
+protected:
+
   using MPC<PK_t>::global_list_;
   using MPC<PK_t>::pk_tree_;
   using MPC<PK_t>::pks_list_;

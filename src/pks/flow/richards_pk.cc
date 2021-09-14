@@ -100,8 +100,11 @@ void Richards::Setup(const Teuchos::Ptr<State>& S)
   std::cout << "setup richards START" << std::endl;
 
   PK_PhysicalBDF_Default::Setup(S);
+  std::cout << "after PK_PhysicalBDF_Default::Setup(S)" << std::endl;
   SetupRichardsFlow_(S);
+  std::cout << "SetupRichardsFlow_(S)" << std::endl;
   SetupPhysicalEvaluators_(S);
+  std::cout << "SetupPhysicalEvaluators_(S)" << std::endl;
 
   std::cout << "setup richards DONE" << std::endl;
 
@@ -1704,6 +1707,17 @@ Richards::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
   }
 
   return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
+}
+
+/* ******************************************************************
+* Return a pointer to a local operator
+****************************************************************** */
+Teuchos::RCP<Operators::Operator> Richards::my_operator(
+    const Operators::OperatorType& type)
+{
+  if (type == Operators::OPERATOR_MATRIX) return matrix_;
+  else if (type == Operators::OPERATOR_PRECONDITIONER_RAW) return preconditioner_;
+  return Teuchos::null;
 }
 
 } // namespace
