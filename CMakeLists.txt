@@ -90,7 +90,7 @@ endif()
 
 if(ENABLE_CUDA) 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
-    -Wno-deprecated-declarations -lineinfo \
+    -Wno-deprecated-declarations -lineinfo -lcusparse \
     -arch=sm_70 \
     -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored \
     -Xcudafe --diag_suppress=conversion_function_not_usable \
