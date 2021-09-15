@@ -56,8 +56,12 @@ getFaceOnBoundaryInternalCell(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_I
   AmanziMesh::Entity_ID_List cells;
   mesh.face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
   if (cells.size() != 1) {
-    Errors::Message message("getFaceOnBoundaryInternalCell called with non-internal face "+std::to_string(f));
-    Exceptions::amanzi_throw(message);
+    AmanziGeometry::Point fc = mesh.face_centroid(f);
+    std::stringstream msgs;
+    msgs << "getFaceOnBoundaryInternalCell called with non-internal face GID "
+        << mesh.face_map(true).GID(f) << " at " << fc;
+    Errors::Message msg(msgs.str());
+    Exceptions::amanzi_throw(msg);
   }
   return cells[0];
 }

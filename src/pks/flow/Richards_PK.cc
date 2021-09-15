@@ -24,6 +24,7 @@
 #include "exceptions.hh"
 #include "InverseFactory.hh"
 #include "Mesh.hh"
+#include "Mesh_Algorithms.hh"
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PK_Utils.hh"
@@ -1004,7 +1005,7 @@ double Richards_PK::BoundaryFaceValue(int f, const CompositeVector& u)
     const Epetra_MultiVector& u_face = *u.ViewComponent("face");
     face_value = u_face[0][f];
   } else {
-    int c = BoundaryFaceGetCell(f);
+    int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh_, f);
     face_value = DeriveBoundaryFaceValue(f, u, wrm_->second[(*wrm_->first)[c]]);
   }
   return face_value;
