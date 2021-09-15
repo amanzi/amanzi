@@ -83,7 +83,6 @@ if (BUILD_TESTS AND ENABLE_Unstructured)
     # Copy test directory files if any out of source build
     if (NOT (${CMAKE_SOURCE_DIR} EQUAL ${CMAKE_BINARY_DIR}))
         file(GLOB DataFiles "${CHEMPK_SOURCE_DIR}/test/*.xml"
-                            "${CHEMPK_SOURCE_DIR}/test/*.bgd"
                             "${CHEMPK_SOURCE_DIR}/test/*.dbs"
                             "${CHEMPK_SOURCE_DIR}/test/*.in"
                             "${CHEMPK_SOURCE_DIR}/test/*.dat")

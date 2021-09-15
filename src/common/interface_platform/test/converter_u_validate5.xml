@@ -74,6 +74,7 @@
       <ParameterList name="submesh">
         <Parameter name="regions" type="Array(string)" value="{FRACTURE_NETWORK_INTERNAL}"/>
         <Parameter name="extraction method" type="string" value="manifold mesh"/>
+        <Parameter name="domain name" type="string" value="fracture"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="verbose object">
@@ -124,12 +125,12 @@
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
-          <ParameterList name="coupled flow steady">
+          <ParameterList name="steady:coupled flow">
             <Parameter name="PK type" type="string" value="darcy matrix fracture"/>
-            <ParameterList name="flow matrix steady">
+            <ParameterList name="steady:flow matrix">
               <Parameter name="PK type" type="string" value="darcy"/>
             </ParameterList>
-            <ParameterList name="flow fracture steady">
+            <ParameterList name="steady:flow fracture">
               <Parameter name="PK type" type="string" value="darcy"/>
             </ParameterList>
           </ParameterList>
@@ -142,12 +143,12 @@
       </ParameterList>
       <ParameterList name="TP 1">
 	<ParameterList name="PK tree">
-          <ParameterList name="coupled transport">
+          <ParameterList name="transient:coupled transport">
             <Parameter name="PK type" type="string" value="transport matrix fracture"/>
-            <ParameterList name="transport matrix">
+            <ParameterList name="transient:transport matrix">
               <Parameter name="PK type" type="string" value="transport"/>
             </ParameterList>
-            <ParameterList name="transport fracture">
+            <ParameterList name="transient:transport fracture">
               <Parameter name="PK type" type="string" value="transport"/> 
             </ParameterList>
           </ParameterList>
@@ -217,6 +218,20 @@
         </ParameterList>
       </ParameterList>
 
+      <ParameterList name="fracture-mass_density_liquid">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="FRACTURE_NETWORK_INTERNAL"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.00000000000000000e+00"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+      </ParameterList>
       <ParameterList name="fracture-porosity">
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
@@ -349,7 +364,7 @@
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
             <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="1.7"/>
@@ -362,7 +377,7 @@
         <ParameterList name="function">
           <ParameterList name="EntireDomain">
             <Parameter name="regions" type="Array(string)" value="{EntireDomain}"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="1.8"/>
@@ -470,7 +485,7 @@
         <Parameter name="error tolerance" type="double" value="1.0e-14"/>
         <Parameter name="maximum number of iterations" type="int" value="20"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -480,7 +495,7 @@
         <Parameter name="error tolerance" type="double" value="1e-14"/>
         <Parameter name="maximum number of iterations" type="int" value="20"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -490,7 +505,7 @@
         <Parameter name="error tolerance" type="double" value="9.99999999999999999e-15"/>
         <Parameter name="maximum number of iterations" type="int" value="20"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -514,15 +529,14 @@
   </ParameterList>
 
   <ParameterList name="PKs">
-    <ParameterList name="coupled flow steady">
-      <Parameter name="PKs order" type="Array(string)" value="{flow matrix steady, flow fracture steady}"/>
+    <ParameterList name="steady:coupled flow">
+      <Parameter name="PKs order" type="Array(string)" value="{steady:flow matrix, steady:flow fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
 
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <Parameter name="preconditioner enhancement" type="string" value="none"/>
 
         <ParameterList name="pressure-lambda constraints">
           <Parameter name="method" type="string" value="projection"/>
@@ -577,7 +591,7 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="flow matrix steady">
+    <ParameterList name="steady:flow matrix">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="physical models and assumptions">
 	<Parameter name="water content model" type="string" value="constant density"/>
@@ -654,7 +668,6 @@
 	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 	<Parameter name="linear solver" type="string" value="AztecOO"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-	<Parameter name="preconditioner enhancement" type="string" value="none"/>
 
 	<Parameter name="time integration method" type="string" value="none"/>
 
@@ -666,7 +679,7 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="flow fracture steady">
+    <ParameterList name="steady:flow fracture">
       <Parameter name="domain name" type="string" value="fracture"/>
       <ParameterList name="physical models and assumptions">
 	<Parameter name="flow in fractures" type="bool" value="true"/>
@@ -724,7 +737,6 @@
 	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 	<Parameter name="linear solver" type="string" value="AztecOO"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-        <Parameter name="preconditioner enhancement" type="string" value="none"/>
 
         <Parameter name="time integration method" type="string" value="none"/>
 
@@ -736,12 +748,12 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="coupled transport">
-      <Parameter name="PKs order" type="Array(string)" value="{transport matrix, transport fracture}"/>
+    <ParameterList name="transient:coupled transport">
+      <Parameter name="PKs order" type="Array(string)" value="{transient:transport matrix, transient:transport fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
     </ParameterList>
     
-    <ParameterList name="transport matrix">
+    <ParameterList name="transient:transport matrix">
       <Parameter name="domain name" type="string" value="domain"/>      
 
       <ParameterList name="physical models and assumptions">
@@ -814,7 +826,7 @@
       </ParameterList>
     </ParameterList>      
       
-    <ParameterList name="transport fracture">
+    <ParameterList name="transient:transport fracture">
       <ParameterList name="physical models and assumptions">
         <Parameter name="effective transport porosity" type="bool" value="false"/>
         <Parameter name="permeability field is required" type="bool" value="false"/>

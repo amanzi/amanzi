@@ -421,9 +421,9 @@ TensorOp::applyBC (MultiFab&      inout,
   //
   const int N = inout.IndexArray().size();
 
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
+// #ifdef _OPENMP
+// #pragma omp parallel for
+// #endif
   for (MFIter mfi(inout); mfi.isValid(); ++mfi)
   {
     const int gn = mfi.index();

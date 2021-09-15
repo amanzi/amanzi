@@ -16,6 +16,7 @@
 #include "dbc.hh"
 #include "errors.hh"
 
+#include "AmanziTypes.hh"
 #include "Point.hh"
 
 #include "FunctionColor.hh"

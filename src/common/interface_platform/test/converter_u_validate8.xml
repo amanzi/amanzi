@@ -61,7 +61,7 @@
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
-          <ParameterList name="multiphase">
+          <ParameterList name="transient:multiphase">
             <Parameter name="PK type" type="string" value="multiphase pl sl xg"/>
           </ParameterList>
         </ParameterList>
@@ -74,9 +74,9 @@
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{H2, H2}"/>
     <ParameterList name="time period control">
-      <Parameter name="start times" type="Array(double)" value="{}"/>
-      <Parameter name="initial time step" type="Array(double)" value="{}"/>
-      <Parameter name="maximum time step" type="Array(double)" value="{}"/>
+      <Parameter name="start times" type="Array(double)" value="{0.0}"/>
+      <Parameter name="initial time step" type="Array(double)" value="{1.0}"/>
+      <Parameter name="maximum time step" type="Array(double)" value="{4.3234e+17}"/>
     </ParameterList>
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="high"/>
@@ -84,7 +84,7 @@
   </ParameterList>
 
   <ParameterList name="PKs"> <!-- no shift -->
-  <ParameterList name="multiphase">
+  <ParameterList name="transient:multiphase">
     <Parameter name="Jacobian type" type="string" value="analytic"/>
     <Parameter name="linear solver" type="string" value="AMESOS"/>
     <Parameter name="preconditioner" type="string" value="Euclid"/>
@@ -314,7 +314,7 @@
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="1.0e+6"/>
@@ -503,7 +503,7 @@
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="components" type="Array(string)" value="{cell, face}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="303.0"/>
@@ -546,7 +546,7 @@
         <Parameter name="controller training start" type="int" value="0"/>
         <Parameter name="controller training end" type="int" value="3"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -566,7 +566,7 @@
         <Parameter name="error tolerance" type="double" value="9.99999999999999945e-21"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -578,6 +578,7 @@
         <Parameter name="convergence criteria" type="Array(string)" value="{relative rhs, relative residual}"/>
         <Parameter name="controller training start" type="int" value="0"/>
         <Parameter name="controller training end" type="int" value="3"/>
+        <Parameter name="release Krylov vectors" type="bool" value="true"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>

@@ -5,7 +5,7 @@ namespace Amanzi {
 
 FunctionExprTK::FunctionExprTK(int n, const std::string& formula)
 {
-  if (n < 1 || n > 3) {
+  if (n < 1 || n > 4) {
     Errors::Message m;
     m << "The number of pameters is incorrect";
     Exceptions::amanzi_throw(m);

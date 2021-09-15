@@ -24,6 +24,7 @@
 #include "exceptions.hh"
 #include "InverseFactory.hh"
 #include "Mesh.hh"
+#include "Mesh_Algorithms.hh"
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PK_Utils.hh"
@@ -515,6 +516,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   if (ti_list_->isSublist("pressure-lambda constraints") && pressure.HasComponent("face")) {
     DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
                                    *pressure.ViewComponent("face"));
+    Teuchos::rcp_dynamic_cast<Field_CompositeVector>(S->GetField(pressure_key_, passwd_))->set_initialized("face");
   }
 
   // error control options
@@ -707,6 +709,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Verbose output of initialization statistics.
   InitializeStatistics_();
+
 }
 
 
@@ -1002,7 +1005,7 @@ double Richards_PK::BoundaryFaceValue(int f, const CompositeVector& u)
     const Epetra_MultiVector& u_face = *u.ViewComponent("face");
     face_value = u_face[0][f];
   } else {
-    int c = BoundaryFaceGetCell(f);
+    int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh_, f);
     face_value = DeriveBoundaryFaceValue(f, u, wrm_->second[(*wrm_->first)[c]]);
   }
   return face_value;

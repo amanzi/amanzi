@@ -96,7 +96,7 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
   auto vo_list = tp_list_->sublist("verbose object"); 
   vo_ = Teuchos::rcp(new VerboseObject("TransportImpl-" + domain, *tp_list_)); 
 
-  // Create pointers to the primary solution field pressure.
+  // Create pointers to the primary solution field tcc.
   const auto& solution = S->GetFieldData(tcc_key_, "state");
   soln_->SetData(solution); 
   
@@ -228,6 +228,7 @@ void TransportImplicit_PK::UpdateBoundaryData(double t_old, double t_new, int co
 {
   for (int i = 0; i < bcs_.size(); i++) {
     bcs_[i]->Compute(t_old, t_new);
+    bcs_[i]->ComputeSubmodel(mesh_, tcc);
   }
 
   auto& values = op_bc_->bc_value();

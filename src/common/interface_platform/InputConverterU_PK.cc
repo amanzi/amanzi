@@ -14,13 +14,13 @@
 #include <string>
 
 //TPLs
-#include <boost/algorithm/string.hpp>
 #include <xercesc/dom/DOM.hpp>
 
 // Amanzi's
 #include "errors.hh"
 #include "exceptions.hh"
 #include "dbc.hh"
+#include "StringExt.hh"
 
 #include "InputConverterU.hh"
 #include "InputConverterU_Defs.hh"
@@ -59,7 +59,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
 
   out_list.set<std::string>("linear solver", TI_SOLVER);
   out_list.set<std::string>("preconditioner", prec);
-  out_list.set<std::string>("preconditioner enhancement", "none");
+  // out_list.set<std::string>("preconditioner enhancement", "none");
 
   // pressure-lambda constraints
   Teuchos::ParameterList& plamb = out_list.sublist("pressure-lambda constraints");
@@ -343,7 +343,8 @@ Teuchos::ParameterList InputConverterU::TranslateInitialization_(
 Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
     const std::string& disc_methods, const std::string& pc_method,
     const std::string& nonlinear_solver, const std::string& nonlinear_coef,
-    const std::string& extensions, bool gravity)
+    const std::string& extensions, bool gravity,
+    const std::string& pk)
 {
   Teuchos::ParameterList out_list;
   Teuchos::ParameterList tmp_list;
@@ -351,7 +352,8 @@ Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
   // process primary and secondary discretization methods
   std::vector<std::string> methods = CharToStrings_(disc_methods.c_str());
   for (int i = 0; i < methods.size(); ++i) {
-    std::string tmp = boost::replace_all_copy(methods[i], "-", ": ");
+    std::string tmp(methods[i]);
+    Amanzi::replace_all(tmp, "-", ": ");
     replace(tmp.begin(), tmp.end(), '_', ' ');
     if (tmp == "mfd: two point flux approximation") tmp = "mfd: two-point flux approximation";
     methods[i] = tmp;
@@ -399,7 +401,7 @@ Teuchos::ParameterList InputConverterU::TranslateDiffusionOperator_(
   }
 
   // fixing miscalleneous scenarious
-  if (pc_method == "linearized_operator") {
+  if (pc_method == "linearized_operator" && pk == "flow") {
     out_list.sublist("diffusion operator").sublist("preconditioner")
         .set<std::string>("Newton correction", "approximate Jacobian");
   }

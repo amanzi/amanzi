@@ -211,7 +211,7 @@
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="component" type="string" value="*"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="2.01325e+05"/>
@@ -451,7 +451,7 @@
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
-          <ParameterList name="flow steady">
+          <ParameterList name="steady:flow">
             <Parameter name="PK type" type="string" value="darcy"/>
           </ParameterList>
         </ParameterList>
@@ -463,18 +463,18 @@
       </ParameterList>
       <ParameterList name="TP 1">
         <ParameterList name="PK tree">
-          <ParameterList name="flow and reactive transport">
+          <ParameterList name="transient:flow and reactive transport">
             <Parameter name="PK type" type="string" value="flow reactive transport"/>
-            <ParameterList name="reactive transport">
+            <ParameterList name="transient:reactive transport">
               <Parameter name="PK type" type="string" value="reactive transport"/>
-              <ParameterList name="transport">
+              <ParameterList name="transient:transport">
                 <Parameter name="PK type" type="string" value="transport"/>
               </ParameterList>
-              <ParameterList name="chemistry">
+              <ParameterList name="transient:chemistry">
                 <Parameter name="PK type" type="string" value="chemistry alquimia"/>
               </ParameterList>
             </ParameterList>
-            <ParameterList name="flow">
+            <ParameterList name="transient:flow">
               <Parameter name="PK type" type="string" value="darcy"/>
             </ParameterList>
           </ParameterList>
@@ -501,7 +501,7 @@
   </ParameterList>
 
   <ParameterList name="PKs">
-    <ParameterList name="flow steady">
+    <ParameterList name="steady:flow">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="absolute permeability">
 	<Parameter name="coordinate system" type="string" value="cartesian"/>
@@ -539,7 +539,6 @@
 	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 	<Parameter name="linear solver" type="string" value="AztecOO"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-	<Parameter name="preconditioner enhancement" type="string" value="none"/>
 	<ParameterList name="pressure-lambda constraints">
 	  <Parameter name="method" type="string" value="projection"/>
 	  <Parameter name="inflow krel correction" type="bool" value="true"/>
@@ -613,15 +612,15 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="flow and reactive transport">
-      <Parameter name="PKs order" type="Array(string)" value="{flow, reactive transport}"/>
+    <ParameterList name="transient:flow and reactive transport">
+      <Parameter name="PKs order" type="Array(string)" value="{transient:flow, transient:reactive transport}"/>
       <Parameter name="master PK index" type="int" value="0"/>
     </ParameterList>
-    <ParameterList name="reactive transport">
-      <Parameter name="PKs order" type="Array(string)" value="{chemistry, transport}"/>
+    <ParameterList name="transient:reactive transport">
+      <Parameter name="PKs order" type="Array(string)" value="{transient:chemistry, transient:transport}"/>
     </ParameterList>
 
-    <ParameterList name="transport">
+    <ParameterList name="transient:transport">
       <Parameter name="domain name" type="string" value="domain"/>
 
       <Parameter name="spatial discretization order" type="int" value="1"/>
@@ -700,7 +699,7 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="chemistry">
+    <ParameterList name="transient:chemistry">
       <Parameter name="domain name" type="string" value="domain"/>
       <Parameter name="engine" type="string" value="PFloTran"/>
       <Parameter name="chemistry model" type="string" value="Alquimia"/>
@@ -726,7 +725,7 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="flow">
+    <ParameterList name="transient:flow">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="absolute permeability">
 	<Parameter name="coordinate system" type="string" value="cartesian"/>
@@ -764,7 +763,6 @@
 	<Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
 	<Parameter name="linear solver" type="string" value="AztecOO"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-	<Parameter name="preconditioner enhancement" type="string" value="none"/>
 	<ParameterList name="pressure-lambda constraints">
 	  <Parameter name="method" type="string" value="projection"/>
 	  <Parameter name="inflow krel correction" type="bool" value="true"/>
@@ -848,7 +846,7 @@
         <Parameter name="controller training start" type="int" value="0"/>
         <Parameter name="controller training end" type="int" value="3"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -859,11 +857,6 @@
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <Parameter name="controller training start" type="int" value="0"/>
         <Parameter name="controller training end" type="int" value="3"/>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="pcg parameters">
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
@@ -877,7 +870,7 @@
         <Parameter name="controller training start" type="int" value="0"/>
         <Parameter name="controller training end" type="int" value="3"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -889,7 +882,7 @@
         <Parameter name="controller training start" type="int" value="0"/>
         <Parameter name="controller training end" type="int" value="3"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

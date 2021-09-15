@@ -1,9 +1,0 @@
-# General reaction test problem for ascem geochemistry code validation
-<Primary Species
-A(aq) ; 0.0 ; 0.0 ; 1.
-
-B(aq) ; 0.0 ; 0.0 ; 1.
-
-<General Kinetics
-1. A(aq) <-> B(aq) ; 1. A(aq) ; 1.15741e-6 ; ;     
-

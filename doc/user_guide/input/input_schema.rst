@@ -712,8 +712,10 @@ Logical regions are compound regions formed from other primitive type regions us
 
 .. code-block:: xml
 
-    <logical name="logical name" operation="union | intersection | subtraction | complement"
-             region_list="region1, region2, region3"/>
+    <logical name="logical name">
+      <operation>union|intersection|subtraction|complement</operation>
+      <region_list>region1, region2, region3<region_list/>
+    </logical>
 
 
 Polygonal_Surface (unstructured only)
@@ -945,7 +947,7 @@ Mineral concentrations are specified using the volume fraction and specific surf
 .. code-block:: xml
 
    <minerals>
-     <mineral name="Calcite" volume_fraction="0.1" specific_surface_area"1.0"/>
+     <mineral name="Calcite" volume_fraction="0.1" specific_surface_area="1.0"/>
    </minerals>
 
 Ion_exchange

@@ -9,7 +9,7 @@ Capabilities Tested
 This two-dimensional transport problem --- with a constant rate mass
 loading point source in a steady-state flow field --- tests the Amanzi
 flow process kernel as well as advection and dispersion features of the transport process kernel. It is a slight modification
-of the previous test :ref:`amanzi_dispersion_aligned_point_2d`: the direction 
+of the previous test (:ref:`aligned_case`): the direction 
 of the velocity field is rotated by :math:`45^\circ` counter-clockwise with respect to the 
 mesh. Thus, the test simulates non-grid-aligned advective and dispersive transport. 
 Capabilities tested include:
@@ -39,7 +39,8 @@ is characterized by geologic media with non-uniform anisotropy, to name a couple
 is therefore desirable to minimize this numerical dispersion in numerical flow and transport
 schemes.
 
-This test problem is a slight modification of the previous test :ref:`amanzi_dispersion_aligned_point_2d`: the direction of the velocity field is rotated by :math:`45^\circ` 
+This test problem is a slight modification of the previous test (:ref:`aligned_case`):
+the direction of the velocity field is rotated by :math:`45^\circ` 
 counter-clockwise with respect to the mesh. 
 
 

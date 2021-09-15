@@ -64,20 +64,46 @@ if (BUILD_SHARED_LIBS)
   set(BUILD_STATIC_LIBS FALSE)
 endif()
 
+# ############################################################################ #
+# Compiler Specific Flags
+# ############################################################################ #
+
+# Check for GNU compilers and add special option for gfortran version 10 and above
+if (CMAKE_Fortran_COMPILER_ID MATCHES GNU)
+  if (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL "10")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-argument-mismatch")
+  endif()
+endif()
+
+# check for Apple CLANG compilers and add special option to allow
+# HDF5, others to compile.
+if (CMAKE_C_COMPILER_ID MATCHES AppleClang)
+  if (CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL "11")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error-implicit-function-declaration")
+  endif()
+endif()
 
 # ############################################################################ #
 # Compiler Definition Warnings
 # ############################################################################ #
+
+message(STATUS "Compilers ... ")
 if (NOT CMAKE_C_COMPILER)
   message(WARNING "C compiler not specified. CMake will guess!")
+else()
+  message(STATUS "CMAKE_C_COMPILER = ${CMAKE_C_COMPILER}")
 endif()
 
 if (NOT CMAKE_CXX_COMPILER)
   message(WARNING "C++ compiler not specified. CMake will guess!")
+else()
+  message(STATUS "CMAKE_CXX_COMPILER = ${CMAKE_CXX_COMPILER}")
 endif()
 
 if (NOT CMAKE_Fortran_COMPILER)
   message(WARNING "Fortran compiler not specified. CMake will guess!")
+else()
+  message(STATUS "CMAKE_Fortran_COMPILER) = ${CMAKE_Fortran_COMPILER}")
 endif()
 
 #if (NOT SPACK_BINARY)
@@ -176,40 +202,45 @@ option(ENABLE_CCSE_TOOLS "Enable building CCSE post processing tools" FALSE)
 
 # Amanzi unstructured mesh API and frameworks
 option(ENABLE_Unstructured "Enable Amanzi unstructured mesh capability" TRUE)
-option(ENABLE_STK_Mesh "Enable the Unstructured STK Mesh Toolkit" FALSE)
-option(ENABLE_MSTK_Mesh "Enable the Unstructured MSTK Mesh Toolkit" TRUE)
-option(ENABLE_MOAB_Mesh "Enable the Unstructured MOAB Mesh Toolkit" FALSE)
+option(ENABLE_MESH_MSTK "Enable the Unstructured MSTK Mesh Toolkit" TRUE)
+option(ENABLE_MESH_MOAB "Enable the Unstructured MOAB Mesh Toolkit" FALSE)
+# turn off frameworks if unstructured not enabled
+if (NOT ENABLE_Unstructured)
+  set(ENABLE_MESH_MSTK FALSE)
+  set(ENABLE_MESH_MOAB FALSE)
+endif()
 
 # Amanzi output formats
 option(ENABLE_Silo "Enable the Silo output specification for visualization" FALSE)
 
-# OpenMP Search - ENABLED ONLY WHEN STRUCTURED IS ON BECAUSE
-# WE SUSPECT THAT IT MAY NOT BE WORKING WELL WITH HYPRE ON
-# THE UNSTRUCTURED SIDE
-if (ENABLE_Structured)
-  # option(ENABLE_OpenMP "Add OpenMP directives to the build" TRUE)
-  set(ENABLE_OpenMP FALSE)
-  if (ENABLE_OpenMP)
-    find_package(OpenMP)
-    find_package(OpenMP_Fortran)
-    if (OPENMP_FOUND)
-      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+# options for using MPI+X strategies
+option(ENABLE_OpenMP "Use OpenMP directives in TPLs that support it" FALSE)
+if (ENABLE_OpenMP)
+  find_package(OpenMP REQUIRED)
+  if (OpenMP_FOUND)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+  endif()
+
+  if (ENABLE_Structured)
+    find_package(OpenMP_Fortran REQUIRED)
+    if (OpenMP_Fortran_FOUND)
       set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
       set(CMAKE_LINK_FLAGS "${CMAKE_LINK_FLAGS} ${OpenMP_LINK_FLAGS}")
-    else()  
-      message(SEND_ERROR "Failed to determine the OpenMP compiler flags. Will deactivate.")
-      set(ENABLE_OpenMP FALSE CACHE BOOL "Enable OpenMP compile directives" FORCE)
     endif()
   endif()
 endif()
 
-# If unstructured is not enabled, there is no reason to have these mesh frameworks
-if (NOT ENABLE_Unstructured)
-  set(ENABLE_STK_Mesh FALSE)
-  set(ENABLE_MSTK_Mesh FALSE)
-  set(ENABLE_MOAB_Mesh FALSE)
+option(ENABLE_CUDA "Use CUDA in TPLs that support it" FALSE)
+if (ENABLE_CUDA)
+  find_package(CUDA REQUIRED)
 endif()
+
+# build with Tpetra or Epetra line.  Note that both enabled is valid
+# here, but not in Amanzi, allowing a common set of TPLs to support
+# two builds of Amanzi.
+option(ENABLE_Epetra "Build TPLs with Epetra line of Trilinos packages" TRUE)
+option(ENABLE_Tpetra "Build TPLs with Tpetra line of Trilinos packages" TRUE)
 
 # Amanzi Test Suite
 option(ENABLE_TESTS "Build the Amanzi Test Suite" TRUE)
@@ -225,6 +256,9 @@ option(BUILD_SPACK "Clone spack from git and treat as a TPL that needs to be bui
 # ############################################################################ #
 # MPI Configuration 
 # ############################################################################ #
+
+message(STATUS "Pre-FindMPI-DEBUGGING:  MPIEXEC = ${MPIEXEC}")
+
 
 # --- The FindMPI package for CMake for versions 2.8.6> use compiler wrappers
 #     to determine include paths, link flags and libraries for each language.
@@ -263,11 +297,27 @@ endif()
 #     MPI_<lang>_LINK_FLAGS
 #     MPI_<lang>_LIBRARIES
 #
-#     MPIEXEC
+#     MPIEXEC_EXECUTABLE
 #     MPIEXEC_NUMPROC_FLAG
 #     MPIEXEC_PREFLAGS
 #     MPIEXEC_POSTFLAGS
+
 find_package(MPI)
+
+message(STATUS "FindMPI-DEBUGGING:  Languages --------------------------")
+message(STATUS "FindMPI-DEBUGGING:  MPI_C_FOUND = ${MPI_C_FOUND}")
+message(STATUS "FindMPI-DEBUGGING:  MPI_CXX_FOUND = ${MPI_CXX_FOUND}")
+message(STATUS "FindMPI-DEBUGGING:  MPI_Fortran_FOUND = ${MPI_Fortran_FOUND}")
+message(STATUS "FindMPI-DEBUGGING:  Compilers --------------------------")
+message(STATUS "FindMPI-DEBUGGING:  MPI_Fortran_HAVE_F90_MODULE = ${MPI_Fortran_HAVE_F90_MODULE}")
+message(STATUS "FindMPI-DEBUGGING:  MPI_MPICXX_FOUND = ${MPI_MPICXX_FOUND}")
+message(STATUS "FindMPI-DEBUGGING:  ----------")
+message(STATUS "FindMPI-DEBUGGING:  MPI_C_COMPILER = ${MPI_C_COMPILER}")
+message(STATUS "FindMPI-DEBUGGING:  MPI_CXX_COMPILER = ${MPI_CXX_COMPILER}")
+message(STATUS "FindMPI-DEBUGGING:  MPI_Fortran_COMPILER = ${MPI_Fortran_COMPILER}")
+message(STATUS "FindMPI-DEBUGGING:  Runtime Environment --------------------")
+message(STATUS "FindMPI-DEBUGGING:  MPIEXEC_EXECUTABLE = ${MPIEXEC_EXECUTABLE}")
+message(STATUS "FindMPI-DEBUGGING:  MPIEXEC = ${MPIEXEC} - is defined for compatability")
 
 
 # The FindMPI package uses FindPackageHandleStandardArgs
@@ -349,8 +399,8 @@ endif()
 
 # - MPI execute binary
 if (NOT MPI_EXEC)
-  if (MPIEXEC)
-    set(MPI_EXEC "${MPIEXEC}" CACHE STRING "Select MPI executable from FindMPI results")
+  if (MPIEXEC_EXECUTABLE)
+    set(MPI_EXEC "${MPIEXEC_EXECUTABLE}" CACHE STRING "Select MPI executable from FindMPI results")
   else()
     find_program(MPI_EXEC
                  NAMES mpirun mpiexec aprun openmpirun
@@ -404,13 +454,35 @@ endif()
 # LAPACK/BLAS Configuration 
 # ############################################################################ #
 
+option(TPL_BLAS_VENDOR "Identifies the vendor for BLAS and LAPACK library search" All)
+set(BLA_VENDOR ${TPL_BLAS_VENDOR})
+
+if ( DEFINED ENV{NERSC_HOST} )
+   
+   set(BLA_VENDOR "CRAYSCI")
+   string(TOLOWER ${CMAKE_Fortran_COMPILER_ID} _lib_compiler_id)
+   set(LIBBLAS_BASE_NAME "sci_${_lib_compiler_id}")
+   set(LIBLAPACK_BASE_NAME "sci_${_lib_compiler_id}")
+   string (REPLACE "-" "_" CRAY_CPU_TEMP $ENV{CRAY_CPU_TARGET})
+   string (REPLACE "x86_64" "${CRAY_CPU_TEMP}/lib" BLA_DIR $ENV{CRAY_LIBSCI_PREFIX_DIR})
+   set(LAPCK_DIR ${BLA_DIR})
+   
+   message(STATUS ">>> Amanzi: On NERSC system BLA_DIR = ${BLA_DIR}")
+   message(STATUS ">>> Amanzi: On NERSC system LAPCK_DIR = ${LAPCK_DIR}")
+   
+endif()
+
 # Search for BLAS (Basic Linear Algebra Subprograms) http://www.netlib.org/blas
+
+message(STATUS ">>> Amanzi: Starting Search for BLAS")
 find_package(BLAS REQUIRED)
-message(STATUS ">>>  BLAS_LIBRARIES = ${BLAS_LIBRARIES}") 
+message(STATUS ">>> Amanzi: BLAS_LIBRARIES = ${BLAS_LIBRARIES}") 
 
 # Search for LAPACK (Linear Algebra PACKage) http://www/netlib.org/lapack
+
+message(STATUS ">>> Amanzi: Starting Search for LAPACK")
 find_package(LAPACK REQUIRED)
-message(STATUS ">>>  LAPACK_LIBRARIES = ${LAPACK_LIBRARIES}") 
+message(STATUS ">>> Amanzi: LAPACK_LIBRARIES = ${LAPACK_LIBRARIES}") 
 
 
 # ############################################################################ #
@@ -588,10 +660,10 @@ append_set(Amanzi_TPL_CMAKE_ARGS
           -DNetCDF_FORTRAN_DIR:FILEPATH=${NetCDF_FORTRAN_DIR})
 
 # MOAB
-if (ENABLE_MOAB_Mesh)
+if (ENABLE_MESH_MOAB)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_MOAB.cmake)
   append_set(Amanzi_TPL_CMAKE_ARGS
-             -DENABLE_MOAB_Mesh:BOOL=${ENABLE_MOAB_Mesh}
+             -DENABLE_MESH_MOAB:BOOL=${ENABLE_MESH_MOAB}
              -DMOAB_DIR:PATH=${TPL_INSTALL_PREFIX})
 endif()
  
@@ -684,14 +756,13 @@ else()
 
 endif()
 append_set(Amanzi_TPL_CMAKE_ARGS
-           -DENABLE_STK_Mesh:BOOL=${ENABLE_STK_Mesh}
            -DTrilinos_INSTALL_PREFIX:PATH=${Trilinos_INSTALL_PREFIX})
 
 # MSTK
-if (ENABLE_MSTK_Mesh)
+if (ENABLE_MESH_MSTK)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_MSTK.cmake) 
   append_set(Amanzi_TPL_CMAKE_ARGS
-             -DENABLE_MSTK_Mesh:BOOL=${ENABLE_MSTK_Mesh}
+             -DENABLE_MESH_MSTK:BOOL=${ENABLE_MESH_MSTK}
              -DMSTK_INCLUDE_DIR:PATH=${MSTK_INCLUDE_DIR}
              -DMSTK_LIBRARY_DIR:PATH=${MSTK_LIBRARY_DIR})
 endif()
@@ -776,7 +847,7 @@ else()
 endif()
 
 # Nanoflann is used by MSTK only
-if (ENABLE_MSTK_Mesh)
+if (ENABLE_MESH_MSTK)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_Nanoflann.cmake)
   set(Nanoflann_INSTALL_PREFIX ${TPL_INSTALL_PREFIX})
   set(Nanoflann_INCLUDE_DIRS "${Nanoflann_INSTALL_PREFIX}/include")
@@ -790,7 +861,7 @@ include(${SuperBuild_BUILD_FILES_DIR}/Build_exprtk.cmake)
 #  Final steps
 # ############################################################################ #
 # -- override compiler with nvccwrapper
-if (ENABLE_KOKKOS_CUDA)
+if (ENABLE_CUDA)
   set(NVCC_WRAPPER_DEFAULT_COMPILER ${CMAKE_CXX_COMPILER})
   set(CMAKE_CXX_COMPILER ${Trilinos_INSTALL_PREFIX}/bin/nvcc_wrapper)
 else()

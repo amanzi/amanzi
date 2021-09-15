@@ -14,9 +14,9 @@
 
 #pragma once
 
-#include <vector>
+#include <algorithm>
 #include <string>
-#include "boost/algorithm/string.hpp"
+#include <vector>
 
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
@@ -79,7 +79,7 @@ inline
 Entity_kind createEntityKind(const std::string& instring)
 {
   std::string estring = instring; // note not done in signature to throw a better error
-  boost::algorithm::to_lower(estring);
+  transform(estring.begin(), estring.end(), estring.begin(), ::tolower);
   if (estring == "cell") return Entity_kind::CELL;
   else if (estring == "face") return Entity_kind::FACE;
   else if (estring == "boundary_face") return Entity_kind::BOUNDARY_FACE;

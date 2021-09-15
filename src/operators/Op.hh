@@ -139,6 +139,10 @@ class Op {
   const Schema& schema_col() const { return schema_col_; }
   int schema_old() const { return schema_old_; }
 
+  // quality control (more work is needed)
+  // -- veify that containers are not empty
+  void Verify() const; 
+
  public:
   std::string schema_string;
 
@@ -161,13 +165,27 @@ class Op {
 * Default implementation
 ****************************************************************** */
 inline
-void Op::Rescale(double scaling) {
+void Op::Rescale(double scaling)
+{
   if (scaling != 1.0) {
     for (int i = 0; i != matrices.size(); ++i) {
       matrices[i] *= scaling;
     }
     if (diag.get()) diag->Scale(scaling);
   }
+}
+
+
+/* ******************************************************************
+* Rudimentary verification of container quality.
+****************************************************************** */
+inline
+void Op::Verify() const
+{
+ int nmatrices = matrices.size();
+ for (int i = 0; i < nmatrices; ++i) {
+   AMANZI_ASSERT(matrices[i].NumRows() > 0 && matrices[i].NumCols() > 0);
+ }
 }
 
 }  // namespace Operators

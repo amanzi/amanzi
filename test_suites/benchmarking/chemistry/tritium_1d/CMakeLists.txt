@@ -4,8 +4,6 @@ project(CHEMISTRY_1D_TRITIUM_TEST)
     if (NOT (${CHEMISTRY_1D_TRITIUM_TEST_SOURCE_DIR} EQUAL ${CHEMISTRY_1D_TRITIUM_TEST_BINARY_DIR}) )
         execute_process(COMMAND ${CMAKE_COMMAND} -E 
           copy ${CHEMISTRY_1D_TRITIUM_TEST_SOURCE_DIR}/amanzi-u-1d-tritium.xml ${CHEMISTRY_1D_TRITIUM_TEST_BINARY_DIR}/amanzi-u-1d-tritium.xml) 
-        execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy ${CHEMISTRY_1D_TRITIUM_TEST_SOURCE_DIR}/tritium.bgd ${CHEMISTRY_1D_TRITIUM_TEST_BINARY_DIR}/tritium.bgd) 
     endif()
 
     add_amanzi_test(examples-phase2-chemistry-1d-tritium amanzi "--xml_file=amanzi-u-1d-tritium.xml" KIND int)

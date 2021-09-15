@@ -33,14 +33,14 @@ class TransportSourceFunction_Alquimia : public TransportDomainFunction {
  public:
   TransportSourceFunction_Alquimia(const Teuchos::ParameterList& plist,
                                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                                   Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk,
+                                   Teuchos::RCP<AmanziChemistry::Alquimia_PK> alquimia_pk,
                                    Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine);
   ~TransportSourceFunction_Alquimia();
   
   void Compute(double t_old, double t_new);
 
   // require by the case class
-  virtual std::string name() const { return "volume"; } 
+  virtual std::string name() const { return "alquimia source"; } 
 
  private:
   void Init_(const std::vector<std::string> &regions);
@@ -52,7 +52,7 @@ class TransportSourceFunction_Alquimia : public TransportDomainFunction {
   Teuchos::RCP<FunctionTabularString> f_;
 
   // Chemistry state and engine.
-  Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk_;
+  Teuchos::RCP<AmanziChemistry::Alquimia_PK> alquimia_pk_;
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
 
   // Containers for interacting with the chemistry engine.

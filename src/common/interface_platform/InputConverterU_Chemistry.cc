@@ -23,6 +23,7 @@
 #include "errors.hh"
 #include "exceptions.hh"
 #include "dbc.hh"
+#include "Key.hh"
 
 #include "InputConverterU.hh"
 #include "InputConverterU_Defs.hh"
@@ -33,7 +34,7 @@ namespace AmanziInput {
 XERCES_CPP_NAMESPACE_USE
 
 /* ******************************************************************
-* Create flow list.
+* Create chemistry list.
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& domain)
 {
@@ -53,45 +54,35 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& d
 
   // chemical engine
   bool flag;
-  node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
+  node = GetPKChemistryPointer_(flag);
   std::string engine = GetAttributeValueS_(node, "engine");
+  std::string bgdfilename = GetAttributeValueS_(node, "input_filename", TYPE_NONE, false, "");
 
   // process engine
   if (engine ==  "amanzi") {
     out_list.set<std::string>("chemistry model", "Amanzi");
 
-    std::string bgdfilename, format("simple");
     node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
-    if (flag) {
-      bgdfilename = GetAttributeValueS_(node, "input_filename", TYPE_NONE, false, "");
-      if (bgdfilename == "") {
-        int status;
-        bgdfilename = CreateBGDFile_(xmlfilename_, rank_, status);
-        if (!status && vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-          Teuchos::OSTab tab = vo_->getOSTab();
-          *vo_->os() << "File \"" << bgdfilename.c_str() 
-                     << "\" exists, skipping its creation." << std::endl;
-        }
+
+    if (bgdfilename != "") {
+      auto pair = Keys::split(bgdfilename, '.');
+      if (pair.second != "xml") {
+        Errors::Message msg;
+        msg << "Incorect suffix for optional XML file with a thermodynamic database.\n";
+        Exceptions::amanzi_throw(msg);
       }
-      format = GetAttributeValueS_(node, "format", TYPE_NONE, false, format);
+      Teuchos::ParameterList& bgd_list = out_list.sublist("thermodynamic database");
+      bgd_list.set<std::string>("file", bgdfilename);
+      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+        *vo_->os() << " using file:" << bgdfilename << std::endl;
     }
-
-    Teuchos::ParameterList& bgd_list = out_list.sublist("thermodynamic database");
-    bgd_list.set<std::string>("file", bgdfilename);
-    bgd_list.set<std::string>("format", format);
-
-    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-      *vo_->os() << " using file:" << bgdfilename << std::endl;
   } else {
     bool valid_engine(true);
-    std::string file_location;
 
     if (engine == "pflotran") {
       out_list.set<std::string>("engine", "PFloTran");
-      file_location = "process_kernels, chemistry";
     } else if (engine == "crunchflow") {
       out_list.set<std::string>("engine", "CrunchFlow");
-      file_location = "process_kernels, chemistry";
     } else {
       valid_engine = false;
     }
@@ -101,7 +92,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& d
       out_list.set<std::string>("chemistry model", "Alquimia");
 
       // Find the name of the engine-specific input file.
-      node = GetUniqueElementByTagsString_(file_location, flag);
+      node = GetPKChemistryPointer_(flag);
       if (flag) {
         std::string inpfilename;
         element = static_cast<DOMElement*>(node);
@@ -117,7 +108,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& d
           *vo_->os() << " using file:" << inpfilename << std::endl;
       } else {
         Errors::Message msg;
-        msg << "Unique tag string \"" << file_location << "\" must exists.\n";
+        msg << "Chemical process kernel has not been found.\n";
         Exceptions::amanzi_throw(msg);
       }
     }
@@ -370,7 +361,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& d
   double ion_value;
   bool ion_guess(false);
 
-  std::string activity_model("unit"), dt_method("fixed");
+  std::string activity_model("unit"), dt_method("fixed"), pitzer_database;
   std::vector<std::string> aux_data;
 
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_chemistry_controls", flag);
@@ -382,7 +373,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& d
 
       text = mm.transcode(inode->getNodeName());
       if (strcmp(text, "activity_model") == 0) {
-        activity_model = GetTextContentS_(inode, "unit, debye-huckel");
+        activity_model = GetTextContentS_(inode, "unit, debye-huckel, pitzer-hwm");
       } else if (strcmp(text, "maximum_newton_iterations") == 0) {
         max_itrs = strtol(mm.transcode(inode->getTextContent()), NULL, 10);
       } else if (strcmp(text, "tolerance") == 0) {
@@ -408,10 +399,14 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& d
       } else if (strcmp(text, "free_ion_guess") == 0) {
         ion_guess = true;
         ion_value = strtod(mm.transcode(inode->getTextContent()), NULL);
+      } else if (strcmp(text, "pitzer_database") == 0) {
+        pitzer_database = mm.transcode(inode->getTextContent());
       }
     }
   }
   out_list.set<std::string>("activity model", activity_model);
+  if (pitzer_database.size() > 0)
+    out_list.set<std::string>("Pitzer database file", pitzer_database);
   out_list.set<int>("maximum Newton iterations", max_itrs);
   out_list.set<double>("tolerance", tol);
   out_list.set<double>("max time step (s)", dt_max);
@@ -455,6 +450,29 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_(const std::string& d
 
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
   return out_list;
+}
+
+
+/* ******************************************************************
+* Helper utility for two stuctures of process_kernel lists
+****************************************************************** */
+DOMNode* InputConverterU::GetPKChemistryPointer_(bool& flag)
+{
+  MemoryManager mm;
+  DOMNode* node = NULL;
+  DOMNodeList *children;
+
+  node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
+  if (!flag) {
+    node = GetUniqueElementByTagsString_("process_kernels", flag);
+    children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode("pk"));
+    for (int i = 0; i < children->getLength(); ++i) {
+      node = GetUniqueElementByTagsString_(children->item(i), "chemistry", flag);
+      if (flag) break;
+    }
+  }
+
+  return node;
 }
 
 }  // namespace AmanziInput

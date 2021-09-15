@@ -69,8 +69,6 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
   // add PCG and GMRES solvers (generic or specialized)
   out_list.sublist("Dispersion Solver") = TranslateLinearSolvers_(
       "unstr_transport_controls, dispersion_linear_solver", "pcg", "");
-  out_list.sublist("Dispersion Solver").sublist("pcg parameters")
-          .sublist("verbose object").set<std::string>("verbosity level", "low");
 
   out_list.sublist("PCG with Hypre AMG") = TranslateLinearSolvers_(
       "unstr_flow_controls, saturated_linear_solver", "pcg", "");
@@ -96,6 +94,7 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
       method_list.set<int>("controller training start", 0);
       method_list.set<int>("controller training end", 3);
       method_list.sublist("verbose object").set<std::string>("verbosity level", "low");
+      method_list.set<bool>("release Krylov vectors", true);
     }
   }
 
@@ -166,6 +165,7 @@ Teuchos::ParameterList InputConverterU::TranslateLinearSolvers_(
   }
 
   slist.sublist("verbose object") = verb_list_.sublist("verbose object");
+  slist.sublist("verbose object").set<std::string>("verbosity level", "low");
 
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)

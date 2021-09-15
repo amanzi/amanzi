@@ -33,8 +33,23 @@ include_directories(${SEACAS_INCLUDE_DIRS})
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_EXTRACTED_SOURCE_DIR})
-include_directories(${MESH_SIMPLE_SOURCE_DIR})
+
+# include mesh frameworks
 include_directories(${MESH_SOURCE_DIR})
+include_directories(${MESH_SIMPLE_SOURCE_DIR})
+if (ENABLE_MESH_MOAB)
+  include_directories(${MOAB_INCLUDE_DIR})
+  include_directories(${MESH_MOAB_SOURCE_DIR})
+  list(APPEND mesh_factory_frameworks mesh_moab)
+  add_definitions("-DHAVE_MESH_MOAB")
+endif()
+
+if (ENABLE_MESH_MSTK)
+  include_directories(${MSTK_INCLUDE_DIR})
+  include_directories(${MESH_MSTK_SOURCE_DIR})
+  list(APPEND mesh_factory_frameworks mesh_mstk)
+  add_definitions("-DHAVE_MESH_MSTK -DMSTK_HAVE_MPI")
+endif()
 
 
 #
@@ -52,25 +67,7 @@ set(mesh_factory_inc_files
     MeshFrameworkFactory.hh)
 
 
-list(APPEND mesh_factory_frameworks simple_mesh)
-
-if (ENABLE_STK_Mesh)
-    include_directories(${STK_INCLUDE_DIR} ${STK_SOURCE_DIR})
-    list(APPEND mesh_factory_frameworks stk_mesh exodus_reader mesh_data)
-    add_definitions("-DHAVE_STK_MESH")
-endif()
-
-if (ENABLE_MOAB_Mesh)
-    include_directories(${MOAB_INCLUDE_DIR} ${MOAB_SOURCE_DIR})
-    list(APPEND mesh_factory_frameworks moab_mesh)
-    add_definitions("-DHAVE_MOAB_MESH")
-endif()
-
-if (ENABLE_MSTK_Mesh)
-    include_directories(${MSTK_INCLUDE_DIR} ${MSTK_SOURCE_DIR})
-    list(APPEND mesh_factory_frameworks mstk_mesh)
-    add_definitions("-DHAVE_MSTK_MESH -DMSTK_HAVE_MPI")
-endif()
+list(APPEND mesh_factory_frameworks mesh_simple)
 
 add_amanzi_library(mesh_factory
                    SOURCE ${mesh_factory_files} HEADERS ${mesh_factory_inc_files}
@@ -92,13 +89,13 @@ if (BUILD_TESTS)
    # Add UnitTest include directories
    include_directories(${UnitTest_INCLUDE_DIRS})
 
-   # Test: test_mesh_factory
-   add_amanzi_test(mesh_factory test_mesh_factory
+   # Test: mesh_test_factory
+   add_amanzi_test(mesh_factory_create mesh_factory_create
                    KIND unit
 		   SOURCE
                          test/Main.cc
-                         test/test_mesh_file.cc 
-                         test/test_mesh_factory.cc
+                         test/mesh_factory_file.cc 
+                         test/mesh_factory.cc
                    LINK_LIBS
 		         mesh_factory
 			 ${UnitTest_LIBRARIES}
@@ -108,7 +105,14 @@ if (BUILD_TESTS)
 
    # Do not call add_amanzi_test again with SOURCE and LINK_LIBS since the
    # previous call carries instructions to build the executable
-   add_amanzi_test(mesh_factory_parallel test_mesh_factory NPROCS 2 KIND uint)
+   add_amanzi_test(mesh_factory_create_np2 mesh_factory_create NPROCS 2 KIND uint)
 
+   # Test: test_mesh_factory
+   add_amanzi_test(mesh_factory_extract_comms_np5 mesh_factory_extract_comms
+                   KIND unit
+		   SOURCE test/Main.cc test/mesh_factory_extract_comms.cc
+                   LINK_LIBS mesh_factory ${UnitTest_LIBRARIES} ${Boost_LIBRARIES} ${Epetra_LIBRARIES} ${HDF5_LIBRARIES}
+                   NPROCS 5) # need sufficient cores to force one proc to have no surface faces
+   
 endif()
    

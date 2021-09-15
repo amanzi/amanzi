@@ -1,10 +1,10 @@
 # CMake CrunchTope patch file
 
 # Now run the patch script
-set(command sh @CRUNCHTOPE_sh_patch@)
+set(command sh @CrunchTope_sh_patch@)
 execute_process(
   COMMAND ${command}
-  WORKING_DIRECTORY "@CRUNCHTOPE_source_dir@"
+  WORKING_DIRECTORY "@CrunchTope_source_dir@"
   RESULT_VARIABLE result
 )
 

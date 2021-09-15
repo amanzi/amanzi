@@ -177,11 +177,12 @@ class Operator : public Matrix<CompositeVector,CompositeVectorSpace> {
 
   // main members
   // -- virtual methods potentially altered by the schema, Schur complements
-  virtual int Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const;
   virtual int Apply(const CompositeVector& X, CompositeVector& Y) const override {
-    return Apply(X, Y, 0.0);
+    return Apply(X,Y,0.0);
   }
-  virtual int ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
+  virtual int Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const;
+  virtual int ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar=0.0) const;
+  virtual int ApplyUnassembled(const CompositeVector& X, CompositeVector& Y, double scalar=0.0) const;
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const override;
 
   // versions that make it easier to deal with Amanzi input spec format
@@ -281,6 +282,9 @@ class Operator : public Matrix<CompositeVector,CompositeVectorSpace> {
   void OpPushBack(const Teuchos::RCP<Op>& block);
   void OpExtend(op_iterator begin, op_iterator end);
   void OpReplace(const Teuchos::RCP<Op>& op, int index) { ops_[index] = op; }
+
+  // quality control
+  void Verify() const;
 
  public:
   // visit methods for Apply
@@ -474,7 +478,10 @@ class Operator : public Matrix<CompositeVector,CompositeVectorSpace> {
   int num_colors_;
   Teuchos::RCP<std::vector<int>> coloring_;
   Teuchos::ParameterList inv_plist_;
-  bool inited_, updated_, computed_;
+  bool inverse_pars_set_;
+  bool initialize_complete_;
+  bool compute_complete_;
+  mutable bool assembly_complete_;
 
   Teuchos::RCP<Epetra_CrsMatrix> A_;
   Teuchos::RCP<Matrix<CompositeVector>> preconditioner_;
@@ -487,7 +494,7 @@ class Operator : public Matrix<CompositeVector,CompositeVectorSpace> {
   int schema_old_;
   Schema schema_row_, schema_col_;
   std::string schema_string_;
-  double shift_;
+  double shift_, shift_min_;
 
   mutable int apply_calls_;
 

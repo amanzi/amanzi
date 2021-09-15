@@ -121,12 +121,12 @@ set(petsc_package_flags ${petsc_hypre_flags} ${petsc_superlu_dist_flags} ${petsc
 
 
 # PETSc install directory
-set(petsc_install_dir ${TPL_INSTALL_PREFIX}/${PETSc_BUILD_TARGET}-${PETSc_VERSION})
+set(PETSc_install_dir ${TPL_INSTALL_PREFIX}/${PETSc_BUILD_TARGET}-${PETSc_VERSION})
 
 if (BUILD_SHARED_LIBS)
-  set(CONFIG_PETSC_SHARED --with-shared-libraries=1)
+  set(CONFIG_PETSc_SHARED --with-shared-libraries=1)
 else()
-  set(CONFIG_PETSC_SHARED --with-shared-libraries=0)
+  set(CONFIG_PETSc_SHARED --with-shared-libraries=0)
 endif()
 
 if (DEFINED ENV{NERSC_HOST})
@@ -135,9 +135,9 @@ if (DEFINED ENV{NERSC_HOST})
                       --with-cxx=${CMAKE_CXX_COMPILER} 
                       --with-fc=${CMAKE_Fortran_COMPILER})
   set(petsc_compiler_flags --CFLAGS=${petsc_cflags}
-                           --CXXFLAGS=${petsc_cxxflags}
-                           --with-clib-autodetect=0 
-                           --with-cxxlib-autodetect=0)
+                           --CXXFLAGS=${petsc_cxxflags})
+#                           --with-clib-autodetect=0 
+#                           --with-cxxlib-autodetect=0)
 else()
   set(petsc_mpi_flags --with-mpi=1 --with-mpi-dir=${MPI_PREFIX})
   set(petsc_compilers)
@@ -149,19 +149,19 @@ set(petsc_mpi_compilers ${petsc_mpi_flags} ${petsc_compilers} ${petsc_compiler_f
 message(STATUS ">>> Build_PETSc -- MPI COMPILERS: ${petsc_mpi_compilers}")
 
 # --- Set the name of the patch
-set(PETSC_patch_file petsc-cmake.patch)
+set(PETSc_patch_file petsc-cmake.patch)
 # --- Configure the bash patch script
-set(PETSC_sh_patch ${PETSc_prefix_dir}/petsc-patch-step.sh)
+set(PETSc_sh_patch ${PETSc_prefix_dir}/petsc-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/petsc-patch-step.sh.in
-               ${PETSC_sh_patch}
+               ${PETSc_sh_patch}
                @ONLY)
 # --- Configure the CMake patch step
-set(PETSC_cmake_patch ${PETSc_prefix_dir}/petsc-patch-step.cmake)
+set(PETSc_cmake_patch ${PETSc_prefix_dir}/petsc-patch-step.cmake)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/petsc-patch-step.cmake.in
-               ${PETSC_cmake_patch}
+               ${PETSc_cmake_patch}
                @ONLY)
 # --- Set the patch command
-set(PETSC_PATCH_COMMAND ${CMAKE_COMMAND} -P ${PETSC_cmake_patch})     
+set(PETSc_PATCH_COMMAND ${CMAKE_COMMAND} -P ${PETSc_cmake_patch})     
 
 # --- Add external project build 
 ExternalProject_Add(${PETSc_BUILD_TARGET}
@@ -174,32 +174,32 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                     URL_MD5       ${PETSc_MD5_SUM}          # md5sum of the archive file
                     DOWNLOAD_NAME ${PETSc_SAVEAS_FILE}      # file name to store (if not end of URL)
                     # -- Patch 
-                    PATCH_COMMAND ${PETSC_PATCH_COMMAND}
+                    PATCH_COMMAND ${PETSc_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR    ${PETSc_source_dir}       # Source directory
                     CONFIGURE_COMMAND
                               ${PETSc_source_dir}/configure
-                                          ${CONFIG_PETSC_SHARED}
-                                          --prefix=${petsc_install_dir}
-                                          ${petsc_mpi_compilers}
-                                          --without-x
-					  --with-ssl=0
-                                          --with-debugging=${petsc_debug_flag}
-                                          --without-valgrind
-                                          --with-cxx-dialect=C++11
-                                          ${petsc_lapack_option}
-                                          ${petsc_blas_option}
-                                          ${petsc_package_flags}
+                              ${CONFIG_PETSc_SHARED}
+                              --prefix=${PETSc_install_dir}
+                              ${petsc_mpi_compilers}
+                              --without-x
+                              --with-ssl=0
+                              --with-debugging=${petsc_debug_flag}
+                              --without-valgrind
+                              --with-cxx-dialect=C++11
+                              ${petsc_lapack_option}
+                              ${petsc_blas_option}
+                              ${petsc_package_flags}
                     # -- Build
                     BINARY_DIR       ${PETSc_build_dir}           # Build directory 
                     BUILD_COMMAND    $(MAKE) -j 1 PETSC_DIR=${PETSc_source_dir} # Run the CMake script to build
                     BUILD_IN_SOURCE  ${PETSc_BUILD_IN_SOURCE}     # Flag for in source builds
                     # -- Install
-                    INSTALL_DIR      ${petsc_install_dir}         # Install directory, NOT in the usual directory
+                    INSTALL_DIR      ${PETSc_install_dir}         # Install directory, NOT in the usual directory
                     INSTALL_COMMAND  $(MAKE) install PETSC_DIR=${PETSc_source_dir}
                     # -- Output control
                     ${PETSc_logging_args})
 
 
 # --- Useful variables for other packages that depend on PETSc
-global_set(PETSC_DIR ${petsc_install_dir})
+global_set(PETSc_DIR ${PETSc_install_dir})

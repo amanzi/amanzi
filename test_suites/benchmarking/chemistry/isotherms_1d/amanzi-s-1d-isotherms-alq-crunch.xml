@@ -29,7 +29,7 @@
     <flow state="on" model="saturated"/>
     <transport state="on" />
     <!--chemistry state="on" engine="pflotran" database="isotherms.dat" /-->
-    <chemistry state="on" engine="crunchflow+" input_filename="1d-isotherms-crunch.in" database="isotherms.dbs" />
+    <chemistry state="on" engine="crunchflow" input_filename="1d-isotherms-crunch.in" database="isotherms.dbs" />
   </process_kernels>
 
   <phases>

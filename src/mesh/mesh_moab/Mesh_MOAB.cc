@@ -31,7 +31,7 @@ Mesh_MOAB::Mesh_MOAB(const std::string& filename,
                      const Teuchos::RCP<const Teuchos::ParameterList>& plist,
                      const bool request_faces,
                      const bool request_edges)
-    : Mesh(comm, gm, Teuchos::null, request_faces, request_edges),
+    : Mesh(comm, gm, plist, request_faces, request_edges),
       extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL)
 {
   int result, rank;
@@ -294,7 +294,7 @@ void Mesh_MOAB::init_id_handle_maps()
 void Mesh_MOAB::init_global_ids() {
   int result;
     
-  if (!serial_run) {
+  if (mbcomm_) {
     // Ask Parallel Communicator to assign global IDs to entities
     bool largest_dim_only=false;
     int start_id = 0;
@@ -311,7 +311,7 @@ void Mesh_MOAB::init_global_ids() {
     mbcomm_->exchange_tags(gid_tag, AllCells);
   }
   else {
-    // Serial case - we assign global IDs ourselves
+    // Case without MPI - we assign global IDs ourselves
     int tagval = 0;
     result = mbcore_->tag_get_handle("GLOBAL_ID", 1,
                                     MB_TYPE_INTEGER, gid_tag,
@@ -1157,7 +1157,8 @@ moab::Tag Mesh_MOAB::build_set(
       tag = cstag;
     }
     else {
-      Errors::Message mesg("Region type not applicable/supported for cell sets");
+      Errors::Message mesg;
+      mesg << "Region \"" << region->name() << "\" type not applicable/supported for cell sets";
       amanzi_throw(mesg);
     }
       
@@ -1210,7 +1211,8 @@ moab::Tag Mesh_MOAB::build_set(
       // Will handle it later in the routine
     }
     else {
-      Errors::Message mesg("Region type not applicable/supported for face sets");
+      Errors::Message mesg;
+      mesg << "Region \"" << region->name() << "\" type not applicable/supported for face sets";
       amanzi_throw(mesg);
     }
     break;

@@ -54,7 +54,11 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // Our decision can be affected by the list of models
   auto physical_models = Teuchos::sublist(my_list_, "physical models and assumptions");
-  bool vapor_diff = physical_models->get<bool>("vapor diffusion", true);
+  bool vapor_diff = physical_models->get<bool>("vapor diffusion");
+
+  if (physical_models->isParameter("eos lookup table")) {
+    eos_table_ = physical_models->get<std::string>("eos lookup table");
+  }
 
   // keys
   particle_density_key_ = Keys::getKey(domain_, "particle_density");
@@ -119,29 +123,18 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
          .set<double>("molar mass of gas", 28.9647e-03);  // dry air
   }
 
-  // -- molar fraction
+  // -- molar fraction FIXME (it is not used by all models)
   if (!S->HasField("molar_fraction_gas") && !elist.isSublist("molar_fraction_gas")) {
     elist.sublist("molar_fraction_gas")
          .set<std::string>("field evaluator type", "molar fraction gas")
          .set<std::string>("molar fraction key", "molar_fraction_gas");
     elist.sublist("molar_fraction_gas")
          .sublist("vapor pressure model parameters")
-         .set<std::string>("vapor pressure model type", "water vapor over water/ice");
+         .set<std::string>("eos type", "water vapor over water/ice");
   }
 
   // Fields for liquid
   // -- internal energy
-  if (!S->HasField(ie_liquid_key_) && !elist.isSublist(ie_liquid_key_)) {
-    Teuchos::Array<std::string> regions({ "All" });
-    elist.sublist(ie_liquid_key_)
-         .set<std::string>("field evaluator type", "iem")
-         .set<std::string>("internal energy key", ie_liquid_key_);
-    elist.sublist("internal_energy_liquid").sublist("IEM parameters").sublist("Material 1")
-         .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters")
-         .set<std::string>("iem type", "linear")
-         .set<double>("molar heat capacity", 76.0);
-  }
-
   S->RequireField(ie_liquid_key_, ie_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
@@ -157,8 +150,12 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
          .set<std::string>("mass density key", mass_density_liquid_key_);
     elist.sublist(mol_density_liquid_key_).sublist("EOS parameters")
          .set<std::string>("eos type", "liquid water 0-30C");
-    elist.sublist(mol_density_liquid_key_)
-         .sublist("verbose object").set<std::string>("verbosity level", "medium");
+    if (eos_table_.size() > 0) {
+      elist.sublist(mol_density_liquid_key_).sublist("EOS parameters")
+           .set<std::string>("eos type", "liquid water tabular")
+           .set<std::string>("table name", eos_table_)
+           .set<std::string>("field name", "density");
+    }
   }
 
   S->RequireField(mol_density_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
@@ -171,10 +168,14 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
     elist.sublist(viscosity_liquid_key_)
          .set<std::string>("field evaluator type", "viscosity")
          .set<std::string>("viscosity key", viscosity_liquid_key_)
-         .sublist("viscosity model parameters")
-         .set<std::string>("viscosity relation type", "liquid water");
-    elist.sublist("viscosity_liquid")
-         .sublist("verbose object").set<std::string>("verbosity level", "high");
+         .sublist("EOS parameters")
+         .set<std::string>("eos type", "liquid water 0-30C");
+    if (eos_table_.size() > 0) {
+      elist.sublist(viscosity_liquid_key_).sublist("EOS parameters")
+           .set<std::string>("eos type", "liquid water tabular")
+           .set<std::string>("table name", eos_table_)
+           .set<std::string>("field name", "viscosity");
+    }
 
     S->RequireField(viscosity_liquid_key_, viscosity_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -183,14 +184,15 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // inform other PKs about strong coupling
   // -- flow
+  auto pks = glist_->sublist("PKs").sublist(name_).get<Teuchos::Array<std::string> >("PKs order").toVector();
   std::string model = (vapor_diff) ? "two-phase" : "one-phase";
-  Teuchos::ParameterList& flow = glist_->sublist("PKs").sublist("flow")
+  Teuchos::ParameterList& flow = glist_->sublist("PKs").sublist(pks[0])
                                         .sublist("physical models and assumptions");
   flow.set<bool>("vapor diffusion", vapor_diff);
   flow.set<std::string>("water content model", model);
 
   // -- energy
-  Teuchos::ParameterList& energy = glist_->sublist("PKs").sublist("energy")
+  Teuchos::ParameterList& energy = glist_->sublist("PKs").sublist(pks[1])
                                           .sublist("physical models and assumptions");
   energy.set<bool>("vapor diffusion", vapor_diff);
 

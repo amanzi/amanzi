@@ -145,7 +145,7 @@ class TreeVector {
   // non-inherited extras
   void Print(std::ostream &os, bool data_io = true) const;
 
-  int GlobalLength() { std::cerr << "This method is not yet implemented\n"; return 0; }
+  // int GlobalLength() { std::cerr << "This method is not yet implemented\n"; return 0; }
 
  private:
   // Init's version of PushBack, which does not add to the space.

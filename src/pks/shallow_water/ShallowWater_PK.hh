@@ -12,6 +12,8 @@
 #ifndef AMANZI_SHALLOW_WATER_PK_HH_
 #define AMANZI_SHALLOW_WATER_PK_HH_
 
+#include <memory>
+
 // TPLs
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
@@ -25,10 +27,12 @@
 #include "DenseVector.hh"
 #include "Key.hh"
 #include "LimiterCell.hh"
+#include "NumericalFlux.hh"
 #include "PK.hh"
 #include "PK_Explicit.hh"
 #include "PK_Factory.hh"
 #include "PK_Physical.hh"
+#include "PK_DomainFunction.hh"
 #include "ReconstructionCell.hh"
 #include "State.hh"
 #include "Tensor.hh"
@@ -69,26 +73,31 @@ class ShallowWater_PK : public PK_Physical,
                                         Epetra_Vector& f_component) override;
 
   // Commit any secondary (dependent) variables.
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override {};
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
 
   // Calculate any diagnostics prior to doing vis
   virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override {};
 
   virtual std::string name() override { return "Shallow water PK"; }
+                            
+  // Bathymetry reconstruction on cell edge midpoints
+  double BathymetryRectangularCellValue(int c, const AmanziGeometry::Point& xp, const Epetra_MultiVector& Bn);
+  double BathymetryEdgeValue(int e, const Epetra_MultiVector& Bn);
 
-  std::vector<double> PhysFlux_x(std::vector<double>);
+  // due to rotational invariance of SW equations, we need flux in the x-direction only.
+  std::vector<double> PhysicalFlux_x(const std::vector<double>&);
 
-  std::vector<double> PhysFlux_y(std::vector<double>);
+  std::vector<double> NumericalFlux_x(std::vector<double>&, std::vector<double>&);
+  std::vector<double> NumericalFlux_x_Rusanov(const std::vector<double>&, const std::vector<double>&);
+  std::vector<double> NumericalFlux_x_CentralUpwind(const std::vector<double>&, const std::vector<double>&);
 
-  std::vector<double> NumFlux_x(std::vector<double>&, std::vector<double>&);
+  std::vector<double> NumericalSource(const std::vector<double>&, int);
 
-  std::vector<double> NumFlux_x_Rus(std::vector<double>&, std::vector<double>&);
+  // access
+  double get_total_source() const { return total_source_; }
 
-  std::vector<double> NumFlux_x_central_upwind(std::vector<double>&, std::vector<double>&);
-
-  std::vector<double> PhysSrc(std::vector<double>);
-
-  std::vector<double> NumSrc(std::vector<double>,int);
+ private:
+  bool ErrorDiagnostics_(int c, double h, double B, double ht);
 
  protected:
   Teuchos::RCP<Teuchos::ParameterList> glist_;
@@ -98,22 +107,28 @@ class ShallowWater_PK : public PK_Physical,
 
   Key domain_;
 
+  // numerical flux
+  std::shared_ptr<NumericalFlux> numerical_flux_;
+
   // names of state fields
-  Key velocity_x_key_, velocity_y_key_;
-  Key discharge_x_key_, discharge_y_key_;
+  Key velocity_key_, discharge_key_;
   Key ponded_depth_key_;
   Key total_depth_key_;
   Key bathymetry_key_;
-  Key discharge_y_grad_key_;
+  Key hydrostatic_pressure_key_;
 
   std::string passwd_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim_;
+                            
+  // source terms
+  std::vector<Teuchos::RCP<PK_DomainFunction> > srcs_;
+  double total_source_;
 
  private:
   // boundary conditions
-  std::vector<Teuchos::RCP<ShallowWaterBoundaryFunction> > bcs_; 
+  std::vector<Teuchos::RCP<ShallowWaterBoundaryFunction> > bcs_;
   std::vector<Teuchos::RCP<Operators::BCs> > op_bcs_;
 
   // gravity magnitude
@@ -121,9 +136,12 @@ class ShallowWater_PK : public PK_Physical,
 
   // limited reconstruction
   Teuchos::RCP<Operators::ReconstructionCell> total_depth_grad_, bathymetry_grad_;
-  Teuchos::RCP<Operators::ReconstructionCell> velocity_x_grad_, velocity_y_grad_;
   Teuchos::RCP<Operators::ReconstructionCell> discharge_x_grad_, discharge_y_grad_;
   Teuchos::RCP<Operators::LimiterCell> limiter_;
+
+  // advanced cfl control
+  double cfl_;
+  int iters_, max_iters_;
 
  private:
   // factory registration
@@ -134,4 +152,3 @@ class ShallowWater_PK : public PK_Physical,
 }  // namespace Amanzi
 
 #endif
-

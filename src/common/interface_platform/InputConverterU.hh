@@ -107,7 +107,8 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateDiffusionOperator_(
       const std::string& disc_methods, const std::string& pc_method,
       const std::string& nonlinear_solver, const std::string& nonlinear_coef,
-      const std::string& extensions, bool gravity);
+      const std::string& extensions, bool gravity,
+      const std::string& pk = "flow");
   Teuchos::ParameterList TranslateTimeIntegrator_(
       const std::string& err_options, const std::string& nonlinear_solver,
       bool modify_correction, const std::string& unstr_controls,
@@ -132,6 +133,10 @@ class InputConverterU : public InputConverter {
       std::string data_key = "value");
 
   void AddIndependentFieldEvaluator_(
+      Teuchos::ParameterList& out_ev,
+      const std::string& field, const std::string& region, double val);
+
+  void AddConstantFieldInitialization_(
       Teuchos::ParameterList& out_ev,
       const std::string& field, const std::string& region, double val);
 
@@ -163,7 +168,8 @@ class InputConverterU : public InputConverter {
   void TranslateTransportBCsAmanziGeochemistry_(Teuchos::ParameterList& out_list);
   void TranslateStateICsAmanziGeochemistry_(Teuchos::ParameterList& out_list,
                                             std::string& constraint,
-                                            std::vector<std::string>& regions);
+                                            std::vector<std::string>& regions,
+                                            const std::string& domain);
 
   // -- chemistry and energy
   Teuchos::ParameterList TranslateChemistry_(const std::string& domain);
@@ -178,10 +184,11 @@ class InputConverterU : public InputConverter {
 
   // -- shallow water
   Teuchos::ParameterList TranslateShallowWater_(const std::string& domain);
+  Teuchos::ParameterList TranslateShallowWaterBCs_();
 
   // -- mpc pks
   bool coupled_flow_, coupled_transport_, coupled_energy_;
-  std::vector<std::string> fracture_regions_;
+  std::vector<std::string> fracture_regions_, surface_regions_;
 
   void ProcessMacros_(const std::string& prefix, char* text_content,
                       Teuchos::ParameterList& mPL, Teuchos::ParameterList& outPL);
@@ -211,6 +218,7 @@ class InputConverterU : public InputConverter {
   Iterator SelectUniqueEntries(Iterator first, Iterator last);
 
   // -- miscalleneous
+  DOMNode* GetPKChemistryPointer_(bool& flag);
   bool FindNameInVector_(const std::string& name, const std::vector<std::string>& list); 
   std::string CreateNameFromVector_(const std::vector<std::string>& list); 
   bool WeightVolumeSubmodel_(const std::vector<std::string>& regions);
@@ -226,9 +234,11 @@ class InputConverterU : public InputConverter {
   Tree phases_;
 
   // global data
-  std::map<std::string, std::string> pk_model_;
+  std::map<std::string, std::string> pk_model_, pk_domain_;
   std::map<std::string, bool> pk_master_;
   std::map<std::string, double> dt_cut_, dt_inc_;
+  
+  std::string eos_lookup_table_;
 
   // global physical constants prefixed with "const"
   double const_gravity_;

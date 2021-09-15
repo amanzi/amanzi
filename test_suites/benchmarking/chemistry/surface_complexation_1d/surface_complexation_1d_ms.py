@@ -36,7 +36,8 @@ if __name__ == "__main__":
         pass
 
     try:
-        PF_DIR='/home/smolins/work/PF-Alquimia_verification'
+        PF_DIR=os.environ.get('PARFLOW_RESULTS_DIR')
+        print('Parflow results directory: ',PF_DIR)
         sys.path.append(PF_DIR)
         from PF_GetXY import GetXY_ParFlow_1D_100
     except:
@@ -131,9 +132,7 @@ if __name__ == "__main__":
     try:
         input_file = os.path.join("amanzi-u-1d-"+root+".xml")
         path_to_amanzi = "output-u"
-        run_amanzi_standard.run_amanzi(input_file, 1,
-                                       [root+".bgd",input_file],
-                                       path_to_amanzi)
+        run_amanzi_standard.run_amanzi(input_file, 1, [input_file], path_to_amanzi)
         
         u_amanzi_native = [[[] for x in range(len(amanzi_totc))] for x in range(len(times))]
         for i, time in enumerate(times):
@@ -153,7 +152,7 @@ if __name__ == "__main__":
             x_amanzi_native, c_amanzi_native = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
             pH_amanzi_native[i] = -np.log10(c_amanzi_native)
 
-    native = True
+        native = True
 
     except:
         native = False
@@ -297,10 +296,12 @@ if __name__ == "__main__":
 
 
     root_ = 'surface_complexation'
+
+    #import pdb; pdb.set_trace()
     
     # parflow + pflotran
     try:
-        path_to_parflow = os.path.join(PF_DIR,root_+'_1d','run_pflotran')
+        path_to_parflow = os.path.join(PF_DIR,root_+'_1d','pflotran')
 
         c_parflow_pflo = [ [] for x in range(len(components)) ]
         v_parflow_pflo = [ [] for x in range(len(components)) ]
@@ -326,7 +327,7 @@ if __name__ == "__main__":
         
     # parflow + crunch
     try:
-        path_to_parflow = os.path.join(PF_DIR,root_+'_1d','run_crunch')
+        path_to_parflow = os.path.join(PF_DIR,root_+'_1d','crunch')
 
         c_parflow_crunch = [ [] for x in range(len(components)) ]
         v_parflow_crunch = [ [] for x in range(len(components)) ]
@@ -377,7 +378,8 @@ if __name__ == "__main__":
         ax += [plt.subplot(nrows,ncols,2*comp+1)]
         bx += [plt.subplot(nrows,ncols,2*comp+2)]
 
-    px = plt.subplot(nrows,1,nrows)
+    px = plt.subplot(nrows,2,7)
+#    qx = plt.subplot(nrows,2,8)
 
     # for i, time in enumerate(times):
     i = 0 # only one time point at 50 years
@@ -385,12 +387,12 @@ if __name__ == "__main__":
     # pflotran 
     # if True:
     for j, comp in enumerate(components):
-        ax[j].plot(x_pflotran, u_pflotran[i][j],color='m',linestyle='-',linewidth=6,label='PFloTran')
+        ax[j].plot(x_pflotran, u_pflotran[i][j],color='m',linestyle='-',linewidth=2,label='PFLOTRAN')
         bx[j].plot(x_pflotran, v_pflotran[i][j],color='m',linestyle='-',linewidth=2)
         ax[j].text(x_pflotran[10],u_pflotran[i][j][10],comp,fontsize=15,bbox=dict(facecolor='white', alpha=1.0))
         bx[j].text(x_pflotran[10],v_pflotran[i][j][10],comp,fontsize=15,bbox=dict(facecolor='white', alpha=1.0))
 
-    px.plot(x_pflotran, pH_pflotran[i],color='m',linestyle='-',linewidth=2,label='PFloTran')
+    px.plot(x_pflotran, pH_pflotran[i],color='m',linestyle='-',linewidth=2,label='PFLOTRAN')
 
 
     # crunchflow 
@@ -415,9 +417,9 @@ if __name__ == "__main__":
     if alq:
         for j, comp in enumerate(components):
             ax[j].plot(x_amanzi_alquimia, u_amanzi_alquimia[i][j],color='r',linestyle='-',linewidth=2)
-            bx[j].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],color='r',linestyle='-',linewidth=2,label='AmanziU+Alquimia(PFloTran)')
+            bx[j].plot(x_amanzi_alquimia, v_amanzi_alquimia[i][j],color='r',linestyle='-',linewidth=2,label='AmanziU+Alquimia(PFLOTRAN)')
 
-        px.plot(x_amanzi_alquimia, pH_amanzi_alquimia[i],color='r',linestyle='-',linewidth=2,label='AmanziU+Alquimia(PFloTran)')
+        px.plot(x_amanzi_alquimia, pH_amanzi_alquimia[i],color='r',linestyle='-',linewidth=2,label='AmanziU+Alquimia(PFLOTRAN)')
 
 
     # amanzi-unstructured-alquimia-crunchflow
@@ -432,10 +434,10 @@ if __name__ == "__main__":
     # amanzi-structured-alquimia-pflotran
     if struct:
         for j, comp in enumerate(components):
-            ax[j].plot(x_amanziS, u_amanziS[i][j],color='g',linestyle='-',linewidth=2,label='AmanziS+Alquimia(PFloTran)')
-            bx[j].plot(x_amanziS, v_amanziS[i][j],color='g',linestyle='-',linewidth=2,label='AmanziS+Alquimia(PFloTran)')
+            ax[j].plot(x_amanziS, u_amanziS[i][j],color='g',linestyle='-',linewidth=2,label='AmanziS+Alquimia(PFLOTRAN)')
+            bx[j].plot(x_amanziS, v_amanziS[i][j],color='g',linestyle='-',linewidth=2,label='AmanziS+Alquimia(PFLOTRAN)')
 
-        px.plot(x_amanziS, pH_amanziS[i],color='g',linestyle='-',linewidth=2,label='AmanziS+Alquimia(PFloTran)')
+        px.plot(x_amanziS, pH_amanziS[i],color='g',linestyle='-',linewidth=2,label='AmanziS+Alquimia(PFLOTRAN)')
 
 
     # amanzi-structured-alquimia-crunchflow
@@ -446,52 +448,76 @@ if __name__ == "__main__":
 
         px.plot(x_amanziS_crunch, pH_amanziS_crunch[i],color='g',linestyle='None',marker='*',linewidth=2,label='AmanziS+Alquimia(CrunchFlow)')
 
+  
     # parflow + pflotran
     if (parflow_pflo > 0):
         for j in range(len(components)):
             ax[j].plot(x_parflow_pflo, c_parflow_pflo[j],'b-')
-            bx[j].plot(x_parflow_pflo, v_parflow_pflo[j],'b-',label='Parflow+Alq(PFT)')
+            bx[j].plot(x_parflow_pflo, v_parflow_pflo[j],'b-')
 
-        px.plot(x_parflow_pflo, pH_parflow_pflo,'b-',linewidth=2)
+        px.plot(x_parflow_pflo, pH_parflow_pflo,'b-',linewidth=2,label='Parflow+Alq(PFLOTRAN)')
 
     # parflow + crunch
     if (parflow_crunch > 0):
         for j in range(len(components)):
             ax[j].plot(x_parflow_crunch, c_parflow_crunch[j],'b*')
-            bx[j].plot(x_parflow_crunch, v_parflow_crunch[j],'b*',label='Parflow+Alq(CF)')
+            bx[j].plot(x_parflow_crunch, v_parflow_crunch[j],'b*')
 
-        px.plot(x_parflow_crunch, pH_parflow_crunch,'b*',linewidth=2)
+        px.plot(x_parflow_crunch, pH_parflow_crunch,'b*',linewidth=2,label='Parflow+Alq(CrunchFlow)')
 
 
     # axes
-    ax[len(components)-1].set_xlabel("Distance (m)",fontsize=15)
-    bx[len(components)-1].set_xlabel("Distance (m)",fontsize=15)
+    #ax[len(components)-1].set_xlabel("Distance (m)",fontsize=16)
+    #bx[len(components)-1].set_xlabel("Distance (m)",fontsize=16)
 
+    ax[0].set_xlabel("Distance (m)",fontsize=16)
+    bx[0].set_xlabel("Distance (m)",fontsize=16)
+
+    ax[1].set_xlabel("Distance (m)",fontsize=16)
+    bx[1].set_xlabel("Distance (m)",fontsize=16)
+
+    ax[2].set_xlabel("Distance (m)",fontsize=16)
+    bx[2].set_xlabel("Distance (m)",fontsize=16)  
+
+    ax[0].tick_params(axis='both', which='major', labelsize=14)
+    ax[1].tick_params(axis='both', which='major', labelsize=14)
+    ax[2].tick_params(axis='both', which='major', labelsize=14)
+
+    bx[0].tick_params(axis='both', which='major', labelsize=14)
+    bx[1].tick_params(axis='both', which='major', labelsize=14)
+    bx[2].tick_params(axis='both', which='major', labelsize=14)
+            
     # for i,comp in enumerate(components):
     i=1
-    ax[i].set_ylabel("Total Concentration [mol/L]",fontsize=15)
-    bx[i].set_ylabel("Total Sorbed Concent. [mol/m3]",fontsize=15)
+    ax[i].set_ylabel("Total Aqueous Concentration [mol/L]",fontsize=16)
+    bx[i].set_ylabel("Total Sorbed Concentration [mol/m3]",fontsize=16)
 
-    px.set_xlabel("Distance(m)",fontsize=15)
-    px.set_ylabel("pH",fontsize=15)
+    px.set_xlabel("Distance(m)",fontsize=16)
+    px.set_ylabel("pH",fontsize=16)
 
-    # for i,comp in enumerate(components):
-    #     ax[i].set_ylim(bottom=0)
-    #     bx[i].set_ylim(bottom=0)
+    ax[0].set_ylim(bottom=0.09)
+    ax[1].set_ylim(bottom=0.09)
+
+    bx[0].set_ylim(bottom=-0.01)
+    bx[1].set_ylim(bottom=-0.01)
+
+    ax[2].ticklabel_format(useMathText=True,axis='y',style='sci',scilimits=(-6,-6))
+    bx[2].ticklabel_format(useMathText=True,axis='y',style='sci',scilimits=(-4,-4))
+    
     px.set_ylim(bottom=4.8)
 
     # plot adjustments
-    ax[0].legend(fontsize=15)
-    bx[0].legend(fontsize=15)
-    px.legend(fontsize=15,loc='upper right')
+#    ax[0].legend(fontsize=15)
+#    bx[0].legend(fontsize=15)
+    px.legend(fontsize=15,bbox_to_anchor=(1.925, 1.10))
 
-    plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",fontsize=20) #,x=0.57,fontsize=20)
+##    plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",fontsize=20) #,x=0.57,fontsize=20)
 
-    plt.tick_params(axis='both', which='major', labelsize=15)
+    plt.tick_params(axis='both', which='major', labelsize=14)
   
-    plt.tight_layout() #(pad=0.4, w_pad=0.5, h_pad=1.0)
+#    plt.tight_layout() #(pad=0.4, w_pad=0.5, h_pad=1.0)
 
-    plt.subplots_adjust(left=0.10,bottom=0.15,right=0.90,top=0.95)
+    plt.subplots_adjust(wspace=0.2,hspace=0.35,left=0.10,bottom=0.05,right=0.95,top=0.95)
 
     # pyplot.show()
     plt.savefig(root+"_1d.png",format="png")

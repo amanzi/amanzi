@@ -12,20 +12,20 @@ message(STATUS ">>>>>>>> AmanziTPL.cmake")
 set(AMANZI_TPLS_VERSION_CMAKE "${CMAKE_SOURCE_DIR}/config/SuperBuild/TPLVersions.cmake")
 file(STRINGS ${AMANZI_TPLS_VERSION_CMAKE} AMANZI_TPLS_VERSION_CMAKE_lines)
 
-FOREACH(line ${AMANZI_TPLS_VERSION_CMAKE_lines})
-  IF ( ${line} MATCHES "AMANZI_TPLS_VERSION " )
+foreach(line ${AMANZI_TPLS_VERSION_CMAKE_lines})
+  if ( ${line} MATCHES "AMANZI_TPLS_VERSION " )
     # message(STATUS "\t >>>>>> Skipping ....")
-  ELSEIF ( ${line} MATCHES "AMANZI_TPLS_VERSION_MAJOR" )
-    STRING(REGEX REPLACE ".*AMANZI_TPLS_VERSION_MAJOR ([0-9]+).*" "\\1" AMANZI_TPLS_VERSION_MAJOR_SRC "${line}")
+  elseif ( ${line} MATCHES "AMANZI_TPLS_VERSION_MAJOR" )
+    string(REGEX REPLACE ".*AMANZI_TPLS_VERSION_MAJOR ([0-9]+).*" "\\1" AMANZI_TPLS_VERSION_MAJOR_SRC "${line}")
     # message(STATUS "\t >>>>>> ${AMANZI_TPLS_VERSION_MAJOR_SRC}")
-  ELSEIF ( ${line} MATCHES "AMANZI_TPLS_VERSION_MINOR" )
-    STRING(REGEX REPLACE ".*AMANZI_TPLS_VERSION_MINOR ([0-9]+).*" "\\1" AMANZI_TPLS_VERSION_MINOR_SRC "${line}")
+  elseif ( ${line} MATCHES "AMANZI_TPLS_VERSION_MINOR" )
+    string(REGEX REPLACE ".*AMANZI_TPLS_VERSION_MINOR ([0-9]+).*" "\\1" AMANZI_TPLS_VERSION_MINOR_SRC "${line}")
     # message(STATUS "\t >>>>>> ${AMANZI_TPLS_VERSION_MINOR_SRC}")
-  ELSEIF ( ${line} MATCHES "AMANZI_TPLS_VERSION_PATCH" )
-    STRING(REGEX REPLACE ".*AMANZI_TPLS_VERSION_PATCH ([0-9]+).*" "\\1" AMANZI_TPLS_VERSION_PATCH_SRC "${line}")
+  elseif ( ${line} MATCHES "AMANZI_TPLS_VERSION_PATCH" )
+    string(REGEX REPLACE ".*AMANZI_TPLS_VERSION_PATCH ([0-9]+).*" "\\1" AMANZI_TPLS_VERSION_PATCH_SRC "${line}")
     # message(STATUS "\t >>>>>> ${AMANZI_TPLS_VERSION_PATCH_SRC}")
-  ENDIF()
-ENDFOREACH()
+  endif()
+endforeach()
 
 set(AMANZI_TPLS_VERSION_REQUIRED ${AMANZI_TPLS_VERSION_MAJOR_SRC}.${AMANZI_TPLS_VERSION_MINOR_SRC}.${AMANZI_TPLS_VERSION_PATCH_SRC})
 
@@ -40,9 +40,9 @@ if (NOT ${AMANZI_TPLS_VERSION} STREQUAL ${AMANZI_TPLS_VERSION_REQUIRED})
   message(WARNING "TPL version does not match the required version.")
 endif()
 
-# List of directories for step 1 in CMAKe's search path for command find_library(). 
+# List of directories for step 1 in CMake's search path for command find_library(). 
 # By default it is empty. We set it to non-standard location of MPI. 
-# Probably, it would be appropriate to add also the path to TPL libraties
+# Probably, it would be appropriate to add also the path to TPL libraries.
 set(CMAKE_LIBRARY_PATH ${MPI_PREFIX}/lib)
 
 
@@ -75,7 +75,6 @@ endif()
 ##############################################################################
 # ZLIB
 ##############################################################################
-
 set (ZLIB_ROOT ${ZLIB_DIR})
 find_package(ZLIB REQUIRED)
 
@@ -91,7 +90,7 @@ message(STATUS "")
 ##############################################################################
 # Boost
 ##############################################################################
-
+#
 # CMake 2.8.6 FindBoost stops at version 1.46
 # Add more versions to the search see cmake --help-module FindBoost for
 # more information.
@@ -170,7 +169,7 @@ message(STATUS "")
 ##############################################################################
 # Trilinos http://trilinos.sandia.gov
 ##############################################################################
-
+#
 # This command alters Trilinos_DIR. If it finds the configuration file
 # Trilinos_DIR is set to the path the configuration file was found.
 if ( NOT Trilinos_INSTALL_PREFIX )
@@ -198,28 +197,56 @@ if (Trilinos_FOUND)
                         " Amanzi requires at least version ${Trilinos_MINIMUM_VERSION}")
   endif()
 
-  # Amanzi uses Epetra and Teuchos utils throughout the code. 
-  # This find_package call defines Epetra_* variables.
-  # Amanzi developers should use these variables
-  # for libraries that ONLY use Epetra/Teuchos and avoid
-  # using the ALL POWERFUL(TM) Trilinos_LIBRARIES.
-  # When/If we create wrappers, using this variable
-  # will make that transition easier.
+  # Amanzi uses Teuchos utils throughout the code.  This find_package
+  # call defines, for instance, Epetra_* variables.  Amanzi developers
+  # should use these variables for libraries that ONLY use
+  # Epetra/Teuchos and avoid using the ALL POWERFUL(TM)
+  # Trilinos_LIBRARIES.
 
   # Verify that the Trilinos found has all the required packages
   # Amanzi needs. This list changes for structured and unstructured
   # mesh capabilities.
-  # List of required Trilinos packages
-  # Teuchos - general purpose toolkit, used through the code
-  # Epetra  - distributed data objects
-  # NOX     - nonlinear solver (Unstructured ONLY)
-  # ML      - multilevel preconditioner (Unstructured ONLY)
-  set(Trilinos_REQUIRED_PACKAGE_LIST Teuchos Epetra) 
-  if (ENABLE_Unstructured)
-    # list(APPEND Trilinos_REQUIRED_PACKAGE_LIST NOX ML Amesos2 MueLu)
-    list(APPEND Trilinos_REQUIRED_PACKAGE_LIST NOX ML Amesos2)
+  #
+  # Teuchos - general purpose toolkit, used throughout the code
+  set(Trilinos_REQUIRED_PACKAGE_LIST Teuchos)
+
+  # Epetra - vectors & matrices using MPI
+  if (ENABLE_Epetra)
+    list(APPEND Trilinos_REQUIRED_PACKAGE_LIST Epetra)
   endif()
 
+  # Tpetra - vectors & matrices using MPI+X
+  if (ENABLE_Tpetra)
+    list(APPEND Trilinos_REQUIRED_PACKAGE_LIST Kokkos KokkosKernels Tpetra)
+  endif()
+  
+  if (ENABLE_Unstructured)
+    if (ENABLE_Epetra)
+      # NOX     - nonlinear solver
+      # ML      - multilevel preconditioner
+      # Amesos2 - direct solvers using Kokkos
+      # Ifpack  - wrappers to external solvers (Hypre) and also block
+      #           solvers (block ILU, additive Schwarz, etc)
+      # NOTE: Basker is intentionally excluded here -- it does not create CMake targets (Trilinos problem?)
+      list(APPEND Trilinos_REQUIRED_PACKAGE_LIST EpetraExt Amesos Amesos2 Ifpack NOX Belos ML AztecOO )
+    endif()
+    if (ENABLE_Tpetra)
+      # Amesos2 - direct solvers using Kokkos
+      # MueLu   - multilevel preconditioner
+      # Ifpack2 - wrappers to external solvers (Hypre) and also block
+      #           solvers (block ILU, additive Schwarz, etc)
+      # NOTE: Basker is intentionally excluded here -- it does not create CMake targets (Trilinos problem?)
+      list(APPEND Trilinos_REQUIRED_PACKAGE_LIST Ifpack2 Amesos2 MueLu ShyLU ShyLU_Node)
+      # Xpetra?
+    endif()
+  endif()
+
+  # MSTK needs Zoltan for partitioning
+  if (ENABLE_MESH_MSTK)
+    list(APPEND Trilinos_REQUIRED_PACKAGE_LIST Zoltan)
+  endif()
+  
+  # find each trilinos package
   foreach(tri_package ${Trilinos_REQUIRED_PACKAGE_LIST})
     find_package(${tri_package} REQUIRED
                  NO_MODULE
@@ -237,59 +264,6 @@ if (Trilinos_FOUND)
       list(APPEND ${tri_package}_INCLUDE_DIRS "${_inc}")
     endforeach()
   endforeach()
-
-  # Zoltan - required by MSTK mesh class 
-  if (ENABLE_MSTK_Mesh)
-    find_package(Zoltan
-                 NO_MODULE
-                 HINTS ${Trilinos_INSTALL_PREFIX}
-                 PATH_SUFFIXES include lib)
-    if (Zoltan_FOUND)
-      message(STATUS "\tZoltan_DIR          = ${Zoltan_DIR}")
-      message(STATUS "\tZoltan_INCLUDE_DIRS = ${Zoltan_INCLUDE_DIRS}")
-      message(STATUS "\tZoltan_LIBRARIES    = ${Zoltan_LIBRARIES}")
-      message(STATUS "")
-      trilinos_package_enabled_tpls(Zoltan)
-      foreach( _inc "${ZOLTAN_TPL_INCLUDE_DIRS}")
-        list(APPEND ZOLTAN_INCLUDE_DIRS "${_inc}")
-      endforeach()
-    else()  
-      message(WARNING "Could not locate Zoltan in ${Trilinos_DIR}. Will not enable MSTK_Mesh")
-      set(ENABLE_MSTK_Mesh OFF CACHE BOOL "Disable MSTK Mesh capability" FORCE)
-    endif()
-  endif()
-
-  option(ENABLE_HYPRE "Enable HYPRE APIs in flow" ON)
-  if (ENABLE_HYPRE)
-    # Ifpack - preconditioner package that serves as a wrapper for HYPRE
-    find_package(Ifpack 
-                 NO_MODULE
-                 HINTS ${Trilinos_INSTALL_PREFIX}
-                 PATH_SUFFIXES include lib
-                 )
-    if (Ifpack_FOUND)
-      message(STATUS "\tIfpack_DIR          = ${Ifpack_DIR}")
-      message(STATUS "\tIfpack_DIR          = ${Ifpack_DIR}")
-      message(STATUS "\tIfpack_INCLUDE_DIRS = ${Ifpack_INCLUDE_DIRS}")
-      message(STATUS "\tIfpack_LIBRARIES    = ${Ifpack_LIBRARIES}")
-      print_link_libraries(ifpack)
-      message(STATUS "")
-
-      trilinos_package_enabled_tpls(Ifpack)
-
-      foreach( _inc "${Ifpack_TPL_INCLUDE_DIRS}")
-        list(APPEND Ifpack_INCLUDE_DIRS "${_inc}")
-      endforeach()
-    else()
-      message(SEND_ERROR "Trilinos in ${Trilinos_DIR} does not have the Ifpack package")
-    endif()
-
-    if (NOT Ifpack_ENABLE_HYPRE)
-      message(WARNING "ENABLE_HYPRE requires the Trilinos package Ifpack with enabled HYPRE."
-                      " Deactivating HYPRE APIs")
-      set(ENABLE_HYPRE OFF CACHE BOOL "Disable the HYPRE APIs" FORCE)                 
-    endif()
-  endif()
        
   # Now update the Trilinos_LIBRARIES and INCLUDE_DIRS
   foreach( _inc "${Trilinos_TPL_INCLUDE_DIRS}")
@@ -304,32 +278,8 @@ endif()
 
 
 ##############################################################################
-# HYPRE and its dependencies
-##############################################################################
-
-if (ENABLE_HYPRE)
-
-  find_package(HYPRE)
-
-  if (HYPRE_FOUND)
-    message(STATUS "HYPRE Package information")
-    message(STATUS "\tHYPRE_VERSION      = ${HYPRE_VERSION}")
-    message(STATUS "\tHYPRE_INCLUDE_DIRS = ${HYPRE_INCLUDE_DIRS}")
-    message(STATUS "\tHYPRE_LIBRARY_DIR  = ${HYPRE_LIBRARY_DIR}")
-    message(STATUS "\tHYPRE_LIBRARY      = ${HYPRE_LIBRARY}")
-    message(STATUS "\tHYPRE_LIBRARIES    = ${HYPRE_LIBRARIES}")
-    print_link_libraries(${HYPRE_LIBRARY})
-    message(STATUS "")
-  else()
-    message(FATAL_ERROR "Can not locate HYPRE library and/or include\n")
-  endif()
-endif()
-
-
-##############################################################################
 # NetCDF - http://www.unidata.ucar.edu/software/netcdf/
 ##############################################################################
-
 find_package(NetCDF REQUIRED)
 set_package_properties(NetCDF
                  PROPERTIES
@@ -414,35 +364,60 @@ endif()
 
 
 ##############################################################################
-############################ Option Processing ###############################
+############################ Optional Packages ###############################
 ##############################################################################
+
+##############################################################################
+# Hypre solvers and its dependencies
+##############################################################################
+option(ENABLE_HYPRE "Build Amanzi to use the Hypre linear solvers" TRUE)
+add_feature_info(HYPRE
+                 ENABLE_HYPRE
+                 "Hypre linear solvers"
+                 )
+if (ENABLE_HYPRE)
+  find_package(HYPRE)
+
+  if (HYPRE_FOUND)
+    message(STATUS "HYPRE Package information")
+    message(STATUS "\tHYPRE_VERSION      = ${HYPRE_VERSION}")
+    message(STATUS "\tHYPRE_INCLUDE_DIRS = ${HYPRE_INCLUDE_DIRS}")
+    message(STATUS "\tHYPRE_LIBRARY_DIR  = ${HYPRE_LIBRARY_DIR}")
+    message(STATUS "\tHYPRE_LIBRARY      = ${HYPRE_LIBRARY}")
+    message(STATUS "\tHYPRE_LIBRARIES    = ${HYPRE_LIBRARIES}")
+    print_link_libraries(${HYPRE_LIBRARY})
+    message(STATUS "")
+  else()
+    message(FATAL_ERROR "Can not locate HYPRE library and/or include\n")
+  endif()
+
+  # also check that we can use Hypre through Ifpack
+  if (ENABLE_Epetra)
+    if (NOT Ifpack_ENABLE_HYPRE)
+      message(FATAL_ERROR "ENABLE_HYPRE requires the Trilinos package Ifpack with enabled HYPRE.")
+    endif()
+  endif()
+  if (ENABLE_Tpetra)
+    if (NOT Ifpack2_ENABLE_HYPRE)
+      message(FATAL_ERROR "ENABLE_HYPRE requires the Trilinos package Ifpack2 with enabled HYPRE.")
+    endif()
+  endif()
+endif()
 
 
 ##############################################################################
 #---------------------------- Mesh Frameworks -------------------------------#
 ##############################################################################
 
-# Enable ALL possible mesh frameworks
-#option(ENABLE_ALL_Mesh "Build all Amanzi mesh frameworks" OFF)
-#if(ENABLE_ALL_Mesh)
-#   set(ENABLE_MOAB_Mesh ON)
-#   set(ENABLE_MSTK_Mesh ON)
-#endif()    
-#set_feature_info(ALL_Mesh
-#                 ENABLE_ALL_Mesh
-#                 "Build all available mesh frameworks"
-#                )    
-
-
 ##############################################################################
 # MOAB - svn co https://svn.mcs.anl.gov/repos/ITAPS/MOAB/trunk MOAB
 ##############################################################################
-option(ENABLE_MOAB_Mesh "Build Amanzi with the MOAB mesh framework" OFF)
-add_feature_info(MOAB_Mesh
-                 ENABLE_MOAB_Mesh
+option(ENABLE_MESH_MOAB "Build Amanzi with the MOAB mesh framework" FALSE)
+add_feature_info(MESH_MOAB
+                 ENABLE_MESH_MOAB
                  "A Mesh-Oriented datABase"
                  )
-if (ENABLE_MOAB_Mesh)
+if (ENABLE_MESH_MOAB)
   find_package(MOAB REQUIRED)
 
   if (MOAB_FOUND)
@@ -462,12 +437,12 @@ endif()
 ##############################################################################
 # MSTK - https://software.lanl.gov/MeshTools/trac/raw-attachment/wiki/WikiStart/mstk-1.80.tar.gz
 ##############################################################################
-option(ENABLE_MSTK_Mesh "Build Amanzi with the MSTK mesh framework" OFF)
-add_feature_info(MSTK_Mesh
-                 ENABLE_MSTK_Mesh
+option(ENABLE_MESH_MSTK "Build Amanzi with the MSTK mesh framework" FALSE)
+add_feature_info(MESH_MSTK
+                 ENABLE_MESH_MSTK
                  "A mesh framework"
                  )
-if (ENABLE_MSTK_Mesh)
+if (ENABLE_MESH_MSTK)
   find_package(MSTK REQUIRED)
 
   if (MSTK_FOUND)
@@ -487,7 +462,11 @@ endif()
 ##############################################################################
 # Silo
 ##############################################################################
-option(ENABLE_Silo "Build Amanzi with Silo output options" OFF)
+option(ENABLE_Silo "Build Amanzi with Silo output options" FALSE)
+add_feature_info(Silo
+                 ENABLE_Silo
+                 "Visualization output file format"
+                 )
 if (ENABLE_Silo)
   find_package(Silo REQUIRED)
 
@@ -504,42 +483,42 @@ endif()
 
 
 ##############################################################################
-#-------------------------- Optional Libraries ------------------------------#
-##############################################################################
-
-
-##############################################################################
 # ASCEMIO - http://www.cgns.sourceforge.net/
 ##############################################################################
-option(ENABLE_ASCEMIO  "Build Amanzi output library with ASCEM-IO parallelIO" OFF)
+option(ENABLE_ASCEMIO  "Build Amanzi output library with ASCEM-IO parallelIO" FALSE)
+if (ENABLE_Unstructured AND NOT ENABLE_ASCEMIO)
+  message(STATUS "ASCEM-IO required for Unstructured builds, turning on.")
+  set(ENABLE_ASCEMIO ON)
+endif()
 set_package_properties(ASCEMIO
                        PROPERTIES
                        DESCRIPTION "ASCEM-IO Scalable Parallel I/O module for Environmental Management Applications"
                        URL "http://ascem-io.secure-water.org"
                        PURPOSE "Required to produce VisIt files in parallel"
                       )
-#if (ENABLE_ASCEMIO)
-if (ENABLE_Unstructured)
-  find_package(ASCEMIO REQUIRED)
-else()
-  find_package(ASCEMIO)
-endif() 
+if (ENABLE_ASCEMIO)
+  if (ENABLE_Unstructured)
+    find_package(ASCEMIO REQUIRED)
+  else()
+    find_package(ASCEMIO)
+  endif() 
 
-if (ASCEMIO_FOUND)
-  message(STATUS "ASCEMIO Package information")
-  message(STATUS "\tASCEMIO_INCLUDE_DIR  = ${ASCEMIO_INCLUDE_DIR}")
-  message(STATUS "\tASCEMIO_INCLUDE_DIRS = ${ASCEMIO_INCLUDE_DIRS}")
-  message(STATUS "\tASCEMIO_LIBRARY_DIR  = ${ASCEMIO_LIBRARY_DIR}")
-  message(STATUS "\tASCEMIO_LIBRARY      = ${ASCEMIO_LIBRARY}")
-  message(STATUS "\tASCEMIO_LIBRARIES    = ${ASCEMIO_LIBRARIES}")
-  message(STATUS "")
-endif() 
+  if (ASCEMIO_FOUND)
+    message(STATUS "ASCEMIO Package information")
+    message(STATUS "\tASCEMIO_INCLUDE_DIR  = ${ASCEMIO_INCLUDE_DIR}")
+    message(STATUS "\tASCEMIO_INCLUDE_DIRS = ${ASCEMIO_INCLUDE_DIRS}")
+    message(STATUS "\tASCEMIO_LIBRARY_DIR  = ${ASCEMIO_LIBRARY_DIR}")
+    message(STATUS "\tASCEMIO_LIBRARY      = ${ASCEMIO_LIBRARY}")
+    message(STATUS "\tASCEMIO_LIBRARIES    = ${ASCEMIO_LIBRARIES}")
+    message(STATUS "")
+  endif()
+endif()
 
 
 ##############################################################################
 # UnitTest++ - http://unittest-cpp.sourceforge.net/
 ##############################################################################
-option(ENABLE_UnitTest "Build Amanzi unit tests. Requires UnitTest++" ON)
+option(ENABLE_UnitTest "Build Amanzi unit tests. Requires UnitTest++" TRUE)
 set_package_properties(UnitTest
                        PROPERTIES
                        DESCRIPTION "C++ unit test framework"
@@ -566,7 +545,7 @@ endif()
 # comment out set_feature_info per
 # https://software.lanl.gov/ascem/trac/ticket/413#comment:1
 ##############################################################################
-option(ENABLE_OpenMP "Build Amanzi executables with OpenMP" OFF)
+option(ENABLE_OpenMP "Build Amanzi with OpenMP support in CCSE, Trilinos, and/or Hypre" FALSE)
 #set_feature_info(OpenMP
 #                 ENABLE_OpenMP
 #                 "OpenMP, multi-platform shared-memory parallel programming"
@@ -578,36 +557,18 @@ endif()
 
 
 ##############################################################################
-# PETSc - http://www.mcs.anl.gov/petsc
+# CUDA
 ##############################################################################
-#option(ENABLE_PETSC "Enable PETSc APIs in the structured mesh" FALSE)
-option(ENABLE_PETSC "Enable PETSc APIs in the structured mesh" ON)
-if (ENABLE_Structured OR ENABLE_ALQUIMIA OR ENABLE_PETSC) # FIXME: Sloppy.
-  find_package(PETSc)
-  if (NOT PETSC_FOUND)
-    message(WARNING "Failed to locate PETSc")
-  else()
-    message(STATUS "PETSc Package information")
-    message(STATUS "\tPETSC_VERSION      = ${PETSC_VERSION}")
-    message(STATUS "\tPETSC_INCLUDE_DIR  = ${PETSC_INCLUDE_DIR}")
-    message(STATUS "\tPETSC_INCLUDE_DIRS = ${PETSC_INCLUDE_DIRS}")
-    message(STATUS "\tPETSC_LIBRARY      = ${PETSC_LIBRARY}")
-    message(STATUS "\tPETSC_LIBRARIES    = ${PETSC_LIBRARIES}")
-    print_link_libraries(${PETSC_LIBRARY})
-    message(STATUS "")
-  endif()
+option(ENABLE_CUDA "Build Amanzi with CUDA support in Trilinos and/or Hypre" FALSE)
+if (ENABLE_CUDA)
+  find_package(CUDA)
 endif()
 
 
 ##############################################################################
-# ALQUIMIA / PFLOTRAN 
+# ALQUIMIA, PFLOTRAN, and CrunchTope
 ##############################################################################
 if (ENABLE_ALQUIMIA) 
-  find_package(PETSc)
-  if (NOT PETSC_FOUND) 
-    message(WARNING "Failed to locate PETSC")
-  endif() 
-
 #  if (ENABLE_PFLOTRAN)
     find_package(PFLOTRAN)
     if (PFLOTRAN_FOUND)
@@ -624,50 +585,80 @@ if (ENABLE_ALQUIMIA)
 
 #  if (ENABLE_CRUNCHTOPE)
      find_package(CrunchTope)
-     if (CRUNCHTOPE_FOUND)
-        message(STATUS "CRUNCHTOPE Package information")
-        message(STATUS "\tCRUNCHTOPE_INCLUDE_DIR  = ${CRUNCHTOPE_INCLUDE_DIR}")
-        message(STATUS "\tCRUNCHTOPE_INCLUDE_DIRS = ${CRUNCHTOPE_INCLUDE_DIRS}")
-        message(STATUS "\tCRUNCHTOPE_LIBRARY_DIR  = ${CRUNCHTOPE_LIBRARY_DIR}")
-        message(STATUS "\tCRUNCHTOPE_LIBRARY      = ${CRUNCHTOPE_LIBRARY}")
-        message(STATUS "\tCRUNCHTOPE_LIBRARIES    = ${CRUNCHTOPE_LIBRARIES}")
-        print_link_libraries(${CRUNCHTOPE_LIBRARY})
+     if (CrunchTope_FOUND)
+        message(STATUS "CrunchTope Package information")
+        message(STATUS "\tCrunchTope_INCLUDE_DIR  = ${CrunchTope_INCLUDE_DIR}")
+        message(STATUS "\tCrunchTope_INCLUDE_DIRS = ${CrunchTope_INCLUDE_DIRS}")
+        message(STATUS "\tCrunchTope_LIBRARY_DIR  = ${CrunchTope_LIBRARY_DIR}")
+        message(STATUS "\tCrunchTope_LIBRARY      = ${CrunchTope_LIBRARY}")
+        message(STATUS "\tCrunchTope_LIBRARIES    = ${CrunchTope_LIBRARIES}")
+        print_link_libraries(${CrunchTope_LIBRARY})
         message(STATUS "")
      endif()
 #  endif()
 
-  if ((NOT PFLOTRAN_FOUND) AND (NOT CRUNCHTOPE_FOUND))
-    message(WARNING "Failed to locate either PFLOTRAN or CRUCHTOPE")
+  if ((NOT PFLOTRAN_FOUND) AND (NOT CrunchTope_FOUND))
+    message(WARNING "Failed to locate either PFLOTRAN or CrunchTope")
   endif()
 
   find_package(Alquimia)
-  if (NOT ALQUIMIA_FOUND)
-    message(WARNING "Failed to locate ALQUIMIA")
+  if (NOT Alquimia_FOUND)
+    message(WARNING "Failed to locate Alquimia")
   else()
-    message(STATUS "ALQUIMIA Package information")
-    message(STATUS "\tALQUIMIA_INCLUDE_DIR  = ${ALQUIMIA_INCLUDE_DIR}")
-    message(STATUS "\tALQUIMIA_INCLUDE_DIRS = ${ALQUIMIA_INCLUDE_DIRS}")
-    message(STATUS "\tALQUIMIA_LIBRARY_DIR  = ${ALQUIMIA_LIBRARY_DIR}")
-    message(STATUS "\tALQUIMIA_LIBRARY      = ${ALQUIMIA_LIBRARY}")
-    message(STATUS "\tALQUIMIA_LIBRARIES    = ${ALQUIMIA_LIBRARIES}")
-    print_link_libraries(${ALQUIMIA_LIBRARY})
+    message(STATUS "Alquimia Package information")
+    message(STATUS "\tAlquimia_INCLUDE_DIR  = ${Alquimia_INCLUDE_DIR}")
+    message(STATUS "\tAlquimia_INCLUDE_DIRS = ${Alquimia_INCLUDE_DIRS}")
+    message(STATUS "\tAlquimia_LIBRARY_DIR  = ${Alquimia_LIBRARY_DIR}")
+    message(STATUS "\tAlquimia_LIBRARY      = ${Alquimia_LIBRARY}")
+    message(STATUS "\tAlquimia_LIBRARIES    = ${Alquimia_LIBRARIES}")
+    print_link_libraries(${Alquimia_LIBRARY})
     message(STATUS "")
   endif()
 endif()
 
+
+##############################################################################
+# PETSc - http://www.mcs.anl.gov/petsc
+##############################################################################
+option(ENABLE_PETSC "Enable PETSc for use in structured or Alquimia" FALSE)
+if (ENABLE_Structured OR ENABLE_ALQUIMIA)
+  message(STATUS "PETSc required for Structure and/or Alquimia TPLs, turning on.")
+  set(ENABLE_PETSC ON)
+endif()
+  
+if (ENABLE_PETSC)
+  find_package(PETSc)
+  if (NOT PETSc_FOUND)
+    message(WARNING "Failed to locate PETSc")
+  else()
+    message(STATUS "PETSc Package information")
+    message(STATUS "\tPETSc_VERSION      = ${PETSc_VERSION}")
+    message(STATUS "\tPETSc_INCLUDE_DIR  = ${PETSc_INCLUDE_DIR}")
+    message(STATUS "\tPETSc_INCLUDE_DIRS = ${PETSc_INCLUDE_DIRS}")
+    message(STATUS "\tPETSc_LIBRARY      = ${PETSc_LIBRARY}")
+    message(STATUS "\tPETSc_LIBRARIES    = ${PETSc_LIBRARIES}")
+    print_link_libraries(${PETSc_LIBRARY})
+    message(STATUS "")
+  endif()
+endif()
+
+
 ##############################################################################
 # CLM LSM 
 ##############################################################################
+option(ENABLE_CLM "Enable CLM land surface model" FALSE)
 if (ENABLE_CLM)
-     find_package(CLM)
-     if (CLM_FOUND)
-        message(STATUS "CLM Package information")
-        message(STATUS "\tCLM_INCLUDE_DIR  = ${CLM_INCLUDE_DIR}")
-        message(STATUS "\tCLM_INCLUDE_DIRS = ${CLM_INCLUDE_DIRS}")
-        message(STATUS "\tCLM_LIBRARY_DIR  = ${CLM_LIBRARY_DIR}")
-        message(STATUS "\tCLM_LIBRARY      = ${CLM_LIBRARY}")
-        message(STATUS "\tCLM_LIBRARIES    = ${CLM_LIBRARIES}")
-        print_link_libraries(${CLM_LIBRARY})
-        message(STATUS "")
-     endif()
+  find_package(CLM)
+  if (NOT CLM_FOUND)
+    message(WARNING "Failed to locate CLM")
+  else()
+    message(STATUS "CLM Package information")
+    message(STATUS "\tCLM_INCLUDE_DIR  = ${CLM_INCLUDE_DIR}")
+    message(STATUS "\tCLM_INCLUDE_DIRS = ${CLM_INCLUDE_DIRS}")
+    message(STATUS "\tCLM_LIBRARY_DIR  = ${CLM_LIBRARY_DIR}")
+    message(STATUS "\tCLM_LIBRARY      = ${CLM_LIBRARY}")
+    message(STATUS "\tCLM_LIBRARIES    = ${CLM_LIBRARIES}")
+    print_link_libraries(${CLM_LIBRARY})
+    message(STATUS "")
   endif()
+endif()

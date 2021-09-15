@@ -14,6 +14,7 @@
 #ifndef AMANZI_OBSERVABLE_AQUEOUS_HH
 #define AMANZI_OBSERVABLE_AQUEOUS_HH
 
+#include "CommonDefs.hh"
 #include "ObservableAmanzi.hh"
 #include "Units.hh"
 

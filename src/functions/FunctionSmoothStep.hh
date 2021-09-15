@@ -44,7 +44,9 @@ class FunctionSmoothStep : public Function {
  public:
   FunctionSmoothStep(double x0, double y0, double x1, double y1);
   ~FunctionSmoothStep() {};
-  FunctionSmoothStep* Clone() const { return new FunctionSmoothStep(*this); }
+  std::unique_ptr<Function> Clone() const {
+    return std::make_unique<FunctionSmoothStep>(*this);
+  }
   double operator()(const std::vector<double>& x) const;
 
  private:

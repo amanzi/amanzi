@@ -246,6 +246,11 @@ class MeshEmbeddedLogical : public Mesh {
   //
   // Mesh Sets for ICs, BCs, Material Properties and whatever else
   //--------------------------------------------------------------
+  virtual
+  bool valid_set_type(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const override {
+    return log_mesh_->valid_set_type(rtype, kind) ||
+      bg_mesh_->valid_set_type(rtype, kind);
+  }
 
   // Get list of entities of type 'category' in set
   virtual
@@ -311,13 +316,6 @@ class MeshEmbeddedLogical : public Mesh {
   virtual
   void cell_get_edges_internal_(const Entity_ID cellid,
           Entity_ID_List *edgeids) const override;
-
-  // edges and directions of a 2D cell - this function is implemented
-  // in each mesh framework. The results are cached in the base class.
-  virtual
-  void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
-          Entity_ID_List *edgeids,
-          std::vector<int> *edge_dirs) const override;
 
   virtual
   int build_columns_() const;

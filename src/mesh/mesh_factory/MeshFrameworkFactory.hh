@@ -16,6 +16,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "AmanziTypes.hh"
+#include "VerboseObject.hh"
 #include "MeshDefs.hh"
 #include "MeshFrameworkTraits.hh"
 
@@ -27,6 +28,15 @@ class GeometricModel;
 
 namespace AmanziMesh {
 class MeshFramework;
+class MeshColumn;
+
+// -------------------------------------------------------------
+// Factory for creating a MeshColumn object from a parent and a column ID
+// -------------------------------------------------------------
+Teuchos::RCP<MeshColumn>
+createColumnMesh(const Teuchos::RCP<const Mesh>& parent_mesh,
+                 int col_id,
+                 const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null);
 
 // -------------------------------------------------------------
 //  class MeshFrameworkFactory
@@ -66,7 +76,6 @@ class MeshFrameworkFactory {
   Teuchos::RCP<MeshFramework> create(const double x0, const double y0, const double z0,
           const double x1, const double y1, const double z1,
           const int nx, const int ny, const int nz);
-
 
   // -- Generate a quad mesh (2D)
   //    Generates a structured mesh covering [x0,x1] X [y0,y1] with (nx, ny) cells.
@@ -110,7 +119,7 @@ class MeshFrameworkFactory {
   //         const Entity_kind setkind,
   //         const bool flatten=false);
 
-protected:
+ protected:
   // The parallel environment
   Comm_ptr_type comm_;
 
@@ -119,11 +128,13 @@ protected:
 
   // Object encoding the level of verbosity and output stream for diagnostic
   // messages, other control parameters that are NOT about construction.
-  Teuchos::RCP<const Teuchos::ParameterList> plist_;
+  Teuchos::RCP<Teuchos::ParameterList> plist_;
 
   // The geometric model describing the space within which the mesh lives
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_;
 
+  // logging
+  Teuchos::RCP<VerboseObject> vo_;
 
  private:
   std::string extraction_method_;

@@ -16,10 +16,6 @@
 #include <climits>
 #include <list>
 
-#include "boost/lambda/lambda.hpp"
-#include "boost/bind.hpp"
-#include "boost/lexical_cast.hpp"
-
 #define  BOOST_FILESYTEM_NO_DEPRECATED
 #include "boost/format.hpp"
 
@@ -120,10 +116,9 @@ class InputConverter {
   void FilterNodes(const std::string& filter);
 
   // auto-generated input files
-  // -- native chemistry
-  std::string CreateBGDFile_(std::string& filename, int rank, int& status);
   // -- Pflotran input file
   std::string CreateINFile_(std::string& filename, int rank);
+  Teuchos::ParameterList TranslateThermodynamicDatabase_();
 
  protected:
   // Useful tools wrapping low-level DOM commands
@@ -134,10 +129,13 @@ class InputConverter {
   xercesc::DOMNode* GetUniqueElementByTagsString_(
       const std::string& tags, bool& flag);
 
+  xercesc::DOMNode* GetUniqueElementByTagsString_(
+      const std::string& tags, bool& flag, bool exception);
+
   // -- modification of the previous routine where the first tag 
   //    is replaced by a pointer to document's element
   xercesc::DOMNode* GetUniqueElementByTagsString_(
-      const xercesc::DOMNode* node1, const std::string& tags, bool& flag);
+      const xercesc::DOMNode* node, const std::string& tags, bool& flag);
 
   // -- extract child with the given attribute
   xercesc::DOMElement* GetUniqueChildByAttribute_(

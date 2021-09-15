@@ -17,15 +17,20 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "EOS.hh"
 #include "Factory.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
+template<typename EOS>
 class EOSFactory : public Utils::Factory<EOS> {
  public:
-  Teuchos::RCP<EOS> CreateEOS(Teuchos::ParameterList& plist);
+  using Utils::Factory<EOS>::CreateInstance;
+
+  Teuchos::RCP<EOS> CreateEOS(Teuchos::ParameterList& plist) {
+    std::string eos_typename = plist.get<std::string>("eos type");
+    return Teuchos::rcp(CreateInstance(eos_typename, plist));
+  }
 };
 
 }  // namespace AmanziEOS

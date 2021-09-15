@@ -207,7 +207,7 @@ main(int argc, char **argv)
     po::notify(vm);    
   
     if (vm.count("help")) {
-      std::cerr << boost::str(boost::format("Usage: %s [options]") % progname) << std::endl;
+      std::cerr << "Usage: " << progname << " [options]" << std::endl;
       std::cerr << desc << std::endl;
       return 3;
     }

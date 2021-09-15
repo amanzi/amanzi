@@ -1,5 +1,5 @@
 ARG amanzi_tpls_ver=latest
-FROM metsi/amanzi-tpls:${amanzi_tpls_ver}
+FROM metsi/amanzi-tpls:${amanzi_tpls_ver}-mpich
 LABEL Description="Amanzi: Build and install Amanzi in a Docker image."
 
 # Switch to amanzi_user
@@ -10,12 +10,14 @@ RUN echo "${AMANZI_TPLS_DIR}"
 
 # Arguments
 ARG amanzi_branch=master
+ARG https_proxy=
+ARG http_proxy=
 
 # Change the Working Directory and update amanzi
 WORKDIR /home/amanzi_user/amanzi
 
-#ENV https_proxy=proxyout.lanl.gov:8080 \
-#    http_proxy=proxyout.lanl.gov:8080
+ENV https_proxy=$https_proxy \
+    http_proxy=$http_proxy
 
 # Make sure we have updated branch information
 RUN echo "Amanzi branch = $amanzi_branch"
@@ -36,7 +38,9 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --with-mpi=/usr \
    --enable-shared \
    && cd /home/amanzi_user/amanzi_builddir/amanzi \
-   && make test 2>&1 > ~/install/unit-tests-output.log 
+   && make test
+
+# 2>&1 > ~/install/unit-tests-output.log 
 
 #  && rm -r /home/amanzi_user/amanzi_builddir/
 
@@ -48,5 +52,5 @@ RUN echo $PATH
 RUN mkdir /home/amanzi_user/work
 
 # Unset proxy
-# ENV https_proxy= \
-#     http_proxy= 
+ENV https_proxy= \
+    http_proxy= 

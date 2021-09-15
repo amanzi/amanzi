@@ -40,10 +40,19 @@ class Operator_FaceCellSff : public Operator_FaceCell {
   virtual void InitializeInverse() override;
   virtual Teuchos::RCP<Operator> Clone() const override;
 
+  // cannot do an assembled forward apply as the assembled thing is not the full
+  // operator
+  virtual int Apply(const CompositeVector& X, CompositeVector& Y) const override {
+    return Apply(X,Y,0.0);
+  }
+  virtual int Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const override {
+    return ApplyUnassembled(X,Y,scalar);
+  }
+
   // Special AssembleMatrix required to deal with schur complement
   virtual void AssembleMatrix(const SuperMap& map,
                               MatrixFE& matrix, int my_block_row, int my_block_col) const override;
-  
+
   // visit method for Apply -- this is identical to Operator_FaceCell's
   // version.
   virtual int ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,

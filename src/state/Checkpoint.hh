@@ -27,10 +27,14 @@ all domains/meshes.
 
     * `"file name base`" ``[string]`` **"checkpoint"**
     * `"file name digits`" ``[int]`` **5**
+    * `"single file checkpoint`" ``[bool]`` **true** If true, writes all
+      checkpoint to one file.  If false, uses a subdirectory with one file per
+      mesh.  false is required if meshes exist on other communicators than
+      MPI_COMM_WORLD, but this is toggled if the code detects that this is
+      necessary.
 
     INCLUDES:
-
-    * ``[io-event-spec]`` An IOEvent_ spec
+    - ``[io-event-spec]`` An IOEvent_ spec
 
 Example:
 
@@ -63,20 +67,30 @@ every 25 seconds thereafter, along with times 101, 303, and 422.  Files will be 
 #include "ObservationData.hh"
 
 namespace Amanzi {
+class State;
 
 class Checkpoint : public IOEvent {
 
  public:
-  Checkpoint(Teuchos::ParameterList& plist, const Comm_ptr_type& comm);
-  Checkpoint(); // this object will not create any output
+  Checkpoint(Teuchos::ParameterList& plist, const State& S);
+
+  // constructor for object that cannot write, but can read
+  Checkpoint(bool old_style=true);
 
   // public interface for coordinator clients
+  void Write(const State& S,
+             double dt,
+             bool final=false,
+             Amanzi::ObservationData* obs_data=nullptr);
+
+  double Read(State& S, const std::string& file_or_dirname);
+
   void CreateFile(int cycle);
   void CreateFinalFile(int cycle);
   void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names) const;
-  void WriteAttributes(double time, double dt, int cycle, int pos) const;
-  void WriteAttributes(double time, double dt, int cycle) const;
-  void WriteAttributes(double time, int cycle) const;
+  void WriteAttributes(int comm_size, double time, double dt, int cycle, int pos) const;
+  void WriteAttributes(int comm_size, double time, double dt, int cycle) const;
+  void WriteAttributes(int comm_size, double time, int cycle) const;
   void WriteObservations(ObservationData* obs_data);
   void Finalize();
 
@@ -88,10 +102,9 @@ class Checkpoint : public IOEvent {
   std::string filebasename_;
   int filenamedigits_;
   int restart_cycle_;
+  bool old_;
 
-  Comm_ptr_type comm_;
-  
-  Teuchos::RCP<Amanzi::HDF5_MPI> checkpoint_output_;
+  std::map<std::string,Teuchos::RCP<Amanzi::HDF5_MPI>> output_;
 };
 
 }  // namespace Amanzi

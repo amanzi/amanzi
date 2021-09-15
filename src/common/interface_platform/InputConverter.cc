@@ -18,9 +18,6 @@
 #include <sys/stat.h>
 
 // TPLs
-#include <boost/lambda/lambda.hpp>
-#include <boost/bind.hpp>
-#include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/filesystem/operations.hpp>
 
@@ -29,7 +26,6 @@
 #include "dbc.hh"
 
 #define  BOOST_FILESYTEM_NO_DEPRECATED
-#include "boost/format.hpp"
 
 #include "xercesc/dom/DOM.hpp"
 #include "xercesc/util/XMLString.hpp"
@@ -41,10 +37,12 @@
 
 // Amanzi's
 #include "ErrorHandler.hpp"
+#include "StringExt.hh"
 #include "InputConverter.hh"
 
 namespace Amanzi {
 namespace AmanziInput {
+
 
 /* ******************************************************************
 * Non-member function: returns parser.
@@ -279,7 +277,7 @@ void InputConverter::ParseGeochemistry_()
 
 
 /* ******************************************************************
-* Returns node specified by the list of consequtive names tags 
+* Returns node specified by the list of consequitive namestags 
 * separated by commas. Only the first tag may be not unique.
 ****************************************************************** */
 DOMNode* InputConverter::GetUniqueElementByTagsString_(
@@ -346,6 +344,25 @@ DOMNode* InputConverter::GetUniqueElementByTagsString_(
 
   flag = (icnt == 1);
   return node_good;
+}
+
+
+/* ******************************************************************
+* Returns node specified by the list of consequtive names tags 
+* separated by commas. Only the first tag may be not unique.
+****************************************************************** */
+xercesc::DOMNode* InputConverter::GetUniqueElementByTagsString_(
+    const std::string& tags, bool& flag, bool exception)
+{
+  xercesc::DOMNode* node = GetUniqueElementByTagsString_(tags, flag);
+
+  if (!flag && exception) {
+    Errors::Message msg;
+    msg << "No unique element for tags \"" << tags << "\"\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  return node;
 }
 
 
@@ -686,7 +703,7 @@ std::string InputConverter::GetAttributeValueS_(
   std::string text, found_type;
   if (elem != NULL && elem->hasAttribute(mm.transcode(attr_name))) {
     text = mm.transcode(elem->getAttribute(mm.transcode(attr_name)));
-    boost::algorithm::trim(text);
+    trim(text);
 
     // check the list of global constants
     found_type = GetConstantType_(text, val);
@@ -956,7 +973,7 @@ std::string InputConverter::GetConstantType_(
     const std::string& val_in, std::string& parsed_val)
 {
   std::string val(val_in);
-  boost::algorithm::trim(val);
+  trim(val);
 
   std::string type;
   if (constants_time_.find(val) != constants_time_.end()) {
@@ -1016,7 +1033,7 @@ std::vector<std::string> InputConverter::CharToStrings_(const char* namelist)
 
   while (tmp2 != NULL) {
     std::string str(tmp2);
-    boost::algorithm::trim(str);
+    trim(str);
     regs.push_back(str);
     tmp2 = strtok(NULL, ",");
   }
@@ -1052,7 +1069,7 @@ double InputConverter::ConvertUnits_(
   unit = "";
   if (data != NULL) {
     unit = std::string(data);
-    boost::algorithm::trim(unit);
+    trim(unit);
     out = units_.ConvertUnitD(out, unit, "SI", mol_mass, flag);
 
     if (!flag) {
@@ -1112,7 +1129,7 @@ std::vector<double> InputConverter::MakeCoordinates_(const std::string& array)
 
   while (tmp2 != NULL) {
     std::string str(tmp2), parsed_str;
-    boost::algorithm::trim(str);
+    trim(str);
 
     GetConstantType_(str, parsed_str);
     coords.push_back(std::strtod(parsed_str.c_str(), NULL));
@@ -1153,7 +1170,7 @@ std::vector<double> InputConverter::MakeVector_(
 std::string InputConverter::TrimString_(char* tmp)
 {
   std::string str(tmp);
-  boost::algorithm::trim(str);
+  trim(str);
   return str;
 }
 
@@ -1856,146 +1873,6 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
   }
 
   return infilename;
-}
-
-
-/* ******************************************************************
-* Adds kd values to a bgd file (using the first material).
-* Returns the name of this file.  
-****************************************************************** */
-std::string InputConverter::CreateBGDFile_(std::string& filename, int rank, int& status)
-{
-  DOMNode* node;
-  DOMElement* element;
-
-  std::ofstream bgd_file;
-  std::stringstream species;
-  std::stringstream isotherms;
-  MemoryManager mm;
-
-  // get and write list of primaries/solutes
-  bool flag;
-  node = GetUniqueElementByTagsString_("phases, liquid_phase, dissolved_components, primaries", flag);
-  if (flag) {
-    std::string name;
-    std::vector<DOMNode*> children = GetSameChildNodes_(node, name, flag, false);
-    for (int i = 0; i < children.size(); ++i) {
-      DOMNode* inode = children[i];
-      name = mm.transcode(inode->getTextContent());
-      species << name << " ;   0.00 ;   0.00 ;   1.00 \n";
-    }
-  } else {
-    node = GetUniqueElementByTagsString_("phases, liquid_phase, dissolved_components, solutes", flag);
-
-    if (flag) {
-      std::string name;
-      std::vector<DOMNode*> children = GetSameChildNodes_(node, name, flag, false);
-      for (int i = 0; i < children.size(); ++i) {
-        DOMNode* inode = children[i];
-        name = mm.transcode(inode->getTextContent());
-        species << name << " ;   0.00 ;   0.00 ;   1.00 \n";
-      }
-    }
-  }
-  
-  // loop over materials to get kd information
-  node = GetUniqueElementByTagsString_("materials", flag);
-  if (flag ) {
-    // get kd information from all materials
-    Teuchos::ParameterList IsothermsPL;
-    std::string name;
-    std::vector<DOMNode*> mat_list = GetSameChildNodes_(node, name, flag, false);
-
-    for (int i = 0; i < mat_list.size(); ++i) {
-      bool flag2;
-      DOMElement* child_elem;
-      
-      DOMNode* inode = mat_list[i];
-      element = static_cast<DOMElement*>(inode);
-      name = GetAttributeValueS_(element, "name");
-      
-      // look for sorption_isotherms
-      child_elem = GetChildByName_(inode, "sorption_isotherms", flag2, false);
-      if (flag2) {
-        // loop over sublist of primaries to get Kd information
-        std::vector<DOMNode*> primary_list = GetSameChildNodes_(static_cast<DOMNode*>(child_elem), name, flag2, false);
-        if (flag2) {
-          
-          for (int j = 0; j < primary_list.size(); ++j) {
-            DOMNode* jnode = primary_list[j];
-            std::string primary_name = GetAttributeValueS_(jnode, "name");
-            DOMNode* kd_node = GetUniqueElementByTagsString_(jnode, "kd_model", flag2);
-            DOMElement* kd_elem = static_cast<DOMElement*>(kd_node);
-            
-            if (flag2) {
-              Teuchos::ParameterList kd_list;
-              double kd = GetAttributeValueD_(kd_elem, "kd");
-              std::string model = GetAttributeValueS_(kd_elem, "model");
-              kd_list.set<std::string>("model", model);
-              kd_list.set<double>("kd", kd);
-              
-              if (model == "langmuir") {
-                double b = GetAttributeValueD_(kd_elem, "b");
-                kd_list.set<double>("b", b);
-              } else if (model == "freundlich") {
-                double n = GetAttributeValueD_(kd_elem, "n");
-                kd_list.set<double>("n", n);
-              }
-              
-              IsothermsPL.sublist(primary_name) = kd_list;
-            }
-          }
-        }
-      }
-    }
-    
-    // create text for kds
-    for (auto iter = IsothermsPL.begin(); iter != IsothermsPL.end(); ++iter) {
-      
-      std::string primary = IsothermsPL.name(iter);
-      Teuchos::ParameterList& curprimary = IsothermsPL.sublist(primary);
-      std::string model = curprimary.get<std::string>("model");
-      double kd = curprimary.get<double>("kd");
-
-      if (model == "langmuir") {
-        double b = curprimary.get<double>("b");
-        isotherms << primary << " ; langmuir ; " << kd << " " << b << std::endl;
-      } else if (model == "freundlich") {
-        double n = curprimary.get<double>("n");
-        isotherms << primary << " ; freundlich ; " << kd << " " << n << std::endl;
-      } else {
-        isotherms << primary << " ; linear ; " << kd << std::endl;
-      }
-    }
-  }
-
-  // build bgd filename
-  std::string bgdfilename(filename);
-  std::string new_extension(".bgd");
-  size_t pos = bgdfilename.find(".xml");
-  bgdfilename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)4);
-
-  // open output bgd file
-  if (rank == 0) {
-    struct stat buffer;
-    status = stat(bgdfilename.c_str(), &buffer);
-    if (status) {
-      bgd_file.open(bgdfilename.c_str());
-
-      // <Primary Species
-      bgd_file << "<Primary Species\n";
-      bgd_file << species.str();
-
-      //<Isotherms
-      bgd_file << "<Isotherms\n";
-      bgd_file << "# Note, these values will be overwritten by the xml file\n";
-      bgd_file << isotherms.str();
-
-      bgd_file.close();
-    }
-  }
-
-  return bgdfilename;
 }
 
 

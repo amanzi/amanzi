@@ -85,7 +85,7 @@ using namespace Amanzi;
 
   // -- check recovered velocity
   Teuchos::ParameterList& wlist = glist->sublist("walkabout data");
-  auto walkabout = Teuchos::rcp(new Amanzi::WalkaboutCheckpoint(wlist, comm));
+  auto walkabout = Teuchos::rcp(new Amanzi::WalkaboutCheckpoint(wlist, *S));
 
   walkabout->CalculateDarcyVelocity(S, xyz, velocity);
 
@@ -160,7 +160,7 @@ using namespace Amanzi;
 
   // -- check recovered velocity
   Teuchos::ParameterList& wlist = glist->sublist("walkabout data");
-  auto walkabout = Teuchos::rcp(new Amanzi::WalkaboutCheckpoint(wlist, comm));
+  auto walkabout = Teuchos::rcp(new Amanzi::WalkaboutCheckpoint(wlist, *S));
 
   std::vector<AmanziGeometry::Point> xyz, velocity;
   walkabout->CalculateDarcyVelocity(S, xyz, velocity);

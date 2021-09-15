@@ -20,7 +20,6 @@ project(MPC_TREE)
 
 # Get the includes directory for chemistry
 get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
-message(DEBUG "Including GEOCHEM_SOURCE_DIR = ${GEOCHEM_SOURCE_DIR} ")
 
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
@@ -37,9 +36,10 @@ include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${PKS_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
-include_directories(${WHETSTONE_SOURCE_DIR})
+include_directories(${SHALLOW_WATER_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${TRANSPORT_SOURCE_DIR})
+include_directories(${WHETSTONE_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -68,7 +68,8 @@ if (ENABLE_AmanziPhysicsModule)
       TransportMatrixFractureImplicit_PK.hh
       FlowReactiveTransport_PK.hh
       ReactiveTransport_PK.hh
-      ReactiveTransportMatrixFracture_PK.hh)
+      ReactiveTransportMatrixFracture_PK.hh
+      SurfaceSubsurface_PK.hh)
 
   set(mpc_tree_src_files 
       PK_MPCWeak.cc 
@@ -82,9 +83,10 @@ if (ENABLE_AmanziPhysicsModule)
       TransportMatrixFractureImplicit_PK.cc
       FlowReactiveTransport_PK.cc
       ReactiveTransport_PK.cc
-      ReactiveTransportMatrixFracture_PK.cc)
+      ReactiveTransportMatrixFracture_PK.cc
+      SurfaceSubsurface_PK.cc)
 
-  set(mpc_tree_link_libs pks flow transport time_integration data_structures state)
+  set(mpc_tree_link_libs pks flow transport shallow_water time_integration data_structures state)
 
 else()
 

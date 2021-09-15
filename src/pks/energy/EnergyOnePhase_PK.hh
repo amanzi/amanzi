@@ -17,7 +17,6 @@
 
 // Amanzi
 #include "BDF1_TI.hh"
-#include "EOS.hh"
 #include "IEM.hh"
 #include "PK_Factory.hh"
 

@@ -146,6 +146,19 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="initial conditions">
+      <ParameterList name="pressure">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="components" type="Array(string)" value="{cell, face}"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="permeability">
         <ParameterList name="function">
           <ParameterList name="ALL">

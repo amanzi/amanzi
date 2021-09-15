@@ -12,6 +12,8 @@
   the correct arguments.
 */
 
+#include "EOS_Utils.hh"
+
 #include "IEMEvaluator.hh"
 #include "IEMFactory.hh"
 
@@ -41,7 +43,8 @@ IEMEvaluator::IEMEvaluator(Teuchos::ParameterList& plist) :
 IEMEvaluator::IEMEvaluator(const IEMEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     iem_(other.iem_),
-    temp_key_(other.temp_key_) {};
+    temperature_key_(other.temperature_key_),
+    pressure_key_(other.pressure_key_) {};
 
 
 /* ******************************************************************
@@ -65,8 +68,10 @@ void IEMEvaluator::InitializeFromPlist_()
   domain_ = Keys::getDomain(my_key_);
   std::string prefix = Keys::getDomainPrefix(my_key_);
 
-  temp_key_ = plist_.get<std::string>("temperature key", prefix + "temperature");
-  dependencies_.insert(temp_key_);
+  temperature_key_ = plist_.get<std::string>("temperature key", prefix + "temperature");
+  pressure_key_ = plist_.get<std::string>("pressure key", prefix + "pressure");
+  dependencies_.insert(temperature_key_);
+  dependencies_.insert(pressure_key_);
 }
 
 
@@ -80,18 +85,30 @@ void IEMEvaluator::EvaluateField_(
     CreateIEMPartition_(S->GetMesh(domain_), plist_);
   }
 
-  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pressure_key_);
 
   for (auto comp = result->begin(); comp != result->end(); ++comp) {
     auto kind = AmanziMesh::entity_kind(*comp);
     const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp);
+    const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp);
     Epetra_MultiVector& result_v = *result->ViewComponent(*comp);
+
+    int ierr(0);
+    std::string msg;
 
     int ncomp = result->size(*comp);
     for (int i = 0; i != ncomp; ++i) {
       auto id = MyModel_(kind, i);
-      result_v[0][i] = iem_->second[(*iem_->first)[id]]->InternalEnergy(temp_v[0][i]);
+      auto model = iem_->second[(*iem_->first)[id]];
+      result_v[0][i] = model->InternalEnergy(temp_v[0][i], pres_v[0][i]);
+
+      if (model->error_code() > 0) {
+        ierr = 1;
+        msg = model->error_msg();
+      }
     }
+    AmanziEOS::ErrorAnalysis(temp->Comm(), ierr, msg);
   }
 }
 
@@ -107,18 +124,27 @@ void IEMEvaluator::EvaluateFieldPartialDerivative_(
     CreateIEMPartition_(S->GetMesh(domain_), plist_);
   }
 
-  AMANZI_ASSERT(wrt_key == temp_key_);
-  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pressure_key_);
 
   for (auto comp = result->begin(); comp != result->end(); ++comp) {
     auto kind = AmanziMesh::entity_kind(*comp);
     const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp);
+    const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp);
     Epetra_MultiVector& result_v = *result->ViewComponent(*comp);
 
     int ncomp = result->size(*comp);
-    for (int i = 0; i != ncomp; ++i) {
-      auto id = MyModel_(kind, i);
-      result_v[0][i] = iem_->second[(*iem_->first)[id]]->DInternalEnergyDT(temp_v[0][i]);
+
+    if (wrt_key == temperature_key_) {
+      for (int i = 0; i != ncomp; ++i) {
+        auto id = MyModel_(kind, i);
+        result_v[0][i] = iem_->second[(*iem_->first)[id]]->DInternalEnergyDT(temp_v[0][i], pres_v[0][i]);
+      }
+    } else if (wrt_key == pressure_key_) {
+      for (int i = 0; i != ncomp; ++i) {
+        auto id = MyModel_(kind, i);
+        result_v[0][i] = iem_->second[(*iem_->first)[id]]->DInternalEnergyDp(temp_v[0][i], pres_v[0][i]);
+      }
     }
   }
 }
@@ -163,9 +189,9 @@ void IEMEvaluator::CreateIEMPartition_(
 /* ******************************************************************
 * Evaluation at a point
 ****************************************************************** */
-double IEMEvaluator::EvaluateFieldSingle(int c, double T)
+double IEMEvaluator::EvaluateFieldSingle(int c, double T, double p)
 {
-  return iem_->second[(*iem_->first)[c]]->InternalEnergy(T);
+  return iem_->second[(*iem_->first)[c]]->InternalEnergy(T, p);
 }
 
 

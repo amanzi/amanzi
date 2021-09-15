@@ -17,7 +17,7 @@
 #include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
-#include "SaturatedVaporPressure.hh"
+#include "EOS_SaturatedVaporPressure.hh"
 #include "MolarFractionGasEvaluator.hh"
 
 namespace Amanzi {
@@ -36,12 +36,12 @@ class MolarFractionGasEvaluator : public SecondaryVariableFieldEvaluator {
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
-  Teuchos::RCP<SaturatedVaporPressure> get_svp_model() { return svp_model_; }
+  Teuchos::RCP<EOS_SaturatedVaporPressure> get_svp_model() { return svp_model_; }
 
  protected:
   Key temp_key_;
 
-  Teuchos::RCP<SaturatedVaporPressure> svp_model_;
+  Teuchos::RCP<EOS_SaturatedVaporPressure> svp_model_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator, MolarFractionGasEvaluator> factory_;

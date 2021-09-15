@@ -1,3 +1,5 @@
+.. _aligned_case:
+
 2D Dispersive Transport in a Uniform Flow Field (aligned)
 =========================================================
 

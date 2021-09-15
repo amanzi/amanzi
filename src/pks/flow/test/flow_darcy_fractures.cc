@@ -60,16 +60,20 @@ TEST(DARCY_TWO_FRACTURES) {
   setnames.push_back("fracture 1");
   setnames.push_back("fracture 2");
 
-  RCP<const Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::FACE);
+  RCP<Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::FACE);
 
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned = 0;
+  int ncells_wghost = 0;
+  if (mesh.get()) {
+    ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+    ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  }
 
   std::cout << "pid=" << MyPID << " cells: " << ncells_owned << " " << ncells_wghost << std::endl;
 
   Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
-  S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
+  S->RegisterDomainMesh(mesh);
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));

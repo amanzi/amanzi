@@ -33,6 +33,7 @@ void test(const std::string& prec_solver,
       << "================================================================================" << std::endl
       << "Diffusion Test (np=" << fix.comm->NumProc() << "): " << disc_type 
       << ",  " << prec_solver << ",  mesh=" << mesh_type << std::endl
+      << "  bc type=" << bc_type << ", problem=Analytic" << ana << std::endl
       << "--------------------------------------------------------------------------------"
       << std::endl;
   }
@@ -56,8 +57,13 @@ void test(const std::string& prec_solver,
     AMANZI_ASSERT(false);
   }      
   fix.Setup(prec_solver, symmetric);
-  for (int i = 0; i < niters - 1; ++i) fix.Go(0.0);
-  fix.Go(tol);
+
+  if (prec_solver == "mat-vec") {
+    fix.MatVec(niters);
+  } else {
+    for (int i = 0; i < niters - 1; ++i) fix.Go(0.0);
+    fix.Go(tol);
+  }
 
   if (fix.get_comm()->MyPID() == 0) {
     std::cout << "================================================================================" 
@@ -87,6 +93,7 @@ void testWGravity(double gravity,
       << "================================================================================" << std::endl
       << "DiffusionWithGravity Test (np=" << fix.comm->NumProc() << "): "
       << disc_type << ", PC: " << pc_type << ", mesh=" << mesh_type << std::endl
+      << "  bc type=" << bc_type << ", problem=Analytic" << ana << std::endl
       << "--------------------------------------------------------------------------------"
       << std::endl;
   }

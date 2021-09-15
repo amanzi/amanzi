@@ -1,0 +1,37 @@
+<ParameterList>
+<ParameterList name="primary species">
+  <ParameterList name="HO2(g)">
+    <Parameter name="ion size parameter" type="double" value="0.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="1.0"/>
+  </ParameterList>
+  <ParameterList name="H2O2(g)">
+    <Parameter name="ion size parameter" type="double" value="0.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="1.0"/>
+  </ParameterList>
+  <ParameterList name="O2(g)">
+    <Parameter name="ion size parameter" type="double" value="0.0"/>
+    <Parameter name="charge" type="int" value="0"/>
+    <Parameter name="gram molecular weight" type="double" value="1.0"/>
+  </ParameterList>
+</ParameterList>
+
+<ParameterList name="general kinetics">
+  <ParameterList name="general_0">
+    <Parameter name="reactants" type="string" value="1.0 HO2(g)"/>
+    <Parameter name="products" type="string" value="0.5 H2O2(g)  0.5 O2(g)"/>
+    <Parameter name="forward rate" type="double" value="1.4e-5"/>
+    <Parameter name="backward rate" type="double" value="0.0"/>
+    <Parameter name="reaction orders (reactants/products)" type="Array(double)" value="{2.0, 0.0, 0.0}"/>
+  </ParameterList>
+</ParameterList>
+
+<ParameterList name="verbose object">
+  <Parameter name="verbosity level" type="string" value="high"/>
+  <Parameter name="hide line prefix" type="bool" value="true"/>
+  <Parameter name="output filename" type="string" value="batch_native.test"/>
+</ParameterList>
+</ParameterList>
+
+

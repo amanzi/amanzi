@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 {
   if (argc < 4) {
     std::cout <<
-      "Usage: verify_operators  with_pc|direct  mesh_type  mesh_size|mesh_file  scheme  tol\n\n"
+      "Usage: verify_operators  with_pc|direct  mesh_type  mesh_size|mesh_file  scheme  tol  nloops  linsolver\n\n"
       "  (req) with_pc   = identity|diagonal|ifpack: ILUT\n"
       "                    Hypre: AMG|Hypre: Euclid\n"
       "                    Trilinos: ML|Trilinos: MueLu\n"
@@ -40,10 +40,12 @@ int main(int argc, char *argv[])
       "  (req) mesh_size = positive integer\n"
       "  (req) mesh_file = file containing mesh\n\n"
       "  (opt) scheme    = mfd|fv  (default mfd)\n"
-      "  (opt) tol       = positive double  (default 1e-10)\n\n"
+      "  (opt) tol       = positive double  (default 1e-10)\n"
+      "  (opt) nloops    = number of iterations  (default is 1 for linear solvers)\n"
+      "  (opr) libsolver = linear solver: pcg (default) or gmres\n\n"
       "Examples:\n"
       "  verify_operators \"Hypre: AMG\" structured3d 10 fv 1e-10\n"
-      "  verify_operators \"Amesos1: KLU\" unstructured2d mymesh.exo mfd 1e-10\n";
+      "  verify_operators \"Amesos1: KLU\" unstructured2d mymesh.exo mfd 1e-10 1 gmres\n";
     return 1;
   }
   for (int i = 1; i < argc; ++i) argv_copy.push_back(argv[i]);
@@ -99,11 +101,23 @@ TEST(Verify_Mesh_and_Operators) {
     tol = std::stod(argv_copy[4]);
   }
 
+  double nloops(1);
+  if (argc > 5) {
+    nloops = std::stoi(argv_copy[5]);
+  }
+
+  std::string linsolver("pcg");
+  if (argc > 6) {
+    linsolver = argv_copy[6];
+  }
+
   // little_k
   AmanziMesh::Entity_kind scalar_coef(AmanziMesh::Entity_kind::UNKNOWN);
 
   // other parameters
   bool symmetric(true);
+  if (linsolver != "pcg") symmetric = false;
+
   int order(1);
   std::string ana("00");
 
@@ -119,12 +133,17 @@ TEST(Verify_Mesh_and_Operators) {
       .set<Teuchos::Array<std::string> >("preconditioner schema", dofs)
       .set<std::string>("nonlinear coefficient", "none");
 
+  plist->sublist("PK operator").sublist("so")
+      .set<std::string>("discretization primary", "mfd: support operator")
+      .set<Teuchos::Array<std::string> >("schema", dofs)
+      .set<Teuchos::Array<std::string> >("preconditioner schema", dofs)
+      .set<std::string>("nonlinear coefficient", "none");
+
   plist->sublist("PK operator").sublist("fv")
       .set<std::string>("discretization primary", "fv: default")
       .set<std::string>("schema", "cell")
       .set<std::string>("preconditioner schema", "cell")
       .set<std::string>("nonlinear coefficient", "none");
-
 
   // solvers
   plist->sublist("solvers").sublist("AztecOO CG")
@@ -135,7 +154,9 @@ TEST(Verify_Mesh_and_Operators) {
   plist->sublist("solvers").sublist("GMRES")
       .set<std::string>("iterative method", "gmres").sublist("gmres parameters")
       .set<int>("maximum number of iterations", 5000)
-      .set<double>("error tolerance", tol);
+      .set<double>("error tolerance", tol)
+      .set<int>("size of Krylov space", 20)
+      .set<bool>("release Krylov vectors", "false");
 
   plist->sublist("solvers").sublist("Amesos1: KLU")
       .set<std::string>("direct method", "amesos").sublist("amesos parameters")
@@ -173,6 +194,7 @@ TEST(Verify_Mesh_and_Operators) {
       .set<int>("smoother sweeps", 3)
       .set<double>("strong threshold", 0.5)
       .set<double>("tolerance", 0.0)
+      .set<int>("verbosity", 0)
       .set<int>("relaxation type", 6);
 
   // -- Trilinos
@@ -240,6 +262,6 @@ TEST(Verify_Mesh_and_Operators) {
   }
 
   test(prec_solver, "Dirichlet", mesh_file, d, n,
-       scheme, symmetric, scalar_coef, 10 * tol, order, ana, 1, plist);
+       scheme, symmetric, scalar_coef, 10 * tol, order, ana, nloops, plist);
 }
 

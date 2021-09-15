@@ -357,7 +357,7 @@
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="components" type="Array(string)" value="{cell, face}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="1.7"/>
@@ -370,7 +370,7 @@
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="components" type="Array(string)" value="{cell, face}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="1.8"/>
@@ -461,7 +461,7 @@
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="coarsen type" type="int" value="0"/>
         <Parameter name="verbosity" type="int" value="0"/>
-        <Parameter name="relaxation type" type="int" value="6"/>
+        <!--Parameter name="relaxation type" type="int" value="6"/-->
       </ParameterList>
     </ParameterList>
     <ParameterList name="Block ILU">
@@ -705,8 +705,7 @@
               <Parameter name="submodel" type="string" value="field" />
               <Parameter name="regions" type="Array(string)" value="{fracture}" />
               <ParameterList name="boundary concentration">
-                <Parameter name="field_out_key" type="string" value="fracture-total_component_concentration" />
-                <Parameter name="copy_field_out_key" type="string" value="default" />
+                <Parameter name="external field key" type="string" value="fracture-total_component_concentration" />
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -756,9 +755,8 @@
               <Parameter name="spatial distribution method" type="string" value="domain coupling" />
               <Parameter name="submodel" type="string" value="rate" />
               <ParameterList name="sink">
-                <Parameter name="flux_key" type="string" value="darcy_flux" />
-                <Parameter name="field_out_key" type="string" value="total_component_concentration" />
-                <Parameter name="field_in_key" type="string" value="fracture-total_component_concentration" />
+                <Parameter name="flux key" type="string" value="darcy_flux" />
+                <Parameter name="external field key" type="string" value="total_component_concentration" />
               </ParameterList>
             </ParameterList>
           </ParameterList>

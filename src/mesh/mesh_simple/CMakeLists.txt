@@ -27,36 +27,9 @@ include_directories(${MESH_SOURCE_DIR})
 include_directories(${Teuchos_INCLUDE_DIRS})
 
 # Library: simple_mesh
-file(GLOB simple_mesh_source_files "*.cc")
-file(GLOB simple_inc_files "*.hh")
-add_amanzi_library(simple_mesh
-                   SOURCE ${simple_mesh_source_files} HEADERS ${simple_inc_files}
+file(GLOB mesh_simple_source_files "*.cc")
+file(GLOB mesh_simple_inc_files "*.hh")
+add_amanzi_library(mesh_simple
+                   SOURCE ${mesh_simple_source_files} HEADERS ${mesh_simple_inc_files}
                    LINK_LIBS mesh geometry error_handling atk 
                              ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
-
-if (BUILD_TESTS)
-
-    # Add UnitTest include directories
-    include_directories(${UnitTest_INCLUDE_DIRS})
-
-    # Test uses Epetra
-    include_directories(${Epetra_INCLUDE_DIRS})
-
-   # Need to copy files for the tests 
-    if (NOT (${MESH_SIMPLE_SOURCE_DIR} EQUAL ${MESH_SIMPLE_BINARY_DIR}))
-      file(GLOB DataFiles "${MESH_SIMPLE_SOURCE_DIR}/test/*.xml"
-                          "${MESH_SIMPLE_SOURCE_DIR}/test/*.txt")
-      file(COPY ${DataFiles} DESTINATION ${MESH_SIMPLE_BINARY_DIR}/test/)
-    endif()
-
-    # Test: simple_mesh
-    add_amanzi_test(simple_mesh_all simple_mesh_all
-                    KIND unit
-		    SOURCE
-                          test/Main.cc 
-                          test/test_maps.cc 
-                          test/test_cell_numbering.cc 
-                    LINK_LIBS simple_mesh ${UnitTest_LIBRARIES})
-
-endif()
-

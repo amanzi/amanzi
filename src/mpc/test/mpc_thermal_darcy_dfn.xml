@@ -136,6 +136,24 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
+      <ParameterList name="internal_energy_liquid">
+        <Parameter name="field evaluator type" type="string" value="iem"/>
+        <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
+        <ParameterList name="IEM parameters">
+          <ParameterList name="Material1">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <ParameterList name="IEM parameters">
+              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="molar heat capacity" type="double" value="75.2"/>
+              <Parameter name="reference temperature" type="double" value="273.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="initial conditions">
@@ -230,7 +248,6 @@
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
       <Parameter name="preconditioning method" type="string" value="boomer amg"/>
-      <Parameter name="discretization method" type="string" value="mfd: optimized for sparsity"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="tolerance" type="double" value="0.001"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
@@ -239,7 +256,7 @@
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="coarsen type" type="int" value="0"/>
         <Parameter name="verbosity" type="int" value="0"/>
-        <Parameter name="relaxation type" type="int" value="3"/>
+        <!--Parameter name="relaxation type" type="int" value="3"/-->
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -261,7 +278,7 @@
         <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -271,6 +288,10 @@
     <ParameterList name="flow and energy">
       <Parameter name="PKs order" type="Array(string)" value="{flow, energy}"/>
       <Parameter name="master PK index" type="int" value="0"/>
+
+      <ParameterList name="physical models and assumptions">
+        <Parameter name="vapor diffusion" type="bool" value="false"/>
+      </ParameterList>
 
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{pressure, temperature}"/>
@@ -353,7 +374,7 @@
 	    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
 	    <Parameter name="gravity" type="bool" value="false"/>
-	    <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
+	    <Parameter name="Newton correction" type="string" value="none"/>
 	    <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
 	  </ParameterList>
 	</ParameterList>

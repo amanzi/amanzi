@@ -79,9 +79,9 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
 
   // post-processing (some may go away)
   FinalizeMPC_PKs_(out_list);
-  MergeInitialConditionsLists_(out_list, "chemistry");
-  MergeInitialConditionsLists_(out_list, "chemistry matrix");
-  MergeInitialConditionsLists_(out_list, "chemistry fracture");
+  MergeInitialConditionsLists_(out_list, "transient:chemistry");
+  MergeInitialConditionsLists_(out_list, "transient:chemistry matrix");
+  MergeInitialConditionsLists_(out_list, "transient:chemistry fracture");
 
   // miscalleneous cross-list information
   // -- initialization file name
@@ -120,7 +120,7 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
 
   // -- additional transport diagnostics
   if (transport_diagnostics_.size() > 0) {
-    out_list.sublist("PKs").sublist("transport")
+    out_list.sublist("PKs").sublist("transient:transport")
         .set<Teuchos::Array<std::string> >("runtime diagnostics: regions", transport_diagnostics_);
   }
 
@@ -153,6 +153,22 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
       std::string filename = out_list.sublist("mesh info").get<std::string>("filename");
       out_list.sublist("mesh info fracture").set<std::string>("filename", filename + "_fracture");
     }
+  }
+
+  // -- single region for surface domain
+  if (surface_regions_.size() > 0) {
+    if (out_list.isSublist("visualization data")) {
+      Teuchos::ParameterList& aux = out_list.sublist("visualization data");
+      out_list.sublist("visualization data surface") = aux;
+
+      std::string name = aux.get<std::string>("file name base");
+      out_list.sublist("visualization data surface")
+          .set<std::string>("file name base", name + "_surface");
+    }
+  }
+
+  if (pk_model_["chemistry"] == "amanzi") {
+    out_list.sublist("thermodynamic database") = TranslateThermodynamicDatabase_();
   }
 
   // -- final I/O
@@ -530,7 +546,7 @@ void InputConverterU::SaveXMLFile(
 
   if (filename == "") {
     filename = xmlfilename;
-    std::string new_extension("_native_v8.xml");
+    std::string new_extension("_native_v9.xml");
     size_t pos = filename.find(".xml");
     filename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)14);
   }

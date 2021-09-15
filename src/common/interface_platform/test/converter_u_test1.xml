@@ -46,7 +46,6 @@
 
   <phases>
     <liquid_phase name="water">
-      <eos>false</eos>
       <viscosity>1.002E-03</viscosity>
       <density>998.2</density>
       <dissolved_components>
@@ -281,17 +280,8 @@
       <assigned_regions>Crib_216-B-18</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
-          <inward_volumetric_flux value="1.1071E-10" function="constant" start="0.0" />
-          <inward_volumetric_flux value="1.48666E-9" function="constant" start="6.17266656e+10" />
-          <inward_volumetric_flux value="0.00330423e-3" function="constant" start="6.173178481E10" />
-          <inward_volumetric_flux value="1.48666E-9 m/s" function="constant" start="6.173705521E10" />
-          <inward_volumetric_flux value="1.48666E-9" function="constant" start="9.4672798E10" />
+          <seepage_face function="constant" inward_mass_flux="9.6411e-06" start="0.0" flux_threshold="0.01"/>
         </liquid_component>
-        <solute_component>
-          <aqueous_conc name="Tc-99" value="0.0" function="constant" start="0.0"/>
-          <aqueous_conc name="Tc-99" value="2.266885E-06" function="constant" start="6.173178481E10"/>
-          <aqueous_conc name="Tc-99" value="0.0" function="constant" start="6.173705521E10"/>
-       </solute_component> 
       </liquid_phase>
     </boundary_condition>
 
@@ -309,7 +299,8 @@
 
     <boundary_condition name="BC Rest">
       <assigned_regions>Recharge_Boundary_WestOfCribs,
-                        Recharge_Boundary_EastOfCribs</assigned_regions>
+                        Recharge_Boundary_EastOfCribs  
+      </assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
           <inward_volumetric_flux value="1.1071E-10" function="constant" start="0.0" />

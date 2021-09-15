@@ -21,31 +21,35 @@ various fields.
   are owned by state, not by any PK).
 
 
-``[state-spec]``
+.. _state-spec:
+.. admonition:: state-spec
 
-* `"field evaluators`" ``[evaluator-typedinline-spec-list]`` A list of evaluators.
-* `"initial conditions`" ``[list]`` A list of constants --
-    `"initial conditions`" is a terrible name and will go away in the next
-    iteration of state.
+   * `"field evaluators`" ``[field-evaluator-typedinline-spec-list]`` A list of evaluators.
+      Note this will eventually be an [evaluator-typedinline-spec-list] but the
+      evaluators themselves do not include the type info.
 
-``[evaluator-typedinline-spec]``
+   * `"initial conditions`" ``[list]`` A list of constant-in-time variables :
+       `"initial conditions`" is a terrible name and will go away in the next
+       iteration of state.
 
-* `"field evaluator type`" ``[string]`` Type of the evaluator
-    
-Included for convenience in defining data that is not in the dependency graph,
-constants are things (like gravity, or atmospheric pressure) which are stored
-in state but never change.  Typically they're limited to scalars and dense,
-local vectors.
+.. _field-evaluator-typedinline-spec:
+.. admonition:: field-evaluator-typedinline-spec
 
-``[constants-scalar-spec]``
+   * `"field evaluator type`" ``[string]`` Type of the evaluator Included for
+      convenience in defining data that is not in the dependency graph,
+      constants are things (like gravity, or atmospheric pressure) which are
+      stored in state but never change.  Typically they're limited to scalars
+      and dense, local vectors.
 
-* `"value`" ``[double]`` Value of a scalar constant
+.. _constants-scalar-spec:
+.. admonition:: constants-scalar-spec
 
-``[constants-vector-spec]``
+   * `"value`" ``[double]`` Value of a scalar constant
 
-* `"value`" ``[Array(double)]`` Value of a dense, local vector.
+.. _constants-vector-spec:
+.. admonition:: constants-vector-spec
 
-
+   * `"value`" ``[Array(double)]`` Value of a dense, local vector.
 
 Example:
 
@@ -68,7 +72,6 @@ Example:
       </ParameterList>
     </ParameterList>
 
-    
 */
 
 #ifndef STATE_STATE_HH_
@@ -151,12 +154,14 @@ class State {
   // -----------------------------------------------------------------------------
   void AssignDomain(const State& other, const std::string& domain);
 
-  // Create data structures, finalizing the structure of the state.
+  // Set requirements from all evaluators, calling EnsureCompatibility and
+  // allocating all memory.
   void Setup();
 
   // Sub-steps in the initialization process. (Used by Amanzi)
   void InitializeEvaluators();
   void InitializeFields();
+  void InitializeFieldCopies();
   bool CheckNotEvaluatedFieldsInitialized();
   bool CheckAllFieldsInitialized();
 
@@ -398,6 +403,9 @@ class State {
   Teuchos::RCP<Field> CheckConsistent_or_die_(Key fieldname,
           FieldType type, Key owner);
 
+private:
+  Teuchos::RCP<VerboseObject> vo_;
+
   // Containers
   MeshMap meshes_;
   std::map<Key,Key> mesh_aliases_;
@@ -415,8 +423,6 @@ class State {
   double last_time_;
   double initial_time_;
   std::vector<Key> copy_tag_;
-
-
   int cycle_;
   int position_in_tp_;
 
@@ -432,25 +438,17 @@ class State {
 void WriteVis(Visualization& vis,
               State& S);
 
-// Checkpointing State.
-void WriteCheckpoint(Checkpoint& ckp,
-                     State& S,
-                     double dt,
-                     bool final = false,
-                     Amanzi::ObservationData* obs_data = NULL);
-
-double ReadCheckpoint(const Comm_ptr_type& comm,
-                      State& S,
-                      std::string filename);
+double ReadCheckpoint(State& S,
+                      const std::string& filename);
 
 double ReadCheckpointInitialTime(const Comm_ptr_type& comm,
-                                 const std::string& filename);
+                                 std::string filename);
 
 int ReadCheckpointPosition(const Comm_ptr_type& comm,
-                           const std::string& filename);
+                           std::string filename);
 
 void ReadCheckpointObservations(const Comm_ptr_type& comm,
-                                const std::string& filename,
+                                std::string filename,
                                 Amanzi::ObservationData& obs_data);
 
 void DeformCheckpointMesh(State& S, Key domain);

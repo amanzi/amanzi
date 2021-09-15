@@ -1,7 +1,7 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
@@ -79,21 +79,21 @@ class MeshLogical : public Mesh {
               const std::vector<AmanziGeometry::Point>* cell_centroids=nullptr,
               const Teuchos::RCP<const Teuchos::ParameterList>& plist=Teuchos::null);
 
-  
+
   void get_logical_geometry(std::vector<double>* const cell_volumes,
                             std::vector<double>* const face_areas,
                             std::vector<std::vector<AmanziGeometry::Point> >* const face_cell_bisectors,
                             std::vector<AmanziGeometry::Point>* const cell_centroids) const;
-      
+
   void set_logical_geometry(std::vector<double> const* const cell_volumes,
                             std::vector<double> const* const face_areas,
                             std::vector<std::vector<AmanziGeometry::Point> > const* const face_cell_bisectors,
                             std::vector<AmanziGeometry::Point> const* const cell_centroids=nullptr);
-      
+
 
   // for testing
   bool operator==(const MeshLogical& other);
-  
+
   // Get parallel type of entity - OWNED, GHOST, ALL (See MeshDefs.hh)
   virtual
   Parallel_type entity_get_ptype(const Entity_kind kind,
@@ -122,7 +122,7 @@ class MeshLogical : public Mesh {
   virtual
   Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const override;
 
-  
+
   //
   // Mesh Entity Adjacencies
   //-------------------------
@@ -282,9 +282,13 @@ class MeshLogical : public Mesh {
   //
   // Mesh Sets for ICs, BCs, Material Properties and whatever else
   //--------------------------------------------------------------
+  virtual
+  bool valid_set_type(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const override {
+    return (rtype == AmanziGeometry::RegionType::ALL) ||
+      (rtype == AmanziGeometry::RegionType::ENUMERATED);
+  }
 
   // Get list of entities of type 'category' in set
-
   virtual
   void get_set_entities(const std::string& setname,
                         const Entity_kind kind,
@@ -353,13 +357,6 @@ class MeshLogical : public Mesh {
   virtual
   void cell_get_edges_internal_(const Entity_ID cellid,
           Entity_ID_List *edgeids) const override;
-
-  // edges and directions of a 2D cell - this function is implemented
-  // in each mesh framework. The results are cached in the base class.
-  virtual
-  void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
-          Entity_ID_List *edgeids,
-          std::vector<int> *edge_dirs) const override;
 
   virtual
   int build_columns_() const;

@@ -61,11 +61,7 @@ int Operator_Node::ApplyMatrixFreeOp(const Op_Cell_Node& op,
                                      const CompositeVector& X, CompositeVector& Y) const 
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
-
-  X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xn = *X.ViewComponent("node", true);
-  Y.PutScalarGhosted(0.0);
-
   {
     Epetra_MultiVector& Yn = *Y.ViewComponent("node", true);
 
@@ -85,10 +81,8 @@ int Operator_Node::ApplyMatrixFreeOp(const Op_Cell_Node& op,
       for (int n = 0; n != nnodes; ++n) {
         Yn[0][nodes[n]] += av(n);
       }
-    } 
+    }
   }
-
-  Y.GatherGhostedToMaster(Add);
   return 0;
 }
 

@@ -11,17 +11,19 @@
 
 #include <boost/format.hpp>
 
+#include "RegionLogical.hh"
 #include "MeshException.hh"
 #include "MeshFrameworkFactory.hh"
 #include "FileFormat.hh"
 
 // #include "MeshExtractedManifold.hh"
+#include "MeshColumn.hh"
 #include "Mesh_simple.hh"
 
-#ifdef HAVE_MSTK_MESH
+#ifdef HAVE_MESH_MSTK
 #include "Mesh_MSTK.hh"
 #endif
-#ifdef HAVE_MOAB_MESH
+#ifdef HAVE_MESH_MOAB
 #include "Mesh_MOAB.hh"
 #endif
 
@@ -30,7 +32,29 @@ namespace AmanziMesh {
 
 
 // -------------------------------------------------------------
-//  class MeshFrameworkFactory
+// Factory for creating a MeshColumn object from a parent and a column ID
+// -------------------------------------------------------------
+Teuchos::RCP<MeshColumn>
+createColumnMesh(const Teuchos::RCP<const Mesh>& parent_mesh,
+                 int col_id,
+                 const Teuchos::RCP<Teuchos::ParameterList>& plist)
+{
+  AMANZI_ASSERT(col_id >= 0);
+  AMANZI_ASSERT(col_id < parent_mesh->num_columns());
+
+  // create the extracted mesh of the column of cells
+  MeshFactory fac(getCommSelf(), parent_mesh->geometric_model(), plist);
+  Teuchos::RCP<Mesh> extracted_mesh = fac.create(parent_mesh,
+          parent_mesh->cells_of_column(col_id), CELL, false, true, false);
+
+  // create the MeshColumn object
+  return Teuchos::rcp(new MeshColumn(extracted_mesh, plist));
+}
+
+
+
+// -------------------------------------------------------------
+//  class MeshFactory
 // -------------------------------------------------------------
 
 // -------------------------------------------------------------
@@ -53,6 +77,8 @@ MeshFrameworkFactory::MeshFrameworkFactory(const Comm_ptr_type& comm,
   if (plist_ == Teuchos::null) {
     plist_ = Teuchos::rcp(new Teuchos::ParameterList());
   }
+
+  vo_ = Teuchos::rcp(new VerboseObject(comm, "Amanzi::MeshFactory", *plist_));
 
   // submesh parameter
   extraction_method_ = "none";
@@ -87,6 +113,8 @@ MeshFrameworkFactory::set_preference(const Preference& pref)
 Teuchos::RCP<MeshFramework>
 MeshFrameworkFactory::create(const std::string& filename)
 {
+  auto tab = vo_->getOSTab();
+
   // check the file format
   FileFormat fmt = fileFormatFromFilename(*comm_, filename);
 
@@ -98,8 +126,11 @@ MeshFrameworkFactory::create(const std::string& filename)
   for (auto p : preference_) {
     int nproc = comm_->NumProc();
 
-#ifdef HAVE_MSTK_MESH
+#ifdef HAVE_MESH_MSTK
     if (p == Framework::MSTK) {
+      if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+        *vo_->os() << "Creating mesh from file \"" << filename << "\" using format \"MSTK\"" << std::endl;
+      }
       if ((nproc == 1 && fmt == FileFormat::EXODUS_II) ||
           (nproc > 1 && (fmt == FileFormat::EXODUS_II || fmt == FileFormat::NEMESIS))) {
         auto mesh = Teuchos::rcp(new Mesh_MSTK(filename, comm_, gm_,
@@ -109,8 +140,11 @@ MeshFrameworkFactory::create(const std::string& filename)
     }
 #endif
 
-#ifdef HAVE_MOAB_MESH
+#ifdef HAVE_MESH_MOAB
     if (p == Framework::MOAB) {
+      if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+        *vo_->os() << "Creating mesh from file \"" << filename << "\" using format \"MOAB\"" << std::endl;
+      }
       if (fmt == FileFormat::MOAB_HDF5 || (nproc == 1 && fmt == FileFormat::EXODUS_II)) {
         auto mesh = Teuchos::rcp(new Mesh_MOAB(filename, comm_, gm_,
                 Teuchos::rcp(new Teuchos::ParameterList(*plist_))));
@@ -156,8 +190,11 @@ MeshFrameworkFactory::create(const double x0, const double y0, const double z0,
       return mesh;
     }
 
-#ifdef HAVE_MSTK_MESH
+#ifdef HAVE_MESH_MSTK
     if (p == Framework::MSTK) {
+      if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+        *vo_->os() << "Creating 3D block mesh using format \"MSTK\"" << std::endl;
+      }
       auto mesh = Teuchos::rcp(new Mesh_MSTK(
           x0, y0, z0, x1, y1, z1, nx, ny, nz,
           comm_, gm_,
@@ -193,8 +230,11 @@ MeshFrameworkFactory::create(const double x0, const double y0,
                              const int nx, const int ny)
 {
   for (auto p : preference_) {
-#ifdef HAVE_MSTK_MESH
+#ifdef HAVE_MESH_MSTK
     if (p == Framework::MSTK) {
+      if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+        *vo_->os() << "Creating 2D block mesh using format \"MSTK\"" << std::endl;
+      }
       auto mesh = Teuchos::rcp(new Mesh_MSTK(
           x0, y0, x1, y1, nx, ny,
           comm_, gm_,
@@ -279,8 +319,25 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const MeshFramework>& inmesh,
     gm = inmesh->get_geometric_model();
   }
 
-  auto comm = Comm_ptr_type(comm_);
-  if (comm == Teuchos::null) {
+  // create the comm via split
+  Comm_ptr_type comm = Teuchos::null;
+  auto parent_comm = Teuchos::rcp_dynamic_cast<const MpiComm_type>(inmesh->get_comm());
+  auto& expert = plist_->sublist("unstructured").sublist("expert");
+  if (parent_comm != Teuchos::null &&
+      expert.get<bool>("create subcommunicator", false)) {
+
+    // mpi comm split
+    MPI_Comm child_comm;
+    bool empty = setids.size() == 0;
+    int ierr = MPI_Comm_split(parent_comm->Comm(),
+            empty ? MPI_UNDEFINED : 1,
+            0, &child_comm);
+    if (ierr) {
+      Errors::Message msg("Error in MPI_Comm_split in creating extracted mesh.");
+      Exceptions::amanzi_throw(msg);
+    }
+    if (!empty) comm = Teuchos::rcp(new Epetra_MpiComm(child_comm));
+  } else {
     comm = inmesh->get_comm();
   }
 
@@ -295,15 +352,21 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const MeshFramework>& inmesh,
 
   // extract
   for (auto p : preference_) {
-#ifdef HAVE_MSTK_MESH
+#ifdef HAVE_MESH_MSTK
     if (p == Framework::MSTK) {
-      auto mesh = Teuchos::rcp(new Mesh_MSTK(
-          inmesh, setids, setkind, flatten,
-          comm, gm,
-          Teuchos::rcp(new Teuchos::ParameterList(*plist_))));
+      if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+        *vo_->os() << "Creating extracted mesh using format \"MSTK\" with " << setids.size() << " local entities." << std::endl;
+      }
 
-//      mesh->BuildCache();
-      return mesh;
+      if (comm != Teuchos::null) {
+        auto mesh = Teuchos::rcp(new Mesh_MSTK(
+                  inmesh, setids, setkind, flatten,
+                  comm, gm, plist_, request_faces, request_edges));
+        mesh->BuildCache();
+        return mesh;
+      } else {
+        return Teuchos::null;
+      }
     }
 #endif
   }
@@ -312,26 +375,32 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const MeshFramework>& inmesh,
   return Teuchos::null;
 }
 
-
 // // -------------------------------------------------------------
 // // This creates a mesh by extracting subsets of entities from an existing
 // //  mesh possibly flattening it by removing the last dimension or (in the
 // // future) extruding it when it makes sense
 // // -------------------------------------------------------------
-// Teuchos::RCP<MeshFramework>
-// MeshFrameworkFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
+// Teuchos::RCP<Mesh>
+// MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
 //                     const std::vector<std::string>& setnames,
 //                     const Entity_kind setkind,
 //                     const bool flatten)
 // {
-//   if (extraction_method_ == "manifold mesh" && setnames.size() == 1) {
+//   if (extraction_method_ == "manifold mesh") {
 //     const auto& comm = inmesh->get_comm();
 //     const auto& gm = inmesh->geometric_model();
 
+//     // greedy solution for more than one sets. A new region is forced into GM
+//     std::string setname(setnames[0]);
+//     if (setnames.size() > 1) {
+//       for (int i = 1; i < setnames.size(); ++i) setname += "_" + setnames[i];
+//       auto rgn = Teuchos::rcp(new AmanziGeometry::RegionLogical(setname, -1, "union", setnames));
+//       Teuchos::rcp_const_cast<AmanziGeometry::GeometricModel>(gm)->AddRegion(rgn);
+//     }
+
 //     auto mesh = Teuchos::rcp(new MeshExtractedManifold(
-//         inmesh, setnames[0], setkind,
-//         comm, gm,
-//Teuchos::rcp(new Teuchos::ParameterList(*plist_))));
+//         inmesh, setname, setkind,
+//         comm, gm, plist_, flatten));
 
 //     mesh->BuildCache();
 //     return mesh;
@@ -343,8 +412,9 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const MeshFramework>& inmesh,
 //     inmesh->get_set_entities(name, setkind, Parallel_type::OWNED, &ids_l);
 //     ids.insert(ids.end(), ids_l.begin(), ids_l.end());
 //   }
-//   return create(inmesh, ids, setkind, flatten);
+//   return create(inmesh, ids, setkind, flatten, request_faces, request_edges);
 // }
+
 
 } // namespace AmanziMesh
 } // namespace Amanzi

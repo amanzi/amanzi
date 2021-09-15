@@ -59,8 +59,7 @@ endif(ENABLE_OpenMP)
 
 get_directory_property(defs COMPILE_DEFINITIONS)
 if(defs)
-  list(APPEND defs ${BL_DEFINES})
-  set_directory_properties(PROPERTIES COMPILE_DEFINITIONS $defs)
+  list(APPEND BL_DEFINES ${defs})
 endif()
 
 
@@ -72,8 +71,8 @@ list(APPEND BL_DEFINES "AMANZI")
 
 if (ENABLE_PETSC)
 
-  set(PETSC_DIR $ENV{PETSC_DIR})
-  if ("${PETSC_DIR}" STREQUAL "")
+  set(PETSc_DIR $ENV{PETSc_DIR})
+  if ("${PETSc_DIR}" STREQUAL "")
     message(FATAL_ERROR "Must define env variable PETSC_DIR if ENABLE_PETSC=ON")
   endif()
 
@@ -81,14 +80,13 @@ if (ENABLE_PETSC)
   #if (${APPLE})
   #  include_directories(/usr/local/include) # For Homebrew valgrind installs
   #endif()
-  include_directories(${PETSC_DIR}/include)
+  include_directories(${PETSc_DIR}/include)
   list(APPEND BL_DEFINES BL_USE_PETSC)
-  set(PETSC_LIB_DIR ${PETSC_DIR}/lib)
-  link_directories(${PETSC_LIB_DIR})
+  set(PETSC_LIB_DIR ${PETSc_DIR}/lib)
+  link_directories(${PETSc_LIB_DIR})
   set(PETSC_LIBS petsc)
   set(PETSC_EXT_LIBS X11)
 endif()
 
 set_directory_properties(PROPERTIES COMPILE_DEFINITIONS "${BL_DEFINES}")
-
 

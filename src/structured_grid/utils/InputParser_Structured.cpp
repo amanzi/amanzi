@@ -865,8 +865,8 @@ namespace Amanzi {
 		    MyAbort("Must provide a refinement ratio for each refined level");
 		  }
 
-		  for (int k=0; k<max_level; ++k) {
-		    if (ref_ratio[k] != 2 && ref_ratio[k]!=4) {
+		  for (int kk=0; kk<max_level; ++kk) {
+		    if (ref_ratio[kk] != 2 && ref_ratio[kk]!=4) {
 		      MyAbort("\"Refinement Ratio\" values must be 2 or 4");
 		    }
 		  }
@@ -888,8 +888,8 @@ namespace Amanzi {
 		      }                                
 		    }
 
-		    for (int k=0; k<regrid_int.size(); ++k) {
-		      if (regrid_int[k] <= 0) {
+		    for (int kk=0; kk<regrid_int.size(); ++kk) {
+		      if (regrid_int[kk] <= 0) {
 			MyAbort("Each value in \"" + regrid_int_str
 				+ "\" must be values must be a postive integer");
 		      }
@@ -906,8 +906,8 @@ namespace Amanzi {
 		    MyAbort("If provided, value of \"" + blocking_factor_str
 			    + "\" required for each level");
 		  }
-		  for (int k=0; k<blocking_factor.size(); ++k) {
-		    double twoPower = std::log(blocking_factor[k])/std::log(2);
+		  for (int kk=0; kk<blocking_factor.size(); ++kk) {
+		    double twoPower = std::log(blocking_factor[kk])/std::log(2);
 		    if (twoPower != (int)(twoPower)) {
 		      MyAbort("\"" + blocking_factor_str + "\" must be a power of two");
 		    }
@@ -923,8 +923,8 @@ namespace Amanzi {
 		    MyAbort("If provided, value of \"" + n_err_buf_str
 			    + "\" required for each refined level");
 		  }
-		  for (int k=0; k<n_err_buf.size(); ++k) {
-		    if (n_err_buf[k] < 0) {
+		  for (int kk=0; kk<n_err_buf.size(); ++kk) {
+		    if (n_err_buf[kk] < 0) {
 		      MyAbort("\"" + n_err_buf_str + "\" must be > 0");
 		    }
 		  }
@@ -939,8 +939,8 @@ namespace Amanzi {
 		    MyAbort("If provided, value of \"" + max_grid_str
 			    + "\" required for each level");
 		  }
-		  for (int k=0; k<max_grid.size(); ++k) {
-		    if (max_grid[k] < blocking_factor[k]) {
+		  for (int kk=0; kk<max_grid.size(); ++kk) {
+		    if (max_grid[kk] < blocking_factor[kk]) {
 		      MyAbort("\"" + max_grid_str + "\" must be > \"" + blocking_factor_str + "\"");
 		    }
 		  }

@@ -25,12 +25,12 @@ bool framework_enabled(Framework f) {
   if (f == Framework::SIMPLE) {
     return true;
 
-#ifdef HAVE_MSTK_MESH
+#ifdef HAVE_MESH_MSTK
   } else if (f == Framework::MSTK) {
     return true;
 #endif
 
-#ifdef HAVE_MOAB_MESH
+#ifdef HAVE_MESH_MOAB
   } else if (f == Framework::MOAB) {
     return true;
 #endif

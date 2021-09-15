@@ -34,7 +34,7 @@ include_directories(${MESH_EXTRACTED_SOURCE_DIR})
 include_directories(${MESH_LOGICAL_SOURCE_DIR})
 include_directories(${MESH_FACTORY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MSTK_SOURCE_DIR})
+include_directories(${MESH_MSTK_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
@@ -211,9 +211,9 @@ if (BUILD_TESTS)
 
     add_amanzi_test(operators_marshak operators_marshak
                     KIND unit
-                    NPROCS 3
+                    NPROCS 2
                     SOURCE test/Main.cc test/operator_marshak.cc
-                           test/Main.cc test/operator_marshak_logical.cc
+                                        test/operator_marshak_logical.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(operators_nonlinear_surface operators_nonlinear_surface
@@ -391,7 +391,7 @@ if (BUILD_TESTS)
                     KIND unit
                     NPROCS 3
                     SOURCE test/Main.cc test/operator_advection_dg.cc
-                                        test/operator_advection_dg_transient
+                                        test/operator_advection_dg_transient.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: mini PDEs

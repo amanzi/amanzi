@@ -21,23 +21,23 @@ include_directories(${ATK_SOURCE_DIR})
 # Library: eos
 #
 set(eos_src_files 
-    EOSEvaluator.cc
-    EOSFactory.cc 
-    EOS_Constant.cc
-    EOS_IdealGas.cc
-    EOS_VaporInGas.cc
-    EOS_Water.cc
-    EOS_WaterFEHM.cc
+    EOSDensityEvaluator.cc
+    EOSViscosityEvaluator.cc
+    H2O_Density.cc
+    H2O_DensityFEHM.cc
+    H2O_ThermalConductivity.cc
+    H2O_SaturatedVaporPressure.cc
+    H2O_Viscosity.cc
+    H2O_ViscosityConstant.cc
+    H2O_ViscosityFEHM.cc
+    H2O_ViscosityTabular.cc
+    H2O_DensityTabular.cc
     Henry_Solubility.cc
+    IdealGas_Density.cc
     IsobaricEOSEvaluator.cc
+    LookupTable.cc
     MolarFractionGasEvaluator.cc
-    ThermalConductivity_Water.cc
-    SaturatedVaporPressure_Water.cc
-    SaturatedVaporPressureFactory.cc
-    Viscosity_Water.cc
-    Viscosity_Constant.cc
-    ViscosityBaseFactory.cc
-    ViscosityEvaluator.cc
+    VaporInGas_Density.cc
    )
 
 add_amanzi_library(eos
@@ -51,28 +51,30 @@ endif()
 # Install Targets
 #
 set(eos_inc_files 
-    EOS.hh
-    EOSEvaluator.hh
-    EOSFactory.hh
-    EOS_Constant.hh
-    EOS_ConstantMolarMass.hh
-    EOS_IdealGas.hh
-    EOS_VaporInGas.hh
-    EOS_Water.hh
-    EOS_WaterFEHM.hh
+    EOSDensityEvaluator.hh
+    EOSViscosityEvaluator.hh
+    EOS_Density.hh
+    EOS_SaturatedVaporPressure.hh
+    H2O_ThermalConductivity.hh
+    EOS_Utils.hh
+    EOS_Viscosity.hh
     eos_registration.hh
+    EOSFactory.hh
+    H2O_Density.hh
+    H2O_DensityFEHM.hh
+    H2O_DensityTabular.hh
+    H2O_SaturatedVaporPressure.hh
+    H2O_Viscosity.hh
+    H2O_ViscosityConstant.hh
+    H2O_ViscosityFEHM.hh
+    H2O_ViscosityTabular.hh
     Henry_Solubility.hh
+    IdealGas_Density.hh
     IsobaricEOSEvaluator.hh
+    LookupTable.hh
     MolarFractionGasEvaluator.hh
-    ThermalConductivity_Water.hh
-    SaturatedVaporPressure.hh
-    SaturatedVaporPressure_Water.hh
-    SaturatedVaporPressureFactory.hh
-    Viscosity_Base.hh
-    Viscosity_Constant.hh
-    Viscosity_Water.hh
-    ViscosityBaseFactory.hh
-    ViscosityEvaluator.hh)
+    VaporInGas_Density.hh
+   )
 
 # install headers into a subdirectory
 install(FILES ${eos_inc_files} DESTINATION include/amanzi)
@@ -83,7 +85,8 @@ if (BUILD_TESTS)
 
     # Copy test directory files if any out of source build
     if (NOT (${EOS_SOURCE_DIR} EQUAL ${EOS_BINARY_DIR}) )
-        file(GLOB DataFiles "${EOS_SOURCE_DIR}/test/*.xml")
+        file(GLOB DataFiles "${EOS_SOURCE_DIR}/test/*.xml"
+                            "${EOS_SOURCE_DIR}/test/*.eos")
         file(COPY ${DataFiles} DESTINATION ${EOS_BINARY_DIR}/test/)
     endif()
 

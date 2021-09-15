@@ -22,6 +22,8 @@
 #ifndef AMANZI_DG_BASIS_HH_
 #define AMANZI_DG_BASIS_HH_
 
+#include <memory>
+
 #include "Teuchos_RCP.hpp"
 
 #include "MeshLight.hh"

@@ -36,7 +36,8 @@ if __name__ == "__main__":
         pass
 
     try:
-        PF_DIR='/home/smolins/work/PF-Alquimia_verification'
+        PF_DIR=os.environ.get('PARFLOW_RESULTS_DIR')
+        print('Parflow results directory: ',PF_DIR)
         sys.path.append(PF_DIR)
         from PF_GetXY import GetXY_ParFlow_1D_100
     except:
@@ -111,7 +112,7 @@ if __name__ == "__main__":
     try:
         input_file = os.path.join("amanzi-u-1d-"+root+".xml")
         path_to_amanzi = "output-u"
-        run_amanzi_standard.run_amanzi(input_file, 1, [root+".bgd",input_file], path_to_amanzi)
+        run_amanzi_standard.run_amanzi(input_file, 1, [input_file], path_to_amanzi)
 
         u_native = [[[] for x in range(len(amanzi_totc))] for x in range(len(timesama))]
         for i, time in enumerate(timesama):
@@ -220,7 +221,7 @@ if __name__ == "__main__":
 
     # parflow + pflotran
     try:
-        path_to_parflow = os.path.join(PF_DIR,root+'_1d','run_pflotran')
+        path_to_parflow = os.path.join(PF_DIR,root+'_1d','pflotran')
 
         c_parflow_pflo = [ [] for x in range(len(components)) ]
         v_parflow_pflo = [ [] for x in range(len(components)) ]
@@ -245,7 +246,7 @@ if __name__ == "__main__":
 
     # parflow + crunch
     try:
-        path_to_parflow = os.path.join(PF_DIR,root+'_1d','run_crunch')
+        path_to_parflow = os.path.join(PF_DIR,root+'_1d','crunch')
         
         compPF = "isotherms_pf.out.PrimaryMobile.00.A.00005.txt"
         x_parflow_crunch, c_parflow_crunch = GetXY_ParFlow_1D_100(compPF,path=path_to_parflow)
@@ -259,7 +260,7 @@ if __name__ == "__main__":
   
 ## plotting ---------------------------------
     # subplots
-    fig, ax = plt.subplots(4,sharex=True,figsize=(8,12))
+    fig, ax = plt.subplots(3,2,figsize=(12,12))
 
     #  colors= ['r'] #,'b','m','g'] # components
     #  styles = ['-','v','o','x'] # codes
@@ -279,105 +280,131 @@ if __name__ == "__main__":
     i = 0 # hardwired 50 years -- because the second entry in the list was taken at cycle 71 = 50 years.
 
 #  pflotran
-    ax[0].plot(x_pflotran, u_pflotran[i][0],color='m',linestyle='-',linewidth=2,label='PFloTran')    
-    ax[1].plot(x_pflotran, v_pflotran[i][0],color='m',linestyle='-',linewidth=2)
+    ax[0,0].plot(x_pflotran, u_pflotran[i][0],color='m',linestyle='-',linewidth=2,label='PFloTran')    
+    ax[0,1].plot(x_pflotran, v_pflotran[i][0],color='m',linestyle='-',linewidth=2)
 
-    ax[2].plot(x_pflotran, u_pflotran[i][1],color='k',linestyle='-',linewidth=2,label='Langmuir PFloTran ')    
-    ax[3].plot(x_pflotran, v_pflotran[i][1],color='k',linestyle='-',linewidth=2)
+    ax[1,0].plot(x_pflotran, u_pflotran[i][1],color='m',linestyle='-',linewidth=2,label='PFloTran')    
+    ax[1,1].plot(x_pflotran, v_pflotran[i][1],color='m',linestyle='-',linewidth=2)
 
-    ax[2].plot(x_pflotran, u_pflotran[i][2],color='c',linestyle='-',linewidth=2,label='Freundlich PFloTran')    
-    ax[3].plot(x_pflotran, v_pflotran[i][2],color='c',linestyle='-',linewidth=2)
+    ax[2,0].plot(x_pflotran, u_pflotran[i][2],color='m',linestyle='-',linewidth=2,label='PFloTran')    
+    ax[2,1].plot(x_pflotran, v_pflotran[i][2],color='m',linestyle='-',linewidth=2)
 
 # crunchflow
     if crunch:
-        ax[0].plot(x_crunchflow, u_crunchflow[0],color='m',linestyle='None',marker='*', label='CrunchFlow OS3D')
+        ax[0,0].plot(x_crunchflow, u_crunchflow[0],color='m',linestyle='None',marker='*', label='CrunchFlow OS3D')
         # crunchflow does not output sorbed concentrations
  
 # native 
     if native:
-        ax[0].plot(x_native, u_native[i][0],color='b',linestyle='None',marker='x')
-        ax[1].plot(x_native, v_native[i][0],color='b',linestyle='None',marker='x',label='AmanziU (2nd-Ord.) Native')
+        ax[0,0].plot(x_native, u_native[i][0],color='b',linestyle='None',marker='x')
+        ax[0,1].plot(x_native, v_native[i][0],color='b',linestyle='None',marker='x',label='AmanziU (2nd-Ord.) Native')
 
-        ax[2].plot(x_native, u_native[i][1],color='k',linestyle='None',marker='x')
-        ax[3].plot(x_native, v_native[i][1],color='k',linestyle='None',marker='x',label='Langmuir AmanziU (2nd-Ord.) Native')
+        ax[1,0].plot(x_native, u_native[i][1],color='k',linestyle='None',marker='x')
+        ax[1,1].plot(x_native, v_native[i][1],color='k',linestyle='None',marker='x',label='Langmuir AmanziU (2nd-Ord.) Native')
 
-        ax[2].plot(x_native, u_native[i][2],color='c',linestyle='None',marker='x')
-        ax[3].plot(x_native, v_native[i][2],color='c',linestyle='None',marker='x',label='Freundlich AmanziU (2nd-Ord.) Native')
+        ax[2,0].plot(x_native, u_native[i][2],color='c',linestyle='None',marker='x')
+        ax[2,1].plot(x_native, v_native[i][2],color='c',linestyle='None',marker='x',label='Freundlich AmanziU (2nd-Ord.) Native')
 
 
 # unstructured alquimia pflotran
     if alq:
-        ax[0].plot(x_alquimia, u_alquimia[i][0],color='r',linestyle='-',linewidth=2)
-        ax[1].plot(x_alquimia, v_alquimia[i][0],color='r',linestyle='-',linewidth=2,label='AmanziU (2nd-Ord.)+Alq(PFT)')
+        ax[0,0].plot(x_alquimia, u_alquimia[i][0],color='r',linestyle='-',linewidth=2,label='AmanziU + Alq (PFLOTRAN)')
+        ax[0,1].plot(x_alquimia, v_alquimia[i][0],color='r',linestyle='-',linewidth=2)
 
-        ax[2].plot(x_alquimia, u_alquimia[i][1],color='k',linestyle='--',linewidth=2)
-        ax[3].plot(x_alquimia, v_alquimia[i][1],color='k',linestyle='--',linewidth=2,label='Langmuir AmanziU (2nd-Ord.)+Alq(PFT)')
+        ax[1,0].plot(x_alquimia, u_alquimia[i][1],color='r',linestyle='-',linewidth=2,label='AmanziU + Alq (PFLOTRAN)')
+        ax[1,1].plot(x_alquimia, v_alquimia[i][1],color='r',linestyle='-',linewidth=2)
 
-        ax[2].plot(x_alquimia, u_alquimia[i][2],color='c',linestyle='--',linewidth=2)
-        ax[3].plot(x_alquimia, v_alquimia[i][2],color='c',linestyle='--',linewidth=2,label='Freundlich AmanziU (2nd-Ord.)+Alq(PFT)')
+        ax[2,0].plot(x_alquimia, u_alquimia[i][2],color='r',linestyle='-',linewidth=2,label='AmanziU + Alq (PFLOTRAN)')
+        ax[2,1].plot(x_alquimia, v_alquimia[i][2],color='r',linestyle='-',linewidth=2)
 
 # unstructured alquimia crunch
     if alqc:
-        ax[0].plot(x_alquimia_crunch, u_alquimia_crunch[i][0],color='r',linestyle='None',marker='*',linewidth=2)
-        ax[1].plot(x_alquimia_crunch, v_alquimia_crunch[i][0],color='r',linestyle='None',marker='*',linewidth=2,label='AmanziU (2nd-Ord.)+Alq(CF)')
+        ax[0,0].plot(x_alquimia_crunch, u_alquimia_crunch[i][0],color='r',linestyle='None',marker='*',linewidth=2,label='AmanziU + Alq (CrunchFlow)')
+        ax[0,1].plot(x_alquimia_crunch, v_alquimia_crunch[i][0],color='r',linestyle='None',marker='*',linewidth=2)
 
 # structured alquimia pflotran
     if (struct>0):
-        sam = ax[0].plot(x_amanziS, c_amanziS[0],'g-',label='AmanziS+Alq(PFT)',linewidth=2)
-        samv = ax[1].plot(x_amanziS, v_amanziS[0],'g-',linewidth=2)
+        sam = ax[0,0].plot(x_amanziS, c_amanziS[0],'g-',label='AmanziS + Alq (PFLOTRAN)',linewidth=2)
+        samv = ax[0,1].plot(x_amanziS, v_amanziS[0],'g-',linewidth=2)
 
-        sam1 = ax[2].plot(x_amanziS, c_amanziS[1],'k*',label='Langmuir AmanziS+Alq(PFT)',linewidth=2)
-        samv1 = ax[3].plot(x_amanziS, v_amanziS[1],'k*',linewidth=2)
+        sam1 = ax[1,0].plot(x_amanziS, c_amanziS[1],'g-',label='AmanziS + Alq (PFLOTRAN)',linewidth=2)
+        samv1 = ax[1,1].plot(x_amanziS, v_amanziS[1],'g-',linewidth=2)
 
-        sam2 = ax[2].plot(x_amanziS, c_amanziS[2],'c*',label='Freundlich AmanziS+Alq(PFT)',linewidth=2)
-        samv2 = ax[3].plot(x_amanziS, v_amanziS[2],'c*',linewidth=2)
+        sam2 = ax[2,0].plot(x_amanziS, c_amanziS[2],'g-',label='AmanziS + Alq (PFLOTRAN)',linewidth=2)
+        samv2 = ax[2,1].plot(x_amanziS, v_amanziS[2],'g-',linewidth=2)
 
 # structured alquimia crunch
     if (struct_c>0):
-        samc = ax[0].plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alq(CF)',linewidth=2) 
-        samcv = ax[1].plot(x_amanziS_crunch, v_amanziS_crunch,'g*',linewidth=2) #,markersize=20) 
+        samc = ax[0,0].plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS + Alq (CrunchFlow)',linewidth=2) 
+        samcv = ax[0,1].plot(x_amanziS_crunch, v_amanziS_crunch,'g*',linewidth=2) #,markersize=20) 
 
 # parflow + crunch    
     if (parflow_crunch>0):
-        pfpfloC  = ax[0].plot(x_parflow_pflo, c_parflow_pflo[0],'b-',label='Parflow+Alq(PFT)',linewidth=2)
-        pfpfloV  = ax[1].plot(x_parflow_pflo, v_parflow_pflo[0],'b-',linewidth=2)
+        pfpfloC  = ax[0,0].plot(x_parflow_pflo, c_parflow_pflo[0],'b-',label='Parflow + Alq (PFLOTRAN)',linewidth=2)
+        pfpfloV  = ax[0,1].plot(x_parflow_pflo, v_parflow_pflo[0],'b-',linewidth=2)
 
-        pfpfloC1 = ax[2].plot(x_parflow_pflo, c_parflow_pflo[1],'k+',label='Langmuir Parflow+Alq(PFT)',linewidth=2)
-        pfpfloV1 = ax[3].plot(x_parflow_pflo, v_parflow_pflo[1],'k+',linewidth=2)
+        pfpfloC1 = ax[1,0].plot(x_parflow_pflo, c_parflow_pflo[1],'b-',label='Parflow + Alq (PFLOTRAN)',linewidth=2)
+        pfpfloV1 = ax[1,1].plot(x_parflow_pflo, v_parflow_pflo[1],'b-',linewidth=2)
 
-        pfpfloC2 = ax[2].plot(x_parflow_pflo, c_parflow_pflo[2],'c+',label='Freundlich Parflow+Alq(PFT)',linewidth=2)
-        pfpfloV2 = ax[3].plot(x_parflow_pflo, v_parflow_pflo[2],'c+',linewidth=2)
+        pfpfloC2 = ax[2,0].plot(x_parflow_pflo, c_parflow_pflo[2],'b-',label='Parflow + Alq (PFLOTRAN)',linewidth=2)
+        pfpfloV2 = ax[2,1].plot(x_parflow_pflo, v_parflow_pflo[2],'b-',linewidth=2)
         
 # parflow + crunch    
     if (parflow_crunch>0):
-        pfcfC  = ax[0].plot(x_parflow_crunch, c_parflow_crunch,'b*',label='Parflow+Alq(CF)',linewidth=2)
-        pfcfV  = ax[1].plot(x_parflow_crunch, v_parflow_crunch,'b*',linewidth=2)
+        pfcfC  = ax[0,0].plot(x_parflow_crunch, c_parflow_crunch,'b*',label='Parflow + Alq (CrunchFlow)',linewidth=2)
+        pfcfV  = ax[0,1].plot(x_parflow_crunch, v_parflow_crunch,'b*',linewidth=2)
         
     # axes
-    ax[0].set_title("Kd linear sorption model",fontsize=15)
-    ax[1].set_xlabel("Distance (m)",fontsize=15)
-    ax[0].set_ylabel("Total A \n Concentration \n [mol/L]",fontsize=15)
-    ax[1].set_ylabel("Total A \n Sorbed Concent. \n [mol/m3]",fontsize=15)
+    ax[0,0].set_title("Kd linear sorption model",fontsize=15)
+    ax[0,0].set_xlabel("Distance (m)",fontsize=15)
+    ax[0,0].set_ylabel("Total Aqueous Conc. \n [mol/L]",fontsize=15)
+    ax[0,1].set_title("Kd linear sorption model",fontsize=15)
+    ax[0,1].set_xlabel("Distance (m)",fontsize=15)
+    ax[0,1].set_ylabel("Total Sorbed Concent. \n [mol/m3]",fontsize=15)
 
-    ax[2].set_title("Langmuir and Freundlich sorption models",fontsize=15)
-    ax[3].set_xlabel("Distance (m)",fontsize=15)
-    ax[2].set_ylabel("Total B, C \n Concentration \n [mol/L]",fontsize=15)
-    ax[3].set_ylabel("Total B, C \n Sorbed Concent. \n [mol/m3]",fontsize=15)
-
-    ax[0].legend(loc='upper right',fontsize=10)
-    ax[1].legend(loc='upper right',fontsize=10)
-    ax[0].set_xlim(left=30,right=70)
-    ax[1].set_xlim(left=30,right=70)
-
-    ax[2].legend(loc='upper right',fontsize=10)
-    ax[3].legend(loc='upper right',fontsize=8)
-    ax[2].set_xlim(left=30,right=70)
-    ax[3].set_xlim(left=30,right=70)
-
+    ax[1,0].set_title("Langmuir sorption model",fontsize=15)
+    ax[1,0].set_xlabel("Distance (m)",fontsize=15)
+    ax[1,0].set_ylabel("Total Aqueous Conc. \n [mol/L]",fontsize=15)
+    ax[1,1].set_title("Langmuir sorption model",fontsize=15)
+    ax[1,1].set_xlabel("Distance (m)",fontsize=15)
+    ax[1,1].set_ylabel("Total Sorbed Concent. \n [mol/m3]",fontsize=15)
+    
+    ax[2,0].set_title("Freundlich sorption model",fontsize=15)
+    ax[2,0].set_xlabel("Distance (m)",fontsize=15)
+    ax[2,0].set_ylabel("Total Aqueous Conc. \n [mol/L]",fontsize=15)
+    ax[2,1].set_title("Freundlich sorption model",fontsize=15)
+    ax[2,1].set_xlabel("Distance (m)",fontsize=15)
+    ax[2,1].set_ylabel("Total Sorbed Concent. \n [mol/m3]",fontsize=15)
+    
+    ax[0,0].legend(loc='upper right',fontsize=9)
+    ax[1,0].legend(loc='upper right',fontsize=9)
+    ax[2,0].legend(loc='upper right',fontsize=9)
+    
+    ax[0,0].set_xlim(left=30,right=70)
+    ax[0,1].set_xlim(left=30,right=70)
+    ax[1,0].set_xlim(left=30,right=70)
+    ax[1,1].set_xlim(left=30,right=70)
+    ax[2,0].set_xlim(left=30,right=70)
+    ax[2,1].set_xlim(left=30,right=70)
+    
+    ax[0,0].tick_params(axis='both', which='major', labelsize=15)
+    ax[0,1].tick_params(axis='both', which='major', labelsize=15)
+    ax[1,0].tick_params(axis='both', which='major', labelsize=15)
+    ax[1,1].tick_params(axis='both', which='major', labelsize=15)
+    ax[2,0].tick_params(axis='both', which='major', labelsize=15)
+    ax[2,1].tick_params(axis='both', which='major', labelsize=15)
+    
+    ax[0,0].ticklabel_format(useMathText=True,axis='y',style='sci',scilimits=(-3,-3))
+    ax[0,1].ticklabel_format(useMathText=True,axis='y',style='sci',scilimits=(-2,-2))
+    ax[1,0].ticklabel_format(useMathText=True,axis='y',style='sci',scilimits=(-3,-3))
+    ax[1,1].ticklabel_format(useMathText=True,axis='y',style='sci',scilimits=(-3,-3))
+    ax[2,0].ticklabel_format(useMathText=True,axis='y',style='sci',scilimits=(-3,-3))
+    ax[2,1].ticklabel_format(useMathText=True,axis='y',style='sci',scilimits=(-3,-3))
+    
     # plot adjustments
     plt.tight_layout() 
-    plt.subplots_adjust(left=0.20,bottom=0.15,right=0.95,top=0.90)
-    plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
+    plt.subplots_adjust(left=0.12,bottom=0.05,right=0.97,top=0.95,hspace=0.4,wspace=0.3)
+##    plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
     plt.tick_params(axis='both', which='major', labelsize=15)
 
     # pyplot.show()

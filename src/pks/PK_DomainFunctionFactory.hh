@@ -22,7 +22,7 @@
 #include "PK_DomainFunctionVolumeFraction.hh"
 #include "PK_DomainFunctionWeight.hh"
 #include "PK_DomainFunctionCoupling.hh"
-#include "PK_DomainFunctionExponentialDecay.hh"
+#include "PK_DomainFunctionFirstOrderExchange.hh"
 #include "PK_DomainFunctionSubgrid.hh"
 #include "PK_DomainFunctionSubgridReturn.hh"
 #include "PK_DomainFunctionSimpleWell.hh"
@@ -32,8 +32,6 @@ namespace Amanzi {
 template <class FunctionBase>
 class PK_DomainFunctionFactory : public FunctionBase {
  public:
-  PK_DomainFunctionFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : mesh_(mesh) {};
   PK_DomainFunctionFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                            const Teuchos::RCP<const State>& S)
     : mesh_(mesh), S_(S) {};
@@ -105,14 +103,14 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
   }
   else if (model == "domain coupling") {
     Teuchos::RCP<PK_DomainFunctionCoupling<FunctionBase> >
-       func = Teuchos::rcp(new PK_DomainFunctionCoupling<FunctionBase>(mesh_));
+       func = Teuchos::rcp(new PK_DomainFunctionCoupling<FunctionBase>(mesh_, S_));
     func->Init(plist, keyword, kind);
     return func;
   }
-  else if (model == "exponential decay") {
+  else if (model == "first order exchange") {
     AMANZI_ASSERT(kind == AmanziMesh::CELL);
-    Teuchos::RCP<PK_DomainFunctionExponentialDecay<FunctionBase> >
-        func = Teuchos::rcp(new PK_DomainFunctionExponentialDecay<FunctionBase>(mesh_, plist, kind));
+    Teuchos::RCP<PK_DomainFunctionFirstOrderExchange<FunctionBase> >
+        func = Teuchos::rcp(new PK_DomainFunctionFirstOrderExchange<FunctionBase>(mesh_, plist, kind));
     func->Init(plist, keyword);
     return func;
   }

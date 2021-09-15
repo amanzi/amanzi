@@ -31,12 +31,16 @@ OR:
 END
 
 ONE OF:
-* `"component`" ``[string]`` Mesh component to evaluate this on.  This is one of "cell", "face", or "node"
+* `"component`" ``[string]`` Mesh component to evaluate this on.  This is one of "cell", "face", "node", "edge",
+  or "boundary_face". The last two may require additional conditions, such as a proper mesh initialization.
+  The mask "*" could be used in place of the component name.
 OR:
-* `"components`" ``[Array(string)]`` Mesh components to evaluate this on.  This is some collection of "cell", "face", and/or "node"
+* `"components`" ``[Array(string)]`` Mesh components to evaluate this on.  This is some collection of "cell", "face", 
+  "node", "edge", and/or "boundary_face". The last two may require additional conditions, such as a proper mesh 
+  initialization.  The array with the single entry "*" could be used to initialize all existing components.
 END
 
-* `"function`" ``[function-spec]`` The spec to provide the actual algebraic function.  
+* `"function`" ``[function-typedsublistdash-spec]`` The spec to provide the actual algebraic function.
 
  */
 
@@ -55,7 +59,8 @@ namespace Functions {
 
 Teuchos::RCP<CompositeVectorFunction>
 CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
-        const CompositeVectorSpace& factory);
+        const CompositeVectorSpace& factory,
+        std::vector<std::string>& componentname_list);
 
 } // namespace
 } // namespace

@@ -1,0 +1,55 @@
+\section{Code development}
+\subsection{Development cycle}
+Development of a new capability consists of several steps that are summarized below.
+Some steps can be skipped during a casual work cycle of code support, bug fixes, and minor improvements. 
+
+\begin{itemize}
+\item Create a new github development branch.
+\item Create github ticket or multiple tickets that summarize and stage the development process.
+\item Implement numerical algorithms and add them to an Amanzi library.
+\item Write unit tests for the new code.
+\item Integrate new functionality into other algorithms.
+\item Write integrated unit tests as needed.
+\item If implemented algorithms take control parameters from an XML file, 
+      document these parameters.
+\item Test new capability and add a benchmark or verification test to the
+      user guide.
+\item Create a pull request to inform team members about the new capability and 
+      to collect miscallenous feedback.
+\item Merge the development branch into the master branch.
+\end{itemize}
+
+
+\subsection{Smart pointers}
+We suggest the following guidelines on smart pointers and argument passing.
+
+\begin{lstlisting}
+unique_ptr<X> factory();      // creates an X
+void sink(unique_ptr<X>&);    // consumes X, the caller cannot keep X 
+                              // or use it after call
+void reseat(unique_ptr<X>&);  // change which X the caller points to 
+
+Teuchos::RCP<X> factory();  // creates an X
+Teuchos::RCP<X> share();    // the caller will or might keep X
+void share(const Teuchos::RCP<X>&);  // the callee will or might keep X
+void reseat(Teuchos::RCP<X>&);       // change which X the caller points to 
+
+void optional(X*);  // if X is an optional argument, i.e. pointer can be null
+
+void if_primitive(X);  // if none of the above apply, and X is a primitive 
+void if_not_primitive(X&);  // if none of the above apply, and X is not a primitive
+X = primitive_return();       // if primitive
+X& = non_primitive_return();  // if there is no ownership transfer implied,
+                              // the caller just looks at (const) or modifies 
+                              // (nonconst) X but does not keep it.
+\end{lstlisting}
+
+
+Note that X can be replaced by const X with no loss of generality.
+Note that the key part of this is that passing by RCP should mean something about ownership, 
+i.e. that the callee might keep X! 
+This also suggests to NEVER use Teuchos::Ptr, instead using X*. 
+Using Ptr requires that the object WAS stored in an RCP, and means an object stored in 
+a unique\_ptr must jump through hoops to be put in a non-owning Ptr before it can be passed.
+
+

@@ -57,6 +57,9 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   // preconditioner application
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 
+  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u, 
+                            Teuchos::RCP<const TreeVector> du);
+
   std::string name() { return "thermal flow matrix fracture"; } 
 
  private:
@@ -91,7 +94,9 @@ class FlowEnergyMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
 
   std::vector<Teuchos::RCP<Operators::PDE_CouplingFlux> > adv_coupling_matrix_, adv_coupling_pc_;
 
-  Teuchos::RCP<Matrix<TreeVector,TreeVectorSpace>> op_pc_solver_;
+  Teuchos::RCP<Matrix<TreeVector, TreeVectorSpace>> op_pc_solver_;
+
+  double residual_norm_;
 
   // factory registration
   static RegisteredPKFactory<FlowEnergyMatrixFracture_PK> reg_;

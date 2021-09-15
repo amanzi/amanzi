@@ -51,7 +51,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     srcs[i]->Compute(time, time); 
   }
 
-  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
+  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData(viscosity_liquid_key_);
 
   std::string linear_solver = plist.get<std::string>("linear solver");
   Teuchos::ParameterList lin_solve_list = linear_operator_list_->sublist(linear_solver);

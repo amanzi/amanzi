@@ -37,6 +37,7 @@
 #include "MultiscaleTransportPorosityFactory.hh"
 #include "Transport_PK.hh"
 #include "TransportBoundaryFunction_Alquimia.hh"
+#include "TransportBoundaryFunction_Chemistry.hh"
 #include "TransportDomainFunction.hh"
 #include "TransportSourceFunction_Alquimia.hh"
 
@@ -127,11 +128,12 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
 * Setup for Alquimia.
 ****************************************************************** */
 #ifdef ALQUIMIA_ENABLED
-void Transport_PK::SetupAlquimia(Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk,
-                                 Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine)
+void Transport_PK::SetupAlquimia()
 {
-  chem_pk_ = chem_pk;
-  chem_engine_ = chem_engine;
+  if (chem_pk_ == Teuchos::null) return;
+
+  alquimia_pk_ = Teuchos::rcp_dynamic_cast<AmanziChemistry::Alquimia_PK>(chem_pk_);
+  chem_engine_ = chem_pk_->chem_engine();
 
   if (chem_engine_ != Teuchos::null) {
     // Retrieve the component names (primary and secondary) from the chemistry 
@@ -183,6 +185,8 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
   bool transport_on_manifold = physical_models->get<bool>("transport in fractures", false);
 
   // require state fields when Flow PK is off
+  S_->RequireScalar("const_fluid_density", passwd_);
+
   if (!S->HasField(permeability_key_) && abs_perm) {
     S->RequireField(permeability_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, dim);
@@ -291,6 +295,10 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
     }
   }
+
+#ifdef ALQUIMIA_ENABLED
+  SetupAlquimia();
+#endif
 }
 
 
@@ -379,7 +387,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   // create boundary conditions
   if (tp_list_->isSublist("boundary conditions")) {
     // -- try simple Dirichlet conditions for species
-    PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_);
+    PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_, S_);
     Teuchos::ParameterList& clist = tp_list_->sublist("boundary conditions").sublist("concentration");
 
     for (auto it = clist.begin(); it != clist.end(); ++it) {
@@ -415,6 +423,27 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
         }
       }
     }
+    // -- try geochemical Dirichlet conditions for species
+    PK_DomainFunctionFactory<TransportBoundaryFunction_Chemistry> factory2(mesh_, S_);
+    Teuchos::ParameterList& cvlist = tp_list_->sublist("boundary conditions").sublist("constraints");
+
+    for (auto it = cvlist.begin(); it != cvlist.end(); ++it) {
+      std::string name = it->first;
+      if (cvlist.isSublist(name)) {
+        Teuchos::ParameterList& spec = cvlist.sublist(name);
+        spec.set<Teuchos::RCP<AmanziChemistry::Chemistry_PK> >("chemical pk", chem_pk_);
+
+        Teuchos::RCP<TransportBoundaryFunction_Chemistry> 
+          bc = factory2.Create(spec, "boundary constraints", AmanziMesh::FACE, Kxy);
+
+        for (int i = 0; i < component_names_.size(); i++) {
+          bc->tcc_names().push_back(component_names_[i]);
+          bc->tcc_index().push_back(i);
+        }
+        bc->set_state(S_);
+        bcs_.push_back(bc);
+      }
+    }
 #ifdef ALQUIMIA_ENABLED
     // -- try geochemical conditions
     Teuchos::ParameterList& glist = tp_list_->sublist("boundary conditions").sublist("geochemical");
@@ -424,7 +453,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
       Teuchos::ParameterList& spec = glist.sublist(specname);
 
       Teuchos::RCP<TransportBoundaryFunction_Alquimia> 
-          bc = Teuchos::rcp(new TransportBoundaryFunction_Alquimia(spec, mesh_, chem_pk_, chem_engine_));
+          bc = Teuchos::rcp(new TransportBoundaryFunction_Alquimia(spec, mesh_, alquimia_pk_, chem_engine_));
 
       std::vector<int>& tcc_index = bc->tcc_index();
       std::vector<std::string>& tcc_names = bc->tcc_names();
@@ -447,13 +476,14 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   time = t_physics_;
   for (int i = 0; i < bcs_.size(); i++) {
     bcs_[i]->Compute(time, time);
+    bcs_[i]->ComputeSubmodel(mesh_, tcc);
   }
 
   VV_CheckInfluxBC();
 
   // source term initialization: so far only "concentration" is available.
   if (tp_list_->isSublist("source terms")) {
-    PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_);
+    PK_DomainFunctionFactory<TransportDomainFunction> factory(mesh_, S_);
     PKUtils_CalculatePermeabilityFactorInWell(S_.ptr(), Kxy);
 
     Teuchos::ParameterList& clist = tp_list_->sublist("source terms").sublist("concentration");
@@ -499,7 +529,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
       Teuchos::ParameterList& spec = glist.sublist(specname);
 
       Teuchos::RCP<TransportSourceFunction_Alquimia> 
-          src = Teuchos::rcp(new TransportSourceFunction_Alquimia(spec, mesh_, chem_pk_, chem_engine_));
+          src = Teuchos::rcp(new TransportSourceFunction_Alquimia(spec, mesh_, alquimia_pk_, chem_engine_));
 
       std::vector<int>& tcc_index = src->tcc_index();
       std::vector<std::string>& tcc_names = src->tcc_names();

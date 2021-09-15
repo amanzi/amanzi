@@ -21,7 +21,6 @@ except:
     pass
 
 import run_amanzi_standard
-import numpy as np
 from compare_field_results import GetXY_AmanziU_1D
 from compare_field_results import GetXY_AmanziS_1D
 from compare_field_results import GetXY_PFloTran_1D
@@ -36,7 +35,8 @@ if __name__ == "__main__":
         pass
 
     try:
-        PF_DIR='/home/smolins/work/PF-Alquimia_verification'
+        PF_DIR=os.environ.get('PARFLOW_RESULTS_DIR')
+        print('Parflow results directory: ',PF_DIR)
         sys.path.append(PF_DIR)
         from PF_GetXY import GetXY_ParFlow_1D_100
     except:
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     local_path = ""
 
     # subplots
-    fig, ax = plt.subplots() 
+    fig, ax = plt.subplots(figsize=(10,8)) 
         
     # AmanziS + Alqumia + PFlotran chemistry
     try:
@@ -107,7 +107,7 @@ if __name__ == "__main__":
         comp = 'total_component_concentration.cell.Tritium conc'
         input_file = os.path.join("amanzi-u-1d-"+root+".xml")
         path_to_amanzi = "output-u"
-        run_amanzi_standard.run_amanzi(input_file, 1, [root+".bgd",input_file], path_to_amanzi)
+        run_amanzi_standard.run_amanzi(input_file, 1, [input_file], path_to_amanzi)
 
         x_amanziU_native, c_amanziU_native = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
         native = len(x_amanziU_native)
@@ -148,7 +148,7 @@ if __name__ == "__main__":
 
     # parflow + pflotran
     try:
-        path_to_parflow = os.path.join(PF_DIR,root+'_1d','run_pflotran')
+        path_to_parflow = os.path.join(PF_DIR,root+'_1d','pflotran')
         
         compPF = "tritium_pf.out.PrimaryMobile.00.Tritium.00005.txt"
         x_parflow_pflo, c_parflow_pflo = GetXY_ParFlow_1D_100(compPF,path=path_to_parflow)
@@ -160,7 +160,7 @@ if __name__ == "__main__":
 
     # parflow + crunch
     try:
-        path_to_parflow = os.path.join(PF_DIR,root+'_1d','run_crunch')
+        path_to_parflow = os.path.join(PF_DIR,root+'_1d','crunch')
         
         compPF = "tritium_pf.out.PrimaryMobile.00.Tritium.00005.txt"
         x_parflow_crunch, c_parflow_crunch = GetXY_ParFlow_1D_100(compPF,path=path_to_parflow)
@@ -172,29 +172,29 @@ if __name__ == "__main__":
 
         
     # Do plot
-    pfl = ax.plot(x_pflotran, c_pflotran,'m-',label='PFloTran',linewidth=2)
+    pfl = ax.plot(x_pflotran, c_pflotran,'m-',label='PFLOTRAN',linewidth=2)
     crunch = ax.plot(x_crunchflow, c_crunchflow,'m*',label='CrunchFlow(OS3D)',linewidth=2)
     
     if (native > 0):
-        nat = ax.plot(x_amanziU_native, c_amanziU_native,'rx',label='AmanziU(2nd-Order)+Native',linewidth=2)
+        nat = ax.plot(x_amanziU_native, c_amanziU_native,'rx',label='AmanziU+Native',linewidth=2)
 
     if (unstruct > 0):
-        alq = ax.plot(x_amanziU, c_amanziU,'r-',label='AmanziU(2nd-Order)+Alquimia(PFloTran)',linewidth=2)
+        alq = ax.plot(x_amanziU, c_amanziU,'r-',label='AmanziU+Alquimia(PFLOTRAN)',linewidth=2)
 
     if (unstruct_crunch > 0):
-        alq_crunch = ax.plot(x_amanziU_crunch, c_amanziU_crunch,'r*',label='AmanziU(2nd-Order)+Alquimia(CrunchFlow)',linewidth=2)
+        alq_crunch = ax.plot(x_amanziU_crunch, c_amanziU_crunch,'r*',label='AmanziU+Alquimia(CrunchFlow)',linewidth=2)
 
     if (struct > 0):
-        sam = ax.plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alquimia(PFloTran)',linewidth=2) 
+        sam = ax.plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alquimia(PFLOTRAN)',linewidth=2) 
 
     if (struct_crunch > 0):
         sam_crunch = ax.plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alquimia(CrunchFlow)',linewidth=2) 
 
     if (parflow_pflo>0):
-        pfpfC  = ax.plot(x_parflow_pflo, c_parflow_pflo,'b-',label='Parflow+Alq(PFT)',linewidth=2)    
+        pfpfC  = ax.plot(x_parflow_pflo, c_parflow_pflo,'b-',label='Parflow+Alquimia(PFLOTRAN)',linewidth=2)    
         
     if (parflow_crunch>0):
-        pfcfC  = ax.plot(x_parflow_crunch, c_parflow_crunch,'b*',label='Parflow+Alq(CF)',linewidth=2)
+        pfcfC  = ax.plot(x_parflow_crunch, c_parflow_crunch,'b*',label='Parflow+Alquimia(CrunchFlow)',linewidth=2)
         
     # axes
     ax.set_xlabel("Distance (m)",fontsize=20)
@@ -204,36 +204,39 @@ if __name__ == "__main__":
     # ax.set_ylim(0,.0001)
 
     # plot adjustments
-    plt.subplots_adjust(left=0.20,bottom=0.15,right=0.99,top=0.90)
-    plt.legend(loc='upper right',fontsize=10)
-    plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
+#    plt.subplots_adjust(left=0.20,bottom=0.15,right=0.99,top=0.90)
+    plt.legend(loc='upper right',fontsize=15)
+#    plt.suptitle("Amanzi 1D "+root.title()+" Benchmark at 50 years",x=0.57,fontsize=20)
     plt.tick_params(axis='both', which='major', labelsize=20)
+
+    plt.tight_layout()
 
     # Do subplot to zoom in on interface
     a = plt.axes([.65, .25, .3, .35])
     a.set_xlim(43,57)
     a.set_ylim(0,.0001)
+    a.tick_params(axis='both', which='major', labelsize=15)
     
-    pfls = a.plot(x_pflotran, c_pflotran,'m-',label='PFloTran',linewidth=2)
+    pfls = a.plot(x_pflotran, c_pflotran,'m-',label='PFLOTRAN',linewidth=2)
     cfs = a.plot(x_crunchflow, c_crunchflow,'m*',label='CrunchFlow',linewidth=2)
     
     if (native > 0):
-        nats = a.plot(x_amanziU_native, c_amanziU_native,'rx',label='Amanzi+Alquimia(PFloTran)',linewidth=2)
+        nats = a.plot(x_amanziU_native, c_amanziU_native,'rx',label='Amanzi+Alquimia(PFLOTRAN)',linewidth=2)
     if (unstruct > 0):
-        alqs = a.plot(x_amanziU, c_amanziU,'r-',label='Amanzi+Alquimia(PFloTran) - 1st Order',linewidth=2)
+        alqs = a.plot(x_amanziU, c_amanziU,'r-',label='Amanzi+Alquimia(PFLOTRAN)',linewidth=2)
     if (unstruct_crunch > 0):
         alqs_crunch = a.plot(x_amanziU_crunch, c_amanziU_crunch,'r*',label='Amanzi+Alquimia(CrunchFlow)',linewidth=2)
     if (struct>0):
-        sams = a.plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alq(PFT)',linewidth=2) 
+        sams = a.plot(x_amanziS, c_amanziS,'g-',label='AmanziS+Alquimia(PFLOTRAN)',linewidth=2) 
     if (struct_crunch>0):
-        sams_crunch = a.plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alq(CF)',linewidth=2)
+        sams_crunch = a.plot(x_amanziS_crunch, c_amanziS_crunch,'g*',label='AmanziS+Alquimia(CrunchFlow)',linewidth=2)
 
     if (parflow_pflo>0):
-        pfpfC_  = a.plot(x_parflow_pflo, c_parflow_pflo,'b-',label='Parflow+Alq(PFT)',linewidth=2)
+        pfpfC_  = a.plot(x_parflow_pflo, c_parflow_pflo,'b-',label='Parflow+Alquimia(PFLOTRAN)',linewidth=2)
     if (parflow_crunch>0):
-        pfcfC_  = a.plot(x_parflow_crunch, c_parflow_crunch,'b*',label='Parflow+Alq(CF)',linewidth=2)
+        pfcfC_  = a.plot(x_parflow_crunch, c_parflow_crunch,'b*',label='Parflow+Alquimia(CrunchFlow)',linewidth=2)
         
-    plt.title('Zoom near interface')
+    plt.title('Zoom near interface',size=15)
     
     # plt.show()
     plt.savefig(root+"_1d.png",format="png")

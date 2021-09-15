@@ -6,21 +6,17 @@
   Authors:
       Ethan Coon
 */
-
 //! An evaluator with no dependencies specified by a constant value.
-
 /*!
 
-An independent variable evaluator that is constant in both space and time.  Really, just a number.
+An independent variable evaluator that is constant in time.  This uses the same
+infrastructure as initial conditions for time-independent data.
 
-This is a quality of life addition -- it is doable as a standard independent
-variable evaluator from a function using the function-constant, but it makes
-life much easier on users who just want a single value.
+This is used by providing:
 
-This is used by providing a field evaluator type == "independent variable constant"
+`"field evaluator type`" == `"independent variable constant`"
 
-* `"value`" ``[double]`` Provide the value used in PutScalar() to set the vector's value.
-
+See the InitialConditions_ description for all parameters.
 */
 
 

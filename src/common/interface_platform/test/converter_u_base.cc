@@ -108,7 +108,7 @@ TEST(CONVERTER_BASE) {
   if (MyPID == 0) std::cout << "Test: convert transport test" << std::endl;
 
   // read parameter list
-  for (int i = 1; i < 9; i++) {
+  for (int i = 1; i < 10; i++) {
     std::stringstream xmlFileName;
     xmlFileName << "test/converter_u_test" << i << ".xml";
 
@@ -121,7 +121,7 @@ TEST(CONVERTER_BASE) {
       Teuchos::XMLObject XMLobj = XMLWriter.toXML(new_xml);
 
       std::stringstream ss;
-      ss << "test" << i << "_native_v8.xml";
+      ss << "test" << i << "_native_v9.xml";
       std::ofstream xmlfile;
       xmlfile.open(ss.str().c_str());
       xmlfile << XMLobj;

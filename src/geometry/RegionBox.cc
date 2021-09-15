@@ -60,14 +60,14 @@ RegionBox::RegionBox(const std::string& name,
 // -------------------------------------------------------------
 bool RegionBox::inside(const Point& p) const
 {
-#ifdef ENABLE_DBC
+// #ifdef ENABLE_DBC
   if (p.dim() != p0_.dim()) {
     Errors::Message msg;
     msg << "Mismatch in corner dimension of RegionBox \""
         << get_name() << "\" and query point.";
     Exceptions::amanzi_throw(msg);
   }
-#endif
+// #endif
 
   for (int i = 0; i != p.dim(); ++i) {
     if (p[i] < p0_[i] - TOL) return false;

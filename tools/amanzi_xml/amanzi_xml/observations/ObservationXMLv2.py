@@ -8,7 +8,7 @@ class ObservationXMLv2(object):
         self.xml = io.fromFile(filename)
         self.obs_list = self.getObservationList()
         self.obs_lists = []
-        for el in self.obs_list.getchildren():
+        for el in list(self.obs_list):
             self.obs_lists.append(el)
 
         self.obs_file = self.getObservationFilename()

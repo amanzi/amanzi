@@ -22,6 +22,8 @@ SecondaryVariablesFieldEvaluator::SecondaryVariablesFieldEvaluator(
             Teuchos::ParameterList& plist) :
     FieldEvaluator(plist)
 {
+  type_ = EvaluatorType::SECONDARY;
+
   // process the plist
   if (plist_.isParameter("evaluator names")) {
     Teuchos::Array<std::string> names =
@@ -144,7 +146,7 @@ bool SecondaryVariablesFieldEvaluator::HasFieldDerivativeChanged(
   Teuchos::OSTab tab = vo_->getOSTab();
 
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-    *vo_->os() << "Secondary Variable d" << my_keys_[0] << "_d" << wrt_key
+    *vo_->os() << "Secondary Variable " << Keys::getDerivKey(my_keys_[0], wrt_key)
           << " requested by " << request << std::endl;
   }
 
@@ -178,7 +180,7 @@ bool SecondaryVariablesFieldEvaluator::HasFieldDerivativeChanged(
   std::pair<Key,Key> deriv_request(request, wrt_key);
   if (update) {
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_->os() << "Updating d" << my_keys_[0] << "_d" << wrt_key << "... " << std::endl;
+      *vo_->os() << "Updating " << Keys::getDerivKey(my_keys_[0], wrt_key) << "... " << std::endl;
     }
 
     // If so, update ourselves, empty our list of filled requests, and return.
@@ -190,14 +192,14 @@ bool SecondaryVariablesFieldEvaluator::HasFieldDerivativeChanged(
     // Otherwise, see if we have filled this request already.
     if (deriv_requests_.find(deriv_request) == deriv_requests_.end()) {
       if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-        *vo_->os() << "d" << my_keys_[0] << "_d" << wrt_key << " has changed, but no need to update... " << std::endl;
+        *vo_->os() << Keys::getDerivKey(my_keys_[0], wrt_key) << " has changed, but no need to update... " << std::endl;
       }
 
       deriv_requests_.insert(deriv_request);
       return true;
     } else {
       if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-        *vo_->os() << "d" << my_keys_[0] << "_d" << wrt_key << " has not changed... " << std::endl;
+        *vo_->os() << Keys::getDerivKey(my_keys_[0], wrt_key) << " has not changed... " << std::endl;
       }
       return false;
     }
@@ -230,7 +232,7 @@ void SecondaryVariablesFieldEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr
         Key wrt_key) {
   std::vector<Teuchos::Ptr<CompositeVector> > dmys;
   for (std::vector<Key>::const_iterator my_key=my_keys_.begin(); my_key!=my_keys_.end(); ++my_key) {
-    Key dmy_key = std::string("d")+*my_key+std::string("_d")+wrt_key;
+    Key dmy_key = Keys::getDerivKey(*my_key, wrt_key);
     if (S->HasField(dmy_key)) {
       // Get the field...
       Teuchos::RCP<CompositeVector> dmy = S->GetFieldData(dmy_key, *my_key);
@@ -275,7 +277,7 @@ void SecondaryVariablesFieldEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr
       for (int i=0; i!=dmys.size(); ++i) {
         // partial F_i / partial dep * ddep/dx
         // -- ddep/dx
-        Key ddep_key = std::string("d")+*dep+std::string("_d")+wrt_key;
+        Key ddep_key = Keys::getDerivKey(*dep, wrt_key);
         Teuchos::RCP<const CompositeVector> ddep = S->GetFieldData(ddep_key);
 
         dmys[i]->Multiply(1.0, *ddep, *tmp[i], 1.0);
@@ -404,12 +406,12 @@ void SecondaryVariablesFieldEvaluator::CheckDerivative_(const Teuchos::Ptr<State
 
   for (int i=0; i!=my_keys_.size(); ++i) {
     Key my_key = my_keys_[i];
-    Key dmy_key = std::string("d")+my_key+std::string("_d")+wrt_key;
+    Key dmy_key = Keys::getDerivKey(my_key, wrt_key);
     Teuchos::RCP<const CompositeVector> dmy = S->GetFieldData(dmy_key);
 
     // calculate differences in derivative estimates
     std::cout.precision(10);
-    std::cout << "ERROR (eps=" << shift << ") for d_" << my_key << "_d" << wrt_key << std::endl;
+    std::cout << "ERROR (eps=" << shift << ") for " << Keys::getDerivKey(my_key, wrt_key) << std::endl;
     std::cout << "  dmy: " << (*dmy)("cell",0) << ", " << (*dmy)("cell",99) << std::endl;
     std::cout << "  my0 (" << (*dep_0)("cell",0) << ") = " << (*mys_0[i])("cell",0) << ", "
               << "my0 (" << (*dep_0)("cell",99) << ") = " << (*mys_0[i])("cell",99) << std::endl;
@@ -426,7 +428,7 @@ void SecondaryVariablesFieldEvaluator::CheckDerivative_(const Teuchos::Ptr<State
     mys_1[i]->NormInf(&error1);
     dmy->NormInf(&error2);
     double error = error1 / (error2 + shift);
-    std::cout << "ERROR (eps=" << shift << ") for d_" << my_key << "_d" << wrt_key << ":  " << error << std::endl;
+    std::cout << "ERROR (eps=" << shift << ") for " << Keys::getDerivKey(my_key, wrt_key) << ":  " << error << std::endl;
 
     // revert pointers in state to old data
     S->SetData(my_key, my_key, mys_0[i]);

@@ -41,7 +41,7 @@ class PK_DomainFunctionSubgrid : public FunctionBase {
   virtual void Compute(double t0, double t1);  
   virtual std::string name() const { return "hyporheic exchange"; }
 
-  virtual void set_state(const Teuchos::RCP<State>& S) {S_ = S;}
+  virtual void set_state(const Teuchos::RCP<State>& S) { S_ = S; }
   
  protected:
   using FunctionBase::value_;
