@@ -310,8 +310,14 @@ TEST(Verify_Mesh_and_Operators) {
   // -- ShyLu FastILU
   plist->sublist("preconditioners").sublist("ifpack2: FAST_ILU")
       .set<std::string>("preconditioning method", "ifpack2: FAST_ILU").sublist("ifpack2: FAST_ILU parameters")
-      .set<double>("fact: filu level-of-fill", 1)
-      .set<double>("fact: drop tolerance", 0.0);
+    .set<std::string>("verbosity","high")
+    .set<int>("triangular solver iterations",1) // default 1
+    .set<int>("level", 3) // default 0
+    .set<double>("damping factor", .5) // default 0.5
+    .set<double>("shift",0.0) // default 0.0
+    .set<bool>("guess",true) // default true
+    .set<int>("sweeps", 20) // default 5
+    .set<int>("block-size",1); // default 1 
 
   // summary of options
   if (MyPID == 0) {
