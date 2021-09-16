@@ -12,6 +12,7 @@
 #include <set>
 
 #include "errors.hh"
+#include "Mesh_Algorithms.hh"
 #include "OperatorDefs.hh"
 
 #include "Flow_PK.hh"
@@ -155,7 +156,7 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dT) c
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         f = it->first;
         if (f < nfaces_owned) {
-          c = BoundaryFaceGetCell(f);
+          c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh_, f);
           mesh_->face_normal(f, false, c, &dir);
           tmp = flux[0][f] * dir;
           if (tmp > 0.0) outflow += tmp;

@@ -17,6 +17,7 @@
 
 #include "GMVMesh.hh"
 #include "Mesh.hh"
+#include "Mesh_Algorithms.hh"
 #include "OperatorDefs.hh"
 #include "State.hh"
 
@@ -52,7 +53,7 @@ void Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, doubl
           bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
           bc_value[f] = it->second[0] * flux_units_;
         } else {
-          int c = BoundaryFaceGetCell(f);
+          int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh_, f);
           if (u_cell[0][c] < face_value) {
             bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
             bc_value[f] = it->second[0] * flux_units_;
