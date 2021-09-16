@@ -164,16 +164,16 @@ struct MeshCache {
   //
   MeshCache(const Teuchos::RCP<MeshFramework>& framework_mesh, bool natural=false)
     :  MeshCache() {
-    set_framework_mesh(framework_mesh);
-    InitializeFramework(natural);
+    setMeshFramework(framework_mesh);
+    initializeFramework(natural);
   }
-  void DestroyFramework() {
+  void destroyFramework() {
     framework_mesh_ = Teuchos::null;
   }
-  void InitializeFramework(bool natural=false);
-  const MeshFramework& get_framework_mesh() const { return *framework_mesh_; }
-  MeshFramework& get_framework_mesh() { return *framework_mesh_; }
-  void set_framework_mesh(const Teuchos::RCP<MeshFramework>& framework_mesh) {
+  void initializeFramework(bool natural=false);
+  const MeshFramework& getMeshFramework() const { return *framework_mesh_; }
+  MeshFramework& getMeshFramework() { return *framework_mesh_; }
+  void setMeshFramework(const Teuchos::RCP<MeshFramework>& framework_mesh) {
     framework_mesh_ = framework_mesh; }
 
   //
@@ -258,60 +258,75 @@ struct MeshCache {
   // ----------------------
   // Accessors and Mutators
   // ----------------------
-  Comm_ptr_type get_comm() const { return comm_; }
-  void set_comm(const Comm_ptr_type& comm) { comm_ = comm; }
+  Comm_ptr_type getComm() const { return comm_; }
+  void setComm(const Comm_ptr_type& comm) { comm_ = comm; }
 
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> get_geometric_model() const { return gm_; }
-  void set_geometric_model(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm) { gm_ = gm; }
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> getGeometricModel() const { return gm_; }
+  void setGeometricModel(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm) { gm_ = gm; }
 
   // space dimension describes the dimension of coordinates in space
-  std::size_t get_space_dimension() const { return space_dim_; }
-  void set_space_dimension(unsigned int dim) { space_dim_ = dim; }
+  std::size_t getSpaceDimension() const { return space_dim_; }
+  void setSpaceDimension(unsigned int dim) { space_dim_ = dim; }
 
   // manifold dimension describes the dimensionality of the corresponding R^n
   // manifold onto which this mesh can be projected.
-  std::size_t get_manifold_dimension() const { return manifold_dim_; }
-  void set_manifold_dimension(const unsigned int dim) { manifold_dim_ = dim; }
+  std::size_t getManifoldDimension() const { return manifold_dim_; }
+  void setManifoldDimension(const unsigned int dim) { manifold_dim_ = dim; }
 
   // Some meshes are subsets of or derived from a parent mesh.
   // Usually this is null, but some meshes may provide it.
-  Teuchos::RCP<const MeshCache> get_parent() const { return parent_; }
-  void set_parent(const Teuchos::RCP<const MeshCache>& parent) {
+  Teuchos::RCP<const MeshCache> getParentMesh() const { return parent_; }
+  void setParentMesh(const Teuchos::RCP<const MeshCache>& parent) {
     parent_ = parent; }
 
   // Some meshes have a corresponding mesh that is better for visualization.
-  const MeshCache& get_vis_mesh() const {
+  const MeshCache& getVisMesh() const {
     if (vis_mesh_.get()) return *vis_mesh_;
     return *this;
   }
-  void set_vis_mesh(const Teuchos::RCP<const MeshCache>& vis_mesh) {
+  void setVisMesh(const Teuchos::RCP<const MeshCache>& vis_mesh) {
     vis_mesh_ = vis_mesh; }
 
   // mesh properties
-  bool is_ordered() const { return is_ordered_; }
-  bool has_edges() const { return has_edges_; }
+  bool isOrdered() const { return is_ordered_; }
+  bool hasEdges() const { return has_edges_; }
 
-  // map access
-  const Entity_ID_View& get_boundary_faces() const {
-    return maps_.get_boundary_faces();
+  // -------------------
+  // Access map objects
+  // -------------------
+  //
+  // a list of all face LIDs that are on the boundary
+  const Entity_ID_View& getBoundaryFaces() const {
+    return maps_.getBoundaryFaces();
   }
-  const Entity_ID_View& get_boundary_nodes() const {
-    return maps_.get_boundary_nodes();
+  // a list of all node LIDs that are on the boundary
+  const Entity_ID_View& getBoundaryNodes() const {
+    return maps_.getBoundaryNodes();
   }
-  const Map_type& get_map(const Entity_kind kind, bool is_ghosted) const {
-    return maps_.get_map(kind, is_ghosted);
+  // maps define GIDs of each Entity_kind
+  const Map_type& getMap(const Entity_kind kind, bool is_ghosted) const {
+    return maps_.getMap(kind, is_ghosted);
   }
-  const Import_type& get_importer(const Entity_kind kind) const {
-    return maps_.get_importer(kind);
+  // importers allow scatter/gather operations
+  const Import_type& getImporter(const Entity_kind kind) const {
+    return maps_.getImporter(kind);
   }
-  const Import_type& get_boundary_face_importer() const {
-    return maps_.get_boundary_face_importer();
+  // an importer from FACE-indexed objects to BOUNDARY_FACE-indexed objects
+  //
+  // Note this is not the same as getImporter(BOUNDARY_FACE), which
+  // communicates BOUNDARY_FACE-indexed objects to other BOUNDARY_FACE-indexed
+  // objects.  See more details in MeshMaps_decl.hh
+  const Import_type& getBoundaryFaceImporter() const {
+    return maps_.getBoundaryFaceImporter();
   }
+  // an importer from NODE-indexed objects to BOUNDARY_NODE-indexed objects
   const Import_type& get_boundary_node_importer() const {
-    return maps_.get_boundary_node_importer();
+    return maps_.getBoundaryNodeImporter();
   }
 
-  // set access
+  // ----------------
+  // sets of entities
+  // ----------------
   const Entity_ID_View& getSetEntities(const std::string& region_name,
           const Entity_kind kind,
           const Parallel_type ptype) const;
@@ -794,7 +809,6 @@ struct MeshCache {
   // helper classes
   MeshMaps maps_;
   mutable MeshSets sets_;
-
 };
 
 

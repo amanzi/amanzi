@@ -9,6 +9,63 @@
 
 //! Collects maps and importers for Mesh objects.
 
+/*
+
+  Maps are indexing objects, a way of going from the "local ID", or LID, to
+  "global IDs" or GIDs.
+
+  LIDs are a non-negative integer from [0,num_entities_on_this_process)
+
+  GIDs may be any non-negative integer, though typically are in
+  [0,num_entities_globally).
+
+  A map, then is effectively an array of length num_entities_on_this_process
+  indexed by LID, containing the corresponding GID.
+
+  Boundary entity maps are somewhat different -- a boundary LID corresponds to
+  the GID of the corresponding entity, so they are not in
+  [0,num_global_boundary_entities), but in [0,num_global_entities).
+
+  Importers are used to provide scatter/gather halo exchange operations across
+  processors.  Importers implement the scatter operation; so for instance, the
+  following examples are valid code:
+
+  ..code::
+      // set up a ghosted vector
+      auto& cell_map maps.getMap(Entity_kind::CELL, true);
+      Vector_type vec(cell_map);
+      // ... set vec data somehow...
+
+      // scatter operation
+      vec.Import(vec, maps.getImporter(Entity_kind::CELL), Insert);
+
+      // gather operation
+      vec.Export(vec, maps.getImporter(Entity_kind::CELL), Add);
+
+  Note this is just as valid with BOUNDARY entities as with normal entities.
+
+  Additionally, importers are provided to import from a FACE vector to a
+  BOUNDARY_FACE vector (respectively NODE and BOUNDARY_NODE):
+
+
+  ..code::
+      // set up a face vector
+      auto& face_map maps.getMap(Entity_kind::FACE, true);
+      Vector_type face_vec(face_map);
+      // ... set face_vec data somehow...
+
+      // set up a boundary_face vector
+      auto& bf_map maps.getMap(Entity_kind::BOUNDARY_FACE, true);
+      Vector_type bf_vec(bf_map);
+
+      // import operation
+      bf_vec.Import(face_vec, maps.getBoundaryFaceImporter(), Insert);
+
+      // export operation
+      face_vec.Export(bf_vec, maps.getBoundaryFaceImporter(), Insert);
+
+*/
+
 #pragma once
 
 #include "AmanziTypes.hh"
@@ -43,18 +100,18 @@ class MeshMaps {
                   bool natural_ordering=false,
                   bool request_edges=false);
 
-  const Entity_ID_View& get_boundary_faces() const {
+  const Entity_ID_View& getBoundaryFaces() const {
     return boundary_faces_;
   }
-  const Entity_ID_View& get_boundary_nodes() const {
+  const Entity_ID_View& getBoundaryNodes() const {
     return boundary_nodes_;
   }
-  const Map_type& get_map(Entity_kind kind, bool include_ghost) const;
-  const Import_type& get_importer(Entity_kind kind) const;
-  const Import_type& get_boundary_face_importer() const {
+  const Map_type& getMap(Entity_kind kind, bool include_ghost) const;
+  const Import_type& getImporter(Entity_kind kind) const;
+  const Import_type& getBoundaryFaceImporter() const {
     return *boundary_face_importer_;
   }
-  const Import_type& get_boundary_node_importer() const {
+  const Import_type& getBoundaryNodeImporter() const {
     return *boundary_node_importer_;
   }
 

@@ -23,7 +23,7 @@ template<class Mesh_type>
 Cell_type getCellType(const Mesh_type& mesh, const Entity_ID c)
 {
   auto faces = mesh.getCellFaces(c);
-  if (mesh.get_manifold_dimension() == 2) {
+  if (mesh.getManifoldDimension() == 2) {
     switch (faces.size()) {
     case 3:
       return Cell_type::TRI;
@@ -34,7 +34,7 @@ Cell_type getCellType(const Mesh_type& mesh, const Entity_ID c)
     default:
       return Cell_type::POLYGON;
     }
-  } else if (mesh.get_manifold_dimension() == 3) {
+  } else if (mesh.getManifoldDimension() == 3) {
     int nquads = 0;
     for (const auto& f : faces) {
       Entity_ID_List fnodes;
@@ -61,7 +61,7 @@ Cell_type getCellType(const Mesh_type& mesh, const Entity_ID c)
     }
   } else {
     Errors::Message msg;
-    msg << "Mesh of manifold_dimension = " << mesh.get_manifold_dimension() << " not supported";
+    msg << "Mesh of manifold_dimension = " << mesh.getManifoldDimension() << " not supported";
     Exceptions::amanzi_throw(msg);
   }
   return Cell_type::UNKNOWN;
@@ -75,7 +75,7 @@ int getFaceDirectionInCell(const Mesh_type& mesh, const Entity_ID f, const Entit
   Entity_ID_List cfaces;
   Entity_Direction_List dirs;
   mesh.getCellFacesAndDirs(c, cfaces, &dirs);
-  int dir = 1;
+  int dir = 0;
   for (int j=0; j!=cfaces.size(); ++j) {
     if (cfaces[j] == f) {
       dir = dirs[j];
@@ -89,11 +89,11 @@ template<class Mesh_type>
 std::pair<double, AmanziGeometry::Point>
 computeCellGeometry(const Mesh_type& mesh, const Entity_ID c)
 {
-  if (mesh.get_manifold_dimension() == 2) {
+  if (mesh.getManifoldDimension() == 2) {
     auto ccoords = mesh.getCellCoordinates(c);
     auto vol_cent = std::make_pair((double)0,
-            AmanziGeometry::Point(mesh.get_space_dimension()));
-    AmanziGeometry::Point normal(mesh.get_space_dimension());
+            AmanziGeometry::Point(mesh.getSpaceDimension()));
+    AmanziGeometry::Point normal(mesh.getSpaceDimension());
     AmanziGeometry::polygon_get_area_centroid_normal(ccoords,
             &vol_cent.first, &vol_cent.second, &normal);
     return vol_cent;
@@ -122,7 +122,7 @@ computeCellGeometry(const Mesh_type& mesh, const Entity_ID c)
 
     auto ccoords = mesh.getCellCoordinates(c);
     auto vol_cent = std::make_pair((double)0,
-            AmanziGeometry::Point(mesh.get_space_dimension()));
+            AmanziGeometry::Point(mesh.getSpaceDimension()));
     AmanziGeometry::polyhed_get_vol_centroid(ccoords, faces.size(), nfnodes,
             cfcoords, &vol_cent.first, &vol_cent.second);
     return vol_cent;
@@ -134,7 +134,7 @@ template<class Mesh_type>
 std::tuple<double,AmanziGeometry::Point,Point_List>
 computeFaceGeometry(const Mesh_type& mesh, const Entity_ID f)
 {
-  if (mesh.get_manifold_dimension() == 3) {
+  if (mesh.getManifoldDimension() == 3) {
     // 3D Elements with possibly curved faces
     Point_List fcoords = mesh.getFaceCoordinates(f);
 
@@ -153,9 +153,9 @@ computeFaceGeometry(const Mesh_type& mesh, const Entity_ID f)
     }
     return std::make_tuple(area, centroid, normals);
 
-  } else if (mesh.get_manifold_dimension() == 2) {
+  } else if (mesh.getManifoldDimension() == 2) {
 
-    if (mesh.get_space_dimension() == 2) {
+    if (mesh.getSpaceDimension() == 2) {
       // 2D mesh
       auto fcoords = mesh.getFaceCoordinates(f);
       AMANZI_ASSERT(fcoords.size() == 2);
@@ -194,18 +194,19 @@ computeFaceGeometry(const Mesh_type& mesh, const Entity_ID f)
       for (int i = 0; i < cellids.size(); i++) {
         AmanziGeometry::Point cvec = fcoords[0] - mesh.getCellCentroid(cellids[i]);
         AmanziGeometry::Point trinormal = cvec^evec;
-        AmanziGeometry::Point normal = evec^trinormal;
+        normals[i] = evec^trinormal;
 
-        double len = norm(normal);
-        normal *= (area/len);
+        // renomralize to area
+        double len = norm(normals[i]);
+        normals[i] *= (area/len);
       }
       return std::make_tuple(area, centroid, normals);
     }
   }
 
   Errors::Message msg;
-  msg << "Invalid mesh argument to MeshAlgorithm: manifold_dim = " << mesh.get_manifold_dimension()
-      << ", space_dim = " << mesh.get_space_dimension();
+  msg << "Invalid mesh argument to MeshAlgorithm: manifold_dim = " << mesh.getManifoldDimension()
+      << ", space_dim = " << mesh.getSpaceDimension();
   Exceptions::amanzi_throw(msg);
   return std::make_tuple(0, AmanziGeometry::Point(), std::vector<AmanziGeometry::Point>());
 }

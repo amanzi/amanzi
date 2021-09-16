@@ -12,7 +12,7 @@
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
 #include "AmanziComm.hh"
-#include "Mesh.hh"
+#include "MeshFramework.hh"
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
 

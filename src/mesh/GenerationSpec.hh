@@ -28,8 +28,8 @@ namespace AmanziMesh {
  * The sole purpose of this class is to encapsulate the input
  * specifications for a generated unstructured mesh.  This should be
  * the only place in Amanzi where the parameter list for the
- * generation of an unstructured mesh is parsed.  
- * 
+ * generation of an unstructured mesh is parsed.
+ *
  */
 class GenerationSpec {
  public:
@@ -64,7 +64,7 @@ class GenerationSpec {
   Partitioner_type partitioner() const { return partitioner_; }
 
  protected:
-  
+
   /// overall mesh domain  FIXME: We already have a domain
 
   Teuchos::RCP<AmanziGeometry::RegionBox> domain_;

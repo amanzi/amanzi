@@ -48,8 +48,8 @@ resolveMeshSetGeometric(const AmanziGeometry::Region& region,
         const MeshCache& mesh)
 {
   AMANZI_ASSERT(region.is_geometric());
-  AMANZI_ASSERT(region.get_space_dimension() == mesh.get_space_dimension());
-  AMANZI_ASSERT(region.get_manifold_dimension() == mesh.get_manifold_dimension());
+  AMANZI_ASSERT(region.get_space_dimension() == mesh.getSpaceDimension());
+  AMANZI_ASSERT(region.get_manifold_dimension() == mesh.getManifoldDimension());
 
   // find the extent
   Entity_ID begin, end;
@@ -100,7 +100,7 @@ resolveMeshSetGeometric(const AmanziGeometry::Region& region,
     }
     entities.resize(lcv);
   } else if (kind == Entity_kind::BOUNDARY_FACE) {
-    auto& face_ids = mesh.get_boundary_faces();
+    auto& face_ids = mesh.getBoundaryFaces();
     int lcv = 0;
     for (int i=begin; i!=end; ++i) {
       if (region.inside((*centroids)[face_ids[i]])) {
@@ -110,7 +110,7 @@ resolveMeshSetGeometric(const AmanziGeometry::Region& region,
     }
     entities.resize(lcv);
   } else if (kind == Entity_kind::BOUNDARY_NODE) {
-    auto& node_ids = mesh.get_boundary_nodes();
+    auto& node_ids = mesh.getBoundaryNodes();
     int lcv = 0;
     for (int i=begin; i!=end; ++i) {
       if (region.inside((*centroids)[node_ids[i]])) {
@@ -133,8 +133,8 @@ resolveMeshSet(const AmanziGeometry::RegionLogical& region,
                const Parallel_type ptype,
                const MeshCache& mesh)
 {
-  AMANZI_ASSERT(region.get_space_dimension() == mesh.get_space_dimension());
-  AMANZI_ASSERT(region.get_manifold_dimension() == mesh.get_manifold_dimension());
+  AMANZI_ASSERT(region.get_space_dimension() == mesh.getSpaceDimension());
+  AMANZI_ASSERT(region.get_manifold_dimension() == mesh.getManifoldDimension());
   AMANZI_ASSERT(false);
   return Entity_ID_List();
 }
@@ -149,8 +149,8 @@ resolveMeshSet(const AmanziGeometry::RegionEnumerated& region,
                const Parallel_type ptype,
                const MeshCache& mesh)
 {
-  AMANZI_ASSERT(region.get_space_dimension() == mesh.get_space_dimension());
-  AMANZI_ASSERT(region.get_manifold_dimension() == mesh.get_manifold_dimension());
+  AMANZI_ASSERT(region.get_space_dimension() == mesh.getSpaceDimension());
+  AMANZI_ASSERT(region.get_manifold_dimension() == mesh.getManifoldDimension());
   AMANZI_ASSERT(false);
   return Entity_ID_List();
 }

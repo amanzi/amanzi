@@ -13,7 +13,6 @@
 
 #include "AmanziComm.hh"
 #include "Mesh.hh"
-#include "MeshFactory.hh"
 #include "MeshAudit.hh"
 
 #include "framework_meshes.hh"
@@ -33,7 +32,7 @@ TEST(MESH_GEOMETRY_PLANAR)
               << "Testing 2D geometry with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
 
-    auto mesh = createFrameworkStructuredUnitQuad(Preference{frm}, 2,2);
+    auto mesh = createStructuredUnitQuad(Preference{frm}, 2,2);
     testMeshAudit<MeshAudit, Mesh>(mesh);
     testGeometryQuad(mesh,2,2);
     testExteriorMapsUnitBox(mesh, 2, 2);
@@ -59,9 +58,9 @@ TEST(MESH_GEOMETRY_1CUBE_GENERATED)
     std::cout << std::endl
               << "Testing 3D geometry with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createFrameworkStructuredUnitHex(Preference{frm}, 1,1,1);
+    auto mesh = createStructuredUnitHex(Preference{frm}, 1,1,1);
     testMeshAudit<MeshAudit, Mesh>(mesh);
-    testGeometryCube<Mesh>(mesh,1,1,1);
+    testGeometryCube(mesh,1,1,1);
 
     // Exterior maps not supported by SIMPLE
     if (frm != Framework::SIMPLE) testExteriorMapsUnitBox(mesh, 1,1,1);
@@ -88,9 +87,9 @@ TEST(MESH_GEOMETRY_1CUBE_EXO)
     std::cout << std::endl
               << "Testing 3D Box 1x1x1 Exo geometry with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createFrameworkUnstructured(Preference{frm}, "test/hex_1x1x1_sets.exo");
+    auto mesh = createUnstructured(Preference{frm}, "test/hex_1x1x1_sets.exo");
     testMeshAudit<MeshAudit, Mesh>(mesh);
-    testGeometryCube<Mesh>(mesh,1,1,1);
+    testGeometryCube(mesh,1,1,1);
     if (frm == Framework::MSTK)
       testExteriorMapsUnitBox(mesh, 1,1,1);
   }
@@ -112,9 +111,9 @@ TEST(MESH_GEOMETRY_3CUBE)
     std::cout << std::endl
               << "Testing 3D Box 3x3x3 with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createFrameworkStructuredUnitHex(Preference{frm}, 3,3,3);
+    auto mesh = createStructuredUnitHex(Preference{frm}, 3,3,3);
     testMeshAudit<MeshAudit, Mesh>(mesh);
-    testGeometryCube<Mesh>(mesh,3,3,3);
+    testGeometryCube(mesh,3,3,3);
     if (frm == Framework::MSTK) {
       testExteriorMapsUnitBox(mesh,3,3,3);
     }
@@ -140,9 +139,9 @@ TEST(MESH_GEOMETRY_3CUBE_EXO)
     std::cout << std::endl
               << "Testing 3D Box 3x3x3 Exo with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createFrameworkUnstructured(Preference{frm}, "test/hex_3x3x3_sets.exo");
+    auto mesh = createUnstructured(Preference{frm}, "test/hex_3x3x3_sets.exo");
     testMeshAudit<MeshAudit, Mesh>(mesh);
-    testGeometryCube<Mesh>(mesh,3,3,3);
+    testGeometryCube(mesh,3,3,3);
     if (frm == Framework::MSTK) {
       testExteriorMapsUnitBox(mesh,3,3,3);
     }
@@ -172,9 +171,9 @@ TEST(MESH_GEOMETRY_3CUBE_EXO)
 //     std::cout << std::endl
 //               << "Testing 3D Box 3x3x3 Exo with " << AmanziMesh::framework_names.at(frm) << std::endl
 //               << "------------------------------------------------" << std::endl;
-//     auto mesh = createFrameworkUnstructured(Preference{frm}, "test/hex_3x3x3.par");
+//     auto mesh = createUnstructured(Preference{frm}, "test/hex_3x3x3.par");
 //     testMeshAudit<MeshAudit, Mesh>(mesh);
-//     testGeometryCube<Mesh>(mesh,3,3,3);
+//     testGeometryCube(mesh,3,3,3);
 //     if (frm == Framework::MSTK) {
 //       testExteriorMapsUnitBox(mesh,3,3,3);
 //     }
@@ -198,9 +197,9 @@ TEST(MESH_GEOMETRY_2x3CUBE)
     std::cout << std::endl
               << "Testing 3D Box 2x2x3 with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createFrameworkStructuredUnitHex(Preference{frm}, 2,2,3);
+    auto mesh = createStructuredUnitHex(Preference{frm}, 2,2,3);
     testMeshAudit<MeshAudit, Mesh>(mesh);
-    testGeometryCube<Mesh>(mesh,2,2,3);
+    testGeometryCube(mesh,2,2,3);
 
     if (frm == Framework::MSTK)
       testExteriorMapsUnitBox(mesh,2,2,3);
@@ -227,7 +226,7 @@ TEST(MESH_GEOMETRY_FRACTURE_EXO)
     std::cout << std::endl
               << "Testing 3D Fracture Exo with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createFrameworkUnstructured(Preference{frm}, "test/fractures.exo");
+    auto mesh = createUnstructured(Preference{frm}, "test/fractures.exo");
     testMeshAudit<MeshAudit, Mesh>(mesh);
   }
 }
@@ -245,7 +244,7 @@ TEST(MESH_GEOMETRY_PINCHOUTS)
     std::cout << std::endl
               << "Testing 3D Pinchout with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createFrameworkUnstructured(Preference{frm}, "test/test_pri_pinchout_mesh.exo");
+    auto mesh = createUnstructured(Preference{frm}, "test/test_pri_pinchout_mesh.exo");
     testMeshAudit<MeshAudit, Mesh>(mesh);
   }
 }

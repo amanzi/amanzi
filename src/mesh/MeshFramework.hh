@@ -55,49 +55,49 @@ class MeshFramework  {
   // ----------------------
   // Accessors and Mutators
   // ----------------------
-  Comm_ptr_type get_comm() const { return comm_; }
-  void set_comm(const Comm_ptr_type& comm) { comm_ = comm; }
+  Comm_ptr_type getComm() const { return comm_; }
+  void setComm(const Comm_ptr_type& comm) { comm_ = comm; }
 
-  Teuchos::RCP<Teuchos::ParameterList> get_parameter_list() const { return plist_; }
-  void set_parameter_list(const Teuchos::RCP<Teuchos::ParameterList>& plist) { plist_ = plist; }
+  Teuchos::RCP<Teuchos::ParameterList> getParameterList() const { return plist_; }
+  void setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& plist) { plist_ = plist; }
 
-  Teuchos::RCP<const VerboseObject> get_verbose_object() const { return vo_; }
-  void set_verbose_object(const Teuchos::RCP<const VerboseObject>& vo) { vo_ = vo; }
+  Teuchos::RCP<const VerboseObject> getVerboseObject() const { return vo_; }
+  void setVerboseObject(const Teuchos::RCP<const VerboseObject>& vo) { vo_ = vo; }
 
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> get_geometric_model() const { return gm_; }
-  void set_geometric_model(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm) { gm_ = gm; }
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> getGeometricModel() const { return gm_; }
+  void setGeometricModel(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm) { gm_ = gm; }
 
   // space dimension describes the dimension of coordinates in space
-  std::size_t get_space_dimension() const { return space_dim_; }
+  std::size_t getSpaceDimension() const { return space_dim_; }
   void set_space_dimension(unsigned int dim) { space_dim_ = dim; }
 
   // manifold dimension describes the dimensionality of the corresponding R^n
   // manifold onto which this mesh can be projected.
-  std::size_t get_manifold_dimension() const { return manifold_dim_; }
+  std::size_t getManifoldDimension() const { return manifold_dim_; }
   void set_manifold_dimension(const unsigned int dim) { manifold_dim_ = dim; }
 
   // Some meshes are subsets of or derived from a parent mesh.
   // Usually this is null, but some meshes may provide it.
-  virtual Teuchos::RCP<const MeshFramework> get_parent() const { return Teuchos::null; }
+  virtual Teuchos::RCP<const MeshFramework> getParentMesh() const { return Teuchos::null; }
 
   // Some meshes have a corresponding mesh that is better for visualization.
-  const MeshFramework& get_vis_mesh() const {
+  const MeshFramework& getVisMesh() const {
     if (vis_mesh_.get()) return *vis_mesh_;
     return *this;
   }
-  void set_vis_mesh(const Teuchos::RCP<const MeshFramework>& vis_mesh) { vis_mesh_ = vis_mesh; }
+  void setVisMesh(const Teuchos::RCP<const MeshFramework>& vis_mesh) { vis_mesh_ = vis_mesh; }
 
   // Some meshes have edges
   //
   // DEVELOPER NOTE: frameworks that do not implement edges need not provide
   // any edge method -- defaults here all throw errors.
-  virtual bool has_edges() const { return false; }
+  virtual bool hasEdges() const { return false; }
 
   // Some meshes may natively order in the ExodusII ordering
-  virtual bool is_ordered() const { return false; }
+  virtual bool isOrdered() const { return false; }
 
   // Some meshes can be deformed.
-  virtual bool is_deformable() const { return false; }
+  virtual bool isDeformable() const { return false; }
 
   virtual void writeToExodusFile(const std::string& filename) const {
     throwNotImplemented_("writeExodusFile");

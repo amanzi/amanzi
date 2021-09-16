@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include "MeshFramework.hh"
+#include "MeshFrameworkTraits.hh"
 #include "MeshCache.hh"
 
 using namespace Amanzi;

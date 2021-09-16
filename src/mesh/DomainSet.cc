@@ -11,6 +11,7 @@
 
 #include "Epetra_MultiVector.h"
 
+#include "Key.hh"
 #include "Mesh.hh"
 #include "DomainSet.hh"
 

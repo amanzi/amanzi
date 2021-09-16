@@ -51,7 +51,7 @@ class Mesh_simple : public MeshFramework {
 
   virtual ~Mesh_simple() = default;
 
-  virtual bool has_edges() const override { return edges_requested_; }
+  virtual bool hasEdges() const override { return edges_requested_; }
 
   // Number of entities of any kind (cell, face, node) and in a
   // particular category (OWNED, GHOST, ALL)

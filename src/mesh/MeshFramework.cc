@@ -74,7 +74,7 @@ Cell_type
 MeshFramework::getCellType_(const Entity_ID c,
                            const Entity_ID_List& faces) const
 {
-  if (get_manifold_dimension() == 2) {
+  if (getManifoldDimension() == 2) {
     switch (faces.size()) {
     case 3:
       return Cell_type::TRI;
@@ -85,7 +85,7 @@ MeshFramework::getCellType_(const Entity_ID c,
     default:
       return Cell_type::POLYGON;
     }
-  } else if (get_manifold_dimension() == 3) {
+  } else if (getManifoldDimension() == 3) {
     int nquads = 0;
     for (const auto& f : faces) {
       Entity_ID_List fnodes;
@@ -112,7 +112,7 @@ MeshFramework::getCellType_(const Entity_ID c,
     }
   } else {
     Errors::Message msg;
-    msg << "Mesh of manifold_dimension = " << get_manifold_dimension() << " not supported";
+    msg << "Mesh of manifold_dimension = " << getManifoldDimension() << " not supported";
     Exceptions::amanzi_throw(msg);
   }
   return Cell_type::UNKNOWN;
@@ -228,13 +228,18 @@ MeshFramework::getFaceNormal(const Entity_ID f, const Entity_ID c, int * const o
   int i;
   for (i=0; i!=fcells.size(); ++i) {
     if (cc == fcells[i]) {
-      if (orientation && (get_space_dimension() == get_manifold_dimension())) {
-        *orientation = MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
-      } else if (c < 0) {
-        if (get_space_dimension() == get_manifold_dimension()) {
+      if (getSpaceDimension() == getManifoldDimension()) {
+        // c may exist or not
+        if (c < 0) {
           int dir = MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
           std::get<2>(geom)[i] *= dir;
-        } else {
+        } else if (orientation) {
+          // orientation only makes sense if c >= 0
+          *orientation = MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
+        }
+      } else {
+        // c must exist
+        if (c < 0) {
           Errors::Message msg("MeshFramework: asking for the natural normal of a submanifold mesh is not valid.");
           Exceptions::amanzi_throw(msg);
         }
@@ -403,7 +408,7 @@ MeshFramework::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
 void
 MeshFramework::hasEdgesOrThrow() const
 {
-  if (!has_edges()) {
+  if (!hasEdges()) {
     Errors::Message msg("MeshFramework does not include edges.");
     Exceptions::amanzi_throw(msg);
   }

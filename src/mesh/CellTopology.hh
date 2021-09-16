@@ -16,7 +16,7 @@
 // Node and face numbering conventions for standard 3D cell types
 namespace Amanzi {
 namespace AmanziMesh {
-
+namespace Topology {
 
 // expected number of faces for standard cells
 // 0 indicates that it is not possible to specify the number for this cell type
@@ -91,6 +91,7 @@ static const int HexTetVert[10][4] = {{0,1,3,4}, {1,2,0,5}, {2,3,1,6},
                                       {1,3,4,6}
 };
 
+} // namespace Topology
 } // namespace AmanziMesh
 } // namespace Amanzi
 

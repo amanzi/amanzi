@@ -15,7 +15,7 @@
 
 #include "Geometry.hh"
 #include "MeshException.hh"
-#include "MeshFramework.hh"
+#include "MeshFrameworkTraits.hh"
 #include "MeshFrameworkFactory.hh"
 
 TEST(MESH_MAPS)

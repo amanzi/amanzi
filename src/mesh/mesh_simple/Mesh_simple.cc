@@ -458,7 +458,7 @@ void Mesh_simple::setNodeCoordinate(const AmanziMesh::Entity_ID local_node_id,
   unsigned int offset = (unsigned int) 3*local_node_id;
 
   std::vector<double>::iterator destination_begin = coordinates_.begin() + offset;
-  int spdim = get_space_dimension();
+  int spdim = getSpaceDimension();
   for (int i = 0; i < spdim; i++) {
     *destination_begin = ncoord[i];
     destination_begin++;

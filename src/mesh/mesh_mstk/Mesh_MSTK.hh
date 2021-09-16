@@ -97,12 +97,12 @@ class Mesh_MSTK : public MeshFramework {
   // Accessors/mutators
   //
   // Parent entity in the source mesh if mesh was derived from another mesh
-  virtual Teuchos::RCP<const MeshFramework> get_parent() const override { return parent_mesh_; }
-  void set_parent(const Teuchos::RCP<const Mesh_MSTK>& parent) { parent_mesh_ = parent; }
+  virtual Teuchos::RCP<const MeshFramework> getParentMesh() const override { return parent_mesh_; }
+  void setParentMesh(const Teuchos::RCP<const Mesh_MSTK>& parent) { parent_mesh_ = parent; }
 
-  virtual bool has_edges() const override { return edges_requested_; }
-  virtual bool is_deformable() const override { return true; }
-  virtual bool is_ordered() const override { return true; }
+  virtual bool hasEdges() const override { return edges_requested_; }
+  virtual bool isDeformable() const override { return true; }
+  virtual bool isOrdered() const override { return true; }
 
   //
   // Entity meta-data
@@ -313,7 +313,7 @@ class Mesh_MSTK : public MeshFramework {
                           {MVERTEX, MVERTEX, MVERTEX, MEDGE},    // 1d meshes
                           {MVERTEX, MEDGE,   MEDGE,   MFACE},    // 2d meshes
                           {MVERTEX, MEDGE,   MFACE,   MREGION}}; // 3d meshes
-    return kind2mtype[get_manifold_dimension()][(int)kind - 1];
+    return kind2mtype[getManifoldDimension()][(int)kind - 1];
   }
 
   void getCellFacesAndDirs_ordered_(const Entity_ID cellid,

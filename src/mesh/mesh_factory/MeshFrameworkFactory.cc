@@ -17,7 +17,7 @@
 #include "FileFormat.hh"
 
 // #include "MeshExtractedManifold.hh"
-#include "MeshColumn.hh"
+// #include "MeshColumn.hh"
 #include "Mesh_simple.hh"
 
 #ifdef HAVE_MESH_MSTK
@@ -31,25 +31,25 @@ namespace Amanzi {
 namespace AmanziMesh {
 
 
-// -------------------------------------------------------------
-// Factory for creating a MeshColumn object from a parent and a column ID
-// -------------------------------------------------------------
-Teuchos::RCP<MeshColumn>
-createColumnMesh(const Teuchos::RCP<const Mesh>& parent_mesh,
-                 int col_id,
-                 const Teuchos::RCP<Teuchos::ParameterList>& plist)
-{
-  AMANZI_ASSERT(col_id >= 0);
-  AMANZI_ASSERT(col_id < parent_mesh->num_columns());
+// // -------------------------------------------------------------
+// // Factory for creating a MeshColumn object from a parent and a column ID
+// // -------------------------------------------------------------
+// Teuchos::RCP<MeshColumn>
+// createColumnMesh(const Teuchos::RCP<const Mesh>& parent_mesh,
+//                  int col_id,
+//                  const Teuchos::RCP<Teuchos::ParameterList>& plist)
+// {
+//   AMANZI_ASSERT(col_id >= 0);
+//   AMANZI_ASSERT(col_id < parent_mesh->num_columns());
 
-  // create the extracted mesh of the column of cells
-  MeshFactory fac(getCommSelf(), parent_mesh->geometric_model(), plist);
-  Teuchos::RCP<Mesh> extracted_mesh = fac.create(parent_mesh,
-          parent_mesh->cells_of_column(col_id), CELL, false, true, false);
+//   // create the extracted mesh of the column of cells
+//   MeshFactory fac(getCommSelf(), parent_mesh->geometric_model(), plist);
+//   Teuchos::RCP<Mesh> extracted_mesh = fac.create(parent_mesh,
+//           parent_mesh->cells_of_column(col_id), CELL, false, true, false);
 
-  // create the MeshColumn object
-  return Teuchos::rcp(new MeshColumn(extracted_mesh, plist));
-}
+//   // create the MeshColumn object
+//   return Teuchos::rcp(new MeshColumn(extracted_mesh, plist));
+// }
 
 
 
@@ -316,12 +316,12 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const MeshFramework>& inmesh,
   // we have sane defaults from the parent mesh for some things
   auto gm = Teuchos::RCP<const AmanziGeometry::GeometricModel>(gm_);
   if (gm == Teuchos::null) {
-    gm = inmesh->get_geometric_model();
+    gm = inmesh->getGeometricModel();
   }
 
   // create the comm via split
   Comm_ptr_type comm = Teuchos::null;
-  auto parent_comm = Teuchos::rcp_dynamic_cast<const MpiComm_type>(inmesh->get_comm());
+  auto parent_comm = Teuchos::rcp_dynamic_cast<const MpiComm_type>(inmesh->getComm());
   auto& expert = plist_->sublist("unstructured").sublist("expert");
   if (parent_comm != Teuchos::null &&
       expert.get<bool>("create subcommunicator", false)) {
@@ -338,7 +338,7 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const MeshFramework>& inmesh,
     }
     if (!empty) comm = Teuchos::rcp(new Epetra_MpiComm(child_comm));
   } else {
-    comm = inmesh->get_comm();
+    comm = inmesh->getComm();
   }
 
   // check that ids are unique
@@ -361,8 +361,8 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const MeshFramework>& inmesh,
       if (comm != Teuchos::null) {
         auto mesh = Teuchos::rcp(new Mesh_MSTK(
                   inmesh, setids, setkind, flatten,
-                  comm, gm, plist_, request_faces, request_edges));
-        mesh->BuildCache();
+                  comm, gm, plist_));
+//        mesh->BuildCache();
         return mesh;
       } else {
         return Teuchos::null;
@@ -387,7 +387,7 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const MeshFramework>& inmesh,
 //                     const bool flatten)
 // {
 //   if (extraction_method_ == "manifold mesh") {
-//     const auto& comm = inmesh->get_comm();
+//     const auto& comm = inmesh->getComm();
 //     const auto& gm = inmesh->geometric_model();
 
 //     // greedy solution for more than one sets. A new region is forced into GM
@@ -412,7 +412,7 @@ MeshFrameworkFactory::create(const Teuchos::RCP<const MeshFramework>& inmesh,
 //     inmesh->get_set_entities(name, setkind, Parallel_type::OWNED, &ids_l);
 //     ids.insert(ids.end(), ids_l.begin(), ids_l.end());
 //   }
-//   return create(inmesh, ids, setkind, flatten, request_faces, request_edges);
+//   return create(inmesh, ids, setkind, flatten);
 // }
 
 

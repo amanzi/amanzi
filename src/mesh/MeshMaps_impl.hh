@@ -11,7 +11,9 @@
 
 #pragma once
 
+#include <set>
 #include "AmanziTypes.hh"
+#include "MeshDefs.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -24,8 +26,8 @@ createMapsFromMeshGIDs(const Mesh& mesh, const Entity_kind kind)
   Entity_ID num_owned = mesh.getNumEntities(kind, Parallel_type::OWNED);
   Entity_GID_List gids = mesh.getEntityGIDs(kind, Parallel_type::ALL);
   return std::make_pair(
-    Teuchos::rcp(new Epetra_Map(-1, gids.size(), gids.data(), 0, *mesh.get_comm())),
-    Teuchos::rcp(new Epetra_Map(-1, num_owned, gids.data(), 0, *mesh.get_comm())));
+    Teuchos::rcp(new Epetra_Map(-1, gids.size(), gids.data(), 0, *mesh.getComm())),
+    Teuchos::rcp(new Epetra_Map(-1, num_owned, gids.data(), 0, *mesh.getComm())));
 }
 
 // returns used, owned
@@ -36,8 +38,8 @@ createMapsFromNaturalGIDs(const Mesh& mesh, const Entity_kind kind)
   Entity_ID num_owned = mesh.getNumEntities(kind, Parallel_type::OWNED);
   Entity_ID num_all = mesh.getNumEntities(kind, Parallel_type::ALL);
   return std::make_pair(
-    Teuchos::rcp(new Epetra_Map(-1, num_all, 0, *mesh.get_comm())),
-    Teuchos::rcp(new Epetra_Map(-1, num_owned, 0, *mesh.get_comm())));
+    Teuchos::rcp(new Epetra_Map(-1, num_all, 0, *mesh.getComm())),
+    Teuchos::rcp(new Epetra_Map(-1, num_owned, 0, *mesh.getComm())));
 }
 
 
@@ -46,7 +48,7 @@ void MeshMaps::initialize(const Mesh& mesh, bool natural, bool request_edges)
 {
   std::vector<Entity_kind> to_construct{Entity_kind::CELL,
     Entity_kind::FACE, Entity_kind::NODE};
-  if (request_edges && mesh.has_edges()) to_construct.push_back(Entity_kind::EDGE);
+  if (request_edges && mesh.hasEdges()) to_construct.push_back(Entity_kind::EDGE);
 
   for (const auto& kind : to_construct) {
     std::pair<Teuchos::RCP<Epetra_Map>, Teuchos::RCP<Epetra_Map>> maps;
@@ -79,16 +81,16 @@ void MeshMaps::initialize(const Mesh& mesh, bool natural, bool request_edges)
   boundary_faces_.resize(nbf_all);
 
   // -- convert to GID
-  const auto& fmap_all = get_map(Entity_kind::FACE, true);
+  const auto& fmap_all = getMap(Entity_kind::FACE, true);
   for (std::size_t i=0; i!=nbf_all; ++i) {
     boundary_faces_[i] = fmap_all.GID(boundary_faces_[i]);
   }
 
   // -- construct map, importer
   all_[Entity_kind::BOUNDARY_FACE] =
-    Teuchos::rcp(new Epetra_Map(-1, nbf_all, boundary_faces_.data(), 0, *mesh.get_comm()));
+    Teuchos::rcp(new Epetra_Map(-1, nbf_all, boundary_faces_.data(), 0, *mesh.getComm()));
   owned_[Entity_kind::BOUNDARY_FACE] =
-    Teuchos::rcp(new Epetra_Map(-1, nbf_owned, boundary_faces_.data(), 0, *mesh.get_comm()));
+    Teuchos::rcp(new Epetra_Map(-1, nbf_owned, boundary_faces_.data(), 0, *mesh.getComm()));
   importer_[Entity_kind::BOUNDARY_FACE] =
     Teuchos::rcp(new Epetra_Import(*all_[Entity_kind::BOUNDARY_FACE], *owned_[Entity_kind::BOUNDARY_FACE]));
   // -- additional importer from face --> boundary_face
@@ -109,7 +111,7 @@ void MeshMaps::initialize(const Mesh& mesh, bool natural, bool request_edges)
   std::size_t nnodes_owned = mesh.getNumEntities(Entity_kind::NODE, Parallel_type::ALL);
   std::size_t nbn_owned = 0;
   std::size_t nbn_all = 0;
-  const auto& nmap_all = get_map(Entity_kind::NODE, true);
+  const auto& nmap_all = getMap(Entity_kind::NODE, true);
   for (const auto& bn : bnodes_lid) {
     boundary_nodes_[bn] = nmap_all.GID(bn);
     ++nbn_all;
@@ -118,9 +120,9 @@ void MeshMaps::initialize(const Mesh& mesh, bool natural, bool request_edges)
 
   // -- construct map, importer
   all_[Entity_kind::BOUNDARY_NODE] =
-    Teuchos::rcp(new Epetra_Map(-1, nbn_all, boundary_nodes_.data(), 0, *mesh.get_comm()));
+    Teuchos::rcp(new Epetra_Map(-1, nbn_all, boundary_nodes_.data(), 0, *mesh.getComm()));
   owned_[Entity_kind::BOUNDARY_NODE] =
-    Teuchos::rcp(new Epetra_Map(-1, nbn_owned, boundary_nodes_.data(), 0, *mesh.get_comm()));
+    Teuchos::rcp(new Epetra_Map(-1, nbn_owned, boundary_nodes_.data(), 0, *mesh.getComm()));
   importer_[Entity_kind::BOUNDARY_NODE] =
     Teuchos::rcp(new Epetra_Import(*all_[Entity_kind::BOUNDARY_NODE], *owned_[Entity_kind::BOUNDARY_NODE]));
   // -- additional importer from node --> boundary_node
@@ -129,7 +131,7 @@ void MeshMaps::initialize(const Mesh& mesh, bool natural, bool request_edges)
 }
 
 const Map_type&
-MeshMaps::get_map(Entity_kind kind, bool include_ghost) const
+MeshMaps::getMap(Entity_kind kind, bool include_ghost) const
 {
   if (include_ghost) {
     return *all_.at(kind);
@@ -139,7 +141,7 @@ MeshMaps::get_map(Entity_kind kind, bool include_ghost) const
 }
 
 const Epetra_Import&
-MeshMaps::get_importer(Entity_kind kind) const
+MeshMaps::getImporter(Entity_kind kind) const
 {
   return *importer_.at(kind);
 }

@@ -48,21 +48,21 @@ MeshCache::MeshCache() :
 {}
 
 
-void MeshCache::InitializeFramework(bool natural)
+void MeshCache::initializeFramework(bool natural)
 {
-  comm_ = framework_mesh_->get_comm();
-  gm_ = framework_mesh_->get_geometric_model();
-  space_dim_ = framework_mesh_->get_space_dimension();
-  manifold_dim_ = framework_mesh_->get_manifold_dimension();
+  comm_ = framework_mesh_->getComm();
+  gm_ = framework_mesh_->getGeometricModel();
+  space_dim_ = framework_mesh_->getSpaceDimension();
+  manifold_dim_ = framework_mesh_->getManifoldDimension();
 
-  is_ordered_ = framework_mesh_->is_ordered();
-  has_edges_ = framework_mesh_->has_edges();
+  is_ordered_ = framework_mesh_->isOrdered();
+  has_edges_ = framework_mesh_->hasEdges();
 
   ncells_owned = framework_mesh_->getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
   ncells_all = framework_mesh_->getNumEntities(Entity_kind::CELL, Parallel_type::ALL);
   nfaces_owned = framework_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
   nfaces_all = framework_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::ALL);
-  if (framework_mesh_->has_edges()) {
+  if (framework_mesh_->hasEdges()) {
     nedges_owned = framework_mesh_->getNumEntities(Entity_kind::EDGE, Parallel_type::OWNED);
     nedges_all = framework_mesh_->getNumEntities(Entity_kind::EDGE, Parallel_type::ALL);
   }
@@ -70,10 +70,10 @@ void MeshCache::InitializeFramework(bool natural)
   nnodes_all = framework_mesh_->getNumEntities(Entity_kind::NODE, Parallel_type::ALL);
   buildMaps(natural);
 
-  nboundary_faces_owned = get_map(Entity_kind::BOUNDARY_FACE, false).NumMyElements();
-  nboundary_faces_all = get_map(Entity_kind::BOUNDARY_FACE, true).NumMyElements();
-  nboundary_nodes_owned = get_map(Entity_kind::BOUNDARY_NODE, false).NumMyElements();
-  nboundary_nodes_all = get_map(Entity_kind::BOUNDARY_NODE, true).NumMyElements();
+  nboundary_faces_owned = getMap(Entity_kind::BOUNDARY_FACE, false).NumMyElements();
+  nboundary_faces_all = getMap(Entity_kind::BOUNDARY_FACE, true).NumMyElements();
+  nboundary_nodes_owned = getMap(Entity_kind::BOUNDARY_NODE, false).NumMyElements();
+  nboundary_nodes_all = getMap(Entity_kind::BOUNDARY_NODE, true).NumMyElements();
 }
 
 
@@ -86,7 +86,7 @@ MeshCache::getSetEntities(const std::string& region_name,
   if (sets_.count(key)) {
     return sets_.at(key);
   } else {
-    auto region = get_geometric_model()->FindRegion(region_name);
+    auto region = getGeometricModel()->FindRegion(region_name);
     sets_[key] = resolveMeshSet(*region, kind, ptype, *this);
     return sets_.at(key);
   }
@@ -396,12 +396,12 @@ void MeshCache::cacheNodeCoordinates()
 // destroyed.
 void MeshCache::precacheLabeledSets()
 {
-  for (const auto& rgn : *get_geometric_model()) {
+  for (const auto& rgn : *getGeometricModel()) {
     if (rgn->get_type() == AmanziGeometry::RegionType::LABELEDSET) {
       auto rgn_lbl = Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
       AMANZI_ASSERT(rgn_lbl);
 
-      if (get_parent() != Teuchos::null) {
+      if (getParentMesh() != Teuchos::null) {
         AMANZI_ASSERT(false); // not yet implemented lifted sets
       } else {
         auto entity_kind = createEntityKind(rgn_lbl->entity_str());
@@ -446,7 +446,7 @@ void cacheAll(MeshCache& mesh)
   mesh.cacheFaceGeometry();
   mesh.cacheCellGeometry();
 
-  if (mesh.has_edges()) {
+  if (mesh.hasEdges()) {
     mesh.cacheCellEdges();
     mesh.cacheEdgeCells();
     mesh.cacheFaceEdges();

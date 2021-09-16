@@ -33,10 +33,10 @@ class MeshColumn;
 // -------------------------------------------------------------
 // Factory for creating a MeshColumn object from a parent and a column ID
 // -------------------------------------------------------------
-Teuchos::RCP<MeshColumn>
-createColumnMesh(const Teuchos::RCP<const Mesh>& parent_mesh,
-                 int col_id,
-                 const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null);
+// Teuchos::RCP<MeshColumn>
+// createColumnMesh(const Teuchos::RCP<const Mesh>& parent_mesh,
+//                  int col_id,
+//                  const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null);
 
 // -------------------------------------------------------------
 //  class MeshFrameworkFactory

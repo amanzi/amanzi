@@ -22,7 +22,7 @@
 #include "Teuchos_Array.hpp"
 
 #include "RegionFactory.hh"
-#include "Mesh.hh"
+#include "MeshFramework.hh"
 #include "MeshFactory.hh"
 
 #include "framework_meshes.hh"
@@ -78,11 +78,11 @@ TEST(MESH_VOLUME_EXTRACTION_GENERATED)
     testHexMeshSets3x3x3(mesh, false, frm);
 
     // Check that their parents are as expected
-    int ncells = mesh->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+    int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
     for (int i = 0; i < ncells; ++i) {
-      int parent_cell = mesh->entity_get_parent(AmanziMesh::CELL,i);
-      auto cc = mesh->cell_centroid(i);
-      auto pcc = parent_mesh->cell_centroid(parent_cell);
+      int parent_cell = mesh->getEntityParent(AmanziMesh::Entity_kind::CELL,i);
+      auto cc = mesh->getCellCentroid(i)
+      auto pcc = parent_mesh->getCellCentroid(parent_cell)
       CHECK_CLOSE(cc[0], pcc[0], 1.e-10);
       CHECK_CLOSE(cc[1], pcc[1], 1.e-10);
       CHECK_CLOSE(cc[2], pcc[2], 1.e-10);
@@ -146,7 +146,7 @@ TEST(MESH_VOLUME_EXTRACTION_EXO)
 
     // make sure we can get sets on the mesh
     AmanziMesh::Entity_ID_List set_ids;
-    parent_mesh->get_set_entities("Region 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL, &set_ids);
+    parent_mesh->get_set_entities("Region 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL, &set_ids);
     CHECK_EQUAL(9, set_ids.size());
     parent_mesh->build_columns();
 
@@ -164,38 +164,38 @@ TEST(MESH_VOLUME_EXTRACTION_EXO)
     auto column_mesh = fac.create(parent_mesh, cell_list, AmanziMesh::Entity_kind::CELL, false);
 
     // Number of cells in column mesh
-    int ncells_col = column_mesh->num_entities(AmanziMesh::CELL,
+    int ncells_col = column_mesh->getNumEntities(AmanziMesh::Entity_kind::CELL,
             AmanziMesh::Parallel_type::OWNED);
     CHECK_EQUAL(ncells,ncells_col);
 
     // Number of faces in the column mesh
-    int nfaces_col = column_mesh->num_entities(AmanziMesh::FACE,
+    int nfaces_col = column_mesh->getNumEntities(AmanziMesh::Entity_kind::FACE,
             AmanziMesh::Parallel_type::OWNED);
     CHECK_EQUAL(5*ncells + 1, nfaces_col);
 
     // Check that their parents are as expected
     for (int i = 0; i < ncells_col; ++i) {
-      int parent_cell = column_mesh->entity_get_parent(AmanziMesh::CELL,i);
+      int parent_cell = column_mesh->getEntityParent(AmanziMesh::Entity_kind::CELL,i);
       CHECK_EQUAL(cell_list[i], parent_cell);
     }
 
     // check we can still get sets
     AmanziMesh::Entity_ID_List set_ids2;
-    bool is_valid = column_mesh->valid_set_name("Region 1", AmanziMesh::CELL);
+    bool is_valid = column_mesh->valid_set_name("Region 1", AmanziMesh::Entity_kind::CELL);
     CHECK(is_valid);
-    column_mesh->get_set_entities("Region 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL, &set_ids2);
+    column_mesh->get_set_entities("Region 1", AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL, &set_ids2);
     CHECK_EQUAL(1, set_ids2.size());
 
     set_ids2.clear();
-    is_valid = column_mesh->valid_set_name("Top Surface", AmanziMesh::FACE);
+    is_valid = column_mesh->valid_set_name("Top Surface", AmanziMesh::Entity_kind::FACE);
     CHECK(is_valid);
-    column_mesh->get_set_entities("Top Surface", AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL, &set_ids2);
+    column_mesh->get_set_entities("Top Surface", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL, &set_ids2);
     CHECK_EQUAL(1, set_ids2.size());
 
     set_ids2.clear();
-    is_valid = column_mesh->valid_set_name("Side Surface", AmanziMesh::FACE);
+    is_valid = column_mesh->valid_set_name("Side Surface", AmanziMesh::Entity_kind::FACE);
     CHECK(is_valid);
-    column_mesh->get_set_entities("Side Surface", AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL, &set_ids2);
+    column_mesh->get_set_entities("Side Surface", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL, &set_ids2);
     CHECK_EQUAL(3, set_ids2.size());
   }
 }

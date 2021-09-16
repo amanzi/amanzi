@@ -13,7 +13,7 @@
 
 #include "AmanziComm.hh"
 #include "Geometry.hh"
-#include "Mesh.hh"
+#include "MeshFramework.hh"
 #include "MeshFactory.hh"
 #include "MeshException.hh"
 
@@ -47,12 +47,12 @@ TEST(MESH_DEFORM2D)
     AmanziMesh::Entity_ID_List nodeids;
     AmanziGeometry::Point_List newpos, finpos;
 
-    int nnodes = mesh->num_entities(AmanziMesh::NODE,
+    int nnodes = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE,
                                 AmanziMesh::Parallel_type::OWNED);
     for (int j = 0; j < nnodes; j++) {
       nodeids.push_back(j);
       AmanziGeometry::Point oldcoord(2),newcoord(2);
-      mesh->node_get_coordinates(j,&oldcoord);
+      oldcoord = mesh->getNodeCoordinate(j);
       newcoord.set(oldcoord[0],0.5*oldcoord[1]);
       newpos.push_back(newcoord);
     }
@@ -62,11 +62,11 @@ TEST(MESH_DEFORM2D)
 
     // If the deformation was successful, the cell volumes should be half
     // of what they were
-    int ncells = mesh->num_entities(AmanziMesh::CELL,
+    int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL,
                                     AmanziMesh::Parallel_type::ALL);
 
     for (int j = 0; j < ncells; j++) {
-      double volume = mesh->cell_volume(j);
+      double volume = mesh->getCellVolume(j)
       CHECK_CLOSE(0.5, volume, 1.e-10);
     }
   } // for each framework i
@@ -106,13 +106,13 @@ TEST(MESH_GENERATED_DEFORM3D)
     AmanziGeometry::Point_List newpos, finpos;
 
     int status = 0;
-    int nnodes = mesh->num_entities(AmanziMesh::NODE,
+    int nnodes = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE,
             AmanziMesh::Parallel_type::OWNED);
     for (int j = 0; j < nnodes; j++) {
       nodeids.push_back(j);
 
       AmanziGeometry::Point oldcoord(3),newcoord(3);
-      mesh->node_get_coordinates(j,&oldcoord);
+      oldcoord = mesh->getNodeCoordinate(j);
 
       newcoord.set(oldcoord[0], oldcoord[1], oldcoord[2]/2.0);
       newpos.push_back(newcoord);

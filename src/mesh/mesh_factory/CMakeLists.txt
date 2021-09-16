@@ -107,12 +107,12 @@ if (BUILD_TESTS)
    # previous call carries instructions to build the executable
    add_amanzi_test(mesh_factory_create_np2 mesh_factory_create NPROCS 2 KIND uint)
 
-   # Test: test_mesh_factory
-   add_amanzi_test(mesh_factory_extract_comms_np5 mesh_factory_extract_comms
-                   KIND unit
-		   SOURCE test/Main.cc test/mesh_factory_extract_comms.cc
-                   LINK_LIBS mesh_factory ${UnitTest_LIBRARIES} ${Boost_LIBRARIES} ${Epetra_LIBRARIES} ${HDF5_LIBRARIES}
-                   NPROCS 5) # need sufficient cores to force one proc to have no surface faces
+   # # Test: test_mesh_factory
+   # add_amanzi_test(mesh_factory_extract_comms_np5 mesh_factory_extract_comms
+   #                 KIND unit
+   #      	   SOURCE test/Main.cc test/mesh_factory_extract_comms.cc
+   #                 LINK_LIBS mesh_factory ${UnitTest_LIBRARIES} ${Boost_LIBRARIES} ${Epetra_LIBRARIES} ${HDF5_LIBRARIES}
+   #                 NPROCS 5) # need sufficient cores to force one proc to have no surface faces
    
 endif()
    

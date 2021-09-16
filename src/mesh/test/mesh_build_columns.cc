@@ -30,7 +30,7 @@
 
 #include "AmanziComm.hh"
 #include "Geometry.hh"
-#include "Mesh.hh"
+#include "MeshFramework.hh"
 #include "mesh_mstk/Mesh_MSTK.hh"
 #include "MeshFactory.hh"
 #include "MeshException.hh"
