@@ -803,7 +803,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
             .set<int>("master PK index", 0)
             .set<std::string>("domain name", "domain");
 
-        out_list.sublist(it->first).sublist("physical models and assumptions")
+        out_list.sublist(pk).sublist("physical models and assumptions")
             .set<bool>("vapor diffusion", (pk_model_["energy"] == "two_phase energy"));
 
         err_options = "pressure, temperature";
@@ -825,7 +825,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
             .set<int>("master PK index", 0)
             .set<std::string>("domain name", "fracture");
 
-        out_list.sublist(it->first).sublist("physical models and assumptions")
+        out_list.sublist(pk).sublist("physical models and assumptions")
             .set<bool>("vapor diffusion", (pk_model_["energy"] == "two_phase energy"));
 
         err_options = "pressure, temperature";

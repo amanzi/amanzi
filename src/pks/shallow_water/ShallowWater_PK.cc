@@ -386,6 +386,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   Epetra_MultiVector& q_c = *S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
 
   // create copies of primary fields
+  *S_->GetFieldData(prev_ponded_depth_key_, passwd_)->ViewComponent("cell") = h_c;
   Epetra_MultiVector h_c_tmp(h_c);
   Epetra_MultiVector q_c_tmp(q_c);
 
@@ -531,7 +532,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     qy = FNum_rot[1] * normal[1] + FNum_rot[2] * normal[0];
 
     // save riemann mass flux
-    riemann_f[0][f] = FNum_rot[0] * farea * orientation;
+    riemann_f[0][f] = FNum_rot[0] * farea * dir;
         
     // add fluxes to temporary fields
     double vol = mesh_->cell_volume(c1);
