@@ -186,6 +186,8 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
   prev_water_content_key_ = Keys::getKey(domain_, "prev_water_content"); 
 
   // require state fields when Flow PK is off
+  S_->RequireScalar("const_fluid_density", passwd_);
+
   if (!S->HasField(permeability_key_) && abs_perm) {
     S->RequireField(permeability_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, dim);

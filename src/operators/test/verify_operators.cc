@@ -194,6 +194,7 @@ TEST(Verify_Mesh_and_Operators) {
       .set<int>("smoother sweeps", 3)
       .set<double>("strong threshold", 0.5)
       .set<double>("tolerance", 0.0)
+      .set<int>("verbosity", 0)
       .set<int>("relaxation type", 6);
 
   // -- Trilinos

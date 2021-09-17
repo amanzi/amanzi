@@ -159,6 +159,9 @@ class TreeOperator : public Matrix<TreeVector,TreeVectorSpace> {
     return "TreeOperator: block diagonal";
   }
 
+  // quality control
+  void Verify() const;
+
  protected:
   int ApplyInverseBlockDiagonal_(const TreeVector& X, TreeVector& Y) const;
 

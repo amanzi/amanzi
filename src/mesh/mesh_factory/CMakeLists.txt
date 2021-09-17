@@ -33,21 +33,10 @@ include_directories(${SEACAS_INCLUDE_DIRS})
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_EXTRACTED_SOURCE_DIR})
-include_directories(${MESH_SIMPLE_SOURCE_DIR})
+
+# include mesh frameworks
 include_directories(${MESH_SOURCE_DIR})
-
-
-#
-# Library: mesh_factory
-#
-set(mesh_factory_files 
-    FileFormat.cc
-    MeshFramework.cc
-    MeshFactory.cc) 
-file(GLOB mesh_factory_inc_files "*.hh")
-
-list(APPEND mesh_factory_frameworks mesh_simple)
-
+include_directories(${MESH_SIMPLE_SOURCE_DIR})
 if (ENABLE_MESH_MOAB)
   include_directories(${MOAB_INCLUDE_DIR})
   include_directories(${MESH_MOAB_SOURCE_DIR})
@@ -61,6 +50,18 @@ if (ENABLE_MESH_MSTK)
   list(APPEND mesh_factory_frameworks mesh_mstk)
   add_definitions("-DHAVE_MESH_MSTK -DMSTK_HAVE_MPI")
 endif()
+
+
+#
+# Library: mesh_factory
+#
+set(mesh_factory_files 
+    FileFormat.cc
+    MeshFramework.cc
+    MeshFactory.cc) 
+file(GLOB mesh_factory_inc_files "*.hh")
+
+list(APPEND mesh_factory_frameworks mesh_simple)
 
 add_amanzi_library(mesh_factory
                    SOURCE ${mesh_factory_files} HEADERS ${mesh_factory_inc_files}

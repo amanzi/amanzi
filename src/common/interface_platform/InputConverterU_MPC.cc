@@ -398,8 +398,10 @@ void InputConverterU::PopulatePKTree_(
   }
   else if (basename == "coupled flow") {
     tmp.set<std::string>("PK type", "darcy matrix fracture");
-    tmp.sublist(Keys::merge(prefix, "flow matrix", delimiter)).set<std::string>("PK type", "darcy");
-    tmp.sublist(Keys::merge(prefix, "flow fracture", delimiter)).set<std::string>("PK type", "darcy");
+    tmp.sublist(Keys::merge(prefix, "flow matrix", delimiter))
+       .set<std::string>("PK type", pk_model_["flow"]);
+    tmp.sublist(Keys::merge(prefix, "flow fracture", delimiter))
+       .set<std::string>("PK type", pk_model_["flow"]);
   }
   else if (basename == "coupled transport") {
     tmp.set<std::string>("PK type", "transport matrix fracture" + implicit);
@@ -801,6 +803,9 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
             .set<int>("master PK index", 0)
             .set<std::string>("domain name", "domain");
 
+        out_list.sublist(it->first).sublist("physical models and assumptions")
+            .set<bool>("vapor diffusion", (pk_model_["energy"] == "two_phase energy"));
+
         err_options = "pressure, temperature";
       }
       else if (basename == "flow and shallow water") {
@@ -819,6 +824,9 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
             .set<Teuchos::Array<std::string> >("PKs order", pk_names)
             .set<int>("master PK index", 0)
             .set<std::string>("domain name", "fracture");
+
+        out_list.sublist(it->first).sublist("physical models and assumptions")
+            .set<bool>("vapor diffusion", (pk_model_["energy"] == "two_phase energy"));
 
         err_options = "pressure, temperature";
       }
@@ -881,7 +889,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
         if (!out_list.sublist(pk).isSublist("time integrator")) {
           out_list.sublist(pk).sublist("time integrator") = TranslateTimeIntegrator_(
               err_options, "nka", false,
-              "unstructured_controls, unstr_flow_controls",
+              "unstructured_controls, unstr_transient_controls",
               dt_cut_[mode], dt_inc_[mode]);
           out_list.sublist(pk).sublist("verbose object") = verb_list_.sublist("verbose object");
         }

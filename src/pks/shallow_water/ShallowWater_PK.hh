@@ -91,7 +91,6 @@ class ShallowWater_PK : public PK_Physical,
   std::vector<double> NumericalFlux_x_Rusanov(const std::vector<double>&, const std::vector<double>&);
   std::vector<double> NumericalFlux_x_CentralUpwind(const std::vector<double>&, const std::vector<double>&);
 
-  std::vector<double> PhysicalSource(const std::vector<double>&);
   std::vector<double> NumericalSource(const std::vector<double>&, int);
 
   // access

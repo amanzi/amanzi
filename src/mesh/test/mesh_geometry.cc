@@ -1,645 +1,251 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-// -------------------------------------------------------------
-/**
- * @file   test_mesh_geometry.cc
- * @author Rao V. Garimella
- * @date   Tue May 15, 2012
- * 
- * @brief  
- * 
- * 
- */
-// -------------------------------------------------------------
-// -------------------------------------------------------------
+/*
+  Copyright 2010-201x held jointly by LANL, ORNL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-#include <UnitTest++.h>
+  Authors: Ethan Coon (coonet@ornl.gov)
+*/
 
-#include <iostream>
+#include "UnitTest++.h"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterXMLFileReader.hpp"
 
 #include "AmanziComm.hh"
-
-#include "Geometry.hh"
-#include "MeshException.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
+#include "MeshAudit.hh"
+
+#include "framework_meshes.hh"
+#include "geometry_harnesses.hh"
 
 TEST(MESH_GEOMETRY_PLANAR)
 {
-  auto comm = Amanzi::getDefaultComm();
-
-  // We are not including MOAB since Mesh_MOAB.cc does not have
-  // routines for generating a mesh
-  std::vector<Amanzi::AmanziMesh::Framework> frameworks;
-  std::vector<std::string> framework_names;
-
-  if (Amanzi::AmanziMesh::framework_enabled(Amanzi::AmanziMesh::Framework::MSTK)) {
-    frameworks.push_back(Amanzi::AmanziMesh::Framework::MSTK);
-    framework_names.push_back("MSTK");
+  // a 2D, generated, structured quad on the unit square, NX=NY=2
+  std::vector<Framework> frameworks;
+  // works in MSTK
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
   }
 
-  for (int frm = 0; frm < frameworks.size(); ++frm) {
-    // Set the framework
-    std::cerr << "Testing geometry operators with " << framework_names[frm] << std::endl;
+  for (const auto& frm : frameworks) {
+    std::cout << std::endl
+              << "Testing 2D geometry with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "------------------------------------------------" << std::endl;
 
-    // Create the mesh
-    Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-
-    int ierr = 0;
-    int aerr = 0;
-    try {
-      Amanzi::AmanziMesh::Preference prefs(meshfactory.get_preference());
-      prefs.clear(); 
-      prefs.push_back(frameworks[frm]);
-      meshfactory.set_preference(prefs);
-
-      mesh = meshfactory.create(0.0,0.0,1.0,1.0,2,2);
-
-    } catch (const Amanzi::AmanziMesh::Message& e) {
-      std::cerr << ": mesh error: " << e.what() << std::endl;
-      ierr++;
-    } catch (const std::exception& e) {
-      std::cerr << ": error: " << e.what() << std::endl;
-      ierr++;
-    }
-
-    comm->SumAll(&ierr, &aerr, 1);
-
-    CHECK_EQUAL(aerr,0);
-
-
-    double exp_cell_volume[4] = {0.25,0.25,0.25,0.25};
-    double exp_cell_centroid[4][2] = {{0.25,0.25},
-                                      {0.25,0.75},
-                                      {0.75,0.25},
-                                      {0.75,0.75}};
-    double exp_face_area[12] = {0.5,0.5,0.5,0.5,
-                                0.5,0.5,0.5,0.5,
-                                0.5,0.5,0.5,0.5};
-    double exp_face_centroid[12][2] = {{0.25,0.0},{0.5,0.25},
-                                       {0.25,0.5},{0.0,0.25},
-                                       {0.5,0.75},{0.25,1.0},
-                                       {0.0,0.75},{0.75,0.0},
-                                       {1.0,0.25},{0.75,0.5},
-                                       {1.0,0.75},{0.75,1.0}};
-
-    int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
-    int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::ALL);
-
-    int space_dim_ = 2;
-
-    for (int i = 0; i < ncells; i++) {
-
-      Amanzi::AmanziGeometry::Point centroid = mesh->cell_centroid(i);
-
-      // Search for a cell with the same centroid in the 
-      // expected list of centroid
-
-      bool found = false;
-
-      for (int j = 0; j < ncells; j++) {
-        if (fabs(exp_cell_centroid[j][0]-centroid[0]) < 1.0e-10 &&
-            fabs(exp_cell_centroid[j][1]-centroid[1]) < 1.0e-10) {
-
-          found = true;
-          CHECK_EQUAL(exp_cell_volume[j],mesh->cell_volume(i));
-          break;
-
-        }
-      }
-
-      CHECK_EQUAL(found,true);
-
-      Amanzi::AmanziMesh::Entity_ID_List cfaces;
-      Amanzi::AmanziGeometry::Point normal_sum(2), normal(2);      
-
-      mesh->cell_get_faces(i,&cfaces);
-      normal_sum.set(0.0);
-
-      for (int j = 0; j < cfaces.size(); j++) {
-        normal = mesh->face_normal(cfaces[j],false,i);
-        normal_sum += normal;
-      }
-
-      double val = L22(normal_sum);
-      CHECK_CLOSE(val,0.0,1.0e-20);                
-    }
-
-    for (int i = 0; i < nfaces; i++) {
-      Amanzi::AmanziGeometry::Point centroid = mesh->face_centroid(i);
-
-      bool found = false;
-
-      for (int j = 0; j < nfaces; j++) {
-        if (fabs(exp_face_centroid[j][0]-centroid[0]) < 1.0e-10 &&
-            fabs(exp_face_centroid[j][1]-centroid[1]) < 1.0e-10) {
-
-          found = true;
-
-          CHECK_EQUAL(exp_face_area[j],mesh->face_area(i));
-
-          // Check the natural normal
-
-          Amanzi::AmanziGeometry::Point normal = mesh->face_normal(i);
-            
-      
-          // Check the normal with respect to each connected cell
-          
-          Amanzi::AmanziMesh::Entity_ID_List cellids;
-          mesh->face_get_cells(i,Amanzi::AmanziMesh::Parallel_type::ALL,&cellids);
-          
-          for (int k = 0; k < cellids.size(); k++) {
-            int dir;
-            Amanzi::AmanziGeometry::Point normal_wrt_cell = 
-              mesh->face_normal(i,false,cellids[k],&dir);
-
-            //            Amanzi::AmanziMesh::Entity_ID_List cellfaces;
-            //            std::vector<int> cellfacedirs;
-            //            mesh->cell_get_faces_and_dirs(cellids[k],&cellfaces,&cellfacedirs);
-            //
-            //            bool found2 = false;
-            //            int dir = 1;
-            //            for (int m = 0; m < cellfaces.size(); m++) {
-            //              if (cellfaces[m] == i) {
-            //                found2 = true;
-            //                dir = cellfacedirs[m];
-            //                break;
-            //              }
-            //            }
-            //
-            //            CHECK_EQUAL(found2,true);
-
-            Amanzi::AmanziGeometry::Point normal1(normal);
-            normal1 *= dir;
-
-            CHECK_ARRAY_EQUAL(&(normal1[0]),&(normal_wrt_cell[0]),space_dim_);
-
-            
-            Amanzi::AmanziGeometry::Point cellcentroid = mesh->cell_centroid(cellids[k]);
-            Amanzi::AmanziGeometry::Point facecentroid = mesh->face_centroid(i);
-
-            Amanzi::AmanziGeometry::Point outvec = facecentroid-cellcentroid;
-
-
-            double dp = outvec*normal_wrt_cell;
-            dp /= (norm(outvec)*norm(normal_wrt_cell));         
-
-
-            CHECK_CLOSE(dp,1.0,1e-10);
-          }
-
-          break;
-        }
-      }
-
-      CHECK_EQUAL(found,true);
-    }
-
-  } // for each framework i
-
+    auto mesh = createFrameworkStructuredUnitQuad(Preference{frm}, 2,2);
+    testMeshAudit<MeshAudit, Mesh>(mesh);
+    testGeometryQuad(mesh,2,2);
+    testExteriorMapsUnitBox(mesh, 2, 2);
+  }
 }
 
 
-TEST(MESH_GEOMETRY_SURFACE)
+TEST(MESH_GEOMETRY_1CUBE_GENERATED)
 {
-  // DISABLED FOR NOW
-  return;
+  // a 3D, generated, structured hex on the unit cube, NX=NY=NZ=1
+  // only makes sense in serial
+  if (getDefaultComm()->NumProc() != 1) return;
 
-  auto comm = Amanzi::getDefaultComm();
+  std::vector<Framework> frameworks;
+  // works in MSTK & SIMPLE (in serial)
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
+  if (getDefaultComm()->NumProc() == 1)
+    frameworks.push_back(Framework::SIMPLE);
 
-  // We are not including MOAB since Mesh_MOAB.cc does not have
-  // routines for generating a mesh
-  std::vector<Amanzi::AmanziMesh::Framework> frameworks;
-  std::vector<std::string> framework_names;
+  for (const auto& frm : frameworks) {
+    std::cout << std::endl
+              << "Testing 3D geometry with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "------------------------------------------------" << std::endl;
+    auto mesh = createFrameworkStructuredUnitHex(Preference{frm}, 1,1,1);
+    testMeshAudit<MeshAudit, Mesh>(mesh);
+    testGeometryCube<Mesh>(mesh,1,1,1);
 
-#ifdef HAVE_MESH_MSTK
-  frameworks.push_back(Amanzi::AmanziMesh::Framework::MSTK);
-  framework_names.push_back("MSTK");
-#endif
-
-  for (int frm = 0; frm < frameworks.size(); ++frm) {
-    // Set the framework
-    std::cerr << "Testing geometry operators with " << framework_names[frm] << std::endl;
-
-    // Create the mesh
-    Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-
-    int ierr = 0;
-    int aerr = 0;
-    try {
-      Amanzi::AmanziMesh::Preference prefs(meshfactory.get_preference());
-      prefs.clear(); 
-      prefs.push_back(frameworks[frm]);
-
-      meshfactory.set_preference(prefs);
-
-      mesh = meshfactory.create("test/surfquad.exo");
-
-    } catch (const Amanzi::AmanziMesh::Message& e) {
-      std::cerr << ": mesh error: " << e.what() << std::endl;
-      ierr++;
-    } catch (const std::exception& e) {
-      std::cerr << ": error: " << e.what() << std::endl;
-      ierr++;
-    }
-
-    comm->SumAll(&ierr, &aerr, 1);
-
-    CHECK_EQUAL(aerr,0);
-
-
-    double exp_cell_volume[4] = {0.25,0.25,0.25,0.25};
-    double exp_cell_centroid[4][3] = {{0.25,0.25,0.0},
-                                      {0.25,0.75,0.0},
-                                      {0.5,0.25,0.25},
-                                      {0.5,0.75,0.25}};
-    double exp_face_area[12] = {0.5,0.5,0.5,0.5,
-                                0.5,0.5,0.5,0.5,
-                                0.5,0.5,0.5,0.5};
-    double exp_face_centroid[12][3] = {{0.25,0.0,0.0},{0.5,0.25,0.0},
-                                       {0.25,0.5,0.0},{0.0,0.25,0.0},
-                                       {0.5,0.75,0.0},{0.25,1.0,0.0},
-                                       {0.0,0.75,0.0},{0.5,0.0,0.25},
-                                       {0.5,0.25,0.5},{0.5,0.5,0.25},
-                                       {0.5,0.75,0.5},{0.5,1.0,0.25}};
-
-    int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
-    int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::ALL);
-
-    for (int i = 0; i < ncells; i++) {
-
-      Amanzi::AmanziGeometry::Point centroid = mesh->cell_centroid(i);
-
-      // Search for a cell with the same centroid in the 
-      // expected list of centroid
-
-      bool found = false;
-
-      for (int j = 0; j < ncells; j++) {
-        if (fabs(exp_cell_centroid[j][0]-centroid[0]) < 1.0e-10 &&
-            fabs(exp_cell_centroid[j][1]-centroid[1]) < 1.0e-10 &&
-            fabs(exp_cell_centroid[j][2]-centroid[2]) < 1.0e-10) {
-
-          found = true;
-          CHECK_EQUAL(exp_cell_volume[j],mesh->cell_volume(i));
-          break;
-
-        }
-      }
-
-      CHECK_EQUAL(found,true);
-    }
-
-    for (int i = 0; i < nfaces; i++) {
-      Amanzi::AmanziGeometry::Point centroid = mesh->face_centroid(i);
-
-      bool found = false;
-
-      for (int j = 0; j < nfaces; j++) {
-        if (fabs(exp_face_centroid[j][0]-centroid[0]) < 1.0e-10 &&
-            fabs(exp_face_centroid[j][1]-centroid[1]) < 1.0e-10 &&
-            fabs(exp_face_centroid[j][2]-centroid[2]) < 1.0e-10) {
-
-          found = true;
-
-          CHECK_EQUAL(exp_face_area[j],mesh->face_area(i));
-
-      
-          // Check the normal with respect to each connected cell
-          
-          Amanzi::AmanziMesh::Entity_ID_List cellids;
-          mesh->face_get_cells(i,Amanzi::AmanziMesh::Parallel_type::ALL,&cellids);
-
-
-          Amanzi::AmanziGeometry::Point facecentroid = mesh->face_centroid(i);
-          
-          for (int k = 0; k < cellids.size(); k++) {
-            int dir;
-            Amanzi::AmanziGeometry::Point normal_wrt_cell = 
-              mesh->face_normal(i,false,cellids[k],&dir);
-
-            //            Amanzi::AmanziMesh::Entity_ID_List cellfaces;
-            //            std::vector<int> cellfacedirs;
-            //            mesh->cell_get_faces_and_dirs(cellids[k],&cellfaces,&cellfacedirs);
-
-            //            bool found2 = false;
-            //            int dir = 1;
-            //            for (int m = 0; m < cellfaces.size(); m++) {
-            //              if (cellfaces[m] == i) {
-            //                found2 = true;
-            //                dir = cellfacedirs[m];
-            //                break;
-            //              }
-            //            }
-
-            //            CHECK_EQUAL(found2,true);
-
-
-            Amanzi::AmanziGeometry::Point cellcentroid = mesh->cell_centroid(cellids[k]);
-
-            Amanzi::AmanziGeometry::Point outvec = facecentroid-cellcentroid;
-
-            double dp = outvec*normal_wrt_cell;
-            dp /= (norm(outvec)*norm(normal_wrt_cell));         
-
-            CHECK_CLOSE(dp,1.0,1e-10);
-
-          }
-
-
-          if (cellids.size() == 2 && 
-              ((fabs(facecentroid[0]-0.5) < 1.0e-16) &&
-               (fabs(facecentroid[2]) < 1.0e-16))) {
-
-            // An edge on the crease. The two normals should be different 
-   
-            Amanzi::AmanziGeometry::Point n0 = mesh->face_normal(i,false,cellids[0]);
-            Amanzi::AmanziGeometry::Point n1 = mesh->face_normal(i,false,cellids[1]);
-
-            double dp = n0*n1/(norm(n0)*norm(n1));
-
-            CHECK_CLOSE(dp,0.0,1e-10);
-
-          }
-
-          break;
-        }
-      }
-
-      CHECK_EQUAL(found,true);
-    }
-
-  } // for each framework i
+    // Exterior maps not supported by SIMPLE
+    if (frm != Framework::SIMPLE) testExteriorMapsUnitBox(mesh, 1,1,1);
+  }
 }
 
 
-TEST(MESH_GEOMETRY_SOLID)
+TEST(MESH_GEOMETRY_1CUBE_EXO)
 {
-  auto comm = Amanzi::getDefaultComm();
+  // a 3D exodus file, structured hex on the unit cube, NX=NY=NZ=1
+  // only makes sense in serial
+  if (getDefaultComm()->NumProc() != 1) return;
 
-  // We are not including MOAB since Mesh_MOAB.cc does not have
-  // routines for generating a mesh
-  std::vector<Amanzi::AmanziMesh::Framework> frameworks;
-  std::vector<std::string> framework_names;
+  // works in MSTK or MOAB
+  std::vector<Framework> frameworks;
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
+  if (framework_enabled(Framework::MOAB)) {
+    frameworks.push_back(Framework::MOAB);
+  }
 
-  frameworks.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
-  framework_names.push_back("Simple");
-  
-#ifdef HAVE_MESH_MSTK
-  frameworks.push_back(Amanzi::AmanziMesh::Framework::MSTK);
-  framework_names.push_back("MSTK");
-#endif
-  
-  for (int frm = 0; frm < frameworks.size(); ++frm) {
-    // Set the framework
-    std::cerr << "Testing geometry operators with " << framework_names[frm] << std::endl;
-
-    // Create the mesh
-    Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-
-    int ierr = 0;
-    int aerr = 0;
-    try {
-      Amanzi::AmanziMesh::Preference prefs(meshfactory.get_preference());
-      prefs.clear(); 
-      prefs.push_back(frameworks[frm]);
-
-      meshfactory.set_preference(prefs);
-
-      mesh = meshfactory.create(0.0,0.0,0.0,1.0,1.0,1.0,2,2,2);
-
-    } catch (const Amanzi::AmanziMesh::Message& e) {
-      std::cerr << ": mesh error: " << e.what() << std::endl;
-      ierr++;
-    } catch (const std::exception& e) {
-      std::cerr << ": error: " << e.what() << std::endl;
-      ierr++;
-    }
-
-    comm->SumAll(&ierr, &aerr, 1);
-
-    CHECK_EQUAL(aerr,0);
-
-
-    double exp_cell_volume[8] = {0.125,0.125,0.125,0.125,
-                                 0.125,0.125,0.125,0.125};
-    double exp_cell_centroid[8][3] = {{0.25,0.25,0.25},
-                                      {0.75,0.25,0.25},
-                                      {0.25,0.75,0.25},
-                                      {0.75,0.75,0.25},
-                                      {0.25,0.25,0.75},
-                                      {0.75,0.25,0.75},
-                                      {0.25,0.75,0.75},
-                                      {0.75,0.75,0.75}};
-    double exp_face_area[36] = {0.25,0.25,0.25,0.25,
-                                0.25,0.25,0.25,0.25,
-                                0.25,0.25,0.25,0.25,
-                                0.25,0.25,0.25,0.25,
-                                0.25,0.25,0.25,0.25,
-                                0.25,0.25,0.25,0.25,
-                                0.25,0.25,0.25,0.25,
-                                0.25,0.25,0.25,0.25,
-                                0.25,0.25,0.25,0.25};
-    double exp_face_centroid[36][3] = {{0.0,0.25,0.25},
-                                       {0.0,0.75,0.25},
-                                       {0.0,0.25,0.75},
-                                       {0.0,0.75,0.75},
-
-                                       {0.5,0.25,0.25},
-                                       {0.5,0.75,0.25},
-                                       {0.5,0.25,0.75},
-                                       {0.5,0.75,0.75},
-
-                                       {1.0,0.25,0.25},
-                                       {1.0,0.75,0.25},
-                                       {1.0,0.25,0.75},
-                                       {1.0,0.75,0.75},
-
-                                       {0.25,0.0,0.25},
-                                       {0.75,0.0,0.25},
-                                       {0.25,0.0,0.75},
-                                       {0.75,0.0,0.75},
-                                                 
-                                       {0.25,0.5,0.25},
-                                       {0.75,0.5,0.25},
-                                       {0.25,0.5,0.75},
-                                       {0.75,0.5,0.75},
-                                                 
-                                       {0.25,1.0,0.25},
-                                       {0.75,1.0,0.25},
-                                       {0.25,1.0,0.75},
-                                       {0.75,1.0,0.75},
-
-                                       {0.25,0.25,0.0},
-                                       {0.75,0.25,0.0},
-                                       {0.25,0.75,0.0},
-                                       {0.75,0.75,0.0},
-                                                     
-                                       {0.25,0.25,0.5},
-                                       {0.75,0.25,0.5},
-                                       {0.25,0.75,0.5},
-                                       {0.75,0.75,0.5},
-                                                     
-                                       {0.25,0.25,1.0},
-                                       {0.75,0.25,1.0},
-                                       {0.25,0.75,1.0},
-                                       {0.75,0.75,1.0},
-                                       
-    };
-
-
-    int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
-    int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::ALL);
-
-    int space_dim_ = 3;
-
-    for (int i = 0; i < ncells; i++) {
-
-      Amanzi::AmanziGeometry::Point centroid = mesh->cell_centroid(i);
-
-      // Search for a cell with the same centroid in the 
-      // expected list of centroid
-
-      bool found = false;
-
-      for (int j = 0; j < ncells; j++) {
-        if (fabs(exp_cell_centroid[j][0]-centroid[0]) < 1.0e-10 &&
-            fabs(exp_cell_centroid[j][1]-centroid[1]) < 1.0e-10 &&
-            fabs(exp_cell_centroid[j][2]-centroid[2]) < 1.0e-10) {
-
-          found = true;
-          CHECK_EQUAL(exp_cell_volume[j],mesh->cell_volume(i));
-          break;
-
-        }
-      }
-
-      CHECK_EQUAL(found,true);
-
-      Amanzi::AmanziMesh::Entity_ID_List cfaces;
-      Amanzi::AmanziGeometry::Point normal_sum(3), normal(3);      
-
-      mesh->cell_get_faces(i,&cfaces);
-      normal_sum.set(0.0);
-
-      for (int j = 0; j < cfaces.size(); j++) {
-        normal = mesh->face_normal(cfaces[j],false,i);
-        normal_sum += normal;
-      }
-
-      double val = L22(normal_sum);
-      CHECK_CLOSE(val,0.0,1.0e-20);                
-    }
-
-    for (int i = 0; i < nfaces; i++) {
-      Amanzi::AmanziGeometry::Point centroid = mesh->face_centroid(i);
-
-      bool found = false;
-
-      for (int j = 0; j < nfaces; j++) {
-        if (fabs(exp_face_centroid[j][0]-centroid[0]) < 1.0e-10 &&
-            fabs(exp_face_centroid[j][1]-centroid[1]) < 1.0e-10 &&
-            fabs(exp_face_centroid[j][2]-centroid[2]) < 1.0e-10) {
-
-          found = true;
-
-          CHECK_EQUAL(exp_face_area[j],mesh->face_area(i));
-
-          // Check the natural normal
-
-          Amanzi::AmanziGeometry::Point normal = mesh->face_normal(i);
-            
-      
-          // Check the normal with respect to each connected cell
-          
-          Amanzi::AmanziMesh::Entity_ID_List cellids;
-          mesh->face_get_cells(i,Amanzi::AmanziMesh::Parallel_type::ALL,&cellids);
-          
-          for (int k = 0; k < cellids.size(); k++) {
-            int dir;
-            Amanzi::AmanziGeometry::Point normal_wrt_cell = 
-              mesh->face_normal(i,false,cellids[k],&dir);
-
-            // Amanzi::AmanziMesh::Entity_ID_List cellfaces;
-            // std::vector<int> cellfacedirs;
-            // mesh->cell_get_faces_and_dirs(cellids[k],&cellfaces,&cellfacedirs);
-
-            // bool found2 = false;
-            // int dir = 1;
-            // for (int m = 0; m < cellfaces.size(); m++) {
-            //   if (cellfaces[m] == i) {
-            //     found2 = true;
-            //     dir = cellfacedirs[m];
-            //     break;
-            //   }
-            // }
-
-            // CHECK_EQUAL(found2,true);
-
-            Amanzi::AmanziGeometry::Point normal1(normal);
-            normal1 *= dir;
-
-            CHECK_ARRAY_EQUAL(&(normal1[0]),&(normal_wrt_cell[0]),space_dim_);
-
-            
-            Amanzi::AmanziGeometry::Point cellcentroid = mesh->cell_centroid(cellids[k]);
-            Amanzi::AmanziGeometry::Point facecentroid = mesh->face_centroid(i);
-
-            Amanzi::AmanziGeometry::Point outvec = facecentroid-cellcentroid;
-
-            double dp = outvec*normal_wrt_cell;
-            dp /= (norm(outvec)*norm(normal_wrt_cell));         
-
-
-            CHECK_CLOSE(dp,1.0,1e-10);
-          }
-
-          break;
-        }
-      }
-
-      CHECK_EQUAL(found,true);
-    }
-
-    
-    // Now deform the mesh a little and verify that the sum of the
-    // outward normals of all faces of cell is still zero
-
-    Amanzi::AmanziGeometry::Point ccoords(3);
-    mesh->node_get_coordinates(13,&ccoords); // central node
-
-    // Lets be sure this is the central node
-    CHECK_EQUAL(ccoords[0],0.5);
-    CHECK_EQUAL(ccoords[1],0.5);
-    CHECK_EQUAL(ccoords[2],0.5);
-    
-    // Perturb it
-    ccoords.set(0.7,0.7,0.7);
-    mesh->node_set_coordinates(13,ccoords);
-
-    // Now check the normals
-
-    for (int i = 0; i < ncells; i++) {
-
-      Amanzi::AmanziMesh::Entity_ID_List cfaces;
-      Amanzi::AmanziGeometry::Point normal_sum(3), normal(3);      
-
-      mesh->cell_get_faces(i,&cfaces);
-      normal_sum.set(0.0);
-
-      for (int j = 0; j < cfaces.size(); j++) {
-        normal = mesh->face_normal(cfaces[j],true,i);
-        normal_sum += normal;
-      }
-
-      double val = L22(normal_sum);
-      CHECK_CLOSE(val,0.0,1.0e-20);                
-
-    }    
-
-  } // for each framework i
-
+  for (const auto& frm : frameworks) {
+    std::cout << std::endl
+              << "Testing 3D Box 1x1x1 Exo geometry with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "------------------------------------------------" << std::endl;
+    auto mesh = createFrameworkUnstructured(Preference{frm}, "test/hex_1x1x1_sets.exo");
+    testMeshAudit<MeshAudit, Mesh>(mesh);
+    testGeometryCube<Mesh>(mesh,1,1,1);
+    if (frm == Framework::MSTK)
+      testExteriorMapsUnitBox(mesh, 1,1,1);
+  }
 }
 
+
+TEST(MESH_GEOMETRY_3CUBE)
+{
+  // a 3D, generated, structured hex on the unit cube, NX=NY=NZ=3
+  // works in MSTK & SIMPLE (in serial)
+  std::vector<Framework> frameworks;
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
+  if (getDefaultComm()->NumProc() == 1)
+    frameworks.push_back(Framework::SIMPLE);
+
+  for (const auto& frm : frameworks) {
+    std::cout << std::endl
+              << "Testing 3D Box 3x3x3 with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "------------------------------------------------" << std::endl;
+    auto mesh = createFrameworkStructuredUnitHex(Preference{frm}, 3,3,3);
+    testMeshAudit<MeshAudit, Mesh>(mesh);
+    testGeometryCube<Mesh>(mesh,3,3,3);
+    if (frm == Framework::MSTK) {
+      testExteriorMapsUnitBox(mesh,3,3,3);
+    }
+  }
+}
+
+
+TEST(MESH_GEOMETRY_3CUBE_EXO)
+{
+  // a 3D exodus file, structured hex on the unit cube, NX=NY=NZ=3
+  // works in MSTK or MOAB
+  std::vector<Framework> frameworks;
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
+  if (framework_enabled(Framework::MOAB) &&
+      getDefaultComm()->NumProc() == 1) {
+    // moab only reads exo in serial, otherwise must read par
+    frameworks.push_back(Framework::MOAB);
+  }
+
+  for (const auto& frm : frameworks) {
+    std::cout << std::endl
+              << "Testing 3D Box 3x3x3 Exo with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "------------------------------------------------" << std::endl;
+    auto mesh = createFrameworkUnstructured(Preference{frm}, "test/hex_3x3x3_sets.exo");
+    testMeshAudit<MeshAudit, Mesh>(mesh);
+    testGeometryCube<Mesh>(mesh,3,3,3);
+    if (frm == Framework::MSTK) {
+      testExteriorMapsUnitBox(mesh,3,3,3);
+    }
+  }
+}
+
+
+//
+// NOTE: this should work but is blocked by MSTK ticket #119, which is used for partitioning
+//
+// TEST(MESH_GEOMETRY_3CUBE_PAR)
+// {
+//   // a 3D exodus file, structured hex on the unit cube, NX=NY=NZ=3, prepartitioned
+//   // works in MSTK or MOAB
+//   int nprocs = getDefaultComm()->NumProc();
+//   if (nprocs != 2) return;
+
+//   std::vector<Framework> frameworks;
+//   if (framework_enabled(Framework::MSTK)) {
+//     frameworks.push_back(Framework::MSTK);
+//   }
+//   if (framework_enabled(Framework::MOAB)) {
+//     frameworks.push_back(Framework::MOAB);
+//   }
+
+//   for (const auto& frm : frameworks) {
+//     std::cout << std::endl
+//               << "Testing 3D Box 3x3x3 Exo with " << AmanziMesh::framework_names.at(frm) << std::endl
+//               << "------------------------------------------------" << std::endl;
+//     auto mesh = createFrameworkUnstructured(Preference{frm}, "test/hex_3x3x3.par");
+//     testMeshAudit<MeshAudit, Mesh>(mesh);
+//     testGeometryCube<Mesh>(mesh,3,3,3);
+//     if (frm == Framework::MSTK) {
+//       testExteriorMapsUnitBox(mesh,3,3,3);
+//     }
+//   }
+// }
+
+
+
+TEST(MESH_GEOMETRY_2x3CUBE)
+{
+  // a 3D, generated, structured hex on the unit cube, NX=NY=NZ=3
+  // works in MSTK & SIMPLE (in serial)
+  std::vector<Framework> frameworks;
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
+  if (getDefaultComm()->NumProc() == 1)
+    frameworks.push_back(Framework::SIMPLE);
+
+  for (const auto& frm : frameworks) {
+    std::cout << std::endl
+              << "Testing 3D Box 2x2x3 with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "------------------------------------------------" << std::endl;
+    auto mesh = createFrameworkStructuredUnitHex(Preference{frm}, 2,2,3);
+    testMeshAudit<MeshAudit, Mesh>(mesh);
+    testGeometryCube<Mesh>(mesh,2,2,3);
+
+    if (frm == Framework::MSTK)
+      testExteriorMapsUnitBox(mesh,2,2,3);
+  }
+}
+
+
+TEST(MESH_GEOMETRY_FRACTURE_EXO)
+{
+  // only works in MSTK or MOAB
+  // Note this only checks the exo mesh, which does not have the fractures in it!
+  // Actual fracture capability is checked later, but would depend on this test passing.
+  std::vector<Framework> frameworks;
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
+
+  // Not sure what is up with this mesh, but MOAB errors trying to read it.
+  // if (framework_enabled(Framework::MOAB)) {
+  //   frameworks.push_back(Framework::MOAB);
+  // }
+
+  for (const auto& frm : frameworks) {
+    std::cout << std::endl
+              << "Testing 3D Fracture Exo with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "------------------------------------------------" << std::endl;
+    auto mesh = createFrameworkUnstructured(Preference{frm}, "test/fractures.exo");
+    testMeshAudit<MeshAudit, Mesh>(mesh);
+  }
+}
+
+
+TEST(MESH_GEOMETRY_PINCHOUTS)
+{
+  // only MSTK can handle this mesh -- it has degeneracies
+  std::vector<Framework> frameworks;
+  if (framework_enabled(Framework::MSTK)) {
+    frameworks.push_back(Framework::MSTK);
+  }
+
+  for (const auto& frm : frameworks) {
+    std::cout << std::endl
+              << "Testing 3D Pinchout with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "------------------------------------------------" << std::endl;
+    auto mesh = createFrameworkUnstructured(Preference{frm}, "test/test_pri_pinchout_mesh.exo");
+    testMeshAudit<MeshAudit, Mesh>(mesh);
+  }
+}

@@ -22,12 +22,21 @@ namespace Energy {
 
 class IEM {
  public:
+  IEM() : ierr_(0) {};
   virtual ~IEM() {}
 
   // IEM(Teuchos::ParameterList& plist);
   virtual double InternalEnergy(double T, double p) = 0;
   virtual double DInternalEnergyDT(double T, double p) = 0;
   virtual double DInternalEnergyDp(double T, double p) = 0;
+
+  // error messages
+  int error_code() { return ierr_; }
+  std::string error_msg() { return error_msg_; }
+
+ protected:
+  int ierr_;
+  std::string error_msg_;
 };
 
 }  // namespace Energy

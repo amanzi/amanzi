@@ -306,6 +306,10 @@ class Mesh : public MeshLight {
   bool valid_set_id(const Set_ID setid, const Entity_kind kind) const;
   bool valid_set_name(const std::string setname, const Entity_kind kind) const;
 
+  // does this mesh framework support this mesh type
+  virtual
+  bool valid_set_type(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const = 0;
+
   // Get number of entities of type 'category' in set
   virtual unsigned int get_set_size(
           const std::string& setname,

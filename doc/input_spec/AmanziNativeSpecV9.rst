@@ -3208,7 +3208,7 @@ Multiphase PK
 Mathematical models
 ...................
 
-The conceptual PDE model for the isothermal multiphase flow inlcude
+The conceptual PDE model for the isothermal multiphase flow include
 transport equations for components and nonlinear algebraic constraints for the phase presence. 
 At the moment we consider two phases (liquid and gas), multiple components, and one 
 constraint.

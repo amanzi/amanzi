@@ -34,8 +34,6 @@ FlowMatrixFracture_PK::FlowMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
     Amanzi::PK_MPC<PK_BDF>(pk_tree, glist, S, soln),
     Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln)
 {
-  Teuchos::ParameterList vlist;
-  vo_ = Teuchos::rcp(new VerboseObject("CoupledFlow_PK", vlist));
   Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(glist, "PKs");
   if (pks_list->isSublist(name_)) {
     plist_ = Teuchos::sublist(pks_list, name_);
@@ -49,6 +47,10 @@ FlowMatrixFracture_PK::FlowMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(plist_, "time integrator", true);
+
+  Teuchos::ParameterList vlist;
+  vlist.sublist("verbose object") = plist_->sublist("verbose object");
+  vo_ = Teuchos::rcp(new VerboseObject("CoupledFlow_PK", vlist));
 }
 
 

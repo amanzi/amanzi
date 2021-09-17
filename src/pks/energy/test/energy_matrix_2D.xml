@@ -271,7 +271,7 @@
         <Parameter name="field evaluator type" type="string" value="molar fraction gas"/>
         <Parameter name="molar fraction key" type="string" value="molar_fraction_gas"/>
         <ParameterList name="vapor pressure model parameters">
-          <Parameter name="vapor pressure model type" type="string" value="water vapor over water/ice"/>
+          <Parameter name="eos type" type="string" value="water vapor over water/ice"/>
         </ParameterList>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="extreme"/>

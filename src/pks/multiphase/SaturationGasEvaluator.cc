@@ -22,7 +22,7 @@ SaturationGasEvaluator::SaturationGasEvaluator(Teuchos::ParameterList& plist)
 {
   my_key_ = plist_.get<std::string>("my key");
   saturation_liquid_key_ = plist_.get<std::string>("saturation liquid key");
-  dependencies_.insert(std::string(saturation_liquid_key_));
+  dependencies_.insert(saturation_liquid_key_);
 }
 
 

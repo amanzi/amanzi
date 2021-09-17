@@ -373,6 +373,44 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
 /* ******************************************************************
 * Return a pointer to a local operator
 ****************************************************************** */
+AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+    Energy_PK::ModifyCorrection(
+        double dt, Teuchos::RCP<const TreeVector> res,
+        Teuchos::RCP<const TreeVector> u,
+        Teuchos::RCP<TreeVector> du)
+{
+  int ntemp_clipped(0);
+  
+  // clipping temperature
+  for (auto comp = u->Data()->begin(); comp != u->Data()->end(); ++comp) {
+    const auto& uc = *u->Data()->ViewComponent(*comp);
+    auto& duc = *du->Data()->ViewComponent(*comp);
+
+    int ncomp = u->Data()->size(*comp, false);
+    for (int i = 0; i < ncomp; ++i) {
+      double tmp0 = uc[0][i] / 20.0;
+      double tmp1 = std::min(tmp0, uc[0][i] - 273.65);
+      if (duc[0][i] < -tmp0) {
+        ntemp_clipped++;
+        duc[0][i] = -tmp0;
+      } else if (duc[0][i] > tmp1) {
+        ntemp_clipped++;
+        duc[0][i] = tmp1;
+      } 
+    }
+  }
+
+  int tmp(ntemp_clipped);
+  u->Data()->Comm()->SumAll(&tmp, &ntemp_clipped, 1);  // find the global clipping
+
+  return (ntemp_clipped) > 0 ? AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED :
+      AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
+}
+
+
+/* ******************************************************************
+* Return a pointer to a local operator
+****************************************************************** */
 Teuchos::RCP<Operators::Operator> Energy_PK::my_operator(
     const Operators::OperatorType& type)
 {

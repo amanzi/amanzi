@@ -96,11 +96,13 @@ if ((ENABLE_Unstructured)  AND
                       "-D ENABLE_MESH_MSTK:BOOL=ON\n")
 endif()    
 
-if(ENABLE_KOKKOS_OPENMP)
-  set(CMAKE_CXX_FLAGS "-fopenmp")
+if(ENABLE_OpenMP)
+  find_package(OpenMP REQUIRED)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-if(ENABLE_KOKKOS_CUDA) 
+if(ENABLE_CUDA) 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
     -Wno-deprecated-declarations \
     -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored \

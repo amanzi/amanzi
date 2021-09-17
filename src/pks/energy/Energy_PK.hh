@@ -82,9 +82,7 @@ class Energy_PK : public PK_PhysicalBDF {
   AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
       ModifyCorrection(double dt, Teuchos::RCP<const TreeVector> res,
                        Teuchos::RCP<const TreeVector> u,
-                       Teuchos::RCP<TreeVector> du) override {
-    return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
-  }
+                       Teuchos::RCP<TreeVector> du) override;
 
   // -- calling this indicates that the time integration
   //    scheme is changing the value of the solution in state.

@@ -12,6 +12,8 @@
   the correct arguments.
 */
 
+#include "EOS_Utils.hh"
+
 #include "IEMEvaluator.hh"
 #include "IEMFactory.hh"
 
@@ -92,11 +94,21 @@ void IEMEvaluator::EvaluateField_(
     const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp);
     Epetra_MultiVector& result_v = *result->ViewComponent(*comp);
 
+    int ierr(0);
+    std::string msg;
+
     int ncomp = result->size(*comp);
     for (int i = 0; i != ncomp; ++i) {
       auto id = MyModel_(kind, i);
-      result_v[0][i] = iem_->second[(*iem_->first)[id]]->InternalEnergy(temp_v[0][i], pres_v[0][i]);
+      auto model = iem_->second[(*iem_->first)[id]];
+      result_v[0][i] = model->InternalEnergy(temp_v[0][i], pres_v[0][i]);
+
+      if (model->error_code() > 0) {
+        ierr = 1;
+        msg = model->error_msg();
+      }
     }
+    AmanziEOS::ErrorAnalysis(temp->Comm(), ierr, msg);
   }
 }
 

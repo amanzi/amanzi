@@ -1,0 +1,1023 @@
+diff --git a/packages/ifpack2/src/Ifpack2_Hypre.cpp b/packages/ifpack2/src/Ifpack2_Hypre.cpp
+new file mode 100644
+index 00000000000..96e57755850
+--- /dev/null
++++ b/packages/ifpack2/src/Ifpack2_Hypre.cpp
+@@ -0,0 +1,78 @@
++/*@HEADER
++// ***********************************************************************
++//
++//       Ifpack2:  Templated Object-Oriented Algebraic Preconditioner Package
++//                 Copyright (2009) Sandia Corporation
++//
++// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
++// license for use of this work by or on behalf of the U.S. Government.
++//
++// Redistribution and use in source and binary forms, with or without
++// modification, are permitted provided that the following conditions are
++// met:
++//
++// 1. Redistributions of source code must retain the above copyright
++// notice, this list of conditions and the following disclaimer.
++//
++// 2. Redistributions in binary form must reproduce the above copyright
++// notice, this list of conditions and the following disclaimer in the
++// documentation and/or other materials provided with the distribution.
++//
++// 3. Neither the name of the Corporation nor the names of the
++// contributors may be used to endorse or promote products derived from
++// this software without specific prior written permission.
++//
++// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
++// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
++// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++//
++// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
++//
++// ***********************************************************************
++//@HEADER
++*/
++
++#include "Ifpack2_ConfigDefs.hpp"
++#if defined(HAVE_IFPACK2_HYPRE) && defined(HAVE_IFPACK2_MPI)
++
++#include "HYPRE_IJ_mv.h"
++#include "HYPRE_parcsr_ls.h"
++#include "krylov.h"
++#include "_hypre_parcsr_mv.h"
++#include "_hypre_IJ_mv.h"
++#include "HYPRE_parcsr_mv.h"
++#include "HYPRE.h"
++#include <map>
++#include "Ifpack2_Hypre_FunctionParameters.hpp"
++
++namespace Ifpack2 {
++
++  #include "Ifpack2_HypreParameterMap.hpp"
++
++  void IFPACK2_CHK_ERRV(int code) {
++    if(code<0) {
++      std::ostringstream ofs;
++      ofs << "Ifpack2::Hypre: Error with code "<<code<<std::endl;
++      throw std::runtime_error(ofs.str());
++    }
++  }
++
++  void IFPACK2_CHK_ERR(int code) {
++    if(code<0) {
++      std::ostringstream ofs;
++      ofs << "Ifpack2::Hypre: Error with code "<<code<<std::endl;
++      throw std::runtime_error(ofs.str());
++    }
++  }
++
++}
++
++#endif // HAVE_IFPACK2_HYPRE && HAVE_IFPACK2_MPI
+\ No newline at end of file
+diff --git a/packages/ifpack2/src/Ifpack2_Hypre_FunctionParameters.hpp b/packages/ifpack2/src/Ifpack2_Hypre_FunctionParameters.hpp
+new file mode 100644
+index 00000000000..b52feadb730
+--- /dev/null
++++ b/packages/ifpack2/src/Ifpack2_Hypre_FunctionParameters.hpp
+@@ -0,0 +1,382 @@
++/*@HEADER
++// ***********************************************************************
++//
++//       Ifpack2:  Templated Object-Oriented Algebraic Preconditioner Package
++//                 Copyright (2009) Sandia Corporation
++//
++// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
++// license for use of this work by or on behalf of the U.S. Government.
++//
++// Redistribution and use in source and binary forms, with or without
++// modification, are permitted provided that the following conditions are
++// met:
++//
++// 1. Redistributions of source code must retain the above copyright
++// notice, this list of conditions and the following disclaimer.
++//
++// 2. Redistributions in binary form must reproduce the above copyright
++// notice, this list of conditions and the following disclaimer in the
++// documentation and/or other materials provided with the distribution.
++//
++// 3. Neither the name of the Corporation nor the names of the
++// contributors may be used to endorse or promote products derived from
++// this software without specific prior written permission.
++//
++// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
++// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
++// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++//
++// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
++//
++// ***********************************************************************
++//@HEADER
++*/
++
++
++#ifndef IFPACK2_HYPRE_FUNCTIONPARAMETERS_HPP
++#define IFPACK2_HYPRE_FUNCTIONPARAMETERS_HPP
++
++#include "Ifpack2_ConfigDefs.hpp"
++#if defined(HAVE_IFPACK2_HYPRE) && defined(HAVE_IFPACK2_MPI)
++
++#include <sstream>
++#include "HYPRE_utilities.h"
++#include "HYPRE_IJ_mv.h"
++#include "HYPRE_parcsr_ls.h"
++#include "krylov.h"
++#include "_hypre_parcsr_mv.h"
++#include "_hypre_IJ_mv.h"
++#include "HYPRE_parcsr_mv.h"
++#include "HYPRE.h"
++
++// Hypre forward declarations (to avoid downstream header pollution)
++struct hypre_IJMatrix_struct;
++typedef struct hypre_IJMatrix_struct *HYPRE_IJMatrix;
++struct hypre_IJVector_struct;
++typedef struct hypre_IJVector_struct *HYPRE_IJVector;
++struct hypre_ParCSRMatrix_struct;
++typedef struct hypre_ParCSRMatrix_struct* HYPRE_ParCSRMatrix;
++struct hypre_ParVector_struct;
++typedef struct hypre_ParVector_struct * HYPRE_ParVector;
++struct hypre_Solver_struct;
++typedef struct hypre_Solver_struct *HYPRE_Solver;
++struct hypre_ParVector_struct;
++typedef struct hypre_ParVector_struct hypre_ParVector;
++//struct hypre_Vector;
++
++#ifndef HYPRE_ENUMS
++#define HYPRE_ENUMS
++//! This enumerated type defines the allowed solvers and preconditioners in Hypre. Some can be used as both solver and preconditioner.
++  enum Hypre_Solver{
++    BoomerAMG,
++    ParaSails,
++    Euclid,
++    AMS,
++    Hybrid,
++    PCG,
++    GMRES,
++    FlexGMRES,
++    LGMRES,
++    BiCGSTAB
++  };
++
++  //! This enumerated type defines the two options for applying inverse, either solve or apply the preconditioner.
++  enum Hypre_Chooser{
++    Hypre_Is_Solver,
++    Hypre_Is_Preconditioner
++  };
++#endif //HYPRE_ENUMS
++
++// The Python script that generates the ParameterMap needs to be after these typedefs
++typedef HYPRE_Int (*int_func)(HYPRE_Solver, HYPRE_Int);
++typedef HYPRE_Int (*double_func)(HYPRE_Solver, double);
++typedef HYPRE_Int (*double_int_func)(HYPRE_Solver, double, HYPRE_Int);
++typedef HYPRE_Int (*int_int_func)(HYPRE_Solver, HYPRE_Int, HYPRE_Int);
++typedef HYPRE_Int (*int_star_func)(HYPRE_Solver, HYPRE_Int*);
++typedef HYPRE_Int (*int_star_star_func)(HYPRE_Solver, HYPRE_Int**);
++typedef HYPRE_Int (*double_star_func)(HYPRE_Solver, double*);
++typedef HYPRE_Int (*int_int_double_double_func)(HYPRE_Solver, HYPRE_Int, HYPRE_Int, double, double);
++typedef HYPRE_Int (*int_int_int_double_int_int_func)(HYPRE_Solver, HYPRE_Int, HYPRE_Int, HYPRE_Int, double, HYPRE_Int, HYPRE_Int);
++typedef HYPRE_Int (*char_star_func)(HYPRE_Solver, char*);
++
++
++namespace Ifpack2 {
++
++  void IFPACK2_CHK_ERRV(int code);
++
++  void IFPACK2_CHK_ERR(int code);
++
++  //! This class is used to help with passing parameters in the SetParameter() function. Use this class to call Hypre's internal parameters.
++  class FunctionParameter {
++  public:
++    //! Single int constructor.
++    FunctionParameter(Hypre_Chooser chooser, int_func funct, HYPRE_Int param1) :
++      chooser_(chooser),
++      option_(0),
++      int_func_(funct),
++      int_param1_(param1) {}
++
++    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, HYPRE_Int param1) :
++      chooser_(chooser),
++      option_(0),
++      int_func_(hypreMapIntFunc_.at(funct_name)),
++      int_param1_(param1) {}
++
++    //! Single double constructor.
++    FunctionParameter(Hypre_Chooser chooser, double_func funct, double param1):
++      chooser_(chooser),
++      option_(1),
++      double_func_(funct),
++      double_param1_(param1) {}
++
++    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, double param1):
++      chooser_(chooser),
++      option_(1),
++      double_func_(hypreMapDoubleFunc_.at(funct_name)),
++      double_param1_(param1) {}
++
++    //! Single double, single int constructor.
++    FunctionParameter(Hypre_Chooser chooser, double_int_func funct, double param1, HYPRE_Int param2):
++      chooser_(chooser),
++      option_(2),
++      double_int_func_(funct),
++      int_param1_(param2),
++      double_param1_(param1) {}
++
++    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, double param1, HYPRE_Int param2):
++      chooser_(chooser),
++      option_(2),
++      double_int_func_(hypreMapDoubleIntFunc_.at(funct_name)),
++      int_param1_(param2),
++      double_param1_(param1) {}
++
++    //! Two ints constructor.
++    FunctionParameter(Hypre_Chooser chooser, int_int_func funct, HYPRE_Int param1, HYPRE_Int param2):
++      chooser_(chooser),
++      option_(3),
++      int_int_func_(funct),
++      int_param1_(param1),
++      int_param2_(param2) {}
++
++    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, HYPRE_Int param1, HYPRE_Int param2):
++      chooser_(chooser),
++      option_(3),
++      int_int_func_(hypreMapIntIntFunc_.at(funct_name)),
++      int_param1_(param1),
++      int_param2_(param2) {}
++
++    //! Int pointer constructor.
++    FunctionParameter(Hypre_Chooser chooser, int_star_func funct, HYPRE_Int *param1):
++      chooser_(chooser),
++      option_(4),
++      int_star_func_(funct),
++      int_star_param_(param1) {}
++
++    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, HYPRE_Int *param1):
++      chooser_(chooser),
++      option_(4),
++      int_star_func_(hypreMapIntStarFunc_.at(funct_name)),
++      int_star_param_(param1) {}
++
++    //! Double pointer constructor.
++    FunctionParameter(Hypre_Chooser chooser, double_star_func funct, double* param1):
++      chooser_(chooser),
++      option_(5),
++      double_star_func_(funct),
++      double_star_param_(param1) {}
++
++    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, double* param1):
++      chooser_(chooser),
++      option_(5),
++      double_star_func_(hypreMapDoubleStarFunc_.at(funct_name)),
++      double_star_param_(param1) {}
++
++    //! Two ints, two doubles constructor.
++    FunctionParameter(Hypre_Chooser chooser, int_int_double_double_func funct, HYPRE_Int param1, HYPRE_Int param2, double param3, double param4):
++      chooser_(chooser),
++      option_(6),
++      int_int_double_double_func_(funct),
++      int_param1_(param1),
++      int_param2_(param2),
++      double_param1_(param3),
++      double_param2_(param4) {}
++
++    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, HYPRE_Int param1, HYPRE_Int param2, double param3, double param4):
++      chooser_(chooser),
++      option_(6),
++      int_int_double_double_func_(hypreMapIntIntDoubleDoubleFunc_.at(funct_name)),
++      int_param1_(param1),
++      int_param2_(param2),
++      double_param1_(param3),
++      double_param2_(param4) {}
++
++    //! Integer pointer to list of integer pointers
++    FunctionParameter(Hypre_Chooser chooser, int_star_star_func funct, HYPRE_Int ** param1):
++      chooser_(chooser),
++      option_(7),
++      int_star_star_func_(funct),
++      int_star_star_param_(param1) {}
++
++    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, HYPRE_Int** param1):
++      chooser_(chooser),
++      option_(7),
++      int_star_star_func_(hypreMapIntStarStarFunc_.at(funct_name)),
++      int_star_star_param_(param1) {}
++
++    //! Five ints, one double constructor.
++    FunctionParameter(Hypre_Chooser chooser, int_int_int_double_int_int_func funct, HYPRE_Int param1, HYPRE_Int param2, HYPRE_Int param3, double param4, HYPRE_Int param5, HYPRE_Int param6):
++      chooser_(chooser),
++      option_(8),
++      int_int_int_double_int_int_func_(funct),
++      int_param1_(param1),
++      int_param2_(param2),
++      int_param3_(param3),
++      int_param4_(param5),
++      int_param5_(param6),
++      double_param1_(param4) {}
++
++    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, HYPRE_Int param1, HYPRE_Int param2, HYPRE_Int param3, double param4, HYPRE_Int param5, HYPRE_Int param6):
++      chooser_(chooser),
++      option_(8),
++      int_int_int_double_int_int_func_(hypreMapIntIntIntDoubleIntIntFunc_.at(funct_name)),
++      int_param1_(param1),
++      int_param2_(param2),
++      int_param3_(param3),
++      int_param4_(param5),
++      int_param5_(param6),
++      double_param1_(param4) {}
++
++    //! Char pointer constructor.
++    FunctionParameter(Hypre_Chooser chooser, char_star_func funct, char *param1):
++      chooser_(chooser),
++      option_(9),
++      char_star_func_(funct),
++      char_star_param_(param1) {}
++
++    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, char *param1):
++      chooser_(chooser),
++      option_(9),
++      char_star_func_(hypreMapCharStarFunc_.at(funct_name)),
++      char_star_param_(param1) {}
++
++    //! Only method of this class. Calls the function pointer with the passed in HYPRE_Solver
++    int CallFunction(HYPRE_Solver solver, HYPRE_Solver precond) {
++      if(chooser_ == Hypre_Is_Solver){
++        if(option_ == 0){
++          return int_func_(solver, int_param1_);
++        } else if(option_ == 1){
++          return double_func_(solver, double_param1_);
++        } else if(option_ == 2){
++          return double_int_func_(solver, double_param1_, int_param1_);
++        } else if (option_ == 3){
++          return int_int_func_(solver, int_param1_, int_param2_);
++        } else if (option_ == 4){
++          return int_star_func_(solver, int_star_param_);
++        } else if (option_ == 5){
++          return double_star_func_(solver, double_star_param_);
++        } else if (option_ == 6) {
++          return int_int_double_double_func_(solver, int_param1_, int_param2_, double_param1_, double_param2_);
++        } else if (option_ == 7) {
++          return int_star_star_func_(solver, int_star_star_param_);
++        } else if (option_ == 8) {
++          return int_int_int_double_int_int_func_(solver, int_param1_, int_param2_, int_param3_, double_param1_, int_param4_, int_param5_);
++        } else if (option_ == 9) {
++          return char_star_func_(solver, char_star_param_);
++        } else {
++          IFPACK2_CHK_ERR(-2);
++        }
++      } else {
++        if(option_ == 0){
++          return int_func_(precond, int_param1_);
++        } else if(option_ == 1){
++          return double_func_(precond, double_param1_);
++        } else if(option_ == 2){
++          return double_int_func_(precond, double_param1_, int_param1_);
++        } else if(option_ == 3) {
++          return int_int_func_(precond, int_param1_, int_param2_);
++        } else if(option_ == 4) {
++          return int_star_func_(precond, int_star_param_);
++        } else if(option_ == 5) {
++          return double_star_func_(precond, double_star_param_);
++        } else if (option_ == 6) {
++          return int_int_double_double_func_(precond, int_param1_, int_param2_, double_param1_, double_param2_);
++        } else if (option_ == 7) {
++          return int_star_star_func_(precond, int_star_star_param_);
++        } else if (option_ == 8) {
++          return int_int_int_double_int_int_func_(precond, int_param1_, int_param2_, int_param3_, double_param1_, int_param4_, int_param5_);
++        } else if (option_ == 9) {
++          return char_star_func_(solver, char_star_param_);
++        } else {
++          IFPACK2_CHK_ERR(-2);
++        }
++      }
++      return 0;
++    }
++
++    static bool isFuncIntInt(std::string funct_name) {
++      return (hypreMapIntIntFunc_.find(funct_name) != hypreMapIntIntFunc_.end());
++    }
++
++    static bool isFuncIntIntDoubleDouble(std::string funct_name) {
++      return (hypreMapIntIntDoubleDoubleFunc_.find(funct_name) != hypreMapIntIntDoubleDoubleFunc_.end());
++    }
++
++    static bool isFuncIntIntIntDoubleIntInt(std::string funct_name) {
++      return (hypreMapIntIntIntDoubleIntIntFunc_.find(funct_name) != hypreMapIntIntIntDoubleIntIntFunc_.end());
++    }
++
++    static bool isFuncIntStarStar(std::string funct_name) {
++      return (hypreMapIntStarStarFunc_.find(funct_name) != hypreMapIntStarStarFunc_.end());
++    }
++
++  private:
++    Hypre_Chooser chooser_;
++    int option_;
++    int_func int_func_;
++    double_func double_func_;
++    double_int_func double_int_func_;
++    int_int_func int_int_func_;
++    int_star_func int_star_func_;
++    double_star_func double_star_func_;
++    int_int_double_double_func int_int_double_double_func_;
++    int_int_int_double_int_int_func int_int_int_double_int_int_func_;
++    int_star_star_func int_star_star_func_;
++    char_star_func char_star_func_;
++    HYPRE_Int int_param1_;
++    HYPRE_Int int_param2_;
++    HYPRE_Int int_param3_;
++    HYPRE_Int int_param4_;
++    HYPRE_Int int_param5_;
++    double double_param1_;
++    double double_param2_;
++    HYPRE_Int *int_star_param_;
++    HYPRE_Int **int_star_star_param_;
++    double *double_star_param_;
++    char *char_star_param_;
++
++    static const std::map<std::string, int_func> hypreMapIntFunc_;
++    static const std::map<std::string, double_func> hypreMapDoubleFunc_;
++    static const std::map<std::string, double_int_func> hypreMapDoubleIntFunc_;
++    static const std::map<std::string, int_int_func> hypreMapIntIntFunc_;
++    static const std::map<std::string, int_star_func> hypreMapIntStarFunc_;
++    static const std::map<std::string, double_star_func> hypreMapDoubleStarFunc_;
++    static const std::map<std::string, int_int_double_double_func> hypreMapIntIntDoubleDoubleFunc_;
++    static const std::map<std::string, int_int_int_double_int_int_func> hypreMapIntIntIntDoubleIntIntFunc_;
++    static const std::map<std::string, int_star_star_func> hypreMapIntStarStarFunc_;
++    static const std::map<std::string, char_star_func> hypreMapCharStarFunc_;
++
++  };
++
++}
++
++#endif // HAVE_IFPACK2_HYPRE && HAVE_IFPACK2_MPI
++
++#endif /* IFPACK2_HYPRE_FUNCTIONPARAMETERS_HPP */
+\ No newline at end of file
+diff --git a/packages/ifpack2/src/Ifpack2_Hypre_decl.hpp b/packages/ifpack2/src/Ifpack2_Hypre_decl.hpp
+index ad8335e0b78..b0e041b9f95 100644
+--- a/packages/ifpack2/src/Ifpack2_Hypre_decl.hpp
++++ b/packages/ifpack2/src/Ifpack2_Hypre_decl.hpp
+@@ -44,7 +44,7 @@
+ #define IFPACK2_HYPRE_DECL_HPP
+ 
+ #include "Ifpack2_ConfigDefs.hpp"
+-#ifdef HAVE_IFPACK2_HYPRE
++#if defined(HAVE_IFPACK2_HYPRE) && defined(HAVE_IFPACK2_MPI)
+ 
+ #include "Ifpack2_Preconditioner.hpp"
+ #include "Ifpack2_Details_CanChangeMatrix.hpp"
+@@ -58,6 +58,7 @@
+ #include "Teuchos_RefCountPtr.hpp"
+ #include "Teuchos_ArrayRCP.hpp"
+ 
++#include "Ifpack2_Hypre_FunctionParameters.hpp"
+ 
+ #include <map>
+ 
+@@ -101,9 +102,6 @@ namespace Ifpack2 {
+     Hypre_Is_Preconditioner
+   };
+ #endif //HYPRE_ENUMS
+-  
+-  class FunctionParameter;
+-  
+ 
+ 
+ //! Ifpack2::Hypre: A class for constructing and using an ILU factorization of a given Tpetra::RowMatrix, using the Hypre library by Lawrence Livermore National Laboratories.
+@@ -530,6 +528,9 @@ public:
+ 
+   //@}
+ 
++  //! Copies matrix data from Tpetra matrix to Hypre matrix.
++  int CopyTpetraToHypre();
++
+ private:
+   // @{ Private methods
+ 
+@@ -557,9 +558,6 @@ private:
+   //! Create the Preconditioner.
+   int CreatePrecond();
+ 
+-  //! Copies matrix data from Tpetra matrix to Hypre matrix.
+-  int CopyTpetraToHypre();
+-
+   //! Add a function to be called in Compute()
+   int AddFunToList(Teuchos::RCP<FunctionParameter> NewFun);
+ 
+@@ -711,5 +709,5 @@ private:
+ 
+ }//end Ifpack2 namespace
+ 
+-#endif // HAVE_IFAPCK2_HYPRE
++#endif // HAVE_IFPACK2_HYPRE && HAVE_IFPACK2_MPI
+ #endif /* IFPACK2_HYPRE_DECL_HPP */
+diff --git a/packages/ifpack2/src/Ifpack2_Hypre_def.hpp b/packages/ifpack2/src/Ifpack2_Hypre_def.hpp
+index 39567505393..68fbfe42ea8 100644
+--- a/packages/ifpack2/src/Ifpack2_Hypre_def.hpp
++++ b/packages/ifpack2/src/Ifpack2_Hypre_def.hpp
+@@ -64,302 +64,9 @@ using Teuchos::RCP;
+ using Teuchos::rcp;
+ using Teuchos::rcpFromRef;
+ 
+-// The Python script that generates the ParameterMap needs to be after these typedefs
+-typedef HYPRE_Int (*int_func)(HYPRE_Solver, HYPRE_Int);
+-typedef HYPRE_Int (*double_func)(HYPRE_Solver, double);
+-typedef HYPRE_Int (*double_int_func)(HYPRE_Solver, double, HYPRE_Int);
+-typedef HYPRE_Int (*int_int_func)(HYPRE_Solver, HYPRE_Int, HYPRE_Int);
+-typedef HYPRE_Int (*int_star_func)(HYPRE_Solver, HYPRE_Int*);
+-typedef HYPRE_Int (*int_star_star_func)(HYPRE_Solver, HYPRE_Int**);
+-typedef HYPRE_Int (*double_star_func)(HYPRE_Solver, double*);
+-typedef HYPRE_Int (*int_int_double_double_func)(HYPRE_Solver, HYPRE_Int, HYPRE_Int, double, double);
+-typedef HYPRE_Int (*int_int_int_double_int_int_func)(HYPRE_Solver, HYPRE_Int, HYPRE_Int, HYPRE_Int, double, HYPRE_Int, HYPRE_Int);
+-typedef HYPRE_Int (*char_star_func)(HYPRE_Solver, char*);
+ 
+ namespace Ifpack2 {
+ 
+-  void IFPACK2_CHK_ERRV(int code) {
+-    if(code<0) {
+-      std::ostringstream ofs;
+-      ofs << "Ifpack2::Hypre: Error with code "<<code<<std::endl;
+-      throw std::runtime_error(ofs.str());
+-    }
+-  }
+-
+-  void IFPACK2_CHK_ERR(int code) {
+-    if(code<0) {
+-      std::ostringstream ofs;
+-      ofs << "Ifpack2::Hypre: Error with code "<<code<<std::endl;
+-      throw std::runtime_error(ofs.str());
+-    }
+-  }
+-
+-
+-//! This class is used to help with passing parameters in the SetParameter() function. Use this class to call Hypre's internal parameters.
+-class FunctionParameter{
+-  public:
+-    //! Single int constructor.
+-    FunctionParameter(Hypre_Chooser chooser, int_func funct, HYPRE_Int param1) :
+-      chooser_(chooser),
+-      option_(0),
+-      int_func_(funct),
+-      int_param1_(param1) {}
+-
+-    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, HYPRE_Int param1) :
+-      chooser_(chooser),
+-      option_(0),
+-      int_func_(hypreMapIntFunc_.at(funct_name)),
+-      int_param1_(param1) {}
+-
+-    //! Single double constructor.
+-    FunctionParameter(Hypre_Chooser chooser, double_func funct, double param1):
+-      chooser_(chooser),
+-      option_(1),
+-      double_func_(funct),
+-      double_param1_(param1) {}
+-
+-    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, double param1):
+-      chooser_(chooser),
+-      option_(1),
+-      double_func_(hypreMapDoubleFunc_.at(funct_name)),
+-      double_param1_(param1) {}
+-
+-    //! Single double, single int constructor.
+-    FunctionParameter(Hypre_Chooser chooser, double_int_func funct, double param1, HYPRE_Int param2):
+-      chooser_(chooser),
+-      option_(2),
+-      double_int_func_(funct),
+-      int_param1_(param2),
+-      double_param1_(param1) {}
+-
+-    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, double param1, HYPRE_Int param2):
+-      chooser_(chooser),
+-      option_(2),
+-      double_int_func_(hypreMapDoubleIntFunc_.at(funct_name)),
+-      int_param1_(param2),
+-      double_param1_(param1) {}
+-
+-    //! Two ints constructor.
+-    FunctionParameter(Hypre_Chooser chooser, int_int_func funct, HYPRE_Int param1, HYPRE_Int param2):
+-      chooser_(chooser),
+-      option_(3),
+-      int_int_func_(funct),
+-      int_param1_(param1),
+-      int_param2_(param2) {}
+-
+-    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, HYPRE_Int param1, HYPRE_Int param2):
+-      chooser_(chooser),
+-      option_(3),
+-      int_int_func_(hypreMapIntIntFunc_.at(funct_name)),
+-      int_param1_(param1),
+-      int_param2_(param2) {}
+-
+-    //! Int pointer constructor.
+-    FunctionParameter(Hypre_Chooser chooser, int_star_func funct, HYPRE_Int *param1):
+-      chooser_(chooser),
+-      option_(4),
+-      int_star_func_(funct),
+-      int_star_param_(param1) {}
+-
+-    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, HYPRE_Int *param1):
+-      chooser_(chooser),
+-      option_(4),
+-      int_star_func_(hypreMapIntStarFunc_.at(funct_name)),
+-      int_star_param_(param1) {}
+-
+-    //! Double pointer constructor.
+-    FunctionParameter(Hypre_Chooser chooser, double_star_func funct, double* param1):
+-      chooser_(chooser),
+-      option_(5),
+-      double_star_func_(funct),
+-      double_star_param_(param1) {}
+-
+-    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, double* param1):
+-      chooser_(chooser),
+-      option_(5),
+-      double_star_func_(hypreMapDoubleStarFunc_.at(funct_name)),
+-      double_star_param_(param1) {}
+-
+-    //! Two ints, two doubles constructor.
+-    FunctionParameter(Hypre_Chooser chooser, int_int_double_double_func funct, HYPRE_Int param1, HYPRE_Int param2, double param3, double param4):
+-      chooser_(chooser),
+-      option_(6),
+-      int_int_double_double_func_(funct),
+-      int_param1_(param1),
+-      int_param2_(param2),
+-      double_param1_(param3),
+-      double_param2_(param4) {}
+-
+-    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, HYPRE_Int param1, HYPRE_Int param2, double param3, double param4):
+-      chooser_(chooser),
+-      option_(6),
+-      int_int_double_double_func_(hypreMapIntIntDoubleDoubleFunc_.at(funct_name)),
+-      int_param1_(param1),
+-      int_param2_(param2),
+-      double_param1_(param3),
+-      double_param2_(param4) {}
+-
+-    //! Integer pointer to list of integer pointers
+-    FunctionParameter(Hypre_Chooser chooser, int_star_star_func funct, HYPRE_Int ** param1):
+-      chooser_(chooser),
+-      option_(7),
+-      int_star_star_func_(funct),
+-      int_star_star_param_(param1) {}
+-
+-    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, HYPRE_Int** param1):
+-      chooser_(chooser),
+-      option_(7),
+-      int_star_star_func_(hypreMapIntStarStarFunc_.at(funct_name)),
+-      int_star_star_param_(param1) {}
+-
+-    //! Five ints, one double constructor.
+-    FunctionParameter(Hypre_Chooser chooser, int_int_int_double_int_int_func funct, HYPRE_Int param1, HYPRE_Int param2, HYPRE_Int param3, double param4, HYPRE_Int param5, HYPRE_Int param6):
+-      chooser_(chooser),
+-      option_(8),
+-      int_int_int_double_int_int_func_(funct),
+-      int_param1_(param1),
+-      int_param2_(param2),
+-      int_param3_(param3),
+-      int_param4_(param5),
+-      int_param5_(param6),
+-      double_param1_(param4) {}
+-
+-    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, HYPRE_Int param1, HYPRE_Int param2, HYPRE_Int param3, double param4, HYPRE_Int param5, HYPRE_Int param6):
+-      chooser_(chooser),
+-      option_(8),
+-      int_int_int_double_int_int_func_(hypreMapIntIntIntDoubleIntIntFunc_.at(funct_name)),
+-      int_param1_(param1),
+-      int_param2_(param2),
+-      int_param3_(param3),
+-      int_param4_(param5),
+-      int_param5_(param6),
+-      double_param1_(param4) {}
+-
+-    //! Char pointer constructor.
+-    FunctionParameter(Hypre_Chooser chooser, char_star_func funct, char *param1):
+-      chooser_(chooser),
+-      option_(9),
+-      char_star_func_(funct),
+-      char_star_param_(param1) {}
+-
+-    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, char *param1):
+-      chooser_(chooser),
+-      option_(9),
+-      char_star_func_(hypreMapCharStarFunc_.at(funct_name)),
+-      char_star_param_(param1) {}
+-
+-  //! Only method of this class. Calls the function pointer with the passed in HYPRE_Solver
+-  int CallFunction(HYPRE_Solver solver, HYPRE_Solver precond) {
+-    if(chooser_ == Hypre_Is_Solver){
+-      if(option_ == 0){
+-        return int_func_(solver, int_param1_);
+-      } else if(option_ == 1){
+-        return double_func_(solver, double_param1_);
+-      } else if(option_ == 2){
+-        return double_int_func_(solver, double_param1_, int_param1_);
+-      } else if (option_ == 3){
+-        return int_int_func_(solver, int_param1_, int_param2_);
+-      } else if (option_ == 4){
+-        return int_star_func_(solver, int_star_param_);
+-      } else if (option_ == 5){
+-        return double_star_func_(solver, double_star_param_);
+-      } else if (option_ == 6) {
+-        return int_int_double_double_func_(solver, int_param1_, int_param2_, double_param1_, double_param2_);
+-      } else if (option_ == 7) {
+-        return int_star_star_func_(solver, int_star_star_param_);
+-      } else if (option_ == 8) {
+-        return int_int_int_double_int_int_func_(solver, int_param1_, int_param2_, int_param3_, double_param1_, int_param4_, int_param5_);
+-      } else if (option_ == 9) {
+-        return char_star_func_(solver, char_star_param_);
+-      } else {
+-        IFPACK2_CHK_ERR(-2);
+-      }
+-    } else {
+-      if(option_ == 0){
+-        return int_func_(precond, int_param1_);
+-      } else if(option_ == 1){
+-        return double_func_(precond, double_param1_);
+-      } else if(option_ == 2){
+-        return double_int_func_(precond, double_param1_, int_param1_);
+-      } else if(option_ == 3) {
+-        return int_int_func_(precond, int_param1_, int_param2_);
+-      } else if(option_ == 4) {
+-        return int_star_func_(precond, int_star_param_);
+-      } else if(option_ == 5) {
+-        return double_star_func_(precond, double_star_param_);
+-      } else if (option_ == 6) {
+-        return int_int_double_double_func_(precond, int_param1_, int_param2_, double_param1_, double_param2_);
+-      } else if (option_ == 7) {
+-        return int_star_star_func_(precond, int_star_star_param_);
+-      } else if (option_ == 8) {
+-        return int_int_int_double_int_int_func_(precond, int_param1_, int_param2_, int_param3_, double_param1_, int_param4_, int_param5_);
+-      } else if (option_ == 9) {
+-        return char_star_func_(solver, char_star_param_);
+-      } else {
+-        IFPACK2_CHK_ERR(-2);
+-      }
+-    }
+-    return 0;
+-  }
+-  
+-   static bool isFuncIntInt(std::string funct_name) {
+-    return (hypreMapIntIntFunc_.find(funct_name) != hypreMapIntIntFunc_.end());
+-  }
+-  
+-  static bool isFuncIntIntDoubleDouble(std::string funct_name) {
+-    return (hypreMapIntIntDoubleDoubleFunc_.find(funct_name) != hypreMapIntIntDoubleDoubleFunc_.end());
+-  }
+-  
+-  static bool isFuncIntIntIntDoubleIntInt(std::string funct_name) {
+-    return (hypreMapIntIntIntDoubleIntIntFunc_.find(funct_name) != hypreMapIntIntIntDoubleIntIntFunc_.end());
+-             }
+-  
+-  static bool isFuncIntStarStar(std::string funct_name) {
+-    return (hypreMapIntStarStarFunc_.find(funct_name) != hypreMapIntStarStarFunc_.end());
+-  }
+-  
+-  private:
+-    Hypre_Chooser chooser_;
+-    int option_;
+-    int_func int_func_;
+-    double_func double_func_;
+-    double_int_func double_int_func_;
+-    int_int_func int_int_func_;
+-    int_star_func int_star_func_;
+-    double_star_func double_star_func_;
+-    int_int_double_double_func int_int_double_double_func_;
+-    int_int_int_double_int_int_func int_int_int_double_int_int_func_;
+-    int_star_star_func int_star_star_func_;
+-    char_star_func char_star_func_;
+-    HYPRE_Int int_param1_;
+-    HYPRE_Int int_param2_;
+-    HYPRE_Int int_param3_;
+-    HYPRE_Int int_param4_;
+-    HYPRE_Int int_param5_;
+-    double double_param1_;
+-    double double_param2_;
+-    HYPRE_Int *int_star_param_;
+-    HYPRE_Int **int_star_star_param_;
+-    double *double_star_param_;
+-    char *char_star_param_;
+-
+-  static const std::map<std::string, int_func> hypreMapIntFunc_;
+-  static const std::map<std::string, double_func> hypreMapDoubleFunc_;
+-  static const std::map<std::string, double_int_func> hypreMapDoubleIntFunc_;
+-  static const std::map<std::string, int_int_func> hypreMapIntIntFunc_;
+-  static const std::map<std::string, int_star_func> hypreMapIntStarFunc_;
+-  static const std::map<std::string, double_star_func> hypreMapDoubleStarFunc_;
+-  static const std::map<std::string, int_int_double_double_func> hypreMapIntIntDoubleDoubleFunc_;
+-  static const std::map<std::string, int_int_int_double_int_int_func> hypreMapIntIntIntDoubleIntIntFunc_;
+-  static const std::map<std::string, int_star_star_func> hypreMapIntStarStarFunc_;
+-  static const std::map<std::string, char_star_func> hypreMapCharStarFunc_;
+-
+-};
+-
+-// NOTE: This really, really needs to be here and not up above, so please don't move it
+-#include "Ifpack2_HypreParameterMap.hpp"
+-
+-
+ template<class MatrixType>
+ Hypre<MatrixType>::
+ Hypre(const Teuchos::RCP<const row_matrix_type>& A):
+@@ -476,50 +183,15 @@ void Hypre<MatrixType>::initialize(){
+   if (timer.is_null ()) timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+ 
+   if(IsInitialized_) return;  
+-
++  double startTime = timer->wallTime();
+   {
+     Teuchos::TimeMonitor timeMon (*timer);
+     
+-    // Create the Hypre matrix and copy values.  Note this uses values (which
+-    // Initialize() shouldn't do) but it doesn't care what they are (for
+-    // instance they can be uninitialized data even).  It should be possible to
+-    // set the Hypre structure without copying values, but this is the easiest
+-    // way to get the structure.
+-    MPI_Comm comm = * (Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(A_->getRowMap()->getComm())->getRawMpiComm());
+-    global_ordinal_type ilower = GloballyContiguousRowMap_->getMinGlobalIndex();
+-    global_ordinal_type iupper = GloballyContiguousRowMap_->getMaxGlobalIndex();
+-    IFPACK2_CHK_ERR(HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &HypreA_));
+-    IFPACK2_CHK_ERR(HYPRE_IJMatrixSetObjectType(HypreA_, HYPRE_PARCSR));
+-    IFPACK2_CHK_ERR(HYPRE_IJMatrixInitialize(HypreA_));
+-    CopyTpetraToHypre();
+-    if(SolveOrPrec_ == Hypre_Is_Solver) {
+-      IFPACK2_CHK_ERR(SetSolverType(SolverType_));
+-      if (SolverPrecondPtr_ != NULL && UsePreconditioner_) {
+-        // both method allows a PC (first condition) and the user wants a PC (second)
+-        IFPACK2_CHK_ERR(SetPrecondType(PrecondType_));
+-        CallFunctions();
+-        IFPACK2_CHK_ERR(SolverPrecondPtr_(Solver_, PrecondSolvePtr_, PrecondSetupPtr_, Preconditioner_));
+-      } else {
+-        CallFunctions();
+-      }
+-    } else {
+-      IFPACK2_CHK_ERR(SetPrecondType(PrecondType_));
+-      CallFunctions();
+-    }
+-    
+-    if (!G_.is_null()) {
+-      SetDiscreteGradient(G_);
+-    }
+-    
+-    if (!Coords_.is_null()) {
+-      SetCoordinates(Coords_);
+-    }
+-    
+     // set flags
+     IsInitialized_=true;
+     NumInitialize_++;
+   }
+-  InitializeTime_ = timer->totalElapsedTime ();
++  InitializeTime_ += (timer->wallTime() - startTime);
+ } //Initialize()
+ 
+ //==============================================================================
+@@ -836,7 +508,7 @@ void Hypre<MatrixType>::compute(){
+   const std::string timerName ("Ifpack2::Hypre::compute");
+   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
+   if (timer.is_null ()) timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+-
++  double startTime = timer->wallTime();
+   // Start timing here.
+   {
+     Teuchos::TimeMonitor timeMon (*timer);
+@@ -844,6 +516,41 @@ void Hypre<MatrixType>::compute(){
+     if(isInitialized() == false){
+       initialize();
+     }
++
++    // Create the Hypre matrix and copy values.  Note this uses values (which
++    // Initialize() shouldn't do) but it doesn't care what they are (for
++    // instance they can be uninitialized data even).  It should be possible to
++    // set the Hypre structure without copying values, but this is the easiest
++    // way to get the structure.
++    MPI_Comm comm = * (Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(A_->getRowMap()->getComm())->getRawMpiComm());
++    global_ordinal_type ilower = GloballyContiguousRowMap_->getMinGlobalIndex();
++    global_ordinal_type iupper = GloballyContiguousRowMap_->getMaxGlobalIndex();
++    IFPACK2_CHK_ERR(HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &HypreA_));
++    IFPACK2_CHK_ERR(HYPRE_IJMatrixSetObjectType(HypreA_, HYPRE_PARCSR));
++    IFPACK2_CHK_ERR(HYPRE_IJMatrixInitialize(HypreA_));
++    CopyTpetraToHypre();
++    if(SolveOrPrec_ == Hypre_Is_Solver) {
++      IFPACK2_CHK_ERR(SetSolverType(SolverType_));
++      if (SolverPrecondPtr_ != NULL && UsePreconditioner_) {
++        // both method allows a PC (first condition) and the user wants a PC (second)
++        IFPACK2_CHK_ERR(SetPrecondType(PrecondType_));
++        CallFunctions();
++        IFPACK2_CHK_ERR(SolverPrecondPtr_(Solver_, PrecondSolvePtr_, PrecondSetupPtr_, Preconditioner_));
++      } else {
++        CallFunctions();
++      }
++    } else {
++      IFPACK2_CHK_ERR(SetPrecondType(PrecondType_));
++      CallFunctions();
++    }
++
++    if (!G_.is_null()) {
++      SetDiscreteGradient(G_);
++    }
++
++    if (!Coords_.is_null()) {
++      SetCoordinates(Coords_);
++    }
+            
+     // Hypre Setup must be called after matrix has values
+     if(SolveOrPrec_ == Hypre_Is_Solver){
+@@ -856,9 +563,7 @@ void Hypre<MatrixType>::compute(){
+     NumCompute_++;
+   }
+   
+-  // timer->totalElapsedTime() returns the total time over all timer
+-  // calls.  Thus, we use = instead of +=.
+-  ComputeTime_ = timer->totalElapsedTime ();
++  ComputeTime_ += (timer->wallTime() - startTime);
+ } //Compute()
+ 
+ //==============================================================================
+@@ -882,7 +587,7 @@ void Hypre<MatrixType>::apply (const Tpetra::MultiVector<scalar_type,local_ordin
+   const std::string timerName ("Ifpack2::Hypre::apply");
+   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
+   if (timer.is_null ()) timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+-
++  double startTime = timer->wallTime();
+   // Start timing here.
+   {
+     Teuchos::TimeMonitor timeMon (*timer);
+@@ -941,9 +646,7 @@ void Hypre<MatrixType>::apply (const Tpetra::MultiVector<scalar_type,local_ordin
+     }
+     NumApply_++;
+   }
+-  // timer->totalElapsedTime() returns the total time over all timer
+-  // calls.  Thus, we use = instead of +=.
+-  ApplyTime_ = timer->totalElapsedTime ();
++  ApplyTime_ += (timer->wallTime() - startTime);
+ } //apply()
+ 
+ 
+@@ -1187,23 +890,28 @@ int Hypre<MatrixType>::CopyTpetraToHypre(){
+   if(Matrix.is_null()) 
+     throw std::runtime_error("Hypre<MatrixType>: Unsupported matrix configuration: Tpetra::CrsMatrix required");
+ 
+-  std::vector<GO> new_indices(Matrix->getNodeMaxNumRowEntries());
+-  for(LO i = 0; i < (LO) Matrix->getNodeNumRows(); i++){
+-    Teuchos::ArrayView<const SC> values;
+-    Teuchos::ArrayView<const LO> indices;
+-    Matrix->getLocalRowView(i, indices, values);
+-    for(LO j = 0; j < (LO)indices.size(); j++){
+-      new_indices[j] = GloballyContiguousColMap_->getGlobalElement(indices[j]);
+-    }
+-    GO GlobalRow[1];
+-    GO numEntries = (GO) indices.size();
+-    GlobalRow[0] = GloballyContiguousRowMap_->getGlobalElement(i);    
+-    IFPACK2_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, new_indices.data(), values.getRawPtr()));
++  LO nrows = Matrix->getNodeNumRows();
++  Kokkos::View<LO*,Kokkos::DefaultExecutionSpace> colsperrow("ColsPerRow",nrows);
++  auto rowPtrs = Matrix->getCrsGraph()->getLocalGraph().row_map;
++  Kokkos::parallel_for(nrows,
++    KOKKOS_LAMBDA(const int i){
++      colsperrow(i) = rowPtrs[i+1]-rowPtrs[i];
++  });
++  auto rowindices = Matrix->getRowMap()->getMyGlobalIndices();
++  auto values = Matrix->getLocalValuesView();
++  auto colindices = Matrix->getCrsGraph()->getLocalGraph().entries;
++  Kokkos::View<GO*,Kokkos::DefaultExecutionSpace>
++    new_colindices("nci",colindices.size());
++  for(int i = 0 ; i < colindices.size(); ++i){
++    new_colindices[i] = GloballyContiguousColMap_->getGlobalElement(colindices[i]);
+   }
++
++  IFPACK2_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_,nrows,colsperrow.data(),
++                                        rowindices.data(),new_colindices.data(),values.data()));
+   IFPACK2_CHK_ERR(HYPRE_IJMatrixAssemble(HypreA_));
+   IFPACK2_CHK_ERR(HYPRE_IJMatrixGetObject(HypreA_, (void**)&ParMatrix_));
+   if (Dump_)
+-    HYPRE_ParCSRMatrixPrint(ParMatrix_,"A.mat");
++    IFPACK2_CHK_ERR(HYPRE_ParCSRMatrixPrint(ParMatrix_,"A.mat"));
+   return 0;
+ } //CopyTpetraToHypre()
+ 
+@@ -1397,4 +1105,4 @@ bool Hypre<MatrixType>::hasTransposeApply() const {
+ 
+ 
+ #endif // HAVE_HYPRE && HAVE_MPI
+-#endif // IFPACK2_HYPRE_DEF_HPP
++#endif // IFPACK2_HYPRE_DEF_HPP
+\ No newline at end of file

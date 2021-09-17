@@ -40,6 +40,7 @@ namespace AmanziMesh {
 
 class Mesh_MOAB : public Mesh {
  public:
+
   // the request_faces and request_edges arguments have to be at the
   // end and not in the middle because if we omit them and specify a
   // pointer argument like gm or verbosity_obj, then there is implicit
@@ -217,7 +218,22 @@ class Mesh_MOAB : public Mesh {
   //
   // Boundary Conditions or Sets
   //----------------------------
-    
+  virtual
+  bool valid_set_type(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const {
+    if (rtype == AmanziGeometry::RegionType::BOX ||
+        rtype == AmanziGeometry::RegionType::PLANE ||
+        rtype == AmanziGeometry::RegionType::POINT ||
+        rtype == AmanziGeometry::RegionType::POLYGON ||
+        rtype == AmanziGeometry::RegionType::LABELEDSET ||
+        rtype == AmanziGeometry::RegionType::COLORFUNCTION) {
+      // while some LOGICAL operations are implemented, not all are...
+      //rtype == AmanziGeometry::RegionType::LOGICAL) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   // Get list of entities of type 'category' in set
   void get_set_entities_and_vofs(const std::string& setname, 
                                  const Entity_kind kind, 

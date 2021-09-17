@@ -92,6 +92,8 @@ class Amanzi_PK : public Chemistry_PK {
   std::vector<int> aux_index_;
   Teuchos::RCP<Epetra_MultiVector> aux_data_;
 
+  int ncells_owned_;
+
  private:
   // factory registration
   static RegisteredPKFactory<Amanzi_PK> reg_;

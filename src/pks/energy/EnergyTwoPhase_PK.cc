@@ -13,7 +13,6 @@
 */
 
 // Amanzi
-#include "EOSDensityEvaluator.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PDE_AdvectionUpwindFactory.hh"
 #include "UpwindFactory.hh"

@@ -11,11 +11,13 @@
 
 #include <boost/format.hpp>
 
+#include "RegionLogical.hh"
 #include "MeshException.hh"
 #include "MeshFactory.hh"
 #include "FileFormat.hh"
 
 #include "MeshExtractedManifold.hh"
+#include "MeshColumn.hh"
 #include "Mesh_simple.hh"
 
 #ifdef HAVE_MESH_MSTK
@@ -27,6 +29,28 @@
 
 namespace Amanzi {
 namespace AmanziMesh {
+
+
+// -------------------------------------------------------------
+// Factory for creating a MeshColumn object from a parent and a column ID
+// -------------------------------------------------------------
+Teuchos::RCP<MeshColumn>
+createColumnMesh(const Teuchos::RCP<const Mesh>& parent_mesh,
+                 int col_id,
+                 const Teuchos::RCP<Teuchos::ParameterList>& plist)
+{
+  AMANZI_ASSERT(col_id >= 0);
+  AMANZI_ASSERT(col_id < parent_mesh->num_columns());
+
+  // create the extracted mesh of the column of cells
+  MeshFactory fac(getCommSelf(), parent_mesh->geometric_model(), plist);
+  Teuchos::RCP<Mesh> extracted_mesh = fac.create(parent_mesh,
+          parent_mesh->cells_of_column(col_id), CELL, false, true, false);
+
+  // create the MeshColumn object
+  return Teuchos::rcp(new MeshColumn(extracted_mesh, plist));
+}
+
 
 
 // -------------------------------------------------------------
@@ -375,12 +399,20 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
                     const bool request_faces,
                     const bool request_edges)
 {
-  if (extraction_method_ == "manifold mesh" && setnames.size() == 1) {
+  if (extraction_method_ == "manifold mesh") {
     const auto& comm = inmesh->get_comm();
     const auto& gm = inmesh->geometric_model();
 
+    // greedy solution for more than one sets. A new region is forced into GM
+    std::string setname(setnames[0]);
+    if (setnames.size() > 1) {
+      for (int i = 1; i < setnames.size(); ++i) setname += "_" + setnames[i];
+      auto rgn = Teuchos::rcp(new AmanziGeometry::RegionLogical(setname, -1, "union", setnames));
+      Teuchos::rcp_const_cast<AmanziGeometry::GeometricModel>(gm)->AddRegion(rgn);
+    }
+
     auto mesh = Teuchos::rcp(new MeshExtractedManifold(
-        inmesh, setnames[0], setkind,
+        inmesh, setname, setkind,
         comm, gm, plist_, request_faces, request_edges, flatten));
 
     mesh->BuildCache();

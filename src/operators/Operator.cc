@@ -410,6 +410,10 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar)
   }
 }
 
+
+/* ******************************************************************
+* Matvec product Y = A * X using containers
+******************************************************************* */
 int Operator::ApplyUnassembled(const CompositeVector& X, CompositeVector& Y, double scalar) const
 {
   X.ScatterMasterToGhosted();
@@ -653,6 +657,9 @@ void Operator::RestoreCheckPoint()
   for (auto& it : *this) {
     it->RestoreCheckPoint();
   }
+
+  assembly_complete_ = false;
+  compute_complete_ = false;
 }
 
 
@@ -1142,6 +1149,14 @@ Teuchos::RCP<Operator> Operator::Clone() const {
   Errors::Message msg("Cloning of a derived Operator class is missing");
   Exceptions::amanzi_throw(msg);
   return Teuchos::null;
+}
+
+
+/* ******************************************************************
+* Rudimentary quality control
+****************************************************************** */
+void Operator::Verify() const {
+  for (const auto& it : *this) it->Verify();
 }
 
 }  // namespace Operators

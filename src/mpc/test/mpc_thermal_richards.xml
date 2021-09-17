@@ -370,6 +370,10 @@
       <Parameter name="PKs order" type="Array(string)" value="{flow, energy}"/>
       <Parameter name="master PK index" type="int" value="0"/>
 
+      <ParameterList name="physical models and assumptions">
+        <Parameter name="vapor diffusion" type="bool" value="true"/>
+      </ParameterList>
+
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{pressure, temperature}"/>
         <Parameter name="linear solver" type="string" value="none"/>

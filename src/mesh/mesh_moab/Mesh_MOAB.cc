@@ -31,7 +31,7 @@ Mesh_MOAB::Mesh_MOAB(const std::string& filename,
                      const Teuchos::RCP<const Teuchos::ParameterList>& plist,
                      const bool request_faces,
                      const bool request_edges)
-    : Mesh(comm, gm, Teuchos::null, request_faces, request_edges),
+    : Mesh(comm, gm, plist, request_faces, request_edges),
       extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL)
 {
   int result, rank;
@@ -1157,7 +1157,8 @@ moab::Tag Mesh_MOAB::build_set(
       tag = cstag;
     }
     else {
-      Errors::Message mesg("Region type not applicable/supported for cell sets");
+      Errors::Message mesg;
+      mesg << "Region \"" << region->name() << "\" type not applicable/supported for cell sets";
       amanzi_throw(mesg);
     }
       
@@ -1210,7 +1211,8 @@ moab::Tag Mesh_MOAB::build_set(
       // Will handle it later in the routine
     }
     else {
-      Errors::Message mesg("Region type not applicable/supported for face sets");
+      Errors::Message mesg;
+      mesg << "Region \"" << region->name() << "\" type not applicable/supported for face sets";
       amanzi_throw(mesg);
     }
     break;
