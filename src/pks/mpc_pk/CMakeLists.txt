@@ -69,6 +69,7 @@ if (ENABLE_AmanziPhysicsModule)
       FlowReactiveTransport_PK.hh
       ReactiveTransport_PK.hh
       ReactiveTransportMatrixFracture_PK.hh
+      ShallowWaterTransport_PK.hh
       SurfaceSubsurface_PK.hh)
 
   set(mpc_tree_src_files 
@@ -84,6 +85,7 @@ if (ENABLE_AmanziPhysicsModule)
       FlowReactiveTransport_PK.cc
       ReactiveTransport_PK.cc
       ReactiveTransportMatrixFracture_PK.cc
+      ShallowWaterTransport_PK.cc
       SurfaceSubsurface_PK.cc)
 
   set(mpc_tree_link_libs pks flow transport shallow_water time_integration data_structures state)
