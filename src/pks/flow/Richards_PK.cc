@@ -39,7 +39,6 @@
 #include "RelPermEvaluator.hh"
 #include "Richards_PK.hh"
 #include "VWContentEvaluator.hh"
-#include "VWContentEvaluatorFactory.hh"
 #include "WRMEvaluator.hh"
 #include "WRM.hh"
 
@@ -184,9 +183,9 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     vwc_list.set<std::string>("water content key", water_content_key_)
             .set<std::string>("pressure key", pressure_key_)
             .set<std::string>("saturation key", saturation_liquid_key_)
-            .set<std::string>("porosity key", porosity_key_);
-    VWContentEvaluatorFactory fac;
-    Teuchos::RCP<VWContentEvaluator> eval = fac.Create(vwc_model, vwc_list);
+            .set<std::string>("porosity key", porosity_key_)
+            .set<std::string>("water content model", vwc_model);
+    auto eval = Teuchos::rcp(new VWContentEvaluator(vwc_list));
     S->SetFieldEvaluator(water_content_key_, eval);
   }
 
@@ -294,7 +293,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
 
     double rho = glist_->sublist("state").sublist("initial conditions")
-                        .sublist("const_fluid_density").get<double>("value", 1000.0);
+                        .sublist("const_fluid_density").get<double>("value");
     double n_l = rho / CommonDefs::MOLAR_MASS_H2O;
 
     Teuchos::ParameterList& wc_eval = S->FEList().sublist(mol_density_liquid_key_);

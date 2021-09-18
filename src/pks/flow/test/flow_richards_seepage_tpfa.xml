@@ -92,7 +92,7 @@
 	<Parameter name="linear solver" type="string" value="linear operator"/>
 	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 	<Parameter name="preconditioner" type="string" value="Trilinos ML"/>
-	<Parameter name="preconditioner enhancement" type="string" value="linear operator"/>
+	<!--Parameter name="preconditioner enhancement" type="string" value="linear operator"/-->
 
 	<ParameterList name="initialization">
 	  <Parameter name="method" type="string" value="saturated solver"/>
@@ -293,7 +293,7 @@
 
     <ParameterList name="initial conditions">
       <ParameterList name="const_fluid_density">
-        <Parameter name="value" type="double" value="1.0"/>
+        <Parameter name="value" type="double" value="998.0"/>
       </ParameterList>
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="1.0"/>

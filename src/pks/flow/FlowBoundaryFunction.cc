@@ -39,6 +39,7 @@ FlowBoundaryFunction::FlowBoundaryFunction(const Teuchos::ParameterList& plist)
   if (plist.isParameter("submodel"))
     seepage_model_ = plist.get<std::string>("submodel");
 
+  seepage_flux_threshold_ = 0.0;
   if (plist.isParameter("seepage flux threshold"))
     seepage_flux_threshold_ = plist.get<double>("seepage flux threshold");
 
