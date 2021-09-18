@@ -386,7 +386,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   Epetra_MultiVector& q_c = *S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
 
   // create copies of primary fields
-  *S_->GetFieldData(prev_ponded_depth_key_, passwd_)->ViewComponent("cell") = h_c;
+  *S_->GetFieldData(prev_ponded_depth_key_, passwd_)->ViewComponent("cell", true) = h_c;
   Epetra_MultiVector h_c_tmp(h_c);
   Epetra_MultiVector q_c_tmp(q_c);
 
