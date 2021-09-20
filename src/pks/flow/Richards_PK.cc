@@ -25,6 +25,7 @@
 #include "InverseFactory.hh"
 #include "Mesh.hh"
 #include "Mesh_Algorithms.hh"
+#include "MultiplicativeEvaluator.hh"
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PK_Utils.hh"
@@ -36,7 +37,6 @@
 // Amanzi::Flow
 #include "DarcyVelocityEvaluator.hh"
 #include "PorosityModelEvaluator.hh"
-#include "RelPermEvaluator.hh"
 #include "Richards_PK.hh"
 #include "VWContentEvaluator.hh"
 #include "WRMEvaluator.hh"
@@ -138,6 +138,10 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
 
   viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid"); 
   mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid"); 
+ 
+  relperm_key_ = Keys::getKey(domain_, "relative_permeability"); 
+  relperm_tmp_key_ = Keys::getKey(domain_, "relative_permeability_tmp"); 
+  alpha_key_ = Keys::getKey(domain_, "alpha_coefficient"); 
 
   // set up the base class 
   Flow_PK::Setup(S);
@@ -280,9 +284,22 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     if (!S->HasField("const_fluid_viscosity")) {
       S->RequireScalar("const_fluid_viscosity", passwd_);
     }
-    S->RequireField(viscosity_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->GetField(viscosity_liquid_key_, passwd_)->set_io_vis(false);
+    S->RequireField(viscosity_liquid_key_, viscosity_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+
+    double mu = glist_->sublist("state").sublist("initial conditions")
+                       .sublist("const_fluid_viscosity").get<double>("value");
+
+    Teuchos::ParameterList& eval = S->FEList().sublist(viscosity_liquid_key_);
+    eval.sublist("function").sublist("DOMAIN")
+        .set<std::string>("region", "All")
+        .set<std::string>("component", "cell")
+        .sublist("function").sublist("function-constant")
+        .set<double>("value", mu);
+    eval.set<std::string>("field evaluator type", "independent variable");
+
+    S->RequireFieldEvaluator(viscosity_liquid_key_);
   }
 
   // -- model for liquid density is constant density unless specified otherwise
@@ -296,20 +313,19 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
                         .sublist("const_fluid_density").get<double>("value");
     double n_l = rho / CommonDefs::MOLAR_MASS_H2O;
 
-    Teuchos::ParameterList& wc_eval = S->FEList().sublist(mol_density_liquid_key_);
-    wc_eval.sublist("function").sublist("DOMAIN")
-           .set<std::string>("region", "All")
-           .set<std::string>("component","cell")
-           .sublist("function").sublist("function-constant")
-           .set<double>("value", n_l);
-    wc_eval.set<std::string>("field evaluator type", "independent variable");
+    Teuchos::ParameterList& eval = S->FEList().sublist(mol_density_liquid_key_);
+    eval.sublist("function").sublist("DOMAIN")
+        .set<std::string>("region", "All")
+        .set<std::string>("component","cell")
+        .sublist("function").sublist("function-constant")
+        .set<double>("value", n_l);
+    eval.set<std::string>("field evaluator type", "independent variable");
 
     S->RequireFieldEvaluator(mol_density_liquid_key_);
   }
   
   // -- saturation
-  Teuchos::RCP<Teuchos::ParameterList>
-      wrm_list = Teuchos::sublist(fp_list_, "water retention models", true);
+  auto wrm_list = Teuchos::sublist(fp_list_, "water retention models", true);
   wrm_ = CreateWRMPartition(mesh_, wrm_list);
 
   if (!S->HasField(saturation_liquid_key_)) {
@@ -329,6 +345,48 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S->GetField(prev_saturation_liquid_key_, passwd_)->set_io_vis(false);
   }
+
+  // -- relative permeability
+  if (!S->HasField(relperm_key_)) {
+    S->RequireField(relperm_key_, relperm_key_)->SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1)
+      ->AddComponent("face", AmanziMesh::FACE, 1);
+  }
+
+  // -- relative permeability (copy)
+  if (!S->HasField(relperm_tmp_key_)) {
+    S->RequireField(relperm_tmp_key_, relperm_tmp_key_)->SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1);
+
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("relative permeability key", relperm_tmp_key_);
+
+    auto eval = Teuchos::rcp(new Flow::RelPermEvaluator(elist, S.ptr(), wrm_));
+    S->SetFieldEvaluator(relperm_tmp_key_, eval);
+  }
+
+  // -- inverse of kinematic viscosity
+  /*
+  if (!S->HasField(alpha_key_)) {
+    S->RequireField(alpha_key_, alpha_key_)->SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1);
+
+    Teuchos::ParameterList elist;
+    Teuchos::Array<std::string> list0, list1;
+    list0.push_back(relperm_tmp_key_);
+    list0.push_back(mol_density_liquid_key_);
+    list1.push_back(viscosity_liquid_key_);
+    elist.set<std::string>("my key", alpha_key_)
+         .set<Teuchos::Array<std::string> >("multiplicative dependencies", list0)
+         .set<Teuchos::Array<std::string> >("reciprocal dependencies", list1);
+
+    auto eval = Teuchos::rcp(new MultiplicativeEvaluator(elist));
+    S->SetFieldEvaluator(alpha_key_, eval);
+  }
+  */
 
   // Local fields and evaluators.
   // -- hydraulic head
@@ -428,7 +486,8 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   // relative permeability and related stractures
   // -- create vectors using estimate of the space size
   Teuchos::RCP<CompositeVectorSpace> upw_cvs = upwind_->Map();
-  krel_ = Teuchos::rcp(new CompositeVector(*upw_cvs));
+  krel_ = S_->GetFieldData(relperm_key_, relperm_key_);
+  // krel_ = Teuchos::rcp(new CompositeVector(*upw_cvs));
   dKdP_ = Teuchos::rcp(new CompositeVector(*upw_cvs));
 
   // -- populate fields with default values
@@ -721,19 +780,6 @@ void Richards_PK::InitializeFields_()
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // set popular default values for missed fields.
-  // -- viscosity: if not initialized, we constant value from state.
-  if (S_->GetField(viscosity_liquid_key_)->owner() == passwd_) {
-    double mu = *S_->GetScalarData("const_fluid_viscosity");
-
-    if (!S_->GetField(viscosity_liquid_key_, passwd_)->initialized()) {
-      S_->GetFieldData(viscosity_liquid_key_, passwd_)->PutScalar(mu);
-      S_->GetField(viscosity_liquid_key_, passwd_)->set_initialized();
-
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initialized " << viscosity_liquid_key_ << " to input value " << mu << std::endl;  
-    }
-  }
-
   if (S_->GetField(saturation_liquid_key_)->owner() == passwd_) {
     if (S_->HasField(saturation_liquid_key_)) {
       if (!S_->GetField(saturation_liquid_key_, passwd_)->initialized()) {
@@ -748,6 +794,8 @@ void Richards_PK::InitializeFields_()
 
   InitializeFieldFromField_(prev_saturation_liquid_key_, saturation_liquid_key_, true);
   InitializeFieldFromField_(prev_water_content_key_, water_content_key_, true);
+
+  InitializeField_(S_.ptr(), relperm_key_, relperm_key_, 1.0);
 
   // set matrix fields assuming presure equilibrium
   // -- pressure

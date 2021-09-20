@@ -21,25 +21,18 @@ namespace Flow {
 * Two constructors.
 ****************************************************************** */
 RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist,
-                                   Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                                   double patm,
+                                   const Teuchos::Ptr<State>& S,
                                    const Teuchos::RCP<WRMPartition>& wrm) :
     SecondaryVariableFieldEvaluator(plist),
-    mesh_(mesh),
-    wrm_(wrm),
-    patm_(patm),
-    min_value_(0.0),
-    max_value_(1.0) {
-  InitializeFromPlist_();
+    wrm_(wrm) {
+  InitializeFromPlist_(S);
 }
 
 RelPermEvaluator::RelPermEvaluator(const RelPermEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     wrm_(other.wrm_),
     pressure_key_(other.pressure_key_),
-    patm_(other.patm_),
-    min_value_(other.min_value_),
-    max_value_(other.max_value_) {};
+    patm_(other.patm_) {};
 
 
 /* ******************************************************************
@@ -53,20 +46,21 @@ Teuchos::RCP<FieldEvaluator> RelPermEvaluator::Clone() const {
 /* ******************************************************************
 * Initialization.
 ****************************************************************** */
-void RelPermEvaluator::InitializeFromPlist_()
+void RelPermEvaluator::InitializeFromPlist_(const Teuchos::Ptr<State>& S)
 {
   // my keys is for rel perm.
   if (my_key_ == std::string("")) {
-    my_key_ = plist_.get<std::string>("rel perm key", "relative_permeability");
+    my_key_ = plist_.get<std::string>("relative permeability key");
   }
 
   // my dependency is pressure.
-  pressure_key_ = plist_.get<std::string>("pressure key", "pressure");
+  std::string domain = Keys::getDomain(my_key_);
+  pressure_key_ = plist_.get<std::string>("pressure key", Keys::getKey(domain, "pressure"));
   dependencies_.insert(pressure_key_);
 
   // use rel perm class for calcualtion
   Teuchos::ParameterList plist;
-  relperm_ = Teuchos::rcp(new RelPerm(plist, mesh_, patm_, wrm_));
+  relperm_ = Teuchos::rcp(new RelPerm(plist, S->GetMesh(domain), patm_, wrm_));
 }
 
 
@@ -77,7 +71,8 @@ void RelPermEvaluator::EvaluateField_(
     const Teuchos::Ptr<State>& S,
     const Teuchos::Ptr<CompositeVector>& result)
 {
-  AMANZI_ASSERT(false);
+  patm_ = *S->GetScalarData("atmospheric_pressure");
+
   // relperm_->Compute(S->GetFieldData(pressure_key_), result);
 }
 
@@ -90,8 +85,37 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(
     Key wrt_key,
     const Teuchos::Ptr<CompositeVector>& result)
 {
-  AMANZI_ASSERT(wrt_key == pressure_key_);
+  patm_ = *S->GetScalarData("atmospheric_pressure");
   // relperm_->ComputeDerivative(S->GetFieldData(pressure_key_), result);
+}
+
+
+/* ******************************************************************
+* TBW
+****************************************************************** */
+void RelPermEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
+{
+  // Create an unowned factory to check my dependencies.
+  auto dep_fac = Teuchos::rcp(new CompositeVectorSpace());
+  dep_fac->SetMesh(S->GetMesh(Keys::getDomain(my_key_)));
+  dep_fac->SetOwned(false);
+  dep_fac->SetComponent("cell", AmanziMesh::CELL, 1);
+
+  // Loop over my dependencies, ensuring they meet the requirements.
+  for (const auto& key : dependencies_) {
+    if (key == my_key_) {
+      Errors::Message msg;
+      msg << "Evaluator for key \"" << my_key_ << "\" depends upon itself.";
+      Exceptions::amanzi_throw(msg);
+    }
+    Teuchos::RCP<CompositeVectorSpace> fac = S->RequireField(key);
+    fac->Update(*dep_fac);
+  }
+
+  // Recurse into the tree to propagate info to leaves.
+  for (const auto& key : dependencies_) {
+    S->RequireFieldEvaluator(key)->EnsureCompatibility(S);
+  }
 }
 
 }  // namespace Flow

@@ -215,6 +215,7 @@ class Richards_PK : public Flow_PK {
   int upwind_frequency_;
 
   // evaluators
+  Key relperm_key_, relperm_tmp_key_, alpha_key_;
   Teuchos::RCP<RelPermEvaluator> rel_perm_eval_;
 
   // consistent water content and Darcy fluxes

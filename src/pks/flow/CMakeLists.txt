@@ -84,7 +84,6 @@ set(flow_inc_files
   PorosityModel.hh
   PorosityModelPartition.hh
   RelPerm.hh
-  RelPermEvaluator.hh
   Richards_PK.hh
   WRM.hh
   WRM_BrooksCorey.hh
