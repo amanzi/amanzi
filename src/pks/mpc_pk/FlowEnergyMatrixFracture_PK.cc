@@ -668,7 +668,7 @@ double FlowEnergyMatrixFracture_PK::ErrorNorm(
   for (int c = 0; c < ncells; ++c) {
     mass += mol_fc[0][c] * mesh_f->cell_volume(c);  // reference cell energy
   }
-  if (error_r > 0) {
+  if (ncells > 0) {
     mean_energy = 76.0 * mass / ncells;
     error_r = (residual_norm_ * dt_) / mean_energy;
   }
