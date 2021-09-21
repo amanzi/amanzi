@@ -106,12 +106,16 @@ void MPCLakeSoilRichards::Initialize(const Teuchos::Ptr<State>& S) {
 //  // Initialize my timestepper.
 //  PK_BDF_Default::Initialize(S);
 
-  auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
-  op_tree_lake_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
+  std::cout << "Solution_" << std::endl;
 
-  std::cout << "op_tree_lake_ = " << op_tree_lake_ << std::endl;
+  solution_->Print(std::cout,false);
 
-  std::cout << "op_tree_lake_ Structure start:\n" << op_tree_lake_->PrintDiagnostics() << std::endl;
+//  auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
+//  op_tree_lake_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
+
+//  std::cout << "op_tree_lake_ = " << op_tree_lake_ << std::endl;
+//
+//  std::cout << "op_tree_lake_ Structure start:\n" << op_tree_lake_->PrintDiagnostics() << std::endl;
 
   auto op0 = lake_pk_->my_operator(Operators::OPERATOR_MATRIX)->Clone();
 //  std::cout << "lake_pk_->my_operator(Operators::OPERATOR_MATRIX) = " << lake_pk_->my_operator(Operators::OPERATOR_MATRIX) << std::endl;
@@ -140,6 +144,19 @@ void MPCLakeSoilRichards::Initialize(const Teuchos::Ptr<State>& S) {
 
   std::cout << "Check 1 in mpc_lake_soil_richards.cc" << std::endl;
 
+  auto op100 = soil_pk_->sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX);
+  auto op111 = soil_pk_->sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX);
+
+  Teuchos::RCP<TreeVectorSpace> tvs = Teuchos::rcp(new TreeVectorSpace());
+  tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(Teuchos::rcpFromRef(op0->DomainMap()))));
+  tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(op1->RangeMap())));
+//  tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(Teuchos::rcpFromRef(op100->DomainMap()))));
+//  tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(Teuchos::rcpFromRef(op111->DomainMap()))));
+  op_tree_lake_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
+
+  std::cout << "op_tree_lake_ = " << op_tree_lake_ << std::endl;
+  std::cout << "op_tree_lake_ Structure start:\n" << op_tree_lake_->PrintDiagnostics() << std::endl;
+
   op_tree_lake_->set_operator_block(0, 0, op0);
 //  op_tree_lake_->set_operator_block(1, 1, op1);
   op_tree_lake_->set_block(1, 1, op1);
@@ -147,9 +164,6 @@ void MPCLakeSoilRichards::Initialize(const Teuchos::Ptr<State>& S) {
   std::cout << "op_tree_lake_ Structure with diagonal blocks:\n" << op_tree_lake_->PrintDiagnostics() << std::endl;
 
   std::cout << "Check 2 in mpc_lake_soil_richards.cc" << std::endl;
-
-//  auto op100 = soil_pk_->sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX);
-//  auto op111 = soil_pk_->sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX);
 
 //  auto op100 = op1->get_operator_block(0,0);
 //  auto op111 = op1->get_operator_block(1,1);
@@ -520,6 +534,7 @@ void MPCLakeSoilRichards::Initialize(const Teuchos::Ptr<State>& S) {
                << vo_->reset() << std::endl << std::endl;
   }
 
+
 }
 
 void
@@ -542,6 +557,8 @@ MPCLakeSoilRichards::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   // generate local matrices and apply sources and boundary conditions
   StrongMPC<PK_BDF_Default>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
 
+
+
   // although, residual calculation can be completed using off-diagonal
   // blocks, we use global matrix-vector multiplication instead.
   op_tree_lake_->AssembleMatrix();
@@ -554,14 +571,20 @@ MPCLakeSoilRichards::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
 
   auto op0 = sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX);
 //  auto op1 = sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX);
-//  auto op1 = soil_pk_->preconditioner();
+  auto op1 = soil_pk_->preconditioner();
 //  auto op1 = soil_pk_->preconditioner()->Clone();
 
-//  std::cout << "FunctionalResidual op1->A()" << std::endl;
-//  std::cout << "op1 = " << op1 << std::endl;
-//  op1->SymbolicAssembleMatrix();
-//  op1->AssembleMatrix();
-//  std::cout << *op1->A() << std::endl;
+  std::cout << "FunctionalResidual op0->A()" << std::endl;
+  std::cout << "op0 = " << op0 << std::endl;
+  op0->SymbolicAssembleMatrix();
+  op0->AssembleMatrix();
+  std::cout << *op0->A() << std::endl;
+
+  std::cout << "FunctionalResidual op1->A()" << std::endl;
+  std::cout << "op1 = " << op1 << std::endl;
+  op1->SymbolicAssembleMatrix();
+  op1->AssembleMatrix();
+  std::cout << *op1->A() << std::endl;
 //
 //  exit(0);
 
@@ -573,39 +596,35 @@ MPCLakeSoilRichards::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   Teuchos::RCP<Operators::Operator> pcA = soil_pk_->sub_pks_[0]->preconditioner();
   Teuchos::RCP<Operators::Operator> pcB = soil_pk_->sub_pks_[1]->preconditioner();
 
-  std::cout << "MPC LSR pcA" << std::endl;
-  pcA->SymbolicAssembleMatrix();
-  pcA->AssembleMatrix();
-  std::cout << *pcA->A() << std::endl;
-  std::cout << "MPC LSR pcB" << std::endl;
-  pcB->SymbolicAssembleMatrix();
-  pcB->AssembleMatrix();
-  std::cout << *pcB->A() << std::endl;
+//  std::cout << "MPC LSR pcA" << std::endl;
+//  pcA->SymbolicAssembleMatrix();
+//  pcA->AssembleMatrix();
+//  std::cout << *pcA->A() << std::endl;
+//  std::cout << "MPC LSR pcB" << std::endl;
+//  pcB->SymbolicAssembleMatrix();
+//  pcB->AssembleMatrix();
+//  std::cout << *pcB->A() << std::endl;
 
 //  exit(0);
 
-  std::cout << "soil_pk_->sub_pks_[0]->name() = " << soil_pk_->sub_pks_[0]->name() << std::endl;
-  std::cout << "soil_pk_->sub_pks_[1]->name() = " << soil_pk_->sub_pks_[1]->name() << std::endl;
 
-  std::cout << "f->SubVector(0)->Data() = " << f->SubVector(0)->Data() << std::endl;
-  std::cout << "op0 = " << op0 << std::endl;
   f->SubVector(0)->Data()->Update(-1.0, *op0->rhs(), 1.0);
-  std::cout << "FR check 1" << std::endl;
-  std::cout << "f->SubVector(1)->SubVector(0)->Data() = " << f->SubVector(1)->SubVector(0)->Data() << std::endl;
-  std::cout << "op10 = " << op10 << std::endl;
   f->SubVector(1)->SubVector(0)->Data()->Update(-1.0, *op10->rhs(), 1.0);
-  std::cout << "FR check 2" << std::endl;
-  std::cout << "f->SubVector(1)->SubVector(1)->Data() = " << f->SubVector(1)->SubVector(1)->Data() << std::endl;
   f->SubVector(1)->SubVector(1)->Data()->Update(-1.0, *op11->rhs(), 1.0);
-  std::cout << "FR check 3" << std::endl;
 //  f->SubVector(1)->Data()->Update(-1.0, *op1->rhs(), 1.0);
 
 //  sub_pks_[0]->FunctionalResidual(t_old, t_new, u_old->SubVector(0),
 //            u_new->SubVector(0), f->SubVector(0));
-//  sub_pks_[1]->FunctionalResidual(t_old, t_new, u_old->SubVector(1),
+//  soil_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(1),
 //            u_new->SubVector(1), f->SubVector(1));
+//  soil_pk_->sub_pks_[0]->FunctionalResidual(t_old, t_new, u_old->SubVector(1)->SubVector(0),
+//              u_new->SubVector(1)->SubVector(0), f->SubVector(1)->SubVector(0));
+//  soil_pk_->sub_pks_[1]->FunctionalResidual(t_old, t_new, u_old->SubVector(1)->SubVector(1),
+//                u_new->SubVector(1)->SubVector(1), f->SubVector(1)->SubVector(1));
 
   std::cout << *op_tree_lake_->A() << std::endl;
+
+  u_old->Print(std::cout,false);
 
 //  exit(0);
 
@@ -639,8 +658,8 @@ int MPCLakeSoilRichards::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu) {
 
   Pu->PutScalar(0.0);
-//  return op_tree_lake_->ApplyInverse(*u, *Pu);
-  int ierr = StrongMPC::ApplyPreconditioner(u,Pu);
+  return op_tree_lake_->ApplyInverse(*u, *Pu);
+//  int ierr = StrongMPC::ApplyPreconditioner(u,Pu);
 
   /*
   int ierr = 0;
@@ -671,9 +690,9 @@ int MPCLakeSoilRichards::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
   */
 
 
-//  ierr = StrongMPC::ApplyPreconditioner(u,Pu);
+//  int ierr = StrongMPC::ApplyPreconditioner(u,Pu);
 
-  return (ierr > 0) ? 0 : 1;
+//  return (ierr > 0) ? 0 : 1;
 
 }
 

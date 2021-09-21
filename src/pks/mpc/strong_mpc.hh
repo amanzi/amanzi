@@ -255,6 +255,7 @@ int StrongMPC<PK_t>::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuch
 //   std::cout<<*(((Pu->SubVector("flow"))->Data())->ViewComponent("cell", false));
 //   cout<<"Exit from StrongMPC precon\n";
 //   exit(0);
+
   return ierr;
 };
 

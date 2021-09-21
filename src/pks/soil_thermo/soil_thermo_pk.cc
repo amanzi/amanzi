@@ -116,6 +116,9 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
   std::cout << "conductivity_key_ = " << conductivity_key_ << std::endl;
   std::cout << "uw_conductivity_key_ soil = " << uw_conductivity_key_ << std::endl;
 
+  S->RequireField(temperature_key_)->SetMesh(mesh_)
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
+
   // Get data for special-case entities.
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -819,7 +822,7 @@ void Soil_Thermo_PK::UpdateBoundaryConditions_(
     values[f] = bc->second;
     std::cout << "temp BC values[f] = " << values[f] << std::endl;
     adv_markers[f] = Operators::OPERATOR_BC_DIRICHLET;
-    adv_values[f] = bc->first;
+    adv_values[f] = 0.; //bc->first;
     std::cout << "temp BC adv_values[f] = " << adv_values[f] << std::endl;
   }
 

@@ -342,6 +342,33 @@ void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
                         ls_name, *linear_operator_list_,
                         true);
 
+  std::cout << "op0 Structure:\n" << op0->PrintDiagnostics() << std::endl;
+
+  std::cout << "op1 Structure:\n" << op1->PrintDiagnostics() << std::endl;
+
+  std::cout << "op0->A()" << std::endl;
+  std::cout << "op0 = " << op0 << std::endl;
+  op0->SymbolicAssembleMatrix();
+  op0->AssembleMatrix();
+  std::cout << *op0->A() << std::endl;
+
+  std::cout << "op1->A()" << std::endl;
+  op1->SymbolicAssembleMatrix();
+  op1->AssembleMatrix();
+  std::cout << *op1->A() << std::endl;
+
+  std::cout << "PRINT" << std::endl;
+  std::cout << op_tree_lake_->PrintDiagnostics() << std::endl;
+  std::cout << "PRINT DONE" << std::endl;
+
+  op_tree_lake_->SymbolicAssembleMatrix();
+  op_tree_lake_->AssembleMatrix();
+
+  std::cout << "before A" << std::endl;
+  std::cout << *op_tree_lake_->A() << std::endl;
+  std::cout << "after A" << std::endl;
+//  exit(0);
+
 
   std::cout << "plist_ = " << plist_ << std::endl;
   std::cout << "plist_->sublist('inverse') = " << plist_->sublist("inverse") << std::endl;
@@ -398,8 +425,6 @@ MPCLake1D::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVecto
   int ierr = op_tree_lake_->ApplyAssembled(*u_new, *f);
   AMANZI_ASSERT(!ierr);
 
-  std::cout << *op_tree_lake_->A() << std::endl;
-
   // diagonal blocks in tree operator must be lake and soil
   AMANZI_ASSERT(sub_pks_[0]->name() == "lake thermo" &&
                   sub_pks_[1]->name() == "soil thermo");
@@ -436,6 +461,22 @@ MPCLake1D::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVecto
 //
 ////  // All surface to subsurface fluxes have been taken by the subsurface.
 ////  g->SubVector(1)->Data()->ViewComponent("cell",false)->PutScalar(0.);
+
+  std::cout << "FunctionalResidual op0->A()" << std::endl;
+  std::cout << "op0 = " << op0 << std::endl;
+  op0->SymbolicAssembleMatrix();
+  op0->AssembleMatrix();
+  std::cout << *op0->A() << std::endl;
+
+//  op1 = sub_pks_[1]->my_operator(Operators::OPERATOR_PRECONDITIONER_RAW);
+
+  std::cout << "FunctionalResidual op1->A()" << std::endl;
+  std::cout << "op1 = " << op1 << std::endl;
+  op1->SymbolicAssembleMatrix();
+  op1->AssembleMatrix();
+  std::cout << *op1->A() << std::endl;
+
+  std::cout << *op_tree_lake_->A() << std::endl;
 
   std::cout << "FunctionalResidual DONE" << std::endl;
 }
