@@ -93,6 +93,16 @@ MeshCache::getSetSize(const std::string& region_name,
   return getSetEntities(region_name, kind, ptype).size();
 }
 
+
+//
+// TODO --etc
+// This should be updated -- only cache the ALL set, then construct the
+// OWNED or GHOST set on demand.  No need to save both OWNED and ALL.
+//
+// TODO --etc
+// Don't cache "ALL" or "BOUNDARY" labeled sets.  Are there others that are
+// just as fast to create as to cache?
+//
 const Entity_ID_View&
 MeshCache::getSetEntities(const std::string& region_name,
                           const Entity_kind kind,

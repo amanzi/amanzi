@@ -407,6 +407,34 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
         CHECK_CLOSE(1.0, nc[2], 1.e-10);
       }
 
+    } else if (r_name == "Empty Geometric") {
+      CHECK(mesh->isValidSetType(r->get_type(), AmanziMesh::Entity_kind::CELL));
+      CHECK_THROW(mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED),
+                  Errors::Message);
+      // int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      // CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
+
+      CHECK(mesh->isValidSetType(r->get_type(), AmanziMesh::Entity_kind::CELL));
+      CHECK_THROW(mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL),
+                  Errors::Message);
+      // n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+      // CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
+
+    } else if (r_name == "Empty Labeled Set") {
+      if (labeled) {
+        CHECK(mesh->isValidSetType(r->get_type(), AmanziMesh::Entity_kind::CELL));
+        CHECK_THROW(mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED),
+                    Errors::Message);
+        //int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+        //CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
+
+        CHECK(mesh->isValidSetType(r->get_type(), AmanziMesh::Entity_kind::CELL));
+        CHECK_THROW(mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL),
+                    Errors::Message);
+        //n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+        //CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
+      }
+
     } else if (r_name == "Unit Hex") {
       // pass -- this is used for extraction method
       continue;
@@ -697,6 +725,35 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh,
         if (nc[1] > 0.5) CHECK_CLOSE(2.0/3, nc[1], 1.e-10);
         else CHECK_CLOSE(1.0/3, nc[1], 1.e-10);
       }
+
+    } else if (r_name == "Empty Geometric") {
+      CHECK(mesh->isValidSetType(r->get_type(), AmanziMesh::Entity_kind::CELL));
+      CHECK_THROW(mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED),
+                  Errors::Message);
+      // int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+      // CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
+
+      CHECK(mesh->isValidSetType(r->get_type(), AmanziMesh::Entity_kind::CELL));
+      CHECK_THROW(mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL),
+                  Errors::Message);
+      // n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+      // CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
+
+    } else if (r_name == "Empty Labeled Set") {
+      if (labeled) {
+        CHECK(mesh->isValidSetType(r->get_type(), AmanziMesh::Entity_kind::CELL));
+        CHECK_THROW(mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED),
+                    Errors::Message);
+        //int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+        //CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
+
+        CHECK(mesh->isValidSetType(r->get_type(), AmanziMesh::Entity_kind::CELL));
+        CHECK_THROW(mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL),
+                    Errors::Message);
+        //n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+        //CHECK_CLOSE_SUMALL(0, n_ents, *mesh->getComm());
+      }
+
     } else {
       std::cout << "Bad set name: \"" << r_name << "\"" << std::endl;
       CHECK(false);

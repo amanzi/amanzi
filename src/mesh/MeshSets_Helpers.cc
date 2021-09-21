@@ -22,31 +22,46 @@ resolveMeshSet(const AmanziGeometry::Region& region,
                const Parallel_type ptype,
                const MeshCache& mesh)
 {
+  std::cout << "Resolving set: " << region.get_name() << std::endl;
+  Entity_ID_List result;
   if (AmanziGeometry::RegionType::ENUMERATED == region.get_type()) {
     auto region_enumerated = dynamic_cast<const AmanziGeometry::RegionEnumerated*>(&region);
     AMANZI_ASSERT(region_enumerated);
-    return resolveMeshSetEnumerated(*region_enumerated, kind, ptype, mesh);
+    result = resolveMeshSetEnumerated(*region_enumerated, kind, ptype, mesh);
 
   } else if (AmanziGeometry::RegionType::LOGICAL == region.get_type()) {
     auto region_logical = dynamic_cast<const AmanziGeometry::RegionLogical*>(&region);
     AMANZI_ASSERT(region_logical);
-    return resolveMeshSetLogical(*region_logical, kind, ptype, mesh);
+    result = resolveMeshSetLogical(*region_logical, kind, ptype, mesh);
 
   } else if (AmanziGeometry::RegionType::LABELEDSET == region.get_type()) {
     auto region_ls = dynamic_cast<const AmanziGeometry::RegionLabeledSet*>(&region);
     AMANZI_ASSERT(region_ls);
-    return resolveMeshSetLabeledSet(*region_ls, kind, ptype, mesh);
+    result = resolveMeshSetLabeledSet(*region_ls, kind, ptype, mesh);
+    // labeled sets may not be sorted, though all other types are.  Sort labeled sets.
+    std::sort(result.begin(), result.end());
 
   } else if (AmanziGeometry::RegionType::ALL == region.get_type()) {
-    return resolveMeshSetAll(region, kind, ptype, mesh);
+    result = resolveMeshSetAll(region, kind, ptype, mesh);
 
   } else if (AmanziGeometry::RegionType::BOUNDARY == region.get_type()) {
-    return resolveMeshSetBoundary(region, kind, ptype, mesh);
+    result = resolveMeshSetBoundary(region, kind, ptype, mesh);
 
   } else {
     // geometric
-    return resolveMeshSetGeometric(region, kind, ptype, mesh);
+    result = resolveMeshSetGeometric(region, kind, ptype, mesh);
   }
+
+  int g_count = 0;
+  int l_count = result.size();
+  mesh.getComm()->SumAll(&l_count, &g_count, 1);
+  if (g_count == 0) {
+    // warn?  error?
+    Errors::Message msg;
+    msg << "AmanziMesh::resolveMeshSet: Region \"" << region.get_name() << "\" of type \"" << to_string(region.get_type()) << "\" is empty.";
+    Exceptions::amanzi_throw(msg);
+  }
+  return result;
 }
 
 
@@ -71,16 +86,31 @@ resolveMeshSetBoundary(const AmanziGeometry::Region& region,
 {
   AMANZI_ASSERT(AmanziGeometry::RegionType::BOUNDARY == region.get_type());
   Entity_ID_List ents;
+  Entity_kind boundary_kind;
   if (kind == Entity_kind::FACE) {
     ents = mesh.getBoundaryFaces();
+    boundary_kind = Entity_kind::BOUNDARY_FACE;
   } else if (kind == Entity_kind::NODE) {
     ents = mesh.getBoundaryNodes();
+    boundary_kind = Entity_kind::BOUNDARY_NODE;
   } else {
     Errors::Message msg;
     msg << "Developer Error: MeshCache::getSetEntities() on region \"" << region.get_name()
         << "\" of type BOUNDARY was requested with invalid type " << to_string(kind);
     Exceptions::amanzi_throw(msg);
   }
+
+  // the above calls always return ALL entities, adjust if needed
+  if (ptype == Parallel_type::OWNED) {
+    // keep only the first OWNED ones
+    ents.resize(mesh.getNumEntities(boundary_kind, ptype));
+  } else if (ptype == Parallel_type::GHOST) {
+    // keep owned -- end
+    Entity_ID_List ents2(ents.begin()+mesh.getNumEntities(boundary_kind, Parallel_type::OWNED),
+                         ents.end());
+    std::swap(ents, ents2);
+  }
+
   return ents;
 }
 
@@ -108,39 +138,37 @@ resolveMeshSetGeometric(const AmanziGeometry::Region& region,
 
   // find the extent
   Entity_ID begin, end;
-  switch(ptype) {
-    case (Parallel_type::GHOST) :
-      begin = mesh.getNumEntities(kind, Parallel_type::OWNED);
-      end = mesh.getNumEntities(kind, Parallel_type::ALL);
-      break;
-    default :
-      begin = 0;
-      end = mesh.getNumEntities(kind, ptype);
+  if (ptype == Parallel_type::GHOST) {
+    begin = mesh.getNumEntities(kind, Parallel_type::OWNED);
+    end = mesh.getNumEntities(kind, Parallel_type::ALL);
+  } else {
+    begin = 0;
+    end = mesh.getNumEntities(kind, ptype);
   }
 
   // collect centroids
   std::function<AmanziGeometry::Point(Entity_ID)> getCentroid;
   switch(kind) {
-    case (Entity_kind::CELL) :
+    case (Entity_kind::CELL) : {
       getCentroid = [&mesh](Entity_ID i) { return mesh.getCellCentroid(i); };
-      break;
-    case (Entity_kind::FACE) :
+    } break;
+    case (Entity_kind::FACE) : {
       getCentroid = [&mesh](Entity_ID i) { return mesh.getFaceCentroid(i); };
-      break;
-    case (Entity_kind::BOUNDARY_FACE) :
+    } break;
+    case (Entity_kind::BOUNDARY_FACE) : {
       getCentroid = [&mesh](Entity_ID i) {
         return mesh.getFaceCentroid(mesh.getBoundaryFaces()[i]); };
-      break;
-    case (Entity_kind::EDGE) :
+    } break;
+    case (Entity_kind::EDGE) : {
       getCentroid = [&mesh](Entity_ID i) { return mesh.getEdgeCentroid(i); };
-      break;
-    case (Entity_kind::NODE) :
+    } break;
+    case (Entity_kind::NODE) : {
       getCentroid = [&mesh](Entity_ID i) { return mesh.getNodeCoordinate(i); };
-      break;
-    case (Entity_kind::BOUNDARY_NODE) :
+    } break;
+    case (Entity_kind::BOUNDARY_NODE) : {
       getCentroid = [&mesh](Entity_ID i) {
         return mesh.getNodeCoordinate(mesh.getBoundaryNodes()[i]); };
-      break;
+    } break;
     default : {}
   }
 
@@ -183,7 +211,7 @@ resolveMeshSetLogical(const AmanziGeometry::RegionLogical& region,
 {
   Entity_ID_List result;
   switch(region.get_operation()) {
-    case (AmanziGeometry::BoolOpType::COMPLEMENT) :
+    case (AmanziGeometry::BoolOpType::COMPLEMENT) : {
       // Get the set of ALL entities of the right kind and type.
       //
       // wow this is a fun hack.  Since an ALL region does not need any aspect
@@ -202,9 +230,9 @@ resolveMeshSetLogical(const AmanziGeometry::RegionLogical& region,
                             std::back_inserter(lresult));
         result = std::move(lresult);
       }
-      break;
 
-    case(AmanziGeometry::BoolOpType::UNION) :
+    } break;
+    case(AmanziGeometry::BoolOpType::UNION) : {
       for (const auto& rname : region.get_component_regions()) {
         auto comp_ents = mesh.getSetEntities(rname, kind, ptype);
 
@@ -216,11 +244,14 @@ resolveMeshSetLogical(const AmanziGeometry::RegionLogical& region,
                        std::back_inserter(lresult));
         result = std::move(lresult);
       }
-      break;
 
-    case(AmanziGeometry::BoolOpType::INTERSECT) :
-      for (const auto& rname : region.get_component_regions()) {
-        auto comp_ents = mesh.getSetEntities(rname, kind, ptype);
+    } break;
+    case(AmanziGeometry::BoolOpType::INTERSECT) : {
+      const auto& rnames = region.get_component_regions();
+      AMANZI_ASSERT(rnames.size() > 1);
+      result = mesh.getSetEntities(rnames[0], kind, ptype);
+      for (int i=1; i!=rnames.size(); ++i) {
+        auto comp_ents = mesh.getSetEntities(rnames[i], kind, ptype);
 
         Entity_ID_List lresult;
         lresult.reserve(std::max(result.size(), comp_ents.size()));
@@ -230,11 +261,14 @@ resolveMeshSetLogical(const AmanziGeometry::RegionLogical& region,
                 std::back_inserter(lresult));
         result = std::move(lresult);
       }
-      break;
 
-    case(AmanziGeometry::BoolOpType::SUBTRACT) :
-      for (const auto& rname : region.get_component_regions()) {
-        auto comp_ents = mesh.getSetEntities(rname, kind, ptype);
+    } break;
+    case(AmanziGeometry::BoolOpType::SUBTRACT) : {
+      const auto& rnames = region.get_component_regions();
+      AMANZI_ASSERT(rnames.size() > 1);
+      result = mesh.getSetEntities(rnames[0], kind, ptype);
+      for (int i=1; i!=rnames.size(); ++i) {
+        auto comp_ents = mesh.getSetEntities(rnames[i], kind, ptype);
 
         Entity_ID_List lresult;
         lresult.reserve(result.size());
@@ -244,8 +278,7 @@ resolveMeshSetLogical(const AmanziGeometry::RegionLogical& region,
                             std::back_inserter(lresult));
         result = std::move(lresult);
       }
-      break;
-
+    } break;
     default : {
       // note this should have errored already!
       Errors::Message msg("RegionLogical: operation type not set");

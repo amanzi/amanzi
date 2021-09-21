@@ -1882,16 +1882,6 @@ Mesh_MSTK::getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
     } else {
       if (mset2) {
         mset = mset2;
-      } else {
-        // from the old code, it is unclear whether this is right.  It seems
-        // possible that both are empty because no entities on this partition.
-        //
-        // But why wouldn't this have errored previously then? We need a
-        // parallel test with a mesh such that only one cell is labeled with a
-        // given material ID to test. --etc
-        Errors::Message msg;
-        msg << "Exodus II file has no labeled cell set with ID " << region.label();
-        Exceptions::amanzi_throw(msg);
       }
     }
   }
