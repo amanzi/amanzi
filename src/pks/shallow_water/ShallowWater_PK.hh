@@ -78,7 +78,7 @@ class ShallowWater_PK : public PK_Physical,
   // Calculate any diagnostics prior to doing vis
   virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override {};
 
-  virtual std::string name() override { return "Shallow water PK"; }
+  virtual std::string name() override { return "shallow water"; }
                             
   // Bathymetry reconstruction on cell edge midpoints
   double BathymetryRectangularCellValue(int c, const AmanziGeometry::Point& xp, const Epetra_MultiVector& Bn);
@@ -97,6 +97,7 @@ class ShallowWater_PK : public PK_Physical,
   double get_total_source() const { return total_source_; }
 
  private:
+  void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);
   bool ErrorDiagnostics_(int c, double h, double B, double ht);
 
  protected:
@@ -112,10 +113,10 @@ class ShallowWater_PK : public PK_Physical,
 
   // names of state fields
   Key velocity_key_, discharge_key_;
-  Key ponded_depth_key_;
-  Key total_depth_key_;
-  Key bathymetry_key_;
+  Key ponded_depth_key_, prev_ponded_depth_key_;
+  Key total_depth_key_, bathymetry_key_;
   Key hydrostatic_pressure_key_;
+  Key riemann_flux_key_;
 
   std::string passwd_;
 

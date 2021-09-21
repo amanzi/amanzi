@@ -663,13 +663,15 @@ double FlowEnergyMatrixFracture_PK::ErrorNorm(
   const auto& mol_fc = *S_->GetFieldData("fracture-molar_density_liquid")->ViewComponent("cell");
 
   int ncells = mol_fc.MyLength();
-  double mean_energy, error_r, mass(0.0);
+  double mean_energy, error_r(0.0), mass(0.0);
 
   for (int c = 0; c < ncells; ++c) {
     mass += mol_fc[0][c] * mesh_f->cell_volume(c);  // reference cell energy
   }
-  mean_energy = 76.0 * mass / ncells;
-  error_r = (residual_norm_ * dt_) / mean_energy;
+  if (ncells > 0) {
+    mean_energy = 76.0 * mass / ncells;
+    error_r = (residual_norm_ * dt_) / mean_energy;
+  }
 
   error = std::max(error, error_r);
 
