@@ -23,6 +23,21 @@ Cell_type getCellType(const Mesh_type& mesh, const Entity_ID c);
 template<class Mesh_type>
 int getFaceDirectionInCell(const Mesh_type& mesh, const Entity_ID f, const Entity_ID c);
 
+//
+// topology algorithms
+//
+template<class Mesh_type>
+Entity_ID_List
+computeCellEdges(const Mesh_type& mesh, const Entity_ID c);
+
+template<class Mesh_type>
+Entity_ID_List
+computeCellNodes(const Mesh_type& mesh, const Entity_ID c);
+
+
+//
+// Geometry algorithms
+//
 template<class Mesh_type>
 std::pair<double,AmanziGeometry::Point>
 computeCellGeometry(const Mesh_type& mesh, const Entity_ID c);
@@ -37,10 +52,19 @@ computeEdgeGeometry(const Mesh_type& mesh, const Entity_ID e);
 
 template<class Mesh_type>
 void computeBisectors(const Mesh_type& mesh, const Entity_ID c,
-        const Entity_ID_List& faces, Point_List& bisectors);
+                      const Entity_ID_List& faces, Point_List& bisectors);
 
 template<class Mesh_type>
 void debugCell(const Mesh_type& mesh, const Entity_ID c);
+
+template<class Mesh_type>
+Point_List getEdgeCoordinates(const Mesh_type& mesh, const Entity_ID e);
+
+template<class Mesh_type>
+Point_List getFaceCoordinates(const Mesh_type& mesh, const Entity_ID f);
+
+template<class Mesh_type>
+Point_List getCellCoordinates(const Mesh_type& mesh, const Entity_ID c);
 
 
 } // namespace MeshAlgorithms

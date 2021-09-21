@@ -2758,7 +2758,7 @@ void Mesh_MSTK::inherit_labeled_sets_(MAttrib_ptr copyatt,
   unsigned int ngr = gm->size();
   for (int i = 0; i < ngr; ++i) {
     auto rgn = gm->FindRegion(i);
-    if (rgn->get_type() == AmanziGeometry::LABELEDSET) {
+    if (rgn->get_type() == AmanziGeometry::RegionType::LABELEDSET) {
       // Get the set from the parent mesh
       Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
           Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);

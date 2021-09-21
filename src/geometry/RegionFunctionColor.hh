@@ -65,7 +65,7 @@ class RegionFunctionColor : public Region {
                       const std::string& file,
                       const int value,
                       const Comm_type& comm,
-                      const LifeCycleType lifecycle=PERMANENT);
+                      const LifeCycleType lifecycle=LifeCycleType::PERMANENT);
 
   // Is the the specified point inside this region
   bool inside(const Point& p) const;

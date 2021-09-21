@@ -23,7 +23,7 @@ namespace AmanziGeometry {
 RegionBoundary::RegionBoundary(const std::string& name,
                                const int id,
                                const LifeCycleType lifecycle)
-    : Region(name, id, false, BOUNDARY, 0, 0, lifecycle) {};
+    : Region(name, id, false, RegionType::BOUNDARY, 0, 0, lifecycle) {};
 
 
 // -------------------------------------------------------------

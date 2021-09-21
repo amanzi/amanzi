@@ -358,15 +358,22 @@ testExteriorMapsUnitBox(const Teuchos::RCP<Mesh_type>& mesh, int nx, int ny, int
 
   auto& bfaces = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
   auto& faces = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
+  auto& bface_ids = mesh->getBoundaryFaces();
+
   for (int j=0; j!=bfaces.NumMyElements(); ++j) {
     auto bf = faces.LID(bfaces.GID(j));
+    CHECK_EQUAL(bface_ids[j], bf);
     auto f_centroid = mesh->getFaceCentroid(bf);
     bool found = false;
     for (int i=0; i!=mesh->getManifoldDimension(); ++i) {
       if (std::abs(f_centroid[i]) < 1e-10 ||
           std::abs(f_centroid[i] - 1) < 1e-10) {
         found = true;
+        break;
       }
+    }
+    if (!found) {
+      std::cout << "not found: " << bf << " at " << f_centroid << std::endl;
     }
     CHECK(found);
   }

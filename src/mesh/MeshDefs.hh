@@ -182,6 +182,13 @@ Partitioner_type createPartitionerType(const std::string& pstring) {
   return Partitioner_type::METIS;
 }
 
+enum class AccessPattern {
+  DEFAULT,
+  CACHE,
+  RECOMPUTE,
+  FRAMEWORK
+};
+
 }  // namespace AmanziMesh
 }  // namespace Amanzi
 

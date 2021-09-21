@@ -23,7 +23,7 @@ RegionPoint::RegionPoint(const std::string& name,
                          const int id,
                          const Point& p,
                          const LifeCycleType lifecycle)
-  : Region(name, id, true, POINT, 1, p.dim(), lifecycle),
+  : Region(name, id, true, RegionType::POINT, 1, p.dim(), lifecycle),
     p_(p) {}
   
 // -------------------------------------------------------------

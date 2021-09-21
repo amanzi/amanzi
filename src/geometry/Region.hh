@@ -194,7 +194,7 @@ class Region {
          RegionType type,
          unsigned int dim,
          unsigned int geom_dim,
-         LifeCycleType lifecycle=PERMANENT)
+         LifeCycleType lifecycle=LifeCycleType::PERMANENT)
     : name_(name),
       id_(id),
       geometric_(geometric),

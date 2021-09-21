@@ -63,34 +63,58 @@ void MeshMaps::initialize(const Mesh& mesh, bool natural, bool request_edges)
   }
 
   // boundary faces
-  // -- get a list of all face LIDs with 1 cell
+  // -- get a list of all owned face LIDs with 1 cell
   std::size_t nfaces_owned = mesh.getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
   std::size_t nfaces_all = mesh.getNumEntities(Entity_kind::FACE, Parallel_type::ALL);
   boundary_faces_.resize(nfaces_all, -1);
-  std::size_t nbf_all = 0;
+
   std::size_t nbf_owned = 0;
+  std::size_t nbf_all = 0;
   for (Entity_ID f=0; f!=nfaces_all; ++f) {
     Entity_ID_List fcells;
     mesh.getFaceCells(f, Parallel_type::ALL, fcells);
     if (fcells.size() == 1) {
-      boundary_faces_[nbf_all] = f;
-      ++nbf_all;
+      boundary_faces_[nbf_all++] = f;
       if (f < nfaces_owned) nbf_owned = nbf_all;
     }
   }
-  boundary_faces_.resize(nbf_all);
 
   // -- convert to GID
+  Entity_GID_List boundary_face_GIDs(boundary_faces_.size());
   const auto& fmap_all = getMap(Entity_kind::FACE, true);
   for (std::size_t i=0; i!=nbf_all; ++i) {
-    boundary_faces_[i] = fmap_all.GID(boundary_faces_[i]);
+    boundary_face_GIDs[i] = fmap_all.GID(boundary_faces_[i]);
   }
 
-  // -- construct map, importer
-  all_[Entity_kind::BOUNDARY_FACE] =
-    Teuchos::rcp(new Epetra_Map(-1, nbf_all, boundary_faces_.data(), 0, *mesh.getComm()));
+  // -- construct owned map
   owned_[Entity_kind::BOUNDARY_FACE] =
-    Teuchos::rcp(new Epetra_Map(-1, nbf_owned, boundary_faces_.data(), 0, *mesh.getComm()));
+    Teuchos::rcp(new Epetra_Map(-1, nbf_owned, boundary_face_GIDs.data(), 0, *mesh.getComm()));
+
+  // Get the local IDs (lc_id) of copies of owned boundary faces on remote
+  // processors (pr_id).  We must check if a ghost face that has only 1 cell is
+  // an exterior face, or on a process boundary.  This is done by seeing if it
+  // appears in the owned boundary face list on another processor (pr_id >= 0)
+  // -- if it does, it is a true exterior face.  If it does not, then it is
+  // interior on the other process, so is a processor boundary.
+  int nbf_notowned = nbf_all - nbf_owned;
+  std::vector<int> pr_id(nbf_notowned), lc_id(nbf_notowned);
+  owned_[Entity_kind::BOUNDARY_FACE]->RemoteIDList(nbf_notowned, &boundary_face_GIDs[nbf_owned],
+          pr_id.data(), lc_id.data());
+
+  int nbf_notowned_tight = 0;
+  for (int i=0; i!=nbf_notowned; ++i) {
+    if (pr_id[i] >= 0) {
+      boundary_faces_[nbf_owned+nbf_notowned_tight] = boundary_faces_[nbf_owned+i];
+      boundary_face_GIDs[nbf_owned+nbf_notowned_tight] = boundary_face_GIDs[nbf_owned+i];
+      ++nbf_notowned_tight;
+    }
+  }
+  nbf_all = nbf_owned + nbf_notowned_tight;
+  boundary_faces_.resize(nbf_all);
+
+  // -- construct the all map
+  all_[Entity_kind::BOUNDARY_FACE] =
+    Teuchos::rcp(new Epetra_Map(-1, nbf_all, boundary_face_GIDs.data(), 0, *mesh.getComm()));
   importer_[Entity_kind::BOUNDARY_FACE] =
     Teuchos::rcp(new Epetra_Import(*all_[Entity_kind::BOUNDARY_FACE], *owned_[Entity_kind::BOUNDARY_FACE]));
   // -- additional importer from face --> boundary_face
@@ -108,21 +132,22 @@ void MeshMaps::initialize(const Mesh& mesh, bool natural, bool request_edges)
 
   // -- convert to GID
   boundary_nodes_.resize(bnodes_lid.size());
-  std::size_t nnodes_owned = mesh.getNumEntities(Entity_kind::NODE, Parallel_type::ALL);
+  Entity_GID_List boundary_node_GIDs(bnodes_lid.size());
+  std::size_t nnodes_owned = mesh.getNumEntities(Entity_kind::NODE, Parallel_type::OWNED);
   std::size_t nbn_owned = 0;
   std::size_t nbn_all = 0;
   const auto& nmap_all = getMap(Entity_kind::NODE, true);
   for (const auto& bn : bnodes_lid) {
-    boundary_nodes_[bn] = nmap_all.GID(bn);
-    ++nbn_all;
-    if (boundary_nodes_[bn] < nnodes_owned) nbn_owned = nbn_all;
+    boundary_nodes_[nbn_all] = bn;
+    boundary_node_GIDs[nbn_all++] = nmap_all.GID(bn);
+    if (bn < nnodes_owned) nbn_owned = nbn_all;
   }
 
   // -- construct map, importer
   all_[Entity_kind::BOUNDARY_NODE] =
-    Teuchos::rcp(new Epetra_Map(-1, nbn_all, boundary_nodes_.data(), 0, *mesh.getComm()));
+    Teuchos::rcp(new Epetra_Map(-1, nbn_all, boundary_node_GIDs.data(), 0, *mesh.getComm()));
   owned_[Entity_kind::BOUNDARY_NODE] =
-    Teuchos::rcp(new Epetra_Map(-1, nbn_owned, boundary_nodes_.data(), 0, *mesh.getComm()));
+    Teuchos::rcp(new Epetra_Map(-1, nbn_owned, boundary_node_GIDs.data(), 0, *mesh.getComm()));
   importer_[Entity_kind::BOUNDARY_NODE] =
     Teuchos::rcp(new Epetra_Import(*all_[Entity_kind::BOUNDARY_NODE], *owned_[Entity_kind::BOUNDARY_NODE]));
   // -- additional importer from node --> boundary_node

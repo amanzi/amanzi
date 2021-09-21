@@ -228,6 +228,11 @@ class Mesh_MSTK : public MeshFramework {
   //
   // Get list of entities of type kind from a framework set.
   //
+  virtual bool isValidSetType(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const override {
+    return true;
+  }
+
+
   // MSTK supports labeled sets
   virtual void getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
           const Entity_kind kind,

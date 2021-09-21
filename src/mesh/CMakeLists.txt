@@ -141,22 +141,30 @@ if (BUILD_TESTS)
     add_amanzi_test(mesh_framework_geometry_np2 mesh_framework_geometry NPROCS 2 KIND unit)
     add_amanzi_test(mesh_framework_geometry_np4 mesh_framework_geometry NPROCS 4 KIND unit)
 
-    # Test: tests mesh cache geometry on a variety of meshes
+    # Test: tests MeshCache geometry without a cache on a variety of meshes
     add_amanzi_test(mesh_geometry mesh_geometry
                     KIND unit
                     SOURCE test/Main.cc test/mesh_geometry.cc
                     LINK_LIBS ${mesh_test_link_libs})
     add_amanzi_test(mesh_geometry_np2 mesh_geometry NPROCS 2 KIND unit)
     add_amanzi_test(mesh_geometry_np4 mesh_geometry NPROCS 4 KIND unit)
-                  
+
+    # Test: tests MeshCace geometry with a cache and no framework on a variety of meshes
+    add_amanzi_test(mesh_cache_geometry mesh_cache_geometry
+                    KIND unit
+                    SOURCE test/Main.cc test/mesh_cache_geometry.cc
+                    LINK_LIBS ${mesh_test_link_libs})
+    add_amanzi_test(mesh_cache_geometry_np2 mesh_cache_geometry NPROCS 2 KIND unit)
+    add_amanzi_test(mesh_cache_geometry_np4 mesh_cache_geometry NPROCS 4 KIND unit)
+    
     # Test: mesh sets
     #   Tests the use of mesh sets on the above meshes and frameworks.
-    # add_amanzi_test(mesh_sets mesh_sets
-    #                 KIND unit
-    #                 SOURCE test/Main.cc test/mesh_sets.cc
-    #                 LINK_LIBS ${mesh_test_link_libs})
-    # add_amanzi_test(mesh_sets_np2 mesh_sets NPROCS 2 KIND unit)
-    # add_amanzi_test(mesh_sets_np4 mesh_sets NPROCS 4 KIND unit)
+    add_amanzi_test(mesh_sets mesh_sets
+                    KIND unit
+                    SOURCE test/Main.cc test/mesh_sets.cc
+                    LINK_LIBS ${mesh_test_link_libs})
+    add_amanzi_test(mesh_sets_np2 mesh_sets NPROCS 2 KIND unit)
+    add_amanzi_test(mesh_sets_np4 mesh_sets NPROCS 4 KIND unit)
     
     # Test: mesh deformation
     #   A basic test of deforming volumetric and surface meshes and

@@ -31,7 +31,7 @@ RegionBoxVolumeFractions::RegionBoxVolumeFractions(
     const Point& p0, const Point& p1,
     const std::vector<Point>& normals,
     const LifeCycleType lifecycle)
-  : Region(name, id, true, BOX_VOF, p0.dim(), p0.dim(), lifecycle),
+  : Region(name, id, true, RegionType::BOX_VOF, p0.dim(), p0.dim(), lifecycle),
     p0_(p0),
     p1_(p1),
     normals_(normals),

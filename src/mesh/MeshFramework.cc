@@ -130,46 +130,19 @@ MeshFramework::setNodeCoordinate(const Entity_ID nodeid, const AmanziGeometry::P
 Point_List
 MeshFramework::getCellCoordinates(const Entity_ID c) const
 {
-  Entity_ID_List nodes;
-  getCellNodes(c, nodes);
-
-  Point_List coords;
-  coords.reserve(nodes.size());
-
-  for (const auto& n : nodes) {
-    coords.emplace_back(getNodeCoordinate(n));
-  }
-  return coords;
+  return MeshAlgorithms::getCellCoordinates(*this, c);
 }
 
 Point_List
 MeshFramework::getFaceCoordinates(const Entity_ID f) const
 {
-  Entity_ID_List nodes;
-  getFaceNodes(f, nodes);
-
-  Point_List coords;
-  coords.reserve(nodes.size());
-
-  for (const auto& n : nodes) {
-    coords.emplace_back(getNodeCoordinate(n));
-  }
-  return coords;
+  return MeshAlgorithms::getFaceCoordinates(*this, f);
 }
 
 Point_List
 MeshFramework::getEdgeCoordinates(const Entity_ID e) const
 {
-  Entity_ID_List nodes;
-  getEdgeNodes(e, nodes);
-
-  Point_List coords;
-  coords.reserve(nodes.size());
-
-  for (const auto& n : nodes) {
-    coords.emplace_back(getNodeCoordinate(n));
-  }
-  return coords;
+  return MeshAlgorithms::getEdgeCoordinates(*this, e);
 }
 
 //
@@ -223,31 +196,22 @@ MeshFramework::getFaceNormal(const Entity_ID f, const Entity_ID c, int * const o
   Entity_ID_List fcells;
   getFaceCells(f, Parallel_type::ALL, fcells);
   if (orientation) *orientation = 0;
-
   Entity_ID cc = (c < 0) ? fcells[0] : c;
-  int i;
-  for (i=0; i!=fcells.size(); ++i) {
-    if (cc == fcells[i]) {
-      if (getSpaceDimension() == getManifoldDimension()) {
-        // c may exist or not
-        if (c < 0) {
-          int dir = MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
-          std::get<2>(geom)[i] *= dir;
-        } else if (orientation) {
-          // orientation only makes sense if c >= 0
-          *orientation = MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
-        }
-      } else {
-        // c must exist
-        if (c < 0) {
-          Errors::Message msg("MeshFramework: asking for the natural normal of a submanifold mesh is not valid.");
-          Exceptions::amanzi_throw(msg);
-        }
-      }
-      break;
+
+  int i = std::find(fcells.begin(), fcells.end(), cc) - fcells.begin();
+  AmanziGeometry::Point normal = std::get<2>(geom)[i];
+
+  if (getSpaceDimension() == getManifoldDimension()) {
+    if (c < 0) {
+      normal *= MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
+    } else if (orientation) {
+      *orientation = MeshAlgorithms::getFaceDirectionInCell(*this, f, cc);
     }
+  } else if (c < 0) {
+    Errors::Message msg("MeshFramework: asking for the natural normal of a submanifold mesh is not valid.");
+    Exceptions::amanzi_throw(msg);
   }
-  return std::get<2>(geom)[i];
+  return normal;
 }
 
 
@@ -313,34 +277,13 @@ void
 MeshFramework::getCellEdges(const Entity_ID c, Entity_ID_List& edges) const
 {
   hasEdgesOrThrow();
-
-  edges.resize(0);
-  Entity_ID_List faces, fedges;
-  getCellFaces(c, faces);
-  for (const auto& f : faces) {
-    getFaceEdges(f, fedges);
-    for (const auto& e : fedges) {
-      if (std::find(edges.begin(), edges.end(), e) == edges.end()) {
-        edges.emplace_back(e);
-      }
-    }
-  }
+  edges = MeshAlgorithms::computeCellEdges(*this, c);
 }
 
 void
 MeshFramework::getCellNodes(const Entity_ID c, Entity_ID_List& nodes) const
 {
-  nodes.resize(0);
-  Entity_ID_List faces, fnodes;
-  getCellFaces(c, faces);
-  for (const auto& f : faces) {
-    getFaceNodes(f, fnodes);
-    for (const auto& n : fnodes) {
-      if (std::find(nodes.begin(), nodes.end(), n) == nodes.end()) {
-        nodes.emplace_back(n);
-      }
-    }
-  }
+  nodes = MeshAlgorithms::computeCellNodes(*this, c);
 }
 
 void

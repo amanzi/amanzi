@@ -77,6 +77,22 @@ void MeshCache::initializeFramework(bool natural)
 }
 
 
+bool
+MeshCache::isValidSetType(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const {
+  if (rtype == AmanziGeometry::RegionType::LABELEDSET && framework_mesh_.get()) {
+    return framework_mesh_->isValidSetType(rtype, kind);
+  }
+  return true;
+}
+
+
+int
+MeshCache::getSetSize(const std::string& region_name,
+                      const Entity_kind kind,
+                      const Parallel_type ptype) const {
+  return getSetEntities(region_name, kind, ptype).size();
+}
+
 const Entity_ID_View&
 MeshCache::getSetEntities(const std::string& region_name,
                           const Entity_kind kind,
@@ -428,6 +444,15 @@ void MeshCache::setNodeCoordinate(const Entity_ID n, const AmanziGeometry::Point
   node_coordinates[n] = coord;
 }
 
+// common error messaging
+void MeshCache::throwAccessError_(const std::string& func_name) const
+{
+  Errors::Message msg;
+  msg << "MeshCache::" << func_name << " cannot compute this quantity -- not cached and framework does not exist.";
+  Exceptions::amanzi_throw(msg);
+}
+
+
 
 namespace Utils {
 void cacheAll(MeshCache& mesh)
@@ -485,6 +510,8 @@ void recacheGeometry(MeshCache& mesh)
     mesh.cacheCellGeometry();
   }
 }
+
+
 
 } // namespace Testing
 

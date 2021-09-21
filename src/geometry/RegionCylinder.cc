@@ -30,7 +30,7 @@ RegionCylinder::RegionCylinder(const std::string& name,
                                const Point& p,
                                double radius,
                                const LifeCycleType lifecycle)
-    : Region(name, id, true, CYLINDER, p.dim(), p.dim(), lifecycle),
+    : Region(name, id, true, RegionType::CYLINDER, p.dim(), p.dim(), lifecycle),
       p_(p),
       axis_(axis/norm(axis)),
       rad2_(radius * radius)

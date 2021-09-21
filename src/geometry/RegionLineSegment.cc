@@ -30,7 +30,7 @@ RegionLineSegment::RegionLineSegment(
     const std::string& name, const int id,
     const Point& p0, const Point& p1,
     const LifeCycleType lifecycle)
-  : Region(name, id, true, LINE_SEGMENT, p0.dim(), p0.dim(), lifecycle),
+  : Region(name, id, true, RegionType::LINE_SEGMENT, p0.dim(), p0.dim(), lifecycle),
     p0_(p0),
     p1_(p1)
 {

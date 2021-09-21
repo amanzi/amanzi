@@ -902,41 +902,41 @@ bool MeshAudit_Geometry<Mesh_type>::check_face_cell_adjacency_consistency() cons
 {
   Entity_ID_List bad_faces1, bad_faces2, bad_faces_exc;
 
-  for (Entity_ID j = 0; j < nfaces_all_; ++j) {
+  for (Entity_ID f=0; f!=nfaces_all_; ++f) {
     try {
       bool bad_data = false;
 
       Entity_ID_List fcells;
-      mesh_->getFaceCells(j, Parallel_type::ALL, fcells);
-      for (int k = 0; k < fcells.size(); ++k) {
+      mesh_->getFaceCells(f, Parallel_type::ALL, fcells);
+      for (const auto& c : fcells) {
         Entity_ID_List cfaces;
         Entity_Direction_List cfdirs;
-        mesh_->getCellFacesAndDirs(fcells[k], cfaces, &cfdirs);
+        mesh_->getCellFacesAndDirs(c, cfaces, &cfdirs);
 
         // find the match
         int i = 0;
         for (; i != cfaces.size(); ++i)
-          if (j == cfaces[i]) break;
+          if (f == cfaces[i]) break;
         if (i == cfaces.size()) {
-          bad_faces1.push_back(j);
+          bad_faces1.push_back(f);
           bad_data = true;
           break;
         }
 
         // check directions
         int orientation = 0;
-        auto fnormal = mesh_->getFaceNormal(j, fcells[k], &orientation);
+        auto fnormal = mesh_->getFaceNormal(f, c, &orientation);
         if (orientation == 0) {
           if (mesh_->getSpaceDimension() == mesh_->getManifoldDimension()) {
             // should be an orientation but there isn't
-            bad_faces2.push_back(j);
+            bad_faces2.push_back(f);
             bad_data = true;
             break;
           }
         } else {
           if (orientation != cfdirs[i]) {
             // orientation is there, not equivalent to the dir from the cell
-            bad_faces2.push_back(j);
+            bad_faces2.push_back(f);
             bad_data = true;
             break;
           }
@@ -944,7 +944,7 @@ bool MeshAudit_Geometry<Mesh_type>::check_face_cell_adjacency_consistency() cons
       }
       if (bad_data) break;
     } catch (...) {
-      bad_faces_exc.push_back(j);
+      bad_faces_exc.push_back(f);
     }
   }
 
@@ -1030,9 +1030,11 @@ bool MeshAudit_Geometry<Mesh_type>::check_face_normal_orientation() const
       for (int k = 0; k < fcells.size(); ++k) {
         int orientation = 0;
         AmanziGeometry::Point fnormalc = mesh_->getFaceNormal(j, fcells[k], &orientation);
-        if (AmanziGeometry::norm((orientation * fnormal) - fnormalc) > 1.e-16) {
-          bad_faces.push_back(j);
-          break;
+        if (orientation != 0) {
+          if (AmanziGeometry::norm((orientation * fnormal) - fnormalc) > 1.e-16) {
+            bad_faces.push_back(j);
+            break;
+          }
         }
       }
     } catch (...) {
@@ -1065,9 +1067,9 @@ bool MeshAudit_Geometry<Mesh_type>::check_cell_geometry() const
   os_ << "Checking cell geometry ..." << std::endl;
   Entity_ID_List bad_cells;
 
-  for (Entity_ID j = 0; j < ncells_all_; ++j) {
-    double hvol = mesh_->getCellVolume(j);
-    if (hvol <= 0.0) bad_cells.push_back(j);
+  for (Entity_ID c=0; c!=ncells_all_; ++c) {
+    double hvol = mesh_->getCellVolume(c);
+    if (hvol <= 0.0) bad_cells.push_back(c);
   }
 
   bool error = false;

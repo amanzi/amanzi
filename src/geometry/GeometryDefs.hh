@@ -17,19 +17,19 @@
 #include "Point.hh"
 
 namespace Amanzi {
-namespace AmanziGeometry {  
+namespace AmanziGeometry {
 
 typedef int Entity_ID;  // should be consistent with similar definition in class Mesh
 typedef std::vector<Point> Point_List;
 
-typedef enum {
+enum class RegionType {
   BOX,
   PLANE,
   LABELEDSET,
   LAYER,
   SURFACE,
   POINT,
-  COLORFUNCTION,  
+  COLORFUNCTION,
   LOGICAL,
   POLYGON,
   ENUMERATED,
@@ -38,28 +38,28 @@ typedef enum {
   LINE_SEGMENT,
   CYLINDER,
   ALL
-} RegionType;
+};
 
 
-typedef enum {
+enum class LifeCycleType {
   PERMANENT=0,
   TEMPORARY
-} LifeCycleType;
+};
 
 
-typedef enum {
+enum class BoolOpType {
   NOBOOLEAN=-1,
   COMPLEMENT,
   UNION,
   INTERSECT,
   SUBTRACT
-} BoolOpType;
+};
 
 const double TOL = 1.0e-08;
 
 // arbitrary number to avoid clashing
 // with IDs of LabeledSet regions
-const unsigned int REGION_ID_OFFSET = 59049;  
+const unsigned int REGION_ID_OFFSET = 59049;
 
 }  // namespace AmanziGeometry
 }  // namespace Amanzi

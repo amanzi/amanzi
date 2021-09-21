@@ -19,13 +19,13 @@
 #include "geometry_harnesses.hh"
 
 //
-// This tests the geometric routines in MeshCache, without caching, and with an
-// existing framework.
+// This tests the geometric routines in MeshCache, WITH caching, and having
+// removed the framework mesh.  Otherwise it is identical to mesh_geometry.
 //
 // Effectively this means that all function calls that need a framework will
 // use it, and the rest will call the algorithm.
 //
-TEST(MESH_GEOMETRY_PLANAR)
+TEST(MESH_CACHE_GEOMETRY_PLANAR)
 {
   // a 2D, generated, structured quad on the unit square, NX=NY=2
   std::vector<Framework> frameworks;
@@ -40,6 +40,10 @@ TEST(MESH_GEOMETRY_PLANAR)
               << "------------------------------------------------" << std::endl;
 
     auto mesh = createStructuredUnitQuad(Preference{frm}, 2,2);
+    // cache, pitch the framework, repeat
+    AmanziMesh::Utils::cacheAll(*mesh);
+    mesh->destroyFramework();
+
     testMeshAudit<MeshAudit, Mesh>(mesh);
     testGeometryQuad(mesh,2,2);
     testExteriorMapsUnitBox(mesh, 2, 2);
@@ -47,7 +51,7 @@ TEST(MESH_GEOMETRY_PLANAR)
 }
 
 
-TEST(MESH_GEOMETRY_1CUBE_GENERATED)
+TEST(MESH_CACHE_GEOMETRY_1CUBE_GENERATED)
 {
   // a 3D, generated, structured hex on the unit cube, NX=NY=NZ=1
   // only makes sense in serial
@@ -66,16 +70,18 @@ TEST(MESH_GEOMETRY_1CUBE_GENERATED)
               << "Testing 3D geometry with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto mesh = createStructuredUnitHex(Preference{frm}, 1,1,1);
+    // cache, pitch the framework, repeat
+    AmanziMesh::Utils::cacheAll(*mesh);
+    mesh->destroyFramework();
+
     testMeshAudit<MeshAudit, Mesh>(mesh);
     testGeometryCube(mesh,1,1,1);
-
-    // Exterior maps not supported by SIMPLE
     if (frm != Framework::SIMPLE) testExteriorMapsUnitBox(mesh, 1,1,1);
   }
 }
 
 
-TEST(MESH_GEOMETRY_1CUBE_EXO)
+TEST(MESH_CACHE_GEOMETRY_1CUBE_EXO)
 {
   // a 3D exodus file, structured hex on the unit cube, NX=NY=NZ=1
   // only makes sense in serial
@@ -95,16 +101,19 @@ TEST(MESH_GEOMETRY_1CUBE_EXO)
               << "Testing 3D Box 1x1x1 Exo geometry with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto mesh = createUnstructured(Preference{frm}, "test/hex_1x1x1_sets.exo");
+    // cache, pitch the framework, repeat
+    AmanziMesh::Utils::cacheAll(*mesh);
+    mesh->destroyFramework();
+
     testMeshAudit<MeshAudit, Mesh>(mesh);
     testGeometryCube(mesh,1,1,1);
     if (frm == Framework::MSTK)
       testExteriorMapsUnitBox(mesh, 1,1,1);
-
   }
 }
 
 
-TEST(MESH_GEOMETRY_3CUBE)
+TEST(MESH_CACHE_GEOMETRY_3CUBE)
 {
   // a 3D, generated, structured hex on the unit cube, NX=NY=NZ=3
   // works in MSTK & SIMPLE (in serial)
@@ -120,6 +129,10 @@ TEST(MESH_GEOMETRY_3CUBE)
               << "Testing 3D Box 3x3x3 with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto mesh = createStructuredUnitHex(Preference{frm}, 3,3,3);
+    // cache, pitch the framework, repeat
+    AmanziMesh::Utils::cacheAll(*mesh);
+    mesh->destroyFramework();
+
     testMeshAudit<MeshAudit, Mesh>(mesh);
     testGeometryCube(mesh,3,3,3);
     if (frm == Framework::MSTK) {
@@ -129,7 +142,7 @@ TEST(MESH_GEOMETRY_3CUBE)
 }
 
 
-TEST(MESH_GEOMETRY_3CUBE_EXO)
+TEST(MESH_CACHE_GEOMETRY_3CUBE_EXO)
 {
   // a 3D exodus file, structured hex on the unit cube, NX=NY=NZ=3
   // works in MSTK or MOAB
@@ -148,6 +161,10 @@ TEST(MESH_GEOMETRY_3CUBE_EXO)
               << "Testing 3D Box 3x3x3 Exo with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto mesh = createUnstructured(Preference{frm}, "test/hex_3x3x3_sets.exo");
+    // cache, pitch the framework, repeat
+    AmanziMesh::Utils::cacheAll(*mesh);
+    mesh->destroyFramework();
+
     testMeshAudit<MeshAudit, Mesh>(mesh);
     testGeometryCube(mesh,3,3,3);
     if (frm == Framework::MSTK) {
@@ -160,7 +177,7 @@ TEST(MESH_GEOMETRY_3CUBE_EXO)
 //
 // NOTE: this should work but is blocked by MSTK ticket #119, which is used for partitioning
 //
-// TEST(MESH_GEOMETRY_3CUBE_PAR)
+// TEST(MESH_CACHE_GEOMETRY_3CUBE_PAR)
 // {
 //   // a 3D exodus file, structured hex on the unit cube, NX=NY=NZ=3, prepartitioned
 //   // works in MSTK or MOAB
@@ -180,6 +197,9 @@ TEST(MESH_GEOMETRY_3CUBE_EXO)
 //               << "Testing 3D Box 3x3x3 Exo with " << AmanziMesh::framework_names.at(frm) << std::endl
 //               << "------------------------------------------------" << std::endl;
 //     auto mesh = createUnstructured(Preference{frm}, "test/hex_3x3x3.par");
+    // // cache, pitch the framework, repeat
+    // AmanziMesh::Utils::cacheAll(*mesh);
+    // mesh->destroyFramework();
 //     testMeshAudit<MeshAudit, Mesh>(mesh);
 //     testGeometryCube(mesh,3,3,3);
 //     if (frm == Framework::MSTK) {
@@ -189,7 +209,7 @@ TEST(MESH_GEOMETRY_3CUBE_EXO)
 // }
 
 
-TEST(MESH_GEOMETRY_2x3CUBE)
+TEST(MESH_CACHE_GEOMETRY_2x3CUBE)
 {
   // a 3D, generated, structured hex on the unit cube, NX=NY=NZ=3
   // works in MSTK & SIMPLE (in serial)
@@ -205,6 +225,10 @@ TEST(MESH_GEOMETRY_2x3CUBE)
               << "Testing 3D Box 2x2x3 with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto mesh = createStructuredUnitHex(Preference{frm}, 2,2,3);
+    // cache, pitch the framework, repeat
+    AmanziMesh::Utils::cacheAll(*mesh);
+    mesh->destroyFramework();
+
     testMeshAudit<MeshAudit, Mesh>(mesh);
     testGeometryCube(mesh,2,2,3);
 
@@ -214,7 +238,7 @@ TEST(MESH_GEOMETRY_2x3CUBE)
 }
 
 
-TEST(MESH_GEOMETRY_FRACTURE_EXO)
+TEST(MESH_CACHE_GEOMETRY_FRACTURE_EXO)
 {
   // only works in MSTK or MOAB
   // Note this only checks the exo mesh, which does not have the fractures in it!
@@ -234,12 +258,15 @@ TEST(MESH_GEOMETRY_FRACTURE_EXO)
               << "Testing 3D Fracture Exo with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto mesh = createUnstructured(Preference{frm}, "test/fractures.exo");
+    // cache, pitch the framework, repeat
+    AmanziMesh::Utils::cacheAll(*mesh);
+    mesh->destroyFramework();
     testMeshAudit<MeshAudit, Mesh>(mesh);
   }
 }
 
 
-TEST(MESH_GEOMETRY_PINCHOUTS)
+TEST(MESH_CACHE_GEOMETRY_PINCHOUTS)
 {
   // only MSTK can handle this mesh -- it has degeneracies
   std::vector<Framework> frameworks;
@@ -252,6 +279,9 @@ TEST(MESH_GEOMETRY_PINCHOUTS)
               << "Testing 3D Pinchout with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto mesh = createUnstructured(Preference{frm}, "test/test_pri_pinchout_mesh.exo");
+    // cache, pitch the framework, repeat
+    AmanziMesh::Utils::cacheAll(*mesh);
+    mesh->destroyFramework();
     testMeshAudit<MeshAudit, Mesh>(mesh);
   }
 }

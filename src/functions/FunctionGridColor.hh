@@ -18,6 +18,8 @@ class FunctionGridColor : public FunctionColor {
   }
   int operator()(const double* ) const;
 
+  int get_dimension() const { return dim_; }
+
 private:
   int dim_;
   std::vector<int> count_;

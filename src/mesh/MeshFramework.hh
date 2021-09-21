@@ -29,6 +29,7 @@ provide more, as long as they are consistent.
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "GeometryDefs.hh"
 #include "MeshDefs.hh"
 #include "AmanziComm.hh"
 
@@ -323,9 +324,13 @@ class MeshFramework  {
   //--------------------------------------------------------------
   // Mesh Sets for ICs, BCs, Material Properties and whatever else
   //--------------------------------------------------------------
+  // Default implementation does not support framework sets.
+  virtual bool isValidSetType(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const {
+    return false;
+  }
+
   // Get list of entities of type kind from a framework set.
   //
-  // Default implementation does not support framework sets.
   virtual void getSetEntities(const AmanziGeometry::RegionLabeledSet& region,
           const Entity_kind kind,
           const Parallel_type ptype,

@@ -13,7 +13,6 @@
 
 #include "AmanziComm.hh"
 #include "MeshFramework.hh"
-#include "MeshFactory.hh"
 #include "MeshAudit.hh"
 
 #include "framework_meshes.hh"
@@ -41,7 +40,7 @@ TEST(MESH_SETS_3CUBE)
     std::cout << std::endl
               << "Testing 3D Box 3x3x3 with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createFrameworkStructuredUnitHex(Preference{frm}, 3,3,3, comm, gm);
+    auto mesh = createStructuredUnitHex(Preference{frm}, 3,3,3, comm, gm);
     testHexMeshSets3x3x3(mesh, false, frm);
   }
 }
@@ -72,7 +71,7 @@ TEST(MESH_SETS_3CUBE_EXO)
     std::cout << std::endl
               << "Testing 3D Box 3x3x3 Exo with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createFrameworkUnstructured(Preference{frm}, "test/hex_3x3x3_sets.exo", comm, gm);
+    auto mesh = createUnstructured(Preference{frm}, "test/hex_3x3x3_sets.exo", comm, gm);
     testHexMeshSets3x3x3(mesh, true, frm);
   }
 }
@@ -105,7 +104,7 @@ TEST(MESH_SETS_3CUBE_EXO)
 //     std::cout << std::endl
 //               << "Testing 3D Box 3x3x3 Par with " << AmanziMesh::framework_names.at(frm) << std::endl
 //               << "------------------------------------------------" << std::endl;
-//     auto mesh = createFrameworkUnstructured(Preference{frm}, "test/hex_3x3x3_sets.par", comm, gm);
+//     auto mesh = createUnstructured(Preference{frm}, "test/hex_3x3x3_sets.par", comm, gm);
 //     testHexMeshSets3x3x3(mesh, true, frm);
 //   }
 // }
@@ -131,7 +130,7 @@ TEST(MESH_SETS_3QUAD)
     std::cout << std::endl
               << "Testing 2D Box 3x3 with " << AmanziMesh::framework_names.at(frm) << std::endl
               << "------------------------------------------------" << std::endl;
-    auto mesh = createFrameworkStructuredUnitQuad(Preference{frm}, 3,3, comm, gm);
+    auto mesh = createStructuredUnitQuad(Preference{frm}, 3,3, comm, gm);
     testQuadMeshSets3x3(mesh, false, frm, false);
   }
 }

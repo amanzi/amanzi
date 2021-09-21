@@ -27,6 +27,10 @@ function go () {
     ${SED} ${SED_ARGS} 's|\.get_comm(|.getComm(|g' "$1"
     ${SED} ${SED_ARGS} 's|->map(|->getMap(|g' "$1"
     ${SED} ${SED_ARGS} 's|\.map(|.getMap(|g' "$1"
+    ${SED} ${SED_ARGS} 's|->get_set_size(|->getSetSize(|g' "$1"
+    ${SED} ${SED_ARGS} 's|\.get_set_size(|.getSetSize(|g' "$1"
+
+    ${SED} ${SED_ARGS} -E 's|([^ ]*)get_set_entities\((.*),[ ]*&(.*)\)|\3 = \1getSetEntities(\2)|g' "$1"
 
     # mesh.node_get_coordinate(n, &node) --> node = mesh.getNodeCoordinate(n)
     ${SED} ${SED_ARGS} -E 's@([^ ]*)node_get_coordinate\(([^,]),[ ]*&(.*)\)@\3 = \1getNodeCoordinate(\2)@g' "$1"

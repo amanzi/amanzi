@@ -26,7 +26,7 @@ RegionPolygon::RegionPolygon(const std::string& name,
                              const int id,
                              const std::vector<Point>& points,
                              const LifeCycleType lifecycle)
-  : Region(name, id, true, POLYGON, points[0].dim()-1, points[0].dim(), lifecycle),
+  : Region(name, id, true, RegionType::POLYGON, points[0].dim()-1, points[0].dim(), lifecycle),
     normal_(points[0].dim()),
     elim_dir_(0)
 {

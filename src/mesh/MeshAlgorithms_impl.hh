@@ -85,6 +85,43 @@ int getFaceDirectionInCell(const Mesh_type& mesh, const Entity_ID f, const Entit
   return dir;
 }
 
+
+template<class Mesh_type>
+Entity_ID_List
+computeCellEdges(const Mesh_type& mesh, const Entity_ID c)
+{
+  Entity_ID_List edges;
+  Entity_ID_List faces, fedges;
+  mesh.getCellFaces(c, faces);
+  for (const auto& f : faces) {
+    mesh.getFaceEdges(f, fedges);
+    for (const auto& e : fedges) {
+      if (std::find(edges.begin(), edges.end(), e) == edges.end()) {
+        edges.emplace_back(e);
+      }
+    }
+  }
+  return edges;
+}
+
+template<class Mesh_type>
+Entity_ID_List
+computeCellNodes(const Mesh_type& mesh, const Entity_ID c)
+{
+  Entity_ID_List nodes;
+  Entity_ID_List faces, fnodes;
+  mesh.getCellFaces(c, faces);
+  for (const auto& f : faces) {
+    mesh.getFaceNodes(f, fnodes);
+    for (const auto& n : fnodes) {
+      if (std::find(nodes.begin(), nodes.end(), n) == nodes.end()) {
+        nodes.emplace_back(n);
+      }
+    }
+  }
+  return nodes;
+}
+
 template<class Mesh_type>
 std::pair<double, AmanziGeometry::Point>
 computeCellGeometry(const Mesh_type& mesh, const Entity_ID c)
@@ -255,6 +292,52 @@ void debugCell(const Mesh_type& mesh, const Entity_ID c)
            << " dir " << f_dirs[fi] << " centroid " << fc << " normal " << mesh.getFaceNormal(faces[fi]) << " bisector " <<  fc - cc << std::endl;
   }
   std::cout << stream.str();
+}
+
+
+template<class Mesh_type>
+Point_List getEdgeCoordinates(const Mesh_type& mesh, const Entity_ID e)
+{
+  Entity_ID_List nodes;
+  mesh.getEdgeNodes(e, nodes);
+
+  Point_List coords;
+  coords.reserve(nodes.size());
+
+  for (const auto& n : nodes) {
+    coords.emplace_back(mesh.getNodeCoordinate(n));
+  }
+  return coords;
+}
+
+template<class Mesh_type>
+Point_List getFaceCoordinates(const Mesh_type& mesh, const Entity_ID f)
+{
+  Entity_ID_List nodes;
+  mesh.getFaceNodes(f, nodes);
+
+  Point_List coords;
+  coords.reserve(nodes.size());
+
+  for (const auto& n : nodes) {
+    coords.emplace_back(mesh.getNodeCoordinate(n));
+  }
+  return coords;
+}
+
+template<class Mesh_type>
+Point_List getCellCoordinates(const Mesh_type& mesh, const Entity_ID c)
+{
+  Entity_ID_List nodes;
+  mesh.getCellNodes(c, nodes);
+
+  Point_List coords;
+  coords.reserve(nodes.size());
+
+  for (const auto& n : nodes) {
+    coords.emplace_back(mesh.getNodeCoordinate(n));
+  }
+  return coords;
 }
 
 

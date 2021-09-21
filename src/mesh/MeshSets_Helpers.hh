@@ -19,36 +19,45 @@ namespace AmanziMesh {
 class MeshCache;
 
 //
-// This casts as needed to find the right implementation.
+// This casts as needed to find the right implementation.  Note that some
+// require casting, some do not, so we avoid if possible.
 //
 Entity_ID_List resolveMeshSet(const AmanziGeometry::Region& region,
         const Entity_kind kind,
         const Parallel_type ptype,
         const MeshCache& mesh);
 
-//
-// The default implementation assumes that region is a geometric region.
-//
+Entity_ID_List resolveMeshSetAll(const AmanziGeometry::Region& region,
+        const Entity_kind kind,
+        const Parallel_type ptype,
+        const MeshCache& mesh);
+
+Entity_ID_List resolveMeshSetBoundary(const AmanziGeometry::Region& region,
+        const Entity_kind kind,
+        const Parallel_type ptype,
+        const MeshCache& mesh);
+
+Entity_ID_List resolveMeshSetEnumerated(const AmanziGeometry::RegionEnumerated& region,
+        const Entity_kind kind,
+        const Parallel_type ptype,
+        const MeshCache& mesh);
+
 Entity_ID_List resolveMeshSetGeometric(const AmanziGeometry::Region& region,
         const Entity_kind kind,
         const Parallel_type ptype,
         const MeshCache& mesh);
 
-//
-// Implements RegionLogical
-//
-Entity_ID_List resolveMeshSet(const AmanziGeometry::RegionLogical& region,
+Entity_ID_List resolveMeshSetLabeledSet(const AmanziGeometry::RegionLabeledSet& region,
         const Entity_kind kind,
         const Parallel_type ptype,
         const MeshCache& mesh);
 
-//
-// Implements RegionEnumerated
-//
-Entity_ID_List resolveMeshSet(const AmanziGeometry::RegionEnumerated& region,
+Entity_ID_List resolveMeshSetLogical(const AmanziGeometry::RegionLogical& region,
         const Entity_kind kind,
         const Parallel_type ptype,
         const MeshCache& mesh);
+
+
 
 
 } // namespace AmanziMesh
