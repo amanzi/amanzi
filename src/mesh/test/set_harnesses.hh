@@ -33,7 +33,6 @@ testHexMeshSets3x3x3(const Teuchos::RCP<Mesh_type>& mesh,
                      bool labeled, Framework f)
 {
   auto gm = mesh->getGeometricModel();
-  CHECK(32 == gm->size() || 33 == gm->size()); // some tests add an extra set
   CHECK_EQUAL(3, mesh->getSpaceDimension());
   CHECK_EQUAL(3, mesh->getManifoldDimension());
   for (const auto& r : *gm) {
@@ -461,8 +460,6 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh,
                     bool labeled, Framework f, bool extracted)
 {
   auto gm = mesh->getGeometricModel();
-  auto num_regions = gm->size();
-  CHECK(num_regions == 23 || num_regions == 24);
   CHECK_EQUAL(2, mesh->getSpaceDimension());
   CHECK_EQUAL(2, mesh->getManifoldDimension());
 
