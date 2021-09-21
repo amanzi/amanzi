@@ -136,8 +136,6 @@ void MPCCoupledSoil::Setup(const Teuchos::Ptr<State>& S)
   preconditioner_->set_operator_block(0, 0, pcA);
   preconditioner_->set_operator_block(1, 1, pcB);
 
-  /*
-
   // select the method used for preconditioning
   std::string precon_string = plist_->get<std::string>("preconditioner type",
                                                        "none");
@@ -383,11 +381,6 @@ void MPCCoupledSoil::Setup(const Teuchos::Ptr<State>& S)
 
   }
 
-
-  */
-
-  /*
-
   // create the EWC delegate
   if (plist_->isSublist("ewc delegate")) {
     Teuchos::RCP<Teuchos::ParameterList> sub_ewc_list = Teuchos::sublist(plist_, "ewc delegate");
@@ -404,8 +397,6 @@ void MPCCoupledSoil::Setup(const Teuchos::Ptr<State>& S)
     ewc_->set_model(model);
     ewc_->setup(S);
   }
-
-  */
 
 //  std::cout << "preconditioner_ = " << preconditioner_ << std::endl;
 //  std::cout << "preconditioner_->get_operator() = " << preconditioner_->get_operator() << std::endl;
