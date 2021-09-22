@@ -57,8 +57,11 @@ Entity_ID_List resolveMeshSetLogical(const AmanziGeometry::RegionLogical& region
         const Parallel_type ptype,
         const MeshCache& mesh);
 
-
-
+Entity_ID_List resolveMeshSetVolumeFractions(const AmanziGeometry::Region& region,
+        const Entity_kind kind,
+        const Parallel_type ptype,
+        Double_View& vol_fracs,
+        const MeshCache& mesh);
 
 } // namespace AmanziMesh
 } // namespace Amanzi

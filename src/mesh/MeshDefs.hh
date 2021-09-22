@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 
+#include "Teuchos_RCP.hpp"
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
 

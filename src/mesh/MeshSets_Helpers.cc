@@ -289,6 +289,80 @@ resolveMeshSetLogical(const AmanziGeometry::RegionLogical& region,
 }
 
 
+Entity_ID_List
+resolveMeshSetVolumeFractions(const AmanziGeometry::Region& region,
+        const Entity_kind kind,
+        const Parallel_type ptype,
+        Double_View& vol_fracs,
+        const MeshCache& mesh)
+{
+  vol_fracs.resize(0);
+  Entity_ID_List ents;
+
+  if ((AmanziGeometry::RegionType::BOX_VOF == region.get_type() ||
+       AmanziGeometry::RegionType::LINE_SEGMENT == region.get_type()) &&
+      (kind == Entity_kind::CELL || kind == Entity_kind::FACE)) {
+
+    if (kind == Entity_kind::CELL) {
+      auto ncells = mesh.getNumEntities(Entity_kind::CELL, ptype);
+      vol_fracs.reserve(ncells);
+      ents.reserve(ncells);
+
+      for (int c=0; c!=ncells; ++c) {
+        auto polytope_nodes = mesh.getCellCoordinates(c);
+        std::vector<Entity_ID_List> polytope_faces;
+
+        if (mesh.getSpaceDimension() == 3) {
+          auto cnodes = mesh.getCellNodes(c);
+          Entity_ID_View cfaces;
+          Entity_Direction_View cfdirs;
+          std::tie(cfaces, cfdirs) = mesh.getCellFacesAndDirections(c);
+          polytope_faces.resize(cfaces.size());
+
+          for (int n = 0; n < cfaces.size(); ++n) {
+            auto fnodes = mesh.getFaceNodes(cfaces[n]);
+
+            for (int i=0; i!=fnodes.size(); ++i) {
+              int j = (cfdirs[n] > 0) ? i : fnodes.size() - i - 1;
+              int pos = std::distance(cnodes.begin(), std::find(cnodes.begin(), cnodes.end(), fnodes[j]));
+              polytope_faces[n].push_back(pos);
+            }
+          }
+        }
+
+        double volume = region.intersect(polytope_nodes, polytope_faces);
+        if (volume > 0.0) {
+          ents.push_back(c);
+          if (region.get_type()==AmanziGeometry::RegionType::LINE_SEGMENT) vol_fracs.push_back(volume);
+          else vol_fracs.push_back(volume / mesh.getCellVolume(c));
+        }
+      }
+
+    } else {
+      // ind == FACE
+      int nfaces = mesh.getNumEntities(Entity_kind::FACE, ptype);
+      vol_fracs.reserve(nfaces);
+      ents.reserve(nfaces);
+
+      std::vector<AmanziGeometry::Point> polygon;
+
+      for (int f=0; f!=nfaces; ++f) {
+        auto polygon = mesh.getFaceCoordinates(f);
+        double area = region.intersect(polygon);
+        if (area > 0.0) {
+          ents.push_back(f);
+          vol_fracs.push_back(area / mesh.getFaceArea(f));
+        }
+      }
+    }
+
+  } else {
+    ents = mesh.getSetEntities(region.get_name(), kind, ptype);
+  }
+  return ents;
+}
+
+
 
 } // namespace AmanziMesh
 } // namespace Amanzi

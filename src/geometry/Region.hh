@@ -171,20 +171,20 @@ class Region {
   // Is the specified point inside the closure of the Region
   virtual bool inside(const Point& p) const = 0;
 
-  // // Calculate intersection measure of object with the Region. The intersection
-  // // is defined when the object and Region have same dimensionality.
-  // //
-  // // -- counter clockwise ordered polygon does not require faces
-  // double intersect(const std::vector<Point>& polytope) const {
-  //   std::vector<std::vector<int> > faces;
-  //   return intersect(polytope, faces);
-  // }
+  // Calculate intersection measure of object with the Region. The intersection
+  // is defined when the object and Region have same dimensionality.
+  //
+  // -- counter clockwise ordered polygon does not require faces
+  double intersect(const Point_View& polytope) const {
+    const std::vector<Entity_ID_View> faces;
+    return intersect(polytope, faces);
+  }
 
-  // // Polyhedron with counter clockwise ordered faces (wrt normals)
-  // virtual double intersect(const std::vector<Point>& polytope, 
-  //                          const std::vector<std::vector<int> >& faces) const {
-  //   return -1.0;
-  // }
+  // Polyhedron with counter clockwise ordered faces (wrt normals)
+  virtual double intersect(const Point_View& polytope,
+                           const std::vector<Entity_ID_View>& faces) const {
+    return -1.0;
+  }
 
  protected:
   // Constructor -- protected as it should never be called directly

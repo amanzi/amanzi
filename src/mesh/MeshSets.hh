@@ -18,6 +18,7 @@ namespace Amanzi {
 namespace AmanziMesh {
 
 using MeshSets = std::map<std::tuple<std::string,Entity_kind,Parallel_type>, Entity_ID_View>;
+using MeshSetVolumeFractions = std::map<std::tuple<std::string,Entity_kind,Parallel_type>, Double_View>;
 
 }
 }

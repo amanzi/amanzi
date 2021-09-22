@@ -20,7 +20,10 @@ namespace Amanzi {
 namespace AmanziGeometry {
 
 typedef int Entity_ID;  // should be consistent with similar definition in class Mesh
-typedef std::vector<Point> Point_List;
+using Point_List = std::vector<AmanziGeometry::Point>;
+template<typename T> using View_type = std::vector<T>;
+using Point_View = View_type<AmanziGeometry::Point>;
+using Entity_ID_View = View_type<Entity_ID>;
 
 enum class RegionType {
   BOX,

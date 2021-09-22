@@ -17,5 +17,8 @@ function go2 () {
     ${SED} ${SED_ARGS} 's|is_deformable|isDeformable|g' "$1"
     ${SED} ${SED_ARGS} 's|get_importer|getImporter|g' "$1"
 
+    ${SED} ${SED_ARGS} 's^"MeshFramework\.hh"^"MeshFrameworkTraits.hh"^g' "$1"
+    ${SED} ${SED_ARGS} 's^"Mesh\.hh"^"MeshFramework.hh"^g' "$1"
+
 }
     

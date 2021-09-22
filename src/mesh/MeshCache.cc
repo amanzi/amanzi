@@ -108,14 +108,32 @@ MeshCache::getSetEntities(const std::string& region_name,
                           const Parallel_type ptype) const
 {
   auto key = std::make_tuple(region_name, kind, ptype);
-  if (sets_.count(key)) {
-    return sets_.at(key);
-  } else {
+  if (!sets_.count(key)) {
     auto region = getGeometricModel()->FindRegion(region_name);
     sets_[key] = resolveMeshSet(*region, kind, ptype, *this);
-    return sets_.at(key);
   }
+  return sets_.at(key);
 }
+
+const Entity_ID_View&
+MeshCache::getSetEntitiesAndVolumeFractions(const std::string& region_name,
+        const Entity_kind kind,
+        const Parallel_type ptype,
+        Double_View* vol_fracs) const
+{
+  if (!vol_fracs) return getSetEntities(region_name, kind, ptype);
+
+  auto key = std::make_tuple(region_name, kind, ptype);
+  if (!set_vol_fracs_.count(key)) {
+    auto region = getGeometricModel()->FindRegion(region_name);
+    sets_[key] = resolveMeshSetVolumeFractions(*region, kind, ptype, *vol_fracs, *this);
+    set_vol_fracs_[key] = *vol_fracs;
+  } else {
+    *vol_fracs = set_vol_fracs_.at(key);
+  }
+  return sets_.at(key);
+}
+
 
 
 std::size_t

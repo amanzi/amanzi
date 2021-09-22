@@ -59,7 +59,7 @@ function go () {
     
     
     ${SED} ${SED_ARGS} 's@\.edge_centroid(@.getEdgeCentroid(@g' "$1"
-    ${SED} ${SED_ARGS} 's@->edge_centroid(@.getEdgeCentroid(@g' "$1"
+    ${SED} ${SED_ARGS} 's@->edge_centroid(@->getEdgeCentroid(@g' "$1"
     
     # remove ordered option, remove reference
     # cell_get_faces_and_dirs(c, &faces, &dirs, true)
@@ -107,6 +107,7 @@ function go () {
     ${SED} ${SED_ARGS} "s/AmanziMesh::EDGE/AmanziMesh::Entity_kind::EDGE/g" "$1"
     ${SED} ${SED_ARGS} "s/AmanziMesh::NODE/AmanziMesh::Entity_kind::NODE/g" "$1"
     ${SED} ${SED_ARGS} "s/AmanziMesh::BOUNDARY_FACE/AmanziMesh::Entity_kind::BOUNDARY_FACE/g" "$1"
+    ${SED} ${SED_ARGS} "s/AmanziMesh::BOUNDARY_NODE/AmanziMesh::Entity_kind::BOUNDARY_NODE/g" "$1"
     ${SED} ${SED_ARGS} "s/Mesh::TRI/Mesh::Cell_type::TRI/g" "$1"
     ${SED} ${SED_ARGS} "s/Mesh::QUAD/Mesh::Cell_type::QUAD/g" "$1"
     ${SED} ${SED_ARGS} "s/Mesh::POLYGON/Mesh::Cell_type::POLYGON/g" "$1"
@@ -119,13 +120,21 @@ function go () {
     ${SED} ${SED_ARGS} "s^manifold_dimension^getManifoldDimension^g" "$1"
     ${SED} ${SED_ARGS} "s^space_dimension^getSpaceDimension^g" "$1"
 
-    ${SED} ${SED_ARGS} 's^"MeshFramework\.hh"^"MeshFrameworkTraits.hh"^g' "$1"
-    ${SED} ${SED_ARGS} 's^"Mesh\.hh"^"MeshFramework.hh"^g' "$1"
-
     # guess some mesh GID calls -- cannot blanket replace because Map.GID()
     ${SED} ${SED_ARGS} 's^mesh->GID^mesh->getEntityGID^g' "$1"
     ${SED} ${SED_ARGS} 's^mesh\.GID^mesh.getEntityGID^g' "$1"
     ${SED} ${SED_ARGS} 's^mesh_->GID^mesh_->getEntityGID^g' "$1"
     ${SED} ${SED_ARGS} 's^mesh_\.GID^mesh_.getEntityGID^g' "$1"
 
+    ${SED} ${SED_ARGS} 's|->valid_set_name(|->isValidSetName(|g' "$1"
+    ${SED} ${SED_ARGS} 's|\.valid_set_name(|.isValidSetName(|g' "$1"
+
+    ${SED} ${SED_ARGS} -E 's|([^ ]*)get_set_entities_and_vofs\(([^&]*)&([^,]*),[ ]*|\3 = \1getSetEntitiesAndVolumeFractions(\2|g' "$1"
+
+    ${SED} ${SED_ARGS} 's|MeshLight|Mesh|g' "$1"
+    
+}
+
+function allgo() {
+    for i in `findsrc . | grep -v mesh/`; do go $i; done
 }

@@ -342,6 +342,10 @@ struct MeshCache {
   // ----------------
   // sets of entities
   // ----------------
+  // NOTE: no test for this -- unclear exactly the semantic of what is and is not valid.  FIXME!
+  bool isValidSetName(const std::string& name, const Entity_kind kind) const {
+    return true;
+  }
   bool isValidSetType(const AmanziGeometry::RegionType rtype, const Entity_kind kind) const;
 
   int getSetSize(const std::string& region_name,
@@ -351,6 +355,11 @@ struct MeshCache {
   const Entity_ID_View& getSetEntities(const std::string& region_name,
           const Entity_kind kind,
           const Parallel_type ptype) const;
+
+  const Entity_ID_View&
+  getSetEntitiesAndVolumeFractions(const std::string& region_name,
+          const Entity_kind kind,
+          const Parallel_type ptype, Double_View* vol_fracs) const;
 
   // ----------------
   // Entity meta-data
@@ -741,6 +750,7 @@ struct MeshCache {
   // helper classes
   MeshMaps maps_;
   mutable MeshSets sets_;
+  mutable MeshSetVolumeFractions set_vol_fracs_;
 };
 
 
