@@ -125,7 +125,16 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   PK_MPCStrong<PK_BDF>::Initialize(S);
 
-  auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
+  // since solution's map could be anything, to create a global operator,
+  // we have to rely on pk's operator structure.
+  auto tvs = Teuchos::rcp(new TreeVectorSpace());
+
+  for (const auto& pk : sub_pks_) {
+    auto& cvs = pk->my_operator(Operators::OPERATOR_MATRIX)->get_domain_map();
+    auto tmp = Teuchos::rcp(new TreeVectorSpace(cvs));
+    tvs->PushBack(tmp);
+  }
+
   op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
 
   // we assume that 0 and 1 correspond to matrix and fracture, respectively

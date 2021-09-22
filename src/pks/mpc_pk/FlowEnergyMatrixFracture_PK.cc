@@ -161,17 +161,13 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   // NOTE: In this PK, the solution is 2-deep, with 2 sub-PKs (matrix,
   // fracture) each with 2 sub-pks of their own (flow,energy).  Currently
   // TreeOperator cannot handle this, so instead we must flatten the map.
-  //
-  // This blob of code should go away in favor of:
-  //   auto tvs = solution_->Map();
-  // once we have a hierarchical TreeOperator.
   auto tvs = Teuchos::rcp(new TreeVectorSpace());
-  for (const auto& subvec_domain : *solution_) {
-    for (const auto& subvec_pk : (*subvec_domain)) {
-      tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(subvec_pk->Map())));
-    }
+  for (const auto& pk : sub_pks_) {
+    auto mpc_pk = Teuchos::rcp_dynamic_cast<PK_MPCStrong>(pk);
+    auto sub_tvs = mpc_pk->op_tree_matrix()->DomainMap();
+    for (const auto& tmp : sub_tvs) tvs->PushBack(tmp);
   }
-  // end blob
+
   AMANZI_ASSERT(tvs->size() == 4);
   op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
   op_tree_pc_ = Teuchos::rcp(new Operators::FlatTreeOperator(tvs));

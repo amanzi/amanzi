@@ -102,12 +102,13 @@ void TransportMatrixFractureImplicit_PK::Initialize(const Teuchos::Ptr<State>& S
 
   AMANZI_ASSERT(pk_matrix->domain() == "domain");
 
-  // in the case of multiple components, we need an auxiliary map corresponding
-  // to one component.
+  // in the case of multiple solutes, we need an auxiliary map corresponding
+  // to one solute. 
   auto tvs_new = Teuchos::rcp(new TreeVectorSpace());
   auto tvs_old = Teuchos::rcp(new TreeVectorSpace(my_solution_->Map()));
   for (auto it = tvs_old->begin(); it != tvs_old->end(); ++it) {
     auto cvs_old = (*it)->Data();
+    AMANZI_ASSERT(cvs_old->size() == 1);  // no aux components (e.g. boundary_face) in solution vector
     auto cvs_new = Teuchos::rcp(new CompositeVectorSpace());
 
     cvs_new->SetMesh(cvs_old->Mesh())->SetGhosted(true);
