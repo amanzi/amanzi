@@ -38,8 +38,6 @@ class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
       Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
-  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
-
  protected:
   void InitializeFromPlist_(const Teuchos::Ptr<State>& S);
 

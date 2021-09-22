@@ -141,7 +141,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
  
   relperm_key_ = Keys::getKey(domain_, "relative_permeability"); 
   relperm_tmp_key_ = Keys::getKey(domain_, "relative_permeability_tmp"); 
-  alpha_key_ = Keys::getKey(domain_, "alpha_coefficient"); 
+  alpha_key_ = Keys::getKey(domain_, "alpha_coef"); 
 
   // set up the base class 
   Flow_PK::Setup(S);
@@ -153,18 +153,15 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single continuum");
 
   // Require primary field for this PK, which is pressure
-  std::vector<std::string> names;
-  std::vector<AmanziMesh::Entity_kind> locations;
-  std::vector<int> ndofs;
+  std::vector<std::string> names({ "cell", "dirichlet_faces" });
+  std::vector<AmanziMesh::Entity_kind> locations({ AmanziMesh::CELL, AmanziMesh::BOUNDARY_FACE });
+  std::vector<int> ndofs(2, 1);
 
   Teuchos::RCP<Teuchos::ParameterList> list1 = Teuchos::sublist(fp_list_, "operators", true);
   Teuchos::RCP<Teuchos::ParameterList> list2 = Teuchos::sublist(list1, "diffusion operator", true);
   Teuchos::RCP<Teuchos::ParameterList> list3 = Teuchos::sublist(list2, "matrix", true);
   std::string name = list3->get<std::string>("discretization primary");
 
-  names.push_back("cell");
-  locations.push_back(AmanziMesh::CELL);
-  ndofs.push_back(1);
   if (name != "fv: default" && name != "nlfv: default") {
     names.push_back("face");
     locations.push_back(AmanziMesh::FACE);
@@ -368,7 +365,6 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // -- inverse of kinematic viscosity
-  /*
   if (!S->HasField(alpha_key_)) {
     S->RequireField(alpha_key_, alpha_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1)
@@ -386,7 +382,6 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     auto eval = Teuchos::rcp(new MultiplicativeEvaluator(elist));
     S->SetFieldEvaluator(alpha_key_, eval);
   }
-  */
 
   // Local fields and evaluators.
   // -- hydraulic head

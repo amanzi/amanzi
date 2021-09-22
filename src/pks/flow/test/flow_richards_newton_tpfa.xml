@@ -218,10 +218,10 @@
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="components" type="Array(string)" value="{cell, dirichlet_faces}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="101325.0"/>
+                <Parameter name="value" type="double" value="0.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

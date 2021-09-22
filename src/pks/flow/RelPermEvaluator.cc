@@ -11,7 +11,7 @@
   Rel perm( pc ( sat ) ).
 */
 
-#include "FlowDefs.hh"
+#include "Mesh_Algorithms.hh"
 #include "RelPermEvaluator.hh"
 
 namespace Amanzi {
@@ -72,8 +72,24 @@ void RelPermEvaluator::EvaluateField_(
     const Teuchos::Ptr<CompositeVector>& result)
 {
   patm_ = *S->GetScalarData("atmospheric_pressure");
+  const auto& pres = S->GetFieldData(pressure_key_); 
 
-  // relperm_->Compute(S->GetFieldData(pressure_key_), result);
+  for (auto comp = result->begin(); comp != result->end(); ++comp) {
+    const auto& pres_c = *pres->ViewComponent(*comp);
+    auto& result_c = *result->ViewComponent(*comp);
+
+    int ncells = pres_c.MyLength();
+    if (*comp == "cell") {
+      for (int c = 0; c != ncells; ++c) {
+        result_c[0][c] = wrm_->second[(*wrm_->first)[c]]->k_relative(patm_ - pres_c[0][c]);
+      }
+    } else if (*comp == "dirichlet_faces") {
+      for (int f = 0; f != ncells; ++f) {
+        int c = AmanziMesh::getBoundaryFaceInternalCell(*pres->Mesh(), f);
+        result_c[0][f] = wrm_->second[(*wrm_->first)[c]]->k_relative(patm_ - pres_c[0][f]);
+      }
+    }
+  }
 }
 
 
@@ -86,35 +102,28 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<CompositeVector>& result)
 {
   patm_ = *S->GetScalarData("atmospheric_pressure");
-  // relperm_->ComputeDerivative(S->GetFieldData(pressure_key_), result);
-}
+  const auto& pres = S->GetFieldData(pressure_key_); 
 
+  if (wrt_key == pressure_key_) {
+    for (auto comp = result->begin(); comp != result->end(); ++comp) {
+      const auto& pres_c = *pres->ViewComponent(*comp);
+      auto& result_c = *result->ViewComponent(*comp);
 
-/* ******************************************************************
-* TBW
-****************************************************************** */
-void RelPermEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
-{
-  // Create an unowned factory to check my dependencies.
-  auto dep_fac = Teuchos::rcp(new CompositeVectorSpace());
-  dep_fac->SetMesh(S->GetMesh(Keys::getDomain(my_key_)));
-  dep_fac->SetOwned(false);
-  dep_fac->SetComponent("cell", AmanziMesh::CELL, 1);
-
-  // Loop over my dependencies, ensuring they meet the requirements.
-  for (const auto& key : dependencies_) {
-    if (key == my_key_) {
-      Errors::Message msg;
-      msg << "Evaluator for key \"" << my_key_ << "\" depends upon itself.";
-      Exceptions::amanzi_throw(msg);
+      int ncells = pres_c.MyLength();
+      if (*comp == "cell") {
+        for (int c = 0; c != ncells; ++c) {
+          // Negative sign indicates that dKdP = -dKdPc.
+          result_c[0][c] = -wrm_->second[(*wrm_->first)[c]]->dKdPc(patm_ - pres_c[0][c]);
+        }
+      } else if (*comp == "dirichlet_faces") {
+        for (int f = 0; f != ncells; ++f) {
+          int c = AmanziMesh::getBoundaryFaceInternalCell(*pres->Mesh(), f);
+          result_c[0][f] = -wrm_->second[(*wrm_->first)[c]]->dKdPc(patm_ - pres_c[0][f]);
+        }
+      }
     }
-    Teuchos::RCP<CompositeVectorSpace> fac = S->RequireField(key);
-    fac->Update(*dep_fac);
-  }
-
-  // Recurse into the tree to propagate info to leaves.
-  for (const auto& key : dependencies_) {
-    S->RequireFieldEvaluator(key)->EnsureCompatibility(S);
+  } else {
+    AMANZI_ASSERT(0);
   }
 }
 

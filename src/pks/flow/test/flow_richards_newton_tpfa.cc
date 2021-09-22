@@ -103,8 +103,8 @@ TEST(FLOW_3D_RICHARDS) {
   *S->GetScalarData("const_fluid_density", passwd) = 1.0;
   S->GetField("const_fluid_density", passwd)->set_initialized();
 
-  S->GetFieldData("viscosity_liquid", passwd)->PutScalar(1.0);
-  S->GetField("viscosity_liquid", passwd)->set_initialized();
+  S->GetFieldData("viscosity_liquid", "viscosity_liquid")->PutScalar(1.0);
+  S->GetField("viscosity_liquid", "viscosity_liquid")->set_initialized();
 
   // -- gravity
   Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");

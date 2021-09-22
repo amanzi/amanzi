@@ -65,6 +65,24 @@ void Richards_PK::FunctionalResidual(
   Operators::CellToFace_ScaleInverse(mu, dKdP_);
   dKdP_->ScaleMasterAndGhosted(molar_rho_);
 
+  // upwind diffusion coefficient
+  CopyDirichletToSolution(op_bc_, S_->GetFieldData(pressure_key_, passwd_), "dirichlet_faces");
+  auto alpha = S_->GetFieldData(alpha_key_, alpha_key_);
+  S_->GetFieldEvaluator(alpha_key_)->HasFieldChanged(S_.ptr(), "flow");
+  
+  auto alpha_upwind = Teuchos::rcp(new CompositeVector(*alpha));
+  AddComponent(alpha_upwind, "face", AmanziMesh::FACE, 1);
+  upwind_->Compute(*darcy_flux_copy, *u_new->Data(), bc_model, *alpha_upwind);
+{
+for (int c = 0; c < 72; ++c) {
+std::cout << c 
+<< "  mu=" << (*mu->ViewComponent("dirichlet_faces"))[0][c] 
+<< "  eta=" << (*S_->GetFieldData(mol_density_liquid_key_)->ViewComponent("dirichlet_faces"))[0][c] 
+<< "  alpha=" << (*alpha_upwind->ViewComponent("dirichlet_faces"))[0][c] << " " 
+<< (*krel_->ViewComponent("dirichlet_faces"))[0][c] << std::endl;
+}
+}
+
   // assemble residual for diffusion operator
   op_matrix_->Init();
   op_matrix_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
@@ -104,6 +122,9 @@ void Richards_PK::FunctionalResidual(
     pressure_matrix_eval_->SetFieldAsChanged(S_.ptr());
     Functional_AddMassTransferMatrix_(dtp, f->Data());
   }
+
+  // setup auxiliary components
+  f->Data()->ViewComponent("dirichlet_faces")->PutScalar(0.0);
 
   // calculate normalized residual
   functional_max_norm = 0.0;

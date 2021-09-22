@@ -13,6 +13,7 @@
 
 #include "errors.hh"
 
+#include "Mesh_Algorithms.hh"
 #include "WhetStoneDefs.hh"
 
 #include "SchemaUtils.hh"
@@ -636,6 +637,29 @@ Teuchos::RCP<CompositeVectorSpace> CreateNonManifoldCVS(
   cvs->AddComponent(compname, AmanziMesh::FACE, mmap, gmap, 1);
 
   return cvs;
+}
+
+
+/* ******************************************************************
+* Composite vector space with one face component having multiple DOFs
+****************************************************************** */
+void CopyDirichletToSolution(const Teuchos::RCP<BCs>& op_bc,
+                             Teuchos::RCP<CompositeVector> field, const std::string& comp)
+{
+  std::vector<int>& bc_model = op_bc->bc_model();
+  std::vector<double>& bc_value = op_bc->bc_value();
+
+  auto field_bf = *field->ViewComponent(comp, true);
+
+  auto mesh = field->Mesh();
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+
+  for (int f = 0; f != nfaces; ++f) {
+    if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+      int bf = AmanziMesh::getFaceOnBoundaryBoundaryFace(*mesh, f);
+      field_bf[0][bf] = bc_value[f];
+    }
+  }
 }
 
 }  // namespace Operators

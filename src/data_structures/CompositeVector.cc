@@ -639,7 +639,7 @@ void DeriveFaceValuesFromCellValues(CompositeVector& cv) {
 // -----------------------------------------------------------------------------
 // Non-member function: extension of a vector via data copy.
 // -----------------------------------------------------------------------------
-void AddComponent(Teuchos::RCP<CompositeVector> cv,
+void AddComponent(Teuchos::RCP<CompositeVector>& cv,
                   const std::string& name, AmanziMesh::Entity_kind kind, int dim) {
   // copy construct the CVS making it not owned and add the new component
   CompositeVectorSpace new_space(cv->Map());
