@@ -169,10 +169,10 @@ if (BUILD_TESTS)
     # Test: mesh deformation
     #   A basic test of deforming volumetric and surface meshes and
     #   making sure geometric quantities get updated correctly.
-    # add_amanzi_test(mesh_deform mesh_deform
-    #                 KIND unit
-    #     	    SOURCE test/Main.cc test/mesh_deform.cc
-    #     	    LINK_LIBS ${mesh_test_link_libs})
+    add_amanzi_test(mesh_deform mesh_deform
+                    KIND unit
+        	    SOURCE test/Main.cc test/mesh_deform.cc
+        	    LINK_LIBS ${mesh_test_link_libs})
 
     # Test: mesh columns
     #   Tests the buidl_columns() capability for semi-structured meshes.              

@@ -15,6 +15,9 @@
 
 namespace Amanzi {
 namespace AmanziMesh {
+
+class MeshCache;
+
 namespace MeshAlgorithms {
 
 template<class Mesh_type>
@@ -66,6 +69,42 @@ Point_List getFaceCoordinates(const Mesh_type& mesh, const Entity_ID f);
 template<class Mesh_type>
 Point_List getCellCoordinates(const Mesh_type& mesh, const Entity_ID c);
 
+//
+// Deformation algorithms
+//
+
+namespace Impl {
+
+// Basic nodal deformation.
+//
+// NOTE: The user is responsible for ensuring consistency of ghost node
+// coordinates -- no communication is done here, so if a node is moved on one
+// process, it must be moved on all processes.
+//
+// NOTE: No geometric consistency is enforced here, so tangling is possible.
+//
+// NOTE: regions move with the mesh -- deforming a mesh does not cause
+// geometric regions to be recalculated.
+//
+// NOTE: prefer to use deform, not this!
+//
+template<class Mesh_type>
+int
+setNodeCoordinates(Mesh_type& mesh,
+                   const Entity_ID_List& nodeids,
+                   const Point_List& newpos);
+}
+
+template<class Mesh_type>
+int
+deform(Mesh_type& mesh,
+       const Entity_ID_List& nodeids,
+       const Point_List& newpos);
+
+int
+deform(MeshCache& mesh,
+       const Entity_ID_List& nodeids,
+       const Point_List& newpos);
 
 } // namespace MeshAlgorithms
 } // namespace AmanziMesh

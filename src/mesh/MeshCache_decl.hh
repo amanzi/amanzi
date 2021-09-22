@@ -497,7 +497,7 @@ struct MeshCache {
   void getCellFacesAndBisectors(
           const Entity_ID c,
           Entity_ID_View& faces,
-          Point_List * const bisectors) const;
+          Point_View * const bisectors) const;
 
   // Get edges of a cell.
   template<AccessPattern AP=AccessPattern::DEFAULT>
@@ -744,11 +744,11 @@ struct MeshCache {
 };
 
 
-namespace Utils {
+namespace MeshAlgorithms {
 
 void cacheAll(MeshCache& mesh);
 void recacheGeometry(MeshCache& mesh);
 
-} // namespace Testing
+} // namespace MeshAlgorithms
 } // namespace AmanziMesh
 } // namespace Amanzi

@@ -15,8 +15,7 @@
 #include "MeshMaps_impl.hh"
 #include "MeshSets.hh"
 #include "MeshSets_Helpers.hh"
-#include "MeshAlgorithms_decl.hh"
-#include "MeshAlgorithms_impl.hh"
+#include "MeshAlgorithms.hh"
 #include "RegionLabeledSet.hh"
 
 namespace Amanzi {
@@ -451,7 +450,8 @@ void MeshCache::setNodeCoordinate(const Entity_ID n, const AmanziGeometry::Point
 {
   if (framework_mesh_.get())
     framework_mesh_->setNodeCoordinate(n, coord);
-  node_coordinates[n] = coord;
+  if (node_coordinates_cached)
+    node_coordinates[n] = coord;
 }
 
 // common error messaging
@@ -463,8 +463,8 @@ void MeshCache::throwAccessError_(const std::string& func_name) const
 }
 
 
+namespace MeshAlgorithms {
 
-namespace Utils {
 void cacheAll(MeshCache& mesh)
 {
   // caches everything, likely just for testing
@@ -522,9 +522,6 @@ void recacheGeometry(MeshCache& mesh)
 }
 
 
-
-} // namespace Testing
-
-
+} // namespace MeshAlgorithms
 } // namespace AmanziMesh
 } // namespace Amanzi

@@ -312,7 +312,7 @@ std::pair<const Entity_ID_View, const Point_View>
 MeshCache::getCellFacesAndBisectors(const Entity_ID c) const
 {
   if (face_geometry_cached) return std::make_pair(cell_faces[c], cell_face_bisectors[c]);
-  Entity_ID_List faces = getCellFaces(c);
+  Entity_ID_View faces = getCellFaces(c);
   Point_View bisectors;
   MeshAlgorithms::computeBisectors(*this, c, faces, bisectors);
   return std::make_pair(faces, bisectors);
@@ -345,7 +345,7 @@ void
 MeshCache::getCellFacesAndBisectors(
   const Entity_ID c,
   Entity_ID_View& faces,
-  Point_List * const bisectors) const
+  Point_View * const bisectors) const
 {
   if (bisectors) std::tie(faces, *bisectors) = getCellFacesAndBisectors(c);
   else faces = getCellFaces(c);

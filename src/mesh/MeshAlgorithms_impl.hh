@@ -13,6 +13,7 @@
 #include "Point.hh"
 #include "Geometry.hh"
 #include "MeshDefs.hh"
+#include "MeshCache_decl.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -339,6 +340,44 @@ Point_List getCellCoordinates(const Mesh_type& mesh, const Entity_ID c)
   }
   return coords;
 }
+
+namespace Impl {
+
+template<class Mesh_type>
+int setNodeCoordinates(Mesh_type& mesh,
+                       const Entity_ID_List& nodeids,
+                       const Point_List& newpos)
+{
+  AMANZI_ASSERT(nodeids.size() == newpos.size());
+  for (int i=0; i!=nodeids.size(); ++i) {
+    mesh.setNodeCoordinate(nodeids[i], newpos[i]);
+  }
+  return 0;
+}
+
+} // namespace
+
+template<class Mesh_type>
+int
+deform(Mesh_type& mesh,
+       const Entity_ID_List& nodeids,
+       const Point_List& newpos)
+{
+  return Impl::setNodeCoordinates(mesh, nodeids, newpos);
+}
+
+inline int
+deform(MeshCache& mesh,
+       const Entity_ID_List& nodeids,
+       const Point_List& newpos)
+{
+  int ierr = Impl::setNodeCoordinates(mesh, nodeids, newpos);
+  recacheGeometry(mesh);
+  return ierr;
+}
+
+
+
 
 
 
