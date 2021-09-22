@@ -48,7 +48,7 @@ TEST(BOX_REGION_2D)
   in_max_xyz = box_params.get< Teuchos::Array<double> >("high coordinate");
  
   // Make sure that the region type is a BOX
-  CHECK_EQUAL(reg->get_type(), Amanzi::AmanziGeometry::BOX);
+  CHECK_EQUAL(reg->get_type(), Amanzi::AmanziGeometry::RegionType::BOX);
 
   // Make sure that the region dimension is 2
   CHECK_EQUAL(reg->get_manifold_dimension(), 2);
@@ -130,7 +130,7 @@ TEST(BOX_REGION_3D)
   in_max_xyz = box_params.get< Teuchos::Array<double> >("high coordinate");
  
   // Make sure that the region type is a BOX
-  CHECK_EQUAL(reg->get_type(),Amanzi::AmanziGeometry::BOX);
+  CHECK_EQUAL(reg->get_type(),Amanzi::AmanziGeometry::RegionType::BOX);
 
   // Make sure that the region dimension is 3
   CHECK_EQUAL(reg->get_manifold_dimension(),3);

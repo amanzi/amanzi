@@ -60,7 +60,7 @@ TEST(POLYGON_REGION2)
   // }
   
   // Make sure that the region type is a Plane
-  CHECK_EQUAL(reg->get_type(),Amanzi::AmanziGeometry::POLYGON);
+  CHECK_EQUAL(reg->get_type(),Amanzi::AmanziGeometry::RegionType::POLYGON);
   
   // See if the parameters of the region were correctly retrieved
   Teuchos::RCP<const Amanzi::AmanziGeometry::RegionPolygon> poly =
@@ -146,7 +146,7 @@ TEST(POLYGON_REGION3)
   in_xyz = poly_params.get< Teuchos::Array<double> >("points");
  
   // Make sure that the region type is a Plane
-  CHECK_EQUAL(reg->get_type(),Amanzi::AmanziGeometry::POLYGON);
+  CHECK_EQUAL(reg->get_type(),Amanzi::AmanziGeometry::RegionType::POLYGON);
   
   // See if the parameters of the region were correctly retrieved
   Teuchos::RCP<const Amanzi::AmanziGeometry::RegionPolygon> poly =

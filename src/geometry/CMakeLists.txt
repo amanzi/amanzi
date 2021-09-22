@@ -17,7 +17,9 @@ include(TestManager)
 project(GEOMETRY)
 
 # Amanzi include directories
-include_directories(${DBC_SOURCE_DIR} ${FUNCS_SOURCE_DIR} ${ATK_SOURCE_DIR})
+include_directories(${DBC_SOURCE_DIR})
+include_directories(${FUNCS_SOURCE_DIR})
+include_directories(${ATK_SOURCE_DIR})  
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -25,17 +27,20 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 #
 # geometry library
 #
-file(GLOB geometry_source_files "*.cc")
 file(GLOB geometry_inc_files "*.hh")
+file(GLOB geometry_src_files "*.cc")
+
 add_amanzi_library(geometry 
-                   SOURCE ${geometry_source_files} HEADERS ${geometry_inc_files}
-                   LINK_LIBS functions error_handling atk ${Teuchos_LIBRARIES} )
+  SOURCE ${geometry_src_files}
+  HEADERS ${geometry_inc_files}
+  LINK_LIBS functions error_handling atk ${Teuchos_LIBRARIES} )
 
 
 #
 # Unit tests
 #
 if (BUILD_TESTS)
+   include_directories(${GEOMETRY_SOURCE_DIR})
    include_directories(${UnitTest_INCLUDE_DIRS})
 
    # Copy test directory files if an out of source build

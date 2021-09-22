@@ -71,7 +71,7 @@ TEST(PLANE_REGION)
  
   // Make sure that the region type is a Plane
 
-  CHECK_EQUAL(reg->get_type(),Amanzi::AmanziGeometry::PLANE);
+  CHECK_EQUAL(reg->get_type(),Amanzi::AmanziGeometry::RegionType::PLANE);
   
   // See if the min-max of the region were correctly retrieved
   

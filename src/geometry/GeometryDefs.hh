@@ -93,6 +93,13 @@ std::string inline to_string(const RegionType rtype) {
   }
 }
 
+inline
+std::ostream& operator<<(std::ostream& os, const RegionType& rtype) {
+  os << to_string(rtype);
+  return os;
+}
+
+
 enum class LifeCycleType {
   PERMANENT=0,
   TEMPORARY

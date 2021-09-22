@@ -33,7 +33,7 @@ TEST(CYLINDER_REGION)
   CHECK_EQUAL(reg->get_name(), reg_name);
   CHECK_EQUAL(reg->get_id(), reg_id);
   CHECK_EQUAL(reg_spec.isSublist(reg_spec.name(reg_spec.begin())), true);
-  CHECK_EQUAL(reg->get_type(), Amanzi::AmanziGeometry::CYLINDER);
+  CHECK_EQUAL(reg->get_type(), Amanzi::AmanziGeometry::RegionType::CYLINDER);
 
   // Make sure that the region dimension is 3
   CHECK_EQUAL(reg->get_manifold_dimension(), 3);

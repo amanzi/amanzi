@@ -57,7 +57,7 @@ TEST(LABELEDSET_REGION)
 
     
     // Make sure that the region type is a Labeled Set
-    CHECK_EQUAL(reg->get_type(),Amanzi::AmanziGeometry::LABELEDSET);
+    CHECK_EQUAL(reg->get_type(),Amanzi::AmanziGeometry::RegionType::LABELEDSET);
   
     // See if the min-max of the region were correctly retrieved
     Amanzi::AmanziGeometry::Point p, n;

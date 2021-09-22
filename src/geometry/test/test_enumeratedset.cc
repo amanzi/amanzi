@@ -59,7 +59,7 @@ TEST(ENUMERATEDSET_REGION)
     std::string in_entity_str = labset_params.get< std::string >("entity");
     
     // Make sure that the region type is a Enumerated Set
-    CHECK_EQUAL(reg->get_type(),Amanzi::AmanziGeometry::ENUMERATED);
+    CHECK_EQUAL(reg->get_type(),Amanzi::AmanziGeometry::RegionType::ENUMERATED);
   
     // See if the min-max of the region were correctly retrieved
     Amanzi::AmanziGeometry::Point p, n;
