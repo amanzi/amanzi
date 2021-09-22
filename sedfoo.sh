@@ -33,9 +33,10 @@ function go () {
     ${SED} ${SED_ARGS} -E 's|([^ ]*)get_set_entities\((.*),[ ]*&(.*)\)|\3 = \1getSetEntities(\2)|g' "$1"
 
     # mesh.node_get_coordinate(n, &node) --> node = mesh.getNodeCoordinate(n)
-    ${SED} ${SED_ARGS} -E 's@([^ ]*)node_get_coordinate\(([^,]),[ ]*&(.*)\)@\3 = \1getNodeCoordinate(\2)@g' "$1"
-    ${SED} ${SED_ARGS} -E 's@([^ ]*)cell_get_coordinates\(([^,]),[ ]*&(.*)\)@\3 = \1getCellCoordinates(\2)@g' "$1"
-    ${SED} ${SED_ARGS} -E 's@([^ ]*)face_get_coordinates\(([^,]),[ ]*&(.*)\)@\3 = \1getFaceCoordinates(\2)@g' "$1"
+    ${SED} ${SED_ARGS} -E 's@([^ ]*)node_get_coordinate\(([^,]*),[ ]*&(.*)\)@\3 = \1getNodeCoordinate(\2)@g' "$1"
+    ${SED} ${SED_ARGS} -E 's@([^ ]*)node_get_coordinates\(([^,]*),[ ]*&(.*)\)@\3 = \1getNodeCoordinate(\2)@g' "$1"
+    ${SED} ${SED_ARGS} -E 's@([^ ]*)cell_get_coordinates\(([^,]*),[ ]*&(.*)\)@\3 = \1getCellCoordinates(\2)@g' "$1"
+    ${SED} ${SED_ARGS} -E 's@([^ ]*)face_get_coordinates\(([^,]*),[ ]*&(.*)\)@\3 = \1getFaceCoordinates(\2)@g' "$1"
 
     # deal with both removing recompute option and case without that option
     #
@@ -77,6 +78,7 @@ function go () {
     ${SED} ${SED_ARGS} 's|cell_get_faces(\([^&]*\)&\(.*\))|getCellFaces(\1\2)|g' "$1"
     # new style cell get faces
     ${SED} ${SED_ARGS} 's|=\(.*\)cell_get_faces|=\1getCellFaces|g' "$1"
+    ${SED} ${SED_ARGS} 's|=\(.*\)cell_get_face_dirs|=\1getCellFaceDirections|g' "$1"
     
     ${SED} ${SED_ARGS} 's|cell_get_edges(\([^&]*\)&\(.*\))|getCellEdges(\1\2)|g' "$1"
     ${SED} ${SED_ARGS} 's|=\(.*\)cell_get_edges|=\1getCellEdges|g' "$1"
@@ -86,8 +88,8 @@ function go () {
     ${SED} ${SED_ARGS} 's|=\(.*\)face_get_edges|=\1getFaceEdges|g' "$1"
     ${SED} ${SED_ARGS} 's|face_get_nodes(\([^&]*\)&\(.*\))|getFaceNodes(\1\2)|g' "$1"
     ${SED} ${SED_ARGS} 's|=\(.*\)face_get_nodes|=\1getFaceNodes|g' "$1"
-    ${SED} ${SED_ARGS} 's|edge_get_nodes(\([^&]*\)&\(.*\))|getEdgeNodes(\1\2)|g' "$1"
-    ${SED} ${SED_ARGS} 's|=\(.*\)edge_get_nodes|=\1getEdgeNodes|g' "$1"
+
+    ${SED} ${SED_ARGS} 's|edge_get_nodes(|getEdgeNodes(|g' "$1"
 
     ${SED} ${SED_ARGS} 's|face_get_cells(\([^&]*\)&\(.*\))|getFaceCells(\1\2)|g' "$1"
     ${SED} ${SED_ARGS} 's|=\(.*\)face_get_cells|=\1getFaceCells|g' "$1"
@@ -117,8 +119,10 @@ function go () {
     ${SED} ${SED_ARGS} "s/Mesh::HEX/Mesh::Cell_type::HEX/g" "$1"
     ${SED} ${SED_ARGS} "s/Mesh::POLYHED/Mesh::Cell_type::POLYHED/g" "$1"
 
-    ${SED} ${SED_ARGS} "s^manifold_dimension^getManifoldDimension^g" "$1"
-    ${SED} ${SED_ARGS} "s^space_dimension^getSpaceDimension^g" "$1"
+    ${SED} ${SED_ARGS} "s^set_manifold_dimension(^setManifoldDimension(^g" "$1"
+    ${SED} ${SED_ARGS} "s^manifold_dimension(^getManifoldDimension(^g" "$1"
+    ${SED} ${SED_ARGS} "s^set_space_dimension(^setSpaceDimension(^g" "$1"
+    ${SED} ${SED_ARGS} "s^space_dimension(^getSpaceDimension(^g" "$1"
 
     # guess some mesh GID calls -- cannot blanket replace because Map.GID()
     ${SED} ${SED_ARGS} 's^mesh->GID^mesh->getEntityGID^g' "$1"
@@ -132,6 +136,11 @@ function go () {
     ${SED} ${SED_ARGS} -E 's|([^ ]*)get_set_entities_and_vofs\(([^&]*)&([^,]*),[ ]*|\3 = \1getSetEntitiesAndVolumeFractions(\2|g' "$1"
 
     ${SED} ${SED_ARGS} 's|MeshLight|Mesh|g' "$1"
+
+    ${SED} ${SED_ARGS} -E 's|([^ ]*)->face_to_cell_edge_map\(([^,]),[ ]*([^,]),[ ]*&(.*)\)|\4 = AmanziMesh::MeshAlgorithms::mapFaceToCellEdges(*\1, \2, \3)|g' "$1"
+    ${SED} ${SED_ARGS} -E 's|([^ ]*)\.face_to_cell_edge_map\(([^,]),[ ]*([^,]),[ ]*&(.*)\)|\4 = AmanziMesh::MeshAlgorithms::mapFaceToCellEdges(\1, \2, \3)|g' "$1"
+
+    ${SED} ${SED_ARGS} 's|valid_edges(|hasEdges(|g' "$1"
     
 }
 

@@ -88,6 +88,19 @@ int getFaceDirectionInCell(const Mesh_type& mesh, const Entity_ID f, const Entit
 
 
 template<class Mesh_type>
+std::vector<int>
+mapFaceToCellEdges(const Mesh_type& mesh, const Entity_ID f, const Entity_ID c)
+{
+  auto fedges = mesh.getFaceEdges(f);
+  auto cedges = mesh.getCellEdges(c);
+  std::vector<int> map(fedges.size());
+  for (int i=0; i!=fedges.size(); ++i)
+    map[i] = std::find(cedges.begin(), cedges.end(), fedges[i]) - cedges.begin();
+  return map;
+}
+
+
+template<class Mesh_type>
 Entity_ID_List
 computeCellEdges(const Mesh_type& mesh, const Entity_ID c)
 {

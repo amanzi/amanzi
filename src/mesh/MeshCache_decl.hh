@@ -482,6 +482,9 @@ struct MeshCache {
   const Entity_ID_View getCellFaces(const Entity_ID c) const;
 
   template<AccessPattern AP=AccessPattern::DEFAULT>
+  const Entity_Direction_View getCellFaceDirections(const Entity_ID c) const;
+
+  template<AccessPattern AP=AccessPattern::DEFAULT>
   std::pair<const Entity_ID_View, const Entity_Direction_View>
   getCellFacesAndDirections(const Entity_ID c) const;
 
@@ -556,6 +559,11 @@ struct MeshCache {
 
   //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
   template<AccessPattern AP=AccessPattern::DEFAULT>
+  void getFaceEdges(const Entity_ID f,
+                    Entity_ID_View& edges) const;
+
+  //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
+  template<AccessPattern AP=AccessPattern::DEFAULT>
   void getFaceEdgesAndDirs(const Entity_ID f,
                            Entity_ID_View& edges,
                            Entity_Direction_View * const dirs=nullptr) const;
@@ -584,6 +592,10 @@ struct MeshCache {
   //[[deprecated("Prefer to use non-void variant that returns nodes directly")]]
   template<AccessPattern AP=AccessPattern::DEFAULT>
   void getEdgeNodes(const Entity_ID e, Entity_ID_View& nodes) const;
+
+  //[[deprecated("Prefer to use non-void variant that returns nodes directly")]]
+  template<AccessPattern AP=AccessPattern::DEFAULT>
+  void getEdgeNodes(const Entity_ID e, Entity_ID* n0, Entity_ID* n1) const;
 
   //-------------------
   // Upward adjacencies

@@ -293,6 +293,22 @@ MeshCache::getCellFaces(const Entity_ID c) const
 }
 
 template<AccessPattern AP>
+const Entity_Direction_View
+MeshCache::getCellFaceDirections(const Entity_ID c) const
+{
+  if (cell_geometry_cached) return cell_face_directions[c];
+  if (framework_mesh_.get()) {
+    Entity_ID_View faces;
+    Entity_Direction_View dirs;
+    framework_mesh_->getCellFacesAndDirs(c, faces, &dirs);
+    return dirs;
+  }
+  throwAccessError_("getCellNumFaces");
+  return cell_face_directions[c]; // NOTE: silences compiler warnings
+}
+
+
+template<AccessPattern AP>
 std::pair<const Entity_ID_View, const Entity_Direction_View>
 MeshCache::getCellFacesAndDirections(const Entity_ID c) const
 {
@@ -327,6 +343,7 @@ MeshCache::getCellFaces(const Entity_ID c,
 {
   faces = getCellFaces(c);
 }
+
 
 //[[deprecated("Prefer to use non-void variant that returns faces directly")]]
 template<AccessPattern AP>
@@ -462,6 +479,15 @@ MeshCache::getFaceEdgesAndDirections(const Entity_ID f) const
 //[[deprecated("Prefer to use non-void variant that returns edges directly")]]
 template<AccessPattern AP>
 void
+MeshCache::getFaceEdges(const Entity_ID f,
+                        Entity_ID_View& edges) const
+{
+  edges = getFaceEdges(f);
+}
+
+//[[deprecated("Prefer to use non-void variant that returns edges directly")]]
+template<AccessPattern AP>
+void
 MeshCache::getFaceEdgesAndDirs(const Entity_ID f,
         Entity_ID_View& edges,
         Entity_Direction_View * const dirs) const
@@ -532,6 +558,17 @@ MeshCache::getEdgeNodes(const Entity_ID e, Entity_ID_View& nodes) const
 {
   nodes = getEdgeNodes(e);
 }
+
+//[[deprecated("Prefer to use non-void variant that returns nodes directly")]]
+template<AccessPattern AP>
+void
+MeshCache::getEdgeNodes(const Entity_ID e, Entity_ID* n0, Entity_ID* n1) const
+{
+  auto nodes = getEdgeNodes(e);
+  if (n0) *n0 = nodes[0];
+  if (n1) *n1 = nodes[1];
+}
+
 
 //-------------------
 // Upward adjacencies
