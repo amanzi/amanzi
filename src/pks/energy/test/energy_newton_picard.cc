@@ -21,6 +21,7 @@
 // Amanzi
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
+#include "Mesh_Algorithms.hh"
 #include "Operator.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_DiffusionMFD.hh"
@@ -130,7 +131,6 @@ void HeatConduction::Init(
   cvs_->SetComponent("cell", AmanziMesh::CELL, 1);
   cvs_->SetOwned(false);
   cvs_->AddComponent("face", AmanziMesh::FACE, 1);
-  cvs_->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1);
 
   // solutions at T=T0 and T=T0+dT
   solution_ = Teuchos::rcp(new CompositeVector(*cvs_)); 
@@ -325,20 +325,14 @@ void HeatConduction::UpdateValues(const CompositeVector& u)
   std::vector<double>& bc_value = bc_->bc_value();
   
   // add boundary face component
-  Epetra_MultiVector& k_df = *k->ViewComponent("dirichlet_faces", true);
-  Epetra_MultiVector& dkdT_df = *dkdT->ViewComponent("dirichlet_faces", true);
+  Epetra_MultiVector& k_f = *k->ViewComponent("face", true);
+  Epetra_MultiVector& dkdT_f = *dkdT->ViewComponent("face", true);
 
-  const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
-  const Epetra_Map& face_map = mesh_->face_map(true);
-
-  for (int f = 0; f != face_map.NumMyElements(); ++f) {
+  for (int f = 0; f != bc_model.size(); ++f) {
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      AMANZI_ASSERT(cells.size() == 1);
-      int bf = ext_face_map.LID(face_map.GID(f));
-      k_df[0][bf] = Conduction(cells[0], bc_value[f]);
-      dkdT_df[0][bf] = ConductionDerivative(cells[0], bc_value[f]);
+      int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh_, f);
+      k_f[0][f] = Conduction(c, bc_value[f]);
+      dkdT_f[0][f] = ConductionDerivative(c, bc_value[f]);
     }
   }
   

@@ -53,7 +53,6 @@ class UpwindSecondOrder : public Upwind<Model> {
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true)
        ->AddComponent("cell", AmanziMesh::CELL, 1)
-       ->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1)
        ->AddComponent("face", AmanziMesh::FACE, 1)
        ->AddComponent("grad", AmanziMesh::CELL, mesh_->space_dimension());
     return cvs;
@@ -102,7 +101,7 @@ void UpwindSecondOrder<Model>::Compute(
 
   const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
   const Epetra_MultiVector& fld_grad = *field.ViewComponent("grad", true);
-  const Epetra_MultiVector& fld_boundary = *field.ViewComponent("dirichlet_faces", true);
+  const Epetra_MultiVector& fld_boundary = *field.ViewComponent("boundary_face", true);
   const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
   const Epetra_Map& face_map = mesh_->face_map(true);
   Epetra_MultiVector& upw_face = *field.ViewComponent(face_comp_, true);

@@ -89,7 +89,7 @@ void UpwindFlux<Model>::Compute(
   // const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
 
   const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
-  const Epetra_MultiVector& fld_boundary = *field.ViewComponent("dirichlet_faces", true);
+  const Epetra_MultiVector& fld_boundary = *field.ViewComponent("boundary_face", true);
   const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
   const Epetra_Map& face_map = mesh_->face_map(true);
   Epetra_MultiVector& upw_face = *field.ViewComponent(face_comp_, true);

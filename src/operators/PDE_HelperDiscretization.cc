@@ -12,7 +12,7 @@
 */
 
 #include "errors.hh"
-
+#include "Mesh_Algorithms.hh"
 #include "WhetStoneDefs.hh"
 
 #include "SchemaUtils.hh"
@@ -636,6 +636,39 @@ Teuchos::RCP<CompositeVectorSpace> CreateNonManifoldCVS(
   cvs->AddComponent(compname, AmanziMesh::FACE, mmap, gmap, 1);
 
   return cvs;
+}
+
+
+/* ******************************************************************
+* Support function: copy data from cells to dirichlet faces
+****************************************************************** */
+void CellToBoundaryFaces(const std::vector<int>& bc_model, CompositeVector& field)
+{
+  auto& field_c = *field.ViewComponent("cell", true);
+  const auto& mesh = field.Mesh();
+
+  int nfaces = bc_model.size();
+
+  if (field.HasComponent("face")) {
+    auto& field_f = *field.ViewComponent("face", true);
+
+    for (int f = 0; f != bc_model.size(); ++f) {
+      if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+        int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh, f);
+        field_f[0][f] = field_c[0][c];
+      }
+    }
+  } else {
+    auto& field_bf = *field.ViewComponent("boundary_face", true);
+
+    for (int f = 0; f != bc_model.size(); ++f) {
+      if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+        int bf = AmanziMesh::getFaceOnBoundaryBoundaryFace(*mesh, f);
+        int  c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh, f);
+        field_bf[0][bf] = field_c[0][c];
+      }
+    }
+  }
 }
 
 }  // namespace Operators

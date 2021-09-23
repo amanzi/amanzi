@@ -125,6 +125,9 @@ Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS(
 Teuchos::RCP<CompositeVectorSpace> CreateNonManifoldCVS(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
+void CellToBoundaryFaces(
+    const std::vector<int>& bc_model, CompositeVector& field);
+
 }  // namespace Operators
 }  // namespace Amanzi
 

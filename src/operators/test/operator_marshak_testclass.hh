@@ -9,6 +9,8 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "Mesh_Algorithms.hh"
+
 namespace Amanzi{
 
 class HeatConduction {
@@ -20,8 +22,7 @@ class HeatConduction {
     CompositeVectorSpace cvs;
     cvs.SetMesh(mesh_)->SetGhosted(true)
         ->AddComponent("cell", AmanziMesh::CELL, 1)
-        ->AddComponent("face", AmanziMesh::FACE, 1)
-        ->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1);
+        ->AddComponent("face", AmanziMesh::FACE, 1);
 
     values_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
     derivatives_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
@@ -41,16 +42,11 @@ class HeatConduction {
     }
 
     // add boundary face component
-    Epetra_MultiVector& vbf = *values_->ViewComponent("dirichlet_faces", true);
-    const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
-    const Epetra_Map& face_map = mesh_->face_map(true);
-    for (int f=0; f!=face_map.NumMyElements(); ++f) {
+    Epetra_MultiVector& values_f = *values_->ViewComponent("face", true);
+    for (int f = 0; f != bc_model.size(); ++f) {
       if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-        AmanziMesh::Entity_ID_List cells;
-        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-        AMANZI_ASSERT(cells.size() == 1);
-        int bf = ext_face_map.LID(face_map.GID(f));
-        vbf[0][bf] = std::pow(bc_value[f], 3.0);
+        int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh_, f);
+        values_f[0][f] = std::pow(bc_value[f], 3.0);
       }
     }
     
