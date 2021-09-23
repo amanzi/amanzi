@@ -41,10 +41,12 @@ void test(const std::string& prec_solver,
     fix.ana = Teuchos::rcp(new Analytic02(dim));
   else if (ana == "03") 
     fix.ana = Teuchos::rcp(new Analytic03b());
-  if (disc_type == "mixed")
+
+  if (disc_type == "mixed" || disc_type == "mixed upwind")
     fix.Discretize<Amanzi::Operators::PDE_DiffusionMFD>(disc_type, scalar_coef);
   else if (disc_type == "fv")
     fix.Discretize<Amanzi::Operators::PDE_DiffusionFV>(disc_type, scalar_coef);
+
   if (bc_type == "Dirichlet") {
     fix.SetBCsDirichlet();
   } else if (bc_type == "DirichletNeumann") {

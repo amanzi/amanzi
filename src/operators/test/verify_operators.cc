@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 {
   if (argc < 4) {
     std::cout <<
-      "Usage: verify_operators  with_pc|direct  mesh_type  mesh_size|mesh_file  scheme  tol  nloops  linsolver\n\n"
+      "Usage: verify_operators  with_pc|direct  mesh_type  mesh_size|mesh_file  scheme  tol  nloops  linsolver  test_id  device\n\n"
       "  (req) with_pc   = identity|diagonal|ifpack2: ILUT|ifpack2: RILUK\n"
       "                    Hypre: AMG|Hypre: Euclid\n"
       "                    Trilinos: ML|Trilinos: MueLu\n"
@@ -39,14 +39,15 @@ int main(int argc, char *argv[])
       "  (req) mesh_type = structured2d|structured3d|unstructured2d|unstructured3d\n"
       "  (req) mesh_size = positive integer\n"
       "  (req) mesh_file = file containing mesh\n\n"
-      "  (opt) scheme    = mfd|fv  (default mfd)\n"
+      "  (opt) scheme    = mfd|fv|mfd_upwind  (default mfd)\n"
       "  (opt) tol       = positive double  (default 1e-10)\n"
       "  (opt) nloops    = number of iterations  (default is 1 for linear solvers)\n"
-      "  (opr) libsolver = linear solver: pcg (default) or gmres\n\n"
+      "  (opr) libsolver = linear solver: pcg (default) or gmres\n"
+      "  (opt) test_id   = id of analytic test (default 00) \n\n"
       "  (opr) device    = device type: serial (default), omp or gpu\n\n"
       "Examples:\n"
       "  verify_operators \"Hypre: AMG\" structured3d 10 fv 1e-10\n"
-      "  verify_operators \"Amesos1: KLU\" unstructured2d mymesh.exo mfd 1e-10 1 gmres gpu\n";
+      "  verify_operators \"Amesos1: KLU\" unstructured2d mymesh.exo mfd 1e-10 1 gmres \"03\" gpu\n";
     return 1;
   }
   for (int i = 1; i < argc; ++i) argv_copy.push_back(argv[i]);
@@ -97,6 +98,7 @@ TEST(Verify_Mesh_and_Operators) {
   if (argc > 3) {
     scheme = argv_copy[3];
     if (scheme == "mfd") scheme = "mixed";
+    if (scheme == "mfd_upwind") scheme = "mixed upwind";
   }
 
   double tol(1e-10);
@@ -114,14 +116,19 @@ TEST(Verify_Mesh_and_Operators) {
     linsolver = argv_copy[6];
   }
 
+  std::string ana("00");
+  if (argc > 7) {
+    ana = argv_copy[7];
+  }
+
   std::string device("serial");
-  if(argc > 7){
-    device = argv_copy[7]; 
+  if(argc > 8) {
+    device = argv_copy[8]; 
   }
 
   int relaxation = 1; 
-  if(argc > 8){
-    relaxation = std::stoi(argv_copy[8]);
+  if(argc > 9) {
+    relaxation = std::stoi(argv_copy[9]);
   }
 
   int interpolation = 3; 
@@ -129,17 +136,17 @@ TEST(Verify_Mesh_and_Operators) {
     interpolation = std::stoi(argv_copy[9]); 
   }
 
-  // little_k
+  // set other parameters based on input values
+  // -- little_k
   AmanziMesh::Entity_kind scalar_coef(AmanziMesh::Entity_kind::UNKNOWN);
+  if (scheme == "mixed upwind") scalar_coef = AmanziMesh::Entity_kind::FACE;
 
-  // other parameters
+  // -- symmetry 
+  int order(1);
   bool symmetric(true);
   if (linsolver != "pcg") symmetric = false;
 
-  int order(1);
-  std::string ana("00");
-
-  // create parameter list
+  // -- parameter list for discretization
   Teuchos::Array<std::string> dofs(2);
   dofs[0] = "face";
   dofs[1] = "cell";
@@ -151,14 +158,19 @@ TEST(Verify_Mesh_and_Operators) {
       .set<Teuchos::Array<std::string> >("preconditioner schema", dofs)
       .set<std::string>("nonlinear coefficient", "none");
 
+  plist->sublist("PK operator").sublist("mixed upwind")
+      .set<std::string>("discretization primary", "mfd: default")
+      .set<Teuchos::Array<std::string> >("schema", dofs)
+      .set<Teuchos::Array<std::string> >("preconditioner schema", dofs)
+      .set<std::string>("nonlinear coefficient", "upwind: face");
+
   plist->sublist("PK operator").sublist("fv")
       .set<std::string>("discretization primary", "fv: default")
       .set<std::string>("schema", "cell")
       .set<std::string>("preconditioner schema", "cell")
       .set<std::string>("nonlinear coefficient", "none");
 
-
-  // solvers
+  // -- parameter list for solvers
   plist->sublist("solvers").sublist("AztecOO CG")
       .set<std::string>("iterative method", "pcg").sublist("pcg parameters")
       .set<int>("maximum number of iterations", 5000)
@@ -201,8 +213,8 @@ TEST(Verify_Mesh_and_Operators) {
       .set<bool>("rescale rows", false)
       .set<double>("ilut drop tolerance", 1e-6);
 
-  if(device == "gpu"){
-    std::cout<<"Using Hypre: AMG with GPU parameters"<<std::endl;
+  if (device == "gpu") {
+    std::cout << "Using Hypre: AMG with GPU parameters" << std::endl;
     plist->sublist("preconditioners").sublist("Hypre: AMG")
         .set<std::string>("preconditioning method", "hypre: boomer amg").sublist("hypre: boomer amg parameters")
         .set<double>("strong threshold", 0.5)
@@ -228,8 +240,8 @@ TEST(Verify_Mesh_and_Operators) {
           11: two-stage Gauss-Seidel 
           12: ''
            */
-  }else if(device == "omp"){
-    std::cout<<"Using Hypre: AMG with OMP parameters"<<std::endl;
+  } else if (device == "omp") {
+    std::cout << "Using Hypre: AMG with OMP parameters" << std::endl;
     plist->sublist("preconditioners").sublist("Hypre: AMG")
         .set<std::string>("preconditioning method", "hypre: boomer amg").sublist("hypre: boomer amg parameters")
         //.set<double>("strong threshold", 0.5)
@@ -244,8 +256,6 @@ TEST(Verify_Mesh_and_Operators) {
         //.set<int>("relaxation order", 0)
         //.set<int>("relaxation type coarse", 9)
         .set<int>("relaxation type", relaxation);
-
-
   } else {
     assert(device == "serial" && "Unrecognized device type");
     std::cout<<"Using Hypre: AMG with serial parameters"<<std::endl;
@@ -255,7 +265,7 @@ TEST(Verify_Mesh_and_Operators) {
         .set<int>("cycle applications", 1)
         .set<int>("smoother sweeps", 1)
         .set<double>("tolerance", 0.0)
-        .set<int>("verbosity", 1)
+        .set<int>("verbosity", 0)
         .set<int>("relaxation type", 18);     
   }
 
@@ -289,9 +299,9 @@ TEST(Verify_Mesh_and_Operators) {
     .set<std::string>("aggregation: type", "uncoupled")
     .set<int>("aggregation: min agg size", 3)
     .set<int>("aggregation: max agg size", 9).sublist("smoother: params")
-      .set<std::string>("relaxation: type", "Symmetric Gauss-Seidel")
-      .set<int>("relaxation: sweeps", 1)
-      .set<double>("relaxation: damping factor", 0.9);
+        .set<std::string>("relaxation: type", "Symmetric Gauss-Seidel")
+        .set<int>("relaxation: sweeps", 1)
+        .set<double>("relaxation: damping factor", 0.9);
 
   // -- ILU
   plist->sublist("preconditioners").sublist("ifpack2: ILUT")
@@ -316,8 +326,11 @@ TEST(Verify_Mesh_and_Operators) {
   }
 
   // auto start = omp_get_wtime();
+  double error_tol(10 * tol);
+  if (ana == "03") error_tol = 0.1;
+
   test(prec_solver, "Dirichlet", mesh_file, d, n,
-       scheme, symmetric, scalar_coef, 10 * tol, order, ana, nloops, plist);
+       scheme, symmetric, scalar_coef, error_tol, order, ana, nloops, plist);
   // printf("Compute: %gs\n", omp_get_wtime() - start);
 }
 
