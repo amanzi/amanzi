@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 {
   if (argc < 4) {
     std::cout <<
-      "Usage: verify_operators  with_pc|direct  mesh_type  mesh_size|mesh_file  scheme  tol  nloops  linsolver\n\n"
+      "Usage: verify_operators  with_pc|direct  mesh_type  mesh_size|mesh_file  scheme  tol  nloops  linsolver  test_id\n\n"
       "  (req) with_pc   = identity|diagonal|ifpack: ILUT\n"
       "                    Hypre: AMG|Hypre: Euclid\n"
       "                    Trilinos: ML|Trilinos: MueLu\n"
@@ -39,13 +39,15 @@ int main(int argc, char *argv[])
       "  (req) mesh_type = structured2d|structured3d|unstructured2d|unstructured3d\n"
       "  (req) mesh_size = positive integer\n"
       "  (req) mesh_file = file containing mesh\n\n"
-      "  (opt) scheme    = mfd|fv  (default mfd)\n"
+      "  (opt) scheme    = mfd|fv|mfd_upwind  (default mfd)\n"
       "  (opt) tol       = positive double  (default 1e-10)\n"
       "  (opt) nloops    = number of iterations  (default is 1 for linear solvers)\n"
-      "  (opr) libsolver = linear solver: pcg (default) or gmres\n\n"
+      "  (opt) libsolver = linear solver: pcg (default) or gmres\n"
+      "  (opt) test_id   = id of analytic test (default 00) \n\n"
       "Examples:\n"
       "  verify_operators \"Hypre: AMG\" structured3d 10 fv 1e-10\n"
-      "  verify_operators \"Amesos1: KLU\" unstructured2d mymesh.exo mfd 1e-10 1 gmres\n";
+      "  verify_operators \"Amesos1: KLU\" unstructured2d mymesh.exo mfd 1e-10 1 gmres\n"
+      "  verify_operators \"identity\" unstructured2d mymesh.exo mfd 1e-10 1 gmres \"03\"\n";
     return 1;
   }
   for (int i = 1; i < argc; ++i) argv_copy.push_back(argv[i]);
@@ -94,6 +96,7 @@ TEST(Verify_Mesh_and_Operators) {
   if (argc > 3) {
     scheme = argv_copy[3];
     if (scheme == "mfd") scheme = "mixed";
+    if (scheme == "mfd_upwind") scheme = "mixed upwind";
   }
 
   double tol(1e-10);
@@ -111,17 +114,22 @@ TEST(Verify_Mesh_and_Operators) {
     linsolver = argv_copy[6];
   }
 
-  // little_k
-  AmanziMesh::Entity_kind scalar_coef(AmanziMesh::Entity_kind::UNKNOWN);
+  std::string ana("00");
+  if (argc > 7) {
+    ana = argv_copy[7];
+  }
 
-  // other parameters
+  // set other parameters based on input values
+  // -- little_k
+  AmanziMesh::Entity_kind scalar_coef(AmanziMesh::Entity_kind::UNKNOWN);
+  if (scheme == "mixed upwind") scalar_coef = AmanziMesh::Entity_kind::FACE;
+
+  // -- symmetry
+  int order(1);
   bool symmetric(true);
   if (linsolver != "pcg") symmetric = false;
 
-  int order(1);
-  std::string ana("00");
-
-  // create parameter list
+  // -- parameter list for discretization
   Teuchos::Array<std::string> dofs(2);
   dofs[0] = "face";
   dofs[1] = "cell";
@@ -132,6 +140,12 @@ TEST(Verify_Mesh_and_Operators) {
       .set<Teuchos::Array<std::string> >("schema", dofs)
       .set<Teuchos::Array<std::string> >("preconditioner schema", dofs)
       .set<std::string>("nonlinear coefficient", "none");
+
+  plist->sublist("PK operator").sublist("mixed upwind")
+      .set<std::string>("discretization primary", "mfd: optimized for sparsity")
+      .set<Teuchos::Array<std::string> >("schema", dofs)
+      .set<Teuchos::Array<std::string> >("preconditioner schema", dofs)
+      .set<std::string>("nonlinear coefficient", "upwind: face");
 
   plist->sublist("PK operator").sublist("so")
       .set<std::string>("discretization primary", "mfd: support operator")
@@ -145,7 +159,7 @@ TEST(Verify_Mesh_and_Operators) {
       .set<std::string>("preconditioner schema", "cell")
       .set<std::string>("nonlinear coefficient", "none");
 
-  // solvers
+  // -- parameter list for solvers
   plist->sublist("solvers").sublist("AztecOO CG")
       .set<std::string>("iterative method", "pcg").sublist("pcg parameters")
       .set<int>("maximum number of iterations", 5000)
@@ -261,7 +275,10 @@ TEST(Verify_Mesh_and_Operators) {
       plist->sublist("preconditioners").sublist(prec_solver).print(std::cout, 0, true, false);
   }
 
+  double error_tol(10 * tol); 
+  if (ana == "03") error_tol = 0.1;
+
   test(prec_solver, "Dirichlet", mesh_file, d, n,
-       scheme, symmetric, scalar_coef, 10 * tol, order, ana, nloops, plist);
+       scheme, symmetric, scalar_coef, error_tol, order, ana, nloops, plist);
 }
 
