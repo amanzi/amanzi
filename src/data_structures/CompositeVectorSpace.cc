@@ -507,8 +507,13 @@ bool CompositeVectorSpace::UnionAndConsistent_(
           }
 
           // union of face and boundary_face is face
+          // we have to update all maps
           names2[j] = "face";
           locations2[j] = AmanziMesh::FACE;
+          mastermaps2.erase("boundary_face");
+          ghostmaps2.erase("boundary_face");
+          mastermaps2["face"] = mastermaps1["face"];
+          ghostmaps2["face"] = ghostmaps1["face"];
         } else {
           // add this spec
           names2.push_back(names1[i]);

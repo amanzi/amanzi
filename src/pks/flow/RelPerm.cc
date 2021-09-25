@@ -12,7 +12,9 @@
   Format: saturation, relative premeability, capillary pressure.
 */
 
+#include "Mesh_Algorithms.hh"
 #include "OperatorDefs.hh"
+
 #include "FlowDefs.hh"
 #include "RelPerm.hh"
 
@@ -39,28 +41,21 @@ void RelPerm::Compute(Teuchos::RCP<const CompositeVector> p,
                       const std::vector<double>& bc_value,
                       const Teuchos::RCP<CompositeVector>& krel)
 {
-  const Epetra_MultiVector& p_c = *p->ViewComponent("cell", false);
-  Epetra_MultiVector& krel_c = *krel->ViewComponent("cell", false);
+  const Epetra_MultiVector& p_c = *p->ViewComponent("cell");
+  Epetra_MultiVector& krel_c = *krel->ViewComponent("cell");
 
   int ncells = krel_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
     krel_c[0][c] = wrm_->second[(*wrm_->first)[c]]->k_relative(patm_ - p_c[0][c]);
   }
 
-  // add boundary face component
-  Epetra_MultiVector& krel_df = *krel->ViewComponent("dirichlet_faces", true);
-  krel_df.PutScalar(0.0);
+  // update Dirichlet boundary faces 
+  Epetra_MultiVector& krel_f = *krel->ViewComponent("face", true);
 
-  const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
-  const Epetra_Map& face_map = mesh_->face_map(true);
-
-  AmanziMesh::Entity_ID_List cells;
-  for (int f = 0; f != face_map.NumMyElements(); ++f) {
+  for (int f = 0; f != bc_model.size(); ++f) {
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      AMANZI_ASSERT(cells.size() == 1);
-      int bf = ext_face_map.LID(face_map.GID(f));
-      krel_df[0][bf] = wrm_->second[(*wrm_->first)[cells[0]]]->k_relative(patm_ - bc_value[f]);
+      int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh_, f);
+      krel_f[0][f] = wrm_->second[(*wrm_->first)[c]]->k_relative(patm_ - bc_value[f]);
     }
   }
 }
@@ -74,8 +69,8 @@ void RelPerm::ComputeDerivative(Teuchos::RCP<const CompositeVector> p,
                                 const std::vector<double>& bc_value,
                                 const Teuchos::RCP<CompositeVector>& dKdP)
 {
-  const Epetra_MultiVector& pres_c = *p->ViewComponent("cell", false);
-  Epetra_MultiVector& derv_c = *dKdP->ViewComponent("cell", false);
+  const Epetra_MultiVector& pres_c = *p->ViewComponent("cell");
+  Epetra_MultiVector& derv_c = *dKdP->ViewComponent("cell");
 
   int ncells = derv_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
@@ -84,19 +79,12 @@ void RelPerm::ComputeDerivative(Teuchos::RCP<const CompositeVector> p,
   }
 
   // add boundary face component
-  Epetra_MultiVector& derv_df = *dKdP->ViewComponent("dirichlet_faces", true);
-  derv_df.PutScalar(0.0);
+  Epetra_MultiVector& derv_f = *dKdP->ViewComponent("face", true);
 
-  const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
-  const Epetra_Map& face_map = mesh_->face_map(true);
-
-  for (int f = 0; f != face_map.NumMyElements(); ++f) {
+  for (int f = 0; f != bc_model.size(); ++f) {
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      AMANZI_ASSERT(cells.size() == 1);
-      int bf = ext_face_map.LID(face_map.GID(f));
-      derv_df[0][bf] = -wrm_->second[(*wrm_->first)[cells[0]]]->dKdPc(patm_ - bc_value[f]);
+      int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh_, f);
+      derv_f[0][f] = -wrm_->second[(*wrm_->first)[c]]->dKdPc(patm_ - bc_value[f]);
     }
   }
 

@@ -641,23 +641,86 @@ Teuchos::RCP<CompositeVectorSpace> CreateNonManifoldCVS(
 
 
 /* ******************************************************************
-* Composite vector space with one face component having multiple DOFs
+* Support function: copy data from cells to dirichlet faces
 ****************************************************************** */
-void CopyDirichletToSolution(const Teuchos::RCP<BCs>& op_bc,
-                             Teuchos::RCP<CompositeVector> field, const std::string& comp)
+void CellToBoundaryFaces(const std::vector<int>& bc_model, CompositeVector& field)
 {
-  std::vector<int>& bc_model = op_bc->bc_model();
-  std::vector<double>& bc_value = op_bc->bc_value();
+  int nfaces = bc_model.size();
+  const auto& mesh = field.Mesh();
+  auto& field_c = *field.ViewComponent("cell", true);
 
-  auto field_bf = *field->ViewComponent(comp, true);
+  if (field.HasComponent("face")) {
+    auto& field_f = *field.ViewComponent("face", true);
 
-  auto mesh = field->Mesh();
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+    for (int f = 0; f != nfaces; ++f) {
+      if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+        int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh, f);
+        field_f[0][f] = field_c[0][c];
+      }
+    }
+  } else {
+    auto& field_bf = *field.ViewComponent("boundary_face", true);
+
+    for (int f = 0; f != nfaces; ++f) {
+      if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+        int bf = AmanziMesh::getFaceOnBoundaryBoundaryFace(*mesh, f);
+        int  c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh, f);
+        field_bf[0][bf] = field_c[0][c];
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Support function: copy data from boundary faces to faces
+****************************************************************** */
+void BoundaryFacesToFaces(
+    const std::vector<int>& bc_model,
+    const CompositeVector& input, CompositeVector& output)
+{
+  int nfaces = bc_model.size();
+  const auto& mesh = output.Mesh();
+
+  const auto& input_bf = *input.ViewComponent("boundary_face", true);
+  auto& output_f = *output.ViewComponent("face", true);
 
   for (int f = 0; f != nfaces; ++f) {
-    if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+    if (bc_model[f] != Operators::OPERATOR_BC_NONE) {
       int bf = AmanziMesh::getFaceOnBoundaryBoundaryFace(*mesh, f);
-      field_bf[0][bf] = bc_value[f];
+      output_f[0][f] = input_bf[0][bf];
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Support function: copy data from BCs to faces
+****************************************************************** */
+void BoundaryDataToFaces(
+    const std::vector<int>& bc_model,
+    const std::vector<double>& bc_value,
+    CompositeVector& field)
+{
+  int nfaces = bc_model.size();
+  const auto& mesh = field.Mesh();
+
+  if (field.HasComponent("face")) {
+    auto& field_f = *field.ViewComponent("face", true);
+
+    for (int f = 0; f != nfaces; ++f) {
+      if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+        field_f[0][f] = bc_value[f];
+      }
+    }
+  } else {
+    auto& field_bf = *field.ViewComponent("boundary_face", true);
+
+    for (int f = 0; f != nfaces; ++f) {
+      if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+        int bf = AmanziMesh::getFaceOnBoundaryBoundaryFace(*mesh, f);
+        field_bf[0][bf] = bc_value[f];
+      }
     }
   }
 }

@@ -125,8 +125,17 @@ Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS(
 Teuchos::RCP<CompositeVectorSpace> CreateNonManifoldCVS(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
-void CopyDirichletToSolution(const Teuchos::RCP<BCs>& op_bc,
-                             Teuchos::RCP<CompositeVector> field, const std::string& comp);
+void CellToBoundaryFaces(
+    const std::vector<int>& bc_model, CompositeVector& field);
+
+void BoundaryFacesToFaces(
+    const std::vector<int>& bc_model,
+    const CompositeVector& input, CompositeVector& output);
+
+void BoundaryDataToFaces(
+    const std::vector<int>& bc_model,
+    const std::vector<double>& bc_value,
+    CompositeVector& field);
 
 }  // namespace Operators
 }  // namespace Amanzi
