@@ -133,8 +133,7 @@ void BoundaryFacesToFaces(
     const CompositeVector& input, CompositeVector& output);
 
 void BoundaryDataToFaces(
-    const std::vector<int>& bc_model,
-    const std::vector<double>& bc_value,
+    const Teuchos::RCP<Operators::BCs>& op_bc,
     CompositeVector& field);
 
 }  // namespace Operators

@@ -649,10 +649,9 @@ void AddComponent(Teuchos::RCP<CompositeVector>& cv,
   // create the new vector and copy data
   Teuchos::RCP<CompositeVector> new_cv = Teuchos::rcp(new CompositeVector(new_space));
   bool ghost = new_space.Ghosted();
-  std::vector<std::string>::const_iterator it;
-  for (it = cv->Map().begin(); it != cv->Map().end(); ++it) {
-    Teuchos::RCP<Epetra_MultiVector> data1 = cv->ViewComponent(*it, ghost);
-    Teuchos::RCP<Epetra_MultiVector> data2 = new_cv->ViewComponent(*it, ghost);
+  for (auto it = cv->Map().begin(); it != cv->Map().end(); ++it) {
+    auto data1 = cv->ViewComponent(*it, ghost);
+    auto data2 = new_cv->ViewComponent(*it, ghost);
     *data2 = *data1;
   }
 

@@ -51,14 +51,11 @@ namespace Operators {
 * Amanzi combines the input and output field in one variable.
 ****************************************************************** */ 
 
-template<class Model>
 class Upwind {
  public:
   Upwind() {};
-  Upwind(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-         Teuchos::RCP<const Model> model) :
+  Upwind(Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       mesh_(mesh),
-      model_(model),
       face_comp_("face") {};
   ~Upwind() {};
 
@@ -86,10 +83,7 @@ class Upwind {
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Teuchos::RCP<const Model> model_;
-
-  // component name where to write the upwinded field.
-  std::string face_comp_;
+  std::string face_comp_;  // component where to write the upwinded field.
 };
 
 }  // namespace Operators

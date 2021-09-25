@@ -9,11 +9,12 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
+#include "InverseFactory.hh"
+#include "Mesh_Algorithms.hh"
 #include "OperatorDefs.hh"
 #include "PDE_Diffusion.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "RemapUtils.hh"
-#include "InverseFactory.hh"
 
 #include "Richards_PK.hh"
 
@@ -30,12 +31,16 @@ namespace Flow {
 void Richards_PK::SolveFullySaturatedProblem(
     double t_old, CompositeVector& u, const std::string& solver_name)
 {
-  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData(viscosity_liquid_key_);
+  std::vector<int>& bc_model = op_bc_->bc_model();
+  std::vector<double>& bc_value = op_bc_->bc_value();
 
   UpdateSourceBoundaryData(t_old, t_old, u);
-  krel_->PutScalarMasterAndGhosted(molar_rho_);
-  Operators::CellToFace_ScaleInverse(mu, krel_);
-  dKdP_->PutScalarMasterAndGhosted(0.0);
+
+  const auto& mu = S_->GetFieldData(viscosity_liquid_key_);
+  alpha_upwind_->PutScalarMasterAndGhosted(molar_rho_);
+  Operators::CellToFace_ScaleInverse(mu, alpha_upwind_);
+
+  alpha_upwind_dP_->PutScalarMasterAndGhosted(0.0);
 
   // create diffusion operator
   op_matrix_->Init();
@@ -91,7 +96,6 @@ void Richards_PK::SolveFullySaturatedProblem(
 void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector> u)
 {
   std::vector<int>& bc_model = op_bc_->bc_model();
-  std::vector<double>& bc_value = op_bc_->bc_value();
 
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData(viscosity_liquid_key_);
 
@@ -101,18 +105,26 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
   Epetra_MultiVector& utmp_face = *utmp.ViewComponent("face");
   Epetra_MultiVector& u_face = *u->ViewComponent("face");
 
-  // update relative permeability coefficients and upwind it
+  // update diffusion coefficient
+  // -- function
   darcy_flux_copy->ScatterMasterToGhosted("face");
 
-  relperm_->Compute(u, bc_model, bc_value, krel_);
-  upwind_->Compute(*darcy_flux_copy, *u, bc_model, *krel_);
-  Operators::CellToFace_ScaleInverse(mu, krel_);
-  krel_->ScaleMasterAndGhosted(molar_rho_);
+  pressure_eval_->SetFieldAsChanged(S_.ptr());
+  auto alpha = S_->GetFieldData(alpha_key_, alpha_key_);
+  S_->GetFieldEvaluator(alpha_key_)->HasFieldChanged(S_.ptr(), "flow");
+  
+  *alpha_upwind_->ViewComponent("cell") = *alpha->ViewComponent("cell");
+  Operators::BoundaryFacesToFaces(bc_model, *alpha, *alpha_upwind_);
+  upwind_->Compute(*darcy_flux_copy, *u, bc_model, *alpha_upwind_);
 
-  relperm_->ComputeDerivative(u, bc_model, bc_value, dKdP_);
-  upwind_->Compute(*darcy_flux_copy, *u, bc_model, *dKdP_);
-  Operators::CellToFace_ScaleInverse(mu, dKdP_);
-  dKdP_->ScaleMasterAndGhosted(molar_rho_);
+  // -- derivative
+  Key der_key = Keys::getDerivKey(alpha_key_, pressure_key_);
+  S_->GetFieldEvaluator(alpha_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, pressure_key_);
+  auto alpha_dP = S_->GetFieldData(der_key);
+
+  *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP->ViewComponent("cell");
+  Operators::BoundaryFacesToFaces(bc_model, *alpha_dP, *alpha_upwind_dP_);
+  upwind_->Compute(*darcy_flux_copy, *solution, bc_model, *alpha_upwind_dP_);
 
   // modify relative permeability coefficient for influx faces
   UpwindInflowBoundary(u);
@@ -170,34 +182,30 @@ void Richards_PK::UpwindInflowBoundary(Teuchos::RCP<const CompositeVector> u)
   std::vector<int>& bc_model = op_bc_->bc_model();
   std::vector<double>& bc_value = op_bc_->bc_value();
 
-  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData(viscosity_liquid_key_);
-  const Epetra_MultiVector& mu_cell = *mu->ViewComponent("cell");
-
-  const Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
-  Epetra_MultiVector& k_face = *krel_->ViewComponent("face", true);
-  AmanziMesh::Entity_ID_List cells;
+  auto& mu_c = *S_->GetFieldData(viscosity_liquid_key_)->ViewComponent("cell");
+  const auto& u_cell = *u->ViewComponent("cell");
+  auto& k_face = *alpha_upwind_->ViewComponent("face", true);
 
   for (int f = 0; f < nfaces_owned; f++) {
     if ((bc_model[f] == Operators::OPERATOR_BC_NEUMANN || 
          bc_model[f] == Operators::OPERATOR_BC_MIXED) && bc_value[f] < 0.0) {
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      int c = cells[0];
+      int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh_, f);
 
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
       double area = mesh_->face_area(f);
       double Knn = ((K[c] * normal) * normal) / (area * area);
       // old version
       // double save = 3.0;
-      // k_face[0][f] = std::min(1.0, -save * bc_value[f] * mu_cell[0][c] / (Knn * rho_ * rho_ * g_));
-      // k_face[0][f] *= rho_ / mu_cell[0][c];
+      // k_face[0][f] = std::min(1.0, -save * bc_value[f] * mu_c[0][c] / (Knn * rho_ * rho_ * g_));
+      // k_face[0][f] *= rho_ / mu_c[0][c];
       double value = bc_value[f] / flux_units_;
-      double kr1 = relperm_->Compute(c, u_cell[0][c]);
-      double kr2 = std::min(1.0, -value * mu_cell[0][c] / (Knn * rho_ * rho_ * g_));
-      k_face[0][f] = (molar_rho_ / mu_cell[0][c]) * (kr1 + kr2) / 2;
+      double kr1 = wrm_->second[(*wrm_->first)[c]]->k_relative(atm_pressure_ - u_cell[0][c]);
+      double kr2 = std::min(1.0, -value * mu_c[0][c] / (Knn * rho_ * rho_ * g_));
+      k_face[0][f] = (molar_rho_ / mu_c[0][c]) * (kr1 + kr2) / 2;
     } 
   }
 
-  krel_->ScatterMasterToGhosted("face");
+  alpha_upwind_->ScatterMasterToGhosted("face");
 }
 
 
@@ -209,26 +217,22 @@ void Richards_PK::UpwindInflowBoundary_New(Teuchos::RCP<const CompositeVector> u
   std::vector<int>& bc_model = op_bc_->bc_model();
   std::vector<double>& bc_value = op_bc_->bc_value();
 
-  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData(viscosity_liquid_key_);
-  const Epetra_MultiVector& mu_cell = *mu->ViewComponent("cell");
-
-  Epetra_MultiVector& k_face = *krel_->ViewComponent("face", true);
-  AmanziMesh::Entity_ID_List cells;
+  auto& mu_c = *S_->GetFieldData(viscosity_liquid_key_)->ViewComponent("cell");
+  auto& k_face = *alpha_upwind_->ViewComponent("face", true);
 
   for (int f = 0; f < nfaces_owned; f++) {
     if ((bc_model[f] == Operators::OPERATOR_BC_NEUMANN || 
          bc_model[f] == Operators::OPERATOR_BC_MIXED) && bc_value[f] < 0.0) {
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      int c = cells[0];
+      int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh_, f);
 
       double value = DeriveBoundaryFaceValue(f, *u, wrm_->second[(*wrm_->first)[c]]);
-      double kr = relperm_->Compute(c, value);
-      k_face[0][f] = kr * (molar_rho_ / mu_cell[0][c]);
+      double kr = wrm_->second[(*wrm_->first)[c]]->k_relative(atm_pressure_ - value);
+      k_face[0][f] = kr * (molar_rho_ / mu_c[0][c]);
       // (*u->ViewComponent("face"))[0][f] = value;
     } 
   }
 
-  krel_->ScatterMasterToGhosted("face");
+  alpha_upwind_->ScatterMasterToGhosted("face");
 }
 
 }  // namespace Flow

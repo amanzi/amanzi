@@ -158,7 +158,7 @@ void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // optional upwinding of conductivity
   if (tmp_list.isSublist("conductivity")) {
-    Operators::UpwindFactory<int> upw_factory;
+    Operators::UpwindFactory upw_factory;
     upwind_ = upw_factory.Create(mesh_, tmp_list.sublist("conductivity"));
     upw_conductivity_ = Teuchos::rcp(new CompositeVector(*upwind_->Map()));
 

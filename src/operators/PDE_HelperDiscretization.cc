@@ -698,10 +698,12 @@ void BoundaryFacesToFaces(
 * Support function: copy data from BCs to faces
 ****************************************************************** */
 void BoundaryDataToFaces(
-    const std::vector<int>& bc_model,
-    const std::vector<double>& bc_value,
+    const Teuchos::RCP<Operators::BCs>& op_bc,
     CompositeVector& field)
 {
+  std::vector<int>& bc_model = op_bc->bc_model();
+  std::vector<double>& bc_value = op_bc->bc_value();
+
   int nfaces = bc_model.size();
   const auto& mesh = field.Mesh();
 

@@ -170,6 +170,9 @@ add_amanzi_library(operators
                           RemapDG.cc RemapUtils.cc
                           UniqueLocalIndex.cc
                           RemapDG_Helper.cc RemapUtils.cc
+                          UpwindFlux.cc
+                          UpwindGravity.cc
+                          UpwindSecondOrder.cc
                           HEADERS ${operators_inc_files}
                    LINK_LIBS geometry mesh mesh_factory error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})                          
 # Add useful utility

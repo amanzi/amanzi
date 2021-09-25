@@ -40,7 +40,7 @@ double H2O_Viscosity::Viscosity(double T, double p)
       xi = 1301.0 * (1.0/A - 1.0/kav1_);
     } else {
       A = (kbv2_ + kcv2_ * dT) * dT;
-     xi = A / (T - 168.15);
+      xi = A / (T - 168.15);
     }
     visc = 0.001 * pow(10.0, xi);
   }
@@ -56,15 +56,29 @@ double H2O_Viscosity::Viscosity(double T, double p)
 };
 
 
-double H2O_Viscosity::DViscosityDT(double T, double p) {
-  Errors::Message message("EOS viscosity of water: derivative not implemented");
-  Exceptions::amanzi_throw(message);
-  return -1.0;
+double H2O_Viscosity::DViscosityDT(double T, double p)
+{
+  double A, xi, dXidT, dT(kT1_ - T), T0(168.15), visc;
+
+  if (T < kT1_) {
+    A = kav1_ + (kbv1_ + kcv1_ * dT) * dT;
+    xi = 1301.0 * (1.0/A - 1.0/kav1_);
+
+    dXidT = 1301.0 / A / A * (kbv1_ + 2 * kcv1_ * dT);
+  } else {
+    A = (kbv2_ + kcv2_ * dT) * dT;
+    xi = A / (T - T0);
+
+    dXidT = (-kbv2_ - 2 * kcv2_ * dT) / (T - T0) - A / (T - T0) / (T - T0); 
+  }
+
+  visc = 2.302585092994046e-3 * pow(10.0, xi) * dXidT;
+  return visc;
 };
 
 
 double H2O_Viscosity::DViscosityDp(double T, double p) {
-  Errors::Message message("EOS viscosity of water: derivative not implemented");
+  Errors::Message message("EOS viscosity of water: dVis/dP is not implemented");
   Exceptions::amanzi_throw(message);
   return -1.0;
 };

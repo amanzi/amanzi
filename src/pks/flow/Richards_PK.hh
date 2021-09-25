@@ -31,7 +31,6 @@
 // Amanzi::Flow
 #include "Flow_PK.hh"
 #include "MultiscaleFlowPorosityPartition.hh"
-#include "RelPerm.hh"
 #include "RelPermEvaluator.hh"
 #include "WRMPartition.hh"
 #include "WRM.hh"
@@ -163,6 +162,8 @@ class Richards_PK : public Flow_PK {
   void CalculateCNLSLimiter_(const CompositeVector& wc, const CompositeVector& dwc_dp, double tol);
   void ApplyCNLSLimiter_();
  
+  void PlotWRMcurves_();
+
  private:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
 
@@ -173,16 +174,12 @@ class Richards_PK : public Flow_PK {
   // water retention models
   Teuchos::RCP<WRMPartition> wrm_;
 
-  Teuchos::RCP<RelPerm> relperm_;
-  Teuchos::RCP<CompositeVector> krel_;
-  Teuchos::RCP<CompositeVector> dKdP_;
-
   // solvers
   Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_;
   Teuchos::RCP<Matrix<CompositeVector,CompositeVectorSpace>> op_pc_solver_;
   Teuchos::RCP<Operators::PDE_Diffusion> op_matrix_diff_, op_preconditioner_diff_;
   Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
-  Teuchos::RCP<Operators::Upwind<RelPerm> > upwind_;
+  Teuchos::RCP<Operators::Upwind> upwind_;
   std::string solver_name_, solver_name_constraint_;
 
   // coupling with energy
@@ -213,9 +210,10 @@ class Richards_PK : public Flow_PK {
 
   // upwind
   int upwind_frequency_;
+  Teuchos::RCP<CompositeVector> alpha_upwind_, alpha_upwind_dP_;
 
   // evaluators
-  Key relperm_key_, relperm_tmp_key_, alpha_key_;
+  Key relperm_key_, alpha_key_;
   Teuchos::RCP<RelPermEvaluator> rel_perm_eval_;
 
   // consistent water content and Darcy fluxes

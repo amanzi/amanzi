@@ -154,7 +154,7 @@ class Energy_PK : public PK_PhysicalBDF {
 
   // upwinding 
   Teuchos::RCP<CompositeVector> upw_conductivity_;
-  Teuchos::RCP<Operators::Upwind<int> > upwind_;  // int implies fake model
+  Teuchos::RCP<Operators::Upwind> upwind_;  // int implies fake model
 };
 
 }  // namespace Energy

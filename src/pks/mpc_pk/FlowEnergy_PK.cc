@@ -176,11 +176,12 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
            .set<std::string>("table name", eos_table_)
            .set<std::string>("field name", "viscosity");
     }
-
-    S->RequireField(viscosity_liquid_key_, viscosity_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator(viscosity_liquid_key_);
   }
+
+  S->RequireField(viscosity_liquid_key_, viscosity_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1)
+    ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+  S->RequireFieldEvaluator(viscosity_liquid_key_);
 
   // inform other PKs about strong coupling
   // -- flow

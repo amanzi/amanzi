@@ -70,7 +70,7 @@ void PDE_AdvectionUpwindFracturedMatrix::UpdateMatrices(
     matrix[f] = Aface;
   }
 
-  // removed matrices fof faces where fracture is located
+  // removed matrices on faces where fracture is located
   AmanziMesh::Entity_ID_List block;
   std::vector<double> vofs;
   for (int i = 0; i < fractures_.size(); ++i) {

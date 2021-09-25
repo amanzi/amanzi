@@ -16,7 +16,6 @@
 #define AMANZI_FLOW_REL_PERM_EVALUATOR_HH_
 
 #include "secondary_variable_field_evaluator.hh"
-#include "RelPerm.hh"
 #include "WRM.hh"
 #include "WRMPartition.hh"
 
@@ -42,8 +41,6 @@ class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
   void InitializeFromPlist_(const Teuchos::Ptr<State>& S);
 
  protected:
-  Teuchos::RCP<RelPerm> relperm_;
-
   Teuchos::RCP<WRMPartition> wrm_;
   Key pressure_key_;
 

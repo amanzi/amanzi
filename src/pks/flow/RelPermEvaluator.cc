@@ -57,10 +57,6 @@ void RelPermEvaluator::InitializeFromPlist_(const Teuchos::Ptr<State>& S)
   std::string domain = Keys::getDomain(my_key_);
   pressure_key_ = plist_.get<std::string>("pressure key", Keys::getKey(domain, "pressure"));
   dependencies_.insert(pressure_key_);
-
-  // use rel perm class for calcualtion
-  Teuchos::ParameterList plist;
-  relperm_ = Teuchos::rcp(new RelPerm(plist, S->GetMesh(domain), patm_, wrm_));
 }
 
 
@@ -78,15 +74,15 @@ void RelPermEvaluator::EvaluateField_(
     const auto& pres_c = *pres->ViewComponent(*comp);
     auto& result_c = *result->ViewComponent(*comp);
 
-    int ncells = pres_c.MyLength();
+    int nids = pres_c.MyLength();
     if (*comp == "cell") {
-      for (int c = 0; c != ncells; ++c) {
+      for (int c = 0; c != nids; ++c) {
         result_c[0][c] = wrm_->second[(*wrm_->first)[c]]->k_relative(patm_ - pres_c[0][c]);
       }
-    } else if (*comp == "dirichlet_faces") {
-      for (int f = 0; f != ncells; ++f) {
-        int c = AmanziMesh::getBoundaryFaceInternalCell(*pres->Mesh(), f);
-        result_c[0][f] = wrm_->second[(*wrm_->first)[c]]->k_relative(patm_ - pres_c[0][f]);
+    } else if (*comp == "boundary_face") {
+      for (int bf = 0; bf != nids; ++bf) {
+        int c = AmanziMesh::getBoundaryFaceInternalCell(*pres->Mesh(), bf);
+        result_c[0][bf] = wrm_->second[(*wrm_->first)[c]]->k_relative(patm_ - pres_c[0][bf]);
       }
     }
   }
@@ -109,16 +105,16 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(
       const auto& pres_c = *pres->ViewComponent(*comp);
       auto& result_c = *result->ViewComponent(*comp);
 
-      int ncells = pres_c.MyLength();
+      int nids = pres_c.MyLength();
       if (*comp == "cell") {
-        for (int c = 0; c != ncells; ++c) {
+        for (int c = 0; c != nids; ++c) {
           // Negative sign indicates that dKdP = -dKdPc.
           result_c[0][c] = -wrm_->second[(*wrm_->first)[c]]->dKdPc(patm_ - pres_c[0][c]);
         }
-      } else if (*comp == "dirichlet_faces") {
-        for (int f = 0; f != ncells; ++f) {
-          int c = AmanziMesh::getBoundaryFaceInternalCell(*pres->Mesh(), f);
-          result_c[0][f] = -wrm_->second[(*wrm_->first)[c]]->dKdPc(patm_ - pres_c[0][f]);
+      } else if (*comp == "boundary_face") {
+        for (int bf = 0; bf != nids; ++bf) {
+          int c = AmanziMesh::getBoundaryFaceInternalCell(*pres->Mesh(), bf);
+          result_c[0][bf] = -wrm_->second[(*wrm_->first)[c]]->dKdPc(patm_ - pres_c[0][bf]);
         }
       }
     }

@@ -71,7 +71,7 @@ double H2O_DensityFEHM::DDensityDp(double T, double p) {
                  + y6_ * t3 + y7_ * p1 * t1 + y8_ * p2 * t1 + y9_ * p1 * t2;
   double z = z0_ + z1_ * p1 + z2_ * p2 + z3_ * p3 + z4_ * t1 + z5_ * t2 
                  + z6_ * t3 + z7_ * p1 * t1 + z8_ * p2 * t1 + z9_ * p1 * t2;
-  return (dydp * z - dzdp * y) / (z * z);
+  return (dydp * z - dzdp * y) / (z * z) / 1e+6;
 }
 
 }  // namespace AmanziEOS
