@@ -35,18 +35,22 @@ void test(const std::string& prec_solver,
       << "--------------------------------------------------------------------------------"
       << std::endl;
   }
+
   if (ana == "00") 
     fix.ana = Teuchos::rcp(new Analytic00(order, 1.0, 1.0, 0.0));
   else if (ana == "02") 
     fix.ana = Teuchos::rcp(new Analytic02(dim));
   else if (ana == "03") 
     fix.ana = Teuchos::rcp(new Analytic03b());
+
   if (disc_type == "mixed")
     fix.Discretize<Amanzi::Operators::PDE_DiffusionMFD>(disc_type, scalar_coef);
   else if (disc_type == "fv")
     fix.Discretize<Amanzi::Operators::PDE_DiffusionFV>(disc_type, scalar_coef);
+
   if (bc_type == "Dirichlet") {
     fix.SetBCsDirichlet();
+    std::cout<<"Set Dirichlet"<<std::endl;
   } else if (bc_type == "DirichletNeumann") {
     fix.SetBCsDirichletNeumann();
   } else if (bc_type == "DirichletNeumannRobin") {
