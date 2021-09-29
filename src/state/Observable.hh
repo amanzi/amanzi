@@ -76,7 +76,7 @@ to disk by the UnstructuredObservation_ object.
       boundary faces and that the default vector is the outward normal direction
       for each face.
 
-    * `"direction normalize flux relative to region`" ``string`` **optional**
+    * `"direction normalized flux relative to region`" ``[string]`` **optional**
       If provided, the flux observation is assumed to be on a set of faces
       which are the exterior of a volumetric region.  This region provides that
       volume, and fluxes are oriented in the "outward normal" direction
