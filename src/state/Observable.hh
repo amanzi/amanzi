@@ -76,6 +76,12 @@ to disk by the UnstructuredObservation_ object.
       boundary faces and that the default vector is the outward normal direction
       for each face.
 
+    * `"direction normalize flux relative to region`" ``string`` **optional**
+      If provided, the flux observation is assumed to be on a set of faces
+      which are the exterior of a volumetric region.  This region provides that
+      volume, and fluxes are oriented in the "outward normal" direction
+      relative to this region's interior.
+
     * `"time integrated`" ``[bool]`` **false** If true, observe the
       time-integral, observing on all cycles and accumulating the
       backwards-Euler product of dt times the observable at the new time.
@@ -119,6 +125,7 @@ class Observable {
  protected:
   bool flux_normalize_;
   Teuchos::RCP<AmanziGeometry::Point> direction_;
+  std::string flux_normalize_region_;
 
   std::string name_;
   std::string variable_;

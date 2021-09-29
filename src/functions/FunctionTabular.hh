@@ -2,9 +2,9 @@
 //! FunctionTabular: Piecewise-defined function.
 
 /*
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 */
 
@@ -37,21 +37,32 @@ The :math:`x_i` and :math:`y_i` may be provided in one of two ways -- explicitly
 
 Explicitly specifying the data:
 
-* `"x values`" ``[Array(double)]`` the :math:`x_i`
-* `"y values`" ``[Array(double)]`` the :math:`y_i`
-* `"forms`" ``[Array(string)]`` **{linear,...}** Form of the interpolant, either `"constant`", `"linear`", or `"USER_DEFINED`"
-* `"USER_DEFINED`" ``[function-spec]`` user-provided functional forms on the interval
-* `"x coordinate`" ``[string]`` **t**, `"x`", `"y`", `"z`" defines which coordinate direction the :math:`x_i` are formed, defaulting to time.
+.. _function-tabular-spec:
+.. admonition:: function-tabular-spec
+
+   * `"x values`" ``[Array(double)]`` the :math:`x_i`
+   * `"y values`" ``[Array(double)]`` the :math:`y_i`
+
+   * `"forms`" ``[Array(string)]`` **optional** Form of the interpolant, either
+     `"constant`", `"linear`", or `"USER_DEFINED`" Default is linear for each *
+     interval.  Note the length of this array should be one per interval, or
+     one less than len of x and y values.
+
+   * `"USER_DEFINED`" ``[function-spec]`` **optional** user-provided functional
+     forms on the interval
+
+   * `"x coordinate`" ``[string]`` **t**, `"x`", `"y`", `"z`" defines which
+     coordinate direction the :math:`x_i` are formed, defaulting to time.
 
 The below example defines a function that is zero on interval :math:`(-\infty,\,0]`,
-linear on interval :math:`(0,\,1]`, constant (`f(x)=1`) on interval :math:`(1,\,2]`, 
+linear on interval :math:`(0,\,1]`, constant (`f(x)=1`) on interval :math:`(1,\,2]`,
 square root of `t` on interval :math:`(2,\,3]`,
 and constant (`f(x)=2`) on interval :math:`(3,\,\infty]`.
 
 Example:
 
 .. code-block:: xml
-  
+
   <ParameterList name="function-tabular">
     <Parameter name="x values" type="Array(double)" value="{0.0, 1.0, 2.0, 3.0}"/>
     <Parameter name="x coordinate" type="string" value="t"/>
@@ -64,22 +75,26 @@ Example:
       </ParameterList>
     </ParameterList>
   </ParameterList>
-  
-
-Loading table from file (note that `"USER_DEFINED`" is not an option here, but could be made so if requested):
 
 
-* `"file`" ``[string]`` filename of the HDF5 data
-* `"x header`" ``[string]`` name of the dataset for the :math:`x_i` in the file
-* `"y header`" ``[string]`` name of the dataset for the :math:`y_i` in the file
-* `"forms`" ``[Array(string)]`` **{linear,...}**, Form of the interpolant, either `"constant`", `"linear`", or `"USER_DEFINED`".
+Loading table from file.  (Note that `"USER_DEFINED`" is not an option here,
+but could be made so if requested).
+
+.. _function-tabular-fromfile-spec:
+.. admonition:: function-tabular-fromfile-spec
+
+   * `"file`" ``[string]`` filename of the HDF5 data
+   * `"x header`" ``[string]`` name of the dataset for the :math:`x_i` in the file
+   * `"y header`" ``[string]`` name of the dataset for the :math:`y_i` in the file
+   * `"forms`" ``[string]`` **optional**, Form of the interpolant, either
+     `"constant`" or `"linear`"
 
 The example below would perform linear-interpolation on the intervals provided by data within the hdf5 file `"my_data.h5`".
 
 Example:
 
 .. code-block:: xml
-  
+
   <ParameterList name="function-tabular">
     <Parameter name="file" type="string" value="my_data.h5"/>
     <Parameter name="x coordinate" type="string" value="t"/>
