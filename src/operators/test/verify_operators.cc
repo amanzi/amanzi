@@ -31,8 +31,8 @@ int main(int argc, char *argv[])
 {
   if (argc < 4) {
     std::cout <<
-      "Usage: verify_operators  with_pc|direct  mesh_type  mesh_size|mesh_file  scheme tol nloops linsolver test_id\n\n"
-      "  (req) with_pc   = identity|diagonal|ifpack2: ILUT|ifpack2: RILUK|ifpack2: FAST_ILU\n"
+      "Usage: verify_operators  with_pc|direct  mesh_type  mesh_size|mesh_file  scheme  tol  nloops  linsolver  test_id  device\n\n"
+      "  (req) with_pc   = identity|diagonal|ifpack2: ILUT|ifpack2: RILUK\n"
       "                    Hypre: AMG|Hypre: Euclid\n"
       "                    Trilinos: ML|Trilinos: MueLu\n"
       "  (req) direct    = Amesos1: KLU|Amesos2: Basker|Amesos2: SuperLUDist\n\n"
@@ -42,7 +42,8 @@ int main(int argc, char *argv[])
       "  (opt) scheme    = mfd|fv|mfd_upwind  (default mfd)\n"
       "  (opt) tol       = positive double  (default 1e-10)\n"
       "  (opt) nloops    = number of iterations  (default is 1 for linear solvers)\n"
-      "  (opr) libsolver = linear solver: pcg (default) or gmres\n\n"
+      "  (opr) libsolver = linear solver: pcg (default) or gmres\n"
+      "  (opt) test_id   = id of analytic test (default 00) \n\n"
       "  (opr) device    = device type: serial (default), omp or gpu\n\n"
       "Examples:\n"
       "  verify_operators \"Hypre: AMG\" structured3d 10 fv 1e-10\n"
@@ -126,17 +127,17 @@ TEST(Verify_Mesh_and_Operators) {
   }
 
 
-  // little_k
+  // set other parameters based on input values
+  // -- little_k
   AmanziMesh::Entity_kind scalar_coef(AmanziMesh::Entity_kind::UNKNOWN);
   if (scheme == "mixed upwind") scalar_coef = AmanziMesh::Entity_kind::FACE;
 
-  // other parameters
+  // -- symmetry 
   int order(1);
   bool symmetric(true);
   if (linsolver != "pcg") symmetric = false;
 
-
-  // create parameter list
+  // -- parameter list for discretization
   Teuchos::Array<std::string> dofs(2);
   dofs[0] = "face";
   dofs[1] = "cell";
@@ -149,16 +150,10 @@ TEST(Verify_Mesh_and_Operators) {
       .set<std::string>("nonlinear coefficient", "none");
 
   plist->sublist("PK operator").sublist("mixed upwind")
-      .set<std::string>("discretization primary", "mfd: optimized for sparsity")
+      .set<std::string>("discretization primary", "mfd: default")
       .set<Teuchos::Array<std::string> >("schema", dofs)
       .set<Teuchos::Array<std::string> >("preconditioner schema", dofs)
       .set<std::string>("nonlinear coefficient", "upwind: face");
-
-  plist->sublist("PK operator").sublist("so")
-      .set<std::string>("discretization primary", "mfd: support operator")
-      .set<Teuchos::Array<std::string> >("schema", dofs)
-      .set<Teuchos::Array<std::string> >("preconditioner schema", dofs)
-      .set<std::string>("nonlinear coefficient", "none");
 
   plist->sublist("PK operator").sublist("fv")
       .set<std::string>("discretization primary", "fv: default")
@@ -166,8 +161,7 @@ TEST(Verify_Mesh_and_Operators) {
       .set<std::string>("preconditioner schema", "cell")
       .set<std::string>("nonlinear coefficient", "none");
 
-
-  // solvers
+  // -- parameter list for solvers
   plist->sublist("solvers").sublist("AztecOO CG")
       .set<std::string>("iterative method", "pcg").sublist("pcg parameters")
       .set<int>("maximum number of iterations", 5000)
@@ -210,8 +204,8 @@ TEST(Verify_Mesh_and_Operators) {
       .set<bool>("rescale rows", false)
       .set<double>("ilut drop tolerance", 1e-6);
 
-  if(device == "gpu"){
-    std::cout<<"Using Hypre: AMG with GPU parameters"<<std::endl;
+  if (device == "gpu") {
+    std::cout << "Using Hypre: AMG with GPU parameters" << std::endl;
     plist->sublist("preconditioners").sublist("Hypre: AMG")
         .set<std::string>("preconditioning method", "hypre: boomer amg").sublist("hypre: boomer amg parameters")
         .set<double>("strong threshold", 0.5)
@@ -237,8 +231,8 @@ TEST(Verify_Mesh_and_Operators) {
           11: two-stage Gauss-Seidel 
           12: ''
            */
-  }else if(device == "omp"){
-    std::cout<<"Using Hypre: AMG with OMP parameters"<<std::endl;
+  } else if (device == "omp") {
+    std::cout << "Using Hypre: AMG with OMP parameters" << std::endl;
     plist->sublist("preconditioners").sublist("Hypre: AMG")
         .set<std::string>("preconditioning method", "hypre: boomer amg").sublist("hypre: boomer amg parameters")
         //.set<double>("strong threshold", 0.5)
@@ -299,9 +293,9 @@ TEST(Verify_Mesh_and_Operators) {
     .set<std::string>("aggregation: type", "uncoupled")
     .set<int>("aggregation: min agg size", 3)
     .set<int>("aggregation: max agg size", 9).sublist("smoother: params")
-      .set<std::string>("relaxation: type", "Symmetric Gauss-Seidel")
-      .set<int>("relaxation: sweeps", 1)
-      .set<double>("relaxation: damping factor", 0.9);
+        .set<std::string>("relaxation: type", "Symmetric Gauss-Seidel")
+        .set<int>("relaxation: sweeps", 1)
+        .set<double>("relaxation: damping factor", 0.9);
 
   // -- ILU
   plist->sublist("preconditioners").sublist("ifpack2: ILUT")

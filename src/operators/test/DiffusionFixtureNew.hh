@@ -133,10 +133,23 @@ void DiffusionFixture::Discretize(const std::string& name,
       }
   );    
   op->SetTensorCoefficient(K);
+
+  if (scalar_coef == AmanziMesh::Entity_kind::FACE) {
+    int nents = mesh->num_entities(scalar_coef, AmanziMesh::Parallel_type::ALL);
+
+    CompositeVectorSpace cvs;
+    cvs.SetMesh(mesh)->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
+    Teuchos::RCP<CompositeVector> kr = cvs.Create();
+    auto vec = kr->ViewComponent<MirrorHost>("face", true);
+    for (int f = 0; f != nents; ++f) {
+      vec(f, 0) = ana->ScalarDiffusivity(mesh->face_centroid(f), 0.0);
+    }
+    op->SetScalarCoefficient(kr, Teuchos::null);
+  }
+
   // boundary condition
   bc = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   op->SetBCs(bc,bc);
-
 }
 
 
