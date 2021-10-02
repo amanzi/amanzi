@@ -35,6 +35,7 @@ initialized (as independent variables are owned by state, not by any PK).
 #include "primary_variable_field_evaluator.hh"
 #include "State.hh"
 #include "StateDefs.hh"
+#include "StringExt.hh"
 
 namespace Amanzi {
 
@@ -1483,6 +1484,9 @@ void WriteStateStatistics(const State& S, const VerboseObject& vo)
 
     for (auto f_it = S.field_begin(); f_it != S.field_end(); ++f_it) {
       std::string name(f_it->first);
+      if (name.size() > 33) replace_all(name, "temperature", "temp");
+      if (name.size() > 33) replace_all(name, "internal_energy", "ie");
+      if (name.size() > 33) replace_all(name, "molar", "mol");
 
       if (f_it->second->type() == COMPOSITE_VECTOR_FIELD) {
         std::map<std::string, double> vmin, vmax, vavg;

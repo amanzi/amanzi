@@ -18,8 +18,8 @@
 #include <vector>
 
 #include "Key.hh"
+#include "Mesh_Algorithms.hh"
 #include "CommonDefs.hh"
-#include "RemapUtils.hh"
 
 #include "Richards_PK.hh"
 
@@ -37,33 +37,36 @@ void Richards_PK::FunctionalResidual(
   double dtp(t_new - t_old);
 
   std::vector<int>& bc_model = op_bc_->bc_model();
-  std::vector<double>& bc_value = op_bc_->bc_value();
 
   if (S_->HasFieldEvaluator(viscosity_liquid_key_)) {
     S_->GetFieldEvaluator(viscosity_liquid_key_)->HasFieldChanged(S_.ptr(), "flow");
   }
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData(viscosity_liquid_key_);
 
-  // refresh data
-  // -- BCs and source terms
+  // compute BCs and source terms, update primary field
   UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
 
-  // -- Darcy flux
+  // upwind diffusion coefficient and its derivative
   darcy_flux_copy->ScatterMasterToGhosted("face");
 
-  // -- relative permeability and its derivative
-  relperm_->Compute(u_new->Data(), bc_model, bc_value, krel_); 
-  upwind_->Compute(*darcy_flux_copy, *u_new->Data(), bc_model, *krel_);
-  Operators::CellToFace_ScaleInverse(mu, krel_);
-  krel_->ScaleMasterAndGhosted(molar_rho_);
+  pressure_eval_->SetFieldAsChanged(S_.ptr());
+  auto alpha = S_->GetFieldData(alpha_key_, alpha_key_);
+  S_->GetFieldEvaluator(alpha_key_)->HasFieldChanged(S_.ptr(), "flow");
+  
+  *alpha_upwind_->ViewComponent("cell") = *alpha->ViewComponent("cell");
+  Operators::BoundaryFacesToFaces(bc_model, *alpha, *alpha_upwind_);
+  upwind_->Compute(*darcy_flux_copy, *u_new->Data(), bc_model, *alpha_upwind_);
 
   // modify relative permeability coefficient for influx faces
   // UpwindInflowBoundary_New(u_new->Data());
 
-  relperm_->ComputeDerivative(u_new->Data(), bc_model, bc_value, dKdP_); 
-  upwind_->Compute(*darcy_flux_copy, *u_new->Data(), bc_model, *dKdP_);
-  Operators::CellToFace_ScaleInverse(mu, dKdP_);
-  dKdP_->ScaleMasterAndGhosted(molar_rho_);
+  Key der_key = Keys::getDerivKey(alpha_key_, pressure_key_);
+  S_->GetFieldEvaluator(alpha_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, pressure_key_);
+  auto alpha_dP = S_->GetFieldData(der_key);
+
+  *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP->ViewComponent("cell");
+  Operators::BoundaryFacesToFaces(bc_model, *alpha_dP, *alpha_upwind_dP_);
+  upwind_->Compute(*darcy_flux_copy, *u_new->Data(), bc_model, *alpha_upwind_dP_);
 
   // assemble residual for diffusion operator
   op_matrix_->Init();
@@ -111,7 +114,7 @@ void Richards_PK::FunctionalResidual(
 
   for (int c = 0; c < ncells_owned; ++c) {
     double factor = mesh_->cell_volume(c) * molar_rho_ * phi_c[0][c] / dtp;
-    double tmp = fabs(f_cell[0][c]) / (factor * molar_rho_ * phi_c[0][c]);
+    double tmp = fabs(f_cell[0][c]) / factor;
     if (tmp > functional_max_norm) {
       functional_max_norm = tmp;
       functional_max_cell = c;        
@@ -312,31 +315,36 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   std::vector<int>& bc_model = op_bc_->bc_model();
   std::vector<double>& bc_value = op_bc_->bc_value();
 
-  // update coefficients
-  // -- BCs and source terms
+  // update BCs and source terms
   UpdateSourceBoundaryData(t_old, tp, *u->Data());
 
   // -- Darcy flux
   if (upwind_frequency_ == FLOW_UPWIND_UPDATE_ITERATION) {
     op_matrix_diff_->UpdateFlux(solution.ptr(), darcy_flux_copy.ptr());
     Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face");
-    for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
+    flux.Scale(1.0 / molar_rho_);  // FIXME
   }
   darcy_flux_copy->ScatterMasterToGhosted("face");
 
-  // -- relative permeability and its derivative
-  relperm_->Compute(u->Data(), bc_model, bc_value, krel_);
-  upwind_->Compute(*darcy_flux_copy, *u->Data(), bc_model, *krel_);
-  Operators::CellToFace_ScaleInverse(mu, krel_);
-  krel_->ScaleMasterAndGhosted(molar_rho_);
+  // diffusion coefficient and its derivative
+  pressure_eval_->SetFieldAsChanged(S_.ptr());
+  auto alpha = S_->GetFieldData(alpha_key_, alpha_key_);
+  S_->GetFieldEvaluator(alpha_key_)->HasFieldChanged(S_.ptr(), "flow");
+  
+  *alpha_upwind_->ViewComponent("cell") = *alpha->ViewComponent("cell");
+  Operators::BoundaryFacesToFaces(bc_model, *alpha, *alpha_upwind_);
+  upwind_->Compute(*darcy_flux_copy, *u->Data(), bc_model, *alpha_upwind_);
 
   // modify relative permeability coefficient for influx faces
   // UpwindInflowBoundary_New(u->Data());
 
-  relperm_->ComputeDerivative(u->Data(), bc_model, bc_value, dKdP_);
-  upwind_->Compute(*darcy_flux_copy, *u->Data(), bc_model, *dKdP_);
-  Operators::CellToFace_ScaleInverse(mu, dKdP_);
-  dKdP_->ScaleMasterAndGhosted(molar_rho_);
+  Key der_key = Keys::getDerivKey(alpha_key_, pressure_key_);
+  S_->GetFieldEvaluator(alpha_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, pressure_key_);
+  auto alpha_dP = S_->GetFieldData(der_key);
+
+  *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP->ViewComponent("cell");
+  Operators::BoundaryFacesToFaces(bc_model, *alpha_dP, *alpha_upwind_dP_);
+  upwind_->Compute(*darcy_flux_copy, *u->Data(), bc_model, *alpha_upwind_dP_);
 
   // create diffusion operators
   op_preconditioner_->Init();

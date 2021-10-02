@@ -165,7 +165,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Teuchos::RCP<WRMmpPartition> wrm_;
 
   // upwind
-  Teuchos::RCP<Operators::UpwindFlux<int> > upwind_;
+  Teuchos::RCP<Operators::UpwindFlux> upwind_;
  
   // time integration
   std::vector<std::string> flux_names_;

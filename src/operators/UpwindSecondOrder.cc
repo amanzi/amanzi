@@ -9,65 +9,44 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_UPWIND_DIVK_HH_
-#define AMANZI_UPWIND_DIVK_HH_
-
 #include <string>
 #include <vector>
 
-#include "Epetra_IntVector.h"
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+// Amanzi
 #include "CompositeVector.hh"
 #include "Mesh.hh"
-#include "VerboseObject.hh"
 #include "WhetStoneMeshUtils.hh"
 
-#include "Upwind.hh"
+// Operators
+#include "UpwindSecondOrder.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class UpwindDivK : public Upwind {
- public:
-  UpwindDivK(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : Upwind(mesh) {};
-  ~UpwindDivK() {};
-
-  // main methods
-  void Init(Teuchos::ParameterList& plist);
-
-  void Compute(const CompositeVector& flux, const CompositeVector& solution,
-               const std::vector<int>& bc_model,
-               CompositeVector& field);
-
- private:
-  int method_, order_;
-  double tolerance_;
-};
-
-
 /* ******************************************************************
 * Public init method. It is not yet used.
 ****************************************************************** */
-inline
-void UpwindDivK::Init(Teuchos::ParameterList& plist)
+void UpwindSecondOrder::Init(Teuchos::ParameterList& plist)
 {
-  method_ = Operators::OPERATOR_UPWIND_DIVK;
+  method_ = Operators::OPERATOR_UPWIND_FLUX_SECOND_ORDER;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
-  order_ = plist.get<int>("polynomial order", 1);
+  order_ = plist.get<int>("polynomial order", 2);
 }
 
 
 /* ******************************************************************
 * Flux-based upwind consistent with mimetic discretization.
 ****************************************************************** */
-inline
-void UpwindDivK::Compute(
+void UpwindSecondOrder::Compute(
     const CompositeVector& flux, const CompositeVector& solution,
     const std::vector<int>& bc_model, CompositeVector& field)
 {
   AMANZI_ASSERT(field.HasComponent("cell"));
+  AMANZI_ASSERT(field.HasComponent("grad"));
   AMANZI_ASSERT(field.HasComponent(face_comp_));
 
   field.ScatterMasterToGhosted("cell");
@@ -77,6 +56,7 @@ void UpwindDivK::Compute(
   // const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
 
   const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
+  const Epetra_MultiVector& fld_grad = *field.ViewComponent("grad", true);
   const Epetra_MultiVector& fld_boundary = *field.ViewComponent("boundary_face", true);
   const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
   const Epetra_Map& face_map = mesh_->face_map(true);
@@ -88,14 +68,18 @@ void UpwindDivK::Compute(
   flx_face.MaxValue(&flxmax);
   double tol = tolerance_ * std::max(fabs(flxmin), fabs(flxmax));
 
-  std::vector<int> dirs;
-  AmanziMesh::Entity_ID_List faces;
+  int dim = mesh_->space_dimension();
+  AmanziGeometry::Point grad(dim);
 
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   for (int c = 0; c < ncells_wghost; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& dirs = mesh_->cell_get_face_dirs(c);
     int nfaces = faces.size();
+
     double kc(fld_cell[0][c]);
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    for (int i = 0; i < dim; i++) grad[i] = fld_grad[i][c];
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
@@ -110,7 +94,8 @@ void UpwindDivK::Compute(
           double v2 = mesh_->cell_volume(c2);
           tmp = v2 / (v1 + v2);
         }
-        upw_face[0][f] += kc * tmp; 
+        const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+        upw_face[0][f] += (kc + grad * (xf - xc)) * tmp;
       // Boundary faces. We upwind only on inflow dirichlet faces.
       } else if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
         upw_face[0][f] = fld_boundary[0][ext_face_map.LID(face_map.GID(f))];
@@ -120,13 +105,8 @@ void UpwindDivK::Compute(
         upw_face[0][f] = kc;
       // Internal and boundary faces. 
       } else if (!flag) {
-        int c2 = WhetStone::cell_get_face_adj_cell(*mesh_, c, f);
-        if (c2 >= 0) {
-          double kc2(fld_cell[0][c2]);
-          upw_face[0][f] = std::pow(kc * (kc + kc2) / 2, 0.5);
-        } else {
-          upw_face[0][f] = kc;
-        }
+        const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+        upw_face[0][f] = kc + grad * (xf - xc);
       }
     }
   }
@@ -135,5 +115,4 @@ void UpwindDivK::Compute(
 }  // namespace Operators
 }  // namespace Amanzi
 
-#endif
 

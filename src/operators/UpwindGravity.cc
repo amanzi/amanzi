@@ -8,11 +8,9 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  A face-based field is defined by volume averaging of cell-centered data.
+  Upwind a cell-centered field (e.g. rel perm) using a given 
+  constant velocity (e.g. gravity).
 */
-
-#ifndef AMANZI_ARITHMETIC_AVERAGE_HH_
-#define AMANZI_ARITHMETIC_AVERAGE_HH_
 
 #include <string>
 #include <vector>
@@ -24,50 +22,34 @@
 // Amanzi
 #include "CompositeVector.hh"
 #include "Mesh.hh"
+#include "Mesh_Algorithms.hh"
 #include "Point.hh"
 
 // Operators
-#include "Upwind.hh"
+#include "UpwindGravity.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class UpwindArithmeticAverage : public Upwind {
- public:
-  UpwindArithmeticAverage(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : Upwind(mesh) {};
-  ~UpwindArithmeticAverage() {};
-
-  // main methods
-  void Init(Teuchos::ParameterList& plist);
-
-  void Compute(const CompositeVector& flux, const CompositeVector& solution,
-               const std::vector<int>& bc_model, CompositeVector& field);
-
- private:
-  int method_, order_;
-  double tolerance_;
-};
-
-
 /* ******************************************************************
 * Public init method. It is not yet used.
 ****************************************************************** */
-inline
-void UpwindArithmeticAverage::Init(Teuchos::ParameterList& plist)
+void UpwindGravity::Init(Teuchos::ParameterList& plist)
 {
-  method_ = OPERATOR_UPWIND_ARITHMETIC_AVERAGE;
+  method_ = Operators::OPERATOR_UPWIND_GRAVITY;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
-  order_ = plist.get<int>("polynomial order", 1);
+  order_ = plist.get<int>("polynomial", 1);
+
+  int dim = mesh_->space_dimension();
+  g_[dim - 1] = -1.0;
 }
 
 
 /* ******************************************************************
-* Upwind field is placed in component "face".
+* Upwind field uses gravity and places the result in field.
 * Upwinded field must be calculated on all faces of the owned cells.
 ****************************************************************** */
-inline
-void UpwindArithmeticAverage::Compute(
+void UpwindGravity::Compute(
     const CompositeVector& flux, const CompositeVector& solution,
     const std::vector<int>& bc_model, CompositeVector& field)
 {
@@ -75,34 +57,48 @@ void UpwindArithmeticAverage::Compute(
   AMANZI_ASSERT(field.HasComponent(face_comp_));
 
   field.ScatterMasterToGhosted("cell");
-
-  Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
-  Epetra_MultiVector& upw_face = *field.ViewComponent(face_comp_, true);
+  const Epetra_MultiVector& field_c = *field.ViewComponent("cell", true);
+  const Epetra_MultiVector& field_bf = *field.ViewComponent("boundary_face", true);
+  Epetra_MultiVector& field_f = *field.ViewComponent(face_comp_, true);
 
   int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   AmanziMesh::Entity_ID_List cells;
 
-  int c1, c2;
+  int c1, c2, dir;
   double kc1, kc2;
   for (int f = 0; f < nfaces_wghost; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     c1 = cells[0];
-    kc1 = fld_cell[0][c1];
+    kc1 = field_c[0][c1];
+
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
+    double flx_face = g_ * normal;
+    bool flag = (flx_face <= -tolerance_);  // upwind flag
 
     if (ncells == 2) { 
       c2 = cells[1];
-      kc2 = fld_cell[0][c2];
+      kc2 = field_c[0][c2];
 
-      double v1 = mesh_->cell_volume(c1);
-      double v2 = mesh_->cell_volume(c2);
+      // We average field on almost vertical faces. 
+      if (fabs(flx_face) <= tolerance_) { 
+        double v1 = mesh_->cell_volume(c1);
+        double v2 = mesh_->cell_volume(c2);
 
-      double tmp = v2 / (v1 + v2);
-      upw_face[0][f] = kc1 * tmp + kc2 * (1.0 - tmp); 
+        double tmp = v2 / (v1 + v2);
+        field_f[0][f] = kc1 * tmp + kc2 * (1.0 - tmp); 
+      } else {
+        field_f[0][f] = (flag) ? kc2 : kc1; 
+      }
 
+    // We upwind only on inflow dirichlet faces.
     } else {
-      upw_face[0][f] = kc1;
+      field_f[0][f] = kc1;
+      if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
+        int bf = getFaceOnBoundaryBoundaryFace(*mesh_, f);
+        field_f[0][f] = field_bf[0][bf];
+      }
     }
   }
 }
@@ -110,5 +106,4 @@ void UpwindArithmeticAverage::Compute(
 }  // namespace Operators
 }  // namespace Amanzi
 
-#endif
 

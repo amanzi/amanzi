@@ -128,6 +128,14 @@ Teuchos::RCP<CompositeVectorSpace> CreateNonManifoldCVS(
 void CellToBoundaryFaces(
     const std::vector<int>& bc_model, CompositeVector& field);
 
+void BoundaryFacesToFaces(
+    const std::vector<int>& bc_model,
+    const CompositeVector& input, CompositeVector& output);
+
+void BoundaryDataToFaces(
+    const Teuchos::RCP<Operators::BCs>& op_bc,
+    CompositeVector& field);
+
 }  // namespace Operators
 }  // namespace Amanzi
 

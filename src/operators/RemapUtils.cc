@@ -24,16 +24,6 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
-* f2 = f2 * Map(f1)
-****************************************************************** */
-int CellToFace_Scale(Teuchos::RCP<CompositeVector>& f1,
-                     Teuchos::RCP<CompositeVector>& f2)
-{
-  return 0;
-}
-
-
-/* ******************************************************************
 * f2 = Map(f1, f2):
 *   cell comp:  f2_cell = f2_cell / f1_cell
 *   face comp:  f2_face = f2_face / FaceAverage(f1_cell)

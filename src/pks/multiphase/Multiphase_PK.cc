@@ -454,7 +454,7 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
                            .sublist("diffusion operator")
                            .sublist("upwind");
 
-  upwind_ = Teuchos::rcp(new Operators::UpwindFlux<int>(mesh_, Teuchos::null));
+  upwind_ = Teuchos::rcp(new Operators::UpwindFlux(mesh_));
   upwind_->Init(upw_list);
 
   // initialize other fields

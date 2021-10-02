@@ -88,7 +88,7 @@ class HeatConduction : public AmanziSolvers::SolverFnBase<CompositeVector> {
 
   std::vector<WhetStone::Tensor> K;
   Teuchos::RCP<CompositeVector> k, dkdT;
-  Teuchos::RCP<Operators::UpwindFlux<HeatConduction> > upwind_;
+  Teuchos::RCP<Operators::UpwindFlux> upwind_;
 
   double dT;
   Teuchos::RCP<CompositeVector> phi_;
@@ -181,7 +181,7 @@ void HeatConduction::Init(
   // Create upwind model
   Teuchos::ParameterList& ulist = plist.sublist("PK operator").sublist("upwind");
   Teuchos::RCP<HeatConduction> problem = Teuchos::rcp(new HeatConduction());
-  upwind_ = Teuchos::rcp(new Operators::UpwindFlux<HeatConduction>(mesh_, problem));
+  upwind_ = Teuchos::rcp(new Operators::UpwindFlux(mesh_));
   upwind_->Init(ulist);
 
   // Update conductivity values

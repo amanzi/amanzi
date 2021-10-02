@@ -35,14 +35,12 @@
 namespace Amanzi {
 namespace Operators {
 
-template<class Model>
-class UpwindFluxAndGravity : public Upwind<Model> {
+class UpwindFluxAndGravity : public Upwind {
  public:
-  UpwindFluxAndGravity(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                       Teuchos::RCP<const Model> model) :
-      Upwind<Model>(mesh, model),
-      upwind_flux_(mesh, model),
-      upwind_gravity_(mesh, model) {};
+  UpwindFluxAndGravity(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : Upwind(mesh),
+      upwind_flux_(mesh),
+      upwind_gravity_(mesh) {};
   ~UpwindFluxAndGravity() {};
 
   // main methods
@@ -66,22 +64,17 @@ class UpwindFluxAndGravity : public Upwind<Model> {
   }
 
  private:
-  using Upwind<Model>::mesh_;
-  using Upwind<Model>::model_;
-  using Upwind<Model>::face_comp_;
-
- private:
   int method_;
-  UpwindFlux<Model> upwind_flux_;
-  UpwindGravity<Model> upwind_gravity_;
+  UpwindFlux upwind_flux_;
+  UpwindGravity upwind_gravity_;
 };
 
 
 /* ******************************************************************
 * Public init method. It is not yet used.
 ****************************************************************** */
-template<class Model>
-void UpwindFluxAndGravity<Model>::Init(Teuchos::ParameterList& plist)
+inline
+void UpwindFluxAndGravity::Init(Teuchos::ParameterList& plist)
 {
   upwind_flux_.Init(plist);
   upwind_gravity_.Init(plist);
@@ -94,8 +87,8 @@ void UpwindFluxAndGravity<Model>::Init(Teuchos::ParameterList& plist)
 * Upwind field is placed in component "face" of field.
 * Upwinded field must be calculated on all faces of the owned cells.
 ****************************************************************** */
-template<class Model>
-void UpwindFluxAndGravity<Model>::Compute(
+inline
+void UpwindFluxAndGravity::Compute(
     const CompositeVector& flux, const CompositeVector& solution,
     const std::vector<int>& bc_model, CompositeVector& field)
 {

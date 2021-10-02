@@ -755,6 +755,7 @@
             <Parameter name="monitor" type="string" value="monitor l2 residual"/>
           </ParameterList>
           <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+          <Parameter name="freeze preconditioner" type="bool" value="true"/>
           <Parameter name="extrapolate initial guess" type="bool" value="true"/>
           <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
           <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>

@@ -142,7 +142,7 @@ void RunTestUpwind(std::string method) {
 
     // Create two upwind models
     Teuchos::ParameterList& ulist = plist.sublist("upwind");
-    UpwindClass upwind(mesh, model);
+    UpwindClass upwind(mesh);
     upwind.Init(ulist);
 
     upwind.Compute(flux, solution, bc_model, field);
@@ -171,18 +171,18 @@ void RunTestUpwind(std::string method) {
 }
 
 TEST(UPWIND_FLUX) {
-  RunTestUpwind<UpwindFlux<Model> >("flux");
+  RunTestUpwind<UpwindFlux>("flux");
 }
 
 TEST(UPWIND_DIVK) {
-  RunTestUpwind<UpwindDivK<Model> >("divk");
+  RunTestUpwind<UpwindDivK>("divk");
 }
 
 TEST(UPWIND_GRAVITY) {
-  RunTestUpwind<UpwindGravity<Model> >("gravity");
+  RunTestUpwind<UpwindGravity>("gravity");
 }
 
 // TEST(UPWIND_FLUX_GRAVITY) {
-//  RunTestUpwind<UpwindFluxAndGravity<Model> >("flux_gravity");
+//  RunTestUpwind<UpwindFluxAndGravity>("flux_gravity");
 // }
 

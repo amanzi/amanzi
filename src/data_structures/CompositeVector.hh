@@ -569,7 +569,7 @@ CompositeVector::Random() {
 // -----------------------------------------------------------------------------
 void DeriveFaceValuesFromCellValues(CompositeVector&);
 
-void AddComponent(Teuchos::RCP<CompositeVector> cv,
+void AddComponent(Teuchos::RCP<CompositeVector>& cv,
                   const std::string& name, AmanziMesh::Entity_kind kind, int dim);
 
 } // namespace

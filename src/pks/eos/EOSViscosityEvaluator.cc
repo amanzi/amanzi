@@ -81,9 +81,6 @@ void EOSViscosityEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S, Key wrt_key,
     const Teuchos::Ptr<CompositeVector>& result)
 {
-  AMANZI_ASSERT(wrt_key == temp_key_);
-
-  // Pull dependencies out of state.
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);
 
