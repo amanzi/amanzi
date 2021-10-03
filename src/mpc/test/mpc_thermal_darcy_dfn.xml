@@ -137,6 +137,24 @@
         </ParameterList>
       </ParameterList>
 
+      <ParameterList name="molar_density_liquid">
+        <Parameter name="field evaluator type" type="string" value="eos"/>
+        <Parameter name="eos basis" type="string" value="both"/>
+        <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
+        <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="eos type" type="string" value="liquid water 0-30C"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="viscosity_liquid">
+        <Parameter name="field evaluator type" type="string" value="viscosity"/>
+        <Parameter name="viscosity key" type="string" value="viscosity_liquid"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="eos type" type="string" value="liquid water 0-30C"/>
+        </ParameterList>
+      </ParameterList>
+
       <ParameterList name="internal_energy_liquid">
         <Parameter name="field evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>

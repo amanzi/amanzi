@@ -136,6 +136,12 @@ class InputConverterU : public InputConverter {
       Teuchos::ParameterList& out_ev,
       const std::string& field, const std::string& region, double val);
 
+  void AddSecondaryFieldEvaluator_(
+     Teuchos::ParameterList& out_ev,
+     const Key& field, const Key& key,
+     const std::string& type, const std::string& model,
+     const std::string& eos_table_name);
+
   void AddConstantFieldInitialization_(
       Teuchos::ParameterList& out_ev,
       const std::string& field, const std::string& region, double val);

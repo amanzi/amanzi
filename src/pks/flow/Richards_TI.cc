@@ -113,7 +113,8 @@ void Richards_PK::FunctionalResidual(
   functional_max_cell = 0;
 
   for (int c = 0; c < ncells_owned; ++c) {
-    double factor = mesh_->cell_volume(c) * molar_rho_ * phi_c[0][c] / dtp;
+    const auto& dens_c = *S_->GetFieldData(mol_density_liquid_key_)->ViewComponent("cell");
+    double factor = mesh_->cell_volume(c) * dens_c[0][c] * phi_c[0][c] / dtp;
     double tmp = fabs(f_cell[0][c]) / factor;
     if (tmp > functional_max_norm) {
       functional_max_norm = tmp;

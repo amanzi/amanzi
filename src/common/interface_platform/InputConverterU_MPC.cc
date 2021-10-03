@@ -630,7 +630,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
 
 
 /* ******************************************************************
-* Translate PKs list
+* Translate PKs list starting with lower-level PKs
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
 {
@@ -803,6 +803,14 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
             .set<int>("master PK index", 0)
             .set<std::string>("domain name", "domain");
 
+        auto& tmp = glist.sublist("state").sublist("field evaluators");
+        AddSecondaryFieldEvaluator_(tmp, 
+            Keys::getKey("domain", "molar_density_liquid"), "molar density key",
+            "eos", "liquid water 0-30C", "density");
+        AddSecondaryFieldEvaluator_(tmp, 
+            Keys::getKey("domain", "viscosity_liquid"), "viscosity key",
+            "viscosity", "liquid water 0-30C", "viscosity");
+
         out_list.sublist(pk).sublist("physical models and assumptions")
             .set<bool>("vapor diffusion", (pk_model_["energy"] == "two_phase energy"));
 
@@ -824,6 +832,14 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
             .set<Teuchos::Array<std::string> >("PKs order", pk_names)
             .set<int>("master PK index", 0)
             .set<std::string>("domain name", "fracture");
+
+        auto& tmp = glist.sublist("state").sublist("field evaluators");
+        AddSecondaryFieldEvaluator_(tmp, 
+            Keys::getKey("fracture", "molar_density_liquid"), "molar density key",
+            "eos", "liquid water 0-30C", "density");
+        AddSecondaryFieldEvaluator_(tmp, 
+            Keys::getKey("fracture", "viscosity_liquid"), "viscosity key",
+            "viscosity", "liquid water 0-30C", "viscosity");
 
         out_list.sublist(pk).sublist("physical models and assumptions")
             .set<bool>("vapor diffusion", (pk_model_["energy"] == "two_phase energy"));

@@ -60,6 +60,7 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   out_list.sublist("domain").set<int>("spatial dimension", dim_);
   out_list.sublist("regions") = TranslateRegions_();
 
+  // Parse various material data 
   out_list.sublist("state") = TranslateState_();
 
   const Teuchos::ParameterList& tmp = TranslateOutput_();
