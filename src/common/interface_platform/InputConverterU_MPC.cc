@@ -811,6 +811,10 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
             Keys::getKey("domain", "viscosity_liquid"), "viscosity key",
             "viscosity", "liquid water 0-30C", "viscosity");
 
+        std::vector<std::string> controls({ "pressure" });
+        out_list.sublist(pk_names[0]).sublist("time integrator")
+            .set<Teuchos::Array<std::string> >("error control options", controls);
+
         out_list.sublist(pk).sublist("physical models and assumptions")
             .set<bool>("vapor diffusion", (pk_model_["energy"] == "two_phase energy"));
 
@@ -840,6 +844,10 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
         AddSecondaryFieldEvaluator_(tmp, 
             Keys::getKey("fracture", "viscosity_liquid"), "viscosity key",
             "viscosity", "liquid water 0-30C", "viscosity");
+
+        std::vector<std::string> controls({ "pressure" });
+        out_list.sublist(pk_names[0]).sublist("time integrator")
+            .set<Teuchos::Array<std::string> >("error control options", controls);
 
         out_list.sublist(pk).sublist("physical models and assumptions")
             .set<bool>("vapor diffusion", (pk_model_["energy"] == "two_phase energy"));
