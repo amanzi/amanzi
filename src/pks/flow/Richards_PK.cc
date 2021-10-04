@@ -362,13 +362,21 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // -- inverse of kinematic viscosity
   if (!S->HasField(alpha_key_)) {
-    S->RequireField(alpha_key_, alpha_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+    Key kkey;
+    if (flow_on_manifold_) {
+      S->RequireField(alpha_key_, alpha_key_)->SetMesh(mesh_)->SetGhosted(true)
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
+      kkey = permeability_key_;
+    } else {
+      S->RequireField(alpha_key_, alpha_key_)->SetMesh(mesh_)->SetGhosted(true)
+        ->AddComponent("cell", AmanziMesh::CELL, 1)
+        ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+      kkey = relperm_key_;
+    }
 
     Teuchos::ParameterList elist;
     Teuchos::Array<std::string> list0, list1;
-    list0.push_back(relperm_key_);
+    list0.push_back(kkey);
     list0.push_back(mol_density_liquid_key_);
     list1.push_back(viscosity_liquid_key_);
     elist.set<std::string>("my key", alpha_key_)
@@ -523,10 +531,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
     opfactory.SetVariableTensorCoefficient(Kptr);
     opfactory.SetVariableScalarCoefficient(alpha_upwind_, alpha_upwind_dP_);
   } else {
-    WhetStone::Tensor Ktmp(dim, 1);
-    Ktmp(0, 0) = molar_rho_ / 0.001;
-    opfactory.SetConstantTensorCoefficient(Ktmp);
-    auto kptr = S_->GetFieldData(permeability_key_);
+    auto kptr = S_->GetFieldData(alpha_key_);
     opfactory.SetVariableScalarCoefficient(kptr);
   }
 
