@@ -363,9 +363,6 @@
   <ParameterList name="PKs">
     <ParameterList name="steady:flow">
       <Parameter name="domain name" type="string" value="domain"/>
-      <ParameterList name="physical models and assumptions">
-        <Parameter name="water content model" type="string" value="constant density"/>
-      </ParameterList>
       <ParameterList name="absolute permeability">
         <Parameter name="coordinate system" type="string" value="cartesian"/>
       </ParameterList>
@@ -827,9 +824,6 @@
             <Parameter name="rainfall" type="bool" value="false"/>
           </ParameterList>
         </ParameterList>
-      </ParameterList>
-      <ParameterList name="physical models and assumptions">
-        <Parameter name="water content model" type="string" value="constant density"/>
       </ParameterList>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>

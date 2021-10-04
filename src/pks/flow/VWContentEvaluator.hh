@@ -50,7 +50,6 @@ class VWContentEvaluator : public SecondaryVariableFieldEvaluator {
 
  protected:
   bool water_vapor_;
-  std::string model_;
   Key saturation_key_, porosity_key_, mol_density_liquid_key_;
   
  private:

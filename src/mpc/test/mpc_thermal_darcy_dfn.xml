@@ -442,7 +442,6 @@
 	<Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
       <ParameterList name="physical models and assumptions">
-        <Parameter name="water content model" type="string" value="constant density"/>
         <Parameter name="flow in fractures" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="fracture permeability models">

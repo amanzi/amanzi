@@ -465,7 +465,6 @@
       </ParameterList>
       
       <ParameterList name="physical models and assumptions">
-        <Parameter name="water content model" type="string" value="constant density"/>
         <Parameter name="eos lookup table" type="string" value="false"/>
       </ParameterList>
       <ParameterList name="verbose object">

@@ -160,7 +160,6 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
   Teuchos::ParameterList& flow = glist_->sublist("PKs").sublist(pks[0])
                                         .sublist("physical models and assumptions");
   flow.set<bool>("vapor diffusion", vapor_diff);
-  flow.set<std::string>("water content model", model);
 
   // -- energy
   Teuchos::ParameterList& energy = glist_->sublist("PKs").sublist(pks[1])

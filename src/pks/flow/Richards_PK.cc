@@ -146,9 +146,8 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   Flow_PK::Setup(S);
 
   // Our decision can be affected by the list of models
-  Teuchos::RCP<Teuchos::ParameterList> physical_models =
-      Teuchos::sublist(fp_list_, "physical models and assumptions");
-  std::string vwc_model = physical_models->get<std::string>("water content model", "constant density");
+  auto physical_models = Teuchos::sublist(fp_list_, "physical models and assumptions");
+  vapor_diffusion_ = physical_models->get<bool>("vapor diffusion", false);
   std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single continuum");
 
   // Require primary field for this PK, which is pressure
@@ -188,7 +187,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
             .set<std::string>("pressure key", pressure_key_)
             .set<std::string>("saturation key", saturation_liquid_key_)
             .set<std::string>("porosity key", porosity_key_)
-            .set<std::string>("water content model", vwc_model);
+            .set<bool>("water vapor", vapor_diffusion_);
     auto eval = Teuchos::rcp(new VWContentEvaluator(vwc_list));
     S->SetFieldEvaluator(water_content_key_, eval);
   }
@@ -487,7 +486,6 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   // -- coupling with other physical PKs
   Teuchos::RCP<Teuchos::ParameterList> physical_models = 
       Teuchos::sublist(fp_list_, "physical models and assumptions");
-  vapor_diffusion_ = physical_models->get<bool>("vapor diffusion", false);
   multiscale_porosity_ = (physical_models->get<std::string>(
       "multiscale model", "single continuum") != "single continuum");
 

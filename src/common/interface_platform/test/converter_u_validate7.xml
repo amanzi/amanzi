@@ -570,7 +570,6 @@
     <ParameterList name="steady:flow matrix">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="physical models and assumptions">
-        <Parameter name="water content model" type="string" value="constant density"/>
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       </ParameterList>
       <ParameterList name="absolute permeability">
@@ -674,7 +673,6 @@
       </ParameterList>
       <ParameterList name="physical models and assumptions">
         <Parameter name="flow in fractures" type="bool" value="true"/>
-        <Parameter name="water content model" type="string" value="constant density"/>
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       </ParameterList>
       <ParameterList name="absolute permeability">
@@ -806,7 +804,6 @@
     <ParameterList name="transient:flow">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="physical models and assumptions">
-        <Parameter name="water content model" type="string" value="constant density"/>
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       </ParameterList>
       <ParameterList name="absolute permeability">
@@ -1015,7 +1012,6 @@
       </ParameterList>
       <ParameterList name="physical models and assumptions">
         <Parameter name="flow in fractures" type="bool" value="true"/>
-        <Parameter name="water content model" type="string" value="constant density"/>
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       </ParameterList>
       <ParameterList name="absolute permeability">
