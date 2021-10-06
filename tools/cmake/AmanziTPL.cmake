@@ -214,10 +214,10 @@ if (Trilinos_FOUND)
   # Epetra  - distributed data objects
   # NOX     - nonlinear solver (Unstructured ONLY)
   # ML      - multilevel preconditioner (Unstructured ONLY)
-  set(Trilinos_REQUIRED_PACKAGE_LIST Teuchos Epetra) 
+  set(Trilinos_REQUIRED_PACKAGE_LIST Teuchos) 
   if (ENABLE_Unstructured)
     # list(APPEND Trilinos_REQUIRED_PACKAGE_LIST NOX ML Amesos2 MueLu)
-    list(APPEND Trilinos_REQUIRED_PACKAGE_LIST NOX ML Amesos2)
+    list(APPEND Trilinos_REQUIRED_PACKAGE_LIST Amesos2)
   endif()
 
   foreach(tri_package ${Trilinos_REQUIRED_PACKAGE_LIST})

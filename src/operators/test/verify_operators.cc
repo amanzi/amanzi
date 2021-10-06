@@ -122,19 +122,10 @@ TEST(Verify_Mesh_and_Operators) {
   }
 
   std::string device("serial");
-  if(argc > 8) {
+  if(argc > 8){
     device = argv_copy[8]; 
   }
 
-  int relaxation = 1; 
-  if(argc > 9) {
-    relaxation = std::stoi(argv_copy[9]);
-  }
-
-  int interpolation = 3; 
-  if(argc > 9){
-    interpolation = std::stoi(argv_copy[9]); 
-  }
 
   // set other parameters based on input values
   // -- little_k
@@ -218,12 +209,12 @@ TEST(Verify_Mesh_and_Operators) {
     plist->sublist("preconditioners").sublist("Hypre: AMG")
         .set<std::string>("preconditioning method", "hypre: boomer amg").sublist("hypre: boomer amg parameters")
         .set<double>("strong threshold", 0.5)
-        .set<int>("cycle applications", 1)
-        .set<int>("smoother sweeps", 2)
+        .set<int>("cycle applications", 2)
+        .set<int>("smoother sweeps", 3)
         //.set<double>("tolerance", 1e-5)
         .set<int>("verbosity", 1)
         .set<int>("coarsening type", 8) /* 8: PMIS */
-        .set<int>("interpolation type", interpolation) 
+        .set<int>("interpolation type", 6) 
         /* From Hypre 2.22.0 Manual */
         /*3:  direct
           15: BAMG-direct
@@ -231,7 +222,7 @@ TEST(Verify_Mesh_and_Operators) {
           14: extended
           18: ? */
         .set<int>("relaxation order", 0) /* must be false */
-        .set<int>("relaxation type", relaxation); 
+        .set<int>("relaxation type", 6); 
         /*3: Hybrid Gauss Seidel 
           4: ''
           6: '' 
@@ -255,18 +246,21 @@ TEST(Verify_Mesh_and_Operators) {
         //.set<int>("interpolation type", interpolation)
         //.set<int>("relaxation order", 0)
         //.set<int>("relaxation type coarse", 9)
-        .set<int>("relaxation type", relaxation);
+        .set<int>("relaxation type", 6);
+
+
   } else {
     assert(device == "serial" && "Unrecognized device type");
     std::cout<<"Using Hypre: AMG with serial parameters"<<std::endl;
     plist->sublist("preconditioners").sublist("Hypre: AMG")
         .set<std::string>("preconditioning method", "hypre: boomer amg").sublist("hypre: boomer amg parameters")
         //.set<double>("strong threshold", 0.5)
-        .set<int>("cycle applications", 1)
-        .set<int>("smoother sweeps", 1)
+        .set<int>("cycle applications", 2)
+        .set<int>("smoother sweeps", 3)
+        .set<double>("strong threshold", 0.5)
         .set<double>("tolerance", 0.0)
-        .set<int>("verbosity", 0)
-        .set<int>("relaxation type", 18);     
+        .set<int>("verbosity", 1)
+        .set<int>("relaxation type", 6);     
   }
 
   // -- Trilinos
@@ -316,6 +310,18 @@ TEST(Verify_Mesh_and_Operators) {
       .set<double>("fact: drop tolerance", 0.0)
       .set<std::string>("fact: type", "KSPILUK");
 
+  //ShyLU package
+  // -- ShyLu FastILU
+  plist->sublist("preconditioners").sublist("ifpack2: FAST_ILU")
+    .set<std::string>("preconditioning method", "ifpack2: FAST_ILU").sublist("ifpack2: FAST_ILU parameters")
+    .set<int>("triangular solve iterations", 4) //relaxation) // default 1
+    .set<int>("level", 0) //level) // default 0
+    .set<double>("damping factor", .5) // default 0.5
+    .set<double>("shift",0.0) // default 0.0
+    .set<bool>("guess",true) // default true
+    .set<int>("sweeps", 7) //interpolation) // default 5
+    .set<int>("block-size",1); // default 1 
+
   // summary of options
   if (MyPID == 0) {
     std::cout << "================================================================================\n";
@@ -325,12 +331,10 @@ TEST(Verify_Mesh_and_Operators) {
       plist->sublist("preconditioners").sublist(prec_solver).print(std::cout, 0, true, false);
   }
 
-  // auto start = omp_get_wtime();
-  double error_tol(10 * tol);
+  double error_tol(10 * tol); 
   if (ana == "03") error_tol = 0.1;
 
   test(prec_solver, "Dirichlet", mesh_file, d, n,
        scheme, symmetric, scalar_coef, error_tol, order, ana, nloops, plist);
-  // printf("Compute: %gs\n", omp_get_wtime() - start);
 }
 
