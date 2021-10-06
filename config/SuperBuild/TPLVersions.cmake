@@ -491,6 +491,20 @@ set(Trilinos_GIT_REPOSITORY "https://github.com/trilinos/Trilinos")
 set(Trilinos_GIT_TAG        "afc4e52595ab82f449f8a4676febbcfbf8223afc")
 
 #
+# TPL: Ginkgo
+#
+set(Ginkgo_VERSION_MAJOR 1)
+set(Ginkgo_VERSION_MINOR 4)
+set(Ginkgo_VERSION_PATCH 0)
+set(Ginkgo_VERSION ${Ginkgo_VERSION_MAJOR}.${Ginkgo_VERSION_MINOR}.${Ginkgo_VERSION_PATCH})
+set(Ginkgo_URL_STRING     "https://github.com/ginkgo-project/ginkgo/archive/refs/tags/")
+set(Ginkgo_ARCHIVE_FILE   v${Ginkgo_VERSION}.tar.gz)
+set(Ginkgo_SAVEAS_FILE    ${Ginkgo_ARCHIVE_FILE})
+set(Ginkgo_GIT_REPOSITORY "https://github.com/ginkgo-project/ginkgo/")
+set(Ginkgo_GIT_TAG        "f811917c1def4d0fcd8db3fe5c948ce13409e28e")
+
+
+#
 # TPL: SEACAS
 #
 set(SEACAS_VERSION_MAJOR 173a1e6)

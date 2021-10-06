@@ -737,6 +737,13 @@ endif()
 append_set(Amanzi_TPL_CMAKE_ARGS
            -DTrilinos_INSTALL_PREFIX:PATH=${Trilinos_INSTALL_PREFIX})
 
+# Ginkgo
+include(${SuperBuild_BUILD_FILES_DIR}/Build_Ginkgo.cmake)
+set(HYPRE_INSTALL_PREFIX ${TPL_INSTALL_PREFIX})
+set(HYPRE_DIR ${GINKGO_INSTALL_PREFIX})
+set(HYPRE_INCLUDE_DIRS "${GINKGO_INSTALL_PREFIX}/include")
+message(STATUS "GINKGO_INSTALL_PREFIX = ${GINKGO_INSTALL_PREFIX}")
+
 # MSTK
 if (ENABLE_MESH_MSTK)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_MSTK.cmake) 

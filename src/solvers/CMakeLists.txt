@@ -60,10 +60,12 @@ if(ENABLE_KOKKOS_OPENMP)
   add_definitions("-DHAVE_OPENMP")
 endif()
 
+message(STATUS "GINKGO LIBRARIES: ${Ginkgo_LIBRARIES}")
+
 set(solvers_tpl_libs ${DBC_LIBRARIES}
 		     ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
                      ${Belos_LIBRARIES} ${NOX_LIBRARIES} ${Amesos2_LIBRARIES}
-                     ${Ifpack2_LIBRARIES} ${kokkos_cuda_libs} ${HYPRE_LIBRARY} muelu xpetra-sup muelu-adapters muelu-interface )
+                     ${Ifpack2_LIBRARIES} ${kokkos_cuda_libs} ${HYPRE_LIBRARY} ${Ginkgo_LIBRARIES} muelu xpetra-sup muelu-adapters muelu-interface )
 list(REVERSE solvers_tpl_libs)
 list(REMOVE_DUPLICATES solvers_tpl_libs)
 list(REVERSE solvers_tpl_libs)
