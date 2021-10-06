@@ -35,7 +35,6 @@ void test(const std::string& prec_solver,
       << "--------------------------------------------------------------------------------"
       << std::endl;
   }
-
   if (ana == "00") 
     fix.ana = Teuchos::rcp(new Analytic00(order, 1.0, 1.0, 0.0));
   else if (ana == "02") 
@@ -50,7 +49,6 @@ void test(const std::string& prec_solver,
 
   if (bc_type == "Dirichlet") {
     fix.SetBCsDirichlet();
-    std::cout<<"Set Dirichlet"<<std::endl;
   } else if (bc_type == "DirichletNeumann") {
     fix.SetBCsDirichletNeumann();
   } else if (bc_type == "DirichletNeumannRobin") {
