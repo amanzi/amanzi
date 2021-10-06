@@ -123,7 +123,8 @@ void MPCLakeSoilRichards::Initialize(const Teuchos::Ptr<State>& S) {
 //  auto op1 = soil_pk_->my_operator(Operators::OPERATOR_MATRIX)->Clone();
 //  std::cout << "soil_pk_->preconditioner() = " << soil_pk_->preconditioner() << std::endl;
 //  auto op1 = soil_pk_->preconditioner()->Clone();
-  auto op1 = soil_pk_->preconditioner()->Clone();
+  auto op1 = soil_pk_->my_tree_operator(Operators::OPERATOR_MATRIX)->Clone();
+//  auto op1_Operator = soil_pk_->my_operator(Operators::OPERATOR_MATRIX)->Clone();
 
   std::cout << "beginning op0->A()" << std::endl;
   std::cout << "op0 = " << op0 << std::endl;
@@ -160,6 +161,7 @@ void MPCLakeSoilRichards::Initialize(const Teuchos::Ptr<State>& S) {
   op_tree_lake_->set_operator_block(0, 0, op0);
 //  op_tree_lake_->set_operator_block(1, 1, op1);
   op_tree_lake_->set_block(1, 1, op1);
+//  op_tree_lake_->set_operator_block(1, 1, op1_Operator);
 
   std::cout << "op_tree_lake_ Structure with diagonal blocks:\n" << op_tree_lake_->PrintDiagnostics() << std::endl;
 

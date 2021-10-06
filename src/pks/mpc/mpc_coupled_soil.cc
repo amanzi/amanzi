@@ -136,6 +136,12 @@ void MPCCoupledSoil::Setup(const Teuchos::Ptr<State>& S)
   preconditioner_->set_operator_block(0, 0, pcA);
   preconditioner_->set_operator_block(1, 1, pcB);
 
+  matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
+  auto opA = sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX)->Clone();
+  auto opB = sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX)->Clone();
+  matrix_->set_operator_block(0, 0, opA);
+  matrix_->set_operator_block(1, 1, opB);
+
   // select the method used for preconditioning
   std::string precon_string = plist_->get<std::string>("preconditioner type",
                                                        "none");
@@ -375,9 +381,12 @@ void MPCCoupledSoil::Setup(const Teuchos::Ptr<State>& S)
     preconditioner_->SymbolicAssembleMatrix();
     preconditioner_->AssembleMatrix();
 
-    std::cout << "preconditioner in MPC soil" << std::endl;
-    std::cout << *preconditioner_->A() << std::endl;
-//    exit(0);
+    matrix_->set_operator_block(0, 1, dWC_dT_block_);
+    matrix_->set_operator_block(1, 0, dE_dp_block_);
+    matrix_->set_inverse_parameters(plist_->sublist("inverse"));
+    matrix_->InitializeInverse();
+    matrix_->SymbolicAssembleMatrix();
+    matrix_->AssembleMatrix();
 
   }
 
@@ -397,19 +406,6 @@ void MPCCoupledSoil::Setup(const Teuchos::Ptr<State>& S)
     ewc_->set_model(model);
     ewc_->setup(S);
   }
-
-//  std::cout << "preconditioner_ = " << preconditioner_ << std::endl;
-//  std::cout << "preconditioner_->get_operator() = " << preconditioner_->get_operator() << std::endl;
-
-//  // set up sparsity structure
-//  preconditioner_->set_inverse_parameters(plist_->sublist("inverse"));
-//  preconditioner_->InitializeInverse();
-//  preconditioner_->SymbolicAssembleMatrix();
-//  preconditioner_->AssembleMatrix();
-//
-//  std::cout << "preconditioner in MPC soil" << std::endl;
-//  std::cout << *preconditioner_->A() << std::endl;
-//  exit(0);
 
   std::cout << "MPCCoupledSoil::Setup DONE" << std::endl;
 }
@@ -907,8 +903,16 @@ int MPCCoupledSoil::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
 Teuchos::RCP<Operators::Operator> MPCCoupledSoil::my_operator(
     const Operators::OperatorType& type)
 {
-  if (type == Operators::OPERATOR_MATRIX) return preconditioner_->get_operator();
+  if (type == Operators::OPERATOR_MATRIX) return matrix_->get_operator();
   else if (type == Operators::OPERATOR_PRECONDITIONER_RAW) return preconditioner_->get_operator();
+  return Teuchos::null;
+}
+
+Teuchos::RCP<Operators::TreeOperator> MPCCoupledSoil::my_tree_operator(
+    const Operators::OperatorType& type)
+{
+  if (type == Operators::OPERATOR_MATRIX) return matrix_;
+  else if (type == Operators::OPERATOR_PRECONDITIONER_RAW) return preconditioner_;
   return Teuchos::null;
 }
 

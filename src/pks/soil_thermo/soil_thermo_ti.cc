@@ -288,7 +288,7 @@ void Soil_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
       }
     }
   }
-//  preconditioner_acc_->AddAccumulationTerm(acc, "cell");
+  preconditioner_acc_->AddAccumulationTerm(acc, "cell");
 
   preconditioner_->SymbolicAssembleMatrix();
   preconditioner_->AssembleMatrix();
@@ -296,7 +296,7 @@ void Soil_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
   std::cout << "Soil preconditioner_ after acc_" << std::endl;
 
   // -- update preconditioner with source term derivatives if needed
-//  AddSourcesToPrecon_(S_next_.ptr(), h);
+  AddSourcesToPrecon_(S_next_.ptr(), h);
 
   preconditioner_->SymbolicAssembleMatrix();
   preconditioner_->AssembleMatrix();

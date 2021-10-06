@@ -193,6 +193,10 @@ class MPCCoupledSoil : public StrongMPC<PK_PhysicalBDF_Default> {
   virtual Teuchos::RCP<Operators::Operator>
       my_operator(const Operators::OperatorType& type) override;
 
+  // -- access methods
+  Teuchos::RCP<Operators::TreeOperator>
+      my_tree_operator(const Operators::OperatorType& type);
+
  protected:
 
   enum PreconditionerType {
@@ -202,6 +206,9 @@ class MPCCoupledSoil : public StrongMPC<PK_PhysicalBDF_Default> {
     PRECON_EWC = 3,
     PRECON_NO_FLOW_COUPLING = 4,
   };
+
+  // mathematical operators
+  Teuchos::RCP<Operators::TreeOperator> matrix_;
 
   Teuchos::RCP<Operators::TreeOperator> preconditioner_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

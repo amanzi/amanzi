@@ -69,8 +69,8 @@ void ThermalConductivityEvaluator::EvaluateField_(
 
   ice_cover_ = false; // first always assume that there is no ice
 
-  double z_ice = 0.5;
-  double z_w   = 0.5;
+  double z_ice = 1.0;
+  double z_w   = 1.0;
 
   double lambda_ice = 2.2;
   double lambda_w   = 1.5;
@@ -93,23 +93,38 @@ void ThermalConductivityEvaluator::EvaluateField_(
       std::cout << "ncomp = " << ncomp << std::endl;
 
       int i_ice_max = 0;
+      int i_ice_min = ncomp-1;
 
 
-      for (int i=0; i!=ncomp; ++i) {
+//      for (int i=0; i!=ncomp; ++i) {
+//        if (temp_v[0][i] < 273.15) { // check if there is ice cover
+//          std::cout << "temp_v[0][" << i << "] = " << temp_v[0][i] << std::endl;
+//          ice_cover_ = true;
+//          i_ice_max = i;
+//        }
+//      } // i
+
+      for (int i=ncomp-2; i!=0; --i) {
         if (temp_v[0][i] < 273.15) { // check if there is ice cover
           std::cout << "temp_v[0][" << i << "] = " << temp_v[0][i] << std::endl;
           ice_cover_ = true;
-          i_ice_max = i;
+          i_ice_min = i;
         }
       } // i
 
-      const AmanziGeometry::Point& zci = mesh->cell_centroid(i_ice_max-1);
+      i_ice_max = i_ice_min;
+      std::cout << "i_ice_max/min = " << i_ice_max << std::endl;
+
+      if (ice_cover_) {
+      const AmanziGeometry::Point& zci = mesh->cell_centroid(i_ice_max+1);
       z_ice = zci[2];
 
-      const AmanziGeometry::Point& zcw = mesh->cell_centroid(i_ice_max+1);
+      const AmanziGeometry::Point& zcw = mesh->cell_centroid(i_ice_max-1);
       z_w = zcw[2];
+      }
 
-      /*
+      std::cout << "z_ice = " << z_ice << ", z_w = " << z_w << std::endl;
+
       for (int i=0; i!=ncomp; ++i) {
         if (temp_v[0][i] < 273.15) { // this cell is in ice layer
             result_v[0][i] = lambda_ice;
@@ -121,11 +136,7 @@ void ThermalConductivityEvaluator::EvaluateField_(
               result_v[0][i] = lambda_w; //10.*K_0_ + V_wind_/V_wind_0_*(K_max_ - K_0_);
           }
         }
-
-//        result_v[0][i] = 10.*K_0_ + V_wind_/V_wind_0_*(K_max_ - K_0_);
-//        result_v[0][i] = 0.;
       } // i
-      */
 
 
       // continuous conductivity between ice and water, no ice movement or changes depending on temperature
@@ -133,16 +144,16 @@ void ThermalConductivityEvaluator::EvaluateField_(
 
         const AmanziGeometry::Point& zc = mesh->cell_centroid(i);
 
-        if (zc[2] <= z_ice) {
+        if (zc[2] >= z_ice) {
           result_v[0][i] = lambda_ice;
         } else {
-            if (zc[2] >= z_w) {
+            if (zc[2] < z_w) {
               result_v[0][i] = lambda_w;
             } else {
                 result_v[0][i] = lambda_w + (lambda_ice - lambda_w)/(z_ice - z_w)*(zc[2] - z_w);
             }
         }
-//        std::cout << "z = " << zc[2] << ", lambda = " << result_v[0][i] << std::endl;
+        std::cout << "z = " << zc[2] << ", lambda = " << result_v[0][i] << std::endl;
       } // i
 
 
@@ -166,17 +177,18 @@ void ThermalConductivityEvaluator::EvaluateField_(
 //            for (int i=0; i!=ncomp; ++i) std::cout << "i = " << i << " result_v[0][i] = " << result_v[0][i] << std::endl;
 //        }
 //      }
-      for (int i=0; i!=ncomp; ++i) {
-        if (ice_cover_ && i < i_ice_max && temp_v[0][i] >= 273.15 ) {
-          result_v[0][i] = lambda_ice;
-          result_v[0][i+i_ice_max] = lambda_w;
-        }
-      } // i
-
-      // no ice
-      for (int i=0; i!=ncomp; ++i) {
-          result_v[0][i] = 1.5; //lambda_w;
-      }
+//      for (int i=0; i!=ncomp; ++i) {
+//        if (ice_cover_ && i < i_ice_max && temp_v[0][i] >= 273.15 ) {
+//          result_v[0][i] = lambda_ice;
+//          result_v[0][i+i_ice_max] = lambda_w;
+//        }
+//      } // i
+//
+//      // no ice
+//      for (int i=0; i!=ncomp; ++i) {
+////          result_v[0][i] = 1.5;
+//          result_v[0][i] = lambda_w;
+//      }
 
     }
 

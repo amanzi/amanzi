@@ -90,7 +90,7 @@ void SoilHeatCapacityEvaluator::EvaluateField_(
 
       for (int i=0; i!=ncomp; ++i) {
 
-          double W = wc_v[0][i] * 1.8e-5; // CONVERTED UNITS from mol/m^3 to volume ratio
+          double W = wc_v[0][i]; // * 1.8e-5; // CONVERTED UNITS from mol/m^3 to volume ratio
           double I = 0.;//= ic_v[0][i] * 1.8e-5;
 
           result_v[0][i] = cg + cw*W + ci*I;

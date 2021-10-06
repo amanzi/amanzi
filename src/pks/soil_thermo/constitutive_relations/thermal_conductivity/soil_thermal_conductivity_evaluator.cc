@@ -102,8 +102,11 @@ void SoilThermalConductivityEvaluator::EvaluateField_(
         double por = 0.;
 //        double wl = 0.;
         double wi = 0.;
-        double wl = wc_v[0][i] * 1.8e-5; // CONVERTED UNITS
+        double wl = wc_v[0][i];// * 1.8e-5; // CONVERTED UNITS
 //        double wi = ic_v[0][i];
+
+        std::cout << "soil water content wc_v[0][i] = " << wc_v[0][i] << std::endl;
+        std::cout << "wl = " << wl << std::endl;
 
         double lambda_sat;
         double lambda_dry;
@@ -170,7 +173,8 @@ void SoilThermalConductivityEvaluator::EvaluateField_(
         // Cote and Konrad (2005) formula for heat conduction coefficient of dry soil
         lambda_dry = CK_const1*pow(10.,(-CK_const2*por));
 
-        result_v[0][i] = 0.75; //(lambda_sat - lambda_dry)*Kersten + lambda_dry;
+//        result_v[0][i] = 0.75;
+        result_v[0][i] = (lambda_sat - lambda_dry)*Kersten + lambda_dry;
 
         std::cout << "lambda_sat = " << lambda_sat << ", lambda_dry = " << lambda_dry << ", Kersten = " << Kersten << std::endl;
         std::cout << "i = " << i << ", wl[i] = " << wl << ", lambda = " << result_v[0][i] << std::endl;
