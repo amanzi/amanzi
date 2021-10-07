@@ -103,14 +103,14 @@ void MPCCoupledSoil::Setup(const Teuchos::Ptr<State>& S)
   Teuchos::RCP<Operators::Operator> pcA = sub_pks_[0]->preconditioner();
   Teuchos::RCP<Operators::Operator> pcB = sub_pks_[1]->preconditioner();
 
-//  std::cout << "MPC Soil pcA" << std::endl;
-//  pcA->SymbolicAssembleMatrix();
-//  pcA->AssembleMatrix();
-//  std::cout << *pcA->A() << std::endl;
-//  std::cout << "MPC Soil pcB" << std::endl;
-//  pcB->SymbolicAssembleMatrix();
-//  pcB->AssembleMatrix();
-//  std::cout << *pcB->A() << std::endl;
+  std::cout << "MPC Soil pcA" << std::endl;
+  pcA->SymbolicAssembleMatrix();
+  pcA->AssembleMatrix();
+  std::cout << *pcA->A() << std::endl;
+  std::cout << "MPC Soil pcB" << std::endl;
+  pcB->SymbolicAssembleMatrix();
+  pcB->AssembleMatrix();
+  std::cout << *pcB->A() << std::endl;
 
 //  exit(0);
 
@@ -137,14 +137,27 @@ void MPCCoupledSoil::Setup(const Teuchos::Ptr<State>& S)
   preconditioner_->set_operator_block(1, 1, pcB);
 
   matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
-  auto opA = sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX)->Clone();
-  auto opB = sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX)->Clone();
-  matrix_->set_operator_block(0, 0, opA);
+  auto opA = sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX);
+  auto opB = sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX);
+  matrix_->set_operator_block(0, 0, pcA);
   matrix_->set_operator_block(1, 1, opB);
+
+//  std::cout << "MPC Soil opA" << std::endl;
+//  opA->SymbolicAssembleMatrix();
+//  opA->AssembleMatrix();
+//  std::cout << *opA->A() << std::endl;
+//  std::cout << "MPC Soil opB" << std::endl;
+//  opB->SymbolicAssembleMatrix();
+//  opB->AssembleMatrix();
+//  std::cout << *opB->A() << std::endl;
+//
+//  exit(0);
 
   // select the method used for preconditioning
   std::string precon_string = plist_->get<std::string>("preconditioner type",
-                                                       "none");
+                                                       "block diagonal");
+
+  std::cout << "MPC Soil precon_string = " << precon_string << std::endl;
   if (precon_string == "none") {
     precon_type_ = PRECON_NONE;
   } else if (precon_string == "block diagonal") {
@@ -407,6 +420,22 @@ void MPCCoupledSoil::Setup(const Teuchos::Ptr<State>& S)
     ewc_->setup(S);
   }
 
+  std::cout << "preconditioner" << std::endl;
+  preconditioner_->set_inverse_parameters(plist_->sublist("inverse"));
+  preconditioner_->InitializeInverse();
+  preconditioner_->SymbolicAssembleMatrix();
+  preconditioner_->AssembleMatrix();
+  std::cout << *preconditioner_->A() << std::endl;
+
+  std::cout << "matrix" << std::endl;
+  matrix_->set_inverse_parameters(plist_->sublist("inverse"));
+  matrix_->InitializeInverse();
+  matrix_->SymbolicAssembleMatrix();
+  matrix_->AssembleMatrix();
+  std::cout << *matrix_->A() << std::endl;
+
+//  exit(0);
+
   std::cout << "MPCCoupledSoil::Setup DONE" << std::endl;
 }
 
@@ -584,7 +613,26 @@ MPCCoupledSoil::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<Tree
   std::cout << *op1->A() << std::endl;
 
 
+  std::cout << "preconditioner" << std::endl;
+  preconditioner_->SymbolicAssembleMatrix();
+  preconditioner_->AssembleMatrix();
   std::cout << *preconditioner_->A() << std::endl;
+
+  auto opA = sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX);
+  auto opB = sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX);
+  std::cout << "MPC Soil opA" << std::endl;
+  opA->SymbolicAssembleMatrix();
+  opA->AssembleMatrix();
+  std::cout << *opA->A() << std::endl;
+  std::cout << "MPC Soil opB" << std::endl;
+  opB->SymbolicAssembleMatrix();
+  opB->AssembleMatrix();
+  std::cout << *opB->A() << std::endl;
+
+  std::cout << "matrix" << std::endl;
+  matrix_->SymbolicAssembleMatrix();
+  matrix_->AssembleMatrix();
+  std::cout << *matrix_->A() << std::endl;
 
 //  exit(0);
 

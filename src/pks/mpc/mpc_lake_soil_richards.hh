@@ -70,7 +70,7 @@ class MPCLakeSoilRichards : public StrongMPC<PK_BDF_Default> {
 
   // sub PKs
   Teuchos::RCP<PK_BDF_Default> lake_pk_;
-  Teuchos::RCP<MPCCoupledSoil> soil_pk_;
+  Teuchos::RCP<MPCCoupledSoil> soil_mpc_;
 
   // sub meshes
   Teuchos::RCP<const AmanziMesh::Mesh> lake_mesh_;
@@ -84,7 +84,7 @@ class MPCLakeSoilRichards : public StrongMPC<PK_BDF_Default> {
   Teuchos::RCP<Debugger> lake_db_;
   Teuchos::RCP<Debugger> soil_db_;
 
-  Teuchos::RCP<Operators::TreeOperator> op_tree_lake_, op_tree_soil_, op_tree_pc_;
+  Teuchos::RCP<Operators::TreeOperator> op_tree_global_;
   Teuchos::RCP<TreeVector> op_tree_rhs_;
 
  private:
