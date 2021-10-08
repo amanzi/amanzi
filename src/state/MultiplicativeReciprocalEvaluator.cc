@@ -26,15 +26,42 @@ MultiplicativeReciprocalEvaluator::MultiplicativeReciprocalEvaluator(Teuchos::Pa
   : SecondaryVariableFieldEvaluator(plist)
 {
   my_key_ = plist.get<std::string>("my key");
+  Key domain = Keys::getDomain(my_key_);
 
-  if (plist.isParameter("multiplicative dependencies"))
-    list0_ = plist.get<Teuchos::Array<std::string> >("multiplicative dependencies").toVector();
+  if (plist_.isParameter("evaluator dependencies")) {
+    Errors::Message msg;
+    msg << "MultiplicativeReciprocalEvaluator: \"" << my_key_ 
+        << "\" must have separate (optional) lists for multiplicative and reciprocal dependencies.";
+    Exceptions::amanzi_throw(msg);
+  }
 
-  if (plist.isParameter("reciprocal dependencies"))
-    list1_ = plist.get<Teuchos::Array<std::string> >("reciprocal dependencies").toVector();
+  if (plist_.isParameter("evaluator multiplicative dependencies")) {
+    // since dependensies is a map, we need separate maps for numerator and denominator
+    const auto& names = plist_.get<Teuchos::Array<std::string> >("evaluator multiplicative dependencies");
+    for (const auto& name : names) {
+      Key full_name = Keys::getKey(domain, name);
+      dependencies_.insert(full_name);
+      list0_.push_back(full_name);
+    }
+  }
 
-  for (auto it = list0_.begin(); it != list0_.end(); ++it) dependencies_.insert(*it);
-  for (auto it = list1_.begin(); it != list1_.end(); ++it) dependencies_.insert(*it);
+  if (plist_.isParameter("evaluator reciprocal dependencies")) {
+    const auto& names = plist_.get<Teuchos::Array<std::string> >("evaluator reciprocal dependencies");
+    for (const auto& name : names) {
+      Key full_name = Keys::getKey(domain, name);
+      dependencies_.insert(full_name);
+      list1_.push_back(full_name);
+    }
+  }
+
+  if (list0_.size() + list1_.size() == 0) {
+    Errors::Message msg;
+    msg << "MultiplicativeReciprocalEvaluator for: \"" << my_key_ << "\" has no dependencies.";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  coef_ = plist_.get<double>("coefficient", 1.0);
+  enforce_positivity_ = plist_.get<bool>("enforce positivity", false);
 }
 
 
@@ -59,18 +86,24 @@ void MultiplicativeReciprocalEvaluator::EvaluateField_(
 {
   for (auto comp = result->begin(); comp != result->end(); ++comp) {
     auto& result_c = *result->ViewComponent(*comp);
-    int ncells = result_c.MyLength();
+    int ndofs = result_c.MyLength();
 
-    result_c.PutScalar(1.0);
+    result_c.PutScalar(coef_);
 
     for (auto it = list0_.begin(); it != list0_.end(); ++it) {
       const auto& factor_c = *S->GetFieldData(*it)->ViewComponent(*comp);
-      for (int c = 0; c != ncells; ++c) result_c[0][c] *= factor_c[0][c];
+      for (int c = 0; c != ndofs; ++c) result_c[0][c] *= factor_c[0][c];
     }
 
     for (auto it = list1_.begin(); it != list1_.end(); ++it) {
       const auto& factor_c = *S->GetFieldData(*it)->ViewComponent(*comp);
-      for (int c = 0; c != ncells; ++c) result_c[0][c] /= factor_c[0][c];
+      for (int c = 0; c != ndofs; ++c) result_c[0][c] /= factor_c[0][c];
+    }
+
+    if (enforce_positivity_) {
+      for (int c = 0; c != ndofs; ++c) {
+        result_c[0][c] = std::max(result_c[0][c], 0.0);
+      }
     }
   }
 }
