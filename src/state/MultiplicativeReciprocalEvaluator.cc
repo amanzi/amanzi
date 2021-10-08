@@ -15,14 +15,14 @@
 */
 
 #include "FieldEvaluator.hh"
-#include "MultiplicativeEvaluator.hh"
+#include "MultiplicativeReciprocalEvaluator.hh"
 
 namespace Amanzi {
 
 /* ******************************************************************
 * Two constructors.
 ****************************************************************** */
-MultiplicativeEvaluator::MultiplicativeEvaluator(Teuchos::ParameterList& plist)
+MultiplicativeReciprocalEvaluator::MultiplicativeReciprocalEvaluator(Teuchos::ParameterList& plist)
   : SecondaryVariableFieldEvaluator(plist)
 {
   my_key_ = plist.get<std::string>("my key");
@@ -38,22 +38,22 @@ MultiplicativeEvaluator::MultiplicativeEvaluator(Teuchos::ParameterList& plist)
 }
 
 
-MultiplicativeEvaluator::MultiplicativeEvaluator(const MultiplicativeEvaluator& other)
+MultiplicativeReciprocalEvaluator::MultiplicativeReciprocalEvaluator(const MultiplicativeReciprocalEvaluator& other)
   : SecondaryVariableFieldEvaluator(other) {};
 
 
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<FieldEvaluator> MultiplicativeEvaluator::Clone() const {
-  return Teuchos::rcp(new MultiplicativeEvaluator(*this));
+Teuchos::RCP<FieldEvaluator> MultiplicativeReciprocalEvaluator::Clone() const {
+  return Teuchos::rcp(new MultiplicativeReciprocalEvaluator(*this));
 }
 
 
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void MultiplicativeEvaluator::EvaluateField_(
+void MultiplicativeReciprocalEvaluator::EvaluateField_(
     const Teuchos::Ptr<State>& S,
     const Teuchos::Ptr<CompositeVector>& result)
 {
@@ -79,7 +79,7 @@ void MultiplicativeEvaluator::EvaluateField_(
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void MultiplicativeEvaluator::EvaluateFieldPartialDerivative_(
+void MultiplicativeReciprocalEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key,
     const Teuchos::Ptr<CompositeVector>& result)

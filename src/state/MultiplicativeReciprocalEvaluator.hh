@@ -14,17 +14,17 @@
     eval = f1 * f2 * ... * fn) / (g1 * g2 * ... * gm)
 */
 
-#ifndef AMANZI_MULTIPLICATIVE_EVALUATOR_HH_
-#define AMANZI_MULTIPLICATIVE_EVALUATOR_HH_
+#ifndef AMANZI_MULTIPLICATIVE_RECIPROCAL_EVALUATOR_HH_
+#define AMANZI_MULTIPLICATIVE_RECIPROCAL_EVALUATOR_HH_
 
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
 
-class MultiplicativeEvaluator : public SecondaryVariableFieldEvaluator {
+class MultiplicativeReciprocalEvaluator : public SecondaryVariableFieldEvaluator {
  public:
-  MultiplicativeEvaluator(Teuchos::ParameterList& plist);
-  MultiplicativeEvaluator(const MultiplicativeEvaluator& other);
+  MultiplicativeReciprocalEvaluator(Teuchos::ParameterList& plist);
+  MultiplicativeReciprocalEvaluator(const MultiplicativeReciprocalEvaluator& other);
 
   // inteface functions to FieldEvaluator
   virtual Teuchos::RCP<FieldEvaluator> Clone() const override;

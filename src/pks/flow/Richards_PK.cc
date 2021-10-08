@@ -25,7 +25,7 @@
 #include "InverseFactory.hh"
 #include "Mesh.hh"
 #include "Mesh_Algorithms.hh"
-#include "MultiplicativeEvaluator.hh"
+#include "MultiplicativeReciprocalEvaluator.hh"
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PK_Utils.hh"
@@ -383,7 +383,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
          .set<Teuchos::Array<std::string> >("multiplicative dependencies", list0)
          .set<Teuchos::Array<std::string> >("reciprocal dependencies", list1);
 
-    auto eval = Teuchos::rcp(new MultiplicativeEvaluator(elist));
+    auto eval = Teuchos::rcp(new MultiplicativeReciprocalEvaluator(elist));
     S->SetFieldEvaluator(alpha_key_, eval);
   }
 
