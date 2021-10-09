@@ -1,9 +1,6 @@
 # -*- mode: cmake -*-
-
 #
-#  Amanzi
-#    Mesh 
-#
+#  Amanzi Mesh
 #
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
@@ -47,6 +44,7 @@ set(mesh_inc_files
   MeshMaps.hh
   MeshSets.hh
   MeshSets_Helpers.hh
+  MeshColumns.hh
   MeshCache.hh
   Mesh.hh
   #DomainSet.hh
@@ -56,6 +54,7 @@ set(mesh_src_files
   GenerationSpec.cc
   MeshFramework.cc
   MeshSets_Helpers.cc
+  MeshColumns.cc
   MeshCache.cc
   #DomainSet.cc
 )
@@ -176,11 +175,11 @@ if (BUILD_TESTS)
 
     # Test: mesh columns
     #   Tests the buidl_columns() capability for semi-structured meshes.              
-    # add_amanzi_test(mesh_build_columns mesh_build_columns
-    #                 KIND unit
-    #     	    SOURCE test/Main.cc test/mesh_build_columns.cc
-    #     	    LINK_LIBS ${mesh_test_link_libs})
-    # add_amanzi_test(mesh_build_columns_np2 mesh_build_columns NPROCS 2 KIND unit)
+    add_amanzi_test(mesh_build_columns mesh_build_columns
+                    KIND unit
+        	    SOURCE test/Main.cc test/mesh_build_columns.cc
+        	    LINK_LIBS ${mesh_test_link_libs})
+    add_amanzi_test(mesh_build_columns_np2 mesh_build_columns NPROCS 2 KIND unit)
 
     # Test: surface extracted mesh
     #   Tests a surface mesh generated using the mesh framework

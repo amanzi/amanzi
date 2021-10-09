@@ -19,9 +19,9 @@ namespace Amanzi {
 namespace AmanziMesh {
 
 // returns used, owned
-template<class Mesh>
+template<class Mesh_type>
 std::pair<Map_ptr_type, Map_ptr_type>
-createMapsFromMeshGIDs(const Mesh& mesh, const Entity_kind kind)
+createMapsFromMeshGIDs(const Mesh_type& mesh, const Entity_kind kind)
 {
   Entity_ID num_owned = mesh.getNumEntities(kind, Parallel_type::OWNED);
   Entity_GID_List gids = mesh.getEntityGIDs(kind, Parallel_type::ALL);
@@ -31,9 +31,9 @@ createMapsFromMeshGIDs(const Mesh& mesh, const Entity_kind kind)
 }
 
 // returns used, owned
-template<class Mesh>
+template<class Mesh_type>
 std::pair<Map_ptr_type, Map_ptr_type>
-createMapsFromNaturalGIDs(const Mesh& mesh, const Entity_kind kind)
+createMapsFromNaturalGIDs(const Mesh_type& mesh, const Entity_kind kind)
 {
   Entity_ID num_owned = mesh.getNumEntities(kind, Parallel_type::OWNED);
   Entity_ID num_all = mesh.getNumEntities(kind, Parallel_type::ALL);
@@ -43,8 +43,8 @@ createMapsFromNaturalGIDs(const Mesh& mesh, const Entity_kind kind)
 }
 
 
-template<class Mesh>
-void MeshMaps::initialize(const Mesh& mesh, bool natural, bool request_edges)
+template<class Mesh_type>
+void MeshMaps::initialize(const Mesh_type& mesh, bool natural, bool request_edges)
 {
   std::vector<Entity_kind> to_construct{Entity_kind::CELL,
     Entity_kind::FACE, Entity_kind::NODE};

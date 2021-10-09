@@ -58,7 +58,7 @@ TEST(MESH_VOLUME_EXTRACTION_GENERATED)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Testing 3D Box 3x3x3 with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "Testing 3D Box 3x3x3 with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto parent_mesh = createFrameworkStructuredUnitHex(Preference{frm}, 6,6,3, comm, gm, Teuchos::null, false, 2,2,1);
 
@@ -140,7 +140,7 @@ TEST(MESH_VOLUME_EXTRACTION_EXO)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Testing 3D Box 3x3x3 with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "Testing 3D Box 3x3x3 with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto parent_mesh = createFrameworkUnstructured(Preference{frm}, filename, comm, gm, Teuchos::null);
 

@@ -45,7 +45,7 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Testing Fracture Extraction with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "Testing Fracture Extraction with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto parent_mesh = createFrameworkStructuredUnitHex(Preference{frm}, 10,10,10, comm, gm);
 
@@ -100,7 +100,7 @@ TEST(MESH_FRACTURE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Testing Fracture Extraction with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "Testing Fracture Extraction with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto parent_mesh = createFrameworkStructuredUnitHex(Preference{frm}, 10,10,10,comm,gm,Teuchos::null,true);
 
@@ -153,7 +153,7 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Testing Fracture Extraction with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "Testing Fracture Extraction with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto parent_mesh = createFrameworkUnstructured(Preference{frm}, "test/mesh_extracted_fracture.exo", comm, gm);
 
@@ -209,7 +209,7 @@ TEST(MESH_FRACTURE_EXTRACTION_EXO_MANIFOLD)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Testing Fracture Extraction with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "Testing Fracture Extraction with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto parent_mesh = createFrameworkUnstructured(Preference{frm}, "test/mesh_extracted_fracture.exo", comm,gm,Teuchos::null, true);
 

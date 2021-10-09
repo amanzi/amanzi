@@ -36,7 +36,7 @@ TEST(MESH_CACHE_GEOMETRY_PLANAR)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Testing 2D geometry with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "Testing 2D geometry with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
 
     auto mesh = createStructuredUnitQuad(Preference{frm}, 2,2);
@@ -67,7 +67,7 @@ TEST(MESH_CACHE_GEOMETRY_1CUBE_GENERATED)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Testing 3D geometry with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "Testing 3D geometry with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto mesh = createStructuredUnitHex(Preference{frm}, 1,1,1);
     // cache, pitch the framework, repeat
@@ -98,7 +98,7 @@ TEST(MESH_CACHE_GEOMETRY_1CUBE_EXO)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Testing 3D Box 1x1x1 Exo geometry with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "Testing 3D Box 1x1x1 Exo geometry with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto mesh = createUnstructured(Preference{frm}, "test/hex_1x1x1_sets.exo");
     // cache, pitch the framework, repeat
@@ -126,7 +126,7 @@ TEST(MESH_CACHE_GEOMETRY_3CUBE)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Testing 3D Box 3x3x3 with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "Testing 3D Box 3x3x3 with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto mesh = createStructuredUnitHex(Preference{frm}, 3,3,3);
     // cache, pitch the framework, repeat
@@ -158,7 +158,7 @@ TEST(MESH_CACHE_GEOMETRY_3CUBE_EXO)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Testing 3D Box 3x3x3 Exo with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "Testing 3D Box 3x3x3 Exo with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto mesh = createUnstructured(Preference{frm}, "test/hex_3x3x3_sets.exo");
     // cache, pitch the framework, repeat
@@ -194,7 +194,7 @@ TEST(MESH_CACHE_GEOMETRY_3CUBE_EXO)
 
 //   for (const auto& frm : frameworks) {
 //     std::cout << std::endl
-//               << "Testing 3D Box 3x3x3 Exo with " << AmanziMesh::framework_names.at(frm) << std::endl
+//               << "Testing 3D Box 3x3x3 Exo with " << AmanziMesh::to_string(frm) << std::endl
 //               << "------------------------------------------------" << std::endl;
 //     auto mesh = createUnstructured(Preference{frm}, "test/hex_3x3x3.par");
     // // cache, pitch the framework, repeat
@@ -222,7 +222,7 @@ TEST(MESH_CACHE_GEOMETRY_2x3CUBE)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Testing 3D Box 2x2x3 with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "Testing 3D Box 2x2x3 with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto mesh = createStructuredUnitHex(Preference{frm}, 2,2,3);
     // cache, pitch the framework, repeat
@@ -255,7 +255,7 @@ TEST(MESH_CACHE_GEOMETRY_FRACTURE_EXO)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Testing 3D Fracture Exo with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "Testing 3D Fracture Exo with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto mesh = createUnstructured(Preference{frm}, "test/fractures.exo");
     // cache, pitch the framework, repeat
@@ -276,7 +276,7 @@ TEST(MESH_CACHE_GEOMETRY_PINCHOUTS)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Testing 3D Pinchout with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "Testing 3D Pinchout with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto mesh = createUnstructured(Preference{frm}, "test/test_pri_pinchout_mesh.exo");
     // cache, pitch the framework, repeat

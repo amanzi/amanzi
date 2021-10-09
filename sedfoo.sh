@@ -141,6 +141,11 @@ function go () {
     ${SED} ${SED_ARGS} -E 's|([^ ]*)\.face_to_cell_edge_map\(([^,]),[ ]*([^,]),[ ]*&(.*)\)|\4 = AmanziMesh::MeshAlgorithms::mapFaceToCellEdges(\1, \2, \3)|g' "$1"
 
     ${SED} ${SED_ARGS} 's|valid_edges(|hasEdges(|g' "$1"
+
+    ${SED} ${SED_ARGS} 's|num_columns(true)|columns.num_columns_all|g' "$1"
+    ${SED} ${SED_ARGS} 's|num_columns(false)|columns.num_columns_owned|g' "$1"
+    ${SED} ${SED_ARGS} -E 's|cells_of_column\((.*)\)|columns.cells[\1]|g' "$1"
+    ${SED} ${SED_ARGS} -E 's|faces_of_column\((.*)\)|columns.faces[\1]|g' "$1"
     
 }
 

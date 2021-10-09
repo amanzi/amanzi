@@ -29,11 +29,8 @@
 #include "UnitTest++.h"
 
 #include "AmanziComm.hh"
-#include "Geometry.hh"
-#include "MeshFramework.hh"
-#include "mesh_mstk/Mesh_MSTK.hh"
-#include "MeshFactory.hh"
-#include "MeshException.hh"
+#include "Mesh.hh"
+#include "MeshAudit.hh"
 
 #include "framework_meshes.hh"
 #include "geometry_harnesses.hh"
@@ -56,19 +53,19 @@ TEST(MESH_COLUMNS)
   }
 
   auto mesh_pars = Teuchos::rcp(new Teuchos::ParameterList());
-  mesh_pars->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "zoltan_rcb");
+  mesh_pars->set<std::string>("partitioner", "zoltan_rcb");
 
   for (const auto& frm : frameworks) {
-    std::cerr << "Testing columns with " << AmanziMesh::framework_names.at(frm) << std::endl;
+    std::cerr << "Testing columns with " << AmanziMesh::to_string(frm) << std::endl;
 
     // Create the mesh
-    auto mesh = createFrameworkStructuredUnitHex({frm}, 3,3,10, comm, Teuchos::null, mesh_pars, false, 2,3,2);
+    auto mesh = createStructuredUnitHex({frm}, 3,3,10, comm, Teuchos::null, mesh_pars, 2,3,2);
 
     // Explicitly call build columns method
-    mesh->build_columns();
+    mesh->buildColumns();
 
     // call test function
-    testColumnsUniformDz(mesh, 2.0/10);
+    testColumnsUniformDz(*mesh, 2.0/10);
   }
 }
 

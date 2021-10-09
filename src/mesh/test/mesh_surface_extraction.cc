@@ -56,7 +56,7 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Extracting surface from 3D Box with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "Extracting surface from 3D Box with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
 
     auto fac_list = Teuchos::rcp(new Teuchos::ParameterList("factory list"));
@@ -110,7 +110,7 @@ TEST(MESH_SURFACE_EXTRACTION_EXO)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "Extracting surface from 3D Box with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "Extracting surface from 3D Box with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto fac_list = Teuchos::rcp(new Teuchos::ParameterList("factory list"));
     fac_list->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "zoltan_rcb");
@@ -167,7 +167,7 @@ TEST(MESH_SURFACE_EXTRACTION_GENERATED_EXTRACTED_MANIFOLD)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "MeshExtractedManifold from surface of 3D Generated Box with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "MeshExtractedManifold from surface of 3D Generated Box with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto fac_list = Teuchos::rcp(new Teuchos::ParameterList("factory list"));
     fac_list->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "zoltan_rcb");
@@ -235,7 +235,7 @@ TEST(MESH_SURFACE_EXTRACTION_EXO_EXTRACTED_MANIFOLD)
 
   for (const auto& frm : frameworks) {
     std::cout << std::endl
-              << "MeshExtractedManifold from surface of 3D EXO Box with " << AmanziMesh::framework_names.at(frm) << std::endl
+              << "MeshExtractedManifold from surface of 3D EXO Box with " << AmanziMesh::to_string(frm) << std::endl
               << "------------------------------------------------" << std::endl;
     auto fac_list = Teuchos::rcp(new Teuchos::ParameterList("factory list"));
     fac_list->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "zoltan_rcb");

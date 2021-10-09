@@ -21,7 +21,6 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
-
 MeshCache::MeshCache() :
   cell_geometry_cached(false),
   cell_faces_cached(false),
@@ -47,7 +46,7 @@ MeshCache::MeshCache() :
 {}
 
 
-void MeshCache::initializeFramework(bool natural)
+void MeshCache::initializeFramework()
 {
   comm_ = framework_mesh_->getComm();
   gm_ = framework_mesh_->getGeometricModel();
@@ -67,13 +66,17 @@ void MeshCache::initializeFramework(bool natural)
   }
   nnodes_owned = framework_mesh_->getNumEntities(Entity_kind::NODE, Parallel_type::OWNED);
   nnodes_all = framework_mesh_->getNumEntities(Entity_kind::NODE, Parallel_type::ALL);
-  buildMaps(natural);
+
+  bool natural_ordered_maps = plist_->get<bool>("natural map ordering", false);
+  buildMaps(natural_ordered_maps);
 
   nboundary_faces_owned = getMap(Entity_kind::BOUNDARY_FACE, false).NumMyElements();
   nboundary_faces_all = getMap(Entity_kind::BOUNDARY_FACE, true).NumMyElements();
   nboundary_nodes_owned = getMap(Entity_kind::BOUNDARY_NODE, false).NumMyElements();
   nboundary_nodes_all = getMap(Entity_kind::BOUNDARY_NODE, true).NumMyElements();
 }
+
+
 
 
 bool
@@ -182,6 +185,17 @@ MeshCache::getNumEntities(const Entity_kind kind, const Parallel_type ptype) con
 Cell_type MeshCache::getCellType(const Entity_ID c) const
 {
   return MeshAlgorithms::getCellType(*this, c);
+}
+
+Parallel_type
+MeshCache::getParallelType(const Entity_kind& kind, const Entity_ID id) const
+{
+  if (id < getNumEntities(kind, Parallel_type::OWNED)) {
+    return Parallel_type::OWNED;
+  } else if (id < getNumEntities(kind, Parallel_type::ALL)) {
+    return Parallel_type::GHOST;
+  }
+  return Parallel_type::UNKNOWN;
 }
 
 

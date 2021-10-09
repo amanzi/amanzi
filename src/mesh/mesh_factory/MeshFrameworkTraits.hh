@@ -12,21 +12,24 @@
 
 #include <string>
 #include <vector>
-#include <map>
 
 namespace Amanzi {
 namespace AmanziMesh {
 
-enum struct Framework { SIMPLE=0, MSTK, MOAB, STK };
+enum struct Framework { SIMPLE=0, MSTK, MOAB };
 
 using Preference = std::vector<Framework>;
 
-static const std::map<Framework,std::string> framework_names = {
-  {Framework::MSTK, std::string("MSTK")},
-  {Framework::MOAB, std::string("MOAB")},
-  {Framework::STK, std::string("stk:mesh")},
-  {Framework::SIMPLE, std::string("Simple")} };
 
+inline
+std::string to_string(const Framework framework) {
+  switch(framework) {
+    case(Framework::MSTK): return "MSTK";
+    case(Framework::SIMPLE): return "Simple";
+    case(Framework::MOAB): return "MOAB";
+    default: return "unknown";
+  }
+}
 
 Preference default_preference();
 bool framework_enabled(Framework f);

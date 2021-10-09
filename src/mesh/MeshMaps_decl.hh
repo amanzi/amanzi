@@ -77,17 +77,17 @@ namespace AmanziMesh {
 // Creates a pair of maps, <ALL, OWNED>, for a given entity_kind.
 // Uses GIDs provided by the Mesh object.
 //
-template<class Mesh>
+template<class Mesh_type>
 std::pair<Map_ptr_type, Map_ptr_type>
-createMapsFromMeshGIDs(const Mesh& mesh, const Entity_kind kind);
+createMapsFromMeshGIDs(const Mesh_type& mesh, const Entity_kind kind);
 
 //
 // Creates a pair of maps, <ALL, OWNED>, for a given entity_kind.
 // Uses a natural ordering of GIDs, proc 0 == 0...n, proc 1 = n..., etc.
 //
-template<class Mesh>
+template<class Mesh_type>
 std::pair<Map_ptr_type, Map_ptr_type>
-createMapsFromNaturalGIDs(const Mesh& mesh, const Entity_kind kind);
+createMapsFromNaturalGIDs(const Mesh_type& mesh, const Entity_kind kind);
 
 
 class MeshMaps {
@@ -95,8 +95,8 @@ class MeshMaps {
  public:
   MeshMaps() {}
 
-  template<class Mesh>
-  void initialize(const Mesh& mesh,
+  template<class Mesh_type>
+  void initialize(const Mesh_type& mesh,
                   bool natural_ordering=false,
                   bool request_edges=false);
 

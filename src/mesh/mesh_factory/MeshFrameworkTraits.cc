@@ -17,7 +17,7 @@ namespace AmanziMesh {
 // A list of frameworks
 // -------------------------------------------------------------
 Preference default_preference() {
-  return Preference{Framework::MSTK, Framework::MOAB, Framework::STK, Framework::SIMPLE};
+  return Preference{Framework::MSTK, Framework::MOAB, Framework::SIMPLE};
 }
 
 
@@ -32,11 +32,6 @@ bool framework_enabled(Framework f) {
 
 #ifdef HAVE_MESH_MOAB
   } else if (f == Framework::MOAB) {
-    return true;
-#endif
-
-#ifdef HAVE_STK_MESH
-  } else if (f == Framework::STK) {
     return true;
 #endif
 

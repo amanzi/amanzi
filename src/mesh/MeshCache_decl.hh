@@ -29,12 +29,13 @@ getting each piece of information:
 
 1. the MeshCache's cache (e.g. "fast" access)
 2. directly from the Framework (e.g. "framework" access)
-3. recomputing from some mix of "cache" and "framework" info (e.g. "slow" access)
+3. recomputing using the public interface of MeshCache.
 
-Note that the third is not always possible -- for instance, if cell-face
-adjacencies are not cached and the framework is deleted, there is no way to
-recompute these adjacencies.  In this case, the third access method will not
-exist.
+Note that the third is not always possible -- for instance, node coordinates
+cannot be recomputed; nor can basic adjacency information.  But, for instance,
+one can determine cell coordinates from node coordinates and cell-node
+adjacency, which itself can be computed from cell-face and face-node adjacency
+information.
 
 "Fast" access will have a few interfaces to allow a method-based access (the
 standard mesh interface), but MeshCache will also expose all underlying data as
@@ -42,12 +43,9 @@ public, allowing direct access.  This "breaking encapsulation" is particularly
 crucial for novel architectures, where we might want to perform a kernel launch
 over a view of the data.
 
-In general, all things are returned by const reference.  This can be broken in
-a few cases, as a const container does not imply that the contained things are
-const.  This should not be a common problem though.  When this class migrates
-to Kokkos::Views, these will return by value instead of by const reference,
+In general, all things are returned by value.  When this class migrates to
+Kokkos::Views, these will return by value, but will be pointers into the data,
 matching the Kokkos View semantics.
-
 
 Therefore, a standard user pattern might look like PDE_OperatorFV, which needs
 face-cell (bidirectional) adjacencies, face normals, cell volumes, and
@@ -102,22 +100,31 @@ from the cell-node adjacencies and the node coordinates.  This would be the
    m.cacheNodeCoordinates();
    m.DestroyFramework();  // destroys Framework after needs are cached
 
-   // This would be valid if we HAD called m.cacheCellCoordinates()
+   // The default will figure out a way to make it work
+   //
+   // This will do the slow thing of iterating over all faces in cells, nodes
+   // in faces, creating a set of nodes, and creating the Point_View of those
+   // node coordinates.
    for (Entity_ID c=0; c!=m.ncells_owned; ++c) {
-     auto ccoords = m.getCellCoordinates(c); // SEG FAULT, not cached!
+     auto ccoords = m.getCellCoordinates(c); // calls the slow access method
+     ...
+   }
+
+   // This would seg fault because we did not cache.
+   for (Entity_ID c=0; c!=m.ncells_owned; ++c) {
+     auto ccoords = m.getCellCoordinates<MeshCache::AccessPattern::CACHED>(c);
+     // SEG FAULT, out of bounds error
      ...
    }
 
    // This would be valid if we had NOT called m.DestroyFramework()
    for (Entity_ID c=0; c!=m.ncells_owned; ++c) {
      auto ccoords = m.getCellCoordinates<MeshCache::AccessPattern::FRAMEWORK>(c);
-     // SEG FAULT, framework mesh destroyed
+     // ERROR THROWN, framework mesh destroyed
      ...
    }
 
-   // This will do the slow thing of iterating over all faces in cells, nodes
-   // in faces, creating a set of nodes, and creating the Point_View of those
-   // node coordinates.
+   // same as the default (but without checking for cached
    for (Entity_ID c=0; c!=m.ncells_owned; ++c) {
      auto ccords = m.getCellCoordinates<MeshCache::AccessPattern::RECOMPUTE>(c);
      ...
@@ -146,6 +153,9 @@ template parameter for the AccessPattern, which is an enum which may be:
    non-recomputable things will actually use the framework.
 
 
+This leads us to the question whether the template is actually needed -- for
+now it is not implemented in many cases, and only the default is available.
+
 Note also that users may query whether something was cached or not via, e.g.,
 cell_coordinates_cached boolean.
 
@@ -160,6 +170,7 @@ cell_coordinates_cached boolean.
 #include "GeometricModel.hh"
 #include "MeshDefs.hh"
 #include "MeshSets.hh"
+#include "MeshColumns.hh"
 #include "MeshMaps_decl.hh"
 
 namespace Amanzi {
@@ -172,24 +183,36 @@ struct MeshCache {
   MeshCache();
 
   //
-  // The current assumption is that all MeshCaches are made from a framework
-  // mesh.
+  // To be used by non-framework meshes
   //
-  // This may change.
+  MeshCache(const Teuchos::RCP<Teuchos::ParameterList>& plist)
+    : MeshCache() {
+    plist_ = plist;
+  }
+
   //
-  MeshCache(const Teuchos::RCP<MeshFramework>& framework_mesh, bool natural=false)
-    :  MeshCache() {
+  // To be used by tests, not real code.
+  //
+  MeshCache(const Teuchos::RCP<MeshFramework>& framework_mesh,
+            const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null)
+    :  MeshCache()
+  {
+    if (plist == Teuchos::null) {
+      plist_ = Teuchos::rcp(new Teuchos::ParameterList());
+    } else {
+      plist_ = plist;
+    }
     setMeshFramework(framework_mesh);
-    initializeFramework(natural);
+    initializeFramework();
   }
-  void destroyFramework() {
-    framework_mesh_ = Teuchos::null;
-  }
-  void initializeFramework(bool natural=false);
+
   Teuchos::RCP<const MeshFramework> getMeshFramework() const { return framework_mesh_; }
   Teuchos::RCP<MeshFramework> getMeshFramework() { return framework_mesh_; }
   void setMeshFramework(const Teuchos::RCP<MeshFramework>& framework_mesh) {
     framework_mesh_ = framework_mesh; }
+
+  void initializeFramework();
+  void destroyFramework() { framework_mesh_ = Teuchos::null; }
 
   //
   // Build the cache, fine grained control
@@ -310,11 +333,11 @@ struct MeshCache {
   // Access map objects
   // -------------------
   //
-  // a list of all face LIDs that are on the boundary
+  // a list of ALL face LIDs that are on the boundary
   const Entity_ID_View& getBoundaryFaces() const {
     return maps_.getBoundaryFaces();
   }
-  // a list of all node LIDs that are on the boundary
+  // a list of ALL node LIDs that are on the boundary
   const Entity_ID_View& getBoundaryNodes() const {
     return maps_.getBoundaryNodes();
   }
@@ -390,6 +413,7 @@ struct MeshCache {
   }
 
   Cell_type getCellType(const Entity_ID c) const;
+  Parallel_type getParallelType(const Entity_kind& kind, const Entity_ID id) const;
 
   //---------------------
   // Geometry
@@ -741,13 +765,22 @@ struct MeshCache {
   bool cells_initialized;
   bool parents_initialized;
 
- private:
+  // column structure
+  MeshColumns columns;
+
+  inline
+  void buildColumns() {
+    columns.initialize(*this);
+  }
+
+private:
 
   // common error messaging
   void throwAccessError_(const std::string& func_name) const;
 
   // standard things
   Comm_ptr_type comm_;
+  Teuchos::RCP<Teuchos::ParameterList> plist_;
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_;
   int space_dim_;
   int manifold_dim_;
@@ -763,6 +796,7 @@ struct MeshCache {
   MeshMaps maps_;
   mutable MeshSets sets_;
   mutable MeshSetVolumeFractions set_vol_fracs_;
+
 };
 
 

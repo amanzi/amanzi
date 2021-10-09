@@ -98,7 +98,7 @@ TEST(MESH_FRAMEWORK_DEFORM2D)
 
   for (const auto& frm : frameworks) {
     // Set the framework
-    std::cout << "Testing deformation with " << AmanziMesh::framework_names.at(frm) << std::endl;
+    std::cout << "Testing deformation with " << AmanziMesh::to_string(frm) << std::endl;
 
     // Create the mesh
     auto mesh = createFrameworkStructuredUnitQuad({frm}, 10, 10, comm,
@@ -131,7 +131,7 @@ TEST(MESH_FRAMEWORK_GENERATED_DEFORM3D)
   }
 
   for (const auto& frm : frameworks) {
-    std::cout << "Testing deformation with " << AmanziMesh::framework_names.at(frm) << std::endl;
+    std::cout << "Testing deformation with " << AmanziMesh::to_string(frm) << std::endl;
 
     // start with a mesh that will be deformed into the known mesh coordinates
     auto mesh = createFrameworkStructuredUnitHex({frm}, 3, 3, 3,
@@ -157,7 +157,7 @@ TEST(MESH_CACHED_DEFORM2D)
 
   for (const auto& frm : frameworks) {
     // Set the framework
-    std::cout << "Testing deformation with " << AmanziMesh::framework_names.at(frm) << std::endl;
+    std::cout << "Testing deformation with " << AmanziMesh::to_string(frm) << std::endl;
 
     // Create the mesh
     auto mesh = createStructuredUnitQuad({frm}, 10, 10, comm,
@@ -190,7 +190,7 @@ TEST(MESH_CACHED_GENERATED_DEFORM3D)
   }
 
   for (const auto& frm : frameworks) {
-    std::cout << "Testing deformation with " << AmanziMesh::framework_names.at(frm) << std::endl;
+    std::cout << "Testing deformation with " << AmanziMesh::to_string(frm) << std::endl;
 
     // start with a mesh that will be deformed into the known mesh coordinates
     auto mesh = createStructuredUnitHex({frm}, 3, 3, 3,
