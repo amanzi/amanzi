@@ -184,8 +184,13 @@ CompositeVectorSpace::AddComponents(const std::vector<std::string>& names,
     // Factory's specs are fixed by an owning PK.  Check that the requested
     // components are supplied by the owning PK.
     if (!CheckContained_(names_, names)) {
-      Errors::Message message("Requested components are not supplied by an already owned CompositeVector.");
-      Exceptions::amanzi_throw(message);
+      Errors::Message msg;
+      msg << "Requested components are not supplied by an already owned CompositeVector."
+          << " Set 1: ";
+      for (const auto& name : names_) msg << name << ", "; 
+      msg << ". Set 2: ";
+      for (const auto& name : names) msg << name << ", "; 
+      Exceptions::amanzi_throw(msg);
     }
 
   } else {
@@ -502,8 +507,13 @@ bool CompositeVectorSpace::UnionAndConsistent_(
           }
 
           // union of face and boundary_face is face
+          // we have to update all maps
           names2[j] = "face";
           locations2[j] = AmanziMesh::FACE;
+          mastermaps2.erase("boundary_face");
+          ghostmaps2.erase("boundary_face");
+          mastermaps2["face"] = mastermaps1["face"];
+          ghostmaps2["face"] = ghostmaps1["face"];
         } else {
           // add this spec
           names2.push_back(names1[i]);

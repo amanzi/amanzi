@@ -604,9 +604,10 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
       // surface fields
       // -- ponded depth 
+      std::string domain = (dim_ == 2) ? "domain" : "surface";
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, ponded_depth", flag);
       if (flag) {
-        TranslateFieldIC_(node, "surface-ponded_depth", "m", reg_str, regions, out_ic, out_ev);
+        TranslateFieldIC_(node, Keys::getKey(domain, "ponded_depth"), "m", reg_str, regions, out_ic, out_ev);
       }
     }
   }
@@ -928,7 +929,7 @@ void InputConverterU::TranslateStateICsAmanziGeochemistry_(
 
 
 /* ******************************************************************
-* Add independent field evalautor
+* Add independent field evaluator
 ****************************************************************** */
 void InputConverterU::AddIndependentFieldEvaluator_(
     Teuchos::ParameterList& out_ev,
@@ -942,6 +943,42 @@ void InputConverterU::AddIndependentFieldEvaluator_(
 
   out_ev.sublist(field)
       .set<std::string>("field evaluator type", "independent variable");
+}
+
+
+/* ******************************************************************
+* Add secondary field evaluator
+****************************************************************** */
+void InputConverterU::AddSecondaryFieldEvaluator_(
+    Teuchos::ParameterList& out_ev,
+    const Key& field, const Key& key,
+    const std::string& type, const std::string& model,
+    const std::string& eos_table_name)
+{
+  out_ev.sublist(field)
+    .set<std::string>("field evaluator type", type)
+    .set<std::string>(key, field);
+
+  out_ev.sublist(field).sublist("EOS parameters")
+    .set<std::string>("eos type", model);
+
+  // modifies
+  if (eos_lookup_table_ != "") {
+    out_ev.sublist(field).sublist("EOS parameters")
+        .set<std::string>("eos type", "liquid water tabular")
+        .set<std::string>("table name", eos_lookup_table_)
+        .set<std::string>("field name", eos_table_name);
+  }
+
+  // extensions
+  Key prefix = Keys::split(field, '-').first;
+  std::string basename = Keys::split(field, '-').second;
+
+  if (basename == "molar_density_liquid") {
+    out_ev.sublist(field)
+      .set<std::string>("eos basis", "both")
+      .set<std::string>("mass density key", Keys::getKey(prefix, "mass_density_liquid"));
+  } 
 }
 
 

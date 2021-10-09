@@ -32,12 +32,10 @@
 namespace Amanzi {
 namespace Operators {
 
-template<class Model>
-class UpwindArithmeticAverage : public Upwind<Model> {
+class UpwindArithmeticAverage : public Upwind {
  public:
-  UpwindArithmeticAverage(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                          Teuchos::RCP<const Model> model)
-      : Upwind<Model>(mesh, model) {};
+  UpwindArithmeticAverage(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : Upwind(mesh) {};
   ~UpwindArithmeticAverage() {};
 
   // main methods
@@ -45,11 +43,6 @@ class UpwindArithmeticAverage : public Upwind<Model> {
 
   void Compute(const CompositeVector& flux, const CompositeVector& solution,
                const std::vector<int>& bc_model, CompositeVector& field);
-
- private:
-  using Upwind<Model>::mesh_;
-  using Upwind<Model>::model_;
-  using Upwind<Model>::face_comp_;
 
  private:
   int method_, order_;
@@ -60,8 +53,8 @@ class UpwindArithmeticAverage : public Upwind<Model> {
 /* ******************************************************************
 * Public init method. It is not yet used.
 ****************************************************************** */
-template<class Model>
-void UpwindArithmeticAverage<Model>::Init(Teuchos::ParameterList& plist)
+inline
+void UpwindArithmeticAverage::Init(Teuchos::ParameterList& plist)
 {
   method_ = OPERATOR_UPWIND_ARITHMETIC_AVERAGE;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
@@ -73,8 +66,8 @@ void UpwindArithmeticAverage<Model>::Init(Teuchos::ParameterList& plist)
 * Upwind field is placed in component "face".
 * Upwinded field must be calculated on all faces of the owned cells.
 ****************************************************************** */
-template<class Model>
-void UpwindArithmeticAverage<Model>::Compute(
+inline
+void UpwindArithmeticAverage::Compute(
     const CompositeVector& flux, const CompositeVector& solution,
     const std::vector<int>& bc_model, CompositeVector& field)
 {

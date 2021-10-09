@@ -39,13 +39,14 @@ class VWContentEvaluator : public SecondaryVariableFieldEvaluator {
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
-  virtual void Init_();
-
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& result);
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
+
+ private:
+  void Init_();
 
  protected:
   bool water_vapor_;

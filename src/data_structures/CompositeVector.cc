@@ -639,7 +639,7 @@ void DeriveFaceValuesFromCellValues(CompositeVector& cv) {
 // -----------------------------------------------------------------------------
 // Non-member function: extension of a vector via data copy.
 // -----------------------------------------------------------------------------
-void AddComponent(Teuchos::RCP<CompositeVector> cv,
+void AddComponent(Teuchos::RCP<CompositeVector>& cv,
                   const std::string& name, AmanziMesh::Entity_kind kind, int dim) {
   // copy construct the CVS making it not owned and add the new component
   CompositeVectorSpace new_space(cv->Map());
@@ -649,10 +649,9 @@ void AddComponent(Teuchos::RCP<CompositeVector> cv,
   // create the new vector and copy data
   Teuchos::RCP<CompositeVector> new_cv = Teuchos::rcp(new CompositeVector(new_space));
   bool ghost = new_space.Ghosted();
-  std::vector<std::string>::const_iterator it;
-  for (it = cv->Map().begin(); it != cv->Map().end(); ++it) {
-    Teuchos::RCP<Epetra_MultiVector> data1 = cv->ViewComponent(*it, ghost);
-    Teuchos::RCP<Epetra_MultiVector> data2 = new_cv->ViewComponent(*it, ghost);
+  for (auto it = cv->Map().begin(); it != cv->Map().end(); ++it) {
+    auto data1 = cv->ViewComponent(*it, ghost);
+    auto data2 = new_cv->ViewComponent(*it, ghost);
     *data2 = *data1;
   }
 

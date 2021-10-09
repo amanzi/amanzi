@@ -16,7 +16,6 @@
 #define AMANZI_FLOW_REL_PERM_EVALUATOR_HH_
 
 #include "secondary_variable_field_evaluator.hh"
-#include "RelPerm.hh"
 #include "WRM.hh"
 #include "WRMPartition.hh"
 
@@ -26,8 +25,7 @@ namespace Flow {
 class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
  public:
   RelPermEvaluator(Teuchos::ParameterList& plist,
-                   Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                   double patm,
+                   const Teuchos::Ptr<State>& S,
                    const Teuchos::RCP<WRMPartition>& wrm);
   RelPermEvaluator(const RelPermEvaluator& other);
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
@@ -40,17 +38,13 @@ class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
       Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
  protected:
-  void InitializeFromPlist_();
+  void InitializeFromPlist_(const Teuchos::Ptr<State>& S);
 
  protected:
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Teuchos::RCP<RelPerm> relperm_;
-
   Teuchos::RCP<WRMPartition> wrm_;
   Key pressure_key_;
 
   double patm_;
-  double min_value_, max_value_;
 };
 
 }  // namespace Flow

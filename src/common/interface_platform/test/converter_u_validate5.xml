@@ -593,11 +593,7 @@
 
     <ParameterList name="steady:flow matrix">
       <Parameter name="domain name" type="string" value="domain"/>
-      <ParameterList name="physical models and assumptions">
-	<Parameter name="water content model" type="string" value="constant density"/>
-      </ParameterList>
 
-      <!--Parameter name="optional fields" type="Array(string)" value="{pressure_head}"/-->
       <ParameterList name="absolute permeability">
 	<Parameter name="coordinate system" type="string" value="cartesian"/>
       </ParameterList>
@@ -683,10 +679,8 @@
       <Parameter name="domain name" type="string" value="fracture"/>
       <ParameterList name="physical models and assumptions">
 	<Parameter name="flow in fractures" type="bool" value="true"/>
-	<Parameter name="water content model" type="string" value="constant density"/>
       </ParameterList>
 
-      <!--Parameter name="optional fields" type="Array(string)" value="{pressure_head}"/-->
       <ParameterList name="absolute permeability">
 	<Parameter name="coordinate system" type="string" value="cartesian"/>
       </ParameterList>

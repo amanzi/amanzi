@@ -17,6 +17,7 @@
 
 #include "GMVMesh.hh"
 #include "Mesh.hh"
+#include "Mesh_Algorithms.hh"
 #include "OperatorDefs.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "PK_Utils.hh"
@@ -736,6 +737,8 @@ void Flow_PK::DeriveFaceValuesFromCellValues(
 double Flow_PK::WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
                                            const Epetra_MultiVector& darcy_flux) const
 {
+  const auto& fmap = darcy_flux.Map();
+
   double volume = 0.0;
   for (int c = 0; c < ncells_owned; c++) {
     const auto& faces = mesh_->cell_get_faces(c);
@@ -743,27 +746,18 @@ double Flow_PK::WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
 
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
+
       if (bc_model[f] != Operators::OPERATOR_BC_NONE && f < nfaces_owned) {
+        int g = fmap.FirstPointInElement(f);
         if (fdirs[i] >= 0) {
-          volume -= darcy_flux[0][f];
+          volume -= darcy_flux[0][g];
         } else {
-          volume += darcy_flux[0][f];
+          volume += darcy_flux[0][g];
         }
       }
     }
   }
   return volume;
-}
-
-
-/* ******************************************************************
-* Returns the first cell attached to a boundary face.   
-****************************************************************** */
-int Flow_PK::BoundaryFaceGetCell(int f) const
-{
-  AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-  return cells[0];
 }
 
 
@@ -778,7 +772,7 @@ double Flow_PK::BoundaryFaceValue(int f, const CompositeVector& u)
     face_value = u_face[0][f];
   } else {
     const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
-    int c = BoundaryFaceGetCell(f);
+    int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh_, f);
     face_value = u_cell[0][c];
   }
   return face_value;

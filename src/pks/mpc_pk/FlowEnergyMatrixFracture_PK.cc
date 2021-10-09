@@ -161,17 +161,13 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   // NOTE: In this PK, the solution is 2-deep, with 2 sub-PKs (matrix,
   // fracture) each with 2 sub-pks of their own (flow,energy).  Currently
   // TreeOperator cannot handle this, so instead we must flatten the map.
-  //
-  // This blob of code should go away in favor of:
-  //   auto tvs = solution_->Map();
-  // once we have a hierarchical TreeOperator.
   auto tvs = Teuchos::rcp(new TreeVectorSpace());
-  for (const auto& subvec_domain : *solution_) {
-    for (const auto& subvec_pk : (*subvec_domain)) {
-      tvs->PushBack(Teuchos::rcp(new TreeVectorSpace(subvec_pk->Map())));
-    }
+  for (const auto& pk : sub_pks_) {
+    auto mpc_pk = Teuchos::rcp_dynamic_cast<PK_MPCStrong>(pk);
+    auto sub_tvs = mpc_pk->op_tree_matrix()->DomainMap();
+    for (const auto& tmp : sub_tvs) tvs->PushBack(tmp);
   }
-  // end blob
+
   AMANZI_ASSERT(tvs->size() == 4);
   op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
   op_tree_pc_ = Teuchos::rcp(new Operators::FlatTreeOperator(tvs));
@@ -376,6 +372,9 @@ void FlowEnergyMatrixFracture_PK::FunctionalResidual(
 
   ApplyFlattened(*op_tree_matrix_, *u_new, g);
   f->Update(1.0, g, 1.0);
+
+  // convergence control
+  f->NormInf(&residual_norm_);
 }
 
 
@@ -681,6 +680,42 @@ int ApplyFlattened(const Operators::TreeOperator& op, const TreeVector& X, TreeV
     }
   }
   return ierr;
+}
+
+
+/* ******************************************************************
+* Check solution and fields for convergence  
+****************************************************************** */
+double FlowEnergyMatrixFracture_PK::ErrorNorm(
+    Teuchos::RCP<const TreeVector> u, 
+    Teuchos::RCP<const TreeVector> du)
+{
+  double error = PK_MPCStrong<PK_BDF>::ErrorNorm(u, du);
+
+  // residual control for energy (note that we cannot do it at
+  // the lower level due to coupling terms.
+  const auto mesh_f = S_->GetMesh("fracture");
+  const auto& mol_fc = *S_->GetFieldData("fracture-molar_density_liquid")->ViewComponent("cell");
+
+  int ncells = mol_fc.MyLength();
+  double mean_energy, error_r(0.0), mass(0.0);
+
+  for (int c = 0; c < ncells; ++c) {
+    mass += mol_fc[0][c] * mesh_f->cell_volume(c);  // reference cell energy
+  }
+  if (ncells > 0) {
+    mean_energy = 76.0 * mass / ncells;
+    error_r = (residual_norm_ * dt_) / mean_energy;
+  }
+
+  error = std::max(error, error_r);
+
+#ifdef HAVE_MPI
+    double tmp = error;
+    u->Comm()->MaxAll(&tmp, &error, 1);
+#endif
+
+  return error;
 }
 
 }  // namespace Amanzi

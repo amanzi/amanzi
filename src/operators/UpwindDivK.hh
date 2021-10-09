@@ -29,12 +29,9 @@
 namespace Amanzi {
 namespace Operators {
 
-template<class Model>
-class UpwindDivK : public Upwind<Model> {
+class UpwindDivK : public Upwind {
  public:
-  UpwindDivK(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                 Teuchos::RCP<const Model> model)
-      : Upwind<Model>(mesh, model) {};
+  UpwindDivK(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : Upwind(mesh) {};
   ~UpwindDivK() {};
 
   // main methods
@@ -45,11 +42,6 @@ class UpwindDivK : public Upwind<Model> {
                CompositeVector& field);
 
  private:
-  using Upwind<Model>::mesh_;
-  using Upwind<Model>::model_;
-  using Upwind<Model>::face_comp_;
-
- private:
   int method_, order_;
   double tolerance_;
 };
@@ -58,8 +50,8 @@ class UpwindDivK : public Upwind<Model> {
 /* ******************************************************************
 * Public init method. It is not yet used.
 ****************************************************************** */
-template<class Model>
-void UpwindDivK<Model>::Init(Teuchos::ParameterList& plist)
+inline
+void UpwindDivK::Init(Teuchos::ParameterList& plist)
 {
   method_ = Operators::OPERATOR_UPWIND_DIVK;
   tolerance_ = plist.get<double>("tolerance", OPERATOR_UPWIND_RELATIVE_TOLERANCE);
@@ -70,8 +62,8 @@ void UpwindDivK<Model>::Init(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Flux-based upwind consistent with mimetic discretization.
 ****************************************************************** */
-template<class Model>
-void UpwindDivK<Model>::Compute(
+inline
+void UpwindDivK::Compute(
     const CompositeVector& flux, const CompositeVector& solution,
     const std::vector<int>& bc_model, CompositeVector& field)
 {
@@ -85,7 +77,7 @@ void UpwindDivK<Model>::Compute(
   // const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
 
   const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
-  const Epetra_MultiVector& fld_boundary = *field.ViewComponent("dirichlet_faces", true);
+  const Epetra_MultiVector& fld_boundary = *field.ViewComponent("boundary_face", true);
   const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
   const Epetra_Map& face_map = mesh_->face_map(true);
   Epetra_MultiVector& upw_face = *field.ViewComponent(face_comp_, true);
@@ -123,7 +115,6 @@ void UpwindDivK<Model>::Compute(
       } else if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
         upw_face[0][f] = fld_boundary[0][ext_face_map.LID(face_map.GID(f))];
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN && flag) {
-        // upw_face[0][f] = ((*model_).*Value)(c, sol_face[0][f]);
         upw_face[0][f] = kc;
       } else if (bc_model[f] == OPERATOR_BC_MIXED && flag) {
         upw_face[0][f] = kc;

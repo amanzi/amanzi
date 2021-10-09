@@ -22,9 +22,11 @@ namespace ShallowWater {
 DischargeEvaluator::DischargeEvaluator(Teuchos::ParameterList& plist)
   : SecondaryVariableFieldEvaluator(plist)
 {
-  my_key_ = "surface-discharge";
-  ponded_depth_key_ = plist_.get<std::string>("ponded depth key", "surface-ponded_depth");
-  velocity_key_ = plist_.get<std::string>("velocity key", "surface-velocity");
+  my_key_ = plist_.get<std::string>("my key", "surface-discharge");
+  std::string domain = Keys::getDomain(my_key_);
+
+  ponded_depth_key_ = plist_.get<std::string>("ponded depth key", Keys::getKey(domain, "ponded_depth"));
+  velocity_key_ = plist_.get<std::string>("velocity key", Keys::getKey(domain, "velocity"));
 
   dependencies_.insert(std::string(ponded_depth_key_));
   dependencies_.insert(std::string(velocity_key_));

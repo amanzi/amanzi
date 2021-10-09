@@ -28,6 +28,7 @@
 
 // Amanzi
 #include "Mesh_MSTK.hh"
+#include "Mesh_Algorithms.hh"
 #include "Tensor.hh"
 #include "WhetStoneDefs.hh"
 
@@ -43,14 +44,6 @@
 
 using namespace Amanzi;
 
-int BoundaryFaceGetCell(const AmanziMesh::Mesh& mesh, int f)
-{
-  AmanziMesh::Entity_ID_List cells;
-  mesh.face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-  return cells[0];
-}
-
-
 double BoundaryFaceGetValue(Operators::BCs& bc, const CompositeVector& u, int f) {
   if (bc.bc_model()[f] == Operators::OPERATOR_BC_DIRICHLET) {
     return bc.bc_value()[f];
@@ -58,11 +51,10 @@ double BoundaryFaceGetValue(Operators::BCs& bc, const CompositeVector& u, int f)
     if (u.HasComponent("face")) {
       return u("face",0,f);
     } else if (u.HasComponent("boundary_face")) {
-      int bf = u.Mesh()->exterior_face_map(false).LID(
-          u.Mesh()->face_map(false).GID(f));
+      int bf = AmanziMesh::getFaceOnBoundaryBoundaryFace(*u.Mesh(), f);
       return u("boundary_face", 0, bf);
     } else {
-      return u("cell",0,BoundaryFaceGetCell(*u.Mesh(), f));
+      return u("cell",0,AmanziMesh::getFaceOnBoundaryInternalCell(*u.Mesh(), f));
     }
   }
 }
@@ -235,17 +227,24 @@ struct Problem {
     int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
     for (int f = 0; f < nfaces_wghost; f++) {
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
-      double area = mesh->face_area(f);
-      int dir, c = BoundaryFaceGetCell(*mesh, f);
-      const AmanziGeometry::Point& normal = mesh->face_normal(f, false, c, &dir);
 
       if (fabs(xf[0]) < 1e-12) {
+        double area = mesh->face_area(f);
+        int dir = 0;
+        int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh, f);
+        const AmanziGeometry::Point& normal = mesh->face_normal(f, false, c, &dir);
+
         bc_model0[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value0[f] = ana->velocity_exact0(xf, 0.0) * normal / area;
         bc_model1[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value1[f] = ana->velocity_exact1(xf, 0.0) * normal / area;
         
       } else if (fabs(xf[1]) < 1e-12) {
+        double area = mesh->face_area(f);
+        int dir = 0;
+        int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh, f);
+        const AmanziGeometry::Point& normal = mesh->face_normal(f, false, c, &dir);
+
         // y = 0 boundary
         bc_model0[f] = Operators::OPERATOR_BC_DIRICHLET;
         bc_value0[f] = ana->exact0(xf, 0.0);
@@ -253,6 +252,11 @@ struct Problem {
         bc_value1[f] = ana->velocity_exact1(xf, 0.0) * normal / area;
         
       } else if (fabs(xf[0] - 1.0) < 1e-12) {
+        double area = mesh->face_area(f);
+        int dir = 0;
+        int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh, f);
+        const AmanziGeometry::Point& normal = mesh->face_normal(f, false, c, &dir);
+
         // x = 1 boundary
         bc_model0[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value0[f] = ana->velocity_exact0(xf, 0.0) * normal / area;
@@ -260,6 +264,11 @@ struct Problem {
         bc_value1[f] = ana->exact1(xf, 0.0);
         
       } else if (fabs(xf[1] - 1.0) < 1e-12) {
+        double area = mesh->face_area(f);
+        int dir = 0;
+        int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh, f);
+        const AmanziGeometry::Point& normal = mesh->face_normal(f, false, c, &dir);
+
         // y = 1 boudaries
         bc_model0[f] = Operators::OPERATOR_BC_DIRICHLET;
         bc_value0[f] = ana->exact0(xf, 0.0);

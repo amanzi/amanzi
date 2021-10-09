@@ -40,6 +40,35 @@ void Richards_PK::ClipHydrostaticPressure(double pmin, double s0, Epetra_MultiVe
   }
 }
 
+
+/* ****************************************************************
+* Plot water retention curves.
+**************************************************************** */
+void Richards_PK::PlotWRMcurves_()
+{
+  int MyPID = mesh_->cell_map(false).Comm().MyPID();
+  if (MyPID != 0) return;
+
+  int ndata(1000);
+  for (int n = 0; n < wrm_->second.size(); ++n) {
+    std::ofstream ofile;
+    std::string filename("wrm_" + std::to_string(n) + ".txt");
+    ofile.open(filename.c_str());
+
+    double sr = wrm_->second[n]->residualSaturation();
+    double ds = (1.0 - sr) / ndata;
+
+    for (int i = 0; i < ndata; i++) {
+      double sat = sr + ds * (i + 0.5);
+      double pc = wrm_->second[n]->capillaryPressure(sat);
+      double krel = wrm_->second[n]->k_relative(pc);
+      ofile << sat << " " << krel << " " << pc << std::endl;
+    }
+    ofile << std::endl;
+    ofile.close();
+  }
+}
+
 }  // namespace Flow
 }  // namespace Amanzi
 

@@ -219,6 +219,47 @@
         <Parameter name="number of dofs" type="int" value="1"/>
         <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
+      <ParameterList name="fracture-molar_density_liquid">
+        <Parameter name="field evaluator type" type="string" value="eos"/>
+        <Parameter name="molar density key" type="string" value="fracture-molar_density_liquid"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="eos type" type="string" value="liquid water tabular"/>
+          <Parameter name="table name" type="string" value="h2o.eos"/>
+          <Parameter name="field name" type="string" value="density"/>
+        </ParameterList>
+        <Parameter name="eos basis" type="string" value="both"/>
+        <Parameter name="mass density key" type="string" value="fracture-mass_density_liquid"/>
+      </ParameterList>
+      <ParameterList name="molar_density_liquid">
+        <Parameter name="field evaluator type" type="string" value="eos"/>
+        <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="eos type" type="string" value="liquid water tabular"/>
+          <Parameter name="table name" type="string" value="h2o.eos"/>
+          <Parameter name="field name" type="string" value="density"/>
+        </ParameterList>
+        <Parameter name="eos basis" type="string" value="both"/>
+        <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
+      </ParameterList>
+
+      <ParameterList name="viscosity_liquid">
+        <Parameter name="field evaluator type" type="string" value="viscosity"/>
+        <Parameter name="viscosity key" type="string" value="viscosity_liquid"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="eos type" type="string" value="liquid water tabular"/>
+          <Parameter name="table name" type="string" value="h2o.eos"/>
+          <Parameter name="field name" type="string" value="viscosity"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="fracture-viscosity_liquid">
+        <Parameter name="field evaluator type" type="string" value="viscosity"/>
+        <Parameter name="viscosity key" type="string" value="fracture-viscosity_liquid"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="eos type" type="string" value="liquid water tabular"/>
+          <Parameter name="table name" type="string" value="h2o.eos"/>
+          <Parameter name="field name" type="string" value="viscosity"/>
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
     <ParameterList name="initial conditions">
       <ParameterList name="gravity">
@@ -529,7 +570,6 @@
     <ParameterList name="steady:flow matrix">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="physical models and assumptions">
-        <Parameter name="water content model" type="string" value="constant density"/>
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       </ParameterList>
       <ParameterList name="absolute permeability">
@@ -633,7 +673,6 @@
       </ParameterList>
       <ParameterList name="physical models and assumptions">
         <Parameter name="flow in fractures" type="bool" value="true"/>
-        <Parameter name="water content model" type="string" value="constant density"/>
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       </ParameterList>
       <ParameterList name="absolute permeability">
@@ -765,7 +804,6 @@
     <ParameterList name="transient:flow">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="physical models and assumptions">
-        <Parameter name="water content model" type="string" value="constant density"/>
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       </ParameterList>
       <ParameterList name="absolute permeability">
@@ -805,7 +843,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="time integrator">
-        <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
+        <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
         <ParameterList name="pressure-lambda constraints">
@@ -974,7 +1012,6 @@
       </ParameterList>
       <ParameterList name="physical models and assumptions">
         <Parameter name="flow in fractures" type="bool" value="true"/>
-        <Parameter name="water content model" type="string" value="constant density"/>
         <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
       </ParameterList>
       <ParameterList name="absolute permeability">
@@ -1011,7 +1048,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="time integrator">
-        <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
+        <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
         <ParameterList name="pressure-lambda constraints">

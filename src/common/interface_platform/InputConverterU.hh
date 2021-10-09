@@ -136,6 +136,12 @@ class InputConverterU : public InputConverter {
       Teuchos::ParameterList& out_ev,
       const std::string& field, const std::string& region, double val);
 
+  void AddSecondaryFieldEvaluator_(
+     Teuchos::ParameterList& out_ev,
+     const Key& field, const Key& key,
+     const std::string& type, const std::string& model,
+     const std::string& eos_table_name);
+
   void AddConstantFieldInitialization_(
       Teuchos::ParameterList& out_ev,
       const std::string& field, const std::string& region, double val);
@@ -234,7 +240,7 @@ class InputConverterU : public InputConverter {
   Tree phases_;
 
   // global data
-  std::map<std::string, std::string> pk_model_, pk_domain_;
+  std::map<std::string, std::string> pk_model_, pk_domain_, pk_region_;
   std::map<std::string, bool> pk_master_;
   std::map<std::string, double> dt_cut_, dt_inc_;
   

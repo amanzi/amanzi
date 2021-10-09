@@ -14,8 +14,8 @@
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "GMVMesh.hh"
 #include "Mesh.hh"
+#include "Mesh_Algorithms.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "State.hh"
@@ -336,21 +336,14 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
 
   // additional boundary conditions
   // -- copy essential conditions to primary variables 
-  const auto& temp = *S_->GetFieldData(temperature_key_)->ViewComponent("face", true);
-  const auto& n_l = *S_->GetFieldData(mol_density_liquid_key_)->ViewComponent("boundary_face", true);
-
-  const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
-  const Epetra_Map& face_map = mesh_->face_map(true);
-
-  int nbfaces = n_l.MyLength();
-  for (int bf = 0; bf < nbfaces; ++bf) {
-    int f = face_map.LID(ext_face_map.GID(bf));
-    if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) temp[0][f] = bc_value[f];
-  }
+  // BoundaryDataToFaces(op_bc_, *S_->GetFieldData(temperature_key_, passwd_));
 
   // -- populate BCs
   S_->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S_.ptr(), passwd_);
   const auto& enth = *S_->GetFieldData(enthalpy_key_)->ViewComponent("boundary_face", true);
+
+  S_->GetFieldEvaluator(mol_density_liquid_key_)->HasFieldChanged(S_.ptr(), passwd_);
+  const auto& n_l = *S_->GetFieldData(mol_density_liquid_key_)->ViewComponent("boundary_face", true);
 
   std::vector<int>& bc_model_enth_ = op_bc_enth_->bc_model();
   std::vector<double>& bc_value_enth_ = op_bc_enth_->bc_value();
@@ -360,8 +353,9 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
     bc_value_enth_[n] = 0.0;
   }
 
+  int nbfaces = n_l.MyLength();
   for (int bf = 0; bf < nbfaces; ++bf) {
-    int f = face_map.LID(ext_face_map.GID(bf));
+    int f = getBoundaryFaceFace(*mesh_, bf);
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
       bc_model_enth_[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_value_enth_[f] = enth[0][bf] * n_l[0][bf];
@@ -399,6 +393,9 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
       } 
     }
   }
+
+  int tmp(ntemp_clipped);
+  u->Data()->Comm()->SumAll(&tmp, &ntemp_clipped, 1);  // find the global clipping
 
   return (ntemp_clipped) > 0 ? AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED :
       AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;

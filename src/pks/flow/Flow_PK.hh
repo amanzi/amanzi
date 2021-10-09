@@ -92,9 +92,9 @@ class Flow_PK : public PK_PhysicalBDF {
   void VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dT) const;
   void VV_PrintHeadExtrema(const CompositeVector& pressure) const;
   void VV_PrintSourceExtrema() const;
+  void VV_FractureConservationLaw() const;
 
   // -- extensions 
-  int BoundaryFaceGetCell(int f) const;  // of AmanziMesh
   void VerticalNormals(int c, AmanziGeometry::Point& n1, AmanziGeometry::Point& n2);
   virtual double BoundaryFaceValue(int f, const CompositeVector& u);
 

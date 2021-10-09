@@ -21,6 +21,7 @@
   s_liquid + s_gas = 1
 */
 
+#include "CommonDefs.hh"
 #include "VWContentEvaluator.hh"
 
 namespace Amanzi {
@@ -30,7 +31,9 @@ namespace Flow {
 * Constructor.
 ****************************************************************** */
 VWContentEvaluator::VWContentEvaluator(Teuchos::ParameterList& plist) :
-    SecondaryVariableFieldEvaluator(plist) {};
+    SecondaryVariableFieldEvaluator(plist) {
+  Init_();
+};
 
 
 /* ******************************************************************
@@ -50,6 +53,7 @@ void VWContentEvaluator::Init_()
   dependencies_.insert(mol_density_liquid_key_);
 
   water_vapor_ = plist_.get<bool>("water vapor", false);
+
   if (water_vapor_) {
     dependencies_.insert(Keys::getKey(domain, "molar_density_gas"));
     dependencies_.insert(Keys::getKey(domain, "molar_fraction_gas"));
@@ -86,13 +90,13 @@ void VWContentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     const Epetra_MultiVector& n_g = *S->GetFieldData("molar_density_gas")->ViewComponent("cell");
     const Epetra_MultiVector& x_g = *S->GetFieldData("molar_fraction_gas")->ViewComponent("cell");
     
-    int ncells = result->size("cell", false);
+    int ncells = result->size("cell");
     for (int c = 0; c != ncells; ++c) {
       result_v[0][c] = phi[0][c] * (s_l[0][c] * n_l[0][c]
                                   + (1.0 - s_l[0][c]) * n_g[0][c] * x_g[0][c]);
     }
   } else {
-    int ncells = result->size("cell", false);
+    int ncells = result->size("cell");
     for (int c = 0; c != ncells; ++c) {
       result_v[0][c] = phi[0][c] * s_l[0][c] * n_l[0][c];
     }
@@ -113,7 +117,7 @@ void VWContentEvaluator::EvaluateFieldPartialDerivative_(
   const Epetra_MultiVector& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
   Epetra_MultiVector& result_v = *result->ViewComponent("cell");
 
-  int ncells = result->size("cell", false);
+  int ncells = result->size("cell");
 
   if (water_vapor_) {
     const Epetra_MultiVector& n_g = *S->GetFieldData("molar_density_gas")->ViewComponent("cell");

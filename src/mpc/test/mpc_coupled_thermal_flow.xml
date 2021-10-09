@@ -168,6 +168,40 @@
         </ParameterList>
       </ParameterList>
 
+      <ParameterList name="molar_density_liquid">
+        <Parameter name="field evaluator type" type="string" value="eos"/>
+        <Parameter name="eos basis" type="string" value="both"/>
+        <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
+        <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="eos type" type="string" value="liquid water 0-30C"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="fracture-molar_density_liquid">
+        <Parameter name="field evaluator type" type="string" value="eos"/>
+        <Parameter name="eos basis" type="string" value="both"/>
+        <Parameter name="molar density key" type="string" value="fracture-molar_density_liquid"/>
+        <Parameter name="mass density key" type="string" value="fracture-mass_density_liquid"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="eos type" type="string" value="liquid water 0-30C"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="viscosity_liquid">
+        <Parameter name="field evaluator type" type="string" value="viscosity"/>
+        <Parameter name="viscosity key" type="string" value="viscosity_liquid"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="eos type" type="string" value="liquid water 0-30C"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="fracture-viscosity_liquid">
+        <Parameter name="field evaluator type" type="string" value="viscosity"/>
+        <Parameter name="viscosity key" type="string" value="fracture-viscosity_liquid"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="eos type" type="string" value="liquid water 0-30C"/>
+        </ParameterList>
+      </ParameterList>
+
       <ParameterList name="internal_energy_liquid">
         <Parameter name="field evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
@@ -709,7 +743,7 @@
       </ParameterList>
 
       <ParameterList name="time integrator">
-	<Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
+	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 	<Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
@@ -754,7 +788,7 @@
       </ParameterList>
 
       <ParameterList name="time integrator">
-	<Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
+	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 	<Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 	<Parameter name="time integration method" type="string" value="none"/>
@@ -827,7 +861,7 @@
       </ParameterList>
 
       <ParameterList name="time integrator">
-	<Parameter name="error control options" type="Array(string)" value="{temperature, residual}"/>
+	<Parameter name="error control options" type="Array(string)" value="{temperature}"/>
 	<Parameter name="linear solver" type="string" value="none"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 	<ParameterList name="pressure-lambda constraints">
@@ -886,7 +920,7 @@
       </ParameterList>
 
       <ParameterList name="time integrator">
-	<Parameter name="error control options" type="Array(string)" value="{temperature, residual}"/>
+	<Parameter name="error control options" type="Array(string)" value="{temperature}"/>
 	<Parameter name="linear solver" type="string" value="none"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 	<ParameterList name="pressure-lambda constraints">

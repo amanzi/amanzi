@@ -188,6 +188,8 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
     pk_model_.clear();
     pk_master_.clear();
     pk_domain_.clear();
+    pk_region_.clear();
+
     for (int j = 0; j < children->getLength(); ++j) {
       DOMNode* jnode = children->item(j);
       if (jnode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
@@ -204,13 +206,13 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
       } else if (strcmp(tagname, "chemistry") == 0) {
         model = GetAttributeValueS_(jnode, "engine");
         pk_model_["chemistry"] = model;
-        pk_domain_["flow"] = "domain";
         GetAttributeValueS_(jnode, "state", "on");
         transient_model += 1;
 
       } else if (strcmp(tagname, "transport") == 0) {
         GetAttributeValueS_(jnode, "state", "on");
         transient_model += 2;
+        pk_domain_["transport"] = "domain";
 
       } else if (strcmp(tagname, "energy") == 0) {
         model = GetAttributeValueS_(jnode, "model");
@@ -225,7 +227,8 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
 
         std::string region = GetAttributeValueS_(jnode, "domain");
         surface_regions_.push_back(region);
-        pk_domain_["shallow_water"] = region;
+        pk_region_["shallow_water"] = region;
+        pk_domain_["shallow_water"] = "domain";
 
         GetAttributeValueS_(jnode, "state", "on");
         transient_model += 16;
@@ -319,8 +322,14 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
     case 16:
       PopulatePKTree_(pk_tree_list, Keys::merge(mode, "shallow water", delimiter));
       break;
+    case 18:
+      PopulatePKTree_(pk_tree_list, Keys::merge(mode, "shallow water and transport", delimiter));
+      pk_domain_["shallow_water"] = "domain";
+      pk_domain_["transport"] = "domain";
+      break;
     case 20:
       PopulatePKTree_(pk_tree_list, Keys::merge(mode, "flow and shallow water", delimiter));
+      pk_domain_["shallow_water"] = "surface";  // for integrated hydrology, SW is defined on manifold
       break;
     case 32: 
       pk_master_["multiphase"] = true;
@@ -473,6 +482,11 @@ void InputConverterU::PopulatePKTree_(
     PopulatePKTree_(tmp, Keys::merge(prefix, "coupled flow and energy", delimiter));
     PopulatePKTree_(tmp, Keys::merge(prefix, "coupled reactive transport", delimiter));
   }
+  else if (basename == "shallow water and transport") {
+    tmp.set<std::string>("PK type", "shallow water transport");
+    tmp.sublist(Keys::merge(prefix, "shallow water", delimiter)).set<std::string>("PK type", "shallow water");
+    tmp.sublist(Keys::merge(prefix, "transport", delimiter)).set<std::string>("PK type", "transport");
+  }
   else {
     Errors::Message msg;
     msg << "Internal error: cannot add \"" << pk_name << "\" to the PK tree.\n";
@@ -616,7 +630,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
 
 
 /* ******************************************************************
-* Translate PKs list
+* Translate PKs list starting with lower-level PKs
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& glist)
 {
@@ -638,89 +652,100 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
       RegisterPKsList_(pk_tree, out_list);
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-        std::string name = pk_tree.begin()->first;
-        *vo_->os() << "TP: PK name=\"" << name << "\", factory: \"" 
-                   << pk_tree.sublist(name).get<std::string>("PK type") << "\"" << std::endl;
+        std::string pk = pk_tree.begin()->first;
+        *vo_->os() << "TP: PK name=\"" << pk << "\", factory: \"" 
+                   << pk_tree.sublist(pk).get<std::string>("PK type") << "\"" << std::endl;
       }
     }
   }
 
-  // parse list of supported PKs
+  // create list of PKs
+  std::vector<std::string> pks;
   for (auto it = out_list.begin(); it != out_list.end(); ++it) {
+    if ((it->second).isList()) pks.push_back(it->first);
+  }
+
+  // parse list of supported PKs in reverse order to allow MPC
+  // contribute to its PKs.
+  for (auto it = pks.crbegin(); it != pks.crend(); ++it) {
+    std::string pk = *it;
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-        *vo_->os() << "Next PK is \"" << it->first << "\"" << std::endl;
+        *vo_->os() << "Next PK is \"" << pk << "\"" << std::endl;
 
     std::string err_options("residual"), mode("transient");
 
-    if ((it->second).isList()) {
+    if (out_list.isSublist(pk)) {
       // -- flow PKs
-      std::string prefix = Keys::split(it->first, delimiter).first;
-      std::string basename = Keys::split(it->first, delimiter).second;
+      std::string prefix = Keys::split(pk, delimiter).first;
+      std::string basename = Keys::split(pk, delimiter).second;
 
       if (prefix == "steady" && (basename == "flow" || basename == "flow matrix")) {
-        out_list.sublist(it->first) = TranslateFlow_("steady", "matrix");
+        out_list.sublist(pk) = TranslateFlow_("steady", "matrix");
       }
-      else if (it->first == "steady:flow fracture") {
-        out_list.sublist(it->first) = TranslateFlow_("steady", "fracture");
+      else if (pk == "steady:flow fracture") {
+        out_list.sublist(pk) = TranslateFlow_("steady", "fracture");
       }
       else if (prefix != "steady" && (basename == "flow" || basename == "flow matrix")) {
-        out_list.sublist(it->first) = TranslateFlow_("transient", "matrix");
+        out_list.sublist(pk) = TranslateFlow_("transient", "matrix");
       }
       else if (basename == "flow fracture") {
-        out_list.sublist(it->first) = TranslateFlow_("transient", "fracture");
+        out_list.sublist(pk) = TranslateFlow_("transient", "fracture");
       }
       // -- energy PKs
       else if (basename == "energy") {
-        out_list.sublist(it->first) = TranslateEnergy_("matrix");
+        out_list.sublist(pk) = TranslateEnergy_("matrix");
       }
       else if (basename == "energy fracture") {
-        out_list.sublist(it->first) = TranslateEnergy_("fracture");
+        out_list.sublist(pk) = TranslateEnergy_("fracture");
       }
       // -- transport PKs
-      else if (basename == "transport" || basename == "transport matrix") {
-        out_list.sublist(it->first) = TranslateTransport_("matrix");
+      else if (basename == "transport") {
+        out_list.sublist(pk) = TranslateTransport_(pk_domain_["transport"]);
+      }
+      else if (basename == "transport matrix") {
+        out_list.sublist(pk) = TranslateTransport_("matrix");
       }
       else if (basename == "transport fracture") {
-        out_list.sublist(it->first) = TranslateTransport_("fracture");
+        out_list.sublist(pk) = TranslateTransport_("fracture");
       }
       // -- chemistry PKs
       else if (basename == "chemistry" || basename == "chemistry matrix") {
-        out_list.sublist(it->first) = TranslateChemistry_("matrix");
+        out_list.sublist(pk) = TranslateChemistry_("matrix");
       }
       else if (basename == "chemistry fracture") {
-        out_list.sublist(it->first) = TranslateChemistry_("fracture");
+        out_list.sublist(pk) = TranslateChemistry_("fracture");
       }
       // -- surface PKs
       else if (basename == "shallow water") {
         // temporarily, we run only stand-along SW
-        out_list.sublist(it->first) = TranslateShallowWater_("surface");
+        out_list.sublist(pk) = TranslateShallowWater_(pk_domain_["shallow_water"]);
       }
       // -- multiphase PKs
       else if (basename == "multiphase") {
         auto& tmp = glist.sublist("state");
-        out_list.sublist(it->first) = TranslateMultiphase_("matrix", tmp);
+        out_list.sublist(pk) = TranslateMultiphase_("matrix", tmp);
       }
       // -- coupled PKs (matrix and fracture)
       else if (basename == "coupled flow") {
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back(Keys::merge(prefix, "flow matrix", delimiter));
         pk_names.push_back(Keys::merge(prefix, "flow fracture", delimiter));
-        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
-        out_list.sublist(it->first).set<int>("master PK index", 0);
+        out_list.sublist(pk).set<Teuchos::Array<std::string> >("PKs order", pk_names);
+        out_list.sublist(pk).set<int>("master PK index", 0);
       }
-      else if (it->first == "steady:coupled flow") {
+      else if (pk == "steady:coupled flow") {
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back("steady:flow matrix");
         pk_names.push_back("steady:flow fracture");
-        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
-        out_list.sublist(it->first).set<int>("master PK index", 0);
+        out_list.sublist(pk).set<Teuchos::Array<std::string> >("PKs order", pk_names);
+        out_list.sublist(pk).set<int>("master PK index", 0);
       }
       else if (basename == "coupled transport") {
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back(Keys::merge(prefix, "transport matrix", delimiter));
         pk_names.push_back(Keys::merge(prefix, "transport fracture", delimiter));
-        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
-        out_list.sublist(it->first).set<int>("master PK index", 0);
+        out_list.sublist(pk).set<Teuchos::Array<std::string> >("PKs order", pk_names);
+        out_list.sublist(pk).set<int>("master PK index", 0);
 
         // implicit PK derived from a strongly coupled MPC needs a time integrator 
         if (transport_implicit_) {
@@ -729,7 +754,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
           node = GetUniqueElementByTagsString_(tags_default, flag);
           if (flag) nonlinear_solver = GetAttributeValueS_(node, "name", TYPE_NONE, false, "nka"); 
 
-          out_list.sublist(it->first).sublist("time integrator") = TranslateTimeIntegrator_(
+          out_list.sublist(pk).sublist("time integrator") = TranslateTimeIntegrator_(
               err_options, nonlinear_solver, false, tags_default,
               dt_cut_[mode], dt_inc_[mode]);
         }
@@ -738,47 +763,59 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back(Keys::merge(prefix, "chemistry matrix", delimiter));
         pk_names.push_back(Keys::merge(prefix, "chemistry fracture", delimiter));
-        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
-        out_list.sublist(it->first).set<int>("master PK index", 0);
+        out_list.sublist(pk).set<Teuchos::Array<std::string> >("PKs order", pk_names);
+        out_list.sublist(pk).set<int>("master PK index", 0);
       }
       // -- multiple PKs
       else if (basename == "reactive transport") {
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back(Keys::merge(prefix, "chemistry", delimiter));
         pk_names.push_back(Keys::merge(prefix, "transport", delimiter));
-        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
+        out_list.sublist(pk).set<Teuchos::Array<std::string> >("PKs order", pk_names);
       }
       else if (basename == "flow and reactive transport") {
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back(Keys::merge(prefix, "flow", delimiter));
         pk_names.push_back(Keys::merge(prefix, "reactive transport", delimiter));
-        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
-        out_list.sublist(it->first).set<int>("master PK index", 0);
+        out_list.sublist(pk).set<Teuchos::Array<std::string> >("PKs order", pk_names);
+        out_list.sublist(pk).set<int>("master PK index", 0);
       }
       else if (basename == "flow and transport") {
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back(Keys::merge(prefix, "flow", delimiter));
         pk_names.push_back(Keys::merge(prefix, "transport", delimiter));
-        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
-        out_list.sublist(it->first).set<int>("master PK index", 0);
+        out_list.sublist(pk).set<Teuchos::Array<std::string> >("PKs order", pk_names);
+        out_list.sublist(pk).set<int>("master PK index", 0);
       }
       else if (basename == "flow and chemistry") {
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back(Keys::merge(prefix, "flow", delimiter));
         pk_names.push_back(Keys::merge(prefix, "chemistry", delimiter));
-        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
-        out_list.sublist(it->first).set<int>("master PK index", 0);
+        out_list.sublist(pk).set<Teuchos::Array<std::string> >("PKs order", pk_names);
+        out_list.sublist(pk).set<int>("master PK index", 0);
       }
       else if (basename == "flow and energy") {
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back(Keys::merge(prefix, "flow", delimiter));
         pk_names.push_back(Keys::merge(prefix, "energy", delimiter));
-        out_list.sublist(it->first)
+        out_list.sublist(pk)
             .set<Teuchos::Array<std::string> >("PKs order", pk_names)
             .set<int>("master PK index", 0)
             .set<std::string>("domain name", "domain");
 
-        out_list.sublist(it->first).sublist("physical models and assumptions")
+        auto& tmp = glist.sublist("state").sublist("field evaluators");
+        AddSecondaryFieldEvaluator_(tmp, 
+            Keys::getKey("domain", "molar_density_liquid"), "molar density key",
+            "eos", "liquid water 0-30C", "density");
+        AddSecondaryFieldEvaluator_(tmp, 
+            Keys::getKey("domain", "viscosity_liquid"), "viscosity key",
+            "viscosity", "liquid water 0-30C", "viscosity");
+
+        std::vector<std::string> controls({ "pressure" });
+        out_list.sublist(pk_names[0]).sublist("time integrator")
+            .set<Teuchos::Array<std::string> >("error control options", controls);
+
+        out_list.sublist(pk).sublist("physical models and assumptions")
             .set<bool>("vapor diffusion", (pk_model_["energy"] == "two_phase energy"));
 
         err_options = "pressure, temperature";
@@ -787,7 +824,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back(Keys::merge(prefix, "flow", delimiter));
         pk_names.push_back(Keys::merge(prefix, "shallow water", delimiter));
-        out_list.sublist(it->first)
+        out_list.sublist(pk)
             .set<Teuchos::Array<std::string> >("PKs order", pk_names)
             .set<int>("master PK index", 0);
       }
@@ -795,12 +832,24 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back(Keys::merge(prefix, "flow fracture", delimiter));
         pk_names.push_back(Keys::merge(prefix, "energy fracture", delimiter));
-        out_list.sublist(it->first)
+        out_list.sublist(pk)
             .set<Teuchos::Array<std::string> >("PKs order", pk_names)
             .set<int>("master PK index", 0)
             .set<std::string>("domain name", "fracture");
 
-        out_list.sublist(it->first).sublist("physical models and assumptions")
+        auto& tmp = glist.sublist("state").sublist("field evaluators");
+        AddSecondaryFieldEvaluator_(tmp, 
+            Keys::getKey("fracture", "molar_density_liquid"), "molar density key",
+            "eos", "liquid water 0-30C", "density");
+        AddSecondaryFieldEvaluator_(tmp, 
+            Keys::getKey("fracture", "viscosity_liquid"), "viscosity key",
+            "viscosity", "liquid water 0-30C", "viscosity");
+
+        std::vector<std::string> controls({ "pressure" });
+        out_list.sublist(pk_names[0]).sublist("time integrator")
+            .set<Teuchos::Array<std::string> >("error control options", controls);
+
+        out_list.sublist(pk).sublist("physical models and assumptions")
             .set<bool>("vapor diffusion", (pk_model_["energy"] == "two_phase energy"));
 
         err_options = "pressure, temperature";
@@ -810,22 +859,22 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back(Keys::merge(prefix, "coupled flow", delimiter));
         pk_names.push_back(Keys::merge(prefix, "coupled transport", delimiter));
-        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
-        out_list.sublist(it->first).set<int>("master PK index", 0);
+        out_list.sublist(pk).set<Teuchos::Array<std::string> >("PKs order", pk_names);
+        out_list.sublist(pk).set<int>("master PK index", 0);
       }
       else if (basename == "coupled reactive transport") {
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back(Keys::merge(prefix, "coupled chemistry", delimiter));
         pk_names.push_back(Keys::merge(prefix, "coupled transport", delimiter));
-        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
-        out_list.sublist(it->first).set<int>("master PK index", 0);
+        out_list.sublist(pk).set<Teuchos::Array<std::string> >("PKs order", pk_names);
+        out_list.sublist(pk).set<int>("master PK index", 0);
       }
       else if (basename == "coupled flow and energy") {
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back(Keys::merge(prefix, "flow and energy", delimiter));
         pk_names.push_back(Keys::merge(prefix, "flow and energy fracture", delimiter));
-        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
-        out_list.sublist(it->first).set<int>("master PK index", 0);
+        out_list.sublist(pk).set<Teuchos::Array<std::string> >("PKs order", pk_names);
+        out_list.sublist(pk).set<int>("master PK index", 0);
 
         err_options = "pressure, temperature";
       }
@@ -833,32 +882,46 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back(Keys::merge(prefix, "coupled flow", delimiter));
         pk_names.push_back(Keys::merge(prefix, "coupled reactive transport", delimiter));
-        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
-        out_list.sublist(it->first).set<int>("master PK index", 0);
+        out_list.sublist(pk).set<Teuchos::Array<std::string> >("PKs order", pk_names);
+        out_list.sublist(pk).set<int>("master PK index", 0);
       }
       else if (basename == "coupled thermal flow and reactive transport") {
         Teuchos::Array<std::string> pk_names;
         pk_names.push_back(Keys::merge(prefix, "coupled flow and energy", delimiter));
         pk_names.push_back(Keys::merge(prefix, "coupled reactive transport", delimiter));
-        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
-        out_list.sublist(it->first).set<int>("master PK index", 0);
+        out_list.sublist(pk)
+            .set<Teuchos::Array<std::string> >("PKs order", pk_names)
+            .set<int>("master PK index", 0);
+      }
+      else if (basename == "shallow water and transport") {
+        Teuchos::Array<std::string> pk_names;
+        pk_names.push_back(Keys::merge(prefix, "shallow water", delimiter));
+        pk_names.push_back(Keys::merge(prefix, "transport", delimiter));
+        out_list.sublist(pk)
+            .set<Teuchos::Array<std::string> >("PKs order", pk_names)
+            .set<std::string>("domain name", pk_domain_["shallow water"]);
+
+        // ... coupling information 
+        out_list.sublist(pk_names[1]).sublist("physical models and assumptions")
+           .set<std::string>("darcy flux key", Keys::getKey(pk_domain_["shallow_water"], "riemann_flux"))
+           .set<std::string>("saturation key", Keys::getKey(pk_domain_["shallow_water"], "ponded_depth"));
       }
 
       // add time integrator to PKs that have no transport and chemistry sub-PKs.
-      if (it->first.find("transport") == std::string::npos &&
-          it->first.find("chemistry") == std::string::npos) {
-        if (!out_list.sublist(it->first).isSublist("time integrator")) {
-          out_list.sublist(it->first).sublist("time integrator") = TranslateTimeIntegrator_(
+      if (pk.find("transport") == std::string::npos &&
+          pk.find("chemistry") == std::string::npos) {
+        if (!out_list.sublist(pk).isSublist("time integrator")) {
+          out_list.sublist(pk).sublist("time integrator") = TranslateTimeIntegrator_(
               err_options, "nka", false,
               "unstructured_controls, unstr_transient_controls",
               dt_cut_[mode], dt_inc_[mode]);
-          out_list.sublist(it->first).sublist("verbose object") = verb_list_.sublist("verbose object");
+          out_list.sublist(pk).sublist("verbose object") = verb_list_.sublist("verbose object");
         }
       }
 
       // lookup table
       if (eos_lookup_table_ != "") {
-        out_list.sublist(it->first).sublist("physical models and assumptions")
+        out_list.sublist(pk).sublist("physical models and assumptions")
             .set<std::string>("eos lookup table", eos_lookup_table_);
       }
     }
@@ -914,7 +977,7 @@ void InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
     if (basename == "flow and shallow water") {
       mesh_list.sublist("expert").set<bool>("request edges", true);
 
-      Teuchos::Array<std::string> aux(1, pk_domain_["shallow_water"]);
+      Teuchos::Array<std::string> aux(1, pk_region_["shallow_water"]);
       mesh_list.sublist("submesh").set<Teuchos::Array<std::string> >("regions", aux)
                                   .set<std::string>("extraction method", "manifold mesh")
                                   .set<std::string>("domain name", "surface");

@@ -78,22 +78,26 @@ Observable::Observable(Teuchos::ParameterList& plist)
     msg << "Observable " << name_ << ": \"direction normalized flux direction\" may only be used with location \"face\"";
     Exceptions::amanzi_throw(msg);
   }
-  if (flux_normalize_ && plist.isParameter("direction normalized flux direction")) {
-    Teuchos::Array<double> direction =
+  if (flux_normalize_) {
+    if (plist.isParameter("direction normalized flux direction")) {
+      Teuchos::Array<double> direction =
         plist.get<Teuchos::Array<double> >("direction normalized flux direction");
-    if (direction.size() == 2) {
-      double norm = std::sqrt(std::pow(direction[0],2) + std::pow(direction[1],2));
-      direction_ = Teuchos::rcp(new AmanziGeometry::Point(direction[0]/norm, direction[1]/norm));
-    } else if (direction.size() == 3) {
-      double norm = std::sqrt(std::pow(direction[0],2) + std::pow(direction[1],2)
-              + std::pow(direction[2],2));
-      direction_ = Teuchos::rcp(new AmanziGeometry::Point(direction[0]/norm,
-              direction[1]/norm, direction[2]/norm));
-    } else {
-      Errors::Message msg;
-      msg << "Observable: \"direction normalized flux direction\" cannot have dimension "
-          << (int) direction.size() << ", must be 2 or 3.";
-      Exceptions::amanzi_throw(msg);
+      if (direction.size() == 2) {
+        double norm = std::sqrt(std::pow(direction[0],2) + std::pow(direction[1],2));
+        direction_ = Teuchos::rcp(new AmanziGeometry::Point(direction[0]/norm, direction[1]/norm));
+      } else if (direction.size() == 3) {
+        double norm = std::sqrt(std::pow(direction[0],2) + std::pow(direction[1],2)
+                + std::pow(direction[2],2));
+        direction_ = Teuchos::rcp(new AmanziGeometry::Point(direction[0]/norm,
+                direction[1]/norm, direction[2]/norm));
+      } else {
+        Errors::Message msg;
+        msg << "Observable: \"direction normalized flux direction\" cannot have dimension "
+            << (int) direction.size() << ", must be 2 or 3.";
+        Exceptions::amanzi_throw(msg);
+      }
+    } else if (plist.isParameter("direction normalized flux relative to region")) {
+      flux_normalize_region_ = plist.get<std::string>("direction normalized flux relative to region");
     }
   }
 }
@@ -213,6 +217,39 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
             // normalize to the provided vector
             AmanziGeometry::Point normal = vec->Mesh()->face_normal(*id);
             sign = (normal * (*direction_)) / AmanziGeometry::norm(normal);
+
+          } else if (!flux_normalize_region_.empty()) {
+            // normalize to outward normal relative to a volumetric region
+            AmanziMesh::Entity_ID_List vol_cells;
+            vec->Mesh()->get_set_entities(flux_normalize_region_,
+                    AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL, &vol_cells);
+
+            // which cell of the face is "inside" the volume
+            AmanziMesh::Entity_ID_List cells;
+            vec->Mesh()->face_get_cells(*id, AmanziMesh::Parallel_type::ALL, &cells);
+            AmanziMesh::Entity_ID c = -1;
+            for (const auto& cc : cells) {
+              if (std::find(vol_cells.begin(), vol_cells.end(), cc) != vol_cells.end()) {
+                c = cc;
+                break;
+              }
+            }
+            if (c < 0) {
+              Errors::Message msg;
+              msg << "Observeable on face region \"" << region_
+                  << "\" flux normalized relative to volumetric region \""
+                  << flux_normalize_region_ << "\" but face "
+                  << vec->Mesh()->face_map(true).GID(*id)
+                  << " does not border the volume region.";
+              Exceptions::amanzi_throw(msg);
+            }
+
+            // normalize with respect to that cell's direction
+            AmanziMesh::Entity_ID_List faces;
+            std::vector<int> dirs;
+            vec->Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+            int i = std::find(faces.begin(), faces.end(), *id) - faces.begin();
+            sign = dirs[i];
 
           } else {
             // normalize to outward normal

@@ -9,14 +9,14 @@
   Authors: Konstantin Lipnikov
            Daniil Svyatskiy
 
-  Process kernel that couples Darcy flow in matrix and fracture network.
+  Process kernel that couples flow in matrix and fracture network.
 */
 
+#include "InverseFactory.hh"
 #include "PDE_CouplingFlux.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "TreeOperator.hh"
-#include "InverseFactory.hh"
 
 #include "FlowMatrixFracture_PK.hh"
 #include "PK_MPCStrong.hh"
@@ -110,8 +110,8 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
                                          .sublist("physical models and assumptions");
   fflow.set<std::string>("coupled matrix fracture flow", "fracture");
 
-  // modify time integrator
-  ti_list_->sublist("BDF1").set<bool>("freeze preconditioner", true);
+  // modify time integrator (only for Darcy)
+  // ti_list_->sublist("BDF1").set<bool>("freeze preconditioner", true);
 
   // process other PKs.
   PK_MPCStrong<PK_BDF>::Setup(S);
@@ -125,7 +125,16 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   PK_MPCStrong<PK_BDF>::Initialize(S);
 
-  auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
+  // since solution's map could be anything, to create a global operator,
+  // we have to rely on pk's operator structure.
+  auto tvs = Teuchos::rcp(new TreeVectorSpace());
+
+  for (const auto& pk : sub_pks_) {
+    auto& cvs = pk->my_operator(Operators::OPERATOR_MATRIX)->get_domain_map();
+    auto tmp = Teuchos::rcp(new TreeVectorSpace(cvs));
+    tvs->PushBack(tmp);
+  }
+
   op_tree_matrix_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
 
   // we assume that 0 and 1 correspond to matrix and fracture, respectively
@@ -230,7 +239,7 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
     // bool wells_on = ti_list_->sublist("initialization").get<bool>("active wells", false);
     double dt(-1e+98), dt_solver;
     bool fail = time_stepper_->TimeStep(dt, dt_solver, solution_);
-    if (fail) Exceptions::amanzi_throw("Solver for coupled Darcy flow did not converge.");
+    if (fail) Exceptions::amanzi_throw("Solver for coupled flow did not converge.");
   }
 
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
@@ -276,11 +285,6 @@ void FlowMatrixFracture_PK::FunctionalResidual(double t_old, double t_new,
   int ierr = op_tree_matrix_->ApplyAssembled(*u_new, *f);
   AMANZI_ASSERT(!ierr);
 
-  // diagonal blocks in tree operator must be Darcy PKs
-  for (int i = 0; i < 2; ++i) {
-    AMANZI_ASSERT(sub_pks_[i]->name() == "darcy" ||
-                  sub_pks_[i]->name() == "richards");
-  }
   auto op0 = sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX);
   auto op1 = sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX);
 
