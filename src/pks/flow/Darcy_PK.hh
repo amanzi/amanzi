@@ -64,7 +64,8 @@ class Darcy_PK : public Flow_PK {
   void FunctionalResidual(const double t_old, double t_new, 
                   Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
                   Teuchos::RCP<TreeVector> f) override;
-  double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override;
+  virtual double ErrorNorm(const AmanziSolvers::Data<TreeVector>& data,
+                           const AmanziSolvers::ConvergenceMonitor& monitor) override;
 
   // -- preconditioner management
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) override;

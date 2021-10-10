@@ -415,9 +415,12 @@ bool Richards_PK::ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0,
 * Check difference du between the predicted and converged solutions.
 * This is a wrapper for various error control methods. 
 ****************************************************************** */
-double Richards_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, 
-                              Teuchos::RCP<const TreeVector> du)
+double Richards_PK::ErrorNorm(const AmanziSolvers::Data<TreeVector>& data,
+                              const AmanziSolvers::ConvergenceMonitor& monitor)
 {
+  auto u = data.u;
+  auto du = data.du;
+
   double error;
   error = ErrorNormSTOMP(*u->Data(), *du->Data());
 

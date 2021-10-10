@@ -44,13 +44,8 @@ class BDF1_SolverFnBase : public AmanziSolvers::SolverFnBase<Vector> {
   // preconditioner update
   virtual void UpdatePreconditioner(const Teuchos::RCP<const Vector>& u);
 
-  // error norm (two versions)
-  virtual double ErrorNorm(const Teuchos::RCP<const Vector>& u,
-                           const Teuchos::RCP<const Vector>& du);
-
-  virtual double ErrorNorm(const Teuchos::RCP<const Vector>& u,
-                           const Teuchos::RCP<const Vector>& du,
-                           const Teuchos::RCP<const Vector>& res,
+  // error norm
+  virtual double ErrorNorm(const AmanziSolvers::Data<Vector>& data,
                            const AmanziSolvers::ConvergenceMonitor& monitor);
 
   // Check the admissibility of an inner iterate (ensures preconditions for
@@ -112,18 +107,10 @@ void BDF1_SolverFnBase<Vector>::UpdatePreconditioner(const Teuchos::RCP<const Ve
 
 // error norm
 template<class Vector>
-double BDF1_SolverFnBase<Vector>::ErrorNorm(const Teuchos::RCP<const Vector>& u,
-                                            const Teuchos::RCP<const Vector>& du) {
-  return bdf_fn_->ErrorNorm(u, du);
-}
-
-
-template<class Vector>
-double BDF1_SolverFnBase<Vector>::ErrorNorm(const Teuchos::RCP<const Vector>& u,
-                                            const Teuchos::RCP<const Vector>& du,
-                                            const Teuchos::RCP<const Vector>& res,
-                                            const AmanziSolvers::ConvergenceMonitor& monitor) {
-  return bdf_fn_->ErrorNorm(u, du, res, monitor);
+double BDF1_SolverFnBase<Vector>::ErrorNorm(
+    const AmanziSolvers::Data<Vector>& data,
+    const AmanziSolvers::ConvergenceMonitor& monitor) {
+  return bdf_fn_->ErrorNorm(data, monitor);
 }
 
 

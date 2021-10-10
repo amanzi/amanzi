@@ -65,9 +65,6 @@ class PK_MPCStrong : virtual public PK_MPC<PK_Base>, public PK_BDF
 
   // -- enorm for the coupled system
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                           Teuchos::RCP<const TreeVector> du);
-
-  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
                            Teuchos::RCP<const TreeVector> du,
                            Teuchos::RCP<const TreeVector> res,
                            const AmanziSolvers::ConvergenceMonitor& monitor);

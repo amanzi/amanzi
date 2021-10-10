@@ -169,7 +169,12 @@ class SolverNKA_LS : public Solver<Vector, VectorSpace> {
       u->Update(-x, *du, 1.);
       fn->ChangedSolution();
       fn->Residual(u, r);
-      return fn->ErrorNorm(u, r);
+
+      Data<Vector> data;
+      data.u = u;
+      data.r = r;
+
+      return fn->ErrorNorm(data, SOLVER_MONITOR_RESIDUAL);
     }
 
     Teuchos::RCP<Vector> u,r,u0,du;
@@ -274,6 +279,13 @@ int SolverNKA_LS<Vector, VectorSpace>::NKA_LS_(const Teuchos::RCP<Vector>& u) {
   Teuchos::RCP<Vector> du_tmp = Teuchos::rcp(new Vector(*u));
   Teuchos::RCP<Vector> u_prev = Teuchos::rcp(new Vector(*u));
 
+  // create solver data
+  Data<Vector> data;
+  data.u = u;
+  data.du = du;
+  data.r = r;
+  data.hr = du_tmp;
+
   // variables to monitor the progress of the nonlinear solver
   double error(0.0), previous_error(0.0);
   double l2_error(0.0), previous_l2_error(0.0);
@@ -283,7 +295,7 @@ int SolverNKA_LS<Vector, VectorSpace>::NKA_LS_(const Teuchos::RCP<Vector>& u) {
   fn_->Residual(u, r);
 
   // report error
-  error = fn_->ErrorNorm(u, r);
+  error = fn_->ErrorNorm(data, SOLVER_MONITOR_RESIDUAL);
   r->Norm2(&l2_error);
   if (vo_->os_OK(Teuchos::VERB_LOW)) {
     *vo_->os() << num_itrs_ << ": error(res) = " << error << std::endl
@@ -363,7 +375,7 @@ int SolverNKA_LS<Vector, VectorSpace>::NKA_LS_(const Teuchos::RCP<Vector>& u) {
       db_->WriteVector<Vector>(db_write_iter++, *r, u.ptr(), du.ptr());
       
       // report error
-      error = fn_->ErrorNorm(u, r);
+      error = fn_->ErrorNorm(data, SOLVER_MONITOR_RESIDUAL);
       r->Norm2(&l2_error);
       if (vo_->os_OK(Teuchos::VERB_LOW)) {
         *vo_->os() << num_itrs_ << ": error(res) = " << error << std::endl

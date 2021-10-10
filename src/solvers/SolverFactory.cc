@@ -13,7 +13,6 @@
 
 #include "SolverAA.hh"
 #include "SolverNKA.hh"
-#include "SolverNKA_Amanzi.hh"
 #include "SolverNKA_LS.hh"
 #include "SolverNKA_BT_ATS.hh"
 #include "SolverNKA_LS_ATS.hh"
@@ -70,16 +69,6 @@ SolverFactory<Vector, VectorSpace>::Create(Teuchos::ParameterList& slist)
       if (!nka_list.isSublist("verbose object")) nka_list.set("verbose object", slist.sublist("verbose object"));
       Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
           Teuchos::rcp(new SolverNKA<Vector,VectorSpace>(nka_list));
-      return solver;
-    } else if (type == "nka amanzi") {
-      if (!slist.isSublist("nka amanzi parameters")) {
-        Errors::Message msg("SolverFactory: missing sublist \"nka amanzi parameters\"");
-        Exceptions::amanzi_throw(msg);
-      }
-      Teuchos::ParameterList nka_list = slist.sublist("nka amanzi parameters");
-      if (!nka_list.isSublist("verbose object")) nka_list.set("verbose object", slist.sublist("verbose object"));
-      Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
-          Teuchos::rcp(new SolverNKA_Amanzi<Vector,VectorSpace>(nka_list));
       return solver;
     } else if (type == "aa") {
       if (!slist.isSublist("aa parameters")) {

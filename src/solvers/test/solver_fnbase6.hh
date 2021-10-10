@@ -27,12 +27,15 @@ class NonlinearProblem6 : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vect
     return 0;
   }
 
-  double ErrorNorm(const Teuchos::RCP<const Epetra_Vector>& u,
-                   const Teuchos::RCP<const Epetra_Vector>& du) {
-    double norm_du, norm_u;
-    du->NormInf(&norm_du);
+  double ErrorNorm(const Amanzi::AmanziSolvers::Data<Epetra_Vector>& data,
+                   const Amanzi::AmanziSolvers::ConvergenceMonitor& monitor) {
+    auto u = data.u;
+    auto r = data.r;
+
+    double norm_r, norm_u;
+    r->NormInf(&norm_r);
     u->NormInf(&norm_u);
-    double error = norm_du / atol_;
+    double error = norm_r / atol_;
     std::cout << " : error = " << error << std::endl;
     return error;
   }

@@ -36,7 +36,10 @@ public:
     return Pu->ReciprocalMultiply(1., *Pu_, *u, 0.);
   }
 
-  double ErrorNorm(Teuchos::RCP<const Epetra_Vector> u, Teuchos::RCP<const Epetra_Vector> du) {
+  double ErrorNorm(const Teuchos::RCP<const Epetra_Vector>& u,
+                   const Teuchos::RCP<const Epetra_Vector>& du,
+                   const Teuchos::RCP<const Epetra_Vector>& res,
+                   const AmanziSolvers::ConvergenceMonitor& monitor) {
     double norm_du, norm_u;
     du->NormInf(&norm_du);
     u->NormInf(&norm_u);

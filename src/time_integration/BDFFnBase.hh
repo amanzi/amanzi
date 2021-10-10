@@ -24,15 +24,9 @@ class BDFFnBase {
   // applies preconditioner to u and returns the result in Pu
   virtual int ApplyPreconditioner(Teuchos::RCP<const Vector> u, Teuchos::RCP<Vector> Pu) = 0;
 
-  // computes a norm on u-du and returns the result
-  virtual double ErrorNorm(Teuchos::RCP<const Vector> u,
-                           Teuchos::RCP<const Vector> du) = 0;
-
   // computes a norm on (u,du,res) and returns it
-  virtual double ErrorNorm(Teuchos::RCP<const Vector> u,
-                           Teuchos::RCP<const Vector> du,
-                           Teuchos::RCP<const Vector> res, 
-                           const AmanziSolvers::ConvergenceMonitor& monitor) { AMANZI_ASSERT(false); return 0.0; } 
+  virtual double ErrorNorm(const AmanziSolvers::Data<Vector>& data,
+                           const AmanziSolvers::ConvergenceMonitor& monitor) = 0;
 
   // updates the preconditioner
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const Vector> up, double h) = 0;

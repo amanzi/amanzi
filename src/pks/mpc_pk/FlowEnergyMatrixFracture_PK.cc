@@ -628,7 +628,7 @@ double FlowEnergyMatrixFracture_PK::ErrorNorm(
     Teuchos::RCP<const TreeVector> res,
     const AmanziSolvers::ConvergenceMonitor& monitor)
 {
-  double error = PK_MPCStrong<PK_BDF>::ErrorNorm(u, du);
+  double error = PK_MPCStrong<PK_BDF>::ErrorNorm(u, du, res, monitor);
 
   // residual control for energy (note that we cannot do it at
   // the lower level due to coupling terms.

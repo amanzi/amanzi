@@ -12,12 +12,12 @@
   F(u) = 0.
 */
 
-
 #ifndef AMANZI_SOLVER_FN_BASE_
 #define AMANZI_SOLVER_FN_BASE_
 
 #include "Teuchos_RCP.hpp"
 
+#include "SolverDefs.hh"
 #include "FnBaseDefs.hh"
 
 namespace Amanzi {
@@ -34,16 +34,11 @@ class SolverFnBase {
 
   // preconditioner toolkit
   virtual int ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
-                                   const Teuchos::RCP<Vector>& Pr) = 0;
+                                  const Teuchos::RCP<Vector>& Pr) = 0;
   virtual void UpdatePreconditioner(const Teuchos::RCP<const Vector>& u) = 0;
 
   // error analysis
-  virtual double ErrorNorm(const Teuchos::RCP<const Vector>& u,
-                           const Teuchos::RCP<const Vector>& du) = 0;
-
-  virtual double ErrorNorm(const Teuchos::RCP<const Vector>& u,
-                           const Teuchos::RCP<const Vector>& du,
-                           const Teuchos::RCP<const Vector>& res, 
+  virtual double ErrorNorm(const Data<Vector>& data,
                            const AmanziSolvers::ConvergenceMonitor& monitor) = 0;
 
   // allow PK to modify a correction
