@@ -315,6 +315,19 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   InitializeField_(S_.ptr(), passwd_, riemann_flux_key_, 0.0);
   InitializeFieldFromField_(prev_ponded_depth_key_, ponded_depth_key_, false);
   
+  // ---- ----
+  Teuchos::RCP<TreeVector> tmp_h = Teuchos::rcp(new TreeVector());
+  Teuchos::RCP<TreeVector> tmp_v = Teuchos::rcp(new TreeVector());
+  
+  soln_->PushBack(tmp_v);
+  soln_->PushBack(tmp_h);
+  
+  soln_h_ = S->GetFieldData(ponded_depth_key_, passwd_);
+  soln_v_ = S->GetFieldData(velocity_key_, passwd_);
+  
+  soln_->SubVector(0)->SetData(soln_h_);
+  soln_->SubVector(1)->SetData(soln_v_);
+    
   // summary of initialization
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -585,6 +598,77 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   for (int c = 0; c < ncells_owned; c++) {
     ht_c[0][c] = h_c[0][c] + B_c[0][c];
   }
+  
+//  auto cvs1 = Teuchos::rcp(new CompositeVectorSpace());
+//  cvs1->SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 3);
+//
+//  Teuchos::RCP<TreeVectorSpace> tvs0 = Teuchos::rcp(new TreeVectorSpace());
+//  Teuchos::RCP<TreeVectorSpace> tvs1 = Teuchos::rcp(new TreeVectorSpace());
+//  tvs0->SetData(cvs1);
+//
+//  Teuchos::RCP<TreeVector> p1 = Teuchos::rcp(new TreeVector(*tvs1));
+
+//  // initialize time integrator
+  auto ti_method = Explicit_TI::forward_euler;
+//  Epetra_Vector& p1 = h_c(0);
+  Explicit_TI::RK<TreeVector> rk(*this, ti_method, *soln_);
+  
+  const Epetra_MultiVector& h_temp = *soln_->SubVector(0)->Data()->ViewComponent("cell");
+  const Epetra_MultiVector& v_temp = *soln_->SubVector(1)->Data()->ViewComponent("cell");
+//  for (int c = 0; c < ncells_owned; ++c) {
+//    std::cout<<"v_temp: "<<v_temp[0][c]<<", vel_c: "<<vel_c[0][c]<<" | v_temp: "<<v_temp[1][c]<<", vel_c: "<<vel_c[1][c]<<std::endl;
+//  }
+  
+  
+//  S->RequireField(discharge_key_, discharge_key_)->SetMesh(mesh_)->SetGhosted(true)
+//    ->SetComponent("cell", AmanziMesh::CELL, 2);
+  
+//  std::cout<<"A0[0][100]: "<<A0[0][100]<<", h[0][c]"<<h_c[0][100]<<std::endl;
+//  std::cout<<"A0[1][100]: "<<A0[1][100]<<", h[0][c]"<<q_c[0][100]<<std::endl;
+//  std::cout<<"A0[2][100]: "<<A0[2][100]<<", h[0][c]"<<q_c[1][100]<<std::endl;
+//  int temporal_disc_order = 2;
+//
+//  auto ti_method = Explicit_TI::forward_euler;
+//   if (temporal_disc_order == 2) {
+//     ti_method = Explicit_TI::heun_euler;
+//   } else if (temporal_disc_order == 3) {
+//     ti_method = Explicit_TI::tvd_3rd_order;
+//   } else if (temporal_disc_order == 4) {
+//     ti_method = Explicit_TI::runge_kutta_4th_order;
+//   }
+//
+//  const Epetra_Map& cmap = mesh_->cell_map(false);
+//  Epetra_MultiVector A0(cmap, 3);
+//  for (int c = 0; c < ncells_owned; ++c) {
+//    A0[0][c] = h_c[0][c];
+//    A0[1][c] = q_c[0][c];
+//    A0[2][c] = q_c[1][c];
+//  }
+  
+
+//  Teuchos::RCP<TreeVector> A = Teuchos::rcp(new TreeVector(*soln_));
+//  TreeVector A(soln_);
+//  Explicit_TI::RK<TreeVector> rk(*this, ti_method, *soln_);
+  
+//  const Epetra_Map& cmap = mesh_->cell_map(false);
+//  RCP<Epetra_Vector> A0 = rcp(new Epetra_Vector(cmap));
+  //  Epetra_MultiVector& A0 = *S_->GetFieldData(ponded_depth_key_, discharge_key_, discharge_key_)->ViewComponent("cell", true);
+//    const Epetra_Map& cmap = mesh_->cell_map(false);
+//    Epetra_MultiVector A0(cmap, 3);
+//    for (int c = 0; c < ncells_owned; ++c) {
+//      A0[0][c] = h_c[0][c];
+//      A0[1][c] = q_c[0][c];
+//      A0[2][c] = q_c[1][c];
+//    }
+//
+//  // advance each component of A = [h; hu; hv] separately
+//  for (int i = 0; i < 3; ++i) {
+//
+//    Epetra_Vector*& A0_i = A0(i);
+//    Epetra_Vector*& A1_i(A0_i);
+//    Explicit_TI::RK<Epetra_Vector> rk(*this, ti_method, *A0_i);
+//    rk.TimeStep(t_old, dt, *A0_i, *A1_i);
+//  }
 
   return failed;
 }

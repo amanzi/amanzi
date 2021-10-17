@@ -25,6 +25,7 @@
 #include "CompositeVector.hh"
 #include "DenseMatrix.hh"
 #include "DenseVector.hh"
+#include "Explicit_TI_RK.hh"
 #include "Key.hh"
 #include "LimiterCell.hh"
 #include "NumericalFlux.hh"
@@ -46,7 +47,7 @@ namespace Amanzi {
 namespace ShallowWater {
     
 class ShallowWater_PK : public PK_Physical,
-                        public PK_Explicit<Epetra_Vector> {
+                        public PK_Explicit<TreeVector> {
  public:
   ShallowWater_PK(Teuchos::ParameterList& pk_tree,
                   const Teuchos::RCP<Teuchos::ParameterList>& glist,
@@ -69,8 +70,8 @@ class ShallowWater_PK : public PK_Physical,
   // Advance PK by step size dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override;
 
-  virtual void FunctionalTimeDerivative(double t, const Epetra_Vector& component,
-                                        Epetra_Vector& f_component) override;
+  virtual void FunctionalTimeDerivative(double t, const TreeVector& component,
+                                        TreeVector& f_component) override;
 
   // Commit any secondary (dependent) variables.
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
@@ -104,6 +105,7 @@ class ShallowWater_PK : public PK_Physical,
   Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> sw_list_;
   Teuchos::RCP<TreeVector> soln_;
+  Teuchos::RCP<CompositeVector> soln_h_, soln_v_;
   Teuchos::RCP<State> S_;
 
   Key domain_;

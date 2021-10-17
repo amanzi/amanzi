@@ -14,8 +14,11 @@
 namespace Amanzi {
 namespace ShallowWater {
     
-void ShallowWater_PK::FunctionalTimeDerivative(double t, const Epetra_Vector& component,
-                                               Epetra_Vector& f_component) {};
+void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& component,
+                                               TreeVector& f_component)
+{
+  
+}
 
 } // namespace ShallowWater
 } // namespace Amanzi
