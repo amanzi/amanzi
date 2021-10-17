@@ -22,7 +22,7 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   bool failed = false;
   
   const Epetra_MultiVector& h_temp = *A.SubVector(0)->Data()->ViewComponent("cell");
-  const Epetra_MultiVector& v_temp = *A.SubVector(1)->Data()->ViewComponent("cell");
+  const Epetra_MultiVector& q_temp = *A.SubVector(1)->Data()->ViewComponent("cell");
   
   Epetra_MultiVector& h_new = *f.SubVector(0)->Data()->ViewComponent("cell");
   Epetra_MultiVector& q_new = *f.SubVector(1)->Data()->ViewComponent("cell");
@@ -48,6 +48,15 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
   S_->GetFieldEvaluator(discharge_key_)->HasFieldChanged(S_.ptr(), passwd_);
   Epetra_MultiVector& q_c = *S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
+  
+  for (int c = 0; c < ncells_owned; c++) {
+    h_c[0][c] = h_temp[0][c];
+    vel_c[0][c] = q_temp[0][c]/(h_c[0][c] + 1.e-14);
+    vel_c[1][c] = q_temp[1][c]/(h_c[0][c] + 1.e-14);
+    q_c[0][c] = q_temp[0][c];
+    q_c[1][c] = q_temp[1][c];
+    ht_c[0][c] = h_c[0][c] + B_c[0][c];
+  }
 
   // create copies of primary fields
   *S_->GetFieldData(prev_ponded_depth_key_, passwd_)->ViewComponent("cell", true) = h_c;
@@ -235,12 +244,7 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     qx = q_c_tmp[0][c] +  S[1];
     qy = q_c_tmp[1][c] +  S[2];
 
-    // transform to non-conservative variables
     h_new[0][c] = h;
-
-    factor = inverse_with_tolerance_1(h);
-//    q_new[0][c] = factor * qx;
-//    q_new[1][c] = factor * qy;
     q_new[0][c] = qx;
     q_new[1][c] = qy;
   }

@@ -400,27 +400,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // create copies of primary fields
   *S_->GetFieldData(prev_ponded_depth_key_, passwd_)->ViewComponent("cell", true) = h_c;
-  Epetra_MultiVector h_c_tmp(h_c);
-  Epetra_MultiVector q_c_tmp(q_c);
-
-  h_c_tmp.PutScalar(0.0);
-  q_c_tmp.PutScalar(0.0);
-
-  // limited reconstructions
-  auto tmp1 = S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
-  total_depth_grad_->ComputeGradient(tmp1);
-  limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_->gradient());
-  limiter_->gradient()->ScatterMasterToGhosted("cell");
-
-  auto tmp5 = S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
-  discharge_x_grad_->ComputeGradient(tmp5, 0);
-  limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_->gradient());
-  limiter_->gradient()->ScatterMasterToGhosted("cell");
-
-  auto tmp6 = S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
-  discharge_y_grad_->ComputeGradient(tmp6, 1);
-  limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_->gradient());
-  limiter_->gradient()->ScatterMasterToGhosted("cell");
 
   // update boundary conditions
   if (bcs_.size() > 0)
@@ -446,21 +425,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // Shallow water equations have the form
   // U_t + F_x(U) + G_y(U) = S(U)
-  
-  Teuchos::RCP<TreeVector> tmp_h = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<TreeVector> tmp_v = Teuchos::rcp(new TreeVector());
-
-  soln_->PushBack(tmp_h);
-  soln_->PushBack(tmp_v);
-
-  soln_h_ = S_->GetFieldData(ponded_depth_key_, passwd_);
-  soln_v_ = S_->GetFieldData(velocity_key_, passwd_);
-  
-  
-
-  soln_->SubVector(0)->SetData(soln_h_);
-  soln_->SubVector(1)->SetData(soln_v_);
-  
+    
+  // change to flux
   Epetra_MultiVector& v_temp = *soln_->SubVector(1)->Data()->ViewComponent("cell");
   for (int c = 0; c < ncells_owned; ++c) {
     v_temp[0][c] *= h_c[0][c];
@@ -468,19 +434,20 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
   
   
-  //  // initialize time integrator
-    auto ti_method = Explicit_TI::forward_euler;
-  //  Epetra_Vector& p1 = h_c(0);
-    Teuchos::RCP<TreeVector>& soln_new(soln_);
-    Explicit_TI::RK<TreeVector> rk(*this, ti_method, *soln_);
-    {
-      rk.TimeStep(t_old, dt, *soln_, *soln_new);
-    }
-    
-    
-  Epetra_MultiVector& h_temp = *soln_new->SubVector(0)->Data()->ViewComponent("cell");
-  Epetra_MultiVector& q_temp = *soln_new->SubVector(1)->Data()->ViewComponent("cell");
+  // initialize time integrator
+  auto ti_method = Explicit_TI::forward_euler;
+//  auto ti_method = Explicit_TI::midpoint;
+//  auto ti_method = Explicit_TI::tvd_3rd_order;
+  
+  Teuchos::RCP<TreeVector>& soln_new(soln_);
+  Explicit_TI::RK<TreeVector> rk(*this, ti_method, *soln_);
+  rk.TimeStep(t_old, dt, *soln_, *soln_new);
 
+  soln_ = soln_new;
+  Epetra_MultiVector& h_temp = *soln_->SubVector(0)->Data()->ViewComponent("cell");
+  Epetra_MultiVector& q_temp = *soln_->SubVector(1)->Data()->ViewComponent("cell");
+
+  // update solution
   for (int c = 0; c < ncells_owned; c++) {
     h_c[0][c] = h_temp[0][c];
     vel_c[0][c] = q_temp[0][c]/(h_c[0][c] + 1.e-14);
@@ -611,6 +578,9 @@ double ShallowWater_PK::get_dt()
     *vo_->os() << "switching from reduced to regular cfl=" << cfl_ << std::endl;
   }
 
+//  double vol = std::sqrt(mesh_->cell_volume(0));
+//  return vol/1000;
+  
   if (iters_ < max_iters_)
     return 0.1 * cfl_ * dt_min;
   else
