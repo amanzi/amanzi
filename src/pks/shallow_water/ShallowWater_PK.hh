@@ -70,8 +70,8 @@ class ShallowWater_PK : public PK_Physical,
   // Advance PK by step size dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override;
 
-  virtual void FunctionalTimeDerivative(double t, const TreeVector& component,
-                                        TreeVector& f_component) override;
+  virtual void FunctionalTimeDerivative(double t, const TreeVector& A,
+                                        TreeVector& f) override;
 
   // Commit any secondary (dependent) variables.
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
@@ -105,7 +105,7 @@ class ShallowWater_PK : public PK_Physical,
   Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> sw_list_;
   Teuchos::RCP<TreeVector> soln_;
-  Teuchos::RCP<CompositeVector> soln_h_, soln_v_;
+  Teuchos::RCP<CompositeVector> soln_h_, soln_v_, soln_q_;
   Teuchos::RCP<State> S_;
 
   Key domain_;

@@ -318,13 +318,13 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   // ---- ----
   Teuchos::RCP<TreeVector> tmp_h = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<TreeVector> tmp_v = Teuchos::rcp(new TreeVector());
-  
-  soln_->PushBack(tmp_v);
+
   soln_->PushBack(tmp_h);
-  
+  soln_->PushBack(tmp_v);
+
   soln_h_ = S->GetFieldData(ponded_depth_key_, passwd_);
   soln_v_ = S->GetFieldData(velocity_key_, passwd_);
-  
+
   soln_->SubVector(0)->SetData(soln_h_);
   soln_->SubVector(1)->SetData(soln_v_);
     
@@ -446,230 +446,50 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // Shallow water equations have the form
   // U_t + F_x(U) + G_y(U) = S(U)
+  
+  Teuchos::RCP<TreeVector> tmp_h = Teuchos::rcp(new TreeVector());
+  Teuchos::RCP<TreeVector> tmp_v = Teuchos::rcp(new TreeVector());
 
-  int dir, c1, c2;
-  double h, u, v, qx, qy, factor;
-  AmanziMesh::Entity_ID_List cells;
+  soln_->PushBack(tmp_h);
+  soln_->PushBack(tmp_v);
 
-  std::vector<double> FNum_rot;  // fluxes
-  std::vector<double> S;         // source term
-  std::vector<double> UL(3), UR(3), U;  // local state vectors
+  soln_h_ = S_->GetFieldData(ponded_depth_key_, passwd_);
+  soln_v_ = S_->GetFieldData(velocity_key_, passwd_);
+  
+  
 
-  // Simplest flux form
-  // U_i^{n+1} = U_i^n - dt/vol * (F_{i+1/2}^n - F_{i-1/2}^n) + dt * S_i
-
-  for (int f = 0; f < nfaces_wghost; ++f) {
-    double farea = mesh_->face_area(f);
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    c1 = cells[0];
-    c2 = (cells.size() == 2) ? cells[1] : -1;
-    if (c1 > ncells_owned && c2 == -1) continue;
-    if (c2 > ncells_owned) std::swap(c1, c2);
-
-    AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
-    normal /= farea;
-
-    double ht_rec = total_depth_grad_->getValue(c1, xf);
-    double B_rec = BathymetryEdgeValue(f, B_n);
-
-    if (ht_rec < B_rec) {
-      ht_rec = ht_c[0][c1];
-      B_rec = B_c[0][c1];
-    }
-    double h_rec = ht_rec - B_rec;
-    failed = ErrorDiagnostics_(c1, h_rec, B_rec, ht_rec);
-    if (failed) return failed;
-
-    double qx_rec = discharge_x_grad_->getValue(c1, xf);
-    double qy_rec = discharge_y_grad_->getValue(c1, xf);
-
-    factor = inverse_with_tolerance(h_rec);
-    double vx_rec = factor * qx_rec;
-    double vy_rec = factor * qy_rec;
-
-    // rotating velocity to the face-based coordinate system
-    double vn, vt;
-    vn =  vx_rec * normal[0] + vy_rec * normal[1];
-    vt = -vx_rec * normal[1] + vy_rec * normal[0];
-
-    UL[0] = h_rec;
-    UL[1] = h_rec * vn;
-    UL[2] = h_rec * vt;
-
-    if (c2 == -1) {
-      if (bcs_.size() > 0 && bcs_[0]->bc_find(f)) {
-        for (int i = 0; i < 3; ++i) {
-          UR[i] = bcs_[0]->bc_value(f)[i];
-        }
-        vn =  UR[1] * normal[0] + UR[2] * normal[1];
-        vt = -UR[1] * normal[1] + UR[2] * normal[0];
-        UR[1] = UR[0] * vn;
-        UR[2] = UR[0] * vt;
-      }
-      else {
-        UR = UL;
-      }
-        
-    } else {
-      ht_rec = total_depth_grad_->getValue(c2, xf);
-          
-      if (ht_rec < B_rec) {
-        ht_rec = ht_c[0][c2];
-        B_rec = B_c[0][c2];
-      }
-      h_rec = ht_rec - B_rec;
-      failed = ErrorDiagnostics_(c2, h_rec, B_rec, ht_rec);
-      if (failed) return failed;
-
-      qx_rec = discharge_x_grad_->getValue(c2, xf);
-      qy_rec = discharge_y_grad_->getValue(c2, xf);
-
-      factor = inverse_with_tolerance(h_rec);
-      vx_rec = factor * qx_rec;
-      vy_rec = factor * qy_rec;
-
-      vn =  vx_rec * normal[0] + vy_rec * normal[1];
-      vt = -vx_rec * normal[1] + vy_rec * normal[0];
-
-      UR[0] = h_rec;
-      UR[1] = h_rec * vn;
-      UR[2] = h_rec * vt;
-    }
-
-    FNum_rot = numerical_flux_->Compute(UL, UR);
-
-    h  = FNum_rot[0];
-    qx = FNum_rot[1] * normal[0] - FNum_rot[2] * normal[1];
-    qy = FNum_rot[1] * normal[1] + FNum_rot[2] * normal[0];
-
-    // save riemann mass flux
-    riemann_f[0][f] = FNum_rot[0] * farea * dir;
-        
-    // add fluxes to temporary fields
-    double vol = mesh_->cell_volume(c1);
-    factor = farea * dt / vol;
-    h_c_tmp[0][c1] -= h * factor;
-    q_c_tmp[0][c1] -= qx * factor;
-    q_c_tmp[1][c1] -= qy * factor;
-
-    if (c2 != -1) {
-      vol = mesh_->cell_volume(c2);
-      factor = farea * dt / vol;
-      h_c_tmp[0][c2] += h * factor;
-      q_c_tmp[0][c2] += qx * factor;
-      q_c_tmp[1][c2] += qy * factor;
-    }
-  }
-
-  // sources (bathymetry, flux exchange, etc)
-  // the code should not fail after that
-  U.resize(3);
-
+  soln_->SubVector(0)->SetData(soln_h_);
+  soln_->SubVector(1)->SetData(soln_v_);
+  
+  Epetra_MultiVector& v_temp = *soln_->SubVector(1)->Data()->ViewComponent("cell");
   for (int c = 0; c < ncells_owned; ++c) {
-    h  = h_c[0][c];
-    qx = q_c[0][c];
-    qy = q_c[1][c];
-
-    factor = inverse_with_tolerance(h);
-    u = factor * qx;
-    v = factor * qy;
-
-    U[0] = h;
-    U[1] = h * u;
-    U[2] = h * v;
-
-    S = NumericalSource(U, c);
-    
-    h  = U[0] + h_c_tmp[0][c] + dt * (S[0] + ext_S_cell[c]);
-    qx = U[1] + q_c_tmp[0][c] + dt * S[1];
-    qy = U[2] + q_c_tmp[1][c] + dt * S[2];
-    
-    // transform to non-conservative variables
-    h_c[0][c] = h;
-
-    factor = inverse_with_tolerance(h);
-    vel_c[0][c] = factor * qx;
-    vel_c[1][c] = factor * qy;
+    v_temp[0][c] *= h_c[0][c];
+    v_temp[1][c] *= h_c[0][c];
   }
+  
+  
+  //  // initialize time integrator
+    auto ti_method = Explicit_TI::forward_euler;
+  //  Epetra_Vector& p1 = h_c(0);
+    Teuchos::RCP<TreeVector>& soln_new(soln_);
+    Explicit_TI::RK<TreeVector> rk(*this, ti_method, *soln_);
+    {
+      rk.TimeStep(t_old, dt, *soln_, *soln_new);
+    }
+    
+    
+  Epetra_MultiVector& h_temp = *soln_new->SubVector(0)->Data()->ViewComponent("cell");
+  Epetra_MultiVector& q_temp = *soln_new->SubVector(1)->Data()->ViewComponent("cell");
 
-  // update other fields
   for (int c = 0; c < ncells_owned; c++) {
+    h_c[0][c] = h_temp[0][c];
+    vel_c[0][c] = q_temp[0][c]/(h_c[0][c] + 1.e-14);
+    vel_c[1][c] = q_temp[1][c]/(h_c[0][c] + 1.e-14);
+    q_c[0][c] = q_temp[0][c];
+    q_c[1][c] = q_temp[1][c];
     ht_c[0][c] = h_c[0][c] + B_c[0][c];
   }
   
-//  auto cvs1 = Teuchos::rcp(new CompositeVectorSpace());
-//  cvs1->SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 3);
-//
-//  Teuchos::RCP<TreeVectorSpace> tvs0 = Teuchos::rcp(new TreeVectorSpace());
-//  Teuchos::RCP<TreeVectorSpace> tvs1 = Teuchos::rcp(new TreeVectorSpace());
-//  tvs0->SetData(cvs1);
-//
-//  Teuchos::RCP<TreeVector> p1 = Teuchos::rcp(new TreeVector(*tvs1));
-
-//  // initialize time integrator
-  auto ti_method = Explicit_TI::forward_euler;
-//  Epetra_Vector& p1 = h_c(0);
-  Explicit_TI::RK<TreeVector> rk(*this, ti_method, *soln_);
-  
-  const Epetra_MultiVector& h_temp = *soln_->SubVector(0)->Data()->ViewComponent("cell");
-  const Epetra_MultiVector& v_temp = *soln_->SubVector(1)->Data()->ViewComponent("cell");
-//  for (int c = 0; c < ncells_owned; ++c) {
-//    std::cout<<"v_temp: "<<v_temp[0][c]<<", vel_c: "<<vel_c[0][c]<<" | v_temp: "<<v_temp[1][c]<<", vel_c: "<<vel_c[1][c]<<std::endl;
-//  }
-  
-  
-//  S->RequireField(discharge_key_, discharge_key_)->SetMesh(mesh_)->SetGhosted(true)
-//    ->SetComponent("cell", AmanziMesh::CELL, 2);
-  
-//  std::cout<<"A0[0][100]: "<<A0[0][100]<<", h[0][c]"<<h_c[0][100]<<std::endl;
-//  std::cout<<"A0[1][100]: "<<A0[1][100]<<", h[0][c]"<<q_c[0][100]<<std::endl;
-//  std::cout<<"A0[2][100]: "<<A0[2][100]<<", h[0][c]"<<q_c[1][100]<<std::endl;
-//  int temporal_disc_order = 2;
-//
-//  auto ti_method = Explicit_TI::forward_euler;
-//   if (temporal_disc_order == 2) {
-//     ti_method = Explicit_TI::heun_euler;
-//   } else if (temporal_disc_order == 3) {
-//     ti_method = Explicit_TI::tvd_3rd_order;
-//   } else if (temporal_disc_order == 4) {
-//     ti_method = Explicit_TI::runge_kutta_4th_order;
-//   }
-//
-//  const Epetra_Map& cmap = mesh_->cell_map(false);
-//  Epetra_MultiVector A0(cmap, 3);
-//  for (int c = 0; c < ncells_owned; ++c) {
-//    A0[0][c] = h_c[0][c];
-//    A0[1][c] = q_c[0][c];
-//    A0[2][c] = q_c[1][c];
-//  }
-  
-
-//  Teuchos::RCP<TreeVector> A = Teuchos::rcp(new TreeVector(*soln_));
-//  TreeVector A(soln_);
-//  Explicit_TI::RK<TreeVector> rk(*this, ti_method, *soln_);
-  
-//  const Epetra_Map& cmap = mesh_->cell_map(false);
-//  RCP<Epetra_Vector> A0 = rcp(new Epetra_Vector(cmap));
-  //  Epetra_MultiVector& A0 = *S_->GetFieldData(ponded_depth_key_, discharge_key_, discharge_key_)->ViewComponent("cell", true);
-//    const Epetra_Map& cmap = mesh_->cell_map(false);
-//    Epetra_MultiVector A0(cmap, 3);
-//    for (int c = 0; c < ncells_owned; ++c) {
-//      A0[0][c] = h_c[0][c];
-//      A0[1][c] = q_c[0][c];
-//      A0[2][c] = q_c[1][c];
-//    }
-//
-//  // advance each component of A = [h; hu; hv] separately
-//  for (int i = 0; i < 3; ++i) {
-//
-//    Epetra_Vector*& A0_i = A0(i);
-//    Epetra_Vector*& A1_i(A0_i);
-//    Explicit_TI::RK<Epetra_Vector> rk(*this, ti_method, *A0_i);
-//    rk.TimeStep(t_old, dt, *A0_i, *A1_i);
-//  }
-
   return failed;
 }
 
