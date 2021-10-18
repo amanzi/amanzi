@@ -65,8 +65,8 @@ enum class Entity_kind
   EDGE = 2,
   FACE = 3,
   CELL = 4,
-  BOUNDARY_FACE = 5,
-  BOUNDARY_NODE = 6
+  BOUNDARY_NODE = 11,
+  BOUNDARY_FACE = 13
 };
 
 // Check if Entity_kind is valid

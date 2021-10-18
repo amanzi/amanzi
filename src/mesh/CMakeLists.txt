@@ -32,9 +32,9 @@ set(mesh_inc_files
   CellTopology.hh
   GenerationSpec.hh
   MeshFramework.hh
-  MeshAlgorithms_decl.hh
-  MeshAlgorithms_impl.hh
-  MeshAlgorithms.hh
+  Mesh_Helpers_decl.hh
+  Mesh_Helpers_impl.hh
+  Mesh_Helpers.hh
   MeshAudit_decl.hh
   MeshAudit_impl.hh
   MeshFrameworkAudit.hh
@@ -43,20 +43,21 @@ set(mesh_inc_files
   MeshMaps_impl.hh
   MeshMaps.hh
   MeshSets.hh
-  MeshSets_Helpers.hh
   MeshColumns.hh
   MeshCache.hh
   Mesh.hh
-  #DomainSet.hh
+  Mesh_Algorithms.hh
+  DomainSet.hh
 )
 
 set(mesh_src_files
   GenerationSpec.cc
   MeshFramework.cc
-  MeshSets_Helpers.cc
+  MeshSets.cc
   MeshColumns.cc
   MeshCache.cc
-  #DomainSet.cc
+  Mesh_Algorithms.cc
+  DomainSet.cc
 )
 
 #
@@ -186,12 +187,12 @@ if (BUILD_TESTS)
     #   extraction constructor on FACEs with the flatten parameter,
     #   currently only supported by MSTK.  This extracts a surface
     #   mesh and checks MeshAudit, geometry, sets, and maps.
-    # add_amanzi_test(mesh_surface_extraction mesh_surface_extraction
-    #                 KIND unit
-    #                 SOURCE test/Main.cc test/mesh_surface_extraction.cc
-    #                 LINK_LIBS ${mesh_test_link_libs})
-    # add_amanzi_test(mesh_surface_extraction_np2 mesh_surface_extraction NPROCS 2 KIND unit)
-    # add_amanzi_test(mesh_surface_extraction_np4 mesh_surface_extraction NPROCS 4 KIND unit)
+    add_amanzi_test(mesh_surface_extraction mesh_surface_extraction
+                    KIND unit
+                    SOURCE test/Main.cc test/mesh_surface_extraction.cc
+                    LINK_LIBS ${mesh_test_link_libs})
+    add_amanzi_test(mesh_surface_extraction_np2 mesh_surface_extraction NPROCS 2 KIND unit)
+    add_amanzi_test(mesh_surface_extraction_np4 mesh_surface_extraction NPROCS 4 KIND unit)
     
     # Test: volume extracted mesh
     #   Tests a volumetric mesh generated using the mesh framework

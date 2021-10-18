@@ -14,8 +14,7 @@
 #include "MeshFramework.hh"
 #include "MeshMaps_impl.hh"
 #include "MeshSets.hh"
-#include "MeshSets_Helpers.hh"
-#include "MeshAlgorithms.hh"
+#include "Mesh_Helpers.hh"
 #include "RegionLabeledSet.hh"
 
 namespace Amanzi {
@@ -41,6 +40,7 @@ MeshCache::MeshCache() :
   node_faces_cached(false),
   node_edges_cached(false),
   node_coordinates_cached(false),
+  parent_entities_cached(false),
   is_ordered_(false),
   has_edges_(false)
 {}
@@ -269,9 +269,10 @@ void MeshCache::cacheFaceGeometry()
   if (face_geometry_cached) return;
   double area;
   face_centroids.resize(nfaces_all);
+  face_areas.resize(nfaces_all);
   face_normals.resize(nfaces_all);
   for (Entity_ID i=0; i!=nfaces_all; ++i) {
-    std::tie(area, face_centroids[i], face_normals[i]) = framework_mesh_->computeFaceGeometry(i);
+    std::tie(face_areas[i], face_centroids[i], face_normals[i]) = framework_mesh_->computeFaceGeometry(i);
   }
 
   // this could get its own call...
@@ -493,6 +494,33 @@ void MeshCache::throwAccessError_(const std::string& func_name) const
   msg << "MeshCache::" << func_name << " cannot compute this quantity -- not cached and framework does not exist.";
   Exceptions::amanzi_throw(msg);
 }
+
+
+Entity_ID
+MeshCache::getEntityParent(const Entity_kind kind, const Entity_ID entid) const
+{
+  if (parent_entities_cached) {
+    switch(kind) {
+      case Entity_kind::CELL:
+        return parent_cells[entid];
+        break;
+      case Entity_kind::FACE:
+        return parent_faces[entid];
+        break;
+      case Entity_kind::EDGE:
+        return parent_edges[entid];
+        break;
+      case Entity_kind::NODE:
+        return parent_nodes[entid];
+      default: {}
+    }
+  } else if (framework_mesh_.get()) {
+    return framework_mesh_->getEntityParent(kind, entid);
+  }
+  return -1;
+}
+
+
 
 
 namespace MeshAlgorithms {

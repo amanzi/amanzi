@@ -487,8 +487,15 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh,
                r_name == "Top Face Plane") {
       if (!extracted) continue; // only valid for extracted
       if (!labeled && r_name != "Top Face Plane") continue; // only valid for exo meshes
+      if (r_name == "Top Face Plane") continue; // This only used to work due to a bug!
       if (!mesh->isValidSetType(r->get_type(), AmanziMesh::Entity_kind::CELL)) continue;
-      if (r_name == "Cell Set 3" && f == Framework::MOAB) continue; // MOAB cannot handle cell sets, only mat IDs
+      if (r_name == "Cell Set 3" && f == Framework::MOAB) continue; // MOAB cannot handle cell sets, only material IDs
+
+      // inferring surface_cell-to-subsurface_cell is not implemented, though
+      // it seems like it ought to be able to be
+      if (r_name == "Cell Set 3") continue;
+      if (r_name == "Top ColFunc") continue;
+      if (r_name == "Top LS") continue;
 
       // this is all cells
       int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -612,15 +619,15 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh,
       ents = mesh->getSetEntities(r_name, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
       for (const auto& e : ents) {
         auto fc = mesh->getFaceCentroid(e);
-        CHECK_CLOSE(0.5, fc[0], 1.e-10);
-        CHECK_CLOSE(0., fc[1], 1.e-10);
+        CHECK_CLOSE(0.5, fc[1], 1.e-10);
+        CHECK_CLOSE(0., fc[0], 1.e-10);
       }
 
     } else if (r_name == "Side Plane - Central Face Box" ||
-               r_name == "Face 106 - Central Face Box") {
+               r_name == "Face 103 - Central Face Box") {
       if (!mesh->isValidSetType(r->get_type(), AmanziMesh::Entity_kind::FACE)) continue;
 
-      if (labeled) {
+      if (labeled || r_name == "Side Plane - Central Face Box") {
         // all but the above box
         int n_ents = mesh->getSetSize(r_name, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
         CHECK_CLOSE_SUMALL(3-1, n_ents, *mesh->getComm());
@@ -630,9 +637,9 @@ testQuadMeshSets3x3(const Teuchos::RCP<Mesh_type>& mesh,
         for (const auto& e : ents) {
           auto fc = mesh->getFaceCentroid(e);
           std::cout << r_name << " centroid = " << fc << std::endl;
-          CHECK_CLOSE(0, fc[1], 1.e-10);
-          if (fc[0] > 0.5) CHECK_CLOSE(2.5/3, fc[0], 1.e-10);
-          else CHECK_CLOSE(0.5/3, fc[0], 1.e-1);
+          CHECK_CLOSE(0, fc[0], 1.e-10);
+          if (fc[1] > 0.5) CHECK_CLOSE(2.5/3, fc[1], 1.e-10);
+          else CHECK_CLOSE(0.5/3, fc[1], 1.e-1);
         }
       }
 

@@ -82,9 +82,9 @@ TEST(ELASTICITY_STIFFNESS_2D) {
 
     // verify exact integration property
     AmanziMesh::Entity_ID_List nodes;
-    mesh->cell_get_nodes(cell, &nodes);
+    mesh->getCellNodes(cell, nodes);
     
-    int d = mesh->space_dimension();
+    int d = mesh->getSpaceDimension();
     Point p(d);
 
     double xx[nrows], yy[nrows];
@@ -98,7 +98,7 @@ TEST(ELASTICITY_STIFFNESS_2D) {
       yy[2 * i + 1] = p[1];
     }
 
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
+    double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell); 
     for (int i = 0; i < nrows; i++) {
       for (int j = 0; j < nrows; j++) {
         vxx += A(i, j) * xx[i] * xx[j];
@@ -146,9 +146,9 @@ TEST(ELASTICITY_STIFFNESS_3D) {
 
   // verify exact integration property
   AmanziMesh::Entity_ID_List nodes;
-  mesh->cell_get_nodes(cell, &nodes);
+  mesh->getCellNodes(cell, nodes);
     
-  int d = mesh->space_dimension();
+  int d = mesh->getSpaceDimension();
   Point p(d);
 
   double xx[nrows], yy[nrows];
@@ -164,7 +164,7 @@ TEST(ELASTICITY_STIFFNESS_3D) {
     yy[3 * i + 2] = 0.0;
   }
 
-  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
+  double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell); 
   for (int i = 0; i < nrows; i++) {
     for (int j = 0; j < nrows; j++) {
       vxx += A(i, j) * xx[i] * xx[j];

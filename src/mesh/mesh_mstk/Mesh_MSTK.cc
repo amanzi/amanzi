@@ -2989,6 +2989,7 @@ void Mesh_MSTK::extract_mstk_mesh_(List_ptr src_entities,
     case MFACE: {  // Extracting a surface from a solid mesh or subset of
       //           // a surface mesh
       idx = 0;
+
       MFace_ptr mf = nullptr;
       while ((mf = (MFace_ptr) List_Next_Entry(src_entities,&idx))) {
         List_ptr fedges = MF_Edges(mf,1,0);
@@ -3007,9 +3008,9 @@ void Mesh_MSTK::extract_mstk_mesh_(List_ptr src_entities,
               MVertex_ptr mv = ME_Vertex(me,k);
               MVertex_ptr mv_new = nullptr;
               MEnt_Get_AttVal(mv,copyatt,&ival,&rval,&pval);
-              if (pval)
+              if (pval) {
                 mv_new = pval;
-              else {
+              } else {
                 MV_Coords(mv,xyz);
                 if (flatten) xyz[2] = 0.0;
                 mv_new = MV_New(mesh_);
@@ -3021,11 +3022,11 @@ void Mesh_MSTK::extract_mstk_mesh_(List_ptr src_entities,
               }
 
               ME_Set_Vertex(fedges_new[j],k,mv_new);
-              ME_Set_GEntDim(fedges_new[j],ME_GEntDim(me));
-              ME_Set_GEntID(fedges_new[j],ME_GEntID(me));
-              MEnt_Set_AttVal(me,copyatt,ival,rval,fedges_new[j]);
-              MEnt_Set_AttVal(fedges_new[j],eparentatt_,0,0.0,me);
             }
+            ME_Set_GEntDim(fedges_new[j],ME_GEntDim(me));
+            ME_Set_GEntID(fedges_new[j],ME_GEntID(me));
+            MEnt_Set_AttVal(me,copyatt,ival,rval,fedges_new[j]);
+            MEnt_Set_AttVal(fedges_new[j],eparentatt_,0,0.0,me);
           }
           fedirs[j] = MF_EdgeDir_i(mf,j);
         }
@@ -3119,30 +3120,40 @@ void Mesh_MSTK::extract_mstk_mesh_(List_ptr src_entities,
     MAttrib_ptr rparentgid_att = MAttrib_New(mesh_,"rparent_gid",INT,MREGION);
 
     // Attach parent global ID info to entities used by other processors
+    int size = getComm()->NumProc();
+    int rank = getComm()->MyPID();
+
     idx = 0;
     MVertex_ptr mv = nullptr;
-    while ((mv = (MVertex_ptr) MESH_Next_Vertex(mesh_,&idx)))
-      if (MV_PType(mv) == POVERLAP) {
+
+    while ((mv = (MVertex_ptr) MESH_Next_Vertex(mesh_,&idx))) {
+      auto ptype = MV_PType(mv);
+      if (ptype == POVERLAP) {
         MEnt_Get_AttVal(mv,vparentatt_,&ival,&rval,&pval);
-        MEnt_Set_AttVal(mv,vparentgid_att,MV_GlobalID((MVertex_ptr)pval),0.0,
-                        NULL);
+        MEnt_Set_AttVal(mv,vparentgid_att,MV_GlobalID((MVertex_ptr)pval),0.0,NULL);
       }
-    idx = 0;
+    }
+
     MEdge_ptr me = nullptr;
-    while ((me = (MEdge_ptr) MESH_Next_Edge(mesh_,&idx)))
-      if (ME_PType(me) == POVERLAP) {
-        MEnt_Get_AttVal(me,eparentatt_,&ival,&rval,&pval);
-        MEnt_Set_AttVal(me,eparentgid_att,ME_GlobalID((MEdge_ptr)pval),0.0,
-                        NULL);
-      }
+    if (entity_dim != MREGION) { // edge parents not set on 3D extraction -- maybe they should be --etc
+      idx = 0;
+      while ((me = (MEdge_ptr) MESH_Next_Edge(mesh_,&idx)))
+        if (ME_PType(me) == POVERLAP) {
+          MEnt_Get_AttVal(me,eparentatt_,&ival,&rval,&pval);
+          MEnt_Set_AttVal(me,eparentgid_att,ME_GlobalID((MEdge_ptr)pval),0.0,NULL);
+        }
+    }
+
     idx = 0;
     MFace_ptr mf = nullptr;
-    while ((mf = (MFace_ptr) MESH_Next_Face(mesh_,&idx)))
-      if (MF_PType(mf) == POVERLAP) {
+    while ((mf = (MFace_ptr) MESH_Next_Face(mesh_,&idx))) {
+      auto ptype = MF_PType(mf);
+      if (ptype == POVERLAP) {
         MEnt_Get_AttVal(mf,fparentatt_,&ival,&rval,&pval);
-        MEnt_Set_AttVal(mf,fparentgid_att,MF_GlobalID((MFace_ptr)pval),0.0,
-                        NULL);
+        MEnt_Set_AttVal(mf,fparentgid_att,MF_GlobalID((MFace_ptr)pval),0.0,NULL);
       }
+    }
+
     idx = 0;
     MRegion_ptr mr = nullptr;
     while ((mr = (MRegion_ptr) MESH_Next_Region(mesh_,&idx)))

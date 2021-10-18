@@ -13,7 +13,7 @@
 #pragma once
 
 #include "MeshDefs.hh"
-#include "MeshAlgorithms.hh"
+#include "Mesh_Helpers.hh"
 #include "MeshFramework.hh"
 #include "MeshCache_decl.hh"
 
@@ -149,9 +149,8 @@ template<AccessPattern AP>
 double
 MeshCache::getFaceArea(const Entity_ID f) const
 {
-  if (face_geometry_cached) return AmanziGeometry::norm(face_normals[f][0]);
-  auto area_cent_norms = MeshAlgorithms::computeFaceGeometry(*this, f);
-  return std::get<0>(area_cent_norms);
+  if (face_geometry_cached) return face_areas[f];
+  return AmanziGeometry::norm(getFaceNormal(f));
 }
 
 template<AccessPattern AP>

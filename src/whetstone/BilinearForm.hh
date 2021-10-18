@@ -22,7 +22,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "errors.hh"
-#include "MeshLight.hh"
+#include "Mesh.hh"
 
 #include "DenseMatrix.hh"
 #include "MatrixObjects.hh"
@@ -36,9 +36,9 @@ class Polynomial;
 
 class BilinearForm {
  public:
-  BilinearForm(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
+  BilinearForm(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : mesh_(mesh),
-      d_(mesh->space_dimension()),
+      d_(mesh->getSpaceDimension()),
       order_(1) {};
   virtual ~BilinearForm() {};
 
@@ -168,7 +168,7 @@ class BilinearForm {
   void set_order(int order) { order_ = order; }
 
  protected:
-  Teuchos::RCP<const AmanziMesh::MeshLight> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int d_, order_;
 };
 

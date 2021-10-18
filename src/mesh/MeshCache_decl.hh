@@ -279,6 +279,10 @@ struct MeshCache {
   void cacheNodeCoordinates();
   bool node_coordinates_cached;
 
+  // Parent entities may need to be cached too
+  void cacheParentEntities();
+  bool parent_entities_cached;
+
   // Note that regions are cached on demand the first time they are requested,
   // but labeled sets must be pre-cached if the framework mesh is to be
   // destroyed.
@@ -286,8 +290,11 @@ struct MeshCache {
 
   // build the MeshMaps object
   //
-  // this is called in InitializeFramework and may not need to be public?
-  void buildMaps(bool natural=false);
+  // This is called in InitializeFramework and may not need to be public?
+  //
+  // If renumber is True, map GIDs are renumbered contiguously, starting on
+  // rank 0 with 0...num_owned_entities and continuing through the ranks.
+  void buildMaps(bool renumber=false);
 
   //
   // Baseline mesh functionality
@@ -394,23 +401,7 @@ struct MeshCache {
   // Note the kind refers to the kind in _this_ mesh -- for some lifted meshes,
   // this may not be the same as the entity kind in the parent mesh.  That
   // logic is left to the user of this class -- we simply store the IDs.
-  inline Entity_ID getEntityParent(const Entity_kind kind, const Entity_ID entid) const {
-    switch(kind) {
-      case Entity_kind::CELL:
-        return parent_cells[entid];
-        break;
-      case Entity_kind::FACE:
-        return parent_faces[entid];
-        break;
-      case Entity_kind::EDGE:
-        return parent_edges[entid];
-        break;
-      case Entity_kind::NODE:
-        return parent_nodes[entid];
-      default: {}
-    }
-    return -1;
-  }
+  Entity_ID getEntityParent(const Entity_kind kind, const Entity_ID entid) const;
 
   Cell_type getCellType(const Entity_ID c) const;
   Parallel_type getParallelType(const Entity_kind& kind, const Entity_ID id) const;
@@ -727,6 +718,7 @@ struct MeshCache {
   CSR<AmanziGeometry::Point> edge_coordinates;
 
   Double_View cell_volumes;
+  Double_View face_areas;
 
   CSR<AmanziGeometry::Point> face_normals;
   CSR<int> face_normal_directions;

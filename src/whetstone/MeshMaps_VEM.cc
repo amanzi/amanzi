@@ -74,7 +74,7 @@ void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
     AmanziMesh::Entity_ID_List edges;
     std::vector<int> dirs;
 
-    mesh0_->face_get_edges_and_dirs(f, &edges, &dirs);
+    mesh0_->getFaceEdgesAndDirs(f, edges, &dirs);
     int nedges = edges.size();
 
     Teuchos::ParameterList plist;
@@ -117,7 +117,7 @@ void MeshMaps_VEM::LeastSquareProjector_Cell_(
   std::vector<AmanziGeometry::Point> x1, x2;
 
   Entity_ID_List nodes;
-  mesh0_->cell_get_nodes(c, &nodes);
+  mesh0_->getCellNodes(c, nodes);
   int nnodes = nodes.size();
 
   for (int n = 0; n < nnodes; ++n) {
@@ -130,11 +130,11 @@ void MeshMaps_VEM::LeastSquareProjector_Cell_(
 
   // FIXME
   if (order > 1) {
-    const auto& faces = mesh0_->cell_get_faces(c);
+    const auto& faces = mesh0_->getCellFaces(c);
     int nfaces = faces.size();
 
     for (int n = 0; n < nfaces; ++n) {
-      const auto& xf = mesh0_->face_centroid(faces[n]);
+      const auto& xf = mesh0_->getFaceCentroid(faces[n]);
       x1.push_back(xf);
 
       for (int i = 0; i < d_; ++i)  {

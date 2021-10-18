@@ -17,7 +17,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 
 #include "BilinearForm.hh"
 #include "DenseMatrix.hh"
@@ -29,11 +29,11 @@ namespace WhetStone {
 
 class DeRham_Face : public MFD3D {
  public:
-  DeRham_Face(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh) 
+  DeRham_Face(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) 
     : MFD3D(mesh) {};
 
   virtual std::vector<SchemaItem> schema() const override {
-    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, 1));
+    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::Entity_kind::FACE, DOF_Type::SCALAR, 1));
   }
 
   int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);

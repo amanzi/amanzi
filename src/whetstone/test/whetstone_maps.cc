@@ -77,7 +77,7 @@ TEST(DG_MAP_DETERMINANT_CELL) {
   std::vector<const char*> list = {"SerendipityPk"};
   
   for (auto name : list) {
-    double fac(0.5), volume = mesh1->cell_volume(cell);
+    double fac(0.5), volume = mesh1->getCellVolume(cell);
     for (int k = 1; k < 4; ++k) {
       // collect geometric data
       Teuchos::ParameterList plist;
@@ -103,7 +103,7 @@ TEST(DG_MAP_DETERMINANT_CELL) {
       fac /= (k + 1);
       CHECK(fabs(err) < fac);
 
-      uc.ChangeOrigin(mesh0->cell_centroid(cell));
+      uc.ChangeOrigin(mesh0->getCellCentroid(cell));
       printf("k=%d  %14s  vol=%8.6g  err=%12.8f  |poly|=%9.6g %9.6g\n",
           k, name, tmp, err, uc[0].NormInf(), uc[1].NormInf());
     }
@@ -180,7 +180,7 @@ TEST(DG_MAP_LEAST_SQUARE_CELL) {
   auto maps = std::make_shared<MeshMaps_VEM>(mesh0, mesh1, plist);
 
   maps->VelocityCell(0, vf, vf, vc1);
-  vc1.ChangeOrigin(mesh0->cell_centroid(cell));
+  vc1.ChangeOrigin(mesh0->getCellCentroid(cell));
 
   // Serendipity calculation
   plist.set<std::string>("method", "Lagrange serendipity")
@@ -327,14 +327,14 @@ TEST(DG_MAP_VELOCITY_CELL) {
   auto maps = std::make_shared<MeshMaps_VEM>(mesh0, mesh1, plist);
 
   std::vector<VectorPolynomial> ve(nedges); 
-  mesh0->cell_get_edges(0, &edges);
+  mesh0->getCellEdges(0, edges);
   for (int n = 0; n < nedges; ++n) {
     maps->VelocityEdge(edges[n], ve[n]);
   }
 
   // -- on faces
   std::vector<VectorPolynomial> vf(nfaces); 
-  mesh0->cell_get_faces(0, &faces);
+  mesh0->getCellFaces(0, faces);
   for (int n = 0; n < nfaces; ++n) {
     maps->VelocityFace(faces[n], vf[n]);
   }

@@ -8,5 +8,5 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-#include "MeshAlgorithms_decl.hh"
-#include "MeshAlgorithms_impl.hh"
+#include "Mesh_Helpers_decl.hh"
+#include "Mesh_Helpers_impl.hh"

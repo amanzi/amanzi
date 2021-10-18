@@ -13,7 +13,7 @@
 #include "errors.hh"
 #include "exceptions.hh"
 #include "MeshFramework.hh"
-#include "MeshAlgorithms_impl.hh"
+#include "Mesh_Helpers_impl.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {

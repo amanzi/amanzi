@@ -50,7 +50,7 @@ bool
 RegionPlane::inside(const Point& p) const
 {
 #ifdef ENABLE_DBC
-  if (p_.dim() != n_.dim()) {
+  if (p.dim() != n_.dim()) {
     Errors::Message mesg;
     mesg << "Mismatch in point dimension of RegionPlane \""
          << Region::get_name() << "\" and query point.";

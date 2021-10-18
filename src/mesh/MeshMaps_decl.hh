@@ -14,7 +14,7 @@
   Maps are indexing objects, a way of going from the "local ID", or LID, to
   "global IDs" or GIDs.
 
-  LIDs are a non-negative integer from [0,num_entities_on_this_process)
+  LIDs are a non-negative integer from [0,num_entities_owned_on_this_rank)
 
   GIDs may be any non-negative integer, though typically are in
   [0,num_entities_globally).
@@ -25,6 +25,8 @@
   Boundary entity maps are somewhat different -- a boundary LID corresponds to
   the GID of the corresponding entity, so they are not in
   [0,num_global_boundary_entities), but in [0,num_global_entities).
+
+  Similarly, in derived meshes, the GID is often the GID of the parent entity.
 
   Importers are used to provide scatter/gather halo exchange operations across
   processors.  Importers implement the scatter operation; so for instance, the
@@ -95,9 +97,11 @@ class MeshMaps {
  public:
   MeshMaps() {}
 
+  // If renumber is True, map GIDs are renumbered contiguously, starting on
+  // rank 0 with 0...num_owned_entities and continuing through the ranks.
   template<class Mesh_type>
   void initialize(const Mesh_type& mesh,
-                  bool natural_ordering=false,
+                  bool renumber=false,
                   bool request_edges=false);
 
   const Entity_ID_View& getBoundaryFaces() const {

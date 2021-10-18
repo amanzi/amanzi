@@ -17,7 +17,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 
 #include "BilinearFormFactory.hh"
 
@@ -28,7 +28,7 @@ BilinearFormFactory::map_type* BilinearFormFactory::map_;  // initialization
 
 Teuchos::RCP<BilinearForm> BilinearFormFactory::Create(
     const Teuchos::ParameterList& plist,
-    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh) {
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) {
   std::string method = plist.get<std::string>("method");
   BFKey key = method;
   map_type::iterator iter = GetMap()->find(key);

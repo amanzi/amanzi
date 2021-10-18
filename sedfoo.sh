@@ -23,6 +23,7 @@ function go () {
     ${SED} ${SED_ARGS} 's|->exterior_face_map(|->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, |g' "$1"
     ${SED} ${SED_ARGS} 's|\.exterior_node_map(|.getMap(AmanziMesh::Entity_kind::BOUNDARY_NODE, |g' "$1"
     ${SED} ${SED_ARGS} 's|->exterior_node_map(|->getMap(AmanziMesh::Entity_kind::BOUNDARY_NODE, |g' "$1"
+    ${SED} ${SED_ARGS} 's|exterior_face_importer(|getBoundaryFaceImporter(|g' "$1"
     ${SED} ${SED_ARGS} 's|->get_comm(|->getComm(|g' "$1"
     ${SED} ${SED_ARGS} 's|\.get_comm(|.getComm(|g' "$1"
     ${SED} ${SED_ARGS} 's|->map(|->getMap(|g' "$1"
@@ -146,6 +147,13 @@ function go () {
     ${SED} ${SED_ARGS} 's|num_columns(false)|columns.num_columns_owned|g' "$1"
     ${SED} ${SED_ARGS} -E 's|cells_of_column\((.*)\)|columns.cells[\1]|g' "$1"
     ${SED} ${SED_ARGS} -E 's|faces_of_column\((.*)\)|columns.faces[\1]|g' "$1"
+
+    ${SED} ${SED_ARGS} 's|get_indexing_parent|getIndexingParent|g' "$1"
+    ${SED} ${SED_ARGS} 's|get_referencing_parent|getReferencingParent|g' "$1"
+    ${SED} ${SED_ARGS} 's|get_subdomain_map|getSubdomainMap|g' "$1"
+    ${SED} ${SED_ARGS} 's|set_subdomain_map|setSubdomainMap|g' "$1"
+    ${SED} ${SED_ARGS} 's|DoImport|doImport|g' "$1"
+    ${SED} ${SED_ARGS} 's|DoExport|doExport|g' "$1"
     
 }
 

@@ -33,7 +33,7 @@ createMapsFromMeshGIDs(const Mesh_type& mesh, const Entity_kind kind)
 // returns used, owned
 template<class Mesh_type>
 std::pair<Map_ptr_type, Map_ptr_type>
-createMapsFromNaturalGIDs(const Mesh_type& mesh, const Entity_kind kind)
+createMapsFromContiguousGIDs(const Mesh_type& mesh, const Entity_kind kind)
 {
   Entity_ID num_owned = mesh.getNumEntities(kind, Parallel_type::OWNED);
   Entity_ID num_all = mesh.getNumEntities(kind, Parallel_type::ALL);
@@ -44,7 +44,7 @@ createMapsFromNaturalGIDs(const Mesh_type& mesh, const Entity_kind kind)
 
 
 template<class Mesh_type>
-void MeshMaps::initialize(const Mesh_type& mesh, bool natural, bool request_edges)
+void MeshMaps::initialize(const Mesh_type& mesh, bool renumber, bool request_edges)
 {
   std::vector<Entity_kind> to_construct{Entity_kind::CELL,
     Entity_kind::FACE, Entity_kind::NODE};
@@ -52,8 +52,8 @@ void MeshMaps::initialize(const Mesh_type& mesh, bool natural, bool request_edge
 
   for (const auto& kind : to_construct) {
     std::pair<Teuchos::RCP<Epetra_Map>, Teuchos::RCP<Epetra_Map>> maps;
-    if (natural) {
-      maps = createMapsFromNaturalGIDs(mesh, kind);
+    if (renumber) {
+      maps = createMapsFromContiguousGIDs(mesh, kind);
     } else {
       maps = createMapsFromMeshGIDs(mesh, kind);
     }

@@ -61,10 +61,10 @@ TEST(DERHAM_COMPLEX_NODE) {
 
   // verify exact integration property
   AmanziMesh::Entity_ID_List nodes;
-  mesh->cell_get_nodes(cell, &nodes);
+  mesh->getCellNodes(cell, nodes);
     
   double xi, yi, xj;
-  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
+  double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell); 
   AmanziGeometry::Point p1(2), p2(2);
 
   for (int i = 0; i < nnodes; i++) {

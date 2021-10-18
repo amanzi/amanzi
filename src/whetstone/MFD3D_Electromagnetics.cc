@@ -15,7 +15,7 @@
 #include <cmath>
 #include <vector>
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 #include "errors.hh"
 
@@ -50,7 +50,7 @@ int MFD3D_Electromagnetics::H1consistency(
 int MFD3D_Electromagnetics::H1consistency2D_(
     int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac)
 {
-  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& faces = mesh_->getCellFaces(c);
   const auto& fdirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
@@ -60,16 +60,16 @@ int MFD3D_Electromagnetics::H1consistency2D_(
 
   // calculate Ac = R (R^T N)^{+} R^T
   double T00 = T(0, 0);
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
+  double volume = mesh_->getCellVolume(c);
 
   for (int i = 0; i < nfaces; ++i) {
     int f = faces[i];
-    double a1 = mesh_->face_area(f);
+    double a1 = mesh_->getFaceArea(f);
 
     for (int j = i; j < nfaces; ++j) {
       f = faces[j];
-      double a2 = mesh_->face_area(f);
+      double a2 = mesh_->getFaceArea(f);
       Ac(i, j) = a1 * a2 / (T00 * fdirs[i] * fdirs[j] * volume);
     }
   }
@@ -77,9 +77,9 @@ int MFD3D_Electromagnetics::H1consistency2D_(
   // Matrix N(:, 1:2) are simply tangents
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-    double len = mesh_->face_area(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+    const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
+    double len = mesh_->getFaceArea(f);
 
     for (int k = 0; k < d_; ++k) {
       len = -len;
@@ -102,11 +102,11 @@ int MFD3D_Electromagnetics::H1consistency3D_(
   Entity_ID_List fedges;
   std::vector<int> edirs, map;
 
-  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& faces = mesh_->getCellFaces(c);
   const auto& fdirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
-  const auto& edges = mesh_->cell_get_edges(c);
+  const auto& edges = mesh_->getCellEdges(c);
   int nedges = edges.size();
 
   int nd = 6;  // order_ * (order_ + 2) * (order_ + 3) / 2;
@@ -118,22 +118,22 @@ int MFD3D_Electromagnetics::H1consistency3D_(
 
   AmanziGeometry::Point v1(d_), v2(d_), v3(d_);
 
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
+  double volume = mesh_->getCellVolume(c);
 
   for (int i = 0; i < nfaces; ++i) {
     int f = faces[i];
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
 
-    mesh_->face_get_edges_and_dirs(f, &fedges, &edirs);
+    mesh_->getFaceEdgesAndDirs(f, fedges, &edirs);
     int nfedges = fedges.size();
 
-    mesh_->face_to_cell_edge_map(f, c, &map);
+    map = AmanziMesh::MeshAlgorithms::mapFaceToCellEdges(*mesh_, f, c);
 
     for (int m = 0; m < nfedges; ++m) {
       int e = fedges[m];
-      const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
-      double len = mesh_->edge_length(e);
+      const AmanziGeometry::Point& xe = mesh_->getEdgeCentroid(e);
+      double len = mesh_->getEdgeLength(e);
 
       len *= 2 * fdirs[i] * edirs[m];
       v2 = xe - xf;
@@ -156,9 +156,9 @@ int MFD3D_Electromagnetics::H1consistency3D_(
   // Matrix N(:, 1:3) are simply tangents
   for (int i = 0; i < nedges; i++) {
     int e = edges[i];
-    const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
-    AmanziGeometry::Point tau = mesh_->edge_vector(e);
-    double len = mesh_->edge_length(e);
+    const AmanziGeometry::Point& xe = mesh_->getEdgeCentroid(e);
+    AmanziGeometry::Point tau = mesh_->getEdgeVector(e);
+    double len = mesh_->getEdgeLength(e);
 
     tau /= len;
     v1 = xe - xc;
@@ -210,9 +210,9 @@ int MFD3D_Electromagnetics::MassMatrixInverseOptimized(
 int MFD3D_Electromagnetics::MassMatrixDiagonal(
     int c, const Tensor& T, DenseMatrix& M)
 {
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->getCellVolume(c);
 
-  const auto& edges = mesh_->cell_get_edges(c);
+  const auto& edges = mesh_->getCellEdges(c);
   int nedges = edges.size();
 
   M.PutScalar(0.0);
@@ -289,10 +289,10 @@ void MFD3D_Electromagnetics::CurlMatrix(int c, DenseMatrix& C)
   Entity_ID_List nodes, fedges;
   std::vector<int> edirs, map;
 
-  const auto& edges = mesh_->cell_get_edges(c);
+  const auto& edges = mesh_->getCellEdges(c);
   int nedges = edges.size();
 
-  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& faces = mesh_->getCellFaces(c);
   const auto& fdirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
@@ -300,7 +300,7 @@ void MFD3D_Electromagnetics::CurlMatrix(int c, DenseMatrix& C)
   C.PutScalar(0.0);
 
   if (d_ == 2) {
-    mesh_->cell_get_nodes(c, &nodes);
+    mesh_->getCellNodes(c, nodes);
 
     for (int i = 0; i < nfaces; ++i) {
       int j = (i + 1) % nfaces;
@@ -311,13 +311,13 @@ void MFD3D_Electromagnetics::CurlMatrix(int c, DenseMatrix& C)
     for (int i = 0; i < nfaces; ++i) {
       int f = faces[i];
 
-      mesh_->face_to_cell_edge_map(f, c, &map);
-      mesh_->face_get_edges_and_dirs(f, &fedges, &edirs);
+      map = AmanziMesh::MeshAlgorithms::mapFaceToCellEdges(*mesh_, f, c);
+      mesh_->getFaceEdgesAndDirs(f, fedges, &edirs);
       int nfedges = fedges.size();
 
       for (int j = 0; j < nfedges; ++j) {
         int e = fedges[j]; 
-        double len = mesh_->edge_length(e);
+        double len = mesh_->getEdgeLength(e);
         C(i, map[j]) = len * edirs[j] * fdirs[i];
       }
     }

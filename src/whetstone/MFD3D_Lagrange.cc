@@ -17,7 +17,7 @@
 #include <vector>
 
 // Amanzi
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 #include "errors.hh"
 
@@ -33,7 +33,7 @@ namespace WhetStone {
 * Constructor parses the parameter list
 ****************************************************************** */
 MFD3D_Lagrange::MFD3D_Lagrange(const Teuchos::ParameterList& plist,
-                               const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
+                               const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
   : MFD3D(mesh)
 {
   order_ = plist.get<int>("method order");
@@ -47,16 +47,16 @@ int MFD3D_Lagrange::H1consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
   Entity_ID_List nodes;
-  mesh_->cell_get_nodes(c, &nodes);
+  mesh_->getCellNodes(c, nodes);
   int nnodes = nodes.size();
 
   N.Reshape(nnodes, d_ + 1);
   Ac.Reshape(nnodes, nnodes);
 
-  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& faces = mesh_->getCellFaces(c);
   const auto& dirs = mesh_->cell_get_face_dirs(c);
 
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->getCellVolume(c);
   AmanziGeometry::Point p(d_), pnext(d_), pprev(d_), v1(d_), v2(d_), v3(d_);
 
   // calculate matrix R. We temporaryly reuse matrix N
@@ -65,12 +65,12 @@ int MFD3D_Lagrange::H1consistency(
   int num_faces = faces.size();
   for (int i = 0; i < num_faces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
-    double area = mesh_->face_area(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+    const AmanziGeometry::Point& fm = mesh_->getFaceCentroid(f);
+    double area = mesh_->getFaceArea(f);
 
     Entity_ID_List face_nodes;
-    mesh_->face_get_nodes(f, &face_nodes);
+    mesh_->getFaceNodes(f, face_nodes);
     int num_face_nodes = face_nodes.size();
 
     for (int j = 0; j < num_face_nodes; j++) {
@@ -112,7 +112,7 @@ int MFD3D_Lagrange::H1consistency(
     }
   }
 
-  const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& cm = mesh_->getCellCentroid(c);
   for (int i = 0; i < nnodes; i++) {
     int v = nodes[i];
     mesh_->node_get_coordinates(v, &p);
@@ -148,10 +148,10 @@ void MFD3D_Lagrange::ProjectorCell_(
     const std::vector<Polynomial>& vf, Polynomial& uc)
 {
   Entity_ID_List nodes;
-  mesh_->cell_get_nodes(c, &nodes);
+  mesh_->getCellNodes(c, nodes);
   int nnodes = nodes.size();
 
-  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& faces = mesh_->getCellFaces(c);
   const auto& dirs = mesh_->cell_get_face_dirs(c);
   int num_faces = faces.size();
 
@@ -162,12 +162,12 @@ void MFD3D_Lagrange::ProjectorCell_(
   R.PutScalar(0.0);
   for (int i = 0; i < num_faces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
-    double area = mesh_->face_area(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+    const AmanziGeometry::Point& fm = mesh_->getFaceCentroid(f);
+    double area = mesh_->getFaceArea(f);
 
     Entity_ID_List face_nodes;
-    mesh_->face_get_nodes(f, &face_nodes);
+    mesh_->getFaceNodes(f, face_nodes);
     int num_face_nodes = face_nodes.size();
 
     for (int j = 0; j < num_face_nodes; j++) {
@@ -204,7 +204,7 @@ void MFD3D_Lagrange::ProjectorCell_(
       uc(k + 1) += R(i, k) * vf[i](0);
     }
   }
-  uc *= 1.0 / mesh_->cell_volume(c);
+  uc *= 1.0 / mesh_->getCellVolume(c);
 }
 
 }  // namespace WhetStone

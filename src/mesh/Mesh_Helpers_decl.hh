@@ -20,15 +20,15 @@ class MeshCache;
 
 namespace MeshAlgorithms {
 
+//
+// topology algorithms
+//
 template<class Mesh_type>
 Cell_type getCellType(const Mesh_type& mesh, const Entity_ID c);
 
 template<class Mesh_type>
 int getFaceDirectionInCell(const Mesh_type& mesh, const Entity_ID f, const Entity_ID c);
 
-//
-// topology algorithms
-//
 template<class Mesh_type>
 Entity_ID_List
 computeCellEdges(const Mesh_type& mesh, const Entity_ID c);

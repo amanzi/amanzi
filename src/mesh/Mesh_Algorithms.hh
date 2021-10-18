@@ -19,32 +19,32 @@ namespace AmanziMesh {
 // -----------------------------------------------------------------------------
 // Given a boundary face ID, get the corresponding face ID
 // -----------------------------------------------------------------------------
-AmanziMesh::Entity_ID
-getBoundaryFaceFace(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_ID bf);
+Entity_ID
+getBoundaryFaceFace(const Mesh& mesh, Entity_ID bf);
 
 // -----------------------------------------------------------------------------
 // Given a face ID, get the corresponding boundary face ID (assuming it is a bf)
 // -----------------------------------------------------------------------------
-AmanziMesh::Entity_ID
-getFaceOnBoundaryBoundaryFace(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_ID f);
+Entity_ID
+getFaceOnBoundaryBoundaryFace(const Mesh& mesh, Entity_ID f);
 
 // -----------------------------------------------------------------------------
 // Given a boundary face ID, get the cell internal to that face.
 // -----------------------------------------------------------------------------
-AmanziMesh::Entity_ID
-getBoundaryFaceInternalCell(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_ID bf);
+Entity_ID
+getBoundaryFaceInternalCell(const Mesh& mesh, Entity_ID bf);
 
 // -----------------------------------------------------------------------------
 // Given a face ID, and assuming it is a boundary face, get the cell internal.
 // -----------------------------------------------------------------------------
-AmanziMesh::Entity_ID
-getFaceOnBoundaryInternalCell(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_ID f);
+Entity_ID
+getFaceOnBoundaryInternalCell(const Mesh& mesh, Entity_ID f);
 
 // -----------------------------------------------------------------------------
 // Given a vector on faces, import to vector on boundary faces
 // -----------------------------------------------------------------------------
 void
-copyFacesToBoundaryFaces(const AmanziMesh::Mesh& mesh,
+copyFacesToBoundaryFaces(const Mesh& mesh,
                          const Epetra_MultiVector& faces,
                          Epetra_MultiVector& boundary_faces);
 
@@ -52,7 +52,7 @@ copyFacesToBoundaryFaces(const AmanziMesh::Mesh& mesh,
 // Given a vector on faces, import to vector on boundary faces
 // -----------------------------------------------------------------------------
 void
-copyBoundaryFacesToFaces(const AmanziMesh::Mesh& mesh,
+copyBoundaryFacesToFaces(const Mesh& mesh,
                          const Epetra_MultiVector& boundary_faces,
                          Epetra_MultiVector& faces);
 
@@ -60,7 +60,7 @@ copyBoundaryFacesToFaces(const AmanziMesh::Mesh& mesh,
 // Given a vector on cells, set the boundary_face entries by their internal cell
 // -----------------------------------------------------------------------------
 void
-copyCellsToBoundaryFaces(const AmanziMesh::Mesh& mesh,
+copyCellsToBoundaryFaces(const Mesh& mesh,
                          const Epetra_MultiVector& cells,
                          Epetra_MultiVector& boundary_faces);
 

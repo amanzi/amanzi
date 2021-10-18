@@ -44,8 +44,8 @@ TEST(FACE_CENTROIDS) {
   Entity_ID_List nodes;
   std::vector<double> weights;
 
-  double area = mesh->cell_volume(0);
-  mesh->cell_get_nodes(0, &nodes); 
+  double area = mesh->getCellVolume(0);
+  mesh->getCellNodes(0, nodes); 
   PolygonCentroidWeights(*mesh, nodes, area, weights);
   
   // verification
@@ -53,7 +53,7 @@ TEST(FACE_CENTROIDS) {
     mesh->node_get_coordinates(nodes[n], &p);
     xc += weights[n] * p;
   }
-  const AmanziGeometry::Point& xm = mesh->cell_centroid(0);
+  const AmanziGeometry::Point& xm = mesh->getCellCentroid(0);
   std::cout << xc << " = " << xm << std::endl;
   CHECK_CLOSE(0.0, norm(xc - xm), 1e-10);
 }

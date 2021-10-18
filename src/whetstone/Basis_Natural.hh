@@ -19,7 +19,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 
 #include "Basis.hh"
 #include "DenseMatrix.hh"
@@ -36,7 +36,7 @@ class Basis_Natural : public Basis {
   ~Basis_Natural() {};
 
   // initialization
-  virtual void Init(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh, 
+  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, 
                     int c, int order, Polynomial& integrals) { order_ = order; }
 
   // transformation of bilinear form
@@ -52,11 +52,11 @@ class Basis_Natural : public Basis {
   virtual void ChangeBasisNaturalToMy(DenseVector& v) const {};
 
   // recover polynomial in natural basis
-  virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,
+  virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                          int c, int order, DenseVector& coefs) const {
-    int d = mesh->space_dimension();
+    int d = mesh->getSpaceDimension();
     Polynomial poly(d, order, coefs);
-    poly.set_origin(mesh->cell_centroid(c));
+    poly.set_origin(mesh->getCellCentroid(c));
     return poly;
   }
 
