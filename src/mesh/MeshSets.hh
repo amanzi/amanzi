@@ -7,6 +7,13 @@
   Authors: Ethan Coon (coonet@ornl.gov)
 */
 // Helper functions for resolving regions on meshes.
+/*
+
+  Here, we use the word "resolve" to mean figuring out which entities are in
+  the set.  The word is not particularly clear, but it is used in the sense of:
+  "resolving whether an entity is inside or outside of the set."
+
+*/
 
 #pragma once
 
@@ -43,7 +50,11 @@ Entity_ID_List resolveMeshSetVolumeFractions(
   Double_View& vol_fracs,
   const MeshCache& mesh);
 
-
+//
+// Note that the Impl namespace is reserved for methods that should not be used
+// outside of the AmanziMesh namespace.  In particular, these are not intended
+// to be used outside of the above "public" function, resolveMeshSet().
+//
 namespace Impl {
 
 Entity_ID_List resolveMeshSet_(const AmanziGeometry::Region& region,

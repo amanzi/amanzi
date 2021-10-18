@@ -44,11 +44,11 @@ struct MeshColumns {
 
   // a vector of columns, each a list of cells in the column, ordered from top
   // down
-  CSR<Entity_ID> cells;
+  RaggedArray<Entity_ID> cells;
 
   // a vector of columns, each a list of faces in the column, ordered from top
   // down.  Note len(faces[i]) == len(cells[i])+1
-  CSR<Entity_ID> faces;
+  RaggedArray<Entity_ID> faces;
 
 private:
   void buildColumn_(const MeshCache& mesh, const Entity_ID f, int col);

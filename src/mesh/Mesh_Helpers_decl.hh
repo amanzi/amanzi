@@ -7,6 +7,27 @@
   Authors: Rao Garimella
       Ethan Coon (coonet@ornl.gov)
 */
+// A collection of helper functions used to compute basic geometric operations on Mesh objects.
+/*
+  Note, these are templated on Mesh_type because they may be used by either
+  MeshFramework objects or MeshCache objects.
+
+  These provide default calculations of fundamental topological and geometric
+  concepts.  While they can be called by users of the Mesh library, typically
+  they are used _inside_ of the library, and should not be called by users.
+
+  For the most part, these are used by member functions of the MeshFramework
+  and MeshCache classes to provide default implementations.  They are
+  implemented as external, nonmember functions because, 1, they use the common
+  API of multiple classes, and so are useful for multiple classes
+  (MeshFramework and MeshCache), and 2, they use the API, and need no "private"
+  data, so they improve encapsulation of the class.
+
+  Note that, if these become commonly used by users of the mesh library, they
+  should get moved into Mesh_Algorithms, which provides functions that are
+  commonly used by clients _outside_ of this library.
+*/
+
 
 #pragma once
 

@@ -32,7 +32,9 @@ getting each piece of information:
 3. recomputing using the public interface of MeshCache.
 
 Note that the third is not always possible -- for instance, node coordinates
-cannot be recomputed; nor can basic adjacency information.  But, for instance,
+cannot be recomputed; nor can basic adjacency information, as there is no
+requirement here that a minimal representation of the framework has been cached
+before it is destroyed.  But many of these _can_ be recomputed; for instance,
 one can determine cell coordinates from node coordinates and cell-node
 adjacency, which itself can be computed from cell-face and face-node adjacency
 information.
@@ -713,36 +715,36 @@ struct MeshCache {
   Point_View cell_centroids;
   Point_View face_centroids;
   Point_View edge_centroids;
-  CSR<AmanziGeometry::Point> cell_coordinates;
-  CSR<AmanziGeometry::Point> face_coordinates;
-  CSR<AmanziGeometry::Point> edge_coordinates;
+  RaggedArray<AmanziGeometry::Point> cell_coordinates;
+  RaggedArray<AmanziGeometry::Point> face_coordinates;
+  RaggedArray<AmanziGeometry::Point> edge_coordinates;
 
   Double_View cell_volumes;
   Double_View face_areas;
 
-  CSR<AmanziGeometry::Point> face_normals;
-  CSR<int> face_normal_directions;
+  RaggedArray<AmanziGeometry::Point> face_normals;
+  RaggedArray<int> face_normal_directions;
   Point_View edge_vectors;
 
   // downward adjacencies
-  CSR<Entity_ID> cell_faces;
-  CSR<int> cell_face_directions;
-  CSR<AmanziGeometry::Point> cell_face_bisectors;
+  RaggedArray<Entity_ID> cell_faces;
+  RaggedArray<int> cell_face_directions;
+  RaggedArray<AmanziGeometry::Point> cell_face_bisectors;
 
-  CSR<Entity_ID> cell_edges;
-  CSR<Entity_ID> cell_nodes;
-  CSR<Entity_ID> face_edges;
-  CSR<int> face_edge_directions;
-  CSR<Entity_ID> face_nodes;
-  CSR<Entity_ID> edge_nodes;
+  RaggedArray<Entity_ID> cell_edges;
+  RaggedArray<Entity_ID> cell_nodes;
+  RaggedArray<Entity_ID> face_edges;
+  RaggedArray<int> face_edge_directions;
+  RaggedArray<Entity_ID> face_nodes;
+  RaggedArray<Entity_ID> edge_nodes;
 
   // upward adjacencies
-  CSR<Entity_ID> face_cells;
-  CSR<Entity_ID> edge_cells;
-  CSR<Entity_ID> edge_faces;
-  CSR<Entity_ID> node_cells;
-  CSR<Entity_ID> node_faces;
-  CSR<Entity_ID> node_edges;
+  RaggedArray<Entity_ID> face_cells;
+  RaggedArray<Entity_ID> edge_cells;
+  RaggedArray<Entity_ID> edge_faces;
+  RaggedArray<Entity_ID> node_cells;
+  RaggedArray<Entity_ID> node_faces;
+  RaggedArray<Entity_ID> node_edges;
 
   // parent entities
   Entity_ID_View parent_nodes;

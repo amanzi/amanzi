@@ -7,6 +7,7 @@
   Authors: Rao Garimella
       Ethan Coon (coonet@ornl.gov)
 */
+// A collection of helper functions used to compute basic geometric operations on Mesh objects.
 
 #include "Mesh_Helpers_decl.hh"
 #include "Mesh_Helpers_impl.hh"

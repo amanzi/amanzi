@@ -42,7 +42,7 @@ using Entity_GID_View = View_type<Entity_GID>;
 using Entity_Direction_View = View_type<int>;
 using Point_View = View_type<AmanziGeometry::Point>;
 
-template<typename T> using CSR = std::vector<std::vector<T>>;
+template<typename T> using RaggedArray = std::vector<std::vector<T>>;
 using Double_View = View_type<double>;
 
 using Map_type = Epetra_Map;
