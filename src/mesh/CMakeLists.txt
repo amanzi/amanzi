@@ -187,6 +187,8 @@ if (BUILD_TESTS)
     #   extraction constructor on FACEs with the flatten parameter,
     #   currently only supported by MSTK.  This extracts a surface
     #   mesh and checks MeshAudit, geometry, sets, and maps.
+    #
+    # NOTE: Currently, the MeshExtractedManifold tests in here are commented out!
     add_amanzi_test(mesh_surface_extraction mesh_surface_extraction
                     KIND unit
                     SOURCE test/Main.cc test/mesh_surface_extraction.cc
@@ -199,10 +201,10 @@ if (BUILD_TESTS)
     #   extraction constructor on CELLs, currently only supported by
     #   MSTK.  This extracts a set of cells, forms a mesh, and
     #   checks MeshAudit, geometry, sets, and maps.
-    # add_amanzi_test(mesh_volume_extraction mesh_volume_extraction
-    #                 KIND unit
-    #                 SOURCE test/Main.cc test/mesh_volume_extraction.cc
-    #                 LINK_LIBS ${mesh_test_link_libs})
+    add_amanzi_test(mesh_volume_extraction mesh_volume_extraction
+                    KIND unit
+                    SOURCE test/Main.cc test/mesh_volume_extraction.cc
+                    LINK_LIBS ${mesh_test_link_libs})
     
     # Test: fracture extracted mesh
     #   Tests a fracture mesh generated using the mesh framework
