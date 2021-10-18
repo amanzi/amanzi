@@ -213,165 +213,163 @@ TEST(BOXREGION_VOFS_2D_INTERSECTION)
   }
 }
 
-// disabling VoF methods -- do we use them?
+TEST(BOXREGION_VOFS_2D_AREA)
+{
+  using namespace Amanzi::AmanziGeometry;
 
-// TEST(BOXREGION_VOFS_2D_AREA)
-// {
-//   using namespace Amanzi::AmanziGeometry;
+  auto ecomm = Amanzi::getDefaultComm();
 
-//   auto ecomm = Amanzi::getDefaultComm();
+  // read the parameter list from input file
+  std::string infilename = "test/boxregion_vofs.xml";
+  Teuchos::ParameterXMLFileReader xmlreader(infilename);
+  Teuchos::ParameterList reg_spec(xmlreader.getParameters());
 
-//   // read the parameter list from input file
-//   std::string infilename = "test/boxregion_vofs.xml";
-//   Teuchos::ParameterXMLFileReader xmlreader(infilename);
-//   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
-
-//   // create a rectangular region
-//   Teuchos::ParameterList::ConstIterator i = reg_spec.begin();
-//   std::string reg_name = reg_spec.name(i);     
-//   unsigned int reg_id = 9959;  // something arbitrary
-//   Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
+  // create a rectangular region
+  Teuchos::ParameterList::ConstIterator i = reg_spec.begin();
+  std::string reg_name = reg_spec.name(i);     
+  unsigned int reg_id = 9959;  // something arbitrary
+  Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
     
-//   Teuchos::RCP<Amanzi::AmanziGeometry::Region> reg = 
-//     Amanzi::AmanziGeometry::createRegion(reg_name, reg_id, reg_params, *ecomm);
+  Teuchos::RCP<Amanzi::AmanziGeometry::Region> reg = 
+    Amanzi::AmanziGeometry::createRegion(reg_name, reg_id, reg_params, *ecomm);
   
-//   Amanzi::AmanziGeometry::Point v1(2), v2(2), v3(2), vv(2);
-//   std::vector<Amanzi::AmanziGeometry::Point> polygon;
+  Amanzi::AmanziGeometry::Point v1(2), v2(2), v3(2), vv(2);
+  std::vector<Amanzi::AmanziGeometry::Point> polygon;
 
-//   v1.set(0.0, 0.0);
-//   v2.set(1.0, 0.0);
-//   v3.set(0.0, 1.0);
+  v1.set(0.0, 0.0);
+  v2.set(1.0, 0.0);
+  v3.set(0.0, 1.0);
 
-//   int n(0);
-//   double area_exact[5] = {0.5, 0.46, 0.34, 0.16, 0.04};
-//   for (double d = 0.0; d <= 0.8; d += 0.2) {
-//     vv.set(d, d);
-//     polygon.clear();
-//     polygon.push_back(vv + v1);
-//     polygon.push_back(vv + v2);
-//     polygon.push_back(vv + v3);
+  int n(0);
+  double area_exact[5] = {0.5, 0.46, 0.34, 0.16, 0.04};
+  for (double d = 0.0; d <= 0.8; d += 0.2) {
+    vv.set(d, d);
+    polygon.clear();
+    polygon.push_back(vv + v1);
+    polygon.push_back(vv + v2);
+    polygon.push_back(vv + v3);
 
-//     double area = reg->intersect(polygon);
-//     CHECK_CLOSE(area_exact[n++], area, 1e-6);
-//   }
-// }
-
-
-// TEST(BOXREGION_VOFS_3D_INTERSECTION)
-// {
-//   using namespace Amanzi::AmanziGeometry;
-
-//   std::cout << "\nIntersection of a moving tet with the unit box\n\n";
-
-//   Point v1(3), vv(3);
-//   std::vector<Point> xyz1, xyz3;
-//   std::vector<std::vector<int> > faces1(4), faces3;
-//   std::vector<std::pair<Point, Point> > xyz2;
-
-//   xyz2.push_back(std::make_pair(Point(0.0, 0.0, 0.0), Point(-1.0, 0.0, 0.0)));
-//   xyz2.push_back(std::make_pair(Point(0.0, 0.0, 0.0), Point(0.0, -1.0, 0.0)));
-//   xyz2.push_back(std::make_pair(Point(0.0, 0.0, 0.0), Point(0.0, 0.0, -1.0)));
-
-//   xyz2.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(1.0, 0.0, 0.0)));
-//   xyz2.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(0.0, 1.0, 0.0)));
-//   xyz2.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(0.0, 0.0, 1.0)));
-
-//   int n(0), sizes[7] = {4, 7, 7, 7, 6, 0, 0};
-//   for (double d = 0.0; d <= 1.21; d += 0.2) {
-//     vv.set(d, d, d);
-//     std::cout << "\nShift: " << vv << std::endl;
-//     xyz1.clear();
-//     xyz1.push_back(vv + Point(0.0, 0.0, 0.0));
-//     xyz1.push_back(vv + Point(1.0, 0.0, 0.0));
-//     xyz1.push_back(vv + Point(0.0, 1.0, 0.0));
-//     xyz1.push_back(vv + Point(0.0, 0.0, 1.0));
-
-//     for (int i = 0; i < 4; ++i) faces1[i].clear();
-//     faces1[0].push_back(0);
-//     faces1[0].push_back(2);
-//     faces1[0].push_back(1);
-
-//     faces1[1].push_back(0);
-//     faces1[1].push_back(1);
-//     faces1[1].push_back(3);
-
-//     faces1[2].push_back(0);
-//     faces1[2].push_back(3);
-//     faces1[2].push_back(2);
-
-//     faces1[3].push_back(1);
-//     faces1[3].push_back(2);
-//     faces1[3].push_back(3);
-
-//     Amanzi::AmanziGeometry::IntersectConvexPolyhedra(xyz1, faces1, xyz2, xyz3, faces3);
-
-//     int nfaces3(faces3.size());
-//     std::cout << "Total number of faces: " << nfaces3 << std::endl;
-//     for (int i = 0; i < nfaces3; ++i) {
-//       int nnodes(faces3[i].size());
-//       for (int m = 0; m < nnodes; ++m) std::cout << faces3[i][m] << " ";
-//       std::cout << std::endl;
-//     }
-//     std::cout << "Total number of vertices: " << xyz3.size() << std::endl;
-
-//     CHECK(nfaces3 == sizes[n++]);
-//   }
-// }
+    double area = reg->intersect(polygon);
+    CHECK_CLOSE(area_exact[n++], area, 1e-6);
+  }
+}
 
 
-// TEST(BOXREGION_VOFS_3D_VOLUME)
-// {
-//   using namespace Amanzi::AmanziGeometry;
+TEST(BOXREGION_VOFS_3D_INTERSECTION)
+{
+  using namespace Amanzi::AmanziGeometry;
 
-//   std::cout << "\nVolume of intersection of a moving tet with the unit box\n\n";
+  std::cout << "\nIntersection of a moving tet with the unit box\n\n";
 
-//   auto ecomm = Amanzi::getDefaultComm();
+  Point v1(3), vv(3);
+  std::vector<Point> xyz1, xyz3;
+  std::vector<std::vector<int> > faces1(4), faces3;
+  std::vector<std::pair<Point, Point> > xyz2;
 
-//   // read the parameter list from input file
-//   std::string infilename = "test/boxregion_vofs_3D.xml";
-//   Teuchos::ParameterXMLFileReader xmlreader(infilename);
-//   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
+  xyz2.push_back(std::make_pair(Point(0.0, 0.0, 0.0), Point(-1.0, 0.0, 0.0)));
+  xyz2.push_back(std::make_pair(Point(0.0, 0.0, 0.0), Point(0.0, -1.0, 0.0)));
+  xyz2.push_back(std::make_pair(Point(0.0, 0.0, 0.0), Point(0.0, 0.0, -1.0)));
 
-//   // create a rectangular region
-//   std::string reg_name = reg_spec.name(reg_spec.begin());
-//   unsigned int reg_id = 9959;  // something arbitrary
-//   Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
+  xyz2.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(1.0, 0.0, 0.0)));
+  xyz2.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(0.0, 1.0, 0.0)));
+  xyz2.push_back(std::make_pair(Point(1.0, 1.0, 1.0), Point(0.0, 0.0, 1.0)));
+
+  int n(0), sizes[7] = {4, 7, 7, 7, 6, 0, 0};
+  for (double d = 0.0; d <= 1.21; d += 0.2) {
+    vv.set(d, d, d);
+    std::cout << "\nShift: " << vv << std::endl;
+    xyz1.clear();
+    xyz1.push_back(vv + Point(0.0, 0.0, 0.0));
+    xyz1.push_back(vv + Point(1.0, 0.0, 0.0));
+    xyz1.push_back(vv + Point(0.0, 1.0, 0.0));
+    xyz1.push_back(vv + Point(0.0, 0.0, 1.0));
+
+    for (int i = 0; i < 4; ++i) faces1[i].clear();
+    faces1[0].push_back(0);
+    faces1[0].push_back(2);
+    faces1[0].push_back(1);
+
+    faces1[1].push_back(0);
+    faces1[1].push_back(1);
+    faces1[1].push_back(3);
+
+    faces1[2].push_back(0);
+    faces1[2].push_back(3);
+    faces1[2].push_back(2);
+
+    faces1[3].push_back(1);
+    faces1[3].push_back(2);
+    faces1[3].push_back(3);
+
+    Amanzi::AmanziGeometry::IntersectConvexPolyhedra(xyz1, faces1, xyz2, xyz3, faces3);
+
+    int nfaces3(faces3.size());
+    std::cout << "Total number of faces: " << nfaces3 << std::endl;
+    for (int i = 0; i < nfaces3; ++i) {
+      int nnodes(faces3[i].size());
+      for (int m = 0; m < nnodes; ++m) std::cout << faces3[i][m] << " ";
+      std::cout << std::endl;
+    }
+    std::cout << "Total number of vertices: " << xyz3.size() << std::endl;
+
+    CHECK(nfaces3 == sizes[n++]);
+  }
+}
+
+
+TEST(BOXREGION_VOFS_3D_VOLUME)
+{
+  using namespace Amanzi::AmanziGeometry;
+
+  std::cout << "\nVolume of intersection of a moving tet with the unit box\n\n";
+
+  auto ecomm = Amanzi::getDefaultComm();
+
+  // read the parameter list from input file
+  std::string infilename = "test/boxregion_vofs_3D.xml";
+  Teuchos::ParameterXMLFileReader xmlreader(infilename);
+  Teuchos::ParameterList reg_spec(xmlreader.getParameters());
+
+  // create a rectangular region
+  std::string reg_name = reg_spec.name(reg_spec.begin());
+  unsigned int reg_id = 9959;  // something arbitrary
+  Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
     
-//   Teuchos::RCP<Amanzi::AmanziGeometry::Region> reg = 
-//     Amanzi::AmanziGeometry::createRegion(reg_name, reg_id, reg_params, *ecomm);
+  Teuchos::RCP<Amanzi::AmanziGeometry::Region> reg = 
+    Amanzi::AmanziGeometry::createRegion(reg_name, reg_id, reg_params, *ecomm);
   
-//   std::vector<Point> xyz;
-//   std::vector<std::vector<int> > faces(4);
+  std::vector<Point> xyz;
+  std::vector<std::vector<int> > faces(4);
 
-//   // double volume_exact[5] = {0.5, 0.46, 0.34, 0.16, 0.04};
-//   for (double d = 0.0; d <= 0.8; d += 0.2) {
-//     Point vv(d, d, d);
-//     xyz.clear();
-//     xyz.push_back(vv + Point(0.0, 0.0, 0.0));
-//     xyz.push_back(vv + Point(1.0, 0.0, 0.0));
-//     xyz.push_back(vv + Point(0.0, 1.0, 0.0));
-//     xyz.push_back(vv + Point(0.0, 0.0, 1.0));
+  // double volume_exact[5] = {0.5, 0.46, 0.34, 0.16, 0.04};
+  for (double d = 0.0; d <= 0.8; d += 0.2) {
+    Point vv(d, d, d);
+    xyz.clear();
+    xyz.push_back(vv + Point(0.0, 0.0, 0.0));
+    xyz.push_back(vv + Point(1.0, 0.0, 0.0));
+    xyz.push_back(vv + Point(0.0, 1.0, 0.0));
+    xyz.push_back(vv + Point(0.0, 0.0, 1.0));
 
-//     for (int i = 0; i < 4; ++i) faces[i].clear();
-//     faces[0].push_back(0);
-//     faces[0].push_back(2);
-//     faces[0].push_back(1);
+    for (int i = 0; i < 4; ++i) faces[i].clear();
+    faces[0].push_back(0);
+    faces[0].push_back(2);
+    faces[0].push_back(1);
 
-//     faces[1].push_back(0);
-//     faces[1].push_back(1);
-//     faces[1].push_back(3);
+    faces[1].push_back(0);
+    faces[1].push_back(1);
+    faces[1].push_back(3);
 
-//     faces[2].push_back(0);
-//     faces[2].push_back(3);
-//     faces[2].push_back(2);
+    faces[2].push_back(0);
+    faces[2].push_back(3);
+    faces[2].push_back(2);
 
-//     faces[3].push_back(1);
-//     faces[3].push_back(2);
-//     faces[3].push_back(3);
+    faces[3].push_back(1);
+    faces[3].push_back(2);
+    faces[3].push_back(3);
 
-//     double volume = reg->intersect(xyz, faces);
-//     std::cout << "volume=" << volume << std::endl;
-//   }
-// }
+    double volume = reg->intersect(xyz, faces);
+    std::cout << "volume=" << volume << std::endl;
+  }
+}
 
 
