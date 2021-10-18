@@ -402,26 +402,26 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   *S_->GetFieldData(prev_ponded_depth_key_, passwd_)->ViewComponent("cell", true) = h_c;
 
   // update boundary conditions
-  if (bcs_.size() > 0)
-      bcs_[0]->Compute(t_old, t_new);
-  
-  // update source (external) terms
-  for (int i = 0; i < srcs_.size(); ++i) {
-    srcs_[i]->Compute(t_old, t_new);
-  }
-  
-  // compute source (external) values
-  // coupling submodel="rate" returns volumetric flux [m^3/s] integrated over
-  // the time step in the last (the second) component of local data vector
-  total_source_ = 0.0;
-  std::vector<double> ext_S_cell(ncells_owned, 0.0);
-  for (int  i = 0; i < srcs_.size(); ++i) {
-    for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
-      int c = it->first;
-      ext_S_cell[c] = it->second[0];  // data unit is [m]
-      total_source_ += it->second[0] * mesh_->cell_volume(c) * dt; // data unit is [m^3]
-    }
-  }
+//  if (bcs_.size() > 0)
+//      bcs_[0]->Compute(t_old, t_new);
+//
+//  // update source (external) terms
+//  for (int i = 0; i < srcs_.size(); ++i) {
+//    srcs_[i]->Compute(t_old, t_new);
+//  }
+//
+//  // compute source (external) values
+//  // coupling submodel="rate" returns volumetric flux [m^3/s] integrated over
+//  // the time step in the last (the second) component of local data vector
+//  total_source_ = 0.0;
+//  std::vector<double> ext_S_cell(ncells_owned, 0.0);
+//  for (int  i = 0; i < srcs_.size(); ++i) {
+//    for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
+//      int c = it->first;
+//      ext_S_cell[c] = it->second[0];  // data unit is [m]
+//      total_source_ += it->second[0] * mesh_->cell_volume(c) * dt; // data unit is [m^3]
+//    }
+//  }
 
   // Shallow water equations have the form
   // U_t + F_x(U) + G_y(U) = S(U)
@@ -439,11 +439,23 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 //  auto ti_method = Explicit_TI::midpoint;
 //  auto ti_method = Explicit_TI::tvd_3rd_order;
   
-  Teuchos::RCP<TreeVector>& soln_new(soln_);
-  Explicit_TI::RK<TreeVector> rk(*this, ti_method, *soln_);
-  rk.TimeStep(t_old, dt, *soln_, *soln_new);
-
+//  Teuchos::RCP<TreeVector>& soln_new(soln_);
+  Teuchos::RCP<TreeVector> soln_new = Teuchos::rcp(new TreeVector);
+  soln_new = soln_;
+  Explicit_TI::RK<TreeVector> rk1(*this, ti_method, *soln_);
+  rk1.TimeStep(t_old, dt, *soln_, *soln_new);
+  
   soln_ = soln_new;
+  
+//  Epetra_MultiVector& h_temp = *soln_->SubVector(0)->Data()->ViewComponent("cell");
+//  Epetra_MultiVector& q_temp = *soln_->SubVector(1)->Data()->ViewComponent("cell");
+  
+//  soln_new = soln_;
+//  Explicit_TI::RK<TreeVector> rk2(*this, ti_method, *soln_);
+//  rk2.TimeStep(t_old + dt/2.0, dt/2.0, *soln_, *soln_new);
+  
+//  soln_ = soln_new;
+  
   Epetra_MultiVector& h_temp = *soln_->SubVector(0)->Data()->ViewComponent("cell");
   Epetra_MultiVector& q_temp = *soln_->SubVector(1)->Data()->ViewComponent("cell");
 
@@ -578,13 +590,13 @@ double ShallowWater_PK::get_dt()
     *vo_->os() << "switching from reduced to regular cfl=" << cfl_ << std::endl;
   }
 
-//  double vol = std::sqrt(mesh_->cell_volume(0));
-//  return vol/1000;
+  double vol = std::sqrt(mesh_->cell_volume(0));
+  return vol/100;
   
-  if (iters_ < max_iters_)
-    return 0.1 * cfl_ * dt_min;
-  else
-    return cfl_ * dt_min;
+//  if (iters_ < max_iters_)
+//    return 0.1 * cfl_ * dt_min;
+//  else
+//    return cfl_ * dt_min;
 }
 
 

@@ -59,7 +59,6 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   }
 
   // create copies of primary fields
-  *S_->GetFieldData(prev_ponded_depth_key_, passwd_)->ViewComponent("cell", true) = h_c;
   Epetra_MultiVector h_c_tmp(h_c);
   Epetra_MultiVector q_c_tmp(q_c);
 
