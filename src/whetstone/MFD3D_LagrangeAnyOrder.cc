@@ -21,7 +21,7 @@
 #include <vector>
 
 // Amanzi
-#include "Mesh.hh"
+#include "MeshLight.hh"
 #include "Point.hh"
 #include "errors.hh"
 
@@ -44,7 +44,7 @@ namespace WhetStone {
 ****************************************************************** */
 MFD3D_LagrangeAnyOrder::MFD3D_LagrangeAnyOrder(
     const Teuchos::ParameterList& plist,
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
   : MFD3D(mesh)
 {
   order_ = plist.get<int>("method order");
@@ -57,19 +57,19 @@ MFD3D_LagrangeAnyOrder::MFD3D_LagrangeAnyOrder(
 std::vector<SchemaItem> MFD3D_LagrangeAnyOrder::schema() const
 {
   std::vector<SchemaItem> items;
-  items.push_back(std::make_tuple(AmanziMesh::Entity_kind::NODE, DOF_Type::SCALAR, 1));
+  items.push_back(std::make_tuple(AmanziMesh::NODE, DOF_Type::SCALAR, 1));
 
   if (order_ > 1) {
     int nk = PolynomialSpaceDimension(d_ - 1, order_ - 2);
-    items.push_back(std::make_tuple(AmanziMesh::Entity_kind::FACE, DOF_Type::SCALAR, nk));
+    items.push_back(std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, nk));
 
     if (d_ == 3) {
       nk = PolynomialSpaceDimension(d_ - 2, order_ - 2);
-      items.push_back(std::make_tuple(AmanziMesh::Entity_kind::EDGE, DOF_Type::MOMENT, nk));
+      items.push_back(std::make_tuple(AmanziMesh::EDGE, DOF_Type::MOMENT, nk));
     }
 
     nk = PolynomialSpaceDimension(d_, order_ - 2);
-    items.push_back(std::make_tuple(AmanziMesh::Entity_kind::CELL, DOF_Type::MOMENT, nk));
+    items.push_back(std::make_tuple(AmanziMesh::CELL, DOF_Type::MOMENT, nk));
   }
 
   return items;
@@ -80,22 +80,22 @@ std::vector<SchemaItem> MFD3D_LagrangeAnyOrder::schema() const
 * High-order consistency condition for the stiffness matrix. 
 ****************************************************************** */
 int MFD3D_LagrangeAnyOrder::H1consistency2D_(
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mymesh,
+    const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh,
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
   // input mesh may have a different dimension than base mesh
-  int d = mymesh->getSpaceDimension();
+  int d = mymesh->space_dimension();
 
   Entity_ID_List nodes;
-  mymesh->getCellNodes(c, nodes);
+  mymesh->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
-  const auto& faces = mymesh->getCellFaces(c);
+  const auto& faces = mymesh->cell_get_faces(c);
   const auto& dirs = mymesh->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
-  const AmanziGeometry::Point& xc = mymesh->getCellCentroid(c); 
-  double volume = mymesh->getCellVolume(c); 
+  const AmanziGeometry::Point& xc = mymesh->cell_centroid(c); 
+  double volume = mymesh->cell_volume(c); 
 
   // calculate degrees of freedom 
   Polynomial poly(d, order_), pf, pc;
@@ -152,9 +152,9 @@ int MFD3D_LagrangeAnyOrder::H1consistency2D_(
     // N and R: degrees of freedom on faces 
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
-      double area = mymesh->getFaceArea(f);
-      const AmanziGeometry::Point& xf = mymesh->getFaceCentroid(f); 
-      AmanziGeometry::Point normal = mymesh->getFaceNormal(f);
+      double area = mymesh->face_area(f);
+      const AmanziGeometry::Point& xf = mymesh->face_centroid(f); 
+      AmanziGeometry::Point normal = mymesh->face_normal(f);
 
       // local coordinate system with origin at face centroid
       auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
@@ -163,7 +163,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency2D_(
       AmanziGeometry::Point conormal = K * normal;
 
       Entity_ID_List face_nodes;
-      mymesh->getFaceNodes(f, face_nodes);
+      mymesh->face_get_nodes(f, &face_nodes);
       int nfnodes = face_nodes.size();
 
       if (order_ == 1 && col > 0) {
@@ -190,7 +190,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency2D_(
           // Simpson rule with 3 points
           double q0 = tmp.Value(x0);
           double q1 = tmp.Value(x1);
-          double qmid = tmp.Value(mymesh->getFaceCentroid(f));
+          double qmid = tmp.Value(mymesh->face_centroid(f));
 
           R_(pos0, col) += (q0 - qmid) / 6;
           R_(pos1, col) += (q1 - qmid) / 6;
@@ -296,18 +296,18 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
   Entity_ID_List nodes, fedges, fnodes, ids;
   std::vector<int> fdirs;
 
-  mesh_->getCellNodes(c, nodes);
+  mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
-  const auto& edges = mesh_->getCellEdges(c);
+  const auto& edges = mesh_->cell_get_edges(c);
   int nedges = edges.size();
 
-  const auto& faces = mesh_->getCellFaces(c);
+  const auto& faces = mesh_->cell_get_faces(c);
   const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
-  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c); 
-  double volume = mesh_->getCellVolume(c); 
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c); 
+  double volume = mesh_->cell_volume(c); 
 
   // surface mesh processing
   MFD3D_LagrangeAnyOrder mfd_surf(mesh_);
@@ -340,9 +340,9 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
 
   for (int l = 0; l < nfaces; ++l) {
     int f = faces[l];
-    double area = mesh_->getFaceArea(f);
-    const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f); 
-    AmanziGeometry::Point normal = mesh_->getFaceNormal(f);
+    double area = mesh_->face_area(f);
+    const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
+    AmanziGeometry::Point normal = mesh_->face_normal(f);
 
     auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
     vsysf.push_back(coordsys);
@@ -367,7 +367,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
     vbasisf.push_back(basis_f);
 
     Polynomial tmp(d_ - 1, order_);
-    tmp.set_origin(surf_mesh->getCellCentroid(0));
+    tmp.set_origin(surf_mesh->cell_centroid(0));
     GrammMatrix(tmp, integrals_f, basis_f, Mf);
 
     DenseMatrix RG(Rf), RGM(Rf);
@@ -375,7 +375,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
     RGM.Multiply(RG, Mf, false);
 
     // -- constant in projector generates additional matrix
-    mesh_->getFaceNodes(f, ids);
+    mesh_->face_get_nodes(f, &ids);
 
     int m = RGM.NumRows();
     int n = RGM.NumCols();
@@ -413,7 +413,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
 
     // -- map : edge moments
     Entity_ID_List dirs_aux;
-    mesh_->getFaceEdgesAndDirs(f, ids, &dirs_aux);
+    mesh_->face_get_edges_and_dirs(f, &ids, &dirs_aux);
     for (int i = 0; i < ids.size(); ++i) {
       int e = ids[i];
       pos = std::distance(edges.begin(), std::find(edges.begin(), edges.end(), e));
@@ -474,9 +474,9 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
     // N: degrees of freedom on faces
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
-      AmanziGeometry::Point normal = mesh_->getFaceNormal(f);
-      const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f); 
-      double area = mesh_->getFaceArea(f);
+      AmanziGeometry::Point normal = mesh_->face_normal(f);
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
+      double area = mesh_->face_area(f);
 
       // local coordinate system with origin at face centroid
       normal *= dirs[i] / area;
@@ -526,9 +526,9 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
     // N: degrees of freedom at edges
     for (int i = 0; i < nedges; i++) {
       int e = edges[i];
-      const auto& xe = mesh_->getEdgeCentroid(e);
-      std::vector<AmanziGeometry::Point> tau_edge(1, mesh_->getEdgeVector(e));
-      double length = mesh_->getEdgeLength(e);
+      const auto& xe = mesh_->edge_centroid(e);
+      std::vector<AmanziGeometry::Point> tau_edge(1, mesh_->edge_vector(e));
+      double length = mesh_->edge_length(e);
 
       for (auto jt = pe.begin(); jt < pe.end(); ++jt) {
         const int* jndex = jt.multi_index();
@@ -622,8 +622,8 @@ int MFD3D_LagrangeAnyOrder::StiffnessMatrix(
 int MFD3D_LagrangeAnyOrder::StiffnessMatrixSurface(
     int f, const Tensor& K, DenseMatrix& A)
 {
-  const auto& origin = mesh_->getFaceCentroid(f);
-  const auto& normal = mesh_->getFaceNormal(f);
+  const auto& origin = mesh_->face_centroid(f);
+  const auto& normal = mesh_->face_normal(f);
 
   SurfaceCoordinateSystem coordsys(origin, normal);
   Teuchos::RCP<const SingleFaceMesh> surf_mesh = Teuchos::rcp(new SingleFaceMesh(mesh_, f, coordsys));
@@ -650,14 +650,14 @@ void MFD3D_LagrangeAnyOrder::ProjectorCell_(
 
   Entity_ID_List nodes;
 
-  mesh_->getCellNodes(c, nodes);
+  mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
-  const auto& faces = mesh_->getCellFaces(c);
+  const auto& faces = mesh_->cell_get_faces(c);
   int nfaces = faces.size();
 
-  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
-  double volume = mesh_->getCellVolume(c);
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  double volume = mesh_->cell_volume(c);
 
   // calculate stiffness matrix.
   Tensor T(d_, 1);
@@ -695,7 +695,7 @@ void MFD3D_LagrangeAnyOrder::ProjectorCell_(
     int f = faces[n];
 
     Entity_ID_List face_nodes;
-    mesh_->getFaceNodes(f, face_nodes);
+    mesh_->face_get_nodes(f, &face_nodes);
     int nfnodes = face_nodes.size();
 
     for (int j = 0; j < nfnodes; j++) {
@@ -707,9 +707,9 @@ void MFD3D_LagrangeAnyOrder::ProjectorCell_(
     }
 
     if (order_ > 1) { 
-      double area = mesh_->getFaceArea(f);
-      const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f); 
-      const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+      double area = mesh_->face_area(f);
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
       // local coordinate system with origin at face centroid
       SurfaceCoordinateSystem coordsys(xf, normal);
@@ -757,8 +757,8 @@ void MFD3D_LagrangeAnyOrder::ProjectorCell_(
     double a1(0.0), a2(0.0), tmp;
     for (int n = 0; n < nfaces; ++n) {  
       int f = faces[n];
-      const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
-      double area = mesh_->getFaceArea(f);
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+      double area = mesh_->face_area(f);
        
       tmp = vf[n].Value(xf) - grad * (xf - xc);
       a1 += tmp * area;
@@ -789,7 +789,7 @@ void MFD3D_LagrangeAnyOrder::ProjectorCell_(
 
     const DenseVector& v3 = moments->coefs();
     for (int n = 0; n < ndof_c; ++n) {
-      v4(n) = v3(n) * mesh_->getCellVolume(c);
+      v4(n) = v3(n) * mesh_->cell_volume(c);
     }
 
     for (int n = 0; n < nd - ndof_c; ++n) {
@@ -821,10 +821,10 @@ void MFD3D_LagrangeAnyOrder::ProjectorCellFromDOFs_(
   int ndof = R_.NumRows();
   AMANZI_ASSERT(ndof == dofs.NumRows() && nd > 0);
 
-  double volume = mesh_->getCellVolume(c);
-  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c); 
+  double volume = mesh_->cell_volume(c);
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c); 
 
-  const auto& faces = mesh_->getCellFaces(c);
+  const auto& faces = mesh_->cell_get_faces(c);
   int nfaces = faces.size();
   int nnodes = nfaces;
   int ndof_c(ndof - nnodes);
@@ -849,8 +849,8 @@ void MFD3D_LagrangeAnyOrder::ProjectorCellFromDOFs_(
     double a1(0.0), a2(0.0), tmp;
     for (int n = 0; n < nfaces; ++n) {  
       int f = faces[n];
-      double area = mesh_->getFaceArea(f);
-      const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f); 
+      double area = mesh_->face_area(f);
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
 
       int m = (n + 1) % nfaces;
       tmp = (dofs(n) + dofs(m)) / 2 - grad * (xf - xc);

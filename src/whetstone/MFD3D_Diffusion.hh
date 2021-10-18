@@ -23,7 +23,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 #include "Point.hh"
 
 #include "BilinearFormFactory.hh"
@@ -39,16 +39,16 @@ namespace WhetStone {
 class MFD3D_Diffusion : public DeRham_Face { 
  public:
   // constructor for backward compatibility
-  MFD3D_Diffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+  MFD3D_Diffusion(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
     : DeRham_Face(mesh) {};
   MFD3D_Diffusion(const Teuchos::ParameterList& plist,
-                  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+                  const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
     : DeRham_Face(mesh) {};
 
   // main methods 
   // -- schema
   virtual std::vector<SchemaItem> schema() const override {
-    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::Entity_kind::FACE, DOF_Type::SCALAR, 1));
+    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, 1));
   }
 
   // -- default Derahm complex for the mass matrix is not used by Amanzi

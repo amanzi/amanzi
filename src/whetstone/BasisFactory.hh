@@ -17,7 +17,7 @@
 
 #include <memory>
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 
 #include "Basis_Natural.hh"
 #include "Basis_Normalized.hh"

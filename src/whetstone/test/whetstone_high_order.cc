@@ -131,7 +131,7 @@ void HighOrderCrouzeixRaviartSerendipity(int dim, std::string file_name) {
   meshfactory.set_preference(Preference({Framework::MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, (dim == 3)); 
  
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
@@ -205,7 +205,7 @@ void HighOrderLagrange2D(std::string file_name) {
   meshfactory.set_preference(Preference({Framework::MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, true); 
  
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
@@ -252,7 +252,7 @@ void HighOrderLagrange2D(std::string file_name) {
       NumericalIntegration numi(mesh);
       numi.UpdateMonomialIntegralsCell(c, 2 * k, integrals);
 
-      Polynomial ptmp, poly(mesh->getSpaceDimension(), k);
+      Polynomial ptmp, poly(mesh->space_dimension(), k);
       Basis_Regularized basis;
       basis.Init(mesh, c, k, ptmp);
 
@@ -383,8 +383,8 @@ void HighOrderLagrangeSerendipity(const std::string& filename) {
   meshfactory.set_preference(Preference({Framework::MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(filename, true, true); 
  
-  int d = mesh->getSpaceDimension();
-  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  int d = mesh->space_dimension();
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
   Teuchos::ParameterList plist; 
   plist.set<int>("method order", 1);

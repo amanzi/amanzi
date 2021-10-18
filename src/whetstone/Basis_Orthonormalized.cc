@@ -18,7 +18,7 @@
       |               a4  |
 */
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 
 #include "Basis_Orthonormalized.hh"
 #include "NumericalIntegration.hh"
@@ -32,10 +32,10 @@ namespace WhetStone {
 * Prepare scaling data for the orthonormalized basis.
 ****************************************************************** */
 void Basis_Orthonormalized::Init(
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,
     int c, int order, Polynomial& integrals)
 {
-  int d = mesh->getSpaceDimension();
+  int d = mesh->space_dimension();
   monomial_scales_.Reshape(d, order);
   monomial_ortho_.Reshape(d, order);
 
@@ -231,11 +231,11 @@ void Basis_Orthonormalized::ChangeBasisNaturalToMy(DenseVector& v) const
 * coefficients in the orthonormalized basis. 
 ****************************************************************** */
 Polynomial Basis_Orthonormalized::CalculatePolynomial(
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,
     int c, int order, DenseVector& coefs) const
 {
   Polynomial poly(monomial_scales_);
-  poly.set_origin(mesh->getCellCentroid(c));
+  poly.set_origin(mesh->cell_centroid(c));
 
   int n(0);
   for (auto it = poly.begin(); it < poly.end(); ++it) {

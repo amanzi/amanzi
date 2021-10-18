@@ -18,7 +18,7 @@
 #include <vector>
 
 // Amanzi
-#include "Mesh.hh"
+#include "MeshLight.hh"
 #include "Point.hh"
 #include "errors.hh"
 
@@ -38,7 +38,7 @@ namespace WhetStone {
 ****************************************************************** */
 MFD3D_CrouzeixRaviartAnyOrder::MFD3D_CrouzeixRaviartAnyOrder(
     const Teuchos::ParameterList& plist,
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh)
   : MFD3D(mesh)
 {
   order_ = plist.get<int>("method order");
@@ -52,11 +52,11 @@ std::vector<SchemaItem> MFD3D_CrouzeixRaviartAnyOrder::schema() const
 {
   int nk = PolynomialSpaceDimension(d_ - 1, order_ - 1);
   std::vector<SchemaItem> items;
-  items.push_back(std::make_tuple(AmanziMesh::Entity_kind::FACE, DOF_Type::MOMENT, nk));
+  items.push_back(std::make_tuple(AmanziMesh::FACE, DOF_Type::MOMENT, nk));
 
   if (order_ > 1) {
     nk = PolynomialSpaceDimension(d_, order_ - 2);
-    items.push_back(std::make_tuple(AmanziMesh::Entity_kind::CELL, DOF_Type::MOMENT, nk));
+    items.push_back(std::make_tuple(AmanziMesh::CELL, DOF_Type::MOMENT, nk));
   }
 
   return items;
@@ -70,12 +70,12 @@ std::vector<SchemaItem> MFD3D_CrouzeixRaviartAnyOrder::schema() const
 int MFD3D_CrouzeixRaviartAnyOrder::H1consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  const auto& faces = mesh_->getCellFaces(c);
+  const auto& faces = mesh_->cell_get_faces(c);
   const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
-  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c); 
-  double volume = mesh_->getCellVolume(c); 
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c); 
+  double volume = mesh_->cell_volume(c); 
 
   // calculate degrees of freedom 
   Polynomial poly(d_, order_), pf(d_ - 1, order_ - 1), pc;
@@ -123,9 +123,9 @@ int MFD3D_CrouzeixRaviartAnyOrder::H1consistency(
 
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
-      double area = mesh_->getFaceArea(f);
-      const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f); 
-      AmanziGeometry::Point normal = mesh_->getFaceNormal(f);
+      double area = mesh_->face_area(f);
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
+      AmanziGeometry::Point normal = mesh_->face_normal(f);
 
       // local coordinate system with origin at face centroid
       SurfaceCoordinateSystem coordsys(xf, normal);
@@ -231,12 +231,12 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorGradientCell_(
 {
   AMANZI_ASSERT(d_ == 2);
 
-  const auto& faces = mesh_->getCellFaces(c);
+  const auto& faces = mesh_->cell_get_faces(c);
   const auto& dirs = mesh_->cell_get_face_dirs(c);
   int nfaces = faces.size();
 
-  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
-  double volume = mesh_->getCellVolume(c);
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  double volume = mesh_->cell_volume(c);
 
   // calculate stiffness matrix
   Tensor T(d_, 1);
@@ -280,8 +280,8 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorGradientCell_(
         // -- face contribution
         for (int n = 0; n < nfaces; ++n) {
           int f = faces[n];
-          const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
-          double area = mesh_->getFaceArea(f);
+          const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+          double area = mesh_->face_area(f);
 
           polys[1] = &(vf[n][i]);
           double tmp = numi.IntegratePolynomialsFace(f, polys) / area;
@@ -324,9 +324,9 @@ void MFD3D_CrouzeixRaviartAnyOrder::CalculateFaceDOFs_(
 
   NumericalIntegration numi(mesh_);
 
-  double area = mesh_->getFaceArea(f);
-  const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f); 
-  const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+  double area = mesh_->face_area(f);
+  const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
+  const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
   // local coordinate system with origin at face centroid
   SurfaceCoordinateSystem coordsys(xf, normal);
@@ -350,7 +350,7 @@ void MFD3D_CrouzeixRaviartAnyOrder::CalculateFaceDOFs_(
 * Generic projector on space of polynomials of order k in cell c.
 ****************************************************************** */
 void MFD3D_CrouzeixRaviartAnyOrder::ProjectorCell_(
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mymesh, 
+    const Teuchos::RCP<const AmanziMesh::MeshLight>& mymesh, 
     int c, const std::vector<Polynomial>& ve,
     const std::vector<Polynomial>& vf,
     const ProjectorType type,
@@ -358,11 +358,11 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorCell_(
 {
   AMANZI_ASSERT(d_ == 2);
 
-  const auto& faces = mymesh->getCellFaces(c);
+  const auto& faces = mymesh->cell_get_faces(c);
   int nfaces = faces.size();
 
-  const AmanziGeometry::Point& xc = mymesh->getCellCentroid(c);
-  double volume = mymesh->getCellVolume(c);
+  const AmanziGeometry::Point& xc = mymesh->cell_centroid(c);
+  double volume = mymesh->cell_volume(c);
 
   // calculate stiffness matrix
   Tensor T(d_, 1);
@@ -423,8 +423,8 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorCell_(
     double a1(0.0), a2(0.0), tmp;
     for (int n = 0; n < nfaces; ++n) {  
       int f = faces[n];
-      const AmanziGeometry::Point& xf = mymesh->getFaceCentroid(f);
-      double area = mymesh->getFaceArea(f);
+      const AmanziGeometry::Point& xf = mymesh->face_centroid(f);
+      double area = mymesh->face_area(f);
        
       tmp = vf[n].Value(xf) - grad * (xf - xc);
       a1 += tmp * area;
@@ -456,7 +456,7 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorCell_(
 
     const DenseVector& v3 = moments->coefs();
     for (int n = 0; n < ndof_c; ++n) {
-      v4(n) = v3(n) * mymesh->getCellVolume(c);
+      v4(n) = v3(n) * mymesh->cell_volume(c);
     }
 
     for (int n = 0; n < nd - ndof_c; ++n) {

@@ -71,23 +71,23 @@ TEST(DARCY_MASS_2D) {
     // verify exact integration property
     AmanziMesh::Entity_ID_List faces;
     std::vector<int> dirs;
-    mesh->getCellFacesAndDirs(cell, faces, &dirs);
+    mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
     
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell); 
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
     for (int i = 0; i < nfaces; i++) {
       int f1 = faces[i];
       for (int j = 0; j < nfaces; j++) {
         int f2 = faces[j];
 
-        xi = mesh->getFaceNormal(f1)[0] * dirs[i];
-        yi = mesh->getFaceNormal(f1)[1] * dirs[i];
-        xj = mesh->getFaceNormal(f2)[0] * dirs[j];
+        xi = mesh->face_normal(f1)[0] * dirs[i];
+        yi = mesh->face_normal(f1)[1] * dirs[i];
+        xj = mesh->face_normal(f2)[0] * dirs[j];
 
         if (method == 0 || method == 2) {
-          xi /= mesh->getFaceArea(f1);
-          yi /= mesh->getFaceArea(f1);
-          xj /= mesh->getFaceArea(f2);
+          xi /= mesh->face_area(f1);
+          yi /= mesh->face_area(f1);
+          xj /= mesh->face_area(f2);
         }
 
         vxx += M(i, j) * xi * xj;
@@ -147,25 +147,25 @@ TEST(DARCY_MASS_3D) {
     // verify exact integration property
     AmanziMesh::Entity_ID_List faces;
     std::vector<int> dirs;
-    mesh->getCellFacesAndDirs(cell, faces, &dirs);
+    mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
     
     double xi, yi, xj, yj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell); 
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
     for (int i = 0; i < nfaces; i++) {
       int f1 = faces[i];
       for (int j = 0; j < nfaces; j++) {
         int f2 = faces[j];
 
-        xi = mesh->getFaceNormal(f1)[0] * dirs[i];
-        yi = mesh->getFaceNormal(f1)[1] * dirs[i];
-        xj = mesh->getFaceNormal(f2)[0] * dirs[j];
-        yj = mesh->getFaceNormal(f2)[1] * dirs[j];
+        xi = mesh->face_normal(f1)[0] * dirs[i];
+        yi = mesh->face_normal(f1)[1] * dirs[i];
+        xj = mesh->face_normal(f2)[0] * dirs[j];
+        yj = mesh->face_normal(f2)[1] * dirs[j];
 
         if (method == 1) {
-          xi /= mesh->getFaceArea(f1);
-          yi /= mesh->getFaceArea(f1);
-          xj /= mesh->getFaceArea(f2);
-          yj /= mesh->getFaceArea(f2);
+          xi /= mesh->face_area(f1);
+          yi /= mesh->face_area(f1);
+          xj /= mesh->face_area(f2);
+          yj /= mesh->face_area(f2);
         }
 
         vxx += M(i, j) * xi * xj;
@@ -198,7 +198,7 @@ TEST(DARCY_MASS_3D_GENERALIZED_POLYHEDRON) {
   MFD3D_GeneralizedDiffusion mfd(plist, mesh);
 
   int nfaces = 6, cell = 0;
-  double volume = mesh->getCellVolume(cell);
+  double volume = mesh->cell_volume(cell);
   DenseMatrix N, R, M;
   DenseMatrix B(3, 3);
 
@@ -284,23 +284,23 @@ TEST(DARCY_INVERSE_MASS_3D) {
 
     AmanziMesh::Entity_ID_List faces;
     std::vector<int> dirs;
-    mesh->getCellFacesAndDirs(cell, faces, &dirs);
+    mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
     
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell); 
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
     for (int i = 0; i < nfaces; i++) {
       int f1 = faces[i];
       for (int j = 0; j < nfaces; j++) {
         int f2 = faces[j];
 
-        xi = mesh->getFaceNormal(f1)[0] * dirs[i];
-        yi = mesh->getFaceNormal(f1)[1] * dirs[i];
-        xj = mesh->getFaceNormal(f2)[0] * dirs[j];
+        xi = mesh->face_normal(f1)[0] * dirs[i];
+        yi = mesh->face_normal(f1)[1] * dirs[i];
+        xj = mesh->face_normal(f2)[0] * dirs[j];
 
         if (method == 4) {
-          xi /= mesh->getFaceArea(f1);
-          yi /= mesh->getFaceArea(f1);
-          xj /= mesh->getFaceArea(f2);
+          xi /= mesh->face_area(f1);
+          yi /= mesh->face_area(f1);
+          xj /= mesh->face_area(f2);
         }
 
         vxx += W(i, j) * xi * xj;
@@ -376,15 +376,15 @@ TEST(DARCY_FULL_TENSOR_2D) {
 
       AmanziMesh::Entity_ID_List faces;
       std::vector<int> dirs;
-      mesh->getCellFacesAndDirs(cell, faces, &dirs);
+      mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
     
       AmanziGeometry::Point v(1.0, 2.0);
       double xi, xj;
-      double vxx = 0.0, volume = mesh->getCellVolume(cell); 
+      double vxx = 0.0, volume = mesh->cell_volume(cell); 
       for (int i = 0; i < nfaces; i++) {
-        xi = (v * mesh->getFaceNormal(faces[i])) * dirs[i];
+        xi = (v * mesh->face_normal(faces[i])) * dirs[i];
         for (int j = 0; j < nfaces; j++) {
-          xj = (v * mesh->getFaceNormal(faces[j])) * dirs[j];
+          xj = (v * mesh->face_normal(faces[j])) * dirs[j];
           vxx += W(i, j) * xi * xj;
         }
       }
@@ -395,9 +395,9 @@ TEST(DARCY_FULL_TENSOR_2D) {
         if (method == 2 || method == 5) continue;
         vxx = 0.0;
         for (int i = 0; i < nfaces; i++) {
-          xi = (v * mesh->getFaceNormal(faces[i])) * dirs[i];
+          xi = (v * mesh->face_normal(faces[i])) * dirs[i];
           for (int j = 0; j < nfaces; j++) {
-            xj = ((j == 2) ? mesh->getFaceArea(faces[j]) : 0.0) * dirs[j];
+            xj = ((j == 2) ? mesh->face_area(faces[j]) : 0.0) * dirs[j];
             vxx += W(i, j) * xi * xj;
           }
         }
@@ -470,22 +470,22 @@ TEST(DARCY_FULL_TENSOR_3D) {
 
     AmanziMesh::Entity_ID_List faces;
     std::vector<int> dirs;
-    mesh->getCellFacesAndDirs(cell, faces, &dirs);
+    mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
     
     AmanziGeometry::Point v(1.0, 2.0, 3.0);
     double xi, xj;
-    double vxx = 0.0, volume = mesh->getCellVolume(cell); 
+    double vxx = 0.0, volume = mesh->cell_volume(cell); 
     for (int i = 0; i < nfaces; i++) {
       int f1 = faces[i];
       for (int j = 0; j < nfaces; j++) {
         int f2 = faces[j];
 
-        xi = (v * mesh->getFaceNormal(f1)) * dirs[i];
-        xj = (v * mesh->getFaceNormal(f2)) * dirs[j];
+        xi = (v * mesh->face_normal(f1)) * dirs[i];
+        xj = (v * mesh->face_normal(f2)) * dirs[j];
 
         if (method == 5) {
-          xi /= mesh->getFaceArea(f1);
-          xj /= mesh->getFaceArea(f2);
+          xi /= mesh->face_area(f1);
+          xj /= mesh->face_area(f2);
         }
 
         vxx += W(i, j) * xi * xj;
@@ -542,13 +542,13 @@ TEST(DARCY_STIFFNESS_2D_NODE) {
 
     // verify exact integration property
     AmanziMesh::Entity_ID_List nodes;
-    mesh->getCellNodes(cell, nodes);
+    mesh->cell_get_nodes(cell, &nodes);
     
-    int d = mesh->getSpaceDimension();
+    int d = mesh->space_dimension();
     Point p(d);
 
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell); 
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
     for (int i = 0; i < nnodes; i++) {
       int v = nodes[i];
       mesh->node_get_coordinates(v, &p);
@@ -610,21 +610,21 @@ TEST(DARCY_STIFFNESS_2D_EDGE) {
 
     // verify exact integration property
     AmanziMesh::Entity_ID_List edges;
-    mesh->getCellEdges(cell, edges);
+    mesh->cell_get_edges(cell, &edges);
     
-    int d = mesh->getSpaceDimension();
+    int d = mesh->space_dimension();
     Point p(d);
 
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell); 
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
     for (int i = 0; i < nedges; i++) {
       int e = edges[i];
-      const AmanziGeometry::Point& xe = mesh->getEdgeCentroid(e);
+      const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
       xi = xe[0];
       yi = xe[1];
       for (int j = 0; j < nedges; j++) {
         e = edges[j];
-        const AmanziGeometry::Point& ye = mesh->getEdgeCentroid(e);
+        const AmanziGeometry::Point& ye = mesh->edge_centroid(e);
         xj = ye[0];
         vxx += A(i, j) * xi * xj;
         vxy += A(i, j) * yi * xj;
@@ -676,13 +676,13 @@ TEST(DARCY_STIFFNESS_3D) {
 
   // verify exact integration property
   AmanziMesh::Entity_ID_List nodes;
-  mesh->getCellNodes(cell, nodes);
+  mesh->cell_get_nodes(cell, &nodes);
     
-  int d = mesh->getSpaceDimension();
+  int d = mesh->space_dimension();
   Point p(d);
 
   double xi, yi, xj;
-  double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell); 
+  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
   for (int i = 0; i < nnodes; i++) {
     int v = nodes[i];
     mesh->node_get_coordinates(v, &p);
@@ -726,14 +726,14 @@ TEST(RECOVER_GRADIENT_MIXED) {
   AmanziMesh::Entity_ID_List faces;
 
   int nfaces = 6, cell = 0;
-  mesh->getCellFaces(cell, faces);
+  mesh->cell_get_faces(cell, &faces);
 
   Point flux(1.0, 2.0, 3.0);
   std::vector<Polynomial> solution(nfaces);
 
   for (int n = 0; n < nfaces; n++) {
     int f = faces[n];
-    const Point& normal = mesh->getFaceNormal(f);
+    const Point& normal = mesh->face_normal(f);
     solution[n].Reshape(3, 0);
     solution[n](0) = -normal * flux;
   }
@@ -777,7 +777,7 @@ TEST(RECOVER_GRADIENT_NODAL) {
   // create pressure solution
   AmanziMesh::Entity_ID_List nodes;
   int nnodes = 8, cell = 0;
-  mesh->getCellNodes(cell, nodes);
+  mesh->cell_get_nodes(cell, &nodes);
 
   Point slope(1.0, 2.0, 3.0);
   std::vector<Polynomial> solution(nnodes);
@@ -825,7 +825,7 @@ TEST(DARCY_INVERSE_MASS_2D) {
  
   MFD3D_Diffusion mfd(mesh);
 
-  int ok, nfaces = 12, cell = 0, dim = mesh->getSpaceDimension();
+  int ok, nfaces = 12, cell = 0, dim = mesh->space_dimension();
   Tensor T(dim, 2);  // tensor of rank 1
   T(0, 0) = 1.0;
   T(1, 1) = 1.0;
@@ -855,17 +855,17 @@ TEST(DARCY_INVERSE_MASS_2D) {
 
     AmanziMesh::Entity_ID_List faces;
     std::vector<int> dirs;
-    mesh->getCellFacesAndDirs(cell, faces, &dirs);
+    mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
     
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell); 
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
-      xi = mesh->getFaceNormal(f)[0] * dirs[i];
-      yi = mesh->getFaceNormal(f)[1] * dirs[i];
+      xi = mesh->face_normal(f)[0] * dirs[i];
+      yi = mesh->face_normal(f)[1] * dirs[i];
       for (int j = 0; j < nfaces; j++) {
         f = faces[j];
-        xj = mesh->getFaceNormal(f)[0] * dirs[j];
+        xj = mesh->face_normal(f)[0] * dirs[j];
         vxx += W(i, j) * xi * xj;
         vxy += W(i, j) * yi * xj;
       }

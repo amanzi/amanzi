@@ -273,8 +273,8 @@ TEST(PROJECTORS_POLYGON_CR) {
   NumericalIntegration numi(mesh);
 
   for (int n = 0; n < nfaces; ++n) {
-    const AmanziGeometry::Point& normal = mesh->getFaceNormal(n,  cell, &dir);
-    double factor = normal[0] / mesh->getFaceArea(n) * dir;
+    const AmanziGeometry::Point& normal = mesh->face_normal(n, false, cell, &dir);
+    double factor = normal[0] / mesh->face_area(n) * dir;
 
     std::vector<const PolynomialBase*> polys;
 
@@ -309,13 +309,13 @@ TEST(PROJECTORS_POLYGON_CR) {
 
     for (auto it = moments.begin(); it < moments.end(); ++it) {
       Polynomial mono(2, it.multi_index(), 1.0);
-      mono.set_origin(mesh->getCellCentroid(cell));
+      mono.set_origin(mesh->cell_centroid(cell));
    
       Polynomial poly(uc);
-      poly.ChangeOrigin(mesh->getCellCentroid(cell));
+      poly.ChangeOrigin(mesh->cell_centroid(cell));
       poly *= mono;
 
-      double val = numi.IntegratePolynomialCell(cell, poly) / mesh->getCellVolume(cell);
+      double val = numi.IntegratePolynomialCell(cell, poly) / mesh->cell_volume(cell);
       int n = it.PolynomialPosition();
       if (n == 0) CHECK_CLOSE(1.0, val, 1e-12);
       if (n >= 1) CHECK(fabs(val - (1.0 + n)) > 0.05);
@@ -347,7 +347,7 @@ TEST(L2_PROJECTORS_SQUARE_CR) {
   std::cout << "    subtest: QUARTIC deformation" << std::endl;
   for (int n = 0; n < 4; ++n) {
     vf[n].Reshape(2, 4, true);
-    vf[n].set_origin(mesh->getCellCentroid(cell));
+    vf[n].set_origin(mesh->cell_centroid(cell));
     vf[n](4, 1) = 1.0;
     vf[n].ChangeOrigin(AmanziGeometry::Point(0.0, 0.0));
   }
@@ -394,7 +394,7 @@ TEST(L2GRADIENT_PROJECTORS_SQUARE_CR) {
   for (int n = 0; n < 4; ++n) {
     vf[n].resize(1);
     vf[n][0].Reshape(2, 3, true);
-    vf[n][0].set_origin(mesh->getCellCentroid(cell));
+    vf[n][0].set_origin(mesh->cell_centroid(cell));
     vf[n][0](3, 1) = 3.0;
     vf[n][0](3, 3) =-1.0;
     vf[n][0].ChangeOrigin(AmanziGeometry::Point(0.0, 0.0));
@@ -615,8 +615,8 @@ TEST(PROJECTORS_POLYGON_PK) {
   NumericalIntegration numi(mesh);
 
   for (int n = 0; n < nfaces; ++n) {
-    const AmanziGeometry::Point& normal = mesh->getFaceNormal(n,  cell, &dir);
-    double factor = normal[0] / mesh->getFaceArea(n) * dir;
+    const AmanziGeometry::Point& normal = mesh->face_normal(n, false, cell, &dir);
+    double factor = normal[0] / mesh->face_area(n) * dir;
 
     std::vector<const PolynomialBase*> polys;
 
@@ -694,11 +694,11 @@ TEST(PROJECTORS_POLYGON_PK) {
 
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, vf, &moments, uc);
-    double tmp = numi.IntegratePolynomialCell(cell, uc) / mesh->getCellVolume(cell);
+    double tmp = numi.IntegratePolynomialCell(cell, uc) / mesh->cell_volume(cell);
     CHECK_CLOSE(1.0, tmp, 1e-12);
 
     mfd.L2Cell(cell, vf, vf, &moments, uc);
-    tmp = numi.IntegratePolynomialCell(cell, uc) / mesh->getCellVolume(cell);
+    tmp = numi.IntegratePolynomialCell(cell, uc) / mesh->cell_volume(cell);
     CHECK_CLOSE(1.0, tmp, 1e-12);
   }
 }
@@ -974,7 +974,7 @@ void Projector3DLagrangeSerendipitySurface(const std::string& filename)
  
   int face(0), nedges(4);
   AmanziGeometry::Point zero(3), xyz0(3), xyz1(3);
-  const auto& xf = mesh->getFaceCentroid(face);
+  const auto& xf = mesh->face_centroid(face);
   Polynomial uf;
   std::vector<Polynomial> ve(nedges);
 
@@ -994,7 +994,7 @@ void Projector3DLagrangeSerendipitySurface(const std::string& filename)
 
   // add constant to thrid edge (y=1)
   int n0, n1;
-  mesh->getEdgeNodes(2, n0, &n1);
+  mesh->edge_get_nodes(2, &n0, &n1);
   mesh->node_get_coordinates(n0, &xyz0);
   mesh->node_get_coordinates(n1, &xyz1);
   if (fabs(xyz0[0] - xyz1[0]) < 1e-6) {

@@ -41,13 +41,13 @@ class MeshMaps {
   MeshMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh) 
     : mesh1_(mesh),
       mesh0_(mesh),
-      d_(mesh1_->getSpaceDimension()) {};
+      d_(mesh1_->space_dimension()) {};
 
   MeshMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
            Teuchos::RCP<const AmanziMesh::Mesh> mesh1) 
     : mesh1_(mesh1),
       mesh0_(mesh0),
-      d_(mesh1_->getSpaceDimension()) {};
+      d_(mesh1_->space_dimension()) {};
 
   virtual ~MeshMaps() {};
 

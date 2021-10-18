@@ -17,7 +17,7 @@
 #ifndef AMANZI_DG_BASIS_NORMALIZED_HH_
 #define AMANZI_DG_BASIS_NORMALIZED_HH_
 
-#include "Mesh.hh"
+#include "MeshLight.hh"
 
 #include "Basis.hh"
 #include "NumericalIntegration.hh"
@@ -33,7 +33,7 @@ class Basis_Normalized : public Basis {
   ~Basis_Normalized() {};
 
   // initialization
-  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+  virtual void Init(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,
                     int c, int order, Polynomial& integrals);
 
   // transformation of bilinear form
@@ -49,7 +49,7 @@ class Basis_Normalized : public Basis {
   virtual void ChangeBasisNaturalToMy(DenseVector& v) const;
 
   // recover polynomial in the natural basis
-  virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+  virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,
                                          int c, int order, DenseVector& coefs) const;
 
   // access
