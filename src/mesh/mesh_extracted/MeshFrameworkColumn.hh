@@ -63,7 +63,7 @@ is "terrain following."
 namespace Amanzi {
 namespace AmanziMesh {
 
-struct MeshColumnAlgorithms : public MeshFrameworkAlgorithms {
+struct MeshFrameworkColumnAlgorithms : public MeshFrameworkAlgorithms {
   // lumped things for more efficient calculation
   virtual std::pair<double, AmanziGeometry::Point>
   computeCellGeometry(const MeshFramework& mesh, const Entity_ID c) const override;
@@ -74,12 +74,12 @@ struct MeshColumnAlgorithms : public MeshFrameworkAlgorithms {
 };
 
 
-class MeshColumn : public MeshFramework {
+class MeshFrameworkColumn : public MeshFramework {
  public:
-  MeshColumn(const Teuchos::RCP<MeshFramework>& col3D_mesh,
+  MeshFrameworkColumn(const Teuchos::RCP<MeshFramework>& col3D_mesh,
              const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
-  virtual ~MeshColumn() = default;
+  virtual ~MeshFrameworkColumn() = default;
 
   // reference for vis.
   virtual Teuchos::RCP<const MeshFramework> getParentMesh() const override {
@@ -237,7 +237,7 @@ namespace MeshAlgorithms {
 // helper function
 template<class Mesh_type>
 std::pair<double,AmanziGeometry::Point>
-computeMeshColumnsCellGeometry(const Mesh_type& mesh, const Entity_ID c)
+computeMeshColumnCellGeometry(const Mesh_type& mesh, const Entity_ID c)
 {
   /* compute volume on the assumption that the top and bottom faces form
      a vertical columnar cell or in other words a polygonal prism */

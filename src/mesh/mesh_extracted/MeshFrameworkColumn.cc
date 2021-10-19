@@ -8,27 +8,27 @@
 #include "errors.hh"
 #include "MeshCache.hh"
 
-#include "MeshColumn.hh"
+#include "MeshFrameworkColumn.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
 
 std::pair<double, AmanziGeometry::Point>
-MeshColumnAlgorithms::computeCellGeometry(const MeshFramework& mesh, const Entity_ID c) const
+MeshFrameworkColumnAlgorithms::computeCellGeometry(const MeshFramework& mesh, const Entity_ID c) const
 {
-  return MeshAlgorithms::computeMeshColumnsCellGeometry(mesh, c);
+  return MeshAlgorithms::computeMeshColumnCellGeometry(mesh, c);
 }
 std::pair<double, AmanziGeometry::Point>
-MeshColumnAlgorithms::computeCellGeometry(const Mesh& mesh, const Entity_ID c) const
+MeshFrameworkColumnAlgorithms::computeCellGeometry(const Mesh& mesh, const Entity_ID c) const
 {
-  return MeshAlgorithms::computeMeshColumnsCellGeometry(mesh, c);
+  return MeshAlgorithms::computeMeshColumnCellGeometry(mesh, c);
 }
 
 // -----------------------------------------------------------------------------
 // Constructor: instantiates base mesh, generates new nodal coordinates,
 //              fixes faces, and makes maps.
 // -----------------------------------------------------------------------------
-MeshColumn::MeshColumn(const Teuchos::RCP<MeshFramework>& col3D_mesh,
+MeshFrameworkColumn::MeshFrameworkColumn(const Teuchos::RCP<MeshFramework>& col3D_mesh,
                        const Teuchos::RCP<Teuchos::ParameterList>& plist) :
   MeshFramework(col3D_mesh->getComm(), col3D_mesh->getGeometricModel(), plist),
   col3D_mesh_(col3D_mesh)
@@ -44,7 +44,7 @@ MeshColumn::MeshColumn(const Teuchos::RCP<MeshFramework>& col3D_mesh,
   // compute special geometric quantities for column entities (node
   // coordinates, face centroids, cell centroids, face areas)
   computeSpecialNodeCoordinates_();
-  algorithms_ = Teuchos::rcp(new MeshColumnAlgorithms());
+  algorithms_ = Teuchos::rcp(new MeshFrameworkColumnAlgorithms());
 }
 
 
@@ -52,7 +52,7 @@ MeshColumn::MeshColumn(const Teuchos::RCP<MeshFramework>& col3D_mesh,
 // Compute special coordinates for the nodes - all the other
 // quantities will follow suit
 // -----------------------------------------------------------------------------
-void MeshColumn::computeSpecialNodeCoordinates_()
+void MeshFrameworkColumn::computeSpecialNodeCoordinates_()
 {
   // Assume that the column is vertical - nodes are stacked vertically
   // above each other. Assume that the base face is perfectly horizontal

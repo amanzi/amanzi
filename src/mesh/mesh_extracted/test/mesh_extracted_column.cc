@@ -20,7 +20,7 @@
 #include "AmanziComm.hh"
 #include "Geometry.hh"
 #include "MeshCache.hh"
-#include "MeshColumn.hh"
+#include "MeshFrameworkColumn.hh"
 #include "RegionBox.hh"
 #include "GeometricModel.hh"
 
@@ -80,7 +80,7 @@ TEST(COLUMN_MESH_3D)
 
   // Create the MeshColumn object
   Teuchos::RCP<AmanziMesh::MeshFramework> colmesh_fw =
-    Teuchos::rcp(new AmanziMesh::MeshColumn(colmesh_ext, Teuchos::null));
+    Teuchos::rcp(new AmanziMesh::MeshFrameworkColumn(colmesh_ext, Teuchos::null));
   AmanziMesh::MeshCache colmesh(colmesh_fw);
 
   // Verify column mesh topology
@@ -229,7 +229,7 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
 
   // Create the MeshColumn object
   Teuchos::RCP<AmanziMesh::MeshFramework> colmesh_fw =
-    Teuchos::rcp(new AmanziMesh::MeshColumn(colmesh_ext, Teuchos::null));
+    Teuchos::rcp(new AmanziMesh::MeshFrameworkColumn(colmesh_ext, Teuchos::null));
   AmanziMesh::MeshCache colmesh(colmesh_fw);
 
   // Verify column mesh topology

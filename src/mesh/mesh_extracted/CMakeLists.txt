@@ -43,7 +43,7 @@ set(mesh_extracted_inc_files
 add_amanzi_library(mesh_extracted
                    SOURCE BlockMapUtils.cc
                           #MeshExtractedManifold.cc
-                          MeshColumn.cc
+                          MeshFrameworkColumn.cc
                           #MeshSurfaceCell.cc
                    HEADERS ${mesh_extracted_inc_files}
                    LINK_LIBS mesh geometry ${Epetra_LIBRARIES})
