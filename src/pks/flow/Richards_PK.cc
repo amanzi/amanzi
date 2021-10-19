@@ -380,8 +380,8 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     list0.push_back(Keys::getVarName(mol_density_liquid_key_));
     list1.push_back(Keys::getVarName(viscosity_liquid_key_));
     elist.set<std::string>("my key", alpha_key_)
-         .set<Teuchos::Array<std::string> >("evaluator multiplicative dependencies", list0)
-         .set<Teuchos::Array<std::string> >("evaluator reciprocal dependencies", list1);
+         .set<Teuchos::Array<std::string> >("multiplicative dependencies", list0)
+         .set<Teuchos::Array<std::string> >("reciprocal dependencies", list1);
 
     auto eval = Teuchos::rcp(new MultiplicativeReciprocalEvaluator(elist));
     S->SetFieldEvaluator(alpha_key_, eval);

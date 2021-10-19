@@ -15,7 +15,7 @@
     eval = f1 * f2 * ... * fn) / (g1 * g2 * ... * gm)
 */
 
-//! A generic evaluator for multiplying and diving a collection of fields.
+//! A generic evaluator for multiplying and dividing a collection of fields.
 
 /*!
 
@@ -24,8 +24,8 @@
    * `"coefficient`" ``[double]`` **1** A constant prefix to the product.
    * `"enforce positivity`" ``[bool]`` **false** If true, max the result with 0.
 
-   * `"evaluator multiplicative dependencies`" ``[Array(string)]`` (optional), only base field names
-   * `"evaluator reciprocal dependencies`" ``[Array(string)]`` (optional), only base field names
+   * `"multiplicative dependencies`" ``[Array(string)]`` **optional**, only base field names
+   * `"reciprocal dependencies`" ``[Array(string)]`` **optional**, only base field names
 
 */
 #ifndef AMANZI_MULTIPLICATIVE_RECIPROCAL_EVALUATOR_HH_

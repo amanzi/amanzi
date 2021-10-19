@@ -35,9 +35,9 @@ MultiplicativeReciprocalEvaluator::MultiplicativeReciprocalEvaluator(Teuchos::Pa
     Exceptions::amanzi_throw(msg);
   }
 
-  if (plist_.isParameter("evaluator multiplicative dependencies")) {
+  if (plist_.isParameter("multiplicative dependencies")) {
     // since dependensies is a map, we need separate maps for numerator and denominator
-    const auto& names = plist_.get<Teuchos::Array<std::string> >("evaluator multiplicative dependencies");
+    const auto& names = plist_.get<Teuchos::Array<std::string> >("multiplicative dependencies");
     for (const auto& name : names) {
       Key full_name = Keys::getKey(domain, name);
       dependencies_.insert(full_name);
@@ -45,8 +45,8 @@ MultiplicativeReciprocalEvaluator::MultiplicativeReciprocalEvaluator(Teuchos::Pa
     }
   }
 
-  if (plist_.isParameter("evaluator reciprocal dependencies")) {
-    const auto& names = plist_.get<Teuchos::Array<std::string> >("evaluator reciprocal dependencies");
+  if (plist_.isParameter("reciprocal dependencies")) {
+    const auto& names = plist_.get<Teuchos::Array<std::string> >("reciprocal dependencies");
     for (const auto& name : names) {
       Key full_name = Keys::getKey(domain, name);
       dependencies_.insert(full_name);
