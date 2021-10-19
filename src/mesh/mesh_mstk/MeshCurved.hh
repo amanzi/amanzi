@@ -55,9 +55,11 @@ class MeshCurved : public Mesh_MSTK {
 
   // new implementtion of some basis functions
   // -- volume/area of cell
-  double cell_volume(
-      const Entity_ID c, const bool recompute = false) const;
+  double cell_volume(const Entity_ID c, const bool recompute = false) const;
   double cell_volume_linear(const Entity_ID c) const { return Mesh::cell_volume(c); }
+
+  // -- centroid
+  AmanziGeometry::Point cell_centroid(const Entity_ID c, bool recompute = false) const;
 
   // -- curvature information
   virtual 
@@ -79,6 +81,11 @@ class MeshCurved : public Mesh_MSTK {
     face_ho_nodes_ = face_ho_nodes;
   }
 
+  virtual int compute_cell_geometry_(
+          const Entity_ID cellid,
+          double *volume,
+          AmanziGeometry::Point *centroid) const override;
+
  private:
   std::shared_ptr<std::vector<AmanziGeometry::Point_List> > edge_ho_nodes_;
   std::shared_ptr<std::vector<AmanziGeometry::Point_List> > face_ho_nodes_;
@@ -88,8 +95,6 @@ class MeshCurved : public Mesh_MSTK {
 inline
 double MeshCurved::cell_volume(const Entity_ID c, const bool recompute) const
 {
-  if (space_dimension() == 3) return cell_volume_linear(c);  // FIXME
-
   Entity_ID_List nodes, faces;
   AmanziGeometry::Point_List points;
 
@@ -119,6 +124,61 @@ double MeshCurved::cell_volume(const Entity_ID c, const bool recompute) const
   }
 
   return volume;
+}
+
+
+inline
+AmanziGeometry::Point MeshCurved::cell_centroid(const Entity_ID c, bool recompute) const
+{
+  int d = space_dimension();
+  AmanziGeometry::Point xc(d);
+
+  Entity_ID_List nodes, faces;
+  AmanziGeometry::Point_List points;
+
+  cell_get_nodes(c, &nodes);
+  cell_get_faces(c, &faces);
+  int nfaces = faces.size();
+
+  double volume(0.0);
+  AmanziGeometry::Point x0(2), x1(2), xf(2), tau(2), q2(2);
+
+  for (int n = 0; n < nfaces; ++n) {
+    int m = (n + 1) % nfaces;
+    node_get_coordinates(nodes[n], &x0);
+    node_get_coordinates(nodes[m], &x1);
+
+    face_get_ho_nodes(faces[n], &points);
+    int npoints = points.size();
+    
+    xf = (x1 + x0) / 2;
+    tau = x1 - x0;
+    xc[0] += tau[1] * (xf[0] * xf[0] + tau[0] * tau[0] / 12) / 2;
+    xc[1] -= tau[0] * (xf[1] * xf[1] + tau[1] * tau[1] / 12) / 2;
+
+    if (npoints == 1) {
+      q2 = xf - points[0];
+      xc[0] += tau[1] * q2[0] * (q2[0] * 4.0/15 - xf[0] * 2.0/3) + 2 * tau[0] * q2[1] * (points[0][0] / 3 + q2[0] / 5);
+      xc[1] -= tau[0] * q2[1] * (q2[1] * 4.0/15 - xf[1] * 2.0/3) + 2 * tau[1] * q2[0] * (points[0][1] / 3 + q2[1] / 5);
+    } 
+  }
+
+  return xc /= cell_volume(c);
+}
+
+
+inline
+int MeshCurved::compute_cell_geometry_(
+    const Entity_ID c, double *volume, AmanziGeometry::Point *centroid) const
+{
+  if (space_dimension() == 3) {
+    Mesh::compute_cell_geometry_(c, volume, centroid);
+    return 0;
+  } 
+
+  *volume = cell_volume(c);
+  *centroid = cell_centroid(c);
+  return 0;
 }
 
 }  // namespace AmanziMesh

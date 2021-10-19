@@ -479,7 +479,7 @@ void RemapGCLr(const Amanzi::Explicit_TI::method_t& rk_method,
 
   for (int c = 0; c < ncells_owned; ++c) {
     double vol1 = numi.IntegratePolynomialCell(c, jac[c]);
-    double vol2 = mesh1->cell_volume(c);
+    double vol2 = mesh1->cell_volume_linear(c);
 
     area += vol1;
     area1 += vol2;
@@ -492,9 +492,10 @@ void RemapGCLr(const Amanzi::Explicit_TI::method_t& rk_method,
     for (int i = 0; i < nk; ++i) data(i) = p2c[i][c];
     auto poly = dg->cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
 
-    WhetStone::Polynomial tmp(jac[c]);
-    tmp.ChangeOrigin(mesh0->cell_centroid(c));
-    poly *= tmp;
+    // WhetStone::Polynomial tmp(jac[c]);
+    // tmp.ChangeOrigin(mesh0->cell_centroid(c));
+    // poly *= tmp;
+    poly *= jac[c];
     mass1 += numi.IntegratePolynomialCell(c, poly);
   }
 
@@ -511,6 +512,7 @@ void RemapGCLr(const Amanzi::Explicit_TI::method_t& rk_method,
     printf("GCL: L1=%12.8g  Inf=%12.8g\n", gcl_err, gcl_inf);
   }
   CHECK_CLOSE(mass0, mass1, 1e-12);
+  CHECK_CLOSE(gcl_err, 0.0, 1e-12);
 
   // initialize I/O
   Teuchos::ParameterList iolist;

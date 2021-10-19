@@ -499,7 +499,7 @@ void RemapTestsCurved(std::string file_name,
 
   for (int c = 0; c < ncells_owned; ++c) {
     double vol1 = numi.IntegratePolynomialCell(c, det[c].Value(1.0));
-    double vol2 = mesh1->cell_volume(c);
+    double vol2 = mesh1->cell_volume_linear(c);
 
     area += vol1;
     area0 += mesh0->cell_volume_linear(c);
@@ -513,9 +513,7 @@ void RemapTestsCurved(std::string file_name,
     for (int i = 0; i < nk; ++i) data(i) = p2c[i][c];
     auto poly = dg->cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
 
-    WhetStone::Polynomial tmp(det[c].Value(1.0));
-    tmp.ChangeOrigin(mesh0->cell_centroid(c));
-    poly *= tmp;
+    poly *= det[c].Value(1.0);
     mass1 += numi.IntegratePolynomialCell(c, poly);
   }
 
@@ -532,6 +530,8 @@ void RemapTestsCurved(std::string file_name,
            mass1 - mass0, area1 - area, area0 - area1);
     printf("GCL: L1=%12.8g  Inf=%12.8g\n", gcl_err, gcl_inf);
   }
+
+  CHECK_CLOSE(gcl_err, 0.0, 1e-12);
 }
 
 TEST(REMAP_CURVED_3D) {
