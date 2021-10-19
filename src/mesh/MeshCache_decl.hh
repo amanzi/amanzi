@@ -28,22 +28,37 @@ Effectively this set of requirements means there are two or three ways of
 getting each piece of information:
 
 1. the MeshCache's cache (e.g. "fast" access)
-2. directly from the Framework (e.g. "framework" access)
-3. recomputing using the public interface of MeshCache.
+2. recomputing using a mesh algorithm and the public interface of MeshCache.
+3. directly from the MeshFramework (e.g. "framework" access), which may itself
+   call a mesh algorithm and its own interface.
 
-Note that the third is not always possible -- for instance, node coordinates
+Note that the second is not always possible -- for instance, node coordinates
 cannot be recomputed; nor can basic adjacency information, as there is no
 requirement here that a minimal representation of the framework has been cached
 before it is destroyed.  But many of these _can_ be recomputed; for instance,
 one can determine cell coordinates from node coordinates and cell-node
 adjacency, which itself can be computed from cell-face and face-node adjacency
-information.
+information.  Therefore, it is often better to recompute with MeshCache, using
+other cached values, than to ask the framework, which likely will use the same
+algorithm but using uncached values.
 
-"Fast" access will have a few interfaces to allow a method-based access (the
-standard mesh interface), but MeshCache will also expose all underlying data as
-public, allowing direct access.  This "breaking encapsulation" is particularly
-crucial for novel architectures, where we might want to perform a kernel launch
-over a view of the data.
+So the default API typically tries to use a cached value first (if it is
+available), then falls back on either the framework (for fundamental things
+that probably shouldn't or can't computed) or the algorithm (for everything
+else).
+
+"Fast" access can be done through the method (the standard mesh interface), but
+MeshCache will also expose all underlying cache data as public, allowing direct
+access.  This "breaking encapsulation" is particularly crucial for novel
+architectures, where we might want to perform a kernel launch over a view of
+the data.  Note also that users may query whether something was cached or not
+via, e.g., cell_coordinates_cached boolean.
+
+Finally, the framework is split into two classes: MeshFramework, which supplies
+all topological information, nodal coordinates, and a fully featured API, and
+MeshFrameworkAlgorithms, which is a virtual class of algorithmic helper
+functions.  This split is done so that one can destroy the MeshFramework but
+still use the original algorithms.
 
 In general, all things are returned by value.  When this class migrates to
 Kokkos::Views, these will return by value, but will be pointers into the data,
@@ -112,57 +127,42 @@ from the cell-node adjacencies and the node coordinates.  This would be the
      ...
    }
 
-   // This would seg fault because we did not cache.
+   // This would be an out of bounds error, because we did not cache
    for (Entity_ID c=0; c!=m.ncells_owned; ++c) {
-     auto ccoords = m.getCellCoordinates<MeshCache::AccessPattern::CACHED>(c);
-     // SEG FAULT, out of bounds error
+     auto ccoords = m.cell_coordinates[c];
+     // out of bounds error
      ...
    }
 
-   // This would be valid if we had NOT called m.DestroyFramework()
-   for (Entity_ID c=0; c!=m.ncells_owned; ++c) {
-     auto ccoords = m.getCellCoordinates<MeshCache::AccessPattern::FRAMEWORK>(c);
-     // ERROR THROWN, framework mesh destroyed
-     ...
-   }
+Note that the MeshCache stores pointers to many other classes that are useful
+for layering in the various capabilities that make this a fully-featured mesh.
 
-   // same as the default (but without checking for cached
-   for (Entity_ID c=0; c!=m.ncells_owned; ++c) {
-     auto ccords = m.getCellCoordinates<MeshCache::AccessPattern::RECOMPUTE>(c);
-     ...
-   }
+1. MeshFramework -- the virtual "framework mesh" which may be slow, but
+   provides all topological and geometric functionality.
 
+2. MeshFrameworkAlgorithms -- this is a virtual struct containing a few virtual
+   methods for implementing algorithms on either this or the MeshFramework
+   object.  This little class is crucial to ensure that, whether you use the
+   algorithm on the framework or on the cache, you do the same algorithm.  It
+   also allows alternative frameworks to overwrite these algorithms by writing
+   derived classes with mesh-specific algorithms.  This would have been
+   implemented as virtual methods in the MeshFramework class, but we want to be
+   able to delete the framework mesh, and will still need these algorithms
+   after deleting that class if not everything is cached.
 
-These snippets hint at the underlying mechanism -- most methods accept a
-template parameter for the AccessPattern, which is an enum which may be:
+3. MeshSets -- this is a dictionary used to store cached lists of entity IDs
+   that exist in a given region on a given mesh.  Helpers and this using
+   declaration are defined in MeshSets.hh
 
-1. AccessPattern::CACHE ("fast" access, no error checking, this is the default!)
-2. AccessPattern::RECOMPUTE ("slow" access but will work if at all possible)
-3. AccessPattern::FRAMEWORK (go back to the framework mesh to get this quantity)
+4. MeshMaps -- a helper class that implements providing maps for use in data
+   structures.
 
-0. AccessPattern::DEFAULT Uses one of the above strategies, typically in the order:
-      CACHE --> RECOMPUTE --> FRAMEWORK
-
-   If things are cached, this adds only one if statement relative to CACHE, and
-   branch prediction will nearly always be correct, so it is likely that this
-   is just as fast as CACHE, and so it should probably be preferred over CACHE
-   for robustness.  But doing so can hide code mistakes. (E.g. if you think
-   things are cached but they aren't, it will fall back on slower approaches.
-
-   If things aren't CACHED, it will then try RECOMPUTE, as generally that will
-   use CACHED calls to do the work.  Only at last recourse will it go back to
-   framework for things -- typically this means that only baseline,
-   non-recomputable things will actually use the framework.
-
-
-This leads us to the question whether the template is actually needed -- for
-now it is not implemented in many cases, and only the default is available.
-
-Note also that users may query whether something was cached or not via, e.g.,
-cell_coordinates_cached boolean.
+5. MeshColumns -- a helper class that implements columnar lists of cells/faces
+   to define subgrid, 1D processes in the vertical dimension.  This class is
+   only created if buildColumns() is called, and has various preconditions on
+   this mesh.
 
 */
-
 
 #pragma once
 
@@ -179,6 +179,7 @@ namespace Amanzi {
 namespace AmanziMesh {
 
 class MeshFramework;
+class MeshFrameworkAlgorithms;
 
 struct MeshCache {
 
@@ -210,8 +211,7 @@ struct MeshCache {
 
   Teuchos::RCP<const MeshFramework> getMeshFramework() const { return framework_mesh_; }
   Teuchos::RCP<MeshFramework> getMeshFramework() { return framework_mesh_; }
-  void setMeshFramework(const Teuchos::RCP<MeshFramework>& framework_mesh) {
-    framework_mesh_ = framework_mesh; }
+  void setMeshFramework(const Teuchos::RCP<MeshFramework>& framework_mesh);
 
   void initializeFramework();
   void destroyFramework() { framework_mesh_ = Teuchos::null; }
@@ -323,8 +323,7 @@ struct MeshCache {
   // Some meshes are subsets of or derived from a parent mesh.
   // Usually this is null, but some meshes may provide it.
   Teuchos::RCP<const MeshCache> getParentMesh() const { return parent_; }
-  void setParentMesh(const Teuchos::RCP<const MeshCache>& parent) {
-    parent_ = parent; }
+  void setParentMesh(const Teuchos::RCP<const MeshCache>& parent);
 
   // Some meshes have a corresponding mesh that is better for visualization.
   const MeshCache& getVisMesh() const {
@@ -766,6 +765,10 @@ struct MeshCache {
   void buildColumns() {
     columns.initialize(*this);
   }
+  inline
+  void buildColumns(const std::vector<std::string>& regions) {
+    columns.initialize(*this, regions);
+  }
 
 private:
 
@@ -783,6 +786,7 @@ private:
 
   // related meshes
   Teuchos::RCP<MeshFramework> framework_mesh_;
+  Teuchos::RCP<const MeshFrameworkAlgorithms> algorithms_;
   Teuchos::RCP<const MeshCache> parent_;
   Teuchos::RCP<const MeshCache> vis_mesh_;
 

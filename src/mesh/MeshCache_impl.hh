@@ -89,7 +89,7 @@ AmanziGeometry::Point
 MeshCache::getCellCentroid(const Entity_ID c) const
 {
   if (cell_geometry_cached) return cell_centroids[c];
-  auto vol_cent = MeshAlgorithms::computeCellGeometry(*this, c);
+  auto vol_cent = algorithms_->computeCellGeometry(*this, c);
   return vol_cent.second;
 }
 
@@ -98,7 +98,7 @@ AmanziGeometry::Point
 MeshCache::getFaceCentroid(const Entity_ID f) const
 {
   if (face_geometry_cached) return face_centroids[f];
-  auto area_cent_norms = MeshAlgorithms::computeFaceGeometry(*this, f);
+  auto area_cent_norms = algorithms_->computeFaceGeometry(*this, f);
   return std::get<1>(area_cent_norms);
 }
 
@@ -107,7 +107,7 @@ AmanziGeometry::Point
 MeshCache::getEdgeCentroid(const Entity_ID e) const
 {
   if (edge_geometry_cached) return edge_centroids[e];
-  auto vec_cent = MeshAlgorithms::computeEdgeGeometry(*this, e);
+  auto vec_cent = algorithms_->computeEdgeGeometry(*this, e);
   return vec_cent.second;
 }
 
@@ -141,7 +141,7 @@ double
 MeshCache::getCellVolume(const Entity_ID c) const
 {
   if (cell_geometry_cached) return cell_volumes[c];
-  auto vol_cent = MeshAlgorithms::computeCellGeometry(*this, c);
+  auto vol_cent = algorithms_->computeCellGeometry(*this, c);
   return vol_cent.first;
 }
 
@@ -158,7 +158,7 @@ double
 MeshCache::getEdgeLength(const Entity_ID e) const
 {
   if (edge_geometry_cached) return AmanziGeometry::norm(edge_vectors[e]);
-  auto vec_cent = MeshAlgorithms::computeEdgeGeometry(*this, e);
+  auto vec_cent = algorithms_->computeEdgeGeometry(*this, e);
   return AmanziGeometry::norm(vec_cent.first);
 }
 
@@ -169,7 +169,7 @@ MeshCache::getFaceNormal(const Entity_ID f) const
 {
   // if (face_geometry_cached) return face_normals[f][0];
   // if (framework_mesh_.get()) return framework_mesh_->getFaceNormal(f);
-  // auto area_cent_norms = MeshAlgorithms::computeFaceGeometry(*this, f);
+  // auto area_cent_norms = algorithms_->computeFaceGeometry(*this, f);
   // return std::get<2>(area_cent_norms)[0];
   // optimize this later! --etc
   return getFaceNormal(f, -1, nullptr);
@@ -213,7 +213,7 @@ MeshCache::getFaceNormal(const Entity_ID f,
     normal = framework_mesh_->getFaceNormal(f, c, orientation);
 
   } else {
-    auto geom = MeshAlgorithms::computeFaceGeometry(*this, f);
+    auto geom = algorithms_->computeFaceGeometry(*this, f);
 
     auto fcells = getFaceCells(f, Parallel_type::ALL);
     if (orientation) *orientation = 0;
@@ -244,7 +244,7 @@ AmanziGeometry::Point
 MeshCache::getEdgeVector(const Entity_ID e) const
 {
   if (edge_geometry_cached) return edge_vectors[e];
-  auto vec_cent = MeshAlgorithms::computeEdgeGeometry(*this, e);
+  auto vec_cent = algorithms_->computeEdgeGeometry(*this, e);
   return vec_cent.first;
 }
 

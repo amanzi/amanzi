@@ -42,8 +42,8 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
     Exceptions::amanzi_throw(mesg);
   }
 
-  set_space_dimension(3);
-  set_manifold_dimension(1);
+  setSpaceDimension(3);
+  setManifoldDimension(1);
 
   // face-cell connectivity topology
   face_cell_ids_ = face_cell_ids;

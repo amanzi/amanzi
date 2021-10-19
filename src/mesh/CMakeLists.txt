@@ -80,7 +80,7 @@ if (ENABLE_MESH_MSTK)
   add_subdirectory(mesh_mstk)
 endif(ENABLE_MESH_MSTK)    
 
-#add_subdirectory(mesh_extracted)
+add_subdirectory(mesh_extracted)
 #add_subdirectory(mesh_logical)
 
 # Factory class

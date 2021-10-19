@@ -42,9 +42,9 @@ set(mesh_extracted_inc_files
 
 add_amanzi_library(mesh_extracted
                    SOURCE BlockMapUtils.cc
-                          MeshExtractedManifold.cc
+                          #MeshExtractedManifold.cc
                           MeshColumn.cc
-                          MeshSurfaceCell.cc
+                          #MeshSurfaceCell.cc
                    HEADERS ${mesh_extracted_inc_files}
                    LINK_LIBS mesh geometry ${Epetra_LIBRARIES})
 
@@ -77,17 +77,16 @@ if (BUILD_TESTS)
     file(COPY ${DataFiles} DESTINATION ${MESH_EXTRACTED_BINARY_DIR}/test/)
   endif()
 
-  add_amanzi_test(mesh_extracted_fracture mesh_extracted_fracture
-                  KIND unit
-                  SOURCE test/Main.cc test/mesh_extracted_fracture.cc
-                  LINK_LIBS ${mesh_frameworks} mesh_extracted mesh_audit geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+  # add_amanzi_test(mesh_extracted_fracture mesh_extracted_fracture
+  #                 KIND unit
+  #                 SOURCE test/Main.cc test/mesh_extracted_fracture.cc
+  #                 LINK_LIBS ${mesh_frameworks} mesh_extracted mesh_audit geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+  # add_amanzi_test(mesh_extracted_fracture_3pe mesh_extracted_fracture NPROCS 3 KIND unit)
 
-  add_amanzi_test(mesh_extracted_fracture_3pe mesh_extracted_fracture NPROCS 3 KIND unit)
-
-  add_amanzi_test(mesh_surface_flattened mesh_surface_flattened
-                  KIND unit
-                  SOURCE test/Main.cc test/mesh_surface_flattened.cc
-                  LINK_LIBS ${mesh_frameworks} mesh_extracted geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+  # add_amanzi_test(mesh_surface_flattened mesh_surface_flattened
+  #                 KIND unit
+  #                 SOURCE test/Main.cc test/mesh_surface_flattened.cc
+  #                 LINK_LIBS ${mesh_frameworks} mesh_extracted geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
   # note: this requires volumetric extraction, which is only supported by MSTK for now...
   if (ENABLE_MESH_MSTK)
@@ -97,11 +96,11 @@ if (BUILD_TESTS)
                   SOURCE test/Main.cc test/mesh_extracted_column.cc 
 		  LINK_LIBS mesh_extracted mesh_mstk geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: extracted surface from column_mesh
-    add_amanzi_test(mesh_extracted_surface_cell mesh_extracted_surface_cell
-                  KIND unit
-                  SOURCE test/Main.cc test/mesh_extracted_surface_cell.cc 
-                  LINK_LIBS mesh_extracted mesh_mstk geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # # Test: extracted surface from column_mesh
+    # add_amanzi_test(mesh_extracted_surface_cell mesh_extracted_surface_cell
+    #               KIND unit
+    #               SOURCE test/Main.cc test/mesh_extracted_surface_cell.cc 
+    #               LINK_LIBS mesh_extracted mesh_mstk geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
   endif()          
 endif()
   

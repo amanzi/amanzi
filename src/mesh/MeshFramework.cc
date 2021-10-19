@@ -30,6 +30,7 @@ MeshFramework::MeshFramework(const Comm_ptr_type& comm,
 {
   if (!plist_.get()) plist_ = Teuchos::rcp(new Teuchos::ParameterList("mesh"));
   vo_ = Teuchos::rcp(new VerboseObject(comm, "MeshFramework", *plist_));
+  algorithms_ = Teuchos::rcp(new MeshFrameworkAlgorithms());
 }
 
 
@@ -148,12 +149,6 @@ MeshFramework::getEdgeCoordinates(const Entity_ID e) const
 //
 // Cell geometry
 //
-std::pair<double, AmanziGeometry::Point>
-MeshFramework::computeCellGeometry(const Entity_ID c) const
-{
-  return MeshAlgorithms::computeCellGeometry(*this, c);
-}
-
 double
 MeshFramework::getCellVolume(const Entity_ID c) const
 {
@@ -170,12 +165,6 @@ MeshFramework::getCellCentroid(const Entity_ID c) const
 //
 // face geometry
 //
-std::tuple<double, AmanziGeometry::Point, Point_List>
-MeshFramework::computeFaceGeometry(const Entity_ID f) const
-{
-  return MeshAlgorithms::computeFaceGeometry(*this, f);
-}
-
 double
 MeshFramework::getFaceArea(const Entity_ID f) const
 {
@@ -218,12 +207,6 @@ MeshFramework::getFaceNormal(const Entity_ID f, const Entity_ID c, int * const o
 //
 // Edge geometry
 //
-std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
-MeshFramework::computeEdgeGeometry(const Entity_ID c) const
-{
-  return MeshAlgorithms::computeEdgeGeometry(*this, c);
-}
-
 double
 MeshFramework::getEdgeLength(const Entity_ID e) const
 {
@@ -364,6 +347,42 @@ MeshFramework::throwNotImplemented_(const std::string& methodname) const
   msg << "MeshFramework does not yet implement " << methodname;
   Exceptions::amanzi_throw(msg);
 }
+
+
+std::pair<double, AmanziGeometry::Point>
+MeshFrameworkAlgorithms::computeCellGeometry(const MeshFramework& mesh, const Entity_ID c) const
+{
+  return MeshAlgorithms::computeCellGeometry(mesh, c);
+}
+std::pair<double, AmanziGeometry::Point>
+MeshFrameworkAlgorithms::computeCellGeometry(const Mesh& mesh, const Entity_ID c) const
+{
+  return MeshAlgorithms::computeCellGeometry(mesh, c);
+}
+
+std::tuple<double, AmanziGeometry::Point, Point_List>
+MeshFrameworkAlgorithms::computeFaceGeometry(const MeshFramework& mesh, const Entity_ID f) const
+{
+  return MeshAlgorithms::computeFaceGeometry(mesh, f);
+}
+std::tuple<double, AmanziGeometry::Point, Point_List>
+MeshFrameworkAlgorithms::computeFaceGeometry(const Mesh& mesh, const Entity_ID f) const
+{
+  return MeshAlgorithms::computeFaceGeometry(mesh, f);
+}
+
+std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
+MeshFrameworkAlgorithms::computeEdgeGeometry(const MeshFramework& mesh, const Entity_ID c) const
+{
+  return MeshAlgorithms::computeEdgeGeometry(mesh, c);
+}
+std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
+MeshFrameworkAlgorithms::computeEdgeGeometry(const Mesh& mesh, const Entity_ID c) const
+{
+  return MeshAlgorithms::computeEdgeGeometry(mesh, c);
+}
+
+
 
 
 } // namespace AmanziMesh

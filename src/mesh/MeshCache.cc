@@ -46,6 +46,21 @@ MeshCache::MeshCache() :
 {}
 
 
+void MeshCache::setParentMesh(const Teuchos::RCP<const MeshCache>& parent)
+{
+  if (parent_ != Teuchos::null && parent_ != parent) {
+    Errors::Message msg("MeshCache::setParentMesh given conflicting parent mesh.");
+    Exceptions::amanzi_throw(msg);
+  }
+  parent_ = parent;
+}
+
+void MeshCache::setMeshFramework(const Teuchos::RCP<MeshFramework>& framework_mesh) {
+  framework_mesh_ = framework_mesh;
+  // always save the algorithms, so we can throw away the data
+  algorithms_ = framework_mesh->getAlgorithms();
+}
+
 void MeshCache::initializeFramework()
 {
   comm_ = framework_mesh_->getComm();
@@ -75,8 +90,6 @@ void MeshCache::initializeFramework()
   nboundary_nodes_owned = getMap(Entity_kind::BOUNDARY_NODE, false).NumMyElements();
   nboundary_nodes_all = getMap(Entity_kind::BOUNDARY_NODE, true).NumMyElements();
 }
-
-
 
 
 bool

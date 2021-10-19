@@ -125,7 +125,7 @@ Mesh_MOAB::Mesh_MOAB(const std::string& filename,
     }
   }
 
-  set_manifold_dimension(celldim);
+  setManifoldDimension(celldim);
 
   // redefine space dimension  // FIXME
   mbcore_->set_dimension(celldim);

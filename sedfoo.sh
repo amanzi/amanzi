@@ -154,6 +154,9 @@ function go () {
     ${SED} ${SED_ARGS} 's|set_subdomain_map|setSubdomainMap|g' "$1"
     ${SED} ${SED_ARGS} 's|DoImport|doImport|g' "$1"
     ${SED} ${SED_ARGS} 's|DoExport|doExport|g' "$1"
+    ${SED} ${SED_ARGS} 's|build_columns|buildColumns|g' "$1"
+    ${SED} ${SED_ARGS} 's|->num_columns()|->columns.num_columns_owned|g' "$1"
+    ${SED} ${SED_ARGS} 's|\.num_columns()|.columns.num_columns_owned|g' "$1"
     
 }
 

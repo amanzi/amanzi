@@ -33,12 +33,12 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
 
   // set dimensions
   if (flatten) {
-    set_space_dimension(2);
+    setSpaceDimension(2);
   } else {
-    set_space_dimension(3);
+    setSpaceDimension(3);
   }
-  //    set_manifold_dimension(0); // ETC: this should be done, but it breaks overland flow
-  set_manifold_dimension(2);
+  //    setManifoldDimension(0); // ETC: this should be done, but it breaks overland flow
+  setManifoldDimension(2);
 
   // set my cells
   Entity_ID_List my_cells;

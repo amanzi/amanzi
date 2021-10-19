@@ -38,6 +38,7 @@ namespace Amanzi {
 namespace AmanziMesh {
 
 class MeshCache;
+using Mesh = MeshCache;
 
 namespace MeshAlgorithms {
 
@@ -123,7 +124,7 @@ deform(Mesh_type& mesh,
        const Point_List& newpos);
 
 int
-deform(MeshCache& mesh,
+deform(Mesh& mesh,
        const Entity_ID_List& nodeids,
        const Point_List& newpos);
 

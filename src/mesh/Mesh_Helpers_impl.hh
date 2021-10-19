@@ -13,7 +13,7 @@
 #include "Point.hh"
 #include "Geometry.hh"
 #include "MeshDefs.hh"
-#include "MeshCache_decl.hh"
+#include "Mesh.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -380,7 +380,7 @@ deform(Mesh_type& mesh,
 }
 
 inline int
-deform(MeshCache& mesh,
+deform(AmanziMesh::Mesh& mesh,
        const Entity_ID_List& nodeids,
        const Point_List& newpos)
 {

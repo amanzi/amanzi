@@ -31,8 +31,8 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
     bg_mesh_(bg_mesh),
     log_mesh_(log_mesh)
 {
-  set_space_dimension(3);
-  set_manifold_dimension(3); // mixed?
+  setSpaceDimension(3);
+  setManifoldDimension(3); // mixed?
 
   // ensure cached properties are available
   if (!bg_mesh->cell_geometry_precomputed_)

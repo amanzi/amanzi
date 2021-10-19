@@ -36,8 +36,8 @@ Mesh_simple::Mesh_simple(double x0, double y0, double z0,
     y0_(y0), y1_(y1),
     z0_(z0), z1_(z1)
 {
-  set_space_dimension(3);
-  set_manifold_dimension(3);
+  setSpaceDimension(3);
+  setManifoldDimension(3);
   edges_requested_ = plist_->get<bool>("request edges", false);
   CreateCache_();
 }

@@ -59,7 +59,7 @@ Mesh_MSTK::Mesh_MSTK(const std::string& filename,
     Errors::Message mesg("cell dimension on this processor is different from max cell dimension across all processors");
     Exceptions::amanzi_throw(mesg);
   }
-  set_manifold_dimension(cell_dim);
+  setManifoldDimension(cell_dim);
 
   if (cell_dim == 2 && space_dim == 3) {
     // Check if this is a completely planar mesh
@@ -84,7 +84,7 @@ Mesh_MSTK::Mesh_MSTK(const std::string& filename,
     if (planar) space_dim = 2;
     comm->MaxAll(&space_dim,&max,1);
     space_dim = max;
-    set_space_dimension(space_dim);
+    setSpaceDimension(space_dim);
   }
 
   // Verify mesh and geometric model compatibility
@@ -128,7 +128,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
     // Load serial mesh
     mesh_ = MESH_New(F1);
     ok &= generate_regular_mesh_(mesh_,x0,y0,z0,x1,y1,z1,nx,ny,nz);
-    set_manifold_dimension(3);
+    setManifoldDimension(3);
     myprocid = 0;
 
   } else {
@@ -150,7 +150,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
 
     ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh_,&topo_dim,ring,with_attr,
                                    method,del_inmesh,mpicomm_);
-    set_manifold_dimension(topo_dim);
+    setManifoldDimension(topo_dim);
   }
 
   if (!ok) {
@@ -190,7 +190,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
   }
 
   int topo_dim = space_dim; // What is the topological dimension of the mesh
-  set_manifold_dimension(topo_dim);
+  setManifoldDimension(topo_dim);
 
   if (serial_run) {
     // Load serial mesh
@@ -254,7 +254,7 @@ Mesh_MSTK::Mesh_MSTK(const Teuchos::RCP<const MeshFramework>& parent_mesh,
     Errors::Message mesg("Cannot extract an MSTK mesh from a non-MSTK mesh.");
     Exceptions::amanzi_throw(mesg);
   }
-  setParentMesh(parent_mesh_as_mstk);
+  parent_mesh_ = parent_mesh_as_mstk;
   auto parent_mesh_mstk = parent_mesh_as_mstk->mesh_;
 
   // store pointers to the MESH_XXXFromID functions so that they can
@@ -2709,7 +2709,7 @@ void Mesh_MSTK::pre_create_steps_(const int space_dimension)
 {
   clear_internals_();
   MSTK_Init();
-  set_space_dimension(space_dimension);
+  setSpaceDimension(space_dimension);
 
   auto mpicomm = Teuchos::rcp_dynamic_cast<const MpiComm_type>(getComm());
   if (!mpicomm.get()) {
@@ -2892,10 +2892,10 @@ void Mesh_MSTK::extract_mstk_mesh_(List_ptr src_entities,
   // What is the cell dimension of new mesh
   switch (entity_dim) {
   case MREGION:
-    set_manifold_dimension(3); // extract regions/cells from mesh
+    setManifoldDimension(3); // extract regions/cells from mesh
     break;
   case MFACE:
-    set_manifold_dimension(2); // extract faces from mesh
+    setManifoldDimension(2); // extract faces from mesh
     break;
   case MEDGE: {
     Errors::Message mesg("Edge list passed into extract mesh. Cannot extract a wire or point mesh");

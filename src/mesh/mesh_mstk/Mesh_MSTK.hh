@@ -27,6 +27,7 @@
 #include "errors.hh"
 
 namespace Amanzi {
+class MeshCache;
 
 namespace AmanziMesh {
 
@@ -98,7 +99,6 @@ class Mesh_MSTK : public MeshFramework {
   //
   // Parent entity in the source mesh if mesh was derived from another mesh
   virtual Teuchos::RCP<const MeshFramework> getParentMesh() const override { return parent_mesh_; }
-  void setParentMesh(const Teuchos::RCP<const Mesh_MSTK>& parent) { parent_mesh_ = parent; }
 
   virtual bool hasEdges() const override { return edges_requested_; }
   virtual bool isDeformable() const override { return true; }

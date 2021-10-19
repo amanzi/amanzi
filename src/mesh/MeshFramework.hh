@@ -12,13 +12,19 @@
 
 Developer note:
 
-This interface is largely here for testing.  Very little is likely to be used
+Most of this interface is here for testing.  Very little is likely to be used
 in the final code, because largely the interface will be used to generate a
 MeshCache object.  The MeshCache will then provide the full interface using
 fast access, non-virtual methods.
 
 A new Framework really must supply only a handful of methods, but may choose to
 provide more, as long as they are consistent.
+
+Note that the framework is split into two classes, MeshFramework and
+MeshFrameworkAlgorithms, both of which must exist.  For many, the algorithms
+will be the default class.  But some "special" frameworks may implement special
+algorithms.  If they do so, the MeshCache object will need the algorithms even
+if the Framework itself is deleted (hence the split).
 
 */
 
@@ -43,7 +49,44 @@ class GeometricModel;
 }
 
 namespace AmanziMesh {
+class MeshCache;
+using Mesh = MeshCache;
+class MeshFramework;
 
+//
+// This class provides default, virtual algorithms for computing geometric
+// quantities given nodal coordinates and topological information.
+//
+// Split into two classes to aid in deletion of the MeshFramework class, while
+// keeping the MeshFrameworkAlgorithms class around for use by the Cache.
+//
+struct MeshFrameworkAlgorithms {
+  // lumped things for more efficient calculation
+  virtual std::pair<double, AmanziGeometry::Point>
+  computeCellGeometry(const MeshFramework& mesh, const Entity_ID c) const;
+
+  // replicated because of a lack of templated virtual functions
+  virtual std::pair<double, AmanziGeometry::Point>
+  computeCellGeometry(const Mesh& mesh, const Entity_ID c) const;
+
+  virtual std::tuple<double, AmanziGeometry::Point, Point_List>
+  computeFaceGeometry(const MeshFramework& mesh, const Entity_ID f) const;
+
+  virtual std::tuple<double, AmanziGeometry::Point, Point_List>
+  computeFaceGeometry(const Mesh& mesh, const Entity_ID f) const;
+
+  virtual std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
+  computeEdgeGeometry(const MeshFramework& mesh, const Entity_ID e) const;
+
+  virtual std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
+  computeEdgeGeometry(const Mesh& mesh, const Entity_ID e) const;
+};
+
+
+//
+// The framework class itself provides setters/getters/attributes, all
+// topology, and coordinates.
+//
 class MeshFramework  {
  protected:
   MeshFramework(const Comm_ptr_type& comm,
@@ -70,12 +113,12 @@ class MeshFramework  {
 
   // space dimension describes the dimension of coordinates in space
   std::size_t getSpaceDimension() const { return space_dim_; }
-  void set_space_dimension(unsigned int dim) { space_dim_ = dim; }
+  void setSpaceDimension(unsigned int dim) { space_dim_ = dim; }
 
   // manifold dimension describes the dimensionality of the corresponding R^n
   // manifold onto which this mesh can be projected.
   std::size_t getManifoldDimension() const { return manifold_dim_; }
-  void set_manifold_dimension(const unsigned int dim) { manifold_dim_ = dim; }
+  void setManifoldDimension(const unsigned int dim) { manifold_dim_ = dim; }
 
   // Some meshes are subsets of or derived from a parent mesh.
   // Usually this is null, but some meshes may provide it.
@@ -88,6 +131,14 @@ class MeshFramework  {
   }
   void setVisMesh(const Teuchos::RCP<const MeshFramework>& vis_mesh) { vis_mesh_ = vis_mesh; }
 
+  // Helper class that provides geometric algorithms.  Sometimes it is useful
+  // to keep the algorithms object even if this class is deleted.
+  Teuchos::RCP<const MeshFrameworkAlgorithms> getAlgorithms() const { return algorithms_; }
+  void setAlgorithms(const Teuchos::RCP<const MeshFrameworkAlgorithms>& algorithms ) {
+    algorithms_ = algorithms; }
+
+  virtual void writeToExodusFile(const std::string& filename) const {}
+
   // Some meshes have edges
   //
   // DEVELOPER NOTE: frameworks that do not implement edges need not provide
@@ -99,10 +150,6 @@ class MeshFramework  {
 
   // Some meshes can be deformed.
   virtual bool isDeformable() const { return false; }
-
-  virtual void writeToExodusFile(const std::string& filename) const {
-    throwNotImplemented_("writeExodusFile");
-  }
 
   // ----------------
   // Entity meta-data
@@ -118,8 +165,11 @@ class MeshFramework  {
   // Global ID of any entity
   //
   // DEVELOPER NOTE: serial meshes need not provide this method -- the default
-  // returns lid.
+  // returns the LID.
   virtual Entity_GID getEntityGID(const Entity_kind kind, const Entity_ID lid) const;
+
+  // DEVELOPER NOTE: serial meshes need not provide this method -- the default
+  // returns a list of LIDs.
   virtual Entity_GID_List getEntityGIDs(const Entity_kind kind, const Parallel_type ptype) const;
 
   // corresponding entity in the parent mesh
@@ -151,14 +201,21 @@ class MeshFramework  {
   virtual double getEdgeLength(const Entity_ID e) const;
 
   // lumped things for more efficient calculation
-  virtual std::pair<double, AmanziGeometry::Point>
-  computeCellGeometry(const Entity_ID c) const;
+  std::pair<double, AmanziGeometry::Point>
+  computeCellGeometry(const Entity_ID c) const {
+    return algorithms_->computeCellGeometry(*this, c);
+  }
 
-  virtual std::tuple<double, AmanziGeometry::Point, Point_List>
-  computeFaceGeometry(const Entity_ID f) const;
+  std::tuple<double, AmanziGeometry::Point, Point_List>
+  computeFaceGeometry(const Entity_ID f) const {
+    return algorithms_->computeFaceGeometry(*this, f);
+  }
 
-  virtual std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
-  computeEdgeGeometry(const Entity_ID e) const;
+  std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
+  computeEdgeGeometry(const Entity_ID e) const {
+    return algorithms_->computeEdgeGeometry(*this, e);
+  }
+
 
   // Normal vector of a face
   //
@@ -348,10 +405,14 @@ protected:
   Teuchos::RCP<const VerboseObject> vo_;
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_;
   Teuchos::RCP<const MeshFramework> vis_mesh_;
+  Teuchos::RCP<const MeshFrameworkAlgorithms> algorithms_;
 
   std::size_t space_dim_;
   std::size_t manifold_dim_;
 };
+
+
+
 
 }  // namespace AmanziMesh
 }  // namespace Amanzi
