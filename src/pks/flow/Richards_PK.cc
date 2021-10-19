@@ -376,9 +376,9 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
 
     Teuchos::ParameterList elist;
     Teuchos::Array<std::string> list0, list1;
-    list0.push_back(kkey);
-    list0.push_back(mol_density_liquid_key_);
-    list1.push_back(viscosity_liquid_key_);
+    list0.push_back(Keys::getVarName(kkey));
+    list0.push_back(Keys::getVarName(mol_density_liquid_key_));
+    list1.push_back(Keys::getVarName(viscosity_liquid_key_));
     elist.set<std::string>("my key", alpha_key_)
          .set<Teuchos::Array<std::string> >("multiplicative dependencies", list0)
          .set<Teuchos::Array<std::string> >("reciprocal dependencies", list1);
