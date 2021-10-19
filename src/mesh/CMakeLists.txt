@@ -188,5 +188,13 @@ if (BUILD_TESTS)
                     KIND unit
         	    SOURCE test/Main.cc test/mesh_nanoflann.cc
         	    LINK_LIBS ${mesh_test_link_libs})
+
+    # Test: mesh high-order
+    #   A basic test of high-order meshes 
+    add_amanzi_test(mesh_high_order mesh_high_order
+                    KIND unit
+        	    SOURCE test/Main.cc test/mesh_high_order.cc
+        	    LINK_LIBS ${mesh_test_link_libs})
+
 endif()
   
