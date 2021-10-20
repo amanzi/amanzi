@@ -225,18 +225,7 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   U.resize(3);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    h  = h_c[0][c];
-    qx = q_c[0][c];
-    qy = q_c[1][c];
-
-    factor = inverse_with_tolerance_1(h);
-    u = factor * qx;
-    v = factor * qy;
-
-    U[0] = h;
-    U[1] = h * u;
-    U[2] = h * v;
-
+    
     S = NumericalSource(U, c);
 
     h  = h_c_tmp[0][c] +  (S[0] + ext_S_cell[c]);
