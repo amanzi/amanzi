@@ -19,7 +19,7 @@
 // Amanzi
 #include "CompositeVector.hh"
 #include "Mesh.hh"
-#include "WhetStoneMeshUtils.hh"
+#include "Mesh_Algorithms.hh"
 
 // Operators
 #include "UpwindSecondOrder.hh"
@@ -88,7 +88,7 @@ void UpwindSecondOrder::Compute(
       // Internal faces. We average field on almost vertical faces. 
       if (bc_model[f] == OPERATOR_BC_NONE && fabs(flx_face[0][f]) <= tol) { 
         double tmp(0.5);
-        int c2 = WhetStone::cell_get_face_adj_cell(*mesh_, c, f);
+        int c2 = cell_get_face_adj_cell(*mesh_, c, f);
         if (c2 >= 0) { 
           double v1 = mesh_->cell_volume(c);
           double v2 = mesh_->cell_volume(c2);

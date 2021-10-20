@@ -20,12 +20,12 @@
 #include "constant_variable_field_evaluator.hh"
 #include "errors.hh"
 #include "exceptions.hh"
+#include "Mesh_Algorithms.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "TimestepControllerFactory.hh"
 #include "Tensor.hh"
-#include "WhetStoneMeshUtils.hh"
 
 // Amanzi::Flow
 #include "Darcy_PK.hh"
@@ -573,7 +573,7 @@ void Darcy_PK::UpdateSpecificYield_()
       int nfaces = faces.size();
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
-        int c2 = WhetStone::cell_get_face_adj_cell(*mesh_, c, f);
+        int c2 = cell_get_face_adj_cell(*mesh_, c, f);
 
         if (c2 >= 0) {
           if (specific_yield[0][c2] <= 0.0)  // cell in the fully saturated layer

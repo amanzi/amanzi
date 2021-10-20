@@ -69,8 +69,15 @@ copyCellsToBoundaryFaces(const AmanziMesh::Mesh& mesh,
 // Given a boundary face f, return the exterior normal. If f is an interior face,
 // dir = 0 and normal orientation is not be reliable in parallel algorithms
 // -----------------------------------------------------------------------------
-AmanziGeometry::Point getFaceNormalExterior(const AmanziMesh::Mesh& mesh,
-                                            int f, int* dir);
+AmanziGeometry::Point
+getFaceNormalExterior(const AmanziMesh::Mesh& mesh, int f, int* dir);
+
+
+// -----------------------------------------------------------------------------
+// Given a cell c and face f, returns the neighbooring cell
+// -----------------------------------------------------------------------------
+int
+cell_get_face_adj_cell(const AmanziMesh::Mesh& mesh, int c, int f);
 
 } // namespace AmanziMesh
 } // namespace Amanzi
