@@ -121,7 +121,8 @@ if (BUILD_TESTS)
     endif()
 
     # Test link libraries
-    set(mesh_test_link_libs geometry mesh mesh_simple mesh_factory ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    set(mesh_test_link_libs geometry mesh mesh_simple mesh_extracted mesh_factory
+      ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # MOAB Mesh framework
     if (ENABLE_MESH_MOAB)
@@ -175,7 +176,7 @@ if (BUILD_TESTS)
         	    LINK_LIBS ${mesh_test_link_libs})
 
     # Test: mesh columns
-    #   Tests the buidl_columns() capability for semi-structured meshes.              
+    #   Tests the buildColumns() capability for semi-structured meshes.              
     add_amanzi_test(mesh_build_columns mesh_build_columns
                     KIND unit
         	    SOURCE test/Main.cc test/mesh_build_columns.cc
@@ -205,7 +206,17 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/mesh_volume_extraction.cc
                     LINK_LIBS ${mesh_test_link_libs})
-    
+
+    # Test: column and surface cell extracted meshes
+    #   These are 1-off, simplified meshes that make 1D and 0D
+    #   conceptual meshes for use in subgrid models.  This extracts
+    #   the column, creates a column mesh, and creates a surface cell
+    #   mesh, all using the factory, and then checks sets on these.
+    add_amanzi_test(mesh_subgrid_extractions mesh_subgrid_extractions
+                    KIND unit
+                    SOURCE test/Main.cc test/mesh_subgrid_extractions.cc
+                    LINK_LIBS ${mesh_test_link_libs})
+                  
     # Test: fracture extracted mesh
     #   Tests a fracture mesh generated using the mesh framework
     #   extraction constructor on FACES but not flattened, currently

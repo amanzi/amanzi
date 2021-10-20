@@ -759,14 +759,14 @@ struct MeshCache {
   bool parents_initialized;
 
   // column structure
-  MeshColumns columns;
+  mutable MeshColumns columns;
 
   inline
-  void buildColumns() {
+  void buildColumns() const {
     columns.initialize(*this);
   }
   inline
-  void buildColumns(const std::vector<std::string>& regions) {
+  void buildColumns(const std::vector<std::string>& regions) const {
     columns.initialize(*this, regions);
   }
 

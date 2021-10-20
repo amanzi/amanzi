@@ -37,6 +37,8 @@ include_directories(${MESH_EXTRACTED_SOURCE_DIR})
 # include mesh frameworks
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_SIMPLE_SOURCE_DIR})
+list(APPEND mesh_factory_frameworks mesh_simple)
+
 if (ENABLE_MESH_MOAB)
   include_directories(${MOAB_INCLUDE_DIR})
   include_directories(${MESH_MOAB_SOURCE_DIR})
@@ -58,21 +60,23 @@ endif()
 set(mesh_factory_files 
     FileFormat.cc
     MeshFrameworkTraits.cc
-    MeshFrameworkFactory.cc) 
+    MeshFrameworkFactory.cc
+    MeshFactory.cc
+    ) 
 
 set(mesh_factory_inc_files
     MeshException.hh
     FileFormat.hh
     MeshFrameworkTraits.hh
-    MeshFrameworkFactory.hh)
+    MeshFrameworkFactory.hh
+    MeshFactory.hh
+    )
 
-
-list(APPEND mesh_factory_frameworks mesh_simple)
 
 add_amanzi_library(mesh_factory
                    SOURCE ${mesh_factory_files} HEADERS ${mesh_factory_inc_files}
-                   LINK_LIBS ${mesh_factory_frameworks} ${Boost_LIBRARIES})
-#                   LINK_LIBS ${mesh_factory_frameworks} mesh_extracted ${Boost_LIBRARIES})
+                   LINK_LIBS ${mesh_factory_frameworks} mesh_extracted ${Boost_LIBRARIES})
+
 
 if (BUILD_TESTS)
 

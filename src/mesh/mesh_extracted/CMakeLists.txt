@@ -37,14 +37,20 @@ include_directories(${Epetra_INCLUDE_DIRS})
 #
 set(mesh_extracted_inc_files
     BlockMapUtils.hh
-    MeshExtractedManifold.hh
-)
+    #MeshExtractedManifold.hh
+    MeshFrameworkColumn.hh
+    MeshSurfaceCell.hh
+    )
+
+set(mesh_extracted_src_files
+  BlockMapUtils.cc
+  #MeshExtractedManifold.cc
+  MeshFrameworkColumn.cc
+  MeshSurfaceCell.cc
+  )
 
 add_amanzi_library(mesh_extracted
-                   SOURCE BlockMapUtils.cc
-                          #MeshExtractedManifold.cc
-                          MeshFrameworkColumn.cc
-                          MeshSurfaceCell.cc
+                   SOURCE ${mesh_extracted_src_files}
                    HEADERS ${mesh_extracted_inc_files}
                    LINK_LIBS mesh geometry ${Epetra_LIBRARIES})
 

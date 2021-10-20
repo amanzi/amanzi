@@ -68,7 +68,6 @@ resolveMeshSet(const AmanziGeometry::Region& region,
   }
 }
 
-
 Entity_ID_List
 resolveMeshSetVolumeFractions(const AmanziGeometry::Region& region,
         const Entity_kind kind,
@@ -348,8 +347,11 @@ resolveGeometricMeshSetFromParent(const AmanziGeometry::Region& region,
         resolveMeshSet(region, Entity_kind::FACE, ptype, parent_mesh);
       return Impl::filterParentEntities(mesh, Entity_kind::CELL, ptype, parent_entities);
     } else if (kind == Entity_kind::FACE) {
-      // faces are ??? -- how do we deal with this?
-      AMANZI_ASSERT(false);
+      // faces are edges, which are typically not formal entities -- how do we deal with this?
+      Errors::Message msg;
+      msg << "Mesh: cannot resolve set entities on parent mesh "
+          << "for entities of kind \"" << to_string(kind) << "\"";
+      Exceptions::amanzi_throw(msg);
     } else {
       Errors::Message msg;
       msg << "Mesh: cannot resolve set entities on parent mesh "

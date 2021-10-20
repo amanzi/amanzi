@@ -44,20 +44,19 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const MeshFramework>& parent
                     // MeshColumn
 
   // set my nodes
-  Entity_ID_List my_nodes;
-  parent_->getFaceNodes(parent_face_, my_nodes);
-  nodes_.resize(my_nodes.size());
+  parent_->getFaceNodes(parent_face_, node_parents_);
+  nodes_.resize(node_parents_.size());
   if (flatten) {
-    for (int i=0; i!=my_nodes.size(); ++i) {
-      auto parent_node = parent_->getNodeCoordinate(my_nodes[i]);
+    for (int i=0; i!=node_parents_.size(); ++i) {
+      auto parent_node = parent_->getNodeCoordinate(node_parents_[i]);
       AmanziGeometry::Point child_node(2);
       child_node[0] = parent_node[0];
       child_node[1] = parent_node[1];
       nodes_[i] = child_node;
     }
   } else {
-    for (int i=0; i!=my_nodes.size(); ++i) {
-      nodes_[i] = parent_->getNodeCoordinate(my_nodes[i]);
+    for (int i=0; i!=node_parents_.size(); ++i) {
+      nodes_[i] = parent_->getNodeCoordinate(node_parents_[i]);
     }
   }
 

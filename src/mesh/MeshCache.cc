@@ -126,7 +126,23 @@ MeshCache::getSetEntities(const std::string& region_name,
   auto key = std::make_tuple(region_name, kind, ptype);
   if (!sets_.count(key)) {
     auto region = getGeometricModel()->FindRegion(region_name);
+    if (region == Teuchos::null) {
+      Errors::Message msg;
+      msg << "Cannot find region of name \"" << region_name << "\" in the geometric model.";
+      Exceptions::amanzi_throw(msg);
+    }
     sets_[key] = resolveMeshSet(*region, kind, ptype, *this);
+
+    // Error on zero -- some zeros already error internally (at the framework
+    // level) but others don't.  This is the highest level we can catch these at.
+    int lsize = sets_[key].size();
+    int gsize = 0;
+    getComm()->SumAll(&lsize, &gsize, 1);
+    if (gsize == 0) {
+      Errors::Message msg;
+      msg << "Region \"" << region_name << "\" has no entities on this mesh of type " << to_string(kind);
+      Exceptions::amanzi_throw(msg);
+    }
   }
   return sets_.at(key);
 }
@@ -142,6 +158,11 @@ MeshCache::getSetEntitiesAndVolumeFractions(const std::string& region_name,
   auto key = std::make_tuple(region_name, kind, ptype);
   if (!set_vol_fracs_.count(key)) {
     auto region = getGeometricModel()->FindRegion(region_name);
+    if (region == Teuchos::null) {
+      Errors::Message msg;
+      msg << "Cannot find region of name \"" << region_name << "\" in the geometric model.";
+      Exceptions::amanzi_throw(msg);
+    }
     sets_[key] = resolveMeshSetVolumeFractions(*region, kind, ptype, *vol_fracs, *this);
     set_vol_fracs_[key] = *vol_fracs;
   } else {

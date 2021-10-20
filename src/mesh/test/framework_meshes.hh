@@ -20,6 +20,7 @@
 #include "MeshFramework.hh"
 #include "MeshFrameworkFactory.hh"
 #include "Mesh.hh"
+#include "MeshFactory.hh"
 
 
 using namespace Amanzi;
@@ -103,8 +104,11 @@ Teuchos::RCP<AmanziMesh::Mesh> createUnstructured(
   const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm=Teuchos::null,
   const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null)
 {
-  auto mesh_fw = createFrameworkUnstructured(pref, filename, comm, gm, plist);
-  return Teuchos::rcp(new AmanziMesh::Mesh(mesh_fw));
+  AmanziMesh::MeshFactory fac(comm, gm, plist);
+  fac.set_preference(pref);
+  return fac.create(filename);
+  // auto mesh_fw = createFrameworkUnstructured(pref, filename, comm, gm, plist);
+  // return Teuchos::rcp(new AmanziMesh::Mesh(mesh_fw));
 }
 
 

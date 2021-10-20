@@ -48,9 +48,17 @@ class MeshSurfaceCell : public MeshFramework {
   // Parent entity in the source mesh if mesh was derived from another mesh
   virtual
   Entity_ID getEntityParent(const Entity_kind kind, const Entity_ID entid) const override {
-    AMANZI_ASSERT(kind == Entity_kind::CELL);
-    AMANZI_ASSERT(entid == 0);
-    return parent_face_;
+    if (kind == Entity_kind::CELL) {
+      AMANZI_ASSERT(entid == 0);
+      return parent_face_;
+    } else if (kind == Entity_kind::NODE) {
+      return node_parents_[entid];
+    } else {
+      Errors::Message msg;
+      msg << "MeshSurfaceCell: Cannot getEntityParent() for Entity kind " << to_string(kind);
+      Exceptions::amanzi_throw(msg);
+    }
+    return -1;
   }
 
   virtual Teuchos::RCP<const MeshFramework> getParentMesh() const override {
@@ -139,7 +147,8 @@ class MeshSurfaceCell : public MeshFramework {
  protected:
   Teuchos::RCP<const MeshFramework> parent_;
 
-  std::vector<AmanziGeometry::Point> nodes_;
+  Point_List nodes_;
+  Entity_ID_List node_parents_;
   std::map<Set_ID,bool> sets_;
   Entity_ID parent_face_;
   Cell_type cell_type_;
