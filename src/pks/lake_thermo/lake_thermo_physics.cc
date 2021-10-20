@@ -91,6 +91,19 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
   const Epetra_MultiVector& rho =
   *S_inter_->GetFieldData(density_key_)->ViewComponent("cell",false);
 
+  Teuchos::ParameterList& param_list = plist_->sublist("parameters");
+  FunctionFactory fac;
+  Teuchos::RCP<Function> r_func_ = Teuchos::rcp(fac.Create(param_list.sublist("precipitation")));
+  Teuchos::RCP<Function> E_func_ = Teuchos::rcp(fac.Create(param_list.sublist("evaporation")));
+
+  std::vector<double> args(1);
+  args[0] = S->time();
+  r_ = (*r_func_)(args);
+  E_ = (*E_func_)(args);
+
+  std::cout << "Precipitation rate at t = " << S->time() << " is " << r_ << std::endl;
+  std::cout << "Evaporation rate at t = " << S->time() << " is " << E_ << std::endl;
+
   double dhdt = r_ - E_ - R_s_ - R_b_;
   double B_w  = r_ - E_;
 

@@ -425,12 +425,12 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   Teuchos::ParameterList& param_list = plist_->sublist("parameters");
 
   // precipitation rate
-  r_ = param_list.get<double>("precipitation");
-  std::cout << "Precipitation rate = " << r_ << std::endl;
+//  r_ = param_list.get<double>("precipitation");
+//  std::cout << "Precipitation rate = " << r_ << std::endl;
 
-  // evaporation rate
-  E_ = param_list.get<double>("evaporation");
-  std::cout << "Evaporation rate = " << E_ << std::endl;
+//  // evaporation rate
+//  E_ = param_list.get<double>("evaporation");
+//  std::cout << "Evaporation rate = " << E_ << std::endl;
 
   R_s_ = 0.;
   R_b_ = 0.;
