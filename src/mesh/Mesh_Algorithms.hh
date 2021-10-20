@@ -65,6 +65,12 @@ copyCellsToBoundaryFaces(const AmanziMesh::Mesh& mesh,
                          Epetra_MultiVector& boundary_faces);
 
 
+// -----------------------------------------------------------------------------
+// Given a boundary face f, return the exterior normal. If f is an interior face,
+// dir = 0 and normal orientation is not be reliable in parallel algorithms
+// -----------------------------------------------------------------------------
+AmanziGeometry::Point getFaceNormalExterior(const AmanziMesh::Mesh& mesh,
+                                            int f, int* dir);
 
 } // namespace AmanziMesh
 } // namespace Amanzi

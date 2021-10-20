@@ -138,68 +138,6 @@ int cell_get_face_adj_cell(const AmanziMesh::Mesh& mesh, int c, int f)
   return -1;
 }
 
-
-/* ******************************************************************
-* Exterior boundary normal: dir = 0 for internal face
-****************************************************************** */
-inline
-AmanziGeometry::Point face_normal_exterior(const AmanziMesh::Mesh& mesh, int f, int* dir)
-{
-  Amanzi::AmanziMesh::Entity_ID_List cells;
-  mesh.face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
-
-  auto normal = mesh.face_normal(f, false, cells[0], dir);
-  if (cells.size() > 1) *dir = 0;
-
-  return normal;
-}
-
-
-/* ******************************************************************
-* Geometric center of a mesh cell 
-****************************************************************** */
-inline
-AmanziGeometry::Point cell_geometric_center(const AmanziMesh::Mesh& mesh, int c)
-{
-  int d = mesh.space_dimension();
-  AmanziGeometry::Point v(d), xg(d);
-
-  AmanziMesh::Entity_ID_List nodes;
-  mesh.cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
-
-  for (int i = 0; i < nnodes; ++i) {
-    mesh.node_get_coordinates(nodes[i], &v);
-    xg += v;
-  } 
-  xg /= nnodes;
-  
-  return xg;
-}
-
-
-/* ******************************************************************
-* Geometric center of a mesh face
-****************************************************************** */
-inline
-AmanziGeometry::Point face_geometric_center(const AmanziMesh::Mesh& mesh, int f)
-{
-  int d = mesh.space_dimension();
-  AmanziGeometry::Point v(d), xg(d);
-
-  AmanziMesh::Entity_ID_List nodes;
-  mesh.face_get_nodes(f, &nodes);
-  int nnodes = nodes.size();
-
-  for (int i = 0; i < nnodes; ++i) {
-    mesh.node_get_coordinates(nodes[i], &v);
-    xg += v;
-  } 
-  xg /= nnodes;
-  
-  return xg;
-}
-
 }  // namespace WhetStone
 }  // namespace Amanzi
 
