@@ -163,7 +163,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
   MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
 
-  std::vector<double> dx, Linferror, L1error, L2error;
+  std::vector<double> dx, Linferror, L1error, L2error, dt_val;
 
   for (int NN = 20; NN <= 80; NN *= 2) {
 
@@ -207,7 +207,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
     WriteStateStatistics(*S, *vo);
 
     // advance in time
-    double t_old(0.0), t_new(0.0), dt;
+    double t_old(0.0), t_new(0.0), dt, dt_max(0.0);
 
     // initialize io
     Teuchos::ParameterList iolist;
@@ -249,6 +249,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
       dt = SWPK.get_dt();
 
       t_new = t_old + dt;
+      dt_max = std::max(dt_max, dt);
 
       SWPK.AdvanceStep(t_old, t_new);
       SWPK.CommitStep(t_old, t_new, S);
@@ -274,6 +275,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
     dx.push_back(hmax);
     Linferror.push_back(err_max);
     L1error.push_back(err_L1);
+    dt_val.push_back(dt_max);
 
     io.InitializeCycle(t_out, iter, "");
     io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
@@ -293,7 +295,10 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
 
   double order = Amanzi::Utils::bestLSfit(dx, L1error);
 
-  std::cout << "computed order = " << order << std::endl;
+  std::cout << "computed order L1 (dx) = " << order << std::endl;
+  
+  double order_Linf_dt = Amanzi::Utils::bestLSfit(dt_val, Linferror);
+  std::cout << "computed order Linf (dt) = " << order_Linf_dt << std::endl;
 
   CHECK(order > 0.9);  // first order scheme
 }

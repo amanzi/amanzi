@@ -441,6 +441,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 //  auto ti_method = Explicit_TI::runge_kutta_4th_order;
   
 //  Teuchos::RCP<TreeVector>& soln_new(soln_);
+//  std::cout<<std::setprecision(15)<<"time: "<<t_old<<", time step: "<<std::setprecision(15)<<dt<<std::endl;
   Teuchos::RCP<TreeVector> soln_new = Teuchos::rcp(new TreeVector);
   soln_new = soln_;
   Explicit_TI::RK<TreeVector> rk1(*this, ti_method, *soln_);
@@ -458,14 +459,17 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   
   Epetra_MultiVector& h_temp = *soln_->SubVector(0)->Data()->ViewComponent("cell");
   Epetra_MultiVector& q_temp = *soln_->SubVector(1)->Data()->ViewComponent("cell");
+//  std::cout<<std::setprecision(15)<<"h_out[0][50]: "<<std::setprecision(15)<<h_temp[0][50]<<std::endl;
+//  std::cout<<std::setprecision(15)<<"q_out[0][50]: "<<std::setprecision(15)<<q_temp[0][50]<<", q_out[1][50]: "<<std::setprecision(15)<<q_temp[1][50]<<std::endl;
 
   // update solution
   for (int c = 0; c < ncells_owned; c++) {
+    double factor = inverse_with_tolerance(h_temp[0][c]);
     h_c[0][c] = h_temp[0][c];
-    vel_c[0][c] = q_temp[0][c]/(h_c[0][c] + 1.e-14);
-    vel_c[1][c] = q_temp[1][c]/(h_c[0][c] + 1.e-14);
     q_c[0][c] = q_temp[0][c];
     q_c[1][c] = q_temp[1][c];
+    vel_c[0][c] = factor * q_temp[0][c];
+    vel_c[1][c] = factor * q_temp[1][c];
     ht_c[0][c] = h_c[0][c] + B_c[0][c];
   }
   
@@ -591,7 +595,7 @@ double ShallowWater_PK::get_dt()
   }
 
 //  double vol = std::sqrt(mesh_->cell_volume(0));
-//  return 1.e-3;
+//  return 1.e-4*vol;
   
   if (iters_ < max_iters_)
     return 0.1 * cfl_ * dt_min;
