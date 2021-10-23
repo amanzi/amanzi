@@ -29,8 +29,8 @@
 void analytical_exact(double t, double x, double y, double &h, double &u, double &v)
 {
   h = std::exp(-t);
-  u = std::exp(t);
-  v = 0.0;
+  u = 0.0;
+  v = std::exp(t);
 }
 
 
@@ -84,7 +84,7 @@ void analytical_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos
 void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
            Epetra_MultiVector& hh_ex, Epetra_MultiVector& vel_ex,
            const Epetra_MultiVector& hh, const Epetra_MultiVector& vel,
-           double& err_max, double& err_L1, double& hmax, double& err_max_u, double& err_L1_u)
+           double& err_max, double& err_L1, double& hmax, double& err_max_u, double& err_L1_u, double& err_max_v, double& err_L1_v)
 {
   int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
@@ -93,6 +93,8 @@ void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   hmax = 0.;
   err_max_u = 0.;
   err_L1_u = 0.;
+  err_max_v = 0.;
+  err_L1_v = 0.;
 
   for (int c = 0; c < ncells_owned; c++) {
     double tmp = std::abs(hh_ex[0][c] - hh[0][c]);
@@ -103,29 +105,43 @@ void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     tmp = std::abs(vel_ex[0][c] - vel[0][c]);
     err_max_u = std::max(err_max_u, tmp);
     err_L1_u += tmp * mesh->cell_volume(c);
+    
+    tmp = std::abs(vel_ex[1][c] - vel[1][c]);
+    err_max_v = std::max(err_max_v, tmp);
+    err_L1_v += tmp * mesh->cell_volume(c);
   }
 
   double err_max_tmp;
   double err_L1_tmp;
   double err_max_tmp_u;
   double err_L1_tmp_u;
+  double err_max_tmp_v;
+  double err_L1_tmp_v;
 
   mesh->get_comm()->MaxAll(&err_max, &err_max_tmp, 1);
   mesh->get_comm()->SumAll(&err_L1, &err_L1_tmp, 1);
   mesh->get_comm()->MaxAll(&err_max_u, &err_max_tmp_u, 1);
   mesh->get_comm()->SumAll(&err_L1_u, &err_L1_tmp_u, 1);
+  mesh->get_comm()->MaxAll(&err_max_v, &err_max_tmp_v, 1);
+  mesh->get_comm()->SumAll(&err_L1_v, &err_L1_tmp_v, 1);
 
   err_max = err_max_tmp;
   err_L1  = err_L1_tmp;
   
   err_max_u = err_max_tmp_u;
   err_L1_u  = err_L1_tmp_u;
+  
+  err_max_v = err_max_tmp_v;
+  err_L1_v  = err_L1_tmp_v;
 
   std::cout << "err_max = " << err_max << std::endl;
   std::cout << "err_L1  = " << err_L1 << std::endl;
   
   std::cout << "err_max (u)= " << err_max_u << std::endl;
   std::cout << "err_L1 (u) = " << err_L1_u << std::endl;
+  
+  std::cout << "err_max (v)= " << err_max_v << std::endl;
+  std::cout << "err_L1 (v) = " << err_L1_v << std::endl;
 }
 
 
@@ -154,7 +170,7 @@ TEST(SHALLOW_WATER_ANALYTICAL) {
   MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
 
-  std::vector<double> dx, Linferror, L1error, L2error, dt_val, Linferror_u, L1error_u;
+  std::vector<double> dx, Linferror, L1error, L2error, dt_val, Linferror_u, L1error_u, Linferror_v, L1error_v;
 
   for (int NN = 40; NN <= 160; NN *= 2) {
 
@@ -262,9 +278,9 @@ TEST(SHALLOW_WATER_ANALYTICAL) {
 
     analytical_exact_field(mesh, hh_ex, vel_ex, t_out);
 
-    double err_max, err_L1, hmax, err_max_u, err_L1_u;
+    double err_max, err_L1, hmax, err_max_u, err_L1_u, err_max_v, err_L1_v;
 
-    error(mesh, hh_ex, vel_ex, hh, vel, err_max, err_L1, hmax, err_max_u, err_L1_u);
+    error(mesh, hh_ex, vel_ex, hh, vel, err_max, err_L1, hmax, err_max_u, err_L1_u, err_max_v, err_L1_v);
 
     dt_val.push_back(dt_max);
     dx.push_back(hmax);
@@ -272,6 +288,8 @@ TEST(SHALLOW_WATER_ANALYTICAL) {
     L1error.push_back(err_L1);
     Linferror_u.push_back(err_max_u);
     L1error_u.push_back(err_L1_u);
+    Linferror_v.push_back(err_max_v);
+    L1error_v.push_back(err_L1_v);
 
     io.InitializeCycle(t_out, iter, "");
     io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
@@ -296,12 +314,18 @@ TEST(SHALLOW_WATER_ANALYTICAL) {
   
   double L1_dt_order_u = Amanzi::Utils::bestLSfit(dt_val, L1error_u);
   double Linf_dt_order_u = Amanzi::Utils::bestLSfit(dt_val, Linferror_u);
+  
+  double L1_dt_order_v = Amanzi::Utils::bestLSfit(dt_val, L1error_v);
+  double Linf_dt_order_v = Amanzi::Utils::bestLSfit(dt_val, Linferror_v);
 
   std::cout << "computed order L1 (dt) = " << L1_dt_order << std::endl;
   std::cout << "computed order Linfty (dt) = " << Linf_dt_order << std::endl;
   
   std::cout << "computed order L1 (dt) u = " << L1_dt_order_u << std::endl;
   std::cout << "computed order Linfty (dt) u = " << Linf_dt_order_u << std::endl;
+  
+  std::cout << "computed order L1 (dt) v = " << L1_dt_order_v << std::endl;
+  std::cout << "computed order Linfty (dt) v = " << Linf_dt_order_v << std::endl;
 
 //  CHECK(order > 0.9);  // first order scheme
 }
