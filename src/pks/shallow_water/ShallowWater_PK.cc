@@ -323,10 +323,10 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   soln_->PushBack(tmp_v);
 
   soln_h_ = S->GetFieldData(ponded_depth_key_, passwd_);
-  soln_v_ = S->GetFieldData(velocity_key_, passwd_);
+  soln_q_ = S->GetFieldData(discharge_key_, discharge_key_);
 
   soln_->SubVector(0)->SetData(soln_h_);
-  soln_->SubVector(1)->SetData(soln_v_);
+  soln_->SubVector(1)->SetData(soln_q_);
     
   // summary of initialization
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -401,67 +401,24 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // create copies of primary fields
   *S_->GetFieldData(prev_ponded_depth_key_, passwd_)->ViewComponent("cell", true) = h_c;
 
-  // update boundary conditions
-//  if (bcs_.size() > 0)
-//      bcs_[0]->Compute(t_old, t_new);
-//
-//  // update source (external) terms
-//  for (int i = 0; i < srcs_.size(); ++i) {
-//    srcs_[i]->Compute(t_old, t_new);
-//  }
-//
-//  // compute source (external) values
-//  // coupling submodel="rate" returns volumetric flux [m^3/s] integrated over
-//  // the time step in the last (the second) component of local data vector
-//  total_source_ = 0.0;
-//  std::vector<double> ext_S_cell(ncells_owned, 0.0);
-//  for (int  i = 0; i < srcs_.size(); ++i) {
-//    for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
-//      int c = it->first;
-//      ext_S_cell[c] = it->second[0];  // data unit is [m]
-//      total_source_ += it->second[0] * mesh_->cell_volume(c) * dt; // data unit is [m^3]
-//    }
-//  }
-
   // Shallow water equations have the form
   // U_t + F_x(U) + G_y(U) = S(U)
     
-  // change to flux
-  Epetra_MultiVector& v_temp = *soln_->SubVector(1)->Data()->ViewComponent("cell");
-  for (int c = 0; c < ncells_owned; ++c) {
-    v_temp[0][c] *= h_c[0][c];
-    v_temp[1][c] *= h_c[0][c];
-  }
-  
-  
   // initialize time integrator
-  auto ti_method = Explicit_TI::forward_euler;
-//  auto ti_method = Explicit_TI::midpoint;
+//  auto ti_method = Explicit_TI::forward_euler;
+  auto ti_method = Explicit_TI::midpoint;
 //  auto ti_method = Explicit_TI::tvd_3rd_order;
 //  auto ti_method = Explicit_TI::runge_kutta_4th_order;
   
-//  Teuchos::RCP<TreeVector>& soln_new(soln_);
-//  std::cout<<std::setprecision(15)<<"time: "<<t_old<<", time step: "<<std::setprecision(15)<<dt<<std::endl;
   Teuchos::RCP<TreeVector> soln_new = Teuchos::rcp(new TreeVector);
   soln_new = soln_;
   Explicit_TI::RK<TreeVector> rk1(*this, ti_method, *soln_);
   rk1.TimeStep(t_old, dt, *soln_, *soln_new);
-//  soln_ = soln_new;
-  
-//  Epetra_MultiVector& h_temp = *soln_->SubVector(0)->Data()->ViewComponent("cell");
-//  Epetra_MultiVector& q_temp = *soln_->SubVector(1)->Data()->ViewComponent("cell");
-  
-//  soln_new = soln_;
-//  Explicit_TI::RK<TreeVector> rk2(*this, ti_method, *soln_);
-//  rk2.TimeStep(t_old + dt/2.0, dt/2.0, *soln_, *soln_new);
-
   soln_ = soln_new;
   
   Epetra_MultiVector& h_temp = *soln_->SubVector(0)->Data()->ViewComponent("cell");
   Epetra_MultiVector& q_temp = *soln_->SubVector(1)->Data()->ViewComponent("cell");
-//  std::cout<<std::setprecision(15)<<"h_out[0][50]: "<<std::setprecision(15)<<h_temp[0][50]<<std::endl;
-//  std::cout<<std::setprecision(15)<<"q_out[0][50]: "<<std::setprecision(15)<<q_temp[0][50]<<", q_out[1][50]: "<<std::setprecision(15)<<q_temp[1][50]<<std::endl;
-
+  
   // update solution
   for (int c = 0; c < ncells_owned; c++) {
     double factor = inverse_with_tolerance(h_temp[0][c]);

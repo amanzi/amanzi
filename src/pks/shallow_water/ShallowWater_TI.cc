@@ -21,8 +21,8 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 {
   bool failed = false;
   
-  const Epetra_MultiVector& h_temp = *A.SubVector(0)->Data()->ViewComponent("cell");
-  const Epetra_MultiVector& q_temp = *A.SubVector(1)->Data()->ViewComponent("cell");
+  const Epetra_MultiVector h_temp = *A.SubVector(0)->Data()->ViewComponent("cell");
+  const Epetra_MultiVector q_temp = *A.SubVector(1)->Data()->ViewComponent("cell");
   
   Epetra_MultiVector& h_new = *f.SubVector(0)->Data()->ViewComponent("cell");
   Epetra_MultiVector& q_new = *f.SubVector(1)->Data()->ViewComponent("cell");
@@ -238,15 +238,6 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     q_new[1][c] = qy;
   }
   
-//  std::cout<<std::setprecision(15)<<"time: "<<t<<std::endl;
-//  const Epetra_MultiVector& h_old_temp = *A.SubVector(0)->Data()->ViewComponent("cell");
-//  const Epetra_MultiVector& q_old_temp = *A.SubVector(1)->Data()->ViewComponent("cell");
-//  std::cout<<"h_old_temp[0][50]: "<<std::setprecision(15)<<h_old_temp[0][50]<<std::endl;
-//  std::cout<<"q_old_temp[0][50]: "<<std::setprecision(15)<<q_old_temp[0][50]<<", q_old_temp[1][50]: "<<std::setprecision(15)<<q_old_temp[1][50]<<std::endl;
-//  Epetra_MultiVector& h_new_temp = *f.SubVector(0)->Data()->ViewComponent("cell");
-//  Epetra_MultiVector& q_new_temp = *f.SubVector(1)->Data()->ViewComponent("cell");
-//  std::cout<<"h_new_temp[0][50]: "<<std::setprecision(15)<<h_new_temp[0][50]<<std::endl;
-//  std::cout<<"q_new_temp[0][50]: "<<std::setprecision(15)<<q_new_temp[0][50]<<", q_new_temp[1][50]: "<<std::setprecision(15)<<q_new_temp[1][50]<<std::endl;
 }
 
 double inverse_with_tolerance_1(double h)
