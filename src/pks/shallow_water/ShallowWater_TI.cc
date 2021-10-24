@@ -29,6 +29,10 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  
+  double tmp[1];
+  S_->GetConstantVectorData("gravity", "state")->Norm2(tmp);
+  double g = tmp[0];
 
   S_->GetFieldEvaluator(discharge_key_)->HasFieldChanged(S_.ptr(), passwd_);
 
@@ -227,8 +231,16 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
   for (int c = 0; c < ncells_owned; ++c) {
     
+    const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    double x = xc[0], y = xc[1];
+    double pi = M_PI;
+    
     S = NumericalSource(U, c);
 
+//    h  = h_c_tmp[0][c] +  (S[0] + ext_S_cell[c]) - std::sin(pi*x)*std::exp(-t);
+//    qx = q_c_tmp[0][c] +  S[1] + g*(1.0 + std::exp(-t)*std::sin(pi*x) )*pi*std::cos(pi*x)*std::exp(-t);
+//    qy = q_c_tmp[1][c] +  S[2];
+    
     h  = h_c_tmp[0][c] +  (S[0] + ext_S_cell[c]);
     qx = q_c_tmp[0][c] +  S[1];
     qy = q_c_tmp[1][c] +  S[2];

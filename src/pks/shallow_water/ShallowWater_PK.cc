@@ -317,10 +317,10 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   
   // ---- ----
   Teuchos::RCP<TreeVector> tmp_h = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<TreeVector> tmp_v = Teuchos::rcp(new TreeVector());
+  Teuchos::RCP<TreeVector> tmp_q = Teuchos::rcp(new TreeVector());
 
   soln_->PushBack(tmp_h);
-  soln_->PushBack(tmp_v);
+  soln_->PushBack(tmp_q);
 
   soln_h_ = S->GetFieldData(ponded_depth_key_, passwd_);
   soln_q_ = S->GetFieldData(discharge_key_, discharge_key_);
@@ -400,21 +400,34 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // create copies of primary fields
   *S_->GetFieldData(prev_ponded_depth_key_, passwd_)->ViewComponent("cell", true) = h_c;
+  
+  Epetra_MultiVector& h_old = *soln_->SubVector(0)->Data()->ViewComponent("cell");
+  Epetra_MultiVector& q_old = *soln_->SubVector(1)->Data()->ViewComponent("cell");
+  
+  for (int c = 0; c < ncells_owned; c++) {
+    double factor = inverse_with_tolerance(h_old[0][c]);
+    h_c[0][c] = h_old[0][c];
+    q_c[0][c] = q_old[0][c];
+    q_c[1][c] = q_old[1][c];
+    vel_c[0][c] = factor * q_old[0][c];
+    vel_c[1][c] = factor * q_old[1][c];
+    ht_c[0][c] = h_c[0][c] + B_c[0][c];
+  }
 
   // Shallow water equations have the form
   // U_t + F_x(U) + G_y(U) = S(U)
     
   // initialize time integrator
-//  auto ti_method = Explicit_TI::forward_euler;
-  auto ti_method = Explicit_TI::midpoint;
+  auto ti_method = Explicit_TI::forward_euler;
+//  auto ti_method = Explicit_TI::midpoint;
 //  auto ti_method = Explicit_TI::tvd_3rd_order;
 //  auto ti_method = Explicit_TI::runge_kutta_4th_order;
   
-  Teuchos::RCP<TreeVector> soln_new = Teuchos::rcp(new TreeVector);
-  soln_new = soln_;
+  auto soln_new = Teuchos::rcp(new TreeVector(*soln_));
+  *soln_new = *soln_;
   Explicit_TI::RK<TreeVector> rk1(*this, ti_method, *soln_);
   rk1.TimeStep(t_old, dt, *soln_, *soln_new);
-  soln_ = soln_new;
+  *soln_ = *soln_new;
   
   Epetra_MultiVector& h_temp = *soln_->SubVector(0)->Data()->ViewComponent("cell");
   Epetra_MultiVector& q_temp = *soln_->SubVector(1)->Data()->ViewComponent("cell");
