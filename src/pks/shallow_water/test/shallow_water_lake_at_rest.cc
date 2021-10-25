@@ -94,19 +94,26 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
         
     double x = node_crd[0], y = node_crd[1];
         
-//    B_n[0][n] = std::max(0.0, 0.25 - 5 * ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))); // non-smooth bathymetry
-    B_n[0][n] = x*(1-x)*y*(1-y);
-//    B_n[0][n] = x/4.0;
-//    B_n[0][n] = 0.1;
+    B_n[0][n] = std::max(0.0, 0.25 - 2.5 * ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))); // non-smooth bathymetry
+//    B_n[0][n] = x*(1-x)*y*(1-y);
+//    B_n[0][n] = x/4.;
+//    B_n[0][n] = 0.;
 //    h_n[0][n] = 0.5;
 //    h_n[0][n] = 0.5 + x*(1-x)*y*(1-y);
     
-      if ((x - 0.4)*(x - 0.4) + (y - 0.4)*(y - 0.4) < 0.1 * 0.1) {
+      if ((x - 0.5)*(x - 0.5) + (y - 0.5)*(y - 0.5) < 0.1 * 0.1) {
           ht_n[0][n] = H_inf + 0.01;
       }
       else {
         ht_n[0][n] = H_inf;
       }
+
+//      if ( x < 0.5 ) {
+//          ht_n[0][n] = H_inf + 1.;
+//      }
+//      else {
+//        ht_n[0][n] = H_inf;
+//      }
     
 //    ht_n[0][n] = h_n[0][n] + B_n[0][n];
 //    ht_n[0][n] = H_inf;
@@ -288,8 +295,8 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
   // Polygonal meshes
 //  RCP<Mesh> mesh = meshfactory.create ("test/median15x16.exo");
 //  RCP<Mesh> mesh = meshfactory.create ("test/random40.exo");
-//  RCP<Mesh> mesh = meshfactory.create ("test/triangular16.exo");
-  RCP<Mesh> mesh = meshfactory.create ("test/triangular8.exo");
+  RCP<Mesh> mesh = meshfactory.create ("test/triangular16.exo");
+//  RCP<Mesh> mesh = meshfactory.create ("test/triangular8.exo");
   
   // Create a state
         
@@ -359,7 +366,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
             
     lake_at_rest_exact_field(mesh, ht_ex, vel_ex, t_out);
             
-    if (iter % 100 == 0) {
+    if (iter % 5 == 0) {
                
       io.InitializeCycle(t_out, iter, "");
                 

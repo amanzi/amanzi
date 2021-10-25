@@ -32,7 +32,7 @@
         <Parameter name="limiter cfl" type="double" value="0.1"/>
       </ParameterList>
       <Parameter name="cfl" type="double" value="0.1"/>
-      <Parameter name="number of reduced cfl cycles" type="int" value="10"/>
+      <Parameter name="number of reduced cfl cycles" type="int" value="0"/>
       <Parameter name="numerical flux" type="string" value="central upwind"/>
 
       <ParameterList name="boundary conditions">
