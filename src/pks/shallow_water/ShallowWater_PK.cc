@@ -404,7 +404,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   Epetra_MultiVector& h_old = *soln_->SubVector(0)->Data()->ViewComponent("cell");
   Epetra_MultiVector& q_old = *soln_->SubVector(1)->Data()->ViewComponent("cell");
   
-  for (int c = 0; c < ncells_owned; c++) {
+  for (int c = 0; c < ncells_owned; ++c) {
     double factor = inverse_with_tolerance(h_old[0][c]);
     h_c[0][c] = h_old[0][c];
     q_c[0][c] = q_old[0][c];
@@ -418,10 +418,10 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // U_t + F_x(U) + G_y(U) = S(U)
     
   // initialize time integrator
-  auto ti_method = Explicit_TI::forward_euler;
+//  auto ti_method = Explicit_TI::forward_euler;
 //  auto ti_method = Explicit_TI::midpoint;
 //  auto ti_method = Explicit_TI::tvd_3rd_order;
-//  auto ti_method = Explicit_TI::runge_kutta_4th_order;
+  auto ti_method = Explicit_TI::runge_kutta_4th_order;
   
   auto soln_new = Teuchos::rcp(new TreeVector(*soln_));
   *soln_new = *soln_;
@@ -431,9 +431,9 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   
   Epetra_MultiVector& h_temp = *soln_->SubVector(0)->Data()->ViewComponent("cell");
   Epetra_MultiVector& q_temp = *soln_->SubVector(1)->Data()->ViewComponent("cell");
-  
+
   // update solution
-  for (int c = 0; c < ncells_owned; c++) {
+  for (int c = 0; c < ncells_owned; ++c) {
     double factor = inverse_with_tolerance(h_temp[0][c]);
     h_c[0][c] = h_temp[0][c];
     q_c[0][c] = q_temp[0][c];

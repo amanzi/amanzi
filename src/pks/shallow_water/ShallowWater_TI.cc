@@ -53,7 +53,7 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   S_->GetFieldEvaluator(discharge_key_)->HasFieldChanged(S_.ptr(), passwd_);
   Epetra_MultiVector& q_c = *S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
   
-  for (int c = 0; c < ncells_owned; c++) {
+  for (int c = 0; c < ncells_owned; ++c) {
     double factor = inverse_with_tolerance_1(h_temp[0][c]);
     h_c[0][c] = h_temp[0][c];
     q_c[0][c] = q_temp[0][c];
@@ -107,7 +107,7 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       total_source_ += it->second[0] * mesh_->cell_volume(c); // data unit is [m^3/s]
     }
   }
-
+  
   // Shallow water equations have the form
   // U_t + F_x(U) + G_y(U) = S(U)
 
@@ -235,12 +235,12 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     double x = xc[0], y = xc[1];
     double pi = M_PI;
     
+    U[0] = h_temp[0][c];
+    U[1] = q_temp[0][c];
+    U[2] = q_temp[1][c];
+    
     S = NumericalSource(U, c);
 
-//    h  = h_c_tmp[0][c] +  (S[0] + ext_S_cell[c]) - std::sin(pi*x)*std::exp(-t);
-//    qx = q_c_tmp[0][c] +  S[1] + g*(1.0 + std::exp(-t)*std::sin(pi*x) )*pi*std::cos(pi*x)*std::exp(-t);
-//    qy = q_c_tmp[1][c] +  S[2];
-    
     h  = h_c_tmp[0][c] +  (S[0] + ext_S_cell[c]);
     qx = q_c_tmp[0][c] +  S[1];
     qy = q_c_tmp[1][c] +  S[2];
