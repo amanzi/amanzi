@@ -28,9 +28,14 @@
 
 void analytical_exact(double t, double x, double y, double &h, double &u, double &v)
 {
-  h = std::exp(-t);
-  u = 0.0;
-  v = std::exp(t);
+// Thacker's time dependent solution [Beljadid et. al. 2016]
+  double eta = 2.0, g = 9.81, T = 1.436739427831727;
+//  double R0 = T * std::sqrt(2.0*g*eta);
+  double R0 = 9.0;
+  
+  h = eta * ( (T*T)/(T*T + t*t) ) * ( 1.0 - ( (x*x + y*y)/(R0*R0) )*( (T*T)/(t*t + T*T) ) );
+  u = (x*t)/(t*t + T*T);
+  v = (y*t)/(t*t + T*T);
 }
 
 
@@ -73,6 +78,7 @@ void analytical_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos
     double h, u, v;
     analytical_exact(0., xc[0], xc[1], h, u, v);
     h_vec_c[0][c] = h;
+    B_vec_c[0][c] = 0.0;
     ht_vec_c[0][c] = h_vec_c[0][c] + B_vec_c[0][c];
     vel_vec_c[0][c] = u;
     vel_vec_c[1][c] = v;
@@ -172,9 +178,9 @@ TEST(SHALLOW_WATER_ANALYTICAL) {
 
   std::vector<double> dx, Linferror, L1error, L2error, dt_val, Linferror_u, L1error_u, Linferror_v, L1error_v;
 
-  for (int NN = 40; NN <= 160; NN *= 2) {
+  for (int NN = 100; NN <= 300; NN *= 3) {
 
-    RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 40, 40, request_faces, request_edges);
+    RCP<Mesh> mesh = meshfactory.create(-3.0, -3.0, 3.0, 3.0, NN, NN, request_faces, request_edges);
     // mesh = meshfactory.create("test/median63x64.exo",request_faces,request_edges);
     // works only with first order, no reconstruction
 
@@ -228,7 +234,7 @@ TEST(SHALLOW_WATER_ANALYTICAL) {
     int iter = 0;
     double dt_max = 0.0;
 
-    while (t_new < 0.1) {
+    while (t_new < 0.01) {
       // cycle 1, time t
       double t_out = t_new;
 
@@ -255,7 +261,7 @@ TEST(SHALLOW_WATER_ANALYTICAL) {
       }
 
 //      dt = SWPK.get_dt();
-      dt = 1.e0/NN;
+      dt = 0.5/NN;
       dt_max = dt;
 //      std::cout<<"dt: "<<dt<<std::endl;
 
