@@ -444,6 +444,23 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
 
 }
 
+// will only work for square
+std::vector<std::vector<double> > matrix_product(std::vector<std::vector<double> > A, std::vector<std::vector<double> > B) {
+	std::vector<std::vector<double> > M(A.size());
+
+	for (int i = 0; i < A.size(); i++) {
+		M[i].resize(B.size());
+		for (int j = 0; j < B.size(); j++) {
+			M[i][j] = 0.;
+			for (int k = 0; k < A.size(); k++) {
+				M[i][j] += A[i][k]*B[k][j];
+			}
+		}
+	}
+
+	return M;
+}
+
 
 //--------------------------------------------------------------
 // Advance conservative variables: (h, hu, hv)
@@ -605,17 +622,17 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         std::vector<double> U_av(3,0.0);
         for (int m = 0; m < 3; ++m) {
           for (int j = 0; j < cnodes.size(); ++j) {
-        	std::cout << "j = " << j << ", cnodes[j] = " << cnodes[j] << ", U[m][cnodes[j]] = " << U[m][cnodes[j]] << std::endl;
+//        	std::cout << "j = " << j << ", cnodes[j] = " << cnodes[j] << ", U[m][cnodes[j]] = " << U[m][cnodes[j]] << std::endl;
             U_av[m] += U[m][cnodes[j]];
            }
            U_av[m] /= 3.;
         }
 
-        std::cout << "U_av = " << U_av[0] << " " << U_av[1] << " " << U_av[2] << std::endl;
+//        std::cout << "U_av = " << U_av[0] << " " << U_av[1] << " " << U_av[2] << std::endl;
 
 		// Project onto left eigenvectors
         std::vector<std::vector<double>> phi_char(3);
-        std::vector<double> Phi_total_char(3);
+        std::vector<double> Phi_total_char(3), Phi_total_orig(3);
         double h  = U[0][i];
         double qx = U[1][i];
         double qy = U[2][i];
@@ -623,18 +640,37 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         double vy = 2.0 * h * qy / (h*h + std::max(h*h, 1.e-14));
 		std::vector<double> xi(2);
 		double vnorm = std::sqrt(vx*vx+vy*vy);
-		xi[0] = vx/(vnorm+1.e-14);
-		xi[1] = vy/(vnorm+1.e-14);
+		if (vnorm == 0.) {
+            std::vector<double> nj(2);
+            nj[0] = 2.*mesh_->cell_volume(ncells[K])*phi_x_[ncells[K]][i][0]; // can take qp = 0 because grad phi is constant
+            nj[1] = 2.*mesh_->cell_volume(ncells[K])*phi_y_[ncells[K]][i][0];
+            double ln = std::sqrt(nj[0]*nj[0]+nj[1]*nj[1]);
+			xi[0] = nj[0]/ln;
+			xi[1] = nj[1]/ln;
+
+		} else {
+			xi[0] = vx/(vnorm);
+			xi[1] = vy/(vnorm);
+		}
 		std::vector<std::vector<double> > L = LeftEigenVecs(U_av,xi);
 		std::vector<std::vector<double> > R = RightEigenVecs(U_av,xi);
 
-		std::cout << "xi = " << xi[0] << " " << xi[1] << std::endl;
+		std::vector<std::vector<double> > Id = matrix_product(L,R);
+
+//		for (int ii = 0; ii < 3; ii++) {
+//			for (int jj = 0; jj < 3; jj++) {
+//				std::cout << Id[ii][jj] << " ";
+//			}
+//			std::cout << std::endl;
+//		}
+
+//		std::cout << "xi = " << xi[0] << " " << xi[1] << std::endl;
 
 		for (int m = 0; m < 3; ++m) {
 	      Phi_total_char[m] = 0.;
 		  for (int n = 0; n < 3; ++n)
 		    Phi_total_char[m] += L[m][n]*Phi_total[n];
-		  std::cout << "Phi_total_char[" << m << "] = " << Phi_total_char[m] << std::endl;
+//		  std::cout << "Phi_total_char[" << m << "] = " << Phi_total_char[m] << std::endl;
 		}
 
         for (int m = 0; m < 3; ++m) {
@@ -647,6 +683,11 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 			  for (int n = 0; n < 3; ++n)
 				phi_char[m][j] += L[m][n]*phi[n][j];
 			}
+		}
+
+		// save original residual
+		for (int m = 0; m < 3; ++m) {
+		  Phi_total_orig[m] = Phi_total[m];
 		}
 
 		// overwrite
@@ -700,7 +741,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
           for (int j = 0; j < cnodes.size(); ++j) {
 
-
               std::vector<double> nj(2);
               nj[0] = 2.*mesh_->cell_volume(ncells[K])*phi_x_[ncells[K]][cnodes[j]][0]; // can take qp = 0 because grad phi is constant
               nj[1] = 2.*mesh_->cell_volume(ncells[K])*phi_y_[ncells[K]][cnodes[j]][0];
@@ -741,7 +781,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 //          std::cout << "node coordinates : " << node_coordinates[0] << " " << node_coordinates[1] << std::endl;
 
 //          if (std::abs(sum_beta[m]-1.) > 1.e-10 && std::abs(sum_beta[m]) > 1.e-10) {
-//          if (std::abs(sum_beta[m]) != 1.) {
+////          if (std::abs(sum_beta[m]) != 1.) {
 //          	std::cout << "sum_beta[" << m << "] = " << sum_beta[m] << " in K = " << K << ", i = " << i << std::endl;
 //          	std::cout << "sum_max[" << m << "] = " << sum_max[m] << std::endl;
 //            for (int j = 0; j < cnodes.size(); ++j) {
@@ -757,7 +797,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
         for (int m = 0; m < 3; ++m) {
         	phi_beta_cell_K_char[m] = beta[m] * Phi_total[m];
-        	std::cout << "phi_beta_cell_K_char[" << m << "] = " << phi_beta_cell_K_char[m] << std::endl;
+//        	std::cout << "phi_beta_cell_K_char[" << m << "] = " << phi_beta_cell_K_char[m] << std::endl;
         }
 
 
@@ -765,8 +805,13 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 		for (int m = 0; m < 3; ++m) {
 		  phi_beta_cell_K[m] = 0.;
 		  for (int n = 0; n < 3; ++n)
-			  phi_beta_cell_K[m] += phi_beta_cell_K_char[n]*R[m][n];
+			  phi_beta_cell_K[m] += R[m][n]*phi_beta_cell_K_char[n];
 		}
+
+//		// restore original residual
+//		for (int m = 0; m < 3; ++m) {
+//		  Phi_total[m] = Phi_total_orig[m];
+//		}
 
         for (int m = 0; m < 3; ++m) {
 
@@ -811,11 +856,11 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 //            U[0][i] = U[0][i];
 //            U[1][i] = -U[1][i];
 //            U[2][i] = -U[2][i];
-		phi_beta_cell[0] *= 0.0;
-		phi_beta_cell[1] *= 0.0;
-		phi_beta_cell[2] *= 0.0;
-//		dual_cell_vol = 10000.0;
-//		dual_cell_vol_old = 10000.0;
+//		phi_beta_cell[0] *= 0.0;
+//		phi_beta_cell[1] *= 0.0;
+//		phi_beta_cell[2] *= 0.0;
+//		dual_cell_vol = 100.0;
+//		dual_cell_vol_old = 100.0;
 	  }
     
 //    std::cout << "dual_cell_vol = " << dual_cell_vol << std::endl;
@@ -829,8 +874,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // 2. corrector step begins
   std::vector<std::vector<double>> U_new(3);
   U_new = U_pr;
-
-  /*
 
   for (int i = 0; i < nnodes_owned; ++i){
     
@@ -876,30 +919,222 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
           }
         }
 
+        // Average
+        std::vector<double> U_av(3,0.0);
+        for (int m = 0; m < 3; ++m) {
+          for (int j = 0; j < cnodes.size(); ++j) {
+//        	std::cout << "j = " << j << ", cnodes[j] = " << cnodes[j] << ", U[m][cnodes[j]] = " << U[m][cnodes[j]] << std::endl;
+            U_av[m] += U[m][cnodes[j]];
+           }
+           U_av[m] /= 3.;
+        }
+
+//        std::cout << "U_av = " << U_av[0] << " " << U_av[1] << " " << U_av[2] << std::endl;
+
+		// Project onto left eigenvectors
+        std::vector<std::vector<double>> phi_char(3);
+        std::vector<double> Phi_total_char(3), Phi_total_orig(3);
+        double h  = U[0][i];
+        double qx = U[1][i];
+        double qy = U[2][i];
+        double vx = 2.0 * h * qx / (h*h + std::max(h*h, 1.e-14));
+        double vy = 2.0 * h * qy / (h*h + std::max(h*h, 1.e-14));
+		std::vector<double> xi(2);
+		double vnorm = std::sqrt(vx*vx+vy*vy);
+		if (vnorm == 0.) {
+            std::vector<double> nj(2);
+            nj[0] = 2.*mesh_->cell_volume(ncells[K])*phi_x_[ncells[K]][i][0]; // can take qp = 0 because grad phi is constant
+            nj[1] = 2.*mesh_->cell_volume(ncells[K])*phi_y_[ncells[K]][i][0];
+            double ln = std::sqrt(nj[0]*nj[0]+nj[1]*nj[1]);
+			xi[0] = nj[0]/ln;
+			xi[1] = nj[1]/ln;
+
+		} else {
+			xi[0] = vx/(vnorm);
+			xi[1] = vy/(vnorm);
+		}
+		std::vector<std::vector<double> > L = LeftEigenVecs(U_av,xi);
+		std::vector<std::vector<double> > R = RightEigenVecs(U_av,xi);
+
+		std::vector<std::vector<double> > Id = matrix_product(L,R);
+
+//		for (int ii = 0; ii < 3; ii++) {
+//			for (int jj = 0; jj < 3; jj++) {
+//				std::cout << Id[ii][jj] << " ";
+//			}
+//			std::cout << std::endl;
+//		}
+
+//		std::cout << "xi = " << xi[0] << " " << xi[1] << std::endl;
+
+		for (int m = 0; m < 3; ++m) {
+	      Phi_total_char[m] = 0.;
+		  for (int n = 0; n < 3; ++n)
+		    Phi_total_char[m] += L[m][n]*Phi_total[n];
+//		  std::cout << "Phi_total_char[" << m << "] = " << Phi_total_char[m] << std::endl;
+		}
+
+        for (int m = 0; m < 3; ++m) {
+        	phi_char[m].resize(cnodes.size());
+        }
+
+		for (int j = 0; j < cnodes.size(); ++j) {
+			for (int m = 0; m < 3; ++m) {
+			  phi_char[m][j] = 0.;
+			  for (int n = 0; n < 3; ++n)
+				phi_char[m][j] += L[m][n]*phi[n][j];
+			}
+		}
+
+		// save original residual
+		for (int m = 0; m < 3; ++m) {
+		  Phi_total_orig[m] = Phi_total[m];
+		}
+
+		// overwrite
+		for (int m = 0; m < 3; ++m) {
+		  Phi_total[m] = Phi_total_char[m];
+		  for (int j = 0; j < cnodes.size(); ++j) {
+		    phi[m][j] = phi_char[m][j];
+		  }
+	    }
+
         std::fill(beta.begin(), beta.end(), 0.0);
         std::fill(sum_max.begin(), sum_max.end(), 0.0);
+        std::vector<std::vector<double>> beta_j(3);
+
         for (int m = 0; m < 3; ++m) {
-          
-          if (std::abs(Phi_total[m]) > 0.0) {
-            
-            for (int j = 0; j < cnodes.size(); ++j) {
-              
-              if (cnodes[j] == i) {
-                beta[m] = std::max(0.0, phi[m][j]/Phi_total[m]);
-              }
-              sum_max[m] +=  std::max(0.0, phi[m][j]/Phi_total[m]);
-            }
+
+          sum_beta[m] = 0.;
+
+          beta_j[m].resize(cnodes.size());
+
+//          if (std::abs(Phi_total[m]) > 0.0) {
+//
+//            for (int j = 0; j < cnodes.size(); ++j) {
+//
+//              if (cnodes[j] == i) {
+//                beta[m] = std::max(0.0, phi[m][j]/Phi_total[m]);
+//              }
+//              sum_max[m] +=  std::max(0.0, phi[m][j]/Phi_total[m]);
+//            } // j
+//          }
+
+//          if (std::abs(sum_max[m]) > 0.0) {
+//            beta[m] = beta[m] / sum_max[m];
+//          }
+
+          for (int j = 0; j < cnodes.size(); ++j) {
+        	 sum_max[m] +=  std::max(0.0, phi[m][j]/(Phi_total[m]+1.e-15));
           }
-          
-          if (std::abs(sum_max[m]) > 0.0) {
-            beta[m] = beta[m] / sum_max[m];
-          }
-          
-          phi_beta_cell[m] += beta[m] * Phi_total[m]; // eq(6)
+
+//          std::vector<double> nj(2);
+//          nj[0] = 2.*mesh_->cell_volume(ncells[K])*phi_x_[ncells[K]][i][0]; // can take qp = 0 because grad phi is constant
+//          nj[1] = 2.*mesh_->cell_volume(ncells[K])*phi_y_[ncells[K]][i][0];
+//
+//         double h  = U[0][i];
+//         double qx = U[1][i];
+//         double qy = U[2][i];
+//         double vx = 2.0 * h * qx / (h*h + std::max(h*h, 1.e-14));
+//         double vy = 2.0 * h * qy / (h*h + std::max(h*h, 1.e-14));
+
+//          beta[m] += (vx*nj[0]+vy*nj[1])/(vx*vx + vy*vy + 1.e-6);
+
+          for (int j = 0; j < cnodes.size(); ++j) {
+
+              std::vector<double> nj(2);
+              nj[0] = 2.*mesh_->cell_volume(ncells[K])*phi_x_[ncells[K]][cnodes[j]][0]; // can take qp = 0 because grad phi is constant
+              nj[1] = 2.*mesh_->cell_volume(ncells[K])*phi_y_[ncells[K]][cnodes[j]][0];
+
+              double h  = U[0][cnodes[j]];
+              double qx = U[1][cnodes[j]];
+              double qy = U[2][cnodes[j]];
+              double vx = 2.0 * h * qx / (h*h + std::max(h*h, 1.e-14));
+              double vy = 2.0 * h * qy / (h*h + std::max(h*h, 1.e-14));
+
+        	  beta_j[m][j] = std::max(0.0, phi[m][j]/(Phi_total[m]+1.e-15));
+        	  beta_j[m][j] = beta_j[m][j] / (sum_max[m]+1.e-15);
+
+//        	  beta_j[m][j] += mesh_->cell_volume(ncells[K])*(vx*nj[0]+vy*nj[1]); ///(vx*vx + vy*vy + 1.e-15);
+//        	  std::cout << "j = " << j << ", dbeta = " << (vx*nj[0]+vy*nj[1])/(vx*vx + vy*vy + 1.e-15) << std::endl;
+//        	  std::cout << "j = " << j << ", dbeta = " << (vx*nj[0]+vy*nj[1]) << std::endl;
+              sum_beta[m] +=  beta_j[m][j];
+//              if (cnodes[j] == i) beta[m] = beta_j[m][j]; ///(sum_beta[m]+1.e-15);
+          } //j
+
+          for (int j = 0; j < cnodes.size(); ++j) {
+              if (cnodes[j] == i) beta[m] = beta_j[m][j]/(sum_beta[m]+1.e-15);
+          } //j
+
+//          beta[m] = 1./3.;
+
+//          phi_beta_cell[m] += beta[m] * Phi_total[m]; // eq(6)
 //          for (int j = 0; j < cnodes.size(); ++j) {
-//		    if (cnodes[j] == i) phi_beta_cell[m] += phi[m][j]; // LxF
-//		  }
+//        	  if (cnodes[j] == i) phi_beta_cell[m] += phi[m][j];
+//          }
+
+//          double blend = 1.;
+//          phi_beta_cell[m] += blend * beta[m] * Phi_total[m];
+//          for (int j = 0; j < cnodes.size(); ++j) {
+//        	  if (cnodes[j] == i) phi_beta_cell[m] += (1.-blend) * phi[m][j];
+//          }
+
+//          std::cout << "node coordinates : " << node_coordinates[0] << " " << node_coordinates[1] << std::endl;
+
+//          if (std::abs(sum_beta[m]-1.) > 1.e-10 && std::abs(sum_beta[m]) > 1.e-10) {
+////          if (std::abs(sum_beta[m]) != 1.) {
+//          	std::cout << "sum_beta[" << m << "] = " << sum_beta[m] << " in K = " << K << ", i = " << i << std::endl;
+//          	std::cout << "sum_max[" << m << "] = " << sum_max[m] << std::endl;
+//            for (int j = 0; j < cnodes.size(); ++j) {
+//              std::cout << "phi[" << m << "][" << j << "] = " << phi[m][j] << std::endl;
+//          	  std::cout << "beta_j[" << m << "][" << j << "] = " << beta_j[m][j] << std::endl;
+//            }
+//          	exit(0);
+//          }
+
+        } // m
+
+        std::vector<double> phi_beta_cell_K_char(3, 0.0), phi_beta_cell_K(3, 0.0);
+
+        for (int m = 0; m < 3; ++m) {
+        	phi_beta_cell_K_char[m] = beta[m] * Phi_total[m];
+//        	std::cout << "phi_beta_cell_K_char[" << m << "] = " << phi_beta_cell_K_char[m] << std::endl;
         }
+
+
+        // Project back
+		for (int m = 0; m < 3; ++m) {
+		  phi_beta_cell_K[m] = 0.;
+		  for (int n = 0; n < 3; ++n)
+			  phi_beta_cell_K[m] += R[m][n]*phi_beta_cell_K_char[n];
+		}
+
+//		// restore original residual
+//		for (int m = 0; m < 3; ++m) {
+//		  Phi_total[m] = Phi_total_orig[m];
+//		}
+
+        for (int m = 0; m < 3; ++m) {
+
+        	phi_beta_cell[m] += phi_beta_cell_K[m];
+
+//        	std::cout << "U[1][i] = " << U[1][i] << ", U[2][i] = " << U[2][i] << std::endl;
+//        	std::cout << "Phi_total[" << m << "] = " << Phi_total[m] << std::endl;
+//        	std::cout << "beta[" << m << "] = " << beta[m] << std::endl;
+
+//        	phi_beta_cell[m] +=  beta[m] * Phi_total[m];
+//        	for (int j = 0; j < cnodes.size(); ++j) {
+//			  if (cnodes[j] == i) phi_beta_cell[m] += phi[m][j]; // LxF
+//		    }
+
+//            double blend = 1.;
+//            phi_beta_cell[m] += blend * beta[m] * Phi_total[m];
+//            for (int j = 0; j < cnodes.size(); ++j) {
+//          	  if (cnodes[j] == i) phi_beta_cell[m] += (1.-blend) * phi[m][j];
+//            }
+
+        } // m
+
         dual_cell_vol += (1.0/3)*mesh_->cell_volume(ncells[K]);
       } // K (cell) loop
 //  } // else
@@ -911,11 +1146,11 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 //            U[0][i] = U[0][i];
 //            U[1][i] = -U[1][i];
 //            U[2][i] = -U[2][i];
-		phi_beta_cell[0] *= 0.0;
-		phi_beta_cell[1] *= 0.0;
-		phi_beta_cell[2] *= 0.0;
-//		dual_cell_vol *= 10.0;
-//		dual_cell_vol_old *= 10.0;
+//		phi_beta_cell[0] *= 0.0;
+//		phi_beta_cell[1] *= 0.0;
+//		phi_beta_cell[2] *= 0.0;
+//		dual_cell_vol *= 100.0;
+//		dual_cell_vol_old *= 100.0;
 	  }
 
       for (int m = 0; m < 3; ++m) {
@@ -927,8 +1162,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   }// i (total DOF) loop
   // corrector step ends
-   *
-   * */
 
   for (int i = 0; i < nnodes_owned; ++i) {
     ht_n[0][i] = U_new[0][i] + B_n[0][i];
@@ -1250,24 +1483,24 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
 //      std::cout << "vx_qp = " << vx_qp << std::endl;
 //      std::cout << "vy_qp = " << vy_qp << std::endl;
 
-//      integral[0] += h_qp*(vx_qp*n[0] + vy_qp*n[1]) * weights_face_[faces_j[f]][qpf];
-//      integral[1] += h_qp*vx_qp*(vx_qp*n[0] + vy_qp*n[1]) * weights_face_[faces_j[f]][qpf];
-//      integral[2] += h_qp*vy_qp*(vx_qp*n[0] + vy_qp*n[1]) * weights_face_[faces_j[f]][qpf];
+      integral[0] += h_qp*(vx_qp*n[0] + vy_qp*n[1]) * weights_face_[faces_j[f]][qpf];
+      integral[1] += h_qp*vx_qp*(vx_qp*n[0] + vy_qp*n[1]) * weights_face_[faces_j[f]][qpf];
+      integral[2] += h_qp*vy_qp*(vx_qp*n[0] + vy_qp*n[1]) * weights_face_[faces_j[f]][qpf];
 
-      double phi_j = phi_face_[faces_j[f]][j][qpf];
-
-      integral[0] += h_qp*(vx_qp*n[0] + vy_qp*n[1]) * phi_j * weights_face_[faces_j[f]][qpf];
-      integral[1] += h_qp*vx_qp*(vx_qp*n[0] + vy_qp*n[1]) * phi_j * weights_face_[faces_j[f]][qpf];
-      integral[2] += h_qp*vy_qp*(vx_qp*n[0] + vy_qp*n[1]) * phi_j * weights_face_[faces_j[f]][qpf];
+//      double phi_j = phi_face_[faces_j[f]][j][qpf];
+//
+//      integral[0] += h_qp*(vx_qp*n[0] + vy_qp*n[1]) * phi_j * weights_face_[faces_j[f]][qpf];
+//      integral[1] += h_qp*vx_qp*(vx_qp*n[0] + vy_qp*n[1]) * phi_j * weights_face_[faces_j[f]][qpf];
+//      integral[2] += h_qp*vy_qp*(vx_qp*n[0] + vy_qp*n[1]) * phi_j * weights_face_[faces_j[f]][qpf];
 
     }
   }
 
 //  } // if c2 != -1
 
-//  for (int m = 0; m < 3; ++m) {
-//	  integral[m] /= 3.;
-//  }
+  for (int m = 0; m < 3; ++m) {
+	  integral[m] /= 3.;
+  }
 
   // 3. compute viscoisty term
   // 3a. compute U_bar i.e. average
@@ -1304,15 +1537,22 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
     vx = 2.0 * h * qx / (h*h + std::max(h*h, 1.e-14));
     vy = 2.0 * h * qy / (h*h + std::max(h*h, 1.e-14));
     
-    S = std::max(lmax*std::abs(vx) + std::sqrt(g_*h), lmax*std::abs(vy) + std::sqrt(g_*h));
-//    S = std::max(std::abs(vx) + std::sqrt(g_*h), std::abs(vy) + std::sqrt(g_*h));
+    std::vector<double> nj(2);
+    nj[0] = 2.*mesh_->cell_volume(K)*phi_x_[K][cnodes[i]][0]; // can take qp = 0 because grad phi is constant
+    nj[1] = 2.*mesh_->cell_volume(K)*phi_y_[K][cnodes[i]][0];
+
+    double ln = std::sqrt(nj[0]*nj[0]+nj[1]*nj[1]);
+
+//    S = std::sqrt(vx*vx+vy*vy) + std::sqrt(g_*h);
+//    S *= ln;
+
+    S = std::max(std::abs(vx) + std::sqrt(g_*h), std::abs(vy) + std::sqrt(g_*h));
     Smax = std::max(Smax, S);
   }
   
-  double alpha = 0.1*lmax * Smax;
-//  double alpha = 0.01*lmax * Smax;
-//  double alpha = Smax;
+  double alpha = 0.1*lmax*Smax;
 //  double alpha = 0.5*lmax*Smax;
+//  double alpha = 0.5*Smax;
   
 //  std::cout << "lmax = " << lmax << std::endl;
 //  std::cout << "alpha = " << alpha << std::endl;
@@ -1799,6 +2039,8 @@ std::vector<std::vector<double> > ShallowWater_PK::RightEigenVecs(std::vector<do
 {
 	std::vector<std::vector<double> > R(3);
 
+	for (int m = 0; m < 3; ++m) R[m].resize(3);
+
 	double h, u, v, qx, qy;
 	double eps = 1.e-6;
 
@@ -1811,21 +2053,18 @@ std::vector<std::vector<double> > ShallowWater_PK::RightEigenVecs(std::vector<do
 	double a = std::sqrt(g_*h);
 
 	// Components of vector 0
-	R[0].resize(3);
 	R[0][0] = 0.;
-	R[0][1] = -a*xi[0];
-	R[0][2] = a*xi[1];
+	R[1][0] = -a*xi[1];
+	R[2][0] = a*xi[0];
 
 	// Components of vector 1
-    R[1].resize(3);
-    R[1][0] = 1.;
+    R[0][1] = 1.;
     R[1][1] = u+a*xi[0];
-    R[1][2] = v+a*xi[1];
+    R[2][1] = v+a*xi[1];
 
     // Components of vector 2
-    R[2].resize(3);
-    R[2][0] = 1.;
-	R[2][1] = u-a*xi[0];
+    R[0][2] = 1.;
+	R[1][2] = u-a*xi[0];
 	R[2][2] = v-a*xi[1];
 
 	return R;
@@ -1840,6 +2079,8 @@ std::vector<std::vector<double> > ShallowWater_PK::LeftEigenVecs(std::vector<dou
 
 	std::vector<std::vector<double> > L(3);
 
+	for (int m = 0; m < 3; ++m) L[m].resize(3);
+
 	double h, u, v, qx, qy;
 	double eps = 1.e-6;
 
@@ -1852,24 +2093,60 @@ std::vector<std::vector<double> > ShallowWater_PK::LeftEigenVecs(std::vector<dou
 	double a = std::sqrt(g_*h);
 
 	// Components of vector 0
-	L[0].resize(3);
 	L[0][0] = 1./a*(u*xi[1]-v*xi[0]);
 	L[0][1] = 1./a*(-xi[1]);
 	L[0][2] = 1./a*(xi[0]);
 
 	// Components of vector 1
-	L[1].resize(3);
-	L[1][0] = 0.5/a*(a-u*xi[0]-v*xi[1]);
-	L[1][1] = 0.5/a*(xi[1]);
-	L[1][2] = 0.5/a*(xi[0]);
+	L[1][0] = 0.5/a*(a+u*xi[0]+v*xi[1]);
+	L[1][1] = 0.5/a*(xi[0]);
+	L[1][2] = 0.5/a*(xi[1]);
 
 	// Components of vector 2
-	L[2].resize(3);
 	L[2][0] = 0.5/a*(a+u*xi[0]+v*xi[1]);
-	L[2][1] = 0.5/a*(-xi[1]);
-	L[2][2] = 0.5/a*(-xi[0]);
+	L[2][1] = 0.5/a*(-xi[0]);
+	L[2][2] = 0.5/a*(-xi[1]);
 
 	return L;
+
+}
+
+std::vector<std::vector<double> > ShallowWater_PK::FluxJacobian(std::vector<double> U, std::vector<double> xi)
+{
+
+	std::vector<std::vector<double> > J(3);
+
+	for (int m = 0; m < 3; ++m) J[m].resize(3);
+
+	double h, u, v, qx, qy;
+	double eps = 1.e-6;
+
+	h  = U[0];
+	qx = U[1];
+	qy = U[2];
+	u  = 2.*h*qx/(h*h + std::max(h*h,eps*eps));
+	v  = 2.*h*qy/(h*h + std::max(h*h,eps*eps));
+
+	double a = std::sqrt(g_*h);
+
+	double udotxi = u*xi[1]+v*xi[1];
+
+	// row 0
+	J[0][0] = 0.;
+	J[0][1] = xi[0];
+	J[0][2] = xi[1];
+
+	// row 1
+	J[1][0] = a*a*xi[0] - u*udotxi;
+	J[1][1] = u*xi[0] + udotxi;
+	J[1][2] = u*xi[1];
+
+	// row 2
+	J[2][0] = a*a*xi[1] - v*udotxi;
+	J[2][1] = v*xi[0];
+	J[2][2] = v*xi[1] + udotxi;
+
+	return J;
 
 }
 
