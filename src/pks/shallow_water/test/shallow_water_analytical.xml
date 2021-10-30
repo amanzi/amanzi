@@ -60,9 +60,9 @@
         <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
         <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
         <Parameter name="limiter location" type="string" value="node"/>
-        <Parameter name="limiter cfl" type="double" value="0.5"/>
+        <Parameter name="limiter cfl" type="double" value="1.0"/>
       </ParameterList>
-      <Parameter name="cfl" type="double" value="0.5"/>
+      <Parameter name="cfl" type="double" value="1.0"/>
       <Parameter name="number of reduced cfl cycles" type="int" value="10"/>
       <Parameter name="numerical flux" type="string" value="central upwind"/>
       

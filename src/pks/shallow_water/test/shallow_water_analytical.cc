@@ -176,9 +176,13 @@ TEST(SHALLOW_WATER_ANALYTICAL) {
   MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
 
-  std::vector<double> dx, Linferror, L1error, L2error, dt_val, Linferror_u, L1error_u, Linferror_v, L1error_v;
+  std::vector<double> dx, Linferror, L1error, L2error;
+  
+  std::vector<int> NN_vector = {80, 160, 320};
 
-  for (int NN = 100; NN <= 300; NN *= 3) {
+  for (int NN_i =0; NN_i < NN_vector.size(); NN_i += 1) {
+    
+    int NN = NN_vector[NN_i];
 
     RCP<Mesh> mesh = meshfactory.create(-3.0, -3.0, 3.0, 3.0, NN, NN, request_faces, request_edges);
     // mesh = meshfactory.create("test/median63x64.exo",request_faces,request_edges);
@@ -260,13 +264,10 @@ TEST(SHALLOW_WATER_ANALYTICAL) {
         io.FinalizeCycle();
       }
 
-//      dt = SWPK.get_dt();
-      dt = 0.5/NN;
-      dt_max = dt;
-//      std::cout<<"dt: "<<dt<<std::endl;
-
+      dt = SWPK.get_dt();
+      
       t_new = t_old + dt;
-
+      
       SWPK.AdvanceStep(t_old, t_new);
       SWPK.CommitStep(t_old, t_new, S);
 
@@ -288,14 +289,9 @@ TEST(SHALLOW_WATER_ANALYTICAL) {
 
     error(mesh, hh_ex, vel_ex, hh, vel, err_max, err_L1, hmax, err_max_u, err_L1_u, err_max_v, err_L1_v);
 
-    dt_val.push_back(dt_max);
     dx.push_back(hmax);
     Linferror.push_back(err_max);
     L1error.push_back(err_L1);
-    Linferror_u.push_back(err_max_u);
-    L1error_u.push_back(err_L1_u);
-    Linferror_v.push_back(err_max_v);
-    L1error_v.push_back(err_L1_v);
 
     io.InitializeCycle(t_out, iter, "");
     io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
@@ -311,27 +307,13 @@ TEST(SHALLOW_WATER_ANALYTICAL) {
     io.WriteVector(*vel_ex(0), "vx_ex", AmanziMesh::CELL);
     io.WriteVector(*vel_ex(1), "vy_ex", AmanziMesh::CELL);
     io.FinalizeCycle();
-    
-    std::cout<<"dt: "<<dt_max<<std::endl;
   } // NN
   
-  double L1_dt_order = Amanzi::Utils::bestLSfit(dt_val, L1error);
-  double Linf_dt_order = Amanzi::Utils::bestLSfit(dt_val, Linferror);
-  
-  double L1_dt_order_u = Amanzi::Utils::bestLSfit(dt_val, L1error_u);
-  double Linf_dt_order_u = Amanzi::Utils::bestLSfit(dt_val, Linferror_u);
-  
-  double L1_dt_order_v = Amanzi::Utils::bestLSfit(dt_val, L1error_v);
-  double Linf_dt_order_v = Amanzi::Utils::bestLSfit(dt_val, Linferror_v);
+  double L1_order = Amanzi::Utils::bestLSfit(dx, L1error);
+  double Linf_order = Amanzi::Utils::bestLSfit(dx, Linferror);
 
-  std::cout << "computed order L1 (dt) = " << L1_dt_order << std::endl;
-  std::cout << "computed order Linfty (dt) = " << Linf_dt_order << std::endl;
+  std::cout << "computed order L1  = " << L1_order << std::endl;
+  std::cout << "computed order Linf = " << Linf_order << std::endl;
   
-  std::cout << "computed order L1 (dt) u = " << L1_dt_order_u << std::endl;
-  std::cout << "computed order Linfty (dt) u = " << Linf_dt_order_u << std::endl;
-  
-  std::cout << "computed order L1 (dt) v = " << L1_dt_order_v << std::endl;
-  std::cout << "computed order Linfty (dt) v = " << Linf_dt_order_v << std::endl;
-
-//  CHECK(order > 0.9);  // first order scheme
+  CHECK(L1_order > 0.9);  // first order scheme (first order time stepping)
 }

@@ -418,10 +418,10 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // U_t + F_x(U) + G_y(U) = S(U)
     
   // initialize time integrator
-//  auto ti_method = Explicit_TI::forward_euler;
+  auto ti_method = Explicit_TI::forward_euler;
 //  auto ti_method = Explicit_TI::midpoint;
 //  auto ti_method = Explicit_TI::tvd_3rd_order;
-  auto ti_method = Explicit_TI::runge_kutta_4th_order;
+//  auto ti_method = Explicit_TI::runge_kutta_4th_order;
   
   auto soln_new = Teuchos::rcp(new TreeVector(*soln_));
   *soln_new = *soln_;
@@ -563,9 +563,6 @@ double ShallowWater_PK::get_dt()
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "switching from reduced to regular cfl=" << cfl_ << std::endl;
   }
-
-//  double vol = std::sqrt(mesh_->cell_volume(0));
-//  return 1.e-4*vol;
   
   if (iters_ < max_iters_)
     return 0.1 * cfl_ * dt_min;
