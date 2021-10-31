@@ -178,7 +178,7 @@ TEST(SHALLOW_WATER_ANALYTICAL) {
 
   std::vector<double> dx, Linferror, L1error, L2error;
   
-  std::vector<int> NN_vector = {80, 160, 320};
+  std::vector<int> NN_vector = {40, 80, 160};
 
   for (int NN_i =0; NN_i < NN_vector.size(); NN_i += 1) {
     
@@ -238,7 +238,7 @@ TEST(SHALLOW_WATER_ANALYTICAL) {
     int iter = 0;
     double dt_max = 0.0;
 
-    while (t_new < 0.005) {
+    while (t_new < 0.01) {
       // cycle 1, time t
       double t_out = t_new;
 
