@@ -315,7 +315,7 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   InitializeField_(S_.ptr(), passwd_, riemann_flux_key_, 0.0);
   InitializeFieldFromField_(prev_ponded_depth_key_, ponded_depth_key_, false);
   
-  // ---- ----
+  // soln_ is the TreeVector of conservative variables [h hu hv]
   Teuchos::RCP<TreeVector> tmp_h = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<TreeVector> tmp_q = Teuchos::rcp(new TreeVector());
 
@@ -327,6 +327,10 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   soln_->SubVector(0)->SetData(soln_h_);
   soln_->SubVector(1)->SetData(soln_q_);
+  
+  // temporal discretization order
+  temporal_disc_order = sw_list_->get<int>("temporal discretization order", 1);
+  std::cout<<"temporal discretization order = "<<temporal_disc_order<<std::endl;
     
   // summary of initialization
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -419,10 +423,15 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     
   // initialize time integrator
   auto ti_method = Explicit_TI::forward_euler;
-//  auto ti_method = Explicit_TI::midpoint;
-//  auto ti_method = Explicit_TI::tvd_3rd_order;
-//  auto ti_method = Explicit_TI::runge_kutta_4th_order;
+  if (temporal_disc_order == 2) {
+    ti_method = Explicit_TI::midpoint;
+  } else if (temporal_disc_order == 3) {
+    ti_method = Explicit_TI::tvd_3rd_order;
+  } else if (temporal_disc_order == 4) {
+    ti_method = Explicit_TI::runge_kutta_4th_order;
+  }
   
+  // call TimeStep()
   auto soln_new = Teuchos::rcp(new TreeVector(*soln_));
   *soln_new = *soln_;
   Explicit_TI::RK<TreeVector> rk1(*this, ti_method, *soln_);

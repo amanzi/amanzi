@@ -96,6 +96,9 @@ class ShallowWater_PK : public PK_Physical,
 
   // access
   double get_total_source() const { return total_source_; }
+                          
+  // temporal discretization order
+  int temporal_disc_order;
 
  private:
   void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);
