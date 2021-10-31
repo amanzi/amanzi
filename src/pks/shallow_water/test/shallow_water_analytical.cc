@@ -238,7 +238,7 @@ TEST(SHALLOW_WATER_ANALYTICAL) {
     int iter = 0;
     double dt_max = 0.0;
 
-    while (t_new < 0.01) {
+    while (t_new < 0.005) {
       // cycle 1, time t
       double t_out = t_new;
 
