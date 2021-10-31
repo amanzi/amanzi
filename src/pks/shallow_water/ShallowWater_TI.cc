@@ -98,13 +98,11 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   // compute source (external) values
   // coupling submodel="rate" returns volumetric flux [m^3/s] integrated over
   // the time step in the last (the second) component of local data vector
-  total_source_ = 0.0;
   std::vector<double> ext_S_cell(ncells_owned, 0.0);
   for (int  i = 0; i < srcs_.size(); ++i) {
     for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
       int c = it->first;
       ext_S_cell[c] = it->second[0];  // data unit is [m]
-      total_source_ += it->second[0] * mesh_->cell_volume(c); // data unit is [m^3/s]
     }
   }
   

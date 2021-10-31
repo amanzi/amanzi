@@ -417,6 +417,20 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     vel_c[1][c] = factor * q_old[1][c];
     ht_c[0][c] = h_c[0][c] + B_c[0][c];
   }
+  
+  // update source (external) terms
+  for (int i = 0; i < srcs_.size(); ++i) {
+    srcs_[i]->Compute(t_old, t_new);
+  }
+  
+  // compute total source value for each time step
+  total_source_ = 0.0;
+  for (int  i = 0; i < srcs_.size(); ++i) {
+    for (auto it = srcs_[i]->begin(); it != srcs_[i]->end(); ++it) {
+      int c = it->first;
+      total_source_ += it->second[0] * mesh_->cell_volume(c) * dt; // data unit is [m^3]
+    }
+  }
 
   // Shallow water equations have the form
   // U_t + F_x(U) + G_y(U) = S(U)
