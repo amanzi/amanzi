@@ -14,8 +14,6 @@
 namespace Amanzi {
 namespace ShallowWater {
 
-double inverse_with_tolerance_1 (double h);
-
 void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
                                                TreeVector& f)
 {
@@ -54,7 +52,7 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   Epetra_MultiVector& q_c = *S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
   
   for (int c = 0; c < ncells_owned; ++c) {
-    double factor = inverse_with_tolerance_1(h_temp[0][c]);
+    double factor = inverse_with_tolerance(h_temp[0][c]);
     h_c[0][c] = h_temp[0][c];
     q_c[0][c] = q_temp[0][c];
     q_c[1][c] = q_temp[1][c];
@@ -146,7 +144,7 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     double qx_rec = discharge_x_grad_->getValue(c1, xf);
     double qy_rec = discharge_y_grad_->getValue(c1, xf);
 
-    factor = inverse_with_tolerance_1(h_rec);
+    factor = inverse_with_tolerance(h_rec);
     double vx_rec = factor * qx_rec;
     double vy_rec = factor * qy_rec;
 
@@ -186,7 +184,7 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       qx_rec = discharge_x_grad_->getValue(c2, xf);
       qy_rec = discharge_y_grad_->getValue(c2, xf);
 
-      factor = inverse_with_tolerance_1(h_rec);
+      factor = inverse_with_tolerance(h_rec);
       vx_rec = factor * qx_rec;
       vy_rec = factor * qy_rec;
 
@@ -250,15 +248,6 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   
 }
 
-double inverse_with_tolerance_1(double h)
-{
-  double eps(1e-6), eps2(1e-12);  // hard-coded tolerances
-
-  if (h > eps) return 1.0 / h;
-
-  double h2 = h * h;
-  return 2 * h / (h2 + std::fmax(h2, eps2));
-}
 
 } // namespace ShallowWater
 } // namespace Amanzi

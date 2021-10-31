@@ -26,8 +26,6 @@
 namespace Amanzi {
 namespace ShallowWater {
 
-double inverse_with_tolerance(double h);
-
 //--------------------------------------------------------------
 // Standard constructor
 //--------------------------------------------------------------
@@ -635,20 +633,6 @@ double ShallowWater_PK::BathymetryEdgeValue(int e, const Epetra_MultiVector& B_n
   mesh_->face_get_nodes(e, &nodes);
 
   return (B_n[0][nodes[0]] + B_n[0][nodes[1]]) / 2;
-}
-
-
-//--------------------------------------------------------------
-// Inversion operation protected for small values
-//--------------------------------------------------------------
-double inverse_with_tolerance(double h)
-{
-  double eps(1e-6), eps2(1e-12);  // hard-coded tolerances
-
-  if (h > eps) return 1.0 / h;
-
-  double h2 = h * h;
-  return 2 * h / (h2 + std::fmax(h2, eps2));
 }
 
 
