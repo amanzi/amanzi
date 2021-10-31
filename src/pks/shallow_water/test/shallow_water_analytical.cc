@@ -17,13 +17,11 @@
 #include "LeastSquare.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-
 #include "ShallowWater_PK.hh"
-
 #include "OutputXDMF.hh"
 
 //--------------------------------------------------------------
-// Analytic solution
+// Analytic solution (Thacker's solution [Beljadid et. al. 2016]
 //--------------------------------------------------------------
 
 void analytical_exact(double t, double x, double y, double &h, double &u, double &v)
@@ -161,7 +159,7 @@ TEST(SHALLOW_WATER_ANALYTICAL) {
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: 2D shallow water: analytical solution" << std::endl;
+  if (MyPID == 0) std::cout << "Test: 2D shallow water: Thacker's solution" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/shallow_water_analytical.xml";
@@ -177,13 +175,9 @@ TEST(SHALLOW_WATER_ANALYTICAL) {
   meshfactory.set_preference(Preference({Framework::MSTK}));
 
   std::vector<double> dx, Linferror, L1error, L2error;
-  
-  std::vector<int> NN_vector = {40, 80, 160};
 
-  for (int NN_i =0; NN_i < NN_vector.size(); NN_i += 1) {
+  for (int NN = 40; NN <= 160; NN *= 2) {
     
-    int NN = NN_vector[NN_i];
-
     RCP<Mesh> mesh = meshfactory.create(-3.0, -3.0, 3.0, 3.0, NN, NN, request_faces, request_edges);
     // mesh = meshfactory.create("test/median63x64.exo",request_faces,request_edges);
     // works only with first order, no reconstruction
