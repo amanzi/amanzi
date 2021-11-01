@@ -95,8 +95,8 @@ void SoilHeatCapacityEvaluator::EvaluateField_(
 
           result_v[0][i] = cg + cw*W + ci*I;
 
-          std::cout << "W = " << W << std::endl;
-          std::cout << "i = " << i << ", heat capacity = " << result_v[0][i] << std::endl;
+//          std::cout << "W = " << W << std::endl;
+//          std::cout << "i = " << i << ", heat capacity = " << result_v[0][i] << std::endl;
 
       } // i
     }

@@ -30,7 +30,7 @@ void Soil_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
                        Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  std::cout << "Soil_Thermo_PK::FunctionalResidual START" << std::endl;
+//  std::cout << "Soil_Thermo_PK::FunctionalResidual START" << std::endl;
 
 
   bool ice_cover_ = false; // first always assume that there is no ice
@@ -151,7 +151,7 @@ void Soil_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   }
 #endif
 
-  std::cout << "Soil_Thermo_PK::FunctionalResidual DONE" << std::endl;
+//  std::cout << "Soil_Thermo_PK::FunctionalResidual DONE" << std::endl;
 
 };
 
@@ -167,7 +167,7 @@ int Soil_Thermo_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
   db_->WriteVector("T_res", u->Data().ptr(), true);
 #endif
 
-std::cout << "Soil_Thermo_PK::ApplyPreconditioner START" << std::endl;
+//std::cout << "Soil_Thermo_PK::ApplyPreconditioner START" << std::endl;
 
 //  preconditioner_->PrintDiagnostics();
 
@@ -180,7 +180,7 @@ std::cout << "Soil_Thermo_PK::ApplyPreconditioner START" << std::endl;
   
   Pu->Data()->ViewComponent("boundary_face")->PutScalar(0.0); // correction 01/22/21
 
-  std::cout << "Soil_Thermo_PK::ApplyPreconditioner DONE" << std::endl;
+//  std::cout << "Soil_Thermo_PK::ApplyPreconditioner DONE" << std::endl;
 
   return (ierr > 0) ? 0 : 1;
 };
@@ -194,7 +194,7 @@ void Soil_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "Precon update at t = " << t << std::endl;
 
-  std::cout << "Soil_Thermo_PK::UpdatePreconditioner START" << std::endl;
+//  std::cout << "Soil_Thermo_PK::UpdatePreconditioner START" << std::endl;
 
   // update state with the solution up.
 
@@ -211,7 +211,7 @@ void Soil_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
 
   // div K_e grad u
   UpdateConductivityData_(S_next_.ptr());
-  std::cout << "jacobian_ = " << jacobian_ << std::endl;
+//  std::cout << "jacobian_ = " << jacobian_ << std::endl;
   if (jacobian_) UpdateConductivityDerivativeData_(S_next_.ptr());
 
   Teuchos::RCP<const CompositeVector> conductivity =
@@ -242,11 +242,11 @@ void Soil_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
     preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), up->Data().ptr());
   }
 
-  std::cout << "Soil preconditioner_" << std::endl;
-  preconditioner_->SymbolicAssembleMatrix();
-  preconditioner_->AssembleMatrix();
-  std::cout << *preconditioner_->A() << std::endl;
-  std::cout << "Soil preconditioner_ after diff_" << std::endl;
+//  std::cout << "Soil preconditioner_" << std::endl;
+//  preconditioner_->SymbolicAssembleMatrix();
+//  preconditioner_->AssembleMatrix();
+//  std::cout << *preconditioner_->A() << std::endl;
+//  std::cout << "Soil preconditioner_ after diff_" << std::endl;
 
   // update with accumulation terms
   // -- update the accumulation derivatives, de/dT
@@ -290,18 +290,18 @@ void Soil_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
   }
   preconditioner_acc_->AddAccumulationTerm(acc, "cell");
 
-  preconditioner_->SymbolicAssembleMatrix();
-  preconditioner_->AssembleMatrix();
-  std::cout << *preconditioner_->A() << std::endl;
-  std::cout << "Soil preconditioner_ after acc_" << std::endl;
+//  preconditioner_->SymbolicAssembleMatrix();
+//  preconditioner_->AssembleMatrix();
+//  std::cout << *preconditioner_->A() << std::endl;
+//  std::cout << "Soil preconditioner_ after acc_" << std::endl;
 
   // -- update preconditioner with source term derivatives if needed
   AddSourcesToPrecon_(S_next_.ptr(), h);
 
-  preconditioner_->SymbolicAssembleMatrix();
-  preconditioner_->AssembleMatrix();
-  std::cout << *preconditioner_->A() << std::endl;
-  std::cout << "Soil preconditioner_ after sources" << std::endl;
+//  preconditioner_->SymbolicAssembleMatrix();
+//  preconditioner_->AssembleMatrix();
+//  std::cout << *preconditioner_->A() << std::endl;
+//  std::cout << "Soil preconditioner_ after sources" << std::endl;
 
 //  // update with advection terms
 //  if (implicit_advection_ && implicit_advection_in_pc_) {
@@ -321,12 +321,12 @@ void Soil_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
   // Apply boundary conditions.
   preconditioner_diff_->ApplyBCs(true, true, true);
 
-  preconditioner_->SymbolicAssembleMatrix();
-  preconditioner_->AssembleMatrix();
-  std::cout << *preconditioner_->A() << std::endl;
-  std::cout << "Soil preconditioner_ after ApplyBCs" << std::endl;
+//  preconditioner_->SymbolicAssembleMatrix();
+//  preconditioner_->AssembleMatrix();
+//  std::cout << *preconditioner_->A() << std::endl;
+//  std::cout << "Soil preconditioner_ after ApplyBCs" << std::endl;
 
-  std::cout << "Soil_Thermo_PK::UpdatePreconditioner DONE" << std::endl;
+//  std::cout << "Soil_Thermo_PK::UpdatePreconditioner DONE" << std::endl;
 
 };
 

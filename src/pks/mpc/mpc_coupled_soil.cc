@@ -64,10 +64,10 @@ MPCCoupledSoil::MPCCoupledSoil(Teuchos::ParameterList& pk_tree_list,
   mass_flux_dir_key_ = Keys::readKey(*plist_, domain_name_, "mass flux direction", "mass_flux_direction");
   rho_key_ = Keys::readKey(*plist_, domain_name_, "mass density liquid", "mass_density_liquid");
 
-  std::cout << "domain_name_ = " << domain_name_ << std::endl;
-  std::cout << "enth_key_ = " << enth_key_ << std::endl;
-
-  std::cout << "MPCCoupledSoil DONE" << std::endl;
+//  std::cout << "domain_name_ = " << domain_name_ << std::endl;
+//  std::cout << "enth_key_ = " << enth_key_ << std::endl;
+//
+//  std::cout << "MPCCoupledSoil DONE" << std::endl;
 
 }
 
@@ -75,7 +75,7 @@ MPCCoupledSoil::MPCCoupledSoil(Teuchos::ParameterList& pk_tree_list,
 void MPCCoupledSoil::Setup(const Teuchos::Ptr<State>& S)
 {
 
-  std::cout << "MPCCoupledSoil::Setup START" << std::endl;
+//  std::cout << "MPCCoupledSoil::Setup START" << std::endl;
 
   // set up keys
   Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
@@ -91,9 +91,9 @@ void MPCCoupledSoil::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // set up the sub-pks
-  std::cout << "before StrongMPC<PK_PhysicalBDF_Default>::Setup(S)" << std::endl;
+//  std::cout << "before StrongMPC<PK_PhysicalBDF_Default>::Setup(S)" << std::endl;
   StrongMPC<PK_PhysicalBDF_Default>::Setup(S);
-  std::cout << "after StrongMPC<PK_PhysicalBDF_Default>::Setup(S)" << std::endl;
+//  std::cout << "after StrongMPC<PK_PhysicalBDF_Default>::Setup(S)" << std::endl;
   mesh_ = S->GetMesh(domain_name_);
 
   // set up debugger
@@ -103,14 +103,14 @@ void MPCCoupledSoil::Setup(const Teuchos::Ptr<State>& S)
   Teuchos::RCP<Operators::Operator> pcA = sub_pks_[0]->preconditioner();
   Teuchos::RCP<Operators::Operator> pcB = sub_pks_[1]->preconditioner();
 
-  std::cout << "MPC Soil pcA" << std::endl;
-  pcA->SymbolicAssembleMatrix();
-  pcA->AssembleMatrix();
-  std::cout << *pcA->A() << std::endl;
-  std::cout << "MPC Soil pcB" << std::endl;
-  pcB->SymbolicAssembleMatrix();
-  pcB->AssembleMatrix();
-  std::cout << *pcB->A() << std::endl;
+//  std::cout << "MPC Soil pcA" << std::endl;
+//  pcA->SymbolicAssembleMatrix();
+//  pcA->AssembleMatrix();
+//  std::cout << *pcA->A() << std::endl;
+//  std::cout << "MPC Soil pcB" << std::endl;
+//  pcB->SymbolicAssembleMatrix();
+//  pcB->AssembleMatrix();
+//  std::cout << *pcB->A() << std::endl;
 
 //  exit(0);
 
@@ -157,7 +157,7 @@ void MPCCoupledSoil::Setup(const Teuchos::Ptr<State>& S)
   std::string precon_string = plist_->get<std::string>("preconditioner type",
                                                        "block diagonal");
 
-  std::cout << "MPC Soil precon_string = " << precon_string << std::endl;
+//  std::cout << "MPC Soil precon_string = " << precon_string << std::endl;
   if (precon_string == "none") {
     precon_type_ = PRECON_NONE;
   } else if (precon_string == "block diagonal") {
@@ -420,49 +420,37 @@ void MPCCoupledSoil::Setup(const Teuchos::Ptr<State>& S)
     ewc_->setup(S);
   }
 
-  std::cout << "preconditioner" << std::endl;
+//  std::cout << "preconditioner" << std::endl;
   preconditioner_->set_inverse_parameters(plist_->sublist("inverse"));
   preconditioner_->InitializeInverse();
   preconditioner_->SymbolicAssembleMatrix();
   preconditioner_->AssembleMatrix();
-  std::cout << *preconditioner_->A() << std::endl;
+//  std::cout << *preconditioner_->A() << std::endl;
 
-  std::cout << "matrix" << std::endl;
+//  std::cout << "matrix" << std::endl;
   matrix_->set_inverse_parameters(plist_->sublist("inverse"));
   matrix_->InitializeInverse();
   matrix_->SymbolicAssembleMatrix();
   matrix_->AssembleMatrix();
-  std::cout << *matrix_->A() << std::endl;
+//  std::cout << *matrix_->A() << std::endl;
 
 //  exit(0);
 
-  std::cout << "MPCCoupledSoil::Setup DONE" << std::endl;
+//  std::cout << "MPCCoupledSoil::Setup DONE" << std::endl;
 }
 
 void MPCCoupledSoil::Initialize(const Teuchos::Ptr<State>& S)
 {
 
-  std::cout << "MPCCoupledSoil::Initialize START" << std::endl;
-
-  std::cout << "Before StrongMPC<PK_PhysicalBDF_Default>::Initialize(S)" << std::endl;
-
   StrongMPC<PK_PhysicalBDF_Default>::Initialize(S);
 
-  std::cout << "Solution_ MPC soil" << std::endl;
-
-  solution_->Print(std::cout,false);
-
-  std::cout << "Initialize check -1" << std::endl;
+//  solution_->Print(std::cout,false);
 
 //  if (ewc_ != Teuchos::null) ewc_->initialize(S);
-
-  std::cout << "Initialize check 0" << std::endl;
 
   // initialize offdiagonal operators
   richards_pk_ = Teuchos::rcp_dynamic_cast<Flow::Richards>(sub_pks_[0]);
   AMANZI_ASSERT(richards_pk_ != Teuchos::null);
-
-  std::cout << "Initialize check 1" << std::endl;
 
   if (precon_type_ != PRECON_NONE && precon_type_ != PRECON_BLOCK_DIAGONAL) {
     Key dWC_dT_key = Keys::getDerivKey(wc_key_, temp_key_);
@@ -476,8 +464,6 @@ void MPCCoupledSoil::Initialize(const Teuchos::Ptr<State>& S)
       S->GetField(dE_dp_key, e_key_)->set_initialized();
     }
   }
-
-  std::cout << "Initialize check 2" << std::endl;
 
   if (ddivq_dT_ != Teuchos::null) {
     if (!is_fv_) {
@@ -494,8 +480,6 @@ void MPCCoupledSoil::Initialize(const Teuchos::Ptr<State>& S)
     ddivq_dT_->SetTensorCoefficient(richards_pk_->K_);
   }
 
-  std::cout << "Initialize check 3" << std::endl;
-
   if (ddivKgT_dp_ != Teuchos::null) {
     if (!is_fv_) {
       Key uw_dkappa_dp_key = Keys::getDerivKey(uw_tc_key_, pres_key_);
@@ -506,8 +490,6 @@ void MPCCoupledSoil::Initialize(const Teuchos::Ptr<State>& S)
 
     ddivKgT_dp_->SetTensorCoefficient(Teuchos::null);
   }
-
-  std::cout << "Initialize check 4" << std::endl;
 
   if (ddivhq_dp_ != Teuchos::null) {
     S->GetFieldData(uw_hkr_key_, name_)->PutScalar(1.);
@@ -532,7 +514,7 @@ void MPCCoupledSoil::Initialize(const Teuchos::Ptr<State>& S)
     ddivhq_dT_->SetTensorCoefficient(richards_pk_->K_);
   }
 
-  std::cout << "MPCCoupledSoil::Initialize DONE" << std::endl;
+//  std::cout << "MPCCoupledSoil::Initialize DONE" << std::endl;
 
 }
 
@@ -561,7 +543,7 @@ void
 MPCCoupledSoil::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                             Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) {
 
-  std::cout << "FunctionalResidual MPC Soil START" << std::endl;
+//  std::cout << "FunctionalResidual MPC Soil START" << std::endl;
 
   // generate local matrices and apply sources and boundary conditions
   StrongMPC<PK_PhysicalBDF_Default>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
@@ -592,51 +574,51 @@ MPCCoupledSoil::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<Tree
   Teuchos::RCP<Operators::Operator> pcA = sub_pks_[0]->preconditioner();
   Teuchos::RCP<Operators::Operator> pcB = sub_pks_[1]->preconditioner();
 
-  std::cout << "MPC Soil pcA" << std::endl;
-  pcA->SymbolicAssembleMatrix();
-  pcA->AssembleMatrix();
-  std::cout << *pcA->A() << std::endl;
-  std::cout << "MPC Soil pcB" << std::endl;
-  pcB->SymbolicAssembleMatrix();
-  pcB->AssembleMatrix();
-  std::cout << *pcB->A() << std::endl;
+//  std::cout << "MPC Soil pcA" << std::endl;
+//  pcA->SymbolicAssembleMatrix();
+//  pcA->AssembleMatrix();
+//  std::cout << *pcA->A() << std::endl;
+//  std::cout << "MPC Soil pcB" << std::endl;
+//  pcB->SymbolicAssembleMatrix();
+//  pcB->AssembleMatrix();
+//  std::cout << *pcB->A() << std::endl;
 
-  std::cout << "op0->A()" << std::endl;
-  std::cout << "op0 = " << op0 << std::endl;
-  op0->SymbolicAssembleMatrix();
-  op0->AssembleMatrix();
-  std::cout << *op0->A() << std::endl;
+//  std::cout << "op0->A()" << std::endl;
+//  std::cout << "op0 = " << op0 << std::endl;
+//  op0->SymbolicAssembleMatrix();
+//  op0->AssembleMatrix();
+//  std::cout << *op0->A() << std::endl;
 
-  std::cout << "op1->A()" << std::endl;
-  op1->SymbolicAssembleMatrix();
-  op1->AssembleMatrix();
-  std::cout << *op1->A() << std::endl;
+//  std::cout << "op1->A()" << std::endl;
+//  op1->SymbolicAssembleMatrix();
+//  op1->AssembleMatrix();
+//  std::cout << *op1->A() << std::endl;
 
 
-  std::cout << "preconditioner" << std::endl;
+//  std::cout << "preconditioner" << std::endl;
   preconditioner_->SymbolicAssembleMatrix();
   preconditioner_->AssembleMatrix();
-  std::cout << *preconditioner_->A() << std::endl;
+//  std::cout << *preconditioner_->A() << std::endl;
 
   auto opA = sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX);
   auto opB = sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX);
-  std::cout << "MPC Soil opA" << std::endl;
-  opA->SymbolicAssembleMatrix();
-  opA->AssembleMatrix();
-  std::cout << *opA->A() << std::endl;
-  std::cout << "MPC Soil opB" << std::endl;
-  opB->SymbolicAssembleMatrix();
-  opB->AssembleMatrix();
-  std::cout << *opB->A() << std::endl;
+//  std::cout << "MPC Soil opA" << std::endl;
+//  opA->SymbolicAssembleMatrix();
+//  opA->AssembleMatrix();
+//  std::cout << *opA->A() << std::endl;
+//  std::cout << "MPC Soil opB" << std::endl;
+//  opB->SymbolicAssembleMatrix();
+//  opB->AssembleMatrix();
+//  std::cout << *opB->A() << std::endl;
 
-  std::cout << "matrix" << std::endl;
+//  std::cout << "matrix" << std::endl;
   matrix_->SymbolicAssembleMatrix();
   matrix_->AssembleMatrix();
-  std::cout << *matrix_->A() << std::endl;
+//  std::cout << *matrix_->A() << std::endl;
 
 //  exit(0);
 
-  std::cout << "FunctionalResidual MPC Soil DONE" << std::endl;
+//  std::cout << "FunctionalResidual MPC Soil DONE" << std::endl;
 }
 
 
@@ -660,7 +642,7 @@ bool MPCCoupledSoil::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> up
 void MPCCoupledSoil::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h)
 {
 
-  std::cout << "MPCCoupledSoil::UpdatePreconditioner START" << std::endl;
+//  std::cout << "MPCCoupledSoil::UpdatePreconditioner START" << std::endl;
   Teuchos::OSTab tab = vo_->getOSTab();
 
   StrongMPC::UpdatePreconditioner(t, up, h);
@@ -871,7 +853,7 @@ void MPCCoupledSoil::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
 
   */
 
-  std::cout << "MPCCoupledSoil::UpdatePreconditioner DONE" << std::endl;
+//  std::cout << "MPCCoupledSoil::UpdatePreconditioner DONE" << std::endl;
 
 }
 

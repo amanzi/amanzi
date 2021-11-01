@@ -105,8 +105,8 @@ void SoilThermalConductivityEvaluator::EvaluateField_(
         double wl = wc_v[0][i];// * 1.8e-5; // CONVERTED UNITS
 //        double wi = ic_v[0][i];
 
-        std::cout << "soil water content wc_v[0][i] = " << wc_v[0][i] << std::endl;
-        std::cout << "wl = " << wl << std::endl;
+//        std::cout << "soil water content wc_v[0][i] = " << wc_v[0][i] << std::endl;
+//        std::cout << "wl = " << wl << std::endl;
 
         double lambda_sat;
         double lambda_dry;
@@ -176,8 +176,8 @@ void SoilThermalConductivityEvaluator::EvaluateField_(
 //        result_v[0][i] = 0.75;
         result_v[0][i] = (lambda_sat - lambda_dry)*Kersten + lambda_dry;
 
-        std::cout << "lambda_sat = " << lambda_sat << ", lambda_dry = " << lambda_dry << ", Kersten = " << Kersten << std::endl;
-        std::cout << "i = " << i << ", wl[i] = " << wl << ", lambda = " << result_v[0][i] << std::endl;
+//        std::cout << "lambda_sat = " << lambda_sat << ", lambda_dry = " << lambda_dry << ", Kersten = " << Kersten << std::endl;
+//        std::cout << "i = " << i << ", wl[i] = " << wl << ", lambda = " << result_v[0][i] << std::endl;
 
       } // i
     }

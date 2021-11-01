@@ -84,14 +84,14 @@ void Soil_Thermo_PK::Setup(const Teuchos::Ptr<State>& S) {
 
   coupled_soil = plist_->get<bool>("coupled with richards", false);
 
-  std::cout << "setup soil_thermo START" << std::endl;
-  std::cout << "soil domain_ = " << domain_ << std::endl;
+//  std::cout << "setup soil_thermo START" << std::endl;
+//  std::cout << "soil domain_ = " << domain_ << std::endl;
 
   SetupSoilThermo_(S);
-  std::cout << "SetupSoilThermo_ DONE" << std::endl;
+//  std::cout << "SetupSoilThermo_ DONE" << std::endl;
   SetupPhysicalEvaluators_(S);
 
-  std::cout << "setup soil_thermo DONE" << std::endl;
+//  std::cout << "setup soil_thermo DONE" << std::endl;
 };
 
 
@@ -112,9 +112,9 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
   cell_is_ice_key_ = Keys::readKey(*plist_, domain_, "ice", "ice");
   pressure_key_ = Keys::readKey(*plist_, domain_, "pressure", "pressure");
 
-  std::cout << "temperature_key_ soil = " << temperature_key_ << std::endl;
-  std::cout << "conductivity_key_ = " << conductivity_key_ << std::endl;
-  std::cout << "uw_conductivity_key_ soil = " << uw_conductivity_key_ << std::endl;
+//  std::cout << "temperature_key_ soil = " << temperature_key_ << std::endl;
+//  std::cout << "conductivity_key_ = " << conductivity_key_ << std::endl;
+//  std::cout << "uw_conductivity_key_ soil = " << uw_conductivity_key_ << std::endl;
 
   S->RequireField(temperature_key_)->SetMesh(mesh_)
         ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -125,7 +125,7 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
   S->RequireFieldEvaluator(cell_vol_key_);
 //  S->RequireScalar("atmospheric_pressure");
 
-  std::cout << "volume eval DONE" << std::endl;
+//  std::cout << "volume eval DONE" << std::endl;
 
 
   // Set primary evaluator for pressure
@@ -142,7 +142,7 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
 
 	  S->RequireFieldEvaluator(pressure_key_);
 
-	  std::cout << "pressure eval DONE" << std::endl;
+//	  std::cout << "pressure eval DONE" << std::endl;
   }
 
   // Set primary evaluator for water content -- for mpc_lake_1D
@@ -159,7 +159,7 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
 
 	  S->RequireFieldEvaluator(water_content_key_);
 
-	  std::cout << "water content eval DONE" << std::endl;
+//	  std::cout << "water content eval DONE" << std::endl;
   }
 
   // Set primary evaluator for ice content
@@ -175,7 +175,7 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
 
   S->RequireFieldEvaluator(ice_content_key_);
 
-  std::cout << "ice content eval DONE" << std::endl;
+//  std::cout << "ice content eval DONE" << std::endl;
 
   // Set up Operators
   // -- boundary conditions
@@ -215,7 +215,7 @@ void Soil_Thermo_PK::SetupSoilThermo_(const Teuchos::Ptr<State>& S) {
     Exceptions::amanzi_throw(message);
   }
 
-  std::cout << "coef_location soil " << coef_location << std::endl;
+//  std::cout << "coef_location soil " << coef_location << std::endl;
 
   S->GetField(uw_conductivity_key_,name_)->set_io_vis(false);
   
@@ -484,31 +484,31 @@ void Soil_Thermo_PK::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField(density_key_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(density_key_);
-  std::cout << "density eval DONE" << std::endl;
+//  std::cout << "density eval DONE" << std::endl;
 
   // -- Energy
   S->RequireField(energy_key_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(energy_key_);
-  std::cout << "energy eval DONE" << std::endl;
+//  std::cout << "energy eval DONE" << std::endl;
 
   // -- Conductivity
   S->RequireField(conductivity_key_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(conductivity_key_);
-  std::cout << "conductivity eval DONE" << std::endl;
+//  std::cout << "conductivity eval DONE" << std::endl;
 
   // -- Heat Capacity
   S->RequireField(heat_capacity_key_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(heat_capacity_key_);
-  std::cout << "heat capacity eval DONE" << std::endl;
+//  std::cout << "heat capacity eval DONE" << std::endl;
 
   // -- Enthalpy
   S->RequireField(enthalpy_key_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(enthalpy_key_);
-  std::cout << "enthalpy eval DONE" << std::endl;
+//  std::cout << "enthalpy eval DONE" << std::endl;
 
 //  Teuchos::RCP<FieldEvaluator> iem_fe =
 //    S->GetFieldEvaluator(Keys::getKey(domain_, "internal_energy_liquid"));
@@ -517,7 +517,7 @@ void Soil_Thermo_PK::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 //  AMANZI_ASSERT(iem_eval != Teuchos::null);
 //  iem_liquid_ = iem_eval->get_IEM();
 
-  std::cout << "Initialized IE" << std::endl;
+//  std::cout << "Initialized IE" << std::endl;
 
 }
 
@@ -537,12 +537,12 @@ void Soil_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   Teuchos::ParameterList& param_list = plist_->sublist("parameters");
 
   // precipitation rate
-  r_ = param_list.get<double>("precipitation");
-  std::cout << "Precipitation rate = " << r_ << std::endl;
-
-  // evaporation rate
-  E_ = param_list.get<double>("evaporation");
-  std::cout << "Evaporation rate = " << E_ << std::endl;
+//  r_ = param_list.get<double>("precipitation");
+//  std::cout << "Precipitation rate = " << r_ << std::endl;
+//
+//  // evaporation rate
+//  E_ = param_list.get<double>("evaporation");
+//  std::cout << "Evaporation rate = " << E_ << std::endl;
 
   R_s_ = 0.;
   R_b_ = 0.;
@@ -586,9 +586,9 @@ void Soil_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   const Epetra_MultiVector& uw_cond_c = *S->GetFieldData(uw_conductivity_key_)->ViewComponent("face", false);
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
-  for (int f = 0; f < nfaces_owned; f++) {
-      std::cout << "soil cond 11 = " << uw_cond_c[0][f] << std::endl;
-  }
+//  for (int f = 0; f < nfaces_owned; f++) {
+//      std::cout << "soil cond 11 = " << uw_cond_c[0][f] << std::endl;
+//  }
 
   // potentially initialize mass flux
 //  if (!flux_exists_) {
@@ -603,7 +603,7 @@ void Soil_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   Teuchos::ParameterList& ic_list = plist_->sublist("initial condition");
   double temp = ic_list.get<double>("initial temperature [K]");
 
-  std::cout << "temp initial = " << temp << std::endl;
+//  std::cout << "temp initial = " << temp << std::endl;
 
   S->GetFieldData(temperature_key_, name_)->PutScalar(temp);
 
@@ -631,25 +631,25 @@ void Soil_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
 
   S->GetField(temperature_key_, name_)->set_initialized();
 
-  std::cout << "Initialized T" << std::endl;
+//  std::cout << "Initialized T" << std::endl;
 
   // for mpc_lake_1D
   if (!coupled_soil) {
 	  S->GetFieldData(water_content_key_, name_)->PutScalar(0.);
 	  S->GetField(water_content_key_, name_)->set_initialized();
-	  std::cout << "Initialized W" << std::endl;
+//	  std::cout << "Initialized W" << std::endl;
   }
 
   S->GetFieldData(ice_content_key_, name_)->PutScalar(0.);
   S->GetField(ice_content_key_, name_)->set_initialized();
 
-  std::cout << "Initialized I" << std::endl;
+//  std::cout << "Initialized I" << std::endl;
 
   if (!coupled_soil) {
 	  S->GetFieldData(pressure_key_, name_)->PutScalar(0.);
 	  S->GetField(pressure_key_, name_)->set_initialized();
 
-	  std::cout << "Initialized p" << std::endl;
+//	  std::cout << "Initialized p" << std::endl;
   }
 
   // summary of initialization
@@ -669,7 +669,7 @@ void Soil_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 void Soil_Thermo_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
 
-  std::cout << "Soil_Thermo_PK::CommitStep START" << std::endl;
+//  std::cout << "Soil_Thermo_PK::CommitStep START" << std::endl;
 
   double dt = t_new - t_old;
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -708,7 +708,7 @@ void Soil_Thermo_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<S
     matrix_adv_->UpdateFlux(enth.ptr(), flux.ptr(), bc_adv_, adv_energy.ptr());
   }
 
-  std::cout << "Soil_Thermo_PK::CommitStep DONE" << std::endl;
+//  std::cout << "Soil_Thermo_PK::CommitStep DONE" << std::endl;
 
 };
 
@@ -759,7 +759,7 @@ bool Soil_Thermo_PK::UpdateConductivityData_(const Teuchos::Ptr<State>& S) {
     if (uw_cond->HasComponent("face"))
       uw_cond->ScatterMasterToGhosted("face");
   }
-  std::cout << "uw_conductivity_key_ soil = " << uw_conductivity_key_ << std::endl;
+//  std::cout << "uw_conductivity_key_ soil = " << uw_conductivity_key_ << std::endl;
   return update;
 }
 
@@ -798,7 +798,7 @@ void Soil_Thermo_PK::UpdateBoundaryConditions_(
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "  Updating BCs." << std::endl;
 
-  std::cout << "Soil_Thermo_PK::UpdateBoundaryConditions_ START" << std::endl;
+//  std::cout << "Soil_Thermo_PK::UpdateBoundaryConditions_ START" << std::endl;
 
   auto& markers = bc_markers();
   auto& values = bc_values();
@@ -820,10 +820,10 @@ void Soil_Thermo_PK::UpdateBoundaryConditions_(
     int f = bc->first;
     markers[f] = Operators::OPERATOR_BC_DIRICHLET;
     values[f] = bc->second;
-    std::cout << "temp BC values[f] = " << values[f] << std::endl;
+//    std::cout << "temp BC values[f] = " << values[f] << std::endl;
     adv_markers[f] = Operators::OPERATOR_BC_DIRICHLET;
     adv_values[f] = 0.; //bc->first;
-    std::cout << "temp BC adv_values[f] = " << adv_values[f] << std::endl;
+//    std::cout << "temp BC adv_values[f] = " << adv_values[f] << std::endl;
   }
 
 //  // Neumann flux boundary conditions
@@ -842,10 +842,10 @@ void Soil_Thermo_PK::UpdateBoundaryConditions_(
     int f = bc->first;
     markers[f] = Operators::OPERATOR_BC_NEUMANN;
     values[f] = bc->second;
-    std::cout << "flux BC values[f] = " << values[f] << std::endl;
+//    std::cout << "flux BC values[f] = " << values[f] << std::endl;
     adv_markers[f] = Operators::OPERATOR_BC_NEUMANN;
     adv_values[f] = 0.;
-    std::cout << "flux BC adv_values[f] = " << adv_values[f] << std::endl;
+//    std::cout << "flux BC adv_values[f] = " << adv_values[f] << std::endl;
   }
 
   // Dirichlet temperature boundary conditions from a coupled surface.
@@ -918,7 +918,7 @@ void Soil_Thermo_PK::UpdateBoundaryConditions_(
     ApplyDirichletBCsToBoundaryFace_(temp.ptr());
   }
 
-  std::cout << "Soil_Thermo_PK::UpdateBoundaryConditions_ DONE" << std::endl;
+//  std::cout << "Soil_Thermo_PK::UpdateBoundaryConditions_ DONE" << std::endl;
 
 };
 

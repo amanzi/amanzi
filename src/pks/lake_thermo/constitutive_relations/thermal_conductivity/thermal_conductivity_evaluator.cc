@@ -90,7 +90,6 @@ void ThermalConductivityEvaluator::EvaluateField_(
       Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
 
       int ncomp = result->size(*comp, false);
-      std::cout << "ncomp = " << ncomp << std::endl;
 
       int i_ice_max = 0;
       int i_ice_min = ncomp-1;
@@ -106,14 +105,14 @@ void ThermalConductivityEvaluator::EvaluateField_(
 
       for (int i=ncomp-2; i!=0; --i) {
         if (temp_v[0][i] < 273.15) { // check if there is ice cover
-          std::cout << "temp_v[0][" << i << "] = " << temp_v[0][i] << std::endl;
+//          std::cout << "temp_v[0][" << i << "] = " << temp_v[0][i] << std::endl;
           ice_cover_ = true;
           i_ice_min = i;
         }
       } // i
 
       i_ice_max = i_ice_min;
-      std::cout << "i_ice_max/min = " << i_ice_max << std::endl;
+//      std::cout << "i_ice_max/min = " << i_ice_max << std::endl;
 
       if (ice_cover_) {
       const AmanziGeometry::Point& zci = mesh->cell_centroid(i_ice_max+1);
@@ -123,7 +122,7 @@ void ThermalConductivityEvaluator::EvaluateField_(
       z_w = zcw[2];
       }
 
-      std::cout << "z_ice = " << z_ice << ", z_w = " << z_w << std::endl;
+//      std::cout << "z_ice = " << z_ice << ", z_w = " << z_w << std::endl;
 
       for (int i=0; i!=ncomp; ++i) {
         if (temp_v[0][i] < 273.15) { // this cell is in ice layer
@@ -153,7 +152,7 @@ void ThermalConductivityEvaluator::EvaluateField_(
                 result_v[0][i] = lambda_w + (lambda_ice - lambda_w)/(z_ice - z_w)*(zc[2] - z_w);
             }
         }
-        std::cout << "z = " << zc[2] << ", lambda = " << result_v[0][i] << std::endl;
+//        std::cout << "z = " << zc[2] << ", lambda = " << result_v[0][i] << std::endl;
       } // i
 
 
