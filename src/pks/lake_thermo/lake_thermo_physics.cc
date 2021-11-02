@@ -129,7 +129,12 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
 //    flux_f[0][f] = cp_*rho0*dhdt*xcf[2]/(h_+1.e-6);
     flux_f[0][f] = cp_*rho0*(dhdt*xcf[2] - B_w)/(h_+1.e-6);
 //    flux_f[0][f] = 1.*normal[2];
-//    std::cout << "f = " << f << " flux = " << flux_f[0][f] << std::endl;
+    std::cout << "dhdt = " << dhdt << std::endl;
+    std::cout << "cp_ = " << cp_ << std::endl;
+    std::cout << "rho0 = " << rho0 << std::endl;
+    std::cout << "xcf[2] = " << xcf[2] << std::endl;
+    std::cout << "h_ = " << h_ << std::endl;
+    std::cout << "f = " << f << " flux = " << flux_f[0][f] << std::endl;
   }
 
   db_->WriteVector(" adv flux", flux.ptr(), true);

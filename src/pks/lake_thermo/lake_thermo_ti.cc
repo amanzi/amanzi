@@ -98,6 +98,16 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
 //  bc_flux_->Compute(t_new);
   UpdateBoundaryConditions_(S_next_.ptr());
 
+  Teuchos::ParameterList& param_list = plist_->sublist("parameters");
+  FunctionFactory fac;
+  Teuchos::RCP<Function> r_func_ = Teuchos::rcp(fac.Create(param_list.sublist("precipitation")));
+  Teuchos::RCP<Function> E_func_ = Teuchos::rcp(fac.Create(param_list.sublist("evaporation")));
+
+  std::vector<double> args(1);
+  args[0] = S_inter_->time();
+  r_ = (*r_func_)(args);
+  E_ = (*E_func_)(args);
+
   // update depth
   double dt = S_next_->time() - S_inter_->time();
   double dhdt = r_ - E_ - R_s_ - R_b_;
