@@ -119,11 +119,11 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/shallow_water_lake_at_rest.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: analytical solution
-    add_amanzi_test(shallow_water_analytical shallow_water_analytical
+    # Test: Thacker's analytical solution
+    add_amanzi_test(shallow_water_Thacker shallow_water_Thacker
                     KIND int
                     NPROCS 3
-                    SOURCE test/Main.cc test/shallow_water_analytical.cc
+                    SOURCE test/Main.cc test/shallow_water_Thacker.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
               
 endif()

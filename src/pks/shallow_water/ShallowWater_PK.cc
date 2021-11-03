@@ -445,7 +445,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   
   // call TimeStep()
   auto soln_new = Teuchos::rcp(new TreeVector(*soln_));
-  *soln_new = *soln_;
   Explicit_TI::RK<TreeVector> rk1(*this, ti_method, *soln_);
   rk1.TimeStep(t_old, dt, *soln_, *soln_new);
   *soln_ = *soln_new;
