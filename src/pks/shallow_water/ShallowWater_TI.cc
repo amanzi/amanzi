@@ -226,28 +226,21 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   U.resize(3);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    
-    const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    double x = xc[0], y = xc[1];
-    double pi = M_PI;
-    
     U[0] = h_temp[0][c];
     U[1] = q_temp[0][c];
     U[2] = q_temp[1][c];
     
     S = NumericalSource(U, c);
 
-    h  = h_c_tmp[0][c] +  (S[0] + ext_S_cell[c]);
-    qx = q_c_tmp[0][c] +  S[1];
-    qy = q_c_tmp[1][c] +  S[2];
+    h  = h_c_tmp[0][c] + (S[0] + ext_S_cell[c]);
+    qx = q_c_tmp[0][c] + S[1];
+    qy = q_c_tmp[1][c] + S[2];
 
     h_new[0][c] = h;
     q_new[0][c] = qx;
     q_new[1][c] = qy;
   }
-  
 }
-
 
 } // namespace ShallowWater
 } // namespace Amanzi
