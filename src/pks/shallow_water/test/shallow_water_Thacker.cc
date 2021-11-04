@@ -150,7 +150,8 @@ void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 
 
 /* **************************************************************** */
-TEST(SHALLOW_WATER_ANALYTICAL) {
+void RunTest(int icase)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -175,6 +176,7 @@ TEST(SHALLOW_WATER_ANALYTICAL) {
   meshfactory.set_preference(Preference({Framework::MSTK}));
 
   std::vector<double> dx, Linferror, L1error, L2error;
+  std::string temporal_order_string;
 
   for (int NN = 40; NN <= 160; NN *= 2) {
     
@@ -228,6 +230,20 @@ TEST(SHALLOW_WATER_ANALYTICAL) {
     OutputXDMF io(iolist, mesh, true, false);
 
     std::string passwd("state");
+    
+    // set temporal discretization order
+    if (icase == 1) {
+      SWPK.temporal_disc_order = 1;
+      temporal_order_string = "RK1: Explicit_RK_Euler";
+    }
+    else if (icase == 2) {
+      SWPK.temporal_disc_order = 2;
+      temporal_order_string = "RK2: Explicit_RK_Midpoint";
+    }
+    else if (icase == 3) {
+      SWPK.temporal_disc_order = 3;
+      temporal_order_string = "RK3: Explicit_TVD_RK3";
+    }
 
     int iter = 0;
     double dt_max = 0.0;
@@ -306,8 +322,15 @@ TEST(SHALLOW_WATER_ANALYTICAL) {
   double L1_order = Amanzi::Utils::bestLSfit(dx, L1error);
   double Linf_order = Amanzi::Utils::bestLSfit(dx, Linferror);
 
+  std::cout << temporal_order_string << std::endl;
   std::cout << "computed order L1  = " << L1_order << std::endl;
   std::cout << "computed order Linf = " << Linf_order << std::endl;
   
   CHECK(L1_order > 0.9);  // first order scheme (first order time stepping)
+}
+
+TEST(SHALLOW_WATER_ANALYTICAL) {
+  RunTest(1); // RK1: Forward Euler
+  RunTest(2); // RK2: Midpoint
+  RunTest(3); // RK3: TVD 3rd Order
 }

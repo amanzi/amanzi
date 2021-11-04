@@ -328,7 +328,6 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   
   // temporal discretization order
   temporal_disc_order = sw_list_->get<int>("temporal discretization order", 1);
-  std::cout<<"temporal discretization order = "<<temporal_disc_order<<std::endl;
     
   // summary of initialization
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
