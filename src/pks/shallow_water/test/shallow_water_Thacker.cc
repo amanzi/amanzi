@@ -326,7 +326,12 @@ void RunTest(int icase)
   std::cout << "computed order L1  = " << L1_order << std::endl;
   std::cout << "computed order Linf = " << Linf_order << std::endl;
   
-  CHECK(L1_order > 0.9);  // first order scheme (first order time stepping)
+  if (icase == 1) {
+    CHECK(L1_order > 0.9);  // first order scheme (first order time stepping)
+  }
+  else if (icase == 2 || icase == 3) {
+    CHECK(L1_order > 1.9);  // second order scheme (second/third order time stepping)
+  }
 }
 
 TEST(SHALLOW_WATER_ANALYTICAL) {
