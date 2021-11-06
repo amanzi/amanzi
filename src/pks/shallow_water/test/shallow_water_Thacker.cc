@@ -332,10 +332,9 @@ void RunTest(int icase)
   else {
     CHECK(L1_order > 1.8); //second order scheme (second/third order time stepping)
   }
-  
 }
 
-TEST(SHALLOW_WATER_ANALYTICAL) {
+TEST(SHALLOW_WATER_THACKER) {
   RunTest(1); // RK1: Forward Euler
   RunTest(2); // RK2: Midpoint
   RunTest(3); // RK3: TVD 3rd Order
