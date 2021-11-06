@@ -334,8 +334,12 @@ void RunTest(int icase)
   }
 }
 
-TEST(SHALLOW_WATER_THACKER) {
+TEST(SHALLOW_WATER_THACKER_RK1) {
   RunTest(1); // RK1: Forward Euler
+}
+TEST(SHALLOW_WATER_THACKER_RK2) {
   RunTest(2); // RK2: Midpoint
+}
+TEST(SHALLOW_WATER_THACKER_RK3) {
   RunTest(3); // RK3: TVD 3rd Order
 }
