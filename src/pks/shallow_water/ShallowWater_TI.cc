@@ -70,25 +70,33 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
   // limited reconstructions
   Teuchos::ParameterList plist = sw_list_->sublist("reconstruction");
-  bool use_limter = plist.get<bool>("use limiter", true);
-  
-  auto tmp1 = S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
-  total_depth_grad_->ComputeGradient(tmp1);
-  if (use_limter == true) {
+  bool use_limter;
+  if (plist.isParameter("use limiter")) {
+      use_limter = plist.get<bool>("use limiter");
+  }
+  if (use_limter == false) {
+    auto tmp1 = S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
+    total_depth_grad_->ComputeGradient(tmp1);
+    
+    auto tmp5 = S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
+    discharge_x_grad_->ComputeGradient(tmp5, 0);
+    
+    auto tmp6 = S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
+    discharge_y_grad_->ComputeGradient(tmp6, 1);
+  }
+  else {
+    auto tmp1 = S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
+    total_depth_grad_->ComputeGradient(tmp1);
     limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_->gradient());
     limiter_->gradient()->ScatterMasterToGhosted("cell");
-  }
-  
-  auto tmp5 = S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
-  discharge_x_grad_->ComputeGradient(tmp5, 0);
-  if (use_limter == true) {
+    
+    auto tmp5 = S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
+    discharge_x_grad_->ComputeGradient(tmp5, 0);
     limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_->gradient());
     limiter_->gradient()->ScatterMasterToGhosted("cell");
-  }
-  
-  auto tmp6 = S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
-  discharge_y_grad_->ComputeGradient(tmp6, 1);
-  if (use_limter == true) {
+    
+    auto tmp6 = S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
+    discharge_y_grad_->ComputeGradient(tmp6, 1);
     limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_->gradient());
     limiter_->gradient()->ScatterMasterToGhosted("cell");
   }
