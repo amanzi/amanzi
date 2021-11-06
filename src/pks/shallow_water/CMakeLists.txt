@@ -122,7 +122,7 @@ if (BUILD_TESTS)
     # Test: Thacker's analytical solution
     add_amanzi_test(shallow_water_Thacker shallow_water_Thacker
                     KIND int
-                    NPROCS 3
+                    NPROCS 1
                     SOURCE test/Main.cc test/shallow_water_Thacker.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
               
