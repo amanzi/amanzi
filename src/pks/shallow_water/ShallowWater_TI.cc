@@ -70,7 +70,7 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
   // limited reconstructions
   Teuchos::ParameterList plist = sw_list_->sublist("reconstruction");
-  bool use_limter;
+  bool use_limter = true;
   if (plist.isParameter("use limiter")) {
       use_limter = plist.get<bool>("use limiter");
   }
