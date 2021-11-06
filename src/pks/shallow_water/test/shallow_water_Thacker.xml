@@ -30,16 +30,11 @@
       <Parameter name="use limiter" type="bool" value="false"/>
       <ParameterList name="reconstruction">
         <Parameter name="polynomial order" type="int" value="0"/>
-        <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
-        <Parameter name="limiter stencil" type="string" value="cell to all cells"/>
-        <Parameter name="limiter location" type="string" value="face"/>
-        <Parameter name="limiter cfl" type="double" value="1.0"/>
       </ParameterList>
       <Parameter name="temporal discretization order" type="int" value="1"/>
       <Parameter name="cfl" type="double" value="1.0"/>
       <Parameter name="number of reduced cfl cycles" type="int" value="10"/>
       <Parameter name="numerical flux" type="string" value="central upwind"/>
-      
 
       <ParameterList name="boundary conditions">
         <ParameterList name="velocity">
