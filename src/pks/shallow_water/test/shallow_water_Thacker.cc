@@ -327,10 +327,10 @@ void RunTest(int icase)
   std::cout << "computed order Linf = " << Linf_order << std::endl;
   
   if (icase == 1) {
-    CHECK(L1_order > 0.9);  // first order scheme (first order time stepping)
+    CHECK(L1_order > 0.9); // first order scheme (first order time stepping)
   }
   else if (icase == 2 || icase == 3) {
-    CHECK(L1_order > 1.9);  // second order scheme (second/third order time stepping)
+    CHECK(L1_order > 1.8); // second order scheme (second/third order time stepping)
   }
 }
 

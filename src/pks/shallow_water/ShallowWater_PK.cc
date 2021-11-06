@@ -237,11 +237,9 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   discharge_y_grad_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
   discharge_y_grad_->Init(plist);
 
-  bool use_limter = plist.get<bool>("use limiter", true);
-  if (use_limter == true) {
-    limiter_ = Teuchos::rcp(new Operators::LimiterCell(mesh_));
-    limiter_->Init(plist);
-  }
+  limiter_ = Teuchos::rcp(new Operators::LimiterCell(mesh_));
+  limiter_->Init(plist);
+  
 
   // default
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
