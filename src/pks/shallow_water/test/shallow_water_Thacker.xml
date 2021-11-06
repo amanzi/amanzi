@@ -28,7 +28,6 @@
       </ParameterList>
 
       <ParameterList name="reconstruction">
-        <Parameter name="use limiter" type="bool" value="false"/>
         <Parameter name="polynomial order" type="int" value="0"/>
         <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
         <Parameter name="limiter stencil" type="string" value="cell to all cells"/>
