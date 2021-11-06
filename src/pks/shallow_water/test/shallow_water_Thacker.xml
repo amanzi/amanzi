@@ -27,6 +27,7 @@
         <Parameter name="verbosity level" type="string" value="low"/>
       </ParameterList>
 
+      <Parameter name="use limiter" type="bool" value="false"/>
       <ParameterList name="reconstruction">
         <Parameter name="polynomial order" type="int" value="0"/>
         <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
