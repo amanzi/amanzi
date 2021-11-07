@@ -138,14 +138,16 @@ void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   err_max_v = err_max_tmp_v;
   err_L1_v  = err_L1_tmp_v;
 
-  std::cout << "err_max = " << err_max << std::endl;
-  std::cout << "err_L1  = " << err_L1 << std::endl;
+  if (mesh->get_comm()->MyPID() == 0) {
+    std::cout << "err_max = " << err_max << std::endl;
+    std::cout << "err_L1  = " << err_L1 << std::endl;
   
-  std::cout << "err_max (u)= " << err_max_u << std::endl;
-  std::cout << "err_L1 (u) = " << err_L1_u << std::endl;
+    std::cout << "err_max (u)= " << err_max_u << std::endl;
+    std::cout << "err_L1 (u) = " << err_L1_u << std::endl;
   
-  std::cout << "err_max (v)= " << err_max_v << std::endl;
-  std::cout << "err_L1 (v) = " << err_L1_v << std::endl;
+    std::cout << "err_max (v)= " << err_max_v << std::endl;
+    std::cout << "err_L1 (v) = " << err_L1_v << std::endl;
+  }
 }
 
 
@@ -181,7 +183,6 @@ void RunTest(int icase)
   for (int NN = 40; NN <= 160; NN *= 2) {
     
     RCP<Mesh> mesh = meshfactory.create(-3.0, -3.0, 3.0, 3.0, NN, NN, request_faces, request_edges);
-    // mesh = meshfactory.create("test/median63x64.exo",request_faces,request_edges);
     // works only with first order, no reconstruction
 
     // create a state
@@ -285,7 +286,7 @@ void RunTest(int icase)
       iter++;
     }
 
-    if (MyPID == 0) std::cout << "Time-stepping finished." << std::endl;
+    if (MyPID == 0) std::cout << "Time-stepping finished, T=" << t_new << std::endl;
 
     // cycle 1, time t
     double t_out = t_new;
@@ -322,9 +323,11 @@ void RunTest(int icase)
   double L1_order = Amanzi::Utils::bestLSfit(dx, L1error);
   double Linf_order = Amanzi::Utils::bestLSfit(dx, Linferror);
 
-  std::cout << temporal_order_string << std::endl;
-  std::cout << "computed order L1  = " << L1_order << std::endl;
-  std::cout << "computed order Linf = " << Linf_order << std::endl;
+  if (MyPID == 0) {
+    std::cout << temporal_order_string << std::endl;
+    std::cout << "computed order L1  = " << L1_order << std::endl;
+    std::cout << "computed order Linf = " << Linf_order << std::endl;
+  }
   
   if (icase == 1) {
     CHECK(L1_order > 0.9); // first order scheme (first order time stepping)

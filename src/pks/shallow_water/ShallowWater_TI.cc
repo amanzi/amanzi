@@ -19,51 +19,41 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 {
   bool failed = false;
   
-  const Epetra_MultiVector h_temp = *A.SubVector(0)->Data()->ViewComponent("cell");
-  const Epetra_MultiVector q_temp = *A.SubVector(1)->Data()->ViewComponent("cell");
+  const auto& h_temp = *A.SubVector(0)->Data()->ViewComponent("cell", true);
+  const auto& q_temp = *A.SubVector(1)->Data()->ViewComponent("cell", true);
   
-  Epetra_MultiVector& h_new = *f.SubVector(0)->Data()->ViewComponent("cell");
-  Epetra_MultiVector& q_new = *f.SubVector(1)->Data()->ViewComponent("cell");
+  auto& h_new = *f.SubVector(0)->Data()->ViewComponent("cell");
+  auto& q_new = *f.SubVector(1)->Data()->ViewComponent("cell");
   
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   
   double tmp[1];
   S_->GetConstantVectorData("gravity", "state")->Norm2(tmp);
   double g = tmp[0];
 
-  S_->GetFieldEvaluator(discharge_key_)->HasFieldChanged(S_.ptr(), passwd_);
-
   // distribute data to ghost cells
-  S_->GetFieldData(total_depth_key_)->ScatterMasterToGhosted("cell");
-  S_->GetFieldData(ponded_depth_key_)->ScatterMasterToGhosted("cell");
-  S_->GetFieldData(velocity_key_)->ScatterMasterToGhosted("cell");
-  S_->GetFieldData(discharge_key_)->ScatterMasterToGhosted("cell");
+  A.SubVector(0)->Data()->ScatterMasterToGhosted("cell");
+  A.SubVector(1)->Data()->ScatterMasterToGhosted("cell");
 
   // save a copy of primary and conservative fields
   Epetra_MultiVector& B_c = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("cell", true);
   Epetra_MultiVector& B_n = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("node", true);
-  Epetra_MultiVector& h_c = *S_->GetFieldData(ponded_depth_key_, passwd_)->ViewComponent("cell", true);
   Epetra_MultiVector& ht_c = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
   Epetra_MultiVector& vel_c = *S_->GetFieldData(velocity_key_, passwd_)->ViewComponent("cell", true);
   Epetra_MultiVector& riemann_f = *S_->GetFieldData(riemann_flux_key_, passwd_)->ViewComponent("face", true);
-
-  S_->GetFieldEvaluator(discharge_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  Epetra_MultiVector& q_c = *S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
   
-  for (int c = 0; c < ncells_owned; ++c) {
+  for (int c = 0; c < ncells_wghost; ++c) {
     double factor = inverse_with_tolerance(h_temp[0][c]);
-    h_c[0][c] = h_temp[0][c];
-    q_c[0][c] = q_temp[0][c];
-    q_c[1][c] = q_temp[1][c];
     vel_c[0][c] = factor * q_temp[0][c];
     vel_c[1][c] = factor * q_temp[1][c];
-    ht_c[0][c] = h_c[0][c] + B_c[0][c];
+    ht_c[0][c] = h_temp[0][c] + B_c[0][c];
   }
 
   // create copies of primary fields
-  Epetra_MultiVector h_c_tmp(h_c);
-  Epetra_MultiVector q_c_tmp(q_c);
+  Epetra_MultiVector h_c_tmp(h_temp);
+  Epetra_MultiVector q_c_tmp(q_temp);
 
   h_c_tmp.PutScalar(0.0);
   q_c_tmp.PutScalar(0.0);
@@ -73,24 +63,18 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   
   auto tmp1 = S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
   total_depth_grad_->ComputeGradient(tmp1);
-  if (use_limter == true) {
-    limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_->gradient());
-    limiter_->gradient()->ScatterMasterToGhosted("cell");
-  }
+  if (use_limiter_) limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_->gradient());
+  total_depth_grad_->gradient()->ScatterMasterToGhosted("cell");
   
-  auto tmp5 = S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
+  auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_x_grad_->ComputeGradient(tmp5, 0);
-  if (use_limter == true) {
-    limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_->gradient());
-    limiter_->gradient()->ScatterMasterToGhosted("cell");
-  }
+  if (use_limiter_) limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_->gradient());
+  discharge_x_grad_->gradient()->ScatterMasterToGhosted("cell");
   
-  auto tmp6 = S_->GetFieldData(discharge_key_, discharge_key_)->ViewComponent("cell", true);
+  auto tmp6 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_y_grad_->ComputeGradient(tmp6, 1);
-  if (use_limter == true) {
-    limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_->gradient());
-    limiter_->gradient()->ScatterMasterToGhosted("cell");
-  }
+  if (use_limiter_) limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_->gradient());
+  discharge_y_grad_->gradient()->ScatterMasterToGhosted("cell");
   
   // update boundary conditions
   if (bcs_.size() > 0)

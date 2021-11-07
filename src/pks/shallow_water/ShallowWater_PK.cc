@@ -237,8 +237,8 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   discharge_y_grad_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
   discharge_y_grad_->Init(plist);
 
-  bool use_limter = sw_list_->get<bool>("use limiter", true);
-  if (use_limter == true) {
+  use_limiter_ = sw_list_->get<bool>("use limiter", true);
+  if (use_limiter_ == true) {
     limiter_ = Teuchos::rcp(new Operators::LimiterCell(mesh_));
     limiter_->Init(plist);
   }
@@ -323,11 +323,11 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
   soln_->PushBack(tmp_h);
   soln_->PushBack(tmp_q);
 
-  soln_h_ = S->GetFieldData(ponded_depth_key_, passwd_);
-  soln_q_ = S->GetFieldData(discharge_key_, discharge_key_);
+  auto soln_h = S->GetFieldData(ponded_depth_key_, passwd_);
+  auto soln_q = S->GetFieldData(discharge_key_, discharge_key_);
 
-  soln_->SubVector(0)->SetData(soln_h_);
-  soln_->SubVector(1)->SetData(soln_q_);
+  soln_->SubVector(0)->SetData(soln_h);
+  soln_->SubVector(1)->SetData(soln_q);
   
   // temporal discretization order
   temporal_disc_order = sw_list_->get<int>("temporal discretization order", 1);
@@ -445,11 +445,20 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     ti_method = Explicit_TI::runge_kutta_4th_order;
   }
   
-  // call TimeStep()
-  auto soln_new = Teuchos::rcp(new TreeVector(*soln_));
-  Explicit_TI::RK<TreeVector> rk1(*this, ti_method, *soln_);
-  rk1.TimeStep(t_old, dt, *soln_, *soln_new);
-  *soln_ = *soln_new;
+  // To use evaluators, we need to overwrite state variables. Since,
+  // soln_ is a shallow copy of state variables, we cannot use.
+  // Instead, we need its deep copy. This deficiency of the DAG.
+  try {
+    auto soln_old = Teuchos::rcp(new TreeVector(*soln_));
+    auto soln_new = Teuchos::rcp(new TreeVector(*soln_));
+
+    Explicit_TI::RK<TreeVector> rk1(*this, ti_method, *soln_old);
+    rk1.TimeStep(t_old, dt, *soln_old, *soln_new);
+
+    *soln_ = *soln_new;
+  } catch(...) {
+    AMANZI_ASSERT(false);
+  }
   
   Epetra_MultiVector& h_temp = *soln_->SubVector(0)->Data()->ViewComponent("cell");
   Epetra_MultiVector& q_temp = *soln_->SubVector(1)->Data()->ViewComponent("cell");

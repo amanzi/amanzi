@@ -111,7 +111,6 @@ class ShallowWater_PK : public PK_Physical,
   Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<Teuchos::ParameterList> sw_list_;
   Teuchos::RCP<TreeVector> soln_;
-  Teuchos::RCP<CompositeVector> soln_h_, soln_v_, soln_q_;
   Teuchos::RCP<State> S_;
 
   Key domain_;
@@ -144,6 +143,7 @@ class ShallowWater_PK : public PK_Physical,
   double g_;
 
   // limited reconstruction
+  bool use_limiter_;
   Teuchos::RCP<Operators::ReconstructionCell> total_depth_grad_, bathymetry_grad_;
   Teuchos::RCP<Operators::ReconstructionCell> discharge_x_grad_, discharge_y_grad_;
   Teuchos::RCP<Operators::LimiterCell> limiter_;
