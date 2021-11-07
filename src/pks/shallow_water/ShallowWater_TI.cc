@@ -22,8 +22,8 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   const auto& h_temp = *A.SubVector(0)->Data()->ViewComponent("cell", true);
   const auto& q_temp = *A.SubVector(1)->Data()->ViewComponent("cell", true);
   
-  auto& h_new = *f.SubVector(0)->Data()->ViewComponent("cell");
-  auto& q_new = *f.SubVector(1)->Data()->ViewComponent("cell");
+  auto& f_temp0 = *f.SubVector(0)->Data()->ViewComponent("cell");
+  auto& f_temp1 = *f.SubVector(1)->Data()->ViewComponent("cell");
   
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
@@ -228,9 +228,9 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     qx = q_c_tmp[0][c] + S[1];
     qy = q_c_tmp[1][c] + S[2];
 
-    h_new[0][c] = h;
-    q_new[0][c] = qx;
-    q_new[1][c] = qy;
+    f_temp0[0][c] = h;
+    f_temp1[0][c] = qx;
+    f_temp1[1][c] = qy;
   }
 }
 
