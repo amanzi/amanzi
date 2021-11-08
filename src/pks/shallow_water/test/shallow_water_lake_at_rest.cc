@@ -68,7 +68,8 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
   S->GetConstantVectorData("gravity", "state")->Norm2(tmp);
   double g = tmp[0];
     
-  int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
+  int nnodes_wghost = mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::ALL);
   std::string passwd = "state";
     
   int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
@@ -82,7 +83,7 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
   Epetra_MultiVector &p_c = *S->GetFieldData("surface-ponded_pressure", "surface-ponded_pressure")->ViewComponent ("cell");
 
   // Define bathymetry at the cell vertices (Bn)
-  for (int n = 0; n < nnodes; ++n) {
+  for (int n = 0; n < nnodes_wghost; ++n) {
 
     Amanzi::AmanziGeometry::Point node_crd;
         
@@ -92,8 +93,10 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
         
     B_n[0][n] = std::max(0.0, 0.25 - 5 * ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))); // non-smooth bathymetry
   }
+  
+  S->GetFieldData("surface-bathymetry")->ScatterMasterToGhosted("node");
     
-  for (int c = 0; c < ncells_owned; ++c) {
+  for (int c = 0; c < ncells_wghost; ++c) {
     
     const Amanzi::AmanziGeometry::Point &xc = mesh->cell_centroid(c);
         
@@ -143,10 +146,16 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
     h_c[0][c] = ht_c[0][c] - B_c[0][c];
     vel_c[0][c] = 0.0;
     vel_c[1][c] = 0.0;
-    q_c[0][c] = 0.0;
-    q_c[1][c] = 0.0;
+    q_c[0][c] = h_c[0][c]*vel_c[0][c];
+    q_c[1][c] = h_c[0][c]*vel_c[1][c];
     p_c[0][c] = patm + rho * g * h_c[0][c];
   }
+  
+  S->GetFieldData("surface-bathymetry")->ScatterMasterToGhosted("cell");
+  S->GetFieldData("surface-total_depth")->ScatterMasterToGhosted("cell");
+  S->GetFieldData("surface-ponded_depth")->ScatterMasterToGhosted("cell");
+  S->GetFieldData("surface-velocity")->ScatterMasterToGhosted("cell");
+  S->GetFieldData("surface-discharge")->ScatterMasterToGhosted("cell");
 }
 
 

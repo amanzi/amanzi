@@ -25,6 +25,7 @@
 #include "CompositeVector.hh"
 #include "DenseMatrix.hh"
 #include "DenseVector.hh"
+#include "Explicit_TI_RK.hh"
 #include "Key.hh"
 #include "LimiterCell.hh"
 #include "NumericalFlux.hh"
@@ -44,9 +45,12 @@
 
 namespace Amanzi {
 namespace ShallowWater {
+
+// inversion operation protected for small values
+double inverse_with_tolerance(double h);
     
 class ShallowWater_PK : public PK_Physical,
-                        public PK_Explicit<Epetra_Vector> {
+                        public PK_Explicit<TreeVector> {
  public:
   ShallowWater_PK(Teuchos::ParameterList& pk_tree,
                   const Teuchos::RCP<Teuchos::ParameterList>& glist,
@@ -69,8 +73,8 @@ class ShallowWater_PK : public PK_Physical,
   // Advance PK by step size dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override;
 
-  virtual void FunctionalTimeDerivative(double t, const Epetra_Vector& component,
-                                        Epetra_Vector& f_component) override;
+  virtual void FunctionalTimeDerivative(double t, const TreeVector& A,
+                                        TreeVector& f) override;
 
   // Commit any secondary (dependent) variables.
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
@@ -95,6 +99,9 @@ class ShallowWater_PK : public PK_Physical,
 
   // access
   double get_total_source() const { return total_source_; }
+                          
+  // temporal discretization order
+  int temporal_disc_order;
 
  private:
   void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);
@@ -136,6 +143,7 @@ class ShallowWater_PK : public PK_Physical,
   double g_;
 
   // limited reconstruction
+  bool use_limiter_;
   Teuchos::RCP<Operators::ReconstructionCell> total_depth_grad_, bathymetry_grad_;
   Teuchos::RCP<Operators::ReconstructionCell> discharge_x_grad_, discharge_y_grad_;
   Teuchos::RCP<Operators::LimiterCell> limiter_;
@@ -153,3 +161,5 @@ class ShallowWater_PK : public PK_Physical,
 }  // namespace Amanzi
 
 #endif
+
+

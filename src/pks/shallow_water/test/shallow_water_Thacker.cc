@@ -5,8 +5,6 @@
  Amanzi is released under the three-clause BSD License.
  The terms of use and "as is" disclaimer for this license are
  provided in the top-level COPYRIGHT file.
- 
- Author: Svetlana Tokareva (tokareva@lanl.gov)
  */
 
 // TPLs
@@ -19,47 +17,27 @@
 #include "LeastSquare.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-
 #include "ShallowWater_PK.hh"
-
 #include "OutputXDMF.hh"
 
 //--------------------------------------------------------------
-// Analytic solution
+// Analytic solution (Thacker's solution [Beljadid et. al. 2016]
 //--------------------------------------------------------------
-double hf(double x)
+
+void analytical_exact(double t, double x, double y, double &h, double &u, double &v)
 {
-  return 2.*cos(x) + 2.*x*sin(x) + 1./8.*cos(2.*x) + x/4.*sin(2.*x) + 12./16.*x*x;
-}
-
-void vortex_2D_exact(double t, double x, double y, double &h, double &u, double &v)
-{
-  double g = 9.81;
-  double gmm = 15.;
-  double omega = M_PI;
-  double u_inf = 6., v_inf = 0.;
-  double H_inf = 10.;
-  double xc = 5., yc = 5.;
-
-  double xt = x - xc - u_inf*t;
-  double yt = y - yc - v_inf*t;
-
-  double rc = std::sqrt(xt*xt + yt*yt); // distance from the vortex core
-
-  // if (omega*rc <= M_PI) {
-  if (rc <= 1.) {
-    h = H_inf + 1./g*(gmm/omega)*(gmm/omega)*(hf(omega*rc)-hf(M_PI));
-    u = u_inf + gmm*(1.+cos(omega*rc))*(yc-y);
-    v = v_inf + gmm*(1.+cos(omega*rc))*(x-xc);
-  } else {
-    h = H_inf;
-    u = u_inf;
-    v = v_inf;
-  }
+// Thacker's time dependent solution [Beljadid et. al. 2016]
+  double eta = 2.0, g = 9.81, T = 1.436739427831727;
+//  double R0 = T * std::sqrt(2.0*g*eta);
+  double R0 = 9.0;
+  
+  h = eta * ( (T*T)/(T*T + t*t) ) * ( 1.0 - ( (x*x + y*y)/(R0*R0) )*( (T*T)/(t*t + T*T) ) );
+  u = (x*t)/(t*t + T*T);
+  v = (y*t)/(t*t + T*T);
 }
 
 
-void vortex_2D_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
+void analytical_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                            Epetra_MultiVector& hh_ex,
                            Epetra_MultiVector& vel_ex, double t)
 {
@@ -73,7 +51,7 @@ void vortex_2D_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     x = xc[0];
     y = xc[1];
 
-    vortex_2D_exact(t, x, y, h, u, v);
+    analytical_exact(t, x, y, h, u, v);
     hh_ex[0][c] = h;
     vel_ex[0][c] = u;
     vel_ex[1][c] = v;
@@ -81,7 +59,7 @@ void vortex_2D_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 }
 
 
-void vortex_2D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos::RCP<Amanzi::State>& S)
+void analytical_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos::RCP<Amanzi::State>& S)
 {
   int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
@@ -96,8 +74,9 @@ void vortex_2D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos:
   for (int c = 0; c < ncells_owned; c++) {
     const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     double h, u, v;
-    vortex_2D_exact(0., xc[0], xc[1], h, u, v);
+    analytical_exact(0., xc[0], xc[1], h, u, v);
     h_vec_c[0][c] = h;
+    B_vec_c[0][c] = 0.0;
     ht_vec_c[0][c] = h_vec_c[0][c] + B_vec_c[0][c];
     vel_vec_c[0][c] = u;
     vel_vec_c[1][c] = v;
@@ -109,37 +88,72 @@ void vortex_2D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos:
 void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
            Epetra_MultiVector& hh_ex, Epetra_MultiVector& vel_ex,
            const Epetra_MultiVector& hh, const Epetra_MultiVector& vel,
-           double& err_max, double& err_L1, double& hmax)
+           double& err_max, double& err_L1, double& hmax, double& err_max_u, double& err_L1_u, double& err_max_v, double& err_L1_v)
 {
   int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   err_max = 0.;
   err_L1 = 0.;
   hmax = 0.;
+  err_max_u = 0.;
+  err_L1_u = 0.;
+  err_max_v = 0.;
+  err_L1_v = 0.;
 
   for (int c = 0; c < ncells_owned; c++) {
     double tmp = std::abs(hh_ex[0][c] - hh[0][c]);
     err_max = std::max(err_max, tmp);
     err_L1 += tmp * mesh->cell_volume(c);
     hmax = std::sqrt(mesh->cell_volume(c));
+    
+    tmp = std::abs(vel_ex[0][c] - vel[0][c]);
+    err_max_u = std::max(err_max_u, tmp);
+    err_L1_u += tmp * mesh->cell_volume(c);
+    
+    tmp = std::abs(vel_ex[1][c] - vel[1][c]);
+    err_max_v = std::max(err_max_v, tmp);
+    err_L1_v += tmp * mesh->cell_volume(c);
   }
 
   double err_max_tmp;
   double err_L1_tmp;
+  double err_max_tmp_u;
+  double err_L1_tmp_u;
+  double err_max_tmp_v;
+  double err_L1_tmp_v;
 
   mesh->get_comm()->MaxAll(&err_max, &err_max_tmp, 1);
   mesh->get_comm()->SumAll(&err_L1, &err_L1_tmp, 1);
+  mesh->get_comm()->MaxAll(&err_max_u, &err_max_tmp_u, 1);
+  mesh->get_comm()->SumAll(&err_L1_u, &err_L1_tmp_u, 1);
+  mesh->get_comm()->MaxAll(&err_max_v, &err_max_tmp_v, 1);
+  mesh->get_comm()->SumAll(&err_L1_v, &err_L1_tmp_v, 1);
 
   err_max = err_max_tmp;
   err_L1  = err_L1_tmp;
+  
+  err_max_u = err_max_tmp_u;
+  err_L1_u  = err_L1_tmp_u;
+  
+  err_max_v = err_max_tmp_v;
+  err_L1_v  = err_L1_tmp_v;
 
-  std::cout << "err_max = " << err_max << std::endl;
-  std::cout << "err_L1  = " << err_L1 << std::endl;
+  if (mesh->get_comm()->MyPID() == 0) {
+    std::cout << "err_max = " << err_max << std::endl;
+    std::cout << "err_L1  = " << err_L1 << std::endl;
+  
+    std::cout << "err_max (u)= " << err_max_u << std::endl;
+    std::cout << "err_L1 (u) = " << err_L1_u << std::endl;
+  
+    std::cout << "err_max (v)= " << err_max_v << std::endl;
+    std::cout << "err_L1 (v) = " << err_L1_v << std::endl;
+  }
 }
 
 
 /* **************************************************************** */
-TEST(SHALLOW_WATER_2D_SMOOTH) {
+void RunTest(int icase)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -148,10 +162,10 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: 2D shallow water: smooth vortex" << std::endl;
+  if (MyPID == 0) std::cout << "Test: 2D shallow water: Thacker's solution" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/shallow_water_2D_smooth.xml";
+  std::string xmlFileName = "test/shallow_water_Thacker.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   /* create a mesh framework */
@@ -163,12 +177,12 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
   MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
 
-  std::vector<double> dx, Linferror, L1error, L2error, dt_val;
+  std::vector<double> dx, Linferror, L1error, L2error;
+  std::string temporal_order_string;
 
-  for (int NN = 20; NN <= 80; NN *= 2) {
-
-    RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 10.0, 10.0, NN, NN, request_faces, request_edges);
-    // mesh = meshfactory.create("test/median63x64.exo",request_faces,request_edges);
+  for (int NN = 40; NN <= 160; NN *= 2) {
+    
+    RCP<Mesh> mesh = meshfactory.create(-3.0, -3.0, 3.0, 3.0, NN, NN, request_faces, request_edges);
     // works only with first order, no reconstruction
 
     // create a state
@@ -189,7 +203,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
     S->InitializeEvaluators();
     SWPK.Initialize(S.ptr());
 
-    vortex_2D_setIC(mesh, S);
+    analytical_setIC(mesh, S);
     S->CheckAllFieldsInitialized();
 
     const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth")->ViewComponent("cell");
@@ -207,7 +221,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
     WriteStateStatistics(*S, *vo);
 
     // advance in time
-    double t_old(0.0), t_new(0.0), dt, dt_max(0.0);
+    double t_old(0.0), t_new(0.0), dt;
 
     // initialize io
     Teuchos::ParameterList iolist;
@@ -217,17 +231,32 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
     OutputXDMF io(iolist, mesh, true, false);
 
     std::string passwd("state");
+    
+    // set temporal discretization order
+    if (icase == 1) {
+      SWPK.temporal_disc_order = 1;
+      temporal_order_string = "RK1: Explicit_RK_Euler";
+    }
+    else if (icase == 2) {
+      SWPK.temporal_disc_order = 2;
+      temporal_order_string = "RK2: Explicit_RK_Midpoint";
+    }
+    else if (icase == 3) {
+      SWPK.temporal_disc_order = 3;
+      temporal_order_string = "RK3: Explicit_TVD_RK3";
+    }
 
     int iter = 0;
+    double dt_max = 0.0;
 
-    while (t_new < 0.001) {
+    while (t_new < 0.01) {
       // cycle 1, time t
       double t_out = t_new;
 
       Epetra_MultiVector hh_ex(hh);
       Epetra_MultiVector vel_ex(vel);
 
-      vortex_2D_exact_field(mesh, hh_ex, vel_ex, t_out);
+      analytical_exact_field(mesh, hh_ex, vel_ex, t_out);
 
       if (iter % 5 == 0) {
         io.InitializeCycle(t_out, iter, "");
@@ -247,10 +276,9 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
       }
 
       dt = SWPK.get_dt();
-
+      
       t_new = t_old + dt;
-      dt_max = std::max(dt_max, dt);
-
+      
       SWPK.AdvanceStep(t_old, t_new);
       SWPK.CommitStep(t_old, t_new, S);
 
@@ -258,7 +286,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
       iter++;
     }
 
-    if (MyPID == 0) std::cout << "Time-stepping finished." << std::endl;
+    if (MyPID == 0) std::cout << "Time-stepping finished, T=" << t_new << std::endl;
 
     // cycle 1, time t
     double t_out = t_new;
@@ -266,16 +294,15 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
     Epetra_MultiVector hh_ex(hh);
     Epetra_MultiVector vel_ex(vel);
 
-    vortex_2D_exact_field(mesh, hh_ex, vel_ex, t_out);
+    analytical_exact_field(mesh, hh_ex, vel_ex, t_out);
 
-    double err_max, err_L1, hmax;
+    double err_max, err_L1, hmax, err_max_u, err_L1_u, err_max_v, err_L1_v;
 
-    error(mesh, hh_ex, vel_ex, hh, vel, err_max, err_L1, hmax);
+    error(mesh, hh_ex, vel_ex, hh, vel, err_max, err_L1, hmax, err_max_u, err_L1_u, err_max_v, err_L1_v);
 
     dx.push_back(hmax);
     Linferror.push_back(err_max);
     L1error.push_back(err_L1);
-    dt_val.push_back(dt_max);
 
     io.InitializeCycle(t_out, iter, "");
     io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
@@ -292,13 +319,26 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
     io.WriteVector(*vel_ex(1), "vy_ex", AmanziMesh::CELL);
     io.FinalizeCycle();
   } // NN
-
-  double order = Amanzi::Utils::bestLSfit(dx, L1error);
-
-  std::cout << "computed order L1 (dx) = " << order << std::endl;
   
-  double order_Linf_dt = Amanzi::Utils::bestLSfit(dt_val, Linferror);
-  std::cout << "computed order Linf (dt) = " << order_Linf_dt << std::endl;
+  double L1_order = Amanzi::Utils::bestLSfit(dx, L1error);
+  double Linf_order = Amanzi::Utils::bestLSfit(dx, Linferror);
 
-  CHECK(order > 0.9);  // first order scheme
+  if (MyPID == 0) {
+    std::cout << temporal_order_string << std::endl;
+    std::cout << "computed order L1  = " << L1_order << std::endl;
+    std::cout << "computed order Linf = " << Linf_order << std::endl;
+  }
+  
+  if (icase == 1) {
+    CHECK(L1_order > 0.9); // first order scheme (first order time stepping)
+  }
+  else {
+    CHECK(L1_order > 1.8); //second order scheme (second/third order time stepping)
+  }
+}
+
+TEST(SHALLOW_WATER_THACKER) {
+  RunTest(1); // RK1: Forward Euler
+  RunTest(2); // RK2: Midpoint
+  RunTest(3); // RK3: TVD 3rd Order
 }
