@@ -906,15 +906,15 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   ms_calls_ = 0;
 
   // save a copy of primary and conservative fields
-  // -- pressure
-  CompositeVector pressure_copy(*S_->GetFieldData(pressure_key_, passwd_));
+  std::map<std::string, CompositeVector> copies;
+  copies.emplace(pressure_key_, *S_->GetFieldData(pressure_key_, passwd_));
 
   // -- saturations, swap prev <- current
   S_->GetFieldEvaluator(saturation_liquid_key_)->HasFieldChanged(S_.ptr(), "flow");
   const CompositeVector& sat = *S_->GetFieldData(saturation_liquid_key_);
   CompositeVector& sat_prev = *S_->GetFieldData(prev_saturation_liquid_key_, passwd_);
 
-  CompositeVector sat_prev_copy(sat_prev);
+  copies.emplace(prev_saturation_liquid_key_, sat_prev);
   sat_prev = sat;
 
   // -- water_conten, swap prev <- current
@@ -922,18 +922,18 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   CompositeVector& wc = *S_->GetFieldData(water_content_key_, water_content_key_);
   CompositeVector& wc_prev = *S_->GetFieldData(prev_water_content_key_, passwd_);
 
-  CompositeVector wc_prev_copy(wc_prev);
+  copies.emplace(prev_water_content_key_, wc_prev);
   wc_prev = wc;
 
   // -- field for multiscale models, save and swap
   Teuchos::RCP<CompositeVector> pressure_matrix_copy, wc_matrix_prev_copy;
   if (multiscale_porosity_) {
-    pressure_matrix_copy = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("pressure_matrix", passwd_)));
+    copies.emplace("pressure_matrix", *S_->GetFieldData("pressure_matrix", passwd_));
 
     CompositeVector& wc_matrix = *S_->GetFieldData("water_content_matrix", passwd_);
     CompositeVector& wc_matrix_prev = *S_->GetFieldData("prev_water_content_matrix", passwd_);
 
-    wc_matrix_prev_copy = Teuchos::rcp(new CompositeVector(wc_matrix_prev));
+    copies.emplace("prev_water_content_matrix", wc_matrix_prev);
     wc_matrix_prev = wc_matrix;
   }
 
@@ -963,22 +963,13 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     dt_ = dt_next_;
 
     // revover the original primary solution, pressure
-    *S_->GetFieldData(pressure_key_, passwd_) = pressure_copy;
-    pressure_eval_->SetFieldAsChanged(S_.ptr());
+    for (auto it = copies.begin(); it != copies.end(); ++it) {
+      *S_->GetFieldData(it->first, passwd_) = it->second;
 
-    // revover the original fields
-    *S_->GetFieldData(prev_saturation_liquid_key_, passwd_) = sat_prev_copy;
-    *S_->GetFieldData(prev_water_content_key_, passwd_) = wc_prev_copy;
-
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Reverted pressure, prev_saturation_liquid, prev_water_content" << std::endl;
-
-    if (multiscale_porosity_) {
-      *S_->GetFieldData("pressure_matrix", passwd_) = *pressure_matrix_copy;
-      *S_->GetFieldData("prev_water_content_matrix", passwd_) = *wc_matrix_prev_copy;
-
-      *vo_->os() << "Reverted pressure_matrix, prev_water_content_matrix" << std::endl;
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "Reverted field \"" << it->first << "\"" << std::endl;
     }
+    pressure_eval_->SetFieldAsChanged(S_.ptr());
 
     return failed;
   }
