@@ -94,9 +94,9 @@ void
 BDF1_SolverFnBase<Vector>::Residual(const Teuchos::RCP<Vector>& u,
                                     const Teuchos::RCP<Vector>& r)
 {
-  std::cout << "BDF1_SolverFnBase::Residual u = " << Debug::get0(*u) << std::endl;
+  // std::cout << "BDF1_SolverFnBase::Residual u = " << Debug::get0(*u) << std::endl;
   bdf_fn_->FunctionalResidual(t_old_, t_new_, u_old_, u, r);
-  std::cout << "BDF1_SolverFnBase::Residual r = " << Debug::get0(*r) << std::endl;
+  // std::cout << "BDF1_SolverFnBase::Residual r = " << Debug::get0(*r) << std::endl;
 }
 
 // preconditioner application

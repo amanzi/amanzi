@@ -242,9 +242,7 @@ BDF1_TI<Vector, VectorSpace>::TimeStep(double dt,
       fn_->ChangedSolution();
 
       if (fn_->IsAdmissible(u)) {
-        std::cout << "BDF1_TI::TimeStep u = " << Debug::get0(*u) << std::endl;
         bool changed = fn_->ModifyPredictor(dt, u_prev, u);
-        std::cout << "BDF1_TI::TimeStep u = " << Debug::get0(*u) << std::endl;
         if (changed) fn_->ChangedSolution();
       } else {
         u->assign(*u_prev);
@@ -276,7 +274,6 @@ BDF1_TI<Vector, VectorSpace>::TimeStep(double dt,
   // Solve the nonlinear BCE system.
   int ierr, code, itr;
   try {
-    std::cout << "BDF1_TI::TimeStep u solve = " << Debug::get0(*u) << std::endl;
     ierr = solver_->Solve(u);
     itr = solver_->num_itrs();
     code = solver_->returned_code();

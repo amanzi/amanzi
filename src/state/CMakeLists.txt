@@ -69,6 +69,7 @@ set(state_inc_files
   evaluator/EvaluatorSecondaryMonotype.hh
   evaluator/EvaluatorSecondaryMonotypeFromFunction.hh
   evaluator/EvaluatorCellToFace.hh
+  evaluator/EvaluatorCellToFaceUpwind.hh
   evaluator/Evaluator_OperatorApply.hh
   evaluator/Evaluator_PDE_Diffusion.hh
   evaluator/Evaluator_PDE_Accumulation.hh
@@ -106,6 +107,7 @@ set(state_src_files
   evaluator/EvaluatorSecondaryMonotype.cc
   evaluator/EvaluatorSecondaryMonotypeFromFunction.cc
   evaluator/EvaluatorCellToFace.cc
+  evaluator/EvaluatorCellToFaceUpwind.cc
   evaluator/Evaluator_OperatorApply.cc
   evaluator/Evaluator_PDE_Diffusion.cc
   evaluator/Evaluator_PDE_Accumulation.cc
@@ -166,6 +168,7 @@ register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorSecondaryMonotypeM
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorSecondaryMonotypeFromFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 #register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorCellVolume_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorCellToFace_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorCellToFaceUpwind_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorSecondaryMeshedQuantity_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorPrimaryStaticMesh_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 # register_evaluator_with_factory(HEADERFILE evaluator/rank_evaluator_reg.hh          LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)

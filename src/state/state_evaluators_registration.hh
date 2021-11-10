@@ -265,6 +265,10 @@ Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMonotypeFromFunction>
 
 Amanzi::Utils::RegisteredFactory<Amanzi::Evaluator, Amanzi::EvaluatorCellToFace>
 Amanzi::EvaluatorCellToFace::reg_("cell-to-face");
+#include "evaluator/EvaluatorCellToFaceUpwind.hh"
+
+Amanzi::Utils::RegisteredFactory<Amanzi::Evaluator, Amanzi::EvaluatorCellToFaceUpwind>
+Amanzi::EvaluatorCellToFaceUpwind::reg_("cell-to-face-upwind");
 #include "evaluator/EvaluatorSecondaryMeshedQuantity.hh"
 
 namespace Amanzi {
