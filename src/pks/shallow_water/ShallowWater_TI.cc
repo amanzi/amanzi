@@ -72,8 +72,8 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
       int f = it->first;
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_value_ht[f] = it->second[0];
-      bc_value_qx[f] = it->second[1];
-      bc_value_qy[f] = it->second[2];
+      bc_value_qx[f] = it->second[1] * bc_value_ht[f];
+      bc_value_qy[f] = it->second[2] * bc_value_ht[f];
     }
   }
 
