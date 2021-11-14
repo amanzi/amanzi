@@ -58,22 +58,43 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   h_c_tmp.PutScalar(0.0);
   q_c_tmp.PutScalar(0.0);
   
-  // update boundary conditions
+  // update boundary conditions given by [h u v]
   if (bcs_.size() > 0)
       bcs_[0]->Compute(t, t);
   
   std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
+  std::vector<double> bc_value_h(nfaces_wghost, 0.0);
   std::vector<double> bc_value_ht(nfaces_wghost, 0.0);
   std::vector<double> bc_value_qx(nfaces_wghost, 0.0);
   std::vector<double> bc_value_qy(nfaces_wghost, 0.0);
   
+  double pi = 3.141592653589793;
   for (int i = 0; i < bcs_.size(); i++) {
     for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
       int f = it->first;
+      AmanziMesh::Entity_ID_List nodes;
+      mesh_->face_get_nodes(f, &nodes);
+      
+      AmanziGeometry::Point x0, x1;
+      mesh_->node_get_coordinates(nodes[0], &x0);
+      mesh_->node_get_coordinates(nodes[1], &x1);
+      double h0 = 0.25 + 0.25*(x0[0])*std::sin(pi*x0[1]);
+      double h1 = 0.25 + 0.25*(x1[0])*std::sin(pi*x1[1]);
+      
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value_ht[f] = it->second[0];
-      bc_value_qx[f] = it->second[1] * bc_value_ht[f];
-      bc_value_qy[f] = it->second[2] * bc_value_ht[f];
+      bc_value_h[f] = it->second[0];
+      
+      
+//      bc_value_h[f] = (h0 + h1)/2.0;
+      
+      bc_value_qx[f] = bc_value_h[f] * it->second[1];
+      bc_value_qy[f] = bc_value_h[f] * it->second[2];
+      bc_value_ht[f] = it->second[0] + (B_n[0][nodes[0]] + B_n[0][nodes[1]])/2.0;
+      
+//      const AmanziGeometry::Point &xf = mesh_->face_centroid(f);
+//      std::cout<<"face f: "<<f<<", coordinates: "<<xf[0]<<", "<<xf[1]<<std::endl;
+//      std::cout<<"bc_value_h: "<<bc_value_h[f]<<", bathymetry: "<<(B_n[0][nodes[0]] + B_n[0][nodes[1]])/2.0<<
+//      ", bc_value_ht: "<<bc_value_ht[f]<<std::endl;
     }
   }
 
@@ -176,6 +197,17 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         vt = -UR[1] * normal[1] + UR[2] * normal[0];
         UR[1] = UR[0] * vn;
         UR[2] = UR[0] * vt;
+        
+//        AmanziMesh::Entity_ID_List nodes;
+//        mesh_->face_get_nodes(f, &nodes);
+//
+//        AmanziGeometry::Point x0, x1;
+//        mesh_->node_get_coordinates(nodes[0], &x0);
+//        mesh_->node_get_coordinates(nodes[1], &x1);
+//        double h0 = 0.25 + 0.25*(x0[0])*std::sin(pi*x0[1]);
+//        double h1 = 0.25 + 0.25*(x1[0])*std::sin(pi*x1[1]);
+//
+//        UR[0] = (h0 + h1)/2.0;
       }
       else {
         UR = UL;
