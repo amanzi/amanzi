@@ -57,29 +57,47 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
   h_c_tmp.PutScalar(0.0);
   q_c_tmp.PutScalar(0.0);
+  
+  // update boundary conditions
+  if (bcs_.size() > 0)
+      bcs_[0]->Compute(t, t);
+  
+  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
+  std::vector<double> bc_value_ht(nfaces_wghost, 0.0);
+  std::vector<double> bc_value_qx(nfaces_wghost, 0.0);
+  std::vector<double> bc_value_qy(nfaces_wghost, 0.0);
+  
+  for (int i = 0; i < bcs_.size(); i++) {
+    for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+      int f = it->first;
+      bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+      bc_value_ht[f] = it->second[0];
+      bc_value_qx[f] = it->second[1];
+      bc_value_qy[f] = it->second[2];
+    }
+  }
 
   // limited reconstructions
   bool use_limter = sw_list_->get<bool>("use limiter", true);
   
   auto tmp1 = S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
   total_depth_grad_->ComputeGradient(tmp1);
-  if (use_limiter_) limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_->gradient());
+  if (use_limiter_) limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_->gradient(), bc_model, bc_value_ht);
+//  if (use_limiter_) limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_->gradient());
   total_depth_grad_->gradient()->ScatterMasterToGhosted("cell");
   
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_x_grad_->ComputeGradient(tmp5, 0);
-  if (use_limiter_) limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_->gradient());
+  if (use_limiter_) limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_->gradient(), bc_model, bc_value_qx);
+//  if (use_limiter_) limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_->gradient());
   discharge_x_grad_->gradient()->ScatterMasterToGhosted("cell");
   
   auto tmp6 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_y_grad_->ComputeGradient(tmp6, 1);
-  if (use_limiter_) limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_->gradient());
+  if (use_limiter_) limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_->gradient(), bc_model, bc_value_qy);
+//  if (use_limiter_) limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_->gradient());
   discharge_y_grad_->gradient()->ScatterMasterToGhosted("cell");
   
-  // update boundary conditions
-  if (bcs_.size() > 0)
-      bcs_[0]->Compute(t, t);
-
   // update source (external) terms
   for (int i = 0; i < srcs_.size(); ++i) {
     srcs_[i]->Compute(t, t);
