@@ -37,9 +37,8 @@
       <Parameter name="numerical flux" type="string" value="central upwind"/>
 
       <ParameterList name="boundary conditions">
-        
         <ParameterList name="ponded-depth">
-          <ParameterList name="BC -1">
+          <ParameterList name="BC 0">
             <Parameter name="regions" type="Array(string)" value="{Boundary}"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="ponded-depth">
@@ -50,7 +49,6 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        
         <ParameterList name="velocity">
           <ParameterList name="BC 0">
             <Parameter name="regions" type="Array(string)" value="{Boundary}"/>
@@ -69,7 +67,6 @@
                   <Parameter name="value" type="double" value="0.0"/>
                 </ParameterList>
               </ParameterList>
-
             </ParameterList>
           </ParameterList>
         </ParameterList>

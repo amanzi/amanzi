@@ -60,13 +60,10 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   q_c_tmp.PutScalar(0.0);
   
   // update boundary conditions given by [h u v]
-//  if (bcs_.size() > 0)
-//      bcs_[0]->Compute(t, t);
   for (int i = 0; i < bcs_.size(); ++i) {
     bcs_[i]->Compute(t,t);
   }
   
-  std::vector<int> bc_model_hn(nnodes_wghost, Operators::OPERATOR_BC_NONE);
   std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
   std::vector<double> bc_value_hn(nnodes_wghost, 0.0);
   std::vector<double> bc_value_h(nfaces_wghost, 0.0);
@@ -74,22 +71,18 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   std::vector<double> bc_value_qx(nfaces_wghost, 0.0);
   std::vector<double> bc_value_qy(nfaces_wghost, 0.0);
   
+  // extract h BC at nodes (ensures well-balancedness)
   for (int i = 0; i < bcs_.size(); ++i) {
     std::string bc_name = bcs_[i]->get_bc_name();
-    WhetStone::DOF_Type type = bcs_[i]->type();
     if (bc_name == "ponded-depth") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int n = it->first;
         bc_value_hn[n] = it->second[0];
-//        AmanziGeometry::Point x;
-//        mesh_->node_get_coordinates(n, &x);
-//        std::cout<<"node: "<<n<<", "<<x[0]<<", "<<x[1]<<std::endl;
-//        std::cout<<"hn: "<<bc_value_hn[n]<<std::endl;
       }
     }
   }
   
-  double pi = 3.141592653589793;
+  // extract and compute qx, qy, h BC at faces
   for (int i = 0; i < bcs_.size(); ++i) {
     std::string bc_name = bcs_[i]->get_bc_name();
     if (bc_name == "velocity") {
@@ -98,51 +91,31 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
         AmanziMesh::Entity_ID_List nodes;
         mesh_->face_get_nodes(f, &nodes);
         
-        //      AmanziGeometry::Point x0, x1;
-        //      mesh_->node_get_coordinates(nodes[0], &x0);
-        //      mesh_->node_get_coordinates(nodes[1], &x1);
-        //      double h0 = 0.25 + 0.25*(x0[0])*std::sin(pi*x0[1]);
-        //      double h1 = 0.25 + 0.25*(x1[0])*std::sin(pi*x1[1]);
-        
         bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
         bc_value_h[f] = (bc_value_hn[nodes[0]] + bc_value_hn[nodes[1]])/2.0;
-        //bc_value_h[f] = (h0 + h1)/2.0;
-        
         bc_value_qx[f] = bc_value_h[f] * it->second[0];
         bc_value_qy[f] = bc_value_h[f] * it->second[1];
         bc_value_ht[f] = bc_value_h[f] + (B_n[0][nodes[0]] + B_n[0][nodes[1]])/2.0;
-        
-        //      bc_value_ht[f] = it->second[0] + (B_n[0][nodes[0]] + B_n[0][nodes[1]])/2.0;
-        
-        //      const AmanziGeometry::Point &xf = mesh_->face_centroid(f);
-        //      std::cout<<"face f: "<<f<<", coordinates: "<<xf[0]<<", "<<xf[1]<<std::endl;
-        //      std::cout<<"bc_value_h: "<<bc_value_h[f]<<", bathymetry: "<<(B_n[0][nodes[0]] + B_n[0][nodes[1]])/2.0<<
-        //      ", bc_value_ht: "<<bc_value_ht[f]<<std::endl;
       }
-      
     }
   }
   
-
-  // limited reconstructions
+  // limited reconstructions using boundary data
   bool use_limter = sw_list_->get<bool>("use limiter", true);
   
   auto tmp1 = S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
   total_depth_grad_->ComputeGradient(tmp1);
   if (use_limiter_) limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_->gradient(), bc_model, bc_value_ht);
-//  if (use_limiter_) limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_->gradient());
   total_depth_grad_->gradient()->ScatterMasterToGhosted("cell");
   
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_x_grad_->ComputeGradient(tmp5, 0);
   if (use_limiter_) limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_->gradient(), bc_model, bc_value_qx);
-//  if (use_limiter_) limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_->gradient());
   discharge_x_grad_->gradient()->ScatterMasterToGhosted("cell");
   
   auto tmp6 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_y_grad_->ComputeGradient(tmp6, 1);
   if (use_limiter_) limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_->gradient(), bc_model, bc_value_qy);
-//  if (use_limiter_) limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_->gradient());
   discharge_y_grad_->gradient()->ScatterMasterToGhosted("cell");
   
   // update source (external) terms
@@ -216,37 +189,9 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
     if (c2 == -1) {
       if (bcs_.size() > 0 && bcs_[0]->bc_find(f)) {
-//        for (int i = 0; i < 3; ++i) {
-//          UR[i] = bcs_[0]->bc_value(f)[i];
-//        }
         UR[0] = bc_value_h[f];
-        UR[1] = bc_value_qx[f];
-        UR[2] = bc_value_qy[f];
-        
-        double qn =  UR[1] * normal[0] + UR[2] * normal[1];
-        double qt = -UR[1] * normal[1] + UR[2] * normal[0];
-        
-        UR[1] = qn;
-        UR[2] = qt;
-//        UR[1] = UR[0] * vn;
-//        UR[2] = UR[0] * vt;
-        
-//        std::cout.precision(14);
-//        std::cout<<"xf: "<<xf[0]<<", "<<xf[1]<<std::endl;
-//        std::cout<<"h: "<<UR[0]<<std::endl;
-        
-//        AmanziMesh::Entity_ID_List nodes;
-//        mesh_->face_get_nodes(f, &nodes);
-//
-//        AmanziGeometry::Point x0, x1;
-//        mesh_->node_get_coordinates(nodes[0], &x0);
-//        mesh_->node_get_coordinates(nodes[1], &x1);
-//        double h0 = 0.25 + 0.25*(x0[0])*std::sin(pi*x0[1]);
-//        double h1 = 0.25 + 0.25*(x1[0])*std::sin(pi*x1[1]);
-//
-//        UR[0] = (h0 + h1)/2.0;
-        
-//        UR[0] = bc_value_h[f];
+        UR[1] =  bc_value_qx[f] * normal[0] + bc_value_qy[f] * normal[1];
+        UR[2] = -bc_value_qx[f] * normal[1] + bc_value_qy[f] * normal[0];
       }
       else {
         UR = UL;

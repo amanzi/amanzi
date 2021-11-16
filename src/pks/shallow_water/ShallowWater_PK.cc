@@ -181,7 +181,8 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   bcs_.clear();
 
-  // -- velocity
+  // velocity BC is required on the faces while ponded depth is required on nodes
+  // -- velocity BC
   if (bc_list->isSublist("velocity")) {
     PK_DomainFunctionFactory<ShallowWaterBoundaryFunction > bc_factory(mesh_, S_);
 
@@ -199,7 +200,7 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
     }
   }
   
-  // -- ponded depth
+  // -- ponded depth BC
   if (bc_list->isSublist("ponded-depth")) {
     PK_DomainFunctionFactory<ShallowWaterBoundaryFunction > bc_factory(mesh_, S_);
 

@@ -40,7 +40,6 @@
       
 
       <ParameterList name="boundary conditions">
-        
         <ParameterList name="ponded-depth">
           <ParameterList name="BC 0">
             <Parameter name="regions" type="Array(string)" value="{Left}"/>
@@ -53,7 +52,6 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        
         <ParameterList name="velocity">
           <ParameterList name="BC 1">
             <Parameter name="regions" type="Array(string)" value="{Left}"/>
@@ -71,7 +69,6 @@
                   <Parameter name="value" type="double" value="0.0"/>
                 </ParameterList>
               </ParameterList>
-
             </ParameterList>
           </ParameterList>
         </ParameterList>
