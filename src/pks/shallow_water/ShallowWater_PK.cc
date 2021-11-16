@@ -199,6 +199,24 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
     }
   }
   
+  // -- ponded depth
+  if (bc_list->isSublist("ponded-depth")) {
+    PK_DomainFunctionFactory<ShallowWaterBoundaryFunction > bc_factory(mesh_, S_);
+
+    Teuchos::ParameterList& tmp_list = bc_list->sublist("ponded-depth");
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      std::string name = it->first;
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
+
+        bc = bc_factory.Create(spec, "ponded-depth", AmanziMesh::NODE, Teuchos::null);
+        bc->set_bc_name("ponded-depth");
+        bc->set_type(WhetStone::DOF_Type::SCALAR);
+        bcs_.push_back(bc);
+      }
+    }
+  }
+  
   // source term
   if (sw_list_->isSublist("source terms")) {
     PK_DomainFunctionFactory<PK_DomainFunction> factory(mesh_, S_);

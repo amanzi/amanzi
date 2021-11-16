@@ -41,26 +41,35 @@
       <Parameter name="numerical flux" type="string" value="central upwind"/>
 
       <ParameterList name="boundary conditions">
+        
+          <ParameterList name="ponded-depth">
+            <ParameterList name="BC 0">
+              <Parameter name="regions" type="Array(string)" value="{AllBoundary}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+              <ParameterList name="ponded-depth">
+                <ParameterList name="function-exprtk">
+                  <Parameter name="number of arguments" type="int" value="4"/>
+                  <Parameter name="formula" type="string" value="2.0*(2.064220183486238/(2.064220183486238 + t*t))*( 1.0 - (2.064220183486238*(x*x + y*y))/(81.0*(2.064220183486238 + t*t)) )"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        
         <ParameterList name="velocity">
-          <ParameterList name="BC 0">
+          <ParameterList name="BC 1">
             <Parameter name="regions" type="Array(string)" value="{AllBoundary}"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="velocity">
-              <Parameter name="number of dofs" type="int" value="3"/>
+              <Parameter name="number of dofs" type="int" value="2"/>
               <Parameter name="function type" type="string" value="composite function"/>
+              
               <ParameterList name="dof 1 function">
-                <ParameterList name="function-exprtk">
-                  <Parameter name="number of arguments" type="int" value="4"/>
-<Parameter name="formula" type="string" value="2.0*(2.064220183486238/(2.064220183486238 + t*t))*( 1.0 - (2.064220183486238*(x*x + y*y))/(81.0*(2.064220183486238 + t*t)) )"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="dof 2 function">
                 <ParameterList name="function-exprtk">
                   <Parameter name="number of arguments" type="int" value="4"/>
                   <Parameter name="formula" type="string" value="(t*x)/(t*t + 2.064220183486238)"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="dof 3 function">
+              <ParameterList name="dof 2 function">
                 <ParameterList name="function-exprtk">
                   <Parameter name="number of arguments" type="int" value="4"/>
                   <Parameter name="formula" type="string" value="(t*y)/(t*t + 2.064220183486238)"/>
