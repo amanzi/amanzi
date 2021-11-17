@@ -33,12 +33,12 @@ HeatFluxBCEvaluator::HeatFluxBCEvaluator(
   Teuchos::ParameterList sublist = plist_.sublist("heat flux bc parameters");
 
   // later: read these parameters from xml
-  SS = 0;
-  alpha = 0;
-  E_a = 0;
-  E_s = 0;
-  H = 0;
-  LE = 0;
+  SS = 0.;      // solar radiation (read from met data)
+  alpha = 0.07; // water albedo
+  E_a = 0.;     // atmospheric downward radiation (read from met data)
+  E_s = 0.;     // surface radiation
+  H = 0.;       // "sensible" heat
+  LE = 0.;      // latent heat
 
 }
 
@@ -68,6 +68,17 @@ void HeatFluxBCEvaluator::EvaluateField_(
 
   // get temperature
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
+
+  // read parameters from the met data
+  Teuchos::ParameterList& param_list = plist_.sublist("parameters");
+  Amanzi::FunctionFactory fac;
+  Teuchos::RCP<Amanzi::Function> SS_func_ = Teuchos::rcp(fac.Create(param_list.sublist("solar radiation")));
+  Teuchos::RCP<Amanzi::Function> E_a_func_ = Teuchos::rcp(fac.Create(param_list.sublist("atmospheric downward radiation")));
+
+  std::vector<double> args(1);
+  args[0] = S->time();
+  SS = (*SS_func_)(args);
+  E_a = (*E_a_func_)(args);
 
   for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
