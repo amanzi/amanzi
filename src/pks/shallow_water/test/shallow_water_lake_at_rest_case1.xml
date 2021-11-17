@@ -5,17 +5,14 @@
   <ParameterList name="regions">
     <ParameterList name="Computational domain">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{-3.0,-3.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{3.0,3.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
-    
-    <ParameterList name="AllBoundary">
-      <ParameterList name="region: boundary">
-        <Parameter name="entity" type="string" value="face"/>
-      </ParameterList>
+    <ParameterList name="Boundary">
+        <ParameterList name="region: boundary">
+        </ParameterList>
     </ParameterList>
-      
   </ParameterList>
 
   <!-- FLOW -->
@@ -24,7 +21,7 @@
       <Parameter name="domain name" type="string" value="surface"/>
 
       <ParameterList name="verbose object">
-        <Parameter name="verbosity level" type="string" value="low"/>
+        <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
 
       <ParameterList name="reconstruction">
@@ -32,44 +29,40 @@
         <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
         <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
         <Parameter name="limiter location" type="string" value="face"/>
-        <Parameter name="limiter cfl" type="double" value="1.0"/>
+        <Parameter name="limiter cfl" type="double" value="0.1"/>
       </ParameterList>
-      <Parameter name="use limiter" type="bool" value="true"/>
-      <Parameter name="temporal discretization order" type="int" value="1"/>
-      <Parameter name="cfl" type="double" value="1.0"/>
+      <Parameter name="cfl" type="double" value="0.5"/>
       <Parameter name="number of reduced cfl cycles" type="int" value="10"/>
       <Parameter name="numerical flux" type="string" value="central upwind"/>
 
       <ParameterList name="boundary conditions">
-          <ParameterList name="ponded-depth">
-            <ParameterList name="BC 0">
-              <Parameter name="regions" type="Array(string)" value="{AllBoundary}"/>
-              <Parameter name="spatial distribution method" type="string" value="none"/>
-              <ParameterList name="ponded-depth">
-                <ParameterList name="function-exprtk">
-                  <Parameter name="number of arguments" type="int" value="4"/>
-                  <Parameter name="formula" type="string" value="2.0*(2.064220183486238/(2.064220183486238 + t*t))*( 1.0 - (2.064220183486238*(x*x + y*y))/(81.0*(2.064220183486238 + t*t)) )"/>
-                </ParameterList>
+        <ParameterList name="ponded-depth">
+          <ParameterList name="BC 0">
+            <Parameter name="regions" type="Array(string)" value="{Boundary}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+            <ParameterList name="ponded-depth">
+              <ParameterList name="function-exprtk">
+                <Parameter name="number of arguments" type="int" value="4"/>
+                <Parameter name="formula" type="string" value="0.5"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
+        </ParameterList>
         <ParameterList name="velocity">
           <ParameterList name="BC 1">
-            <Parameter name="regions" type="Array(string)" value="{AllBoundary}"/>
+            <Parameter name="regions" type="Array(string)" value="{Boundary}"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="velocity">
               <Parameter name="number of dofs" type="int" value="2"/>
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
-                <ParameterList name="function-exprtk">
-                  <Parameter name="number of arguments" type="int" value="4"/>
-                  <Parameter name="formula" type="string" value="(t*x)/(t*t + 2.064220183486238)"/>
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.0"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">
-                <ParameterList name="function-exprtk">
-                  <Parameter name="number of arguments" type="int" value="4"/>
-                  <Parameter name="formula" type="string" value="(t*y)/(t*t + 2.064220183486238)"/>
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.0"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -99,18 +92,26 @@
     </ParameterList>
 
     <ParameterList name="initial conditions">
-      <ParameterList name="const_fluid_density">
+      <ParameterList name="fluid_density">
         <Parameter name="value" type="double" value="1000.0"/>
       </ParameterList>
 
-      <ParameterList name="atmospheric_pressure">
-        <Parameter name="value" type="double" value="101325.0"/>
+      <ParameterList name="fluid_viscosity">
+        <Parameter name="value" type="double" value="0.001"/>
       </ParameterList>
 
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
       </ParameterList>
-
+      
+      <ParameterList name="const_fluid_density">
+        <Parameter name="value" type="double" value="9.98200000000000045e+02"/>
+      </ParameterList>
+      
+      <ParameterList name="atmospheric_pressure">
+        <Parameter name="value" type="double" value="1.01325000000000000e+05"/>
+      </ParameterList>
+      
       <ParameterList name="surface-bathymetry">
         <ParameterList name="function">
           <ParameterList name="domain">
@@ -164,3 +165,10 @@
     </ParameterList>
   </ParameterList>
 </ParameterList>
+
+
+
+
+
+
+
