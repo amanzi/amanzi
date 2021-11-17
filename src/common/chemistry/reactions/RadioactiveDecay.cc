@@ -68,18 +68,26 @@ RadioactiveDecay::RadioactiveDecay(const Teuchos::ParameterList& plist,
 
   std::string progeny = plist.get<std::string>("product");
 
-  // NOTE: we allow zero progeny
+  // NOTE: we allow empty progeny
   if (progeny.size() > 0) {
-    int id2 = name_to_id.at(progeny);
-    if (id2 < 0) {
-      std::stringstream ss;
-      ss << "Unknown progeny species '" << progeny << "'.\n"
-         << "Progeny species must be in the primary species list.\n";
-      Exceptions::amanzi_throw(Errors::Message(ss.str()));
+    double coeff;
+    std::string name;
+    std::istringstream iss2(progeny);
+    while (iss2 >> coeff || !iss2.eof()) {
+      iss2 >> name;
+      int id2 = name_to_id.at(name);
+
+      if (id2 < 0) {
+        std::stringstream ss;
+        ss << "Unknown progeny species '" << progeny << "'.\n"
+           << "Progeny species must be in the primary species list.\n";
+        Exceptions::amanzi_throw(Errors::Message(ss.str()));
+      }
+
+      species_names_.push_back(name);
+      species_ids_.push_back(id2);
+      stoichiometry_.push_back(coeff);
     }
-    species_names_.push_back(progeny);
-    species_ids_.push_back(id2);
-    stoichiometry_.push_back(1.0);
   }
 
   // we assume that species_names[0] etc is for the parent, any
