@@ -61,7 +61,7 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   
   // update boundary conditions given by [h u v]
   for (int i = 0; i < bcs_.size(); ++i) {
-    bcs_[i]->Compute(t,t);
+    bcs_[i]->Compute(t, t);
   }
   
   int bc_h_index, bc_vel_index;
@@ -72,35 +72,30 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   std::vector<double> bc_value_qx(nfaces_wghost, 0.0);
   std::vector<double> bc_value_qy(nfaces_wghost, 0.0);
   
-  if (bcs_.size() > 0) {
-    // extract h and v BC index
-    for (int i = 0; i < bcs_.size(); ++i) {
-      std::string bc_name = bcs_[i]->get_bc_name();
-      if (bc_name == "ponded-depth") {
-        bc_h_index = i;
-      }
-      else if (bc_name == "velocity") {
-        bc_vel_index = i;
+  // extract velocity and compute qx, qy, h BC at faces
+  for (int i = 0; i < bcs_.size(); ++i) {
+    if (bcs_[i]->get_bc_name() == "ponded-depth") {
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int n = it->first;
+        bc_value_hn[n] = it->second[0];
       }
     }
-    
-    // extract h BC at nodes (ensures well-balancedness)
-    for (auto it = bcs_[bc_h_index]->begin(); it != bcs_[bc_h_index]->end(); ++it) {
-      int n = it->first;
-      bc_value_hn[n] = it->second[0];
-    }
-    
-    // extract and compute qx, qy, h BC at faces
-    for (auto it = bcs_[bc_vel_index]->begin(); it != bcs_[bc_vel_index]->end(); ++it) {
-      int f = it->first;
-      AmanziMesh::Entity_ID_List nodes;
-      mesh_->face_get_nodes(f, &nodes);
+  }
+
+  AmanziMesh::Entity_ID_List nodes;
+  // extract ponded depth BC at nodes to ensure well-balancedness
+  for (int i = 0; i < bcs_.size(); ++i) {
+    if (bcs_[i]->get_bc_name() == "velocity") {
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int f = it->first;
+        mesh_->face_get_nodes(f, &nodes);
       
-      bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value_h[f] = (bc_value_hn[nodes[0]] + bc_value_hn[nodes[1]])/2.0;
-      bc_value_qx[f] = bc_value_h[f] * it->second[0];
-      bc_value_qy[f] = bc_value_h[f] * it->second[1];
-      bc_value_ht[f] = bc_value_h[f] + (B_n[0][nodes[0]] + B_n[0][nodes[1]])/2.0;
+        bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value_h[f] = (bc_value_hn[nodes[0]] + bc_value_hn[nodes[1]]) / 2;
+        bc_value_qx[f] = bc_value_h[f] * it->second[0];
+        bc_value_qy[f] = bc_value_h[f] * it->second[1];
+        bc_value_ht[f] = bc_value_h[f] + (B_n[0][nodes[0]] + B_n[0][nodes[1]]) / 2;
+      }
     }
   }
     
@@ -192,16 +187,14 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     UL[2] = h_rec * vt;
 
     if (c2 == -1) {
-      if (bcs_.size() > 0 && bcs_[bc_vel_index]->bc_find(f)) {
+      if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
         UR[0] = bc_value_h[f];
         UR[1] =  bc_value_qx[f] * normal[0] + bc_value_qy[f] * normal[1];
         UR[2] = -bc_value_qx[f] * normal[1] + bc_value_qy[f] * normal[0];
-      }
-      else {
-        // outflow BC
+      } else {
+        // default outflow BC
         UR = UL;
       }
-
     } else {
       ht_rec = total_depth_grad_->getValue(c2, xf);
 
