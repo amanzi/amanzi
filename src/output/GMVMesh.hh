@@ -63,23 +63,23 @@ start_data();
 // Writes node data to files which has previously been opened with
 // open_data_file.
 void
-write_node_data(const Epetra_Vector& x, std::string varname);
+write_node_data(const Vector_type& x, std::string varname);
 void
-write_node_data(const Epetra_MultiVector& x, const unsigned int component,
+write_node_data(const MultiVector_type& x, const unsigned int component,
                 std::string varname);
 
 // Writes cell data to files which has previously been opened with
 // open_data_file.
 void
-write_cell_data(const Epetra_Vector& x, std::string varname);
+write_cell_data(const Vector_type& x, std::string varname);
 void
-write_cell_data(const Epetra_MultiVector& x, const unsigned int component,
+write_cell_data(const MultiVector_type& x, const unsigned int component,
                 std::string varname);
 
 // Writes cell data to files which has previously been opened with
 // open_data_file.
 void
-write_face_data(const Epetra_Vector& x, std::string varname);
+write_face_data(const Vector_type& x, std::string varname);
 
 // Writes the cycle number and time
 void

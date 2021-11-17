@@ -234,7 +234,6 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
   }
 }
 
-#if 0 
 /* ******************************************************************
 * Visit methods for symbolic assemble: Face
 ****************************************************************** */
@@ -242,38 +241,25 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
                                                  const SuperMap& map, GraphFE& graph,
                                                  int my_block_row, int my_block_col) const
 {
-  std::vector<int> lid_r(2*cell_max_faces);
-  std::vector<int> lid_c(2*cell_max_faces);
+  std::vector<int> lid_r(OPERATOR_MAX_FACES);
+  std::vector<int> lid_c(OPERATOR_MAX_FACES);
 
   // ELEMENT: cell, DOFS: face
-  const auto face_row_inds = map.GhostIndices(my_block_row, "face", 0);
-  const auto face_col_inds = map.GhostIndices(my_block_col, "face", 0);
+  const auto face_row_inds = map.GhostIndices<MirrorHost>(my_block_row, "face", 0);
+  const auto face_col_inds = map.GhostIndices<MirrorHost>(my_block_col, "face", 0);
 
-  const auto face_gh_map = map.ComponentGhostedMap(my_block_row, "face");
-
-  int ierr(0);
-  AmanziMesh::Entity_ID_List faces;
   for (int c = 0; c != ncells_owned; ++c) {
-    mesh_->cell_get_faces(c, &faces);
+    AmanziMesh::Entity_ID_View faces;
+    mesh_->cell_get_faces(c, faces);
     int nfaces = faces.size();
 
-    int k = 0;
     for (int n = 0; n != nfaces; ++n) {
-      int f = faces[n];
-      int face_dof_size = face_gh_map->ElementSize(f);
-      int first = face_gh_map->FirstPointInElement(f);
-
-      for (int m = 0; m != face_dof_size; ++m) {
-        lid_r[k] = face_row_inds[first + m];
-        lid_c[k] = face_col_inds[first + m];
-        k++;
-      }
+      lid_r[n] = face_row_inds[faces[n]];
+      lid_c[n] = face_col_inds[faces[n]];
     }
-    graph.insertLocalIndices(k, lid_r.data(), k, lid_c.data());
+    graph.insertLocalIndices(nfaces, lid_r.data(), nfaces, lid_c.data());
   }
-  AMANZI_ASSERT(!ierr);
 }
-#endif 
 
 /* ******************************************************************
 * Visit methods for symbolic assemble: Surface
@@ -314,8 +300,8 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(
   auto face_col_inds = map.GhostIndices<MirrorHost>(my_block_col, "face", 0);
 
   int ierr = 0;
-  AmanziMesh::Entity_ID_View cells;
   for (int sf = 0; sf != nsurf_faces; ++sf) {
+    AmanziMesh::Entity_ID_View cells;
     op.mesh->face_get_cells(sf, AmanziMesh::Parallel_type::ALL, cells);
     int ncells = cells.size();
     for (int n = 0; n != ncells; ++n) {

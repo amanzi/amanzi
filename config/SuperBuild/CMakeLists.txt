@@ -739,10 +739,9 @@ append_set(Amanzi_TPL_CMAKE_ARGS
 
 # Ginkgo
 include(${SuperBuild_BUILD_FILES_DIR}/Build_Ginkgo.cmake)
-set(HYPRE_INSTALL_PREFIX ${TPL_INSTALL_PREFIX})
-set(HYPRE_DIR ${GINKGO_INSTALL_PREFIX})
-set(HYPRE_INCLUDE_DIRS "${GINKGO_INSTALL_PREFIX}/include")
-message(STATUS "GINKGO_INSTALL_PREFIX = ${GINKGO_INSTALL_PREFIX}")
+message(STATUS "Ginkgo_INSTALL_PREFIX = ${Ginkgo_INSTALL_PREFIX}")
+set(Ginkgo_DIR ${Ginkgo_INSTALL_PREFIX})
+set(Ginkgo_INCLUDE_DIRS "${Ginkgo_DIR}/include")
 
 # MSTK
 if (ENABLE_MESH_MSTK)

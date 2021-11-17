@@ -50,9 +50,9 @@ class Operator_FaceCell : public Operator_Cell {
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
-//  virtual void SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
-//          const SuperMap& map, GraphFE& graph,
-//          int my_block_row, int my_block_col) const;
+  virtual void SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
+          const SuperMap& map, GraphFE& graph,
+          int my_block_row, int my_block_col) const;
  virtual void SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
          const SuperMap& map, GraphFE& graph,
          int my_block_row, int my_block_col) const;

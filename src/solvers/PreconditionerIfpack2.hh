@@ -39,6 +39,7 @@ class PreconditionerIfpack2 : public Preconditioner {
   }
 
   virtual void initializeInverse() override {
+    std::cout<<"##OUTPUT initializeInverse"<<std::endl;
     Ifpack2::Factory factory;
     A_ = h_;
     std::string method = plist_.get<std::string>("method");
@@ -50,6 +51,7 @@ class PreconditionerIfpack2 : public Preconditioner {
   }
 
   virtual void computeInverse() override {
+    std::cout<<"##OUTPUT computeInverse"<<std::endl;
     pc_->compute();
     if (vo_->os_OK(Teuchos::VERB_HIGH)) pc_->describe(*vo_->os(), vo_->getVerbLevel());
   }
