@@ -72,6 +72,7 @@ of methods.
 #include "PreconditionerHypre.hh"
 // #include "PreconditionerML.hh"
 #include "PreconditionerMueLu.hh"
+#include "PreconditionerGinkgo.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
@@ -289,7 +290,10 @@ createAssembledMethod(const std::string& method_name, Teuchos::ParameterList& in
     method_list.set<std::string>("method", method_name.substr(std::string("hypre: ").length(),
             method_name.length()));
     inv = Teuchos::rcp(new PreconditionerHypre());
-
+ } else if (Keys::startsWith(method_name, "Ginkgo: ")) {
+    method_list.set<std::string>("method", method_name.substr(std::string("Ginkgo: ").length(),
+            method_name.length()));
+    inv = Teuchos::rcp(new PreconditionerGinkgo());
   // } else if (method_name == "ml") {
   //   inv = Teuchos::rcp(new PreconditionerML());
   } else if (method_name == "muelu") {

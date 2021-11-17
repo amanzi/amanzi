@@ -51,14 +51,11 @@ namespace Operators {
 * Amanzi combines the input and output field in one variable.
 ****************************************************************** */ 
 
-template<class Model>
 class Upwind {
  public:
   Upwind() {};
-  Upwind(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-         Teuchos::RCP<const Model> model) :
+  Upwind(Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       mesh_(mesh),
-      model_(model),
       face_comp_("face") {};
   ~Upwind() {};
 
@@ -69,7 +66,7 @@ class Upwind {
   // -- upwind of a given cell-centered field on mesh faces
   // -- not all input parameters are use by some algorithms
   virtual void Compute(const CompositeVector& flux, const CompositeVector& solution,
-                       const std::vector<int>& bc_model, CompositeVector& field) = 0;
+                       const Kokkos::View<int*>& bc_model, CompositeVector& field) = 0;
 
   // -- returns combined map for the original and upwinded fields.
   // -- Currently, composite vector cannot be extended on a fly. 
@@ -87,7 +84,6 @@ class Upwind {
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Teuchos::RCP<const Model> model_;
 
   // component name where to write the upwinded field.
   std::string face_comp_;

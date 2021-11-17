@@ -23,7 +23,7 @@ if ( DISABLE_EXTERNAL_DOWNLOAD )
   STRING(REGEX REPLACE ".*\/" "" Ginkgo_GIT_REPOSITORY_LOCAL_DIR ${Ginkgo_GIT_REPOSITORY})
   set (Ginkgo_GIT_REPOSITORY_TEMP ${TPL_DOWNLOAD_DIR}/${Ginkgo_GIT_REPOSITORY_LOCAL_DIR})
 else()
-  set (HYPRE_GIT_REPOSITORY_TEMP ${Ginkgo_GIT_REPOSITORY})
+  set (Ginkgo_GIT_REPOSITORY_TEMP ${Ginkgo_GIT_REPOSITORY})
 endif()
 message(STATUS "Ginkgo git repository = ${Ginkgo_GIT_REPOSITORY_TEMP}")
 
@@ -71,4 +71,6 @@ ExternalProject_Add(${Ginkgo_BUILD_TARGET}
             )
 
 # --- Useful variables for packages that depends on Ginkgo
-global_set(Ginkgo_INSTALL_PREFIX "${Ginkgo_install_dir}")
+include(BuildLibraryName)
+build_library_name(Ginkgo Ginkgo_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib64)
+set(Ginkgo_INSTALL_PREFIX ${TPL_INSTALL_PREFIX})

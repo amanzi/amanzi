@@ -32,9 +32,8 @@ int main(int argc, char *argv[])
   if (argc < 4) {
     std::cout <<
       "Usage: verify_operators  with_pc|direct  mesh_type  mesh_size|mesh_file  scheme  tol  nloops  linsolver  test_id  device\n\n"
-      "  (req) with_pc   = identity|diagonal\n"
-      "                    ifpack2: ILUT|ifpack2: RILUK|ifpack2: SCHWARZ\n"
-      "                    Hypre: AMG|Hypre: Euclid\n"
+      "  (req) with_pc   = identity|diagonal|ifpack2: ILUT|ifpack2: RILUK\n"
+      "                    Hypre: AMG|Hypre: Euclid|Ginkgo: Jacobi\n"
       "                    Trilinos: ML|Trilinos: MueLu\n"
       "  (req) direct    = Amesos1: KLU|Amesos2: Basker|Amesos2: SuperLUDist\n\n"
       "  (req) mesh_type = structured2d|structured3d|unstructured2d|unstructured3d\n"
@@ -331,6 +330,21 @@ TEST(Verify_Mesh_and_Operators) {
     .set<bool>("guess",true) // default true
     .set<int>("sweeps", 7) //interpolation) // default 5
     .set<int>("block-size",1); // default 1 
+
+  // Ginkgo package
+  plist->sublist("preconditioners").sublist("Ginkgo: jacobi")
+    .set<std::string>("preconditioning method", "Ginkgo: jacobi").sublist("Ginkgo: jacobi parameters")
+    .set<int>("verbose",1); // default 1 
+  plist->sublist("preconditioners").sublist("Ginkgo: ilu")
+    .set<std::string>("preconditioning method", "Ginkgo: ilu").sublist("Ginkgo: ilu parameters")
+    .set<int>("verbose",1); // default 1 
+  plist->sublist("preconditioners").sublist("Ginkgo: ic")
+    .set<std::string>("preconditioning method", "Ginkgo: ic").sublist("Ginkgo: ic parameters")
+    .set<int>("verbose",1); // default 1 
+  plist->sublist("preconditioners").sublist("Ginkgo: isai")
+    .set<std::string>("preconditioning method", "Ginkgo: isai").sublist("Ginkgo: isai parameters")
+    .set<int>("verbose",1); // default 1 
+
 
   // summary of options
   if (MyPID == 0) {
