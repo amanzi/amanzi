@@ -108,9 +108,6 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
   outfile.setf(std::ios::scientific,std::ios::floatfield);
   outfile << S->time() << " " << r_ << "\n";
 
-  std::cout << "Precipitation rate at t = " << S->time() << " is " << r_ << std::endl;
-  std::cout << "Evaporation rate at t = " << S->time() << " is " << E_ << std::endl;
-
   double dhdt = r_ - E_ - R_s_ - R_b_;
   double B_w  = r_ - E_;
 
@@ -128,11 +125,13 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
 
 //    flux_f[0][f] = cp_*rho0*dhdt*xcf[2]/(h_+1.e-6);
     flux_f[0][f] = cp_*rho0*(dhdt*xcf[2] - B_w)/(h_+1.e-6);
-//    flux_f[0][f] = 1.*normal[2];
+//    flux_f[0][f] = 100.*normal[2];
+    std::cout << "Precipitation rate at t = " << S->time() << " is " << r_ << std::endl;
+    std::cout << "Evaporation rate at t = " << S->time() << " is " << E_ << std::endl;
     std::cout << "dhdt = " << dhdt << std::endl;
-    std::cout << "cp_ = " << cp_ << std::endl;
-    std::cout << "rho0 = " << rho0 << std::endl;
-    std::cout << "xcf[2] = " << xcf[2] << std::endl;
+//    std::cout << "cp_ = " << cp_ << std::endl;
+//    std::cout << "rho0 = " << rho0 << std::endl;
+//    std::cout << "xcf[2] = " << xcf[2] << std::endl;
     std::cout << "h_ = " << h_ << std::endl;
     std::cout << "f = " << f << " flux = " << flux_f[0][f] << std::endl;
   }
@@ -216,6 +215,16 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
     const Epetra_MultiVector& cv =
       *S->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
 
+    Teuchos::ParameterList& param_list = plist_->sublist("parameters");
+    FunctionFactory fac;
+    Teuchos::RCP<Function> r_func_ = Teuchos::rcp(fac.Create(param_list.sublist("precipitation")));
+    Teuchos::RCP<Function> E_func_ = Teuchos::rcp(fac.Create(param_list.sublist("evaporation")));
+
+    std::vector<double> args(1);
+    args[0] = S->time();
+    r_ = (*r_func_)(args);
+    E_ = (*E_func_)(args);
+
     double dhdt = r_ - E_ - R_s_ - R_b_;
     double B_w  = r_ - E_;
 
@@ -247,6 +256,8 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
       } else {
           g_c[0][c] += (S0_*exp(-alpha_e_*h_*xc[2])*(-alpha_e_*h_) - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6)) * cv[0][c]; // + M
       }
+
+//      std::cout << "SRC = " << g_c[0][c] << std::endl;
 
 //      g_c[0][c] += (8.-2.*xc[2]) * cv[0][c];
 

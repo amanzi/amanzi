@@ -29,8 +29,8 @@ HeatFluxBCEvaluator::HeatFluxBCEvaluator(
   temperature_key_ = Keys::readKey(plist_, domain_name, "temperature", "temperature");
   dependencies_.insert(temperature_key_);
 
-  AMANZI_ASSERT(plist_.isSublist("heat flux bc parameters"));
-  Teuchos::ParameterList sublist = plist_.sublist("heat flux bc parameters");
+//  AMANZI_ASSERT(plist_.isSublist("heat flux bc parameters"));
+//  Teuchos::ParameterList sublist = plist_.sublist("heat flux bc parameters");
 
   // later: read these parameters from xml
   SS = 0.;      // solar radiation (read from met data)

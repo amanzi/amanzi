@@ -372,6 +372,8 @@ public:
 
   Key cell_is_ice_key_;
 
+  Key surface_flux_key_;
+
 private:
   // factory registration
   static RegisteredPKFactory<Lake_Thermo_PK> reg_;

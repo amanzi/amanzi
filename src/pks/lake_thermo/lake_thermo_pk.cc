@@ -101,6 +101,7 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   conductivity_key_ = Keys::readKey(*plist_, domain_, "thermal conductivity", "thermal_conductivity");
   uw_conductivity_key_ = Keys::readKey(*plist_, domain_, "upwinded thermal conductivity", "upwind_thermal_conductivity");
   cell_is_ice_key_ = Keys::readKey(*plist_, domain_, "ice", "ice");
+  surface_flux_key_ = Keys::readKey(*plist_, domain_, "surface flux", "surface_flux");
 
   std::cout << "temperature_key_  lake= " << temperature_key_ << std::endl;
   std::cout << "uw_conductivity_key_ lake = " << uw_conductivity_key_ << std::endl;
@@ -301,6 +302,16 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
     Teuchos::rcp(new LakeThermo::ThermalConductivityEvaluator(tcm_plist));
   S->SetFieldEvaluator(conductivity_key_, tcm);
 
+  // -- surface flux evaluator
+  S->RequireField(surface_flux_key_)->SetMesh(mesh_)
+    ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::ParameterList sflx_plist =
+    plist_->sublist("surface flux evaluator");
+  sflx_plist.set("evaluator name", surface_flux_key_);
+  Teuchos::RCP<LakeThermo::HeatFluxBCEvaluator> sflx =
+    Teuchos::rcp(new LakeThermo::HeatFluxBCEvaluator(sflx_plist));
+  S->SetFieldEvaluator(surface_flux_key_, sflx);
+
 //  // source terms
 //  is_source_term_ = plist_->get<bool>("source term");
 //  is_source_term_differentiable_ = plist_->get<bool>("source term is differentiable", true);
@@ -406,6 +417,11 @@ void Lake_Thermo_PK::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   S->RequireField(enthalpy_key_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(enthalpy_key_);
+
+  // -- Surface heat flux
+  S->RequireField(surface_flux_key_)->SetMesh(mesh_)->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(surface_flux_key_);
 
 }
 
