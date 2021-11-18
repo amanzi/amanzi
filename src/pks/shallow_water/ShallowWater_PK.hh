@@ -98,6 +98,7 @@ class ShallowWater_PK : public PK_Physical,
 
   std::vector<std::vector<double> > RightEigenVecs(std::vector<double> U, std::vector<double> xi);
   std::vector<std::vector<double> > LeftEigenVecs(std::vector<double> U, std::vector<double> xi);
+  std::vector<std::vector<double> > FluxJacobian(std::vector<double> U, std::vector<double> xi);
     
   std::vector<double> ComputePhiTotal(int K, std::vector<std::vector<double> >& U);
   std::vector<double> ResidualsLF(int K, int j, std::vector<std::vector<double> > U);

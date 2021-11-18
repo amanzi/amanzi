@@ -754,7 +754,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         	  beta_j[m][j] = std::max(0.0, phi[m][j]/(Phi_total[m]+1.e-15));
         	  beta_j[m][j] = beta_j[m][j] / (sum_max[m]+1.e-15);
 
-//        	  beta_j[m][j] += mesh_->cell_volume(ncells[K])*(vx*nj[0]+vy*nj[1]); ///(vx*vx + vy*vy + 1.e-15);
+//        	  beta_j[m][j] += mesh_->cell_volume(ncells[K])*(vx*nj[0]+vy*nj[1])/(vx*vx + vy*vy + 1.e-15);
 //        	  std::cout << "j = " << j << ", dbeta = " << (vx*nj[0]+vy*nj[1])/(vx*vx + vy*vy + 1.e-15) << std::endl;
 //        	  std::cout << "j = " << j << ", dbeta = " << (vx*nj[0]+vy*nj[1]) << std::endl;
               sum_beta[m] +=  beta_j[m][j];
@@ -762,7 +762,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
           } //j
 
           for (int j = 0; j < cnodes.size(); ++j) {
-              if (cnodes[j] == i) beta[m] = beta_j[m][j]/(sum_beta[m]+1.e-15);
+              if (cnodes[j] == i) beta[m] = beta_j[m][j]; ///(sum_beta[m]+1.e-15);
           } //j
   
 //          beta[m] = 1./3.;
@@ -781,7 +781,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 //          std::cout << "node coordinates : " << node_coordinates[0] << " " << node_coordinates[1] << std::endl;
 
 //          if (std::abs(sum_beta[m]-1.) > 1.e-10 && std::abs(sum_beta[m]) > 1.e-10) {
-////          if (std::abs(sum_beta[m]) != 1.) {
+//          if (std::abs(sum_beta[m]-1.) > 1.e-10) {
 //          	std::cout << "sum_beta[" << m << "] = " << sum_beta[m] << " in K = " << K << ", i = " << i << std::endl;
 //          	std::cout << "sum_max[" << m << "] = " << sum_max[m] << std::endl;
 //            for (int j = 0; j < cnodes.size(); ++j) {
@@ -826,8 +826,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 //			  if (cnodes[j] == i) phi_beta_cell[m] += phi[m][j]; // LxF
 //		    }
 
-//            double blend = 1.;
-//            phi_beta_cell[m] += blend * beta[m] * Phi_total[m];
+//            double blend = 0.;
+//            phi_beta_cell[m] += blend * phi_beta_cell_K[m];
 //            for (int j = 0; j < cnodes.size(); ++j) {
 //          	  if (cnodes[j] == i) phi_beta_cell[m] += (1.-blend) * phi[m][j];
 //            }
@@ -875,6 +875,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   std::vector<std::vector<double>> U_new(3);
   U_new = U_pr;
 
+ /*
   for (int i = 0; i < nnodes_owned; ++i){
     
     AmanziGeometry::Point node_coordinates;
@@ -1162,6 +1163,9 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   }// i (total DOF) loop
   // corrector step ends
+   *
+   *
+   */
 
   for (int i = 0; i < nnodes_owned; ++i) {
     ht_n[0][i] = U_new[0][i] + B_n[0][i];
@@ -1550,8 +1554,8 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
     Smax = std::max(Smax, S);
   }
   
-  double alpha = 0.1*lmax*Smax;
-//  double alpha = 0.5*lmax*Smax;
+//  double alpha = 0.1*lmax*Smax;
+  double alpha = 0.5*lmax*Smax;
 //  double alpha = 0.5*Smax;
   
 //  std::cout << "lmax = " << lmax << std::endl;
@@ -2052,20 +2056,35 @@ std::vector<std::vector<double> > ShallowWater_PK::RightEigenVecs(std::vector<do
 
 	double a = std::sqrt(g_*h);
 
+//	// Components of vector 0
+//	R[0][0] = 0.;
+//	R[1][0] = -a*xi[1];
+//	R[2][0] = a*xi[0];
+//
+//	// Components of vector 1
+//    R[0][1] = 1.;
+//    R[1][1] = u+a*xi[0];
+//    R[2][1] = v+a*xi[1];
+//
+//    // Components of vector 2
+//    R[0][2] = 1.;
+//	R[1][2] = u-a*xi[0];
+//	R[2][2] = v-a*xi[1];
+
 	// Components of vector 0
-	R[0][0] = 0.;
-	R[1][0] = -a*xi[1];
-	R[2][0] = a*xi[0];
+	R[0][0] = 1.;
+	R[1][0] = 0.;
+	R[2][0] = 0.;
 
 	// Components of vector 1
-    R[0][1] = 1.;
-    R[1][1] = u+a*xi[0];
-    R[2][1] = v+a*xi[1];
+    R[0][1] = 0.;
+    R[1][1] = 1.;
+    R[2][1] = 0.;
 
     // Components of vector 2
-    R[0][2] = 1.;
-	R[1][2] = u-a*xi[0];
-	R[2][2] = v-a*xi[1];
+    R[0][2] = 0.;
+	R[1][2] = 0.;
+	R[2][2] = 1.;
 
 	return R;
 
@@ -2092,20 +2111,35 @@ std::vector<std::vector<double> > ShallowWater_PK::LeftEigenVecs(std::vector<dou
 
 	double a = std::sqrt(g_*h);
 
+//	// Components of vector 0
+//	L[0][0] = 1./a*(u*xi[1]-v*xi[0]);
+//	L[0][1] = 1./a*(-xi[1]);
+//	L[0][2] = 1./a*(xi[0]);
+//
+//	// Components of vector 1
+//	L[1][0] = 0.5/a*(a+u*xi[0]+v*xi[1]);
+//	L[1][1] = 0.5/a*(xi[0]);
+//	L[1][2] = 0.5/a*(xi[1]);
+//
+//	// Components of vector 2
+//	L[2][0] = 0.5/a*(a+u*xi[0]+v*xi[1]);
+//	L[2][1] = 0.5/a*(-xi[0]);
+//	L[2][2] = 0.5/a*(-xi[1]);
+
 	// Components of vector 0
-	L[0][0] = 1./a*(u*xi[1]-v*xi[0]);
-	L[0][1] = 1./a*(-xi[1]);
-	L[0][2] = 1./a*(xi[0]);
+	L[0][0] = 1.;
+	L[0][1] = 0.;
+	L[0][2] = 0.;
 
 	// Components of vector 1
-	L[1][0] = 0.5/a*(a+u*xi[0]+v*xi[1]);
-	L[1][1] = 0.5/a*(xi[0]);
-	L[1][2] = 0.5/a*(xi[1]);
+	L[1][0] = 0.;
+	L[1][1] = 1.;
+	L[1][2] = 0.;
 
 	// Components of vector 2
-	L[2][0] = 0.5/a*(a+u*xi[0]+v*xi[1]);
-	L[2][1] = 0.5/a*(-xi[0]);
-	L[2][2] = 0.5/a*(-xi[1]);
+	L[2][0] = 0.;
+	L[2][1] = 0.;
+	L[2][2] = 1.;
 
 	return L;
 
