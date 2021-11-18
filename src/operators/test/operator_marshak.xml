@@ -31,11 +31,11 @@
     </ParameterList>
 
     <ParameterList name="diffusion operator Sff">
-      <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-      <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="discretization primary" type="string" value="mfd: default"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: default"/>
       <Parameter name="schema" type="Array(string)" value="{cell,face}"/>
-      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-      <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{cell,face}"/>
+      <Parameter name="nonlinear coefficient" type="string" value="none"/>
       <Parameter name="scaled constraint equation" type="bool" value="true"/>
     </ParameterList>
     
@@ -55,6 +55,7 @@
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="1e-16"/>
+        <Parameter name="convergence criteria" type="Array(string)" value="{make one iteration}"/>
         <Parameter name="maximum number of iterations" type="int" value="200"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="medium"/>
@@ -65,6 +66,7 @@
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="1e-16"/>
+        <Parameter name="convergence criteria" type="Array(string)" value="{make one iteration}"/>
         <Parameter name="maximum number of iterations" type="int" value="200"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="low"/>
@@ -76,12 +78,12 @@
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
-      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
-      <ParameterList name="boomer amg parameters">
+      <Parameter name="preconditioning method" type="string" value="hypre: boomer amg"/>
+      <ParameterList name="hypre: boomer amg parameters">
         <Parameter name="cycle applications" type="int" value="2"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
-        <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="strong threshold" type="double" value="0.5"/>
+        <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="relaxation type down" type="int" value="13"/>
         <Parameter name="relaxation type up" type="int" value="14"/>
         <Parameter name="coarsen type" type="int" value="0"/>
