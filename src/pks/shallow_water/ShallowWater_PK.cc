@@ -328,20 +328,31 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
     
     // 1. volume quadrature information.
     // 1a. calculate weights
-    int order = 5;
-    int n_points, start_position;
-    n_points = WhetStone::q2d_order[order][0];
-    start_position = WhetStone::q2d_order[order][1];
-    weights_vol_[c].resize(n_points);
-    // find weights of quadrature points
-    for (int qp = 0; qp < n_points; ++qp) {
-      weights_vol_[c][qp] = WhetStone::q2d_weights[qp+start_position] * mesh_->cell_volume(c);
-    }
+//    int order = 5;
+//    int n_points, start_position;
+//    n_points = WhetStone::q2d_order[order][0];
+//    start_position = WhetStone::q2d_order[order][1];
+//    weights_vol_[c].resize(n_points);
+//    // find weights of quadrature points
+//    for (int qp = 0; qp < n_points; ++qp) {
+//      weights_vol_[c][qp] = WhetStone::q2d_weights[qp+start_position] * mesh_->cell_volume(c);
+//    }
     
     phi_[c].resize(nnodes_owned);
     phi_x_[c].resize(nnodes_owned);
     phi_y_[c].resize(nnodes_owned);
 
+    // Guassian quadrature points on rectangle (4 points)
+    int n_points = 4;
+    double quadrature_points[4][2] = {
+      {0.211324865405187, 0.211324865405187},
+      {0.788675134594813, 0.211324865405187},
+      {0.788675134594813, 0.788675134594813},
+      {0.211324865405187, 0.788675134594813},
+    };
+    
+    weights_vol_[c].resize(n_points);
+    
     for (int j = 0; j < cnodes.size(); ++j) {
       // 1b. construct volume quadrature points
       std::vector<AmanziGeometry::Point> quad_nodes_vol(n_points); // to store physical coordinates of quadrature points
@@ -353,9 +364,22 @@ void ShallowWater_PK::Initialize(const Teuchos::Ptr<State>& S)
       for (int qp = 0; qp < n_points; ++qp) {
 //        quad_nodes_vol[qp] = (1.0 - WhetStone::q2d_points[qp+start_position][0] - WhetStone::q2d_points[qp+start_position][1] )*coords[0] + (WhetStone::q2d_points[qp+start_position][0])*coords[1] + (WhetStone::q2d_points[qp+start_position][1])*coords[2];
         
-        double x = WhetStone::q2d_points[qp+start_position][0], y = WhetStone::q2d_points[qp+start_position][1];
+        double x = quadrature_points[qp][0], y = quadrature_points[qp][1];
         
         quad_nodes_vol[qp] = (1.0 - x )*(1.0 - y)*coords[0] + x*(1.0 - y)*coords[1] + x*y*coords[2] + (1.0 - x)*y*coords[3];
+      }
+      
+      weights_vol_[c].resize(n_points);
+      double Jacobian[2][2];
+      for (int  qp = 0; qp < n_points; ++qp) {
+        double x = quadrature_points[qp][0], y = quadrature_points[qp][1];
+        
+        Jacobian[0][0] = -(1.0 - y)*coords[0][0] + (1.0 - y)*coords[1][0] + y*coords[2][0] - y*coords[3][0];
+        Jacobian[0][1] = -(1.0 - x )*coords[0][0] - x*coords[1][0] + x*coords[2][0] + (1.0 - x)*coords[3][0];
+        Jacobian[1][0] = -(1.0 - y)*coords[0][1] + (1.0 - y)*coords[1][1] + y*coords[2][1] - y*coords[3][1];
+        Jacobian[1][1] = -(1.0 - x )*coords[0][1] - x*coords[1][1] + x*coords[2][1] + (1.0 - x)*coords[3][1];
+        
+        weights_vol_[c][qp] = (0.5)*(0.5)*std::abs((Jacobian[0][0]*Jacobian[1][1] - Jacobian[1][0]*Jacobian[0][1]));
       }
       
       phi_[c][cnodes[j]].resize(n_points);
