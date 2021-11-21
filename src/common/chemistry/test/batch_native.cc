@@ -160,6 +160,10 @@ void RunBatchNative(const std::string& filexml,
       // chem->CopyBeakerToState(&state);
       time += dt;
       if ((n + 1) % frequency == 0) chem->DisplayTotalColumns(time, state, false);
+
+      // non-conservative clipping of small values
+      // for (int i = 0; i < ncomp; ++i)
+      //   state.total[i] = std::max(1.0e-200, state.total[i]);
     }
     chem->Speciate(&state);
     chem->DisplayResults();
@@ -174,6 +178,7 @@ void RunBatchNative(const std::string& filexml,
   // cleanup memory
   delete chem;
 }
+
 
 TEST(NATIVE_CA_DEBYE_HUCKEL) {
   std::vector<double> ict = {3.0e-3, 1.0e-3, 1.0e-3};
@@ -443,6 +448,18 @@ TEST(NATIVE_RADIOACTIVE_DECAY_SORBED) {
                  864000.0, 2000, 50);
 }
 
+TEST(NATIVE_RADIOACTIVE_DECAY_BRANCHES) {
+  std::vector<double> ict = { 8.7086e-05, 3.2169e-03, 3.4698e-03, 5.1930e-04,
+                              1.7495e-04, 2.5079e-06, 5.5912e-10, 1.9627e-10 };
+
+  std::vector<double> icm, icie, icfi, icts;
+  RunBatchNative("test/native/radioactive-decay-branches.xml",
+                 "test/native/radioactive-decay-branches.test",
+                 "unit",
+                 ict, icm, icie, icfi,  // initial conditions
+                 0.25, 1.0, 1.0,  // porosity, saturation, cell volume
+                 1.0e-1, 1000, 10);
+}
 
 TEST(NATIVE_SORPTION_ISOTHERMS) {
   std::vector<double> ict = { 1.0e-4, 1.0e-4, 1.0e-4 };
