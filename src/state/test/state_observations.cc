@@ -94,6 +94,8 @@ public:
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S->RequireField("flux")->SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("face", AmanziMesh::FACE, 1);
+    S->RequireField("multi_dof")->SetMesh(mesh)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, 3);
     S->set_time(0.);
     S->set_cycle(0);
 
@@ -101,6 +103,9 @@ public:
     S->GetFieldData("constant", "state")->PutScalar(2.0);
     S->GetFieldData("linear", "state")->PutScalar(0.);
 
+    (*S->GetFieldData("multi_dof", "state")->ViewComponent("cell", false))(0)->PutScalar(0.);
+    (*S->GetFieldData("multi_dof", "state")->ViewComponent("cell", false))(1)->PutScalar(1.);
+    (*S->GetFieldData("multi_dof", "state")->ViewComponent("cell", false))(2)->PutScalar(2.);
 
     Epetra_MultiVector& flux_f = *S->GetFieldData("flux", "state")
       ->ViewComponent("face", false);
@@ -298,6 +303,48 @@ TEST_FIXTURE(obs_test, Face_NORMALIZED_REL_VOLUME) {
   std::vector<double> observation(1, Observable::nan);
   obs.Update(S.ptr(), observation, 0);
   CHECK_CLOSE(4.0, observation[0], 1.e-10); // flux is given by face area
+}
+
+
+TEST_FIXTURE(obs_test, MULTI_DOF_OBS_ALL) {
+  // direction nomralized flux relative to region allows normalizing in an
+  // outward-normal relative to a volumetric region.
+  Teuchos::ParameterList obs_list("my obs");
+  obs_list.set<std::string>("variable", "multi_dof");
+  obs_list.set<std::string>("region", "all");
+  obs_list.set<std::string>("location name", "cell");
+  obs_list.set<std::string>("functional", "average");
+
+  Observable obs(obs_list);
+  obs.Setup(S.ptr());
+  obs.FinalizeStructure(S.ptr());
+  CHECK_EQUAL(3, obs.get_num_vectors());
+
+  std::vector<double> observation(3, Observable::nan);
+  obs.Update(S.ptr(), observation, 0);
+  CHECK_CLOSE(0.0, observation[0], 1.e-10);
+  CHECK_CLOSE(1.0, observation[1], 1.e-10);
+  CHECK_CLOSE(2.0, observation[2], 1.e-10);
+}
+
+TEST_FIXTURE(obs_test, MULTI_DOF_OBS_ONE) {
+  // direction nomralized flux relative to region allows normalizing in an
+  // outward-normal relative to a volumetric region.
+  Teuchos::ParameterList obs_list("my obs");
+  obs_list.set<std::string>("variable", "multi_dof");
+  obs_list.set<std::string>("region", "all");
+  obs_list.set<std::string>("location name", "cell");
+  obs_list.set<std::string>("functional", "average");
+  obs_list.set<int>("degree of freedom", 2);
+
+  Observable obs(obs_list);
+  obs.Setup(S.ptr());
+  obs.FinalizeStructure(S.ptr());
+  CHECK_EQUAL(1, obs.get_num_vectors());
+
+  std::vector<double> observation(3, Observable::nan);
+  obs.Update(S.ptr(), observation, 0);
+  CHECK_CLOSE(2.0, observation[0], 1.e-10);
 }
 
 
