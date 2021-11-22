@@ -26,12 +26,12 @@
 namespace Amanzi {
 
 UnstructuredObservations::UnstructuredObservations(
-    Teuchos::ParameterList& plist,
-    const Teuchos::Ptr<State>& S)
+      Teuchos::ParameterList& plist)
   : write_(false),
     count_(0),
     time_integrated_(false),
     num_total_(0),
+    observed_once_(false),
     IOEvent(plist)
 {
   // interpret parameter list
@@ -40,9 +40,8 @@ UnstructuredObservations::UnstructuredObservations(
     Teuchos::ParameterList& oq_list = plist.sublist("observed quantities");
     for (auto it : oq_list) {
       if (oq_list.isSublist(it.first)) {
-        auto obs = Teuchos::rcp(new Observable(oq_list.sublist(it.first), S));
+        auto obs = Teuchos::rcp(new Observable(oq_list.sublist(it.first)));
         observables_.emplace_back(obs);
-        num_total_ += obs->get_num_vectors();
         time_integrated_ |= obs->is_time_integrated();
       } else {
         Errors::Message msg;
@@ -59,13 +58,10 @@ UnstructuredObservations::UnstructuredObservations(
 
   } else {
     // old style, single list/single entry
-    auto obs = Teuchos::rcp(new Observable(plist, S));
+    auto obs = Teuchos::rcp(new Observable(plist));
     observables_.emplace_back(obs);
-    num_total_ += obs->get_num_vectors();
     time_integrated_ |= obs->is_time_integrated();
   }
-
-  integrated_observation_.resize(num_total_);
 
   // file format
   filename_ = plist.get<std::string>("observation output filename");
@@ -75,25 +71,47 @@ UnstructuredObservations::UnstructuredObservations(
   Utils::Units unit;
   bool flag = false;
   time_unit_factor_ = unit.ConvertTime(1., "s", time_unit_, flag);
+  writing_domain_ = plist.get<std::string>("domain", "NONE");
+}
 
-  std::string domain = plist.get<std::string>("domain", "none");
-  if (domain == "none") {
-    // write on MPI_COMM_WORLD rank 0
-    if (getDefaultComm()->MyPID() == 0) {
-      write_ = true;
-      Init_();
+void UnstructuredObservations::Setup(const Teuchos::Ptr<State>& S)
+{
+  // require fields, evaluators
+  for (auto& obs : observables_) obs->Setup(S);
+
+  // what rank writes the file?
+  write_ = false;
+  if (writing_domain_ == "NONE") {
+    if (observables_.size() > 0) {
+      writing_domain_ = Keys::getDomain(observables_[0]->get_variable());
+    } else {
+      if (getDefaultComm()->MyPID() == 0) {
+        write_ = true;
+      }
     }
-  } else {
-    if (S->GetMesh(domain)->get_comm()->MyPID() == 0) {
+  }
+  if (writing_domain_ != "NONE") {
+    if (S->GetMesh(writing_domain_)->get_comm()->MyPID() == 0) {
       write_ = true;
-      Init_();
     }
   }
 }
 
-
 void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
 {
+  if (!observed_once_) {
+    // final setup, open file handle, etc
+    for (auto& obs : observables_) {
+      obs->FinalizeStructure(S);
+    }
+    num_total_ = 0;
+    for (const auto& obs : observables_) num_total_ += obs->get_num_vectors();
+    integrated_observation_.resize(num_total_);
+    observed_once_ = true;
+
+    if (write_) InitFile_();
+  }
+
   bool dump_requested = DumpRequested(S->cycle(), S->time());
   if (time_integrated_) {
     if (dump_requested) {
@@ -149,7 +167,7 @@ void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
 // Note also that this (along with Write_) may become a separate class for
 // different file types (e.g. text vs netcdf)
 //
-void UnstructuredObservations::Init_()
+void UnstructuredObservations::InitFile_()
 {
   if (boost::filesystem::portable_file_name(filename_)) {
     fid_ = std::make_unique<std::ofstream>(filename_.c_str());
@@ -165,11 +183,18 @@ void UnstructuredObservations::Init_()
             << "# Functional: " << obs->get_functional() << std::endl
             << "# Variable: " << obs->get_variable() << std::endl
             << "# Number of Vectors: " << obs->get_num_vectors() << std::endl;
+      if (obs->get_degree_of_freedom() >= 0)
+        *fid_ << "# DoF: " << obs->get_degree_of_freedom() << std::endl;
     }
     *fid_ << "# =============================================================================" << std::endl;
     *fid_ << "\"time [" << time_unit_ << "]\"";
     for (const auto& obs : observables_) {
-      *fid_ << delimiter_ << "\"" << obs->get_name() << "\"";
+      if (obs->get_num_vectors() > 1) {
+        for (int i=0; i!=obs->get_num_vectors(); ++i)
+          *fid_ << delimiter_ << "\"" << obs->get_name() << " dof " << i << "\"";
+      } else {
+        *fid_ << delimiter_ << "\"" << obs->get_name() << "\"";
+      }
     }
     *fid_ << std::endl
           << std::scientific;
@@ -188,9 +213,9 @@ void UnstructuredObservations::Write_(double time, const std::vector<double>& ob
     *fid_ << time;
     for (auto val : obs) *fid_ << delimiter_ << val;
     *fid_ << std::endl;
+    ++count_;
+    if (count_ % interval_ == 0) fid_->flush();
   }
-  ++count_;
-  if (count_ % interval_ == 0) fid_->flush();
 }
 
 

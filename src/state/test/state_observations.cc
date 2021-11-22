@@ -68,6 +68,14 @@ public:
     middle.set<Teuchos::Array<double>>("low coordinate", std::vector<double>{-0.3,-0.3,-0.3});
     middle.set<Teuchos::Array<double>>("high coordinate", std::vector<double>{0.3,0.3,0.3});
 
+    auto& one_side = region_list.sublist("one side volume").sublist("region: box");
+    one_side.set<Teuchos::Array<double>>("low coordinate", std::vector<double>{-1, -1, -1});
+    one_side.set<Teuchos::Array<double>>("high coordinate", std::vector<double>{-0.3, 1, 1});
+
+    auto& one_side_side = region_list.sublist("one side side").sublist("region: box");
+    one_side_side.set<Teuchos::Array<double>>("low coordinate", std::vector<double>{-.35, -1, -1});
+    one_side_side.set<Teuchos::Array<double>>("high coordinate", std::vector<double>{-0.3, 1, 1});
+
     Teuchos::RCP<AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
 
@@ -86,19 +94,24 @@ public:
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S->RequireField("flux")->SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("face", AmanziMesh::FACE, 1);
+    S->RequireField("multi_dof")->SetMesh(mesh)->SetGhosted(false)
+      ->SetComponent("cell", AmanziMesh::CELL, 3);
     S->set_time(0.);
     S->set_cycle(0);
-    S->Setup();
 
+    S->Setup();
     S->GetFieldData("constant", "state")->PutScalar(2.0);
     S->GetFieldData("linear", "state")->PutScalar(0.);
 
+    (*S->GetFieldData("multi_dof", "state")->ViewComponent("cell", false))(0)->PutScalar(0.);
+    (*S->GetFieldData("multi_dof", "state")->ViewComponent("cell", false))(1)->PutScalar(1.);
+    (*S->GetFieldData("multi_dof", "state")->ViewComponent("cell", false))(2)->PutScalar(2.);
 
     Epetra_MultiVector& flux_f = *S->GetFieldData("flux", "state")
       ->ViewComponent("face", false);
-    AmanziGeometry::Point plus_z(0.0, 0.0, 1.0);
+    AmanziGeometry::Point plus_xz(1.0, 0.0, 1.0);
     for (int f=0; f!=flux_f.MyLength(); ++f) {
-      flux_f[0][f] = mesh->face_normal(f) * plus_z;
+      flux_f[0][f] = mesh->face_normal(f) * plus_xz;
     }
 
     Epetra_MultiVector& id_c = *S->GetFieldData("id", "state")
@@ -147,7 +160,9 @@ TEST_FIXTURE(obs_test, ObservePoint) {
   obs_list.set<std::string>("location name", "cell");
   obs_list.set<std::string>("functional", "point");
 
-  Observable obs(obs_list, S.ptr());
+  Observable obs(obs_list);
+  obs.Setup(S.ptr());
+  obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
@@ -163,7 +178,9 @@ TEST_FIXTURE(obs_test, ObserveIntensiveIntegral) {
   obs_list.set<std::string>("location name", "cell");
   obs_list.set<std::string>("functional", "integral");
 
-  Observable obs(obs_list, S.ptr());
+  Observable obs(obs_list);
+  obs.Setup(S.ptr());
+  obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
@@ -180,7 +197,9 @@ TEST_FIXTURE(obs_test, ObserveExtensiveIntegral) {
   obs_list.set<std::string>("location name", "cell");
   obs_list.set<std::string>("functional", "extensive integral");
 
-  Observable obs(obs_list, S.ptr());
+  Observable obs(obs_list);
+  obs.Setup(S.ptr());
+  obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
@@ -197,7 +216,9 @@ TEST_FIXTURE(obs_test, ObserveAverage) {
   obs_list.set<std::string>("location name", "cell");
   obs_list.set<std::string>("functional", "average");
 
-  Observable obs(obs_list, S.ptr());
+  Observable obs(obs_list);
+  obs.Setup(S.ptr());
+  obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
@@ -213,7 +234,9 @@ TEST_FIXTURE(obs_test, ObserveMin) {
   obs_list.set<std::string>("location name", "cell");
   obs_list.set<std::string>("functional", "minimum");
 
-  Observable obs(obs_list, S.ptr());
+  Observable obs(obs_list);
+  obs.Setup(S.ptr());
+  obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
@@ -229,7 +252,9 @@ TEST_FIXTURE(obs_test, ObserveMax) {
   obs_list.set<std::string>("location name", "cell");
   obs_list.set<std::string>("functional", "maximum");
 
-  Observable obs(obs_list, S.ptr());
+  Observable obs(obs_list);
+  obs.Setup(S.ptr());
+  obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
@@ -248,12 +273,78 @@ TEST_FIXTURE(obs_test, Face) {
   obs_list.set<std::string>("functional", "extensive integral");
   obs_list.set("direction normalized flux", true);
 
-  Observable obs(obs_list, S.ptr());
+  Observable obs(obs_list);
+  obs.Setup(S.ptr());
+  obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
   obs.Update(S.ptr(), observation, 0);
   CHECK_CLOSE(4.0, observation[0], 1.e-10); // flux is given by face area
+}
+
+
+TEST_FIXTURE(obs_test, Face_NORMALIZED_REL_VOLUME) {
+  // direction nomralized flux relative to region allows normalizing in an
+  // outward-normal relative to a volumetric region.
+  Teuchos::ParameterList obs_list("my obs");
+  obs_list.set<std::string>("variable", "flux");
+  obs_list.set<std::string>("region", "one side side");
+  obs_list.set<std::string>("location name", "face");
+  obs_list.set<std::string>("functional", "extensive integral");
+  obs_list.set("direction normalized flux", true);
+  obs_list.set("direction normalized flux relative to region", "one side volume");
+
+  Observable obs(obs_list);
+  obs.Setup(S.ptr());
+  obs.FinalizeStructure(S.ptr());
+  CHECK_EQUAL(1, obs.get_num_vectors());
+
+  std::vector<double> observation(1, Observable::nan);
+  obs.Update(S.ptr(), observation, 0);
+  CHECK_CLOSE(4.0, observation[0], 1.e-10); // flux is given by face area
+}
+
+
+TEST_FIXTURE(obs_test, MULTI_DOF_OBS_ALL) {
+  // direction nomralized flux relative to region allows normalizing in an
+  // outward-normal relative to a volumetric region.
+  Teuchos::ParameterList obs_list("my obs");
+  obs_list.set<std::string>("variable", "multi_dof");
+  obs_list.set<std::string>("region", "all");
+  obs_list.set<std::string>("location name", "cell");
+  obs_list.set<std::string>("functional", "average");
+
+  Observable obs(obs_list);
+  obs.Setup(S.ptr());
+  obs.FinalizeStructure(S.ptr());
+  CHECK_EQUAL(3, obs.get_num_vectors());
+
+  std::vector<double> observation(3, Observable::nan);
+  obs.Update(S.ptr(), observation, 0);
+  CHECK_CLOSE(0.0, observation[0], 1.e-10);
+  CHECK_CLOSE(1.0, observation[1], 1.e-10);
+  CHECK_CLOSE(2.0, observation[2], 1.e-10);
+}
+
+TEST_FIXTURE(obs_test, MULTI_DOF_OBS_ONE) {
+  // direction nomralized flux relative to region allows normalizing in an
+  // outward-normal relative to a volumetric region.
+  Teuchos::ParameterList obs_list("my obs");
+  obs_list.set<std::string>("variable", "multi_dof");
+  obs_list.set<std::string>("region", "all");
+  obs_list.set<std::string>("location name", "cell");
+  obs_list.set<std::string>("functional", "average");
+  obs_list.set<int>("degree of freedom", 2);
+
+  Observable obs(obs_list);
+  obs.Setup(S.ptr());
+  obs.FinalizeStructure(S.ptr());
+  CHECK_EQUAL(1, obs.get_num_vectors());
+
+  std::vector<double> observation(3, Observable::nan);
+  obs.Update(S.ptr(), observation, 0);
+  CHECK_CLOSE(2.0, observation[0], 1.e-10);
 }
 
 
@@ -269,7 +360,8 @@ TEST_FIXTURE(obs_test, FileOne) {
   obs_list.set<std::string>("functional", "average");
 
   {
-    UnstructuredObservations obs(obs_list, S.ptr());
+    UnstructuredObservations obs(obs_list);
+    obs.Setup(S.ptr());
     obs.MakeObservations(S.ptr());
     advance(1.0);
     obs.MakeObservations(S.ptr());
@@ -300,7 +392,8 @@ TEST_FIXTURE(obs_test, FileTwo) {
   obsB_list.set<std::string>("functional", "average");
 
   {
-    UnstructuredObservations obs(obs_list, S.ptr());
+    UnstructuredObservations obs(obs_list);
+    obs.Setup(S.ptr());
     obs.MakeObservations(S.ptr());
     advance(1.0);
     obs.MakeObservations(S.ptr());
@@ -334,7 +427,8 @@ TEST_FIXTURE(obs_test, TimeIntegrated) {
   obsB_list.set<std::string>("functional", "average");
 
   {
-    UnstructuredObservations obs(obs_list, S.ptr());
+    UnstructuredObservations obs(obs_list);
+    obs.Setup(S.ptr());
     obs.MakeObservations(S.ptr());
     advance(0.5);
     obs.MakeObservations(S.ptr());
@@ -362,7 +456,8 @@ TEST_FIXTURE(obs_test, WritesNaN) {
   obsA_list.set<std::string>("functional", "extensive integral");
 
   {
-    UnstructuredObservations obs(obs_list, S.ptr());
+    UnstructuredObservations obs(obs_list);
+    obs.Setup(S.ptr());
     obs.MakeObservations(S.ptr());
     advance(0.5);
     obs.MakeObservations(S.ptr());
