@@ -49,6 +49,7 @@ class HeatFluxBCEvaluator :
   double LE;
 
   Key temperature_key_;
+  Key conductivity_key_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,HeatFluxBCEvaluator> factory_;

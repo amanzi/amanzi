@@ -101,6 +101,14 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   conductivity_key_ = Keys::readKey(*plist_, domain_, "thermal conductivity", "thermal_conductivity");
   uw_conductivity_key_ = Keys::readKey(*plist_, domain_, "upwinded thermal conductivity", "upwind_thermal_conductivity");
   cell_is_ice_key_ = Keys::readKey(*plist_, domain_, "ice", "ice");
+
+//  std::string domain_surf;
+//  domain_surf = plist_->get<std::string>("surface domain name", "surface");
+//  surface_flux_key_ = Keys::readKey(*plist_, domain_surf, "surface flux", "surface_flux");
+//  S->RequireField(surface_flux_key_)
+//	  ->SetMesh(S->GetMesh(domain_surf))
+//	  ->AddComponent("cell", AmanziMesh::CELL, 1);
+
   surface_flux_key_ = Keys::readKey(*plist_, domain_, "surface flux", "surface_flux");
 
   std::cout << "temperature_key_  lake= " << temperature_key_ << std::endl;
@@ -302,6 +310,10 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
     Teuchos::rcp(new LakeThermo::ThermalConductivityEvaluator(tcm_plist));
   S->SetFieldEvaluator(conductivity_key_, tcm);
 
+
+
+
+  // THIS SHOULD NOT BE DEFINED ON THE MESH -- > ONLY ONE VALUE FOR THE UPPER BOUNDARY
   // -- surface flux evaluator
   S->RequireField(surface_flux_key_)->SetMesh(mesh_)
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -453,7 +465,7 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   alpha_e_ = 0.;
   S0_ = 0.;
 
-  h_ = 1.;
+  h_ = 1.5;
 
 
 #if MORE_DEBUG_FLAG
@@ -710,12 +722,17 @@ void Lake_Thermo_PK::UpdateBoundaryConditions_(
 //    // push all onto diffusion, assuming that the incoming enthalpy is 0 (likely mass flux is 0)
 //  }
 
+  S->GetFieldEvaluator(surface_flux_key_)->HasFieldChanged(S.ptr(), name_);
+  const Epetra_MultiVector& flux =
+       *S->GetFieldData(surface_flux_key_)->ViewComponent("cell",false);
+
   // Neumann diffusive flux, not Neumann TOTAL flux.  Potentially advective flux.
   for (Functions::BoundaryFunction::Iterator bc=bc_diff_flux_->begin();
        bc!=bc_diff_flux_->end(); ++bc) {
     int f = bc->first;
     markers[f] = Operators::OPERATOR_BC_NEUMANN;
-    values[f] = bc->second;
+    values[f] = flux[0][0]; //*h_; //bc->second;
+    std::cout << "BC flux = " << flux[0][0] << std::endl;
     adv_markers[f] = Operators::OPERATOR_BC_NEUMANN;
     adv_values[f] = 0.;
   }
