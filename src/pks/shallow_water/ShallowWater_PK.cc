@@ -857,7 +857,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
 //        std::cout << "mesh_->cell_volume(" << ncells[K] << ") = " << mesh_->cell_volume(ncells[K]) << std::endl;
 //        std::cout << "dual_cell_vol_old = " << dual_cell_vol_old << std::endl;
-        dual_cell_vol_old += (1.0/3)*mesh_->cell_volume(ncells[K]);
+        dual_cell_vol_old += (1.0/cnodes.size())*mesh_->cell_volume(ncells[K]);
       } // K (cell) loop
 //    } // else
 
@@ -1148,7 +1148,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
         } // m
 
-        dual_cell_vol += (1.0/3)*mesh_->cell_volume(ncells[K]);
+        dual_cell_vol += (1.0/cnodes.size())*mesh_->cell_volume(ncells[K]);
       } // K (cell) loop
 //  } // else
       

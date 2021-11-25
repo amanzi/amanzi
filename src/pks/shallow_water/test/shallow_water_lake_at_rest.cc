@@ -101,7 +101,7 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
 //    h_n[0][n] = 0.5;
 //    h_n[0][n] = 0.5 + x*(1-x)*y*(1-y);
     
-      if ((x - 0.5)*(x - 0.5) + (y - 0.5)*(y - 0.5) < 0.1 * 0.1) {
+      if ((x - 0.)*(x - 0.) + (y - 0.)*(y - 0.) < 0.1 * 0.1) {
           ht_n[0][n] = H_inf + 0.01;
       }
       else {
@@ -290,7 +290,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
   std::vector<double> dx, Linferror, L1error, L2error;
     
   // Rectangular mesh
-  RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 25, 25, request_faces, request_edges);
+  RCP<Mesh> mesh = meshfactory.create(-15.0, -15.0, 15.0, 15.0, 50, 50, request_faces, request_edges);
     
   // Polygonal meshes
 //  RCP<Mesh> mesh = meshfactory.create ("test/median15x16.exo");
@@ -358,7 +358,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
         
   int iter = 0;
         
-  while (t_new < 2.0) {
+  while (t_new < 8.0) {
    
     double t_out = t_new;
             
@@ -394,6 +394,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
                 
       io.FinalizeCycle();
       std::cout<<"time: "<<t_new<<std::endl;
+
     }
             
     dt = SWPK.get_dt();
