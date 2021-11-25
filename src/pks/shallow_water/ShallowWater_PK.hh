@@ -44,6 +44,9 @@
 
 namespace Amanzi {
 namespace ShallowWater {
+
+// inversion operation protected for small values
+double inverse_with_tolerance(double h);
     
 class ShallowWater_PK : public PK_Physical,
                         public PK_Explicit<Epetra_Vector> {
@@ -110,6 +113,8 @@ class ShallowWater_PK : public PK_Physical,
   std::vector<double> basis_grad(int i, int c, AmanziGeometry::Point x);
   std::vector<double> basis_grad_quad(int i, int c, AmanziGeometry::Point x);
   std::vector<double> get_barycentric(std::vector<AmanziGeometry::Point> vertices, AmanziGeometry::Point x);
+  std::vector<std::vector<double>> Jacobian(int i, int c, std::vector<double> U);
+  std::vector<double> normals_opposite_vertex(int i, int c);
 
   // access
   double get_total_source() const { return total_source_; }

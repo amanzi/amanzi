@@ -550,7 +550,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     std::fill(phi_beta_cell.begin(), phi_beta_cell.end(), 0.0);
     dual_cell_vol = 0.0;
     
-    
     // loop over cells joined to the vertex i
     AmanziMesh::Entity_ID_List ncells, cnodes;
     mesh_->node_get_cells(i, Amanzi::AmanziMesh::Parallel_type::ALL, &ncells);
@@ -572,6 +571,28 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         }
       }
       
+      if (U[0][i] < 1.e-12) {
+        Phi_total[0] = 0.0;
+        Phi_total[1] = 0.0;
+        Phi_total[2] = 0.0;
+      }
+      
+      //std::cout<<"i: "<<i<<", cell: "<<ncells[K]<<", Phi_total: "<<Phi_total[0]<<" : "<<Phi_total[1]<<" : "<<Phi_total[2]<<std::endl;
+      
+      // stabalization term --
+      
+      std::vector<double> U_tmp(3);
+      U_tmp[0] = U[0][i];
+      U_tmp[1] = U[1][i];
+      U_tmp[2] = U[2][i];
+      
+      std::vector<std::vector<double>> J = Jacobian(i, ncells[K], U_tmp);
+      std::vector<double> stab_term(3);
+      stab_term[0] = J[0][0]*Phi_total[0] + J[0][1]*Phi_total[1] + J[0][2]*Phi_total[2];
+      stab_term[1] = J[1][0]*Phi_total[0] + J[1][1]*Phi_total[1] + J[1][2]*Phi_total[2];
+      stab_term[2] = J[2][0]*Phi_total[0] + J[2][1]*Phi_total[1] + J[2][2]*Phi_total[2];
+      // --
+      
       std::fill(beta.begin(), beta.end(), 0.0);
       std::fill(sum_max.begin(), sum_max.end(), 0.0);
       for (int m = 0; m < 3; ++m) {
@@ -590,7 +611,8 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         if (std::abs(sum_max[m]) > 0.0) {
           beta[m] = beta[m] / sum_max[m];
         }
-        phi_beta_cell[m] += beta[m] * Phi_total[m]; // eq(6)
+        
+        phi_beta_cell[m] += beta[m] * Phi_total[m] + (0.0*1.e-1)*stab_term[m]; // eq(6)
         
       }
       dual_cell_vol += (1.0/cnodes.size())*mesh_->cell_volume(ncells[K]);
@@ -601,20 +623,24 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       //        }
       
     } // K (cell) loop
+      
+    
     
     
     for (int m = 0; m < 3; ++m) {
       U_pr[m][i] = -(dt/dual_cell_vol)*phi_beta_cell[m] + U[m][i];
       // boundary condition
-      if (std::abs(node_coordinates[0] - 0.0) < 1.e-12 || std::abs(node_coordinates[0] - 1.0) < 1.e-12 || std::abs(node_coordinates[1] - 0.0) < 1.e-12 || std::abs(node_coordinates[1] - 1.0) < 1.e-12) {
-        //U_pr[0][i] = 0.5;
-//        U_pr[1][i] = 0.0;
-//        U_pr[2][i] = 0.0;
+      if (std::abs(node_coordinates[0] - 0.0) < 1.e-12 || std::abs(node_coordinates[0] - 2.0) < 1.e-12 || std::abs(node_coordinates[0] - 0.0) < 1.e-12 || std::abs(node_coordinates[0] - 2.0) < 1.e-12) {
+//      if (ncells.size() < 4) {
+          U_pr[0][i] = 0.5 - node_coordinates[0]/16.0;
+        //U_pr[1][i] = 0.0;
+        //U_pr[2][i] = 0.0;
       }
     }
-    
+      
   } // i (total DOF) loop
   // predictor step ends
+  
   
   for (int i = 0; i < nnodes_owned; ++i) {
     h_n[0][i] = U_pr[0][i];
@@ -622,12 +648,13 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     q_n[1][i] = U_pr[2][i];
     ht_n[0][i] = h_n[0][i] + B_n[0][i];
     double h = h_n[0][i];
-    double factor = (2.0*h)/(h*h + std::max(h*h, 1.e-14));
+    double factor = inverse_with_tolerance(h);
     vel_n[0][i] = factor * q_n[0][i];
     vel_n[1][i] = factor * q_n[1][i];
   }
   
-/*
+  /*
+  
   // 2. corrector step begins
   std::vector<std::vector<double>> U_new = U_pr;
   
@@ -637,9 +664,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     mesh_->node_get_coordinates(i, &node_coordinates);
     
     // compute on interior nodes only
-
     {
-      
       std::fill(phi_beta_cell.begin(), phi_beta_cell.end(), 0.0);
       dual_cell_vol = 0.0;
       
@@ -685,33 +710,35 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
           
           phi_beta_cell[m] += beta[m] * Phi_total[m]; // eq(6)
         }
-        dual_cell_vol += (1.0/3)*mesh_->cell_volume(ncells[K]);
+        dual_cell_vol += (1.0/cnodes.size())*mesh_->cell_volume(ncells[K]);
       } // K (cell) loop
       
       for (int m = 0; m < 3; ++m) {
         U_new[m][i] = -(dt/dual_cell_vol)*phi_beta_cell[m] + U_pr[m][i];
         
         if (std::abs(node_coordinates[0] - 0.0) < 1.e-12 || std::abs(node_coordinates[0] - 1.0) < 1.e-12 || std::abs(node_coordinates[1] - 0.0) < 1.e-12 || std::abs(node_coordinates[1] - 1.0) < 1.e-12) {
-          U_new[1][i] = 0.0;
-          U_new[2][i] = 0.0;
+//          U_new[1][i] = 0.0;
+//          U_new[2][i] = 0.0;
         }
         
       }
     }
   }// i (total DOF) loop
   // corrector step ends
-*/
 
-//  for (int i = 0; i < nnodes_owned; ++i) {
-//    h_n[0][i] = U_new[0][i];
-//    q_n[0][i] = U_new[1][i];
-//    q_n[1][i] = U_new[2][i];
-//    ht_n[0][i] = ht_n[0][i] + B_n[0][i];
-//    double h = h_n[0][i];
-//    double factor = (2.0*h)/(h*h + std::max(h*h, 1.e-14));
-//    vel_n[0][i] = factor * q_n[0][i];
-//    vel_n[1][i] = factor * q_n[1][i];
-//  }
+
+  for (int i = 0; i < nnodes_owned; ++i) {
+    h_n[0][i] = U_new[0][i];
+    q_n[0][i] = U_new[1][i];
+    q_n[1][i] = U_new[2][i];
+    ht_n[0][i] = ht_n[0][i] + B_n[0][i];
+    double h = h_n[0][i];
+    double factor = inverse_with_tolerance(h);
+    vel_n[0][i] = factor * q_n[0][i];
+    vel_n[1][i] = factor * q_n[1][i];
+  }
+  
+  */
   
   // compute cell averaged quantities
   for (int c = 0; c < ncells_owned; ++c) {
@@ -777,12 +804,14 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
   mesh_->cell_get_nodes(K, &cnodes);
 
   Epetra_MultiVector& ht_n = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("node", true);
+  Epetra_MultiVector& B_n = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("node", true);
   
   // 1. calculate volume integral
   std::vector<double> Uqp(3), Sqp(3), Uxqp(3), Uyqp(3);
   std::vector<std::vector<double>> flux(2);
   std::vector<double> phi_j_grad(2);
   double h, qx, qy; // values conservative variables
+  double u, v;
   double h_x, h_y, qx_x, qx_y, qy_x, qy_y; // gradients
   double phi_j;
   for (int qp = 0; qp < weights_vol_[K].size(); ++qp ) {
@@ -795,6 +824,9 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
     Uyqp = EvalSol_y_vol(U, qp, K);
     
     h = Uqp[0], qx = Uqp[1], qy = Uqp[2];
+    double factor = inverse_with_tolerance(h);
+    u = factor * qx;
+    v = factor * qy;
     
     h_x = Uxqp[0], h_y = Uyqp[0];
     qx_x = Uxqp[1], qx_y = Uyqp[1];
@@ -802,10 +834,14 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
     
     integral[0] += (qx_x + qy_y)*phi_j*weights_vol_[K][qp];
     
-    integral[1] += (2*qx*qx_x/h - qx*qx*h_x/(h*h) + g_*h*h_x + qy*qx_y/h + qx*qy_y/h - qx*qy*h_y/(h*h))*phi_j*weights_vol_[K][qp];
-
-    integral[2] += (qy*qx_x/h + qx*qy_x/h - qx*qy*h_x/(h*h) + 2*qy*qy_y/h - qy*qy*h_y/(h*h) + g_*h*h_y)*phi_j*weights_vol_[K][qp];
+//    integral[1] += (2*qx*qx_x/h - qx*qx*h_x/(h*h) + g_*h*h_x + qy*qx_y/h + qx*qy_y/h - qx*qy*h_y/(h*h))*phi_j*weights_vol_[K][qp];
+//
+//    integral[2] += (qy*qx_x/h + qx*qy_x/h - qx*qy*h_x/(h*h) + 2*qy*qy_y/h - qy*qy*h_y/(h*h) + g_*h*h_y)*phi_j*weights_vol_[K][qp];
     
+    integral[1] += (2*u*qx_x - u*u*h_x + g_*h*h_x + v*qx_y + u*qy_y - u*v*h_y)*phi_j*weights_vol_[K][qp];
+
+    integral[2] += (v*qx_x + u*qy_x - u*v*h_x + 2*v*qy_y - v*v*h_y + g_*h*h_y)*phi_j*weights_vol_[K][qp];
+
     for (int m = 0; m < 3; ++m) {
       integral[m] += Sqp[m] * phi_j * weights_vol_[K][qp]; // bathymetry term
     }
@@ -815,10 +851,14 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
 //      ht_x += ht_n[0][cnodes[i]] * phi_x_[K][cnodes[i]][qp];
 //      ht_y += ht_n[0][cnodes[i]] * phi_y_[K][cnodes[i]][qp];
 //    }
-//
+
 //    integral[1] += (2*qx*qx_x/h - qx*qx*h_x/(h*h) + g_*h*ht_x + qy*qx_y/h + qx*qy_y/h - qx*qy*h_y/(h*h))*phi_j*weights_vol_[K][qp];
 //
 //    integral[2] += (qy*qx_x/h + qx*qy_x/h - qx*qy*h_x/(h*h) + 2*qy*qy_y/h - qy*qy*h_y/(h*h) + g_*h*ht_y)*phi_j*weights_vol_[K][qp];
+    
+//    integral[1] += (2*u*qx_x - u*u*h_x + g_*h*ht_x + v*qx_y + u*qy_y - u*v*h_y)*phi_j*weights_vol_[K][qp];
+//
+//    integral[2] += (v*qx_x + u*qy_x - u*v*h_x + 2*v*qy_y - v*v*h_y + g_*h*ht_y)*phi_j*weights_vol_[K][qp];
   }
 
   // 3. compute viscoisty term
@@ -829,7 +869,14 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
       U_avg[m] += U[m][cnodes[i]];
     }
     U_avg[m] = U_avg[m]/cnodes.size();
+    
   }
+  double B_avg = 0.0;
+  for (int i = 0; i < cnodes.size(); ++i) {
+    B_avg = B_n[0][cnodes[i]];
+  }
+  B_avg = B_avg/cnodes.size();
+  
   // 3b. compute artificial viscosity \alpha
 //  double h, qx, qy, vx, vy,
   double vx, vy, S, Smax = 0.0;
@@ -837,8 +884,9 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
     h = U[0][cnodes[i]];
     qx = U[1][cnodes[i]];
     qy = U[2][cnodes[i]];
-    vx = 2.0 * h * qx / (h*h + std::max(h*h, 1.e-14));
-    vy = 2.0 * h * qy / (h*h + std::max(h*h, 1.e-14));
+    double factor = inverse_with_tolerance(h);
+    vx = factor*qx;
+    vy = factor*qy;
     
     S = std::max(std::abs(vx) + std::sqrt(g_*h), std::abs(vy) + std::sqrt(g_*h));
     Smax = std::max(Smax, S);
@@ -854,9 +902,11 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
   
   double alpha = 1.0* lmax * Smax;
   
-  for (int m = 0; m < 3; ++m) {
+  for (int m = 0; m < 3; ++m) { // change back to m = 0 to m < 3
     integral[m] += alpha * (U[m][j] - U_avg[m]);
   }
+  
+  //integral[0] += alpha * (U[0][j] + B_n[0][j] - U_avg[0] - B_avg);
   
   return integral;
 }
@@ -1172,6 +1222,67 @@ std::vector<double> ShallowWater_PK::basis_grad_quad(int i, int c, AmanziGeometr
 
 
 //--------------------------------------------------------------
+// Jacobian \partial F/ \partial U
+//--------------------------------------------------------------
+std::vector<std::vector<double>> ShallowWater_PK::Jacobian(int i, int c, std::vector<double> U)
+{
+  std::vector<std::vector<double>> J(3);
+  
+  J[0].resize(3); J[1].resize(3); J[2].resize(3);
+  
+  double h = U[0], u = U[1]/(h + 1.e-12), v = U[2]/(h + 1.e-12);
+  std::vector<double> n(2); // sum of the negative of the two normal vectors opposite the vertex
+  n = normals_opposite_vertex(i, c);
+  
+  J[0][0] = 0.0*n[0] + 0.0*n[1];
+  J[0][1] = 1.0*n[0] + 0.0*n[1];
+  J[0][2] = 0.0*n[0] + 1.0*n[1];
+  
+  J[1][0] = (-u*u + g_ * h)*n[0] + (-u*v)*n[1];
+  J[1][1] = 2*u*n[0] + v*n[1];
+  J[1][2] = 0.0*n[0] + u*n[1];
+  
+  J[2][0] = (-u*v)*n[0] + (-v*v + g_ * h)*n[1];
+  J[2][1] = v*n[0] + 0.0*n[1];
+  J[2][2] = u*n[0] + 2*v*n[1];
+  
+  return J;
+}
+
+
+//--------------------------------------------------------------
+// Find normals to faces opposite to vertex
+//--------------------------------------------------------------
+std::vector<double> ShallowWater_PK::normals_opposite_vertex(int i, int c)
+{
+  std::vector<double> normal_opposite_vertex(2);
+  normal_opposite_vertex[0] = 0.0; normal_opposite_vertex[1] = 0.0;
+  
+  AmanziMesh::Entity_ID_List face_nodes, cfaces;
+  mesh_->cell_get_faces(c, &cfaces);
+  Amanzi::AmanziGeometry::Point x0, x1;
+
+  for (int f = 0; f < cfaces.size(); ++f) {
+    
+    mesh_->face_get_nodes(cfaces[f], &face_nodes);
+    mesh_->node_get_coordinates(face_nodes[0], &x0);
+    mesh_->node_get_coordinates(face_nodes[1], &x1);
+    
+    if (face_nodes[0] == i || face_nodes[1] == i) {
+      double farea = mesh_->face_area(cfaces[f]);
+      const auto& xf = mesh_->face_centroid(cfaces[f]);
+      const auto& normal = mesh_->face_normal(cfaces[f]);
+      
+      normal_opposite_vertex[0] += -normal[0];
+      normal_opposite_vertex[1] += -normal[1];
+    }
+  }
+  
+  return normal_opposite_vertex;
+}
+
+
+//--------------------------------------------------------------
 // Physical source term S(U) = (0, -ghB_x, -ghB_y)
 //--------------------------------------------------------------
 std::vector<double> ShallowWater_PK::PhysicalSource(const std::vector<double>& U)
@@ -1249,6 +1360,20 @@ double ShallowWater_PK::get_dt()
     return 0.1 * cfl_ * dt_min;
   else
     return cfl_ * dt_min;
+}
+
+
+//--------------------------------------------------------------
+// Inversion operation protected for small values
+//--------------------------------------------------------------
+double inverse_with_tolerance(double h)
+{
+  double eps(1e-6), eps2(1e-12);  // hard-coded tolerances
+  
+  if (h > eps) return 1.0 / h;
+  
+  double h2 = h * h;
+  return 2 * h / (h2 + std::fmax(h2, eps2));
 }
 
 

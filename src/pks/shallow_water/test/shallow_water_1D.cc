@@ -23,6 +23,10 @@
 
 #include "OutputXDMF.hh"
 
+
+double interface = 1000.0;
+double hL_val = 10.0;
+double hR_val = 0.0;
 //--------------------------------------------------------------
 // analytic solution
 //--------------------------------------------------------------
@@ -30,25 +34,54 @@ void dam_break_1D_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                         Teuchos::RCP<Amanzi::State>& S)
 {
   int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int nnodes_owned = mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   std::string passwd = "state";
 
   Epetra_MultiVector& B_vec_c = *S->GetFieldData("surface-bathymetry",passwd)->ViewComponent("cell");
+  Epetra_MultiVector& B_vec_n = *S->GetFieldData("surface-bathymetry",passwd)->ViewComponent("node");
   Epetra_MultiVector& h_vec_c = *S->GetFieldData("surface-ponded_depth",passwd)->ViewComponent("cell");
+  Epetra_MultiVector& h_vec_n = *S->GetFieldData("surface-ponded_depth",passwd)->ViewComponent("node");
   Epetra_MultiVector& ht_vec_c = *S->GetFieldData("surface-total_depth",passwd)->ViewComponent("cell");
-
+  Epetra_MultiVector& ht_vec_n = *S->GetFieldData("surface-total_depth",passwd)->ViewComponent("node");
+  Epetra_MultiVector& vel_vec_c = *S->GetFieldData("surface-velocity",passwd)->ViewComponent("cell");
+  Epetra_MultiVector& vel_vec_n = *S->GetFieldData("surface-velocity",passwd)->ViewComponent("node");
+  Epetra_MultiVector& q_vec_c = *S->GetFieldData("surface-discharge", "surface-discharge")->ViewComponent("cell");
+  Epetra_MultiVector& q_vec_n = *S->GetFieldData("surface-discharge", "surface-discharge")->ViewComponent ("node");
+  
   for (int c = 0; c < ncells_owned; c++) {
     Amanzi::AmanziGeometry::Point xc = mesh->cell_centroid(c);
-    if (xc[0] < 1000.) {
-      h_vec_c[0][c] = 10.;
+    if (xc[0] < interface) {
+      h_vec_c[0][c] = hL_val;
     } else {
-      h_vec_c[0][c] = 0.; //0.0000000001;
+      h_vec_c[0][c] = hR_val; //0.0000000001;
     }
     ht_vec_c[0][c] = h_vec_c[0][c] + B_vec_c[0][c];
   }
 
   S->GetFieldData("surface-velocity", passwd)->PutScalar(0.0);
   S->GetFieldData("surface-discharge", "surface-discharge")->PutScalar(0.0);
+  
+  for (int n = 0; n < nnodes_owned; ++n) {
+    Amanzi::AmanziGeometry::Point node_crd;
+    
+    mesh->node_get_coordinates(n, &node_crd); // Coordinate of current node
+        
+    double x = node_crd[0], y = node_crd[1];
+    
+    if (x < interface) {
+      h_vec_n[0][n] = hL_val;
+    } else {
+      h_vec_n[0][n] = hR_val; //0.0000000001;
+    }
+    ht_vec_n[0][n] = h_vec_n[0][n] + B_vec_n[0][n];
+    q_vec_n[0][n] = 0.0;
+    q_vec_n[1][n] = 0.0;
+    vel_vec_n[0][n] = 0.0;
+    vel_vec_n[1][n] = 0.0;
+  }
+  
+  
 }
 
 
@@ -78,8 +111,10 @@ void dam_break_1D_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 {
   double hL, x0, x, h, u;
 
-  hL = 10.;
-  x0 = 1000.;
+//  hL = 1.;
+//  x0 = 1.;
+  hL = hL_val;
+  x0 = interface;
 
   int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
@@ -173,7 +208,7 @@ TEST(SHALLOW_WATER_1D) {
   MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
 
-  RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 2000.0, 50.0, 1000, 1, request_faces, request_edges);
+  RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 2*interface, 50.0, 1000, 2, request_faces, request_edges);
   // mesh = meshfactory.create("test/median63x64.exo",request_faces,request_edges); // works only with first order, no reconstruction
 
   // create a state
@@ -197,11 +232,24 @@ TEST(SHALLOW_WATER_1D) {
   dam_break_1D_setIC(mesh, S);
   S->CheckAllFieldsInitialized();
 
-  const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth")->ViewComponent("cell");
-  const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
-  const Epetra_MultiVector& vel = *S->GetFieldData("surface-velocity")->ViewComponent("cell");
-  const Epetra_MultiVector& q = *S->GetFieldData("surface-discharge")->ViewComponent("cell");
-  const Epetra_MultiVector& B = *S->GetFieldData("surface-bathymetry")->ViewComponent("cell");
+//  const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth")->ViewComponent("cell");
+//  const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
+//  const Epetra_MultiVector& vel = *S->GetFieldData("surface-velocity")->ViewComponent("cell");
+//  const Epetra_MultiVector& q = *S->GetFieldData("surface-discharge")->ViewComponent("cell");
+//  const Epetra_MultiVector& B = *S->GetFieldData("surface-bathymetry")->ViewComponent("cell");
+  
+  const Epetra_MultiVector &B = *S->GetFieldData("surface-bathymetry")->ViewComponent("cell");
+  const Epetra_MultiVector &Bn = *S->GetFieldData("surface-bathymetry")->ViewComponent("node");
+  const Epetra_MultiVector &hh = *S->GetFieldData("surface-ponded_depth")->ViewComponent("cell");
+  const Epetra_MultiVector &hhn = *S->GetFieldData("surface-ponded_depth")->ViewComponent("node");
+  const Epetra_MultiVector &ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
+  const Epetra_MultiVector &htn = *S->GetFieldData("surface-total_depth")->ViewComponent("node");
+  const Epetra_MultiVector &vel = *S->GetFieldData("surface-velocity")->ViewComponent("cell");
+  const Epetra_MultiVector &veln = *S->GetFieldData("surface-velocity")->ViewComponent("node");
+  const Epetra_MultiVector &q = *S->GetFieldData("surface-discharge")->ViewComponent("cell");
+  const Epetra_MultiVector &qn = *S->GetFieldData("surface-discharge")->ViewComponent("node");
+  const Epetra_MultiVector &p = *S->GetFieldData("surface-ponded_pressure")->ViewComponent("cell");
+  
 
   // create pid vector
   Epetra_MultiVector pid(B);
@@ -237,6 +285,18 @@ TEST(SHALLOW_WATER_1D) {
 
     if (iter % 5 == 0) {
       io.InitializeCycle(t_out, iter, "");
+//      io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
+//      io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
+//      io.WriteVector(*vel(0), "vx", AmanziMesh::CELL);
+//      io.WriteVector(*vel(1), "vy", AmanziMesh::CELL);
+//      io.WriteVector(*q(0), "qx", AmanziMesh::CELL);
+//      io.WriteVector(*q(1), "qy", AmanziMesh::CELL);
+//      io.WriteVector(*B(0), "B", AmanziMesh::CELL);
+//      io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
+//
+//      io.WriteVector(*hh_ex(0), "hh_ex", AmanziMesh::CELL);
+//      io.WriteVector(*vel_ex(0), "vx_ex", AmanziMesh::CELL);
+      
       io.WriteVector(*hh(0), "depth", AmanziMesh::CELL);
       io.WriteVector(*ht(0), "total_depth", AmanziMesh::CELL);
       io.WriteVector(*vel(0), "vx", AmanziMesh::CELL);
@@ -244,10 +304,21 @@ TEST(SHALLOW_WATER_1D) {
       io.WriteVector(*q(0), "qx", AmanziMesh::CELL);
       io.WriteVector(*q(1), "qy", AmanziMesh::CELL);
       io.WriteVector(*B(0), "B", AmanziMesh::CELL);
+      io.WriteVector(*p(0), "hyd pressure", AmanziMesh::CELL);
+      io.WriteVector(*Bn(0), "B_n", AmanziMesh::NODE);
+      io.WriteVector(*hhn(0), "hh_n", AmanziMesh::NODE);
+      io.WriteVector(*htn(0), "ht_n", AmanziMesh::NODE);
+      io.WriteVector(*veln(0), "vel_n_x", AmanziMesh::NODE);
+      io.WriteVector(*veln(1), "vel_n_y", AmanziMesh::NODE);
+      io.WriteVector(*qn(0), "qn_x", AmanziMesh::NODE);
+      io.WriteVector(*qn(1), "qn_y", AmanziMesh::NODE);
+      
       io.WriteVector(*pid(0), "pid", AmanziMesh::CELL);
-
+      
       io.WriteVector(*hh_ex(0), "hh_ex", AmanziMesh::CELL);
       io.WriteVector(*vel_ex(0), "vx_ex", AmanziMesh::CELL);
+//      io.WriteVector(*vel_ex(1), "vy_ex", AmanziMesh::CELL);
+      
       io.FinalizeCycle();
     }
 
@@ -264,6 +335,10 @@ TEST(SHALLOW_WATER_1D) {
     if (iter == 1) {
       ConservationCheck(mesh, hh, ht, vel, B, TEini);
       if (MyPID == 0) std::cout << "cycle= " << iter << "  initial TE=" << TEini << "  dt=" << dt << std::endl;
+    }
+    
+    if (iter % 20 == 0) {
+      std::cout<<"time: "<<t_new<<std::endl;
     }
   }
 
