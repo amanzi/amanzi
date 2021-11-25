@@ -939,7 +939,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 //        	std::cout << "j = " << j << ", cnodes[j] = " << cnodes[j] << ", U[m][cnodes[j]] = " << U[m][cnodes[j]] << std::endl;
             U_av[m] += U[m][cnodes[j]];
            }
-           U_av[m] /= 3.;
+           U_av[m] /= cnodes.size().;
         }
 
 //        std::cout << "U_av = " << U_av[0] << " " << U_av[1] << " " << U_av[2] << std::endl;
@@ -1356,52 +1356,52 @@ std::vector<double> ShallowWater_PK::ResidualsLF(int K, int j, std::vector<std::
 
 //  // 1a. calculate volume integral of [0,gH grad (H+B)]
   std::vector<double> Uqp(3);
-//  for (int qp = 0; qp < weights_vol_[K].size(); ++qp ) {
-//    Uqp = EvalSol_vol(U, qp, K);
-//
-//    std::vector<double> gradHtot_qp(2,0.);
-//    for (int i = 0; i < cnodes.size(); ++i) {
-//      gradHtot_qp[0] += ht_n[0][cnodes[i]] * phi_x_[K][cnodes[i]][qp];
-//      gradHtot_qp[1] += ht_n[0][cnodes[i]] * phi_y_[K][cnodes[i]][qp];
-//	}
-//
-////    std::cout << "------ gradHtot_qp in K = " << K << std::endl;
-////    std::cout << gradHtot_qp[0] << std::endl;
-////    std::cout << gradHtot_qp[1] << std::endl;
+  for (int qp = 0; qp < weights_vol_[K].size(); ++qp ) {
+    Uqp = EvalSol_vol(U, qp, K);
+
+    std::vector<double> gradHtot_qp(2,0.);
+    for (int i = 0; i < cnodes.size(); ++i) {
+      gradHtot_qp[0] += ht_n[0][cnodes[i]] * phi_x_[K][cnodes[i]][qp];
+      gradHtot_qp[1] += ht_n[0][cnodes[i]] * phi_y_[K][cnodes[i]][qp];
+	}
+
+//    std::cout << "------ gradHtot_qp in K = " << K << std::endl;
+//    std::cout << gradHtot_qp[0] << std::endl;
+//    std::cout << gradHtot_qp[1] << std::endl;
+
+    double h_qp = Uqp[0];
+    integral[0] += 0.;
+    integral[1] += g_*h_qp*gradHtot_qp[0] * weights_vol_[K][qp];
+    integral[2] += g_*h_qp*gradHtot_qp[1] * weights_vol_[K][qp];
+
+//    double phi_j = phi_[K][j][qp];
 //
 //    double h_qp = Uqp[0];
 //    integral[0] += 0.;
-//    integral[1] += g_*h_qp*gradHtot_qp[0] * weights_vol_[K][qp];
-//    integral[2] += g_*h_qp*gradHtot_qp[1] * weights_vol_[K][qp];
+//    integral[1] += g_*h_qp*gradHtot_qp[0] * phi_j * weights_vol_[K][qp];
+//    integral[2] += g_*h_qp*gradHtot_qp[1] * phi_j * weights_vol_[K][qp];
+
+  }
+
+//  // average depth
+//  double Hav = 0.;
+//  for (int i = 0; i < cnodes.size(); ++i) {
+//      Hav += U[0][cnodes[i]];
+//  }
+//  Hav /= nNodes;
 //
-////    double phi_j = phi_[K][j][qp];
-////
-////    double h_qp = Uqp[0];
-////    integral[0] += 0.;
-////    integral[1] += g_*h_qp*gradHtot_qp[0] * phi_j * weights_vol_[K][qp];
-////    integral[2] += g_*h_qp*gradHtot_qp[1] * phi_j * weights_vol_[K][qp];
+//  for (int i = 0; i < cnodes.size(); ++i) {
+//	  std::vector<double> nj(2);
+//	  nj[0] = 2.*mesh_->cell_volume(K)*phi_x_[K][cnodes[i]][0]; // can take qp = 0 because grad phi is constant
+//	  nj[1] = 2.*mesh_->cell_volume(K)*phi_y_[K][cnodes[i]][0];
+//
+//	  integral[0] += 0.;
+//	  integral[1] += (U[0][cnodes[i]] + B_n[0][cnodes[i]])*nj[0];
+//	  integral[2] += (U[0][cnodes[i]] + B_n[0][cnodes[i]])*nj[1];
 //
 //  }
-
-  // average depth
-  double Hav = 0.;
-  for (int i = 0; i < cnodes.size(); ++i) {
-      Hav += U[0][cnodes[i]];
-  }
-  Hav /= nNodes;
-
-  for (int i = 0; i < cnodes.size(); ++i) {
-	  std::vector<double> nj(2);
-	  nj[0] = 2.*mesh_->cell_volume(K)*phi_x_[K][cnodes[i]][0]; // can take qp = 0 because grad phi is constant
-	  nj[1] = 2.*mesh_->cell_volume(K)*phi_y_[K][cnodes[i]][0];
-
-	  integral[0] += 0.;
-	  integral[1] += (U[0][cnodes[i]] + B_n[0][cnodes[i]])*nj[0];
-	  integral[2] += (U[0][cnodes[i]] + B_n[0][cnodes[i]])*nj[1];
-
-  }
-
-  for (int m = 0; m < 3; ++m) integral[m] *= 0.5*g_*Hav;
+//
+//  for (int m = 0; m < 3; ++m) integral[m] *= 0.5*g_*Hav;
 
 //  // 1b. Calculate volume integral of [Hu, Hu*u] times grad phi
 //  std::vector<std::vector<double>> flux(2);
