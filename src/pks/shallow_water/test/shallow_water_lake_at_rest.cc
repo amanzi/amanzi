@@ -290,14 +290,14 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
   std::vector<double> dx, Linferror, L1error, L2error;
     
   // Rectangular mesh
-//  RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 25, 25, request_faces, request_edges);
+  RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 25, 25, request_faces, request_edges);
     
   // Polygonal meshes
 //  RCP<Mesh> mesh = meshfactory.create ("test/median15x16.exo");
 //  RCP<Mesh> mesh = meshfactory.create ("test/random40.exo");
 //  RCP<Mesh> mesh = meshfactory.create ("test/triangular16.exo");
 //  RCP<Mesh> mesh = meshfactory.create ("test/triangular8.exo");
-  RCP<Mesh> mesh = meshfactory.create ("test/square.exo");
+//  RCP<Mesh> mesh = meshfactory.create ("test/square.exo");
   
   // Create a state
         

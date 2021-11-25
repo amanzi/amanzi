@@ -108,7 +108,9 @@ class ShallowWater_PK : public PK_Physical,
   std::vector<double> EvalSol_face(std::vector<std::vector<double>> U, int qpf, int f);
   std::vector<double> EvalPhySource_vol(std::vector<std::vector<double>> U, int qp, int c);
   double basis_value(int i, int c, AmanziGeometry::Point x);
+  double basis_value_quad(int i, int c, AmanziGeometry::Point x);
   std::vector<double> basis_grad(int i, int c, AmanziGeometry::Point x);
+  std::vector<double> basis_grad_quad(int i, int c, AmanziGeometry::Point x);
   std::vector<double> get_barycentric(std::vector<AmanziGeometry::Point> vertices, AmanziGeometry::Point x);
 
   // access
