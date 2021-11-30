@@ -403,7 +403,20 @@ class State {
   Teuchos::RCP<Field> CheckConsistent_or_die_(Key fieldname,
           FieldType type, Key owner);
 
-private:
+  // debug help -- provides breakpoints for developers to find when fields and
+  // evals are created.
+  //
+  // Often, Arcos errors on the second call to RequireField or
+  // RequireFieldEvaluator, because the request is different from the first
+  // one.  If the second one is the "wrong" one, this is fine.  If the first
+  // one is the "wrong" one, it can be hard to know what code is requiring the
+  // field with the wrong metadata.  These functions are called in
+  // RequireField() and RequireFieldEvaluator(), and allow breakpoints to be
+  // set so the developer can trap the first call.
+  void CheckIsDebugEval_(const Key& eval);
+  void CheckIsDebugField_(const Key& field);
+
+ private:
   Teuchos::RCP<VerboseObject> vo_;
 
   // Containers
