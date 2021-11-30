@@ -95,7 +95,8 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
       parent_->get_set_entities_and_vofs(r->name(), FACE, Parallel_type::OWNED, &faces_in_set, &vofs);
       sets_[r->id()] = std::find(faces_in_set.begin(), faces_in_set.end(),
               parent_face_) != faces_in_set.end();
-
+    } else if (r->type() == AmanziGeometry::ALL) {
+      sets_[r->id()] = true;
     } else if (r->is_geometric()) {
       // check containment
       if (r->space_dimension() == 3) {
