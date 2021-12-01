@@ -136,24 +136,12 @@ class SolverNKA_BT_ATS : public Solver<Vector, VectorSpace> {
   }
 
   // access
-  double tolerance() {
-    return tol_;
-  }
-  double residual() {
-    return residual_;
-  }
-  int num_itrs() {
-    return num_itrs_;
-  }
-  int pc_calls() {
-    return pc_calls_;
-  }
-  int pc_updates() {
-    return pc_updates_;
-  }
-  int returned_code() {
-    return returned_code_;
-  }
+  double tolerance() { return tol_; }
+  double residual() { return residual_; }
+  int num_itrs() { return num_itrs_; }
+  int pc_calls() { return pc_calls_; }
+  int pc_updates() { return pc_updates_; }
+  int returned_code() { return returned_code_; }
 
  private:
   void Init_();
@@ -218,7 +206,7 @@ SolverNKA_BT_ATS<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vecto
   }
 
   // update the verbose options
-  vo_ = Teuchos::rcp(new VerboseObject("Solver::NKA_BT_ATS", plist_,map->getComm()));
+  vo_ = Teuchos::rcp(new VerboseObject("Solver::NKA_BT_ATS", plist_));
 }
 
 

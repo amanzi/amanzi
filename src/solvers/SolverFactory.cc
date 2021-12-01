@@ -14,7 +14,7 @@
 //#include "SolverAA.hh"
 #include "SolverNKA.hh"
 //#include "SolverNKA_LS.hh"
-//#include "SolverNKA_BT_ATS.hh"
+#include "SolverNKA_BT_ATS.hh"
 //#include "SolverNKA_LS_ATS.hh"
 #include "SolverNewton.hh"
 //#include "SolverNox.hh"
@@ -101,16 +101,16 @@ SolverFactory<Vector, VectorSpace>::Create(Teuchos::ParameterList& slist)
     //  Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
     //      Teuchos::rcp(new SolverNKA_LS<Vector,VectorSpace>(nka_list));
     //  return solver;
-    //} else if (type == "nka_bt_ats") {
-    //  if (!slist.isSublist("nka_bt_ats parameters")) {
-    //    Errors::Message msg("SolverFactory: missing sublist \"nka_bt_ats parameters\"");
-    //    Exceptions::amanzi_throw(msg);
-    //  }
-    //  Teuchos::ParameterList nka_list = slist.sublist("nka_bt_ats parameters");
-    //  if (!nka_list.isSublist("verbose object")) nka_list.set("verbose object", slist.sublist("verbose object"));
-    //  Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
-    //      Teuchos::rcp(new SolverNKA_BT_ATS<Vector,VectorSpace>(nka_list));
-    //  return solver;
+    } else if (type == "nka_bt_ats") {
+      if (!slist.isSublist("nka_bt_ats parameters")) {
+        Errors::Message msg("SolverFactory: missing sublist \"nka_bt_ats parameters\"");
+        Exceptions::amanzi_throw(msg);
+      }
+      Teuchos::ParameterList nka_list = slist.sublist("nka_bt_ats parameters");
+      if (!nka_list.isSublist("verbose object")) nka_list.set("verbose object", slist.sublist("verbose object"));
+      Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
+          Teuchos::rcp(new SolverNKA_BT_ATS<Vector,VectorSpace>(nka_list));
+      return solver;
     //} else if (type == "nka_ls_ats") {
     //  if (!slist.isSublist("nka_ls_ats parameters")) {
     //    Errors::Message msg("SolverFactory: missing sublist \"nka_ls_ats parameters\"");
