@@ -32,7 +32,8 @@ int main(int argc, char *argv[])
   if (argc < 4) {
     std::cout <<
       "Usage: verify_operators  with_pc|direct  mesh_type  mesh_size|mesh_file  scheme  tol  nloops  linsolver  test_id  device\n\n"
-      "  (req) with_pc   = identity|diagonal|ifpack2: ILUT|ifpack2: RILUK\n"
+      "  (req) with_pc   = identity|diagonal\n"
+      "                    ifpack2: ILUT|ifpack2: RILUK|ifpack2: SCHWARZ\n"
       "                    Hypre: AMG|Hypre: Euclid\n"
       "                    Trilinos: ML|Trilinos: MueLu\n"
       "  (req) direct    = Amesos1: KLU|Amesos2: Basker|Amesos2: SuperLUDist\n\n"
@@ -302,6 +303,15 @@ TEST(Verify_Mesh_and_Operators) {
       .set<std::string>("preconditioning method", "ifpack2: ILUT").sublist("ifpack2: ILUT parameters")
       .set<double>("fact: ilut level-of-fill", 1)
       .set<double>("fact: drop tolerance", 0.0);
+
+  plist->sublist("preconditioners").sublist("ifpack2: SCHWARZ")
+      .set<std::string>("preconditioning method", "ifpack2: SCHWARZ").sublist("ifpack2: SCHWARZ parameters")
+      .set<std::string>("schwarz: combine mode", "add")
+      .set<int>("schwarz: overlap level", 0)
+      .set<bool>("schwarz: use reordering", false)
+      .set<std::string>("schwarz: inner preconditioner name", "ILUT")
+      .sublist("schwarz: inner preconditioner parameters")
+        .set<double>("fact: ilut level-of-fill", 1.0);
 
   // -- RILUK: a modified variant of the ILU(k) factorization
   plist->sublist("preconditioners").sublist("ifpack2: RILUK")

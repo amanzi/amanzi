@@ -126,7 +126,6 @@ void testWGravity(const Teuchos::RCP<AnalyticBase>& ana,
 #define NLFV 0
 #define ASSEMBLING 1
 
-
 /* *****************************************************************
 * Exactness test for mixed diffusion solver.
 */

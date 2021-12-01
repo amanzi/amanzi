@@ -168,8 +168,8 @@
       <Parameter name="preconditioning method" type="string" value="ifpack2: SCHWARZ"/>
       <ParameterList name="ifpack2: SCHWARZ parameters">
         <Parameter name="schwarz: combine mode" type="string" value="add"/>
-        <Parameter name="schwarz: overlap level" type="int" value="1"/>
-        <Parameter name="schwarz: use reordering" type="bool" value="false"/>-->
+        <Parameter name="schwarz: overlap level" type="int" value="0"/>
+        <Parameter name="schwarz: use reordering" type="bool" value="false"/>
         <Parameter name="schwarz: inner preconditioner name" type="string" value="ILUT"/>
         <ParameterList name="schwarz: inner preconditioner parameters">
           <Parameter name="fact: ilut level-of-fill" type="double" value="1.0"/>
