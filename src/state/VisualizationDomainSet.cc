@@ -15,12 +15,14 @@
 namespace Amanzi {
 
 void
-VisualizationDomainSet::WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names ) const
+VisualizationDomainSet::WriteVector(const Epetra_MultiVector& vec,
+        const std::vector<std::string>& names ) const
 {
   Key varname = Keys::getVarName(names[0]);
   if (!lifted_vectors_.count(varname)) {
     // create a lifted vector if we don't currently have one
-    auto lifted_vec = Teuchos::rcp(new Epetra_MultiVector(mesh()->cell_map(false), vec.NumVectors()));
+    auto lifted_vec = Teuchos::rcp(new Epetra_MultiVector(mesh()->cell_map(false),
+            vec.NumVectors()));
 
     // also create a lifted set of names
     std::vector<std::string> lifted_names;
@@ -37,7 +39,8 @@ VisualizationDomainSet::WriteVector(const Epetra_MultiVector& vec, const std::ve
   auto subdomain = subdomains_.at(Keys::getDomain(names[0]));
   for (int j=0; j!=vec.NumVectors(); ++j) {
     for (int c=0; c!=vec.MyLength(); ++c) {
-      lifted_vec[j][subdomain->entity_get_parent(AmanziMesh::Entity_kind::CELL, c)] = vec[j][c];
+      auto parent_id = subdomain->entity_get_parent(AmanziMesh::Entity_kind::CELL, c);
+      lifted_vec[j][parent_id] = vec[j][c];
     }
   }
 }
@@ -71,6 +74,23 @@ VisualizationDomainSet::WriteVector(const Epetra_Vector& vec, const std::string&
 void
 VisualizationDomainSet::FinalizeTimestep() const
 {
+  // FIXME -- Have to confirm that these are collective.  Some evals may only
+  // be on some submeshes, meaning that the lifted vector may be on a subset of
+  // processes.  Therefore each lifted vector much confirm it is collective
+  // before trying to write. See #636
+  //
+  // For now we just error...  Note that even this error could be fooled if the
+  // set of lifted vector keys are different, but the same number, on each
+  // process.  In that case, vis would just totally be messed up, or maybe
+  // would error later when # of DoF mismatches were found.
+  int l_nlifted = lifted_vectors_.size();
+  int g_nlifted = -1;
+  mesh()->get_comm()->MaxAll(&l_nlifted, &g_nlifted, 1);
+  if (l_nlifted != g_nlifted) {
+    Errors::Message msg("VisualizationDomainSet: the number of lifted vectors on each process differs.  See Amanzi #636");
+    Exceptions::amanzi_throw(msg);
+  }
+
   // write the lifted vectors
   for (const auto& vecs : lifted_vectors_) {
     if (vecs.second.first->NumVectors() == 1) {

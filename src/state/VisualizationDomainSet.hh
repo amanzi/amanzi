@@ -54,23 +54,29 @@ namespace Amanzi {
 
 class VisualizationDomainSet : public Visualization {
  public:
-  VisualizationDomainSet(Teuchos::ParameterList& plist) : Visualization(plist) {
+  VisualizationDomainSet(Teuchos::ParameterList& plist)
+    : Visualization(plist) {
     write_partition_ = false; // doesn't work yet
   }
 
-  void set_subdomain_mesh(const Key& subdomain, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) {
+  void set_subdomain_mesh(const Key& subdomain,
+                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) {
     subdomains_[subdomain] = mesh;
   }
 
   // public interface for data clients
-  virtual void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names ) const override;
-  virtual void WriteVector(const Epetra_Vector& vec, const std::string& name ) const override;
+  virtual void WriteVector(const Epetra_MultiVector& vec,
+                           const std::vector<std::string>& names ) const override;
+  virtual void WriteVector(const Epetra_Vector& vec,
+                           const std::string& name ) const override;
 
   virtual void FinalizeTimestep() const override;
 
  protected:
   // note this is lazily constructed, so must be mutable
-  mutable std::map<std::string, std::pair<Teuchos::RCP<Epetra_MultiVector>, std::vector<std::string>>> lifted_vectors_;
+  mutable std::map<std::string,
+                   std::pair<Teuchos::RCP<Epetra_MultiVector>,
+                             std::vector<std::string>>> lifted_vectors_;
 
   std::map<Key, Teuchos::RCP<const AmanziMesh::Mesh>> subdomains_;
 };

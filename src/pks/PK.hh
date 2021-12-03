@@ -108,7 +108,7 @@ class PK {
     }
 
     // set up the VerboseObject
-    vo_ = Teuchos::rcp(new VerboseObject(name_, *plist_));
+    vo_ = Teuchos::rcp(new VerboseObject(solution->Comm(), name_, *plist_));
   };
 
   // Virtual destructor

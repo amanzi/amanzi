@@ -35,7 +35,14 @@ SecondaryVariableFieldEvaluator::SecondaryVariableFieldEvaluator(
     for (const auto& dep : deps) {
       dependencies_.insert(dep);
     }
-  }
+  } else if (plist_.isParameter("evaluator dependency suffixes")) {
+    auto names = plist_.get<Teuchos::Array<std::string>>("evaluator dependency suffixes");
+    Key domain = Keys::getDomain(my_key_);
+    for (auto name : names) {
+      Key varname = Keys::getKey(domain, name);
+      dependencies_.insert(varname);
+    }
+  } // else the evaluator itself will deal with dependencies
 
   check_derivative_ = plist_.get<bool>("check derivatives", false);
 

@@ -40,7 +40,8 @@ UnstructuredObservations::UnstructuredObservations(
     Teuchos::ParameterList& oq_list = plist.sublist("observed quantities");
     for (auto it : oq_list) {
       if (oq_list.isSublist(it.first)) {
-        auto obs = Teuchos::rcp(new Observable(oq_list.sublist(it.first)));
+        // for now, all of this is on MPI_COMM_WORLD
+        auto obs = Teuchos::rcp(new Observable(getDefaultComm(), oq_list.sublist(it.first)));
         observables_.emplace_back(obs);
         time_integrated_ |= obs->is_time_integrated();
       } else {
@@ -58,7 +59,7 @@ UnstructuredObservations::UnstructuredObservations(
 
   } else {
     // old style, single list/single entry
-    auto obs = Teuchos::rcp(new Observable(plist));
+    auto obs = Teuchos::rcp(new Observable(getDefaultComm(), plist));
     observables_.emplace_back(obs);
     time_integrated_ |= obs->is_time_integrated();
   }
@@ -71,7 +72,6 @@ UnstructuredObservations::UnstructuredObservations(
   Utils::Units unit;
   bool flag = false;
   time_unit_factor_ = unit.ConvertTime(1., "s", time_unit_, flag);
-  writing_domain_ = plist.get<std::string>("domain", "NONE");
 }
 
 void UnstructuredObservations::Setup(const Teuchos::Ptr<State>& S)
@@ -81,20 +81,7 @@ void UnstructuredObservations::Setup(const Teuchos::Ptr<State>& S)
 
   // what rank writes the file?
   write_ = false;
-  if (writing_domain_ == "NONE") {
-    if (observables_.size() > 0) {
-      writing_domain_ = Keys::getDomain(observables_[0]->get_variable());
-    } else {
-      if (getDefaultComm()->MyPID() == 0) {
-        write_ = true;
-      }
-    }
-  }
-  if (writing_domain_ != "NONE") {
-    if (S->GetMesh(writing_domain_)->get_comm()->MyPID() == 0) {
-      write_ = true;
-    }
-  }
+  if (getDefaultComm()->MyPID() == 0) write_ = true;
 }
 
 void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
@@ -105,7 +92,12 @@ void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
       obs->FinalizeStructure(S);
     }
     num_total_ = 0;
-    for (const auto& obs : observables_) num_total_ += obs->get_num_vectors();
+    for (const auto& obs : observables_) {
+      int num_local = obs->get_num_vectors();
+      int num_global = -1;
+      getDefaultComm()->MaxAll(&num_local, &num_global, 1);
+      num_total_ += num_global;
+    }
     integrated_observation_.resize(num_total_);
     observed_once_ = true;
 

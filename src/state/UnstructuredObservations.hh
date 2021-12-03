@@ -67,7 +67,6 @@ class UnstructuredObservations : public IOEvent {
  private:
   std::vector<Teuchos::RCP<Observable>> observables_;
 
-  std::string writing_domain_;
   bool write_;
   int num_total_;
   std::string filename_;

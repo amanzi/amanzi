@@ -160,7 +160,7 @@ TEST_FIXTURE(obs_test, ObservePoint) {
   obs_list.set<std::string>("location name", "cell");
   obs_list.set<std::string>("functional", "point");
 
-  Observable obs(obs_list);
+  Observable obs(getDefaultComm(), obs_list);
   obs.Setup(S.ptr());
   obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
@@ -178,7 +178,7 @@ TEST_FIXTURE(obs_test, ObserveIntensiveIntegral) {
   obs_list.set<std::string>("location name", "cell");
   obs_list.set<std::string>("functional", "integral");
 
-  Observable obs(obs_list);
+  Observable obs(getDefaultComm(), obs_list);
   obs.Setup(S.ptr());
   obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
@@ -197,7 +197,7 @@ TEST_FIXTURE(obs_test, ObserveExtensiveIntegral) {
   obs_list.set<std::string>("location name", "cell");
   obs_list.set<std::string>("functional", "extensive integral");
 
-  Observable obs(obs_list);
+  Observable obs(getDefaultComm(), obs_list);
   obs.Setup(S.ptr());
   obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
@@ -216,7 +216,7 @@ TEST_FIXTURE(obs_test, ObserveAverage) {
   obs_list.set<std::string>("location name", "cell");
   obs_list.set<std::string>("functional", "average");
 
-  Observable obs(obs_list);
+  Observable obs(getDefaultComm(), obs_list);
   obs.Setup(S.ptr());
   obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
@@ -234,7 +234,7 @@ TEST_FIXTURE(obs_test, ObserveMin) {
   obs_list.set<std::string>("location name", "cell");
   obs_list.set<std::string>("functional", "minimum");
 
-  Observable obs(obs_list);
+  Observable obs(getDefaultComm(), obs_list);
   obs.Setup(S.ptr());
   obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
@@ -252,7 +252,7 @@ TEST_FIXTURE(obs_test, ObserveMax) {
   obs_list.set<std::string>("location name", "cell");
   obs_list.set<std::string>("functional", "maximum");
 
-  Observable obs(obs_list);
+  Observable obs(getDefaultComm(), obs_list);
   obs.Setup(S.ptr());
   obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
@@ -273,7 +273,7 @@ TEST_FIXTURE(obs_test, Face) {
   obs_list.set<std::string>("functional", "extensive integral");
   obs_list.set("direction normalized flux", true);
 
-  Observable obs(obs_list);
+  Observable obs(getDefaultComm(), obs_list);
   obs.Setup(S.ptr());
   obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
@@ -295,7 +295,7 @@ TEST_FIXTURE(obs_test, Face_NORMALIZED_REL_VOLUME) {
   obs_list.set("direction normalized flux", true);
   obs_list.set("direction normalized flux relative to region", "one side volume");
 
-  Observable obs(obs_list);
+  Observable obs(getDefaultComm(), obs_list);
   obs.Setup(S.ptr());
   obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
@@ -315,7 +315,7 @@ TEST_FIXTURE(obs_test, MULTI_DOF_OBS_ALL) {
   obs_list.set<std::string>("location name", "cell");
   obs_list.set<std::string>("functional", "average");
 
-  Observable obs(obs_list);
+  Observable obs(getDefaultComm(), obs_list);
   obs.Setup(S.ptr());
   obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(3, obs.get_num_vectors());
@@ -337,7 +337,7 @@ TEST_FIXTURE(obs_test, MULTI_DOF_OBS_ONE) {
   obs_list.set<std::string>("functional", "average");
   obs_list.set<int>("degree of freedom", 2);
 
-  Observable obs(obs_list);
+  Observable obs(getDefaultComm(), obs_list);
   obs.Setup(S.ptr());
   obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
