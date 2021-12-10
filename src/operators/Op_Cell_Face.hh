@@ -62,7 +62,6 @@ class Op_Cell_Face : public Op {
           int nfaces = faces.extent(0);
           for (int m=0; m!=nfaces; ++m)
             Kokkos::atomic_add(&Xf(faces(m), 0), lA(m,m));
-          Kokkos::atomic_add(&Xc(c,0), lA(nfaces,nfaces));
         }); 
   }
 

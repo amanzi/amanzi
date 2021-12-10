@@ -80,7 +80,6 @@ void UpwindFlux::Compute(
   flux.ScatterMasterToGhosted("face");
 
   const auto& flx_face = flux.ViewComponent("face", true);
-  // const Multivector_type& sol_face = *solution.ViewComponent("face", true);
 
   const auto& fld_cell = field.ViewComponent("cell", true);
   const auto& fld_boundary = field.ViewComponent("dirichlet_faces", true);

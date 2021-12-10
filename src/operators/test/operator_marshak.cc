@@ -116,9 +116,8 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 
   Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(cvs->CreateSpace()));
   solution->putScalar(knc->TemperatureFloor);  // solution at time T=0
-
   // Create and initialize flux field.
- Teuchos::RCP<CompositeVectorSpace> cvs_flux = Teuchos::rcp(new CompositeVectorSpace());
+  Teuchos::RCP<CompositeVectorSpace> cvs_flux = Teuchos::rcp(new CompositeVectorSpace());
   cvs_flux->SetMesh(mesh)
       ->SetComponent("face", AmanziMesh::FACE, 1)
       ->SetGhosted(true);
@@ -162,6 +161,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     op->Setup(K, knc->values(), knc->derivatives());
     op->UpdateMatrices(flux.ptr(), solution.ptr());
     // get the global operator
+
     Teuchos::RCP<Operator> global_op = op->global_operator();
 
     // add accumulation terms
@@ -218,7 +218,6 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   // calculate errors
   const auto& p = solution->ViewComponent("cell");
   double pl2_err(0.0), pnorm(0.0);
-
   for (int c = 0; c < ncells_owned; ++c) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     double err = p(c,0) - knc->exact(t, xc);
@@ -259,6 +258,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 // }
 
 TEST(MARSHAK_NONLINEAR_WAVE_MFD) {
-  RunTestMarshak("diffusion operator Sff", 0.0);
+//  RunTestMarshak("diffusion operator Sff", 0.0);
+  RunTestMarshak("diffusion operator fv", 0.0);
 }
 

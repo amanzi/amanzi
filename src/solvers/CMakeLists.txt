@@ -109,10 +109,10 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/solver_linear_operators.cc
                     LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
-    add_amanzi_test(solver_preconditioners solver_preconditioners
-                    KIND unit
-                    SOURCE test/Main.cc test/solver_preconditioners.cc
-                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+    #add_amanzi_test(solver_preconditioners solver_preconditioners
+    #                KIND unit
+    #                SOURCE test/Main.cc test/solver_preconditioners.cc
+    #                LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
     #add_amanzi_test(solver_ooo_gids solver_ooo_gids
     #                KIND unit
