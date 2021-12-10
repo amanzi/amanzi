@@ -10,7 +10,9 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#ifdef HAVE_IFPACK2_GINKGO
 #include "ginkgo/ginkgo.hpp"
+#endif
 
 #include "exceptions.hh"
 #include "Preconditioner.hh"
@@ -27,6 +29,7 @@ using Ifpack2_PC_type = Ifpack2::Preconditioner<Matrix_type::scalar_type,
 class PreconditionerGinkgo : public Preconditioner {
  public:
 
+#ifdef HAVE_IFPACK2_GINKGO
   // Ginkgo Matrix type 
   using SC = Matrix_type::scalar_type; 
   using LO = Matrix_type::local_ordinal_type; 
@@ -233,8 +236,9 @@ class PreconditionerGinkgo : public Preconditioner {
   std::string method_;
   bool initialized_;
   mutable int returned_code_;
-
+#endif
 };
+
 
 } // namespace AmanziPreconditioners
 } // namespace Amanzi

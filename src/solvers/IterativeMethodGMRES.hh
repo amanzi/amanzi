@@ -213,15 +213,11 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
   // and r = H (f - M x)  for the left preconditioner
   if (left_pc_) {
     m_->apply(x, p);
-    //std::cout << "GMRES: p0 = " << Debug::get0(p) << std::endl;
     p.update(1.0, f, -1.0);
     h_->applyInverse(p, r);
-    //std::cout << "GMRES: r0 = " << Debug::get0(r) << std::endl;
   } else {
-    //std::cout << "GMRES: x0 = " << Debug::get0(x) << std::endl;
     m_->apply(x, r);
     r.update(1.0, f, -1.0);
-    //std::cout << "GMRES: r0 = " << Debug::get0(r) << std::endl;
   }
 
   double rnorm0 = r.norm2();
@@ -259,7 +255,6 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
       h_->applyInverse(*(v_[i]), p);
       m_->apply(p, w);
     }
-    //std::cout << "GMRES: w" << i << " = " << Debug::get0(w) << std::endl;
 
     double tmp(0.0);
     for (int k = 0; k <= i; k++) {  // Arnoldi algorithm
@@ -270,7 +265,6 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
     tmp = w.norm2();
     T(i + 1, i) = tmp;
     s[i + 1] = 0.0;
-    //std::cout << "GMRES: 2nd w" << i << " = " << Debug::get0(w) << std::endl;
 
     for (int k = 0; k < i; k++) {
       ApplyGivensRotation_(T(k, i), T(k + 1, i), cs[k], sn[k]);

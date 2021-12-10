@@ -127,8 +127,6 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   CompositeVector heat_capacity(cvs->CreateSpace());
   heat_capacity.putScalar(1.0);
 
-  
-
   // Create upwind model
   ParameterList& ulist = plist.sublist("PK operator").sublist("upwind");
   UpwindFlux upwind(mesh);
@@ -142,7 +140,6 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   double t(0.0), dt(1e-4);
   while (t < tstop) {
     solution->ScatterMasterToGhosted();
-
 
     // update bc
     for (int f = 0; f < nfaces_wghost; f++) {
@@ -171,15 +168,13 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     // apply BCs and assemble
     op->ApplyBCs(true, true, true);
     global_op->set_inverse_parameters("Hypre AMG", plist.sublist("preconditioners"), "Amanzi GMRES", plist.sublist("solvers"));
+    // global_op->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
     global_op->initializeInverse();
     global_op->computeInverse();
 
-    auto sol_new = solution->ViewComponent("cell");
-    auto sol_old(sol_new);
-
-
+    // save solution at previus time step
+    auto sol_prev = *solution;
     CompositeVector rhs = *global_op->rhs();
-    //    global_op->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
     global_op->applyInverse(rhs, *solution);
 
     step++;
@@ -194,15 +189,16 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 
     // Change time step based on solution change.
     // We use empiric algorithm insired by Levenberg-Marquardt 
-    auto sol_diff(sol_old);
-    for(int i = 0 ; i < sol_diff.size(); ++i){
-      sol_diff(i,0) = sol_diff(i,0)*-1.0+sol_new(i,0)*1.0; 
-    }
-    //sol_diff.update(1.0, sol_new, -1.0);
+    auto sol_diff = sol_prev;
+    sol_diff.update(1.0, *solution, -1.0);
+
+    auto sol_diff_c = sol_diff.ViewComponent("cell");
+    auto sol_prev_c = sol_prev.ViewComponent("cell");
 
     double ds_rel(0.0);
     for (int c = 0; c < ncells_owned; c++) {
-      ds_rel = std::max(ds_rel, sol_diff(c,0) / (1e-3 + sol_old(c,0) + sol_diff(c,0)));
+      double tmp = std::fabs(sol_diff_c(c, 0));
+      ds_rel = std::max(ds_rel, tmp / (1e-3 + sol_prev_c(c,0) + tmp));
     }
     double ds_rel_local = ds_rel;
     Teuchos::reduceAll(*(mesh->get_comm()),Teuchos::REDUCE_MAX,1,&ds_rel_local,&ds_rel); 
@@ -228,24 +224,17 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   Teuchos::reduceAll(*(mesh->get_comm()),Teuchos::REDUCE_SUM,1,&tmp,
                      &pl2_err);
 
-  //mesh->get_comm()->SumAll(&tmp, &pl2_err, 1);
+  // mesh->get_comm()->SumAll(&tmp, &pl2_err, 1);
   tmp = pnorm;
   Teuchos::reduceAll(*(mesh->get_comm()),Teuchos::REDUCE_SUM,1,&tmp,
                      &pnorm);
-  //mesh->get_comm()->SumAll(&tmp, &pnorm, 1);
+  // mesh->get_comm()->SumAll(&tmp, &pnorm, 1);
 
   pl2_err = std::pow(pl2_err / pnorm, 0.5);
   pnorm = std::pow(pnorm, 0.5);
   printf("||dp||=%10.6g  ||p||=%10.6g\n", pl2_err, pnorm);
 
   CHECK_CLOSE(0.0, pl2_err, 0.1);
-
-  //if (MyPID == 0) {
-  //  GMV::open_data_file(*mesh, (std::string)"operators.gmv");
-  //  GMV::start_data();
-  //  GMV::write_cell_data(p, 0, "solution");
-  //  GMV::close_data_file();
-  //}
 }
 
 
