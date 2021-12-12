@@ -67,10 +67,9 @@ Example:
 #include "Mesh.hh"
 
 #include "IOEvent.hh"
+#include "Output.hh"
 
 namespace Amanzi {
-
-class Output;
 
 class Visualization : public IOEvent {
  public:
@@ -96,6 +95,9 @@ class Visualization : public IOEvent {
   virtual void FinalizeTimestep() const;
 
   // public interface for data clients
+  template <typename T>
+  void Write(const std::string& name, const T& t) const;
+
   virtual void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names ) const;
   virtual void WriteVector(const Epetra_Vector& vec, const std::string& name ) const;
   virtual void WriteRegions();
@@ -118,6 +120,25 @@ class Visualization : public IOEvent {
   bool write_mesh_exo_;
 };
 
-} // Amanzi namespace
+
+template <>
+inline void Visualization::Write<Epetra_Vector>(const std::string& name,
+                                                const Epetra_Vector& t) const {
+  visualization_output_->WriteVector(t, name, AmanziMesh::CELL);
+}
+
+template <>
+inline void Visualization::Write<double>(const std::string& name,
+                                         const double& t) const {
+  visualization_output_->WriteAttribute(t, name);
+}
+
+template <>
+inline void Visualization::Write<int>(const std::string& name,
+                                      const int& t) const {
+  visualization_output_->WriteAttribute(t, name);
+}
+
+} // namespace Amanzi
 
 #endif

@@ -10,21 +10,19 @@ Checkpointing for state.
 #include <iostream>
 #include <iomanip>
 
-#include "mpi.h"
 #include "boost/filesystem.hpp"
+#include "Epetra_MpiComm.h"
+#include "mpi.h"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 #include "Checkpoint.hh"
 #include "State.hh"
-#include "Epetra_MpiComm.h"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "primary_variable_field_evaluator.hh"
 
 namespace Amanzi {
 
-Checkpoint::Checkpoint(Teuchos::ParameterList& plist,
-                       const State& S) :
-  IOEvent(plist),
-  old_(true)
+Checkpoint::Checkpoint(Teuchos::ParameterList& plist, const State& S)
+  : IOEvent(plist),
+    old_(true)
 {
   ReadParameters_();
 
@@ -34,7 +32,7 @@ Checkpoint::Checkpoint(Teuchos::ParameterList& plist,
   this->getOStream()->setShowLinePrefix(true);
 
   // Read the sublist for verbosity settings.
-  Teuchos::readVerboseObjectSublist(&plist_,this);
+  Teuchos::readVerboseObjectSublist(&plist_, this);
 
   // Set up the HDF5 objects
   if (old_) {
@@ -61,7 +59,7 @@ Checkpoint::Checkpoint(Teuchos::ParameterList& plist,
 
   // NOTE: do not make this an 'else' clause!
   if (!old_) {
-    for (auto domain=S.mesh_begin(); domain!=S.mesh_end(); ++domain) {
+    for (auto domain = S.mesh_begin(); domain != S.mesh_end(); ++domain) {
       const auto& mesh = S.GetMesh(domain->first);
       output_[domain->first] = Teuchos::rcp(new HDF5_MPI(mesh->get_comm()));
       output_[domain->first]->setTrackXdmf(false);
@@ -75,6 +73,13 @@ Checkpoint::Checkpoint(bool old) :
   IOEvent(),
   old_(old)
 {}
+
+
+Checkpoint::Checkpoint(const std::string& filename, const Comm_ptr_type& comm)
+    : IOEvent() {
+  output_["domain"] = Teuchos::rcp(new HDF5_MPI(comm, filename));
+  output_["domain"]->open_h5file();
+}
 
 
 // -----------------------------------------------------------------------------
@@ -154,8 +159,8 @@ void Checkpoint::Write(const State& S,
     if (final && S.GetMesh()->get_comm()->MyPID() == 0)
       CreateFinalFile(S.cycle());
 
-    for (State::field_iterator field=S.field_begin(); field!=S.field_end(); ++field) {
-      field->second->WriteCheckpoint(*this);
+    for (auto it = S.data_begin(); it != S.data_end(); ++it) {
+      it->second->WriteCheckpoint(*this);
     }
     WriteAttributes(S.GetMesh("domain")->get_comm()->NumProc(),
                     S.time(), dt, S.cycle(), S.position());
@@ -163,94 +168,6 @@ void Checkpoint::Write(const State& S,
     Finalize();
   }
 }
-
-double Checkpoint::Read(State& S, const std::string& file_or_dirname)
-{
-  // if provided a directory, use new style
-  if (boost::filesystem::is_directory(file_or_dirname)) {
-    old_ = false;
-  } else if (boost::filesystem::is_regular_file(file_or_dirname)) {
-    old_ = true;
-  } else {
-    Errors::Message message;
-    message << "Checkpoint::Read: location \"" << file_or_dirname << "\" does not exist.";
-    Exceptions::amanzi_throw(message);
-  }
-
-  // create the readers
-  auto comm = S.GetMesh()->get_comm();
-  if (old_) {
-    output_["domain"] = Teuchos::rcp(new HDF5_MPI(comm, file_or_dirname));
-    output_["domain"]->open_h5file(true);
-
-  } else {
-    for (auto domain=S.mesh_begin(); domain!=S.mesh_end(); ++domain) {
-      const auto& mesh = S.GetMesh(domain->first);
-
-      boost::filesystem::path chkp_file = boost::filesystem::path(file_or_dirname) / (domain->first+".h5");
-      output_[domain->first] = Teuchos::rcp(new HDF5_MPI(mesh->get_comm(), chkp_file.string()));
-      output_[domain->first]->open_h5file(true);
-    }
-  }
-
-  // load the attributes
-  double time(0.);
-  output_["domain"]->readAttrReal(time, "time");
-  S.set_time(time);
-
-  double dt(0.);
-  output_["domain"]->readAttrReal(dt, "dt");
-
-  int cycle(0);
-  output_["domain"]->readAttrInt(cycle, "cycle");
-  S.set_cycle(cycle);
-
-  int pos(0);
-  output_["domain"]->readAttrInt(pos, "position");
-  S.set_position(pos);
-
-  // load the number of processes and ensure they are the same -- otherwise
-  // the below just gives crap.
-  int rank(-1);
-  output_["domain"]->readAttrInt(rank, "mpi_comm_world_rank");
-  if (comm->NumProc() != rank) {
-    Errors::Message message;
-    message << "Requested checkpoint file " << file_or_dirname << " was created on "
-            << rank << " processes, making it incompatible with this run on "
-            << comm->NumProc() << " process.";
-    Exceptions::amanzi_throw(message);
-  }
-
-  // load the data
-  for (State::field_iterator field=S.field_begin(); field!=S.field_end(); ++field) {
-    if (field->second->type() == COMPOSITE_VECTOR_FIELD &&
-        field->second->io_checkpoint()) {
-      Key domain = old_ ? "domain" : Keys::getDomain(field->first);
-      if (domain.empty()) domain = "domain";
-
-      bool read_complete = field->second->ReadCheckpoint(*output_[domain]);
-      if (read_complete) {
-        if (S.HasFieldEvaluator(field->first)) {
-          Teuchos::RCP<FieldEvaluator> fm = S.GetFieldEvaluator(field->first);
-          Teuchos::RCP<PrimaryVariableFieldEvaluator> solution_evaluator =
-            Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
-          if (solution_evaluator != Teuchos::null){
-            Teuchos::Ptr<State> S_ptr(&S);
-            solution_evaluator->SetFieldAsChanged(S_ptr);
-          }
-        }
-        field->second->set_initialized();
-      }
-    }
-  }
-
-  // close files
-  for (auto& file_out : output_) {
-    file_out.second->close_h5file();
-  }
-  return dt;
-}
-
 
 
 void Checkpoint::WriteVector(const Epetra_MultiVector& vec,

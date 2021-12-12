@@ -70,20 +70,24 @@ namespace Amanzi {
 class State;
 
 class Checkpoint : public IOEvent {
-
  public:
   Checkpoint(Teuchos::ParameterList& plist, const State& S);
+  Checkpoint(const std::string& filename, const Comm_ptr_type& comm);
 
-  // constructor for object that cannot write, but can read
-  Checkpoint(bool old_style=true);
+  // constructors for object that cannot write, but can read
+  Checkpoint(bool old_style = true);
 
   // public interface for coordinator clients
+  template <typename T>
+  void Write(const std::string& name, const T& t) const;
+
+  template <typename T>
+  void Read(const std::string& name, T& t) const {};
+
   void Write(const State& S,
              double dt,
-             bool final=false,
-             Amanzi::ObservationData* obs_data=nullptr);
-
-  double Read(State& S, const std::string& file_or_dirname);
+             bool final = false,
+             Amanzi::ObservationData* obs_data = nullptr);
 
   void CreateFile(int cycle);
   void CreateFinalFile(int cycle);
@@ -106,6 +110,41 @@ class Checkpoint : public IOEvent {
 
   std::map<std::string,Teuchos::RCP<Amanzi::HDF5_MPI>> output_;
 };
+
+
+template <>
+inline void Checkpoint::Write<Epetra_Vector>(const std::string& name,
+                                             const Epetra_Vector& t) const {
+  output_.at("domain")->writeCellDataReal(t, name);
+}
+
+template <>
+inline void Checkpoint::Write<double>(const std::string& name,
+                                      const double& t) const {
+  output_.at("domain")->writeAttrReal(t, name);
+}
+
+template <>
+inline void Checkpoint::Write<int>(const std::string& name,
+                                   const int& t) const {
+  output_.at("domain")->writeAttrInt(t, name);
+}
+
+template <>
+inline void Checkpoint::Read<Epetra_Vector>(const std::string& name,
+                                            Epetra_Vector& t) const {
+  output_.at("domain")->readData(t, name);
+}
+
+template <>
+inline void Checkpoint::Read<double>(const std::string&name, double& t) const {
+  output_.at("domain")->readAttrReal(t, name);
+}
+
+template <>
+inline void Checkpoint::Read<int>(const std::string& name, int& t) const {
+  output_.at("domain")->readAttrInt(t, name);
+}
 
 }  // namespace Amanzi
 #endif

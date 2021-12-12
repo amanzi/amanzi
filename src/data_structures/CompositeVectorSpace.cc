@@ -92,7 +92,6 @@ CompositeVectorSpace::SubsetOf(const CompositeVectorSpace& other) const {
 // Useful for PKs to maintain default factories that apply to multiple CVs.
 CompositeVectorSpace*
 CompositeVectorSpace::Update(const CompositeVectorSpace& other) {
-
   if (this != &other) {
     AddComponents(other.names_, other.locations_, other.mastermaps_, other.ghostmaps_, other.num_dofs_);    
     SetMesh(other.mesh_);

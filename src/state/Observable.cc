@@ -17,14 +17,14 @@ This class calculates the actual observation value.
 #include <string>
 #include <algorithm>
 
-#include "Key.hh"
 #include "errors.hh"
+#include "Key.hh"
 #include "Mesh.hh"
-#include "State.hh"
-#include "Field.hh"
-#include "FieldEvaluator.hh"
 
+// Amanzi::State
+#include "Evaluator.hh"
 #include "Observable.hh"
+#include "State.hh"
 
 namespace Amanzi {
 
@@ -117,14 +117,14 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
   // does the observed quantity have an evaluator?  Or can we make one? Note
   // that a non-evaluator based observation must already have been created by
   // PKs by now, because PK->Setup() has already been run.
-  if (!S->HasField(variable_)) {
+  if (!S->HasData(variable_)) {
     // not yet created, require the eval
-    S->RequireFieldEvaluator(variable_);
+    S->Require<CompositeVector, CompositeVectorSpace>(variable_, "", "state");
     has_eval_ = true;
   } else {
     // does it have an evaluator or can we make one?
     try {
-      S->RequireFieldEvaluator(variable_);
+      S->Require<CompositeVector, CompositeVectorSpace>(variable_, "", "state");
       has_eval_ = true;
      } catch(...) {
       has_eval_ = false;
@@ -132,12 +132,12 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // try to set requirements on the field, if they are not already set
-  if (!S->HasField(variable_)) {
+  if (!S->HasData(variable_)) {
     // require the field
-    auto cvs = S->RequireField(variable_);
+    auto& cvs = S->Require<CompositeVector, CompositeVectorSpace>(variable_, "");
 
     // we have to set the mesh now -- assume it is provided by the domain
-    cvs->SetMesh(S->GetMesh(Keys::getDomain(variable_)));
+    cvs.SetMesh(S->GetMesh(Keys::getDomain(variable_)));
 
     // was num_vectors set?  if not use default of 1
     if (num_vectors_ < 0) num_vectors_ = 1;
@@ -149,7 +149,7 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
     }
 
     // require the component on location_ with num_vectors_
-    cvs->AddComponent(location_, AmanziMesh::entity_kind(location_), num_vectors_);
+    cvs.AddComponent(location_, AmanziMesh::entity_kind(location_), num_vectors_);
   }
 }
 
@@ -158,7 +158,7 @@ void Observable::FinalizeStructure(const Teuchos::Ptr<State>& S)
 {
   // one last check that the structure is all set up and consistent
   if (num_vectors_ < 0) {
-    const auto& field = *S->GetFieldData(variable_);
+    const auto& field = S->GetW<CompositeVector>(variable_, "state");
     if (!field.HasComponent(location_)) {
       Errors::Message msg;
       msg << "Observable: \"" << name_ << "\" uses variable \""
@@ -190,22 +190,22 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
 
   // update the variable
   if (has_eval_)
-    S->GetFieldEvaluator(variable_)->HasFieldChanged(S, "observation");
+    S->GetEvaluator(variable_).Update(*S, "observation");
 
-  Teuchos::RCP<const Field> field = S->GetField(variable_);
-  if (field->type() == CONSTANT_SCALAR) {
+  const auto& record = S->GetRecord(variable_);
+  if (record.ValidType<double>()) {
     // scalars, just return the value
-    data[start_loc] = *field->GetScalarData();
+    data[start_loc] = record.Get<double>();
 
-  } else if (field->type() == COMPOSITE_VECTOR_FIELD) {
+  } else if (record.ValidType<CompositeVector>()) {
     // vector field
-    Teuchos::RCP<const CompositeVector> vec = field->GetFieldData();
-    AMANZI_ASSERT(vec->HasComponent(location_));
+    const CompositeVector& vec = record.Get<CompositeVector>();
+    AMANZI_ASSERT(vec.HasComponent(location_));
 
     // get the region
     AmanziMesh::Entity_kind entity = AmanziMesh::entity_kind(location_);
     AmanziMesh::Entity_ID_List ids;
-    vec->Mesh()->get_set_entities(region_, entity, AmanziMesh::Parallel_type::OWNED, &ids);
+    vec.Mesh()->get_set_entities(region_, entity, AmanziMesh::Parallel_type::OWNED, &ids);
 
     std::vector<double> value;
     if (functional_ == "minimum") {
@@ -216,12 +216,12 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
       value.resize(get_num_vectors() + 1, 0.);
     }
 
-    const Epetra_MultiVector& subvec = *vec->ViewComponent(location_, false);
+    const Epetra_MultiVector& subvec = *vec.ViewComponent(location_, false);
 
     if (entity == AmanziMesh::CELL) {
       for (AmanziMesh::Entity_ID_List::const_iterator id=ids.begin();
            id!=ids.end(); ++id) {
-        double vol = vec->Mesh()->cell_volume(*id);
+        double vol = vec.Mesh()->cell_volume(*id);
         if (dof_ < 0) {
           for (int i=0; i!=get_num_vectors(); ++i) {
             value[i] = (*function_)(value[i], subvec[i][*id], vol);
@@ -234,25 +234,25 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
     } else if (entity == AmanziMesh::FACE) {
       for (AmanziMesh::Entity_ID_List::const_iterator id=ids.begin();
            id!=ids.end(); ++id) {
-        double vol = vec->Mesh()->face_area(*id);
+        double vol = vec.Mesh()->face_area(*id);
 
         // hack to orient flux to outward-normal along a boundary only
         double sign = 1;
         if (flux_normalize_) {
           if (direction_.get()) {
             // normalize to the provided vector
-            AmanziGeometry::Point normal = vec->Mesh()->face_normal(*id);
+            AmanziGeometry::Point normal = vec.Mesh()->face_normal(*id);
             sign = (normal * (*direction_)) / AmanziGeometry::norm(normal);
 
           } else if (!flux_normalize_region_.empty()) {
             // normalize to outward normal relative to a volumetric region
             AmanziMesh::Entity_ID_List vol_cells;
-            vec->Mesh()->get_set_entities(flux_normalize_region_,
+            vec.Mesh()->get_set_entities(flux_normalize_region_,
                     AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL, &vol_cells);
 
             // which cell of the face is "inside" the volume
             AmanziMesh::Entity_ID_List cells;
-            vec->Mesh()->face_get_cells(*id, AmanziMesh::Parallel_type::ALL, &cells);
+            vec.Mesh()->face_get_cells(*id, AmanziMesh::Parallel_type::ALL, &cells);
             AmanziMesh::Entity_ID c = -1;
             for (const auto& cc : cells) {
               if (std::find(vol_cells.begin(), vol_cells.end(), cc) != vol_cells.end()) {
@@ -265,7 +265,7 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
               msg << "Observeable on face region \"" << region_
                   << "\" flux normalized relative to volumetric region \""
                   << flux_normalize_region_ << "\" but face "
-                  << vec->Mesh()->face_map(true).GID(*id)
+                  << vec.Mesh()->face_map(true).GID(*id)
                   << " does not border the volume region.";
               Exceptions::amanzi_throw(msg);
             }
@@ -273,17 +273,17 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
             // normalize with respect to that cell's direction
             AmanziMesh::Entity_ID_List faces;
             std::vector<int> dirs;
-            vec->Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
+            vec.Mesh()->cell_get_faces_and_dirs(c, &faces, &dirs);
             int i = std::find(faces.begin(), faces.end(), *id) - faces.begin();
             sign = dirs[i];
 
           } else {
             // normalize to outward normal
             AmanziMesh::Entity_ID_List cells;
-            vec->Mesh()->face_get_cells(*id, AmanziMesh::Parallel_type::ALL, &cells);
+            vec.Mesh()->face_get_cells(*id, AmanziMesh::Parallel_type::ALL, &cells);
             AmanziMesh::Entity_ID_List faces;
             std::vector<int> dirs;
-            vec->Mesh()->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
+            vec.Mesh()->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
             int i = std::find(faces.begin(), faces.end(), *id) - faces.begin();
             sign = dirs[i];
           }

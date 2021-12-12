@@ -76,8 +76,10 @@ typedef std::vector<Key> KeyVector;
 
 typedef std::pair<Key,Key> KeyPair;
 typedef std::set<std::pair<Key, Key> > KeyPairSet;
+typedef std::vector<KeyPair> KeyPairVector;
 
 typedef std::tuple<Key,Key,Key> KeyTriple;
+typedef std::set<KeyTriple> KeyTripleSet;
 
 namespace Keys {
 
@@ -210,6 +212,34 @@ Key readKey(Teuchos::ParameterList& list,
             const Key& basename,
             const Key& default_name="");
 
+// Convenience function for requesting a list of names of Keys from an input spec.
+Teuchos::Array<Key>
+readKeys(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
+         Teuchos::Array<Key> const * const default_names=nullptr);
+
+
+// Convenience function to see if a map (or map-like) object has a key.
+template<typename T, typename K>
+bool hasKey(const T& container, const K& key) {
+  return container.count(key) > 0;
+}
+
+// Tag'd variables are of the form VARNAME:TAG
+inline Key
+getKeyTag(const Key& var, const Key& tag) {
+  return tag.empty() ? var : var+":"+tag;
+}
+
+// Split a DOMAIN-VARNAME key.
+inline KeyPair
+splitKeyTag(const Key& name)
+{
+  std::size_t pos = name.find(':');
+  if (pos == std::string::npos) 
+    return std::make_pair(name, Key(""));
+  else
+    return std::make_pair(name.substr(0,pos), name.substr(pos+1,name.size()));
+}
 
 } // namespace Keys
 } // namespace Amanzi

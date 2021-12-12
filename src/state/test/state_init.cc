@@ -1,9 +1,9 @@
 /*
   State
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -18,6 +18,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "CompositeVector.hh"
 #include "MeshFactory.hh"
 
 // State
@@ -34,50 +35,57 @@ TEST(FIELD_INITIALIZATION) {
 
   // create geometric model
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-  Teuchos::RCP<AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
+  auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   // create a mesh
   AmanziMesh::Preference pref;
   pref.clear();
-  pref.push_back(AmanziMesh::Framework::MSTK);   
-    
-  AmanziMesh::MeshFactory meshfactory(comm,gm);
+  pref.push_back(AmanziMesh::Framework::MSTK);
+
+  AmanziMesh::MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(pref);
   Teuchos::RCP<AmanziMesh::Mesh> mesh = meshfactory.create("test/cube3x3x3.exo");
 
+  // create a state
   Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("state");
-  Teuchos::Ptr<State> S = Teuchos::ptr(new State(state_list));
+  State S(state_list);
 
-  S->RegisterMesh("domain", mesh);
-  S->RequireField("porosity")->SetMesh(mesh)->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireField("field")->SetMesh(mesh)->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->Setup();
-  S->RequireField("permeability")->SetMesh(mesh)->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, 3);
-  S->Setup();
-  S->InitializeFields();
+  // populate state
+  S.RegisterMesh("domain", mesh);
+  S.Require<CompositeVector, CompositeVectorSpace>("porosity")
+    .SetMesh(mesh)->SetGhosted(false)
+                  ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S.RequireEvaluator("porosity");
+  S.Require<CompositeVector, CompositeVectorSpace>("permeability")
+    .SetMesh(mesh)->SetGhosted(false)
+                  ->SetComponent("cell", AmanziMesh::CELL, 3);
+
+  // setup creates data
+  S.Setup();
+
+  // initialize data
+  S.InitializeEvaluators();
 
   // check state's fields
   // -- porosity (simple field)
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell");
+  const auto& phi = *S.Get<CompositeVector>("porosity").ViewComponent("cell");
   for (int c = 0; c < ncells; ++c) {
     CHECK_EQUAL(0.25, phi[0][c]);
   }
-  // -- scalar field from a file
-  const Epetra_MultiVector& fld = *S->GetFieldData("field")->ViewComponent("cell");
-  for (int c = 1; c < ncells; ++c) {
-    CHECK_EQUAL(1.0e-11, fld[0][c]);
-  }
-  // -- permeability from a file
-  const Epetra_MultiVector& K = *S->GetFieldData("permeability")->ViewComponent("cell");
-  for (int c = 1; c < ncells; ++c) {
-    CHECK_EQUAL(1.0e-11, K[0][c]);
-    CHECK_EQUAL(1.0e-12, K[1][c]);
-    CHECK_EQUAL(1.0e-13, K[2][c]);
-  }
-}
 
+  // from exo currently not supported in new state
+  // // -- scalar field from a file
+  // const Epetra_MultiVector& fld =
+  // *S.Get<CompositeVector>("field").ViewComponent("cell");
+  // for (int c = 1; c < ncells; ++c) {
+  //   CHECK_EQUAL(1.0e-11, fld[0][c]);
+  // }
+  // // -- permeability from a file
+  // const Epetra_MultiVector& K = *S.Get<CompositeVector>("permeability").ViewComponent("cell");
+  //  for (int c = 1; c < ncells; ++c) {
+  //   CHECK_EQUAL(1.0e-11, K[0][c]);
+  //   CHECK_EQUAL(1.0e-12, K[1][c]);
+  //   CHECK_EQUAL(1.0e-13, K[2][c]);
+  // }
+}

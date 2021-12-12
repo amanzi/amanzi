@@ -51,7 +51,10 @@ bool compareFiles(const std::string& p1, const std::string& p2) {
 
 
 struct obs_test {
-public:
+ using CV = CompositeVector;
+ using CVS = CompositeVectorSpace;
+
+ public:
   obs_test() {
     auto comm = Amanzi::getDefaultComm();
 
@@ -76,8 +79,7 @@ public:
     one_side_side.set<Teuchos::Array<double>>("low coordinate", std::vector<double>{-.35, -1, -1});
     one_side_side.set<Teuchos::Array<double>>("high coordinate", std::vector<double>{-0.3, 1, 1});
 
-    Teuchos::RCP<AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
+    auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
 
     AmanziMesh::MeshFactory meshfactory(comm,gm);
     Teuchos::RCP<AmanziMesh::Mesh> mesh = meshfactory.create(-1,-1,-1,1,1,1,3,3,3);
@@ -86,51 +88,59 @@ public:
 
     S = Teuchos::rcp(new State(state_list));
     S->RegisterMesh("domain", mesh);
-    S->RequireField("constant")->SetMesh(mesh)->SetGhosted(false)
+
+    S->Require<CompositeVector, CompositeVectorSpace>("constant", "", "state")
+      .SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireField("linear")->SetMesh(mesh)->SetGhosted(false)
+    S->Require<CompositeVector, CompositeVectorSpace>("linear", "", "state")
+      .SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireField("id")->SetMesh(mesh)->SetGhosted(false)
+    S->Require<CompositeVector, CompositeVectorSpace>("id", "", "state")
+      .SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireField("flux")->SetMesh(mesh)->SetGhosted(false)
+    S->Require<CompositeVector, CompositeVectorSpace>("flux", "", "state")
+      .SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("face", AmanziMesh::FACE, 1);
-    S->RequireField("multi_dof")->SetMesh(mesh)->SetGhosted(false)
+    S->Require<CompositeVector, CompositeVectorSpace>("multi_dof", "", "state")
+      .SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 3);
-    S->set_time(0.);
+    S->Setup();
+
+    S->set_time(0.0);
     S->set_cycle(0);
 
-    S->Setup();
-    S->GetFieldData("constant", "state")->PutScalar(2.0);
-    S->GetFieldData("linear", "state")->PutScalar(0.);
+    S->GetW<CompositeVector>("constant", "", "state").PutScalar(2.0);
+    S->GetW<CompositeVector>("linear", "", "state").PutScalar(0.0);
 
-    (*S->GetFieldData("multi_dof", "state")->ViewComponent("cell", false))(0)->PutScalar(0.);
-    (*S->GetFieldData("multi_dof", "state")->ViewComponent("cell", false))(1)->PutScalar(1.);
-    (*S->GetFieldData("multi_dof", "state")->ViewComponent("cell", false))(2)->PutScalar(2.);
+    (*S->GetW<CV>("multi_dof", "", "state").ViewComponent("cell", false))(0)->PutScalar(0.0);
+    (*S->GetW<CV>("multi_dof", "", "state").ViewComponent("cell", false))(1)->PutScalar(1.0);
+    (*S->GetW<CV>("multi_dof", "", "state").ViewComponent("cell", false))(2)->PutScalar(2.0);
 
-    Epetra_MultiVector& flux_f = *S->GetFieldData("flux", "state")
-      ->ViewComponent("face", false);
+    Epetra_MultiVector& flux_f = *S->GetW<CV>("flux", "", "state").ViewComponent("face", false);
     AmanziGeometry::Point plus_xz(1.0, 0.0, 1.0);
-    for (int f=0; f!=flux_f.MyLength(); ++f) {
+
+    for (int f = 0; f != flux_f.MyLength(); ++f) {
       flux_f[0][f] = mesh->face_normal(f) * plus_xz;
     }
 
-    Epetra_MultiVector& id_c = *S->GetFieldData("id", "state")
-      ->ViewComponent("cell", false);
+    Epetra_MultiVector& id_c = *S->GetW<CV>("id", "", "state").ViewComponent("cell", false);
     auto& cell_map = S->GetMesh("domain")->map(AmanziMesh::CELL, false);
-    for (int c=0; c!=id_c.MyLength(); ++c) {
+
+    for (int c = 0; c != id_c.MyLength(); ++c) {
       id_c[0][c] = cell_map.GID(c);
     }
   }
 
   void advance(double dt) {
     S->advance_time(dt);
-    S->GetFieldData("linear", "state")->PutScalar(S->time() * 0.1);
+    S->GetW<CV>("linear", "", "state").PutScalar(S->time() * 0.1);
     S->advance_cycle();
   }
 
-public:
+ public:
   Teuchos::RCP<State> S;
 };
+
 
 SUITE(STATE_OBSERVATIONS) {
 
@@ -152,6 +162,7 @@ TEST_FIXTURE(obs_test, Assumptions) {
   CHECK_EQUAL(27, cells_all_total);
 }
 
+
 TEST_FIXTURE(obs_test, ObservePoint) {
   // integrate an observable
   Teuchos::ParameterList obs_list("my obs");
@@ -166,9 +177,12 @@ TEST_FIXTURE(obs_test, ObservePoint) {
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
+std::cout << "HERE" << std::endl;
   obs.Update(S.ptr(), observation, 0);
+std::cout << "HERE" << std::endl;
   CHECK_CLOSE(2.0, observation[0], 1.e-10);
 }
+
 
 TEST_FIXTURE(obs_test, ObserveIntensiveIntegral) {
   // integrate an observable
