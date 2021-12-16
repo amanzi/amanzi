@@ -431,6 +431,7 @@ class State {
   {
     return state_plist_->sublist("evaluators");
   }
+  Teuchos::ParameterList& GetEvaluatorList(const Key& key);
 
   // Require Evaluators.
   Evaluator& RequireEvaluator(const Key&, const Key& tag = "");
