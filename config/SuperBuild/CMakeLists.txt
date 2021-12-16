@@ -722,6 +722,15 @@ if (ENABLE_HYPRE)
   endif()
 endif()
 
+# Ginkgo
+option(ENABLE_GINKGO "Build the GINKGO solver package" FALSE)
+if (ENABLE_GINKGO)
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_Ginkgo.cmake)
+  set(GINKGO_INSTALL_PREFIX ${TPL_INSTALL_PREFIX})
+  set(GINKGO_DIR ${GINKGO_INSTALL_PREFIX})
+  set(GINKGO_INCLUDE_DIRS "${GINKGO_INSTALL_PREFIX}/include/ginkgo")
+endif()
+
 if (ENABLE_PETSC OR ENABLE_Structured)
   append_set(Amanzi_TPL_CMAKE_ARGS
              -DParMetis_DIR:FILEPATH=${ParMetis_DIR})

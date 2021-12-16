@@ -277,7 +277,7 @@ if (ENABLE_CUDA)
   -Xcudafe --diag_suppress=cc_clobber_ignored \
   -Xcudafe --diag_suppress=code_is_unreachable")
   list(APPEND Trilinos_CMAKE_ARCH_ARGS
-    "-DKokkos_ENABLE_CUDA_UVM:BOOL=ON"
+    "-DKokkos_ENABLE_CUDA_UVM:BOOL=OFF"
     "-DKokkos_ENABLE_CUDA_LAMBDA:BOOL=ON") 
   # Change the default compiler for Trilinos to use nvcc_wrapper 
   set(Trilinos_CXX_COMPILER ${NVCC_WRAPPER_PATH})
@@ -312,7 +312,8 @@ if (ENABLE_Trilinos_Patch)
     trilinos-duplicate-parameters.patch
     trilinos-superludist.patch
     trilinos-ifpack.patch
-    trilinos-ifpack2.patch
+    trilinos-ifpack2-hypre.patch
+    trilinos-ifpack2-shylu.patch 
     )
   configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
                  ${Trilinos_prefix_dir}/trilinos-patch-step.sh
@@ -363,6 +364,7 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                                       -DCMAKE_INSTALL_RPATH:PATH=${Trilinos_install_dir}/lib
                                       -DCMAKE_INSTALL_NAME_DIR:PATH=${Trilinos_install_dir}/lib
                                       -DCMAKE_BUILD_TYPE:STRING=${Trilinos_BUILD_TYPE}
+                                      -DTpetra_ENABLE_DEPRECATED_CODE:BOOL=TRUE
 
                     # -- Build
                     BINARY_DIR       ${Trilinos_build_dir}        # Build directory 

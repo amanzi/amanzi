@@ -157,10 +157,13 @@
 #   0.97.12      - update Trilinos to afc4e525 (Nov 14, 2020)
 #   0.97.13      - update Alquimia to 1.0.8
 #   0.97.14      - update MSTK to 3.3.6
-
+#
 #   0.98.0       - configuration updates fixing CamelCase names (required changes in Amanzi build as well)
 #   0.98.1       - configuratoin updates fixing consistency of meshing options (required changes in Amanzi build as well).
 #   0.98.2       - update Hypre to 2.22.0
+#   0.98.3       - update hypre to 2.23.0
+#                - update trilinos to 13.2.0 (Oct 2021)  
+#                - add Ginkgo 1.4.0
 
 
 include(CMakeParseArguments)
@@ -405,7 +408,7 @@ set(MOAB_MD5_SUM        dd2cf5c32ede64dfd7e9b04e0387c4b4)
 # TPL: HYPRE
 #
 set(HYPRE_VERSION_MAJOR  2)
-set(HYPRE_VERSION_MINOR  22)
+set(HYPRE_VERSION_MINOR  23)
 set(HYPRE_VERSION_PATCH  0)
 set(HYPRE_VERSION  ${HYPRE_VERSION_MAJOR}.${HYPRE_VERSION_MINOR}.${HYPRE_VERSION_PATCH})
 set(HYPRE_URL_STRING     "https://github.com/hypre-space/hypre/archive/")
@@ -413,7 +416,20 @@ set(HYPRE_ARCHIVE_FILE   v${HYPRE_VERSION}.tar.gz)
 set(HYPRE_SAVEAS_FILE    hypre-${HYPRE_VERSION}.tar.gz)
 set(HYPRE_MD5_SUM        0b3abc221b216db97175709aa0bf94d7)
 set(HYPRE_GIT_REPOSITORY "https://github.com/hypre-space/hypre")
-set(HYPRE_GIT_TAG        "09b6b53ca5873573b8c40b78de6a4b531579de68")
+set(HYPRE_GIT_TAG        "e8d142b630bb832d5d5e3712f4749283e0f2e876")
+
+#
+# TPL: Ginkgo
+#
+set(Ginkgo_VERSION_MAJOR 1)
+set(Ginkgo_VERSION_MINOR 4)
+set(Ginkgo_VERSION_PATCH 0)
+set(Ginkgo_VERSION ${Ginkgo_VERSION_MAJOR}.${Ginkgo_VERSION_MINOR}.${Ginkgo_VERSION_PATCH})
+set(Ginkgo_URL_STRING     "https://github.com/ginkgo-project/ginkgo/archive/refs/tags/")
+set(Ginkgo_ARCHIVE_FILE   v${Ginkgo_VERSION}.tar.gz)
+set(Ginkgo_SAVEAS_FILE    ${Ginkgo_ARCHIVE_FILE})
+set(Ginkgo_GIT_REPOSITORY "https://github.com/ginkgo-project/ginkgo/")
+set(Ginkgo_GIT_TAG        "f811917c1def4d0fcd8db3fe5c948ce13409e28e")
 
 #
 # TPL: ParMetis
@@ -481,14 +497,14 @@ set(PETSc_MD5_SUM        c1bfeeb3613f59049d312713b461a1b1)
 # TPL: Trilinos
 #
 set(Trilinos_VERSION_MAJOR 13)
-set(Trilinos_VERSION_MINOR 0)
-set(Trilinos_VERSION_PATCH afc4e525)
+set(Trilinos_VERSION_MINOR 2)
+set(Trilinos_VERSION_PATCH 4a5f790)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}-${Trilinos_VERSION_MINOR}-${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "https://github.com/trilinos/Trilinos/archive")
 set(Trilinos_ARCHIVE_FILE   trilinos-release-${Trilinos_VERSION}.tar.gz)
 set(Trilinos_SAVEAS_FILE    ${Trilinos_ARCHIVE_FILE})
 set(Trilinos_GIT_REPOSITORY "https://github.com/trilinos/Trilinos")
-set(Trilinos_GIT_TAG        "afc4e52595ab82f449f8a4676febbcfbf8223afc")
+set(Trilinos_GIT_TAG        "4a5f7906a6420ee2f9450367e9cc95b28c00d744")
 
 #
 # TPL: SEACAS

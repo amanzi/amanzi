@@ -162,6 +162,7 @@ dry_run=${FALSE}
 # -- tpls
 alquimia=${FALSE}
 hypre=${TRUE}
+ginkgo=${FALSE}
 superlu=${TRUE}
 netcdf4=${TRUE}
 petsc=${FALSE}
@@ -367,6 +368,7 @@ Value in brackets indicates default setting.
   mesh_moab               build the MOAB Mesh Toolkit ['"${mesh_moab}"']
 
   hypre                   build the HYPRE solver APIs ['"${hypre}"']
+  ginkgo                  build the Ginkgo solver APIs ['"${ginkgo}"']
   superlu                 build the SuperLU solver ['"${superlu}"']
   petsc                   build the PETSc solver APIs ['"${petsc}"']
 
@@ -394,7 +396,7 @@ Value in brackets indicates default setting.
   tpetra                  build Amanzi using the Tpetra/Kokkos stack of TPLs ['"${tpetra}"']
                           NOTE: enabling both builds TPLs that are compatible with both Amanzi
                           variants, but will error prior to building Amanzi.
-  cuda                    build with Cuda support, currently used by Kokkos and Hypre ['"${cuda}"']
+  cuda                    build with Cuda support, currently used by Kokkos, Hypre and Ginkgo ['"${cuda}"']
   openmp                  build with OpenMP support, currently used by Kokkos and Hypre ['"${openmp}"']
                           Note that this option may conflict with structured, so use of --enable-openmp
                           may require the use of --disable-structured.
@@ -582,6 +584,7 @@ Amanzi TPLs:
     mesh_moab    = '"${mesh_moab}"'
     netcdf4      = '"${netcdf4}"'
     hypre        = '"${hypre}"'
+    ginkgo       = '"${ginkgo}"'
     superlu      = '"${superlu}"'
     petsc        = '"${petsc}"'
     epetra       = '"${epetra}"'
@@ -1809,6 +1812,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_MESH_MSTK:BOOL=${mesh_mstk} \
       -DENABLE_NetCDF4:BOOL=${netcdf4} \
       -DENABLE_HYPRE:BOOL=${hypre} \
+      -DENABLE_GINKGO:BOOL=${ginkgo} \
       -DENABLE_SUPERLU:BOOL=${superlu} \
       -DENABLE_PETSC:BOOL=${petsc} \
       -DENABLE_ALQUIMIA:BOOL=${alquimia} \
@@ -1935,6 +1939,7 @@ cmd_configure="${cmake_binary} \
     -DENABLE_MESH_MSTK:BOOL=${mesh_mstk} \
     -DENABLE_SUPERLU:BOOL=${superlu} \
     -DENABLE_HYPRE:BOOL=${hypre} \
+    -DENABLE_GINKGO:BOOL=${ginkgo} \
     -DENABLE_PETSC:BOOL=${petsc} \
     -DENABLE_ALQUIMIA:BOOL=${alquimia} \
     -DENABLE_PFLOTRAN:BOOL=${pflotran} \

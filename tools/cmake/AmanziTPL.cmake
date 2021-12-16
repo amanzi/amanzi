@@ -404,6 +404,31 @@ if (ENABLE_HYPRE)
   endif()
 endif()
 
+##############################################################################
+# Ginkgo solvers 
+##############################################################################
+option(ENABLE_GINKGO "Build Amanzi to use the Ginkgo linear solvers" TRUE)
+add_feature_info(Ginkgo
+                 ENABLE_GINKGO
+                 "Ginkgo linear solvers"
+                 )
+if (ENABLE_GINKGO)
+  find_package(Ginkgo)
+
+  if (GINKGO_FOUND)
+    message(STATUS "GINKGO Package information")
+    message(STATUS "\tGinkgo_VERSION      = ${Ginkgo_VERSION}")
+    message(STATUS "\tGinkgo_INCLUDE_DIRS = ${Ginkgo_INCLUDE_DIRS}")
+    message(STATUS "\tGinkgo_LIBRARY_DIR  = ${Ginkgo_LIBRARY_DIR}")
+    message(STATUS "\tGinkgo_LIBRARY      = ${Ginkgo_LIBRARY}")
+    message(STATUS "\tGinkgo_LIBRARIES    = ${Ginkgo_LIBRARIES}")
+    print_link_libraries(${Ginkgo_LIBRARY})
+    message(STATUS "")
+  else()
+    message(FATAL_ERROR "Can not locate Ginkgo library and/or include\n")
+  endif()
+endif()
+
 
 ##############################################################################
 #---------------------------- Mesh Frameworks -------------------------------#
