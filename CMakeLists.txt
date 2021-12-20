@@ -68,6 +68,17 @@ else()
   SET(CMAKE_SKIP_RPATH ON CACHE BOOL "Turn off for static install." FORCE)
 endif()
 
+
+if(ENABLE_MESH_MOAB)
+  set(ENABLE_MOAB_Mesh ON)
+endif()
+if(ENABLE_MESH_MSTK)
+  set(ENABLE_MSTK_Mesh ON)
+endif()
+if(ENABLE_MESHSTK)
+  set(ENABLE_STK_Mesh ON)
+endif() 
+
 # Check the mesh framework choice
 if ((ENABLE_Unstructured)  AND
     (NOT ENABLE_STK_Mesh)  AND
