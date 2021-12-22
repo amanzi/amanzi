@@ -313,6 +313,11 @@ MeshFactory::create(const Teuchos::ParameterList& parameter_list,
 // This creates a mesh by extracting subsets of entities from an
 // existing mesh possibly flattening it by removing the last
 // dimension or (in the future) extruding it when it makes sense
+//
+// Note: this call is expected to be collective on
+// MeshFactory::comm_, which may or may not be the same as
+// inmesh->get_comm().
+//
 // -------------------------------------------------------------
 Teuchos::RCP<Mesh>
 MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
@@ -347,7 +352,9 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
     }
     if (!empty) comm = Teuchos::rcp(new Epetra_MpiComm(child_comm));
   } else {
-    comm = inmesh->get_comm();
+    // note, this could be parent_comm or it could be COMM_SELF or any other
+    // comm that the factory was made with.
+    comm = comm_;
   }
 
   // check that ids are unique
@@ -365,7 +372,8 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
     if (p == Framework::MSTK) {
 
       if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-        *vo_->os() << "Creating extracted mesh using format \"MSTK\" with " << setids.size() << " local entities." << std::endl;
+        *vo_->os() << "Creating extracted mesh using format \"MSTK\" with " << setids.size() << " local entities of type "
+                   << entity_kind_string(setkind) << "." << std::endl;
       }
 
       if (comm != Teuchos::null) {

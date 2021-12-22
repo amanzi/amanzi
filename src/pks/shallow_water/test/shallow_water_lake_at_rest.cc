@@ -58,7 +58,7 @@ void lake_at_rest_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 // ---- ---- ---- ---- ---- ---- ---- ----
 // Inital Conditions
 // ---- ---- ---- ---- ---- ---- ---- ----
-void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos::RCP<Amanzi::State> &S)
+void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos::RCP<Amanzi::State> &S, int icase)
 {
   double pi = M_PI;
   const double rho = *S->GetScalarData("const_fluid_density");
@@ -68,7 +68,8 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
   S->GetConstantVectorData("gravity", "state")->Norm2(tmp);
   double g = tmp[0];
     
-  int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
+  int nnodes_wghost = mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::ALL);
   std::string passwd = "state";
     
   int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
@@ -82,18 +83,25 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
   Epetra_MultiVector &p_c = *S->GetFieldData("surface-ponded_pressure", "surface-ponded_pressure")->ViewComponent ("cell");
 
   // Define bathymetry at the cell vertices (Bn)
-  for (int n = 0; n < nnodes; ++n) {
+  for (int n = 0; n < nnodes_wghost; ++n) {
 
     Amanzi::AmanziGeometry::Point node_crd;
         
     mesh->node_get_coordinates(n, &node_crd); // Coordinate of current node
         
     double x = node_crd[0], y = node_crd[1];
-        
-    B_n[0][n] = std::max(0.0, 0.25 - 5 * ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))); // non-smooth bathymetry
+      
+    if (icase == 1) {
+      B_n[0][n] = std::max(0.0, 0.25 - 5 * ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))); // non-smooth bathymetry
+    }
+    else if (icase == 2) {
+      B_n[0][n] = 0.25 - 0.25 * x * std::sin(pi*y); // non-zero bathymetry at boundary
+    }
   }
+  
+  S->GetFieldData("surface-bathymetry")->ScatterMasterToGhosted("node");
     
-  for (int c = 0; c < ncells_owned; ++c) {
+  for (int c = 0; c < ncells_wghost; ++c) {
     
     const Amanzi::AmanziGeometry::Point &xc = mesh->cell_centroid(c);
         
@@ -133,7 +141,7 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
         
     // Perturb the solution; change time period t_new to at least 10.0
 //    if ((xc[0] - 0.3)*(xc[0] - 0.3) + (xc[1] - 0.3)*(xc[1] - 0.3) < 0.1 * 0.1) {
-//      ht_c[0][c] = H_inf + 0.01;
+//      ht_c[0][c] = H_inf + 0.1;
 //    }
 //    else {
 //      ht_c[0][c] = H_inf;
@@ -143,10 +151,16 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
     h_c[0][c] = ht_c[0][c] - B_c[0][c];
     vel_c[0][c] = 0.0;
     vel_c[1][c] = 0.0;
-    q_c[0][c] = 0.0;
-    q_c[1][c] = 0.0;
+    q_c[0][c] = h_c[0][c]*vel_c[0][c];
+    q_c[1][c] = h_c[0][c]*vel_c[1][c];
     p_c[0][c] = patm + rho * g * h_c[0][c];
   }
+  
+  S->GetFieldData("surface-bathymetry")->ScatterMasterToGhosted("cell");
+  S->GetFieldData("surface-total_depth")->ScatterMasterToGhosted("cell");
+  S->GetFieldData("surface-ponded_depth")->ScatterMasterToGhosted("cell");
+  S->GetFieldData("surface-velocity")->ScatterMasterToGhosted("cell");
+  S->GetFieldData("surface-discharge")->ScatterMasterToGhosted("cell");
 }
 
 
@@ -231,7 +245,13 @@ void RunTest(int icase)
   }
     
   // Read parameter list
-  std::string xmlFilename = "test/shallow_water_lake_at_rest.xml";
+  std::string xmlFilename;
+  if (icase == 1) {
+    xmlFilename = "test/shallow_water_lake_at_rest_case1.xml";
+  }
+  else if (icase == 2) {
+    xmlFilename = "test/shallow_water_lake_at_rest_case2.xml";
+  }
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFilename);
     
   // Create a mesh framework
@@ -275,7 +295,7 @@ void RunTest(int icase)
   S->InitializeEvaluators();
   SWPK.Initialize(S.ptr());
     
-  lake_at_rest_setIC(mesh, S);
+  lake_at_rest_setIC(mesh, S, icase);
   S->CheckAllFieldsInitialized();
         
   const Epetra_MultiVector &B = *S->GetFieldData("surface-bathymetry")->ViewComponent("cell");

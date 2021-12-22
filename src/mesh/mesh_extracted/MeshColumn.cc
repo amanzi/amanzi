@@ -23,6 +23,14 @@ MeshColumn::MeshColumn(const Teuchos::RCP<Mesh>& col3D_mesh,
   AMANZI_ASSERT(col3D_mesh_->space_dimension() == 3);
   AMANZI_ASSERT(col3D_mesh_->manifold_dimension() == 3);
 
+  // set my cells
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << " constructing MeshColumn mesh with col3D_mesh parent that has "
+               << col3D_mesh_->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED)
+               << " cells and "
+               << col3D_mesh_->num_entities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED)
+               << " faces." << std::endl;
+
   // set supporting subclasses
   set_space_dimension(3);
   set_manifold_dimension(3);

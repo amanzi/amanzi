@@ -10,6 +10,7 @@ dependency tree.
 
 ------------------------------------------------------------------------- */
 
+#include "Debugger.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "secondary_variables_field_evaluator.hh"
 
@@ -217,8 +218,35 @@ void SecondaryVariablesFieldEvaluator::UpdateField_(const Teuchos::Ptr<State>& S
     myfields.push_back(S->GetFieldData(*key, *key).ptr());
   }
 
+  // logging
+  Teuchos::RCP<Debugger> db;
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    db = Teuchos::rcp(new Debugger(myfields[0]->Mesh(), my_keys_[0],
+            plist_.sublist("verbose object")));
+    std::vector<Teuchos::Ptr<const CompositeVector>> vecs;
+    std::vector<Key> keys;
+    for (const auto& dep : dependencies_) {
+      keys.emplace_back(dep);
+      vecs.emplace_back(S->GetFieldData(dep).ptr());
+    }
+    if (db->get_cells().size() > 0) {
+      db->WriteDivider();
+      db->WriteVectors(keys, vecs);
+      db->WriteDivider();
+    }
+  }
+
   // call the evaluate method
   EvaluateField_(S, myfields);
+
+  // finish by writing the result
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    std::vector<Teuchos::Ptr<const CompositeVector>> vecs;
+    for (const auto& f : myfields) {
+      vecs.push_back(f);
+    }
+    db->WriteVectors(my_keys_, vecs);
+  }
 }
 
 

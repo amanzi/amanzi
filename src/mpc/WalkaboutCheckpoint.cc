@@ -24,6 +24,7 @@
 #include "errors.hh"
 #include "Darcy_PK.hh"
 #include "Mesh.hh"
+#include "Mesh_Algorithms.hh"
 #include "OperatorDefs.hh"
 #include "ParallelCommunication.hh"
 #include "ReconstructionCell.hh"
@@ -107,7 +108,7 @@ void WalkaboutCheckpoint::CalculateDarcyVelocity(
         int f = faces[n];
         if (bc_model[f] == Operators::OPERATOR_BC_NEUMANN) {
           double area = mesh->face_area(f);
-          AmanziGeometry::Point normal = WhetStone::face_normal_exterior(*mesh, f, &dir);
+          AmanziGeometry::Point normal = getFaceNormalExterior(*mesh, f, &dir);
 
           bool flag(false);
           for (int m = 0; m < node_basis.size(); ++m) {

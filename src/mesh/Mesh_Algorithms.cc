@@ -108,6 +108,37 @@ copyCellsToBoundaryFaces(const AmanziMesh::Mesh& mesh,
 }
 
 
+// -----------------------------------------------------------------------------
+// Exterior boundary normal: dir = 0 for internal face
+// -----------------------------------------------------------------------------
+AmanziGeometry::Point
+getFaceNormalExterior(const AmanziMesh::Mesh& mesh, int f, int* dir)
+{
+  Entity_ID_List cells;
+  mesh.face_get_cells(f, Parallel_type::ALL, &cells);
+
+  auto normal = mesh.face_normal(f, false, cells[0], dir);
+  if (cells.size() > 1) *dir = 0;
+
+  return normal;
+}
+
+
+// -----------------------------------------------------------------------------
+// Given a cell c and face f, returns the neighbooring cell
+// -----------------------------------------------------------------------------
+int
+cell_get_face_adj_cell(const AmanziMesh::Mesh& mesh, int c, int f)
+{
+  Entity_ID_List cells;
+  mesh.face_get_cells(f, Parallel_type::ALL, &cells);
+
+  if (cells.size() == 2)
+    return cells[0] + cells[1] - c;
+
+  return -1;
+}
+
 
 } // namespace AmanziMesh
 } // namespace Amanzi

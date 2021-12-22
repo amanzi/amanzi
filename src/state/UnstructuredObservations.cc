@@ -183,11 +183,18 @@ void UnstructuredObservations::InitFile_()
             << "# Functional: " << obs->get_functional() << std::endl
             << "# Variable: " << obs->get_variable() << std::endl
             << "# Number of Vectors: " << obs->get_num_vectors() << std::endl;
+      if (obs->get_degree_of_freedom() >= 0)
+        *fid_ << "# DoF: " << obs->get_degree_of_freedom() << std::endl;
     }
     *fid_ << "# =============================================================================" << std::endl;
     *fid_ << "\"time [" << time_unit_ << "]\"";
     for (const auto& obs : observables_) {
-      *fid_ << delimiter_ << "\"" << obs->get_name() << "\"";
+      if (obs->get_num_vectors() > 1) {
+        for (int i=0; i!=obs->get_num_vectors(); ++i)
+          *fid_ << delimiter_ << "\"" << obs->get_name() << " dof " << i << "\"";
+      } else {
+        *fid_ << delimiter_ << "\"" << obs->get_name() << "\"";
+      }
     }
     *fid_ << std::endl
           << std::scientific;

@@ -169,6 +169,12 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_coupled_flow.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+    add_amanzi_test(mpc_coupled_flow_source mpc_coupled_flow_source
+                    KIND      int
+                    NPROCS    2
+                    SOURCE    test/Main.cc test/mpc_coupled_flow_source.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     add_amanzi_test(mpc_coupled_transport mpc_coupled_transport
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_coupled_transport.cc

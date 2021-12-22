@@ -40,6 +40,9 @@ to disk by the UnstructuredObservation_ object.
 
     * `"number of vectors`" ``[int]`` **1** Number of vector components to write.
 
+    * `"degree of freedom`" ``[int]`` **-1** Degree of freedom to write.  Default
+        of -1 implies writing all degrees of freedom.
+
     * `"functional`" ``[string]`` the type of function to apply to the variable
       on the region.  One of:
 
@@ -116,7 +119,10 @@ class Observable {
   const std::string& get_location() { return location_; }
   const std::string& get_functional() { return functional_; }
   bool is_time_integrated() { return time_integrated_; }
-  int get_num_vectors() { return num_vectors_; }
+  int get_num_vectors() {
+    return (dof_ >= 0) ? 1 : num_vectors_;
+  }
+  int get_degree_of_freedom() { return dof_; }
 
   void Setup(const Teuchos::Ptr<State>& S);
   void FinalizeStructure(const Teuchos::Ptr<State>& S);
@@ -133,6 +139,7 @@ class Observable {
   std::string functional_;
   std::string location_;
   int num_vectors_;
+  int dof_;
   bool time_integrated_;
   double old_time_;
   bool has_eval_;

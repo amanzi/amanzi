@@ -80,7 +80,10 @@ endif()
 #
 set(ENABLE_SEACAS_Patch ON)
 if (ENABLE_SEACAS_Patch)
-  set(SEACAS_patch_file seacas-nemslice.patch)
+  set(SEACAS_patch_file
+    seacas-nemslice.patch
+    seacas-exoduspy.patch
+    )
   configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/seacas-patch-step.sh.in
                  ${SEACAS_prefix_dir}/seacas-patch-step.sh
                  @ONLY)
