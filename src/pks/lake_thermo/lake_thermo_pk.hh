@@ -15,9 +15,9 @@ Solves an advection-diffusion equation for energy:
     c\rho\frac{\partial T}{\partial t} - \nabla \cdot \kappa \nabla T + \nabla \cdot \mathbf{q} T = Q_e + T \nabla q
 
 .. todo:: Document the energy error norm!
-    
-.. _energy-pk-spec:
-.. admonition:: energy-pk-spec
+
+.. _lake_thermal_pk-spec:
+.. admonition:: lake_thermal_pk-spec
 
     * `"domain`" ``[string]`` **"domain"**  Defaults to the subsurface mesh.
 
@@ -149,7 +149,7 @@ Solves an advection-diffusion equation for energy:
     - `"conserved quantity`"
     - `"energy`"
     
- */
+*/
 
 
 #ifndef PKS_LAKE_THERMO_HH_
