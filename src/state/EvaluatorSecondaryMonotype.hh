@@ -24,8 +24,8 @@ implementing the missing Update_() and UpdateFieldDerivative_() methods.
 
 */
 
-#ifndef STATE_EVALUATOR_ALGEBRAIC_HH_
-#define STATE_EVALUATOR_ALGEBRAIC_HH_
+#ifndef AMANZI_STATE_EVALUATOR_ALGEBRAIC_HH_
+#define AMANZI_STATE_EVALUATOR_ALGEBRAIC_HH_
 
 #include <string>
 #include <vector>
@@ -118,7 +118,7 @@ EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility(State& S) 
 // ---------------------------------------------------------------------------
 template <typename Data_t, typename DataFactory_t>
 inline void
-EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::Update_(State& S) {
+EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::Update_(State& S) {
   // vector of pointers to results
   std::vector<Data_t*> results;
   for (const auto& keytag : my_keys_) {

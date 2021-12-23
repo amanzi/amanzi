@@ -21,7 +21,7 @@ namespace AmanziEOS {
 * Constructor takes a parameter list.
 ******************************************************************* */
 IsobaricEOSEvaluator::IsobaricEOSEvaluator(Teuchos::ParameterList& plist) :
-    SecondaryVariablesFieldEvaluator(plist)
+    EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   // Process the list for my provided field.
   std::string mode = plist_.get<std::string>("eos basis", "molar");
@@ -35,15 +35,16 @@ IsobaricEOSEvaluator::IsobaricEOSEvaluator(Teuchos::ParameterList& plist) :
     AMANZI_ASSERT(0);
   }
 
-  // my keys
+  // my keys and tags
+  Key tag("");
   if (mode_ == EOS_MODE_MOLAR || mode_ == EOS_MODE_BOTH) {
     a_key_ = plist_.get<std::string>("molar density key");
-    my_keys_.push_back(a_key_);
+    my_keys_.push_back(std::make_pair(a_key_, tag));
   }
 
   if (mode_ == EOS_MODE_MASS || mode_ == EOS_MODE_BOTH) {
     a_key_ = plist_.get<std::string>("mass density key");
-    my_keys_.push_back(a_key_);
+    my_keys_.push_back(std::make_pair(a_key_, tag));
   }
 
   // set up my dependencies
@@ -51,7 +52,7 @@ IsobaricEOSEvaluator::IsobaricEOSEvaluator(Teuchos::ParameterList& plist) :
 
   // -- temperature
   temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
-  dependencies_.insert(temp_key_);
+  dependencies_.push_back(std::make_pair(temp_key_, tag));
 
   // -- pressure
   pres_key_ = plist_.get<std::string>("pressure key", "atmospheric_pressure");
@@ -64,36 +65,34 @@ IsobaricEOSEvaluator::IsobaricEOSEvaluator(Teuchos::ParameterList& plist) :
 
 
 IsobaricEOSEvaluator::IsobaricEOSEvaluator(const IsobaricEOSEvaluator& other) :
-    SecondaryVariablesFieldEvaluator(other),
+    EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
     eos_(other.eos_),
     mode_(other.mode_),
     temp_key_(other.temp_key_),
     pres_key_(other.pres_key_) {};
 
 
-Teuchos::RCP<FieldEvaluator> IsobaricEOSEvaluator::Clone() const {
+Teuchos::RCP<Evaluator> IsobaricEOSEvaluator::Clone() const {
   return Teuchos::rcp(new IsobaricEOSEvaluator(*this));
 }
 
 
-void IsobaricEOSEvaluator::EvaluateField_(
-    const Teuchos::Ptr<State>& S,
-    const std::vector<Teuchos::Ptr<CompositeVector> >& results)
+void IsobaricEOSEvaluator::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
-  // Pull dependencies out of state.
-  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
-  Teuchos::RCP<const double> pres = S->GetScalarData(pres_key_);
+  auto temp = S.GetPtr<CompositeVector>(temp_key_);
+  double pres = S.Get<double>(pres_key_);
 
   int index = 0; // index to the results list
   if (mode_ == EOS_MODE_MOLAR || mode_ == EOS_MODE_BOTH) {
-    Teuchos::Ptr<CompositeVector> result = results[index];
+    auto result = results[index];
     for (auto comp = result->begin(); comp != result->end(); ++comp) {
       const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp));
       Epetra_MultiVector& result_v = *(result->ViewComponent(*comp));
 
       int count = result->size(*comp);
       for (int id = 0; id != count; ++id) {
-        result_v[0][id] = eos_->MolarDensity(temp_v[0][id], *pres);
+        result_v[0][id] = eos_->MolarDensity(temp_v[0][id], pres);
       }
     }
     index++;
@@ -104,57 +103,54 @@ void IsobaricEOSEvaluator::EvaluateField_(
     double M = eos_->MolarMass();
     results[1]->Update(M, *(results[0]), 0.0);
   } else if (mode_ == EOS_MODE_MASS || mode_ == EOS_MODE_BOTH) {
-    Teuchos::Ptr<CompositeVector> result = results[index];
+    auto result = results[index];
     for (auto comp = result->begin(); comp != result->end(); ++comp) {
-      const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp));
-      Epetra_MultiVector& result_v = *(result->ViewComponent(*comp));
+      const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp);
+      Epetra_MultiVector& result_v = *result->ViewComponent(*comp);
 
       int count = result->size(*comp);
       for (int id = 0; id != count; ++id) {
-        result_v[0][id] = eos_->Density(temp_v[0][id], *pres);
+        result_v[0][id] = eos_->Density(temp_v[0][id], pres);
       }
     }
   }
 }
 
 
-void IsobaricEOSEvaluator::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> >& results)
+void IsobaricEOSEvaluator::EvaluatePartialDerivative_(
+    const State& S, const Key& wrt_key, const Key& wrt_tag,
+    const std::vector<CompositeVector*>& results) 
 {
-  // Pull dependencies out of state.
-  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
-  Teuchos::RCP<const double> pres = S->GetScalarData(pres_key_);
+  auto temp = S.GetPtr<CompositeVector>(temp_key_);
+  double pres = S.Get<double>(pres_key_);
 
   if (wrt_key == temp_key_) {
 
     int index = 0; // index to the results list
     if (mode_ == EOS_MODE_MOLAR || mode_ == EOS_MODE_BOTH) {
       // evaluate DMolarDensityDT()
-      Teuchos::Ptr<CompositeVector> result = results[index];
-      for (CompositeVector::name_iterator comp=result->begin();
-           comp!=result->end(); ++comp) {
-        const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
-        Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+      auto result = results[index];
+      for (auto comp = result->begin(); comp != result->end(); ++comp) {
+        const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp);
+        Epetra_MultiVector& result_v = *result->ViewComponent(*comp);
 
         int count = result->size(*comp);
         for (int id=0; id!=count; ++id) {
-          result_v[0][id] = eos_->DMolarDensityDT(temp_v[0][id], *pres);
+          result_v[0][id] = eos_->DMolarDensityDT(temp_v[0][id], pres);
         }
       }
       index++;
     }
 
     if (mode_ == EOS_MODE_MASS || mode_ == EOS_MODE_BOTH) {
-      Teuchos::Ptr<CompositeVector> result = results[index];
-      for (CompositeVector::name_iterator comp=result->begin();
-           comp!=result->end(); ++comp) {
-        const Epetra_MultiVector& temp_v = *(temp->ViewComponent(*comp,false));
-        Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
+      auto result = results[index];
+      for (auto comp = result->begin(); comp != result->end(); ++comp) {
+        const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp);
+        Epetra_MultiVector& result_v = *result->ViewComponent(*comp);
 
         int count = result->size(*comp);
-        for (int id=0; id!=count; ++id) {
-          result_v[0][id] = eos_->DDensityDT(temp_v[0][id], *pres);
+        for (int id = 0; id != count; ++id) {
+          result_v[0][id] = eos_->DDensityDT(temp_v[0][id], pres);
         }
       }
     }

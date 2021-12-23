@@ -15,26 +15,26 @@
 #define AMANZI_EOS_DENSITY_EVALUATOR_HH_
 
 #include "EOS_Density.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 #include "Factory.hh"
-#include "secondary_variables_field_evaluator.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-class EOSDensityEvaluator : public SecondaryVariablesFieldEvaluator {
+class EOSDensityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   enum EOSMode { EOS_MODE_MASS, EOS_MODE_MOLAR, EOS_MODE_BOTH };
 
   explicit EOSDensityEvaluator(Teuchos::ParameterList& plist);
-
   EOSDensityEvaluator(const EOSDensityEvaluator& other);
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
-  // Required methods from SecondaryVariableFieldEvaluator
-  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const std::vector<Teuchos::Ptr<CompositeVector> >& results);
-  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> >& results);
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
+
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
+
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Key& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override;
 
   Teuchos::RCP<EOS_Density> get_EOS() { return eos_; }
 
@@ -48,7 +48,7 @@ class EOSDensityEvaluator : public SecondaryVariablesFieldEvaluator {
   Key pres_key_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator, EOSDensityEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, EOSDensityEvaluator> factory_;
 };
 
 }  // namespace AmanziEOS

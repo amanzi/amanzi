@@ -16,30 +16,27 @@
 namespace Amanzi {
 
 // -----------------------------------------------------------------------------
-// Transfer operators -- ONLY COPIES POINTERS
+// Transfer operators -- copies ONLY pointers
 // -----------------------------------------------------------------------------
 void PK_Physical::State_to_Solution(const Teuchos::RCP<State>& S,
                                     TreeVector& solution) {
-  solution.SetData(S->GetFieldData(key_, name_));
+  solution.SetData(S->GetPtrW<CompositeVector>(key_, key_));
 }
 
 
-// -----------------------------------------------------------------------------
-// Transfer operators -- ONLY COPIES POINTERS
-// -----------------------------------------------------------------------------
 void PK_Physical::Solution_to_State(TreeVector& solution,
                                     const Teuchos::RCP<State>& S) {
-  AMANZI_ASSERT(solution.Data() == S->GetFieldData(key_));
-  //  S->SetData(key_, name_, solution->Data());
-  //  solution_evaluator_->SetFieldAsChanged();
+  AMANZI_ASSERT(solution.Data() == S->GetPtr<TreeVector>(key_));
+  // S->SetData(key_, name_, solution->Data());
+  // solution_evaluator_->SetFieldAsChanged();
 }
 
 
 void PK_Physical::Solution_to_State(const TreeVector& solution,
                                     const Teuchos::RCP<State>& S) {
-  AMANZI_ASSERT(solution.Data() == S->GetFieldData(key_));
-  //  S->SetData(key_, name_, solution->Data());
-  //  solution_evaluator_->SetFieldAsChanged();
+  AMANZI_ASSERT(solution.Data() == S->GetPtr<TreeVector>(key_));
+  // S->SetData(key_, name_, solution->Data());
+  // solution_evaluator_->SetFieldAsChanged();
 }
   
 
@@ -54,18 +51,18 @@ void PK_Physical::set_states(const Teuchos::RCP<State>& S,
   S_inter_ = S_inter;
   S_next_ = S_next;
     
-  // Get the FE and mark it as changed.
+  // Get the evaluator and mark it as changed.
   // Note that this is necessary because we need this to point at the
-  // FE in S_next_, not the one which we created in S_.
-  Teuchos::RCP<FieldEvaluator> fm = S_next->GetFieldEvaluator(key_);
+  // evaluator in S_next_, not the one which we created in S_.
+  auto fm = S_next->GetEvaluatorPtr(key_);
 #if ENABLE_DBC
-  solution_evaluator_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
+  solution_evaluator_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<TreeVector> >(fm);
   AMANZI_ASSERT(solution_evaluator_ != Teuchos::null);
 #else
-  solution_evaluator_ = Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(fm);
+  solution_evaluator_ = Teuchos::rcp_static_cast<EvaluatorPrimary<TreeVector> >(fm);
 #endif
 
-  solution_evaluator_->SetFieldAsChanged(S_next_.ptr());
+  solution_evaluator_->SetChanged();
 }
 
 } // namespace Amanzi

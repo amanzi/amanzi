@@ -25,17 +25,7 @@
 
 namespace Amanzi {
 
-// Fields
-typedef enum { NULL_FIELD_TYPE, COMPOSITE_VECTOR_FIELD, CONSTANT_VECTOR, CONSTANT_SCALAR } FieldType;
-
-enum class DataType { NULL_TYPE,
-                      COMPOSITE_VECTOR,
-                      CONSTANT_DOUBLE_VECTOR,
-                      CONSTANT_DOUBLE };
-
-typedef enum { UNKNOWN, PRIMARY, SECONDARY, INDEPENDENT } EvaluatorType;
-
-typedef bool NullFactory; // placeholder object for no factory required
+typedef bool NullFactory;  // placeholder object for no factory required
 
 } // namespace
 

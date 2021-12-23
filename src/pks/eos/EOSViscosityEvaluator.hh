@@ -15,25 +15,23 @@
 #define AMANZI_EOS_VISCOSITY_EVALUATOR_HH_
 
 #include "EOS_Viscosity.hh"
-#include "secondary_variable_field_evaluator.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-class EOSViscosityEvaluator : public SecondaryVariableFieldEvaluator {
+class EOSViscosityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  // constructor format for all derived classes
-  explicit
-  EOSViscosityEvaluator(Teuchos::ParameterList& plist);
-
+  explicit EOSViscosityEvaluator(Teuchos::ParameterList& plist);
   EOSViscosityEvaluator(const EOSViscosityEvaluator& other);
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
-  // Required methods from SecondaryVariableFieldEvaluator
-  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& result);
-  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
+
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
+
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Key& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override;
 
  protected:
   // the actual model
@@ -44,7 +42,7 @@ class EOSViscosityEvaluator : public SecondaryVariableFieldEvaluator {
   Key temp_key_, pres_key_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator, EOSViscosityEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, EOSViscosityEvaluator> factory_;
 };
 
 }  // namespace AmanziEOS

@@ -43,7 +43,7 @@ class EvaluatorMultiplicativeReciprocal : public EvaluatorSecondaryMonotype<Comp
   EvaluatorMultiplicativeReciprocal(Teuchos::ParameterList& plist);
   EvaluatorMultiplicativeReciprocal(const EvaluatorMultiplicativeReciprocal& other);
 
-  // inteface functions to FieldEvaluator
+  // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;

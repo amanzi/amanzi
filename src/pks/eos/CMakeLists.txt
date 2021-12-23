@@ -90,7 +90,7 @@ if (BUILD_TESTS)
         file(COPY ${DataFiles} DESTINATION ${EOS_BINARY_DIR}/test/)
     endif()
 
-    set(amanzi_libs eos atk)
+    set(amanzi_libs eos atk operators)
 
     # Test: Multiscale
     add_amanzi_test(eos_evaluators eos_evaluators

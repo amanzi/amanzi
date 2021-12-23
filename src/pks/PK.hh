@@ -80,7 +80,7 @@ Developer's note:
 
 #include "TreeVector.hh"
 #include "State.hh"
-#include "primary_variable_field_evaluator.hh"
+#include "EvaluatorPrimary.hh"
 
 namespace Amanzi {
 
@@ -164,24 +164,26 @@ class PK {
 
  protected:
   // Helper method to add a primary variable evaluator
+  /*
   void AddDefaultPrimaryEvaluator_(const Key& key) {
     Teuchos::ParameterList elist;
     elist.set<std::string>("evaluator name", key);
-    auto eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+    auto eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector>(elist));
     AMANZI_ASSERT(S_ != Teuchos::null);
-    S_->SetFieldEvaluator(key, eval);
+    S_->SetEvaluator(key, eval);
   }
+  */
 
-  // Helper method to initialize a field
+  // Helper method to initialize a CV field
   void InitializeField_(const Teuchos::Ptr<State>& S, const std::string& passwd,
                         std::string fieldname, double default_val) {
     Teuchos::OSTab tab = vo_->getOSTab();
 
-    if (S->HasField(fieldname)) {
-      if (S->GetField(fieldname)->owner() == passwd) {
-        if (!S->GetField(fieldname)->initialized()) {
-          S->GetFieldData(fieldname, passwd)->PutScalar(default_val);
-          S->GetField(fieldname, passwd)->set_initialized();
+    if (S->HasData(fieldname)) {
+      if (S->GetRecord(fieldname).owner() == passwd) {
+        if (!S->GetRecord(fieldname).initialized()) {
+          S->GetW<CompositeVector>(fieldname, "", passwd).PutScalar(default_val);
+          S->GetRecordW(fieldname, "", passwd).set_initialized();
 
           if (vo_->os_OK(Teuchos::VERB_MEDIUM))
             *vo_->os() << "initialized \"" << fieldname << "\" to value " << default_val << std::endl;

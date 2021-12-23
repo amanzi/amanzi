@@ -15,29 +15,27 @@
 #define AMANZI_EOS_ISOBARIC_EOS_EVALUATOR_HH_
 
 #include "Factory.hh"
-#include "secondary_variables_field_evaluator.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 
 #include "EOS_Density.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-class IsobaricEOSEvaluator : public SecondaryVariablesFieldEvaluator {
+class IsobaricEOSEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   enum EOSMode { EOS_MODE_MASS, EOS_MODE_MOLAR, EOS_MODE_BOTH };
 
-  // constructor format for all derived classes
-  explicit
-  IsobaricEOSEvaluator(Teuchos::ParameterList& plist);
-
+  explicit IsobaricEOSEvaluator(Teuchos::ParameterList& plist);
   IsobaricEOSEvaluator(const IsobaricEOSEvaluator& other);
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
-  // Required methods from SecondaryVariableFieldEvaluator
-  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const std::vector<Teuchos::Ptr<CompositeVector> >& results);
-  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> >& results);
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
+
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
+
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Key& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override;
 
   Teuchos::RCP<EOS_Density> get_EOS() { return eos_; }
 
@@ -46,14 +44,10 @@ class IsobaricEOSEvaluator : public SecondaryVariablesFieldEvaluator {
   Teuchos::RCP<EOS_Density> eos_;
   EOSMode mode_;
 
-  // Keys for fields
-  // dependencies
-  Key temp_key_;
-  Key pres_key_;
-  Key a_key_;
+  Key temp_key_, pres_key_, a_key_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator, IsobaricEOSEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, IsobaricEOSEvaluator> factory_;
 };
 
 }  // namespace AmanziEOS

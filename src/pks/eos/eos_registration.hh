@@ -31,10 +31,10 @@ namespace Amanzi {
 namespace AmanziEOS {
 
 // registry of method
-Utils::RegisteredFactory<FieldEvaluator, EOSDensityEvaluator> EOSDensityEvaluator::factory_("eos");
-Utils::RegisteredFactory<FieldEvaluator, IsobaricEOSEvaluator> IsobaricEOSEvaluator::factory_("isobaric eos");
-Utils::RegisteredFactory<FieldEvaluator, MolarFractionGasEvaluator> MolarFractionGasEvaluator::factory_("molar fraction gas");
-Utils::RegisteredFactory<FieldEvaluator, EOSViscosityEvaluator> EOSViscosityEvaluator::factory_("viscosity");
+Utils::RegisteredFactory<Evaluator, EOSDensityEvaluator> EOSDensityEvaluator::factory_("eos");
+Utils::RegisteredFactory<Evaluator, IsobaricEOSEvaluator> IsobaricEOSEvaluator::factory_("isobaric eos");
+Utils::RegisteredFactory<Evaluator, MolarFractionGasEvaluator> MolarFractionGasEvaluator::factory_("molar fraction gas");
+Utils::RegisteredFactory<Evaluator, EOSViscosityEvaluator> EOSViscosityEvaluator::factory_("viscosity");
 
 Utils::RegisteredFactory<EOS_Density, IdealGas_Density> IdealGas_Density::factory_("ideal gas");
 Utils::RegisteredFactory<EOS_Density, VaporInGas_Density> VaporInGas_Density::factory_("vapor in gas");

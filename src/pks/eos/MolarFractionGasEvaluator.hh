@@ -15,26 +15,25 @@
 #define AMANZI_EOS_MOLAR_FRACTION_GAS_EVALUATOR_HH_
 
 #include "Factory.hh"
-#include "secondary_variable_field_evaluator.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 
 #include "EOS_SaturatedVaporPressure.hh"
-#include "MolarFractionGasEvaluator.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
 
-class MolarFractionGasEvaluator : public SecondaryVariableFieldEvaluator {
+class MolarFractionGasEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   explicit MolarFractionGasEvaluator(Teuchos::ParameterList& plist);
-
   MolarFractionGasEvaluator(const MolarFractionGasEvaluator& other);
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
-  // Required methods from SecondaryVariableFieldEvaluator
-  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& result);
-  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
+
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
+
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Key& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override;
 
   Teuchos::RCP<EOS_SaturatedVaporPressure> get_svp_model() { return svp_model_; }
 
@@ -44,7 +43,7 @@ class MolarFractionGasEvaluator : public SecondaryVariableFieldEvaluator {
   Teuchos::RCP<EOS_SaturatedVaporPressure> svp_model_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator, MolarFractionGasEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, MolarFractionGasEvaluator> factory_;
 };
 
 }  // namespace AmanziEOS

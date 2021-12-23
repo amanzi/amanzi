@@ -21,7 +21,7 @@
 
 #include "Debugger.hh"
 #include "Key.hh"
-#include "primary_variable_field_evaluator.hh"
+#include "EvaluatorPrimary.hh"
 #include "PK.hh"
 
 namespace Amanzi {
@@ -66,7 +66,7 @@ class PK_Physical : virtual public PK {
 
   // solution and evaluator
   std::string key_;
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> solution_evaluator_;
+  Teuchos::RCP<EvaluatorPrimary<TreeVector> > solution_evaluator_;
 
   // debugger for dumping vectors
   Teuchos::RCP<Debugger> db_;
