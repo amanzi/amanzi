@@ -105,11 +105,20 @@ void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
   auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
   op_tree_lake_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
 
+  // only coupling terms
+  op_tree_coupling_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
+
   auto op0 = lake_pk_->my_operator(Operators::OPERATOR_MATRIX)->Clone();
   auto op1 = soil_pk_->my_operator(Operators::OPERATOR_MATRIX)->Clone();
 
+  Teuchos::RCP<Operators::Operator> op0_null;
+  Teuchos::RCP<Operators::Operator> op1_null;
+
   op_tree_lake_->set_operator_block(0, 0, op0);
   op_tree_lake_->set_operator_block(1, 1, op1);
+
+  op_tree_coupling_->set_operator_block(0, 0, op0_null);
+  op_tree_coupling_->set_operator_block(1, 1, op1_null);
 
   // off-diagonal blocks are coupled PDEs
   // -- minimum composite vector spaces containing the coupling term
@@ -292,6 +301,11 @@ void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
   op_coupling00->Setup(values00, 1.0);                            // values00 will be ADDED (with factor)
   op_coupling00->UpdateMatrices(Teuchos::null, Teuchos::null);
 
+  auto op_coupling00_null = Teuchos::rcp(new Operators::PDE_CouplingFlux(
+        oplist, cvs_lake, cvs_lake, inds_lake1, inds_lake1, op0_null));
+  op_coupling00_null->Setup(values00, 1.0);                            // values00 will be ADDED (with factor)
+  op_coupling00_null->UpdateMatrices(Teuchos::null, Teuchos::null);
+
 //  auto op_coupling01 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
 //      oplist, cvs_lake, cvs_soil, inds_lake, inds_soil));
 //  op_coupling01->Setup(values, -1.0);
@@ -322,11 +336,24 @@ void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
   op_coupling11->Setup(values11, 1.0);
   op_coupling11->UpdateMatrices(Teuchos::null, Teuchos::null);
 
+  auto op_coupling11_null = Teuchos::rcp(new Operators::PDE_CouplingFlux(
+      oplist, cvs_soil, cvs_soil, inds_soil, inds_soil, op1_null));
+  op_coupling11_null->Setup(values11, 1.0);
+  op_coupling11_null->UpdateMatrices(Teuchos::null, Teuchos::null);
+
   op_tree_lake_->set_operator_block(0, 1, op_coupling01->global_operator());
   op_tree_lake_->set_operator_block(1, 0, op_coupling10->global_operator());
 
+  // set coupling blocks
+  op_tree_coupling_->set_operator_block(0, 1, op_coupling01->global_operator());
+  op_tree_coupling_->set_operator_block(1, 0, op_coupling10->global_operator());
+
   op_tree_lake_->set_operator_block(0, 0, op_coupling00->global_operator());
   op_tree_lake_->set_operator_block(1, 1, op_coupling11->global_operator());
+
+  // set coupling blocks
+  op_tree_coupling_->set_operator_block(0, 0, op_coupling00_null->global_operator());
+  op_tree_coupling_->set_operator_block(1, 1, op_coupling11_null->global_operator());
 
   // create a global problem
 //  lake_pk_->my_pde(Operators::PDE_DIFFUSION)->ApplyBCs(true, true, true);
@@ -367,6 +394,15 @@ void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
   std::cout << "before A" << std::endl;
   std::cout << *op_tree_lake_->A() << std::endl;
   std::cout << "after A" << std::endl;
+
+  op_tree_coupling_->SymbolicAssembleMatrix();
+  op_tree_coupling_->AssembleMatrix();
+
+  std::cout << "before A_coupling" << std::endl;
+  std::cout << *op_tree_coupling_->A() << std::endl;
+  std::cout << "after A_coupling" << std::endl;
+
+
 //  exit(0);
 
 
@@ -407,6 +443,31 @@ MPCLake1D::set_states(const Teuchos::RCP<State>& S,
 //  water_->set_states(S,S_inter,S_next);
 }
 
+/* ******************************************************************
+* Calculate Y = A * X using matrix-free matvec on blocks of operators.
+****************************************************************** */
+int ApplyFlattened(const Operators::TreeOperator& op, const TreeVector& X, TreeVector& Y)
+{
+  Y.PutScalar(0.0);
+
+  auto Xtv = collectTreeVectorLeaves_const(X);
+  auto Ytv = collectTreeVectorLeaves(Y);
+
+  int ierr(0), n(0);
+  for (auto jt = Ytv.begin(); jt != Ytv.end(); ++jt, ++n) {
+    CompositeVector& yN = *(*jt)->Data();
+    int m(0);
+    for (auto it = Xtv.begin(); it != Xtv.end(); ++it, ++m) {
+      auto block = op.get_operator_block(n,m);
+      if (block != Teuchos::null) {
+        const CompositeVector& xN = *(*it)->Data();
+        ierr |= block->Apply(xN, yN, 1.0);
+      }
+    }
+  }
+  return ierr;
+}
+
 
 // -- computes the non-linear functional g = g(t,u,udot)
 //    By default this just calls each sub pk FunctionalResidual().
@@ -419,10 +480,34 @@ MPCLake1D::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVecto
   // generate local matrices and apply sources and boundary conditions
   StrongMPC<PK_BDF_Default>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
 
+  std::cout << "MPCLake1D::FunctionalResidual first" << std::endl;
+  f->Print(std::cout);
+
+  // add contribution of coupling terms to the residual
+//  Teuchos::RCP<TreeVector> g(f);
+  TreeVector g(*f);
+
+  // op_tree_coupling_ contains only coupling blocks
+//  op_tree_coupling_->SymbolicAssembleMatrix();
+  op_tree_coupling_->AssembleMatrix();
+  int ierr = op_tree_coupling_->ApplyAssembled(*u_new, g);
+
+//  ApplyFlattened(*op_tree_coupling_, *u_new, *g);
+
+//  f->Update(1.0, g, 1.0);
+
+  std::cout << "MPCLake1D::FunctionalResidual second" << std::endl;
+  f->Print(std::cout);
+
+//  exit(0);
+
+  /*
+  // HERE <----
+
   // although, residual calculation can be completed using off-diagonal
   // blocks, we use global matrix-vector multiplication instead.
   op_tree_lake_->AssembleMatrix();
-  int ierr = op_tree_lake_->ApplyAssembled(*u_new, *f);
+  int ierr = op_tree_lake_->ApplyAssembled(*u_new, *f); // f = A*u_new
   AMANZI_ASSERT(!ierr);
 
   // diagonal blocks in tree operator must be lake and soil
@@ -434,34 +519,18 @@ MPCLake1D::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVecto
 
   f->SubVector(0)->Data()->Update(-1.0, *op0->rhs(), 1.0);
   f->SubVector(1)->Data()->Update(-1.0, *op1->rhs(), 1.0);
+  */
 
 //  lake_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(0),
 //            u_new->SubVector(0), f->SubVector(0));
 //  soil_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(1),
 //            u_new->SubVector(1), f->SubVector(1));
+//
+//  op_tree_lake_->AssembleMatrix();
+//  int ierr = op_tree_lake_->ApplyAssembled(*u_new, *f);
+//  AMANZI_ASSERT(!ierr);
 
-  // propagate updated info into state
-//  Solution_to_State(*u_new, S_next_);
-//
-//  // Evaluate the surface flow residual
-//  soil_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(1),
-//                            u_new->SubVector(1), g->SubVector(1));
-//
-////
-////  // The residual of the surface flow equation provides the mass flux from
-////  // subsurface to surface.
-////
-////  Epetra_MultiVector& source = *S_next_->GetFieldData(Keys::getKey(domain_surf_,"surface_subsurface_flux"),
-////          name_)->ViewComponent("cell",false);
-////  source = *g->SubVector(1)->Data()->ViewComponent("cell",false);
-////
-//  // Evaluate the subsurface residual, which uses this flux as a Neumann BC.
-//  lake_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(0),
-//          u_new->SubVector(0), g->SubVector(0));
-//
-////  // All surface to subsurface fluxes have been taken by the subsurface.
-////  g->SubVector(1)->Data()->ViewComponent("cell",false)->PutScalar(0.);
-
+  /*
   std::cout << "FunctionalResidual op0->A()" << std::endl;
   std::cout << "op0 = " << op0 << std::endl;
   op0->SymbolicAssembleMatrix();
@@ -477,6 +546,7 @@ MPCLake1D::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVecto
   std::cout << *op1->A() << std::endl;
 
   std::cout << *op_tree_lake_->A() << std::endl;
+  */
 
   std::cout << "FunctionalResidual DONE" << std::endl;
 }
@@ -486,7 +556,13 @@ int MPCLake1D::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu) {
 
   Pu->PutScalar(0.0);
-  return op_tree_lake_->ApplyInverse(*u, *Pu);
+//  int ierr = op_tree_lake_->ApplyInverse(*u, *Pu);
+
+//  int ierr = 0;
+//
+//  *Pu = *u;
+//
+//  return ierr;
 
   /*
   int ierr = 0;
@@ -519,6 +595,10 @@ int MPCLake1D::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
 
   return (ierr > 0) ? 0 : 1;
   */
+
+  int ierr = StrongMPC::ApplyPreconditioner(u,Pu);
+
+  return (ierr > 0) ? 0 : 1;
 
 }
 

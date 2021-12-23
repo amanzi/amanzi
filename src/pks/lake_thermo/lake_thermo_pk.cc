@@ -448,7 +448,7 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   // read model parameters
 
   rho0 = 1000.;
-  cp_ = 4184./rho0;
+  cp_ = 3990./rho0;
 
   Teuchos::ParameterList& param_list = plist_->sublist("parameters");
 
@@ -726,13 +726,20 @@ void Lake_Thermo_PK::UpdateBoundaryConditions_(
   const Epetra_MultiVector& flux =
        *S->GetFieldData(surface_flux_key_)->ViewComponent("cell",false);
 
+  // get temperature
+  const Epetra_MultiVector& cond_v = *S->GetFieldData(conductivity_key_)
+	->ViewComponent("cell",false);
+
+  std::cout << "thermal conductivity = " << cond_v[0][39] << std::endl;
+
   // Neumann diffusive flux, not Neumann TOTAL flux.  Potentially advective flux.
   for (Functions::BoundaryFunction::Iterator bc=bc_diff_flux_->begin();
        bc!=bc_diff_flux_->end(); ++bc) {
     int f = bc->first;
+    std::cout << "f = " << f << std::endl;
     markers[f] = Operators::OPERATOR_BC_NEUMANN;
-    values[f] = flux[0][0]; //*h_; //bc->second;
-    std::cout << "BC flux = " << flux[0][0] << std::endl;
+    values[f] = flux[0][39]; //*h_; ///cond_v[0][39]*h_; //bc->second;
+    std::cout << "f = " << f << ", BC flux = " << flux[0][39] << std::endl;
     adv_markers[f] = Operators::OPERATOR_BC_NEUMANN;
     adv_values[f] = 0.;
   }

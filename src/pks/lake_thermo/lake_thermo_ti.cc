@@ -108,6 +108,79 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   r_ = (*r_func_)(args);
   E_ = (*E_func_)(args);
 
+  // Compute evaporartion rate
+    Teuchos::ParameterList& param_list_eval = plist_->sublist("surface flux evaluator");
+    Teuchos::ParameterList& param_list_param = param_list_eval.sublist("parameters");
+    // read parameters from the met data
+    Teuchos::RCP<Amanzi::Function> SS_func_ = Teuchos::rcp(fac.Create(param_list_param.sublist("solar radiation")));
+    Teuchos::RCP<Amanzi::Function> E_a_func_ = Teuchos::rcp(fac.Create(param_list_param.sublist("atmospheric downward radiation")));
+    Teuchos::RCP<Amanzi::Function> T_a_func_ = Teuchos::rcp(fac.Create(param_list_param.sublist("air temperature")));
+    Teuchos::RCP<Amanzi::Function> H_a_func_ = Teuchos::rcp(fac.Create(param_list_param.sublist("air humidity")));
+    Teuchos::RCP<Amanzi::Function> P_a_func_ = Teuchos::rcp(fac.Create(param_list_param.sublist("atmospheric pressure")));
+
+    args[0] = S_inter_->time();
+    double SS = (*SS_func_)(args);
+    double E_a = (*E_a_func_)(args);
+    double T_a = (*T_a_func_)(args);
+    double q_a = (*H_a_func_)(args);
+    double P_a = (*P_a_func_)(args);
+
+    // get temperature
+    const Epetra_MultiVector& temp_v = *S_inter_->GetFieldData(temperature_key_)
+		->ViewComponent("cell",false);
+
+    Epetra_MultiVector& g_c = *g->Data()->ViewComponent("cell",false);
+    unsigned int ncomp = g_c.MyLength();
+
+    double T_s = temp_v[0][ncomp-1];
+
+	double b1_vap   = 610.78;        // Coefficient [N m^{-2} = kg m^{-1} s^{-2}]
+    double b3_vap   = 273.16;        // Triple point [K]
+	double b2w_vap  = 17.2693882;    // Coefficient (water)
+	double b2i_vap  = 21.8745584;    // Coefficient (ice)
+	double b4w_vap  = 35.86;         // Coefficient (temperature) [K]
+	double b4i_vap  = 7.66;          // Coefficient (temperature) [K]
+
+	// Saturation water vapour pressure [N m^{-2} = kg m^{-1} s^{-2}]
+	double wvpres_s;
+
+	double h_ice = 0.;
+	double h_Ice_min_flk = 1.e-9;
+	if (h_ice < h_Ice_min_flk) {  // Water surface
+		wvpres_s = b1_vap*std::exp(b2w_vap*(T_s-b3_vap)/(T_s-b4w_vap));
+	} else {                      // Ice surface
+		wvpres_s = b1_vap*std::exp(b2i_vap*(T_s-b3_vap)/(T_s-b4i_vap));
+	}
+
+	// Saturation specific humidity at T=T_s
+	double tpsf_R_dryair    = 2.8705e2;  // Gas constant for dry air [J kg^{-1} K^{-1}]
+	double tpsf_R_watvap    = 4.6151e2;  // Gas constant for water vapour [J kg^{-1} K^{-1}]
+	double tpsf_Rd_o_Rv  = tpsf_R_dryair/tpsf_R_watvap;
+	double q_s = tpsf_Rd_o_Rv*wvpres_s/(P_a-(1.-tpsf_Rd_o_Rv)*wvpres_s);
+
+	double height_tq = 2;
+	double tpsf_kappa_q_a   = 2.4e-05; // Molecular diffusivity of air for water vapour [m^{2} s^{-1}]
+
+	double LE = -tpsf_kappa_q_a*(q_a-q_s)/height_tq;
+
+	double rho_a = P_a/tpsf_R_dryair/T_s/(1.+(1./tpsf_Rd_o_Rv-1.)*q_s);
+
+	double tpsf_c_a_p  = 1.005e3; // Specific heat of air at constant pressure [J kg^{-1} K^{-1}]
+	double tpsf_L_evap = 2.501e6; // Specific heat of evaporation [J kg^{-1}]
+	double tpl_L_f     = 3.3e5;   // Latent heat of fusion [J kg^{-1}]
+
+	double Q_watvap   = LE*rho_a;
+	LE = tpsf_L_evap;
+	if (h_ice >= h_Ice_min_flk) LE = LE + tpl_L_f;   // Add latent heat of fusion over ice
+	LE = Q_watvap*LE;
+
+	double row0 = 1.e+3;
+	double evap_rate = LE/(row0*tpsf_L_evap);
+
+//	std::cout << "evap_rate = " << evap_rate << std::endl;
+
+//	E_ = evap_rate;
+
   // update depth
   double dt = S_next_->time() - S_inter_->time();
   double dhdt = r_ - E_ - R_s_ - R_b_;
@@ -179,7 +252,9 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   }
 #endif
 
-//  g->Data()->Print(std::cout);
+  g->Data()->Print(std::cout);
+
+//  exit(0);
 
 //  if (ice_cover_) exit(0);
 
@@ -218,6 +293,9 @@ int Lake_Thermo_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
 
 //  std::cout << "ApplyPreconditioner ierr = " << ierr << std::endl;
 //  std::cout << *preconditioner_->A() << std::endl;
+
+//  int ierr = 0;
+//  *Pu = *u;
 
   return (ierr > 0) ? 0 : 1;
 };
@@ -331,7 +409,7 @@ void Lake_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
 //    preconditioner_adv_->Setup(*mass_flux);
 //    preconditioner_adv_->SetBCs(bc_adv_, bc_adv_);
 //    preconditioner_adv_->UpdateMatrices(mass_flux.ptr(), dhdT.ptr());
-//    ApplyDirichletBCsToEnthalpy_(S_next_.ptr());  !!!!!!!!!!!!! IMPORTANT !!!!!!
+//    ApplyDirichletBCsToEnthalpy_(S_next_.ptr());  //!!!!!!!!!!!!! IMPORTANT !!!!!!
 //    preconditioner_adv_->ApplyBCs(false, true, false);
 //
 //  }

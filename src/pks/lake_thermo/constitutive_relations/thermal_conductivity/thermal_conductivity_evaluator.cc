@@ -73,7 +73,8 @@ void ThermalConductivityEvaluator::EvaluateField_(
   double z_w   = 1.0;
 
   double lambda_ice = 2.2;
-  double lambda_w   = 1.5;
+  double lambda_w   = 3.*0.561; //1.5
+  lambda_ice = lambda_w;
 
   // get temperature
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
@@ -105,7 +106,7 @@ void ThermalConductivityEvaluator::EvaluateField_(
 
       for (int i=ncomp-2; i!=0; --i) {
         if (temp_v[0][i] < 273.15) { // check if there is ice cover
-//          std::cout << "temp_v[0][" << i << "] = " << temp_v[0][i] << std::endl;
+          std::cout << "temp_v[0][" << i << "] = " << temp_v[0][i] << std::endl;
           ice_cover_ = true;
           i_ice_min = i;
         }
@@ -122,7 +123,7 @@ void ThermalConductivityEvaluator::EvaluateField_(
       z_w = zcw[2];
       }
 
-//      std::cout << "z_ice = " << z_ice << ", z_w = " << z_w << std::endl;
+      std::cout << "z_ice = " << z_ice << ", z_w = " << z_w << std::endl;
 
       for (int i=0; i!=ncomp; ++i) {
         if (temp_v[0][i] < 273.15) { // this cell is in ice layer
@@ -137,7 +138,7 @@ void ThermalConductivityEvaluator::EvaluateField_(
         }
       } // i
 
-
+/*
       // continuous conductivity between ice and water, no ice movement or changes depending on temperature
       for (int i=0; i!=ncomp; ++i) {
 
@@ -152,8 +153,24 @@ void ThermalConductivityEvaluator::EvaluateField_(
                 result_v[0][i] = lambda_w + (lambda_ice - lambda_w)/(z_ice - z_w)*(zc[2] - z_w);
             }
         }
-//        std::cout << "z = " << zc[2] << ", lambda = " << result_v[0][i] << std::endl;
+        std::cout << "z = " << zc[2] << ", lambda = " << result_v[0][i] << std::endl;
       } // i
+*/
+
+      // simple interpolation between neighboring cells
+      std::vector<double> lambda(ncomp);
+
+      lambda[0] = result_v[0][0];
+
+      for (int i=1; i!=ncomp; ++i) {
+
+        const AmanziGeometry::Point& zc = mesh->cell_centroid(i);
+
+        lambda[i] = 0.5*(result_v[0][i-1]+result_v[0][i]);
+
+      } // i
+
+      for (int i=0; i!=ncomp; ++i)  result_v[0][i] = lambda[i];
 
 
 

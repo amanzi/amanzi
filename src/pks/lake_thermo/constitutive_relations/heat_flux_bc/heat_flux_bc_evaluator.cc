@@ -136,7 +136,7 @@ void HeatFluxBCEvaluator::EvaluateField_(
     	double tpsf_Rd_o_Rv  = tpsf_R_dryair/tpsf_R_watvap;
     	double q_s = tpsf_Rd_o_Rv*wvpres_s/(P_a-(1.-tpsf_Rd_o_Rv)*wvpres_s);
 
-    	double height_tq = 2;
+    	double height_tq = 2.;
 		double tpsf_kappa_t_a   = 2.2e-05; // Molecular temperature conductivity of air [m^{2} s^{-1}]
     	double tpsf_kappa_q_a   = 2.4e-05; // Molecular diffusivity of air for water vapour [m^{2} s^{-1}]
 
@@ -144,6 +144,8 @@ void HeatFluxBCEvaluator::EvaluateField_(
     	LE = -tpsf_kappa_q_a*(q_a-q_s)/height_tq;
 
     	double rho_a = P_a/tpsf_R_dryair/T_s/(1.+(1./tpsf_Rd_o_Rv-1.)*q_s);
+
+//    	std::cout << "rho_a = " << rho_a << std::endl;
 
     	double tpsf_c_a_p  = 1.005e3; // Specific heat of air at constant pressure [J kg^{-1} K^{-1}]
     	double tpsf_L_evap = 2.501e6; // Specific heat of evaporation [J kg^{-1}]
@@ -155,12 +157,27 @@ void HeatFluxBCEvaluator::EvaluateField_(
     	if (h_ice >= h_Ice_min_flk) LE = LE + tpl_L_f;   // Add latent heat of fusion over ice
     	LE = Q_watvap*LE;
 
+    	double row0 = 1.e+3;
+    	double evap_rate = LE/(row0*tpsf_L_evap);
+
+//    	std::cout << "evap_rate = " << evap_rate << std::endl;
+
+    	std::cout << "q_s = " << q_s << std::endl;
+    	std::cout << "q_a = " << q_a << std::endl;
+    	std::cout << "T_s = " << T_s << std::endl;
+    	std::cout << "T_a = " << T_a << std::endl;
+    	std::cout << "P_a = " << P_a << std::endl;
+    	std::cout << "rho_a = " << rho_a << std::endl;
+    	std::cout << "SS = " << SS << std::endl;
     	std::cout << "E_a = " << E_a << ", E_s = " << E_s << std::endl;
     	std::cout << "H = " << H << ", LE = " << LE << std::endl;
 
         result_v[0][i] = SS*(1.-alpha) + E_a - E_s - H - LE;
 
         result_v[0][i] *= -1.; ///cond_v[0][i];
+
+//        std::cout << "cond_v[0][i] = " << cond_v[0][i] << std::endl;
+
       } // i
 
     }
