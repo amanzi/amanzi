@@ -265,7 +265,9 @@ Overland energy with Ice
 ^^^^^^^^^^^^^^^^^^^^^^^^
 { energy_surface_ice }
 
-
+Lake Model (1D) with Ice
+^^^^^^^^^^^^^^^^^^^^^^^^
+{ lake_thermo_pk }
 
 Surface Energy Balance PKs
 ------------------------------

@@ -113,6 +113,8 @@ html_static_path = ['_static']
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'ATSdoc'
 
+# Display todos by setting to True
+todo_include_todos = True
 
 # -- Options for LaTeX output ------------------------------------------------
 
