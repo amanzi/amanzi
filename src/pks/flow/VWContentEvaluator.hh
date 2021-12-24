@@ -27,23 +27,23 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "Factory.hh"
-#include "secondary_variable_field_evaluator.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-class VWContentEvaluator : public SecondaryVariableFieldEvaluator {
+class VWContentEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   explicit VWContentEvaluator(Teuchos::ParameterList& plist);
   VWContentEvaluator(const VWContentEvaluator& other);
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
 
-  // Required methods from SecondaryVariableFieldEvaluator
-  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& result);
-  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
+
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Key& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override;
 
  private:
   void Init_();
@@ -53,7 +53,7 @@ class VWContentEvaluator : public SecondaryVariableFieldEvaluator {
   Key saturation_key_, porosity_key_, mol_density_liquid_key_;
   
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,VWContentEvaluator> reg_;
+  static Utils::RegisteredFactory<Evaluator, VWContentEvaluator> reg_;
 };
 
 }  // namespace Flow

@@ -70,43 +70,48 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
+
   DPK->Setup(S.ptr());
   S->Setup();
   S->InitializeFields();
+  S->InitializeEvaluators();
 
   // modify the default state for the problem at hand 
   // -- permeability
   std::string passwd("flow"); 
-  Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
+  auto& K = *S->GetW<CompositeVector>("permeability", passwd).ViewComponent("cell");
   for (int c = 0; c < K.MyLength(); c++) {
     K[0][c] = 0.1;
     K[1][c] = 2.0;
   }
-  S->GetField("permeability", "flow")->set_initialized();
+  S->GetRecordW("permeability", "flow").set_initialized();
 
   // -- fluid density and viscosity
-  *S->GetScalarData("const_fluid_density", passwd) = 1.0;
-  S->GetField("const_fluid_density", "flow")->set_initialized();
+  S->GetW<double>("const_fluid_density", passwd) = 1.0;
+  S->GetRecordW("const_fluid_density", "flow").set_initialized();
 
-  *S->GetScalarData("const_fluid_viscosity", passwd) = 1.0;
-  S->GetField("const_fluid_viscosity", "flow")->set_initialized();
+  S->GetW<double>("const_fluid_viscosity", passwd) = 1.0;
+  S->GetRecordW("const_fluid_viscosity", "flow").set_initialized();
 
   // -- gravity
-  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
+  auto& gravity = S->GetW<AmanziGeometry::Point>("gravity", "state");
   gravity[1] = -1.0;
-  S->GetField("gravity", "state")->set_initialized();
+  S->GetRecordW("gravity", "state").set_initialized();
 
   // create the initial pressure function
-  Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell", false);
+  auto& p = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
 
   for (int c = 0; c < p.MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);
     p[0][c] = xc[1] * (xc[1] + 2.0);
   }
-  S->GetField("pressure", "flow")->set_initialized();
+  S->GetRecordW("pressure", "flow").set_initialized();
 
   // initialize Darcy process kernel.
   DPK->Initialize(S.ptr());
+
+auto vo = Teuchos::rcp(new Amanzi::VerboseObject("State", state_list));
+WriteStateStatistics(*S, *vo);
 
   // transient solution
   double t_old(0.0), t_new, dt(0.1);

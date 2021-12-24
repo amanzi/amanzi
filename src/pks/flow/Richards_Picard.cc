@@ -50,8 +50,6 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     srcs[i]->Compute(time, time); 
   }
 
-  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData(viscosity_liquid_key_);
-
   std::string linear_solver = plist.get<std::string>("linear solver");
   Teuchos::ParameterList lin_solve_list = linear_operator_list_->sublist(linear_solver);
   AmanziSolvers::setMakeOneIterationCriteria(lin_solve_list);
@@ -79,21 +77,21 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     // -- function
     darcy_flux_copy->ScatterMasterToGhosted("face");
 
-    pressure_eval_->SetFieldAsChanged(S_.ptr());
-    auto alpha = S_->GetFieldData(alpha_key_, alpha_key_);
-    S_->GetFieldEvaluator(alpha_key_)->HasFieldChanged(S_.ptr(), "flow");
+    pressure_eval_->SetChanged();
+    auto alpha = S_->GetW<CompositeVector>(alpha_key_, alpha_key_);
+    S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
   
-    *alpha_upwind_->ViewComponent("cell") = *alpha->ViewComponent("cell");
-    Operators::BoundaryFacesToFaces(bc_model, *alpha, *alpha_upwind_);
+    *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
+    Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
     upwind_->Compute(*darcy_flux_copy, *solution, bc_model, *alpha_upwind_);
 
     // -- derivative 
     Key der_key = Keys::getDerivKey(alpha_key_, pressure_key_);
-    S_->GetFieldEvaluator(alpha_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, pressure_key_);
-    auto alpha_dP = S_->GetFieldData(der_key);
+    S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, StateTags::DEFAULT);
+    auto alpha_dP = S_->GetW<CompositeVector>(der_key, alpha_key_);
 
-    *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP->ViewComponent("cell");
-    Operators::BoundaryFacesToFaces(bc_model, *alpha_dP, *alpha_upwind_dP_);
+    *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP.ViewComponent("cell");
+    Operators::BoundaryFacesToFaces(bc_model, alpha_dP, *alpha_upwind_dP_);
     upwind_->Compute(*darcy_flux_copy, *solution, bc_model, *alpha_upwind_dP_);
 
     // create algebraic problem (matrix = preconditioner)
@@ -147,7 +145,7 @@ double Richards_PK::CalculateRelaxationFactor(const Epetra_MultiVector& uold,
                                               const Epetra_MultiVector& unew)
 { 
   double relaxation = 1.0;
-  double patm = *S_->GetScalarData("atmospheric_pressure");
+  double patm = S_->Get<double>("atmospheric_pressure");
 
   if (error_control_ & FLOW_TI_ERROR_CONTROL_SATURATION) {
     for (int c = 0; c < ncells_owned; c++) {

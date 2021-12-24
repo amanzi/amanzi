@@ -102,7 +102,7 @@ class Richards_PK : public Flow_PK {
   // -- calling this indicates that the time integration
   //    scheme is changing the value of the solution in state.
   virtual void ChangedSolution() override {
-    pressure_eval_->SetFieldAsChanged(S_.ptr());
+    pressure_eval_->SetChanged();
   }
 
   // -- returns the number of linear iterations.

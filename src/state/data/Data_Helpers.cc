@@ -22,7 +22,6 @@ namespace Helpers {
 //
 // Specializations for simple data types
 // ======================================================================
-
 template <>
 void WriteVis<double>(const Visualization& vis, const Key& fieldname,
                       const std::vector<std::string>& subfieldnames,
@@ -42,7 +41,6 @@ void ReadCheckpoint<double>(const Checkpoint& chkp, const Key& fieldname,
   chkp.Read(fieldname, t);
 }
 
-// specialization for double
 template <>
 bool Initialize<double>(Teuchos::ParameterList& plist, double& t,
                         const Key& fieldname,
@@ -54,6 +52,7 @@ bool Initialize<double>(Teuchos::ParameterList& plist, double& t,
   }
   return false;
 }
+
 
 template <>
 void WriteVis<int>(const Visualization& vis, const Key& fieldname,
@@ -73,7 +72,6 @@ void ReadCheckpoint<int>(const Checkpoint& chkp, const Key& fieldname, int& t) {
   chkp.Read(fieldname, t);
 }
 
-// specialization for int
 template <>
 bool Initialize<int>(Teuchos::ParameterList& plist, int& t,
                      const Key& fieldname,
@@ -86,10 +84,34 @@ bool Initialize<int>(Teuchos::ParameterList& plist, int& t,
   return false;
 }
 
+
+//
+// Specializations for geometric objects
+// ======================================================================
+template <>
+void WriteVis<AmanziGeometry::Point>(const Visualization& vis, const Key& fieldname,
+                                     const std::vector<std::string>& subfieldnames,
+                                     const AmanziGeometry::Point& vec)
+{
+}
+
+template <>
+bool Initialize<AmanziGeometry::Point>(Teuchos::ParameterList& plist,
+                                       AmanziGeometry::Point& p, const Key& fieldname,
+                                       const std::vector<std::string>& subfieldnames) {
+  if (plist.isParameter("value")) {
+    auto tmp = plist.get<Teuchos::Array<double> >("value").toVector();
+    if (tmp.size() < 4) {
+      p.set(tmp.size(), tmp.data());
+      return true;
+    }
+  }
+  return false;
+}
+
 //
 // Specializations for CompositeVector
 // ======================================================================
-
 template <>
 void WriteVis<CompositeVector>(const Visualization& vis, const Key& fieldname,
                                const std::vector<std::string>& subfieldnames,

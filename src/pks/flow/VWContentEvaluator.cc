@@ -30,8 +30,8 @@ namespace Flow {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-VWContentEvaluator::VWContentEvaluator(Teuchos::ParameterList& plist) :
-    SecondaryVariableFieldEvaluator(plist) {
+VWContentEvaluator::VWContentEvaluator(Teuchos::ParameterList& plist)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist) {
   Init_();
 };
 
@@ -41,22 +41,22 @@ VWContentEvaluator::VWContentEvaluator(Teuchos::ParameterList& plist) :
 ****************************************************************** */
 void VWContentEvaluator::Init_()
 {
-  my_key_ = plist_.get<std::string>("water content key");
-  std::string domain = Keys::getDomain(my_key_);
+  my_keys_.push_back(std::make_pair(plist_.get<std::string>("water content key"), ""));
+  std::string domain = Keys::getDomain(my_keys_[0].first);
 
   saturation_key_ = plist_.get<std::string>("saturation key");
   porosity_key_ = plist_.get<std::string>("porosity key");
   mol_density_liquid_key_ = Keys::getKey(domain, "molar_density_liquid");
 
-  dependencies_.insert(porosity_key_);
-  dependencies_.insert(saturation_key_);
-  dependencies_.insert(mol_density_liquid_key_);
+  dependencies_.push_back(std::make_pair(porosity_key_, ""));
+  dependencies_.push_back(std::make_pair(saturation_key_, ""));
+  dependencies_.push_back(std::make_pair(mol_density_liquid_key_, ""));
 
   water_vapor_ = plist_.get<bool>("water vapor", false);
 
   if (water_vapor_) {
-    dependencies_.insert(Keys::getKey(domain, "molar_density_gas"));
-    dependencies_.insert(Keys::getKey(domain, "molar_fraction_gas"));
+    dependencies_.push_back(std::make_pair(Keys::getKey(domain, "molar_density_gas"), ""));
+    dependencies_.push_back(std::make_pair(Keys::getKey(domain, "molar_fraction_gas"), ""));
   }
 }
 
@@ -64,12 +64,12 @@ void VWContentEvaluator::Init_()
 /* ******************************************************************
 * Copy constructors.
 ****************************************************************** */
-VWContentEvaluator::VWContentEvaluator(const VWContentEvaluator& other) :
-    SecondaryVariableFieldEvaluator(other),
-    water_vapor_(other.water_vapor_) {};
+VWContentEvaluator::VWContentEvaluator(const VWContentEvaluator& other)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+      water_vapor_(other.water_vapor_) {};
 
 
-Teuchos::RCP<FieldEvaluator> VWContentEvaluator::Clone() const {
+Teuchos::RCP<Evaluator> VWContentEvaluator::Clone() const {
   return Teuchos::rcp(new VWContentEvaluator(*this));
 }
 
@@ -77,26 +77,26 @@ Teuchos::RCP<FieldEvaluator> VWContentEvaluator::Clone() const {
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void VWContentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
-                                        const Teuchos::Ptr<CompositeVector>& result)
+void VWContentEvaluator::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
-  const Epetra_MultiVector& s_l = *S->GetFieldData(saturation_key_)->ViewComponent("cell");
-  const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell");
+  const auto& s_l = *S.Get<CompositeVector>(saturation_key_).ViewComponent("cell");
+  const auto& n_l = *S.Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
 
-  const Epetra_MultiVector& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
-  Epetra_MultiVector& result_v = *result->ViewComponent("cell");
+  const auto& phi = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
+  auto& result_v = *results[0]->ViewComponent("cell");
 
   if (water_vapor_) {
-    const Epetra_MultiVector& n_g = *S->GetFieldData("molar_density_gas")->ViewComponent("cell");
-    const Epetra_MultiVector& x_g = *S->GetFieldData("molar_fraction_gas")->ViewComponent("cell");
+    const auto& n_g = *S.Get<CompositeVector>("molar_density_gas").ViewComponent("cell");
+    const auto& x_g = *S.Get<CompositeVector>("molar_fraction_gas").ViewComponent("cell");
     
-    int ncells = result->size("cell");
+    int ncells = results[0]->size("cell");
     for (int c = 0; c != ncells; ++c) {
       result_v[0][c] = phi[0][c] * (s_l[0][c] * n_l[0][c]
                                   + (1.0 - s_l[0][c]) * n_g[0][c] * x_g[0][c]);
     }
   } else {
-    int ncells = result->size("cell");
+    int ncells = results[0]->size("cell");
     for (int c = 0; c != ncells; ++c) {
       result_v[0][c] = phi[0][c] * s_l[0][c] * n_l[0][c];
     }
@@ -107,21 +107,21 @@ void VWContentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void VWContentEvaluator::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
+void VWContentEvaluator::EvaluatePartialDerivative_(
+    const State& S, const Key& wrt_key, const Key& wrt_tag,
+    const std::vector<CompositeVector*>& results)
 {
-  const Epetra_MultiVector& s_l = *S->GetFieldData(saturation_key_)->ViewComponent("cell");
-  const Epetra_MultiVector& n_l = *S->GetFieldData(mol_density_liquid_key_)->ViewComponent("cell");
+  const auto& s_l = *S.Get<CompositeVector>(saturation_key_).ViewComponent("cell");
+  const auto& n_l = *S.Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
 
-  const Epetra_MultiVector& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
-  Epetra_MultiVector& result_v = *result->ViewComponent("cell");
+  const auto& phi = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
+  auto& result_v = *results[0]->ViewComponent("cell");
 
-  int ncells = result->size("cell");
+  int ncells = results[0]->size("cell");
 
   if (water_vapor_) {
-    const Epetra_MultiVector& n_g = *S->GetFieldData("molar_density_gas")->ViewComponent("cell");
-    const Epetra_MultiVector& x_g = *S->GetFieldData("molar_fraction_gas")->ViewComponent("cell");
+    const auto& n_g = *S.Get<CompositeVector>("molar_density_gas").ViewComponent("cell");
+    const auto& x_g = *S.Get<CompositeVector>("molar_fraction_gas").ViewComponent("cell");
 
     if (wrt_key == porosity_key_) {
       for (int c = 0; c != ncells; ++c) {

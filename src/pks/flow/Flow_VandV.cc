@@ -28,11 +28,11 @@ void Flow_PK::VV_FractureConservationLaw() const
 {
   if (!coupled_to_matrix_ || fabs(dt_) < 1e+10) return;
 
-  const auto& fracture_flux = *S_->GetFieldData("fracture-darcy_flux")->ViewComponent("face", true);
-  const auto& matrix_flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
+  const auto& fracture_flux = *S_->Get<CompositeVector>("fracture-darcy_flux").ViewComponent("face", true);
+  const auto& matrix_flux = *S_->Get<CompositeVector>("darcy_flux").ViewComponent("face", true);
 
-  const auto& fracture_map = S_->GetFieldData("fracture-darcy_flux")->Map().Map("face", true);
-  const auto& matrix_map = S_->GetFieldData("darcy_flux")->Map().Map("face", true);
+  const auto& fracture_map = S_->Get<CompositeVector>("fracture-darcy_flux").Map().Map("face", true);
+  const auto& matrix_map = S_->Get<CompositeVector>("darcy_flux").Map().Map("face", true);
 
   auto mesh_matrix = S_->GetMesh("domain");
 
@@ -172,9 +172,9 @@ void Flow_PK::VV_ValidateBCs() const
 ******************************************************************* */
 void Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
 {
-  const Epetra_MultiVector& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell", false);
-  const Epetra_MultiVector& flux = *S->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
-  const Epetra_MultiVector& ws = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell", false);
+  const auto& phi = *S->Get<CompositeVector>(porosity_key_).ViewComponent("cell");
+  const auto& flux = *S->Get<CompositeVector>(darcy_flux_key_).ViewComponent("face", true);
+  const auto& ws = *S->Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
 
   std::vector<int>& bc_model = op_bc_->bc_model();
   double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flux) * rho_ * dt_;
@@ -207,7 +207,7 @@ void Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
 ******************************************************************* */
 void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dT) const
 {
-  const Epetra_MultiVector& flux = *S->GetFieldData(darcy_flux_key_)->ViewComponent("face");
+  const auto& flux = *S->Get<CompositeVector>(darcy_flux_key_).ViewComponent("face");
 
   int dir, f, c, nbcs(0);
   double tmp, outflow(0.0);

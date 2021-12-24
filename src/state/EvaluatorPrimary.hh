@@ -34,8 +34,8 @@ class EvaluatorPrimary_ : public Evaluator {
   explicit EvaluatorPrimary_(Teuchos::ParameterList& plist);
   EvaluatorPrimary_(const EvaluatorPrimary_& other) = default;
 
-  virtual Evaluator &operator=(const Evaluator &other) override;
-  EvaluatorPrimary_ &operator=(const EvaluatorPrimary_& other);
+  virtual Evaluator& operator=(const Evaluator& other) override;
+  EvaluatorPrimary_& operator=(const EvaluatorPrimary_& other);
 
   // ---------------------------------------------------------------------------
   // Lazy evaluation of the evaluator.
@@ -107,7 +107,7 @@ public:
       for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
         auto wrt = Keys::splitKeyTag(deriv.first);
         S.RequireDerivative<Data_t,DataFactory_t>(my_key_, my_tag_,
-                wrt.first, wrt.second, my_key_);
+                                                  wrt.first, wrt.second, my_key_);
       }
     }
   }
@@ -140,12 +140,13 @@ EvaluatorPrimary<CompositeVector, CompositeVectorSpace>::UpdateDerivative_(State
 template <>
 inline void
 EvaluatorPrimary<CompositeVector,CompositeVectorSpace>::EnsureCompatibility(State& S) {
-  auto& my_fac = S.Require<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_, my_key_);
+  Key owner = S.GetRecord(my_key_, my_tag_).owner();
+  auto& my_fac = S.Require<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_, owner);
   if (S.HasDerivativeSet(my_key_, my_tag_)) {
     for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
       auto wrt = Keys::splitKeyTag(deriv.first);
       S.RequireDerivative<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_,
-              wrt.first, wrt.second, my_key_).Update(my_fac);
+              wrt.first, wrt.second, owner).Update(my_fac);
     }
   }
 }

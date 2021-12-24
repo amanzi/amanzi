@@ -27,6 +27,11 @@ namespace Amanzi {
 
 typedef bool NullFactory;  // placeholder object for no factory required
 
+namespace StateTags {
+const Key DEFAULT = "";
+const Key PREV_TIMESTEP = "prev";
+}
+
 } // namespace
 
 #endif

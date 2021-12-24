@@ -15,27 +15,27 @@
 #ifndef AMANZI_FLOW_REL_PERM_EVALUATOR_HH_
 #define AMANZI_FLOW_REL_PERM_EVALUATOR_HH_
 
-#include "secondary_variable_field_evaluator.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 #include "WRM.hh"
 #include "WRMPartition.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
+class RelPermEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   RelPermEvaluator(Teuchos::ParameterList& plist,
                    const Teuchos::Ptr<State>& S,
                    const Teuchos::RCP<WRMPartition>& wrm);
   RelPermEvaluator(const RelPermEvaluator& other);
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
- protected:
-  // Required methods from SecondaryVariableFieldEvaluator
-  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-      const Teuchos::Ptr<CompositeVector>& result);
-  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-      Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
+
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
+
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Key& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override;
 
  protected:
   void InitializeFromPlist_(const Teuchos::Ptr<State>& S);

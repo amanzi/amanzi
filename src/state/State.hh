@@ -89,11 +89,11 @@ Example:
 #include "CompositeVector.hh"
 #include "CompositeVectorSpace.hh"
 
-#include "RecordSet.hh"
-
-#include "Visualization.hh"
 #include "Checkpoint.hh"
 #include "ObservationData.hh"
+#include "RecordSet.hh"
+#include "StateDefs.hh"
+#include "Visualization.hh"
 
 namespace Amanzi {
 
@@ -192,10 +192,10 @@ class State {
   // checks for ownership and type specifiers of the fields.
   //
   // State also manages access to data.  Data is "owned" by at most one
-  // object -- that object, which is typically either a PK or a
-  // Evaluator, may write the solution, and therefore receives non-const
-  // pointers to data.  Data may be used by anyone, but non-owning objects
-  // receive const-only pointers to data.
+  // object -- that object, which is typically either a PK or a Evaluator
+  // (always true for secondary), may write the solution, and therefore 
+  // receives non-const pointers to data.  Data may be used by anyone, but 
+  // non-owning objects receive const-only pointers to data.
   // 
   // Requiring data from State takes up to two template arguments:
   //  T is the data type required
@@ -221,22 +221,25 @@ class State {
 
   template <typename T, typename F>
   F& Require(const Key& fieldname) {
-    return Require<T, F>(fieldname, "", "");
+    return Require<T, F>(fieldname, StateTags::DEFAULT, "");
   }
 
   template <typename T> void Require(const Key& fieldname) {
-    Require<T>(fieldname, "", "");
+    Require<T>(fieldname, StateTags::DEFAULT, "");
   }
 
   // Ensure a record exists.
-  bool HasData(const Key& key, const Key& tag = "") const {
+  bool HasData(const Key& key, const Key& tag = StateTags::DEFAULT) const {
     if (Keys::hasKey(data_, key)) return data_.at(key)->HasRecord(tag);
     return false;
   }
 
   // Record accessors.
+  const Record& GetRecord(const Key& fieldname, const Key& tag = StateTags::DEFAULT) const {
+    return data_.at(fieldname)->GetRecord(tag);
+  }
   Record& GetRecordW(const Key& fieldname, const Key& owner) {
-    auto& r = data_.at(fieldname)->GetRecord("");
+    auto& r = data_.at(fieldname)->GetRecord(StateTags::DEFAULT);
     r.AssertOwnerOrDie(owner);
     return r;
   }
@@ -244,9 +247,6 @@ class State {
     auto& r = data_.at(fieldname)->GetRecord(tag);
     r.AssertOwnerOrDie(owner);
     return r;
-  }
-  const Record& GetRecord(const Key& fieldname, const Key& tag = "") const {
-    return data_.at(fieldname)->GetRecord(tag);
   }
 
   // RecordSet accessors.
@@ -260,7 +260,8 @@ class State {
 
   // Require derivatives
   template <typename T, typename F>
-  F& RequireDerivative(const Key& key, const Key& tag, const Key& wrt_key, const Key& wrt_tag, const Key &owner = "") {
+  F& RequireDerivative(const Key& key, const Key& tag,
+                       const Key& wrt_key, const Key& wrt_tag, const Key& owner = "") {
     auto keytag = Keys::getKeyTag(key, tag);
     if (!Keys::hasKey(derivs_, keytag)) {
       derivs_.emplace(keytag, std::make_unique<RecordSet>(keytag));
@@ -270,7 +271,8 @@ class State {
   }
 
   template <typename T>
-  void RequireDerivative(const Key& key, const Key& tag, const Key& wrt_key, const Key& wrt_tag, const Key &owner = "") {
+  void RequireDerivative(const Key& key, const Key& tag, const Key& wrt_key,
+                         const Key& wrt_tag, const Key& owner = "") {
     auto keytag = Keys::getKeyTag(key, tag);
     if (!Keys::hasKey(derivs_, keytag)) {
       derivs_.emplace(keytag, std::make_unique<RecordSet>(keytag));
@@ -281,12 +283,12 @@ class State {
 
   template <typename T, typename F>
   F& RequireDerivative(const Key &key, const Key& wrt_key, const Key& wrt_tag) {
-    return RequireDerivative<T, F>(key, "", wrt_key, wrt_tag, "");
+    return RequireDerivative<T, F>(key, StateTags::DEFAULT, wrt_key, wrt_tag, "");
   }
 
   template <typename T>
   void RequireDerivative(const Key& key, const Key& wrt_key, const Key& wrt_tag) {
-    RequireDerivative<T>(key, "", wrt_key, wrt_tag, "");
+    RequireDerivative<T>(key, StateTags::DEFAULT, wrt_key, wrt_tag, "");
   }
 
   bool HasDerivative(const Key& key, const Key& tag, const Key& wrt_key, const Key& wrt_tag) const {
@@ -301,9 +303,9 @@ class State {
   // derivatives.
   
   template <typename T>
-  const T& GetDerivative(const Key &key, const Key& tag, const Key &wrt_key,
-                         const Key &wrt_tag) const {
-    return derivs_.at(Keys::getKeyTag(key,tag))->Get<T>(Keys::getKeyTag(wrt_key, wrt_tag));
+  const T& GetDerivative(const Key& key, const Key& tag, const Key& wrt_key,
+                         const Key& wrt_tag) const {
+    return derivs_.at(Keys::getKeyTag(key, tag))->Get<T>(Keys::getKeyTag(wrt_key, wrt_tag));
   }
 
   template <typename T>
@@ -354,21 +356,21 @@ class State {
   }
 
   template <typename T>
-  Teuchos::RCP<const T> GetPtr(const Key& fieldname, const Key& tag = "") const {
+  Teuchos::RCP<const T> GetPtr(const Key& fieldname, const Key& tag = StateTags::DEFAULT) const {
     return data_.at(fieldname)->GetPtr<T>(tag);
-  }
-  template <typename T>
-  Teuchos::RCP<T> GetPtrW(const Key& fieldname, const Key& owner) {
-    return data_.at(fieldname)->GetPtrW<T>("", owner);
   }
   template <typename T>
   Teuchos::RCP<T> GetPtrW(const Key& fieldname, const Key& tag, const Key& owner) {
     return data_.at(fieldname)->GetPtrW<T>(tag, owner);
   }
+  template <typename T>
+  Teuchos::RCP<T> GetPtrW(const Key& fieldname, const Key& owner) {
+    return data_.at(fieldname)->GetPtrW<T>(StateTags::DEFAULT, owner);
+  }
 
   template <typename T>
   void Set(const Key& fieldname, const Key& owner, const T& data) {
-    return data_.at(fieldname)->Set("", owner, data);
+    return data_.at(fieldname)->Set(StateTags::DEFAULT, owner, data);
   }
   template <typename T>
   void Set(const Key& fieldname, const Key& tag, const Key& owner, const T& data) {
@@ -392,20 +394,19 @@ class State {
   Teuchos::ParameterList& ICList() { return state_plist_.sublist("initial conditions"); }
 
   // Evaluator interface
-  Evaluator& RequireEvaluator(const Key& key, const Key& tag = "");
+  Evaluator& RequireEvaluator(const Key& key, const Key& tag = StateTags::DEFAULT);
 
   // -- get/set
-  Evaluator& GetEvaluator(const Key& key, const Key& tag = "");
-  const Evaluator& GetEvaluator(const Key& key, const Key& tag = "") const;
-  Teuchos::RCP<Evaluator> GetEvaluatorPtr(const Key& key, const Key& tag = "");
+  Evaluator& GetEvaluator(const Key& key, const Key& tag = StateTags::DEFAULT);
+  const Evaluator& GetEvaluator(const Key& key, const Key& tag = StateTags::DEFAULT) const;
+  Teuchos::RCP<Evaluator> GetEvaluatorPtr(const Key& key, const Key& tag = StateTags::DEFAULT);
 
+  void SetEvaluator(const Key& key, const Key& tag, const Teuchos::RCP<Evaluator>& evaluator);
   void SetEvaluator(const Key& key, const Teuchos::RCP<Evaluator>& evaluator) {
-    SetEvaluator(key, "", evaluator);
+    SetEvaluator(key, StateTags::DEFAULT, evaluator);
   }
-  void SetEvaluator(const Key& key, const Key& tag,
-                    const Teuchos::RCP<Evaluator>& evaluator);
 
-  bool HasEvaluator(const Key& key, const Key& tag = "");
+  bool HasEvaluator(const Key& key, const Key& tag = StateTags::DEFAULT);
 
   // Write evaluators to file for drawing dependency graph.
   void WriteDependencyGraph() const;
@@ -434,15 +435,15 @@ class State {
   // Time tags and vector copies
   // -----------------------------------------------------------------------------
   // Time accessor and mutators.
-  double time(const Key& tag = "") const { return Get<double>("time", tag); }
+  double time(const Key& tag = StateTags::DEFAULT) const { return Get<double>("time", tag); }
   void set_time(const Key& tag, double value) { Set("time", tag, "time", value); }
-  void set_time(double value) { Set("time", "", "time", value); }
+  void set_time(double value) { Set("time", StateTags::DEFAULT, "time", value); }
 
   void advance_time(const Key& tag, double dt) {
     Set("time", tag, "time", Get<double>("time", tag) + dt);
   }
   void advance_time(double dt) {
-    Set("time", "", "time", Get<double>("time") + dt);
+    Set("time", StateTags::DEFAULT, "time", Get<double>("time") + dt);
   }
 
   double final_time() const { return final_time_; }

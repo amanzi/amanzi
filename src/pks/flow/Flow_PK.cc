@@ -74,23 +74,15 @@ void Flow_PK::Setup(const Teuchos::Ptr<State>& S)
   permeability_key_ = Keys::getKey(domain_, "permeability"); 
 
   // -- constant fields
-  if (!S->HasField("const_fluid_density")) {
-    S->RequireScalar("const_fluid_density", passwd_);
-  }
-
-  if (!S->HasField("atmospheric_pressure")) {
-    S->RequireScalar("atmospheric_pressure", passwd_);
-  }
-
-  if (!S->HasField("gravity")) {
-    S->RequireConstantVector("gravity", passwd_, dim);  // state resets ownership.
-  } 
+  S->Require<double>("const_fluid_density", StateTags::DEFAULT, passwd_);
+  S->Require<double>("atmospheric_pressure", StateTags::DEFAULT, passwd_);
+  S->Require<AmanziGeometry::Point>("gravity", StateTags::DEFAULT, "state");
 
   // -- effective fracture permeability
   if (flow_on_manifold_) {
-    if (!S->HasField(permeability_key_)) {
-      S->RequireField(permeability_key_, permeability_key_)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    if (!S->HasData(permeability_key_)) {
+      S->Require<CompositeVector, CompositeVectorSpace>(permeability_key_, StateTags::DEFAULT, permeability_key_)
+        .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
       auto fpm_list = Teuchos::sublist(fp_list_, "fracture permeability models", true);
       Teuchos::RCP<FracturePermModelPartition> fpm = CreateFracturePermModelPartition(mesh_, fpm_list);
@@ -99,33 +91,34 @@ void Flow_PK::Setup(const Teuchos::Ptr<State>& S)
       elist.set<std::string>("permeability key", permeability_key_)
            .set<std::string>("aperture key", Keys::getKey(domain_, "aperture"));
       Teuchos::RCP<FracturePermModelEvaluator> eval = Teuchos::rcp(new FracturePermModelEvaluator(elist, fpm));
-      S->SetFieldEvaluator(permeability_key_, eval);
+      S->SetEvaluator(permeability_key_, eval);
     }
   // -- matrix absolute permeability
   } else {
-    if (!S->HasField(permeability_key_)) {
-      S->RequireField(permeability_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, dim);
+    if (!S->HasData(permeability_key_)) {
+      S->Require<CompositeVector, CompositeVectorSpace>(permeability_key_, StateTags::DEFAULT, passwd_)
+        .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, dim);
     }
   }
 
   // -- darcy flux
-  if (!S->HasField(darcy_flux_key_)) {
+  if (!S->HasData(darcy_flux_key_)) {
     if (flow_on_manifold_) {
       auto cvs = Operators::CreateNonManifoldCVS(mesh_);
-      *S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true) = *cvs;
+      *S->Require<CompositeVector, CompositeVectorSpace>(darcy_flux_key_, StateTags::DEFAULT, passwd_)
+        .SetMesh(mesh_)->SetGhosted(true) = *cvs;
     } else {
-      S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("face", AmanziMesh::FACE, 1);
+      S->Require<CompositeVector, CompositeVectorSpace>(darcy_flux_key_, StateTags::DEFAULT, passwd_)
+        .SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::FACE, 1);
     }
   }
 
-  if (!S->HasFieldEvaluator(darcy_flux_key_)) {
+  if (!S->HasEvaluator(darcy_flux_key_, StateTags::DEFAULT)) {
     AddDefaultPrimaryEvaluator_(darcy_flux_key_);
   }
 
   // Wells
-  if (!S->HasField("well_index")) {
+  if (!S->HasData("well_index")) {
     if (fp_list_->isSublist("source terms")) {
       Teuchos::ParameterList& src_list = fp_list_->sublist("source terms");
       for (auto it = src_list.begin(); it != src_list.end(); ++it) {
@@ -133,8 +126,8 @@ void Flow_PK::Setup(const Teuchos::Ptr<State>& S)
         if (src_list.isSublist(name)) {
           Teuchos::ParameterList& spec = src_list.sublist(name);
           if (IsWellIndexRequire(spec)) {
-            S->RequireField("well_index", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-                ->SetComponent("cell", AmanziMesh::CELL, 1);
+            S->Require<CompositeVector, CompositeVectorSpace>("well_index", StateTags::DEFAULT, passwd_)
+              .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
             peaceman_model_ = true;
             break;
           }
@@ -165,13 +158,9 @@ void Flow_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Fundamental physical quantities
   // -- temporarily these quantities are constant
-  double* gravity_data;
-  S->GetConstantVectorData("gravity")->ExtractView(&gravity_data);
-  gravity_.set(dim, &(gravity_data[0]));  // do it in complicated way because we
-                                          // are not sure if gravity_data is an
-                                          // array or vector
+  gravity_ = S->Get<AmanziGeometry::Point>("gravity");
   g_ = fabs(gravity_[dim - 1]);
-  rho_ = *S->GetScalarData("const_fluid_density");
+  rho_ = S->Get<double>("const_fluid_density");
 
   // -- molar rescaling of some quantatities.
   molar_rho_ = rho_ / CommonDefs::MOLAR_MASS_H2O;
@@ -194,41 +183,40 @@ void Flow_PK::InitializeFields_()
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // set popular default values for missed fields.
-  if (S_->GetField("const_fluid_density")->owner() == passwd_) {
-    if (!S_->GetField("const_fluid_density", passwd_)->initialized()) {
-      *(S_->GetScalarData("const_fluid_density", passwd_)) = 1000.0;
-      S_->GetField("const_fluid_density", passwd_)->set_initialized();
+  if (S_->GetRecord("const_fluid_density", StateTags::DEFAULT).owner() == passwd_) {
+    if (!S_->GetRecord("const_fluid_density", StateTags::DEFAULT).initialized()) {
+      S_->GetW<double>("const_fluid_density", StateTags::DEFAULT, passwd_) = 1000.0;
+      S_->GetRecordW("const_fluid_density", StateTags::DEFAULT, passwd_).set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
           *vo_->os() << "initialized const_fluid_density to default value 1000.0" << std::endl;  
     }
   }
 
-  if (S_->HasField("const_fluid_viscosity")) {
-    if (!S_->GetField("const_fluid_viscosity", passwd_)->initialized()) {
-      *(S_->GetScalarData("const_fluid_viscosity", passwd_)) = CommonDefs::ISOTHERMAL_VISCOSITY;
-      S_->GetField("const_fluid_viscosity", passwd_)->set_initialized();
+  if (S_->HasData("const_fluid_viscosity")) {
+    if (!S_->GetRecord("const_fluid_viscosity", StateTags::DEFAULT).initialized()) {
+      S_->GetW<double>("const_fluid_viscosity", StateTags::DEFAULT, passwd_) = CommonDefs::ISOTHERMAL_VISCOSITY;
+      S_->GetRecordW("const_fluid_viscosity", StateTags::DEFAULT, passwd_).set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
           *vo_->os() << "initialized const_fluid_viscosity to default value 1.002e-3" << std::endl;  
     }
   }
 
-  if (S_->HasField("atmospheric_pressure")) {
-    if (!S_->GetField("atmospheric_pressure", passwd_)->initialized()) {
-      *(S_->GetScalarData("atmospheric_pressure", passwd_)) = FLOW_PRESSURE_ATMOSPHERIC;
-      S_->GetField("atmospheric_pressure", passwd_)->set_initialized();
+  if (S_->HasData("atmospheric_pressure")) {
+    if (!S_->GetRecord("atmospheric_pressure", StateTags::DEFAULT).initialized()) {
+      S_->GetW<double>("atmospheric_pressure", StateTags::DEFAULT, passwd_) = FLOW_PRESSURE_ATMOSPHERIC;
+      S_->GetRecordW("atmospheric_pressure", StateTags::DEFAULT, passwd_).set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
           *vo_->os() << "initialized atmospheric_pressure to default value " << FLOW_PRESSURE_ATMOSPHERIC << std::endl;  
     }
   }
 
-  if (!S_->GetField("gravity", "state")->initialized()) {
-    Epetra_Vector& gvec = *S_->GetConstantVectorData("gravity", "state");
-    gvec.PutScalar(0.0);
+  if (!S_->GetRecord("gravity", StateTags::DEFAULT).initialized()) {
+    AmanziGeometry::Point gvec(dim);
     gvec[dim - 1] = -9.80;
-    S_->GetField("gravity", "state")->set_initialized();
+    S_->GetRecordW("gravity", StateTags::DEFAULT, "gravity").set_initialized();
 
     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
         *vo_->os() << "initialized gravity to default value -9.8" << std::endl;  
@@ -256,9 +244,9 @@ void Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S)
     *vo_->os() << "Secondary fields: hydraulic head, darcy_velocity, etc." << std::endl;  
   }  
 
-  Epetra_MultiVector& hydraulic_head = *(S->GetFieldData(hydraulic_head_key_, passwd_)->ViewComponent("cell"));
-  const Epetra_MultiVector& pressure = *(S->GetFieldData(pressure_key_)->ViewComponent("cell"));
-  double rho = *(S->GetScalarData("const_fluid_density"));
+  auto& hydraulic_head = *S->GetW<CompositeVector>(hydraulic_head_key_, StateTags::DEFAULT, passwd_).ViewComponent("cell");
+  const auto& pressure = *S->Get<CompositeVector>(pressure_key_).ViewComponent("cell");
+  double rho = S->Get<double>("const_fluid_density");
 
   // calculate hydraulic head
   double g = fabs(gravity_[dim - 1]);
@@ -271,16 +259,16 @@ void Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S)
 
   // calculate optional fields
   Key optional_key = Keys::getKey(domain_, "pressure_head"); 
-  if (S->HasField(optional_key)) {
-    auto& field_c = *S->GetFieldData(optional_key, passwd_)->ViewComponent("cell");
+  if (S->HasData(optional_key)) {
+    auto& field_c = *S->GetW<CompositeVector>(optional_key, StateTags::DEFAULT, passwd_).ViewComponent("cell");
     for (int c = 0; c != ncells_owned; ++c) {
       field_c[0][c] = pressure[0][c] / (g * rho);
     }
   }
 
   // calculate full velocity vector
-  darcy_flux_eval_->SetFieldAsChanged(S);
-  S->GetFieldEvaluator(darcy_velocity_key_)->HasFieldChanged(S, darcy_velocity_key_);
+  darcy_flux_eval_->SetChanged();
+  S->GetEvaluator(darcy_velocity_key_, StateTags::DEFAULT).Update(*S, darcy_velocity_key_);
 }
 
 
@@ -291,7 +279,7 @@ void Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S)
 void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 {
   // Process main one-line options (not sublists)
-  atm_pressure_ = *S_->GetScalarData("atmospheric_pressure");
+  atm_pressure_ = S_->Get<double>("atmospheric_pressure");
 
   // Create BC objects
   // -- memory
@@ -369,9 +357,9 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 
   // Create source objects
   // -- evaluate the well index
-  if (S_->HasField("well_index")) {
-    if (!S_->GetField("well_index", passwd_)->initialized()) {
-      S_->GetFieldData("well_index", passwd_)->PutScalar(0.0);
+  if (S_->HasData("well_index")) {
+    if (!S_->GetRecord("well_index", StateTags::DEFAULT).initialized()) {
+      S_->GetW<CompositeVector>("well_index", StateTags::DEFAULT, passwd_).PutScalar(0.0);
 
       Teuchos::ParameterList& src_list = plist.sublist("source terms");
       for (auto it = src_list.begin(); it != src_list.end(); ++it) {
@@ -384,7 +372,7 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
         }
       }
     }
-    S_->GetField("well_index", passwd_)->set_initialized();
+    S_->GetRecordW("well_index", StateTags::DEFAULT, passwd_).set_initialized();
   }
 
   // -- wells
@@ -411,8 +399,8 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 void Flow_PK::ComputeWellIndex(Teuchos::ParameterList& spec)
 {
   AmanziMesh::Entity_ID_List cells;
-  Epetra_MultiVector& wi = *S_->GetFieldData("well_index", passwd_)->ViewComponent("cell");
-  const Epetra_MultiVector& perm = *S_->GetFieldData(permeability_key_)->ViewComponent("cell");
+  auto& wi = *S_->GetW<CompositeVector>("well_index", StateTags::DEFAULT, passwd_).ViewComponent("cell");
+  const auto& perm = *S_->Get<CompositeVector>(permeability_key_).ViewComponent("cell");
 
   double kx, ky, dx, dy, h, r0, rw;
   double xmin, xmax, ymin, ymax, zmin, zmax;
@@ -607,9 +595,9 @@ void Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
 ****************************************************************** */
 void Flow_PK::SetAbsolutePermeabilityTensor()
 {
-  const CompositeVector& cv = *S_->GetFieldData(permeability_key_);
+  const auto& cv = S_->Get<CompositeVector>(permeability_key_);
   cv.ScatterMasterToGhosted("cell");
-  const Epetra_MultiVector& perm = *cv.ViewComponent("cell", true);
+  const auto& perm = *cv.ViewComponent("cell", true);
 
   // For permeabilities given in local (layer-based) coordinates
   AmanziGeometry::Point n1(dim), n2(dim), normal(dim), tau(dim);

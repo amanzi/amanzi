@@ -53,7 +53,7 @@ class PK_DomainFunctionSubgridReturn : public FunctionBase,
 
  private:
 
-  std::string field_out_suffix_, copy_field_out_key_, dset_;
+  std::string field_out_suffix_, copy_field_out_tag_, dset_;
 };
 
 
@@ -74,7 +74,7 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Init(
   
   dset_ = blist.get<std::string>("subgrid domain set", "subgrid");
   
-  copy_field_out_key_ = blist.get<std::string>("copy subgrid field", "default");
+  copy_field_out_tag_ = blist.get<std::string>("copy subgrid field", "default");
 
   // get and check the region
   std::vector<std::string> regions =
@@ -144,8 +144,7 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
       Key var = Keys::getKey(domain,field_out_suffix_);
       
       // get the vector to be integrated
-      const CompositeVector& vec_out =
-        *S_->GetFieldCopyData(var, copy_field_out_key_);
+      const auto& vec_out = S_->Get<CompositeVector>(var, copy_field_out_tag_);
       const auto& vec_c = *vec_out.ViewComponent("cell", true);
       
       std::vector<double> val(nfun,0.);

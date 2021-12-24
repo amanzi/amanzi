@@ -38,10 +38,9 @@ void Richards_PK::FunctionalResidual(
 
   std::vector<int>& bc_model = op_bc_->bc_model();
 
-  if (S_->HasFieldEvaluator(viscosity_liquid_key_)) {
-    S_->GetFieldEvaluator(viscosity_liquid_key_)->HasFieldChanged(S_.ptr(), "flow");
+  if (S_->HasEvaluator(viscosity_liquid_key_)) {
+    S_->GetEvaluator(viscosity_liquid_key_).Update(*S_, "flow");
   }
-  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData(viscosity_liquid_key_);
 
   // compute BCs and source terms, update primary field
   UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
@@ -49,13 +48,13 @@ void Richards_PK::FunctionalResidual(
   // upwind diffusion coefficient and its derivative
   darcy_flux_copy->ScatterMasterToGhosted("face");
 
-  pressure_eval_->SetFieldAsChanged(S_.ptr());
-  auto alpha = S_->GetFieldData(alpha_key_, alpha_key_);
-  S_->GetFieldEvaluator(alpha_key_)->HasFieldChanged(S_.ptr(), "flow");
+  pressure_eval_->SetChanged();
+  auto alpha = S_->GetW<CompositeVector>(alpha_key_, StateTags::DEFAULT, alpha_key_);
+  S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
   
   if (!flow_on_manifold_) {
-    *alpha_upwind_->ViewComponent("cell") = *alpha->ViewComponent("cell");
-    Operators::BoundaryFacesToFaces(bc_model, *alpha, *alpha_upwind_);
+    *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
+    Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
     upwind_->Compute(*darcy_flux_copy, *u_new->Data(), bc_model, *alpha_upwind_);
   }
 
@@ -64,11 +63,11 @@ void Richards_PK::FunctionalResidual(
 
   if (!flow_on_manifold_) {
     Key der_key = Keys::getDerivKey(alpha_key_, pressure_key_);
-    S_->GetFieldEvaluator(alpha_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, pressure_key_);
-    auto alpha_dP = S_->GetFieldData(der_key);
+    S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, StateTags::DEFAULT);
+    auto alpha_dP = S_->GetW<CompositeVector>(der_key, alpha_key_);
 
-    *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP->ViewComponent("cell");
-    Operators::BoundaryFacesToFaces(bc_model, *alpha_dP, *alpha_upwind_dP_);
+    *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP.ViewComponent("cell");
+    Operators::BoundaryFacesToFaces(bc_model, alpha_dP, *alpha_upwind_dP_);
     upwind_->Compute(*darcy_flux_copy, *u_new->Data(), bc_model, *alpha_upwind_dP_);
   }
 
@@ -85,13 +84,13 @@ void Richards_PK::FunctionalResidual(
   // add accumulation term 
   Epetra_MultiVector& f_cell = *f->Data()->ViewComponent("cell");
 
-  pressure_eval_->SetFieldAsChanged(S_.ptr());
-  S_->GetFieldEvaluator(porosity_key_)->HasFieldChanged(S_.ptr(), "flow");
-  const Epetra_MultiVector& phi_c = *S_->GetFieldData(porosity_key_)->ViewComponent("cell");
+  pressure_eval_->SetChanged();
+  S_->GetEvaluator(porosity_key_).Update(*S_, "flow");
+  const auto& phi_c = *S_->Get<CompositeVector>(porosity_key_).ViewComponent("cell");
 
-  S_->GetFieldEvaluator(water_content_key_)->HasFieldChanged(S_.ptr(), "flow");
-  const Epetra_MultiVector& wc_c = *S_->GetFieldData(water_content_key_)->ViewComponent("cell");
-  const Epetra_MultiVector& wc_prev_c = *S_->GetFieldData(prev_water_content_key_)->ViewComponent("cell");
+  S_->GetEvaluator(water_content_key_).Update(*S_, "flow");
+  const auto& wc_c = *S_->Get<CompositeVector>(water_content_key_).ViewComponent("cell");
+  const auto& wc_prev_c = *S_->Get<CompositeVector>(prev_water_content_key_).ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; ++c) {
     double wc1 = wc_c[0][c];
@@ -108,7 +107,7 @@ void Richards_PK::FunctionalResidual(
 
   // add water content in matrix
   if (multiscale_porosity_) {
-    pressure_matrix_eval_->SetFieldAsChanged(S_.ptr());
+    pressure_matrix_eval_->SetChanged();
     Functional_AddMassTransferMatrix_(dtp, f->Data());
   }
 
@@ -117,7 +116,7 @@ void Richards_PK::FunctionalResidual(
   functional_max_cell = 0;
 
   for (int c = 0; c < ncells_owned; ++c) {
-    const auto& dens_c = *S_->GetFieldData(mol_density_liquid_key_)->ViewComponent("cell");
+    const auto& dens_c = *S_->Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
     double factor = mesh_->cell_volume(c) * dens_c[0][c] * phi_c[0][c] / dtp;
     double tmp = fabs(f_cell[0][c]) / factor;
     if (tmp > functional_max_norm) {
@@ -144,8 +143,8 @@ void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
 {
   Key temperature_key = Keys::getKey(domain_, "temperature"); 
 
-  const CompositeVector& pres = *S_->GetFieldData(pressure_key_);
-  const CompositeVector& temp = *S_->GetFieldData(temperature_key);
+  const auto& pres = S_->Get<CompositeVector>(pressure_key_);
+  const auto& temp = S_->Get<CompositeVector>(temperature_key);
 
   // Compute conductivities
   Teuchos::RCP<CompositeVector> kvapor_pres = Teuchos::rcp(new CompositeVector(f->Map()));
@@ -187,27 +186,27 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
   AMANZI_ASSERT(domain_ == "domain");
   Key temperature_key = Keys::getKey(domain_, "temperature"); 
 
-  S_->GetFieldEvaluator("molar_density_gas")->HasFieldChanged(S_.ptr(), passwd_);
-  const Epetra_MultiVector& n_g = *S_->GetFieldData("molar_density_gas")->ViewComponent("cell");
+  S_->GetEvaluator("molar_density_gas").Update(*S_, passwd_);
+  const auto& n_g = *S_->Get<CompositeVector>("molar_density_gas").ViewComponent("cell");
 
-  S_->GetFieldEvaluator(porosity_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  const Epetra_MultiVector& phi = *S_->GetFieldData(porosity_key_)->ViewComponent("cell");
+  S_->GetEvaluator(porosity_key_).Update(*S_, passwd_);
+  const auto& phi = *S_->Get<CompositeVector>(porosity_key_).ViewComponent("cell");
 
-  S_->GetFieldEvaluator(saturation_liquid_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  const Epetra_MultiVector& s_l = *S_->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
+  S_->GetEvaluator(saturation_liquid_key_).Update(*S_, passwd_);
+  const auto& s_l = *S_->Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
 
-  S_->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S_.ptr(), passwd_);
-  const Epetra_MultiVector& n_l = *S_->GetFieldData("molar_density_liquid")->ViewComponent("cell");
+  S_->GetEvaluator("molar_density_liquid").Update(*S_, passwd_);
+  const auto& n_l = *S_->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
 
-  S_->GetFieldEvaluator("molar_fraction_gas")->HasFieldChanged(S_.ptr(), passwd_);
-  const Epetra_MultiVector& x_g = *S_->GetFieldData("molar_fraction_gas")->ViewComponent("cell");
+  S_->GetEvaluator("molar_fraction_gas").Update(*S_, passwd_);
+  const auto& x_g = *S_->Get<CompositeVector>("molar_fraction_gas").ViewComponent("cell");
 
   std::string der_name = Keys::getDerivKey("molar_fraction_gas", temperature_key);
-  S_->GetFieldEvaluator("molar_fraction_gas")->HasFieldDerivativeChanged(S_.ptr(), passwd_, temperature_key);
-  const Epetra_MultiVector& dxgdT = *S_->GetFieldData(der_name)->ViewComponent("cell");
+  S_->GetEvaluator("molar_fraction_gas").UpdateDerivative(*S_, passwd_, temperature_key, StateTags::DEFAULT);
+  const auto& dxgdT = *S_->Get<CompositeVector>(der_name).ViewComponent("cell");
 
-  const Epetra_MultiVector& temp = *S_->GetFieldData(temperature_key)->ViewComponent("cell");
-  const Epetra_MultiVector& pres = *S_->GetFieldData(pressure_key_)->ViewComponent("cell");
+  const auto& temp = *S_->Get<CompositeVector>(temperature_key).ViewComponent("cell");
+  const auto& pres = *S_->Get<CompositeVector>(pressure_key_).ViewComponent("cell");
 
   Epetra_MultiVector& kp_cell = *kvapor_pres->ViewComponent("cell");
   Epetra_MultiVector& kt_cell = *kvapor_temp->ViewComponent("cell");
@@ -245,14 +244,14 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
 ****************************************************************** */
 void Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<CompositeVector> f)
 {
-  const Epetra_MultiVector& pcf = *S_->GetFieldData(pressure_key_)->ViewComponent("cell");
-  const Epetra_MultiVector& pcm = *S_->GetFieldData("pressure_matrix")->ViewComponent("cell");
+  const auto& pcf = *S_->Get<CompositeVector>(pressure_key_).ViewComponent("cell");
+  const auto& pcm = *S_->Get<CompositeVector>("pressure_matrix").ViewComponent("cell");
 
-  S_->GetFieldEvaluator("porosity_matrix")->HasFieldChanged(S_.ptr(), "flow");
-  const Epetra_MultiVector& phi = *S_->GetFieldData("porosity_matrix")->ViewComponent("cell");
+  S_->GetEvaluator("porosity_matrix").Update(*S_, "flow");
+  const auto& phi = *S_->Get<CompositeVector>("porosity_matrix").ViewComponent("cell");
 
-  const Epetra_MultiVector& wcm_prev = *S_->GetFieldData("prev_water_content_matrix")->ViewComponent("cell");
-  Epetra_MultiVector& wcm = *S_->GetFieldData("water_content_matrix", passwd_)->ViewComponent("cell");
+  const auto& wcm_prev = *S_->Get<CompositeVector>("prev_water_content_matrix").ViewComponent("cell");
+  auto& wcm = *S_->Get<CompositeVector>("water_content_matrix", passwd_).ViewComponent("cell");
 
   Epetra_MultiVector& fc = *f->ViewComponent("cell");
 
@@ -283,10 +282,10 @@ void Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<Comp
 ****************************************************************** */
 void Richards_PK::CalculateVWContentMatrix_()
 {
-  const Epetra_MultiVector& pcm = *S_->GetFieldData("pressure_matrix")->ViewComponent("cell");
-  S_->GetFieldEvaluator("porosity_matrix")->HasFieldChanged(S_.ptr(), "flow");
-  const Epetra_MultiVector& phi = *S_->GetFieldData("porosity_matrix")->ViewComponent("cell");
-  Epetra_MultiVector& wcm = *S_->GetFieldData("water_content_matrix", passwd_)->ViewComponent("cell");
+  S_->GetEvaluator("porosity_matrix").Update(*S_, "flow");
+  const auto& pcm = *S_->Get<CompositeVector>("pressure_matrix").ViewComponent("cell");
+  const auto& phi = *S_->Get<CompositeVector>("porosity_matrix").ViewComponent("cell");
+  auto& wcm = *S_->GetW<CompositeVector>("water_content_matrix", passwd_).ViewComponent("cell");
 
   double phi0, pcm0;
   for (int c = 0; c < ncells_owned; ++c) {
@@ -315,8 +314,6 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
 {
   double t_old = tp - dtp;
 
-  Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData(viscosity_liquid_key_);
-
   std::vector<int>& bc_model = op_bc_->bc_model();
   std::vector<double>& bc_value = op_bc_->bc_value();
 
@@ -332,13 +329,13 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   darcy_flux_copy->ScatterMasterToGhosted("face");
 
   // diffusion coefficient and its derivative
-  pressure_eval_->SetFieldAsChanged(S_.ptr());
-  auto alpha = S_->GetFieldData(alpha_key_, alpha_key_);
-  S_->GetFieldEvaluator(alpha_key_)->HasFieldChanged(S_.ptr(), "flow");
+  pressure_eval_->SetChanged();
+  auto alpha = S_->GetW<CompositeVector>(alpha_key_, alpha_key_);
+  S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
   
   if (!flow_on_manifold_) {
-    *alpha_upwind_->ViewComponent("cell") = *alpha->ViewComponent("cell");
-    Operators::BoundaryFacesToFaces(bc_model, *alpha, *alpha_upwind_);
+    *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
+    Operators::BoundaryFacesToFaces(bc_model, alpha, *alpha_upwind_);
     upwind_->Compute(*darcy_flux_copy, *u->Data(), bc_model, *alpha_upwind_);
   }
 
@@ -347,8 +344,8 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
 
   if (!flow_on_manifold_) {
     Key der_key = Keys::getDerivKey(alpha_key_, pressure_key_);
-    S_->GetFieldEvaluator(alpha_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, pressure_key_);
-    auto alpha_dP = S_->GetFieldData(der_key);
+    S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, StateTags::DEFAULT);
+    auto alpha_dP = S_->GetPtrW<CompositeVector>(der_key, alpha_key_);
 
     *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP->ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, *alpha_dP, *alpha_upwind_dP_);
@@ -364,14 +361,14 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   // add time derivative
   if (dtp > 0.0) {
     std::string der_name = Keys::getDerivKey(water_content_key_, pressure_key_);
-    S_->GetFieldEvaluator(water_content_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, pressure_key_);
-    CompositeVector& dwc_dp = *S_->GetFieldData(der_name, water_content_key_);
+    S_->GetEvaluator(water_content_key_).UpdateDerivative(*S_, passwd_, pressure_key_, StateTags::DEFAULT);
+    auto& dwc_dp = S_->GetW<CompositeVector>(der_name, water_content_key_);
 
     op_acc_->AddAccumulationDelta(*u->Data(), dwc_dp, dwc_dp, dtp, "cell");
  
     // estimate CNLS limiters
     if (algebraic_water_content_balance_) {
-      const CompositeVector& wc = *S_->GetFieldData(water_content_key_);
+      const auto& wc = S_->Get<CompositeVector>(water_content_key_);
       CalculateCNLSLimiter_(wc, dwc_dp, bdf1_dae_->tol_solver());
     }
   }

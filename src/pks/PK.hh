@@ -164,15 +164,14 @@ class PK {
 
  protected:
   // Helper method to add a primary variable evaluator
-  /*
   void AddDefaultPrimaryEvaluator_(const Key& key) {
     Teuchos::ParameterList elist;
-    elist.set<std::string>("evaluator name", key);
-    auto eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector>(elist));
+    elist.set<std::string>("name", key);  // probably is not used
+    elist.setName(key);  // new way
+    auto eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(elist));
     AMANZI_ASSERT(S_ != Teuchos::null);
     S_->SetEvaluator(key, eval);
   }
-  */
 
   // Helper method to initialize a CV field
   void InitializeField_(const Teuchos::Ptr<State>& S, const std::string& passwd,

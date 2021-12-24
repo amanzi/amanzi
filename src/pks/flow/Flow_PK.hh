@@ -28,12 +28,12 @@
 #include "BDFFnBase.hh"
 #include "Checkpoint.hh"
 #include "CompositeVectorSpace.hh"
-#include "independent_variable_field_evaluator_fromfunction.hh"
+#include "EvaluatorIndependentFunction.hh"
 #include "Key.hh"
 #include "Operator.hh"
 #include "PK_DomainFunction.hh"
 #include "PK_PhysicalBDF.hh"
-#include "primary_variable_field_evaluator.hh"
+#include "EvaluatorPrimary.hh"
 #include "Tensor.hh"
 #include "Units.hh"
 #include "VerboseObject.hh"
@@ -149,8 +149,8 @@ class Flow_PK : public PK_PhysicalBDF {
   mutable double mass_bc, seepage_mass_, mass_initial;
 
   // field evaluators (MUST GO AWAY lipnikov@lanl.gov)
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> darcy_flux_eval_;
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval_, pressure_matrix_eval_;
+  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> > darcy_flux_eval_;
+  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> > pressure_eval_, pressure_matrix_eval_;
 
   // DFN model
   bool flow_on_manifold_;  // true for the DFN model

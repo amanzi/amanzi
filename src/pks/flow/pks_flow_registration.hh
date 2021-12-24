@@ -18,7 +18,7 @@ namespace Flow {
 
 RegisteredPKFactory<Darcy_PK> Darcy_PK::reg_("darcy");
 RegisteredPKFactory<Richards_PK> Richards_PK::reg_("richards");
-Utils::RegisteredFactory<FieldEvaluator, VWContentEvaluator> VWContentEvaluator::reg_("water content");
+Utils::RegisteredFactory<Evaluator, VWContentEvaluator> VWContentEvaluator::reg_("water content");
 
 }  // namespace Amanzi
 }  // namespace Flow

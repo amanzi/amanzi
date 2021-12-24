@@ -37,8 +37,7 @@ class Record {
   Record(const Record& other, Key fieldname) : Record(other) {
     set_fieldname(fieldname);
   }
-  Record(const Record& other, Key fieldname, Key owner)
-      : Record(other, fieldname) {
+  Record(const Record& other, Key fieldname, Key owner) : Record(other, fieldname) {
     set_owner(owner);
   }
 

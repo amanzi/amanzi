@@ -12,6 +12,7 @@
 */
 
 #include "EvaluatorPrimary.hh"
+#include "StateDefs.hh"
 #include "UniqueHelpers.hh"
 
 namespace Amanzi {
@@ -20,17 +21,17 @@ namespace Amanzi {
 // Constructors
 // ---------------------------------------------------------------------------
 EvaluatorPrimary_::EvaluatorPrimary_(Teuchos::ParameterList& plist)
-  : my_key_(Keys::cleanPListName(plist.name())),
-    my_tag_(plist.get<std::string>("tag", "")),
-    vo_(Keys::cleanPListName(plist.name()), plist)
+    : my_key_(Keys::cleanPListName(plist.name())),
+      my_tag_(plist.get<std::string>("tag", StateTags::DEFAULT)),
+      vo_(Keys::cleanPListName(plist.name()), plist)
 {}
 
 
 // ---------------------------------------------------------------------------
 // Assignment operator.
 // ---------------------------------------------------------------------------
-EvaluatorPrimary_ &EvaluatorPrimary_::
-operator=(const EvaluatorPrimary_& other) {
+EvaluatorPrimary_& EvaluatorPrimary_::operator=(const EvaluatorPrimary_& other)
+{
   if (this != &other) {
     AMANZI_ASSERT(my_key_ == other.my_key_);
     requests_ = other.requests_;
@@ -43,7 +44,8 @@ operator=(const EvaluatorPrimary_& other) {
 // ---------------------------------------------------------------------------
 // Virtual assignment operator.
 // ---------------------------------------------------------------------------
-Evaluator &EvaluatorPrimary_::operator=(const Evaluator& other) {
+Evaluator& EvaluatorPrimary_::operator=(const Evaluator& other)
+{
   if (this != &other) {
     const EvaluatorPrimary_ *other_p = dynamic_cast<const EvaluatorPrimary_*>(&other);
     AMANZI_ASSERT(other_p != NULL);
@@ -59,7 +61,8 @@ Evaluator &EvaluatorPrimary_::operator=(const Evaluator& other) {
 // Updates the data, if needed.  Returns true if the value of the data has
 // changed since the last request for an update.
 // ---------------------------------------------------------------------------
-bool EvaluatorPrimary_::Update(State& S, const Key& request) {
+bool EvaluatorPrimary_::Update(State& S, const Key& request)
+{
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
     *vo_.os() << "Primary Variable " << my_key_ << " requested by " << request << std::endl;
@@ -90,7 +93,8 @@ bool EvaluatorPrimary_::Update(State& S, const Key& request) {
 // ---------------------------------------------------------------------------
 bool EvaluatorPrimary_::UpdateDerivative(State& S, const Key& request,
                                          const Key& wrt_key,
-                                         const Key& wrt_tag) {
+                                         const Key& wrt_tag)
+{
   // enforce the contract: all calls to this must either have wrt_key,wrt_tag
   // as the key provided (for primary evaluators) or as a dependency (for
   // secondary evaluators)
@@ -133,7 +137,8 @@ bool EvaluatorPrimary_::UpdateDerivative(State& S, const Key& request,
 // Effectively this simply tosses the request history, so that the next
 // requests will say this has changed.
 // ---------------------------------------------------------------------------
-void EvaluatorPrimary_::SetChanged() {
+void EvaluatorPrimary_::SetChanged()
+{
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
     *vo_.os() << "Primary field \"" << vo_.color("gree") << my_key_

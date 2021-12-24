@@ -111,8 +111,7 @@ void PK_DomainFunctionFirstOrderExchange<FunctionBase>::Compute(double t0, doubl
   std::vector<double> args(1 + dim);
 
   // get the tcc vector
-  auto& tcc = *S_->GetFieldCopyData(tcc_key_, tcc_copy_)
-              ->ViewComponent("cell", false);
+  auto& tcc = *S_->Get<CompositeVector>(tcc_key_, tcc_copy_).ViewComponent("cell");
   
   for (UniqueSpecList::const_iterator uspec = unique_specs_.at(kind_)->begin();
        uspec != unique_specs_.at(kind_)->end(); ++uspec) {

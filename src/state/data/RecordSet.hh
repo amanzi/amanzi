@@ -36,7 +36,8 @@ class RecordSet {
   // constructors
   RecordSet() {}
   RecordSet(Key fieldname)
-      : fieldname_(fieldname), vis_fieldname_(fieldname), initialized_(false) {}
+      : fieldname_(fieldname),
+        vis_fieldname_(fieldname) {}
 
   // delete things that suggest this could be duplicated, etc
   RecordSet(const RecordSet& other) = delete;
@@ -47,7 +48,6 @@ class RecordSet {
   // access
   const Key& fieldname() const { return fieldname_; }
   const Key& vis_fieldname() const { return vis_fieldname_; }
-  bool initialized() const { return initialized_; }
   Utils::Units units() const { return units_; }
 
   // mutate
@@ -55,7 +55,6 @@ class RecordSet {
   void set_vis_fieldname(Key vis_fieldname) {
     vis_fieldname_ = std::move(vis_fieldname);
   }
-  void set_initialized(bool initialized = true) { initialized_ = initialized; }
   void set_units(Utils::Units units) { units = std::move(units); }
 
   // pass-throughs for other functionality
@@ -90,17 +89,17 @@ class RecordSet {
   }
 
   // Data setters/getters
-  template <typename T> const T& Get(const Key& tag = "") const {
+  template <typename T> const T& Get(const Key& tag = StateTags::DEFAULT) const {
     return records_.at(tag)->Get<T>();
   }
 
   template <typename T> T& GetW(const Key& tag, const Key& owner) {
     return records_.at(tag)->GetW<T>(owner);
   }
-  template <typename T> T& GetW(const Key& owner) { return GetW<T>("", owner); }
+  template <typename T> T& GetW(const Key& owner) { return GetW<T>(StateTags::DEFAULT, owner); }
 
   template <typename T>
-  Teuchos::RCP<const T> GetPtr(const Key& tag = "") const {
+  Teuchos::RCP<const T> GetPtr(const Key& tag = StateTags::DEFAULT) const {
     return records_.at(tag)->GetPtr<T>();
   }
 
@@ -109,7 +108,7 @@ class RecordSet {
     return records_.at(tag)->GetPtrW<T>(owner);
   }
   template <typename T> Teuchos::RCP<T> GetPtrW(const Key& owner) {
-    return GetPtrW<T>("", owner);
+    return GetPtrW<T>(StateTags::DEFAULT, owner);
   }
 
   template <typename T>
@@ -118,14 +117,14 @@ class RecordSet {
   }
   template <typename T>
   void SetPtr(const Key& owner, const Teuchos::RCP<T>& t) {
-    SetPtr<T>("", owner, t);
+    SetPtr<T>(StateTags::DEFAULT, owner, t);
   }
 
   template <typename T> void Set(const Key& tag, const Key& owner, const T& t) {
     records_.at(tag)->Set<T>(owner, t);
   }
   template <typename T> void Set(const Key& owner, const T& t) {
-    Set<T>("", owner, t);
+    Set<T>(StateTags::DEFAULT, owner, t);
   }
 
   template <typename T, typename F> F& GetFactory() {
@@ -148,10 +147,19 @@ class RecordSet {
     GetFactory<T, NullFactory>();  // checks valid type
   }
 
+  // initialization of set is the collective (AND) operation
+  bool isInitialized() {
+    bool flag(true);
+    for (auto& r : records_) flag &= r.second->initialized();
+    return flag;
+  }
+  void initializeTags(bool initialized = true) {
+    for (auto& r : records_) r.second->set_initialized(initialized);
+  }
+
  private:
   Key fieldname_;
   Key vis_fieldname_;
-  bool initialized_;
   Utils::Units units_;
 
   DataFactory factory_;

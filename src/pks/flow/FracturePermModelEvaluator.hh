@@ -17,7 +17,7 @@
 #define AMANZI_FLOW_POROSITY_EVALUATOR_HH_
 
 #include "Factory.hh"
-#include "secondary_variable_field_evaluator.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 
 #include "FracturePermModel.hh"
 #include "FracturePermModelPartition.hh"
@@ -25,7 +25,7 @@
 namespace Amanzi {
 namespace Flow {
 
-class FracturePermModelEvaluator : public SecondaryVariableFieldEvaluator {
+class FracturePermModelEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   // constructor format for all derived classes
   explicit
@@ -33,14 +33,13 @@ class FracturePermModelEvaluator : public SecondaryVariableFieldEvaluator {
                              Teuchos::RCP<FracturePermModelPartition> fpm);
   FracturePermModelEvaluator(const FracturePermModelEvaluator& other);
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
 
  protected:
-  // Required methods from SecondaryVariableFieldEvaluator
-  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-                              const Teuchos::Ptr<CompositeVector>& result);
-  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
+
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Key& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override;
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -48,7 +47,7 @@ class FracturePermModelEvaluator : public SecondaryVariableFieldEvaluator {
   Key aperture_key_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator, FracturePermModelEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, FracturePermModelEvaluator> factory_;
 };
 
 }  // namespace Flow

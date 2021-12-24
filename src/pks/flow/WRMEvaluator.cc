@@ -23,24 +23,24 @@ namespace Flow {
 * Two constructors.
 ****************************************************************** */
 WRMEvaluator::WRMEvaluator(Teuchos::ParameterList& plist,
-                           const Teuchos::RCP<WRMPartition>& wrm) :
-    SecondaryVariableFieldEvaluator(plist),
-    wrm_(wrm)
+                           const Teuchos::RCP<WRMPartition>& wrm)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
+      wrm_(wrm)
 {
   InitializeFromPlist_();
 }
 
 
-WRMEvaluator::WRMEvaluator(const WRMEvaluator& other) :
-    SecondaryVariableFieldEvaluator(other),
-    pressure_key_(other.pressure_key_),
-    wrm_(other.wrm_) {};
+WRMEvaluator::WRMEvaluator(const WRMEvaluator& other)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+      pressure_key_(other.pressure_key_),
+      wrm_(other.wrm_) {};
 
 
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<FieldEvaluator> WRMEvaluator::Clone() const {
+Teuchos::RCP<Evaluator> WRMEvaluator::Clone() const {
   return Teuchos::rcp(new WRMEvaluator(*this));
 }
 
@@ -49,24 +49,23 @@ Teuchos::RCP<FieldEvaluator> WRMEvaluator::Clone() const {
 * Initialization.
 ****************************************************************** */
 void WRMEvaluator::InitializeFromPlist_() {
-  my_key_ = plist_.get<std::string>("saturation key", "saturation_liquid");
+  my_keys_.push_back(std::make_pair(plist_.get<std::string>("saturation key", "saturation_liquid"), ""));
 
   // my dependency is pressure.
   pressure_key_ = plist_.get<std::string>("pressure key", "pressure");
-  dependencies_.insert(pressure_key_);
+  dependencies_.push_back(std::make_pair(pressure_key_, ""));
 }
 
 
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void WRMEvaluator::EvaluateField_(
-    const Teuchos::Ptr<State>& S,
-    const Teuchos::Ptr<CompositeVector>& result)
+void WRMEvaluator::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
-  Epetra_MultiVector& sat_c = *result->ViewComponent("cell", false);
-  const Epetra_MultiVector& pres_c = *S->GetFieldData(pressure_key_)->ViewComponent("cell", false);
-  const double patm = *S->GetScalarData("atmospheric_pressure");
+  auto& sat_c = *results[0]->ViewComponent("cell");
+  const auto& pres_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
+  double patm = S.Get<double>("atmospheric_pressure");
 
   int ncells = sat_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
@@ -78,13 +77,13 @@ void WRMEvaluator::EvaluateField_(
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void WRMEvaluator::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
+void WRMEvaluator::EvaluatePartialDerivative_(
+    const State& S, const Key& wrt_key, const Key& wrt_tag,
+    const std::vector<CompositeVector*>& results)
 {
-  Epetra_MultiVector& sat_c = *result->ViewComponent("cell", false);
-  const Epetra_MultiVector& pres_c = *S->GetFieldData(pressure_key_)->ViewComponent("cell", false);
-  const double patm = *S->GetScalarData("atmospheric_pressure");
+  auto& sat_c = *results[0]->ViewComponent("cell");
+  const auto& pres_c = *S.Get<CompositeVector>(pressure_key_).ViewComponent("cell");
+  double patm = S.Get<double>("atmospheric_pressure");
 
   int ncells = sat_c.MyLength();
   for (int c = 0; c != ncells; ++c) {

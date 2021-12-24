@@ -47,7 +47,7 @@ bool RecordSet::HasRecord(const Key& tag) const {
   return records_.count(tag) > 0;
 }
 
-Record &RecordSet::GetRecord(const Key& tag) {
+Record& RecordSet::GetRecord(const Key& tag) {
   try {
     return *records_.at(tag);
   } catch (const std::out_of_range& e) {
@@ -57,7 +57,7 @@ Record &RecordSet::GetRecord(const Key& tag) {
   }
 }
 
-const Record &RecordSet::GetRecord(const Key& tag) const {
+const Record& RecordSet::GetRecord(const Key& tag) const {
   try {
     return *records_.at(tag);
   } catch (const std::out_of_range& e) {
@@ -70,12 +70,12 @@ const Record &RecordSet::GetRecord(const Key& tag) const {
 void RecordSet::RequireRecord(const Key& tag, const Key& owner) {
   if (!HasRecord(tag)) {
     records_.emplace(tag, std::make_unique<Record>(fieldname(), owner));
-    auto &r = records_.at(tag);
+    auto& r = records_.at(tag);
     if (!tag.empty()) {
       r->set_vis_fieldname(vis_fieldname() + std::string("_") + tag);
     }
   } else if (!owner.empty()) {
-    auto &r = records_.at(tag);
+    auto& r = records_.at(tag);
     if (r->owner().empty()) {
       r->set_owner(owner);
     } else {
@@ -84,4 +84,4 @@ void RecordSet::RequireRecord(const Key& tag, const Key& owner) {
   }
 }
 
-} // namespace Amanzi
+}  // namespace Amanzi

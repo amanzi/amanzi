@@ -21,7 +21,8 @@ namespace Amanzi {
 // Constructor
 // -----------------------------------------------------------------------------
 EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
-    : vo_(Keys::cleanPListName(plist.name()), plist), plist_(plist) {
+    : vo_(Keys::cleanPListName(plist.name()), plist),
+      plist_(plist) {
   // process the plist for names and tags of the things this evaluator calculates
   if (plist_.isParameter("names")) {
     auto names = plist_.get<Teuchos::Array<std::string>>("names");
@@ -59,10 +60,9 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
     }
   }
   if (my_keys_.size() == 0) {
-    Errors::Message message;
-    message << "EvaluatorSecondary: " << plist.name()
-            << " processed no key-tag pairs.";
-    throw(message);
+    Errors::Message msg;
+    msg << "EvaluatorSecondary: " << plist.name() << " processed no key-tag pairs.";
+    throw(msg);
   }
     
   // process the plist for dependencies
@@ -99,7 +99,7 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
 }
 
 
-Evaluator &EvaluatorSecondary::operator=(const Evaluator& other) {
+Evaluator& EvaluatorSecondary::operator=(const Evaluator& other) {
   if (this != &other) {
     const EvaluatorSecondary *other_p =
         dynamic_cast<const EvaluatorSecondary *>(&other);
@@ -260,8 +260,10 @@ bool EvaluatorSecondary::IsDependency(const State& S, const Key& key,
 
 
 bool EvaluatorSecondary::ProvidesKey(const Key& key, const Key& tag) const {
-  return std::find(my_keys_.begin(), my_keys_.end(),
-                   std::make_pair(key, tag)) != my_keys_.end();
+  for (int i = 0; i < my_keys_.size(); ++i) {
+    return std::find(my_keys_.begin(), my_keys_.end(),
+                     std::make_pair(key, tag)) != my_keys_.end();
+  }
 }
 
 

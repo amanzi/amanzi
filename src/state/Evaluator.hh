@@ -89,7 +89,7 @@ class Evaluator {
   // Virtual method for debugging, plotting the dependency graph, etc.
   // ---------------------------------------------------------------------------
   virtual std::string WriteToString() const = 0;
-  friend std::ostream &operator<<(std::ostream&, const Evaluator&);
+  friend std::ostream& operator<<(std::ostream&, const Evaluator&);
 };
 
 }  // namespace Amanzi

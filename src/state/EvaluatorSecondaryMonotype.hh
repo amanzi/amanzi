@@ -81,7 +81,8 @@ EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility(State& S) 
     for (const auto& keytag : my_keys_) {
       for (const auto& deriv : S.GetDerivativeSet(keytag.first, keytag.second)) {
         auto wrt = Keys::splitKeyTag(deriv.first);
-        auto& dfac = S.RequireDerivative<Data_t,DataFactory_t>(keytag.first, keytag.second, wrt.first, wrt.second, keytag.first);
+        auto& dfac = S.RequireDerivative<Data_t,DataFactory_t>(keytag.first, keytag.second,
+                                                               wrt.first, wrt.second, keytag.first);
         dfac = fac; // derivatives are of the same type -- pointwise
       }
     }

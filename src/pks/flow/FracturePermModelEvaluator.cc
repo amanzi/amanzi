@@ -26,26 +26,26 @@ namespace Flow {
 * Two constructors.
 ****************************************************************** */
 FracturePermModelEvaluator::FracturePermModelEvaluator(
-    Teuchos::ParameterList& plist, Teuchos::RCP<FracturePermModelPartition> fpm) :
-    SecondaryVariableFieldEvaluator(plist),
-    fpm_(fpm)
+    Teuchos::ParameterList& plist, Teuchos::RCP<FracturePermModelPartition> fpm)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
+      fpm_(fpm)
 {
-  my_key_ = plist.get<std::string>("permeability key");
+  my_keys_.push_back(std::make_pair(plist.get<std::string>("permeability key"), ""));
   aperture_key_ = plist.get<std::string>("aperture key");
-  dependencies_.insert(aperture_key_);
+  dependencies_.push_back(std::make_pair(aperture_key_, ""));
 }
 
 
-FracturePermModelEvaluator::FracturePermModelEvaluator(const FracturePermModelEvaluator& other) :
-    SecondaryVariableFieldEvaluator(other),
-    aperture_key_(other.aperture_key_),
-    fpm_(other.fpm_) {};
+FracturePermModelEvaluator::FracturePermModelEvaluator(const FracturePermModelEvaluator& other)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+      aperture_key_(other.aperture_key_),
+      fpm_(other.fpm_) {};
 
 
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<FieldEvaluator> FracturePermModelEvaluator::Clone() const {
+Teuchos::RCP<Evaluator> FracturePermModelEvaluator::Clone() const {
   return Teuchos::rcp(new FracturePermModelEvaluator(*this));
 }
 
@@ -53,12 +53,11 @@ Teuchos::RCP<FieldEvaluator> FracturePermModelEvaluator::Clone() const {
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void FracturePermModelEvaluator::EvaluateField_(
-    const Teuchos::Ptr<State>& S,
-    const Teuchos::Ptr<CompositeVector>& result)
+void FracturePermModelEvaluator::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
-  Epetra_MultiVector& perm_c = *result->ViewComponent("cell", false);
-  const Epetra_MultiVector& aperture_c = *S->GetFieldData(aperture_key_)->ViewComponent("cell", false);
+  auto& perm_c = *results[0]->ViewComponent("cell");
+  const auto& aperture_c = *S.Get<CompositeVector>(aperture_key_).ViewComponent("cell");
 
   int ncells = perm_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
@@ -70,12 +69,11 @@ void FracturePermModelEvaluator::EvaluateField_(
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void FracturePermModelEvaluator::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key,
-    const Teuchos::Ptr<CompositeVector>& result)
+void FracturePermModelEvaluator::EvaluatePartialDerivative_(
+    const State& S, const Key& wrt_key, const Key& wrt_tag,
+    const std::vector<CompositeVector*>& results)
 {
-  result->PutScalar(0.0);
+  results[0]->PutScalar(0.0);
 }
 
 }  // namespace Flow

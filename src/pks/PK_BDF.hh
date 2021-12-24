@@ -22,7 +22,7 @@
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 #include "PDE_HelperDiscretization.hh"
-#include "primary_variable_field_evaluator.hh"
+#include "EvaluatorPrimary.hh"
 
 #include "PK.hh"
 

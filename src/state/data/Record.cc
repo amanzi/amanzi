@@ -19,8 +19,12 @@ namespace Amanzi {
 
 // Basic constructor
 Record::Record(Key fieldname, Key owner)
-   : fieldname_(std::move(fieldname)), owner_(std::move(owner)),
-     vis_key_(fieldname_), units_(), io_checkpoint_(true), io_vis_(true),
+   : fieldname_(std::move(fieldname)),
+     owner_(std::move(owner)),
+     vis_key_(fieldname_),
+     units_(),
+     io_checkpoint_(true),
+     io_vis_(true),
      initialized_(false) {}
 
 // Copy constructor does not copy data!

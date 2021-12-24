@@ -51,8 +51,7 @@ State::State(Teuchos::ParameterList& state_plist) :
     state_plist_(state_plist),
     time_(0.0),
     cycle_(0),
-    position_in_tp_(TIME_PERIOD_START)
-{
+    position_in_tp_(TIME_PERIOD_START) {
   vo_ = Teuchos::rcp(new VerboseObject("State", state_plist_));
 };
 
@@ -73,7 +72,8 @@ void State::RegisterMesh(const Key& key,
 };
 
 
-Teuchos::RCP<const AmanziMesh::Mesh> State::GetMesh(const Key& key) const {
+Teuchos::RCP<const AmanziMesh::Mesh> State::GetMesh(const Key& key) const
+{
   Teuchos::RCP<const AmanziMesh::Mesh> mesh;
   if (key.empty()) {
     mesh = GetMesh_("domain");
@@ -90,7 +90,8 @@ Teuchos::RCP<const AmanziMesh::Mesh> State::GetMesh(const Key& key) const {
 };
 
 
-Teuchos::RCP<AmanziMesh::Mesh> State::GetDeformableMesh(Key key) {
+Teuchos::RCP<AmanziMesh::Mesh> State::GetDeformableMesh(Key key)
+{
   if (key.empty()) key = "domain";
 
   mesh_iterator lb = meshes_.lower_bound(key);
@@ -110,10 +111,11 @@ Teuchos::RCP<AmanziMesh::Mesh> State::GetDeformableMesh(Key key) {
     Exceptions::amanzi_throw(message);
   }
   return Teuchos::null;
-};
+}
 
 
-bool State::IsDeformableMesh(const Key& key) const {
+bool State::IsDeformableMesh(const Key& key) const
+{
   mesh_iterator lb = meshes_.lower_bound(key);
   if (lb != meshes_.end() && !(meshes_.key_comp()(key, lb->first))) {
     return lb->second.second;
@@ -123,10 +125,11 @@ bool State::IsDeformableMesh(const Key& key) const {
     Exceptions::amanzi_throw(msg);
   }
   return false;
-};
+}
 
 
-Teuchos::RCP<AmanziMesh::Mesh> State::GetMesh_(const Key& key) const {
+Teuchos::RCP<AmanziMesh::Mesh> State::GetMesh_(const Key& key) const
+{
   if (key.empty()) return GetMesh_("domain");
   
   mesh_iterator lb = meshes_.lower_bound(key);
@@ -135,7 +138,7 @@ Teuchos::RCP<AmanziMesh::Mesh> State::GetMesh_(const Key& key) const {
   } else {
     return Teuchos::null;
   }
-};
+}
 
 
 void State::RegisterDomainSet(const Key& name,
@@ -148,7 +151,8 @@ bool State::HasDomainSet(const Key& name) const {
 }
 
 Teuchos::RCP<const AmanziMesh::DomainSet>
-State::GetDomainSet(const Key& name) const {
+State::GetDomainSet(const Key& name) const
+{
   if (!domain_sets_.count(name)) {
     Errors::Message msg;
     msg << "DomainSet \"" << name << "\" does not exist in State.";
@@ -161,17 +165,18 @@ State::GetDomainSet(const Key& name) const {
 // -----------------------------------------------------------------------------
 // State handles data evaluation.
 // -----------------------------------------------------------------------------
-Evaluator& State::RequireEvaluator(const Key& key, const Key& tag) {
+Evaluator& State::RequireEvaluator(const Key& key, const Key& tag)
+{
   // does it already exist?
   if (HasEvaluator(key, tag)) {
     return GetEvaluator(key, tag);
   }
 
   // See if the key is provided by another existing evaluator.
-  for (auto& f_it : evaluators_) {
-    if (Keys::hasKey(f_it.second, tag) &&
-        f_it.second.at(tag)->ProvidesKey(key, tag)) {
-      auto& evaluator = f_it.second.at(tag);
+  for (auto& e : evaluators_) {
+    if (Keys::hasKey(e.second, tag) &&
+        e.second.at(tag)->ProvidesKey(key, tag)) {
+      auto& evaluator = e.second.at(tag);
       SetEvaluator(key, evaluator);
       return *evaluator;
     }
@@ -215,7 +220,8 @@ Evaluator& State::RequireEvaluator(const Key& key, const Key& tag) {
 }
 
 
-bool State::HasEvaluator(const Key& key, const Key& tag) {
+bool State::HasEvaluator(const Key& key, const Key& tag)
+{
   if (Keys::hasKey(evaluators_, key)) {
     return Keys::hasKey(evaluators_.at(key), tag);
   } else {
@@ -224,7 +230,8 @@ bool State::HasEvaluator(const Key& key, const Key& tag) {
 }
 
 
-Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition(Key key) {
+Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition(Key key)
+{
   Teuchos::RCP<const Functions::MeshPartition> mp = GetMeshPartition_(key);
   if (mp == Teuchos::null) {
     std::stringstream messagestream;
@@ -233,10 +240,11 @@ Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition(Key key) {
     Exceptions::amanzi_throw(message);
   }
   return mp;
-};
+}
 
 
-Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition_(Key key) {
+Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition_(Key key)
+{
   MeshPartitionMap::iterator lb = mesh_partitions_.lower_bound(key);
   if (lb != mesh_partitions_.end() && !(mesh_partitions_.key_comp()(key, lb->first))) {
     return lb->second;
@@ -258,14 +266,15 @@ Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition_(Key key) {
     }
     return Teuchos::null;
   }
-};
+}
 
 
-void State::WriteDependencyGraph() const {
+void State::WriteDependencyGraph() const
+{
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
     std::ofstream os("dependency_graph.txt", std::ios::out);
-    for (auto& fe : evaluators_) {
-      for (auto& e : fe.second) os << *e.second;
+    for (auto& e : evaluators_) {
+      for (auto& r : e.second) os << *r.second;
     }
     os.close();
   }
@@ -289,10 +298,11 @@ State::GetModelParameters(std::string modelname) {
 // -----------------------------------------------------------------------------
 // Initialize data, allowing values to be specified here or in the owning PK.
 // All independent variables must be initialized here.
-void State::Setup() {
-  Require<double>("time", "", "time");
+void State::Setup()
+{
+  Require<double>("time", StateTags::DEFAULT, "time");
   Require<double>("time", "next", "time");
-  Require<int>("cycle", "", "cycle");
+  Require<int>("cycle", StateTags::DEFAULT, "cycle");
   Require<int>("cycle", "next", "cycle");
 
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -302,10 +312,10 @@ void State::Setup() {
   for (auto& e : evaluators_) {
     for (auto& r : e.second) {
       if (!r.second->ProvidesKey(e.first, r.first)) {
-        Errors::Message message;
-        message << "Evaluator \"" << e.first << "\" with tag \"" << r.first
-                << "\" does not provide its own key.";
-        Exceptions::amanzi_throw(message);
+        Errors::Message msg;
+        msg << "Evaluator \"" << e.first << "\" with tag \"" << r.first
+            << "\" does not provide its own key.";
+        Exceptions::amanzi_throw(msg);
       }
 
       if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
@@ -322,10 +332,14 @@ void State::Setup() {
 
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
       *vo_->os() << "Record \"" << r.first << "\": ";
-      // if (f.second->type() == Amanzi::COMPOSITE_VECTOR_FIELD) {
-      //   auto cv = r.second->GetFieldData();
-      //   for (auto comp=cv->begin(); comp!=cv->end(); ++comp) *vo_->os() << *comp << " ";
-      // }
+
+      auto& field = GetRecord(r.first);
+      if (field.ValidType<CompositeVector>()) {
+        const auto& cv = Get<CompositeVector>(r.first);
+        for (auto comp = cv.begin(); comp != cv.end(); ++comp) *vo_->os() << *comp << " ";
+      } else {
+        *vo_->os() << " not of type CV";
+      }
       *vo_->os() << "\n";
     }
   }
@@ -333,24 +347,22 @@ void State::Setup() {
   for (auto& deriv : derivs_) {
     deriv.second->CreateData();
   }
-};
+}
 
 
-void State::Initialize() {
+void State::Initialize()
+{
   // Set metadata
   GetW<int>("cycle", "", "cycle") = cycle_;
-  data_.at("cycle")->set_initialized();
+  data_.at("cycle")->initializeTags();
 
   GetW<double>("time", "", "time") = time_;
-  data_.at("time")->set_initialized();
+  data_.at("time")->initializeTags();
 
-  // Initialize any other fields from state plist.
+  // Initialize data from initial conditions.
   InitializeFields();
 
-  // Ensure that non-evaluator-based fields are initialized.
-  // CheckNotEvaluatedFieldsInitialized();
-
-  // Initialize other field evaluators.
+  // Initialize evaluators.
   InitializeEvaluators();
 
   // Ensure everything is owned and initialized.
@@ -361,10 +373,11 @@ void State::Initialize() {
 
   // Reset io_vis flags using blacklist and whitelist
   InitializeIOFlags();
-};
+}
 
 
-void State::Initialize(Teuchos::RCP<State> S) {
+void State::Initialize(Teuchos::RCP<State> S)
+{
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
     Teuchos::OSTab tab1 = vo_->getOSTab();
@@ -373,7 +386,7 @@ void State::Initialize(Teuchos::RCP<State> S) {
 
   for (auto& e : data_) {
     if (S->HasData(e.first)) {
-      auto field = GetRecordW(e.first, e.first);
+      auto& field = GetRecordW(e.first, e.first);
       const auto& copy = S->GetRecord(e.first);
 
       /*
@@ -403,9 +416,6 @@ void State::Initialize(Teuchos::RCP<State> S) {
   // Initialize any other fields from state plist.
   InitializeFields();
 
-  // Ensure that non-evaluator-based fields are initialized.
-  // CheckNotEvaluatedFieldsInitialized();
-
   // Initialize other field evaluators.
   InitializeEvaluators();
 
@@ -417,26 +427,27 @@ void State::Initialize(Teuchos::RCP<State> S) {
 
   // Reset io_vis flags using blacklist and whitelist
   InitializeIOFlags();
-};
+}
 
 
-void State::InitializeEvaluators() {
-  VerboseObject vo("State", state_plist_); 
-  if (vo.os_OK(Teuchos::VERB_EXTREME)) {
-    Teuchos::OSTab tab = vo.getOSTab();
-    *vo.os() << "initializing evaluators..." << std::endl;
-  }
-
+void State::InitializeEvaluators()
+{
   for (auto& e : evaluators_) {
     auto tag = e.second.begin();
-    std::cout << "Initializing eval: \"" << e.first << "\" with tag \"" << tag->first << "\"" << std::endl;
+
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "initializing eval: \"" << e.first << "\" with 1st tag \"" << tag->first << "\"" << std::endl;
+    }
+
     tag->second->Update(*this, "state");
-    GetRecordSetW(e.first).set_initialized();
+    GetRecordSetW(e.first).initializeTags();
   }
-};
+}
 
 
-void State::InitializeFieldCopies() {
+void State::InitializeFieldCopies()
+{
   VerboseObject vo("State", state_plist_); 
   if (vo.os_OK(Teuchos::VERB_EXTREME)) {
     Teuchos::OSTab tab = vo.getOSTab();
@@ -451,10 +462,11 @@ void State::InitializeFieldCopies() {
       }
     } 
   }
-};
+}
 
 
-void State::InitializeFields() {
+void State::InitializeFields()
+{
   bool pre_initialization = false;
   VerboseObject vo("State", state_plist_); 
 
@@ -477,7 +489,7 @@ void State::InitializeFields() {
             tmp->SetChanged();
           }
         }          
-        it->second->set_initialized();
+        it->second->initializeTags();
       }
     }
     // file_input.close_h5file();
@@ -486,13 +498,15 @@ void State::InitializeFields() {
   // Initialize through initial condition
   if (vo.os_OK(Teuchos::VERB_MEDIUM)) {
     Teuchos::OSTab tab = vo.getOSTab();
-    *vo.os() << "initializing fields through initial conditions..." << std::endl;
+    *vo.os() << "initializing data through initial conditions..." << std::endl;
   }
 
   if (state_plist_.isSublist("initial conditions")) {
     for (auto& e : data_) {
-      if (pre_initialization || !e.second->initialized()) {
+      bool flag(false);
+      if (pre_initialization || !e.second->isInitialized()) {
         if (state_plist_.sublist("initial conditions").isSublist(e.first)) {
+          flag = true;
           Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(e.first);
           e.second->Initialize(sublist);
         } else {
@@ -503,6 +517,7 @@ void State::InitializeFields() {
           if (is_ds) {
             Key lifted_key = Keys::getKey(ds_name, "*", std::get<2>(split));
             if (state_plist_.sublist("initial conditions").isSublist(lifted_key)) {
+              flag = true;
               Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(lifted_key);
               sublist.set("evaluator name", e.first);
               e.second->Initialize(sublist);
@@ -510,15 +525,21 @@ void State::InitializeFields() {
           }
         }
       }
+
+      if (vo.os_OK(Teuchos::VERB_HIGH)) {
+        Teuchos::OSTab tab = vo.getOSTab();
+        *vo_->os() << "initializing \"" << e.first << "\"  [" << flag << "]" << std::endl;
+      }
     }
   }
-};
+}
 
 
 // Make sure all fields have gotten their IC, either from State or the owning PK.
-bool State::CheckAllFieldsInitialized() {
+bool State::CheckAllFieldsInitialized()
+{
   for (auto& e : data_) {
-    if (!e.second->initialized()) {
+    if (!e.second->isInitialized()) {
       // field was not initialized
       std::stringstream ss;
       ss << "Variable \"" << e.first << "\" was not initialized\n";
@@ -528,11 +549,12 @@ bool State::CheckAllFieldsInitialized() {
     }
   }
   return true;
-};
+}
 
 
 // Utility for setting vis flags
-void State::InitializeIOFlags() {
+void State::InitializeIOFlags()
+{
   Teuchos::Array<std::string> empty;
 
   // removing fields from vis dump
@@ -566,7 +588,8 @@ void State::InitializeIOFlags() {
 
 
 // Non-member function for vis.
-void WriteVis(Visualization& vis, const State& S) {
+void WriteVis(Visualization& vis, const State& S)
+{
   if (!vis.is_disabled()) {
     // Create the new time step
     vis.CreateTimestep(S.time(), S.cycle(), vis.get_tag());
@@ -578,16 +601,15 @@ void WriteVis(Visualization& vis, const State& S) {
     }
     vis.WriteRegions();
     vis.WritePartition();
-
-    // Finalize i/o.
     vis.FinalizeTimestep();
   }
-};
+}
 
 
 // Non-member function for checkpointing.
 void WriteCheckpoint(Checkpoint& chkp, const Comm_ptr_type& comm,
-                     const State& S, bool final) {
+                     const State& S, bool final)
+{
   if (!chkp.is_disabled()) {
     // chkp.SetFinal(final);
     chkp.CreateFile(S.cycle());
@@ -597,23 +619,24 @@ void WriteCheckpoint(Checkpoint& chkp, const Comm_ptr_type& comm,
     chkp.Write("mpi_num_procs", comm->NumProc());
     chkp.Finalize();
   }
-};
+}
 
 
 // Non-member function for checkpointing.
 void ReadCheckpoint(const Comm_ptr_type& comm, State& S, 
-                    const std::string& filename) {
+                    const std::string& filename)
+{
   Checkpoint chkp(filename, comm);
 
   // Load the number of processes and ensure they are the same.
   int num_procs(-1);
   chkp.Read("mpi_num_procs", num_procs);
   if (comm->NumProc() != num_procs) {
-    std::stringstream messagestream;
-    messagestream << "Requested checkpoint file was created on " << num_procs
-                  << " processes, making it incompatible with this run on "
-                  << comm->NumProc() << " processes.";
-    Errors::Message message(messagestream.str());
+    std::stringstream ss;
+    ss << "Requested checkpoint file was created on " << num_procs
+       << " processes, making it incompatible with this run on "
+       << comm->NumProc() << " processes.";
+    Errors::Message message(ss.str());
     throw(message);
   }
 
@@ -623,12 +646,13 @@ void ReadCheckpoint(const Comm_ptr_type& comm, State& S,
   }
 
   chkp.Finalize();
-};
+}
 
 
 // Non-member function for checkpointing.
 double ReadCheckpointInitialTime(const Comm_ptr_type& comm,
-                                 std::string filename) {
+                                 std::string filename)
+{
   if (!Keys::ends_with(filename, ".h5")) {
     // new style checkpoint
     boost::filesystem::path filepath = boost::filesystem::path(filename) / "domain.h5";
@@ -642,12 +666,12 @@ double ReadCheckpointInitialTime(const Comm_ptr_type& comm,
   checkpoint.readAttrReal(time, "time");
   checkpoint.close_h5file();
   return time;
-};
+}
 
 
 // Non-member function for checkpointing position.
-int ReadCheckpointPosition(const Comm_ptr_type& comm,
-                           std::string filename) {
+int ReadCheckpointPosition(const Comm_ptr_type& comm, std::string filename)
+{
   if (!Keys::ends_with(filename, ".h5")) {
     // new style checkpoint
     boost::filesystem::path filepath = boost::filesystem::path(filename) / "domain.h5";
@@ -661,13 +685,14 @@ int ReadCheckpointPosition(const Comm_ptr_type& comm,
   checkpoint.readAttrInt(pos, "position");
   checkpoint.close_h5file();
   return pos;
-};
+}
 
 
 // Non-member function for checkpointing observations.
 void ReadCheckpointObservations(const Comm_ptr_type& comm,
                                 std::string filename,
-                                Amanzi::ObservationData& obs_data) {
+                                Amanzi::ObservationData& obs_data)
+{
   if (!Keys::ends_with(filename, ".h5")) {
     // new style checkpoint
     boost::filesystem::path filepath = boost::filesystem::path(filename) / "domain.h5";
@@ -718,13 +743,15 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
   }
 }
 
+
 // Non-member function for deforming the mesh after reading a checkpoint file
 // that contains the vertex coordinate field (this is written by deformation pks)
 //
 // FIX ME: Refactor this to make the name more general.  Should align with a
 // mesh name prefix or something, and the coordinates should be written by
 // state in WriteCheckpoint if mesh IsDeformableMesh() --ETC
-void DeformCheckpointMesh(State& S, Key domain) {
+void DeformCheckpointMesh(State& S, Key domain)
+{
   if (S.HasData("vertex coordinate")) { // only deform mesh if vertex coordinate
                                         // field exists
     AmanziMesh::Mesh* write_access_mesh = const_cast<AmanziMesh::Mesh*>(&*S.GetMesh());
@@ -785,14 +812,22 @@ void WriteStateStatistics(const State& S, const VerboseObject& vo)
           *vo.os() << namedot << " " << c_it->second << " / " 
                     << vmax[name_comp] << " / " << vavg[name_comp] << std::endl;
         }
-      } else if (S.GetRecord(name).ValidType<double>()) {
+      }
+      else if (S.GetRecord(name).ValidType<double>()) {
         double vmin = S.Get<double>(name);
         name.resize(40, '.');
         *vo.os() << name << " " << vmin << std::endl;
       }
+      else if (S.GetRecord(name).ValidType<AmanziGeometry::Point>()) {
+        const auto& p = S.Get<AmanziGeometry::Point>(name);
+        name.resize(40, '.');
+        *vo.os() << name;
+        for (int i = 0; i < p.dim(); ++i) *vo.os() << " " << p[i];
+        *vo.os() << std::endl;
+      }
     }
   }
-};
+}
 
 
 Evaluator& State::GetEvaluator(const Key& key, const Key& tag) {
@@ -800,7 +835,8 @@ Evaluator& State::GetEvaluator(const Key& key, const Key& tag) {
 }
 
 
-const Evaluator& State::GetEvaluator(const Key& key, const Key& tag) const {
+const Evaluator& State::GetEvaluator(const Key& key, const Key& tag) const
+{
   try {
     return *evaluators_.at(key).at(tag);
   } catch (std::out_of_range) {
@@ -810,10 +846,11 @@ const Evaluator& State::GetEvaluator(const Key& key, const Key& tag) const {
     Errors::Message message(messagestream.str());
     throw(message);
   }
-};
+}
 
 
-Teuchos::RCP<Evaluator> State::GetEvaluatorPtr(const Key& key, const Key& tag) {
+Teuchos::RCP<Evaluator> State::GetEvaluatorPtr(const Key& key, const Key& tag)
+{
   try {
     return evaluators_.at(key).at(tag);
   } catch (std::out_of_range) {
@@ -823,7 +860,7 @@ Teuchos::RCP<Evaluator> State::GetEvaluatorPtr(const Key& key, const Key& tag) {
     Errors::Message message(messagestream.str());
     throw(message);
   }
-};
+}
 
 
 void State::SetEvaluator(const Key& key, const Key& tag,
@@ -848,8 +885,8 @@ State::GetEvaluatorList(const Key& key)
       }
     }
   }
-  // return an empty new list
+
   return FEList().sublist(key);
 }
 
-} // namespace Amanzi
+}  // namespace Amanzi
