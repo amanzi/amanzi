@@ -78,9 +78,10 @@ Developer's note:
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "TreeVector.hh"
-#include "State.hh"
 #include "EvaluatorPrimary.hh"
+#include "State.hh"
+#include "Tag.hh"
+#include "TreeVector.hh"
 
 namespace Amanzi {
 
@@ -181,8 +182,8 @@ class PK {
     if (S->HasData(fieldname)) {
       if (S->GetRecord(fieldname).owner() == passwd) {
         if (!S->GetRecord(fieldname).initialized()) {
-          S->GetW<CompositeVector>(fieldname, "", passwd).PutScalar(default_val);
-          S->GetRecordW(fieldname, "", passwd).set_initialized();
+          S->GetW<CompositeVector>(fieldname, Tags::DEFAULT, passwd).PutScalar(default_val);
+          S->GetRecordW(fieldname, Tags::DEFAULT, passwd).set_initialized();
 
           if (vo_->os_OK(Teuchos::VERB_MEDIUM))
             *vo_->os() << "initialized \"" << fieldname << "\" to value " << default_val << std::endl;

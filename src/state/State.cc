@@ -165,7 +165,7 @@ State::GetDomainSet(const Key& name) const
 // -----------------------------------------------------------------------------
 // State handles data evaluation.
 // -----------------------------------------------------------------------------
-Evaluator& State::RequireEvaluator(const Key& key, const Key& tag)
+Evaluator& State::RequireEvaluator(const Key& key, const Tag& tag)
 {
   // does it already exist?
   if (HasEvaluator(key, tag)) {
@@ -207,7 +207,7 @@ Evaluator& State::RequireEvaluator(const Key& key, const Key& tag)
 
     // -- Create and set the evaluator.
     Evaluator_Factory evaluator_factory;
-    sublist.set("tag", tag);
+    sublist.set("tag", tag.get());
     auto evaluator = evaluator_factory.createEvaluator(sublist);
     SetEvaluator(key, tag, evaluator);
     return *evaluator;
@@ -220,7 +220,7 @@ Evaluator& State::RequireEvaluator(const Key& key, const Key& tag)
 }
 
 
-bool State::HasEvaluator(const Key& key, const Key& tag)
+bool State::HasEvaluator(const Key& key, const Tag& tag)
 {
   if (Keys::hasKey(evaluators_, key)) {
     return Keys::hasKey(evaluators_.at(key), tag);
@@ -300,27 +300,30 @@ State::GetModelParameters(std::string modelname) {
 // All independent variables must be initialized here.
 void State::Setup()
 {
-  Require<double>("time", StateTags::DEFAULT, "time");
-  Require<double>("time", "next", "time");
-  Require<int>("cycle", StateTags::DEFAULT, "cycle");
-  Require<int>("cycle", "next", "cycle");
+  Tag tag_next = make_tag("next");
+  Require<double>("time", Tags::DEFAULT, "time");
+  Require<double>("time", tag_next, "time");
+
+  Require<int>("cycle", Tags::DEFAULT, "cycle");
+  Require<int>("cycle", tag_next, "cycle");
 
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // Ensure compatibility of all the evaluators -- each evaluator's dependencies
   // must provide what is required of that evaluator.
   for (auto& e : evaluators_) {
+std::cout << "testing... " << e.first << std::endl;
     for (auto& r : e.second) {
       if (!r.second->ProvidesKey(e.first, r.first)) {
         Errors::Message msg;
-        msg << "Evaluator \"" << e.first << "\" with tag \"" << r.first
+        msg << "Evaluator \"" << e.first << "\" with tag \"" << r.first.get()
             << "\" does not provide its own key.";
         Exceptions::amanzi_throw(msg);
       }
 
       if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
         Teuchos::OSTab tab1 = vo_->getOSTab();
-        *vo_->os() << "checking compatibility: " << r.first;
+        *vo_->os() << "checking compatibility: \"" << e.first << "\" + \"" << r.first.get() << "\"\n";
       }
       r.second->EnsureCompatibility(*this);
     }
@@ -353,10 +356,10 @@ void State::Setup()
 void State::Initialize()
 {
   // Set metadata
-  GetW<int>("cycle", "", "cycle") = cycle_;
+  GetW<int>("cycle", Tags::DEFAULT, "cycle") = cycle_;
   data_.at("cycle")->initializeTags();
 
-  GetW<double>("time", "", "time") = time_;
+  GetW<double>("time", Tags::DEFAULT, "time") = time_;
   data_.at("time")->initializeTags();
 
   // Initialize data from initial conditions.
@@ -437,7 +440,7 @@ void State::InitializeEvaluators()
 
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "initializing eval: \"" << e.first << "\" with 1st tag \"" << tag->first << "\"" << std::endl;
+      *vo_->os() << "initializing eval: \"" << e.first << "\" with 1st tag \"" << tag->first.get() << "\"" << std::endl;
     }
 
     tag->second->Update(*this, "state");
@@ -830,40 +833,41 @@ void WriteStateStatistics(const State& S, const VerboseObject& vo)
 }
 
 
-Evaluator& State::GetEvaluator(const Key& key, const Key& tag) {
+Evaluator& State::GetEvaluator(const Key& key, const Tag& tag) {
   return *GetEvaluatorPtr(key, tag);
 }
 
 
-const Evaluator& State::GetEvaluator(const Key& key, const Key& tag) const
+const Evaluator& State::GetEvaluator(const Key& key, const Tag& tag) const
 {
   try {
     return *evaluators_.at(key).at(tag);
   } catch (std::out_of_range) {
-    std::stringstream messagestream;
-    messagestream << "Evaluator for field \"" << key << "\" at tag \"" << tag
-                  << "\" does not exist in the state.";
-    Errors::Message message(messagestream.str());
+    std::stringstream ss;
+    ss << "Evaluator for field \"" << key << "\" at tag \"" << tag.get()
+       << "\" does not exist in the state.";
+    Errors::Message message(ss.str());
     throw(message);
   }
 }
 
 
-Teuchos::RCP<Evaluator> State::GetEvaluatorPtr(const Key& key, const Key& tag)
+Teuchos::RCP<Evaluator> State::GetEvaluatorPtr(const Key& key, const Tag& tag)
 {
   try {
     return evaluators_.at(key).at(tag);
   } catch (std::out_of_range) {
-    std::stringstream messagestream;
-    messagestream << "Evaluator for field \"" << key << "\" at tag \"" << tag
-                  << "\" does not exist in the state.";
-    Errors::Message message(messagestream.str());
+    std::stringstream ss;
+    ss << "Evaluator for field \"" << key << "\" at tag \"" << tag.get()
+       << "\" does not exist in the state.";
+    Errors::Message message(ss.str());
     throw(message);
   }
 }
 
 
-void State::SetEvaluator(const Key& key, const Key& tag,
+// Key defines field, Tag defines particular copy of field
+void State::SetEvaluator(const Key& key, const Tag& tag,
                          const Teuchos::RCP<Evaluator>& evaluator) {
   evaluators_[key][tag] = evaluator;
 }

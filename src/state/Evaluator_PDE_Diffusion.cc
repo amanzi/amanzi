@@ -28,8 +28,9 @@ Lots of options here, document me!
 namespace Amanzi {
 
 Evaluator_PDE_Diffusion::Evaluator_PDE_Diffusion(Teuchos::ParameterList& plist)
-    : EvaluatorSecondary(plist) {
-  my_tag_ = plist.get<std::string>("tag");
+    : EvaluatorSecondary(plist)
+{
+  my_tag_ = make_tag(plist.get<std::string>("tag"));
 
   // my keys
   rhs_key_ = plist.get<std::string>("rhs key");
@@ -59,7 +60,9 @@ Evaluator_PDE_Diffusion::Evaluator_PDE_Diffusion(Teuchos::ParameterList& plist)
   }
 }
 
-void Evaluator_PDE_Diffusion::EnsureCompatibility(State& S) {
+
+void Evaluator_PDE_Diffusion::EnsureCompatibility(State& S)
+{
   // require the rhs
   auto& rhs_fac = S.Require<CompositeVector, CompositeVectorSpace>(rhs_key_, my_tag_, rhs_key_);
   if (rhs_fac.Mesh().get()) {
@@ -111,11 +114,13 @@ void Evaluator_PDE_Diffusion::EnsureCompatibility(State& S) {
   }
 }
 
-bool Evaluator_PDE_Diffusion::UpdateDerivative(State& S, const Key& requestor, const Key& wrt_key,
-                                               const Key& wrt_tag) {
+
+bool Evaluator_PDE_Diffusion::UpdateDerivative(
+    State& S, const Key& requestor, const Key& wrt_key, const Tag& wrt_tag)
+{
   AMANZI_ASSERT(IsDependency(S, wrt_key, wrt_tag));
   AMANZI_ASSERT(!jac_op_key_.empty());
-  bool wrt_is_u = wrt_key == u_key_ && wrt_tag == my_tag_;
+  bool wrt_is_u = (wrt_key == u_key_) && (wrt_tag == my_tag_);
 
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
@@ -129,8 +134,8 @@ bool Evaluator_PDE_Diffusion::UpdateDerivative(State& S, const Key& requestor, c
 
   // -- must update if our our dependencies have changed, as these affect the
   // partial derivatives
-  Key my_request = Key{"d"} + Keys::getKeyTag(my_keys_[0].first, my_keys_[0].second) + "_d" +
-                   Keys::getKeyTag(wrt_key, wrt_tag);
+  Key my_request = Key{"d"} + Keys::getKeyTag(my_keys_[0].first, my_keys_[0].second.get())
+                 + "_d" + Keys::getKeyTag(wrt_key, wrt_tag.get());
   update |= Update(S, my_request);
 
   // -- must update if any of our dependencies' derivatives have changed
@@ -144,7 +149,7 @@ bool Evaluator_PDE_Diffusion::UpdateDerivative(State& S, const Key& requestor, c
   }
   if (!u_key_.empty() && !wrt_is_u &&
       S.GetEvaluator(u_key_, my_tag_).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
-    update |= S.GetEvaluator(u_key_, my_tag_).UpdateDerivative(S, my_request, wrt_tag, wrt_tag);
+    update |= S.GetEvaluator(u_key_, my_tag_).UpdateDerivative(S, my_request, wrt_key, wrt_tag);
   }
 
   // Do the update
@@ -176,7 +181,9 @@ bool Evaluator_PDE_Diffusion::UpdateDerivative(State& S, const Key& requestor, c
   }
 }
 
-void Evaluator_PDE_Diffusion::Update_(State& S) {
+
+void Evaluator_PDE_Diffusion::Update_(State& S)
+{
   // get pointers to the results of this update
   auto A_rhs = S.GetPtrW<CompositeVector>(rhs_key_, my_tag_, rhs_key_);
   auto A_lop = S.GetPtrW<Operators::Op>(local_op_key_, my_tag_, local_op_key_);
@@ -214,7 +221,10 @@ void Evaluator_PDE_Diffusion::Update_(State& S) {
   pde->ApplyBCs(true, true, true);
 }
 
-void Evaluator_PDE_Diffusion::UpdateDerivative_(State& S, const Key& wrt_key, const Key& wrt_tag) {
+
+void Evaluator_PDE_Diffusion::UpdateDerivative_(
+    State& S, const Key& wrt_key, const Tag& wrt_tag)
+{
   // need the spaces
   const CompositeVector& A_rhs = S.Get<CompositeVector>(rhs_key_, my_tag_);
 

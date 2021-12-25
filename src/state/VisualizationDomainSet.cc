@@ -15,7 +15,7 @@
 namespace Amanzi {
 
 void
-VisualizationDomainSet::WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names ) const
+VisualizationDomainSet::WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names) const
 {
   Key varname = Keys::getVarName(names[0]);
   if (!lifted_vectors_.count(varname)) {
@@ -44,7 +44,7 @@ VisualizationDomainSet::WriteVector(const Epetra_MultiVector& vec, const std::ve
 
 
 void
-VisualizationDomainSet::WriteVector(const Epetra_Vector& vec, const std::string& name ) const
+VisualizationDomainSet::WriteVector(const Epetra_Vector& vec, const std::string& name) const
 {
   Key varname = Keys::getVarName(name);
   if (!lifted_vectors_.count(varname)) {

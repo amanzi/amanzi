@@ -19,9 +19,10 @@
 #include "Teuchos_RCP.hpp"
 
 #include "CommonDefs.hh"
+#include "DenseVector.hh"
 #include "Mesh.hh"
 #include "State.hh"
-#include "DenseVector.hh"
+#include "Tag.hh"
 
 
 namespace Amanzi {
@@ -54,7 +55,8 @@ class PK_DomainFunctionSubgrid : public FunctionBase {
   AmanziMesh::Entity_ID entity_lid_;
   AmanziMesh::Entity_ID entity_gid_out_;
 
-  std::string field_out_key_, copy_field_out_tag_;
+  Key field_out_key_;
+  Tag copy_field_out_tag_;
 };
 
 
@@ -72,9 +74,9 @@ void PK_DomainFunctionSubgrid<FunctionBase>::Init(
     Teuchos::ParameterList blist = plist.sublist(keyword);
     field_out_key_ = blist.get<std::string>("field_out_key");
     if (blist.isParameter("copy_field_out_tag"))
-      copy_field_out_tag_ = blist.get<std::string>("copy_field_out_tag");
+      copy_field_out_tag_ = make_tag(blist.get<std::string>("copy_field_out_tag"));
     else
-      copy_field_out_tag_ = "default";
+      copy_field_out_tag_ = make_tag("default");
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "error in domain subgrid sublist : " << msg.what();

@@ -19,9 +19,11 @@
 #include "Teuchos_RCP.hpp"
 
 #include "CommonDefs.hh"
-#include "Mesh.hh"
-#include "UniqueMeshFunction.hh"
 #include "DenseVector.hh"
+#include "Key.hh"
+#include "Mesh.hh"
+#include "Tag.hh"
+#include "UniqueMeshFunction.hh"
 
 
 namespace Amanzi {
@@ -56,8 +58,8 @@ class PK_DomainFunctionFirstOrderExchange : public FunctionBase,
 
  private:
   AmanziMesh::Entity_kind kind_;
-  std::string tcc_key_;
-  std::string tcc_copy_;
+  Key tcc_key_;
+  Tag tcc_copy_;
 };
 
 
@@ -75,7 +77,7 @@ void PK_DomainFunctionFirstOrderExchange<FunctionBase>::Init(
   tcc_key_ = Keys::readKey(blist, blist.get<std::string>("domain name", "domain"),
                            "total component concentration",
                            "total_component_concentration");
-  tcc_copy_ = blist.get<std::string>("total component concentration copy", "default");
+  tcc_copy_ = make_tag(blist.get<std::string>("total component concentration copy", "default"));
   
   // get and check the regions
   std::vector<std::string> regions =

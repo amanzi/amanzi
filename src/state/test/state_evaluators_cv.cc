@@ -21,6 +21,7 @@
 
 #include "EvaluatorPrimary.hh"
 #include "EvaluatorSecondaryMonotype.hh"
+#include "Tag.hh"
 #include "State.hh"
 
 using namespace Amanzi;
@@ -34,7 +35,7 @@ class AEvaluator
 public:
   AEvaluator(Teuchos::ParameterList& plist)
       : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist) {
-    dependencies_.emplace_back(std::make_pair(Key("fb"), Key("")));
+    dependencies_.emplace_back(std::make_pair(Key("fb"), Tags::DEFAULT));
     comp_ = plist.get<std::string>("component", "cell");
   }
 
@@ -53,7 +54,7 @@ public:
   }
 
   virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key,
-                                          const Key& wrt_tag,
+                                          const Tag& wrt_tag,
                                           const std::vector<CompositeVector*> &results) override {
     auto& result_c = *results[0]->ViewComponent(comp_);
 
@@ -84,13 +85,11 @@ SUITE(EVALUATORS_CV) {
         .set<std::string>("verbosity level", "extreme");
     es_list.setName("fa");
 
-    S.Require<CompositeVector, CompositeVectorSpace>("fa", "", "fa")
-        .SetMesh(mesh)
-        ->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S.RequireDerivative<CompositeVector,CompositeVectorSpace>("fa", "", "fa", "");
-    auto fa_eval = Teuchos::rcp(
-        new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
+    S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
+        .SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    S.RequireDerivative<CompositeVector,CompositeVectorSpace>(
+        "fa", Tags::DEFAULT, "fa", Tags::DEFAULT);
+    auto fa_eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
     S.SetEvaluator("fa", fa_eval);
 
     // Setup fields and marked as initialized
@@ -100,36 +99,38 @@ SUITE(EVALUATORS_CV) {
     S.Initialize();
 
     // provides
-    CHECK(S.GetEvaluator("fa").ProvidesKey("fa", ""));     // self
-    CHECK(!S.GetEvaluator("fa").ProvidesKey("other", "")); // self
-    CHECK(!S.GetEvaluator("fa").ProvidesKey("fa", "old")); // self
+    auto tag1 = make_tag("old");
+    CHECK(S.GetEvaluator("fa").ProvidesKey("fa", Tags::DEFAULT));      // self
+    CHECK(!S.GetEvaluator("fa").ProvidesKey("other", Tags::DEFAULT));  // self
+    CHECK(!S.GetEvaluator("fa").ProvidesKey("fa", tag1));              // self
 
     // dependencies -- none
-    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", ""));      // not self
-    CHECK(!S.GetEvaluator("fa").IsDependency(S, "other", ""));   // not other
-    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", "other")); // not other
+    auto tag2 = make_tag("other");
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", Tags::DEFAULT));     // not self
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "other", Tags::DEFAULT));  // not other
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", tag2));              // not other
 
     // check first call is always "changed"
     CHECK(S.GetEvaluator("fa").Update(S, "my_request"));
-    CHECK(S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", ""));
+    CHECK(S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", Tags::DEFAULT));
 
     // second call should not be changed
     CHECK(!S.GetEvaluator("fa").Update(S, "my_request"));
-    CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", ""));
+    CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", Tags::DEFAULT));
 
     // but first call with new request should be
     CHECK(S.GetEvaluator("fa").Update(S, "my_request_2"));
-    CHECK(S.GetEvaluator("fa").UpdateDerivative(S, "my_request_2", "fa", ""));
+    CHECK(S.GetEvaluator("fa").UpdateDerivative(S, "my_request_2", "fa", Tags::DEFAULT));
 
     // mark as changed
-    auto eval = S.GetEvaluatorPtr("fa", "");
+    auto eval = S.GetEvaluatorPtr("fa", Tags::DEFAULT);
     auto eval_p = Teuchos::rcp_dynamic_cast<
         EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(eval);
     CHECK(eval_p.get());
     eval_p->SetChanged();
 
     CHECK(S.GetEvaluator("fa").Update(S, "my_request"));
-    CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", ""));
+    CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", Tags::DEFAULT));
   }
 
 
@@ -148,9 +149,8 @@ SUITE(EVALUATORS_CV) {
     es_list.sublist("verbose object")
         .set<std::string>("verbosity level", "extreme");
     es_list.setName("fb");
-    S.Require<CompositeVector,CompositeVectorSpace>("fb", "", "fb")
-        .SetMesh(mesh)->SetGhosted(true)
-                      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S.Require<CompositeVector,CompositeVectorSpace>("fb", Tags::DEFAULT, "fb")
+        .SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
         
     auto fb_eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
     S.SetEvaluator("fb", fb_eval);
@@ -161,60 +161,64 @@ SUITE(EVALUATORS_CV) {
         .set<std::string>("verbosity level", "extreme");
     ea_list.setName("fa");
     ea_list.set("tag", "");
-    S.Require<CompositeVector, CompositeVectorSpace>("fa", "", "fa")
+    S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
         .SetMesh(mesh)->SetGhosted(true)
                       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
     S.SetEvaluator("fa", fa_eval);
 
-    S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fa", "", "fb", "");
+    S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
+        "fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
 
     // setup 
     S.Setup();
 
     // Check that info from fa made it into fb under the default data policy
-    CHECK(S.Get<CompositeVector>("fa", "").HasComponent("cell"));
-    CHECK(S.Get<CompositeVector>("fa", "").Mesh() == S.GetMesh("domain"));
+    CHECK(S.Get<CompositeVector>("fa", Tags::DEFAULT).HasComponent("cell"));
+    CHECK(S.Get<CompositeVector>("fa", Tags::DEFAULT).Mesh() == S.GetMesh("domain"));
 
     // initialize
-    S.GetW<CompositeVector>("fb", "", "fb").PutScalar(3.0);
+    S.GetW<CompositeVector>("fb", Tags::DEFAULT, "fb").PutScalar(3.0);
     S.GetRecordW("fb", "fb").set_initialized();
     S.Initialize();
 
     // provides
-    CHECK(S.GetEvaluator("fa").ProvidesKey("fa", ""));     // self
-    CHECK(!S.GetEvaluator("fa").ProvidesKey("fa", "old")); // other tag
-    CHECK(!S.GetEvaluator("fa").ProvidesKey("fb", ""));    // other key
+    auto tag1 = make_tag("old");
+    CHECK(S.GetEvaluator("fa").ProvidesKey("fa", Tags::DEFAULT));   // self
+    CHECK(!S.GetEvaluator("fa").ProvidesKey("fa", tag1));           // other tag
+    CHECK(!S.GetEvaluator("fa").ProvidesKey("fb", Tags::DEFAULT));  // other key
 
     // dependencies -- fb
-    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", ""));    // not self
-    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", "old")); // not self
-    CHECK(!S.GetEvaluator("fa").IsDependency(S, "other", "")); // not other
-    CHECK(S.GetEvaluator("fa").IsDependency(S, "fb", ""));     // but fb is!
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", Tags::DEFAULT));     // not self
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", tag1));              // not self
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "other", Tags::DEFAULT));  // not other
+    CHECK(S.GetEvaluator("fa").IsDependency(S, "fb", Tags::DEFAULT));      // but fb is!
 
     // check first call is always "changed"
     CHECK(S.GetEvaluator("fa").Update(S, "my_request"));
-    CHECK(S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fb", ""));
+    CHECK(S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fb", Tags::DEFAULT));
 
     // check the value and derivative
-    CHECK_CLOSE(6.0, (*S.Get<CompositeVector>("fa", "").ViewComponent("cell",false))[0][0], 1.e-10);
-    CHECK_CLOSE(2.0, (*S.GetDerivative<CompositeVector>("fa", "", "fb", "").ViewComponent("cell",false))[0][0], 1.e-10);
+    CHECK_CLOSE(6.0, (*S.Get<CompositeVector>("fa", Tags::DEFAULT).ViewComponent("cell"))[0][0], 1.0e-10);
+    CHECK_CLOSE(2.0, (*S.GetDerivative<CompositeVector>(
+        "fa", Tags::DEFAULT, "fb", Tags::DEFAULT).ViewComponent("cell"))[0][0], 1.0e-10);
 
     // second call should not be changed
     CHECK(!S.GetEvaluator("fa").Update(S, "my_request"));
-    CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fb", ""));
+    CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fb", Tags::DEFAULT));
 
     // but first call with new request should be
     CHECK(S.GetEvaluator("fa").Update(S, "my_request_2"));
-    CHECK(S.GetEvaluator("fa").UpdateDerivative(S, "my_request_2", "fb", ""));
+    CHECK(S.GetEvaluator("fa").UpdateDerivative(S, "my_request_2", "fb", Tags::DEFAULT));
 
     // check the value and derivative are still the same
-    CHECK_CLOSE(6.0, (*S.Get<CompositeVector>("fa", "").ViewComponent("cell",false))[0][0], 1.e-10);
-    CHECK_CLOSE(2.0, (*S.GetDerivative<CompositeVector>("fa", "", "fb", "").ViewComponent("cell",false))[0][0], 1.e-10);
+    CHECK_CLOSE(6.0, (*S.Get<CompositeVector>("fa", Tags::DEFAULT).ViewComponent("cell"))[0][0], 1.0e-10);
+    CHECK_CLOSE(2.0, (*S.GetDerivative<CompositeVector>(
+        "fa", Tags::DEFAULT, "fb", Tags::DEFAULT).ViewComponent("cell"))[0][0], 1.0e-10);
 
     // change the primary and mark as changed
-    S.GetW<CompositeVector>("fb", "", "fb").PutScalar(14.0);
+    S.GetW<CompositeVector>("fb", Tags::DEFAULT, "fb").PutScalar(14.0);
     auto eval = S.GetEvaluatorPtr("fb");
     auto eval_p = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector,CompositeVectorSpace>>(eval);
     CHECK(eval_p.get());
@@ -222,11 +226,12 @@ SUITE(EVALUATORS_CV) {
 
     // now the value is different, and so it has changed
     CHECK(S.GetEvaluator("fa").Update(S, "my_request"));
-    CHECK(S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fb", ""));
+    CHECK(S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fb", Tags::DEFAULT));
 
     // check the values
-    CHECK_CLOSE(28.0, (*S.Get<CompositeVector>("fa", "").ViewComponent("cell",false))[0][0], 1.e-10);
-    CHECK_CLOSE(2.0, (*S.GetDerivative<CompositeVector>("fa", "", "fb", "").ViewComponent("cell",false))[0][0], 1.e-10);
+    CHECK_CLOSE(28.0, (*S.Get<CompositeVector>("fa", Tags::DEFAULT).ViewComponent("cell"))[0][0], 1.0e-10);
+    CHECK_CLOSE(2.0, (*S.GetDerivative<CompositeVector>(
+        "fa", Tags::DEFAULT, "fb", Tags::DEFAULT).ViewComponent("cell"))[0][0], 1.0e-10);
   }
 
 
@@ -245,7 +250,7 @@ SUITE(EVALUATORS_CV) {
     es_list.sublist("verbose object")
         .set<std::string>("verbosity level", "extreme");
     es_list.setName("fb");
-    S.Require<CompositeVector,CompositeVectorSpace>("fb", "", "fb");
+    S.Require<CompositeVector,CompositeVectorSpace>("fb", Tags::DEFAULT, "fb");
     auto fb_eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
     S.SetEvaluator("fb", fb_eval);
 
@@ -255,11 +260,11 @@ SUITE(EVALUATORS_CV) {
         .set<std::string>("verbosity level", "extreme");
     ea_list.setName("fa");
     ea_list.set("tag", "");
-    S.Require<CompositeVector, CompositeVectorSpace>("fa", "", "fa")
+    S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
         .SetMesh(mesh)->SetGhosted(true)
                       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
-    S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fa", "", "fb", "");
+    S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
     S.SetEvaluator("fa", fa_eval);
 
@@ -270,33 +275,33 @@ SUITE(EVALUATORS_CV) {
     ec_list.setName("fc");
     ec_list.set("tag", "");
     ec_list.set("component", "face");
-    S.Require<CompositeVector, CompositeVectorSpace>("fc", "", "fc")
+    S.Require<CompositeVector, CompositeVectorSpace>("fc", Tags::DEFAULT, "fc")
         .SetMesh(mesh)->SetGhosted(true)
                       ->SetComponent("face", AmanziMesh::FACE, 2);
-    S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fc", "", "fb", "");
+    S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fc", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fc_eval = Teuchos::rcp(new AEvaluator(ec_list));
     S.SetEvaluator("fc", fc_eval);
     
     // setup 
     S.Setup();
 
-    CHECK(S.Get<CompositeVector>("fa", "").Mesh() == S.GetMesh("domain"));
+    CHECK(S.Get<CompositeVector>("fa", Tags::DEFAULT).Mesh() == S.GetMesh("domain"));
 
     // b gets both
-    CHECK(S.Get<CompositeVector>("fb", "").HasComponent("cell"));
-    CHECK(S.Get<CompositeVector>("fb", "").HasComponent("face"));
+    CHECK(S.Get<CompositeVector>("fb", Tags::DEFAULT).HasComponent("cell"));
+    CHECK(S.Get<CompositeVector>("fb", Tags::DEFAULT).HasComponent("face"));
 
     // a still has just cell
-    CHECK(S.Get<CompositeVector>("fa", "").HasComponent("cell"));
-    CHECK(!S.Get<CompositeVector>("fa", "").HasComponent("face"));
-    CHECK(S.GetDerivative<CompositeVector>("fa","","fb","").HasComponent("cell"));
-    CHECK(!S.GetDerivative<CompositeVector>("fa","","fb","").HasComponent("face"));
+    CHECK(S.Get<CompositeVector>("fa", Tags::DEFAULT).HasComponent("cell"));
+    CHECK(!S.Get<CompositeVector>("fa", Tags::DEFAULT).HasComponent("face"));
+    CHECK(S.GetDerivative<CompositeVector>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT).HasComponent("cell"));
+    CHECK(!S.GetDerivative<CompositeVector>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT).HasComponent("face"));
 
     // c still has just face
-    CHECK(!S.Get<CompositeVector>("fc", "").HasComponent("cell"));
-    CHECK(S.Get<CompositeVector>("fc", "").HasComponent("face"));
-    CHECK(!S.GetDerivative<CompositeVector>("fc","","fb","").HasComponent("cell"));
-    CHECK(S.GetDerivative<CompositeVector>("fc","","fb","").HasComponent("face"));
+    CHECK(!S.Get<CompositeVector>("fc", Tags::DEFAULT).HasComponent("cell"));
+    CHECK(S.Get<CompositeVector>("fc", Tags::DEFAULT).HasComponent("face"));
+    CHECK(!S.GetDerivative<CompositeVector>("fc", Tags::DEFAULT, "fb", Tags::DEFAULT).HasComponent("cell"));
+    CHECK(S.GetDerivative<CompositeVector>("fc", Tags::DEFAULT, "fb", Tags::DEFAULT).HasComponent("face"));
   }
 
   
@@ -318,7 +323,7 @@ SUITE(EVALUATORS_CV) {
     es_list.sublist("verbose object")
         .set<std::string>("verbosity level", "extreme");
     es_list.setName("fb");
-    S.Require<CompositeVector,CompositeVectorSpace>("fb", "", "fb").SetMesh(mesh2);
+    S.Require<CompositeVector,CompositeVectorSpace>("fb", Tags::DEFAULT, "fb").SetMesh(mesh2);
     auto fb_eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
     S.SetEvaluator("fb", fb_eval);
 
@@ -328,11 +333,11 @@ SUITE(EVALUATORS_CV) {
         .set<std::string>("verbosity level", "extreme");
     ea_list.setName("fa");
     ea_list.set("tag", "");
-    S.Require<CompositeVector, CompositeVectorSpace>("fa", "", "fa")
+    S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
         .SetMesh(mesh)
         ->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fa", "", "fb", "");
+    S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
     S.SetEvaluator("fa", fa_eval);
 
@@ -358,7 +363,7 @@ SUITE(EVALUATORS_CV) {
     es_list.sublist("verbose object")
         .set<std::string>("verbosity level", "extreme");
     es_list.setName("fb");
-    S.Require<CompositeVector,CompositeVectorSpace>("fb", "", "fb")
+    S.Require<CompositeVector,CompositeVectorSpace>("fb", Tags::DEFAULT, "fb")
         .SetMesh(mesh)
         ->SetComponent("face", AmanziMesh::FACE, 1);
     auto fb_eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
@@ -370,11 +375,11 @@ SUITE(EVALUATORS_CV) {
         .set<std::string>("verbosity level", "extreme");
     ea_list.setName("fa");
     ea_list.set("tag", "");
-    S.Require<CompositeVector, CompositeVectorSpace>("fa", "", "fa")
+    S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
         .SetMesh(mesh)
         ->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fa", "", "fb", "");
+    S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
     S.SetEvaluator("fa", fa_eval);
 
@@ -399,7 +404,7 @@ SUITE(EVALUATORS_CV) {
     es_list.sublist("verbose object")
         .set<std::string>("verbosity level", "extreme");
     es_list.setName("fb");
-    S.Require<CompositeVector,CompositeVectorSpace>("fb", "", "fb");
+    S.Require<CompositeVector,CompositeVectorSpace>("fb", Tags::DEFAULT, "fb");
     auto fb_eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
     S.SetEvaluator("fb", fb_eval);
 
@@ -409,11 +414,11 @@ SUITE(EVALUATORS_CV) {
         .set<std::string>("verbosity level", "extreme");
     ea_list.setName("fa");
     ea_list.set("tag", "");
-    S.Require<CompositeVector, CompositeVectorSpace>("fa", "", "fa")
+    S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
         .SetMesh(mesh)
         ->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fa", "", "fb", "");
+    S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
     S.SetEvaluator("fa", fa_eval);
 
@@ -425,11 +430,11 @@ SUITE(EVALUATORS_CV) {
     ec_list.setName("fc");
     ec_list.set("tag", "");
     ec_list.set("component", "face");
-    S.Require<CompositeVector, CompositeVectorSpace>("fc", "", "fc")
+    S.Require<CompositeVector, CompositeVectorSpace>("fc", Tags::DEFAULT, "fc")
         .SetMesh(mesh2)
         ->SetGhosted(true)
         ->SetComponent("face", AmanziMesh::FACE, 2);
-    S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fc", "", "fb", "");
+    S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fc", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fc_eval = Teuchos::rcp(new AEvaluator(ec_list));
     S.SetEvaluator("fc", fc_eval);
     
@@ -456,7 +461,7 @@ SUITE(EVALUATORS_CV) {
     es_list.sublist("verbose object")
         .set<std::string>("verbosity level", "extreme");
     es_list.setName("fb");
-    S.Require<CompositeVector,CompositeVectorSpace>("fb", "", "fb");
+    S.Require<CompositeVector,CompositeVectorSpace>("fb", Tags::DEFAULT, "fb");
     auto fb_eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
     S.SetEvaluator("fb", fb_eval);
 
@@ -466,11 +471,11 @@ SUITE(EVALUATORS_CV) {
         .set<std::string>("verbosity level", "extreme");
     ea_list.setName("fa");
     ea_list.set("tag", "");
-    S.Require<CompositeVector, CompositeVectorSpace>("fa", "", "fa")
+    S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
         .SetMesh(mesh)
         ->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 2);
-    S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fa", "", "fb", "");
+    S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
     S.SetEvaluator("fa", fa_eval);
 
@@ -482,11 +487,11 @@ SUITE(EVALUATORS_CV) {
     ec_list.setName("fc");
     ec_list.set("tag", "");
     ec_list.set("component", "face");
-    S.Require<CompositeVector, CompositeVectorSpace>("fc", "", "fc")
+    S.Require<CompositeVector, CompositeVectorSpace>("fc", Tags::DEFAULT, "fc")
         .SetMesh(mesh2)
         ->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fc", "", "fb", "");
+    S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fc", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fc_eval = Teuchos::rcp(new AEvaluator(ec_list));
     S.SetEvaluator("fc", fc_eval);
     
@@ -510,7 +515,7 @@ SUITE(EVALUATORS_CV) {
     es_list.sublist("verbose object")
         .set<std::string>("verbosity level", "extreme");
     es_list.setName("fb");
-    S.Require<CompositeVector,CompositeVectorSpace>("fb", "", "fb")
+    S.Require<CompositeVector,CompositeVectorSpace>("fb", Tags::DEFAULT, "fb")
         .SetMesh(mesh)
         ->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -524,18 +529,18 @@ SUITE(EVALUATORS_CV) {
     ea_list.setName("fa");
     ea_list.set("tag", "");
     ea_list.set("consistency policy", "take from child");
-    S.Require<CompositeVector, CompositeVectorSpace>("fa", "", "fa");
-    S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fa", "", "fb", "");
+    S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa");
+    S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
     S.SetEvaluator("fa", fa_eval);
     
     // setup 
     S.Setup();
 
-    CHECK(S.Get<CompositeVector>("fa", "").Mesh() == S.GetMesh("domain"));
-    CHECK(S.Get<CompositeVector>("fb", "").HasComponent("cell"));
-    CHECK(S.Get<CompositeVector>("fa", "").HasComponent("cell"));
-    CHECK(S.GetDerivative<CompositeVector>("fa","","fb","").HasComponent("cell"));
+    CHECK(S.Get<CompositeVector>("fa", Tags::DEFAULT).Mesh() == S.GetMesh("domain"));
+    CHECK(S.Get<CompositeVector>("fb", Tags::DEFAULT).HasComponent("cell"));
+    CHECK(S.Get<CompositeVector>("fa", Tags::DEFAULT).HasComponent("cell"));
+    CHECK(S.GetDerivative<CompositeVector>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT).HasComponent("cell"));
   }
 
 
@@ -554,7 +559,7 @@ SUITE(EVALUATORS_CV) {
     es_list.sublist("verbose object")
         .set<std::string>("verbosity level", "extreme");
     es_list.setName("fb");
-    S.Require<CompositeVector,CompositeVectorSpace>("fb", "", "fb")
+    S.Require<CompositeVector,CompositeVectorSpace>("fb", Tags::DEFAULT, "fb")
         .SetMesh(mesh)
         ->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -567,9 +572,9 @@ SUITE(EVALUATORS_CV) {
         .set<std::string>("verbosity level", "extreme");
     ea_list.setName("fa");
     ea_list.set("tag", "");
-    S.Require<CompositeVector, CompositeVectorSpace>("fa", "", "fa")
+    S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
         .SetMesh(mesh);
-    S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fa", "", "fb", "");
+    S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
     S.SetEvaluator("fa", fa_eval);
     

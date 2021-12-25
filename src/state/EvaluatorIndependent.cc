@@ -22,7 +22,7 @@ EvaluatorIndependent_::EvaluatorIndependent_(Teuchos::ParameterList& plist)
     : time_(0.0),
       computed_once_(false),
       my_key_(Keys::cleanPListName(plist.name())),
-      my_tag_(plist.get<std::string>("tag", "")),
+      my_tag_(make_tag(plist.get<std::string>("tag", ""))),
       temporally_variable_(!plist.get<bool>("constant in time", false)),
       plist_(plist),
       vo_(Keys::cleanPListName(plist.name()), plist) {}
@@ -135,7 +135,7 @@ bool EvaluatorIndependent_::Update(State& S, const Key& request) {
 // ---------------------------------------------------------------------------
 bool EvaluatorIndependent_::UpdateDerivative(State& S, const Key& request,
                                              const Key& wrt_key,
-                                             const Key& wrt_tag) {
+                                             const Tag& wrt_tag) {
 
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
     Teuchos::OSTab tab = vo_.getOSTab();
@@ -146,26 +146,24 @@ bool EvaluatorIndependent_::UpdateDerivative(State& S, const Key& request,
 }
 
 
-bool EvaluatorIndependent_::IsDependency(const State& S, const Key& key,
-                                         const Key& tag) const {
+bool EvaluatorIndependent_::IsDependency(const State& S, const Key& key, const Tag& tag) const {
   return false;
 }
 
 
-bool EvaluatorIndependent_::ProvidesKey(const Key& key, const Key& tag) const {
-  return key == my_key_ && tag == my_tag_;
+bool EvaluatorIndependent_::ProvidesKey(const Key& key, const Tag& tag) const {
+  return (key == my_key_) && (tag == my_tag_);
 }
 
 
-bool EvaluatorIndependent_::IsDifferentiableWRT(const State& S,
-                                                const Key& wrt_key,
-                                                const Key& wrt_tag) const {
+bool EvaluatorIndependent_::IsDifferentiableWRT(const State& S, const Key& wrt_key,
+                                                const Tag& wrt_tag) const {
   return false;
 }
 
 
-// void EvaluatorIndependent_::EnsureCompatibleDerivative(State& S,
-//         const Key& wrt_key, const Key& wrt_tag) {
+// void EvaluatorIndependent_::EnsureCompatibleDerivative(
+//     State& S, const Key& wrt_key, const Tag& wrt_tag) {
 //   Errors::Message msg("Independent Variables are not differentiable");
 //   throw(msg);
 // }

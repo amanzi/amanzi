@@ -42,7 +42,7 @@ EvaluatorMultiplicativeReciprocal::EvaluatorMultiplicativeReciprocal(Teuchos::Pa
     const auto& names = plist_.get<Teuchos::Array<std::string> >("multiplicative dependencies");
     for (const auto& name : names) {
       Key full_name = Keys::getKey(domain, name);
-      dependencies_.push_back(std::make_pair(full_name, ""));
+      dependencies_.push_back(std::make_pair(full_name, Tags::DEFAULT));
       list0_.push_back(full_name);
     }
   }
@@ -51,7 +51,7 @@ EvaluatorMultiplicativeReciprocal::EvaluatorMultiplicativeReciprocal(Teuchos::Pa
     const auto& names = plist_.get<Teuchos::Array<std::string> >("reciprocal dependencies");
     for (const auto& name : names) {
       Key full_name = Keys::getKey(domain, name);
-      dependencies_.push_back(std::make_pair(full_name, ""));
+      dependencies_.push_back(std::make_pair(full_name, Tags::DEFAULT));
       list1_.push_back(full_name);
     }
   }
@@ -114,7 +114,7 @@ void EvaluatorMultiplicativeReciprocal::Evaluate_(
 * Required member function.
 ****************************************************************** */
 void EvaluatorMultiplicativeReciprocal::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Key& wrt_tag,
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results) 
 {
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {

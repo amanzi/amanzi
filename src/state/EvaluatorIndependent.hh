@@ -15,8 +15,10 @@
 #define AMANZI_STATE_INDEPENDENT_EVALUATOR_HH_
 
 #include "errors.hh"
+
 #include "Evaluator.hh"
 #include "Evaluator_Factory.hh"
+#include "Tag.hh"
 
 namespace Amanzi {
 
@@ -53,16 +55,15 @@ class EvaluatorIndependent_ : public Evaluator {
   // ---------------------------------------------------------------------------
   virtual bool UpdateDerivative(State& S, const Key& request,
                                 const Key& wrt_key,
-                                const Key& wrt_tag) override final;
+                                const Tag& wrt_tag) override final;
 
   virtual bool IsDependency(const State& S, const Key& key,
-                            const Key& tag) const override final;
-  virtual bool ProvidesKey(const Key& key, const Key& tag) const override final;
+                            const Tag& tag) const override final;
+  virtual bool ProvidesKey(const Key& key, const Tag& tag) const override final;
   virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key,
-                                   const Key& wrt_tag) const override final;
+                                   const Tag& wrt_tag) const override final;
 
   virtual void EnsureCompatibility(State& S) override;
-  //  virtual void EnsureCompatibleDerivative(State& S, const Key& wrt_key, const Key& wrt_tag) override;
   
   virtual std::string WriteToString() const override;
 
@@ -74,7 +75,7 @@ class EvaluatorIndependent_ : public Evaluator {
 
  protected:
   Key my_key_;
-  Key my_tag_;
+  Tag my_tag_;
 
   double time_;
   bool temporally_variable_;

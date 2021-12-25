@@ -37,6 +37,7 @@
 #include "EvaluatorSecondary.hh"
 #include "Evaluator_OperatorApply.hh"
 #include "State.hh"
+#include "Tag.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -179,7 +180,7 @@ protected:
   }
 
   virtual void UpdateDerivative_(State& S, const Key& wrt_key,
-          const Key& wrt_tag) override {
+          const Tag& wrt_tag) override {
     AMANZI_ASSERT(false);
   }
   
@@ -189,7 +190,7 @@ class Evaluator_PDE_DiffusionFV : public EvaluatorSecondary {
 public:
   Evaluator_PDE_DiffusionFV(Teuchos::ParameterList& plist)
       : EvaluatorSecondary(plist) {
-    tag_ = plist.get<std::string>("tag");
+    tag_ = make_tag(plist.get<std::string>("tag"));
 
     // my keys
     rhs_key_ = plist.get<std::string>("rhs key");
@@ -211,7 +212,7 @@ public:
   };
 
   virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key,
-                                   const Key& wrt_tag) const override {
+                                   const Tag& wrt_tag) const override {
     return false;
   }
 
@@ -262,12 +263,12 @@ public:
   }
 
   virtual void UpdateDerivative_(State& S, const Key& wrt_key,
-                                 const Key& wrt_tag) override {
+                                 const Tag& wrt_tag) override {
     AMANZI_ASSERT(0);
   }
 
 protected:
-  Key tag_;
+  Tag tag_;
   Key rhs_key_, local_op_key_;
   Key tensor_coef_key_, scalar_coef_key_;
   Key bcs_key_;
@@ -286,7 +287,7 @@ SUITE(EVALUATOR_ON_OP) {
     S.RegisterDomainMesh(mesh);
 
     // require some op data
-    auto& f = S.Require<Operators::Op, Operators::Op_Factory>("my_op", "", "my_op");
+    auto& f = S.Require<Operators::Op, Operators::Op_Factory>("my_op", Tags::DEFAULT, "my_op");
     f.set_mesh(mesh);
     f.set_name("cell");
     f.set_schema(Operators::Schema{Operators::OPERATOR_SCHEMA_BASE_CELL |
@@ -304,7 +305,7 @@ SUITE(EVALUATOR_ON_OP) {
     // Setup fields and marked as initialized.
     // Note: USER CODE SHOULD NOT DO IT THIS WAY!
     S.Setup();
-    S.GetW<Operators::Op>("my_op", "", "my_op").diag->PutScalar(3.14);
+    S.GetW<Operators::Op>("my_op", Tags::DEFAULT, "my_op").diag->PutScalar(3.14);
     S.GetRecordW("my_op", "my_op").set_initialized();
     S.Initialize();
   }
@@ -320,10 +321,8 @@ SUITE(EVALUATOR_ON_OP) {
     S.RegisterDomainMesh(mesh);
 
     // require vector and primary evaluator for x
-    S.Require<CompositeVector, CompositeVectorSpace>("x", "")
-        .SetMesh(mesh)
-        ->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S.Require<CompositeVector, CompositeVectorSpace>("x", Tags::DEFAULT, "x")
+        .SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     Teuchos::ParameterList xe_list;
     xe_list.sublist("verbose object")
         .set<std::string>("verbosity level", "extreme");
@@ -333,10 +332,9 @@ SUITE(EVALUATOR_ON_OP) {
     S.SetEvaluator("x", x_eval);
 
     // require vector and independent evaluator for source term b
-    S.Require<CompositeVector, CompositeVectorSpace>("b", "")
-        .SetMesh(mesh)
-        ->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S.Require<CompositeVector, CompositeVectorSpace>("b", Tags::DEFAULT)
+        .SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+
     Teuchos::ParameterList be_list;
     be_list.sublist("verbose object")
         .set<std::string>("verbosity level", "extreme");
@@ -345,10 +343,8 @@ SUITE(EVALUATOR_ON_OP) {
     S.SetEvaluator("b", b_eval);
 
     // require vector and independent evaluator for Diag(A)
-    S.Require<CompositeVector, CompositeVectorSpace>("Diag", "")
-        .SetMesh(mesh)
-        ->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S.Require<CompositeVector, CompositeVectorSpace>("Diag", Tags::DEFAULT)
+        .SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     Teuchos::ParameterList de_list;
     de_list.sublist("verbose object")
         .set<std::string>("verbosity level", "extreme");
@@ -357,7 +353,7 @@ SUITE(EVALUATOR_ON_OP) {
     S.SetEvaluator("Diag", D_eval);
 
     // require the local operator and evaluator
-    auto& fac = S.Require<Operators::Op, Operators::Op_Factory>("A_local", "");
+    auto& fac = S.Require<Operators::Op, Operators::Op_Factory>("A_local", Tags::DEFAULT);
     fac.set_mesh(mesh);
     fac.set_schema(Operators::Schema{Operators::OPERATOR_SCHEMA_BASE_CELL |
                                      Operators::OPERATOR_SCHEMA_DOFS_CELL});
@@ -373,10 +369,8 @@ SUITE(EVALUATOR_ON_OP) {
     S.SetEvaluator("A_local", A_eval);
 
     // require vector and secondary evaluator for r = Ax - b
-    S.Require<CompositeVector, CompositeVectorSpace>("residual", "")
-        .SetMesh(mesh)
-        ->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S.Require<CompositeVector, CompositeVectorSpace>("residual", Tags::DEFAULT)
+        .SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     Teuchos::ParameterList re_list;
     re_list.sublist("verbose object")
         .set<std::string>("verbosity level", "extreme");
@@ -391,8 +385,8 @@ SUITE(EVALUATOR_ON_OP) {
     // Setup fields and marked as initialized.  Note: USER CODE SHOULD NOT DO IT
     // THIS WAY!
     S.Setup();
-    S.GetW<CompositeVector>("x", "", "x").PutScalar(1.);
-    S.GetRecordW("x", "", "x").set_initialized();
+    S.GetW<CompositeVector>("x", Tags::DEFAULT, "x").PutScalar(1.);
+    S.GetRecordW("x", Tags::DEFAULT, "x").set_initialized();
     S.Initialize();
 
     // Update residual
@@ -400,7 +394,7 @@ SUITE(EVALUATOR_ON_OP) {
 
     // Ax - b
     CHECK_CLOSE(33.0,
-                (*S.Get<CompositeVector>("residual", "")
+                (*S.Get<CompositeVector>("residual", Tags::DEFAULT)
                       .ViewComponent("cell", false))[0][0],
                 1.e-10);
   }
@@ -416,10 +410,8 @@ SUITE(EVALUATOR_ON_OP) {
     S.RegisterDomainMesh(mesh);
 
     // require vector and primary evaluator for x
-    S.Require<CompositeVector, CompositeVectorSpace>("x", "")
-        .SetMesh(mesh)
-        ->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S.Require<CompositeVector, CompositeVectorSpace>("x", Tags::DEFAULT)
+        .SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     Teuchos::ParameterList xe_list;
     xe_list.sublist("verbose object")
         .set<std::string>("verbosity level", "extreme");
@@ -428,7 +420,7 @@ SUITE(EVALUATOR_ON_OP) {
     S.SetEvaluator("x", x_eval);
 
     // require vector and independent evaluator for source term b
-    auto& b_space = *S.Require<CompositeVector, CompositeVectorSpace>("b", "")
+    auto& b_space = *S.Require<CompositeVector, CompositeVectorSpace>("b", Tags::DEFAULT)
                          .SetMesh(mesh)
                          ->SetGhosted(true)
                          ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -440,7 +432,7 @@ SUITE(EVALUATOR_ON_OP) {
     S.SetEvaluator("b", b_eval);
 
     // require vector and independent evaluator for Tensor
-    auto& f = S.Require<TensorVector, TensorVector_Factory>("K", "");
+    auto& f = S.Require<TensorVector, TensorVector_Factory>("K", Tags::DEFAULT);
     f.set_map(b_space); // cells
     f.set_rank(0);
     Teuchos::ParameterList Ke_list;
@@ -451,10 +443,8 @@ SUITE(EVALUATOR_ON_OP) {
     S.SetEvaluator("K", K_eval);
 
     // require vector and independent evaluator for kr (on faces!)
-    S.Require<CompositeVector, CompositeVectorSpace>("k_relative", "")
-        .SetMesh(mesh)
-        ->SetGhosted(true)
-        ->SetComponent("face", AmanziMesh::FACE, 1);
+    S.Require<CompositeVector, CompositeVectorSpace>("k_relative", Tags::DEFAULT)
+        .SetMesh(mesh)->SetGhosted(true)->SetComponent("face", AmanziMesh::FACE, 1);
     Teuchos::ParameterList kre_list;
     kre_list.sublist("verbose object")
         .set<std::string>("verbosity level", "extreme");
@@ -463,7 +453,7 @@ SUITE(EVALUATOR_ON_OP) {
     S.SetEvaluator("k_relative", kr_eval);
 
     // require boundary conditions
-    auto& bc_fac = S.Require<Operators::BCs, Operators::BCs_Factory>("bcs", "");
+    auto& bc_fac = S.Require<Operators::BCs, Operators::BCs_Factory>("bcs", Tags::DEFAULT);
     bc_fac.set_mesh(mesh);
     bc_fac.set_kind(AmanziMesh::FACE);
     bc_fac.set_type(WhetStone::DOF_Type::SCALAR);
@@ -475,16 +465,14 @@ SUITE(EVALUATOR_ON_OP) {
     S.SetEvaluator("bcs", bc_eval);
 
     // require the local operator and rhs
-    auto& Afac = S.Require<Operators::Op, Operators::Op_Factory>("A_local", "");
+    auto& Afac = S.Require<Operators::Op, Operators::Op_Factory>("A_local", Tags::DEFAULT);
     Afac.set_mesh(mesh);
     Afac.set_name("A_local");
     Afac.set_schema(Operators::Schema{Operators::OPERATOR_SCHEMA_BASE_FACE |
                                       Operators::OPERATOR_SCHEMA_DOFS_CELL});
 
-    S.Require<CompositeVector, CompositeVectorSpace>("A_rhs", "")
-        .SetMesh(mesh)
-        ->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S.Require<CompositeVector, CompositeVectorSpace>("A_rhs", Tags::DEFAULT)
+        .SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
     Teuchos::ParameterList Ae_list;
     Ae_list.sublist("verbose object")
@@ -502,10 +490,8 @@ SUITE(EVALUATOR_ON_OP) {
     S.SetEvaluator("A_rhs", A_eval);
 
     // require vector and secondary evaluator for r = Ax - b
-    S.Require<CompositeVector, CompositeVectorSpace>("residual", "")
-        .SetMesh(mesh)
-        ->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S.Require<CompositeVector, CompositeVectorSpace>("residual", Tags::DEFAULT)
+        .SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     Teuchos::ParameterList re_list;
     re_list.sublist("verbose object")
         .set<std::string>("verbosity level", "extreme");
@@ -530,7 +516,7 @@ SUITE(EVALUATOR_ON_OP) {
 
     // Ax - b
     double error(0.);
-    auto& r = *S.Get<CompositeVector>("residual", "").ViewComponent("cell", false);
+    auto& r = *S.Get<CompositeVector>("residual", Tags::DEFAULT).ViewComponent("cell");
     r.NormInf(&error);
     CHECK_CLOSE(0.0, error, 1.e-3);
   }

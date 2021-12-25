@@ -73,7 +73,7 @@ class EvaluatorSecondaryMonotypeFromFunction
   // This should get some careful thought of the right strategy.  Punting for
   // now --etc
   virtual void EvaluatePartialDerivative_(const State& S,
-          const Key& wrt_key, const Key& wrt_tag, const std::vector<CompositeVector*>& results) override {
+          const Key& wrt_key, const Tag& wrt_tag, const std::vector<CompositeVector*>& results) override {
     for (auto& r : results) {
       r->PutScalar(0.0);
     }

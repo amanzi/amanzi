@@ -38,11 +38,11 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
 
       int i = 0;
       for (auto name : names) {
-        my_keys_.emplace_back(std::make_pair(name, tags[i]));
+        my_keys_.emplace_back(std::make_pair(name, make_tag(tags[i])));
         ++i;
       }
     } else {
-      auto tag = plist_.get<std::string>("tag");
+      auto tag = make_tag(plist_.get<std::string>("tag"));
       for (auto name : names) {
         my_keys_.emplace_back(std::make_pair(name, tag));
       }
@@ -52,10 +52,10 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
     if (plist_.isParameter("tags")) {
       auto tags = plist_.get<Teuchos::Array<std::string>>("tags");
       for (auto tag : tags) {
-        my_keys_.emplace_back(std::make_pair(name, tag));
+        my_keys_.emplace_back(std::make_pair(name, make_tag(tag)));
       }
     } else {
-      auto tag = plist_.get<std::string>("tag");
+      auto tag = make_tag(plist_.get<std::string>("tag"));
       my_keys_.emplace_back(std::make_pair(name, tag));
     }
   }
@@ -81,7 +81,7 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
 
       int i = 0;
       for (auto dep : deps) {
-        dependencies_.emplace_back(std::make_pair(dep, tags[i]));
+        dependencies_.emplace_back(std::make_pair(dep, make_tag(tags[i])));
         ++i;
       }
     } else if (plist_.get<bool>("dependency tags are my tag", false)) {
@@ -137,7 +137,7 @@ bool EvaluatorSecondary::Update(State& S, const Key& request) {
   bool update = false;
   for (auto& dep : dependencies_) {
     update |= S.GetEvaluator(dep.first, dep.second)
-                 .Update(S, Keys::getKeyTag(my_keys_[0].first, my_keys_[0].second));
+        .Update(S, Keys::getKeyTag(my_keys_[0].first, my_keys_[0].second.get()));
   }
 
   if (update) {
@@ -174,9 +174,9 @@ bool EvaluatorSecondary::Update(State& S, const Key& request) {
 // wrt_key changed since it was last requested for Field Key reqest.
 // Updates the derivative if needed.
 // ---------------------------------------------------------------------------
-bool EvaluatorSecondary::UpdateDerivative(State&S, const Key& requestor,
+bool EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
                                           const Key& wrt_key,
-                                          const Key& wrt_tag) {
+                                          const Tag& wrt_tag) {
   AMANZI_ASSERT(IsDependency(S, wrt_key, wrt_tag));
 
   Teuchos::OSTab tab = vo_.getOSTab();
@@ -200,8 +200,8 @@ bool EvaluatorSecondary::UpdateDerivative(State&S, const Key& requestor,
   // -- must update if our our dependencies have changed, as these affect the
   // partial derivatives
   Key my_request = Key{"d"} +
-                   Keys::getKeyTag(my_keys_[0].first, my_keys_[0].second) +
-                   "_d" + Keys::getKeyTag(wrt_key, wrt_tag);
+                   Keys::getKeyTag(my_keys_[0].first, my_keys_[0].second.get())
+                   + "_d" + Keys::getKeyTag(wrt_key, wrt_tag.get());
   update |= Update(S, my_request);
 
   // -- must update if any of our dependencies' derivatives have changed
@@ -214,7 +214,7 @@ bool EvaluatorSecondary::UpdateDerivative(State&S, const Key& requestor,
   }
 
   // Do the update
-  auto request = std::make_tuple(wrt_key, wrt_tag, requestor);
+  DerivativeTriple request = std::make_tuple(wrt_key, wrt_tag, requestor);
   if (update) {
     if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
       *vo_.os() << "  ... updating." << std::endl;
@@ -243,8 +243,7 @@ bool EvaluatorSecondary::UpdateDerivative(State&S, const Key& requestor,
 }
 
 
-bool EvaluatorSecondary::IsDependency(const State& S, const Key& key,
-                                      const Key& tag) const {
+bool EvaluatorSecondary::IsDependency(const State& S, const Key& key, const Tag& tag) const {
   if (std::find(dependencies_.begin(), dependencies_.end(),
                 std::make_pair(key, tag)) != dependencies_.end()) {
     return true;
@@ -259,7 +258,7 @@ bool EvaluatorSecondary::IsDependency(const State& S, const Key& key,
 }
 
 
-bool EvaluatorSecondary::ProvidesKey(const Key& key, const Key& tag) const {
+bool EvaluatorSecondary::ProvidesKey(const Key& key, const Tag& tag) const {
   for (int i = 0; i < my_keys_.size(); ++i) {
     return std::find(my_keys_.begin(), my_keys_.end(),
                      std::make_pair(key, tag)) != my_keys_.end();
@@ -270,11 +269,11 @@ bool EvaluatorSecondary::ProvidesKey(const Key& key, const Key& tag) const {
 std::string EvaluatorSecondary::WriteToString() const {
   std::stringstream result;
   for (const auto &key : my_keys_) {
-    result << key.first << ":" << key.second << ",";
+    result << key.first << ":" << key.second.get() << ",";
   }
   result << std::endl << "  Type: secondary" << std::endl;
   for (const auto &dep : dependencies_) {
-    result << "  Dep: " << dep.first << "," << dep.second << std::endl;
+    result << "  Dep: " << dep.first << "," << dep.second.get() << std::endl;
   }
   result << std::endl;
   return result.str();

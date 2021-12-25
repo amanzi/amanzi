@@ -20,7 +20,7 @@ TEST(STATE_CREATION) {
   using namespace Amanzi;
 
   State s;
-  s.Require<double>("my_double", "", "my_double");
+  s.Require<double>("my_double", Tags::DEFAULT, "my_double");
   s.Setup();
 }
 
@@ -28,7 +28,7 @@ TEST(STATE_ASSIGNMENT) {
   using namespace Amanzi;
 
   State s;
-  s.Require<double>("my_double", "", "my_double");
+  s.Require<double>("my_double", Tags::DEFAULT, "my_double");
   s.Setup();
   s.GetW<double>("my_double", "my_double") = 1.1;
   CHECK_EQUAL(1.1, s.Get<double>("my_double"));
@@ -47,7 +47,7 @@ TEST(STATE_FACTORIES_PERSIST) {
   s.RegisterDomainMesh(mesh);
 
   // require data with factory
-  s.Require<CompositeVector, CompositeVectorSpace>("my_vec", "", "my_vec_owner")
+  s.Require<CompositeVector, CompositeVectorSpace>("my_vec", Tags::DEFAULT, "my_vec_owner")
       .SetMesh(s.GetMesh())
       ->SetGhosted();
 
@@ -70,16 +70,15 @@ TEST(STATE_HETEROGENEOUS_DATA) {
   s.RegisterDomainMesh(mesh);
 
   // require some data
-  s.Require<double>("my_double", "", "my_double_owner");
+  s.Require<double>("my_double", Tags::DEFAULT, "my_double_owner");
 
   // require a copy
-  s.Require<double>("my_double", "prev", "my_double_prev_owner");
+  Tag tag_prev = make_tag("prev");
+  s.Require<double>("my_double", tag_prev, "my_double_prev_owner");
 
   // require data with factory
-  s.Require<CompositeVector, CompositeVectorSpace>("my_vec", "", "my_vec_owner")
-      .SetMesh(s.GetMesh())
-      ->SetComponent("cell", AmanziMesh::CELL, 1)
-      ->SetGhosted();
+  s.Require<CompositeVector, CompositeVectorSpace>("my_vec", Tags::DEFAULT, "my_vec_owner")
+      .SetMesh(s.GetMesh())->SetComponent("cell", AmanziMesh::CELL, 1)->SetGhosted();
 
   s.Setup();
 
@@ -105,21 +104,21 @@ TEST(STATE_HETEROGENEOUS_DATA) {
   CHECK_THROW(s.Get<double>("my_other_nonexistent_data"), std::out_of_range);
 
   // setting data
-  s.Set("my_double", "", "my_double_owner", 1.1);
+  s.Set("my_double", Tags::DEFAULT, "my_double_owner", 1.1);
   CHECK_EQUAL(1.1, s.Get<double>("my_double"));
 
   // copies
-  CHECK(s.HasData("my_double", "prev"));
-  CHECK(!s.HasData("my_vec", "prev"));
+  CHECK(s.HasData("my_double", tag_prev));
+  CHECK(!s.HasData("my_vec", tag_prev));
 
-  s.Set("my_double", "prev", "my_double_prev_owner", 2.2);
+  s.Set("my_double", tag_prev, "my_double_prev_owner", 2.2);
   CHECK_EQUAL(1.1, s.Get<double>("my_double"));
-  CHECK_EQUAL(2.2, s.Get<double>("my_double", "prev"));
+  CHECK_EQUAL(2.2, s.Get<double>("my_double", tag_prev));
 
   // set by reference
-  s.GetW<double>("my_double", "prev", "my_double_prev_owner") = 3.3;
+  s.GetW<double>("my_double", tag_prev, "my_double_prev_owner") = 3.3;
   CHECK_EQUAL(1.1, s.Get<double>("my_double"));
-  CHECK_EQUAL(3.3, s.Get<double>("my_double", "prev"));
+  CHECK_EQUAL(3.3, s.Get<double>("my_double", tag_prev));
 }
 
 TEST(STATE_VIRTUAL_DATA) {
@@ -135,8 +134,7 @@ TEST(STATE_VIRTUAL_DATA) {
   s.RegisterDomainMesh(mesh);
 
   // require some data
-  auto &f = s.Require<Operators::Op, Operators::Op_Factory>("my_op", "",
-                                                            "my_op_owner");
+  auto &f = s.Require<Operators::Op, Operators::Op_Factory>("my_op", Tags::DEFAULT, "my_op_owner");
   f.set_mesh(mesh);
   f.set_name("cell");
   f.set_schema(Operators::Schema{Operators::OPERATOR_SCHEMA_BASE_CELL |

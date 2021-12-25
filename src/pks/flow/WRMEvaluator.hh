@@ -17,6 +17,8 @@
 
 #include "EvaluatorSecondaryMonotype.hh"
 #include "Factory.hh"
+#include "Tag.hh"
+
 #include "WRM.hh"
 #include "WRMPartition.hh"
 
@@ -35,7 +37,7 @@ class WRMEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Composit
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Key& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
  protected:

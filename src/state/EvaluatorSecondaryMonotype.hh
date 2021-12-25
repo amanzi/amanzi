@@ -51,11 +51,10 @@ public:
 protected:
   virtual void Update_(State& S) override;
 
-  virtual void UpdateDerivative_(State& S, const Key& wrt_key,
-          const Key& wrt_tag) override;
+  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) override;
   
   virtual void EvaluatePartialDerivative_(const State& S,
-          const Key& wrt_key, const Key& wrt_tag, const std::vector<Data_t*>& results) = 0;
+          const Key& wrt_key, const Tag& wrt_tag, const std::vector<Data_t*>& results) = 0;
 
   virtual void Evaluate_(const State& S, const std::vector<Data_t*>& results) = 0;
 };
@@ -80,9 +79,10 @@ EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility(State& S) 
   if (has_derivs) {
     for (const auto& keytag : my_keys_) {
       for (const auto& deriv : S.GetDerivativeSet(keytag.first, keytag.second)) {
-        auto wrt = Keys::splitKeyTag(deriv.first);
+        auto wrt = Keys::splitKeyTag(deriv.first.get());
+        auto tag = make_tag(wrt.second);
         auto& dfac = S.RequireDerivative<Data_t,DataFactory_t>(keytag.first, keytag.second,
-                                                               wrt.first, wrt.second, keytag.first);
+                                                               wrt.first, tag, keytag.first);
         dfac = fac; // derivatives are of the same type -- pointwise
       }
     }
@@ -102,9 +102,10 @@ EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility(State& S) 
     auto& eval = S.RequireEvaluator(dep.first, dep.second);
     if (has_derivs) {
       for (const auto& deriv : S.GetDerivativeSet(akeytag.first, akeytag.second)) {
-        auto wrt = Keys::splitKeyTag(deriv.first);
-        if (eval.IsDifferentiableWRT(S, wrt.first, wrt.second)) {
-          auto& dfac = S.RequireDerivative<Data_t,DataFactory_t>(dep.first, dep.second, wrt.first, wrt.second);
+        auto wrt = Keys::splitKeyTag(deriv.first.get());
+        auto tag = make_tag(wrt.second);
+        if (eval.IsDifferentiableWRT(S, wrt.first, tag)) {
+          auto& dfac = S.RequireDerivative<Data_t,DataFactory_t>(dep.first, dep.second, wrt.first, tag);
           dfac = fac;
         }
       }
@@ -137,7 +138,7 @@ EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::Update_(State& S) {
 template <typename Data_t, typename DataFactory_t>
 inline void
 EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::UpdateDerivative_(
-    State& S, const Key& wrt_key, const Key& wrt_tag) {
+    State& S, const Key& wrt_key, const Tag& wrt_tag) {
   Errors::Message message;
   message << "EvaluatorSecondaryMonotype: "
           << my_keys_[0].first << "," << my_keys_[0].second
@@ -149,11 +150,11 @@ EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::UpdateDerivative_(
 // declare specializations
 template <>
 void EvaluatorSecondaryMonotype<double>::UpdateDerivative_(
-    State& S, const Key& wrt_key, const Key& wrt_tag);
+    State& S, const Key& wrt_key, const Tag& wrt_tag);
 
 template <>
 void EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::UpdateDerivative_(
-    State& S, const Key& wrt_key, const Key& wrt_tag);
+    State& S, const Key& wrt_key, const Tag& wrt_tag);
 
 template <>
 void EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::EnsureCompatibility(State& S);

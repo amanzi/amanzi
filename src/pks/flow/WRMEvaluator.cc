@@ -49,11 +49,11 @@ Teuchos::RCP<Evaluator> WRMEvaluator::Clone() const {
 * Initialization.
 ****************************************************************** */
 void WRMEvaluator::InitializeFromPlist_() {
-  my_keys_.push_back(std::make_pair(plist_.get<std::string>("saturation key", "saturation_liquid"), ""));
+  my_keys_.push_back(std::make_pair(plist_.get<std::string>("saturation key", "saturation_liquid"), Tags::DEFAULT));
 
   // my dependency is pressure.
   pressure_key_ = plist_.get<std::string>("pressure key", "pressure");
-  dependencies_.push_back(std::make_pair(pressure_key_, ""));
+  dependencies_.push_back(std::make_pair(pressure_key_, Tags::DEFAULT));
 }
 
 
@@ -78,7 +78,7 @@ void WRMEvaluator::Evaluate_(
 * Required member function.
 ****************************************************************** */
 void WRMEvaluator::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Key& wrt_tag,
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results)
 {
   auto& sat_c = *results[0]->ViewComponent("cell");

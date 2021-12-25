@@ -43,36 +43,36 @@ bool RecordSet::Initialize(Teuchos::ParameterList& plist) {
 }
 
 // Copy management
-bool RecordSet::HasRecord(const Key& tag) const {
+bool RecordSet::HasRecord(const Tag& tag) const {
   return records_.count(tag) > 0;
 }
 
-Record& RecordSet::GetRecord(const Key& tag) {
+Record& RecordSet::GetRecord(const Tag& tag) {
   try {
     return *records_.at(tag);
   } catch (const std::out_of_range& e) {
     Errors::Message msg;
-    msg << "Record: \"" << fieldname_ << "\" << does not have tag \"" << tag << "\"";
+    msg << "Record: \"" << fieldname_ << "\" << does not have tag \"" << tag.get() << "\"";
     throw(msg);
   }
 }
 
-const Record& RecordSet::GetRecord(const Key& tag) const {
+const Record& RecordSet::GetRecord(const Tag& tag) const {
   try {
     return *records_.at(tag);
   } catch (const std::out_of_range& e) {
     Errors::Message msg;
-    msg << "Record: \"" << fieldname_ << "\" << does not have tag \"" << tag << "\"";
+    msg << "Record: \"" << fieldname_ << "\" << does not have tag \"" << tag.get() << "\"";
     throw(msg);
   }
 }
 
-void RecordSet::RequireRecord(const Key& tag, const Key& owner) {
+void RecordSet::RequireRecord(const Tag& tag, const Key& owner) {
   if (!HasRecord(tag)) {
     records_.emplace(tag, std::make_unique<Record>(fieldname(), owner));
     auto& r = records_.at(tag);
-    if (!tag.empty()) {
-      r->set_vis_fieldname(vis_fieldname() + std::string("_") + tag);
+    if (!tag.get().empty()) {
+      r->set_vis_fieldname(vis_fieldname() + std::string("_") + tag.get());
     }
   } else if (!owner.empty()) {
     auto& r = records_.at(tag);

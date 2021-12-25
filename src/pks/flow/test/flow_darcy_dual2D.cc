@@ -110,8 +110,8 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   // initialize Darcy process kernel.
   DPK->Initialize(S.ptr());
 
-auto vo = Teuchos::rcp(new Amanzi::VerboseObject("State", state_list));
-WriteStateStatistics(*S, *vo);
+  auto vo = Teuchos::rcp(new Amanzi::VerboseObject("State", state_list));
+  WriteStateStatistics(*S, *vo);
 
   // transient solution
   double t_old(0.0), t_new, dt(0.1);

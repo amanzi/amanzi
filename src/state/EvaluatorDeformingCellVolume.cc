@@ -37,7 +37,7 @@ EvaluatorDeformingCellVolume::EvaluatorDeformingCellVolume(Teuchos::ParameterLis
 
   // stick in the deformation key as my leaf node.
   Key deformation_key = plist.get<std::string>("deformation key");
-  dependencies_.emplace_back(std::make_pair(deformation_key, ""));
+  dependencies_.emplace_back(std::make_pair(deformation_key, Tags::DEFAULT));
 }
 
 
@@ -57,7 +57,7 @@ void EvaluatorDeformingCellVolume::EnsureCompatibility(State& S) {
 
   if (!my_fac.Owned()) {
     // requirements not yet set, claim ownership and set valid component
-    S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_key_)
+    S.Require<CompositeVector, CompositeVectorSpace>(my_key_, Tags::DEFAULT)
         .SetMesh(S.GetMesh(my_mesh_))->SetComponent("cell", AmanziMesh::CELL, 1);
 
     // check plist for vis or checkpointing control
@@ -75,7 +75,7 @@ void EvaluatorDeformingCellVolume::EnsureCompatibility(State& S) {
 // Evaluates the cell volume from the mesh values.
 // ---------------------------------------------------------------------------
 void EvaluatorDeformingCellVolume::Update_(State& S) {
-  auto& cv = *S.GetW<CompositeVector>(my_key_, "", my_key_).ViewComponent("cell");
+  auto& cv = *S.GetW<CompositeVector>(my_key_, Tags::DEFAULT, my_key_).ViewComponent("cell");
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = S.GetMesh(my_mesh_);
 

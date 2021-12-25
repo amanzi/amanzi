@@ -15,7 +15,6 @@
 #ifndef AMANZI_FLOW_DARCY_VELOCITY_EVALUATOR_
 #define AMANZI_FLOW_DARCY_VELOCITY_EVALUATOR_
 
-// #include "Factory.hh"
 #include "EvaluatorSecondaryMonotype.hh"
 
 namespace Amanzi {
@@ -31,7 +30,7 @@ class DarcyVelocityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Key& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override {};
 
   // since cell reequires face, the default behavior is not applicable

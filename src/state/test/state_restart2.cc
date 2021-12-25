@@ -47,10 +47,10 @@ TEST(HDF5_MPI_AND_SERIAL) {
   Key serial_fname = Keys::getKey(serial_dname, "field");
   S->RegisterMesh(serial_dname, serial_mesh);
 
-  S->Require<CompositeVector, CompositeVectorSpace>("my_field", "", "my_field")
+  S->Require<CompositeVector, CompositeVectorSpace>("my_field", Tags::DEFAULT, "my_field")
     .SetMesh(domain_mesh)->SetGhosted(true)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->Require<CompositeVector, CompositeVectorSpace>(serial_fname, "", serial_fname)
+  S->Require<CompositeVector, CompositeVectorSpace>(serial_fname, Tags::DEFAULT, serial_fname)
     .SetMesh(domain_mesh)->SetGhosted(true)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
 
@@ -64,10 +64,10 @@ TEST(HDF5_MPI_AND_SERIAL) {
   for (int i=0; i!=4; ++i) {
     cell_values[i] += rank * 40;
   }
-  auto& mf = *S->GetW<CompositeVector>("my_field", "", "my_field").ViewComponent("cell", false);
+  auto& mf = *S->GetW<CompositeVector>("my_field", Tags::DEFAULT, "my_field").ViewComponent("cell");
   mf(0)->ReplaceMyValues(4, cell_values, cell_index_list);
 
-  auto& sf = *S->GetW<CompositeVector>(serial_fname, "", serial_fname).ViewComponent("cell", false);
+  auto& sf = *S->GetW<CompositeVector>(serial_fname, Tags::DEFAULT, serial_fname).ViewComponent("cell");
   sf(0)->ReplaceMyValues(4, cell_values, cell_index_list);
 
   // make sure we can write them all... for real!
@@ -81,22 +81,24 @@ TEST(HDF5_MPI_AND_SERIAL) {
   S2.RegisterDomainMesh(domain_mesh);
   S2.RegisterMesh(serial_dname, serial_mesh);
 
-  S2.Require<CompositeVector, CompositeVectorSpace>("my_field", "", "my_field")
+  S2.Require<CompositeVector, CompositeVectorSpace>("my_field", Tags::DEFAULT, "my_field")
     .SetMesh(domain_mesh)->SetGhosted(true)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S2.Require<CompositeVector, CompositeVectorSpace>(serial_fname, "", serial_fname)
+  S2.Require<CompositeVector, CompositeVectorSpace>(serial_fname, Tags::DEFAULT, serial_fname)
     .SetMesh(domain_mesh)->SetGhosted(true)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
   S2.Setup();
 
   ReadCheckpoint(comm, S2, "checkpoint00000/domain.h5");
 
-  S2.GetW<CompositeVector>("my_field", "", "my_field").Update(-1.0, S->Get<CompositeVector>("my_field"), 1.0);
+  S2.GetW<CompositeVector>("my_field", Tags::DEFAULT, "my_field")
+    .Update(-1.0, S->Get<CompositeVector>("my_field"), 1.0);
   double diff;
   S2.Get<CompositeVector>("my_field").Norm2(&diff);
   CHECK_CLOSE(0.0, diff, 1.0e-10);
 
-  S2.GetW<CompositeVector>(serial_fname, "", serial_fname).Update(-1.0, S->Get<CompositeVector>(serial_fname), 1.0);
+  S2.GetW<CompositeVector>(serial_fname, Tags::DEFAULT, serial_fname)
+    .Update(-1.0, S->Get<CompositeVector>(serial_fname), 1.0);
   diff = 0.0;
   S2.Get<CompositeVector>(serial_fname).Norm2(&diff);
   CHECK_CLOSE(0.0, diff, 1.0e-10);

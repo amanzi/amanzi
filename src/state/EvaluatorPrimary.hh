@@ -54,12 +54,12 @@ class EvaluatorPrimary_ : public Evaluator {
   // ---------------------------------------------------------------------------
   virtual bool UpdateDerivative(State& S, const Key& request,
                                 const Key& wrt_key,
-                                const Key& wrt_tag) override final;
+                                const Tag& wrt_tag) override final;
 
-  virtual bool IsDependency(const State& S, const Key& key, const Key& tag) const override final;
-  virtual bool ProvidesKey(const Key& key, const Key& tag) const override final;
+  virtual bool IsDependency(const State& S, const Key& key, const Tag& tag) const override final;
+  virtual bool ProvidesKey(const Key& key, const Tag& tag) const override final;
   virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key,
-                                   const Key& wrt_tag) const override final {
+                                   const Tag& wrt_tag) const override final {
     return ProvidesKey(wrt_key, wrt_tag);
   }
 
@@ -78,9 +78,9 @@ class EvaluatorPrimary_ : public Evaluator {
 
  protected:
   Key my_key_;
-  Key my_tag_;
+  Tag my_tag_;
   KeySet requests_;
-  KeyTripleSet deriv_requests_;
+  DerivativeTripleSet deriv_requests_;
 
   bool deriv_once_;
 
@@ -105,9 +105,9 @@ public:
     auto& my_fac = S.Require<Data_t, DataFactory_t>(my_key_, my_tag_, my_key_);
     if (S.HasDerivativeSet(my_key_, my_tag_)) {
       for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
-        auto wrt = Keys::splitKeyTag(deriv.first);
-        S.RequireDerivative<Data_t,DataFactory_t>(my_key_, my_tag_,
-                                                  wrt.first, wrt.second, my_key_);
+        auto wrt = Keys::splitKeyTag(deriv.first.get());
+        auto tag = make_tag(wrt.second);
+        S.RequireDerivative<Data_t,DataFactory_t>(my_key_, my_tag_, wrt.first, tag, my_key_);
       }
     }
   }
@@ -144,9 +144,10 @@ EvaluatorPrimary<CompositeVector,CompositeVectorSpace>::EnsureCompatibility(Stat
   auto& my_fac = S.Require<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_, owner);
   if (S.HasDerivativeSet(my_key_, my_tag_)) {
     for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
-      auto wrt = Keys::splitKeyTag(deriv.first);
+      auto wrt = Keys::splitKeyTag(deriv.first.get());
+      Tag wrt_tag = make_tag(wrt.second);
       S.RequireDerivative<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_,
-              wrt.first, wrt.second, owner).Update(my_fac);
+              wrt.first, wrt_tag, owner).Update(my_fac);
     }
   }
 }

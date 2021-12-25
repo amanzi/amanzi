@@ -19,9 +19,10 @@
 #include "Teuchos_RCP.hpp"
 
 #include "CommonDefs.hh"
+#include "DenseVector.hh"
 #include "Mesh.hh"
 #include "State.hh"
-#include "DenseVector.hh"
+#include "Tag.hh"
 
 
 namespace Amanzi {
@@ -52,8 +53,8 @@ class PK_DomainFunctionSubgridReturn : public FunctionBase,
   Teuchos::RCP<const State> S_;
 
  private:
-
-  std::string field_out_suffix_, copy_field_out_tag_, dset_;
+  Key field_out_suffix_, dset_;
+  Tag copy_field_out_tag_;
 };
 
 
@@ -74,7 +75,7 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Init(
   
   dset_ = blist.get<std::string>("subgrid domain set", "subgrid");
   
-  copy_field_out_tag_ = blist.get<std::string>("copy subgrid field", "default");
+  copy_field_out_tag_ = make_tag(blist.get<std::string>("copy subgrid field", "default"));
 
   // get and check the region
   std::vector<std::string> regions =

@@ -18,10 +18,11 @@
 #include "Teuchos_RCP.hpp"
 #include "UnitTest++.h"
 
+#include "Checkpoint.hh"
 #include "CompositeVector.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
-#include "Checkpoint.hh"
+#include "Tag.hh"
 
 SUITE(RESTART) {
 
@@ -206,7 +207,7 @@ SUITE(RESTART) {
     S0.RegisterDomainMesh(Mesh);
 
     S0.Require<Amanzi::CompositeVector, Amanzi::CompositeVectorSpace>(
-          "celldata", "", "state_restart")
+        "celldata", Amanzi::Tags::DEFAULT, "state_restart")
         .SetMesh(Mesh)->SetGhosted(false)
                       ->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
 
@@ -222,7 +223,7 @@ SUITE(RESTART) {
     S1.RegisterDomainMesh(Mesh);
 
     S1.Require<Amanzi::CompositeVector, Amanzi::CompositeVectorSpace>(
-          "celldata", "", "state_restart")
+        "celldata", Amanzi::Tags::DEFAULT, "state_restart")
         .SetMesh(Mesh)->SetGhosted(false)
                       ->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
 

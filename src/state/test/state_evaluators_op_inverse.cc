@@ -73,14 +73,14 @@ class XIndependent
  protected:
   virtual void Update_(State& s) override {
     auto&x = s.GetW<CompositeVector>(my_key_, my_tag_, my_key_);
-    auto& x_c = *x.ViewComponent("cell", false);
+    auto& x_c = *x.ViewComponent("cell");
     for (int c = 0; c != x_c.MyLength(); ++c) {
       AmanziGeometry::Point cc = x.Mesh()->cell_centroid(c);
       x_c[0][c] = cc[0] * cc[0] + cc[1] * cc[1]; // x^2 + y^2
     }
 
     if (x.HasComponent("face")) {
-      auto& x_f = *x.ViewComponent("face", false);
+      auto& x_f = *x.ViewComponent("face");
       for (int f = 0; f != x_f.MyLength(); ++f) {
         AmanziGeometry::Point fc = x.Mesh()->face_centroid(f);
         x_f[0][f] = fc[0] * fc[0] + fc[1] * fc[1]; // x^2 + y^2
@@ -192,7 +192,7 @@ void test(const std::string& discretization) {
   S.SetEvaluator("x", x_eval);
 
   // require independent evaluator for source term b
-  S.Require<CompositeVector, CompositeVectorSpace>("b", "")
+  S.Require<CompositeVector, CompositeVectorSpace>("b", Tags::DEFAULT)
       .SetMesh(mesh)->SetGhosted(false)
                     ->AddComponent("cell", AmanziMesh::CELL, 1);
 
@@ -251,7 +251,7 @@ void test(const std::string& discretization) {
   re_list.set("tag", "");
   auto r_eval = Teuchos::rcp(new Evaluator_OperatorApply(re_list));
   S.SetEvaluator("residual", r_eval);
-  S.Require<CompositeVector, CompositeVectorSpace>("residual", "")
+  S.Require<CompositeVector, CompositeVectorSpace>("residual", Tags::DEFAULT)
       .SetMesh(mesh)->SetGhosted(true);
 
   // run
@@ -265,7 +265,7 @@ void test(const std::string& discretization) {
 
   // -- check error
   double error;
-  const auto& r = S.Get<CompositeVector>("residual", "");
+  const auto& r = S.Get<CompositeVector>("residual", Tags::DEFAULT);
   r.NormInf(&error);
   std::cout << "Error=" << error << std::endl;
   CHECK_CLOSE(0.0, error, 1.e-3);
@@ -290,6 +290,9 @@ void test_inverse(const std::string& discretization) {
   // yet.  Just testing remove of DATA needs.
 
   // require primary evaluator for x
+  S.Require<CompositeVector, CompositeVectorSpace>("x", Tags::DEFAULT, "x")
+      .SetMesh(mesh)->SetGhosted(false)->AddComponent("cell", AmanziMesh::CELL, 1);
+
   Teuchos::ParameterList xe_list;
   xe_list.sublist("verbose object").set<std::string>("verbosity level", "high");
   xe_list.setName("x");
@@ -297,9 +300,8 @@ void test_inverse(const std::string& discretization) {
   S.SetEvaluator("x", x_eval);
 
   // require independent evaluator for source term b
-  S.Require<CompositeVector, CompositeVectorSpace>("b", "")
-      .SetMesh(mesh)->SetGhosted(false)
-                    ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S.Require<CompositeVector, CompositeVectorSpace>("b", Tags::DEFAULT)
+      .SetMesh(mesh)->SetGhosted(false)->AddComponent("cell", AmanziMesh::CELL, 1);
 
   Teuchos::ParameterList be_list;
   be_list.sublist("verbose object").set<std::string>("verbosity level", "high");
@@ -365,20 +367,21 @@ void test_inverse(const std::string& discretization) {
   re_list.setName("residual");
   auto r_eval = Teuchos::rcp(new Evaluator_OperatorApply(re_list));
   S.SetEvaluator("residual", r_eval);
-  S.Require<CompositeVector, CompositeVectorSpace>("residual", "")
+  S.Require<CompositeVector, CompositeVectorSpace>("residual", Tags::DEFAULT)
       .SetMesh(mesh)->SetGhosted(true);
 
   // require the derivative of r with respect to x.  The derivative of
   // OperatorApply WRT x is a linear operator.  We require assembly to invert,
   // and so the output of this is the assembled matrix.
-  S.RequireDerivative<Operators::Operator,Operators::Operator_Factory>("residual","","x","");
+  S.RequireDerivative<Operators::Operator,Operators::Operator_Factory>(
+      "residual", Tags::DEFAULT, "x", Tags::DEFAULT);
 
   
   // run
   // -- setup and init
   S.Setup();
-  S.GetW<CompositeVector>("x","","x").PutScalar(1.);
-  S.GetRecordW("x","","x").set_initialized();
+  S.GetW<CompositeVector>("x", Tags::DEFAULT, "x").PutScalar(1.);
+  S.GetRecordW("x", Tags::DEFAULT, "x").set_initialized();
   S.Initialize();
 
   // -- update residual
@@ -388,32 +391,31 @@ void test_inverse(const std::string& discretization) {
   {
     // -- check error of the initial guess
     double error(0.);
-    auto& r = S.Get<CompositeVector>("residual", "");
+    auto& r = S.Get<CompositeVector>("residual", Tags::DEFAULT);
     r.NormInf(&error);
     std::cout << "Error = " << error << std::endl;
   }
   
   // -- update derivative
-  updated = S.GetEvaluator("residual").UpdateDerivative(S, "pk", "x", "");
+  updated = S.GetEvaluator("residual").UpdateDerivative(S, "pk", "x", Tags::DEFAULT);
   CHECK(updated);
 
   {
     // -- get the derivative
-    const auto& lin_op = S.GetDerivative<Operators::Operator>("residual", "", "x", "");
+    const auto& lin_op = S.GetDerivative<Operators::Operator>("residual", Tags::DEFAULT, "x", Tags::DEFAULT);
 
     // -- apply the inverse
-    auto& r = S.Get<CompositeVector>("residual", "");
+    auto& r = S.Get<CompositeVector>("residual", Tags::DEFAULT);
     CompositeVector dx(r.Map());
     lin_op.ApplyInverse(r, dx);
 
     // -- update x
-    S.GetW<CompositeVector>("x", "", "x").Update(-1.0, dx, 1.0);
-    // S.Get<CompositeVector>("x","").Print(std::cout);
+    S.GetW<CompositeVector>("x", Tags::DEFAULT, "x").Update(-1.0, dx, 1.0);
   }
 
   {
     // -- mark x as changed
-    auto lx_eval = S.GetEvaluatorPtr("x", "");
+    auto lx_eval = S.GetEvaluatorPtr("x", Tags::DEFAULT);
     auto x_primary_eval = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector,CompositeVectorSpace>>(lx_eval);
     CHECK(x_primary_eval.get());
     x_primary_eval->SetChanged();
@@ -426,7 +428,7 @@ void test_inverse(const std::string& discretization) {
   {
     // -- check error after the preconditioner is applied
     double error;
-    auto& r = S.Get<CompositeVector>("residual", "");
+    auto& r = S.Get<CompositeVector>("residual", Tags::DEFAULT);
     r.NormInf(&error);
     std::cout << "Error = " << error << std::endl;
     CHECK_CLOSE(0.0, error, 1.e-3);

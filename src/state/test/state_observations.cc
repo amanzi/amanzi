@@ -89,19 +89,19 @@ struct obs_test {
     S = Teuchos::rcp(new State(state_list));
     S->RegisterMesh("domain", mesh);
 
-    S->Require<CompositeVector, CompositeVectorSpace>("constant", "", "state")
+    S->Require<CompositeVector, CompositeVectorSpace>("constant", Tags::DEFAULT, "state")
       .SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->Require<CompositeVector, CompositeVectorSpace>("linear", "", "state")
+    S->Require<CompositeVector, CompositeVectorSpace>("linear", Tags::DEFAULT, "state")
       .SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->Require<CompositeVector, CompositeVectorSpace>("id", "", "state")
+    S->Require<CompositeVector, CompositeVectorSpace>("id", Tags::DEFAULT, "state")
       .SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->Require<CompositeVector, CompositeVectorSpace>("flux", "", "state")
+    S->Require<CompositeVector, CompositeVectorSpace>("flux", Tags::DEFAULT, "state")
       .SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("face", AmanziMesh::FACE, 1);
-    S->Require<CompositeVector, CompositeVectorSpace>("multi_dof", "", "state")
+    S->Require<CompositeVector, CompositeVectorSpace>("multi_dof", Tags::DEFAULT, "state")
       .SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 3);
     S->Setup();
@@ -109,21 +109,21 @@ struct obs_test {
     S->set_time(0.0);
     S->set_cycle(0);
 
-    S->GetW<CompositeVector>("constant", "", "state").PutScalar(2.0);
-    S->GetW<CompositeVector>("linear", "", "state").PutScalar(0.0);
+    S->GetW<CompositeVector>("constant", Tags::DEFAULT, "state").PutScalar(2.0);
+    S->GetW<CompositeVector>("linear", Tags::DEFAULT, "state").PutScalar(0.0);
 
-    (*S->GetW<CV>("multi_dof", "", "state").ViewComponent("cell", false))(0)->PutScalar(0.0);
-    (*S->GetW<CV>("multi_dof", "", "state").ViewComponent("cell", false))(1)->PutScalar(1.0);
-    (*S->GetW<CV>("multi_dof", "", "state").ViewComponent("cell", false))(2)->PutScalar(2.0);
+    (*S->GetW<CV>("multi_dof", Tags::DEFAULT, "state").ViewComponent("cell"))(0)->PutScalar(0.0);
+    (*S->GetW<CV>("multi_dof", Tags::DEFAULT, "state").ViewComponent("cell"))(1)->PutScalar(1.0);
+    (*S->GetW<CV>("multi_dof", Tags::DEFAULT, "state").ViewComponent("cell"))(2)->PutScalar(2.0);
 
-    Epetra_MultiVector& flux_f = *S->GetW<CV>("flux", "", "state").ViewComponent("face", false);
+    Epetra_MultiVector& flux_f = *S->GetW<CV>("flux", Tags::DEFAULT, "state").ViewComponent("face");
     AmanziGeometry::Point plus_xz(1.0, 0.0, 1.0);
 
     for (int f = 0; f != flux_f.MyLength(); ++f) {
       flux_f[0][f] = mesh->face_normal(f) * plus_xz;
     }
 
-    Epetra_MultiVector& id_c = *S->GetW<CV>("id", "", "state").ViewComponent("cell", false);
+    Epetra_MultiVector& id_c = *S->GetW<CV>("id", Tags::DEFAULT, "state").ViewComponent("cell");
     auto& cell_map = S->GetMesh("domain")->map(AmanziMesh::CELL, false);
 
     for (int c = 0; c != id_c.MyLength(); ++c) {
@@ -133,7 +133,7 @@ struct obs_test {
 
   void advance(double dt) {
     S->advance_time(dt);
-    S->GetW<CV>("linear", "", "state").PutScalar(S->time() * 0.1);
+    S->GetW<CV>("linear", Tags::DEFAULT, "state").PutScalar(S->time() * 0.1);
     S->advance_cycle();
   }
 

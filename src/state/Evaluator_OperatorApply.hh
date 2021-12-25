@@ -56,8 +56,9 @@ scale the linear operators by dh/dp. --etc
 #ifndef AMANZI_STATE_EVALUATOR_OPERATOR_APPLY_HH_
 #define AMANZI_STATE_EVALUATOR_OPERATOR_APPLY_HH_
 
-#include "EvaluatorSecondary.hh"
 #include "Evaluator_Factory.hh"
+#include "EvaluatorSecondary.hh"
+#include "Tag.hh"
 
 namespace Amanzi {
 
@@ -73,15 +74,14 @@ class Evaluator_OperatorApply : public EvaluatorSecondary {
   virtual void EnsureCompatibility(State& S) override;
 
   // handled in ensure compatibility?
-  // virtual void EnsureCompatibleDerivative(State& S, const Key& wrt_key, const Key& wrt_tag) override {};
+  // virtual void EnsureCompatibleDerivative(State& S, const Key& wrt_key, const Tag& wrt_tag) override {};
 
  protected:
   // These do the actual work
   virtual void Update_(State& S) override;
 
   // creates the operator for applying inverses
-  virtual void UpdateDerivative_(State& S, const Key& wrt_key,
-                                 const Key& wrt_tag) override;
+  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) override;
 
  protected:
   Key x0_key_; // x_0

@@ -58,10 +58,10 @@ class AEvaluator : public EvaluatorSecondaryMonotype<double> {
 public:
   AEvaluator(Teuchos::ParameterList& plist)
       : EvaluatorSecondaryMonotype<double>(plist) {
-    dependencies_.emplace_back(std::make_pair(Key("fb"), Key()));
-    dependencies_.emplace_back(std::make_pair(Key("fc"), Key()));
-    dependencies_.emplace_back(std::make_pair(Key("fe"), Key()));
-    dependencies_.emplace_back(std::make_pair(Key("fh"), Key()));
+    dependencies_.emplace_back(std::make_pair(Key("fb"), Tags::DEFAULT));
+    dependencies_.emplace_back(std::make_pair(Key("fc"), Tags::DEFAULT));
+    dependencies_.emplace_back(std::make_pair(Key("fe"), Tags::DEFAULT));
+    dependencies_.emplace_back(std::make_pair(Key("fh"), Tags::DEFAULT));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
@@ -78,7 +78,7 @@ public:
   }
 
   virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key,
-                                          const Key& wrt_tag,
+                                          const Tag& wrt_tag,
                                           const std::vector<double*>& results) override {
     auto& fc = S.Get<double>("fc");
     auto& fe = S.Get<double>("fe");
@@ -103,8 +103,8 @@ class CEvaluator : public EvaluatorSecondaryMonotype<double> {
 public:
   CEvaluator(Teuchos::ParameterList& plist)
       : EvaluatorSecondaryMonotype<double>(plist) {
-    dependencies_.emplace_back(std::make_pair(Key("fd"), Key()));
-    dependencies_.emplace_back(std::make_pair(Key("fg"), Key()));
+    dependencies_.emplace_back(std::make_pair(Key("fd"), Tags::DEFAULT));
+    dependencies_.emplace_back(std::make_pair(Key("fg"), Tags::DEFAULT));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
@@ -118,7 +118,7 @@ public:
   }
 
   virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key,
-                                          const Key& wrt_tag,
+                                          const Tag& wrt_tag,
                                           const std::vector<double*>& results) override {
 
     if (wrt_key == "fd") {
@@ -136,7 +136,7 @@ class DEvaluator : public EvaluatorSecondaryMonotype<double> {
 public:
   DEvaluator(Teuchos::ParameterList& plist)
       : EvaluatorSecondaryMonotype<double>(plist) {
-    dependencies_.emplace_back(std::make_pair(Key("fg"), Key()));
+    dependencies_.emplace_back(std::make_pair(Key("fg"), Tags::DEFAULT));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
@@ -149,7 +149,7 @@ public:
   }
 
   virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key,
-                                          const Key& wrt_tag,
+                                          const Tag& wrt_tag,
                                           const std::vector<double*>& results) override {
     if (wrt_key == "fg") {
       (*results[0]) = 2.;
@@ -164,8 +164,8 @@ class EEvaluator : public EvaluatorSecondaryMonotype<double> {
 public:
   EEvaluator(Teuchos::ParameterList& plist)
       : EvaluatorSecondaryMonotype<double>(plist) {
-    dependencies_.emplace_back(std::make_pair(Key("fd"), Key()));
-    dependencies_.emplace_back(std::make_pair(Key("ff"), Key()));
+    dependencies_.emplace_back(std::make_pair(Key("fd"), Tags::DEFAULT));
+    dependencies_.emplace_back(std::make_pair(Key("ff"), Tags::DEFAULT));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
@@ -179,7 +179,7 @@ public:
   }
 
   virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key,
-                                          const Key& wrt_tag,
+                                          const Tag& wrt_tag,
                                           const std::vector<double*>& results) override {
     auto& fd = S.Get<double>("fd");
     auto& ff = S.Get<double>("ff");
@@ -199,7 +199,7 @@ class FEvaluator : public EvaluatorSecondaryMonotype<double> {
 public:
   FEvaluator(Teuchos::ParameterList& plist)
       : EvaluatorSecondaryMonotype<double>(plist) {
-    dependencies_.emplace_back(std::make_pair(Key("fg"), Key()));
+    dependencies_.emplace_back(std::make_pair(Key("fg"), Tags::DEFAULT));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
@@ -212,7 +212,7 @@ public:
   }
 
   virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key,
-                                          const Key& wrt_tag,
+                                          const Tag& wrt_tag,
                                           const std::vector<double*>& results) override {
 
     if (wrt_key == "fg") {
@@ -228,7 +228,7 @@ class HEvaluator : public EvaluatorSecondaryMonotype<double> {
 public:
   HEvaluator(Teuchos::ParameterList& plist)
       : EvaluatorSecondaryMonotype<double>(plist) {
-    dependencies_.emplace_back(std::make_pair(Key("ff"), Key()));
+    dependencies_.emplace_back(std::make_pair(Key("ff"), Tags::DEFAULT));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
@@ -241,7 +241,7 @@ public:
   }
 
   virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key,
-                                          const Key& wrt_tag,
+                                          const Tag& wrt_tag,
                                           const std::vector<double*>& results) override {
     if (wrt_key == "ff") {
       (*results[0]) = 2.;
@@ -260,62 +260,62 @@ public:
     // --  A and its evaluator
     es_list.setName("fa");
     es_list.set("tag", "");
-    S.Require<double>("fa", "", "fa");
-    S.RequireDerivative<double>("fa", "", "fb", "");
-    S.RequireDerivative<double>("fa", "", "fg", "");
+    S.Require<double>("fa", Tags::DEFAULT, "fa");
+    S.RequireDerivative<double>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
+    S.RequireDerivative<double>("fa", Tags::DEFAULT, "fg", Tags::DEFAULT);
     fa_eval = Teuchos::rcp(new AEvaluator(es_list));
     S.SetEvaluator("fa", fa_eval);
 
     // --  C and its evaluator
     es_list.setName("fc");
-    S.Require<double>("fc", "", "fc");
+    S.Require<double>("fc", Tags::DEFAULT, "fc");
     fc_eval = Teuchos::rcp(new CEvaluator(es_list));
     S.SetEvaluator("fc", fc_eval);
 
     // --  D and its evaluator
     es_list.setName("fd");
-    S.Require<double>("fd", "", "fd");
+    S.Require<double>("fd", Tags::DEFAULT, "fd");
     fd_eval = Teuchos::rcp(new DEvaluator(es_list));
     S.SetEvaluator("fd", fd_eval);
 
     // --  E and its evaluator
     es_list.setName("fe");
-    S.Require<double>("fe", "", "fe");
-    S.RequireDerivative<double>("fe", "", "fg", "");
+    S.Require<double>("fe", Tags::DEFAULT, "fe");
+    S.RequireDerivative<double>("fe", Tags::DEFAULT, "fg", Tags::DEFAULT);
     fe_eval = Teuchos::rcp(new EEvaluator(es_list));
     S.SetEvaluator("fe", fe_eval);
 
     // --  F and its evaluator
     es_list.setName("ff");
-    S.Require<double>("ff", "", "ff");
+    S.Require<double>("ff", Tags::DEFAULT, "ff");
     ff_eval = Teuchos::rcp(new FEvaluator(es_list));
     S.SetEvaluator("ff", ff_eval);
 
     // --  H and its evaluator
     es_list.setName("fh");
-    S.Require<double>("fh", "", "fh");
+    S.Require<double>("fh", Tags::DEFAULT, "fh");
     fh_eval = Teuchos::rcp(new HEvaluator(es_list));
     S.SetEvaluator("fh", fh_eval);
 
     // Primary fields
     ep_list.setName("fb");
     // -- field B and its evaluator
-    S.Require<double>("fb", "", "fb");
+    S.Require<double>("fb", Tags::DEFAULT, "fb");
     fb_eval = Teuchos::rcp(new EvaluatorPrimary<double>(ep_list));
     S.SetEvaluator("fb", fb_eval);
 
     // -- field G and its evaluator
     ep_list.setName("fg");
-    S.Require<double>("fg", "", "fg");
+    S.Require<double>("fg", Tags::DEFAULT, "fg");
     fg_eval = Teuchos::rcp(new EvaluatorPrimary<double>(ep_list));
     S.SetEvaluator("fg", fg_eval);
 
     // Setup fields initialize
     S.Setup();
     S.GetW<double>("fb", "fb") = 2.0;
-    S.GetRecordSetW("fb").set_initialized();
+    S.GetRecordSetW("fb").initializeTags();
     S.GetW<double>("fg", "fg") = 3.0;
-    S.GetRecordSetW("fg").set_initialized();
+    S.GetRecordSetW("fg").initializeTags();
     S.Initialize();
 
     Teuchos::ParameterList plist;
@@ -354,34 +354,34 @@ SUITE(DAG) {
 
     // calculate dA/dB
     std::cout << "Calculate derivative of field A wrt field B:" << std::endl;
-    changed = fa_eval->UpdateDerivative(S, "fa", "fb", "");
-    CHECK_CLOSE(2.0, S.GetDerivative<double>("fa", "", "fb", ""), 1e-12);
+    changed = fa_eval->UpdateDerivative(S, "fa", "fb", Tags::DEFAULT);
+    CHECK_CLOSE(2.0, S.GetDerivative<double>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT), 1e-12);
     CHECK(changed);
 
     // calculate dA/dG
     std::cout << "Calculate derivative of field A wrt field G:" << std::endl;
-    changed = fa_eval->UpdateDerivative(S, "fa", "fg", "");
-    CHECK_CLOSE(8640.0, S.GetDerivative<double>("fa", "", "fg", ""), 1e-12);
+    changed = fa_eval->UpdateDerivative(S, "fa", "fg", Tags::DEFAULT);
+    CHECK_CLOSE(8640.0, S.GetDerivative<double>("fa", Tags::DEFAULT, "fg", Tags::DEFAULT), 1e-12);
     CHECK(changed);
 
     // calculate dE/dG:
     std::cout << "Calculate derivative of field E wrt field G:" << std::endl;
-    changed = fe_eval->UpdateDerivative(S, "fe", "fg", "");
-    CHECK_CLOSE(24.0, S.GetDerivative<double>("fe", "", "fg", ""), 1e-12);
+    changed = fe_eval->UpdateDerivative(S, "fe", "fg", Tags::DEFAULT);
+    CHECK_CLOSE(24.0, S.GetDerivative<double>("fe", Tags::DEFAULT, "fg", Tags::DEFAULT), 1e-12);
     CHECK(changed);
 
     // Now we repeat some calculations. Since no primary fields changed,
     // the result should be the same
     // calculate dA/dG
     std::cout << "Calculate derivative of field A wrt field G:" << std::endl;
-    changed = fa_eval->UpdateDerivative(S, "fa", "fg", "");
-    CHECK_CLOSE(8640.0, S.GetDerivative<double>("fa", "", "fg", ""), 1e-12);
+    changed = fa_eval->UpdateDerivative(S, "fa", "fg", Tags::DEFAULT);
+    CHECK_CLOSE(8640.0, S.GetDerivative<double>("fa", Tags::DEFAULT, "fg", Tags::DEFAULT), 1e-12);
     CHECK(!changed);
 
     std::cout << "Calculate derivative of field A wrt field G:" << std::endl;
     fb_eval->SetChanged();
-    changed = fa_eval->UpdateDerivative(S, "fa", "fg", "");
-    CHECK_CLOSE(8640.0, S.GetDerivative<double>("fa", "", "fg", ""), 1e-12);
+    changed = fa_eval->UpdateDerivative(S, "fa", "fg", Tags::DEFAULT);
+    CHECK_CLOSE(8640.0, S.GetDerivative<double>("fa", Tags::DEFAULT, "fg", Tags::DEFAULT), 1e-12);
     CHECK(changed);
   }
 }

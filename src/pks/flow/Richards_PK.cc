@@ -174,7 +174,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   if (!S->HasData(pressure_key_)) {
-    S->Require<CV_t, CVS_t>(pressure_key_, StateTags::DEFAULT, passwd_)
+    S->Require<CV_t, CVS_t>(pressure_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponents(names, locations, ndofs);
     AddDefaultPrimaryEvaluator_(pressure_key_);
   }
@@ -182,7 +182,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   // Require conserved quantity.
   // -- water content
   if (!S->HasData(water_content_key_)) {
-    S->Require<CV_t, CVS_t>(water_content_key_, StateTags::DEFAULT, water_content_key_)
+    S->Require<CV_t, CVS_t>(water_content_key_, Tags::DEFAULT, water_content_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
     Teuchos::ParameterList vwc_list;
@@ -192,12 +192,12 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
             .set<std::string>("porosity key", porosity_key_)
             .set<bool>("water vapor", vapor_diffusion_);
     auto eval = Teuchos::rcp(new VWContentEvaluator(vwc_list));
-    S->SetEvaluator(water_content_key_, StateTags::DEFAULT, eval);
+    S->SetEvaluator(water_content_key_, Tags::DEFAULT, eval);
   }
 
   // -- water content from the previous time step
   if (!S->HasData(prev_water_content_key_)) {
-    S->Require<CV_t, CVS_t>(prev_water_content_key_, StateTags::DEFAULT, passwd_)
+    S->Require<CV_t, CVS_t>(prev_water_content_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     S->GetRecordW(prev_water_content_key_, passwd_).set_io_vis(false);
   }
@@ -205,29 +205,29 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   // -- multiscale extension: secondary (immobile water content)
   if (multiscale_model == "dual continuum discontinuous matrix") {
     if (!S->HasData("pressure_matrix")) {
-      S->Require<CV_t, CVS_t>("pressure_matrix", StateTags::DEFAULT, passwd_)
+      S->Require<CV_t, CVS_t>("pressure_matrix", Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(false)->SetComponent("cell", AmanziMesh::CELL, 1);
 
       Teuchos::ParameterList elist;
       elist.set<std::string>("evaluator name", "pressure_matrix");
       pressure_matrix_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
-      S->SetEvaluator("pressure_matrix", StateTags::DEFAULT, pressure_matrix_eval_);
+      S->SetEvaluator("pressure_matrix", Tags::DEFAULT, pressure_matrix_eval_);
     }
 
     Teuchos::RCP<Teuchos::ParameterList> msp_list = Teuchos::sublist(fp_list_, "multiscale models", true);
     msp_ = CreateMultiscaleFlowPorosityPartition(mesh_, msp_list);
 
     if (!S->HasData("water_content_matrix")) {
-      S->Require<CV_t, CVS_t>("water_content_matrix", StateTags::DEFAULT, passwd_)
+      S->Require<CV_t, CVS_t>("water_content_matrix", Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     }
     if (!S->HasData("prev_water_content_matrix")) {
-      S->Require<CV_t, CVS_t>("prev_water_content_matrix", StateTags::DEFAULT, passwd_)
+      S->Require<CV_t, CVS_t>("prev_water_content_matrix", Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
       S->GetRecordW("prev_water_content_matrix", passwd_).set_io_vis(false);
     }
 
-    S->Require<CV_t, CVS_t>("porosity_matrix", StateTags::DEFAULT, "porosity_matrix")
+    S->Require<CV_t, CVS_t>("porosity_matrix", Tags::DEFAULT, "porosity_matrix")
       .SetMesh(mesh_)->SetGhosted(false)->SetComponent("cell", AmanziMesh::CELL, 1);
 
     Teuchos::ParameterList elist;
@@ -241,15 +241,15 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     int nnodes, nnodes_tmp = NumberMatrixNodes(msp_);
     mesh_->get_comm()->MaxAll(&nnodes_tmp, &nnodes, 1);
     if (nnodes > 1) {
-      S->Require<CV_t, CVS_t>("water_content_matrix_aux", StateTags::DEFAULT, passwd_)
+      S->Require<CV_t, CVS_t>("water_content_matrix_aux", Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(false)->SetComponent("cell", AmanziMesh::CELL, nnodes - 1);
       S->GetRecordW("water_content_matrix_aux", passwd_).set_io_vis(false);
 
-      S->Require<CV_t, CVS_t>("pressure_matrix_aux", StateTags::DEFAULT, passwd_)
+      S->Require<CV_t, CVS_t>("pressure_matrix_aux", Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(false)->SetComponent("cell", AmanziMesh::CELL, nnodes - 1);
       S->GetRecordW("pressure_matrix_aux", passwd_).set_io_vis(false);
 
-      S->Require<CV_t, CVS_t>("porosity_matrix_aux", StateTags::DEFAULT, "porosity_matrix_aux")
+      S->Require<CV_t, CVS_t>("porosity_matrix_aux", Tags::DEFAULT, "porosity_matrix_aux")
         .SetMesh(mesh_)->SetGhosted(false)->SetComponent("cell", AmanziMesh::CELL, nnodes - 1);
       S->SetEvaluator("porosity_matrix_aux", eval);
       S->GetRecordW("porosity_matrix_aux", passwd_).set_io_vis(false);
@@ -259,7 +259,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   // Require additional fields and evaluators for this PK.
   // -- porosity
   if (!S->HasData(porosity_key_)) {
-    S->Require<CV_t, CVS_t>(porosity_key_, StateTags::DEFAULT, porosity_key_)
+    S->Require<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, porosity_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
     std::string pom_name = physical_models->get<std::string>("porosity model", "constant porosity");
@@ -283,9 +283,9 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   // -- viscosity: if not requested by any PK, we request its constant value.
   if (!S->HasData(viscosity_liquid_key_)) {
     if (!S->HasData("const_fluid_viscosity")) {
-      S->Require<double>("const_fluid_viscosity", passwd_);
+      S->Require<double>("const_fluid_viscosity", Tags::DEFAULT, passwd_);
     }
-    S->Require<CV_t, CVS_t>(viscosity_liquid_key_, StateTags::DEFAULT, viscosity_liquid_key_)
+    S->Require<CV_t, CVS_t>(viscosity_liquid_key_, Tags::DEFAULT, viscosity_liquid_key_)
       .SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
 
@@ -307,7 +307,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   // -- model for liquid density is constant density unless specified otherwise
   //    in high-level PKs.
   if (!S->HasData(mol_density_liquid_key_)) {
-    S->Require<CV_t, CVS_t>(mol_density_liquid_key_, StateTags::DEFAULT, mol_density_liquid_key_)
+    S->Require<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT, mol_density_liquid_key_)
       .SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
@@ -333,7 +333,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   wrm_ = CreateWRMPartition(mesh_, wrm_list);
 
   if (!S->HasData(saturation_liquid_key_)) {
-    S->Require<CV_t, CVS_t>(saturation_liquid_key_, StateTags::DEFAULT, saturation_liquid_key_)
+    S->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
     Teuchos::ParameterList elist;
@@ -345,14 +345,14 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   if (!S->HasData(prev_saturation_liquid_key_)) {
-    S->Require<CV_t, CVS_t>(prev_saturation_liquid_key_, StateTags::DEFAULT, passwd_)
+    S->Require<CV_t, CVS_t>(prev_saturation_liquid_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     S->GetRecordW(prev_saturation_liquid_key_, passwd_).set_io_vis(false);
   }
 
   // -- relative permeability
   if (!S->HasData(relperm_key_)) {
-    S->Require<CV_t, CVS_t>(relperm_key_, StateTags::DEFAULT, relperm_key_)
+    S->Require<CV_t, CVS_t>(relperm_key_, Tags::DEFAULT, relperm_key_)
       .SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
 
@@ -367,11 +367,11 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   if (!S->HasData(alpha_key_)) {
     Key kkey;
     if (flow_on_manifold_) {
-      S->Require<CV_t, CVS_t>(alpha_key_, StateTags::DEFAULT, alpha_key_)
+      S->Require<CV_t, CVS_t>(alpha_key_, Tags::DEFAULT, alpha_key_)
         .SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
       kkey = permeability_key_;
     } else {
-      S->Require<CV_t, CVS_t>(alpha_key_, StateTags::DEFAULT, alpha_key_)
+      S->Require<CV_t, CVS_t>(alpha_key_, Tags::DEFAULT, alpha_key_)
         .SetMesh(mesh_)->SetGhosted(true)
         ->AddComponent("cell", AmanziMesh::CELL, 1)
         ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
@@ -394,13 +394,13 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   // Local fields and evaluators.
   // -- hydraulic head
   if (!S->HasData(hydraulic_head_key_)) {
-    S->Require<CV_t, CVS_t>(hydraulic_head_key_, StateTags::DEFAULT, passwd_)
+    S->Require<CV_t, CVS_t>(hydraulic_head_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // -- Darcy velocity vector
   if (!S->HasData(darcy_velocity_key_)) {
-    S->Require<CV_t, CVS_t>(darcy_velocity_key_, StateTags::DEFAULT, darcy_velocity_key_)
+    S->Require<CV_t, CVS_t>(darcy_velocity_key_, Tags::DEFAULT, darcy_velocity_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, dim);
 
     Teuchos::ParameterList elist;
@@ -417,7 +417,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   int noff = abs_perm.get<int>("off-diagonal components", 0);
  
   if (noff > 0) {
-    CompositeVectorSpace& cvs = S->Require<CV_t, CVS_t>(permeability_key_, StateTags::DEFAULT, passwd_);
+    CompositeVectorSpace& cvs = S->Require<CV_t, CVS_t>(permeability_key_, Tags::DEFAULT, passwd_);
     cvs.SetOwned(false);
     cvs.AddComponent("offd", AmanziMesh::CELL, noff)->SetOwned(true);
   }
@@ -535,7 +535,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
     opfactory.SetVariableTensorCoefficient(Kptr);
     opfactory.SetVariableScalarCoefficient(alpha_upwind_, alpha_upwind_dP_);
   } else {
-    auto kptr = S_->GetPtrW<CV_t>(alpha_key_, StateTags::DEFAULT);
+    auto kptr = S_->GetPtrW<CV_t>(alpha_key_, Tags::DEFAULT, alpha_key_);
     opfactory.SetVariableScalarCoefficient(kptr);
   }
 
@@ -556,7 +556,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   // Create pointers to the primary flow field pressure.
-  solution = S->GetPtrW<CV_t>(pressure_key_, StateTags::DEFAULT, passwd_);
+  solution = S->GetPtrW<CV_t>(pressure_key_, Tags::DEFAULT, passwd_);
   soln_->SetData(solution); 
   
   // Create auxiliary vectors for time history and error estimates.
@@ -568,7 +568,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   darcy_flux_copy = Teuchos::rcp(new CompositeVector(S->Get<CV_t>(darcy_flux_key_)));
 
   // Conditional initialization of lambdas from pressures.
-  auto& pressure = S->GetW<CV_t>(pressure_key_, StateTags::DEFAULT, passwd_);
+  auto& pressure = S->GetW<CV_t>(pressure_key_, Tags::DEFAULT, passwd_);
 
   if (ti_list_->isSublist("pressure-lambda constraints") && pressure.HasComponent("face")) {
     DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
@@ -687,13 +687,13 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
     // initialization is usually done at time 0, so we need to update other
     // fields such as prev_saturation_liquid
     S->GetEvaluator(saturation_liquid_key_).Update(*S, "flow");
-    auto& s_l = S->GetW<CV_t>(saturation_liquid_key_, StateTags::DEFAULT, saturation_liquid_key_);
-    auto& s_l_prev = S->GetW<CV_t>(prev_saturation_liquid_key_, StateTags::DEFAULT, passwd_);
+    auto& s_l = S->GetW<CV_t>(saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_);
+    auto& s_l_prev = S->GetW<CV_t>(prev_saturation_liquid_key_, Tags::DEFAULT, passwd_);
     s_l_prev = s_l;
 
     S->GetEvaluator(water_content_key_).Update(*S, "flow");
-    auto& wc = S->GetW<CV_t>(water_content_key_, StateTags::DEFAULT, water_content_key_);
-    auto& wc_prev = S->GetW<CV_t>(prev_water_content_key_, StateTags::DEFAULT, passwd_);
+    auto& wc = S->GetW<CV_t>(water_content_key_, Tags::DEFAULT, water_content_key_);
+    auto& wc_prev = S->GetW<CV_t>(prev_water_content_key_, Tags::DEFAULT, passwd_);
     wc_prev = wc;
 
     // We start with pressure equilibrium
@@ -780,8 +780,8 @@ void Richards_PK::InitializeFields_()
   if (S_->GetRecord(saturation_liquid_key_).owner() == passwd_) {
     if (S_->HasData(saturation_liquid_key_)) {
       if (!S_->GetRecord(saturation_liquid_key_).initialized()) {
-        S_->GetW<CV_t>(saturation_liquid_key_, StateTags::DEFAULT, passwd_).PutScalar(1.0);
-        S_->GetRecordW(saturation_liquid_key_, StateTags::DEFAULT, passwd_).set_initialized();
+        S_->GetW<CV_t>(saturation_liquid_key_, Tags::DEFAULT, passwd_).PutScalar(1.0);
+        S_->GetRecordW(saturation_liquid_key_, Tags::DEFAULT, passwd_).set_initialized();
 
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
             *vo_->os() << "initialized saturation_liquid to default value 1.0" << std::endl;  
@@ -810,9 +810,9 @@ void Richards_PK::InitializeFields_()
 
   // -- water contents 
   if (S_->HasData("water_content_matrix")) {
-    if (!S_->GetRecord("water_content_matrix", passwd_).initialized()) {
+    if (!S_->GetRecord("water_content_matrix", Tags::DEFAULT).initialized()) {
       CalculateVWContentMatrix_();
-      S_->GetRecordW("water_content_matrix", passwd_).set_initialized();
+      S_->GetRecordW("water_content_matrix", Tags::DEFAULT, passwd_).set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
           *vo_->os() << "initialized water_content_matrix to VWContent(pressure_matrix)" << std::endl;  
@@ -911,20 +911,20 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // save a copy of primary and conservative fields
   std::map<std::string, CompositeVector> copies;
-  copies.emplace(pressure_key_, S_->Get<CV_t>(pressure_key_, StateTags::DEFAULT));
+  copies.emplace(pressure_key_, S_->Get<CV_t>(pressure_key_, Tags::DEFAULT));
 
   // -- saturations, swap prev <- current
   S_->GetEvaluator(saturation_liquid_key_).Update(*S_, "flow");
   const auto& sat = S_->Get<CV_t>(saturation_liquid_key_);
-  auto& sat_prev = S_->GetW<CV_t>(prev_saturation_liquid_key_, StateTags::DEFAULT, passwd_);
+  auto& sat_prev = S_->GetW<CV_t>(prev_saturation_liquid_key_, Tags::DEFAULT, passwd_);
 
   copies.emplace(prev_saturation_liquid_key_, sat_prev);
   sat_prev = sat;
 
   // -- water_conten, swap prev <- current
   S_->GetEvaluator(water_content_key_).Update(*S_, "flow");
-  auto& wc = S_->GetW<CV_t>(water_content_key_, StateTags::DEFAULT, water_content_key_);
-  auto& wc_prev = S_->GetW<CV_t>(prev_water_content_key_, StateTags::DEFAULT, passwd_);
+  auto& wc = S_->GetW<CV_t>(water_content_key_, Tags::DEFAULT, water_content_key_);
+  auto& wc_prev = S_->GetW<CV_t>(prev_water_content_key_, Tags::DEFAULT, passwd_);
 
   copies.emplace(prev_water_content_key_, wc_prev);
   wc_prev = wc;
@@ -934,8 +934,8 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (multiscale_porosity_) {
     copies.emplace("pressure_matrix", S_->Get<CV_t>("pressure_matrix"));
 
-    auto& wc_matrix = S_->GetW<CV_t>("water_content_matrix", StateTags::DEFAULT, passwd_);
-    auto& wc_matrix_prev = S_->GetW<CV_t>("prev_water_content_matrix", StateTags::DEFAULT, passwd_);
+    auto& wc_matrix = S_->GetW<CV_t>("water_content_matrix", Tags::DEFAULT, passwd_);
+    auto& wc_matrix_prev = S_->GetW<CV_t>("prev_water_content_matrix", Tags::DEFAULT, passwd_);
 
     copies.emplace("prev_water_content_matrix", wc_matrix_prev);
     wc_matrix_prev = wc_matrix;

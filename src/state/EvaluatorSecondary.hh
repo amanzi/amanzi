@@ -55,13 +55,12 @@ public:
   // ---------------------------------------------------------------------------
   virtual bool UpdateDerivative(State& S, const Key& request,
                                 const Key& wrt_key,
-                                const Key& wrt_tag) override;
+                                const Tag& wrt_tag) override;
 
-  virtual bool IsDependency(const State& S, const Key& key,
-                            const Key& tag) const override;
-  virtual bool ProvidesKey(const Key& key, const Key& tag) const override;
+  virtual bool IsDependency(const State& S, const Key& key, const Tag& tag) const override;
+  virtual bool ProvidesKey(const Key& key, const Tag& tag) const override;
   virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key,
-          const Key& wrt_tag) const override {
+          const Tag& wrt_tag) const override {
     return IsDependency(S, wrt_key, wrt_tag);
   }
 
@@ -70,17 +69,16 @@ public:
 protected:
   // These do the actual work
   virtual void Update_(State& S) = 0;
-  virtual void UpdateDerivative_(State& S, const Key& wrt_key,
-                                 const Key& wrt_tag) = 0;
+  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) = 0;
 
   void EnsureCompatibility_Flags_(State& S);
   
 protected:
-  KeyPairVector my_keys_;
+  KeyTagVector my_keys_;
+  KeyTagVector dependencies_;
 
   KeySet requests_;
-  KeyTripleSet deriv_requests_;
-  KeyPairVector dependencies_;
+  DerivativeTripleSet deriv_requests_;
 
   VerboseObject vo_;
   Teuchos::ParameterList plist_;

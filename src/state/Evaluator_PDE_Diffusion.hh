@@ -30,7 +30,7 @@ namespace Amanzi {
 
 class Evaluator_PDE_Diffusion : public EvaluatorSecondary {
  public:
-  Evaluator_PDE_Diffusion(Teuchos::ParameterList &plist);
+  Evaluator_PDE_Diffusion(Teuchos::ParameterList& plist);
 
   Evaluator_PDE_Diffusion(const Evaluator_PDE_Diffusion& other) = default;
   virtual Teuchos::RCP<Evaluator> Clone() const override {
@@ -40,22 +40,22 @@ class Evaluator_PDE_Diffusion : public EvaluatorSecondary {
   virtual void EnsureCompatibility(State &S) override;
 
   // jac-op handled in EnsureCompatibility()
-  //  virtual void EnsureCompatibleDerivative(State &S, const Key& wrt_key, const Key& wrt_tag) override {}
+  // virtual void EnsureCompatibleDerivative(State &S, const Key& wrt_key, const Tag& wrt_tag) override {};
   
-  virtual bool UpdateDerivative(State &S, const Key &requestor, const Key &wrt_key,
-          const Key &wrt_tag) override;
+  virtual bool UpdateDerivative(State& S, const Key& requestor, const Key& wrt_key,
+          const Tag& wrt_tag) override;
   
-  virtual bool IsDifferentiableWRT(const State &S, const Key &wrt_key,
-          const Key &wrt_tag) const override {
+  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key,
+          const Tag& wrt_tag) const override {
     return IsDependency(S, wrt_key, wrt_tag) && !jac_op_key_.empty();
   }
 
  protected:
-  virtual void Update_(State &S) override;
-  virtual void UpdateDerivative_(State &S, const Key &wrt_key, const Key &wrt_tag) override;
+  virtual void Update_(State& S) override;
+  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) override;
 
  protected:
-  Key my_tag_;
+  Tag my_tag_;
   Key rhs_key_, local_op_key_, jac_op_key_;
   Key tensor_coef_key_, scalar_coef_key_;
   Key bcs_key_;

@@ -50,13 +50,13 @@ void RelPermEvaluator::InitializeFromPlist_(const Teuchos::Ptr<State>& S)
 {
   // my keys is for rel perm.
   if (my_keys_.size() == 0) {
-    my_keys_.push_back(std::make_pair(plist_.get<std::string>("relative permeability key"), ""));
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("relative permeability key"), Tags::DEFAULT));
   }
 
   // my dependency is pressure.
   std::string domain = Keys::getDomain(my_keys_[0].first);
   pressure_key_ = plist_.get<std::string>("pressure key", Keys::getKey(domain, "pressure"));
-  dependencies_.push_back(std::make_pair(pressure_key_, ""));
+  dependencies_.push_back(std::make_pair(pressure_key_, Tags::DEFAULT));
 }
 
 
@@ -92,7 +92,7 @@ void RelPermEvaluator::Evaluate_(
 * Required member function.
 ****************************************************************** */
 void RelPermEvaluator::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Key& wrt_tag,
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results)
 {
   patm_ = S.Get<double>("atmospheric_pressure");

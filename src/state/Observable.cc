@@ -119,12 +119,12 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
   // PKs by now, because PK->Setup() has already been run.
   if (!S->HasData(variable_)) {
     // not yet created, require the eval
-    S->Require<CompositeVector, CompositeVectorSpace>(variable_, "", "state");
+    S->Require<CompositeVector, CompositeVectorSpace>(variable_, Tags::DEFAULT, "state");
     has_eval_ = true;
   } else {
     // does it have an evaluator or can we make one?
     try {
-      S->Require<CompositeVector, CompositeVectorSpace>(variable_, "", "state");
+      S->Require<CompositeVector, CompositeVectorSpace>(variable_, Tags::DEFAULT, "state");
       has_eval_ = true;
      } catch(...) {
       has_eval_ = false;
@@ -134,7 +134,7 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
   // try to set requirements on the field, if they are not already set
   if (!S->HasData(variable_)) {
     // require the field
-    auto& cvs = S->Require<CompositeVector, CompositeVectorSpace>(variable_, "");
+    auto& cvs = S->Require<CompositeVector, CompositeVectorSpace>(variable_, Tags::DEFAULT);
 
     // we have to set the mesh now -- assume it is provided by the domain
     cvs.SetMesh(S->GetMesh(Keys::getDomain(variable_)));

@@ -87,7 +87,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
 
     // -- derivative 
     Key der_key = Keys::getDerivKey(alpha_key_, pressure_key_);
-    S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, StateTags::DEFAULT);
+    S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
     auto alpha_dP = S_->GetW<CompositeVector>(der_key, alpha_key_);
 
     *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP.ViewComponent("cell");

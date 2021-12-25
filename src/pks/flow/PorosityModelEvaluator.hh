@@ -18,6 +18,8 @@
 
 #include "Factory.hh"
 #include "EvaluatorSecondaryMonotype.hh"
+#include "Tag.hh"
+
 #include "PorosityModel.hh"
 #include "PorosityModelPartition.hh"
 
@@ -37,7 +39,7 @@ class PorosityModelEvaluator : public EvaluatorSecondaryMonotype<CompositeVector
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Key& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
  protected:

@@ -62,7 +62,7 @@ EvaluatorSecondaryMonotypeFromFunction::EvaluatorSecondaryMonotypeFromFunction(
   } else {
     Errors::Message m;
     m << "EvaluatorSecondaryMonotypeFromFunction: " << my_keys_[0].first << ","
-      << my_keys_[0].second << ": missing list \"function\" or \"functions\"";
+      << my_keys_[0].second.get() << ": missing list \"function\" or \"functions\"";
     throw(m);
   }
 }

@@ -30,9 +30,9 @@ FracturePermModelEvaluator::FracturePermModelEvaluator(
     : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
       fpm_(fpm)
 {
-  my_keys_.push_back(std::make_pair(plist.get<std::string>("permeability key"), ""));
+  my_keys_.push_back(std::make_pair(plist.get<std::string>("permeability key"), Tags::DEFAULT));
   aperture_key_ = plist.get<std::string>("aperture key");
-  dependencies_.push_back(std::make_pair(aperture_key_, ""));
+  dependencies_.push_back(std::make_pair(aperture_key_, Tags::DEFAULT));
 }
 
 
@@ -70,7 +70,7 @@ void FracturePermModelEvaluator::Evaluate_(
 * Required member function.
 ****************************************************************** */
 void FracturePermModelEvaluator::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Key& wrt_tag,
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results)
 {
   results[0]->PutScalar(0.0);

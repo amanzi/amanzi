@@ -33,7 +33,7 @@ class EvaluatorDeformingCellVolume : public EvaluatorSecondary {
 
  protected:
   virtual void Update_(State &S) override;
-  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Key& wrt_tag) override {};
+  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) override {};
 
  protected:
   Key my_mesh_, my_key_;

@@ -23,6 +23,7 @@
 #include "DataFactory.hh"
 #include "Record.hh"
 #include "StateDefs.hh"
+#include "Tag.hh"
 
 namespace Amanzi {
 
@@ -30,7 +31,7 @@ class Visualization;
 
 class RecordSet {
  private:
-  using RecordMap = std::unordered_map<Key, std::unique_ptr<Record> >;
+  using RecordMap = std::unordered_map<Tag, std::unique_ptr<Record> >;
 
  public:
   // constructors
@@ -64,15 +65,15 @@ class RecordSet {
   bool Initialize(Teuchos::ParameterList& plist);
 
   // copy management
-  const Record& GetRecord(const Key& tag) const;
-  Record& GetRecord(const Key& tag);
+  const Record& GetRecord(const Tag& tag) const;
+  Record& GetRecord(const Tag& tag);
 
-  void RequireRecord(const Key& tag, const Key& owner);
+  void RequireRecord(const Tag& tag, const Key& owner);
 
-  //  void SwitchCopies(const Key& tag1, const Key& tag2); // needs owner
+  //  void SwitchCopies(const Tag& tag1, const Tag& tag2); // needs owner
   //  information?
-  bool HasRecord(const Key& tag) const;
-  bool DeleteRecord(const Key& tag);
+  bool HasRecord(const Tag& tag) const;
+  bool DeleteRecord(const Tag& tag);
 
   // Iterate over tags
   typedef RecordMap::const_iterator tag_iterator;
@@ -89,42 +90,42 @@ class RecordSet {
   }
 
   // Data setters/getters
-  template <typename T> const T& Get(const Key& tag = StateTags::DEFAULT) const {
+  template <typename T> const T& Get(const Tag& tag = Tags::DEFAULT) const {
     return records_.at(tag)->Get<T>();
   }
 
-  template <typename T> T& GetW(const Key& tag, const Key& owner) {
+  template <typename T> T& GetW(const Tag& tag, const Key& owner) {
     return records_.at(tag)->GetW<T>(owner);
   }
-  template <typename T> T& GetW(const Key& owner) { return GetW<T>(StateTags::DEFAULT, owner); }
+  template <typename T> T& GetW(const Key& owner) { return GetW<T>(Tags::DEFAULT, owner); }
 
   template <typename T>
-  Teuchos::RCP<const T> GetPtr(const Key& tag = StateTags::DEFAULT) const {
+  Teuchos::RCP<const T> GetPtr(const Tag& tag = Tags::DEFAULT) const {
     return records_.at(tag)->GetPtr<T>();
   }
 
   template <typename T>
-  Teuchos::RCP<T> GetPtrW(const Key& tag, const Key& owner) {
+  Teuchos::RCP<T> GetPtrW(const Tag& tag, const Key& owner) {
     return records_.at(tag)->GetPtrW<T>(owner);
   }
   template <typename T> Teuchos::RCP<T> GetPtrW(const Key& owner) {
-    return GetPtrW<T>(StateTags::DEFAULT, owner);
+    return GetPtrW<T>(Tags::DEFAULT, owner);
   }
 
   template <typename T>
-  void SetPtr(const Key& tag, const Key& owner, const Teuchos::RCP<T>& t) {
+  void SetPtr(const Tag& tag, const Key& owner, const Teuchos::RCP<T>& t) {
     records_.at(tag)->SetPtr<T>(owner, t);
   }
   template <typename T>
   void SetPtr(const Key& owner, const Teuchos::RCP<T>& t) {
-    SetPtr<T>(StateTags::DEFAULT, owner, t);
+    SetPtr<T>(Tags::DEFAULT, owner, t);
   }
 
-  template <typename T> void Set(const Key& tag, const Key& owner, const T& t) {
+  template <typename T> void Set(const Tag& tag, const Key& owner, const T& t) {
     records_.at(tag)->Set<T>(owner, t);
   }
   template <typename T> void Set(const Key& owner, const T& t) {
-    Set<T>(StateTags::DEFAULT, owner, t);
+    Set<T>(Tags::DEFAULT, owner, t);
   }
 
   template <typename T, typename F> F& GetFactory() {

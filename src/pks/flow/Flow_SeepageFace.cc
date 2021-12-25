@@ -31,7 +31,7 @@ namespace Flow {
 ****************************************************************** */
 void Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, double* area_seepage)
 {
-  const auto& flux = *S_->Get<CompositeVector>(darcy_flux_key_, StateTags::DEFAULT).ViewComponent("face", true);
+  const auto& flux = *S_->Get<CompositeVector>(darcy_flux_key_, Tags::DEFAULT).ViewComponent("face", true);
   const auto& u_cell = *u.ViewComponent("cell");
 
   std::vector<int>& bc_model = op_bc_->bc_model();

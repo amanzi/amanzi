@@ -72,7 +72,7 @@ TEST(STATE_EXTENSIBILITY_CREATION) {
 
   State s(*Teuchos::sublist(plist, "state"));
   s.RegisterDomainMesh(m);
-  s.Require<MyPointList>("my_points", "", "my_points");
+  s.Require<MyPointList>("my_points", Tags::DEFAULT, "my_points");
   s.GetRecordW("my_points", "my_points").set_io_vis();
   s.Setup();
   s.InitializeFields();

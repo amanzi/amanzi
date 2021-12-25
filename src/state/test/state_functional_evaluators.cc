@@ -68,9 +68,8 @@ SUITE(EVALS) {
     A_func_lin_list.set<Teuchos::Array<double>>("x0", x0);
     A_func_lin_list.set<Teuchos::Array<double>>("gradient", grad);
 
-    S->Require<CompositeVector, CompositeVectorSpace>("fa", "fa")
-        .SetMesh(mesh)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
+        .SetMesh(mesh)->SetGhosted(true) ->SetComponent("cell", AmanziMesh::CELL, 1);
     auto fa_eval = Teuchos::rcp(new EvaluatorIndependentFunction(A_list));
     S->SetEvaluator("fa", fa_eval);
 
@@ -83,7 +82,7 @@ SUITE(EVALS) {
 
     // calculate field A
     fa_eval->Update(*S, "main");
-    const Epetra_MultiVector& fa = *S->GetW<CompositeVector>("fa", "", "fa").ViewComponent("cell");
+    const Epetra_MultiVector& fa = *S->GetW<CompositeVector>("fa", Tags::DEFAULT, "fa").ViewComponent("cell");
 
     // eval point of 0th cell is:
     // {  1.1, 1, 1, 1 }
@@ -132,9 +131,8 @@ SUITE(EVALS) {
     A_func_lin_list.set<Teuchos::Array<double>>("x0", x0);
     A_func_lin_list.set<Teuchos::Array<double>>("gradient", grad);
 
-    S->Require<CompositeVector, CompositeVectorSpace>("fa", "fa")
-        .SetMesh(mesh)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa")
+        .SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     auto fa_eval = Teuchos::rcp(new EvaluatorIndependentFunction(A_list));
     S->SetEvaluator("fa", fa_eval);
 
@@ -157,7 +155,7 @@ SUITE(EVALS) {
     B_func_llist.set<Teuchos::Array<double>>("x0", x02);
     B_func_llist.set<Teuchos::Array<double>>("gradient", grad2);
 
-    S->Require<CompositeVector, CompositeVectorSpace>("fb", "", "fb")
+    S->Require<CompositeVector, CompositeVectorSpace>("fb", Tags::DEFAULT, "fb")
         .SetMesh(mesh)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
     auto fb_eval = Teuchos::rcp(new EvaluatorSecondaryMonotypeFromFunction(B_list));
@@ -172,7 +170,7 @@ SUITE(EVALS) {
 
     // calculate field B
     fb_eval->Update(*S, "main");
-    const auto& fb = *S->Get<CompositeVector>("fb", "").ViewComponent("cell");
+    const auto& fb = *S->Get<CompositeVector>("fb", Tags::DEFAULT).ViewComponent("cell");
 
     // eval point of 0th cell is:
     // {  1.1, 1, 1, 1 }

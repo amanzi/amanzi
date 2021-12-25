@@ -43,12 +43,14 @@ struct test_state {
     names[0] = "cell";
     names[1] = "face";
 
+    Tag tag1 = make_tag("tag1");
+    Tag tag2 = make_tag("tag2");
     std::vector<int> num_dofs(2, 1);
 
-    state->Require<CompositeVector, CompositeVectorSpace>("fieldname", "tag1", "owner")
+    state->Require<CompositeVector, CompositeVectorSpace>("fieldname", tag1, "owner")
       .SetMesh(state->GetMesh())->SetComponents(names, locations, num_dofs);
 
-    state->Require<CompositeVector, CompositeVectorSpace>("fieldname", "tag2", "owner")
+    state->Require<CompositeVector, CompositeVectorSpace>("fieldname", tag2, "owner")
       .SetMesh(state->GetMesh())->SetComponents(names, locations, num_dofs);
 
     state->Setup();
@@ -61,12 +63,14 @@ struct test_state {
 
 SUITE(COPY) {
   TEST_FIXTURE(test_state, StateCopy) {
-    state->GetW<CompositeVector>("fieldname", "tag1", "owner").PutScalar(2.0);
+    Tag tag1 = make_tag("tag1");
+    Tag tag2 = make_tag("tag2");
+    state->GetW<CompositeVector>("fieldname", tag1, "owner").PutScalar(2.0);
 
-    state->Set<CompositeVector>("fieldname", "tag2", "owner",
-                                state->Get<CompositeVector>("fieldname", "tag1"));
+    state->Set<CompositeVector>("fieldname", tag2, "owner",
+                                state->Get<CompositeVector>("fieldname", tag1));
 
-    auto& field = state->Get<CompositeVector>("fieldname", "tag2");
+    auto& field = state->Get<CompositeVector>("fieldname", tag2);
     CHECK_CLOSE(2.0, (*field.ViewComponent("cell"))[0][0], 0.00001);
     std::cout << "State copy... passed\n";
   }

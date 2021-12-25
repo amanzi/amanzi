@@ -1,5 +1,6 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
+  State
+
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -79,20 +80,26 @@ Example:
 
 #include <string>
 #include <vector>
+
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_MultiVector.h"
 
-#include "Mesh.hh"
-#include "DomainSet.hh"
-#include "MeshPartition.hh"
+// Amanzi
 #include "CompositeVector.hh"
 #include "CompositeVectorSpace.hh"
+#include "DomainSet.hh"
+#include "Key.hh"
+#include "Mesh.hh"
+#include "MeshPartition.hh"
 
+// Amanzi::State
 #include "Checkpoint.hh"
 #include "ObservationData.hh"
 #include "RecordSet.hh"
 #include "StateDefs.hh"
+#include "Tag.hh"
 #include "Visualization.hh"
 
 namespace Amanzi {
@@ -117,7 +124,7 @@ class State {
   typedef std::map<Key, Teuchos::RCP<Functions::MeshPartition> > MeshPartitionMap;
 
   using RecordSetMap = std::unordered_map<Key, std::unique_ptr<RecordSet> >;
-  using EvaluatorMap = std::unordered_map<Key, std::unordered_map<Key, Teuchos::RCP<Evaluator> > >;
+  using EvaluatorMap = std::unordered_map<Key, std::unordered_map<Tag, Teuchos::RCP<Evaluator> > >;
 
  public:
   State();
@@ -202,7 +209,7 @@ class State {
   //  F is a factory, which must provide a method Create() that makes a T
   //    (optional)
   template <typename T, typename F>
-  F& Require(const Key& fieldname, const Key& tag, const Key& owner = "") {
+  F& Require(const Key& fieldname, const Tag& tag, const Key& owner = "") {
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
@@ -211,7 +218,7 @@ class State {
   }
 
   template <typename T>
-  void Require(const Key& fieldname, const Key& tag, const Key& owner = "") {
+  void Require(const Key& fieldname, const Tag& tag, const Key& owner = "") {
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
@@ -221,29 +228,30 @@ class State {
 
   template <typename T, typename F>
   F& Require(const Key& fieldname) {
-    return Require<T, F>(fieldname, StateTags::DEFAULT, "");
+    return Require<T, F>(fieldname, Tags::DEFAULT, "");
   }
 
-  template <typename T> void Require(const Key& fieldname) {
-    Require<T>(fieldname, StateTags::DEFAULT, "");
+  template <typename T>
+  void Require(const Key& fieldname) {
+    Require<T>(fieldname, Tags::DEFAULT, "");
   }
 
   // Ensure a record exists.
-  bool HasData(const Key& key, const Key& tag = StateTags::DEFAULT) const {
+  bool HasData(const Key& key, const Tag& tag = Tags::DEFAULT) const {
     if (Keys::hasKey(data_, key)) return data_.at(key)->HasRecord(tag);
     return false;
   }
 
   // Record accessors.
-  const Record& GetRecord(const Key& fieldname, const Key& tag = StateTags::DEFAULT) const {
+  const Record& GetRecord(const Key& fieldname, const Tag& tag = Tags::DEFAULT) const {
     return data_.at(fieldname)->GetRecord(tag);
   }
   Record& GetRecordW(const Key& fieldname, const Key& owner) {
-    auto& r = data_.at(fieldname)->GetRecord(StateTags::DEFAULT);
+    auto& r = data_.at(fieldname)->GetRecord(Tags::DEFAULT);
     r.AssertOwnerOrDie(owner);
     return r;
   }
-  Record& GetRecordW(const Key& fieldname, const Key& tag, const Key& owner) {
+  Record& GetRecordW(const Key& fieldname, const Tag& tag, const Key& owner) {
     auto& r = data_.at(fieldname)->GetRecord(tag);
     r.AssertOwnerOrDie(owner);
     return r;
@@ -260,41 +268,44 @@ class State {
 
   // Require derivatives
   template <typename T, typename F>
-  F& RequireDerivative(const Key& key, const Key& tag,
-                       const Key& wrt_key, const Key& wrt_tag, const Key& owner = "") {
-    auto keytag = Keys::getKeyTag(key, tag);
+  F& RequireDerivative(const Key& key, const Tag& tag,
+                       const Key& wrt_key, const Tag& wrt_tag, const Key& owner = "") {
+    auto keytag = Keys::getKeyTag(key, tag.get());
     if (!Keys::hasKey(derivs_, keytag)) {
       derivs_.emplace(keytag, std::make_unique<RecordSet>(keytag));
     }
-    derivs_.at(keytag)->RequireRecord(Keys::getKeyTag(wrt_key, wrt_tag), owner);
+    Tag der_tag = make_tag(Keys::getKeyTag(wrt_key, wrt_tag.get()));
+    derivs_.at(keytag)->RequireRecord(der_tag, owner);
     return derivs_.at(keytag)->SetType<T, F>();
   }
 
   template <typename T>
-  void RequireDerivative(const Key& key, const Key& tag, const Key& wrt_key,
-                         const Key& wrt_tag, const Key& owner = "") {
-    auto keytag = Keys::getKeyTag(key, tag);
+  void RequireDerivative(const Key& key, const Tag& tag, const Key& wrt_key,
+                         const Tag& wrt_tag, const Key& owner = "") {
+    auto keytag = Keys::getKeyTag(key, tag.get());
     if (!Keys::hasKey(derivs_, keytag)) {
       derivs_.emplace(keytag, std::make_unique<RecordSet>(keytag));
     }
-    derivs_.at(keytag)->RequireRecord(Keys::getKeyTag(wrt_key, wrt_tag), owner);
+    Tag der_tag = make_tag(Keys::getKeyTag(wrt_key, wrt_tag.get()));
+    derivs_.at(keytag)->RequireRecord(der_tag, owner);
     derivs_.at(keytag)->SetType<T>();
   }
 
   template <typename T, typename F>
-  F& RequireDerivative(const Key &key, const Key& wrt_key, const Key& wrt_tag) {
-    return RequireDerivative<T, F>(key, StateTags::DEFAULT, wrt_key, wrt_tag, "");
+  F& RequireDerivative(const Key &key, const Key& wrt_key, const Tag& wrt_tag) {
+    return RequireDerivative<T, F>(key, Tags::DEFAULT, wrt_key, wrt_tag, "");
   }
 
   template <typename T>
-  void RequireDerivative(const Key& key, const Key& wrt_key, const Key& wrt_tag) {
-    RequireDerivative<T>(key, StateTags::DEFAULT, wrt_key, wrt_tag, "");
+  void RequireDerivative(const Key& key, const Key& wrt_key, const Tag& wrt_tag) {
+    RequireDerivative<T>(key, Tags::DEFAULT, wrt_key, wrt_tag, "");
   }
 
-  bool HasDerivative(const Key& key, const Key& tag, const Key& wrt_key, const Key& wrt_tag) const {
-    auto keytag = Keys::getKeyTag(key,tag);
+  bool HasDerivative(const Key& key, const Tag& tag, const Key& wrt_key, const Tag& wrt_tag) const {
+    auto keytag = Keys::getKeyTag(key, tag.get());
     if (Keys::hasKey(derivs_, keytag)) {
-      return derivs_.at(keytag)->HasRecord(Keys::getKeyTag(wrt_key, wrt_tag));
+      Tag der_tag = make_tag(Keys::getKeyTag(wrt_key, wrt_tag.get()));
+      return derivs_.at(keytag)->HasRecord(der_tag);
     }
     return false;
   }
@@ -303,35 +314,39 @@ class State {
   // derivatives.
   
   template <typename T>
-  const T& GetDerivative(const Key& key, const Key& tag, const Key& wrt_key,
-                         const Key& wrt_tag) const {
-    return derivs_.at(Keys::getKeyTag(key, tag))->Get<T>(Keys::getKeyTag(wrt_key, wrt_tag));
+  const T& GetDerivative(const Key& key, const Tag& tag, const Key& wrt_key,
+                         const Tag& wrt_tag) const {
+    Tag der_tag = make_tag(Keys::getKeyTag(wrt_key, wrt_tag.get()));
+    return derivs_.at(Keys::getKeyTag(key, tag.get()))->Get<T>(der_tag);
   }
 
   template <typename T>
-  T& GetDerivativeW(const Key& key, const Key& tag, const Key& wrt_key,
-                    const Key& wrt_tag, const Key& owner) {
-    return derivs_.at(Keys::getKeyTag(key,tag))->GetW<T>(Keys::getKeyTag(wrt_key, wrt_tag), owner);
+  T& GetDerivativeW(const Key& key, const Tag& tag, const Key& wrt_key,
+                    const Tag& wrt_tag, const Key& owner) {
+    Tag der_tag = make_tag(Keys::getKeyTag(wrt_key, wrt_tag.get()));
+    return derivs_.at(Keys::getKeyTag(key, tag.get()))->GetW<T>(der_tag, owner);
   }
 
   template <typename T>
-  Teuchos::RCP<const T> GetDerivativePtr(const Key& key, const Key& tag,
-                                         const Key& wrt_key, const Key& wrt_tag) const {
-    return derivs_.at(Keys::getKeyTag(key, tag))->GetPtr<T>(Keys::getKeyTag(wrt_key, wrt_tag));
+  Teuchos::RCP<const T> GetDerivativePtr(const Key& key, const Tag& tag,
+                                         const Key& wrt_key, const Tag& wrt_tag) const {
+    Tag der_tag = make_tag(Keys::getKeyTag(wrt_key, wrt_tag.get()));
+    return derivs_.at(Keys::getKeyTag(key, tag.get()))->GetPtr<T>(der_tag);
   }
 
   template <typename T>
-  Teuchos::RCP<T> GetDerivativePtrW(const Key& key, const Key& tag,
-                                    const Key& wrt_key, const Key& wrt_tag,
+  Teuchos::RCP<T> GetDerivativePtrW(const Key& key, const Tag& tag,
+                                    const Key& wrt_key, const Tag& wrt_tag,
                                     const Key& owner) {
-    return derivs_.at(Keys::getKeyTag(key, tag))->GetPtrW<T>(Keys::getKeyTag(wrt_key, wrt_tag), owner);
+    Tag der_tag = make_tag(Keys::getKeyTag(wrt_key, wrt_tag.get()));
+    return derivs_.at(Keys::getKeyTag(key, tag.get()))->GetPtrW<T>(der_tag, owner);
   }
 
-  bool HasDerivativeSet(const Key& key, const Key& tag) const {
-    return Keys::hasKey(derivs_, Keys::getKeyTag(key, tag));
+  bool HasDerivativeSet(const Key& key, const Tag& tag) const {
+    return Keys::hasKey(derivs_, Keys::getKeyTag(key, tag.get()));
   }
-  RecordSet& GetDerivativeSet(const Key& key, const Key& tag) {
-    return *derivs_.at(Keys::getKeyTag(key, tag));
+  RecordSet& GetDerivativeSet(const Key& key, const Tag& tag) {
+    return *derivs_.at(Keys::getKeyTag(key, tag.get()));
   }
   
   // Access to data
@@ -341,7 +356,7 @@ class State {
     return data_.at(fieldname)->Get<T>();
   }
   template <typename T>
-  const T& Get(const Key& fieldname, const Key& tag) const {
+  const T& Get(const Key& fieldname, const Tag& tag) const {
     return data_.at(fieldname)->Get<T>(tag);
   }
 
@@ -351,29 +366,29 @@ class State {
     return data_.at(fieldname)->GetW<T>(owner);
   }
   template <typename T>
-  T& GetW(const Key& fieldname, const Key& tag, const Key& owner) {
+  T& GetW(const Key& fieldname, const Tag& tag, const Key& owner) {
     return data_.at(fieldname)->GetW<T>(tag, owner);
   }
 
   template <typename T>
-  Teuchos::RCP<const T> GetPtr(const Key& fieldname, const Key& tag = StateTags::DEFAULT) const {
+  Teuchos::RCP<const T> GetPtr(const Key& fieldname, const Tag& tag = Tags::DEFAULT) const {
     return data_.at(fieldname)->GetPtr<T>(tag);
   }
   template <typename T>
-  Teuchos::RCP<T> GetPtrW(const Key& fieldname, const Key& tag, const Key& owner) {
+  Teuchos::RCP<T> GetPtrW(const Key& fieldname, const Tag& tag, const Key& owner) {
     return data_.at(fieldname)->GetPtrW<T>(tag, owner);
   }
   template <typename T>
   Teuchos::RCP<T> GetPtrW(const Key& fieldname, const Key& owner) {
-    return data_.at(fieldname)->GetPtrW<T>(StateTags::DEFAULT, owner);
+    return data_.at(fieldname)->GetPtrW<T>(Tags::DEFAULT, owner);
   }
 
   template <typename T>
   void Set(const Key& fieldname, const Key& owner, const T& data) {
-    return data_.at(fieldname)->Set(StateTags::DEFAULT, owner, data);
+    return data_.at(fieldname)->Set(Tags::DEFAULT, owner, data);
   }
   template <typename T>
-  void Set(const Key& fieldname, const Key& tag, const Key& owner, const T& data) {
+  void Set(const Key& fieldname, const Tag& tag, const Key& owner, const T& data) {
     return data_.at(fieldname)->Set(tag, owner, data);
   }
 
@@ -394,19 +409,19 @@ class State {
   Teuchos::ParameterList& ICList() { return state_plist_.sublist("initial conditions"); }
 
   // Evaluator interface
-  Evaluator& RequireEvaluator(const Key& key, const Key& tag = StateTags::DEFAULT);
+  Evaluator& RequireEvaluator(const Key& key, const Tag& tag = Tags::DEFAULT);
 
   // -- get/set
-  Evaluator& GetEvaluator(const Key& key, const Key& tag = StateTags::DEFAULT);
-  const Evaluator& GetEvaluator(const Key& key, const Key& tag = StateTags::DEFAULT) const;
-  Teuchos::RCP<Evaluator> GetEvaluatorPtr(const Key& key, const Key& tag = StateTags::DEFAULT);
+  Evaluator& GetEvaluator(const Key& key, const Tag& tag = Tags::DEFAULT);
+  const Evaluator& GetEvaluator(const Key& key, const Tag& tag = Tags::DEFAULT) const;
+  Teuchos::RCP<Evaluator> GetEvaluatorPtr(const Key& key, const Tag& tag = Tags::DEFAULT);
 
-  void SetEvaluator(const Key& key, const Key& tag, const Teuchos::RCP<Evaluator>& evaluator);
+  void SetEvaluator(const Key& key, const Tag& tag, const Teuchos::RCP<Evaluator>& evaluator);
   void SetEvaluator(const Key& key, const Teuchos::RCP<Evaluator>& evaluator) {
-    SetEvaluator(key, StateTags::DEFAULT, evaluator);
+    SetEvaluator(key, Tags::DEFAULT, evaluator);
   }
 
-  bool HasEvaluator(const Key& key, const Key& tag = StateTags::DEFAULT);
+  bool HasEvaluator(const Key& key, const Tag& tag = Tags::DEFAULT);
 
   // Write evaluators to file for drawing dependency graph.
   void WriteDependencyGraph() const;
@@ -435,15 +450,15 @@ class State {
   // Time tags and vector copies
   // -----------------------------------------------------------------------------
   // Time accessor and mutators.
-  double time(const Key& tag = StateTags::DEFAULT) const { return Get<double>("time", tag); }
-  void set_time(const Key& tag, double value) { Set("time", tag, "time", value); }
-  void set_time(double value) { Set("time", StateTags::DEFAULT, "time", value); }
+  double time(const Tag& tag = Tags::DEFAULT) const { return Get<double>("time", tag); }
+  void set_time(const Tag& tag, double value) { Set("time", tag, "time", value); }
+  void set_time(double value) { Set("time", Tags::DEFAULT, "time", value); }
 
-  void advance_time(const Key& tag, double dt) {
+  void advance_time(const Tag& tag, double dt) {
     Set("time", tag, "time", Get<double>("time", tag) + dt);
   }
   void advance_time(double dt) {
-    Set("time", StateTags::DEFAULT, "time", Get<double>("time") + dt);
+    Set("time", Tags::DEFAULT, "time", Get<double>("time") + dt);
   }
 
   double final_time() const { return final_time_; }

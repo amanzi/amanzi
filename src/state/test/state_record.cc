@@ -9,7 +9,7 @@ using namespace Amanzi;
 
 std::unique_ptr<RecordSet> getRecordDouble() {
   auto f = std::make_unique<RecordSet>("my_field");
-  f->RequireRecord("", "my_owner");
+  f->RequireRecord(Tags::DEFAULT, "my_owner");
   f->SetType<double>();
   f->CreateData();
   return f;
@@ -17,7 +17,7 @@ std::unique_ptr<RecordSet> getRecordDouble() {
 
 std::unique_ptr<RecordSet> getRecordVec() {
   auto f = std::make_unique<RecordSet>("my_field");
-  f->RequireRecord("", "my_owner");
+  f->RequireRecord(Tags::DEFAULT, "my_owner");
   auto &fac = f->SetType<Vec, VecFactory>();
   fac.set_size(2);
   f->CreateData();
@@ -72,14 +72,15 @@ TEST(FIELD_THROWS_ON_BAD_TYPE) {
 
 TEST(FIELD_COPY) {
   auto f = getRecordDouble();
-  f->RequireRecord("prev", "my_other_owner");
+  Tag tag = make_tag("prev");
+  f->RequireRecord(tag, "my_other_owner");
   f->CreateData();
 
   f->Set("my_owner", 1.1);
   CHECK_EQUAL(1.1, f->Get<double>());
-  f->Set("prev", "my_other_owner", 2.1);
+  f->Set(tag, "my_other_owner", 2.1);
   CHECK_EQUAL(1.1, f->Get<double>());
-  CHECK_EQUAL(2.1, f->Get<double>("prev"));
+  CHECK_EQUAL(2.1, f->Get<double>(tag));
 }
 
 // TEST(FIELD_SET_FROM_OTHER) {

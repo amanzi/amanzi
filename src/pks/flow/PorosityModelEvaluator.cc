@@ -52,11 +52,11 @@ Teuchos::RCP<Evaluator> PorosityModelEvaluator::Clone() const {
 * Initialization.
 ****************************************************************** */
 void PorosityModelEvaluator::InitializeFromPlist_() {
-  my_keys_.push_back(std::make_pair(plist_.get<std::string>("porosity key"), ""));
+  my_keys_.push_back(std::make_pair(plist_.get<std::string>("porosity key"), Tags::DEFAULT));
 
   // my dependency is pressure.
   pressure_key_ = plist_.get<std::string>("pressure key");
-  dependencies_.push_back(std::make_pair(pressure_key_, ""));
+  dependencies_.push_back(std::make_pair(pressure_key_, Tags::DEFAULT));
 }
 
 
@@ -80,7 +80,7 @@ void PorosityModelEvaluator::Evaluate_(
 * Required member function.
 ****************************************************************** */
 void PorosityModelEvaluator::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Key& wrt_tag,
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results)
 {
   auto& phi_c = *results[0]->ViewComponent("cell");

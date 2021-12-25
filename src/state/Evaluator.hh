@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "State.hh"
+#include "Tag.hh"
 
 namespace Amanzi {
 
@@ -28,12 +29,6 @@ class Evaluator {
   virtual ~Evaluator() {}
   virtual Teuchos::RCP<Evaluator> Clone() const = 0;
   virtual Evaluator& operator=(const Evaluator& other) = 0;
-
-  // ---------------------------------------------------------------------------
-  // Set/get the time tag of this evaluator's metadata.
-  // ---------------------------------------------------------------------------
-  // Key tag() { return my_tag_; }
-  // void set_tag(const Key &tag) { my_tag_ = tag; }
 
   // ---------------------------------------------------------------------------
   // Lazy evaluation of the evaluator.
@@ -51,7 +46,7 @@ class Evaluator {
   // an update.
   // ---------------------------------------------------------------------------
   virtual bool UpdateDerivative(State& S, const Key& requester,
-                                const Key& wrt_key, const Key& wrt_tag) = 0;
+                                const Key& wrt_key, const Tag& wrt_tag) = 0;
 
   // ---------------------------------------------------------------------------
   // Does this depend upon key?
@@ -60,7 +55,7 @@ class Evaluator {
   // evaluator named key.
   // ---------------------------------------------------------------------------
   virtual bool IsDependency(const State& S, const Key& key,
-                            const Key& tag) const = 0;
+                            const Tag& tag) const = 0;
 
   // ---------------------------------------------------------------------------
   // Is this evaluator differentiable with respect to the primary variable in
@@ -70,14 +65,14 @@ class Evaluator {
   // evaluator named key.
   // ---------------------------------------------------------------------------
   virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key,
-                                   const Key& wrt_tag) const = 0;
+                                   const Tag& wrt_tag) const = 0;
 
   // ---------------------------------------------------------------------------
   // Does this provide key?
   //
   // Returns true if key is a field owned by this evaluator, false otherwise.
   // ---------------------------------------------------------------------------
-  virtual bool ProvidesKey(const Key& key, const Key& tag) const = 0;
+  virtual bool ProvidesKey(const Key& key, const Tag& tag) const = 0;
 
   // ---------------------------------------------------------------------------
   // Checks that all data requirements on dependencies of this evaluator are

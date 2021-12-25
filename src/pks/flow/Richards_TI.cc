@@ -49,7 +49,7 @@ void Richards_PK::FunctionalResidual(
   darcy_flux_copy->ScatterMasterToGhosted("face");
 
   pressure_eval_->SetChanged();
-  auto alpha = S_->GetW<CompositeVector>(alpha_key_, StateTags::DEFAULT, alpha_key_);
+  auto alpha = S_->GetW<CompositeVector>(alpha_key_, Tags::DEFAULT, alpha_key_);
   S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
   
   if (!flow_on_manifold_) {
@@ -63,7 +63,7 @@ void Richards_PK::FunctionalResidual(
 
   if (!flow_on_manifold_) {
     Key der_key = Keys::getDerivKey(alpha_key_, pressure_key_);
-    S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, StateTags::DEFAULT);
+    S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
     auto alpha_dP = S_->GetW<CompositeVector>(der_key, alpha_key_);
 
     *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP.ViewComponent("cell");
@@ -202,7 +202,7 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
   const auto& x_g = *S_->Get<CompositeVector>("molar_fraction_gas").ViewComponent("cell");
 
   std::string der_name = Keys::getDerivKey("molar_fraction_gas", temperature_key);
-  S_->GetEvaluator("molar_fraction_gas").UpdateDerivative(*S_, passwd_, temperature_key, StateTags::DEFAULT);
+  S_->GetEvaluator("molar_fraction_gas").UpdateDerivative(*S_, passwd_, temperature_key, Tags::DEFAULT);
   const auto& dxgdT = *S_->Get<CompositeVector>(der_name).ViewComponent("cell");
 
   const auto& temp = *S_->Get<CompositeVector>(temperature_key).ViewComponent("cell");
@@ -251,7 +251,7 @@ void Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<Comp
   const auto& phi = *S_->Get<CompositeVector>("porosity_matrix").ViewComponent("cell");
 
   const auto& wcm_prev = *S_->Get<CompositeVector>("prev_water_content_matrix").ViewComponent("cell");
-  auto& wcm = *S_->Get<CompositeVector>("water_content_matrix", passwd_).ViewComponent("cell");
+  auto& wcm = *S_->Get<CompositeVector>("water_content_matrix", Tags::DEFAULT).ViewComponent("cell");
 
   Epetra_MultiVector& fc = *f->ViewComponent("cell");
 
@@ -344,7 +344,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
 
   if (!flow_on_manifold_) {
     Key der_key = Keys::getDerivKey(alpha_key_, pressure_key_);
-    S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, StateTags::DEFAULT);
+    S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
     auto alpha_dP = S_->GetPtrW<CompositeVector>(der_key, alpha_key_);
 
     *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP->ViewComponent("cell");
@@ -361,7 +361,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   // add time derivative
   if (dtp > 0.0) {
     std::string der_name = Keys::getDerivKey(water_content_key_, pressure_key_);
-    S_->GetEvaluator(water_content_key_).UpdateDerivative(*S_, passwd_, pressure_key_, StateTags::DEFAULT);
+    S_->GetEvaluator(water_content_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
     auto& dwc_dp = S_->GetW<CompositeVector>(der_name, water_content_key_);
 
     op_acc_->AddAccumulationDelta(*u->Data(), dwc_dp, dwc_dp, dtp, "cell");

@@ -79,7 +79,6 @@ typedef std::set<std::pair<Key, Key> > KeyPairSet;
 typedef std::vector<KeyPair> KeyPairVector;
 
 typedef std::tuple<Key,Key,Key> KeyTriple;
-typedef std::set<KeyTriple> KeyTripleSet;
 
 namespace Keys {
 

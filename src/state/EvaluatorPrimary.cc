@@ -22,7 +22,7 @@ namespace Amanzi {
 // ---------------------------------------------------------------------------
 EvaluatorPrimary_::EvaluatorPrimary_(Teuchos::ParameterList& plist)
     : my_key_(Keys::cleanPListName(plist.name())),
-      my_tag_(plist.get<std::string>("tag", StateTags::DEFAULT)),
+      my_tag_(make_tag(plist.get<std::string>("tag", ""))),
       vo_(Keys::cleanPListName(plist.name()), plist)
 {}
 
@@ -93,7 +93,7 @@ bool EvaluatorPrimary_::Update(State& S, const Key& request)
 // ---------------------------------------------------------------------------
 bool EvaluatorPrimary_::UpdateDerivative(State& S, const Key& request,
                                          const Key& wrt_key,
-                                         const Key& wrt_tag)
+                                         const Tag& wrt_tag)
 {
   // enforce the contract: all calls to this must either have wrt_key,wrt_tag
   // as the key provided (for primary evaluators) or as a dependency (for
@@ -102,8 +102,8 @@ bool EvaluatorPrimary_::UpdateDerivative(State& S, const Key& request,
 
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-    *vo_.os() << "Primary Variable " << my_key_ << ":" << my_tag_
-              << " derivative with respect to " << wrt_key << ":" << wrt_tag
+    *vo_.os() << "Primary Variable " << my_key_ << ":" << my_tag_.get()
+              << " derivative with respect to " << wrt_key << ":" << wrt_tag.get()
               << " requested by " << request;
   }
 
@@ -115,8 +115,7 @@ bool EvaluatorPrimary_::UpdateDerivative(State& S, const Key& request,
     UpdateDerivative_(S);
   }
 
-  if (deriv_requests_.find(std::make_tuple(wrt_key, wrt_tag, request)) ==
-      deriv_requests_.end()) {
+  if (deriv_requests_.find(std::make_tuple(wrt_key, wrt_tag, request)) == deriv_requests_.end()) {
     if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
       *vo_.os() << "  ... not updating but new to this request." << std::endl;
     }
@@ -153,14 +152,13 @@ void EvaluatorPrimary_::SetChanged()
 
 
 // Nothing is a dependency of a primary variable.
-bool EvaluatorPrimary_::IsDependency(const State& S, const Key& key,
-                                     const Key& tag) const {
+bool EvaluatorPrimary_::IsDependency(const State& S, const Key& key, const Tag& tag) const {
   return false;
 }
 
 
-bool EvaluatorPrimary_::ProvidesKey(const Key& key, const Key& tag) const {
-  return key == my_key_ && tag == my_tag_;
+bool EvaluatorPrimary_::ProvidesKey(const Key& key, const Tag& tag) const {
+  return (key == my_key_) && (tag == my_tag_);
 }
 
 

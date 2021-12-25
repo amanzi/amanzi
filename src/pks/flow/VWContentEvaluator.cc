@@ -41,22 +41,22 @@ VWContentEvaluator::VWContentEvaluator(Teuchos::ParameterList& plist)
 ****************************************************************** */
 void VWContentEvaluator::Init_()
 {
-  my_keys_.push_back(std::make_pair(plist_.get<std::string>("water content key"), ""));
+  my_keys_.push_back(std::make_pair(plist_.get<std::string>("water content key"), Tags::DEFAULT));
   std::string domain = Keys::getDomain(my_keys_[0].first);
 
   saturation_key_ = plist_.get<std::string>("saturation key");
   porosity_key_ = plist_.get<std::string>("porosity key");
   mol_density_liquid_key_ = Keys::getKey(domain, "molar_density_liquid");
 
-  dependencies_.push_back(std::make_pair(porosity_key_, ""));
-  dependencies_.push_back(std::make_pair(saturation_key_, ""));
-  dependencies_.push_back(std::make_pair(mol_density_liquid_key_, ""));
+  dependencies_.push_back(std::make_pair(porosity_key_, Tags::DEFAULT));
+  dependencies_.push_back(std::make_pair(saturation_key_, Tags::DEFAULT));
+  dependencies_.push_back(std::make_pair(mol_density_liquid_key_, Tags::DEFAULT));
 
   water_vapor_ = plist_.get<bool>("water vapor", false);
 
   if (water_vapor_) {
-    dependencies_.push_back(std::make_pair(Keys::getKey(domain, "molar_density_gas"), ""));
-    dependencies_.push_back(std::make_pair(Keys::getKey(domain, "molar_fraction_gas"), ""));
+    dependencies_.push_back(std::make_pair(Keys::getKey(domain, "molar_density_gas"), Tags::DEFAULT));
+    dependencies_.push_back(std::make_pair(Keys::getKey(domain, "molar_fraction_gas"), Tags::DEFAULT));
   }
 }
 
@@ -108,7 +108,7 @@ void VWContentEvaluator::Evaluate_(
 * Required member: field calculation.
 ****************************************************************** */
 void VWContentEvaluator::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Key& wrt_tag,
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results)
 {
   const auto& s_l = *S.Get<CompositeVector>(saturation_key_).ViewComponent("cell");

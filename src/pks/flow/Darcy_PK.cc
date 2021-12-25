@@ -151,7 +151,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
       ndofs.push_back(1);
     }
 
-    S->Require<CV_t, CVS_t>(pressure_key_, StateTags::DEFAULT, passwd_)
+    S->Require<CV_t, CVS_t>(pressure_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponents(names, locations, ndofs);
 
     AddDefaultPrimaryEvaluator_(pressure_key_);
@@ -159,58 +159,58 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // require additional fields for this PK
   if (!S->HasData(specific_storage_key_)) {
-    S->Require<CV_t, CVS_t>(specific_storage_key_, StateTags::DEFAULT, passwd_)
+    S->Require<CV_t, CVS_t>(specific_storage_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   if (!S->HasData(specific_yield_key_)) {
-    S->Require<CV_t, CVS_t>(specific_yield_key_, StateTags::DEFAULT, passwd_)
+    S->Require<CV_t, CVS_t>(specific_yield_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   if (!S->HasData(saturation_liquid_key_)) {
-    S->Require<CV_t, CVS_t>(saturation_liquid_key_, StateTags::DEFAULT, saturation_liquid_key_)
+    S->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
     AddDefaultPrimaryEvaluator_(saturation_liquid_key_);
   }
 
   if (!S->HasData(prev_saturation_liquid_key_)) {
-    S->Require<CV_t, CVS_t>(prev_saturation_liquid_key_, StateTags::DEFAULT, passwd_)
+    S->Require<CV_t, CVS_t>(prev_saturation_liquid_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // Require additional field evaluators for this PK.
   // -- porosity
   if (!S->HasData(porosity_key_)) {
-    S->Require<CV_t, CVS_t>(porosity_key_, StateTags::DEFAULT, porosity_key_)
+    S->Require<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, porosity_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireEvaluator(porosity_key_, StateTags::DEFAULT);
+    S->RequireEvaluator(porosity_key_, Tags::DEFAULT);
   }
 
   // -- viscosity
   if (!S->HasData("const_fluid_viscosity")) {
-    S->Require<double>("const_fluid_viscosity", StateTags::DEFAULT, passwd_);
+    S->Require<double>("const_fluid_viscosity", Tags::DEFAULT, passwd_);
   }
 
   // Local fields and evaluators.
   if (!S->HasData(hydraulic_head_key_)) {
-    S->Require<CV_t, CVS_t>(hydraulic_head_key_, StateTags::DEFAULT, passwd_)
+    S->Require<CV_t, CVS_t>(hydraulic_head_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // full velocity vector
   if (!S->HasData(darcy_velocity_key_)) {
-    S->Require<CV_t, CVS_t>(darcy_velocity_key_, StateTags::DEFAULT, darcy_velocity_key_)
+    S->Require<CV_t, CVS_t>(darcy_velocity_key_, Tags::DEFAULT, darcy_velocity_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, dim);
 
     Teuchos::ParameterList elist;
     elist.set<std::string>("domain name", domain_)
          .set("names", Teuchos::Array<std::string>({ darcy_velocity_key_ }))
-         .set("tags", Teuchos::Array<std::string>({ StateTags::DEFAULT }))
+         .set("tags", Teuchos::Array<std::string>({ "" }))
          .set<std::string>("darcy flux key", darcy_flux_key_);
     auto eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
-    S->SetEvaluator(darcy_velocity_key_, StateTags::DEFAULT, eval);
+    S->SetEvaluator(darcy_velocity_key_, Tags::DEFAULT, eval);
   }
 
   // Require additional components for the existing fields
@@ -219,7 +219,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   int noff = abs_perm.get<int>("off-diagonal components", 0);
  
   if (noff > 0) {
-    CompositeVectorSpace& cvs = S->Require<CV_t, CVS_t>(permeability_key_, StateTags::DEFAULT, passwd_);
+    CompositeVectorSpace& cvs = S->Require<CV_t, CVS_t>(permeability_key_, Tags::DEFAULT, passwd_);
     cvs.SetOwned(false);
     cvs.AddComponent("offd", AmanziMesh::CELL, noff)->SetOwned(true);
   }
@@ -230,7 +230,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
     for (auto it = fields.begin(); it != fields.end(); ++it) {
       Key optional_key = Keys::getKey(domain_, *it); 
       if (!S->HasData(optional_key)) {
-        S->Require<CV_t, CVS_t>(optional_key, StateTags::DEFAULT, passwd_)
+        S->Require<CV_t, CVS_t>(optional_key, Tags::DEFAULT, passwd_)
           .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
       }
     }
@@ -273,7 +273,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   UpdateLocalFields_(S);
 
   // Create solution and auxiliary data for time history.
-  solution = S->GetPtrW<CV_t>(pressure_key_, StateTags::DEFAULT, passwd_);
+  solution = S->GetPtrW<CV_t>(pressure_key_, Tags::DEFAULT, passwd_);
   soln_->SetData(solution); 
 
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
@@ -299,7 +299,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   UpdateSpecificYield_();
 
   // Initialize lambdas. It may be used by boundary conditions.
-  auto& pressure = S->GetW<CompositeVector>(pressure_key_, StateTags::DEFAULT, passwd_);
+  auto& pressure = S->GetW<CompositeVector>(pressure_key_, Tags::DEFAULT, passwd_);
 
   if (ti_list_->isSublist("pressure-lambda constraints") && solution->HasComponent("face")) {
     std::string method = ti_list_->sublist("pressure-lambda constraints").get<std::string>("method");
@@ -308,7 +308,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
       Epetra_MultiVector& lambda = *solution->ViewComponent("face");
 
       DeriveFaceValuesFromCellValues(p, lambda);
-      S->GetRecordW(pressure_key_, StateTags::DEFAULT, passwd_).set_initialized("face");
+      S->GetRecordW(pressure_key_, Tags::DEFAULT, passwd_).set_initialized("face");
     }
   }
 
@@ -456,7 +456,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // calculate and assemble elemental stiffness matrices
   double factor = 1.0 / g_;
-  const auto& ss = S_->Get<CV_t>(specific_storage_key_, StateTags::DEFAULT);
+  const auto& ss = S_->Get<CV_t>(specific_storage_key_, Tags::DEFAULT);
   CompositeVector ss_g(ss); 
   ss_g.Update(0.0, ss, factor);
 
@@ -532,7 +532,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void Darcy_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   // calculate Darcy mass flux
-  auto flux = S->GetPtrW<CV_t>(darcy_flux_key_, StateTags::DEFAULT, passwd_);
+  auto flux = S->GetPtrW<CV_t>(darcy_flux_key_, Tags::DEFAULT, passwd_);
 
   if (coupled_to_matrix_ || flow_on_manifold_) {
     op_diff_->UpdateFluxNonManifold(solution.ptr(), flux.ptr());
