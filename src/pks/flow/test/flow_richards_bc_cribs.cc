@@ -85,9 +85,9 @@ TEST(FLOW_3D_RICHARDS) {
   RPK->CommitStep(0.0, 1.0, S);  // dummay times
 
   // derive dependent variable
-  const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
-  const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
-  const Epetra_MultiVector& K = *S->GetFieldData("permeability")->ViewComponent("cell");
+  const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
+  const auto& ws = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
+  const auto& K = *S->Get<CompositeVector>("permeability").ViewComponent("cell");
 
   GMV::open_data_file(*mesh, (std::string)"flow.gmv");
   GMV::start_data();

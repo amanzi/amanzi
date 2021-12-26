@@ -185,13 +185,19 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     S->Require<CV_t, CVS_t>(water_content_key_, Tags::DEFAULT, water_content_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
-    Teuchos::ParameterList vwc_list;
-    vwc_list.set<std::string>("water content key", water_content_key_)
-            .set<std::string>("pressure key", pressure_key_)
-            .set<std::string>("saturation key", saturation_liquid_key_)
-            .set<std::string>("porosity key", porosity_key_)
-            .set<bool>("water vapor", vapor_diffusion_);
-    auto eval = Teuchos::rcp(new VWContentEvaluator(vwc_list));
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("water content key", water_content_key_)
+         .set<std::string>("tag", "")
+         .set<std::string>("pressure key", pressure_key_)
+         .set<std::string>("saturation key", saturation_liquid_key_)
+         .set<std::string>("porosity key", porosity_key_)
+         .set<bool>("water vapor", vapor_diffusion_);
+    elist.setName(water_content_key_);
+
+    S->RequireDerivative<CV_t, CVS_t>(water_content_key_, Tags::DEFAULT,
+                                      pressure_key_, Tags::DEFAULT, water_content_key_);
+
+    auto eval = Teuchos::rcp(new VWContentEvaluator(elist));
     S->SetEvaluator(water_content_key_, Tags::DEFAULT, eval);
   }
 
@@ -231,8 +237,9 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
       .SetMesh(mesh_)->SetGhosted(false)->SetComponent("cell", AmanziMesh::CELL, 1);
 
     Teuchos::ParameterList elist;
-    elist.set<std::string>("porosity key", "porosity_matrix");
-    elist.set<std::string>("pressure key", "pressure_matrix");
+    elist.set<std::string>("porosity key", "porosity_matrix")
+         .set<std::string>("pressure key", "pressure_matrix")
+         .set<std::string>("tag", "");
     Teuchos::RCP<PorosityModelPartition> pom = CreatePorosityModelPartition(mesh_, msp_list);
     Teuchos::RCP<PorosityModelEvaluator> eval = Teuchos::rcp(new PorosityModelEvaluator(elist, pom));
     S->SetEvaluator("porosity_matrix", eval);
@@ -299,7 +306,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
         .set<Teuchos::Array<std::string> >("components", components)
         .sublist("function").sublist("function-constant")
         .set<double>("value", mu);
-    eval.set<std::string>("field evaluator type", "independent variable");
+    eval.set<std::string>("evaluator type", "independent variable");
 
     S->RequireEvaluator(viscosity_liquid_key_);
   }
@@ -323,7 +330,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
         .set<Teuchos::Array<std::string> >("components", components)
         .sublist("function").sublist("function-constant")
         .set<double>("value", n_l);
-    eval.set<std::string>("field evaluator type", "independent variable");
+    eval.set<std::string>("evaluator type", "independent variable");
 
     S->RequireEvaluator(mol_density_liquid_key_);
   }
@@ -338,7 +345,10 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
 
     Teuchos::ParameterList elist;
     elist.set<std::string>("saturation key", saturation_liquid_key_)
-         .set<std::string>("pressure key", pressure_key_);
+         .set<std::string>("pressure key", pressure_key_)
+         .set<std::string>("tag", "");
+    elist.setName(saturation_liquid_key_);
+
     // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     Teuchos::RCP<WRMEvaluator> eval = Teuchos::rcp(new WRMEvaluator(elist, wrm_));
     S->SetEvaluator(saturation_liquid_key_, eval);
@@ -357,7 +367,11 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
 
     Teuchos::ParameterList elist;
-    elist.set<std::string>("relative permeability key", relperm_key_);
+    elist.set<std::string>("relative permeability key", relperm_key_)
+         .set<std::string>("tag", "");
+    elist.setName(relperm_key_);
+
+    S->RequireDerivative<CV_t, CVS_t>(relperm_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, relperm_key_);
 
     auto eval = Teuchos::rcp(new Flow::RelPermEvaluator(elist, S.ptr(), wrm_));
     S->SetEvaluator(relperm_key_, eval);
@@ -385,7 +399,11 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     list1.push_back(Keys::getVarName(viscosity_liquid_key_));
     elist.set<std::string>("my key", alpha_key_)
          .set<Teuchos::Array<std::string> >("multiplicative dependencies", list0)
-         .set<Teuchos::Array<std::string> >("reciprocal dependencies", list1);
+         .set<Teuchos::Array<std::string> >("reciprocal dependencies", list1)
+         .set<std::string>("tag", "");
+    elist.setName(alpha_key_);
+
+    S->RequireDerivative<CV_t, CVS_t>(alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
 
     auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
     S->SetEvaluator(alpha_key_, eval);
@@ -406,7 +424,9 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     Teuchos::ParameterList elist;
     elist.set<std::string>("domain name", domain_);
     elist.set<std::string>("darcy velocity key", darcy_velocity_key_)
-         .set<std::string>("darcy flux key", darcy_flux_key_);
+         .set<std::string>("darcy flux key", darcy_flux_key_)
+         .set<std::string>("tag", "");
+    elist.setName(darcy_velocity_key_);
     Teuchos::RCP<DarcyVelocityEvaluator> eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
     S->SetEvaluator(darcy_velocity_key_, eval);
   }
@@ -764,7 +784,6 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Verbose output of initialization statistics.
   InitializeStatistics_();
-
 }
 
 
@@ -1080,10 +1099,6 @@ double Richards_PK::DeriveBoundaryFaceValue(
       min_val= u_cell[0][c] + (g_f - bnd_flux) / (dir * trans_f);
     }
     double eps = std::max(1.0e-4 * std::abs(bnd_flux), 1.0e-8);
-
-    // std::cout<<"min_val "<<min_val<<" max_val "<<max_val<<" "<<" trans_f "<<trans_f<<"\n";
-    // std::cout<<"g_f "<<g_f<<" bnd "<< bnd_flux <<" dir "<<dir<<"\n";
-    // std::cout<<c <<"norm "<<n<<"\n";
 
     const KRelFn func = &WRM::k_relative;       
     Amanzi::BoundaryFaceSolver<WRM> bnd_solver(trans_f, g_f, u_cell[0][c], lmd, bnd_flux, dir, pc_shift, 

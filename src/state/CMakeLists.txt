@@ -91,6 +91,7 @@ add_amanzi_library(state
                           Checkpoint.cc
                           Observable.cc
                           chemistry_data.cc
+                          Evaluator.cc
                           Evaluator_Factory.cc
                           Evaluator_PDE_Diffusion.cc
                           Evaluator_OperatorApply.cc

@@ -69,27 +69,27 @@ int AdvanceToSteadyState(
     if (last_step && dT < 1e-3) break;
 
     // reset primary field
-    Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval = 
-       Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator("pressure"));
-    *S->GetFieldData("pressure", "flow") = *soln->Data();
-    pressure_eval->SetFieldAsChanged(S.ptr());
+    auto pressure_eval = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> >(
+        S->GetEvaluatorPtr("pressure"));
+    S->GetW<CompositeVector>("pressure", "flow") = *soln->Data();
+    pressure_eval->SetChanged();
  
     // update and swap saturations
-    S->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S.ptr(), "flow");
-    const CompositeVector& s_l = *S->GetFieldData("saturation_liquid");
-    CompositeVector& s_l_prev = *S->GetFieldData("prev_saturation_liquid", "flow");
+    S->GetEvaluator("saturation_liquid").Update(*S, "flow");
+    const auto& s_l = S->Get<CompositeVector>("saturation_liquid");
+    auto& s_l_prev = S->GetW<CompositeVector>("prev_saturation_liquid", "flow");
     s_l_prev = s_l;
 
     // update and swap water content
-    S->GetFieldEvaluator("water_content")->HasFieldChanged(S.ptr(), "flow");
-    const CompositeVector& wc = *S->GetFieldData("water_content");
-    CompositeVector& wc_prev = *S->GetFieldData("prev_water_content", "flow");
+    S->GetEvaluator("water_content").Update(*S, "flow");
+    const auto& wc = S->Get<CompositeVector>("water_content");
+    auto& wc_prev = S->GetW<CompositeVector>("prev_water_content", "flow");
     wc_prev = wc;
 
     // update and swap matrix water content
-    if (S->HasField("water_content_matrix")) {
-      const CompositeVector& wcm = *S->GetFieldData("water_content_matrix");
-      CompositeVector& wcm_prev = *S->GetFieldData("prev_water_content_matrix", "flow");
+    if (S->HasData("water_content_matrix")) {
+      const auto& wcm = S->Get<CompositeVector>("water_content_matrix");
+      auto& wcm_prev = S->GetW<CompositeVector>("prev_water_content_matrix", "flow");
       wcm_prev = wcm;
     }
 

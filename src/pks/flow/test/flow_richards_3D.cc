@@ -79,16 +79,14 @@ TEST(FLOW_3D_RICHARDS) {
   // modify the default state for the problem at hand
   std::string passwd("flow"); 
 
-  *S->GetScalarData("const_fluid_density", passwd) = 1.0;
-  S->GetFieldData("viscosity_liquid", "viscosity_liquid")->PutScalar(1.0);
+  S->GetW<double>("const_fluid_density", passwd) = 1.0;
+  S->GetW<CompositeVector>("viscosity_liquid", Tags::DEFAULT, "viscosity_liquid").PutScalar(1.0);
   // S->GetField("viscosity_liquid", passwd)->set_initialized();
 
-  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
-  gravity[2] = -1.0;
-  S->GetField("gravity", "state")->set_initialized();
+  auto gravity = S->Get<AmanziGeometry::Point>("gravity");
 
   // create the initial pressure function
-  Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell", false);
+  auto& p = *S->GetW<CompositeVector>("pressure", Tags::DEFAULT, passwd).ViewComponent("cell");
 
   for (int c = 0; c < p.MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);

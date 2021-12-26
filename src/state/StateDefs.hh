@@ -29,6 +29,7 @@ typedef bool NullFactory;  // placeholder object for no factory required
 
 namespace Tags {
 const Tag DEFAULT = make_tag("");
+const Tag NEXT = make_tag("next");
 }
 
 typedef std::pair<Key, Tag> KeyTag;

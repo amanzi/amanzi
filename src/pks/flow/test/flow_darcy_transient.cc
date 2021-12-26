@@ -72,8 +72,8 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
   DPK->Setup(S.ptr());
-  std::cout << "Owner of " << S->GetField("permeability")->fieldname() 
-            << " is " << S->GetField("permeability")->owner() << "\n";
+  std::cout << "Owner of " << S->GetRecord("permeability").fieldname() 
+            << " is " << S->GetRecord("permeability").owner() << "\n";
 
   S->Setup();
   S->InitializeFields();
@@ -81,8 +81,8 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
 
   // modify the default state for the problem at hand
   // -- permeability
-  std::string passwd("flow"); 
-  Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
+  Key passwd("flow"); 
+  auto& K = *S->GetW<CompositeVector>("permeability", passwd).ViewComponent("cell");
 
   AmanziMesh::Entity_ID_List block;
 
@@ -99,32 +99,27 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
     K[0][c] = 0.5;
     K[1][c] = 0.5;
   } 
-  S->GetField("permeability", "flow")->set_initialized();
+  S->GetRecordW("permeability", "flow").set_initialized();
 
   // -- fluid density and viscosity
-  *S->GetScalarData("const_fluid_density", passwd) = 1.0;
-  S->GetField("const_fluid_density", "flow")->set_initialized();
+  S->GetW<double>("const_fluid_density", passwd) = 1.0;
+  S->GetRecordW("const_fluid_density", "flow").set_initialized();
 
-  *S->GetScalarData("const_fluid_viscosity", passwd) = 1.0;
-  S->GetField("const_fluid_viscosity", "flow")->set_initialized();
-
-  // -- gravity
-  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
-  gravity[1] = -1.0;
-  S->GetField("gravity", "state")->set_initialized();
+  S->GetW<double>("const_fluid_viscosity", passwd) = 1.0;
+  S->GetRecordW("const_fluid_viscosity", "flow").set_initialized();
 
   // -- storativity
-  S->GetFieldData("specific_storage", passwd)->PutScalar(2.0);
-  S->GetField("specific_storage", "flow")->set_initialized();
+  S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(2.0);
+  S->GetRecordW("specific_storage", "flow").set_initialized();
 
   // create the initial pressure function
-  Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell", false);
+  auto& p = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
 
   for (int c = 0; c < p.MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);
     p[0][c] = xc[1] * (xc[1] + 2.0);
   }
-  S->GetField("pressure", "flow")->set_initialized();
+  S->GetRecordW("pressure", "flow").set_initialized();
 
   // initialize the Darcy process kernel
   DPK->Initialize(S.ptr());
@@ -196,7 +191,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
 
   /* modify the default state for the problem at hand */
   std::string passwd("flow"); 
-  Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
+  auto& K = *S->GetW<CompositeVector>("permeability", passwd).ViewComponent("cell");
   
   AmanziMesh::Entity_ID_List block;
   mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
@@ -215,16 +210,14 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
     K[2][c] = 0.5;
   }
 
-  *S->GetScalarData("const_fluid_density", passwd) = 1.0;
-  *S->GetScalarData("const_fluid_viscosity", passwd) = 1.0;
-  Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
-  gravity[2] = -1.0;
+  S->GetW<double>("const_fluid_density", passwd) = 1.0;
+  S->GetW<double>("const_fluid_viscosity", passwd) = 1.0;
 
-  S->GetFieldData("specific_storage", passwd)->PutScalar(1.0);
-  S->GetFieldData("specific_yield", passwd)->PutScalar(0.0);
+  S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(1.0);
+  S->GetW<CompositeVector>("specific_yield", passwd).PutScalar(0.0);
 
-  /* create the initial pressure function */
-  Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell", false);
+  // create the initial pressure function
+  auto& p = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
 
   for (int c = 0; c < p.MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);

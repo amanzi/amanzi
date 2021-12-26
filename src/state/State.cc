@@ -271,12 +271,10 @@ Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition_(Key key)
 
 void State::WriteDependencyGraph() const
 {
-  if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-    std::ofstream os("dependency_graph.txt", std::ios::out);
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     for (auto& e : evaluators_) {
-      for (auto& r : e.second) os << *r.second;
+      for (auto& r : e.second) *vo_->os() << *r.second;
     }
-    os.close();
   }
 }
 
@@ -300,19 +298,20 @@ State::GetModelParameters(std::string modelname) {
 // All independent variables must be initialized here.
 void State::Setup()
 {
-  Tag tag_next = make_tag("next");
   Require<double>("time", Tags::DEFAULT, "time");
-  Require<double>("time", tag_next, "time");
+  Require<double>("time", Tags::NEXT, "time");
+  GetRecordSetW("time").initializeTags();
 
   Require<int>("cycle", Tags::DEFAULT, "cycle");
-  Require<int>("cycle", tag_next, "cycle");
+  Require<int>("cycle", Tags::NEXT, "cycle");
+  GetRecordSetW("cycle").initializeTags();
 
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // Ensure compatibility of all the evaluators -- each evaluator's dependencies
   // must provide what is required of that evaluator.
+WriteDependencyGraph();
   for (auto& e : evaluators_) {
-std::cout << "testing... " << e.first << std::endl;
     for (auto& r : e.second) {
       if (!r.second->ProvidesKey(e.first, r.first)) {
         Errors::Message msg;
@@ -504,10 +503,11 @@ void State::InitializeFields()
     *vo.os() << "initializing data through initial conditions..." << std::endl;
   }
 
+  Tag failed;
   if (state_plist_.isSublist("initial conditions")) {
     for (auto& e : data_) {
       bool flag(false);
-      if (pre_initialization || !e.second->isInitialized()) {
+      if (pre_initialization || !e.second->isInitialized(failed)) {
         if (state_plist_.sublist("initial conditions").isSublist(e.first)) {
           flag = true;
           Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(e.first);
@@ -541,11 +541,11 @@ void State::InitializeFields()
 // Make sure all fields have gotten their IC, either from State or the owning PK.
 bool State::CheckAllFieldsInitialized()
 {
+  Tag failed;
   for (auto& e : data_) {
-    if (!e.second->isInitialized()) {
-      // field was not initialized
+    if (!e.second->isInitialized(failed)) {
       std::stringstream ss;
-      ss << "Variable \"" << e.first << "\" was not initialized\n";
+      ss << "Variable \"" << e.first << "\" with tag \"" << failed.get() << "\" was not initialized\n";
       Errors::Message msg(ss.str());
       Exceptions::amanzi_throw(msg);
       return false;

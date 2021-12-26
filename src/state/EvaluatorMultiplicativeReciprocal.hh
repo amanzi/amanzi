@@ -52,8 +52,6 @@ class EvaluatorMultiplicativeReciprocal : public EvaluatorSecondaryMonotype<Comp
                                           const std::vector<CompositeVector*>& results) override;
 
  private:
-  std::string my_key_;
-
   bool enforce_positivity_;
   double coef_;
   std::vector<std::string> list0_, list1_;

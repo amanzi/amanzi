@@ -92,21 +92,20 @@ class DarcyProblem {
     Teuchos::ParameterList state_list = plist->sublist("state");
     S = Teuchos::rcp(new State(state_list));
     S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
-    S->set_time(0.0);
 
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
     DPK = new Darcy_PK(plist, "flow", S, soln);
     DPK->Setup(S.ptr());
     S->Setup();
+    S->set_time(0.0);
+
     S->InitializeFields();
     S->InitializeEvaluators();
 
     // create other parameters
-    mu = *S->GetScalarData("const_fluid_viscosity", passwd);
-    rho = *S->GetScalarData("const_fluid_density", passwd);
-
-    Epetra_Vector& gvec = *S->GetConstantVectorData("gravity", "state");
-    gravity.set(3, gvec.Values());
+    mu = S->Get<double>("const_fluid_viscosity");
+    rho = S->Get<double>("const_fluid_density");
+    gravity = S->Get<AmanziGeometry::Point>("gravity");
 
     return 0;
   }
@@ -146,7 +145,7 @@ class DarcyProblem {
   }
 
   double calculatePressureCellError(double p0, AmanziGeometry::Point& pressure_gradient) {
-    Epetra_MultiVector& pressure = *S->GetFieldData("pressure", passwd)->ViewComponent("cell", false);
+    const auto& pressure = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
 
     double error_L2 = 0.0;
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -160,7 +159,7 @@ class DarcyProblem {
   }
 
   double calculatePressureFaceError(double p0, AmanziGeometry::Point& pressure_gradient) {
-    Epetra_MultiVector& lambda = *S->GetFieldData("pressure", passwd)->ViewComponent("face", false);
+    const auto& lambda = *S->Get<CompositeVector>("pressure").ViewComponent("face");
 
     double error_L2 = 0.0;
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
@@ -174,7 +173,7 @@ class DarcyProblem {
   }
 
   double calculateDarcyFluxError(AmanziGeometry::Point& velocity_exact) {
-    Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
+    auto& flux = *S->Get<CompositeVector>("darcy_flux").ViewComponent("face");
 
     double error_L2 = 0.0;
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
@@ -187,9 +186,9 @@ class DarcyProblem {
   }
 
   double calculateDarcyDivergenceError() {
-    Teuchos::RCP<CompositeVector> cv = S->GetFieldData("darcy_flux", passwd);
-    cv->ScatterMasterToGhosted("face");
-    Epetra_MultiVector& flux = *cv->ViewComponent("face", true);
+    auto& cv = S->GetW<CompositeVector>("darcy_flux", Tags::DEFAULT, passwd);
+    cv.ScatterMasterToGhosted("face");
+    Epetra_MultiVector& flux = *cv.ViewComponent("face", true);
 
     double error_L2 = 0.0;
     int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -235,7 +234,7 @@ TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
     DPK->Initialize(S.ptr());
     S->CheckAllFieldsInitialized();
 
-    DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", passwd), false);
+    DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), false);
     DPK->CommitStep(0.0, 1.0, S);
 
     // calculate errors
@@ -273,7 +272,7 @@ TEST_FIXTURE(DarcyProblem, DirichletNeumann) {
     DPK->Initialize(S.ptr());
     S->CheckAllFieldsInitialized();
 
-    DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", passwd), false);
+    DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), false);
     DPK->CommitStep(0.0, 1.0, S);
 
     // calculate errors
@@ -311,7 +310,7 @@ TEST_FIXTURE(DarcyProblem, StaticHeadDirichlet) {
     DPK->Initialize(S.ptr());
     S->CheckAllFieldsInitialized();
 
-    DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", passwd), false);
+    DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), false);
     DPK->CommitStep(0.0, 1.0, S);
 
     // calculate errors
@@ -352,7 +351,7 @@ TEST_FIXTURE(DarcyProblem, DDprisms) {
     DPK->Initialize(S.ptr());
     S->CheckAllFieldsInitialized();
 
-    DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", passwd), false);
+    DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), false);
     DPK->CommitStep(0.0, 1.0, S);
 
     // calculate errors
@@ -394,7 +393,7 @@ TEST_FIXTURE(DarcyProblem, DNtetrahedra) {
     DPK->Initialize(S.ptr());
     S->CheckAllFieldsInitialized();
 
-    DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", passwd), false);
+    DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), false);
     DPK->CommitStep(0.0, 1.0, S);
 
     // calculate errors
@@ -435,7 +434,7 @@ TEST_FIXTURE(DarcyProblem, DDmixed) {
     DPK->Initialize(S.ptr());
     S->CheckAllFieldsInitialized();
 
-    DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", passwd), false);
+    DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), false);
     DPK->CommitStep(0.0, 1.0, S);
 
     // calculate errors

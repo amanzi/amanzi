@@ -75,8 +75,8 @@ TEST(FLOW_2D_MULTISCALE) {
 
   // create the initial pressure function
   std::string passwd("flow");
-  Epetra_MultiVector& pf = *S->GetFieldData("pressure", passwd)->ViewComponent("cell");
-  Epetra_MultiVector& pm = *S->GetFieldData("pressure_matrix", passwd)->ViewComponent("cell");
+  auto& pf = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
+  auto& pm = *S->GetW<CompositeVector>("pressure_matrix", passwd).ViewComponent("cell");
 
   for (int c = 0; c < pf.MyLength(); c++) {
     pm[0][c] = pf[0][c];

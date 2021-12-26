@@ -30,7 +30,8 @@ namespace Amanzi {
 // ---------------------------------------------------------------------------
 template <>
 void EvaluatorSecondaryMonotype<double>::UpdateDerivative_(
-    State& S, const Key& wrt_key, const Tag& wrt_tag) {
+    State& S, const Key& wrt_key, const Tag& wrt_tag)
+{
   std::vector<double*> results(my_keys_.size());
   int j = 0;
   for (const auto& keytag : my_keys_) {
@@ -84,14 +85,23 @@ void EvaluatorSecondaryMonotype<double>::UpdateDerivative_(
 // ---------------------------------------------------------------------------
 template <>
 void EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::
-    UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) {
-
+    UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag)
+{
   std::vector<CompositeVector*> results(my_keys_.size());
   int j = 0;
   for (const auto& keytag : my_keys_) {
     results[j] = &S.GetDerivativeW<CompositeVector>(keytag.first, keytag.second, wrt_key, wrt_tag, keytag.first);
-    results[j]->PutScalarMasterAndGhosted(0.);
+    results[j]->PutScalarMasterAndGhosted(0.0);
     ++j;
+  }
+
+  // if provides key, then the result is 1
+  if (ProvidesKey(wrt_key, wrt_tag)) {
+    Errors::Message msg;
+    msg << "EvaluatorSecondary (" << my_keys_[0].first << "," << my_keys_[0].second.get() 
+        << ") provides key (" << wrt_key << "," << wrt_tag.get() 
+        << ") and so should not be differentiated with respect to this key.";
+    throw(msg);
   }
 
   // dF/dx = sum_(deps) partial F/ partial dep * ddep/dx + partial F/partial x
@@ -137,7 +147,8 @@ void EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::
 // Ensures that dependencies provide the vector structure we need for this.
 // ---------------------------------------------------------------------------
 template <>
-void EvaluatorSecondaryMonotype<CompositeVector,CompositeVectorSpace>::EnsureCompatibility(State& S) {
+void EvaluatorSecondaryMonotype<CompositeVector,CompositeVectorSpace>::EnsureCompatibility(State& S)
+{
   // claim ownership, declare type
   for (auto keytag : my_keys_) {
     const auto& fac = S.Require<CompositeVector,CompositeVectorSpace>(
@@ -152,6 +163,7 @@ void EvaluatorSecondaryMonotype<CompositeVector,CompositeVectorSpace>::EnsureCom
   bool has_derivs = false;
   for (auto keytag : my_keys_)
     has_derivs |= S.HasDerivativeSet(keytag.first, keytag.second);
+
   if (has_derivs) {
     for (const auto& keytag : my_keys_) {
       for (const auto& deriv : S.GetDerivativeSet(keytag.first, keytag.second)) {

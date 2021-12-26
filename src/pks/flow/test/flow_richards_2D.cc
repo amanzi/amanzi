@@ -71,7 +71,7 @@ TEST(FLOW_2D_RICHARDS) {
 
     // modify the default state for the problem at hand
     std::string passwd("flow"); 
-    Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell");
+    auto& K = *S->GetW<CompositeVector>("permeability", passwd).ViewComponent("cell");
   
     AmanziMesh::Entity_ID_List block;
     mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
@@ -87,18 +87,14 @@ TEST(FLOW_2D_RICHARDS) {
       K[0][c] = 0.5;
       K[1][c] = 0.5;
     }
-    S->GetField("permeability", "flow")->set_initialized();
+    S->GetRecordW("permeability", "flow").set_initialized();
 
     // -- fluid vicosity
-    S->GetFieldData("viscosity_liquid", "viscosity_liquid")->PutScalar(1.0);
-    S->GetField("viscosity_liquid", "viscosity_liquid")->set_initialized();
-
-    Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
-    gravity[1] = -9.8;
-    S->GetField("gravity", "state")->set_initialized();
+    S->GetW<CompositeVector>("viscosity_liquid", "viscosity_liquid").PutScalar(1.0);
+    S->GetRecordW("viscosity_liquid", "viscosity_liquid").set_initialized();
 
     // create the initial pressure function
-    Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell");
+    auto& p = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
 
     for (int c = 0; c < p.MyLength(); c++) {
       const Point& xc = mesh->cell_centroid(c);

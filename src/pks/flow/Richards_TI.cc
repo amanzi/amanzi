@@ -49,7 +49,7 @@ void Richards_PK::FunctionalResidual(
   darcy_flux_copy->ScatterMasterToGhosted("face");
 
   pressure_eval_->SetChanged();
-  auto alpha = S_->GetW<CompositeVector>(alpha_key_, Tags::DEFAULT, alpha_key_);
+  auto& alpha = S_->GetW<CompositeVector>(alpha_key_, Tags::DEFAULT, alpha_key_);
   S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
   
   if (!flow_on_manifold_) {
@@ -62,9 +62,9 @@ void Richards_PK::FunctionalResidual(
   // UpwindInflowBoundary_New(u_new->Data());
 
   if (!flow_on_manifold_) {
-    Key der_key = Keys::getDerivKey(alpha_key_, pressure_key_);
     S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
-    auto alpha_dP = S_->GetW<CompositeVector>(der_key, alpha_key_);
+    auto& alpha_dP = S_->GetDerivativeW<CompositeVector>(
+        alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
 
     *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha_dP, *alpha_upwind_dP_);
@@ -330,7 +330,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
 
   // diffusion coefficient and its derivative
   pressure_eval_->SetChanged();
-  auto alpha = S_->GetW<CompositeVector>(alpha_key_, alpha_key_);
+  auto& alpha = S_->GetW<CompositeVector>(alpha_key_, alpha_key_);
   S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
   
   if (!flow_on_manifold_) {
@@ -343,12 +343,12 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   // UpwindInflowBoundary_New(u->Data());
 
   if (!flow_on_manifold_) {
-    Key der_key = Keys::getDerivKey(alpha_key_, pressure_key_);
     S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
-    auto alpha_dP = S_->GetPtrW<CompositeVector>(der_key, alpha_key_);
+    auto& alpha_dP = S_->GetDerivativeW<CompositeVector>(
+        alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
 
-    *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP->ViewComponent("cell");
-    Operators::BoundaryFacesToFaces(bc_model, *alpha_dP, *alpha_upwind_dP_);
+    *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP.ViewComponent("cell");
+    Operators::BoundaryFacesToFaces(bc_model, alpha_dP, *alpha_upwind_dP_);
     upwind_->Compute(*darcy_flux_copy, *u->Data(), bc_model, *alpha_upwind_dP_);
   }
 
@@ -360,9 +360,9 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
 
   // add time derivative
   if (dtp > 0.0) {
-    std::string der_name = Keys::getDerivKey(water_content_key_, pressure_key_);
     S_->GetEvaluator(water_content_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
-    auto& dwc_dp = S_->GetW<CompositeVector>(der_name, water_content_key_);
+    auto& dwc_dp = S_->GetDerivativeW<CompositeVector>(
+        water_content_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, water_content_key_);
 
     op_acc_->AddAccumulationDelta(*u->Data(), dwc_dp, dwc_dp, dtp, "cell");
  

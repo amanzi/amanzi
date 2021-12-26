@@ -11,7 +11,7 @@
   Secondary variable field evaluator computes product of fields 
   or inverse of fields:
 
-    eval = f1 * f2 * ... * fn) / (g1 * g2 * ... * gm)
+    eval = (f1 * f2 * ... * fn) / (g1 * g2 * ... * gm)
 */
 
 #include <utility>
@@ -27,12 +27,16 @@ namespace Amanzi {
 EvaluatorMultiplicativeReciprocal::EvaluatorMultiplicativeReciprocal(Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
-  my_key_ = plist.get<std::string>("my key");
-  Key domain = Keys::getDomain(my_key_);
+  if (my_keys_.size() == 0) {
+    Key key = plist.get<std::string>("my key");
+    Tag tag = make_tag(plist.get<std::string>("tag"));
+    my_keys_.push_back(make_pair(key, tag));
+  }
+  Key domain = Keys::getDomain(my_keys_[0].first);
 
   if (plist_.isParameter("evaluator dependencies")) {
     Errors::Message msg;
-    msg << "EvaluatorMultiplicativeReciprocal: \"" << my_key_ 
+    msg << "EvaluatorMultiplicativeReciprocal: \"" << my_keys_[0].first 
         << "\" must have separate (optional) lists for multiplicative and reciprocal dependencies.";
     Exceptions::amanzi_throw(msg);
   }
@@ -58,7 +62,7 @@ EvaluatorMultiplicativeReciprocal::EvaluatorMultiplicativeReciprocal(Teuchos::Pa
 
   if (list0_.size() + list1_.size() == 0) {
     Errors::Message msg;
-    msg << "EvaluatorMultiplicativeReciprocal for: \"" << my_key_ << "\" has no dependencies.";
+    msg << "EvaluatorMultiplicativeReciprocal for: \"" << my_keys_[0].first << "\" has no dependencies.";
     Exceptions::amanzi_throw(msg);
   }
 

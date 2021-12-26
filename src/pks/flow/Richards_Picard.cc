@@ -78,7 +78,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     darcy_flux_copy->ScatterMasterToGhosted("face");
 
     pressure_eval_->SetChanged();
-    auto alpha = S_->GetW<CompositeVector>(alpha_key_, alpha_key_);
+    auto& alpha = S_->GetW<CompositeVector>(alpha_key_, alpha_key_);
     S_->GetEvaluator(alpha_key_).Update(*S_, "flow");
   
     *alpha_upwind_->ViewComponent("cell") = *alpha.ViewComponent("cell");
@@ -86,9 +86,9 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     upwind_->Compute(*darcy_flux_copy, *solution, bc_model, *alpha_upwind_);
 
     // -- derivative 
-    Key der_key = Keys::getDerivKey(alpha_key_, pressure_key_);
     S_->GetEvaluator(alpha_key_).UpdateDerivative(*S_, passwd_, pressure_key_, Tags::DEFAULT);
-    auto alpha_dP = S_->GetW<CompositeVector>(der_key, alpha_key_);
+    auto& alpha_dP = S_->GetDerivativeW<CompositeVector>(
+        alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
 
     *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP.ViewComponent("cell");
     Operators::BoundaryFacesToFaces(bc_model, alpha_dP, *alpha_upwind_dP_);

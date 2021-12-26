@@ -402,7 +402,7 @@ class State {
   // managed in State, where each node is an Evaluator.
   //
   // -- allows PKs to add to this list to custom evaluators
-  Teuchos::ParameterList& FEList() { return state_plist_.sublist("field evaluators"); }
+  Teuchos::ParameterList& FEList() { return state_plist_.sublist("evaluators"); }
   Teuchos::ParameterList& GetEvaluatorList(const Key& key);
   
   // -- allows PKs to add to this list to initial conditions

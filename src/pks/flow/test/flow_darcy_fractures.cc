@@ -85,17 +85,17 @@ TEST(DARCY_TWO_FRACTURES) {
 
   // modify the default state
   // -- storativity
-  S->GetFieldData("specific_storage", "flow")->PutScalar(2.0);
-  S->GetField("specific_storage", "flow")->set_initialized();
+  S->GetW<CompositeVector>("specific_storage", Tags::DEFAULT, "flow").PutScalar(2.0);
+  S->GetRecordW("specific_storage", Tags::DEFAULT, "flow").set_initialized();
 
   // create the initial pressure function
-  Epetra_MultiVector& p = *S->GetFieldData("pressure", "flow")->ViewComponent("cell", false);
+  auto& p = *S->GetW<CompositeVector>("pressure", Tags::DEFAULT, "flow").ViewComponent("cell");
 
   for (int c = 0; c < p.MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);
     p[0][c] = xc[0] * (xc[1] + 2.0);
   }
-  S->GetField("pressure", "flow")->set_initialized();
+  S->GetRecordW("pressure", "flow").set_initialized();
 
   // initialize the Darcy process kernel
   DPK->Initialize(S.ptr());

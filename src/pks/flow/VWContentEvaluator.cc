@@ -41,7 +41,9 @@ VWContentEvaluator::VWContentEvaluator(Teuchos::ParameterList& plist)
 ****************************************************************** */
 void VWContentEvaluator::Init_()
 {
-  my_keys_.push_back(std::make_pair(plist_.get<std::string>("water content key"), Tags::DEFAULT));
+  if (my_keys_.size() == 0) {
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("water content key"), Tags::DEFAULT));
+  }
   std::string domain = Keys::getDomain(my_keys_[0].first);
 
   saturation_key_ = plist_.get<std::string>("saturation key");

@@ -49,7 +49,9 @@ Teuchos::RCP<Evaluator> WRMEvaluator::Clone() const {
 * Initialization.
 ****************************************************************** */
 void WRMEvaluator::InitializeFromPlist_() {
-  my_keys_.push_back(std::make_pair(plist_.get<std::string>("saturation key", "saturation_liquid"), Tags::DEFAULT));
+  if (my_keys_.size() == 0) {
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("saturation key", "saturation_liquid"), Tags::DEFAULT));
+  }
 
   // my dependency is pressure.
   pressure_key_ = plist_.get<std::string>("pressure key", "pressure");

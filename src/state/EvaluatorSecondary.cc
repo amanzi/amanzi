@@ -259,21 +259,20 @@ bool EvaluatorSecondary::IsDependency(const State& S, const Key& key, const Tag&
 
 
 bool EvaluatorSecondary::ProvidesKey(const Key& key, const Tag& tag) const {
-  for (int i = 0; i < my_keys_.size(); ++i) {
-    return std::find(my_keys_.begin(), my_keys_.end(),
-                     std::make_pair(key, tag)) != my_keys_.end();
-  }
+  std::pair<Key, Tag> my_key = std::make_pair(key, tag);
+  return std::find(my_keys_.begin(), my_keys_.end(), my_key) != my_keys_.end();
 }
 
 
 std::string EvaluatorSecondary::WriteToString() const {
   std::stringstream result;
-  for (const auto &key : my_keys_) {
-    result << key.first << ":" << key.second.get() << ",";
+  result << my_keys_.size() << " ";
+  for (const auto& key : my_keys_) {
+    result << key.first << ":" << key.second.get();
   }
-  result << std::endl << "  Type: secondary" << std::endl;
-  for (const auto &dep : dependencies_) {
-    result << "  Dep: " << dep.first << "," << dep.second.get() << std::endl;
+  result << std::endl << "  type: secondary" << std::endl;
+  for (const auto& dep : dependencies_) {
+    result << "  dep: " << dep.first << ", tag=\"" << dep.second.get() << "\"" << std::endl;
   }
   result << std::endl;
   return result.str();
