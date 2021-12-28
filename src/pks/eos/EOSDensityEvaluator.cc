@@ -40,7 +40,8 @@ EOSDensityEvaluator::EOSDensityEvaluator(Teuchos::ParameterList& plist)
   }
 
   // my keys
-  Key key, tag("");
+  Key key;
+  Tag tag = make_tag("");
   if (mode_ == EOS_MODE_MOLAR || mode_ == EOS_MODE_BOTH) {
     key = plist_.get<std::string>("molar density key");
     my_keys_.push_back(std::make_pair(key, tag));
@@ -155,7 +156,7 @@ void EOSDensityEvaluator::Evaluate_(
 * TBW.
 ****************************************************************** */
 void EOSDensityEvaluator::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Key& wrt_tag,
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results)
 {
   double p_atm = S.Get<double>("atmospheric_pressure");

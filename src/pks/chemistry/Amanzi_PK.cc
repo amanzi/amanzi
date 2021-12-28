@@ -146,15 +146,15 @@ void Amanzi_PK::AllocateAdditionalChemistryStorage_()
 {
   int n_secondary_comps = chem_->secondary_species().size();
   if (n_secondary_comps > 0) {
-    Teuchos::RCP<CompositeVectorSpace> fac = S_->RequireField(secondary_activity_coeff_key_, passwd_);
-    fac->SetMesh(mesh_)->SetGhosted(false)
+    auto& fac = S_->Require<CompositeVector, CompositeVectorSpace>(
+        secondary_activity_coeff_key_, Tags::DEFAULT, passwd_);
+    fac.SetMesh(mesh_)->SetGhosted(false)
        ->SetComponent("cell", AmanziMesh::CELL, n_secondary_comps);
 
-    Teuchos::RCP<CompositeVector> sac = Teuchos::rcp(new CompositeVector(*fac));
-    S_->GetField(secondary_activity_coeff_key_, passwd_)->SetData(sac);
-    S_->GetField(secondary_activity_coeff_key_, passwd_)->CreateData();
-    S_->GetFieldData(secondary_activity_coeff_key_, passwd_)->PutScalar(1.0);
-    S_->GetField(secondary_activity_coeff_key_, passwd_)->set_initialized();
+    CompositeVector sac(fac);
+    sac.PutScalar(1.0);
+    S_->Set<CompositeVector>(secondary_activity_coeff_key_, Tags::DEFAULT, passwd_, sac);
+    S_->GetRecordW(secondary_activity_coeff_key_, Tags::DEFAULT, passwd_).set_initialized();
   }
 }
 

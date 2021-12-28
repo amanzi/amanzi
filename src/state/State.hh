@@ -236,6 +236,17 @@ class State {
     Require<T>(fieldname, Tags::DEFAULT, "");
   }
 
+  template <typename T, typename F>
+  F& Require(const Key& fieldname, const Tag& tag, const Key& owner,
+             const std::vector<std::string>& subfield_names) {
+    if (!Keys::hasKey(data_, fieldname)) {
+      data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
+    }
+    data_.at(fieldname)->RequireRecord(tag, owner);
+    data_.at(fieldname)->GetRecord(tag).set_subfieldnames(subfield_names);
+    return data_.at(fieldname)->SetType<T, F>();
+  }
+
   // Ensure a record exists.
   bool HasData(const Key& key, const Tag& tag = Tags::DEFAULT) const {
     if (Keys::hasKey(data_, key)) return data_.at(key)->HasRecord(tag);

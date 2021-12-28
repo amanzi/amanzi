@@ -31,11 +31,11 @@ MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& pli
 
   // process the list for my provided field.
   if (my_keys_.size() == 0)
-    my_keys_.push_back(std::make_pair(plist_.get<std::string>("viscosity key", "viscosity_liquid"), ""));
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("viscosity key", "viscosity_liquid"), Tags::DEFAULT));
 
   // set up dependencies
   std::string domain = Keys::getDomain(my_keys_[0].first);
-  Key tag("");
+  Tag tag = make_tag("");
   temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
   dependencies_.push_back(std::make_pair(temp_key_, tag));
 }
@@ -73,7 +73,7 @@ void MolarFractionGasEvaluator::Evaluate_(
 
 
 void MolarFractionGasEvaluator::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Key& wrt_tag,
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results)
 {
   AMANZI_ASSERT(wrt_key == temp_key_);

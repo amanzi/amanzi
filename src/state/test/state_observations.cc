@@ -177,9 +177,7 @@ TEST_FIXTURE(obs_test, ObservePoint) {
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
-std::cout << "HERE" << std::endl;
   obs.Update(S.ptr(), observation, 0);
-std::cout << "HERE" << std::endl;
   CHECK_CLOSE(2.0, observation[0], 1.e-10);
 }
 

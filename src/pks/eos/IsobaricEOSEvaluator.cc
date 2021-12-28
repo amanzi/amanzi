@@ -36,7 +36,7 @@ IsobaricEOSEvaluator::IsobaricEOSEvaluator(Teuchos::ParameterList& plist) :
   }
 
   // my keys and tags
-  Key tag("");
+  Tag tag = make_tag("");
   if (mode_ == EOS_MODE_MOLAR || mode_ == EOS_MODE_BOTH) {
     a_key_ = plist_.get<std::string>("molar density key");
     my_keys_.push_back(std::make_pair(a_key_, tag));
@@ -118,7 +118,7 @@ void IsobaricEOSEvaluator::Evaluate_(
 
 
 void IsobaricEOSEvaluator::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Key& wrt_tag,
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results) 
 {
   auto temp = S.GetPtr<CompositeVector>(temp_key_);

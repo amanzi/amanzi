@@ -24,11 +24,11 @@ EOSViscosityEvaluator::EOSViscosityEvaluator(Teuchos::ParameterList& plist)
 {
   // my keys
   if (my_keys_.size() == 0)
-    my_keys_.push_back(std::make_pair(plist_.get<std::string>("viscosity key", "viscosity_liquid"), ""));
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("viscosity key", "viscosity_liquid"), Tags::DEFAULT));
 
   // set up my dependencies
   Key domain = Keys::getDomain(my_keys_[0].first);
-  Key tag("");
+  Tag tag = make_tag("");
 
   temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
   dependencies_.push_back(std::make_pair(temp_key_, tag));
@@ -77,7 +77,7 @@ void EOSViscosityEvaluator::Evaluate_(
 
 
 void EOSViscosityEvaluator::EvaluatePartialDerivative_(
-    const State& S, const Key& wrt_key, const Key& wrt_tag,
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results)
 {
   auto temp = S.GetPtr<CompositeVector>(temp_key_);

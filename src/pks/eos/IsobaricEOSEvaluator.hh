@@ -34,7 +34,7 @@ class IsobaricEOSEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, 
 
   virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Key& wrt_tag,
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
   Teuchos::RCP<EOS_Density> get_EOS() { return eos_; }
