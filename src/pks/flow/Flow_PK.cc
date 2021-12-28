@@ -72,6 +72,7 @@ void Flow_PK::Setup(const Teuchos::Ptr<State>& S)
   // -- keys
   darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
   permeability_key_ = Keys::getKey(domain_, "permeability"); 
+  aperture_key_ = Keys::getKey(domain_, "aperture"); 
 
   // -- constant fields
   S->Require<double>("const_fluid_density", Tags::DEFAULT, passwd_);
@@ -87,17 +88,25 @@ void Flow_PK::Setup(const Teuchos::Ptr<State>& S)
       auto fpm_list = Teuchos::sublist(fp_list_, "fracture permeability models", true);
       Teuchos::RCP<FracturePermModelPartition> fpm = CreateFracturePermModelPartition(mesh_, fpm_list);
 
-      Teuchos::ParameterList elist;
+      Teuchos::ParameterList elist(permeability_key_);
       elist.set<std::string>("permeability key", permeability_key_)
-           .set<std::string>("aperture key", Keys::getKey(domain_, "aperture"))
+           .set<std::string>("aperture key", aperture_key_)
            .set<std::string>("tag", "");
       Teuchos::RCP<FracturePermModelEvaluator> eval = Teuchos::rcp(new FracturePermModelEvaluator(elist, fpm));
       S->SetEvaluator(permeability_key_, eval);
     }
+
+    if (!S->HasData(aperture_key_)) {
+      S->Require<CompositeVector, CompositeVectorSpace>(aperture_key_, Tags::DEFAULT, aperture_key_)
+        .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+
+      S->RequireEvaluator(aperture_key_);
+    }
+
   // -- matrix absolute permeability
   } else {
     if (!S->HasData(permeability_key_)) {
-      S->Require<CompositeVector, CompositeVectorSpace>(permeability_key_, Tags::DEFAULT, passwd_)
+      S->Require<CompositeVector, CompositeVectorSpace>(permeability_key_, Tags::DEFAULT, permeability_key_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, dim);
     }
   }

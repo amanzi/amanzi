@@ -82,7 +82,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   // modify the default state for the problem at hand
   // -- permeability
   Key passwd("flow"); 
-  auto& K = *S->GetW<CompositeVector>("permeability", passwd).ViewComponent("cell");
+  auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
 
   AmanziMesh::Entity_ID_List block;
 
@@ -99,7 +99,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
     K[0][c] = 0.5;
     K[1][c] = 0.5;
   } 
-  S->GetRecordW("permeability", "flow").set_initialized();
+  S->GetRecordW("permeability", "permeability").set_initialized();
 
   // -- fluid density and viscosity
   S->GetW<double>("const_fluid_density", passwd) = 1.0;
@@ -191,7 +191,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
 
   /* modify the default state for the problem at hand */
   std::string passwd("flow"); 
-  auto& K = *S->GetW<CompositeVector>("permeability", passwd).ViewComponent("cell");
+  auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
   
   AmanziMesh::Entity_ID_List block;
   mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);

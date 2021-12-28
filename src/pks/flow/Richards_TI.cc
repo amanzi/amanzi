@@ -201,9 +201,9 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
   S_->GetEvaluator("molar_fraction_gas").Update(*S_, passwd_);
   const auto& x_g = *S_->Get<CompositeVector>("molar_fraction_gas").ViewComponent("cell");
 
-  std::string der_name = Keys::getDerivKey("molar_fraction_gas", temperature_key);
   S_->GetEvaluator("molar_fraction_gas").UpdateDerivative(*S_, passwd_, temperature_key, Tags::DEFAULT);
-  const auto& dxgdT = *S_->Get<CompositeVector>(der_name).ViewComponent("cell");
+  const auto& dxgdT = *S_->GetDerivative<CompositeVector>(
+      "molar_fraction_gas", Tags::DEFAULT, temperature_key, Tags::DEFAULT).ViewComponent("cell");
 
   const auto& temp = *S_->Get<CompositeVector>(temperature_key).ViewComponent("cell");
   const auto& pres = *S_->Get<CompositeVector>(pressure_key_).ViewComponent("cell");

@@ -51,8 +51,11 @@ Teuchos::RCP<Evaluator> PorosityModelEvaluator::Clone() const {
 /* ******************************************************************
 * Initialization.
 ****************************************************************** */
-void PorosityModelEvaluator::InitializeFromPlist_() {
-  my_keys_.push_back(std::make_pair(plist_.get<std::string>("porosity key"), Tags::DEFAULT));
+void PorosityModelEvaluator::InitializeFromPlist_()
+{
+  if (my_keys_.size() == 0) {
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("porosity key"), Tags::DEFAULT));
+  }
 
   // my dependency is pressure.
   pressure_key_ = plist_.get<std::string>("pressure key");

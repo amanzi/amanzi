@@ -183,13 +183,10 @@ bool Initialize<CompositeVector>(
   // First try all initialization method which set the entire data structure.
   // ------ Try to set values from a restart file -----
   if (plist.isParameter("restart file")) {
-    AMANZI_ASSERT(false);
-    /*
     auto filename = plist.get<std::string>("restart file");
     Checkpoint chkp(filename, t.Comm());
     ReadCheckpoint(chkp, fieldname, t);
     chkp.Finalize();
-    */
     return true;
   }
 

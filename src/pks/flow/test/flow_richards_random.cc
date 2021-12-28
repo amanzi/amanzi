@@ -101,9 +101,9 @@ void RunTestConvergence(std::string input_xml) {
     AdvanceToSteadyState(S, *RPK, ti_specs, soln);
     RPK->CommitStep(0.0, 1.0, S);
 
-    S->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
-    const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
-    const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
+    S->Get<CompositeVector>("darcy_flux").ScatterMasterToGhosted("face");
+    const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
+    const auto& flux = *S->Get<CompositeVector>("darcy_flux").ViewComponent("face", true);
 
     double pressure_err, flux_err, div_err;  // error checks
     pressure_err = CalculatePressureCellError(mesh, p);

@@ -204,7 +204,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
     S->Require<CV_t, CVS_t>(darcy_velocity_key_, Tags::DEFAULT, darcy_velocity_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, dim);
 
-    Teuchos::ParameterList elist;
+    Teuchos::ParameterList elist(darcy_velocity_key_);
     elist.set<std::string>("domain name", domain_)
          .set("names", Teuchos::Array<std::string>({ darcy_velocity_key_ }))
          .set("tags", Teuchos::Array<std::string>({ "" }))

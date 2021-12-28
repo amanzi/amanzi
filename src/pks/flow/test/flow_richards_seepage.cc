@@ -87,11 +87,11 @@ void Flow2D_SeepageTest(std::string filename, bool deform)
 
   // modify the default state for the problem at hand
   std::string passwd("flow"); 
-  double rho = *S->GetScalarData("const_fluid_density");
-  double g = (*S->GetConstantVectorData("gravity", "state"))[1];
+  double rho = S->Get<double>("const_fluid_density");
+  double g = (S->Get<AmanziGeometry::Point>("gravity"))[1];
 
   // create the initial pressure function
-  Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell");
+  auto& p = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
 
   double patm(101325.0), z0(30.0);
   for (int c = 0; c < p.MyLength(); c++) {
@@ -99,7 +99,7 @@ void Flow2D_SeepageTest(std::string filename, bool deform)
     p[0][c] = patm + rho * g * (xc[1] - z0);
   }
 
-  Epetra_MultiVector& lambda = *S->GetFieldData("pressure", passwd)->ViewComponent("face");
+  auto& lambda = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("face");
   RPK->DeriveFaceValuesFromCellValues(p, lambda); 
 
   // create Richards process kernel
@@ -118,7 +118,7 @@ void Flow2D_SeepageTest(std::string filename, bool deform)
   printf("seepage face total = %12.4f\n", RPK->seepage_mass());
 
   // output 
-  const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
+  const auto& ws = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
 
   Teuchos::ParameterList iolist;
   iolist.get<std::string>("file name base", "plot");

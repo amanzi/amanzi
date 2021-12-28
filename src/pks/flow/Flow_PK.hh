@@ -165,6 +165,7 @@ class Flow_PK : public PK_PhysicalBDF {
   Key darcy_velocity_key_;
   Key water_content_key_, prev_water_content_key_;
   Key viscosity_liquid_key_, mol_density_liquid_key_;
+  Key aperture_key_;
 
   // io
   Utils::Units units_;

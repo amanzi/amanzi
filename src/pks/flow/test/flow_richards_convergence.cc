@@ -92,8 +92,8 @@ void RunTestConvergence(std::string input_xml) {
     RPK->CommitStep(0.0, 1.0, S);  // dummy times
 
     double pressure_err, flux_err, div_err;  // error checks
-    const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
-    const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
+    const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
+    const auto& flux = *S->GetW<CompositeVector>("darcy_flux", "flow").ViewComponent("face", true);
 
     pressure_err = CalculatePressureCellError(mesh, p);
     flux_err = CalculateDarcyFluxError(mesh, flux);

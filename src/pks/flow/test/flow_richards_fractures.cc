@@ -93,7 +93,7 @@ TEST(RICHARDS_TWO_FRACTURES) {
     t_old = t_new;
   }
 
-  auto& p = *S->GetFieldData("pressure", "flow")->ViewComponent("cell");
+  const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
   for (int c = 0; c < p.MyLength(); c++) {
     CHECK(p[0][c] > -1.0 && p[0][c] < 2.0);
   }

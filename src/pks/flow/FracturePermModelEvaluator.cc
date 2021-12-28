@@ -30,7 +30,10 @@ FracturePermModelEvaluator::FracturePermModelEvaluator(
     : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
       fpm_(fpm)
 {
-  my_keys_.push_back(std::make_pair(plist.get<std::string>("permeability key"), Tags::DEFAULT));
+  if (my_keys_.size() == 0) {
+    my_keys_.push_back(std::make_pair(plist.get<std::string>("permeability key"), Tags::DEFAULT));
+  }
+
   aperture_key_ = plist.get<std::string>("aperture key");
   dependencies_.push_back(std::make_pair(aperture_key_, Tags::DEFAULT));
 }

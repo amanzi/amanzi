@@ -185,14 +185,13 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     S->Require<CV_t, CVS_t>(water_content_key_, Tags::DEFAULT, water_content_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
-    Teuchos::ParameterList elist;
+    Teuchos::ParameterList elist(water_content_key_);
     elist.set<std::string>("water content key", water_content_key_)
          .set<std::string>("tag", "")
          .set<std::string>("pressure key", pressure_key_)
          .set<std::string>("saturation key", saturation_liquid_key_)
          .set<std::string>("porosity key", porosity_key_)
          .set<bool>("water vapor", vapor_diffusion_);
-    elist.setName(water_content_key_);
 
     S->RequireDerivative<CV_t, CVS_t>(water_content_key_, Tags::DEFAULT,
                                       pressure_key_, Tags::DEFAULT, water_content_key_);
@@ -214,7 +213,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
       S->Require<CV_t, CVS_t>("pressure_matrix", Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(false)->SetComponent("cell", AmanziMesh::CELL, 1);
 
-      Teuchos::ParameterList elist;
+      Teuchos::ParameterList elist("pressure_matrix");
       elist.set<std::string>("evaluator name", "pressure_matrix");
       pressure_matrix_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
       S->SetEvaluator("pressure_matrix", Tags::DEFAULT, pressure_matrix_eval_);
@@ -236,10 +235,11 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     S->Require<CV_t, CVS_t>("porosity_matrix", Tags::DEFAULT, "porosity_matrix")
       .SetMesh(mesh_)->SetGhosted(false)->SetComponent("cell", AmanziMesh::CELL, 1);
 
-    Teuchos::ParameterList elist;
+    Teuchos::ParameterList elist("porosity_matrix");
     elist.set<std::string>("porosity key", "porosity_matrix")
          .set<std::string>("pressure key", "pressure_matrix")
          .set<std::string>("tag", "");
+
     Teuchos::RCP<PorosityModelPartition> pom = CreatePorosityModelPartition(mesh_, msp_list);
     Teuchos::RCP<PorosityModelEvaluator> eval = Teuchos::rcp(new PorosityModelEvaluator(elist, pom));
     S->SetEvaluator("porosity_matrix", eval);
@@ -276,10 +276,14 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
           pom_list = Teuchos::sublist(fp_list_, "porosity models", true);
       Teuchos::RCP<PorosityModelPartition> pom = CreatePorosityModelPartition(mesh_, pom_list);
 
-      Teuchos::ParameterList elist;
+      Teuchos::ParameterList elist(porosity_key_);
       elist.set<std::string>("porosity key", porosity_key_)
-           .set<std::string>("pressure key", pressure_key_);
+           .set<std::string>("pressure key", pressure_key_)
+           .set<std::string>("tag", "");
       // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+
+      S->RequireDerivative<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, porosity_key_);
+
       Teuchos::RCP<PorosityModelEvaluator> eval = Teuchos::rcp(new PorosityModelEvaluator(elist, pom));
       S->SetEvaluator(porosity_key_, eval);
     } else {
@@ -343,11 +347,10 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     S->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
-    Teuchos::ParameterList elist;
+    Teuchos::ParameterList elist(saturation_liquid_key_);
     elist.set<std::string>("saturation key", saturation_liquid_key_)
          .set<std::string>("pressure key", pressure_key_)
          .set<std::string>("tag", "");
-    elist.setName(saturation_liquid_key_);
 
     // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     Teuchos::RCP<WRMEvaluator> eval = Teuchos::rcp(new WRMEvaluator(elist, wrm_));
@@ -366,10 +369,9 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
       .SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
 
-    Teuchos::ParameterList elist;
+    Teuchos::ParameterList elist(relperm_key_);
     elist.set<std::string>("relative permeability key", relperm_key_)
          .set<std::string>("tag", "");
-    elist.setName(relperm_key_);
 
     S->RequireDerivative<CV_t, CVS_t>(relperm_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, relperm_key_);
 
@@ -392,7 +394,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
       kkey = relperm_key_;
     }
 
-    Teuchos::ParameterList elist;
+    Teuchos::ParameterList elist(alpha_key_);
     Teuchos::Array<std::string> list0, list1;
     list0.push_back(Keys::getVarName(kkey));
     list0.push_back(Keys::getVarName(mol_density_liquid_key_));
@@ -401,7 +403,6 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
          .set<Teuchos::Array<std::string> >("multiplicative dependencies", list0)
          .set<Teuchos::Array<std::string> >("reciprocal dependencies", list1)
          .set<std::string>("tag", "");
-    elist.setName(alpha_key_);
 
     S->RequireDerivative<CV_t, CVS_t>(alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
 
@@ -421,12 +422,12 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     S->Require<CV_t, CVS_t>(darcy_velocity_key_, Tags::DEFAULT, darcy_velocity_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, dim);
 
-    Teuchos::ParameterList elist;
+    Teuchos::ParameterList elist(darcy_velocity_key_);
     elist.set<std::string>("domain name", domain_);
     elist.set<std::string>("darcy velocity key", darcy_velocity_key_)
          .set<std::string>("darcy flux key", darcy_flux_key_)
          .set<std::string>("tag", "");
-    elist.setName(darcy_velocity_key_);
+
     Teuchos::RCP<DarcyVelocityEvaluator> eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
     S->SetEvaluator(darcy_velocity_key_, eval);
   }
@@ -437,7 +438,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   int noff = abs_perm.get<int>("off-diagonal components", 0);
  
   if (noff > 0) {
-    CompositeVectorSpace& cvs = S->Require<CV_t, CVS_t>(permeability_key_, Tags::DEFAULT, passwd_);
+    CompositeVectorSpace& cvs = S->Require<CV_t, CVS_t>(permeability_key_, Tags::DEFAULT, permeability_key_);
     cvs.SetOwned(false);
     cvs.AddComponent("offd", AmanziMesh::CELL, noff)->SetOwned(true);
   }

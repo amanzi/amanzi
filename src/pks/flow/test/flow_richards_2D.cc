@@ -71,7 +71,7 @@ TEST(FLOW_2D_RICHARDS) {
 
     // modify the default state for the problem at hand
     std::string passwd("flow"); 
-    auto& K = *S->GetW<CompositeVector>("permeability", passwd).ViewComponent("cell");
+    auto& K = *S->GetW<CompositeVector>("permeability", "permeability").ViewComponent("cell");
   
     AmanziMesh::Entity_ID_List block;
     mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
@@ -87,7 +87,7 @@ TEST(FLOW_2D_RICHARDS) {
       K[0][c] = 0.5;
       K[1][c] = 0.5;
     }
-    S->GetRecordW("permeability", "flow").set_initialized();
+    S->GetRecordW("permeability", "permeability").set_initialized();
 
     // -- fluid vicosity
     S->GetW<CompositeVector>("viscosity_liquid", "viscosity_liquid").PutScalar(1.0);
