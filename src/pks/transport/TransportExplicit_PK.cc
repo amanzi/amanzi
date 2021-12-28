@@ -25,7 +25,6 @@
 #include "BCs.hh"
 #include "errors.hh"
 #include "Explicit_TI_RK.hh"
-#include "FieldEvaluator.hh"
 #include "Mesh.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_AdvectionUpwind.hh"
@@ -87,7 +86,7 @@ void TransportExplicit_PK::AdvanceSecondOrderUpwindRK2(double dt_cycle)
   Epetra_Vector f_component(cmap_wghost);
 
   // distribute old vector of concentrations
-  S_->GetFieldData(tcc_key_)->ScatterMasterToGhosted("cell");
+  S_->Get<CompositeVector>(tcc_key_).ScatterMasterToGhosted("cell");
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 
@@ -145,7 +144,7 @@ void TransportExplicit_PK::AdvanceSecondOrderUpwindRKn(double dt_cycle)
 {
   dt_ = dt_cycle;  // overwrite the maximum stable transport step
 
-  S_->GetFieldData(tcc_key_)->ScatterMasterToGhosted("cell");
+  S_->Get<CompositeVector>(tcc_key_).ScatterMasterToGhosted("cell");
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 
@@ -187,7 +186,7 @@ bool TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   double dt_MPC = t_new - t_old;
 
   // We use original tcc and make a copy of it later if needed.
-  tcc = S_->GetFieldData(tcc_key_, passwd_);
+  tcc = S_->GetPtrW<CompositeVector>(tcc_key_, passwd_);
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
 
   // calculate stable time step
@@ -353,7 +352,7 @@ bool TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
     // populate the dispersion operator (if any)
     if (flag_dispersion_) {
-      auto darcy_flux = *S_->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
+      auto darcy_flux = *S_->Get<CompositeVector>(darcy_flux_key_).ViewComponent("face", true);
       CalculateDispersionTensor_(darcy_flux, *transport_phi, *ws);
     }
 
@@ -544,8 +543,8 @@ void TransportExplicit_PK::AdvanceDonorUpwind(double dt_cycle)
       tcc_next[i][c] = tcc_prev[i][c] * vol_phi_ws;
   }
 
-  auto darcy_flux = *S_->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
-  const auto& flux_map = S_->GetFieldData(darcy_flux_key_)->Map().Map("face", true);
+  auto darcy_flux = *S_->Get<CompositeVector>(darcy_flux_key_).ViewComponent("face", true);
+  const auto& flux_map = S_->Get<CompositeVector>(darcy_flux_key_).Map().Map("face", true);
  
   // advance all components at once
   for (int f = 0; f < nfaces_wghost; f++) {  // loop over master and slave faces

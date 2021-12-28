@@ -39,11 +39,11 @@ TEST(CONSTRUCTOR) {
   Epetra_SerialComm* comm = new Epetra_SerialComm();
 #endif
 
-  /* read parameter list */
+  // read parameter list
   std::string xmlFileName = "test/transport_mics.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
  
-  /* create an MSTK mesh framework */
+  // create an MSTK mesh framework
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
@@ -56,10 +56,10 @@ TEST(CONSTRUCTOR) {
   meshfactory.set_preference(pref);
   RCP<const Mesh> mesh = meshfactory.create(0.0,0.0,0.0, 1.0,1.0,1.0, 1, 2, 1); 
  
-  //MeshAudit audit(mesh);
-  //audit.Verify();
+  // MeshAudit audit(mesh);
+  // audit.Verify();
 
-  /* create a simple state and populate it */
+  // create a simple state and populate it
   std::vector<std::string> component_names;
   component_names.push_back("Component 0");
   component_names.push_back("Component 1");
@@ -67,20 +67,16 @@ TEST(CONSTRUCTOR) {
   Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
-  S->set_time(0.0);
-  S->set_intermediate_time(0.0);
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
   TPK.Setup(S.ptr());
   TPK.CreateDefaultState(mesh, 2);
 
-  /* initialize a transport process kernel from a transport state */
+  // initialize a transport process kernel from a transport state
   TPK.Initialize(S.ptr());
 
   double cfl = TPK.cfl();
   CHECK(0 < cfl && cfl <= 1.0);
- 
-  
 }
 
 

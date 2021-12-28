@@ -23,7 +23,6 @@
 // Amanzi
 #include "BCs.hh"
 #include "errors.hh"
-#include "FieldEvaluator.hh"
 #include "Mesh.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_Diffusion.hh"
@@ -43,6 +42,9 @@
 
 namespace Amanzi {
 namespace Transport {
+
+using CV_t = CompositeVector;
+using CVS_t = CompositeVectorSpace;
 
 /* ******************************************************************
 * New constructor compatible with new MPC framework.
@@ -186,29 +188,29 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
   prev_water_content_key_ = Keys::getKey(domain_, "prev_water_content"); 
 
   // require state fields when Flow PK is off
-  S_->RequireScalar("const_fluid_density", passwd_);
+  S_->Require<double>("const_fluid_density", Tags::DEFAULT, passwd_);
 
-  if (!S->HasField(permeability_key_) && abs_perm) {
-    S->RequireField(permeability_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, dim);
+  if (!S->HasData(permeability_key_) && abs_perm) {
+    S->Require<CV_t, CVS_t>(permeability_key_, Tags::DEFAULT, permeability_key_).
+      SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, dim);
   }
-  if (!S->HasField(darcy_flux_key_)) {
+  if (!S->HasData(darcy_flux_key_)) {
     if (transport_on_manifold) {
       auto cvs = Operators::CreateNonManifoldCVS(mesh_);
-      *S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true) = *cvs;
+      *S->Require<CV_t, CVS_t>(darcy_flux_key_, Tags::DEFAULT, passwd_).SetMesh(mesh_)->SetGhosted(true) = *cvs;
     } else {
-      S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("face", AmanziMesh::FACE, 1);
+      S->Require<CV_t, CVS_t>(darcy_flux_key_, Tags::DEFAULT, passwd_)
+        .SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::FACE, 1);
     }
   }
-  if (!S->HasField(saturation_liquid_key_)) {
-    S->RequireField(saturation_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  if (!S->HasData(saturation_liquid_key_)) {
+    S->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
-  if (!S->HasField(prev_saturation_liquid_key_)) {
-    S->RequireField(prev_saturation_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->GetField(prev_saturation_liquid_key_, passwd_)->set_io_vis(false);
+  if (!S->HasData(prev_saturation_liquid_key_)) {
+    S->Require<CV_t, CVS_t>(prev_saturation_liquid_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->GetRecordW(prev_saturation_liquid_key_, passwd_).set_io_vis(false);
   }
 
   // require state fields when Transport PK is on
@@ -219,27 +221,23 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   int ncomponents = component_names_.size();
-  if (!S->HasField(tcc_key_)) {
-    std::vector<std::vector<std::string> > subfield_names(1);
-    subfield_names[0] = component_names_;
-
-    S->RequireField(tcc_key_, passwd_, subfield_names)
-      ->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
+  if (!S->HasData(tcc_key_)) {
+    S->Require<CV_t, CVS_t>(tcc_key_, Tags::DEFAULT, passwd_, component_names_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, ncomponents);
   }
 
   // porosity evaluators
-  if (!S->HasField(porosity_key_)) {
-    S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator(porosity_key_);
+  if (!S->HasData(porosity_key_)) {
+    S->Require<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, porosity_key_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireEvaluator(porosity_key_);
   }
 
   if (use_transport_porosity_) {
-    if (!S->HasField(transport_porosity_key_)) {
-      S->RequireField(transport_porosity_key_, transport_porosity_key_)->SetMesh(mesh_)
-        ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-      S->RequireFieldEvaluator(transport_porosity_key_);
+    if (!S->HasData(transport_porosity_key_)) {
+      S->Require<CV_t, CVS_t>(transport_porosity_key_, Tags::DEFAULT, transport_porosity_key_)
+        .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+      S->RequireEvaluator(transport_porosity_key_);
     }
   }
 
@@ -249,51 +247,48 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
     multiscale_porosity_ = true;
     msp_ = CreateMultiscaleTransportPorosityPartition(mesh_, tp_list_);
 
-    if (!S->HasField("total_component_concentration_matrix")) {
-      std::vector<std::vector<std::string> > subfield_names(1);
-      subfield_names[0] = component_names_;
-
-      S->RequireField("total_component_concentration_matrix", passwd_, subfield_names)
-        ->SetMesh(mesh_)->SetGhosted(false)
+    if (!S->HasData("total_component_concentration_matrix")) {
+      S->Require<CV_t, CVS_t>("total_component_concentration_matrix", Tags::DEFAULT, passwd_, component_names_)
+        .SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
 
       // Secondary matrix nodes are collected here. We assume same order of species.
       int nnodes, nnodes_tmp = NumberMatrixNodes(msp_);
       mesh_->get_comm()->MaxAll(&nnodes_tmp, &nnodes, 1);
       if (nnodes > 1) {
-        S->RequireField("total_component_concentration_matrix_aux", passwd_)
-          ->SetMesh(mesh_)->SetGhosted(false)
+        S->Require<CV_t, CVS_t>("total_component_concentration_matrix_aux", Tags::DEFAULT, passwd_)
+          .SetMesh(mesh_)->SetGhosted(false)
           ->SetComponent("cell", AmanziMesh::CELL, ncomponents * (nnodes - 1));
-        S->GetField("total_component_concentration_matrix_aux", passwd_)->set_io_vis(false);
+        S->GetRecordW("total_component_concentration_matrix_aux", passwd_).set_io_vis(false);
       }
     }
 
     // -- water content in fractures
-    if (!S->HasField(water_content_key_)) {
-      S->RequireField(water_content_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    if (!S->HasData(water_content_key_)) {
+      S->Require<CV_t, CVS_t>(water_content_key_, Tags::DEFAULT, passwd_)
+        .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     }
-    if (!S->HasField(prev_water_content_key_)) {
-      S->RequireField(prev_water_content_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
-      S->GetField(prev_water_content_key_, passwd_)->set_io_vis(false);
+    if (!S->HasData(prev_water_content_key_)) {
+      S->Require<CV_t, CVS_t>(prev_water_content_key_, Tags::DEFAULT, passwd_)
+        .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+      S->GetRecordW(prev_water_content_key_, passwd_).set_io_vis(false);
     }
 
     // -- water content in matrix
-    if (!S->HasField("water_content_matrix")) {
-      S->RequireField("water_content_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    if (!S->HasData("water_content_matrix")) {
+      S->Require<CV_t, CVS_t>("water_content_matrix", Tags::DEFAULT, passwd_)
+        .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     }
-    if (!S->HasField("prev_water_content_matrix")) {
-      S->RequireField("prev_water_content_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
-      S->GetField("prev_water_content_matrix", passwd_)->set_io_vis(false);
+    if (!S->HasData("prev_water_content_matrix")) {
+      S->Require<CV_t, CVS_t>("prev_water_content_matrix", Tags::DEFAULT, passwd_)
+        .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+      S->GetRecordW("prev_water_content_matrix", passwd_).set_io_vis(false);
     }
 
     // -- porosity of matrix
-    if (!S->HasField("porosity_matrix")) {
-      S->RequireField("porosity_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    if (!S->HasData("porosity_matrix")) {
+      S->Require<CV_t, CVS_t>("porosity_matrix", Tags::DEFAULT, passwd_)
+        .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     }
   }
 
@@ -344,22 +339,22 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   InitializeAll_();
  
   // pointers to state variables (move in subroutines for consistency)
-  S->GetFieldData(darcy_flux_key_)->ScatterMasterToGhosted("face");
+  S->Get<CV_t>(darcy_flux_key_).ScatterMasterToGhosted("face");
 
-  ws = S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell", false);
-  ws_prev = S->GetFieldData(prev_saturation_liquid_key_)->ViewComponent("cell", false);
-  phi = S->GetFieldData(porosity_key_)->ViewComponent("cell", false);
+  ws = S->Get<CV_t>(saturation_liquid_key_).ViewComponent("cell");
+  ws_prev = S->Get<CV_t>(prev_saturation_liquid_key_).ViewComponent("cell");
+  phi = S->Get<CV_t>(porosity_key_).ViewComponent("cell");
 
   if (use_transport_porosity_) {
-    transport_phi = S->GetFieldData(transport_porosity_key_)->ViewComponent("cell", false);
+    transport_phi = S->Get<CV_t>(transport_porosity_key_).ViewComponent("cell");
   } else {
     transport_phi = phi;
   }
 
-  tcc = S->GetFieldData(tcc_key_, passwd_);
+  tcc = S->GetPtrW<CV_t>(tcc_key_, passwd_);
 
   // memory for new components
-  tcc_tmp = Teuchos::rcp(new CompositeVector(*(S->GetFieldData(tcc_key_))));
+  tcc_tmp = Teuchos::rcp(new CompositeVector(S->Get<CV_t>(tcc_key_)));
   *tcc_tmp = *tcc;
 
   // upwind structures
@@ -588,17 +583,17 @@ void Transport_PK::InitializeFields_()
 void Transport_PK::InitializeFieldFromField_(
     const std::string& field0, const std::string& field1, bool call_evaluator)
 {
-  if (S_->HasField(field0)) {
-    if (S_->GetField(field0)->owner() == passwd_) {
-      if (!S_->GetField(field0, passwd_)->initialized()) {
+  if (S_->HasData(field0)) {
+    if (S_->GetRecord(field0).owner() == passwd_) {
+      if (!S_->GetRecord(field0).initialized()) {
         if (call_evaluator)
-            S_->GetFieldEvaluator(field1)->HasFieldChanged(S_.ptr(), passwd_);
+            S_->GetEvaluator(field1).Update(*S_, passwd_);
 
-        const CompositeVector& f1 = *S_->GetFieldData(field1);
-        CompositeVector& f0 = *S_->GetFieldData(field0, passwd_);
+        const auto& f1 = S_->Get<CV_t>(field1);
+        auto& f0 = S_->GetW<CV_t>(field0, passwd_);
         f0 = f1;
 
-        S_->GetField(field0, passwd_)->set_initialized();
+        S_->GetRecordW(field0, passwd_).set_initialized();
 
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
             *vo_->os() << "initialized " << field0 << " to " << field1 << std::endl;
@@ -734,22 +729,21 @@ void Transport_PK::AddMultiscalePorosity_(
     double t_old, double t_new, double t_int1, double t_int2)
 {
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell");
-  Epetra_MultiVector& tcc_matrix = 
-     *S_->GetFieldData("total_component_concentration_matrix", passwd_)->ViewComponent("cell");
+  auto& tcc_matrix = *S_->GetW<CV_t>("total_component_concentration_matrix", passwd_).ViewComponent("cell");
 
-  const Epetra_MultiVector& wcf_prev = *S_->GetFieldData(prev_water_content_key_)->ViewComponent("cell");
-  const Epetra_MultiVector& wcf = *S_->GetFieldData(water_content_key_)->ViewComponent("cell");
+  const auto& wcf_prev = *S_->Get<CV_t>(prev_water_content_key_).ViewComponent("cell");
+  const auto& wcf = *S_->Get<CV_t>(water_content_key_).ViewComponent("cell");
 
-  const Epetra_MultiVector& wcm_prev = *S_->GetFieldData("prev_water_content_matrix")->ViewComponent("cell");
-  const Epetra_MultiVector& wcm = *S_->GetFieldData("water_content_matrix")->ViewComponent("cell");
+  const auto& wcm_prev = *S_->Get<CV_t>("prev_water_content_matrix").ViewComponent("cell");
+  const auto& wcm = *S_->Get<CV_t>("water_content_matrix").ViewComponent("cell");
 
   // multi-node matrix requires more input data
-  const Epetra_MultiVector& phi_matrix = *S_->GetFieldData("porosity_matrix")->ViewComponent("cell");
+  const auto& phi_matrix = *S_->Get<CV_t>("porosity_matrix").ViewComponent("cell");
 
   int nnodes(1);
   Teuchos::RCP<Epetra_MultiVector> tcc_matrix_aux;
-  if (S_->HasField("total_component_concentration_matrix_aux")) {
-    tcc_matrix_aux = S_->GetFieldData("total_component_concentration_matrix_aux", passwd_)->ViewComponent("cell");
+  if (S_->HasData("total_component_concentration_matrix_aux")) {
+    tcc_matrix_aux = S_->GetW<CV_t>("total_component_concentration_matrix_aux", passwd_).ViewComponent("cell");
     nnodes = tcc_matrix_aux->NumVectors() + 1; 
   }
   WhetStone::DenseVector tcc_m(nnodes);
@@ -808,8 +802,7 @@ void Transport_PK::AddMultiscalePorosity_(
 ******************************************************************* */
 void Transport_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
-  Teuchos::RCP<CompositeVector> tcc_aux;
-  tcc_aux = S->GetFieldData(tcc_key_, passwd_);
+  auto tcc_aux = S->GetPtrW<CV_t>(tcc_key_, passwd_);
   *tcc_aux = *tcc_tmp;
 }
 
@@ -912,9 +905,9 @@ bool Transport_PK::ComputeBCs_(
 ******************************************************************* */
 void Transport_PK::IdentifyUpwindCells()
 {
-  S_->GetFieldData(darcy_flux_key_)->ScatterMasterToGhosted("face");
-  auto darcy_flux = S_->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
-  const auto& map = S_->GetFieldData(darcy_flux_key_)->Map().Map("face", true);
+  S_->Get<CV_t>(darcy_flux_key_).ScatterMasterToGhosted("face");
+  auto darcy_flux = S_->Get<CV_t>(darcy_flux_key_).ViewComponent("face", true);
+  const auto& map = S_->Get<CV_t>(darcy_flux_key_).Map().Map("face", true);
 
   upwind_cells_.clear();
   downwind_cells_.clear();

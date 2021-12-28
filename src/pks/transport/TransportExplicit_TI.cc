@@ -26,7 +26,7 @@ void TransportExplicit_PK::FunctionalTimeDerivative(
     double t, const Epetra_Vector& component,
     Epetra_Vector& f_component)
 {
-  auto darcy_flux = S_->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
+  auto darcy_flux = S_->Get<CompositeVector>(darcy_flux_key_).ViewComponent("face", true);
 
   // distribute vector
   Epetra_Vector component_tmp(component);
@@ -129,7 +129,7 @@ void TransportExplicit_PK::FunctionalTimeDerivative(
   }
 
   // BOUNDARY CONDITIONS for ADVECTION
-  const auto& flux_map = S_->GetFieldData(darcy_flux_key_)->Map().Map("face", true);
+  const auto& flux_map = S_->Get<CompositeVector>(darcy_flux_key_).Map().Map("face", true);
 
   for (int m = 0; m < bcs_.size(); m++) {
     std::vector<int>& tcc_index = bcs_[m]->tcc_index();
@@ -171,7 +171,7 @@ void TransportExplicit_PK::DudtOld(double t,
                            const Epetra_Vector& component,
                            Epetra_Vector& f_component)
 {
-  auto darcy_flux = S_->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
+  auto darcy_flux = S_->Get<CompositeVector>(darcy_flux_key_).ViewComponent("face", true);
 
   // transport routines need an RCP pointer
   Teuchos::RCP<const Epetra_Vector> component_rcp(&component, false);

@@ -24,7 +24,6 @@
 // Amanzi
 #include "BCs.hh"
 #include "errors.hh"
-#include "FieldEvaluator.hh"
 #include "Mesh.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_AdvectionUpwindFactory.hh"
@@ -97,7 +96,7 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
   vo_ = Teuchos::rcp(new VerboseObject("TransportImpl-" + domain, *tp_list_)); 
 
   // Create pointers to the primary solution field tcc.
-  const auto& solution = S->GetFieldData(tcc_key_, "state");
+  auto solution = S->GetPtrW<CompositeVector>(tcc_key_, "state");
   soln_->SetData(solution); 
   
   // boundary conditions
@@ -117,7 +116,7 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
   // refresh data BC and source data  
   UpdateBoundaryData(t_physics_, t_physics_, 0);
 
-  auto flux = S->GetFieldData(darcy_flux_key_);
+  auto flux = S->GetPtr<CompositeVector>(darcy_flux_key_);
   op_adv_->Setup(*flux);
   op_adv_->UpdateMatrices(flux.ptr());
 
@@ -188,7 +187,7 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     Epetra_MultiVector& rhs_cell = *rhs.ViewComponent("cell");
   
     // apply boundary conditions
-    op_adv_->UpdateMatrices(S_->GetFieldData(darcy_flux_key_).ptr());
+    op_adv_->UpdateMatrices(S_->GetPtr<CompositeVector>(darcy_flux_key_).ptr());
     op_adv_->ApplyBCs(true, true, true);
 
     // add sources

@@ -77,14 +77,13 @@ std::cout << "Test: 2D transport on a square mesh for long time" << std::endl;
 
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 
-  Teuchos::RCP<Epetra_MultiVector> 
-      flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
+  auto& flux = *S->GetW<CompositeVector>("darcy_flux", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(1.0, 0.5);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    (*flux)[0][f] = velocity * normal;
+    flux[0][f] = velocity * normal;
   }
 
   /* initialize a transport process kernel */
@@ -94,8 +93,7 @@ std::cout << "Test: 2D transport on a square mesh for long time" << std::endl;
   int iter;
   double t_old(0.0), t_new(0.0), dt;
 
-  Teuchos::RCP<Epetra_MultiVector> 
-      tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
+  auto& tcc = *S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
   iter = 0;
   bool flag = true;
@@ -114,16 +112,14 @@ std::cout << "Test: 2D transport on a square mesh for long time" << std::endl;
       if (TPK.MyPID == 0) {
         GMV::open_data_file(*mesh, (std::string)"transport.gmv");
         GMV::start_data();
-        GMV::write_cell_data(*tcc, 0, "Component_0");
+        GMV::write_cell_data(tcc, 0, "Component_0");
         GMV::close_data_file();
       }
       break;
     }
   }
 
-  TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, Transport::TRANSPORT_LIMITER_TOLERANCE);
- 
-  
+  TPK.VV_CheckTracerBounds(tcc, 0, 0.0, 1.0, Transport::TRANSPORT_LIMITER_TOLERANCE);
 }
 
 

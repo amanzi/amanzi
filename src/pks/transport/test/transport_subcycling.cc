@@ -69,33 +69,31 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
   Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
-  S->set_time(0.0);
-  S->set_intermediate_time(0.0);
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
   TPK.Setup(S.ptr());
   TPK.CreateDefaultState(mesh, 2);
   S->InitializeFields();
   S->InitializeEvaluators();
+  S->set_time(0.0);
+  S->set_intermediate_time(0.0);
 
   /* modify the default state for the problem at hand */
   std::string passwd("state"); 
-  Teuchos::RCP<Epetra_MultiVector> 
-      flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
+  auto& flux = *S->GetW<CompositeVector>("darcy_flux", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(1.0, 1.0);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    (*flux)[0][f] = velocity * normal;
+    flux[0][f] = velocity * normal;
   }
 
   /* initialize a transport process kernel */
   TPK.Initialize(S.ptr());
 
   /* advance the state */
-  Teuchos::RCP<Epetra_MultiVector>
-      tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
+  auto tcc = S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
   double t_old(0.0), t_new(0.0), dt;
   int iter = 0;

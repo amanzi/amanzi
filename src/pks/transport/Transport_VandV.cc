@@ -24,6 +24,9 @@
 namespace Amanzi {
 namespace Transport {
 
+using CV_t = CompositeVector;
+using CVS_t = CompositeVectorSpace;
+
 /* ****************************************************************
 * Construct default state for unit tests.
 **************************************************************** */
@@ -31,50 +34,46 @@ void Transport_PK::CreateDefaultState(
     Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int ncomponents) 
 {
   std::string name("state"); 
-  S_->RequireScalar("const_fluid_density", name);
+  S_->Require<double>("const_fluid_density", Tags::DEFAULT, name);
 
-  if (!S_->HasField(saturation_liquid_key_)) {
-    S_->RequireField(saturation_liquid_key_, name)->SetMesh(mesh)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+  if (!S_->HasData(saturation_liquid_key_)) {
+    S_->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, name)
+      .SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
   
-  if (!S_->HasField(prev_saturation_liquid_key_)) {
-    S_->RequireField(prev_saturation_liquid_key_, name)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+  if (!S_->HasData(prev_saturation_liquid_key_)) {
+    S_->Require<CV_t, CVS_t>(prev_saturation_liquid_key_, Tags::DEFAULT, name)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  if (!S_->HasField(darcy_flux_key_)) {
-    S_->RequireField(darcy_flux_key_, name)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("face", AmanziMesh::FACE, 1);
+  if (!S_->HasData(darcy_flux_key_)) {
+    S_->Require<CV_t, CVS_t>(darcy_flux_key_, Tags::DEFAULT, name)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::FACE, 1);
   }
   
-  if (!S_->HasField(tcc_key_)) {
-    std::vector<std::vector<std::string> > subfield_names(1);
-    for (int i = 0; i != ncomponents; ++i) {
-      subfield_names[0].push_back(component_names_[i]);
-    }
-    S_->RequireField(tcc_key_, name, subfield_names)->SetMesh(mesh_)
-        ->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, ncomponents);
+  if (!S_->HasData(tcc_key_)) {
+    S_->Require<CV_t, CVS_t>(tcc_key_, Tags::DEFAULT, name, component_names_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, ncomponents);
   }
 
   // initialize fields
   S_->Setup();
  
   // set popular default values
-  *(S_->GetScalarData("const_fluid_density", name)) = 1000.0;
-  S_->GetField("const_fluid_density", name)->set_initialized();
+  S_->GetW<double>("const_fluid_density", name) = 1000.0;
+  S_->GetRecordW("const_fluid_density", name).set_initialized();
 
-  S_->GetFieldData(saturation_liquid_key_, name)->PutScalar(1.0);
-  S_->GetField(saturation_liquid_key_, name)->set_initialized();
+  S_->GetW<CV_t>(saturation_liquid_key_, name).PutScalar(1.0);
+  S_->GetRecordW(saturation_liquid_key_, name).set_initialized();
 
-  S_->GetFieldData(prev_saturation_liquid_key_, name)->PutScalar(1.0);
-  S_->GetField(prev_saturation_liquid_key_, name)->set_initialized();
+  S_->GetW<CV_t>(prev_saturation_liquid_key_, name).PutScalar(1.0);
+  S_->GetRecordW(prev_saturation_liquid_key_, name).set_initialized();
 
-  S_->GetFieldData(tcc_key_, name)->PutScalar(0.0);
-  S_->GetField(tcc_key_, name)->set_initialized();
+  S_->GetW<CV_t>(tcc_key_, name).PutScalar(0.0);
+  S_->GetRecordW(tcc_key_, name).set_initialized();
 
-  S_->GetFieldData(darcy_flux_key_, name)->PutScalar(0.0);
-  S_->GetField(darcy_flux_key_, name)->set_initialized();
+  S_->GetW<CV_t>(darcy_flux_key_, name).PutScalar(0.0);
+  S_->GetRecordW(darcy_flux_key_, name).set_initialized();
 
   S_->InitializeFields();
 }
@@ -86,7 +85,7 @@ void Transport_PK::CreateDefaultState(
 void Transport_PK::Policy(Teuchos::Ptr<State> S)
 {
   if (mesh_->get_comm()->NumProc() > 1) {
-    if (!S->GetFieldData(tcc_key_)->Ghosted()) {
+    if (!S->Get<CV_t>(tcc_key_).Ghosted()) {
       Errors::Message msg;
       msg << "Field \"total component concentration\" has no ghost values."
           << " Transport PK is giving up.\n";
@@ -102,7 +101,7 @@ void Transport_PK::Policy(Teuchos::Ptr<State> S)
 void Transport_PK::VV_PrintSoluteExtrema(
     const Epetra_MultiVector& tcc_next, double dT_MPC, const std::string& mesh_id)
 {
-  auto darcy_flux = *S_->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
+  const auto& darcy_flux = *S_->Get<CV_t>(darcy_flux_key_).ViewComponent("face", true);
 
   int num_components = tcc_next.NumVectors();
   double tccmin_vec[num_components];
@@ -199,7 +198,7 @@ void Transport_PK::VV_PrintLimiterStatistics()
 ****************************************************************** */
 void Transport_PK::VV_CheckInfluxBC() const
 {
-  auto darcy_flux = *S_->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
+  const auto& darcy_flux = *S_->Get<CV_t>(darcy_flux_key_).ViewComponent("face", true);
 
   int number_components = tcc->ViewComponent("cell")->NumVectors();
   std::vector<int> influx_face(nfaces_wghost);
@@ -309,7 +308,7 @@ void Transport_PK::VV_CheckTracerBounds(Epetra_MultiVector& tracer,
 ****************************************************************** */
 double Transport_PK::VV_SoluteVolumeChangePerSecond(int idx_tracer)
 {
-  auto darcy_flux = *S_->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
+  const auto& darcy_flux = *S_->Get<CV_t>(darcy_flux_key_).ViewComponent("face", true);
 
   double volume = 0.0;
 

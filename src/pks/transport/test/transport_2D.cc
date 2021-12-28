@@ -75,7 +75,6 @@ std::cout << "Test: Advance on a 2D square mesh: limiter=" << limiter
   Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
-  S->set_time(0.0);
 
   plist->sublist("PKs").sublist("transport").sublist("reconstruction")
         .set<std::string>("limiter", limiter)
@@ -85,10 +84,11 @@ std::cout << "Test: Advance on a 2D square mesh: limiter=" << limiter
   TPK.CreateDefaultState(mesh, 2);
   S->InitializeFields();
   S->InitializeEvaluators();
+  S->set_time(0.0);
 
   // modify the default state for the problem at hand
   std::string passwd("state"); 
-  Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
+  auto& flux = *S->GetW<CompositeVector>("darcy_flux", passwd).ViewComponent("face");
 
   AmanziGeometry::Point velocity(1.0, 1.0);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
@@ -105,8 +105,7 @@ std::cout << "Test: Advance on a 2D square mesh: limiter=" << limiter
   double t_old(0.0), t_new(0.0), dt;
   bool flag(true);
 
-  Teuchos::RCP<Epetra_MultiVector> 
-      tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
+  auto tcc = S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
 
   iter = 0;
   while (t_new < 0.5) {

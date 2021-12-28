@@ -82,20 +82,20 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
-  S->set_time(0.0);
-  S->set_intermediate_time(0.0);
-  S->set_initial_time(0.0);
-  S->set_final_time(0.0);
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
   TPK.Setup(S.ptr());
   TPK.CreateDefaultState(mesh, 1);
   S->InitializeFields();
   S->InitializeEvaluators();
+  S->set_time(0.0);
+  S->set_intermediate_time(0.0);
+  S->set_initial_time(0.0);
+  S->set_final_time(0.0);
 
   // modify the default state
-  auto& flux = *S->GetFieldData("darcy_flux", "state")->ViewComponent("face", true);
-  const auto flux_map = S->GetFieldData("darcy_flux", "state")->Map().Map("face", true);
+  auto& flux = *S->GetW<CompositeVector>("darcy_flux", "state").ViewComponent("face", true);
+  const auto flux_map = S->GetW<CompositeVector>("darcy_flux", "state").Map().Map("face", true);
 
   int dir;
   AmanziGeometry::Point velocity(1.0, 0.2, -0.1);
@@ -114,7 +114,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
       flux[0][g] = (velocity * normal) * dir;
     }
   }
-  S->GetField("darcy_flux", "state")->set_initialized();
+  S->GetRecordW("darcy_flux", "state").set_initialized();
 
   // initialize the transport process kernel
   TPK.Initialize(S.ptr());
@@ -122,8 +122,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   // advance the transport state 
   int iter;
   double t_old(0.0), t_new(0.0), dt;
-  Epetra_MultiVector& tcc = *S->GetFieldData("total_component_concentration", "state")
-                              ->ViewComponent("cell", false);
+  auto& tcc = *S->GetW<CompositeVector>("total_component_concentration", "state").ViewComponent("cell");
 
   iter = 0;
   while (t_new < 0.2) {

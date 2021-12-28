@@ -119,8 +119,8 @@ int Transport_PK::FindDiffusionValue(const std::string& tcc_name, double* md, in
 void Transport_PK::CalculateAxiSymmetryDirection()
 {
   axi_symmetry_.resize(ncells_owned, -1);
-  if (S_->HasField(permeability_key_) && dim == 3) {
-    const Epetra_MultiVector& perm = *S_->GetFieldData(permeability_key_)->ViewComponent("cell");
+  if (S_->HasData(permeability_key_) && dim == 3) {
+    const auto& perm = *S_->Get<CompositeVector>(permeability_key_).ViewComponent("cell");
 
     for (int c = 0; c < ncells_owned; ++c) {
       int k = -1;
