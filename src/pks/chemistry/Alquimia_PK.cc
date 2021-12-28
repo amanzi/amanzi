@@ -153,10 +153,9 @@ void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
   for (size_t i = 0; i < aux_names_.size(); ++i) {
     aux_names_[i] = Keys::getKey(domain_, aux_names_[i]);
 
-    if (!S->HasField(aux_names_[i])) {
-      auto cell_subfield_names = std::vector<std::vector<std::string>>{aux_subfield_names_[i]};
-      S->RequireField(aux_names_[i], passwd_, cell_subfield_names)
-        ->SetMesh(mesh_)->SetGhosted(false)
+    if (!S->HasData(aux_names_[i])) {
+      S->Require<CompositeVector, CompositeVectorSpace>(aux_names_[i], Tags::DEFAULT, passwd_, aux_subfield_names_[i])
+        .SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, aux_subfield_names_[i].size());
     }
   }
@@ -166,22 +165,20 @@ void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
 
     for (auto it = names.begin(); it != names.end(); ++it) {
       Key aux_field_name = Keys::getKey(domain_, *it);
-      if (!S->HasField(aux_field_name)) {
-        S->RequireField(aux_field_name, passwd_)
-          ->SetMesh(mesh_)->SetGhosted(false)
-          ->SetComponent("cell", AmanziMesh::CELL, 1);
+      if (!S->HasData(aux_field_name)) {
+        S->Require<CompositeVector, CompositeVectorSpace>(aux_field_name, Tags::DEFAULT, passwd_)
+          .SetMesh(mesh_)->SetGhosted(false)->SetComponent("cell", AmanziMesh::CELL, 1);
       }
     }
   }
 
   // Setup more auxiliary data
-  if (!S->HasField(alquimia_aux_data_key_)) {
+  if (!S->HasData(alquimia_aux_data_key_)) {
     int num_aux_data = chem_engine_->Sizes().num_aux_integers + chem_engine_->Sizes().num_aux_doubles;
-    S->RequireField(alquimia_aux_data_key_, passwd_)
-      ->SetMesh(mesh_)->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, num_aux_data);
+    S->Require<CompositeVector, CompositeVectorSpace>(alquimia_aux_data_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)->SetGhosted(false)->SetComponent("cell", AmanziMesh::CELL, num_aux_data);
 
-    S->GetField(alquimia_aux_data_key_, passwd_)->set_io_vis(false);
+    S->GetRecordW(alquimia_aux_data_key_, passwd_).set_io_vis(false);
   }
 }
 
@@ -245,9 +242,9 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
       mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &cell_indices);
   
       // Ensure dependencies are filled
-      S_->GetFieldEvaluator(poro_key_)->HasFieldChanged(S_.ptr(), name_);
-      S_->GetFieldEvaluator(fluid_den_key_)->HasFieldChanged(S_.ptr(), name_);
-      S_->GetFieldEvaluator(saturation_key_)->HasFieldChanged(S_.ptr(), name_);
+      S_->GetEvaluator(poro_key_).Update(*S_, name_);
+      S_->GetEvaluator(fluid_den_key_).Update(*S_, name_);
+      S_->GetEvaluator(saturation_key_).Update(*S_, name_);
 
       // Loop over the cells.
       for (int i = 0; i < num_cells; ++i) {
@@ -269,7 +266,7 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
   if (aux_output_ != Teuchos::null) {
     int counter = 0;
     for (int i = 0; i < aux_names_.size(); ++i) {
-      auto& aux_state = *S->GetFieldData(aux_names_[i], passwd_)->ViewComponent("cell");
+      auto& aux_state = *S->GetW<CompositeVector>(aux_names_[i], Tags::DEFAULT, passwd_).ViewComponent("cell");
       for (int j = 0; j < aux_subfield_names_[i].size(); ++j) {
         *aux_state[j] = *(*aux_output_)[counter++];
       }
@@ -295,8 +292,7 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
 ******************************************************************* */
 int Alquimia_PK::InitializeSingleCell(int cell, const std::string& condition) 
 {
-  Teuchos::RCP<Epetra_MultiVector> tcc =
-      S_->GetFieldData(tcc_key_, passwd_)->ViewComponent("cell", true);
+  auto tcc = S_->GetW<CompositeVector>(tcc_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
 
   CopyToAlquimia(cell, tcc, alq_mat_props_, alq_state_, alq_aux_data_);
 
@@ -493,8 +489,7 @@ void Alquimia_PK::CopyToAlquimia(int cell,
                                  AlquimiaState& state,
                                  AlquimiaAuxiliaryData& aux_data)
 {
-  Teuchos::RCP<const Epetra_MultiVector> tcc =
-      S_->GetFieldData(tcc_key_)->ViewComponent("cell", true);
+  auto tcc = S_->GetW<CompositeVector>(tcc_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
   CopyToAlquimia(cell, tcc, mat_props, state, aux_data);
 }
 
@@ -508,8 +503,8 @@ void Alquimia_PK::CopyToAlquimia(int cell,
                                  AlquimiaState& state,
                                  AlquimiaAuxiliaryData& aux_data)
 {
-  const Epetra_MultiVector& porosity = *S_->GetFieldData(poro_key_)->ViewComponent("cell", true);
-  const Epetra_MultiVector& fluid_density = *S_->GetFieldData(fluid_den_key_)->ViewComponent("cell", true);
+  const auto& porosity = *S_->Get<CompositeVector>(poro_key_).ViewComponent("cell", true);
+  const auto& fluid_density = *S_->Get<CompositeVector>(fluid_den_key_).ViewComponent("cell", true);
 
   state.water_density = fluid_density[0][cell]; 
   state.porosity = porosity[0][cell];
@@ -518,7 +513,7 @@ void Alquimia_PK::CopyToAlquimia(int cell,
     state.total_mobile.data[i] = (*aqueous_components)[i][cell];
 
     if (using_sorption_) {
-      const Epetra_MultiVector& sorbed = *S_->GetFieldData(total_sorbed_key_)->ViewComponent("cell");
+      const auto& sorbed = *S_->Get<CompositeVector>(total_sorbed_key_).ViewComponent("cell");
       state.total_immobile.data[i] = sorbed[i][cell];
     } 
   }
@@ -529,9 +524,9 @@ void Alquimia_PK::CopyToAlquimia(int cell,
   assert(mat_props.mineral_rate_cnst.size == number_minerals_);
 
   if (number_minerals_ > 0) {
-    const Epetra_MultiVector& mineral_vf = *S_->GetFieldData(min_vol_frac_key_)->ViewComponent("cell");
-    const Epetra_MultiVector& mineral_ssa = *S_->GetFieldData(min_ssa_key_)->ViewComponent("cell");
-    const Epetra_MultiVector& mineral_rate = *S_->GetFieldData(mineral_rate_constant_key_)->ViewComponent("cell");
+    const auto& mineral_vf = *S_->Get<CompositeVector>(min_vol_frac_key_).ViewComponent("cell");
+    const auto& mineral_ssa = *S_->Get<CompositeVector>(min_ssa_key_).ViewComponent("cell");
+    const auto& mineral_rate = *S_->Get<CompositeVector>(mineral_rate_constant_key_).ViewComponent("cell");
     for (unsigned int i = 0; i < number_minerals_; ++i) {
       state.mineral_volume_fraction.data[i] = mineral_vf[i][cell];
       mat_props.mineral_rate_cnst.data[i] = mineral_rate[i][cell];
@@ -542,7 +537,7 @@ void Alquimia_PK::CopyToAlquimia(int cell,
   // ion exchange
   assert(state.cation_exchange_capacity.size == number_ion_exchange_sites_);
   if (number_ion_exchange_sites_ > 0) {
-    const Epetra_MultiVector& ion_exchange = *S_->GetFieldData(ion_exchange_sites_key_)->ViewComponent("cell");
+    const auto& ion_exchange = *S_->Get<CompositeVector>(ion_exchange_sites_key_).ViewComponent("cell");
     for (int i = 0; i < number_ion_exchange_sites_; i++) {
       state.cation_exchange_capacity.data[i] = ion_exchange[i][cell];
     }
@@ -550,7 +545,7 @@ void Alquimia_PK::CopyToAlquimia(int cell,
   
   // surface complexation
   if (number_sorption_sites_ > 0) {
-    const Epetra_MultiVector& sorption_sites = *S_->GetFieldData(sorp_sites_key_)->ViewComponent("cell");
+    const auto& sorption_sites = *S_->Get<CompositeVector>(sorp_sites_key_).ViewComponent("cell");
 
     assert(number_sorption_sites_ == state.surface_site_density.size);
     for (int i = 0; i < number_sorption_sites_; ++i) {
@@ -561,8 +556,8 @@ void Alquimia_PK::CopyToAlquimia(int cell,
   }
 
   // Auxiliary data -- block copy.
-  if (S_->HasField(alquimia_aux_data_key_)) {
-    aux_data_ = S_->GetFieldData(alquimia_aux_data_key_, passwd_)->ViewComponent("cell");
+  if (S_->HasData(alquimia_aux_data_key_)) {
+    aux_data_ = S_->GetW<CompositeVector>(alquimia_aux_data_key_, passwd_).ViewComponent("cell");
     int num_aux_ints = chem_engine_->Sizes().num_aux_integers;
     int num_aux_doubles = chem_engine_->Sizes().num_aux_doubles;
 
@@ -576,16 +571,16 @@ void Alquimia_PK::CopyToAlquimia(int cell,
     }
   }
 
-  const Epetra_MultiVector& water_saturation = *S_->GetFieldData(saturation_key_)->ViewComponent("cell", true);
+  const auto& water_saturation = *S_->Get<CompositeVector>(saturation_key_).ViewComponent("cell", true);
 
   mat_props.volume = mesh_->cell_volume(cell);
   mat_props.saturation = water_saturation[0][cell];
 
   // sorption isotherms
   if (using_sorption_isotherms_) {
-    const Epetra_MultiVector& isotherm_kd = *S_->GetFieldData(isotherm_kd_key_)->ViewComponent("cell");
-    const Epetra_MultiVector& isotherm_freundlich_n = *S_->GetFieldData(isotherm_freundlich_n_key_)->ViewComponent("cell");
-    const Epetra_MultiVector& isotherm_langmuir_b = *S_->GetFieldData(isotherm_langmuir_b_key_)->ViewComponent("cell");
+    const auto& isotherm_kd = *S_->Get<CompositeVector>(isotherm_kd_key_).ViewComponent("cell");
+    const auto& isotherm_freundlich_n = *S_->Get<CompositeVector>(isotherm_freundlich_n_key_).ViewComponent("cell");
+    const auto& isotherm_langmuir_b = *S_->Get<CompositeVector>(isotherm_langmuir_b_key_).ViewComponent("cell");
 
     for (unsigned int i = 0; i < number_aqueous_components_; ++i) {
       mat_props.isotherm_kd.data[i] = isotherm_kd[i][cell];
@@ -596,7 +591,7 @@ void Alquimia_PK::CopyToAlquimia(int cell,
   
   // first order reaction rate cnst
   if (number_aqueous_kinetics_ > 0) {
-    const Epetra_MultiVector& aqueous_kinetics_rate = *S_->GetFieldData(first_order_decay_constant_key_)->ViewComponent("cell");
+    const auto& aqueous_kinetics_rate = *S_->Get<CompositeVector>(first_order_decay_constant_key_).ViewComponent("cell");
     for (unsigned int i = 0; i < number_aqueous_kinetics_; ++i) {
       mat_props.aqueous_kinetic_rate_cnst.data[i] = aqueous_kinetics_rate[i][cell];
     }
@@ -664,22 +659,22 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
     (*aqueous_components)[i][cell] = state.total_mobile.data[i];
 
     if (using_sorption_) {
-      const Epetra_MultiVector& sorbed = *S_->GetFieldData(total_sorbed_key_)->ViewComponent("cell");
+      const auto& sorbed = *S_->Get<CompositeVector>(total_sorbed_key_).ViewComponent("cell");
       sorbed[i][cell] = state.total_immobile.data[i];
     }
   }
 
   // Free ion species.
-  const Epetra_MultiVector& free_ion = *S_->GetFieldData(free_ion_species_key_)->ViewComponent("cell");
+  const auto& free_ion = *S_->Get<CompositeVector>(free_ion_species_key_).ViewComponent("cell");
   for (int i = 0; i < number_aqueous_components_; ++i) {
     free_ion[i][cell] = aux_output.primary_free_ion_concentration.data[i];
   }
 
   // Mineral properties.
   if (number_minerals_ > 0) {
-    const Epetra_MultiVector& mineral_vf = *S_->GetFieldData(min_vol_frac_key_)->ViewComponent("cell");
-    const Epetra_MultiVector& mineral_ssa = *S_->GetFieldData(min_ssa_key_)->ViewComponent("cell");
-    const Epetra_MultiVector& mineral_rate = *S_->GetFieldData( mineral_rate_constant_key_)->ViewComponent("cell");
+    const auto& mineral_vf = *S_->Get<CompositeVector>(min_vol_frac_key_).ViewComponent("cell");
+    const auto& mineral_ssa = *S_->Get<CompositeVector>(min_ssa_key_).ViewComponent("cell");
+    const auto& mineral_rate = *S_->Get<CompositeVector>(mineral_rate_constant_key_).ViewComponent("cell");
 
     for (int i = 0; i < number_minerals_; ++i) {
       mineral_vf[i][cell] = state.mineral_volume_fraction.data[i];
@@ -690,7 +685,7 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
 
   // ion exchange
   if (number_ion_exchange_sites_ > 0) {
-    const Epetra_MultiVector& ion_exchange = *S_->GetFieldData(ion_exchange_sites_key_)->ViewComponent("cell");
+    const auto& ion_exchange = *S_->Get<CompositeVector>(ion_exchange_sites_key_).ViewComponent("cell");
     for (unsigned int i = 0; i < number_ion_exchange_sites_; i++) {
       ion_exchange[i][cell] = state.cation_exchange_capacity.data[i];
     }
@@ -698,15 +693,15 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
 
   // surface complexation
   if (number_sorption_sites_ > 0) {
-    const Epetra_MultiVector& sorption_sites = *S_->GetFieldData(sorp_sites_key_)->ViewComponent("cell");
+    const auto& sorption_sites = *S_->Get<CompositeVector>(sorp_sites_key_).ViewComponent("cell");
 
     for (unsigned int i = 0; i < number_sorption_sites_; i++) {
       sorption_sites[i][cell] = state.surface_site_density.data[i];
     }
   }
 
-  if (S_->HasField(alquimia_aux_data_key_)) {
-    aux_data_ = S_->GetFieldData(alquimia_aux_data_key_, passwd_)->ViewComponent("cell");
+  if (S_->HasData(alquimia_aux_data_key_)) {
+    aux_data_ = S_->GetW<CompositeVector>(alquimia_aux_data_key_, passwd_).ViewComponent("cell");
 
     int num_aux_ints = chem_engine_->Sizes().num_aux_integers;
     int num_aux_doubles = chem_engine_->Sizes().num_aux_doubles;
@@ -722,9 +717,9 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
   }
 
   if (using_sorption_isotherms_) {
-    const Epetra_MultiVector& isotherm_kd = *S_->GetFieldData(isotherm_kd_key_)->ViewComponent("cell");
-    const Epetra_MultiVector& isotherm_freundlich_n = *S_->GetFieldData(isotherm_freundlich_n_key_)->ViewComponent("cell");
-    const Epetra_MultiVector& isotherm_langmuir_b = *S_->GetFieldData(isotherm_langmuir_b_key_)->ViewComponent("cell");
+    const auto& isotherm_kd = *S_->Get<CompositeVector>(isotherm_kd_key_).ViewComponent("cell");
+    const auto& isotherm_freundlich_n = *S_->Get<CompositeVector>(isotherm_freundlich_n_key_).ViewComponent("cell");
+    const auto& isotherm_langmuir_b = *S_->Get<CompositeVector>(isotherm_langmuir_b_key_).ViewComponent("cell");
 
     for (unsigned int i = 0; i < number_aqueous_components_; ++i) {
       isotherm_kd[i][cell] = mat_props.isotherm_kd.data[i];
@@ -802,9 +797,9 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   int max_itrs(0), avg_itrs(0), min_itrs(1000), imax(-1);
 
   // Ensure dependencies are filled
-  S_->GetFieldEvaluator(poro_key_)->HasFieldChanged(S_.ptr(), name_);
-  S_->GetFieldEvaluator(fluid_den_key_)->HasFieldChanged(S_.ptr(), name_);
-  S_->GetFieldEvaluator(saturation_key_)->HasFieldChanged(S_.ptr(), name_);
+  S_->GetEvaluator(poro_key_).Update(*S_, name_);
+  S_->GetEvaluator(fluid_den_key_).Update(*S_, name_);
+  S_->GetEvaluator(saturation_key_).Update(*S_, name_);
 
   // Now loop through all the cells and advance the chemistry.
   int convergence_failure = 0;
@@ -864,7 +859,7 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (aux_output_ != Teuchos::null) {
     int counter = 0;
     for (int i = 0; i < aux_names_.size(); ++i) {
-      auto& aux_state = *S_->GetFieldData(aux_names_[i], passwd_)->ViewComponent("cell");
+      auto& aux_state = *S_->GetW<CompositeVector>(aux_names_[i], passwd_).ViewComponent("cell");
       for (int j = 0; j < aux_subfield_names_[i].size(); ++j) {
         *aux_state[j] = *(*aux_output_)[counter++];
       }
@@ -920,9 +915,9 @@ void Alquimia_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next)
 
   for (size_t i = 0; i < aux_names.size(); ++i) {
     aux_names[i] = Keys::getKey(domain_, aux_names[i]);
-    if (S_->HasField(aux_names[i]) && S_next->HasField(aux_names[i])) {
-      *S_next->GetFieldData(aux_names[i], passwd_)->ViewComponent("cell", false) =
-        *S_->GetFieldData(aux_names[i], passwd_)->ViewComponent("cell", false);
+    if (S_->HasData(aux_names[i]) && S_next->HasData(aux_names[i])) {
+      *S_next->GetW<CompositeVector>(aux_names[i], passwd_).ViewComponent("cell") =
+        *S_->Get<CompositeVector>(aux_names[i]).ViewComponent("cell");
     }
   }
 
@@ -932,16 +927,16 @@ void Alquimia_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next)
 
     for (auto it = names.begin(); it != names.end(); ++it) {
       Key aux_field_name = Keys::getKey(domain_, *it);
-      if (S_->HasField(aux_field_name) && S_next->HasField(aux_field_name)) {
-        *S_next->GetFieldData(aux_field_name, passwd_)->ViewComponent("cell", false) =
-          *S_->GetFieldData(aux_field_name, passwd_)->ViewComponent("cell", false);
+      if (S_->HasData(aux_field_name) && S_next->HasData(aux_field_name)) {
+        *S_next->GetW<CompositeVector>(aux_field_name, passwd_).ViewComponent("cell") =
+          *S_->Get<CompositeVector>(aux_field_name).ViewComponent("cell");
       }
     }
   }
 
-  if (S_->HasField(alquimia_aux_data_key_) && S_next->HasField(alquimia_aux_data_key_)) {
-    *S_next->GetFieldData(alquimia_aux_data_key_, passwd_)->ViewComponent("cell", false) =
-      *S_->GetFieldData(alquimia_aux_data_key_, passwd_)->ViewComponent("cell", false);
+  if (S_->HasData(alquimia_aux_data_key_) && S_next->HasData(alquimia_aux_data_key_)) {
+    *S_next->GetW<CompositeVector>(alquimia_aux_data_key_, passwd_).ViewComponent("cell") =
+      *S_->Get<CompositeVector>(alquimia_aux_data_key_).ViewComponent("cell");
   }
 }
 

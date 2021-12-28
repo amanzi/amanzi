@@ -44,15 +44,15 @@ void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
   saturation_tolerance_ = cp_list_->get<double>("saturation tolerance", 1e-14);
   
   // require flow fields
-  S->Require<CV_t, CVS_t>(poro_key_, Tags::DEFAULT, passwd_).SetMesh(mesh_)
+  S->Require<CV_t, CVS_t>(poro_key_, Tags::DEFAULT, poro_key_).SetMesh(mesh_)
     ->SetGhosted(false)->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireEvaluator(poro_key_);
 
-  S->Require<CV_t, CVS_t>(saturation_key_, Tags::DEFAULT, passwd_).SetMesh(mesh_)
+  S->Require<CV_t, CVS_t>(saturation_key_, Tags::DEFAULT, saturation_key_).SetMesh(mesh_)
     ->SetGhosted(false)->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireEvaluator(saturation_key_);
 
-  S->Require<CV_t, CVS_t>(fluid_den_key_, Tags::DEFAULT, passwd_).SetMesh(mesh_)
+  S->Require<CV_t, CVS_t>(fluid_den_key_, Tags::DEFAULT, fluid_den_key_).SetMesh(mesh_)
     ->SetGhosted(false)->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireEvaluator(fluid_den_key_);
 

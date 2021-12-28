@@ -88,11 +88,11 @@ Teuchos::ParameterList InputConverterU::TranslateMultiphase_(
 
   // additional state list
   auto& fic = state_list.sublist("initial conditions");
-  auto& fev = state_list.sublist("field evaluators");
+  auto& fev = state_list.sublist("evaluators");
 
   // -- density
   auto& tmp = fev.sublist("molar_density_gas");
-  tmp.set<std::string>("field evaluator type", "eos")
+  tmp.set<std::string>("evaluator type", "eos")
      .set<std::string>("eos basis", "molar")
      .set<std::string>("molar density key", "molar_density_gas")
      .set<std::string>("pressure key", "pressure_gas");
@@ -124,7 +124,7 @@ Teuchos::ParameterList InputConverterU::TranslateMultiphase_(
   // -- temperature
   fev.sublist("temperature") = fic.sublist("temperature");
   fev.sublist("temperature")
-     .set<std::string>("field evaluator type", "independent variable");
+     .set<std::string>("evaluator type", "independent variable");
   fic.remove("temperature");
 
   return out_list;

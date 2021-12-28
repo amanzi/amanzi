@@ -803,7 +803,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
             .set<int>("master PK index", 0)
             .set<std::string>("domain name", "domain");
 
-        auto& tmp = glist.sublist("state").sublist("field evaluators");
+        auto& tmp = glist.sublist("state").sublist("evaluators");
         AddSecondaryFieldEvaluator_(tmp, 
             Keys::getKey("domain", "molar_density_liquid"), "molar density key",
             "eos", "liquid water 0-30C", "density");
@@ -837,7 +837,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(Teuchos::ParameterList& gl
             .set<int>("master PK index", 0)
             .set<std::string>("domain name", "fracture");
 
-        auto& tmp = glist.sublist("state").sublist("field evaluators");
+        auto& tmp = glist.sublist("state").sublist("evaluators");
         AddSecondaryFieldEvaluator_(tmp, 
             Keys::getKey("fracture", "molar_density_liquid"), "molar density key",
             "eos", "liquid water 0-30C", "density");

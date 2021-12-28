@@ -310,7 +310,6 @@ void State::Setup()
 
   // Ensure compatibility of all the evaluators -- each evaluator's dependencies
   // must provide what is required of that evaluator.
-WriteDependencyGraph();
   for (auto& e : evaluators_) {
     for (auto& r : e.second) {
       if (!r.second->ProvidesKey(e.first, r.first)) {

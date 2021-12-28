@@ -43,7 +43,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   }
 
   // first we write initial conditions for scalars and vectors, not region-specific
-  Teuchos::ParameterList& out_ev = out_list.sublist("field evaluators");
+  Teuchos::ParameterList& out_ev = out_list.sublist("evaluators");
   Teuchos::ParameterList& out_ic = out_list.sublist("initial conditions");
 
   MemoryManager mm;
@@ -241,7 +241,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         std::string model = GetAttributeValueS_(node, "model", "linear");
 
         Teuchos::ParameterList& field_ev = out_ev.sublist("internal_energy_liquid");
-        field_ev.set<std::string>("field evaluator type", "iem")
+        field_ev.set<std::string>("evaluator type", "iem")
             .set<std::string>("internal energy key", "internal_energy_liquid");
 
         field_ev.sublist("IEM parameters").sublist(reg_str)
@@ -266,7 +266,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         std::string model = GetAttributeValueS_(node, "model", "linear");
 
         Teuchos::ParameterList& field_ev = out_ev.sublist("internal_energy_rock");
-        field_ev.set<std::string>("field evaluator type", "iem")
+        field_ev.set<std::string>("evaluator type", "iem")
             .set<std::string>("internal energy key", "internal_energy_rock");
 
         field_ev.sublist("IEM parameters").sublist(reg_str)
@@ -358,7 +358,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         std::string model = GetAttributeValueS_(node, "model", "linear");
 
         Teuchos::ParameterList& field_ev = out_ev.sublist("fracture-internal_energy_liquid");
-        field_ev.set<std::string>("field evaluator type", "iem")
+        field_ev.set<std::string>("evaluator type", "iem")
             .set<std::string>("internal energy key", "fracture-internal_energy_liquid");
 
         field_ev.sublist("IEM parameters").sublist(reg_str)
@@ -752,13 +752,13 @@ void InputConverterU::TranslateFieldEvaluator_(
     field_ic.set<std::string>("restart file", filename);
 
     Teuchos::ParameterList& field_ev = out_ev.sublist(field);
-    field_ev.set<std::string>("field evaluator type", "constant variable");
+    field_ev.set<std::string>("evaluator type", "constant variable");
   } else if (type == "h5file") {  // regular h5 file
     std::string filename = GetAttributeValueS_(node, "filename");
     bool temporal = GetAttributeValueS_(node, "constant_in_time", TYPE_NUMERICAL, false, "true") == "true";
 
     Teuchos::ParameterList& field_ev = out_ev.sublist(field);
-    field_ev.set<std::string>("field evaluator type", "independent variable from file")
+    field_ev.set<std::string>("evaluator type", "independent variable from file")
         .set<std::string>("filename", filename)
         .set<std::string>("domain name", domain)
         .set<std::string>("component name", "cell")
@@ -775,7 +775,7 @@ void InputConverterU::TranslateFieldEvaluator_(
         .set<std::string>("component", "cell")
         .sublist("function").sublist("function-constant")
         .set<double>("value", val);
-    field_ev.set<std::string>("field evaluator type", "independent variable");
+    field_ev.set<std::string>("evaluator type", "independent variable");
   }
 }
 
@@ -942,7 +942,7 @@ void InputConverterU::AddIndependentFieldEvaluator_(
       .set<double>("value", val);
 
   out_ev.sublist(field)
-      .set<std::string>("field evaluator type", "independent variable");
+      .set<std::string>("evaluator type", "independent variable");
 }
 
 
@@ -956,7 +956,7 @@ void InputConverterU::AddSecondaryFieldEvaluator_(
     const std::string& eos_table_name)
 {
   out_ev.sublist(field)
-    .set<std::string>("field evaluator type", type)
+    .set<std::string>("evaluator type", type)
     .set<std::string>(key, field);
 
   out_ev.sublist(field).sublist("EOS parameters")

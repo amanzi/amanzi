@@ -167,15 +167,17 @@ TEST(INITIALIZE_CRUNCH) {
   Teuchos::ParameterList state_list = plist->sublist("state");
   auto S = Teuchos::rcp(new State(state_list));
   S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
-  S->set_time(0.0);
 
   auto pks_list = plist->sublist("PK tree").sublist("chemistry");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   auto CPK = Teuchos::rcp(new Alquimia_PK(pks_list, plist, S, soln));
   CPK->Setup(S.ptr());
+
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
+  S->set_time(0.0);
+
   CPK->Initialize(S.ptr());
 
   // Now create second chemistry PK
