@@ -1,4 +1,3 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /*
    State
 
@@ -27,16 +26,22 @@ namespace Amanzi {
 
 typedef bool NullFactory;  // placeholder object for no factory required
 
-namespace Tags {
-const Tag DEFAULT = make_tag("");
-const Tag NEXT = make_tag("next");
-}
-
 typedef std::pair<Key, Tag> KeyTag;
 typedef std::vector<KeyTag> KeyTagVector;
 
 typedef std::tuple<Key, Tag, Key> DerivativeTriple;
 typedef std::set<DerivativeTriple> DerivativeTripleSet;
+
+namespace Tags {
+const Tag DEFAULT = make_tag("");
+const Tag NEXT = make_tag("next");
+}
+
+enum class EvaluatorType {
+  INDEPENDENT,
+  SECONDARY,
+  OTHER
+};
 
 } // namespace
 

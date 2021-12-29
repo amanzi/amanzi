@@ -96,9 +96,10 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   // modify the default state for the problem at hand 
   // create the initial temperature function 
   std::string passwd("thermal");
-  Epetra_MultiVector& temperature = *S->GetFieldData("temperature", passwd)->ViewComponent("cell");
+  auto& temperature = *S->GetW<CompositeVector>("temperature", Tags::DEFAULT, passwd).ViewComponent("cell");
   temperature.PutScalar(273.0);
-  Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator("temperature"))->SetFieldAsChanged(S.ptr());
+  Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> >(
+      S->GetEvaluatorPtr("temperature"))->SetChanged();
 
   // compute conductivity
   EPK->UpdateConductivityData(S.ptr());
@@ -138,17 +139,17 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   double dT = 1.0;
   CompositeVector solution(op->DomainMap());
 
-  S->GetFieldEvaluator("energy")->HasFieldDerivativeChanged(S.ptr(), passwd, "temperature");
-  const CompositeVector& dEdT = *S->GetFieldData(Keys::getDerivKey("energy", "temperature"));
+  S->GetEvaluator("energy").UpdateDerivative(*S, passwd, "temperature", Tags::DEFAULT);
+  const auto& dEdT = S->GetDerivative<CompositeVector>("energy", Tags::DEFAULT, "temperature", Tags::DEFAULT);
 
   op2->AddAccumulationDelta(solution, dEdT, dEdT, dT, "cell");
 
   // add advection term: u = q_l n_l c_v
   // we do not upwind n_l c_v  in this test.
-  S->GetFieldEvaluator("internal_energy_liquid")->HasFieldDerivativeChanged(S.ptr(), passwd, "temperature");
-  const Epetra_MultiVector& c_v = *S->GetFieldData(Keys::getDerivKey("internal_energy_liquid", "temperature"))
-      ->ViewComponent("cell", true);
-  const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell", true);
+  S->GetEvaluator("internal_energy_liquid").UpdateDerivative(*S, passwd, "temperature", Tags::DEFAULT);
+  const auto& c_v = *S->GetDerivative<CompositeVector>(
+      "internal_energy_liquid", Tags::DEFAULT, "temperature", Tags::DEFAULT).ViewComponent("cell", true);
+  const auto& n_l = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell", true);
 
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(op->DomainMap()));
   Epetra_MultiVector& q_l = *flux->ViewComponent("face");

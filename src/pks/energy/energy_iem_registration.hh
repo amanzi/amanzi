@@ -25,11 +25,11 @@ Amanzi::Utils::Factory<Amanzi::Energy::IEM>::map_type*
 namespace Amanzi {
 namespace Energy {
 
-Utils::RegisteredFactory<FieldEvaluator,IEMEvaluator> IEMEvaluator::factory_("iem");
-Utils::RegisteredFactory<FieldEvaluator,IEM_WaterVaporEvaluator> IEM_WaterVaporEvaluator::factory_("iem water vapor");
+Utils::RegisteredFactory<Evaluator, IEMEvaluator> IEMEvaluator::factory_("iem");
+Utils::RegisteredFactory<Evaluator, IEM_WaterVaporEvaluator> IEM_WaterVaporEvaluator::factory_("iem water vapor");
 
-Utils::RegisteredFactory<IEM,IEM_Linear> IEM_Linear::factory_("linear");
-Utils::RegisteredFactory<IEM,IEM_Tabular> IEM_Tabular::factory_("tabular");
+Utils::RegisteredFactory<IEM, IEM_Linear> IEM_Linear::factory_("linear");
+Utils::RegisteredFactory<IEM, IEM_Tabular> IEM_Tabular::factory_("tabular");
 
 }  // namespace Energy
 }  // namespace Amanzi

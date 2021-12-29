@@ -22,17 +22,19 @@ namespace Energy {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(Teuchos::ParameterList& plist) :
-    SecondaryVariableFieldEvaluator(plist)
+TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(Teuchos::ParameterList& plist)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
-  my_key_ = plist_.get<std::string>("thermal conductivity key");
-  auto prefix = Keys::getDomainPrefix(my_key_);
+  if (my_keys_.size() == 0) {
+    my_keys_.push_back(make_pair(plist_.get<std::string>("thermal conductivity key"), Tags::DEFAULT));
+  }
+  auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
 
   temperature_key_ = plist_.get<std::string>("temperature key", prefix + "temperature");
-  dependencies_.insert(temperature_key_);
+  dependencies_.push_back(std::make_pair(temperature_key_, Tags::DEFAULT));
 
   porosity_key_ = plist_.get<std::string>("porosity key", prefix + "porosity");
-  dependencies_.insert(porosity_key_);
+  dependencies_.push_back(std::make_pair(porosity_key_, Tags::DEFAULT));
 
   AMANZI_ASSERT(plist_.isSublist("thermal conductivity parameters"));
   Teuchos::ParameterList sublist = plist_.sublist("thermal conductivity parameters");
@@ -45,16 +47,16 @@ TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(Teuchos::ParameterList& plist) :
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(const TCMEvaluator_OnePhase& other) :
-    SecondaryVariableFieldEvaluator(other),
-    temperature_key_(other.temperature_key_),
-    tc_(other.tc_) {};
+TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(const TCMEvaluator_OnePhase& other)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+      temperature_key_(other.temperature_key_),
+      tc_(other.tc_) {};
 
 
 /* ******************************************************************
 * TBW.
 ****************************************************************** */
-Teuchos::RCP<FieldEvaluator> TCMEvaluator_OnePhase::Clone() const {
+Teuchos::RCP<Evaluator> TCMEvaluator_OnePhase::Clone() const {
   return Teuchos::rcp(new TCMEvaluator_OnePhase(*this));
 }
 
@@ -62,16 +64,16 @@ Teuchos::RCP<FieldEvaluator> TCMEvaluator_OnePhase::Clone() const {
 /* ******************************************************************
 * Evaluator body.
 ****************************************************************** */
-void TCMEvaluator_OnePhase::EvaluateField_(
-    const Teuchos::Ptr<State>& S, const Teuchos::Ptr<CompositeVector>& result)
+void TCMEvaluator_OnePhase::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
   // pull out the dependencies
-  const Epetra_MultiVector& temp_c = *S->GetFieldData(temperature_key_)->ViewComponent("cell");
-  const Epetra_MultiVector& poro_c = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
-  Epetra_MultiVector& result_c = *result->ViewComponent("cell");
+  const auto& temp_c = *S.Get<CompositeVector>(temperature_key_).ViewComponent("cell");
+  const auto& poro_c = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
+  Epetra_MultiVector& result_c = *results[0]->ViewComponent("cell");
 
   int ierr(0);
-  int ncomp = result->size("cell", false);
+  int ncomp = results[0]->size("cell", false);
   for (int i = 0; i != ncomp; ++i) {
     double k_liq = tc_->ThermalConductivity(temp_c[0][i]);
     ierr = std::max(ierr, tc_->error_code());
@@ -79,16 +81,16 @@ void TCMEvaluator_OnePhase::EvaluateField_(
     double phi = poro_c[0][i];
     result_c[0][i] = phi * k_liq + (1.0 - phi) * k_rock_;
   }
-  AmanziEOS::ErrorAnalysis(S->GetFieldData(temperature_key_)->Comm(), ierr, tc_->error_msg());
+  AmanziEOS::ErrorAnalysis(S.Get<CompositeVector>(temperature_key_).Comm(), ierr, tc_->error_msg());
 }
 
 
 /* ******************************************************************
 * Evaluator of derivarives.
 ****************************************************************** */
-void TCMEvaluator_OnePhase::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
+void TCMEvaluator_OnePhase::EvaluatePartialDerivative_(
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
+    const std::vector<CompositeVector*>& results) 
 {
   AMANZI_ASSERT(0);
 }

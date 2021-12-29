@@ -40,6 +40,15 @@ void EvaluatorSecondaryMonotype<double>::UpdateDerivative_(
     ++j;
   }
 
+  // if provides key, then the result is 1
+  if (ProvidesKey(wrt_key, wrt_tag)) {
+    auto keytag = std::make_pair(wrt_key, wrt_tag);
+    int i = std::find(my_keys_.begin(), my_keys_.end(), keytag) - my_keys_.begin();
+    AMANZI_ASSERT(i < my_keys_.size());  // ensured by IsDifferentiableWRT() check previously
+    *results[i] = 1.0;
+    return;
+  }
+
   // dF/dx = sum_(deps) partial F/ partial dep * ddep/dx + partial F/partial x
   for (auto& dep : dependencies_) {
     if (wrt_key == dep.first && wrt_tag == dep.second) {
@@ -118,7 +127,7 @@ void EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::
         results[i]->Update(1., tmp_data[i], 1.);
 
     } else if (S.GetEvaluator(dep.first, dep.second)
-                   .IsDependency(S, wrt_key, wrt_tag)) {
+                .IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
       // partial F / partial dep * ddep/dx
       // note this has already been Updated in the public version of this
       // function

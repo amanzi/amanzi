@@ -21,8 +21,11 @@ namespace Amanzi {
 // Constructor
 // -----------------------------------------------------------------------------
 EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
-    : vo_(Keys::cleanPListName(plist.name()), plist),
-      plist_(plist) {
+    : plist_(plist),
+      vo_(Keys::cleanPListName(plist.name()), plist)
+{
+  type_ = EvaluatorType::SECONDARY;
+
   // process the plist for names and tags of the things this evaluator calculates
   if (plist_.isParameter("names")) {
     auto names = plist_.get<Teuchos::Array<std::string>>("names");
@@ -99,7 +102,8 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
 }
 
 
-Evaluator& EvaluatorSecondary::operator=(const Evaluator& other) {
+Evaluator& EvaluatorSecondary::operator=(const Evaluator& other)
+{
   if (this != &other) {
     const EvaluatorSecondary *other_p =
         dynamic_cast<const EvaluatorSecondary *>(&other);
@@ -110,7 +114,8 @@ Evaluator& EvaluatorSecondary::operator=(const Evaluator& other) {
 }
 
 
-EvaluatorSecondary& EvaluatorSecondary::operator=(const EvaluatorSecondary& other) {
+EvaluatorSecondary& EvaluatorSecondary::operator=(const EvaluatorSecondary& other)
+{
   if (this != &other) {
     AMANZI_ASSERT(my_keys_ == other.my_keys_);
     requests_ = other.requests_;
@@ -124,7 +129,8 @@ EvaluatorSecondary& EvaluatorSecondary::operator=(const EvaluatorSecondary& othe
 // Answers the question, has this Field changed since it was last requested
 // for Field Key reqest.  Updates the field if needed.
 // -----------------------------------------------------------------------------
-bool EvaluatorSecondary::Update(State& S, const Key& request) {
+bool EvaluatorSecondary::Update(State& S, const Key& request)
+{
   Teuchos::OSTab tab = vo_.getOSTab();
 
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
@@ -176,7 +182,8 @@ bool EvaluatorSecondary::Update(State& S, const Key& request) {
 // ---------------------------------------------------------------------------
 bool EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
                                           const Key& wrt_key,
-                                          const Tag& wrt_tag) {
+                                          const Tag& wrt_tag)
+{
   AMANZI_ASSERT(IsDependency(S, wrt_key, wrt_tag));
 
   Teuchos::OSTab tab = vo_.getOSTab();
@@ -243,12 +250,13 @@ bool EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
 }
 
 
-bool EvaluatorSecondary::IsDependency(const State& S, const Key& key, const Tag& tag) const {
+bool EvaluatorSecondary::IsDependency(const State& S, const Key& key, const Tag& tag) const
+{
   if (std::find(dependencies_.begin(), dependencies_.end(),
                 std::make_pair(key, tag)) != dependencies_.end()) {
     return true;
   } else {
-    for (auto &dep : dependencies_) {
+    for (auto& dep : dependencies_) {
       if (S.GetEvaluator(dep.first, dep.second).IsDependency(S, key, tag)) {
         return true;
       }
@@ -264,7 +272,8 @@ bool EvaluatorSecondary::ProvidesKey(const Key& key, const Tag& tag) const {
 }
 
 
-std::string EvaluatorSecondary::WriteToString() const {
+std::string EvaluatorSecondary::WriteToString() const
+{
   std::stringstream result;
   result << my_keys_.size() << " ";
   for (const auto& key : my_keys_) {

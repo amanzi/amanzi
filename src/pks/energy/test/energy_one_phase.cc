@@ -22,6 +22,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "CompositeVector.hh"
 #include "EnergyOnePhase_PK.hh"
 #include "MeshFactory.hh"
 #include "Operator.hh"
@@ -90,8 +91,8 @@ TEST(ENERGY_ONE_PHASE) {
   double t(0.0), dt(0.1), t1(5.5), dt_next;
   while (t < t1) {
     // swap conserved quntity (no backup, we check dt_next instead)
-    const CompositeVector& e = *S->GetFieldData("energy");
-    CompositeVector& e_prev = *S->GetFieldData("prev_energy", "thermal");
+    const auto& e = S->Get<CompositeVector>("energy");
+    auto& e_prev = S->GetW<CompositeVector>("prev_energy", "thermal");
     e_prev = e;
 
     if (itrs == 0) {
@@ -104,7 +105,8 @@ TEST(ENERGY_ONE_PHASE) {
     EPK->bdf1_dae()->TimeStep(dt, dt_next, soln);
     CHECK(dt_next >= dt);
     EPK->bdf1_dae()->CommitSolution(dt, soln);
-    Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator("temperature"))->SetFieldAsChanged(S.ptr());
+    Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> >(
+        S->GetEvaluatorPtr("temperature"))->SetChanged();
 
     t += dt;
     itrs++;
@@ -113,7 +115,7 @@ TEST(ENERGY_ONE_PHASE) {
   EPK->CommitStep(0.0, 1.0, S);
   WriteStateStatistics(*S, *vo);
 
-  auto temp = *S->GetFieldData("temperature")->ViewComponent("cell");
+  auto temp = *S->Get<CompositeVector>("temperature").ViewComponent("cell");
   for (int c = 0; c < 20; ++c) { 
     CHECK_CLOSE(1.5, temp[0][c], 2e-8);
   }

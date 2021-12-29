@@ -24,11 +24,13 @@ namespace Energy {
 /* ******************************************************************
 * Constructor from ParameterList
 ****************************************************************** */
-TotalEnergyEvaluator::TotalEnergyEvaluator(Teuchos::ParameterList& plist) :
-    SecondaryVariableFieldEvaluator(plist)
+TotalEnergyEvaluator::TotalEnergyEvaluator(Teuchos::ParameterList& plist)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
-  my_key_ = plist_.get<std::string>("energy key");
-  auto prefix = Keys::getDomainPrefix(my_key_);
+  if (my_keys_.size() == 0) {
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("energy key"), Tags::DEFAULT));
+  }
+  auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
 
   vapor_diffusion_ = plist_.get<bool>("vapor diffusion");
   ie_rock_key_ = plist_.get<std::string>("internal energy rock key");
@@ -42,41 +44,41 @@ TotalEnergyEvaluator::TotalEnergyEvaluator(Teuchos::ParameterList& plist) :
   porosity_key_ = prefix + "porosity";
   sat_liquid_key_ = prefix + "saturation_liquid";
 
-  dependencies_.insert(porosity_key_);
-  dependencies_.insert(sat_liquid_key_);
-  dependencies_.insert(mol_density_liquid_key_);
-  dependencies_.insert(ie_liquid_key_);
+  dependencies_.push_back(std::make_pair(porosity_key_, Tags::DEFAULT));
+  dependencies_.push_back(std::make_pair(sat_liquid_key_, Tags::DEFAULT));
+  dependencies_.push_back(std::make_pair(mol_density_liquid_key_, Tags::DEFAULT));
+  dependencies_.push_back(std::make_pair(ie_liquid_key_, Tags::DEFAULT));
 
   if (vapor_diffusion_) {
-    dependencies_.insert(mol_density_gas_key_);
-    dependencies_.insert(ie_gas_key_);
+    dependencies_.push_back(std::make_pair(mol_density_gas_key_, Tags::DEFAULT));
+    dependencies_.push_back(std::make_pair(ie_gas_key_, Tags::DEFAULT));
   }
 
-  dependencies_.insert(ie_rock_key_);
-  dependencies_.insert(particle_density_key_);
+  dependencies_.push_back(std::make_pair(ie_rock_key_, Tags::DEFAULT));
+  dependencies_.push_back(std::make_pair(particle_density_key_, Tags::DEFAULT));
 }
 
 
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-TotalEnergyEvaluator::TotalEnergyEvaluator(const TotalEnergyEvaluator& other) :
-    SecondaryVariableFieldEvaluator(other),
-    vapor_diffusion_(other.vapor_diffusion_),
-    particle_density_key_(other.particle_density_key_),
-    porosity_key_(other.porosity_key_),
-    sat_liquid_key_(other.sat_liquid_key_),
-    ie_rock_key_(other.ie_rock_key_),
-    ie_liquid_key_(other.ie_liquid_key_),
-    ie_gas_key_(other.ie_gas_key_),
-    mol_density_liquid_key_(other.mol_density_liquid_key_),
-    mol_density_gas_key_(other.mol_density_gas_key_) {};
+TotalEnergyEvaluator::TotalEnergyEvaluator(const TotalEnergyEvaluator& other)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+      vapor_diffusion_(other.vapor_diffusion_),
+      particle_density_key_(other.particle_density_key_),
+      porosity_key_(other.porosity_key_),
+      sat_liquid_key_(other.sat_liquid_key_),
+      ie_rock_key_(other.ie_rock_key_),
+      ie_liquid_key_(other.ie_liquid_key_),
+      ie_gas_key_(other.ie_gas_key_),
+      mol_density_liquid_key_(other.mol_density_liquid_key_),
+      mol_density_gas_key_(other.mol_density_gas_key_) {};
 
 
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<FieldEvaluator> TotalEnergyEvaluator::Clone() const {
+Teuchos::RCP<Evaluator> TotalEnergyEvaluator::Clone() const {
   return Teuchos::rcp(new TotalEnergyEvaluator(*this));
 }
 
@@ -84,26 +86,25 @@ Teuchos::RCP<FieldEvaluator> TotalEnergyEvaluator::Clone() const {
 /* ******************************************************************
 * Field evaluator.
 ****************************************************************** */
-void TotalEnergyEvaluator::EvaluateField_(
-    const Teuchos::Ptr<State>& S,
-    const Teuchos::Ptr<CompositeVector>& result) 
+void TotalEnergyEvaluator::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
-  const auto& s_l = *S->GetFieldData(sat_liquid_key_)->ViewComponent("cell");
-  const auto& n_l = *S->GetFieldData(mol_density_liquid_key_)->ViewComponent("cell");
-  const auto& u_l = *S->GetFieldData(ie_liquid_key_)->ViewComponent("cell");
+  const auto& s_l = *S.Get<CompositeVector>(sat_liquid_key_).ViewComponent("cell");
+  const auto& n_l = *S.Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
+  const auto& u_l = *S.Get<CompositeVector>(ie_liquid_key_).ViewComponent("cell");
 
   Teuchos::RCP<const Epetra_MultiVector> n_g, u_g;
   if (vapor_diffusion_) {
-    n_g = S->GetFieldData(mol_density_gas_key_)->ViewComponent("cell");
-    u_g = S->GetFieldData(ie_gas_key_)->ViewComponent("cell");
+    n_g = S.Get<CompositeVector>(mol_density_gas_key_).ViewComponent("cell");
+    u_g = S.Get<CompositeVector>(ie_gas_key_).ViewComponent("cell");
   } 
 
-  const auto& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
-  const auto& u_rock = *S->GetFieldData(ie_rock_key_)->ViewComponent("cell");
-  const auto& rho_rock = *S->GetFieldData(particle_density_key_)->ViewComponent("cell");
+  const auto& phi = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
+  const auto& u_rock = *S.Get<CompositeVector>(ie_rock_key_).ViewComponent("cell");
+  const auto& rho_rock = *S.Get<CompositeVector>(particle_density_key_).ViewComponent("cell");
 
-  auto& result_v = *result->ViewComponent("cell");
-  int ncells = result->size("cell");
+  auto& result_v = *results[0]->ViewComponent("cell");
+  int ncells = results[0]->size("cell");
 
   for (int c = 0; c != ncells; ++c) {
     result_v[0][c] = phi[0][c] * s_l[0][c] * n_l[0][c] * u_l[0][c]
@@ -119,26 +120,26 @@ void TotalEnergyEvaluator::EvaluateField_(
 /* ******************************************************************
 * Field derivative evaluator.
 ****************************************************************** */
-void TotalEnergyEvaluator::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
+void TotalEnergyEvaluator::EvaluatePartialDerivative_(
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
+    const std::vector<CompositeVector*>& results)
 {
-  const auto& s_l = *S->GetFieldData(sat_liquid_key_)->ViewComponent("cell");
-  const auto& n_l = *S->GetFieldData(mol_density_liquid_key_)->ViewComponent("cell");
-  const auto& u_l = *S->GetFieldData(ie_liquid_key_)->ViewComponent("cell");
+  const auto& s_l = *S.Get<CompositeVector>(sat_liquid_key_).ViewComponent("cell");
+  const auto& n_l = *S.Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
+  const auto& u_l = *S.Get<CompositeVector>(ie_liquid_key_).ViewComponent("cell");
 
   Teuchos::RCP<const Epetra_MultiVector> n_g, u_g;
   if (vapor_diffusion_) {
-    n_g = S->GetFieldData(mol_density_gas_key_)->ViewComponent("cell");
-    u_g = S->GetFieldData(ie_gas_key_)->ViewComponent("cell");
+    n_g = S.Get<CompositeVector>(mol_density_gas_key_).ViewComponent("cell");
+    u_g = S.Get<CompositeVector>(ie_gas_key_).ViewComponent("cell");
   }
 
-  const auto& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
-  const auto& u_rock = *S->GetFieldData(ie_rock_key_)->ViewComponent("cell");
-  const auto& rho_rock = *S->GetFieldData(particle_density_key_)->ViewComponent("cell");
+  const auto& phi = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
+  const auto& u_rock = *S.Get<CompositeVector>(ie_rock_key_).ViewComponent("cell");
+  const auto& rho_rock = *S.Get<CompositeVector>(particle_density_key_).ViewComponent("cell");
 
-  auto& result_v = *result->ViewComponent("cell");
-  int ncells = result->size("cell");
+  auto& result_v = *results[0]->ViewComponent("cell");
+  int ncells = results[0]->size("cell");
 
   if (wrt_key == porosity_key_) {
     for (int c = 0; c != ncells; ++c) {

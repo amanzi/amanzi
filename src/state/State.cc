@@ -332,21 +332,35 @@ void State::Setup()
     r.second->CreateData();
 
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_->os() << "Record \"" << r.first << "\": ";
+      *vo_->os() << "RecordSet \"" << r.first << "\", tags: ";
 
       auto& field = GetRecord(r.first);
+      for(auto& e : *r.second) *vo_->os() << "\"" << e.first.get() << "\" ";
       if (field.ValidType<CompositeVector>()) {
         const auto& cv = Get<CompositeVector>(r.first);
+        *vo_->os() << "comps: ";
         for (auto comp = cv.begin(); comp != cv.end(); ++comp) *vo_->os() << *comp << " ";
       } else {
-        *vo_->os() << " not of type CV";
+        *vo_->os() << "not CV";
       }
       *vo_->os() << "\n";
     }
   }
 
   for (auto& deriv : derivs_) {
-    deriv.second->CreateData();
+    // Some PKs allows an evalutator to be either independent or secondary.
+    if (GetEvaluator(deriv.first).get_type() == EvaluatorType::SECONDARY) {
+      deriv.second->CreateData();
+    }
+
+    if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+      *vo_->os() << "Derivative: D" << deriv.first << "/Dtags" << std::endl;
+    }
+  }
+
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    Teuchos::OSTab tab1 = vo_->getOSTab();
+    *vo_->os() << "Setup is complete.\n\n";
   }
 }
 

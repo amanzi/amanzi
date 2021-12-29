@@ -20,28 +20,28 @@ namespace Energy {
 /* ******************************************************************
 * Constructor of a secondary evaluator.
 ****************************************************************** */
-EnthalpyEvaluator::EnthalpyEvaluator(Teuchos::ParameterList& plist) :
-    SecondaryVariableFieldEvaluator(plist)
+EnthalpyEvaluator::EnthalpyEvaluator(Teuchos::ParameterList& plist)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
-  if (my_key_ == std::string("")) {
-    my_key_ = plist_.get<std::string>("enthalpy key");
+  if (my_keys_.size() == 0) {
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("enthalpy key"), Tags::DEFAULT));
   }
-  auto prefix = Keys::getDomainPrefix(my_key_);  // include dash
+  auto prefix = Keys::getDomainPrefix(my_keys_[0].first);  // include dash
 
   // Set up my dependencies.
   // -- internal energy
   ie_liquid_key_ = plist_.get<std::string>("internal energy key", prefix + "internal_energy_liquid");
-  dependencies_.insert(ie_liquid_key_);
+  dependencies_.push_back(std::make_pair(ie_liquid_key_, Tags::DEFAULT));
 
   // -- pressure work
   include_work_ = plist_.get<bool>("include work term", true);
 
   if (include_work_) {
     pressure_key_ = plist_.get<std::string>("pressure key", prefix + "pressure");
-    dependencies_.insert(pressure_key_);
+    dependencies_.push_back(std::make_pair(pressure_key_, Tags::DEFAULT));
 
     mol_density_liquid_key_ = plist_.get<std::string>("molar density key", prefix + "molar_density_liquid");
-    dependencies_.insert(mol_density_liquid_key_);
+    dependencies_.push_back(std::make_pair(mol_density_liquid_key_, Tags::DEFAULT));
   }
 }
 
@@ -49,18 +49,18 @@ EnthalpyEvaluator::EnthalpyEvaluator(Teuchos::ParameterList& plist) :
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-EnthalpyEvaluator::EnthalpyEvaluator(const EnthalpyEvaluator& other) :
-    SecondaryVariableFieldEvaluator(other),
-    pressure_key_(other.pressure_key_),
-    mol_density_liquid_key_(other.mol_density_liquid_key_),
-    ie_liquid_key_(other.ie_liquid_key_),
-    include_work_(other.include_work_) {};
+EnthalpyEvaluator::EnthalpyEvaluator(const EnthalpyEvaluator& other)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+      pressure_key_(other.pressure_key_),
+      mol_density_liquid_key_(other.mol_density_liquid_key_),
+      ie_liquid_key_(other.ie_liquid_key_),
+      include_work_(other.include_work_) {};
 
 
 /* ******************************************************************
 * TBW.
 ****************************************************************** */
-Teuchos::RCP<FieldEvaluator> EnthalpyEvaluator::Clone() const {
+Teuchos::RCP<Evaluator> EnthalpyEvaluator::Clone() const {
   return Teuchos::rcp(new EnthalpyEvaluator(*this));
 }
 
@@ -68,23 +68,22 @@ Teuchos::RCP<FieldEvaluator> EnthalpyEvaluator::Clone() const {
 /* ******************************************************************
 * Evaluator's body.
 ****************************************************************** */
-void EnthalpyEvaluator::EvaluateField_(
-    const Teuchos::Ptr<State>& S,
-    const Teuchos::Ptr<CompositeVector>& result)
+void EnthalpyEvaluator::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
-  Teuchos::RCP<const CompositeVector> u_l = S->GetFieldData(ie_liquid_key_);
-  *result = *u_l;
+  auto u_l = S.GetPtr<CompositeVector>(ie_liquid_key_);
+  *results[0] = *u_l;
 
   if (include_work_) {
-    Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pressure_key_);
-    Teuchos::RCP<const CompositeVector> n_l = S->GetFieldData(mol_density_liquid_key_);
+    auto pres = S.GetPtr<CompositeVector>(pressure_key_);
+    auto n_l = S.GetPtr<CompositeVector>(mol_density_liquid_key_);
 
-    for (auto comp = result->begin(); comp != result->end(); ++comp) {
+    for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
       const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp);
       const Epetra_MultiVector& nl_v = *n_l->ViewComponent(*comp);
-      Epetra_MultiVector& result_v = *result->ViewComponent(*comp);
+      Epetra_MultiVector& result_v = *results[0]->ViewComponent(*comp);
 
-      int ncomp = result->size(*comp);
+      int ncomp = results[0]->size(*comp);
       for (int i = 0; i != ncomp; ++i) {
         result_v[0][i] += pres_v[0][i] / nl_v[0][i];
       }
@@ -96,23 +95,23 @@ void EnthalpyEvaluator::EvaluateField_(
 /* ******************************************************************
 * Evaluator for derivatives.
 ****************************************************************** */
-void EnthalpyEvaluator::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
+void EnthalpyEvaluator::EvaluatePartialDerivative_(
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
+    const std::vector<CompositeVector*>& results)
 {
   if (wrt_key == ie_liquid_key_) {
-    result->PutScalar(1.0);
+    results[0]->PutScalar(1.0);
 
   } else if (wrt_key == pressure_key_) {
     AMANZI_ASSERT(include_work_);
     
-    Teuchos::RCP<const CompositeVector> n_l = S->GetFieldData(mol_density_liquid_key_);
+    auto n_l = S.GetPtr<CompositeVector>(mol_density_liquid_key_);
 
-    for (CompositeVector::name_iterator comp = result->begin(); comp != result->end(); ++comp) {
+    for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
       const Epetra_MultiVector& nl_v = *n_l->ViewComponent(*comp);
-      Epetra_MultiVector& result_v = *result->ViewComponent(*comp);
+      Epetra_MultiVector& result_v = *results[0]->ViewComponent(*comp);
 
-      int ncomp = result->size(*comp);
+      int ncomp = results[0]->size(*comp);
       for (int i = 0; i != ncomp; ++i) {
         result_v[0][i] = 1.0 / nl_v[0][i];
       }
@@ -121,15 +120,15 @@ void EnthalpyEvaluator::EvaluateFieldPartialDerivative_(
   } else if (wrt_key == mol_density_liquid_key_) {
     AMANZI_ASSERT(include_work_);
     
-    Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pressure_key_);
-    Teuchos::RCP<const CompositeVector> n_l = S->GetFieldData(mol_density_liquid_key_);
+    auto pres = S.GetPtr<CompositeVector>(pressure_key_);
+    auto n_l = S.GetPtr<CompositeVector>(mol_density_liquid_key_);
 
-    for (auto comp = result->begin(); comp != result->end(); ++comp) {
+    for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
       const Epetra_MultiVector& nl_v = *n_l->ViewComponent(*comp);
       const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp);
-      Epetra_MultiVector& result_v = *result->ViewComponent(*comp);
+      Epetra_MultiVector& result_v = *results[0]->ViewComponent(*comp);
 
-      int ncomp = result->size(*comp, false);
+      int ncomp = results[0]->size(*comp, false);
       for (int i = 0; i != ncomp; ++i) {
         result_v[0][i] = -pres_v[0][i] / (nl_v[0][i] * nl_v[0][i]);
       }
@@ -144,9 +143,9 @@ void EnthalpyEvaluator::EvaluateFieldPartialDerivative_(
 double EnthalpyEvaluator::EvaluateFieldSingle(
     const Teuchos::Ptr<State>& S, int c, double T, double p)
 {
-  double tmp = Teuchos::rcp_dynamic_cast<IEMEvaluator>(S->GetFieldEvaluator(ie_liquid_key_))->EvaluateFieldSingle(c, T, p);
+  double tmp = Teuchos::rcp_dynamic_cast<IEMEvaluator>(S->GetEvaluatorPtr(ie_liquid_key_))->EvaluateFieldSingle(c, T, p);
   if (include_work_) {
-    const auto& nl_c = *S->GetFieldData(mol_density_liquid_key_)->ViewComponent("cell", true);
+    const auto& nl_c = *S->Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell", true);
     tmp += p / nl_c[0][c];
   }
   return tmp;

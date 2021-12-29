@@ -29,7 +29,7 @@ class EvaluatorIndependentFunction
 
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
-  virtual Evaluator &operator=(const Evaluator &other) override;
+  virtual Evaluator& operator=(const Evaluator &other) override;
 
   EvaluatorIndependentFunction &
   operator=(const EvaluatorIndependentFunction &other);

@@ -14,10 +14,10 @@
 
 #include "Teuchos_ParameterList.hpp"
 
+#include "EvaluatorPrimary.hh"
 #include "Mesh.hh"
 #include "Mesh_Algorithms.hh"
 #include "PK_DomainFunctionFactory.hh"
-#include "primary_variable_field_evaluator.hh"
 #include "State.hh"
 #include "WhetStoneDefs.hh"
 
@@ -26,6 +26,9 @@
 
 namespace Amanzi {
 namespace Energy {
+
+using CV_t = CompositeVector;
+using CVS_t = CompositeVectorSpace;
 
 /* ******************************************************************
 * Default constructor for Energy PK.
@@ -88,57 +91,69 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
 void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   // require first-requested state variables
-  if (!S->HasField("atmospheric_pressure")) {
-    S->RequireScalar("atmospheric_pressure", passwd_);
+  if (!S->HasData("atmospheric_pressure")) {
+    S->Require<double>("atmospheric_pressure", Tags::DEFAULT, passwd_);
   }
 
   // require primary state variables
-  if (!S->HasField(temperature_key_)) {
+  if (!S->HasData(temperature_key_)) {
     std::vector<std::string> names({"cell", "face"});
     std::vector<int> ndofs(2, 1);
     std::vector<AmanziMesh::Entity_kind> locations({AmanziMesh::CELL, AmanziMesh::FACE});
  
-    S->RequireField(temperature_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponents(names, locations, ndofs);
+    S->Require<CV_t, CVS_t>(temperature_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponents(names, locations, ndofs);
 
-    Teuchos::ParameterList elist;
+    Teuchos::ParameterList elist(temperature_key_);
     elist.set<std::string>("evaluator name", temperature_key_);
-    temperature_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator(temperature_key_, temperature_eval_);
+    temperature_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
+    S->SetEvaluator(temperature_key_, temperature_eval_);
   } else {
-    temperature_eval_ = 
-        Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator(temperature_key_));
+    temperature_eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t> >(S->GetEvaluatorPtr(temperature_key_));
   }
 
   // conserved quantity from the last time step.
-  if (!S->HasField(prev_energy_key_)) {
-    S->RequireField(prev_energy_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->GetField(prev_energy_key_, passwd_)->set_io_vis(false);
+  if (!S->HasData(prev_energy_key_)) {
+    S->Require<CV_t, CVS_t>(prev_energy_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->GetRecordW(prev_energy_key_, passwd_).set_io_vis(false);
   }
 
   // other fields
   // -- energies
-  S->RequireField(ie_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
+  S->Require<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT, ie_liquid_key_)
+    .SetMesh(mesh_)->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-  S->RequireFieldEvaluator(ie_liquid_key_);
+
+  S->RequireDerivative<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT,
+                                    temperature_key_, Tags::DEFAULT, ie_liquid_key_);
+  S->RequireDerivative<CV_t, CVS_t>(ie_rock_key_, Tags::DEFAULT,
+                                    temperature_key_, Tags::DEFAULT, ie_rock_key_);
+
+  S->RequireEvaluator(ie_liquid_key_);
 
   // -- densities
-  S->RequireField(mol_density_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
+  S->Require<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT, mol_density_liquid_key_)
+    .SetMesh(mesh_)->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-  S->RequireFieldEvaluator(mol_density_liquid_key_);
 
-  S->RequireField(mass_density_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
+  S->RequireDerivative<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT,
+                                    temperature_key_, Tags::DEFAULT, mol_density_liquid_key_);
+
+  S->RequireEvaluator(mol_density_liquid_key_);
+
+  S->Require<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT, mass_density_liquid_key_)
+    .SetMesh(mesh_)->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-  S->RequireFieldEvaluator(mass_density_liquid_key_);
+  S->RequireEvaluator(mass_density_liquid_key_);
 
   // -- darcy flux
-  if (!S->HasField(darcy_flux_key_)) {
-    S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, 1);
+  if (!S->HasData(darcy_flux_key_)) {
+    S->Require<CV_t, CVS_t>(darcy_flux_key_, Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::FACE, 1);
   }
 }
 
@@ -215,18 +230,18 @@ void Energy_PK::InitializeFields_()
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  if (!S_->GetField(temperature_key_, passwd_)->initialized()) {
-    S_->GetFieldData(temperature_key_, passwd_)->PutScalar(298.0);
-    S_->GetField(temperature_key_, passwd_)->set_initialized();
+  if (!S_->GetRecord(temperature_key_).initialized()) {
+    S_->GetW<CV_t>(temperature_key_, passwd_).PutScalar(298.0);
+    S_->GetRecordW(temperature_key_, passwd_).set_initialized();
 
     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
         *vo_->os() << "initialized temperature to default value 298 K." << std::endl;  
   }
 
-  if (S_->GetField(darcy_flux_key_)->owner() == passwd_) {
-    if (!S_->GetField(darcy_flux_key_, passwd_)->initialized()) {
-      S_->GetFieldData(darcy_flux_key_, passwd_)->PutScalar(0.0);
-      S_->GetField(darcy_flux_key_, passwd_)->set_initialized();
+  if (S_->GetRecord(darcy_flux_key_).owner() == passwd_) {
+    if (!S_->GetRecord(darcy_flux_key_).initialized()) {
+      S_->GetW<CV_t>(darcy_flux_key_, passwd_).PutScalar(0.0);
+      S_->GetRecordW(darcy_flux_key_, passwd_).set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
           *vo_->os() << "initialized darcy_flux to default value 0.0" << std::endl;  
@@ -240,9 +255,9 @@ void Energy_PK::InitializeFields_()
 ****************************************************************** */
 bool Energy_PK::UpdateConductivityData(const Teuchos::Ptr<State>& S)
 {
-  bool update = S->GetFieldEvaluator(conductivity_key_)->HasFieldChanged(S, passwd_);
+  bool update = S->GetEvaluator(conductivity_key_).Update(*S, passwd_);
   if (update) {
-    const auto& conductivity = *S->GetFieldData(conductivity_key_)->ViewComponent("cell");
+    const auto& conductivity = *S->Get<CV_t>(conductivity_key_).ViewComponent("cell");
     WhetStone::Tensor Ktmp(dim, 1);
 
     K.clear();
@@ -339,11 +354,11 @@ void Energy_PK::ComputeBCs(const CompositeVector& u)
   // BoundaryDataToFaces(op_bc_, *S_->GetFieldData(temperature_key_, passwd_));
 
   // -- populate BCs
-  S_->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  const auto& enth = *S_->GetFieldData(enthalpy_key_)->ViewComponent("boundary_face", true);
+  S_->GetEvaluator(enthalpy_key_).Update(*S_, passwd_);
+  const auto& enth = *S_->Get<CV_t>(enthalpy_key_).ViewComponent("boundary_face", true);
 
-  S_->GetFieldEvaluator(mol_density_liquid_key_)->HasFieldChanged(S_.ptr(), passwd_);
-  const auto& n_l = *S_->GetFieldData(mol_density_liquid_key_)->ViewComponent("boundary_face", true);
+  S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd_);
+  const auto& n_l = *S_->Get<CV_t>(mol_density_liquid_key_).ViewComponent("boundary_face", true);
 
   std::vector<int>& bc_model_enth_ = op_bc_enth_->bc_model();
   std::vector<double>& bc_value_enth_ = op_bc_enth_->bc_value();

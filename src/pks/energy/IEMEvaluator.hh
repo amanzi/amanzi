@@ -18,7 +18,7 @@
 // Amanzi
 #include "Key.hh"
 #include "Factory.hh"
-#include "secondary_variable_field_evaluator.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 
 // Amanzi::Energy
 #include "IEM.hh"
@@ -29,20 +29,20 @@ namespace Energy {
 typedef std::vector<Teuchos::RCP<IEM> > IEMList;
 typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, IEMList> IEMPartition;
 
-class IEMEvaluator : public SecondaryVariableFieldEvaluator {
+class IEMEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   // constructor format for all derived classes
   explicit
   IEMEvaluator(Teuchos::ParameterList& plist);
   IEMEvaluator(const IEMEvaluator& other);
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
 
-  // Required methods from SecondaryVariableFieldEvaluator
-  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& results);
-  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector>& results);
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
+
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override;
 
   Teuchos::RCP<IEMPartition> iem_partition() { return iem_; }
 
@@ -65,7 +65,7 @@ class IEMEvaluator : public SecondaryVariableFieldEvaluator {
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
-  static Utils::RegisteredFactory<FieldEvaluator,IEMEvaluator> factory_;
+  static Utils::RegisteredFactory<Evaluator, IEMEvaluator> factory_;
 };
 
 }  // namespace Energy

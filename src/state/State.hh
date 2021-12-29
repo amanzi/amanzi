@@ -285,8 +285,8 @@ class State {
     if (!Keys::hasKey(derivs_, keytag)) {
       derivs_.emplace(keytag, std::make_unique<RecordSet>(keytag));
     }
-    Tag der_tag = make_tag(Keys::getKeyTag(wrt_key, wrt_tag.get()));
-    derivs_.at(keytag)->RequireRecord(der_tag, owner);
+    Tag dertag = make_tag(Keys::getKeyTag(wrt_key, wrt_tag.get()));
+    derivs_.at(keytag)->RequireRecord(dertag, owner);
     return derivs_.at(keytag)->SetType<T, F>();
   }
 
@@ -297,13 +297,13 @@ class State {
     if (!Keys::hasKey(derivs_, keytag)) {
       derivs_.emplace(keytag, std::make_unique<RecordSet>(keytag));
     }
-    Tag der_tag = make_tag(Keys::getKeyTag(wrt_key, wrt_tag.get()));
-    derivs_.at(keytag)->RequireRecord(der_tag, owner);
+    Tag dertag = make_tag(Keys::getKeyTag(wrt_key, wrt_tag.get()));
+    derivs_.at(keytag)->RequireRecord(dertag, owner);
     derivs_.at(keytag)->SetType<T>();
   }
 
   template <typename T, typename F>
-  F& RequireDerivative(const Key &key, const Key& wrt_key, const Tag& wrt_tag) {
+  F& RequireDerivative(const Key& key, const Key& wrt_key, const Tag& wrt_tag) {
     return RequireDerivative<T, F>(key, Tags::DEFAULT, wrt_key, wrt_tag, "");
   }
 
@@ -323,7 +323,6 @@ class State {
 
   // ignoring record access for now, this could be added to, e.g. vis
   // derivatives.
-  
   template <typename T>
   const T& GetDerivative(const Key& key, const Tag& tag, const Key& wrt_key,
                          const Tag& wrt_tag) const {
@@ -353,6 +352,7 @@ class State {
     return derivs_.at(Keys::getKeyTag(key, tag.get()))->GetPtrW<T>(der_tag, owner);
   }
 
+  // set operations
   bool HasDerivativeSet(const Key& key, const Tag& tag) const {
     return Keys::hasKey(derivs_, Keys::getKeyTag(key, tag.get()));
   }

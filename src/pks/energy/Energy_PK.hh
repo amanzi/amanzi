@@ -20,6 +20,7 @@
 
 // Amanzi
 #include "CompositeVector.hh"
+#include "EvaluatorPrimary.hh"
 #include "Key.hh"
 #include "Operator.hh"
 #include "PDE_Accumulation.hh"
@@ -29,7 +30,6 @@
 #include "PK_BDF.hh"
 #include "PK_DomainFunction.hh"
 #include "PK_PhysicalBDF.hh"
-#include "primary_variable_field_evaluator.hh"
 #include "Tensor.hh"
 #include "TreeVector.hh"
 #include "Upwind.hh"
@@ -87,7 +87,7 @@ class Energy_PK : public PK_PhysicalBDF {
   // -- calling this indicates that the time integration
   //    scheme is changing the value of the solution in state.
   void ChangedSolution() override {
-    temperature_eval_->SetFieldAsChanged(S_.ptr());
+    temperature_eval_->SetChanged();
   }
 
   // other methods
@@ -123,7 +123,7 @@ class Energy_PK : public PK_PhysicalBDF {
 
   // primary field
   std::string passwd_;
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> temperature_eval_;
+  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> > temperature_eval_;
 
   // names of state fields 
   Key temperature_key_;

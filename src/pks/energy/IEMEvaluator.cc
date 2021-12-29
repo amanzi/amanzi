@@ -23,8 +23,8 @@ namespace Energy {
 /* ******************************************************************
 * Constructors.
 ****************************************************************** */
-IEMEvaluator::IEMEvaluator(Teuchos::ParameterList& plist) :
-    SecondaryVariableFieldEvaluator(plist)
+IEMEvaluator::IEMEvaluator(Teuchos::ParameterList& plist)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
   /*
   AMANZI_ASSERT(plist_.isSublist("IEM parameters"));
@@ -40,17 +40,17 @@ IEMEvaluator::IEMEvaluator(Teuchos::ParameterList& plist) :
 /* ******************************************************************
 * Copy constructors.
 ****************************************************************** */
-IEMEvaluator::IEMEvaluator(const IEMEvaluator& other) :
-    SecondaryVariableFieldEvaluator(other),
-    iem_(other.iem_),
-    temperature_key_(other.temperature_key_),
-    pressure_key_(other.pressure_key_) {};
+IEMEvaluator::IEMEvaluator(const IEMEvaluator& other)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+      iem_(other.iem_),
+      temperature_key_(other.temperature_key_),
+      pressure_key_(other.pressure_key_) {};
 
 
 /* ******************************************************************
 * Copy assinement
 ****************************************************************** */
-Teuchos::RCP<FieldEvaluator> IEMEvaluator::Clone() const {
+Teuchos::RCP<Evaluator> IEMEvaluator::Clone() const {
   return Teuchos::rcp(new IEMEvaluator(*this));
 }
 
@@ -60,44 +60,44 @@ Teuchos::RCP<FieldEvaluator> IEMEvaluator::Clone() const {
 ****************************************************************** */
 void IEMEvaluator::InitializeFromPlist_()
 {
-  if (my_key_ == std::string("")) {
-    my_key_ = plist_.get<std::string>("internal energy key");
+  if (my_keys_.size() == 0) {
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("internal energy key"), Tags::DEFAULT));
   }
 
   // Set up my dependencies.
-  domain_ = Keys::getDomain(my_key_);
-  std::string prefix = Keys::getDomainPrefix(my_key_);
+  domain_ = Keys::getDomain(my_keys_[0].first);
+  std::string prefix = Keys::getDomainPrefix(my_keys_[0].first);
 
   temperature_key_ = plist_.get<std::string>("temperature key", prefix + "temperature");
   pressure_key_ = plist_.get<std::string>("pressure key", prefix + "pressure");
-  dependencies_.insert(temperature_key_);
-  dependencies_.insert(pressure_key_);
+  dependencies_.push_back(std::make_pair(temperature_key_, Tags::DEFAULT));
+  dependencies_.push_back(std::make_pair(pressure_key_, Tags::DEFAULT));
 }
 
 
 /* ******************************************************************
 * Evaluation body.
 ****************************************************************** */
-void IEMEvaluator::EvaluateField_(
-    const Teuchos::Ptr<State>& S, const Teuchos::Ptr<CompositeVector>& result)
+void IEMEvaluator::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
   if (iem_ == Teuchos::null) {
-    CreateIEMPartition_(S->GetMesh(domain_), plist_);
+    CreateIEMPartition_(S.GetMesh(domain_), plist_);
   }
 
-  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
-  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pressure_key_);
+  auto temp = S.GetPtr<CompositeVector>(temperature_key_);
+  auto pres = S.GetPtr<CompositeVector>(pressure_key_);
 
-  for (auto comp = result->begin(); comp != result->end(); ++comp) {
+  for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
     auto kind = AmanziMesh::entity_kind(*comp);
     const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp);
     const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp);
-    Epetra_MultiVector& result_v = *result->ViewComponent(*comp);
+    Epetra_MultiVector& result_v = *results[0]->ViewComponent(*comp);
 
     int ierr(0);
     std::string msg;
 
-    int ncomp = result->size(*comp);
+    int ncomp = results[0]->size(*comp);
     for (int i = 0; i != ncomp; ++i) {
       auto id = MyModel_(kind, i);
       auto model = iem_->second[(*iem_->first)[id]];
@@ -116,24 +116,24 @@ void IEMEvaluator::EvaluateField_(
 /* ******************************************************************
 * Evaluation of field derivatives.
 ****************************************************************** */
-void IEMEvaluator::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
+void IEMEvaluator::EvaluatePartialDerivative_(
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
+    const std::vector<CompositeVector*>& results) 
 {
   if (iem_ == Teuchos::null) {
-    CreateIEMPartition_(S->GetMesh(domain_), plist_);
+    CreateIEMPartition_(S.GetMesh(domain_), plist_);
   }
 
-  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
-  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pressure_key_);
+  auto temp = S.GetPtr<CompositeVector>(temperature_key_);
+  auto pres = S.GetPtr<CompositeVector>(pressure_key_);
 
-  for (auto comp = result->begin(); comp != result->end(); ++comp) {
+  for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
     auto kind = AmanziMesh::entity_kind(*comp);
     const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp);
     const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp);
-    Epetra_MultiVector& result_v = *result->ViewComponent(*comp);
+    Epetra_MultiVector& result_v = *results[0]->ViewComponent(*comp);
 
-    int ncomp = result->size(*comp);
+    int ncomp = results[0]->size(*comp);
 
     if (wrt_key == temperature_key_) {
       for (int i = 0; i != ncomp; ++i) {

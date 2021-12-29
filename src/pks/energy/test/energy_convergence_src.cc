@@ -22,11 +22,11 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "EvaluatorPrimary.hh"
 #include "GMVMesh.hh"
 #include "LeastSquare.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "secondary_variable_field_evaluator.hh"
 #include "State.hh"
 
 // Energy
@@ -46,30 +46,29 @@ class TestEnthalpyEvaluator : public EnthalpyEvaluator {
   explicit TestEnthalpyEvaluator(Teuchos::ParameterList& plist) :
       EnthalpyEvaluator(plist) {};
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const {
+  virtual Teuchos::RCP<Evaluator> Clone() const {
     return Teuchos::rcp(new TestEnthalpyEvaluator(*this));
   }
 
   // Required methods from SecondaryVariableFieldEvaluator
-  virtual void EvaluateField_(
-          const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& result) {
-    for (auto comp = result->begin(); comp != result->end(); ++comp) {
-      const auto& temp_c = *S->GetFieldData("temperature")->ViewComponent(*comp);
-      auto& result_c = *result->ViewComponent(*comp);
-      int ncomp = result->size(*comp, false);
+  virtual void Evaluate_(
+          const State& S, const std::vector<CompositeVector*>& results) {
+    for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
+      const auto& temp_c = *S.Get<CompositeVector>("temperature").ViewComponent(*comp);
+      auto& result_c = *results[0]->ViewComponent(*comp);
+      int ncomp = results[0]->size(*comp, false);
       for (int i = 0; i != ncomp; ++i) {
         result_c[0][i] = temp_c[0][i];
       }
     }
   }
 
-  virtual void EvaluateFieldPartialDerivative_(
-          const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-    for (auto comp = result->begin(); comp != result->end(); ++comp) {
-      auto& result_c = *result->ViewComponent(*comp);
-      int ncomp = result->size(*comp, false);
+  virtual void EvaluatePartialDerivative_(
+          const State& S, const Key& wrt_key, const Tag& wrt_tag,
+          const std::vector<CompositeVector*>& results) {
+    for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
+      auto& result_c = *results[0]->ViewComponent(*comp);
+      int ncomp = results[0]->size(*comp, false);
       for (int i = 0; i != ncomp; ++i) {
         result_c[0][i] = 1.0;
       }
@@ -134,12 +133,20 @@ TEST(ENERGY_CONVERGENCE_SRC) {
     // overwrite enthalpy with a different model
     Teuchos::ParameterList ev_list;
     ev_list.set<std::string>("enthalpy key", "enthalpy")
-           .set<bool>("include work term", false);
-    S->RequireField("enthalpy")->SetMesh(mesh)->SetGhosted()
+           .set<bool>("include work term", false)
+           .set<std::string>("tag", "");
+    ev_list.setName("enthalpy");
+
+    S->Require<CompositeVector, CompositeVectorSpace>("enthalpy", Tags::DEFAULT, "enthalpy")
+      .SetMesh(mesh)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+
+    S->RequireDerivative<CompositeVector, CompositeVectorSpace>(
+        "enthalpy", Tags::DEFAULT, "temperature", Tags::DEFAULT, "enthalpy");
+
     auto enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
-    S->SetFieldEvaluator("enthalpy", enthalpy);
+    S->SetEvaluator("enthalpy", enthalpy);
 
     EPK->Setup(S.ptr());
     S->Setup();
@@ -154,8 +161,8 @@ TEST(ENERGY_CONVERGENCE_SRC) {
     double t(0.0), t1(100), dt_next;
     while (t < t1) {
       // swap conserved quntity (no backup, we check dt_next instead)
-      const CompositeVector& e = *S->GetFieldData("energy");
-      CompositeVector& e_prev = *S->GetFieldData("prev_energy", "thermal");
+      const auto& e = S->Get<CompositeVector>("energy");
+      auto& e_prev = S->GetW<CompositeVector>("prev_energy", Tags::DEFAULT, "thermal");
       e_prev = e;
 
       if (itrs == 0) {
@@ -168,7 +175,8 @@ TEST(ENERGY_CONVERGENCE_SRC) {
       EPK->bdf1_dae()->TimeStep(dt, dt_next, soln);
       CHECK(dt_next >= dt);
       EPK->bdf1_dae()->CommitSolution(dt, soln);
-      Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator("temperature"))->SetFieldAsChanged(S.ptr());
+      Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> >(
+          S->GetEvaluatorPtr("temperature"))->SetChanged();
 
       t += dt;
       itrs++;
@@ -178,7 +186,7 @@ TEST(ENERGY_CONVERGENCE_SRC) {
 
     
     // calculate errors
-    Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");
+    auto temp = S->GetPtr<CompositeVector>("temperature");
     Analytic00 ana(temp, mesh);
 
     double l2_norm, l2_err, inf_err;  // error checks

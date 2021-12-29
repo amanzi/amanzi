@@ -22,7 +22,7 @@ namespace Amanzi {
 // ---------------------------------------------------------------------------
 EvaluatorIndependentFunction::EvaluatorIndependentFunction(
     Teuchos::ParameterList& plist)
-    : EvaluatorIndependent<CompositeVector, CompositeVectorSpace>(plist) {}
+    : EvaluatorIndependent<CompositeVector, CompositeVectorSpace>(plist) {};
 
 
 // ---------------------------------------------------------------------------

@@ -91,12 +91,9 @@ public:
         new DataFactory_Impl<T, NullFactory>(*this));
   }
 
-  // thing factory Create specialization on NullFactory factory (i.e. null
-  // factory)
+  // factory Create specialization on NullFactory factory (i.e. null factory)
   void Create(Data& t) const override { t.SetPtr<T>(Teuchos::rcp(new T())); }
 
-  // thing factory Create specialization on NullFactory factory (i.e. null
-  // factory)
   Data Create() const override { return data<T>(Teuchos::rcp(new T())); }
 
   const NullFactory& Get() const { return *f_; }
