@@ -30,20 +30,18 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
   
-  double tmp[1];
-  S_->GetConstantVectorData("gravity", "state")->Norm2(tmp);
-  double g = tmp[0];
+  double g = norm(S_->Get<AmanziGeometry::Point>("gravity"));
 
   // distribute data to ghost cells
   A.SubVector(0)->Data()->ScatterMasterToGhosted("cell");
   A.SubVector(1)->Data()->ScatterMasterToGhosted("cell");
 
   // save a copy of primary and conservative fields
-  Epetra_MultiVector& B_c = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("cell", true);
-  Epetra_MultiVector& B_n = *S_->GetFieldData(bathymetry_key_, passwd_)->ViewComponent("node", true);
-  Epetra_MultiVector& ht_c = *S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
-  Epetra_MultiVector& vel_c = *S_->GetFieldData(velocity_key_, passwd_)->ViewComponent("cell", true);
-  Epetra_MultiVector& riemann_f = *S_->GetFieldData(riemann_flux_key_, passwd_)->ViewComponent("face", true);
+  const auto& B_c = *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("cell", true);
+  const auto& B_n = *S_->Get<CompositeVector>(bathymetry_key_).ViewComponent("node", true);
+  auto& ht_c = *S_->GetW<CompositeVector>(total_depth_key_, passwd_).ViewComponent("cell", true);
+  auto& vel_c = *S_->GetW<CompositeVector>(velocity_key_, passwd_).ViewComponent("cell", true);
+  auto& riemann_f = *S_->GetW<CompositeVector>(riemann_flux_key_, passwd_).ViewComponent("face", true);
   
   for (int c = 0; c < ncells_wghost; ++c) {
     double factor = inverse_with_tolerance(h_temp[0][c]);
@@ -102,7 +100,7 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   // limited reconstructions using boundary data
   bool use_limter = sw_list_->get<bool>("use limiter", true);
   
-  auto tmp1 = S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
+  auto tmp1 = S_->GetW<CompositeVector>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
   total_depth_grad_->ComputeGradient(tmp1);
   if (use_limiter_) limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_->gradient(), bc_model, bc_value_ht);
   total_depth_grad_->gradient()->ScatterMasterToGhosted("cell");

@@ -14,6 +14,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "CompositeVector.hh"
 #include "LeastSquare.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
@@ -23,6 +24,8 @@
 //--------------------------------------------------------------
 // Analytic solution (Thacker's solution [Beljadid et. al. 2016]
 //--------------------------------------------------------------
+
+using namespace Amanzi;
 
 void analytical_exact(double t, double x, double y, double &h, double &u, double &v)
 {
@@ -37,16 +40,16 @@ void analytical_exact(double t, double x, double y, double &h, double &u, double
 }
 
 
-void analytical_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
+void analytical_exact_field(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                            Epetra_MultiVector& hh_ex,
                            Epetra_MultiVector& vel_ex, double t)
 {
   double x, y, h, u, v;
 
-  int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
-    const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
 
     x = xc[0];
     y = xc[1];
@@ -59,20 +62,20 @@ void analytical_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 }
 
 
-void analytical_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos::RCP<Amanzi::State>& S)
+void analytical_setIC(Teuchos::RCP<const AmanziMesh::Mesh> mesh, Teuchos::RCP<State>& S)
 {
-  int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   std::string passwd = "state";
 
-  Epetra_MultiVector& B_vec_c = *S->GetFieldData("surface-bathymetry",passwd)->ViewComponent("cell");
-  Epetra_MultiVector& h_vec_c = *S->GetFieldData("surface-ponded_depth",passwd)->ViewComponent("cell");
-  Epetra_MultiVector& ht_vec_c = *S->GetFieldData("surface-total_depth",passwd)->ViewComponent("cell");
-  Epetra_MultiVector& vel_vec_c = *S->GetFieldData("surface-velocity",passwd)->ViewComponent("cell");
-  Epetra_MultiVector& q_vec_c = *S->GetFieldData("surface-discharge", "surface-discharge")->ViewComponent("cell");
+  auto& B_vec_c = *S->GetW<CompositeVector>("surface-bathymetry", Tags::DEFAULT, passwd).ViewComponent("cell");
+  auto& h_vec_c = *S->GetW<CompositeVector>("surface-ponded_depth", Tags::DEFAULT, passwd).ViewComponent("cell");
+  auto& ht_vec_c = *S->GetW<CompositeVector>("surface-total_depth", Tags::DEFAULT, passwd).ViewComponent("cell");
+  auto& vel_vec_c = *S->GetW<CompositeVector>("surface-velocity", Tags::DEFAULT, passwd).ViewComponent("cell");
+  auto& q_vec_c = *S->GetW<CompositeVector>("surface-discharge", Tags::DEFAULT, "surface-discharge").ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned; c++) {
-    const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     double h, u, v;
     analytical_exact(0., xc[0], xc[1], h, u, v);
     h_vec_c[0][c] = h;
@@ -85,12 +88,12 @@ void analytical_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos
   }
 }
 
-void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
+void error(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
            Epetra_MultiVector& hh_ex, Epetra_MultiVector& vel_ex,
            const Epetra_MultiVector& hh, const Epetra_MultiVector& vel,
            double& err_max, double& err_L1, double& hmax, double& err_max_u, double& err_L1_u, double& err_max_v, double& err_L1_v)
 {
-  int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   err_max = 0.;
   err_L1 = 0.;
@@ -189,7 +192,6 @@ void RunTest(int icase)
     Teuchos::ParameterList state_list = plist->sublist("state");
     RCP<State> S = rcp(new State(state_list));
     S->RegisterMesh("surface", mesh);
-    S->set_time(0.0);
 
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
 
@@ -201,16 +203,17 @@ void RunTest(int icase)
     S->Setup();
     S->InitializeFields();
     S->InitializeEvaluators();
+    S->set_time(0.0);
     SWPK.Initialize(S.ptr());
 
     analytical_setIC(mesh, S);
     S->CheckAllFieldsInitialized();
 
-    const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth")->ViewComponent("cell");
-    const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
-    const Epetra_MultiVector& vel = *S->GetFieldData("surface-velocity")->ViewComponent("cell");
-    const Epetra_MultiVector& q = *S->GetFieldData("surface-discharge")->ViewComponent("cell");
-    const Epetra_MultiVector& B = *S->GetFieldData("surface-bathymetry")->ViewComponent("cell");
+    const auto& hh = *S->Get<CompositeVector>("surface-ponded_depth").ViewComponent("cell");
+    const auto& ht = *S->Get<CompositeVector>("surface-total_depth").ViewComponent("cell");
+    const auto& vel = *S->Get<CompositeVector>("surface-velocity").ViewComponent("cell");
+    const auto& q = *S->Get<CompositeVector>("surface-discharge").ViewComponent("cell");
+    const auto& B = *S->Get<CompositeVector>("surface-bathymetry").ViewComponent("cell");
 
     // create pid vector
     Epetra_MultiVector pid(B);

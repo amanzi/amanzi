@@ -18,20 +18,22 @@ namespace ShallowWater {
 * Simple constructor
 ****************************************************************** */
 HydrostaticPressureEvaluator::HydrostaticPressureEvaluator(Teuchos::ParameterList& plist)
-  : SecondaryVariableFieldEvaluator(plist)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
-  my_key_ = plist_.get<std::string>("my key", "surface-ponded_pressure");
-  std::string domain = Keys::getDomain(my_key_);
+  if (my_keys_.size() == 0) {
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key", "surface-ponded_pressure"), Tags::DEFAULT));
+  }
+  std::string domain = Keys::getDomain(my_keys_[0].first);
 
   ponded_depth_key_ = plist_.get<std::string>("ponded depth key", Keys::getKey(domain, "ponded_depth"));
-  dependencies_.insert(ponded_depth_key_);
+  dependencies_.push_back(std::make_pair(ponded_depth_key_, Tags::DEFAULT));
 }
 
 
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<FieldEvaluator> HydrostaticPressureEvaluator::Clone() const {
+Teuchos::RCP<Evaluator> HydrostaticPressureEvaluator::Clone() const {
   return Teuchos::rcp(new HydrostaticPressureEvaluator(*this));
 }
 
@@ -39,19 +41,15 @@ Teuchos::RCP<FieldEvaluator> HydrostaticPressureEvaluator::Clone() const {
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void HydrostaticPressureEvaluator::EvaluateField_(
-    const Teuchos::Ptr<State>& S,
-    const Teuchos::Ptr<CompositeVector>& result)
+void HydrostaticPressureEvaluator::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
-  const auto& h_c = *S->GetFieldData(ponded_depth_key_)->ViewComponent("cell");
-  const double rho = *S->GetScalarData("const_fluid_density");
-  const double patm = *S->GetScalarData("atmospheric_pressure");
+  const auto& h_c = *S.Get<CompositeVector>(ponded_depth_key_).ViewComponent("cell");
+  const double rho = S.Get<double>("const_fluid_density");
+  const double patm = S.Get<double>("atmospheric_pressure");
+  double g = norm(S.Get<AmanziGeometry::Point>("gravity"));
   
-  double tmp[1];
-  S->GetConstantVectorData("gravity", "state")->Norm2(tmp);
-  double g = tmp[0];
-  
-  auto& result_c = *result->ViewComponent("cell");
+  auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
@@ -63,18 +61,15 @@ void HydrostaticPressureEvaluator::EvaluateField_(
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void HydrostaticPressureEvaluator::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
+void HydrostaticPressureEvaluator::EvaluatePartialDerivative_(
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
+    const std::vector<CompositeVector*>& results)
 {
-  const auto& h_c = *S->GetFieldData(ponded_depth_key_)->ViewComponent("cell");
-  const double rho = *S->GetScalarData("const_fluid_density");
+  const auto& h_c = *S.Get<CompositeVector>(ponded_depth_key_).ViewComponent("cell");
+  const double rho = S.Get<double>("const_fluid_density");
+  double g = norm(S.Get<AmanziGeometry::Point>("gravity"));
   
-  double tmp[1];
-  S->GetConstantVectorData("gravity", "state")->Norm2(tmp);
-  double g = tmp[0];
-  
-  auto& result_c = *result->ViewComponent("cell");
+  auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
   if (wrt_key == ponded_depth_key_) {

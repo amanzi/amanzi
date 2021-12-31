@@ -23,6 +23,8 @@
 #define _USE_MATH_DEFINES
 #include "math.h"
 
+using namespace Amanzi;
+
 double H_inf = 0.5; // Lake at rest total height
 
 // ---- ---- ---- ---- ---- ---- ---- ----
@@ -61,12 +63,10 @@ void lake_at_rest_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos::RCP<Amanzi::State> &S, int icase)
 {
   double pi = M_PI;
-  const double rho = *S->GetScalarData("const_fluid_density");
-  const double patm = *S->GetScalarData("atmospheric_pressure");
+  const double rho = S->Get<double>("const_fluid_density");
+  const double patm = S->Get<double>("atmospheric_pressure");
   
-  double tmp[1];
-  S->GetConstantVectorData("gravity", "state")->Norm2(tmp);
-  double g = tmp[0];
+  double g = norm(S->Get<AmanziGeometry::Point>("gravity"));
     
   int ncells_wghost = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
   int nnodes_wghost = mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::ALL);
@@ -74,13 +74,13 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
     
   int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
     
-  Epetra_MultiVector &B_c = *S->GetFieldData("surface-bathymetry", passwd)->ViewComponent ("cell");
-  Epetra_MultiVector &B_n = *S->GetFieldData("surface-bathymetry", passwd)->ViewComponent ("node");
-  Epetra_MultiVector &h_c = *S->GetFieldData("surface-ponded_depth", passwd)->ViewComponent ("cell");
-  Epetra_MultiVector &ht_c = *S->GetFieldData("surface-total_depth", passwd)->ViewComponent ("cell");
-  Epetra_MultiVector &vel_c = *S->GetFieldData("surface-velocity", passwd)->ViewComponent ("cell");
-  Epetra_MultiVector &q_c = *S->GetFieldData("surface-discharge", "surface-discharge")->ViewComponent ("cell");
-  Epetra_MultiVector &p_c = *S->GetFieldData("surface-ponded_pressure", "surface-ponded_pressure")->ViewComponent ("cell");
+  auto &B_c = *S->GetW<CompositeVector>("surface-bathymetry", Tags::DEFAULT, passwd).ViewComponent ("cell");
+  auto &B_n = *S->GetW<CompositeVector>("surface-bathymetry", Tags::DEFAULT, passwd).ViewComponent ("node");
+  auto &h_c = *S->GetW<CompositeVector>("surface-ponded_depth", Tags::DEFAULT, passwd).ViewComponent ("cell");
+  auto &ht_c = *S->GetW<CompositeVector>("surface-total_depth", Tags::DEFAULT, passwd).ViewComponent ("cell");
+  auto &vel_c = *S->GetW<CompositeVector>("surface-velocity", Tags::DEFAULT, passwd).ViewComponent ("cell");
+  auto &q_c = *S->GetW<CompositeVector>("surface-discharge", Tags::DEFAULT, "surface-discharge").ViewComponent ("cell");
+  auto &p_c = *S->GetW<CompositeVector>("surface-ponded_pressure", Tags::DEFAULT, "surface-ponded_pressure").ViewComponent ("cell");
 
   // Define bathymetry at the cell vertices (Bn)
   for (int n = 0; n < nnodes_wghost; ++n) {
@@ -99,7 +99,7 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
     }
   }
   
-  S->GetFieldData("surface-bathymetry")->ScatterMasterToGhosted("node");
+  S->Get<CompositeVector>("surface-bathymetry").ScatterMasterToGhosted("node");
     
   for (int c = 0; c < ncells_wghost; ++c) {
     
@@ -156,11 +156,11 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
     p_c[0][c] = patm + rho * g * h_c[0][c];
   }
   
-  S->GetFieldData("surface-bathymetry")->ScatterMasterToGhosted("cell");
-  S->GetFieldData("surface-total_depth")->ScatterMasterToGhosted("cell");
-  S->GetFieldData("surface-ponded_depth")->ScatterMasterToGhosted("cell");
-  S->GetFieldData("surface-velocity")->ScatterMasterToGhosted("cell");
-  S->GetFieldData("surface-discharge")->ScatterMasterToGhosted("cell");
+  S->Get<CompositeVector>("surface-bathymetry").ScatterMasterToGhosted("cell");
+  S->Get<CompositeVector>("surface-total_depth").ScatterMasterToGhosted("cell");
+  S->Get<CompositeVector>("surface-ponded_depth").ScatterMasterToGhosted("cell");
+  S->Get<CompositeVector>("surface-velocity").ScatterMasterToGhosted("cell");
+  S->Get<CompositeVector>("surface-discharge").ScatterMasterToGhosted("cell");
 }
 
 
@@ -281,7 +281,6 @@ void RunTest(int icase)
   Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterMesh("surface", mesh);
-  S->set_time(0.0);
         
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp (new TreeVector());
           
@@ -293,18 +292,19 @@ void RunTest(int icase)
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
+  S->set_time(0.0);
   SWPK.Initialize(S.ptr());
     
   lake_at_rest_setIC(mesh, S, icase);
   S->CheckAllFieldsInitialized();
         
-  const Epetra_MultiVector &B = *S->GetFieldData("surface-bathymetry")->ViewComponent("cell");
-  const Epetra_MultiVector &Bn = *S->GetFieldData("surface-bathymetry")->ViewComponent("node");
-  const Epetra_MultiVector &hh = *S->GetFieldData("surface-ponded_depth")->ViewComponent("cell");
-  const Epetra_MultiVector &ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
-  const Epetra_MultiVector &vel = *S->GetFieldData("surface-velocity")->ViewComponent("cell");
-  const Epetra_MultiVector &q = *S->GetFieldData("surface-discharge")->ViewComponent("cell");
-  const Epetra_MultiVector &p = *S->GetFieldData("surface-ponded_pressure")->ViewComponent("cell");
+  const auto &B = *S->Get<CompositeVector>("surface-bathymetry").ViewComponent("cell");
+  const auto &Bn = *S->Get<CompositeVector>("surface-bathymetry").ViewComponent("node");
+  const auto &hh = *S->Get<CompositeVector>("surface-ponded_depth").ViewComponent("cell");
+  const auto &ht = *S->Get<CompositeVector>("surface-total_depth").ViewComponent("cell");
+  const auto &vel = *S->Get<CompositeVector>("surface-velocity").ViewComponent("cell");
+  const auto &q = *S->Get<CompositeVector>("surface-discharge").ViewComponent("cell");
+  const auto &p = *S->Get<CompositeVector>("surface-ponded_pressure").ViewComponent("cell");
         
   // Create a pid vector
   Epetra_MultiVector pid(B);

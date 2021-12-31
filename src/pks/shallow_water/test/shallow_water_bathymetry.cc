@@ -58,7 +58,6 @@ Epetra_MultiVector RunTest(int ntest) {
   Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
   S->RegisterMesh("surface", mesh);
-  S->set_time(0.0);
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::ParameterList pk_tree = plist->sublist("PK tree").sublist("shallow water");
@@ -69,13 +68,14 @@ Epetra_MultiVector RunTest(int ntest) {
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
+  S->set_time(0.0);
   SWPK.Initialize(S.ptr());
   S->CheckAllFieldsInitialized();
 
-  const Epetra_MultiVector& hh = *S->GetFieldData("surface-ponded_depth")->ViewComponent("cell");
-  const Epetra_MultiVector& ht = *S->GetFieldData("surface-total_depth")->ViewComponent("cell");
-  const Epetra_MultiVector& vel = *S->GetFieldData("surface-velocity")->ViewComponent("cell");
-  const Epetra_MultiVector& B = *S->GetFieldData("surface-bathymetry")->ViewComponent("cell");
+  const auto& hh = *S->Get<CompositeVector>("surface-ponded_depth").ViewComponent("cell");
+  const auto& ht = *S->Get<CompositeVector>("surface-total_depth").ViewComponent("cell");
+  const auto& vel = *S->Get<CompositeVector>("surface-velocity").ViewComponent("cell");
+  const auto& B = *S->Get<CompositeVector>("surface-bathymetry").ViewComponent("cell");
 
   // create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("ShallowWater", *plist));
