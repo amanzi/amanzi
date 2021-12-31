@@ -42,6 +42,8 @@ EOSDensityEvaluator::EOSDensityEvaluator(Teuchos::ParameterList& plist)
   // my keys
   Key key;
   Tag tag = make_tag("");
+
+  my_keys_.clear();
   if (mode_ == EOS_MODE_MOLAR || mode_ == EOS_MODE_BOTH) {
     key = plist_.get<std::string>("molar density key");
     my_keys_.push_back(std::make_pair(key, tag));
@@ -72,7 +74,7 @@ EOSDensityEvaluator::EOSDensityEvaluator(Teuchos::ParameterList& plist)
   AMANZI_ASSERT(plist_.isSublist("EOS parameters"));
   EOSFactory<EOS_Density> eos_fac;
   eos_ = eos_fac.CreateEOS(plist_.sublist("EOS parameters"));
-};
+}
 
 
 /* ******************************************************************
@@ -107,8 +109,10 @@ void EOSDensityEvaluator::Evaluate_(
   CompositeVector *molar_dens, *mass_dens;
   if (mode_ == EOS_MODE_MOLAR) {
     molar_dens = results[0];
+    mass_dens = nullptr;
   } else if (mode_ == EOS_MODE_MASS) {
     mass_dens = results[0];
+    molar_dens = nullptr;
   } else {
     molar_dens = results[0];
     mass_dens = results[1];
@@ -166,8 +170,10 @@ void EOSDensityEvaluator::EvaluatePartialDerivative_(
   CompositeVector *molar_dens, *mass_dens;
   if (mode_ == EOS_MODE_MOLAR) {
     molar_dens = results[0];
+    mass_dens = nullptr;
   } else if (mode_ == EOS_MODE_MASS) {
     mass_dens = results[0];
+    molar_dens = nullptr;
   } else {
     molar_dens = results[0];
     mass_dens = results[1];

@@ -73,12 +73,11 @@ void EnergyOnePhase_PK::Setup(const Teuchos::Ptr<State>& S)
          .set<std::string>("particle density key", particle_density_key_)
          .set<std::string>("internal energy rock key", ie_rock_key_);
     elist.setName(energy_key_);
+    Teuchos::RCP<TotalEnergyEvaluator> ee = Teuchos::rcp(new TotalEnergyEvaluator(elist));
+    S->SetEvaluator(energy_key_, ee);
 
     S->RequireDerivative<CV_t, CVS_t>(energy_key_, Tags::DEFAULT,
                                       temperature_key_, Tags::DEFAULT, energy_key_);
-
-    Teuchos::RCP<TotalEnergyEvaluator> ee = Teuchos::rcp(new TotalEnergyEvaluator(elist));
-    S->SetEvaluator(energy_key_, ee);
   }
 
   // -- advection of enthalpy
@@ -92,12 +91,11 @@ void EnergyOnePhase_PK::Setup(const Teuchos::Ptr<State>& S)
     elist.set("enthalpy key", enthalpy_key_)
          .set<std::string>("tag", "");
     elist.setName(enthalpy_key_);
+    auto enth = Teuchos::rcp(new EnthalpyEvaluator(elist));
+    S->SetEvaluator(enthalpy_key_, enth);
 
     S->RequireDerivative<CV_t, CVS_t>(enthalpy_key_, Tags::DEFAULT,
                                       temperature_key_, Tags::DEFAULT, enthalpy_key_);
-
-    auto enth = Teuchos::rcp(new EnthalpyEvaluator(elist));
-    S->SetEvaluator(enthalpy_key_, enth);
   }
 
   // -- thermal conductivity

@@ -76,10 +76,14 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
   particle_density_key_ = Keys::getKey(domain_, "particle_density");
 
   ie_liquid_key_ = Keys::getKey(domain_, "internal_energy_liquid");
+  ie_gas_key_ = Keys::getKey(domain_, "internal_energy_gas");
   ie_rock_key_ = Keys::getKey(domain_, "internal_energy_rock");
 
   mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid");
   mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
+
+  mol_density_gas_key_ = Keys::getKey(domain_, "molar_density_gas");
+  x_gas_key_ = Keys::getKey(domain_, "molar_fraction_gas");
 
   darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
 }
@@ -120,35 +124,43 @@ void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // other fields
-  // -- energies
+  // -- energies (liquid, rock)
   S->Require<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT, ie_liquid_key_)
     .SetMesh(mesh_)->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+  S->RequireEvaluator(ie_liquid_key_);
 
   S->RequireDerivative<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT,
                                     temperature_key_, Tags::DEFAULT, ie_liquid_key_);
+
+  S->Require<CV_t, CVS_t>(ie_rock_key_, Tags::DEFAULT, ie_rock_key_)
+    .SetMesh(mesh_)->SetGhosted(true)
+    ->AddComponent("cell", AmanziMesh::CELL, 1)
+    ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+  S->RequireEvaluator(ie_rock_key_);
+
   S->RequireDerivative<CV_t, CVS_t>(ie_rock_key_, Tags::DEFAULT,
                                     temperature_key_, Tags::DEFAULT, ie_rock_key_);
-
-  S->RequireEvaluator(ie_liquid_key_);
 
   // -- densities
   S->Require<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT, mol_density_liquid_key_)
     .SetMesh(mesh_)->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+  S->RequireEvaluator(mol_density_liquid_key_);
 
   S->RequireDerivative<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT,
                                     temperature_key_, Tags::DEFAULT, mol_density_liquid_key_);
-
-  S->RequireEvaluator(mol_density_liquid_key_);
 
   S->Require<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT, mass_density_liquid_key_)
     .SetMesh(mesh_)->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
   S->RequireEvaluator(mass_density_liquid_key_);
+
+  S->RequireDerivative<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT,
+                                    temperature_key_, Tags::DEFAULT, mass_density_liquid_key_);
 
   // -- darcy flux
   if (!S->HasData(darcy_flux_key_)) {
