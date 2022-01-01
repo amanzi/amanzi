@@ -321,6 +321,10 @@ class State {
     return false;
   }
 
+  bool HasDerivative(const Key& key, const Key& wrt_key) const {
+    return HasDerivative(key, Tags::DEFAULT, wrt_key, Tags::DEFAULT);
+  }
+
   // ignoring record access for now, this could be added to, e.g. vis
   // derivatives.
   template <typename T>
@@ -331,10 +335,20 @@ class State {
   }
 
   template <typename T>
+  const T& GetDerivative(const Key& key, const Key& wrt_key) const {
+    return GetDerivative<T>(key, Tags::DEFAULT, wrt_key, Tags::DEFAULT);
+  }
+
+  template <typename T>
   T& GetDerivativeW(const Key& key, const Tag& tag, const Key& wrt_key,
                     const Tag& wrt_tag, const Key& owner) {
     Tag der_tag = make_tag(Keys::getKeyTag(wrt_key, wrt_tag.get()));
     return derivs_.at(Keys::getKeyTag(key, tag.get()))->GetW<T>(der_tag, owner);
+  }
+
+  template <typename T>
+  T& GetDerivativeW(const Key& key, const Key& wrt_key, const Key& owner) {
+    return GetDerivativeW<T>(key, Tags::DEFAULT, wrt_key, Tags::DEFAULT, owner);
   }
 
   template <typename T>

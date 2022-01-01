@@ -38,8 +38,9 @@ const Tag NEXT = make_tag("next");
 }
 
 enum class EvaluatorType {
-  INDEPENDENT,
+  PRIMARY,
   SECONDARY,
+  INDEPENDENT,
   OTHER
 };
 

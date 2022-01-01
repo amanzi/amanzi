@@ -60,7 +60,7 @@ TotalComponentStorage::TotalComponentStorage(const TotalComponentStorage& other)
     MultiphaseBaseEvaluator(other) {};
 
 
-Teuchos::RCP<FieldEvaluator> TotalComponentStorage::Clone() const {
+Teuchos::RCP<Evaluator> TotalComponentStorage::Clone() const {
   return Teuchos::rcp(new TotalComponentStorage(*this));
 }
 
@@ -68,9 +68,8 @@ Teuchos::RCP<FieldEvaluator> TotalComponentStorage::Clone() const {
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void TotalComponentStorage::EvaluateField_(
-    const Teuchos::Ptr<State>& S,
-    const Teuchos::Ptr<CompositeVector>& result)
+void TotalComponentStorage::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
   const auto& sl = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
@@ -93,9 +92,9 @@ void TotalComponentStorage::EvaluateField_(
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void TotalComponentStorage::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
+void TotalComponentStorage::EvaluatePartialDerivative_(
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
+    const std::vector<CompositeVector*>& results)
 {
   const auto& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
   const auto& sl = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
@@ -104,8 +103,8 @@ void TotalComponentStorage::EvaluateFieldPartialDerivative_(
   const auto& xl = *S->GetFieldData(mole_fraction_liquid_key_)->ViewComponent("cell");
   const auto& xg = *S->GetFieldData(mole_fraction_gas_key_)->ViewComponent("cell");
 
-  auto& result_c = *result->ViewComponent("cell");
-  int ncells = result->size("cell", false);
+  auto& result_c = *results[0]->ViewComponent("cell");
+  int ncells = results[0]->size("cell", false);
 
   if (wrt_key == porosity_key_) {
     for (int c = 0; c != ncells; ++c) {

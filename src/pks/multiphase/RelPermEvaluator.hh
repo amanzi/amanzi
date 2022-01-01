@@ -16,7 +16,7 @@
 #define AMANZI_MULTIPHASE_REL_PERM_EVALUATOR_HH_
 
 // Amanzi
-#include "secondary_variable_field_evaluator.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 
 // Multiphase
 #include "MultiphaseTypeDefs.hh"
@@ -25,22 +25,21 @@
 namespace Amanzi {
 namespace Multiphase {
 
-class RelPermEvaluator : public SecondaryVariableFieldEvaluator {
+class RelPermEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
   RelPermEvaluator(Teuchos::ParameterList& plist,
                    const Teuchos::RCP<WRMmpPartition>& wrm);
   RelPermEvaluator(const RelPermEvaluator& other);
 
-  // inteface functions to FieldEvaluator
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const override;
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
 
-  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-      const Teuchos::Ptr<CompositeVector>& result) override;
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
 
-  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-      Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) override;
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override;
 
-  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S) override;
+  virtual void EnsureCompatibility(State& S) override;
 
  private:
   Teuchos::RCP<WRMmpPartition> wrm_;

@@ -19,13 +19,13 @@
 #include "BCs.hh"
 #include "BDF1_TI.hh"
 #include "BDFFnBase.hh"
-#include "FieldEvaluator.hh"
+#include "Evaluator.hh"
+#include "EvaluatorPrimary.hh"
 #include "Key.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_AdvectionUpwind.hh"
 #include "PDE_DiffusionFVwithGravity.hh"
 #include "PK_PhysicalBDF.hh"
-#include "primary_variable_field_evaluator.hh"
 #include "State.hh"
 #include "FlattenedTreeOperator.hh"
 #include "TreeVector.hh"
@@ -119,12 +119,12 @@ class Multiphase_PK: public PK_PhysicalBDF {
   std::vector<std::string> component_names_; 
   int num_primary_, num_phases_;
 
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_liquid_eval_;
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> saturation_liquid_eval_;
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> x_gas_eval_;
+  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> > pressure_liquid_eval_;
+  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> > saturation_liquid_eval_;
+  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> > x_gas_eval_;
 
   // variable evaluators
-  Teuchos::RCP<FieldEvaluator> eval_tws_, eval_tcs_;
+  Teuchos::RCP<Evaluator> eval_tws_, eval_tcs_;
 
   // complimentarity problem
   std::string ncp_;

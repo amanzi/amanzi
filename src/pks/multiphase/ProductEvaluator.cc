@@ -45,7 +45,7 @@ ProductEvaluator::ProductEvaluator(const ProductEvaluator& other)
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<FieldEvaluator> ProductEvaluator::Clone() const {
+Teuchos::RCP<Evaluator> ProductEvaluator::Clone() const {
   return Teuchos::rcp(new ProductEvaluator(*this));
 }
 
@@ -54,8 +54,7 @@ Teuchos::RCP<FieldEvaluator> ProductEvaluator::Clone() const {
 * Required member function.
 ****************************************************************** */
 void ProductEvaluator::EvaluateField_(
-    const Teuchos::Ptr<State>& S,
-    const Teuchos::Ptr<CompositeVector>& result)
+    const State& S, const std::vector<CompositeVector*>& results)
 {
   auto& result_c = *result->ViewComponent("cell");
   int ncells = result_c.MyLength();
@@ -80,11 +79,10 @@ void ProductEvaluator::EvaluateField_(
 * Required member function.
 ****************************************************************** */
 void ProductEvaluator::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key,
-    const Teuchos::Ptr<CompositeVector>& result)
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
+    const std::vector<CompositeVector*>& results)
 {
-  auto& result_c = *result->ViewComponent("cell");
+  auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = result_c.MyLength();
 
   int n(0);

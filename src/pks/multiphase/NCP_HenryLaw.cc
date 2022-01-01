@@ -36,7 +36,7 @@ NCP_HenryLaw::NCP_HenryLaw(const NCP_HenryLaw& other)
   : MultiphaseBaseEvaluator(other) {};
 
 
-Teuchos::RCP<FieldEvaluator> NCP_HenryLaw::Clone() const {
+Teuchos::RCP<Evaluator> NCP_HenryLaw::Clone() const {
   return Teuchos::rcp(new NCP_HenryLaw(*this));
 }
 
@@ -44,8 +44,8 @@ Teuchos::RCP<FieldEvaluator> NCP_HenryLaw::Clone() const {
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void NCP_HenryLaw::EvaluateField_(const Teuchos::Ptr<State>& S,
-                                  const Teuchos::Ptr<CompositeVector>& result)
+void NCP_HenryLaw::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& pg = *S->GetFieldData(pressure_gas_key_)->ViewComponent("cell");
   const auto& nl = *S->GetFieldData(molar_density_liquid_key_)->ViewComponent("cell");
@@ -63,11 +63,11 @@ void NCP_HenryLaw::EvaluateField_(const Teuchos::Ptr<State>& S,
 * Required member: field derivative calculation.
 ****************************************************************** */
 void NCP_HenryLaw::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
+    const std::vector<CompositeVector*>& results)
 {
-  auto& result_c = *result->ViewComponent("cell");
-  int ncells = result->size("cell", false);
+  auto& result_c = *results[0]->ViewComponent("cell");
+  int ncells = results[0]->size("cell", false);
 
   if (wrt_key == pressure_gas_key_) {
     for (int c = 0; c != ncells; ++c) result_c[0][c] = kH_;

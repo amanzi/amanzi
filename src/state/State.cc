@@ -349,7 +349,8 @@ void State::Setup()
 
   for (auto& deriv : derivs_) {
     // Some PKs allows an evalutator to be either independent or secondary.
-    if (GetEvaluator(deriv.first).get_type() == EvaluatorType::SECONDARY) {
+    auto type = GetEvaluator(deriv.first).get_type();
+    if (type == EvaluatorType::SECONDARY || type == EvaluatorType::PRIMARY) {
       deriv.second->CreateData();
     }
 

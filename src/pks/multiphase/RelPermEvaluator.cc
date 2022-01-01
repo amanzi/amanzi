@@ -24,8 +24,8 @@ namespace Multiphase {
 ****************************************************************** */
 RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist,
                                    const Teuchos::RCP<WRMmpPartition>& wrm)
-  : SecondaryVariableFieldEvaluator(plist),
-    wrm_(wrm)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
+      wrm_(wrm)
 {
   my_key_ = plist.get<std::string>("my key");
   std::string domain = Keys::getDomain(my_key_);
@@ -41,15 +41,15 @@ RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist,
 }
 
 
-RelPermEvaluator::RelPermEvaluator(const RelPermEvaluator& other) :
-    SecondaryVariableFieldEvaluator(other),
-    wrm_(other.wrm_) {};
+RelPermEvaluator::RelPermEvaluator(const RelPermEvaluator& other)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+      wrm_(other.wrm_) {};
 
 
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<FieldEvaluator> RelPermEvaluator::Clone() const {
+Teuchos::RCP<Evaluator> RelPermEvaluator::Clone() const {
   return Teuchos::rcp(new RelPermEvaluator(*this));
 }
 
@@ -57,9 +57,8 @@ Teuchos::RCP<FieldEvaluator> RelPermEvaluator::Clone() const {
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void RelPermEvaluator::EvaluateField_(
-    const Teuchos::Ptr<State>& S,
-    const Teuchos::Ptr<CompositeVector>& result)
+void RelPermEvaluator::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& sat_c = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
   auto& result_c = *result->ViewComponent("cell");
@@ -75,9 +74,8 @@ void RelPermEvaluator::EvaluateField_(
 * Required member function.
 ****************************************************************** */
 void RelPermEvaluator::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key,
-    const Teuchos::Ptr<CompositeVector>& result)
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
+    const std::vector<CompositeVector*>& results)
 {
   const auto& sat_c = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
   auto& result_c = *result->ViewComponent("cell");
@@ -92,10 +90,10 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(
 /* ******************************************************************
 * Ensure part of my fields exists.
 ****************************************************************** */
-void RelPermEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
+void RelPermEvaluator::EnsureCompatibility(State& S)
 {
   AMANZI_ASSERT(my_key_ != std::string(""));
-  auto my_fac = S->RequireField(my_key_, my_key_);
+  auto my_fac = S.RequireField(my_key_, my_key_);
 
   // If my requirements have not yet been set, we'll have to hope they
   // get set by someone later.  For now just defer.

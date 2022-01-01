@@ -34,18 +34,15 @@ class TotalComponentStorage : public MultiphaseBaseEvaluator {
   TotalComponentStorage(Teuchos::ParameterList& plist);
   TotalComponentStorage(const TotalComponentStorage& other);
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
+
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
+
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override;
 
   virtual void Init_();
-
-  // interface to FieldEvaluator
-  virtual void EvaluateField_(
-      const Teuchos::Ptr<State>& S,
-      const Teuchos::Ptr<CompositeVector>& result);
-
-  virtual void EvaluateFieldPartialDerivative_(
-      const Teuchos::Ptr<State>& S, Key wrt_key,
-      const Teuchos::Ptr<CompositeVector>& result);
 
  protected:
   Key saturation_liquid_key_, porosity_key_;
@@ -53,7 +50,7 @@ class TotalComponentStorage : public MultiphaseBaseEvaluator {
   Key mole_fraction_liquid_key_, mole_fraction_gas_key_;
   
  private:
-  static Utils::RegisteredFactory<FieldEvaluator, TotalComponentStorage> reg_;
+  static Utils::RegisteredFactory<Evaluator, TotalComponentStorage> reg_;
 };
 
 }  // namespace Multiphase

@@ -54,7 +54,7 @@ TotalComponentStorage_MolarDensity::TotalComponentStorage_MolarDensity(
     const TotalComponentStorage_MolarDensity& other) : MultiphaseBaseEvaluator(other) {};
 
 
-Teuchos::RCP<FieldEvaluator> TotalComponentStorage_MolarDensity::Clone() const {
+Teuchos::RCP<Evaluator> TotalComponentStorage_MolarDensity::Clone() const {
   return Teuchos::rcp(new TotalComponentStorage_MolarDensity(*this));
 }
 
@@ -62,9 +62,8 @@ Teuchos::RCP<FieldEvaluator> TotalComponentStorage_MolarDensity::Clone() const {
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void TotalComponentStorage_MolarDensity::EvaluateField_(
-    const Teuchos::Ptr<State>& S,
-    const Teuchos::Ptr<CompositeVector>& result)
+void TotalComponentStorage_MolarDensity::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
   const auto& sl = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
@@ -85,14 +84,14 @@ void TotalComponentStorage_MolarDensity::EvaluateField_(
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void TotalComponentStorage_MolarDensity::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
+void TotalComponentStorage_MolarDensity::EvaluatePartialDerivative_(
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
+    const std::vector<CompositeVector*>& results)
 {
-  const auto& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
-  const auto& sl = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
-  const auto& nl = *S->GetFieldData(molar_density_liquid_key_)->ViewComponent("cell");
-  const auto& ng = *S->GetFieldData(molar_density_gas_key_)->ViewComponent("cell");
+  const auto& phi = *S.GetFieldData(porosity_key_)->ViewComponent("cell");
+  const auto& sl = *S.GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
+  const auto& nl = *S.GetFieldData(molar_density_liquid_key_)->ViewComponent("cell");
+  const auto& ng = *S.GetFieldData(molar_density_gas_key_)->ViewComponent("cell");
 
   auto& result_c = *result->ViewComponent("cell");
   int ncells = result->size("cell", false);

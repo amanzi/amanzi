@@ -39,7 +39,7 @@ PressureGasEvaluator::PressureGasEvaluator(
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<FieldEvaluator> PressureGasEvaluator::Clone() const {
+Teuchos::RCP<Evaluator> PressureGasEvaluator::Clone() const {
   return Teuchos::rcp(new PressureGasEvaluator(*this));
 }
 
@@ -47,9 +47,8 @@ Teuchos::RCP<FieldEvaluator> PressureGasEvaluator::Clone() const {
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void PressureGasEvaluator::EvaluateField_(
-    const Teuchos::Ptr<State>& S,
-    const Teuchos::Ptr<CompositeVector>& result)
+void PressureGasEvaluator::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& p_c = *S->GetFieldData(pressure_liquid_key_)->ViewComponent("cell");
   const auto& sat_c = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
@@ -65,12 +64,12 @@ void PressureGasEvaluator::EvaluateField_(
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void PressureGasEvaluator::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
+void PressureGasEvaluator::EvaluatePartialDerivative_(
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
+    const std::vector<CompositeVector*>& results)
 {
-  const auto& sat_c = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
-  auto& result_c = *result->ViewComponent("cell");
+  const auto& sat_c = *S.GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
+  auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
   if (wrt_key == pressure_liquid_key_) {

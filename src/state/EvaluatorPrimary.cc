@@ -24,7 +24,9 @@ EvaluatorPrimary_::EvaluatorPrimary_(Teuchos::ParameterList& plist)
     : my_key_(Keys::cleanPListName(plist.name())),
       my_tag_(make_tag(plist.get<std::string>("tag", ""))),
       vo_(Keys::cleanPListName(plist.name()), plist)
-{}
+{
+  type_ = EvaluatorType::PRIMARY;
+}
 
 
 // ---------------------------------------------------------------------------

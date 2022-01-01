@@ -131,6 +131,9 @@ SUITE(EVALUATORS_CV) {
 
     CHECK(S.GetEvaluator("fa").Update(S, "my_request"));
     CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", Tags::DEFAULT));
+
+    CHECK_CLOSE(1.0, (*S.GetDerivative<CompositeVector>(
+        "fa", Tags::DEFAULT, "fa", Tags::DEFAULT).ViewComponent("cell"))[0][0], 1.0e-10);
   }
 
 
@@ -170,6 +173,9 @@ SUITE(EVALUATORS_CV) {
 
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
         "fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
+
+    S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
+        "fa", Tags::DEFAULT, "fa", Tags::DEFAULT);
 
     // setup 
     S.Setup();
@@ -232,6 +238,9 @@ SUITE(EVALUATORS_CV) {
     CHECK_CLOSE(28.0, (*S.Get<CompositeVector>("fa", Tags::DEFAULT).ViewComponent("cell"))[0][0], 1.0e-10);
     CHECK_CLOSE(2.0, (*S.GetDerivative<CompositeVector>(
         "fa", Tags::DEFAULT, "fb", Tags::DEFAULT).ViewComponent("cell"))[0][0], 1.0e-10);
+
+    // check self-derivative is not working
+    // CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", Tags::DEFAULT));
   }
 
 
