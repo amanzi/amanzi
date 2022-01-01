@@ -94,14 +94,14 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
         
     double x = node_crd[0], y = node_crd[1];
         
-    B_n[0][n] = std::max(0.0, 0.25 - 5 * ((x - 0.35) * (x - 0.35) + (y - 0.35) * (y - 0.35))); // non-smooth bathymetry
+//    B_n[0][n] = std::max(0.0, 0.25 - 5 * ((x - 0.35) * (x - 0.35) + (y - 0.35) * (y - 0.35))); // non-smooth bathymetry
 //    B_n[0][n] = x*(1-x)*y*(1-y);
 //    B_n[0][n] = x/4.0;
-//    B_n[0][n] = 0.0;
+    B_n[0][n] = 0.0;
 //    h_n[0][n] = 0.5;
 //    h_n[0][n] = 0.5 + x*(1-x)*y*(1-y);
     
-      if ((x - 0.5)*(x - 0.5) + (y - 0.5)*(y - 0.5) < 0.1 * 0.1) {
+      if ((x - (-1.0))*(x - (-1.0)) <= 0.1 * 0.1) {
         ht_n[0][n] = H_inf + 0.001;
       }
       else {
@@ -274,13 +274,13 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
   std::vector<double> dx, Linferror, L1error, L2error;
     
   // Rectangular mesh
-//  RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 25, 25, request_faces, request_edges);
+  RCP<Mesh> mesh = meshfactory.create(-1.0, 0.0, 3.0, 1.0, 40, 2, request_faces, request_edges);
     
   // Polygonal meshes
 //  RCP<Mesh> mesh = meshfactory.create ("test/median15x16.exo");
 //  RCP<Mesh> mesh = meshfactory.create ("test/random40.exo");
-//  RCP<Mesh> mesh = meshfactory.create ("test/triangular16.exo");
-  RCP<Mesh> mesh = meshfactory.create ("test/triangular8.exo");
+//  RCP<Mesh> mesh = meshfactory.create ("test/triangular16.exo");/
+//  RCP<Mesh> mesh = meshfactory.create ("test/triangular8.exo");
   
   // Create a state
         
@@ -350,7 +350,7 @@ TEST(SHALLOW_WATER_LAKE_AT_REST) {
   }
   
         
-  while (t_new < 2.0) {
+  while (t_new < 1.0) {
    
     double t_out = t_new;
             

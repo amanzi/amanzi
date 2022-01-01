@@ -632,7 +632,7 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       // boundary condition
       if (std::abs(node_coordinates[0] - 0.0) < 1.e-12 || std::abs(node_coordinates[0] - 2.0) < 1.e-12 || std::abs(node_coordinates[0] - 0.0) < 1.e-12 || std::abs(node_coordinates[0] - 2.0) < 1.e-12) {
 //      if (ncells.size() < 4) {
-          U_pr[0][i] = 0.5 - node_coordinates[0]/16.0;
+        //U_pr[0][i] = 0.5 - node_coordinates[0]/16.0;
         //U_pr[1][i] = 0.0;
         //U_pr[2][i] = 0.0;
       }
