@@ -24,15 +24,17 @@ namespace Multiphase {
 ****************************************************************** */
 PressureGasEvaluator::PressureGasEvaluator(
     Teuchos::ParameterList& plist, Teuchos::RCP<WRMmpPartition> wrm)
-  : SecondaryVariableFieldEvaluator(plist),
-    wrm_(wrm)
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
+      wrm_(wrm)
 {
-  my_key_ = plist_.get<std::string>("my key");
+  if (my_keys_.size() == 0) {
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
+  }
   pressure_liquid_key_ = plist_.get<std::string>("pressure liquid key");
   saturation_liquid_key_ = plist_.get<std::string>("saturation liquid key");
 
-  dependencies_.insert(std::string(pressure_liquid_key_));
-  dependencies_.insert(std::string(saturation_liquid_key_));
+  dependencies_.push_back(std::make_pair(pressure_liquid_key_, Tags::DEFAULT));
+  dependencies_.push_back(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
 }
 
 
@@ -50,9 +52,9 @@ Teuchos::RCP<Evaluator> PressureGasEvaluator::Clone() const {
 void PressureGasEvaluator::Evaluate_(
     const State& S, const std::vector<CompositeVector*>& results)
 {
-  const auto& p_c = *S->GetFieldData(pressure_liquid_key_)->ViewComponent("cell");
-  const auto& sat_c = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
-  auto& result_c = *result->ViewComponent("cell");
+  const auto& p_c = *S.Get<CompositeVector>(pressure_liquid_key_).ViewComponent("cell");
+  const auto& sat_c = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
+  auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
@@ -68,7 +70,7 @@ void PressureGasEvaluator::EvaluatePartialDerivative_(
     const State& S, const Key& wrt_key, const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results)
 {
-  const auto& sat_c = *S.GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
+  const auto& sat_c = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();

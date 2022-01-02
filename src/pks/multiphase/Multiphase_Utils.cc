@@ -27,7 +27,7 @@ namespace Multiphase {
 void ConvertFieldToTensor(const Teuchos::RCP<State>& S, int dim,
                           const std::string& key, std::vector<WhetStone::Tensor>& K)
 {
-  const CompositeVector& cv = *S->GetFieldData(key);
+  const auto& cv = S->Get<CompositeVector>(key);
   cv.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& perm = *cv.ViewComponent("cell", true);
 

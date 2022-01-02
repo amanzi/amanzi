@@ -19,9 +19,11 @@ namespace Multiphase {
 ****************************************************************** */
 NCP_F::NCP_F(Teuchos::ParameterList& plist) : MultiphaseBaseEvaluator(plist)
 {
-  my_key_ = plist_.get<std::string>("my key");
+  if (my_keys_.size() == 0) {
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
+  }
   saturation_liquid_key_ = plist_.get<std::string>("saturation liquid key");
-  dependencies_.insert(std::string(saturation_liquid_key_));
+  dependencies_.push_back(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
 }
 
 
@@ -42,9 +44,9 @@ Teuchos::RCP<Evaluator> NCP_F::Clone() const {
 void NCP_F::Evaluate_(
     const State& S, const std::vector<CompositeVector*>& results)
 {
-  const auto& sl = *S.GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
+  const auto& sl = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
 
-  auto& result_c = *result->ViewComponent("cell");
+  auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell", false);
 
   for (int c = 0; c != ncells; ++c) {

@@ -108,9 +108,9 @@ TEST(MULTIPHASE_MODEL_I) {
     // output solution
     if (iloop % 5 == 0) {
       io->InitializeCycle(t, iloop, "");
-      const auto& u0 = *S->GetFieldData("pressure_liquid")->ViewComponent("cell");
-      const auto& u1 = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
-      const auto& u2 = *S->GetFieldData("mole_fraction_gas")->ViewComponent("cell");
+      const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
+      const auto& u1 = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
+      const auto& u2 = *S->Get<CompositeVector>("mole_fraction_gas").ViewComponent("cell");
 
       io->WriteVector(*u0(0), "pressure", AmanziMesh::CELL);
       io->WriteVector(*u1(0), "saturation", AmanziMesh::CELL);
@@ -125,16 +125,16 @@ TEST(MULTIPHASE_MODEL_I) {
 
   // verification
   double dmin, dmax;
-  const auto& sl = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
+  const auto& sl = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
   sl.MinValue(&dmin);
   sl.MaxValue(&dmax);
   CHECK(dmin >= 0.0 && dmax <= 1.0);
   
-  S->GetFieldData("ncp_fg")->NormInf(&dmax);
+  S->Get<CompositeVector>("ncp_fg").NormInf(&dmax);
   CHECK(dmax <= 1.0e-14);
 
   double vmin[2], vmax[2];
-  const auto& xg = *S->GetFieldData("mole_fraction_gas")->ViewComponent("cell");
+  const auto& xg = *S->Get<CompositeVector>("mole_fraction_gas").ViewComponent("cell");
   xg.MinValue(vmin);
   xg.MaxValue(vmax);
   CHECK(vmin[0] >= 0.0 && vmax[0] <= 1.0);

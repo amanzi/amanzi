@@ -31,18 +31,20 @@ TotalWaterStorage::TotalWaterStorage(Teuchos::ParameterList& plist) :
 ****************************************************************** */
 void TotalWaterStorage::Init_()
 {
-  my_key_ = plist_.get<std::string>("my key");
+  if (my_keys_.size() == 0) {
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
+  }
   saturation_liquid_key_ = plist_.get<std::string>("saturation liquid key");
   porosity_key_ = plist_.get<std::string>("porosity key");
   molar_density_liquid_key_ = plist_.get<std::string>("molar density liquid key");
   molar_density_gas_key_ = plist_.get<std::string>("molar density gas key");
   x_vapor_key_ = plist_.get<std::string>("mole fraction vapor key");
 
-  dependencies_.insert(porosity_key_);
-  dependencies_.insert(saturation_liquid_key_);
-  dependencies_.insert(molar_density_liquid_key_);
-  dependencies_.insert(molar_density_gas_key_);
-  dependencies_.insert(x_vapor_key_);
+  dependencies_.push_back(std::make_pair(porosity_key_, Tags::DEFAULT));
+  dependencies_.push_back(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
+  dependencies_.push_back(std::make_pair(molar_density_liquid_key_, Tags::DEFAULT));
+  dependencies_.push_back(std::make_pair(molar_density_gas_key_, Tags::DEFAULT));
+  dependencies_.push_back(std::make_pair(x_vapor_key_, Tags::DEFAULT));
 }
 
 
@@ -53,7 +55,7 @@ TotalWaterStorage::TotalWaterStorage(const TotalWaterStorage& other) :
     MultiphaseBaseEvaluator(other) {};
 
 
-Teuchos::RCP<FieldEvaluator> TotalWaterStorage::Clone() const {
+Teuchos::RCP<Evaluator> TotalWaterStorage::Clone() const {
   return Teuchos::rcp(new TotalWaterStorage(*this));
 }
 
@@ -61,18 +63,17 @@ Teuchos::RCP<FieldEvaluator> TotalWaterStorage::Clone() const {
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void TotalWaterStorage::EvaluateField_(
-    const Teuchos::Ptr<State>& S,
-    const Teuchos::Ptr<CompositeVector>& result)
+void TotalWaterStorage::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
-  const auto& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
-  const auto& sl = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
-  const auto& nl = *S->GetFieldData(molar_density_liquid_key_)->ViewComponent("cell");
-  const auto& ng = *S->GetFieldData(molar_density_gas_key_)->ViewComponent("cell");
-  const auto& vg = *S->GetFieldData(x_vapor_key_)->ViewComponent("cell");
+  const auto& phi = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
+  const auto& sl = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
+  const auto& nl = *S.Get<CompositeVector>(molar_density_liquid_key_).ViewComponent("cell");
+  const auto& ng = *S.Get<CompositeVector>(molar_density_gas_key_).ViewComponent("cell");
+  const auto& vg = *S.Get<CompositeVector>(x_vapor_key_).ViewComponent("cell");
 
-  auto& result_c = *result->ViewComponent("cell");
-  int ncells = result->size("cell", false);
+  auto& result_c = *results[0]->ViewComponent("cell");
+  int ncells = results[0]->size("cell", false);
 
   for (int c = 0; c != ncells; ++c) {
     result_c[0][c] = phi[0][c] * (sl[0][c] * nl[0][c]
@@ -84,18 +85,18 @@ void TotalWaterStorage::EvaluateField_(
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void TotalWaterStorage::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
+void TotalWaterStorage::EvaluatePartialDerivative_(
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
+    const std::vector<CompositeVector*>& results)
 {
-  const auto& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
-  const auto& sl = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
-  const auto& nl = *S->GetFieldData(molar_density_liquid_key_)->ViewComponent("cell");
-  const auto& ng = *S->GetFieldData(molar_density_gas_key_)->ViewComponent("cell");
-  const auto& vg = *S->GetFieldData(x_vapor_key_)->ViewComponent("cell");
+  const auto& phi = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
+  const auto& sl = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
+  const auto& nl = *S.Get<CompositeVector>(molar_density_liquid_key_).ViewComponent("cell");
+  const auto& ng = *S.Get<CompositeVector>(molar_density_gas_key_).ViewComponent("cell");
+  const auto& vg = *S.Get<CompositeVector>(x_vapor_key_).ViewComponent("cell");
 
-  auto& result_c = *result->ViewComponent("cell");
-  int ncells = result->size("cell", false);
+  auto& result_c = *results[0]->ViewComponent("cell");
+  int ncells = results[0]->size("cell", false);
 
   if (wrt_key == porosity_key_) {
     for (int c = 0; c != ncells; ++c) {

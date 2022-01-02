@@ -19,6 +19,9 @@
 namespace Amanzi {
 namespace NavierStokes {
 
+using CV_t = CompositeVector;
+using CVS_t = CompositeVectorSpace;
+
 /* ******************************************************************
 * New constructor: extracts lists and requires fields.
 ****************************************************************** */
@@ -89,14 +92,14 @@ void NavierStokes_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // primary fields
   // -- pressure
-  if (!S->HasField("pressure")) {
-    S->RequireField("pressure", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  if (!S->HasData("pressure")) {
+    S->Require<CV_t, CVS_t>("pressure", Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
-    Teuchos::ParameterList elist;
+    Teuchos::ParameterList elist("pressure");
     elist.set<std::string>("evaluator name", "pressure");
-    pressure_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator("pressure", pressure_eval_);
+    pressure_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
+    S->SetEvaluator("pressure", pressure_eval_);
   }
 
   // -- velocity
@@ -104,21 +107,19 @@ void NavierStokes_PK::Setup(const Teuchos::Ptr<State>& S)
   std::vector<AmanziMesh::Entity_kind> locations = {AmanziMesh::NODE, AmanziMesh::FACE};
   std::vector<int> ndofs = {dim, 1};
 
-  if (!S->HasField("fluid_velocity")) {
-    S->RequireField("fluid_velocity", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponents(names, locations, ndofs);
+  if (!S->HasData("fluid_velocity")) {
+    S->Require<CV_t, CVS_t>("fluid_velocity", Tags::DEFAULT, passwd_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponents(names, locations, ndofs);
 
-    Teuchos::ParameterList elist;
+    Teuchos::ParameterList elist("fluid_velocity");
     elist.set<std::string>("evaluator name", "fluid_velocity");
-    fluid_velocity_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator("fluid_velocity", fluid_velocity_eval_);
+    fluid_velocity_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
+    S->SetEvaluator("fluid_velocity", fluid_velocity_eval_);
   }
 
   // -- viscosity: if not requested by any PK, we request its constant value.
-  if (!S->HasField("const_fluid_viscosity")) {
-    if (!S->HasField("const_fluid_viscosity")) {
-      S->RequireScalar("const_fluid_viscosity", passwd_);
-    }
+  if (!S->HasData("const_fluid_viscosity")) {
+    S->Require<double>("const_fluid_viscosity", Tags::DEFAULT, passwd_);
   }
 }
 
@@ -162,8 +163,8 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   soln_->PushBack(tmp_u);
   soln_->PushBack(tmp_p);
  
-  soln_p_ = S->GetFieldData("pressure", passwd_);
-  soln_u_ = S->GetFieldData("fluid_velocity", passwd_);
+  soln_p_ = S->GetPtrW<CV_t>("pressure", Tags::DEFAULT, passwd_);
+  soln_u_ = S->GetPtrW<CV_t>("fluid_velocity", Tags::DEFAULT, passwd_);
   soln_->SubVector(0)->SetData(soln_u_); 
   soln_->SubVector(1)->SetData(soln_p_); 
 
@@ -252,7 +253,7 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Populate matrix and preconditioner
   // -- setup phase
-  double mu = *S_->GetScalarData("const_fluid_viscosity", passwd_);
+  double mu = S_->Get<double>("const_fluid_viscosity");
   op_matrix_elas_->global_operator()->Init();
   op_matrix_elas_->SetTensorCoefficient(mu);
 
@@ -336,8 +337,8 @@ bool NavierStokes_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   dt_ = t_new - t_old;
 
   // save a copy of primary and conservative fields
-  CompositeVector pressure_copy(*S_->GetFieldData("pressure", passwd_));
-  CompositeVector fluid_velocity_copy(*S_->GetFieldData("fluid_velocity", passwd_));
+  CompositeVector pressure_copy(S_->Get<CV_t>("pressure"));
+  CompositeVector fluid_velocity_copy(S_->Get<CV_t>("fluid_velocity"));
 
   // initialization
   if (num_itrs_ == 0) {
@@ -356,11 +357,11 @@ bool NavierStokes_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     dt_ = dt_next_;
 
     // recover the original primary solution
-    *S_->GetFieldData("pressure", passwd_) = pressure_copy;
-    pressure_eval_->SetFieldAsChanged(S_.ptr());
+    S_->GetW<CV_t>("pressure", Tags::DEFAULT, passwd_) = pressure_copy;
+    pressure_eval_->SetChanged();
 
-    *S_->GetFieldData("fluid_velocity", passwd_) = fluid_velocity_copy;
-    fluid_velocity_eval_->SetFieldAsChanged(S_.ptr());
+    S_->GetW<CV_t>("fluid_velocity", Tags::DEFAULT, passwd_) = fluid_velocity_copy;
+    fluid_velocity_eval_->SetChanged();
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Reverted pressure, fluid_velocity" << std::endl;
@@ -370,8 +371,8 @@ bool NavierStokes_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // commit solution (should we do it here ?)
   bdf1_dae_->CommitSolution(dt_, soln_);
-  pressure_eval_->SetFieldAsChanged(S_.ptr());
-  fluid_velocity_eval_->SetFieldAsChanged(S_.ptr());
+  pressure_eval_->SetChanged();
+  fluid_velocity_eval_->SetChanged();
 
   num_itrs_++;
   dt_ = dt_next_;

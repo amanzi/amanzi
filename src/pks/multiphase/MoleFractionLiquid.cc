@@ -24,19 +24,21 @@ namespace Multiphase {
 MoleFractionLiquid::MoleFractionLiquid(Teuchos::ParameterList& plist)
   : MultiphaseBaseEvaluator(plist)
 {
-  my_key_ = plist_.get<std::string>("my key");
+  if (my_keys_.size() == 0) {
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
+  }
   pressure_gas_key_ = plist_.get<std::string>("pressure gas key");
   x_gas_key_ = plist_.get<std::string>("mole fraction gas key");
 
-  dependencies_.insert(std::string(pressure_gas_key_));
-  dependencies_.insert(std::string(x_gas_key_));
+  dependencies_.push_back(std::make_pair(pressure_gas_key_, Tags::DEFAULT));
+  dependencies_.push_back(std::make_pair(x_gas_key_, Tags::DEFAULT));
 }
 
 
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<FieldEvaluator> MoleFractionLiquid::Clone() const {
+Teuchos::RCP<Evaluator> MoleFractionLiquid::Clone() const {
   return Teuchos::rcp(new MoleFractionLiquid(*this));
 }
 
@@ -44,13 +46,12 @@ Teuchos::RCP<FieldEvaluator> MoleFractionLiquid::Clone() const {
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void MoleFractionLiquid::EvaluateField_(
-    const Teuchos::Ptr<State>& S,
-    const Teuchos::Ptr<CompositeVector>& result)
+void MoleFractionLiquid::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
-  const auto& pg_c = *S->GetFieldData(pressure_gas_key_)->ViewComponent("cell");
-  const auto& xg_c = *S->GetFieldData(x_gas_key_)->ViewComponent("cell");
-  auto& result_c = *result->ViewComponent("cell");
+  const auto& pg_c = *S.Get<CompositeVector>(pressure_gas_key_).ViewComponent("cell");
+  const auto& xg_c = *S.Get<CompositeVector>(x_gas_key_).ViewComponent("cell");
+  auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
@@ -62,13 +63,13 @@ void MoleFractionLiquid::EvaluateField_(
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void MoleFractionLiquid::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
+void MoleFractionLiquid::EvaluatePartialDerivative_(
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
+    const std::vector<CompositeVector*>& results)
 {
-  const auto& pg_c = *S->GetFieldData(pressure_gas_key_)->ViewComponent("cell");
-  const auto& xg_c = *S->GetFieldData(x_gas_key_)->ViewComponent("cell");
-  auto& result_c = *result->ViewComponent("cell");
+  const auto& pg_c = *S.Get<CompositeVector>(pressure_gas_key_).ViewComponent("cell");
+  const auto& xg_c = *S.Get<CompositeVector>(x_gas_key_).ViewComponent("cell");
+  auto& result_c = *results[0]->ViewComponent("cell");
  
   int ncells = result_c.MyLength();
   if (wrt_key == pressure_gas_key_) {

@@ -24,16 +24,18 @@ namespace Multiphase {
 TccLiquid::TccLiquid(Teuchos::ParameterList& plist)
   : MultiphaseBaseEvaluator(plist)
 {
-  my_key_ = plist_.get<std::string>("my key");
+  if (my_keys_.size() == 0) {
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
+  }
   tcc_gas_key_ = plist_.get<std::string>("tcc gas key");
-  dependencies_.insert(tcc_gas_key_);
+  dependencies_.push_back(std::make_pair(tcc_gas_key_, Tags::DEFAULT));
 }
 
 
 /* ******************************************************************
 * Copy constructor.
 ****************************************************************** */
-Teuchos::RCP<FieldEvaluator> TccLiquid::Clone() const {
+Teuchos::RCP<Evaluator> TccLiquid::Clone() const {
   return Teuchos::rcp(new TccLiquid(*this));
 }
 
@@ -41,12 +43,11 @@ Teuchos::RCP<FieldEvaluator> TccLiquid::Clone() const {
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void TccLiquid::EvaluateField_(
-    const Teuchos::Ptr<State>& S,
-    const Teuchos::Ptr<CompositeVector>& result)
+void TccLiquid::Evaluate_(
+    const State& S, const std::vector<CompositeVector*>& results)
 {
-  const auto& tcc = *S->GetFieldData(tcc_gas_key_)->ViewComponent("cell");
-  auto& result_c = *result->ViewComponent("cell");
+  const auto& tcc = *S.Get<CompositeVector>(tcc_gas_key_).ViewComponent("cell");
+  auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = result_c.MyLength();
 
   for (int c = 0; c != ncells; ++c) {
@@ -58,11 +59,11 @@ void TccLiquid::EvaluateField_(
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void TccLiquid::EvaluateFieldPartialDerivative_(
-    const Teuchos::Ptr<State>& S,
-    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
+void TccLiquid::EvaluatePartialDerivative_(
+    const State& S, const Key& wrt_key, const Tag& wrt_tag,
+    const std::vector<CompositeVector*>& results)
 {
-  auto& result_c = *result->ViewComponent("cell");
+  auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = result_c.MyLength();
 
   if (wrt_key == tcc_gas_key_) {

@@ -17,8 +17,8 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "independent_variable_field_evaluator_fromfunction.hh"
-#include "secondary_variable_field_evaluator.hh"
+#include "EvaluatorIndependentFunction.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 #include "PK_BDF.hh"
 #include "PK_MPCStrong.hh"
 #include "PK_Factory.hh"

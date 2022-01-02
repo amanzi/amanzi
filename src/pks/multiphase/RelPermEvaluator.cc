@@ -27,8 +27,10 @@ RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist,
     : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
       wrm_(wrm)
 {
-  my_key_ = plist.get<std::string>("my key");
-  std::string domain = Keys::getDomain(my_key_);
+  if (my_keys_.size() == 0) {
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
+  }
+  std::string domain = Keys::getDomain(my_keys_[0].first);
   saturation_liquid_key_ = plist.get<std::string>("saturation key", Keys::getKey(domain, "saturation_liquid"));
 
   std::string name = plist.get<std::string>("phase name");
@@ -37,7 +39,7 @@ RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist,
   else if (name == "gas")
     phase_ = MULTIPHASE_PHASE_GAS;
 
-  dependencies_.insert(saturation_liquid_key_);
+  dependencies_.push_back(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
 }
 
 
@@ -60,8 +62,8 @@ Teuchos::RCP<Evaluator> RelPermEvaluator::Clone() const {
 void RelPermEvaluator::Evaluate_(
     const State& S, const std::vector<CompositeVector*>& results)
 {
-  const auto& sat_c = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
-  auto& result_c = *result->ViewComponent("cell");
+  const auto& sat_c = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
+  auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
@@ -73,12 +75,12 @@ void RelPermEvaluator::Evaluate_(
 /* ******************************************************************
 * Required member function.
 ****************************************************************** */
-void RelPermEvaluator::EvaluateFieldPartialDerivative_(
+void RelPermEvaluator::EvaluatePartialDerivative_(
     const State& S, const Key& wrt_key, const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results)
 {
-  const auto& sat_c = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
-  auto& result_c = *result->ViewComponent("cell");
+  const auto& sat_c = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
+  auto& result_c = *results[0]->ViewComponent("cell");
 
   int ncells = result_c.MyLength();
   for (int c = 0; c != ncells; ++c) {
@@ -92,26 +94,26 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(
 ****************************************************************** */
 void RelPermEvaluator::EnsureCompatibility(State& S)
 {
-  AMANZI_ASSERT(my_key_ != std::string(""));
-  auto my_fac = S.RequireField(my_key_, my_key_);
+  Key key = my_keys_[0].first;
+  auto my_fac = S.Require<CompositeVector, CompositeVectorSpace>(key, Tags::DEFAULT, key);
 
   // If my requirements have not yet been set, we'll have to hope they
   // get set by someone later.  For now just defer.
-  if (my_fac->Mesh() != Teuchos::null) {
+  if (my_fac.Mesh() != Teuchos::null) {
     // Create an unowned factory to check my dependencies.
     auto dep_fac = Teuchos::rcp(new CompositeVectorSpace); 
-    dep_fac->SetMesh(my_fac->Mesh())->SetGhosted(true)
+    dep_fac->SetMesh(my_fac.Mesh())->SetGhosted(true)
         ->AddComponent("cell", AmanziMesh::CELL, 1)->SetOwned(false);
 
     // Loop over my dependencies, ensuring they meet the requirements.
-    for (auto key=dependencies_.begin(); key!=dependencies_.end(); ++key) {
-      Teuchos::RCP<CompositeVectorSpace> fac = S->RequireField(*key);
-      fac->Update(*dep_fac);
+    for (auto dep = dependencies_.begin(); dep != dependencies_.end(); ++dep) {
+      auto fac = S.Require<CompositeVector, CompositeVectorSpace>(dep->first);
+      fac.Update(*dep_fac);
     }
 
     // Recurse into the tree to propagate info to leaves.
-    for (auto key=dependencies_.begin(); key!=dependencies_.end(); ++key) {
-      S->RequireFieldEvaluator(*key)->EnsureCompatibility(S);
+    for (auto dep = dependencies_.begin(); dep != dependencies_.end(); ++dep) {
+      S.RequireEvaluator(dep->first).EnsureCompatibility(S);
     }
   }
 }

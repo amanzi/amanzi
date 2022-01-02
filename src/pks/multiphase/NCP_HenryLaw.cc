@@ -20,12 +20,14 @@ namespace Multiphase {
 NCP_HenryLaw::NCP_HenryLaw(Teuchos::ParameterList& plist)
   : MultiphaseBaseEvaluator(plist)
 {
-  my_key_ = plist_.get<std::string>("my key");
+  if (my_keys_.size() == 0) {
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
+  }
   pressure_gas_key_ = plist_.get<std::string>("pressure gas key");
   molar_density_liquid_key_ = plist_.get<std::string>("molar density liquid key");
 
-  dependencies_.insert(std::string(pressure_gas_key_));
-  dependencies_.insert(std::string(molar_density_liquid_key_));
+  dependencies_.push_back(std::make_pair(pressure_gas_key_, Tags::DEFAULT));
+  dependencies_.push_back(std::make_pair(molar_density_liquid_key_, Tags::DEFAULT));
 }
 
 
@@ -47,11 +49,11 @@ Teuchos::RCP<Evaluator> NCP_HenryLaw::Clone() const {
 void NCP_HenryLaw::Evaluate_(
     const State& S, const std::vector<CompositeVector*>& results)
 {
-  const auto& pg = *S->GetFieldData(pressure_gas_key_)->ViewComponent("cell");
-  const auto& nl = *S->GetFieldData(molar_density_liquid_key_)->ViewComponent("cell");
+  const auto& pg = *S.Get<CompositeVector>(pressure_gas_key_).ViewComponent("cell");
+  const auto& nl = *S.Get<CompositeVector>(molar_density_liquid_key_).ViewComponent("cell");
 
-  auto& result_c = *result->ViewComponent("cell");
-  int ncells = result->size("cell", false);
+  auto& result_c = *results[0]->ViewComponent("cell");
+  int ncells = results[0]->size("cell", false);
 
   for (int c = 0; c != ncells; ++c) {
     result_c[0][c] = pg[0][c] * kH_ - nl[0][c];
@@ -62,7 +64,7 @@ void NCP_HenryLaw::Evaluate_(
 /* ******************************************************************
 * Required member: field derivative calculation.
 ****************************************************************** */
-void NCP_HenryLaw::EvaluateFieldPartialDerivative_(
+void NCP_HenryLaw::EvaluatePartialDerivative_(
     const State& S, const Key& wrt_key, const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results)
 {

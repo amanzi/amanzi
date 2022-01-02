@@ -127,14 +127,14 @@ public:
 
 
 template <>
-inline void EvaluatorPrimary<double>::UpdateDerivative_(State& s) {
-  s.GetDerivativeW<double>(my_key_, my_tag_, my_key_, my_tag_, my_key_) = 1.0;
+inline void EvaluatorPrimary<double>::UpdateDerivative_(State& S) {
+  S.GetDerivativeW<double>(my_key_, my_tag_, my_key_, my_tag_, my_key_) = 1.0;
 }
 
 template <>
 inline void
-EvaluatorPrimary<CompositeVector, CompositeVectorSpace>::UpdateDerivative_(State& s) {
-  s.GetDerivativeW<CompositeVector>(my_key_, my_tag_, my_key_, my_tag_, my_key_).PutScalar(1.0);
+EvaluatorPrimary<CompositeVector, CompositeVectorSpace>::UpdateDerivative_(State& S) {
+  S.GetDerivativeW<CompositeVector>(my_key_, my_tag_, my_key_, my_tag_, my_key_).PutScalar(1.0);
 }
 
 template <>
@@ -147,7 +147,7 @@ EvaluatorPrimary<CompositeVector,CompositeVectorSpace>::EnsureCompatibility(Stat
       auto wrt = Keys::splitKeyTag(deriv.first.get());
       Tag wrt_tag = make_tag(wrt.second);
       S.RequireDerivative<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_,
-              wrt.first, wrt_tag, owner).Update(my_fac);
+              wrt.first, wrt_tag, my_key_).Update(my_fac);
     }
   }
 }

@@ -184,6 +184,7 @@ bool EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
                                           const Key& wrt_key,
                                           const Tag& wrt_tag)
 {
+std::cout << my_keys_[0].first << " wrt:"  <<  wrt_key << " + " << wrt_tag.get() << std::endl;
   AMANZI_ASSERT(IsDependency(S, wrt_key, wrt_tag));
 
   Teuchos::OSTab tab = vo_.getOSTab();
@@ -275,7 +276,6 @@ bool EvaluatorSecondary::ProvidesKey(const Key& key, const Tag& tag) const {
 std::string EvaluatorSecondary::WriteToString() const
 {
   std::stringstream result;
-  result << my_keys_.size() << " ";
   for (const auto& key : my_keys_) {
     result << key.first << ":" << key.second.get();
   }

@@ -29,25 +29,22 @@ class TotalWaterStorage : public MultiphaseBaseEvaluator {
   TotalWaterStorage(Teuchos::ParameterList& plist);
   TotalWaterStorage(const TotalWaterStorage& other);
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
+  // required inteface functions
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
+
+  virtual void Evaluate_(const State& S, const std::vector<CompositeVector*>& results) override;
+
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
+                                          const std::vector<CompositeVector*>& results) override;
 
   virtual void Init_();
-
-  // Required methods from SecondaryVariableFieldEvaluator
-  virtual void EvaluateField_(
-      const Teuchos::Ptr<State>& S,
-      const Teuchos::Ptr<CompositeVector>& result);
-
-  virtual void EvaluateFieldPartialDerivative_(
-      const Teuchos::Ptr<State>& S, Key wrt_key,
-      const Teuchos::Ptr<CompositeVector>& result);
 
  protected:
   Key saturation_liquid_key_, porosity_key_, x_vapor_key_;
   Key molar_density_liquid_key_, molar_density_gas_key_;
   
  private:
-  static Utils::RegisteredFactory<FieldEvaluator, TotalWaterStorage> reg_;
+  static Utils::RegisteredFactory<Evaluator, TotalWaterStorage> reg_;
 };
 
 }  // namespace Multiphase

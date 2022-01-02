@@ -327,9 +327,9 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="field evaluators">
+    <ParameterList name="evaluators">
       <ParameterList name="porosity">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
@@ -344,7 +344,7 @@
       </ParameterList>
 
       <ParameterList name="viscosity_liquid">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
@@ -359,7 +359,7 @@
       </ParameterList>
 
       <ParameterList name="viscosity_gas">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
@@ -374,7 +374,7 @@
       </ParameterList>
 
       <ParameterList name="molar_density_water">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
@@ -389,7 +389,7 @@
       </ParameterList>
 
       <ParameterList name="molar_density_gas">
-        <Parameter name="field evaluator type" type="string" value="eos"/>
+        <Parameter name="evaluator type" type="string" value="eos"/>
         <Parameter name="eos basis" type="string" value="molar"/>
         <Parameter name="molar density key" type="string" value="molar_density_gas"/>
         <Parameter name="pressure key" type="string" value="pressure_gas"/>
@@ -403,7 +403,7 @@
       </ParameterList>
 
       <ParameterList name="molecular_diff_liquid">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
@@ -418,7 +418,7 @@
       </ParameterList>
 
       <ParameterList name="temperature">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{All}"/>

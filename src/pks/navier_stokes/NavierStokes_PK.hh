@@ -22,6 +22,7 @@
 
 // Amanzi
 #include "BDF1_TI.hh"
+#include "EvaluatorPrimary.hh"
 #include "Key.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_Abstract.hh"
@@ -29,7 +30,6 @@
 #include "PK.hh"
 #include "PK_Factory.hh"
 #include "PK_PhysicalBDF.hh"
-#include "primary_variable_field_evaluator.hh"
 #include "State.hh"
 #include "TreeOperator.hh"
 #include "TreeVector.hh"
@@ -109,8 +109,8 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   // -- calling this indicates that the time integration
   //    scheme is changing the value of the solution in state.
   void ChangedSolution() {
-    pressure_eval_->SetFieldAsChanged(S_.ptr());
-    fluid_velocity_eval_->SetFieldAsChanged(S_.ptr());
+    pressure_eval_->SetChanged();
+    fluid_velocity_eval_->SetChanged();
   }
 
   // other methods
@@ -141,7 +141,7 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   Teuchos::RCP<TreeVector> soln_;
   Teuchos::RCP<CompositeVector> soln_p_, soln_u_;
 
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval_, fluid_velocity_eval_;
+  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> > pressure_eval_, fluid_velocity_eval_;
 
   // solvers
   Teuchos::RCP<Operators::TreeOperator> op_matrix_, op_preconditioner_, op_pc_solver_;

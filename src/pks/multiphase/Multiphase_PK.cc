@@ -143,10 +143,13 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
     S->Require<CV_t, CVS_t>(pressure_liquid_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
-    Teuchos::ParameterList elist;
-    elist.set<std::string>("evaluator name", pressure_liquid_key_);
+    Teuchos::ParameterList elist(pressure_liquid_key_);
+    elist.set<std::string>("name", pressure_liquid_key_);
     pressure_liquid_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
     S->SetEvaluator(pressure_liquid_key_, pressure_liquid_eval_);
+
+    S->RequireDerivative<CV_t, CVS_t>(pressure_liquid_key_, Tags::DEFAULT,
+                                      pressure_liquid_key_, Tags::DEFAULT, pressure_liquid_key_);
   }
 
   // water saturation is the primary solution
@@ -154,8 +157,8 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
     S->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
-    Teuchos::ParameterList elist;
-    elist.set<std::string>("evaluator name", saturation_liquid_key_);
+    Teuchos::ParameterList elist(saturation_liquid_key_);
+    elist.set<std::string>("name", saturation_liquid_key_);
     saturation_liquid_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
     S->SetEvaluator(saturation_liquid_key_, saturation_liquid_eval_);
   }
@@ -171,7 +174,8 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
     Teuchos::ParameterList elist(pressure_gas_key_);
     elist.set<std::string>("my key", pressure_gas_key_)
          .set<std::string>("pressure liquid key", pressure_liquid_key_)
-         .set<std::string>("saturation liquid key", saturation_liquid_key_);
+         .set<std::string>("saturation liquid key", saturation_liquid_key_)
+         .set<std::string>("tag", "");
 
     auto eval = Teuchos::rcp(new PressureGasEvaluator(elist, wrm_));
     S->SetEvaluator(pressure_gas_key_, eval);
@@ -208,6 +212,7 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 
     Teuchos::ParameterList elist(relperm_liquid_key_);
     elist.set<std::string>("my key", relperm_liquid_key_)
+         .set<std::string>("tag", "")
          .set<std::string>("saturation liquid key", saturation_liquid_key_)
          .set<std::string>("phase name", "liquid");
 
@@ -222,6 +227,7 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 
     Teuchos::ParameterList elist(relperm_gas_key_);
     elist.set<std::string>("my key", relperm_gas_key_)
+         .set<std::string>("tag", "")
          .set<std::string>("saturation liquid key", saturation_liquid_key_)
          .set<std::string>("phase name", "gas");
 
@@ -266,7 +272,9 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 
     Teuchos::ParameterList elist(ncp_fg_key_);
     elist.set<std::string>("my key", ncp_fg_key_)
-         .set<Teuchos::Array<std::string> >("evaluator dependencies", dep_names) 
+         .set<std::string>("tag", "")
+         .set<Teuchos::Array<std::string> >("dependencies", dep_names) 
+         .set<bool>("dependency tags are my tag", true)
          .set<Teuchos::Array<int> >("powers", dep_powers);
 
     auto eval = Teuchos::rcp(new ProductEvaluator(elist));

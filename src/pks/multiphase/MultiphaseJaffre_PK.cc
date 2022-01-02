@@ -65,7 +65,7 @@ void MultiphaseJaffre_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetComponent("cell", AmanziMesh::CELL, component_names_.size());
 
     Teuchos::ParameterList elist(molar_density_liquid_key_);
-    elist.set<std::string>("evaluator name", molar_density_liquid_key_)
+    elist.set<std::string>("name", molar_density_liquid_key_)
          .set<std::string>("tag", "");
     auto eval = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
     S->SetEvaluator(molar_density_liquid_key_, eval);
@@ -86,7 +86,9 @@ void MultiphaseJaffre_PK::Setup(const Teuchos::Ptr<State>& S)
 
     Teuchos::ParameterList elist(tws_key_);
     elist.set<std::string>("my key", tws_key_)
-         .set<Teuchos::Array<std::string> >("evaluator dependencies", dep_names) 
+         .set<std::string>("tag", "")
+         .set<Teuchos::Array<std::string> >("dependencies", dep_names) 
+         .set<bool>("dependency tags are my tag", true)
          .set<Teuchos::Array<int> >("powers", dep_powers);
 
     eval_tws_ = Teuchos::rcp(new ProductEvaluator(elist));
@@ -100,6 +102,7 @@ void MultiphaseJaffre_PK::Setup(const Teuchos::Ptr<State>& S)
 
     Teuchos::ParameterList elist(tcs_key_);
     elist.set<std::string>("my key", tcs_key_)
+         .set<std::string>("tag", "")
          .set<std::string>("saturation liquid key", saturation_liquid_key_)
          .set<std::string>("porosity key", porosity_key_)
          .set<std::string>("molar density liquid key", molar_density_liquid_key_)
@@ -125,7 +128,9 @@ void MultiphaseJaffre_PK::Setup(const Teuchos::Ptr<State>& S)
 
     Teuchos::ParameterList elist(advection_liquid_key_);
     elist.set<std::string>("my key", advection_liquid_key_)
-         .set<Teuchos::Array<std::string> >("evaluator dependencies", dep_names) 
+         .set<std::string>("tag", "")
+         .set<Teuchos::Array<std::string> >("dependencies", dep_names) 
+         .set<bool>("dependency tags are my tag", true)
          .set<Teuchos::Array<int> >("powers", dep_powers);
 
     auto eval = Teuchos::rcp(new ProductEvaluator(elist));
@@ -146,7 +151,9 @@ void MultiphaseJaffre_PK::Setup(const Teuchos::Ptr<State>& S)
 
     Teuchos::ParameterList elist(advection_water_key_);
     elist.set<std::string>("my key", advection_water_key_)
-         .set<Teuchos::Array<std::string> >("evaluator dependencies", dep_names) 
+         .set<std::string>("tag", "")
+         .set<Teuchos::Array<std::string> >("dependencies", dep_names) 
+         .set<bool>("dependency tags are my tag", true)
          .set<Teuchos::Array<int> >("powers", dep_powers);
 
     auto eval = Teuchos::rcp(new ProductEvaluator(elist));
@@ -168,7 +175,9 @@ void MultiphaseJaffre_PK::Setup(const Teuchos::Ptr<State>& S)
 
     Teuchos::ParameterList elist(advection_gas_key_);
     elist.set<std::string>("my key", advection_gas_key_)
-         .set<Teuchos::Array<std::string> >("evaluator dependencies", dep_names) 
+         .set<std::string>("tag", "")
+         .set<Teuchos::Array<std::string> >("dependencies", dep_names) 
+         .set<bool>("dependency tags are my tag", true)
          .set<Teuchos::Array<int> >("powers", dep_powers);
 
     auto eval = Teuchos::rcp(new ProductEvaluator(elist));
@@ -187,9 +196,11 @@ void MultiphaseJaffre_PK::Setup(const Teuchos::Ptr<State>& S)
     dep_names.push_back(porosity_key_);
     dep_names.push_back(saturation_liquid_key_);
 
-    Teuchos::ParameterList elist(advection_liquid_key_);
+    Teuchos::ParameterList elist(diffusion_liquid_key_);
     elist.set<std::string>("my key", diffusion_liquid_key_)
-         .set<Teuchos::Array<std::string> >("evaluator dependencies", dep_names) 
+         .set<std::string>("tag", "")
+         .set<Teuchos::Array<std::string> >("dependencies", dep_names) 
+         .set<bool>("dependency tags are my tag", true)
          .set<Teuchos::Array<int> >("powers", dep_powers);
 
     auto eval = Teuchos::rcp(new ProductEvaluator(elist));
@@ -205,7 +216,8 @@ void MultiphaseJaffre_PK::Setup(const Teuchos::Ptr<State>& S)
 
     Teuchos::ParameterList elist(ncp_f_key_);
     elist.set<std::string>("my key", ncp_f_key_)
-         .set<std::string>("saturation liquid key", saturation_liquid_key_);
+         .set<std::string>("saturation liquid key", saturation_liquid_key_)
+         .set<std::string>("tag", "");
     auto eval = Teuchos::rcp(new NCP_F(elist));
     S->SetEvaluator(ncp_f_key_, eval);
   }
@@ -216,8 +228,10 @@ void MultiphaseJaffre_PK::Setup(const Teuchos::Ptr<State>& S)
 
     Teuchos::ParameterList elist(ncp_g_key_);
     elist.set<std::string>("my key", ncp_g_key_)
+         .set<std::string>("tag", "")
          .set<std::string>("pressure gas key", pressure_gas_key_)
          .set<std::string>("molar density liquid key", molar_density_liquid_key_);
+    // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     auto eval = Teuchos::rcp(new NCP_HenryLaw(elist));
     S->SetEvaluator(ncp_g_key_, eval);
   }

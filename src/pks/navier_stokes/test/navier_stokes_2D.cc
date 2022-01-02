@@ -94,15 +94,15 @@ TEST(NAVIER_STOKES_2D) {
     itrs++;
 
     // reset primary fields
-    Teuchos::RCP<PrimaryVariableFieldEvaluator> fluid_velocity_eval =
-       Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator("pressure"));
-    *S->GetFieldData("fluid_velocity", "navier stokes") = *soln->SubVector(0)->Data();
-    fluid_velocity_eval->SetFieldAsChanged(S.ptr());
+    auto fluid_velocity_eval = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> >(
+        S->GetEvaluatorPtr("pressure"));
+    S->GetW<CompositeVector>("fluid_velocity", Tags::DEFAULT, "navier stokes") = *soln->SubVector(0)->Data();
+    fluid_velocity_eval->SetChanged();
 
-    Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval =
-       Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(S->GetFieldEvaluator("pressure"));
-    *S->GetFieldData("pressure", "navier stokes") = *soln->SubVector(1)->Data();
-    pressure_eval->SetFieldAsChanged(S.ptr());
+    auto pressure_eval = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> >(
+        S->GetEvaluatorPtr("pressure"));
+    S->GetW<CompositeVector>("pressure", Tags::DEFAULT, "navier stokes") = *soln->SubVector(1)->Data();
+    pressure_eval->SetChanged();
 
     // commit step
     NSPK->CommitStep(T - dT, T, S);
@@ -114,8 +114,8 @@ TEST(NAVIER_STOKES_2D) {
   OutputXDMF io(iolist, mesh, true, false);
 
   io.InitializeCycle(T, 1, "");
-  const auto& u = *S->GetFieldData("fluid_velocity")->ViewComponent("node");
-  const auto& p = *S->GetFieldData("pressure")->ViewComponent("cell");
+  const auto& u = *S->Get<CompositeVector>("fluid_velocity").ViewComponent("node");
+  const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("cell");
   io.WriteVector(*u(0), "velocity_x", AmanziMesh::NODE);
   io.WriteVector(*u(1), "velocity_y", AmanziMesh::NODE);
   io.WriteVector(*p(0), "pressure", AmanziMesh::CELL);

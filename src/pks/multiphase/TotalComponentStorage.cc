@@ -35,7 +35,9 @@ TotalComponentStorage::TotalComponentStorage(Teuchos::ParameterList& plist) :
 ****************************************************************** */
 void TotalComponentStorage::Init_()
 {
-  my_key_ = plist_.get<std::string>("my key");
+  if (my_keys_.size() == 0) {
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
+  }
 
   saturation_liquid_key_ = plist_.get<std::string>("saturation liquid key");
   porosity_key_ = plist_.get<std::string>("porosity key");
@@ -44,12 +46,12 @@ void TotalComponentStorage::Init_()
   mole_fraction_liquid_key_ = plist_.get<std::string>("mole fraction liquid key");
   mole_fraction_gas_key_ = plist_.get<std::string>("mole fraction gas key");
 
-  dependencies_.insert(porosity_key_);
-  dependencies_.insert(saturation_liquid_key_);
-  dependencies_.insert(molar_density_liquid_key_);
-  dependencies_.insert(molar_density_gas_key_);
-  dependencies_.insert(mole_fraction_liquid_key_);
-  dependencies_.insert(mole_fraction_gas_key_);
+  dependencies_.push_back(std::make_pair(porosity_key_, Tags::DEFAULT));
+  dependencies_.push_back(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
+  dependencies_.push_back(std::make_pair(molar_density_liquid_key_, Tags::DEFAULT));
+  dependencies_.push_back(std::make_pair(molar_density_gas_key_, Tags::DEFAULT));
+  dependencies_.push_back(std::make_pair(mole_fraction_liquid_key_, Tags::DEFAULT));
+  dependencies_.push_back(std::make_pair(mole_fraction_gas_key_, Tags::DEFAULT));
 }
 
 
@@ -71,15 +73,15 @@ Teuchos::RCP<Evaluator> TotalComponentStorage::Clone() const {
 void TotalComponentStorage::Evaluate_(
     const State& S, const std::vector<CompositeVector*>& results)
 {
-  const auto& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
-  const auto& sl = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
-  const auto& nl = *S->GetFieldData(molar_density_liquid_key_)->ViewComponent("cell");
-  const auto& ng = *S->GetFieldData(molar_density_gas_key_)->ViewComponent("cell");
-  const auto& xl = *S->GetFieldData(mole_fraction_liquid_key_)->ViewComponent("cell");
-  const auto& xg = *S->GetFieldData(mole_fraction_gas_key_)->ViewComponent("cell");
+  const auto& phi = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
+  const auto& sl = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
+  const auto& nl = *S.Get<CompositeVector>(molar_density_liquid_key_).ViewComponent("cell");
+  const auto& ng = *S.Get<CompositeVector>(molar_density_gas_key_).ViewComponent("cell");
+  const auto& xl = *S.Get<CompositeVector>(mole_fraction_liquid_key_).ViewComponent("cell");
+  const auto& xg = *S.Get<CompositeVector>(mole_fraction_gas_key_).ViewComponent("cell");
 
-  auto& result_c = *result->ViewComponent("cell");
-  int ncells = result->size("cell", false);
+  auto& result_c = *results[0]->ViewComponent("cell");
+  int ncells = results[0]->size("cell", false);
 
   for (int c = 0; c != ncells; ++c) {
     double tmpl = phi[0][c] * nl[0][c] * sl[0][c];
@@ -96,12 +98,12 @@ void TotalComponentStorage::EvaluatePartialDerivative_(
     const State& S, const Key& wrt_key, const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results)
 {
-  const auto& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
-  const auto& sl = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
-  const auto& nl = *S->GetFieldData(molar_density_liquid_key_)->ViewComponent("cell");
-  const auto& ng = *S->GetFieldData(molar_density_gas_key_)->ViewComponent("cell");
-  const auto& xl = *S->GetFieldData(mole_fraction_liquid_key_)->ViewComponent("cell");
-  const auto& xg = *S->GetFieldData(mole_fraction_gas_key_)->ViewComponent("cell");
+  const auto& phi = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
+  const auto& sl = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
+  const auto& nl = *S.Get<CompositeVector>(molar_density_liquid_key_).ViewComponent("cell");
+  const auto& ng = *S.Get<CompositeVector>(molar_density_gas_key_).ViewComponent("cell");
+  const auto& xl = *S.Get<CompositeVector>(mole_fraction_liquid_key_).ViewComponent("cell");
+  const auto& xg = *S.Get<CompositeVector>(mole_fraction_gas_key_).ViewComponent("cell");
 
   auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell", false);
