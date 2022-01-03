@@ -249,7 +249,7 @@ MeshFramework::getCellFacesAndBisectors(const Entity_ID cellid,
 {
   getCellFaces(cellid, faceids);
   if (bisectors)
-    MeshAlgorithms::computeBisectors(*this, cellid, faceids, *bisectors);
+    *bisectors = MeshAlgorithms::computeBisectors(*this, cellid, faceids);
 }
 
 
@@ -380,6 +380,12 @@ std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
 MeshFrameworkAlgorithms::computeEdgeGeometry(const Mesh& mesh, const Entity_ID c) const
 {
   return MeshAlgorithms::computeEdgeGeometry(mesh, c);
+}
+
+Point_List
+MeshFrameworkAlgorithms::computeBisectors(const Mesh& mesh, const Entity_ID c, const Entity_ID_View& faces) const
+{
+  return MeshAlgorithms::computeBisectors(mesh, c, faces);
 }
 
 

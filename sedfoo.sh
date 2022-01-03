@@ -124,6 +124,8 @@ function go () {
     ${SED} ${SED_ARGS} "s^manifold_dimension(^getManifoldDimension(^g" "$1"
     ${SED} ${SED_ARGS} "s^set_space_dimension(^setSpaceDimension(^g" "$1"
     ${SED} ${SED_ARGS} "s^space_dimension(^getSpaceDimension(^g" "$1"
+    ${SED} ${SED_ARGS} "s^set_geometric_model(^setGeometricModel(^g" "$1"
+    ${SED} ${SED_ARGS} "s^geometric_model(^getGeometricModel(^g" "$1"
 
     # guess some mesh GID calls -- cannot blanket replace because Map.GID()
     ${SED} ${SED_ARGS} 's^mesh->GID^mesh->getEntityGID^g' "$1"

@@ -9,6 +9,7 @@
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
 #include "Mesh_MSTK.hh"
+#include "Mesh.hh"
 #include "MeshLogicalFactory.hh"
 #include "Geometry.hh"
 
@@ -26,18 +27,18 @@ demoMeshLogicalSegmentRegularManual()
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
-  
+
   // Create the mesh:
   std::vector<double> cell_volumes(4, 0.25);
   std::vector<double> face_areas(5, 1.);
-  
+
   std::vector<std::vector<int> > face_cell_list(5);
   face_cell_list[0] = { 0 };
   face_cell_list[1] = { 0, 1 };
   face_cell_list[2] = { 1, 2 };
   face_cell_list[3] = { 2, 3 };
   face_cell_list[4] = { 3 };
-  
+
   std::vector<std::vector<int> > face_cell_dirs(5);
   face_cell_dirs[0] = { 1 };
   face_cell_dirs[1] = { -1, 1 };
@@ -47,9 +48,9 @@ demoMeshLogicalSegmentRegularManual()
 
   Point bisector(3);
   bisector[0] = 0.125;
-  bisector[1] = 0.0;                    
+  bisector[1] = 0.0;
   bisector[2] = 0.0;
-  
+
   std::vector<std::vector<Point> > face_cell_bisectors(5);
   face_cell_bisectors[0] = std::vector<Point>{ bisector };
   face_cell_bisectors[1] = std::vector<Point>{ -bisector, bisector };
@@ -64,12 +65,12 @@ demoMeshLogicalSegmentRegularManual()
             cell_volumes,
             face_areas,
             face_cell_bisectors));
-  mesh->set_geometric_model(gm);
-  return mesh;    
+  mesh->setGeometricModel(gm);
+  return mesh;
 };
 
 
-  
+
 // Single segment of plant with irregular mesh spacing
 Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
 demoMeshLogicalSegmentIrregularManual() {
@@ -79,11 +80,11 @@ demoMeshLogicalSegmentIrregularManual() {
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
-  
+
   // Create the mesh:
   std::vector<double> cell_volumes = { 2, 3, 4 };
   std::vector<double> face_areas = { 2, 2, 2, 2 };
-  
+
   std::vector<std::vector<int> > face_cell_list(4);
   face_cell_list[0] = { 0 };
   face_cell_list[1] = { 0, 1 };
@@ -98,16 +99,16 @@ demoMeshLogicalSegmentIrregularManual() {
 
   Amanzi::AmanziGeometry::Point normal(3);
   normal[0] = 1.0;
-  normal[1] = 0.0;                    
+  normal[1] = 0.0;
   normal[2] = 0.0;
-  
+
   std::vector<std::vector<Point> > face_cell_bisectors;
   face_cell_bisectors.resize(4);
   face_cell_bisectors[0] = { .5 * normal };
   face_cell_bisectors[1] = { -.5 * normal, .75 * normal };
   face_cell_bisectors[2] = { -.75 * normal, normal };
   face_cell_bisectors[3] = { -normal };
-  
+
   Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical> mesh =
     Teuchos::rcp(new MeshLogical(comm,
             face_cell_list,
@@ -115,8 +116,8 @@ demoMeshLogicalSegmentIrregularManual() {
             cell_volumes,
             face_areas,
             face_cell_bisectors));
-  mesh->set_geometric_model(gm);
-  return mesh;    
+  mesh->setGeometricModel(gm);
+  return mesh;
 }
 
 // Single coarse root to 1 meter, then branches to 4 fine roots
@@ -140,7 +141,7 @@ demoMeshLogicalYManual() {
   double half_cell_fine = 0.5 * 0.75;
   double cross_section_coarse = 1.e-4;
   double cross_section_fine = cross_section_coarse / 4.;
-  
+
   // Structure: set up centroids
   // ---------------------------------
   // coarse root
@@ -152,7 +153,7 @@ demoMeshLogicalYManual() {
 
   // branch cell
   Point branch = cell_centroids[cell_centroids.size()-1] + down;
-  
+
   // fine root 1
   Point root_normal1(1., 0., -1.);
   root_normal1 *= half_cell_fine / norm(root_normal1);
@@ -279,7 +280,7 @@ demoMeshLogicalYManual() {
   face_areas[14] = cross_section_fine;
   face_cell_dirs[14] = { -1 };
 
-  // make the mesh  
+  // make the mesh
   Teuchos::RCP<MeshLogical> m = Teuchos::rcp(new MeshLogical(comm, face_cells, face_cell_dirs,
           cell_vols, face_areas, face_cell_bisectors, &cell_centroids));
 
@@ -299,7 +300,7 @@ demoMeshLogicalYManual() {
               gm->size(), "CELL", fine_cells));
   gm->AddRegion(fine_rgn);
 
-  m->set_geometric_model(gm);
+  m->setGeometricModel(gm);
   return m;
 }
 
@@ -331,7 +332,7 @@ RegularMeshCellFromCoordFunctor::RegularMeshCellFromCoordFunctor(
   : X0_(X0), X1_(X1), nx_(nx), ny_(ny), nz_(nz), dX_(3) {
   dX_[0] = (X1_[0] - X0_[0]) / nx_;
   dX_[1] = (X1_[1] - X0_[1]) / ny_;
-  dX_[2] = (X1_[2] - X0_[2]) / nz_;  
+  dX_[2] = (X1_[2] - X0_[2]) / nz_;
 }
 
 Amanzi::AmanziMesh::Entity_ID
@@ -351,8 +352,9 @@ demoMeshLogicalYEmbedded() {
   using namespace Amanzi::AmanziGeometry;
 
   auto comm = Amanzi::getDefaultComm();
-  
-  Teuchos::RCP<MeshLogical> m_log = demoMeshLogicalYManual();
+
+  Teuchos::RCP<MeshFramework> m_log_fw = demoMeshLogicalYManual();
+  Teuchos::RCP<Mesh> m_log = Teuchos::rcp(new Mesh(m_log_fw));
 
   Point X0(-1.75, -1.75, -3.);
   Point X1(1.75, 1.75, 0.);
@@ -360,16 +362,15 @@ demoMeshLogicalYEmbedded() {
 
   Teuchos::RCP<Mesh_MSTK> m_bg =
     Teuchos::rcp(new Mesh_MSTK(X0[0], X0[1],X0[2], X1[0], X1[1], X1[2],
-			       nx, ny, nz, comm,
-                               m_log->geometric_model(), Teuchos::null, true, false));
+			       nx, ny, nz, comm, m_log->getGeometricModel(), Teuchos::null));
 
   // make the new connections, 1 per logical cell
-  int ncells_log = m_log->num_entities(CELL, Parallel_type::ALL);
+  int ncells_log = m_log->getNumEntities(Entity_kind::CELL, Parallel_type::ALL);
   std::vector<Entity_ID_List> face_cell_ids_(ncells_log);
 
   RegularMeshCellFromCoordFunctor cellID(X0, X1, nx, ny, nz);
   for (int c=0; c!=ncells_log; ++c) {
-    int bg_c = cellID(m_log->cell_centroid(c));
+    int bg_c = cellID(m_log->getCellCentroid(c));
     face_cell_ids_[c].push_back(c);
     face_cell_ids_[c].push_back(bg_c);
   }
@@ -377,9 +378,9 @@ demoMeshLogicalYEmbedded() {
   // cross-sectional areas and lengths given by root class
   // relatively made up numbers, this could be done formally if we wanted to.
   Entity_ID_List coarse_roots, fine_roots;
-  m_log->get_set_entities("coarse_root", CELL, Parallel_type::ALL, &coarse_roots);
-  m_log->get_set_entities("fine_root", CELL, Parallel_type::ALL, &fine_roots);
-  
+  coarse_roots = m_log->getSetEntities("coarse_root", Entity_kind::CELL, Parallel_type::ALL);
+  fine_roots = m_log->getSetEntities("fine_root", Entity_kind::CELL, Parallel_type::ALL);
+
   std::vector<std::vector<double> > face_cell_lengths(ncells_log);
   std::vector<AmanziGeometry::Point> face_area_normals(ncells_log);
   Point ihat(1.,0.,0.);  // just must have 0 z to avoid gravity
@@ -397,12 +398,12 @@ demoMeshLogicalYEmbedded() {
   }
 
   Teuchos::RCP<MeshEmbeddedLogical> m =
-    Teuchos::rcp(new MeshEmbeddedLogical(comm, m_bg, m_log,
+    Teuchos::rcp(new MeshEmbeddedLogical(comm, m_bg, m_log->getMeshFramework(),
   					 face_cell_ids_, face_cell_lengths,
   					 face_area_normals));
   return m;
 }
-  
+
 
 
 } // namespace Testing

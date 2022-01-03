@@ -441,9 +441,23 @@ resolveMeshSetEnumerated(const AmanziGeometry::RegionEnumerated& region,
                          const Parallel_type ptype,
                          const MeshCache& mesh)
 {
-  AMANZI_ASSERT(region.get_space_dimension() == mesh.getSpaceDimension());
-  AMANZI_ASSERT(false);
-  return Entity_ID_List();
+  if (kind == createEntityKind(region.entity_str())) {
+    const Entity_ID_List& region_entities = region.entities();
+    bool ghosted = (ptype != Parallel_type::OWNED);
+    auto mesh_map = mesh.getMap(kind, ghosted);
+    Entity_ID_List mesh_ents(mesh_map.NumMyElements());
+    for (int i=0; i!=mesh_map.NumMyElements(); ++i)
+      mesh_ents[i] = mesh_map.GID(i);
+
+    Entity_ID_List result;
+    result.reserve(mesh_ents.size());
+    std::set_intersection(mesh_ents.begin(), mesh_ents.end(),
+                          region_entities.begin(), region_entities.end(),
+                          std::back_inserter(result));
+    return result;
+  } else {
+    return Entity_ID_List();
+  }
 }
 
 

@@ -123,41 +123,48 @@ void MeshMaps::initialize(const Mesh_type& mesh, bool renumber, bool request_edg
 
   // boundary nodes
   // -- form an ordered set of all boundary nodes whose faces are boundary faces
-  std::set<Entity_ID> bnodes_lid;
-  for (std::size_t i=0; i!=nbf_all; ++i) {
-    Entity_ID_List fnodes;
-    mesh.getFaceNodes(boundary_faces_[i], fnodes);
-    for (const auto& n : fnodes) bnodes_lid.insert(n);
-  }
+  if (mesh.hasNodes()) {
+    std::set<Entity_ID> bnodes_lid;
+    for (std::size_t i=0; i!=nbf_all; ++i) {
+      Entity_ID_List fnodes;
+      mesh.getFaceNodes(boundary_faces_[i], fnodes);
+      for (const auto& n : fnodes) bnodes_lid.insert(n);
+    }
 
-  // -- convert to GID
-  boundary_nodes_.resize(bnodes_lid.size());
-  Entity_GID_List boundary_node_GIDs(bnodes_lid.size());
-  std::size_t nnodes_owned = mesh.getNumEntities(Entity_kind::NODE, Parallel_type::OWNED);
-  std::size_t nbn_owned = 0;
-  std::size_t nbn_all = 0;
-  const auto& nmap_all = getMap(Entity_kind::NODE, true);
-  for (const auto& bn : bnodes_lid) {
-    boundary_nodes_[nbn_all] = bn;
-    boundary_node_GIDs[nbn_all++] = nmap_all.GID(bn);
-    if (bn < nnodes_owned) nbn_owned = nbn_all;
-  }
+    // -- convert to GID
+    boundary_nodes_.resize(bnodes_lid.size());
+    Entity_GID_List boundary_node_GIDs(bnodes_lid.size());
+    std::size_t nnodes_owned = mesh.getNumEntities(Entity_kind::NODE, Parallel_type::OWNED);
+    std::size_t nbn_owned = 0;
+    std::size_t nbn_all = 0;
+    const auto& nmap_all = getMap(Entity_kind::NODE, true);
+    for (const auto& bn : bnodes_lid) {
+      boundary_nodes_[nbn_all] = bn;
+      boundary_node_GIDs[nbn_all++] = nmap_all.GID(bn);
+      if (bn < nnodes_owned) nbn_owned = nbn_all;
+    }
 
-  // -- construct map, importer
-  all_[Entity_kind::BOUNDARY_NODE] =
-    Teuchos::rcp(new Epetra_Map(-1, nbn_all, boundary_node_GIDs.data(), 0, *mesh.getComm()));
-  owned_[Entity_kind::BOUNDARY_NODE] =
-    Teuchos::rcp(new Epetra_Map(-1, nbn_owned, boundary_node_GIDs.data(), 0, *mesh.getComm()));
-  importer_[Entity_kind::BOUNDARY_NODE] =
-    Teuchos::rcp(new Epetra_Import(*all_[Entity_kind::BOUNDARY_NODE], *owned_[Entity_kind::BOUNDARY_NODE]));
-  // -- additional importer from node --> boundary_node
-  boundary_node_importer_ = Teuchos::rcp(new Epetra_Import(*owned_[Entity_kind::BOUNDARY_NODE],
-          *owned_[Entity_kind::NODE]));
+    // -- construct map, importer
+    all_[Entity_kind::BOUNDARY_NODE] =
+      Teuchos::rcp(new Epetra_Map(-1, nbn_all, boundary_node_GIDs.data(), 0, *mesh.getComm()));
+    owned_[Entity_kind::BOUNDARY_NODE] =
+      Teuchos::rcp(new Epetra_Map(-1, nbn_owned, boundary_node_GIDs.data(), 0, *mesh.getComm()));
+    importer_[Entity_kind::BOUNDARY_NODE] =
+      Teuchos::rcp(new Epetra_Import(*all_[Entity_kind::BOUNDARY_NODE], *owned_[Entity_kind::BOUNDARY_NODE]));
+    // -- additional importer from node --> boundary_node
+    boundary_node_importer_ = Teuchos::rcp(new Epetra_Import(*owned_[Entity_kind::BOUNDARY_NODE],
+            *owned_[Entity_kind::NODE]));
+  }
 }
 
 const Map_type&
 MeshMaps::getMap(Entity_kind kind, bool include_ghost) const
 {
+  if (all_.count(kind) == 0) {
+    Errors::Message msg;
+    msg << "This mesh does not support entity kind " << to_string(kind);
+    Exceptions::amanzi_throw(msg);
+  }
   if (include_ghost) {
     return *all_.at(kind);
   } else {

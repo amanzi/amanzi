@@ -277,13 +277,14 @@ computeEdgeGeometry(const Mesh_type& mesh, const Entity_ID e)
 }
 
 template<class Mesh_type>
-void
+Point_List
 computeBisectors(const Mesh_type& mesh, const Entity_ID c,
-        const Entity_ID_List& faces, Point_List& bisectors)
+        const Entity_ID_List& faces)
 {
-  bisectors.resize(faces.size());
+  Point_List bisectors(faces.size());
   for (int i = 0; i != faces.size(); ++i)
     bisectors[i] = mesh.getFaceCentroid(faces[i]) - mesh.getCellCentroid(c);
+  return bisectors;
 }
 
 

@@ -76,8 +76,9 @@ std::pair<AmanziGeometry::Point,AmanziGeometry::Point>
 computeEdgeGeometry(const Mesh_type& mesh, const Entity_ID e);
 
 template<class Mesh_type>
-void computeBisectors(const Mesh_type& mesh, const Entity_ID c,
-                      const Entity_ID_List& faces, Point_List& bisectors);
+Point_List
+computeBisectors(const Mesh_type& mesh, const Entity_ID c,
+                 const Entity_ID_List& faces);
 
 template<class Mesh_type>
 void debugCell(const Mesh_type& mesh, const Entity_ID c);

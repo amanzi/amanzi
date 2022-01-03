@@ -1,8 +1,8 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon
@@ -95,7 +95,7 @@ last tip is the upstream inlet, and orientation is aligned with the flow directi
 Finally, often tips of segments may be boundaries (faces with boundary
 conditions), no type (i.e. there is no face), junction (at least one, likely
 more, faces will be connected to the end cell eventually), or branch (the tip
-cell will add a face to a junction tip of another segment).  
+cell will add a face to a junction tip of another segment).
 
 * `"first tip type`" ``[string]`` Type of the first tip.  One of `"none`",
    `"boundary`", `"junction`", or `"branch`".
@@ -144,7 +144,7 @@ coordinate.  In this case, specify:
 
 This option is provided in the `"logical from segments parameters`"
 list.
-    
+
 As an example, consider the confluence of the Allegheny and the Monongahela,
 which come together in Pittsburgh to form the Ohio.  This could be simply
 modeled by three segments:
@@ -190,7 +190,7 @@ modeled by three segments:
       </ParameterList>
     </ParameterList>
   </ParameterList>
-    
+
  */
 #include <numeric>
 
@@ -216,7 +216,7 @@ MeshLogicalFactory::Create() const {
             face_areas_,
             face_cell_bisectors_,
             &cell_centroids_));
-    
+
   } else {
     mesh = Teuchos::rcp(new MeshLogical(comm_,
             face_cell_list_,
@@ -226,12 +226,12 @@ MeshLogicalFactory::Create() const {
             face_cell_bisectors_,
             nullptr));
   }
-  mesh->set_geometric_model(gm_);
+  mesh->setGeometricModel(gm_);
   return mesh;
 }
 
 
-// One-stop shop -- create the whole thing from PList  
+// One-stop shop -- create the whole thing from PList
 Teuchos::RCP<MeshLogical>
 MeshLogicalFactory::Create(Teuchos::ParameterList& plist) {
   // set global options
@@ -250,15 +250,15 @@ MeshLogicalFactory::Create(Teuchos::ParameterList& plist) {
     // These are declared here to help document what actually needs to exist.
     // There are a lot of logical consistencies across these that need to be
     // tracked, and a lot of different ways of providing the same info.
-    
+
     // things we need to call the constructor
     std::string seg_name = segment_it.first;
     AddSegment(segments.sublist(seg_name));
-  }    
+  }
 
   // add any additional sets
   Teuchos::ParameterList& sets = plist.sublist("sets");
-  
+
   for (auto& set_it : sets) {
     std::string set_name = set_it.first;
     auto set_list = sets.get<Teuchos::Array<std::string> >(set_name);
@@ -291,7 +291,7 @@ MeshLogicalFactory::AddSegment(
     std::vector<Entity_ID> *const cells,
     std::vector<Entity_ID> *const faces) {
   AMANZI_ASSERT(calculated_volume_);
-    
+
   // orientation
   auto orientation = begin - end;
   double seg_length = AmanziGeometry::norm(orientation);
@@ -370,7 +370,7 @@ MeshLogicalFactory::AddSegment(
 
   // check for expected existence of cell volumes
   AMANZI_ASSERT((cell_volumes == nullptr) == calculated_volume_);
-  
+
   // set the new cell lids
   int cell_first = cell_volumes_.size();
   std::vector<Entity_ID> new_cells(n_cells);
@@ -402,7 +402,7 @@ MeshLogicalFactory::AddSegment(
 
   // ensure orientation is unit normal
   AmanziGeometry::Point my_orientation = orientation / AmanziGeometry::norm(orientation);
-  
+
   // add the first face
   int i_face = 0;
   if (first_tip_type == LogicalTip_t::BOUNDARY) {
@@ -470,7 +470,7 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist) {
   // number and size of cells, total segment length
   double seg_length = -1.0;
   int n_cells = -1;
-  
+
   if (plist.isParameter("cell lengths [m]")) {
     cell_lengths = plist.get<Teuchos::Array<double>>("cell lengths [m]").toVector();
     seg_length = std::accumulate(cell_lengths.begin(), cell_lengths.end(), 0.);
@@ -494,7 +494,7 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist) {
     Errors::Message msg;
     msg << "MeshLogicalFactory (segment \"" << seg_name << "\"): unable to get number of cells and segment length.  See documentation.";
     Exceptions::amanzi_throw(msg);
-    
+
   }
 
   // potentially get cell volumes
@@ -589,7 +589,7 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist) {
     for (int i=0; i!=n_cells; ++i) {
       cell_centroids.emplace_back(AmanziGeometry::Point(centroids_raw[3*i], centroids_raw[3*i+1], centroids_raw[3*i+2]));
     }
-    
+
 
   } else if (plist.isParameter("first tip")
              && plist.isParameter("last tip")) {
@@ -632,7 +632,7 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist) {
   }
 
   // Now start doing the add
-  
+
   // -- if a branch, reserve space for the first face.  This keeps faces in some reasonable
   //    order internally, but isn't really necessary.
   std::vector<int> new_cells, new_faces;
@@ -651,7 +651,7 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist) {
     std::vector<int> cells = {-1, (int) cell_volumes_.size() };
     std::vector<AmanziGeometry::Point> bisectors = { AmanziGeometry::Point(), orientation * cell_lengths[0]/2. };
     std::vector<int> dirs = { 0, 1 };
-    
+
     if (branch_from_tip == "first") {
       cells[0] = seg_cells_[branch_from].front();
       bisectors[0] = seg_orientations_[branch_from] * cell_lengths_[cells[0]]/2.;
@@ -678,7 +678,7 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist) {
 
     AddFace(f, cells, bisectors, dirs, face_areas_mine[0]);
 
-    
+
   } else {
     // -- Just add the interior faces
     auto centroids_p = cell_centroids.size() > 0 ? &cell_centroids : nullptr;
@@ -686,14 +686,14 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist) {
 
     AddSegment(centroids_p, volumes_p, cell_lengths, face_areas, orientation,
                first_tip_type, last_tip_type, seg_name, &new_cells, &new_faces);
-  }  
+  }
 
   seg_cells_[seg_name] = new_cells;
   seg_faces_[seg_name] = new_faces;
   seg_orientations_[seg_name] = orientation;
 
 }
-  
+
 
 // Reserve a slot for a face (likely to be added via AddFace!)
 int
@@ -715,12 +715,12 @@ MeshLogicalFactory::AddFace(int f,
                             const std::vector<int>& dirs,
                             double area) {
   if (f < 0) f = ReserveFace();
-  
+
   if (cells.size() != 2) {
     Errors::Message msg("MeshLogicalFactory: connection added is improperly formed -- all connections need two cells.");
     Exceptions::amanzi_throw(msg);
   }
-  
+
   face_cell_list_[f] = cells;
   face_cell_bisectors_[f] = bisectors;
   face_cell_dirs_[f] = dirs;
@@ -742,13 +742,13 @@ MeshLogicalFactory::AddSet(const std::string& set_name,
 
   // create the region
   // - these are destroyed when the gm is destroyed
-  Teuchos::RCP<AmanziGeometry::RegionEnumerated> enum_rgn = 
+  Teuchos::RCP<AmanziGeometry::RegionEnumerated> enum_rgn =
       Teuchos::rcp(new AmanziGeometry::RegionEnumerated(set_name, gm_->size(),
               ent, ents));
   gm_->AddRegion(enum_rgn);
   return gm_->size() - 1;
 }
-  
+
 
 MeshLogicalFactory::LogicalTip_t
 MeshLogicalFactory::GetTipType_(Teuchos::ParameterList& plist, const std::string& pname)

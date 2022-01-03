@@ -206,14 +206,12 @@ struct MeshCache {
       plist_ = plist;
     }
     setMeshFramework(framework_mesh);
-    initializeFramework();
   }
 
   Teuchos::RCP<const MeshFramework> getMeshFramework() const { return framework_mesh_; }
   Teuchos::RCP<MeshFramework> getMeshFramework() { return framework_mesh_; }
   void setMeshFramework(const Teuchos::RCP<MeshFramework>& framework_mesh);
 
-  void initializeFramework();
   void destroyFramework() { framework_mesh_ = Teuchos::null; }
 
   //
@@ -335,6 +333,7 @@ struct MeshCache {
 
   // mesh properties
   bool isOrdered() const { return is_ordered_; }
+  bool hasNodes() const { return has_nodes_; }
   bool hasEdges() const { return has_edges_; }
 
   // -------------------
@@ -782,7 +781,7 @@ private:
   int space_dim_;
   int manifold_dim_;
   bool is_ordered_;
-  bool has_edges_;
+  bool has_edges_, has_nodes_;
 
   // related meshes
   Teuchos::RCP<MeshFramework> framework_mesh_;

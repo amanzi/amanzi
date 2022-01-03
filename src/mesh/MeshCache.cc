@@ -42,7 +42,8 @@ MeshCache::MeshCache() :
   node_coordinates_cached(false),
   parent_entities_cached(false),
   is_ordered_(false),
-  has_edges_(false)
+  has_edges_(false),
+  has_nodes_(true)
 {}
 
 
@@ -59,10 +60,8 @@ void MeshCache::setMeshFramework(const Teuchos::RCP<MeshFramework>& framework_me
   framework_mesh_ = framework_mesh;
   // always save the algorithms, so we can throw away the data
   algorithms_ = framework_mesh->getAlgorithms();
-}
-
-void MeshCache::initializeFramework()
-{
+  has_edges_ = framework_mesh->hasEdges();
+  has_nodes_ = framework_mesh->hasNodes();
   comm_ = framework_mesh_->getComm();
   gm_ = framework_mesh_->getGeometricModel();
   space_dim_ = framework_mesh_->getSpaceDimension();
@@ -73,22 +72,29 @@ void MeshCache::initializeFramework()
 
   ncells_owned = framework_mesh_->getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
   ncells_all = framework_mesh_->getNumEntities(Entity_kind::CELL, Parallel_type::ALL);
+
   nfaces_owned = framework_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
   nfaces_all = framework_mesh_->getNumEntities(Entity_kind::FACE, Parallel_type::ALL);
-  if (framework_mesh_->hasEdges()) {
+
+  if (has_edges_) {
     nedges_owned = framework_mesh_->getNumEntities(Entity_kind::EDGE, Parallel_type::OWNED);
     nedges_all = framework_mesh_->getNumEntities(Entity_kind::EDGE, Parallel_type::ALL);
   }
-  nnodes_owned = framework_mesh_->getNumEntities(Entity_kind::NODE, Parallel_type::OWNED);
-  nnodes_all = framework_mesh_->getNumEntities(Entity_kind::NODE, Parallel_type::ALL);
+  if (has_nodes_) {
+    nnodes_owned = framework_mesh_->getNumEntities(Entity_kind::NODE, Parallel_type::OWNED);
+    nnodes_all = framework_mesh_->getNumEntities(Entity_kind::NODE, Parallel_type::ALL);
+  }
 
   bool natural_ordered_maps = plist_->get<bool>("natural map ordering", false);
   buildMaps(natural_ordered_maps);
 
   nboundary_faces_owned = getMap(Entity_kind::BOUNDARY_FACE, false).NumMyElements();
   nboundary_faces_all = getMap(Entity_kind::BOUNDARY_FACE, true).NumMyElements();
-  nboundary_nodes_owned = getMap(Entity_kind::BOUNDARY_NODE, false).NumMyElements();
-  nboundary_nodes_all = getMap(Entity_kind::BOUNDARY_NODE, true).NumMyElements();
+
+  if (has_nodes_) {
+    nboundary_nodes_owned = getMap(Entity_kind::BOUNDARY_NODE, false).NumMyElements();
+    nboundary_nodes_all = getMap(Entity_kind::BOUNDARY_NODE, true).NumMyElements();
+  }
 }
 
 

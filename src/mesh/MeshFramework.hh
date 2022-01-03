@@ -80,6 +80,9 @@ struct MeshFrameworkAlgorithms {
 
   virtual std::pair<AmanziGeometry::Point, AmanziGeometry::Point>
   computeEdgeGeometry(const Mesh& mesh, const Entity_ID e) const;
+
+  virtual Point_List
+  computeBisectors(const Mesh& mesh, const Entity_ID c, const Entity_ID_View& faces) const;
 };
 
 
@@ -144,6 +147,11 @@ class MeshFramework  {
   // DEVELOPER NOTE: frameworks that do not implement edges need not provide
   // any edge method -- defaults here all throw errors.
   virtual bool hasEdges() const { return false; }
+
+  // DEVELOPER NOTE: frameworks that do not implement nodes DO need to provide
+  // ALL node methods to have them throw errors.  The default here assumes
+  // nodes exist.
+  virtual bool hasNodes() const { return true; }
 
   // Some meshes may natively order in the ExodusII ordering
   virtual bool isOrdered() const { return false; }
