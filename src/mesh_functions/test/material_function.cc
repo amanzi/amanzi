@@ -68,7 +68,7 @@ TEST(MESH2D)
   // test first region
   std::vector<std::string> rgns;
   rgns.push_back("RGN1");
-  AmanziMesh::Entity_kind kind = AmanziMesh::CELL;  
+  AmanziMesh::Entity_kind kind = AmanziMesh::Entity_kind::CELL;  
 
   Teuchos::RCP<MultiFunction> f = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new FunctionConstant(1.0))));
   Teuchos::RCP<MeshFunction::Domain> domain = Teuchos::rcp(new MeshFunction::Domain(rgns, kind));

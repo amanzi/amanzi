@@ -35,10 +35,10 @@ void MaterialMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
       region != domain->first.end(); ++region) {
 
     // Get the ids from the mesh by region name and entity kind.
-    if (mesh_->valid_set_name(*region, kind)) {
+    if (mesh_->isValidSetName(*region, kind)) {
       AmanziMesh::Entity_ID_List ids;
       std::vector<double> vofs;
-      mesh_->get_set_entities_and_vofs(*region, kind, AmanziMesh::Parallel_type::ALL, &ids, &vofs);
+      ids = mesh_->getSetEntitiesAndVolumeFractions(*region, kind, AmanziMesh::Parallel_type::ALL, &vofs);
 
       // populating default volume fractions (move this to mesh framework?)
       if (vofs.size() == 0) vofs.resize(ids.size(), 1.0);
@@ -54,7 +54,7 @@ void MaterialMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
       }
     } else {
       Errors::Message msg;
-      msg << "Unknown region in processing mesh function spec: \"" << *region << "\", kind=" << kind;
+      msg << "Unknown region in processing mesh function spec: \"" << *region << "\", kind=" << AmanziMesh::to_string(kind);
       Exceptions::amanzi_throw(msg);
     }
   }

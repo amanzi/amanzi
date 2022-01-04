@@ -52,7 +52,7 @@ void CompositeVectorFunction::Compute(double time,
 #endif
 
   // create the input tuple
-  int dim = mesh->space_dimension();
+  int dim = mesh->getSpaceDimension();
   std::vector<double> args(1+dim, 0.);
   args[0] = time;
 
@@ -70,7 +70,7 @@ void CompositeVectorFunction::Compute(double time,
     AmanziMesh::Entity_kind kind = spec->first->second;
     if (vo && vo->os_OK(Teuchos::VERB_EXTREME)) {
       *vo->os() << "Writing function on component: " << compname
-                << " and entity " << AmanziMesh::entity_kind_string(kind) << std::endl;
+                << " and entity " << AmanziMesh::to_string(kind) << std::endl;
     }
 
     // loop over all regions in the spec
@@ -78,26 +78,26 @@ void CompositeVectorFunction::Compute(double time,
          region!=spec->first->first.end(); ++region) {
       // special case for BOUNDARY_FACE because BOUNDARY_FACE cannot currently
       // be used in sets, see #558.  Hopefully this will be fixed soon.
-      if (kind == AmanziMesh::BOUNDARY_FACE) {
-        if (mesh->valid_set_name(*region, AmanziMesh::FACE)) {
+      if (kind == AmanziMesh::Entity_kind::BOUNDARY_FACE) {
+        if (mesh->isValidSetName(*region, AmanziMesh::Entity_kind::FACE)) {
           // get the indices of the domain.
           AmanziMesh::Entity_ID_List id_list;
-          mesh->get_set_entities(*region, AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &id_list);
+          id_list = mesh->getSetEntities(*region, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
 
-          const Epetra_Map& face_map = mesh->face_map(false);
-          const Epetra_Map& vandelay_map = mesh->exterior_face_map(false);
+          const Epetra_Map& face_map = mesh->getMap(AmanziMesh::Entity_kind::FACE, false);
+          const Epetra_Map& vandelay_map = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false);
 
           // loop over indices
           AmanziMesh::Entity_ID_List cells;
           for (AmanziMesh::Entity_ID_List::const_iterator id=id_list.begin();
                id!=id_list.end(); ++id) {
-            mesh->face_get_cells(*id, AmanziMesh::Parallel_type::ALL, &cells);
+            mesh->getFaceCells(*id, AmanziMesh::Parallel_type::ALL, cells);
             if (cells.size() == 1) {
               AmanziMesh::Entity_ID bf = vandelay_map.LID(face_map.GID(*id));
               AMANZI_ASSERT(bf >= 0);
 
               // get the coordinate
-              AmanziGeometry::Point xf = mesh->face_centroid(*id);
+              AmanziGeometry::Point xf = mesh->getFaceCentroid(*id);
               for (int i=0; i!=dim; ++i) args[i+1] = xf[i];
 
               // evaluate the functions and stuff the result into the CV
@@ -114,14 +114,14 @@ void CompositeVectorFunction::Compute(double time,
         }
       } else {
 
-        bool valid = mesh->valid_set_name(*region, kind);
+        bool valid = mesh->isValidSetName(*region, kind);
         if (vo && vo->os_OK(Teuchos::VERB_EXTREME)) {
           if (!valid) *vo->os() << "  region: " << *region << " not valid!" << std::endl;
         }
         if (valid) {
           // get the indices of the domain.
           AmanziMesh::Entity_ID_List id_list;
-          mesh->get_set_entities(*region, kind, AmanziMesh::Parallel_type::OWNED, &id_list);
+          id_list = mesh->getSetEntities(*region, kind, AmanziMesh::Parallel_type::OWNED);
           auto map = cv->Map().Map(compname, false);
 
           if (vo && vo->os_OK(Teuchos::VERB_EXTREME)) {
@@ -133,12 +133,12 @@ void CompositeVectorFunction::Compute(double time,
                id!=id_list.end(); ++id) {
             // get the coordinate
             AmanziGeometry::Point xc;
-            if (kind == AmanziMesh::CELL) {
-              xc = mesh->cell_centroid(*id);
-            } else if (kind == AmanziMesh::FACE) {
-              xc = mesh->face_centroid(*id);
-            } else if (kind == AmanziMesh::NODE) {
-              mesh->node_get_coordinates(*id, &xc);
+            if (kind == AmanziMesh::Entity_kind::CELL) {
+              xc = mesh->getCellCentroid(*id);
+            } else if (kind == AmanziMesh::Entity_kind::FACE) {
+              xc = mesh->getFaceCentroid(*id);
+            } else if (kind == AmanziMesh::Entity_kind::NODE) {
+              xc = mesh->getNodeCoordinate(*id);
             } else {
               AMANZI_ASSERT(0);
             }
