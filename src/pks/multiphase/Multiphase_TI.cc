@@ -271,6 +271,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
           Key fname = eqns_[row].advection[phase].second;
 
           if (S_->HasDerivative(fname, keyc) || fname == keyc) {
+std::cout << "Try1: " << fname << " " << keyc << " " << row << " " << col << std::endl;
             auto pde = Teuchos::rcp(new Operators::PDE_DiffusionFV(ddf_list, global_op));
 
             S_->GetEvaluator(key).Update(*S_, passwd_);
@@ -304,6 +305,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
           Key fname = eqns_[row].advection[phase].second;
 
           if (S_->HasDerivative(fname, keyc)) {
+std::cout << "Try2: " << fname << " " << keyc << " " << row << " " << col << std::endl;
             // --- upwind gas molar mobility times molar fraction 
             S_->GetEvaluator(key).Update(*S_, passwd_);
             kr_c = *S_->Get<CompositeVector>(key).ViewComponent("cell");
@@ -328,6 +330,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
         if ((key = eqns_[row].advection[phase].first) != "") {
 
           if (S_->HasDerivative(key, keyc)) {
+std::cout << "Try3: " << key << " " << keyc << " " << row << " " << col << std::endl;
             // --- upwind derivative
             S_->GetEvaluator(key).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
             kr_c = *S_->GetDerivative<CompositeVector>(key, keyc).ViewComponent("cell");
@@ -363,6 +366,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
             if (fname == keyc) {
               der_c = &*fone_c;
             } else {
+std::cout << "Try4: " << key << " " << keyc << " " << row << " " << col << " fname=" << fname << std::endl;
               S_->GetEvaluator(fname).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
               der_c = &*S_->GetDerivative<CompositeVector>(fname, keyc).ViewComponent("cell");
             }
@@ -391,6 +395,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
           Key fname = eqns_[row].diffusion[phase].second;
 
           if (S_->HasDerivative(fname, keyc)) {
+std::cout << "Try5: " << fname << " " << keyc << " " << row << " " << col << std::endl;
             // --- calculate diffusion coefficient
             S_->GetEvaluator(key).Update(*S_, passwd_);
             kr_c = *S_->Get<CompositeVector>(key).ViewComponent("cell");
@@ -415,6 +420,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
         if ((key = eqns_[row].diffusion[phase].first) != "" && keyc == saturation_liquid_key_) {
 
           if (S_->HasDerivative(key, keyc)) {
+std::cout << "Try6: " << key << " " << keyc << " " << row << " " << col << std::endl;
             S_->GetEvaluator(key).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
             kr_c = *S_->GetDerivative<CompositeVector>(key, keyc).ViewComponent("cell");
 
@@ -447,6 +453,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
       // storage term
       if ((key = eqns_[row].storage) != "") {
         if (S_->HasDerivative(key, keyc)) {
+std::cout << "Try7: " << key << " " << keyc << " " << row << " " << col << std::endl;
           auto pde = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, global_op)); 
           S_->GetEvaluator(key).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
           auto der = S_->GetDerivativePtr<CompositeVector>(key, Tags::DEFAULT, keyc, Tags::DEFAULT);
@@ -473,6 +480,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
     Key keyc = soln_names_[solc.var];
     if (S_->HasDerivative(key, keyc)) {
+std::cout << "Try8: " << key << " " << keyc << std::endl;
       S_->GetEvaluator(key).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
       der_fc = S_->GetDerivative<CompositeVector>(key, Tags::DEFAULT, keyc, Tags::DEFAULT).ViewComponent("cell");
     }
@@ -483,6 +491,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
     keyc = soln_names_[solc.var];
     if (S_->HasDerivative(key, keyc)) {
+std::cout << "Try9: " << key << " " << keyc << std::endl;
       S_->GetEvaluator(key).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
       der_gc = S_->GetDerivative<CompositeVector>(key, Tags::DEFAULT, keyc, Tags::DEFAULT).ViewComponent("cell");
     }

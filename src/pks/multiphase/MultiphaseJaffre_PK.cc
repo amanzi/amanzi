@@ -69,6 +69,9 @@ void MultiphaseJaffre_PK::Setup(const Teuchos::Ptr<State>& S)
          .set<std::string>("tag", "");
     auto eval = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
     S->SetEvaluator(molar_density_liquid_key_, eval);
+
+    S->RequireDerivative<CV_t, CVS_t>(molar_density_liquid_key_, Tags::DEFAULT,
+                                      molar_density_liquid_key_, Tags::DEFAULT, molar_density_liquid_key_);
   }
 
   // conserved quantities
@@ -93,6 +96,9 @@ void MultiphaseJaffre_PK::Setup(const Teuchos::Ptr<State>& S)
 
     eval_tws_ = Teuchos::rcp(new ProductEvaluator(elist));
     S->SetEvaluator(tws_key_, eval_tws_);
+
+    S->RequireDerivative<CV_t, CVS_t>(tws_key_, Tags::DEFAULT,
+                                      saturation_liquid_key_, Tags::DEFAULT, tws_key_);
   }
 
   // -- total component storage
@@ -110,6 +116,13 @@ void MultiphaseJaffre_PK::Setup(const Teuchos::Ptr<State>& S)
 
     eval_tcs_ = Teuchos::rcp(new TotalComponentStorage_MolarDensity(elist));
     S->SetEvaluator(tcs_key_, eval_tcs_);
+
+    S->RequireDerivative<CV_t, CVS_t>(tcs_key_, Tags::DEFAULT,
+                                      pressure_liquid_key_, Tags::DEFAULT, tcs_key_);
+    S->RequireDerivative<CV_t, CVS_t>(tcs_key_, Tags::DEFAULT,
+                                      molar_density_liquid_key_, Tags::DEFAULT, tcs_key_);
+    S->RequireDerivative<CV_t, CVS_t>(tcs_key_, Tags::DEFAULT,
+                                      saturation_liquid_key_, Tags::DEFAULT, tcs_key_);
   }
 
   // product evaluators
@@ -135,6 +148,11 @@ void MultiphaseJaffre_PK::Setup(const Teuchos::Ptr<State>& S)
 
     auto eval = Teuchos::rcp(new ProductEvaluator(elist));
     S->SetEvaluator(advection_liquid_key_, eval);
+
+    S->RequireDerivative<CV_t, CVS_t>(advection_liquid_key_, Tags::DEFAULT,
+                                      molar_density_liquid_key_, Tags::DEFAULT, advection_liquid_key_);
+    S->RequireDerivative<CV_t, CVS_t>(advection_liquid_key_, Tags::DEFAULT,
+                                      saturation_liquid_key_, Tags::DEFAULT, advection_liquid_key_);
   }
 
   if (!S->HasData(advection_water_key_)) {
@@ -158,6 +176,9 @@ void MultiphaseJaffre_PK::Setup(const Teuchos::Ptr<State>& S)
 
     auto eval = Teuchos::rcp(new ProductEvaluator(elist));
     S->SetEvaluator(advection_water_key_, eval);
+
+    S->RequireDerivative<CV_t, CVS_t>(advection_water_key_, Tags::DEFAULT,
+                                      saturation_liquid_key_, Tags::DEFAULT, advection_water_key_);
   }
 
   // -- coefficient for advection operator in gas phase
@@ -182,6 +203,11 @@ void MultiphaseJaffre_PK::Setup(const Teuchos::Ptr<State>& S)
 
     auto eval = Teuchos::rcp(new ProductEvaluator(elist));
     S->SetEvaluator(advection_gas_key_, eval);
+
+    S->RequireDerivative<CV_t, CVS_t>(advection_gas_key_, Tags::DEFAULT,
+                                      pressure_liquid_key_, Tags::DEFAULT, advection_gas_key_);
+    S->RequireDerivative<CV_t, CVS_t>(advection_gas_key_, Tags::DEFAULT,
+                                      saturation_liquid_key_, Tags::DEFAULT, advection_gas_key_);
   }
 
   // -- coefficient for diffusion operator in liquid phase
@@ -205,6 +231,11 @@ void MultiphaseJaffre_PK::Setup(const Teuchos::Ptr<State>& S)
 
     auto eval = Teuchos::rcp(new ProductEvaluator(elist));
     S->SetEvaluator(diffusion_liquid_key_, eval);
+
+    S->RequireDerivative<CV_t, CVS_t>(diffusion_liquid_key_, Tags::DEFAULT,
+                                      molar_density_liquid_key_, Tags::DEFAULT, diffusion_liquid_key_);
+    S->RequireDerivative<CV_t, CVS_t>(diffusion_liquid_key_, Tags::DEFAULT,
+                                      saturation_liquid_key_, Tags::DEFAULT, diffusion_liquid_key_);
   }
 
   // -- coefficient for diffusion operator in gas phase
@@ -220,6 +251,9 @@ void MultiphaseJaffre_PK::Setup(const Teuchos::Ptr<State>& S)
          .set<std::string>("tag", "");
     auto eval = Teuchos::rcp(new NCP_F(elist));
     S->SetEvaluator(ncp_f_key_, eval);
+
+    S->RequireDerivative<CV_t, CVS_t>(ncp_f_key_, Tags::DEFAULT,
+                                      saturation_liquid_key_, Tags::DEFAULT, ncp_f_key_);
   }
 
   if (!S->HasData(ncp_g_key_)) {
@@ -234,6 +268,13 @@ void MultiphaseJaffre_PK::Setup(const Teuchos::Ptr<State>& S)
     // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
     auto eval = Teuchos::rcp(new NCP_HenryLaw(elist));
     S->SetEvaluator(ncp_g_key_, eval);
+
+    S->RequireDerivative<CV_t, CVS_t>(ncp_g_key_, Tags::DEFAULT,
+                                      pressure_liquid_key_, Tags::DEFAULT, ncp_g_key_);
+    S->RequireDerivative<CV_t, CVS_t>(ncp_g_key_, Tags::DEFAULT,
+                                      molar_density_liquid_key_, Tags::DEFAULT, ncp_g_key_);
+    S->RequireDerivative<CV_t, CVS_t>(ncp_g_key_, Tags::DEFAULT,
+                                      saturation_liquid_key_, Tags::DEFAULT, ncp_g_key_);
   }
 }
 

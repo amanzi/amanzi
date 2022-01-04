@@ -184,7 +184,6 @@ bool EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
                                           const Key& wrt_key,
                                           const Tag& wrt_tag)
 {
-std::cout << my_keys_[0].first << " wrt:"  <<  wrt_key << " + " << wrt_tag.get() << std::endl;
   AMANZI_ASSERT(IsDependency(S, wrt_key, wrt_tag));
 
   Teuchos::OSTab tab = vo_.getOSTab();

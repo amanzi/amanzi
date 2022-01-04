@@ -39,8 +39,6 @@ class RelPermEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Comp
   virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
-  virtual void EnsureCompatibility(State& S) override;
-
  private:
   Teuchos::RCP<WRMmpPartition> wrm_;
  

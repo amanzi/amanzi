@@ -152,6 +152,13 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
                                       pressure_liquid_key_, Tags::DEFAULT, pressure_liquid_key_);
   }
 
+  // temperature typically is the primary solution owned by another PK
+  if (!S->HasData(temperature_key_)) {
+    S->Require<CV_t, CVS_t>(temperature_key_, Tags::DEFAULT, temperature_key_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireEvaluator(temperature_key_);
+  }
+
   // water saturation is the primary solution
   if (!S->HasData(saturation_liquid_key_)) {
     S->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, passwd_)
@@ -161,6 +168,9 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
     elist.set<std::string>("name", saturation_liquid_key_);
     saturation_liquid_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
     S->SetEvaluator(saturation_liquid_key_, saturation_liquid_eval_);
+
+    S->RequireDerivative<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT,
+                                      saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_);
   }
 
   // total pressure gas
@@ -179,6 +189,13 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 
     auto eval = Teuchos::rcp(new PressureGasEvaluator(elist, wrm_));
     S->SetEvaluator(pressure_gas_key_, eval);
+
+    S->RequireDerivative<CV_t, CVS_t>(pressure_gas_key_, Tags::DEFAULT,
+                                      pressure_liquid_key_, Tags::DEFAULT, pressure_gas_key_);
+    S->RequireDerivative<CV_t, CVS_t>(pressure_gas_key_, Tags::DEFAULT,
+                                      pressure_liquid_key_, Tags::DEFAULT, pressure_gas_key_);
+    S->RequireDerivative<CV_t, CVS_t>(pressure_gas_key_, Tags::DEFAULT,
+                                      saturation_liquid_key_, Tags::DEFAULT, pressure_gas_key_);
   }
 
   // Darcy velocities
@@ -218,6 +235,9 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 
     auto eval = Teuchos::rcp(new RelPermEvaluator(elist, wrm_));
     S->SetEvaluator(relperm_liquid_key_, eval);
+
+    S->RequireDerivative<CV_t, CVS_t>(relperm_liquid_key_, Tags::DEFAULT,
+                                      saturation_liquid_key_, Tags::DEFAULT, relperm_liquid_key_);
   }
 
   // relative permeability of gas phase
@@ -233,6 +253,9 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
 
     auto eval = Teuchos::rcp(new RelPermEvaluator(elist, wrm_));
     S->SetEvaluator(relperm_gas_key_, eval);
+
+    S->RequireDerivative<CV_t, CVS_t>(relperm_gas_key_, Tags::DEFAULT,
+                                      saturation_liquid_key_, Tags::DEFAULT, relperm_gas_key_);
   }
 
   // material properties

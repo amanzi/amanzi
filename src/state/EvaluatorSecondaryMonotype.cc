@@ -24,7 +24,6 @@
 
 namespace Amanzi {
 
-
 // ---------------------------------------------------------------------------
 // Updates the derivative for doubles
 // ---------------------------------------------------------------------------
@@ -165,8 +164,8 @@ void EvaluatorSecondaryMonotype<CompositeVector,CompositeVectorSpace>::EnsureCom
   }
 
   // grab my factory
-  auto akeytag = my_keys_[0];
-  auto& my_fac = S.Require<CompositeVector,CompositeVectorSpace>(akeytag.first, akeytag.second, akeytag.first);
+  auto keytag = my_keys_[0];
+  auto& my_fac = S.Require<CompositeVector,CompositeVectorSpace>(keytag.first, keytag.second, keytag.first);
 
   // require existence of derivatives
   bool has_derivs = false;
@@ -208,7 +207,8 @@ void EvaluatorSecondaryMonotype<CompositeVector,CompositeVectorSpace>::EnsureCom
     }
 
   } else if (consistency_policy == "give to child" && my_fac.Mesh().get()) {
-    // set requirements on my derivatives
+    // set my requirements on my derivatives
+    // for a CV, we typically merge two CVSs and run consistency checks
     if (has_derivs) {
       for (const auto& keytag : my_keys_) {
         for (const auto& deriv : S.GetDerivativeSet(keytag.first, keytag.second)) {
@@ -243,7 +243,7 @@ void EvaluatorSecondaryMonotype<CompositeVector,CompositeVectorSpace>::EnsureCom
       S.GetEvaluator(dep.first, dep.second).EnsureCompatibility(S);
     }
 
-    } else if (consistency_policy.substr(0, 15) == "take from child") {
+  } else if (consistency_policy.substr(0, 15) == "take from child") {
     // require derivatives of my children
     if (has_derivs) {
       for (const auto& keytag : my_keys_) {

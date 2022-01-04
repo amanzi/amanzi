@@ -88,35 +88,5 @@ void RelPermEvaluator::EvaluatePartialDerivative_(
   }
 }
 
-
-/* ******************************************************************
-* Ensure part of my fields exists.
-****************************************************************** */
-void RelPermEvaluator::EnsureCompatibility(State& S)
-{
-  Key key = my_keys_[0].first;
-  auto my_fac = S.Require<CompositeVector, CompositeVectorSpace>(key, Tags::DEFAULT, key);
-
-  // If my requirements have not yet been set, we'll have to hope they
-  // get set by someone later.  For now just defer.
-  if (my_fac.Mesh() != Teuchos::null) {
-    // Create an unowned factory to check my dependencies.
-    auto dep_fac = Teuchos::rcp(new CompositeVectorSpace); 
-    dep_fac->SetMesh(my_fac.Mesh())->SetGhosted(true)
-        ->AddComponent("cell", AmanziMesh::CELL, 1)->SetOwned(false);
-
-    // Loop over my dependencies, ensuring they meet the requirements.
-    for (auto dep = dependencies_.begin(); dep != dependencies_.end(); ++dep) {
-      auto fac = S.Require<CompositeVector, CompositeVectorSpace>(dep->first);
-      fac.Update(*dep_fac);
-    }
-
-    // Recurse into the tree to propagate info to leaves.
-    for (auto dep = dependencies_.begin(); dep != dependencies_.end(); ++dep) {
-      S.RequireEvaluator(dep->first).EnsureCompatibility(S);
-    }
-  }
-}
-
 }  // namespace Flow
 }  // namespace Amanzi
