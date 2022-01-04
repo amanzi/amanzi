@@ -597,12 +597,28 @@ struct MeshCache {
   template<AccessPattern AP=AccessPattern::DEFAULT>
   void getFaceNodes(const Entity_ID f, Entity_ID_View& nodes) const;
 
+  //
+  // NOT CURRENTLY IMPLEMENTED, here to satisfy the interface
+  //
+  template<AccessPattern AP=AccessPattern::DEFAULT>
+  const Point_View getFaceHOCoordinates(const Entity_ID f) const {
+    return Point_View();
+  }
+
   // Get nodes of edge
   template<AccessPattern AP=AccessPattern::DEFAULT>
   std::size_t getEdgeNumNodes(const Entity_ID e) const;
 
   template<AccessPattern AP=AccessPattern::DEFAULT>
   const Entity_ID_View getEdgeNodes(const Entity_ID e) const;
+
+  //
+  // NOT CURRENTLY IMPLEMENTED, here to satisfy the interface
+  //
+  template<AccessPattern AP=AccessPattern::DEFAULT>
+  const Point_View getEdgeHOCoordinates(const Entity_ID e) const {
+    return Point_View();
+  }
 
   //[[deprecated("Prefer to use non-void variant that returns nodes directly")]]
   template<AccessPattern AP=AccessPattern::DEFAULT>

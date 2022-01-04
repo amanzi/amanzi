@@ -147,15 +147,15 @@ TEST(HARMONIC_AVERAGING_POINT_2D) {
   double w;
   AmanziGeometry::Point xa(0.8, 0.0), xb(0.7, 1.0);  // end-points of face f
   AmanziGeometry::Point p(2), v(2), u(2), xab(2), xcc(2);
-  const AmanziGeometry::Point& xc1 = mesh->cell_centroid(c1);
-  const AmanziGeometry::Point& xc2 = mesh->cell_centroid(c2);
+  const AmanziGeometry::Point& xc1 = mesh->getCellCentroid(c1);
+  const AmanziGeometry::Point& xc2 = mesh->getCellCentroid(c2);
 
   // identity tensor: conormal = normal
   {
     double tmp1, tmp2;
     AmanziGeometry::Point conormal1(2), conormal2(2);
-    conormal1 = mesh->face_normal(f);
-    conormal2 = mesh->face_normal(f);
+    conormal1 = mesh->getFaceNormal(f);
+    conormal2 = mesh->getFaceNormal(f);
 
     nlfv.HarmonicAveragingPoint(f, c1, c2, conormal1, conormal2, p, w);
     std::cout << "hap: " << p << " weight=" << w << std::endl;
@@ -189,7 +189,7 @@ TEST(HARMONIC_AVERAGING_POINT_2D) {
   {
     WhetStone::Tensor K1(2, 2), K2(2, 2); 
     AmanziGeometry::Point conormal1(2), conormal2(2);
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
 
     K1(0, 0) = 2.0;
     K1(0, 1) = K1(1, 0) = 1.0;

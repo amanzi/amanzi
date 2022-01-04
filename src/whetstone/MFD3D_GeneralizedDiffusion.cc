@@ -12,7 +12,7 @@
   Mimetic schemes for generalized polyhedra.
 */
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 
 #include "MFD3D_GeneralizedDiffusion.hh"
 #include "WhetStoneDefs.hh"
@@ -26,8 +26,8 @@ namespace WhetStone {
 std::vector<SchemaItem> MFD3D_GeneralizedDiffusion::schema() const
 {
   std::vector<SchemaItem> items;
-  items.push_back(std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, d_));
-  items.push_back(std::make_tuple(AmanziMesh::CELL, DOF_Type::SCALAR, 1));
+  items.push_back(std::make_tuple(AmanziMesh::Entity_kind::FACE, DOF_Type::SCALAR, d_));
+  items.push_back(std::make_tuple(AmanziMesh::Entity_kind::CELL, DOF_Type::SCALAR, 1));
   return items;
 }
 
@@ -38,8 +38,14 @@ std::vector<SchemaItem> MFD3D_GeneralizedDiffusion::schema() const
 int MFD3D_GeneralizedDiffusion::L2consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const auto& faces = mesh_->getCellFaces(c);
+  const auto& dirs = mesh_->getCellFaceDirections(c);
+  std::cout << "faces = ";
+  for (const auto& f : faces) std::cout <<  f << ",";
+  std::cout << std::endl;
+  std::cout << "dirs = ";
+  for (const auto& dir : dirs) std::cout << dir << ",";
+  std::cout << std::endl;
   int nfaces = faces.size();
 
   int nx(d_ * nfaces);
@@ -47,8 +53,8 @@ int MFD3D_GeneralizedDiffusion::L2consistency(
   N.Reshape(nx, d_);
   Mc.Reshape(nx, nx);
 
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
+  double volume = mesh_->getCellVolume(c);
 
   AmanziGeometry::Point v1(d_), v2(d_);
   std::vector<AmanziGeometry::Point> vv(3), xm(3);
@@ -57,9 +63,10 @@ int MFD3D_GeneralizedDiffusion::L2consistency(
   DenseMatrix R(N);
   for (int i = 0; i < nfaces; ++i) {
     int f = faces[i];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    double area = mesh_->face_area(f);  
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+    double area = mesh_->getFaceArea(f);  
     double area_div = norm(normal);
+    std::cout << "area, area_div = " << area << ", " << area_div << std::endl;
 
     CurvedFaceGeometry_(f, dirs[i], vv, xm);
 
@@ -136,8 +143,8 @@ int MFD3D_GeneralizedDiffusion::MassMatrixOptimized(
 int MFD3D_GeneralizedDiffusion::L2consistencyInverse(
     int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry)
 {
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const auto& faces = mesh_->getCellFaces(c);
+  const auto& dirs = mesh_->getCellFaceDirections(c);
 
   int nfaces = faces.size();
   int nx(d_ * nfaces);
@@ -145,8 +152,8 @@ int MFD3D_GeneralizedDiffusion::L2consistencyInverse(
   R.Reshape(nx, d_);
   Wc.Reshape(nx, nx);
 
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
+  double volume = mesh_->getCellVolume(c);
 
   AmanziGeometry::Point v1(d_), v2(d_);
   std::vector<AmanziGeometry::Point> vv(3), xm(3);
@@ -155,8 +162,8 @@ int MFD3D_GeneralizedDiffusion::L2consistencyInverse(
   DenseMatrix N(R);
   for (int i = 0; i < nfaces; ++i) {
     int f = faces[i];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    double area = mesh_->face_area(f);  
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+    double area = mesh_->getFaceArea(f);  
     double area_div = norm(normal);
 
     CurvedFaceGeometry_(f, dirs[i], vv, xm);
@@ -212,8 +219,8 @@ int MFD3D_GeneralizedDiffusion::StiffnessMatrix(
   DenseMatrix M;
   MassMatrixInverse(c, K, M);
 
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const auto& faces = mesh_->getCellFaces(c);
+  const auto& dirs = mesh_->getCellFaceDirections(c);
 
   int nfaces = faces.size();
   int nx(d_ * nfaces);
@@ -224,10 +231,10 @@ int MFD3D_GeneralizedDiffusion::StiffnessMatrix(
 
   for (int i = 0; i < nfaces; ++i) {
     int f = faces[i];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
     area_div(d_ * i) = norm(normal);
 
-    double tmp = mesh_->face_area(f);  
+    double tmp = mesh_->getFaceArea(f);  
     area(d_ * i) = tmp;
     area(d_ * i + 1) = tmp * dirs[i];
     area(d_ * i + 2) = tmp * dirs[i];
@@ -261,8 +268,8 @@ int MFD3D_GeneralizedDiffusion::StiffnessMatrix(
 ****************************************************************** */
 int MFD3D_GeneralizedDiffusion::DivergenceMatrix(int c, DenseMatrix& A)
 {
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const auto& faces = mesh_->getCellFaces(c);
+  const auto& dirs = mesh_->getCellFaceDirections(c);
   int nfaces = faces.size();
 
   A.Reshape(1, d_ * nfaces);
@@ -270,7 +277,7 @@ int MFD3D_GeneralizedDiffusion::DivergenceMatrix(int c, DenseMatrix& A)
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
     A(0, d_ * n) = norm(normal) * dirs[n]; 
   } 
 
@@ -288,7 +295,7 @@ void MFD3D_GeneralizedDiffusion::CurvedFaceGeometry_(
   // local coordinate system uses external normal
   AmanziGeometry::Point normal(d_), xf(d_), v1(d_), v2(d_), v3(d_), p1(d_), p2(d_);
 
-  normal = mesh_->face_normal(f);
+  normal = mesh_->getFaceNormal(f);
   normal /= norm(normal);
 
   if (fabs(normal[0]) > 0.1) {
@@ -309,12 +316,12 @@ void MFD3D_GeneralizedDiffusion::CurvedFaceGeometry_(
 
   // geometric center. We cannot use face_centroid
   Entity_ID_List nodes;
-  mesh_->face_get_nodes(f, &nodes);
+  mesh_->getFaceNodes(f, nodes);
   int nnodes = nodes.size();
 
   xf.set(0.0);
   for (int n = 0; n < nnodes; ++n) {
-    mesh_->node_get_coordinates(nodes[n], &p1);
+    p1 = mesh_->getNodeCoordinate(nodes[n]);
     xf += p1;
   }
   xf /= nnodes;
@@ -329,8 +336,8 @@ void MFD3D_GeneralizedDiffusion::CurvedFaceGeometry_(
   for (int n = 0; n < nnodes; ++n) {
     int m = (n + 1) % nnodes;
 
-    mesh_->node_get_coordinates(nodes[n], &p1);
-    mesh_->node_get_coordinates(nodes[m], &p2);
+    p1 = mesh_->getNodeCoordinate(nodes[n]);
+    p2 = mesh_->getNodeCoordinate(nodes[m]);
 
     v1 = xf - p1;
     v2 = xf - p2;

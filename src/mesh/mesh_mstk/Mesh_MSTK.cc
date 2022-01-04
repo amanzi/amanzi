@@ -478,7 +478,10 @@ void Mesh_MSTK::getCellFacesAndDirs_ordered_(const Entity_ID cellid,
 {
   if (getManifoldDimension() == 3) {
     Cell_type celltype = getCellType(cellid);
-    if (celltype != Cell_type::UNKNOWN) {
+    if (celltype == Cell_type::TET ||
+        celltype == Cell_type::PRISM ||
+        celltype == Cell_type::PYRAMID ||
+        celltype == Cell_type::HEX) {
       int lid, nf;
       MEntity_ptr cell = cell_id_to_handle_[cellid];
 

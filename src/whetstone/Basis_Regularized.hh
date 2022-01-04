@@ -19,7 +19,7 @@
 
 #include <vector>
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 
 #include "Basis.hh"
 #include "WhetStoneDefs.hh"
@@ -33,7 +33,7 @@ class Basis_Regularized : public Basis {
   ~Basis_Regularized() {};
 
   // initialization
-  virtual void Init(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,
+  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                     int c, int order, Polynomial& integrals);
 
   // transformation of bilinear form
@@ -49,7 +49,7 @@ class Basis_Regularized : public Basis {
   virtual void ChangeBasisNaturalToMy(DenseVector& v) const;
 
   // Recover polynomial in the natural basis
-  virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,
+  virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                          int c, int order, DenseVector& coefs) const;
 
   // access

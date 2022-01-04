@@ -18,7 +18,7 @@
 #include <tuple>
 #include <vector>
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 #include "errors.hh"
 
@@ -39,11 +39,11 @@ std::vector<SchemaItem> MFD3D_CrouzeixRaviartSerendipity::schema() const
 {
   int nk = PolynomialSpaceDimension(d_ - 1, order_ - 1);
   std::vector<SchemaItem> items;
-  items.push_back(std::make_tuple(AmanziMesh::FACE, DOF_Type::MOMENT, nk));
+  items.push_back(std::make_tuple(AmanziMesh::Entity_kind::FACE, DOF_Type::MOMENT, nk));
 
   if (order_ > 3) {
     nk = PolynomialSpaceDimension(d_, order_ - 4);
-    items.push_back(std::make_tuple(AmanziMesh::CELL, DOF_Type::MOMENT, nk));
+    items.push_back(std::make_tuple(AmanziMesh::Entity_kind::CELL, DOF_Type::MOMENT, nk));
   }
 
   return items;
@@ -57,7 +57,7 @@ std::vector<SchemaItem> MFD3D_CrouzeixRaviartSerendipity::schema() const
 int MFD3D_CrouzeixRaviartSerendipity::H1consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  int nfaces = mesh_->cell_get_num_faces(c);
+  int nfaces = mesh_->getCellNumFaces(c);
   AMANZI_ASSERT(nfaces > 3);  // FIXME
 
   // calculate degrees of freedom 
@@ -178,7 +178,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
   MFD3D_CrouzeixRaviartAnyOrder::H1consistency(c, T, N, A);  
 
   // select number of non-aligned edges: we assume cell convexity 
-  int nfaces = mesh_->cell_get_num_faces(c);
+  int nfaces = mesh_->getCellNumFaces(c);
   int eta(3);
   if (nfaces > 3) eta = 4;
 
@@ -197,7 +197,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
   NN.Inverse();
 
   // calculate degrees of freedom
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
   DenseVector v1(nd), v5(nd);
 
   DenseVector vdof(ndof_f + ndof_cs);
@@ -231,7 +231,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
 
     vdof.Reshape(ndof_f + ndof_c);
     for (int n = ndof_cs; n < ndof_c; ++n) {
-      vdof(ndof_f + n) = v4(n) / mesh_->cell_volume(c); 
+      vdof(ndof_f + n) = v4(n) / mesh_->getCellVolume(c); 
     }
 
     R_.Multiply(vdof, v4, true);
@@ -256,7 +256,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
 
     const DenseVector& v3 = moments->coefs();
     for (int n = 0; n < ndof_cs; ++n) {
-      v4(n) = v3(n) * mesh_->cell_volume(c);
+      v4(n) = v3(n) * mesh_->getCellVolume(c);
     }
 
     for (int n = 0; n < nd - ndof_cs; ++n) {
@@ -280,7 +280,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
 void MFD3D_CrouzeixRaviartSerendipity::CalculateDOFsOnBoundary_(
     int c, const std::vector<Polynomial>& vf, DenseVector& vdof)
 {
-  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& faces = mesh_->getCellFaces(c);
   int nfaces = faces.size();
 
   std::vector<const PolynomialBase*> polys(2);
@@ -294,9 +294,9 @@ void MFD3D_CrouzeixRaviartSerendipity::CalculateDOFsOnBoundary_(
   int row(0);
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
-    double area = mesh_->face_area(f);
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    double area = mesh_->getFaceArea(f);
+    const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f); 
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
 
     // local coordinate system with origin at face centroid
     SurfaceCoordinateSystem coordsys(xf, normal);

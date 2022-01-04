@@ -15,7 +15,7 @@
 #include <cmath>
 #include <vector>
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 
 #include "MFD3D_Diffusion.hh"
 #include "Tensor.hh"
@@ -32,18 +32,18 @@ namespace WhetStone {
 int MFD3D_Diffusion::L2consistencyInverseSurface(
     int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
 {
-  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& faces = mesh_->getCellFaces(c);
   int nfaces = faces.size();
 
   R.Reshape(nfaces, d_ - 1);
   Wc.Reshape(nfaces, nfaces);
 
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->getCellVolume(c);
 
   // calculate cell normal
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  const AmanziGeometry::Point& xf1 = mesh_->face_centroid(faces[0]);
-  const AmanziGeometry::Point& xf2 = mesh_->face_centroid(faces[1]);
+  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
+  const AmanziGeometry::Point& xf1 = mesh_->getFaceCentroid(faces[0]);
+  const AmanziGeometry::Point& xf2 = mesh_->getFaceCentroid(faces[1]);
   AmanziGeometry::Point v1(d_), v2(d_), v3(d_);
 
   v1 = (xf1 - xc)^(xf2 - xc);
@@ -81,11 +81,11 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
   }
 
   // calculate matrix R
-  const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& cm = mesh_->getCellCentroid(c);
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
+    const AmanziGeometry::Point& fm = mesh_->getFaceCentroid(f);
 
     R(i, 0) = v2 * (fm - cm);
     R(i, 1) = v3 * (fm - cm);
@@ -117,10 +117,10 @@ int MFD3D_Diffusion::MassMatrixInverseSurface(
 AmanziGeometry::Point MFD3D_Diffusion::mesh_face_normal(int f, int c)
 {
   std::vector<AmanziGeometry::Point> vs;
-  mesh_->face_get_coordinates(f, &vs);
+  vs = mesh_->getFaceCoordinates(f);
 
   AmanziGeometry::Point tau(vs[1] - vs[0]);
-  AmanziGeometry::Point normal = vs[0] - mesh_->cell_centroid(c);
+  AmanziGeometry::Point normal = vs[0] - mesh_->getCellCentroid(c);
 
   // orthogonalize and rescale normal
   double len = norm(tau);

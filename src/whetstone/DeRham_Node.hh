@@ -2,9 +2,9 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -17,8 +17,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "MeshLight.hh"
-
+#include "Mesh.hh"
 #include "BilinearForm.hh"
 #include "DenseMatrix.hh"
 #include "MFD3D.hh"
@@ -27,18 +26,18 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class DeRham_Node : public MFD3D { 
+class DeRham_Node : public MFD3D {
  public:
-  DeRham_Node(const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh) 
+  DeRham_Node(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : MFD3D(mesh) {};
 
   virtual std::vector<SchemaItem> schema() const override {
-    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::NODE, DOF_Type::SCALAR, 1));
+    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::Entity_kind::NODE, DOF_Type::SCALAR, 1));
   }
 
   int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
 
-  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override; 
+  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override;
 };
 
 }  // namespace WhetStone

@@ -150,7 +150,8 @@ double
 MeshCache::getFaceArea(const Entity_ID f) const
 {
   if (face_geometry_cached) return face_areas[f];
-  return AmanziGeometry::norm(getFaceNormal(f));
+  auto area_cent_norms = algorithms_->computeFaceGeometry(*this, f);
+  return std::get<0>(area_cent_norms);
 }
 
 template<AccessPattern AP>

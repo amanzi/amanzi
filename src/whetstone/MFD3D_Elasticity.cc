@@ -16,7 +16,7 @@
 #include <iterator>
 #include <vector>
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 #include "errors.hh"
 
@@ -35,22 +35,22 @@ namespace WhetStone {
 int MFD3D_Elasticity::L2consistency(int c, const Tensor& T,
                                     DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
-  const auto& faces = mesh_->cell_get_faces(c);
+  const auto& faces = mesh_->getCellFaces(c);
   int nfaces = faces.size();
 
   N.Reshape(nfaces, d_);
   Mc.Reshape(nfaces, nfaces);
 
   AmanziGeometry::Point v1(d_), v2(d_);
-  const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& cm = mesh_->getCellCentroid(c);
 
   Tensor Tinv(T);
   Tinv.Inverse();
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    const AmanziGeometry::Point& fm = mesh_->getFaceCentroid(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
 
     v1 = fm - cm;
     double a = normal * v1;
@@ -69,14 +69,14 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
                                     DenseMatrix& N, DenseMatrix& Ac)
 {
   Entity_ID_List nodes;
-  mesh_->cell_get_nodes(c, &nodes);
+  mesh_->getCellNodes(c, nodes);
   int nnodes = nodes.size();
 
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const auto& faces = mesh_->getCellFaces(c);
+  const auto& dirs = mesh_->getCellFaceDirections(c);
   int nfaces = faces.size();
 
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->getCellVolume(c);
 
   int nrows = d_ * nnodes;
   N.Reshape(nrows, d_ * (d_ + 1));
@@ -119,12 +119,12 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
-    double area = mesh_->face_area(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+    const AmanziGeometry::Point& fm = mesh_->getFaceCentroid(f);
+    double area = mesh_->getFaceArea(f);
 
     Entity_ID_List face_nodes;
-    mesh_->face_get_nodes(f, &face_nodes);
+    mesh_->getFaceNodes(f, face_nodes);
     int num_face_nodes = face_nodes.size();
 
     for (int j = 0; j < num_face_nodes; j++) {
@@ -140,9 +140,9 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
         int vnext = face_nodes[jnext];
         int vprev = face_nodes[jprev];
 
-        mesh_->node_get_coordinates(v, &p);
-        mesh_->node_get_coordinates(vnext, &pnext);
-        mesh_->node_get_coordinates(vprev, &pprev);
+        p = mesh_->getNodeCoordinate(v);
+        pnext = mesh_->getNodeCoordinate(vnext);
+        pprev = mesh_->getNodeCoordinate(vprev);
 
         v1 = pprev - pnext;
         v2 = p - fm;
@@ -174,11 +174,11 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
 
   // calculate matrix N
   N.PutScalar(0.0);
-  const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
+  const AmanziGeometry::Point& cm = mesh_->getCellCentroid(c);
 
   for (int i = 0; i < nnodes; i++) {
     int v = nodes[i];
-    mesh_->node_get_coordinates(v, &p);
+    p = mesh_->getNodeCoordinate(v);
     v1 = p - cm;
 
     int md = 0;

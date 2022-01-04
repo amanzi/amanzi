@@ -14,7 +14,7 @@
   entries a.
 */
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 
 #include "Basis_Normalized.hh"
 #include "NumericalIntegration.hh"
@@ -28,10 +28,10 @@ namespace WhetStone {
 * Prepare scaling data for the normalized basis.
 ****************************************************************** */
 void Basis_Normalized::Init(
-    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     int c, int order, Polynomial& integrals)
 {
-  int d = mesh->space_dimension();
+  int d = mesh->getSpaceDimension();
   monomial_scales_.Reshape(d, order);
 
   NumericalIntegration numi(mesh);
@@ -149,11 +149,11 @@ void Basis_Normalized::ChangeBasisNaturalToMy(DenseVector& v) const
 * coefficients in the normalized basis. 
 ****************************************************************** */
 Polynomial Basis_Normalized::CalculatePolynomial(
-    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     int c, int order, DenseVector& coefs) const
 {
   Polynomial poly(monomial_scales_);
-  poly.set_origin(mesh->cell_centroid(c));
+  poly.set_origin(mesh->getCellCentroid(c));
 
   int n(0);
   for (auto it = poly.begin(); it < poly.end(); ++it) {

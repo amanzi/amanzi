@@ -2,14 +2,14 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Base class for maps between mesh objects located on different 
+  Base class for maps between mesh objects located on different
   meshes, e.g. two states of a deformable mesh.
 */
 
@@ -32,27 +32,26 @@ void MeshMaps::VelocityEdge(int e, VectorPolynomial& v) const
 {
   AMANZI_ASSERT(d_ == 3);
 
-  AmanziGeometry::Point_List points0, points1;
-  mesh0_->edge_get_ho_nodes(e, &points0);
-  mesh1_->edge_get_ho_nodes(e, &points1);
+  auto points0 = mesh0_->getEdgeHOCoordinates(e);
+  auto points1 = mesh1_->getEdgeHOCoordinates(e);
   AMANZI_ASSERT(points0.size() == points1.size());
 
   // local coordinate system (-0.5, 0.5)
-  std::vector<AmanziGeometry::Point> tau(1, mesh0_->edge_vector(e));
+  std::vector<AmanziGeometry::Point> tau(1, mesh0_->getEdgeVector(e));
 
   // polynomial is converted from local to global coordinate system
   int n0, n1;
   AmanziGeometry::Point x0, x1, y0, y1, ye;
 
-  const AmanziGeometry::Point& xe = mesh0_->edge_centroid(e);
-  ye = mesh1_->edge_centroid(e);
+  const AmanziGeometry::Point& xe = mesh0_->getEdgeCentroid(e);
+  ye = mesh1_->getEdgeCentroid(e);
 
-  mesh0_->edge_get_nodes(e, &n0, &n1);
-  mesh0_->node_get_coordinates(n0, &x0);
-  mesh0_->node_get_coordinates(n1, &x1);
+  mesh0_->getEdgeNodes(e, &n0, &n1);
+  x0 = mesh0_->getNodeCoordinate(n0);
+  x1 = mesh0_->getNodeCoordinate(n1);
 
-  mesh1_->node_get_coordinates(n0, &y0);
-  mesh1_->node_get_coordinates(n1, &y1);
+  y0 = mesh1_->getNodeCoordinate(n0);
+  y1 = mesh1_->getNodeCoordinate(n1);
 
   // velocity at points defining the polynomial
   y0 -= x0;
@@ -78,7 +77,7 @@ void MeshMaps::VelocityEdge(int e, VectorPolynomial& v) const
       v[i](2) = 2 * y0[i] + 2 * y1[i] - 4 * points1[0][i];
     }
 
-    v[i].InverseChangeCoordinates(xe, tau);  
+    v[i].InverseChangeCoordinates(xe, tau);
   }
 }
 
@@ -90,14 +89,13 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
 {
   AMANZI_ASSERT(d_ == 2);
 
-  AmanziGeometry::Point_List points0, points1;
-  mesh0_->face_get_ho_nodes(f, &points0);
-  mesh1_->face_get_ho_nodes(f, &points1);
+  auto points0 = mesh0_->getFaceHOCoordinates(f);
+  auto points1 = mesh1_->getFaceHOCoordinates(f);
   AMANZI_ASSERT(points0.size() == points1.size());
 
   // local coordinate system
-  const AmanziGeometry::Point& xf = mesh0_->face_centroid(f);
-  const AmanziGeometry::Point& normal = mesh0_->face_normal(f);
+  const AmanziGeometry::Point& xf = mesh0_->getFaceCentroid(f);
+  const AmanziGeometry::Point& normal = mesh0_->getFaceNormal(f);
 
   SurfaceCoordinateSystem coordsys(xf, normal);
   const auto& tau = *coordsys.tau();
@@ -106,14 +104,14 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
   AmanziMesh::Entity_ID_List nodes;
   AmanziGeometry::Point x0, x1, y0, y1;
 
-  AmanziGeometry::Point yf = mesh1_->face_centroid(f);
+  AmanziGeometry::Point yf = mesh1_->getFaceCentroid(f);
 
-  mesh0_->face_get_nodes(f, &nodes);
-  mesh0_->node_get_coordinates(nodes[0], &x0);
-  mesh0_->node_get_coordinates(nodes[1], &x1);
+  mesh0_->getFaceNodes(f, nodes);
+  x0 = mesh0_->getNodeCoordinate(nodes[0]);
+  x1 = mesh0_->getNodeCoordinate(nodes[1]);
 
-  mesh1_->node_get_coordinates(nodes[0], &y0);
-  mesh1_->node_get_coordinates(nodes[1], &y1);
+  y0 = mesh1_->getNodeCoordinate(nodes[0]);
+  y1 = mesh1_->getNodeCoordinate(nodes[1]);
 
   // velocity at points defining the polynomial
   y0 -= x0;
@@ -139,7 +137,7 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
       v[i](2) = 2 * y0[i] + 2 * y1[i] - 4 * points1[0][i];
     }
 
-    v[i].InverseChangeCoordinates(xf, tau);  
+    v[i].InverseChangeCoordinates(xf, tau);
   }
 }
 
@@ -150,7 +148,7 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
 void MeshMaps::NansonFormula(
     int f, const VectorSpaceTimePolynomial& map, VectorSpaceTimePolynomial& cn) const
 {
-  const auto& normal = mesh0_->face_normal(f);
+  const auto& normal = mesh0_->getFaceNormal(f);
   cn.resize(d_);
 
   auto grad = Gradient(map);
@@ -195,7 +193,7 @@ void MeshMaps::Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const
 * We assume that vectors of vertices have a proper length.
 ****************************************************************** */
 int MeshMaps::LeastSquareFit(int order,
-                             const std::vector<AmanziGeometry::Point>& x1, 
+                             const std::vector<AmanziGeometry::Point>& x1,
                              const std::vector<AmanziGeometry::Point>& x2,
                              VectorPolynomial& v) const
 {
@@ -219,7 +217,7 @@ int MeshMaps::LeastSquareFit(int order,
       psi(n, i) = val;
     }
   }
-      
+
   // form linear system
   DenseMatrix A(nk, nk);
 
@@ -230,7 +228,7 @@ int MeshMaps::LeastSquareFit(int order,
   DenseVector b(nk), u(nk);
 
   v.resize(d_);
-  for (int k = 0; k < d_; ++k) { 
+  for (int k = 0; k < d_; ++k) {
     v[k].Reshape(d_, order);
     v[k].set_origin(AmanziGeometry::Point(d_));
 
@@ -261,27 +259,27 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
 
   WhetStone::Entity_ID_List nodes;
 
-  const auto& faces = mesh0_->cell_get_faces(c);
-  int nfaces = faces.size();  
+  const auto& faces = mesh0_->getCellFaces(c);
+  int nfaces = faces.size();
 
   AmanziGeometry::Point v0(d_), v1(d_);
   std::vector<Polynomial> vvf;
 
   for (int i = 0; i < nfaces; ++i) {
     int f = faces[i];
-    const AmanziGeometry::Point& xf = mesh1_->face_centroid(f);
-    mesh0_->face_get_nodes(f, &nodes);
+    const AmanziGeometry::Point& xf = mesh1_->getFaceCentroid(f);
+    mesh0_->getFaceNodes(f, nodes);
 
-    mesh0_->node_get_coordinates(nodes[0], &v0);
-    mesh0_->node_get_coordinates(nodes[1], &v1);
+    v0 = mesh0_->getNodeCoordinate(nodes[0]);
+    v1 = mesh0_->getNodeCoordinate(nodes[1]);
     double f0 = poly.Value(v0);
     double f1 = poly.Value(v1);
 
     WhetStone::Polynomial vf(d_ - 1, 1);
     vf.Reshape(d_ - 1, order);
     if (order == 1) {
-      vf(0, 0) = (f0 + f1) / 2; 
-      vf(1, 0) = f1 - f0; 
+      vf(0, 0) = (f0 + f1) / 2;
+      vf(1, 0) = f1 - f0;
     } else if (order == 2) {
       double f2 = poly.Value((v0 + v1) / 2);
       vf(0, 0) = f2;
@@ -291,8 +289,8 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
       AMANZI_ASSERT(0);
     }
 
-    mesh1_->node_get_coordinates(nodes[0], &v0);
-    mesh1_->node_get_coordinates(nodes[1], &v1);
+    v0 = mesh1_->getNodeCoordinate(nodes[0]);
+    v1 = mesh1_->getNodeCoordinate(nodes[1]);
 
     std::vector<AmanziGeometry::Point> tau;
     tau.push_back(v1 - v0);
@@ -306,7 +304,7 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
     NumericalIntegration numi(mesh1_);
     double mass = numi.IntegratePolynomialCell(c, poly);
 
-    moments(0) = mass / mesh1_->cell_volume(c);
+    moments(0) = mass / mesh1_->getCellVolume(c);
   }
 
   Teuchos::ParameterList plist;

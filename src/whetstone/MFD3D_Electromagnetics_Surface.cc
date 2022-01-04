@@ -15,7 +15,7 @@
 #include <cmath>
 #include <vector>
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 #include "Point.hh"
 #include "errors.hh"
 
@@ -37,16 +37,16 @@ int MFD3D_Electromagnetics::L2consistencyBoundary(
   Entity_ID_List edges;
   std::vector<int> dirs;
 
-  mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
+  mesh_->getFaceEdgesAndDirs(f, edges, &dirs);
   int nedges = edges.size();
 
   N.Reshape(nedges, d_ - 1);
   Mc.Reshape(nedges, nedges);
 
   AmanziGeometry::Point v1(d_), v2(d_), v3(d_);
-  const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-  const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-  double area = mesh_->face_area(f);
+  const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+  const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
+  double area = mesh_->getFaceArea(f);
 
   // calculate rotation matrix
   Tensor P(d_, 2); 
@@ -74,14 +74,14 @@ int MFD3D_Electromagnetics::L2consistencyBoundary(
 
   for (int i = 0; i < nedges; i++) {
     int e = edges[i];
-    const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
-    double a1 = mesh_->edge_length(e);
+    const AmanziGeometry::Point& xe = mesh_->getEdgeCentroid(e);
+    double a1 = mesh_->getEdgeLength(e);
     v2 = PTP * (xe - xf);
 
     for (int j = i; j < nedges; j++) {
       e = edges[j];
-      const AmanziGeometry::Point& ye = mesh_->edge_centroid(e);
-      double a2 = mesh_->edge_length(e);
+      const AmanziGeometry::Point& ye = mesh_->getEdgeCentroid(e);
+      double a2 = mesh_->getEdgeLength(e);
 
       v1 = ye - xf;
       Mc(i, j) = (v1 * v2) * (a1 * a2) / area;
@@ -89,12 +89,12 @@ int MFD3D_Electromagnetics::L2consistencyBoundary(
   }
 
   // Rows of matrix N are normal vectors in the plane of face f.
-  v1 = mesh_->edge_vector(edges[0]) / mesh_->edge_length(edges[0]);
+  v1 = mesh_->getEdgeVector(edges[0]) / mesh_->getEdgeLength(edges[0]);
   v2 = v3^v1;
   for (int i = 0; i < nedges; i++) {
     int e = edges[i];
-    const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
-    double len = mesh_->edge_length(e);
+    const AmanziGeometry::Point& tau = mesh_->getEdgeVector(e);
+    double len = mesh_->getEdgeLength(e);
     N(i, 0) = -(tau * v2) * dirs[i] / len; 
     N(i, 1) = (tau * v1) * dirs[i] / len; 
   }

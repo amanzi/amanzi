@@ -16,7 +16,7 @@
 
 #include <vector>
 
-#include "MeshLight.hh"
+#include "Mesh.hh"
 
 #include "Basis_Regularized.hh"
 #include "WhetStoneDefs.hh"
@@ -28,7 +28,7 @@ namespace WhetStone {
 * Prepare scaling data for the regularized basis.
 ****************************************************************** */
 void Basis_Regularized::Init(
-    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     int c, int order, Polynomial& integrals)
 {
   int k0 = monomial_scales_.size();
@@ -36,8 +36,8 @@ void Basis_Regularized::Init(
 
   if (k0 < order + 1) {
     order_ = order;
-    d_ = mesh->space_dimension();
-    volume = mesh->cell_volume(c);
+    d_ = mesh->getSpaceDimension();
+    volume = mesh->getCellVolume(c);
 
     monomial_scales_.resize(order + 1);
     for (int k = k0; k < order + 1; ++k) {
@@ -154,12 +154,12 @@ void Basis_Regularized::ChangeBasisNaturalToMy(DenseVector& v) const
 * coefficients in the regularized basis. 
 ****************************************************************** */
 Polynomial Basis_Regularized::CalculatePolynomial(
-    const Teuchos::RCP<const AmanziMesh::MeshLight>& mesh,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     int c, int order, DenseVector& coefs) const
 {
-  int d = mesh->space_dimension();
+  int d = mesh->getSpaceDimension();
   Polynomial poly(d, order, coefs);
-  poly.set_origin(mesh->cell_centroid(c));
+  poly.set_origin(mesh->getCellCentroid(c));
 
   int n(0);
   for (int k = 0; k < order + 1; ++k) {

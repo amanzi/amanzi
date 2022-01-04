@@ -34,11 +34,13 @@ TEST(NUMI_CELL_2D_EULER_FORMULA) {
   std::cout << "Test: Numerical integration: Euler's formula for polygon" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
+  auto mesh_plist = Teuchos::rcp(new Teuchos::ParameterList());
+  mesh_plist->set("request edges", true);
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, gm, mesh_plist);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", true, true); 
- 
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
+
   NumericalIntegration numi(mesh);
 
   int cell(0);
@@ -50,17 +52,17 @@ TEST(NUMI_CELL_2D_EULER_FORMULA) {
   val = numi.IntegratePolynomialCell(cell, poly);
 
   printf("order=0  value=%10.6g\n", val);
-  CHECK_CLOSE(val, mesh->cell_volume(cell), 1e-10);
+  CHECK_CLOSE(val, mesh->getCellVolume(cell), 1e-10);
  
   // 1st-order polynomial
   poly.Reshape(2, 1);
   poly(1, 0) = 2.0;
   poly(1, 1) = 3.0;
-  poly.set_origin(mesh->cell_centroid(cell));
+  poly.set_origin(mesh->getCellCentroid(cell));
   val = numi.IntegratePolynomialCell(cell, poly);
 
   printf("order=1  value=%10.6g\n", val);
-  CHECK_CLOSE(val, mesh->cell_volume(cell), 1e-10);
+  CHECK_CLOSE(val, mesh->getCellVolume(cell), 1e-10);
 }
 
 
@@ -73,10 +75,12 @@ TEST(NUMI_CELL_2D_QUADRATURE_POLYGON) {
   std::cout << "Test: Numerical integration: quadrature rules in 2D" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
+  auto mesh_plist = Teuchos::rcp(new Teuchos::ParameterList());
+  mesh_plist->set("request edges", true);
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm,gm,mesh_plist);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", true, true); 
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
  
   NumericalIntegration numi(mesh);
 
@@ -87,7 +91,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_POLYGON) {
   Polynomial poly(2, 1);
   poly(1, 0) = 2.0;
   poly(1, 1) = 3.0;
-  poly.set_origin(mesh->cell_centroid(cell));
+  poly.set_origin(mesh->getCellCentroid(cell));
 
   std::vector<const WhetStoneFunction*> polys(1);
   polys[0] = &poly;
@@ -96,7 +100,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_POLYGON) {
     val1 = numi.IntegrateFunctionsTriangulatedCell(cell, polys, order);
 
     printf("order=%d  value=%10.6g\n", order, val1);
-    CHECK_CLOSE(val1, poly.Value(mesh->cell_centroid(cell)), 1e-12);
+    CHECK_CLOSE(val1, poly.Value(mesh->getCellCentroid(cell)), 1e-12);
   }
  
   // cross-comparison of integrators
@@ -159,6 +163,8 @@ TEST(NUMI_CELL_2D_QUADRATURE_SQUARE) {
 }
 
 
+#ifdef SINGLE_FACE_MESH
+
 /* **************************************************************** */
 TEST(NUMI_CELL_3D_QUADRATURE_POLYHEDRON) {
   using namespace Amanzi;
@@ -168,10 +174,12 @@ TEST(NUMI_CELL_3D_QUADRATURE_POLYHEDRON) {
   std::cout << "Test: Numerical integration: quadrature rules in 3D" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
+  auto mesh_plist = Teuchos::rcp(new Teuchos::ParameterList());
+  mesh_plist->set("request edges", true);
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm,gm,mesh_plist);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/dodecahedron.exo", true, true); 
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/dodecahedron.exo");
  
   NumericalIntegration numi(mesh);
 
@@ -183,7 +191,7 @@ TEST(NUMI_CELL_3D_QUADRATURE_POLYHEDRON) {
   poly(1, 0) = 2.0;
   poly(1, 1) = 3.0;
   poly(1, 2) = 4.0;
-  poly.set_origin(mesh->cell_centroid(cell));
+  poly.set_origin(mesh->getCellCentroid(cell));
 
   std::vector<const WhetStoneFunction*> polys(1);
   polys[0] = &poly;
@@ -192,7 +200,7 @@ TEST(NUMI_CELL_3D_QUADRATURE_POLYHEDRON) {
     val1 = numi.IntegrateFunctionsTriangulatedCell(cell, polys, order);
 
     printf("order=%d  value=%10.6g\n", order, val1);
-    CHECK_CLOSE(val1, poly.Value(mesh->cell_centroid(cell)), 1e-12);
+    CHECK_CLOSE(val1, poly.Value(mesh->getCellCentroid(cell)), 1e-12);
   }
  
   // cross-comparison of integrators
@@ -214,6 +222,8 @@ TEST(NUMI_CELL_3D_QUADRATURE_POLYHEDRON) {
   }
 }
 
+
+#endif
 
 /* ******************************************************************
 * 3D cube: Amanzi mesh

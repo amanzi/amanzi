@@ -42,19 +42,20 @@ TEST(MASS_MATRIX_2D) {
   auto comm = Amanzi::getCommSelf();
 #endif
 
-  MeshFactory meshfactory(comm);
+  auto mesh_plist = Teuchos::rcp(new Teuchos::ParameterList());
+  mesh_plist->set("request edges", true);
+  MeshFactory meshfactory(comm, Teuchos::null, mesh_plist);
   meshfactory.set_preference(Preference({Framework::MSTK}));
 
-  bool request_faces(true), request_edges(true);
   // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 20, 20, true, true); 
-  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/two_cell2.exo", request_faces, request_edges); 
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/two_cell2.exo"); 
  
   Teuchos::ParameterList plist;
   MFD3D_Electromagnetics mfd(plist, mesh);
 
   int cell = 0;
   AmanziMesh::Entity_ID_List edges;
-  mesh->cell_get_edges(cell, &edges);
+  mesh->getCellEdges(cell, edges);
 
   int nedges = edges.size();
   int nrows = nedges;
@@ -91,18 +92,18 @@ TEST(MASS_MATRIX_2D) {
 
     // verify exact integration property
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
+    double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell); 
     for (int i = 0; i < nedges; i++) {
       int e1 = edges[i];
-      const AmanziGeometry::Point& t1 = mesh->edge_vector(e1);
-      double a1 = mesh->edge_length(e1);
+      const AmanziGeometry::Point& t1 = mesh->getEdgeVector(e1);
+      double a1 = mesh->getEdgeLength(e1);
 
       xi = t1[0] / a1;
       yi = t1[1] / a1;
       for (int j = 0; j < nedges; j++) {
         int e2 = edges[j];
-        const AmanziGeometry::Point& t2 = mesh->edge_vector(e2);
-        double a2 = mesh->edge_length(e2);
+        const AmanziGeometry::Point& t2 = mesh->getEdgeVector(e2);
+        double a2 = mesh->getEdgeLength(e2);
         xj = t2[0] / a2;
         vxx += M(i, j) * xi * xj;
         vxy += M(i, j) * yi * xj;
@@ -131,21 +132,23 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
   auto comm = Amanzi::getCommSelf();
 #endif
 
-  MeshFactory meshfactory(comm);
+  auto mesh_plist = Teuchos::rcp(new Teuchos::ParameterList());
+  mesh_plist->set("request edges", true);
+  MeshFactory meshfactory(comm, Teuchos::null, mesh_plist);
   meshfactory.set_preference(Preference({Framework::MSTK}));
 
   RCP<Mesh> mesh;
   if (mesh_file == "")
-    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, true, true); 
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
   else 
-    mesh = meshfactory.create(mesh_file, true, true); 
+    mesh = meshfactory.create(mesh_file); 
  
   Teuchos::ParameterList plist;
   MFD3D_Electromagnetics mfd(plist, mesh);
 
   int cell = 0;
   AmanziMesh::Entity_ID_List edges;
-  mesh->cell_get_edges(cell, &edges);
+  mesh->getCellEdges(cell, edges);
 
   int nedges = edges.size();
   int nrows = nedges;
@@ -185,18 +188,18 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
 
     // verify exact integration property
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
+    double vxx = 0.0, vxy = 0.0, volume = mesh->getCellVolume(cell); 
     for (int i = 0; i < nedges; i++) {
       int e1 = edges[i];
-      const AmanziGeometry::Point& t1 = mesh->edge_vector(e1);
-      double a1 = mesh->edge_length(e1);
+      const AmanziGeometry::Point& t1 = mesh->getEdgeVector(e1);
+      double a1 = mesh->getEdgeLength(e1);
 
       xi = t1[0] / a1;
       yi = t1[1] / a1;
       for (int j = 0; j < nedges; j++) {
         int e2 = edges[j];
-        const AmanziGeometry::Point& t2 = mesh->edge_vector(e2);
-        double a2 = mesh->edge_length(e2);
+        const AmanziGeometry::Point& t2 = mesh->getEdgeVector(e2);
+        double a2 = mesh->getEdgeLength(e2);
         xj = t2[0] / a2;
         vxx += M(i, j) * xi * xj;
         vxy += M(i, j) * yi * xj;
@@ -241,20 +244,21 @@ TEST(STIFFNESS_MATRIX_2D) {
   auto comm = Amanzi::getCommSelf();
 #endif
 
-  MeshFactory meshfactory(comm);
+  auto mesh_plist = Teuchos::rcp(new Teuchos::ParameterList());
+  mesh_plist->set("request edges", true);
+  MeshFactory meshfactory(comm, Teuchos::null, mesh_plist);
   meshfactory.set_preference(Preference({Framework::MSTK}));
 
-  bool request_faces(true), request_edges(true);
-  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1, true, true); 
-  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/two_cell2.exo", request_faces, request_edges); 
- 
+  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/two_cell2.exo");
+
   Teuchos::ParameterList plist;
   MFD3D_Electromagnetics mfd(plist, mesh);
 
   int cell = 0;
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
-  mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
+  mesh->getCellFacesAndDirs(cell, faces, &dirs);
 
   int nfaces = faces.size();
   int nrows = nfaces;
@@ -284,22 +288,22 @@ TEST(STIFFNESS_MATRIX_2D) {
     double xi, xj, vxx(0.0);
     AmanziGeometry::Point p1(2), p2(2);
 
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(cell);
-    double volume = mesh->cell_volume(cell); 
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(cell);
+    double volume = mesh->getCellVolume(cell); 
 
     for (int i = 0; i < nrows; i++) {
       int f1 = faces[i];
-      const AmanziGeometry::Point& n1 = mesh->face_normal(f1);
-      const AmanziGeometry::Point& xf1 = mesh->face_centroid(f1);
-      double a1 = mesh->face_area(f1);
+      const AmanziGeometry::Point& n1 = mesh->getFaceNormal(f1);
+      const AmanziGeometry::Point& xf1 = mesh->getFaceCentroid(f1);
+      double a1 = mesh->getFaceArea(f1);
 
       xi = ((xf1 - xc) * n1) * dirs[i] / a1;
 
       for (int j = 0; j < nrows; j++) {
         int f2 = faces[j];
-        const AmanziGeometry::Point& n2 = mesh->face_normal(f2);
-        const AmanziGeometry::Point& xf2 = mesh->face_centroid(f2);
-        double a2 = mesh->face_area(f2);
+        const AmanziGeometry::Point& n2 = mesh->getFaceNormal(f2);
+        const AmanziGeometry::Point& xf2 = mesh->getFaceCentroid(f2);
+        double a2 = mesh->getFaceArea(f2);
 
         xj = ((xf2 - xc) * n2) * dirs[j] / a2;
         vxx += A(i, j) * xi * xj;
@@ -327,21 +331,23 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
   auto comm = Amanzi::getCommSelf();
 #endif
 
-  MeshFactory meshfactory(comm);
+  auto mesh_plist = Teuchos::rcp(new Teuchos::ParameterList());
+  mesh_plist->set("request edges", true);
+  MeshFactory meshfactory(comm, Teuchos::null, mesh_plist);
   meshfactory.set_preference(Preference({Framework::MSTK}));
 
   RCP<Mesh> mesh;
   if (mesh_file == "")
-    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, true, true); 
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
   else 
-    mesh = meshfactory.create(mesh_file, true, true); 
+    mesh = meshfactory.create(mesh_file); 
  
   Teuchos::ParameterList plist;
   MFD3D_Electromagnetics mfd(plist, mesh);
 
   int cell = 0;
   AmanziMesh::Entity_ID_List edges;
-  mesh->cell_get_edges(cell, &edges);
+  mesh->getCellEdges(cell, edges);
 
   int nedges = edges.size();
   int nrows = nedges;
@@ -375,23 +381,23 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
 
     // verify exact integration property
     double xi, xj, yj;
-    double vxx(0.0), vxy(0.0), volume = mesh->cell_volume(cell); 
+    double vxx(0.0), vxy(0.0), volume = mesh->getCellVolume(cell); 
     AmanziGeometry::Point v1(3);
 
     for (int i = 0; i < nedges; i++) {
       int e1 = edges[i];
-      const AmanziGeometry::Point& xe = mesh->edge_centroid(e1);
-      const AmanziGeometry::Point& t1 = mesh->edge_vector(e1);
-      double a1 = mesh->edge_length(e1);
+      const AmanziGeometry::Point& xe = mesh->getEdgeCentroid(e1);
+      const AmanziGeometry::Point& t1 = mesh->getEdgeVector(e1);
+      double a1 = mesh->getEdgeLength(e1);
 
       v1 = xe ^ t1;
       xi = v1[0] / a1;
 
       for (int j = 0; j < nedges; j++) {
         int e2 = edges[j];
-        const AmanziGeometry::Point& ye = mesh->edge_centroid(e2);
-        const AmanziGeometry::Point& t2 = mesh->edge_vector(e2);
-        double a2 = mesh->edge_length(e2);
+        const AmanziGeometry::Point& ye = mesh->getEdgeCentroid(e2);
+        const AmanziGeometry::Point& t2 = mesh->getEdgeVector(e2);
+        double a2 = mesh->getEdgeLength(e2);
 
         v1 = ye ^ t2;
         xj = v1[0] / a2;

@@ -10,7 +10,8 @@ function go () {
     ${SED} ${SED_ARGS} 's|entity_get_ptype(|getEntityPtype(|g' "$1"
     ${SED} ${SED_ARGS} 's|entity_get_parent(|getEntityParent(|g' "$1"
     ${SED} ${SED_ARGS} 's|node_set_coordinates|setNodeCoordinate|g' "$1"
-
+    ${SED} ${SED_ARGS} 's|cell_get_num_faces|getCellNumFaces|g' "$1"
+    
     ${SED} ${SED_ARGS} 's|\.cell_map(|.getMap(AmanziMesh::Entity_kind::CELL, |g' "$1"
     ${SED} ${SED_ARGS} 's|->cell_map(|->getMap(AmanziMesh::Entity_kind::CELL, |g' "$1"
     ${SED} ${SED_ARGS} 's|\.face_map(|.getMap(AmanziMesh::Entity_kind::FACE, |g' "$1"
