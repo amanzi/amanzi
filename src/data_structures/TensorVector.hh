@@ -61,7 +61,7 @@ struct TensorVector {
   int size_() {
     int count = 0;
     for (auto& name : map) {
-      count += map.Mesh()->num_entities(AmanziMesh::entity_kind(name), 
+      count += map.Mesh()->getNumEntities(AmanziMesh::entity_kind(name), 
           ghosted ? AmanziMesh::Parallel_type::ALL : AmanziMesh::Parallel_type::OWNED);
     }
     return count;
@@ -88,7 +88,7 @@ class TensorVector_Factory {
 
   void set_map(CompositeVectorSpace map) {
     map_ = std::move(map);
-    d_ = map_.Mesh()->space_dimension();
+    d_ = map_.Mesh()->getSpaceDimension();
   }
   void set_ghosted(bool ghosted) {
     ghosted_ = ghosted;

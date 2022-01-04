@@ -37,8 +37,8 @@ struct test_tv {
     mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
     std::vector<Entity_kind> locations(2);
-    locations[0] = CELL;
-    locations[1] = FACE;
+    locations[0] = Entity_kind::CELL;
+    locations[1] = Entity_kind::FACE;
 
     std::vector<std::string> names(2);
     names[0] = "cell";

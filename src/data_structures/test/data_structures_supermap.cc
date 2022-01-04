@@ -304,26 +304,26 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR) {
   CompositeVectorSpace cv;
   std::vector<std::string> names; names.push_back("cell"); names.push_back("face");
   std::vector<int> dofs{2,2};
-  std::vector<Entity_kind> locs; locs.push_back(CELL); locs.push_back(FACE);
+  std::vector<Entity_kind> locs; locs.push_back(Entity_kind::CELL); locs.push_back(Entity_kind::FACE);
   cv.SetMesh(mesh)->SetGhosted()->SetComponents(names, locs, dofs);
 
   // create a SuperMapLumped from this space
   Teuchos::RCP<Operators::SuperMap> map = createSuperMap(cv);
 
-  int ncells_owned = mesh->num_entities(CELL, Parallel_type::OWNED);
-  int nfaces_owned = mesh->num_entities(FACE, Parallel_type::OWNED);
-  int ncells_used = mesh->num_entities(CELL, Parallel_type::ALL);
-  int nfaces_used = mesh->num_entities(FACE, Parallel_type::ALL);
+  int ncells_owned = mesh->getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
+  int nfaces_owned = mesh->getNumEntities(Entity_kind::FACE, Parallel_type::OWNED);
+  int ncells_used = mesh->getNumEntities(Entity_kind::CELL, Parallel_type::ALL);
+  int nfaces_used = mesh->getNumEntities(Entity_kind::FACE, Parallel_type::ALL);
   
   // check basic sizes
   CHECK_EQUAL(2*ncells_owned + 2*nfaces_owned, map->Map()->NumMyElements());
   CHECK_EQUAL(2*ncells_used + 2*nfaces_used, map->GhostedMap()->NumMyElements());
 
   // check CompMaps
-  CHECK(mesh->cell_map(false).SameAs(*map->ComponentMap(0, "cell")));
-  CHECK(mesh->cell_map(true).SameAs(*map->ComponentGhostedMap(0, "cell")));
-  CHECK(mesh->face_map(false).SameAs(*map->ComponentMap(0, "face")));
-  CHECK(mesh->face_map(true).SameAs(*map->ComponentGhostedMap(0, "face")));
+  CHECK(mesh->getMap(AmanziMesh::Entity_kind::CELL, false).SameAs(*map->ComponentMap(0, "cell")));
+  CHECK(mesh->getMap(AmanziMesh::Entity_kind::CELL, true).SameAs(*map->ComponentGhostedMap(0, "cell")));
+  CHECK(mesh->getMap(AmanziMesh::Entity_kind::FACE, false).SameAs(*map->ComponentMap(0, "face")));
+  CHECK(mesh->getMap(AmanziMesh::Entity_kind::FACE, true).SameAs(*map->ComponentGhostedMap(0, "face")));
   
   // check ordering is as expected
   const auto& inds_c0 = map->GhostIndices(0, "cell", 0);
@@ -390,24 +390,24 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR_REPEATED_MAPS) {
   CompositeVectorSpace cv;
   std::vector<std::string> names; names.push_back("cellA"); names.push_back("cellB");
   std::vector<int> dofs{1,1};
-  std::vector<Entity_kind> locs; locs.push_back(CELL); locs.push_back(CELL);
+  std::vector<Entity_kind> locs; locs.push_back(Entity_kind::CELL); locs.push_back(Entity_kind::CELL);
   cv.SetMesh(mesh)->SetGhosted()->SetComponents(names, locs, dofs);
 
   // create a SuperMapLumped from this space
   Teuchos::RCP<Operators::SuperMap> map = createSuperMap(cv);
 
-  int ncells_owned = mesh->num_entities(CELL, Parallel_type::OWNED);
-  int ncells_used = mesh->num_entities(CELL, Parallel_type::ALL);
+  int ncells_owned = mesh->getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
+  int ncells_used = mesh->getNumEntities(Entity_kind::CELL, Parallel_type::ALL);
   
   // check basic sizes
   CHECK_EQUAL(2*ncells_owned, map->Map()->NumMyElements());
   CHECK_EQUAL(2*ncells_used, map->GhostedMap()->NumMyElements());
 
   // check CompMaps
-  CHECK(mesh->cell_map(false).SameAs(*map->ComponentMap(0, "cellA")));
-  CHECK(mesh->cell_map(true).SameAs(*map->ComponentGhostedMap(0, "cellA")));
-  CHECK(mesh->cell_map(false).SameAs(*map->ComponentMap(0, "cellB")));
-  CHECK(mesh->cell_map(true).SameAs(*map->ComponentGhostedMap(0, "cellB")));
+  CHECK(mesh->getMap(AmanziMesh::Entity_kind::CELL, false).SameAs(*map->ComponentMap(0, "cellA")));
+  CHECK(mesh->getMap(AmanziMesh::Entity_kind::CELL, true).SameAs(*map->ComponentGhostedMap(0, "cellA")));
+  CHECK(mesh->getMap(AmanziMesh::Entity_kind::CELL, false).SameAs(*map->ComponentMap(0, "cellB")));
+  CHECK(mesh->getMap(AmanziMesh::Entity_kind::CELL, true).SameAs(*map->ComponentGhostedMap(0, "cellB")));
   
   // check ordering is as expected
   const auto& inds_c0 = map->GhostIndices(0, "cellA", 0);
@@ -442,7 +442,7 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR_REPEATED_MAPS) {
   CompositeVectorSpace cv2;
   std::vector<std::string> names2{"cell"};
   std::vector<int> dofs2{2};
-  std::vector<Entity_kind> locs2{CELL};
+  std::vector<Entity_kind> locs2{Entity_kind::CELL};
   cv2.SetMesh(mesh)->SetGhosted()->SetComponents(names2, locs2, dofs2);
 
   // create a SuperMapLumped from this space
@@ -467,16 +467,16 @@ TEST(SUPERMAP_FROM_TWO_IDENTICAL_COMPOSITEVECTORS) {
 
   // create a CVSpace
   CompositeVectorSpace cvA;
-  cvA.SetMesh(mesh)->SetGhosted()->SetComponents({"cell"}, {CELL}, {1});
+  cvA.SetMesh(mesh)->SetGhosted()->SetComponents({"cell"}, {Entity_kind::CELL}, {1});
   CompositeVectorSpace cvB;
-  cvB.SetMesh(mesh)->SetGhosted()->SetComponents({"cell"}, {CELL}, {1});
+  cvB.SetMesh(mesh)->SetGhosted()->SetComponents({"cell"}, {Entity_kind::CELL}, {1});
 
   // create a SuperMapLumped from this space
   Teuchos::RCP<Operators::SuperMap> map = Teuchos::rcp(new SuperMap({cvA, cvB}));
 
   // now create another with one CV, 2 dofs
   CompositeVectorSpace cv2;
-  cv2.SetMesh(mesh)->SetGhosted()->SetComponents({"cell"}, {CELL}, {2});
+  cv2.SetMesh(mesh)->SetGhosted()->SetComponents({"cell"}, {Entity_kind::CELL}, {2});
   Teuchos::RCP<Operators::SuperMap> map2 = createSuperMap(cv2);
 
   // same map!
@@ -505,11 +505,11 @@ TEST(SUPERMAP_FROM_CELL_PLUS_FACE_IS_CELLFACE) {
 
   // create a CVSpace
   CompositeVectorSpace cvA;
-  cvA.SetMesh(mesh)->SetGhosted()->SetComponents( std::vector<std::string>{"cell"}, std::vector<Entity_kind>{CELL}, std::vector<int>{1} );
+  cvA.SetMesh(mesh)->SetGhosted()->SetComponents( std::vector<std::string>{"cell"}, std::vector<Entity_kind>{Entity_kind::CELL}, std::vector<int>{1} );
   CompositeVectorSpace cvB;
-  cvB.SetMesh(mesh)->SetGhosted()->SetComponents( std::vector<std::string>{"face"}, std::vector<Entity_kind>{FACE}, std::vector<int>{1} );
+  cvB.SetMesh(mesh)->SetGhosted()->SetComponents( std::vector<std::string>{"face"}, std::vector<Entity_kind>{Entity_kind::FACE}, std::vector<int>{1} );
   CompositeVectorSpace cv2;
-  cv2.SetMesh(mesh)->SetGhosted()->SetComponents( std::vector<std::string>{"cell","face"}, std::vector<Entity_kind>{CELL,FACE}, std::vector<int>{1,1} );
+  cv2.SetMesh(mesh)->SetGhosted()->SetComponents( std::vector<std::string>{"cell","face"}, std::vector<Entity_kind>{Entity_kind::CELL,Entity_kind::FACE}, std::vector<int>{1,1} );
 
   // create a SuperMapLumped from this space
   Teuchos::RCP<Operators::SuperMap> map = Teuchos::rcp(new SuperMap({cvA, cvB}));
@@ -541,11 +541,11 @@ TEST(SUPERMAP_FROM_SAME_NAME_DIFFERENT_MAP) {
 
   // create a CVSpace
   CompositeVectorSpace cvA;
-  cvA.SetMesh(mesh)->SetGhosted()->SetComponents( std::vector<std::string>{"cell"}, std::vector<Entity_kind>{CELL}, std::vector<int>{1} );
+  cvA.SetMesh(mesh)->SetGhosted()->SetComponents( std::vector<std::string>{"cell"}, std::vector<Entity_kind>{Entity_kind::CELL}, std::vector<int>{1} );
   CompositeVectorSpace cvB;
-  cvB.SetMesh(mesh)->SetGhosted()->SetComponents( std::vector<std::string>{"cell"}, std::vector<Entity_kind>{FACE}, std::vector<int>{1} );
+  cvB.SetMesh(mesh)->SetGhosted()->SetComponents( std::vector<std::string>{"cell"}, std::vector<Entity_kind>{Entity_kind::FACE}, std::vector<int>{1} );
   CompositeVectorSpace cv2;
-  cv2.SetMesh(mesh)->SetGhosted()->SetComponents( std::vector<std::string>{"cell","face"}, std::vector<Entity_kind>{CELL,FACE}, std::vector<int>{1,1} );
+  cv2.SetMesh(mesh)->SetGhosted()->SetComponents( std::vector<std::string>{"cell","face"}, std::vector<Entity_kind>{Entity_kind::CELL,Entity_kind::FACE}, std::vector<int>{1,1} );
 
   // create a SuperMapLumped from this space
   Teuchos::RCP<Operators::SuperMap> map = Teuchos::rcp(new SuperMap({cvA, cvB}));
@@ -577,10 +577,10 @@ TEST(SUPERMAP_FROM_SAME_NAME_SAME_MAP_DIFFERENT_ELEMENTSIZE) {
   if (MyPID == 0) std::cout << "Test: SuperMapLumped from 2 CompositeVectors with same elements but different element sizes in the same compname" << std::endl;
 
   auto mesh = getMesh(comm);
-  int ncells = mesh->num_entities(CELL, Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
 
   // create a CVSpace
-  const auto& cell_map = mesh->cell_map(false);
+  const auto& cell_map = mesh->getMap(AmanziMesh::Entity_kind::CELL, false);
   const int * gids = nullptr;
   const long long * llgids = nullptr;
   cell_map.MyGlobalElements(gids, llgids);
@@ -590,7 +590,7 @@ TEST(SUPERMAP_FROM_SAME_NAME_SAME_MAP_DIFFERENT_ELEMENTSIZE) {
 
   Teuchos::RCP<const Epetra_BlockMap> block_cell_map = Teuchos::rcp(new Epetra_BlockMap(cell_map.NumGlobalElements(), cell_map.NumMyElements(), gids, &element_size[0], 0, *comm));
 
-  const auto& cell_mapg = mesh->cell_map(true);
+  const auto& cell_mapg = mesh->getMap(AmanziMesh::Entity_kind::CELL, true);
   Epetra_Import importer(cell_mapg, cell_map);
   Epetra_IntVector element_sizeg(cell_mapg);
   element_sizeg.Import(element_size, importer, Insert);
@@ -600,9 +600,9 @@ TEST(SUPERMAP_FROM_SAME_NAME_SAME_MAP_DIFFERENT_ELEMENTSIZE) {
   
 
   CompositeVectorSpace cvA;
-  cvA.SetMesh(mesh)->SetGhosted()->SetComponents({"cell"}, {CELL}, {1});
+  cvA.SetMesh(mesh)->SetGhosted()->SetComponents({"cell"}, {Entity_kind::CELL}, {1});
   CompositeVectorSpace cvB;
-  cvB.SetMesh(mesh)->SetGhosted()->SetComponents({"cell"}, {CELL}, {{"cell",block_cell_map}}, {{"cell", block_cell_map_g}}, {1});
+  cvB.SetMesh(mesh)->SetGhosted()->SetComponents({"cell"}, {Entity_kind::CELL}, {{"cell",block_cell_map}}, {{"cell", block_cell_map_g}}, {1});
 
   // create a SuperMapLumped from this space
   Teuchos::RCP<Operators::SuperMap> map = Teuchos::rcp(new SuperMap({cvA, cvB}));
@@ -660,7 +660,7 @@ TEST(SUPERMAP_FROM_TREEVECTOR) {
   Teuchos::RCP<CompositeVectorSpace> cv = Teuchos::rcp(new CompositeVectorSpace());
   std::vector<std::string> names; names.push_back("cell"); names.push_back("face");
   std::vector<int> dofs(2,2);
-  std::vector<Entity_kind> locs; locs.push_back(CELL); locs.push_back(FACE);
+  std::vector<Entity_kind> locs; locs.push_back(Entity_kind::CELL); locs.push_back(Entity_kind::FACE);
   cv->SetMesh(mesh)->SetGhosted()->SetComponents(names, locs, dofs);
 
   // create a TV

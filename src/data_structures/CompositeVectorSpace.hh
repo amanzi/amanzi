@@ -59,7 +59,7 @@ public:
   // -------------------------------------
 
   // CompositeVectors exist on a single communicator.
-  Comm_ptr_type Comm() const { return mesh_->get_comm(); }
+  Comm_ptr_type Comm() const { return mesh_->getComm(); }
 
   // mesh specification
   Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return mesh_; }

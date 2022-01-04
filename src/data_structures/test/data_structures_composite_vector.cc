@@ -35,8 +35,8 @@ struct test_cv {
     mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
     std::vector<Entity_kind> locations(2);
-    locations[0] = CELL;
-    locations[1] = FACE;
+    locations[0] = Entity_kind::CELL;
+    locations[1] = Entity_kind::FACE;
 
     std::vector<std::string> names(2);
     names[0] = "cell";
@@ -193,7 +193,7 @@ SUITE(COMPOSITE_VECTOR) {
   TEST_FIXTURE(test_cv, CVScatter) {
     int rank = comm->MyPID();
     int size = comm->NumProc();
-    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+    int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
     { // scope for x_c
       Epetra_MultiVector& x_c = *x->ViewComponent("cell",false);
@@ -216,7 +216,7 @@ SUITE(COMPOSITE_VECTOR) {
     }
 
     { // scope for x_f
-      int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+      int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
       Epetra_MultiVector& x_f = *x->ViewComponent("face",false);
       for (int f=0; f!=nfaces; ++f) {
         x_f[0][f] = rank+1.0;
@@ -227,14 +227,14 @@ SUITE(COMPOSITE_VECTOR) {
 
   TEST_FIXTURE(test_cv, CVGather) {
     int rank = comm->MyPID();
-    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+    int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
     Epetra_MultiVector& x_c = *x->ViewComponent("cell",true);
     for (int c=0; c!=ncells; ++c) {
       x_c[0][c] = rank + 1;
     }
     x->GatherGhostedToMaster("cell");
 
-    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+    int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
     Epetra_MultiVector& x_f = *x->ViewComponent("face",true);
     for (int f=0; f!=nfaces; ++f) {
       x_f[0][f] = rank + 1;
@@ -246,7 +246,7 @@ SUITE(COMPOSITE_VECTOR) {
     // Ensures that Communication happens after a change.
     int rank = comm->MyPID();
     int size = comm->NumProc();
-    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+    int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
     Epetra_MultiVector& x_c = *x->ViewComponent("cell",false);
     for (int c=0; c!=ncells; ++c) {
       x_c[0][c] = rank+1.0;
@@ -274,7 +274,7 @@ SUITE(COMPOSITE_VECTOR) {
     // Does not work
     int rank = comm->MyPID();
     int size = comm->NumProc();
-    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+    int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
     Epetra_MultiVector& x_c = *x->ViewComponent("cell",false);
     for (int c=0; c!=ncells; ++c) {

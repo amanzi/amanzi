@@ -27,7 +27,10 @@
 #include "Teuchos_RCP.hpp"
 #include "Epetra_Map.h"
 #include "Epetra_BlockMap.h"
+
+#include "MeshCache_decl.hh"
 #include "SuperMapLumped.hh"
+
 
 class Epetra_Vector;
 
@@ -37,10 +40,6 @@ class CompositeVectorSpace;
 class CompositeVector;
 class TreeVectorSpace;
 class TreeVector;
-
-namespace AmanziMesh {
-class Mesh;
-}
 
 
 namespace Operators {

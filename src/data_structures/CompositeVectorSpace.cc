@@ -30,8 +30,8 @@ namespace Amanzi {
 
 std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
 getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
-  return std::make_pair(Teuchos::rcpFromRef(mesh.map(location, false)),
-                        Teuchos::rcpFromRef(mesh.map(location, true)));
+  return std::make_pair(Teuchos::rcpFromRef(mesh.getMap(location, false)),
+                        Teuchos::rcpFromRef(mesh.getMap(location, true)));
 }
 
 
@@ -227,9 +227,9 @@ CompositeVectorSpace::SetComponents(const std::vector<std::string>& names,
   std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps;
 
   for (int i=0; i<locations.size(); ++i) {
-    Teuchos::RCP<const Epetra_BlockMap> master_mp(&mesh_->map(locations[i], false), false);
+    Teuchos::RCP<const Epetra_BlockMap> master_mp(&mesh_->getMap(locations[i], false), false);
     mastermaps[names[i]] = master_mp;
-    Teuchos::RCP<const Epetra_BlockMap> ghost_mp(&mesh_->map(locations[i], true), false);
+    Teuchos::RCP<const Epetra_BlockMap> ghost_mp(&mesh_->getMap(locations[i], true), false);
     ghostmaps[names[i]] = ghost_mp;
   }
        
@@ -392,8 +392,8 @@ bool CompositeVectorSpace::UnionAndConsistent_(const std::vector<std::string>& n
         n2_it = std::find(names2.begin(), names2.end(), std::string("face"));
         if (n2_it != names2.end()) {
           int j = n2_it - names2.begin();
-          if ((locations1[i] != AmanziMesh::BOUNDARY_FACE) ||
-              (locations2[j] != AmanziMesh::FACE)) {
+          if ((locations1[i] != AmanziMesh::Entity_kind::BOUNDARY_FACE) ||
+              (locations2[j] != AmanziMesh::Entity_kind::FACE)) {
             return false;
           }
           if (num_dofs1[i] != num_dofs2[j]) {
@@ -410,8 +410,8 @@ bool CompositeVectorSpace::UnionAndConsistent_(const std::vector<std::string>& n
         n2_it = std::find(names2.begin(), names2.end(), std::string("boundary_face"));
         if (n2_it != names2.end()) {
           int j = n2_it - names2.begin();
-          if ((locations1[i] != AmanziMesh::FACE) ||
-              (locations2[j] != AmanziMesh::BOUNDARY_FACE)) {
+          if ((locations1[i] != AmanziMesh::Entity_kind::FACE) ||
+              (locations2[j] != AmanziMesh::Entity_kind::BOUNDARY_FACE)) {
             return false;
           }
           if (num_dofs1[i] != num_dofs2[j]) {
@@ -420,7 +420,7 @@ bool CompositeVectorSpace::UnionAndConsistent_(const std::vector<std::string>& n
 
           // union of face and boundary_face is face
           names2[j] = "face";
-          locations2[j] = AmanziMesh::FACE;
+          locations2[j] = AmanziMesh::Entity_kind::FACE;
         } else {
           // add this spec
           names2.push_back(names1[i]);
@@ -473,8 +473,8 @@ bool CompositeVectorSpace::UnionAndConsistent_(
         n2_it = std::find(names2.begin(), names2.end(), std::string("face"));
         if (n2_it != names2.end()) {
           int j = n2_it - names2.begin();
-          if ((locations1[i] != AmanziMesh::BOUNDARY_FACE) ||
-              (locations2[j] != AmanziMesh::FACE)) {
+          if ((locations1[i] != AmanziMesh::Entity_kind::BOUNDARY_FACE) ||
+              (locations2[j] != AmanziMesh::Entity_kind::FACE)) {
             return false;
           }
           if (num_dofs1[i] != num_dofs2[j]) {
@@ -493,8 +493,8 @@ bool CompositeVectorSpace::UnionAndConsistent_(
         n2_it = std::find(names2.begin(), names2.end(), std::string("boundary_face"));
         if (n2_it != names2.end()) {
           int j = n2_it - names2.begin();
-          if ((locations1[i] != AmanziMesh::FACE) ||
-              (locations2[j] != AmanziMesh::BOUNDARY_FACE)) {
+          if ((locations1[i] != AmanziMesh::Entity_kind::FACE) ||
+              (locations2[j] != AmanziMesh::Entity_kind::BOUNDARY_FACE)) {
             return false;
           } 
           if (num_dofs1[i] != num_dofs2[j]) {
@@ -503,7 +503,7 @@ bool CompositeVectorSpace::UnionAndConsistent_(
 
           // union of face and boundary_face is face
           names2[j] = "face";
-          locations2[j] = AmanziMesh::FACE;
+          locations2[j] = AmanziMesh::Entity_kind::FACE;
         } else {
           // add this spec
           names2.push_back(names1[i]);

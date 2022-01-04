@@ -132,7 +132,7 @@ CreateThyraVector(const Teuchos::RCP<CompositeVector>& cv) {
     // the outer product of the map's space num_dof times.
 
     // Create the VectorSpace associated with the component's (non-ghosted) map.
-    Teuchos::RCP<const Epetra_Map> map = cv->map(*name, false);
+    Teuchos::RCP<const Epetra_Map> map = cv->getMap(*name, false);
     Teuchos::RCP<const Thyra::VectorSpaceBase<double> > comp_space =
       Thyra::create_VectorSpace(map);
 
@@ -186,7 +186,7 @@ CreateThyraVector(const Teuchos::RCP<const CompositeVector>& cv) {
     // the outer product of the map's space num_dof times.
 
     // Create the VectorSpace associated with the component's (non-ghosted) map.
-    Teuchos::RCP<const Epetra_Map> map = cv->map(*name, false);
+    Teuchos::RCP<const Epetra_Map> map = cv->getMap(*name, false);
     Teuchos::RCP< const Thyra::VectorSpaceBase<double> > comp_space =
       Thyra::create_VectorSpace(map);
 
@@ -286,7 +286,7 @@ CreateThyraVectorSpace(const Teuchos::RCP<const CompositeVector>& cv) {
     // the outer product of the map's space num_dof times.
 
     // Create the VectorSpace associated with the component's (non-ghosted) map.
-    Teuchos::RCP<const Epetra_Map> map = cv->map(*name, false);
+    Teuchos::RCP<const Epetra_Map> map = cv->getMap(*name, false);
     Teuchos::RCP< const Thyra::VectorSpaceBase<double> > comp_space =
       Thyra::create_VectorSpace(map);
 
@@ -403,7 +403,7 @@ void ViewThyraVectorAsCompositeVector(const Teuchos::RCP<Thyra::VectorBase<doubl
 
     // get an Epetra_MultiVector view of the data and stick it in the CV
     Teuchos::RCP<Epetra_MultiVector> mv =
-      Thyra::get_Epetra_MultiVector(*cv->map(*name, false), mv_block);
+      Thyra::get_Epetra_MultiVector(*cv->getMap(*name, false), mv_block);
     cv->SetComponent(*name, mv);
     i++;
   }

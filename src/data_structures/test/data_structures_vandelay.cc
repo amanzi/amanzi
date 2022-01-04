@@ -44,12 +44,12 @@ struct test_cv_vandelay {
     // mesh = Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2, comm, NULL));
 
     std::vector<Entity_kind> locations(2);
-    locations[0] = CELL;
-    locations[1] = FACE;
+    locations[0] = Entity_kind::CELL;
+    locations[1] = Entity_kind::FACE;
 
     std::vector<Entity_kind> locations_v(2);
-    locations_v[0] = CELL;
-    locations_v[1] = BOUNDARY_FACE;
+    locations_v[0] = Entity_kind::CELL;
+    locations_v[1] = Entity_kind::BOUNDARY_FACE;
 
     std::vector<std::string> names(2);
     names[0] = "cell";

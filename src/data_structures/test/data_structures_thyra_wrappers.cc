@@ -33,8 +33,8 @@ struct test_data {
     mesh = mesh_fact(0.0, 0.0, 0.0, 2.0, 1.0, 1.0, 2, 1, 1);
 
     std::vector<AmanziMesh::Entity_kind> locations(2);
-    locations[0] = AmanziMesh::CELL;
-    locations[1] = AmanziMesh::FACE;
+    locations[0] = AmanziMesh::Entity_kind::CELL;
+    locations[1] = AmanziMesh::Entity_kind::FACE;
 
     std::vector<std::string> names(2);
     names[0] = "cell";

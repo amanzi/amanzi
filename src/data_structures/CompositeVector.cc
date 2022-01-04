@@ -434,7 +434,7 @@ void CompositeVector::GatherGhostedToMaster(std::string name,
 
 
 void CompositeVector::CreateVandelayVector_() const {
-  vandelay_vector_ = Teuchos::rcp(new Epetra_MultiVector(Mesh()->exterior_face_map(false),
+  vandelay_vector_ = Teuchos::rcp(new Epetra_MultiVector(Mesh()->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false),
           mastervec_->NumVectors("face"), false));
 }
 
@@ -442,13 +442,13 @@ void CompositeVector::ApplyVandelay_() const {
   if (vandelay_vector_ == Teuchos::null) {
     CreateVandelayVector_();
   }
-  vandelay_vector_->Import(*ViewComponent("face",false), Mesh()->exterior_face_importer(), Insert);
+  vandelay_vector_->Import(*ViewComponent("face",false), Mesh()->getBoundaryFaceImporter(), Insert);
 }
 
 
 // return non-empty importer
 const Epetra_Import& CompositeVector::importer(std::string name) const {
-  return Mesh()->importer(Location(name));
+  return Mesh()->getImporter(Location(name));
 }
 
 
@@ -600,7 +600,7 @@ void DeriveFaceValuesFromCellValues(CompositeVector& cv) {
     int f_owned = cv_f.MyLength();
     for (int f=0; f!=f_owned; ++f) {
       AmanziMesh::Entity_ID_List cells;
-      cv.Mesh()->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      cv.Mesh()->getFaceCells(f, AmanziMesh::Parallel_type::ALL, cells);
       int ncells = cells.size();
 
       double face_value = 0.0;
@@ -614,8 +614,8 @@ void DeriveFaceValuesFromCellValues(CompositeVector& cv) {
     const Epetra_MultiVector& cv_c = *cv.ViewComponent("cell",true);
     Epetra_MultiVector& cv_f = *cv.ViewComponent("boundary_face",false);
 
-    const Epetra_BlockMap& fb_map = cv.Mesh()->exterior_face_map(false);
-    const Epetra_BlockMap& f_map = cv.Mesh()->face_map(false);
+    const Epetra_BlockMap& fb_map = cv.Mesh()->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false);
+    const Epetra_BlockMap& f_map = cv.Mesh()->getMap(AmanziMesh::Entity_kind::FACE, false);
 
     int fb_owned = cv_f.MyLength();
     for (int fb=0; fb!=fb_owned; ++fb) {
@@ -624,7 +624,7 @@ void DeriveFaceValuesFromCellValues(CompositeVector& cv) {
       int f_gid = fb_map.GID(fb);
       int f_lid = f_map.LID(f_gid);
       
-      cv.Mesh()->face_get_cells(f_lid, AmanziMesh::Parallel_type::ALL, &cells);
+      cv.Mesh()->getFaceCells(f_lid, AmanziMesh::Parallel_type::ALL, cells);
       int ncells = cells.size();
 
       AMANZI_ASSERT((ncells==1));
