@@ -256,11 +256,11 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   if (fail) {
     // recover conserved quantaties at the beginning of time step
-    *S_->GetFieldData("prev_saturation_liquid", "flow") = sat_prev_copy;
-    *S_->GetFieldData("prev_energy", "thermal") = e_prev_copy;
-    if (S_->HasField("water_content")) {
-      *S_->GetFieldData("prev_water_content", "flow") =
-          *S_->GetFieldCopyData("prev_water_content", "wc_copy", "state");
+    *S_->GetFieldData(prev_sat_liquid_key_, "flow") = sat_prev_copy;
+    *S_->GetFieldData(prev_energy_key_, "thermal") = e_prev_copy;
+    if (S_->HasField(wc_key_)) {
+      *S_->GetFieldData(prev_wc_key_, "flow") =
+          *S_->GetFieldCopyData(prev_wc_key_, "wc_copy", "state");
     }
 
     Teuchos::OSTab tab = vo_->getOSTab();
