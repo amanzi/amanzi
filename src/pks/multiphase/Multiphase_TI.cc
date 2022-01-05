@@ -264,6 +264,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
       //
       // Richards-type operator for all phases, div [K f grad(g)]
+      // The pair describing this equation term is (f, g).
       //
       for (int phase = 0; phase < 2; ++phase) {
         // -- diffusion operator div[ (K f dg/dv) grad dv ] 
@@ -271,7 +272,6 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
           Key fname = eqns_[row].advection[phase].second;
 
           if (S_->HasDerivative(fname, keyc) || fname == keyc) {
-std::cout << "Try1: " << fname << " " << keyc << " " << row << " " << col << std::endl;
             auto pde = Teuchos::rcp(new Operators::PDE_DiffusionFV(ddf_list, global_op));
 
             S_->GetEvaluator(key).Update(*S_, passwd_);
@@ -304,8 +304,7 @@ std::cout << "Try1: " << fname << " " << keyc << " " << row << " " << col << std
         if ((key = eqns_[row].advection[phase].first) != "") {
           Key fname = eqns_[row].advection[phase].second;
 
-          if (S_->HasDerivative(fname, keyc)) {
-std::cout << "Try2: " << fname << " " << keyc << " " << row << " " << col << std::endl;
+          if (fname != keyc && S_->HasDerivative(fname, keyc)) {
             // --- upwind gas molar mobility times molar fraction 
             S_->GetEvaluator(key).Update(*S_, passwd_);
             kr_c = *S_->Get<CompositeVector>(key).ViewComponent("cell");
@@ -330,7 +329,6 @@ std::cout << "Try2: " << fname << " " << keyc << " " << row << " " << col << std
         if ((key = eqns_[row].advection[phase].first) != "") {
 
           if (S_->HasDerivative(key, keyc)) {
-std::cout << "Try3: " << key << " " << keyc << " " << row << " " << col << std::endl;
             // --- upwind derivative
             S_->GetEvaluator(key).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
             kr_c = *S_->GetDerivative<CompositeVector>(key, keyc).ViewComponent("cell");
@@ -366,7 +364,6 @@ std::cout << "Try3: " << key << " " << keyc << " " << row << " " << col << std::
             if (fname == keyc) {
               der_c = &*fone_c;
             } else {
-std::cout << "Try4: " << key << " " << keyc << " " << row << " " << col << " fname=" << fname << std::endl;
               S_->GetEvaluator(fname).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
               der_c = &*S_->GetDerivative<CompositeVector>(fname, keyc).ViewComponent("cell");
             }
@@ -394,8 +391,7 @@ std::cout << "Try4: " << key << " " << keyc << " " << row << " " << col << " fna
         if ((key = eqns_[row].diffusion[phase].first) != "") {
           Key fname = eqns_[row].diffusion[phase].second;
 
-          if (S_->HasDerivative(fname, keyc)) {
-std::cout << "Try5: " << fname << " " << keyc << " " << row << " " << col << std::endl;
+          if (fname != keyc && S_->HasDerivative(fname, keyc)) {
             // --- calculate diffusion coefficient
             S_->GetEvaluator(key).Update(*S_, passwd_);
             kr_c = *S_->Get<CompositeVector>(key).ViewComponent("cell");
@@ -420,7 +416,6 @@ std::cout << "Try5: " << fname << " " << keyc << " " << row << " " << col << std
         if ((key = eqns_[row].diffusion[phase].first) != "" && keyc == saturation_liquid_key_) {
 
           if (S_->HasDerivative(key, keyc)) {
-std::cout << "Try6: " << key << " " << keyc << " " << row << " " << col << std::endl;
             S_->GetEvaluator(key).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
             kr_c = *S_->GetDerivative<CompositeVector>(key, keyc).ViewComponent("cell");
 
@@ -453,7 +448,6 @@ std::cout << "Try6: " << key << " " << keyc << " " << row << " " << col << std::
       // storage term
       if ((key = eqns_[row].storage) != "") {
         if (S_->HasDerivative(key, keyc)) {
-std::cout << "Try7: " << key << " " << keyc << " " << row << " " << col << std::endl;
           auto pde = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, global_op)); 
           S_->GetEvaluator(key).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
           auto der = S_->GetDerivativePtr<CompositeVector>(key, Tags::DEFAULT, keyc, Tags::DEFAULT);
@@ -480,7 +474,6 @@ std::cout << "Try7: " << key << " " << keyc << " " << row << " " << col << std::
 
     Key keyc = soln_names_[solc.var];
     if (S_->HasDerivative(key, keyc)) {
-std::cout << "Try8: " << key << " " << keyc << std::endl;
       S_->GetEvaluator(key).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
       der_fc = S_->GetDerivative<CompositeVector>(key, Tags::DEFAULT, keyc, Tags::DEFAULT).ViewComponent("cell");
     }
@@ -491,7 +484,6 @@ std::cout << "Try8: " << key << " " << keyc << std::endl;
 
     keyc = soln_names_[solc.var];
     if (S_->HasDerivative(key, keyc)) {
-std::cout << "Try9: " << key << " " << keyc << std::endl;
       S_->GetEvaluator(key).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
       der_gc = S_->GetDerivative<CompositeVector>(key, Tags::DEFAULT, keyc, Tags::DEFAULT).ViewComponent("cell");
     }

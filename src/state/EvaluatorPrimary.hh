@@ -137,9 +137,12 @@ EvaluatorPrimary<CompositeVector, CompositeVectorSpace>::UpdateDerivative_(State
   S.GetDerivativeW<CompositeVector>(my_key_, my_tag_, my_key_, my_tag_, my_key_).PutScalar(1.0);
 }
 
+// Implementatin for a CV also updates derivatives, but not clear why it is
+// done for primary variables
 template <>
 inline void
-EvaluatorPrimary<CompositeVector,CompositeVectorSpace>::EnsureCompatibility(State& S) {
+EvaluatorPrimary<CompositeVector,CompositeVectorSpace>::EnsureCompatibility(State& S)
+{
   Key owner = S.GetRecord(my_key_, my_tag_).owner();
   auto& my_fac = S.Require<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_, owner);
   if (S.HasDerivativeSet(my_key_, my_tag_)) {

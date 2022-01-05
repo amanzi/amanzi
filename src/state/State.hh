@@ -25,7 +25,7 @@ various fields.
 .. _state-spec:
 .. admonition:: state-spec
 
-   * `"field evaluators`" ``[field-evaluator-typedinline-spec-list]`` A list of evaluators.
+   * `"evaluators`" ``[evaluator-typedinline-spec-list]`` A list of evaluators.
       Note this will eventually be an [evaluator-typedinline-spec-list] but the
       evaluators themselves do not include the type info.
 
@@ -33,10 +33,10 @@ various fields.
        `"initial conditions`" is a terrible name and will go away in the next
        iteration of state.
 
-.. _field-evaluator-typedinline-spec:
-.. admonition:: field-evaluator-typedinline-spec
+.. _evaluator-typedinline-spec:
+.. admonition:: evaluator-typedinline-spec
 
-   * `"field evaluator type`" ``[string]`` Type of the evaluator Included for
+   * `"evaluator type`" ``[string]`` Type of the evaluator Included for
       convenience in defining data that is not in the dependency graph,
       constants are things (like gravity, or atmospheric pressure) which are
       stored in state but never change.  Typically they're limited to scalars
@@ -57,9 +57,9 @@ Example:
 .. code-block:: xml
 
     <ParameterList name="state">
-      <ParameterList name="field evaluators">
+      <ParameterList name="evaluators">
         <ParameterList name="pressure">
-          <Parameter name="field evaluator type" type="string" value="primary variable field evaluator" />
+          <Parameter name="evaluator type" type="string" value="primary variable" />
         </ParameterList>
       </ParameterList>
 

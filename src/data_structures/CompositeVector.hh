@@ -382,7 +382,7 @@ class CompositeVector {
   // -- Utilities --
 
   // Write components to outstream.
-  void Print(std::ostream &os, bool data_io = true) const;
+  void Print(std::ostream& os, bool data_io = true) const;
 
   // Populate by random numbers between -1 and 1.
   int Random();

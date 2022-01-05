@@ -805,13 +805,18 @@ void DeformCheckpointMesh(State& S, Key domain)
 // Non-member function for statistics
 void WriteStateStatistics(const State& S, const VerboseObject& vo)
 {
+  // sort data in alphabetic order
+  std::set<std::string> sorted;
+  for (auto it = S.data_begin(); it != S.data_end(); ++it) {
+    sorted.insert(it->first);
+  }
+
   if (vo.os_OK(Teuchos::VERB_HIGH)) {
     Teuchos::OSTab tab = vo.getOSTab();
     *vo.os() << "\nField                                    Min/Max/Avg" << std::endl;
 
-    for (auto it = S.data_begin(); it != S.data_end(); ++it) {
-      std::string name(it->first);
-
+    // for (auto it = S.data_begin(); it != S.data_end(); ++it) {
+    for (auto name : sorted) {
       if (name.size() > 33) replace_all(name, "temperature", "temp");
       if (name.size() > 33) replace_all(name, "internal_energy", "ie");
       if (name.size() > 33) replace_all(name, "molar", "mol");

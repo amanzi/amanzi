@@ -129,6 +129,14 @@ void MultiphaseModel1_PK::Setup(const Teuchos::Ptr<State>& S)
                                       x_gas_key_, Tags::DEFAULT, tcs_key_);
   }
 
+  // liquid molar density
+  if (!S->HasData(molar_density_liquid_key_)) {
+    S->Require<CV_t, CVS_t>(molar_density_liquid_key_, Tags::DEFAULT, molar_density_liquid_key_)
+      .SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, component_names_.size());
+    S->RequireEvaluator(molar_density_liquid_key_);
+  }
+
   // saturation
   if (!S->HasData(saturation_gas_key_)) {
     S->Require<CV_t, CVS_t>(saturation_gas_key_, Tags::DEFAULT, saturation_gas_key_)

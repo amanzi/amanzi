@@ -152,6 +152,13 @@ public:
                 std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps,
                 const std::vector<int>& num_dofs);
 
+  // Write components to outstream.
+  void Print(std::ostream& os) const {
+    for (int i = 0; i != names_.size(); ++i) {
+      os << "comp=" << names_[i] << " location=" << locations_[i] << " dofs=" << num_dofs_[i] << std::endl;
+    }
+  }
+
 private:
   // Indexing of name->int
   int Index_(const std::string& name) const {
