@@ -233,16 +233,13 @@ class Mesh {
   // On a distributed mesh, this will count all the faces of the
   // cell, OWNED or GHOST.
   KOKKOS_INLINE_FUNCTION unsigned int cell_get_num_faces(const Entity_ID cellid) const{
-    #if AMANZI_MESH_CACHE_VARS != 0
       return mesh_cache_.cell_get_num_faces(cellid); 
-    #else // Non-cached version
-      Entity_ID_List cfaceids;
-      std::vector<int> cfacedirs;
-      cell_get_faces_and_dirs_internal_(cellid, &cfaceids, &cfacedirs, false);
-      return cfaceids.size();
-    #endif
   }
-  
+
+  unsigned int cell_get_num_faces_host(const Entity_ID cellid) const{
+      return mesh_cache_.cell_get_num_faces_host(cellid); 
+  }
+
   unsigned int cell_get_max_faces() const;
   unsigned int cell_get_max_nodes() const;
   unsigned int cell_get_max_edges() const;
@@ -366,6 +363,12 @@ class Mesh {
   {
     mesh_cache_.face_get_cells(faceid,ptype,cellids); 
   }
+  void
+  face_get_cells_host(const Entity_ID faceid, const Parallel_type ptype,
+                 Kokkos::View<Entity_ID*, Kokkos::HostSpace>& cellids) const
+  {
+    mesh_cache_.face_get_cells_host(faceid,ptype,cellids); 
+  }
 
 
   // Same level adjacencies
@@ -484,11 +487,23 @@ class Mesh {
     return mesh_cache_.cell_volume(cellid);
   }
 
+  double cell_volume_host(const Entity_ID cellid) const
+  {
+    return mesh_cache_.cell_volume_host(cellid);
+  }
+
   // Area/length of face
   KOKKOS_INLINE_FUNCTION double
   face_area(const Entity_ID faceid, const bool recompute = false) const
   {
     return mesh_cache_.face_area(faceid,recompute);
+  }
+
+  // Area/length of face
+  double
+  face_area_host(const Entity_ID faceid, const bool recompute = false) const
+  {
+    return mesh_cache_.face_area_host(faceid,recompute);
   }
 
   // Length of edge
@@ -514,6 +529,12 @@ class Mesh {
     return mesh_cache_.cell_centroid(cellid); 
   }
 
+  AmanziGeometry::Point
+  cell_centroid_host(const Entity_ID cellid) const
+  {
+    return mesh_cache_.cell_centroid_host(cellid); 
+  }
+
   // Centroid of face (center of gravity not just the average of node
   // coordinates)
   //
@@ -526,6 +547,12 @@ class Mesh {
   face_centroid(const Entity_ID faceid, const bool recompute = false) const
   {
     return mesh_cache_.face_centroid(faceid,recompute);
+  }
+
+  AmanziGeometry::Point
+  face_centroid_host(const Entity_ID faceid, const bool recompute = false) const
+  {
+    return mesh_cache_.face_centroid_host(faceid,recompute);
   }
 
   void display_cache(){
@@ -543,6 +570,12 @@ class Mesh {
     return mesh_cache_.face_normal(faceid,recompute,cellid,orientation); 
   }
 
+  AmanziGeometry::Point
+  face_normal_host(const Entity_ID faceid, const bool recompute = false,
+              const Entity_ID cellid = -1, int* orientation = NULL) const
+  {
+    return mesh_cache_.face_normal_host(faceid,recompute,cellid,orientation); 
+  }
 
   // Edge vector
   //
@@ -897,6 +930,7 @@ public:
   void PrintMeshStatistics() const;
 
   Kokkos::View<double*> cell_volumes() const { return mesh_cache_.cell_volumes(); }
+  Kokkos::View<double*,Kokkos::HostSpace> cell_volumes_host() const { return mesh_cache_.cell_volumes_host(); }
 
  protected:
   Comm_ptr_type comm_;

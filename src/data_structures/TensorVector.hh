@@ -130,7 +130,6 @@ struct TensorVector {
     return std::move(WhetStone::Tensor<DeviceOnlyMemorySpace>(data.at(i), data.size(i,0), data.size(i,1), data.size(i,2)));
   }
 
-  KOKKOS_INLINE_FUNCTION
   WhetStone::Tensor<Kokkos::HostSpace> at_host(const int& i) const {
     // FIXME -- not const correct, but to do so needs a const-correct WhetStone::Tensor,
     // e.g. a WhetStone::Tensor that takes a Kokkos::View<const double*> --etc

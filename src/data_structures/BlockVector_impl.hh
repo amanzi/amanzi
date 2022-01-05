@@ -70,7 +70,9 @@ BlockVector<Scalar>::BlockVector(const BlockVector<Scalar>& other,
     // }
   } else {
     CreateData_(mode);
-    if (mode == InitMode::COPY) { *this = other; }
+    if (mode == InitMode::COPY) { 
+      *this = other; 
+    }
   }
 };
 

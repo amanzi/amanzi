@@ -254,8 +254,8 @@ FileHDF5::WriteView(const std::string& var_path,
                       static_cast<int>(vec.extent(1)) };
 
   IODetails::DangerousString full_h5path(var_path);
-
-  auto local_length = vec.extent(0);
+  // Fix for gcc 9.4.0
+  std::size_t local_length = vec.extent(0);
   auto global_length(local_length);
   Teuchos::reduceAll(
     *comm_, Teuchos::REDUCE_SUM, 1, &local_length, &global_length);

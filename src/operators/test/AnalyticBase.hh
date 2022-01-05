@@ -69,6 +69,7 @@ class AnalyticBase { //: public WhetStone::WhetStoneFunction {
   // -- tensorial diffusion coefficient
   virtual const WhetStone::Tensor<Kokkos::HostSpace>&
   TensorDiffusivity(const AmanziGeometry::Point& p, double t) const {
+    std::cout<<"TensorDiffusivity"<<std::endl;
     return K_;
   }
     
@@ -172,9 +173,9 @@ void ComputeCellError(const AnalyticBase& ana,
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   auto p = p_vec.ViewComponent<MirrorHost>("cell", false);
   for (int c = 0; c < ncells; c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->cell_centroid_host(c);
     double tmp = ana.pressure_exact(xc, t);
-    double volume = mesh->cell_volume(c);
+    double volume = mesh->cell_volume_host(c);
 
     l2_err += std::pow(tmp - p(c,0), 2.0) * volume;
     inf_err = std::max(inf_err, fabs(tmp - p(c,0)));
@@ -210,9 +211,9 @@ void ComputeFaceError(const AnalyticBase& ana,
   auto u = u_vec.ViewComponent<MirrorHost>("face", false);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces; f++) {
-    double area = mesh->face_area(f);
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+    double area = mesh->face_area_host(f);
+    const AmanziGeometry::Point& normal = mesh->face_normal_host(f);
+    const AmanziGeometry::Point& xf = mesh->face_centroid_host(f);
     const AmanziGeometry::Point& velocity = ana.velocity_exact(xf, t);
     double tmp = velocity * normal;
 

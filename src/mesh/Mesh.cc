@@ -105,7 +105,7 @@ Mesh::cell_get_max_faces() const
 {
   unsigned int n(0);
   int ncells = num_entities(CELL, Parallel_type::OWNED);
-  for (int c = 0; c < ncells; ++c) { n = std::max(n, cell_get_num_faces(c)); }
+  for (int c = 0; c < ncells; ++c) { n = std::max(n, cell_get_num_faces_host(c)); }
   return n;
 }
 

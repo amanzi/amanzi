@@ -17,12 +17,19 @@
 #include <vector>
 #include <string>
 #include "boost/algorithm/string.hpp"
+#include "Kokkos_DualView.hpp"
 
 #include "AmanziTypes.hh"
 #include "errors.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
+
+template<typename T, typename MEM>
+struct DualCrs{
+  Kokkos::DualView<int*, MEM> row_map; 
+  Kokkos::DualView<T, MEM> entries; 
+};
 
 // Necessary typedefs and enumerations
 typedef int Set_ID;

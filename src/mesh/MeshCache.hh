@@ -49,8 +49,13 @@ class MeshCache {
   // cell, OWNED or GHOST.
   KOKKOS_INLINE_FUNCTION unsigned int cell_get_num_faces(const Entity_ID cellid) const{
       assert(cell2face_info_cached_);
-      return cell_face_ids_.row_map(cellid + 1) - cell_face_ids_.row_map(cellid);
+      return cell_face_ids_.row_map.view_device()(cellid + 1) - cell_face_ids_.row_map.view_device()(cellid);
   }
+  unsigned int cell_get_num_faces_host(const Entity_ID cellid) const{
+      assert(cell2face_info_cached_);
+      return cell_face_ids_.row_map.view_host()(cellid + 1) - cell_face_ids_.row_map.view_host()(cellid);
+  }
+
 
   // Get faces of a cell.
   //
@@ -70,9 +75,19 @@ class MeshCache {
   {
     assert(cell2face_info_cached_);
     faceids =
-      Kokkos::subview(cell_face_ids_.entries,
-                      Kokkos::make_pair(cell_face_ids_.row_map(cellid),
-                                        cell_face_ids_.row_map(cellid + 1)));
+      Kokkos::subview(cell_face_ids_.entries.view_device(),
+                      Kokkos::make_pair(cell_face_ids_.row_map.view_device()(cellid),
+                                        cell_face_ids_.row_map.view_device()(cellid + 1)));
+  }
+  void
+  cell_get_faces_host(const Entity_ID cellid,
+                 Kokkos::View<Entity_ID*, Kokkos::HostSpace>& faceids) const
+  {
+    assert(cell2face_info_cached_);
+    faceids =
+      Kokkos::subview(cell_face_ids_.entries.view_host(),
+                      Kokkos::make_pair(cell_face_ids_.row_map.view_host()(cellid),
+                                        cell_face_ids_.row_map.view_host()(cellid + 1)));
   }
 
   // Get faces of a cell and directions in which the cell uses the face
@@ -94,13 +109,28 @@ class MeshCache {
   {
     assert(cell2face_info_cached_);
     faceids =
-      Kokkos::subview(cell_face_ids_.entries,
-                      Kokkos::make_pair(cell_face_ids_.row_map(cellid),
-                                        cell_face_ids_.row_map(cellid + 1)));
+      Kokkos::subview(cell_face_ids_.entries.view_device(),
+                      Kokkos::make_pair(cell_face_ids_.row_map.view_device()(cellid),
+                                        cell_face_ids_.row_map.view_device()(cellid + 1)));
     face_dirs =
-      Kokkos::subview(cell_face_dirs_.entries,
-                      Kokkos::make_pair(cell_face_dirs_.row_map(cellid),
-                                        cell_face_dirs_.row_map(cellid + 1)));
+      Kokkos::subview(cell_face_dirs_.entries.view_device(),
+                      Kokkos::make_pair(cell_face_dirs_.row_map.view_device()(cellid),
+                                        cell_face_dirs_.row_map.view_device()(cellid + 1)));
+  }
+  void
+  cell_get_faces_and_dirs_host(const Entity_ID cellid,
+                          Kokkos::View<Entity_ID*,Kokkos::HostSpace>& faceids,
+                          Kokkos::View<int*,Kokkos::HostSpace>& face_dirs) const
+  {
+    assert(cell2face_info_cached_);
+    faceids =
+      Kokkos::subview(cell_face_ids_.entries.view_host(),
+                      Kokkos::make_pair(cell_face_ids_.row_map.view_host()(cellid),
+                                        cell_face_ids_.row_map.view_host()(cellid + 1)));
+    face_dirs =
+      Kokkos::subview(cell_face_dirs_.entries.view_host(),
+                      Kokkos::make_pair(cell_face_dirs_.row_map.view_host()(cellid),
+                                        cell_face_dirs_.row_map.view_host()(cellid + 1)));
   }
   
   // Get the bisectors, i.e. vectors from cell centroid to face centroids.
@@ -111,13 +141,28 @@ class MeshCache {
   {
     assert(cell_get_faces_and_bisectors_precomputed_); 
     faceids =
-      Kokkos::subview(cell_face_ids_.entries,
-                      Kokkos::make_pair(cell_face_ids_.row_map(cellid),
-                                        cell_face_ids_.row_map(cellid + 1)));
+      Kokkos::subview(cell_face_ids_.entries.view_device(),
+                      Kokkos::make_pair(cell_face_ids_.row_map.view_device()(cellid),
+                                        cell_face_ids_.row_map.view_device()(cellid + 1)));
     bisectors = 
-      Kokkos::subview(cell_faces_bisectors_.entries,
-                    Kokkos::make_pair(cell_faces_bisectors_.row_map(cellid),
-                                      cell_faces_bisectors_.row_map(cellid + 1)));
+      Kokkos::subview(cell_faces_bisectors_.entries.view_device(),
+                    Kokkos::make_pair(cell_faces_bisectors_.row_map.view_device()(cellid),
+                                      cell_faces_bisectors_.row_map.view_device()(cellid + 1)));
+  }
+  void 
+  cell_get_faces_and_bisectors_host(const Entity_ID cellid, 
+                      Kokkos::View<Entity_ID*,Kokkos::HostSpace>& faceids,
+                      Kokkos::View<AmanziGeometry::Point*,Kokkos::HostSpace>& bisectors) const
+  {
+    assert(cell_get_faces_and_bisectors_precomputed_); 
+    faceids =
+      Kokkos::subview(cell_face_ids_.entries.view_host(),
+                      Kokkos::make_pair(cell_face_ids_.row_map.view_host()(cellid),
+                                        cell_face_ids_.row_map.view_host()(cellid + 1)));
+    bisectors = 
+      Kokkos::subview(cell_faces_bisectors_.entries.view_host(),
+                    Kokkos::make_pair(cell_faces_bisectors_.row_map.view_host()(cellid),
+                                      cell_faces_bisectors_.row_map.view_host()(cellid + 1)));
   }
 
   // Cells connected to a face
@@ -130,8 +175,8 @@ class MeshCache {
                  Kokkos::View<Entity_ID*>& cellids) const
   {
     int ncellids = 0;
-    int csr_start = face_cell_ptype_.row_map(faceid);
-    int csr_end = face_cell_ptype_.row_map(faceid + 1);
+    int csr_start = face_cell_ptype_.row_map.view_device()(faceid);
+    int csr_end = face_cell_ptype_.row_map.view_device()(faceid + 1);
 
     // Create a subview
     int start = -1;
@@ -142,7 +187,7 @@ class MeshCache {
       int i = csr_start;
       stop = csr_end;
       while (!done && i < csr_end) {
-        Parallel_type cell_ptype = face_cell_ptype_.entries(i);
+        Parallel_type cell_ptype = face_cell_ptype_.entries.view_device()(i);
         if (cell_ptype == Parallel_type::PTYPE_UNKNOWN) {
           ++i;
           continue;
@@ -158,7 +203,7 @@ class MeshCache {
       bool done = false;
       int i = csr_start;
       while (!done && i < csr_end) {
-        Parallel_type cell_ptype = face_cell_ptype_.entries(i);
+        Parallel_type cell_ptype = face_cell_ptype_.entries.view_device()(i);
         if (cell_ptype == Parallel_type::PTYPE_UNKNOWN) {
           ++i;
           continue;
@@ -171,9 +216,57 @@ class MeshCache {
     }
     // Generate the subview
     cellids =
-      Kokkos::subview(face_cell_ids_dirs_, Kokkos::make_pair(start, stop));
+      Kokkos::subview(face_cell_ids_dirs_.view_device(), Kokkos::make_pair(start, stop));
   }
+  
+  void
+  face_get_cells_host(const Entity_ID faceid, const Parallel_type ptype,
+                 Kokkos::View<Entity_ID*,Kokkos::HostSpace>& cellids) const
+  {
+    int ncellids = 0;
+    int csr_start = face_cell_ptype_.row_map.view_host()(faceid);
+    int csr_end = face_cell_ptype_.row_map.view_host()(faceid + 1);
 
+    // Create a subview
+    int start = -1;
+    int stop = -1;
+    // Return all cells except the UNKNOWN
+    if (ptype == Parallel_type::ALL) {
+      bool done = false;
+      int i = csr_start;
+      stop = csr_end;
+      while (!done && i < csr_end) {
+        Parallel_type cell_ptype = face_cell_ptype_.entries.view_host()(i);
+        if (cell_ptype == Parallel_type::PTYPE_UNKNOWN) {
+          ++i;
+          continue;
+        } else {
+          start = i;
+          done = true;
+        }
+      }
+    } else if (ptype == Parallel_type::PTYPE_UNKNOWN) {
+      assert(false);
+      return;
+    } else {
+      bool done = false;
+      int i = csr_start;
+      while (!done && i < csr_end) {
+        Parallel_type cell_ptype = face_cell_ptype_.entries.view_host()(i);
+        if (cell_ptype == Parallel_type::PTYPE_UNKNOWN) {
+          ++i;
+          continue;
+        }
+        if (cell_ptype == ptype && start == -1) { start = i; }
+        if (cell_ptype != ptype && start != -1) { stop = i; }
+        ++i;
+      }
+      if (stop == -1) { stop = i; }
+    }
+    // Generate the subview
+    cellids =
+      Kokkos::subview(face_cell_ids_dirs_.view_host(), Kokkos::make_pair(start, stop));
+  }
 
   //
   // Column information
@@ -211,23 +304,23 @@ class MeshCache {
       case CELL:
         if(entid > cells_parent_.extent(0))
           return -1; 
-        return cells_parent_(entid);  
+        return cells_parent_.view_device()(entid);  
         break;
       case FACE: 
         if(entid > faces_parent_.extent(0))
           return -1; 
-        return faces_parent_(entid);
+        return faces_parent_.view_device()(entid);
         break; 
       case EDGE: 
         assert(edges_requested_); 
         if(entid > edges_parent_.extent(0))
           return -1; 
-        return edges_parent_(entid);
+        return edges_parent_.view_device()(entid);
         break; 
       case NODE: 
         if(entid > nodes_parent_.extent(0))
           return -1; 
-        return nodes_parent_(entid);
+        return nodes_parent_.view_device()(entid);
       default: {} 
     }
     return -1;
@@ -241,14 +334,25 @@ class MeshCache {
   double cell_volume(const Entity_ID cellid, const bool recompute) const;
   KOKKOS_INLINE_FUNCTION double cell_volume(const Entity_ID cellid) const
   {
-    return cell_volumes_(cellid);
+    return cell_volumes_.view_device()(cellid);
+  }
+  double cell_volume_host(const Entity_ID cellid) const
+  {
+    return cell_volumes_.view_host()(cellid);
   }
 
   // Area/length of face
   KOKKOS_INLINE_FUNCTION double
   face_area(const Entity_ID faceid, const bool recompute = false) const
   {
-    return face_areas_(faceid);
+    return face_areas_.view_device()(faceid);
+  }
+
+  // Area/length of face
+  double
+  face_area_host(const Entity_ID faceid, const bool recompute = false) const
+  {
+    return face_areas_.view_host()(faceid);
   }
 
   // Length of edge
@@ -269,7 +373,13 @@ class MeshCache {
   cell_centroid(const Entity_ID cellid) const
   {
     assert(cell_geometry_precomputed_);
-    return cell_centroids_(cellid);
+    return cell_centroids_.view_device()(cellid);
+  }
+  AmanziGeometry::Point
+  cell_centroid_host(const Entity_ID cellid) const
+  {
+    assert(cell_geometry_precomputed_);
+    return cell_centroids_.view_host()(cellid);
   }
 
   // Centroid of face (center of gravity not just the average of node
@@ -283,7 +393,12 @@ class MeshCache {
   KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
   face_centroid(const Entity_ID faceid, const bool recompute = false) const
   {
-    return face_centroids_(faceid);
+    return face_centroids_.view_device()(faceid);
+  }
+  AmanziGeometry::Point
+  face_centroid_host(const Entity_ID faceid, const bool recompute = false) const
+  {
+    return face_centroids_.view_host()(faceid);
   }
 
   void display_cache();
@@ -302,9 +417,9 @@ class MeshCache {
 
     Kokkos::View<AmanziGeometry::Point*> fnormals, fnormals_new;
     fnormals =
-      Kokkos::subview(face_normals_.entries,
-                      Kokkos::make_pair(face_normals_.row_map(faceid),
-                                        face_normals_.row_map(faceid + 1)));
+      Kokkos::subview(face_normals_.entries.view_device(),
+                      Kokkos::make_pair(face_normals_.row_map.view_device()(faceid),
+                                        face_normals_.row_map.view_device()(faceid + 1)));
 
     assert(fnormals.extent(0) > 0);
 
@@ -313,7 +428,7 @@ class MeshCache {
       // the first cell, appropriately adjusted according to whether the
       // face is pointing into the cell (-ve cell id) or out
 
-      int c = face_cell_ids_.entries(face_cell_ids_.row_map(faceid));
+      int c = face_cell_ids_.entries.view_device()(face_cell_ids_.row_map.view_device()(faceid));
       return c < 0 ? -fnormals(0) : fnormals(0);
     } else {
       // Find the index of 'cellid' in list of cells connected to face
@@ -321,10 +436,54 @@ class MeshCache {
       int dir;
       int irefcell;
       int nfc =
-        face_cell_ids_.row_map(faceid + 1) - face_cell_ids_.row_map(faceid);
+        face_cell_ids_.row_map.view_device()(faceid + 1) - face_cell_ids_.row_map.view_device()(faceid);
       for (irefcell = 0; irefcell < nfc; irefcell++) {
         int c =
-          face_cell_ids_.entries(face_cell_ids_.row_map(faceid) + irefcell);
+          face_cell_ids_.entries.view_device()(face_cell_ids_.row_map.view_device()(faceid) + irefcell);
+        if (c == cellid || ~c == cellid) {
+          dir = c < 0 ? -1 : 1;
+          break;
+        }
+      }
+      assert(irefcell < nfc);
+      if (orientation) *orientation = dir; // if orientation was requested
+      return fnormals(irefcell);
+    }
+  }
+
+  AmanziGeometry::Point
+  face_normal_host(const Entity_ID faceid, const bool recompute = false,
+              const Entity_ID cellid = -1, int* orientation = NULL) const
+  {
+    assert(face_geometry_precomputed_);
+    assert(recompute == false);
+    assert(faces_requested_);
+
+    Kokkos::View<AmanziGeometry::Point*,Kokkos::HostSpace> fnormals, fnormals_new;
+    fnormals =
+      Kokkos::subview(face_normals_.entries.view_host(),
+                      Kokkos::make_pair(face_normals_.row_map.view_host()(faceid),
+                                        face_normals_.row_map.view_host()(faceid + 1)));
+
+    assert(fnormals.extent(0) > 0);
+
+    if (cellid == -1) {
+      // Return the natural normal. This is the normal with respect to
+      // the first cell, appropriately adjusted according to whether the
+      // face is pointing into the cell (-ve cell id) or out
+
+      int c = face_cell_ids_.entries.view_host()(face_cell_ids_.row_map.view_host()(faceid));
+      return c < 0 ? -fnormals(0) : fnormals(0);
+    } else {
+      // Find the index of 'cellid' in list of cells connected to face
+
+      int dir;
+      int irefcell;
+      int nfc =
+        face_cell_ids_.row_map.view_host()(faceid + 1) - face_cell_ids_.row_map.view_host()(faceid);
+      for (irefcell = 0; irefcell < nfc; irefcell++) {
+        int c =
+          face_cell_ids_.entries.view_host()(face_cell_ids_.row_map.view_host()(faceid) + irefcell);
         if (c == cellid || ~c == cellid) {
           dir = c < 0 ? -1 : 1;
           break;
@@ -393,16 +552,16 @@ class MeshCache {
   {
     if (!face2edge_info_cached_) cache_face2edge_info_();
 
-    edgeids = Kokkos::subview(face_edge_ids_.entries,
-                              std::make_pair(face_edge_ids_.row_map(faceid),
-                                            face_edge_ids_.row_map(faceid + 1)));
+    edgeids = Kokkos::subview(face_edge_ids_.entries.view_device(),
+                              std::make_pair(face_edge_ids_.row_map.view_device()(faceid),
+                                            face_edge_ids_.row_map.view_device()(faceid + 1)));
     //*edgeids = face_edge_ids_[faceid]; // copy operation
 
     if (edge_dirs) {
       *edge_dirs =
-        Kokkos::subview(face_edge_dirs_.entries,
-                        std::make_pair(face_edge_dirs_.row_map(faceid),
-                                      face_edge_dirs_.row_map(faceid + 1)));
+        Kokkos::subview(face_edge_dirs_.entries.view_device(),
+                        std::make_pair(face_edge_dirs_.row_map.view_device()(faceid),
+                                      face_edge_dirs_.row_map.view_device()(faceid + 1)));
       // std::vector<int> &fedgedirs = face_edge_dirs_[faceid];
       //*edge_dirs = fedgedirs; // copy operation
     }
@@ -423,16 +582,16 @@ class MeshCache {
     if (!cell2edge_info_cached_) cache_cell2edge_info_();
 
     size_t faceid_size =
-      face_edge_ids_.row_map(faceid + 1) - face_edge_ids_.row_map(faceid);
+      face_edge_ids_.row_map.view_device()(faceid + 1) - face_edge_ids_.row_map.view_device()(faceid);
     map->resize(faceid_size);
     for (int f = 0; f < faceid_size; ++f) {
       Entity_ID fedge =
-        face_edge_ids_.entries(face_edge_ids_.row_map(faceid) + f);
+        face_edge_ids_.entries.view_device()(face_edge_ids_.row_map.view_device()(faceid) + f);
 
       size_t cellid_size =
-        cell_edge_ids_.row_map(cellid + 1) - cell_edge_ids_.row_map(cellid);
+        cell_edge_ids_.row_map.view_device()(cellid + 1) - cell_edge_ids_.row_map.view_device()(cellid);
       for (int c = 0; c < cellid_size; ++c) {
-        if (fedge == cell_edge_ids_.entries(cell_edge_ids_.row_map(cellid) + c)) {
+        if (fedge == cell_edge_ids_.entries.view_device()(cell_edge_ids_.row_map.view_device()(cellid) + c)) {
           (*map)[f] = c;
           break;
         }
@@ -446,9 +605,9 @@ class MeshCache {
   {
     if (!cell2edge_info_cached_) cache_cell2edge_info_();
 
-    edgeids = Kokkos::subview(cell_edge_ids_.entries,
-                              std::make_pair(cell_edge_ids_.row_map(cellid),
-                                            cell_edge_ids_.row_map(cellid + 1)));
+    edgeids = Kokkos::subview(cell_edge_ids_.entries.view_device(),
+                              std::make_pair(cell_edge_ids_.row_map.view_device()(cellid),
+                                            cell_edge_ids_.row_map.view_device()(cellid + 1)));
     // Entity_ID_List &cedgeids = cell_edge_ids_[cellid];
     //*edgeids = cell_edge_ids_[cellid]; // copy operation
   }
@@ -461,16 +620,18 @@ class MeshCache {
   {
     if (!cell2edge_info_cached_) cache_cell2edge_info_();
 
-    edgeids = Kokkos::subview(cell_edge_ids_.entries,
-                              std::make_pair(cell_edge_ids_.row_map(cellid),
-                                            cell_edge_ids_.row_map(cellid + 1)));
+    edgeids = Kokkos::subview(cell_edge_ids_.entries.view_device(),
+                              std::make_pair(cell_edge_ids_.row_map.view_device()(cellid),
+                                            cell_edge_ids_.row_map.view_device()(cellid + 1)));
     *edgedirs =
-      Kokkos::subview(cell_2D_edge_dirs_.entries,
-                      std::make_pair(cell_2D_edge_dirs_.row_map(cellid),
-                                    cell_2D_edge_dirs_.row_map(cellid + 1)));
+      Kokkos::subview(cell_2D_edge_dirs_.entries.view_device(),
+                      std::make_pair(cell_2D_edge_dirs_.row_map.view_device()(cellid),
+                                    cell_2D_edge_dirs_.row_map.view_device()(cellid + 1)));
   }
 
-  Kokkos::View<double*> cell_volumes() const { return cell_volumes_; }
+  Kokkos::View<double*> cell_volumes() const { return cell_volumes_.view_device(); }
+  Kokkos::View<double*,Kokkos::HostSpace> cell_volumes_host() const { return cell_volumes_.view_host(); }
+
 
   // Virtual methods to fill the cache with geometric quantities.
   //
@@ -506,56 +667,60 @@ class MeshCache {
 
   void cache_cell_get_faces_and_bisectors_() const; 
 
+  // view types for host mirroring 
+  using view_type_entity_ID = Kokkos::View<Entity_ID*, Kokkos::DefaultExecutionSpace>; 
+  using view_type_parallel_type = Kokkos::View<Parallel_type*, Kokkos::DefaultExecutionSpace>; 
+
   // the cache
   // -- geometry
-  mutable Kokkos::View<double*> cell_volumes_, face_areas_, edge_lengths_;
-  mutable Kokkos::View<AmanziGeometry::Point*> cell_centroids_, face_centroids_;
+  mutable Kokkos::DualView<double*> cell_volumes_, face_areas_, edge_lengths_;
+  mutable Kokkos::DualView<AmanziGeometry::Point*> cell_centroids_, face_centroids_;
 
   // -- Have to account for the fact that a "face" for a non-manifold
   // surface mesh can have more than one cell connected to
   // it. Therefore, we have to store as many normals for a face as
   // there are cells connected to it. For a given face, its normal to
   // face_get_cells()[i] is face_normals_[i]
-  mutable Kokkos::Crs<AmanziGeometry::Point, Kokkos::DefaultExecutionSpace>
+  mutable DualCrs<AmanziGeometry::Point*, Kokkos::DefaultExecutionSpace>
     face_normals_;
 
-  mutable Kokkos::View<AmanziGeometry::Point*> edge_vectors_;
+  mutable Kokkos::DualView<AmanziGeometry::Point*> edge_vectors_;
 
-  mutable Kokkos::View<Entity_ID*> cells_parent_; 
-  mutable Kokkos::View<Entity_ID*> faces_parent_; 
-  mutable Kokkos::View<Entity_ID*> edges_parent_; 
-  mutable Kokkos::View<Entity_ID*> nodes_parent_; 
+  mutable Kokkos::DualView<Entity_ID*> cells_parent_; 
+  mutable Kokkos::DualView<Entity_ID*> faces_parent_; 
+  mutable Kokkos::DualView<Entity_ID*> edges_parent_; 
+  mutable Kokkos::DualView<Entity_ID*> nodes_parent_; 
 
-  mutable Kokkos::Crs<AmanziGeometry::Point, Kokkos::DefaultExecutionSpace> cell_faces_bisectors_;
+  mutable DualCrs<AmanziGeometry::Point*, Kokkos::DefaultExecutionSpace> cell_faces_bisectors_;
 
 
   // -- column information, only created if columns are requested
-  mutable Kokkos::View<Entity_ID*> cell_cellabove_, cell_cellbelow_,
+  mutable Kokkos::DualView<Entity_ID*> cell_cellabove_, cell_cellbelow_,
     node_nodeabove_;
   mutable std::vector<Entity_ID_List> column_cells_; 
   mutable std::vector<Entity_ID_List> column_faces_; 
   //mutable Kokkos::Crs<Entity_ID, Kokkos::DefaultExecutionSpace> column_cells_;
   //mutable Kokkos::Crs<Entity_ID, Kokkos::DefaultExecutionSpace> column_faces_;
-  mutable Kokkos::View<Entity_ID*> columnID_;
+  mutable Kokkos::DualView<Entity_ID*> columnID_;
   mutable int num_owned_cols_;
   mutable bool columns_built_;
 
   // -- topology
-  mutable Kokkos::Crs<Entity_ID, Kokkos::DefaultExecutionSpace> cell_face_ids_;
-  mutable Kokkos::Crs<int, Kokkos::DefaultExecutionSpace>
+  mutable DualCrs<Entity_ID*, Kokkos::DefaultExecutionSpace> cell_face_ids_;
+  mutable DualCrs<int*, Kokkos::DefaultExecutionSpace>
     cell_face_dirs_; // 1 or -1
 
   // 1s complement if face is pointing out of cell; cannot use 0 as
   // cellid can be 0
-  mutable Kokkos::Crs<Entity_ID, Kokkos::DefaultExecutionSpace> face_cell_ids_;
-  mutable Kokkos::View<Entity_ID*> face_cell_ids_dirs_;
+  mutable DualCrs<Entity_ID*, Kokkos::DefaultExecutionSpace> face_cell_ids_;
+  mutable Kokkos::DualView<Entity_ID*> face_cell_ids_dirs_;
 
-  mutable Kokkos::Crs<Parallel_type, Kokkos::DefaultExecutionSpace>
+  mutable DualCrs<Parallel_type*, Kokkos::DefaultExecutionSpace>
     face_cell_ptype_;
-  mutable Kokkos::Crs<Entity_ID, Kokkos::DefaultExecutionSpace> cell_edge_ids_;
-  mutable Kokkos::Crs<int, Kokkos::DefaultExecutionSpace> cell_2D_edge_dirs_;
-  mutable Kokkos::Crs<Entity_ID, Kokkos::DefaultExecutionSpace> face_edge_ids_;
-  mutable Kokkos::Crs<int, Kokkos::DefaultExecutionSpace> face_edge_dirs_;
+  mutable DualCrs<Entity_ID*, Kokkos::DefaultExecutionSpace> cell_edge_ids_;
+  mutable DualCrs<int*, Kokkos::DefaultExecutionSpace> cell_2D_edge_dirs_;
+  mutable DualCrs<Entity_ID*, Kokkos::DefaultExecutionSpace> face_edge_ids_;
+  mutable DualCrs<int*, Kokkos::DefaultExecutionSpace> face_edge_dirs_;
 
   // -- flags to indicate what part of cache is up-to-date
   mutable bool cell2face_info_cached_, face2cell_info_cached_;

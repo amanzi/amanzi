@@ -148,7 +148,6 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRESRestart
 {
   // initialize verbose object
   Teuchos::OSTab tab = vo_->getOSTab();
-
   // allocate memory for Krylov space
   v_.resize(krylov_dim_ + 1, Teuchos::null);
 
@@ -172,7 +171,6 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRESRestart
       *vo_->os() << "Not converged (max iterations), ||r||=" << residual_
                  << " ||f||=" << fnorm_ << std::endl;
   }
-
   return ierr;
 }
 
@@ -195,18 +193,13 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
   Vector r(f, Teuchos::Copy);
   Vector p(f, Teuchos::Copy);
 
-  // Vector w(f.getMap()), r(f.getMap()), p(f.getMap()); // construct empty vectors
-  // r.assign(f);
-  // p.assign(f);
-  // w.assign(f);
-
   double s[krylov_dim_ + 1], cs[krylov_dim_ + 1], sn[krylov_dim_ + 1];
   WhetStone::DenseMatrix<> T(krylov_dim_ + 1, krylov_dim_); T = 0.;
   num_itrs_inner_ = 0;
 
   // h_->applyInverse(f, r);
   // r.Dot(fnorm, f);  This is the preconditioned norm of the residual.
-  double fnorm = f.norm2();
+  double fnorm = w.norm2();
   fnorm_ = fnorm;
 
   // initial residual is r = f - M x for the right preconditioner

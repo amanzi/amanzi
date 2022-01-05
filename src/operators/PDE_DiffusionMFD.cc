@@ -1486,8 +1486,8 @@ double PDE_DiffusionMFD::ComputeTransmissibility(int f) const
 {
   WhetStone::MFD3D_Diffusion mfd(mesh_);
 
-  AmanziMesh::Entity_ID_View cells;
-  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> cells;
+  mesh_->face_get_cells_host(f, AmanziMesh::Parallel_type::ALL, cells);
   int c = cells[0];
 
   if (K_.get()) {

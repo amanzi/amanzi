@@ -149,9 +149,9 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
   const auto cell_row_inds = map.GhostIndices<MirrorHost>(my_block_row, "cell", 0);
   const auto cell_col_inds = map.GhostIndices<MirrorHost>(my_block_col, "cell", 0);
 
-  AmanziMesh::Entity_ID_View cells; 
+  Kokkos::View<AmanziMesh::Entity_ID*,Kokkos::HostSpace> cells; 
   for (int f = 0; f != nfaces_owned; ++f) {
-    op.mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+    op.mesh->face_get_cells_host(f, AmanziMesh::Parallel_type::ALL, cells);
     
     int ncells = cells.size();
     for (int n = 0; n != ncells; ++n) {

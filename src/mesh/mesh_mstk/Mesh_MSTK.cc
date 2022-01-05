@@ -2670,7 +2670,7 @@ Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
       if (nface > 0) {
         if (!mesh_cache_.kdtree_faces_initialized_) {
           face_centroid(0);
-          mesh_cache_.kdtree_faces_.Init(mesh_cache_.face_centroids_);
+          mesh_cache_.kdtree_faces_.Init(mesh_cache_.face_centroids_.view_device());
           mesh_cache_.kdtree_faces_initialized_ = true;
         }
 

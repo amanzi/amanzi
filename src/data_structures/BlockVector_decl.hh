@@ -228,7 +228,7 @@ class BlockVector {
   }
   virtual MultiVector_ptr_type_<Scalar>
   GetComponent_(const std::string& name, bool ghosted = false)
-  {
+  {    
     if (!HasComponent(name)) {
       Errors::Message msg;
       msg << "Vector does not have component \"" << name << "\"";

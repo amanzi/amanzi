@@ -42,16 +42,16 @@ void
 MeshCache::cache_cell_face_info_() const
 {
   int ncells = mesh_->num_entities(CELL, Parallel_type::ALL);
-  Kokkos::resize(cell_face_ids_.row_map, ncells + 1);
-  Kokkos::resize(cell_face_dirs_.row_map, ncells + 1);
-  cell_face_ids_.row_map(0) = 0;
-  cell_face_dirs_.row_map(0) = 0;
+  cell_face_ids_.row_map.resize(ncells + 1);
+  cell_face_dirs_.row_map.resize(ncells + 1);
+  cell_face_ids_.row_map.view_host()(0) = 0;
+  cell_face_dirs_.row_map.view_host()(0) = 0;
 
   int nfaces = mesh_->num_entities(FACE, Parallel_type::ALL);
-  Kokkos::resize(face_cell_ids_.row_map, nfaces + 1);
-  Kokkos::resize(face_cell_ptype_.row_map, nfaces + 1);
-  face_cell_ids_.row_map(0) = 0;
-  face_cell_ptype_.row_map(0) = 0;
+  face_cell_ids_.row_map.resize(nfaces + 1);
+  face_cell_ptype_.row_map.resize(nfaces + 1);
+  face_cell_ids_.row_map.view_host()(0) = 0;
+  face_cell_ptype_.row_map.view_host()(0) = 0;
 
   int cell_face_ids_size = 0; 
   int cell_face_dirs_size = 0; 
@@ -65,16 +65,16 @@ MeshCache::cache_cell_face_info_() const
     for (int jf = 0; jf < nf; jf++) {
       Entity_ID f = cell_face_ids_view[jf];
       int dir = cell_face_dirs_view[jf];
-      face_cell_ids_.row_map(f)++;
-      face_cell_ptype_.row_map(f)++;
+      face_cell_ids_.row_map.view_host()(f)++;
+      face_cell_ptype_.row_map.view_host()(f)++;
     }
 
     cell_face_ids_size += cell_face_ids_view.size();
     cell_face_dirs_size += cell_face_dirs_view.size();
   }
 
-  Kokkos::resize(cell_face_ids_.entries,cell_face_ids_size);
-  Kokkos::resize(cell_face_dirs_.entries,cell_face_dirs_size); 
+  cell_face_ids_.entries.resize(cell_face_ids_size);
+  cell_face_dirs_.entries.resize(cell_face_dirs_size); 
 
   for (int c = 0; c < ncells; c++) {
     Entity_ID_List cell_face_ids_view;
@@ -84,46 +84,45 @@ MeshCache::cache_cell_face_info_() const
     int nf = cell_face_ids_view.size();
 
     // Save to the CRS
-    cell_face_ids_.row_map(c + 1) =
-      cell_face_ids_.row_map(c) + cell_face_ids_view.size();
+    cell_face_ids_.row_map.view_host()(c + 1) =
+      cell_face_ids_.row_map.view_host()(c) + cell_face_ids_view.size();
     for (int fi = 0; fi < cell_face_ids_view.size(); ++fi) {
-      cell_face_ids_.entries(cell_face_ids_.row_map(c) + fi) =
+      cell_face_ids_.entries.view_host()(cell_face_ids_.row_map.view_host()(c) + fi) =
         cell_face_ids_view[fi];
     }
-    cell_face_dirs_.row_map(c + 1) =
-      cell_face_dirs_.row_map(c) + cell_face_dirs_view.size();
+    cell_face_dirs_.row_map.view_host()(c + 1) =
+      cell_face_dirs_.row_map.view_host()(c) + cell_face_dirs_view.size();
     for (int fd = 0; fd < cell_face_dirs_view.size(); ++fd) {
-      cell_face_dirs_.entries(cell_face_dirs_.row_map(c) + fd) =
+      cell_face_dirs_.entries.view_host()(cell_face_dirs_.row_map.view_host()(c) + fd) =
         cell_face_dirs_view[fd];
     }
   }
 
   // Prefix sum
-  Entity_ID tmp1 = face_cell_ids_.row_map(0);
-  face_cell_ids_.row_map(0) = 0;
+  Entity_ID tmp1 = face_cell_ids_.row_map.view_host()(0);
+  face_cell_ids_.row_map.view_host()(0) = 0;
   for (int f = 0; f < nfaces; ++f) {
-    Entity_ID tmp2 = face_cell_ids_.row_map(f + 1);
-    face_cell_ids_.row_map(f + 1) = face_cell_ids_.row_map(f) + tmp1;
+    Entity_ID tmp2 = face_cell_ids_.row_map.view_host()(f + 1);
+    face_cell_ids_.row_map.view_host()(f + 1) = face_cell_ids_.row_map.view_host()(f) + tmp1;
     tmp1 = tmp2;
   }
-  Kokkos::deep_copy(face_cell_ptype_.row_map, face_cell_ids_.row_map);
-  Kokkos::resize(face_cell_ids_.entries,
-                 face_cell_ids_.row_map(face_cell_ids_.row_map.extent(0) - 1));
-  Kokkos::resize(
-    face_cell_ptype_.entries,
-    face_cell_ptype_.row_map(face_cell_ptype_.row_map.extent(0) - 1));
+  Kokkos::deep_copy(face_cell_ptype_.row_map.view_host(), face_cell_ids_.row_map.view_host());
+  face_cell_ids_.entries.resize(
+                 face_cell_ids_.row_map.view_host()(face_cell_ids_.row_map.extent(0) - 1));
+  face_cell_ptype_.entries.resize(
+    face_cell_ptype_.row_map.view_host()(face_cell_ptype_.row_map.view_host().extent(0) - 1));
 
 
-  Kokkos::View<int*> offset("", nfaces);
+  Kokkos::View<int*, Kokkos::HostSpace> offset("", nfaces);
 
   for (int c = 0; c < ncells; c++) {
-    int nf = cell_face_ids_.row_map(c + 1) - cell_face_ids_.row_map(c);
+    int nf = cell_face_ids_.row_map.view_host()(c + 1) - cell_face_ids_.row_map.view_host()(c);
     for (int jf = 0; jf < nf; jf++) {
-      Entity_ID f = cell_face_ids_.entries(jf + cell_face_ids_.row_map(c));
-      int dir = cell_face_dirs_.entries(jf + cell_face_dirs_.row_map(c));
-      face_cell_ids_.entries(face_cell_ids_.row_map(f) + offset(f)) =
+      Entity_ID f = cell_face_ids_.entries.view_host()(jf + cell_face_ids_.row_map.view_host()(c));
+      int dir = cell_face_dirs_.entries.view_host()(jf + cell_face_dirs_.row_map.view_host()(c));
+      face_cell_ids_.entries.view_host()(face_cell_ids_.row_map.view_host()(f) + offset(f)) =
         dir > 0 ? c : ~c;
-      face_cell_ptype_.entries(face_cell_ptype_.row_map(f) + offset(f)) =
+      face_cell_ptype_.entries.view_host()(face_cell_ptype_.row_map.view_host()(f) + offset(f)) =
         mesh_->entity_get_ptype(CELL, c);
       offset(f)++;
     }
@@ -132,17 +131,17 @@ MeshCache::cache_cell_face_info_() const
   // Sort the cells based on parallel type
   // Basic select sort for now \TODO improve the sort
   for (int f = 0; f < nfaces; f++) {
-    int begin = face_cell_ids_.row_map(f);
-    int end = face_cell_ids_.row_map(f + 1);
+    int begin = face_cell_ids_.row_map.view_host()(f);
+    int end = face_cell_ids_.row_map.view_host()(f + 1);
     // Sort face_cell_ids_ regarding face_cell_ptype_
     // Search for the parallel types one by one
     int pos = begin;
     for (int pt = 0; pt < static_cast<int>(Parallel_type::PARALLEL_TYPE_SIZE);
          ++pt) {
       for (int c = pos; c < end; ++c) {
-        if (static_cast<int>(face_cell_ptype_.entries(c)) == pt) {
-          std::swap(face_cell_ptype_.entries(c), face_cell_ptype_.entries(pos));
-          std::swap(face_cell_ids_.entries(c), face_cell_ids_.entries(pos));
+        if (static_cast<int>(face_cell_ptype_.entries.view_host()(c)) == pt) {
+          std::swap(face_cell_ptype_.entries.view_host()(c), face_cell_ptype_.entries.view_host()(pos));
+          std::swap(face_cell_ids_.entries.view_host()(c), face_cell_ids_.entries.view_host()(pos));
           ++pos;
         }
       }
@@ -153,10 +152,10 @@ MeshCache::cache_cell_face_info_() const
   // Copy to the dirs
   Kokkos::resize(face_cell_ids_dirs_, face_cell_ids_.entries.extent(0));
   for (int i = 0; i < face_cell_ids_.entries.extent(0); ++i) {
-    if (face_cell_ids_.entries(i) < 0)
-      face_cell_ids_dirs_(i) = ~face_cell_ids_.entries(i);
+    if (face_cell_ids_.entries.view_host()(i) < 0)
+      face_cell_ids_dirs_.view_host()(i) = ~face_cell_ids_.entries.view_host()(i);
     else
-      face_cell_ids_dirs_(i) = face_cell_ids_.entries(i);
+      face_cell_ids_dirs_.view_host()(i) = face_cell_ids_.entries.view_host()(i);
   }
 
   cell2face_info_cached_ = true;
@@ -174,16 +173,16 @@ MeshCache::display_cache()
   // Display all cache
   std::cout << "face_centroid: " << std::endl;
   for (int i = 0; i < face_centroids_.extent(0); ++i)
-    std::cout << face_centroids_(i)[0] << " " << face_centroids_(i)[1] << " "
-              << face_centroids_(i)[2] << std::endl;
+    std::cout << face_centroids_.view_host()(i)[0] << " " << face_centroids_.view_host()(i)[1] << " "
+              << face_centroids_.view_host()(i)[2] << std::endl;
   std::cout << std::endl;
 
   std::cout << "face_normal: " << std::endl;
   for (int i = 0; i < face_normals_.row_map.extent(0) - 1; ++i) {
     std::cout << i << ": ";
-    for (int j = face_normals_.row_map(i); j < face_normals_.row_map(i + 1);
+    for (int j = face_normals_.row_map.view_host()(i); j < face_normals_.row_map.view_host()(i + 1);
          ++j) {
-      std::cout << face_normals_.entries(j) << " ";
+      std::cout << face_normals_.entries.view_host()(j) << " ";
     }
     std::cout << std::endl;
   }
@@ -192,10 +191,10 @@ MeshCache::display_cache()
   std::cout << "face_cell_ptype_: " << std::endl;
   for (int i = 0; i < face_cell_ptype_.row_map.extent(0) - 1; ++i) {
     std::cout << i << ": ";
-    for (int j = face_cell_ptype_.row_map(i);
-         j < face_cell_ptype_.row_map(i + 1);
+    for (int j = face_cell_ptype_.row_map.view_host()(i);
+         j < face_cell_ptype_.row_map.view_host()(i + 1);
          ++j) {
-      std::cout << static_cast<int>(face_cell_ptype_.entries(j)) << " ";
+      std::cout << static_cast<int>(face_cell_ptype_.entries.view_host()(j)) << " ";
     }
     std::cout << std::endl;
   }
@@ -205,9 +204,9 @@ MeshCache::display_cache()
   std::cout << "face_cell_ids_: " << std::endl;
   for (int i = 0; i < face_cell_ids_.row_map.extent(0) - 1; ++i) {
     std::cout << i << ": ";
-    for (int j = face_cell_ids_.row_map(i); j < face_cell_ids_.row_map(i + 1);
+    for (int j = face_cell_ids_.row_map.view_host()(i); j < face_cell_ids_.row_map.view_host()(i + 1);
          ++j) {
-      std::cout << face_cell_ids_.entries(j) << " ";
+      std::cout << face_cell_ids_.entries.view_host()(j) << " ";
     }
     std::cout << std::endl;
   }
@@ -216,9 +215,9 @@ MeshCache::display_cache()
   std::cout << "cell_face_ids_: " << std::endl;
   for (int i = 0; i < cell_face_ids_.row_map.extent(0) - 1; ++i) {
     std::cout << i << ": ";
-    for (int j = cell_face_ids_.row_map(i); j < cell_face_ids_.row_map(i + 1);
+    for (int j = cell_face_ids_.row_map.view_host()(i); j < cell_face_ids_.row_map.view_host()(i + 1);
          ++j) {
-      std::cout << cell_face_ids_.entries(j) << " ";
+      std::cout << cell_face_ids_.entries.view_host()(j) << " ";
     }
     std::cout << std::endl;
   }
@@ -227,9 +226,9 @@ MeshCache::display_cache()
   std::cout << "cell_face_dirs_: " << std::endl;
   for (int i = 0; i < cell_face_dirs_.row_map.extent(0) - 1; ++i) {
     std::cout << i << ": ";
-    for (int j = cell_face_dirs_.row_map(i); j < cell_face_dirs_.row_map(i + 1);
+    for (int j = cell_face_dirs_.row_map.view_host()(i); j < cell_face_dirs_.row_map.view_host()(i + 1);
          ++j) {
-      std::cout << cell_face_dirs_.entries(j) << " ";
+      std::cout << cell_face_dirs_.entries.view_host()(j) << " ";
     }
     std::cout << std::endl;
   }
@@ -241,37 +240,37 @@ void
 MeshCache::cache_face2edge_info_() const
 {
   int nfaces = mesh_->num_entities(FACE, Parallel_type::ALL);
-  Kokkos::resize(face_edge_ids_.row_map, nfaces + 1);
-  Kokkos::resize(face_edge_dirs_.row_map, nfaces + 1);
-  face_edge_ids_.row_map(0) = 0;
-  face_edge_dirs_.row_map(0) = 0;
+  face_edge_ids_.row_map.resize(nfaces + 1);
+  face_edge_dirs_.row_map.resize(nfaces + 1);
+  face_edge_ids_.row_map.view_host()(0) = 0;
+  face_edge_dirs_.row_map.view_host()(0) = 0;
 
   int face_edge_ids_size = 0; 
   for (int f = 0; f < nfaces; f++) {
     Entity_ID_List fedgeids;
     std::vector<int> fedgedirs;
     mesh_->face_get_edges_and_dirs_internal_(f, fedgeids, &fedgedirs, true);
-    face_edge_ids_.row_map(f + 1) =
-      face_edge_ids_.row_map(f) + fedgeids.size();
-    face_edge_dirs_.row_map(f + 1) =
-      face_edge_dirs_.row_map(f) + fedgedirs.size();
+    face_edge_ids_.row_map.view_host()(f + 1) =
+      face_edge_ids_.row_map.view_host()(f) + fedgeids.size();
+    face_edge_dirs_.row_map.view_host()(f + 1) =
+      face_edge_dirs_.row_map.view_host()(f) + fedgedirs.size();
     face_edge_ids_size += fedgeids.size();
   }
 
-  Kokkos::resize(face_edge_ids_.entries,face_edge_ids_size); 
-  Kokkos::resize(face_edge_dirs_.entries,face_edge_ids_size); 
+  face_edge_ids_.entries.resize(face_edge_ids_size); 
+  face_edge_dirs_.entries.resize(face_edge_ids_size); 
 
   for (int f = 0; f < nfaces; f++) {
     Entity_ID_List fedgeids;
     std::vector<int> fedgedirs;
     mesh_->face_get_edges_and_dirs_internal_(f, fedgeids, &fedgedirs, true);
-    face_edge_ids_.row_map(f + 1) =
-      face_edge_ids_.row_map(f) + fedgeids.size();
-    face_edge_dirs_.row_map(f + 1) =
-      face_edge_dirs_.row_map(f) + fedgedirs.size();
+    face_edge_ids_.row_map.view_host()(f + 1) =
+      face_edge_ids_.row_map.view_host()(f) + fedgeids.size();
+    face_edge_dirs_.row_map.view_host()(f + 1) =
+      face_edge_dirs_.row_map.view_host()(f) + fedgedirs.size();
     for (int i = 0; i < fedgeids.size(); ++i) {
-      face_edge_ids_.entries(face_edge_ids_.row_map(f) + i) = fedgeids[i];
-      face_edge_dirs_.entries(face_edge_dirs_.row_map(f) + i) = fedgedirs[i];
+      face_edge_ids_.entries.view_host()(face_edge_ids_.row_map.view_host()(f) + i) = fedgeids[i];
+      face_edge_dirs_.entries.view_host()(face_edge_dirs_.row_map.view_host()(f) + i) = fedgedirs[i];
     }
   }
 
@@ -297,10 +296,10 @@ MeshCache::cache_cell2edge_info_() const
       std::vector<int> cell_2D_edge_dirs_tmp;
       mesh_->cell_2D_get_edges_and_dirs_internal_(
         c, cell_edge_ids_tmp, &cell_2D_edge_dirs_tmp);
-      cell_edge_ids_.row_map(c + 1) =
-        cell_edge_ids_.row_map(c) + cell_edge_ids_tmp.size();
-      cell_2D_edge_dirs_.row_map(c + 1) =
-        cell_2D_edge_dirs_.row_map(c) + cell_2D_edge_dirs_tmp.size();
+      cell_edge_ids_.row_map.view_host()(c + 1) =
+        cell_edge_ids_.row_map.view_host()(c) + cell_edge_ids_tmp.size();
+      cell_2D_edge_dirs_.row_map.view_host()(c + 1) =
+        cell_2D_edge_dirs_.row_map.view_host()(c) + cell_2D_edge_dirs_tmp.size();
       cell_edge_ids_entries_size += cell_edge_ids_tmp.size(); 
       cell_2D_edge_dirs_entries_size += cell_2D_edge_dirs_tmp.size();
     }
@@ -311,14 +310,14 @@ MeshCache::cache_cell2edge_info_() const
       std::vector<int> cell_2D_edge_dirs_tmp;
       mesh_->cell_2D_get_edges_and_dirs_internal_(
         c, cell_edge_ids_tmp, &cell_2D_edge_dirs_tmp);
-      cell_edge_ids_.row_map(c + 1) =
-        cell_edge_ids_.row_map(c) + cell_edge_ids_tmp.size();
-      cell_2D_edge_dirs_.row_map(c + 1) =
-        cell_2D_edge_dirs_.row_map(c) + cell_2D_edge_dirs_tmp.size();
+      cell_edge_ids_.row_map.view_host()(c + 1) =
+        cell_edge_ids_.row_map.view_host()(c) + cell_edge_ids_tmp.size();
+      cell_2D_edge_dirs_.row_map.view_host()(c + 1) =
+        cell_2D_edge_dirs_.row_map.view_host()(c) + cell_2D_edge_dirs_tmp.size();
       for (int i = 0; i < cell_edge_ids_tmp.size(); ++i) {
-        cell_edge_ids_.entries(cell_edge_ids_.row_map(c) + i) =
+        cell_edge_ids_.entries.view_host()(cell_edge_ids_.row_map.view_host()(c) + i) =
           cell_edge_ids_tmp[i];
-        cell_2D_edge_dirs_.entries(cell_2D_edge_dirs_.row_map(c) + i) =
+        cell_2D_edge_dirs_.entries.view_host()(cell_2D_edge_dirs_.row_map.view_host()(c) + i) =
           cell_2D_edge_dirs_tmp[i];
       }
     }
@@ -327,18 +326,18 @@ MeshCache::cache_cell2edge_info_() const
     for (int c = 0; c < ncells; c++) {
       Entity_ID_List cell_edge_ids_tmp;
       mesh_->cell_get_edges_internal_(c, cell_edge_ids_tmp);
-      cell_edge_ids_.row_map(c + 1) =
-        cell_edge_ids_.row_map(c) + cell_edge_ids_tmp.size();
+      cell_edge_ids_.row_map.view_host()(c + 1) =
+        cell_edge_ids_.row_map.view_host()(c) + cell_edge_ids_tmp.size();
       cell_edge_ids_size += cell_edge_ids_tmp.size();
     }
     Kokkos::resize(cell_edge_ids_.entries,cell_edge_ids_size); 
     for (int c = 0; c < ncells; c++) {
       Entity_ID_List cell_edge_ids_tmp;
       mesh_->cell_get_edges_internal_(c, cell_edge_ids_tmp);
-      cell_edge_ids_.row_map(c + 1) =
-        cell_edge_ids_.row_map(c) + cell_edge_ids_tmp.size();
+      cell_edge_ids_.row_map.view_host()(c + 1) =
+        cell_edge_ids_.row_map.view_host()(c) + cell_edge_ids_tmp.size();
       for (int i = 0; i < cell_edge_ids_tmp.size(); ++i) {
-        cell_edge_ids_.entries(cell_edge_ids_.row_map(c) + i) =
+        cell_edge_ids_.entries.view_host()(cell_edge_ids_.row_map.view_host()(c) + i) =
           cell_edge_ids_tmp[i];
       }
     }
@@ -353,26 +352,26 @@ MeshCache::cache_parents_info_() const
   int ncells = mesh_->num_entities(CELL, Parallel_type::ALL);
   Kokkos::resize(cells_parent_,ncells); 
   for(int i = 0 ; i < ncells; ++i){
-    cells_parent_[i] = mesh_->entity_get_parent_type(CELL,i); 
+    cells_parent_.view_host()[i] = mesh_->entity_get_parent_type(CELL,i); 
   }
   // FACES 
   int nfaces = mesh_->num_entities(FACE, Parallel_type::ALL);
   Kokkos::resize(faces_parent_,nfaces);
   for(int i = 0 ; i < nfaces; ++i){
-    faces_parent_[i] = mesh_->entity_get_parent_type(FACE,i); 
+    faces_parent_.view_host()[i] = mesh_->entity_get_parent_type(FACE,i); 
   }
   // NODES 
   int nnodes = mesh_->num_entities(NODE, Parallel_type::ALL);
   Kokkos::resize(nodes_parent_,nnodes);
   for(int i = 0 ; i < nnodes; ++i){
-    nodes_parent_[i] = mesh_->entity_get_parent_type(NODE,i); 
+    nodes_parent_.view_host()[i] = mesh_->entity_get_parent_type(NODE,i); 
   }
   // EDGES
   if(edges_requested_){
     int nedges = mesh_->num_entities(EDGE, Parallel_type::ALL);
     Kokkos::resize(edges_parent_,nedges);
     for(int i = 0 ; i < nedges; ++i){
-      edges_parent_[i] = mesh_->entity_get_parent_type(EDGE,i); 
+      edges_parent_.view_host()[i] = mesh_->entity_get_parent_type(EDGE,i); 
     }
   }
   parents_precomputed_ = true; 
@@ -398,32 +397,80 @@ MeshCache::init()
   assert(!cell_get_faces_and_bisectors_precomputed_); 
   cache_cell_get_faces_and_bisectors_(); 
   cell_get_faces_and_bisectors_precomputed_ = true;
+
+  // Sync GPU 
+  // Dual views 
+  cell_volumes_.sync<Kokkos::DefaultExecutionSpace>();
+  face_areas_.sync<Kokkos::DefaultExecutionSpace>();
+  edge_lengths_.sync<Kokkos::DefaultExecutionSpace>();
+  cell_centroids_.sync<Kokkos::DefaultExecutionSpace>();
+  face_centroids_.sync<Kokkos::DefaultExecutionSpace>();
+  edge_vectors_.sync<Kokkos::DefaultExecutionSpace>();
+  cells_parent_.sync<Kokkos::DefaultExecutionSpace>();
+  faces_parent_.sync<Kokkos::DefaultExecutionSpace>();
+  edges_parent_.sync<Kokkos::DefaultExecutionSpace>();
+  nodes_parent_.sync<Kokkos::DefaultExecutionSpace>();
+  cell_cellabove_.sync<Kokkos::DefaultExecutionSpace>();
+  cell_cellbelow_.sync<Kokkos::DefaultExecutionSpace>();
+  node_nodeabove_.sync<Kokkos::DefaultExecutionSpace>();
+  columnID_.sync<Kokkos::DefaultExecutionSpace>();
+  face_cell_ids_dirs_.sync<Kokkos::DefaultExecutionSpace>();
+
+  
+  // Dual CRS 
+  face_normals_.row_map.sync<Kokkos::DefaultExecutionSpace>();
+  face_normals_.entries.sync<Kokkos::DefaultExecutionSpace>();
+  cell_faces_bisectors_.row_map.sync<Kokkos::DefaultExecutionSpace>();
+  cell_faces_bisectors_.entries.sync<Kokkos::DefaultExecutionSpace>();
+  cell_face_ids_.row_map.sync<Kokkos::DefaultExecutionSpace>();
+  cell_face_ids_.entries.sync<Kokkos::DefaultExecutionSpace>();
+  cell_face_dirs_.row_map.sync<Kokkos::DefaultExecutionSpace>();
+  cell_face_dirs_.entries.sync<Kokkos::DefaultExecutionSpace>();
+  face_cell_ids_.row_map.sync<Kokkos::DefaultExecutionSpace>();
+  face_cell_ids_.entries.sync<Kokkos::DefaultExecutionSpace>();
+  face_cell_ids_.row_map.sync<Kokkos::DefaultExecutionSpace>();
+  face_cell_ids_.entries.sync<Kokkos::DefaultExecutionSpace>();
+  face_cell_ptype_.row_map.sync<Kokkos::DefaultExecutionSpace>();
+  face_cell_ptype_.entries.sync<Kokkos::DefaultExecutionSpace>();
+  cell_edge_ids_.row_map.sync<Kokkos::DefaultExecutionSpace>();
+  cell_edge_ids_.entries.sync<Kokkos::DefaultExecutionSpace>();
+  cell_2D_edge_dirs_.row_map.sync<Kokkos::DefaultExecutionSpace>();
+  cell_2D_edge_dirs_.entries.sync<Kokkos::DefaultExecutionSpace>();
+  face_edge_ids_.row_map.sync<Kokkos::DefaultExecutionSpace>();
+  face_edge_ids_.entries.sync<Kokkos::DefaultExecutionSpace>();
+  face_edge_dirs_.row_map.sync<Kokkos::DefaultExecutionSpace>();
+  face_edge_dirs_.entries.sync<Kokkos::DefaultExecutionSpace>();
 }
 
 void 
 MeshCache::cache_cell_get_faces_and_bisectors_() const {
+
   int ncells = mesh_->num_entities(CELL, Parallel_type::ALL);
   Kokkos::resize(cell_faces_bisectors_.row_map,ncells+1); 
-  cell_faces_bisectors_.row_map(0) = 0; 
-  
+  cell_faces_bisectors_.row_map.view_host()(0) = 0; 
+
   int entries_size = 0; 
   for(int i = 0 ; i < ncells; ++i){
-    Kokkos::View<Entity_ID*> faceids;
-    cell_get_faces(i, faceids);
+    Kokkos::View<Entity_ID*,Kokkos::HostSpace> faceids;
+    cell_get_faces_host(i, faceids);
     entries_size += faceids.size(); 
   }
-  Kokkos::resize(cell_faces_bisectors_.entries,entries_size); 
+
+  cell_faces_bisectors_.entries.resize(entries_size); 
   for(int i = 0 ; i < ncells; ++i){
-    Kokkos::View<Entity_ID*> faceids;
-    cell_get_faces(i, faceids);
-    AmanziGeometry::Point cc = cell_centroid(i);
-    cell_faces_bisectors_.row_map(i + 1) = faceids.extent(0) +
-       cell_faces_bisectors_.row_map(i);
+    Kokkos::View<Entity_ID*,Kokkos::HostSpace> faceids;
+    cell_get_faces_host(i, faceids);
+    AmanziGeometry::Point cc = cell_centroid_host(i);
+    cell_faces_bisectors_.row_map.view_host()(i + 1) = faceids.extent(0) +
+       cell_faces_bisectors_.row_map.view_host()(i);
     for (int j = 0; j < faceids.extent(0); ++j) {
-      cell_faces_bisectors_.entries(cell_faces_bisectors_.row_map(i)+j) = 
-        face_centroid(faceids(j)) - cc;
+      cell_faces_bisectors_.entries.view_host()(cell_faces_bisectors_.row_map.view_host()(i)+j) = 
+        face_centroid_host(faceids(j)) - cc;
     }
   }
+  cell_faces_bisectors_.entries.sync_device();
+  cell_faces_bisectors_.row_map.sync_device();
+
 }
 
 int
@@ -431,22 +478,26 @@ MeshCache::compute_cell_geometric_quantities_() const
 {
   int ncells = mesh_->num_entities(CELL, Parallel_type::ALL);
 
-  Kokkos::resize(cell_volumes_, ncells);
-  Kokkos::resize(cell_centroids_, ncells);
+  cell_volumes_.resize(ncells);
+  cell_centroids_.resize(ncells);
   for (int i = 0; i < ncells; i++) {
     double volume;
     AmanziGeometry::Point centroid(mesh_->space_dimension());
 
     compute_cell_geometry_(i, &volume, &centroid);
 
-    cell_volumes_(i) = volume;
-    cell_centroids_(i) = centroid;
+    cell_volumes_.view_host()(i) = volume;
+    cell_centroids_.view_host()(i) = centroid;
   }
 
   cell_geometry_precomputed_ = true;
 
+  cell_volumes_.sync_device(); 
+  cell_centroids_.sync_device(); 
+
   return 1;
 }
+
 
 
 int
@@ -459,12 +510,12 @@ MeshCache::compute_face_geometric_quantities_() const
 
   int nfaces = mesh_->num_entities(FACE, Parallel_type::ALL);
 
-  Kokkos::resize(face_areas_, nfaces);
-  Kokkos::resize(face_centroids_, nfaces);
+  face_areas_.resize(nfaces);
+  face_centroids_.resize(nfaces);
 
   // Temporary views
-  Kokkos::resize(face_normals_.row_map, nfaces + 1);
-  face_normals_.row_map(0) = 0;
+  face_normals_.row_map.resize(nfaces + 1);
+  face_normals_.row_map.view_host()(0) = 0;
 
   // Find size 
   int entries_size = 0; 
@@ -477,12 +528,12 @@ MeshCache::compute_face_geometric_quantities_() const
     // of the face points out of cell0 and into cell1. If one of these
     // cells do not exist, then the normal is the null vector.
     compute_face_geometry_(i, &area, &centroid, normals);
-    face_areas_(i) = area;
-    face_centroids_(i) = centroid;
+    face_areas_.view_host()(i) = area;
+    face_centroids_.view_host()(i) = centroid;
     entries_size += normals.size(); 
   }
 
-  Kokkos::resize(face_normals_.entries,entries_size); 
+  face_normals_.entries.resize(entries_size); 
 
   for (int i = 0; i < nfaces; i++) {
     double area;
@@ -490,12 +541,17 @@ MeshCache::compute_face_geometric_quantities_() const
     std::vector<AmanziGeometry::Point> normals;
     compute_face_geometry_(i, &area, &centroid, normals);
     for (int j = 0; j < normals.size(); ++j) {
-      face_normals_.entries(face_normals_.row_map(i) + j) = normals[j];
+      face_normals_.entries.view_host()(face_normals_.row_map.view_host()(i) + j) = normals[j];
     }
-    face_normals_.row_map(i + 1) = normals.size() + face_normals_.row_map(i);
+    face_normals_.row_map.view_host()(i + 1) = normals.size() + face_normals_.row_map.view_host()(i);
   }
 
   face_geometry_precomputed_ = true;
+
+  face_normals_.row_map.sync_device(); 
+  face_areas_.sync_device(); 
+  face_centroids_.sync_device(); 
+  face_normals_.entries.sync_device(); 
 
   return 1;
 }
@@ -506,8 +562,8 @@ MeshCache::compute_edge_geometric_quantities_() const
 {
   int nedges = mesh_->num_entities(EDGE, Parallel_type::ALL);
 
-  Kokkos::resize(edge_vectors_, nedges);
-  Kokkos::resize(edge_lengths_, nedges);
+  edge_vectors_.resize(nedges);
+  edge_lengths_.resize(nedges);
 
   for (int i = 0; i < nedges; i++) {
     double length;
@@ -515,12 +571,15 @@ MeshCache::compute_edge_geometric_quantities_() const
 
     compute_edge_geometry_(i, &length, &evector);
 
-    edge_lengths_(i) = length;
-    edge_vectors_(i) = evector;
+    edge_lengths_.view_host()(i) = length;
+    edge_vectors_.view_host()(i) = evector;
   }
 
   edge_geometry_precomputed_ = true;
-
+  
+  edge_lengths_.sync_device(); 
+  edge_vectors_.sync_device(); 
+  
   return 1;
 }
 
@@ -539,12 +598,12 @@ MeshCache::compute_cell_geometry_(const Entity_ID cellid, double* volume,
     // representation - special elements like hexes can get away
     // without (but we have yet to put in the code for the standard
     // node ordering and computation for these special elements)
-    Kokkos::View<Entity_ID*> faces;
+    Kokkos::View<Entity_ID*,Kokkos::HostSpace> faces;
     std::vector<unsigned int> nfnodes;
-    Kokkos::View<int*> fdirs;
+    Kokkos::View<int*,Kokkos::HostSpace> fdirs;
     std::vector<AmanziGeometry::Point> fcoords, ccoords, cfcoords; 
 
-    cell_get_faces_and_dirs(cellid, faces, fdirs);
+    cell_get_faces_and_dirs_host(cellid, faces, fdirs);
 
     int nf = faces.extent(0);
     nfnodes.resize(nf);
@@ -627,17 +686,17 @@ MeshCache::compute_face_geometry_(
     AmanziGeometry::polygon_get_area_centroid_normal(
       fcoords, area, centroid, &normal);
 
-    Kokkos::View<Entity_ID*> cellids;
-    face_get_cells(faceid, Parallel_type::ALL, cellids);
+    Kokkos::View<Entity_ID*,Kokkos::HostSpace> cellids;
+    face_get_cells_host(faceid, Parallel_type::ALL, cellids);
     AMANZI_ASSERT(cellids.extent(0) <= 2);
 
     normals.resize(cellids.size()); 
     for (int i = 0; i < cellids.extent(0); i++) {
-      Kokkos::View<Entity_ID*> cellfaceids;
-      Kokkos::View<int*> cellfacedirs;
+      Kokkos::View<Entity_ID*,Kokkos::HostSpace> cellfaceids;
+      Kokkos::View<int*,Kokkos::HostSpace> cellfacedirs;
       int dir = 1;
 
-      cell_get_faces_and_dirs(cellids(i), cellfaceids, cellfacedirs);
+      cell_get_faces_and_dirs_host(cellids(i), cellfaceids, cellfacedirs);
 
       bool found = false;
       for (int j = 0; j < cellfaceids.extent(0); j++) {
@@ -730,7 +789,7 @@ MeshCache::compute_face_geometry_(
 
         AMANZI_ASSERT(found);
 
-        AmanziGeometry::Point cvec = fcoords[0] - cell_centroids_(cellids(i));
+        AmanziGeometry::Point cvec = fcoords[0] - cell_centroids_.view_host()(cellids(i));
         AmanziGeometry::Point trinormal = cvec ^ evec;
 
         AmanziGeometry::Point normal = evec ^ trinormal;
@@ -776,7 +835,7 @@ MeshCache::cell_volume(const Entity_ID cellid, const bool recompute) const
 {
   if (!cell_geometry_precomputed_) {
     compute_cell_geometric_quantities_();
-    return cell_volumes_(cellid);
+    return cell_volumes_.view_host()(cellid);
   } else {
     if (recompute) {
       double volume;
@@ -784,7 +843,7 @@ MeshCache::cell_volume(const Entity_ID cellid, const bool recompute) const
       compute_cell_geometry_(cellid, &volume, &centroid);
       return volume;
     } else
-      return cell_volumes_(cellid);
+      return cell_volumes_.view_host()(cellid);
   }
 }
 
@@ -796,7 +855,7 @@ MeshCache::edge_length(const Entity_ID edgeid, const bool recompute) const
 
   if (!edge_geometry_precomputed_) {
     compute_edge_geometric_quantities_();
-    return edge_lengths_(edgeid);
+    return edge_lengths_.view_host()(edgeid);
   } else {
     if (recompute) {
       double length;
@@ -804,7 +863,7 @@ MeshCache::edge_length(const Entity_ID edgeid, const bool recompute) const
       compute_edge_geometry_(edgeid, &length, &vector);
       return length;
     } else
-      return edge_lengths_(edgeid);
+      return edge_lengths_.view_host()(edgeid);
   }
 }
 
@@ -839,7 +898,7 @@ MeshCache::edge_vector(const Entity_ID edgeid, const bool recompute,
     compute_edge_geometry_(edgeid, &length, &evector);
     // evector_ref already points to evector
   } else
-    evector_ref = edge_vectors_(edgeid);
+    evector_ref = edge_vectors_.view_host()(edgeid);
 
   if (orientation) *orientation = 1;
 
@@ -940,12 +999,12 @@ MeshCache::build_columns(const std::string& setname) const
   Kokkos::parallel_for(
     "Mesh::build_columns loop 1",
     nc, KOKKOS_LAMBDA(const int& i) {
-    cell_cellbelow_(i) = -1;
-    cell_cellabove_(i) = -1;
+    cell_cellbelow_.view_host()(i) = -1;
+    cell_cellabove_.view_host()(i) = -1;
   });
   Kokkos::parallel_for(
     "Mesh::build_columns loop 2",
-    nn, KOKKOS_LAMBDA(const int& i) { node_nodeabove_(i) = -1; });
+    nn, KOKKOS_LAMBDA(const int& i) { node_nodeabove_.view_host()(i) = -1; });
 
   Entity_ID_List top_faces;
   mesh_->get_set_entities(setname, FACE, Parallel_type::ALL, top_faces);
@@ -1020,12 +1079,12 @@ MeshCache::build_columns() const
   Kokkos::parallel_for(
     "Mesh::build_columns loop 1",
     nc, KOKKOS_LAMBDA(const int& i) {
-    cell_cellbelow_(i) = -1;
-    cell_cellabove_(i) = -1;
+    cell_cellbelow_.view_host()(i) = -1;
+    cell_cellabove_.view_host()(i) = -1;
   });
   Kokkos::parallel_for(
     "Mesh::build_columns loop 2",
-    nn, KOKKOS_LAMBDA(const int& i) { node_nodeabove_(i) = -1; });
+    nn, KOKKOS_LAMBDA(const int& i) { node_nodeabove_.view_host()(i) = -1; });
 
   // Find the faces at the top of the domain. We assume that these are all
   // the boundary faces whose normal points in the positive z-direction
@@ -1104,7 +1163,7 @@ MeshCache::build_single_column_(int colnum, Entity_ID top_face) const
       success = 0;
       break;
     }
-    columnID_(cur_cell) = colnum;
+    columnID_.view_host()(cur_cell) = colnum;
     colcells.push_back(cur_cell);
     colfaces.push_back(top_face);
 
@@ -1144,19 +1203,19 @@ MeshCache::build_single_column_(int colnum, Entity_ID top_face) const
     // record the cell above and cell below
     face_get_cells(bot_face, Parallel_type::ALL, fcells2);
     if (fcells2.extent(0) == 2) {
-      if (cell_cellbelow_(cur_cell) != -1) { // intersecting column of cells
+      if (cell_cellbelow_.view_host()(cur_cell) != -1) { // intersecting column of cells
         std::cerr << "Intersecting column of cells\n";
         success = 0;
         break;
       }
 
       if (fcells2(0) == cur_cell) {
-        cell_cellbelow_(cur_cell) = fcells2(1);
-        cell_cellabove_(fcells2(1)) = cur_cell;
+        cell_cellbelow_.view_host()(cur_cell) = fcells2(1);
+        cell_cellabove_.view_host()(fcells2(1)) = cur_cell;
         cur_cell = fcells2(1);
       } else if (fcells2(1) == cur_cell) {
-        cell_cellbelow_(cur_cell) = fcells2(0);
-        cell_cellabove_(fcells2(0)) = cur_cell;
+        cell_cellbelow_.view_host()(cur_cell) = fcells2(0);
+        cell_cellabove_.view_host()(fcells2(0)) = cur_cell;
         cur_cell = fcells2(0);
       } else {
         std::cerr << "Unlikely problem in face to cell connectivity\n";
@@ -1227,7 +1286,7 @@ MeshCache::build_single_column_(int colnum, Entity_ID top_face) const
       int bot_i = (ind + even_odd * k) % nfvtop;
       if (bot_i < 0) bot_i += nfvtop;
       Entity_ID botnode = botnodes[bot_i];
-      node_nodeabove_(botnode) = topnode;
+      node_nodeabove_.view_host()(botnode) = topnode;
     }
 
     top_face = bot_face;

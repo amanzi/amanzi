@@ -128,10 +128,10 @@ void DiffusionFixture::Discretize(const std::string& name,
       K->size(), 
       //size function: size of element c 
       [&](int c) -> const Amanzi::WhetStone::Tensor<Kokkos::HostSpace>& {
-       const AmanziGeometry::Point& xc = mesh->cell_centroid(c); 
+       const AmanziGeometry::Point& xc = mesh->cell_centroid_host(c); 
        return ana->TensorDiffusivity(xc,0.0); 
       }
-  );    
+  );
   op->SetTensorCoefficient(K);
 
   if (scalar_coef == AmanziMesh::Entity_kind::FACE) {
@@ -142,7 +142,7 @@ void DiffusionFixture::Discretize(const std::string& name,
     Teuchos::RCP<CompositeVector> kr = cvs.Create();
     auto vec = kr->ViewComponent<MirrorHost>("face", true);
     for (int f = 0; f != nents; ++f) {
-      vec(f, 0) = ana->ScalarDiffusivity(mesh->face_centroid(f), 0.0);
+      vec(f, 0) = ana->ScalarDiffusivity(mesh->face_centroid_host(f), 0.0);
     }
     op->SetScalarCoefficient(kr, Teuchos::null);
   }
@@ -203,7 +203,7 @@ void DiffusionFixture::SetScalarCoefficient(
     kr = cvs.Create();
     auto vec = kr->ViewComponent<MirrorHost>("cell", true);
     for (int c = 0; c != nents; ++c) {
-      vec(c, 0) = ana->ScalarDiffusivity(mesh->cell_centroid(c), 0.0);
+      vec(c, 0) = ana->ScalarDiffusivity(mesh->cell_centroid_host(c), 0.0);
     }
 
   } else if (kind == AmanziMesh::FACE) {
@@ -211,7 +211,7 @@ void DiffusionFixture::SetScalarCoefficient(
     kr = cvs.Create();
     auto vec = kr->ViewComponent<MirrorHost>("face", true);
     for (int f = 0; f != nents; ++f) {
-      vec(f, 0) = ana->ScalarDiffusivity(mesh->face_centroid(f), 0.0);
+      vec(f, 0) = ana->ScalarDiffusivity(mesh->face_centroid_host(f), 0.0);
     }
   }
   op->SetScalarCoefficient(kr, Teuchos::null);
@@ -233,7 +233,7 @@ void DiffusionFixture::SetBCsDirichlet()
     for (int bf = 0; bf != bf_map.getNodeNumElements(); ++bf) {
       auto f = f_map.getLocalElement(bf_map.getGlobalElement(bf));
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value[f] = ana->pressure_exact(mesh->face_centroid(f), 0.0);
+      bc_value[f] = ana->pressure_exact(mesh->face_centroid_host(f), 0.0);
     }
   } else {
     Exceptions::amanzi_throw("OperatorDiffusion test harness not implemented for this kind.");
@@ -251,20 +251,26 @@ void DiffusionFixture::Go(double tol, bool initial_guess)
   int ncells = mesh->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
   CompositeVector& rhs = *global_op->rhs();
 
-  auto rhs_c = rhs.ViewComponent<MirrorHost>("cell", false);
-  for (int c = 0; c != ncells; ++c) {
-    const auto& xc = mesh->cell_centroid(c);
-    rhs_c(c, 0) += ana->source_exact(xc, 0.0) * mesh->cell_volume(c);
+  // The view on host needs to be scoped to be released 
+  // This would prevent the vector to be copied later (in apply inverse)
+  {
+    auto rhs_c = rhs.ViewComponent<MirrorHost>("cell", false);
+    for (int c = 0; c != ncells; ++c) {
+      const auto& xc = mesh->cell_centroid_host(c);
+      rhs_c(c, 0) += ana->source_exact(xc, 0.0) * mesh->cell_volume_host(c);
+      std::cout<<rhs_c(c,0)<<"("<<ana->source_exact(xc, 0.0)<<"*"<<mesh->cell_volume_host(c)<<") - ";
+    }
+    std::cout<<std::endl;
   }
+
+  
 
   op->ApplyBCs(true, true, true);
   global_op->computeInverse();
   if (!initial_guess) solution->putScalar(0.0);
-
   auto start = std::chrono::high_resolution_clock::now();
-  global_op->applyInverse(*global_op->rhs(), *solution);
+  global_op->applyInverse(rhs, *solution);
   auto stop = std::chrono::high_resolution_clock::now();
-
   if (tol > 0.0) {
     // compute pressure error
     double pnorm(0.0), pl2_err(0.0), pinf_err(0.0);
