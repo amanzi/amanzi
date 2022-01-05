@@ -66,6 +66,7 @@ void MeshCache::setMeshFramework(const Teuchos::RCP<MeshFramework>& framework_me
   gm_ = framework_mesh_->getGeometricModel();
   space_dim_ = framework_mesh_->getSpaceDimension();
   manifold_dim_ = framework_mesh_->getManifoldDimension();
+  is_logical_ = framework_mesh_->isLogical();
 
   is_ordered_ = framework_mesh_->isOrdered();
   has_edges_ = framework_mesh_->hasEdges();

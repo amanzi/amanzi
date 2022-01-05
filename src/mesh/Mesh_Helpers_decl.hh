@@ -92,6 +92,12 @@ Point_List getFaceCoordinates(const Mesh_type& mesh, const Entity_ID f);
 template<class Mesh_type>
 Point_List getCellCoordinates(const Mesh_type& mesh, const Entity_ID c);
 
+template<class Mesh_type>
+std::size_t getMaxCellNumNodes(const Mesh_type& mesh);
+
+template<class Mesh_type>
+std::size_t getMaxCellNumFaces(const Mesh_type& mesh);
+
 //
 // Deformation algorithms
 //

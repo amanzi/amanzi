@@ -333,6 +333,7 @@ struct MeshCache {
 
   // mesh properties
   bool isOrdered() const { return is_ordered_; }
+  bool isLogical() const { return is_logical_; }
   bool hasNodes() const { return has_nodes_; }
   bool hasEdges() const { return has_edges_; }
 
@@ -797,6 +798,7 @@ private:
   int space_dim_;
   int manifold_dim_;
   bool is_ordered_;
+  bool is_logical_;
   bool has_edges_, has_nodes_;
 
   // related meshes

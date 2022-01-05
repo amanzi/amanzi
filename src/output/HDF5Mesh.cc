@@ -22,15 +22,15 @@ void HDF5::createMeshFile(AmanziMesh::Mesh &mesh_maps, std::string filename) {
   group = H5Gcreate(file, "/Mesh", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   // get num_nodes, num_cells
-  int num_nodes = mesh_maps.num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
-  int num_elems = mesh_maps.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int num_nodes = mesh_maps.getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
+  int num_elems = mesh_maps.getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
   // get coords
   double *nodes = new double[num_nodes*3];
 
   AmanziGeometry::Point xc;
   for (int i = 0; i < num_nodes; i++) {
-    mesh_maps.node_get_coordinates(i, &xc);
+    xc = mesh_maps.getNodeCoordinate(i);
     nodes[i*3] = xc[0];
     nodes[i*3+1] = xc[1];
     nodes[i*3+2] = xc[2];
@@ -49,11 +49,11 @@ void HDF5::createMeshFile(AmanziMesh::Mesh &mesh_maps, std::string filename) {
   H5Sclose(dataspace);
 
   // get number of nodes per element and element type
-  ctype_ = mesh_maps.cell_get_type(0); 
-  cname_ = mesh_maps.cell_type_to_name(ctype_);
+  ctype_ = mesh_maps.getCellType(0); 
+  cname_ = AmanziMesh::to_string(ctype_);
   AmanziMesh::Entity_ID_List nodeids;
   unsigned int cellid = 0;
-  mesh_maps.cell_get_nodes(cellid,&nodeids);
+  mesh_maps.getCellNodes(cellid,nodeids);
   conn_ = nodeids.size();
     
   // get connectivity
@@ -62,7 +62,7 @@ void HDF5::createMeshFile(AmanziMesh::Mesh &mesh_maps, std::string filename) {
 
   for (unsigned int i = 0; i < num_elems; i++) {
     //mesh_maps.cell_to_nodes(i, xh.begin(), xh.end());
-    mesh_maps.cell_get_nodes(i,&nodeids);
+    mesh_maps.getCellNodes(i,nodeids);
     for (int j = 0; j < conn_; j++) {
       ielem[i*conn_+j] = nodeids[j];
     }

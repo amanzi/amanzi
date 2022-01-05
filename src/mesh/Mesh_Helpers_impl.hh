@@ -355,6 +355,34 @@ Point_List getCellCoordinates(const Mesh_type& mesh, const Entity_ID c)
   return coords;
 }
 
+template<class Mesh_type>
+std::size_t getMaxCellNumNodes(const Mesh_type& mesh)
+{
+  auto ncells = mesh.getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
+  int max_nnodes(0);
+  for (int c=0; c!=ncells; ++c) {
+    max_nnodes = std::max(max_nnodes, (int) mesh.getCellNumNodes(c));
+  }
+  int max_nnodes_g(0);
+  mesh.getComm()->MaxAll(&max_nnodes, &max_nnodes_g, 1);
+  return max_nnodes_g;
+}
+
+
+template<class Mesh_type>
+std::size_t getMaxCellNumFaces(const Mesh_type& mesh)
+{
+  auto ncells = mesh.getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
+  int max_nfaces(0);
+  for (int c=0; c!=ncells; ++c) {
+    max_nfaces = std::max(max_nfaces, (int) mesh.getCellNumFaces(c));
+  }
+  int max_nfaces_g(0);
+  mesh.getComm()->MaxAll(&max_nfaces, &max_nfaces_g, 1);
+  return max_nfaces_g;
+}
+
+
 namespace Impl {
 
 template<class Mesh_type>

@@ -159,6 +159,9 @@ class MeshFramework  {
   // Some meshes can be deformed.
   virtual bool isDeformable() const { return false; }
 
+  // Some meshes are logical meshes and do not have coordinate info.
+  virtual bool isLogical() const { return false; }
+
   // ----------------
   // Entity meta-data
   // ----------------

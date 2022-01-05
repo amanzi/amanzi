@@ -55,11 +55,11 @@ OutputXDMF::FinalizeCycle() {
 void
 OutputXDMF::WriteVector(const Epetra_Vector& vec, const std::string& name,
                         const AmanziMesh::Entity_kind& kind) const {
-  if (mesh_->is_logical()) {
+  if (mesh_->isLogical()) {
     io_->writeNodeDataReal(vec, name);
-  } else if (kind == AmanziMesh::CELL) {
+  } else if (kind == AmanziMesh::Entity_kind::CELL) {
     io_->writeCellDataReal(vec, name);
-  } else if (kind == AmanziMesh::NODE) {
+  } else if (kind == AmanziMesh::Entity_kind::NODE) {
     io_->writeNodeDataReal(vec, name);
   }
 }
@@ -71,11 +71,11 @@ OutputXDMF::WriteMultiVector(const Epetra_MultiVector& vec,
                              const AmanziMesh::Entity_kind& kind) const {
   AMANZI_ASSERT(names.size() == vec.NumVectors());
   for (int i=0; i!=vec.NumVectors(); ++i) {
-    if (mesh_->is_logical()) {
+    if (mesh_->isLogical()) {
       io_->writeNodeDataReal(*vec(i), names[i]);
-    } else if (kind == AmanziMesh::CELL) {
+    } else if (kind == AmanziMesh::Entity_kind::CELL) {
       io_->writeCellDataReal(*vec(i), names[i]);
-    } else if (kind == AmanziMesh::NODE) {
+    } else if (kind == AmanziMesh::Entity_kind::NODE) {
       io_->writeNodeDataReal(*vec(i), names[i]);
     }
   }
@@ -138,7 +138,7 @@ OutputXDMF::ReadAttribute(std::string& val, const std::string& name) const {
 void
 OutputXDMF::Init_(Teuchos::ParameterList& plist) {
   // create and set up the HDF5_MPI object
-  io_ = Teuchos::rcp(new HDF5_MPI(mesh_->get_comm(), include_io_set_));
+  io_ = Teuchos::rcp(new HDF5_MPI(mesh_->getComm(), include_io_set_));
   io_->setTrackXdmf(is_vis_);
   io_->setDynMesh(is_dynamic_);
 

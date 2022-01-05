@@ -120,7 +120,8 @@ function go () {
     ${SED} ${SED_ARGS} "s/Mesh::PYRAMID/Mesh::Cell_type::PYRAMID/g" "$1"
     ${SED} ${SED_ARGS} "s/Mesh::HEX/Mesh::Cell_type::HEX/g" "$1"
     ${SED} ${SED_ARGS} "s/Mesh::POLYHED/Mesh::Cell_type::POLYHED/g" "$1"
-
+    ${SED} ${SED_ARGS} 's|cell_get_type(|getCellType(|g' "$1"
+    
     ${SED} ${SED_ARGS} "s^set_manifold_dimension(^setManifoldDimension(^g" "$1"
     ${SED} ${SED_ARGS} "s^manifold_dimension(^getManifoldDimension(^g" "$1"
     ${SED} ${SED_ARGS} "s^set_space_dimension(^setSpaceDimension(^g" "$1"

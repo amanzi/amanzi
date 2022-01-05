@@ -127,6 +127,9 @@ class MeshLogical : public MeshFramework {
   // disallow nodes
   virtual bool hasNodes() const override { return false; }
 
+  // Some meshes are logical meshes and do not have coordinate info.
+  virtual bool isLogical() const { return true; }
+
   // Get cell type - UNKNOWN, TRI, QUAD, ... See MeshDefs.hh
   virtual
   Cell_type getCellType(const Entity_ID cellid) const override {
