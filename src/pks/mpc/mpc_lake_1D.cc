@@ -494,7 +494,7 @@ MPCLake1D::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVecto
 
 //  ApplyFlattened(*op_tree_coupling_, *u_new, *g);
 
-//  f->Update(1.0, g, 1.0);
+  f->Update(1.0, g, 1.0);
 
   std::cout << "MPCLake1D::FunctionalResidual second" << std::endl;
   f->Print(std::cout);
@@ -616,8 +616,8 @@ MPCLake1D::UpdatePreconditioner(double t,
   // order important -- subsurface's pk includes the surface's local ops, so
   // doing the subsurface 2nd re-inits the surface matrices (and doesn't
   // refill them).  This is why subsurface is first
-//  StrongMPC<>::UpdatePreconditioner(t, up, h);
-  op_tree_lake_->ComputeInverse();
+  StrongMPC::UpdatePreconditioner(t, up, h);
+//  op_tree_lake_->ComputeInverse();
 
   std::cout << "UpdatePreconditioner DONE" << std::endl;
 
