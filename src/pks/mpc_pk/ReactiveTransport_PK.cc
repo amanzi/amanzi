@@ -106,7 +106,7 @@ bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) 
     Exceptions::amanzi_throw(message);
   }
 
-  // Second, we do a chemistry step.
+  // Second, we do a chemistry step using a copy of the tcc vector
   try {
     chemistry_pk_->set_aqueous_components(total_component_concentration_stor);
 

@@ -45,7 +45,6 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
                          const Teuchos::RCP<TreeVector>& soln) :
   Chemistry_PK(),
   soln_(soln),
-  max_time_step_(9.9e9),
   chem_initialized_(false),
   current_time_(0.0),
   saved_time_(0.0)
@@ -446,40 +445,40 @@ void Alquimia_PK::XMLParameters()
   }
 
   // Other settings.
-  max_time_step_ = cp_list_->get<double>("max time step (s)", 9.9e9);
-  min_time_step_ = cp_list_->get<double>("min time step (s)", 9.9e9);
-  prev_time_step_ = cp_list_->get<double>("initial time step (s)", std::min(min_time_step_, max_time_step_));
+  dt_max_ = cp_list_->get<double>("max time step (s)", 9.9e9);
+  dt_min_ = cp_list_->get<double>("min time step (s)", 9.9e9);
+  dt_prev_ = cp_list_->get<double>("initial time step (s)", std::min(dt_min_, dt_max_));
 
-  if (prev_time_step_ > max_time_step_) {
+  if (dt_prev_ > dt_max_) {
     msg << "Alquimia_PK::XMLParameters(): \n";
     msg << "  Initial Time Step exceeds Max Time Step!\n";
     Exceptions::amanzi_throw(msg);
   }
 
-  time_step_ = prev_time_step_;
-  time_step_control_method_ = cp_list_->get<std::string>("time step control method", "fixed");
-  num_iterations_for_time_step_cut_ = cp_list_->get<int>("time step cut threshold", 8);
-  if (num_iterations_for_time_step_cut_ <= 0) {
+  dt_next_ = dt_prev_;
+  dt_control_method_ = cp_list_->get<std::string>("time step control method", "fixed");
+  dt_cut_threshold_ = cp_list_->get<int>("time step cut threshold", 8);
+  if (dt_cut_threshold_ <= 0) {
     msg << "Alquimia_PK::XMLParameters(): \n";
-    msg << "  Invalid \"time step cut threshold\": " << num_iterations_for_time_step_cut_ << " (must be > 1).\n";
+    msg << "  Invalid \"time step cut threshold\": " << dt_cut_threshold_ << " (must be > 1).\n";
     Exceptions::amanzi_throw(msg);
   }
-  num_steps_before_time_step_increase_ = cp_list_->get<int>("time step increase threshold", 4);
-  if (num_steps_before_time_step_increase_ <= 0) {
+  dt_increase_threshold_ = cp_list_->get<int>("time step increase threshold", 4);
+  if (dt_increase_threshold_ <= 0) {
     msg << "Alquimia_PK::XMLParameters(): \n";
-    msg << "  Invalid \"time step increase threshold\": " << num_steps_before_time_step_increase_ << " (must be > 1).\n";
+    msg << "  Invalid \"time step increase threshold\": " << dt_increase_threshold_ << " (must be > 1).\n";
     Exceptions::amanzi_throw(msg);
   }
-  time_step_cut_factor_ = cp_list_->get<double>("time step cut factor", 2.0);
-  if (time_step_cut_factor_ <= 1.0) {
+  dt_cut_factor_ = cp_list_->get<double>("time step cut factor", 2.0);
+  if (dt_cut_factor_ <= 1.0) {
     msg << "Alquimia_PK::XMLParameters(): \n";
-    msg << "  Invalid \"time step cut factor\": " << time_step_cut_factor_ << " (must be > 1).\n";
+    msg << "  Invalid \"time step cut factor\": " << dt_cut_factor_ << " (must be > 1).\n";
     Exceptions::amanzi_throw(msg);
   }
-  time_step_increase_factor_ = cp_list_->get<double>("time step increase factor", 1.2);
-  if (time_step_increase_factor_ <= 1.0) {
+  dt_increase_factor_ = cp_list_->get<double>("time step increase factor", 1.2);
+  if (dt_increase_factor_ <= 1.0) {
     msg << "Alquimia_PK::XMLParameters(): \n";
-    msg << "  Invalid \"time step increase factor\": " << time_step_increase_factor_ << " (must be > 1).\n";
+    msg << "  Invalid \"time step increase factor\": " << dt_increase_factor_ << " (must be > 1).\n";
     Exceptions::amanzi_throw(msg);
   }
 }
@@ -785,10 +784,10 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   current_time_ = saved_time_ + dt;
 
   // If we are given a dt that is less than the one we wanted, we don't record it.
-  if (dt < time_step_) {
-    prev_time_step_ = time_step_;
+  if (dt < dt_next_) {
+    dt_prev_ = dt_next_;
   } else {
-    prev_time_step_ = dt;
+    dt_prev_ = dt;
   }
 
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
@@ -880,30 +879,30 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 ******************************************************************* */
 void Alquimia_PK::ComputeNextTimeStep()
 {
-  if (time_step_control_method_ == "simple") {
-    if ((num_successful_steps_ == 0) || (num_iterations_ >= num_iterations_for_time_step_cut_)) {
+  if (dt_control_method_ == "simple") {
+    if ((num_successful_steps_ == 0) || (num_iterations_ >= dt_cut_threshold_)) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
         Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "Number of Newton iterations exceeds threshold (" << num_iterations_for_time_step_cut_ 
-                   << ") for time step cut, cutting dT by " << time_step_cut_factor_ << std::endl;
+        *vo_->os() << "Number of Newton iterations exceeds threshold (" << dt_cut_threshold_ 
+                   << ") for time step cut, cutting dT by " << dt_cut_factor_ << std::endl;
       }
-      time_step_ = prev_time_step_ / time_step_cut_factor_;
+      dt_next_ = dt_prev_ / dt_cut_factor_;
     }
-    else if (num_successful_steps_ >= num_steps_before_time_step_increase_) {
+    else if (num_successful_steps_ >= dt_increase_threshold_) {
       if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
         Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "Number of successful steps exceeds threshold (" << num_steps_before_time_step_increase_ 
-                   << ") for time step increase, growing dT by " << time_step_increase_factor_ << std::endl;
+        *vo_->os() << "Number of successful steps exceeds threshold (" << dt_increase_threshold_ 
+                   << ") for time step increase, growing dT by " << dt_increase_factor_ << std::endl;
       }
-      time_step_ = prev_time_step_ * time_step_increase_factor_;
+      dt_next_ = dt_prev_ * dt_increase_factor_;
       num_successful_steps_ = 0;
     }
   }
 
-  if (time_step_ > max_time_step_)
-    time_step_ = max_time_step_;
-  /* else if (time_step_ > min_time_step_)
-     time_step_ = min_time_step_; */
+  if (dt_next_ > dt_max_)
+    dt_next_ = dt_max_;
+  /* else if (dt_next_ > dt_min_)
+     dt_next_ = dt_min_; */
 }
 
 

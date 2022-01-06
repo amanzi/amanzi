@@ -46,9 +46,6 @@ class Alquimia_PK: public Chemistry_PK {
   virtual void Setup(const Teuchos::Ptr<State>& S);
   virtual void Initialize(const Teuchos::Ptr<State>& S);
 
-  virtual void set_dt(double dt) {};
-  virtual double get_dt() { return this->time_step_; }
-
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
   virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) { extra_chemistry_output_data(); }
@@ -110,10 +107,8 @@ class Alquimia_PK: public Chemistry_PK {
 
  private:
   // Time stepping controls. Some parameters are defined in the base class
-  double time_step_, max_time_step_, min_time_step_, prev_time_step_;
-  std::string time_step_control_method_;
-  int num_iterations_for_time_step_cut_, num_steps_before_time_step_increase_;
-  double time_step_cut_factor_, time_step_increase_factor_;
+  double prev_time_step_;
+  std::string dt_control_method_;
 
   bool chem_initialized_;
 
