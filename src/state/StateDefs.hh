@@ -35,6 +35,7 @@ typedef std::set<DerivativeTriple> DerivativeTripleSet;
 namespace Tags {
 const Tag DEFAULT = make_tag("");
 const Tag NEXT = make_tag("next");
+const Tag COPY = make_tag("copy");
 }
 
 enum class EvaluatorType {

@@ -109,16 +109,16 @@ void ObservableSolute::ComputeObservation(
   // fields below are subject to various input conditions
   Key total_sorbed_key = Keys::getKey(domain_, "total_sorbed");
 
-  if (!S.HasField(tcc_key)) {
+  if (!S.HasData(tcc_key)) {
     // bail out with default values if this field is not yet created
     *value = 0.0;
     *volume = 1.0;
     return;
   }
 
-  const Epetra_MultiVector& ws = *S.GetFieldData(ws_key)->ViewComponent("cell");
-  const Epetra_MultiVector& tcc = *S.GetFieldData(tcc_key)->ViewComponent("cell");
-  const Epetra_MultiVector& porosity = *S.GetFieldData(poro_key)->ViewComponent("cell");    
+  const auto& ws = *S.Get<CompositeVector>(ws_key).ViewComponent("cell");
+  const auto& tcc = *S.Get<CompositeVector>(tcc_key).ViewComponent("cell");
+  const auto& porosity = *S.Get<CompositeVector>(poro_key).ViewComponent("cell");    
 
   unit = units_.system().concentration;
 
@@ -133,8 +133,8 @@ void ObservableSolute::ComputeObservation(
     }
 
   } else if (variable_ == comp_names_[tcc_index_] + " sorbed concentration" &&
-             S.HasField(total_sorbed_key)) {
-    const auto& sorbed = *S.GetFieldData(total_sorbed_key)->ViewComponent("cell");
+             S.HasData(total_sorbed_key)) {
+    const auto& sorbed = *S.Get<CompositeVector>(total_sorbed_key).ViewComponent("cell");
 
     // we assume constant particle density
     for (int i = 0; i < region_size_; i++) {
@@ -147,11 +147,11 @@ void ObservableSolute::ComputeObservation(
 
   } else if (variable_ == comp_names_[tcc_index_] + " free ion concentration") {
     Key free_ion_key = Keys::getKey(domain_, "primary_free_ion_concentration_" + comp_names_[tcc_index_]);
-    if (!S.HasField(free_ion_key)) {
+    if (!S.HasData(free_ion_key)) {
       msg << "Observation: state does not have field \"" << variable_ << "\"";
       Exceptions::amanzi_throw(msg);
     }
-    const auto& free_ion = *S.GetFieldData(free_ion_key)->ViewComponent("cell");
+    const auto& free_ion = *S.Get<CompositeVector>(free_ion_key).ViewComponent("cell");
 
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
@@ -173,8 +173,8 @@ void ObservableSolute::ComputeObservation(
 
   } else if (variable_ == comp_names_[tcc_index_] + " volumetric flow rate" ||
              variable_ == comp_names_[tcc_index_] + " breakthrough curve") {
-    const Epetra_MultiVector& darcy_flux = *S.GetFieldData(darcy_key)->ViewComponent("face");
-    const auto& fmap = *S.GetFieldData(darcy_key)->Map().Map("face", true);
+    const auto& darcy_flux = *S.Get<CompositeVector>(darcy_key).ViewComponent("face");
+    const auto& fmap = *S.Get<CompositeVector>(darcy_key).Map().Map("face", true);
     Amanzi::AmanziMesh::Entity_ID_List cells;
 
     if (obs_boundary_) { // observation is on a boundary set

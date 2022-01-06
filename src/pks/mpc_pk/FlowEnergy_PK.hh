@@ -51,9 +51,9 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Key domain_;  // computational domain
 
-  Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> particle_density_eval;
-  Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> porosity_eval;
-  Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> saturation_liquid_eval;
+  Teuchos::RCP<EvaluatorIndependentFunction> particle_density_eval;
+  Teuchos::RCP<EvaluatorIndependentFunction> porosity_eval;
+  Teuchos::RCP<EvaluatorIndependentFunction> saturation_liquid_eval;
 
   // keys
   Key ie_rock_key_, ie_gas_key_, ie_liquid_key_, energy_key_, prev_energy_key_;

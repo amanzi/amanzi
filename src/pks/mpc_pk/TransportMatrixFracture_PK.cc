@@ -13,12 +13,15 @@
 */
 
 #include "PDE_DiffusionFracturedMatrix.hh"
-#include "primary_variable_field_evaluator.hh"
+#include "EvaluatorPrimary.hh"
 
 #include "TransportMatrixFracture_PK.hh"
 #include "PK_MPCStrong.hh"
 
 namespace Amanzi {
+
+using CV_t = CompositeVector;
+using CVS_t = CompositeVectorSpace;
 
 /* ******************************************************************* 
 * Constructor
@@ -46,18 +49,20 @@ void TransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // darcy fluxes use non-uniform distribution of DOFs
   // -- darcy flux for matrix
-  if (!S->HasField("darcy_flux")) {
+  if (!S->HasData("darcy_flux")) {
     auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
-    S->RequireField("darcy_flux", "transport")->SetMesh(mesh_domain_)->SetGhosted(true) 
+    S->Require<CV_t, CVS_t>("darcy_flux", Tags::DEFAULT, "transport")
+      .SetMesh(mesh_domain_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
   }
 
   // -- darcy flux for fracture
-  if (!S->HasField("fracture-darcy_flux")) {
+  if (!S->HasData("fracture-darcy_flux")) {
     auto cvs = Operators::CreateNonManifoldCVS(mesh_fracture_);
-    *S->RequireField("fracture-darcy_flux", "transport")->SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs;
+    *S->Require<CV_t, CVS_t>("fracture-darcy_flux", Tags::DEFAULT, "transport")
+      .SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs;
   }
 
   // add boundary condition to transport in matrix list

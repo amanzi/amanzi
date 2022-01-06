@@ -68,8 +68,8 @@ using namespace Amanzi;
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-  auto& flow = *S->GetFieldData("darcy_flux", "flow")->ViewComponent("face");
-  auto& pres = *S->GetFieldData("pressure", "flow")->ViewComponent("cell");
+  auto& flow = *S->GetW<CompositeVector>("darcy_flux", "flow").ViewComponent("face");
+  auto& pres = *S->GetW<CompositeVector>("pressure", "flow").ViewComponent("cell");
   
   // -- overwite with constant velocity
   AmanziGeometry::Point vel(1.0, 2.0);
@@ -149,8 +149,8 @@ using namespace Amanzi;
   int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
-  auto& flow = *S->GetFieldData("darcy_flux", "flow")->ViewComponent("face");
-  auto& pres = *S->GetFieldData("pressure", "flow")->ViewComponent("cell");
+  auto& flow = *S->GetW<CompositeVector>("darcy_flux", "flow").ViewComponent("face");
+  auto& pres = *S->GetW<CompositeVector>("pressure", "flow").ViewComponent("cell");
 
   for (int f = 0; f < nfaces; ++f) {
     flow[0][f] = vel * mesh->face_normal(f);

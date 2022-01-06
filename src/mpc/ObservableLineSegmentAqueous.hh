@@ -68,8 +68,8 @@ void ObservableLineSegmentAqueous::ComputeObservation(
       *volume += lofs_[i];
     }
   } else if (weighting_ == "flux norm") {
-    if (S.HasField("darcy_velocity")) {
-      const Epetra_MultiVector& darcy_vel = *S.GetFieldData("darcy_velocity")->ViewComponent("cell");
+    if (S.HasData("darcy_velocity")) {
+      const auto& darcy_vel = *S.Get<CompositeVector>("darcy_velocity").ViewComponent("cell");
       for (int i = 0; i < region_size_; i++) {
         int c = entity_ids_[i];
 
@@ -95,20 +95,20 @@ void ObservableLineSegmentAqueous::InterpolatedValues(State& S,
   Teuchos::RCP<const CompositeVector> cv;
 
   if (var == "hydraulic head") {
-    if (!S.HasField("hydraulic_head")) {
+    if (!S.HasData("hydraulic_head")) {
       Errors::Message msg;
       msg <<"InterpolatedValue: field hydraulic_head doesn't exist in state";
       Exceptions::amanzi_throw(msg);
     }
-    cv = S.GetFieldData("hydraulic_head");
+    cv = S.GetPtr<CompositeVector>("hydraulic_head");
     vector = cv->ViewComponent("cell", true);
   } else {
-    if (!S.HasField(var)) {
+    if (!S.HasData(var)) {
       Errors::Message msg;
       msg <<"InterpolatedValue: field "<<var<<" doesn't exist in state";
       Exceptions::amanzi_throw(msg);
     }
-    cv = S.GetFieldData(var);
+    cv = S.GetPtr<CompositeVector>(var);
     vector = cv->ViewComponent("cell", true);
   }
 

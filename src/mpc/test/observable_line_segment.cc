@@ -69,14 +69,14 @@ TEST(OBSERVABLE_LINE_SEGMENT) {
   Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
   S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
 
-  S->RequireField("test_field", "test_field")->SetMesh(mesh)->SetGhosted(true)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->Require<CompositeVector, CompositeVectorSpace>("test_field", Tags::DEFAULT, "test_field")
+    .SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
 
-  Epetra_MultiVector& test = *S->GetFieldData("test_field", "test_field")->ViewComponent("cell");
+  auto& test = *S->GetW<CompositeVector>("test_field", Tags::DEFAULT, "test_field").ViewComponent("cell");
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 

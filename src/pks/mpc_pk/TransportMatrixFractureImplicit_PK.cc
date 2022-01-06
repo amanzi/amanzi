@@ -26,6 +26,9 @@
 
 namespace Amanzi {
 
+using CV_t = CompositeVector;
+using CVS_t = CompositeVectorSpace;
+
 /* *******************************************************************
 * Constructor
 ******************************************************************* */
@@ -63,18 +66,20 @@ void TransportMatrixFractureImplicit_PK::Setup(const Teuchos::Ptr<State>& S)
   // distribution of DOFs
 
   // -- darcy flux in matrix
-  if (!S->HasField("darcy_flux")) {
+  if (!S->HasData("darcy_flux")) {
     auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
-    S->RequireField("darcy_flux", "state")->SetMesh(mesh_domain_)->SetGhosted(true)
+    S->Require<CV_t, CVS_t>("darcy_flux", Tags::DEFAULT, "state")
+      .SetMesh(mesh_domain_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
   }
 
   // -- darcy flux in fracture
-  if (!S->HasField("fracture-darcy_flux")) {
+  if (!S->HasData("fracture-darcy_flux")) {
     auto cvs = Operators::CreateNonManifoldCVS(mesh_fracture_);
-    *S->RequireField("fracture-darcy_flux", "state")->SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs;
+    *S->Require<CV_t, CVS_t>("fracture-darcy_flux", Tags::DEFAULT, "state")
+      .SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs;
   }
 
   // process other PKs
@@ -226,7 +231,7 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
 
   int np(0), dir, shift;
   AmanziMesh::Entity_ID_List cells;
-  const auto& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face");
+  const auto& flux = *S_->Get<CV_t>("darcy_flux").ViewComponent("face");
   const auto& mmap = flux.Map();
 
   for (int c = 0; c < ncells_owned_f; ++c) {
@@ -254,10 +259,10 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
   }
 
   // update accumulation term and the right-hand side
-  const auto& phi_m = *S_->GetFieldData("porosity");
-  const auto& phi_f = *S_->GetFieldData("fracture-porosity");
-  const auto& tcc_m = *S_->GetFieldData("total_component_concentration");
-  const auto& tcc_f = *S_->GetFieldData("fracture-total_component_concentration");
+  const auto& phi_m = S_->Get<CV_t>("porosity");
+  const auto& phi_f = S_->Get<CV_t>("fracture-porosity");
+  const auto& tcc_m = S_->Get<CV_t>("total_component_concentration");
+  const auto& tcc_f = S_->Get<CV_t>("fracture-total_component_concentration");
 
   // we assume that all components are aquesous
   int num_aqueous = tcc_m.ViewComponent("cell")->NumVectors();
@@ -277,10 +282,10 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
     pk_fracture->op_acc()->AddAccumulationDelta(*tv_one->SubVector(1)->Data(), phi_f, phi_f, dt, "cell");
 
     // assemble the operators
-    pk_matrix->op_adv()->UpdateMatrices(S_->GetFieldData("darcy_flux").ptr());
+    pk_matrix->op_adv()->UpdateMatrices(S_->GetPtr<CV_t>("darcy_flux").ptr());
     pk_matrix->op_adv()->ApplyBCs(true, true, true);
 
-    pk_fracture->op_adv()->UpdateMatrices(S_->GetFieldData("fracture-darcy_flux").ptr());
+    pk_fracture->op_adv()->UpdateMatrices(S_->GetPtr<CV_t>("fracture-darcy_flux").ptr());
     pk_fracture->op_adv()->ApplyBCs(true, true, true);
 
     op_coupling00_->Setup(values1, 1.0);
@@ -333,8 +338,8 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
 void TransportMatrixFractureImplicit_PK::CommitStep(
     double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
-  *S->GetFieldData("total_component_concentration", "state") = *my_solution_->SubVector(0)->Data();
-  *S->GetFieldData("fracture-total_component_concentration", "state") = *my_solution_->SubVector(1)->Data();
+  S->GetW<CV_t>("total_component_concentration", "state") = *my_solution_->SubVector(0)->Data();
+  S->GetW<CV_t>("fracture-total_component_concentration", "state") = *my_solution_->SubVector(1)->Data();
 }
 
 

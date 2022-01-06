@@ -47,10 +47,9 @@ ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
 void ReactiveTransport_PK::Initialize(const Teuchos::Ptr<State>& S) {
   Amanzi::PK_MPCAdditive<PK>::Initialize(S);
 
-  if (S->HasField("total_component_concentration")) {
-    total_component_concentration_stor = 
-       Teuchos::rcp(new Epetra_MultiVector(*S->GetFieldData("total_component_concentration")
-                                             ->ViewComponent("cell", true)));
+  if (S->HasData("total_component_concentration")) {
+    total_component_concentration_stor = Teuchos::rcp(new Epetra_MultiVector(
+        *S->Get<CompositeVector>("total_component_concentration").ViewComponent("cell", true)));
     storage_created = true;
   }
 }
@@ -113,8 +112,8 @@ bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) 
     pk_fail = chemistry_pk_->AdvanceStep(t_old, t_new, reinit);
     chem_step_succeeded = true;
  
-    *S_->GetFieldData("total_component_concentration", "state")
-       ->ViewComponent("cell", true) = *chemistry_pk_->aqueous_components();
+    *S_->GetW<CompositeVector>("total_component_concentration", "state")
+      .ViewComponent("cell", true) = *chemistry_pk_->aqueous_components();
   }
   catch (const Errors::Message& chem_error) {
     fail = true;

@@ -306,6 +306,9 @@ void State::Setup()
   Require<int>("cycle", Tags::NEXT, "cycle");
   GetRecordSetW("cycle").initializeTags();
 
+  Require<double>("dt", Tags::DEFAULT, "coordinator");
+  GetRecordW("dt", Tags::DEFAULT, "coordinator").set_initialized();
+
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // Ensure compatibility of all the evaluators -- each evaluator's dependencies
@@ -656,6 +659,9 @@ void ReadCheckpoint(const Comm_ptr_type& comm, State& S,
     Errors::Message message(ss.str());
     throw(message);
   }
+
+  // load metadata
+  chkp.ReadAttributes(S);
 
   // load the data
   for (auto data = S.data_begin(); data != S.data_end(); ++data) {

@@ -15,13 +15,16 @@
 #include "InverseFactory.hh"
 #include "PDE_CouplingFlux.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
-#include "primary_variable_field_evaluator.hh"
+#include "EvaluatorPrimary.hh"
 #include "TreeOperator.hh"
 
 #include "FlowMatrixFracture_PK.hh"
 #include "PK_MPCStrong.hh"
 
 namespace Amanzi {
+
+using CV_t = CompositeVector;
+using CVS_t = CompositeVectorSpace;
 
 /* *******************************************************************
 * Constructor
@@ -66,36 +69,36 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   // distribution of DOFs
   // -- pressure
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
-  if (!S->HasField("pressure")) {
-    *S->RequireField("pressure", "flow")->SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
-
+  if (!S->HasData("pressure")) {
+    *S->Require<CV_t, CVS_t>("pressure", Tags::DEFAULT, "flow")
+      .SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
     AddDefaultPrimaryEvaluator_("pressure");
   }
 
   // -- darcy flux
-  if (!S->HasField("darcy_flux")) {
+  if (!S->HasData("darcy_flux")) {
     std::string name("face");
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
-    S->RequireField("darcy_flux", "flow")->SetMesh(mesh_domain_)->SetGhosted(true)
+    S->Require<CV_t, CVS_t>("darcy_flux", Tags::DEFAULT, "flow")
+      .SetMesh(mesh_domain_)->SetGhosted(true)
       ->SetComponent(name, AmanziMesh::FACE, mmap, gmap, 1);
-
     AddDefaultPrimaryEvaluator_("darcy_flux");
   }
 
   // -- darcy flux for fracture
-  if (!S->HasField("fracture-darcy_flux")) {
+  if (!S->HasData("fracture-darcy_flux")) {
     auto cvs2 = Operators::CreateNonManifoldCVS(mesh_fracture_);
-    *S->RequireField("fracture-darcy_flux", "flow")->SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs2;
-
+    *S->Require<CV_t, CVS_t>("fracture-darcy_flux", Tags::DEFAULT, "flow")
+      .SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs2;
     AddDefaultPrimaryEvaluator_("fracture-darcy_flux");
   }
 
   // Require additional fields and evaluators
   Key normal_permeability_key_("fracture-normal_permeability");
-  if (!S->HasField(normal_permeability_key_)) {
-    S->RequireField(normal_permeability_key_, "state")->SetMesh(mesh_fracture_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  if (!S->HasData(normal_permeability_key_)) {
+    S->Require<CV_t, CVS_t>(normal_permeability_key_, Tags::DEFAULT, "state")
+      .SetMesh(mesh_fracture_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // inform dependent PKs about coupling
@@ -164,9 +167,8 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
               ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   // -- indices transmissibimility coefficients for matrix-fracture flux
-  const auto& kn = *S_->GetFieldData("fracture-normal_permeability")->ViewComponent("cell");
-  double gravity;
-  S->GetConstantVectorData("gravity")->Norm2(&gravity);
+  const auto& kn = *S_->Get<CV_t>("fracture-normal_permeability").ViewComponent("cell");
+  double gravity = norm(S->Get<AmanziGeometry::Point>("gravity"));
 
   int ncells_owned_f = mesh_fracture->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   auto inds_matrix = std::make_shared<std::vector<std::vector<int> > >(npoints_owned);

@@ -115,6 +115,15 @@ int BlockVector::GlobalLength() const {
 }
 
 
+long int BlockVector::GetLocalElementCount() const {
+  long int count(0);
+  for (int i = 0; i != num_components_; ++i) {
+    count += data_[i]->NumVectors() * data_[i]->MyLength();
+  }
+  return count;
+}
+
+
 // Check consistency of meta-data and allocate data.
 void BlockVector::CreateData() {
 #ifdef ENABLE_DBC

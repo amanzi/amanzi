@@ -17,8 +17,8 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "independent_variable_field_evaluator_fromfunction.hh"
-#include "secondary_variable_field_evaluator.hh"
+#include "EvaluatorIndependentFunction.hh"
+#include "EvaluatorSecondary.hh"
 #include "PK_BDF.hh"
 #include "PK_MPCWeak.hh"
 #include "PK_Factory.hh"
@@ -52,8 +52,8 @@ class TransportMatrixFracture_PK : public PK_MPCWeak {
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
 
-  Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> matrix_bc;
-  Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> fracture_src;
+  Teuchos::RCP<EvaluatorIndependentFunction> matrix_bc;
+  Teuchos::RCP<EvaluatorIndependentFunction> fracture_src;
 
   // factory registration
   static RegisteredPKFactory<TransportMatrixFracture_PK> reg_;

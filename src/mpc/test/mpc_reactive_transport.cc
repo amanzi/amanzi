@@ -62,7 +62,7 @@ using namespace Amanzi::AmanziGeometry;
   {
     Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
     cycle_driver.Go();
-    S->GetFieldData("total_component_concentration")->MeanValue(&avg1);
+    S->Get<CompositeVector>("total_component_concentration").MeanValue(&avg1);
   }
 
   // restart simulation and compare results

@@ -417,6 +417,13 @@ class State {
     return data_.at(fieldname)->Set(tag, owner, data);
   }
 
+  // -- copy between tags assume that operator = is supported
+  template <typename T>
+  void Copy(const Key& fieldname, const Tag& tag, const Tag& copy) {
+    Key owner = GetRecord(fieldname, copy).owner();
+    GetW<T>(fieldname, copy, owner) = Get<T>(fieldname, tag);
+  }
+  
 
   // -----------------------------------------------------------------------------
   // State handles data evaluation.

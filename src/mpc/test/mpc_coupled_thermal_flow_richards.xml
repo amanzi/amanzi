@@ -150,9 +150,9 @@
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
-    <ParameterList name="field evaluators">
+    <ParameterList name="evaluators">
       <ParameterList name="porosity">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
@@ -166,7 +166,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="fracture-porosity">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
@@ -181,7 +181,7 @@
       </ParameterList>
 
       <ParameterList name="internal_energy_liquid">
-        <Parameter name="field evaluator type" type="string" value="iem"/>
+        <Parameter name="evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
         <ParameterList name="IEM parameters">
           <ParameterList name="Material1">
@@ -198,7 +198,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="fracture-internal_energy_liquid">
-        <Parameter name="field evaluator type" type="string" value="iem"/>
+        <Parameter name="evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
         <ParameterList name="IEM parameters">
           <ParameterList name="Material1">
@@ -216,7 +216,7 @@
       </ParameterList>
 
       <ParameterList name="particle_density">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
@@ -230,7 +230,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="fracture-particle_density">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
@@ -245,7 +245,7 @@
       </ParameterList>
 
       <ParameterList name="molar_density_liquid">
-        <Parameter name="field evaluator type" type="string" value="eos"/>
+        <Parameter name="evaluator type" type="string" value="eos"/>
         <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
         <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
         <Parameter name="eos basis" type="string" value="both"/>
@@ -254,7 +254,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="fracture-molar_density_liquid">
-        <Parameter name="field evaluator type" type="string" value="eos"/>
+        <Parameter name="evaluator type" type="string" value="eos"/>
         <Parameter name="molar density key" type="string" value="fracture-molar_density_liquid"/>
         <Parameter name="mass density key" type="string" value="fracture-mass_density_liquid"/>
         <Parameter name="eos basis" type="string" value="both"/>
@@ -264,14 +264,14 @@
       </ParameterList>
 
       <ParameterList name="viscosity_liquid">
-        <Parameter name="field evaluator type" type="string" value="viscosity"/>
+        <Parameter name="evaluator type" type="string" value="viscosity"/>
         <Parameter name="viscosity key" type="string" value="viscosity_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water FEHM"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="fracture-viscosity_liquid">
-        <Parameter name="field evaluator type" type="string" value="viscosity"/>
+        <Parameter name="evaluator type" type="string" value="viscosity"/>
         <Parameter name="viscosity key" type="string" value="fracture-viscosity_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water FEHM"/>
@@ -279,7 +279,7 @@
       </ParameterList>
 
       <ParameterList name="fracture-aperture">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="regions" type="Array(string)" value="{RegionBottom,RegionTop}"/>

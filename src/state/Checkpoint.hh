@@ -91,13 +91,18 @@ class Checkpoint : public IOEvent {
 
   void CreateFile(int cycle);
   void CreateFinalFile(int cycle);
+  void Finalize();
+
+  // i/o
   void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names) const;
   void WriteAttributes(int comm_size, double time, double dt, int cycle, int pos) const;
   void WriteAttributes(int comm_size, double time, double dt, int cycle) const;
   void WriteAttributes(int comm_size, double time, int cycle) const;
   void WriteObservations(ObservationData* obs_data);
-  void Finalize();
 
+  void ReadAttributes(State& S);
+
+  // access
   void set_filebasename(std::string base) { filebasename_ = base; }
 
  protected:

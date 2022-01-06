@@ -84,6 +84,7 @@ TEST(MULTIPHASE_MODEL_I) {
   // initialize the multiphase process kernel
   MPK->Initialize(S.ptr());
   S->CheckAllFieldsInitialized();
+  S->WriteDependencyGraph();
   WriteStateStatistics(*S, *vo);
 
   // initialize io

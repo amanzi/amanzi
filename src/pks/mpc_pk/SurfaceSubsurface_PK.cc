@@ -53,8 +53,8 @@ void SurfaceSubsurface_PK::Initialize(const Teuchos::Ptr<State>& S)
   int nsurf_nodes = mesh_surface_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
   int nsurf_cells = mesh_surface_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   
-  Epetra_MultiVector &B_n = *S->GetFieldData("surface-bathymetry", "state")->ViewComponent("node");
-  Epetra_MultiVector &B_c = *S->GetFieldData("surface-bathymetry", "state")->ViewComponent("cell");
+  auto& B_n = *S->GetW<CompositeVector>("surface-bathymetry", "state").ViewComponent("node");
+  auto& B_c = *S->GetW<CompositeVector>("surface-bathymetry", "state").ViewComponent("cell");
   
   // Bathymetry node values
   AmanziGeometry::Point node_crd;
@@ -76,7 +76,7 @@ void SurfaceSubsurface_PK::Initialize(const Teuchos::Ptr<State>& S)
     B_c[0][c] = xf[2]; // z value of the surface
   }
   
-  S->GetField("surface-bathymetry", "state")->set_initialized();
+  S->GetRecordW("surface-bathymetry", "state").set_initialized();
   
   PK_MPC<PK>::Initialize(S);
 }

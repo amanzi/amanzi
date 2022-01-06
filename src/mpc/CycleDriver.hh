@@ -128,8 +128,11 @@ inline
 std::set<std::string> StateVisFields(const State& S)
 {
   std::set<std::string> fields;
-  for (auto it = S.field_begin(); it != S.field_end(); ++it) 
-    if (it->second->io_vis()) fields.insert(it->first);
+  for (auto it = S.data_begin(); it != S.data_end(); ++it) {
+    for (auto& e : *it->second) {
+      if (e.second->io_vis()) fields.insert(it->first);
+    }
+  }
   return fields;
 }
 

@@ -20,6 +20,9 @@
 
 namespace Amanzi {
 
+using CV_t = CompositeVector;
+using CVS_t = CompositeVectorSpace;
+
 // -----------------------------------------------------------------------------
 // Standard constructor
 // -----------------------------------------------------------------------------
@@ -44,22 +47,24 @@ void ReactiveTransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // darcy fluxes use non-uniform distribution of DOFs
   // -- darcy flux for matrix
-  if (!S->HasField("darcy_flux")) {
+  if (!S->HasData("darcy_flux")) {
     auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
-    S->RequireField("darcy_flux", "transport")->SetMesh(mesh_domain_)->SetGhosted(true) 
+    S->Require<CV_t, CVS_t>("darcy_flux", Tags::DEFAULT, "transport")
+      .SetMesh(mesh_domain_)->SetGhosted(true) 
       ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
   }
 
   // -- darcy flux for fracture
-  if (!S->HasField("fracture-darcy_flux")) {
+  if (!S->HasData("fracture-darcy_flux")) {
     auto cvs = Operators::CreateNonManifoldCVS(mesh_fracture_);
-    *S->RequireField("fracture-darcy_flux", "transport")->SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs;
+    *S->Require<CV_t, CVS_t>("fracture-darcy_flux", Tags::DEFAULT, "transport")
+      .SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs;
   }
 
-  tcc_matrix_key_="total_component_concentration";
-  tcc_fracture_key_="fracture-total_component_concentration";
+  tcc_matrix_key_ = "total_component_concentration";
+  tcc_fracture_key_ = "fracture-total_component_concentration";
   
   // evaluators in fracture
   Teuchos::ParameterList& elist = S->FEList();
@@ -73,6 +78,10 @@ void ReactiveTransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
       .set<double>("value", rho);
   elist.sublist("fracture-mass_density_liquid")
         .set<std::string>("field evaluator type", "independent variable");
+
+  // copies
+  S->Require<CV_t, CVS_t>(tcc_matrix_key_, Tags::COPY, "state");
+  S->Require<CV_t, CVS_t>(tcc_fracture_key_, Tags::COPY, "state");
 
   // communicate chemistry engine to transport.
   auto ic = coupled_chemistry_pk_->begin();
@@ -102,9 +111,6 @@ void ReactiveTransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
 // -----------------------------------------------------------------------------
 void ReactiveTransportMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
-  S->RequireFieldCopy(tcc_matrix_key_, "matrix_copy", "state");
-  S->RequireFieldCopy(tcc_fracture_key_, "fracture_copy", "state");
-
   Amanzi::PK_MPCAdditive<PK>::Initialize(S);
 }
   
@@ -147,8 +153,8 @@ bool ReactiveTransportMatrixFracture_PK::AdvanceStep(
   if (fail) return fail;
 
   // save copy of fields (FIXME)
-  S_->CopyField(tcc_matrix_key_, "matrix_copy", "state");
-  S_->CopyField(tcc_fracture_key_, "fracture_copy", "state");  
+  S_->Copy<CV_t>(tcc_matrix_key_, Tags::DEFAULT, Tags::COPY);
+  S_->Copy<CV_t>(tcc_fracture_key_, Tags::DEFAULT, Tags::COPY);  
   
   try {
     std::vector<Teuchos::RCP<AmanziChemistry::Chemistry_PK> > subpks;
@@ -158,19 +164,19 @@ bool ReactiveTransportMatrixFracture_PK::AdvanceStep(
     }
     
     // tell chemistry PKs to work with copies
-    auto tcc_m_copy = S_->GetFieldCopyData(tcc_matrix_key_, "matrix_copy", "state")->ViewComponent("cell", true);
-    auto tcc_f_copy = S_->GetFieldCopyData(tcc_fracture_key_, "fracture_copy", "state")->ViewComponent("cell", true);  
+    auto tcc_m_copy = S_->GetW<CV_t>(tcc_matrix_key_, Tags::COPY, "state").ViewComponent("cell", true);
+    auto tcc_f_copy = S_->GetW<CV_t>(tcc_fracture_key_, Tags::COPY, "state").ViewComponent("cell", true);  
 
     subpks[0]->set_aqueous_components(tcc_m_copy);
     subpks[1]->set_aqueous_components(tcc_f_copy);
 
     fail = coupled_chemistry_pk_->AdvanceStep(t_old, t_new, reinit);
  
-    *S_->GetFieldData(tcc_matrix_key_, "state")
-      ->ViewComponent("cell", true) = *subpks[0]->aqueous_components();
+    *S_->GetW<CV_t>(tcc_matrix_key_, Tags::DEFAULT, "state")
+      .ViewComponent("cell", true) = *subpks[0]->aqueous_components();
 
-    *S_->GetFieldData(tcc_fracture_key_, "state")
-      ->ViewComponent("cell", true) = *subpks[1]->aqueous_components();
+    *S_->GetW<CV_t>(tcc_fracture_key_, Tags::DEFAULT, "state")
+      .ViewComponent("cell", true) = *subpks[1]->aqueous_components();
   }
   catch (const Errors::Message& chem_error) {
     fail = true;

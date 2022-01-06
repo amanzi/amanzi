@@ -225,7 +225,7 @@ void CycleDriver::Setup() {
   }
 
   pk_->Setup(S_.ptr());
-  S_->RequireScalar("dt", "coordinator");
+  S_->Require<double>("dt", Tags::DEFAULT, "coordinator");
   S_->Setup();
 
   // create the time step manager
@@ -267,18 +267,15 @@ void CycleDriver::Setup() {
 ****************************************************************** */
 void CycleDriver::Initialize() {
  
-  *S_->GetScalarData("dt", "coordinator") = tp_dt_[0];
-  S_->GetField("dt", "coordinator")->set_initialized();
+  S_->GetW<double>("dt", Tags::DEFAULT, "coordinator") = tp_dt_[0];
+  S_->GetRecordW("dt", "coordinator").set_initialized();
 
   // Initialize the state (initializes all dependent variables).
   S_->InitializeFields();
   S_->InitializeEvaluators();
 
-  // Initialize the process kernels
+  // Initialize the process kernels and verify
   pk_->Initialize(S_.ptr());
-
-  // Final checks.
-  S_->CheckNotEvaluatedFieldsInitialized();
   S_->CheckAllFieldsInitialized();
 
   // S_->WriteDependencyGraph();
@@ -357,8 +354,10 @@ void CycleDriver::ReportMemory() {
   }
 
   double doubles_count(0.0);
-  for (State::field_iterator field = S_->field_begin(); field != S_->field_end(); ++field) {
-    doubles_count += static_cast<double>(field->second->GetLocalElementCount());
+  for (auto it = S_->data_begin(); it != S_->data_end(); ++it) {
+    if (S_->GetRecord(it->first).ValidType<CompositeVector>()) {
+      doubles_count += static_cast<double>(S_->Get<CompositeVector>(it->first).GetLocalElementCount());
+    }
   }
   double global_doubles_count(0.0);
   double min_doubles_count(0.0);
@@ -748,12 +747,13 @@ Teuchos::RCP<State> CycleDriver::Go() {
 
     Init_PK(time_period_id_);
 
-    // start at time t = t0 and initialize the state.
+    Setup();
+
+    // start at time t = t0 and initialize data.
     S_->set_time(tp_start_[time_period_id_]);
     S_->set_cycle(cycle0_);
     S_->set_position(TIME_PERIOD_START);
     
-    Setup();
     Initialize();
 
     dt = tp_dt_[time_period_id_];
@@ -788,7 +788,8 @@ Teuchos::RCP<State> CycleDriver::Go() {
     S_->GetMeshPartition("materials");
     
     // re-initialize the state object
-    restart_dT = ReadCheckpoint(*S_, restart_filename_);
+    ReadCheckpoint(comm_, *S_, restart_filename_);
+    restart_dT = S_->Get<double>("dt");
 
     cycle0_ = S_->cycle();
     for (std::vector<std::pair<double,double> >::iterator it = reset_info_.begin();
@@ -823,12 +824,10 @@ Teuchos::RCP<State> CycleDriver::Go() {
 
   // enfoce consistent physics after initialization
   // this is optional but helps with statistics
+  S_->GetW<double>("dt", Tags::DEFAULT, "coordinator") = dt;
+  S_->GetRecordW("dt", "coordinator").set_initialized();
+
   S_->InitializeEvaluators();
-
-  *S_->GetScalarData("dt", "coordinator") = dt;
-  S_->GetField("dt","coordinator")->set_initialized();
-
-  S_->CheckNotEvaluatedFieldsInitialized();
   S_->CheckAllFieldsInitialized();
 
   // visualization at IC
@@ -875,7 +874,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
                      << ": time = " << units.OutputTime(S_->time())
                      << ", dt = " << units.OutputTime(dt) << "\n";
         }
-        *S_->GetScalarData("dt", "coordinator") = dt;
+        S_->GetW<double>("dt", Tags::DEFAULT, "coordinator") = dt;
         S_->set_initial_time(S_->time());
         S_->set_final_time(S_->time() + dt);
         S_->set_intermediate_time(S_->time());
@@ -963,10 +962,10 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   // Setup
   pk_->Setup(S_.ptr());
 
-  S_->RequireScalar("dt", "coordinator");
+  S_->Require<double>("dt", Tags::DEFAULT, "coordinator");
   S_->Setup();
-  *S_->GetScalarData("dt", "coordinator") = tp_dt_[time_pr_id];
-  S_->GetField("dt", "coordinator")->set_initialized();
+  S_->GetW<double>("dt", Tags::DEFAULT, "coordinator") = tp_dt_[time_pr_id];
+  S_->GetRecordW("dt", Tags::DEFAULT, "coordinator").set_initialized();
 
   // Initialize
   S_->InitializeFields();
@@ -975,11 +974,8 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   // Initialize the state from the old state.
   S_->Initialize(S_old_);
 
-  // Initialize the process kernels variables 
+  // Initialize the process kernels and verify
   pk_->Initialize(S_.ptr());
-
-  // Final checks
-  S_->CheckNotEvaluatedFieldsInitialized();
   S_->CheckAllFieldsInitialized();
 
   S_->GetMeshPartition("materials");

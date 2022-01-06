@@ -113,12 +113,12 @@ void ObservableAqueous::ComputeObservation(
   int dim = mesh_->space_dimension();
 
   // separate cases for density
-  double rho = *S.GetScalarData("const_fluid_density");
+  double rho = S.Get<double>("const_fluid_density");
   Key mol_density_key = Keys::getKey(domain_, "molar_density_liquid");
 
   Teuchos::RCP<const Epetra_MultiVector> rho_c;
-  if (S.HasField(mol_density_key)) 
-    rho_c = S.GetFieldData(mol_density_key)->ViewComponent("cell");
+  if (S.HasData(mol_density_key)) 
+    rho_c = S.Get<CompositeVector>(mol_density_key).ViewComponent("cell");
 
   Key head_key = Keys::getKey(domain_, "hydraulic_head");
   Key poro_key = Keys::getKey(domain_, "porosity");
@@ -126,8 +126,8 @@ void ObservableAqueous::ComputeObservation(
   Key pressure_key = Keys::getKey(domain_, "pressure");
   Key perm_key =Keys::getKey(domain_, "permeability");    
   
-  const Epetra_MultiVector& porosity = *S.GetFieldData(poro_key)->ViewComponent("cell");    
-  const Epetra_MultiVector& ws = *S.GetFieldData(sat_key)->ViewComponent("cell");
+  const auto& porosity = *S.Get<CompositeVector>(poro_key).ViewComponent("cell");    
+  const auto& ws = *S.Get<CompositeVector>(sat_key).ViewComponent("cell");
   
   unit = "";
 
@@ -140,12 +140,12 @@ void ObservableAqueous::ComputeObservation(
     }
   } else if (variable_ == "gravimetric water content") {
     Key pd_key = Keys::getKey(domain_, "particle_density");
-    if (!S.HasField(pd_key)) {
+    if (!S.HasData(pd_key)) {
       msg << "Observation \""  << variable_ << "\" requires field \"particle_density\".\n";
       Exceptions::amanzi_throw(msg);
     }
     
-    const Epetra_MultiVector& pd = *S.GetFieldData(pd_key)->ViewComponent("cell");    
+    const auto& pd = *S.Get<CompositeVector>(pd_key).ViewComponent("cell");    
   
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
@@ -156,7 +156,7 @@ void ObservableAqueous::ComputeObservation(
       *value  += porosity[0][c] * ws[0][c] * tmp / (pd[0][c] * (1.0 - porosity[0][c])) * vol;
     }    
   } else if (variable_ == "aqueous pressure") {
-    const auto& pressure = *S.GetFieldData(pressure_key)->ViewComponent("cell");
+    const auto& pressure = *S.Get<CompositeVector>(pressure_key).ViewComponent("cell");
 
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
@@ -177,7 +177,7 @@ void ObservableAqueous::ComputeObservation(
       *value  += ws[0][c] * vol;
     }    
   } else if (variable_ == "hydraulic head") {
-    const Epetra_MultiVector& hydraulic_head = *S.GetFieldData(head_key)->ViewComponent("cell");
+    const auto& hydraulic_head = *S.Get<CompositeVector>(head_key).ViewComponent("cell");
  
     for (int i = 0; i < region_size_; ++i) {
       int c = entity_ids_[i];
@@ -187,8 +187,8 @@ void ObservableAqueous::ComputeObservation(
     }
     unit = "m";
   } else if (variable_ == "permeability-weighted hydraulic head") {
-    const Epetra_MultiVector& hydraulic_head = *S.GetFieldData(head_key)->ViewComponent("cell");
-    const Epetra_MultiVector& perm = *S.GetFieldData(perm_key)->ViewComponent("cell");
+    const auto& hydraulic_head = *S.Get<CompositeVector>(head_key).ViewComponent("cell");
+    const auto& perm = *S.Get<CompositeVector>(perm_key).ViewComponent("cell");
 
     for (int i = 0; i < region_size_; ++i) {
       int c = entity_ids_[i];
@@ -199,7 +199,7 @@ void ObservableAqueous::ComputeObservation(
     }
     unit = "m";
   } else if (variable_ == "drawdown") {
-    const Epetra_MultiVector& hydraulic_head = *S.GetFieldData(head_key)->ViewComponent("cell");
+    const auto& hydraulic_head = *S.Get<CompositeVector>(head_key).ViewComponent("cell");
 
     for (int i = 0; i < region_size_; ++i) {
       int c = entity_ids_[i];
@@ -214,8 +214,8 @@ void ObservableAqueous::ComputeObservation(
     //   *value = od.begin()->(*value) * (*volume) - (*value);
     // }
   } else if (variable_ == "permeability-weighted drawdown") {
-    const Epetra_MultiVector& hydraulic_head = *S.GetFieldData(head_key)->ViewComponent("cell");
-    const Epetra_MultiVector& perm = *S.GetFieldData(perm_key)->ViewComponent("cell");
+    const auto& hydraulic_head = *S.Get<CompositeVector>(head_key).ViewComponent("cell");
+    const auto& perm = *S.Get<CompositeVector>(perm_key).ViewComponent("cell");
 
     for (int i = 0; i < region_size_; ++i) {
       int c = entity_ids_[i];
@@ -234,10 +234,10 @@ void ObservableAqueous::ComputeObservation(
              variable_ == "aqueous volumetric flow rate") {
     Key darcy_flux_key = Keys::getKey(domain_, "darcy_flux");
     Teuchos::RCP<const Epetra_MultiVector> aperture_rcp;
-    const auto& darcy_flux = *S.GetFieldData(darcy_flux_key)->ViewComponent("face");
+    const auto& darcy_flux = *S.Get<CompositeVector>(darcy_flux_key).ViewComponent("face");
     if (domain_ == "fracture")
-      aperture_rcp = S.GetFieldData("fracture-aperture")->ViewComponent("cell");
-    const auto& fmap = *S.GetFieldData(darcy_flux_key)->Map().Map("face", true);
+      aperture_rcp = S.Get<CompositeVector>("fracture-aperture").ViewComponent("cell");
+    const auto& fmap = *S.Get<CompositeVector>(darcy_flux_key).Map().Map("face", true);
     Amanzi::AmanziMesh::Entity_ID_List cells;
     
     if (obs_boundary_ == 1) { // observation is on a boundary set
@@ -289,7 +289,7 @@ void ObservableAqueous::ComputeObservation(
 
   } else if (variable_ == "pH") {
     Key ph_key = Keys::getKey(domain_, "pH");
-    const Epetra_MultiVector& pH = *S.GetFieldData(ph_key)->ViewComponent("cell");
+    const auto& pH = *S.Get<CompositeVector>(ph_key).ViewComponent("cell");
 
     for (int i = 0; i < region_size_; ++i) {
       int c = entity_ids_[i];
@@ -310,8 +310,8 @@ void ObservableAqueous::ComputeObservation(
 double ObservableAqueous::CalculateWaterTable_(State& S, 
                                                AmanziMesh::Entity_ID_List& ids)
 {
-  Teuchos::RCP<const Epetra_MultiVector> pressure = S.GetFieldData("pressure")->ViewComponent("cell", true);
-  double patm = *S.GetScalarData("atmospheric_pressure");
+  auto pressure = S.Get<CompositeVector>("pressure").ViewComponent("cell", true);
+  double patm = S.Get<double>("atmospheric_pressure");
 
   // initilize and apply the reconstruction operator
   Teuchos::ParameterList plist;

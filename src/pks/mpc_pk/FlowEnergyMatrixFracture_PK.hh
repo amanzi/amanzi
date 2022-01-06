@@ -17,13 +17,13 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "independent_variable_field_evaluator_fromfunction.hh"
+#include "EvaluatorIndependentFunction.hh"
+#include "EvaluatorSecondary.hh"
 #include "PDE_CouplingFlux.hh"
 #include "PK_BDF.hh"
 #include "PK_MPCStrong.hh"
 #include "PK_Factory.hh"
 #include "TreeOperator.hh"
-#include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
 

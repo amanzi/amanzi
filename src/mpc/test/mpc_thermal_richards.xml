@@ -119,9 +119,9 @@
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="extreme"/>
     </ParameterList>
-    <ParameterList name="field evaluators">
+    <ParameterList name="evaluators">
       <ParameterList name="particle_density">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
@@ -135,7 +135,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="porosity">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
@@ -149,7 +149,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="molar_density_liquid">
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
@@ -174,17 +174,17 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="viscosity_liquid">
-        <Parameter name="field evaluator type" type="string" value="viscosity"/>
+        <Parameter name="evaluator type" type="string" value="viscosity"/>
         <Parameter name="viscosity key" type="string" value="viscosity_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water 0-30C"/>
         </ParameterList>
       </ParameterList>
       <ParameterList name="internal_energy_liquid">
-        <Parameter name="field evaluator type" type="string" value="iem"/>
+        <Parameter name="evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
         <ParameterList name="IEM parameters">
           <ParameterList name="Material1">

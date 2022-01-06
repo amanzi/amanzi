@@ -141,11 +141,47 @@ void Checkpoint::CreateFinalFile(const int cycle) {
 }
 
 
+void Checkpoint::ReadAttributes(State& S) {
+  double time(0.0);
+  output_["domain"]->readAttrReal(time, "time");
+  S.set_time(time);
+  S.GetW<double>("time", Tags::DEFAULT, "time") = time;
+
+  double dt(0.0);
+  output_["domain"]->readAttrReal(dt, "dt");
+  S.GetW<double>("dt", Tags::DEFAULT, "dt") = dt;
+
+  int cycle(0);
+  output_["domain"]->readAttrInt(cycle, "cycle");
+  S.set_cycle(cycle);
+  S.GetW<int>("cycle", Tags::DEFAULT, "cycle") = cycle;
+
+  int pos(0);
+  output_["domain"]->readAttrInt(pos, "position");
+  S.set_position(pos);
+
+  // load the number of processes and ensure they are the same -- otherwise
+  // the below just gives crap.
+  int rank(-1);
+  output_["domain"]->readAttrInt(rank, "mpi_comm_world_rank");
+  /*
+  if (comm->NumProc() != rank) {
+    Errors::Message message;
+    message << "Requested checkpoint file " << file_or_dirname << " was created on "
+            << rank << " processes, making it incompatible with this run on "
+            << comm->NumProc() << " process.";
+    Exceptions::amanzi_throw(message);
+  }
+  */
+}
+
+
 void Checkpoint::Finalize() {
   for (const auto& file_out : output_) {
     file_out.second->close_h5file();
   }
 }
+
 
 void Checkpoint::Write(const State& S,
                        double dt,

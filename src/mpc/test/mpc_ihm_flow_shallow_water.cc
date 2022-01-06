@@ -89,7 +89,7 @@ using namespace Amanzi::AmanziGeometry;
   cycle_driver.Go();
   
   // calculate the fluid pressure at the top of the subsurface at final time
-  const Epetra_MultiVector &p = *S->GetFieldData("pressure")->ViewComponent("face");
+  const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("face");
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   double p_top_avg = 0.0, top_surface_area = 0.0;
   
@@ -107,12 +107,10 @@ using namespace Amanzi::AmanziGeometry;
   
   // calculate the average ponded depth at final time
   double h_avg;
-  S->GetFieldData("surface-ponded_depth")->MeanValue(&h_avg);
-  const double rho = *S->GetScalarData("const_fluid_density");
-  const double patm = *S->GetScalarData("atmospheric_pressure");
-  double tmp[1];
-  S->GetConstantVectorData("gravity")->Norm2(tmp);
-  double g = tmp[0];
+  S->Get<CompositeVector>("surface-ponded_depth").MeanValue(&h_avg);
+  const double rho = S->Get<double>("const_fluid_density");
+  const double patm = S->Get<double>("atmospheric_pressure");
+  double g = norm(S->Get<AmanziGeometry::Point>("gravity"));
   
   std::cout<<"average surface ponded height: "<<h_avg<<std::endl;
   std::cout<<"average hydrostatic pressure at surface: "<<patm + rho*g*h_avg<<std::endl;
