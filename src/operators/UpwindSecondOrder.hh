@@ -52,10 +52,10 @@ class UpwindSecondOrder : public Upwind<Model> {
   Teuchos::RCP<CompositeVectorSpace> Map() {
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true)
-       ->AddComponent("cell", AmanziMesh::CELL, 1)
-       ->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1)
-       ->AddComponent("face", AmanziMesh::FACE, 1)
-       ->AddComponent("grad", AmanziMesh::CELL, mesh_->space_dimension());
+       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+       ->AddComponent("dirichlet_faces", AmanziMesh::Entity_kind::BOUNDARY_FACE, 1)
+       ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1)
+       ->AddComponent("grad", AmanziMesh::Entity_kind::CELL, mesh_->getSpaceDimension());
     return cvs;
   }
 
@@ -103,8 +103,8 @@ void UpwindSecondOrder<Model>::Compute(
   const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
   const Epetra_MultiVector& fld_grad = *field.ViewComponent("grad", true);
   const Epetra_MultiVector& fld_boundary = *field.ViewComponent("dirichlet_faces", true);
-  const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
-  const Epetra_Map& face_map = mesh_->face_map(true);
+  const Epetra_Map& ext_face_map = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
+  const Epetra_Map& face_map = mesh_->getMap(AmanziMesh::Entity_kind::FACE, true);
   Epetra_MultiVector& upw_face = *field.ViewComponent(face_comp_, true);
   upw_face.PutScalar(0.0);
 
@@ -113,17 +113,17 @@ void UpwindSecondOrder<Model>::Compute(
   flx_face.MaxValue(&flxmax);
   double tol = tolerance_ * std::max(fabs(flxmin), fabs(flxmax));
 
-  int dim = mesh_->space_dimension();
+  int dim = mesh_->getSpaceDimension();
   AmanziGeometry::Point grad(dim);
 
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
   for (int c = 0; c < ncells_wghost; c++) {
-    const auto& faces = mesh_->cell_get_faces(c);
-    const auto& dirs = mesh_->cell_get_face_dirs(c);
+    const auto& faces = mesh_->getCellFaces(c);
+    const auto& dirs = mesh_->getCellFaceDirections(c);
     int nfaces = faces.size();
 
     double kc(fld_cell[0][c]);
-    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
     for (int i = 0; i < dim; i++) grad[i] = fld_grad[i][c];
 
     for (int n = 0; n < nfaces; n++) {
@@ -135,11 +135,11 @@ void UpwindSecondOrder<Model>::Compute(
         double tmp(0.5);
         int c2 = WhetStone::cell_get_face_adj_cell(*mesh_, c, f);
         if (c2 >= 0) { 
-          double v1 = mesh_->cell_volume(c);
-          double v2 = mesh_->cell_volume(c2);
+          double v1 = mesh_->getCellVolume(c);
+          double v2 = mesh_->getCellVolume(c2);
           tmp = v2 / (v1 + v2);
         }
-        const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+        const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
         upw_face[0][f] += (kc + grad * (xf - xc)) * tmp;
       // Boundary faces. We upwind only on inflow dirichlet faces.
       } else if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
@@ -151,7 +151,7 @@ void UpwindSecondOrder<Model>::Compute(
         upw_face[0][f] = kc;
       // Internal and boundary faces. 
       } else if (!flag) {
-        const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+        const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
         upw_face[0][f] = kc + grad * (xf - xc);
       }
     }

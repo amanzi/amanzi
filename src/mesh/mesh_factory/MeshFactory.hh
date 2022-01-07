@@ -29,7 +29,9 @@ struct MeshFactory : public MeshFrameworkFactory {
   Teuchos::RCP<Mesh>
   create(Args... args) {
     Teuchos::RCP<MeshFramework> mesh_fw = MeshFrameworkFactory::create(args...);
-    return Teuchos::rcp(new Mesh(mesh_fw));
+    auto mesh = Teuchos::rcp(new Mesh(mesh_fw));
+    MeshAlgorithms::cacheDefault(*mesh);
+    return mesh;
   }
 
   // Need a special one for extracted meshes, since they differ not just in
@@ -37,6 +39,13 @@ struct MeshFactory : public MeshFrameworkFactory {
   Teuchos::RCP<Mesh>
   create(const Teuchos::RCP<const Mesh>& parent_mesh,
          const Entity_ID_List& setids,
+         const Entity_kind setkind,
+         const bool flatten=false);
+
+  // Another for extracted meshes, this time with set names instead of IDs
+  Teuchos::RCP<Mesh>
+  create(const Teuchos::RCP<const Mesh>& parent_mesh,
+         const std::vector<std::string>& setnames,
          const Entity_kind setkind,
          const bool flatten=false);
 

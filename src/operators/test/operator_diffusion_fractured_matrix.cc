@@ -48,6 +48,7 @@ void TestDiffusionFracturedMatrix(double gravity) {
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
+  int comm_size = comm->NumProc();
 
   if (MyPID == 0) std::cout << "\nTest: 3D fractured matrix problem: gravity=" << gravity << "\n";
 
@@ -64,9 +65,9 @@ void TestDiffusionFracturedMatrix(double gravity) {
   meshfactory.set_preference(Preference({Framework::MSTK}));
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
 
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
 
   // modify diffusion coefficient
   WhetStone::Tensor Knull;
@@ -75,7 +76,7 @@ void TestDiffusionFracturedMatrix(double gravity) {
   Analytic02 ana(mesh, Point(1.0, 2.0, 0.0), gravity, Knull);
 
   for (int c = 0; c < ncells; c++) {
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
     const WhetStone::Tensor& Ktmp = ana.TensorDiffusivity(xc, 0.0);
     Kc->push_back(Ktmp);
   }
@@ -83,12 +84,12 @@ void TestDiffusionFracturedMatrix(double gravity) {
   // create boundary data.
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator");
 
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; ++f) {
-    const Point& xf = mesh->face_centroid(f);
+    const Point& xf = mesh->getFaceCentroid(f);
 
     // external boundary
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
@@ -146,12 +147,14 @@ void TestDiffusionFracturedMatrix(double gravity) {
               << " itr=" << global_op->num_itrs()
               << " code=" << global_op->returned_code() << std::endl;
 
-    // visualization
-    const Epetra_MultiVector& p = *solution->ViewComponent("cell");
-    GMV::open_data_file(*mesh, (std::string)"operators.gmv");
-    GMV::start_data();
-    GMV::write_cell_data(p, 0, "solution");
-    GMV::close_data_file();
+    if (comm_size == 1) {
+      // visualization
+      const Epetra_MultiVector& p = *solution->ViewComponent("cell");
+      GMV::open_data_file(*mesh, (std::string)"operators.gmv");
+      GMV::start_data();
+      GMV::write_cell_data(p, 0, "solution");
+      GMV::close_data_file();
+    }
   }
 
   CHECK(global_op->num_itrs() < 200);
@@ -164,7 +167,7 @@ void TestDiffusionFracturedMatrix(double gravity) {
   // calculate flux error. To reuse the standard tools, we need to
   // collapse flux on fracture interface
   Epetra_MultiVector& flx_long = *flux->ViewComponent("face", true);
-  Epetra_MultiVector flx_short(mesh->face_map(false), 1);
+  Epetra_MultiVector flx_short(mesh->getMap(AmanziMesh::Entity_kind::FACE, false), 1);
   double unorm, ul2_err, uinf_err;
 
   op->UpdateFlux(solution.ptr(), flux.ptr());

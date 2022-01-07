@@ -547,7 +547,8 @@ void MFD3D_Diffusion::RescaleMassMatrixInverse_(int c, DenseMatrix& W)
   std::vector<double> areas(nfaces, 0.0);
   for (int i = 0; i < nfaces; i++) {
     int f = faces[i];
-    areas[i] = norm(mesh_->getFaceNormal(f));
+    //areas[i] = norm(mesh_->getFaceNormal(f));
+    areas[i] = mesh_->getFaceArea(f);
   }
 
   // back to area-weighted fluxes

@@ -86,8 +86,8 @@ void UpwindDivK<Model>::Compute(
 
   const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
   const Epetra_MultiVector& fld_boundary = *field.ViewComponent("dirichlet_faces", true);
-  const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
-  const Epetra_Map& face_map = mesh_->face_map(true);
+  const Epetra_Map& ext_face_map = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
+  const Epetra_Map& face_map = mesh_->getMap(AmanziMesh::Entity_kind::FACE, true);
   Epetra_MultiVector& upw_face = *field.ViewComponent(face_comp_, true);
   upw_face.PutScalar(0.0);
 
@@ -99,9 +99,9 @@ void UpwindDivK<Model>::Compute(
   std::vector<int> dirs;
   AmanziMesh::Entity_ID_List faces;
 
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
   for (int c = 0; c < ncells_wghost; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->getCellFacesAndDirs(c, faces, &dirs);
     int nfaces = faces.size();
     double kc(fld_cell[0][c]);
 
@@ -114,8 +114,8 @@ void UpwindDivK<Model>::Compute(
         double tmp(0.5);
         int c2 = WhetStone::cell_get_face_adj_cell(*mesh_, c, f);
         if (c2 >= 0) { 
-          double v1 = mesh_->cell_volume(c);
-          double v2 = mesh_->cell_volume(c2);
+          double v1 = mesh_->getCellVolume(c);
+          double v2 = mesh_->getCellVolume(c2);
           tmp = v2 / (v1 + v2);
         }
         upw_face[0][f] += kc * tmp; 

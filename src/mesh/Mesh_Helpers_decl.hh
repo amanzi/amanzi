@@ -51,6 +51,9 @@ Cell_type getCellType(const Mesh_type& mesh, const Entity_ID c);
 template<class Mesh_type>
 int getFaceDirectionInCell(const Mesh_type& mesh, const Entity_ID f, const Entity_ID c);
 
+template<>
+int getFaceDirectionInCell(const Mesh& mesh, const Entity_ID f, const Entity_ID c);
+
 template<class Mesh_type>
 Entity_ID_List
 computeCellEdges(const Mesh_type& mesh, const Entity_ID c);
@@ -58,6 +61,10 @@ computeCellEdges(const Mesh_type& mesh, const Entity_ID c);
 template<class Mesh_type>
 Entity_ID_List
 computeCellNodes(const Mesh_type& mesh, const Entity_ID c);
+
+template<class Mesh_type>
+Entity_ID_List
+computeNodeCells(const Mesh_type& mesh, const Entity_ID n);
 
 
 //
@@ -97,6 +104,13 @@ std::size_t getMaxCellNumNodes(const Mesh_type& mesh);
 
 template<class Mesh_type>
 std::size_t getMaxCellNumFaces(const Mesh_type& mesh);
+
+template<class Mesh_type>
+std::size_t getMaxCellNumEdges(const Mesh_type& mesh);
+
+template<class Mesh_type>
+Entity_ID_List getCellFaceAdjacentCells(const Mesh_type& mesh,
+        Entity_ID c, Parallel_type ptype);
 
 //
 // Deformation algorithms

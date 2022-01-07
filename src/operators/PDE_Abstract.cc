@@ -117,10 +117,10 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                                   const Teuchos::Ptr<const CompositeVector>& p)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
-  int d(mesh_->space_dimension());
+  int d(mesh_->getSpaceDimension());
 
   WhetStone::DenseMatrix Mcell, Acell, AcellT;
-  WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
+  WhetStone::Tensor Kc(mesh_->getSpaceDimension(), 1);
   Kc(0, 0) = 1.0;
 
   if (matrix_ == "mass") {
@@ -167,7 +167,7 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
       AmanziMesh::Entity_ID_List nodes;
 
       for (int c = 0; c < ncells_owned; ++c) {
-        mesh_->cell_get_nodes(c, &nodes);
+        mesh_->getCellNodes(c, nodes);
 
         AmanziGeometry::Point vn(d);
         std::vector<AmanziGeometry::Point> vec;
@@ -233,7 +233,7 @@ void PDE_Abstract::CreateStaticMatrices_()
 {
   AMANZI_ASSERT(matrix_ == "advection");
 
-  int d(mesh_->space_dimension());
+  int d(mesh_->getSpaceDimension());
   WhetStone::DenseMatrix Acell;
   WhetStone::VectorPolynomial poly(d, d, 0);
 

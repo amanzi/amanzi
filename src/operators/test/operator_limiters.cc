@@ -50,21 +50,21 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  meshfactory.set_preference(Preference({Framework::MSTK}));
 
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 7, 7);
 
   // create and initialize cell-based field 
-  Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
-  Epetra_MultiVector grad_exact(mesh->cell_map(false), 2);
+  Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::CELL, true), 1));
+  Epetra_MultiVector grad_exact(mesh->getMap(AmanziMesh::Entity_kind::CELL, false), 2);
 
-  int ncells_owned  = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned  = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+  int nnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_wghost; c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     (*field)[0][c] = xc[0] + 2 * xc[1];
     if (c < ncells_owned) {
       grad_exact[0][c] = 1.0;
@@ -109,7 +109,7 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
       bc_value.assign(nfaces_wghost, 0.0);
 
       for (int f = 0; f < nfaces_wghost; f++) {
-        const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+        const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
         if (fabs(xf[0]) < 1e-6 || fabs(1.0 - xf[0]) < 1e-6 ||
             fabs(xf[1]) < 1e-6 || fabs(1.0 - xf[1]) < 1e-6) {
           bc_model[f] = OPERATOR_BC_DIRICHLET;
@@ -122,7 +122,7 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
       AmanziGeometry::Point xv(2);
 
       for (int v = 0; v < nnodes_wghost; v++) {
-        mesh->node_get_coordinates(v, &xv);
+        xv = mesh->getNodeCoordinate(v);
         if (fabs(xv[0]) < 1e-6 || fabs(1.0 - xv[0]) < 1e-6 ||
             fabs(xv[1]) < 1e-6 || fabs(1.0 - xv[1]) < 1e-6) {
           bc_model[v] = OPERATOR_BC_DIRICHLET;
@@ -171,19 +171,19 @@ TEST(LIMITER_LINEAR_FUNCTION_3D) {
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  meshfactory.set_preference(Preference({Framework::MSTK}));
 
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 6, 5);
 
   // create and initialize cell-based field 
-  Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
-  Epetra_MultiVector grad_exact(mesh->cell_map(false), 3);
+  Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::CELL, true), 1));
+  Epetra_MultiVector grad_exact(mesh->getMap(AmanziMesh::Entity_kind::CELL, false), 3);
 
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_wghost; c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     (*field)[0][c] = xc[0] + 2 * xc[1] + 3 * xc[2];
     if (c < ncells_owned) {
       grad_exact[0][c] = 1.0;
@@ -195,18 +195,18 @@ TEST(LIMITER_LINEAR_FUNCTION_3D) {
   // create and initialize flux
   // Since limiters do not allow maximum on the outflow bounadry, 
   // we use this trick: re-entering flow everywhere.
-  const Epetra_Map& fmap = mesh->face_map(true);
+  const Epetra_Map& fmap = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
   Teuchos::RCP<Epetra_MultiVector> flux = Teuchos::rcp(new Epetra_MultiVector(fmap, 1));
 
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+  int nnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
   AmanziGeometry::Point velocity(3), center(0.5, 0.5, 0.5);
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+    const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
     velocity = center - xf;
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    (*flux)[0][f] = (velocity * normal) / mesh->face_area(f);
+    const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
+    (*flux)[0][f] = (velocity * normal) / mesh->getFaceArea(f);
   }
 
   for (int i = 0; i < 4; i++) {
@@ -233,7 +233,7 @@ TEST(LIMITER_LINEAR_FUNCTION_3D) {
       bc_value.assign(nfaces_wghost, 0.0);
 
       for (int f = 0; f < nfaces_wghost; f++) {
-        const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+        const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
         if (fabs(xf[0]) < 1e-6 || fabs(1.0 - xf[0]) < 1e-6 ||
             fabs(xf[1]) < 1e-6 || fabs(1.0 - xf[1]) < 1e-6 ||
             fabs(xf[2]) < 1e-6 || fabs(1.0 - xf[2]) < 1e-6) {
@@ -247,7 +247,7 @@ TEST(LIMITER_LINEAR_FUNCTION_3D) {
       AmanziGeometry::Point xv(3);
 
       for (int v = 0; v < nnodes_wghost; v++) {
-        mesh->node_get_coordinates(v, &xv);
+        xv = mesh->getNodeCoordinate(v);
         if (fabs(xv[0]) < 1e-6 || fabs(1.0 - xv[0]) < 1e-6 ||
             fabs(xv[1]) < 1e-6 || fabs(1.0 - xv[1]) < 1e-6 ||
             fabs(xv[2]) < 1e-6 || fabs(1.0 - xv[2]) < 1e-6) {
@@ -295,20 +295,20 @@ TEST(LIMITER_SMOOTH_FIELD_2D) {
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  meshfactory.set_preference(Preference({Framework::MSTK}));
 
   for (int n = 14; n < 100; n*=2) { 
     Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, n, n - 1);
 
     // create and initialize cell-based field ussing f(x,y) = x^2 y + 2 x y^3
-    Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
-    Epetra_MultiVector grad_exact(mesh->cell_map(false), 2);
+    Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::CELL, true), 1));
+    Epetra_MultiVector grad_exact(mesh->getMap(AmanziMesh::Entity_kind::CELL, false), 2);
 
-    int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+    int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
 
     for (int c = 0; c < ncells_wghost; c++) {
-      const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+      const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
       double x = xc[0], y = xc[1];
       (*field)[0][c] = x*x*y + 2*x*y*y*y;
       if (c < ncells_owned) {
@@ -320,18 +320,18 @@ TEST(LIMITER_SMOOTH_FIELD_2D) {
     // create and initialize flux
     // Since limiters do not allow maximum on the outflow bounadry, 
     // we use this trick: re-entering flow everywhere.
-    const Epetra_Map& fmap = mesh->face_map(true);
+    const Epetra_Map& fmap = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
     Teuchos::RCP<Epetra_MultiVector> flux = Teuchos::rcp(new Epetra_MultiVector(fmap, 1));
 
-    int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-    int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+    int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+    int nnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
     AmanziGeometry::Point velocity(1.0, 2.0), center(0.5, 0.5);
 
     for (int f = 0; f < nfaces_wghost; f++) {
-      const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+      const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
       velocity = center - xf;
-      const AmanziGeometry::Point& normal = mesh->face_normal(f);
-      (*flux)[0][f] = (velocity * normal) / mesh->face_area(f);
+      const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
+      (*flux)[0][f] = (velocity * normal) / mesh->getFaceArea(f);
     }
 
     for (int i = 0; i < 7; i++) {
@@ -367,7 +367,7 @@ TEST(LIMITER_SMOOTH_FIELD_2D) {
         bc_value.assign(nfaces_wghost, 0.0);
 
         for (int f = 0; f < nfaces_wghost; f++) {
-          const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+          const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
           double x = xf[0], y = xf[1];
           if (fabs(xf[0]) < 1e-6 || fabs(1.0 - xf[0]) < 1e-6 ||
               fabs(xf[1]) < 1e-6 || fabs(1.0 - xf[1]) < 1e-6) {
@@ -381,7 +381,7 @@ TEST(LIMITER_SMOOTH_FIELD_2D) {
         AmanziGeometry::Point xv(2);
 
         for (int v = 0; v < nnodes_wghost; v++) {
-          mesh->node_get_coordinates(v, &xv);
+          xv = mesh->getNodeCoordinate(v);
           double x = xv[0], y = xv[1];
           if (fabs(xv[0]) < 1e-6 || fabs(1.0 - xv[0]) < 1e-6 ||
               fabs(xv[1]) < 1e-6 || fabs(1.0 - xv[1]) < 1e-6) {
@@ -431,20 +431,20 @@ TEST(LIMITER_SMOOTH_FIELD_3D) {
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  meshfactory.set_preference(Preference({Framework::MSTK}));
 
   for (int n = 14; n < 50; n*=2) { 
     Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n - 2, n - 1);
 
     // create and initialize cell-based field f(x,y,z) = x^2 y z^2 + 2 x y^3 z
-    Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
-    Epetra_MultiVector grad_exact(mesh->cell_map(false), 3);
+    Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::CELL, true), 1));
+    Epetra_MultiVector grad_exact(mesh->getMap(AmanziMesh::Entity_kind::CELL, false), 3);
 
-    int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+    int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+    int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
 
     for (int c = 0; c < ncells_wghost; c++) {
-      const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+      const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
       double x = xc[0], y = xc[1], z = xc[2];
       (*field)[0][c] = x*x*y*z*z + 2*x*y*y*y*z;
       if (c < ncells_owned) {
@@ -457,18 +457,18 @@ TEST(LIMITER_SMOOTH_FIELD_3D) {
     // create and initialize flux
     // Since limiters do not allow maximum on the outflow bounadry, 
     // we use this trick: re-entering flow everywhere.
-    const Epetra_Map& fmap = mesh->face_map(true);
+    const Epetra_Map& fmap = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
     Teuchos::RCP<Epetra_MultiVector> flux = Teuchos::rcp(new Epetra_MultiVector(fmap, 1));
 
-    int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-    int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+    int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+    int nnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
     AmanziGeometry::Point velocity(3), center(0.5, 0.5, 0.5);
 
     for (int f = 0; f < nfaces_wghost; f++) {
-      const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+      const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
       velocity = center - xf;
-      const AmanziGeometry::Point& normal = mesh->face_normal(f);
-      (*flux)[0][f] = (velocity * normal) / mesh->face_area(f);
+      const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
+      (*flux)[0][f] = (velocity * normal) / mesh->getFaceArea(f);
     }
 
     for (int i = 0; i < 3; i++) {
@@ -491,7 +491,7 @@ TEST(LIMITER_SMOOTH_FIELD_3D) {
         bc_value.assign(nfaces_wghost, 0.0);
 
         for (int f = 0; f < nfaces_wghost; f++) {
-          const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+          const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
           double x = xf[0], y = xf[1], z = xf[2];
           if (fabs(xf[0]) < 1e-6 || fabs(1.0 - xf[0]) < 1e-6 ||
               fabs(xf[1]) < 1e-6 || fabs(1.0 - xf[1]) < 1e-6 ||
@@ -506,7 +506,7 @@ TEST(LIMITER_SMOOTH_FIELD_3D) {
         AmanziGeometry::Point xv(3);
 
         for (int v = 0; v < nnodes_wghost; v++) {
-          mesh->node_get_coordinates(v, &xv);
+          xv = mesh->getNodeCoordinate(v);
           double x = xv[0], y = xv[1], z = xv[2];
           if (fabs(xv[0]) < 1e-6 || fabs(1.0 - xv[0]) < 1e-6 ||
               fabs(xv[1]) < 1e-6 || fabs(1.0 - xv[1]) < 1e-6 ||
@@ -568,19 +568,19 @@ void SmoothField2DPoly(double extension)
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
   MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  meshfactory.set_preference(Preference({Framework::MSTK}));
 
   Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // create and initialize cell-based field ussing f(x,y) = x^2 y + 2 x y^3
-  Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
-  Epetra_MultiVector grad_exact(mesh->cell_map(false), 2);
+  Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::CELL, true), 1));
+  Epetra_MultiVector grad_exact(mesh->getMap(AmanziMesh::Entity_kind::CELL, false), 2);
 
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_wghost; c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     double x = xc[0], y = xc[1];
     (*field)[0][c] = x*x*y + 2*x*y*y*y;
     if (c < ncells_owned) {
@@ -592,18 +592,18 @@ void SmoothField2DPoly(double extension)
   // Create and initialize flux
   // Since limiters do not allow maximum on the outflow bounadry, 
   // we use this trick: re-entering flow everywhere.
-  const Epetra_Map& fmap = mesh->face_map(true);
+  const Epetra_Map& fmap = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
   Teuchos::RCP<Epetra_MultiVector> flux = Teuchos::rcp(new Epetra_MultiVector(fmap, 1));
 
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
+  int nnodes_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::ALL);
   AmanziGeometry::Point velocity(1.0, 2.0), center(0.5, 0.5);
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+    const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
     velocity = center - xf;
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    (*flux)[0][f] = (velocity * normal) / mesh->face_area(f);
+    const AmanziGeometry::Point& normal = mesh->getFaceNormal(f);
+    (*flux)[0][f] = (velocity * normal) / mesh->getFaceArea(f);
   }
 
   for (int i = 0; i < 7; i++) {
@@ -639,7 +639,7 @@ void SmoothField2DPoly(double extension)
       bc_value.assign(nfaces_wghost, 0.0);
 
       for (int f = 0; f < nfaces_wghost; f++) {
-        const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+        const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
         double x = xf[0], y = xf[1];
         if (fabs(xf[0]) < 1e-6 || fabs(1.0 - xf[0]) < 1e-6 ||
             fabs(xf[1]) < 1e-6 || fabs(1.0 - xf[1]) < 1e-6) {
@@ -653,7 +653,7 @@ void SmoothField2DPoly(double extension)
       AmanziGeometry::Point xv(2);
 
       for (int v = 0; v < nnodes_wghost; v++) {
-        mesh->node_get_coordinates(v, &xv);
+        xv = mesh->getNodeCoordinate(v);
         double x = xv[0], y = xv[1];
         if (fabs(xv[0]) < 1e-6 || fabs(1.0 - xv[0]) < 1e-6 ||
             fabs(xv[1]) < 1e-6 || fabs(1.0 - xv[1]) < 1e-6) {
@@ -705,18 +705,18 @@ TEST(LIMITER_LINEAR_FUNCTION_FRACTURES) {
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  meshfactory.set_preference(Preference({Framework::MSTK}));
   Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/fractures.exo");
 
   // create and initialize cell-based field 
-  Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
-  Epetra_MultiVector grad_exact(mesh->cell_map(false), 3);
+  Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::CELL, true), 1));
+  Epetra_MultiVector grad_exact(mesh->getMap(AmanziMesh::Entity_kind::CELL, false), 3);
 
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_wghost; c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     if (fabs(xc[2] - 0.5) < 1e-10) {
       (*field)[0][c] = xc[0] + 2 * xc[1];
       if (c < ncells_owned) {
@@ -737,17 +737,18 @@ TEST(LIMITER_LINEAR_FUNCTION_FRACTURES) {
   // create and initialize flux
   // Since limiters do not allow maximum on the outflow bounadry, 
   // we use this trick: re-entering flow everywhere.
-  const Epetra_Map& fmap = mesh->face_map(true);
+  const Epetra_Map& fmap = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
   Teuchos::RCP<Epetra_MultiVector> flux = Teuchos::rcp(new Epetra_MultiVector(fmap, 1));
 
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
   AmanziGeometry::Point velocity(3), center(0.5, 0.5, 0.5);
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+    const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
     velocity = center - xf;
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    (*flux)[0][f] = (velocity * normal) / mesh->face_area(f);
+    const AmanziGeometry::Point& normal = mesh->getFaceNormal(f,
+            mesh->getFaceCells(f, AmanziMesh::Parallel_type::ALL)[0]);
+    (*flux)[0][f] = (velocity * normal) / mesh->getFaceArea(f);
   }
 
   for (int i = 1; i < 2; i++) {
@@ -766,7 +767,7 @@ TEST(LIMITER_LINEAR_FUNCTION_FRACTURES) {
       bc_value.assign(nfaces_wghost, 0.0);
 
       for (int f = 0; f < nfaces_wghost; f++) {
-        const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+        const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
         if (fabs(xf[0]) < 1e-6 || fabs(1.0 - xf[0]) < 1e-6 ||
             fabs(xf[1]) < 1e-6 || fabs(1.0 - xf[1]) < 1e-6 ||
             fabs(xf[2]) < 1e-6 || fabs(1.0 - xf[2]) < 1e-6) {

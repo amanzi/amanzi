@@ -70,10 +70,10 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   Analytic04 ana(mesh);
 
   // vector spaces
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
 
   Teuchos::RCP<CompositeVectorSpace> cell_space = Teuchos::rcp(new CompositeVectorSpace());
   cell_space->SetMesh(mesh)->SetComponent("cell",CELL,1)->SetGhosted();
@@ -87,8 +87,8 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   src.PutScalar(0.0);
 
   for (int c = 0; c < ncells; c++) {
-    const Point& xc = mesh->cell_centroid(c);
-    double volume = mesh->cell_volume(c);
+    const Point& xc = mesh->getCellCentroid(c);
+    double volume = mesh->getCellVolume(c);
     src[0][c] = ana.source_exact(xc, 0.0) * volume;
   }
 
@@ -100,7 +100,7 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   std::vector<WhetStone::Tensor> K;
 
   for (int c = 0; c != ncells; ++c) {
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
     const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
     K.push_back(Kc);
   }
@@ -111,7 +111,7 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
     Epetra_MultiVector& coef_faces = *coef->ViewComponent("face",false);
 
     for (int f = 0; f != nfaces; ++f) {
-      const Point& xf = mesh->face_centroid(f);
+      const Point& xf = mesh->getFaceCentroid(f);
       coef_faces[0][f] = ana.ScalarCoefficient(xf, 0.0);
     }
   }
@@ -124,7 +124,7 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   std::vector<double> bc_mixed;
 
   AmanziMesh::Entity_ID_List left;
-  mesh->get_set_entities("Left side", AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL, &left);
+  left = mesh->getSetEntities("Left side", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
   for (int f=0; f!=left.size(); ++f) {
     bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
     mesh->face_centroid(f, &xv);
@@ -132,7 +132,7 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   }
 
   AmanziMesh::Entity_ID_List right;
-  mesh->get_set_entities("Right side", AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL, &right);
+  right = mesh->getSetEntities("Right side", AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
   for (int f = 0; f != right.size(); ++f) {
     bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
     mesh->face_centroid(f, &xv);
@@ -163,7 +163,7 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   {
     Epetra_MultiVector& p_cell = *solution.ViewComponent("cell");
     for (int c = 0; c < ncells; c++) {
-      const Point& xc = mesh->cell_centroid(c);
+      const Point& xc = mesh->getCellCentroid(c);
       p_cell[0][c] = ana.pressure_exact(xc, 0.0);
     }
   }

@@ -151,13 +151,13 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
       return out;
     }
     if (little_k_ != OPERATOR_LITTLE_K_UPWIND) {
-      out.AddComponent("cell", AmanziMesh::CELL, 1);
+      out.AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     }
     if (little_k_ != OPERATOR_LITTLE_K_STANDARD) {
-      out.AddComponent("face", AmanziMesh::FACE, 1);
+      out.AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
     }
     if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
-      out.AddComponent("twin", AmanziMesh::FACE, 1);
+      out.AddComponent("twin", AmanziMesh::Entity_kind::FACE, 1);
     }
     return out;          
   }

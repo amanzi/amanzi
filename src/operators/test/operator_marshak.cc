@@ -58,7 +58,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
   MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  meshfactory.set_preference(Preference({Framework::MSTK}));
   // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 3.0, 1.0, 200, 10);
   RCP<const Mesh> mesh = meshfactory.create("test/marshak.exo");
 
@@ -67,8 +67,8 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
@@ -77,12 +77,12 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   }
 
   // create boundary data (no mixed bc)
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    const Point& xf = mesh->face_centroid(f);
+    const Point& xf = mesh->getFaceCentroid(f);
 
     if (fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
@@ -100,11 +100,11 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
   if (op_list_name == "diffusion operator Sff") {
     cvs->SetMesh(mesh)->SetGhosted(true)
-       ->AddComponent("cell", AmanziMesh::CELL, 1)
-       ->AddComponent("face", AmanziMesh::FACE, 1);
+       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1)
+       ->AddComponent("face", AmanziMesh::Entity_kind::FACE, 1);
   } else {
     cvs->SetMesh(mesh)->SetGhosted(true)
-       ->AddComponent("cell", AmanziMesh::CELL, 1);
+       ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
   }
 
   Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(*cvs));
@@ -116,7 +116,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 
   Point velocity(0.0, 0.0);
   for (int f = 0; f < nfaces_wghost; f++) {
-    const Point& normal = mesh->face_normal(f);
+    const Point& normal = mesh->getFaceNormal(f);
     flx[0][f] = velocity * normal;
   }
 
@@ -139,7 +139,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 
     // update bc
     for (int f = 0; f < nfaces_wghost; f++) {
-      const Point& xf = mesh->face_centroid(f);
+      const Point& xf = mesh->getFaceCentroid(f);
       if (fabs(xf[0]) < 1e-6) bc_value[f] = knc->exact(t + dt, xf);
     }
 
@@ -159,7 +159,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     Teuchos::RCP<Operator> global_op = op->global_operator();
 
     // add accumulation terms
-    PDE_Accumulation op_acc(AmanziMesh::CELL, global_op);
+    PDE_Accumulation op_acc(AmanziMesh::Entity_kind::CELL, global_op);
     op_acc.AddAccumulationDelta(*solution, heat_capacity, heat_capacity, dt, "cell");
 
     // apply BCs and assemble
@@ -210,15 +210,15 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   double pl2_err(0.0), pnorm(0.0);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     double err = p[0][c] - knc->exact(t, xc);
     pl2_err += err * err;
     pnorm += p[0][c] * p[0][c];
   }
   double tmp = pl2_err;
-  mesh->get_comm()->SumAll(&tmp, &pl2_err, 1);
+  mesh->getComm()->SumAll(&tmp, &pl2_err, 1);
   tmp = pnorm;
-  mesh->get_comm()->SumAll(&tmp, &pnorm, 1);
+  mesh->getComm()->SumAll(&tmp, &pnorm, 1);
 
   pl2_err = std::pow(pl2_err / pnorm, 0.5);
   pnorm = std::pow(pnorm, 0.5);

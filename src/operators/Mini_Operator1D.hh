@@ -49,8 +49,8 @@ class Mini_Operator1D {
   void SetMatrixRow(int i, double al, double ad, double ar);
 
   // elementary mesh operations
-  double mesh_cell_volume(int i) { return (*mesh_)(i + 1) - (*mesh_)(i); } 
-  double mesh_cell_centroid(int i) { return ((*mesh_)(i + 1) + (*mesh_)(i)) / 2; } 
+  double mesh_getCellVolume(int i) { return (*mesh_)(i + 1) - (*mesh_)(i); } 
+  double mesh_getCellCentroid(int i) { return ((*mesh_)(i + 1) + (*mesh_)(i)) / 2; } 
 
   // access
   const WhetStone::DenseVector& rhs() const { return rhs_; }

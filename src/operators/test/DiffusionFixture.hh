@@ -67,7 +67,7 @@ struct DiffusionFixture {
   void MatVec(int nloops);
 
   // access
-  Comm_ptr_type get_comm() const { return comm; }
+  Comm_ptr_type getComm() const { return comm; }
   
  public:
   Comm_ptr_type comm;
@@ -119,10 +119,10 @@ void DiffusionFixture::Discretize(const std::string& name,
 
   // populate diffusion coefficient(s)
   auto K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells; c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     K->push_back(ana->TensorDiffusivity(xc, 0.0));   
   }
 
@@ -132,7 +132,7 @@ void DiffusionFixture::Discretize(const std::string& name,
   op = opfactory.Create();
 
   // boundary condition
-  bc = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  bc = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   op->SetBCs(bc, bc);
 }
 
@@ -147,16 +147,16 @@ void DiffusionFixture::DiscretizeWithGravity(
   Operators::PDE_DiffusionFactory opfactory(plist->sublist("PK operator").sublist(name), mesh);
 
   // set gravity
-  AmanziGeometry::Point g(mesh->space_dimension());
-  g[mesh->space_dimension() - 1] = -gravity;
+  AmanziGeometry::Point g(mesh->getSpaceDimension());
+  g[mesh->getSpaceDimension() - 1] = -gravity;
   opfactory.SetConstantGravitationalTerm(g, 1.0);
 
   // populate diffusion coefficient
   auto K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells; c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     K->push_back(ana->TensorDiffusivity(xc, 0.0));   
   }
 
@@ -165,7 +165,7 @@ void DiffusionFixture::DiscretizeWithGravity(
 
   op = opfactory.Create();
 
-  bc = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  bc = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   op->SetBCs(bc, bc);
 }
 
@@ -209,26 +209,26 @@ void DiffusionFixture::SetScalarCoefficient(
     AmanziMesh::Entity_kind kind)
 {
   if (kind == AmanziMesh::Entity_kind::UNKNOWN) return;
-  int nents = mesh->num_entities(kind, AmanziMesh::Parallel_type::ALL);
+  int nents = mesh->getNumEntities(kind, AmanziMesh::Parallel_type::ALL);
 
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh)->SetGhosted();
   Teuchos::RCP<CompositeVector> kr;
 
-  if (kind == AmanziMesh::CELL) {
-    cvs.SetComponent("cell", AmanziMesh::CELL, 1);
+  if (kind == AmanziMesh::Entity_kind::CELL) {
+    cvs.SetComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
     kr = cvs.Create();
     auto& kr_c = *kr->ViewComponent("cell", true);
     for (int c = 0; c != nents; ++c) {
-      kr_c[0][c] = ana->ScalarDiffusivity(mesh->cell_centroid(c), 0.0);
+      kr_c[0][c] = ana->ScalarDiffusivity(mesh->getCellCentroid(c), 0.0);
     }
 
-  } else if (kind == AmanziMesh::FACE) {
-    cvs.SetComponent("face", AmanziMesh::FACE, 1);
+  } else if (kind == AmanziMesh::Entity_kind::FACE) {
+    cvs.SetComponent("face", AmanziMesh::Entity_kind::FACE, 1);
     kr = cvs.Create();
     auto& kr_f = *kr->ViewComponent("face", true);
     for (int f = 0; f != nents; ++f) {
-      kr_f[0][f] = ana->ScalarDiffusivity(mesh->face_centroid(f), 0.0);
+      kr_f[0][f] = ana->ScalarDiffusivity(mesh->getFaceCentroid(f), 0.0);
     }
   }
 
@@ -244,14 +244,14 @@ void DiffusionFixture::SetBCsDirichlet()
   auto& bc_value = bc->bc_value();
   auto& bc_model = bc->bc_model();
     
-  if (bc->kind() == AmanziMesh::FACE) {
-    const auto& bf_map = mesh->map(AmanziMesh::BOUNDARY_FACE, false);
-    const auto& f_map = mesh->map(AmanziMesh::FACE, false);
+  if (bc->kind() == AmanziMesh::Entity_kind::FACE) {
+    const auto& bf_map = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false);
+    const auto& f_map = mesh->getMap(AmanziMesh::Entity_kind::FACE, false);
       
     for (int bf = 0; bf != bf_map.NumMyElements(); ++bf) {
       auto f = f_map.LID(bf_map.GID(bf));
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value[f] = ana->pressure_exact(mesh->face_centroid(f), 0.0);
+      bc_value[f] = ana->pressure_exact(mesh->getFaceCentroid(f), 0.0);
     }
   } else {
     Exceptions::amanzi_throw("OperatorDiffusion test harness not implemented for this kind.");
@@ -264,18 +264,18 @@ void DiffusionFixture::SetBCsDirichletNeumann()
   auto& bc_value = bc->bc_value();
   auto& bc_model = bc->bc_model();
     
-  if (bc->kind() == AmanziMesh::FACE) {
-    const auto& bf_map = mesh->map(AmanziMesh::BOUNDARY_FACE, true);
-    const auto& f_map = mesh->map(AmanziMesh::FACE, true);
+  if (bc->kind() == AmanziMesh::Entity_kind::FACE) {
+    const auto& bf_map = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
+    const auto& f_map = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
       
     for (int bf = 0; bf != bf_map.NumMyElements(); ++bf) {
       auto f = f_map.LID(bf_map.GID(bf));
-      const auto& xf = mesh->face_centroid(f);
+      const auto& xf = mesh->getFaceCentroid(f);
       if (xf[0] < 0.0) {
         bool flag;
         auto normal = ana->face_normal_exterior(f, &flag);
         bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
-        bc_value[f] = (ana->velocity_exact(xf, 0.0) * normal) / mesh->face_area(f);
+        bc_value[f] = (ana->velocity_exact(xf, 0.0) * normal) / mesh->getFaceArea(f);
       } else {
         bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
         bc_value[f] = ana->pressure_exact(xf, 0.0);
@@ -293,21 +293,21 @@ void DiffusionFixture::SetBCsDirichletNeumannRobin()
   auto& bc_model = bc->bc_model();
   auto& bc_mixed = bc->bc_mixed();
     
-  if (bc->kind() == AmanziMesh::FACE) {
-    const auto& bf_map = mesh->map(AmanziMesh::BOUNDARY_FACE, true);
-    const auto& f_map = mesh->map(AmanziMesh::FACE, true);
+  if (bc->kind() == AmanziMesh::Entity_kind::FACE) {
+    const auto& bf_map = mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
+    const auto& f_map = mesh->getMap(AmanziMesh::Entity_kind::FACE, true);
       
     for (int bf = 0; bf != bf_map.NumMyElements(); ++bf) {
       auto f = f_map.LID(bf_map.GID(bf));
-      const auto& xf = mesh->face_centroid(f);
+      const auto& xf = mesh->getFaceCentroid(f);
 
       bool flag;
       auto normal = ana->face_normal_exterior(f, &flag);
-      double area = mesh->face_area(f);
+      double area = mesh->getFaceArea(f);
 
       if (xf[0] < 0.0) {
         bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
-        bc_value[f] = (ana->velocity_exact(xf, 0.0) * normal) / mesh->face_area(f);
+        bc_value[f] = (ana->velocity_exact(xf, 0.0) * normal) / mesh->getFaceArea(f);
       } else if (xf[1] < 0.0) {
         bc_model[f] = Operators::OPERATOR_BC_MIXED;
         bc_value[f] = ana->velocity_exact(xf, 0.0) * normal / area;
@@ -334,13 +334,13 @@ void DiffusionFixture::Go(double tol)
   global_op->Init();
   op->UpdateMatrices(Teuchos::null, solution.ptr());
 
-  int ncells = mesh->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
   CompositeVector& rhs = *global_op->rhs();
 
   auto& rhs_c = *rhs.ViewComponent("cell", false);
   for (int c = 0; c != ncells; ++c) {
-    const auto& xc = mesh->cell_centroid(c);
-    rhs_c[0][c] += ana->source_exact(xc, 0.0) * mesh->cell_volume(c);
+    const auto& xc = mesh->getCellCentroid(c);
+    rhs_c[0][c] += ana->source_exact(xc, 0.0) * mesh->getCellVolume(c);
   }
     
   op->ApplyBCs(true, true, true);

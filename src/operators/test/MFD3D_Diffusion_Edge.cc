@@ -41,44 +41,44 @@ int MFD3D_Diffusion_Edge::H1consistency(
   Entity_ID_List fedges;
   std::vector<int> edirs, map;
 
-  const auto& faces = mesh_->cell_get_faces(c);
-  const auto& dirs = mesh_->cell_get_face_dirs(c);
+  const auto& faces = mesh_->getCellFaces(c);
+  const auto& dirs = mesh_->getCellFaceDirections(c);
   int nfaces = faces.size();
 
-  const auto& edges = mesh_->cell_get_edges(c);
+  const auto& edges = mesh_->getCellEdges(c);
   int nedges = edges.size();
 
   N.Reshape(nedges, d_ + 1);
   Ac.Reshape(nedges, nedges);
 
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  const AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
+  double volume = mesh_->getCellVolume(c);
 
   // calculate matrix R (we re-use matrix N)
   if (d_ == 3) N.PutScalar(0.0);
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
 
     if (d_ == 2) {
       for (int k = 0; k < d_; k++) N(n, k) = normal[k] * dirs[n];
     } else {
-      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-      double area = mesh_->face_area(f);
+      const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
+      double area = mesh_->getFaceArea(f);
 
-      mesh_->face_get_edges_and_dirs(f, &fedges, &edirs);
-      mesh_->face_to_cell_edge_map(f, c, &map);
+      mesh_->getFaceEdgesAndDirs(f, fedges, &edirs);
+      map = AmanziMesh::MeshAlgorithms::mapFaceToCellEdges(*mesh_, f, c);
       int nfedges = fedges.size();
 
       int e0 = fedges[0];
-      const AmanziGeometry::Point& xe0 = mesh_->edge_centroid(e0);
+      const AmanziGeometry::Point& xe0 = mesh_->getEdgeCentroid(e0);
 
       for (int k = 0; k < d_; ++k) N(map[0], k) += normal[k] * dirs[n];
 
       for (int m = 0; m < nfedges; ++m) {
         int e = fedges[m];
-        const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
+        const AmanziGeometry::Point& tau = mesh_->getEdgeVector(e);
  
         double tmp = ((tau^normal) * (xf - xe0)) * dirs[n] * edirs[m] / area;
 
@@ -105,7 +105,7 @@ int MFD3D_Diffusion_Edge::H1consistency(
   // calculate N
   for (int n = 0; n < nedges; n++) {
     int e = edges[n];
-    const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
+    const AmanziGeometry::Point& xe = mesh_->getEdgeCentroid(e);
     for (int k = 0; k < d_; k++) N(n, k) = xe[k] - xc[k];
     N(n, d_) = 1.0;
   }

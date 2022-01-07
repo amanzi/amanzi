@@ -101,8 +101,7 @@ class MeshMaps {
   // rank 0 with 0...num_owned_entities and continuing through the ranks.
   template<class Mesh_type>
   void initialize(const Mesh_type& mesh,
-                  bool renumber=false,
-                  bool request_edges=false);
+                  bool renumber=false);
 
   const Entity_ID_View& getBoundaryFaces() const {
     return boundary_faces_;

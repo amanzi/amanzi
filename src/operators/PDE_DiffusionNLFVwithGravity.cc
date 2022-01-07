@@ -36,7 +36,7 @@ void PDE_DiffusionNLFVwithGravity::UpdateMatrices(
 
   double rho_g = rho_ * norm(g_);
   for (int c = 0; c < ncells_owned; ++c) {
-    double zc = (mesh_->cell_centroid(c))[dim_ - 1];
+    double zc = (mesh_->getCellCentroid(c))[dim_ - 1];
     hh_c[0][c] = u_c[0][c] + rho_g * zc;
   }
 
@@ -53,14 +53,14 @@ void PDE_DiffusionNLFVwithGravity::UpdateMatrices(
   for (int f = 0; f < nfaces_owned; ++f) {
     WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
 
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL, cells);
     int ncells = cells.size();
 
     if (ncells == 2) {
       WhetStone::DenseVector v(ncells), av(ncells);
       for (int n = 0; n < ncells; n++) {
         int c = cells[n];
-        double zc = (mesh_->cell_centroid(c))[dim_ - 1];
+        double zc = (mesh_->getCellCentroid(c))[dim_ - 1];
         v(n) = zc * rho_g;
       }
 
@@ -71,8 +71,8 @@ void PDE_DiffusionNLFVwithGravity::UpdateMatrices(
       }
     } else if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
       int c = cells[0];
-      double zf = (mesh_->face_centroid(f))[dim_ - 1];
-      double zc = (mesh_->cell_centroid(c))[dim_ - 1];
+      double zf = (mesh_->getFaceCentroid(f))[dim_ - 1];
+      double zc = (mesh_->getCellCentroid(c))[dim_ - 1];
       rhs_cell[0][c] -= Aface(0, 0) * (zc - zf) * rho_g;
     }
   }
@@ -95,7 +95,7 @@ void PDE_DiffusionNLFVwithGravity::UpdateFlux(const Teuchos::Ptr<const Composite
 
   double rho_g = rho_ * norm(g_);
   for (int c = 0; c < ncells_owned; ++c) {
-    double zc = (mesh_->cell_centroid(c))[dim_ - 1];
+    double zc = (mesh_->getCellCentroid(c))[dim_ - 1];
     hh_c[0][c] = u_c[0][c] + rho_g * zc;
   }
 
@@ -109,7 +109,7 @@ void PDE_DiffusionNLFVwithGravity::UpdateFlux(const Teuchos::Ptr<const Composite
 double PDE_DiffusionNLFVwithGravity::MapBoundaryValue_(int f, double u)
 {
   double rho_g = rho_ * fabs(g_[dim_ - 1]); 
-  double zf = (mesh_->face_centroid(f))[dim_ - 1];
+  double zf = (mesh_->getFaceCentroid(f))[dim_ - 1];
   return u + rho_g * zf; 
 }
 

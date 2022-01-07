@@ -31,7 +31,7 @@ class Operator_Edge : public Operator {
                 Teuchos::ParameterList& plist) :
       Operator(cvs, plist, OPERATOR_SCHEMA_DOFS_EDGE) {
     set_schema_string("EDGE");
-    cell_max_edges = mesh_->cell_get_max_edges();
+    cell_max_edges = AmanziMesh::MeshAlgorithms::getMaxCellNumEdges(*mesh_);
   }
 
   // copy constructor

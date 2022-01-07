@@ -36,7 +36,7 @@ void Operator_Cell::UpdateRHS(const CompositeVector& source,
     Epetra_MultiVector& rhs_c = *rhs_->ViewComponent("cell", false);
     const Epetra_MultiVector& source_c = *source.ViewComponent("cell", false);
     for (int c = 0; c != ncells_owned; ++c) {
-      rhs_c[0][c] += source_c[0][c] * mesh_->cell_volume(c);
+      rhs_c[0][c] += source_c[0][c] * mesh_->getCellVolume(c);
     }
   }
 }
@@ -75,7 +75,7 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
 
   AmanziMesh::Entity_ID_List cells;
   for (int f = 0; f != nfaces_owned; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL, cells);
     int ncells = cells.size();
 
     WhetStone::DenseVector v(ncells), av(ncells);
@@ -134,7 +134,7 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
   int ierr(0);
   AmanziMesh::Entity_ID_List cells; 
   for (int f = 0; f != nfaces_owned; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL, cells);
     
     int ncells = cells.size();
     lid_r.resize(ncells);
@@ -191,7 +191,7 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
   int ierr(0);
   AmanziMesh::Entity_ID_List cells;
   for (int f = 0; f != nfaces_owned; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL, cells);
     
     int ncells = cells.size();
     lid_r.resize(ncells);

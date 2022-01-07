@@ -99,7 +99,7 @@ Teuchos::RCP<PDE_Diffusion> PDE_DiffusionFactory::Create()
 
   if (gravity_ && norm(g_) == 0.0) {
     double tmp = oplist_.get<double>("gravity magnitude");
-    g_[mesh_->space_dimension() - 1] = tmp;
+    g_[mesh_->getSpaceDimension() - 1] = tmp;
   }
   
   Teuchos::RCP<PDE_Diffusion> op;
@@ -328,7 +328,7 @@ Teuchos::RCP<PDE_Diffusion> PDE_DiffusionFactory::Create(
 
   // MFD methods with non-uniform DOFs
   } else if (fractured_matrix) {
-    AmanziGeometry::Point g(mesh->space_dimension());  // gravity should be turned-off in PList
+    AmanziGeometry::Point g(mesh->getSpaceDimension());  // gravity should be turned-off in PList
     auto op = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(oplist, mesh, 0.0, g));
     op->Init(oplist);
     op->SetBCs(bc, bc);

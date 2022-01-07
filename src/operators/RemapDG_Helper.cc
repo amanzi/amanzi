@@ -32,17 +32,17 @@ RemapDG_Helper::RemapDG_Helper(
   : mesh0_(mesh0),
     mesh1_(mesh1),
     plist_(plist),
-    dim_(mesh0->space_dimension())
+    dim_(mesh0->getSpaceDimension())
 {
   // mesh data
-  ncells_owned_ = mesh0_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  ncells_wghost_ = mesh0_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  nfaces_owned_ = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  nfaces_wghost_ = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  ncells_owned_ = mesh0_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  ncells_wghost_ = mesh0_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  nfaces_owned_ = mesh0_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  nfaces_wghost_ = mesh0_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
 
-  if (mesh0_->valid_edges()) {
-    nedges_owned_ = mesh0_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::OWNED);
-    nedges_wghost_ = mesh0_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
+  if (mesh0_->hasEdges()) {
+    nedges_owned_ = mesh0_->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_type::OWNED);
+    nedges_wghost_ = mesh0_->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_type::ALL);
   }
 
   auto& pklist = plist_.sublist("PK operator");
@@ -94,12 +94,12 @@ void RemapDG_Helper::InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal>
 
   // boundary data
   int nk = WhetStone::PolynomialSpaceDimension(dim_, order_);
-  auto bc = Teuchos::rcp(new BCs(mesh0_, AmanziMesh::FACE, WhetStone::DOF_Type::VECTOR));
+  auto bc = Teuchos::rcp(new BCs(mesh0_, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::VECTOR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(nk);
 
-  const auto& fmap = mesh0_->face_map(true);
-  const auto& bmap = mesh0_->exterior_face_map(true);
+  const auto& fmap = mesh0_->getMap(AmanziMesh::Entity_kind::FACE, true);
+  const auto& bmap = mesh0_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
   for (int bf = 0; bf < bmap.NumMyElements(); ++bf) {
     int f = fmap.LID(bmap.GID(bf));
     for (int i = 0; i < nk; ++i) bc_value[f][i] = 0.0;
@@ -134,7 +134,7 @@ void RemapDG_Helper::StaticEdgeFaceVelocities()
     maps_->VelocityFace(f, velf_vec_[f]);
   }
 
-  if (mesh0_->valid_edges()) {
+  if (mesh0_->hasEdges()) {
     vele_vec_.resize(nedges_wghost_);
     for (int e = 0; e < nedges_wghost_; ++e) {
       maps_->VelocityEdge(e, vele_vec_[e]);
@@ -153,7 +153,7 @@ void RemapDG_Helper::StaticCellVelocity()
 
   for (int c = 0; c < ncells_owned_; ++c) {
     // faces are always included
-    const auto& faces = mesh0_->cell_get_faces(c);
+    const auto& faces = mesh0_->getCellFaces(c);
 
     std::vector<WhetStone::VectorPolynomial> vve, vvf;
     for (int n = 0; n < faces.size(); ++n) {
@@ -162,7 +162,7 @@ void RemapDG_Helper::StaticCellVelocity()
 
     // edges are included in 3D only
     if (dim_ == 3) {
-      mesh0_->cell_get_edges(c, &edges);
+      mesh0_->getCellEdges(c, edges);
 
       for (int n = 0; n < edges.size(); ++n) {
         vve.push_back(vele_vec_[edges[n]]);
@@ -264,7 +264,7 @@ void RemapDG_Helper::ApplyLimiter(double t, CompositeVector& x)
   }
 
   int nids, itmp = ids.size();
-  mesh0_->get_comm()->SumAll(&itmp, &nids, 1);
+  mesh0_->getComm()->SumAll(&itmp, &nids, 1);
   sharp_ = std::max(sharp_, 100.0 * nids / x.ViewComponent("cell")->GlobalLength());
 
   // apply limiter
@@ -282,7 +282,7 @@ void RemapDG_Helper::ApplyLimiter(double t, CompositeVector& x)
     WhetStone::DenseVector data(nk);
 
     CompositeVectorSpace cvs;
-    cvs.SetMesh(mesh0_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, dim_);
+    cvs.SetMesh(mesh0_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, dim_);
     auto grad = Teuchos::rcp(new CompositeVector(cvs));
     Epetra_MultiVector& grad_c = *grad->ViewComponent("cell", true);
 

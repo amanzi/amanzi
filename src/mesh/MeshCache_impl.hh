@@ -194,9 +194,18 @@ MeshCache::getFaceNormal(const Entity_ID f,
   if (face_geometry_cached) {
     auto fcells = getFaceCells(f, Parallel_type::ALL);
     if (orientation) *orientation = 0;
-    Entity_ID cc = (c < 0) ? fcells[0] : c;
 
-    int i = std::find(fcells.begin(), fcells.end(), cc) - fcells.begin();
+    Entity_ID cc;
+    std::size_t i;
+    if (c < 0) {
+      cc = fcells[0];
+      i = 0;
+    } else {
+      cc = c;
+      auto ncells = fcells.size();
+      for (i=0; i!=ncells; ++i)
+        if (fcells[i] == cc) break;
+    }
     normal = face_normals[f][i];
 
     if (getSpaceDimension() == getManifoldDimension()) {
@@ -351,6 +360,11 @@ MeshCache::getCellFacesAndDirs(const Entity_ID c,
         Entity_ID_View& faces,
         Entity_Direction_View * const dirs) const
 {
+  if (cell_geometry_cached) {
+    faces = cell_faces[c];
+    if (dirs) *dirs = cell_face_directions[c];
+    return;
+  }
   if (dirs) std::tie(faces, *dirs) = getCellFacesAndDirections(c);
   else faces = getCellFaces(c);
 }
@@ -603,6 +617,40 @@ MeshCache::getFaceCells(const Entity_ID f,
                         Entity_ID_View& cells) const
 {
   cells = getFaceCells(f, ptype);
+}
+
+template<AccessPattern AP>
+void
+MeshCache::getEdgeCells(const Entity_ID e,
+                        const Parallel_type ptype,
+                        Entity_ID_View& cells) const
+{
+  // FIXME -- this doesn't respect Parallel_type
+  if (edge_cells_cached) {
+    cells = edge_cells[e];
+  } else if (framework_mesh_) {
+    framework_mesh_->getEdgeCells(e, ptype, cells);
+  } else {
+    Errors::Message msg("MeshCache::getEdgeCells not implemented as generic algorithm.");
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
+template<AccessPattern AP>
+void
+MeshCache::getNodeCells(const Entity_ID n,
+                        const Parallel_type ptype,
+                        Entity_ID_View& cells) const
+{
+  // FIXME -- this doesn't respect Parallel_type
+  if (node_cells_cached) {
+    cells = node_cells[n];
+  } else if (framework_mesh_) {
+    framework_mesh_->getNodeCells(n, ptype, cells);
+  } else {
+    Errors::Message msg("MeshCache::getNodeCells not implemented as generic algorithm.");
+    Exceptions::amanzi_throw(msg);
+  }
 }
 
 

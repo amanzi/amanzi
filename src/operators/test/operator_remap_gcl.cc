@@ -91,7 +91,7 @@ double MyRemapDG::InitialMass(const TreeVector& p1, int order)
     mass += numi.IntegratePolynomialCell(c, poly);
   }
 
-  mesh0_->get_comm()->SumAll(&mass, &mass0, 1);
+  mesh0_->getComm()->SumAll(&mass, &mass0, 1);
   return mass0;
 }
 
@@ -118,7 +118,7 @@ void MyRemapDG::CollectStatistics(double t, const TreeVector& u)
     xc.MaxValue(xmax);
     xc.MinValue(xmin);
 
-    if (mesh0_->get_comm()->MyPID() == 0) {
+    if (mesh0_->getComm()->MyPID() == 0) {
       printf("t=%8.5f  L2=%9.5g  nfnc=%5d  sharp=%5.1f%%  umax/umin: %9.5g %9.5g\n",
              tglob, l2norm_, nfun_, sharp_, xmax[0], xmin[0]);
     }
@@ -204,11 +204,11 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
   mesh0->BuildCache();
   mesh1->BuildCache();
 
-  int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh0->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
   // create and initialize cell-based fields
   auto cvs1 = Teuchos::rcp(new CompositeVectorSpace());
-  cvs1->SetMesh(mesh0)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
+  cvs1->SetMesh(mesh0)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, nk);
 
   Teuchos::RCP<TreeVectorSpace> tvs0 = Teuchos::rcp(new TreeVectorSpace());
   Teuchos::RCP<TreeVectorSpace> tvs1 = Teuchos::rcp(new TreeVectorSpace());
@@ -221,7 +221,7 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
   Epetra_MultiVector& j1c = *p1->SubVector(1)->Data()->ViewComponent("cell", true);
 
   auto cvs2 = Teuchos::rcp(new CompositeVectorSpace());
-  cvs2->SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
+  cvs2->SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::Entity_kind::CELL, nk);
 
   Teuchos::RCP<TreeVectorSpace> tvs2 = Teuchos::rcp(new TreeVectorSpace());
   tvs0->SetData(cvs2);
@@ -297,7 +297,7 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
 
   for (int c = 0; c < ncells_owned; ++c) {
     double vol1 = numi.IntegratePolynomialCell(c, jac[c]);
-    double vol2 = mesh1->cell_volume(c);
+    double vol2 = mesh1->getCellVolume(c);
 
     area += vol1;
     area1 += vol2;
@@ -311,7 +311,7 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
     auto poly = dg->cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
 
     WhetStone::Polynomial tmp(jac[c]);
-    tmp.ChangeOrigin(mesh0->cell_centroid(c));
+    tmp.ChangeOrigin(mesh0->getCellCentroid(c));
     poly *= tmp;
     mass1 += numi.IntegratePolynomialCell(c, poly);
   }
@@ -336,7 +336,7 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
   OutputXDMF io(iolist, mesh1, true, false);
 
   io.InitializeCycle(t, 1, "");
-  io.WriteVector(*p2c(0), "solution", AmanziMesh::CELL);
+  io.WriteVector(*p2c(0), "solution", AmanziMesh::Entity_kind::CELL);
   io.FinalizeCycle();
 }
 

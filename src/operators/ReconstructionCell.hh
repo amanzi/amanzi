@@ -46,7 +46,7 @@ class ReconstructionCell : public Reconstruction {
   // -- compute gradient and keep it internally
   virtual void ComputeGradient(const Teuchos::RCP<const Epetra_MultiVector>& field,
                                int component = 0) override {
-    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+    int ncells_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
     AmanziMesh::Entity_ID_List ids(ncells_wghost);
     for (int c = 0; c < ncells_wghost; ++c) ids[c] = c;
     ComputeGradient(ids, field, component);

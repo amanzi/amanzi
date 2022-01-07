@@ -90,8 +90,8 @@ void UpwindFlux<Model>::Compute(
 
   const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
   const Epetra_MultiVector& fld_boundary = *field.ViewComponent("dirichlet_faces", true);
-  const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
-  const Epetra_Map& face_map = mesh_->face_map(true);
+  const Epetra_Map& ext_face_map = mesh_->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, true);
+  const Epetra_Map& face_map = mesh_->getMap(AmanziMesh::Entity_kind::FACE, true);
   Epetra_MultiVector& upw_face = *field.ViewComponent(face_comp_, true);
 
   double flxmin, flxmax, tol;
@@ -99,19 +99,19 @@ void UpwindFlux<Model>::Compute(
   flx_face.MaxValue(&flxmax);
   tol = tolerance_ * std::max(fabs(flxmin), fabs(flxmax));
 
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
   AmanziMesh::Entity_ID_List cells;
 
   int c1, c2, dir;
   double kc1, kc2;
   for (int f = 0; f < nfaces_wghost; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL, cells);
     int ncells = cells.size();
 
     c1 = cells[0];
     kc1 = fld_cell[0][c1];
 
-    mesh_->face_normal(f, false, c1, &dir);
+    mesh_->getFaceNormal(f,  c1, &dir);
     bool flag = (flx_face[0][f] * dir <= -tol);  // upwind flag
 
     if (ncells == 2) { 
@@ -120,8 +120,8 @@ void UpwindFlux<Model>::Compute(
 
       // We average field on almost vertical faces. 
       if (fabs(flx_face[0][f]) <= tol) { 
-        double v1 = mesh_->cell_volume(c1);
-        double v2 = mesh_->cell_volume(c2);
+        double v1 = mesh_->getCellVolume(c1);
+        double v2 = mesh_->getCellVolume(c2);
 
         double tmp = v2 / (v1 + v2);
         upw_face[0][f] = kc1 * tmp + kc2 * (1.0 - tmp); 

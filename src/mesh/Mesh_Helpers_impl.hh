@@ -73,14 +73,41 @@ Cell_type getCellType(const Mesh_type& mesh, const Entity_ID c)
 template<class Mesh_type>
 int getFaceDirectionInCell(const Mesh_type& mesh, const Entity_ID f, const Entity_ID c)
 {
+  int dir = 0;
   Entity_ID_List cfaces;
   Entity_Direction_List dirs;
   mesh.getCellFacesAndDirs(c, cfaces, &dirs);
-  int dir = 0;
   for (int j=0; j!=cfaces.size(); ++j) {
     if (cfaces[j] == f) {
       dir = dirs[j];
       break;
+    }
+  }
+  return dir;
+}
+
+
+template<> inline
+int getFaceDirectionInCell(const Mesh& mesh, const Entity_ID f, const Entity_ID c)
+{
+  int dir = 0;
+  if (mesh.cell_faces_cached) {
+    auto nfaces = mesh.cell_faces[c].size();
+    for (int j=0; j!=nfaces; ++j) {
+      if (mesh.cell_faces[c][j] == f) {
+        dir = mesh.cell_face_directions[c][j];
+        break;
+      }
+    }
+  } else {
+    Entity_ID_List cfaces;
+    Entity_Direction_List dirs;
+    mesh.getCellFacesAndDirs(c, cfaces, &dirs);
+    for (int j=0; j!=cfaces.size(); ++j) {
+      if (cfaces[j] == f) {
+        dir = dirs[j];
+        break;
+      }
     }
   }
   return dir;
@@ -380,6 +407,37 @@ std::size_t getMaxCellNumFaces(const Mesh_type& mesh)
   int max_nfaces_g(0);
   mesh.getComm()->MaxAll(&max_nfaces, &max_nfaces_g, 1);
   return max_nfaces_g;
+}
+
+template<class Mesh_type>
+std::size_t getMaxCellNumEdges(const Mesh_type& mesh)
+{
+  auto ncells = mesh.getNumEntities(Entity_kind::CELL, Parallel_type::OWNED);
+  int max_nedges(0);
+  for (int c=0; c!=ncells; ++c) {
+    max_nedges = std::max(max_nedges, (int) mesh.getCellNumEdges(c));
+  }
+  int max_nedges_g(0);
+  mesh.getComm()->MaxAll(&max_nedges, &max_nedges_g, 1);
+  return max_nedges_g;
+}
+
+
+template<class Mesh_type>
+Entity_ID_List getCellFaceAdjacentCells(const Mesh_type& mesh,
+        Entity_ID c, Parallel_type ptype)
+{
+  auto cfaces = mesh.getCellFaces(c);
+  Entity_ID_List adj_cells;
+  for (const auto& f : cfaces) {
+    auto fcells = mesh.getFaceCells(f, ptype);
+    for (const auto& fc : fcells) {
+      if (c != fc &&
+          std::find(adj_cells.begin(), adj_cells.end(), fc) == adj_cells.end())
+        adj_cells.push_back(fc);
+    }
+  }
+  return adj_cells;
 }
 
 

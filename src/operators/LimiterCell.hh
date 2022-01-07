@@ -182,7 +182,8 @@ class LimiterCell {
   std::vector<std::vector<int> > upwind_cells_;  // fracture friendly 
   std::vector<std::vector<int> > downwind_cells_;
 
-  int type_, stencil_id_, location_;
+  int type_, stencil_id_;
+  AmanziMesh::Entity_kind location_;
   bool limiter_correction_, external_bounds_;
   double cfl_;
 

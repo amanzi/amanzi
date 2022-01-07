@@ -593,6 +593,24 @@ void cacheAll(MeshCache& mesh)
   }
 }
 
+void cacheDefault(MeshCache& mesh)
+{
+  // caches what the developers currently think is best
+  mesh.cacheNodeCoordinates();
+
+  mesh.cacheCellFaces();
+  mesh.cacheFaceCells();
+  mesh.cacheFaceGeometry();
+  mesh.cacheCellGeometry();
+
+  // if (mesh.hasEdges()) {
+  //   mesh.cacheFaceEdges();
+  //   mesh.cacheEdgeFaces();
+  //   mesh.cacheEdgeGeometry();
+  // }
+}
+
+
 void recacheGeometry(MeshCache& mesh)
 {
   // recaches the geometry, as presumably the nodal coordinates have changed.

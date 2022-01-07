@@ -32,7 +32,23 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& parent_mesh,
     MeshFrameworkFactory::create(parent_mesh->getMeshFramework(), setids, setkind, flatten);
   auto mesh = Teuchos::rcp(new MeshCache(mesh_fw));
   mesh->setParentMesh(parent_mesh);
+  MeshAlgorithms::cacheDefault(*mesh);
   return mesh;
+}
+
+
+Teuchos::RCP<Mesh>
+MeshFactory::create(const Teuchos::RCP<const Mesh>& parent_mesh,
+       const std::vector<std::string>& setnames,
+       const Entity_kind setkind,
+       const bool flatten)
+{
+  Entity_ID_List entities;
+  for (const auto& setname : setnames) {
+    auto l_entities = parent_mesh->getSetEntities(setname, setkind, Parallel_type::OWNED);
+    for (const auto& ent : l_entities) entities.emplace_back(ent);
+  }
+  return create(parent_mesh, entities, setkind, flatten);
 }
 
 // Create a 1D Column Mesh from a columnar structured volume mesh.

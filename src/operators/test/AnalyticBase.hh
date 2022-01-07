@@ -44,7 +44,7 @@ class AnalyticBase : public Amanzi::WhetStone::WhetStoneFunction {
  public:
   AnalyticBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) 
     : mesh_(mesh),
-      d_(mesh->space_dimension()) {};
+      d_(mesh->getSpaceDimension()) {};
   ~AnalyticBase() {};
 
   // analytic solution for diffusion problem with gravity
@@ -113,11 +113,11 @@ void AnalyticBase::ComputeCellError(
   l2_err = 0.0;
   inf_err = 0.0;
 
-  int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells; c++) {
-    const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
     double tmp = pressure_exact(xc, t);
-    double volume = mesh_->cell_volume(c);
+    double volume = mesh_->getCellVolume(c);
 
     // std::cout << c << " xc=" << xc << " p: " << tmp << " " << p[0][c] << std::endl;
     l2_err += std::pow(tmp - p[0][c], 2.0) * volume;
@@ -145,11 +145,11 @@ void AnalyticBase::ComputeFaceError(
   l2_err = 0.0;
   inf_err = 0.0;
 
-  int nfaces = mesh_->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces; f++) {
-    double area = mesh_->face_area(f);
-    const Amanzi::AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    const Amanzi::AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    double area = mesh_->getFaceArea(f);
+    const Amanzi::AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+    const Amanzi::AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
     const Amanzi::AmanziGeometry::Point& velocity = velocity_exact(xf, t);
     double tmp = velocity * normal;
 
@@ -191,12 +191,12 @@ void AnalyticBase::ComputeNodeError(
 
   Amanzi::WhetStone::Polynomial poly(d_, 1);
   Amanzi::AmanziMesh::Entity_ID_List nodes;
-  int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells; c++) {
-    double volume = mesh_->cell_volume(c);
+    double volume = mesh_->getCellVolume(c);
 
-    mesh_->cell_get_nodes(c, &nodes);
+    mesh_->getCellNodes(c, nodes);
     int nnodes = nodes.size();
     std::vector<Amanzi::WhetStone::Polynomial> cell_solution(nnodes);
 
@@ -205,12 +205,12 @@ void AnalyticBase::ComputeNodeError(
       cell_solution[k].Reshape(d_, 0);
       cell_solution[k](0) = p[0][v];
 
-      mesh_->node_get_coordinates(v, &xv);
+      xv = mesh_->getNodeCoordinate(v);
       double tmp = pressure_exact(xv, t);
 
       if (std::abs(tmp - p[0][v]) > .01) {
         Amanzi::AmanziGeometry::Point xv2(2);
-        mesh_->node_get_coordinates(v, &xv2);
+        xv2 = mesh_->getNodeCoordinate(v);
         // std::cout << v << " at " << xv << " error: " << tmp << " " << p[0][v] << std::endl;
       }
       l2_err += std::pow(tmp - p[0][v], 2.0) * volume / nnodes;
@@ -218,7 +218,7 @@ void AnalyticBase::ComputeNodeError(
       pnorm += std::pow(tmp, 2.0) * volume / nnodes;
     }
 
-    const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    const Amanzi::AmanziGeometry::Point& xc = mesh_->getCellCentroid(c);
     const Amanzi::AmanziGeometry::Point& grad_exact = gradient_exact(xc, t);
     mfd.L2Cell(c, cell_solution, cell_solution, NULL, poly);
     for (int k = 0; k < d_; ++k) grad[k] = poly(k + 1);
@@ -259,12 +259,12 @@ void AnalyticBase::ComputeEdgeError(
 
   Amanzi::AmanziMesh::Entity_ID_List edges;
   Amanzi::WhetStone::MFD3D_Diffusion mfd(mesh_);
-  int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells; c++) {
-    double volume = mesh_->cell_volume(c);
+    double volume = mesh_->getCellVolume(c);
 
-    mesh_->cell_get_edges(c, &edges);
+    mesh_->getCellEdges(c, edges);
     int nedges = edges.size();
     std::vector<double> cell_solution(nedges);
 
@@ -272,7 +272,7 @@ void AnalyticBase::ComputeEdgeError(
       int e = edges[k];
       cell_solution[k] = p[0][e];
 
-      const Amanzi::AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
+      const Amanzi::AmanziGeometry::Point& xe = mesh_->getEdgeCentroid(e);
       double tmp = pressure_exact(xe, t);
       l2_err += std::pow(tmp - p[0][e], 2.0) * volume / nedges;
       inf_err = std::max(inf_err, fabs(tmp - p[0][e]));
@@ -307,20 +307,20 @@ void AnalyticBase::ComputeEdgeMomentsError(
 
   Amanzi::AmanziMesh::Entity_ID_List edges;
   Amanzi::WhetStone::MFD3D_Diffusion mfd(mesh_);
-  int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh_->getNumEntities(Amanzi::AmanziMesh::Entity_kind::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells; c++) {
-    double volume = mesh_->cell_volume(c);
+    double volume = mesh_->getCellVolume(c);
 
-    mesh_->cell_get_edges(c, &edges);
+    mesh_->getCellEdges(c, edges);
     int nedges = edges.size();
 
     for (int k = 0; k < nedges; k++) {
       int e = edges[k];
 
-      mesh_->edge_get_nodes(e, &n0, &n1);
-      mesh_->node_get_coordinates(n0, &x0);
-      mesh_->node_get_coordinates(n1, &x1);
+      mesh_->getEdgeNodes(e, &n0, &n1);
+      x0 = mesh_->getNodeCoordinate(n0);
+      x1 = mesh_->getNodeCoordinate(n1);
 
       double s0(0.0), s1(0.0);
       for (int n = 0; n <= ngauss; ++n) {
@@ -355,13 +355,13 @@ inline
 Amanzi::AmanziGeometry::Point AnalyticBase::face_normal_exterior(int f, bool* flag)
 {
   Amanzi::AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
+  mesh_->getFaceCells(f, Amanzi::AmanziMesh::Parallel_type::ALL, cells);
   *flag = (cells.size() == 1);
 
   int dir;
   Amanzi::AmanziGeometry::Point normal(d_);
   if (*flag) 
-    normal = mesh_->face_normal(f, false, cells[0], &dir);
+    normal = mesh_->getFaceNormal(f,  cells[0], &dir);
 
   return normal;
 }
@@ -377,9 +377,9 @@ void AnalyticBase::GlobalOp(std::string op, double* val, int n)
   for (int i = 0; i < n; ++i) val_tmp[i] = val[i];
 
   if (op == "sum") 
-    mesh_->get_comm()->SumAll(val_tmp, val, n);
+    mesh_->getComm()->SumAll(val_tmp, val, n);
   else if (op == "max") 
-    mesh_->get_comm()->MaxAll(val_tmp, val, n);
+    mesh_->getComm()->MaxAll(val_tmp, val, n);
 
   delete[] val_tmp;
 }

@@ -47,7 +47,7 @@ void PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
   if (!is_scalar_) rho_c = &*rho_cv_->ViewComponent("cell", false);
 
   if (global_op_->rhs()->HasComponent("face")) {
-    int dim = mesh_->space_dimension();
+    int dim = mesh_->getSpaceDimension();
 
     // preparing little-k data
     Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
@@ -64,7 +64,7 @@ void PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
     Epetra_MultiVector& rhs_face = *global_op_->rhs()->ViewComponent("face", true);
     for (int f = nfaces_owned; f < nfaces_wghost; f++) rhs_face[0][f] = 0.0;
 
-    WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
+    WhetStone::Tensor Kc(mesh_->getSpaceDimension(), 1);
     Kc(0, 0) = 1.0;
     if (const_K_.rank() > 0) Kc = const_K_;
 
@@ -74,10 +74,10 @@ void PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
 
     AmanziMesh::Entity_ID_List grav_workspace;
     for (int c = 0; c < ncells_owned; c++) {
-      const auto& faces = mesh_->cell_get_faces(c);
-      const auto& dirs = mesh_->cell_get_face_dirs(c);
+      const auto& faces = mesh_->getCellFaces(c);
+      const auto& dirs = mesh_->getCellFaceDirections(c);
       int nfaces = faces.size();
-      double zc = (mesh_->cell_centroid(c))[dim - 1];
+      double zc = (mesh_->getCellCentroid(c))[dim - 1];
 
       // building blocks for the gravity term
       double rho = rho_c ? (*rho_c)[0][c] : rho_;
@@ -117,7 +117,7 @@ void PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
 
         for (int n = 0; n < nfaces; n++) {
           int f = faces[n];
-          const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+          const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f,  c, &dir);
           double tmp;
 
           if (gravity_special_projection_) {
@@ -141,7 +141,7 @@ void PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
         WhetStone::DenseVector v(nfaces), av(nfaces);
         for (int n = 0; n < nfaces; n++) {
           int f = faces[n];
-          double zf = (mesh_->face_centroid(f))[dim - 1];
+          double zf = (mesh_->getFaceCentroid(f))[dim - 1];
           v(n) = -(zf - zc) * kf[n] * rho * norm(g_) / kc;
         }
 
@@ -185,7 +185,7 @@ void PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeV
     if (k_->HasComponent("grav")) k_face = k_->ViewComponent("grav", true);
   }
 
-  int dim = mesh_->space_dimension();
+  int dim = mesh_->getSpaceDimension();
   Epetra_MultiVector& flux_data = *flux->ViewComponent("face", true);
   Epetra_MultiVector grav_flux(flux_data);
   grav_flux.PutScalar(0.0);
@@ -202,9 +202,9 @@ void PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeV
 
   AmanziMesh::Entity_ID_List grav_workspace;
   for (int c = 0; c < ncells_owned; c++) {
-    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& faces = mesh_->getCellFaces(c);
     int nfaces = faces.size();
-    double zc = mesh_->cell_centroid(c)[dim - 1];
+    double zc = mesh_->getCellCentroid(c)[dim - 1];
 
     // building blocks for the gravity term
     double rho = rho_c ? (*rho_c)[0][c] : rho_;
@@ -232,7 +232,7 @@ void PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeV
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
         if (f < nfaces_owned) {
-          const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+          const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
 
           if (gravity_special_projection_) {
             const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f, grav_workspace);
@@ -252,7 +252,7 @@ void PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeV
       WhetStone::DenseVector v(nfaces), av(nfaces);
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
-        double zf = (mesh_->face_centroid(f))[dim - 1];
+        double zf = (mesh_->getFaceCentroid(f))[dim - 1];
         v(n) = -(zf - zc) * kf[n] * rho * norm(g_) / kc;
       }
 
@@ -261,7 +261,7 @@ void PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeV
       for (int n = 0; n < nfaces; n++) {
         int dir, f = faces[n];
         if (f < nfaces_owned) {
-          mesh_->face_normal(f, false, c, &dir);
+          mesh_->getFaceNormal(f,  c, &dir);
             
           double tmp = av(n) * kf[n] * dir;
           grav_flux[0][f] += tmp;
@@ -297,7 +297,7 @@ void PDE_DiffusionMFDwithGravity::UpdateFluxNonManifold(
     if (k_->HasComponent("grav")) k_face = k_->ViewComponent("grav", true);
   }
 
-  int dim = mesh_->space_dimension();
+  int dim = mesh_->getSpaceDimension();
   Epetra_MultiVector& flux_data = *flux->ViewComponent("face", true);
 
   CompositeVector grav(*flux);
@@ -314,7 +314,7 @@ void PDE_DiffusionMFDwithGravity::UpdateFluxNonManifold(
 
   AmanziMesh::Entity_ID_List grav_workspace;
   for (int c = 0; c < ncells_owned; c++) {
-    const auto& faces = mesh_->cell_get_faces(c);
+    const auto& faces = mesh_->getCellFaces(c);
     int nfaces = faces.size();
 
     // Update terms due to nonlinear coefficient
@@ -337,7 +337,7 @@ void PDE_DiffusionMFDwithGravity::UpdateFluxNonManifold(
 
     for (int n = 0; n < nfaces; n++) {
       int dir, f = faces[n];
-      AmanziGeometry::Point normal = mesh_->face_normal(f, false, c, &dir);
+      AmanziGeometry::Point normal = mesh_->getFaceNormal(f,  c, &dir);
       normal *= dir;
 
       int g = fmap.FirstPointInElement(f);
@@ -389,13 +389,13 @@ void PDE_DiffusionMFDwithGravity::Init_(Teuchos::ParameterList& plist)
 AmanziGeometry::Point PDE_DiffusionMFDwithGravity::GravitySpecialDirection_(int f,
            AmanziMesh::Entity_ID_List& cells) const
 {
-  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+  mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL, cells);
   int ncells = cells.size();
 
   if (ncells == 2) {
-    return mesh_->cell_centroid(cells[1]) - mesh_->cell_centroid(cells[0]);
+    return mesh_->getCellCentroid(cells[1]) - mesh_->getCellCentroid(cells[0]);
   } else {
-    return mesh_->face_centroid(f) - mesh_->cell_centroid(cells[0]);
+    return mesh_->getFaceCentroid(f) - mesh_->getCellCentroid(cells[0]);
   }
 }
 
@@ -406,11 +406,11 @@ AmanziGeometry::Point PDE_DiffusionMFDwithGravity::GravitySpecialDirection_(int 
 double PDE_DiffusionMFDwithGravity::ComputeGravityFlux(int f) const
 {
   AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+  mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL, cells);
   int c = cells[0];
 
   double gflux;
-  const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+  const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
 
   if (K_.get()) {
     gflux = (((*K_)[c] * g_) * normal);

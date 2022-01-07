@@ -25,8 +25,8 @@ class Op_Edge_Edge : public Op {
                const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       Op(OPERATOR_SCHEMA_BASE_EDGE |
          OPERATOR_SCHEMA_DOFS_EDGE, name, mesh) {
-    diag = Teuchos::rcp(new Epetra_MultiVector(mesh->edge_map(false), 1));
-    diag_shadow = Teuchos::rcp(new Epetra_MultiVector(mesh->edge_map(false), 1));
+    diag = Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::EDGE, false), 1));
+    diag_shadow = Teuchos::rcp(new Epetra_MultiVector(mesh->getMap(AmanziMesh::Entity_kind::EDGE, false), 1));
   }
 
   virtual void ApplyMatrixFreeOp(const Operator* assembler,

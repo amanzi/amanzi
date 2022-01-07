@@ -50,31 +50,36 @@ std::pair<double, double> RunForwardProblem(const std::string& discretization,
   auto comm = Amanzi::getDefaultComm();
   
   // create a mesh
-  Teuchos::RCP<Mesh> mesh = Teuchos::rcp(new Mesh_MSTK(0.,0.,1.,1.,nx,ny, comm));
-  
+  auto mesh_plist = Teuchos::rcp(new Teuchos::ParameterList());
+  mesh_plist->set("request edges", true);
+  Teuchos::RCP<GeometricModel> gm;
+  MeshFactory meshfactory(comm, gm, mesh_plist);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.,0.,1.,1.,nx,ny);
+
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
   
   Analytic06 ana(mesh);
 
   for (int c = 0; c < ncells; c++) {
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
     const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
   
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
   bool flag;
   for (int f = 0; f < nfaces_wghost; f++) {
-    const Point& xf = mesh->face_centroid(f);
-    double area = mesh->face_area(f);
+    const Point& xf = mesh->getFaceCentroid(f);
+    double area = mesh->getFaceArea(f);
     Point normal = ana.face_normal_exterior(f, &flag);
 
     if (fabs(xf[0]) < 1e-6) {
@@ -106,7 +111,7 @@ std::pair<double, double> RunForwardProblem(const std::string& discretization,
   CompositeVector source(*op->global_operator()->rhs());
   Epetra_MultiVector& source_c = *source.ViewComponent("cell",false);
   for (int c = 0; c != ncells; ++c) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     source_c[0][c] = ana.source_exact(xc,0);
   }
   op->global_operator()->UpdateRHS(source, false);
@@ -122,7 +127,7 @@ std::pair<double, double> RunForwardProblem(const std::string& discretization,
   u.PutScalar(0.0);
   Epetra_MultiVector& u_c = *u.ViewComponent("cell", false);
   for (int c = 0; c != ncells; ++c) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     u_c[0][c] = ana.pressure_exact(xc, 0.0);
   }
 
@@ -130,19 +135,19 @@ std::pair<double, double> RunForwardProblem(const std::string& discretization,
     Epetra_MultiVector& u_f = *u.ViewComponent("face",false);
     
     for (int f = 0; f != nfaces; ++f) {
-      const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+      const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
       u_f[0][f] = ana.pressure_exact(xf, 0.0);
     }
   }
 
   if (u.HasComponent("boundary_face")) {
-    int nboundary_faces = mesh->num_entities(AmanziMesh::BOUNDARY_FACE,
+    int nboundary_faces = mesh->getNumEntities(AmanziMesh::Entity_kind::BOUNDARY_FACE,
             AmanziMesh::Parallel_type::OWNED);
     Epetra_MultiVector& u_f = *u.ViewComponent("boundary_face",false);
 
     for (int bf = 0; bf != nboundary_faces; ++bf) {
-      int f = mesh->face_map(false).LID(mesh->exterior_face_map(false).GID(bf));
-      const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+      int f = mesh->getMap(AmanziMesh::Entity_kind::FACE, false).LID(mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false).GID(bf));
+      const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
       u_f[0][f] = ana.pressure_exact(xf, 0.0);
     }
   }
@@ -177,31 +182,37 @@ std::pair<double, double> RunInverseProblem(const std::string& discretization,
   auto comm = Amanzi::getDefaultComm();
   
   // create a mesh
-  Teuchos::RCP<Mesh> mesh = Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, 1.0, 1.0, nx, ny, comm));
-  
+  // create a mesh
+  auto mesh_plist = Teuchos::rcp(new Teuchos::ParameterList());
+  mesh_plist->set("request edges", true);
+  Teuchos::RCP<GeometricModel> gm;
+  MeshFactory meshfactory(comm, gm, mesh_plist);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.,0.,1.,1.,nx,ny);
+
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
   
   Analytic06 ana(mesh);
 
   for (int c = 0; c < ncells; c++) {
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
     const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
   
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
   bool flag;
   for (int f = 0; f < nfaces_wghost; f++) {
-    const Point& xf = mesh->face_centroid(f);
-    double area = mesh->face_area(f);
+    const Point& xf = mesh->getFaceCentroid(f);
+    double area = mesh->getFaceArea(f);
     Point normal = ana.face_normal_exterior(f, &flag);
 
     if (fabs(xf[0]) < 1e-6) {
@@ -233,7 +244,7 @@ std::pair<double, double> RunInverseProblem(const std::string& discretization,
   CompositeVector source(*op->global_operator()->rhs());
   Epetra_MultiVector& source_c = *source.ViewComponent("cell", false);
   for (int c = 0; c != ncells; ++c) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     source_c[0][c] = ana.source_exact(xc, 0.0);
   }
   op->global_operator()->UpdateRHS(source, false);
@@ -249,7 +260,7 @@ std::pair<double, double> RunInverseProblem(const std::string& discretization,
   u.PutScalar(0.0);
   Epetra_MultiVector& u_c = *u.ViewComponent("cell", false);
   for (int c = 0; c != ncells; ++c) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     u_c[0][c] = ana.pressure_exact(xc, 0.0);
   }
 
@@ -257,20 +268,20 @@ std::pair<double, double> RunInverseProblem(const std::string& discretization,
     Epetra_MultiVector& u_f = *u.ViewComponent("face", false);
     
     for (int f = 0; f != nfaces; ++f) {
-      const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+      const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
       u_f[0][f] = ana.pressure_exact(xf, 0.0);
     }
   }
 
   if (u.HasComponent("boundary_face")) {
-    int nboundary_faces = mesh->num_entities(AmanziMesh::BOUNDARY_FACE, AmanziMesh::Parallel_type::OWNED);
+    int nboundary_faces = mesh->getNumEntities(AmanziMesh::Entity_kind::BOUNDARY_FACE, AmanziMesh::Parallel_type::OWNED);
     Epetra_MultiVector& u_f = *u.ViewComponent("boundary_face", false);
 
     for (int bf = 0; bf != nboundary_faces; ++bf) {
-      int f = mesh->face_map(false).LID(
-          mesh->exterior_face_map(false).GID(bf));
+      int f = mesh->getMap(AmanziMesh::Entity_kind::FACE, false).LID(
+          mesh->getMap(AmanziMesh::Entity_kind::BOUNDARY_FACE, false).GID(bf));
 
-      const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+      const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
       u_f[0][f] = ana.pressure_exact(xf, 0.0);
     }
   }

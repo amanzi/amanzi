@@ -65,18 +65,18 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
 
   // extract a manifold mesh
-  RCP<Mesh> surfmesh = meshfactory.create(mesh, surfaces, AmanziMesh::FACE);
+  RCP<Mesh> surfmesh = meshfactory.create(mesh, surfaces, AmanziMesh::Entity_kind::FACE);
 
-  int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned = surfmesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = surfmesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = surfmesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
 
   std::cout << "pid=" << MyPID << " cells: " << ncells_owned << " " << ncells_wghost << std::endl;
 
   // verify one-to-one map (2D-cell -> 3D-face)
   for (int c = 0; c < ncells_wghost; ++c) {
-    int g = surfmesh->entity_get_parent(AmanziMesh::CELL, c);
-    double diff = AmanziGeometry::norm(surfmesh->cell_centroid(c) - mesh->face_centroid(g));
+    int g = surfmesh->getEntityParent(AmanziMesh::Entity_kind::CELL, c);
+    double diff = AmanziGeometry::norm(surfmesh->getCellCentroid(c) - mesh->getFaceCentroid(g));
     CHECK_CLOSE(0.0, diff, 1e-14); 
   }
 
@@ -84,22 +84,22 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
-    const Point& xc = mesh->cell_centroid(c);
+    const Point& xc = mesh->getCellCentroid(c);
     Kc(0, 0) = 1.0 + xc[0] * xc[0];
     K->push_back(Kc);
   }
 
   // create boundary data (no mixed bc)
   Entity_ID_List cells;
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::Entity_kind::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    surfmesh->face_get_cells(f, Parallel_type::ALL, &cells);
+    surfmesh->getFaceCells(f, Parallel_type::ALL, cells);
     if (cells.size() == 2) continue;
 
-    const Point& xf = surfmesh->face_centroid(f);
+    const Point& xf = surfmesh->getFaceCentroid(f);
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
         fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {

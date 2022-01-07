@@ -665,11 +665,7 @@ struct MeshCache {
   template<AccessPattern AP=AccessPattern::DEFAULT>
   void getEdgeCells(const Entity_ID e,
                     const Parallel_type ptype,
-                    Entity_ID_View& cells) const {
-    Errors::Message msg("MeshCache::getEdgeCells not implemented");
-    Exceptions::amanzi_throw(msg);
-  }
-
+                    Entity_ID_View& cells) const;
 
   // Faces of type 'ptype' connected to an edge
   // NOTE: The order of faces is not guaranteed to be the same for
@@ -688,10 +684,7 @@ struct MeshCache {
   template<AccessPattern AP=AccessPattern::DEFAULT>
   void getNodeCells(const Entity_ID n,
                     const Parallel_type ptype,
-                    Entity_ID_View& cells) const {
-    Errors::Message msg("MeshCache::getNodeCells not implemented");
-    Exceptions::amanzi_throw(msg);
-  }
+                    Entity_ID_View& cells) const;
 
   // Faces of type parallel 'ptype' connected to a node
   // NOTE: The order of faces is not guarnateed to be the same for
@@ -817,6 +810,7 @@ private:
 
 namespace MeshAlgorithms {
 
+void cacheDefault(MeshCache& mesh);
 void cacheAll(MeshCache& mesh);
 void recacheGeometry(MeshCache& mesh);
 

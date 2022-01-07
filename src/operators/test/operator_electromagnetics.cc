@@ -65,16 +65,17 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(comm,gm);
+  auto mesh_plist = Teuchos::rcp(new Teuchos::ParameterList());
+  mesh_plist->set("request edges", true);
+  MeshFactory meshfactory(comm, gm, mesh_plist);
   meshfactory.set_preference(Preference({Framework::MSTK}));
 
-  bool request_faces(true), request_edges(true);
   RCP<const Mesh> mesh;
   if (nx > 0) 
-    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, request_faces, request_edges);
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx);
   else
-    mesh = meshfactory.create("test/hex_split_faces5.exo", request_faces, request_edges);
-    // mesh = meshfactory.create("test/hexes.exo", request_faces, request_edges);
+    mesh = meshfactory.create("test/hex_split_faces5.exo");
+    // mesh = meshfactory.create("test/hexes.exo");
 
   // create resistivity coefficient
   double time = 1.0;
@@ -82,19 +83,19 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   WhetStone::Tensor Kc(3, 2);
 
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh->getCellCentroid(c);
     Kc = ana.Tensor(xc, time);
     K->push_back(Kc);
   }
 
   // create boundary data
-  int nedges_owned = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nedges_owned = mesh->getNumEntities(AmanziMesh::Entity_kind::EDGE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL);
 
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::EDGE, WhetStone::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::Entity_kind::EDGE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -102,19 +103,19 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   AmanziMesh::Entity_ID_List cells, edges;
 
   for (int f = 0; f < nfaces_wghost; ++f) {
-    const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+    const AmanziGeometry::Point& xf = mesh->getFaceCentroid(f);
 
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
         fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {
 
-      mesh->face_get_edges_and_dirs(f, &edges, &edirs);
+      mesh->getFaceEdgesAndDirs(f, edges, &edirs);
       int nedges = edges.size();
       for (int i = 0; i < nedges; ++i) {
         int e = edges[i];
-        double len = mesh->edge_length(e);
-        const AmanziGeometry::Point& tau = mesh->edge_vector(e);
-        const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
+        double len = mesh->getEdgeLength(e);
+        const AmanziGeometry::Point& tau = mesh->getEdgeVector(e);
+        const AmanziGeometry::Point& xe = mesh->getEdgeCentroid(e);
 
         bc_model[e] = OPERATOR_BC_DIRICHLET;
         bc_value[e] = (ana.electric_exact(xe, time) * tau) / len;
@@ -140,15 +141,15 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   source.PutScalarMasterAndGhosted(0.0);
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh->cell_get_edges(c, &edges);
+    mesh->getCellEdges(c, edges);
     int nedges = edges.size();
-    double vol = 3.0 * mesh->cell_volume(c) / nedges;
+    double vol = 3.0 * mesh->getCellVolume(c) / nedges;
 
     for (int n = 0; n < nedges; ++n) {
       int e = edges[n];
-      double len = mesh->edge_length(e);
-      const AmanziGeometry::Point& tau = mesh->edge_vector(e);
-      const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
+      double len = mesh->getEdgeLength(e);
+      const AmanziGeometry::Point& tau = mesh->getEdgeVector(e);
+      const AmanziGeometry::Point& xe = mesh->getEdgeCentroid(e);
 
       src[0][e] += (ana.source_exact(xe, time) * tau) / len * vol;
     }
@@ -162,9 +163,9 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   sol.PutScalar(0.0);
   if (initial_guess) {
     for (int e = 0; e < nedges_owned; e++) {
-      double len = mesh->edge_length(e);
-      const AmanziGeometry::Point& tau = mesh->edge_vector(e);
-      const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
+      double len = mesh->getEdgeLength(e);
+      const AmanziGeometry::Point& tau = mesh->getEdgeVector(e);
+      const AmanziGeometry::Point& xe = mesh->getEdgeCentroid(e);
 
       sol[0][e] = (ana.electric_exact(xe, time) * tau) / len;
     }
@@ -179,7 +180,7 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   phi.PutScalar(c_t);
 
   Teuchos::RCP<Operator> global_op = op_curlcurl->global_operator();
-  Teuchos::RCP<PDE_Accumulation> op_acc = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::EDGE, global_op));
+  Teuchos::RCP<PDE_Accumulation> op_acc = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::Entity_kind::EDGE, global_op));
 
   double dT = 1.0;
   op_acc->AddAccumulationDelta(solution, phi, phi, dT, "edge");

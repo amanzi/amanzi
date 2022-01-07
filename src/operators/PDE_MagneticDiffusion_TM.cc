@@ -44,8 +44,8 @@ void PDE_MagneticDiffusion_TM::ModifyMatrices(
     const WhetStone::DenseMatrix& Mcell = mass_op_[c];
     const WhetStone::DenseMatrix& Ccell = curl_op_[c];
 
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    mesh_->cell_get_nodes(c, &nodes);
+    mesh_->getCellFacesAndDirs(c, faces, &dirs);
+    mesh_->getCellNodes(c, nodes);
 
     int nfaces = faces.size();
     int nnodes = nodes.size();
@@ -54,7 +54,7 @@ void PDE_MagneticDiffusion_TM::ModifyMatrices(
 
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
-      v1(n) = Bf[0][f] * dirs[n] * mesh_->face_area(f);
+      v1(n) = Bf[0][f] * dirs[n] * mesh_->getFaceArea(f);
     }
 
     Mcell.Multiply(v1, v2, false);
@@ -89,8 +89,8 @@ void PDE_MagneticDiffusion_TM::ModifyFields(
   for (int c = 0; c < ncells_owned; ++c) {
     const WhetStone::DenseMatrix& Ccell = curl_op_[c];
 
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    mesh_->cell_get_nodes(c, &nodes);
+    mesh_->getCellFacesAndDirs(c, faces, &dirs);
+    mesh_->getCellNodes(c, nodes);
 
     int nfaces = faces.size();
     int nnodes = nodes.size();
@@ -107,7 +107,7 @@ void PDE_MagneticDiffusion_TM::ModifyFields(
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
       if (!fflag[f]) {
-        Bf[0][f] -= dt * v2(n) * dirs[n] / mesh_->face_area(f);
+        Bf[0][f] -= dt * v2(n) * dirs[n] / mesh_->getFaceArea(f);
         fflag[f] = true;
       }
     }
@@ -123,12 +123,12 @@ void PDE_MagneticDiffusion_TM::ModifyFields(
 ****************************************************************** */
 void PDE_MagneticDiffusion_TM::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
-  if (local_schema_col_.get_base() == AmanziMesh::CELL && mesh_->space_dimension() == 2) {
+  if (local_schema_col_.get_base() == AmanziMesh::Entity_kind::CELL && mesh_->getSpaceDimension() == 2) {
     Teuchos::RCP<const BCs> bc_f, bc_v;
     for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
-      if ((*bc)->kind() == AmanziMesh::FACE) {
+      if ((*bc)->kind() == AmanziMesh::Entity_kind::FACE) {
         bc_f = *bc;
-      } else if ((*bc)->kind() == AmanziMesh::NODE) {
+      } else if ((*bc)->kind() == AmanziMesh::Entity_kind::NODE) {
         bc_v = *bc;
       }
     }
@@ -153,13 +153,13 @@ void PDE_MagneticDiffusion_TM::ApplyBCs_Node_(
 
   // calculate number of cells for each node
   // move to properties of BCs (lipnikov@lanl.gov)
-  std::vector<int> node_get_cells(nnodes_wghost, 0);
+  std::vector<int> node_cells(nnodes_wghost, 0);
   for (int c = 0; c != ncells_wghost; ++c) {
-    mesh_->cell_get_nodes(c, &nodes);
+    mesh_->getCellNodes(c, nodes);
     int nnodes = nodes.size();
 
     for (int n = 0; n < nnodes; ++n) {
-      node_get_cells[nodes[n]]++;
+      node_cells[nodes[n]]++;
     }
   }
 
@@ -172,7 +172,7 @@ void PDE_MagneticDiffusion_TM::ApplyBCs_Node_(
       const std::vector<int>& bc_model = bc_v->bc_model();
       const std::vector<double>& bc_value = bc_v->bc_value();
 
-      mesh_->cell_get_nodes(c, &nodes);
+      mesh_->getCellNodes(c, nodes);
       int nnodes = nodes.size();
 
       // essential conditions for test functions
@@ -206,7 +206,7 @@ void PDE_MagneticDiffusion_TM::ApplyBCs_Node_(
 
           if (essential_eqn) {
             rhs_node[0][v] = value;
-            Acell(n, n) = 1.0 / node_get_cells[v];
+            Acell(n, n) = 1.0 / node_cells[v];
           }
         }
       }
@@ -229,10 +229,10 @@ double PDE_MagneticDiffusion_TM::CalculateOhmicHeating(const CompositeVector& E)
 
   double energy(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    mesh_->cell_get_nodes(c, &nodes);
+    mesh_->getCellNodes(c, nodes);
     int nnodes = nodes.size();
 
-    double volume = mesh_->cell_volume(c);
+    double volume = mesh_->getCellVolume(c);
     double tmp = volume / (*K_)[c](0, 0) / nnodes;
     for (int n = 0; n < nnodes; ++n) {
       int v = nodes[n];
@@ -241,7 +241,7 @@ double PDE_MagneticDiffusion_TM::CalculateOhmicHeating(const CompositeVector& E)
   }
 
   double tmp(energy);
-  mesh_->get_comm()->SumAll(&tmp, &energy, 1);
+  mesh_->getComm()->SumAll(&tmp, &energy, 1);
 
   return energy;
 }

@@ -142,10 +142,10 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Node_Node& op,
 int Operator_Schema::ApplyMatrixFreeOp(const Op_MeshInjection& op,
                                        const CompositeVector& X, CompositeVector& Y) const
 {
-  auto col_comp_name = AmanziMesh::entity_kind_string(std::get<0>(*op.schema_col().begin()));
+  auto col_comp_name = AmanziMesh::to_string(std::get<0>(*op.schema_col().begin()));
   const Epetra_MultiVector& X_vec = *X.ViewComponent(col_comp_name, false);
 
-  auto row_comp_name = AmanziMesh::entity_kind_string(std::get<0>(*op.schema_row().begin()));
+  auto row_comp_name = AmanziMesh::to_string(std::get<0>(*op.schema_row().begin()));
   Epetra_MultiVector& Y_vec = *Y.ViewComponent(row_comp_name, false);
 
   if (!op.transpose) {
@@ -273,8 +273,8 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
       AmanziMesh::Entity_kind kind;
       std::tie(kind, std::ignore, num) = *it;
 
-      if (kind == AmanziMesh::CELL) {
-        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      if (kind == AmanziMesh::Entity_kind::CELL) {
+        mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL, cells);
         int ncells = cells.size();
 
         for (int n = 0; n != ncells; ++n) {
@@ -318,8 +318,8 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Node_Schema& op,
       AmanziMesh::Entity_kind kind;
       std::tie(kind, std::ignore, num) = *it;
 
-      if (kind == AmanziMesh::CELL) {
-        mesh_->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
+      if (kind == AmanziMesh::Entity_kind::CELL) {
+        mesh_->getNodeCells(v, AmanziMesh::Parallel_type::ALL, cells);
         int ncells = cells.size();
 
         for (int n = 0; n != ncells; ++n) {
@@ -374,13 +374,13 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_MeshInjection& op,
 {
   auto row_entity_kind = std::get<0>(*op.schema_row().begin());
   auto col_entity_kind = std::get<0>(*op.schema_col().begin());
-  auto row_comp_name = AmanziMesh::entity_kind_string(row_entity_kind);
-  auto col_comp_name = AmanziMesh::entity_kind_string(col_entity_kind);
+  auto row_comp_name = AmanziMesh::to_string(row_entity_kind);
+  auto col_comp_name = AmanziMesh::to_string(col_entity_kind);
   const std::vector<int>& row_inds = map.GhostIndices(my_block_row, row_comp_name, 0);
   const std::vector<int>& col_inds = map.GhostIndices(my_block_col, col_comp_name, 0);
 
-  auto row_entity_map = op.get_row_mesh().map(row_entity_kind, false);
-  auto col_entity_map = op.get_col_mesh().map(col_entity_kind, false);
+  auto row_entity_map = op.get_row_mesh().getMap(row_entity_kind, false);
+  auto col_entity_map = op.get_col_mesh().getMap(col_entity_kind, false);
 
   int ierr(0);
   if (!op.transpose) {
@@ -483,8 +483,8 @@ void Operator_Schema::AssembleMatrixOp(const Op_Face_Schema& op,
       AmanziMesh::Entity_kind kind;
       std::tie(kind, std::ignore, num) = *it;
 
-      if (kind == AmanziMesh::CELL) {
-        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      if (kind == AmanziMesh::Entity_kind::CELL) {
+        mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL, cells);
         int ncells = cells.size();
 
         for (int n = 0; n != ncells; ++n) {
@@ -529,8 +529,8 @@ void Operator_Schema::AssembleMatrixOp(const Op_Node_Schema& op,
       AmanziMesh::Entity_kind kind;
       std::tie(kind, std::ignore, num) = *it;
 
-      if (kind == AmanziMesh::CELL) {
-        mesh_->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
+      if (kind == AmanziMesh::Entity_kind::CELL) {
+        mesh_->getNodeCells(v, AmanziMesh::Parallel_type::ALL, cells);
         int ncells = cells.size();
 
         for (int n = 0; n != ncells; ++n) {
@@ -587,13 +587,13 @@ void Operator_Schema::AssembleMatrixOp(const Op_MeshInjection& op,
 {
   auto row_entity_kind = std::get<0>(*op.schema_row().begin());
   auto col_entity_kind = std::get<0>(*op.schema_col().begin());
-  auto row_comp_name = AmanziMesh::entity_kind_string(row_entity_kind);
-  auto col_comp_name = AmanziMesh::entity_kind_string(col_entity_kind);
+  auto row_comp_name = AmanziMesh::to_string(row_entity_kind);
+  auto col_comp_name = AmanziMesh::to_string(col_entity_kind);
   const std::vector<int>& row_inds = map.GhostIndices(my_block_row, row_comp_name, 0);
   const std::vector<int>& col_inds = map.GhostIndices(my_block_col, col_comp_name, 0);
 
-  auto row_entity_map = op.get_row_mesh().map(row_entity_kind, false);
-  auto col_entity_map = op.get_col_mesh().map(col_entity_kind, false);
+  auto row_entity_map = op.get_row_mesh().getMap(row_entity_kind, false);
+  auto col_entity_map = op.get_col_mesh().getMap(col_entity_kind, false);
 
   int ierr(0);
   if (!op.transpose) {

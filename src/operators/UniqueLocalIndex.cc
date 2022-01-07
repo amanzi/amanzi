@@ -36,11 +36,11 @@ int UniqueIndexFaceToCells(const AmanziMesh::Mesh& mesh, int f, int c)
   int pos = 0;
   AmanziMesh::Entity_ID_List cells;
 
-  mesh.face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+  mesh.getFaceCells(f, AmanziMesh::Parallel_type::ALL, cells);
   int ncells = cells.size();
   if (ncells > 1) {
     std::set<int> gids;
-    const Epetra_BlockMap& cmap = mesh.cell_map(true);
+    const Epetra_BlockMap& cmap = mesh.getMap(AmanziMesh::Entity_kind::CELL, true);
 
     for (int i = 0; i < ncells; ++i) gids.insert(cmap.GID(cells[i]));
 

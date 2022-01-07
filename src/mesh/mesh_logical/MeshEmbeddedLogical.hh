@@ -55,7 +55,7 @@ class MeshEmbeddedLogical : public MeshFramework {
   virtual bool hasNodes() const override { return false; }
 
   // Some meshes are logical meshes and do not have coordinate info.
-  virtual bool isLogical() const { return false; }
+  virtual bool isLogical() const override { return false; }
 
   // Parent entity in the source mesh if mesh was derived from another mesh
   virtual

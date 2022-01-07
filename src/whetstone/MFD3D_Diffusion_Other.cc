@@ -44,10 +44,12 @@ int MFD3D_Diffusion::MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& 
   for (int n = 0; n < nfaces; n++) {
     int f = faces[n];
     const AmanziGeometry::Point& xf = mesh_->getFaceCentroid(f);
-    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
+    const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f, c);
+    //const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
 
     a = xf - xc;
-    double s = mesh_->getFaceArea(f) * dirs[n] / norm(a);
+    // double s = mesh_->getFaceArea(f) * dirs[n] / norm(a);
+    double s = mesh_->getFaceArea(f) / norm(a);
     double Knn = ((K * a) * normal) * s;
     double dxn = a * normal;
     W(n, n) = Knn / fabs(dxn);

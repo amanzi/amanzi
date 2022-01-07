@@ -30,7 +30,7 @@ class Operator_ConsistentFace : public Operator {
   Operator_ConsistentFace(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
                           Teuchos::ParameterList& plist) :
       Operator(cvs, plist, OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_FACE) {
-    cell_max_faces_ = mesh_->cell_get_max_faces();
+    cell_max_faces_ = AmanziMesh::MeshAlgorithms::getMaxCellNumFaces(*mesh_);
   }
 
   // copy constructor
