@@ -437,7 +437,7 @@ void WalkaboutCheckpoint::WriteDataFile(
     }
 
     // timestamp and cycle number 
-    WriteAttributes(mesh.get_comm()->NumProc(), S->time(), S->cycle());    
+    WriteAttributes(mesh.get_comm()->NumProc(), 0);    
     Finalize();
   }
 }

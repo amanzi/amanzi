@@ -198,8 +198,7 @@ void Checkpoint::Write(const State& S,
     for (auto it = S.data_begin(); it != S.data_end(); ++it) {
       it->second->WriteCheckpoint(*this);
     }
-    WriteAttributes(S.GetMesh("domain")->get_comm()->NumProc(),
-                    S.time(), dt, S.cycle(), S.position());
+    WriteAttributes(S.GetMesh("domain")->get_comm()->NumProc(), S.position());
     WriteObservations(obs_data);
     Finalize();
   }
@@ -241,31 +240,11 @@ void Checkpoint::WriteVector(const Epetra_MultiVector& vec,
 // -----------------------------------------------------------------------------
 // Write simple attributes.
 // -----------------------------------------------------------------------------
-void Checkpoint::WriteAttributes(int comm_size, double time, double dt, int cycle, int position) const {
+void Checkpoint::WriteAttributes(int comm_size, int position) const {
   const auto& output = output_.at("domain");
-  output->writeAttrReal(time, "time");
-  output->writeAttrReal(dt, "dt");
-  output->writeAttrInt(cycle, "cycle");
   output->writeAttrInt(position, "position");
   output->writeAttrInt(comm_size, "mpi_comm_world_rank");
-};
-
-
-void Checkpoint::WriteAttributes(int comm_size, double time, double dt, int cycle) const {
-  const auto& output = output_.at("domain");
-  output->writeAttrReal(time, "time");
-  output->writeAttrReal(dt, "dt");
-  output->writeAttrInt(cycle, "cycle");
-  output->writeAttrInt(comm_size, "mpi_comm_world_rank");
-};
-
-
-void Checkpoint::WriteAttributes(int comm_size, double time, int cycle) const {
-  const auto& output = output_.at("domain");
-  output->writeAttrReal(time, "time");
-  output->writeAttrInt(cycle, "cycle");
-  output->writeAttrInt(comm_size, "mpi_comm_world_rank");
-};
+}
 
 
 // -----------------------------------------------------------------------------

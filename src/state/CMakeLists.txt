@@ -57,6 +57,14 @@ endif(ENABLE_Silo)
 # Library: state
 #
 set(state_inc_files 
+  Checkpoint.hh
+  chemistry_data.hh 
+  data/Data.hh
+  data/Data_Helpers.hh
+  data/Data_Impl.hh
+  data/DataFactory.hh
+  data/DataFactory_Impl.hh
+  data/Record.hh
   Evaluator.hh
   Evaluator_Factory.hh
   Evaluator_OperatorApply.hh
@@ -70,14 +78,7 @@ set(state_inc_files
   EvaluatorPrimary.hh
   EvaluatorSecondaryMonotype.hh
   EvaluatorSecondaryMonotypeFromFunction.hh
-  data/Data.hh
-  data/Data_Helpers.hh
-  data/Data_Impl.hh
-  data/DataFactory.hh
-  data/DataFactory_Impl.hh
-  data/Record.hh
-  Checkpoint.hh
-  chemistry_data.hh 
+  IO.hh
   Observable.hh
   StateDefs.hh
   State.hh
@@ -89,7 +90,6 @@ set(state_inc_files
 add_amanzi_library(state 
                    SOURCE State.cc
                           Checkpoint.cc
-                          Observable.cc
                           chemistry_data.cc
                           Evaluator.cc
                           Evaluator_Factory.cc
@@ -105,6 +105,8 @@ add_amanzi_library(state
                           EvaluatorSecondary.cc
                           EvaluatorSecondaryMonotype.cc
                           EvaluatorSecondaryMonotypeFromFunction.cc
+                          IO.cc
+                          Observable.cc
                           UnstructuredObservations.cc
                           Visualization.cc
                           VisualizationDomainSet.cc

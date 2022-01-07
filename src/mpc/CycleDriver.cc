@@ -31,6 +31,7 @@
 // Amanzi
 #include "Checkpoint.hh"
 #include "errors.hh"
+#include "IO.hh"
 #include "PK.hh"
 #include "PK_Factory.hh"
 #include "ObservationData.hh"
