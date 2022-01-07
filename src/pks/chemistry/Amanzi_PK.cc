@@ -49,7 +49,6 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
                      const Teuchos::RCP<State>& S,
                      const Teuchos::RCP<TreeVector>& soln) :
     soln_(soln),
-    dt_max_(9.9e9),
     chem_(NULL),
     current_time_(0.0),
     saved_time_(0.0)
@@ -644,7 +643,6 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         chem_->CopyState(beaker_state_, &beaker_state_copy_);
 
         // chemistry computations for this cell
-
         num_itrs = chem_->ReactionStep(&beaker_state_, beaker_parameters_, dt);
 
         if (max_itrs < num_itrs) {
@@ -658,11 +656,12 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       } catch (Exceptions::Amanzi_exception& geochem_err) {
         ierr = 1;
         internal_msg = geochem_err.what();
+        // chem_->DisplayComponents(beaker_state_);
         break;
       }
 
       if (ierr == 0) CopyBeakerStructuresToCellState(c, aqueous_components_);
-      // TODO: was porosity etc changed? copy someplace
+      // TODO: was porosity etc changed? copy some place
     }
   }
 
@@ -695,6 +694,7 @@ void Amanzi_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>
 {
   saved_time_ = t_new;
 
+  // we keep own estimate of stable time step and report it to CD via get_dt()
   if (dt_control_method_ == "simple") {
     if ((num_successful_steps_ == 0) || (num_iterations_ >= dt_cut_threshold_)) {
       dt_next_ /= dt_cut_factor_;
