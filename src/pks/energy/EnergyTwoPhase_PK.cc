@@ -92,6 +92,9 @@ void EnergyTwoPhase_PK::Setup(const Teuchos::Ptr<State>& S)
 
     auto enth = Teuchos::rcp(new EnthalpyEvaluator(elist));
     S->SetEvaluator(enthalpy_key_, enth);
+
+    S->RequireDerivative<CV_t, CVS_t>(enthalpy_key_, Tags::DEFAULT,
+                                      temperature_key_, Tags::DEFAULT, enthalpy_key_);
   }
 
   // -- thermal conductivity

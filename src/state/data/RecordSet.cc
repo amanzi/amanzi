@@ -84,4 +84,15 @@ void RecordSet::RequireRecord(const Tag& tag, const Key& owner) {
   }
 }
 
+
+bool RecordSet::isInitialized(Tag& failed) {
+  for (auto& r : records_) {
+    if (!r.second->initialized()) {;
+      failed = r.first;
+      return false;
+    }
+  }
+  return true;
+}
+
 }  // namespace Amanzi

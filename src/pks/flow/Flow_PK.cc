@@ -75,8 +75,8 @@ void Flow_PK::Setup(const Teuchos::Ptr<State>& S)
   aperture_key_ = Keys::getKey(domain_, "aperture"); 
 
   // -- constant fields
-  S->Require<double>("const_fluid_density", Tags::DEFAULT, passwd_);
-  S->Require<double>("atmospheric_pressure", Tags::DEFAULT, passwd_);
+  S->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
+  S->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
   S->Require<AmanziGeometry::Point>("gravity", Tags::DEFAULT, "state");
 
   // -- effective fracture permeability
@@ -193,20 +193,18 @@ void Flow_PK::InitializeFields_()
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // set popular default values for missed fields.
-  if (S_->GetRecord("const_fluid_density", Tags::DEFAULT).owner() == passwd_) {
-    if (!S_->GetRecord("const_fluid_density", Tags::DEFAULT).initialized()) {
-      S_->GetW<double>("const_fluid_density", Tags::DEFAULT, passwd_) = 1000.0;
-      S_->GetRecordW("const_fluid_density", Tags::DEFAULT, passwd_).set_initialized();
+  if (!S_->GetRecord("const_fluid_density", Tags::DEFAULT).initialized()) {
+    S_->GetW<double>("const_fluid_density", Tags::DEFAULT, "state") = 1000.0;
+    S_->GetRecordW("const_fluid_density", Tags::DEFAULT, "state").set_initialized();
 
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initialized const_fluid_density to default value 1000.0" << std::endl;  
-    }
+    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+        *vo_->os() << "initialized const_fluid_density to default value 1000.0" << std::endl;  
   }
 
   if (S_->HasData("const_fluid_viscosity")) {
     if (!S_->GetRecord("const_fluid_viscosity", Tags::DEFAULT).initialized()) {
-      S_->GetW<double>("const_fluid_viscosity", Tags::DEFAULT, passwd_) = CommonDefs::ISOTHERMAL_VISCOSITY;
-      S_->GetRecordW("const_fluid_viscosity", Tags::DEFAULT, passwd_).set_initialized();
+      S_->GetW<double>("const_fluid_viscosity", Tags::DEFAULT, "state") = CommonDefs::ISOTHERMAL_VISCOSITY;
+      S_->GetRecordW("const_fluid_viscosity", Tags::DEFAULT, "state").set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
           *vo_->os() << "initialized const_fluid_viscosity to default value 1.002e-3" << std::endl;  
@@ -215,8 +213,8 @@ void Flow_PK::InitializeFields_()
 
   if (S_->HasData("atmospheric_pressure")) {
     if (!S_->GetRecord("atmospheric_pressure", Tags::DEFAULT).initialized()) {
-      S_->GetW<double>("atmospheric_pressure", Tags::DEFAULT, passwd_) = FLOW_PRESSURE_ATMOSPHERIC;
-      S_->GetRecordW("atmospheric_pressure", Tags::DEFAULT, passwd_).set_initialized();
+      S_->GetW<double>("atmospheric_pressure", Tags::DEFAULT, "state") = FLOW_PRESSURE_ATMOSPHERIC;
+      S_->GetRecordW("atmospheric_pressure", Tags::DEFAULT, "state").set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
           *vo_->os() << "initialized atmospheric_pressure to default value " << FLOW_PRESSURE_ATMOSPHERIC << std::endl;  

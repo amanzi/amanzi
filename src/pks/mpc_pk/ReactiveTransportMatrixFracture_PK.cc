@@ -77,11 +77,11 @@ void ReactiveTransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
       .sublist("function").sublist("function-constant")
       .set<double>("value", rho);
   elist.sublist("fracture-mass_density_liquid")
-        .set<std::string>("field evaluator type", "independent variable");
+        .set<std::string>("evaluator type", "independent variable");
 
   // copies
-  S->Require<CV_t, CVS_t>(tcc_matrix_key_, Tags::COPY, "state");
-  S->Require<CV_t, CVS_t>(tcc_fracture_key_, Tags::COPY, "state");
+  S->Require<CV_t, CVS_t>(tcc_matrix_key_, Tags::COPY, tcc_matrix_key_);
+  S->Require<CV_t, CVS_t>(tcc_fracture_key_, Tags::COPY, tcc_fracture_key_);
 
   // communicate chemistry engine to transport.
   auto ic = coupled_chemistry_pk_->begin();
@@ -164,8 +164,8 @@ bool ReactiveTransportMatrixFracture_PK::AdvanceStep(
     }
     
     // tell chemistry PKs to work with copies
-    auto tcc_m_copy = S_->GetW<CV_t>(tcc_matrix_key_, Tags::COPY, "state").ViewComponent("cell", true);
-    auto tcc_f_copy = S_->GetW<CV_t>(tcc_fracture_key_, Tags::COPY, "state").ViewComponent("cell", true);  
+    auto tcc_m_copy = S_->GetW<CV_t>(tcc_matrix_key_, Tags::COPY, tcc_matrix_key_).ViewComponent("cell", true);
+    auto tcc_f_copy = S_->GetW<CV_t>(tcc_fracture_key_, Tags::COPY, tcc_fracture_key_).ViewComponent("cell", true);  
 
     subpks[0]->set_aqueous_components(tcc_m_copy);
     subpks[1]->set_aqueous_components(tcc_f_copy);

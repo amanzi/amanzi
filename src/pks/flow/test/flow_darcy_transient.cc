@@ -102,11 +102,11 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   S->GetRecordW("permeability", "permeability").set_initialized();
 
   // -- fluid density and viscosity
-  S->GetW<double>("const_fluid_density", passwd) = 1.0;
-  S->GetRecordW("const_fluid_density", "flow").set_initialized();
+  S->GetW<double>("const_fluid_density", "state") = 1.0;
+  S->GetRecordW("const_fluid_density", "state").set_initialized();
 
-  S->GetW<double>("const_fluid_viscosity", passwd) = 1.0;
-  S->GetRecordW("const_fluid_viscosity", "flow").set_initialized();
+  S->GetW<double>("const_fluid_viscosity", "state") = 1.0;
+  S->GetRecordW("const_fluid_viscosity", "state").set_initialized();
 
   // -- storativity
   S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(2.0);
@@ -210,8 +210,8 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
     K[2][c] = 0.5;
   }
 
-  S->GetW<double>("const_fluid_density", passwd) = 1.0;
-  S->GetW<double>("const_fluid_viscosity", passwd) = 1.0;
+  S->GetW<double>("const_fluid_density", "state") = 1.0;
+  S->GetW<double>("const_fluid_viscosity", "state") = 1.0;
 
   S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(1.0);
   S->GetW<CompositeVector>("specific_yield", passwd).PutScalar(0.0);

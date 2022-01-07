@@ -127,16 +127,16 @@ void Multiphase_PK::Setup(const Teuchos::Ptr<State>& S)
       S->Require<AmanziGeometry::Point>("gravity", Tags::DEFAULT, "state");
 
   if (!S->HasData("const_fluid_density"))
-      S->Require<double>("const_fluid_density", Tags::DEFAULT, passwd_);
+      S->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
 
   if (!S->HasData("const_fluid_viscosity"))
-      S->Require<double>("const_fluid_viscosity", Tags::DEFAULT, passwd_);
+      S->Require<double>("const_fluid_viscosity", Tags::DEFAULT, "state");
 
   if (!S->HasData("const_gas_viscosity"))
-      S->Require<double>("const_gas_viscosity", Tags::DEFAULT, passwd_);
+      S->Require<double>("const_gas_viscosity", Tags::DEFAULT, "state");
 
   if (!S->HasData("atmospheric_pressure"))
-    S->Require<double>("atmospheric_pressure", Tags::DEFAULT, passwd_);
+    S->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
 
   // pressure is the primary solution
   if (!S->HasData(pressure_liquid_key_)) {

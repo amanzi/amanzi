@@ -48,10 +48,7 @@ State::State() {
 };
 
 State::State(Teuchos::ParameterList& state_plist) :
-    state_plist_(state_plist),
-    time_(0.0),
-    cycle_(0),
-    position_in_tp_(TIME_PERIOD_START) {
+    state_plist_(state_plist) {
   vo_ = Teuchos::rcp(new VerboseObject("State", state_plist_));
 };
 
@@ -309,6 +306,9 @@ void State::Setup()
   Require<double>("dt", Tags::DEFAULT, "coordinator");
   GetRecordW("dt", Tags::DEFAULT, "coordinator").set_initialized();
 
+  Require<int>("position", Tags::DEFAULT, "position");
+  GetRecordSetW("position").initializeTags();
+
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // Ensure compatibility of all the evaluators -- each evaluator's dependencies
@@ -372,10 +372,10 @@ void State::Setup()
 void State::Initialize()
 {
   // Set metadata
-  GetW<int>("cycle", Tags::DEFAULT, "cycle") = cycle_;
+  GetW<int>("cycle", Tags::DEFAULT, "cycle") = 0;
   data_.at("cycle")->initializeTags();
 
-  GetW<double>("time", Tags::DEFAULT, "time") = time_;
+  GetW<double>("time", Tags::DEFAULT, "time") = 0.0;
   data_.at("time")->initializeTags();
 
   // Initialize data from initial conditions.
@@ -405,27 +405,26 @@ void State::Initialize(Teuchos::RCP<State> S)
 
   for (auto& e : data_) {
     if (S->HasData(e.first)) {
-      auto& field = GetRecordW(e.first, e.first);
+      auto owner = GetRecord(e.first).owner();
+      auto& field = GetRecordW(e.first, owner);
       const auto& copy = S->GetRecord(e.first);
 
-      /*
-      if (field.type() != copy.type()) {
-        std::stringstream messagestream;
-        messagestream << "States has fields with the same name but different types\n";
-        Errors::Message message(messagestream.str());
-        Exceptions::amanzi_throw(message);
-      }
-      */
       if (copy.initialized()) {
         if (field.ValidType<double>()) {
-          field.Set<double>(field.owner(), copy.Get<double>());
+          field.Set<double>(owner, copy.Get<double>());
+        } else if (field.ValidType<int>()) {
+          field.Set<int>(owner, copy.Get<int>());
         } else if (field.ValidType<std::vector<double> >()) {
-          field.Set<std::vector<double>>(field.owner(), copy.Get<std::vector<double>>());
+          field.Set<std::vector<double>>(owner, copy.Get<std::vector<double>>());
         } else if (field.ValidType<CompositeVector>()) {
-          field.Set<CompositeVector>(field.owner(), copy.Get<CompositeVector>());
+          field.Set<CompositeVector>(owner, copy.Get<CompositeVector>());
+        } else if (field.ValidType<AmanziGeometry::Point>()) {
+          field.Set<AmanziGeometry::Point>(owner, copy.Get<AmanziGeometry::Point>());
         } else {
-          Errors::Message message("Copy field with unknown type\n");
-          Exceptions::amanzi_throw(message);
+          std::stringstream ss;
+          ss << "Trying to copy \"" << e.first << "\" with unknown type.\n";
+          Errors::Message msg(ss.str());
+          Exceptions::amanzi_throw(msg);
         }
         field.set_initialized();      
       }

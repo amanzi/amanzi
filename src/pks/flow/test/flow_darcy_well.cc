@@ -109,11 +109,11 @@ void RunTestDarcyWell(std::string controller, bool fit) {
     
 
   // -- fluid density and viscosity
-  S->GetW<double>("const_fluid_density", passwd) = 1.0;
-  S->GetRecordW("const_fluid_density", "flow").set_initialized();
+  S->GetW<double>("const_fluid_density", "state") = 1.0;
+  S->GetRecordW("const_fluid_density", "state").set_initialized();
 
-  S->GetW<double>("const_fluid_viscosity", passwd) = 1.0;
-  S->GetRecordW("const_fluid_viscosity", "flow").set_initialized();
+  S->GetW<double>("const_fluid_viscosity", "state") = 1.0;
+  S->GetRecordW("const_fluid_viscosity", "state").set_initialized();
 
   // -- storativity
   S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(0.1);
@@ -229,11 +229,11 @@ void Run_3D_DarcyWell(std::string controller) {
   S->GetRecordW("permeability", "permeability").set_initialized();
 
   // -- fluid density and viscosity
-  S->GetW<double>("const_fluid_density", passwd) = 1.0;
-  S->GetRecordW("const_fluid_density", "flow").set_initialized();
+  S->GetW<double>("const_fluid_density", "state") = 1.0;
+  S->GetRecordW("const_fluid_density", "state").set_initialized();
 
-  S->GetW<double>("const_fluid_viscosity", passwd) = 1.0;
-  S->GetRecordW("const_fluid_viscosity", "flow").set_initialized();
+  S->GetW<double>("const_fluid_viscosity", "state") = 1.0;
+  S->GetRecordW("const_fluid_viscosity", "state").set_initialized();
 
   // -- storativity
   S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(0.1);
@@ -326,11 +326,11 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
   S->GetRecordW("permeability", "permeability").set_initialized();
 
   // -- fluid density and viscosity
-  S->GetW<double>("const_fluid_density", passwd) = 1.0;
-  S->GetRecordW("const_fluid_density", "flow").set_initialized();
+  S->GetW<double>("const_fluid_density", "state") = 1.0;
+  S->GetRecordW("const_fluid_density", "state").set_initialized();
 
-  S->GetW<double>("const_fluid_viscosity", passwd) = 1.0;
-  S->GetRecordW("const_fluid_viscosity", "flow").set_initialized();
+  S->GetW<double>("const_fluid_viscosity", "state") = 1.0;
+  S->GetRecordW("const_fluid_viscosity", "state").set_initialized();
 
   // -- storativity
   S->GetW<CompositeVector>("specific_storage", passwd).PutScalar(0.0);

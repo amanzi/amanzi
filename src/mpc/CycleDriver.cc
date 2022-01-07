@@ -427,17 +427,6 @@ void CycleDriver::ReadParameterList_() {
           << "\" does not exist or is not a regular file.";
       Exceptions::amanzi_throw(msg);
     }
-
-    // if (restart_requested_) {
-    //   if (vo_->os_OK(Teuchos::VERB_LOW)) {
-    //     *vo_->os() << "Restarting from checkpoint file: " << restart_filename_ << std::endl;
-    //   }
-    // } else {
-    //   if (vo_->os_OK(Teuchos::VERB_LOW)) {
-    //     *vo_->os() << "Initializing data from checkpoint file: " << restart_filename_ << std::endl
-    //                << "    (Ignoring all initial conditions.)" << std::endl;
-    //   }
-    // }
   }
 
   if (coordinator_list_->isSublist("time period control")) {
@@ -942,11 +931,6 @@ void CycleDriver::ResetDriver(int time_pr_id) {
     S_->RegisterMesh(it->first, it->second.first);
   }    
   
-  //  S_->RegisterMesh("domain", mesh);
-  S_->set_cycle(S_old_->cycle());
-  S_->set_time(tp_start_[time_pr_id]); 
-  S_->set_position(TIME_PERIOD_START);
-
   // delete the old global solution vector
   pk_ = Teuchos::null;
   soln_ = Teuchos::null;
@@ -965,6 +949,11 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   S_->Require<double>("dt", Tags::DEFAULT, "coordinator");
   S_->Setup();
+
+  S_->set_cycle(S_old_->cycle());
+  S_->set_time(tp_start_[time_pr_id]); 
+  S_->set_position(TIME_PERIOD_START);
+
   S_->GetW<double>("dt", Tags::DEFAULT, "coordinator") = tp_dt_[time_pr_id];
   S_->GetRecordW("dt", Tags::DEFAULT, "coordinator").set_initialized();
 

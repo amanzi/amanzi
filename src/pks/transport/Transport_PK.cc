@@ -188,7 +188,7 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
   prev_water_content_key_ = Keys::getKey(domain_, "prev_water_content"); 
 
   // require state fields when Flow PK is off
-  S_->Require<double>("const_fluid_density", Tags::DEFAULT, passwd_);
+  S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
 
   if (!S->HasData(permeability_key_) && abs_perm) {
     S->Require<CV_t, CVS_t>(permeability_key_, Tags::DEFAULT, permeability_key_).

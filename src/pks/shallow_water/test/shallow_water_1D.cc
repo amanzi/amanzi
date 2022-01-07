@@ -16,12 +16,13 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "IO.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
+#include "OutputXDMF.hh"
 
 #include "ShallowWater_PK.hh"
 
-#include "OutputXDMF.hh"
 
 using namespace Amanzi;
 

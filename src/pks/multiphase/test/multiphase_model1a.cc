@@ -27,6 +27,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "IO.hh"
 #include "MeshFactory.hh"
 #include "Mesh.hh"
 #include "State.hh"

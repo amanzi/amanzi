@@ -119,7 +119,7 @@ void NavierStokes_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // -- viscosity: if not requested by any PK, we request its constant value.
   if (!S->HasData("const_fluid_viscosity")) {
-    S->Require<double>("const_fluid_viscosity", Tags::DEFAULT, passwd_);
+    S->Require<double>("const_fluid_viscosity", Tags::DEFAULT, "state");
   }
 }
 

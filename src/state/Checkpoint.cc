@@ -148,8 +148,8 @@ void Checkpoint::ReadAttributes(State& S) {
   S.GetW<double>("time", Tags::DEFAULT, "time") = time;
 
   double dt(0.0);
-  output_["domain"]->readAttrReal(dt, "dt");
-  S.GetW<double>("dt", Tags::DEFAULT, "dt") = dt;
+  output_["domain"]->readAttrReal(dt, "coordinator");
+  S.GetW<double>("dt", Tags::DEFAULT, "coordinator") = dt;
 
   int cycle(0);
   output_["domain"]->readAttrInt(cycle, "cycle");
@@ -159,20 +159,6 @@ void Checkpoint::ReadAttributes(State& S) {
   int pos(0);
   output_["domain"]->readAttrInt(pos, "position");
   S.set_position(pos);
-
-  // load the number of processes and ensure they are the same -- otherwise
-  // the below just gives crap.
-  int rank(-1);
-  output_["domain"]->readAttrInt(rank, "mpi_comm_world_rank");
-  /*
-  if (comm->NumProc() != rank) {
-    Errors::Message message;
-    message << "Requested checkpoint file " << file_or_dirname << " was created on "
-            << rank << " processes, making it incompatible with this run on "
-            << comm->NumProc() << " process.";
-    Exceptions::amanzi_throw(message);
-  }
-  */
 }
 
 
@@ -198,7 +184,7 @@ void Checkpoint::Write(const State& S,
     for (auto it = S.data_begin(); it != S.data_end(); ++it) {
       it->second->WriteCheckpoint(*this);
     }
-    WriteAttributes(S.GetMesh("domain")->get_comm()->NumProc(), S.position());
+    WriteAttributes(S.GetMesh("domain")->get_comm()->NumProc());
     WriteObservations(obs_data);
     Finalize();
   }
@@ -240,9 +226,8 @@ void Checkpoint::WriteVector(const Epetra_MultiVector& vec,
 // -----------------------------------------------------------------------------
 // Write simple attributes.
 // -----------------------------------------------------------------------------
-void Checkpoint::WriteAttributes(int comm_size, int position) const {
+void Checkpoint::WriteAttributes(int comm_size) const {
   const auto& output = output_.at("domain");
-  output->writeAttrInt(position, "position");
   output->writeAttrInt(comm_size, "mpi_comm_world_rank");
 }
 

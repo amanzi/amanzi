@@ -14,6 +14,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "IO.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "ShallowWater_PK.hh"

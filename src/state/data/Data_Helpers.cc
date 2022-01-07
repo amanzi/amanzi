@@ -117,7 +117,7 @@ void WriteVis<CompositeVector>(const Visualization& vis, const Key& fieldname,
                                const std::vector<std::string>& subfieldnames,
                                const CompositeVector& vec) {
   if (vec.HasComponent("cell")) {
-    const auto& vec_c = *vec.ViewComponent("cell", false);
+    const auto& vec_c = *vec.ViewComponent("cell");
     if (subfieldnames.size() > 0) {
       if (vec_c.NumVectors() != subfieldnames.size()) {
         Errors::Message msg;
@@ -131,7 +131,8 @@ void WriteVis<CompositeVector>(const Visualization& vis, const Key& fieldname,
       // Epetra vectors need iterated over and they aren't, by default,
       // iterable.
       for (int i = 0; i != vec_c.NumVectors(); ++i) {
-        vis.Write(subfieldnames[i], *vec_c(i));
+        Key fullname = fieldname + std::string(".cell.") + subfieldnames[i];
+        vis.Write(fullname, *vec_c(i));
       }
 
     } else {

@@ -190,7 +190,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // -- viscosity
   if (!S->HasData("const_fluid_viscosity")) {
-    S->Require<double>("const_fluid_viscosity", Tags::DEFAULT, passwd_);
+    S->Require<double>("const_fluid_viscosity", Tags::DEFAULT, "state");
   }
 
   // Local fields and evaluators.

@@ -100,8 +100,8 @@ TEST(FLOW_3D_RICHARDS) {
   S->GetRecordW("permeability", "permeability").set_initialized();
 
   // -- fluid density and viscosity
-  S->GetW<double>("const_fluid_density", passwd) = 1.0;
-  S->GetRecordW("const_fluid_density", passwd).set_initialized();
+  S->GetW<double>("const_fluid_density", "state") = 1.0;
+  S->GetRecordW("const_fluid_density", "state").set_initialized();
 
   S->GetW<CompositeVector>("viscosity_liquid", "viscosity_liquid").PutScalar(1.0);
   S->GetRecordW("viscosity_liquid", "viscosity_liquid").set_initialized();

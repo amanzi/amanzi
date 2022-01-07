@@ -675,7 +675,7 @@
               <Parameter name="regions" type="Array(string)" value="{fracture}" />
               <ParameterList name="boundary concentration">
                 <Parameter name="external field key" type="string" value="fracture-total_component_concentration" />
-                <Parameter name="external field copy key" type="string" value="default" />
+                <Parameter name="external field copy key" type="string" value="" />
               </ParameterList>
             </ParameterList>
           </ParameterList>          

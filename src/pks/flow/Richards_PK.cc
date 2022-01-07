@@ -294,7 +294,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   // -- viscosity: if not requested by any PK, we request its constant value.
   if (!S->HasData(viscosity_liquid_key_)) {
     if (!S->HasData("const_fluid_viscosity")) {
-      S->Require<double>("const_fluid_viscosity", Tags::DEFAULT, passwd_);
+      S->Require<double>("const_fluid_viscosity", Tags::DEFAULT, "state");
     }
     S->Require<CV_t, CVS_t>(viscosity_liquid_key_, Tags::DEFAULT, viscosity_liquid_key_)
       .SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1)

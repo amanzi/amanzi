@@ -504,13 +504,15 @@ class State {
   void set_initial_time( double initial_time) { initial_time_ = initial_time; }
 
   // Cycle accessor and mutators.
-  int cycle() const { return cycle_; }
-  void set_cycle(int cycle) { cycle_ = cycle; }
-  void advance_cycle(int dcycle = 1) { cycle_ += dcycle; }
+  int cycle() const { return Get<int>("cycle"); }
+  void set_cycle(int cycle) { Set("cycle", Tags::DEFAULT, "cycle", cycle); }
+  void advance_cycle(int dcycle = 1) {
+    Set("cycle", Tags::DEFAULT, "cycle", Get<int>("cycle") + dcycle);
+  }
 
   // Position accessor and mutators.
-  int position() const { return position_in_tp_; }
-  void set_position(int pos ) { position_in_tp_ = pos; }
+  int position() const { return Get<int>("position"); }
+  void set_position(int pos) { Set("position", Tags::DEFAULT, "position", pos); }
 
   // Utility for setting vis flags using blacklist and whitelist
   void InitializeIOFlags();
@@ -533,11 +535,7 @@ class State {
   DomainSetMap domain_sets_;
 
   // meta-data
-  double time_;
   double final_time_, intermediate_time_, last_time_, initial_time_;
-
-  int cycle_;
-  int position_in_tp_;
 
   // parameter list
   Teuchos::ParameterList state_plist_;

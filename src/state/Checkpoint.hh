@@ -95,7 +95,7 @@ class Checkpoint : public IOEvent {
 
   // i/o
   void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names) const;
-  void WriteAttributes(int comm_size, int pos) const;
+  void WriteAttributes(int comm_size) const;
   void WriteObservations(ObservationData* obs_data);
 
   void ReadAttributes(State& S);

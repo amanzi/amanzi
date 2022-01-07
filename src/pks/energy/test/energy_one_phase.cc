@@ -23,6 +23,7 @@
 
 // Amanzi
 #include "CompositeVector.hh"
+#include "IO.hh"
 #include "EnergyOnePhase_PK.hh"
 #include "MeshFactory.hh"
 #include "Operator.hh"

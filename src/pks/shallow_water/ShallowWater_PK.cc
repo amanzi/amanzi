@@ -92,11 +92,11 @@ void ShallowWater_PK::Setup(const Teuchos::Ptr<State>& S)
   
   // required for calculating hydrostatic pressure
   if (!S->HasData("const_fluid_density")) {
-    S->Require<double>("const_fluid_density", Tags::DEFAULT, passwd_);
+    S->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
   }
   
   if (!S->HasData("atmospheric_pressure")) {
-    S->Require<double>("atmospheric_pressure", Tags::DEFAULT, passwd_);
+    S->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
   }
 
   //-------------------------------

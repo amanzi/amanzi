@@ -96,7 +96,7 @@ void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   // require first-requested state variables
   if (!S->HasData("atmospheric_pressure")) {
-    S->Require<double>("atmospheric_pressure", Tags::DEFAULT, passwd_);
+    S->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
   }
 
   // require primary state variables

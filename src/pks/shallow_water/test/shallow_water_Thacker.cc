@@ -15,6 +15,7 @@
 
 // Amanzi
 #include "CompositeVector.hh"
+#include "IO.hh"
 #include "LeastSquare.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"

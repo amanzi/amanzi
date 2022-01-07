@@ -76,6 +76,7 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
   mol_density_gas_key_ = Keys::getKey(domain_, "molar_density_gas");
   mass_density_liquid_key_ = Keys::getKey(domain_, "mass_density_liquid");
 
+  pressure_key_ = Keys::getKey(domain_, "pressure");
   sat_liquid_key_ = Keys::getKey(domain_, "saturation_liquid");
   prev_sat_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid");
 
@@ -96,7 +97,7 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
   if (!S->HasData(ie_rock_key_) && !elist.isSublist(ie_rock_key_)) {
     Teuchos::Array<std::string> regions({ "All" });
     elist.sublist(ie_rock_key_)
-         .set<std::string>("field evaluator type", "iem")
+         .set<std::string>("evaluator type", "iem")
          .set<std::string>("internal energy key", ie_rock_key_);
     elist.sublist(ie_rock_key_).sublist("IEM parameters").sublist("Material 1")
          .set<Teuchos::Array<std::string> >("regions", regions).sublist("IEM parameters")
@@ -108,14 +109,14 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
   // -- internal energy
   if (!S->HasData(ie_gas_key_) && !elist.isSublist(ie_gas_key_)) {
     elist.sublist(ie_gas_key_)
-         .set<std::string>("field evaluator type", "iem water vapor")
+         .set<std::string>("evaluator type", "iem water vapor")
          .set<std::string>("internal energy key", ie_gas_key_);
   }
 
   // -- molar density
   if (!S->HasData(mol_density_gas_key_) && !elist.isSublist(mol_density_gas_key_)) {
     elist.sublist(mol_density_gas_key_)
-         .set<std::string>("field evaluator type", "eos")
+         .set<std::string>("evaluator type", "eos")
          .set<std::string>("eos basis", "molar")
          .set<std::string>("molar density key", mol_density_gas_key_);
     elist.sublist(mol_density_gas_key_).sublist("EOS parameters")
@@ -129,7 +130,7 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
   // -- molar fraction FIXME (it is not used by all models)
   if (!S->HasData("molar_fraction_gas") && !elist.isSublist("molar_fraction_gas")) {
     elist.sublist("molar_fraction_gas")
-         .set<std::string>("field evaluator type", "molar fraction gas")
+         .set<std::string>("evaluator type", "molar fraction gas")
          .set<std::string>("molar fraction key", "molar_fraction_gas");
     elist.sublist("molar_fraction_gas")
          .sublist("vapor pressure model parameters")
@@ -151,17 +152,15 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
   S->RequireEvaluator(mol_density_liquid_key_);
 
+  S->RequireDerivative<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT,
+                                    pressure_key_, Tags::DEFAULT, mass_density_liquid_key_);
+
   // -- viscosity
   S->Require<CV_t, CVS_t>(viscosity_liquid_key_, Tags::DEFAULT, viscosity_liquid_key_)
     .SetMesh(mesh_)->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
   S->RequireEvaluator(viscosity_liquid_key_);
-
-  // copies of fields
-  if (S_->HasData(prev_wc_key_)) {
-    S->Require<CV_t, CVS_t>(prev_wc_key_, Tags::COPY, "state");
-  }
 
   // inform other PKs about strong coupling
   // -- flow
@@ -178,6 +177,12 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // process other PKs.
   PK_MPCStrong<PK_BDF>::Setup(S);
+
+  // copies of fields (must be called after PKs)
+  if (S_->HasData(prev_wc_key_)) {
+    S->Require<CV_t, CVS_t>(prev_wc_key_, Tags::COPY, prev_wc_key_);
+    S->GetRecordW(prev_wc_key_, Tags::COPY, prev_wc_key_).set_initialized();
+  }
 }
 
 
