@@ -16,6 +16,7 @@
 #include "Teuchos_RCP.hpp"
 #include "UnitTest++.h"
 
+#include "IO.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "State.hh"

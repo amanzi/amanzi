@@ -22,6 +22,7 @@
 #include "MeshFactory.hh"
 
 // Amanzi::State
+#include "IO.hh"
 #include "Data.hh"
 #include "Data_Helpers.hh"
 #include "State.hh"

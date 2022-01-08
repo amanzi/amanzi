@@ -73,7 +73,7 @@ void ReadCheckpoint(const Comm_ptr_type& comm, State& S,
 
   // Load the number of processes and ensure they are the same.
   int num_procs(-1);
-  chkp.Read("mpi_comm_world_rank", num_procs);
+  chkp.Read("mpi_num_procs", num_procs);
   if (comm->NumProc() != num_procs) {
     std::stringstream ss;
     ss << "Requested checkpoint file " << filename << " was created on " 

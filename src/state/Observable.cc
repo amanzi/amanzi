@@ -118,18 +118,11 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
   // that a non-evaluator based observation must already have been created by
   // PKs by now, because PK->Setup() has already been run.
   if (!S->HasData(variable_)) {
-    // not yet created, require the eval
+    // not yet created, require a new record
     S->Require<CompositeVector, CompositeVectorSpace>(variable_, Tags::DEFAULT, "state");
-    has_eval_ = true;
-  } else {
-    // does it have an evaluator or can we make one?
-    try {
-      S->Require<CompositeVector, CompositeVectorSpace>(variable_, Tags::DEFAULT, "state");
-      has_eval_ = true;
-     } catch(...) {
-      has_eval_ = false;
-    }
-  }
+  } 
+
+  has_eval_ = S->HasEvaluator(variable_);
 
   // try to set requirements on the field, if they are not already set
   if (!S->HasData(variable_)) {

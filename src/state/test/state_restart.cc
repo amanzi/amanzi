@@ -20,6 +20,7 @@
 
 #include "Checkpoint.hh"
 #include "CompositeVector.hh"
+#include "IO.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
 #include "Tag.hh"

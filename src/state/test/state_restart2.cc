@@ -18,6 +18,7 @@
 #include "Teuchos_Array.hpp"
 #include "UnitTest++.h"
 
+#include "IO.hh"
 #include "Checkpoint.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"

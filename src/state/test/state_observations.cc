@@ -12,6 +12,7 @@
 
 #include "AmanziComm.hh"
 #include "CompositeVector.hh"
+#include "IO.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
 #include "Observable.hh"
@@ -171,12 +172,17 @@ TEST_FIXTURE(obs_test, ObservePoint) {
   obs_list.set<std::string>("location name", "cell");
   obs_list.set<std::string>("functional", "point");
 
+  Teuchos::ParameterList vlist;
+  vlist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+  auto vo = Teuchos::rcp(new VerboseObject("Test", vlist));
+
   Observable obs(obs_list);
   obs.Setup(S.ptr());
   obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
 
   std::vector<double> observation(1, Observable::nan);
+  WriteStateStatistics(*S, *vo);
   obs.Update(S.ptr(), observation, 0);
   CHECK_CLOSE(2.0, observation[0], 1.e-10);
 }
@@ -339,6 +345,7 @@ TEST_FIXTURE(obs_test, MULTI_DOF_OBS_ALL) {
   CHECK_CLOSE(2.0, observation[2], 1.e-10);
 }
 
+
 TEST_FIXTURE(obs_test, MULTI_DOF_OBS_ONE) {
   // direction nomralized flux relative to region allows normalizing in an
   // outward-normal relative to a volumetric region.
@@ -358,7 +365,6 @@ TEST_FIXTURE(obs_test, MULTI_DOF_OBS_ONE) {
   obs.Update(S.ptr(), observation, 0);
   CHECK_CLOSE(2.0, observation[0], 1.e-10);
 }
-
 
 
 TEST_FIXTURE(obs_test, FileOne) {
@@ -418,7 +424,6 @@ TEST_FIXTURE(obs_test, FileTwo) {
 }
 
 
-
 TEST_FIXTURE(obs_test, TimeIntegrated) {
   //  one observation in a file
   Teuchos::ParameterList obs_list("my obs");
@@ -454,6 +459,7 @@ TEST_FIXTURE(obs_test, TimeIntegrated) {
   CHECK(compareFiles("obs3.dat", "test/obs3.dat.gold"));
 }
 
+
 TEST_FIXTURE(obs_test, WritesNaN) {
   // integrate an observable
   //  one observation in a file
@@ -481,6 +487,5 @@ TEST_FIXTURE(obs_test, WritesNaN) {
   // valuesA: NaN NaN
   CHECK(compareFiles("obs4.dat", "test/obs4.dat.gold"));
 }
-
 
 }

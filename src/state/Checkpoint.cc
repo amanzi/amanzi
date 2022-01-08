@@ -148,7 +148,7 @@ void Checkpoint::ReadAttributes(State& S) {
   S.GetW<double>("time", Tags::DEFAULT, "time") = time;
 
   double dt(0.0);
-  output_["domain"]->readAttrReal(dt, "coordinator");
+  output_["domain"]->readAttrReal(dt, "dt");
   S.GetW<double>("dt", Tags::DEFAULT, "coordinator") = dt;
 
   int cycle(0);
@@ -228,7 +228,7 @@ void Checkpoint::WriteVector(const Epetra_MultiVector& vec,
 // -----------------------------------------------------------------------------
 void Checkpoint::WriteAttributes(int comm_size) const {
   const auto& output = output_.at("domain");
-  output->writeAttrInt(comm_size, "mpi_comm_world_rank");
+  output->writeAttrInt(comm_size, "mpi_num_procs");
 }
 
 

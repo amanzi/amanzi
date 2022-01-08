@@ -139,11 +139,11 @@ template <typename Data_t, typename DataFactory_t>
 inline void
 EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::UpdateDerivative_(
     State& S, const Key& wrt_key, const Tag& wrt_tag) {
-  Errors::Message message;
-  message << "EvaluatorSecondaryMonotype: "
-          << my_keys_[0].first << "," << my_keys_[0].second
-          << " has no implemented UpdateDerivative_()";
-  throw(message);
+  Errors::Message msg;
+  msg << "EvaluatorSecondaryMonotype: "
+      << my_keys_[0].first << "," << my_keys_[0].second.get()
+      << " has no implemented UpdateDerivative_()";
+  throw(msg);
 }
 
 
