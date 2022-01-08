@@ -115,7 +115,7 @@ add_amanzi_library(state
                           data/Data_Helpers.cc
                           Debugger.cc
                    HEADERS ${state_inc_files}
-		   LINK_LIBS data_structures functions mesh_functions output mesh atk
+		   LINK_LIBS operators data_structures functions mesh_functions output mesh atk
 		   ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
 set_property(GLOBAL PROPERTY STATE_SOURCE_DIR ${MPC_SOURCE_DIR})
 set_property(GLOBAL PROPERTY STATE_BINARY_DIR ${MPC_BINARY_DIR})

@@ -11,15 +11,17 @@
   Helpers that know how to read/write/etc data.
 */
 
-#include "Data_Helpers.hh"
-
+#include "ColumnMeshFunction.hh"
 #include "CompositeVectorFunction.hh"
 #include "CompositeVectorFunctionFactory.hh"
+
+#include "Data_Helpers.hh"
+#include "IO.hh"
 
 namespace Amanzi {
 namespace Helpers {
 
-//
+// ======================================================================
 // Specializations for simple data types
 // ======================================================================
 template <>
@@ -85,7 +87,7 @@ bool Initialize<int>(Teuchos::ParameterList& plist, int& t,
 }
 
 
-//
+// ======================================================================
 // Specializations for geometric objects
 // ======================================================================
 template <>
@@ -98,7 +100,8 @@ void WriteVis<AmanziGeometry::Point>(const Visualization& vis, const Key& fieldn
 template <>
 bool Initialize<AmanziGeometry::Point>(Teuchos::ParameterList& plist,
                                        AmanziGeometry::Point& p, const Key& fieldname,
-                                       const std::vector<std::string>& subfieldnames) {
+                                       const std::vector<std::string>& subfieldnames)
+{
   if (plist.isParameter("value")) {
     auto tmp = plist.get<Teuchos::Array<double> >("value").toVector();
     if (tmp.size() < 4) {
@@ -109,13 +112,15 @@ bool Initialize<AmanziGeometry::Point>(Teuchos::ParameterList& plist,
   return false;
 }
 
-//
+
+// ======================================================================
 // Specializations for CompositeVector
 // ======================================================================
 template <>
 void WriteVis<CompositeVector>(const Visualization& vis, const Key& fieldname,
                                const std::vector<std::string>& subfieldnames,
-                               const CompositeVector& vec) {
+                               const CompositeVector& vec)
+{
   if (vec.HasComponent("cell")) {
     const auto& vec_c = *vec.ViewComponent("cell");
     if (subfieldnames.size() > 0) {
@@ -192,19 +197,24 @@ bool Initialize<CompositeVector>(
   }
 
   // // ------ Try to set values from an file -----
-  // if (plist.isSublist("exodus file initialization")) {
-  //   // data must be pre-initialized to zero in case Exodus file does not
-  //   // provide all values.
-  //   t.PutScalar(0.0);
+  if (plist.isSublist("exodus file initialization")) {
+    // data must be pre-initialized to zero in case Exodus file does not
+    // provide all values.
+    t.PutScalar(0.0);
 
-  //   Teuchos::ParameterList& file_list = plist.sublist("exodus file
-  //   initialization"); Functions::ReadExodusIIMeshFunction(file_list, t);
-  //   return true;
-  // }
+    Teuchos::ParameterList& file_list = plist.sublist("exodus file initialization");
+    ReadVariableFromExodusII(file_list, t);
+    return true;
+  }
 
   // ------ Set values using a constant -----
   if (plist.isParameter("constant")) {
     double value = plist.get<double>("constant");
+    t.PutScalar(value);
+    return true;
+  }
+  if (plist.isParameter("value")) {
+    double value = plist.get<double>("value");
     t.PutScalar(value);
     return true;
   }
@@ -213,32 +223,29 @@ bool Initialize<CompositeVector>(
   // ------ Try to set cell values from a restart file -----
   if (plist.isParameter("cells from file")) {
     AMANZI_ASSERT(false);
-    /*
     auto filename = plist.get<std::string>("cells from file");
     Checkpoint chkp(filename, t.Comm());
 
     // read just the cells
-    auto& vec_c = *t.ViewComponent("cell", false);
+    auto& vec_c = *t.ViewComponent("cell");
     for (int i = 0; i != vec_c.NumVectors(); ++i) {
       std::stringstream name;
       name << fieldname << ".cell." << i;
       chkp.Read(name.str(), *vec_c(i));
     }
     chkp.Finalize();
-    */
+    return true;
   }
 
+
   // ------ Set values from 1D solution -----
-  /*
   if (plist.isSublist("initialize from 1D column")) {
-    Teuchos::ParameterList& init_plist =
-        plist.sublist("initialize from 1D column");
+    Teuchos::ParameterList& init_plist = plist.sublist("initialize from 1D column");
     if (!init_plist.isParameter("f header"))
       init_plist.set("f header", std::string("/") + fieldname);
     Functions::ReadColumnMeshFunction(init_plist, t);
-    fully_initialized = true;
+    return true;
   }
-  */
 
   // ------ Set values using a function -----
   if (plist.isSublist("function")) {
@@ -292,8 +299,7 @@ bool Initialize<CompositeVector>(
       auto t_ptr = Teuchos::rcpFromRef(t).ptr();
 
       // no map, just evaluate the function
-      Teuchos::RCP<Functions::CompositeVectorFunction> func =
-          Functions::CreateCompositeVectorFunction(func_plist, t.Map(), complist);
+      auto func = Functions::CreateCompositeVectorFunction(func_plist, t.Map(), complist);
       func->Compute(0.0, t_ptr);
       fully_initialized = true;
     }
@@ -301,6 +307,12 @@ bool Initialize<CompositeVector>(
 
   if (fully_initialized) {
     if ((t.HasComponent("face") || t.HasComponent("boundary_face")) &&
+         t.HasComponent("cell") &&
+         plist.get<bool>("initialize faces from cells", false)) {
+      DeriveFaceValuesFromCellValues(t);
+      return true;
+    }
+    if (t.HasComponent("boundary_face") &&
         t.HasComponent("cell") &&
         plist.get<bool>("initialize faces from cells", false)) {
       DeriveFaceValuesFromCellValues(t);
@@ -310,5 +322,6 @@ bool Initialize<CompositeVector>(
   return fully_initialized;
 }
 
-} // namespace Helpers
-} // namespace Amanzi
+}  // namespace Helpers
+}  // namespace Amanzi
+

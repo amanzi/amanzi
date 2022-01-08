@@ -42,6 +42,9 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
 
 void DeformCheckpointMesh(State& S, Key domain);
 
+// Reading from files
+void ReadVariableFromExodusII(Teuchos::ParameterList& plist, CompositeVector& var);
+
 // Statistics
 void WriteStateStatistics(const State& S, const VerboseObject& vo);
 

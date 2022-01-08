@@ -11,10 +11,14 @@
 
 #include <iostream>
 #include <ostream>
+#include <string>
 
+#define BOOST_FILESYSTEM_NO_DEPRECATED
 #include "boost/filesystem.hpp"
+#include <boost/format.hpp>
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Epetra_Vector.h"
+#include "exodusII.h" 
 
 // Amanzi
 #include "CompositeVector.hh"
@@ -29,7 +33,9 @@
 
 namespace Amanzi {
 
-// Non-member function for vis.
+// -----------------------------------------------------------------------------
+// Non-member function for visualization.
+// -----------------------------------------------------------------------------
 void WriteVis(Visualization& vis, const State& S)
 {
   if (!vis.is_disabled()) {
@@ -49,7 +55,9 @@ void WriteVis(Visualization& vis, const State& S)
 }
 
 
+// -----------------------------------------------------------------------------
 // Non-member function for checkpointing.
+// -----------------------------------------------------------------------------
 void WriteCheckpoint(Checkpoint& chkp, const Comm_ptr_type& comm,
                      const State& S, bool final)
 {
@@ -65,7 +73,9 @@ void WriteCheckpoint(Checkpoint& chkp, const Comm_ptr_type& comm,
 }
 
 
+// -----------------------------------------------------------------------------
 // Non-member function for checkpointing.
+// -----------------------------------------------------------------------------
 void ReadCheckpoint(const Comm_ptr_type& comm, State& S, 
                     const std::string& filename)
 {
@@ -95,7 +105,9 @@ void ReadCheckpoint(const Comm_ptr_type& comm, State& S,
 }
 
 
+// -----------------------------------------------------------------------------
 // Non-member function for checkpointing.
+// -----------------------------------------------------------------------------
 double ReadCheckpointInitialTime(const Comm_ptr_type& comm,
                                  std::string filename)
 {
@@ -115,7 +127,9 @@ double ReadCheckpointInitialTime(const Comm_ptr_type& comm,
 }
 
 
+// -----------------------------------------------------------------------------
 // Non-member function for checkpointing position.
+// -----------------------------------------------------------------------------
 int ReadCheckpointPosition(const Comm_ptr_type& comm, std::string filename)
 {
   if (!Keys::ends_with(filename, ".h5")) {
@@ -134,7 +148,9 @@ int ReadCheckpointPosition(const Comm_ptr_type& comm, std::string filename)
 }
 
 
+// -----------------------------------------------------------------------------
 // Non-member function for checkpointing observations.
+// -----------------------------------------------------------------------------
 void ReadCheckpointObservations(const Comm_ptr_type& comm,
                                 std::string filename,
                                 Amanzi::ObservationData& obs_data)
@@ -190,12 +206,14 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
 }
 
 
+// -----------------------------------------------------------------------------
 // Non-member function for deforming the mesh after reading a checkpoint file
 // that contains the vertex coordinate field (this is written by deformation pks)
 //
 // FIX ME: Refactor this to make the name more general.  Should align with a
 // mesh name prefix or something, and the coordinates should be written by
 // state in WriteCheckpoint if mesh IsDeformableMesh() --ETC
+// -----------------------------------------------------------------------------
 void DeformCheckpointMesh(State& S, Key domain)
 {
   if (S.HasData("vertex coordinate")) { // only deform mesh if vertex coordinate
@@ -231,7 +249,126 @@ void DeformCheckpointMesh(State& S, Key domain)
 }
 
 
-// Non-member function for statistics
+// -----------------------------------------------------------------------------
+// Reads cell-based varibles as attributes.
+// It recongnizes parallel and serial inputs.
+// -----------------------------------------------------------------------------
+void ReadVariableFromExodusII(Teuchos::ParameterList& plist, CompositeVector& var) 
+{ 
+  Epetra_MultiVector& var_c = *var.ViewComponent("cell"); 
+  int nvectors = var_c.NumVectors(); 
+ 
+  std::string file_name = plist.get<std::string>("file"); 
+  std::vector<std::string> attributes = 
+      plist.get<Teuchos::Array<std::string> >("attributes").toVector(); 
+ 
+  // open ExodusII file 
+  auto comm = var.Comm();
+ 
+  if (comm->NumProc() > 1) { 
+    int ndigits = (int)floor(log10(comm->NumProc())) + 1;
+    std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
+    file_name = boost::str(boost::format(fmt) % file_name % comm->NumProc() % comm->MyPID());
+  } 
+ 
+  int CPU_word_size(8), IO_word_size(0), ierr; 
+  float version; 
+  int exoid = ex_open(file_name.c_str(), EX_READ, &CPU_word_size, &IO_word_size, &version); 
+  if (comm->MyPID() == 0) {
+    printf("Trying file: %s ws=%d %d  id=%d\n", file_name.c_str(), CPU_word_size, IO_word_size, exoid); 
+  }
+
+  // check if we have to use serial file
+  int fail = (exoid < 0) ? 1 : 0;
+  int fail_tmp(fail);
+  bool distributed_data(true);
+
+  comm->SumAll(&fail_tmp, &fail, 1);
+  if (fail == comm->NumProc()) {
+    Errors::Message msg("Rao is working on new data layout which we need to proceed.");
+    Exceptions::amanzi_throw(msg);
+
+    file_name = plist.get<std::string>("file"); 
+    distributed_data = false;
+    if (comm->MyPID() == 0) {
+      exoid = ex_open(file_name.c_str(), EX_READ, &CPU_word_size, &IO_word_size, &version); 
+      printf("Opening file: %s ws=%d %d  id=%d\n", file_name.c_str(), CPU_word_size, IO_word_size, exoid); 
+    }
+  } else if (fail > 0) {
+    Errors::Message msg("A few parallel Exodus files are missing, but not all.");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  // read database parameters 
+  if (comm->MyPID() == 0 || distributed_data) {  
+    int dim, num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets; 
+    char title[MAX_LINE_LENGTH + 1]; 
+    ierr = ex_get_init(exoid, title, &dim, &num_nodes, &num_elem, 
+                       &num_elem_blk, &num_node_sets, &num_side_sets); 
+ 
+    int* ids = (int*) calloc(num_elem_blk, sizeof(int)); 
+    ierr = ex_get_ids(exoid, EX_ELEM_BLOCK, ids); 
+ 
+    // read number of variables 
+    int num_vars;
+    auto obj_type = ex_var_type_to_ex_entity_type('e');
+    ierr = ex_get_variable_param(exoid, obj_type, &num_vars);
+    if (ierr < 0) printf("Exodus file has no variables.\n");
+
+    char* var_names[num_vars];
+    for (int i = 0; i < num_vars; i++) {
+      var_names[i] = (char*) calloc ((MAX_STR_LENGTH+1), sizeof(char));
+    }
+
+    obj_type = ex_var_type_to_ex_entity_type('e');
+    ierr = ex_get_variable_names(exoid, obj_type, num_vars, var_names);
+    if (ierr < 0) printf("Exodus file cannot read variable names.\n");
+
+    int var_index(-1), ncells;
+    for (int k = 0; k < nvectors; ++k) {
+      for (int i = 0; i < num_vars; i++) {
+        std::string tmp(var_names[i]);
+        if (tmp == attributes[k]) var_index = i + 1;
+      }
+      if (var_index < 0) printf("Exodus file has no variable \"%s\".\n", attributes[k].c_str());
+      printf("Variable \"%s\" has index %d.\n", attributes[k].c_str(), var_index);
+
+      // read variable with the k-th attribute
+      int offset = 0; 
+      char elem_type[MAX_LINE_LENGTH + 1]; 
+      for (int i = 0; i < num_elem_blk; i++) { 
+        int num_elem_this_blk, num_attr, num_nodes_elem; 
+        ierr = ex_get_block(exoid, EX_ELEM_BLOCK, ids[i], elem_type, &num_elem_this_blk, 
+                            &num_nodes_elem, 0, 0, &num_attr); 
+ 
+        double* var_values = (double*) calloc(num_elem_this_blk, sizeof(double)); 
+        ierr = ex_get_var(exoid, 1, EX_ELEM_BLOCK, var_index, ids[i], num_elem_this_blk, var_values); 
+ 
+        for (int n = 0; n < num_elem_this_blk; n++) { 
+          int c = n + offset; 
+          var_c[k][c] = var_values[n]; 
+        } 
+        free(var_values); 
+        printf("MyPID=%d  ierr=%d  id=%d  ncells=%d\n", comm->MyPID(), ierr, ids[i], num_elem_this_blk); 
+ 
+        offset += num_elem_this_blk; 
+      } 
+      ncells = offset; 
+    }
+
+    for (int i = 0; i < num_vars; i++) {
+      free(var_names[i]);
+    }
+ 
+    ierr = ex_close(exoid); 
+    printf("Closing file: %s ncells=%d error=%d\n", file_name.c_str(), ncells, ierr); 
+  }
+} 
+
+
+// -----------------------------------------------------------------------------
+// Prints state statistics
+// -----------------------------------------------------------------------------
 void WriteStateStatistics(const State& S, const VerboseObject& vo)
 {
   // sort data in alphabetic order
