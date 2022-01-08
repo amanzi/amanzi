@@ -124,10 +124,10 @@ if (BUILD_TESTS)
                   SOURCE    test/Main.cc test/multiphase_model1a.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-  add_amanzi_test(multiphase_model1b multiphase_model1b
-                  KIND      int
-                  SOURCE    test/Main.cc test/multiphase_model1b.cc
-                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+  # add_amanzi_test(multiphase_model1b multiphase_model1b
+  #                 KIND      int
+  #                 SOURCE    test/Main.cc test/multiphase_model1b.cc
+  #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
   # Unit tests: Pl-Sl-Cg
   add_amanzi_test(multiphase_model2a multiphase_model2a

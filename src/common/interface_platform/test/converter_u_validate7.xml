@@ -71,7 +71,7 @@
     </ParameterList>
   </ParameterList>
   <ParameterList name="state">
-    <ParameterList name="field evaluators">
+    <ParameterList name="evaluators">
       <ParameterList name="mass_density_liquid">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -84,7 +84,7 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="porosity">
         <ParameterList name="function">
@@ -107,7 +107,7 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="saturation_liquid">
         <ParameterList name="function">
@@ -121,7 +121,7 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="fracture-saturation_liquid">
         <ParameterList name="function">
@@ -135,10 +135,10 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="internal_energy_liquid">
-        <Parameter name="field evaluator type" type="string" value="iem"/>
+        <Parameter name="evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
         <ParameterList name="IEM parameters">
           <ParameterList name="TopRegion">
@@ -162,7 +162,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="internal_energy_rock">
-        <Parameter name="field evaluator type" type="string" value="iem"/>
+        <Parameter name="evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
         <ParameterList name="IEM parameters">
           <ParameterList name="TopRegion">
@@ -193,7 +193,7 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="fracture-porosity">
         <ParameterList name="function">
@@ -207,10 +207,10 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
       </ParameterList>
       <ParameterList name="fracture-aperture">
-        <Parameter name="field evaluator type" type="string" value="independent variable from file"/>
+        <Parameter name="evaluator type" type="string" value="independent variable from file"/>
         <Parameter name="filename" type="string" value="aperture.h5"/>
         <Parameter name="domain name" type="string" value="fracture"/>
         <Parameter name="component name" type="string" value="cell"/>
@@ -220,7 +220,7 @@
         <Parameter name="constant in time" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="fracture-molar_density_liquid">
-        <Parameter name="field evaluator type" type="string" value="eos"/>
+        <Parameter name="evaluator type" type="string" value="eos"/>
         <Parameter name="molar density key" type="string" value="fracture-molar_density_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water tabular"/>
@@ -231,7 +231,7 @@
         <Parameter name="mass density key" type="string" value="fracture-mass_density_liquid"/>
       </ParameterList>
       <ParameterList name="molar_density_liquid">
-        <Parameter name="field evaluator type" type="string" value="eos"/>
+        <Parameter name="evaluator type" type="string" value="eos"/>
         <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water tabular"/>
@@ -243,7 +243,7 @@
       </ParameterList>
 
       <ParameterList name="viscosity_liquid">
-        <Parameter name="field evaluator type" type="string" value="viscosity"/>
+        <Parameter name="evaluator type" type="string" value="viscosity"/>
         <Parameter name="viscosity key" type="string" value="viscosity_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water tabular"/>
@@ -252,7 +252,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="fracture-viscosity_liquid">
-        <Parameter name="field evaluator type" type="string" value="viscosity"/>
+        <Parameter name="evaluator type" type="string" value="viscosity"/>
         <Parameter name="viscosity key" type="string" value="fracture-viscosity_liquid"/>
         <ParameterList name="EOS parameters">
           <Parameter name="eos type" type="string" value="liquid water tabular"/>
