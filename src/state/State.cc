@@ -313,20 +313,27 @@ void State::Setup()
 
   // Ensure compatibility of all the evaluators -- each evaluator's dependencies
   // must provide what is required of that evaluator.
-  for (auto& e : evaluators_) {
-    for (auto& r : e.second) {
-      if (!r.second->ProvidesKey(e.first, r.first)) {
-        Errors::Message msg;
-        msg << "Evaluator \"" << e.first << "\" with tag \"" << r.first.get()
-            << "\" does not provide its own key.";
-        Exceptions::amanzi_throw(msg);
-      }
+  // Since evaluators are added automatically, we need multiple loops.
+  int n(0);
 
-      if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-        Teuchos::OSTab tab1 = vo_->getOSTab();
-        *vo_->os() << "checking compatibility: \"" << e.first << "\" + \"" << r.first.get() << "\"\n";
+  while (n != evaluator_count()) {
+    n = 0;
+    for (auto& e : evaluators_) {
+      for (auto& r : e.second) {
+        if (!r.second->ProvidesKey(e.first, r.first)) {
+          Errors::Message msg;
+          msg << "Evaluator \"" << e.first << "\" with tag \"" << r.first.get()
+              << "\" does not provide its own key.";
+          Exceptions::amanzi_throw(msg);
+        }
+
+        if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+          Teuchos::OSTab tab1 = vo_->getOSTab();
+          *vo_->os() << n << " checking compatibility: \"" << e.first << "\" + \"" << r.first.get() << "\"\n";
+        }
+        r.second->EnsureCompatibility(*this);
       }
-      r.second->EnsureCompatibility(*this);
+      n++;
     }
   }
 

@@ -140,6 +140,11 @@ void EnergyTwoPhase_PK::Setup(const Teuchos::Ptr<State>& S)
 
   S->RequireDerivative<CV_t, CVS_t>(x_gas_key_, Tags::DEFAULT,
                                     temperature_key_, Tags::DEFAULT, x_gas_key_);
+
+  // other evalautors
+  if (!S->HasData(particle_density_key_)) {
+    S->Require<CV_t, CVS_t>(particle_density_key_, Tags::DEFAULT, particle_density_key_);
+  }
 }
 
 

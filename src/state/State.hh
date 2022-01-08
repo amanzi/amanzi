@@ -455,6 +455,9 @@ class State {
 
   bool HasEvaluator(const Key& key, const Tag& tag = Tags::DEFAULT);
 
+  // -- iterators/counts
+  int evaluator_count() { return evaluators_.size(); }
+
   // Write evaluators to file for drawing dependency graph.
   void WriteDependencyGraph() const;
 
