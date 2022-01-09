@@ -141,16 +141,16 @@ EvaluatorPrimary<CompositeVector, CompositeVectorSpace>::UpdateDerivative_(State
 // done for primary variables
 template <>
 inline void
-EvaluatorPrimary<CompositeVector,CompositeVectorSpace>::EnsureCompatibility(State& S)
+EvaluatorPrimary<CompositeVector, CompositeVectorSpace>::EnsureCompatibility(State& S)
 {
   Key owner = S.GetRecord(my_key_, my_tag_).owner();
-  auto& my_fac = S.Require<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_, owner);
+  auto& my_fac = S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, owner);
   if (S.HasDerivativeSet(my_key_, my_tag_)) {
     for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
       auto wrt = Keys::splitKeyTag(deriv.first.get());
       Tag wrt_tag = make_tag(wrt.second);
-      S.RequireDerivative<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_,
-              wrt.first, wrt_tag, my_key_).Update(my_fac);
+      S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
+          my_key_, my_tag_, wrt.first, wrt_tag, my_key_).Update(my_fac);
     }
   }
 }

@@ -269,8 +269,32 @@ Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition_(Key key)
 void State::WriteDependencyGraph() const
 {
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *vo_->os() << "------------------------------------------" << std::endl
+               << "Dependency & Structure list for evaluators" << std::endl
+               << "------------------------------------------" << std::endl;
     for (auto& e : evaluators_) {
       for (auto& r : e.second) *vo_->os() << *r.second;
+      if (GetRecord(e.first).ValidType<CompositeVector>()) {
+        Teuchos::OSTab tab1 = vo_->getOSTab();
+        Teuchos::OSTab tab2 = vo_->getOSTab();
+        data_.at(e.first)->GetFactory<CompositeVector, CompositeVectorSpace>().Print(*vo_->os());
+        *vo_->os() << std::endl;
+      }
+    }
+
+    *vo_->os() << "------------------------------" << std::endl
+               << "Structure list for derivatives" << std::endl
+               << "------------------------------" << std::endl;
+    for (auto& e : derivs_) {
+      *vo_->os() << "D" << e.first << "/D{ ";
+      for (const auto& tag : *e.second) *vo_->os() << tag.first.get() << " ";
+      *vo_->os() << "}" << std::endl;
+      if (GetRecord(e.first).ValidType<CompositeVector>()) {
+        Teuchos::OSTab tab1 = vo_->getOSTab();
+        Teuchos::OSTab tab2 = vo_->getOSTab();
+        derivs_.at(e.first)->GetFactory<CompositeVector, CompositeVectorSpace>().Print(*vo_->os());
+        *vo_->os() << std::endl;
+      }
     }
   }
 }
@@ -363,14 +387,10 @@ void State::Setup()
     if (type == EvaluatorType::SECONDARY || type == EvaluatorType::PRIMARY) {
       deriv.second->CreateData();
     }
-
-    if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_->os() << "Derivative: D" << deriv.first << "/Dtags" << std::endl;
-    }
   }
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-    Teuchos::OSTab tab1 = vo_->getOSTab();
+    WriteDependencyGraph();
     *vo_->os() << "Setup is complete.\n\n";
   }
 }
@@ -393,9 +413,6 @@ void State::Initialize()
 
   // Ensure everything is owned and initialized.
   CheckAllFieldsInitialized();
-
-  // Write dependency graph.
-  WriteDependencyGraph();
 
   // Reset io_vis flags using blacklist and whitelist
   InitializeIOFlags();
@@ -446,9 +463,6 @@ void State::Initialize(Teuchos::RCP<State> S)
 
   // Ensure everything is owned and initialized.
   // CheckAllFieldsInitialized();
-
-  // Write dependency graph.
-  WriteDependencyGraph();
 
   // Reset io_vis flags using blacklist and whitelist
   InitializeIOFlags();

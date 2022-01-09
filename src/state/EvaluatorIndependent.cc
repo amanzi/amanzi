@@ -177,7 +177,7 @@ bool EvaluatorIndependent_::IsDifferentiableWRT(const State& S, const Key& wrt_k
 std::string EvaluatorIndependent_::WriteToString() const {
   std::stringstream result;
   result << my_key_ << std::endl
-         << "  Type: independent" << std::endl << std::endl;
+         << "  Type: independent" << std::endl;
   return result.str();
 }
 

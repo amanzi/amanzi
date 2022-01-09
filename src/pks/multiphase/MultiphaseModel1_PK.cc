@@ -76,7 +76,8 @@ void MultiphaseModel1_PK::Setup(const Teuchos::Ptr<State>& S)
     S->SetEvaluator(x_gas_key_, x_gas_eval_);
 
     S->RequireDerivative<CV_t, CVS_t>(x_gas_key_, Tags::DEFAULT,
-                                      x_gas_key_, Tags::DEFAULT, x_gas_key_);
+                                      x_gas_key_, Tags::DEFAULT, x_gas_key_)
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // conserved quantities

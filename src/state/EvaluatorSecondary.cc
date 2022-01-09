@@ -282,7 +282,6 @@ std::string EvaluatorSecondary::WriteToString() const
   for (const auto& dep : dependencies_) {
     result << "  dep: " << dep.first << ", tag=\"" << dep.second.get() << "\"" << std::endl;
   }
-  result << std::endl;
   return result.str();
 }
 

@@ -166,7 +166,7 @@ bool EvaluatorPrimary_::ProvidesKey(const Key& key, const Tag& tag) const {
 
 std::string EvaluatorPrimary_::WriteToString() const {
   std::stringstream result;
-  result << my_key_ << std::endl << "  Type: primary" << std::endl << std::endl;
+  result << my_key_ << std::endl << "  Type: primary" << std::endl;
   return result.str();
 }
 
