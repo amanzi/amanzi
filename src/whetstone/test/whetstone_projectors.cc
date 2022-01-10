@@ -962,14 +962,11 @@ void Projector3DLagrangeSerendipity(const std::string& filename)
 }
 
 
-#ifdef SINGLE_FACE_MESH
-
 TEST(SERENDIPITY_PROJECTORS_CUBE_PK) {
   Projector3DLagrangeSerendipity("test/cube_unit.exo");
   Projector3DLagrangeSerendipity("test/cube_unit_rotated.exo");
 }
 
-#endif
 
 /* **************************************************************** */
 void Projector3DLagrangeSerendipitySurface(const std::string& filename)
@@ -1027,11 +1024,8 @@ void Projector3DLagrangeSerendipitySurface(const std::string& filename)
 }
 
 
-#ifdef SINGLE_FACE_MESH
-
 TEST(SERENDIPITY_PROJECTORS_CUBE_PK_SURFACE) {
   Projector3DLagrangeSerendipitySurface("test/cube_unit.exo");
   Projector3DLagrangeSerendipitySurface("test/cube_unit_rotated.exo");
 }
 
-#endif

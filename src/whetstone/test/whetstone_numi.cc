@@ -163,8 +163,6 @@ TEST(NUMI_CELL_2D_QUADRATURE_SQUARE) {
 }
 
 
-#ifdef SINGLE_FACE_MESH
-
 /* **************************************************************** */
 TEST(NUMI_CELL_3D_QUADRATURE_POLYHEDRON) {
   using namespace Amanzi;
@@ -222,8 +220,6 @@ TEST(NUMI_CELL_3D_QUADRATURE_POLYHEDRON) {
   }
 }
 
-
-#endif
 
 /* ******************************************************************
 * 3D cube: Amanzi mesh

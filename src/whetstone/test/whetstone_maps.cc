@@ -275,8 +275,6 @@ TEST(DG_MAP_GCL) {
 /* ****************************************************************
 * Hierachical velocity reconstruction in 3D
 **************************************************************** */
-#ifdef SINGLE_FACE_MESH
-
 TEST(DG_MAP_VELOCITY_CELL) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -354,5 +352,3 @@ TEST(DG_MAP_VELOCITY_CELL) {
   CHECK_CLOSE(0.0, vc.NormInf(), 1e-12);
 }
 
-
-#endif

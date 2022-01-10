@@ -207,7 +207,8 @@ void MFD3D_LagrangeSerendipity::ProjectorFace_(
   const auto& normal = mesh_->getFaceNormal(f);
   SurfaceCoordinateSystem coordsys(xf, normal);
 
-  Teuchos::RCP<const SingleFaceMesh> surf_mesh = Teuchos::rcp(new SingleFaceMesh(mesh_, f, coordsys));
+  auto framework = Teuchos::rcp(new SingleFaceMesh(mesh_, f, coordsys));
+  auto surf_mesh = Teuchos::rcp(new AmanziMesh::Mesh(framework, Teuchos::null));
 
   std::vector<Polynomial> vve;
   for (int i = 0; i < ve.size(); ++i) {

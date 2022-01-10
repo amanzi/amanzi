@@ -17,24 +17,29 @@
 
 #include "Point.hh"
 
-#include "Mesh.hh"
+#include "MeshFramework.hh"
 #include "SurfaceCoordinateSystem.hh"
 
 namespace Amanzi {
 namespace WhetStone {
 
-class SingleFaceMesh : public AmanziMesh::Mesh {
+class SingleFaceMesh : public AmanziMesh::MeshFramework {
  public:
   SingleFaceMesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int f,
-                 const SurfaceCoordinateSystem& coordsys) {
-    BuildCache_(mesh, f, coordsys);
+                 const SurfaceCoordinateSystem& coordsys)
+      : MeshFramework(Amanzi::getDefaultComm(), Teuchos::null, Teuchos::null),
+        mesh_(mesh),
+        coordsys_(coordsys),
+        f_(f) {
+    Init_(mesh, f, coordsys);
   }
 
-  SingleFaceMesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int f) {
-    const auto& xf = mesh->getFaceCentroid(f);
-    const auto& normal = mesh->getFaceNormal(f);
-    SurfaceCoordinateSystem coordsys(xf, normal);
-    BuildCache_(mesh, f, coordsys);
+  SingleFaceMesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int f)
+      : MeshFramework(Amanzi::getDefaultComm(), Teuchos::null, Teuchos::null),
+        mesh_(mesh),
+        coordsys_(SurfaceCoordinateSystem(mesh->getFaceCentroid(f), mesh->getFaceNormal(f))),
+        f_(f) {
+    Init_(mesh, f, coordsys_);
    }
 
   ~SingleFaceMesh() {};
@@ -42,237 +47,168 @@ class SingleFaceMesh : public AmanziMesh::Mesh {
   // ---------------------
   // Downward connectivity
   // ---------------------
-  virtual void cell_get_nodes(const AmanziMesh::Entity_ID c,
-                              AmanziMesh::Entity_ID_List *nodes) const {
-    AMANZI_ASSERT(c == 0);
-    *nodes = cell_node_ids_;
-  }
+  virtual
+  void getCellNodes(const AmanziMesh::Entity_ID c,
+                    AmanziMesh::Entity_ID_List& nodes) const override;
 
-  virtual void face_get_nodes(const AmanziMesh::Entity_ID f,
-                              AmanziMesh::Entity_ID_List *nodes) const {
-    AMANZI_ASSERT(f < nnodes_);
-    *nodes = face_node_ids_[f];
-  }
+  virtual
+  void getFaceNodes(const AmanziMesh::Entity_ID f,
+                    AmanziMesh::Entity_ID_List& nodes) const override;
 
-  virtual void getEdgeNodes(const AmanziMesh::Entity_ID e,
-                              AmanziMesh::Entity_ID* n0, AmanziMesh::Entity_ID* n1) const {
-    AMANZI_ASSERT(e < nnodes_);
-    *n0 = face_node_ids_[e][0]; 
-    *n1 = face_node_ids_[e][1]; 
-  }
+  virtual 
+  void getCellFacesAndDirs(const AmanziMesh::Entity_ID c,
+                           AmanziMesh::Entity_ID_List& faces,
+                           AmanziMesh::Entity_Direction_List* dirs) const final;
 
   // -------------------
   // Upward connectivity
   // -------------------
-  virtual void node_get_cells(
-          const AmanziMesh::Entity_ID v,
-          const AmanziMesh::Parallel_type ptype,
-          AmanziMesh::Entity_ID_List *cells) const { AMANZI_ASSERT(v < nnodes_); cells->resize(1, 0); }
+  virtual
+  void getFaceCells(const AmanziMesh::Entity_ID f,
+                    const AmanziMesh::Parallel_type ptype,
+                    AmanziMesh::Entity_ID_List& cells) const final;
 
-  virtual void node_get_faces(
-          const AmanziMesh::Entity_ID v,
-          const AmanziMesh::Parallel_type ptype,
-          AmanziMesh::Entity_ID_List *faces) const {
-    AMANZI_ASSERT(v < nnodes_);
-    faces->resize(2);
-    (*faces)[0] = v; 
-    (*faces)[1] = (v + 1) % nnodes_;
-  }
+  virtual
+  void getNodeFaces(const AmanziMesh::Entity_ID v,
+                    const AmanziMesh::Parallel_type ptype,
+                    AmanziMesh::Entity_ID_List& faces) const override;
 
   // --------
   // Geometry
   // --------
-  virtual void node_get_coordinates(
-          const AmanziMesh::Entity_ID v, AmanziGeometry::Point* xp) const {
-    AMANZI_ASSERT(v < nnodes_); *xp = cell_coords_[v];
-  }
+  virtual
+  AmanziGeometry::Point getNodeCoordinate(const AmanziGeometry::Entity_ID v) const final;
 
-  virtual void face_get_coordinates(
-          const AmanziMesh::Entity_ID f,
-          std::vector<AmanziGeometry::Point> *fcoords) const {
-    AMANZI_ASSERT(f < nnodes_);
-    fcoords->resize(2);
-    const auto& nodes = face_node_ids_[f];
-    (*fcoords)[0] = cell_coords_[nodes[0]];
-    (*fcoords)[1] = cell_coords_[nodes[1]];
-  }
+  virtual 
+  std::size_t getNumEntities(const AmanziMesh::Entity_kind kind,
+                             const AmanziMesh::Parallel_type ptype) const override;
 
-  virtual void cell_get_coordinates(
-          const AmanziMesh::Entity_ID c,
-          std::vector<AmanziGeometry::Point> *ccoords) const { *ccoords = cell_coords_; }
-
-  virtual unsigned int num_entities(
-          const AmanziMesh::Entity_kind kind,
-          const AmanziMesh::Parallel_type ptype) const {
-    return (kind == AmanziMesh::Entity_kind::CELL) ? 1 : nnodes_;
-  }
-
-  virtual AmanziMesh::Parallel_type getEntityPtype(
-          const AmanziMesh::Entity_kind kind, const AmanziMesh::Entity_ID ent) const {
+  virtual
+  AmanziMesh::Parallel_type getEntityPtype(const AmanziMesh::Entity_kind kind, 
+                                           const AmanziMesh::Entity_ID entid) const final {
     return AmanziMesh::Parallel_type::OWNED;
   }
 
- protected:
-  // is not used and will be removed when light mesh becomes cache-only 
-  virtual void cell_get_faces_and_dirs_internal_(
-          const AmanziMesh::Entity_ID c,
-          AmanziMesh::Entity_ID_List* faces,
-          std::vector<int>* fdirs,
-          const bool ordered = false) const {};
-
-  virtual void cell_get_edges_internal_(
-          const AmanziMesh::Entity_ID c,
-          AmanziMesh::Entity_ID_List* edges) const {};
-
-  virtual void face_get_edges_and_dirs_internal_(
-          const AmanziMesh::Entity_ID f,
-          AmanziMesh::Entity_ID_List* edges,
-          std::vector<int>* edirs,
-          const bool ordered = true) const {};
-
-  virtual void face_get_cells_internal_(
-          const AmanziMesh::Entity_ID f,
-          const AmanziMesh::Parallel_type ptype,
-          AmanziMesh::Entity_ID_List* cells) const {};
-
-  // geometries
-  virtual int compute_cell_geometry_(
-          const AmanziMesh::Entity_ID c,
-          double* volume,
-          AmanziGeometry::Point* xc) const { return 0; }
-
-  virtual int compute_face_geometry_(
-          const AmanziMesh::Entity_ID f,
-          double* area,
-          AmanziGeometry::Point* xf,
-          std::vector<AmanziGeometry::Point> *normals) const { return 0; }
-
-  virtual int compute_edge_geometry_(
-          const AmanziMesh::Entity_ID e,
-          double *length,
-          AmanziGeometry::Point* tau) const { return 0; }
-
  private:
-  void BuildCache_(
+  void Init_(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int f,
     const SurfaceCoordinateSystem& coordsys);
 
  private:
-  int nnodes_;
-  AmanziMesh::Entity_ID_List cell_node_ids_;
-  std::vector<AmanziGeometry::Point> cell_coords_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  SurfaceCoordinateSystem coordsys_;
+  const AmanziMesh::Entity_ID f_;
 
-  std::vector<AmanziMesh::Entity_ID_List> face_node_ids_;
+  int nnodes_;
 };
 
 
+inline
+void SingleFaceMesh::getCellNodes(
+    const AmanziMesh::Entity_ID c,
+    AmanziMesh::Entity_ID_List& nodes) const
+{
+  AMANZI_ASSERT(c == 0);
+  nodes.resize(nnodes_);
+  for (int i = 0; i < nnodes_; ++i) nodes[i] = i;
+}
+
+
+inline
+void SingleFaceMesh::getCellFacesAndDirs(
+    const AmanziMesh::Entity_ID c,
+    AmanziMesh::Entity_ID_List& faces,
+    AmanziMesh::Entity_Direction_List* const dirs) const
+{
+  AmanziMesh::Entity_ID_List fedges;
+  mesh_->getFaceEdgesAndDirs(f_, fedges, dirs);
+
+  faces.resize(nnodes_);
+  for (int i = 0; i < nnodes_; ++i) faces[i] = i;
+}
+
+
+inline
+void SingleFaceMesh::getFaceNodes(
+    const AmanziMesh::Entity_ID f,
+    AmanziMesh::Entity_ID_List& nodes) const 
+{
+  AMANZI_ASSERT(f < nnodes_);
+  AmanziMesh::Entity_ID_List fedges;
+  AmanziMesh::Entity_Direction_List fdirs;
+  mesh_->getFaceEdgesAndDirs(f_, fedges, &fdirs);
+
+  nodes.resize(2);
+  int n0(f), n1((f + 1) % nnodes_);
+
+  nodes[0] = (fdirs[f] > 0) ? n0 : n1;
+  nodes[1] = (fdirs[f] > 0) ? n1 : n0;
+}
+
+
+inline
+void SingleFaceMesh::getFaceCells(
+    const AmanziMesh::Entity_ID f,
+    const AmanziMesh::Parallel_type ptype,
+    AmanziMesh::Entity_ID_List& cells) const
+{
+  cells.resize(1, 0);
+}
+
+
+inline
+AmanziGeometry::Point SingleFaceMesh::getNodeCoordinate(
+    const AmanziGeometry::Entity_ID v) const
+{
+  AMANZI_ASSERT(v < nnodes_);
+  const auto& nodes = mesh_->getFaceNodes(f_);
+  const auto& xyz = mesh_->getNodeCoordinate(nodes[v]);
+  return coordsys_.Project(xyz, true);
+}
+
+
+inline
+void SingleFaceMesh::getNodeFaces(
+    const AmanziMesh::Entity_ID v,
+    const AmanziMesh::Parallel_type ptype,
+   AmanziMesh::Entity_ID_List& faces) const 
+{
+  AMANZI_ASSERT(v < nnodes_);
+  faces.resize(2);
+  faces[0] = v; 
+  faces[1] = (v + 1) % nnodes_;
+}
+
+
+inline
+std::size_t SingleFaceMesh::getNumEntities(
+    const AmanziMesh::Entity_kind kind,
+    const AmanziMesh::Parallel_type ptype) const
+{
+  if (kind == AmanziMesh::Entity_kind::CELL) {
+    return 1;
+  } else if (kind == AmanziMesh::Entity_kind::NODE || 
+             kind == AmanziMesh::Entity_kind::EDGE || 
+             kind == AmanziMesh::Entity_kind::FACE) {
+    return nnodes_;
+  }
+  return 0;
+}
+
+
 /* ******************************************************************
-* Construct cache data
+* Initialize framework from a cache
 ****************************************************************** */
 inline
-void SingleFaceMesh::BuildCache_(
+void SingleFaceMesh::Init_(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int f,
     const SurfaceCoordinateSystem& coordsys)
 {
-  // CACHE NO LONGER WORKS THIS WAY -- REIMPLEMENT LATER
-  Errors::Message msg("SingleFaceMesh not yet implemented in WhetStone");
-  Exceptions::amanzi_throw(msg);
+  int d = mesh->getSpaceDimension() - 1;
+  nnodes_ = mesh_->getFaceNodes(f).size();
 
-  // int d = mesh->getSpaceDimension() - 1;
-  // setSpaceDimension(d);
-  // setManifoldDimension(d);
-
-  // AmanziMesh::Entity_ID_List fedges, fnodes, enodes, cells;
-  // mesh->getFaceNodes(f, fnodes);
-  // nnodes_ = fnodes.size();
-
-  // std::vector<int> fdirs(nnodes_, 1);
-  // if (mesh->hasEdges()) {
-  //   mesh->getFaceEdgesAndDirs(f, fedges, &fdirs);
-  // }
-
-  // // single surface cell
-  // fedges.resize(nnodes_);
-  // for (int i = 0; i < nnodes_; ++i) fedges[i] = i;
-
-  // cell_face_ids_.resize(1);
-  // cell_face_ids_[0] = fedges;
-
-  // cell_face_dirs_.resize(1);
-  // cell_face_dirs_[0] = fdirs;
-
-  // AmanziGeometry::Point xyz(d);
-  // const auto& xf = mesh->getFaceCentroid(f);
-  // cell_centroids_.resize(1, coordsys.Project(xf, true));
-
-  // double volume = mesh->getFaceArea(f);
-  // cell_volumes_.resize(1, volume);
-
-  // // cell nodes
-  // cell_node_ids_.resize(nnodes_);
-  // cell_coords_.resize(nnodes_);
-
-  // for (int i = 0; i < nnodes_; ++i) {
-  //   cell_node_ids_[i] = i;
-  //   xyz = mesh->getNodeCoordinate(fnodes[i]);
-  //   cell_coords_[i] = coordsys.Project(xyz, true);
-  // }
-
-  // // cell faces
-  // enodes.resize(2);
-  // face_node_ids_.resize(nnodes_);
-  // face_areas_.resize(nnodes_);
-  // face_centroids_.resize(nnodes_);
-  // face_normals_.resize(nnodes_);
-
-  // for (int i = 0; i < nnodes_; ++i) {
-  //   int n0(i), n1((i + 1) % nnodes_);
-
-  //   enodes[0] = (fdirs[i] > 0) ? n0 : n1;
-  //   enodes[1] = (fdirs[i] > 0) ? n1 : n0;
-  //   face_node_ids_[i] = enodes;
-
-  //   auto tau = (cell_coords_[n1] - cell_coords_[n0]) * fdirs[i];
-  //   face_areas_[i] = norm(tau);
-
-  //   face_normals_[i].resize(1, AmanziGeometry::Point(tau[1], -tau[0]));
-  //   face_centroids_[i] = (cell_coords_[n1] + cell_coords_[n0]) / 2;
-  // }
-
-  // // cell edges
-  // edge_vectors_.resize(nnodes_);
-  // edge_lengths_ = face_areas_;
-
-  // for (int i = 0; i < nnodes_; ++i) {
-  //   int n0(i), n1((i + 1) % nnodes_);
-  //   edge_vectors_[i] = cell_coords_[n1] - cell_coords_[n0];
-  // }
-
-  // // backward connectivity
-  // cells.resize(1, 0);
-  // std::vector<int> edirs(1, 1);
-  // face_cell_ids_.resize(nnodes_, cells);
-
-  // face_edge_ids_.resize(nnodes_);
-  // face_edge_dirs_.resize(nnodes_, edirs);
-
-  // for (int i = 0; i < nnodes_; ++i) {
-  //   cells.resize(1, i);
-  //   face_edge_ids_[i] = cells;
-  // }
-
-  // // cache is done (this probably is not needed)
-  // faces_requested_ = true;
-  // edges_requested_ = true;
-
-  // cell2face_info_cached_ = true;
-  // cell2edge_info_cached_ = true;
-  // face2cell_info_cached_ = true;
-  // face2edge_info_cached_ = true;
-
-  // cell_geometry_precomputed_ = true;
-  // face_geometry_precomputed_ = true;
-  // edge_geometry_precomputed_ = true;
+  setSpaceDimension(d);
+  setManifoldDimension(d);
 }
 
 } // namespace WhetStone

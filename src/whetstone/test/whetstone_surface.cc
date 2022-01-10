@@ -45,7 +45,8 @@ TEST(DARCY_SURFACE_MESH) {
   T(0, 0) = 1;
  
   for (int f = 0; f < mesh->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::ALL); ++f) {
-    RCP<SingleFaceMesh> surfmesh = Teuchos::rcp(new SingleFaceMesh(mesh, f));
+    auto framework = Teuchos::rcp(new SingleFaceMesh(mesh, f));
+    auto surfmesh = Teuchos::rcp(new AmanziMesh::Mesh(framework, Teuchos::null));
     MFD3D_Diffusion mfd(surfmesh);
  
     DenseMatrix M;

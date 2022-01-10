@@ -109,14 +109,12 @@ void HighOrderCrouzeixRaviart(int dim, std::string file_name) {
   }
 }
 
-#ifdef SINGLE_FACE_MESH
 
 TEST(HIGH_ORDER_CROUZEIX_RAVIART) {
   HighOrderCrouzeixRaviart(2, "test/one_pentagon.exo");
   HighOrderCrouzeixRaviart(3, "test/cube_unit.exo");
 } 
 
-#endif
 
 /* ******************************************************************
 * Incorrect Serendipity Crouzier-Raviart 2D element (for testing)
@@ -366,7 +364,6 @@ void HighOrderLagrange3D(const std::string& filename1,
   }
 }
 
-#ifdef SINGLE_FACE_MESH
 
 TEST(HIGH_ORDER_LAGRANGE_3D) {
   HighOrderLagrange3D("test/cube_unit.exo", "test/cube_unit_rotated.exo");
@@ -374,7 +371,6 @@ TEST(HIGH_ORDER_LAGRANGE_3D) {
   HighOrderLagrange3D("test/parallepiped.exo", "test/parallepiped_rotated.exo");
 }
 
-#endif
 
 /* ******************************************************************
 * Serendipity 2D and 3D Lagrange elements
@@ -461,16 +457,13 @@ void HighOrderLagrangeSerendipity(const std::string& filename) {
   }
 }
 
-#ifdef SINGLE_FACE_MESH
 
 TEST(HIGH_ORDER_LAGRANGE_SERENDIPITY) {
   HighOrderLagrangeSerendipity("test/two_cell2_dist.exo");
   HighOrderLagrangeSerendipity("test/one_pentagon.exo");
   HighOrderLagrangeSerendipity("test/cube_unit.exo");
 } 
-#endif
 
-#ifdef SINGLE_FACE_MESH
 
 /* ******************************************************************
 * Surface Lagrange element
@@ -513,4 +506,3 @@ TEST(HIGH_ORDER_LAGRANGE_SURFACE) {
   CHECK(A3d.NormInf() <= 1e-12 * A2d.NormInf());
 }
 
-#endif

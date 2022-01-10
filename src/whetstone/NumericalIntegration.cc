@@ -699,7 +699,13 @@ void NumericalIntegration::IntegrateMonomialsFaceReduction_(
 
   // create a surface mesh
   SurfaceCoordinateSystem coordsys(xf, normal);
-  Teuchos::RCP<const SingleFaceMesh> surf_mesh = Teuchos::rcp(new SingleFaceMesh(mesh_, f, coordsys));
+  auto framework = Teuchos::rcp(new SingleFaceMesh(mesh_, f, coordsys));
+  auto surf_mesh = Teuchos::rcp(new AmanziMesh::Mesh(framework, Teuchos::null));
+  surf_mesh->cacheCellFaces();
+  surf_mesh->cacheCellGeometry();
+  surf_mesh->cacheFaceCells();
+  surf_mesh->cacheFaceGeometry();
+  // surf_mesh->destroyFramework();
   NumericalIntegration numi_f(surf_mesh);
 
   PolynomialIterator it(d_);

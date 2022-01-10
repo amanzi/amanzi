@@ -75,8 +75,6 @@ TEST(DG2D_MASS_MATRIX) {
 /* ****************************************************************
 * Test of 3D DG mass matrices: K is tensor
 **************************************************************** */
-#ifdef SINGLE_FACE_MESH
-
 TEST(DG3D_MASS_MATRIX) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -158,7 +156,6 @@ TEST(DG3D_MASS_MATRIX) {
   }
 }
 
-#endif
 
 /* ****************************************************************
 * Test of DG mass matrices: K is polynomial
@@ -401,8 +398,6 @@ TEST(DG2D_FLUX_MATRIX_CONSERVATION) {
 /* ****************************************************************
 * Test of DG3D flux matrices on a face
 **************************************************************** */
-#ifdef SINGLE_FACE_MESH
-
 TEST(DG3D_FLUX_MATRIX) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -465,7 +460,6 @@ TEST(DG3D_FLUX_MATRIX) {
   }
 }
 
-#endif
 
 /* ****************************************************************
 * Test of DG advection matrices in a cell
@@ -560,8 +554,6 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
 /* ****************************************************************
 * Test of DG advection matrices in a cell
 **************************************************************** */
-#ifdef SINGLE_FACE_MESH
-
 TEST(DG3D_ADVECTION_MATRIX_CELL) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -637,7 +629,6 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
   }
 }
 
-#endif
  
 /* ****************************************************************
 * Test of polynomial least-square approximation

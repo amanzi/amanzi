@@ -511,7 +511,8 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
   const AmanziGeometry::Point& normal = mesh_->getFaceNormal(f);
   auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
 
-  Teuchos::RCP<const SingleFaceMesh> surf_mesh = Teuchos::rcp(new SingleFaceMesh(mesh_, f, *coordsys));
+  auto framework = Teuchos::rcp(new SingleFaceMesh(mesh_, f, *coordsys));
+  auto surf_mesh = Teuchos::rcp(new AmanziMesh::Mesh(framework, Teuchos::null));
   NumericalIntegration numi_f(surf_mesh);
 
   // integrate traces of polynomials on face f
