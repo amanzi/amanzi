@@ -133,7 +133,7 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   // Initialize miscalleneous defaults.
   // -- times
-  double t_ini = S->time(); 
+  double t_ini = S->get_time(); 
   dt_desirable_ = dt_;
   dt_next_ = dt_;
 
@@ -323,7 +323,7 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
     // *vo_->os() << "default (no-flow) BC assigned to " << missed_bc_faces_ << " faces" << std::endl << std::endl;
 
     *vo_->os() << vo_->color("green") << "Initialization of PK is complete, T=" 
-               << units_.OutputTime(S_->time()) << vo_->reset() << std::endl << std::endl;
+               << units_.OutputTime(S_->get_time()) << vo_->reset() << std::endl << std::endl;
   }
 }
 

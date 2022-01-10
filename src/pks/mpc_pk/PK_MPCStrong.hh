@@ -174,7 +174,7 @@ void PK_MPCStrong<PK_Base>::Initialize(const Teuchos::Ptr<State>& S)
   if (!my_list_->template get<bool>("strongly coupled PK", false)) {
     // -- instantiate time stepper
     Teuchos::ParameterList& ts_plist = my_list_->sublist("time integrator").sublist("BDF1");
-    ts_plist.set("initial time", S_->time());
+    ts_plist.set("initial time", S_->get_time());
     time_stepper_ = Teuchos::rcp(new Amanzi::BDF1_TI<TreeVector,
         TreeVectorSpace>(*this, ts_plist, solution_));
 
@@ -183,7 +183,7 @@ void PK_MPCStrong<PK_Base>::Initialize(const Teuchos::Ptr<State>& S)
     solution_dot->PutScalar(0.0);
 
     // -- set initial state
-    time_stepper_->SetInitialState(S_->time(), solution_, solution_dot);
+    time_stepper_->SetInitialState(S_->get_time(), solution_, solution_dot);
   }
 }
 

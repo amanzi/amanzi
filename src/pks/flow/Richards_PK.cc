@@ -459,7 +459,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   // Initialize miscalleneous defaults.
   // -- times
-  double t_ini = S->time(); 
+  double t_ini = S->get_time(); 
   dt_desirable_ = dt_;
   dt_next_ = dt_;
 
@@ -664,7 +664,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   // and clip it as requested. We have to do it only once at the beginning
   // of time period.
   if (ti_list_->isSublist("initialization") && initialize_with_darcy_ 
-      && S->position() == Amanzi::TIME_PERIOD_START) {
+      && S->get_position() == Amanzi::TIME_PERIOD_START) {
     initialize_with_darcy_ = false;
     Teuchos::ParameterList& ini_list = ti_list_->sublist("initialization");
  
@@ -741,7 +741,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   if (ti_list_->isSublist("pressure-lambda constraints") && solution->HasComponent("face")) {
     solver_name_constraint_ = ti_list_->sublist("pressure-lambda constraints").get<std::string>("linear solver");
 
-    if (S->position() == Amanzi::TIME_PERIOD_START) {
+    if (S->get_position() == Amanzi::TIME_PERIOD_START) {
       EnforceConstraints(t_ini, solution);
       pressure_eval_->SetChanged();
 
@@ -903,7 +903,7 @@ void Richards_PK::InitializeStatistics_()
     }
 
     *vo_->os() << vo_->color("green") << "Initialization of PK is complete, T=" 
-               << units_.OutputTime(S_->time()) << vo_->reset() << std::endl << std::endl;
+               << units_.OutputTime(S_->get_time()) << vo_->reset() << std::endl << std::endl;
   }
 
   if (dirichlet_bc_faces_ == 0 &&

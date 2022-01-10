@@ -285,7 +285,7 @@ void CycleDriver::Initialize() {
   // commit the initial conditions.
   // pk_->CommitStep(t0_-get_dt(), get_dt());
   if (!restart_requested_) {
-    pk_->CommitStep(S_->time(), S_->time(), S_);
+    pk_->CommitStep(S_->get_time(), S_->get_time(), S_);
   }
 }
 
@@ -297,7 +297,7 @@ void CycleDriver::Initialize() {
 * This really should be removed, but for now is left to help stupid developers.
 ****************************************************************** */
 void CycleDriver::Finalize() {
-  if (!checkpoint_->DumpRequested(S_->cycle(), S_->time())) {
+  if (!checkpoint_->DumpRequested(S_->cycle(), S_->get_time())) {
     pk_->CalculateDiagnostics(S_);
     checkpoint_->Write(*S_, 0.0, true, &observations_data_);
   }
@@ -481,7 +481,7 @@ double CycleDriver::get_dt(bool after_failure) {
   std::vector<std::pair<double,double> >::iterator it_max;
 
   for (it = reset_info_.begin(), it_max = reset_max_.begin(); it != reset_info_.end(); ++it, ++it_max) {    
-    if (S_->time() == it->first) {
+    if (S_->get_time() == it->first) {
       if (reset_max_.size() > 0) {
         max_dt_ = it_max->second;
       }
@@ -508,8 +508,8 @@ double CycleDriver::get_dt(bool after_failure) {
     Exceptions::amanzi_throw(message);
   }
 
-  if (S_->time() > 0) {
-    if (dt / S_->time() < 1e-14) {
+  if (S_->get_time() > 0) {
+    if (dt / S_->get_time() < 1e-14) {
       Errors::Message message("CycleDriver: error, timestep too small with respect to current time");
       Exceptions::amanzi_throw(message);
     }
@@ -517,7 +517,7 @@ double CycleDriver::get_dt(bool after_failure) {
 
 
   // ask the step manager if this step is ok
-  dt = tsm_->TimeStep(S_->time(), dt, after_failure);
+  dt = tsm_->TimeStep(S_->get_time(), dt, after_failure);
 
 
   // cap the max step size
@@ -550,7 +550,7 @@ void CycleDriver::set_dt(double dt) {
   }
 
   // ask the step manager if this step is ok
-  dt_ = tsm_->TimeStep(S_->time() + dt, dt);
+  dt_ = tsm_->TimeStep(S_->get_time() + dt, dt);
 
   // set the physical step size
   pk_->set_dt(dt_);
@@ -575,7 +575,7 @@ double CycleDriver::Advance(double dt) {
   if (advance) {
     std::vector<std::pair<double,double> >::const_iterator it;
     for (it = reset_info_.begin(); it != reset_info_.end(); ++it) {
-      if (it->first == S_->time()) break;
+      if (it->first == S_->get_time()) break;
     }
 
     if (it != reset_info_.end()) {
@@ -586,11 +586,11 @@ double CycleDriver::Advance(double dt) {
       reinit = true;
     }      
 
-    fail = pk_->AdvanceStep(S_->time(), S_->time()+dt, reinit);
+    fail = pk_->AdvanceStep(S_->get_time(), S_->get_time()+dt, reinit);
   }
 
   if (!fail) {
-    pk_->CommitStep(S_->last_time(), S_->time(), S_);
+    pk_->CommitStep(S_->last_time(), S_->get_time(), S_);
     // advance the iteration count and timestep size
     if (advance) {
       S_->advance_cycle();
@@ -601,7 +601,7 @@ double CycleDriver::Advance(double dt) {
     bool force_check(false);
     bool force_obser(false);
 
-    if (abs(S_->time() - tp_end_[time_period_id_]) < 1e-10) {
+    if (abs(S_->get_time() - tp_end_[time_period_id_]) < 1e-10) {
       force_vis = true;
       force_check = true;                       
       force_obser = true;
@@ -611,7 +611,7 @@ double CycleDriver::Advance(double dt) {
     dt_new = get_dt(fail);
 
     if (!reset_info_.empty())
-        if (S_->time() == reset_info_.front().first)
+        if (S_->get_time() == reset_info_.front().first)
             force_check = true;
 
     // make vis, observations, and checkpoints in this order
@@ -627,7 +627,7 @@ double CycleDriver::Advance(double dt) {
 
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       Utils::Units units("molar");
-      *vo_->os() << "New time = " << units.OutputTime(S_->time()) << std::endl;
+      *vo_->os() << "New time = " << units.OutputTime(S_->get_time()) << std::endl;
     }
   } else {
     dt_new = get_dt(fail);
@@ -654,7 +654,7 @@ void CycleDriver::Observations(bool force, bool integrate) {
     // integrate continuous observations in time and save results in internal variables
     if (integrate) observations_->MakeContinuousObservations(*S_);
 
-    if (observations_->DumpRequested(S_->cycle(), S_->time()) || force) {
+    if (observations_->DumpRequested(S_->cycle(), S_->get_time()) || force) {
       // continuous observations are not updated here
       int n = observations_->MakeObservations(*S_);
       Teuchos::OSTab tab = vo_->getOSTab();
@@ -672,7 +672,7 @@ void CycleDriver::Visualize(bool force, const std::string& tag) {
   if (!dump) {
     for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
          vis!=visualization_.end(); ++vis) {
-      if ((*vis)->DumpRequested(S_->cycle(), S_->time())) {
+      if ((*vis)->DumpRequested(S_->cycle(), S_->get_time())) {
         dump = true;
       }
     }
@@ -681,7 +681,7 @@ void CycleDriver::Visualize(bool force, const std::string& tag) {
   //if (dump || force) //pk_->CalculateDiagnostics();
   
   for (const auto& vis : visualization_) {
-    if (force || vis->DumpRequested(S_->cycle(), S_->time())) {
+    if (force || vis->DumpRequested(S_->cycle(), S_->get_time())) {
       vis->set_tag(tag);
       WriteVis(*vis, *S_);
       Teuchos::OSTab tab = vo_->getOSTab();
@@ -695,10 +695,10 @@ void CycleDriver::Visualize(bool force, const std::string& tag) {
 * Write a checkpoint file if requested.
 ****************************************************************** */
 void CycleDriver::WriteCheckpoint(double dt, bool force) {
-  if (force || checkpoint_->DumpRequested(S_->cycle(), S_->time())) {
+  if (force || checkpoint_->DumpRequested(S_->cycle(), S_->get_time())) {
     bool final = false;
 
-    if (fabs( S_->time() - tp_end_[num_time_periods_-1]) < 1e-6) {
+    if (fabs( S_->get_time() - tp_end_[num_time_periods_-1]) < 1e-6) {
       final = true;
     }
 
@@ -712,7 +712,7 @@ void CycleDriver::WriteCheckpoint(double dt, bool force) {
 
 void CycleDriver::WriteWalkabout(bool force) {
   if (walkabout_ != Teuchos::null) {
-    if (walkabout_->DumpRequested(S_->cycle(), S_->time()) || force) {
+    if (walkabout_->DumpRequested(S_->cycle(), S_->get_time()) || force) {
       if (!walkabout_->is_disabled())
          *vo_->os() << "Cycle " << S_->cycle() << ": writing walkabout file" << std::endl;
       walkabout_->WriteDataFile(S_, pk_);
@@ -748,7 +748,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
 
     dt = tp_dt_[time_period_id_];
     max_dt_ = tp_max_dt_[time_period_id_];
-    dt = tsm_->TimeStep(S_->time(), dt);
+    dt = tsm_->TimeStep(S_->get_time(), dt);
     pk_->set_dt(dt);
 
   } else {
@@ -784,7 +784,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
     cycle0_ = S_->cycle();
     for (std::vector<std::pair<double,double> >::iterator it = reset_info_.begin();
           it != reset_info_.end(); ++it) {
-      if (it->first <= S_->time()) it = reset_info_.erase(it);
+      if (it->first <= S_->get_time()) it = reset_info_.erase(it);
       if (it == reset_info_.end() ) break;
     }
 
@@ -807,8 +807,8 @@ Teuchos::RCP<State> CycleDriver::Go() {
       pk_->Initialize(S_.ptr());
     }
 
-    S_->set_initial_time(S_->time());
-    dt = tsm_->TimeStep(S_->time(), restart_dT);
+    S_->set_initial_time(S_->get_time());
+    dt = tsm_->TimeStep(S_->get_time(), restart_dT);
     pk_->set_dt(dt);
   }
 
@@ -847,7 +847,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
     while (time_period_id_ < num_time_periods_) {
       int start_cycle_num = S_->cycle();
       //  do 
-      while ((S_->time() < tp_end_[time_period_id_]) && 
+      while ((S_->get_time() < tp_end_[time_period_id_]) && 
              ((tp_max_cycle_[time_period_id_] == -1) || 
               (S_->cycle() - start_cycle_num < tp_max_cycle_[time_period_id_])))
       {
@@ -861,13 +861,13 @@ Teuchos::RCP<State> CycleDriver::Go() {
           Utils::Units units("molar");
           Teuchos::OSTab tab = vo_->getOSTab();
           *vo_->os() << "\nCycle " << S_->cycle()
-                     << ": time = " << units.OutputTime(S_->time())
+                     << ": time = " << units.OutputTime(S_->get_time())
                      << ", dt = " << units.OutputTime(dt) << "\n";
         }
         S_->GetW<double>("dt", Tags::DEFAULT, "coordinator") = dt;
-        S_->set_initial_time(S_->time());
-        S_->set_final_time(S_->time() + dt);
-        S_->set_intermediate_time(S_->time());
+        S_->set_initial_time(S_->get_time());
+        S_->set_final_time(S_->get_time() + dt);
+        S_->set_intermediate_time(S_->get_time());
         S_->set_position(TIME_PERIOD_INSIDE);
 
         dt = Advance(dt);

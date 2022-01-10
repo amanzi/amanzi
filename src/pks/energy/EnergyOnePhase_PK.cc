@@ -194,7 +194,7 @@ void EnergyOnePhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   // initialize boundary conditions
-  double t_ini = S->time(); 
+  double t_ini = S->get_time(); 
   auto temperature = S->GetW<CV_t>(temperature_key_, passwd_);
   UpdateSourceBoundaryData(t_ini, t_ini, temperature);
 

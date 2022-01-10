@@ -244,7 +244,7 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
   // compute the equilibrium state
   int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   ierr = 0;
-  if (fabs(initial_conditions_time_ - S->time()) <= 1e-8 * fabs(S->time())) {
+  if (fabs(initial_conditions_time_ - S->get_time()) <= 1e-8 * fabs(S->get_time())) {
     for (int c = 0; c < num_cells; ++c) {
       CopyCellStateToBeakerState(c, tcc);
 
@@ -261,7 +261,7 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
   } else {
     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "no data initialization due to time mismatch: " << S->time() << std::endl;
+      *vo_->os() << "no data initialization due to time mismatch: " << S->get_time() << std::endl;
     }
   }
 
@@ -271,7 +271,7 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << vo_->color("green") << "Initialization of PK was successful, T=" 
-        << S->time() << vo_->reset() << std::endl << std::endl;
+        << S->get_time() << vo_->reset() << std::endl << std::endl;
   }
 }
 

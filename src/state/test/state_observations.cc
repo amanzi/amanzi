@@ -134,7 +134,7 @@ struct obs_test {
 
   void advance(double dt) {
     S->advance_time(dt);
-    S->GetW<CV>("linear", Tags::DEFAULT, "state").PutScalar(S->time() * 0.1);
+    S->GetW<CV>("linear", Tags::DEFAULT, "state").PutScalar(S->get_time() * 0.1);
     S->advance_cycle();
   }
 

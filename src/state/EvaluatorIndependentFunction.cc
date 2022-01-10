@@ -73,7 +73,7 @@ void EvaluatorIndependentFunction::Update_(State& S) {
   // NOTE: EvaluatorIndependentFunctions own their own data.
   CompositeVector& cv = S.GetW<CompositeVector>(my_key_, my_tag_, my_key_);
   auto cv_ptr = Teuchos::rcpFromRef(cv).ptr();
-  time_ = S.time(my_tag_);
+  time_ = S.get_time(my_tag_);
   func_->Compute(time_, cv_ptr);
 }
 

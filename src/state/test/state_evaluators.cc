@@ -83,8 +83,8 @@ class BIndependent : public EvaluatorIndependent<double> {
   };
 
  protected:
-  virtual void Update_(State& s) override {
-    s.GetW<double>(my_key_, my_tag_, my_key_) = s.time(my_tag_);
+  virtual void Update_(State& S) override {
+    S.GetW<double>(my_key_, my_tag_, my_key_) = S.get_time(my_tag_);
   }
 };
 

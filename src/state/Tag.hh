@@ -18,8 +18,9 @@ namespace Amanzi {
 class Tag {
  public:
   Tag() : tag_("") {};
+  explicit Tag(const std::string& tag) : tag_(tag) {};
 
-  void set(const Key& key) { tag_ = key; }
+  void set(const std::string& tag) { tag_ = tag; }
   std::string get() const { return tag_; }
 
   // support of hash

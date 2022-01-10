@@ -174,11 +174,11 @@ class CompositeVector {
 
   Comm_ptr_type Comm() const { return map_->Comm(); }
   Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return map_->Mesh(); }
-  bool HasComponent(std::string name) const { return map_->HasComponent(name); }
+  bool HasComponent(const std::string& name) const { return map_->HasComponent(name); }
   int NumComponents() const { return size(); }
   AmanziMesh::Entity_kind Location(std::string name) const { return map_->Location(name); }
 
-  int NumVectors(std::string name) const { return map_->NumVectors(name); }
+  int NumVectors(const std::string& name) const { return map_->NumVectors(name); }
   int GlobalLength() const { return mastervec_->GlobalLength(); }
   long int GetLocalElementCount() const { return mastervec_->GetLocalElementCount(); }
 

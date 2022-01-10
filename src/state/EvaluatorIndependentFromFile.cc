@@ -140,7 +140,7 @@ void EvaluatorIndependentFromFile::Update_(State& S)
     LoadFile_(0);
   }
 
-  double t = S.time();
+  double t = S.get_time();
   if (time_func_ != Teuchos::null) {
     std::vector<double> point(1, t);
     t = (*time_func_)(point);

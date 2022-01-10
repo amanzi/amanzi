@@ -93,11 +93,11 @@ bool EvaluatorIndependent_::Update(State& S, const Key& request) {
     requests_.insert(request);
     computed_once_ = true;
     if (temporally_variable_)
-      time_ = S.time(my_tag_);
+      time_ = S.get_time(my_tag_);
     return true;
   }
 
-  if (temporally_variable_ && (S.time(my_tag_) != time_)) {
+  if (temporally_variable_ && (S.get_time(my_tag_) != time_)) {
     // field is not current, update and clear requests
     if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
       *vo_.os() << "Independent field \"" << my_key_ << "\" requested by "
@@ -105,7 +105,7 @@ bool EvaluatorIndependent_::Update(State& S, const Key& request) {
     }
     Update_(S);
     if (temporally_variable_)
-      time_ = S.time(my_tag_);
+      time_ = S.get_time(my_tag_);
     requests_.clear();
     requests_.insert(request);
     return true;
