@@ -104,8 +104,8 @@ bool EvaluatorPrimary_::UpdateDerivative(State& S, const Key& request,
 
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-    *vo_.os() << "Primary Variable " << my_key_ << ":" << my_tag_.get()
-              << " derivative with respect to " << wrt_key << ":" << wrt_tag.get()
+    *vo_.os() << "Primary Variable " << Keys::getKeyTag(my_key_, my_tag_.get())
+              << " derivative with respect to " << Keys::getKeyTag(wrt_key, wrt_tag.get())
               << " requested by " << request;
   }
 

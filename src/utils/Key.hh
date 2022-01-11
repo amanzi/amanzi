@@ -85,6 +85,7 @@ namespace Keys {
 static const char name_delimiter = '-';
 static const char deriv_delimiter = '|';
 static const char dset_delimiter = ':';
+static const char tag_delimiter = '@';
 
 //
 // Utility functions
@@ -226,15 +227,14 @@ bool hasKey(const T& container, const K& key) {
 // Tag'd variables are of the form VARNAME:TAG
 inline Key
 getKeyTag(const Key& var, const Key& tag) {
-  return tag.empty() ? var : var+":"+tag;
+  return tag.empty() ? var : merge(var, tag, tag_delimiter);
 }
 
 // Split a DOMAIN-VARNAME key.
 inline KeyPair
-splitKeyTag(const Key& name)
-{
-  std::size_t pos = name.find(':');
-  if (pos == std::string::npos) 
+splitKeyTag(const Key& name) {
+  std::size_t pos = name.find(tag_delimiter);
+  if (pos == std::string::npos)
     return std::make_pair(name, Key(""));
   else
     return std::make_pair(name.substr(0,pos), name.substr(pos+1,name.size()));

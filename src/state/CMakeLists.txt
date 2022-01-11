@@ -33,6 +33,7 @@ include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR}/data)
+include_directories(${STATE_SOURCE_DIR}/evaluators)
 include_directories(${WHETSTONE_SOURCE_DIR})
 
 # External (TPL) include directories
@@ -65,19 +66,19 @@ set(state_inc_files
   data/DataFactory.hh
   data/DataFactory_Impl.hh
   data/Record.hh
-  Evaluator.hh
-  Evaluator_Factory.hh
-  Evaluator_OperatorApply.hh
-  Evaluator_PDE_Diffusion.hh
-  EvaluatorCellVolume.hh
-  EvaluatorDeformingCellVolume.hh
-  EvaluatorIndependent.hh
-  EvaluatorIndependentFromFile.hh
-  EvaluatorIndependentFunction.hh
-  EvaluatorMultiplicativeReciprocal.hh
-  EvaluatorPrimary.hh
-  EvaluatorSecondaryMonotype.hh
-  EvaluatorSecondaryMonotypeFromFunction.hh
+  evaluators/Evaluator.hh
+  evaluators/Evaluator_Factory.hh
+  evaluators/Evaluator_OperatorApply.hh
+  evaluators/Evaluator_PDE_Diffusion.hh
+  evaluators/EvaluatorCellVolume.hh
+  evaluators/EvaluatorDeformingCellVolume.hh
+  evaluators/EvaluatorIndependent.hh
+  evaluators/EvaluatorIndependentFromFile.hh
+  evaluators/EvaluatorIndependentFunction.hh
+  evaluators/EvaluatorMultiplicativeReciprocal.hh
+  evaluators/EvaluatorPrimary.hh
+  evaluators/EvaluatorSecondaryMonotype.hh
+  evaluators/EvaluatorSecondaryMonotypeFromFunction.hh
   IO.hh
   Observable.hh
   StateDefs.hh
@@ -91,20 +92,20 @@ add_amanzi_library(state
                    SOURCE State.cc
                           Checkpoint.cc
                           chemistry_data.cc
-                          Evaluator.cc
-                          Evaluator_Factory.cc
-                          Evaluator_PDE_Diffusion.cc
-                          Evaluator_OperatorApply.cc
-                          EvaluatorCellVolume.cc
-                          EvaluatorDeformingCellVolume.cc
-                          EvaluatorIndependent.cc
-                          EvaluatorIndependentFromFile.cc
-                          EvaluatorIndependentFunction.cc
-                          EvaluatorMultiplicativeReciprocal.cc
-                          EvaluatorPrimary.cc
-                          EvaluatorSecondary.cc
-                          EvaluatorSecondaryMonotype.cc
-                          EvaluatorSecondaryMonotypeFromFunction.cc
+                          evaluators/Evaluator.cc
+                          evaluators/Evaluator_Factory.cc
+                          evaluators/Evaluator_PDE_Diffusion.cc
+                          evaluators/Evaluator_OperatorApply.cc
+                          evaluators/EvaluatorCellVolume.cc
+                          evaluators/EvaluatorDeformingCellVolume.cc
+                          evaluators/EvaluatorIndependent.cc
+                          evaluators/EvaluatorIndependentFromFile.cc
+                          evaluators/EvaluatorIndependentFunction.cc
+                          evaluators/EvaluatorMultiplicativeReciprocal.cc
+                          evaluators/EvaluatorPrimary.cc
+                          evaluators/EvaluatorSecondary.cc
+                          evaluators/EvaluatorSecondaryMonotype.cc
+                          evaluators/EvaluatorSecondaryMonotypeFromFunction.cc
                           IO.cc
                           Observable.cc
                           UnstructuredObservations.cc

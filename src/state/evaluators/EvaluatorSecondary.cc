@@ -276,7 +276,7 @@ std::string EvaluatorSecondary::WriteToString() const
 {
   std::stringstream result;
   for (const auto& key : my_keys_) {
-    result << key.first << ":" << key.second.get();
+    result << Keys::getKeyTag(key.first, key.second.get());
   }
   result << std::endl << "  type: secondary" << std::endl;
   for (const auto& dep : dependencies_) {

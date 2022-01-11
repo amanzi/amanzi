@@ -382,7 +382,9 @@ void State::Setup()
   }
 
   for (auto& deriv : derivs_) {
-    // Some PKs allows an evalutator to be either independent or secondary.
+    // Some PKs allow an evalutator to be either independent or secondary,
+    // depending on the input deck. We can require derivative only in one 
+    // case, for the secondary evaluator.
     auto type = GetEvaluator(deriv.first).get_type();
     if (type == EvaluatorType::SECONDARY || type == EvaluatorType::PRIMARY) {
       deriv.second->CreateData();
