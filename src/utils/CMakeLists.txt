@@ -60,6 +60,7 @@ add_amanzi_library(atk
                            ObservationData.hh
                            Spline.hh
                            SplinedCurve.hh
+                           Tag.hh
                            Key.hh
                            ExprTK.hh
                            StringExt.hh

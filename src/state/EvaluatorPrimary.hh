@@ -106,8 +106,7 @@ public:
     if (S.HasDerivativeSet(my_key_, my_tag_)) {
       for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
         auto wrt = Keys::splitKeyTag(deriv.first.get());
-        auto tag = make_tag(wrt.second);
-        S.RequireDerivative<Data_t,DataFactory_t>(my_key_, my_tag_, wrt.first, tag, my_key_);
+        S.RequireDerivative<Data_t,DataFactory_t>(my_key_, my_tag_, wrt.first, wrt.second, my_key_);
       }
     }
   }
@@ -148,9 +147,8 @@ EvaluatorPrimary<CompositeVector, CompositeVectorSpace>::EnsureCompatibility(Sta
   if (S.HasDerivativeSet(my_key_, my_tag_)) {
     for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
       auto wrt = Keys::splitKeyTag(deriv.first.get());
-      Tag wrt_tag = make_tag(wrt.second);
       S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
-          my_key_, my_tag_, wrt.first, wrt_tag, my_key_).Update(my_fac);
+          my_key_, my_tag_, wrt.first, wrt.second, my_key_).Update(my_fac);
     }
   }
 }

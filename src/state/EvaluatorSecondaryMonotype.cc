@@ -176,9 +176,8 @@ void EvaluatorSecondaryMonotype<CompositeVector,CompositeVectorSpace>::EnsureCom
     for (const auto& keytag : my_keys_) {
       for (const auto& deriv : S.GetDerivativeSet(keytag.first, keytag.second)) {
         auto wrt = Keys::splitKeyTag(deriv.first.get());
-        auto wrt_tag = make_tag(wrt.second);
         S.RequireDerivative<CompositeVector,CompositeVectorSpace>(
-            keytag.first, keytag.second, wrt.first, wrt_tag, keytag.first);
+            keytag.first, keytag.second, wrt.first, wrt.second, keytag.first);
       }
     }
   }
@@ -199,9 +198,8 @@ void EvaluatorSecondaryMonotype<CompositeVector,CompositeVectorSpace>::EnsureCom
       for (const auto& keytag : my_keys_) {
         for (const auto& deriv : S.GetDerivativeSet(keytag.first, keytag.second)) {
           auto wrt = Keys::splitKeyTag(deriv.first.get());
-          auto wrt_tag = make_tag(wrt.second);
           S.RequireDerivative<CompositeVector,CompositeVectorSpace>(
-              keytag.first, keytag.second, wrt.first, wrt_tag, keytag.first).Update(my_fac);
+              keytag.first, keytag.second, wrt.first, wrt.second, keytag.first).Update(my_fac);
         }
       }
     }
@@ -213,9 +211,8 @@ void EvaluatorSecondaryMonotype<CompositeVector,CompositeVectorSpace>::EnsureCom
       for (const auto& keytag : my_keys_) {
         for (const auto& deriv : S.GetDerivativeSet(keytag.first, keytag.second)) {
           auto wrt = Keys::splitKeyTag(deriv.first.get());
-          auto wrt_tag = make_tag(wrt.second);
           S.RequireDerivative<CompositeVector,CompositeVectorSpace>(
-              keytag.first, keytag.second, wrt.first, wrt_tag, keytag.first).Update(my_fac);
+              keytag.first, keytag.second, wrt.first, wrt.second, keytag.first).Update(my_fac);
         }
       }
     }
@@ -230,10 +227,9 @@ void EvaluatorSecondaryMonotype<CompositeVector,CompositeVectorSpace>::EnsureCom
         for (const auto& keytag : my_keys_) {
           for (const auto& deriv : S.GetDerivativeSet(keytag.first, keytag.second)) {
             auto wrt = Keys::splitKeyTag(deriv.first.get());
-            auto wrt_tag = make_tag(wrt.second);
-            if (S.GetEvaluator(dep.first, dep.second).IsDifferentiableWRT(S, wrt.first, wrt_tag)) {
+            if (S.GetEvaluator(dep.first, dep.second).IsDifferentiableWRT(S, wrt.first, wrt.second)) {
               S.RequireDerivative<CompositeVector,CompositeVectorSpace>(
-                  dep.first, dep.second, wrt.first, wrt_tag).Update(my_fac);
+                  dep.first, dep.second, wrt.first, wrt.second).Update(my_fac);
             }
           }
         }
@@ -249,10 +245,9 @@ void EvaluatorSecondaryMonotype<CompositeVector,CompositeVectorSpace>::EnsureCom
       for (const auto& keytag : my_keys_) {
         for (const auto& deriv : S.GetDerivativeSet(keytag.first, keytag.second)) {
           auto wrt = Keys::splitKeyTag(deriv.first.get());
-          auto wrt_tag = make_tag(wrt.second);
           for (const auto& dep : dependencies_) {
             S.RequireDerivative<CompositeVector,CompositeVectorSpace>(
-                dep.first, dep.second, wrt.first, wrt_tag);
+                dep.first, dep.second, wrt.first, wrt.second);
           }
         }
       }
@@ -293,9 +288,8 @@ void EvaluatorSecondaryMonotype<CompositeVector,CompositeVectorSpace>::EnsureCom
       for (auto keytag : my_keys_) {
         for (const auto& deriv : S.GetDerivativeSet(keytag.first, keytag.second)) {
           auto wrt = Keys::splitKeyTag(deriv.first.get());
-          auto wrt_tag = make_tag(wrt.second);
           S.RequireDerivative<CompositeVector,CompositeVectorSpace>(
-              keytag.first, keytag.second, wrt.first, wrt_tag, keytag.first).Update(my_fac);
+              keytag.first, keytag.second, wrt.first, wrt.second, keytag.first).Update(my_fac);
         }
       }
     }

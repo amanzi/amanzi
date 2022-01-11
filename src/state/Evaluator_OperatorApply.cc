@@ -98,17 +98,17 @@ Evaluator_OperatorApply::Evaluator_OperatorApply(Teuchos::ParameterList& plist)
   }
 
   // push dependencies
-  dependencies_.emplace_back(std::make_pair(x0_key_, my_keys_[0].second));
-  for (const auto& x_key : x_keys_) dependencies_.emplace_back(std::make_pair(x_key, my_keys_[0].second));
-  for (const auto& rhs : rhs_keys_) dependencies_.emplace_back(std::make_pair(rhs, my_keys_[0].second));
-  for (const auto& op_key : op0_keys_) dependencies_.emplace_back(std::make_pair(op_key, my_keys_[0].second));
-  for (const auto& op_rhs_key : op0_rhs_keys_) dependencies_.emplace_back(std::make_pair(op_rhs_key, my_keys_[0].second));
+  dependencies_.insert(std::make_pair(x0_key_, my_keys_[0].second));
+  for (const auto& x_key : x_keys_) dependencies_.insert(std::make_pair(x_key, my_keys_[0].second));
+  for (const auto& rhs : rhs_keys_) dependencies_.insert(std::make_pair(rhs, my_keys_[0].second));
+  for (const auto& op_key : op0_keys_) dependencies_.insert(std::make_pair(op_key, my_keys_[0].second));
+  for (const auto& op_rhs_key : op0_rhs_keys_) dependencies_.insert(std::make_pair(op_rhs_key, my_keys_[0].second));
   for (const auto& op_list : op_keys_)
     for (const auto& op_key : op_list)
-      dependencies_.emplace_back(std::make_pair(op_key, my_keys_[0].second));
+      dependencies_.insert(std::make_pair(op_key, my_keys_[0].second));
   for (const auto& rhs_list : op_rhs_keys_)
     for (const auto& rhs_key : rhs_list)
-      dependencies_.emplace_back(std::make_pair(rhs_key, my_keys_[0].second));
+      dependencies_.insert(std::make_pair(rhs_key, my_keys_[0].second));
 
   // primary entity is the entity on which the operator primarily exists.
   // This is CELL for control volume methods and NODE for Lagrangian FE
@@ -205,7 +205,7 @@ void Evaluator_OperatorApply::EnsureCompatibility(State& S) {
     if (has_derivs) {
       for (const auto& deriv : S.GetDerivativeSet(my_keys_[0].first, my_keys_[0].second)) {
         auto wrt = Keys::splitKeyTag(deriv.first.get());
-        auto tag = make_tag(wrt.second);
+        auto tag = wrt.second;
         AMANZI_ASSERT(tag == my_keys_[0].second);
         AMANZI_ASSERT(wrt.first == x0_key_);     // NEED TO IMPLEMENT OFF-DIAGONALS EVENTUALLY --etc
         auto& deriv_fac = S.RequireDerivative<Operators::Operator,Operators::Operator_Factory>(
@@ -224,7 +224,7 @@ void Evaluator_OperatorApply::EnsureCompatibility(State& S) {
   if (has_derivs) {
     for (const auto& deriv : S.GetDerivativeSet(my_keys_[0].first, my_keys_[0].second)) {
       auto wrt = Keys::splitKeyTag(deriv.first.get());
-      auto tag = make_tag(wrt.second);
+      auto tag = wrt.second;
       AMANZI_ASSERT(tag == my_keys_[0].second);
       AMANZI_ASSERT(wrt.first == x0_key_);     // NEED TO IMPLEMENT OFF-DIAGONALS EVENTUALLY --etc
       // quasi-linear operators covered by Update() call --etc

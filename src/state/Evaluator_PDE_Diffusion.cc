@@ -45,18 +45,18 @@ Evaluator_PDE_Diffusion::Evaluator_PDE_Diffusion(Teuchos::ParameterList& plist)
 
   // dependencies
   tensor_coef_key_ = plist.get<std::string>("tensor coefficient key");
-  dependencies_.emplace_back(std::make_pair(tensor_coef_key_, my_tag_));
+  dependencies_.insert(std::make_pair(tensor_coef_key_, my_tag_));
 
   scalar_coef_key_ = plist.get<std::string>("scalar coefficient key");
-  dependencies_.emplace_back(std::make_pair(scalar_coef_key_, my_tag_));
+  dependencies_.insert(std::make_pair(scalar_coef_key_, my_tag_));
 
   bcs_key_ = plist.get<std::string>("boundary conditions key");
-  dependencies_.emplace_back(std::make_pair(bcs_key_, my_tag_));
+  dependencies_.insert(std::make_pair(bcs_key_, my_tag_));
 
   if (plist_.get<std::string>("discretization primary") == "nlfv: default" ||
       plist.get<std::string>("Newton correction", "none") != "none") {
     u_key_ = plist.get<std::string>("operator argument key");
-    dependencies_.emplace_back(std::make_pair(u_key_, my_tag_));
+    dependencies_.insert(std::make_pair(u_key_, my_tag_));
   }
 }
 
@@ -134,8 +134,8 @@ bool Evaluator_PDE_Diffusion::UpdateDerivative(
 
   // -- must update if our our dependencies have changed, as these affect the
   // partial derivatives
-  Key my_request = Key{"d"} + Keys::getKeyTag(my_keys_[0].first, my_keys_[0].second.get())
-                 + "_d" + Keys::getKeyTag(wrt_key, wrt_tag.get());
+  Key my_request = Keys::getDerivKey(my_keys_[0].first, my_keys_[0].second,
+        wrt_key, wrt_tag);
   update |= Update(S, my_request);
 
   // -- must update if any of our dependencies' derivatives have changed

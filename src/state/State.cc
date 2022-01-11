@@ -1,9 +1,9 @@
 /*
   State
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon
@@ -128,7 +128,7 @@ bool State::IsDeformableMesh(const Key& key) const
 Teuchos::RCP<AmanziMesh::Mesh> State::GetMesh_(const Key& key) const
 {
   if (key.empty()) return GetMesh_("domain");
-  
+
   mesh_iterator lb = meshes_.lower_bound(key);
   if (lb != meshes_.end() && !(meshes_.key_comp()(key, lb->first))) {
     return lb->second.first;
@@ -214,6 +214,7 @@ Evaluator& State::RequireEvaluator(const Key& key, const Tag& tag)
   Errors::Message message;
   message << "Model for \"" << key << "\" cannot be created in State.";
   Exceptions::amanzi_throw(message);
+  return *Evaluator_Factory().createEvaluator(fm_plist); // silences warning
 }
 
 
@@ -383,10 +384,10 @@ void State::Setup()
 
   for (auto& deriv : derivs_) {
     // Some PKs allows an evalutator to be either independent or secondary.
-    auto type = GetEvaluator(deriv.first).get_type();
-    if (type == EvaluatorType::SECONDARY || type == EvaluatorType::PRIMARY) {
+    // auto type = GetEvaluator(deriv.first).get_type();
+    // if (type == EvaluatorType::SECONDARY || type == EvaluatorType::PRIMARY) {
       deriv.second->CreateData();
-    }
+    // }
   }
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
@@ -450,9 +451,9 @@ void State::Initialize(Teuchos::RCP<State> S)
           Errors::Message msg(ss.str());
           Exceptions::amanzi_throw(msg);
         }
-        field.set_initialized();      
+        field.set_initialized();
       }
-    }   
+    }
   }
 
   // Initialize any other fields from state plist.
@@ -487,7 +488,7 @@ void State::InitializeEvaluators()
 
 void State::InitializeFieldCopies()
 {
-  VerboseObject vo("State", state_plist_); 
+  VerboseObject vo("State", state_plist_);
   if (vo.os_OK(Teuchos::VERB_EXTREME)) {
     Teuchos::OSTab tab = vo.getOSTab();
     *vo.os() << "initializing field copies..." << std::endl;
@@ -499,7 +500,7 @@ void State::InitializeFieldCopies()
       for (auto& r : *e.second) {
         Set<CompositeVector>(e.first, r.first, copy.owner(), copy.Get<CompositeVector>());
       }
-    } 
+    }
   }
 }
 
@@ -507,7 +508,7 @@ void State::InitializeFieldCopies()
 void State::InitializeFields()
 {
   bool pre_initialization = false;
-  VerboseObject vo("State", state_plist_); 
+  VerboseObject vo("State", state_plist_);
 
   if (state_plist_.isParameter("initialization filename")) {
     pre_initialization = true;
@@ -517,7 +518,7 @@ void State::InitializeFields()
 
     for (auto it = data_.begin(); it != data_.end(); ++it) {
       auto owner = GetRecord(it->first).owner();
-      auto& r = GetRecordW(it->first, owner); 
+      auto& r = GetRecordW(it->first, owner);
       if (r.ValidType<CompositeVector>()) {
         r.ReadCheckpoint(file_input);
 
@@ -527,13 +528,13 @@ void State::InitializeFields()
           if (tmp != nullptr) {
             tmp->SetChanged();
           }
-        }          
+        }
         it->second->initializeTags();
       }
     }
     // file_input.close_h5file();
   }
-   
+
   // Initialize through initial condition
   if (vo.os_OK(Teuchos::VERB_MEDIUM)) {
     Teuchos::OSTab tab = vo.getOSTab();
@@ -598,7 +599,7 @@ void State::InitializeIOFlags()
   Teuchos::Array<std::string> empty;
 
   // removing fields from vis dump
-  std::vector<std::string> blacklist = 
+  std::vector<std::string> blacklist =
       state_plist_.get<Teuchos::Array<std::string> >("blacklist", empty).toVector();
 
   for (auto it = data_begin(); it != data_end(); ++it) {
@@ -620,7 +621,7 @@ void State::InitializeIOFlags()
       std::regex pattern(whitelist[m]);
       io_allow |= std::regex_match(it->first, pattern);
     }
-    if (io_allow) { 
+    if (io_allow) {
       for (auto& r : *it->second) r.second->set_io_vis(true);
     }
   }
@@ -638,7 +639,7 @@ const Evaluator& State::GetEvaluator(const Key& key, const Tag& tag) const
     return *evaluators_.at(key).at(tag);
   } catch (std::out_of_range) {
     std::stringstream ss;
-    ss << "Evaluator for field \"" << key << "\" at tag \"" << tag.get()
+    ss << "Evaluator for field \"" << key << "\" at tag \"" << tag
        << "\" does not exist in the state.";
     Errors::Message message(ss.str());
     throw(message);
@@ -652,7 +653,7 @@ Teuchos::RCP<Evaluator> State::GetEvaluatorPtr(const Key& key, const Tag& tag)
     return evaluators_.at(key).at(tag);
   } catch (std::out_of_range) {
     std::stringstream ss;
-    ss << "Evaluator for field \"" << key << "\" at tag \"" << tag.get()
+    ss << "Evaluator for field \"" << key << "\" at tag \"" << tag
        << "\" does not exist in the state.";
     Errors::Message message(ss.str());
     throw(message);

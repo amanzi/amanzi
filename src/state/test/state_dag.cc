@@ -59,10 +59,10 @@ class AEvaluator : public EvaluatorSecondaryMonotype<double> {
 public:
   AEvaluator(Teuchos::ParameterList& plist)
       : EvaluatorSecondaryMonotype<double>(plist) {
-    dependencies_.emplace_back(std::make_pair(Key("fb"), Tags::DEFAULT));
-    dependencies_.emplace_back(std::make_pair(Key("fc"), Tags::DEFAULT));
-    dependencies_.emplace_back(std::make_pair(Key("fe"), Tags::DEFAULT));
-    dependencies_.emplace_back(std::make_pair(Key("fh"), Tags::DEFAULT));
+    dependencies_.insert(std::make_pair(Key("fb"), Tags::DEFAULT));
+    dependencies_.insert(std::make_pair(Key("fc"), Tags::DEFAULT));
+    dependencies_.insert(std::make_pair(Key("fe"), Tags::DEFAULT));
+    dependencies_.insert(std::make_pair(Key("fh"), Tags::DEFAULT));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
@@ -104,8 +104,8 @@ class CEvaluator : public EvaluatorSecondaryMonotype<double> {
 public:
   CEvaluator(Teuchos::ParameterList& plist)
       : EvaluatorSecondaryMonotype<double>(plist) {
-    dependencies_.emplace_back(std::make_pair(Key("fd"), Tags::DEFAULT));
-    dependencies_.emplace_back(std::make_pair(Key("fg"), Tags::DEFAULT));
+    dependencies_.insert(std::make_pair(Key("fd"), Tags::DEFAULT));
+    dependencies_.insert(std::make_pair(Key("fg"), Tags::DEFAULT));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
@@ -137,7 +137,7 @@ class DEvaluator : public EvaluatorSecondaryMonotype<double> {
 public:
   DEvaluator(Teuchos::ParameterList& plist)
       : EvaluatorSecondaryMonotype<double>(plist) {
-    dependencies_.emplace_back(std::make_pair(Key("fg"), Tags::DEFAULT));
+    dependencies_.insert(std::make_pair(Key("fg"), Tags::DEFAULT));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
@@ -165,8 +165,8 @@ class EEvaluator : public EvaluatorSecondaryMonotype<double> {
 public:
   EEvaluator(Teuchos::ParameterList& plist)
       : EvaluatorSecondaryMonotype<double>(plist) {
-    dependencies_.emplace_back(std::make_pair(Key("fd"), Tags::DEFAULT));
-    dependencies_.emplace_back(std::make_pair(Key("ff"), Tags::DEFAULT));
+    dependencies_.insert(std::make_pair(Key("fd"), Tags::DEFAULT));
+    dependencies_.insert(std::make_pair(Key("ff"), Tags::DEFAULT));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
@@ -200,7 +200,7 @@ class FEvaluator : public EvaluatorSecondaryMonotype<double> {
 public:
   FEvaluator(Teuchos::ParameterList& plist)
       : EvaluatorSecondaryMonotype<double>(plist) {
-    dependencies_.emplace_back(std::make_pair(Key("fg"), Tags::DEFAULT));
+    dependencies_.insert(std::make_pair(Key("fg"), Tags::DEFAULT));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
@@ -229,7 +229,7 @@ class HEvaluator : public EvaluatorSecondaryMonotype<double> {
 public:
   HEvaluator(Teuchos::ParameterList& plist)
       : EvaluatorSecondaryMonotype<double>(plist) {
-    dependencies_.emplace_back(std::make_pair(Key("ff"), Tags::DEFAULT));
+    dependencies_.insert(std::make_pair(Key("ff"), Tags::DEFAULT));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {

@@ -66,6 +66,7 @@
 
 #include <set>
 #include "Teuchos_ParameterList.hpp"
+#include "Tag.hh"
 
 namespace Amanzi {
 
@@ -79,12 +80,22 @@ typedef std::set<std::pair<Key, Key> > KeyPairSet;
 typedef std::vector<KeyPair> KeyPairVector;
 
 typedef std::tuple<Key,Key,Key> KeyTriple;
+typedef std::set<KeyTriple> KeyTripleSet;
+
+typedef std::pair<Key,Tag> KeyTag;
+typedef std::vector<KeyTag> KeyTagVector;
+typedef std::set<KeyTag> KeyTagSet;
+
+typedef std::tuple<Key,Tag,Key> DerivativeTriple;
+typedef std::set<DerivativeTriple> DerivativeTripleSet;
+
 
 namespace Keys {
 
 static const char name_delimiter = '-';
 static const char deriv_delimiter = '|';
 static const char dset_delimiter = ':';
+static const char tag_delimiter = '@';
 
 //
 // Utility functions
@@ -99,9 +110,13 @@ bool in(const Key& key, const std::string& c);
 Key merge(const Key& domain, const Key& name, const char& delimiter);
 KeyPair split(const Key& name, const char& delimiter);
 
+template<class Container, class Key>
+bool hasKey(const Container& c, const Key& key) {
+  return c.count(key);
+}
 
 //
-// Working with Keys and Domains
+// Working with Keys
 // -----------------------------------------------------------------------------
 inline
 Key standardize(const Key& other) {
@@ -128,6 +143,9 @@ Key getDomainPrefix(const Key& name);
 // Grab the varname suffix of a DOMAIN-VARNAME Key
 Key getVarName(const Key& name);
 
+//
+// Domain Sets
+// -----------------------------------------------------------------------------
 // Domain Sets are of the form NAME:ID, where ID is an integer or
 // region string indexing the domain set.
 Key getDomainInSet(const Key& ds_name, const Key& subdomain);
@@ -162,8 +180,24 @@ Key getKey(const Key& ds_name, const int& ds_id, const Key& varname);
 // Check if a key, interpreted as a domain set, matches the domain-set name
 bool matchesDomainSet(const Key& domain_set, const Key& name);
 
+
+//
+// Working with tags
+// -----------------------------------------------------------------------------
+// Tag'd variables are of the form VARNAME:TAG
+Key getKey(const Key& var, const Tag& tag);
+Key getKey(const KeyTag& var_tag);
+
+KeyTag splitKeyTag(const Key& name);
+
+//
+// Working with derivatives
+// -----------------------------------------------------------------------------
 // Derivatives are of the form dKey|dKey.
 Key getDerivKey(const Key& var, const Key& wrt);
+Key getDerivKey(const Key& var, const Tag& tag,
+                const Key& wrt, const Tag& wrt_tag);
+Key getDerivKey(const KeyTag& var, const KeyTag& wrt);
 
 //
 // Helper functions for reading keys and domains from parameter lists
@@ -211,34 +245,12 @@ Key readKey(Teuchos::ParameterList& list,
             const Key& basename,
             const Key& default_name="");
 
-// Convenience function for requesting a list of names of Keys from an input spec.
+// Convenience function for requesting a list of names of Keys from an input
+// spec.
 Teuchos::Array<Key>
 readKeys(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
-         Teuchos::Array<Key> const * const default_names=nullptr);
+         Teuchos::Array<Key> const* const default_names=nullptr);
 
-
-// Convenience function to see if a map (or map-like) object has a key.
-template<typename T, typename K>
-bool hasKey(const T& container, const K& key) {
-  return container.count(key) > 0;
-}
-
-// Tag'd variables are of the form VARNAME:TAG
-inline Key
-getKeyTag(const Key& var, const Key& tag) {
-  return tag.empty() ? var : var+":"+tag;
-}
-
-// Split a DOMAIN-VARNAME key.
-inline KeyPair
-splitKeyTag(const Key& name)
-{
-  std::size_t pos = name.find(':');
-  if (pos == std::string::npos) 
-    return std::make_pair(name, Key(""));
-  else
-    return std::make_pair(name.substr(0,pos), name.substr(pos+1,name.size()));
-}
 
 } // namespace Keys
 } // namespace Amanzi

@@ -37,7 +37,7 @@ EvaluatorDeformingCellVolume::EvaluatorDeformingCellVolume(Teuchos::ParameterLis
 
   // stick in the deformation key as my leaf node.
   Key deformation_key = plist.get<std::string>("deformation key");
-  dependencies_.emplace_back(std::make_pair(deformation_key, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(deformation_key, Tags::DEFAULT));
 }
 
 

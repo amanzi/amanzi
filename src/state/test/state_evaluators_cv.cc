@@ -35,7 +35,7 @@ class AEvaluator
 public:
   AEvaluator(Teuchos::ParameterList& plist)
       : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist) {
-    dependencies_.emplace_back(std::make_pair(Key("fb"), Tags::DEFAULT));
+    dependencies_.insert(std::make_pair(Key("fb"), Tags::DEFAULT));
     comp_ = plist.get<std::string>("component", "cell");
   }
 

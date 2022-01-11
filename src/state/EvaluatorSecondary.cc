@@ -41,13 +41,13 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
 
       int i = 0;
       for (auto name : names) {
-        my_keys_.emplace_back(std::make_pair(name, make_tag(tags[i])));
+        my_keys_.emplace_back(KeyTag{name, Tag{tags[i]}});
         ++i;
       }
     } else {
       auto tag = make_tag(plist_.get<std::string>("tag"));
       for (auto name : names) {
-        my_keys_.emplace_back(std::make_pair(name, tag));
+        my_keys_.emplace_back(KeyTag{name, Tag{tag}});
       }
     }
   } else {
@@ -55,11 +55,11 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
     if (plist_.isParameter("tags")) {
       auto tags = plist_.get<Teuchos::Array<std::string>>("tags");
       for (auto tag : tags) {
-        my_keys_.emplace_back(std::make_pair(name, make_tag(tag)));
+        my_keys_.emplace_back(KeyTag{name, Tag{tag}});
       }
     } else {
       auto tag = make_tag(plist_.get<std::string>("tag"));
-      my_keys_.emplace_back(std::make_pair(name, tag));
+      my_keys_.emplace_back(KeyTag{name, Tag{tag}});
     }
   }
   if (my_keys_.size() == 0) {
@@ -84,13 +84,13 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
 
       int i = 0;
       for (auto dep : deps) {
-        dependencies_.emplace_back(std::make_pair(dep, make_tag(tags[i])));
+        dependencies_.insert(std::make_pair(dep, make_tag(tags[i])));
         ++i;
       }
     } else if (plist_.get<bool>("dependency tags are my tag", false)) {
       auto my_tag = my_keys_[0].second;
       for (auto dep : deps) {
-        dependencies_.emplace_back(std::make_pair(dep, my_tag));
+        dependencies_.insert(std::make_pair(dep, my_tag));
       }
     } else {
       Errors::Message message;
@@ -143,7 +143,7 @@ bool EvaluatorSecondary::Update(State& S, const Key& request)
   bool update = false;
   for (auto& dep : dependencies_) {
     update |= S.GetEvaluator(dep.first, dep.second)
-        .Update(S, Keys::getKeyTag(my_keys_[0].first, my_keys_[0].second.get()));
+        .Update(S, Keys::getKey(my_keys_[0].first, my_keys_[0].second));
   }
 
   if (update) {
@@ -206,9 +206,7 @@ bool EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
 
   // -- must update if our our dependencies have changed, as these affect the
   // partial derivatives
-  Key my_request = Key{"d"} +
-                   Keys::getKeyTag(my_keys_[0].first, my_keys_[0].second.get())
-                   + "_d" + Keys::getKeyTag(wrt_key, wrt_tag.get());
+  Key my_request = Keys::getDerivKey(my_keys_[0], KeyTag(wrt_key, wrt_tag));
   update |= Update(S, my_request);
 
   // -- must update if any of our dependencies' derivatives have changed

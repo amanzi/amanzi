@@ -202,9 +202,9 @@ public:
     tensor_coef_key_ = plist.get<std::string>("tensor coefficient key");
     scalar_coef_key_ = plist.get<std::string>("scalar coefficient key");
     bcs_key_ = plist.get<std::string>("boundary conditions key");
-    dependencies_.emplace_back(std::make_pair(tensor_coef_key_, tag_));
-    dependencies_.emplace_back(std::make_pair(scalar_coef_key_, tag_));
-    dependencies_.emplace_back(std::make_pair(bcs_key_, tag_));
+    dependencies_.insert(std::make_pair(tensor_coef_key_, tag_));
+    dependencies_.insert(std::make_pair(scalar_coef_key_, tag_));
+    dependencies_.insert(std::make_pair(bcs_key_, tag_));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {

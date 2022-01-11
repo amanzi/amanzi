@@ -261,11 +261,40 @@ bool matchesDomainSet(const Key& domain_set, const Key& name)
   return splitDomainSet(name, result) ? std::get<0>(result) == domain_set : false;
 }
 
+// tags
+Key getKey(const Key& var, const Tag& tag)
+{
+  return merge(var, tag.get(), tag_delimiter);
+}
+Key getKey(const KeyTag& var_tag)
+{
+  return getKey(var_tag.first, var_tag.second);
+}
+
+KeyTag splitKeyTag(const Key& name) {
+  auto pair = split(name, tag_delimiter);
+  return std::make_pair(pair.first, Tag(pair.second));
+}
+
 // Derivatives are of the form dKey|dKey.
 Key getDerivKey(const Key& var, const Key& wrt)
 {
-  return std::string("d")+var+deriv_delimiter+"d"+wrt;
+  std::string d("d");
+  return merge(d+var, d+wrt, deriv_delimiter);
 }
+
+Key getDerivKey(const Key& var, const Tag& tag,
+                const Key& wrt, const Tag& wrt_tag)
+{
+  return getDerivKey(Keys::getKey(var, tag),
+                     Keys::getKey(wrt, wrt_tag));
+}
+
+Key getDerivKey(const KeyTag& var, const KeyTag& wrt)
+{
+  return getDerivKey(Keys::getKey(var), Keys::getKey(wrt));
+}
+
 
 //
 // Helper functions for reading keys and domains from parameter lists
@@ -375,15 +404,16 @@ Key readKey(Teuchos::ParameterList& list,
   }
 }
 
-
 Teuchos::Array<Key>
 readKeys(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
-         Teuchos::Array<Key> const * const default_names) {
-  std::string basename_key_arg = basename+" keys";
-  std::string basename_key_suffix_arg = basename+" key suffixes";
+         Teuchos::Array<Key> const* const default_names)
+{
+  std::string basename_key_arg = basename + " keys";
+  std::string basename_key_suffix_arg = basename + " key suffixes";
 
   if (list.isParameter(basename_key_suffix_arg)) {
-    Teuchos::Array<std::string> suffixes = list.get<Teuchos::Array<std::string>>(basename_key_suffix_arg);
+    Teuchos::Array<std::string> suffixes =
+      list.get<Teuchos::Array<std::string>>(basename_key_suffix_arg);
     Teuchos::Array<std::string> defaults(suffixes.size());
     int i = 0;
     for (const auto& suffix : suffixes) {
@@ -398,11 +428,14 @@ readKeys(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
       default_keys[i] = getKey(domain, def);
       ++i;
     }
-    return list.get<Teuchos::Array<std::string>>(basename_key_arg, default_keys);
+    return list.get<Teuchos::Array<std::string>>(basename_key_arg,
+                                                 default_keys);
   } else {
     return list.get<Teuchos::Array<std::string>>(basename_key_arg);
   }
 }
+
+
 
 } // namespace
 } // namespace

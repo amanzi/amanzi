@@ -1,25 +1,25 @@
 /*
-  State 
+  State
 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_STATE_TAG_HH_
-#define AMANZI_STATE_TAG_HH_
+#pragma once
 
-#include "Key.hh"
+#include <iostream>
 
 namespace Amanzi {
 
 class Tag {
  public:
   Tag() : tag_("") {};
+  explicit Tag(const std::string& tag) : tag_(tag) {}
 
-  void set(const Key& key) { tag_ = key; }
+  void set(const std::string& key) { tag_ = key; }
   std::string get() const { return tag_; }
 
   // support of hash
@@ -27,17 +27,24 @@ class Tag {
 
   bool operator<(const Tag& other) const { return (tag_ < other.tag_); }
 
+  friend std::ostream& operator<<(std::ostream& os, const Tag& t) {
+    os << t.get();
+    return os;
+  }
+
  private:
   std::string tag_;
 };
 
 // non-member function
 inline
-Tag make_tag(const Key& key) {
+Tag make_tag(const std::string& key) {
   Tag tag;
   tag.set(key);
   return tag;
-}  
+}
+
+
 
 }  // namespace Amanzi
 
@@ -53,4 +60,4 @@ struct hash<Amanzi::Tag> {
 
 }  // namespace
 
-# endif
+

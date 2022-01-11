@@ -20,22 +20,18 @@
 
 #include "Teuchos_ParameterList.hpp"
 
+#include "Key.hh"
 #include "Tag.hh"
 
 namespace Amanzi {
 
 typedef bool NullFactory;  // placeholder object for no factory required
 
-typedef std::pair<Key, Tag> KeyTag;
-typedef std::vector<KeyTag> KeyTagVector;
-
-typedef std::tuple<Key, Tag, Key> DerivativeTriple;
-typedef std::set<DerivativeTriple> DerivativeTripleSet;
-
 namespace Tags {
-const Tag DEFAULT = make_tag("");
-const Tag NEXT = make_tag("next");
-const Tag COPY = make_tag("copy");
+static const Tag DEFAULT("");
+static const Tag OLD(""); // an alias -- DEFAULT may go away?
+static const Tag NEXT("next");
+static const Tag COPY("copy");
 }
 
 enum class EvaluatorType {

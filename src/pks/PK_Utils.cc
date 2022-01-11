@@ -60,6 +60,7 @@ AmanziGeometry::Point PKUtils_EntityCoordinates(
   } else if (kind == AmanziMesh::EDGE) {
     return mesh.edge_centroid(id);
   }
+  return AmanziGeometry::Point();
 }
 
 }  // namespace Amanzi

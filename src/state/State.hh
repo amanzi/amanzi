@@ -1,8 +1,8 @@
 /*
   State
 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
@@ -97,10 +97,9 @@ Example:
 // Amanzi::State
 #include "Checkpoint.hh"
 #include "ObservationData.hh"
-#include "RecordSet.hh"
+#include "data/RecordSet.hh"
 #include "StateDefs.hh"
 #include "Tag.hh"
-#include "Visualization.hh"
 
 namespace Amanzi {
 
@@ -157,7 +156,7 @@ class State {
   // -----------------------------------------------------------------------------
   // State handles mesh management.
   // -----------------------------------------------------------------------------
-  // Meshes are "registered" with state. 
+  // Meshes are "registered" with state.
   // -- Register a mesh under the default key, "domain".
   void RegisterDomainMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
                           bool deformable = false);
@@ -186,7 +185,7 @@ class State {
                          const Teuchos::RCP<AmanziMesh::DomainSet> set);
   bool HasDomainSet(const Key& name) const;
   Teuchos::RCP<const AmanziMesh::DomainSet> GetDomainSet(const Key& name) const;
-  
+
 
   // -----------------------------------------------------------------------------
   // State handles data management.
@@ -200,10 +199,10 @@ class State {
   //
   // State also manages access to data.  Data is "owned" by at most one
   // object -- that object, which is typically either a PK or a Evaluator
-  // (always true for secondary), may write the solution, and therefore 
-  // receives non-const pointers to data.  Data may be used by anyone, but 
+  // (always true for secondary), may write the solution, and therefore
+  // receives non-const pointers to data.  Data may be used by anyone, but
   // non-owning objects receive const-only pointers to data.
-  // 
+  //
   // Requiring data from State takes up to two template arguments:
   //  T is the data type required
   //  F is a factory, which must provide a method Create() that makes a T
@@ -228,12 +227,12 @@ class State {
 
   template <typename T, typename F>
   F& Require(const Key& fieldname) {
-    return Require<T, F>(fieldname, Tags::DEFAULT, "");
+    return Require<T, F>(fieldname, Tags::DEFAULT);
   }
 
   template <typename T>
   void Require(const Key& fieldname) {
-    Require<T>(fieldname, Tags::DEFAULT, "");
+    Require<T>(fieldname, Tags::DEFAULT);
   }
 
   template <typename T, typename F>
@@ -281,11 +280,11 @@ class State {
   template <typename T, typename F>
   F& RequireDerivative(const Key& key, const Tag& tag,
                        const Key& wrt_key, const Tag& wrt_tag, const Key& owner = "") {
-    auto keytag = Keys::getKeyTag(key, tag.get());
+    auto keytag = Keys::getKey(key, tag);
     if (!Keys::hasKey(derivs_, keytag)) {
       derivs_.emplace(keytag, std::make_unique<RecordSet>(keytag));
     }
-    Tag dertag = make_tag(Keys::getKeyTag(wrt_key, wrt_tag.get()));
+    Tag dertag = make_tag(Keys::getKey(wrt_key, wrt_tag));
     derivs_.at(keytag)->RequireRecord(dertag, owner);
     return derivs_.at(keytag)->SetType<T, F>();
   }
@@ -293,11 +292,11 @@ class State {
   template <typename T>
   void RequireDerivative(const Key& key, const Tag& tag, const Key& wrt_key,
                          const Tag& wrt_tag, const Key& owner = "") {
-    auto keytag = Keys::getKeyTag(key, tag.get());
+    auto keytag = Keys::getKey(key, tag);
     if (!Keys::hasKey(derivs_, keytag)) {
       derivs_.emplace(keytag, std::make_unique<RecordSet>(keytag));
     }
-    Tag dertag = make_tag(Keys::getKeyTag(wrt_key, wrt_tag.get()));
+    Tag dertag = make_tag(Keys::getKey(wrt_key, wrt_tag));
     derivs_.at(keytag)->RequireRecord(dertag, owner);
     derivs_.at(keytag)->SetType<T>();
   }
@@ -313,9 +312,9 @@ class State {
   }
 
   bool HasDerivative(const Key& key, const Tag& tag, const Key& wrt_key, const Tag& wrt_tag) const {
-    auto keytag = Keys::getKeyTag(key, tag.get());
+    auto keytag = Keys::getKey(key, tag);
     if (Keys::hasKey(derivs_, keytag)) {
-      Tag der_tag = make_tag(Keys::getKeyTag(wrt_key, wrt_tag.get()));
+      Tag der_tag = make_tag(Keys::getKey(wrt_key, wrt_tag));
       return derivs_.at(keytag)->HasRecord(der_tag);
     }
     return false;
@@ -330,8 +329,8 @@ class State {
   template <typename T>
   const T& GetDerivative(const Key& key, const Tag& tag, const Key& wrt_key,
                          const Tag& wrt_tag) const {
-    Tag der_tag = make_tag(Keys::getKeyTag(wrt_key, wrt_tag.get()));
-    return derivs_.at(Keys::getKeyTag(key, tag.get()))->Get<T>(der_tag);
+    Tag der_tag = make_tag(Keys::getKey(wrt_key, wrt_tag));
+    return derivs_.at(Keys::getKey(key, tag))->Get<T>(der_tag);
   }
 
   template <typename T>
@@ -342,8 +341,8 @@ class State {
   template <typename T>
   T& GetDerivativeW(const Key& key, const Tag& tag, const Key& wrt_key,
                     const Tag& wrt_tag, const Key& owner) {
-    Tag der_tag = make_tag(Keys::getKeyTag(wrt_key, wrt_tag.get()));
-    return derivs_.at(Keys::getKeyTag(key, tag.get()))->GetW<T>(der_tag, owner);
+    Tag der_tag = make_tag(Keys::getKey(wrt_key, wrt_tag));
+    return derivs_.at(Keys::getKey(key, tag))->GetW<T>(der_tag, owner);
   }
 
   template <typename T>
@@ -354,26 +353,26 @@ class State {
   template <typename T>
   Teuchos::RCP<const T> GetDerivativePtr(const Key& key, const Tag& tag,
                                          const Key& wrt_key, const Tag& wrt_tag) const {
-    Tag der_tag = make_tag(Keys::getKeyTag(wrt_key, wrt_tag.get()));
-    return derivs_.at(Keys::getKeyTag(key, tag.get()))->GetPtr<T>(der_tag);
+    Tag der_tag = make_tag(Keys::getKey(wrt_key, wrt_tag));
+    return derivs_.at(Keys::getKey(key, tag))->GetPtr<T>(der_tag);
   }
 
   template <typename T>
   Teuchos::RCP<T> GetDerivativePtrW(const Key& key, const Tag& tag,
                                     const Key& wrt_key, const Tag& wrt_tag,
                                     const Key& owner) {
-    Tag der_tag = make_tag(Keys::getKeyTag(wrt_key, wrt_tag.get()));
-    return derivs_.at(Keys::getKeyTag(key, tag.get()))->GetPtrW<T>(der_tag, owner);
+    Tag der_tag = make_tag(Keys::getKey(wrt_key, wrt_tag));
+    return derivs_.at(Keys::getKey(key, tag))->GetPtrW<T>(der_tag, owner);
   }
 
   // set operations
   bool HasDerivativeSet(const Key& key, const Tag& tag) const {
-    return Keys::hasKey(derivs_, Keys::getKeyTag(key, tag.get()));
+    return Keys::hasKey(derivs_, Keys::getKey(key, tag));
   }
   RecordSet& GetDerivativeSet(const Key& key, const Tag& tag) {
-    return *derivs_.at(Keys::getKeyTag(key, tag.get()));
+    return *derivs_.at(Keys::getKey(key, tag));
   }
-  
+
   // Access to data
   // -- const
   template <typename T>
@@ -423,7 +422,7 @@ class State {
     Key owner = GetRecord(fieldname, copy).owner();
     GetW<T>(fieldname, copy, owner) = Get<T>(fieldname, tag);
   }
-  
+
 
   // -----------------------------------------------------------------------------
   // State handles data evaluation.
@@ -436,7 +435,7 @@ class State {
   // -- allows PKs to add to this list to custom evaluators
   Teuchos::ParameterList& FEList() { return state_plist_.sublist("evaluators"); }
   Teuchos::ParameterList& GetEvaluatorList(const Key& key);
-  
+
   // -- allows PKs to add to this list to initial conditions
   Teuchos::ParameterList& ICList() { return state_plist_.sublist("initial conditions"); }
 

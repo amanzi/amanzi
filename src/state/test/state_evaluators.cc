@@ -35,7 +35,7 @@ class AEvaluator : public EvaluatorSecondaryMonotype<double> {
 public:
   AEvaluator(Teuchos::ParameterList &plist)
       : EvaluatorSecondaryMonotype<double>(plist) {
-    dependencies_.emplace_back(std::make_pair(Key{"fb"}, Tags::DEFAULT));
+    dependencies_.insert(std::make_pair(Key{"fb"}, Tags::DEFAULT));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {

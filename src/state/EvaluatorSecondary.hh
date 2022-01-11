@@ -72,10 +72,10 @@ protected:
   virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) = 0;
 
   void EnsureCompatibility_Flags_(State& S);
-  
+
 protected:
   KeyTagVector my_keys_;
-  KeyTagVector dependencies_;
+  KeyTagSet dependencies_;
 
   KeySet requests_;
   DerivativeTripleSet deriv_requests_;
