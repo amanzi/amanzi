@@ -152,8 +152,11 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
   S->RequireEvaluator(mol_density_liquid_key_);
 
-  S->RequireDerivative<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT,
-                                    pressure_key_, Tags::DEFAULT, mass_density_liquid_key_);
+  S->RequireEvaluator(mass_density_liquid_key_);
+  if (S->GetEvaluator(mass_density_liquid_key_).IsDifferentiableWRT(*S, pressure_key_, Tags::DEFAULT)) {
+    S->RequireDerivative<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT,
+                                      pressure_key_, Tags::DEFAULT, mass_density_liquid_key_);
+  }
 
   // -- viscosity
   S->Require<CV_t, CVS_t>(viscosity_liquid_key_, Tags::DEFAULT, viscosity_liquid_key_)

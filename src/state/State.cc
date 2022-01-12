@@ -361,7 +361,7 @@ void State::Setup()
     }
   }
 
-  // -- Create the data for all fields.
+  // Create the data for all fields.
   for (auto& r : data_) {
     r.second->CreateData();
 
@@ -381,14 +381,9 @@ void State::Setup()
     }
   }
 
+  // Create the data for all derivatives
   for (auto& deriv : derivs_) {
-    // Some PKs allow an evalutator to be either independent or secondary,
-    // depending on the input deck. We can require derivative only in one 
-    // case, for the secondary evaluator.
-    auto type = GetEvaluator(deriv.first).get_type();
-    if (type == EvaluatorType::SECONDARY || type == EvaluatorType::PRIMARY) {
-      deriv.second->CreateData();
-    }
+    deriv.second->CreateData();
   }
 
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {

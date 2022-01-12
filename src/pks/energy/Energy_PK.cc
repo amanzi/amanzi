@@ -150,8 +150,10 @@ void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
   S->RequireEvaluator(mol_density_liquid_key_);
 
-  S->RequireDerivative<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT,
-                                    temperature_key_, Tags::DEFAULT, mol_density_liquid_key_);
+  if (S->GetEvaluator(mol_density_liquid_key_).IsDifferentiableWRT(*S, temperature_key_, Tags::DEFAULT)) {
+    S->RequireDerivative<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT,
+                                      temperature_key_, Tags::DEFAULT, mol_density_liquid_key_);
+  }
 
   S->Require<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT, mass_density_liquid_key_)
     .SetMesh(mesh_)->SetGhosted(true)
@@ -159,8 +161,10 @@ void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
   S->RequireEvaluator(mass_density_liquid_key_);
 
-  S->RequireDerivative<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT,
-                                    temperature_key_, Tags::DEFAULT, mass_density_liquid_key_);
+  if (S->GetEvaluator(mass_density_liquid_key_).IsDifferentiableWRT(*S, temperature_key_, Tags::DEFAULT)) {
+    S->RequireDerivative<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT,
+                                      temperature_key_, Tags::DEFAULT, mass_density_liquid_key_);
+  }
 
   // -- darcy flux
   if (!S->HasData(darcy_flux_key_)) {
