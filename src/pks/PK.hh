@@ -97,7 +97,9 @@ class PK {
      const Teuchos::RCP<TreeVector>& solution)
     :  solution_(solution),
        name_(Keys::cleanPListName(pk_tree.name())),
-       S_(S)
+       S_(S),
+       tag_current_(Tags::DEFAULT),
+       tag_next_(Tags::NEXT)
   {
     Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(global_plist, "PKs", true);
     if (pk_list->isSublist(name_)) {
@@ -116,16 +118,21 @@ class PK {
   virtual ~PK() {};
 
   // Setup
-  virtual void Setup(const Teuchos::Ptr<State>& S) = 0;
+  virtual void Setup() = 0;
 
   // Initialize owned (dependent) variables.
-  virtual void Initialize(const Teuchos::Ptr<State>& S) = 0;
+  virtual void Initialize() = 0;
 
   // Choose a time step compatible with physics.
   virtual double get_dt() = 0;
 
   // Set a time step for a PK.
   virtual void set_dt(double dt) = 0;
+
+  // Set the tags to integrate between
+  virtual void set_tags(const Tag& current, const Tag& next) {
+    tag_current_ = current; tag_next_ = next;
+  }
 
   // Advance PK from time t_old to time t_new. True value of the last
   // parameter indicates drastic change of boundary and/or source terms
@@ -136,75 +143,37 @@ class PK {
   virtual bool ValidStep() { return true; }
 
   // Tag the primary variable as changed in the DAG
-  virtual void ChangedSolutionPK(const Teuchos::Ptr<State>& S) {}
-  virtual void ChangedSolutionPK() { ChangedSolutionPK(S_next_.ptr()); }
+  virtual void ChangedSolutionPK(const Tag& tag) {}
+  virtual void ChangedSolutionPK() { ChangedSolutionPK(tag_next_); }
 
   // Update any needed secondary variables at time t_new from a sucessful step
   // from t_old. This is called after every successful AdvanceStep() call,
   // independent of coupling.
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) = 0;
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) = 0;
 
   // Calculate any diagnostics at S->time(), currently for visualization.
-  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) = 0;
+  virtual void CalculateDiagnostics(const Tag& tag) = 0;
 
   // Return PK's name
   virtual std::string name() { return name_; }
 
-
   /////////////////////////////////////////////////////////////////////
-
-  // -- set pointers to State, and point the solution vector to the data in S_next
-  virtual void set_states(const Teuchos::RCP<State>& S,
-                          const Teuchos::RCP<State>& S_inter,
-                          const Teuchos::RCP<State>& S_next) = 0;
-
   // -- transfer operators
-  virtual void State_to_Solution(const Teuchos::RCP<State>& S, TreeVector& soln) = 0;
-  virtual void Solution_to_State(TreeVector& soln, const Teuchos::RCP<State>& S) = 0;
-  virtual void Solution_to_State(const TreeVector& soln, const Teuchos::RCP<State>& S) = 0;
+  virtual void State_to_Solution(const Tag& tag, TreeVector& soln) = 0;
 
- protected:
-  // Helper method to add a primary variable evaluator
-  void AddDefaultPrimaryEvaluator_(const Key& key) {
-    Teuchos::ParameterList elist;
-    elist.set<std::string>("name", key);  // probably is not used
-    elist.setName(key);  // new way
-    auto eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(elist));
-    AMANZI_ASSERT(S_ != Teuchos::null);
-    S_->SetEvaluator(key, eval);
-  }
-
-  // Helper method to initialize a CV field
-  void InitializeField_(const Teuchos::Ptr<State>& S, const std::string& passwd,
-                        std::string fieldname, double default_val) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-
-    if (S->HasData(fieldname)) {
-      if (S->GetRecord(fieldname).owner() == passwd) {
-        if (!S->GetRecord(fieldname).initialized()) {
-          S->GetW<CompositeVector>(fieldname, Tags::DEFAULT, passwd).PutScalar(default_val);
-          S->GetRecordW(fieldname, Tags::DEFAULT, passwd).set_initialized();
-
-          if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-            *vo_->os() << "initialized \"" << fieldname << "\" to value " << default_val << std::endl;
-        }
-      }
-    }
-  }
-
-
+  // why are there two here?  and is a non-const one necessary?
+  //  virtual void Solution_to_State(TreeVector& soln, const Teuchos::RCP<State>& S) = 0;
+  virtual void Solution_to_State(const TreeVector& soln, const Tag& tag) = 0;
 
  protected:
   Teuchos::RCP<Teuchos::ParameterList> plist_;
   std::string name_;
+
   Teuchos::RCP<TreeVector> solution_;  // single vector for the global problem
+  Teuchos::RCP<State> S_; // global data manager
+  Tag tag_current_, tag_next_; // tags for time integration
 
-  // states
-  Teuchos::RCP<State> S_;
-  Teuchos::RCP<State> S_inter_, S_next_;
-
-  // fancy IO
-  Teuchos::RCP<VerboseObject> vo_;
+  Teuchos::RCP<VerboseObject> vo_;  // fancy IO
 };
 
 }  // namespace Amanzi

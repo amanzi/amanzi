@@ -46,20 +46,22 @@ class PK_Physical : virtual public PK {
 
   // Default implementations of PK methods.
   // -- transfer operators -- pointer copies only
-  virtual void State_to_Solution(const Teuchos::RCP<State>& S, TreeVector& soln);
-  virtual void Solution_to_State(TreeVector& soln, const Teuchos::RCP<State>& S);
-  virtual void Solution_to_State(const TreeVector& soln, const Teuchos::RCP<State>& S);
-
-  // overloaded function also gets the primary field evaulator.
-  virtual void set_states(const Teuchos::RCP<State>& S,
-                          const Teuchos::RCP<State>& S_inter,
-                          const Teuchos::RCP<State>& S_next);
+  virtual void State_to_Solution(const Tag& tag, TreeVector& soln);
+  virtual void Solution_to_State(const TreeVector& soln, const Tag& tag);
 
   // access
   Key domain() { return domain_; }
   Teuchos::RCP<Debugger> debugger() { return db_; }
 
  protected:
+  // Helper method to add a primary variable evaluator
+  void AddDefaultPrimaryEvaluator_(const Tag& tag = Tags::DEFAULT);
+
+  // Helper method to initialize a CV field
+  void InitializeField_(const Key& key, const Tag& tag, const Key& passwd,
+                        double default_val);
+
+protected:
   // name of domain, associated mesh
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Key domain_;
