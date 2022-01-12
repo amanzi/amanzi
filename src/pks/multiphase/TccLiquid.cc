@@ -28,7 +28,7 @@ TccLiquid::TccLiquid(Teuchos::ParameterList& plist)
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
   }
   tcc_gas_key_ = plist_.get<std::string>("tcc gas key");
-  dependencies_.push_back(std::make_pair(tcc_gas_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(tcc_gas_key_, Tags::DEFAULT));
 }
 
 

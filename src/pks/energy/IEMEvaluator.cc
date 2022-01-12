@@ -70,8 +70,8 @@ void IEMEvaluator::InitializeFromPlist_()
 
   temperature_key_ = plist_.get<std::string>("temperature key", prefix + "temperature");
   pressure_key_ = plist_.get<std::string>("pressure key", prefix + "pressure");
-  dependencies_.push_back(std::make_pair(temperature_key_, Tags::DEFAULT));
-  dependencies_.push_back(std::make_pair(pressure_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(temperature_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
 }
 
 

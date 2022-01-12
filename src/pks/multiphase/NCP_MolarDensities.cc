@@ -27,9 +27,9 @@ NCP_MolarDensities::NCP_MolarDensities(Teuchos::ParameterList& plist)
   molar_density_gas_key_ = plist_.get<std::string>("molar density gas key");
   tcc_gas_key_ = plist_.get<std::string>("tcc gas key");
 
-  dependencies_.push_back(std::make_pair(x_vapor_key_, Tags::DEFAULT));
-  dependencies_.push_back(std::make_pair(molar_density_gas_key_, Tags::DEFAULT));
-  dependencies_.push_back(std::make_pair(tcc_gas_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(x_vapor_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(molar_density_gas_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(tcc_gas_key_, Tags::DEFAULT));
 }
 
 

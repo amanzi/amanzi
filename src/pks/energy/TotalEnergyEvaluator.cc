@@ -44,18 +44,18 @@ TotalEnergyEvaluator::TotalEnergyEvaluator(Teuchos::ParameterList& plist)
   porosity_key_ = prefix + "porosity";
   sat_liquid_key_ = prefix + "saturation_liquid";
 
-  dependencies_.push_back(std::make_pair(porosity_key_, Tags::DEFAULT));
-  dependencies_.push_back(std::make_pair(sat_liquid_key_, Tags::DEFAULT));
-  dependencies_.push_back(std::make_pair(mol_density_liquid_key_, Tags::DEFAULT));
-  dependencies_.push_back(std::make_pair(ie_liquid_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(porosity_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(sat_liquid_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(mol_density_liquid_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(ie_liquid_key_, Tags::DEFAULT));
 
   if (vapor_diffusion_) {
-    dependencies_.push_back(std::make_pair(mol_density_gas_key_, Tags::DEFAULT));
-    dependencies_.push_back(std::make_pair(ie_gas_key_, Tags::DEFAULT));
+    dependencies_.insert(std::make_pair(mol_density_gas_key_, Tags::DEFAULT));
+    dependencies_.insert(std::make_pair(ie_gas_key_, Tags::DEFAULT));
   }
 
-  dependencies_.push_back(std::make_pair(ie_rock_key_, Tags::DEFAULT));
-  dependencies_.push_back(std::make_pair(particle_density_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(ie_rock_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(particle_density_key_, Tags::DEFAULT));
 }
 
 

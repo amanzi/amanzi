@@ -30,8 +30,8 @@ DischargeEvaluator::DischargeEvaluator(Teuchos::ParameterList& plist)
   ponded_depth_key_ = plist_.get<std::string>("ponded depth key", Keys::getKey(domain, "ponded_depth"));
   velocity_key_ = plist_.get<std::string>("velocity key", Keys::getKey(domain, "velocity"));
 
-  dependencies_.push_back(std::make_pair(ponded_depth_key_, Tags::DEFAULT));
-  dependencies_.push_back(std::make_pair(velocity_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(ponded_depth_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(velocity_key_, Tags::DEFAULT));
 }
 
 

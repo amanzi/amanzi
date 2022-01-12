@@ -55,7 +55,7 @@ void WRMEvaluator::InitializeFromPlist_() {
 
   // my dependency is pressure.
   pressure_key_ = plist_.get<std::string>("pressure key", "pressure");
-  dependencies_.push_back(std::make_pair(pressure_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
 }
 
 

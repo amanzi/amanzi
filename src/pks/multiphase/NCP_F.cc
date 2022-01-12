@@ -23,7 +23,7 @@ NCP_F::NCP_F(Teuchos::ParameterList& plist) : MultiphaseBaseEvaluator(plist)
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
   }
   saturation_liquid_key_ = plist_.get<std::string>("saturation liquid key");
-  dependencies_.push_back(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
 }
 
 

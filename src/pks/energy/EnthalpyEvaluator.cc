@@ -31,17 +31,17 @@ EnthalpyEvaluator::EnthalpyEvaluator(Teuchos::ParameterList& plist)
   // Set up my dependencies.
   // -- internal energy
   ie_liquid_key_ = plist_.get<std::string>("internal energy key", prefix + "internal_energy_liquid");
-  dependencies_.push_back(std::make_pair(ie_liquid_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(ie_liquid_key_, Tags::DEFAULT));
 
   // -- pressure work
   include_work_ = plist_.get<bool>("include work term", true);
 
   if (include_work_) {
     pressure_key_ = plist_.get<std::string>("pressure key", prefix + "pressure");
-    dependencies_.push_back(std::make_pair(pressure_key_, Tags::DEFAULT));
+    dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
 
     mol_density_liquid_key_ = plist_.get<std::string>("molar density key", prefix + "molar_density_liquid");
-    dependencies_.push_back(std::make_pair(mol_density_liquid_key_, Tags::DEFAULT));
+    dependencies_.insert(std::make_pair(mol_density_liquid_key_, Tags::DEFAULT));
   }
 }
 

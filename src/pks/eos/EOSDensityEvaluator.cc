@@ -57,10 +57,10 @@ EOSDensityEvaluator::EOSDensityEvaluator(Teuchos::ParameterList& plist)
   // set up my dependencies
   std::string domain = Keys::getDomain(key);
   temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
-  dependencies_.push_back(std::make_pair(temp_key_, tag));
+  dependencies_.insert(std::make_pair(temp_key_, tag));
 
   pres_key_ = plist_.get<std::string>("pressure key", Keys::getKey(domain, "pressure"));
-  dependencies_.push_back(std::make_pair(pres_key_, tag));
+  dependencies_.insert(std::make_pair(pres_key_, tag));
 
   // logging
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {

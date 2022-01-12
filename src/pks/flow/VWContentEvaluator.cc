@@ -50,15 +50,15 @@ void VWContentEvaluator::Init_()
   porosity_key_ = plist_.get<std::string>("porosity key");
   mol_density_liquid_key_ = Keys::getKey(domain, "molar_density_liquid");
 
-  dependencies_.push_back(std::make_pair(porosity_key_, Tags::DEFAULT));
-  dependencies_.push_back(std::make_pair(saturation_key_, Tags::DEFAULT));
-  dependencies_.push_back(std::make_pair(mol_density_liquid_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(porosity_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(saturation_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(mol_density_liquid_key_, Tags::DEFAULT));
 
   water_vapor_ = plist_.get<bool>("water vapor", false);
 
   if (water_vapor_) {
-    dependencies_.push_back(std::make_pair(Keys::getKey(domain, "molar_density_gas"), Tags::DEFAULT));
-    dependencies_.push_back(std::make_pair(Keys::getKey(domain, "molar_fraction_gas"), Tags::DEFAULT));
+    dependencies_.insert(std::make_pair(Keys::getKey(domain, "molar_density_gas"), Tags::DEFAULT));
+    dependencies_.insert(std::make_pair(Keys::getKey(domain, "molar_fraction_gas"), Tags::DEFAULT));
   }
 }
 

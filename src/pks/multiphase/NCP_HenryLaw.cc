@@ -26,8 +26,8 @@ NCP_HenryLaw::NCP_HenryLaw(Teuchos::ParameterList& plist)
   pressure_gas_key_ = plist_.get<std::string>("pressure gas key");
   molar_density_liquid_key_ = plist_.get<std::string>("molar density liquid key");
 
-  dependencies_.push_back(std::make_pair(pressure_gas_key_, Tags::DEFAULT));
-  dependencies_.push_back(std::make_pair(molar_density_liquid_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(pressure_gas_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(molar_density_liquid_key_, Tags::DEFAULT));
 }
 
 

@@ -56,7 +56,7 @@ void RelPermEvaluator::InitializeFromPlist_(const Teuchos::Ptr<State>& S)
   // my dependency is pressure.
   std::string domain = Keys::getDomain(my_keys_[0].first);
   pressure_key_ = plist_.get<std::string>("pressure key", Keys::getKey(domain, "pressure"));
-  dependencies_.push_back(std::make_pair(pressure_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
 }
 
 

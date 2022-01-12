@@ -37,7 +37,7 @@ MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& pli
   std::string domain = Keys::getDomain(my_keys_[0].first);
   Tag tag = make_tag("");
   temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
-  dependencies_.push_back(std::make_pair(temp_key_, tag));
+  dependencies_.insert(std::make_pair(temp_key_, tag));
 }
 
 

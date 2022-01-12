@@ -26,7 +26,7 @@ HydrostaticPressureEvaluator::HydrostaticPressureEvaluator(Teuchos::ParameterLis
   std::string domain = Keys::getDomain(my_keys_[0].first);
 
   ponded_depth_key_ = plist_.get<std::string>("ponded depth key", Keys::getKey(domain, "ponded_depth"));
-  dependencies_.push_back(std::make_pair(ponded_depth_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(ponded_depth_key_, Tags::DEFAULT));
 }
 
 

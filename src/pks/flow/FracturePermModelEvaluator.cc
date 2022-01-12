@@ -35,7 +35,7 @@ FracturePermModelEvaluator::FracturePermModelEvaluator(
   }
 
   aperture_key_ = plist.get<std::string>("aperture key");
-  dependencies_.push_back(std::make_pair(aperture_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(aperture_key_, Tags::DEFAULT));
 }
 
 

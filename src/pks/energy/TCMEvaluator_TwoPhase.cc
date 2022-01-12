@@ -30,10 +30,10 @@ TCMEvaluator_TwoPhase::TCMEvaluator_TwoPhase(Teuchos::ParameterList& plist)
   auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
 
   porosity_key_ = plist_.get<std::string>("porosity key", prefix + "porosity");
-  dependencies_.push_back(std::make_pair(porosity_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(porosity_key_, Tags::DEFAULT));
 
   saturation_key_ = plist_.get<std::string>("saturation key", prefix + "saturation_liquid");
-  dependencies_.push_back(std::make_pair(saturation_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(saturation_key_, Tags::DEFAULT));
 
   AMANZI_ASSERT(plist_.isSublist("thermal conductivity parameters"));
   Teuchos::ParameterList sublist = plist_.sublist("thermal conductivity parameters");

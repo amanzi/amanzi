@@ -39,7 +39,7 @@ RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist,
   else if (name == "gas")
     phase_ = MULTIPHASE_PHASE_GAS;
 
-  dependencies_.push_back(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
 }
 
 

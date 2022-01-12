@@ -30,8 +30,8 @@ MoleFractionLiquid::MoleFractionLiquid(Teuchos::ParameterList& plist)
   pressure_gas_key_ = plist_.get<std::string>("pressure gas key");
   x_gas_key_ = plist_.get<std::string>("mole fraction gas key");
 
-  dependencies_.push_back(std::make_pair(pressure_gas_key_, Tags::DEFAULT));
-  dependencies_.push_back(std::make_pair(x_gas_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(pressure_gas_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(x_gas_key_, Tags::DEFAULT));
 }
 
 

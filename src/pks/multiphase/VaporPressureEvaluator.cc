@@ -37,9 +37,9 @@ VaporPressureEvaluator::VaporPressureEvaluator(
   molar_density_liquid_key_ = plist_.get<std::string>("molar density liquid key");
   saturation_liquid_key_ = plist_.get<std::string>("saturation liquid key");
 
-  dependencies_.push_back(std::make_pair(temperature_key_, Tags::DEFAULT));
-  dependencies_.push_back(std::make_pair(molar_density_liquid_key_, Tags::DEFAULT));
-  dependencies_.push_back(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(temperature_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(molar_density_liquid_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
 
   AmanziEOS::EOSFactory<AmanziEOS::EOS_SaturatedVaporPressure> svp_factory;
   svp_ = svp_factory.CreateEOS(plist);

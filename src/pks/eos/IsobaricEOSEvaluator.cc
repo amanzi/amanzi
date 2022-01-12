@@ -52,7 +52,7 @@ IsobaricEOSEvaluator::IsobaricEOSEvaluator(Teuchos::ParameterList& plist) :
 
   // -- temperature
   temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
-  dependencies_.push_back(std::make_pair(temp_key_, tag));
+  dependencies_.insert(std::make_pair(temp_key_, tag));
 
   // -- pressure
   pres_key_ = plist_.get<std::string>("pressure key", "atmospheric_pressure");

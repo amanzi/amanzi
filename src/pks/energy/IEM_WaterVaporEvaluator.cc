@@ -58,11 +58,11 @@ void IEM_WaterVaporEvaluator::InitializeFromPlist_()
   // Set up my dependencies.
   std::string domain = Keys::getDomain(my_keys_[0].first);
   temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
-  dependencies_.push_back(std::make_pair(temp_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(temp_key_, Tags::DEFAULT));
 
   // -- molar fraction of water vapor in the gaseous phase
   mol_frac_key_ = plist_.get<std::string>("vapor molar fraction key", Keys::getKey(domain, "molar_fraction_gas"));
-  dependencies_.push_back(std::make_pair(mol_frac_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(mol_frac_key_, Tags::DEFAULT));
 }
 
 

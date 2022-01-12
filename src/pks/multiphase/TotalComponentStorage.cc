@@ -46,12 +46,12 @@ void TotalComponentStorage::Init_()
   mole_fraction_liquid_key_ = plist_.get<std::string>("mole fraction liquid key");
   mole_fraction_gas_key_ = plist_.get<std::string>("mole fraction gas key");
 
-  dependencies_.push_back(std::make_pair(porosity_key_, Tags::DEFAULT));
-  dependencies_.push_back(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
-  dependencies_.push_back(std::make_pair(molar_density_liquid_key_, Tags::DEFAULT));
-  dependencies_.push_back(std::make_pair(molar_density_gas_key_, Tags::DEFAULT));
-  dependencies_.push_back(std::make_pair(mole_fraction_liquid_key_, Tags::DEFAULT));
-  dependencies_.push_back(std::make_pair(mole_fraction_gas_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(porosity_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(molar_density_liquid_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(molar_density_gas_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(mole_fraction_liquid_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(mole_fraction_gas_key_, Tags::DEFAULT));
 }
 
 

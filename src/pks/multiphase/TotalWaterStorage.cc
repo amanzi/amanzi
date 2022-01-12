@@ -40,11 +40,11 @@ void TotalWaterStorage::Init_()
   molar_density_gas_key_ = plist_.get<std::string>("molar density gas key");
   x_vapor_key_ = plist_.get<std::string>("mole fraction vapor key");
 
-  dependencies_.push_back(std::make_pair(porosity_key_, Tags::DEFAULT));
-  dependencies_.push_back(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
-  dependencies_.push_back(std::make_pair(molar_density_liquid_key_, Tags::DEFAULT));
-  dependencies_.push_back(std::make_pair(molar_density_gas_key_, Tags::DEFAULT));
-  dependencies_.push_back(std::make_pair(x_vapor_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(porosity_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(molar_density_liquid_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(molar_density_gas_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(x_vapor_key_, Tags::DEFAULT));
 }
 
 

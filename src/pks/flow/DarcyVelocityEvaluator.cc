@@ -27,7 +27,7 @@ DarcyVelocityEvaluator::DarcyVelocityEvaluator(Teuchos::ParameterList& plist)
 {
   AMANZI_ASSERT(my_keys_.size() > 0);
   darcy_flux_key_ = plist.get<std::string>("darcy flux key");
-  dependencies_.push_back(std::make_pair(darcy_flux_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(darcy_flux_key_, Tags::DEFAULT));
 }
 
 
