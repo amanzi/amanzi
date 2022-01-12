@@ -29,11 +29,11 @@ OutputSilo::OutputSilo(Teuchos::ParameterList& plist,
       fid_(NULL),
       count_(0)
 {
-  if (mesh_->vis_mesh().getComm()->NumProc() > 1) {
+  if (mesh_->getComm()->NumProc() > 1) {
     Errors::Message msg("OutputSilo does not yet support parallel runs.");
     Exceptions::amanzi_throw(msg);
   }
-  if (mesh_->vis_mesh().getSpaceDimension() != 3 || mesh_->vis_mesh().getManifoldDimension() != 3) {
+  if (mesh_->getSpaceDimension() != 3 || mesh_->getManifoldDimension() != 3) {
     Errors::Message msg("OutputSilo is untested on non-3D meshes.");
     Exceptions::amanzi_throw(msg);
   }
@@ -75,12 +75,12 @@ OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag) {
   coordnames[2] = (char*)"z-coords";
 
   // -- nodal coordinates
-  int nnodes = mesh_->vis_mesh().getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
+  int nnodes = mesh_->getNumEntities(AmanziMesh::Entity_kind::NODE, AmanziMesh::Parallel_type::OWNED);
   std::vector<double> x(nnodes), y(nnodes), z(nnodes);
 
   AmanziGeometry::Point xyz;
   for (int i=0; i!=nnodes; ++i) {
-    xyz = mesh_->vis_mesh().getNodeCoordinate(i);
+    xyz = mesh_->getNodeCoordinate(i);
     x[i] = xyz[0];
     y[i] = xyz[1];
     z[i] = xyz.dim() > 2 ? xyz[2] : 0.0;
@@ -101,8 +101,8 @@ OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag) {
   DBAddOption(optlist, DBOPT_DTIME, &time);
 
   // -- write the base mesh UCD object
-  int ncells = mesh_->vis_mesh().getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
-  int ierr = DBPutUcdmesh(fid_, "mesh", mesh_->vis_mesh().getSpaceDimension(),
+  int ncells = mesh_->getNumEntities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ierr = DBPutUcdmesh(fid_, "mesh", mesh_->getSpaceDimension(),
                           (char const* const*)coordnames, coords,
                           nnodes, ncells, 0, 0, DB_DOUBLE, optlist);
   AMANZI_ASSERT(!ierr);
@@ -110,19 +110,19 @@ OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag) {
   // -- Construct the silo face-node info.
   // We rely on the mesh having the faces nodes arranged counter-clockwise
   // around the face.  This should be satisfied by AmanziMesh.
-  int nfaces = mesh_->vis_mesh().getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh_->getNumEntities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED);
   std::vector<int> face_node_counts(nfaces);
   std::vector<char> ext_faces(nfaces, 0x0);
   std::vector<int> face_node_list;
 
   for (int f=0; f!=nfaces; ++f) {
     AmanziMesh::Entity_ID_List fnodes;
-    mesh_->vis_mesh().getFaceNodes(f, fnodes);
+    mesh_->getFaceNodes(f, fnodes);
     face_node_counts[f] = fnodes.size();
     face_node_list.insert(face_node_list.end(), fnodes.begin(), fnodes.end());
 
     AmanziMesh::Entity_ID_List fcells;
-    mesh_->vis_mesh().getFaceCells(f, AmanziMesh::Parallel_type::ALL, fcells);
+    mesh_->getFaceCells(f, AmanziMesh::Parallel_type::ALL, fcells);
     if (fcells.size() == 1) {
       ext_faces[f] = 0x1;
     }
@@ -135,7 +135,7 @@ OutputSilo::InitializeCycle(double time, int cycle, const std::string& tag) {
   for (int c=0; c!=ncells; ++c) {
     AmanziMesh::Entity_ID_List cfaces;
     std::vector<int> dirs;
-    mesh_->vis_mesh().getCellFacesAndDirs(c, cfaces, &dirs);
+    mesh_->getCellFacesAndDirs(c, cfaces, &dirs);
     for (int i=0; i!=cfaces.size(); ++i) {
       if (dirs[i] < 0) cfaces[i] = ~cfaces[i];
     }
