@@ -225,7 +225,7 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Do we need to initialize chemistry?
   int ierr = 0;
-  if (fabs(initial_conditions_time_ - S->time()) < 1e-8 * (1.0 + fabs(S->time()))) {
+  if (fabs(initial_conditions_time_ - S->get_time()) < 1e-8 * (1.0 + fabs(S->get_time()))) {
     for (auto it = chem_initial_conditions_.begin(); it != chem_initial_conditions_.end(); ++it) {
       std::string region = it->first;
       std::string condition = it->second;
@@ -281,7 +281,7 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << vo_->color("green") << "Initialization of PK was successful, T="
-        << S->time() << vo_->reset() << std::endl << std::endl;
+        << S->get_time() << vo_->reset() << std::endl << std::endl;
   }
 }
 

@@ -97,7 +97,7 @@ Example:
 // Amanzi::State
 #include "Checkpoint.hh"
 #include "ObservationData.hh"
-#include "data/RecordSet.hh"
+#include "RecordSet.hh"
 #include "StateDefs.hh"
 #include "Tag.hh"
 
@@ -484,7 +484,7 @@ class State {
   // Time tags and vector copies
   // -----------------------------------------------------------------------------
   // Time accessor and mutators.
-  double time(const Tag& tag = Tags::DEFAULT) const { return Get<double>("time", tag); }
+  double get_time(const Tag& tag = Tags::DEFAULT) const { return Get<double>("time", tag); }
   void set_time(const Tag& tag, double value) { Set("time", tag, "time", value); }
   void set_time(double value) { Set("time", Tags::DEFAULT, "time", value); }
 
@@ -513,7 +513,7 @@ class State {
   }
 
   // Position accessor and mutators.
-  int position() const { return Get<int>("position"); }
+  int get_position() const { return Get<int>("position"); }
   void set_position(int pos) { Set("position", Tags::DEFAULT, "position", pos); }
 
   // Utility for setting vis flags using blacklist and whitelist

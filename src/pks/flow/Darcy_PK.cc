@@ -248,7 +248,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   // Initialize miscalleneous defaults.
   // -- times
-  double t_ini = S->time(); 
+  double t_ini = S->get_time(); 
   dt_next_ = dt_;
   dt_desirable_ = dt_;  // The minimum desirable time step from now on.
   dt_history_.clear();
@@ -431,7 +431,7 @@ void Darcy_PK::InitializeStatistics_(bool init_darcy)
     VV_PrintSourceExtrema();
 
     *vo_->os() << vo_->color("green") << "Initialization of PK is complete, T=" 
-               << S_->time() << " dT=" << get_dt() << vo_->reset() << std::endl << std::endl;
+               << S_->get_time() << " dT=" << get_dt() << vo_->reset() << std::endl << std::endl;
   }
 
   if (dirichlet_bc_faces_ == 0 &&

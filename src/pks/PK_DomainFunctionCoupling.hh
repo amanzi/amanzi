@@ -205,7 +205,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
 {
   Errors::Message msg;
 
-  // compute reverse map: cannot move this to Init() due to lack 
+  // compute reverse map: should we move this to Init() ??? 
   mesh_out_ = S_->Get<CompositeVector>(field_out_key_).Mesh();
 
   if (submodel_ == "field" || submodel_ == "conserved quantity") {

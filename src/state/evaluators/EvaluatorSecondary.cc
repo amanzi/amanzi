@@ -73,8 +73,7 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
     auto deps = plist_.get<Teuchos::Array<std::string>>("dependencies");
 
     if (plist_.isParameter("dependency tags")) {
-      Teuchos::Array<std::string> tags =
-          plist_.get<Teuchos::Array<std::string>>("dependency tags");
+      auto tags = plist_.get<Teuchos::Array<std::string>>("dependency tags");
       if (deps.size() != tags.size()) {
         Errors::Message message;
         message << "EvaluatorSecondary: " << my_keys_[0].first
@@ -84,13 +83,44 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
 
       int i = 0;
       for (auto dep : deps) {
-        dependencies_.insert(std::make_pair(dep, make_tag(tags[i])));
+        dependencies_.insert(KeyTag(dep, make_tag(tags[i])));
         ++i;
       }
     } else if (plist_.get<bool>("dependency tags are my tag", false)) {
-      auto my_tag = my_keys_[0].second;
-      for (auto dep : deps) {
-        dependencies_.insert(std::make_pair(dep, my_tag));
+      auto my_tag = my_keys_.front().second;
+      for (const auto& dep : deps) {
+        dependencies_.insert(KeyTag(dep, my_tag));
+      }
+    } else {
+      Errors::Message message;
+      message << "EvalutorSecondary for " << my_keys_[0].first
+              << " was not provided its dependencies' tags.";
+      throw(message);
+    }
+
+  } else if (plist_.isParameter("dependency suffixes")) {
+    auto dep_suff = plist_.get<Teuchos::Array<std::string>>("dependency suffixes");
+    auto domain = Keys::getDomain(my_keys_.front().first);
+
+    if (plist_.isParameter("dependency tags")) {
+      auto tags = plist_.get<Teuchos::Array<std::string>>("dependency tags");
+      if (dep_suff.size() != tags.size()) {
+        Errors::Message message;
+        message << "EvaluatorSecondary: " << my_keys_[0].first
+                << " has dependency and tag lists of different sizes!";
+        throw(message);
+      }
+
+      int i = 0;
+      for (const auto& suffix : dep_suff) {
+        dependencies_.insert(KeyTag(Keys::getKey(domain, suffix),
+                make_tag(tags[i])));
+        ++i;
+      }
+    } else if (plist_.get<bool>("dependency tags are my tag", false)) {
+      const auto& my_tag = my_keys_[0].second;
+      for (const auto& suffix : dep_suff) {
+        dependencies_.insert(KeyTag(Keys::getKey(domain, suffix), my_tag));
       }
     } else {
       Errors::Message message;
@@ -274,7 +304,7 @@ std::string EvaluatorSecondary::WriteToString() const
 {
   std::stringstream result;
   for (const auto& key : my_keys_) {
-    result << key.first << ":" << key.second.get();
+    result << Keys::getKey(key.first, key.second);
   }
   result << std::endl << "  type: secondary" << std::endl;
   for (const auto& dep : dependencies_) {

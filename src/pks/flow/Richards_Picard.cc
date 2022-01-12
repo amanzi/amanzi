@@ -39,7 +39,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
   Epetra_MultiVector& pnew_cell = *solution_new.ViewComponent("cell");
 
   // update steady state boundary conditions
-  double time = S_->time();
+  double time = S_->get_time();
   for (int i = 0; i < bcs_.size(); i++) {
     bcs_[i]->Compute(time, time);
     bcs_[i]->ComputeSubmodel(mesh_);

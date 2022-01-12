@@ -241,7 +241,7 @@ SUITE(RESTART) {
         .ViewComponent("cell", false);
 
     // and compare with the original
-    CHECK_EQUAL(S0.time(), S1.time());
+    CHECK_EQUAL(S0.get_time(), S1.get_time());
     CHECK_EQUAL(s0p.MyLength(), s1p.MyLength());
 
     for (int i = 0; i < s1p.MyLength(); ++i) {

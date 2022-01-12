@@ -24,7 +24,7 @@ void PKUtils_CalculatePermeabilityFactorInWell(
 {
   if (!S->HasData("permeability")) return;
 
-  const CompositeVector& cv = S->GetW<CompositeVector>("permeability", "permeability");
+  const auto& cv = S->Get<CompositeVector>("permeability");
   cv.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& perm = *cv.ViewComponent("cell", true);
  

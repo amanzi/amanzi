@@ -306,7 +306,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   // Set initial values for transport variables.
   dt_ = dt_debug_ = t_physics_ = 0.0;
-  double time = S->time();
+  double time = S->get_time();
   if (time >= 0.0) t_physics_ = time;
 
   dispersion_preconditioner = "identity";

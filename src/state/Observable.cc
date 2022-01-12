@@ -177,7 +177,7 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
   // deal with the time integrated case for the first observation
   if (time_integrated_ && std::isnan(old_time_)) {
     for (int i=0; i!=get_num_vectors(); ++i) data[start_loc+i] = 0.;
-    old_time_ = S->time();
+    old_time_ = S->get_time();
     return;
   }
 
@@ -353,8 +353,8 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
   }
 
   if (time_integrated_) {
-    double dt = S->time() - old_time_;
-    old_time_ = S->time();
+    double dt = S->get_time() - old_time_;
+    old_time_ = S->get_time();
     for (int i=0; i!=get_num_vectors(); ++i) {
       data[start_loc+i] *= dt;
     }

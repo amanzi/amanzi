@@ -382,14 +382,10 @@ void State::Setup()
     }
   }
 
-  for (auto& deriv : derivs_) {
-    // Some PKs allows an evalutator to be either independent or secondary.
-    // auto type = GetEvaluator(deriv.first).get_type();
-    // if (type == EvaluatorType::SECONDARY || type == EvaluatorType::PRIMARY) {
-      deriv.second->CreateData();
-    // }
-  }
+  // -- Create data for all derivatives
+  for (auto& deriv : derivs_) deriv.second->CreateData();
 
+  // -- Write DAG to disk for visualization
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     WriteDependencyGraph();
     *vo_->os() << "Setup is complete.\n\n";

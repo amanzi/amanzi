@@ -421,7 +421,7 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
     op_bcs_.push_back(op_bc);
   }
 
-  double t_ini = S->time();
+  double t_ini = S->get_time();
   for (int i = 0; i < bcs_.size(); i++) {
     bcs_[i]->Compute(t_ini, t_ini);
     bcs_[i]->ComputeSubmodel(mesh_);
@@ -492,7 +492,7 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
                  << " entities" << std::endl;
     }
     *vo_->os() << vo_->color("green") << "Initialization of PK is complete, T=" 
-               << units_.OutputTime(S_->time()) << vo_->reset() << std::endl << std::endl;
+               << units_.OutputTime(S_->get_time()) << vo_->reset() << std::endl << std::endl;
   }
 }
 

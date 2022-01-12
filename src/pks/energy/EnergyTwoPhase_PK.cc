@@ -154,7 +154,7 @@ void EnergyTwoPhase_PK::Setup(const Teuchos::Ptr<State>& S)
 void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   // times, initialization could be done on any non-zero interval.
-  double t_old = S->time(); 
+  double t_old = S->get_time(); 
   dt_ = ti_list_->get<double>("initial time step", 1.0);
 
   // Call the base class initialize.
@@ -244,7 +244,7 @@ void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   // initialize boundary conditions
-  double t_ini = S->time(); 
+  double t_ini = S->get_time(); 
   auto temperature = S->GetW<CV_t>(temperature_key_, Tags::DEFAULT, passwd_);
   UpdateSourceBoundaryData(t_ini, t_ini, temperature);
 

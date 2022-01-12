@@ -210,7 +210,7 @@ void Chemistry_PK::Initialize(const Teuchos::Ptr<State>& S)
   InitializeField_(S, passwd_, alquimia_aux_data_key_, 0.0);
 
   // miscaleneous controls
-  initial_conditions_time_ = cp_list_->get<double>("initial conditions time", S->time());
+  initial_conditions_time_ = cp_list_->get<double>("initial conditions time", S->get_time());
 }
 
 
