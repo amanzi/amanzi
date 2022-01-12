@@ -362,7 +362,7 @@ void State::Setup()
     }
   }
 
-  // -- Create the data for all fields.
+  // Create the data for all fields.
   for (auto& r : data_) {
     r.second->CreateData();
 
@@ -382,8 +382,10 @@ void State::Setup()
     }
   }
 
-  // -- Create data for all derivatives
-  for (auto& deriv : derivs_) deriv.second->CreateData();
+  // Create the data for all derivatives
+  for (auto& deriv : derivs_) {
+    deriv.second->CreateData();
+  }
 
   // -- Write DAG to disk for visualization
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
