@@ -47,8 +47,8 @@ class Energy_PK : public PK_PhysicalBDF {
   virtual ~Energy_PK() {};
 
   // methods required by PK interface
-  virtual void Setup(const Teuchos::Ptr<State>& S) override;
-  virtual void Initialize(const Teuchos::Ptr<State>& S) override;
+  virtual void Setup() override;
+  virtual void Initialize() override;
   virtual std::string name() override { return passwd_; }
 
   // methods required for time integration

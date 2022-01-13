@@ -66,7 +66,7 @@ class TransportImplicit_PK : public Transport_PK,
 
   ~TransportImplicit_PK() {};
 
-  virtual void Initialize(const Teuchos::Ptr<State>& S) override;  
+  virtual void Initialize() override;  
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override ; 
 
   // methods required for time integration interface

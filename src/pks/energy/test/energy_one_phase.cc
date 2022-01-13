@@ -76,12 +76,12 @@ TEST(ENERGY_ONE_PHASE) {
   auto soln = Teuchos::rcp(new TreeVector());
   auto EPK = Teuchos::rcp(new EnergyOnePhase_PK(pk_tree, plist, S, soln));
 
-  EPK->Setup(S.ptr());
+  EPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
 
-  EPK->Initialize(S.ptr());
+  EPK->Initialize();
   S->CheckAllFieldsInitialized();
 
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("EnergyOnePhase", *plist));
@@ -113,7 +113,7 @@ TEST(ENERGY_ONE_PHASE) {
     itrs++;
   }
 
-  EPK->CommitStep(0.0, 1.0, S);
+  EPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
   WriteStateStatistics(*S, *vo);
 
   auto temp = *S->Get<CompositeVector>("temperature").ViewComponent("cell");

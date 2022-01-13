@@ -58,13 +58,13 @@ TEST(NAVIER_STOKES_2D) {
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<NavierStokes_PK> NSPK = Teuchos::rcp(new NavierStokes_PK(plist, "navier stokes", S, soln));
 
-  NSPK->Setup(S.ptr());
+  NSPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
 
   // initialize the Navier Stokes process kernel
-  NSPK->Initialize(S.ptr());
+  NSPK->Initialize();
   S->CheckAllFieldsInitialized();
  
   // solve the problem 
@@ -105,7 +105,7 @@ TEST(NAVIER_STOKES_2D) {
     pressure_eval->SetChanged();
 
     // commit step
-    NSPK->CommitStep(T - dT, T, S);
+    NSPK->CommitStep(T - dT, T, Tags::DEFAULT);
   }
 
   // initialize I/O

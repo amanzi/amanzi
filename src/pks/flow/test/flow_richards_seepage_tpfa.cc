@@ -70,7 +70,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Richards_PK* RPK = new Richards_PK(plist, "flow", S, soln);
 
-  RPK->Setup(S.ptr());
+  RPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -105,7 +105,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   }
 
   // create Richards process kernel
-  RPK->Initialize(S.ptr());
+  RPK->Initialize();
   S->CheckAllFieldsInitialized();
 
   // solve the steady-state problem
@@ -119,7 +119,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   RPK->set_dt(1.0);
   printf("time step = %12.4f\n", RPK->get_dt());
   printf("seepage face total = %12.4f\n", RPK->seepage_mass());
-  RPK->CommitStep(0.0, 1.0, S);  // dummy times for flow
+  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT);  // dummy times for flow
 
   const auto& ws = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
   if (MyPID == 0) {

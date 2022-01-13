@@ -56,8 +56,8 @@ class Flow_PK : public PK_PhysicalBDF {
   virtual ~Flow_PK() {};
 
   // members required by PK interface
-  virtual void Setup(const Teuchos::Ptr<State>& S) override;
-  virtual void Initialize(const Teuchos::Ptr<State>& S) override;
+  virtual void Setup() override;
+  virtual void Initialize() override;
 
   // other members of this PK.
   // -- initialize simple fields common for both flow models.

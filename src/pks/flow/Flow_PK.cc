@@ -55,7 +55,7 @@ Flow_PK::Flow_PK() : passwd_("flow") { vo_ = Teuchos::null; }
 /* ******************************************************************
 * Setup of static fields common for Darcy and Richards.
 ****************************************************************** */
-void Flow_PK::Setup(const Teuchos::Ptr<State>& S)
+void Flow_PK::Setup()
 {
   // Work flow can be affected by the list of models
   auto physical_models = Teuchos::sublist(fp_list_, "physical models and assumptions");
@@ -75,14 +75,14 @@ void Flow_PK::Setup(const Teuchos::Ptr<State>& S)
   aperture_key_ = Keys::getKey(domain_, "aperture"); 
 
   // -- constant fields
-  S->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
-  S->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
-  S->Require<AmanziGeometry::Point>("gravity", Tags::DEFAULT, "state");
+  S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
+  S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
+  S_->Require<AmanziGeometry::Point>("gravity", Tags::DEFAULT, "state");
 
   // -- effective fracture permeability
   if (flow_on_manifold_) {
-    if (!S->HasData(permeability_key_)) {
-      S->Require<CompositeVector, CompositeVectorSpace>(permeability_key_, Tags::DEFAULT, permeability_key_)
+    if (!S_->HasData(permeability_key_)) {
+      S_->Require<CompositeVector, CompositeVectorSpace>(permeability_key_, Tags::DEFAULT, permeability_key_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
       auto fpm_list = Teuchos::sublist(fp_list_, "fracture permeability models", true);
@@ -93,42 +93,42 @@ void Flow_PK::Setup(const Teuchos::Ptr<State>& S)
            .set<std::string>("aperture key", aperture_key_)
            .set<std::string>("tag", "");
       Teuchos::RCP<FracturePermModelEvaluator> eval = Teuchos::rcp(new FracturePermModelEvaluator(elist, fpm));
-      S->SetEvaluator(permeability_key_, eval);
+      S_->SetEvaluator(permeability_key_, eval);
     }
 
-    if (!S->HasData(aperture_key_)) {
-      S->Require<CompositeVector, CompositeVectorSpace>(aperture_key_, Tags::DEFAULT, aperture_key_)
+    if (!S_->HasData(aperture_key_)) {
+      S_->Require<CompositeVector, CompositeVectorSpace>(aperture_key_, Tags::DEFAULT, aperture_key_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
-      S->RequireEvaluator(aperture_key_);
+      S_->RequireEvaluator(aperture_key_);
     }
 
   // -- matrix absolute permeability
   } else {
-    if (!S->HasData(permeability_key_)) {
-      S->Require<CompositeVector, CompositeVectorSpace>(permeability_key_, Tags::DEFAULT, permeability_key_)
+    if (!S_->HasData(permeability_key_)) {
+      S_->Require<CompositeVector, CompositeVectorSpace>(permeability_key_, Tags::DEFAULT, permeability_key_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, dim);
     }
   }
 
   // -- darcy flux
-  if (!S->HasData(darcy_flux_key_)) {
+  if (!S_->HasData(darcy_flux_key_)) {
     if (flow_on_manifold_) {
       auto cvs = Operators::CreateNonManifoldCVS(mesh_);
-      *S->Require<CompositeVector, CompositeVectorSpace>(darcy_flux_key_, Tags::DEFAULT, passwd_)
+      *S_->Require<CompositeVector, CompositeVectorSpace>(darcy_flux_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(true) = *cvs;
     } else {
-      S->Require<CompositeVector, CompositeVectorSpace>(darcy_flux_key_, Tags::DEFAULT, passwd_)
+      S_->Require<CompositeVector, CompositeVectorSpace>(darcy_flux_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::FACE, 1);
     }
   }
 
-  if (!S->HasEvaluator(darcy_flux_key_, Tags::DEFAULT)) {
+  if (!S_->HasEvaluator(darcy_flux_key_, Tags::DEFAULT)) {
     AddDefaultPrimaryEvaluator_(darcy_flux_key_);
   }
 
   // Wells
-  if (!S->HasData("well_index")) {
+  if (!S_->HasData("well_index")) {
     if (fp_list_->isSublist("source terms")) {
       Teuchos::ParameterList& src_list = fp_list_->sublist("source terms");
       for (auto it = src_list.begin(); it != src_list.end(); ++it) {
@@ -136,7 +136,7 @@ void Flow_PK::Setup(const Teuchos::Ptr<State>& S)
         if (src_list.isSublist(name)) {
           Teuchos::ParameterList& spec = src_list.sublist(name);
           if (IsWellIndexRequire(spec)) {
-            S->Require<CompositeVector, CompositeVectorSpace>("well_index", Tags::DEFAULT, passwd_)
+            S_->Require<CompositeVector, CompositeVectorSpace>("well_index", Tags::DEFAULT, passwd_)
               .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
             peaceman_model_ = true;
             break;
@@ -151,7 +151,7 @@ void Flow_PK::Setup(const Teuchos::Ptr<State>& S)
 /* ******************************************************************
 * Initiazition of fundamental flow sturctures.
 ****************************************************************** */
-void Flow_PK::Initialize(const Teuchos::Ptr<State>& S)
+void Flow_PK::Initialize()
 {
   dt_ = 0.0;
 
@@ -168,9 +168,9 @@ void Flow_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Fundamental physical quantities
   // -- temporarily these quantities are constant
-  gravity_ = S->Get<AmanziGeometry::Point>("gravity");
+  gravity_ = S_->Get<AmanziGeometry::Point>("gravity");
   g_ = fabs(gravity_[dim - 1]);
-  rho_ = S->Get<double>("const_fluid_density");
+  rho_ = S_->Get<double>("const_fluid_density");
 
   // -- molar rescaling of some quantatities.
   molar_rho_ = rho_ / CommonDefs::MOLAR_MASS_H2O;
@@ -230,15 +230,15 @@ void Flow_PK::InitializeFields_()
         *vo_->os() << "initialized gravity to default value -9.8" << std::endl;  
   }
 
-  InitializeField_(S_.ptr(), porosity_key_, porosity_key_, 0.2);
+  InitializeField_(porosity_key_, Tags::DEFAULT, porosity_key_, 0.2);
 
-  InitializeField_(S_.ptr(), passwd_, specific_storage_key_, 0.0);
-  InitializeField_(S_.ptr(), passwd_, specific_yield_key_, 0.0);
+  InitializeField_(specific_storage_key_, Tags::DEFAULT, passwd_, 0.0);
+  InitializeField_(specific_yield_key_, Tags::DEFAULT, passwd_, 0.0);
 
-  InitializeField_(S_.ptr(), passwd_, hydraulic_head_key_, 0.0);
-  InitializeField_(S_.ptr(), passwd_, pressure_head_key_, 0.0);
+  InitializeField_(hydraulic_head_key_, Tags::DEFAULT, passwd_, 0.0);
+  InitializeField_(pressure_head_key_, Tags::DEFAULT, passwd_, 0.0);
 
-  InitializeField_(S_.ptr(), passwd_, darcy_flux_key_, 0.0);
+  InitializeField_(darcy_flux_key_, Tags::DEFAULT, passwd_, 0.0);
 }
 
 

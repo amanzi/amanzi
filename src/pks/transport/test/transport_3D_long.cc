@@ -76,7 +76,7 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
-  TPK.Setup(S.ptr());
+  TPK.Setup();
   TPK.CreateDefaultState(mesh, 1);
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -94,7 +94,7 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
   }
 
   /* initialize a transport process kernel */
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
 
   /* advance the transport state */
   int iter;
@@ -113,7 +113,7 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
     S->set_final_time(t_new);
 
     TPK.AdvanceStep(t_old, t_new);
-    TPK.CommitStep(t_old, t_new, S);
+    TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
     iter++;

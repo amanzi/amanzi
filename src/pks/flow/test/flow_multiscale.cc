@@ -68,7 +68,7 @@ TEST(FLOW_2D_MULTISCALE) {
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Richards_PK> RPK = Teuchos::rcp(new Richards_PK(plist, "flow", S, soln));
 
-  RPK->Setup(S.ptr());
+  RPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -83,7 +83,7 @@ TEST(FLOW_2D_MULTISCALE) {
   }
 
   // initialize the Richards process kernel
-  RPK->Initialize(S.ptr());
+  RPK->Initialize();
   S->CheckAllFieldsInitialized();
 
   // solve the problem 
@@ -94,7 +94,7 @@ TEST(FLOW_2D_MULTISCALE) {
   ti_specs.max_itrs = 1000;
 
   AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-  RPK->CommitStep(0.0, 1.0, S);  // dummy times
+  RPK->CommitStep(0.0, 1.0, Tags::DEFAULT);  // dummy times
 
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");

@@ -37,15 +37,15 @@ class TransportMatrixFractureImplicit_PK : public PK_MPCStrong<PK_BDF> {
 
   // PK methods
   // -- setup
-  virtual void Setup(const Teuchos::Ptr<State>& S);
-  virtual void Initialize(const Teuchos::Ptr<State>& S);
+  virtual void Setup() override;
+  virtual void Initialize() override;
 
   // -- advance each sub pk from t_old to t_new.
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) override;
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
 
   // miscaleneous methods
-  virtual std::string name() { return "coupled transport implicit"; } 
+  virtual std::string name() override { return "coupled transport implicit"; } 
 
  private:
   Teuchos::RCP<TreeVector> ExtractComponent_(

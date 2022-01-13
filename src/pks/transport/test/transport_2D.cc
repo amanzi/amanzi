@@ -80,7 +80,7 @@ std::cout << "Test: Advance on a 2D square mesh: limiter=" << limiter
         .set<std::string>("limiter", limiter)
         .set<std::string>("limiter stencil", stencil);
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
-  TPK.Setup(S.ptr());
+  TPK.Setup();
   TPK.CreateDefaultState(mesh, 2);
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -98,7 +98,7 @@ std::cout << "Test: Advance on a 2D square mesh: limiter=" << limiter
   }
 
   // initialize a transport process kernel from a transport state
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
 
   // advance the transport state 
   int iter;
@@ -123,7 +123,7 @@ std::cout << "Test: Advance on a 2D square mesh: limiter=" << limiter
     S->set_final_time(t_new);
 
     TPK.AdvanceStep(t_old, t_new);
-    TPK.CommitStep(t_old, t_new, S);
+    TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
     iter++;

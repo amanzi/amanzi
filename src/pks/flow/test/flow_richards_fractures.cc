@@ -72,14 +72,14 @@ TEST(RICHARDS_TWO_FRACTURES) {
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Richards_PK> RPK = Teuchos::rcp(new Richards_PK(plist, "flow", S, soln));
-  RPK->Setup(S.ptr());
+  RPK->Setup();
 
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
 
   // initialize the Darcy process kernel
-  RPK->Initialize(S.ptr());
+  RPK->Initialize();
   S->CheckAllFieldsInitialized();
 
   // transient solution
@@ -88,7 +88,7 @@ TEST(RICHARDS_TWO_FRACTURES) {
     t_new = t_old + dt;
 
     RPK->AdvanceStep(t_old, t_new);
-    RPK->CommitStep(t_old, t_new, S);
+    RPK->CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
   }

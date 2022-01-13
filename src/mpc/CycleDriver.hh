@@ -53,7 +53,7 @@ class CycleDriver {
   void Finalize();
   void ReportMemory();
   double Advance(double dt);
-  void Visualize(bool force = false, const std::string& tag = "");
+  void Visualize(bool force = false, const Tag& tag = Tags::DEFAULT);
   void Observations(bool force = false, bool integrate = false);
   void WriteCheckpoint(double dt, bool force = false);
   void WriteWalkabout(bool force);

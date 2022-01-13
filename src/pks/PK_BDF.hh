@@ -24,7 +24,7 @@
 #include "PDE_HelperDiscretization.hh"
 #include "EvaluatorPrimary.hh"
 
-#include "PK.hh"
+#include "PK_Physical.hh"
 
 namespace Amanzi {
 

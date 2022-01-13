@@ -77,7 +77,7 @@ TEST(DARCY_TWO_FRACTURES) {
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
-  DPK->Setup(S.ptr());
+  DPK->Setup();
 
   S->Setup();
   S->InitializeFields();
@@ -98,7 +98,7 @@ TEST(DARCY_TWO_FRACTURES) {
   S->GetRecordW("pressure", "flow").set_initialized();
 
   // initialize the Darcy process kernel
-  DPK->Initialize(S.ptr());
+  DPK->Initialize();
   S->CheckAllFieldsInitialized();
 
   // transient solution
@@ -107,7 +107,7 @@ TEST(DARCY_TWO_FRACTURES) {
     t_new = t_old + dt;
 
     DPK->AdvanceStep(t_old, t_new);
-    DPK->CommitStep(t_old, t_new, S);
+    DPK->CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
   }

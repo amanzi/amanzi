@@ -74,7 +74,7 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   TransportImplicit_PK TPK(pk_tree, plist, S, soln);
 
-  TPK.Setup(S.ptr());
+  TPK.Setup();
   TPK.CreateDefaultState(mesh, 2);
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -93,14 +93,14 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
   }
 
   // initialize a transport process kernel
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
 
   // advance the state
   double t_old(0.0), t_new, dt;
   dt = 0.01;
   t_new = t_old + dt;
   TPK.AdvanceStep(t_old, t_new);
-  TPK.CommitStep(t_old, t_new, S);
+  TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
   
   //printing cell concentration
   auto tcc = S->GetW<CompositeVector>("total_component_concentration", passwd).ViewComponent("cell");
@@ -109,7 +109,7 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
     t_new = t_old + dt;
     
     TPK.AdvanceStep(t_old, t_new);
-    TPK.CommitStep(t_old, t_new, S);
+    TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
     
     t_old = t_new;
  

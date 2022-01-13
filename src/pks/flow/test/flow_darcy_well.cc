@@ -80,7 +80,7 @@ void RunTestDarcyWell(std::string controller, bool fit) {
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
-  DPK->Setup(S.ptr());
+  DPK->Setup();
   S->Setup();
   S->InitializeFields();
 
@@ -120,7 +120,7 @@ void RunTestDarcyWell(std::string controller, bool fit) {
   S->GetRecordW("specific_storage", "flow").set_initialized();
 
   // initialize the Darcy process kernel
-  DPK->Initialize(S.ptr());
+  DPK->Initialize();
 
   std::string filename = controller.replace(controller.size()-4, 4, "_flow2D.gmv");
 
@@ -130,7 +130,7 @@ void RunTestDarcyWell(std::string controller, bool fit) {
     t_new = t_old + dt;
 
     DPK->AdvanceStep(t_old, t_new);
-    DPK->CommitStep(t_old, t_new, S);
+    DPK->CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
 
@@ -212,7 +212,7 @@ void Run_3D_DarcyWell(std::string controller) {
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
-  DPK->Setup(S.ptr());
+  DPK->Setup();
   S->Setup();
   S->InitializeFields();
 
@@ -240,7 +240,7 @@ void Run_3D_DarcyWell(std::string controller) {
   S->GetRecordW("specific_storage", "flow").set_initialized();
 
   // initialize the Darcy process kernel
-  DPK->Initialize(S.ptr());
+  DPK->Initialize();
 
   std::string filename = controller.replace(controller.size()-4, 4, "_flow3D.gmv");
 
@@ -250,7 +250,7 @@ void Run_3D_DarcyWell(std::string controller) {
     t_new = t_old + dt;
 
     DPK->AdvanceStep(t_old, t_new);
-    DPK->CommitStep(t_old, t_new, S);
+    DPK->CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
 
@@ -309,7 +309,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
-  DPK->Setup(S.ptr());
+  DPK->Setup();
   S->Setup();
   S->InitializeFields();
 
@@ -340,7 +340,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
   S->GetRecordW("porosity", "porosity").set_initialized();
 
   // initialize the Darcy process kernel
-  DPK->Initialize(S.ptr());
+  DPK->Initialize();
 
   //std::string filename = controller.replace(controller.size()-4, 4, "_flow3D.gmv");
   std::string filename = "flow_darcy_well_peaceman_3D.gmv";

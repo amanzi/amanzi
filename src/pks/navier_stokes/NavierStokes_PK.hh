@@ -56,15 +56,15 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   ~NavierStokes_PK() {};
 
   // methods required for PK interface
-  virtual void Setup(const Teuchos::Ptr<State>& S);
-  virtual void Initialize(const Teuchos::Ptr<State>& S);
+  virtual void Setup() final;
+  virtual void Initialize() final;
 
-  virtual double get_dt() { return dt_; }
-  virtual void set_dt(double dt) { dt_ = dt; dt_desirable_ = dt_; }
+  virtual double get_dt() final { return dt_; }
+  virtual void set_dt(double dt) final { dt_ = dt; dt_desirable_ = dt_; }
 
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
-  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) {};
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) final;
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) final;
+  virtual void CalculateDiagnostics(const Tag& tag) final {};
 
   virtual std::string name() { return passwd_; }
 

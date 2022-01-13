@@ -48,13 +48,13 @@ double SurfaceSubsurface_PK::get_dt()
 // -----------------------------------------------------------------------------
 // Initialize
 // -----------------------------------------------------------------------------
-void SurfaceSubsurface_PK::Initialize(const Teuchos::Ptr<State>& S)
+void SurfaceSubsurface_PK::Initialize()
 {
   int nsurf_nodes = mesh_surface_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
   int nsurf_cells = mesh_surface_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   
-  auto& B_n = *S->GetW<CompositeVector>("surface-bathymetry", "state").ViewComponent("node");
-  auto& B_c = *S->GetW<CompositeVector>("surface-bathymetry", "state").ViewComponent("cell");
+  auto& B_n = *S_->GetW<CompositeVector>("surface-bathymetry", "state").ViewComponent("node");
+  auto& B_c = *S_->GetW<CompositeVector>("surface-bathymetry", "state").ViewComponent("cell");
   
   // Bathymetry node values
   AmanziGeometry::Point node_crd;
@@ -76,9 +76,9 @@ void SurfaceSubsurface_PK::Initialize(const Teuchos::Ptr<State>& S)
     B_c[0][c] = xf[2]; // z value of the surface
   }
   
-  S->GetRecordW("surface-bathymetry", "state").set_initialized();
+  S_->GetRecordW("surface-bathymetry", "state").set_initialized();
   
-  PK_MPC<PK>::Initialize(S);
+  PK_MPC<PK>::Initialize();
 }
 
 
@@ -94,8 +94,8 @@ void SurfaceSubsurface_PK::set_dt(double dt) {
 // -----------------------------------------------------------------------------
 // Make necessary operatios by the end of the time steps.
 // -----------------------------------------------------------------------------
-void SurfaceSubsurface_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
-  sub_pks_[slave_]->CommitStep(t_old, t_new, S);
+void SurfaceSubsurface_PK::CommitStep(double t_old, double t_new, const Tag& tag) {
+  sub_pks_[slave_]->CommitStep(t_old, t_new, tag);
 }
 
 
@@ -112,7 +112,7 @@ bool SurfaceSubsurface_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   master_dt_ = t_new - t_old;
 
-  sub_pks_[master_]->CommitStep(t_old, t_new, S_);
+  sub_pks_[master_]->CommitStep(t_old, t_new, Tags::DEFAULT);
 
   slave_dt_ = sub_pks_[slave_]->get_dt();
 
@@ -141,7 +141,7 @@ bool SurfaceSubsurface_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     } else {
       // if success, commit the state and increment to next intermediate
       S_->set_intermediate_time(t_old + dt_done + dt_next);
-      sub_pks_[slave_]->CommitStep(t_old + dt_done, t_old + dt_done + dt_next, S_);
+      sub_pks_[slave_]->CommitStep(t_old + dt_done, t_old + dt_done + dt_next, Tags::DEFAULT);
 
       dt_done += dt_next;
       nsubcycles++;

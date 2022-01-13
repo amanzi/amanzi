@@ -42,26 +42,26 @@ TransportMatrixFracture_PK::TransportMatrixFracture_PK(Teuchos::ParameterList& p
 /* ******************************************************************* 
 * Physics-based setup of PK.
 ******************************************************************* */
-void TransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
+void TransportMatrixFracture_PK::Setup()
 {
-  mesh_domain_ = S->GetMesh();
-  mesh_fracture_ = S->GetMesh("fracture");
+  mesh_domain_ = S_->GetMesh();
+  mesh_fracture_ = S_->GetMesh("fracture");
 
   // darcy fluxes use non-uniform distribution of DOFs
   // -- darcy flux for matrix
-  if (!S->HasData("darcy_flux")) {
+  if (!S_->HasData("darcy_flux")) {
     auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
-    S->Require<CV_t, CVS_t>("darcy_flux", Tags::DEFAULT, "transport")
+    S_->Require<CV_t, CVS_t>("darcy_flux", Tags::DEFAULT, "transport")
       .SetMesh(mesh_domain_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
   }
 
   // -- darcy flux for fracture
-  if (!S->HasData("fracture-darcy_flux")) {
+  if (!S_->HasData("fracture-darcy_flux")) {
     auto cvs = Operators::CreateNonManifoldCVS(mesh_fracture_);
-    *S->Require<CV_t, CVS_t>("fracture-darcy_flux", Tags::DEFAULT, "transport")
+    *S_->Require<CV_t, CVS_t>("fracture-darcy_flux", Tags::DEFAULT, "transport")
       .SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs;
   }
 
@@ -96,7 +96,7 @@ void TransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
          .set<std::string>("flux key", "darcy_flux");
 
   // setup the sub-PKs
-  PK_MPCWeak::Setup(S);
+  PK_MPCWeak::Setup();
 }
 
 

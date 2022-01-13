@@ -71,7 +71,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
-  DPK->Setup(S.ptr());
+  DPK->Setup();
   std::cout << "Owner of " << S->GetRecord("permeability").fieldname() 
             << " is " << S->GetRecord("permeability").owner() << "\n";
 
@@ -122,7 +122,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   S->GetRecordW("pressure", "flow").set_initialized();
 
   // initialize the Darcy process kernel
-  DPK->Initialize(S.ptr());
+  DPK->Initialize();
   S->CheckAllFieldsInitialized();
 
   // transient solution
@@ -131,7 +131,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
     t_new = t_old + dt;
 
     DPK->AdvanceStep(t_old, t_new);
-    DPK->CommitStep(t_old, t_new, S);
+    DPK->CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
 
@@ -184,7 +184,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
-  DPK->Setup(S.ptr());
+  DPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -225,7 +225,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
   }
 
   // initialize the Darcy process kernel
-  DPK->Initialize(S.ptr());
+  DPK->Initialize();
   S->CheckAllFieldsInitialized();
 
   // transient solution
@@ -234,7 +234,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
     t_new = t_old + dt;
 
     DPK->AdvanceStep(t_old, t_new);
-    DPK->CommitStep(t_old, t_new, S);
+    DPK->CommitStep(t_old, t_new, Tags::DEFAULT);
 
     if (MyPID == 0) {
       GMV::open_data_file(*mesh, (std::string)"flow.gmv");

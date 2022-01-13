@@ -25,34 +25,30 @@ class Dummy_PK : public PK_PhysicalBDF {
                       const Teuchos::RCP<TreeVector>& soln);
 
   // Setup
-  virtual void Setup(const Teuchos::Ptr<State>& S) {dummy_dt = 1000; step_count = 1;}
+  virtual void Setup() { dummy_dt = 1000; step_count = 1; }
 
   // Initialize owned (dependent) variables.
-  virtual void Initialize(const Teuchos::Ptr<State>& S) {}
+  virtual void Initialize() {};
   
   // Choose a time step compatible with physics.
-  virtual double get_dt() {
-    return dummy_dt;
-  }
-
-  virtual void set_dt(double dt) {
-    dummy_dt = dt;
-  };
+  virtual double get_dt() { return dummy_dt; }
+  virtual void set_dt(double dt) { dummy_dt = dt; };
 
   // Advance PK by step size dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
 
   // Commit any secondary (dependent) variables.
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {};
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) {};
 
   // Calculate any diagnostics prior to doing vis
-  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) {};
+  virtual void CalculateDiagnostics(const Tag& tag) {};
 
   virtual std::string name() { return "dummy_pk"; }
 
   // Time integration interface
   // computes the non-linear functional f = f(t,u,udot)
-  virtual void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+  virtual
+  void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                           Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) {};
 
   // applies preconditioner to u and returns the result in Pu

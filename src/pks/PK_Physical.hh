@@ -55,7 +55,8 @@ class PK_Physical : virtual public PK {
 
  protected:
   // Helper method to add a primary variable evaluator
-  void AddDefaultPrimaryEvaluator_(const Tag& tag = Tags::DEFAULT);
+  void AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag = Tags::DEFAULT);
+  void AddDefaultPrimaryEvaluator_(const Tag& tag = Tags::DEFAULT) { AddDefaultPrimaryEvaluator_(key_, tag); }
 
   // Helper method to initialize a CV field
   void InitializeField_(const Key& key, const Tag& tag, const Key& passwd,

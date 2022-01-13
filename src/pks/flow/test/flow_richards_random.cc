@@ -82,13 +82,13 @@ void RunTestConvergence(std::string input_xml) {
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
     Richards_PK* RPK = new Richards_PK(plist, "flow", S, soln);
 
-    RPK->Setup(S.ptr());
+    RPK->Setup();
     S->Setup();
     S->InitializeFields();
     S->InitializeEvaluators();
 
     // create Richards process kernel
-    RPK->Initialize(S.ptr());
+    RPK->Initialize();
     S->CheckAllFieldsInitialized();
 
     // solver the problem
@@ -99,7 +99,7 @@ void RunTestConvergence(std::string input_xml) {
     ti_specs.max_itrs = 2000;
 
     AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-    RPK->CommitStep(0.0, 1.0, S);
+    RPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
 
     S->Get<CompositeVector>("darcy_flux").ScatterMasterToGhosted("face");
     const auto& p = *S->Get<CompositeVector>("pressure").ViewComponent("cell");

@@ -130,9 +130,8 @@ Amanzi_PK::~Amanzi_PK() {
 /* ******************************************************************
 * Register fields and evaluators with the State
 ******************************************************************* */
-void Amanzi_PK::Setup(const Teuchos::Ptr<State>& S)
-{
-  Chemistry_PK::Setup(S);
+void Amanzi_PK::Setup() {
+  Chemistry_PK::Setup();
 }
 
 
@@ -159,14 +158,14 @@ void Amanzi_PK::AllocateAdditionalChemistryStorage_()
 /* *******************************************************************
 * Initialization
 ******************************************************************* */
-void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
+void Amanzi_PK::Initialize()
 {
   ncells_owned_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   // initialization using base class
-  Chemistry_PK::Initialize(S);
+  Chemistry_PK::Initialize();
 
-  auto tcc = S->GetPtrW<CompositeVector>(tcc_key_, Tags::DEFAULT, passwd_)->ViewComponent("cell", true);
+  auto tcc = S_->GetPtrW<CompositeVector>(tcc_key_, Tags::DEFAULT, passwd_)->ViewComponent("cell", true);
 
   XMLParameters();
 
@@ -204,9 +203,9 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // copy the cell data into the beaker storage for initialization purposes
   // but first ensure dependencies are filled
-  S->GetEvaluator(poro_key_).Update(*S_, name_);
-  S->GetEvaluator(fluid_den_key_).Update(*S_, name_);
-  S->GetEvaluator(saturation_key_).Update(*S_, name_);
+  S_->GetEvaluator(poro_key_).Update(*S_, name_);
+  S_->GetEvaluator(fluid_den_key_).Update(*S_, name_);
+  S_->GetEvaluator(saturation_key_).Update(*S_, name_);
 
   // finish setting up & testing the chemistry object
   int ierr(0);
@@ -244,7 +243,7 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
   // compute the equilibrium state
   int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   ierr = 0;
-  if (fabs(initial_conditions_time_ - S->get_time()) <= 1e-8 * fabs(S->get_time())) {
+  if (fabs(initial_conditions_time_ - S_->get_time()) <= 1e-8 * fabs(S_->get_time())) {
     for (int c = 0; c < num_cells; ++c) {
       CopyCellStateToBeakerState(c, tcc);
 
@@ -261,7 +260,7 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
   } else {
     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "no data initialization due to time mismatch: " << S->get_time() << std::endl;
+      *vo_->os() << "no data initialization due to time mismatch: " << S_->get_time() << std::endl;
     }
   }
 
@@ -271,7 +270,7 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << vo_->color("green") << "Initialization of PK was successful, T=" 
-        << S->get_time() << vo_->reset() << std::endl << std::endl;
+        << S_->get_time() << vo_->reset() << std::endl << std::endl;
   }
 }
 
@@ -686,7 +685,7 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 * that it has accepted the state update, thus, the PK should update
 * possible auxilary state variables here
 ******************************************************************* */
-void Amanzi_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
+void Amanzi_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
   saved_time_ = t_new;
 

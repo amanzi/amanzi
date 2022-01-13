@@ -264,16 +264,24 @@ bool matchesDomainSet(const Key& domain_set, const Key& name)
 // tags
 Key getKey(const Key& var, const Tag& tag)
 {
-  return merge(var, tag.get(), tag_delimiter);
+  if (tag.get() == "")
+    return var;
+  else
+    return merge(var, tag.get(), tag_delimiter);
 }
+
 Key getKey(const KeyTag& var_tag)
 {
   return getKey(var_tag.first, var_tag.second);
 }
 
-KeyTag splitKeyTag(const Key& name) {
-  auto pair = split(name, tag_delimiter);
-  return std::make_pair(pair.first, Tag(pair.second));
+KeyTag splitKeyTag(const Key& name)
+{
+  std::size_t pos = name.find(tag_delimiter);
+  if (pos == std::string::npos)
+    return std::make_pair(name, Tag(""));
+  else
+    return std::make_pair(name.substr(0,pos), Tag(name.substr(pos+1,name.size())));
 }
 
 // Derivatives are of the form dKey|dKey.

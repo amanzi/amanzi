@@ -57,42 +57,42 @@ TransportMatrixFractureImplicit_PK::TransportMatrixFractureImplicit_PK(
 /* *******************************************************************
 * Physics-based setup of PK.
 ******************************************************************* */
-void TransportMatrixFractureImplicit_PK::Setup(const Teuchos::Ptr<State>& S)
+void TransportMatrixFractureImplicit_PK::Setup()
 {
-  mesh_domain_ = S->GetMesh();
-  mesh_fracture_ = S->GetMesh("fracture");
+  mesh_domain_ = S_->GetMesh();
+  mesh_fracture_ = S_->GetMesh("fracture");
 
   // primary and secondary fields for matrix affected by non-uniform
   // distribution of DOFs
 
   // -- darcy flux in matrix
-  if (!S->HasData("darcy_flux")) {
+  if (!S_->HasData("darcy_flux")) {
     auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
-    S->Require<CV_t, CVS_t>("darcy_flux", Tags::DEFAULT, "state")
+    S_->Require<CV_t, CVS_t>("darcy_flux", Tags::DEFAULT, "state")
       .SetMesh(mesh_domain_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
   }
 
   // -- darcy flux in fracture
-  if (!S->HasData("fracture-darcy_flux")) {
+  if (!S_->HasData("fracture-darcy_flux")) {
     auto cvs = Operators::CreateNonManifoldCVS(mesh_fracture_);
-    *S->Require<CV_t, CVS_t>("fracture-darcy_flux", Tags::DEFAULT, "state")
+    *S_->Require<CV_t, CVS_t>("fracture-darcy_flux", Tags::DEFAULT, "state")
       .SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs;
   }
 
   // process other PKs
-  PK_MPCStrong<PK_BDF>::Setup(S);
+  PK_MPCStrong<PK_BDF>::Setup();
 }
 
 
 /* *******************************************************************
 * Initialization creates a tree operator to assemble global matrix
 ******************************************************************* */
-void TransportMatrixFractureImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
+void TransportMatrixFractureImplicit_PK::Initialize()
 {
-  PK_MPCStrong<PK_BDF>::Initialize(S);
+  PK_MPCStrong<PK_BDF>::Initialize();
 
   // set a huge time step that will be limited by advance step
   set_dt(1e+98);
@@ -336,10 +336,10 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
 * Spezialized implementation of implicit transport
 ****************************************************************** */
 void TransportMatrixFractureImplicit_PK::CommitStep(
-    double t_old, double t_new, const Teuchos::RCP<State>& S)
+    double t_old, double t_new, const Tag& tag)
 {
-  S->GetW<CV_t>("total_component_concentration", "state") = *my_solution_->SubVector(0)->Data();
-  S->GetW<CV_t>("fracture-total_component_concentration", "state") = *my_solution_->SubVector(1)->Data();
+  S_->GetW<CV_t>("total_component_concentration", "state") = *my_solution_->SubVector(0)->Data();
+  S_->GetW<CV_t>("fracture-total_component_concentration", "state") = *my_solution_->SubVector(1)->Data();
 }
 
 

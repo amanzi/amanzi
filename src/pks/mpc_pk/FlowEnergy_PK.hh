@@ -33,8 +33,8 @@ class FlowEnergy_PK : public PK_MPCStrong<PK_BDF> {
                 const Teuchos::RCP<TreeVector>& soln);
 
   // PK methods
-  virtual void Setup(const Teuchos::Ptr<State>& S) override;
-  virtual void Initialize(const Teuchos::Ptr<State>& S) override;  
+  virtual void Setup() override;
+  virtual void Initialize() override;  
 
   // -- dt is the minimum of the sub pks
   // virtual double get_dt();

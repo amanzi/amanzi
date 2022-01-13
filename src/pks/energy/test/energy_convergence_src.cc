@@ -148,12 +148,12 @@ TEST(ENERGY_CONVERGENCE_SRC) {
     auto enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
     S->SetEvaluator("enthalpy", enthalpy);
 
-    EPK->Setup(S.ptr());
+    EPK->Setup();
     S->Setup();
     S->InitializeFields();
     S->InitializeEvaluators();
 
-    EPK->Initialize(S.ptr());
+    EPK->Initialize();
     S->CheckAllFieldsInitialized();
        
     // constant time stepping 
@@ -182,7 +182,7 @@ TEST(ENERGY_CONVERGENCE_SRC) {
       itrs++;
     }
 
-    EPK->CommitStep(0.0, 1.0, S);
+    EPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
 
     
     // calculate errors
@@ -197,7 +197,7 @@ TEST(ENERGY_CONVERGENCE_SRC) {
 
     printf("mesh=%d bdf1_steps=%3d  L2_temp_err=%7.3e L2_temp=%7.3e\n", n, itrs, l2_err, l2_norm);
     CHECK(l2_err < 8e-1);
-    //WriteStateStatistics(S.ptr(), vo_);
+    //WriteStateStatistics(*S, *vo_);
     
     // save solution
     GMV::open_data_file(*mesh, (std::string)"energy.gmv");
