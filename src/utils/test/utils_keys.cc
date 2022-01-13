@@ -136,6 +136,12 @@ TEST(KEY_OPERATIONS) {
 
   CHECK_EQUAL("dwater_content|dpressure", getDerivKey("water_content", "pressure"));
   CHECK_EQUAL("dsurface-water_content|dpressure", getDerivKey("surface-water_content", "pressure"));
+
+  {
+    CHECK_EQUAL("density", splitKeyTag("density@pressure").first);
+    CHECK_EQUAL("pressure", splitKeyTag("density@pressure").second.get());
+    CHECK_EQUAL("density@pressure", getKey("density", Tag("pressure")));
+  }
 }
 
 
