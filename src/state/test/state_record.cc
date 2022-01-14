@@ -33,7 +33,7 @@ TEST(FIELD_MAKE_NULLFACTORY) { auto f = getRecordDouble(); }
 
 TEST(FIELD_SET_NULLFACTORY) {
   auto f = getRecordDouble();
-  f->Set("my_owner", 1.1);
+  f->Assign("my_owner", 1.1);
   CHECK_EQUAL(1.1, f->Get<double>());
 }
 
@@ -61,12 +61,12 @@ TEST(FIELD_SET_TWICE_OK) {
 
 TEST(FIELD_THROWS_ON_BAD_OWNER) {
   auto f = getRecordDouble();
-  CHECK_THROW(f->Set("not_my_owner", 1.1), Errors::Message);
+  CHECK_THROW(f->Assign("not_my_owner", 1.1), Errors::Message);
 }
 
 TEST(FIELD_THROWS_ON_BAD_TYPE) {
   auto f = getRecordDouble();
-  f->Set("my_owner", 1.1);
+  f->Assign("my_owner", 1.1);
   CHECK_THROW(f->Get<bool>(), Errors::Message);
 }
 
@@ -76,9 +76,9 @@ TEST(FIELD_COPY) {
   f->RequireRecord(tag, "my_other_owner");
   f->CreateData();
 
-  f->Set("my_owner", 1.1);
+  f->Assign("my_owner", 1.1);
   CHECK_EQUAL(1.1, f->Get<double>());
-  f->Set(tag, "my_other_owner", 2.1);
+  f->Assign(tag, "my_other_owner", 2.1);
   CHECK_EQUAL(1.1, f->Get<double>());
   CHECK_EQUAL(2.1, f->Get<double>(tag));
 }
@@ -87,11 +87,11 @@ TEST(FIELD_COPY) {
 //   auto f1 = getRecordDouble()->GetRecord("");
 //   auto f2 = getRecordDouble()->GetRecord("");
 
-//   f2.Set("my_owner", 0.0);
-//   f1.Set("my_owner", 1.1);
+//   f2.Assign("my_owner", 0.0);
+//   f1.Assign("my_owner", 1.1);
 
 //   f2.SetFromOther("my_owner", f1);
-//   f1.Set("my_owner", 2.1);
+//   f1.Assign("my_owner", 2.1);
 
 //   CHECK_EQUAL(1.1, f2.Get<double>());
 //   CHECK_EQUAL(2.1, f1.Get<double>());

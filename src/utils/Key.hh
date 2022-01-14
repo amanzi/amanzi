@@ -112,7 +112,7 @@ KeyPair split(const Key& name, const char& delimiter);
 
 template<class Container, class Key>
 bool hasKey(const Container& c, const Key& key) {
-  return c.count(key);
+  return (bool) c.count(key);
 }
 
 //

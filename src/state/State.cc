@@ -69,6 +69,24 @@ void State::RegisterMesh(const Key& key,
 };
 
 
+void State::AliasMesh(const Key& target, const Key& alias) {
+  bool deformable = IsDeformableMesh(target);
+  Teuchos::RCP<AmanziMesh::Mesh> mesh = GetMesh_(target);
+  RegisterMesh(alias, mesh, deformable);
+  mesh_aliases_[alias] = target;
+
+  if (GetMesh_(target+"_3d") != Teuchos::null) {
+    RegisterMesh(alias+"_3d", GetMesh_(target+"_3d"), deformable);
+    mesh_aliases_[alias+"_3d"] = target+"_3d";
+  }
+};
+
+
+bool State::IsAliasedMesh(const Key& key) const {
+  return Keys::hasKey(mesh_aliases_, key);
+}
+
+
 Teuchos::RCP<const AmanziMesh::Mesh> State::GetMesh(const Key& key) const
 {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh;
@@ -174,7 +192,7 @@ Evaluator& State::RequireEvaluator(const Key& key, const Tag& tag)
     if (Keys::hasKey(e.second, tag) &&
         e.second.at(tag)->ProvidesKey(key, tag)) {
       auto& evaluator = e.second.at(tag);
-      SetEvaluator(key, evaluator);
+      SetEvaluator(key, tag, evaluator);
       return *evaluator;
     }
   }
@@ -208,6 +226,13 @@ Evaluator& State::RequireEvaluator(const Key& key, const Tag& tag)
     auto evaluator = evaluator_factory.createEvaluator(sublist);
     SetEvaluator(key, tag, evaluator);
     return *evaluator;
+  }
+
+  // is it cell volume?
+  if (Keys::getVarName(key) == "cell_volume") {
+    Teuchos::ParameterList& cv_list = GetEvaluatorList(key);
+    cv_list.set("evaluator type", "cell volume");
+    return RequireEvaluator(key, tag);
   }
 
   // cannot find the evaluator, error
@@ -275,7 +300,7 @@ void State::WriteDependencyGraph() const
                << "------------------------------------------" << std::endl;
     for (auto& e : evaluators_) {
       for (auto& r : e.second) *vo_->os() << *r.second;
-      if (GetRecord(e.first).ValidType<CompositeVector>()) {
+      if (GetRecord(e.first, e.second.begin()->first).ValidType<CompositeVector>()) {
         Teuchos::OSTab tab1 = vo_->getOSTab();
         Teuchos::OSTab tab2 = vo_->getOSTab();
         data_.at(e.first)->GetFactory<CompositeVector, CompositeVectorSpace>().Print(*vo_->os());
@@ -288,12 +313,13 @@ void State::WriteDependencyGraph() const
                << "------------------------------" << std::endl;
     for (auto& e : derivs_) {
       *vo_->os() << "D" << e.first << "/D{ ";
-      for (const auto& tag : *e.second) *vo_->os() << tag.first.get() << " ";
+      for (const auto& wrt : *e.second) *vo_->os() << wrt.first.get() << " ";
       *vo_->os() << "}" << std::endl;
-      if (GetRecord(e.first).ValidType<CompositeVector>()) {
+      auto wrt_tag = e.second->begin();
+      if (e.second->GetRecord(wrt_tag->first).ValidType<CompositeVector>()) {
         Teuchos::OSTab tab1 = vo_->getOSTab();
         Teuchos::OSTab tab2 = vo_->getOSTab();
-        derivs_.at(e.first)->GetFactory<CompositeVector, CompositeVectorSpace>().Print(*vo_->os());
+        e.second->GetFactory<CompositeVector, CompositeVectorSpace>().Print(*vo_->os());
         *vo_->os() << std::endl;
       }
     }
@@ -328,8 +354,8 @@ void State::Setup()
   Require<int>("cycle", Tags::NEXT, "cycle");
   GetRecordSetW("cycle").initializeTags();
 
-  Require<double>("dt", Tags::DEFAULT, "coordinator");
-  GetRecordW("dt", Tags::DEFAULT, "coordinator").set_initialized();
+  Require<double>("dt", Tags::DEFAULT, "dt");
+  GetRecordW("dt", Tags::DEFAULT, "dt").set_initialized();
 
   Require<int>("position", Tags::DEFAULT, "position");
   GetRecordSetW("position").initializeTags();
@@ -399,10 +425,13 @@ void State::Initialize()
 {
   // Set metadata
   GetW<int>("cycle", Tags::DEFAULT, "cycle") = 0;
-  data_.at("cycle")->initializeTags();
+  GetRecordSetW("cycle").initializeTags();
 
   GetW<double>("time", Tags::DEFAULT, "time") = 0.0;
-  data_.at("time")->initializeTags();
+  GetRecordSetW("time").initializeTags();
+
+  GetW<double>("dt", Tags::DEFAULT, "dt") = 0.;
+  GetRecordSetW("dt").initializeTags();
 
   // Initialize data from initial conditions.
   InitializeFields();
@@ -418,7 +447,7 @@ void State::Initialize()
 }
 
 
-void State::Initialize(Teuchos::RCP<State> S)
+void State::Initialize(const State& other)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
@@ -427,28 +456,13 @@ void State::Initialize(Teuchos::RCP<State> S)
   }
 
   for (auto& e : data_) {
-    if (S->HasData(e.first)) {
+    if (other.HasData(e.first)) {
       auto owner = GetRecord(e.first).owner();
       auto& field = GetRecordW(e.first, owner);
-      const auto& copy = S->GetRecord(e.first);
+      const auto& copy = other.GetRecord(e.first);
 
       if (copy.initialized()) {
-        if (field.ValidType<double>()) {
-          field.Set<double>(owner, copy.Get<double>());
-        } else if (field.ValidType<int>()) {
-          field.Set<int>(owner, copy.Get<int>());
-        } else if (field.ValidType<std::vector<double> >()) {
-          field.Set<std::vector<double>>(owner, copy.Get<std::vector<double>>());
-        } else if (field.ValidType<CompositeVector>()) {
-          field.Set<CompositeVector>(owner, copy.Get<CompositeVector>());
-        } else if (field.ValidType<AmanziGeometry::Point>()) {
-          field.Set<AmanziGeometry::Point>(owner, copy.Get<AmanziGeometry::Point>());
-        } else {
-          std::stringstream ss;
-          ss << "Trying to copy \"" << e.first << "\" with unknown type.\n";
-          Errors::Message msg(ss.str());
-          Exceptions::amanzi_throw(msg);
-        }
+        field.Assign(copy);
         field.set_initialized();
       }
     }
@@ -470,21 +484,21 @@ void State::Initialize(Teuchos::RCP<State> S)
 
 void State::InitializeEvaluators()
 {
-  for (auto& e : evaluators_) {
-    auto tag = e.second.begin();
+  Teuchos::OSTab tab = vo_->getOSTab();
+  for (const auto& e : evaluators_) {
+    for (const auto& tag : e.second) {
+      if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+        *vo_->os() << "initializing eval: \"" << e.first << "\" @ \"" << tag.first << "\"" << std::endl;
+      }
 
-    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-      Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "initializing eval: \"" << e.first << "\" with 1st tag \"" << tag->first.get() << "\"" << std::endl;
+      tag.second->Update(*this, "state");
     }
-
-    tag->second->Update(*this, "state");
     GetRecordSetW(e.first).initializeTags();
   }
 }
 
 
-void State::InitializeFieldCopies()
+void State::InitializeFieldCopies(const Tag& reference_tag)
 {
   VerboseObject vo("State", state_plist_);
   if (vo.os_OK(Teuchos::VERB_EXTREME)) {
@@ -493,10 +507,15 @@ void State::InitializeFieldCopies()
   }
 
   for (auto& e : data_) {
-    const auto& copy = GetRecord(e.first);
-    if (copy.ValidType<CompositeVector>()) {
-      for (auto& r : *e.second) {
-        Set<CompositeVector>(e.first, r.first, copy.owner(), copy.Get<CompositeVector>());
+    if (HasData(e.first, reference_tag)) {
+      const auto& copy = GetRecord(e.first, reference_tag);
+      if (copy.initialized() && copy.ValidType<CompositeVector>()) {
+        for (auto& r : *e.second) {
+          if (!r.second->initialized()) {
+            r.second->Assign(copy);
+            r.second->set_initialized();
+          }
+        }
       }
     }
   }

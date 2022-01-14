@@ -153,6 +153,8 @@ EvaluatorPrimary<CompositeVector, CompositeVectorSpace>::EnsureCompatibility(Sta
   }
 }
 
+using EvaluatorPrimaryCV = EvaluatorPrimary<CompositeVector, CompositeVectorSpace>;
+
 } // namespace Amanzi
 
 #endif

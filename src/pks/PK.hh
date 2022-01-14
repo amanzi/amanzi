@@ -123,12 +123,16 @@ class PK {
   // Initialize owned (dependent) variables.
   virtual void Initialize() = 0;
 
+  // Return PK's name
+  virtual std::string name() { return name_; }
+
   // Choose a time step compatible with physics.
   virtual double get_dt() = 0;
 
   // Set a time step for a PK.
   virtual void set_dt(double dt) = 0;
 
+  // Set a tag interval for advancing
   // Set the tags to integrate between
   virtual void set_tags(const Tag& current, const Tag& next) {
     tag_current_ = current; tag_next_ = next;
@@ -139,23 +143,16 @@ class PK {
   // that may need PK's attention.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit) = 0;
 
-  // Check whether the solution calculated for the new step is valid.
-  virtual bool ValidStep() { return true; }
-
-  // Tag the primary variable as changed in the DAG
-  virtual void ChangedSolutionPK(const Tag& tag) {}
-  virtual void ChangedSolutionPK() { ChangedSolutionPK(tag_next_); }
-
-  // Update any needed secondary variables at time t_new from a sucessful step
-  // from t_old. This is called after every successful AdvanceStep() call,
-  // independent of coupling.
+  // This is called after ALL PKs have successfully advanced their
+  // steps, so information needed to back up can be overwritten.
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) = 0;
 
-  // Calculate any diagnostics at S->time(), currently for visualization.
-  virtual void CalculateDiagnostics(const Tag& tag) = 0;
+  // This is called if ANY PK has failed; do what is needed to back up for a
+  // new attempt at the step.
+  virtual void FailStep(double t_old, double t_new, const Tag& tag) = 0;
 
-  // Return PK's name
-  virtual std::string name() { return name_; }
+  // Calculate any diagnostics at S->time(), currently for visualization.
+  virtual void CalculateDiagnostics(const Tag& tag) {}
 
   /////////////////////////////////////////////////////////////////////
   // -- transfer operators
@@ -165,13 +162,21 @@ class PK {
   //  virtual void Solution_to_State(TreeVector& soln, const Teuchos::RCP<State>& S) = 0;
   virtual void Solution_to_State(const TreeVector& soln, const Tag& tag) = 0;
 
+  // Tag the primary variable as changed in the DAG
+  virtual void ChangedSolutionPK(const Tag& tag) = 0;
+
+  // When including ValidStep() in Advance(), make this protected!  refs
+  // amanzi/ats#110
+  // Check whether the solution calculated for the new step is valid.
+  virtual bool ValidStep() { return true; }
+
  protected:
   Teuchos::RCP<Teuchos::ParameterList> plist_;
   std::string name_;
+  Tag tag_current_, tag_next_; // tags for time integration
 
   Teuchos::RCP<TreeVector> solution_;  // single vector for the global problem
   Teuchos::RCP<State> S_; // global data manager
-  Tag tag_current_, tag_next_; // tags for time integration
 
   Teuchos::RCP<VerboseObject> vo_;  // fancy IO
 };

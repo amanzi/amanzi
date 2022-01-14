@@ -42,6 +42,11 @@ bool RecordSet::Initialize(Teuchos::ParameterList& plist) {
   return init;
 }
 
+void RecordSet::Copy(const Tag& dest, const Tag& source) {
+  records_.at(dest)->Assign(*records_.at(source));
+}
+
+
 // Copy management
 bool RecordSet::HasRecord(const Tag& tag) const {
   return records_.count(tag) > 0;

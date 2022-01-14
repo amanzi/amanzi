@@ -42,12 +42,12 @@ class PK_Physical : virtual public PK {
   };
 
   // Virtual destructor
-  virtual ~PK_Physical() {};
+  virtual ~PK_Physical() override {};
 
   // Default implementations of PK methods.
   // -- transfer operators -- pointer copies only
-  virtual void State_to_Solution(const Tag& tag, TreeVector& soln);
-  virtual void Solution_to_State(const TreeVector& soln, const Tag& tag);
+  virtual void State_to_Solution(const Tag& tag, TreeVector& soln) override;
+  virtual void Solution_to_State(const TreeVector& soln, const Tag& tag) override;
 
   // access
   Key domain() { return domain_; }
@@ -68,7 +68,6 @@ protected:
 
   // solution and evaluator
   std::string key_;
-  Teuchos::RCP<EvaluatorPrimary<TreeVector> > solution_evaluator_;
 
   // debugger for dumping vectors
   Teuchos::RCP<Debugger> db_;

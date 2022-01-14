@@ -147,11 +147,12 @@ class State {
   void Initialize();
   void InitializeFields();
   void InitializeEvaluators();
-  void InitializeFieldCopies();
+  void InitializeFieldCopies(const Tag& ref = Tags::DEFAULT);
   bool CheckAllFieldsInitialized();
 
-  // Using another state for initialization (should we use tags? for non-maching states?)
-  void Initialize(Teuchos::RCP<State> S);
+  // Using another state for initialization (should we use tags? for
+  // non-maching states?)
+  void Initialize(const State& S);
 
   // -----------------------------------------------------------------------------
   // State handles mesh management.
@@ -164,6 +165,10 @@ class State {
   // -- Register a mesh under a generic key.
   void RegisterMesh(const Key& key, const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
                     bool deformable = false);
+
+  // Alias a mesh to an existing mesh
+  void AliasMesh(const Key& target, const Key& alias);
+  bool IsAliasedMesh(const Key& key) const;
 
   // Ensure a mesh exists.
   bool HasMesh(const Key& key) const { return GetMesh_(key) != Teuchos::null; }
@@ -268,6 +273,8 @@ class State {
   }
 
   // RecordSet accessors.
+  bool HasRecordSet(const Key& fieldname) const { return Keys::hasKey(data_, fieldname); }
+  const RecordSet& GetRecordSet(const Key& fieldname) const { return *data_.at(fieldname); }
   RecordSet& GetRecordSetW(const Key& fieldname) { return *data_.at(fieldname); }
 
   // Iterate over Records.
@@ -376,18 +383,14 @@ class State {
   // Access to data
   // -- const
   template <typename T>
-  const T& Get(const Key& fieldname) const {
-    return data_.at(fieldname)->Get<T>();
-  }
-  template <typename T>
-  const T& Get(const Key& fieldname, const Tag& tag) const {
+  const T& Get(const Key& fieldname, const Tag& tag = Tags::DEFAULT) const {
     return data_.at(fieldname)->Get<T>(tag);
   }
 
   // -- non-const
   template <typename T>
   T& GetW(const Key& fieldname, const Key& owner) {
-    return data_.at(fieldname)->GetW<T>(owner);
+    return GetW<T>(fieldname, Tags::DEFAULT, owner);
   }
   template <typename T>
   T& GetW(const Key& fieldname, const Tag& tag, const Key& owner) {
@@ -404,23 +407,37 @@ class State {
   }
   template <typename T>
   Teuchos::RCP<T> GetPtrW(const Key& fieldname, const Key& owner) {
-    return data_.at(fieldname)->GetPtrW<T>(Tags::DEFAULT, owner);
+    return GetPtrW<T>(fieldname, Tags::DEFAULT, owner);
   }
 
+  //
+  // Sets by deep copy, not pointer
+  //
   template <typename T>
-  void Set(const Key& fieldname, const Key& owner, const T& data) {
-    return data_.at(fieldname)->Set(Tags::DEFAULT, owner, data);
+  void Assign(const Key& fieldname, const Key& owner, const T& data) {
+    return Assign<T>(fieldname, Tags::DEFAULT, owner, data);
   }
   template <typename T>
-  void Set(const Key& fieldname, const Tag& tag, const Key& owner, const T& data) {
-    return data_.at(fieldname)->Set(tag, owner, data);
+  void Assign(const Key& fieldname, const Tag& tag, const Key& owner, const T& data) {
+    return data_.at(fieldname)->Assign(tag, owner, data);
+  }
+
+  // Sets by pointer
+  template <typename T>
+  void SetPtr(const Key& fieldname, const Key& owner,
+           const Teuchos::RCP<T>& data) {
+    return SetPtr<T>(fieldname, owner, Tags::DEFAULT, data);
+  }
+  template <typename T>
+  void SetPtr(const Key& fieldname, const Tag& tag, const Key& owner,
+           const Teuchos::RCP<T>& data) {
+    return data_.at(fieldname)->SetPtr<T>(tag, owner, data);
   }
 
   // -- copy between tags assume that operator = is supported
-  template <typename T>
-  void Copy(const Key& fieldname, const Tag& tag, const Tag& copy) {
-    Key owner = GetRecord(fieldname, copy).owner();
-    GetW<T>(fieldname, copy, owner) = Get<T>(fieldname, tag);
+  inline
+  void Copy(const Key& fieldname, const Tag& dest, const Tag& source) {
+    return GetRecordSetW(fieldname).Copy(dest, source);
   }
 
 
@@ -484,15 +501,16 @@ class State {
   // Time tags and vector copies
   // -----------------------------------------------------------------------------
   // Time accessor and mutators.
+  void require_time(const Tag& tag) { return Require<double>("time", tag); }
   double get_time(const Tag& tag = Tags::DEFAULT) const { return Get<double>("time", tag); }
-  void set_time(const Tag& tag, double value) { Set("time", tag, "time", value); }
-  void set_time(double value) { Set("time", Tags::DEFAULT, "time", value); }
+  void set_time(const Tag& tag, double value) { Assign("time", tag, "time", value); }
+  void set_time(double value) { Assign("time", Tags::DEFAULT, "time", value); }
 
   void advance_time(const Tag& tag, double dt) {
-    Set("time", tag, "time", Get<double>("time", tag) + dt);
+    Assign("time", tag, "time", Get<double>("time", tag) + dt);
   }
   void advance_time(double dt) {
-    Set("time", Tags::DEFAULT, "time", Get<double>("time") + dt);
+    Assign("time", Tags::DEFAULT, "time", Get<double>("time") + dt);
   }
 
   double final_time() const { return final_time_; }
@@ -507,14 +525,14 @@ class State {
 
   // Cycle accessor and mutators.
   int cycle() const { return Get<int>("cycle"); }
-  void set_cycle(int cycle) { Set("cycle", Tags::DEFAULT, "cycle", cycle); }
+  void set_cycle(int cycle) { Assign("cycle", Tags::DEFAULT, "cycle", cycle); }
   void advance_cycle(int dcycle = 1) {
-    Set("cycle", Tags::DEFAULT, "cycle", Get<int>("cycle") + dcycle);
+    Assign("cycle", Tags::DEFAULT, "cycle", Get<int>("cycle") + dcycle);
   }
 
   // Position accessor and mutators.
   int get_position() const { return Get<int>("position"); }
-  void set_position(int pos) { Set("position", Tags::DEFAULT, "position", pos); }
+  void set_position(int pos) { Assign("position", Tags::DEFAULT, "position", pos); }
 
   // Utility for setting vis flags using blacklist and whitelist
   void InitializeIOFlags();
@@ -529,6 +547,7 @@ class State {
 
   // Containers
   MeshMap meshes_;
+  std::map<Key,Key> mesh_aliases_;
   RecordSetMap data_;
   RecordSetMap derivs_;
   EvaluatorMap evaluators_;

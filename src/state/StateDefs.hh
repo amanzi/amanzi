@@ -29,7 +29,8 @@ typedef bool NullFactory;  // placeholder object for no factory required
 
 namespace Tags {
 static const Tag DEFAULT("");
-static const Tag OLD(""); // an alias -- DEFAULT may go away?
+static const Tag CURRENT(""); // an alias -- DEFAULT may go away?
+static const Tag INTER("inter");
 static const Tag NEXT("next");
 static const Tag COPY("copy");
 }

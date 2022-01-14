@@ -88,7 +88,6 @@ if (ENABLE_AmanziPhysicsModule)
   add_subdirectory(flow)
   add_subdirectory(multiphase)
   add_subdirectory(navier_stokes)
-endif()
 
 # chemistry isn't REALLY physics...
 add_subdirectory(chemistry)
@@ -99,10 +98,14 @@ add_subdirectory(transport)
 # add shallow water
 add_subdirectory(shallow_water)
 
+endif()
+
+
+
 if (ENABLE_AmanziPhysicsModule)
   add_subdirectory(energy)
   add_subdirectory(dummy)
-endif()
 
 add_subdirectory(mpc_pk)
+endif()
 

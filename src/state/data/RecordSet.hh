@@ -63,6 +63,7 @@ class RecordSet {
   void WriteCheckpoint(const Checkpoint& chkp) const;
   void ReadCheckpoint(const Checkpoint& chkp);
   bool Initialize(Teuchos::ParameterList& plist);
+  void Copy(const Tag& dest, const Tag& source);
 
   // copy management
   const Record& GetRecord(const Tag& tag) const;
@@ -108,7 +109,8 @@ class RecordSet {
   Teuchos::RCP<T> GetPtrW(const Tag& tag, const Key& owner) {
     return records_.at(tag)->GetPtrW<T>(owner);
   }
-  template <typename T> Teuchos::RCP<T> GetPtrW(const Key& owner) {
+  template <typename T>
+  Teuchos::RCP<T> GetPtrW(const Key& owner) {
     return GetPtrW<T>(Tags::DEFAULT, owner);
   }
 
@@ -121,27 +123,32 @@ class RecordSet {
     SetPtr<T>(Tags::DEFAULT, owner, t);
   }
 
-  template <typename T> void Set(const Tag& tag, const Key& owner, const T& t) {
-    records_.at(tag)->Set<T>(owner, t);
+  template <typename T>
+  void Assign(const Tag& tag, const Key& owner, const T& t) {
+    records_.at(tag)->Assign<T>(owner, t);
   }
-  template <typename T> void Set(const Key& owner, const T& t) {
-    Set<T>(Tags::DEFAULT, owner, t);
+  template <typename T>
+  void Assign(const Key& owner, const T& t) {
+    Assign<T>(Tags::DEFAULT, owner, t);
   }
 
-  template <typename T, typename F> F& GetFactory() {
+  template <typename T, typename F>
+  F& GetFactory() {
     return factory_.GetW<T, F>();
   }
 
   bool HasType() { return factory_.HasType(); }
 
-  template <typename T, typename F> F& SetType() {
+  template <typename T, typename F>
+  F& SetType() {
     if (!factory_.HasType()) {
       factory_ = dataFactory<T, F>();
     }
     return GetFactory<T, F>();
   }
 
-  template <typename T> void SetType() {
+  template <typename T>
+  void SetType() {
     if (!factory_.HasType()) {
       factory_ = dataFactory<T, NullFactory>();
     }
@@ -161,7 +168,6 @@ class RecordSet {
 
   DataFactory factory_;
   RecordMap records_;
-  RecordMap derivatives_;
 };
 
 } // namespace Amanzi

@@ -104,14 +104,14 @@ TEST(STATE_HETEROGENEOUS_DATA) {
   CHECK_THROW(s.Get<double>("my_other_nonexistent_data"), std::out_of_range);
 
   // setting data
-  s.Set("my_double", Tags::DEFAULT, "my_double_owner", 1.1);
+  s.Assign("my_double", Tags::DEFAULT, "my_double_owner", 1.1);
   CHECK_EQUAL(1.1, s.Get<double>("my_double"));
 
   // copies
   CHECK(s.HasData("my_double", tag_prev));
   CHECK(!s.HasData("my_vec", tag_prev));
 
-  s.Set("my_double", tag_prev, "my_double_prev_owner", 2.2);
+  s.Assign("my_double", tag_prev, "my_double_prev_owner", 2.2);
   CHECK_EQUAL(1.1, s.Get<double>("my_double"));
   CHECK_EQUAL(2.2, s.Get<double>("my_double", tag_prev));
 

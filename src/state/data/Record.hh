@@ -129,10 +129,11 @@ class Record {
     }
   }
 
-  template <typename T> void Set(const Key& owner, const T& t) {
+  template <typename T>
+  void Assign(const Key& owner, const T& t) {
     AssertOwnerOrDie(owner);
     try {
-      data_.Set(t);
+      data_.Assign<T>(t);
     } catch (const Errors::Message& msg) {
       Errors::Message new_msg;
       new_msg << "Access to field: \"" << fieldname() << "\"" << msg.what();
@@ -140,6 +141,16 @@ class Record {
     }
   }
 
+  void Assign(const Record& other) {
+    try {
+      data_.Assign(other.data_);
+    } catch (const Errors::Message& msg) {
+      Errors::Message new_msg;
+      new_msg << "Access to field: \"" << fieldname() << "\"" << msg.what();
+      throw(new_msg);
+    }
+  }
+  
   // consistency checking
   void AssertOwnerOrDie(const Key& owner) const;
 

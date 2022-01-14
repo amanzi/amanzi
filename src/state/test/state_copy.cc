@@ -67,8 +67,7 @@ SUITE(COPY) {
     Tag tag2 = make_tag("tag2");
     state->GetW<CompositeVector>("fieldname", tag1, "owner").PutScalar(2.0);
 
-    state->Set<CompositeVector>("fieldname", tag2, "owner",
-                                state->Get<CompositeVector>("fieldname", tag1));
+    state->Copy("fieldname", tag2, tag1);
 
     auto& field = state->Get<CompositeVector>("fieldname", tag2);
     CHECK_CLOSE(2.0, (*field.ViewComponent("cell"))[0][0], 0.00001);

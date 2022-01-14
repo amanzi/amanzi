@@ -173,11 +173,17 @@ void EvaluatorSecondaryMonotype<CompositeVector,CompositeVectorSpace>::EnsureCom
     has_derivs |= S.HasDerivativeSet(keytag.first, keytag.second);
 
   if (has_derivs) {
+    // a derivative on any of my_keys_ means we need it on all other of my_keys_
     for (const auto& keytag : my_keys_) {
-      for (const auto& deriv : S.GetDerivativeSet(keytag.first, keytag.second)) {
-        auto wrt = Keys::splitKeyTag(deriv.first.get());
-        S.RequireDerivative<CompositeVector,CompositeVectorSpace>(
-            keytag.first, keytag.second, wrt.first, wrt.second, keytag.first);
+      if (S.HasDerivativeSet(keytag.first, keytag.second)) {
+        for (const auto& deriv : S.GetDerivativeSet(keytag.first, keytag.second)) {
+          auto wrt = Keys::splitKeyTag(deriv.first.get());
+          for (const auto& other_keytag : my_keys_) {
+            S.RequireDerivative<CompositeVector,CompositeVectorSpace>(
+              other_keytag.first, other_keytag.second,
+              wrt.first, wrt.second, other_keytag.first);
+          }
+        }
       }
     }
   }

@@ -8,7 +8,7 @@ using namespace Amanzi;
 TEST(NULL_FACTORY) {
   DataFactory fac = dataFactory<double, NullFactory>();
   auto s = fac.Create();
-  s.Set(1.1);
+  s.Assign(1.1);
   CHECK_EQUAL(1.1, s.Get<double>());
 }
 
@@ -16,7 +16,7 @@ TEST(NULL_FACTORY_MISDIRECTED) {
   DataFactory fac = dataFactory<double, NullFactory>();
   auto s = data<double>();
   fac.Create(s);
-  s.Set(1.1);
+  s.Assign(1.1);
   CHECK_EQUAL(1.1, s.Get<double>());
 }
 

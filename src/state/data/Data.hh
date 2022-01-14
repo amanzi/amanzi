@@ -1,9 +1,9 @@
 /*
   State
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon
@@ -11,9 +11,9 @@
   Basic object that may store heterogeneous data and put in State.
   The underlying object is stored as a Teuchos::RCP.
 
-  Ownership: Note that this object TAKES OWNERSHIP of whatever it 
-  is created with. While initializing the data with a raw pointer 
-  is possible, this is a bad idea. Alternatively, you can pass in 
+  Ownership: Note that this object TAKES OWNERSHIP of whatever it
+  is created with. While initializing the data with a raw pointer
+  is possible, this is a bad idea. Alternatively, you can pass in
   an RCP, which is then shared ownership.
 
   *** Usage:
@@ -84,7 +84,7 @@ class Data {
     if (&other != this) {
       if (!p_) {
         Errors::Message msg;
-        msg << " data not created through RecordSet::SetType() or State::CreatData()";
+        msg << " data not created through RecordSet::SetType() or State::CreateData()";
         throw(msg);
       }
       *p_ = *other.p_;
@@ -99,7 +99,7 @@ class Data {
   template <typename T> const T& Get() const {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreatData()";
+      msg << " data not created through RecordSet::SetType() or State::CreateData()";
       throw(msg);
     }
     return p_->Get<T>();
@@ -109,7 +109,7 @@ class Data {
   template <typename T> T& GetW() {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreatData()";
+      msg << " data not created through RecordSet::SetType() or State::CreateData()";
       throw(msg);
     }
     return p_->GetW<T>();
@@ -119,7 +119,7 @@ class Data {
   template <typename T> Teuchos::RCP<const T> GetPtr() const {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreatData()";
+      msg << " data not created through RecordSet::SetType() or State::CreateData()";
       throw(msg);
     }
     return p_->GetPtr<T>();
@@ -129,7 +129,7 @@ class Data {
   template <typename T> Teuchos::RCP<T> GetPtrW() {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreatData()";
+      msg << " data not created through RecordSet::SetType() or State::CreateData()";
       throw(msg);
     }
     return p_->GetPtrW<T>();
@@ -144,13 +144,13 @@ class Data {
   }
 
   // mutator -- set value
-  template <typename T> void Set(const T& t) {
+  template <typename T> void Assign(const T& t) {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreatData()";
+      msg << " data not created through RecordSet::SetType() or State::CreateData()";
       throw(msg);
     }
-    p_->Set(t);
+    p_->Assign(t);
   }
 
   template <typename T> bool ValidType() const { return p_->ValidType<T>(); }
@@ -160,7 +160,7 @@ class Data {
                 const std::vector<std::string>& subfieldnames) const {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreatData()";
+      msg << " data not created through RecordSet::SetType() or State::CreateData()";
       throw(msg);
     }
     p_->WriteVis(vis, fieldname, subfieldnames);
@@ -168,7 +168,7 @@ class Data {
   void WriteCheckpoint(const Checkpoint& chkp, const Key& fieldname) const {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreatData()";
+      msg << " data not created through RecordSet::SetType() or State::CreateData()";
       throw(msg);
     }
     p_->WriteCheckpoint(chkp, fieldname);
@@ -176,7 +176,7 @@ class Data {
   void ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname) {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreatData()";
+      msg << " data not created through RecordSet::SetType() or State::CreateData()";
       throw(msg);
     }
     p_->ReadCheckpoint(chkp, fieldname);
@@ -185,10 +185,14 @@ class Data {
                   const std::vector<std::string>& subfieldnames) {
     if (!p_) {
       Errors::Message msg;
-      msg << " data not created through RecordSet::SetType() or State::CreatData()";
+      msg << " data not created through RecordSet::SetType() or State::CreateData()";
       throw(msg);
     }
     return p_->Initialize(plist, fieldname, subfieldnames);
+  }
+
+  void Assign(const Data& other) {
+    p_->Assign(*other.p_);
   }
 
  private:

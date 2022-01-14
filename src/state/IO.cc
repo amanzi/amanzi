@@ -45,8 +45,9 @@ void WriteVis(Visualization& vis, const State& S)
     // Write all fields to the visualization file, the fields know if they
     // need to be written.
     for (auto r = S.data_begin(); r != S.data_end(); ++r) {
-      if (S.GetRecord(r->first).ValidType<CompositeVector>())
-        r->second->WriteVis(vis);
+      // note, no type checking is required -- the type knows if it can be
+      // visualized
+      r->second->WriteVis(vis);
     }
     vis.WriteRegions();
     vis.WritePartition();
@@ -381,37 +382,40 @@ void WriteStateStatistics(const State& S, const VerboseObject& vo)
     Teuchos::OSTab tab = vo.getOSTab();
     *vo.os() << "\nField                                    Min/Max/Avg" << std::endl;
 
-    // for (auto it = S.data_begin(); it != S.data_end(); ++it) {
     for (auto name : sorted) {
       if (name.size() > 33) replace_all(name, "temperature", "temp");
       if (name.size() > 33) replace_all(name, "internal_energy", "ie");
       if (name.size() > 33) replace_all(name, "molar", "mol");
 
-      if (S.GetRecord(name).ValidType<CompositeVector>()) {
-        std::map<std::string, double> vmin, vmax, vavg;
-        S.Get<CompositeVector>(name).MinValue(vmin);
-        S.Get<CompositeVector>(name).MaxValue(vmax);
-        S.Get<CompositeVector>(name).MeanValue(vavg);
+      for (const auto& r : S.GetRecordSet(name)) {
+        if (r.second->ValidType<CompositeVector>()) {
+          std::map<std::string, double> vmin, vmax, vavg;
+          r.second->Get<CompositeVector>().MinValue(vmin);
+          r.second->Get<CompositeVector>().MaxValue(vmax);
+          r.second->Get<CompositeVector>().MeanValue(vavg);
 
-        for (auto c_it = vmin.begin(); c_it != vmin.end(); ++c_it) {
-          std::string namedot(name), name_comp(c_it->first);
-          if (vmin.size() != 1) namedot.append("." + name_comp);
+          for (auto c_it = vmin.begin(); c_it != vmin.end(); ++c_it) {
+            std::string namedot(Keys::getKey(name, r.first)), name_comp(c_it->first);
+            if (vmin.size() != 1) namedot.append("." + name_comp);
+            namedot.resize(40, '.');
+            *vo.os() << namedot << " " << c_it->second << " / " 
+                     << vmax[name_comp] << " / " << vavg[name_comp] << std::endl;
+          }
+
+        } else if (r.second->ValidType<double>()) {
+          double vmin = r.second->Get<double>();
+          auto namedot = Keys::getKey(name, r.first);
           namedot.resize(40, '.');
-          *vo.os() << namedot << " " << c_it->second << " / " 
-                    << vmax[name_comp] << " / " << vavg[name_comp] << std::endl;
+          *vo.os() << namedot << " " << vmin << std::endl;
+
+        } else if (r.second->ValidType<AmanziGeometry::Point>()) {
+          const auto& p = r.second->Get<AmanziGeometry::Point>();
+          auto namedot = Keys::getKey(name, r.first);
+          namedot.resize(40, '.');
+          *vo.os() << namedot;
+          for (int i = 0; i < p.dim(); ++i) *vo.os() << " " << p[i];
+          *vo.os() << std::endl;
         }
-      }
-      else if (S.GetRecord(name).ValidType<double>()) {
-        double vmin = S.Get<double>(name);
-        name.resize(40, '.');
-        *vo.os() << name << " " << vmin << std::endl;
-      }
-      else if (S.GetRecord(name).ValidType<AmanziGeometry::Point>()) {
-        const auto& p = S.Get<AmanziGeometry::Point>(name);
-        name.resize(40, '.');
-        *vo.os() << name;
-        for (int i = 0; i < p.dim(); ++i) *vo.os() << " " << p[i];
-        *vo.os() << std::endl;
       }
     }
   }

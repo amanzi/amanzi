@@ -1,9 +1,9 @@
 /*
   State
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon
@@ -12,8 +12,8 @@
   The underlying object is stored as a Teuchos::RCP.
 
   Ownership: Note that this object TAKES OWNERSHIP of whatever it
-  is created with. While initializing the data with a raw pointer 
-  is possible, this is a bad idea. Alternatively, you can pass in 
+  is created with. While initializing the data with a raw pointer
+  is possible, this is a bad idea. Alternatively, you can pass in
   an RCP, which is then shared ownership.
 
   Implementation note -- Teuchos::RCP does NOT support move semantics,
@@ -51,7 +51,7 @@ class Data_Intf {
 
   template <typename T> void SetPtr(Teuchos::RCP<T> t);
 
-  template <typename T> void Set(const T& t);
+  template <typename T> void Assign(const T& t);
 
   template <typename T> bool ValidType() const;
 
@@ -68,6 +68,9 @@ class Data_Intf {
   virtual
   bool Initialize(Teuchos::ParameterList& plist, const Key& fieldname,
                   const std::vector<std::string>& subfieldnames) = 0;
+
+  virtual
+  void Assign(const Data_Intf& other) = 0;
 };
 
 
@@ -99,29 +102,38 @@ template <typename T> class Data_Impl : public Data_Intf {
   Teuchos::RCP<T> GetPtrW() { return t_; }
 
   void SetPtr(Teuchos::RCP<T> t) { t_ = std::move(t); }
-  void Set(const T& t) { *t_ = t; }
+  void Assign(const T& t) { *t_ = t; }
 
   // virtual interface for ad-hoc polymorphism
+  virtual
   void WriteVis(const Visualization& vis, const Key& fieldname,
                 const std::vector<std::string>& subfieldnames) const override {
     ::Amanzi::Helpers::WriteVis(vis, fieldname, subfieldnames, *t_);
   }
 
+  virtual
   void WriteCheckpoint(const Checkpoint& chkp,
                        const Key& fieldname) const override {
     ::Amanzi::Helpers::WriteCheckpoint(chkp, fieldname, *t_);
   }
 
+  virtual
   void ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname) override {
     ::Amanzi::Helpers::ReadCheckpoint(chkp, fieldname, *t_);
   }
 
+  virtual
   bool Initialize(Teuchos::ParameterList& plist, const Key& fieldname,
                   const std::vector<std::string>& subfieldnames) override {
     return ::Amanzi::Helpers::Initialize(plist, *t_, fieldname, subfieldnames);
   }
 
-private:
+  virtual
+  void Assign(const Data_Intf& other) override {
+    return ::Amanzi::Helpers::Assign(*t_, other.Get<T>());
+  }
+
+ private:
   Teuchos::RCP<T> t_;
 };
 
@@ -178,14 +190,14 @@ template <typename T> void Data_Intf::SetPtr(Teuchos::RCP<T> t) {
   p->SetPtr(std::move(t));
 }
 
-template <typename T> void Data_Intf::Set(const T& t) {
+template <typename T> void Data_Intf::Assign(const T& t) {
   auto p = dynamic_cast<Data_Impl<T>* >(this);
   if (!p) {
     Errors::Message msg;
     msg << " data requested via incorrect type (6): \"" << typeid(T).name() << "\"";
     Exceptions::amanzi_throw(msg);
   }
-  p->Set(t);
+  p->Assign(t);
 }
 
 template <typename T> bool Data_Intf::ValidType() const {
