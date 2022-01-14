@@ -39,8 +39,8 @@ class Chemistry_PK : public PK_Physical {
   virtual ~Chemistry_PK() {};
 
   // required members for PK interface
-  virtual void Setup(const Teuchos::Ptr<State>& S);
-  virtual void Initialize(const Teuchos::Ptr<State>& S);
+  virtual void Setup() override;
+  virtual void Initialize() override;
 
   // Required members for chemistry interface
   // -- output of auxillary cellwise data from chemistry

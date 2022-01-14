@@ -50,15 +50,15 @@ class Multiphase_PK: public PK_PhysicalBDF {
   ~Multiphase_PK() {};
 
   // method required for abstract PK interface
-  virtual void Setup(const Teuchos::Ptr<State>& S) override;
-  virtual void Initialize(const Teuchos::Ptr<State>& S) override;
+  virtual void Setup() override;
+  virtual void Initialize() override;
 
   virtual double get_dt() override { return dt_; }
   virtual void set_dt(double dt) override { dt_ = dt; }
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit) override;
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
-  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override {};
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
+  virtual void CalculateDiagnostics(const Tag& tag) override {};
 
   virtual std::string name() override { return "multiphase"; }
 

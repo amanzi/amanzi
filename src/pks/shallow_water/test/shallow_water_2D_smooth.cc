@@ -183,12 +183,12 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
 
     // create a shallow water PK
     ShallowWater_PK SWPK(pk_tree,plist,S,soln);
-    SWPK.Setup(S.ptr());
+    SWPK.Setup();
     S->Setup();
     S->InitializeFields();
     S->InitializeEvaluators();
     S->set_time(0.0);
-    SWPK.Initialize(S.ptr());
+    SWPK.Initialize();
 
     vortex_2D_setIC(mesh, S);
     S->CheckAllFieldsInitialized();
@@ -253,7 +253,7 @@ TEST(SHALLOW_WATER_2D_SMOOTH) {
       dt_max = std::max(dt_max, dt);
 
       SWPK.AdvanceStep(t_old, t_new);
-      SWPK.CommitStep(t_old, t_new, S);
+      SWPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
       t_old = t_new;
       iter++;

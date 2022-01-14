@@ -1503,7 +1503,7 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string& setname,
       amanzi_throw(mesg);
     } 
 
-    Tag tag;
+    moab::Tag tag;
     if (kind == CELL) tag = cstag;
     else if (kind == FACE) tag = sstag;
     else if (kind == NODE) tag = nstag;

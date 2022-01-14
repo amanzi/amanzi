@@ -84,22 +84,22 @@ NavierStokes_PK::NavierStokes_PK(const Teuchos::RCP<Teuchos::ParameterList>& gli
 * model factories, evaluator factories, and parameters of the list
 * "physical models and assumptions".
 ****************************************************************** */
-void NavierStokes_PK::Setup(const Teuchos::Ptr<State>& S)
+void NavierStokes_PK::Setup()
 {
   dt_ = 0.0;
-  mesh_ = S->GetMesh();
+  mesh_ = S_->GetMesh();
   dim = mesh_->space_dimension();
 
   // primary fields
   // -- pressure
-  if (!S->HasData("pressure")) {
-    S->Require<CV_t, CVS_t>("pressure", Tags::DEFAULT, passwd_)
+  if (!S_->HasData("pressure")) {
+    S_->Require<CV_t, CVS_t>("pressure", Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
     Teuchos::ParameterList elist("pressure");
     elist.set<std::string>("evaluator name", "pressure");
     pressure_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
-    S->SetEvaluator("pressure", pressure_eval_);
+    S_->SetEvaluator("pressure", pressure_eval_);
   }
 
   // -- velocity
@@ -107,19 +107,19 @@ void NavierStokes_PK::Setup(const Teuchos::Ptr<State>& S)
   std::vector<AmanziMesh::Entity_kind> locations = {AmanziMesh::NODE, AmanziMesh::FACE};
   std::vector<int> ndofs = {dim, 1};
 
-  if (!S->HasData("fluid_velocity")) {
-    S->Require<CV_t, CVS_t>("fluid_velocity", Tags::DEFAULT, passwd_)
+  if (!S_->HasData("fluid_velocity")) {
+    S_->Require<CV_t, CVS_t>("fluid_velocity", Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponents(names, locations, ndofs);
 
     Teuchos::ParameterList elist("fluid_velocity");
     elist.set<std::string>("evaluator name", "fluid_velocity");
     fluid_velocity_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
-    S->SetEvaluator("fluid_velocity", fluid_velocity_eval_);
+    S_->SetEvaluator("fluid_velocity", fluid_velocity_eval_);
   }
 
   // -- viscosity: if not requested by any PK, we request its constant value.
-  if (!S->HasData("const_fluid_viscosity")) {
-    S->Require<double>("const_fluid_viscosity", Tags::DEFAULT, "state");
+  if (!S_->HasData("const_fluid_viscosity")) {
+    S_->Require<double>("const_fluid_viscosity", Tags::DEFAULT, "state");
   }
 }
 
@@ -129,11 +129,11 @@ void NavierStokes_PK::Setup(const Teuchos::Ptr<State>& S)
 * list and initializes various objects including those created during 
 * the setup step.
 ****************************************************************** */
-void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
+void NavierStokes_PK::Initialize()
 {
   // Initialize miscalleneous defaults.
   // -- times
-  double t_ini = S->get_time(); 
+  double t_ini = S_->get_time(); 
   dt_desirable_ = dt_;
   dt_next_ = dt_;
 
@@ -163,8 +163,8 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   soln_->PushBack(tmp_u);
   soln_->PushBack(tmp_p);
  
-  soln_p_ = S->GetPtrW<CV_t>("pressure", Tags::DEFAULT, passwd_);
-  soln_u_ = S->GetPtrW<CV_t>("fluid_velocity", Tags::DEFAULT, passwd_);
+  soln_p_ = S_->GetPtrW<CV_t>("pressure", Tags::DEFAULT, passwd_);
+  soln_u_ = S_->GetPtrW<CV_t>("fluid_velocity", Tags::DEFAULT, passwd_);
   soln_->SubVector(0)->SetData(soln_u_); 
   soln_->SubVector(1)->SetData(soln_p_); 
 
@@ -385,7 +385,7 @@ bool NavierStokes_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 * Performs one time step from time t_old to time t_new either for
 * steady-state or transient simulation.
 ******************************************************************* */
-void NavierStokes_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
+void NavierStokes_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
   double tmp1, tmp2;

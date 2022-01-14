@@ -62,7 +62,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
-  TPK.Setup(S.ptr());
+  TPK.Setup();
   TPK.CreateDefaultState(mesh, 2);
 
   S->InitializeFields();
@@ -90,7 +90,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   }
 
   // initialize a transport process kernel
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
 
   /* advance the state */
   double t_old(0.0), t_new, dt;
@@ -105,7 +105,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
     t_new = t_old + dt;
 
     TPK.AdvanceStep(t_old, t_new);
-    TPK.CommitStep(t_old, t_new, S);
+    TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
     iter++;

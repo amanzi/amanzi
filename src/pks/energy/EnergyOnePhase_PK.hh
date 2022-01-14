@@ -36,24 +36,26 @@ public:
   virtual ~EnergyOnePhase_PK() {};
 
   // methods required for PK intrefcae
-  virtual void Setup(const Teuchos::Ptr<State>& S);
-  virtual void Initialize(const Teuchos::Ptr<State>& S);
+  virtual void Setup() final;
+  virtual void Initialize() final;
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
-  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) {};
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) final;
+  virtual void CalculateDiagnostics(const Tag& tag) final {};
 
-  double get_dt() { return dt_; }
-  void set_dt(double dt) { dt_ = dt; }
+  double get_dt() final { return dt_; }
+  void set_dt(double dt) final { dt_ = dt; }
 
   virtual std::string name() { return "one-phase energy"; }
 
   // methods required for time integration interface
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
-  virtual void FunctionalResidual(const double t_old, double t_new,
+  virtual 
+  void FunctionalResidual(const double t_old, double t_new,
                           Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new,
-                          Teuchos::RCP<TreeVector> g);
-  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
+                          Teuchos::RCP<TreeVector> g) final ;
+  virtual
+  double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) final;
 
   // -- management of the preconditioner
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt);

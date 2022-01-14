@@ -225,7 +225,7 @@ void CycleDriver::Setup() {
     }
   }
 
-  pk_->Setup(S_.ptr());
+  pk_->Setup();
   S_->Require<double>("dt", Tags::DEFAULT, "coordinator");
   S_->Setup();
 
@@ -276,7 +276,7 @@ void CycleDriver::Initialize() {
   S_->InitializeEvaluators();
 
   // Initialize the process kernels and verify
-  pk_->Initialize(S_.ptr());
+  pk_->Initialize();
   S_->CheckAllFieldsInitialized();
 
   // S_->WriteDependencyGraph();
@@ -285,7 +285,7 @@ void CycleDriver::Initialize() {
   // commit the initial conditions.
   // pk_->CommitStep(t0_-get_dt(), get_dt());
   if (!restart_requested_) {
-    pk_->CommitStep(S_->get_time(), S_->get_time(), S_);
+    pk_->CommitStep(S_->get_time(), S_->get_time(), Tags::DEFAULT);
   }
 }
 
@@ -298,7 +298,7 @@ void CycleDriver::Initialize() {
 ****************************************************************** */
 void CycleDriver::Finalize() {
   if (!checkpoint_->DumpRequested(S_->cycle(), S_->get_time())) {
-    pk_->CalculateDiagnostics(S_);
+    pk_->CalculateDiagnostics(Tags::DEFAULT);
     checkpoint_->Write(*S_, 0.0, true, &observations_data_);
   }
 }
@@ -590,7 +590,7 @@ double CycleDriver::Advance(double dt) {
   }
 
   if (!fail) {
-    pk_->CommitStep(S_->last_time(), S_->get_time(), S_);
+    pk_->CommitStep(S_->last_time(), S_->get_time(), Tags::DEFAULT);
     // advance the iteration count and timestep size
     if (advance) {
       S_->advance_cycle();
@@ -617,7 +617,7 @@ double CycleDriver::Advance(double dt) {
     // make vis, observations, and checkpoints in this order
     // Amanzi::timer_manager.start("I/O");
     if (advance) {
-      pk_->CalculateDiagnostics(S_);
+      pk_->CalculateDiagnostics(Tags::DEFAULT);
       Visualize(force_vis);
       Observations(force_obser, true);
       WriteCheckpoint(dt_new, force_check);   // write Checkpoint with new dt
@@ -667,7 +667,7 @@ void CycleDriver::Observations(bool force, bool integrate) {
 /* ******************************************************************
 * Write visualization file with extension (cycle + tag) if requested.
 ****************************************************************** */
-void CycleDriver::Visualize(bool force, const std::string& tag) {
+void CycleDriver::Visualize(bool force, const Tag& tag) {
   bool dump = force;
   if (!dump) {
     for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
@@ -800,11 +800,11 @@ Teuchos::RCP<State> CycleDriver::Go() {
         restart_dT =  tp_dt_[time_period_id_];
       }
       else {
-        pk_->Initialize(S_.ptr());
+        pk_->Initialize();
       }     
     } else {
       // Initialize the process kernels
-      pk_->Initialize(S_.ptr());
+      pk_->Initialize();
     }
 
     S_->set_initial_time(S_->get_time());
@@ -825,7 +825,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
   // after initialization of State and PK we know all fields and clean of
   S_->InitializeIOFlags(); 
 
-  pk_->CalculateDiagnostics(S_);
+  pk_->CalculateDiagnostics(Tags::DEFAULT);
   Visualize();
   Observations();
   WriteCheckpoint(dt);
@@ -945,7 +945,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   //if (observations_ != Teuchos::null) observations_->RegisterWithTimeStepManager(tsm_);
 
   // Setup
-  pk_->Setup(S_.ptr());
+  pk_->Setup();
 
   S_->Require<double>("dt", Tags::DEFAULT, "coordinator");
   S_->Setup();
@@ -965,12 +965,12 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   S_->Initialize(S_old_);
 
   // Initialize the process kernels and verify
-  pk_->Initialize(S_.ptr());
+  pk_->Initialize();
   S_->CheckAllFieldsInitialized();
 
   S_->GetMeshPartition("materials");
 
-  pk_->CalculateDiagnostics(S_);
+  pk_->CalculateDiagnostics(Tags::DEFAULT);
   Observations();
 
   pk_->set_dt(tp_dt_[time_pr_id]);
@@ -980,7 +980,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   // new fields are added/removed to/from the state
   auto fields_old = StateVisFields(*S_old_);
   auto fields = StateVisFields(*S_);
-  if (fields_old != fields) Visualize(true, "ic");
+  if (fields_old != fields) Visualize(true, make_tag("ic"));
 
   S_old_ = Teuchos::null;
 }

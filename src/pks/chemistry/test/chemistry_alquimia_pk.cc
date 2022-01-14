@@ -171,17 +171,17 @@ TEST(INITIALIZE_CRUNCH) {
   auto pks_list = plist->sublist("PK tree").sublist("chemistry");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   auto CPK = Teuchos::rcp(new Alquimia_PK(pks_list, plist, S, soln));
-  CPK->Setup(S.ptr());
+  CPK->Setup();
 
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
   S->set_time(0.0);
 
-  CPK->Initialize(S.ptr());
+  CPK->Initialize();
 
   // Now create second chemistry PK
   auto CPK2 = Teuchos::rcp(new Alquimia_PK(pks_list, plist, S, soln));
-  CPK2->Setup(S.ptr());
-  CPK2->Initialize(S.ptr());
+  CPK2->Setup();
+  CPK2->Initialize();
 }

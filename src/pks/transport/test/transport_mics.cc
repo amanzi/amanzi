@@ -69,11 +69,11 @@ TEST(CONSTRUCTOR) {
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
-  TPK.Setup(S.ptr());
+  TPK.Setup();
   TPK.CreateDefaultState(mesh, 2);
 
   // initialize a transport process kernel from a transport state
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
 
   double cfl = TPK.cfl();
   CHECK(0 < cfl && cfl <= 1.0);

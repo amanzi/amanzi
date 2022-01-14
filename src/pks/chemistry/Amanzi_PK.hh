@@ -40,15 +40,15 @@ class Amanzi_PK : public Chemistry_PK {
   ~Amanzi_PK();
 
   // members required by PK interface
-  virtual void Setup(const Teuchos::Ptr<State>& S);
-  virtual void Initialize(const Teuchos::Ptr<State>& S);
+  virtual void Setup() final;
+  virtual void Initialize() final;
 
-  virtual void set_dt(double dt) {};
-  virtual double get_dt() { return dt_next_; }
+  virtual void set_dt(double dt) final {};
+  virtual double get_dt() final { return dt_next_; }
 
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
-  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) { extra_chemistry_output_data(); }
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) final;
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) final;
+  virtual void CalculateDiagnostics(const Tag& tag) final { extra_chemistry_output_data(); }
 
   virtual std::string name() { return "chemistry amanzi"; }
 

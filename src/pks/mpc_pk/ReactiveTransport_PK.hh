@@ -42,9 +42,9 @@ class ReactiveTransport_PK : public PK_MPCAdditive<PK> {
   // -- advance each sub pk dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
 
-  virtual void Initialize(const Teuchos::Ptr<State>& S);
+  virtual void Initialize();
 
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag);
 
   std::string name() { return "reactive transport"; }
 

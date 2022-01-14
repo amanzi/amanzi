@@ -143,9 +143,9 @@ Alquimia_PK::~Alquimia_PK()
 /* ******************************************************************
 * Register fields and evaluators with the State
 ******************************************************************* */
-void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
+void Alquimia_PK::Setup()
 {
-  Chemistry_PK::Setup(S);
+  Chemistry_PK::Setup();
 
   // Set up auxiliary chemistry data using the ChemistryEngine.
   chem_engine_->GetAuxiliaryOutputNames(aux_names_, aux_subfield_names_);
@@ -153,8 +153,8 @@ void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
   for (size_t i = 0; i < aux_names_.size(); ++i) {
     aux_names_[i] = Keys::getKey(domain_, aux_names_[i]);
 
-    if (!S->HasData(aux_names_[i])) {
-      S->Require<CompositeVector, CompositeVectorSpace>(aux_names_[i], Tags::DEFAULT, passwd_, aux_subfield_names_[i])
+    if (!S_->HasData(aux_names_[i])) {
+      S_->Require<CompositeVector, CompositeVectorSpace>(aux_names_[i], Tags::DEFAULT, passwd_, aux_subfield_names_[i])
         .SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, aux_subfield_names_[i].size());
     }
@@ -165,20 +165,20 @@ void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
 
     for (auto it = names.begin(); it != names.end(); ++it) {
       Key aux_field_name = Keys::getKey(domain_, *it);
-      if (!S->HasData(aux_field_name)) {
-        S->Require<CompositeVector, CompositeVectorSpace>(aux_field_name, Tags::DEFAULT, passwd_)
+      if (!S_->HasData(aux_field_name)) {
+        S_->Require<CompositeVector, CompositeVectorSpace>(aux_field_name, Tags::DEFAULT, passwd_)
           .SetMesh(mesh_)->SetGhosted(false)->SetComponent("cell", AmanziMesh::CELL, 1);
       }
     }
   }
 
   // Setup more auxiliary data
-  if (!S->HasData(alquimia_aux_data_key_)) {
+  if (!S_->HasData(alquimia_aux_data_key_)) {
     int num_aux_data = chem_engine_->Sizes().num_aux_integers + chem_engine_->Sizes().num_aux_doubles;
-    S->Require<CompositeVector, CompositeVectorSpace>(alquimia_aux_data_key_, Tags::DEFAULT, passwd_)
+    S_->Require<CompositeVector, CompositeVectorSpace>(alquimia_aux_data_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(false)->SetComponent("cell", AmanziMesh::CELL, num_aux_data);
 
-    S->GetRecordW(alquimia_aux_data_key_, passwd_).set_io_vis(false);
+    S_->GetRecordW(alquimia_aux_data_key_, passwd_).set_io_vis(false);
   }
 }
 
@@ -186,10 +186,10 @@ void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
 /* *******************************************************************
 * Initialization
 ******************************************************************* */
-void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
+void Alquimia_PK::Initialize()
 {
   // initialization using the base class
-  Chemistry_PK::Initialize(S);
+  Chemistry_PK::Initialize();
 
   if (!aux_names_.empty()) {
     int n_total = 0;
@@ -204,7 +204,7 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // initialize fields as soon as possible
   for (size_t i = 0; i < aux_names_.size(); ++i) {
-    InitializeField_(S, passwd_, aux_names_[i], 0.0);
+    InitializeField_(aux_names_[i], Tags::DEFAULT, passwd_, 0.0);
   }
 
   // Initialize the data structures that we will use to traffic data between 
@@ -225,7 +225,7 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Do we need to initialize chemistry?
   int ierr = 0;
-  if (fabs(initial_conditions_time_ - S->get_time()) < 1e-8 * (1.0 + fabs(S->get_time()))) {
+  if (fabs(initial_conditions_time_ - S_->get_time()) < 1e-8 * (1.0 + fabs(S_->get_time()))) {
     for (auto it = chem_initial_conditions_.begin(); it != chem_initial_conditions_.end(); ++it) {
       std::string region = it->first;
       std::string condition = it->second;
@@ -266,7 +266,7 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
   if (aux_output_ != Teuchos::null) {
     int counter = 0;
     for (int i = 0; i < aux_names_.size(); ++i) {
-      auto& aux_state = *S->GetW<CompositeVector>(aux_names_[i], Tags::DEFAULT, passwd_).ViewComponent("cell");
+      auto& aux_state = *S_->GetW<CompositeVector>(aux_names_[i], Tags::DEFAULT, passwd_).ViewComponent("cell");
       for (int j = 0; j < aux_subfield_names_[i].size(); ++j) {
         *aux_state[j] = *(*aux_output_)[counter++];
       }
@@ -281,7 +281,7 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
   if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << vo_->color("green") << "Initialization of PK was successful, T="
-        << S->get_time() << vo_->reset() << std::endl << std::endl;
+        << S_->get_time() << vo_->reset() << std::endl << std::endl;
   }
 }
 
@@ -946,9 +946,9 @@ void Alquimia_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next)
 * it has accepted the state update, thus, the PK should update
 * possible auxilary state variables here
 ******************************************************************* */
-void Alquimia_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) 
+void Alquimia_PK::CommitStep(double t_old, double t_new, const Tag& tag) 
 {
-  if (S_ != S) CopyFieldstoNewState(S);
+  // if (S_ != S) CopyFieldstoNewState(S);  // ATS shoudl fix this
   saved_time_ = t_new;
 }
 

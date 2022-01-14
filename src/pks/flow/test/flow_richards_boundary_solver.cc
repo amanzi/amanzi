@@ -77,12 +77,12 @@ TEST(FLOW_BOUNDARY_SOLVER) {
   Teuchos::RCP<TreeVector> soln2 = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Richards_PK> RPK2 = Teuchos::rcp(new Richards_PK(plist, "flow", S2, soln2));
 
-  RPK1->Setup(S1.ptr());
+  RPK1->Setup();
   S1->Setup();
   S1->InitializeFields();
   S1->InitializeEvaluators();
 
-  RPK2->Setup(S2.ptr());
+  RPK2->Setup();
   S2->Setup();
   S2->InitializeFields();
   S2->InitializeEvaluators();
@@ -130,9 +130,9 @@ TEST(FLOW_BOUNDARY_SOLVER) {
   }
 
   // initialize the Richards process kernel
-  RPK1->Initialize(S1.ptr());
+  RPK1->Initialize();
   S1->CheckAllFieldsInitialized();
-  RPK2->Initialize(S2.ptr());
+  RPK2->Initialize();
   S2->CheckAllFieldsInitialized();
 
   std::cout << p1 << "\n";

@@ -83,7 +83,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
     S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
     TransportExplicit_PK TPK(plist, S, "transport", component_names);
-    TPK.Setup(S.ptr());
+    TPK.Setup();
     TPK.CreateDefaultState(mesh, 1);
     S->InitializeFields();
     S->InitializeEvaluators();
@@ -111,7 +111,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
     S->GetW<double>("const_fluid_density", passwd) = 1.0;
 
     /* initialize a transport process kernel */
-    TPK.Initialize(S.ptr());
+    TPK.Initialize();
     TPK.spatial_disc_order = TPK.temporal_disc_order = 1;
  
     /* advance the state */
@@ -127,7 +127,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
       S->set_final_time(t_new);
 
       TPK.AdvanceStep(t_old, t_new);
-      TPK.CommitStep(t_old ,t_new, S);
+      TPK.CommitStep(t_old ,t_new, Tags::DEFAULT);
 
       t_old = t_new;
       ncycles += TPK.nsubcycles;
@@ -200,7 +200,7 @@ void ConvergenceBoxMeshes(int order, double tol, std::string limiter)
     plist->sublist("PKs").sublist("transport")
           .sublist("reconstruction").set<std::string>("limiter", limiter);
     TransportExplicit_PK TPK(plist, S, "transport", component_names);
-    TPK.Setup(S.ptr());
+    TPK.Setup();
     TPK.CreateDefaultState(mesh, 1);
     S->InitializeFields();
     S->InitializeEvaluators();
@@ -228,7 +228,7 @@ void ConvergenceBoxMeshes(int order, double tol, std::string limiter)
     S->GetW<double>("const_fluid_density", passwd) = 1.0;
 
     // initialize transport process kernel
-    TPK.Initialize(S.ptr());
+    TPK.Initialize();
     TPK.spatial_disc_order = TPK.temporal_disc_order = order;
  
     // advance the state
@@ -247,7 +247,7 @@ void ConvergenceBoxMeshes(int order, double tol, std::string limiter)
       S->set_final_time(t_new);
 
       TPK.AdvanceStep(t_old, t_new);
-      TPK.CommitStep(t_old, t_new, S);
+      TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
       t_old = t_new;
 
@@ -340,7 +340,7 @@ void ConvergencePolyMeshes(int order, double tol, std::string limiter)
     plist->sublist("PKs").sublist("transport")
           .sublist("reconstruction").set<std::string>("limiter", limiter);
     TransportExplicit_PK TPK(plist, S, "transport", component_names);
-    TPK.Setup(S.ptr());
+    TPK.Setup();
     TPK.CreateDefaultState(mesh, 1);
     S->InitializeFields();
     S->InitializeEvaluators();
@@ -368,7 +368,7 @@ void ConvergencePolyMeshes(int order, double tol, std::string limiter)
     S->GetW<double>("const_fluid_density", passwd) = 1.0;
 
     /* initialize a transport process kernel */
-    TPK.Initialize(S.ptr());
+    TPK.Initialize();
     TPK.spatial_disc_order = TPK.temporal_disc_order = order;
  
     /* advance the state */
@@ -383,7 +383,7 @@ void ConvergencePolyMeshes(int order, double tol, std::string limiter)
       S->set_final_time(t_new);
 
       TPK.AdvanceStep(t_old, t_new);
-      TPK.CommitStep(t_old, t_new, S);
+      TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
       t_old = t_new;
       iter++;

@@ -77,13 +77,13 @@ TEST(MULTIPHASE_MODEL_I) {
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   auto MPK = Teuchos::rcp(new MultiphaseModel1_PK(pk_tree, plist, S, soln));
 
-  MPK->Setup(S.ptr());
+  MPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
 
   // initialize the multiphase process kernel
-  MPK->Initialize(S.ptr());
+  MPK->Initialize();
   S->CheckAllFieldsInitialized();
   S->WriteDependencyGraph();
   WriteStateStatistics(*S, *vo);
@@ -99,7 +99,7 @@ TEST(MULTIPHASE_MODEL_I) {
   while (t < tend && iloop < 200) {
     while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 4; }
 
-    MPK->CommitStep(t, t + dt, S);
+    MPK->CommitStep(t, t + dt, Tags::DEFAULT);
     S->advance_cycle();
 
     S->advance_time(dt);

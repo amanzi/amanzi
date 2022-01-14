@@ -92,83 +92,83 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
 /* ******************************************************************
 * Construction of PK global variables.
 ****************************************************************** */
-void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
+void Energy_PK::Setup()
 {
   // require first-requested state variables
-  if (!S->HasData("atmospheric_pressure")) {
-    S->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
+  if (!S_->HasData("atmospheric_pressure")) {
+    S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
   }
 
   // require primary state variables
-  if (!S->HasData(temperature_key_)) {
+  if (!S_->HasData(temperature_key_)) {
     std::vector<std::string> names({"cell", "face"});
     std::vector<int> ndofs(2, 1);
     std::vector<AmanziMesh::Entity_kind> locations({AmanziMesh::CELL, AmanziMesh::FACE});
  
-    S->Require<CV_t, CVS_t>(temperature_key_, Tags::DEFAULT, passwd_)
+    S_->Require<CV_t, CVS_t>(temperature_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponents(names, locations, ndofs);
 
     Teuchos::ParameterList elist(temperature_key_);
     elist.set<std::string>("evaluator name", temperature_key_);
     temperature_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
-    S->SetEvaluator(temperature_key_, temperature_eval_);
+    S_->SetEvaluator(temperature_key_, temperature_eval_);
   } else {
-    temperature_eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t> >(S->GetEvaluatorPtr(temperature_key_));
+    temperature_eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(temperature_key_));
   }
 
   // conserved quantity from the last time step.
-  if (!S->HasData(prev_energy_key_)) {
-    S->Require<CV_t, CVS_t>(prev_energy_key_, Tags::DEFAULT, passwd_)
+  if (!S_->HasData(prev_energy_key_)) {
+    S_->Require<CV_t, CVS_t>(prev_energy_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->GetRecordW(prev_energy_key_, passwd_).set_io_vis(false);
+    S_->GetRecordW(prev_energy_key_, passwd_).set_io_vis(false);
   }
 
   // other fields
   // -- energies (liquid, rock)
-  S->Require<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT, ie_liquid_key_)
+  S_->Require<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT, ie_liquid_key_)
     .SetMesh(mesh_)->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-  S->RequireEvaluator(ie_liquid_key_);
+  S_->RequireEvaluator(ie_liquid_key_);
 
-  S->RequireDerivative<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT,
+  S_->RequireDerivative<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT,
                                     temperature_key_, Tags::DEFAULT, ie_liquid_key_);
 
-  S->Require<CV_t, CVS_t>(ie_rock_key_, Tags::DEFAULT, ie_rock_key_)
+  S_->Require<CV_t, CVS_t>(ie_rock_key_, Tags::DEFAULT, ie_rock_key_)
     .SetMesh(mesh_)->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-  S->RequireEvaluator(ie_rock_key_);
+  S_->RequireEvaluator(ie_rock_key_);
 
-  S->RequireDerivative<CV_t, CVS_t>(ie_rock_key_, Tags::DEFAULT,
+  S_->RequireDerivative<CV_t, CVS_t>(ie_rock_key_, Tags::DEFAULT,
                                     temperature_key_, Tags::DEFAULT, ie_rock_key_);
 
   // -- densities
-  S->Require<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT, mol_density_liquid_key_)
+  S_->Require<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT, mol_density_liquid_key_)
     .SetMesh(mesh_)->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-  S->RequireEvaluator(mol_density_liquid_key_);
+  S_->RequireEvaluator(mol_density_liquid_key_);
 
-  if (S->GetEvaluator(mol_density_liquid_key_).IsDifferentiableWRT(*S, temperature_key_, Tags::DEFAULT)) {
-    S->RequireDerivative<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT,
-                                      temperature_key_, Tags::DEFAULT, mol_density_liquid_key_);
+  if (S_->GetEvaluator(mol_density_liquid_key_).IsDifferentiableWRT(*S_, temperature_key_, Tags::DEFAULT)) {
+    S_->RequireDerivative<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT,
+                                       temperature_key_, Tags::DEFAULT, mol_density_liquid_key_);
   }
 
-  S->Require<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT, mass_density_liquid_key_)
+  S_->Require<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT, mass_density_liquid_key_)
     .SetMesh(mesh_)->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-  S->RequireEvaluator(mass_density_liquid_key_);
+  S_->RequireEvaluator(mass_density_liquid_key_);
 
-  if (S->GetEvaluator(mass_density_liquid_key_).IsDifferentiableWRT(*S, temperature_key_, Tags::DEFAULT)) {
-    S->RequireDerivative<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT,
-                                      temperature_key_, Tags::DEFAULT, mass_density_liquid_key_);
+  if (S_->GetEvaluator(mass_density_liquid_key_).IsDifferentiableWRT(*S_, temperature_key_, Tags::DEFAULT)) {
+    S_->RequireDerivative<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT,
+                                       temperature_key_, Tags::DEFAULT, mass_density_liquid_key_);
   }
 
   // -- darcy flux
-  if (!S->HasData(darcy_flux_key_)) {
-    S->Require<CV_t, CVS_t>(darcy_flux_key_, Tags::DEFAULT, passwd_)
+  if (!S_->HasData(darcy_flux_key_)) {
+    S_->Require<CV_t, CVS_t>(darcy_flux_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::FACE, 1);
   }
 }
@@ -177,7 +177,7 @@ void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
 /* ******************************************************************
 * Basic initialization of energy classes.
 ****************************************************************** */
-void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
+void Energy_PK::Initialize()
 {
   // Create BCs objects
   // -- memory

@@ -190,12 +190,12 @@ TEST(SHALLOW_WATER_1D) {
 
   // create a shallow water PK
   ShallowWater_PK SWPK(sw_list,plist,S,soln);
-  SWPK.Setup(S.ptr());
+  SWPK.Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
   S->set_time(0.0);
-  SWPK.Initialize(S.ptr());
+  SWPK.Initialize();
 
   dam_break_1D_setIC(mesh, S);
   S->CheckAllFieldsInitialized();
@@ -259,7 +259,7 @@ TEST(SHALLOW_WATER_1D) {
     t_new = t_old + dt;
 
     SWPK.AdvanceStep(t_old, t_new);
-    SWPK.CommitStep(t_old, t_new, S);
+    SWPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
     iter++;

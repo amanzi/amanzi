@@ -49,11 +49,11 @@ FlowEnergy_PK::FlowEnergy_PK(Teuchos::ParameterList& pk_tree,
 /* ******************************************************************* 
 * Physics-based setup of PK.
 ******************************************************************* */
-void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
+void FlowEnergy_PK::Setup()
 {
-  mesh_ = S->GetMesh(domain_);
+  mesh_ = S_->GetMesh(domain_);
 
-  Teuchos::ParameterList& elist = S->FEList();
+  Teuchos::ParameterList& elist = S_->FEList();
 
   // Our decision can be affected by the list of models
   auto physical_models = Teuchos::sublist(my_list_, "physical models and assumptions");
@@ -88,13 +88,13 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
   // Require primary field for this PK, which is pressure
   // Fields for solids
   // -- rock
-  if (!S->HasData(particle_density_key_)) {
-    S->Require<CV_t, CVS_t>(particle_density_key_, Tags::DEFAULT, particle_density_key_)
+  if (!S_->HasData(particle_density_key_)) {
+    S_->Require<CV_t, CVS_t>(particle_density_key_, Tags::DEFAULT, particle_density_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireEvaluator(particle_density_key_);
+    S_->RequireEvaluator(particle_density_key_);
   }
 
-  if (!S->HasData(ie_rock_key_) && !elist.isSublist(ie_rock_key_)) {
+  if (!S_->HasData(ie_rock_key_) && !elist.isSublist(ie_rock_key_)) {
     Teuchos::Array<std::string> regions({ "All" });
     elist.sublist(ie_rock_key_)
          .set<std::string>("evaluator type", "iem")
@@ -107,14 +107,14 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // Fields for gas
   // -- internal energy
-  if (!S->HasData(ie_gas_key_) && !elist.isSublist(ie_gas_key_)) {
+  if (!S_->HasData(ie_gas_key_) && !elist.isSublist(ie_gas_key_)) {
     elist.sublist(ie_gas_key_)
          .set<std::string>("evaluator type", "iem water vapor")
          .set<std::string>("internal energy key", ie_gas_key_);
   }
 
   // -- molar density
-  if (!S->HasData(mol_density_gas_key_) && !elist.isSublist(mol_density_gas_key_)) {
+  if (!S_->HasData(mol_density_gas_key_) && !elist.isSublist(mol_density_gas_key_)) {
     elist.sublist(mol_density_gas_key_)
          .set<std::string>("evaluator type", "eos")
          .set<std::string>("eos basis", "molar")
@@ -128,7 +128,7 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // -- molar fraction FIXME (it is not used by all models)
-  if (!S->HasData("molar_fraction_gas") && !elist.isSublist("molar_fraction_gas")) {
+  if (!S_->HasData("molar_fraction_gas") && !elist.isSublist("molar_fraction_gas")) {
     elist.sublist("molar_fraction_gas")
          .set<std::string>("evaluator type", "molar fraction gas")
          .set<std::string>("molar fraction key", "molar_fraction_gas");
@@ -139,31 +139,31 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // Fields for liquid
   // -- internal energy
-  S->Require<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT, ie_liquid_key_)
+  S_->Require<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT, ie_liquid_key_)
     .SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-  S->RequireEvaluator(ie_liquid_key_);
+  S_->RequireEvaluator(ie_liquid_key_);
 
 
   // -- molar and mass density
-  S->Require<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT, mol_density_liquid_key_)
+  S_->Require<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT, mol_density_liquid_key_)
     .SetMesh(mesh_)->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-  S->RequireEvaluator(mol_density_liquid_key_);
+  S_->RequireEvaluator(mol_density_liquid_key_);
 
-  S->RequireEvaluator(mass_density_liquid_key_);
-  if (S->GetEvaluator(mass_density_liquid_key_).IsDifferentiableWRT(*S, pressure_key_, Tags::DEFAULT)) {
-    S->RequireDerivative<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT,
+  S_->RequireEvaluator(mass_density_liquid_key_);
+  if (S_->GetEvaluator(mass_density_liquid_key_).IsDifferentiableWRT(*S_, pressure_key_, Tags::DEFAULT)) {
+    S_->RequireDerivative<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT,
                                       pressure_key_, Tags::DEFAULT, mass_density_liquid_key_);
   }
 
   // -- viscosity
-  S->Require<CV_t, CVS_t>(viscosity_liquid_key_, Tags::DEFAULT, viscosity_liquid_key_)
+  S_->Require<CV_t, CVS_t>(viscosity_liquid_key_, Tags::DEFAULT, viscosity_liquid_key_)
     .SetMesh(mesh_)->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-  S->RequireEvaluator(viscosity_liquid_key_);
+  S_->RequireEvaluator(viscosity_liquid_key_);
 
   // inform other PKs about strong coupling
   // -- flow
@@ -179,12 +179,12 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
   energy.set<bool>("vapor diffusion", vapor_diff);
 
   // process other PKs.
-  PK_MPCStrong<PK_BDF>::Setup(S);
+  PK_MPCStrong<PK_BDF>::Setup();
 
   // copies of fields (must be called after PKs)
   if (S_->HasData(prev_wc_key_)) {
-    S->Require<CV_t, CVS_t>(prev_wc_key_, Tags::COPY, prev_wc_key_);
-    S->GetRecordW(prev_wc_key_, Tags::COPY, prev_wc_key_).set_initialized();
+    S_->Require<CV_t, CVS_t>(prev_wc_key_, Tags::COPY, prev_wc_key_);
+    S_->GetRecordW(prev_wc_key_, Tags::COPY, prev_wc_key_).set_initialized();
   }
 }
 
@@ -192,9 +192,9 @@ void FlowEnergy_PK::Setup(const Teuchos::Ptr<State>& S)
 /* ******************************************************************* 
 * Initialization of copies requires fileds to exists
 ******************************************************************* */
-void FlowEnergy_PK::Initialize(const Teuchos::Ptr<State>& S)
+void FlowEnergy_PK::Initialize()
 {
-  Amanzi::PK_MPCStrong<PK_BDF>::Initialize(S);
+  Amanzi::PK_MPCStrong<PK_BDF>::Initialize();
 
   // MPC_PKs that build on top of this may need a tree operator. Since
   // we cannot use solution_, we create a TVS from scratch

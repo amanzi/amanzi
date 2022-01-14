@@ -22,6 +22,7 @@
 
 #include "FlowEnergyMatrixFracture_PK.hh"
 #include "PK_MPCStrong.hh"
+#include "PK_Physical.hh"
 
 namespace Amanzi {
 
@@ -61,10 +62,10 @@ FlowEnergyMatrixFracture_PK::FlowEnergyMatrixFracture_PK(
 /* *******************************************************************
 * Physics-based setup of PK.
 ******************************************************************* */
-void FlowEnergyMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
+void FlowEnergyMatrixFracture_PK::Setup()
 {
-  mesh_domain_ = S->GetMesh();
-  mesh_fracture_ = S->GetMesh("fracture");
+  mesh_domain_ = S_->GetMesh();
+  mesh_fracture_ = S_->GetMesh("fracture");
 
   // keys
   normal_permeability_key_ = "fracture-normal_permeability";
@@ -74,45 +75,44 @@ void FlowEnergyMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   // distribution of DOFs, so we need to define it here
   // -- pressure
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
-  if (!S->HasData("pressure")) {
-    *S->Require<CV_t, CVS_t>("pressure", Tags::DEFAULT, "flow")
+  if (!S_->HasData("pressure")) {
+    *S_->Require<CV_t, CVS_t>("pressure", Tags::DEFAULT, "flow")
       .SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
-    AddDefaultPrimaryEvaluator_("pressure");
+    AddDefaultPrimaryEvaluator_("pressure", Tags::DEFAULT);
   }
 
-  if (!S->HasData("temperature")) {
-    *S->Require<CV_t, CVS_t>("temperature", Tags::DEFAULT, "thermal")
+  if (!S_->HasData("temperature")) {
+    *S_->Require<CV_t, CVS_t>("temperature", Tags::DEFAULT, "thermal")
       .SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
-    AddDefaultPrimaryEvaluator_("temperature");
+    AddDefaultPrimaryEvaluator_("temperature", Tags::DEFAULT);
   }
 
   // -- darcy flux
-  if (!S->HasData("darcy_flux")) {
+  if (!S_->HasData("darcy_flux")) {
     std::string name("face");
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
-    S->Require<CV_t, CVS_t>("darcy_flux", Tags::DEFAULT, "flow")
+    S_->Require<CV_t, CVS_t>("darcy_flux", Tags::DEFAULT, "flow")
       .SetMesh(mesh_domain_)->SetGhosted(true)
       ->SetComponent(name, AmanziMesh::FACE, mmap, gmap, 1);
-
-    AddDefaultPrimaryEvaluator_("darcy_flux");
+    AddDefaultPrimaryEvaluator_("darcy_flux", Tags::DEFAULT);
   }
 
   // -- darcy flux for fracture
-  if (!S->HasData("fracture-darcy_flux")) {
+  if (!S_->HasData("fracture-darcy_flux")) {
     auto cvs2 = Operators::CreateNonManifoldCVS(mesh_fracture_);
-    *S->Require<CV_t, CVS_t>("fracture-darcy_flux", Tags::DEFAULT, "flow")
+    *S_->Require<CV_t, CVS_t>("fracture-darcy_flux", Tags::DEFAULT, "flow")
       .SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs2;
   }
 
   // Require additional fields and evaluators
-  if (!S->HasData(normal_permeability_key_)) {
-    S->Require<CV_t, CVS_t>(normal_permeability_key_, Tags::DEFAULT, "state")
+  if (!S_->HasData(normal_permeability_key_)) {
+    S_->Require<CV_t, CVS_t>(normal_permeability_key_, Tags::DEFAULT, "state")
       .SetMesh(mesh_fracture_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  if (!S->HasData(normal_conductivity_key_)) {
-    S->Require<CV_t, CVS_t>(normal_conductivity_key_, Tags::DEFAULT, "state")
+  if (!S_->HasData(normal_conductivity_key_)) {
+    S_->Require<CV_t, CVS_t>(normal_conductivity_key_, Tags::DEFAULT, "state")
       .SetMesh(mesh_fracture_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
@@ -140,16 +140,16 @@ void FlowEnergyMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   fenergy.set<std::string>("coupled matrix fracture energy", "fracture");
 
   // process other PKs
-  PK_MPCStrong<PK_BDF>::Setup(S);
+  PK_MPCStrong<PK_BDF>::Setup();
 }
 
 
 /* *******************************************************************
 * Initialization create a tree operator to assemble global matrix
 ******************************************************************* */
-void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
+void FlowEnergyMatrixFracture_PK::Initialize()
 {
-  PK_MPCStrong<PK_BDF>::Initialize(S);
+  PK_MPCStrong<PK_BDF>::Initialize();
 
   // diagonal blocks (0,0) and (2,2) in tree operator must be Darcy PKs
   // one reason is that Darcy_PK combines matrix and preconditioner
@@ -210,7 +210,7 @@ void FlowEnergyMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   // -- indices transmissibimility coefficients for matrix-fracture flux
   const auto& kn = *S_->Get<CV_t>(normal_permeability_key_).ViewComponent("cell");
   const auto& tn = *S_->Get<CV_t>(normal_conductivity_key_).ViewComponent("cell");
-  double gravity = norm(S->Get<AmanziGeometry::Point>("gravity"));
+  double gravity = norm(S_->Get<AmanziGeometry::Point>("gravity"));
 
   int ncells_owned_f = mesh_fracture->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   auto inds_matrix = std::make_shared<std::vector<std::vector<int> > >(npoints_owned);
@@ -683,6 +683,18 @@ double FlowEnergyMatrixFracture_PK::ErrorNorm(
 #endif
 
   return error;
+}
+
+
+/* *******************************************************************
+* This should be refactored, see for simialr function in PK_Physical
+******************************************************************* */
+void FlowEnergyMatrixFracture_PK::AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag)
+{
+  Teuchos::ParameterList elist(key);
+  elist.set<std::string>("tag", tag.get());
+  auto eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(elist));
+  S_->SetEvaluator(key, tag, eval);
 }
 
 }  // namespace Amanzi

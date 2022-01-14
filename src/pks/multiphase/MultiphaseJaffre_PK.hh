@@ -36,8 +36,8 @@ class MultiphaseJaffre_PK: public Multiphase_PK {
   ~MultiphaseJaffre_PK() {};
 
   // modifying interface for PKs
-  virtual void Setup(const Teuchos::Ptr<State>& S) override;
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
+  virtual void Setup() final;
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
   virtual std::string name() override { return "multiphase jaffre"; }
 
   // possibly modifies the correction, after the nonlinear solver (NKA)

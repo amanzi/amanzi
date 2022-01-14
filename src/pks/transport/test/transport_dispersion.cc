@@ -81,7 +81,7 @@ TEST(DISPERSION) {
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
-  TPK.Setup(S.ptr());
+  TPK.Setup();
   TPK.CreateDefaultState(mesh, 1);
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -113,7 +113,7 @@ TEST(DISPERSION) {
 
   /* initialize a transport process kernel */
   Amanzi::VerboseObject::global_hide_line_prefix = true;
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
 
   /* advance the state */
   double dt0;
@@ -129,7 +129,7 @@ TEST(DISPERSION) {
     // printf("\n");
 
     TPK.AdvanceStep(t_old, t_new);
-    TPK.CommitStep(t_old, t_new, S);
+    TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
     iter++;
@@ -184,7 +184,7 @@ TEST(DIFFUSION) {
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
-  TPK.Setup(S.ptr());
+  TPK.Setup();
   TPK.CreateDefaultState(mesh, 1);
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -210,7 +210,7 @@ TEST(DIFFUSION) {
 
   /* initialize a transport process kernel */
   Amanzi::VerboseObject::global_hide_line_prefix = true;
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
 
   /* advance the state */
   double dt0;
@@ -226,7 +226,7 @@ TEST(DIFFUSION) {
     // printf("\n");
 
     TPK.AdvanceStep(t_old, t_new);
-    TPK.CommitStep(t_old, t_new, S);
+    TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
     iter++;
@@ -287,7 +287,7 @@ TEST(GAS_DIFFUSION) {
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   TransportExplicit_PK TPK(plist, S, "transport", component_names);
-  TPK.Setup(S.ptr());
+  TPK.Setup();
   TPK.CreateDefaultState(mesh, 1);
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -315,7 +315,7 @@ TEST(GAS_DIFFUSION) {
 
   /* initialize a transport process kernel */
   Amanzi::VerboseObject::global_hide_line_prefix = true;
-  TPK.Initialize(S.ptr());
+  TPK.Initialize();
 
   /* advance the state */
   double dt0;
@@ -329,7 +329,7 @@ TEST(GAS_DIFFUSION) {
     t_new = t_old + dt;
 
     TPK.AdvanceStep(t_old, t_new);
-    TPK.CommitStep(t_old, t_new, S);
+    TPK.CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
     iter++;

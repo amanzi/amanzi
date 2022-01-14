@@ -44,12 +44,12 @@ ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
 // -----------------------------------------------------------------------------
 // 
 // -----------------------------------------------------------------------------
-void ReactiveTransport_PK::Initialize(const Teuchos::Ptr<State>& S) {
-  Amanzi::PK_MPCAdditive<PK>::Initialize(S);
+void ReactiveTransport_PK::Initialize() {
+  Amanzi::PK_MPCAdditive<PK>::Initialize();
 
-  if (S->HasData("total_component_concentration")) {
+  if (S_->HasData("total_component_concentration")) {
     total_component_concentration_stor = Teuchos::rcp(new Epetra_MultiVector(
-        *S->Get<CompositeVector>("total_component_concentration").ViewComponent("cell", true)));
+        *S_->Get<CompositeVector>("total_component_concentration").ViewComponent("cell", true)));
     storage_created = true;
   }
 }
@@ -126,8 +126,8 @@ bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) 
 // -----------------------------------------------------------------------------
 // 
 // -----------------------------------------------------------------------------
-void ReactiveTransport_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
-  chemistry_pk_->CommitStep(t_old, t_new, S);
+void ReactiveTransport_PK::CommitStep(double t_old, double t_new, const Tag& tag) {
+  chemistry_pk_->CommitStep(t_old, t_new, tag);
 }
 
 }  // namespace Amanzi

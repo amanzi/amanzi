@@ -60,44 +60,44 @@ FlowMatrixFracture_PK::FlowMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
 /* *******************************************************************
 * Physics-based setup of PK.
 ******************************************************************* */
-void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
+void FlowMatrixFracture_PK::Setup()
 {
-  mesh_domain_ = S->GetMesh();
-  mesh_fracture_ = S->GetMesh("fracture");
+  mesh_domain_ = S_->GetMesh();
+  mesh_fracture_ = S_->GetMesh("fracture");
 
   // primary and secondary fields for matrix affected by non-uniform
   // distribution of DOFs
   // -- pressure
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
-  if (!S->HasData("pressure")) {
-    *S->Require<CV_t, CVS_t>("pressure", Tags::DEFAULT, "flow")
+  if (!S_->HasData("pressure")) {
+    *S_->Require<CV_t, CVS_t>("pressure", Tags::DEFAULT, "flow")
       .SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
-    AddDefaultPrimaryEvaluator_("pressure");
+    AddDefaultPrimaryEvaluator_("pressure", Tags::DEFAULT);
   }
 
   // -- darcy flux
-  if (!S->HasData("darcy_flux")) {
+  if (!S_->HasData("darcy_flux")) {
     std::string name("face");
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
-    S->Require<CV_t, CVS_t>("darcy_flux", Tags::DEFAULT, "flow")
+    S_->Require<CV_t, CVS_t>("darcy_flux", Tags::DEFAULT, "flow")
       .SetMesh(mesh_domain_)->SetGhosted(true)
       ->SetComponent(name, AmanziMesh::FACE, mmap, gmap, 1);
-    AddDefaultPrimaryEvaluator_("darcy_flux");
+    AddDefaultPrimaryEvaluator_("darcy_flux", Tags::DEFAULT);
   }
 
   // -- darcy flux for fracture
-  if (!S->HasData("fracture-darcy_flux")) {
+  if (!S_->HasData("fracture-darcy_flux")) {
     auto cvs2 = Operators::CreateNonManifoldCVS(mesh_fracture_);
-    *S->Require<CV_t, CVS_t>("fracture-darcy_flux", Tags::DEFAULT, "flow")
+    *S_->Require<CV_t, CVS_t>("fracture-darcy_flux", Tags::DEFAULT, "flow")
       .SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs2;
-    AddDefaultPrimaryEvaluator_("fracture-darcy_flux");
+    AddDefaultPrimaryEvaluator_("fracture-darcy_flux", Tags::DEFAULT);
   }
 
   // Require additional fields and evaluators
   Key normal_permeability_key_("fracture-normal_permeability");
-  if (!S->HasData(normal_permeability_key_)) {
-    S->Require<CV_t, CVS_t>(normal_permeability_key_, Tags::DEFAULT, "state")
+  if (!S_->HasData(normal_permeability_key_)) {
+    S_->Require<CV_t, CVS_t>(normal_permeability_key_, Tags::DEFAULT, "state")
       .SetMesh(mesh_fracture_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
@@ -117,16 +117,16 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   // ti_list_->sublist("BDF1").set<bool>("freeze preconditioner", true);
 
   // process other PKs.
-  PK_MPCStrong<PK_BDF>::Setup(S);
+  PK_MPCStrong<PK_BDF>::Setup();
 }
 
 
 /* *******************************************************************
 * Initialization create a tree operator to assemble global matrix
 ******************************************************************* */
-void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
+void FlowMatrixFracture_PK::Initialize()
 {
-  PK_MPCStrong<PK_BDF>::Initialize(S);
+  PK_MPCStrong<PK_BDF>::Initialize();
 
   // since solution's map could be anything, to create a global operator,
   // we have to rely on pk's operator structure.
@@ -168,7 +168,7 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- indices transmissibimility coefficients for matrix-fracture flux
   const auto& kn = *S_->Get<CV_t>("fracture-normal_permeability").ViewComponent("cell");
-  double gravity = norm(S->Get<AmanziGeometry::Point>("gravity"));
+  double gravity = norm(S_->Get<AmanziGeometry::Point>("gravity"));
 
   int ncells_owned_f = mesh_fracture->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   auto inds_matrix = std::make_shared<std::vector<std::vector<int> > >(npoints_owned);
@@ -314,6 +314,18 @@ int FlowMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
 {
   Y->PutScalar(0.0);
   return op_tree_matrix_->ApplyInverse(*X, *Y);
+}
+
+
+/* *******************************************************************
+* This should be refactored, see for simialr function in PK_Physical
+******************************************************************* */
+void FlowMatrixFracture_PK::AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag)
+{
+  Teuchos::ParameterList elist(key);
+  elist.set<std::string>("tag", tag.get());
+  auto eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(elist));
+  S_->SetEvaluator(key, tag, eval);
 }
 
 }  // namespace Amanzi

@@ -94,7 +94,7 @@ int AdvanceToSteadyState(
     }
 
     // commit step
-    RPK.CommitStep(T_physics - dT, T_physics, S);
+    RPK.CommitStep(T_physics - dT, T_physics, Tags::DEFAULT);
     RPK.VV_ReportMultiscale();
   }
 

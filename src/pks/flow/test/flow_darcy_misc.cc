@@ -95,7 +95,7 @@ class DarcyProblem {
 
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
     DPK = new Darcy_PK(plist, "flow", S, soln);
-    DPK->Setup(S.ptr());
+    DPK->Setup();
     S->Setup();
     S->set_time(0.0);
 
@@ -231,11 +231,11 @@ TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
     createBClist("pressure", "BC 2", regions, 1.0);
     // DPK->ResetParameterList(dp_list);
  
-    DPK->Initialize(S.ptr());
+    DPK->Initialize();
     S->CheckAllFieldsInitialized();
 
     DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), false);
-    DPK->CommitStep(0.0, 1.0, S);
+    DPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
 
     // calculate errors
     double p0 = 1.0;
@@ -269,11 +269,11 @@ TEST_FIXTURE(DarcyProblem, DirichletNeumann) {
     regions[0] = std::string("Bottom");
     createBClist("pressure", "BC 2", regions, 1.0);
 
-    DPK->Initialize(S.ptr());
+    DPK->Initialize();
     S->CheckAllFieldsInitialized();
 
     DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), false);
-    DPK->CommitStep(0.0, 1.0, S);
+    DPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
 
     // calculate errors
     double p0 = 1.0;
@@ -307,11 +307,11 @@ TEST_FIXTURE(DarcyProblem, StaticHeadDirichlet) {
     createBClist("static head", "BC 2", regions, 0.25);
     // DPK->ResetParameterList(dp_list);
 
-    DPK->Initialize(S.ptr());
+    DPK->Initialize();
     S->CheckAllFieldsInitialized();
 
     DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), false);
-    DPK->CommitStep(0.0, 1.0, S);
+    DPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
 
     // calculate errors
     double p0 = 2.0;
@@ -348,11 +348,11 @@ TEST_FIXTURE(DarcyProblem, DDprisms) {
     createBClist("pressure", "BC 2", regions, 1.0);
     // DPK->ResetParameterList(dp_list);
 
-    DPK->Initialize(S.ptr());
+    DPK->Initialize();
     S->CheckAllFieldsInitialized();
 
     DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), false);
-    DPK->CommitStep(0.0, 1.0, S);
+    DPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
 
     // calculate errors
     double p0 = 1.0;
@@ -390,11 +390,11 @@ TEST_FIXTURE(DarcyProblem, DNtetrahedra) {
     createBClist("pressure", "BC 2", regions, 1.0);
     // DPK->ResetParameterList(dp_list);
 
-    DPK->Initialize(S.ptr());
+    DPK->Initialize();
     S->CheckAllFieldsInitialized();
 
     DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), false);
-    DPK->CommitStep(0.0, 1.0, S);
+    DPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
 
     // calculate errors
     double p0 = 1.0;
@@ -431,11 +431,11 @@ TEST_FIXTURE(DarcyProblem, DDmixed) {
     createBClist("pressure", "BC 2", regions, 1.0);
     // DPK->ResetParameterList(dp_list);
 
-    DPK->Initialize(S.ptr());
+    DPK->Initialize();
     S->CheckAllFieldsInitialized();
 
     DPK->SolveFullySaturatedProblem(S->GetW<CompositeVector>("pressure", passwd), false);
-    DPK->CommitStep(0.0, 1.0, S);
+    DPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
 
     // calculate errors
     double p0 = 1.0;

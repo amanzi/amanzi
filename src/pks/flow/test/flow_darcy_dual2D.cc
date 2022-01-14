@@ -72,7 +72,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
 
-  DPK->Setup(S.ptr());
+  DPK->Setup();
   S->Setup();
   S->InitializeFields();
   S->InitializeEvaluators();
@@ -109,7 +109,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   S->GetRecordW("pressure", "flow").set_initialized();
 
   // initialize Darcy process kernel.
-  DPK->Initialize(S.ptr());
+  DPK->Initialize();
 
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("State", state_list));
   WriteStateStatistics(*S, *vo);
@@ -120,7 +120,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
     t_new = t_old + dt;
 
     DPK->AdvanceStep(t_old, t_new);
-    DPK->CommitStep(t_old, t_new, S);
+    DPK->CommitStep(t_old, t_new, Tags::DEFAULT);
 
     t_old = t_new;
 

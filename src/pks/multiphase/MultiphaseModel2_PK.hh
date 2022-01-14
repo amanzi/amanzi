@@ -35,8 +35,8 @@ class MultiphaseModel2_PK: public Multiphase_PK {
   ~MultiphaseModel2_PK() {};
 
   // modifying interface for PKs
-  virtual void Setup(const Teuchos::Ptr<State>& S) override;
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
+  virtual void Setup() override;
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
   virtual std::string name() override { return "multiphase pl sl ng"; }
 
   // possibly modifies the correction, after the nonlinear solver (NKA)

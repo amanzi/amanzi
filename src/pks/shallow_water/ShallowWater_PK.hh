@@ -64,8 +64,8 @@ class ShallowWater_PK : public PK_Physical,
 
   ~ShallowWater_PK() {};
 
-  virtual void Setup(const Teuchos::Ptr<State>& S) override;
-  virtual void Initialize(const Teuchos::Ptr<State>& S) override;
+  virtual void Setup() override;
+  virtual void Initialize() override;
 
   virtual double get_dt() override;
   virtual void set_dt(double dt) override {};
@@ -77,10 +77,10 @@ class ShallowWater_PK : public PK_Physical,
                                         TreeVector& f) override;
 
   // Commit any secondary (dependent) variables.
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
+  virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
 
   // Calculate any diagnostics prior to doing vis
-  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override {};
+  virtual void CalculateDiagnostics(const Tag& tag) override {};
 
   virtual std::string name() override { return "shallow water"; }
                             
