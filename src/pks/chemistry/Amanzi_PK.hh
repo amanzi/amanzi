@@ -43,9 +43,6 @@ class Amanzi_PK : public Chemistry_PK {
   virtual void Setup() final;
   virtual void Initialize() final;
 
-  virtual void set_dt(double dt) final {};
-  virtual double get_dt() final { return dt_next_; }
-
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false) final;
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) final;
   virtual void CalculateDiagnostics(const Tag& tag) final { extra_chemistry_output_data(); }
@@ -85,8 +82,6 @@ class Amanzi_PK : public Chemistry_PK {
 
   std::string dt_control_method_;
   double current_time_, saved_time_;
-  double dt_max_, dt_next_, dt_cut_factor_, dt_increase_factor_;
-  int dt_cut_threshold_, dt_increase_threshold_;
 
   std::vector<std::string> aux_names_;
   std::vector<int> aux_index_;
