@@ -153,8 +153,8 @@ bool ReactiveTransportMatrixFracture_PK::AdvanceStep(
   if (fail) return fail;
 
   // save copy of fields (FIXME)
-  S_->Copy<CV_t>(tcc_matrix_key_, Tags::DEFAULT, Tags::COPY);
-  S_->Copy<CV_t>(tcc_fracture_key_, Tags::DEFAULT, Tags::COPY);  
+  S_->Copy(tcc_matrix_key_, Tags::COPY, Tags::DEFAULT);
+  S_->Copy(tcc_fracture_key_, Tags::COPY, Tags::DEFAULT);  
   
   try {
     std::vector<Teuchos::RCP<AmanziChemistry::Chemistry_PK> > subpks;

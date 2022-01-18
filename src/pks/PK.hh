@@ -149,7 +149,9 @@ class PK {
 
   // This is called if ANY PK has failed; do what is needed to back up for a
   // new attempt at the step.
-  virtual void FailStep(double t_old, double t_new, const Tag& tag) = 0;
+  virtual void FailStep(double t_old, double t_new, const Tag& tag) {
+    AMANZI_ASSERT(false);
+  }
 
   // Calculate any diagnostics at S->time(), currently for visualization.
   virtual void CalculateDiagnostics(const Tag& tag) {}
@@ -163,7 +165,9 @@ class PK {
   virtual void Solution_to_State(const TreeVector& soln, const Tag& tag) = 0;
 
   // Tag the primary variable as changed in the DAG
-  virtual void ChangedSolutionPK(const Tag& tag) = 0;
+  virtual void ChangedSolutionPK(const Tag& tag) {
+    AMANZI_ASSERT(false);
+  }
 
   // When including ValidStep() in Advance(), make this protected!  refs
   // amanzi/ats#110

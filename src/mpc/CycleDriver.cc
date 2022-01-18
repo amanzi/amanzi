@@ -226,7 +226,7 @@ void CycleDriver::Setup() {
   }
 
   pk_->Setup();
-  S_->Require<double>("dt", Tags::DEFAULT, "coordinator");
+  S_->Require<double>("dt", Tags::DEFAULT, "dt");
   S_->Setup();
 
   // create the time step manager
@@ -268,8 +268,8 @@ void CycleDriver::Setup() {
 ****************************************************************** */
 void CycleDriver::Initialize() {
  
-  S_->GetW<double>("dt", Tags::DEFAULT, "coordinator") = tp_dt_[0];
-  S_->GetRecordW("dt", "coordinator").set_initialized();
+  S_->GetW<double>("dt", Tags::DEFAULT, "dt") = tp_dt_[0];
+  S_->GetRecordW("dt", "dt").set_initialized();
 
   // Initialize the state (initializes all dependent variables).
   S_->InitializeFields();
@@ -814,8 +814,8 @@ Teuchos::RCP<State> CycleDriver::Go() {
 
   // enfoce consistent physics after initialization
   // this is optional but helps with statistics
-  S_->GetW<double>("dt", Tags::DEFAULT, "coordinator") = dt;
-  S_->GetRecordW("dt", "coordinator").set_initialized();
+  S_->GetW<double>("dt", Tags::DEFAULT, "dt") = dt;
+  S_->GetRecordW("dt", "dt").set_initialized();
 
   S_->InitializeEvaluators();
   S_->CheckAllFieldsInitialized();
@@ -864,7 +864,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
                      << ": time = " << units.OutputTime(S_->get_time())
                      << ", dt = " << units.OutputTime(dt) << "\n";
         }
-        S_->GetW<double>("dt", Tags::DEFAULT, "coordinator") = dt;
+        S_->GetW<double>("dt", Tags::DEFAULT, "dt") = dt;
         S_->set_initial_time(S_->get_time());
         S_->set_final_time(S_->get_time() + dt);
         S_->set_intermediate_time(S_->get_time());
@@ -947,22 +947,22 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   // Setup
   pk_->Setup();
 
-  S_->Require<double>("dt", Tags::DEFAULT, "coordinator");
+  S_->Require<double>("dt", Tags::DEFAULT, "dt");
   S_->Setup();
 
   S_->set_cycle(S_old_->cycle());
   S_->set_time(tp_start_[time_pr_id]); 
   S_->set_position(TIME_PERIOD_START);
 
-  S_->GetW<double>("dt", Tags::DEFAULT, "coordinator") = tp_dt_[time_pr_id];
-  S_->GetRecordW("dt", Tags::DEFAULT, "coordinator").set_initialized();
+  S_->GetW<double>("dt", Tags::DEFAULT, "dt") = tp_dt_[time_pr_id];
+  S_->GetRecordW("dt", Tags::DEFAULT, "dt").set_initialized();
 
   // Initialize
   S_->InitializeFields();
   S_->InitializeEvaluators();
 
   // Initialize the state from the old state.
-  S_->Initialize(S_old_);
+  S_->Initialize(*S_old_);
 
   // Initialize the process kernels and verify
   pk_->Initialize();

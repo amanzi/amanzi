@@ -149,7 +149,7 @@ void Checkpoint::ReadAttributes(State& S) {
 
   double dt(0.0);
   output_["domain"]->readAttrReal(dt, "dt");
-  S.GetW<double>("dt", Tags::DEFAULT, "coordinator") = dt;
+  S.GetW<double>("dt", Tags::DEFAULT, "dt") = dt;
 
   int cycle(0);
   output_["domain"]->readAttrInt(cycle, "cycle");
