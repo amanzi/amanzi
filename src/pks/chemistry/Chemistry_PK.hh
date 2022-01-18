@@ -42,6 +42,9 @@ class Chemistry_PK : public PK_Physical {
   virtual void Setup() override;
   virtual void Initialize() override;
 
+  virtual void set_dt(double dt) override {};
+  virtual double get_dt() override { return dt_next_; }
+
   // Required members for chemistry interface
   // -- output of auxillary cellwise data from chemistry
   virtual Teuchos::RCP<Epetra_MultiVector> extra_chemistry_output_data() = 0;
@@ -108,6 +111,9 @@ class Chemistry_PK : public PK_Physical {
 #endif
 
   // time controls
+  int dt_cut_threshold_, dt_increase_threshold_;
+  double dt_min_, dt_max_, dt_prev_, dt_next_, dt_cut_factor_, dt_increase_factor_;
+
   int num_iterations_, num_successful_steps_;
   double initial_conditions_time_;
 };

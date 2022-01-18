@@ -30,7 +30,8 @@ Chemistry_PK::Chemistry_PK() :
     number_sorption_sites_(0),
     using_sorption_(false),
     using_sorption_isotherms_(false),
-    number_aqueous_kinetics_(0)
+    number_aqueous_kinetics_(0),
+    dt_max_(9.9e9)
     {};
 
 
@@ -298,6 +299,7 @@ void Chemistry_PK::ErrorAnalysis(int ierr, std::string& internal_msg)
   if (tmp_out[0] != 0) {
     // update time control parameters
     num_successful_steps_ = 0;
+    dt_next_ /= dt_cut_factor_;
 
     // get at least one error message
     int n = tmp_out[1];

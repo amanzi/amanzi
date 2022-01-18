@@ -22,8 +22,8 @@ ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
                                            const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                                            const Teuchos::RCP<State>& S,
                                            const Teuchos::RCP<TreeVector>& soln) :
-  Amanzi::PK_MPCAdditive<PK>(pk_tree, global_list, S, soln) { 
-
+  Amanzi::PK_MPCAdditive<PK>(pk_tree, global_list, S, soln)
+{
   storage_created = false;
   chem_step_succeeded = true;
 
@@ -44,7 +44,8 @@ ReactiveTransport_PK::ReactiveTransport_PK(Teuchos::ParameterList& pk_tree,
 // -----------------------------------------------------------------------------
 // 
 // -----------------------------------------------------------------------------
-void ReactiveTransport_PK::Initialize() {
+void ReactiveTransport_PK::Initialize()
+{
   Amanzi::PK_MPCAdditive<PK>::Initialize();
 
   if (S_->HasData("total_component_concentration")) {
@@ -58,8 +59,8 @@ void ReactiveTransport_PK::Initialize() {
 // -----------------------------------------------------------------------------
 // Calculate the min of sub PKs timestep sizes.
 // -----------------------------------------------------------------------------
-double ReactiveTransport_PK::get_dt() {
-
+double ReactiveTransport_PK::get_dt()
+{
   dTtran_ = transport_pk_->get_dt();
   dTchem_ = chemistry_pk_->get_dt();
 
@@ -76,7 +77,8 @@ double ReactiveTransport_PK::get_dt() {
 // -----------------------------------------------------------------------------
 // 
 // -----------------------------------------------------------------------------
-void ReactiveTransport_PK::set_dt(double dt) {
+void ReactiveTransport_PK::set_dt(double dt)
+{
   dTtran_ = dt;
   dTchem_ = dt;
   //dTchem_ = chemistry_pk_->get_dt();
@@ -105,7 +107,7 @@ bool ReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) 
     Exceptions::amanzi_throw(message);
   }
 
-  // Second, we do a chemistry step.
+  // Second, we do a chemistry step using a copy of the tcc vector
   try {
     chemistry_pk_->set_aqueous_components(total_component_concentration_stor);
 

@@ -42,7 +42,7 @@ class MatrixBlock {
   MatrixBlock();
   explicit MatrixBlock(int n);
   MatrixBlock(int n, int m);
-  virtual ~MatrixBlock();
+  ~MatrixBlock();
 
   void Resize(int new_size);
 
