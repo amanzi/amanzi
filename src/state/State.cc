@@ -43,6 +43,9 @@
 
 namespace Amanzi {
 
+// -----------------------------------------------------------------------------
+// Constructors
+// -----------------------------------------------------------------------------
 State::State() {
   vo_ = Teuchos::rcp(new VerboseObject("State", "none"));
 };
@@ -166,14 +169,108 @@ bool State::HasDomainSet(const Key& name) const {
 }
 
 Teuchos::RCP<const AmanziMesh::DomainSet>
-State::GetDomainSet(const Key& name) const
-{
+State::GetDomainSet(const Key& name) const {
   if (!domain_sets_.count(name)) {
     Errors::Message msg;
     msg << "DomainSet \"" << name << "\" does not exist in State.";
     Exceptions::amanzi_throw(msg);
   }
   return domain_sets_.at(name);
+}
+
+// -----------------------------------------------------------------------------
+// State handles data
+// -----------------------------------------------------------------------------
+//
+// RecordSets
+//
+bool State::HasRecordSet(const Key& fieldname) const {
+  return Keys::hasKey(data_, fieldname);
+}
+
+const RecordSet& State::GetRecordSet(const Key& fieldname) const {
+  if (!HasRecordSet(fieldname)) {
+    Errors::Message msg;
+    msg << "State does not have a RecordSet named \"" << fieldname << "\"";
+    Exceptions::amanzi_throw(msg);
+  }
+  return *data_.at(fieldname);
+}
+
+RecordSet& State::GetRecordSetW(const Key& fieldname) {
+  if (!HasRecordSet(fieldname)) {
+    Errors::Message msg;
+    msg << "State does not have a RecordSet named \"" << fieldname << "\"";
+    Exceptions::amanzi_throw(msg);
+  }
+  return *data_.at(fieldname);
+}
+
+
+//
+// Records
+//
+bool State::HasRecord(const Key& fieldname, const Tag& tag) const {
+  return HasRecordSet(fieldname) && GetRecordSet(fieldname).HasRecord(tag);
+}
+
+const Record& State::GetRecord(const Key& fieldname, const Tag& tag) const {
+  return GetRecordSet(fieldname).GetRecord(tag);
+}
+
+Record& State::GetRecordW(const Key& fieldname, const Key& owner) {
+  auto& r = GetRecordSetW(fieldname).GetRecord(Tags::DEFAULT);
+  r.AssertOwnerOrDie(owner);
+  return r;
+}
+Record& State::GetRecordW(const Key& fieldname, const Tag& tag, const Key& owner) {
+  auto& r = GetRecordSetW(fieldname).GetRecord(tag);
+  r.AssertOwnerOrDie(owner);
+  return r;
+}
+
+//
+// Derivative RecordSets
+//
+bool State::HasDerivativeSet(const Key& fieldname, const Tag& tag) const {
+  return Keys::hasKey(derivs_, Keys::getKey(fieldname, tag));
+}
+
+const RecordSet& State::GetDerivativeSet(const Key& fieldname, const Tag& tag) const {
+  if (!HasDerivativeSet(fieldname, tag)) {
+    Errors::Message msg;
+    msg << "State does not have a Derivative RecordSet for field \"" << fieldname << "\" at tag \""
+        << tag.get() << "\"";
+    Exceptions::amanzi_throw(msg);
+  }
+  return *derivs_.at(Keys::getKey(fieldname, tag));
+}
+
+RecordSet& State::GetDerivativeSetW(const Key& fieldname, const Tag& tag) {
+  if (!HasDerivativeSet(fieldname, tag)) {
+    Errors::Message msg;
+    msg << "State does not have a Derivative RecordSet for field \"" << fieldname << "\" at tag \""
+        << tag.get() << "\"";
+    Exceptions::amanzi_throw(msg);
+  }
+  return *derivs_.at(Keys::getKey(fieldname, tag));
+}
+
+//
+// Derivative Records -- note, there is currently no interface for directly
+// getting the Derivative Record.  We expect this is not necessary.
+//
+bool State::HasDerivative(const Key& key, const Tag& tag,
+                          const Key& wrt_key, const Tag& wrt_tag) const {
+  auto keytag = Keys::getKey(key, tag);
+  if (Keys::hasKey(derivs_, keytag)) {
+    Tag der_tag = make_tag(Keys::getKey(wrt_key, wrt_tag));
+    return derivs_.at(keytag)->HasRecord(der_tag);
+  }
+  return false;
+}
+bool State::HasDerivative(const Key& key, const Key& wrt_key) const {
+  return HasDerivative(key, Tags::DEFAULT, wrt_key, Tags::DEFAULT);
 }
 
 
@@ -456,7 +553,7 @@ void State::Initialize(const State& other)
   }
 
   for (auto& e : data_) {
-    if (other.HasData(e.first)) {
+    if (other.HasRecord(e.first)) {
       auto owner = GetRecord(e.first).owner();
       auto& field = GetRecordW(e.first, owner);
       const auto& copy = other.GetRecord(e.first);
@@ -507,7 +604,7 @@ void State::InitializeFieldCopies(const Tag& reference_tag)
   }
 
   for (auto& e : data_) {
-    if (HasData(e.first, reference_tag)) {
+    if (HasRecord(e.first, reference_tag)) {
       const auto& copy = GetRecord(e.first, reference_tag);
       if (copy.initialized() && copy.ValidType<CompositeVector>()) {
         for (auto& r : *e.second) {

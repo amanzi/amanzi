@@ -49,7 +49,7 @@ void TransportMatrixFracture_PK::Setup()
 
   // darcy fluxes use non-uniform distribution of DOFs
   // -- darcy flux for matrix
-  if (!S_->HasData("darcy_flux")) {
+  if (!S_->HasRecord("darcy_flux")) {
     auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
@@ -59,7 +59,7 @@ void TransportMatrixFracture_PK::Setup()
   }
 
   // -- darcy flux for fracture
-  if (!S_->HasData("fracture-darcy_flux")) {
+  if (!S_->HasRecord("fracture-darcy_flux")) {
     auto cvs = Operators::CreateNonManifoldCVS(mesh_fracture_);
     *S_->Require<CV_t, CVS_t>("fracture-darcy_flux", Tags::DEFAULT, "transport")
       .SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs;

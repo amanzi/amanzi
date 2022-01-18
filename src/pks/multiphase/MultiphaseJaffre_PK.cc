@@ -56,7 +56,7 @@ void MultiphaseJaffre_PK::Setup()
   molecular_diff_gas_key_ = Keys::getKey(domain_, "molecular_diff_gas"); 
 
   // liquid molar fraction is the primary solution
-  if (!S_->HasData(molar_density_liquid_key_)) {
+  if (!S_->HasRecord(molar_density_liquid_key_)) {
     component_names_ = mp_list_->sublist("molecular diffusion")
        .get<Teuchos::Array<std::string> >("aqueous names").toVector();
 
@@ -76,7 +76,7 @@ void MultiphaseJaffre_PK::Setup()
 
   // conserved quantities
   // -- total water storage
-  if (!S_->HasData(tws_key_)) {
+  if (!S_->HasRecord(tws_key_)) {
     S_->Require<CV_t, CVS_t>(tws_key_, Tags::DEFAULT, tws_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
@@ -102,7 +102,7 @@ void MultiphaseJaffre_PK::Setup()
   }
 
   // -- total component storage
-  if (!S_->HasData(tcs_key_)) {
+  if (!S_->HasRecord(tcs_key_)) {
     S_->Require<CV_t, CVS_t>(tcs_key_, Tags::DEFAULT, tcs_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
@@ -127,7 +127,7 @@ void MultiphaseJaffre_PK::Setup()
 
   // product evaluators
   // -- coefficient for advection operator (div eta_l q_l) in liquid phase
-  if (!S_->HasData(advection_liquid_key_)) {
+  if (!S_->HasRecord(advection_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(advection_liquid_key_, Tags::DEFAULT, advection_liquid_key_)
       .SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
 
@@ -155,7 +155,7 @@ void MultiphaseJaffre_PK::Setup()
                                        saturation_liquid_key_, Tags::DEFAULT, advection_liquid_key_);
   }
 
-  if (!S_->HasData(advection_water_key_)) {
+  if (!S_->HasRecord(advection_water_key_)) {
     S_->Require<CV_t, CVS_t>(advection_water_key_, Tags::DEFAULT, advection_water_key_)
       .SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
 
@@ -182,7 +182,7 @@ void MultiphaseJaffre_PK::Setup()
   }
 
   // -- coefficient for advection operator in gas phase
-  if (!S_->HasData(advection_gas_key_)) {
+  if (!S_->HasRecord(advection_gas_key_)) {
     S_->Require<CV_t, CVS_t>(advection_gas_key_, Tags::DEFAULT, advection_gas_key_)
       .SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
 
@@ -211,7 +211,7 @@ void MultiphaseJaffre_PK::Setup()
   }
 
   // -- coefficient for diffusion operator in liquid phase
-  if (!S_->HasData(diffusion_liquid_key_)) {
+  if (!S_->HasRecord(diffusion_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(diffusion_liquid_key_, Tags::DEFAULT, diffusion_liquid_key_)
       .SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
 
@@ -241,7 +241,7 @@ void MultiphaseJaffre_PK::Setup()
   // -- coefficient for diffusion operator in gas phase
 
   // nonlinear complimentary problem
-  if (!S_->HasData(ncp_f_key_)) {
+  if (!S_->HasRecord(ncp_f_key_)) {
     S_->Require<CV_t, CVS_t>(ncp_f_key_, Tags::DEFAULT, ncp_f_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
@@ -256,7 +256,7 @@ void MultiphaseJaffre_PK::Setup()
                                        saturation_liquid_key_, Tags::DEFAULT, ncp_f_key_);
   }
 
-  if (!S_->HasData(ncp_g_key_)) {
+  if (!S_->HasRecord(ncp_g_key_)) {
     S_->Require<CV_t, CVS_t>(ncp_g_key_, Tags::DEFAULT, ncp_g_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 

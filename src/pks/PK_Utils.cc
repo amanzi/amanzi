@@ -22,7 +22,7 @@ namespace Amanzi {
 void PKUtils_CalculatePermeabilityFactorInWell(
     const Teuchos::Ptr<State>& S, Teuchos::RCP<Epetra_Vector>& Kxy)
 {
-  if (!S->HasData("permeability")) return;
+  if (!S->HasRecord("permeability")) return;
 
   const auto& cv = S->Get<CompositeVector>("permeability");
   cv.ScatterMasterToGhosted("cell");

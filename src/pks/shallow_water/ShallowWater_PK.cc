@@ -86,16 +86,16 @@ void ShallowWater_PK::Setup()
   //-------------------------------
   // constant fields
   //-------------------------------
-  if (!S_->HasData("gravity")) {
+  if (!S_->HasRecord("gravity")) {
     S_->Require<AmanziGeometry::Point>("gravity", Tags::DEFAULT, "state");
   }
   
   // required for calculating hydrostatic pressure
-  if (!S_->HasData("const_fluid_density")) {
+  if (!S_->HasRecord("const_fluid_density")) {
     S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
   }
   
-  if (!S_->HasData("atmospheric_pressure")) {
+  if (!S_->HasRecord("atmospheric_pressure")) {
     S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
   }
 
@@ -103,27 +103,27 @@ void ShallowWater_PK::Setup()
   // primary fields
   //-------------------------------
   // -- ponded depth 
-  if (!S_->HasData(ponded_depth_key_)) {
+  if (!S_->HasRecord(ponded_depth_key_)) {
     S_->Require<CV_t, CVS_t>(ponded_depth_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     AddDefaultPrimaryEvaluator_(ponded_depth_key_);
   }
 
   // -- total depth
-  if (!S_->HasData(total_depth_key_)) {
+  if (!S_->HasRecord(total_depth_key_)) {
     S_->Require<CV_t, CVS_t>(total_depth_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // -- velocity
-  if (!S_->HasData(velocity_key_)) {
+  if (!S_->HasRecord(velocity_key_)) {
     S_->Require<CV_t, CVS_t>(velocity_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 2);
     AddDefaultPrimaryEvaluator_(velocity_key_);
   }
 
   // -- discharge
-  if (!S_->HasData(discharge_key_)) {
+  if (!S_->HasRecord(discharge_key_)) {
     S_->Require<CV_t, CVS_t>(discharge_key_, Tags::DEFAULT, discharge_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 2);
 
@@ -135,7 +135,7 @@ void ShallowWater_PK::Setup()
   }
 
   // -- bathymetry
-  if (!S_->HasData(bathymetry_key_)) {
+  if (!S_->HasRecord(bathymetry_key_)) {
     std::vector<std::string> names({"cell", "node"});
     std::vector<int> ndofs(2, 1);
     std::vector<AmanziMesh::Entity_kind> locations({AmanziMesh::CELL, AmanziMesh::NODE});
@@ -148,7 +148,7 @@ void ShallowWater_PK::Setup()
   // secondary fields
   //-------------------------------
   // -- hydrostatic pressure
-  if (!S_->HasData(hydrostatic_pressure_key_)) {
+  if (!S_->HasRecord(hydrostatic_pressure_key_)) {
     S_->Require<CV_t, CVS_t>(hydrostatic_pressure_key_, Tags::DEFAULT, hydrostatic_pressure_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     
@@ -160,13 +160,13 @@ void ShallowWater_PK::Setup()
   }
 
   // -- riemann flux
-  if (!S_->HasData(riemann_flux_key_)) {
+  if (!S_->HasRecord(riemann_flux_key_)) {
     S_->Require<CV_t, CVS_t>(riemann_flux_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::FACE, 1);
   }
 
   // -- previous state of ponded depth (for coupling)
-  if (!S_->HasData(prev_ponded_depth_key_)) {
+  if (!S_->HasRecord(prev_ponded_depth_key_)) {
     S_->Require<CV_t, CVS_t>(prev_ponded_depth_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     S_->GetRecordW(prev_ponded_depth_key_, passwd_).set_io_vis(false);
@@ -372,7 +372,7 @@ void ShallowWater_PK::Initialize()
 void ShallowWater_PK::InitializeFieldFromField_(
     const std::string& field0, const std::string& field1, bool call_evaluator)
 {
-  if (S_->HasData(field0)) {
+  if (S_->HasRecord(field0)) {
     if (S_->GetRecord(field0).owner() == passwd_) {
       if (!S_->GetRecord(field0).initialized()) {
         if (call_evaluator)

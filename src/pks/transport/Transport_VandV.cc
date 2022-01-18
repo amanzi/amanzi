@@ -36,22 +36,22 @@ void Transport_PK::CreateDefaultState(
   std::string name("state"); 
   S_->Require<double>("const_fluid_density", Tags::DEFAULT, name);
 
-  if (!S_->HasData(saturation_liquid_key_)) {
+  if (!S_->HasRecord(saturation_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, name)
       .SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
   
-  if (!S_->HasData(prev_saturation_liquid_key_)) {
+  if (!S_->HasRecord(prev_saturation_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(prev_saturation_liquid_key_, Tags::DEFAULT, name)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  if (!S_->HasData(darcy_flux_key_)) {
+  if (!S_->HasRecord(darcy_flux_key_)) {
     S_->Require<CV_t, CVS_t>(darcy_flux_key_, Tags::DEFAULT, name)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::FACE, 1);
   }
   
-  if (!S_->HasData(tcc_key_)) {
+  if (!S_->HasRecord(tcc_key_)) {
     S_->Require<CV_t, CVS_t>(tcc_key_, Tags::DEFAULT, name, component_names_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, ncomponents);
   }

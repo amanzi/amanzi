@@ -69,14 +69,14 @@ void FlowMatrixFracture_PK::Setup()
   // distribution of DOFs
   // -- pressure
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
-  if (!S_->HasData("pressure")) {
+  if (!S_->HasRecord("pressure")) {
     *S_->Require<CV_t, CVS_t>("pressure", Tags::DEFAULT, "flow")
       .SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
     AddDefaultPrimaryEvaluator_("pressure", Tags::DEFAULT);
   }
 
   // -- darcy flux
-  if (!S_->HasData("darcy_flux")) {
+  if (!S_->HasRecord("darcy_flux")) {
     std::string name("face");
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
@@ -87,7 +87,7 @@ void FlowMatrixFracture_PK::Setup()
   }
 
   // -- darcy flux for fracture
-  if (!S_->HasData("fracture-darcy_flux")) {
+  if (!S_->HasRecord("fracture-darcy_flux")) {
     auto cvs2 = Operators::CreateNonManifoldCVS(mesh_fracture_);
     *S_->Require<CV_t, CVS_t>("fracture-darcy_flux", Tags::DEFAULT, "flow")
       .SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs2;
@@ -96,7 +96,7 @@ void FlowMatrixFracture_PK::Setup()
 
   // Require additional fields and evaluators
   Key normal_permeability_key_("fracture-normal_permeability");
-  if (!S_->HasData(normal_permeability_key_)) {
+  if (!S_->HasRecord(normal_permeability_key_)) {
     S_->Require<CV_t, CVS_t>(normal_permeability_key_, Tags::DEFAULT, "state")
       .SetMesh(mesh_fracture_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }

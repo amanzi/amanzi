@@ -117,7 +117,7 @@ void ObservableAqueous::ComputeObservation(
   Key mol_density_key = Keys::getKey(domain_, "molar_density_liquid");
 
   Teuchos::RCP<const Epetra_MultiVector> rho_c;
-  if (S.HasData(mol_density_key)) 
+  if (S.HasRecord(mol_density_key)) 
     rho_c = S.Get<CompositeVector>(mol_density_key).ViewComponent("cell");
 
   Key head_key = Keys::getKey(domain_, "hydraulic_head");
@@ -140,7 +140,7 @@ void ObservableAqueous::ComputeObservation(
     }
   } else if (variable_ == "gravimetric water content") {
     Key pd_key = Keys::getKey(domain_, "particle_density");
-    if (!S.HasData(pd_key)) {
+    if (!S.HasRecord(pd_key)) {
       msg << "Observation \""  << variable_ << "\" requires field \"particle_density\".\n";
       Exceptions::amanzi_throw(msg);
     }

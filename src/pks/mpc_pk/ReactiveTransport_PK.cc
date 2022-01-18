@@ -48,7 +48,7 @@ void ReactiveTransport_PK::Initialize()
 {
   Amanzi::PK_MPCAdditive<PK>::Initialize();
 
-  if (S_->HasData("total_component_concentration")) {
+  if (S_->HasRecord("total_component_concentration")) {
     total_component_concentration_stor = Teuchos::rcp(new Epetra_MultiVector(
         *S_->Get<CompositeVector>("total_component_concentration").ViewComponent("cell", true)));
     storage_created = true;

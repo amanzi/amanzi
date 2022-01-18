@@ -66,7 +66,7 @@ void TransportMatrixFractureImplicit_PK::Setup()
   // distribution of DOFs
 
   // -- darcy flux in matrix
-  if (!S_->HasData("darcy_flux")) {
+  if (!S_->HasRecord("darcy_flux")) {
     auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
@@ -76,7 +76,7 @@ void TransportMatrixFractureImplicit_PK::Setup()
   }
 
   // -- darcy flux in fracture
-  if (!S_->HasData("fracture-darcy_flux")) {
+  if (!S_->HasRecord("fracture-darcy_flux")) {
     auto cvs = Operators::CreateNonManifoldCVS(mesh_fracture_);
     *S_->Require<CV_t, CVS_t>("fracture-darcy_flux", Tags::DEFAULT, "state")
       .SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs;

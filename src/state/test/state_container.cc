@@ -83,9 +83,9 @@ TEST(STATE_HETEROGENEOUS_DATA) {
   s.Setup();
 
   // existence
-  CHECK(s.HasData("my_double"));
-  CHECK(s.HasData("my_vec"));
-  CHECK(!s.HasData("my_nonexistent_data"));
+  CHECK(s.HasRecord("my_double"));
+  CHECK(s.HasRecord("my_vec"));
+  CHECK(!s.HasRecord("my_nonexistent_data"));
 
   // defaults
   CHECK(!s.GetRecord("my_double").initialized());
@@ -98,7 +98,7 @@ TEST(STATE_HETEROGENEOUS_DATA) {
   // incorrect type in Get
   CHECK_THROW(s.Get<double>("my_vec"), Errors::Message);
 
-  // nonexistent data -- two checks ensure that previous HasData() call didn't
+  // nonexistent data -- two checks ensure that previous HasRecord() call didn't
   // create the data!
   CHECK_THROW(s.Get<double>("my_nonexistent_data"), std::out_of_range);
   CHECK_THROW(s.Get<double>("my_other_nonexistent_data"), std::out_of_range);
@@ -108,8 +108,8 @@ TEST(STATE_HETEROGENEOUS_DATA) {
   CHECK_EQUAL(1.1, s.Get<double>("my_double"));
 
   // copies
-  CHECK(s.HasData("my_double", tag_prev));
-  CHECK(!s.HasData("my_vec", tag_prev));
+  CHECK(s.HasRecord("my_double", tag_prev));
+  CHECK(!s.HasRecord("my_vec", tag_prev));
 
   s.Assign("my_double", tag_prev, "my_double_prev_owner", 2.2);
   CHECK_EQUAL(1.1, s.Get<double>("my_double"));
@@ -143,7 +143,7 @@ TEST(STATE_VIRTUAL_DATA) {
   s.Setup();
 
   // existence
-  CHECK(s.HasData("my_op"));
+  CHECK(s.HasRecord("my_op"));
   CHECK_EQUAL(Operators::OPERATOR_SCHEMA_DOFS_CELL |
                   Operators::OPERATOR_SCHEMA_BASE_CELL,
               s.Get<Operators::Op>("my_op").schema_old());

@@ -62,7 +62,7 @@ void EnergyOnePhase_PK::Setup()
 
   // Get data and evaluators needed by the PK
   // -- energy, the conserved quantity
-  if (!S_->HasData(energy_key_)) {
+  if (!S_->HasRecord(energy_key_)) {
     S_->Require<CV_t, CVS_t>(energy_key_, Tags::DEFAULT, energy_key_)
       .SetMesh(mesh_)->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
 
@@ -81,7 +81,7 @@ void EnergyOnePhase_PK::Setup()
   }
 
   // -- advection of enthalpy
-  if (!S_->HasData(enthalpy_key_)) {
+  if (!S_->HasRecord(enthalpy_key_)) {
     S_->Require<CV_t, CVS_t>(enthalpy_key_, Tags::DEFAULT, enthalpy_key_)
       .SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1)
@@ -99,7 +99,7 @@ void EnergyOnePhase_PK::Setup()
   }
 
   // -- thermal conductivity
-  if (!S_->HasData(conductivity_key_)) {
+  if (!S_->HasRecord(conductivity_key_)) {
     S_->Require<CV_t, CVS_t>(conductivity_key_, Tags::DEFAULT, conductivity_key_)
       .SetMesh(mesh_)->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
 
@@ -225,7 +225,7 @@ void EnergyOnePhase_PK::InitializeFields_()
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  if (S_->HasData(prev_energy_key_)) {
+  if (S_->HasRecord(prev_energy_key_)) {
     if (!S_->GetRecord(prev_energy_key_).initialized()) {
       temperature_eval_->SetChanged();
       S_->GetEvaluator(energy_key_).Update(*S_, passwd_);

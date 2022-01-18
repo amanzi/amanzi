@@ -152,7 +152,7 @@ void Alquimia_PK::Setup()
   for (size_t i = 0; i < aux_names_.size(); ++i) {
     aux_names_[i] = Keys::getKey(domain_, aux_names_[i]);
 
-    if (!S_->HasData(aux_names_[i])) {
+    if (!S_->HasRecord(aux_names_[i])) {
       S_->Require<CompositeVector, CompositeVectorSpace>(aux_names_[i], Tags::DEFAULT, passwd_, aux_subfield_names_[i])
         .SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, aux_subfield_names_[i].size());
@@ -164,7 +164,7 @@ void Alquimia_PK::Setup()
 
     for (auto it = names.begin(); it != names.end(); ++it) {
       Key aux_field_name = Keys::getKey(domain_, *it);
-      if (!S_->HasData(aux_field_name)) {
+      if (!S_->HasRecord(aux_field_name)) {
         S_->Require<CompositeVector, CompositeVectorSpace>(aux_field_name, Tags::DEFAULT, passwd_)
           .SetMesh(mesh_)->SetGhosted(false)->SetComponent("cell", AmanziMesh::CELL, 1);
       }
@@ -172,7 +172,7 @@ void Alquimia_PK::Setup()
   }
 
   // Setup more auxiliary data
-  if (!S_->HasData(alquimia_aux_data_key_)) {
+  if (!S_->HasRecord(alquimia_aux_data_key_)) {
     int num_aux_data = chem_engine_->Sizes().num_aux_integers + chem_engine_->Sizes().num_aux_doubles;
     S_->Require<CompositeVector, CompositeVectorSpace>(alquimia_aux_data_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(false)->SetComponent("cell", AmanziMesh::CELL, num_aux_data);
@@ -555,7 +555,7 @@ void Alquimia_PK::CopyToAlquimia(int cell,
   }
 
   // Auxiliary data -- block copy.
-  if (S_->HasData(alquimia_aux_data_key_)) {
+  if (S_->HasRecord(alquimia_aux_data_key_)) {
     aux_data_ = S_->GetW<CompositeVector>(alquimia_aux_data_key_, passwd_).ViewComponent("cell");
     int num_aux_ints = chem_engine_->Sizes().num_aux_integers;
     int num_aux_doubles = chem_engine_->Sizes().num_aux_doubles;
@@ -699,7 +699,7 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
     }
   }
 
-  if (S_->HasData(alquimia_aux_data_key_)) {
+  if (S_->HasRecord(alquimia_aux_data_key_)) {
     aux_data_ = S_->GetW<CompositeVector>(alquimia_aux_data_key_, passwd_).ViewComponent("cell");
 
     int num_aux_ints = chem_engine_->Sizes().num_aux_integers;
@@ -914,7 +914,7 @@ void Alquimia_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next)
 
   for (size_t i = 0; i < aux_names.size(); ++i) {
     aux_names[i] = Keys::getKey(domain_, aux_names[i]);
-    if (S_->HasData(aux_names[i]) && S_next->HasData(aux_names[i])) {
+    if (S_->HasRecord(aux_names[i]) && S_next->HasRecord(aux_names[i])) {
       *S_next->GetW<CompositeVector>(aux_names[i], passwd_).ViewComponent("cell") =
         *S_->Get<CompositeVector>(aux_names[i]).ViewComponent("cell");
     }
@@ -926,14 +926,14 @@ void Alquimia_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next)
 
     for (auto it = names.begin(); it != names.end(); ++it) {
       Key aux_field_name = Keys::getKey(domain_, *it);
-      if (S_->HasData(aux_field_name) && S_next->HasData(aux_field_name)) {
+      if (S_->HasRecord(aux_field_name) && S_next->HasRecord(aux_field_name)) {
         *S_next->GetW<CompositeVector>(aux_field_name, passwd_).ViewComponent("cell") =
           *S_->Get<CompositeVector>(aux_field_name).ViewComponent("cell");
       }
     }
   }
 
-  if (S_->HasData(alquimia_aux_data_key_) && S_next->HasData(alquimia_aux_data_key_)) {
+  if (S_->HasRecord(alquimia_aux_data_key_) && S_next->HasRecord(alquimia_aux_data_key_)) {
     *S_next->GetW<CompositeVector>(alquimia_aux_data_key_, passwd_).ViewComponent("cell") =
       *S_->Get<CompositeVector>(alquimia_aux_data_key_).ViewComponent("cell");
   }

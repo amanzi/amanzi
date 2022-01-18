@@ -69,7 +69,7 @@ class RecordSet {
   const Record& GetRecord(const Tag& tag) const;
   Record& GetRecord(const Tag& tag);
 
-  void RequireRecord(const Tag& tag, const Key& owner);
+  Record& RequireRecord(const Tag& tag, const Key& owner);
 
   //  void SwitchCopies(const Tag& tag1, const Tag& tag2); // needs owner
   //  information?

@@ -87,7 +87,7 @@ int AdvanceToSteadyState(
     wc_prev = wc;
 
     // update and swap matrix water content
-    if (S->HasData("water_content_matrix")) {
+    if (S->HasRecord("water_content_matrix")) {
       const auto& wcm = S->Get<CompositeVector>("water_content_matrix");
       auto& wcm_prev = S->GetW<CompositeVector>("prev_water_content_matrix", "flow");
       wcm_prev = wcm;

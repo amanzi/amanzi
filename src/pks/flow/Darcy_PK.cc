@@ -136,7 +136,7 @@ void Darcy_PK::Setup()
   Teuchos::RCP<Teuchos::ParameterList> list3 = Teuchos::sublist(list2, "matrix", true);
   std::string name = list3->get<std::string>("discretization primary");
 
-  if (!S_->HasData(pressure_key_)) {
+  if (!S_->HasRecord(pressure_key_)) {
     std::vector<std::string> names;
     std::vector<AmanziMesh::Entity_kind> locations;
     std::vector<int> ndofs;
@@ -158,49 +158,49 @@ void Darcy_PK::Setup()
   }
 
   // require additional fields for this PK
-  if (!S_->HasData(specific_storage_key_)) {
+  if (!S_->HasRecord(specific_storage_key_)) {
     S_->Require<CV_t, CVS_t>(specific_storage_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  if (!S_->HasData(specific_yield_key_)) {
+  if (!S_->HasRecord(specific_yield_key_)) {
     S_->Require<CV_t, CVS_t>(specific_yield_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  if (!S_->HasData(saturation_liquid_key_)) {
+  if (!S_->HasRecord(saturation_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
     AddDefaultPrimaryEvaluator_(saturation_liquid_key_);
   }
 
-  if (!S_->HasData(prev_saturation_liquid_key_)) {
+  if (!S_->HasRecord(prev_saturation_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(prev_saturation_liquid_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // Require additional field evaluators for this PK.
   // -- porosity
-  if (!S_->HasData(porosity_key_)) {
+  if (!S_->HasRecord(porosity_key_)) {
     S_->Require<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, porosity_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
   }
 
   // -- viscosity
-  if (!S_->HasData("const_fluid_viscosity")) {
+  if (!S_->HasRecord("const_fluid_viscosity")) {
     S_->Require<double>("const_fluid_viscosity", Tags::DEFAULT, "state");
   }
 
   // Local fields and evaluators.
-  if (!S_->HasData(hydraulic_head_key_)) {
+  if (!S_->HasRecord(hydraulic_head_key_)) {
     S_->Require<CV_t, CVS_t>(hydraulic_head_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // full velocity vector
-  if (!S_->HasData(darcy_velocity_key_)) {
+  if (!S_->HasRecord(darcy_velocity_key_)) {
     S_->Require<CV_t, CVS_t>(darcy_velocity_key_, Tags::DEFAULT, darcy_velocity_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, dim);
 
@@ -229,7 +229,7 @@ void Darcy_PK::Setup()
     std::vector<std::string> fields = fp_list_->get<Teuchos::Array<std::string> >("optional fields").toVector();
     for (auto it = fields.begin(); it != fields.end(); ++it) {
       Key optional_key = Keys::getKey(domain_, *it); 
-      if (!S_->HasData(optional_key)) {
+      if (!S_->HasRecord(optional_key)) {
         S_->Require<CV_t, CVS_t>(optional_key, Tags::DEFAULT, passwd_)
           .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
       }
@@ -469,7 +469,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   op_acc_->AddAccumulationDeltaNoVolume(*solution, sy_g, "cell");
 
   // Peaceman model
-  if (S_->HasData("well_index")) {
+  if (S_->HasRecord("well_index")) {
     const auto& wi = S_->Get<CV_t>("well_index");
     op_acc_->AddAccumulationTerm(wi, "cell");
   }

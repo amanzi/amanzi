@@ -193,7 +193,7 @@ void WalkaboutCheckpoint::CalculateData(
   // process non-flow state variables
   bool flag(false);
   Teuchos::RCP<const Epetra_MultiVector> kd;
-  if (S->HasData("isotherm_kd")) {
+  if (S->HasRecord("isotherm_kd")) {
     flag = true;
     S->Get<CompositeVector>("isotherm_kd").ScatterMasterToGhosted();
     kd = S->Get<CompositeVector>("isotherm_kd").ViewComponent("cell", true);

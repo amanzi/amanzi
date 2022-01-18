@@ -92,7 +92,7 @@ void NavierStokes_PK::Setup()
 
   // primary fields
   // -- pressure
-  if (!S_->HasData("pressure")) {
+  if (!S_->HasRecord("pressure")) {
     S_->Require<CV_t, CVS_t>("pressure", Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
@@ -107,7 +107,7 @@ void NavierStokes_PK::Setup()
   std::vector<AmanziMesh::Entity_kind> locations = {AmanziMesh::NODE, AmanziMesh::FACE};
   std::vector<int> ndofs = {dim, 1};
 
-  if (!S_->HasData("fluid_velocity")) {
+  if (!S_->HasRecord("fluid_velocity")) {
     S_->Require<CV_t, CVS_t>("fluid_velocity", Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponents(names, locations, ndofs);
 
@@ -118,7 +118,7 @@ void NavierStokes_PK::Setup()
   }
 
   // -- viscosity: if not requested by any PK, we request its constant value.
-  if (!S_->HasData("const_fluid_viscosity")) {
+  if (!S_->HasRecord("const_fluid_viscosity")) {
     S_->Require<double>("const_fluid_viscosity", Tags::DEFAULT, "state");
   }
 }

@@ -217,7 +217,7 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
 // -----------------------------------------------------------------------------
 void DeformCheckpointMesh(State& S, Key domain)
 {
-  if (S.HasData("vertex coordinate")) { // only deform mesh if vertex coordinate
+  if (S.HasRecord("vertex coordinate")) { // only deform mesh if vertex coordinate
                                         // field exists
     AmanziMesh::Mesh* write_access_mesh = const_cast<AmanziMesh::Mesh*>(&*S.GetMesh());
 

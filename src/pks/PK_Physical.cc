@@ -49,7 +49,7 @@ void PK_Physical::InitializeField_(const Key& key, const Tag& tag, const Key& pa
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  if (S_->HasData(key, tag)) {
+  if (S_->HasRecord(key, tag)) {
     if (S_->GetRecord(key, tag).owner() == passwd) {
       if (!S_->GetRecord(key, tag).initialized()) {
         S_->GetW<CompositeVector>(key, tag, passwd).PutScalar(default_val);

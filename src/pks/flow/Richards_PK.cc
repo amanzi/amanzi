@@ -173,7 +173,7 @@ void Richards_PK::Setup()
     ndofs.push_back(1);
   }
 
-  if (!S_->HasData(pressure_key_)) {
+  if (!S_->HasRecord(pressure_key_)) {
     S_->Require<CV_t, CVS_t>(pressure_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponents(names, locations, ndofs);
     AddDefaultPrimaryEvaluator_(pressure_key_);
@@ -181,7 +181,7 @@ void Richards_PK::Setup()
 
   // Require conserved quantity.
   // -- water content
-  if (!S_->HasData(water_content_key_)) {
+  if (!S_->HasRecord(water_content_key_)) {
     S_->Require<CV_t, CVS_t>(water_content_key_, Tags::DEFAULT, water_content_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
@@ -201,7 +201,7 @@ void Richards_PK::Setup()
   }
 
   // -- water content from the previous time step
-  if (!S_->HasData(prev_water_content_key_)) {
+  if (!S_->HasRecord(prev_water_content_key_)) {
     S_->Require<CV_t, CVS_t>(prev_water_content_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     S_->GetRecordW(prev_water_content_key_, passwd_).set_io_vis(false);
@@ -209,7 +209,7 @@ void Richards_PK::Setup()
 
   // -- multiscale extension: secondary (immobile water content)
   if (multiscale_model == "dual continuum discontinuous matrix") {
-    if (!S_->HasData("pressure_matrix")) {
+    if (!S_->HasRecord("pressure_matrix")) {
       S_->Require<CV_t, CVS_t>("pressure_matrix", Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(false)->SetComponent("cell", AmanziMesh::CELL, 1);
 
@@ -222,11 +222,11 @@ void Richards_PK::Setup()
     Teuchos::RCP<Teuchos::ParameterList> msp_list = Teuchos::sublist(fp_list_, "multiscale models", true);
     msp_ = CreateMultiscaleFlowPorosityPartition(mesh_, msp_list);
 
-    if (!S_->HasData("water_content_matrix")) {
+    if (!S_->HasRecord("water_content_matrix")) {
       S_->Require<CV_t, CVS_t>("water_content_matrix", Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     }
-    if (!S_->HasData("prev_water_content_matrix")) {
+    if (!S_->HasRecord("prev_water_content_matrix")) {
       S_->Require<CV_t, CVS_t>("prev_water_content_matrix", Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
       S_->GetRecordW("prev_water_content_matrix", passwd_).set_io_vis(false);
@@ -265,7 +265,7 @@ void Richards_PK::Setup()
 
   // Require additional fields and evaluators for this PK.
   // -- porosity
-  if (!S_->HasData(porosity_key_)) {
+  if (!S_->HasRecord(porosity_key_)) {
     S_->Require<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, porosity_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
@@ -292,8 +292,8 @@ void Richards_PK::Setup()
   }
 
   // -- viscosity: if not requested by any PK, we request its constant value.
-  if (!S_->HasData(viscosity_liquid_key_)) {
-    if (!S_->HasData("const_fluid_viscosity")) {
+  if (!S_->HasRecord(viscosity_liquid_key_)) {
+    if (!S_->HasRecord("const_fluid_viscosity")) {
       S_->Require<double>("const_fluid_viscosity", Tags::DEFAULT, "state");
     }
     S_->Require<CV_t, CVS_t>(viscosity_liquid_key_, Tags::DEFAULT, viscosity_liquid_key_)
@@ -317,7 +317,7 @@ void Richards_PK::Setup()
 
   // -- model for liquid density is constant density unless specified otherwise
   //    in high-level PKs.
-  if (!S_->HasData(mol_density_liquid_key_)) {
+  if (!S_->HasRecord(mol_density_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT, mol_density_liquid_key_)
       .SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1)
@@ -343,7 +343,7 @@ void Richards_PK::Setup()
   auto wrm_list = Teuchos::sublist(fp_list_, "water retention models", true);
   wrm_ = CreateWRMPartition(mesh_, wrm_list);
 
-  if (!S_->HasData(saturation_liquid_key_)) {
+  if (!S_->HasRecord(saturation_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
@@ -357,14 +357,14 @@ void Richards_PK::Setup()
     S_->SetEvaluator(saturation_liquid_key_, eval);
   }
 
-  if (!S_->HasData(prev_saturation_liquid_key_)) {
+  if (!S_->HasRecord(prev_saturation_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(prev_saturation_liquid_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     S_->GetRecordW(prev_saturation_liquid_key_, passwd_).set_io_vis(false);
   }
 
   // -- relative permeability
-  if (!S_->HasData(relperm_key_)) {
+  if (!S_->HasRecord(relperm_key_)) {
     S_->Require<CV_t, CVS_t>(relperm_key_, Tags::DEFAULT, relperm_key_)
       .SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1)
       ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
@@ -380,7 +380,7 @@ void Richards_PK::Setup()
   }
 
   // -- inverse of kinematic viscosity
-  if (!S_->HasData(alpha_key_)) {
+  if (!S_->HasRecord(alpha_key_)) {
     Key kkey;
     if (flow_on_manifold_) {
       S_->Require<CV_t, CVS_t>(alpha_key_, Tags::DEFAULT, alpha_key_)
@@ -412,13 +412,13 @@ void Richards_PK::Setup()
 
   // Local fields and evaluators.
   // -- hydraulic head
-  if (!S_->HasData(hydraulic_head_key_)) {
+  if (!S_->HasRecord(hydraulic_head_key_)) {
     S_->Require<CV_t, CVS_t>(hydraulic_head_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // -- Darcy velocity vector
-  if (!S_->HasData(darcy_velocity_key_)) {
+  if (!S_->HasRecord(darcy_velocity_key_)) {
     S_->Require<CV_t, CVS_t>(darcy_velocity_key_, Tags::DEFAULT, darcy_velocity_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, dim);
 
@@ -798,7 +798,7 @@ void Richards_PK::InitializeFields_()
 
   // set popular default values for missed fields.
   if (S_->GetRecord(saturation_liquid_key_).owner() == passwd_) {
-    if (S_->HasData(saturation_liquid_key_)) {
+    if (S_->HasRecord(saturation_liquid_key_)) {
       if (!S_->GetRecord(saturation_liquid_key_).initialized()) {
         S_->GetW<CV_t>(saturation_liquid_key_, Tags::DEFAULT, passwd_).PutScalar(1.0);
         S_->GetRecordW(saturation_liquid_key_, Tags::DEFAULT, passwd_).set_initialized();
@@ -814,7 +814,7 @@ void Richards_PK::InitializeFields_()
 
   // set matrix fields assuming presure equilibrium
   // -- pressure
-  if (S_->HasData("pressure_matrix")) {
+  if (S_->HasRecord("pressure_matrix")) {
     // if (!S_->GetField("pressure_matrix", passwd_)->initialized()) {
       const auto& p1 = *S_->Get<CV_t>(pressure_key_).ViewComponent("cell");
       auto& p0 = *S_->GetW<CV_t>("pressure_matrix", passwd_).ViewComponent("cell");
@@ -829,7 +829,7 @@ void Richards_PK::InitializeFields_()
   }
 
   // -- water contents 
-  if (S_->HasData("water_content_matrix")) {
+  if (S_->HasRecord("water_content_matrix")) {
     if (!S_->GetRecord("water_content_matrix", Tags::DEFAULT).initialized()) {
       CalculateVWContentMatrix_();
       S_->GetRecordW("water_content_matrix", Tags::DEFAULT, passwd_).set_initialized();
@@ -849,7 +849,7 @@ void Richards_PK::InitializeFields_()
 void Richards_PK::InitializeFieldFromField_(
     const std::string& field0, const std::string& field1, bool call_evaluator)
 {
-  if (S_->HasData(field0)) {
+  if (S_->HasRecord(field0)) {
     if (!S_->GetRecord(field0).initialized()) {
       if (call_evaluator)
           S_->GetEvaluator(field1).Update(*S_, passwd_);

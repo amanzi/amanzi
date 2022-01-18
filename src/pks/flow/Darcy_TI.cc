@@ -43,7 +43,7 @@ void Darcy_PK::FunctionalResidual(
   op_acc_->AddAccumulationDeltaNoVolume(*u_old->Data(), sy_g, "cell");
 
   // Peaceman model
-  if (S_->HasData("well_index")) {
+  if (S_->HasRecord("well_index")) {
     const auto& wi = S_->Get<CompositeVector>("well_index");
     op_acc_->AddAccumulationTerm(wi, "cell");
   }

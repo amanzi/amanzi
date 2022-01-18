@@ -59,7 +59,7 @@ void Chemistry_PK::Setup()
 
   // require transport fields
   std::vector<std::string>::const_iterator it;
-  if (!S_->HasData(tcc_key_)) {
+  if (!S_->HasRecord(tcc_key_)) {
     S_->Require<CV_t, CVS_t>(tcc_key_, Tags::DEFAULT, passwd_, comp_names_)
       .SetMesh(mesh_)->SetGhosted(true)
     ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_components_);
@@ -336,7 +336,7 @@ void Chemistry_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next)
   };
 
   for (int i = 0; i < fields.size(); ++i) {
-    if (S_->HasData(fields[i]) && S_next->HasData(fields[i])) {
+    if (S_->HasRecord(fields[i]) && S_next->HasRecord(fields[i])) {
       *S_next->GetW<CompositeVector>(fields[i], Tags::DEFAULT, passwd_).ViewComponent("cell") =
         *S_->Get<CompositeVector>(fields[i]).ViewComponent("cell");
     }

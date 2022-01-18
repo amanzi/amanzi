@@ -123,23 +123,23 @@ void Multiphase_PK::Setup()
   ncp_fg_key_ = Keys::getKey(domain_, "ncp_fg"); 
 
   // register non-standard fields
-  if (!S_->HasData("gravity"))
+  if (!S_->HasRecord("gravity"))
       S_->Require<AmanziGeometry::Point>("gravity", Tags::DEFAULT, "state");
 
-  if (!S_->HasData("const_fluid_density"))
+  if (!S_->HasRecord("const_fluid_density"))
       S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
 
-  if (!S_->HasData("const_fluid_viscosity"))
+  if (!S_->HasRecord("const_fluid_viscosity"))
       S_->Require<double>("const_fluid_viscosity", Tags::DEFAULT, "state");
 
-  if (!S_->HasData("const_gas_viscosity"))
+  if (!S_->HasRecord("const_gas_viscosity"))
       S_->Require<double>("const_gas_viscosity", Tags::DEFAULT, "state");
 
-  if (!S_->HasData("atmospheric_pressure"))
+  if (!S_->HasRecord("atmospheric_pressure"))
     S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
 
   // pressure is the primary solution
-  if (!S_->HasData(pressure_liquid_key_)) {
+  if (!S_->HasRecord(pressure_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(pressure_liquid_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
@@ -153,14 +153,14 @@ void Multiphase_PK::Setup()
   }
 
   // temperature typically is the primary solution owned by another PK
-  if (!S_->HasData(temperature_key_)) {
+  if (!S_->HasRecord(temperature_key_)) {
     S_->Require<CV_t, CVS_t>(temperature_key_, Tags::DEFAULT, temperature_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     S_->RequireEvaluator(temperature_key_);
   }
 
   // water saturation is the primary solution
-  if (!S_->HasData(saturation_liquid_key_)) {
+  if (!S_->HasRecord(saturation_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
@@ -177,7 +177,7 @@ void Multiphase_PK::Setup()
   auto wrm_list = Teuchos::sublist(mp_list_, "water retention models", true);
   wrm_ = CreateModelPartition<WRMmp>(mesh_, wrm_list, "water retention model");
 
-  if (!S_->HasData(pressure_gas_key_)) {
+  if (!S_->HasRecord(pressure_gas_key_)) {
     S_->Require<CV_t, CVS_t>(pressure_gas_key_, Tags::DEFAULT, pressure_gas_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
@@ -199,31 +199,31 @@ void Multiphase_PK::Setup()
   }
 
   // Darcy velocities
-  if (!S_->HasData(darcy_flux_liquid_key_)) {
+  if (!S_->HasRecord(darcy_flux_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(darcy_flux_liquid_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::FACE, 1);
   }
 
-  if (!S_->HasData(darcy_flux_gas_key_)) {
+  if (!S_->HasRecord(darcy_flux_gas_key_)) {
     S_->Require<CV_t, CVS_t>(darcy_flux_gas_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::FACE, 1);
   }
 
   // viscosities
-  if (!S_->HasData(viscosity_liquid_key_)) {
+  if (!S_->HasRecord(viscosity_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(viscosity_liquid_key_, Tags::DEFAULT, viscosity_liquid_key_)
       .SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
     S_->RequireEvaluator(viscosity_liquid_key_);
   }
 
-  if (!S_->HasData(viscosity_gas_key_)) {
+  if (!S_->HasRecord(viscosity_gas_key_)) {
     S_->Require<CV_t, CVS_t>(viscosity_gas_key_, Tags::DEFAULT, viscosity_gas_key_)
       .SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
     S_->RequireEvaluator(viscosity_gas_key_);
   }
 
   // relative permeability of liquid phase
-  if (!S_->HasData(relperm_liquid_key_)) {
+  if (!S_->HasRecord(relperm_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(relperm_liquid_key_, Tags::DEFAULT, relperm_liquid_key_)
       .SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
 
@@ -241,7 +241,7 @@ void Multiphase_PK::Setup()
   }
 
   // relative permeability of gas phase
-  if (!S_->HasData(relperm_gas_key_)) {
+  if (!S_->HasRecord(relperm_gas_key_)) {
     S_->Require<CV_t, CVS_t>(relperm_gas_key_, Tags::DEFAULT, relperm_gas_key_)
       .SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
 
@@ -259,31 +259,31 @@ void Multiphase_PK::Setup()
   }
 
   // material properties
-  if (!S_->HasData(permeability_key_)) {
+  if (!S_->HasRecord(permeability_key_)) {
     S_->Require<CV_t, CVS_t>(permeability_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, dim_);
   }
 
-  if (!S_->HasData(porosity_key_)) {
+  if (!S_->HasRecord(porosity_key_)) {
     S_->Require<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, porosity_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     S_->RequireEvaluator(porosity_key_);
   }
 
   // fields from previous time step
-  if (!S_->HasData(prev_tws_key_)) {
+  if (!S_->HasRecord(prev_tws_key_)) {
     S_->Require<CV_t, CVS_t>(prev_tws_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     S_->GetRecordW(prev_tws_key_, passwd_).set_io_vis(false);
   }
-  if (!S_->HasData(prev_tcs_key_)) {
+  if (!S_->HasRecord(prev_tcs_key_)) {
     S_->Require<CV_t, CVS_t>(prev_tcs_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     S_->GetRecordW(prev_tcs_key_, passwd_).set_io_vis(false);
   }
 
   // complimantary constraints fields
-  if (!S_->HasData(ncp_fg_key_)) {
+  if (!S_->HasRecord(ncp_fg_key_)) {
     S_->Require<CV_t, CVS_t>(ncp_fg_key_, Tags::DEFAULT, ncp_fg_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
@@ -518,7 +518,7 @@ void Multiphase_PK::InitializeFields_()
 void Multiphase_PK::InitializeFieldFromField_(
     const std::string& field0, const std::string& field1, bool call_evaluator)
 {
-  if (S_->HasData(field0)) {
+  if (S_->HasRecord(field0)) {
     if (!S_->GetRecord(field0).initialized()) {
       if (call_evaluator)
           S_->GetEvaluator(field1).Update(*S_, passwd_);

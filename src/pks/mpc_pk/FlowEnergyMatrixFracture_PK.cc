@@ -75,20 +75,20 @@ void FlowEnergyMatrixFracture_PK::Setup()
   // distribution of DOFs, so we need to define it here
   // -- pressure
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
-  if (!S_->HasData("pressure")) {
+  if (!S_->HasRecord("pressure")) {
     *S_->Require<CV_t, CVS_t>("pressure", Tags::DEFAULT, "flow")
       .SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
     AddDefaultPrimaryEvaluator_("pressure", Tags::DEFAULT);
   }
 
-  if (!S_->HasData("temperature")) {
+  if (!S_->HasRecord("temperature")) {
     *S_->Require<CV_t, CVS_t>("temperature", Tags::DEFAULT, "thermal")
       .SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
     AddDefaultPrimaryEvaluator_("temperature", Tags::DEFAULT);
   }
 
   // -- darcy flux
-  if (!S_->HasData("darcy_flux")) {
+  if (!S_->HasRecord("darcy_flux")) {
     std::string name("face");
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
@@ -99,19 +99,19 @@ void FlowEnergyMatrixFracture_PK::Setup()
   }
 
   // -- darcy flux for fracture
-  if (!S_->HasData("fracture-darcy_flux")) {
+  if (!S_->HasRecord("fracture-darcy_flux")) {
     auto cvs2 = Operators::CreateNonManifoldCVS(mesh_fracture_);
     *S_->Require<CV_t, CVS_t>("fracture-darcy_flux", Tags::DEFAULT, "flow")
       .SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs2;
   }
 
   // Require additional fields and evaluators
-  if (!S_->HasData(normal_permeability_key_)) {
+  if (!S_->HasRecord(normal_permeability_key_)) {
     S_->Require<CV_t, CVS_t>(normal_permeability_key_, Tags::DEFAULT, "state")
       .SetMesh(mesh_fracture_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  if (!S_->HasData(normal_conductivity_key_)) {
+  if (!S_->HasRecord(normal_conductivity_key_)) {
     S_->Require<CV_t, CVS_t>(normal_conductivity_key_, Tags::DEFAULT, "state")
       .SetMesh(mesh_fracture_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
   }
@@ -340,7 +340,7 @@ bool FlowEnergyMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool r
   if (fail) {
     k = 0;
     for (int i = 0; i < nnames; ++i) {
-      if (S_->HasData(names[i])) {
+      if (S_->HasRecord(names[i])) {
         S_->GetW<CV_t>("prev_" + names[i], passwds[i]) = *(copies[k]);
         S_->GetW<CV_t>("fracture-prev_" + names[i], passwds[i]) = *(copies[k + 1]);
       }
@@ -593,7 +593,7 @@ void FlowEnergyMatrixFracture_PK::SwapEvaluatorField_(
     Teuchos::RCP<CompositeVector>& fdm_copy,
     Teuchos::RCP<CompositeVector>& fdf_copy)
 {
-  if (!S_->HasData(key)) return;
+  if (!S_->HasRecord(key)) return;
 
   // matrix
   Key ev_key, fd_key;
@@ -611,7 +611,7 @@ void FlowEnergyMatrixFracture_PK::SwapEvaluatorField_(
   // fracture
   ev_key = "fracture-" + key;
   fd_key = "fracture-prev_" + key;
-  if (!S_->HasData(ev_key)) return;
+  if (!S_->HasRecord(ev_key)) return;
 
   S_->GetEvaluator(ev_key).Update(*S_, passwd);
   {

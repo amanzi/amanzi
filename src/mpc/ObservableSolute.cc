@@ -109,7 +109,7 @@ void ObservableSolute::ComputeObservation(
   // fields below are subject to various input conditions
   Key total_sorbed_key = Keys::getKey(domain_, "total_sorbed");
 
-  if (!S.HasData(tcc_key)) {
+  if (!S.HasRecord(tcc_key)) {
     // bail out with default values if this field is not yet created
     *value = 0.0;
     *volume = 1.0;
@@ -133,7 +133,7 @@ void ObservableSolute::ComputeObservation(
     }
 
   } else if (variable_ == comp_names_[tcc_index_] + " sorbed concentration" &&
-             S.HasData(total_sorbed_key)) {
+             S.HasRecord(total_sorbed_key)) {
     const auto& sorbed = *S.Get<CompositeVector>(total_sorbed_key).ViewComponent("cell");
 
     // we assume constant particle density
@@ -147,7 +147,7 @@ void ObservableSolute::ComputeObservation(
 
   } else if (variable_ == comp_names_[tcc_index_] + " free ion concentration") {
     Key free_ion_key = Keys::getKey(domain_, "primary_free_ion_concentration_" + comp_names_[tcc_index_]);
-    if (!S.HasData(free_ion_key)) {
+    if (!S.HasRecord(free_ion_key)) {
       msg << "Observation: state does not have field \"" << variable_ << "\"";
       Exceptions::amanzi_throw(msg);
     }

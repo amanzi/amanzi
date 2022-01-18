@@ -29,7 +29,7 @@ void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u, bool wells_on)
   // add diffusion operator
   op_->RestoreCheckPoint();
  
-  if (wells_on && S_->HasData("well_index")) {
+  if (wells_on && S_->HasRecord("well_index")) {
     const auto& wi = S_->Get<CompositeVector>("well_index");
     op_acc_->AddAccumulationTerm(wi, "cell");
   }

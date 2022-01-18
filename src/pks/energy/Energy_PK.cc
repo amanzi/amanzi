@@ -95,12 +95,12 @@ Energy_PK::Energy_PK(Teuchos::ParameterList& pk_tree,
 void Energy_PK::Setup()
 {
   // require first-requested state variables
-  if (!S_->HasData("atmospheric_pressure")) {
+  if (!S_->HasRecord("atmospheric_pressure")) {
     S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "state");
   }
 
   // require primary state variables
-  if (!S_->HasData(temperature_key_)) {
+  if (!S_->HasRecord(temperature_key_)) {
     std::vector<std::string> names({"cell", "face"});
     std::vector<int> ndofs(2, 1);
     std::vector<AmanziMesh::Entity_kind> locations({AmanziMesh::CELL, AmanziMesh::FACE});
@@ -117,7 +117,7 @@ void Energy_PK::Setup()
   }
 
   // conserved quantity from the last time step.
-  if (!S_->HasData(prev_energy_key_)) {
+  if (!S_->HasRecord(prev_energy_key_)) {
     S_->Require<CV_t, CVS_t>(prev_energy_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     S_->GetRecordW(prev_energy_key_, passwd_).set_io_vis(false);
@@ -167,7 +167,7 @@ void Energy_PK::Setup()
   }
 
   // -- darcy flux
-  if (!S_->HasData(darcy_flux_key_)) {
+  if (!S_->HasRecord(darcy_flux_key_)) {
     S_->Require<CV_t, CVS_t>(darcy_flux_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::FACE, 1);
   }

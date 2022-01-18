@@ -217,8 +217,8 @@ class State {
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
-    data_.at(fieldname)->RequireRecord(tag, owner);
-    return data_.at(fieldname)->SetType<T, F>();
+    GetRecordSetW(fieldname).RequireRecord(tag, owner);
+    return GetRecordSetW(fieldname).SetType<T, F>();
   }
 
   template <typename T>
@@ -226,8 +226,9 @@ class State {
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
-    data_.at(fieldname)->RequireRecord(tag, owner);
-    data_.at(fieldname)->SetType<T>();
+    auto& rs = GetRecordSetW(fieldname);
+    rs.RequireRecord(tag, owner);
+    rs.SetType<T>();
   }
 
   template <typename T, typename F>
@@ -246,66 +247,61 @@ class State {
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
-    data_.at(fieldname)->RequireRecord(tag, owner);
-    data_.at(fieldname)->GetRecord(tag).set_subfieldnames(subfield_names);
-    return data_.at(fieldname)->SetType<T, F>();
+    auto& rs = GetRecordSetW(fieldname);
+    auto& r = rs.RequireRecord(tag, owner);
+    r.set_subfieldnames(subfield_names);
+    return rs.SetType<T, F>();
   }
 
-  // Ensure a record exists.
-  bool HasData(const Key& key, const Tag& tag = Tags::DEFAULT) const {
-    if (Keys::hasKey(data_, key)) return data_.at(key)->HasRecord(tag);
-    return false;
-  }
 
-  // Record accessors.
-  const Record& GetRecord(const Key& fieldname, const Tag& tag = Tags::DEFAULT) const {
-    return data_.at(fieldname)->GetRecord(tag);
-  }
-  Record& GetRecordW(const Key& fieldname, const Key& owner) {
-    auto& r = data_.at(fieldname)->GetRecord(Tags::DEFAULT);
-    r.AssertOwnerOrDie(owner);
-    return r;
-  }
-  Record& GetRecordW(const Key& fieldname, const Tag& tag, const Key& owner) {
-    auto& r = data_.at(fieldname)->GetRecord(tag);
-    r.AssertOwnerOrDie(owner);
-    return r;
-  }
+  //
+  // RecordSets are a collection of Records that share the same data factory
+  // (and therefore data layout).
+  //
+  bool HasRecordSet(const Key& fieldname) const;
+  const RecordSet& GetRecordSet(const Key& fieldname) const;
+  RecordSet& GetRecordSetW(const Key& fieldname);
 
-  // RecordSet accessors.
-  bool HasRecordSet(const Key& fieldname) const { return Keys::hasKey(data_, fieldname); }
-  const RecordSet& GetRecordSet(const Key& fieldname) const { return *data_.at(fieldname); }
-  RecordSet& GetRecordSetW(const Key& fieldname) { return *data_.at(fieldname); }
-
-  // Iterate over Records.
+  // Iterate over RecordSets
   typedef RecordSetMap::const_iterator data_iterator;
   data_iterator data_begin() const { return data_.begin(); }
   data_iterator data_end() const { return data_.end(); }
   RecordSetMap::size_type data_count() { return data_.size(); }
 
+  //
+  // Records are an instance of data + metadata, created by the RecordSet's
+  // data factory, and distinguished by tags.
+  //
+  bool HasRecord(const Key& key, const Tag& tag = Tags::DEFAULT) const;
+  const Record& GetRecord(const Key& fieldname, const Tag& tag = Tags::DEFAULT) const;
+  Record& GetRecordW(const Key& fieldname, const Key& owner);
+  Record& GetRecordW(const Key& fieldname, const Tag& tag, const Key& owner);
+
   // Require derivatives
   template <typename T, typename F>
   F& RequireDerivative(const Key& key, const Tag& tag,
                        const Key& wrt_key, const Tag& wrt_tag, const Key& owner = "") {
-    auto keytag = Keys::getKey(key, tag);
-    if (!Keys::hasKey(derivs_, keytag)) {
+    if (!HasDerivativeSet(key, tag)) {
+      auto keytag = Keys::getKey(key, tag);
       derivs_.emplace(keytag, std::make_unique<RecordSet>(keytag));
     }
-    Tag dertag = make_tag(Keys::getKey(wrt_key, wrt_tag));
-    derivs_.at(keytag)->RequireRecord(dertag, owner);
-    return derivs_.at(keytag)->SetType<T, F>();
+    Tag dertag(Keys::getKey(wrt_key, wrt_tag));
+    auto& deriv_set = GetDerivativeSetW(key, tag);
+    deriv_set.RequireRecord(dertag, owner);
+    return deriv_set.SetType<T, F>();
   }
 
   template <typename T>
   void RequireDerivative(const Key& key, const Tag& tag, const Key& wrt_key,
                          const Tag& wrt_tag, const Key& owner = "") {
-    auto keytag = Keys::getKey(key, tag);
-    if (!Keys::hasKey(derivs_, keytag)) {
+    if (!HasDerivativeSet(key, tag)) {
+      auto keytag = Keys::getKey(key, tag);
       derivs_.emplace(keytag, std::make_unique<RecordSet>(keytag));
     }
     Tag dertag = make_tag(Keys::getKey(wrt_key, wrt_tag));
-    derivs_.at(keytag)->RequireRecord(dertag, owner);
-    derivs_.at(keytag)->SetType<T>();
+    auto& deriv_set = GetDerivativeSetW(key, tag);
+    deriv_set.RequireRecord(dertag, owner);
+    return deriv_set.SetType<T>();
   }
 
   template <typename T, typename F>
@@ -318,26 +314,21 @@ class State {
     RequireDerivative<T>(key, Tags::DEFAULT, wrt_key, wrt_tag, "");
   }
 
-  bool HasDerivative(const Key& key, const Tag& tag, const Key& wrt_key, const Tag& wrt_tag) const {
-    auto keytag = Keys::getKey(key, tag);
-    if (Keys::hasKey(derivs_, keytag)) {
-      Tag der_tag = make_tag(Keys::getKey(wrt_key, wrt_tag));
-      return derivs_.at(keytag)->HasRecord(der_tag);
-    }
-    return false;
-  }
+  // set operations
+  bool HasDerivativeSet(const Key& key, const Tag& tag) const;
+  const RecordSet& GetDerivativeSet(const Key& key, const Tag& tag) const;
+  RecordSet& GetDerivativeSetW(const Key& key, const Tag& tag);
 
-  bool HasDerivative(const Key& key, const Key& wrt_key) const {
-    return HasDerivative(key, Tags::DEFAULT, wrt_key, Tags::DEFAULT);
-  }
+  bool HasDerivative(const Key& key, const Tag& tag, const Key& wrt_key, const Tag& wrt_tag) const;
+  bool HasDerivative(const Key& key, const Key& wrt_key) const;
 
   // ignoring record access for now, this could be added to, e.g. vis
   // derivatives.
   template <typename T>
-  const T& GetDerivative(const Key& key, const Tag& tag, const Key& wrt_key,
-                         const Tag& wrt_tag) const {
+  const T& GetDerivative(const Key& key, const Tag& tag,
+                         const Key& wrt_key, const Tag& wrt_tag) const {
     Tag der_tag = make_tag(Keys::getKey(wrt_key, wrt_tag));
-    return derivs_.at(Keys::getKey(key, tag))->Get<T>(der_tag);
+    return GetDerivativeSet(key, tag).Get<T>(der_tag);
   }
 
   template <typename T>
@@ -349,7 +340,7 @@ class State {
   T& GetDerivativeW(const Key& key, const Tag& tag, const Key& wrt_key,
                     const Tag& wrt_tag, const Key& owner) {
     Tag der_tag = make_tag(Keys::getKey(wrt_key, wrt_tag));
-    return derivs_.at(Keys::getKey(key, tag))->GetW<T>(der_tag, owner);
+    return GetDerivativeSetW(key, tag).GetW<T>(der_tag, owner);
   }
 
   template <typename T>
@@ -361,7 +352,7 @@ class State {
   Teuchos::RCP<const T> GetDerivativePtr(const Key& key, const Tag& tag,
                                          const Key& wrt_key, const Tag& wrt_tag) const {
     Tag der_tag = make_tag(Keys::getKey(wrt_key, wrt_tag));
-    return derivs_.at(Keys::getKey(key, tag))->GetPtr<T>(der_tag);
+    return GetDerivativeSet(key, tag).GetPtr<T>(der_tag);
   }
 
   template <typename T>
@@ -369,22 +360,19 @@ class State {
                                     const Key& wrt_key, const Tag& wrt_tag,
                                     const Key& owner) {
     Tag der_tag = make_tag(Keys::getKey(wrt_key, wrt_tag));
-    return derivs_.at(Keys::getKey(key, tag))->GetPtrW<T>(der_tag, owner);
-  }
-
-  // set operations
-  bool HasDerivativeSet(const Key& key, const Tag& tag) const {
-    return Keys::hasKey(derivs_, Keys::getKey(key, tag));
-  }
-  RecordSet& GetDerivativeSet(const Key& key, const Tag& tag) {
-    return *derivs_.at(Keys::getKey(key, tag));
+    return GetDerivativeSetW(key, tag).GetPtrW<T>(der_tag, owner);
   }
 
   // Access to data
+  template <typename T>
+  bool HasData(const Key& fieldname, const Tag& tag = Tags::DEFAULT) const {
+    return HasRecord(fieldname, tag) && GetRecord(fieldname, tag).ValidType<T>();
+  }
+
   // -- const
   template <typename T>
   const T& Get(const Key& fieldname, const Tag& tag = Tags::DEFAULT) const {
-    return data_.at(fieldname)->Get<T>(tag);
+    return GetRecordSet(fieldname).Get<T>(tag);
   }
 
   // -- non-const
@@ -394,16 +382,16 @@ class State {
   }
   template <typename T>
   T& GetW(const Key& fieldname, const Tag& tag, const Key& owner) {
-    return data_.at(fieldname)->GetW<T>(tag, owner);
+    return GetRecordSetW(fieldname).GetW<T>(tag, owner);
   }
 
   template <typename T>
   Teuchos::RCP<const T> GetPtr(const Key& fieldname, const Tag& tag = Tags::DEFAULT) const {
-    return data_.at(fieldname)->GetPtr<T>(tag);
+    return GetRecordSet(fieldname).GetPtr<T>(tag);
   }
   template <typename T>
   Teuchos::RCP<T> GetPtrW(const Key& fieldname, const Tag& tag, const Key& owner) {
-    return data_.at(fieldname)->GetPtrW<T>(tag, owner);
+    return GetRecordSetW(fieldname).GetPtrW<T>(tag, owner);
   }
   template <typename T>
   Teuchos::RCP<T> GetPtrW(const Key& fieldname, const Key& owner) {
@@ -419,7 +407,7 @@ class State {
   }
   template <typename T>
   void Assign(const Key& fieldname, const Tag& tag, const Key& owner, const T& data) {
-    return data_.at(fieldname)->Assign(tag, owner, data);
+    return GetRecordSetW(fieldname).Assign(tag, owner, data);
   }
 
   // Sets by pointer
@@ -431,7 +419,7 @@ class State {
   template <typename T>
   void SetPtr(const Key& fieldname, const Tag& tag, const Key& owner,
            const Teuchos::RCP<T>& data) {
-    return data_.at(fieldname)->SetPtr<T>(tag, owner, data);
+    return GetRecordSetW(fieldname).SetPtr<T>(tag, owner, data);
   }
 
   // -- copy between tags assume that operator = is supported

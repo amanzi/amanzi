@@ -88,13 +88,13 @@ void FlowEnergy_PK::Setup()
   // Require primary field for this PK, which is pressure
   // Fields for solids
   // -- rock
-  if (!S_->HasData(particle_density_key_)) {
+  if (!S_->HasRecord(particle_density_key_)) {
     S_->Require<CV_t, CVS_t>(particle_density_key_, Tags::DEFAULT, particle_density_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     S_->RequireEvaluator(particle_density_key_);
   }
 
-  if (!S_->HasData(ie_rock_key_) && !elist.isSublist(ie_rock_key_)) {
+  if (!S_->HasRecord(ie_rock_key_) && !elist.isSublist(ie_rock_key_)) {
     Teuchos::Array<std::string> regions({ "All" });
     elist.sublist(ie_rock_key_)
          .set<std::string>("evaluator type", "iem")
@@ -107,14 +107,14 @@ void FlowEnergy_PK::Setup()
 
   // Fields for gas
   // -- internal energy
-  if (!S_->HasData(ie_gas_key_) && !elist.isSublist(ie_gas_key_)) {
+  if (!S_->HasRecord(ie_gas_key_) && !elist.isSublist(ie_gas_key_)) {
     elist.sublist(ie_gas_key_)
          .set<std::string>("evaluator type", "iem water vapor")
          .set<std::string>("internal energy key", ie_gas_key_);
   }
 
   // -- molar density
-  if (!S_->HasData(mol_density_gas_key_) && !elist.isSublist(mol_density_gas_key_)) {
+  if (!S_->HasRecord(mol_density_gas_key_) && !elist.isSublist(mol_density_gas_key_)) {
     elist.sublist(mol_density_gas_key_)
          .set<std::string>("evaluator type", "eos")
          .set<std::string>("eos basis", "molar")
@@ -128,7 +128,7 @@ void FlowEnergy_PK::Setup()
   }
 
   // -- molar fraction FIXME (it is not used by all models)
-  if (!S_->HasData("molar_fraction_gas") && !elist.isSublist("molar_fraction_gas")) {
+  if (!S_->HasRecord("molar_fraction_gas") && !elist.isSublist("molar_fraction_gas")) {
     elist.sublist("molar_fraction_gas")
          .set<std::string>("evaluator type", "molar fraction gas")
          .set<std::string>("molar fraction key", "molar_fraction_gas");
@@ -182,7 +182,7 @@ void FlowEnergy_PK::Setup()
   PK_MPCStrong<PK_BDF>::Setup();
 
   // copies of fields (must be called after PKs)
-  if (S_->HasData(prev_wc_key_)) {
+  if (S_->HasRecord(prev_wc_key_)) {
     S_->Require<CV_t, CVS_t>(prev_wc_key_, Tags::COPY, prev_wc_key_);
     S_->GetRecordW(prev_wc_key_, Tags::COPY, prev_wc_key_).set_initialized();
   }
@@ -248,7 +248,7 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   sat_prev = sat;
 
   // -- swap water_contents (current and previous)
-  if (S_->HasData(wc_key_)) {
+  if (S_->HasRecord(wc_key_)) {
     S_->Copy(prev_wc_key_, Tags::COPY, Tags::DEFAULT);
 
     S_->GetEvaluator(wc_key_).Update(*S_, "flow");
@@ -273,7 +273,7 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     // recover conserved quantaties at the beginning of time step
     S_->GetW<CV_t>(prev_sat_liquid_key_, "flow") = sat_prev_copy;
     S_->GetW<CV_t>(prev_energy_key_, "thermal") = e_prev_copy;
-    if (S_->HasData(wc_key_)) {
+    if (S_->HasRecord(wc_key_)) {
       S_->Copy(prev_wc_key_, Tags::DEFAULT, Tags::COPY);
     }
 

@@ -402,7 +402,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
     GMV::write_cell_data(p, 0, "pressure");
     GMV::write_cell_data(p_exact, 0, "exact");
     GMV::write_cell_data(err_p, 0, "error");
-    if (S->HasData("well_index")) {
+    if (S->HasRecord("well_index")) {
       const auto& wi = *S->Get<CompositeVector>("well_index").ViewComponent("cell");
       GMV::write_cell_data(wi, 0, "well_index");
     }

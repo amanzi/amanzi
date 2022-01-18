@@ -117,7 +117,7 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
   // does the observed quantity have an evaluator?  Or can we make one? Note
   // that a non-evaluator based observation must already have been created by
   // PKs by now, because PK->Setup() has already been run.
-  if (!S->HasData(variable_)) {
+  if (!S->HasRecord(variable_)) {
     // not yet created, require a new record
     S->Require<CompositeVector, CompositeVectorSpace>(variable_, Tags::DEFAULT, "state");
   } 
@@ -125,7 +125,7 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
   has_eval_ = S->HasEvaluator(variable_);
 
   // try to set requirements on the field, if they are not already set
-  if (!S->HasData(variable_)) {
+  if (!S->HasRecord(variable_)) {
     // require the field
     auto& cvs = S->Require<CompositeVector, CompositeVectorSpace>(variable_, Tags::DEFAULT);
 

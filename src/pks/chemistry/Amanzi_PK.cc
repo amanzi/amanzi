@@ -499,7 +499,7 @@ void Amanzi_PK::CopyCellStateToBeakerState(
   beaker_state_.saturation = water_saturation[0][c];
   beaker_state_.volume = mesh_->cell_volume(c);
 
-  if (S_->HasData(temperature_key_)) {
+  if (S_->HasRecord(temperature_key_)) {
     const auto& temp = *S_->Get<CompositeVector>(temperature_key_).ViewComponent("cell");
     beaker_state_.temperature = temp[0][c];
   }

@@ -72,20 +72,24 @@ const Record& RecordSet::GetRecord(const Tag& tag) const {
   }
 }
 
-void RecordSet::RequireRecord(const Tag& tag, const Key& owner) {
+Record& RecordSet::RequireRecord(const Tag& tag, const Key& owner) {
   if (!HasRecord(tag)) {
     records_.emplace(tag, std::make_unique<Record>(fieldname(), owner));
     auto& r = records_.at(tag);
     if (!tag.get().empty()) {
       r->set_vis_fieldname(vis_fieldname() + std::string("_") + tag.get());
     }
-  } else if (!owner.empty()) {
+    return *r;
+  } else {
     auto& r = records_.at(tag);
-    if (r->owner().empty()) {
-      r->set_owner(owner);
-    } else {
-      r->AssertOwnerOrDie(owner);
+    if (!owner.empty()) {
+      if (r->owner().empty()) {
+        r->set_owner(owner);
+      } else {
+        r->AssertOwnerOrDie(owner);
+      }
     }
+    return *r;
   }
 }
 
