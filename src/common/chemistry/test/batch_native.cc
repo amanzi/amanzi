@@ -188,7 +188,6 @@ void RunBatchNative(const std::string& filexml,
   delete chem;
 }
 
-
 TEST(NATIVE_CA_DEBYE_HUCKEL) {
   std::vector<double> ict = {3.0e-3, 1.0e-3, 1.0e-3};
   std::vector<double> icm, icie, icfi, icsd, icssa;

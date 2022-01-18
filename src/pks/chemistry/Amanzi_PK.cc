@@ -514,11 +514,13 @@ void Amanzi_PK::CopyBeakerStructuresToCellState(
 {
   for (unsigned int i = 0; i < number_aqueous_components_; ++i) {
     (*aqueous_components)[i][c] = beaker_state_.total.at(i);
+    // (*aqueous_components)[i][c] = std::max(beaker_state_.total.at(i), 1e-200);
   }
 
   const auto& free_ion = *S_->Get<CompositeVector>(free_ion_species_key_).ViewComponent("cell");
   for (int i = 0; i < number_aqueous_components_; ++i) {
     free_ion[i][c] = beaker_state_.free_ion.at(i);
+    // free_ion[i][c] = std::max(beaker_state_.free_ion.at(i), 1e-200);
   }
 
   // activity coefficients
