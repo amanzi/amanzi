@@ -278,7 +278,7 @@ SUITE(EVALUATORS) {
 
     // check the value and derivative
     CHECK_CLOSE(3.0, S.Get<double>("fa", Tags::DEFAULT), 1.e-10);
-    CHECK_THROW(S.GetDerivative<double>("fa", Tags::DEFAULT, "fa", Tags::DEFAULT), std::out_of_range);
+    CHECK_THROW(S.GetDerivative<double>("fa", Tags::DEFAULT, "fa", Tags::DEFAULT), std::exception);
 
     // second call should not be changed
     CHECK(!S.GetEvaluator("fa").Update(S, "my_request"));
@@ -338,7 +338,7 @@ SUITE(EVALUATORS) {
 
     // check the value and derivative
     CHECK_CLOSE(1.1, S.Get<double>("fa", Tags::DEFAULT), 1.e-10);
-    CHECK_THROW(S.GetDerivative<double>("fa", Tags::DEFAULT, "fa", Tags::DEFAULT), std::out_of_range);
+    CHECK_THROW(S.GetDerivative<double>("fa", Tags::DEFAULT, "fa", Tags::DEFAULT), std::exception);
 
     // second call should not be changed
     CHECK(!S.GetEvaluator("fa").Update(S, "my_request"));

@@ -7,6 +7,7 @@
 // TPLs
 #include "UnitTest++.h"
 
+#include "IO.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
 #include "errors.hh"
@@ -100,8 +101,8 @@ TEST(STATE_HETEROGENEOUS_DATA) {
 
   // nonexistent data -- two checks ensure that previous HasRecord() call didn't
   // create the data!
-  CHECK_THROW(s.Get<double>("my_nonexistent_data"), std::out_of_range);
-  CHECK_THROW(s.Get<double>("my_other_nonexistent_data"), std::out_of_range);
+  CHECK_THROW(s.Get<double>("my_nonexistent_data"), std::exception);
+  CHECK_THROW(s.Get<double>("my_other_nonexistent_data"), std::exception);
 
   // setting data
   s.Assign("my_double", Tags::DEFAULT, "my_double_owner", 1.1);
