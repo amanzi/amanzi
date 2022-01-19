@@ -67,9 +67,16 @@ class Analytic00 : public AnalyticBase {
     return str.str();
   }
 
-  const Amanzi::WhetStone::Tensor<Kokkos::HostSpace>& TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) const override {
+  const Amanzi::WhetStone::Tensor<Kokkos::HostSpace>& 
+  TensorDiffusivity_host(const Amanzi::AmanziGeometry::Point& p, double t) const override {
     return K_;
   }
+
+  const __device__ Amanzi::WhetStone::Tensor<DefaultExecutionSpace>& 
+  TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) const override {
+    return K_device_;
+  }
+
 
   double ScalarDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) const override {
     return kr_;

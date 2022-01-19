@@ -29,6 +29,36 @@ static int MyPID;
 
 int main(int argc, char *argv[])
 {
+
+#if 0 
+  std::cout<<"TEST"<<std::endl;
+  Kokkos::DualView<int*, Kokkos::CudaSpace> dv; 
+
+  dv.resize(10);
+
+  dv.modify<Kokkos::HostSpace>(); 
+
+  for(int i = 0 ; i < 10 ; ++i){
+    dv.h_view(i) = i; 
+      printf("H %d = %d",i,dv.h_view(i)); 
+  }
+
+  dv.sync<Kokkos::CudaSpace>(); 
+
+  Kokkos::parallel_for(
+    "", 
+    10, 
+    KOKKOS_LAMBDA(const int i){
+      printf("D %d = %d",i,dv.d_view(i)); 
+    }
+  );
+  printf("\n");
+
+  std::cout<<"DONE TEST"<<std::endl;
+  Kokkos::finalize(); 
+  exit(0); 
+#endif 
+
   if (argc < 4) {
     std::cout <<
       "Usage: verify_operators  with_pc|direct  mesh_type  mesh_size|mesh_file  scheme  tol  nloops  linsolver  test_id  device\n\n"
@@ -172,7 +202,9 @@ TEST(Verify_Mesh_and_Operators) {
       .set<int>("maximum number of iterations", 5000)
       .set<double>("error tolerance", tol)
       .set<int>("size of Krylov space", 20)
-      .set<bool>("release Krylov vectors", "false");
+      .set<bool>("release Krylov vectors", "false")
+      .sublist("verbose object")
+      .set<std::string>("verbosity level","medium");
 
   plist->sublist("solvers").sublist("Amesos1: KLU")
       .set<std::string>("direct method", "amesos").sublist("amesos parameters")

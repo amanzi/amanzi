@@ -139,15 +139,28 @@ class MeshCache {
                       Kokkos::View<Entity_ID*>& faceids,
                       Kokkos::View<AmanziGeometry::Point*>& bisectors) const
   {
+        #ifdef OUTPUT_CUDA 
+
+    printf("CGFAB size: %lld\n",cell_face_ids_.entries.view_device().size());
+    #endif 
     assert(cell_get_faces_and_bisectors_precomputed_); 
     faceids =
       Kokkos::subview(cell_face_ids_.entries.view_device(),
                       Kokkos::make_pair(cell_face_ids_.row_map.view_device()(cellid),
                                         cell_face_ids_.row_map.view_device()(cellid + 1)));
+                              #ifdef OUTPUT_CUDA 
+
+    printf("faceids size: %lld\n",faceids.size());
+    #endif 
     bisectors = 
       Kokkos::subview(cell_faces_bisectors_.entries.view_device(),
                     Kokkos::make_pair(cell_faces_bisectors_.row_map.view_device()(cellid),
                                       cell_faces_bisectors_.row_map.view_device()(cellid + 1)));
+                                          #ifdef OUTPUT_CUDA 
+
+    printf("bisectors size: %lld\n",bisectors.size());
+    #endif 
+
   }
   void 
   cell_get_faces_and_bisectors_host(const Entity_ID cellid, 
@@ -673,8 +686,12 @@ class MeshCache {
 
   // the cache
   // -- geometry
+
   mutable Kokkos::DualView<double*> cell_volumes_, face_areas_, edge_lengths_;
   mutable Kokkos::DualView<AmanziGeometry::Point*> cell_centroids_, face_centroids_;
+
+  // Test 
+  //Kokkos::View<double*, DefaultExecutionSpace> cell_volumes = cell_volumes_.d_view; 
 
   // -- Have to account for the fact that a "face" for a non-manifold
   // surface mesh can have more than one cell connected to

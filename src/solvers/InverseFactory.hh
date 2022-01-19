@@ -336,6 +336,10 @@ createInverse(Teuchos::ParameterList& inv_list,
               const Teuchos::RCP<Operator>& m,
               const Teuchos::RCP<Assembler>& h)
 {
+      #ifdef OUTPUT_CUDA 
+
+  std::cout<<"InverseFactory:CreateInverse 2"<<std::endl;
+  #endif 
   // deal with deprecated option
   if (inv_list.isParameter("preconditioner type")) {
     Impl::warn("InverseFactory: DEPRECATION -- please rename \"preconditioner type\" to \"preconditioning method\".  \"preconditioner type\" may silently be ignored in the future.");
@@ -372,6 +376,7 @@ createInverse(Teuchos::ParameterList& inv_list,
   }
   dir_inv->set_inverse_parameters(inv_list);
   dir_inv->set_matrices(m,h);
+
   inv = dir_inv;
 
   if (inv_list.isParameter("iterative method")) {
@@ -392,6 +397,10 @@ Teuchos::RCP<Matrix<Vector,VectorSpace>>
 createInverse(Teuchos::ParameterList& inv_list,
               const Teuchos::RCP<Operator>& m)
 {
+      #ifdef OUTPUT_CUDA 
+
+  std::cout<<"InverseFactory:CreateInverse 1"<<std::endl;
+  #endif 
   return createInverse<Operator,Operator,Vector,VectorSpace>(inv_list, m, m);
 }
 

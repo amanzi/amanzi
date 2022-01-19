@@ -83,6 +83,8 @@ class CompositeVector_ : public BlockVector<Scalar> {
   virtual MultiVector_ptr_type_<Scalar>
   GetComponent_(const std::string& name, bool ghosted = false) override;
 
+
+
   // The Vandelay is an Importer/Exporter which allows face unknowns
   // to be spoofed as boundary face unknowns.
   void CreateVandelay_() const;

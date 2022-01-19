@@ -189,6 +189,10 @@ template<class Matrix,class Preconditioner,class Vector,class VectorSpace>
 int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
+
+#ifdef OUTPUT_CUDA 
+  std::cout<<"GMRES_"<<std::endl;
+#endif 
   Vector w(f, Teuchos::Copy);
   Vector r(f, Teuchos::Copy);
   Vector p(f, Teuchos::Copy);
@@ -202,13 +206,27 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
   double fnorm = w.norm2();
   fnorm_ = fnorm;
 
+  Kokkos::fence(); 
   // initial residual is r = f - M x for the right preconditioner
   // and r = H (f - M x)  for the left preconditioner
   if (left_pc_) {
+    #ifdef OUTPUT_CUDA 
+    std::cout<<"left_pc"<<std::endl;
+    #endif 
     m_->apply(x, p);
     p.update(1.0, f, -1.0);
+    #ifdef OUTPUT_CUDA 
+    m_->display(r," Av r "); 
+    #endif 
     h_->applyInverse(p, r);
+    #ifdef OUTPUT_CUDA 
+    m_->display(r," Ap r "); 
+    #endif 
+
   } else {
+    #ifdef OUTPUT_CUDA 
+    std::cout<<"right_pc"<<std::endl;
+    #endif 
     m_->apply(x, r);
     r.update(1.0, f, -1.0);
   }
@@ -237,6 +255,13 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
 
   s[0] = rnorm0;
 
+  m_->display(w," w "); 
+  m_->display(r," r "); 
+  m_->display(p," p "); 
+
+#ifdef OUTPUT_CUDA 
+  std::cout<<"Krilov dim: "<<krylov_dim_<<std::endl;
+  #endif 
   for (int i = 0; i < krylov_dim_; i++) {
     // calculate H M v_i for the left preconditioner
     //       and M H v_i for the right preconditioner
@@ -267,7 +292,9 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
     ApplyGivensRotation_(T(i, i), T(i + 1, i), cs[i], sn[i]);
     ApplyGivensRotation_(s[i],    s[i + 1],    cs[i], sn[i]);
     residual_ = fabs(s[i + 1]);
-
+#ifdef OUTPUT_CUDA 
+    std::cout<< num_itrs_ << " ||r||=" << residual_ << std::endl;
+#endif 
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << num_itrs_ << " ||r||=" << residual_ << std::endl;
     }
@@ -278,6 +305,10 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
 
     int ierr = CheckConvergence_(residual_, fnorm);
     if (ierr != 0) {
+      #ifdef OUTPUT_CUDA 
+      m_->display(x,"x before"); 
+      #endif 
+
       //std::cout << "GMRES: CS x = " << Debug::get0(x) << "," << x.normInf() << std::endl;
       //std::cout << "GMRES: CS p = " << Debug::get0(p) << "," << p.normInf() << std::endl;
       //std::cout << "GMRES: CS r = " << Debug::get0(r) << "," << r.normInf() << std::endl;
@@ -285,6 +316,9 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
       //std::cout << "GMRES: CS2 x = " << Debug::get0(x) << "," << x.normInf() << std::endl;
       //std::cout << "GMRES: CS2 p = " << Debug::get0(p) << "," << p.normInf() << std::endl;
       //std::cout << "GMRES: CS2 r = " << Debug::get0(r) << "," << r.normInf() << std::endl;
+#ifdef OUTPUT_CUDA 
+      m_->display(x,"x after"); 
+#endif 
       return ierr;
     }
 
@@ -321,7 +355,10 @@ int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_(
       }
     }
   }
-
+#ifdef OUTPUT_CUDA 
+  std::cout<<"Calling M display"<<std::endl;
+  m_->display(x,"x before"); 
+#endif 
   ComputeSolution_(x, krylov_dim_ - 1, T, s, p, r);  // vector s is overwritten
   return LIN_SOLVER_MAX_ITERATIONS;
 }
@@ -334,6 +371,9 @@ template<class Matrix,class Preconditioner,class Vector,class VectorSpace>
 int IterativeMethodGMRES<Matrix,Preconditioner,Vector,VectorSpace>::GMRES_Deflated_(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
+  #ifdef OUTPUT_CUDA 
+  std::cout<<"GMRES_Deflated_"<<std::endl;
+  #endif 
   Vector w(f, Teuchos::Copy);
   Vector r(f, Teuchos::Copy);
   Vector p(f, Teuchos::Copy);

@@ -175,9 +175,17 @@ void PDE_DiffusionFV::SetScalarCoefficient(const Teuchos::RCP<const CompositeVec
 void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                                      const Teuchos::Ptr<const CompositeVector>& u)
 {
+      #ifdef OUTPUT_CUDA 
+
+  std::cout<<"PDE_DiffusionFV::UpdateMatrices"<<std::endl;
+  #endif 
   if (!transmissibility_initialized_) ComputeTransmissibility_();
   
   if (local_op_.get()) {
+        #ifdef OUTPUT_CUDA 
+
+    std::cout<<"local.get: true"<<std::endl;
+    #endif 
     using memory_space = decltype(local_op_->A)::memory_space;
     using DenseMatrix = WhetStone::DenseMatrix<memory_space>;
     
@@ -187,7 +195,10 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
     const auto k_face = ScalarCoefficientFaces(true);
     const Amanzi::AmanziMesh::Mesh* m = mesh_.get();
     DenseMatrix_Vector& A = local_op_->A; 
+    #ifdef OUTPUT_CUDA 
 
+    std::cout<<"nfaces_owned: "<<nfaces_owned<<std::endl;
+#endif 
     // updating matrix blocks
     Kokkos::parallel_for(
         "PDE_DiffusionFV::UpdateMatrices",
@@ -198,12 +209,26 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
 
           for (int i = 0; i != A_f.NumRows(); ++i) {
             A_f(i, i) = tij;
+                #ifdef OUTPUT_CUDA 
+
+            printf("(%d-%d-%d) %.4f - ",f,i,i,A_f(i,i)); 
+            #endif 
             for (int j = i + 1; j != A_f.NumRows(); ++j) {
               A_f(i, j) = -tij;
               A_f(j, i) = -tij;
+                  #ifdef OUTPUT_CUDA 
+
+              printf("(%d-%d-%d) %.4f - ",f,j,i,A_f(j,i)); 
+              printf("(%d-%d-%d) %.4f - ",f,i,j,A_f(i,j));
+              #endif 
             }
           }
         });
+            #ifdef OUTPUT_CUDA 
+
+      Kokkos::fence(); 
+      std::cout<<std::endl;
+      #endif 
   }
 }
 
@@ -252,6 +277,23 @@ void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
 ****************************************************************** */
 void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
+      #ifdef OUTPUT_CUDA 
+
+  std::cout<<"Apply BC"<<std::endl;
+#endif 
+    auto rhs = global_op_->rhs()->ViewComponent<DefaultDevice>("cell", true);
+    #ifdef OUTPUT_CUDA 
+
+    std::cout<<"BEFORE: "; 
+    Kokkos::parallel_for(
+      "Test",
+      nfaces_owned, 
+      KOKKOS_LAMBDA(const int f){
+        printf("%.4f - ",rhs(0,0)); 
+    }); 
+    Kokkos::fence(); 
+    std::cout<<std::endl;
+#endif 
   AMANZI_ASSERT(bcs_trial_.size() > 0);
   const auto bc_model = bcs_trial_[0]->bc_model();
   const auto bc_value = bcs_trial_[0]->bc_value();
@@ -267,12 +309,17 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
         "PDE_DiffusionFV::ApplyBCs",
         nfaces_owned,
         KOKKOS_LAMBDA(const int f) {
+
           AmanziMesh::Entity_ID_View cells;
           m->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
           int ncells = cells.extent(0);
 
           if (bc_model(f) == OPERATOR_BC_DIRICHLET && primary) {
             double tij = trans_face(f,0) * k_face(f,0);
+            #ifdef OUTPUT_CUDA 
+            printf("trans_face: %.4f k_face: %.4f bc_value: %.4f \n",trans_face(f,0),k_face(f,0),bc_value(f));
+            printf("##### tij: %.4f\n",tij); 
+            #endif 
             Kokkos::atomic_add(&rhs_cell(cells(0),0), bc_value(f) * tij);
           } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
             local_op->Zero(f);
@@ -280,7 +327,24 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
             if (primary) Kokkos::atomic_add(&rhs_cell(cells(0),0), -bc_value(f) * m->face_area(f));
           }
         });
+            #ifdef OUTPUT_CUDA 
+
+        Kokkos::fence(); 
+        std::cout<<std::endl;
+        #endif 
   }
+    #ifdef OUTPUT_CUDA 
+
+    std::cout<<"AFTER: "; 
+    Kokkos::parallel_for(
+      "Test",
+      nfaces_owned, 
+      KOKKOS_LAMBDA(const int f){
+        printf("%.4f - ",rhs(0,0)); 
+    }); 
+    Kokkos::fence(); 
+    std::cout<<std::endl;
+    #endif 
 
   if (jac_op_ != Teuchos::null) ApplyBCsJacobian();
 }
@@ -309,6 +373,10 @@ void PDE_DiffusionFV::ApplyBCsJacobian()
 void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
                                  const Teuchos::Ptr<CompositeVector>& darcy_mass_flux)
 {
+    #ifdef OUTPUT_CUDA 
+
+  std::cout<<"PDE_DiffusionFV::UpdateFlux"<<std::endl;
+  #endif 
   // prep views
   auto trans_face = transmissibility_->ViewComponent<DefaultDevice>("face", true);
   AMANZI_ASSERT(bcs_trial_.size() > 0);
@@ -363,6 +431,31 @@ void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solu
           }
         }
       });
+          #ifdef OUTPUT_CUDA 
+
+      Kokkos::fence(); 
+    #endif 
+        #ifdef OUTPUT_CUDA 
+
+    std::cout<<"flux: "; 
+    Kokkos::parallel_for(
+      "", 
+      ncells_owned, 
+      KOKKOS_LAMBDA(const int c){ 
+        AmanziMesh::Entity_ID_View cells, faces;
+        AmanziMesh::Entity_Dir_View dirs;
+        m->cell_get_faces_and_dirs(c, faces, dirs);
+        int nfaces = faces.size();
+
+        for (int n = 0; n < nfaces; n++) {
+          int f = faces(n);
+          printf("(%d-%d)%.4f - ",c,f,flux(f,0)); 
+        }
+      }
+    ); 
+    Kokkos::fence(); 
+    std::cout<<std::endl;
+    #endif 
 }
 
 
@@ -480,8 +573,16 @@ void PDE_DiffusionFV::ComputeJacobianLocal_(
 ****************************************************************** */
 void PDE_DiffusionFV::ComputeTransmissibility_()
 {
+      #ifdef OUTPUT_CUDA 
+
+  std::cout<<"Compute transmissibility"<<std::endl;
+  #endif 
   transmissibility_->putScalar(0.);
   if (!K_.get()) {
+    #ifdef OUTPUT_CUDA 
+
+    std::cout<<"No K_, computing"<<std::endl;
+    #endif 
     CompositeVectorSpace cvs;
     cvs.SetMesh(mesh_)
         ->SetGhosted(false)
@@ -502,15 +603,52 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
           });
     }
     K_ = K;
+
+    #ifdef OUTPUT_CUDA 
+
+    {
+    const TensorVector* Kc_ = K_.get(); 
+    TensorVector* Kc = K.get(); 
+    Kokkos::parallel_for(
+    "PDE_DiffusionFV::ComputeTrans Init Tensor Ceof",
+    ncells_owned,
+    KOKKOS_LAMBDA(const int& c) {
+      printf("Kc[%d]=%.4f\n",c,Kc->at(c)(0,0));
+
+      printf("K_[%d]=%.4f\n",c,Kc_->at(c)(0,0));
+    });
+    Kokkos::fence(); 
+    std::cout<<std::endl;
+    }
+    #endif 
   }
   {
+        #ifdef OUTPUT_CUDA 
+
+
+    {
+    // Kc exists
+    const TensorVector* Kc_ = K_.get(); 
+    Kokkos::parallel_for(
+    "PDE_DiffusionFV::ComputeTrans Init Tensor Ceof",
+    ncells_owned,
+    KOKKOS_LAMBDA(const int& c) {
+      printf("K_[%d]=%.4f\n",c,Kc_->at(c)(0,0));
+    });
+    Kokkos::fence(); 
+    std::cout<<std::endl;
+    }
+    #endif 
 
     auto trans_face = transmissibility_->ViewComponent<DefaultDevice>("face", true);
     const Amanzi::AmanziMesh::Mesh* m = mesh_.get();
     const int space_dimension = mesh_->space_dimension(); 
 
     const TensorVector* K = K_.get();    
+    #ifdef OUTPUT_CUDA 
 
+    std::cout<<"COMPUTE: ncells_owned: "<<ncells_owned<<std::endl;
+#endif 
     Kokkos::parallel_for(
         "PDE_DiffusionFV::ComputeTransmissibility",
         ncells_owned,
@@ -521,6 +659,10 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
           m->cell_get_faces_and_bisectors(c, faces, bisectors);
 
           WhetStone::Tensor<DeviceOnlyMemorySpace> Kc = K->at(c);
+    #ifdef OUTPUT_CUDA 
+
+          printf("faces: %d\n",faces.size()); 
+          #endif 
           for (int i = 0; i < faces.extent(0); i++) {
             auto f = faces(i);
             const AmanziGeometry::Point& a = bisectors(i);
@@ -532,8 +674,17 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
             const double perm = ((Kc * a) * normal) * s;
             const double dxn = a * normal;
             Kokkos::atomic_add(&trans_face(f,0), fabs(dxn / perm));
+                #ifdef OUTPUT_CUDA 
+
+            printf("trans_face: %d = %.4f  dxn = %.4f perm = %.4f\n",f,trans_face(f,0),dxn,perm); 
+          #endif 
           }
         });
+            #ifdef OUTPUT_CUDA 
+
+      Kokkos::fence(); 
+      std::cout<<std::endl;
+      #endif 
   }
   transmissibility_->GatherGhostedToMaster();
   transmissibility_->reciprocal(*transmissibility_);

@@ -36,6 +36,7 @@ SuperMapLumped::~SuperMapLumped() = default;
 void
 SuperMapLumped::CreateIndexing_()
 {
+  std::cout<<"SuperMapLumped::CreateIndexing_"<<std::endl;
   // fill the offsets
   {
     int offset = 0;
@@ -76,13 +77,22 @@ SuperMapLumped::CreateIndexing_()
 
   // fill the LIDs and GIDs of owned entities
   for (const auto& compname : *comp_maps_) {
+    #ifdef OUTPUT_CUDA
+    std::cout<<"Owned entities of "<<compname<<std::endl;
+    #endif
     LO nentities_owned = counts_.at(compname);
     LO nentities = nentities_owned + ghosted_counts_.at(compname);
 
+    indices_->clear_sync_state(compname); 
+    gids_comp.clear_sync_state(compname); 
+
+    indices_->modify_host(compname); 
+    gids_comp.modify_host(compname);
+
     auto index_view =
-      indices_->ViewComponent<MirrorHost>(compname, false);
+      indices_->ViewComponent<Kokkos::HostSpace>(compname, false);
     auto global_index_view =
-      gids_comp.ViewComponent<MirrorHost>(compname, false);
+      gids_comp.ViewComponent<Kokkos::HostSpace>(compname, false);
 
     int offset = offsets_.at(compname);
     int n_dofs = comp_maps_->getNumVectors(compname);
@@ -93,15 +103,24 @@ SuperMapLumped::CreateIndexing_()
         index_view(i, j) = lid;
         global_index_view(i, j) = gid;
         gids_flat[lid] = gid;
+        #ifdef OUTPUT_CUDA 
+        std::cout<<"index_view("<<i<<","<<j<<") = "<<index_view(i,j)<<std::endl;
+        std::cout<<"global_index_view("<<i<<","<<j<<") = "<<global_index_view(i,j)<<std::endl;
+        #endif 
       }
     }
+    //indices_->sync_device(compname); 
+    //gids_comp.sync_device(compname);
   }
-
+     
   // communicate the GIDs
   gids_comp.ScatterMasterToGhosted();
 
   // fill the LIDs and GIDs of the ghost entities
   for (const auto& compname : *comp_maps_) {
+    #ifdef OUTPUT_CUDA 
+    std::cout<<"Creation loop HOST: "<<compname<<std::endl;
+    #endif 
     LO nentities_owned = counts_.at(compname);
     LO nentities = nentities_owned + ghosted_counts_.at(compname);
 
@@ -112,14 +131,24 @@ SuperMapLumped::CreateIndexing_()
 
     int ghosted_offset = ghosted_offsets_.at(compname);
     int n_dofs = comp_maps_->getNumVectors(compname);
+    #ifdef OUTPUT_CUDA 
+    std::cout<<" nentities-owned: "<<nentities_owned<<" nentities: "<<nentities<<" n_dofs: "<<n_dofs<<std::endl;
+    #endif 
     for (LO i = nentities_owned; i != nentities; ++i) {
       for (int j = 0; j != n_dofs; ++j) {
         LO lid = ghosted_offset + j + (i - nentities_owned) * n_dofs;
         index_view(i, j) = lid;
         gids_flat[lid] = global_index_view(i, j);
+        #ifdef OUTPUT_CUDA 
+        std::cout<<"index_view("<<i<<","<<j<<") = "<<index_view(i,j)<<std::endl;
+        std::cout<<"global_index_view("<<i<<","<<j<<") = "<<global_index_view(i,j)<<std::endl;
+        #endif 
       }
     }
   }
+  #ifdef OUTPUT_CUDA 
+  std::cout<<"DONE  Host"<<std::endl;
+  #endif 
 
   // create supermap
   // -- hopefully we found them all!
@@ -130,6 +159,31 @@ SuperMapLumped::CreateIndexing_()
   // -- construct
   ghosted_map_ = Teuchos::rcp(new Map_type(
     n_global_ghosted, gids_flat.data(), n_local_ghosted_, 0, indices_->Comm()));
+
+
+  for (const auto& compname : *comp_maps_) {
+    LO nentities_owned = counts_.at(compname);
+    LO nentities = nentities_owned + ghosted_counts_.at(compname);
+    int n_dofs = comp_maps_->getNumVectors(compname);
+
+    auto index_view =
+      indices_->ViewComponent(compname, true);
+
+    #ifdef OUTPUT_CUDA 
+    std::cout<<"indices component "<<compname<<" = "; 
+    Kokkos::parallel_for(
+      "", 
+      nentities_owned, 
+      KOKKOS_LAMBDA(const int i ){
+        for(int j = 0 ; j < n_dofs; ++j){
+          printf("(%d/%d) %d - ",i,j,index_view(i,j)); 
+        }
+      });
+    Kokkos::fence(); 
+    std::cout<<std::endl; 
+    #endif 
+  }
+
 }
 
 

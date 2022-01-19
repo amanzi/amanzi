@@ -197,7 +197,10 @@ SuperMap::SuperMap(const Comm_ptr_type& comm,
   std::map<std::string, std::size_t> dofnums;
   std::map<std::string, BlockMap_ptr_type> master_maps;
   std::map<std::string, BlockMap_ptr_type> ghost_maps;
-
+  #ifdef OUTPUT_CUDA 
+  std::cout<<"SuperMap::SuperMap"<<std::endl;
+  #endif 
+  
   // this groups maps by map equivalence, not component names.
 
   // loop over nodes, finding unique component names on unique meshes

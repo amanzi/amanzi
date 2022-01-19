@@ -36,6 +36,7 @@ namespace Operators {
 int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
                                          const CompositeVector& X, CompositeVector& Y) const
 {
+  std::cout<<"Operator_FaceCell::ApplyMatrixFreeOp"<<std::endl;
   AMANZI_ASSERT(op.A.size() == ncells_owned);
   auto Xf = X.ViewComponent("face", true);
   auto Xc = X.ViewComponent("cell", false);
@@ -421,6 +422,7 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_Face& op,
     
     ierr |= mat.sumIntoValues(lid_r.data(), lid_c.data(), op.matrices[c]);
   }
+
   AMANZI_ASSERT(!ierr);
 }
 #endif 

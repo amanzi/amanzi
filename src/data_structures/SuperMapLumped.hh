@@ -111,7 +111,7 @@ class SuperMapLumped {
   name_iterator end() const { return comp_maps_->end(); }
   std::size_t size() const { return comp_maps_->size(); }
 
- protected:
+ public:
   void CreateIndexing_();
 
  protected:

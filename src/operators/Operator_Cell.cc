@@ -73,7 +73,6 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
 int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
                                      const CompositeVector& X, CompositeVector& Y) const
 {
-
   AMANZI_ASSERT(op.A.size() == nfaces_owned);
   auto Yc = Y.ViewComponent("cell", true);
   auto Xc = X.ViewComponent("cell", true);
@@ -141,6 +140,7 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
                                              const SuperMap& map, GraphFE& graph,
                                              int my_block_row, int my_block_col) const
 {
+  std::cout<<"Operator_Cell:SymbolicAssembleMatrixOp"<<std::endl;
   AMANZI_ASSERT(op.A.size() == nfaces_owned);
 
   int lid_r[2];
@@ -159,12 +159,6 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
       lid_c[n] = cell_col_inds[cells[n]];
     }
 
-    // if (lid_r[0] == 28 || (lid_r.size() > 1 && lid_r[1] == 28)) {
-    //   std::cout << "Got a 28: face = " << f << ", cells = " << lid_r[0];
-    //   if (lid_r.size() > 1)
-    //     std::cout << "," << lid_r[1];
-    //   std::cout << std::endl;
-
     graph.insertLocalIndices(ncells, lid_r, ncells, lid_c);
   }
 }
@@ -178,6 +172,7 @@ void Operator_Cell::AssembleMatrixOp(const Op_Cell_Cell& op,
                                      const SuperMap& map, MatrixFE& mat,
                                      int my_block_row, int my_block_col) const
 {
+  std::cout<<"Operator_Cell::AssembleMatrixOp OP_CELL_CELL"<<std::endl;
   AMANZI_ASSERT(op.diag->getNumVectors() == 1);
 
   const auto cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
@@ -210,6 +205,29 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
 {
   AMANZI_ASSERT(op.A.size() == nfaces_owned);
 
+  op.A.update_entries_host(); 
+
+  #ifdef OUTPUT_CUDA 
+  std::cout<<std::endl;
+  std::cout<<"host: "; 
+  for(int i = 0 ; i < nfaces_owned; ++i){
+    std::cout<<op.A.at_host(i)(0,0)<<" - ";
+  }
+  std::cout<<std::endl;
+
+  //op.A.update_entries_device(); 
+
+  std::cout<<"device: ";
+  Kokkos::parallel_for(
+    "", 
+    nfaces_owned, 
+    KOKKOS_LAMBDA(const int i){ 
+      printf("%.4f - ",op.A[i](0,0)); 
+    });
+    Kokkos::fence(); 
+  std::cout<<std::endl;
+  std::cout<<"Operator_Cell::AssembleMatrixOp"<<std::endl;
+  #endif 
   const auto cell_row_inds = map.GhostIndices<>(my_block_row, "cell", 0);
   const auto cell_col_inds = map.GhostIndices<>(my_block_col, "cell", 0);
 
@@ -219,18 +237,26 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
   int nrows_local = mat.getMatrix()->getNodeNumRows();
 
   const AmanziMesh::Mesh* mesh = op.mesh.get();
-  
+  #ifdef OUTPUT_CUDA 
+  std::cout<<"nfaces_owned: "<<nfaces_owned<<std::endl;
+  #endif 
   Kokkos::parallel_for(
       "Operator_Cell::AssembleMatrixOp::Face_Cell",
       nfaces_owned,
-      KOKKOS_LAMBDA(const int& f) {
+      KOKKOS_LAMBDA(const int f) {
         AmanziMesh::Entity_ID_View cells;
         mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
     
         auto A_f = op.A[f];
-        for (int n = 0; n != cells.extent(0); ++n) {
+        int nc = cells.extent(0); 
+        for (int n = 0; n < nc; ++n) {
           if (cell_row_inds[cells[n]] < nrows_local) {
-            for (int m = 0; m != cells.extent(0); ++m) {
+            for (int m = 0; m < cells.extent(0); ++m) {
+              #ifdef OUTPUT_CUDA 
+              printf("# %d = %.4f %lld ( %d / %d / %d / %d) %d,%d  - ",
+                         f,A_f(n,m),cells.extent(0),n,m,cells(n),
+                         cells(m),cell_row_inds(cells(n)),cell_col_inds(cells(m))); 
+              #endif 
               proc_mat.sumIntoValues(cell_row_inds(cells(n)),
                       &cell_col_inds(cells(m)), 1,
                       &A_f(n,m), true, true);
@@ -244,6 +270,20 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
           }
         }
       });
+  #ifdef OUTPUT_CUDA 
+  Kokkos::fence(); 
+  std::cout<<std::endl;
+
+  std::cout<<"device after: ";
+  Kokkos::parallel_for(
+    "", 
+    nfaces_owned, 
+    KOKKOS_LAMBDA(const int i){ 
+      printf("(%d) %.4f - ",i,op.A[i](0,0)); 
+    });
+    Kokkos::fence(); 
+  std::cout<<std::endl;
+  #endif 
 
 }
 

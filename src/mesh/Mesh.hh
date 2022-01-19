@@ -543,6 +543,24 @@ class Mesh {
   // decomposition of the face. Each triangular facet is formed by the
   // connecting the face center (average of face nodes) to the two
   // nodes of an edge of the face
+
+#if 0 
+  template<typename DEVICE = Kokkos::DefaultExecutionSpace>
+  KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
+  face_centroid(const Entity_ID faceid, const bool recompute = false) const
+  {
+    return mesh_cache_.face_centroid(faceid,recompute);
+  }
+
+  template<>
+  KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
+  face_centroid<Kokkos::HostSpace>(const Entity_ID faceid, const bool recompute = false) const
+  {
+    return mesh_cache_.face_centroid_host(faceid,recompute);
+  }
+#endif 
+
+
   KOKKOS_INLINE_FUNCTION AmanziGeometry::Point
   face_centroid(const Entity_ID faceid, const bool recompute = false) const
   {
@@ -929,8 +947,20 @@ public:
  public:
   void PrintMeshStatistics() const;
 
+#if 0
+  template<class DEVICE = DefaultExecutionSpace> 
+  // KOKKOS_INLINE_FUNCTION
+  Kokkos::View<double*, DEVICE> cell_volumes() const 
+  {
+    return mesh_cache_.
+    cell_volumes(); 
+  }
+#endif 
+
+#if 1
   Kokkos::View<double*> cell_volumes() const { return mesh_cache_.cell_volumes(); }
   Kokkos::View<double*,Kokkos::HostSpace> cell_volumes_host() const { return mesh_cache_.cell_volumes_host(); }
+#endif 
 
  protected:
   Comm_ptr_type comm_;
@@ -946,6 +976,17 @@ public:
 
   mutable MeshCache mesh_cache_; 
 };
+
+#if 0
+// Sepcialization for host device 
+template<>
+//KOKKOS_INLINE_FUNCTION 
+Kokkos::View<double*,Kokkos::HostSpace> Mesh::cell_volumes<Kokkos::HostSpace>() const 
+{ 
+  return mesh_cache_.cell_volumes_host(); 
+}
+#endif 
+
 
 // Get a coordinate
 AmanziGeometry::Point

@@ -68,7 +68,6 @@ struct TensorVector {
     if(data.size() != size) 
       data.set_size(size); 
 
-    std::size_t total_size = 0; 
     // 1 compute total size: 
     for(int i = 0 ; i < size; ++i){
       const auto& t = f_e(i); 
@@ -86,6 +85,42 @@ struct TensorVector {
       }
     }
     data.update_entries_device();
+  }
+
+  template<typename F_ELEMENT> 
+  void InitDevice(
+    int size,  
+    F_ELEMENT&& f_e)
+  {
+    if(data.size() != size) 
+      data.set_size(size); 
+
+    std::size_t total_size = 0; 
+    // 1 compute total size: 
+    Kokkos::parallel_for(
+      "TensorVector::InitDevice L1", 
+      size, 
+      KOKKOS_LAMBDA(const int i){
+        //const Amanzi::WhetStone::Tensor<DefaultExecutionSpace>& t = f_e(i); 
+        data.set_row_map(i,f_e(i).mem()); 
+        //data.set_sizes(i,0,t.dimension()); 
+        //data.set_sizes(i,1,t.rank()); 
+        //data.set_sizes(i,2,t.size()); 
+      });  
+    data.prefix_sum_device(); 
+#if 0 
+    Kokkos::parallel_for(
+      "TensorVector::InitDevice L2", 
+      size, 
+      KOKKOS_LAMBDA(const int i){
+        int idx = data.row_map(i); 
+        const auto& t = f_e(i).data(); 
+        for(int j = 0 ; j < t.size(); ++j){
+          data.set_entries(idx+j,t(j)); 
+        }
+      }); 
+#endif 
+    //data.update_entries_host();
   }
 
   /**

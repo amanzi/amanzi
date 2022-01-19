@@ -38,6 +38,8 @@
 
 #include "Kokkos_Core.hpp"
 
+//#define OUTPUT_CUDA
+#undef OUTPUT_CUDA 
 
 namespace Amanzi {
 
@@ -55,6 +57,8 @@ using DefaultHost =
 
   
 #ifdef KOKKOS_ENABLE_CUDA_UVM
+
+#warning "UVM ENABLED"
 // If we are using UVM, we sometimes prefer to turn it off to avoid unnecessary
 // syncing when we want to stay fully on the device and never come back to the
 // host.

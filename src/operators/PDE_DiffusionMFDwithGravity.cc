@@ -104,7 +104,7 @@ void PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
             // Amanzi's first upwind: the family of DIVK methods uses hydraulic
             // head as the primary variable and linear transformation for pressure.
             if (!fv_flag) {
-              AMANZI_ASSERT(false); // crud -- we used v for kr, and now we
+              assert(false); // crud -- we used v for kr, and now we
                                     // need all three v, Av, and kr?  Is there
                                     // a way around this?
               // WhetStone::DenseVector v(nfaces), av(nfaces);

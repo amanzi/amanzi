@@ -195,6 +195,7 @@ cMultiVectorView_type_<DeviceType, Scalar>
 BlockVector<Scalar>::ViewComponent(const std::string& name, bool ghosted) const
 {
   using memory_space = typename DeviceType::memory_space;
+
   return VectorHarness::getMultiVector(
     VectorHarness::readOnly(*GetComponent_(name, ghosted)).on(memory_space()));
 }
@@ -459,6 +460,7 @@ BlockVector<Scalar>::elementWiseMultiply(Scalar scalarAB,
                                          const BlockVector<Scalar>& B,
                                          Scalar scalarThis)
 {
+  std::cout<<"BLOCKVECTOR::elementWiseMultiply"<<std::endl;
   for (const auto& name : *this) {
     // There is a nasty gotcha here -- if this is A, when we call getVector we
     // clobber data and break things without erroring.  But this being B is ok.

@@ -179,6 +179,21 @@ class Operator: public Matrix<CompositeVector,CompositeSpace> {
   // set all local values to 0.
   void Zero();
 
+  void display(const CompositeVector& X, std::string s){
+    #ifdef OUTPUT_CUDA 
+    std::cout<<"OP DISPLAY "<<s;
+    auto x = X.ViewComponent("cell",false); 
+    Kokkos::parallel_for(
+      "",
+      x.extent(0), 
+      KOKKOS_LAMBDA(const int i){printf("%.4f - ",x(i,0));}
+    );
+    Kokkos::fence();
+    std::cout<<std::endl;
+    #endif 
+  }
+
+
   // main members as an operator
   virtual int apply(const CompositeVector& X, CompositeVector& Y, double scalar) const;
   virtual int apply(const CompositeVector& X, CompositeVector& Y) const override {

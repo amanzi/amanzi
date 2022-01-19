@@ -59,7 +59,7 @@ using namespace Amanzi;
 class AnalyticBase { //: public WhetStone::WhetStoneFunction {
  public:
   AnalyticBase(int d) 
-    : d_(d), K_(d,1) {};
+    : d_(d), K_(d,1), K_device_(d,1) {};
   virtual ~AnalyticBase() {};
 
   virtual std::string name() const = 0;
@@ -67,11 +67,16 @@ class AnalyticBase { //: public WhetStone::WhetStoneFunction {
 
   // analytic solution for diffusion problem with gravity
   // -- tensorial diffusion coefficient
-  virtual const WhetStone::Tensor<Kokkos::HostSpace>&
+  virtual __device__ const WhetStone::Tensor<DefaultExecutionSpace>&
   TensorDiffusivity(const AmanziGeometry::Point& p, double t) const {
-    std::cout<<"TensorDiffusivity"<<std::endl;
+    return K_device_;
+  }
+
+  virtual const Amanzi::WhetStone::Tensor<Kokkos::HostSpace>& 
+  TensorDiffusivity_host(const Amanzi::AmanziGeometry::Point& p, double t) const {
     return K_;
   }
+
     
 
   // -- scalar diffusion coefficient
@@ -101,7 +106,7 @@ class AnalyticBase { //: public WhetStone::WhetStoneFunction {
   // derived quantity: Darcy velocity -K k grad(h)
   virtual AmanziGeometry::Point
   velocity_exact(const AmanziGeometry::Point& p, double t) const {
-    auto K = TensorDiffusivity(p, t);
+    auto K = TensorDiffusivity_host(p, t);
     double kr = ScalarDiffusivity(p, t);
     auto grad = gradient_exact(p, t);
     return -(K * grad) * kr;
@@ -110,6 +115,8 @@ class AnalyticBase { //: public WhetStone::WhetStoneFunction {
  protected:
   int d_;
   WhetStone::Tensor<Kokkos::HostSpace> K_;
+  WhetStone::Tensor<DefaultExecutionSpace> K_device_;
+
 };
 
 //
@@ -166,12 +173,22 @@ void ComputeCellError(const AnalyticBase& ana,
                       double t,
                       double& pnorm, double& l2_err, double& inf_err)
 {
+  std::cout<<"AnalyticBase: Compute Cell Error"<<std::endl;
   pnorm = 0.0;
   l2_err = 0.0;
   inf_err = 0.0;
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   auto p = p_vec.ViewComponent<MirrorHost>("cell", false);
+
+#ifdef OUTPUT_CUDA 
+  std::cout<<"p = ";
+  for(int c = 0 ;  c <  ncells; ++c){
+    std::cout<<p(c,0)<<" - "; 
+  }
+  std::cout<<std::endl;
+  #endif 
+
   for (int c = 0; c < ncells; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid_host(c);
     double tmp = ana.pressure_exact(xc, t);

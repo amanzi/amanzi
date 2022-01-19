@@ -46,6 +46,31 @@ class BlockVector {
   BlockVector<Scalar>& operator=(const BlockVector<Scalar>& other);
   void assign(const BlockVector<Scalar>& other) { *this = other; }
 
+  void sync_device(const std::string& name){
+    //std::cout<<"BlockVector::sync device"<<std::endl;
+    master_data_.at(name)->sync_device(); 
+  }
+
+  void modify_device(const std::string& name){
+    //std::cout<<"BlockVector::modify device"<<std::endl;
+    master_data_.at(name)->modify_device(); 
+  }
+
+  void sync_host(const std::string& name){
+    //std::cout<<"BlockVector::sync host"<<std::endl;
+    master_data_.at(name)->sync_host(); 
+  }
+
+  void modify_host(const std::string& name){
+    //std::cout<<"BlockVector::modify host"<<std::endl;
+    master_data_.at(name)->modify_host(); 
+  }
+
+  void clear_sync_state(const std::string& name){
+    //std::cout<<"Clear Sync State"<<std::endl;
+    master_data_.at(name)->clear_sync_state(); 
+  }
+  
   //
   // Meta-data delegated to map
   // ---------------------------------------------

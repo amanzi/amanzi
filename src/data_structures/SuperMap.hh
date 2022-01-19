@@ -98,6 +98,9 @@ class SuperMap {
   GhostIndices(std::size_t block_num, const std::string& compname,
                std::size_t dof_num) const
   {
+    #ifdef OUTPUT_CUDA 
+    std::cout<<"GhostIndices"<<std::endl;
+    #endif 
     auto bi = block_info_.find(std::make_tuple(block_num, compname, dof_num));
     if (bi == block_info_.end()) {
       Errors::Message msg;

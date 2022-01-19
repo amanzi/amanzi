@@ -75,6 +75,10 @@ class Inverse : public Matrix<Vector,VectorSpace> {
 
   virtual void set_matrices(const Teuchos::RCP<Operator>& m,
                     const Teuchos::RCP<Preconditioner>& h) {
+                    #ifdef OUTPUT_CUDA 
+
+    std::cout<<"Inverse::set_matrices"<<std::endl;
+    #endif 
     m_ = m;
     h_ = h;
   }

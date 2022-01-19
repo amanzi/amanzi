@@ -35,12 +35,35 @@ class Op_Face_Cell : public Op {
       int ncells = cells.extent(0); 
       A.set_shape(f, ncells,ncells);
     }
+
     A.Init();
+    #ifdef OUTPUT_CUDA 
+
+    // Matrix value: 
+    for (int f=0; f!=nfaces_owned; ++f) {
+      std::cout<<A.at_host(f)(0,0)<<" - "; 
+    }
+    std::cout<<std::endl<<" Device: ";
+    toto(); 
+    #endif 
+  }
+
+  void toto(){ 
+        Kokkos::parallel_for(
+      "Test",
+      A.size(), 
+      KOKKOS_LAMBDA(const int f){
+        printf("%.4f - ",A[0](0,0)); 
+    }); 
+    Kokkos::fence(); 
+    std::cout<<std::endl;
+
   }
 
   virtual void
   SumLocalDiag(CompositeVector& X) const
   {
+    std::cout<<"Op_Face_cell: SumLocalDiag"<<std::endl;
     AmanziMesh::Mesh const * mesh_ = mesh.get();
     auto Xv = X.ViewComponent("cell", true);
     Kokkos::parallel_for(

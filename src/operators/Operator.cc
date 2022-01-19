@@ -340,6 +340,36 @@ int Operator::ComputeNegativeResidual(const CompositeVector& u, CompositeVector&
 ******************************************************************* */
 int Operator::apply(const CompositeVector& X, CompositeVector& Y, double scalar) const
 {
+
+  #ifdef OUTPUT_CUDA 
+  {
+  std::cout<<"X"; 
+  auto x = X.ViewComponent("cell",true); 
+  Kokkos::parallel_for(
+    "",
+    x.extent(0), 
+    KOKKOS_LAMBDA(const int i){printf("%.4f - ",x(i,0));}
+  );
+  Kokkos::fence(); 
+  std::cout<<std::endl;
+  }
+  #endif 
+
+#ifdef OUTPUT_CUDA 
+{
+  std::cout<<"Y"; 
+  auto y = Y.ViewComponent("cell",true); 
+  Kokkos::parallel_for(
+    "",
+    y.extent(0), 
+    KOKKOS_LAMBDA(const int i){printf("%.4f - ",y(i,0));}
+  );
+  Kokkos::fence(); 
+  std::cout<<std::endl;
+  }
+
+  std::cout<<"apply: operator"<<std::endl;
+#endif 
   X.ScatterMasterToGhosted();
 
   // initialize ghost elements
@@ -508,6 +538,7 @@ void Operator::set_inverse_parameters(Teuchos::ParameterList& plist)
 ****************************************************************** */
 void Operator::initializeInverse()
 {
+  std::cout<<"Operator::initializeInverse"<<std::endl;
   if (!inited_) {
     Errors::Message msg("No inverse parameter list.  Provide a sublist \"inverse\" or ensure set_inverse_parameters() is called.");
     msg << " In: " << typeid(*this).name() << "\n";
@@ -537,6 +568,7 @@ void Operator::initializeInverse()
 
 void Operator::computeInverse()
 {
+  std::cout<<"Operator::computeInverse"<<std::endl;
   if (!updated_) {
     initializeInverse();
   }

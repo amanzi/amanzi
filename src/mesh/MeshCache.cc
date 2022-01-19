@@ -41,6 +41,7 @@ MeshCache::MeshCache(Mesh* mesh, const bool request_faces, const bool request_ed
 void
 MeshCache::cache_cell_face_info_() const
 {
+
   int ncells = mesh_->num_entities(CELL, Parallel_type::ALL);
   cell_face_ids_.row_map.resize(ncells + 1);
   cell_face_dirs_.row_map.resize(ncells + 1);
@@ -161,6 +162,7 @@ MeshCache::cache_cell_face_info_() const
   cell2face_info_cached_ = true;
   face2cell_info_cached_ = true;
   faces_requested_ = true;
+
 }
 
 void
@@ -380,6 +382,7 @@ MeshCache::cache_parents_info_() const
 void
 MeshCache::init()
 {
+
   assert(!cell2face_info_cached_);
   cache_cell_face_info_();
   cell2face_info_cached_ = true;
@@ -398,48 +401,42 @@ MeshCache::init()
   cache_cell_get_faces_and_bisectors_(); 
   cell_get_faces_and_bisectors_precomputed_ = true;
 
-  // Sync GPU 
-  // Dual views 
-  cell_volumes_.sync<Kokkos::DefaultExecutionSpace>();
-  face_areas_.sync<Kokkos::DefaultExecutionSpace>();
-  edge_lengths_.sync<Kokkos::DefaultExecutionSpace>();
-  cell_centroids_.sync<Kokkos::DefaultExecutionSpace>();
-  face_centroids_.sync<Kokkos::DefaultExecutionSpace>();
-  edge_vectors_.sync<Kokkos::DefaultExecutionSpace>();
-  cells_parent_.sync<Kokkos::DefaultExecutionSpace>();
-  faces_parent_.sync<Kokkos::DefaultExecutionSpace>();
-  edges_parent_.sync<Kokkos::DefaultExecutionSpace>();
-  nodes_parent_.sync<Kokkos::DefaultExecutionSpace>();
-  cell_cellabove_.sync<Kokkos::DefaultExecutionSpace>();
-  cell_cellbelow_.sync<Kokkos::DefaultExecutionSpace>();
-  node_nodeabove_.sync<Kokkos::DefaultExecutionSpace>();
-  columnID_.sync<Kokkos::DefaultExecutionSpace>();
-  face_cell_ids_dirs_.sync<Kokkos::DefaultExecutionSpace>();
+  Kokkos::deep_copy(cell_volumes_.view_device(),cell_volumes_.view_host()); 
+  Kokkos::deep_copy(face_areas_.view_device(),face_areas_.view_host()); 
+  Kokkos::deep_copy(edge_lengths_.view_device(),edge_lengths_.view_host()); 
+  Kokkos::deep_copy(cell_centroids_.view_device(),cell_centroids_.view_host()); 
+  Kokkos::deep_copy(face_centroids_.view_device(),face_centroids_.view_host()); 
+  Kokkos::deep_copy(edge_vectors_.view_device(),edge_vectors_.view_host()); 
+  Kokkos::deep_copy(cells_parent_.view_device(),cells_parent_.view_host()); 
+  Kokkos::deep_copy(faces_parent_.view_device(),faces_parent_.view_host()); 
+  Kokkos::deep_copy(edges_parent_.view_device(),edges_parent_.view_host()); 
+  Kokkos::deep_copy(nodes_parent_.view_device(),nodes_parent_.view_host()); 
+  Kokkos::deep_copy(cell_cellabove_.view_device(),cell_cellabove_.view_host()); 
+  Kokkos::deep_copy(cell_cellbelow_.view_device(),cell_cellbelow_.view_host()); 
+  Kokkos::deep_copy(node_nodeabove_.view_device(),node_nodeabove_.view_host()); 
+  Kokkos::deep_copy(columnID_.view_device(),columnID_.view_host()); 
+  Kokkos::deep_copy(face_cell_ids_dirs_.view_device(),face_cell_ids_dirs_.view_host()); 
 
-  
-  // Dual CRS 
-  face_normals_.row_map.sync<Kokkos::DefaultExecutionSpace>();
-  face_normals_.entries.sync<Kokkos::DefaultExecutionSpace>();
-  cell_faces_bisectors_.row_map.sync<Kokkos::DefaultExecutionSpace>();
-  cell_faces_bisectors_.entries.sync<Kokkos::DefaultExecutionSpace>();
-  cell_face_ids_.row_map.sync<Kokkos::DefaultExecutionSpace>();
-  cell_face_ids_.entries.sync<Kokkos::DefaultExecutionSpace>();
-  cell_face_dirs_.row_map.sync<Kokkos::DefaultExecutionSpace>();
-  cell_face_dirs_.entries.sync<Kokkos::DefaultExecutionSpace>();
-  face_cell_ids_.row_map.sync<Kokkos::DefaultExecutionSpace>();
-  face_cell_ids_.entries.sync<Kokkos::DefaultExecutionSpace>();
-  face_cell_ids_.row_map.sync<Kokkos::DefaultExecutionSpace>();
-  face_cell_ids_.entries.sync<Kokkos::DefaultExecutionSpace>();
-  face_cell_ptype_.row_map.sync<Kokkos::DefaultExecutionSpace>();
-  face_cell_ptype_.entries.sync<Kokkos::DefaultExecutionSpace>();
-  cell_edge_ids_.row_map.sync<Kokkos::DefaultExecutionSpace>();
-  cell_edge_ids_.entries.sync<Kokkos::DefaultExecutionSpace>();
-  cell_2D_edge_dirs_.row_map.sync<Kokkos::DefaultExecutionSpace>();
-  cell_2D_edge_dirs_.entries.sync<Kokkos::DefaultExecutionSpace>();
-  face_edge_ids_.row_map.sync<Kokkos::DefaultExecutionSpace>();
-  face_edge_ids_.entries.sync<Kokkos::DefaultExecutionSpace>();
-  face_edge_dirs_.row_map.sync<Kokkos::DefaultExecutionSpace>();
-  face_edge_dirs_.entries.sync<Kokkos::DefaultExecutionSpace>();
+  Kokkos::deep_copy(face_normals_.entries.view_device(),face_normals_.entries.view_host()); 
+  Kokkos::deep_copy(face_normals_.row_map.view_device(),face_normals_.row_map.view_host()); 
+  Kokkos::deep_copy(cell_faces_bisectors_.entries.view_device(),cell_faces_bisectors_.entries.view_host()); 
+  Kokkos::deep_copy(cell_faces_bisectors_.row_map.view_device(),cell_faces_bisectors_.row_map.view_host()); 
+  Kokkos::deep_copy(cell_face_ids_.entries.view_device(),cell_face_ids_.entries.view_host()); 
+  Kokkos::deep_copy(cell_face_ids_.row_map.view_device(),cell_face_ids_.row_map.view_host()); 
+  Kokkos::deep_copy(cell_face_dirs_.entries.view_device(),cell_face_dirs_.entries.view_host()); 
+  Kokkos::deep_copy(cell_face_dirs_.row_map.view_device(),cell_face_dirs_.row_map.view_host()); 
+  Kokkos::deep_copy(face_cell_ids_.entries.view_device(),face_cell_ids_.entries.view_host()); 
+  Kokkos::deep_copy(face_cell_ids_.row_map.view_device(),face_cell_ids_.row_map.view_host()); 
+  Kokkos::deep_copy(face_cell_ptype_.entries.view_device(),face_cell_ptype_.entries.view_host()); 
+  Kokkos::deep_copy(face_cell_ptype_.row_map.view_device(),face_cell_ptype_.row_map.view_host()); 
+  Kokkos::deep_copy(cell_edge_ids_.entries.view_device(),cell_edge_ids_.entries.view_host()); 
+  Kokkos::deep_copy(cell_edge_ids_.row_map.view_device(),cell_edge_ids_.row_map.view_host()); 
+  Kokkos::deep_copy(cell_2D_edge_dirs_.entries.view_device(),cell_2D_edge_dirs_.entries.view_host()); 
+  Kokkos::deep_copy(cell_2D_edge_dirs_.row_map.view_device(),cell_2D_edge_dirs_.row_map.view_host()); 
+  Kokkos::deep_copy(face_edge_ids_.entries.view_device(),face_edge_ids_.entries.view_host()); 
+  Kokkos::deep_copy(face_edge_ids_.row_map.view_device(),face_edge_ids_.row_map.view_host()); 
+  Kokkos::deep_copy(face_edge_dirs_.entries.view_device(),face_edge_dirs_.entries.view_host()); 
+  Kokkos::deep_copy(face_edge_dirs_.row_map.view_device(),face_edge_dirs_.row_map.view_host()); 
 }
 
 void 
