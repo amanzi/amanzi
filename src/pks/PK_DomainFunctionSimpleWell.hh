@@ -98,7 +98,6 @@ void PK_DomainFunctionSimpleWell<FunctionBase>::Init(const Teuchos::ParameterLis
 
   if (submodel_ == "bhp") {
     depth_ = well_list.get<double>("depth");
-    int dim = (*mesh_).space_dimension();
     gravity_ = S_->Get<AmanziGeometry::Point>("gravity");
     rho_ = S->Get<double>("const_fluid_density");
   }

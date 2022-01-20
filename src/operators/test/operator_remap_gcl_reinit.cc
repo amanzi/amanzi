@@ -45,11 +45,11 @@ class MyRemapDGr : public Operators::RemapDG<TreeVector> {
              const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
              Teuchos::ParameterList& plist, double T1)
     : RemapDG<TreeVector>(mesh0, mesh1, plist),
-      T1_(T1),
-      l2norm_(-1.0),
-      tini_(0.0),
       tprint_(0.0),
-      dt_output_(0.1) {};
+      dt_output_(0.1),
+      l2norm_(-1.0),
+      T1_(T1),
+      tini_(0.0) {};
   ~MyRemapDGr() {};
 
   // create basic structures at each cycle

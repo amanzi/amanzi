@@ -37,7 +37,6 @@ class ChemistryMatrixFracture_PK : public PK_MPCWeak {
   virtual std::string name() override { return "coupled chemistry"; } 
 
  private:
-  const Teuchos::RCP<Teuchos::ParameterList>& glist_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
 
   // factory registration

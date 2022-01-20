@@ -102,7 +102,7 @@ public:
   }
 
   virtual void EnsureCompatibility(State& S) override final {
-    auto& my_fac = S.Require<Data_t, DataFactory_t>(my_key_, my_tag_, my_key_);
+    S.Require<Data_t, DataFactory_t>(my_key_, my_tag_, my_key_);
     if (S.HasDerivativeSet(my_key_, my_tag_)) {
       for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
         auto wrt = Keys::splitKeyTag(deriv.first.get());

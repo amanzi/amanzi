@@ -22,17 +22,20 @@ Record::Record(Key fieldname, Key owner)
    : fieldname_(std::move(fieldname)),
      owner_(std::move(owner)),
      vis_key_(fieldname_),
-     units_(),
+     initialized_(false),
      io_checkpoint_(true),
      io_vis_(true),
-     initialized_(false) {}
+     units_() {}
 
 // Copy constructor does not copy data!
 Record::Record(const Record& other)
    : fieldname_(other.fieldname_), owner_(other.owner_),
-     vis_key_(other.vis_key_), units_(other.units_),
-     io_checkpoint_(other.io_checkpoint_), io_vis_(other.io_vis_),
-     initialized_(other.initialized_), subfieldnames_(other.subfieldnames_) {};
+     vis_key_(other.vis_key_),
+     subfieldnames_(other.subfieldnames_),
+     initialized_(other.initialized_),
+     io_checkpoint_(other.io_checkpoint_),
+     io_vis_(other.io_vis_),
+     units_(other.units_) {}
 
 // pass-throughs for other functionality
 void Record::WriteVis(const Visualization& vis) const {

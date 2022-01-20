@@ -77,8 +77,8 @@ CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
                          Teuchos::RCP<Amanzi::State>& S,
                          const Comm_ptr_type& comm,
                          Amanzi::ObservationData& observations_data) :
-    glist_(glist),
     S_(S),
+    glist_(glist),
     comm_(comm),
     observations_data_(observations_data),
     restart_requested_(false) {

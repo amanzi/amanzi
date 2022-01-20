@@ -32,6 +32,7 @@ class MultiphaseBaseEvaluator : public EvaluatorSecondaryMonotype<CompositeVecto
     n_ = other.n_; kH_ = other.kH_;
   }
 
+  using EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::Update;
   bool Update(State& S, Key request, bool force) {
     bool ok = EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::Update(S, request);
     if (force) {

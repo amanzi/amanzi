@@ -31,8 +31,8 @@ RemapDG_Helper::RemapDG_Helper(
     Teuchos::ParameterList& plist) 
   : mesh0_(mesh0),
     mesh1_(mesh1),
-    plist_(plist),
-    dim_(mesh0->space_dimension())
+    dim_(mesh0->space_dimension()),
+    plist_(plist)
 {
   // mesh data
   ncells_owned_ = mesh0_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);

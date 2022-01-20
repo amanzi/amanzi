@@ -109,7 +109,7 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
 * u is the given velocity field and C is the advected field.
 ****************************************************************** */
 void PDE_AdvectionRiemann::UpdateMatrices(
-    const Teuchos::Ptr<const std::vector<WhetStone::Polynomial> >& u)
+    const std::vector<WhetStone::Polynomial>& u)
 {
   double flux;
   WhetStone::DenseMatrix Aface;
@@ -117,22 +117,22 @@ void PDE_AdvectionRiemann::UpdateMatrices(
 
   if (matrix_ == "flux" && flux_ == "upwind") {
     for (int f = 0; f < nfaces_owned; ++f) {
-      dg_->FluxMatrix(f, (*u)[f], Aface, true, jump_on_test_, &flux);
+      dg_->FluxMatrix(f, u[f], Aface, true, jump_on_test_, &flux);
       matrix[f] = Aface;
     }
   } else if (matrix_ == "flux" && flux_ == "downwind") {
     for (int f = 0; f < nfaces_owned; ++f) {
-      dg_->FluxMatrix(f, (*u)[f], Aface, false, jump_on_test_, &flux);
+      dg_->FluxMatrix(f, u[f], Aface, false, jump_on_test_, &flux);
       matrix[f] = Aface;
     }
   } else if (matrix_ == "flux" && flux_ == "upwind at gauss points") {
     for (int f = 0; f < nfaces_owned; ++f) {
-      dg_->FluxMatrixGaussPoints(f, (*u)[f], Aface, true, jump_on_test_);
+      dg_->FluxMatrixGaussPoints(f, u[f], Aface, true, jump_on_test_);
       matrix[f] = Aface;
     }
   } else if (matrix_ == "flux" && flux_ == "downwind at gauss points") {
     for (int f = 0; f < nfaces_owned; ++f) {
-      dg_->FluxMatrixGaussPoints(f, (*u)[f], Aface, false, jump_on_test_);
+      dg_->FluxMatrixGaussPoints(f, u[f], Aface, false, jump_on_test_);
       matrix[f] = Aface;
     }
   } else if (matrix_ == "flux" && flux_ == "Rusanov") {

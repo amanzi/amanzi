@@ -37,8 +37,8 @@ class AnalyticDGBase {
   AnalyticDGBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, bool advection)
     : mesh_(mesh),
       order_(order),
-      advection_(advection),
-      d_(mesh_->space_dimension()) {};
+      d_(mesh_->space_dimension()),
+      advection_(advection) {};
   ~AnalyticDGBase() {};
 
   // analytic data in conventional Taylor basis

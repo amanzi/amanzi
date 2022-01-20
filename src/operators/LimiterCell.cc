@@ -43,11 +43,11 @@ namespace Operators {
 ******************************************************************* */
 LimiterCell::LimiterCell(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) 
   : mesh_(mesh),
-    flux_(Teuchos::null),
     gradient_(Teuchos::null),
     component_(0),
-    cfl_(1.0),
-    external_bounds_(false)
+    flux_(Teuchos::null),
+    external_bounds_(false),
+    cfl_(1.0)
 {
   dim = mesh_->space_dimension();
 

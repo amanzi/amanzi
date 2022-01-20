@@ -42,9 +42,9 @@ IEMEvaluator::IEMEvaluator(Teuchos::ParameterList& plist)
 ****************************************************************** */
 IEMEvaluator::IEMEvaluator(const IEMEvaluator& other)
     : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
-      iem_(other.iem_),
       temperature_key_(other.temperature_key_),
-      pressure_key_(other.pressure_key_) {};
+      pressure_key_(other.pressure_key_),
+      iem_(other.iem_) {};
 
 
 /* ******************************************************************

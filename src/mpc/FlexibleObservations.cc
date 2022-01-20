@@ -38,9 +38,9 @@ FlexibleObservations::FlexibleObservations(
     Teuchos::RCP<Teuchos::ParameterList> units_list,
     Amanzi::ObservationData& observation_data,
     Teuchos::RCP<const State> S)
-    : observation_data_(observation_data),
-      obs_list_(obs_list),
-      coordinator_list_(coordinator_list)
+    : obs_list_(obs_list),
+      coordinator_list_(coordinator_list),
+      observation_data_(observation_data)
 {
   rank_ = S->GetMesh("domain")->get_comm()->MyPID();
 

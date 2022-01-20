@@ -35,8 +35,8 @@ class PK_DomainFunctionFirstOrderExchange : public FunctionBase,
   PK_DomainFunctionFirstOrderExchange(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                           const Teuchos::ParameterList& plist,
                           AmanziMesh::Entity_kind kind) :
-    UniqueMeshFunction(mesh),
     FunctionBase(plist),
+    UniqueMeshFunction(mesh),
     kind_(kind) {
   };
   virtual ~PK_DomainFunctionFirstOrderExchange() = default;

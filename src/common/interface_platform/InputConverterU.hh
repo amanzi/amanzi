@@ -34,9 +34,9 @@ class InputConverterU : public InputConverter {
  public:
   explicit InputConverterU(const std::string& input_filename) :
       InputConverter(input_filename), 
+      multiphase_(false),
       const_gravity_(GRAVITY_MAGNITUDE),
       const_atm_pressure_(ATMOSPHERIC_PRESSURE),
-      vo_(NULL),
       flow_single_phase_(false),
       compressibility_(false),
       fractures_(false),
@@ -44,33 +44,33 @@ class InputConverterU : public InputConverter {
       transport_permeability_(false),
       use_transport_porosity_(false),
       transport_implicit_(false),
-      multiphase_(false),
       restart_(false),
-      ic_time_(0.0),
       ic_time_flow_(0.0),
+      ic_time_(0.0),
       output_prefix_(""),
       io_walkabout_(false),
-      io_mesh_info_(false) {};
+      io_mesh_info_(false),
+      vo_(NULL) {};
 
   explicit InputConverterU(const std::string& input_filename, 
                            xercesc::DOMDocument* input_doc,
                            const std::string& output_prefix) :
       InputConverter(input_filename, input_doc), 
-      vo_(NULL),
+      multiphase_(false),
       flow_single_phase_(false),
       compressibility_(false),
       fractures_(false),
-      multiphase_(false),
       mesh_rectangular_(false),
       transport_permeability_(false),
       use_transport_porosity_(false),
       transport_implicit_(false),
       restart_(false),
-      ic_time_(0.0),
       ic_time_flow_(0.0),
+      ic_time_(0.0),
       output_prefix_(output_prefix),
       io_walkabout_(false),
-      io_mesh_info_(false) {};
+      io_mesh_info_(false),
+      vo_(NULL) {};
 
   ~InputConverterU() { if (vo_ != NULL) delete vo_; }
 

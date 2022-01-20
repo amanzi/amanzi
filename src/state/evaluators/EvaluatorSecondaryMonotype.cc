@@ -159,7 +159,7 @@ void EvaluatorSecondaryMonotype<CompositeVector,CompositeVectorSpace>::EnsureCom
 {
   // claim ownership, declare type
   for (auto keytag : my_keys_) {
-    const auto& fac = S.Require<CompositeVector,CompositeVectorSpace>(
+    S.Require<CompositeVector,CompositeVectorSpace>(
         keytag.first, keytag.second, keytag.first);
   }
 

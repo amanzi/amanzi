@@ -311,7 +311,6 @@ void AdvectionDiffusionTransient(int nx, int nloops, double* error)
   // create boundary data for diffusion and
   // Neumann on outflow boundary is needed for operator's positive-definitness
   bool flag;
-  double diff_flux, adv_flux;
   auto bcd = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   {
     std::vector<int>& bc_model = bcd->bc_model();

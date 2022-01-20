@@ -110,9 +110,9 @@ class BCs {
   // -- vector is a general vector DOF (example: moments of pressure)
   // -- normal-component is a geometric DOF (example: normal component of fluid velocity)
   BCs(Teuchos::RCP<const AmanziMesh::Mesh> mesh, AmanziMesh::Entity_kind kind, WhetStone::DOF_Type type) : 
-      mesh_(mesh),
       kind_(kind),
-      type_(type) {};
+      type_(type),
+      mesh_(mesh) {};
   ~BCs() {};
 
   // access

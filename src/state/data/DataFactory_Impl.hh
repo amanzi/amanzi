@@ -81,10 +81,10 @@ template <typename T>
 class DataFactory_Impl<T, NullFactory> : public DataFactory_Intf {
 public:
   DataFactory_Impl()
-      : f_(std::move(std::unique_ptr<NullFactory>(new NullFactory()))) {};
+      : f_(std::unique_ptr<NullFactory>(new NullFactory())) {};
 
   DataFactory_Impl(const DataFactory_Impl& other)
-      : f_(std::move(std::unique_ptr<NullFactory>(new NullFactory(*other.f_)))) {};
+      : f_(std::unique_ptr<NullFactory>(new NullFactory(*other.f_))) {};
 
   std::unique_ptr<DataFactory_Intf> Clone() const override {
     return std::unique_ptr<DataFactory_Impl<T, NullFactory>>(

@@ -25,8 +25,8 @@ EvaluatorIndependentFromFile::EvaluatorIndependentFromFile(
     : EvaluatorIndependent<CompositeVector, CompositeVectorSpace>(plist),
       filename_(plist.get<std::string>("filename")),
       meshname_(plist.get<std::string>("domain name", "domain")),
-      varname_(plist.get<std::string>("variable name")),
       compname_(plist.get<std::string>("component name", "cell")),
+      varname_(plist.get<std::string>("variable name")),
       locname_(plist.get<std::string>("mesh entity", "cell")),
       ndofs_(plist.get<int>("number of dofs", 1)) {
   if (plist.isSublist("time function")) {

@@ -38,9 +38,9 @@ IEM_WaterVaporEvaluator::IEM_WaterVaporEvaluator(
 
 IEM_WaterVaporEvaluator::IEM_WaterVaporEvaluator(const IEM_WaterVaporEvaluator& other)
     : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
-      iem_(other.iem_),
       temp_key_(other.temp_key_),
-      mol_frac_key_(other.mol_frac_key_) {};
+      mol_frac_key_(other.mol_frac_key_),
+      iem_(other.iem_) {};
 
 
 Teuchos::RCP<Evaluator>

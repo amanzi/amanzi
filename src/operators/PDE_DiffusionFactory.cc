@@ -36,8 +36,8 @@ namespace Operators {
 PDE_DiffusionFactory::PDE_DiffusionFactory(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) 
   : mesh_(mesh),
-    gravity_(false),
     const_k_(1.0),
+    gravity_(false),
     const_b_(0.0)
 {};
 
@@ -47,8 +47,8 @@ PDE_DiffusionFactory::PDE_DiffusionFactory(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
   : oplist_(oplist),
     mesh_(mesh),
-    gravity_(false),
     const_k_(1.0),
+    gravity_(false),
     const_b_(0.0)
 {
   if (oplist.isParameter("diffusion coefficient")) {

@@ -80,8 +80,8 @@ protected:
   KeySet requests_;
   DerivativeTripleSet deriv_requests_;
 
-  VerboseObject vo_;
   Teuchos::ParameterList plist_;
+  VerboseObject vo_;
 
 }; // class Evaluator
 

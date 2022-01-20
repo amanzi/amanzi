@@ -32,8 +32,8 @@ class InverseIterativeMethod :
 
  public:
   InverseIterativeMethod()
-      : inited_(false),
-        Inverse<Matrix,Preconditioner,Vector,VectorSpace>() {};
+      : Inverse<Matrix,Preconditioner,Vector,VectorSpace>(),
+        inited_(false) {};
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override;
   virtual void InitializeInverse() override {

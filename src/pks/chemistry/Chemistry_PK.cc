@@ -26,11 +26,11 @@ using CVS_t = CompositeVectorSpace;
 Chemistry_PK::Chemistry_PK() :
     passwd_("state"),
     number_minerals_(0),
-    number_ion_exchange_sites_(0),
+    number_aqueous_kinetics_(0),
     number_sorption_sites_(0),
     using_sorption_(false),
     using_sorption_isotherms_(false),
-    number_aqueous_kinetics_(0),
+    number_ion_exchange_sites_(0),
     dt_max_(9.9e9)
     {};
 

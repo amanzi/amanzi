@@ -31,9 +31,6 @@ namespace Flow {
 void Richards_PK::SolveFullySaturatedProblem(
     double t_old, CompositeVector& u, const std::string& solver_name)
 {
-  std::vector<int>& bc_model = op_bc_->bc_model();
-  std::vector<double>& bc_value = op_bc_->bc_value();
-
   UpdateSourceBoundaryData(t_old, t_old, u);
 
   const auto& mu = S_->GetPtr<CompositeVector>(viscosity_liquid_key_);

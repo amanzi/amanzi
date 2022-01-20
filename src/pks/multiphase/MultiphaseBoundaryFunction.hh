@@ -31,8 +31,8 @@ class MultiphaseBoundaryFunction : public PK_DomainFunction {
   MultiphaseBoundaryFunction()
       : rainfall_(false),
         bc_name_("underfined"),
-        component_name_("water"),
-        component_id_(-1) {};
+        component_id_(-1),
+        component_name_("water") {};
 
   MultiphaseBoundaryFunction(const Teuchos::ParameterList& plist);
   void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);

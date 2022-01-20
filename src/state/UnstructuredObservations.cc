@@ -27,12 +27,12 @@ namespace Amanzi {
 
 UnstructuredObservations::UnstructuredObservations(
       Teuchos::ParameterList& plist)
-  : write_(false),
+  : IOEvent(plist),
+    write_(false),
+    num_total_(0),
     count_(0),
     time_integrated_(false),
-    num_total_(0),
-    observed_once_(false),
-    IOEvent(plist)
+    observed_once_(false)
 {
   // interpret parameter list
   // loop over the sublists and create an observable for each
