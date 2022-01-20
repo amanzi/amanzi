@@ -69,7 +69,7 @@ class InputConverterS : public InputConverter {
   std::string chemistry_engine_;
   std::vector<std::string> solutes_;
   bool solute_names_parsed_;
-  double gravity_, liquid_density_, liquid_viscosity_;
+  double liquid_density_, liquid_viscosity_;
   std::vector<std::string> constraint_names_;
 };
 

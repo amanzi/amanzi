@@ -126,23 +126,6 @@ list<string> MakePPEntry(int i)
   return pp;
 }
 
-list<string> MakePPEntry(long i)
-{
-  list<string> pp;
-  stringstream s;
-  s << i;
-  pp.push_back(s.str());
-  return pp;
-}
-
-list<string> MakePPEntry(const string& s1, const string& s2)
-{
-  list<string> pp;
-  pp.push_back(MangleString(s1));
-  pp.push_back(MangleString(s2));
-  return pp;
-}
-
 list<string> MakePPEntry(const vector<string>& ss)
 {
   list<string> pp;
@@ -176,17 +159,6 @@ list<string> MakePPEntry(const vector<int>& is)
   return pp;
 }
 
-list<string> MakePPEntry(const vector<long>& is)
-{
-  list<string> pp;
-  for (size_t i = 0; i < is.size(); ++i)
-  {
-    stringstream s;
-    s << is[i];
-    pp.push_back(s.str());
-  }
-  return pp;
-}
 
 // Shortcut for putting entries into tables.
 void AddToTable(list<ParmParse::PP_entry>& table,
@@ -385,15 +357,15 @@ void InputConverterS::ParseDefinitions_()
           string stop = GetChildValueS_(time_macro, "stop", found, true);
           
           char* endptr = const_cast<char*>(start.c_str());
-          double t1 = strtod(start.c_str(), &endptr);
+          strtod(start.c_str(), &endptr);
           if (endptr == start.c_str()) // Not parsed!
             ThrowErrorIllformed_("definitions->macros", "start", "time_macro");
           endptr = const_cast<char*>(stop.c_str());
-          double t2 = strtod(stop.c_str(), &endptr);
+          strtod(stop.c_str(), &endptr);
           if (endptr == stop.c_str()) // Not parsed!
             ThrowErrorIllformed_("definitions->macros", "stop", "time_macro");
           endptr = const_cast<char*>(timestep_interval.c_str());
-          double interval = strtod(timestep_interval.c_str(), &endptr);
+          strtod(timestep_interval.c_str(), &endptr);
           if (endptr == timestep_interval.c_str()) // Not parsed!
             ThrowErrorIllformed_("definitions->macros", "timestep_interval", "time_macro");
 
@@ -443,15 +415,15 @@ void InputConverterS::ParseDefinitions_()
          
         // Verify the entries.
         char* endptr = const_cast<char*>(start.c_str());
-        long c1 = strtol(start.c_str(), &endptr, 10);
+        strtol(start.c_str(), &endptr, 10);
         if (endptr == start.c_str()) // Not parsed!
           ThrowErrorIllformed_("definitions->macros", "start", "cycle_macro");
         endptr = const_cast<char*>(stop.c_str());
-        long c2 = strtol(stop.c_str(), &endptr, 10);
+        strtol(stop.c_str(), &endptr, 10);
         if (endptr == stop.c_str()) // Not parsed!
           ThrowErrorIllformed_("definitions->macros", "stop", "cycle_macro");
         endptr = const_cast<char*>(timestep_interval.c_str());
-        long interval = strtol(timestep_interval.c_str(), &endptr, 10);
+        strtol(timestep_interval.c_str(), &endptr, 10);
         if (endptr == timestep_interval.c_str()) // Not parsed!
           ThrowErrorIllformed_("definitions->macros", "timestep_interval", "cycle_macro");
 
@@ -611,7 +583,7 @@ void InputConverterS::ParseExecutionControls_()
 
   // Each level of verbosity corresponds to several verbosity parameters 
   // for Amanzi-S.
-  int prob_v, mg_v, cg_v, amr_v, diffuse_v, io_v, fab_v;
+  int prob_v(0), mg_v(0), cg_v(0), amr_v(0), diffuse_v(0), io_v(0), fab_v(0);
   if (level == "none") {
     prob_v = 0; mg_v = 0; cg_v = 0; amr_v = 0; diffuse_v = 0; io_v = 0; fab_v = 0;
   }
@@ -655,10 +627,7 @@ void InputConverterS::ParseNumericalControls_(const string& flow_model)
   amr_controls["max_grid_size"]             = "64";
 
   // Common controls -- currently empty.
-  DOMNode* common_controls = GetUniqueElementByTagsString_("numerical_controls, common_controls", found);
-  if (found)
-  {
-  }
+  GetUniqueElementByTagsString_("numerical_controls, common_controls", found);
 
 #define CONTROLS_ARE_ATTRIBUTES // Otherwise, controls are children
 #undef CONTROLS_ARE_ATTRIBUTES
@@ -1077,12 +1046,11 @@ void InputConverterS::ParseRegions_()
     vector<DOMNode*> boxes = GetChildren_(regions, "box", found);
     for (size_t i = 0; i < boxes.size(); ++i)
     {
-      bool found;
       DOMElement* box = static_cast<DOMElement*>(boxes[i]);
       string region_name = GetAttributeValueS_(box, "name");
       region_names.push_back(region_name);
-      vector<double> lo_coords = GetAttributeVectorD_(box, "low_coordinates", dim_, "m", found);
-      vector<double> hi_coords = GetAttributeVectorD_(box, "high_coordinates", dim_, "m", found);
+      vector<double> lo_coords = GetAttributeVectorD_(box, "low_coordinates", dim_, "m", true);
+      vector<double> hi_coords = GetAttributeVectorD_(box, "high_coordinates", dim_, "m", true);
       AddToTable(table, MakePPPrefix("geometry", region_name, "lo_coordinate"), MakePPEntry(lo_coords));
       AddToTable(table, MakePPPrefix("geometry", region_name, "hi_coordinate"), MakePPEntry(hi_coords));
 
@@ -1134,11 +1102,10 @@ void InputConverterS::ParseRegions_()
     vector<DOMNode*> points = GetChildren_(regions, "point", found);
     for (size_t i = 0; i < points.size(); ++i)
     {
-      bool found;
       DOMElement* point = static_cast<DOMElement*>(points[i]);
       string region_name = GetAttributeValueS_(point, "name");
       region_names.push_back(region_name);
-      vector<double> coords = GetAttributeVectorD_(point, "coordinate", dim_, "m", found);
+      vector<double> coords = GetAttributeVectorD_(point, "coordinate", dim_, "m", true);
       AddToTable(table, MakePPPrefix("geometry", region_name, "coordinate"), MakePPEntry(coords));
       AddToTable(table, MakePPPrefix("geometry", region_name, "type"), MakePPEntry("point"));
       AddToTable(table, MakePPPrefix("geometry", region_name, "purpose"), MakePPEntry("all"));
@@ -1148,12 +1115,11 @@ void InputConverterS::ParseRegions_()
     vector<DOMNode*> planes = GetChildren_(regions, "plane", found);
     for (size_t i = 0; i < planes.size(); ++i)
     {
-      bool found;
       DOMElement* plane = static_cast<DOMElement*>(planes[i]);
       string region_name = GetAttributeValueS_(plane, "name");
       region_names.push_back(region_name);
-      vector<double> location = GetAttributeVectorD_(plane, "location", dim_, "m", found);
-      vector<double> normal = GetAttributeVectorD_(plane, "normal", dim_, "", found);
+      vector<double> location = GetAttributeVectorD_(plane, "location", dim_, "m", true);
+      vector<double> normal = GetAttributeVectorD_(plane, "normal", dim_, "", true);
 
       // FIXME: We need to redo the orientation logic.
       vector<double> lo_coords;
@@ -1224,7 +1190,6 @@ void InputConverterS::ParseRegions_()
       vector<DOMNode*> ellipses = GetChildren_(regions, "ellipse", found);
       for (size_t i = 0; i < ellipses.size(); ++i)
       {
-        bool found;
         DOMElement* ellipse = static_cast<DOMElement*>(ellipses[i]);
         string region_name = GetAttributeValueS_(ellipse, "name");
         region_names.push_back(region_name);
@@ -1264,7 +1229,6 @@ void InputConverterS::ParseRegions_()
     vector<DOMNode*> logicals = GetChildren_(regions, "logical", found);
     for (size_t i = 0; i < logicals.size(); ++i)
     {
-      bool found;
       DOMElement* logical = static_cast<DOMElement*>(logicals[i]);
       string region_name = GetAttributeValueS_(logical, "name");
       string operation   = GetAttributeValueS_(logical, "operation");
@@ -1294,11 +1258,8 @@ void InputConverterS::ParseRegions_()
 void InputConverterS::ParseGeochemistry_()
 {
   list<ParmParse::PP_entry> table;
-  bool found;
 
   MemoryManager mm;
-  char* text;
-  DOMNodeList *node_list, *children;
   DOMNode* node;
   DOMElement* element;
 
@@ -1331,7 +1292,6 @@ void InputConverterS::ParseGeochemistry_()
 	bgdfilename = GetAttributeValueS_(element, "file");
 	format = GetAttributeValueS_(element, "format", TYPE_NONE, false, format);
       } else {
-        int status;
         Exceptions::amanzi_throw(Errors::Message("BGD file is no longer created. Aborting."));
 	// bgdfilename = CreateBGDFile_(xmlfilename_, rank_, status);
       }
@@ -1698,7 +1658,7 @@ void InputConverterS::ParseMaterials_(bool& do_tracer_diffusion)
   DOMElement* transport = static_cast<DOMElement*>(GetUniqueElementByTagsString_("process_kernels, transport", found));
   if (!found)
     ThrowErrorMisschild_("process_kernels", "transport", "process_kernels");
-  DOMElement* chemistry = static_cast<DOMElement*>(GetUniqueElementByTagsString_("process_kernels, chemistry", found));
+  GetUniqueElementByTagsString_("process_kernels, chemistry", found);
   if (!found)
     ThrowErrorMisschild_("process_kernels", "chemistry", "process_kernels");
 
@@ -1805,16 +1765,12 @@ void InputConverterS::ParsePhases_(bool& do_tracer_diffusion)
 
   AddToTable(table, MakePPPrefix("tracer", "tracers"), MakePPEntry(solutes_));
 
-  DOMElement* solid_phase = static_cast<DOMElement*>(GetUniqueElementByTagsString_("phases, solid_phase", found));
-  if (found)
-  {
+  GetUniqueElementByTagsString_("phases, solid_phase", found);
+  if (found) {
     // Currently, Amanzi-S doesn't think of things this way.
   }
 
-  DOMElement* gas_phase = static_cast<DOMElement*>(GetUniqueElementByTagsString_("phases, gas_phase", found));
-  if (found)
-  {
-  }
+  GetUniqueElementByTagsString_("phases, gas_phase", found);
   AddToTable(table, MakePPPrefix("phase", "phases"), MakePPEntry(phase_names));
 
   ParmParse::appendTable(table);

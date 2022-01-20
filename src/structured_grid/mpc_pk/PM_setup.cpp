@@ -340,7 +340,6 @@ namespace
     }
 }
 
-static Box grow_box_by_one (const Box& b) { return BoxLib::grow(b,1); }
 
 //
 // Components are  Interior, Inflow, Outflow, Symmetry, SlipWall, NoSlipWall.

@@ -95,10 +95,10 @@ xercesc::DOMDocument* OpenXMLInput(XercesDOMParser* parser,
 * Various constructors.
 ****************************************************************** */
 InputConverter::InputConverter(const std::string& input_filename):
+    units_("molar"),
     xmlfilename_(input_filename),
     doc_(NULL),
-    parser_(NULL),
-    units_("molar")
+    parser_(NULL)
 {
   parser_ = CreateXMLParser();
   doc_ = OpenXMLInput(parser_, input_filename);
@@ -107,10 +107,10 @@ InputConverter::InputConverter(const std::string& input_filename):
 
 InputConverter::InputConverter(const std::string& input_filename,
                                xercesc::DOMDocument* input_doc):
+    units_("molar"),
     xmlfilename_(input_filename),
     doc_(input_doc),
-    parser_(NULL),
-    units_("molar")
+    parser_(NULL)
 {
   FilterNodes("comments");
 }

@@ -64,11 +64,11 @@ BCRec          PorousMedia::pres_bc;
 RegionManager* PorousMedia::region_manager = 0;
 RockManager*   PorousMedia::rock_manager = 0;
 
-static double richard_time;
-static double richard_time_min = 1.e6;
+// static double richard_time;
+// static double richard_time_min = 1.e6;
 
 static bool trivial_flow_advance = false;
-static bool trivial_transport_advance = false;
+// static bool trivial_transport_advance = false;
 static bool trivial_chemistry_advance = false;
 
 PM_Error_Value::PM_Error_Value (Real min_time, Real max_time, int max_level, 
@@ -7504,7 +7504,6 @@ PorousMedia::derive_Hydraulic_Head(Real      time,
                                    MultiFab& mf,
                                    int       dcomp)
 {
-  Real t_new = state[Press_Type].curTime();
   int ncomp = 1;
   int ngrow = mf.nGrow();
   const Real* plo = geom.ProbLo();

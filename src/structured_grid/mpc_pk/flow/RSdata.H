@@ -4,7 +4,7 @@
 #include <Layout.H>
 #include <RockManager.H>
 
-class NLScontrol; // forward ref
+struct NLScontrol; // forward ref
 
 struct RSdata
 {
