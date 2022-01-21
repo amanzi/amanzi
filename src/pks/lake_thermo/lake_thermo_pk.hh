@@ -9,10 +9,11 @@
 
 /*!
 
-Solves an advection-diffusion equation for energy:
+Solves a 1D advection-diffusion equation in vertical coordinate for energy:
 
 .. math::
-    c\rho\frac{\partial T}{\partial t} - \frac{1}{h^2} \nabla \cdot \lambda \nabla T + \nabla \cdot \mathbf{q} T = M + T \nabla q
+    c\rho\frac{\partial T}{\partial t} = \frac{1}{h^2} \frac{\partial}{\partial \xi} \left( \lambda \frac{\partial T}{\partial \xi} \right) +
+     c\rho\frac{dh}{dt}\frac{\xi}{h}\frac{\partial T}{\partial \xi} - c\rho\frac{1}{h}\frac{dh_0}{dt}\frac{\partial T}{\partial \xi} - \frac{1}{h}\frac{\partial S}{\partial \xi}+ M
 
 .. todo:: Document the energy error norm!
 
