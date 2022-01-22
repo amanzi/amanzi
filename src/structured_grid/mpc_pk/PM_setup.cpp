@@ -731,9 +731,8 @@ PorousMedia::variableSetUp ()
   //
   // Set state variables Ids.
   //
-  int num_gradn = ncomps;
-  // NUM_SCALARS   = ncomps + 2; // Currently unused last 2 components
-  NUM_SCALARS   = ncomps;
+  // NUM_SCALARS = ncomps + 2; // Currently unused last 2 components
+  NUM_SCALARS = ncomps;
 
   if (ntracers > 0)
     NUM_SCALARS = NUM_SCALARS + ntracers;
@@ -875,7 +874,6 @@ PorousMedia::variableSetUp ()
 
   // "User defined" - although these must correspond to those in PorousMedia::derive
   IndexType regionIDtype(IndexType::TheCellType());
-  int nCompRegion = 1;
   std::string amr_prefix = "amr";
   ParmParse pp(amr_prefix);
   int num_user_derives = pp.countval("user_derive_list");
@@ -1474,8 +1472,8 @@ void  PorousMedia::read_comp()
 	Array<std::string> forms;
 	ppr.get("aqueous_vol_flux",vals[0]);
 	ppr.get("water_table_height",vals[1]);
-	Real aqueous_ref_pres = 0; ppr.query("val",vals[2]);
-	Real aqueous_pres_grad = 0; ppr.query("grad",vals[3]);
+	ppr.query("val",vals[2]);
+	ppr.query("grad",vals[3]);
 	ic_array.set(i,new RegionData(icname,ic_regions,ic_type,vals));
 	if (flow_is_static) flow_eval  = PM_FLOW_EVAL_COMPUTE_GIVEN_P;
       }
@@ -1892,10 +1890,9 @@ void  PorousMedia::read_tracer()
         ppc.get(thermo_fmt_str.c_str(),amanzi_thermo_fmt);
         ppc.get(thermo_file_str.c_str(),amanzi_thermo_file);
 
-        const std::string& activity_model_dh = Amanzi::AmanziChemistry::ActivityModelFactory::debye_huckel;
-        const std::string& activity_model_ph = Amanzi::AmanziChemistry::ActivityModelFactory::pitzer_hwm;
         const std::string& activity_model_u  = Amanzi::AmanziChemistry::ActivityModelFactory::unit;
-        std::string activity_model = activity_model_u; ppc.query("Activity_Model",activity_model);
+        std::string activity_model = activity_model_u;
+        ppc.query("Activity_Model",activity_model);
         
         Real tolerance=1.5e-12; ppc.query("Tolerance",tolerance);
         int max_num_Newton_iters = 150; ppc.query("Maximum_Newton_Iterations",max_num_Newton_iters);
@@ -2018,7 +2015,6 @@ void  PorousMedia::read_tracer()
   molecular_diffusivity.resize(ntracers,0);
   if (ntracers > 0)
   {
-    int Nimmobile = 0;
     int Nmobile = ntracers;
 #if ALQUIMIA_ENABLED
     if (chemistry_engine != 0) {
@@ -2092,7 +2088,7 @@ void  PorousMedia::read_tracer()
           const std::string FIG_str = "Free_Ion_Guess";
           int nfig = ppri.countval(FIG_str.c_str());
           if (nfig > 0) {
-            Real val;
+            Real val(0.0);
             if (nfig == 1) {
               ppri.get(FIG_str.c_str(), val);
             }
@@ -2108,7 +2104,7 @@ void  PorousMedia::read_tracer()
           const std::string AC_str = "Activity_Coefficient";
           int nac = ppri.countval(AC_str.c_str());
           if (nac > 0) {
-            Real valac;
+            Real valac(0.0);
             if (nac == 1) {
               ppri.get(AC_str.c_str(), valac);
             }

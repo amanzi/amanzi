@@ -69,37 +69,35 @@ protected:
 
 struct ArrayTransform
 {
-    virtual ArrayTransform* clone() const {return new ArrayTransform(*this);}
-    virtual Array<Real> transform(Real time) const {return Array<Real>(1,time);}
+  virtual ~ArrayTransform() {};
+  virtual ArrayTransform* clone() const { return new ArrayTransform(*this); }
+  virtual Array<Real> transform(Real time) const { return Array<Real>(1,time); }
 };
 
 
 class Transform_S_AR_For_BC : public RegionData {
  public:
-    Transform_S_AR_For_BC(const std::string&          label,
-                          const Array<Real>&          x,
-                          const Array<Real>&          y,
-                          const Array<std::string>&   form,
-                          const Array<const Region*>& regions,
-                          const std::string&          typeStr,
-                          int                         nComp,
-                          ArrayTransform&             tfunc)
-        : RegionData(label,regions,typeStr,Array<Real>(nComp)), func(x,y,form), tfunc(tfunc.clone()) {}
+  Transform_S_AR_For_BC(const std::string&          label,
+                        const Array<Real>&          x,
+                        const Array<Real>&          y,
+                        const Array<std::string>&   form,
+                        const Array<const Region*>& regions,
+                        const std::string&          typeStr,
+                        int                         nComp,
+                        ArrayTransform&             tfunc)
+      : RegionData(label,regions,typeStr,Array<Real>(nComp)), func(x,y,form), tfunc(tfunc.clone()) {}
 
-    ~Transform_S_AR_For_BC() { delete tfunc; }
-    virtual Array<Real> operator() (Real time) const override {
-        Real t1 = func(time);
-        const Array<Real> t2 = tfunc->transform(t1);
-        return t2;
-    }
-    Real tabularFunction(Real time) const  {return func(time);}
+  ~Transform_S_AR_For_BC() { delete tfunc; }
+  virtual Array<Real> operator() (Real time) const override {
+    Real t1 = func(time);
+    const Array<Real> t2 = tfunc->transform(t1);
+    return t2;
+  }
+  Real tabularFunction(Real time) const  {return func(time);}
 
  protected:
-    TabularFunction func;
-    ArrayTransform* tfunc;
+  TabularFunction func;
+  ArrayTransform* tfunc;
 };
-
-
-
 
 #endif

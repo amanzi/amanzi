@@ -1061,8 +1061,7 @@ PorousMedia::initData ()
               
             typedef std::map<std::string,Real> ICParmPair; // ic parameter and value
             typedef std::map<std::string, ICParmPair > ICLabelParmPair; // parameter/value associated label
-            typedef std::map<std::string, ICLabelParmPair> ChemICMap; // 
-            typedef std::map<std::string, std::map<std::string,int> > LabelIdx;
+            typedef std::map<std::string, ICLabelParmPair> ChemICMap;
               
             const Real* dx = geom.CellSize();
 
@@ -8077,7 +8076,7 @@ PorousMedia::GetCrseUmac(PArray<MultiFab>& u_mac_crse,
   Real t_new = pm->state[State_Type].curTime(); 
   Real alpha = (time - t_old)/(t_new - t_old);
   Real teps = 1.e-6;
-  const Geometry& cgeom  = parent->Geom(level-1);
+  const Geometry& cgeom = parent->Geom(level-1);
   for (int i=0; i<BL_SPACEDIM; ++i)
     {
       BL_ASSERT(!u_mac_crse.defined(i));
