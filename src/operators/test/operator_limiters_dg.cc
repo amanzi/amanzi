@@ -150,7 +150,7 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
 
     // calculate gradient error
     double err_int, err_glb, gnorm;
-    ComputeGradError(mesh, grad_c, grad_exact, err_int, err_glb, gnorm);
+    ComputePolyError(mesh, grad_c, grad_exact, err_int, err_glb, gnorm);
     // CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
 
     int nids, itmp = ids.size();

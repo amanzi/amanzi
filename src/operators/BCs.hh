@@ -115,7 +115,7 @@ class BCs {
       mesh_(mesh) {};
   ~BCs() {};
 
-  // access
+  // non-const access
   Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }
   AmanziMesh::Entity_kind kind() const { return kind_; }
   WhetStone::DOF_Type type() const { return type_; }
@@ -165,6 +165,7 @@ class BCs {
     return bc_value_vector_;
   }
 
+  // const access
   const std::vector<int>& bc_model() const { return bc_model_; }
   const std::vector<double>& bc_value() const { return bc_value_; }
   const std::vector<double>& bc_mixed() const { return bc_mixed_; }

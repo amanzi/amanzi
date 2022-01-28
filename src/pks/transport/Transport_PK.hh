@@ -28,7 +28,7 @@
 #include "PK_Explicit.hh"
 #include "PK_Factory.hh"
 #include "PK_Physical.hh"
-#include "ReconstructionCell.hh"
+#include "ReconstructionCellGrad.hh"
 #include "State.hh"
 #include "Tensor.hh"
 #include "Units.hh"
@@ -212,7 +212,7 @@ class Transport_PK : public PK_Physical {
   std::vector<std::vector<double> > upwind_flux_, downwind_flux_;
 
   int current_component_;  // data for lifting
-  Teuchos::RCP<Operators::ReconstructionCell> lifting_;
+  Teuchos::RCP<Operators::ReconstructionCellGrad> lifting_;
   Teuchos::RCP<Operators::LimiterCell> limiter_;
 
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators

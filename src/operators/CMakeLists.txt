@@ -120,7 +120,8 @@ set(operators_inc_files
     SchemaUtils.hh
     TreeOperator.hh
     Reconstruction.hh
-    ReconstructionCell.hh
+    ReconstructionCellGrad.hh
+    ReconstructionCellPoly.hh
     UniqueLocalIndex.hh
     Upwind.hh
     UpwindArithmeticAverage.hh
@@ -166,7 +167,8 @@ add_amanzi_library(operators
                           PDE_Reaction.cc
                           Schema.cc SchemaUtils.cc
                           TreeOperator.cc
-                          ReconstructionCell.cc
+                          ReconstructionCellGrad.cc
+                          ReconstructionCellPoly.cc
                           RemapDG.cc RemapUtils.cc
                           UniqueLocalIndex.cc
                           RemapDG_Helper.cc RemapUtils.cc

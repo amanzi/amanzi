@@ -21,11 +21,11 @@
 #include "Mesh.hh"
 
 inline
-void ComputeGradError(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
-                      Epetra_MultiVector& grad, Epetra_MultiVector& grad_exact,
+void ComputePolyError(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
+                      Epetra_MultiVector& poly, Epetra_MultiVector& poly_exact,
                       double& err_int, double& err_glb, double& gnorm)
 {
-  int dim = mesh->space_dimension();
+  int npoly = poly.NumVectors();
   int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
   int nfaces_owned = mesh->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
   std::vector<int> flag(ncells_owned, 0);
@@ -38,8 +38,8 @@ void ComputeGradError(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     mesh->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
     int c = cells[0];
     if (cells.size() == 1 && flag[c] == 0) {
-      for (int i = 0; i < dim; ++i) {
-        double tmp = grad[i][c] - grad_exact[i][c];
+      for (int i = 0; i < npoly; ++i) {
+        double tmp = poly[i][c] - poly_exact[i][c];
         err_bnd += tmp * tmp * mesh->cell_volume(c);
       }
       flag[c] = 1;
@@ -50,10 +50,10 @@ void ComputeGradError(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   err_glb = 0.0;
   for (int c = 0; c < ncells_owned; ++c) {
     double volume = mesh->cell_volume(c);
-    for (int i = 0; i < dim; ++i) {
-      double tmp = grad[i][c] - grad_exact[i][c];
+    for (int i = 0; i < npoly; ++i) {
+      double tmp = poly[i][c] - poly_exact[i][c];
       err_glb += tmp * tmp * volume;
-      gnorm += grad_exact[i][c] * grad_exact[i][c] * volume;
+      gnorm += poly_exact[i][c] * poly_exact[i][c] * volume;
     }
   }
   err_int = err_glb - err_bnd;

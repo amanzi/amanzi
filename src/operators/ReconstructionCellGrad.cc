@@ -20,7 +20,7 @@
 #include "Mesh.hh"
 #include "OperatorDefs.hh"
 #include "Point.hh"
-#include "ReconstructionCell.hh"
+#include "ReconstructionCellGrad.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -29,16 +29,16 @@ namespace Operators {
 * Initialization of basic parameters.
 * NOTE: we assume that ghost values of field were already populated.
 ****************************************************************** */
-void ReconstructionCell::Init(Teuchos::ParameterList& plist)
+void ReconstructionCellGrad::Init(Teuchos::ParameterList& plist)
 {
   dim = mesh_->space_dimension();
 
-  CompositeVectorSpace cv_space;
-  cv_space.SetMesh(mesh_);
-  cv_space.SetGhosted(true);
-  cv_space.SetComponent("cell", AmanziMesh::CELL, dim);
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(mesh_);
+  cvs.SetGhosted(true);
+  cvs.SetComponent("cell", AmanziMesh::CELL, dim);
 
-  gradient_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cv_space, true));
+  gradient_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
 
   // process other parameters
   poly_order_ = plist.get<int>("polynomial order", 0);
@@ -49,14 +49,15 @@ void ReconstructionCell::Init(Teuchos::ParameterList& plist)
 * Gradient of linear reconstruction is based on stabilized 
 * least-square fit.
 ****************************************************************** */
-void ReconstructionCell::ComputeGradient(
+void ReconstructionCellGrad::ComputePoly(
     const AmanziMesh::Entity_ID_List& ids,
-    const Teuchos::RCP<const Epetra_MultiVector>& field, int component)
+    const Teuchos::RCP<const Epetra_MultiVector>& field, int component,
+    const Teuchos::RCP<const BCs>& bc)
 {
   field_ = field;
   component_ = component;
 
-  Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
+  Epetra_MultiVector& grad = *gradient_->ViewComponent("cell");
   AmanziMesh::Entity_ID_List cells;
   AmanziGeometry::Point xcc(dim);
 
@@ -77,7 +78,7 @@ void ReconstructionCell::ComputeGradient(
 
     for (int n = 0; n < ncells; n++) {
       const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(cells[n]);
-      for (int i = 0; i < dim; i++) xcc[i] = xc2[i] - xc[i];
+      xcc = xc2 - xc;
 
       double value = (*field_)[component_][cells[n]] - (*field_)[component_][c];
       PopulateLeastSquareSystem_(xcc, value, matrix, rhs);
@@ -109,7 +110,7 @@ void ReconstructionCell::ComputeGradient(
 /* ******************************************************************
 * Assemble a SPD least square matrix
 ****************************************************************** */
-void ReconstructionCell::PopulateLeastSquareSystem_(
+void ReconstructionCellGrad::PopulateLeastSquareSystem_(
     AmanziGeometry::Point& centroid, double field_value,
     WhetStone::DenseMatrix& matrix, WhetStone::DenseVector& rhs)
 {
@@ -128,7 +129,7 @@ void ReconstructionCell::PopulateLeastSquareSystem_(
 * On intersecting manifolds, we extract neighboors living in the same 
 * manifold using a smoothness criterion.
 ****************************************************************** */
-void ReconstructionCell::CellFaceAdjCellsNonManifold_(
+void ReconstructionCellGrad::CellFaceAdjCellsNonManifold_(
     AmanziMesh::Entity_ID c, AmanziMesh::Parallel_type ptype,
     std::vector<AmanziMesh::Entity_ID>& cells) const
 {
@@ -173,7 +174,7 @@ void ReconstructionCell::CellFaceAdjCellsNonManifold_(
 /* ******************************************************************
 * Calculates reconstructed value at point p.
 ****************************************************************** */
-double ReconstructionCell::getValue(int c, const AmanziGeometry::Point& p)
+double ReconstructionCellGrad::getValue(int c, const AmanziGeometry::Point& p)
 {
   Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
   const auto& xc = mesh_->cell_centroid(c);
@@ -187,7 +188,7 @@ double ReconstructionCell::getValue(int c, const AmanziGeometry::Point& p)
 /* ******************************************************************
 * Calculates reconstructed value at point p using external gradient.
 ****************************************************************** */
-double ReconstructionCell::getValue(
+double ReconstructionCellGrad::getValue(
     const AmanziGeometry::Point& gradient, int c, const AmanziGeometry::Point& p)
 {
   const auto& xc = mesh_->cell_centroid(c);

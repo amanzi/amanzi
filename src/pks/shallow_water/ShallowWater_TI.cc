@@ -101,17 +101,17 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   bool use_limter = sw_list_->get<bool>("use limiter", true);
   
   auto tmp1 = S_->GetW<CompositeVector>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-  total_depth_grad_->ComputeGradient(tmp1);
+  total_depth_grad_->ComputePoly(tmp1);
   if (use_limiter_) limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_->gradient(), bc_model, bc_value_ht);
   total_depth_grad_->gradient()->ScatterMasterToGhosted("cell");
   
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
-  discharge_x_grad_->ComputeGradient(tmp5, 0);
+  discharge_x_grad_->ComputePoly(tmp5, 0);
   if (use_limiter_) limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_->gradient(), bc_model, bc_value_qx);
   discharge_x_grad_->gradient()->ScatterMasterToGhosted("cell");
   
   auto tmp6 = A.SubVector(1)->Data()->ViewComponent("cell", true);
-  discharge_y_grad_->ComputeGradient(tmp6, 1);
+  discharge_y_grad_->ComputePoly(tmp6, 1);
   if (use_limiter_) limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_->gradient(), bc_model, bc_value_qy);
   discharge_y_grad_->gradient()->ScatterMasterToGhosted("cell");
   

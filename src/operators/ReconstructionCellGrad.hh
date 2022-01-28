@@ -12,8 +12,8 @@
   in ghost cells. 
 */
 
-#ifndef AMANZI_RECONSTRUCTION_CELL_HH_
-#define AMANZI_RECONSTRUCTION_CELL_HH_
+#ifndef AMANZI_RECONSTRUCTION_CELL_GRAD_HH_
+#define AMANZI_RECONSTRUCTION_CELL_GRAD_HH_
 
 #include <vector>
 
@@ -33,28 +33,30 @@
 namespace Amanzi {
 namespace Operators {
 
-class ReconstructionCell : public Reconstruction {  
+class ReconstructionCellGrad : public Reconstruction {  
  public:
-  ReconstructionCell() {};
-  ReconstructionCell(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : Reconstruction(mesh) {};
-  ~ReconstructionCell() {};
+  ReconstructionCellGrad() {};
+  ReconstructionCellGrad(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : Reconstruction(mesh) {};
+  ~ReconstructionCellGrad() {};
 
   // save pointer to the already distributed field.
   virtual void Init(Teuchos::ParameterList& plist) override;
 
   // unlimited gradient
   // -- compute gradient and keep it internally
-  virtual void ComputeGradient(const Teuchos::RCP<const Epetra_MultiVector>& field,
-                               int component = 0) override {
+  virtual void ComputePoly(const Teuchos::RCP<const Epetra_MultiVector>& field,
+                           int component = 0,
+                           const Teuchos::RCP<const BCs>& bc = Teuchos::null) override {
     int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     AmanziMesh::Entity_ID_List ids(ncells_wghost);
     for (int c = 0; c < ncells_wghost; ++c) ids[c] = c;
-    ComputeGradient(ids, field, component);
+    ComputePoly(ids, field, component, bc);
   }
 
   // -- compute gradient only in specified cells
-  void ComputeGradient(const AmanziMesh::Entity_ID_List& ids,
-                       const Teuchos::RCP<const Epetra_MultiVector>& field, int component);
+  void ComputePoly(const AmanziMesh::Entity_ID_List& ids,
+                   const Teuchos::RCP<const Epetra_MultiVector>& field, int component,
+                   const Teuchos::RCP<const BCs>& bc = Teuchos::null);
 
   // calculate value of a linear function at point p
   double getValue(int c, const AmanziGeometry::Point& p);

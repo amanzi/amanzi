@@ -27,6 +27,7 @@
 #include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 
+#include "BCs.hh"
 #include "CompositeVector.hh"
 #include "DenseMatrix.hh"
 #include "DenseVector.hh"
@@ -50,25 +51,18 @@ class LimiterCell {
   void Init(Teuchos::ParameterList& plist,
             Teuchos::RCP<const Epetra_MultiVector> flux = Teuchos::null);
 
-  // -- limit gradient using boundary data
+  // -- limit gradient using boundary data (calls the generic function)
   void ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field, int component,
                     const Teuchos::RCP<CompositeVector>& gradient,
-                    const std::vector<int>& bc_model, const std::vector<double>& bc_value) {
-    AmanziMesh::Entity_ID_List ids(ncells_owned_);
-    for (int c = 0; c < ncells_owned_; ++c) ids[c] = c;
-    ApplyLimiter(ids, field, component, gradient, bc_model, bc_value); 
-  }
+                    const Teuchos::RCP<const BCs>& bc);
 
   void ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field, int component,
-                    const Teuchos::RCP<CompositeVector>& gradient) {
-    std::vector<int> bc_model;
-    std::vector<double> bc_value;
-    AmanziMesh::Entity_ID_List ids(ncells_owned_);
-    for (int c = 0; c < ncells_owned_; ++c) ids[c] = c;
-    ApplyLimiter(ids, field, component, gradient, bc_model, bc_value); 
-  }
+                    const Teuchos::RCP<CompositeVector>& gradient,
+                    const std::vector<int>& bc_model, const std::vector<double>& bc_value);
 
-  // -- apply limiter in specified cells
+  void ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field, int component,
+                    const Teuchos::RCP<CompositeVector>& gradient);
+
   // -- apply limiter in specified cells
   void ApplyLimiter(const AmanziMesh::Entity_ID_List& ids,
                     Teuchos::RCP<const Epetra_MultiVector> field, int component,

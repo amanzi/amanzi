@@ -645,6 +645,11 @@ void State::InitializeFields()
         }
         it->second->initializeTags();
       }
+
+      if (vo.os_OK(Teuchos::VERB_HIGH)) {
+        Teuchos::OSTab tab = vo.getOSTab();
+        *vo_->os() << "initializing from HDF5 file: \"" << it->first << std::endl;
+      }
     }
     // file_input.close_h5file();
   }
@@ -658,10 +663,10 @@ void State::InitializeFields()
   Tag failed;
   if (state_plist_.isSublist("initial conditions")) {
     for (auto& e : data_) {
-      bool flag(false);
+      std::string flag("... skipped");
       if (pre_initialization || !e.second->isInitialized(failed)) {
         if (state_plist_.sublist("initial conditions").isSublist(e.first)) {
-          flag = true;
+          flag = "[ok]";
           Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(e.first);
           e.second->Initialize(sublist);
         } else {
@@ -672,7 +677,7 @@ void State::InitializeFields()
           if (is_ds) {
             Key lifted_key = Keys::getKey(ds_name, "*", std::get<2>(split));
             if (state_plist_.sublist("initial conditions").isSublist(lifted_key)) {
-              flag = true;
+              flag = "[ok]";
               Teuchos::ParameterList sublist = state_plist_.sublist("initial conditions").sublist(lifted_key);
               sublist.set("evaluator name", e.first);
               e.second->Initialize(sublist);
@@ -683,7 +688,7 @@ void State::InitializeFields()
 
       if (vo.os_OK(Teuchos::VERB_HIGH)) {
         Teuchos::OSTab tab = vo.getOSTab();
-        *vo_->os() << "initializing \"" << e.first << "\"  [" << flag << "]" << std::endl;
+        *vo_->os() << "initializing \"" << e.first << "\" " << flag << std::endl;
       }
     }
   }

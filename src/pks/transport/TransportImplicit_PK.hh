@@ -29,7 +29,7 @@
 #include "PK.hh"
 #include "PK_Explicit.hh"
 #include "PK_Factory.hh"
-#include "ReconstructionCell.hh"
+#include "ReconstructionCellGrad.hh"
 #include "State.hh"
 #include "Tensor.hh"
 #include "Units.hh"
