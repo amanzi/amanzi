@@ -231,6 +231,7 @@ class State {
     rs.SetType<T>();
   }
 
+#ifdef DISABLE_DEFAULT_TAG
   template <typename T, typename F>
   F& Require(const Key& fieldname) {
     return Require<T, F>(fieldname, Tags::DEFAULT);
@@ -240,6 +241,7 @@ class State {
   void Require(const Key& fieldname) {
     Require<T>(fieldname, Tags::DEFAULT);
   }
+#endif
 
   template <typename T, typename F>
   F& Require(const Key& fieldname, const Tag& tag, const Key& owner,
@@ -272,8 +274,14 @@ class State {
   // Records are an instance of data + metadata, created by the RecordSet's
   // data factory, and distinguished by tags.
   //
+#ifdef DISABLE_DEFAULT_TAG
   bool HasRecord(const Key& key, const Tag& tag = Tags::DEFAULT) const;
   const Record& GetRecord(const Key& fieldname, const Tag& tag = Tags::DEFAULT) const;
+#else
+  bool HasRecord(const Key& key, const Tag& tag) const;
+  const Record& GetRecord(const Key& fieldname, const Tag& tag) const;
+#endif
+
   Record& GetRecordW(const Key& fieldname, const Key& owner);
   Record& GetRecordW(const Key& fieldname, const Tag& tag, const Key& owner);
 
@@ -304,6 +312,7 @@ class State {
     return deriv_set.SetType<T>();
   }
 
+#ifdef DISABLE_DEFAULT_TAG
   template <typename T, typename F>
   F& RequireDerivative(const Key& key, const Key& wrt_key, const Tag& wrt_tag) {
     return RequireDerivative<T, F>(key, Tags::DEFAULT, wrt_key, wrt_tag, "");
@@ -313,6 +322,7 @@ class State {
   void RequireDerivative(const Key& key, const Key& wrt_key, const Tag& wrt_tag) {
     RequireDerivative<T>(key, Tags::DEFAULT, wrt_key, wrt_tag, "");
   }
+#endif
 
   // set operations
   bool HasDerivativeSet(const Key& key, const Tag& tag) const;
@@ -331,10 +341,12 @@ class State {
     return GetDerivativeSet(key, tag).Get<T>(der_tag);
   }
 
+#ifdef DISABLE_DEFAULT_TAG
   template <typename T>
   const T& GetDerivative(const Key& key, const Key& wrt_key) const {
     return GetDerivative<T>(key, Tags::DEFAULT, wrt_key, Tags::DEFAULT);
   }
+#endif
 
   template <typename T>
   T& GetDerivativeW(const Key& key, const Tag& tag, const Key& wrt_key,
@@ -343,10 +355,12 @@ class State {
     return GetDerivativeSetW(key, tag).GetW<T>(der_tag, owner);
   }
 
+#ifdef DISABLE_DEFAULT_TAG
   template <typename T>
   T& GetDerivativeW(const Key& key, const Key& wrt_key, const Key& owner) {
     return GetDerivativeW<T>(key, Tags::DEFAULT, wrt_key, Tags::DEFAULT, owner);
   }
+#endif
 
   template <typename T>
   Teuchos::RCP<const T> GetDerivativePtr(const Key& key, const Tag& tag,
@@ -364,6 +378,7 @@ class State {
   }
 
   // Access to data
+#ifdef DISABLE_DEFAULT_TAG
   template <typename T>
   bool HasData(const Key& fieldname, const Tag& tag = Tags::DEFAULT) const {
     return HasRecord(fieldname, tag) && GetRecord(fieldname, tag).ValidType<T>();
@@ -380,19 +395,45 @@ class State {
   T& GetW(const Key& fieldname, const Key& owner) {
     return GetW<T>(fieldname, Tags::DEFAULT, owner);
   }
+
+#else
+
+  template <typename T>
+  bool HasData(const Key& fieldname, const Tag& tag) const {
+    return HasRecord(fieldname, tag) && GetRecord(fieldname, tag).ValidType<T>();
+  }
+
+  // -- const
+  template <typename T>
+  const T& Get(const Key& fieldname, const Tag& tag) const {
+    return GetRecordSet(fieldname).Get<T>(tag);
+  }
+
+#endif
+
   template <typename T>
   T& GetW(const Key& fieldname, const Tag& tag, const Key& owner) {
     return GetRecordSetW(fieldname).GetW<T>(tag, owner);
   }
 
+#ifdef DISABLE_DEFAULT_TAG
   template <typename T>
   Teuchos::RCP<const T> GetPtr(const Key& fieldname, const Tag& tag = Tags::DEFAULT) const {
     return GetRecordSet(fieldname).GetPtr<T>(tag);
   }
+#else
+  template <typename T>
+  Teuchos::RCP<const T> GetPtr(const Key& fieldname, const Tag& tag) const {
+    return GetRecordSet(fieldname).GetPtr<T>(tag);
+  }
+#endif
+
   template <typename T>
   Teuchos::RCP<T> GetPtrW(const Key& fieldname, const Tag& tag, const Key& owner) {
     return GetRecordSetW(fieldname).GetPtrW<T>(tag, owner);
   }
+
+#ifdef DISABLE_DEFAULT_TAG
   template <typename T>
   Teuchos::RCP<T> GetPtrW(const Key& fieldname, const Key& owner) {
     return GetPtrW<T>(fieldname, Tags::DEFAULT, owner);
@@ -405,17 +446,23 @@ class State {
   void Assign(const Key& fieldname, const Key& owner, const T& data) {
     return Assign<T>(fieldname, Tags::DEFAULT, owner, data);
   }
+#endif
+
   template <typename T>
   void Assign(const Key& fieldname, const Tag& tag, const Key& owner, const T& data) {
     return GetRecordSetW(fieldname).Assign(tag, owner, data);
   }
 
+
   // Sets by pointer
+#ifdef DISABLE_DEFAULT_TAG
   template <typename T>
   void SetPtr(const Key& fieldname, const Key& owner,
            const Teuchos::RCP<T>& data) {
     return SetPtr<T>(fieldname, owner, Tags::DEFAULT, data);
   }
+#endif
+
   template <typename T>
   void SetPtr(const Key& fieldname, const Tag& tag, const Key& owner,
            const Teuchos::RCP<T>& data) {
@@ -444,6 +491,7 @@ class State {
   // -- allows PKs to add to this list to initial conditions
   Teuchos::ParameterList& ICList() { return state_plist_.sublist("initial conditions"); }
 
+#ifdef DISABLE_DEFAULT_TAG
   // Evaluator interface
   Evaluator& RequireEvaluator(const Key& key, const Tag& tag = Tags::DEFAULT);
 
@@ -452,12 +500,26 @@ class State {
   const Evaluator& GetEvaluator(const Key& key, const Tag& tag = Tags::DEFAULT) const;
   Teuchos::RCP<Evaluator> GetEvaluatorPtr(const Key& key, const Tag& tag = Tags::DEFAULT);
 
-  void SetEvaluator(const Key& key, const Tag& tag, const Teuchos::RCP<Evaluator>& evaluator);
   void SetEvaluator(const Key& key, const Teuchos::RCP<Evaluator>& evaluator) {
     SetEvaluator(key, Tags::DEFAULT, evaluator);
   }
 
   bool HasEvaluator(const Key& key, const Tag& tag = Tags::DEFAULT);
+
+#else
+
+  // Evaluator interface
+  Evaluator& RequireEvaluator(const Key& key, const Tag& tag);
+
+  // -- get/set
+  Evaluator& GetEvaluator(const Key& key, const Tag& tag);
+  const Evaluator& GetEvaluator(const Key& key, const Tag& tag) const;
+  Teuchos::RCP<Evaluator> GetEvaluatorPtr(const Key& key, const Tag& tag);
+
+  bool HasEvaluator(const Key& key, const Tag& tag);
+#endif
+
+  void SetEvaluator(const Key& key, const Tag& tag, const Teuchos::RCP<Evaluator>& evaluator);
 
   // -- iterators/counts
   int evaluator_count() { return evaluators_.size(); }
@@ -498,7 +560,7 @@ class State {
     Assign("time", tag, "time", Get<double>("time", tag) + dt);
   }
   void advance_time(double dt) {
-    Assign("time", Tags::DEFAULT, "time", Get<double>("time") + dt);
+    Assign("time", Tags::DEFAULT, "time", Get<double>("time", Tags::DEFAULT) + dt);
   }
 
   double final_time() const { return final_time_; }
@@ -512,14 +574,14 @@ class State {
   void set_initial_time( double initial_time) { initial_time_ = initial_time; }
 
   // Cycle accessor and mutators.
-  int cycle() const { return Get<int>("cycle"); }
+  int cycle() const { return Get<int>("cycle", Tags::DEFAULT); }
   void set_cycle(int cycle) { Assign("cycle", Tags::DEFAULT, "cycle", cycle); }
   void advance_cycle(int dcycle = 1) {
-    Assign("cycle", Tags::DEFAULT, "cycle", Get<int>("cycle") + dcycle);
+    Assign("cycle", Tags::DEFAULT, "cycle", Get<int>("cycle", Tags::DEFAULT) + dcycle);
   }
 
   // Position accessor and mutators.
-  int get_position() const { return Get<int>("position"); }
+  int get_position() const { return Get<int>("position", Tags::DEFAULT); }
   void set_position(int pos) { Assign("position", Tags::DEFAULT, "position", pos); }
 
   // Utility for setting vis flags using blacklist and whitelist

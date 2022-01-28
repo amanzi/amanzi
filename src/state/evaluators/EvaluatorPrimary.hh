@@ -38,6 +38,12 @@ class EvaluatorPrimary_ : public Evaluator {
   EvaluatorPrimary_& operator=(const EvaluatorPrimary_& other);
 
   // ---------------------------------------------------------------------------
+  // Step 1 of graph checking -- Requires evaluators for the full dependency
+  // graph.  Nothing to do here.
+  // ---------------------------------------------------------------------------
+  virtual void EnsureEvaluators(State& S) override {}
+
+  // ---------------------------------------------------------------------------
   // Lazy evaluation of the evaluator.
   //
   // Updates the data, if needed.  Returns true if the value of the data has

@@ -1,9 +1,9 @@
 /*
   Output
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon
@@ -64,7 +64,7 @@ OutputXDMF::WriteVector(const Epetra_Vector& vec, const std::string& name,
   }
 }
 
-  
+
 void
 OutputXDMF::WriteMultiVector(const Epetra_MultiVector& vec,
                              const std::vector<std::string>& names,
@@ -80,20 +80,20 @@ OutputXDMF::WriteMultiVector(const Epetra_MultiVector& vec,
     }
   }
 }
-  
+
 
 void
 OutputXDMF::WriteAttribute(const double& val, const std::string& name) const {
   io_->writeAttrReal(val, name);
 }
 
-  
+
 void
 OutputXDMF::WriteAttribute(const int& val, const std::string& name) const {
   io_->writeAttrInt(val, name);
 }
 
-  
+
 void
 OutputXDMF::WriteAttribute(const std::string& val, const std::string& name) const {
   io_->writeAttrString(val, name);
@@ -106,7 +106,7 @@ OutputXDMF::ReadVector(Epetra_Vector& vec, const std::string& name) const {
   io_->readData(vec, name);
 }
 
-  
+
 void
 OutputXDMF::ReadMultiVector(Epetra_MultiVector& vec,
                             const std::vector<std::string>& names) const {

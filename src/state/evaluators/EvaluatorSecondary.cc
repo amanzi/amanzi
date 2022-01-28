@@ -22,7 +22,8 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
     : plist_(plist),
-      vo_(Keys::cleanPListName(plist.name()), plist)
+      vo_(Keys::cleanPListName(plist.name()), plist),
+      updated_once_(false)
 {
   type_ = EvaluatorType::SECONDARY;
 
@@ -67,7 +68,7 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
     msg << "EvaluatorSecondary: " << plist.name() << " processed no key-tag pairs.";
     throw(msg);
   }
-    
+
   // process the plist for dependencies
   if (plist_.isParameter("dependencies")) {
     auto deps = plist_.get<Teuchos::Array<std::string>>("dependencies");
@@ -155,6 +156,27 @@ EvaluatorSecondary& EvaluatorSecondary::operator=(const EvaluatorSecondary& othe
 }
 
 
+// ---------------------------------------------------------------------------
+// Step 1 of graph checking -- Requires evaluators for the full dependency
+// graph.
+// ---------------------------------------------------------------------------
+void EvaluatorSecondary::EnsureEvaluators(State& S)
+{
+  // first make sure that we have evaluators for all of _our_ keys.  Note that
+  // we may not, as not all of my_keys_ may be required.
+  for (const auto& my_key_tag : my_keys_) {
+    S.RequireEvaluator(my_key_tag.first, my_key_tag.second);
+  }
+
+  // next make sure that all dependencies have evaluators, and call
+  // EnsureEvaluators recursively to fill out the dependency graph
+  for (const auto& dep : dependencies_) {
+    auto& dep_eval = S.RequireEvaluator(dep.first, dep.second);
+    dep_eval.EnsureEvaluators(S);
+  }
+}
+
+
 // -----------------------------------------------------------------------------
 // Answers the question, has this Field changed since it was last requested
 // for Field Key reqest.  Updates the field if needed.
@@ -174,6 +196,12 @@ bool EvaluatorSecondary::Update(State& S, const Key& request)
   for (auto& dep : dependencies_) {
     update |= S.GetEvaluator(dep.first, dep.second)
         .Update(S, Keys::getKey(my_keys_[0].first, my_keys_[0].second));
+  }
+
+  if (!updated_once_) {
+    // force always updating once
+    update = true;
+    updated_once_ = true;
   }
 
   if (update) {

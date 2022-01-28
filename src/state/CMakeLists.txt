@@ -42,10 +42,17 @@ include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_INCLUDE_DIRS})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 include_directories(${SEACAS_DIR}/include)
+
 if(ENABLE_Silo)
   include_directories(${Silo_INCLUDE_DIRS})
   add_definitions(-DENABLE_Silo)
 endif(ENABLE_Silo)
+
+if(ENABLE_ATSPhysicsModule)
+  if (NOT ENABLE_AmanziPhysicsModule)
+    add_definitions(-DDISABLE_DEFAULT_TAG)
+  endif()
+endif()
 
 
 # This state library will move to a new location 
