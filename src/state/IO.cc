@@ -40,14 +40,17 @@ void WriteVis(Visualization& vis, const State& S)
 {
   if (!vis.is_disabled()) {
     // Create the new time step
-    vis.CreateTimestep(S.get_time(), S.cycle(), vis.get_tag().get());
+    const auto& tag = vis.get_tag();
+    vis.CreateTimestep(S.get_time(), S.cycle(), tag.get());
 
-    // Write all fields to the visualization file, the fields know if they
-    // need to be written.
     for (auto r = S.data_begin(); r != S.data_end(); ++r) {
       // note, no type checking is required -- the type knows if it can be
-      // visualized
-      r->second->WriteVis(vis);
+      // visualized. However, since overwriting of attributes does not work
+      // properly, we skip them. FIXME 
+      for (const auto& e : *r->second) {
+        if (!e.second->ValidType<double>() && !e.second->ValidType<int>()) 
+          e.second->WriteVis(vis);
+      }
     }
     vis.WriteRegions();
     vis.WritePartition();

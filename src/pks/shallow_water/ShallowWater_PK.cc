@@ -37,9 +37,9 @@ ShallowWater_PK::ShallowWater_PK(Teuchos::ParameterList& pk_tree,
                                  const Teuchos::RCP<State>& S,
                                  const Teuchos::RCP<TreeVector>& soln)
   : PK(pk_tree, glist, S, soln),
-    S_(S),
-    soln_(soln),
     glist_(glist),
+    soln_(soln),
+    S_(S),
     passwd_("state"),
     iters_(0)
 {
@@ -250,13 +250,13 @@ void ShallowWater_PK::Initialize()
   // reconstruction
   Teuchos::ParameterList plist = sw_list_->sublist("reconstruction");
   
-  total_depth_grad_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
+  total_depth_grad_ = Teuchos::rcp(new Operators::ReconstructionCellGrad(mesh_));
   total_depth_grad_->Init(plist);
 
-  discharge_x_grad_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
+  discharge_x_grad_ = Teuchos::rcp(new Operators::ReconstructionCellGrad(mesh_));
   discharge_x_grad_->Init(plist);
 
-  discharge_y_grad_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
+  discharge_y_grad_ = Teuchos::rcp(new Operators::ReconstructionCellGrad(mesh_));
   discharge_y_grad_->Init(plist);
 
   use_limiter_ = sw_list_->get<bool>("use limiter", true);
@@ -403,7 +403,6 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   bool failed = false;
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   S_->GetEvaluator(discharge_key_).Update(*S_, passwd_);
 
@@ -415,11 +414,10 @@ bool ShallowWater_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // save a copy of primary and conservative fields
   auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-  auto& B_n = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("node", true);
   auto& h_c = *S_->GetW<CV_t>(ponded_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
   auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
   auto& vel_c = *S_->GetW<CV_t>(velocity_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-  auto& riemann_f = *S_->GetW<CV_t>(riemann_flux_key_, passwd_).ViewComponent("face", true);
+  // auto& riemann_f = *S_->GetW<CV_t>(riemann_flux_key_, passwd_).ViewComponent("face", true);
     
   S_->GetEvaluator(discharge_key_).Update(*S_, passwd_);
   auto& q_c = *S_->GetW<CV_t>(discharge_key_, Tags::DEFAULT, discharge_key_).ViewComponent("cell", true);
@@ -522,9 +520,7 @@ std::vector<double> ShallowWater_PK::NumericalSource(
   auto& B_c = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
   auto& B_n = *S_->GetW<CV_t>(bathymetry_key_, Tags::DEFAULT, passwd_).ViewComponent("node", true);
   auto& ht_c = *S_->GetW<CV_t>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-  auto& h_c = *S_->GetW<CV_t>(ponded_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
 
-  const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
   AmanziMesh::Entity_ID_List cfaces;
   mesh_->cell_get_faces(c, &cfaces);
 

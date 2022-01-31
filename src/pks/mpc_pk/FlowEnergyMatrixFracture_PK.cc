@@ -37,9 +37,9 @@ FlowEnergyMatrixFracture_PK::FlowEnergyMatrixFracture_PK(
     const Teuchos::RCP<Teuchos::ParameterList>& glist,
     const Teuchos::RCP<State>& S,
     const Teuchos::RCP<TreeVector>& soln)
-  : glist_(glist),
-    Amanzi::PK_MPC<PK_BDF>(pk_tree, glist, S, soln),
-    Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln)
+    : Amanzi::PK_MPC<PK_BDF>(pk_tree, glist, S, soln),
+      Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln),
+      glist_(glist)
 {
   Teuchos::ParameterList vlist;
   vo_ =  Teuchos::rcp(new VerboseObject("CoupledThermalFlow_PK", vlist));

@@ -11,7 +11,7 @@
 
 #include <algorithm>
 
-#include "ReconstructionCell.hh"
+#include "ReconstructionCellGrad.hh"
 #include "OperatorDefs.hh"
 #include "TransportExplicit_PK.hh"
 #include "UniqueLocalIndex.hh"
@@ -37,7 +37,7 @@ void TransportExplicit_PK::FunctionalTimeDerivative(
 
   Teuchos::ParameterList plist = tp_list_->sublist("reconstruction");
   lifting_->Init(plist);
-  lifting_->ComputeGradient(component_rcp);
+  lifting_->ComputePoly(component_rcp);
 
   // extract boundary conditions for the current component
   std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
@@ -178,7 +178,7 @@ void TransportExplicit_PK::DudtOld(double t,
 
   Teuchos::ParameterList plist = tp_list_->sublist("reconstruction");
   lifting_->Init(plist);
-  lifting_->ComputeGradient(component_rcp);
+  lifting_->ComputePoly(component_rcp);
 
   // extract boundary conditions for the current component
   std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);

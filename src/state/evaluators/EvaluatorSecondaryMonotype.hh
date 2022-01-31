@@ -209,7 +209,7 @@ EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility_ClaimOwner
 {
   // claim ownership, declare type
   for (auto keytag : my_keys_) {
-    const auto& fac = S.Require<Data_t,DataFactory_t>(keytag.first, keytag.second, keytag.first);
+    S.Require<Data_t,DataFactory_t>(keytag.first, keytag.second, keytag.first);
   }
 }
 

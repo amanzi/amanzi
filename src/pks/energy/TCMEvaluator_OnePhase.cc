@@ -49,8 +49,8 @@ TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(Teuchos::ParameterList& plist)
 ****************************************************************** */
 TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(const TCMEvaluator_OnePhase& other)
     : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
-      temperature_key_(other.temperature_key_),
-      tc_(other.tc_) {};
+      tc_(other.tc_),
+      temperature_key_(other.temperature_key_) {};
 
 
 /* ******************************************************************

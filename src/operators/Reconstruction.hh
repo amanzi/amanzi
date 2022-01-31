@@ -17,6 +17,7 @@
 #include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 
+#include "BCs.hh"
 #include "Mesh.hh"
 #include "Point.hh"
 
@@ -33,8 +34,9 @@ class Reconstruction {
   // main members
   virtual void Init(Teuchos::ParameterList& plist) = 0;
 
-  virtual void ComputeGradient(const Teuchos::RCP<const Epetra_MultiVector>& field,
-                               int component = 0) {
+  virtual void ComputePoly(const Teuchos::RCP<const Epetra_MultiVector>& field,
+                           int component = 0,
+                           const Teuchos::RCP<const BCs>& bc = Teuchos::null) {
     field_ = field;
     component_ = component;
   }

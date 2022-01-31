@@ -7,6 +7,7 @@
 // TPLs
 #include "UnitTest++.h"
 
+#include "IO.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
 #include "errors.hh"

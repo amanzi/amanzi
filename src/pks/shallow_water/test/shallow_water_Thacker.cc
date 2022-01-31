@@ -31,7 +31,7 @@ using namespace Amanzi;
 void analytical_exact(double t, double x, double y, double &h, double &u, double &v)
 {
 // Thacker's time dependent solution [Beljadid et. al. 2016]
-  double eta = 2.0, g = 9.81, T = 1.436739427831727;
+  double eta = 2.0, T = 1.436739427831727;
 //  double R0 = T * std::sqrt(2.0*g*eta);
   double R0 = 9.0;
   
@@ -251,7 +251,6 @@ void RunTest(int icase)
     }
 
     int iter = 0;
-    double dt_max = 0.0;
 
     while (t_new < 0.01) {
       // cycle 1, time t

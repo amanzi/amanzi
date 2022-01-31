@@ -24,8 +24,8 @@ OutputXDMF::OutputXDMF(Teuchos::ParameterList& plist,
   : is_vis_(is_vis),
     is_dynamic_(is_dynamic),
     include_io_set_(include_io_set),
-    mesh_(mesh),
-    mesh_written_(false)
+    mesh_written_(false),
+    mesh_(mesh)
 {
   Init_(plist);
 }

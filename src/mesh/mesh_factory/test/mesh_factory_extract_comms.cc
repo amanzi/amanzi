@@ -55,7 +55,7 @@ TEST (EXTRACT_COMM_SPLIT) {
   Amanzi::AmanziMesh::MeshFactory meshfactory(comm,gm,plist);
 
   bool flatten = true;
-  bool extrude = false;
+  // bool extrude = false;
 
   if (Amanzi::AmanziMesh::framework_enabled(
         Amanzi::AmanziMesh::Framework::MSTK)) {

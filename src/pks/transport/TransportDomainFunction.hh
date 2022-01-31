@@ -32,7 +32,7 @@ class TransportDomainFunction {
  public:
   TransportDomainFunction() : domain_volume_(-1.0) {};
   TransportDomainFunction(const Teuchos::ParameterList& plist) : domain_volume_(-1.0) {};
-  ~TransportDomainFunction() {};
+  virtual ~TransportDomainFunction() {};
 
   // source term on time interval (t0, t1]
   virtual void Compute(double t0, double t1) { AMANZI_ASSERT(false); }

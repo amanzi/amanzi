@@ -195,13 +195,13 @@ class Region {
          unsigned int dim,
          unsigned int geom_dim,
          LifeCycleType lifecycle=PERMANENT)
-    : name_(name),
-      id_(id),
-      geometric_(geometric),
-      type_(type),
+    : lifecycle_(lifecycle),
       manifold_dimension_(dim),
       space_dimension_(geom_dim),
-      lifecycle_(lifecycle) {};
+      name_(name),
+      id_(id),
+      type_(type),
+      geometric_(geometric) {};
 
  protected:
   // Lifecycle (Temporary or Permanent)

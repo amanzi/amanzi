@@ -43,11 +43,11 @@ namespace Operators {
 ******************************************************************* */
 LimiterCell::LimiterCell(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) 
   : mesh_(mesh),
-    flux_(Teuchos::null),
     gradient_(Teuchos::null),
     component_(0),
-    cfl_(1.0),
-    external_bounds_(false)
+    flux_(Teuchos::null),
+    external_bounds_(false),
+    cfl_(1.0)
 {
   dim = mesh_->space_dimension();
 
@@ -134,6 +134,47 @@ void LimiterCell::Init(Teuchos::ParameterList& plist,
   external_bounds_ = plist.get<bool>("use external bounds", false);
   limiter_points_ = plist.get<int>("limiter points", 1);
   limiter_correction_ = plist.get<bool>("limiter extension for transport", false);
+}
+
+
+/* ******************************************************************
+* Apply an internal limiter using BC object
+****************************************************************** */
+void LimiterCell::ApplyLimiter(
+    Teuchos::RCP<const Epetra_MultiVector> field, int component,
+    const Teuchos::RCP<CompositeVector>& gradient,
+    const Teuchos::RCP<const BCs>& bc)
+{
+  const auto& bc_model = bc->bc_model();
+  const auto& bc_value = bc->bc_value();
+
+  AmanziMesh::Entity_ID_List ids(ncells_owned_);
+  for (int c = 0; c < ncells_owned_; ++c) ids[c] = c;
+
+  ApplyLimiter(ids, field, component, gradient, bc_model, bc_value); 
+}
+
+
+void LimiterCell::ApplyLimiter(
+    Teuchos::RCP<const Epetra_MultiVector> field, int component,
+    const Teuchos::RCP<CompositeVector>& gradient,
+    const std::vector<int>& bc_model, const std::vector<double>& bc_value)
+{
+  AmanziMesh::Entity_ID_List ids(ncells_owned_);
+  for (int c = 0; c < ncells_owned_; ++c) ids[c] = c;
+  ApplyLimiter(ids, field, component, gradient, bc_model, bc_value); 
+}
+
+
+void LimiterCell::ApplyLimiter(
+    Teuchos::RCP<const Epetra_MultiVector> field, int component,
+    const Teuchos::RCP<CompositeVector>& gradient)
+{
+  std::vector<int> bc_model;
+  std::vector<double> bc_value;
+  AmanziMesh::Entity_ID_List ids(ncells_owned_);
+  for (int c = 0; c < ncells_owned_; ++c) ids[c] = c;
+  ApplyLimiter(ids, field, component, gradient, bc_model, bc_value); 
 }
 
 

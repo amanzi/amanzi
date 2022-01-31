@@ -36,9 +36,9 @@ class Analytic00 : public AnalyticBase {
              double kr = 1.0)
     : AnalyticBase(mesh),
       g_(g),
-      v_(v),
       K_(K),
       kr_(kr),
+      v_(v),
       poly_(2, order) {
     poly_(0, 0) = 1.0;
 
@@ -74,35 +74,42 @@ class Analytic00 : public AnalyticBase {
   ~Analytic00() {};
 
   // diffusivity
-  Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) {
+  virtual
+  Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) override {
     Amanzi::WhetStone::Tensor K(2, 1);
     K(0, 0) = K_;
     return K;
   }
 
-  double ScalarDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) const { return kr_; }
+  virtual
+  double ScalarDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) override { return kr_; }
 
   // exact solution
-  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const { 
+  virtual
+  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const override { 
     return poly_.Value(p);
   }
 
-  Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  virtual
+  Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) override { 
     Amanzi::AmanziGeometry::Point v(2);
     v[0] = -grad_[0].Value(p);
     v[1] = -grad_[1].Value(p);
     return kr_ * (K_ * v);
   }
  
-  Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  virtual 
+  Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t)  override { 
     return -velocity_exact(p, t);
   }
 
-  Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
+  virtual
+  Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) override {
     return v_;
   }
 
-  double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { return rhs_.Value(p); }
+  virtual
+  double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) override { return rhs_.Value(p); }
 
  private:
   double g_, K_, kr_;

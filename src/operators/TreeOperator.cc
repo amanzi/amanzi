@@ -38,15 +38,15 @@ namespace Operators {
 * Constructors
 ****************************************************************** */
 TreeOperator::TreeOperator()
-  : inverse_pars_set_(false),
-    initialize_complete_(false),
-    compute_complete_(false),
-    assembly_complete_(false),
-    block_diagonal_(false),
+  : block_diagonal_(false),
+    shift_(0.0),
+    shift_min_(0.0),
     num_colors_(0),
     coloring_(Teuchos::null),
-    shift_(0.0),
-    shift_min_(0.0)
+    inverse_pars_set_(false),
+    initialize_complete_(false),
+    compute_complete_(false),
+    assembly_complete_(false)
 {
   vo_ = Teuchos::rcp(new VerboseObject("TreeOperator", Teuchos::ParameterList()));
 }

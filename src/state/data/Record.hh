@@ -55,18 +55,14 @@ class Record {
   const std::vector<std::string>& subfieldnames() const { return subfieldnames_; }
 
   // mutators
-  void set_fieldname(Key fieldname) { fieldname_ = std::move(fieldname); }
+  void set_fieldname(const Key& fieldname) { fieldname_ = fieldname; }
   void set_initialized(bool initialized = true) { initialized_ = initialized; }
-  void set_owner(Key owner) { owner_ = std::move(owner); }
-  void set_vis_fieldname(Key key) { vis_key_ = std::move(key); }
-  void set_io_checkpoint(bool io_checkpoint = true) {
-    io_checkpoint_ = std::move(io_checkpoint);
-  }
-  void set_io_vis(bool io_vis = true) { io_vis_ = std::move(io_vis); }
-  void set_units(Utils::Units units) { units = std::move(units); }
-  void set_subfieldnames(std::vector<std::string> subfieldnames) {
-    subfieldnames_ = std::move(subfieldnames);
-  }
+  void set_owner(const Key& owner) { owner_ = owner; }
+  void set_vis_fieldname(const Key& key) { vis_key_ = key; }
+  void set_io_checkpoint(bool io_checkpoint = true) { io_checkpoint_ = io_checkpoint; }
+  void set_io_vis(bool io_vis = true) { io_vis_ = io_vis; }
+  void set_units(const Utils::Units& units) { units_ = units; }
+  void set_subfieldnames(const std::vector<std::string>& subfieldnames) { subfieldnames_ = subfieldnames; }
 
   // pass-throughs for other functionality
   void WriteVis(const Visualization& vis) const;

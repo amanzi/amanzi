@@ -47,9 +47,9 @@ TCMEvaluator_TwoPhase::TCMEvaluator_TwoPhase(Teuchos::ParameterList& plist)
 ****************************************************************** */
 TCMEvaluator_TwoPhase::TCMEvaluator_TwoPhase(const TCMEvaluator_TwoPhase& other)
     : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
+      tc_(other.tc_),
       porosity_key_(other.porosity_key_),
-      saturation_key_(other.saturation_key_),
-      tc_(other.tc_) {};
+      saturation_key_(other.saturation_key_) {}
 
 
 /* ******************************************************************

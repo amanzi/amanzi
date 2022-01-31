@@ -78,8 +78,9 @@ class TestEnthalpyEvaluator : public EnthalpyEvaluator {
       }
     }
   }
-
-  virtual double EvaluateFieldSingle(const Teuchos::Ptr<State>& S, int c, double T) {
+ 
+  using EnthalpyEvaluator::EvaluateFieldSingle;
+  double EvaluateFieldSingle(const Teuchos::Ptr<State>& S, int c, double T) {
     return std::pow(T, 3.0);
   }
 };

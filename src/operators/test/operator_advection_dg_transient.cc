@@ -200,14 +200,16 @@ AdvectionFn<Analytic>::AdvectionFn(
     const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
     Teuchos::RCP<WhetStone::DG_Modal> dg,  
     bool conservative_form, std::string weak_form)
-    : plist_(plist), nx_(nx), dt_(dt), 
+    : dt_stable_min(1e+99),
+      limiter_min(-1.0),
+      limiter_mean(-1.0),
+      ana_(mesh, dg->get_order(), true),
+      plist_(plist),
+      nx_(nx),
+      dt_(dt), 
       mesh_(mesh),
       dg_(dg), 
-      ana_(mesh, dg->get_order(), true),
-      conservative_form_(conservative_form),
-      dt_stable_min(1e+99),
-      limiter_min(-1.0),
-      limiter_mean(-1.0)
+      conservative_form_(conservative_form)
 {
   divergence_term_ = !conservative_form_;
   if (weak_form == "dual") {
@@ -354,7 +356,7 @@ void AdvectionFn<Analytic>::FunctionalTimeDerivative(
   // populate the global operator
   op_flux->SetBCs(bc, bc);
   op_flux->Setup(velc, velf);
-  op_flux->UpdateMatrices(velf.ptr());
+  op_flux->UpdateMatrices(*velf);
   op_flux->local_op()->Rescale(weak_sign_);
   op_flux->ApplyBCs(true, true, true);
 

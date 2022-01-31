@@ -116,10 +116,10 @@ class PreconditionerHypre : public AmanziSolvers::Preconditioner {
  public:
   PreconditionerHypre() :
       AmanziSolvers::Preconditioner(),
-      num_blocks_(0),
       block_indices_(Teuchos::null),
-      IfpHypre_(Teuchos::null),
-      returned_code_(0)
+      num_blocks_(0),
+      returned_code_(0),
+      IfpHypre_(Teuchos::null)
   {}
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& list) override final;

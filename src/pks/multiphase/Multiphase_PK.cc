@@ -49,12 +49,12 @@ Multiphase_PK::Multiphase_PK(Teuchos::ParameterList& pk_tree,
                              const Teuchos::RCP<Teuchos::ParameterList>& glist,
                              const Teuchos::RCP<State>& S,
                              const Teuchos::RCP<TreeVector>& soln) :
-  glist_(glist),
-  soln_(soln),
   passwd_("multiphase"),
+  soln_(soln),
   num_phases_(2),
-  num_itrs_(0),
-  op_pc_assembled_(false)
+  op_pc_assembled_(false),
+  glist_(glist),
+  num_itrs_(0)
 {
   S_ = S;
 

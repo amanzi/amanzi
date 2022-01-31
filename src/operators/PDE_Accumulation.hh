@@ -76,8 +76,8 @@ class PDE_Accumulation : public PDE_HelperBCsList {
 
   PDE_Accumulation(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op)
     : global_op_(global_op),
-      mesh_(Teuchos::null),
-      plist_(plist)
+      plist_(plist),
+      mesh_(Teuchos::null)
   {
     Schema schema;
     std::string name = plist_.get<std::string>("entity kind");
@@ -89,8 +89,8 @@ class PDE_Accumulation : public PDE_HelperBCsList {
 
   PDE_Accumulation(Teuchos::ParameterList& plist, Teuchos::RCP<AmanziMesh::Mesh> mesh)
     : global_op_(Teuchos::null),
-      mesh_(mesh),
-      plist_(plist)
+      plist_(plist),
+      mesh_(mesh)
   {
     Schema schema;
     std::string name = plist_.get<std::string>("entity kind");
@@ -102,8 +102,8 @@ class PDE_Accumulation : public PDE_HelperBCsList {
 
   PDE_Accumulation(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : global_op_(Teuchos::null),
-      mesh_(mesh),
-      plist_(plist)
+      plist_(plist),
+      mesh_(mesh)
   {
     Schema schema;
     std::string name = plist_.get<std::string>("entity kind");

@@ -71,7 +71,7 @@ Domain::Domain(const unsigned int dim,
   spatial_dimension_(dim), GeometricModels(in_geometric_models),
   FreeRegions(in_Regions)
 {
-  if (dim != 2 || dim != 3) {
+  if (dim != 2 && dim != 3) {
     std::cerr << "Only 2D and 3D domains are supported" << std::endl;
     throw std::exception();
   }

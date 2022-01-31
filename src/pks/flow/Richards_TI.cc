@@ -315,7 +315,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   double t_old = tp - dtp;
 
   std::vector<int>& bc_model = op_bc_->bc_model();
-  std::vector<double>& bc_value = op_bc_->bc_value();
+  // std::vector<double>& bc_value = op_bc_->bc_value();
 
   // update BCs and source terms
   UpdateSourceBoundaryData(t_old, tp, *u->Data());

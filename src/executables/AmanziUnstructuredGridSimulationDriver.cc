@@ -78,7 +78,7 @@ Amanzi::Simulator::ReturnType
 AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
                                             Amanzi::ObservationData& observations_data)
 {
-  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  // Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   // Teuchos::OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 

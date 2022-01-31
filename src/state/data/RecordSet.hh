@@ -56,7 +56,7 @@ class RecordSet {
   void set_vis_fieldname(Key vis_fieldname) {
     vis_fieldname_ = std::move(vis_fieldname);
   }
-  void set_units(Utils::Units units) { units = std::move(units); }
+  void set_units(Utils::Units units) { units_ = std::move(units); }
 
   // pass-throughs for other functionality
   void WriteVis(const Visualization& vis) const;

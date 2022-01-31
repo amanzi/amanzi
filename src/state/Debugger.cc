@@ -22,15 +22,15 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                    std::string name,
                    Teuchos::ParameterList& plist,
                    Teuchos::EVerbosityLevel verb_level) :
-    mesh_(mesh),
-    name_(name),
-    plist_(plist),
     verb_level_(verb_level),
-    precision_(10),
+    plist_(plist),
+    mesh_(mesh),
     width_(15),
     header_width_(20),
+    precision_(10),
     cellnum_width_(5),
-    decimal_width_(7)
+    decimal_width_(7),
+    name_(name)
 {
   vo_ = Teuchos::rcp(new VerboseObject(name, plist));
 

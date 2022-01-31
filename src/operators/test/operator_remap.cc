@@ -45,8 +45,8 @@ class MyRemapDG : public Operators::RemapDG<CompositeVector> {
             Teuchos::ParameterList& plist)
     : Operators::RemapDG<CompositeVector>(mesh0, mesh1, plist),
       tprint_(0.0),
-      l2norm_(-1.0),
-      dt_output_(0.1) {};
+      dt_output_(0.1),
+      l2norm_(-1.0) {};
   ~MyRemapDG() {};
 
   // time control

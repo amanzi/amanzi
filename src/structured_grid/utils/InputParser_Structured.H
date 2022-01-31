@@ -24,7 +24,9 @@ namespace Amanzi {
           ICBCFunc(const ParameterList& plist,
                    const std::string& Amanzi_type,
                    const std::string& label)
-              : plist(plist), Amanzi_type(Amanzi_type), label(label) {}
+              : Amanzi_type(Amanzi_type),
+                label(label),
+                plist(plist) {} 
           
           const ParameterList& PList() const {return plist;}
           const std::string& Amanzi_Type() const {return Amanzi_type;}
@@ -64,7 +66,10 @@ namespace Amanzi {
                     const std::string&        Amanzi_type,
                     const ParameterList&      func_plist,
                     const Array<std::string>& regions)
-              : label(label), Amanzi_type(Amanzi_type), func_plist(func_plist), regions(regions) {}
+              : func_plist(func_plist),
+                Amanzi_type(Amanzi_type),
+                label(label),
+                regions(regions) {}
 
 
           typedef std::map<std::string,PhaseFunc> PhaseFuncMap;
@@ -321,8 +326,10 @@ namespace Amanzi {
                     const Array<std::string>& reqParms,
                     bool reqListsOnly,
                     bool reqParmsOnly)
-              : reqListsOnly(reqListsOnly), reqParmsOnly(reqParmsOnly),
-                reqLists(reqLists), reqParms(reqParms)
+              : reqLists(reqLists),
+                reqParms(reqParms),
+                reqListsOnly(reqListsOnly),
+                reqParmsOnly(reqParmsOnly)
               {
                   init(p);
               }

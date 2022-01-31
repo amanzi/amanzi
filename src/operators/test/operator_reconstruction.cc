@@ -28,7 +28,8 @@
 // Amanzi::Operators
 #include "ErrorAnalysis.hh"
 #include "OperatorDefs.hh"
-#include "ReconstructionCell.hh"
+#include "ReconstructionCellGrad.hh"
+#include "ReconstructionCellPoly.hh"
 
 
 /* *****************************************************************
@@ -73,15 +74,15 @@ TEST(RECONSTRUCTION_LINEAR_2D) {
   plist.set<int>("polynomial_order", 1);
   plist.set<bool>("limiter extension for transport", false);
 
-  ReconstructionCell lifting(mesh);
+  ReconstructionCellGrad lifting(mesh);
   lifting.Init(plist);
-  lifting.ComputeGradient(field); 
+  lifting.ComputePoly(field); 
 
   // calculate gradient error
   double err_int, err_glb, gnorm;
   Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
 
-  ComputeGradError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
+  ComputePolyError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
   CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
 
   if (MyPID == 0) printf("errors (interior & global): %8.4f %8.4f\n", err_int, err_glb);
@@ -131,18 +132,79 @@ TEST(RECONSTRUCTION_LINEAR_3D) {
   plist.set<int>("polynomial_order", 1);
   plist.set<bool>("limiter extension for transport", false);
 
-  ReconstructionCell lifting(mesh);
+  ReconstructionCellGrad lifting(mesh);
   lifting.Init(plist);
-  lifting.ComputeGradient(field);
+  lifting.ComputePoly(field);
 
   // calculate gradient error
   double err_int, err_glb, gnorm;
   Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
 
-  ComputeGradError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
+  ComputePolyError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
   CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
 
   if (MyPID == 0) printf("errors (interior & global): %8.4f %8.4f\n", err_int, err_glb);
 }
 
+
+/* *****************************************************************
+* Exactness on quadratic functions in two dimensions
+***************************************************************** */
+TEST(RECONSTRUCTION_QUADRATIC_2D) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi::Operators;
+
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
+
+  if (MyPID == 0) std::cout << "\nTest: Exactness on quadratic functions in 2D." << std::endl;
+
+  // create rectangular mesh
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 7, 7);
+
+  // create and initialize cell-based field 
+  Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
+  Epetra_MultiVector poly_exact(mesh->cell_map(false), 5);
+
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+
+  for (int c = 0; c < ncells_wghost; c++) {
+    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    (*field)[0][c] = 1 * xc[0] + 2 * xc[1] 
+                   + 3 * xc[0] * xc[0] + 4 * xc[0] * xc[1] + 5 * xc[1] * xc[1];
+    if (c < ncells_owned) {
+      poly_exact[0][c] = 1.0 + 6 * xc[0] + 4 * xc[1];
+      poly_exact[1][c] = 2.0 + 10 * xc[1] + 4 * xc[0];
+      poly_exact[2][c] = 3.0;
+      poly_exact[3][c] = 4.0;
+      poly_exact[4][c] = 5.0;
+    }
+  }
+
+  // Compute reconstruction
+  Teuchos::ParameterList plist;
+  plist.set<std::string>("limiter", "tensorial");
+  plist.set<int>("polynomial_order", 1);
+  plist.set<bool>("limiter extension for transport", false);
+
+  ReconstructionCellPoly lifting(mesh);
+  lifting.Init(plist);
+  lifting.ComputePoly(field); 
+
+  // calculate polynomia; error
+  double err_int, err_glb, gnorm;
+  Epetra_MultiVector& poly_computed = *lifting.poly()->ViewComponent("cell");
+
+  ComputePolyError(mesh, poly_computed, poly_exact, err_int, err_glb, gnorm);
+  // CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
+  CHECK_CLOSE(0.0, err_int, 1.0e-12);
+
+  if (MyPID == 0) printf("errors (interior & global): %8.4f %8.4f\n", err_int, err_glb);
+}
 

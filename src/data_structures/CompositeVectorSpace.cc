@@ -37,7 +37,7 @@ getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
 
 // constructor
 CompositeVectorSpace::CompositeVectorSpace() :
-  owned_(false), mesh_(Teuchos::null), ghosted_(false) {};
+  ghosted_(false), owned_(false), mesh_(Teuchos::null) {};
 
 
 // copy constructor

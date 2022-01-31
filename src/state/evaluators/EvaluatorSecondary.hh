@@ -86,8 +86,8 @@ protected:
 
   bool updated_once_;
 
-  VerboseObject vo_;
   Teuchos::ParameterList plist_;
+  VerboseObject vo_;
 
 }; // class Evaluator
 

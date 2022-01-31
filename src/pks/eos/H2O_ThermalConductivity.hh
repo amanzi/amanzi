@@ -22,8 +22,8 @@ namespace AmanziEOS {
 // Equation of State model
 class H2O_ThermalConductivity {
  public:
-  explicit
-  H2O_ThermalConductivity(Teuchos::ParameterList& eos_plist);
+  explicit H2O_ThermalConductivity(Teuchos::ParameterList& eos_plist);
+  virtual ~H2O_ThermalConductivity() {};
 
   virtual double ThermalConductivity(double T);
   virtual double DThermalConductivityDT(double T);

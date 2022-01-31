@@ -107,7 +107,6 @@ class Alquimia_PK: public Chemistry_PK {
 
  private:
   // Time stepping controls. Some parameters are defined in the base class
-  double prev_time_step_;
   std::string dt_control_method_;
 
   bool chem_initialized_;

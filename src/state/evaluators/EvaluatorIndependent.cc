@@ -19,11 +19,11 @@ namespace Amanzi {
 // Constructor
 // ---------------------------------------------------------------------------
 EvaluatorIndependent_::EvaluatorIndependent_(Teuchos::ParameterList& plist)
-    : time_(0.0),
-      computed_once_(false),
-      my_key_(Keys::cleanPListName(plist.name())),
+    : my_key_(Keys::cleanPListName(plist.name())),
       my_tag_(make_tag(plist.get<std::string>("tag", ""))),
+      time_(0.0),
       temporally_variable_(!plist.get<bool>("constant in time", false)),
+      computed_once_(false),
       plist_(plist),
       vo_(Keys::cleanPListName(plist.name()), plist) {
   type_ = EvaluatorType::INDEPENDENT;

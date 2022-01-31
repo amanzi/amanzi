@@ -95,11 +95,11 @@ class PK {
      const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
      const Teuchos::RCP<State>& S,
      const Teuchos::RCP<TreeVector>& solution)
-    :  solution_(solution),
-       name_(Keys::cleanPListName(pk_tree.name())),
-       S_(S),
-       tag_current_(Tags::DEFAULT),
-       tag_next_(Tags::NEXT)
+    : name_(Keys::cleanPListName(pk_tree.name())),
+      tag_current_(Tags::DEFAULT),
+      tag_next_(Tags::NEXT),
+      solution_(solution),
+      S_(S)
   {
     Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(global_plist, "PKs", true);
     if (pk_list->isSublist(name_)) {

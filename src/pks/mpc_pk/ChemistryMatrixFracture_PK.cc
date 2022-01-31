@@ -24,7 +24,6 @@ ChemistryMatrixFracture_PK::ChemistryMatrixFracture_PK(Teuchos::ParameterList& p
                                                        const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                                        const Teuchos::RCP<State>& S,
                                                        const Teuchos::RCP<TreeVector>& soln) :
-    glist_(glist),
     Amanzi::PK(pk_tree, glist, S, soln),
     Amanzi::PK_MPCWeak(pk_tree, glist, S, soln)
 {

@@ -57,7 +57,7 @@ class Upwind {
   Upwind(Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       mesh_(mesh),
       face_comp_("face") {};
-  ~Upwind() {};
+  virtual ~Upwind() {};
 
   // main methods
   // -- initialization of control parameters

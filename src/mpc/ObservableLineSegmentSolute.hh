@@ -110,12 +110,12 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
 
   if (interpolation == "linear") {
     Teuchos::ParameterList plist;
-    Operators::ReconstructionCell lifting(mesh_);
+    Operators::ReconstructionCellGrad lifting(mesh_);
       
     cv->ScatterMasterToGhosted();
 
     lifting.Init(plist);
-    lifting.ComputeGradient(ids, vector, tcc_index_);
+    lifting.ComputePoly(ids, vector, tcc_index_);
 
     if (limiter_) {
       plist.set<std::string>("limiter", "Kuzmin");

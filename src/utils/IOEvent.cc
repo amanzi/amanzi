@@ -25,8 +25,8 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 IOEvent::IOEvent(Teuchos::ParameterList& plist) :
     plist_(plist),
-    disabled_(false),
-    units_() {
+    units_(),
+    disabled_(false) {
   ReadParameters_();
 };
 
@@ -34,7 +34,7 @@ IOEvent::IOEvent(Teuchos::ParameterList& plist) :
 // -----------------------------------------------------------------------------
 // Constructor for a disabled Event.
 // -----------------------------------------------------------------------------
-IOEvent::IOEvent(): disabled_(true), units_() {};
+IOEvent::IOEvent(): units_(), disabled_(true) {};
 
 
 // -----------------------------------------------------------------------------

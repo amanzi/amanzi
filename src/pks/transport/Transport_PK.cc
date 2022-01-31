@@ -368,7 +368,7 @@ void Transport_PK::Initialize()
   ws_subcycle_end = Teuchos::rcp(new Epetra_Vector(cmap_owned));
 
   // reconstruction initialization
-  lifting_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
+  lifting_ = Teuchos::rcp(new Operators::ReconstructionCellGrad(mesh_));
   limiter_ = Teuchos::rcp(new Operators::LimiterCell(mesh_));
 
   // mechanical dispersion

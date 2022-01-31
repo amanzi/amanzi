@@ -30,9 +30,9 @@ TransportMatrixFracture_PK::TransportMatrixFracture_PK(Teuchos::ParameterList& p
                                                        const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                                        const Teuchos::RCP<State>& S,
                                                        const Teuchos::RCP<TreeVector>& soln) :
-    glist_(glist),
     Amanzi::PK(pk_tree, glist, S, soln),
-    Amanzi::PK_MPCWeak(pk_tree, glist, S, soln)
+    Amanzi::PK_MPCWeak(pk_tree, glist, S, soln),
+    glist_(glist)
 {
   Teuchos::ParameterList vlist;
   vo_ = Teuchos::rcp(new VerboseObject("TransportMatrixFracture_PK", vlist)); 

@@ -131,7 +131,6 @@ protected:
     auto& bcs = s.GetW<Operators::BCs>(my_key_, my_tag_, my_key_);
 
     auto mesh = bcs.mesh();
-    auto kind = bcs.kind();
 
     auto& model = bcs.bc_model();
     auto& value = bcs.bc_value();

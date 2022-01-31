@@ -41,8 +41,8 @@ FracturePermModelEvaluator::FracturePermModelEvaluator(
 
 FracturePermModelEvaluator::FracturePermModelEvaluator(const FracturePermModelEvaluator& other)
     : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(other),
-      aperture_key_(other.aperture_key_),
-      fpm_(other.fpm_) {};
+      fpm_(other.fpm_),
+      aperture_key_(other.aperture_key_) {};
 
 
 /* ******************************************************************

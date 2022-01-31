@@ -34,10 +34,10 @@ class InverseAssembled :
       public Inverse<Operator,Assembler,Vector,VectorSpace> {
  public:
   InverseAssembled(const std::string& method_name) :
-      method_name_(method_name),
+      Inverse<Operator,Assembler,Vector,VectorSpace>(),
       updated_(false),
       computed_once_(false),
-      Inverse<Operator,Assembler,Vector,VectorSpace>()
+      method_name_(method_name)
   {}
 
   virtual void set_inverse_parameters(Teuchos::ParameterList& plist) override final;
