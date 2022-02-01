@@ -24,8 +24,12 @@ class Tag {
 
   // support of hash
   bool operator==(const Tag& other) const { return (tag_ == other.tag_); }
+  bool operator!=(const Tag& other) const { return !(*this == other); }
 
   bool operator<(const Tag& other) const { return (tag_ < other.tag_); }
+  bool operator>(const Tag& other) const { return (tag_ > other.tag_); }
+  bool operator<=(const Tag& other) const { return !(*this > other); }
+  bool operator>=(const Tag& other) const { return !(*this < other); }
 
   friend std::ostream& operator<<(std::ostream& os, const Tag& t) {
     os << t.get();

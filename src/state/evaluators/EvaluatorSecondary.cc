@@ -23,7 +23,8 @@ namespace Amanzi {
 EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
     : plist_(plist),
       vo_(Keys::cleanPListName(plist.name()), plist),
-      updated_once_(false)
+      updated_once_(false),
+      nonlocal_dependencies_(false)
 {
   type_ = EvaluatorType::SECONDARY;
 
@@ -130,6 +131,8 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
       throw(message);
     }
   }
+
+  nonlocal_dependencies_ = plist_.get<bool>("includes non-rank-local dependencies", false);
 }
 
 
@@ -204,6 +207,17 @@ bool EvaluatorSecondary::Update(State& S, const Key& request)
     updated_once_ = true;
   }
 
+  // check if nonlocal for changes in offprocess dependencies
+  if (nonlocal_dependencies_) {
+    auto comm = get_comm_(S);
+    if (comm != Teuchos::null) {
+      int update_l = update;
+      int update_g = 0;
+      comm->MaxAll(&update_l, &update_g, 1);
+      update |= update_g;
+    }
+  }
+
   if (update) {
     if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
       *vo_.os() << "Updating " << my_keys_[0].first << " value... " << std::endl;
@@ -276,6 +290,17 @@ bool EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
     }
   }
 
+  // check if nonlocal for changes in offprocess dependencies
+  if (nonlocal_dependencies_) {
+    auto comm = get_comm_(S);
+    if (comm != Teuchos::null) {
+      int update_l = update;
+      int update_g = 0;
+      comm->MaxAll(&update_l, &update_g, 1);
+      update |= update_g;
+    }
+  }
+
   // Do the update
   DerivativeTriple request = std::make_tuple(wrt_key, wrt_tag, requestor);
   if (update) {
@@ -288,6 +313,7 @@ bool EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
     deriv_requests_.clear();
     deriv_requests_.insert(request);
     return true;
+
   } else {
     // Otherwise, simply service the request
     if (deriv_requests_.find(request) == deriv_requests_.end()) {

@@ -75,11 +75,14 @@ protected:
   virtual void Update_(State& S) = 0;
   virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) = 0;
 
+  // may need to check for dependencies on other ranks
+  virtual Teuchos::Ptr<const Comm_type> get_comm_(const State& s) const { return Teuchos::null; }
   void EnsureCompatibility_Flags_(State& S);
 
 protected:
   KeyTagVector my_keys_;
   KeyTagSet dependencies_;
+  bool nonlocal_dependencies_;
 
   KeySet requests_;
   DerivativeTripleSet deriv_requests_;

@@ -281,7 +281,14 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::EnsureCompati
     dep_fac.SetMesh(S.GetMesh(domain))
       ->AddComponents(names, locations, num_dofs);
   }
+}
 
+template <>
+Teuchos::Ptr<const Comm_type>
+EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::get_comm_(
+  const State& S) const
+{
+  return S.Get<CompositeVector>(my_keys_.front().first, my_keys_.front().second).Comm().ptr();
 }
 
 

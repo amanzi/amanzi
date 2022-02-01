@@ -46,6 +46,14 @@ class EvaluatorSecondaryMonotype : public EvaluatorSecondary {
 public:
   using EvaluatorSecondary::EvaluatorSecondary;
 
+  //
+  // This is the ONLY implementation of EnsureCompatibility.  Deriving classes
+  // override the hooks used here instead of overriding this directly.
+  //
+  // Therefore we comment this code heavily so that the developer understands
+  // what each of these hooks should do, and can customize them if needed.
+  // Developers, see below for the implementation and comments!
+  //
   virtual void EnsureCompatibility(State& S) override final;
 
  protected:
@@ -58,16 +66,15 @@ public:
 
   virtual void Evaluate_(const State& S, const std::vector<Data_t*>& results) = 0;
 
+  virtual Teuchos::Ptr<const Comm_type> get_comm_(const State& S) const override {
+    return Teuchos::null; }
+
  protected:
-  // NOTE: EnsureCompatiblity() is often overridden by derived classes because
-  // the factories are nearly, but not quite, identical between either various
-  // keys evaluated by this evaluator, or from my key to dependency.  These
-  // helper functions can be used by derived classes to do parts of, but not
-  // all of, the default EnsureCompatibility().
-  //
-  // helper function that does the basics that likely all
-  // EvaluatorSecondaryMonotype will use.
-  virtual void EnsureCompatibility_Basics_(State& S);
+  // NOTE: aspects of EnsureCompatiblity are often overridden by derived
+  // classes because the factories are nearly, but not quite, identical between
+  // either various keys evaluated by this evaluator, or from my key to
+  // dependency.  These helper functions can be used by derived classes to do
+  // parts of, but not all of, the default EnsureCompatibility().
 
   // helper function -- calls Require and claims ownership of all of my_keys_.
   // Called in Basics
@@ -124,54 +131,125 @@ public:
 };
 
 
-// implement generic versions
+//
+// This is the ONLY implementation of EnsureCompatibility.  Deriving classes
+// override the hooks used here instead of overriding this directly.
+//
+// Therefore we comment this code heavily so that the developer understands
+// what each of these hooks should do, and can customize them if needed.
+//
 template <typename Data_t, typename DataFactory_t>
 inline void
 EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility(State& S)
 {
-  EnsureCompatibility_Basics_(S);
+  // Calls Require, setting the data type
+  // (e.g. CompositeVector) and claiming ownership of all of my_keys_.
+  //
+  // Likely this is not overridden
+  EnsureCompatibility_ClaimOwnership_(S);
+
+  // Checks the parameter list for io flags, setting whether to visualize
+  // and/or checkpoint this field.
+  //
+  // Likely this is not overridden
+  EnsureCompatibility_Flags_(S);
+
+  // A simple loop over dependencies, calling Require to set their type to
+  // Data_t.
+  //
+  // Likely this is not overridden
+  EnsureCompatibility_Deps_(S);
+
+  // Much like EnsureCompatibility_ClaimOwnership_, but for all required
+  // derivatives of my_keys_.
+  //
+  // Likely this is not overridden
+  EnsureCompatibility_ClaimDerivs_(S);
+
+  // Much like EnsureCompatibility_Deps_, but for all derivatives of
+  // dependencies, as specified by my derivatives and IsDifferentiableWRT.
+  // Requires that all dependencies have evaluators by now.
+  //
+  // Likely this is not overridden
+  EnsureCompatibility_DepDerivs_(S);
+
+  // Optional hook, defaults to empty, that allows enforcing structure on
+  // my_keys prior to going into the logic of how the vector structure of
+  // my_keys relates to that of my dependencies.
+  //
+  // This can be useful to override for evaluators that evaluate multiple of
+  // my_keys -- they often override this to call
+  // EnsureCompatibility_StructureSame_(), which ensures that all of my_keys
+  // have the same structure, even if PKs haven't required that common
+  // structure.
   EnsureCompatibility_Structure_(S);
 
   std::string consistency_policy =
       plist_.get<std::string>("consistency policy", "give to child");
-
   if (consistency_policy == "none") {
-    // Requirements must be set by requiring code.
+    // Structure is set by PKs and parents of this evaluator.  Do not pass my
+    // structure onto my children, and do not get my structure from my
+    // children.  I don't believe this is ever used currently.
+
+    // Set the structure of my derivatives to match the structure of my_keys.
     //
-    // Set requirements on my derivatives.
+    // This could be overridden, for strange implementations, but should have a
+    // special reason for doing so (and I am unaware of any that do so
+    // currently).
     EnsureCompatibility_DerivStructure_(S);
 
-    // Ensure compatibility of children
+    // Recurse through the dependency graph.
+    //
+    // Likely this is never overriden.
     EnsureCompatibility_DepEnsureCompatibility_(S);
 
   } else if (consistency_policy == "give to child") {
-    // Requirements set on my_keys must be provided by my dependencies.  This
+    // Structure of my_keys are passed down to my dependencies.  This
     // is the most common, and also the most commonly customized with minor
     // tweaks to EnsureCompatibility_ToDeps_ implemented by specific
     // evaluators.
 
-    // Set requirements on my derivatives.
+    // Set the structure of my derivatives to match the structure of my_keys.
+    //
+    // This could be overridden, for strange implementations, but should have a
+    // special reason for doing so (and I am unaware of any that do so
+    // currently).
     EnsureCompatibility_DerivStructure_(S);
 
-    // Give my requirements to my children
+    // Set the structure of dependencies based on my structure.
+    //
+    // The default implementation simply sets the structure based on the
+    // structure of the first of my_keys.  It is common to override this,
+    // frequently using helper functions such as other overloads of methods of
+    // the same name, such as providing a special factory, etc.
     EnsureCompatibility_ToDeps_(S);
 
-    // Now that the dependency requirements are set, call EnsureCompatibility
+    // Recurse through the dependency graph.
+    //
+    // Likely this is never overriden.
     EnsureCompatibility_DepEnsureCompatibility_(S);
 
   } else if (Keys::starts_with(consistency_policy, "take from child")) {
     // my_keys structure is set by the structure of my dependencies.  This is
     // most commonly used for evaluators where the structure is based on an
     // unknown, runtime-provided discretization.
+
+    // Recurse through the dependency graph.
     //
-    // First call the dependencies EnsureCompatibility, which will set the
-    // structure of my dependencies.
+    // Likely this is never overriden.
     EnsureCompatibility_DepEnsureCompatibility_(S);
 
-    // Then, take requirements from children
+    // Set the structure of my_keys based on that of my dependencies.
+    //
+    // By default, this takes either the union of intersection of structure of
+    // dependencies, then applies it to all of my_keys.
     EnsureCompatibility_FromDeps_(S, consistency_policy);
 
-    // Finally, push that into derivatives as well
+    // Set the structure of my derivatives to match the structure of my_keys.
+    //
+    // This could be overridden, for strange implementations, but should have a
+    // special reason for doing so (and I am unaware of any that do so
+    // currently).
     EnsureCompatibility_DerivStructure_(S);
   } else {
     Errors::Message msg;
@@ -182,22 +260,6 @@ EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility(State& S)
   }
 }
 
-
-// ---------------------------------------------------------------------------
-// Helper function that does the basics of ensuring requirements of evaluators
-// are met.  Likely this is called by ALL implementations of
-// EnsureCompatibility, whether there is a factory or not.
-// ---------------------------------------------------------------------------
-template <typename Data_t, typename DataFactory_t>
-inline void
-EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility_Basics_(State& S)
-{
-  EnsureCompatibility_ClaimOwnership_(S);
-  EnsureCompatibility_Flags_(S);
-  EnsureCompatibility_Deps_(S);
-  EnsureCompatibility_ClaimDerivs_(S);
-  EnsureCompatibility_DepDerivs_(S);
-}
 
 // ---------------------------------------------------------------------------
 // Helper function that claims ownership of all of my_keys and sets the type.
@@ -391,6 +453,10 @@ EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::EnsureCompati
   const std::vector<std::string>& names,
   const std::vector<AmanziMesh::Entity_kind>& locations,
   const std::vector<int>& num_dofs);
+
+template <>
+Teuchos::Ptr<const Comm_type>
+EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::get_comm_(const State& S) const;
 
 
 using EvaluatorSecondaryMonotypeCV = EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>;
