@@ -60,6 +60,9 @@ class Evaluator {
   // Returns true if key is a field owned by this evaluator, false otherwise.
   virtual bool ProvidesKey(const Key& key, const Tag& tag) const = 0;
 
+  // Requires evaluators for the full dependency graph.
+  virtual void EnsureEvaluators(State& S) = 0;
+
   // Checks that all data requirements on dependencies of this evaluator are
   // satisfied by other evaluators in the dependency graph.
   virtual void EnsureCompatibility(State& S) = 0;

@@ -1,6 +1,4 @@
 # -*- mode: cmake -*-
-
-
 #
 #  Amanzi Tool Kit (ATK)
 #    General utilities

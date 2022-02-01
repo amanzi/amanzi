@@ -101,8 +101,8 @@ TEST(STATE_HETEROGENEOUS_DATA) {
 
   // nonexistent data -- two checks ensure that previous HasRecord() call didn't
   // create the data!
-  CHECK_THROW(s.Get<double>("my_nonexistent_data"), std::exception);
-  CHECK_THROW(s.Get<double>("my_other_nonexistent_data"), std::exception);
+  CHECK_THROW(s.Get<double>("my_nonexistent_data"), Errors::Message);
+  CHECK_THROW(s.Get<double>("my_other_nonexistent_data"), Errors::Message);
 
   // setting data
   s.Assign("my_double", Tags::DEFAULT, "my_double_owner", 1.1);

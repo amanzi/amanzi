@@ -1,15 +1,15 @@
 /*
   State
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon
-
-  An evaluator with no dependencies specified by a function.
 */
+
+//! An evaluator with no dependencies specified by a function.
 
 #ifndef AMANZI_STATE_INDEPENDENT_EVALUATOR_HH_
 #define AMANZI_STATE_INDEPENDENT_EVALUATOR_HH_
@@ -39,6 +39,12 @@ class EvaluatorIndependent_ : public Evaluator {
   virtual Evaluator& operator=(const Evaluator& other) override;
 
   // ---------------------------------------------------------------------------
+  // Step 1 of graph checking -- Requires evaluators for the full dependency
+  // graph.  Nothing to do here.
+  // ---------------------------------------------------------------------------
+  virtual void EnsureEvaluators(State& S) override {}
+
+  // ---------------------------------------------------------------------------
   // Lazy evaluation of the evaluator.
   //
   // Updates the data, if needed.  Returns true if the value of the data has
@@ -64,7 +70,7 @@ class EvaluatorIndependent_ : public Evaluator {
                                    const Tag& wrt_tag) const override final;
 
   virtual void EnsureCompatibility(State& S) override;
-  
+
   virtual std::string WriteToString() const override;
 
  protected:
@@ -97,6 +103,8 @@ public:
     S.Require<Data_t, DataFactory_t>(my_key_, my_tag_, my_key_);
   }
 };
+
+using EvaluatorIndependentCV = EvaluatorIndependent<CompositeVector,CompositeVectorSpace>;
 
 } // namespace Amanzi
 

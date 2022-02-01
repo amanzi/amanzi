@@ -78,14 +78,16 @@ EvaluatorSecondaryMonotypeFromFunction::EvaluatorSecondaryMonotypeFromFunction(
 }
 
 
-Teuchos::RCP<Evaluator> EvaluatorSecondaryMonotypeFromFunction::Clone() const {
+Teuchos::RCP<Evaluator> EvaluatorSecondaryMonotypeFromFunction::Clone() const
+{
   return Teuchos::rcp(new EvaluatorSecondaryMonotypeFromFunction(*this));
 }
 
 
 // These do the actual work
 void EvaluatorSecondaryMonotypeFromFunction::Evaluate_(
-    const State& S, const std::vector<CompositeVector*>& results) {
+    const State& S, const std::vector<CompositeVector*>& results)
+{
   int ndeps = dependencies_.size();
   std::vector<Teuchos::Ptr<const CompositeVector>> deps;
   for (auto& dep : dependencies_) {
@@ -102,7 +104,7 @@ void EvaluatorSecondaryMonotypeFromFunction::Evaluate_(
     for (auto& result : results) {
       result_vecs.emplace_back(result->ViewComponent(comp, false).ptr());
     }
-      
+
     for (int i = 0; i != result_vecs[0]->MyLength(); ++i) {
       std::vector<double> p(ndeps);
       for (int j = 0; j != ndeps; ++j)

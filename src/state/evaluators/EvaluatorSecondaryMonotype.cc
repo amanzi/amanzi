@@ -60,18 +60,16 @@ void EvaluatorSecondaryMonotype<double>::UpdateDerivative_(
       EvaluatePartialDerivative_(S, wrt_key, wrt_tag, tmp);
       for (int i=0; i!=my_keys_.size(); ++i)
         (*results[i]) += tmp_data[i];
-      
 
     } else if (S.GetEvaluator(dep.first, dep.second)
                    .IsDependency(S, wrt_key, wrt_tag)) {
       // partial F / partial dep * ddep/dx
       // note this has already been Updated in the public version of this
       // function
-
       // -- ddep/dx
       const auto &ddep =
           S.GetDerivative<double>(dep.first, dep.second, wrt_key, wrt_tag);
-      
+
       // -- partial F / partial dep
       std::vector<double> tmp_data(my_keys_.size(), 0.);
       std::vector<double*> tmp(my_keys_.size());
@@ -105,11 +103,11 @@ void EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::
 
   // if provides key, then the result is 1
   if (ProvidesKey(wrt_key, wrt_tag)) {
-    Errors::Message msg;
-    msg << "EvaluatorSecondary (" << my_keys_[0].first << "," << my_keys_[0].second.get() 
-        << ") provides key (" << wrt_key << "," << wrt_tag.get() 
-        << ") and so should not be differentiated with respect to this key.";
-    throw(msg);
+    auto keytag = std::make_pair(wrt_key, wrt_tag);
+    int i = std::find(my_keys_.begin(), my_keys_.end(), keytag) - my_keys_.begin();
+    AMANZI_ASSERT(i < my_keys_.size());  // ensured by IsDifferentiableWRT() check previously
+    results[i]->PutScalar(1.);
+    return;
   }
 
   // dF/dx = sum_(deps) partial F/ partial dep * ddep/dx + partial F/partial x
@@ -134,7 +132,7 @@ void EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::
       // -- ddep/dx
       const auto &ddep =
           S.GetDerivative<CompositeVector>(dep.first, dep.second, wrt_key, wrt_tag);
-      
+
       // -- partial F / partial dep
       std::vector<CompositeVector> tmp_data(my_keys_.size(), *results[0]);
       std::vector<CompositeVector*> tmp(my_keys_.size());
@@ -152,154 +150,146 @@ void EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::
 
 
 // ---------------------------------------------------------------------------
-// Ensures that dependencies provide the vector structure we need for this.
+// If multiple of my_keys are evaluated, it can be useful to make sure that all
+// of my keys share the same structure.
 // ---------------------------------------------------------------------------
 template <>
-void EvaluatorSecondaryMonotype<CompositeVector,CompositeVectorSpace>::EnsureCompatibility(State& S)
+void
+EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::EnsureCompatibility_StructureSame_(
+  State& S)
 {
-  // claim ownership, declare type
-  for (auto keytag : my_keys_) {
-    S.Require<CompositeVector,CompositeVectorSpace>(
-        keytag.first, keytag.second, keytag.first);
-  }
-
-  // grab my factory
-  auto keytag = my_keys_[0];
-  auto& my_fac = S.Require<CompositeVector,CompositeVectorSpace>(keytag.first, keytag.second, keytag.first);
-
-  // require existence of derivatives
-  bool has_derivs = false;
-  for (auto keytag : my_keys_)
-    has_derivs |= S.HasDerivativeSet(keytag.first, keytag.second);
-
-  if (has_derivs) {
-    // a derivative on any of my_keys_ means we need it on all other of my_keys_
-    for (const auto& keytag : my_keys_) {
-      if (S.HasDerivativeSet(keytag.first, keytag.second)) {
-        for (const auto& deriv : S.GetDerivativeSet(keytag.first, keytag.second)) {
-          auto wrt = Keys::splitKeyTag(deriv.first.get());
-          for (const auto& other_keytag : my_keys_) {
-            S.RequireDerivative<CompositeVector,CompositeVectorSpace>(
-              other_keytag.first, other_keytag.second,
-              wrt.first, wrt.second, other_keytag.first);
-          }
-        }
-      }
-    }
-  }
-
-  // check plist for vis or checkpointing control
-  EnsureCompatibility_Flags_(S);
-
-  // require evaluators for dependencies
-  for (auto& dep : dependencies_) S.RequireEvaluator(dep.first, dep.second);
-
-  // set requirements on myself, my derivatives, my dependencies, and their derivatives
-  std::string consistency_policy =
-      plist_.get<std::string>("consistency policy", "give to child");
-  if (consistency_policy == "none") {
-    // I must have requirements since I won't get them here.
-    // Set requirements on my derivatives.
-    if (has_derivs) {
-      for (const auto& keytag : my_keys_) {
-        for (const auto& deriv : S.GetDerivativeSet(keytag.first, keytag.second)) {
-          auto wrt = Keys::splitKeyTag(deriv.first.get());
-          S.RequireDerivative<CompositeVector,CompositeVectorSpace>(
-              keytag.first, keytag.second, wrt.first, wrt.second, keytag.first).Update(my_fac);
-        }
-      }
-    }
-
-  } else if (consistency_policy == "give to child" && my_fac.Mesh().get()) {
-    // set my requirements on my derivatives
-    // for a CV, we typically merge two CVSs and run consistency checks
-    if (has_derivs) {
-      for (const auto& keytag : my_keys_) {
-        for (const auto& deriv : S.GetDerivativeSet(keytag.first, keytag.second)) {
-          auto wrt = Keys::splitKeyTag(deriv.first.get());
-          S.RequireDerivative<CompositeVector,CompositeVectorSpace>(
-              keytag.first, keytag.second, wrt.first, wrt.second, keytag.first).Update(my_fac);
-        }
-      }
-    }
-
-    // give my requirements to my children
-    for (const auto& dep : dependencies_) {
-      auto& fac = S.Require<CompositeVector, CompositeVectorSpace>(dep.first, dep.second);
-      fac.Update(my_fac);
-
-      // Set requirements on derivatives too
-      if (has_derivs) {
-        for (const auto& keytag : my_keys_) {
-          for (const auto& deriv : S.GetDerivativeSet(keytag.first, keytag.second)) {
-            auto wrt = Keys::splitKeyTag(deriv.first.get());
-            if (S.GetEvaluator(dep.first, dep.second).IsDifferentiableWRT(S, wrt.first, wrt.second)) {
-              S.RequireDerivative<CompositeVector,CompositeVectorSpace>(
-                  dep.first, dep.second, wrt.first, wrt.second).Update(my_fac);
-            }
-          }
-        }
-      }
-
-      // call ensure compatibility, now that dep requirements are set
-      S.GetEvaluator(dep.first, dep.second).EnsureCompatibility(S);
-    }
-
-  } else if (consistency_policy.substr(0, 15) == "take from child") {
-    // require derivatives of my children
-    if (has_derivs) {
-      for (const auto& keytag : my_keys_) {
-        for (const auto& deriv : S.GetDerivativeSet(keytag.first, keytag.second)) {
-          auto wrt = Keys::splitKeyTag(deriv.first.get());
-          for (const auto& dep : dependencies_) {
-            S.RequireDerivative<CompositeVector,CompositeVectorSpace>(
-                dep.first, dep.second, wrt.first, wrt.second);
-          }
-        }
-      }
-    }
-
-    // then call children to set their info, which will also set up deriv info
-    for (const auto& dep : dependencies_) {
-      S.GetEvaluator(dep.first, dep.second).EnsureCompatibility(S);
-    }
-
-    // take my requirements as the intersection or union of my children
-    CompositeVectorSpace my_space;
-    for (const auto& dep : dependencies_) {
-      const auto& fac = S.Require<CompositeVector, CompositeVectorSpace>(dep.first, dep.second);
-      if (my_space.size() == 0) {
-        my_space = fac;
-      } else {
-        if (!my_space.SameAs(fac)) {
-          if ((consistency_policy == "take from child: intersection" &&
-               fac.SubsetOf(my_space)) ||
-              (consistency_policy == "take from child: union" &&
-               my_space.SubsetOf(fac))) {
-            my_space = fac;
-          }
-        }
-      }
-    }
-
-    // update my facs with this info
-    my_fac.Update(my_space);
-    for (auto keytag : my_keys_) {
-      S.Require<CompositeVector,CompositeVectorSpace>(keytag.first,
-              keytag.second, keytag.first).Update(my_fac);
-    }
-
-    // now push that into my derivative as well
-    if (has_derivs) {
-      for (auto keytag : my_keys_) {
-        for (const auto& deriv : S.GetDerivativeSet(keytag.first, keytag.second)) {
-          auto wrt = Keys::splitKeyTag(deriv.first.get());
-          S.RequireDerivative<CompositeVector,CompositeVectorSpace>(
-              keytag.first, keytag.second, wrt.first, wrt.second, keytag.first).Update(my_fac);
-        }
+  for (const auto& keytag : my_keys_) {
+    const auto& my_fac = S.Require<CompositeVector,CompositeVectorSpace>(keytag.first, keytag.second);
+    for (const auto& keytag_other : my_keys_) {
+      if (keytag != keytag_other) {
+        auto& other_fac = S.Require<CompositeVector,CompositeVectorSpace>(keytag_other.first, keytag_other.second);
+        other_fac.Update(my_fac);
       }
     }
   }
 }
+
+
+// ---------------------------------------------------------------------------
+// Push metadata from my_keys to my_derivs
+//
+// Simply Updates deriv facs with fac of the variable.  Assumes the structure
+// of my_keys has already been set, either by user code, or by calls to
+// dependencies EnsureCompatibility_FromDeps_()
+// ---------------------------------------------------------------------------
+template <>
+void
+EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::EnsureCompatibility_DerivStructure_(
+  State& S)
+{
+  for (const auto& keytag : my_keys_) {
+    if (S.HasDerivativeSet(keytag.first, keytag.second)) {
+      auto my_fac = S.Require<CompositeVector,CompositeVectorSpace>(keytag.first, keytag.second);
+      for (const auto& deriv : S.GetDerivativeSet(keytag.first, keytag.second)) {
+        auto wrt = Keys::splitKeyTag(deriv.first.get());
+        S.RequireDerivative<CompositeVector,CompositeVectorSpace>(
+          keytag.first, keytag.second, wrt.first, wrt.second, keytag.first).Update(my_fac);
+      }
+    }
+  }
+}
+
+
+// ---------------------------------------------------------------------------
+// Get vector structure for my_keys from dependencies.
+// ---------------------------------------------------------------------------
+template <>
+void
+EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::EnsureCompatibility_FromDeps_(
+  State& S, const std::string& consistency_policy)
+{
+  // take my requirements as the intersection or union of my children
+  CompositeVectorSpace combined_dep_fac;
+  for (const auto& dep : dependencies_) {
+    const auto& dep_fac = S.Require<CompositeVector, CompositeVectorSpace>(dep.first, dep.second);
+    if (combined_dep_fac.size() == 0) {
+      combined_dep_fac = dep_fac;
+    } else {
+      if (!combined_dep_fac.SameAs(dep_fac)) {
+        if ((consistency_policy == "take from child: intersection" &&
+             dep_fac.SubsetOf(combined_dep_fac)) ||
+            (consistency_policy == "take from child: union" &&
+             combined_dep_fac.SubsetOf(dep_fac))) {
+          combined_dep_fac = dep_fac;
+        }
+      }
+    }
+  }
+
+  // update my facs with this info
+  for (auto keytag : my_keys_) {
+    S.Require<CompositeVector,CompositeVectorSpace>(keytag.first,
+            keytag.second, keytag.first).Update(combined_dep_fac);
+  }
+}
+
+
+// ---------------------------------------------------------------------------
+// Push my structure to my dependencies.  Default method, using my factory.
+//
+// Note, this is the most frequently overridden entry point for other
+// evaluators.  Most overrides simply choose a different factory to send to
+// their dependencies using the other overload of ToDeps_.  For instance, an
+// upwinding evaluator, which looks to calculate coefficents on faces based on
+// those from cells and boundary faces, might create a CVS on the same mesh but
+// with CELL and BOUNDARY_FACE entries, then call
+//
+//   EnsureCompatibility_ToDeps_(S, cell_bf_fac);
+// ---------------------------------------------------------------------------
+template <>
+void
+EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::EnsureCompatibility_ToDeps_(
+  State& S)
+{
+  auto akeytag = my_keys_.front();
+  const auto& my_fac = S.Require<CompositeVector,CompositeVectorSpace>(akeytag.first, akeytag.second);
+  EnsureCompatibility_ToDeps_(S, my_fac);
+}
+
+// ---------------------------------------------------------------------------
+// Push fac structure to dependencies, potentially change the Mesh based on the
+// domain name.
+// ---------------------------------------------------------------------------
+template <>
+void
+EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::EnsureCompatibility_ToDeps_(
+  State& S, const CompositeVectorSpace& fac)
+{
+  for (const auto& dep : dependencies_) {
+    auto& dep_fac = S.Require<CompositeVector,CompositeVectorSpace>(dep.first, dep.second);
+    dep_fac.Update(fac);
+  }
+}
+
+
+template <>
+void
+EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::EnsureCompatibility_ToDeps_(
+  State& S,
+  const std::vector<std::string>& names,
+  const std::vector<AmanziMesh::Entity_kind>& locations,
+  const std::vector<int>& num_dofs)
+{
+  for (const auto& dep : dependencies_) {
+    auto& dep_fac = S.Require<CompositeVector,CompositeVectorSpace>(dep.first, dep.second);
+    auto domain = Keys::getDomain(dep.first);
+    dep_fac.SetMesh(S.GetMesh(domain))
+      ->AddComponents(names, locations, num_dofs);
+  }
+}
+
+template <>
+Teuchos::Ptr<const Comm_type>
+EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::get_comm_(
+  const State& S) const
+{
+  return S.Get<CompositeVector>(my_keys_.front().first, my_keys_.front().second).Comm().ptr();
+}
+
 
 }  // namespace Amanzi

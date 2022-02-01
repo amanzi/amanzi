@@ -392,6 +392,21 @@ Key guessDomainType(const Key& domain)
 }
 
 
+Key readSuffix(Teuchos::ParameterList& list,
+               const Key& basename,
+               const Key& default_name)
+{
+  std::string basename_key_suffix_arg = basename+" key suffix";
+
+  Key default_key;
+  if (default_name.empty()) {
+    return list.get<std::string>(basename_key_suffix_arg);
+  } else {
+    return list.get<std::string>(basename_key_suffix_arg, default_name);
+  }
+}
+
+
 Key readKey(Teuchos::ParameterList& list,
             const Key& domain,
             const Key& basename,

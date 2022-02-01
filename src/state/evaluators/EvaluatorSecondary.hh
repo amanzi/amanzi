@@ -42,6 +42,9 @@ public:
   virtual Evaluator& operator=(const Evaluator& other) override;
   EvaluatorSecondary& operator=(const EvaluatorSecondary& other);
 
+  // Requires evaluators for the full dependency graph.
+  virtual void EnsureEvaluators(State& S) override;
+
   // ---------------------------------------------------------------------------
   // Answers the question, has this Field changed since it was last requested
   // for Field Key reqest.  Updates the field if needed.
@@ -61,7 +64,8 @@ public:
   virtual bool ProvidesKey(const Key& key, const Tag& tag) const override;
   virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key,
           const Tag& wrt_tag) const override {
-    return IsDependency(S, wrt_key, wrt_tag);
+    // note, provides key means the value is 1, and there may be times we have to use this value...
+    return ProvidesKey(wrt_key, wrt_tag) || IsDependency(S, wrt_key, wrt_tag);
   }
 
   virtual std::string WriteToString() const override;
@@ -71,14 +75,19 @@ protected:
   virtual void Update_(State& S) = 0;
   virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) = 0;
 
+  // may need to check for dependencies on other ranks
+  virtual Teuchos::Ptr<const Comm_type> get_comm_(const State& s) const { return Teuchos::null; }
   void EnsureCompatibility_Flags_(State& S);
 
 protected:
   KeyTagVector my_keys_;
   KeyTagSet dependencies_;
+  bool nonlocal_dependencies_;
 
   KeySet requests_;
   DerivativeTripleSet deriv_requests_;
+
+  bool updated_once_;
 
   Teuchos::ParameterList plist_;
   VerboseObject vo_;

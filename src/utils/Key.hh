@@ -4,7 +4,6 @@
    Amanzi is released under the three-clause BSD License.
    The terms of use and "as is" disclaimer for this license are
    provided in the top-level COPYRIGHT file.
-   See $ATS_DIR/COPYRIGHT
 
    Author: Ethan Coon
 */
@@ -67,6 +66,7 @@
 #include <set>
 #include "Teuchos_ParameterList.hpp"
 #include "Tag.hh"
+#include "FIFO_Set.hh"
 
 namespace Amanzi {
 
@@ -84,7 +84,7 @@ typedef std::set<KeyTriple> KeyTripleSet;
 
 typedef std::pair<Key,Tag> KeyTag;
 typedef std::vector<KeyTag> KeyTagVector;
-typedef std::set<KeyTag> KeyTagSet;
+using KeyTagSet = Utils::FIFO_Set<KeyTag>;
 
 typedef std::tuple<Key,Tag,Key> DerivativeTriple;
 typedef std::set<DerivativeTriple> DerivativeTripleSet;
@@ -233,6 +233,12 @@ Key readDomainHint(Teuchos::ParameterList& plist,
 // Most domains are of a common type, either "domain", "surface", "snow",
 // "canopy", etc.  This tries to guess the type for use in above read calls.
 Key guessDomainType(const Key& domain);
+
+
+// Read a suffix to construct domain sets.
+Key readSuffix(Teuchos::ParameterList& list,
+               const Key& basename,
+               const Key& default_name="");
 
 
 // Read a Key from a parameter list, given some default information Here

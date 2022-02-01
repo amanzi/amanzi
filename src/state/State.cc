@@ -459,13 +459,16 @@ void State::Setup()
 
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  // Ensure compatibility of all the evaluators -- each evaluator's dependencies
-  // must provide what is required of that evaluator.
-  // Since evaluators are added automatically, we need multiple loops.
-  int n(0);
-
-  while (n != evaluator_count()) {
-    n = 0;
+  // Ensure consistency of the dependency graph.  This takes two steps -- the
+  // first pass ensures that all evaluators are present and instantiated,
+  // completed the dag.  The second pass sets data requirements, and makes sure
+  // data requirements are consistent.
+  //
+  // Note that the first pass may modify the graph, but since it is a DAG, and
+  // this is called recursively, we can just call it on the nodes that appear
+  // initially.
+  { // scope for copy
+    EvaluatorMap evaluators_copy(evaluators_);
     for (auto& e : evaluators_) {
       for (auto& r : e.second) {
         if (!r.second->ProvidesKey(e.first, r.first)) {
@@ -477,11 +480,19 @@ void State::Setup()
 
         if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
           Teuchos::OSTab tab1 = vo_->getOSTab();
-          *vo_->os() << n << " checking compatibility: \"" << e.first << "\" + \"" << r.first.get() << "\"\n";
+          *vo_->os() << "ensure evaluators: \"" << e.first << "\" @ \""
+                     << r.first << "\"" << std::endl;
         }
-        r.second->EnsureCompatibility(*this);
+        r.second->EnsureEvaluators(*this);
       }
-      n++;
+    }
+  }
+
+  // Second pass calls EnsureCompatibility, which checks data consistency.
+  // This pass does not modify the graph.
+  for (auto& e : evaluators_) {
+    for (auto& r : e.second) {
+      r.second->EnsureCompatibility(*this);
     }
   }
 

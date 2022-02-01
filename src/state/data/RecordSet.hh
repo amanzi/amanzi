@@ -92,22 +92,22 @@ class RecordSet {
 
   // Data setters/getters
   template <typename T> const T& Get(const Tag& tag = Tags::DEFAULT) const {
-    return records_.at(tag)->Get<T>();
+    return GetRecord(tag).Get<T>();
   }
 
   template <typename T> T& GetW(const Tag& tag, const Key& owner) {
-    return records_.at(tag)->GetW<T>(owner);
+    return GetRecord(tag).GetW<T>(owner);
   }
   template <typename T> T& GetW(const Key& owner) { return GetW<T>(Tags::DEFAULT, owner); }
 
   template <typename T>
   Teuchos::RCP<const T> GetPtr(const Tag& tag = Tags::DEFAULT) const {
-    return records_.at(tag)->GetPtr<T>();
+    return GetRecord(tag).GetPtr<T>();
   }
 
   template <typename T>
   Teuchos::RCP<T> GetPtrW(const Tag& tag, const Key& owner) {
-    return records_.at(tag)->GetPtrW<T>(owner);
+    return GetRecord(tag).GetPtrW<T>(owner);
   }
   template <typename T>
   Teuchos::RCP<T> GetPtrW(const Key& owner) {
@@ -116,7 +116,7 @@ class RecordSet {
 
   template <typename T>
   void SetPtr(const Tag& tag, const Key& owner, const Teuchos::RCP<T>& t) {
-    records_.at(tag)->SetPtr<T>(owner, t);
+    GetRecord(tag).SetPtr<T>(owner, t);
   }
   template <typename T>
   void SetPtr(const Key& owner, const Teuchos::RCP<T>& t) {
@@ -125,7 +125,7 @@ class RecordSet {
 
   template <typename T>
   void Assign(const Tag& tag, const Key& owner, const T& t) {
-    records_.at(tag)->Assign<T>(owner, t);
+    GetRecord(tag).Assign<T>(owner, t);
   }
   template <typename T>
   void Assign(const Key& owner, const T& t) {

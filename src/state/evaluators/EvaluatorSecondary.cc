@@ -22,7 +22,9 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
     : plist_(plist),
-      vo_(Keys::cleanPListName(plist.name()), plist)
+      vo_(Keys::cleanPListName(plist.name()), plist),
+      updated_once_(false),
+      nonlocal_dependencies_(false)
 {
   type_ = EvaluatorType::SECONDARY;
 
@@ -67,7 +69,7 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
     msg << "EvaluatorSecondary: " << plist.name() << " processed no key-tag pairs.";
     throw(msg);
   }
-    
+
   // process the plist for dependencies
   if (plist_.isParameter("dependencies")) {
     auto deps = plist_.get<Teuchos::Array<std::string>>("dependencies");
@@ -129,6 +131,8 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
       throw(message);
     }
   }
+
+  nonlocal_dependencies_ = plist_.get<bool>("includes non-rank-local dependencies", false);
 }
 
 
@@ -155,6 +159,27 @@ EvaluatorSecondary& EvaluatorSecondary::operator=(const EvaluatorSecondary& othe
 }
 
 
+// ---------------------------------------------------------------------------
+// Step 1 of graph checking -- Requires evaluators for the full dependency
+// graph.
+// ---------------------------------------------------------------------------
+void EvaluatorSecondary::EnsureEvaluators(State& S)
+{
+  // first make sure that we have evaluators for all of _our_ keys.  Note that
+  // we may not, as not all of my_keys_ may be required.
+  for (const auto& my_key_tag : my_keys_) {
+    S.RequireEvaluator(my_key_tag.first, my_key_tag.second);
+  }
+
+  // next make sure that all dependencies have evaluators, and call
+  // EnsureEvaluators recursively to fill out the dependency graph
+  for (const auto& dep : dependencies_) {
+    auto& dep_eval = S.RequireEvaluator(dep.first, dep.second);
+    dep_eval.EnsureEvaluators(S);
+  }
+}
+
+
 // -----------------------------------------------------------------------------
 // Answers the question, has this Field changed since it was last requested
 // for Field Key reqest.  Updates the field if needed.
@@ -174,6 +199,23 @@ bool EvaluatorSecondary::Update(State& S, const Key& request)
   for (auto& dep : dependencies_) {
     update |= S.GetEvaluator(dep.first, dep.second)
         .Update(S, Keys::getKey(my_keys_[0].first, my_keys_[0].second));
+  }
+
+  if (!updated_once_) {
+    // force always updating once
+    update = true;
+    updated_once_ = true;
+  }
+
+  // check if nonlocal for changes in offprocess dependencies
+  if (nonlocal_dependencies_) {
+    auto comm = get_comm_(S);
+    if (comm != Teuchos::null) {
+      int update_l = update;
+      int update_g = 0;
+      comm->MaxAll(&update_l, &update_g, 1);
+      update |= update_g;
+    }
   }
 
   if (update) {
@@ -248,6 +290,17 @@ bool EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
     }
   }
 
+  // check if nonlocal for changes in offprocess dependencies
+  if (nonlocal_dependencies_) {
+    auto comm = get_comm_(S);
+    if (comm != Teuchos::null) {
+      int update_l = update;
+      int update_g = 0;
+      comm->MaxAll(&update_l, &update_g, 1);
+      update |= update_g;
+    }
+  }
+
   // Do the update
   DerivativeTriple request = std::make_tuple(wrt_key, wrt_tag, requestor);
   if (update) {
@@ -260,6 +313,7 @@ bool EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
     deriv_requests_.clear();
     deriv_requests_.insert(request);
     return true;
+
   } else {
     // Otherwise, simply service the request
     if (deriv_requests_.find(request) == deriv_requests_.end()) {
