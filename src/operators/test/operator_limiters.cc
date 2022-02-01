@@ -33,7 +33,9 @@
 #include "OperatorDefs.hh"
 #include "ReconstructionCellGrad.hh"
 
-const std::string LIMITERS[8] = {"B-J", "Tensorial", "Tens. c2c", "Kuzmin", "B-J c2c", "B-J all", "M-G all", "B-J node"};
+const std::string LIMITERS[9] = {"B-J", "Tensorial", "Tens. c2c", "Kuzmin",
+                                 "B-J c2c", "B-J all", "M-G all", "B-J node",
+                                 "B-J ext"};
 
 /* *****************************************************************
 * Limiters must be 1 on linear functions in two dimensions
@@ -72,7 +74,7 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
     }
   }
 
-  for (int i = 0; i < 8; i++) {
+  for (int i = 0; i < 9; i++) {
     std::vector<int> bc_model;
     std::vector<double> bc_value;
     Teuchos::ParameterList plist;
@@ -102,6 +104,10 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
       plist.set<std::string>("limiter", "Barth-Jespersen")
            .set<std::string>("limiter stencil", "cell to all cells")
            .set<std::string>("limiter location", "node");
+    } else if (i == 8) {
+      plist.set<std::string>("limiter", "Barth-Jespersen")
+           .set<std::string>("limiter stencil", "cell to all cells")
+           .set<bool>("use external controls", true);
     }
 
     if (i != 3) {
@@ -131,6 +137,15 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
       }
     }
 
+    // Set control 
+    auto controls = Teuchos::rcp(new std::vector<std::vector<AmanziGeometry::Point> >(ncells_owned));
+    if (i == 8) {
+      for (int c = 0; c < ncells_owned; ++c) {
+        const auto& xc = mesh->cell_centroid(c);
+        (*controls)[c].push_back(xc);
+      }
+    }
+
     // Compute reconstruction
     ReconstructionCellGrad lifting(mesh);
     lifting.Init(plist);
@@ -139,6 +154,7 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
     // Apply limiter
     LimiterCell limiter(mesh);
     limiter.Init(plist);
+    if (i == 8) limiter.set_controls(controls);
     limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
 
     // calculate gradient error.

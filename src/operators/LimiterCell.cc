@@ -47,6 +47,7 @@ LimiterCell::LimiterCell(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
     component_(0),
     flux_(Teuchos::null),
     external_bounds_(false),
+    external_controls_(false),
     cfl_(1.0)
 {
   dim = mesh_->space_dimension();
@@ -132,6 +133,7 @@ void LimiterCell::Init(Teuchos::ParameterList& plist,
 
   cfl_ = plist.get<double>("limiter cfl", 1.0);
   external_bounds_ = plist.get<bool>("use external bounds", false);
+  external_controls_ = plist.get<bool>("use external controls", false);
   limiter_points_ = plist.get<int>("limiter points", 1);
   limiter_correction_ = plist.get<bool>("limiter extension for transport", false);
 }
@@ -193,6 +195,11 @@ void LimiterCell::ApplyLimiter(
 
   if (external_bounds_ && bounds_ == Teuchos::null) {
     Errors::Message msg("External bounds for limiters are requested but not provided");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  if (external_controls_ && controls_ == Teuchos::null) {
+    Errors::Message msg("External control points for limiters are requested but not provided");
     Exceptions::amanzi_throw(msg);
   }
 
@@ -451,18 +458,29 @@ void LimiterCell::LimiterScalar_(
     for (int k = 0; k < dim; ++k) gradient_c[k] = grad[k][c];
 
     // only two options for control points are supported
-    if (location_ == AmanziMesh::FACE) 
+    int x, nents(0);
+    if (external_controls_) {
+      nents = (*controls_)[c].size();
+    } else if (location_ == AmanziMesh::FACE) {
       mesh_->cell_get_faces(c, &ents);
-    else 
+      nents = ents.size();
+    } else if (location_ == AmanziMesh::NODE) {
       mesh_->cell_get_nodes(c, &ents);
+      nents = ents.size();
+    } else {
+      AMANZI_ASSERT(false);
+    }
 
-    int nents = ents.size();
     for (int i = 0; i < nents; i++) {
-      int x = ents[i];
-      if (location_ == AmanziMesh::FACE) {
+      if (external_controls_) {
+        x = c;
+        u1_add = gradient_c * ((*controls_)[c][i] - xc);
+      } else if (location_ == AmanziMesh::FACE) {
+        x = ents[i];
         const AmanziGeometry::Point& xf = mesh_->face_centroid(x);
         u1_add = gradient_c * (xf - xc);
-      } else {
+      } else if (location_ == AmanziMesh::NODE) {
+        x = ents[i];
         mesh_->node_get_coordinates(x, &xv);
         u1_add = gradient_c * (xv - xc);
       }

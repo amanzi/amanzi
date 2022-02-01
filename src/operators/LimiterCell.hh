@@ -113,6 +113,7 @@ class LimiterCell {
   // modifiers
   void set_gradient(const Teuchos::RCP<CompositeVector>& gradient) { gradient_ = gradient; }
   void set_bounds(const Teuchos::RCP<CompositeVector>& bounds) { bounds_ = bounds; }
+  void set_controls(const Teuchos::RCP<std::vector<std::vector<AmanziGeometry::Point> > >& controls) { controls_ = controls; }
  
  private:
   // scalar limiters
@@ -178,9 +179,12 @@ class LimiterCell {
 
   int type_, stencil_id_, location_;
   bool limiter_correction_, external_bounds_;
-  double cfl_;
 
   int limiter_points_;  // number of Gauss points on faces where limiting occurs
+  bool external_controls_;
+  Teuchos::RCP<std::vector<std::vector<AmanziGeometry::Point> > > controls_;
+
+  double cfl_;
 };
 
 }  // namespace Operators

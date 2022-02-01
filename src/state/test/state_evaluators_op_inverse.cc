@@ -361,7 +361,6 @@ void test_inverse(const std::string& discretization) {
   amg_p.set("verbosity", 0);
 
   re_list.set<std::string>("iterative method", "pcg");
-  auto& pcg_p = re_list.sublist("pcg parameters");
   
   re_list.setName("residual");
   auto r_eval = Teuchos::rcp(new Evaluator_OperatorApply(re_list));
