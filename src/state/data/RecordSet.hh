@@ -155,6 +155,16 @@ class RecordSet {
     GetFactory<T, NullFactory>();  // checks valid type
   }
 
+  template <typename T, typename F>
+  bool ValidType() {
+    return factory_.ValidType<T,F>();
+  }
+
+  template <typename T>
+  bool ValidType() {
+    return factory_.ValidType<T>();
+  }
+
   // initialization of set is the collective (AND) operation
   bool isInitialized(Tag& failed);
   void initializeTags(bool initialized = true) {

@@ -46,13 +46,13 @@ class TestEnthalpyEvaluator : public EnthalpyEvaluator {
   explicit TestEnthalpyEvaluator(Teuchos::ParameterList& plist) :
       EnthalpyEvaluator(plist) {};
 
-  virtual Teuchos::RCP<Evaluator> Clone() const {
+  virtual Teuchos::RCP<Evaluator> Clone() const override {
     return Teuchos::rcp(new TestEnthalpyEvaluator(*this));
   }
 
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void Evaluate_(
-          const State& S, const std::vector<CompositeVector*>& results) {
+          const State& S, const std::vector<CompositeVector*>& results) override {
     for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
       const auto& temp_c = *S.Get<CompositeVector>("temperature").ViewComponent(*comp);
       auto& result_c = *results[0]->ViewComponent(*comp);
@@ -65,7 +65,7 @@ class TestEnthalpyEvaluator : public EnthalpyEvaluator {
 
   virtual void EvaluatePartialDerivative_(
           const State& S, const Key& wrt_key, const Tag& wrt_tag,
-          const std::vector<CompositeVector*>& results) {
+          const std::vector<CompositeVector*>& results) override {
     for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
       auto& result_c = *results[0]->ViewComponent(*comp);
       int ncomp = results[0]->size(*comp, false);
@@ -75,7 +75,8 @@ class TestEnthalpyEvaluator : public EnthalpyEvaluator {
     }
   }
 
-  virtual double EvaluateFieldSingle(const Teuchos::Ptr<State>& S, int c, double T) { return 0.0; }
+  using EnthalpyEvaluator::EvaluateFieldSingle;
+  double EvaluateFieldSingle(const Teuchos::Ptr<State>& S, int c, double T) { return 0.0; }
 };
 
 }  // namespace Amanzi

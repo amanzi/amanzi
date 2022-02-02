@@ -319,7 +319,7 @@ EvaluatorSecondaryMonotype<Data_t,DataFactory_t>::EnsureCompatibility_Deps_(
   State& S)
 {
   for (auto& dep : dependencies_) {
-    auto& depfac = S.Require<Data_t,DataFactory_t>(dep.first, dep.second);
+    S.Require<Data_t,DataFactory_t>(dep.first, dep.second);
   }
 }
 

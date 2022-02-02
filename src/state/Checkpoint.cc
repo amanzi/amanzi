@@ -175,11 +175,11 @@ void Checkpoint::Write(const State& S,
                        Amanzi::ObservationData* obs_data)
 {
   if (!is_disabled()) {
-    CreateFile(S.cycle());
+    CreateFile(S.get_cycle());
 
     // create hard link to the final file
     if (final && S.GetMesh()->get_comm()->MyPID() == 0)
-      CreateFinalFile(S.cycle());
+      CreateFinalFile(S.get_cycle());
 
     for (auto it = S.data_begin(); it != S.data_end(); ++it) {
       it->second->WriteCheckpoint(*this);

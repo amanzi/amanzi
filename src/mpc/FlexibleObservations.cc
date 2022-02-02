@@ -126,7 +126,7 @@ int FlexibleObservations::MakeObservations(State& S)
 
   // loop over all observables
   for (std::map<std::string, Teuchos::RCP<Observable> >::iterator i = observations.begin(); i != observations.end(); i++) {
-    if ((i->second)->DumpRequested(S.get_time()) || (i->second)->DumpRequested(S.cycle())) {
+    if ((i->second)->DumpRequested(S.get_time()) || (i->second)->DumpRequested(S.get_cycle())) {
       num_obs++;          
       
       // we need to make an observation for each variable in the observable

@@ -21,10 +21,10 @@ namespace Amanzi {
 // Constructor
 // -----------------------------------------------------------------------------
 EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
-    : plist_(plist),
-      vo_(Keys::cleanPListName(plist.name()), plist),
+    : nonlocal_dependencies_(false),
       updated_once_(false),
-      nonlocal_dependencies_(false)
+      plist_(plist),
+      vo_(Keys::cleanPListName(plist.name()), plist)
 {
   type_ = EvaluatorType::SECONDARY;
 

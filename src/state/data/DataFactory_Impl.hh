@@ -1,13 +1,13 @@
 /*
-  State
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon
+*/
 
+/*
   Basic factory wrapper that may store heterogeneous data and
   create heterogeneous Data objects to put into State.
 
@@ -15,7 +15,7 @@
 
   Implementation details of the underlying classes that do type erasure.
   If I were smarter, these could probably be made private members of
-  the public class, but then the non-member constructors would need to 
+  the public class, but then the non-member constructors would need to
   be friends, etc.
 */
 
@@ -107,7 +107,7 @@ public:
 
 // thing factory base class implementation
 template <typename T, typename F> bool DataFactory_Intf::ValidType() const {
-  auto p = dynamic_cast<DataFactory_Impl<T, F>* >(this);
+  auto p = dynamic_cast<const DataFactory_Impl<T, F>* >(this);
   if (!p) {
     return false;
   } else {
