@@ -557,12 +557,13 @@ class State {
   void set_time(double value) { Assign("time", Tags::DEFAULT, "time", value); }
 
   void advance_time(const Tag& tag, double dt) {
-    Assign("time", tag, "time", Get<double>("time", tag) + dt);
+    Assign("time", tag, "time", get_time(tag) + dt);
   }
   void advance_time(double dt) {
-    Assign("time", Tags::DEFAULT, "time", Get<double>("time", Tags::DEFAULT) + dt);
+    advance_time(Tags::DEFAULT, dt);
   }
 
+  // can these go away in favor of time at different tags?
   double final_time() const { return final_time_; }
   void set_final_time(double new_time) { final_time_ = new_time; }
   double intermediate_time() const { return intermediate_time_; }
@@ -574,10 +575,14 @@ class State {
   void set_initial_time( double initial_time) { initial_time_ = initial_time; }
 
   // Cycle accessor and mutators.
-  int cycle() const { return Get<int>("cycle", Tags::DEFAULT); }
-  void set_cycle(int cycle) { Assign("cycle", Tags::DEFAULT, "cycle", cycle); }
-  void advance_cycle(int dcycle = 1) {
-    Assign("cycle", Tags::DEFAULT, "cycle", Get<int>("cycle", Tags::DEFAULT) + dcycle);
+  void require_cycle(const Tag& tag) { Require<int>("cycle", tag); }
+  int get_cycle(Tag tag = Tags::DEFAULT) const {
+    return Get<int>("cycle", tag);
+  }
+  void set_cycle(Tag tag, int cycle) { Assign("cycle", tag, "cycle", cycle); }
+  void set_cycle(int cycle) { set_cycle(Tags::DEFAULT, cycle); }
+  void advance_cycle(Tag tag = Tags::DEFAULT, int dcycle = 1) {
+    Assign("cycle", tag, "cycle", get_cycle(tag) + dcycle);
   }
 
   // Position accessor and mutators.

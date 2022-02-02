@@ -115,6 +115,15 @@ template <typename T, typename F> bool DataFactory_Intf::ValidType() const {
   }
 }
 
+template <typename T> bool DataFactory_Intf::ValidType() const {
+  auto p = dynamic_cast<DataFactory_Impl<T, F>* >(this);
+  if (!p) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
 template <typename T, typename F> const F& DataFactory_Intf::Get() const {
   auto p = dynamic_cast<DataFactory_Impl<T, F>* >(this);
   if (!p) {

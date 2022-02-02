@@ -391,6 +391,12 @@ Teuchos::RCP<const Functions::MeshPartition> State::GetMeshPartition_(Key key)
 
 void State::WriteDependencyGraph() const
 {
+  // FIXME -- this is not what it used to be.  This simply writes data
+  // struture, and is not the dependency graph information at all.  Rename
+  // this, then recover the old WriteDependencyGraph method, which wrote a list
+  // of all evaluators and their dependnecies that could be read in networkx
+  // for plotting the dag. --ETC
+
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "------------------------------------------" << std::endl
                << "Dependency & Structure list for evaluators" << std::endl
@@ -428,7 +434,8 @@ void State::WriteDependencyGraph() const
 // State handles model parameters.
 // -----------------------------------------------------------------------------
 Teuchos::ParameterList
-State::GetModelParameters(std::string modelname) {
+State::GetModelParameters(std::string modelname)
+{
   AMANZI_ASSERT(state_plist_.isSublist("model parameters"));
   Teuchos::ParameterList model_plist = state_plist_.sublist("model parameters");
   AMANZI_ASSERT(model_plist.isSublist(modelname));
@@ -503,12 +510,11 @@ void State::Setup()
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
       *vo_->os() << "RecordSet \"" << r.first << "\", tags: ";
 
-      auto& field = GetRecord(r.first);
       for(auto& e : *r.second) *vo_->os() << "\"" << e.first.get() << "\" ";
-      if (field.ValidType<CompositeVector>()) {
-        const auto& cv = Get<CompositeVector>(r.first);
+      if (r.second->ValidType<CompositeVectorSpace, CompositeVector>()) {
+        const auto& cvs = r.second.GetFactory<CompositeVector,CompositeVectorSpace>();
         *vo_->os() << "comps: ";
-        for (auto comp = cv.begin(); comp != cv.end(); ++comp) *vo_->os() << *comp << " ";
+        for (const auto& comp : cvs) *vo_->os() << *comp << " ";
       } else {
         *vo_->os() << "not CV";
       }

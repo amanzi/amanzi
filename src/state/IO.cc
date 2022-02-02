@@ -1,9 +1,9 @@
 /*
   State
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon
@@ -18,7 +18,7 @@
 #include <boost/format.hpp>
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Epetra_Vector.h"
-#include "exodusII.h" 
+#include "exodusII.h"
 
 // Amanzi
 #include "CompositeVector.hh"
@@ -41,14 +41,14 @@ void WriteVis(Visualization& vis, const State& S)
   if (!vis.is_disabled()) {
     // Create the new time step
     const auto& tag = vis.get_tag();
-    vis.CreateTimestep(S.get_time(), S.cycle(), tag.get());
+    vis.CreateTimestep(S.get_time(), S.get_cycle(), tag.get());
 
     for (auto r = S.data_begin(); r != S.data_end(); ++r) {
       // note, no type checking is required -- the type knows if it can be
       // visualized. However, since overwriting of attributes does not work
-      // properly, we skip them. FIXME 
+      // properly, we skip them. FIXME
       for (const auto& e : *r->second) {
-        if (!e.second->ValidType<double>() && !e.second->ValidType<int>()) 
+        if (!e.second->ValidType<double>() && !e.second->ValidType<int>())
           e.second->WriteVis(vis);
       }
     }
@@ -67,7 +67,7 @@ void WriteCheckpoint(Checkpoint& chkp, const Comm_ptr_type& comm,
 {
   if (!chkp.is_disabled()) {
     // chkp.SetFinal(final);
-    chkp.CreateFile(S.cycle());
+    chkp.CreateFile(S.get_cycle());
     for (auto r = S.data_begin(); r != S.data_end(); ++r) {
       r->second->WriteCheckpoint(chkp);
     }
@@ -80,7 +80,7 @@ void WriteCheckpoint(Checkpoint& chkp, const Comm_ptr_type& comm,
 // -----------------------------------------------------------------------------
 // Non-member function for checkpointing.
 // -----------------------------------------------------------------------------
-void ReadCheckpoint(const Comm_ptr_type& comm, State& S, 
+void ReadCheckpoint(const Comm_ptr_type& comm, State& S,
                     const std::string& filename)
 {
   Checkpoint chkp(filename, comm);
@@ -90,7 +90,7 @@ void ReadCheckpoint(const Comm_ptr_type& comm, State& S,
   chkp.Read("mpi_num_procs", num_procs);
   if (comm->NumProc() != num_procs) {
     std::stringstream ss;
-    ss << "Requested checkpoint file " << filename << " was created on " 
+    ss << "Requested checkpoint file " << filename << " was created on "
        << num_procs << " processes, making it incompatible with this run on "
        << comm->NumProc() << " processes.";
     Errors::Message message(ss.str());
@@ -175,7 +175,7 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
   double* tmp_data(NULL);
 
   checkpoint.readDataString(&tmp_labels, &nlabels, "obs_names");
-  if (nlabels > 0) { 
+  if (nlabels > 0) {
     checkpoint.readAttrInt(&nobs, &nlabels, "obs_numbers");
   }
   for (int i = 0; i < nlabels; ++i) ndata_glb += 2 * nobs[i];
@@ -205,7 +205,7 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
   if (nlabels > 0) {
     free(tmp_labels);
     free(nobs);
-    if (tmp_data != NULL) free(tmp_data); 
+    if (tmp_data != NULL) free(tmp_data);
   }
 }
 
@@ -257,29 +257,29 @@ void DeformCheckpointMesh(State& S, Key domain)
 // Reads cell-based varibles as attributes.
 // It recongnizes parallel and serial inputs.
 // -----------------------------------------------------------------------------
-void ReadVariableFromExodusII(Teuchos::ParameterList& plist, CompositeVector& var) 
-{ 
-  Epetra_MultiVector& var_c = *var.ViewComponent("cell"); 
-  int nvectors = var_c.NumVectors(); 
- 
-  std::string file_name = plist.get<std::string>("file"); 
-  std::vector<std::string> attributes = 
-      plist.get<Teuchos::Array<std::string> >("attributes").toVector(); 
- 
-  // open ExodusII file 
+void ReadVariableFromExodusII(Teuchos::ParameterList& plist, CompositeVector& var)
+{
+  Epetra_MultiVector& var_c = *var.ViewComponent("cell");
+  int nvectors = var_c.NumVectors();
+
+  std::string file_name = plist.get<std::string>("file");
+  std::vector<std::string> attributes =
+      plist.get<Teuchos::Array<std::string> >("attributes").toVector();
+
+  // open ExodusII file
   auto comm = var.Comm();
- 
-  if (comm->NumProc() > 1) { 
+
+  if (comm->NumProc() > 1) {
     int ndigits = (int)floor(log10(comm->NumProc())) + 1;
     std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
     file_name = boost::str(boost::format(fmt) % file_name % comm->NumProc() % comm->MyPID());
-  } 
- 
-  int CPU_word_size(8), IO_word_size(0), ierr; 
-  float version; 
-  int exoid = ex_open(file_name.c_str(), EX_READ, &CPU_word_size, &IO_word_size, &version); 
+  }
+
+  int CPU_word_size(8), IO_word_size(0), ierr;
+  float version;
+  int exoid = ex_open(file_name.c_str(), EX_READ, &CPU_word_size, &IO_word_size, &version);
   if (comm->MyPID() == 0) {
-    printf("Trying file: %s ws=%d %d  id=%d\n", file_name.c_str(), CPU_word_size, IO_word_size, exoid); 
+    printf("Trying file: %s ws=%d %d  id=%d\n", file_name.c_str(), CPU_word_size, IO_word_size, exoid);
   }
 
   // check if we have to use serial file
@@ -292,28 +292,28 @@ void ReadVariableFromExodusII(Teuchos::ParameterList& plist, CompositeVector& va
     Errors::Message msg("Rao is working on new data layout which we need to proceed.");
     Exceptions::amanzi_throw(msg);
 
-    file_name = plist.get<std::string>("file"); 
+    file_name = plist.get<std::string>("file");
     distributed_data = false;
     if (comm->MyPID() == 0) {
-      exoid = ex_open(file_name.c_str(), EX_READ, &CPU_word_size, &IO_word_size, &version); 
-      printf("Opening file: %s ws=%d %d  id=%d\n", file_name.c_str(), CPU_word_size, IO_word_size, exoid); 
+      exoid = ex_open(file_name.c_str(), EX_READ, &CPU_word_size, &IO_word_size, &version);
+      printf("Opening file: %s ws=%d %d  id=%d\n", file_name.c_str(), CPU_word_size, IO_word_size, exoid);
     }
   } else if (fail > 0) {
     Errors::Message msg("A few parallel Exodus files are missing, but not all.");
     Exceptions::amanzi_throw(msg);
   }
 
-  // read database parameters 
-  if (comm->MyPID() == 0 || distributed_data) {  
-    int dim, num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets; 
-    char title[MAX_LINE_LENGTH + 1]; 
-    ierr = ex_get_init(exoid, title, &dim, &num_nodes, &num_elem, 
-                       &num_elem_blk, &num_node_sets, &num_side_sets); 
- 
-    int* ids = (int*) calloc(num_elem_blk, sizeof(int)); 
-    ierr = ex_get_ids(exoid, EX_ELEM_BLOCK, ids); 
- 
-    // read number of variables 
+  // read database parameters
+  if (comm->MyPID() == 0 || distributed_data) {
+    int dim, num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets;
+    char title[MAX_LINE_LENGTH + 1];
+    ierr = ex_get_init(exoid, title, &dim, &num_nodes, &num_elem,
+                       &num_elem_blk, &num_node_sets, &num_side_sets);
+
+    int* ids = (int*) calloc(num_elem_blk, sizeof(int));
+    ierr = ex_get_ids(exoid, EX_ELEM_BLOCK, ids);
+
+    // read number of variables
     int num_vars;
     auto obj_type = ex_var_type_to_ex_entity_type('e');
     ierr = ex_get_variable_param(exoid, obj_type, &num_vars);
@@ -338,36 +338,36 @@ void ReadVariableFromExodusII(Teuchos::ParameterList& plist, CompositeVector& va
       printf("Variable \"%s\" has index %d.\n", attributes[k].c_str(), var_index);
 
       // read variable with the k-th attribute
-      int offset = 0; 
-      char elem_type[MAX_LINE_LENGTH + 1]; 
-      for (int i = 0; i < num_elem_blk; i++) { 
-        int num_elem_this_blk, num_attr, num_nodes_elem; 
-        ierr = ex_get_block(exoid, EX_ELEM_BLOCK, ids[i], elem_type, &num_elem_this_blk, 
-                            &num_nodes_elem, 0, 0, &num_attr); 
- 
-        double* var_values = (double*) calloc(num_elem_this_blk, sizeof(double)); 
-        ierr = ex_get_var(exoid, 1, EX_ELEM_BLOCK, var_index, ids[i], num_elem_this_blk, var_values); 
- 
-        for (int n = 0; n < num_elem_this_blk; n++) { 
-          int c = n + offset; 
-          var_c[k][c] = var_values[n]; 
-        } 
-        free(var_values); 
-        printf("MyPID=%d  ierr=%d  id=%d  ncells=%d\n", comm->MyPID(), ierr, ids[i], num_elem_this_blk); 
- 
-        offset += num_elem_this_blk; 
-      } 
-      ncells = offset; 
+      int offset = 0;
+      char elem_type[MAX_LINE_LENGTH + 1];
+      for (int i = 0; i < num_elem_blk; i++) {
+        int num_elem_this_blk, num_attr, num_nodes_elem;
+        ierr = ex_get_block(exoid, EX_ELEM_BLOCK, ids[i], elem_type, &num_elem_this_blk,
+                            &num_nodes_elem, 0, 0, &num_attr);
+
+        double* var_values = (double*) calloc(num_elem_this_blk, sizeof(double));
+        ierr = ex_get_var(exoid, 1, EX_ELEM_BLOCK, var_index, ids[i], num_elem_this_blk, var_values);
+
+        for (int n = 0; n < num_elem_this_blk; n++) {
+          int c = n + offset;
+          var_c[k][c] = var_values[n];
+        }
+        free(var_values);
+        printf("MyPID=%d  ierr=%d  id=%d  ncells=%d\n", comm->MyPID(), ierr, ids[i], num_elem_this_blk);
+
+        offset += num_elem_this_blk;
+      }
+      ncells = offset;
     }
 
     for (int i = 0; i < num_vars; i++) {
       free(var_names[i]);
     }
- 
-    ierr = ex_close(exoid); 
-    printf("Closing file: %s ncells=%d error=%d\n", file_name.c_str(), ncells, ierr); 
+
+    ierr = ex_close(exoid);
+    printf("Closing file: %s ncells=%d error=%d\n", file_name.c_str(), ncells, ierr);
   }
-} 
+}
 
 
 // -----------------------------------------------------------------------------
@@ -401,7 +401,7 @@ void WriteStateStatistics(const State& S, const VerboseObject& vo)
             std::string namedot(Keys::getKey(name, r.first)), name_comp(c_it->first);
             if (vmin.size() != 1) namedot.append("." + name_comp);
             namedot.resize(40, '.');
-            *vo.os() << namedot << " " << c_it->second << " / " 
+            *vo.os() << namedot << " " << c_it->second << " / "
                      << vmax[name_comp] << " / " << vavg[name_comp] << std::endl;
           }
 

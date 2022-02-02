@@ -112,7 +112,7 @@ void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
     if (write_) InitFile_();
   }
 
-  bool dump_requested = DumpRequested(S->cycle(), S->get_time());
+  bool dump_requested = DumpRequested(S->get_cycle(), S->get_time());
   if (time_integrated_) {
     if (dump_requested) {
       std::vector<double> observation(num_total_, Observable::nan);
