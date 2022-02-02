@@ -512,9 +512,9 @@ void State::Setup()
 
       for(auto& e : *r.second) *vo_->os() << "\"" << e.first.get() << "\" ";
       if (r.second->ValidType<CompositeVectorSpace, CompositeVector>()) {
-        const auto& cvs = r.second.GetFactory<CompositeVector,CompositeVectorSpace>();
+        const auto& cvs = r.second->GetFactory<CompositeVector,CompositeVectorSpace>();
         *vo_->os() << "comps: ";
-        for (const auto& comp : cvs) *vo_->os() << *comp << " ";
+        for (const auto& comp : cvs) *vo_->os() << comp << " ";
       } else {
         *vo_->os() << "not CV";
       }
@@ -561,6 +561,9 @@ void State::Initialize()
 }
 
 
+//
+// NOTE: this method assumes all Records have a DEFAULT tag
+//
 void State::Initialize(const State& other)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
@@ -570,10 +573,10 @@ void State::Initialize(const State& other)
   }
 
   for (auto& e : data_) {
-    if (other.HasRecord(e.first)) {
-      auto owner = GetRecord(e.first).owner();
-      auto& field = GetRecordW(e.first, owner);
-      const auto& copy = other.GetRecord(e.first);
+    if (other.HasRecord(e.first, Tags::DEFAULT)) {
+      auto owner = GetRecord(e.first, Tags::DEFAULT).owner();
+      auto& field = GetRecordW(e.first, Tags::DEFAULT, owner);
+      const auto& copy = other.GetRecord(e.first, Tags::DEFAULT);
 
       if (copy.initialized()) {
         field.Assign(copy);
@@ -636,11 +639,14 @@ void State::InitializeFieldCopies(const Tag& reference_tag)
 }
 
 
-void State::InitializeFields()
+void State::InitializeFields(const Tag& tag)
 {
   bool pre_initialization = false;
   VerboseObject vo("State", state_plist_);
 
+  // this directly overlaps with "initial conditions" --> "varname" -->
+  // "restart file" capability, but is done globally instead of by variable.
+  // Can the be refactored to use that instead?
   if (state_plist_.isParameter("initialization filename")) {
     pre_initialization = true;
     std::string filename = state_plist_.get<std::string>("initialization filename");
@@ -648,13 +654,16 @@ void State::InitializeFields()
     // file_input.open_h5file();
 
     for (auto it = data_.begin(); it != data_.end(); ++it) {
-      auto owner = GetRecord(it->first).owner();
-      auto& r = GetRecordW(it->first, owner);
+      auto owner = GetRecord(it->first, tag).owner();
+      auto& r = GetRecordW(it->first, tag, owner);
       if (r.ValidType<CompositeVector>()) {
         r.ReadCheckpoint(file_input);
 
-        if (HasEvaluator(it->first)) {
-          Evaluator& fm = GetEvaluator(it->first);
+        // this is pretty hacky -- why are these ICs not in the PK's list?  And
+        // if they aren't owned by a PK, they should be independent variables
+        // not primary variables.
+        if (HasEvaluator(it->first, tag)) {
+          Evaluator& fm = GetEvaluator(it->first, tag);
           auto tmp = dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace>* >(&fm);
           if (tmp != nullptr) {
             tmp->SetChanged();

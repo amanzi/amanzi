@@ -297,7 +297,7 @@ void CycleDriver::Initialize() {
 * This really should be removed, but for now is left to help stupid developers.
 ****************************************************************** */
 void CycleDriver::Finalize() {
-  if (!checkpoint_->DumpRequested(S_->cycle(), S_->get_time())) {
+  if (!checkpoint_->DumpRequested(S_->get_cycle(), S_->get_time())) {
     pk_->CalculateDiagnostics(Tags::DEFAULT);
     checkpoint_->Write(*S_, 0.0, true, &observations_data_);
   }
@@ -339,7 +339,7 @@ void CycleDriver::ReportMemory() {
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "======================================================================" << std::endl;
-    *vo_->os() << "Simulation made " << S_->cycle() << " cycles.\n";
+    *vo_->os() << "Simulation made " << S_->get_cycle() << " cycles.\n";
     *vo_->os() << "All meshes combined have " << global_ncells << " cells.\n";
     *vo_->os() << "Memory usage (high water mark):\n";
     *vo_->os() << std::fixed << std::setprecision(1);
@@ -654,11 +654,11 @@ void CycleDriver::Observations(bool force, bool integrate) {
     // integrate continuous observations in time and save results in internal variables
     if (integrate) observations_->MakeContinuousObservations(*S_);
 
-    if (observations_->DumpRequested(S_->cycle(), S_->get_time()) || force) {
+    if (observations_->DumpRequested(S_->get_cycle(), S_->get_time()) || force) {
       // continuous observations are not updated here
       int n = observations_->MakeObservations(*S_);
       Teuchos::OSTab tab = vo_->getOSTab();
-      *vo_->os() << "Cycle " << S_->cycle() << ": writing observations... " << n << std::endl;
+      *vo_->os() << "Cycle " << S_->get_cycle() << ": writing observations... " << n << std::endl;
     }
   }
 }
@@ -672,7 +672,7 @@ void CycleDriver::Visualize(bool force, const Tag& tag) {
   if (!dump) {
     for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
          vis!=visualization_.end(); ++vis) {
-      if ((*vis)->DumpRequested(S_->cycle(), S_->get_time())) {
+      if ((*vis)->DumpRequested(S_->get_cycle(), S_->get_time())) {
         dump = true;
       }
     }
@@ -681,7 +681,7 @@ void CycleDriver::Visualize(bool force, const Tag& tag) {
   //if (dump || force) //pk_->CalculateDiagnostics();
   
   for (const auto& vis : visualization_) {
-    if (force || vis->DumpRequested(S_->cycle(), S_->get_time())) {
+    if (force || vis->DumpRequested(S_->get_cycle(), S_->get_time())) {
       vis->set_tag(tag);
       WriteVis(*vis, *S_);
       Teuchos::OSTab tab = vo_->getOSTab();
@@ -695,7 +695,7 @@ void CycleDriver::Visualize(bool force, const Tag& tag) {
 * Write a checkpoint file if requested.
 ****************************************************************** */
 void CycleDriver::WriteCheckpoint(double dt, bool force) {
-  if (force || checkpoint_->DumpRequested(S_->cycle(), S_->get_time())) {
+  if (force || checkpoint_->DumpRequested(S_->get_cycle(), S_->get_time())) {
     bool final = false;
 
     if (fabs( S_->get_time() - tp_end_[num_time_periods_-1]) < 1e-6) {
@@ -712,9 +712,9 @@ void CycleDriver::WriteCheckpoint(double dt, bool force) {
 
 void CycleDriver::WriteWalkabout(bool force) {
   if (walkabout_ != Teuchos::null) {
-    if (walkabout_->DumpRequested(S_->cycle(), S_->get_time()) || force) {
+    if (walkabout_->DumpRequested(S_->get_cycle(), S_->get_time()) || force) {
       if (!walkabout_->is_disabled())
-         *vo_->os() << "Cycle " << S_->cycle() << ": writing walkabout file" << std::endl;
+         *vo_->os() << "Cycle " << S_->get_cycle() << ": writing walkabout file" << std::endl;
       walkabout_->WriteDataFile(S_, pk_);
     }
   }
@@ -781,7 +781,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
     ReadCheckpoint(comm_, *S_, restart_filename_);
     restart_dT = S_->Get<double>("dt");
 
-    cycle0_ = S_->cycle();
+    cycle0_ = S_->get_cycle();
     for (std::vector<std::pair<double,double> >::iterator it = reset_info_.begin();
           it != reset_info_.end(); ++it) {
       if (it->first <= S_->get_time()) it = reset_info_.erase(it);
@@ -845,14 +845,14 @@ Teuchos::RCP<State> CycleDriver::Go() {
 #endif
 
     while (time_period_id_ < num_time_periods_) {
-      int start_cycle_num = S_->cycle();
+      int start_cycle_num = S_->get_cycle();
       //  do 
       while ((S_->get_time() < tp_end_[time_period_id_]) && 
              ((tp_max_cycle_[time_period_id_] == -1) || 
-              (S_->cycle() - start_cycle_num < tp_max_cycle_[time_period_id_])))
+              (S_->get_cycle() - start_cycle_num < tp_max_cycle_[time_period_id_])))
       {
         if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-          if (S_->cycle() % 100 == 0 && S_->cycle() > 0) {
+          if (S_->get_cycle() % 100 == 0 && S_->get_cycle() > 0) {
             WriteStateStatistics(*S_, *vo_);
             Teuchos::OSTab tab = vo_->getOSTab();
             *vo_->os() << "\nSimulation end time: " << tp_end_[time_period_id_] << " sec." << std::endl;
@@ -860,7 +860,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
           }
           Utils::Units units("molar");
           Teuchos::OSTab tab = vo_->getOSTab();
-          *vo_->os() << "\nCycle " << S_->cycle()
+          *vo_->os() << "\nCycle " << S_->get_cycle()
                      << ": time = " << units.OutputTime(S_->get_time())
                      << ", dt = " << units.OutputTime(dt) << "\n";
         }
@@ -950,7 +950,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   S_->Require<double>("dt", Tags::DEFAULT, "dt");
   S_->Setup();
 
-  S_->set_cycle(S_old_->cycle());
+  S_->set_cycle(S_old_->get_cycle());
   S_->set_time(tp_start_[time_pr_id]); 
   S_->set_position(TIME_PERIOD_START);
 

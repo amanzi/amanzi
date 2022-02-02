@@ -39,7 +39,10 @@ class Data_Intf {
  public:
   virtual ~Data_Intf() {};
 
-  // virtual std::unique_ptr<Data_Intf> Clone() const = 0;
+  // note, this clone is expected to return an empty Data object, so as not to
+  // require a Clone method or copy constructor for the data itself -- that is
+  // the job of the factory.
+  virtual std::unique_ptr<Data_Intf> CloneEmpty() const = 0;
 
   template <typename T> const T& Get() const;
 
@@ -89,9 +92,9 @@ template <typename T> class Data_Impl : public Data_Intf {
   Data_Impl(Ts&&... ts)
       : t_(Teuchos::rcp(new T(std::forward<Ts...>(ts...)))) {}
 
-  // std::unique_ptr<Data_Intf> Clone() const override {
-  //   return std::unique_ptr<Data_Impl<T> >(new Data_Impl<T>(*this));
-  // }
+  virtual std::unique_ptr<Data_Intf> CloneEmpty() const override {
+    return std::unique_ptr<Data_Impl<T>>(new Data_Impl<T>());
+  }
 
   Data_Impl<T>& operator=(Data_Impl<T> other) = delete;
 

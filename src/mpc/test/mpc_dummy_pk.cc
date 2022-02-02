@@ -102,7 +102,7 @@ using namespace std;
 
   double dt_last; 
   dt_last = cycle_driver.get_dt();
-  int cycle = S->cycle();
+  int cycle = S->get_cycle();
 
   
 

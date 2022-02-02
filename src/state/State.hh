@@ -145,7 +145,7 @@ class State {
 
   // Sub-steps in the initialization process. (Used by Amanzi)
   void Initialize();
-  void InitializeFields();
+  void InitializeFields(const Tag& tag = Tags::DEFAULT);
   void InitializeEvaluators();
   void InitializeFieldCopies(const Tag& ref = Tags::DEFAULT);
   bool CheckAllFieldsInitialized();
@@ -231,7 +231,7 @@ class State {
     rs.SetType<T>();
   }
 
-#ifdef DISABLE_DEFAULT_TAG
+#ifndef DISABLE_DEFAULT_TAG
   template <typename T, typename F>
   F& Require(const Key& fieldname) {
     return Require<T, F>(fieldname, Tags::DEFAULT);
@@ -274,7 +274,7 @@ class State {
   // Records are an instance of data + metadata, created by the RecordSet's
   // data factory, and distinguished by tags.
   //
-#ifdef DISABLE_DEFAULT_TAG
+#ifndef DISABLE_DEFAULT_TAG
   bool HasRecord(const Key& key, const Tag& tag = Tags::DEFAULT) const;
   const Record& GetRecord(const Key& fieldname, const Tag& tag = Tags::DEFAULT) const;
 #else
@@ -312,7 +312,7 @@ class State {
     return deriv_set.SetType<T>();
   }
 
-#ifdef DISABLE_DEFAULT_TAG
+#ifndef DISABLE_DEFAULT_TAG
   template <typename T, typename F>
   F& RequireDerivative(const Key& key, const Key& wrt_key, const Tag& wrt_tag) {
     return RequireDerivative<T, F>(key, Tags::DEFAULT, wrt_key, wrt_tag, "");
@@ -341,7 +341,7 @@ class State {
     return GetDerivativeSet(key, tag).Get<T>(der_tag);
   }
 
-#ifdef DISABLE_DEFAULT_TAG
+#ifndef DISABLE_DEFAULT_TAG
   template <typename T>
   const T& GetDerivative(const Key& key, const Key& wrt_key) const {
     return GetDerivative<T>(key, Tags::DEFAULT, wrt_key, Tags::DEFAULT);
@@ -355,7 +355,7 @@ class State {
     return GetDerivativeSetW(key, tag).GetW<T>(der_tag, owner);
   }
 
-#ifdef DISABLE_DEFAULT_TAG
+#ifndef DISABLE_DEFAULT_TAG
   template <typename T>
   T& GetDerivativeW(const Key& key, const Key& wrt_key, const Key& owner) {
     return GetDerivativeW<T>(key, Tags::DEFAULT, wrt_key, Tags::DEFAULT, owner);
@@ -378,7 +378,7 @@ class State {
   }
 
   // Access to data
-#ifdef DISABLE_DEFAULT_TAG
+#ifndef DISABLE_DEFAULT_TAG
   template <typename T>
   bool HasData(const Key& fieldname, const Tag& tag = Tags::DEFAULT) const {
     return HasRecord(fieldname, tag) && GetRecord(fieldname, tag).ValidType<T>();
@@ -416,7 +416,7 @@ class State {
     return GetRecordSetW(fieldname).GetW<T>(tag, owner);
   }
 
-#ifdef DISABLE_DEFAULT_TAG
+#ifndef DISABLE_DEFAULT_TAG
   template <typename T>
   Teuchos::RCP<const T> GetPtr(const Key& fieldname, const Tag& tag = Tags::DEFAULT) const {
     return GetRecordSet(fieldname).GetPtr<T>(tag);
@@ -433,7 +433,7 @@ class State {
     return GetRecordSetW(fieldname).GetPtrW<T>(tag, owner);
   }
 
-#ifdef DISABLE_DEFAULT_TAG
+#ifndef DISABLE_DEFAULT_TAG
   template <typename T>
   Teuchos::RCP<T> GetPtrW(const Key& fieldname, const Key& owner) {
     return GetPtrW<T>(fieldname, Tags::DEFAULT, owner);
@@ -455,7 +455,7 @@ class State {
 
 
   // Sets by pointer
-#ifdef DISABLE_DEFAULT_TAG
+#ifndef DISABLE_DEFAULT_TAG
   template <typename T>
   void SetPtr(const Key& fieldname, const Key& owner,
            const Teuchos::RCP<T>& data) {
@@ -491,7 +491,7 @@ class State {
   // -- allows PKs to add to this list to initial conditions
   Teuchos::ParameterList& ICList() { return state_plist_.sublist("initial conditions"); }
 
-#ifdef DISABLE_DEFAULT_TAG
+#ifndef DISABLE_DEFAULT_TAG
   // Evaluator interface
   Evaluator& RequireEvaluator(const Key& key, const Tag& tag = Tags::DEFAULT);
 

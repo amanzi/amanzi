@@ -33,12 +33,12 @@ class DataFactory {
  public:
   DataFactory() : p_(std::unique_ptr<DataFactory_Intf>()) {};
 
-  DataFactory(DataFactory_Intf *t, Data_intf *d)
+  DataFactory(DataFactory_Intf *t, Data_Intf *d)
     : p_(t), data_p_(d) {}
 
   DataFactory(const DataFactory& other)
     : p_(other.p_->Clone()),
-      data_p_(other.data_p_->Clone()) {}
+      data_p_(other.data_p_->CloneEmpty()) {}
 
   DataFactory(DataFactory&& other) noexcept : p_(std::move(other.p_)) {}
 
@@ -81,12 +81,13 @@ class DataFactory {
 
 
 template <typename T, typename F> DataFactory dataFactory() {
-  return DataFactory(new DataFactory_Impl<T, F>());
+  return DataFactory(new DataFactory_Impl<T, F>(),
+                     new Data_Impl<T>());
 }
 
-template <typename T, typename F> DataFactory dataFactory(F f) {
-  return DataFactory(new DataFactory_Impl<T, F>(std::move(f)));
-}
+// template <typename T, typename F> DataFactory dataFactory(F f) {
+//   return DataFactory(new DataFactory_Impl<T, F>(std::move(f)));
+// }
 
 } // namespace Amanzi
 

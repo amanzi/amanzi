@@ -298,7 +298,7 @@ void WalkaboutCheckpoint::WriteDataFile(
 {
   if (!is_disabled()) {
     pk_ = pk;
-    CreateFile(S->cycle());
+    CreateFile(S->get_cycle());
 
     std::vector<AmanziGeometry::Point> xyz;
     std::vector<AmanziGeometry::Point> velocity;
