@@ -476,7 +476,7 @@ void State::Setup()
   // initially.
   { // scope for copy
     EvaluatorMap evaluators_copy(evaluators_);
-    for (auto& e : evaluators_) {
+    for (auto& e : evaluators_copy) {
       for (auto& r : e.second) {
         if (!r.second->ProvidesKey(e.first, r.first)) {
           Errors::Message msg;
