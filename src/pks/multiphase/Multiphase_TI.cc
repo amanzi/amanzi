@@ -51,7 +51,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   // miscalleneous fields
   // -- gas pressure
   S_->GetEvaluator(pressure_gas_key_).Update(*S_, passwd_);
-  auto pg = S_->GetPtrW<CompositeVector>(pressure_gas_key_, pressure_gas_key_);
+  auto pg = S_->GetPtrW<CompositeVector>(pressure_gas_key_, Tags::DEFAULT, pressure_gas_key_);
 
   // -- molar densities
   S_->GetEvaluator(molar_density_gas_key_).Update(*S_, passwd_);
@@ -106,7 +106,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
         // -- add advection term to the residual
         Key fname = eqns_[n].advection[phase].second;
         S_->GetEvaluator(fname).Update(*S_, passwd_);
-        auto var = S_->GetPtr<CompositeVector>(fname);
+        auto var = S_->GetPtr<CompositeVector>(fname, Tags::DEFAULT);
         pde->global_operator()->ComputeNegativeResidual(*var, fadd);
         fone.Update(1.0, fadd, 1.0);
       }
@@ -281,7 +281,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
               der_c = &*fone_c;
             } else {
               S_->GetEvaluator(fname).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
-              der_c = &*S_->GetDerivative<CompositeVector>(fname, keyc).ViewComponent("cell");
+              der_c = &*S_->GetDerivative<CompositeVector>(fname, Tags::DEFAULT, keyc, Tags::DEFAULT).ViewComponent("cell");
             }
 
             for (int c = 0; c < ncells_owned_; ++c) {
@@ -331,14 +331,14 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
           if (S_->HasDerivative(key, keyc)) {
             // --- upwind derivative
             S_->GetEvaluator(key).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
-            kr_c = *S_->GetDerivative<CompositeVector>(key, keyc).ViewComponent("cell");
+            kr_c = *S_->GetDerivative<CompositeVector>(key, Tags::DEFAULT, keyc, Tags::DEFAULT).ViewComponent("cell");
             const auto& flux = S_->Get<CompositeVector>(flux_names_[phase]);
             upwind_->Compute(flux, *kr, bcnone, *kr);
 
             // --- calculate advective flux 
             Key fname = eqns_[row].advection[phase].second;
             S_->GetEvaluator(fname).Update(*S_, passwd_);
-            auto var = S_->GetPtr<CompositeVector>(fname);
+            auto var = S_->GetPtr<CompositeVector>(fname, Tags::DEFAULT);
             pde_diff_K_->Setup(Kptr, kr, Teuchos::null, rho_g, gravity_);
             pde_diff_K_->SetBCs(op_bcs_[solr.var], op_bcs_[solc.var]);
             pde_diff_K_->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -365,7 +365,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
               der_c = &*fone_c;
             } else {
               S_->GetEvaluator(fname).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
-              der_c = &*S_->GetDerivative<CompositeVector>(fname, keyc).ViewComponent("cell");
+              der_c = &*S_->GetDerivative<CompositeVector>(fname, Tags::DEFAULT, keyc, Tags::DEFAULT).ViewComponent("cell");
             }
 
             S_->GetEvaluator(key).Update(*S_, passwd_);
@@ -417,7 +417,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
           if (S_->HasDerivative(key, keyc)) {
             S_->GetEvaluator(key).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
-            kr_c = *S_->GetDerivative<CompositeVector>(key, keyc).ViewComponent("cell");
+            kr_c = *S_->GetDerivative<CompositeVector>(key, Tags::DEFAULT, keyc, Tags::DEFAULT).ViewComponent("cell");
 
             // --- upwind derivative
             const auto& flux = S_->Get<CompositeVector>(flux_names_[phase]);
@@ -426,7 +426,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
             // --- calculate advective flux 
             Key fname = eqns_[row].diffusion[phase].second;
             S_->GetEvaluator(fname).Update(*S_, passwd_);
-            auto var = S_->GetPtr<CompositeVector>(fname);
+            auto var = S_->GetPtr<CompositeVector>(fname, Tags::DEFAULT);
             pde_diff_D_->Setup(Teuchos::null, kr, Teuchos::null);
             pde_diff_D_->SetBCs(op_bcs_[solr.var], op_bcs_[solc.var]);
             pde_diff_D_->UpdateMatrices(Teuchos::null, Teuchos::null);

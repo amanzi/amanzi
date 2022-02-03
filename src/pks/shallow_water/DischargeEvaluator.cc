@@ -69,7 +69,6 @@ void DischargeEvaluator::EvaluatePartialDerivative_(
     const State& S, const Key& wrt_key, const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results) 
 {
-  const auto& h_c = *S.Get<CompositeVector>(ponded_depth_key_).ViewComponent("cell");
   const auto& u_c = *S.Get<CompositeVector>(velocity_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
 

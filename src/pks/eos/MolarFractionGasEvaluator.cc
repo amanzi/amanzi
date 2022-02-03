@@ -34,10 +34,11 @@ MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& pli
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("viscosity key", "viscosity_liquid"), Tags::DEFAULT));
 
   // set up dependencies
+  tag_ = Tags::DEFAULT;
+
   std::string domain = Keys::getDomain(my_keys_[0].first);
-  Tag tag = make_tag("");
   temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
-  dependencies_.insert(std::make_pair(temp_key_, tag));
+  dependencies_.insert(std::make_pair(temp_key_, tag_));
 }
 
 
@@ -56,7 +57,7 @@ void MolarFractionGasEvaluator::Evaluate_(
     const State& S, const std::vector<CompositeVector*>& results)
 {
   // Pull dependencies out of state.
-  auto temp = S.GetPtr<CompositeVector>(temp_key_);
+  auto temp = S.GetPtr<CompositeVector>(temp_key_, tag_);
   double p_atm = S.Get<double>("atmospheric_pressure");
 
   // evaluate p_s / p_atm
@@ -78,7 +79,7 @@ void MolarFractionGasEvaluator::EvaluatePartialDerivative_(
 {
   AMANZI_ASSERT(wrt_key == temp_key_);
 
-  auto temp = S.GetPtr<CompositeVector>(temp_key_);
+  auto temp = S.GetPtr<CompositeVector>(temp_key_, tag_);
   double p_atm = S.Get<double>("atmospheric_pressure");
 
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {

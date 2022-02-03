@@ -45,6 +45,7 @@ class IsobaricEOSEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, 
   EOSMode mode_;
 
   Key temp_key_, pres_key_, a_key_;
+  Tag tag_;
 
  private:
   static Utils::RegisteredFactory<Evaluator, IsobaricEOSEvaluator> factory_;

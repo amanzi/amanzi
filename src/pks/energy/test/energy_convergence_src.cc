@@ -187,7 +187,7 @@ TEST(ENERGY_CONVERGENCE_SRC) {
 
     
     // calculate errors
-    auto temp = S->GetPtr<CompositeVector>("temperature");
+    auto temp = S->GetPtr<CompositeVector>("temperature", Tags::DEFAULT);
     Analytic00 ana(temp, mesh);
 
     double l2_norm, l2_err, inf_err;  // error checks

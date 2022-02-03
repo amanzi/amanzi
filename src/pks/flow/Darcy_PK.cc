@@ -340,7 +340,7 @@ void Darcy_PK::Initialize()
     opfactory.SetConstantTensorCoefficient(Ktmp);
 
     S_->GetEvaluator(permeability_key_).Update(*S_, permeability_key_);
-    auto kptr = S_->GetPtr<CV_t>(permeability_key_);
+    auto kptr = S_->GetPtr<CV_t>(permeability_key_, Tags::DEFAULT);
     opfactory.SetVariableScalarCoefficient(kptr);
   }
 

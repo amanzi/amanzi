@@ -638,7 +638,7 @@ void Multiphase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
     pdeK->global_operator()->Init();
     pdeK->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-    auto var = S_->GetPtr<CV_t>(varp_name[phase]);
+    auto var = S_->GetPtr<CV_t>(varp_name[phase], Tags::DEFAULT);
     pdeK->UpdateFlux(var.ptr(), flux.ptr());
   }
 }

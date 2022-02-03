@@ -96,7 +96,7 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
       msg <<"InterpolatedValue: field \"total_component_concentration\" doesn't exist in state";
       Exceptions::amanzi_throw(msg);
     }
-    cv = S.GetPtr<CompositeVector>("total_component_concentration");
+    cv = S.GetPtr<CompositeVector>("total_component_concentration", Tags::DEFAULT);
     vector = cv->ViewComponent("cell", true);
   } else {
     if (!S.HasRecord(var)) {
@@ -104,7 +104,7 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
       msg <<"InterpolatedValue: field " << var << " doesn't exist in state";
       Exceptions::amanzi_throw(msg);
     }
-    cv = S.GetPtr<CompositeVector>(var);
+    cv = S.GetPtr<CompositeVector>(var, Tags::DEFAULT);
     vector = cv->ViewComponent("cell", true);
   }
 

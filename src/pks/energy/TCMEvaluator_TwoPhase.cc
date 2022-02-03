@@ -24,8 +24,9 @@ namespace Energy {
 TCMEvaluator_TwoPhase::TCMEvaluator_TwoPhase(Teuchos::ParameterList& plist)
     : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
+  tag_ = Tags::DEFAULT;
   if (my_keys_.size() == 0) {
-    my_keys_.push_back(make_pair(plist_.get<std::string>("thermal conductivity key"), Tags::DEFAULT));
+    my_keys_.push_back(make_pair(plist_.get<std::string>("thermal conductivity key"), tag_));
   }
   auto prefix = Keys::getDomainPrefix(my_keys_[0].first);
 
@@ -67,8 +68,8 @@ void TCMEvaluator_TwoPhase::Evaluate_(
     const State& S, const std::vector<CompositeVector*>& results)
 {
   // pull out the dependencies
-  auto poro = S.GetPtr<CompositeVector>(porosity_key_);
-  auto sat = S.GetPtr<CompositeVector>(saturation_key_);
+  auto poro = S.GetPtr<CompositeVector>(porosity_key_, tag_);
+  auto sat = S.GetPtr<CompositeVector>(saturation_key_, tag_);
 
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
     // much more efficient to pull out vectors first

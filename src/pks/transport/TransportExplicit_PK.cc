@@ -186,7 +186,7 @@ bool TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   double dt_MPC = t_new - t_old;
 
   // We use original tcc and make a copy of it later if needed.
-  tcc = S_->GetPtrW<CompositeVector>(tcc_key_, passwd_);
+  tcc = S_->GetPtrW<CompositeVector>(tcc_key_, Tags::DEFAULT, passwd_);
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
 
   // calculate stable time step

@@ -28,12 +28,12 @@ EOSViscosityEvaluator::EOSViscosityEvaluator(Teuchos::ParameterList& plist)
 
   // set up my dependencies
   Key domain = Keys::getDomain(my_keys_[0].first);
-  Tag tag = make_tag("");
+  tag_ = Tags::DEFAULT;
 
   temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
-  dependencies_.insert(std::make_pair(temp_key_, tag));
+  dependencies_.insert(std::make_pair(temp_key_, tag_));
   pres_key_ = plist_.get<std::string>("pressure key", Keys::getKey(domain, "pressure"));
-  dependencies_.insert(std::make_pair(pres_key_, tag));
+  dependencies_.insert(std::make_pair(pres_key_, tag_));
 
   // Construct my Viscosity model
   AMANZI_ASSERT(plist_.isSublist("EOS parameters"));
@@ -56,8 +56,8 @@ Teuchos::RCP<Evaluator> EOSViscosityEvaluator::Clone() const {
 void EOSViscosityEvaluator::Evaluate_(
     const State& S, const std::vector<CompositeVector*>& results) 
 {
-  auto temp = S.GetPtr<CompositeVector>(temp_key_);
-  auto pres = S.GetPtr<CompositeVector>(pres_key_);
+  auto temp = S.GetPtr<CompositeVector>(temp_key_, tag_);
+  auto pres = S.GetPtr<CompositeVector>(pres_key_, tag_);
 
   // evaluate p_s / p_atm
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
@@ -80,8 +80,8 @@ void EOSViscosityEvaluator::EvaluatePartialDerivative_(
     const State& S, const Key& wrt_key, const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results)
 {
-  auto temp = S.GetPtr<CompositeVector>(temp_key_);
-  auto pres = S.GetPtr<CompositeVector>(pres_key_);
+  auto temp = S.GetPtr<CompositeVector>(temp_key_, tag_);
+  auto pres = S.GetPtr<CompositeVector>(pres_key_, tag_);
 
   // evaluate d/dT( p_s / p_atm )
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {

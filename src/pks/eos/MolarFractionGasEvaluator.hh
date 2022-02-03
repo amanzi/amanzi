@@ -39,6 +39,7 @@ class MolarFractionGasEvaluator : public EvaluatorSecondaryMonotype<CompositeVec
 
  protected:
   Key temp_key_;
+  Tag tag_;
 
   Teuchos::RCP<EOS_SaturatedVaporPressure> svp_model_;
 

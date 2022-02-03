@@ -65,13 +65,14 @@ void IEMEvaluator::InitializeFromPlist_()
   }
 
   // Set up my dependencies.
+  tag_ = Tags::DEFAULT;
   domain_ = Keys::getDomain(my_keys_[0].first);
   std::string prefix = Keys::getDomainPrefix(my_keys_[0].first);
 
   temperature_key_ = plist_.get<std::string>("temperature key", prefix + "temperature");
   pressure_key_ = plist_.get<std::string>("pressure key", prefix + "pressure");
-  dependencies_.insert(std::make_pair(temperature_key_, Tags::DEFAULT));
-  dependencies_.insert(std::make_pair(pressure_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(temperature_key_, tag_));
+  dependencies_.insert(std::make_pair(pressure_key_, tag_));
 }
 
 
@@ -85,8 +86,8 @@ void IEMEvaluator::Evaluate_(
     CreateIEMPartition_(S.GetMesh(domain_), plist_);
   }
 
-  auto temp = S.GetPtr<CompositeVector>(temperature_key_);
-  auto pres = S.GetPtr<CompositeVector>(pressure_key_);
+  auto temp = S.GetPtr<CompositeVector>(temperature_key_, tag_);
+  auto pres = S.GetPtr<CompositeVector>(pressure_key_, tag_);
 
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
     auto kind = AmanziMesh::entity_kind(*comp);
@@ -124,8 +125,8 @@ void IEMEvaluator::EvaluatePartialDerivative_(
     CreateIEMPartition_(S.GetMesh(domain_), plist_);
   }
 
-  auto temp = S.GetPtr<CompositeVector>(temperature_key_);
-  auto pres = S.GetPtr<CompositeVector>(pressure_key_);
+  auto temp = S.GetPtr<CompositeVector>(temperature_key_, tag_);
+  auto pres = S.GetPtr<CompositeVector>(pressure_key_, tag_);
 
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
     auto kind = AmanziMesh::entity_kind(*comp);

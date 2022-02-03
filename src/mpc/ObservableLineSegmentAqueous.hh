@@ -100,7 +100,7 @@ void ObservableLineSegmentAqueous::InterpolatedValues(State& S,
       msg <<"InterpolatedValue: field hydraulic_head doesn't exist in state";
       Exceptions::amanzi_throw(msg);
     }
-    cv = S.GetPtr<CompositeVector>("hydraulic_head");
+    cv = S.GetPtr<CompositeVector>("hydraulic_head", Tags::DEFAULT);
     vector = cv->ViewComponent("cell", true);
   } else {
     if (!S.HasRecord(var)) {
@@ -108,7 +108,7 @@ void ObservableLineSegmentAqueous::InterpolatedValues(State& S,
       msg <<"InterpolatedValue: field "<<var<<" doesn't exist in state";
       Exceptions::amanzi_throw(msg);
     }
-    cv = S.GetPtr<CompositeVector>(var);
+    cv = S.GetPtr<CompositeVector>(var, Tags::DEFAULT);
     vector = cv->ViewComponent("cell", true);
   }
 

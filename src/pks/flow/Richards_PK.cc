@@ -1027,7 +1027,7 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void Richards_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
   // calculate Darcy mass flux
-  auto darcy_flux = S_->GetPtrW<CV_t>(darcy_flux_key_, passwd_);
+  auto darcy_flux = S_->GetPtrW<CV_t>(darcy_flux_key_, Tags::DEFAULT, passwd_);
 
   if (coupled_to_matrix_ || flow_on_manifold_) {
     op_matrix_diff_->UpdateFluxNonManifold(solution.ptr(), darcy_flux.ptr());

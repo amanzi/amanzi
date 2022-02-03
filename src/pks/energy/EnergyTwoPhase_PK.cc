@@ -217,8 +217,8 @@ void EnergyTwoPhase_PK::Initialize()
     op_matrix_diff_->SetScalarCoefficient(upw_conductivity_, Teuchos::null);
     op_preconditioner_diff_->SetScalarCoefficient(upw_conductivity_, Teuchos::null);
   } else {
-    op_matrix_diff_->SetScalarCoefficient(S_->GetPtr<CV_t>(conductivity_key_), Teuchos::null);
-    op_preconditioner_diff_->SetScalarCoefficient(S_->GetPtr<CV_t>(conductivity_key_), Teuchos::null);
+    op_matrix_diff_->SetScalarCoefficient(S_->GetPtr<CV_t>(conductivity_key_, Tags::DEFAULT), Teuchos::null);
+    op_preconditioner_diff_->SetScalarCoefficient(S_->GetPtr<CV_t>(conductivity_key_, Tags::DEFAULT), Teuchos::null);
   }
 
   op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_preconditioner_));

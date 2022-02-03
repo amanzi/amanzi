@@ -40,6 +40,7 @@ class EOSViscosityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector,
   // Keys for fields
   // dependencies
   Key temp_key_, pres_key_;
+  Tag tag_;
 
  private:
   static Utils::RegisteredFactory<Evaluator, EOSViscosityEvaluator> factory_;

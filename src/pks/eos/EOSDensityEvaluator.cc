@@ -41,26 +41,26 @@ EOSDensityEvaluator::EOSDensityEvaluator(Teuchos::ParameterList& plist)
 
   // my keys
   Key key;
-  Tag tag = make_tag("");
+  tag_ = Tags::DEFAULT;
 
   my_keys_.clear();
   if (mode_ == EOS_MODE_MOLAR || mode_ == EOS_MODE_BOTH) {
     key = plist_.get<std::string>("molar density key");
-    my_keys_.push_back(std::make_pair(key, tag));
+    my_keys_.push_back(std::make_pair(key, tag_));
   }
 
   if (mode_ == EOS_MODE_MASS || mode_ == EOS_MODE_BOTH) {
     key = plist_.get<std::string>("mass density key");
-    my_keys_.push_back(std::make_pair(key, tag));
+    my_keys_.push_back(std::make_pair(key, tag_));
   }
 
   // set up my dependencies
   std::string domain = Keys::getDomain(key);
   temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
-  dependencies_.insert(std::make_pair(temp_key_, tag));
+  dependencies_.insert(std::make_pair(temp_key_, tag_));
 
   pres_key_ = plist_.get<std::string>("pressure key", Keys::getKey(domain, "pressure"));
-  dependencies_.insert(std::make_pair(pres_key_, tag));
+  dependencies_.insert(std::make_pair(pres_key_, tag_));
 
   // logging
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
@@ -103,8 +103,8 @@ void EOSDensityEvaluator::Evaluate_(
     const State& S, const std::vector<CompositeVector*>& results) 
 {
   double p_atm = S.Get<double>("atmospheric_pressure");
-  auto temp = S.GetPtr<CompositeVector>(temp_key_);
-  auto pres = S.GetPtr<CompositeVector>(pres_key_);
+  auto temp = S.GetPtr<CompositeVector>(temp_key_, tag_);
+  auto pres = S.GetPtr<CompositeVector>(pres_key_, tag_);
 
   CompositeVector *molar_dens, *mass_dens;
   if (mode_ == EOS_MODE_MOLAR) {
@@ -164,8 +164,8 @@ void EOSDensityEvaluator::EvaluatePartialDerivative_(
     const std::vector<CompositeVector*>& results)
 {
   double p_atm = S.Get<double>("atmospheric_pressure");
-  auto temp = S.GetPtr<CompositeVector>(temp_key_);
-  auto pres = S.GetPtr<CompositeVector>(pres_key_);
+  auto temp = S.GetPtr<CompositeVector>(temp_key_, tag_);
+  auto pres = S.GetPtr<CompositeVector>(pres_key_, tag_);
 
   CompositeVector *molar_dens, *mass_dens;
   if (mode_ == EOS_MODE_MOLAR) {

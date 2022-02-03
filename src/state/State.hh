@@ -341,26 +341,12 @@ class State {
     return GetDerivativeSet(key, tag).Get<T>(der_tag);
   }
 
-#ifndef DISABLE_DEFAULT_TAG
-  template <typename T>
-  const T& GetDerivative(const Key& key, const Key& wrt_key) const {
-    return GetDerivative<T>(key, Tags::DEFAULT, wrt_key, Tags::DEFAULT);
-  }
-#endif
-
   template <typename T>
   T& GetDerivativeW(const Key& key, const Tag& tag, const Key& wrt_key,
                     const Tag& wrt_tag, const Key& owner) {
     Tag der_tag = make_tag(Keys::getKey(wrt_key, wrt_tag));
     return GetDerivativeSetW(key, tag).GetW<T>(der_tag, owner);
   }
-
-#ifndef DISABLE_DEFAULT_TAG
-  template <typename T>
-  T& GetDerivativeW(const Key& key, const Key& wrt_key, const Key& owner) {
-    return GetDerivativeW<T>(key, Tags::DEFAULT, wrt_key, Tags::DEFAULT, owner);
-  }
-#endif
 
   template <typename T>
   Teuchos::RCP<const T> GetDerivativePtr(const Key& key, const Tag& tag,
@@ -416,38 +402,19 @@ class State {
     return GetRecordSetW(fieldname).GetW<T>(tag, owner);
   }
 
-#ifndef DISABLE_DEFAULT_TAG
-  template <typename T>
-  Teuchos::RCP<const T> GetPtr(const Key& fieldname, const Tag& tag = Tags::DEFAULT) const {
-    return GetRecordSet(fieldname).GetPtr<T>(tag);
-  }
-#else
   template <typename T>
   Teuchos::RCP<const T> GetPtr(const Key& fieldname, const Tag& tag) const {
     return GetRecordSet(fieldname).GetPtr<T>(tag);
   }
-#endif
 
   template <typename T>
   Teuchos::RCP<T> GetPtrW(const Key& fieldname, const Tag& tag, const Key& owner) {
     return GetRecordSetW(fieldname).GetPtrW<T>(tag, owner);
   }
 
-#ifndef DISABLE_DEFAULT_TAG
-  template <typename T>
-  Teuchos::RCP<T> GetPtrW(const Key& fieldname, const Key& owner) {
-    return GetPtrW<T>(fieldname, Tags::DEFAULT, owner);
-  }
-
   //
   // Sets by deep copy, not pointer
   //
-  template <typename T>
-  void Assign(const Key& fieldname, const Key& owner, const T& data) {
-    return Assign<T>(fieldname, Tags::DEFAULT, owner, data);
-  }
-#endif
-
   template <typename T>
   void Assign(const Key& fieldname, const Tag& tag, const Key& owner, const T& data) {
     return GetRecordSetW(fieldname).Assign(tag, owner, data);

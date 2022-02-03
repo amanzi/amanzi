@@ -36,15 +36,15 @@ IsobaricEOSEvaluator::IsobaricEOSEvaluator(Teuchos::ParameterList& plist) :
   }
 
   // my keys and tags
-  Tag tag = make_tag("");
+  tag_ = Tags::DEFAULT;
   if (mode_ == EOS_MODE_MOLAR || mode_ == EOS_MODE_BOTH) {
     a_key_ = plist_.get<std::string>("molar density key");
-    my_keys_.push_back(std::make_pair(a_key_, tag));
+    my_keys_.push_back(std::make_pair(a_key_, tag_));
   }
 
   if (mode_ == EOS_MODE_MASS || mode_ == EOS_MODE_BOTH) {
     a_key_ = plist_.get<std::string>("mass density key");
-    my_keys_.push_back(std::make_pair(a_key_, tag));
+    my_keys_.push_back(std::make_pair(a_key_, tag_));
   }
 
   // set up my dependencies
@@ -52,7 +52,7 @@ IsobaricEOSEvaluator::IsobaricEOSEvaluator(Teuchos::ParameterList& plist) :
 
   // -- temperature
   temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
-  dependencies_.insert(std::make_pair(temp_key_, tag));
+  dependencies_.insert(std::make_pair(temp_key_, tag_));
 
   // -- pressure
   pres_key_ = plist_.get<std::string>("pressure key", "atmospheric_pressure");
@@ -80,7 +80,7 @@ Teuchos::RCP<Evaluator> IsobaricEOSEvaluator::Clone() const {
 void IsobaricEOSEvaluator::Evaluate_(
     const State& S, const std::vector<CompositeVector*>& results)
 {
-  auto temp = S.GetPtr<CompositeVector>(temp_key_);
+  auto temp = S.GetPtr<CompositeVector>(temp_key_, tag_);
   double pres = S.Get<double>(pres_key_);
 
   int index = 0; // index to the results list
@@ -121,8 +121,8 @@ void IsobaricEOSEvaluator::EvaluatePartialDerivative_(
     const State& S, const Key& wrt_key, const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results) 
 {
-  auto temp = S.GetPtr<CompositeVector>(temp_key_);
-  double pres = S.Get<double>(pres_key_);
+  auto temp = S.GetPtr<CompositeVector>(temp_key_, tag_);
+  double pres = S.Get<double>(pres_key_, tag_);
 
   if (wrt_key == temp_key_) {
 

@@ -30,8 +30,6 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
   
-  double g = norm(S_->Get<AmanziGeometry::Point>("gravity"));
-
   // distribute data to ghost cells
   A.SubVector(0)->Data()->ScatterMasterToGhosted("cell");
   A.SubVector(1)->Data()->ScatterMasterToGhosted("cell");
@@ -62,7 +60,6 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     bcs_[i]->Compute(t, t);
   }
   
-  int bc_h_index, bc_vel_index;
   std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
   std::vector<double> bc_value_hn(nnodes_wghost, 0.0);
   std::vector<double> bc_value_h(nfaces_wghost, 0.0);
@@ -98,8 +95,6 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   }
     
   // limited reconstructions using boundary data
-  bool use_limter = sw_list_->get<bool>("use limiter", true);
-  
   auto tmp1 = S_->GetW<CompositeVector>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
   total_depth_grad_->ComputePoly(tmp1);
   if (use_limiter_) limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_->gradient(), bc_model, bc_value_ht);
@@ -135,7 +130,7 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   // U_t + F_x(U) + G_y(U) = S(U)
 
   int dir, c1, c2;
-  double h, u, v, qx, qy, factor;
+  double h, qx, qy, factor;
   AmanziMesh::Entity_ID_List cells;
 
   std::vector<double> FNum_rot;  // fluxes

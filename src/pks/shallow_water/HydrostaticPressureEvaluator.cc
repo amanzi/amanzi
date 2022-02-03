@@ -65,7 +65,6 @@ void HydrostaticPressureEvaluator::EvaluatePartialDerivative_(
     const State& S, const Key& wrt_key, const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results)
 {
-  const auto& h_c = *S.Get<CompositeVector>(ponded_depth_key_).ViewComponent("cell");
   const double rho = S.Get<double>("const_fluid_density");
   double g = norm(S.Get<AmanziGeometry::Point>("gravity"));
   

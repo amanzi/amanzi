@@ -96,7 +96,7 @@ void TransportImplicit_PK::Initialize()
   vo_ = Teuchos::rcp(new VerboseObject("TransportImpl-" + domain, *tp_list_)); 
 
   // Create pointers to the primary solution field tcc.
-  auto solution = S_->GetPtrW<CompositeVector>(tcc_key_, "state");
+  auto solution = S_->GetPtrW<CompositeVector>(tcc_key_, Tags::DEFAULT, "state");
   soln_->SetData(solution); 
   
   // boundary conditions
@@ -116,7 +116,7 @@ void TransportImplicit_PK::Initialize()
   // refresh data BC and source data  
   UpdateBoundaryData(t_physics_, t_physics_, 0);
 
-  auto flux = S_->GetPtr<CompositeVector>(darcy_flux_key_);
+  auto flux = S_->GetPtr<CompositeVector>(darcy_flux_key_, Tags::DEFAULT);
   op_adv_->Setup(*flux);
   op_adv_->UpdateMatrices(flux.ptr());
 
@@ -187,7 +187,7 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     Epetra_MultiVector& rhs_cell = *rhs.ViewComponent("cell");
   
     // apply boundary conditions
-    op_adv_->UpdateMatrices(S_->GetPtr<CompositeVector>(darcy_flux_key_).ptr());
+    op_adv_->UpdateMatrices(S_->GetPtr<CompositeVector>(darcy_flux_key_, Tags::DEFAULT).ptr());
     op_adv_->ApplyBCs(true, true, true);
 
     // add sources

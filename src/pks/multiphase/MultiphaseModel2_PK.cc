@@ -478,7 +478,7 @@ void MultiphaseModel2_PK::InitMPSolutionVector()
   for (int i = 0; i < soln_names_.size(); ++i) {
     auto field = Teuchos::rcp(new TreeVector());
     soln_->PushBack(field);
-    field->SetData(S_->GetPtrW<CV_t>(soln_names_[i], passwd_));
+    field->SetData(S_->GetPtrW<CV_t>(soln_names_[i], Tags::DEFAULT, passwd_));
   }
 }
 

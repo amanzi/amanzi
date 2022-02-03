@@ -23,8 +23,9 @@ namespace Energy {
 EnthalpyEvaluator::EnthalpyEvaluator(Teuchos::ParameterList& plist)
     : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
 {
+  tag_ = Tags::DEFAULT;
   if (my_keys_.size() == 0) {
-    my_keys_.push_back(std::make_pair(plist_.get<std::string>("enthalpy key"), Tags::DEFAULT));
+    my_keys_.push_back(std::make_pair(plist_.get<std::string>("enthalpy key"), tag_));
   }
   auto prefix = Keys::getDomainPrefix(my_keys_[0].first);  // include dash
 
@@ -71,12 +72,12 @@ Teuchos::RCP<Evaluator> EnthalpyEvaluator::Clone() const {
 void EnthalpyEvaluator::Evaluate_(
     const State& S, const std::vector<CompositeVector*>& results)
 {
-  auto u_l = S.GetPtr<CompositeVector>(ie_liquid_key_);
+  auto u_l = S.GetPtr<CompositeVector>(ie_liquid_key_, tag_);
   *results[0] = *u_l;
 
   if (include_work_) {
-    auto pres = S.GetPtr<CompositeVector>(pressure_key_);
-    auto n_l = S.GetPtr<CompositeVector>(mol_density_liquid_key_);
+    auto pres = S.GetPtr<CompositeVector>(pressure_key_, tag_);
+    auto n_l = S.GetPtr<CompositeVector>(mol_density_liquid_key_, tag_);
 
     for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
       const Epetra_MultiVector& pres_v = *pres->ViewComponent(*comp);
@@ -105,7 +106,7 @@ void EnthalpyEvaluator::EvaluatePartialDerivative_(
   } else if (wrt_key == pressure_key_) {
     AMANZI_ASSERT(include_work_);
     
-    auto n_l = S.GetPtr<CompositeVector>(mol_density_liquid_key_);
+    auto n_l = S.GetPtr<CompositeVector>(mol_density_liquid_key_, tag_);
 
     for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
       const Epetra_MultiVector& nl_v = *n_l->ViewComponent(*comp);
@@ -120,8 +121,8 @@ void EnthalpyEvaluator::EvaluatePartialDerivative_(
   } else if (wrt_key == mol_density_liquid_key_) {
     AMANZI_ASSERT(include_work_);
     
-    auto pres = S.GetPtr<CompositeVector>(pressure_key_);
-    auto n_l = S.GetPtr<CompositeVector>(mol_density_liquid_key_);
+    auto pres = S.GetPtr<CompositeVector>(pressure_key_, tag_);
+    auto n_l = S.GetPtr<CompositeVector>(mol_density_liquid_key_, tag_);
 
     for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
       const Epetra_MultiVector& nl_v = *n_l->ViewComponent(*comp);

@@ -123,7 +123,7 @@ void EnergyOnePhase_PK::Initialize()
   Energy_PK::Initialize();
 
   // Create pointers to the primary flow field pressure.
-  solution = S_->GetPtrW<CV_t>(temperature_key_, passwd_);
+  solution = S_->GetPtrW<CV_t>(temperature_key_, Tags::DEFAULT, passwd_);
   soln_->SetData(solution); 
 
   // Create local evaluators. Initialize local fields.
@@ -145,7 +145,7 @@ void EnergyOnePhase_PK::Initialize()
   Teuchos::ParameterList oplist_adv = ep_list_->sublist("operators").sublist("advection operator");
   op_matrix_advection_ = opfactory_adv.Create(oplist_adv, mesh_);
 
-  const CompositeVector& flux = *S_->GetPtr<CV_t>(darcy_flux_key_);
+  const CompositeVector& flux = *S_->GetPtr<CV_t>(darcy_flux_key_, Tags::DEFAULT);
   op_matrix_advection_->Setup(flux);
   op_matrix_advection_->SetBCs(op_bc_enth_, op_bc_enth_);
   op_advection_ = op_matrix_advection_->global_operator();
@@ -165,8 +165,8 @@ void EnergyOnePhase_PK::Initialize()
     op_matrix_diff_->SetScalarCoefficient(upw_conductivity_, Teuchos::null);
     op_preconditioner_diff_->SetScalarCoefficient(upw_conductivity_, Teuchos::null);
   } else {
-    op_matrix_diff_->SetScalarCoefficient(S_->GetPtr<CV_t>(conductivity_key_), Teuchos::null);
-    op_preconditioner_diff_->SetScalarCoefficient(S_->GetPtr<CV_t>(conductivity_key_), Teuchos::null);
+    op_matrix_diff_->SetScalarCoefficient(S_->GetPtr<CV_t>(conductivity_key_, Tags::DEFAULT), Teuchos::null);
+    op_preconditioner_diff_->SetScalarCoefficient(S_->GetPtr<CV_t>(conductivity_key_, Tags::DEFAULT), Teuchos::null);
   }
 
   op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_preconditioner_));

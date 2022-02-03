@@ -40,6 +40,7 @@ class EnthalpyEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Com
 
  protected:
   Key pressure_key_, mol_density_liquid_key_, ie_liquid_key_;
+  Tag tag_;
   bool include_work_;
 
  private:

@@ -69,8 +69,8 @@ void IEM_WaterVaporEvaluator::InitializeFromPlist_()
 void IEM_WaterVaporEvaluator::Evaluate_(
     const State& S, const std::vector<CompositeVector*>& results)
 {
-  auto temp = S.GetPtr<CompositeVector>(temp_key_);
-  auto mol_frac = S.GetPtr<CompositeVector>(mol_frac_key_);
+  auto temp = S.GetPtr<CompositeVector>(temp_key_, Tags::DEFAULT);
+  auto mol_frac = S.GetPtr<CompositeVector>(mol_frac_key_, Tags::DEFAULT);
 
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
     const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp);
@@ -89,8 +89,8 @@ void IEM_WaterVaporEvaluator::EvaluatePartialDerivative_(
     const State& S, const Key& wrt_key, const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results)
 {
-  auto temp = S.GetPtr<CompositeVector>(temp_key_);
-  auto mol_frac = S.GetPtr<CompositeVector>(mol_frac_key_);
+  auto temp = S.GetPtr<CompositeVector>(temp_key_, Tags::DEFAULT);
+  auto mol_frac = S.GetPtr<CompositeVector>(mol_frac_key_, Tags::DEFAULT);
 
   if (wrt_key == temp_key_) {
     for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {

@@ -184,7 +184,7 @@ TEST(ENERGY_CONVERGENCE) {
     EPK->CommitStep(0.0, 1.0, Tags::DEFAULT);
 
     // calculate errors
-    auto temp = S->GetPtr<CompositeVector>("temperature");
+    auto temp = S->GetPtr<CompositeVector>("temperature", Tags::DEFAULT);
     Analytic01 ana(temp, mesh);
 
     double l2_norm, l2_err, inf_err;  // error checks

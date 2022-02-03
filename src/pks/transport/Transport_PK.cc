@@ -351,7 +351,7 @@ void Transport_PK::Initialize()
     transport_phi = phi;
   }
 
-  tcc = S_->GetPtrW<CV_t>(tcc_key_, passwd_);
+  tcc = S_->GetPtrW<CV_t>(tcc_key_, Tags::DEFAULT, passwd_);
 
   // memory for new components
   tcc_tmp = Teuchos::rcp(new CompositeVector(S_->Get<CV_t>(tcc_key_)));
@@ -802,7 +802,7 @@ void Transport_PK::AddMultiscalePorosity_(
 ******************************************************************* */
 void Transport_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 {
-  auto tcc_aux = S_->GetPtrW<CV_t>(tcc_key_, passwd_);
+  auto tcc_aux = S_->GetPtrW<CV_t>(tcc_key_, Tags::DEFAULT, passwd_);
   *tcc_aux = *tcc_tmp;
 }
 

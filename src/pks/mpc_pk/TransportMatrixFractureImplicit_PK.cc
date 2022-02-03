@@ -282,10 +282,10 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
     pk_fracture->op_acc()->AddAccumulationDelta(*tv_one->SubVector(1)->Data(), phi_f, phi_f, dt, "cell");
 
     // assemble the operators
-    pk_matrix->op_adv()->UpdateMatrices(S_->GetPtr<CV_t>("darcy_flux").ptr());
+    pk_matrix->op_adv()->UpdateMatrices(S_->GetPtr<CV_t>("darcy_flux", Tags::DEFAULT).ptr());
     pk_matrix->op_adv()->ApplyBCs(true, true, true);
 
-    pk_fracture->op_adv()->UpdateMatrices(S_->GetPtr<CV_t>("fracture-darcy_flux").ptr());
+    pk_fracture->op_adv()->UpdateMatrices(S_->GetPtr<CV_t>("fracture-darcy_flux", Tags::DEFAULT).ptr());
     pk_fracture->op_adv()->ApplyBCs(true, true, true);
 
     op_coupling00_->Setup(values1, 1.0);

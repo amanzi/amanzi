@@ -39,8 +39,8 @@ class TCMEvaluator_TwoPhase : public EvaluatorSecondaryMonotype<CompositeVector,
   Teuchos::RCP<TCM_TwoPhase> tc_;
 
   // Keys for fields dependencies
-  Key porosity_key_;
-  Key saturation_key_;
+  Key porosity_key_, saturation_key_;
+  Tag tag_;
 };
 
 }  // namespace Energy

@@ -58,8 +58,9 @@ class IEMEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Composit
   AmanziMesh::Entity_ID MyModel_(AmanziMesh::Entity_kind kind, AmanziMesh::Entity_ID id);
 
  protected:
-  Key temperature_key_, pressure_key_;
   Key domain_;
+  Key temperature_key_, pressure_key_;
+  Tag tag_;
   Teuchos::RCP<IEMPartition> iem_;
 
  private:

@@ -511,8 +511,8 @@ void State::Setup()
       *vo_->os() << "RecordSet \"" << r.first << "\", tags: ";
 
       for(auto& e : *r.second) *vo_->os() << "\"" << e.first.get() << "\" ";
-      if (r.second->ValidType<CompositeVectorSpace, CompositeVector>()) {
-        const auto& cvs = r.second->GetFactory<CompositeVector,CompositeVectorSpace>();
+      if (r.second->ValidType<CompositeVector, CompositeVectorSpace>()) {
+        const auto& cvs = r.second->GetFactory<CompositeVector, CompositeVectorSpace>();
         *vo_->os() << "comps: ";
         for (const auto& comp : cvs) *vo_->os() << comp << " ";
       } else {

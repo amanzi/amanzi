@@ -47,6 +47,7 @@ class EOSDensityEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, C
   // Keys for field dependencies
   Key temp_key_;
   Key pres_key_;
+  Tag tag_;
 
  private:
   static Utils::RegisteredFactory<Evaluator, EOSDensityEvaluator> factory_;

@@ -33,7 +33,7 @@ void Richards_PK::SolveFullySaturatedProblem(
 {
   UpdateSourceBoundaryData(t_old, t_old, u);
 
-  const auto& mu = S_->GetPtr<CompositeVector>(viscosity_liquid_key_);
+  const auto& mu = S_->GetPtr<CompositeVector>(viscosity_liquid_key_, Tags::DEFAULT);
   alpha_upwind_->PutScalarMasterAndGhosted(molar_rho_);
   Operators::CellToFace_ScaleInverse(mu, alpha_upwind_);
 
