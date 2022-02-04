@@ -92,7 +92,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_POLYGON) {
   std::vector<const WhetStoneFunction*> polys(1);
   polys[0] = &poly;
 
-  for (int order = 1; order < 10; ++order) {
+  for (int order = 1; order < 14; ++order) {
     val1 = numi.IntegrateFunctionsTriangulatedCell(cell, polys, order);
 
     printf("order=%d  value=%10.6g\n", order, val1);
@@ -100,7 +100,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_POLYGON) {
   }
  
   // cross-comparison of integrators
-  for (int order = 1; order < 10; ++order) {
+  for (int order = 1; order < 14; ++order) {
     poly.Reshape(2, order, true);
     poly(order, 0) = 1.0;
 
@@ -138,7 +138,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_SQUARE) {
   int cell(3), face(9);
   double val, exact;
 
-  for (int order = 1; order < 10; ++order) {
+  for (int order = 1; order < 14; ++order) {
     Polynomial poly(2, order);
     poly(order, 0) = 1.0;
 
@@ -153,8 +153,14 @@ TEST(NUMI_CELL_2D_QUADRATURE_SQUARE) {
 
     // face of a square
     val = numi.IntegrateFunctionsTriangulatedFace(face, polys, order);
-    printf("FACE: order=%d  values: %10.6g %10.6g\n", order, val, exact);
+    printf("FACE: order=%d  values: %10.6g %10.6g  err=%10.6g\n", order, val, exact, val - exact);
     CHECK_CLOSE(val, exact, 1e-12);
+
+    // add y-component to polynomial
+    int k = MonomialSpaceDimension(2, order);
+    poly(order, k - 1) = 1.0;
+    val = numi.IntegrateFunctionsTriangulatedCell(cell, polys, order);
+    CHECK_CLOSE(val, 2 * exact, 1e-12);
   }
 }
 
