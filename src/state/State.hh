@@ -457,17 +457,15 @@ class State {
   // -- get/set
   Evaluator& GetEvaluator(const Key& key, const Tag& tag = Tags::DEFAULT);
   const Evaluator& GetEvaluator(const Key& key, const Tag& tag = Tags::DEFAULT) const;
-  Teuchos::RCP<Evaluator> GetEvaluatorPtr(const Key& key, const Tag& tag = Tags::DEFAULT);
 #else
   // -- get/set
   Evaluator& GetEvaluator(const Key& key, const Tag& tag);
   const Evaluator& GetEvaluator(const Key& key, const Tag& tag) const;
-  Teuchos::RCP<Evaluator> GetEvaluatorPtr(const Key& key, const Tag& tag);
 #endif
 
   bool HasEvaluator(const Key& key, const Tag& tag);
-
   void SetEvaluator(const Key& key, const Tag& tag, const Teuchos::RCP<Evaluator>& evaluator);
+  Teuchos::RCP<Evaluator> GetEvaluatorPtr(const Key& key, const Tag& tag);
 
   // -- iterators/counts
   int evaluator_count() { return evaluators_.size(); }

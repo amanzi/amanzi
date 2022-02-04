@@ -177,7 +177,7 @@ TEST(ENERGY_CONVERGENCE_SRC) {
       CHECK(dt_next >= dt);
       EPK->bdf1_dae()->CommitSolution(dt, soln);
       Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> >(
-          S->GetEvaluatorPtr("temperature"))->SetChanged();
+          S->GetEvaluatorPtr("temperature", Tags::DEFAULT))->SetChanged();
 
       t += dt;
       itrs++;

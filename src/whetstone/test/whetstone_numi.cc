@@ -24,6 +24,15 @@
 #include "NumericalIntegration.hh"
 #include "Polynomial.hh"
 
+class TestFunction : public Amanzi::WhetStone::WhetStoneFunction {
+ public:
+  virtual double Value(const Amanzi::AmanziGeometry::Point& xp) const {
+    double a = norm(xp - Amanzi::AmanziGeometry::Point(0.5, 0.5));
+    return (a < 0.25) ? 1.0 : 0.0;
+    // return (1.0 + tanh((a - 0.5) * 10)) / 2;
+  }
+};
+
 
 /* **************************************************************** */
 TEST(NUMI_CELL_2D_EULER_FORMULA) {
@@ -161,6 +170,13 @@ TEST(NUMI_CELL_2D_QUADRATURE_SQUARE) {
     poly(order, k - 1) = 1.0;
     val = numi.IntegrateFunctionsTriangulatedCell(cell, polys, order);
     CHECK_CLOSE(val, 2 * exact, 1e-12);
+
+    if (order > 6) {
+      TestFunction f;
+      polys[0] = &f;
+      val = numi.IntegrateFunctionsTriangulatedCell(cell, polys, order);
+      CHECK_CLOSE(val, 0.1963, 0.1);
+    }
   }
 }
 

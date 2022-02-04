@@ -674,7 +674,7 @@ void MultiphaseModel1_PK::ModifyEvaluators(int neqn)
     Teuchos::rcp_dynamic_cast<TotalComponentStorage>(eval_tcs_)->set_subvector(ifield, n, kH_[n]);
     Teuchos::rcp_dynamic_cast<TotalComponentStorage>(eval_tcs_)->Update(*S_, passwd_, true);
 
-    auto eval = S_->GetEvaluatorPtr(x_liquid_key_);
+    auto eval = S_->GetEvaluatorPtr(x_liquid_key_, Tags::DEFAULT);
     Teuchos::rcp_dynamic_cast<MoleFractionLiquid>(eval)->set_subvector(ifield, n, kH_[n]);
     Teuchos::rcp_dynamic_cast<MoleFractionLiquid>(eval)->Update(*S_, passwd_, true);
   }

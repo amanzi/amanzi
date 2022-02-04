@@ -144,7 +144,7 @@ void EnthalpyEvaluator::EvaluatePartialDerivative_(
 double EnthalpyEvaluator::EvaluateFieldSingle(
     const Teuchos::Ptr<State>& S, int c, double T, double p)
 {
-  double tmp = Teuchos::rcp_dynamic_cast<IEMEvaluator>(S->GetEvaluatorPtr(ie_liquid_key_))->EvaluateFieldSingle(c, T, p);
+  double tmp = Teuchos::rcp_dynamic_cast<IEMEvaluator>(S->GetEvaluatorPtr(ie_liquid_key_, Tags::DEFAULT))->EvaluateFieldSingle(c, T, p);
   if (include_work_) {
     const auto& nl_c = *S->Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell", true);
     tmp += p / nl_c[0][c];

@@ -113,7 +113,7 @@ void Energy_PK::Setup()
     temperature_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
     S_->SetEvaluator(temperature_key_, Tags::DEFAULT, temperature_eval_);
   } else {
-    temperature_eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(temperature_key_));
+    temperature_eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(temperature_key_, Tags::DEFAULT));
   }
 
   // conserved quantity from the last time step.

@@ -509,11 +509,11 @@ void MultiphaseJaffre_PK::ModifyEvaluators(int neqn)
     Teuchos::rcp_dynamic_cast<TotalComponentStorage_MolarDensity>(eval_tcs_)->Update(*S_, passwd_, true);
 
     // mole fraction is second in the dependencies set
-    auto eval = S_->GetEvaluatorPtr(advection_liquid_key_);
+    auto eval = S_->GetEvaluatorPtr(advection_liquid_key_, Tags::DEFAULT);
     Teuchos::rcp_dynamic_cast<ProductEvaluator>(eval)->set_subvector(1, n, kH_[n]);
     Teuchos::rcp_dynamic_cast<ProductEvaluator>(eval)->Update(*S_, passwd_, true);
 
-    eval = S_->GetEvaluatorPtr(ncp_g_key_);
+    eval = S_->GetEvaluatorPtr(ncp_g_key_, Tags::DEFAULT);
     Teuchos::rcp_dynamic_cast<NCP_HenryLaw>(eval)->set_subvector(ifield, n, kH_[n]);
     Teuchos::rcp_dynamic_cast<NCP_HenryLaw>(eval)->Update(*S_, passwd_, true);
   }

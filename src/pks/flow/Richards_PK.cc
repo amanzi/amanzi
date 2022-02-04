@@ -445,8 +445,8 @@ void Richards_PK::Setup()
 
   // Since high-level PK may own some fields, we have to populate 
   // frequently used evaluators outside of field registration
-  pressure_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(pressure_key_));
-  darcy_flux_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(darcy_flux_key_));
+  pressure_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(pressure_key_, Tags::DEFAULT));
+  darcy_flux_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(darcy_flux_key_, Tags::DEFAULT));
 }
 
 

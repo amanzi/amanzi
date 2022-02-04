@@ -144,7 +144,7 @@ SUITE(EVALUATORS) {
     CHECK_CLOSE(1.0, S.GetDerivative<double>("fa", Tags::DEFAULT, "fa", Tags::DEFAULT), 1.e-10);
 
     // mark as changed
-    auto eval = S.GetEvaluatorPtr("fa");
+    auto eval = S.GetEvaluatorPtr("fa", Tags::DEFAULT);
     auto eval_p = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<double>>(eval);
     CHECK(eval_p.get());
     eval_p->SetChanged();
@@ -223,7 +223,7 @@ SUITE(EVALUATORS) {
 
     // change the primary and mark as changed
     S.GetW<double>("fb", Tags::DEFAULT, "fb") = 14.0;
-    auto eval = S.GetEvaluatorPtr("fb");
+    auto eval = S.GetEvaluatorPtr("fb", Tags::DEFAULT);
     auto eval_p = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<double>>(eval);
     CHECK(eval_p.get());
     eval_p->SetChanged();

@@ -70,7 +70,7 @@ int AdvanceToSteadyState(
 
     // reset primary field
     auto pressure_eval = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> >(
-        S->GetEvaluatorPtr("pressure"));
+        S->GetEvaluatorPtr("pressure", Tags::DEFAULT));
     S->GetW<CompositeVector>("pressure", "flow") = *soln->Data();
     pressure_eval->SetChanged();
  

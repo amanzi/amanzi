@@ -506,8 +506,8 @@ void ShallowWater_PK::CommitStep(
 {
   S_->GetEvaluator(hydrostatic_pressure_key_).Update(*S_, passwd_);
   
-  Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(velocity_key_))->SetChanged();
-  Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(ponded_depth_key_))->SetChanged();
+  Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(velocity_key_, Tags::DEFAULT))->SetChanged();
+  Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(ponded_depth_key_, Tags::DEFAULT))->SetChanged();
 }
 
 

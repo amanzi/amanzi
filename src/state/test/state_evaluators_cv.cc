@@ -225,7 +225,7 @@ SUITE(EVALUATORS_CV) {
 
     // change the primary and mark as changed
     S.GetW<CompositeVector>("fb", Tags::DEFAULT, "fb").PutScalar(14.0);
-    auto eval = S.GetEvaluatorPtr("fb");
+    auto eval = S.GetEvaluatorPtr("fb", Tags::DEFAULT);
     auto eval_p = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector,CompositeVectorSpace>>(eval);
     CHECK(eval_p.get());
     eval_p->SetChanged();

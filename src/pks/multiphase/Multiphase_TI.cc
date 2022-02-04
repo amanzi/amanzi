@@ -541,7 +541,7 @@ void Multiphase_PK::ChangedSolution()
 {
   for (int i = 0; i < 3; ++i ) {
     Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> >(
-        S_->GetEvaluatorPtr(soln_names_[i]))->SetChanged();
+        S_->GetEvaluatorPtr(soln_names_[i], Tags::DEFAULT))->SetChanged();
   }
 }
 

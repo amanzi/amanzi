@@ -237,7 +237,7 @@ void Darcy_PK::Setup()
   }
 
   // save frequently used evaluators 
-  darcy_flux_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(darcy_flux_key_));
+  darcy_flux_eval_ = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(darcy_flux_key_, Tags::DEFAULT));
 }
 
 

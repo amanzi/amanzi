@@ -99,7 +99,7 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   auto& temperature = *S->GetW<CompositeVector>("temperature", Tags::DEFAULT, passwd).ViewComponent("cell");
   temperature.PutScalar(273.0);
   Teuchos::rcp_static_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> >(
-      S->GetEvaluatorPtr("temperature"))->SetChanged();
+      S->GetEvaluatorPtr("temperature", Tags::DEFAULT))->SetChanged();
 
   // compute conductivity
   EPK->UpdateConductivityData(S.ptr());
