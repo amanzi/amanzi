@@ -422,14 +422,6 @@ class State {
 
 
   // Sets by pointer
-#ifndef DISABLE_DEFAULT_TAG
-  template <typename T>
-  void SetPtr(const Key& fieldname, const Key& owner,
-           const Teuchos::RCP<T>& data) {
-    return SetPtr<T>(fieldname, owner, Tags::DEFAULT, data);
-  }
-#endif
-
   template <typename T>
   void SetPtr(const Key& fieldname, const Tag& tag, const Key& owner,
            const Teuchos::RCP<T>& data) {
@@ -458,33 +450,22 @@ class State {
   // -- allows PKs to add to this list to initial conditions
   Teuchos::ParameterList& ICList() { return state_plist_.sublist("initial conditions"); }
 
-#ifndef DISABLE_DEFAULT_TAG
   // Evaluator interface
-  Evaluator& RequireEvaluator(const Key& key, const Tag& tag = Tags::DEFAULT);
+  Evaluator& RequireEvaluator(const Key& key, const Tag& tag);
 
+#ifndef DISABLE_DEFAULT_TAG
   // -- get/set
   Evaluator& GetEvaluator(const Key& key, const Tag& tag = Tags::DEFAULT);
   const Evaluator& GetEvaluator(const Key& key, const Tag& tag = Tags::DEFAULT) const;
   Teuchos::RCP<Evaluator> GetEvaluatorPtr(const Key& key, const Tag& tag = Tags::DEFAULT);
-
-  void SetEvaluator(const Key& key, const Teuchos::RCP<Evaluator>& evaluator) {
-    SetEvaluator(key, Tags::DEFAULT, evaluator);
-  }
-
-  bool HasEvaluator(const Key& key, const Tag& tag = Tags::DEFAULT);
-
 #else
-
-  // Evaluator interface
-  Evaluator& RequireEvaluator(const Key& key, const Tag& tag);
-
   // -- get/set
   Evaluator& GetEvaluator(const Key& key, const Tag& tag);
   const Evaluator& GetEvaluator(const Key& key, const Tag& tag) const;
   Teuchos::RCP<Evaluator> GetEvaluatorPtr(const Key& key, const Tag& tag);
+#endif
 
   bool HasEvaluator(const Key& key, const Tag& tag);
-#endif
 
   void SetEvaluator(const Key& key, const Tag& tag, const Teuchos::RCP<Evaluator>& evaluator);
 

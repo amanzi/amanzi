@@ -265,51 +265,51 @@ public:
     S.RequireDerivative<double>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
     S.RequireDerivative<double>("fa", Tags::DEFAULT, "fg", Tags::DEFAULT);
     fa_eval = Teuchos::rcp(new AEvaluator(es_list));
-    S.SetEvaluator("fa", fa_eval);
+    S.SetEvaluator("fa", Tags::DEFAULT, fa_eval);
 
     // --  C and its evaluator
     es_list.setName("fc");
     S.Require<double>("fc", Tags::DEFAULT, "fc");
     fc_eval = Teuchos::rcp(new CEvaluator(es_list));
-    S.SetEvaluator("fc", fc_eval);
+    S.SetEvaluator("fc", Tags::DEFAULT, fc_eval);
 
     // --  D and its evaluator
     es_list.setName("fd");
     S.Require<double>("fd", Tags::DEFAULT, "fd");
     fd_eval = Teuchos::rcp(new DEvaluator(es_list));
-    S.SetEvaluator("fd", fd_eval);
+    S.SetEvaluator("fd", Tags::DEFAULT, fd_eval);
 
     // --  E and its evaluator
     es_list.setName("fe");
     S.Require<double>("fe", Tags::DEFAULT, "fe");
     S.RequireDerivative<double>("fe", Tags::DEFAULT, "fg", Tags::DEFAULT);
     fe_eval = Teuchos::rcp(new EEvaluator(es_list));
-    S.SetEvaluator("fe", fe_eval);
+    S.SetEvaluator("fe", Tags::DEFAULT, fe_eval);
 
     // --  F and its evaluator
     es_list.setName("ff");
     S.Require<double>("ff", Tags::DEFAULT, "ff");
     ff_eval = Teuchos::rcp(new FEvaluator(es_list));
-    S.SetEvaluator("ff", ff_eval);
+    S.SetEvaluator("ff", Tags::DEFAULT, ff_eval);
 
     // --  H and its evaluator
     es_list.setName("fh");
     S.Require<double>("fh", Tags::DEFAULT, "fh");
     fh_eval = Teuchos::rcp(new HEvaluator(es_list));
-    S.SetEvaluator("fh", fh_eval);
+    S.SetEvaluator("fh", Tags::DEFAULT, fh_eval);
 
     // Primary fields
     ep_list.setName("fb");
     // -- field B and its evaluator
     S.Require<double>("fb", Tags::DEFAULT, "fb");
     fb_eval = Teuchos::rcp(new EvaluatorPrimary<double>(ep_list));
-    S.SetEvaluator("fb", fb_eval);
+    S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);
 
     // -- field G and its evaluator
     ep_list.setName("fg");
     S.Require<double>("fg", Tags::DEFAULT, "fg");
     fg_eval = Teuchos::rcp(new EvaluatorPrimary<double>(ep_list));
-    S.SetEvaluator("fg", fg_eval);
+    S.SetEvaluator("fg", Tags::DEFAULT, fg_eval);
 
     // Setup fields initialize
     S.Setup();

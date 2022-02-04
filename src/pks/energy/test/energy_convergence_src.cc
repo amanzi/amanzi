@@ -147,7 +147,7 @@ TEST(ENERGY_CONVERGENCE_SRC) {
         "enthalpy", Tags::DEFAULT, "temperature", Tags::DEFAULT, "enthalpy");
 
     auto enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
-    S->SetEvaluator("enthalpy", enthalpy);
+    S->SetEvaluator("enthalpy", Tags::DEFAULT, enthalpy);
 
     EPK->Setup();
     S->Setup();

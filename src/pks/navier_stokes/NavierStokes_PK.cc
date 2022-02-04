@@ -99,7 +99,7 @@ void NavierStokes_PK::Setup()
     Teuchos::ParameterList elist("pressure");
     elist.set<std::string>("evaluator name", "pressure");
     pressure_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
-    S_->SetEvaluator("pressure", pressure_eval_);
+    S_->SetEvaluator("pressure", Tags::DEFAULT, pressure_eval_);
   }
 
   // -- velocity
@@ -114,7 +114,7 @@ void NavierStokes_PK::Setup()
     Teuchos::ParameterList elist("fluid_velocity");
     elist.set<std::string>("evaluator name", "fluid_velocity");
     fluid_velocity_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
-    S_->SetEvaluator("fluid_velocity", fluid_velocity_eval_);
+    S_->SetEvaluator("fluid_velocity", Tags::DEFAULT, fluid_velocity_eval_);
   }
 
   // -- viscosity: if not requested by any PK, we request its constant value.

@@ -241,8 +241,8 @@ void Richards_PK::Setup()
          .set<std::string>("tag", "");
 
     Teuchos::RCP<PorosityModelPartition> pom = CreatePorosityModelPartition(mesh_, msp_list);
-    Teuchos::RCP<PorosityModelEvaluator> eval = Teuchos::rcp(new PorosityModelEvaluator(elist, pom));
-    S_->SetEvaluator("porosity_matrix", eval);
+    auto eval = Teuchos::rcp(new PorosityModelEvaluator(elist, pom));
+    S_->SetEvaluator("porosity_matrix", Tags::DEFAULT, eval);
 
     // Secondary matrix nodes are collected here.
     int nnodes, nnodes_tmp = NumberMatrixNodes(msp_);
@@ -258,7 +258,7 @@ void Richards_PK::Setup()
 
       S_->Require<CV_t, CVS_t>("porosity_matrix_aux", Tags::DEFAULT, "porosity_matrix_aux")
         .SetMesh(mesh_)->SetGhosted(false)->SetComponent("cell", AmanziMesh::CELL, nnodes - 1);
-      S_->SetEvaluator("porosity_matrix_aux", eval);
+      S_->SetEvaluator("porosity_matrix_aux", Tags::DEFAULT, eval);
       S_->GetRecordW("porosity_matrix_aux", passwd_).set_io_vis(false);
     }
   }
@@ -284,10 +284,10 @@ void Richards_PK::Setup()
 
       S_->RequireDerivative<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, porosity_key_);
 
-      Teuchos::RCP<PorosityModelEvaluator> eval = Teuchos::rcp(new PorosityModelEvaluator(elist, pom));
-      S_->SetEvaluator(porosity_key_, eval);
+      auto eval = Teuchos::rcp(new PorosityModelEvaluator(elist, pom));
+      S_->SetEvaluator(porosity_key_, Tags::DEFAULT, eval);
     } else {
-      S_->RequireEvaluator(porosity_key_);
+      S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
     }
   }
 
@@ -312,7 +312,7 @@ void Richards_PK::Setup()
         .set<double>("value", mu);
     eval.set<std::string>("evaluator type", "independent variable");
 
-    S_->RequireEvaluator(viscosity_liquid_key_);
+    S_->RequireEvaluator(viscosity_liquid_key_, Tags::DEFAULT);
   }
 
   // -- model for liquid density is constant density unless specified otherwise
@@ -336,7 +336,7 @@ void Richards_PK::Setup()
         .set<double>("value", n_l);
     eval.set<std::string>("evaluator type", "independent variable");
 
-    S_->RequireEvaluator(mol_density_liquid_key_);
+    S_->RequireEvaluator(mol_density_liquid_key_, Tags::DEFAULT);
   }
   
   // -- saturation
@@ -353,8 +353,8 @@ void Richards_PK::Setup()
          .set<std::string>("tag", "");
 
     // elist.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    Teuchos::RCP<WRMEvaluator> eval = Teuchos::rcp(new WRMEvaluator(elist, wrm_));
-    S_->SetEvaluator(saturation_liquid_key_, eval);
+    auto eval = Teuchos::rcp(new WRMEvaluator(elist, wrm_));
+    S_->SetEvaluator(saturation_liquid_key_, Tags::DEFAULT, eval);
   }
 
   if (!S_->HasRecord(prev_saturation_liquid_key_)) {
@@ -376,7 +376,7 @@ void Richards_PK::Setup()
     S_->RequireDerivative<CV_t, CVS_t>(relperm_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, relperm_key_);
 
     auto eval = Teuchos::rcp(new Flow::RelPermEvaluator(elist, S_.ptr(), wrm_));
-    S_->SetEvaluator(relperm_key_, eval);
+    S_->SetEvaluator(relperm_key_, Tags::DEFAULT, eval);
   }
 
   // -- inverse of kinematic viscosity
@@ -407,7 +407,7 @@ void Richards_PK::Setup()
     S_->RequireDerivative<CV_t, CVS_t>(alpha_key_, Tags::DEFAULT, pressure_key_, Tags::DEFAULT, alpha_key_);
 
     auto eval = Teuchos::rcp(new EvaluatorMultiplicativeReciprocal(elist));
-    S_->SetEvaluator(alpha_key_, eval);
+    S_->SetEvaluator(alpha_key_, Tags::DEFAULT, eval);
   }
 
   // Local fields and evaluators.
@@ -428,8 +428,8 @@ void Richards_PK::Setup()
          .set<std::string>("darcy flux key", darcy_flux_key_)
          .set<std::string>("tag", "");
 
-    Teuchos::RCP<DarcyVelocityEvaluator> eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
-    S_->SetEvaluator(darcy_velocity_key_, eval);
+    auto eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
+    S_->SetEvaluator(darcy_velocity_key_, Tags::DEFAULT, eval);
   }
 
   // Require additional components for the existing fields
@@ -972,7 +972,7 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // initialization
   if (num_itrs_ == 0) {
-    Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln_));
+    auto udot = Teuchos::rcp(new TreeVector(*soln_));
     udot->PutScalar(0.0);
     bdf1_dae_->SetInitialState(t_old, soln_, udot);
 

@@ -38,7 +38,7 @@ void Richards_PK::FunctionalResidual(
 
   std::vector<int>& bc_model = op_bc_->bc_model();
 
-  if (S_->HasEvaluator(viscosity_liquid_key_)) {
+  if (S_->HasEvaluator(viscosity_liquid_key_, Tags::DEFAULT)) {
     S_->GetEvaluator(viscosity_liquid_key_).Update(*S_, "flow");
   }
 

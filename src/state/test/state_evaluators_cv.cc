@@ -90,7 +90,7 @@ SUITE(EVALUATORS_CV) {
     S.RequireDerivative<CompositeVector,CompositeVectorSpace>(
         "fa", Tags::DEFAULT, "fa", Tags::DEFAULT);
     auto fa_eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
-    S.SetEvaluator("fa", fa_eval);
+    S.SetEvaluator("fa", Tags::DEFAULT, fa_eval);
 
     // Setup fields and marked as initialized
     S.Setup();
@@ -156,7 +156,7 @@ SUITE(EVALUATORS_CV) {
         .SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
         
     auto fb_eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
-    S.SetEvaluator("fb", fb_eval);
+    S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);
 
     // make the secondary.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
     Teuchos::ParameterList ea_list;
@@ -169,7 +169,7 @@ SUITE(EVALUATORS_CV) {
                       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
-    S.SetEvaluator("fa", fa_eval);
+    S.SetEvaluator("fa", Tags::DEFAULT, fa_eval);
 
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
         "fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
@@ -261,7 +261,7 @@ SUITE(EVALUATORS_CV) {
     es_list.setName("fb");
     S.Require<CompositeVector,CompositeVectorSpace>("fb", Tags::DEFAULT, "fb");
     auto fb_eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
-    S.SetEvaluator("fb", fb_eval);
+    S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);
 
     // make the secondary
     Teuchos::ParameterList ea_list;
@@ -275,7 +275,7 @@ SUITE(EVALUATORS_CV) {
 
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
-    S.SetEvaluator("fa", fa_eval);
+    S.SetEvaluator("fa", Tags::DEFAULT, fa_eval);
 
     // make another secondary
     Teuchos::ParameterList ec_list;
@@ -289,7 +289,7 @@ SUITE(EVALUATORS_CV) {
                       ->SetComponent("face", AmanziMesh::FACE, 2);
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fc", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fc_eval = Teuchos::rcp(new AEvaluator(ec_list));
-    S.SetEvaluator("fc", fc_eval);
+    S.SetEvaluator("fc", Tags::DEFAULT, fc_eval);
     
     // setup 
     S.Setup();
@@ -334,7 +334,7 @@ SUITE(EVALUATORS_CV) {
     es_list.setName("fb");
     S.Require<CompositeVector,CompositeVectorSpace>("fb", Tags::DEFAULT, "fb").SetMesh(mesh2);
     auto fb_eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
-    S.SetEvaluator("fb", fb_eval);
+    S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);
 
     // make the secondary
     Teuchos::ParameterList ea_list;
@@ -348,7 +348,7 @@ SUITE(EVALUATORS_CV) {
         ->SetComponent("cell", AmanziMesh::CELL, 1);
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
-    S.SetEvaluator("fa", fa_eval);
+    S.SetEvaluator("fa", Tags::DEFAULT, fa_eval);
 
     CHECK_THROW(S.Setup(), Errors::Message);
   }
@@ -376,7 +376,7 @@ SUITE(EVALUATORS_CV) {
         .SetMesh(mesh)
         ->SetComponent("face", AmanziMesh::FACE, 1);
     auto fb_eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
-    S.SetEvaluator("fb", fb_eval);
+    S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);
 
     // make the secondary
     Teuchos::ParameterList ea_list;
@@ -390,7 +390,7 @@ SUITE(EVALUATORS_CV) {
         ->SetComponent("cell", AmanziMesh::CELL, 1);
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
-    S.SetEvaluator("fa", fa_eval);
+    S.SetEvaluator("fa", Tags::DEFAULT, fa_eval);
 
     CHECK_THROW(S.Setup(), Errors::Message);
   }
@@ -415,7 +415,7 @@ SUITE(EVALUATORS_CV) {
     es_list.setName("fb");
     S.Require<CompositeVector,CompositeVectorSpace>("fb", Tags::DEFAULT, "fb");
     auto fb_eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
-    S.SetEvaluator("fb", fb_eval);
+    S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);
 
     // make the secondary
     Teuchos::ParameterList ea_list;
@@ -429,7 +429,7 @@ SUITE(EVALUATORS_CV) {
         ->SetComponent("cell", AmanziMesh::CELL, 1);
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
-    S.SetEvaluator("fa", fa_eval);
+    S.SetEvaluator("fa", Tags::DEFAULT, fa_eval);
 
 
     // make another secondary
@@ -445,7 +445,7 @@ SUITE(EVALUATORS_CV) {
         ->SetComponent("face", AmanziMesh::FACE, 2);
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fc", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fc_eval = Teuchos::rcp(new AEvaluator(ec_list));
-    S.SetEvaluator("fc", fc_eval);
+    S.SetEvaluator("fc", Tags::DEFAULT, fc_eval);
     
     // setup 
     CHECK_THROW(S.Setup(), Errors::Message);
@@ -472,7 +472,7 @@ SUITE(EVALUATORS_CV) {
     es_list.setName("fb");
     S.Require<CompositeVector,CompositeVectorSpace>("fb", Tags::DEFAULT, "fb");
     auto fb_eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
-    S.SetEvaluator("fb", fb_eval);
+    S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);
 
     // make the secondary
     Teuchos::ParameterList ea_list;
@@ -486,7 +486,7 @@ SUITE(EVALUATORS_CV) {
         ->SetComponent("cell", AmanziMesh::CELL, 2);
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
-    S.SetEvaluator("fa", fa_eval);
+    S.SetEvaluator("fa", Tags::DEFAULT, fa_eval);
 
 
     // make another secondary
@@ -502,7 +502,7 @@ SUITE(EVALUATORS_CV) {
         ->SetComponent("cell", AmanziMesh::CELL, 1);
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fc", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fc_eval = Teuchos::rcp(new AEvaluator(ec_list));
-    S.SetEvaluator("fc", fc_eval);
+    S.SetEvaluator("fc", Tags::DEFAULT, fc_eval);
     
     // setup 
     CHECK_THROW(S.Setup(), Errors::Message);
@@ -529,7 +529,7 @@ SUITE(EVALUATORS_CV) {
         ->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
     auto fb_eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
-    S.SetEvaluator("fb", fb_eval);
+    S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);
 
     // make the secondary
     Teuchos::ParameterList ea_list;
@@ -541,7 +541,7 @@ SUITE(EVALUATORS_CV) {
     S.Require<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fa");
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
-    S.SetEvaluator("fa", fa_eval);
+    S.SetEvaluator("fa", Tags::DEFAULT, fa_eval);
     
     // setup 
     S.Setup();
@@ -573,7 +573,7 @@ SUITE(EVALUATORS_CV) {
         ->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
     auto fb_eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
-    S.SetEvaluator("fb", fb_eval);
+    S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);
 
     // make the secondary
     Teuchos::ParameterList ea_list;
@@ -585,7 +585,7 @@ SUITE(EVALUATORS_CV) {
         .SetMesh(mesh);
     S.RequireDerivative<CompositeVector, CompositeVectorSpace>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
-    S.SetEvaluator("fa", fa_eval);
+    S.SetEvaluator("fa", Tags::DEFAULT, fa_eval);
     
     // setup 
     CHECK_THROW(S.Setup(), Errors::Message);

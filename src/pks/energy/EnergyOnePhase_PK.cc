@@ -73,8 +73,8 @@ void EnergyOnePhase_PK::Setup()
          .set<std::string>("particle density key", particle_density_key_)
          .set<std::string>("internal energy rock key", ie_rock_key_);
     elist.setName(energy_key_);
-    Teuchos::RCP<TotalEnergyEvaluator> ee = Teuchos::rcp(new TotalEnergyEvaluator(elist));
-    S_->SetEvaluator(energy_key_, ee);
+    auto ee = Teuchos::rcp(new TotalEnergyEvaluator(elist));
+    S_->SetEvaluator(energy_key_, Tags::DEFAULT, ee);
 
     S_->RequireDerivative<CV_t, CVS_t>(energy_key_, Tags::DEFAULT,
                                       temperature_key_, Tags::DEFAULT, energy_key_);
@@ -92,7 +92,7 @@ void EnergyOnePhase_PK::Setup()
          .set<std::string>("tag", "");
     elist.setName(enthalpy_key_);
     auto enth = Teuchos::rcp(new EnthalpyEvaluator(elist));
-    S_->SetEvaluator(enthalpy_key_, enth);
+    S_->SetEvaluator(enthalpy_key_, Tags::DEFAULT, enth);
 
     S_->RequireDerivative<CV_t, CVS_t>(enthalpy_key_, Tags::DEFAULT,
                                        temperature_key_, Tags::DEFAULT, enthalpy_key_);
@@ -109,7 +109,7 @@ void EnergyOnePhase_PK::Setup()
     elist.setName(conductivity_key_);
 
     auto tcm = Teuchos::rcp(new TCMEvaluator_OnePhase(elist));
-    S_->SetEvaluator(conductivity_key_, tcm);
+    S_->SetEvaluator(conductivity_key_, Tags::DEFAULT, tcm);
   }
 }
 

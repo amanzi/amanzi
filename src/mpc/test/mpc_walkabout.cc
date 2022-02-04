@@ -30,8 +30,7 @@ using namespace Amanzi;
 
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = glist->sublist("regions");
-  Teuchos::RCP<AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new AmanziGeometry::GeometricModel(2, region_list, *comm));
+  auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   // create mesh
   auto mesh_list = Teuchos::sublist(glist, "mesh");

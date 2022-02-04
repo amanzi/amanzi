@@ -55,7 +55,7 @@ TEST(FIELD_INITIALIZATION) {
   S.Require<CompositeVector, CompositeVectorSpace>("porosity")
     .SetMesh(mesh)->SetGhosted(false)
                   ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S.RequireEvaluator("porosity");
+  S.RequireEvaluator("porosity", Tags::DEFAULT);
   S.Require<CompositeVector, CompositeVectorSpace>("permeability")
     .SetMesh(mesh)->SetGhosted(false)
                   ->SetComponent("cell", AmanziMesh::CELL, 3);

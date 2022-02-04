@@ -91,16 +91,16 @@ void Flow_PK::Setup()
       Teuchos::ParameterList elist(permeability_key_);
       elist.set<std::string>("permeability key", permeability_key_)
            .set<std::string>("aperture key", aperture_key_)
-           .set<std::string>("tag", "");
+           .set<std::string>("tag", Tags::DEFAULT.get());
       Teuchos::RCP<FracturePermModelEvaluator> eval = Teuchos::rcp(new FracturePermModelEvaluator(elist, fpm));
-      S_->SetEvaluator(permeability_key_, eval);
+      S_->SetEvaluator(permeability_key_, Tags::DEFAULT, eval);
     }
 
     if (!S_->HasRecord(aperture_key_)) {
       S_->Require<CompositeVector, CompositeVectorSpace>(aperture_key_, Tags::DEFAULT, aperture_key_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
-      S_->RequireEvaluator(aperture_key_);
+      S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
     }
 
   // -- matrix absolute permeability

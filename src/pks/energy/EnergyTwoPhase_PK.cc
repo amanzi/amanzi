@@ -71,8 +71,8 @@ void EnergyTwoPhase_PK::Setup()
          .set<std::string>("internal energy rock key", ie_rock_key_);
     elist.setName(energy_key_);
 
-    Teuchos::RCP<TotalEnergyEvaluator> ee = Teuchos::rcp(new TotalEnergyEvaluator(elist));
-    S_->SetEvaluator(energy_key_, ee);
+    auto ee = Teuchos::rcp(new TotalEnergyEvaluator(elist));
+    S_->SetEvaluator(energy_key_, Tags::DEFAULT, ee);
 
     S_->RequireDerivative<CV_t, CVS_t>(energy_key_, Tags::DEFAULT,
                                       temperature_key_, Tags::DEFAULT, energy_key_);
@@ -91,7 +91,7 @@ void EnergyTwoPhase_PK::Setup()
     elist.setName(enthalpy_key_);
 
     auto enth = Teuchos::rcp(new EnthalpyEvaluator(elist));
-    S_->SetEvaluator(enthalpy_key_, enth);
+    S_->SetEvaluator(enthalpy_key_, Tags::DEFAULT, enth);
 
     S_->RequireDerivative<CV_t, CVS_t>(enthalpy_key_, Tags::DEFAULT,
                                        temperature_key_, Tags::DEFAULT, enthalpy_key_);
@@ -108,7 +108,7 @@ void EnergyTwoPhase_PK::Setup()
     elist.setName(conductivity_key_);
 
     auto tcm = Teuchos::rcp(new TCMEvaluator_TwoPhase(elist));
-    S_->SetEvaluator(conductivity_key_, tcm);
+    S_->SetEvaluator(conductivity_key_, Tags::DEFAULT, tcm);
   }
 
   // -- densities
@@ -116,7 +116,7 @@ void EnergyTwoPhase_PK::Setup()
     .SetMesh(mesh_)->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-  S_->RequireEvaluator(mol_density_gas_key_);
+  S_->RequireEvaluator(mol_density_gas_key_, Tags::DEFAULT);
 
   S_->RequireDerivative<CV_t, CVS_t>(mol_density_gas_key_, Tags::DEFAULT,
                                     temperature_key_, Tags::DEFAULT, mol_density_gas_key_);
@@ -126,7 +126,7 @@ void EnergyTwoPhase_PK::Setup()
     .SetMesh(mesh_)->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-  S_->RequireEvaluator(ie_gas_key_);
+  S_->RequireEvaluator(ie_gas_key_, Tags::DEFAULT);
 
   S_->RequireDerivative<CV_t, CVS_t>(ie_gas_key_, Tags::DEFAULT,
                                     temperature_key_, Tags::DEFAULT, ie_gas_key_);
@@ -136,7 +136,7 @@ void EnergyTwoPhase_PK::Setup()
     .SetMesh(mesh_)->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-  S_->RequireEvaluator(x_gas_key_);
+  S_->RequireEvaluator(x_gas_key_, Tags::DEFAULT);
 
   S_->RequireDerivative<CV_t, CVS_t>(x_gas_key_, Tags::DEFAULT,
                                      temperature_key_, Tags::DEFAULT, x_gas_key_);

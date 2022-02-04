@@ -299,7 +299,7 @@ SUITE(EVALUATOR_ON_OP) {
     es_list.setName("my_op");
 
     auto op_eval = Teuchos::rcp(new EvaluatorPrimary<Operators::Op, Operators::Op_Factory>(es_list));
-    S.SetEvaluator("my_op", op_eval);
+    S.SetEvaluator("my_op", Tags::DEFAULT, op_eval);
 
     // Setup fields and marked as initialized.
     // Note: USER CODE SHOULD NOT DO IT THIS WAY!
@@ -328,7 +328,7 @@ SUITE(EVALUATOR_ON_OP) {
     xe_list.setName("x");
     auto x_eval = Teuchos::rcp(
         new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(xe_list));
-    S.SetEvaluator("x", x_eval);
+    S.SetEvaluator("x", Tags::DEFAULT, x_eval);
 
     // require vector and independent evaluator for source term b
     S.Require<CompositeVector, CompositeVectorSpace>("b", Tags::DEFAULT)
@@ -339,7 +339,7 @@ SUITE(EVALUATOR_ON_OP) {
         .set<std::string>("verbosity level", "extreme");
     be_list.setName("b");
     auto b_eval = Teuchos::rcp(new BIndependent(be_list));
-    S.SetEvaluator("b", b_eval);
+    S.SetEvaluator("b", Tags::DEFAULT, b_eval);
 
     // require vector and independent evaluator for Diag(A)
     S.Require<CompositeVector, CompositeVectorSpace>("Diag", Tags::DEFAULT)
@@ -349,7 +349,7 @@ SUITE(EVALUATOR_ON_OP) {
         .set<std::string>("verbosity level", "extreme");
     de_list.setName("Diag");
     auto D_eval = Teuchos::rcp(new DiagIndependent(de_list));
-    S.SetEvaluator("Diag", D_eval);
+    S.SetEvaluator("Diag", Tags::DEFAULT, D_eval);
 
     // require the local operator and evaluator
     auto& fac = S.Require<Operators::Op, Operators::Op_Factory>("A_local", Tags::DEFAULT);
@@ -365,7 +365,7 @@ SUITE(EVALUATOR_ON_OP) {
     Ae_list.set("dependency tags are my tag", true);
     Ae_list.set("tag", "");
     auto A_eval = Teuchos::rcp(new Evaluator_PDE_Diagonal(Ae_list));
-    S.SetEvaluator("A_local", A_eval);
+    S.SetEvaluator("A_local", Tags::DEFAULT, A_eval);
 
     // require vector and secondary evaluator for r = Ax - b
     S.Require<CompositeVector, CompositeVectorSpace>("residual", Tags::DEFAULT)
@@ -379,7 +379,7 @@ SUITE(EVALUATOR_ON_OP) {
     re_list.set("tag", "");
     re_list.setName("residual");
     auto r_eval = Teuchos::rcp(new Evaluator_OperatorApply(re_list));
-    S.SetEvaluator("residual", r_eval);
+    S.SetEvaluator("residual", Tags::DEFAULT, r_eval);
 
     // Setup fields and marked as initialized.  Note: USER CODE SHOULD NOT DO IT
     // THIS WAY!
@@ -416,7 +416,7 @@ SUITE(EVALUATOR_ON_OP) {
         .set<std::string>("verbosity level", "extreme");
     xe_list.setName("x");
     auto x_eval = Teuchos::rcp(new XIndependent(xe_list));
-    S.SetEvaluator("x", x_eval);
+    S.SetEvaluator("x", Tags::DEFAULT, x_eval);
 
     // require vector and independent evaluator for source term b
     auto& b_space = *S.Require<CompositeVector, CompositeVectorSpace>("b", Tags::DEFAULT)
@@ -428,7 +428,7 @@ SUITE(EVALUATOR_ON_OP) {
         .set<std::string>("verbosity level", "extreme");
     be_list.setName("b");
     auto b_eval = Teuchos::rcp(new BIndependent(be_list));
-    S.SetEvaluator("b", b_eval);
+    S.SetEvaluator("b", Tags::DEFAULT, b_eval);
 
     // require vector and independent evaluator for Tensor
     auto& f = S.Require<TensorVector, TensorVector_Factory>("K", Tags::DEFAULT);
@@ -439,7 +439,7 @@ SUITE(EVALUATOR_ON_OP) {
         .set<std::string>("verbosity level", "extreme");
     Ke_list.setName("K");
     auto K_eval = Teuchos::rcp(new KIndependent(Ke_list));
-    S.SetEvaluator("K", K_eval);
+    S.SetEvaluator("K", Tags::DEFAULT, K_eval);
 
     // require vector and independent evaluator for kr (on faces!)
     S.Require<CompositeVector, CompositeVectorSpace>("k_relative", Tags::DEFAULT)
@@ -449,7 +449,7 @@ SUITE(EVALUATOR_ON_OP) {
         .set<std::string>("verbosity level", "extreme");
     kre_list.setName("k_relative");
     auto kr_eval = Teuchos::rcp(new DiagIndependent(kre_list));
-    S.SetEvaluator("k_relative", kr_eval);
+    S.SetEvaluator("k_relative", Tags::DEFAULT, kr_eval);
 
     // require boundary conditions
     auto& bc_fac = S.Require<Operators::BCs, Operators::BCs_Factory>("bcs", Tags::DEFAULT);
@@ -461,7 +461,7 @@ SUITE(EVALUATOR_ON_OP) {
         .set<std::string>("verbosity level", "extreme");
     bce_list.setName("bcs");
     auto bc_eval = Teuchos::rcp(new BCsIndependent(bce_list));
-    S.SetEvaluator("bcs", bc_eval);
+    S.SetEvaluator("bcs", Tags::DEFAULT, bc_eval);
 
     // require the local operator and rhs
     auto& Afac = S.Require<Operators::Op, Operators::Op_Factory>("A_local", Tags::DEFAULT);
@@ -485,8 +485,8 @@ SUITE(EVALUATOR_ON_OP) {
     Ae_list.set("boundary conditions key", "bcs");
 
     auto A_eval = Teuchos::rcp(new Evaluator_PDE_DiffusionFV(Ae_list));
-    S.SetEvaluator("A_local", A_eval);
-    S.SetEvaluator("A_rhs", A_eval);
+    S.SetEvaluator("A_local", Tags::DEFAULT, A_eval);
+    S.SetEvaluator("A_rhs", Tags::DEFAULT, A_eval);
 
     // require vector and secondary evaluator for r = Ax - b
     S.Require<CompositeVector, CompositeVectorSpace>("residual", Tags::DEFAULT)
@@ -503,7 +503,7 @@ SUITE(EVALUATOR_ON_OP) {
     re_list.set("tag", "");
     re_list.setName("residual");
     auto r_eval = Teuchos::rcp(new Evaluator_OperatorApply(re_list));
-    S.SetEvaluator("residual", r_eval);
+    S.SetEvaluator("residual", Tags::DEFAULT, r_eval);
 
     // Setup fields and marked as initialized.  Note: USER CODE SHOULD NOT DO IT
     // THIS WAY!

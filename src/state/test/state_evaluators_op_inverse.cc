@@ -188,7 +188,7 @@ void test(const std::string& discretization) {
   xe_list.sublist("verbose object").set<std::string>("verbosity level", "high");
   xe_list.setName("x");
   auto x_eval = Teuchos::rcp(new XIndependent(xe_list));
-  S.SetEvaluator("x", x_eval);
+  S.SetEvaluator("x", Tags::DEFAULT, x_eval);
 
   // require independent evaluator for source term b
   S.Require<CompositeVector, CompositeVectorSpace>("b", Tags::DEFAULT)
@@ -199,28 +199,28 @@ void test(const std::string& discretization) {
   be_list.sublist("verbose object").set<std::string>("verbosity level", "high");
   be_list.setName("b");
   auto b_eval = Teuchos::rcp(new BIndependent(be_list));
-  S.SetEvaluator("b", b_eval);
+  S.SetEvaluator("b", Tags::DEFAULT, b_eval);
 
   // require vector and independent evaluator for Tensor
   Teuchos::ParameterList Ke_list;
   Ke_list.sublist("verbose object").set<std::string>("verbosity level", "high");
   Ke_list.setName("K");
   auto K_eval = Teuchos::rcp(new KIndependent(Ke_list));
-  S.SetEvaluator("K", K_eval);
+  S.SetEvaluator("K", Tags::DEFAULT, K_eval);
 
   // require vector and independent evaluator for kr (on faces!)
   Teuchos::ParameterList kre_list;
   kre_list.sublist("verbose object").set<std::string>("verbosity level", "high");
   kre_list.setName("k_relative");
   auto kr_eval = Teuchos::rcp(new DiagIndependent(kre_list));
-  S.SetEvaluator("k_relative", kr_eval);
+  S.SetEvaluator("k_relative", Tags::DEFAULT, kr_eval);
 
   // require boundary conditions
   Teuchos::ParameterList bce_list;
   bce_list.sublist("verbose object").set<std::string>("verbosity level", "high");
   bce_list.setName("bcs");
   auto bc_eval = Teuchos::rcp(new BCsIndependent(bce_list));
-  S.SetEvaluator("bcs", bc_eval);
+  S.SetEvaluator("bcs", Tags::DEFAULT, bc_eval);
 
   // require the local operator and rhs
   Teuchos::ParameterList Ae_list;
@@ -236,8 +236,8 @@ void test(const std::string& discretization) {
          .set("discretization primary", discretization);
 
   auto A_eval = Teuchos::rcp(new Evaluator_PDE_Diffusion(Ae_list));
-  S.SetEvaluator("A_local", A_eval);
-  S.SetEvaluator("A_rhs", A_eval);
+  S.SetEvaluator("A_local", Tags::DEFAULT, A_eval);
+  S.SetEvaluator("A_rhs", Tags::DEFAULT, A_eval);
 
   // require secondary evaluator for r = Ax - b
   Teuchos::ParameterList re_list("residual");
@@ -249,7 +249,7 @@ void test(const std::string& discretization) {
   re_list.set("rhs coefficients", Teuchos::Array<double>(1, -1.0));
   re_list.set("tag", "");
   auto r_eval = Teuchos::rcp(new Evaluator_OperatorApply(re_list));
-  S.SetEvaluator("residual", r_eval);
+  S.SetEvaluator("residual", Tags::DEFAULT, r_eval);
   S.Require<CompositeVector, CompositeVectorSpace>("residual", Tags::DEFAULT)
       .SetMesh(mesh)->SetGhosted(true);
 
@@ -296,7 +296,7 @@ void test_inverse(const std::string& discretization) {
   xe_list.sublist("verbose object").set<std::string>("verbosity level", "high");
   xe_list.setName("x");
   auto x_eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector,CompositeVectorSpace>(xe_list));
-  S.SetEvaluator("x", x_eval);
+  S.SetEvaluator("x", Tags::DEFAULT, x_eval);
 
   // require independent evaluator for source term b
   S.Require<CompositeVector, CompositeVectorSpace>("b", Tags::DEFAULT)
@@ -306,28 +306,28 @@ void test_inverse(const std::string& discretization) {
   be_list.sublist("verbose object").set<std::string>("verbosity level", "high");
   be_list.setName("b");
   auto b_eval = Teuchos::rcp(new BIndependent(be_list));
-  S.SetEvaluator("b", b_eval);
+  S.SetEvaluator("b", Tags::DEFAULT, b_eval);
 
   // require vector and independent evaluator for Tensor
   Teuchos::ParameterList Ke_list;
   Ke_list.sublist("verbose object").set<std::string>("verbosity level", "high");
   Ke_list.setName("K");
   auto K_eval = Teuchos::rcp(new KIndependent(Ke_list));
-  S.SetEvaluator("K", K_eval);
+  S.SetEvaluator("K", Tags::DEFAULT, K_eval);
 
   // require vector and independent evaluator for kr (on faces!)
   Teuchos::ParameterList kre_list;
   kre_list.sublist("verbose object").set<std::string>("verbosity level", "high");
   kre_list.setName("k_relative");
   auto kr_eval = Teuchos::rcp(new DiagIndependent(kre_list));
-  S.SetEvaluator("k_relative", kr_eval);
+  S.SetEvaluator("k_relative", Tags::DEFAULT, kr_eval);
 
   // require boundary conditions
   Teuchos::ParameterList bce_list;
   bce_list.sublist("verbose object").set<std::string>("verbosity level", "high");
   bce_list.setName("bcs");
   auto bc_eval = Teuchos::rcp(new BCsIndependent(bce_list));
-  S.SetEvaluator("bcs", bc_eval);
+  S.SetEvaluator("bcs", Tags::DEFAULT, bc_eval);
 
   // require the local operator and rhs
   Teuchos::ParameterList Ae_list;
@@ -342,8 +342,8 @@ void test_inverse(const std::string& discretization) {
   Ae_list.set("operator argument key", "x");
   Ae_list.set("discretization primary", discretization);
   auto A_eval = Teuchos::rcp(new Evaluator_PDE_Diffusion(Ae_list));
-  S.SetEvaluator("A_local", A_eval);
-  S.SetEvaluator("A_rhs", A_eval);
+  S.SetEvaluator("A_local", Tags::DEFAULT, A_eval);
+  S.SetEvaluator("A_rhs", Tags::DEFAULT, A_eval);
 
   // require secondary evaluator for r = b - Ax
   Teuchos::ParameterList re_list;
@@ -364,7 +364,7 @@ void test_inverse(const std::string& discretization) {
   
   re_list.setName("residual");
   auto r_eval = Teuchos::rcp(new Evaluator_OperatorApply(re_list));
-  S.SetEvaluator("residual", r_eval);
+  S.SetEvaluator("residual", Tags::DEFAULT, r_eval);
   S.Require<CompositeVector, CompositeVectorSpace>("residual", Tags::DEFAULT)
       .SetMesh(mesh)->SetGhosted(true);
 

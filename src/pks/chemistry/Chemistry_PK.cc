@@ -47,15 +47,15 @@ void Chemistry_PK::Setup()
   // require flow fields
   S_->Require<CV_t, CVS_t>(poro_key_, Tags::DEFAULT, poro_key_).SetMesh(mesh_)
     ->SetGhosted(false)->AddComponent("cell", AmanziMesh::CELL, 1);
-  S_->RequireEvaluator(poro_key_);
+  S_->RequireEvaluator(poro_key_, Tags::DEFAULT);
 
   S_->Require<CV_t, CVS_t>(saturation_key_, Tags::DEFAULT, saturation_key_).SetMesh(mesh_)
     ->SetGhosted(false)->AddComponent("cell", AmanziMesh::CELL, 1);
-  S_->RequireEvaluator(saturation_key_);
+  S_->RequireEvaluator(saturation_key_, Tags::DEFAULT);
 
   S_->Require<CV_t, CVS_t>(fluid_den_key_, Tags::DEFAULT, fluid_den_key_).SetMesh(mesh_)
     ->SetGhosted(false)->AddComponent("cell", AmanziMesh::CELL, 1);
-  S_->RequireEvaluator(fluid_den_key_);
+  S_->RequireEvaluator(fluid_den_key_, Tags::DEFAULT);
 
   // require transport fields
   std::vector<std::string>::const_iterator it;

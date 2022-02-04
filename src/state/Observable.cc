@@ -122,7 +122,7 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
     S->Require<CompositeVector, CompositeVectorSpace>(variable_, Tags::DEFAULT, "state");
   } 
 
-  has_eval_ = S->HasEvaluator(variable_);
+  has_eval_ = S->HasEvaluator(variable_, Tags::DEFAULT);
 
   // try to set requirements on the field, if they are not already set
   if (!S->HasRecord(variable_)) {

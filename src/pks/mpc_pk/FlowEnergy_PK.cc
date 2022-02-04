@@ -91,7 +91,7 @@ void FlowEnergy_PK::Setup()
   if (!S_->HasRecord(particle_density_key_)) {
     S_->Require<CV_t, CVS_t>(particle_density_key_, Tags::DEFAULT, particle_density_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->RequireEvaluator(particle_density_key_);
+    S_->RequireEvaluator(particle_density_key_, Tags::DEFAULT);
   }
 
   if (!S_->HasRecord(ie_rock_key_) && !elist.isSublist(ie_rock_key_)) {
@@ -142,7 +142,7 @@ void FlowEnergy_PK::Setup()
   S_->Require<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT, ie_liquid_key_)
     .SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-  S_->RequireEvaluator(ie_liquid_key_);
+  S_->RequireEvaluator(ie_liquid_key_, Tags::DEFAULT);
 
 
   // -- molar and mass density
@@ -150,9 +150,9 @@ void FlowEnergy_PK::Setup()
     .SetMesh(mesh_)->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-  S_->RequireEvaluator(mol_density_liquid_key_);
+  S_->RequireEvaluator(mol_density_liquid_key_, Tags::DEFAULT);
 
-  S_->RequireEvaluator(mass_density_liquid_key_);
+  S_->RequireEvaluator(mass_density_liquid_key_, Tags::DEFAULT);
   if (S_->GetEvaluator(mass_density_liquid_key_).IsDifferentiableWRT(*S_, pressure_key_, Tags::DEFAULT)) {
     S_->RequireDerivative<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT,
                                       pressure_key_, Tags::DEFAULT, mass_density_liquid_key_);
@@ -163,7 +163,7 @@ void FlowEnergy_PK::Setup()
     .SetMesh(mesh_)->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-  S_->RequireEvaluator(viscosity_liquid_key_);
+  S_->RequireEvaluator(viscosity_liquid_key_, Tags::DEFAULT);
 
   // inform other PKs about strong coupling
   // -- flow

@@ -144,7 +144,7 @@ TEST(ENERGY_CONVERGENCE) {
         "enthalpy", Tags::DEFAULT, "temperature", Tags::DEFAULT, "enthalpy");
 
     auto enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
-    S->SetEvaluator("enthalpy", enthalpy);
+    S->SetEvaluator("enthalpy", Tags::DEFAULT, enthalpy);
 
     EPK->Setup();
     S->Setup();
@@ -259,7 +259,7 @@ TEST(ENERGY_PRECONDITIONER) {
         "enthalpy", Tags::DEFAULT, "temperature", Tags::DEFAULT, "enthalpy");
 
     auto enthalpy = Teuchos::rcp(new TestEnthalpyEvaluator(ev_list));
-    S->SetEvaluator("enthalpy", enthalpy);
+    S->SetEvaluator("enthalpy", Tags::DEFAULT, enthalpy);
 
     EPK->Setup();
     S->Setup();
@@ -279,7 +279,7 @@ TEST(ENERGY_PRECONDITIONER) {
       e_prev = e;
 
       if (itrs == 0) {
-        Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln));
+        auto udot = Teuchos::rcp(new TreeVector(*soln));
         udot->PutScalar(0.0);
         EPK->bdf1_dae()->SetInitialState(t, soln, udot);
         EPK->UpdatePreconditioner(t, soln, dt);

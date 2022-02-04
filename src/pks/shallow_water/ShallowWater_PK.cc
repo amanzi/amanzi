@@ -129,9 +129,9 @@ void ShallowWater_PK::Setup()
 
     Teuchos::ParameterList elist(discharge_key_);
     elist.set<std::string>("my key", discharge_key_)
-         .set<std::string>("tag", "");
+         .set<std::string>("tag", Tags::DEFAULT.get());
     auto eval = Teuchos::rcp(new DischargeEvaluator(elist));
-    S_->SetEvaluator(discharge_key_, eval);
+    S_->SetEvaluator(discharge_key_, Tags::DEFAULT, eval);
   }
 
   // -- bathymetry
@@ -156,7 +156,7 @@ void ShallowWater_PK::Setup()
     elist.set<std::string>("my key", hydrostatic_pressure_key_)
          .set<std::string>("tag", "");
     auto eval = Teuchos::rcp(new HydrostaticPressureEvaluator(elist));
-    S_->SetEvaluator(hydrostatic_pressure_key_, eval);
+    S_->SetEvaluator(hydrostatic_pressure_key_, Tags::DEFAULT, eval);
   }
 
   // -- riemann flux

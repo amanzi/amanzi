@@ -51,8 +51,7 @@ void RunTestDarcyWell(std::string controller, bool fit) {
 
   // create an MSTK mesh framework
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
-  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
+  auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
   Preference pref;
   pref.clear();
@@ -78,8 +77,8 @@ void RunTestDarcyWell(std::string controller, bool fit) {
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
+  auto soln = Teuchos::rcp(new TreeVector());
+  auto DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
   DPK->Setup();
   S->Setup();
   S->InitializeFields();

@@ -146,7 +146,7 @@ void Multiphase_PK::Setup()
     Teuchos::ParameterList elist(pressure_liquid_key_);
     elist.set<std::string>("name", pressure_liquid_key_);
     pressure_liquid_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
-    S_->SetEvaluator(pressure_liquid_key_, pressure_liquid_eval_);
+    S_->SetEvaluator(pressure_liquid_key_, Tags::DEFAULT, pressure_liquid_eval_);
 
     S_->RequireDerivative<CV_t, CVS_t>(pressure_liquid_key_, Tags::DEFAULT,
                                        pressure_liquid_key_, Tags::DEFAULT, pressure_liquid_key_);
@@ -156,7 +156,7 @@ void Multiphase_PK::Setup()
   if (!S_->HasRecord(temperature_key_)) {
     S_->Require<CV_t, CVS_t>(temperature_key_, Tags::DEFAULT, temperature_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->RequireEvaluator(temperature_key_);
+    S_->RequireEvaluator(temperature_key_, Tags::DEFAULT);
   }
 
   // water saturation is the primary solution
@@ -167,7 +167,7 @@ void Multiphase_PK::Setup()
     Teuchos::ParameterList elist(saturation_liquid_key_);
     elist.set<std::string>("name", saturation_liquid_key_);
     saturation_liquid_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
-    S_->SetEvaluator(saturation_liquid_key_, saturation_liquid_eval_);
+    S_->SetEvaluator(saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_eval_);
 
     S_->RequireDerivative<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT,
                                       saturation_liquid_key_, Tags::DEFAULT, saturation_liquid_key_);
@@ -188,7 +188,7 @@ void Multiphase_PK::Setup()
          .set<std::string>("tag", "");
 
     auto eval = Teuchos::rcp(new PressureGasEvaluator(elist, wrm_));
-    S_->SetEvaluator(pressure_gas_key_, eval);
+    S_->SetEvaluator(pressure_gas_key_, Tags::DEFAULT, eval);
 
     S_->RequireDerivative<CV_t, CVS_t>(pressure_gas_key_, Tags::DEFAULT,
                                       pressure_liquid_key_, Tags::DEFAULT, pressure_gas_key_);
@@ -213,13 +213,13 @@ void Multiphase_PK::Setup()
   if (!S_->HasRecord(viscosity_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(viscosity_liquid_key_, Tags::DEFAULT, viscosity_liquid_key_)
       .SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
-    S_->RequireEvaluator(viscosity_liquid_key_);
+    S_->RequireEvaluator(viscosity_liquid_key_, Tags::DEFAULT);
   }
 
   if (!S_->HasRecord(viscosity_gas_key_)) {
     S_->Require<CV_t, CVS_t>(viscosity_gas_key_, Tags::DEFAULT, viscosity_gas_key_)
       .SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
-    S_->RequireEvaluator(viscosity_gas_key_);
+    S_->RequireEvaluator(viscosity_gas_key_, Tags::DEFAULT);
   }
 
   // relative permeability of liquid phase
@@ -234,7 +234,7 @@ void Multiphase_PK::Setup()
          .set<std::string>("phase name", "liquid");
 
     auto eval = Teuchos::rcp(new RelPermEvaluator(elist, wrm_));
-    S_->SetEvaluator(relperm_liquid_key_, eval);
+    S_->SetEvaluator(relperm_liquid_key_, Tags::DEFAULT, eval);
 
     S_->RequireDerivative<CV_t, CVS_t>(relperm_liquid_key_, Tags::DEFAULT,
                                        saturation_liquid_key_, Tags::DEFAULT, relperm_liquid_key_);
@@ -252,7 +252,7 @@ void Multiphase_PK::Setup()
          .set<std::string>("phase name", "gas");
 
     auto eval = Teuchos::rcp(new RelPermEvaluator(elist, wrm_));
-    S_->SetEvaluator(relperm_gas_key_, eval);
+    S_->SetEvaluator(relperm_gas_key_, Tags::DEFAULT, eval);
 
     S_->RequireDerivative<CV_t, CVS_t>(relperm_gas_key_, Tags::DEFAULT,
                                       saturation_liquid_key_, Tags::DEFAULT, relperm_gas_key_);
@@ -267,7 +267,7 @@ void Multiphase_PK::Setup()
   if (!S_->HasRecord(porosity_key_)) {
     S_->Require<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, porosity_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->RequireEvaluator(porosity_key_);
+    S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
   }
 
   // fields from previous time step
@@ -301,7 +301,7 @@ void Multiphase_PK::Setup()
          .set<Teuchos::Array<int> >("powers", dep_powers);
 
     auto eval = Teuchos::rcp(new ProductEvaluator(elist));
-    S_->SetEvaluator(ncp_fg_key_, eval);
+    S_->SetEvaluator(ncp_fg_key_, Tags::DEFAULT, eval);
   }
 }
 
@@ -560,7 +560,7 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // initialization
   if (num_itrs_ == 0) {
-    Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(*soln_));
+    auto udot = Teuchos::rcp(new TreeVector(*soln_));
     udot->PutScalar(0.0);
     bdf1_dae_->SetInitialState(t_old, soln_, udot);
     num_itrs_++;

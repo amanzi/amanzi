@@ -139,7 +139,7 @@ void EnergyOnePhase_PK::UpdatePreconditioner(
     const auto& n_l = S_->Get<CompositeVector>(mol_density_liquid_key_);
     dHdT->Multiply(1.0, *dHdT, n_l, 0.0);
 
-    if (S_->HasEvaluator(mol_density_liquid_key_)) {
+    if (S_->HasEvaluator(mol_density_liquid_key_, Tags::DEFAULT)) {
       auto& eval = S_->GetEvaluator(mol_density_liquid_key_);
       if (eval.get_type() == EvaluatorType::SECONDARY) {
         eval.UpdateDerivative(*S_, passwd_, temperature_key_, Tags::DEFAULT);

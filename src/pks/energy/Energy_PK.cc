@@ -111,7 +111,7 @@ void Energy_PK::Setup()
     Teuchos::ParameterList elist(temperature_key_);
     elist.set<std::string>("evaluator name", temperature_key_);
     temperature_eval_ = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
-    S_->SetEvaluator(temperature_key_, temperature_eval_);
+    S_->SetEvaluator(temperature_key_, Tags::DEFAULT, temperature_eval_);
   } else {
     temperature_eval_ = Teuchos::rcp_static_cast<EvaluatorPrimary<CV_t, CVS_t> >(S_->GetEvaluatorPtr(temperature_key_));
   }
@@ -129,7 +129,7 @@ void Energy_PK::Setup()
     .SetMesh(mesh_)->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-  S_->RequireEvaluator(ie_liquid_key_);
+  S_->RequireEvaluator(ie_liquid_key_, Tags::DEFAULT);
 
   S_->RequireDerivative<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT,
                                     temperature_key_, Tags::DEFAULT, ie_liquid_key_);
@@ -138,7 +138,7 @@ void Energy_PK::Setup()
     .SetMesh(mesh_)->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-  S_->RequireEvaluator(ie_rock_key_);
+  S_->RequireEvaluator(ie_rock_key_, Tags::DEFAULT);
 
   S_->RequireDerivative<CV_t, CVS_t>(ie_rock_key_, Tags::DEFAULT,
                                     temperature_key_, Tags::DEFAULT, ie_rock_key_);
@@ -148,7 +148,7 @@ void Energy_PK::Setup()
     .SetMesh(mesh_)->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-  S_->RequireEvaluator(mol_density_liquid_key_);
+  S_->RequireEvaluator(mol_density_liquid_key_, Tags::DEFAULT);
 
   if (S_->GetEvaluator(mol_density_liquid_key_).IsDifferentiableWRT(*S_, temperature_key_, Tags::DEFAULT)) {
     S_->RequireDerivative<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT,
@@ -159,7 +159,7 @@ void Energy_PK::Setup()
     .SetMesh(mesh_)->SetGhosted(true)
     ->AddComponent("cell", AmanziMesh::CELL, 1)
     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
-  S_->RequireEvaluator(mass_density_liquid_key_);
+  S_->RequireEvaluator(mass_density_liquid_key_, Tags::DEFAULT);
 
   if (S_->GetEvaluator(mass_density_liquid_key_).IsDifferentiableWRT(*S_, temperature_key_, Tags::DEFAULT)) {
     S_->RequireDerivative<CV_t, CVS_t>(mass_density_liquid_key_, Tags::DEFAULT,

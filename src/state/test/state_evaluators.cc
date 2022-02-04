@@ -104,7 +104,7 @@ SUITE(EVALUATORS) {
 
     // Create the evaluator.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
     auto fa_eval = Teuchos::rcp(new EvaluatorPrimary<double>(es_list));
-    S.SetEvaluator("fa", fa_eval);
+    S.SetEvaluator("fa", Tags::DEFAULT, fa_eval);
 
     // setup and initialize.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
     S.Setup();
@@ -167,7 +167,7 @@ SUITE(EVALUATORS) {
     es_list.setName("fb");
     S.Require<double>("fb", Tags::DEFAULT, "fb");
     auto fb_eval = Teuchos::rcp(new EvaluatorPrimary<double>(es_list));
-    S.SetEvaluator("fb", fb_eval);
+    S.SetEvaluator("fb", Tags::DEFAULT, fb_eval);
 
     // make the secondary.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
     Teuchos::ParameterList ea_list;
@@ -177,7 +177,7 @@ SUITE(EVALUATORS) {
     S.Require<double>("fa", Tags::DEFAULT, "fa");
     S.RequireDerivative<double>("fa", Tags::DEFAULT, "fb", Tags::DEFAULT);
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
-    S.SetEvaluator("fa", fa_eval);
+    S.SetEvaluator("fa", Tags::DEFAULT, fa_eval);
 
     // setup and initialize.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
     S.Setup();
@@ -251,7 +251,7 @@ SUITE(EVALUATORS) {
 
     // Create the evaluator.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
     auto fa_eval = Teuchos::rcp(new AIndependent(es_list));
-    S.SetEvaluator("fa", fa_eval);
+    S.SetEvaluator("fa", Tags::DEFAULT, fa_eval);
 
     // setup and initialize.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
     S.Setup();
@@ -306,7 +306,7 @@ SUITE(EVALUATORS) {
 
     // Create the evaluator.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
     auto fa_eval = Teuchos::rcp(new BIndependent(es_list));
-    S.SetEvaluator("fa", fa_eval);
+    S.SetEvaluator("fa", Tags::DEFAULT, fa_eval);
 
     S.Require<double>("time", Tags::DEFAULT, "time");
 

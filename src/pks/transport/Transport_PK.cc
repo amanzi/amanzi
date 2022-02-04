@@ -230,14 +230,14 @@ void Transport_PK::Setup()
   if (!S_->HasRecord(porosity_key_)) {
     S_->Require<CV_t, CVS_t>(porosity_key_, Tags::DEFAULT, porosity_key_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->RequireEvaluator(porosity_key_);
+    S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
   }
 
   if (use_transport_porosity_) {
     if (!S_->HasRecord(transport_porosity_key_)) {
       S_->Require<CV_t, CVS_t>(transport_porosity_key_, Tags::DEFAULT, transport_porosity_key_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-      S_->RequireEvaluator(transport_porosity_key_);
+      S_->RequireEvaluator(transport_porosity_key_, Tags::DEFAULT);
     }
   }
 

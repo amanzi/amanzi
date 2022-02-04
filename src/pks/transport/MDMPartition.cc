@@ -46,7 +46,7 @@ Teuchos::RCP<MDMPartition> CreateMDMPartition(
     }
   }
 
-  Teuchos::RCP<Functions::MeshPartition> partition = Teuchos::rcp(new Functions::MeshPartition());
+  auto partition = Teuchos::rcp(new Functions::MeshPartition());
   partition->Initialize(mesh, AmanziMesh::CELL, regions, -1);
   partition->Verify();
 

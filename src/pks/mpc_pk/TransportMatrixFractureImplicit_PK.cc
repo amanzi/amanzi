@@ -350,8 +350,8 @@ Teuchos::RCP<TreeVector> TransportMatrixFractureImplicit_PK::ExtractComponent_(
     const CompositeVector& tcc_m, const CompositeVector& tcc_f, int component)
 {
   auto tv = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<TreeVector> tv1 = Teuchos::rcp(new TreeVector());
-  Teuchos::RCP<TreeVector> tv2 = Teuchos::rcp(new TreeVector());
+  auto tv1 = Teuchos::rcp(new TreeVector());
+  auto tv2 = Teuchos::rcp(new TreeVector());
   tv->PushBack(tv1);
   tv->PushBack(tv2);
 
