@@ -738,8 +738,8 @@ void Lake_Thermo_PK::UpdateBoundaryConditions_(
     int f = bc->first;
     std::cout << "f = " << f << std::endl;
     markers[f] = Operators::OPERATOR_BC_NEUMANN;
-    values[f] = flux[0][39]; //*h_; ///cond_v[0][39]*h_; //bc->second;
-    std::cout << "f = " << f << ", BC flux = " << flux[0][39] << std::endl;
+    values[f] = flux[0][39]/cond_v[0][39]*h_; ///cond_v[0][39]*h_; //bc->second;
+    std::cout << "f = " << f << ", BC flux = " << values[f] << std::endl;
     adv_markers[f] = Operators::OPERATOR_BC_NEUMANN;
     adv_values[f] = 0.;
   }

@@ -168,11 +168,12 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
 	LE = Q_watvap*LE;
 
 	double row0 = 1.e+3;
-	double evap_rate = LE/(row0*tpsf_L_evap);
+	double evap_rate = LE/(row0*tpsf_L_evap)*1000.;
+	evap_rate = abs(evap_rate);
 
 //	std::cout << "evap_rate = " << evap_rate << std::endl;
 
-//	E_ = evap_rate;
+	E_ = evap_rate;
 
   // <-- end compute evaporation rate
 
@@ -207,7 +208,7 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
 //    std::cout << "cp_ = " << cp_ << std::endl;
 //    std::cout << "rho0 = " << rho0 << std::endl;
 //    std::cout << "xcf[2] = " << xcf[2] << std::endl;
-    std::cout << "h_ = " << h_ << std::endl;
+//    std::cout << "h_ = " << h_ << std::endl;
 //    std::cout << "f = " << f << " flux = " << flux_f[0][f] << std::endl;
   }
 
@@ -239,9 +240,9 @@ void Lake_Thermo_PK::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   const Epetra_MultiVector& uw_cond_c = *S_next_->GetFieldData(uw_conductivity_key_)->ViewComponent("face", false);
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
-//  for (int f = 0; f < nfaces_owned; f++) {
-//      std::cout << "lake cond = " << uw_cond_c[0][f] << std::endl;
-//  }
+  for (int f = 0; f < nfaces_owned; f++) {
+      uw_cond_c[0][f] /= (h_*h_);
+  }
 
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
 
@@ -366,11 +367,12 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
   	LE = Q_watvap*LE;
 
   	double row0 = 1.e+3;
-  	double evap_rate = LE/(row0*tpsf_L_evap);
+  	double evap_rate = LE/(row0*tpsf_L_evap)*1000.;
+  	evap_rate = abs(evap_rate);
 
 //  	std::cout << "evap_rate = " << evap_rate << std::endl;
 
-//  	E_ = evap_rate;
+  	E_ = evap_rate;
 
     // <-- end compute evaporation rate
 
@@ -395,7 +397,7 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
     const Epetra_MultiVector& lambda_c =
     *S->GetFieldData(conductivity_key_)->ViewComponent("cell",false);
 
-    S0_ = SS;
+    S0_ = 0.1*SS/h_;
 
     // water extinction coefficient
     alpha_e_ = 1.04;
@@ -405,7 +407,7 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
     for (unsigned int c=0; c!=ncells; ++c) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
-      g_c[0][c] += -1.*( (S0_*exp(-alpha_e_*h_*(1.-xc[2]))*(-alpha_e_*h_)/h_ - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6)) * cv[0][c] );
+      g_c[0][c] += -1.*( (S0_*exp(-alpha_e_*h_*(1.-xc[2]))*(alpha_e_*h_)/(h_+1.e-6) - cp_*rho0*temp[0][c]*dhdt/(h_+1.e-6)) * cv[0][c] );
 //      g_c[0][c] += -1.*( -cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6) * cv[0][c] );
 
       std::cout << "c = " << c << ", SRC = " << g_c[0][c] << std::endl;

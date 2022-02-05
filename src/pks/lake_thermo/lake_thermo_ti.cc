@@ -35,34 +35,88 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   // get temperature
   Teuchos::RCP<const CompositeVector> temp = S_inter_->GetFieldData(temperature_key_);
 
-  for (CompositeVector::name_iterator comp=temp->begin();
-       comp!=temp->end(); ++comp) {
-    // much more efficient to pull out vectors first
-//      const Epetra_MultiVector& eta_v = *eta->ViewComponent(*comp,false);
-//      const Epetra_MultiVector& height_v = *height->ViewComponent(*comp,false);
-    const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
+  Epetra_MultiVector& g_c = *g->Data()->ViewComponent("cell",false);
+  unsigned int ncomp = g_c.MyLength();
 
-    int ncomp = temp->size(*comp, false);
+  std::cout << "ncomp in ti = " << ncomp << std::endl;
 
-    int i_ice_max;
+	const Epetra_MultiVector& temp_v = *temp->ViewComponent("cell",false);
 
-    for (int i=0; i!=ncomp; ++i) {
-      if (temp_v[0][i] < 273.15) { // check if there is ice cover
-        ice_cover_ = true;
-        i_ice_max = i;
-      }
-    } // i
+//	int ncomp = temp->size(*comp, false);
+
+	int i_ice_max = 0;
+	int i_ice_min = ncomp;
+
+	for (int i=0; i!=ncomp; ++i) {
+	  if (temp_v[0][i] < 273.15) { // check if there is ice cover
+//		std::cout << "temp_v[0][" << i << "] = " << temp_v[0][i] << std::endl;
+		ice_cover_ = true;
+		i_ice_max = i;
+	  }
+	} // i
+
+	for (int i=ncomp-2; i!=0; --i) {
+	  if (temp_v[0][i] < 273.15) { // check if there is ice cover
+//		std::cout << "temp_v[0][" << i << "] = " << temp_v[0][i] << std::endl;
+		ice_cover_ = true;
+		i_ice_min = i;
+	  }
+	} // i
+
+	std::cout << "ncomp = " << ncomp << std::endl;
+	std::cout << "i_ice_max = " << i_ice_max << ", i_ice_min = " << i_ice_min << std::endl;
+
+//	// if melting occured at the top, swap cells
+//	for (int i=0; i!=ncomp; ++i) {
+//	  if (ice_cover_ && i < i_ice_max && temp_v[0][i] >= 273.15 ) {
+//		temp_v[0][i] = temp_v[0][i+1];
+//		temp_v[0][i+i_ice_max] = temp_v[0][i+i_ice_max+1];
+//	  }
+//	} // i
+
+//	// if melting occured at the top, swap cells
+//	for (int i=ncomp-1; i!=1; --i) {
+//	  if (ice_cover_ && i > i_ice_max && temp_v[0][i] >= 273.15 ) {
+//		std::cout << "swapping cells at i = " << i << std::endl;
+//		temp_v[0][i] = temp_v[0][i-1];
+//		temp_v[0][i_ice_min] = temp_v[0][i_ice_min-1];
+//	  }
+//	} // i
 
 
-//    // if melting occured at the top, swap cells
-//    for (int i=0; i!=ncomp; ++i) {
-//      if (ice_cover_ && i < i_ice_max && temp_v[0][i] >= 273.15 ) {
-//        temp_v[0][i] = temp_v[0][i+1];
-//        temp_v[0][i+i_ice_max] = temp_v[0][i+i_ice_max+1];
-//      }
-//    } // i
+	int d_thawed = ncomp-1-i_ice_max;
+	int d_ice = i_ice_max-i_ice_min+1;
 
-  }
+	std::cout << "d_thawed = " << d_thawed << std::endl;
+	std::cout << "d_ice = " << d_ice << std::endl;
+
+	std::vector<double> temp_new(ncomp);
+
+	for (int i=0; i!=ncomp; ++i) {
+		temp_new[i] = temp_v[0][i];
+	}
+
+	if (ice_cover_ && d_thawed > 0) {
+		// if thawing occured at the top, swap cells
+		for (int i=0; i < std::min(d_thawed,d_ice); ++i) {
+			std::cout << "swapping cells at i = " << i << std::endl;
+//			std::cout << "temp_v[0][" << i_ice_max+1+i << "] = temp_v[0][" << std::max(i_ice_min+1+i,i_ice_max-d_thawed+1+i) << "]" << std::endl;
+//			std::cout << "temp_v[0][" << i_ice_min+i << "] = temp_v[0][" << i_ice_max+1+i << "]" << std::endl;
+//			temp_new[i_ice_max+1+i] = temp_v[0][std::max(i_ice_min+1+i,i_ice_max-d_thawed+1+i)];
+//			temp_new[i_ice_min+i] = temp_v[0][i_ice_max+1+i];
+			std::cout << "temp_v[0][" << ncomp-1-i << "] = temp_v[0][" << i_ice_max-i << "]" << std::endl;
+			std::cout << "temp_v[0][" << ncomp-d_ice-1-i << "] = temp_v[0][" << ncomp-1-i << "]" << std::endl;
+			temp_new[ncomp-1-i] = temp_v[0][i_ice_max-i];
+			temp_new[ncomp-d_ice-1-i] = temp_v[0][ncomp-1-i];
+		} // i
+
+		std::cout << "Temperature after swapping cells" << std::endl;
+		for (int i=0; i!=ncomp; ++i) {
+			temp_v[0][i] = temp_new[i];
+			std::cout << "temp_v[0][" << i << "] = " << temp_v[0][i] << std::endl;
+		}
+
+	}
 
   // increment, get timestep
   niter_++;
@@ -125,12 +179,9 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
     double q_a = (*H_a_func_)(args);
     double P_a = (*P_a_func_)(args);
 
-    // get temperature
-    const Epetra_MultiVector& temp_v = *S_inter_->GetFieldData(temperature_key_)
-		->ViewComponent("cell",false);
-
-    Epetra_MultiVector& g_c = *g->Data()->ViewComponent("cell",false);
-    unsigned int ncomp = g_c.MyLength();
+//    // get temperature
+//    const Epetra_MultiVector& temp_v = *S_inter_->GetFieldData(temperature_key_)
+//		->ViewComponent("cell",false);
 
     double T_s = temp_v[0][ncomp-1];
 
@@ -175,16 +226,21 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
 	LE = Q_watvap*LE;
 
 	double row0 = 1.e+3;
-	double evap_rate = LE/(row0*tpsf_L_evap);
+	double evap_rate = LE/(row0*tpsf_L_evap)*1000.;
+	evap_rate = abs(evap_rate);
 
-//	std::cout << "evap_rate = " << evap_rate << std::endl;
+	std::cout << "evap_rate = " << evap_rate << std::endl;
 
-//	E_ = evap_rate;
+	E_ = evap_rate;
+
+	std::cout << "precip rate = " << r_ << std::endl;
 
   // update depth
   double dt = S_next_->time() - S_inter_->time();
   double dhdt = r_ - E_ - R_s_ - R_b_;
   h_ += dhdt*dt;
+
+  std::cout << "h_ = " << h_ << std::endl;
 
   // zero out residual
   Teuchos::RCP<CompositeVector> res = g->Data();

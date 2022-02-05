@@ -145,7 +145,13 @@ void HeatFluxBCEvaluator::EvaluateField_(
 
     	double rho_a = P_a/tpsf_R_dryair/T_s/(1.+(1./tpsf_Rd_o_Rv-1.)*q_s);
 
-//    	std::cout << "rho_a = " << rho_a << std::endl;
+    	std::cout << "P_a = " << P_a << std::endl;
+    	std::cout << "tpsf_R_dryair = " << tpsf_R_dryair << std::endl;
+    	std::cout << "T_s = " << T_s << std::endl;
+    	std::cout << "tpsf_Rd_o_Rv = " << tpsf_Rd_o_Rv << std::endl;
+    	std::cout << "q_s = " << q_s << std::endl;
+
+    	std::cout << "rho_a = " << rho_a << std::endl;
 
     	double tpsf_c_a_p  = 1.005e3; // Specific heat of air at constant pressure [J kg^{-1} K^{-1}]
     	double tpsf_L_evap = 2.501e6; // Specific heat of evaporation [J kg^{-1}]
@@ -158,7 +164,7 @@ void HeatFluxBCEvaluator::EvaluateField_(
     	LE = Q_watvap*LE;
 
     	double row0 = 1.e+3;
-    	double evap_rate = LE/(row0*tpsf_L_evap);
+//    	double evap_rate = LE/(row0*tpsf_L_evap)*10.;
 
 //    	std::cout << "evap_rate = " << evap_rate << std::endl;
 
@@ -172,7 +178,7 @@ void HeatFluxBCEvaluator::EvaluateField_(
     	std::cout << "E_a = " << E_a << ", E_s = " << E_s << std::endl;
     	std::cout << "H = " << H << ", LE = " << LE << std::endl;
 
-        result_v[0][i] = SS*(1.-alpha) + E_a - E_s - H - LE;
+        result_v[0][i] = 0.1*SS*(1.-alpha) + E_a - E_s - H - LE;
 
         result_v[0][i] *= -1.; ///cond_v[0][i];
 
