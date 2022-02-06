@@ -76,7 +76,7 @@ TEST(FLOW_2D_MULTISCALE) {
   // create the initial pressure function
   std::string passwd("flow");
   auto& pf = *S->GetW<CompositeVector>("pressure", passwd).ViewComponent("cell");
-  auto& pm = *S->GetW<CompositeVector>("pressure_matrix", passwd).ViewComponent("cell");
+  auto& pm = *S->GetW<CompositeVector>("pressure_msp", passwd).ViewComponent("cell");
 
   for (int c = 0; c < pf.MyLength(); c++) {
     pm[0][c] = pf[0][c];
@@ -100,7 +100,7 @@ TEST(FLOW_2D_MULTISCALE) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");
     GMV::start_data();
     GMV::write_cell_data(pf, 0, "pressure");
-    GMV::write_cell_data(pm, 0, "pressure_matrix");
+    GMV::write_cell_data(pm, 0, "pressure_msp");
     GMV::close_data_file();
   }
 

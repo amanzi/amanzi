@@ -10,7 +10,7 @@
   model. Current naming convention is that the fields used in the 
   single-porosity model correspond now to the fracture continuum.
   Example: pressure = pressure in the fracture continuum;
-           pressure_matrix = pressure in the matrix continuum.
+           pressure_msp = pressure in the matrix continuum.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */

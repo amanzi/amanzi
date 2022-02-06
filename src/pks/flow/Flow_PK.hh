@@ -150,7 +150,7 @@ class Flow_PK : public PK_PhysicalBDF {
 
   // field evaluators (MUST GO AWAY lipnikov@lanl.gov)
   Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> > darcy_flux_eval_;
-  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> > pressure_eval_, pressure_matrix_eval_;
+  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> > pressure_eval_, pressure_msp_eval_;
 
   // DFN model
   bool flow_on_manifold_;  // true for the DFN model

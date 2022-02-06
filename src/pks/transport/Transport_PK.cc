@@ -187,6 +187,10 @@ void Transport_PK::Setup()
   water_content_key_ = Keys::getKey(domain_, "water_content"); 
   prev_water_content_key_ = Keys::getKey(domain_, "prev_water_content"); 
 
+  porosity_msp_key_ = Keys::getKey(domain_, "porosity_msp"); 
+  water_content_msp_key_ = Keys::getKey(domain_, "water_content_msp"); 
+  prev_water_content_msp_key_ = Keys::getKey(domain_, "prev_water_content_msp"); 
+
   // require state fields when Flow PK is off
   S_->Require<double>("const_fluid_density", Tags::DEFAULT, "state");
 
@@ -247,8 +251,8 @@ void Transport_PK::Setup()
     multiscale_porosity_ = true;
     msp_ = CreateMultiscaleTransportPorosityPartition(mesh_, tp_list_);
 
-    if (!S_->HasRecord("total_component_concentration_matrix")) {
-      S_->Require<CV_t, CVS_t>("total_component_concentration_matrix", Tags::DEFAULT, passwd_, component_names_)
+    if (!S_->HasRecord("total_component_concentration_msp")) {
+      S_->Require<CV_t, CVS_t>("total_component_concentration_msp", Tags::DEFAULT, passwd_, component_names_)
         .SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
 
@@ -256,10 +260,10 @@ void Transport_PK::Setup()
       int nnodes, nnodes_tmp = NumberMatrixNodes(msp_);
       mesh_->get_comm()->MaxAll(&nnodes_tmp, &nnodes, 1);
       if (nnodes > 1) {
-        S_->Require<CV_t, CVS_t>("total_component_concentration_matrix_aux", Tags::DEFAULT, passwd_)
+        S_->Require<CV_t, CVS_t>("total_component_concentration_msp_aux", Tags::DEFAULT, passwd_)
           .SetMesh(mesh_)->SetGhosted(false)
           ->SetComponent("cell", AmanziMesh::CELL, ncomponents * (nnodes - 1));
-        S_->GetRecordW("total_component_concentration_matrix_aux", passwd_).set_io_vis(false);
+        S_->GetRecordW("total_component_concentration_msp_aux", passwd_).set_io_vis(false);
       }
     }
 
@@ -275,19 +279,19 @@ void Transport_PK::Setup()
     }
 
     // -- water content in matrix
-    if (!S_->HasRecord("water_content_matrix")) {
-      S_->Require<CV_t, CVS_t>("water_content_matrix", Tags::DEFAULT, passwd_)
+    if (!S_->HasRecord(water_content_msp_key_)) {
+      S_->Require<CV_t, CVS_t>(water_content_msp_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     }
-    if (!S_->HasRecord("prev_water_content_matrix")) {
-      S_->Require<CV_t, CVS_t>("prev_water_content_matrix", Tags::DEFAULT, passwd_)
+    if (!S_->HasRecord(prev_water_content_msp_key_)) {
+      S_->Require<CV_t, CVS_t>(prev_water_content_msp_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-      S_->GetRecordW("prev_water_content_matrix", passwd_).set_io_vis(false);
+      S_->GetRecordW(prev_water_content_msp_key_, passwd_).set_io_vis(false);
     }
 
     // -- porosity of matrix
-    if (!S_->HasRecord("porosity_matrix")) {
-      S_->Require<CV_t, CVS_t>("porosity_matrix", Tags::DEFAULT, passwd_)
+    if (!S_->HasRecord(porosity_msp_key_)) {
+      S_->Require<CV_t, CVS_t>(porosity_msp_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
     }
   }
@@ -567,13 +571,13 @@ void Transport_PK::InitializeFields_()
   InitializeFieldFromField_(water_content_key_, porosity_key_, false);
   InitializeFieldFromField_(prev_water_content_key_, water_content_key_, false);
 
-  InitializeFieldFromField_("water_content_matrix", "porosity_matrix", false);
-  InitializeFieldFromField_("prev_water_content_matrix", "water_content_matrix", false);
+  InitializeFieldFromField_(water_content_msp_key_, porosity_msp_key_, false);
+  InitializeFieldFromField_(prev_water_content_msp_key_, water_content_msp_key_, false);
 
   InitializeFieldFromField_(prev_saturation_liquid_key_, saturation_liquid_key_, false);
-  InitializeFieldFromField_("total_component_concentration_matrix", tcc_key_, false);
+  InitializeFieldFromField_("total_component_concentration_msp", tcc_key_, false);
 
-  InitializeField_("total_component_concentration_matrix_aux", Tags::DEFAULT, passwd_, 0.0);
+  InitializeField_("total_component_concentration_msp_aux", Tags::DEFAULT, passwd_, 0.0);
 }
 
 
@@ -729,21 +733,21 @@ void Transport_PK::AddMultiscalePorosity_(
     double t_old, double t_new, double t_int1, double t_int2)
 {
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell");
-  auto& tcc_matrix = *S_->GetW<CV_t>("total_component_concentration_matrix", passwd_).ViewComponent("cell");
+  auto& tcc_matrix = *S_->GetW<CV_t>("total_component_concentration_msp", passwd_).ViewComponent("cell");
 
   const auto& wcf_prev = *S_->Get<CV_t>(prev_water_content_key_).ViewComponent("cell");
   const auto& wcf = *S_->Get<CV_t>(water_content_key_).ViewComponent("cell");
 
-  const auto& wcm_prev = *S_->Get<CV_t>("prev_water_content_matrix").ViewComponent("cell");
-  const auto& wcm = *S_->Get<CV_t>("water_content_matrix").ViewComponent("cell");
+  const auto& wcm_prev = *S_->Get<CV_t>(prev_water_content_msp_key_).ViewComponent("cell");
+  const auto& wcm = *S_->Get<CV_t>(water_content_msp_key_).ViewComponent("cell");
 
   // multi-node matrix requires more input data
-  const auto& phi_matrix = *S_->Get<CV_t>("porosity_matrix").ViewComponent("cell");
+  const auto& phi_matrix = *S_->Get<CV_t>(porosity_msp_key_).ViewComponent("cell");
 
   int nnodes(1);
   Teuchos::RCP<Epetra_MultiVector> tcc_matrix_aux;
-  if (S_->HasRecord("total_component_concentration_matrix_aux")) {
-    tcc_matrix_aux = S_->GetW<CV_t>("total_component_concentration_matrix_aux", passwd_).ViewComponent("cell");
+  if (S_->HasRecord("total_component_concentration_msp_aux")) {
+    tcc_matrix_aux = S_->GetW<CV_t>("total_component_concentration_msp_aux", passwd_).ViewComponent("cell");
     nnodes = tcc_matrix_aux->NumVectors() + 1; 
   }
   WhetStone::DenseVector tcc_m(nnodes);

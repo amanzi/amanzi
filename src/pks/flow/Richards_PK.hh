@@ -188,6 +188,10 @@ class Richards_PK : public Flow_PK {
   bool vapor_diffusion_;
 
   // multiscale models
+  Key pressure_msp_key_;
+  Key porosity_msp_key_;
+  Key water_content_msp_key_, prev_water_content_msp_key_;
+
   bool multiscale_porosity_;
   int ms_itrs_, ms_calls_;
   Teuchos::RCP<MultiscaleFlowPorosityPartition> msp_;

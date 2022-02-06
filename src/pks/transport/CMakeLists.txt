@@ -153,6 +153,11 @@ if (BUILD_TESTS AND ENABLE_AmanziPhysicsModule)
                     SOURCE test/Main.cc test/transport_3D_long.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+    add_amanzi_test(transport_multiscale transport_multiscale
+                    KIND unit
+                    SOURCE test/Main.cc test/transport_multiscale.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     add_amanzi_test(transport_implicit transport_implicit
                     KIND unit
                     SOURCE test/Main.cc test/transport_implicit.cc

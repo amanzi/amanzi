@@ -107,7 +107,7 @@ void Richards_PK::FunctionalResidual(
 
   // add water content in matrix
   if (multiscale_porosity_) {
-    pressure_matrix_eval_->SetChanged();
+    pressure_msp_eval_->SetChanged();
     Functional_AddMassTransferMatrix_(dtp, f->Data());
   }
 
@@ -245,13 +245,13 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
 void Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<CompositeVector> f)
 {
   const auto& pcf = *S_->Get<CompositeVector>(pressure_key_).ViewComponent("cell");
-  const auto& pcm = *S_->Get<CompositeVector>("pressure_matrix").ViewComponent("cell");
+  const auto& pcm = *S_->Get<CompositeVector>(pressure_msp_key_).ViewComponent("cell");
 
-  S_->GetEvaluator("porosity_matrix").Update(*S_, "flow");
-  const auto& phi = *S_->Get<CompositeVector>("porosity_matrix").ViewComponent("cell");
+  S_->GetEvaluator(porosity_msp_key_).Update(*S_, "flow");
+  const auto& phi = *S_->Get<CompositeVector>(porosity_msp_key_).ViewComponent("cell");
 
-  const auto& wcm_prev = *S_->Get<CompositeVector>("prev_water_content_matrix").ViewComponent("cell");
-  auto& wcm = *S_->Get<CompositeVector>("water_content_matrix", Tags::DEFAULT).ViewComponent("cell");
+  const auto& wcm_prev = *S_->Get<CompositeVector>(prev_water_content_msp_key_).ViewComponent("cell");
+  auto& wcm = *S_->Get<CompositeVector>(water_content_msp_key_, Tags::DEFAULT).ViewComponent("cell");
 
   Epetra_MultiVector& fc = *f->ViewComponent("cell");
 
@@ -282,10 +282,10 @@ void Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<Comp
 ****************************************************************** */
 void Richards_PK::CalculateVWContentMatrix_()
 {
-  S_->GetEvaluator("porosity_matrix").Update(*S_, "flow");
-  const auto& pcm = *S_->Get<CompositeVector>("pressure_matrix").ViewComponent("cell");
-  const auto& phi = *S_->Get<CompositeVector>("porosity_matrix").ViewComponent("cell");
-  auto& wcm = *S_->GetW<CompositeVector>("water_content_matrix", passwd_).ViewComponent("cell");
+  S_->GetEvaluator(porosity_msp_key_).Update(*S_, "flow");
+  const auto& pcm = *S_->Get<CompositeVector>(pressure_msp_key_).ViewComponent("cell");
+  const auto& phi = *S_->Get<CompositeVector>(porosity_msp_key_).ViewComponent("cell");
+  auto& wcm = *S_->GetW<CompositeVector>(water_content_msp_key_, passwd_).ViewComponent("cell");
 
   double phi0, pcm0;
   for (int c = 0; c < ncells_owned; ++c) {

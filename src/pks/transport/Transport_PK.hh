@@ -179,6 +179,9 @@ class Transport_PK : public PK_Physical {
   Key saturation_liquid_key_, prev_saturation_liquid_key_;
   Key water_content_key_, prev_water_content_key_;
 
+  Key porosity_msp_key_;
+  Key water_content_msp_key_, prev_water_content_msp_key_;
+
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;
   int nnodes_wghost;
