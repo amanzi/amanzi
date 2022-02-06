@@ -231,18 +231,6 @@ class State {
     rs.SetType<T>();
   }
 
-#ifndef DISABLE_DEFAULT_TAG
-  template <typename T, typename F>
-  F& Require(const Key& fieldname) {
-    return Require<T, F>(fieldname, Tags::DEFAULT);
-  }
-
-  template <typename T>
-  void Require(const Key& fieldname) {
-    Require<T>(fieldname, Tags::DEFAULT);
-  }
-#endif
-
   template <typename T, typename F>
   F& Require(const Key& fieldname, const Tag& tag, const Key& owner,
              const std::vector<std::string>& subfield_names) {
@@ -311,18 +299,6 @@ class State {
     deriv_set.RequireRecord(dertag, owner);
     return deriv_set.SetType<T>();
   }
-
-#ifndef DISABLE_DEFAULT_TAG
-  template <typename T, typename F>
-  F& RequireDerivative(const Key& key, const Key& wrt_key, const Tag& wrt_tag) {
-    return RequireDerivative<T, F>(key, Tags::DEFAULT, wrt_key, wrt_tag, "");
-  }
-
-  template <typename T>
-  void RequireDerivative(const Key& key, const Key& wrt_key, const Tag& wrt_tag) {
-    RequireDerivative<T>(key, Tags::DEFAULT, wrt_key, wrt_tag, "");
-  }
-#endif
 
   // set operations
   bool HasDerivativeSet(const Key& key, const Tag& tag) const;

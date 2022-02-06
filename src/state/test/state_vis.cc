@@ -106,7 +106,7 @@ SUITE(VISUALIZATION) {
 
     S0.RegisterMesh("domain", Mesh);
     S0.Require<Amanzi::CompositeVector, Amanzi::CompositeVectorSpace>(
-          "celldata")
+          "celldata", Amanzi::Tags::DEFAULT)
         .SetMesh(Mesh)
         ->SetGhosted(false)
         ->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);

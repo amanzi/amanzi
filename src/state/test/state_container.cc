@@ -52,7 +52,7 @@ TEST(STATE_FACTORIES_PERSIST) {
       .SetMesh(s.GetMesh())
       ->SetGhosted();
 
-  s.Require<CompositeVector, CompositeVectorSpace>("my_vec").SetComponent(
+  s.Require<CompositeVector, CompositeVectorSpace>("my_vec", Tags::DEFAULT).SetComponent(
       "cell", AmanziMesh::CELL, 1);
 
   s.Setup();

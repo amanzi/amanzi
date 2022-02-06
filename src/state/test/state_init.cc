@@ -52,11 +52,11 @@ TEST(FIELD_INITIALIZATION) {
 
   // populate state
   S.RegisterMesh("domain", mesh);
-  S.Require<CompositeVector, CompositeVectorSpace>("porosity")
+  S.Require<CompositeVector, CompositeVectorSpace>("porosity", Tags::DEFAULT)
     .SetMesh(mesh)->SetGhosted(false)
                   ->SetComponent("cell", AmanziMesh::CELL, 1);
   S.RequireEvaluator("porosity", Tags::DEFAULT);
-  S.Require<CompositeVector, CompositeVectorSpace>("permeability")
+  S.Require<CompositeVector, CompositeVectorSpace>("permeability", Tags::DEFAULT)
     .SetMesh(mesh)->SetGhosted(false)
                   ->SetComponent("cell", AmanziMesh::CELL, 3);
 

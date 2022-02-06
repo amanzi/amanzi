@@ -53,7 +53,7 @@ Teuchos::RCP<Evaluator> EvaluatorDeformingCellVolume::Clone() const {
 // Ensures that the function can provide for the vector's requirements.
 // ---------------------------------------------------------------------------
 void EvaluatorDeformingCellVolume::EnsureCompatibility(State& S) {
-  auto& my_fac = S.Require<CompositeVector, CompositeVectorSpace>(my_key_);
+  auto& my_fac = S.Require<CompositeVector, CompositeVectorSpace>(my_key_, Tags::DEFAULT);
 
   if (!my_fac.Owned()) {
     // requirements not yet set, claim ownership and set valid component
