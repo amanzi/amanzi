@@ -9,7 +9,7 @@
 
 /*!
 
-Solves a 1D advection-diffusion equation in vertical coordinate for energy:
+Solves a 1D advection-diffusion equation in vertical coordinate for water temperature:
 
 .. math::
     c\rho\frac{\partial T}{\partial t} = \frac{1}{h^2} \frac{\partial}{\partial \xi} \left( \lambda \frac{\partial T}{\partial \xi} \right) +
@@ -30,8 +30,7 @@ Solves a 1D advection-diffusion equation in vertical coordinate for energy:
       boundary condition.  See `Energy-specific Boundary Conditions`_
       
     * `"thermal conductivity evaluator`"
-      ``[thermal-conductivity-evaluator-spec]`` The thermal conductivity.  This
-      needs to go away, and should get moved to State.
+      ``[thermal-conductivity-evaluator-spec]`` The thermal conductivity.
 
     * `"absolute error tolerance`" ``[double]`` **76.e-6** A small amount of
       energy, see error norm. `[MJ]`
@@ -68,29 +67,6 @@ Solves a 1D advection-diffusion equation in vertical coordinate for energy:
     * `"preconditioner`" ``[preconditioner-typed-spec]`` The Preconditioner_
 
     * `"linear solver`" ``[linear-solver-typed-spec]`` A `LinearOperator`_
-      
-    IF
-    
-    * `"source term`" ``[bool]`` **false** Is there a source term?
-    
-    THEN
-    
-    * `"source key`" ``[string]`` **DOMAIN-total_energy_source** Typically
-      not set, as the default is good. ``[MJ s^-1]``
-
-    * `"source term is differentiable`" ``[bool]`` **true** Can the source term
-      be differentiated with respect to the primary variable?
-
-    * `"source term finite difference`" ``[bool]`` **false** If the source term
-      is not diffferentiable, we can do a finite difference approximation of
-      this derivative anyway.  This is useful for difficult-to-differentiate
-      terms like a surface energy balance, which includes many terms.
-
-    EVALUATORS:
-
-    - `"source term`"
-    
-    END
 
     Globalization:
     
@@ -109,13 +85,10 @@ Solves a 1D advection-diffusion equation in vertical coordinate for energy:
     
     Variable names:
 
-    * `"conserved quantity key`" ``[string]`` **DOMAIN-energy** The total energy :math:`E` `[MJ]`
+    * `"conserved quantity key`" ``[string]`` **DOMAIN-temperature** The water temperature :math:`T` `[K]`
     * `"energy key`" ``[string]`` **DOMAIN-energy** The total energy :math:`E`, also the conserved quantity. `[MJ]`
     * `"water content key`" ``[string]`` **DOMAIN-water_content** The total mass :math:`\Theta`, used in error norm `[mol]`
     * `"enthalpy key`" ``[string]`` **DOMAIN-enthalpy** The specific enthalpy :math`e` `[MJ mol^-1]`
-    * `"flux key`" ``[string]`` **DOMAIN-mass_flux** The mass flux :math:`\mathbf{q}` used in advection. `[mol s^-1]`
-    * `"diffusive energy flux`" ``[string]`` **DOMAIN-diffusive_energy_flux** :math:`\mathbf{q_e}` `[MJ s^-1]`
-    * `"advected energy flux`" ``[string]`` **DOMAIN-advected_energy_flux** :math:`\mathbf{q_e^{adv}} = q e` `[MJ s^-1]`
     * `"thermal conductivity`" ``[string]`` **DOMAIN-thermal_conductivity** Thermal conductivity on cells `[W m^-1 K^-1]`
     * `"upwinded thermal conductivity`" ``[string]`` **DOMAIN-upwinded_thermal_conductivity** Thermal conductivity on faces `[W m^-1 K^-1]`
     
@@ -125,30 +98,16 @@ Solves a 1D advection-diffusion equation in vertical coordinate for energy:
       The inverse of the accumulation operator.  See PDE_Accumulation_.
       Typically not provided by users, as defaults are correct.
 
-    IF
-    
-    * `"coupled to surface via flux`" ``[bool]`` **false** If true, apply
-      surface boundary conditions from an exchange flux.  Note, if this is a
-      coupled problem, it is probably set by the MPC.  No need for a user to
-      set it.
-      
-    THEN
-
-    * `"surface-subsurface energy flux key`" ``[string]`` **DOMAIN-surface_subsurface_energy_flux**
-    
-    END
-
-    * `"coupled to surface via temperature`" ``[bool]`` **false** If true, apply
-      surface boundary conditions from the surface temperature (Dirichlet).
-
 
     EVALUATORS:
 
     - `"enthalpy`"
     - `"cell volume`"
     - `"thermal conductivity`"
-    - `"conserved quantity`"
     - `"energy`"
+    - `"density`"
+    - `"surface heat flux`"
+
     
 */
 
