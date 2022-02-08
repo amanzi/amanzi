@@ -22,22 +22,18 @@ namespace Amanzi {
 // Constructor
 // ---------------------------------------------------------------------------
 EvaluatorDeformingCellVolume::EvaluatorDeformingCellVolume(Teuchos::ParameterList& plist)
-    : EvaluatorSecondary(plist) {
-  my_key_ = plist.get<std::string>("evaluator name", "cell_volume");
-
+    : EvaluatorSecondary(plist)
+{
   if (plist.isParameter("mesh name")) {
     my_mesh_ = plist.get<std::string>("mesh name");
-  } else if (my_key_ == std::string("cell_volume")) {
-    my_mesh_ = "domain";
-  } else if (my_key_.length() > std::string("cell_volume").length()) {
-    my_mesh_ = my_key_.substr(0, my_key_.length() - std::string("cell_volume").length() - 1);
   } else {
-    AMANZI_ASSERT(0);
+    my_mesh_ = Keys::getDomain(my_keys_.front().first);
   }
 
   // stick in the deformation key as my leaf node.
   Key deformation_key = plist.get<std::string>("deformation key");
-  dependencies_.insert(std::make_pair(deformation_key, Tags::DEFAULT));
+  Tag deformation_tag(plist.get<std::string>("tag", ""));
+  dependencies_.insert(KeyTag(deformation_key, deformation_tag));
 }
 
 
@@ -49,25 +45,14 @@ Teuchos::RCP<Evaluator> EvaluatorDeformingCellVolume::Clone() const {
 }
 
 
-// ---------------------------------------------------------------------------
-// Ensures that the function can provide for the vector's requirements.
-// ---------------------------------------------------------------------------
 void EvaluatorDeformingCellVolume::EnsureCompatibility(State& S) {
-  auto& my_fac = S.Require<CompositeVector, CompositeVectorSpace>(my_key_, Tags::DEFAULT);
+  Key key = my_keys_.front().first;
+  Tag tag = my_keys_.front().second;
+  S.Require<CompositeVector,CompositeVectorSpace>(key, tag)
+    .SetMesh(S.GetMesh(my_mesh_))
+    ->AddComponent("cell", AmanziMesh::Entity_kind::CELL, 1);
 
-  if (!my_fac.Owned()) {
-    // requirements not yet set, claim ownership and set valid component
-    S.Require<CompositeVector, CompositeVectorSpace>(my_key_, Tags::DEFAULT)
-        .SetMesh(S.GetMesh(my_mesh_))->SetComponent("cell", AmanziMesh::CELL, 1);
-
-    // check plist for vis or checkpointing control
-    bool io_my_key =
-        plist_.get<bool>(std::string("visualize ") + my_key_, true);
-    std::cout << "vis " << my_key_ << "? " << io_my_key << std::endl;
-    S.GetRecordW(my_key_, my_key_).set_io_vis(io_my_key);
-    bool flag = plist_.get<bool>(std::string("checkpoint ") + my_key_, false);
-    S.GetRecordW(my_key_, my_key_).set_io_vis(flag);
-  }
+  EnsureCompatibility_Flags_(S);
 }
 
 

@@ -220,12 +220,12 @@ void ReadCheckpointObservations(const Comm_ptr_type& comm,
 // -----------------------------------------------------------------------------
 void DeformCheckpointMesh(State& S, Key domain)
 {
-  if (S.HasRecord("vertex coordinate")) { // only deform mesh if vertex coordinate
-                                        // field exists
+  if (S.HasRecord("vertex coordinate", Tags::DEFAULT)) {
+    // only deform mesh if vertex coordinate field exists
     AmanziMesh::Mesh* write_access_mesh = const_cast<AmanziMesh::Mesh*>(&*S.GetMesh());
 
     // get vertex coordinates state
-    const CompositeVector& vc = S.Get<CompositeVector>("vertex coordinate");
+    const CompositeVector& vc = S.Get<CompositeVector>("vertex coordinate", Tags::DEFAULT);
     vc.ScatterMasterToGhosted("node");
     const Epetra_MultiVector& vc_n = *vc.ViewComponent("node", true);
 

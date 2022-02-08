@@ -345,37 +345,36 @@ Key readDomain(Teuchos::ParameterList& plist,
 
 Key readDomainHint(Teuchos::ParameterList& plist,
                    const Key& hint,
-                   const Key& hint_prefix,
-                   Key prefix)
+                   Key hint_domain_type,
+                   Key domain_type)
 {
   std::string param;
-  if (prefix.empty()) param = "domain name";
-  else param = (prefix + " domain name");
+  if (domain_type.empty()) param = "domain name";
+  else param = (domain_type + " domain name");
 
-  prefix = standardize(prefix);
-  if (prefix == "subsurface") prefix = "domain";
+  domain_type = standardize(domain_type);
+  hint_domain_type = standardize(hint_domain_type);
 
-  if (standardize(hint) == standardize(hint_prefix)) {
-    return standardize(plist.get<std::string>(param, prefix));
+  if (standardize(hint) == hint_domain_type) {
+    return standardize(plist.get<std::string>(param, domain_type));
 
-  } else if (prefix == standardize(hint_prefix)) {
+  } else if (domain_type == hint_domain_type) {
     return standardize(plist.get<std::string>(param, hint));
 
-  } else if (Keys::starts_with(hint, hint_prefix)) {
+  } else if (Keys::starts_with(hint, hint_domain_type)) {
     Key default_domain;
-    if (prefix == "domain") {
-      default_domain = hint.substr(hint_prefix.size(), std::string::npos);
+    if (domain_type == "domain") {
+      default_domain = hint.substr(hint_domain_type.size(), std::string::npos);
       if (Keys::starts_with(default_domain, "_"))
         default_domain = default_domain.substr(1, std::string::npos);
       if (Keys::starts_with(default_domain, dset_delimiter))
-        default_domain = prefix+default_domain;
+        default_domain = domain_type+default_domain;
     } else {
-      default_domain = prefix + hint.substr(hint_prefix.size(), std::string::npos);
+      default_domain = domain_type + hint.substr(hint_domain_type.size(), std::string::npos);
     }
     return standardize(plist.get<std::string>(param, default_domain));
-  } else if (standardize(hint_prefix) == "domain" ||
-             hint_prefix == "subsurface") {
-    return standardize(plist.get<std::string>(param, prefix+"_"+hint));
+  } else if (hint_domain_type == "domain") {
+    return standardize(plist.get<std::string>(param, domain_type+"_"+hint));
   }
   return standardize(plist.get<std::string>(param));
 }

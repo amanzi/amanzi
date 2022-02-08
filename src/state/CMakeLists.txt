@@ -48,13 +48,6 @@ if(ENABLE_Silo)
   add_definitions(-DENABLE_Silo)
 endif(ENABLE_Silo)
 
-if(ENABLE_ATSPhysicsModule)
-  if (NOT ENABLE_AmanziPhysicsModule)
-    add_definitions(-DDISABLE_DEFAULT_TAG)
-  endif()
-endif()
-
-
 # This state library will move to a new location 
 # once Markus has created the data manager.
 # I use global properties since all the PROJECT_NAME
@@ -82,6 +75,7 @@ set(state_inc_files
   evaluators/EvaluatorIndependent.hh
   evaluators/EvaluatorIndependentFromFile.hh
   evaluators/EvaluatorIndependentFunction.hh
+  evaluators/EvaluatorIndependentConstant.hh
   evaluators/EvaluatorMultiplicativeReciprocal.hh
   evaluators/EvaluatorPrimary.hh
   evaluators/EvaluatorSecondaryMonotype.hh
@@ -108,6 +102,7 @@ add_amanzi_library(state
                           evaluators/EvaluatorIndependent.cc
                           evaluators/EvaluatorIndependentFromFile.cc
                           evaluators/EvaluatorIndependentFunction.cc
+                          evaluators/EvaluatorIndependentConstant.cc
                           evaluators/EvaluatorMultiplicativeReciprocal.cc
                           evaluators/EvaluatorPrimary.cc
                           evaluators/EvaluatorSecondary.cc

@@ -15,6 +15,7 @@
 #include "EvaluatorDeformingCellVolume.hh"
 #include "EvaluatorIndependentFromFile.hh"
 #include "EvaluatorIndependentFunction.hh"
+#include "EvaluatorIndependentConstant.hh"
 #include "EvaluatorMultiplicativeReciprocal.hh"
 #include "EvaluatorSecondaryMonotypeFromFunction.hh"
 
@@ -25,6 +26,7 @@ Utils::RegisteredFactory<Evaluator, EvaluatorDeformingCellVolume> EvaluatorDefor
 
 Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFunction> EvaluatorIndependentFunction::fac_("independent variable");
 Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFromFile> EvaluatorIndependentFromFile::fac_("independent variable from file");
+Utils::RegisteredFactory<Evaluator, EvaluatorIndependentConstant> EvaluatorIndependentConstant::fac_("independent variable constant");
 
 Utils::RegisteredFactory<Evaluator, EvaluatorMultiplicativeReciprocal> EvaluatorMultiplicativeReciprocal::fac_("multiplicative reciprocal");
 

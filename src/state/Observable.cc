@@ -48,6 +48,7 @@ Observable::Observable(Teuchos::ParameterList& plist)
   variable_ = plist.get<std::string>("variable");
   region_ = plist.get<std::string>("region");
   location_ = plist.get<std::string>("location name", "cell");
+  tag_ = Tag(plist.get<std::string>("tag", ""));
 
   // Note: -1 here means either take it from the physics if possible, or if
   // this variable is not in the physics, instead will default to 1.
@@ -117,17 +118,17 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
   // does the observed quantity have an evaluator?  Or can we make one? Note
   // that a non-evaluator based observation must already have been created by
   // PKs by now, because PK->Setup() has already been run.
-  if (!S->HasRecord(variable_)) {
+  if (!S->HasRecord(variable_, tag_)) {
     // not yet created, require a new record
-    S->Require<CompositeVector, CompositeVectorSpace>(variable_, Tags::DEFAULT, "state");
-  } 
+    S->Require<CompositeVector, CompositeVectorSpace>(variable_, tag_, "state");
+  }
 
-  has_eval_ = S->HasEvaluator(variable_, Tags::DEFAULT);
+  has_eval_ = S->HasEvaluator(variable_, tag_);
 
   // try to set requirements on the field, if they are not already set
-  if (!S->HasRecord(variable_)) {
+  if (!S->HasRecord(variable_, tag_)) {
     // require the field
-    auto& cvs = S->Require<CompositeVector, CompositeVectorSpace>(variable_, Tags::DEFAULT);
+    auto& cvs = S->Require<CompositeVector, CompositeVectorSpace>(variable_, tag_);
 
     // we have to set the mesh now -- assume it is provided by the domain
     cvs.SetMesh(S->GetMesh(Keys::getDomain(variable_)));
@@ -151,7 +152,7 @@ void Observable::FinalizeStructure(const Teuchos::Ptr<State>& S)
 {
   // one last check that the structure is all set up and consistent
   if (num_vectors_ < 0) {
-    const auto& field = S->GetW<CompositeVector>(variable_, "state");
+    const auto& field = S->GetW<CompositeVector>(variable_, tag_, "state");
     if (!field.HasComponent(location_)) {
       Errors::Message msg;
       msg << "Observable: \"" << name_ << "\" uses variable \""
@@ -183,9 +184,9 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
 
   // update the variable
   if (has_eval_)
-    S->GetEvaluator(variable_).Update(*S, "observation");
+    S->GetEvaluator(variable_, tag_).Update(*S, "observation");
 
-  const auto& record = S->GetRecord(variable_);
+  const auto& record = S->GetRecord(variable_, tag_);
   if (record.ValidType<double>()) {
     // scalars, just return the value
     data[start_loc] = record.Get<double>();

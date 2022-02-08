@@ -121,6 +121,7 @@ bool hasKey(const Container& c, const Key& key) {
 inline
 Key standardize(const Key& other) {
   if (other.empty()) return "domain";
+  if (other == "subsurface") return "domain";
   return other;
 }
 
@@ -227,7 +228,7 @@ Key readDomain(Teuchos::ParameterList& plist,
 // value.
 Key readDomainHint(Teuchos::ParameterList& plist,
                    const Key& hint,
-                   const Key& hint_dtype,
+                   Key hint_dtype,
                    Key dtype);
 
 // Most domains are of a common type, either "domain", "surface", "snow",

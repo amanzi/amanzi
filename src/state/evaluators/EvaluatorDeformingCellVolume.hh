@@ -28,10 +28,14 @@ class EvaluatorDeformingCellVolume : public EvaluatorSecondary {
   EvaluatorDeformingCellVolume(const EvaluatorDeformingCellVolume &other) = default;
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
-  // setup of data and class
+  // not differentiable WRT to anything
+  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key,
+          const Tag& wrt_tag) const override { return false; }
+
   virtual void EnsureCompatibility(State& S) override;
 
  protected:
+
   virtual void Update_(State &S) override;
   virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) override {};
 

@@ -96,12 +96,12 @@ void EvaluatorMultiplicativeReciprocal::Evaluate_(
     result_c.PutScalar(coef_);
 
     for (auto it = list0_.begin(); it != list0_.end(); ++it) {
-      const auto& factor_c = *S.Get<CompositeVector>(*it).ViewComponent(*comp);
+      const auto& factor_c = *S.Get<CompositeVector>(*it, Tags::DEFAULT).ViewComponent(*comp);
       for (int c = 0; c != ndofs; ++c) result_c[0][c] *= factor_c[0][c];
     }
 
     for (auto it = list1_.begin(); it != list1_.end(); ++it) {
-      const auto& factor_c = *S.Get<CompositeVector>(*it).ViewComponent(*comp);
+      const auto& factor_c = *S.Get<CompositeVector>(*it, Tags::DEFAULT).ViewComponent(*comp);
       for (int c = 0; c != ndofs; ++c) result_c[0][c] /= factor_c[0][c];
     }
 
@@ -127,13 +127,13 @@ void EvaluatorMultiplicativeReciprocal::EvaluatePartialDerivative_(
 
     result_c.PutScalar(1.0);
     for (auto it = list0_.begin(); it != list0_.end(); ++it) {
-      const auto& factor_c = *S.Get<CompositeVector>(*it).ViewComponent(*comp);
+      const auto& factor_c = *S.Get<CompositeVector>(*it, Tags::DEFAULT).ViewComponent(*comp);
       if (*it != wrt_key)
         for (int c = 0; c != ncells; ++c) result_c[0][c] *= factor_c[0][c];
     }
 
     for (auto it = list1_.begin(); it != list1_.end(); ++it) {
-      const auto& factor_c = *S.Get<CompositeVector>(*it).ViewComponent(*comp);
+      const auto& factor_c = *S.Get<CompositeVector>(*it, Tags::DEFAULT).ViewComponent(*comp);
       if (*it == wrt_key)
         for (int c = 0; c != ncells; ++c) result_c[0][c] /= -factor_c[0][c] * factor_c[0][c];
       else 
