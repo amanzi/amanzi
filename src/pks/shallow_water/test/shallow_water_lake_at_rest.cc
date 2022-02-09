@@ -31,7 +31,7 @@ double H_inf = 0.5; // Lake at rest total height
 // ---- ---- ---- ---- ---- ---- ---- ----
 // Exact Solution
 // ---- ---- ---- ---- ---- ---- ---- ----
-void lake_at_rest_exact(double t, double x, double y, double &ht, double &u, double &v)
+void lake_at_rest_exact(double t, double x, double y, double& ht, double& u, double& v)
 {
   ht = H_inf;
   u = 0;
@@ -39,14 +39,14 @@ void lake_at_rest_exact(double t, double x, double y, double &ht, double &u, dou
 }
 
 void lake_at_rest_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
-                               Epetra_MultiVector &ht_ex, Epetra_MultiVector &vel_ex, double t)
+                               Epetra_MultiVector& ht_ex, Epetra_MultiVector& vel_ex, double t)
 {
   double x, y, ht, u, v;
     
   int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
     
   for (int c = 0; c < ncells_owned; ++c) {
-    const Amanzi::AmanziGeometry::Point &xc = mesh->cell_centroid(c);
+    const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
         
     x = xc[0]; y = xc[1];
         
@@ -61,7 +61,7 @@ void lake_at_rest_exact_field(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 // ---- ---- ---- ---- ---- ---- ---- ----
 // Inital Conditions
 // ---- ---- ---- ---- ---- ---- ---- ----
-void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos::RCP<Amanzi::State> &S, int icase)
+void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuchos::RCP<Amanzi::State>& S, int icase)
 {
   double pi = M_PI;
   const double rho = S->Get<double>("const_fluid_density");
@@ -102,7 +102,7 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
     
   for (int c = 0; c < ncells_wghost; ++c) {
     
-    const Amanzi::AmanziGeometry::Point &xc = mesh->cell_centroid(c);
+    const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
         
     Amanzi::AmanziMesh::Entity_ID_List cfaces, cnodes, cedges;
     mesh->cell_get_faces(c, &cfaces);
@@ -166,9 +166,9 @@ void lake_at_rest_setIC(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, Teuch
 // Error
 // ---- ---- ---- ---- ---- ---- ---- ----
 void error(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
-            Epetra_MultiVector &ht_ex, Epetra_MultiVector &vel_ex,
-            const Epetra_MultiVector &ht, const Epetra_MultiVector &vel,
-            double &err_max, double &err_L1, double &hmax)
+            Epetra_MultiVector& ht_ex, Epetra_MultiVector& vel_ex,
+            const Epetra_MultiVector& ht, const Epetra_MultiVector& vel,
+            double& err_max, double& err_L1, double& hmax)
 {
   int ncells_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
     

@@ -151,6 +151,7 @@ void Richards_PK::Setup()
   alpha_key_ = Keys::getKey(domain_, "alpha_coef"); 
 
   // set up the base class 
+  key_ = pressure_key_;
   Flow_PK::Setup();
 
   // Our decision can be affected by the list of models

@@ -31,6 +31,9 @@
 namespace Amanzi {
 namespace Flow {
 
+using CV_t = CompositeVector;
+using CVS_t = CompositeVectorSpace;
+
 /* ******************************************************************
 * default constructor that initializes all pointers to NULL
 ****************************************************************** */
@@ -82,7 +85,7 @@ void Flow_PK::Setup()
   // -- effective fracture permeability
   if (flow_on_manifold_) {
     if (!S_->HasRecord(permeability_key_)) {
-      S_->Require<CompositeVector, CompositeVectorSpace>(permeability_key_, Tags::DEFAULT, permeability_key_)
+      S_->Require<CV_t, CVS_t>(permeability_key_, Tags::DEFAULT, permeability_key_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
       auto fpm_list = Teuchos::sublist(fp_list_, "fracture permeability models", true);
@@ -97,7 +100,7 @@ void Flow_PK::Setup()
     }
 
     if (!S_->HasRecord(aperture_key_)) {
-      S_->Require<CompositeVector, CompositeVectorSpace>(aperture_key_, Tags::DEFAULT, aperture_key_)
+      S_->Require<CV_t, CVS_t>(aperture_key_, Tags::DEFAULT, aperture_key_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
 
       S_->RequireEvaluator(aperture_key_, Tags::DEFAULT);
@@ -106,7 +109,7 @@ void Flow_PK::Setup()
   // -- matrix absolute permeability
   } else {
     if (!S_->HasRecord(permeability_key_)) {
-      S_->Require<CompositeVector, CompositeVectorSpace>(permeability_key_, Tags::DEFAULT, permeability_key_)
+      S_->Require<CV_t, CVS_t>(permeability_key_, Tags::DEFAULT, permeability_key_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, dim);
     }
   }
@@ -115,10 +118,10 @@ void Flow_PK::Setup()
   if (!S_->HasRecord(darcy_flux_key_)) {
     if (flow_on_manifold_) {
       auto cvs = Operators::CreateNonManifoldCVS(mesh_);
-      *S_->Require<CompositeVector, CompositeVectorSpace>(darcy_flux_key_, Tags::DEFAULT, passwd_)
+      *S_->Require<CV_t, CVS_t>(darcy_flux_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(true) = *cvs;
     } else {
-      S_->Require<CompositeVector, CompositeVectorSpace>(darcy_flux_key_, Tags::DEFAULT, passwd_)
+      S_->Require<CV_t, CVS_t>(darcy_flux_key_, Tags::DEFAULT, passwd_)
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::FACE, 1);
     }
   }
@@ -136,7 +139,7 @@ void Flow_PK::Setup()
         if (src_list.isSublist(name)) {
           Teuchos::ParameterList& spec = src_list.sublist(name);
           if (IsWellIndexRequire(spec)) {
-            S_->Require<CompositeVector, CompositeVectorSpace>("well_index", Tags::DEFAULT, passwd_)
+            S_->Require<CV_t, CVS_t>("well_index", Tags::DEFAULT, passwd_)
               .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
             peaceman_model_ = true;
             break;

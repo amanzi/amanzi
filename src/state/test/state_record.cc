@@ -18,7 +18,7 @@ std::unique_ptr<RecordSet> getRecordDouble() {
 std::unique_ptr<RecordSet> getRecordVec() {
   auto f = std::make_unique<RecordSet>("my_field");
   f->RequireRecord(Tags::DEFAULT, "my_owner");
-  auto &fac = f->SetType<Vec, VecFactory>();
+  auto& fac = f->SetType<Vec, VecFactory>();
   fac.set_size(2);
   f->CreateData();
   return f;

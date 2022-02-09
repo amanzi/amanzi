@@ -101,7 +101,7 @@
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="7.0e+10"/>
         <Parameter name="maximum cycle number" type="int" value="20"/>
-        <Parameter name="initial time step" type="double" value="100.0"/>
+        <Parameter name="initial time step" type="double" value="1000.0"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="time period control">

@@ -24,18 +24,17 @@ class EvaluatorIndependentFunction
     : public EvaluatorIndependent<CompositeVector, CompositeVectorSpace> {
 
  public:
-  explicit EvaluatorIndependentFunction(Teuchos::ParameterList &plist);
-  EvaluatorIndependentFunction(const EvaluatorIndependentFunction &other) = default;
+  explicit EvaluatorIndependentFunction(Teuchos::ParameterList& plist);
+  EvaluatorIndependentFunction(const EvaluatorIndependentFunction& other) = default;
 
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
-  virtual Evaluator& operator=(const Evaluator &other) override;
+  virtual Evaluator& operator=(const Evaluator& other) override;
 
-  EvaluatorIndependentFunction &
-  operator=(const EvaluatorIndependentFunction &other);
+  EvaluatorIndependentFunction& operator=(const EvaluatorIndependentFunction& other);
 
  protected:
-  virtual void Update_(State &S) override;
+  virtual void Update_(State& S) override;
 
  protected:
   Teuchos::RCP<Functions::CompositeVectorFunction> func_;

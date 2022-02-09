@@ -33,7 +33,7 @@ using namespace Amanzi::AmanziMesh;
  ****************************************************************** */
 class AEvaluator : public EvaluatorSecondaryMonotype<double> {
 public:
-  AEvaluator(Teuchos::ParameterList &plist)
+  AEvaluator(Teuchos::ParameterList& plist)
       : EvaluatorSecondaryMonotype<double>(plist) {
     dependencies_.insert(std::make_pair(Key{"fb"}, Tags::DEFAULT));
   }
@@ -42,8 +42,8 @@ public:
     return Teuchos::rcp(new AEvaluator(*this));
   };
 
-  virtual void Evaluate_(const State &S, const std::vector<double*> &results) override {
-    auto &fb = S.Get<double>("fb");
+  virtual void Evaluate_(const State& S, const std::vector<double*>& results) override {
+    auto& fb = S.Get<double>("fb");
     (*results[0]) = 2 * fb;
   }
 

@@ -23,12 +23,12 @@ class EvaluatorIndependentConstant
     : public EvaluatorIndependent<CompositeVector, CompositeVectorSpace> {
 
  public:
-  explicit EvaluatorIndependentConstant(Teuchos::ParameterList &plist);
-  EvaluatorIndependentConstant(const EvaluatorIndependentConstant &other) = default;
+  explicit EvaluatorIndependentConstant(Teuchos::ParameterList& plist);
+  EvaluatorIndependentConstant(const EvaluatorIndependentConstant& other) = default;
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
  protected:
-  virtual void Update_(State &S) override;
+  virtual void Update_(State& S) override;
 
  protected:
   double value_;

@@ -35,7 +35,7 @@ namespace Amanzi {
 template <typename Data_t, typename DataFactory_t = NullFactory>
 class EvaluatorSecondaryMonotypeMultiplicative : public EvaluatorSecondaryMonotype<Data_t, DataFactory_t> {
 public:
-  EvaluatorSecondaryMonotypeMultiplicative(Teuchos::ParameterList &plist) :
+  EvaluatorSecondaryMonotypeMultiplicative(Teuchos::ParameterList& plist) :
       EvaluatorSecondaryMonotype<Data_t,DataFactory_t>(plist)
   {
     coef_ = this->plist_.template get<double>("coefficient", 1.0);
@@ -45,14 +45,14 @@ public:
   }
     
 
-  EvaluatorSecondaryMonotypeMultiplicative(const EvaluatorSecondaryMonotypeMultiplicative &other) = default;
+  EvaluatorSecondaryMonotypeMultiplicative(const EvaluatorSecondaryMonotypeMultiplicative& other) = default;
   virtual Teuchos::RCP<Evaluator> Clone() const override {
     return Teuchos::rcp(new EvaluatorSecondaryMonotypeMultiplicative(*this));
   }
 
 protected:
 
-  virtual void Evaluate_(const State &S, const std::vector<Data_t*> &results) override {
+  virtual void Evaluate_(const State& S, const std::vector<Data_t*>& results) override {
     AMANZI_ASSERT(results.size() == 1);
     int i=0;
     results[0]->PutScalar(coef_);
@@ -67,8 +67,8 @@ protected:
     }
   }
   
-  virtual void EvaluatePartialDerivative_(const State &S,
-          const Key &wrt_key, const Key &wrt_tag, const std::vector<Data_t*> &results) override {
+  virtual void EvaluatePartialDerivative_(const State& S,
+          const Key& wrt_key, const Key& wrt_tag, const std::vector<Data_t*>& results) override {
     int i=0;
     results[0]->PutScalar(coef_);
     for (const auto& dep : this->dependencies_) {

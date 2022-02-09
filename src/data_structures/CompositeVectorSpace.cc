@@ -325,6 +325,7 @@ void CompositeVectorSpace::InitIndexMap_() {
   }
 }
 
+
 Teuchos::RCP<const Epetra_BlockMap> CompositeVectorSpace::Map(const std::string& name, bool ghost) const {
   if (std::find(names_.begin(), names_.end(), name) == names_.end()) {
     Errors::Message message("Map: Requested component ("+name+") doesn't exist in CompositeVectorSpace.");
@@ -395,8 +396,7 @@ bool CompositeVectorSpace::UnionAndConsistent_(const std::vector<std::string>& n
                                                std::vector<AmanziMesh::Entity_kind>& locations2,
                                                std::vector<int>& num_dofs2) {
   for (int i=0; i!=names1.size(); ++i) {
-    std::vector<std::string>::iterator n2_it =
-      std::find(names2.begin(), names2.end(), names1[i]);
+    auto n2_it = std::find(names2.begin(), names2.end(), names1[i]);
     if (n2_it == names2.end()) {
       // no match
 
@@ -476,8 +476,7 @@ bool CompositeVectorSpace::UnionAndConsistent_(
     std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> >& ghostmaps2) {
 
   for (int i=0; i!=names1.size(); ++i) {
-    std::vector<std::string>::iterator n2_it =
-        std::find(names2.begin(), names2.end(), names1[i]);
+    auto n2_it = std::find(names2.begin(), names2.end(), names1[i]);
 
     if (n2_it == names2.end()) {
       // no match

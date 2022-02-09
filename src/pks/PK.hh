@@ -159,9 +159,6 @@ class PK {
   /////////////////////////////////////////////////////////////////////
   // -- transfer operators
   virtual void State_to_Solution(const Tag& tag, TreeVector& soln) = 0;
-
-  // why are there two here?  and is a non-const one necessary?
-  //  virtual void Solution_to_State(TreeVector& soln, const Teuchos::RCP<State>& S) = 0;
   virtual void Solution_to_State(const TreeVector& soln, const Tag& tag) = 0;
 
   // Tag the primary variable as changed in the DAG

@@ -32,7 +32,9 @@ void PK_Physical::Solution_to_State(const TreeVector& solution,
 }
 
 
+// -----------------------------------------------------------------------------
 // Helper method to add a primary variable evaluator
+// -----------------------------------------------------------------------------
 void PK_Physical::AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag)
 {
   AMANZI_ASSERT(S_ != Teuchos::null);
@@ -43,7 +45,10 @@ void PK_Physical::AddDefaultPrimaryEvaluator_(const Key& key, const Tag& tag)
   S_->SetEvaluator(key, tag, eval);
 }
 
+
+// -----------------------------------------------------------------------------
 // Helper method to initialize a CV field
+// -----------------------------------------------------------------------------
 void PK_Physical::InitializeField_(const Key& key, const Tag& tag, const Key& passwd,
         double default_val)
 {

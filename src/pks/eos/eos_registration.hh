@@ -11,10 +11,12 @@
   Self-registering factory of EOS models.
 */
 
+#include "COM_MillingtonQuirk.hh"
+
 #include "EOSDensityEvaluator.hh"
+#include "EOSFactory.hh"
 #include "EOSViscosityEvaluator.hh"
 #include "H2O_DensityTabular.hh"
-#include "EOSFactory.hh"
 #include "H2O_Density.hh"
 #include "H2O_DensityFEHM.hh"
 #include "H2O_SaturatedVaporPressure.hh"
@@ -26,6 +28,7 @@
 #include "IsobaricEOSEvaluator.hh"
 #include "MolarFractionGasEvaluator.hh"
 #include "VaporInGas_Density.hh"
+#include "VaporInGas_Diffusion.hh"
 
 namespace Amanzi {
 namespace AmanziEOS {
@@ -48,6 +51,10 @@ Utils::RegisteredFactory<EOS_Viscosity, H2O_Viscosity> H2O_Viscosity::factory_("
 Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityConstant> H2O_ViscosityConstant::factory_("constant");
 Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityFEHM> H2O_ViscosityFEHM::factory_("liquid water FEHM");
 Utils::RegisteredFactory<EOS_Viscosity, H2O_ViscosityTabular> H2O_ViscosityTabular::factory_("liquid water tabular");
+
+Utils::RegisteredFactory<EOS_Diffusion, VaporInGas_Diffusion> VaporInGas_Diffusion::factory_("vapor in gas");
+
+Utils::RegisteredFactory<COM_Tortuosity, COM_MillingtonQuirk> COM_MillingtonQuirk::factory_("Millington Quirk");
 
 }  // namespace AmanziEOS
 }  // namespace Amanzi

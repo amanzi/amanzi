@@ -17,6 +17,8 @@
 #include <string>
 #include <vector>
 
+#include "EOSFactory.hh"
+#include "COM_Tortuosity.hh"
 #include "Key.hh"
 #include "Mesh_Algorithms.hh"
 #include "CommonDefs.hh"
@@ -34,6 +36,9 @@ void Richards_PK::FunctionalResidual(
     Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
     Teuchos::RCP<TreeVector> f)
 { 
+  // verify that u_new = solution@default
+  Solution_to_State(*u_new, Tags::DEFAULT);
+
   double dtp(t_new - t_old);
 
   std::vector<int>& bc_model = op_bc_->bc_model();
@@ -185,9 +190,11 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
 {
   AMANZI_ASSERT(domain_ == "domain");
   Key temperature_key = Keys::getKey(domain_, "temperature"); 
+  Key mol_density_gas_key = Keys::getKey(domain_, "molar_density_gas"); 
+  Key x_gas_key = Keys::getKey(domain_, "molar_fraction_gas");
 
-  S_->GetEvaluator("molar_density_gas").Update(*S_, passwd_);
-  const auto& n_g = *S_->Get<CompositeVector>("molar_density_gas").ViewComponent("cell");
+  S_->GetEvaluator(mol_density_gas_key).Update(*S_, passwd_);
+  const auto& n_g = *S_->Get<CompositeVector>(mol_density_gas_key).ViewComponent("cell");
 
   S_->GetEvaluator(porosity_key_).Update(*S_, passwd_);
   const auto& phi = *S_->Get<CompositeVector>(porosity_key_).ViewComponent("cell");
@@ -195,15 +202,15 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
   S_->GetEvaluator(saturation_liquid_key_).Update(*S_, passwd_);
   const auto& s_l = *S_->Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
 
-  S_->GetEvaluator("molar_density_liquid").Update(*S_, passwd_);
-  const auto& n_l = *S_->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
+  S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd_);
+  const auto& n_l = *S_->Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
 
-  S_->GetEvaluator("molar_fraction_gas").Update(*S_, passwd_);
-  const auto& x_g = *S_->Get<CompositeVector>("molar_fraction_gas").ViewComponent("cell");
+  S_->GetEvaluator(x_gas_key).Update(*S_, passwd_);
+  const auto& x_g = *S_->Get<CompositeVector>(x_gas_key).ViewComponent("cell");
 
-  S_->GetEvaluator("molar_fraction_gas").UpdateDerivative(*S_, passwd_, temperature_key, Tags::DEFAULT);
+  S_->GetEvaluator(x_gas_key).UpdateDerivative(*S_, passwd_, temperature_key, Tags::DEFAULT);
   const auto& dxgdT = *S_->GetDerivative<CompositeVector>(
-      "molar_fraction_gas", Tags::DEFAULT, temperature_key, Tags::DEFAULT).ViewComponent("cell");
+      x_gas_key, Tags::DEFAULT, temperature_key, Tags::DEFAULT).ViewComponent("cell");
 
   const auto& temp = *S_->Get<CompositeVector>(temperature_key).ViewComponent("cell");
   const auto& pres = *S_->Get<CompositeVector>(pressure_key_).ViewComponent("cell");
@@ -211,18 +218,22 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
   Epetra_MultiVector& kp_cell = *kvapor_pres->ViewComponent("cell");
   Epetra_MultiVector& kt_cell = *kvapor_temp->ViewComponent("cell");
 
-  double a = 4.0 / 3.0;
-  double b = 10.0 / 3.0;
-  double Dref = 0.282;
+  // Millington Quirk fit for tortuosity
+  Teuchos::ParameterList plist;
+  plist.set<std::string>("eos type", "Millington Quirk");
+  AmanziEOS::EOSFactory<AmanziEOS::COM_Tortuosity> com_fac;
+  auto tau_model = com_fac.CreateEOS(plist);
+
+  double Dref = 0.282e-4;
   double Pref = atm_pressure_;
   double Tref = 298.0;  // Kelvins
   double R = CommonDefs::IDEAL_GAS_CONSTANT_R;
 
   for (int c = 0; c != ncells_owned; ++c) {
-    // Millington Quirk fit for tortuosity
-    double tau_phi_sat_g = pow(phi[0][c], a) * pow((1.0 - s_l[0][c]), b);
+    double tau = tau_model->Tortuosity(phi[0][c], s_l[0][c]);
+    double tau_phi_sat = tau * phi[0][c] * (1.0 - s_l[0][c]);
     double D_g = Dref * (Pref / atm_pressure_) * pow(temp[0][c] / Tref, 1.8);
-    double tmp = tau_phi_sat_g * n_g[0][c] * D_g;
+    double tmp = tau_phi_sat * n_g[0][c] * D_g;
 
     double nRT = n_l[0][c] * temp[0][c] * R;
     double pc = atm_pressure_ - pres[0][c];
@@ -312,6 +323,9 @@ int Richards_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
 ****************************************************************** */
 void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, double dtp)
 {
+  // verify that u = solution@default
+  Solution_to_State(*u, Tags::DEFAULT);
+
   double t_old = tp - dtp;
 
   std::vector<int>& bc_model = op_bc_->bc_model();

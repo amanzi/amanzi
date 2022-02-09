@@ -84,24 +84,20 @@ if (BUILD_TESTS)
 endif()
 
 if (ENABLE_AmanziPhysicsModule)
+  # this should go first
   add_subdirectory(eos)
+
   add_subdirectory(flow)
   add_subdirectory(multiphase)
   add_subdirectory(navier_stokes)
 
-
-# chemistry isn't REALLY physics...
-add_subdirectory(chemistry)
-
-# ok, transport is physics but oh well...
-add_subdirectory(transport)
-
-# add shallow water
-add_subdirectory(shallow_water)
-
+  # chemistry should be processed before transport
+  add_subdirectory(chemistry)
+  add_subdirectory(transport)
+  add_subdirectory(shallow_water)
   add_subdirectory(energy)
   add_subdirectory(dummy)
 
-add_subdirectory(mpc_pk)
+  add_subdirectory(mpc_pk)
 endif()
 

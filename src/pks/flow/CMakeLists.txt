@@ -20,6 +20,7 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
+include_directories(${EOS_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
@@ -58,7 +59,7 @@ if (Ifpack_ENABLE_HYPRE)
   list(APPEND flow_tpl_libs ${Ifpack_LIBRARIES} ${HYPRE_LIBRARY})
 endif()
 add_amanzi_library(flow SOURCE ${flow_src_files}
-                   LINK_LIBS pks operators state functions 
+                   LINK_LIBS pks eos operators state functions 
                              mesh_functions time_integration data_structures
                              ${flow_tpl_libs})
 
