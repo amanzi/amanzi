@@ -33,6 +33,22 @@ and provide instructions on how to verify that the setup is correct.
 
 Here we'd be looking at spack building gcc, cmake, openmpi, and openblas
 
+ParFlow provides this guideance, it's a good start for us to think about.
+Building GCC will take considerable amount of time.
+
+```shell
+spack install gcc@10.3.0
+```
+
+Add the compiler to the set of compilers Spack can use:
+
+```shell
+spack load gcc@10.3.0
+spack compiler find
+spack compilers
+```
+
+
 
 ### Configure Spack to use locally installed software
 
