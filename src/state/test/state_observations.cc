@@ -12,6 +12,7 @@
 
 #include "AmanziComm.hh"
 #include "CompositeVector.hh"
+#include "MeshColumn.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
 #include "Observable.hh"
@@ -98,7 +99,9 @@ public:
       ->SetComponent("cell", AmanziMesh::CELL, 3);
     S->set_time(0.);
     S->set_cycle(0);
+  }
 
+  void setup() {
     S->Setup();
     S->GetFieldData("constant", "state")->PutScalar(2.0);
     S->GetFieldData("linear", "state")->PutScalar(0.);
@@ -106,6 +109,8 @@ public:
     (*S->GetFieldData("multi_dof", "state")->ViewComponent("cell", false))(0)->PutScalar(0.);
     (*S->GetFieldData("multi_dof", "state")->ViewComponent("cell", false))(1)->PutScalar(1.);
     (*S->GetFieldData("multi_dof", "state")->ViewComponent("cell", false))(2)->PutScalar(2.);
+
+    auto mesh = S->GetMesh("domain");
 
     Epetra_MultiVector& flux_f = *S->GetFieldData("flux", "state")
       ->ViewComponent("face", false);
@@ -132,9 +137,55 @@ public:
   Teuchos::RCP<State> S;
 };
 
+
+struct obs_domain_set_test : public obs_test {
+  obs_domain_set_test() : obs_test() {
+    // create the surface mesh
+    auto parent = S->GetMesh("domain");
+    AmanziMesh::MeshFactory fac(parent->get_comm(),
+            parent->geometric_model(), Teuchos::null);
+    auto surface_mesh = fac.create(parent, {"top face"}, AmanziMesh::FACE, true, true, false);
+    S->RegisterMesh("surface", surface_mesh);
+
+    // create domain set
+    parent->build_columns();
+    std::vector<std::string> cols;
+    for (int i=0; i!=parent->num_columns(); ++i) {
+      cols.emplace_back(std::to_string(surface_mesh->cell_map(false).GID(i)));
+    }
+    auto domain_set = Teuchos::rcp(new AmanziMesh::DomainSet("column", S->GetMesh("surface"), cols));
+    S->RegisterDomainSet("column", domain_set);
+
+    // create subdomain meshes
+    int i = 0;
+    for (auto& ds : *domain_set) {
+      auto parent_list = Teuchos::rcp(new Teuchos::ParameterList(*parent->parameter_list()));
+      Teuchos::RCP<AmanziMesh::Mesh> col_mesh = AmanziMesh::createColumnMesh(parent, i, parent_list);
+      S->RegisterMesh(ds, col_mesh);
+      i++;
+    }
+
+    for (auto& ds : *domain_set) {
+      S->RequireField(Keys::getKey(ds,"variable"))->SetMesh(S->GetMesh(ds))
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    }
+  }
+
+  void setup_domain_set() {
+    obs_test::setup();
+    auto ds = S->GetDomainSet("column");
+    for (auto& dname : *ds) {
+      int index = Keys::getDomainSetIndex<int>(dname);
+      S->GetFieldData(Keys::getKey(dname,"variable"),"state")->PutScalar(index);
+    }
+  }
+};
+
+
 SUITE(STATE_OBSERVATIONS) {
 
 TEST_FIXTURE(obs_test, Assumptions) {
+  setup();
   int num_cells = S->GetMesh("domain")
     ->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int num_cells_total = 0;
@@ -153,6 +204,7 @@ TEST_FIXTURE(obs_test, Assumptions) {
 }
 
 TEST_FIXTURE(obs_test, ObservePoint) {
+  setup();
   // integrate an observable
   Teuchos::ParameterList obs_list("my obs");
   obs_list.set<std::string>("variable", "constant");
@@ -161,6 +213,7 @@ TEST_FIXTURE(obs_test, ObservePoint) {
   obs_list.set<std::string>("functional", "point");
 
   Observable obs(obs_list);
+  obs.set_comm(S->GetMesh("domain")->get_comm());
   obs.Setup(S.ptr());
   obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
@@ -171,6 +224,7 @@ TEST_FIXTURE(obs_test, ObservePoint) {
 }
 
 TEST_FIXTURE(obs_test, ObserveIntensiveIntegral) {
+  setup();
   // integrate an observable
   Teuchos::ParameterList obs_list("my obs");
   obs_list.set<std::string>("variable", "constant");
@@ -179,6 +233,7 @@ TEST_FIXTURE(obs_test, ObserveIntensiveIntegral) {
   obs_list.set<std::string>("functional", "integral");
 
   Observable obs(obs_list);
+  obs.set_comm(S->GetMesh("domain")->get_comm());
   obs.Setup(S.ptr());
   obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
@@ -190,6 +245,7 @@ TEST_FIXTURE(obs_test, ObserveIntensiveIntegral) {
 
 
 TEST_FIXTURE(obs_test, ObserveExtensiveIntegral) {
+  setup();
   // integrate an observable
   Teuchos::ParameterList obs_list("my obs");
   obs_list.set<std::string>("variable", "constant");
@@ -198,6 +254,7 @@ TEST_FIXTURE(obs_test, ObserveExtensiveIntegral) {
   obs_list.set<std::string>("functional", "extensive integral");
 
   Observable obs(obs_list);
+  obs.set_comm(S->GetMesh("domain")->get_comm());
   obs.Setup(S.ptr());
   obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
@@ -209,6 +266,7 @@ TEST_FIXTURE(obs_test, ObserveExtensiveIntegral) {
 
 
 TEST_FIXTURE(obs_test, ObserveAverage) {
+  setup();
   // integrate an observable
   Teuchos::ParameterList obs_list("my obs");
   obs_list.set<std::string>("variable", "constant");
@@ -217,6 +275,7 @@ TEST_FIXTURE(obs_test, ObserveAverage) {
   obs_list.set<std::string>("functional", "average");
 
   Observable obs(obs_list);
+  obs.set_comm(S->GetMesh("domain")->get_comm());
   obs.Setup(S.ptr());
   obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
@@ -227,6 +286,7 @@ TEST_FIXTURE(obs_test, ObserveAverage) {
 }
 
 TEST_FIXTURE(obs_test, ObserveMin) {
+  setup();
   // integrate an observable
   Teuchos::ParameterList obs_list("my obs");
   obs_list.set<std::string>("variable", "id");
@@ -235,6 +295,7 @@ TEST_FIXTURE(obs_test, ObserveMin) {
   obs_list.set<std::string>("functional", "minimum");
 
   Observable obs(obs_list);
+  obs.set_comm(S->GetMesh("domain")->get_comm());
   obs.Setup(S.ptr());
   obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
@@ -245,6 +306,7 @@ TEST_FIXTURE(obs_test, ObserveMin) {
 }
 
 TEST_FIXTURE(obs_test, ObserveMax) {
+  setup();
   // integrate an observable
   Teuchos::ParameterList obs_list("my obs");
   obs_list.set<std::string>("variable", "id");
@@ -253,6 +315,7 @@ TEST_FIXTURE(obs_test, ObserveMax) {
   obs_list.set<std::string>("functional", "maximum");
 
   Observable obs(obs_list);
+  obs.set_comm(S->GetMesh("domain")->get_comm());
   obs.Setup(S.ptr());
   obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
@@ -265,6 +328,7 @@ TEST_FIXTURE(obs_test, ObserveMax) {
 
 
 TEST_FIXTURE(obs_test, Face) {
+  setup();
   // integrate an observable
   Teuchos::ParameterList obs_list("my obs");
   obs_list.set<std::string>("variable", "flux");
@@ -274,6 +338,7 @@ TEST_FIXTURE(obs_test, Face) {
   obs_list.set("direction normalized flux", true);
 
   Observable obs(obs_list);
+  obs.set_comm(S->GetMesh("domain")->get_comm());
   obs.Setup(S.ptr());
   obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
@@ -285,6 +350,7 @@ TEST_FIXTURE(obs_test, Face) {
 
 
 TEST_FIXTURE(obs_test, Face_NORMALIZED_REL_VOLUME) {
+  setup();
   // direction nomralized flux relative to region allows normalizing in an
   // outward-normal relative to a volumetric region.
   Teuchos::ParameterList obs_list("my obs");
@@ -296,6 +362,7 @@ TEST_FIXTURE(obs_test, Face_NORMALIZED_REL_VOLUME) {
   obs_list.set("direction normalized flux relative to region", "one side volume");
 
   Observable obs(obs_list);
+  obs.set_comm(S->GetMesh("domain")->get_comm());
   obs.Setup(S.ptr());
   obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
@@ -307,6 +374,7 @@ TEST_FIXTURE(obs_test, Face_NORMALIZED_REL_VOLUME) {
 
 
 TEST_FIXTURE(obs_test, MULTI_DOF_OBS_ALL) {
+  setup();
   // direction nomralized flux relative to region allows normalizing in an
   // outward-normal relative to a volumetric region.
   Teuchos::ParameterList obs_list("my obs");
@@ -316,6 +384,7 @@ TEST_FIXTURE(obs_test, MULTI_DOF_OBS_ALL) {
   obs_list.set<std::string>("functional", "average");
 
   Observable obs(obs_list);
+  obs.set_comm(S->GetMesh("domain")->get_comm());
   obs.Setup(S.ptr());
   obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(3, obs.get_num_vectors());
@@ -328,6 +397,7 @@ TEST_FIXTURE(obs_test, MULTI_DOF_OBS_ALL) {
 }
 
 TEST_FIXTURE(obs_test, MULTI_DOF_OBS_ONE) {
+  setup();
   // direction nomralized flux relative to region allows normalizing in an
   // outward-normal relative to a volumetric region.
   Teuchos::ParameterList obs_list("my obs");
@@ -338,6 +408,7 @@ TEST_FIXTURE(obs_test, MULTI_DOF_OBS_ONE) {
   obs_list.set<int>("degree of freedom", 2);
 
   Observable obs(obs_list);
+  obs.set_comm(S->GetMesh("domain")->get_comm());
   obs.Setup(S.ptr());
   obs.FinalizeStructure(S.ptr());
   CHECK_EQUAL(1, obs.get_num_vectors());
@@ -350,6 +421,7 @@ TEST_FIXTURE(obs_test, MULTI_DOF_OBS_ONE) {
 
 
 TEST_FIXTURE(obs_test, FileOne) {
+  setup();
   //  one observation in a file
   Teuchos::ParameterList obs_list("my obs");
   obs_list.set<std::string>("observation output filename", "obs1.dat");
@@ -374,6 +446,7 @@ TEST_FIXTURE(obs_test, FileOne) {
 
 
 TEST_FIXTURE(obs_test, FileTwo) {
+  setup();
   //  one observation in a file
   Teuchos::ParameterList obs_list("my obs");
   obs_list.set<std::string>("observation output filename", "obs2.dat");
@@ -408,6 +481,7 @@ TEST_FIXTURE(obs_test, FileTwo) {
 
 
 TEST_FIXTURE(obs_test, TimeIntegrated) {
+  setup();
   //  one observation in a file
   Teuchos::ParameterList obs_list("my obs");
   obs_list.set<std::string>("observation output filename", "obs3.dat");
@@ -443,6 +517,7 @@ TEST_FIXTURE(obs_test, TimeIntegrated) {
 }
 
 TEST_FIXTURE(obs_test, WritesNaN) {
+  setup();
   // integrate an observable
   //  one observation in a file
   Teuchos::ParameterList obs_list("my obs");
@@ -469,6 +544,76 @@ TEST_FIXTURE(obs_test, WritesNaN) {
   // valuesA: NaN NaN
   CHECK(compareFiles("obs4.dat", "test/obs4.dat.gold"));
 }
+
+
+TEST_FIXTURE(obs_domain_set_test, ObsDomainSet) {
+  setup_domain_set();
+
+  // must be able to deal with column observations off process, and still write
+  // only on the local process if all are local
+  Teuchos::ParameterList obs_list1("my obs ds1");
+  obs_list1.set<std::string>("observation output filename", "obs_ds1.dat");
+  obs_list1.set<Teuchos::Array<double>>("times", std::vector<double>{0,1});
+
+  auto& obsA_list = obs_list1.sublist("observed quantities").sublist("obsA");
+  obsA_list.set<std::string>("variable", "column:0-variable");
+  obsA_list.set<std::string>("region", "all");
+  obsA_list.set<std::string>("location name", "cell");
+  obsA_list.set<std::string>("functional", "average");
+
+  auto& obsB_list = obs_list1.sublist("observed quantities").sublist("obsB");
+  obsB_list.set<std::string>("variable", "column:8-variable");
+  obsB_list.set<std::string>("region", "all");
+  obsB_list.set<std::string>("location name", "cell");
+  obsB_list.set<std::string>("functional", "average");
+
+  {
+    UnstructuredObservations obs(obs_list1);
+    obs.Setup(S.ptr());
+    obs.MakeObservations(S.ptr());
+    advance(0.5);
+    obs.MakeObservations(S.ptr());
+    advance(0.5);
+    obs.MakeObservations(S.ptr());
+  }
+
+  // times: 0, 1
+  // valuesA: 0,0
+  // valuesB: 8,8
+  CHECK(compareFiles("obs_ds1.dat", "test/obs_ds1.dat.gold"));
+}
+
+
+TEST_FIXTURE(obs_domain_set_test, ObsDomainSetSubCommunicator) {
+  setup_domain_set();
+
+  // observation that exists and is written on rank 1
+  Teuchos::ParameterList obs_list("my obs ds2");
+  obs_list.set<std::string>("observation output filename", "obs_ds2.dat");
+  obs_list.set<Teuchos::Array<double>>("times", std::vector<double>{0,1});
+  obs_list.set<std::string>("domain", "column:8");
+
+  auto& obsB_list = obs_list.sublist("observed quantities").sublist("obsB");
+  obsB_list.set<std::string>("variable", "column:8-variable");
+  obsB_list.set<std::string>("region", "all");
+  obsB_list.set<std::string>("location name", "cell");
+  obsB_list.set<std::string>("functional", "average");
+
+  {
+    UnstructuredObservations obs(obs_list);
+    obs.Setup(S.ptr());
+    obs.MakeObservations(S.ptr());
+    advance(0.5);
+    obs.MakeObservations(S.ptr());
+    advance(0.5);
+    obs.MakeObservations(S.ptr());
+  }
+
+  // times: 0, 1
+  // valuesB: 8,8
+  CHECK(compareFiles("obs_ds2.dat", "test/obs_ds2.dat.gold"));
+}
+
 
 
 }
