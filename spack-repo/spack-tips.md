@@ -29,10 +29,46 @@ A condensed/simple version of these instructions would probably go in
 the README.md. But here I'm hoping we can include a bit more detail
 and provide instructions on how to verify that the setup is correct.
 
+### Let Spack build and manage it all
+
+Here we'd be looking at spack building gcc, cmake, openmpi, and openblas
+
+
+### Configure Spack to use locally installed software
+
+Here we'd be looking at first make sure that cmake, gcc, openmpi are in your path and then running the compiler and externals setup
+
+```
+  spack compiler find
+```
+
+```
+  spack externals find
+```
+
+Finally, we'd need to pick and configure blas/lapack within packages/yaml file.  I wonder if we need an entire section on blas/lapack, particularly if we end up supporting mkl.
+
+### Configure Spack to use modules to manage locally installed software
+
+Here we would still use 
+```
+  spack compiler find
+```
+
+```
+  spack externals find
+```
+
+But then we would update by hand the entries associated with the modules we want spack to be able to use.   Not sure how to make this easiest on the user.
+
+
 ## Working with Spack
 
 Here we look at the commands used most often, e.g., install, spec,
 info, find etc.
+
+
+
 
 
 
