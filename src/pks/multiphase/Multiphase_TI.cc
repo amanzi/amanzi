@@ -76,8 +76,10 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   auto& comp_c = *comp.ViewComponent("cell");
 
   // start loop over physical equations
+  int neqns = eqns_.size();
+
   Key key;
-  for (int n = 0; n < num_primary_ + 1; ++n) {
+  for (int n = 0; n < neqns - 1; ++n) {
     ModifyEvaluators(n);
     auto sol = EquationToSolution(n);
     PopulateBCs(sol.comp, true);
@@ -164,7 +166,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   }
 
   // process gas constraints
-  int n = num_primary_ + 1;
+  int n = neqns - 1;
   key = eqns_[n].constraint.first;
   S_->GetEvaluator(key).Update(*S_, passwd_);
   const auto& ncp_fc = *S_->Get<CompositeVector>(key).ViewComponent("cell");
@@ -237,14 +239,16 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
   // for each operator we linearize (a) functions on which it acts and
   // (b) non-linear coefficients
+  int neqns = eqns_.size();
+
   Key key;
-  for (int row = 0; row < num_primary_ + 1; ++row) {
+  for (int row = 0; row < neqns - 1; ++row) {
     ModifyEvaluators(row);
     auto solr = EquationToSolution(row);
     Key keyr = soln_names_[solr.var];
     PopulateBCs(solr.comp, false);
 
-    for (int col = 0; col < num_primary_ + 2; ++col) {
+    for (int col = 0; col < neqns; ++col) {
       auto solc = EquationToSolution(col);
       Key keyc = soln_names_[solc.var];
 
@@ -458,9 +462,9 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
   }
       
   // process constraint
-  int n = num_primary_ + 1;
+  int n = neqns - 1;
 
-  for (int i = 0; i < num_primary_ + 2; ++i) {
+  for (int i = 0; i < neqns; ++i) {
     auto solc = EquationToSolution(i);
     auto pde = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_)); 
     op_preconditioner_->set_operator_block(n, i, pde->global_operator());

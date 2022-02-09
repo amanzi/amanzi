@@ -53,6 +53,36 @@
   <ParameterList name="multiphase">
     <Parameter name="domain name" type="string" value="domain"/>
 
+    <ParameterList name="system">
+      <ParameterList name="pressure eqn">
+        <Parameter name="primary unknown" type="string" value="pressure_liquid"/>
+        <Parameter name="advection liquid" type="Array(string)" value="{ advection_water, pressure_liquid }"/>
+        <Parameter name="advection factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
+
+        <Parameter name="diffusion liquid" type="Array(string)" value="{ diffusion_liquid, molar_density_liquid }"/>
+        <Parameter name="diffusion factors" type="Array(double)" value="{ -0.1111111111111111,  -0.1111111111111111 }"/>
+
+        <Parameter name="accumulation" type="string" value="total_water_storage"/>
+      </ParameterList>
+
+      <ParameterList name="solute eqn">
+        <Parameter name="primary unknown" type="string" value="molar_density_liquid"/>
+        <Parameter name="advection liquid" type="Array(string)" value="{ advection_liquid, pressure_liquid }"/>
+        <Parameter name="advection gas" type="Array(string)" value="{ advection_gas, pressure_gas }"/>
+        <Parameter name="advection factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
+
+        <Parameter name="diffusion liquid" type="Array(string)" value="{ diffusion_liquid, molar_density_liquid }"/>
+        <Parameter name="diffusion factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
+
+        <Parameter name="accumulation" type="string" value="total_component_storage"/>
+      </ParameterList>
+
+      <ParameterList name="constraint eqn">
+        <Parameter name="primary unknown" type="string" value="saturation_liquid"/>
+        <Parameter name="ncp evaluators" type="Array(string)" value="{ ncp_f, ncp_g }"/>
+      </ParameterList>
+    </ParameterList>
+
     <Parameter name="Jacobian type" type="string" value="analytic"/>
     <Parameter name="linear solver" type="string" value="GMRES"/>
     <Parameter name="preconditioner" type="string" value="Euclid"/>

@@ -49,8 +49,6 @@ class MultiphaseModel1_PK: public Multiphase_PK {
                    Teuchos::RCP<TreeVector> du) override; 
 
   // interface multiphase models
-  virtual void InitMPSolutionVector() override;
-  virtual void InitMPPreconditioner() override;
   virtual void PopulateBCs(int icomp, bool flag) override;
 
   virtual SolutionStructure EquationToSolution(int neqn) override;

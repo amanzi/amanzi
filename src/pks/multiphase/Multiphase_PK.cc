@@ -356,8 +356,12 @@ void Multiphase_PK::Initialize()
       AMANZI_ASSERT(pc_list_->isSublist(block_names_[i]));
   }
 
-  // vector of primary variables
-  InitMPSolutionVector();
+  // create system structure using pairs of evaluators and scalar factors
+  int id(0);
+  id = InitMPSystem_("pressure eqn", id, 1);
+  id = InitMPSystem_("energy eqn", id, 1);
+  id = InitMPSystem_("solute eqn", id, num_primary_);
+  id = InitMPSystem_("constraint eqn", id, 1);
 
   // boundary conditions
   Teuchos::RCP<MultiphaseBoundaryFunction> bc;
@@ -452,7 +456,6 @@ void Multiphase_PK::Initialize()
   // preconditioner is model-specific. It is created in the scope of global assembly to 
   // reduce memory footprint for large number of components.
   op_preconditioner_ = Teuchos::rcp(new Operators::FlattenedTreeOperator(Teuchos::rcpFromRef(soln_->Map())));
-  InitMPPreconditioner();
 
   std::string pc_name = mp_list_->get<std::string>("preconditioner");
   std::string ls_name = mp_list_->get<std::string>("linear solver");
@@ -641,6 +644,89 @@ void Multiphase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
     auto var = S_->GetPtr<CV_t>(varp_name[phase], Tags::DEFAULT);
     pdeK->UpdateFlux(var.ptr(), flux.ptr());
   }
+}
+
+
+/* ******************************************************************* 
+* Create vector of solutions
+******************************************************************* */
+int Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eqn_num)
+{
+  const auto& plist = mp_list_->sublist("system");
+  if (!plist.isSublist(eqn_name)) return eqn_id;
+  auto slist = plist.sublist(eqn_name);
+
+  std::string name, primary_name;
+  std::vector<std::string> names;
+
+  name = slist.get<std::string>("primary unknown");
+  primary_name = Keys::getKey(domain_, name); 
+  soln_names_.push_back(primary_name); 
+
+  for (int i = 0; i < eqn_num; ++i) {
+    int n = eqn_id + i;
+    eqns_.resize(n + 1);
+   
+    // advection evaluators
+    if (slist.isParameter("advection factors"))
+      eqns_[n].adv_factors = slist.get<Teuchos::Array<double> >("advection factors").toVector();
+
+    if (slist.isParameter("advection liquid")) {
+      names = slist.get<Teuchos::Array<std::string> >("advection liquid").toVector();
+      eqns_[n].advection.push_back(std::make_pair(Keys::getKey(domain_, names[0]),
+                                                  Keys::getKey(domain_, names[1])));
+    } else {
+      eqns_[n].advection.push_back(std::make_pair("", ""));  // no liquid phase
+    }
+
+    if (slist.isParameter("advection gas")) {
+      names = slist.get<Teuchos::Array<std::string> >("advection gas").toVector();
+      eqns_[n].advection.push_back(std::make_pair(Keys::getKey(domain_, names[0]),
+                                                  Keys::getKey(domain_, names[1])));
+    } else {
+      eqns_[n].advection.push_back(std::make_pair("", ""));  // no gas phase
+    }
+
+    // diffusion evaluators
+    if (slist.isParameter("diffusion factors"))
+      eqns_[n].diff_factors = slist.get<Teuchos::Array<double> >("diffusion factors").toVector();
+
+    if (slist.isParameter("diffusion liquid")) {
+      names = slist.get<Teuchos::Array<std::string> >("diffusion liquid").toVector();
+      eqns_[n].diffusion.push_back(std::make_pair(Keys::getKey(domain_, names[0]),
+                                                  Keys::getKey(domain_, names[1])));
+    } else {
+      eqns_[n].diffusion.push_back(std::make_pair("", ""));
+    }
+
+    if (slist.isParameter("diffusion gas")) {
+      names = slist.get<Teuchos::Array<std::string> >("diffusion gas").toVector();
+      eqns_[n].diffusion.push_back(std::make_pair(Keys::getKey(domain_, names[0]),
+                                                  Keys::getKey(domain_, names[1])));
+    } else {
+      eqns_[n].diffusion.push_back(std::make_pair("", ""));
+    }
+
+    // storage
+    if (slist.isParameter("accumulation")) {
+      name = slist.get<std::string>("accumulation");
+      eqns_[n].storage = Keys::getKey(domain_, name);
+    }
+
+    // constraint
+    if (slist.isParameter("ncp evaluators")) {
+      names = slist.get<Teuchos::Array<std::string> >("ncp evaluators").toVector();
+      eqns_[n].constraint = std::make_pair(Keys::getKey(domain_, names[0]),
+                                           Keys::getKey(domain_, names[1]));
+    }
+  }
+
+  // update solution vector
+  auto field = Teuchos::rcp(new TreeVector());
+  soln_->PushBack(field);
+  field->SetData(S_->GetPtrW<CompositeVector>(primary_name, Tags::DEFAULT, passwd_));
+
+  return eqn_id + eqn_num;
 }
 
 }  // namespace Multiphase

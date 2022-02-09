@@ -42,7 +42,7 @@ VaporPressureEvaluator::VaporPressureEvaluator(
   dependencies_.insert(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
 
   AmanziEOS::EOSFactory<AmanziEOS::EOS_SaturatedVaporPressure> svp_factory;
-  svp_ = svp_factory.CreateEOS(plist);
+  svp_ = svp_factory.Create(plist);
 }
 
 

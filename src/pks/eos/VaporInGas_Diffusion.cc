@@ -20,8 +20,8 @@ namespace AmanziEOS {
 VaporInGas_Diffusion::VaporInGas_Diffusion(Teuchos::ParameterList& plist)
   : EOS_Diffusion(plist)
 {
-  Tref_ = plist.get<double>("reference binary diffusion", 0.282e-4);
-  dref_ = plist.get<double>("reference temperature", 298.0);
+  dref_ = plist.get<double>("reference binary diffusion", 0.282e-4);
+  Tref_ = plist.get<double>("reference temperature", 298.0);
 }
 
 

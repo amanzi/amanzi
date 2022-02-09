@@ -93,8 +93,6 @@ class Multiphase_PK: public PK_PhysicalBDF {
   virtual void ChangedSolution() override;
 
   // multiphase submodels
-  virtual void InitMPSolutionVector() = 0;
-  virtual void InitMPPreconditioner() = 0;
   virtual void PopulateBCs(int icomp, bool flag) = 0;
   virtual SolutionStructure EquationToSolution(int neqn) = 0;
   virtual void ModifyEvaluators(int neqn) = 0;
@@ -102,6 +100,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Teuchos::RCP<TreeVector> soln() { return soln_; }
 
  private:
+  int InitMPSystem_(const std::string& eqn_name, int enq_id, int enq_num);
   void InitializeFields_();
   void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);
 

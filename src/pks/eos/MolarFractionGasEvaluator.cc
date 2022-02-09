@@ -27,7 +27,7 @@ MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& pli
   // set up the actual model
   AMANZI_ASSERT(plist_.isSublist("vapor pressure model parameters"));
   EOSFactory<EOS_SaturatedVaporPressure> svp_fac;
-  svp_model_ = svp_fac.CreateEOS(plist_.sublist("vapor pressure model parameters"));
+  svp_model_ = svp_fac.Create(plist_.sublist("vapor pressure model parameters"));
 
   // process the list for my provided field.
   if (my_keys_.size() == 0)

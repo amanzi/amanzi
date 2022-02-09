@@ -313,68 +313,17 @@ MultiphaseJaffre_PK::ModifyCorrection(
   }
 
   // clip saturation (residual saturation is missing, FIXME)
+  /*
   const auto& u2c = *u->SubVector(2)->Data()->ViewComponent("cell");
   auto& du2c = *du->SubVector(2)->Data()->ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned_; ++c) {
-    // du2c[0][c] = std::min(du2c[0][c], u2c[0][c]);
-    // du2c[0][c] = std::max(du2c[0][c], u2c[0][c] - 1.0);
+    du2c[0][c] = std::min(du2c[0][c], u2c[0][c]);
+    du2c[0][c] = std::max(du2c[0][c], u2c[0][c] - 1.0);
   }
+  */
 
   return AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED;
-}
-
-
-/* ******************************************************************* 
-* Create vector of solutions
-******************************************************************* */
-void MultiphaseJaffre_PK::InitMPSolutionVector()
-{
-  soln_names_.push_back(pressure_liquid_key_);
-  soln_names_.push_back(molar_density_liquid_key_);
-  soln_names_.push_back(saturation_liquid_key_);
-
-  for (int i = 0; i < soln_names_.size(); ++i) {
-    auto field = Teuchos::rcp(new TreeVector());
-    soln_->PushBack(field);
-    field->SetData(S_->GetPtrW<CompositeVector>(soln_names_[i], Tags::DEFAULT, passwd_));
-  }
-}
-
-
-/* ******************************************************************* 
-* Create matrix structure of pairs of evaluators and scalar factors
-******************************************************************* */
-void MultiphaseJaffre_PK::InitMPPreconditioner()
-{
-  eqns_.resize(num_primary_ + 2);
-
-  eqns_[0].adv_factors.resize(2, 1.0);
-  eqns_[0].advection.push_back(std::make_pair(advection_water_key_, pressure_liquid_key_));
-  eqns_[0].advection.push_back(std::make_pair("", ""));  // no gas phase
-
-  eqns_[0].diff_factors.resize(2, -mol_mass_[0] / mol_mass_H2O_);
-  eqns_[0].diffusion.push_back(std::make_pair(diffusion_liquid_key_, molar_density_liquid_key_));
-  eqns_[0].diffusion.push_back(std::make_pair("", ""));  // no gas phase flux
-
-  eqns_[0].storage = tws_key_;
-
-  for (int i = 0; i < num_primary_; ++i) {
-    int n = i + 1;
-    eqns_[n].adv_factors.resize(2, 1.0);
-    eqns_[n].advection.push_back(std::make_pair(advection_liquid_key_, pressure_liquid_key_));
-    eqns_[n].advection.push_back(std::make_pair(advection_gas_key_, pressure_gas_key_));
-
-    eqns_[n].diff_factors.resize(2, 1.0);
-    eqns_[n].diffusion.push_back(std::make_pair(diffusion_liquid_key_, molar_density_liquid_key_));
-    eqns_[n].diffusion.push_back(std::make_pair("", ""));
-
-    eqns_[n].storage = tcs_key_;
-  }
-
-  // the last equaiton is special
-  int n = num_primary_ + 1;
-  eqns_[n].constraint = std::make_pair(ncp_f_key_, ncp_g_key_);
 }
 
 

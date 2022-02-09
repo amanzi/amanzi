@@ -38,7 +38,7 @@ EOSViscosityEvaluator::EOSViscosityEvaluator(Teuchos::ParameterList& plist)
   // Construct my Viscosity model
   AMANZI_ASSERT(plist_.isSublist("EOS parameters"));
   EOSFactory<EOS_Viscosity> eos_fac;
-  visc_ = eos_fac.CreateEOS(plist_.sublist("EOS parameters"));
+  visc_ = eos_fac.Create(plist_.sublist("EOS parameters"));
 }
 
 
