@@ -31,6 +31,8 @@ include(AddPackageDependency)
 if (SEACAS_LIBRARIES AND SEACAS_INCLUDE_DIRS)
 
   # Do nothing. Variables are set. No need to search again
+  set(SEACAS_INCLUDE_DIR ${SEACAS_INCLUDE_DIRS})
+  set(SEACAS_LIBRARY    ${SEACAS_LIBRARIES})
 
 else()
 
@@ -48,7 +50,7 @@ else()
   endif()
 
   # Search for ExodusII include files
-  set(exodus_inc_names "exodusII.h")
+  set(exodus_inc_names "SEACASIoss_config.h")
   if (SEACAS_INCLUDE_DIR)
     if (EXISTS "${SEACAS_INCLUDE_DIR}")
 

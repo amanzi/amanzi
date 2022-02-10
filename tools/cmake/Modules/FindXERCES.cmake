@@ -147,7 +147,7 @@ else(XERCES_LIBRARY_DIR AND XERCES_INCLUDE_DIR)
   endif()    
 
   # Grab the library dependencies from the setting file xerces-c.pc
-  file (STRINGS ${XERCES_DIR}/lib/pkgconfig/xerces-c.pc XERCES_LIBRARY_DEPS REGEX "Libs.private:*")
+  #file (STRINGS ${XERCES_DIR}/lib/pkgconfig/xerces-c.pc XERCES_LIBRARY_DEPS REGEX "Libs.private:*")
 
   if (NOT "${XERCES_LIBRARY_DEPS}" STREQUAL "")
     STRING(REGEX REPLACE "Libs.private:" "" XERCES_LIBRARY_DEPS ${XERCES_LIBRARY_DEPS})
