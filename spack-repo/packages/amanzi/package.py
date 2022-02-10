@@ -39,19 +39,24 @@ class Amanzi(CMakePackage):
         values=('unstructured', 'structured'),
         description='Select mesh type: unstructured or structured', 
         multi=False)
+    variant('mstk', default=True, description='Enable MSTK support')
+    variant('silo', default=False, description='Enable Silo support')
     variant('alquimia', default=False, description='Enable alquimia support')
     variant('hypre', default=True, description='Enable Hypre solver support')
     variant('ats', default=False, description='Enable ATS support')
     variant('AmanziPhysics', default=False, description='Enable Amanzi Physics support')
     variant('ATSPhysics', default=False, description='Enable Amanzi Physics support')
     variant('crunchtope', default=False, description='Enable CrunchTope support')
-
-#   variant('mstk', default=True, description='Enable MSTK mesh support for '
-#     'unstructured mesh') 
+    variant('mstk', default=True, description='Enable MSTK mesh support for '
+      'unstructured mesh') 
 #    variant('moab', default=False, description='Enable MOAB mesh support for '
 #            'unstructured mesh')
 #    variant('silo', default=False, description='Enable Silo reader for binary '
 #            'files')
+    variant('moab', default=False, description='Enable MOAB mesh support for '
+            'unstructured mesh')
+    variant('silo', default=False, description='Enable Silo reader for binary '
+            'files')
     #variant('petsc', default=True, description='Enable PETsC support')
 #    variant('tests', default=False, description='Enable the unit test suite')
 
@@ -90,6 +95,10 @@ class Amanzi(CMakePackage):
     # MSTK 
     depends_on('mstk@3.3.5 partitioner=all +exodusii +parallel', when='+mstk')
     depends_on('nanoflann', when='+mstk')
+    # Silo 
+    depends_on('silo', when='+silo')
+    # Moab 
+    depends_on('moab', when='+moab')
     # Other
     depends_on('crunchtope', when='+crunchtope')
     #depends_on('trilinos@12.14.1 +pnetcdf +boost +cgns +hdf5 +metis '
@@ -202,13 +211,13 @@ class Amanzi(CMakePackage):
         #    options.append('-DAMANZI_ARCH=\'\'')
 
         # unused 
-        #if '+moab' in self.spec:
-        #    options.append('-DENABLE_MOAB_Mesh=ON')
-        #else:
-        #    options.append('-DENABLE_MOAB_Mesh=OFF')
-        #if '+silo' in self.spec:
-        #    options.append('-DENABLE_Silo=ON')
-        #else:
-        #    options.append('-DENABLE_Silo=OFF')
+        if '+moab' in self.spec:
+            options.append('-DENABLE_MOAB_Mesh=ON')
+        else:
+            options.append('-DENABLE_MOAB_Mesh=OFF')
+        if '+silo' in self.spec:
+            options.append('-DENABLE_Silo=ON')
+        else:
+            options.append('-DENABLE_Silo=OFF')
         
         return options
