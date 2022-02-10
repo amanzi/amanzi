@@ -31,6 +31,10 @@ class Amanzi(CMakePackage):
     version('1.1-dev', tag='amanzi-1.1-dev', submodules=True)
     version('1.0.0', tag='amanzi-1.0.0', submodules=True)
 
+
+    variant('eptra', default=True, description='Enable Epetra support')
+    variant('tpetra', default=False, description='Enable Tpetra support')
+
     variant('mesh_type', default='unstructured', 
         values=('unstructured', 'structured'),
         description='Select mesh type: unstructured or structured', 
@@ -82,7 +86,7 @@ class Amanzi(CMakePackage):
     # Hypre
     depends_on('superlu', when='+hypre')
     depends_on('superlu-dist@5.4.0', when='+hypre')
-    depends_on('hypre@2.18.2 +mpi', when='+hypre')
+    depends_on('hypre@2.22.1 +mpi', when='+hypre')
     # MSTK 
     depends_on('mstk@3.3.5 partitioner=all +exodusii +parallel', when='+mstk')
     depends_on('nanoflann', when='+mstk')
@@ -91,8 +95,8 @@ class Amanzi(CMakePackage):
     #depends_on('trilinos@12.14.1 +pnetcdf +boost +cgns +hdf5 +metis '
     #           '+zlib +anasazi +amesos2 +epetra +ml +teuchos +superlu-dist '
     #           '+zoltan +nox +ifpack +muelu')
-    depends_on('trilinos@12.18.1 +pnetcdf +boost +cgns +hdf5 +metis '
-               '+zlib +anasazi +amesos2 +epetra +ml +teuchos '
+    depends_on('trilinos@13.0.0 +boost +hdf5 '
+               '+anasazi +amesos2 +epetra +ml '
                '+zoltan +nox +ifpack +muelu')
 
     # Conflicts 
@@ -111,6 +115,16 @@ class Amanzi(CMakePackage):
         # not supported or always off/on options
         options.append('-DENABLE_OpenMP=OFF')
         options.append('-DENABLE_SPACK_BUILD=ON')
+
+        #if '+eptra' in self.spec: 
+        #    options.append('-DENABLE_EPETRA=ON')
+        #else: 
+        #    options.append('-DENABLE_EPETRA=OFF')
+
+        #if '+tpetra' in self.spec: 
+        #    options.append('-DENABLE_TPETRA=ON')
+        #else: 
+        #    options.append('-DENABLE_TPETRA=OFF')
 
         if '+alquimia' in self.spec:
             options.append('-DENABLE_ALQUIMIA=ON')
