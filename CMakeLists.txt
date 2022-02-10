@@ -14,8 +14,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_CXX_EXTENSIONS OFF)
 set(ENABLE_SPACK_BUILD OFF CACHE BOOL "Enable Spack Build")
 
-message(WARNING "ENABLE_SPACK_BUILD: ${ENABLE_SPACK_BUILD}")
-
 # Enable testing, ctest needs this
 # all add_test commands are ignored unless this is called!
 enable_testing()
