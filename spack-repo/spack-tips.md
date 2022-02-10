@@ -15,6 +15,31 @@ Here's a quick list of the commands we use most often:
   * ...
   
   
+## Spack Environements 
+
+Spack environments allow you to create specific containers of spack modules for your project. 
+See the spack complete guide on thee [environments](https://spack.readthedocs.io/en/latest/environments.html)
+
+Create the environment: 
+```shell
+spack env create amanzi
+```
+
+Load the environment:
+```shell
+spack env activate amanzi 
+```
+
+Unload/quit an enviroment: 
+```shell 
+spack env disactivate 
+# Shortcut (same as previous): 
+despacktivate 
+```
+
+From inside the environment you can now install spackages as you would do using the `spack install` command. 
+They will be added to the current environment and loaded directly when the environment is activated. 
+
 ## Spack Setup
 
 Here we need to develop instructions on how to setup the compilers,
