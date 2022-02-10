@@ -26,10 +26,10 @@ class Amanzi(CMakePackage):
 
     maintainers = ['julienloiseau']
 
-    #version('master', branch='master', submodules=True)
-    version('master', branch='master', default=True)
-    version('1.1-dev', tag='amanzi-1.1-dev')
-    version('1.0.0', tag='amanzi-1.0.0')
+    # Submodule is ON for ATS 
+    version('master', branch='master', default=True, submodules=True)
+    version('1.1-dev', tag='amanzi-1.1-dev', submodules=True)
+    version('1.0.0', tag='amanzi-1.0.0', submodules=True)
 
     variant('structured', default=False,
             description='Build structured mesh capability')
@@ -47,15 +47,16 @@ class Amanzi(CMakePackage):
     variant('alquimia', default=False, description='Enable alquimia support')
     variant('hypre', default=True, description='Enable Hypre solver support')
     variant('ats', default=False, description='Enable ATS support')
+    variant('AmanziPhysics', default=False, description='Enable Amanzi Physics support')
+    variant('ATSPhysics', default=False, description='Enable Amanzi Physics support')
 
     patch('exprtk.patch', when = '@1.0.0')
 
-#    depends_on('moab', when='+moab')
-#    depends_on('silo', when='+silo')
+    #depends_on('moab', when='+moab')
+    #depends_on('silo', when='+silo')
     #depends_on('hdf5@1.10.6 +hl+mpi', when='-alquimia')
     #depends_on('superlu-dist@6.0.0', when='+hypre')
     #depends_on('hypre +superlu-dist +mpi', when='+hypre')
-
 
     depends_on('git', type='build')
     depends_on('cmake@3.15:',  type='build')
@@ -98,14 +99,14 @@ class Amanzi(CMakePackage):
         options.append('-DCMAKE_C_COMPILER=' + self.spec['mpi'].mpicc)
         options.append('-DCMAKE_CXX_COMPILER=' + self.spec['mpi'].mpicxx)
         options.append('-DCMAKE_Fortran_COMPILER=' + self.spec['mpi'].mpifc)
-
-        # not supported or always off/on options
-        options.append('-DENABLE_OpenMP=OFF')
-        options.append('-DSPACKAGE_BUILD=ON')
         
         options.append('-DXERCES_LIBRARY_DIR=' + self.spec['xerces-c'].prefix + '/lib')
         #options.append('-DSuperLU_DIR=' + self.spec['superlu'].prefix)
         options.append('-DTrilinos_INSTALL_PREFIX:PATH=' + self.spec['trilinos'].prefix)
+
+        # not supported or always off/on options
+        options.append('-DENABLE_OpenMP=OFF')
+        options.append('-DENABLE_SPACK_BUILD=ON')
 
         if '+alquimia' in self.spec:
             options.append('-DENABLE_ALQUIMIA=ON')
@@ -117,6 +118,17 @@ class Amanzi(CMakePackage):
             options.append('-DENABLE_PETSC=OFF')
             options.append('-DENABLE_PFLOTRAN=OFF')
             options.append('-DENABLE_CRUNCHTOPE=OFF')
+
+        if '+AmanziPhysics' in self.spec: 
+            options.append('-DENABLE_AmanziPhysicsModule=ON')
+        else: 
+            options.append('-DENABLE_AmanziPhysicsModule=OFF')
+
+        if '+ATSPhysics' in self.spec: 
+            options.append('-DENABLE_ATSPhysicsModule=ON')
+        else: 
+            options.append('-DENABLE_ATSPhysicsModule=OFF')
+
 
         # options based on variants
         if '+tests' in self.spec:
@@ -154,8 +166,6 @@ class Amanzi(CMakePackage):
             options.append('-DENABLE_SUPERLU=OFF')
             options.append('-DENABLE_HYPRE=OFF')
 
-        #options.append('-DENABLE_ATSPhysicsModule=ON')
-        options.append('-DENABLE_AmanziPhysicsModule=OFF')
         options.append('-DENABLE_CLM=OFF')
         options.append('-DENABLE_DBC=ON')
 
