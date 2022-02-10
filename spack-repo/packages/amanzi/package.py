@@ -42,6 +42,7 @@ class Amanzi(CMakePackage):
     variant('ats', default=False, description='Enable ATS support')
     variant('AmanziPhysics', default=False, description='Enable Amanzi Physics support')
     variant('ATSPhysics', default=False, description='Enable Amanzi Physics support')
+    variant('crunchtope', default=False, description='Enable CrunchTope support')
 
 #    variant('moab', default=False, description='Enable MOAB mesh support for '
 #            'unstructured mesh')
@@ -87,7 +88,7 @@ class Amanzi(CMakePackage):
     depends_on('mstk@3.3.5 partitioner=all +exodusii +parallel', when='+mstk')
     depends_on('nanoflann', when='+mstk')
     # Other
-
+    depends_on('crunchtope', when='+crunchtope')
     #depends_on('trilinos@12.14.1 +pnetcdf +boost +cgns +hdf5 +metis '
     #           '+zlib +anasazi +amesos2 +epetra +ml +teuchos +superlu-dist '
     #           '+zoltan +nox +ifpack +muelu')
@@ -113,11 +114,17 @@ class Amanzi(CMakePackage):
             options.append('-DENABLE_ALQUIMIA=ON')
             options.append('-DENABLE_PETSC=ON')
             options.append('-DENABLE_PFLOTRAN=ON')
-            options.append('-DENABLE_CRUNCHTOPE=ON')
+            options.append('-DPFLOTRAN_LIBRARY_DIR=' + self.spec['pflotran'].prefix + '/lib')
+            options.append('-DALQUIMIA_DIR=' + self.spec['alquimia'].prefix)
         else:
             options.append('-DENABLE_ALQUIMIA=OFF')
             options.append('-DENABLE_PETSC=OFF')
             options.append('-DENABLE_PFLOTRAN=OFF')
+
+        if '+crunchtope' in self.spec: 
+            options.append('-DENABLE_CRUNCHTOPE=ON')
+            options.append('-DCRUNCHTOPE_DIR=' + self.spec['crunchtope'].prefix)
+        else: 
             options.append('-DENABLE_CRUNCHTOPE=OFF')
 
         if '+AmanziPhysics' in self.spec: 
