@@ -152,7 +152,7 @@ void Observable::FinalizeStructure(const Teuchos::Ptr<State>& S)
 {
   // one last check that the structure is all set up and consistent
   if (num_vectors_ < 0) {
-    const auto& field = S->GetW<CompositeVector>(variable_, tag_, "state");
+    const auto& field = S->Get<CompositeVector>(variable_, tag_);
     if (!field.HasComponent(location_)) {
       Errors::Message msg;
       msg << "Observable: \"" << name_ << "\" uses variable \""
