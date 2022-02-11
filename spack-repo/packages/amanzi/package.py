@@ -31,32 +31,29 @@ class Amanzi(CMakePackage):
     version('1.1-dev', tag='amanzi-1.1-dev', submodules=True)
     version('1.0.0', tag='amanzi-1.0.0', submodules=True)
 
-
+    # Trilinos framework: epetra|tpetra
     variant('eptra', default=True, description='Enable Epetra support')
     variant('tpetra', default=False, description='Enable Tpetra support')
 
+    # Mesh Type: unstructured|structured
+    #            (could be both, but currently not support for structured) 
     variant('mesh_type', default='unstructured', 
         values=('unstructured', 'structured'),
         description='Select mesh type: unstructured or structured', 
         multi=False)
-    variant('mstk', default=True, description='Enable MSTK support')
-    variant('silo', default=False, description='Enable Silo support')
+    variant('mstk', default=True, description='Enable MSTK mesh support for '
+            'unstructured mesh') 
+    variant('moab', default=False, description='Enable MOAB mesh support for '
+            'unstructured mesh')
+    variant('silo', default=False, description='Enable Silo reader for binary '
+            'files')
+    
     variant('alquimia', default=False, description='Enable alquimia support')
     variant('hypre', default=True, description='Enable Hypre solver support')
     variant('ats', default=False, description='Enable ATS support')
     variant('AmanziPhysics', default=False, description='Enable Amanzi Physics support')
     variant('ATSPhysics', default=False, description='Enable Amanzi Physics support')
     variant('crunchtope', default=False, description='Enable CrunchTope support')
-    variant('mstk', default=True, description='Enable MSTK mesh support for '
-      'unstructured mesh') 
-#    variant('moab', default=False, description='Enable MOAB mesh support for '
-#            'unstructured mesh')
-#    variant('silo', default=False, description='Enable Silo reader for binary '
-#            'files')
-    variant('moab', default=False, description='Enable MOAB mesh support for '
-            'unstructured mesh')
-    variant('silo', default=False, description='Enable Silo reader for binary '
-            'files')
     #variant('petsc', default=True, description='Enable PETsC support')
 #    variant('tests', default=False, description='Enable the unit test suite')
 
@@ -79,9 +76,9 @@ class Amanzi(CMakePackage):
     depends_on('seacas')
     depends_on('boost@1.59.0: cxxstd=11 +program_options')
     depends_on('xerces-c')
-    depends_on('cgns@develop +mpi +parallel')
+    depends_on('cgns@develop +mpi')
     depends_on('ascemio')
-    depends_on('netcdf-c@4.7.3 +parallel-netcdf')
+    depends_on('netcdf-c +parallel-netcdf')
     depends_on('unittest-cpp')
     # Alquimia
     depends_on('petsc@3.10.2')
@@ -93,7 +90,7 @@ class Amanzi(CMakePackage):
     depends_on('superlu-dist@5.4.0', when='+hypre')
     depends_on('hypre@2.22.1 +mpi', when='+hypre')
     # MSTK 
-    depends_on('mstk@3.3.5 partitioner=all +exodusii +parallel', when='+mstk')
+    depends_on('mstk@3.3.5 partitioner=all +seacas +parallel', when='+mstk')
     depends_on('nanoflann', when='+mstk')
     # Silo 
     depends_on('silo', when='+silo')
