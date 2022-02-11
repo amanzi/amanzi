@@ -35,7 +35,7 @@ class NCP_MolarDensities : public MultiphaseBaseEvaluator {
                                           const std::vector<CompositeVector*>& results) override;
 
  protected:
-  Key x_vapor_key_, tcc_gas_key_, molar_density_gas_key_;
+  Key x_vapor_key_, tcc_gas_key_, mol_density_gas_key_;
 };
 
 }  // namespace Multiphase

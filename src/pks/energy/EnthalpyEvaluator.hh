@@ -39,7 +39,7 @@ class EnthalpyEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, Com
   virtual double EvaluateFieldSingle(const Teuchos::Ptr<State>& S, int c, double T, double p);
 
  protected:
-  Key pressure_key_, mol_density_liquid_key_, ie_liquid_key_;
+  Key pressure_key_, mol_density_key_, ie_key_;
   Tag tag_;
   bool include_work_;
 

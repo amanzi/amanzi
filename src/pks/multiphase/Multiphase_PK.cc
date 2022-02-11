@@ -110,8 +110,8 @@ void Multiphase_PK::Setup()
 
   advection_liquid_key_ = Keys::getKey(domain_, "advection_liquid"); 
   advection_gas_key_ = Keys::getKey(domain_, "advection_gas"); 
-  molar_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid"); 
-  molar_density_gas_key_ = Keys::getKey(domain_, "molar_density_gas"); 
+  mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid"); 
+  mol_density_gas_key_ = Keys::getKey(domain_, "molar_density_gas"); 
 
   darcy_flux_liquid_key_ = Keys::getKey(domain_, "darcy_flux_liquid"); 
   darcy_flux_gas_key_ = Keys::getKey(domain_, "darcy_flux_gas"); 

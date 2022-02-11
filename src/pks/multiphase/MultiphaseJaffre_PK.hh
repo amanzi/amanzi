@@ -53,7 +53,7 @@ class MultiphaseJaffre_PK: public Multiphase_PK {
   virtual void ModifyEvaluators(int neqn) override;
 
  private:
-  Key advection_water_key_, molar_density_water_key_;
+  Key advection_water_key_, mol_density_water_key_;
   Key diffusion_liquid_key_;
   Key molecular_diff_liquid_key_, molecular_diff_gas_key_; 
 

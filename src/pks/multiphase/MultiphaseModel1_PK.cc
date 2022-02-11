@@ -17,6 +17,7 @@
 
 // Amanzi::Energy
 #include "TCMEvaluator_TwoPhase.hh"
+#include "EnthalpyEvaluator.hh"
 
 // Multiphase
 #include "MoleFractionLiquid.hh"
@@ -69,6 +70,8 @@ void MultiphaseModel1_PK::Setup()
   ie_gas_key_ = Keys::getKey(domain_, "internal_energy_gas");
   conductivity_key_ = Keys::getKey(domain_, "thermal_conductivity");
   particle_density_key_ = Keys::getKey(domain_, "particle_density");
+  enthalpy_liquid_key_ = Keys::getKey(domain_, "enthalpy_liquid");
+  enthalpy_gas_key_ = Keys::getKey(domain_, "enthalpy_gas");
 
   // gas mole fraction is the primary solution
   if (!S_->HasRecord(x_gas_key_)) {
@@ -99,8 +102,8 @@ void MultiphaseModel1_PK::Setup()
     Teuchos::ParameterList elist(tws_key_);
     elist.set<std::string>("my key", tws_key_)
          .set<std::string>("tag", "")
-         .set<std::string>("molar density liquid key", molar_density_liquid_key_)
-         .set<std::string>("molar density gas key", molar_density_gas_key_)
+         .set<std::string>("molar density liquid key", mol_density_liquid_key_)
+         .set<std::string>("molar density gas key", mol_density_gas_key_)
          .set<std::string>("porosity key", porosity_key_)
          .set<std::string>("saturation liquid key", saturation_liquid_key_)
          .set<std::string>("mole fraction vapor key", x_vapor_key_);
@@ -124,8 +127,8 @@ void MultiphaseModel1_PK::Setup()
          .set<std::string>("tag", "")
          .set<std::string>("saturation liquid key", saturation_liquid_key_)
          .set<std::string>("porosity key", porosity_key_)
-         .set<std::string>("molar density liquid key", molar_density_liquid_key_)
-         .set<std::string>("molar density gas key", molar_density_gas_key_)
+         .set<std::string>("molar density liquid key", mol_density_liquid_key_)
+         .set<std::string>("molar density gas key", mol_density_gas_key_)
          .set<std::string>("mole fraction liquid key", x_liquid_key_)
          .set<std::string>("mole fraction gas key", x_gas_key_);
 
@@ -208,14 +211,35 @@ void MultiphaseModel1_PK::Setup()
       auto tcm = Teuchos::rcp(new Energy::TCMEvaluator_TwoPhase(elist));
       S_->SetEvaluator(conductivity_key_, Tags::DEFAULT, tcm);
     }
+
+    // -- advection of enthalpy
+    if (!S_->HasRecord(enthalpy_liquid_key_)) {
+      S_->Require<CV_t, CVS_t>(enthalpy_liquid_key_, Tags::DEFAULT, enthalpy_liquid_key_)
+        .SetMesh(mesh_)->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+
+      Teuchos::ParameterList elist = mp_list_->sublist("enthalpy evaluator");
+      elist.set("enthalpy key", enthalpy_liquid_key_)
+           .set<std::string>("tag", "")
+           .set<std::string>("internal energy key", ie_liquid_key_)
+           .set<bool>("include work term", false)
+           .set<std::string>("pressure key", pressure_liquid_key_)
+           .set<std::string>("molar density key", mol_density_liquid_key_);
+      elist.setName(enthalpy_liquid_key_);
+
+      auto enth = Teuchos::rcp(new Energy::EnthalpyEvaluator(elist));
+      S_->SetEvaluator(enthalpy_liquid_key_, Tags::DEFAULT, enth);
+
+      S_->RequireDerivative<CV_t, CVS_t>(enthalpy_liquid_key_, Tags::DEFAULT,
+                                         temperature_key_, Tags::DEFAULT, enthalpy_liquid_key_);
+    }
   }
 
   // liquid molar density
-  if (!S_->HasRecord(molar_density_liquid_key_)) {
-    S_->Require<CV_t, CVS_t>(molar_density_liquid_key_, Tags::DEFAULT, molar_density_liquid_key_)
+  if (!S_->HasRecord(mol_density_liquid_key_)) {
+    S_->Require<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT, mol_density_liquid_key_)
       .SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, component_names_.size());
-    S_->RequireEvaluator(molar_density_liquid_key_, Tags::DEFAULT);
+    S_->RequireEvaluator(mol_density_liquid_key_, Tags::DEFAULT);
   }
 
   // saturation
@@ -241,7 +265,7 @@ void MultiphaseModel1_PK::Setup()
     elist.set<std::string>("my key", pressure_vapor_key_)
          .set<std::string>("tag", "")
          .set<std::string>("temperature key", temperature_key_)
-         .set<std::string>("molar density liquid key", molar_density_liquid_key_)
+         .set<std::string>("molar density liquid key", mol_density_liquid_key_)
          .set<std::string>("saturation liquid key", saturation_liquid_key_)
          .set<std::string>("eos type", "water vapor over water/ice");
     auto eval = Teuchos::rcp(new VaporPressureEvaluator(elist, wrm_));
@@ -256,7 +280,7 @@ void MultiphaseModel1_PK::Setup()
     Teuchos::Array<int> dep_powers(4, 1);
     Teuchos::Array<std::string> dep_names;
 
-    dep_names.push_back(molar_density_gas_key_);
+    dep_names.push_back(mol_density_gas_key_);
     dep_names.push_back(molecular_diff_gas_key_);
     dep_names.push_back(porosity_key_);
     dep_names.push_back(saturation_gas_key_);
@@ -305,7 +329,7 @@ void MultiphaseModel1_PK::Setup()
     Teuchos::Array<int> dep_powers(4, 1);
     Teuchos::Array<std::string> dep_names;
 
-    dep_names.push_back(molar_density_liquid_key_);
+    dep_names.push_back(mol_density_liquid_key_);
     dep_names.push_back(x_liquid_key_);
     dep_names.push_back(relperm_liquid_key_);
     dep_names.push_back(viscosity_liquid_key_);
@@ -337,7 +361,7 @@ void MultiphaseModel1_PK::Setup()
     Teuchos::Array<int> dep_powers(3, 1);
     Teuchos::Array<std::string> dep_names;
 
-    dep_names.push_back(molar_density_liquid_key_);
+    dep_names.push_back(mol_density_liquid_key_);
     dep_names.push_back(relperm_liquid_key_);
     dep_names.push_back(viscosity_liquid_key_);
     dep_powers[2] = -1;
@@ -365,7 +389,7 @@ void MultiphaseModel1_PK::Setup()
     Teuchos::Array<int> dep_powers(4, 1);
     Teuchos::Array<std::string> dep_names;
 
-    dep_names.push_back(molar_density_gas_key_);
+    dep_names.push_back(mol_density_gas_key_);
     dep_names.push_back(x_gas_key_);
     dep_names.push_back(relperm_gas_key_);
     dep_names.push_back(viscosity_gas_key_);
@@ -398,7 +422,7 @@ void MultiphaseModel1_PK::Setup()
     Teuchos::Array<std::string> dep_names;
 
     dep_names.push_back(molecular_diff_liquid_key_);
-    dep_names.push_back(molar_density_liquid_key_);
+    dep_names.push_back(mol_density_liquid_key_);
     dep_names.push_back(saturation_liquid_key_);
 
     Teuchos::ParameterList elist(diffusion_liquid_key_);
@@ -424,7 +448,7 @@ void MultiphaseModel1_PK::Setup()
     Teuchos::Array<std::string> dep_names;
 
     dep_names.push_back(molecular_diff_gas_key_);
-    dep_names.push_back(molar_density_gas_key_);
+    dep_names.push_back(mol_density_gas_key_);
     dep_names.push_back(saturation_gas_key_);
 
     Teuchos::ParameterList elist(diffusion_gas_key_);

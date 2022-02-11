@@ -24,11 +24,11 @@ NCP_MolarDensities::NCP_MolarDensities(Teuchos::ParameterList& plist)
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
   }
   x_vapor_key_ = plist_.get<std::string>("mole fraction vapor key");
-  molar_density_gas_key_ = plist_.get<std::string>("molar density gas key");
+  mol_density_gas_key_ = plist_.get<std::string>("molar density gas key");
   tcc_gas_key_ = plist_.get<std::string>("tcc gas key");
 
   dependencies_.insert(std::make_pair(x_vapor_key_, Tags::DEFAULT));
-  dependencies_.insert(std::make_pair(molar_density_gas_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(mol_density_gas_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(tcc_gas_key_, Tags::DEFAULT));
 }
 
@@ -52,7 +52,7 @@ void NCP_MolarDensities::Evaluate_(
     const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& xg = *S.Get<CompositeVector>(x_vapor_key_).ViewComponent("cell");
-  const auto& ng = *S.Get<CompositeVector>(molar_density_gas_key_).ViewComponent("cell");
+  const auto& ng = *S.Get<CompositeVector>(mol_density_gas_key_).ViewComponent("cell");
   const auto& tcc = *S.Get<CompositeVector>(tcc_gas_key_).ViewComponent("cell");
 
   auto& result_c = *results[0]->ViewComponent("cell");
@@ -74,7 +74,7 @@ void NCP_MolarDensities::EvaluatePartialDerivative_(
     const std::vector<CompositeVector*>& results)
 {
   const auto& xg = *S.Get<CompositeVector>(x_vapor_key_).ViewComponent("cell");
-  const auto& ng = *S.Get<CompositeVector>(molar_density_gas_key_).ViewComponent("cell");
+  const auto& ng = *S.Get<CompositeVector>(mol_density_gas_key_).ViewComponent("cell");
 
   auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell", false);
@@ -82,7 +82,7 @@ void NCP_MolarDensities::EvaluatePartialDerivative_(
   if (wrt_key == x_vapor_key_) {
     for (int c = 0; c != ncells; ++c) result_c[0][c] = -ng[0][c];
   }
-  else if (wrt_key == molar_density_gas_key_) {
+  else if (wrt_key == mol_density_gas_key_) {
     for (int c = 0; c != ncells; ++c) result_c[0][c] = 1.0 - xg[0][c];
   }
   else if (wrt_key == tcc_gas_key_) {

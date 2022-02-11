@@ -39,13 +39,13 @@ void TotalComponentStorage_MolarDensity::Init_()
 
   saturation_liquid_key_ = plist_.get<std::string>("saturation liquid key");
   porosity_key_ = plist_.get<std::string>("porosity key");
-  molar_density_liquid_key_ = plist_.get<std::string>("molar density liquid key");
-  molar_density_gas_key_ = plist_.get<std::string>("molar density gas key");
+  mol_density_liquid_key_ = plist_.get<std::string>("molar density liquid key");
+  mol_density_gas_key_ = plist_.get<std::string>("molar density gas key");
 
   dependencies_.insert(std::make_pair(porosity_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
-  dependencies_.insert(std::make_pair(molar_density_liquid_key_, Tags::DEFAULT));
-  dependencies_.insert(std::make_pair(molar_density_gas_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(mol_density_liquid_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(mol_density_gas_key_, Tags::DEFAULT));
 }
 
 
@@ -69,8 +69,8 @@ void TotalComponentStorage_MolarDensity::Evaluate_(
 {
   const auto& phi = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
   const auto& sl = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
-  const auto& nl = *S.Get<CompositeVector>(molar_density_liquid_key_).ViewComponent("cell");
-  const auto& ng = *S.Get<CompositeVector>(molar_density_gas_key_).ViewComponent("cell");
+  const auto& nl = *S.Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
+  const auto& ng = *S.Get<CompositeVector>(mol_density_gas_key_).ViewComponent("cell");
 
   auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell", false);
@@ -92,8 +92,8 @@ void TotalComponentStorage_MolarDensity::EvaluatePartialDerivative_(
 {
   const auto& phi = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
   const auto& sl = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
-  const auto& nl = *S.Get<CompositeVector>(molar_density_liquid_key_).ViewComponent("cell");
-  const auto& ng = *S.Get<CompositeVector>(molar_density_gas_key_).ViewComponent("cell");
+  const auto& nl = *S.Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
+  const auto& ng = *S.Get<CompositeVector>(mol_density_gas_key_).ViewComponent("cell");
 
   auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell", false);
@@ -109,11 +109,11 @@ void TotalComponentStorage_MolarDensity::EvaluatePartialDerivative_(
     }
   }
 
-  else if (wrt_key == molar_density_liquid_key_) {
+  else if (wrt_key == mol_density_liquid_key_) {
     for (int c = 0; c != ncells; ++c) {
       result_c[0][c] = phi[0][c] * sl[0][c];
     }
-  } else if (wrt_key == molar_density_gas_key_) {
+  } else if (wrt_key == mol_density_gas_key_) {
     for (int c = 0; c != ncells; ++c) {
       result_c[0][c] = phi[0][c] * (1.0 - sl[0][c]);
     }

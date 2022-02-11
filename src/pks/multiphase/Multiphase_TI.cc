@@ -54,8 +54,8 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   auto pg = S_->GetPtrW<CompositeVector>(pressure_gas_key_, Tags::DEFAULT, pressure_gas_key_);
 
   // -- molar densities
-  S_->GetEvaluator(molar_density_gas_key_).Update(*S_, passwd_);
-  S_->GetEvaluator(molar_density_liquid_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(mol_density_gas_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd_);
 
   // -- storage
   S_->GetEvaluator(tws_key_).Update(*S_, passwd_);
@@ -204,10 +204,10 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
   // miscalleneous fields
   // -- molar densities
-  S_->GetEvaluator(molar_density_gas_key_).Update(*S_, passwd_);
-  const auto& eta_g = S_->Get<CompositeVector>(molar_density_gas_key_);
+  S_->GetEvaluator(mol_density_gas_key_).Update(*S_, passwd_);
+  const auto& eta_g = S_->Get<CompositeVector>(mol_density_gas_key_);
 
-  S_->GetEvaluator(molar_density_liquid_key_).Update(*S_, passwd_);
+  S_->GetEvaluator(mol_density_liquid_key_).Update(*S_, passwd_);
 
   // -- mass density of gas phase 
   auto rho_g = Teuchos::rcp(new CompositeVector(eta_g));

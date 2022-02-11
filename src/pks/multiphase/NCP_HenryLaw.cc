@@ -24,10 +24,10 @@ NCP_HenryLaw::NCP_HenryLaw(Teuchos::ParameterList& plist)
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
   }
   pressure_gas_key_ = plist_.get<std::string>("pressure gas key");
-  molar_density_liquid_key_ = plist_.get<std::string>("molar density liquid key");
+  mol_density_liquid_key_ = plist_.get<std::string>("molar density liquid key");
 
   dependencies_.insert(std::make_pair(pressure_gas_key_, Tags::DEFAULT));
-  dependencies_.insert(std::make_pair(molar_density_liquid_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(mol_density_liquid_key_, Tags::DEFAULT));
 }
 
 
@@ -50,7 +50,7 @@ void NCP_HenryLaw::Evaluate_(
     const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& pg = *S.Get<CompositeVector>(pressure_gas_key_).ViewComponent("cell");
-  const auto& nl = *S.Get<CompositeVector>(molar_density_liquid_key_).ViewComponent("cell");
+  const auto& nl = *S.Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
 
   auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell", false);
@@ -74,7 +74,7 @@ void NCP_HenryLaw::EvaluatePartialDerivative_(
   if (wrt_key == pressure_gas_key_) {
     for (int c = 0; c != ncells; ++c) result_c[0][c] = kH_;
   }
-  else if (wrt_key == molar_density_liquid_key_) {
+  else if (wrt_key == mol_density_liquid_key_) {
     for (int c = 0; c != ncells; ++c) result_c[0][c] = -1.0;
   }
 }

@@ -46,8 +46,8 @@ class TotalComponentStorage : public MultiphaseBaseEvaluator {
 
  protected:
   Key saturation_liquid_key_, porosity_key_;
-  Key molar_density_liquid_key_, molar_density_gas_key_;
-  Key mole_fraction_liquid_key_, mole_fraction_gas_key_;
+  Key mol_density_liquid_key_, mol_density_gas_key_;
+  Key x_liquid_key_, x_gas_key_;
   
  private:
   static Utils::RegisteredFactory<Evaluator, TotalComponentStorage> reg_;

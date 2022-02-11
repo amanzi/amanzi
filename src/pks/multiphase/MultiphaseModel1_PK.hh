@@ -58,6 +58,7 @@ class MultiphaseModel1_PK: public Multiphase_PK {
   Key molecular_diff_liquid_key_, molecular_diff_gas_key_; 
   Key ie_rock_key_, ie_liquid_key_, ie_gas_key_;
   Key conductivity_key_, particle_density_key_;
+  Key enthalpy_liquid_key_, enthalpy_gas_key_;
 
  private:
   // factory registration
