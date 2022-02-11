@@ -53,6 +53,7 @@ Multiphase_PK::Multiphase_PK(Teuchos::ParameterList& pk_tree,
   soln_(soln),
   num_phases_(2),
   op_pc_assembled_(false),
+  non_isothermal_(false),
   glist_(glist),
   num_itrs_(0)
 {
@@ -93,6 +94,8 @@ void Multiphase_PK::Setup()
   saturation_gas_key_ = Keys::getKey(domain_, "saturation_gas"); 
 
   temperature_key_ = Keys::getKey(domain_, "temperature"); 
+  energy_key_ = Keys::getKey(domain_, "energy"); 
+  prev_energy_key_ = Keys::getKey(domain_, "prev_energy");
 
   x_liquid_key_ = Keys::getKey(domain_, "mole_fraction_liquid"); 
   x_gas_key_ = Keys::getKey(domain_, "mole_fraction_gas"); 
@@ -154,9 +157,14 @@ void Multiphase_PK::Setup()
 
   // temperature typically is the primary solution owned by another PK
   if (!S_->HasRecord(temperature_key_)) {
-    S_->Require<CV_t, CVS_t>(temperature_key_, Tags::DEFAULT, temperature_key_)
+    S_->Require<CV_t, CVS_t>(temperature_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-    S_->RequireEvaluator(temperature_key_, Tags::DEFAULT);
+
+    Teuchos::ParameterList elist(temperature_key_);
+    elist.set<std::string>("name", temperature_key_)
+         .set<std::string>("tag", Tags::DEFAULT.get());
+    auto eval = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
+    S_->SetEvaluator(temperature_key_, Tags::DEFAULT, eval);
   }
 
   // water saturation is the primary solution
@@ -335,7 +343,7 @@ void Multiphase_PK::Initialize()
   // verbose object must go first to support initialization reports
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = mp_list_->sublist("verbose object");
-  vo_ = Teuchos::rcp(new VerboseObject("Multiphase", vlist));
+  vo_ = Teuchos::rcp(new VerboseObject("Multiphase_PK", vlist));
 
   // fundamental physical quantities
   gravity_ = S_->Get<AmanziGeometry::Point>("gravity");
@@ -422,16 +430,15 @@ void Multiphase_PK::Initialize()
 
   for (int i = 0; i < soln_names_.size(); ++i) {
     auto op_bc = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
-    op_bcs_.push_back(op_bc);
+    op_bcs_[soln_names_[i]] = op_bc;
   }
+  op_bcs_[pressure_gas_key_] = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
 
   double t_ini = S_->get_time();
   for (int i = 0; i < bcs_.size(); i++) {
     bcs_[i]->Compute(t_ini, t_ini);
     bcs_[i]->ComputeSubmodel(mesh_);
   }
-
-  op_bc_pg_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
 
   PopulateBCs(0, true);
 
@@ -447,7 +454,7 @@ void Multiphase_PK::Initialize()
 
   pde_diff_K_ = Teuchos::rcp(new Operators::PDE_DiffusionFVwithGravity(ddf_list, mesh_, 1.0, gravity_));
   pde_diff_K_->Setup(Kptr, Teuchos::null, Teuchos::null, rho_l_, gravity_);
-  pde_diff_K_->SetBCs(op_bcs_[0], op_bcs_[0]);
+  pde_diff_K_->SetBCs(op_bcs_[pressure_liquid_key_], op_bcs_[pressure_liquid_key_]);
   pde_diff_K_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   auto& mdf_list = mp_list_->sublist("operators").sublist("molecular diffusion operator").sublist("matrix");
@@ -494,6 +501,9 @@ void Multiphase_PK::Initialize()
       *vo_->os() << "bc \"" << bcs_[i]->keyword() << "\" has " << bcs_[i]->size()
                  << " entities" << std::endl;
     }
+    UpdatePreconditioner(0.0, soln_, 1.0);
+    *vo_->os() << "preconditioner:" << std::endl 
+               << op_preconditioner_->PrintDiagnostics() << std::endl;
     *vo_->os() << vo_->color("green") << "Initialization of PK is complete, T=" 
                << units_.OutputTime(S_->get_time()) << vo_->reset() << std::endl << std::endl;
   }
@@ -554,6 +564,8 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   copy_names.push_back(prev_tcs_key_);
   copy_names.push_back(darcy_flux_liquid_key_);
   copy_names.push_back(darcy_flux_gas_key_);
+  if (non_isothermal_)
+    copy_names.push_back(prev_energy_key_);
 
   int ncopy = copy_names.size();
   std::vector<CompositeVector> copies;
@@ -575,6 +587,8 @@ bool Multiphase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   S_->GetW<CV_t>(prev_tws_key_, Tags::DEFAULT, passwd_) = S_->Get<CV_t>(tws_key_);
   S_->GetW<CV_t>(prev_tcs_key_, Tags::DEFAULT, passwd_) = S_->Get<CV_t>(tcs_key_);
+  if (non_isothermal_)
+    S_->GetW<CV_t>(prev_energy_key_, Tags::DEFAULT, passwd_) = S_->Get<CV_t>(energy_key_);
 
   // trying to make a step
   bool failed(false);
@@ -637,7 +651,7 @@ void Multiphase_PK::CommitStep(double t_old, double t_new, const Tag& tag)
 
     auto& pdeK = pde_diff_K_;
     pdeK->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_);
-    pdeK->SetBCs(op_bcs_[0], op_bcs_[0]);
+    pdeK->SetBCs(op_bcs_[pressure_liquid_key_], op_bcs_[pressure_liquid_key_]);
     pdeK->global_operator()->Init();
     pdeK->UpdateMatrices(Teuchos::null, Teuchos::null);
 
@@ -666,6 +680,12 @@ int Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eq
   for (int i = 0; i < eqn_num; ++i) {
     int n = eqn_id + i;
     eqns_.resize(n + 1);
+    eqns_flattened_.resize(n + 1);
+
+    eqns_flattened_[n].resize(3);
+    eqns_flattened_[n][0] = soln_names_.size() - 1;
+    eqns_flattened_[n][1] = i;
+    eqns_flattened_[n][2] = (eqn_num > 1) ? n : -1;  // dEval_dSoln=0 for all eqns except this
    
     // advection evaluators
     if (slist.isParameter("advection factors"))
@@ -727,6 +747,127 @@ int Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eq
   field->SetData(S_->GetPtrW<CompositeVector>(primary_name, Tags::DEFAULT, passwd_));
 
   return eqn_id + eqn_num;
+}
+
+
+/* ******************************************************************* 
+* Populate boundary conditions for various bc types
+******************************************************************* */
+void Multiphase_PK::PopulateBCs(int icomp, bool flag)
+{
+  int n0 = (non_isothermal_) ? 2 : 1;
+  Key x_key = soln_names_[n0];
+
+  for (int i = 0; i < soln_names_.size(); ++i) {
+    Key name = soln_names_[i];
+    auto& bc_model = op_bcs_[name]->bc_model();
+    auto& bc_value = op_bcs_[name]->bc_value();
+
+    int nfaces = bc_model.size();
+    for (int n = 0; n < nfaces; ++n) {
+      bc_model[n] = Operators::OPERATOR_BC_NONE;
+      bc_value[n] = 0.0;
+    }
+  }
+
+  // calculus of variations produces zero for fixed BCs
+  double factor = (flag) ? 1.0 : 0.0;
+
+  // populate boundary conditions
+  for (int i = 0; i < bcs_.size(); ++i) {
+    if (bcs_[i]->get_bc_name() == "pressure") {
+      auto& bc_model = op_bcs_[pressure_liquid_key_]->bc_model();
+      auto& bc_value = op_bcs_[pressure_liquid_key_]->bc_value();
+
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int f = it->first;
+        bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value[f] = it->second[0];
+      }
+    }
+
+    if (bcs_[i]->get_bc_name() == "flux") {
+      if (bcs_[i]->component_name() == "water") { 
+        auto& bc_model = op_bcs_[pressure_liquid_key_]->bc_model();
+        auto& bc_value = op_bcs_[pressure_liquid_key_]->bc_value();
+
+        for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+          int f = it->first;
+          bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
+          bc_value[f] = it->second[0] * factor;
+        }
+      } else if (bcs_[i]->component_id() == icomp) {
+        auto& bc_model = op_bcs_[x_key]->bc_model();
+        auto& bc_value = op_bcs_[x_key]->bc_value();
+
+        for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+          int f = it->first;
+          bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
+          bc_value[f] = it->second[0] * factor;
+        }
+      }
+    }
+
+    if (bcs_[i]->get_bc_name() == "saturation") {
+      auto& bc_model_s = op_bcs_[saturation_liquid_key_]->bc_model();
+      auto& bc_value_s = op_bcs_[saturation_liquid_key_]->bc_value();
+
+      auto& bc_model_x = op_bcs_[x_key]->bc_model();
+      auto& bc_value_x = op_bcs_[x_key]->bc_value();
+
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int f = it->first;
+        bc_model_s[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value_s[f] = it->second[0];
+
+        bc_model_x[f] = Operators::OPERATOR_BC_DIRICHLET;  // a huck
+        bc_value_x[f] = 0.0;
+      }
+    }
+  }
+
+  // mark missing boundary conditions as zero flux conditions 
+  AmanziMesh::Entity_ID_List cells;
+  missed_bc_faces_ = 0;
+
+  for (int f = 0; f < nfaces_owned_; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+
+    if (cells.size() == 1) {
+      for (int i = 0; i < soln_names_.size(); ++i) {
+        Key name = soln_names_[i];
+        auto& bc_model = op_bcs_[name]->bc_model();
+
+        if (bc_model[f] == Operators::OPERATOR_BC_NONE) {
+          bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
+          if (i == 0) missed_bc_faces_++;
+        }
+      }
+    }
+  }
+
+  // boundary conditions for derived fields 
+  auto& bc_model_pg = op_bcs_[pressure_gas_key_]->bc_model();
+  auto& bc_value_pg = op_bcs_[pressure_gas_key_]->bc_value();
+
+  auto& bc_model_pl = op_bcs_[pressure_liquid_key_]->bc_model();
+  auto& bc_value_pl = op_bcs_[pressure_liquid_key_]->bc_value();
+
+  auto& bc_value_s = op_bcs_[saturation_liquid_key_]->bc_value();
+
+  bc_model_pg = bc_model_pl;
+
+  for (int f = 0; f != nfaces_owned_; ++f) {
+    if (bc_model_pg[f] == Operators::OPERATOR_BC_DIRICHLET) {
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      int c = cells[0];
+
+      bc_value_pg[f] = bc_value_pl[f] + wrm_->second[(*wrm_->first)[c]]->capillaryPressure(bc_value_s[f]);
+    }
+    else if (bc_model_pg[f] == Operators::OPERATOR_BC_NEUMANN) {
+      bc_value_pg[f] = 0.0;
+    }
+  }
 }
 
 }  // namespace Multiphase

@@ -49,14 +49,9 @@ class MultiphaseModel2_PK: public Multiphase_PK {
                    Teuchos::RCP<TreeVector> du) override; 
 
   // interface multiphase models
-  virtual void PopulateBCs(int icomp, bool flag) override;
-
-  virtual SolutionStructure EquationToSolution(int neqn) override;
   virtual void ModifyEvaluators(int neqn) override;
 
  private:
-  int missed_bc_faces_;
-
   Key advection_water_key_, pressure_vapor_key_, x_vapor_key_;
   Key diffusion_liquid_key_, diffusion_gas_key_, diffusion_vapor_key_; 
   Key molecular_diff_liquid_key_, molecular_diff_gas_key_; 

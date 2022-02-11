@@ -88,6 +88,7 @@ if (ENABLE_AmanziPhysicsModule)
   add_subdirectory(eos)
 
   add_subdirectory(flow)
+  add_subdirectory(energy)
   add_subdirectory(multiphase)
   add_subdirectory(navier_stokes)
 
@@ -95,7 +96,6 @@ if (ENABLE_AmanziPhysicsModule)
   add_subdirectory(chemistry)
   add_subdirectory(transport)
   add_subdirectory(shallow_water)
-  add_subdirectory(energy)
   add_subdirectory(dummy)
 
   add_subdirectory(mpc_pk)

@@ -52,7 +52,7 @@ TEST(MULTIPHASE_MODEL_I) {
   if (MyPID == 0) std::cout << "Test: multiphase pk, model Pl-Sl-Xg" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/multiphase_model1a.xml";
+  std::string xmlFileName = "test/multiphase_model1c.xml";
   auto plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create a MSTK mesh framework
@@ -61,8 +61,7 @@ TEST(MULTIPHASE_MODEL_I) {
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 200, 5);
-  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 50, 3);
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 100, 3);
 
   // create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Multiphase_PK", *plist));
@@ -102,6 +101,7 @@ TEST(MULTIPHASE_MODEL_I) {
     S->advance_cycle();
 
     S->advance_time(dt);
+    S->GetW<double>("dt", "dt") = dt;
     t += dt;
     dt = std::min(dt_max, dt * 1.2);
     iloop++;
@@ -132,7 +132,7 @@ TEST(MULTIPHASE_MODEL_I) {
   CHECK(dmin >= 0.0 && dmax <= 1.0);
   
   S->Get<CompositeVector>("ncp_fg").NormInf(&dmax);
-  CHECK(dmax <= 1.0e-14);
+  CHECK(dmax <= 2.0e-14);
 
   const auto& xg = *S->Get<CompositeVector>("mole_fraction_gas").ViewComponent("cell");
   xg.MinValue(&dmin);

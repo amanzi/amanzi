@@ -15,6 +15,9 @@
 // TPLs
 #include "Teuchos_RCP.hpp"
 
+// Amanzi::Energy
+#include "TCMEvaluator_TwoPhase.hh"
+
 // Multiphase
 #include "MoleFractionLiquid.hh"
 #include "MultiphaseModel1_PK.hh"
@@ -23,6 +26,7 @@
 #include "ProductEvaluator.hh"
 #include "SaturationGasEvaluator.hh"
 #include "TotalComponentStorage.hh"
+#include "TotalEnergyEvaluator.hh"
 #include "TotalWaterStorage.hh"
 #include "VaporPressureEvaluator.hh"
 
@@ -59,6 +63,12 @@ void MultiphaseModel1_PK::Setup()
   diffusion_liquid_key_ = Keys::getKey(domain_, "diffusion_liquid"); 
   diffusion_vapor_key_ = Keys::getKey(domain_, "diffusion_vapor"); 
   diffusion_gas_key_ = Keys::getKey(domain_, "diffusion_gas"); 
+
+  ie_rock_key_ = Keys::getKey(domain_, "internal_energy_rock");
+  ie_liquid_key_ = Keys::getKey(domain_, "internal_energy_liquid");
+  ie_gas_key_ = Keys::getKey(domain_, "internal_energy_gas");
+  conductivity_key_ = Keys::getKey(domain_, "thermal_conductivity");
+  particle_density_key_ = Keys::getKey(domain_, "particle_density");
 
   // gas mole fraction is the primary solution
   if (!S_->HasRecord(x_gas_key_)) {
@@ -128,6 +138,76 @@ void MultiphaseModel1_PK::Setup()
                                        saturation_liquid_key_, Tags::DEFAULT, tcs_key_);
     S_->RequireDerivative<CV_t, CVS_t>(tcs_key_, Tags::DEFAULT,
                                        x_gas_key_, Tags::DEFAULT, tcs_key_);
+  }
+
+  // -- total energy
+  non_isothermal_ = mp_list_->sublist("system").isParameter("energy eqn");
+
+  if (non_isothermal_) {
+    if (!S_->HasRecord(energy_key_)) {
+      S_->Require<CV_t, CVS_t>(energy_key_, Tags::DEFAULT, energy_key_)
+        .SetMesh(mesh_)->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+
+      Teuchos::ParameterList elist = mp_list_->sublist("energy evaluator");
+      elist.set<std::string>("energy key", energy_key_)
+           .set<std::string>("tag", "")
+           .set<bool>("vapor diffusion", true)
+           .set<std::string>("particle density key", particle_density_key_)
+           .set<std::string>("internal energy rock key", ie_rock_key_);
+      elist.setName(energy_key_);
+
+      auto ee = Teuchos::rcp(new Energy::TotalEnergyEvaluator(elist));
+      S_->SetEvaluator(energy_key_, Tags::DEFAULT, ee);
+
+      S_->RequireDerivative<CV_t, CVS_t>(energy_key_, Tags::DEFAULT,
+                                        temperature_key_, Tags::DEFAULT, energy_key_);
+    }
+
+    // previous conserved quantities
+    if (!S_->HasRecord(prev_energy_key_)) {
+      S_->Require<CV_t, CVS_t>(prev_energy_key_, Tags::DEFAULT, passwd_)
+        .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+      S_->GetRecordW(prev_energy_key_, passwd_).set_io_vis(false);
+    }
+
+    // internal energies 
+    S_->Require<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT, ie_liquid_key_)
+      .SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireEvaluator(ie_liquid_key_, Tags::DEFAULT);
+
+    S_->RequireDerivative<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT,
+                                       temperature_key_, Tags::DEFAULT, ie_liquid_key_);
+
+    S_->Require<CV_t, CVS_t>(ie_gas_key_, Tags::DEFAULT, ie_gas_key_)
+      .SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireEvaluator(ie_gas_key_, Tags::DEFAULT);
+
+    S_->RequireDerivative<CV_t, CVS_t>(ie_gas_key_, Tags::DEFAULT,
+                                       temperature_key_, Tags::DEFAULT, ie_gas_key_);
+
+    S_->Require<CV_t, CVS_t>(ie_rock_key_, Tags::DEFAULT, ie_rock_key_)
+      .SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireEvaluator(ie_rock_key_, Tags::DEFAULT);
+
+    S_->RequireDerivative<CV_t, CVS_t>(ie_rock_key_, Tags::DEFAULT,
+                                       temperature_key_, Tags::DEFAULT, ie_rock_key_);
+
+    // -- thermal conductivity
+    if (!S_->HasRecord(conductivity_key_)) {
+      S_->Require<CV_t, CVS_t>(conductivity_key_, Tags::DEFAULT, conductivity_key_)
+        .SetMesh(mesh_)->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+
+      Teuchos::ParameterList elist = mp_list_->sublist("thermal conductivity evaluator");
+      elist.set("thermal conductivity key", conductivity_key_)
+           .set<std::string>("tag", "");
+      elist.setName(conductivity_key_);
+
+      auto tcm = Teuchos::rcp(new Energy::TCMEvaluator_TwoPhase(elist));
+      S_->SetEvaluator(conductivity_key_, Tags::DEFAULT, tcm);
+    }
   }
 
   // liquid molar density
@@ -427,6 +507,17 @@ void MultiphaseModel1_PK::Setup()
   }
 }
 
+/* ******************************************************************
+* Initialize various PK objects
+****************************************************************** */
+void MultiphaseModel1_PK::Initialize()
+{
+  Multiphase_PK::Initialize();
+  if (non_isothermal_) {
+    InitializeFieldFromField_(prev_energy_key_, energy_key_, true);
+  }
+}
+
 
 /* ******************************************************************
 * Push data to the state
@@ -486,141 +577,14 @@ MultiphaseModel1_PK::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r
 
 
 /* ******************************************************************* 
-* Populate boundary conditions for various bc types
-******************************************************************* */
-void MultiphaseModel1_PK::PopulateBCs(int icomp, bool flag)
-{
-  // calculus of variations produces zero for fixed BCs
-  double factor = (flag) ? 1.0 : 0.0;
-
-  auto& bc_model_p = op_bcs_[0]->bc_model();
-  auto& bc_value_p = op_bcs_[0]->bc_value();
-
-  auto& bc_model_x = op_bcs_[1]->bc_model();
-  auto& bc_value_x = op_bcs_[1]->bc_value();
-
-  auto& bc_model_s = op_bcs_[2]->bc_model();
-  auto& bc_value_s = op_bcs_[2]->bc_value();
-
-  // initialize to zero
-  int nfaces = bc_model_p.size();
-  for (int n = 0; n < nfaces; ++n) {
-    bc_model_p[n] = Operators::OPERATOR_BC_NONE;
-    bc_value_p[n] = 0.0;
-
-    bc_model_x[n] = Operators::OPERATOR_BC_NONE;
-    bc_value_x[n] = 0.0;
-
-    bc_model_s[n] = Operators::OPERATOR_BC_NONE;
-    bc_value_s[n] = 0.0;
-  }
-
-  // populate boundary conditions
-  for (int i = 0; i < bcs_.size(); ++i) {
-    if (bcs_[i]->get_bc_name() == "pressure") {
-      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
-        int f = it->first;
-        bc_model_p[f] = Operators::OPERATOR_BC_DIRICHLET;
-        bc_value_p[f] = it->second[0];
-      }
-    }
-
-    if (bcs_[i]->get_bc_name() == "flux") {
-      if (bcs_[i]->component_name() == "water") { 
-        for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
-          int f = it->first;
-          bc_model_p[f] = Operators::OPERATOR_BC_NEUMANN;
-          bc_value_p[f] = it->second[0] * factor;
-        }
-      } else if (bcs_[i]->component_id() == icomp) {
-        for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
-          int f = it->first;
-          bc_model_x[f] = Operators::OPERATOR_BC_NEUMANN;
-          bc_value_x[f] = it->second[0] * factor;
-        }
-      }
-    }
-
-    if (bcs_[i]->get_bc_name() == "saturation") {
-      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
-        int f = it->first;
-        bc_model_s[f] = Operators::OPERATOR_BC_DIRICHLET;
-        bc_value_s[f] = it->second[0];
-
-        bc_model_x[f] = Operators::OPERATOR_BC_DIRICHLET;  // a huck
-        bc_value_x[f] = 0.0;
-      }
-    }
-  }
-
-  // mark missing boundary conditions as zero flux conditions 
-  AmanziMesh::Entity_ID_List cells;
-  missed_bc_faces_ = 0;
-
-  for (int f = 0; f < nfaces_owned_; f++) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-
-    if (cells.size() == 1) {
-      if (bc_model_p[f] == Operators::OPERATOR_BC_NONE) {
-        bc_model_p[f] = Operators::OPERATOR_BC_NEUMANN;
-        missed_bc_faces_++;
-      }
-
-      if (bc_model_x[f] == Operators::OPERATOR_BC_NONE)
-        bc_model_x[f] = Operators::OPERATOR_BC_NEUMANN;
-
-      if (bc_model_s[f] == Operators::OPERATOR_BC_NONE)
-        bc_model_s[f] = Operators::OPERATOR_BC_NEUMANN;
-    }
-  }
-
-  // boundary conditions for derived fields 
-  auto& bc_model_pg = op_bc_pg_->bc_model();
-  auto& bc_value_pg = op_bc_pg_->bc_value();
-
-  bc_model_pg = bc_model_p;
-
-  for (int f = 0; f != nfaces_owned_; ++f) {
-    if (bc_model_pg[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      int c = cells[0];
-
-      bc_value_pg[f] = bc_value_p[f] + wrm_->second[(*wrm_->first)[c]]->capillaryPressure(bc_value_s[f]);
-    }
-    else if (bc_model_pg[f] == Operators::OPERATOR_BC_NEUMANN) {
-      bc_value_pg[f] = 0.0;
-    }
-  }
-}
-
-
-/* ******************************************************************* 
-* Map for indices
-******************************************************************* */
-SolutionStructure MultiphaseModel1_PK::EquationToSolution(int neqn)
-{
-  SolutionStructure soln(neqn, 0, -1);
-  if (neqn == 0) return soln;
-
-  if (neqn == num_primary_ + 1) {
-    soln.var = 2;
-    return soln;
-  }
- 
-  soln.var = 1;
-  soln.comp = neqn - 1;
-  soln.matching_eqn = neqn;  // dEval_dSoln=0 for all eqns except this
-  return soln;
-}
-
-
-/* ******************************************************************* 
 * Tweak evaluators.
 ******************************************************************* */
 void MultiphaseModel1_PK::ModifyEvaluators(int neqn)
 {
-  if (neqn > 0) {
-    int ifield(0), n(neqn - 1);
+  int n0 = (non_isothermal_) ? 1 : 0;
+ 
+  if (neqn > n0) {
+    int ifield(0), n(neqn - 1 - n0);
     // ifield is dummy here
     Teuchos::rcp_dynamic_cast<TotalComponentStorage>(eval_tcs_)->set_subvector(ifield, n, kH_[n]);
     Teuchos::rcp_dynamic_cast<TotalComponentStorage>(eval_tcs_)->Update(*S_, passwd_, true);

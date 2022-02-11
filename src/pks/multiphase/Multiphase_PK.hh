@@ -93,16 +93,17 @@ class Multiphase_PK: public PK_PhysicalBDF {
   virtual void ChangedSolution() override;
 
   // multiphase submodels
-  virtual void PopulateBCs(int icomp, bool flag) = 0;
-  virtual SolutionStructure EquationToSolution(int neqn) = 0;
+  void PopulateBCs(int icomp, bool flag);
   virtual void ModifyEvaluators(int neqn) = 0;
 
   Teuchos::RCP<TreeVector> soln() { return soln_; }
 
+ protected:
+  void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);
+
  private:
   int InitMPSystem_(const std::string& eqn_name, int enq_id, int enq_num);
   void InitializeFields_();
-  void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);
 
  protected:
   int ncells_owned_, ncells_wghost_;
@@ -131,6 +132,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   // keys
   Key pressure_liquid_key_, x_liquid_key_, x_gas_key_;
   Key saturation_liquid_key_, saturation_gas_key_, temperature_key_;
+  Key energy_key_, prev_energy_key_;
   Key porosity_key_, pressure_gas_key_;
   Key permeability_key_, relperm_liquid_key_, relperm_gas_key_;
   Key advection_liquid_key_, advection_gas_key_;
@@ -148,12 +150,13 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Teuchos::RCP<Operators::PDE_DiffusionFVwithGravity> pde_diff_K_;
   Teuchos::RCP<Operators::PDE_DiffusionFV> pde_diff_D_;
 
+  bool non_isothermal_;
   std::vector<EquationStructure> eqns_;
+  std::vector<std::vector<int> > eqns_flattened_;
 
   // boundary conditions
   std::vector<Teuchos::RCP<MultiphaseBoundaryFunction> > bcs_; 
-  std::vector<Teuchos::RCP<Operators::BCs> > op_bcs_;
-  Teuchos::RCP<Operators::BCs> op_bc_pg_;
+  std::map<std::string, Teuchos::RCP<Operators::BCs> > op_bcs_;
 
   // physical parameters
   double mu_l_, mu_g_, rho_l_, eta_l_, mol_mass_H2O_;
@@ -174,6 +177,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Teuchos::RCP<Teuchos::ParameterList> mp_list_;
 
  private:
+  int missed_bc_faces_;
   double smooth_mu_;  // smoothing parameter
 
   // solvers and preconditioners

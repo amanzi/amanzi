@@ -73,8 +73,8 @@ void TCMEvaluator_TwoPhase::Evaluate_(
 
   for (auto comp = results[0]->begin(); comp != results[0]->end(); ++comp) {
     // much more efficient to pull out vectors first
-    const Epetra_MultiVector& poro_v = *poro->ViewComponent(*comp);
-    const Epetra_MultiVector& sat_v = *sat->ViewComponent(*comp);
+    const auto& poro_v = *poro->ViewComponent(*comp);
+    const auto& sat_v = *sat->ViewComponent(*comp);
     Epetra_MultiVector& result_v = *results[0]->ViewComponent(*comp);
 
     int ncomp = results[0]->size(*comp);

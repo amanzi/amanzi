@@ -42,16 +42,6 @@ struct EquationStructure {
   EquationTerm constraint;
 };
 
-
-struct SolutionStructure {
- public:
-  SolutionStructure(int var0, int comp0, int eqn) : var(var0), comp(comp0), matching_eqn(eqn) {};
-
- public:
-  int var, comp, matching_eqn;
-};
-
-
 }  // namespace Multiphase
 }  // namespace Amanzi
 

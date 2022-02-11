@@ -1,7 +1,7 @@
 /*
   Multiphase PK
 
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
@@ -57,6 +57,8 @@ FlattenedTreeOperator::FlattenedTreeOperator(Teuchos::RCP<const TreeVectorSpace>
 
   // resize the blocks
   blocks_.resize(n_blocks, Teuchos::Array<Teuchos::RCP<TreeOperator> >(n_blocks, Teuchos::null));
+  row_size_ = n_blocks;
+  col_size_ = n_blocks;
 
   // first map supports solvers which use casual tree vectors
   // second map helps matrix assembly from smaller-size blocks

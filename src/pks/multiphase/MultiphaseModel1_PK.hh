@@ -36,6 +36,7 @@ class MultiphaseModel1_PK: public Multiphase_PK {
 
   // modifying interface for PKs
   virtual void Setup() override;
+  virtual void Initialize() override;
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override;
   virtual std::string name() override { return "multiphase pl sl xg"; }
 
@@ -49,17 +50,14 @@ class MultiphaseModel1_PK: public Multiphase_PK {
                    Teuchos::RCP<TreeVector> du) override; 
 
   // interface multiphase models
-  virtual void PopulateBCs(int icomp, bool flag) override;
-
-  virtual SolutionStructure EquationToSolution(int neqn) override;
   virtual void ModifyEvaluators(int neqn) override;
 
  private:
-  int missed_bc_faces_;
-
   Key advection_water_key_, pressure_vapor_key_, x_vapor_key_;
   Key diffusion_liquid_key_, diffusion_gas_key_, diffusion_vapor_key_; 
   Key molecular_diff_liquid_key_, molecular_diff_gas_key_; 
+  Key ie_rock_key_, ie_liquid_key_, ie_gas_key_;
+  Key conductivity_key_, particle_density_key_;
 
  private:
   // factory registration

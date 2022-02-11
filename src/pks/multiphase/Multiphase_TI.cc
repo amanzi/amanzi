@@ -43,7 +43,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
 
   // extract pointers to subvectors
   std::vector<Teuchos::RCP<CompositeVector> > up, fp;
-  for (int i = 0; i < 3; ++i) {
+  for (int i = 0; i < soln_names_.size(); ++i) {
     up.push_back(u_new->SubVector(i)->Data());
     fp.push_back(f->SubVector(i)->Data());
   }
@@ -80,9 +80,10 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
 
   Key key;
   for (int n = 0; n < neqns - 1; ++n) {
+    Key keyr = soln_names_[eqns_flattened_[n][0]];
+
     ModifyEvaluators(n);
-    auto sol = EquationToSolution(n);
-    PopulateBCs(sol.comp, true);
+    PopulateBCs(eqns_flattened_[n][1], true);
   
     // Richards-type operator for all phases
     fone.PutScalar(0.0);
@@ -100,7 +101,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
         // -- form operator
         auto& pde = pde_diff_K_;
         pde->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_);  // FIXME (gravity for gas phase)
-        pde->SetBCs(op_bcs_[sol.var], op_bcs_[sol.var]);
+        pde->SetBCs(op_bcs_[keyr], op_bcs_[keyr]);
         pde->global_operator()->Init();
         pde->UpdateMatrices(Teuchos::null, Teuchos::null);
         pde->ApplyBCs(bcflag, false, false);
@@ -125,7 +126,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
         // -- form operator
         auto& pde = pde_diff_D_;
         pde->Setup(Teuchos::null, kr, Teuchos::null);
-        pde->SetBCs(op_bcs_[sol.var], op_bcs_[sol.var]);
+        pde->SetBCs(op_bcs_[keyr], op_bcs_[keyr]);
         pde->global_operator()->Init();
         pde->UpdateMatrices(Teuchos::null, Teuchos::null);
         pde->ApplyBCs(false, false, false);
@@ -134,7 +135,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
         Key fname = eqns_[n].diffusion[phase].second;
         S_->GetEvaluator(fname).Update(*S_, passwd_);
         const auto& tmp = *S_->Get<CompositeVector>(fname).ViewComponent("cell");
-        int m = std::min(sol.comp, tmp.NumVectors() - 1);
+        int m = std::min(eqns_flattened_[n][1], tmp.NumVectors() - 1);
         for (int c = 0; c < ncells_owned_; ++c) {
           comp_c[0][c] = tmp[m][c];
         }
@@ -160,9 +161,9 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
     }
 
     // copy temporary vector to residual
-    auto& fc = *fp[sol.var]->ViewComponent("cell");
+    auto& fc = *fp[eqns_flattened_[n][0]]->ViewComponent("cell");
     for (int c = 0; c < ncells_owned_; ++c)
-      fc[sol.comp][c] = fone_c[0][c];
+      fc[eqns_flattened_[n][1]][c] = fone_c[0][c];
   }
 
   // process gas constraints
@@ -175,7 +176,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   S_->GetEvaluator(key).Update(*S_, passwd_);
   const auto& ncp_gc = *S_->Get<CompositeVector>(key).ViewComponent("cell");
 
-  auto& fci = *fp[2]->ViewComponent("cell");
+  auto& fci = *fp[eqns_flattened_[n][0]]->ViewComponent("cell");
   if (ncp_ == "min") {
     for (int c = 0; c < ncells_owned_; ++c) {
       fci[0][c] = std::min(ncp_fc[0][c], ncp_gc[0][c]);
@@ -197,7 +198,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 {
   // extract pointers to subvectors
   std::vector<Teuchos::RCP<const CompositeVector> > up;
-  for (int i = 0; i < 3; ++i) {
+  for (int i = 0; i < soln_names_.size(); ++i) {
     up.push_back(u->SubVector(i)->Data());
   }
 
@@ -244,15 +245,13 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
   Key key;
   for (int row = 0; row < neqns - 1; ++row) {
     ModifyEvaluators(row);
-    auto solr = EquationToSolution(row);
-    Key keyr = soln_names_[solr.var];
-    PopulateBCs(solr.comp, false);
+    Key keyr = soln_names_[eqns_flattened_[row][0]];
+    PopulateBCs(eqns_flattened_[row][1], false);
 
     for (int col = 0; col < neqns; ++col) {
-      auto solc = EquationToSolution(col);
-      Key keyc = soln_names_[solc.var];
+      Key keyc = soln_names_[eqns_flattened_[col][0]];
 
-      if (solc.matching_eqn >= 0 && row != solc.matching_eqn) continue;
+      if (eqns_flattened_[col][2] >= 0 && row != eqns_flattened_[col][2]) continue;
 
       bool bcflag = (row == col);
 
@@ -268,7 +267,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
       //
       // Richards-type operator for all phases, div [K f grad(g)]
-      // The pair describing this equation term is (f, g).
+      // The pair of evaluators or fields describing this equation is (f, g).
       //
       for (int phase = 0; phase < 2; ++phase) {
         // -- diffusion operator div[ (K f dg/dv) grad dv ] 
@@ -295,7 +294,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
             upwind_->Compute(flux, *kr, bcnone, *kr);
 
             pde->Setup(Kptr, kr, Teuchos::null);
-            pde->SetBCs(op_bcs_[solr.var], op_bcs_[solc.var]);
+            pde->SetBCs(op_bcs_[keyr], op_bcs_[keyc]);
             pde->UpdateMatrices(Teuchos::null, Teuchos::null);
             pde->ApplyBCs(bcflag, false, false);
 
@@ -320,7 +319,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
             auto tmp = S_->GetDerivativePtr<CompositeVector>(fname, Tags::DEFAULT, keyc, Tags::DEFAULT);
 
             pde_diff_K_->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_);  // FIXME
-            pde_diff_K_->SetBCs(op_bcs_[solr.var], op_bcs_[solc.var]);
+            pde_diff_K_->SetBCs(op_bcs_[keyr], op_bcs_[keyc]);
             pde_diff_K_->UpdateMatrices(Teuchos::null, Teuchos::null);
             pde_diff_K_->UpdateFlux(tmp.ptr(), flux_tmp.ptr());
 
@@ -344,7 +343,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
             S_->GetEvaluator(fname).Update(*S_, passwd_);
             auto var = S_->GetPtr<CompositeVector>(fname, Tags::DEFAULT);
             pde_diff_K_->Setup(Kptr, kr, Teuchos::null, rho_g, gravity_);
-            pde_diff_K_->SetBCs(op_bcs_[solr.var], op_bcs_[solc.var]);
+            pde_diff_K_->SetBCs(op_bcs_[keyr], op_bcs_[keyc]);
             pde_diff_K_->UpdateMatrices(Teuchos::null, Teuchos::null);
             pde_diff_K_->UpdateFlux(var.ptr(), flux_tmp.ptr());
 
@@ -379,10 +378,10 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
               kr_c[0][c] = (*der_c)[0][c] * coef_c[0][c];
             }
             auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
-            upwind_->Compute(flux, *kr, op_bcs_[solr.var]->bc_model(), *kr);
+            upwind_->Compute(flux, *kr, op_bcs_[keyr]->bc_model(), *kr);
 
             pde->Setup(Teuchos::null, kr, Teuchos::null);
-            pde->SetBCs(op_bcs_[solr.var], op_bcs_[solc.var]);
+            pde->SetBCs(op_bcs_[keyr], op_bcs_[keyc]);
             pde->UpdateMatrices(Teuchos::null, Teuchos::null);
             pde->ApplyBCs(bcflag, false, false);
 
@@ -407,7 +406,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
             // --- calculate advective flux 
             pde_diff_D_->Setup(Teuchos::null, kr, Teuchos::null);
-            pde_diff_D_->SetBCs(op_bcs_[solr.var], op_bcs_[solc.var]);
+            pde_diff_D_->SetBCs(op_bcs_[keyr], op_bcs_[keyc]);
             pde_diff_D_->UpdateMatrices(Teuchos::null, Teuchos::null);
             pde_diff_D_->UpdateFlux(tmp.ptr(), flux_tmp.ptr());
 
@@ -432,7 +431,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
             S_->GetEvaluator(fname).Update(*S_, passwd_);
             auto var = S_->GetPtr<CompositeVector>(fname, Tags::DEFAULT);
             pde_diff_D_->Setup(Teuchos::null, kr, Teuchos::null);
-            pde_diff_D_->SetBCs(op_bcs_[solr.var], op_bcs_[solc.var]);
+            pde_diff_D_->SetBCs(op_bcs_[keyr], op_bcs_[keyc]);
             pde_diff_D_->UpdateMatrices(Teuchos::null, Teuchos::null);
             pde_diff_D_->UpdateFlux(var.ptr(), flux_tmp.ptr());
 
@@ -445,7 +444,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
       // populate advection operator
       auto pde1 = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, global_op)); 
       pde1->Setup(*flux_acc);
-      pde1->SetBCs(op_bcs_[solr.var], op_bcs_[solc.var]);
+      pde1->SetBCs(op_bcs_[keyr], op_bcs_[keyc]);
       pde1->UpdateMatrices(flux_acc.ptr());
       pde1->ApplyBCs(false, false, false);
 
@@ -465,7 +464,6 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
   int n = neqns - 1;
 
   for (int i = 0; i < neqns; ++i) {
-    auto solc = EquationToSolution(i);
     auto pde = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_)); 
     op_preconditioner_->set_operator_block(n, i, pde->global_operator());
  
@@ -476,7 +474,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
     S_->GetEvaluator(key).Update(*S_, passwd_);
     const auto& ncp_fc = *S_->Get<CompositeVector>(key).ViewComponent("cell");
 
-    Key keyc = soln_names_[solc.var];
+    Key keyc = soln_names_[eqns_flattened_[i][0]];
     if (S_->HasDerivative(key, keyc)) {
       S_->GetEvaluator(key).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
       der_fc = S_->GetDerivative<CompositeVector>(key, Tags::DEFAULT, keyc, Tags::DEFAULT).ViewComponent("cell");
@@ -486,7 +484,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
     S_->GetEvaluator(key).Update(*S_, passwd_);
     const auto& ncp_gc = *S_->Get<CompositeVector>(key).ViewComponent("cell");
 
-    keyc = soln_names_[solc.var];
+    keyc = soln_names_[eqns_flattened_[i][0]];
     if (S_->HasDerivative(key, keyc)) {
       S_->GetEvaluator(key).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
       der_gc = S_->GetDerivative<CompositeVector>(key, Tags::DEFAULT, keyc, Tags::DEFAULT).ViewComponent("cell");
@@ -543,7 +541,7 @@ int Multiphase_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
 ****************************************************************** */
 void Multiphase_PK::ChangedSolution()
 {
-  for (int i = 0; i < 3; ++i ) {
+  for (int i = 0; i < soln_names_.size(); ++i ) {
     Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> >(
         S_->GetEvaluatorPtr(soln_names_[i], Tags::DEFAULT))->SetChanged();
   }
