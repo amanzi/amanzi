@@ -132,7 +132,7 @@ TEST(MULTIPHASE_MODEL_I) {
   CHECK(dmin >= 0.0 && dmax <= 1.0);
   
   S->Get<CompositeVector>("ncp_fg").NormInf(&dmax);
-  CHECK(dmax <= 2.0e-14);
+  CHECK(dmax <= 1.0e-13);
 
   const auto& xg = *S->Get<CompositeVector>("mole_fraction_gas").ViewComponent("cell");
   xg.MinValue(&dmin);

@@ -100,6 +100,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
 
  protected:
   void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);
+  Teuchos::ParameterList MyRequire_(const Key& key, const std::string& owner);
 
  private:
   int InitMPSystem_(const std::string& eqn_name, int enq_id, int enq_num);
@@ -119,7 +120,6 @@ class Multiphase_PK: public PK_PhysicalBDF {
   std::vector<std::string> component_names_; 
   int num_primary_, num_phases_;
 
-  Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> > pressure_liquid_eval_;
   Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> > saturation_liquid_eval_;
   Teuchos::RCP<EvaluatorPrimary<CompositeVector, CompositeVectorSpace> > x_gas_eval_;
 
@@ -139,6 +139,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Key viscosity_liquid_key_, viscosity_gas_key_;
   Key darcy_flux_liquid_key_, darcy_flux_gas_key_;
   Key mol_density_liquid_key_, mol_density_gas_key_;
+  Key mass_density_liquid_key_, mass_density_gas_key_;
   Key tws_key_, tcs_key_, prev_tws_key_, prev_tcs_key_;
   Key ncp_f_key_, ncp_g_key_, ncp_fg_key_;
 
