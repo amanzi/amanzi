@@ -88,7 +88,7 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
         dependencies_.insert(KeyTag(dep, make_tag(tags[i])));
         ++i;
       }
-    } else if (plist_.get<bool>("dependency tags are my tag", false)) {
+    } else if (plist_.get<bool>("dependency tags are my tag", true)) {
       auto my_tag = my_keys_.front().second;
       for (const auto& dep : deps) {
         dependencies_.insert(KeyTag(dep, my_tag));
