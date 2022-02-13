@@ -24,7 +24,7 @@ class Ascemio(CMakePackage):
         when='@2.3')
 
     depends_on('mpi')
-    depends_on('hdf5@1.10.6 +hl+mpi')
+    depends_on('hdf5@1.10.6 +hl+mpi+fortran+shared')
 
     def cmake_args(self):
         options = []
