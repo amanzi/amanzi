@@ -263,15 +263,15 @@ if (NOT Boost_NO_BOOST_CMAKE)
 
   # If we found boost-cmake, then we're done.  Print out what we found.
   # Otherwise let the rest of the module try to find it.
-  #if (Boost_FOUND)
-  #  message(STATUS "Boost ${Boost_FIND_VERSION} found.")
-  #  if (Boost_FIND_COMPONENTS)
-  #    message(STATUS "Found Boost components:\n   ${Boost_FIND_COMPONENTS}")
-  #  endif()
+  if (Boost_FOUND)
+    message(STATUS "Boost ${Boost_FIND_VERSION} found.")
+    if (Boost_FIND_COMPONENTS)
+      message(STATUS "Found Boost components:\n   ${Boost_FIND_COMPONENTS}")
+    endif()
     # Restore project's policies
-    #cmake_policy(POP)
-    #return()
-  #endif()
+    cmake_policy(POP)
+    return()
+  endif()
 endif()
 
 
