@@ -58,7 +58,7 @@ class Amanzi(CMakePackage):
     #variant('petsc', default=True, description='Enable PETsC support')
 #    variant('tests', default=False, description='Enable the unit test suite')
 
-    patch('exprtk.patch', when = '@1.0.0')
+    patch('exprtk.patch')
 
     #depends_on('moab', when='+moab')
     #depends_on('silo', when='+silo')
