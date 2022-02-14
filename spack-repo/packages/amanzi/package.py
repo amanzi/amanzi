@@ -121,8 +121,19 @@ class Amanzi(CMakePackage):
         options.append('-DCMAKE_Fortran_COMPILER=' + self.spec['mpi'].mpifc)
 
         # Provide information normally in the cache?
-        options.append('-DXERCES_LIBRARY_DIR=' + self.spec['xerces-c'].prefix + '/lib')
-        #options.append('-DSuperLU_DIR=' + self.spec['superlu'].prefix)
+        options.append('-DUnitTest_DIR=' + self.spec['unittest-cpp'].prefix)
+        options.append('-DZLIB_DIR_DIR=' + self.spec['zlib'].prefix)
+        options.append('-DMETIS_DIR=' + self.spec['metis'].prefix)
+        options.append('-DBOOST_ROOT=' + self.spec['boost'].prefix)
+        options.append('-DHDF5_ROOT=' + self.spec['hdf5'].prefix)
+        options.append('-DASCEMIO_DIR=' + self.spec['ascemio'].prefix)
+        options.append('-DNetCDF_DIR=' + self.spec['netcdf-c'].prefix)
+        options.append('-DMSTK_LIBRARY_DIR=' + self.spec['mstk'].prefix + '/lib')
+        options.append('-DMSTK_INCLUDE_DIR=' + self.spec['mstk'].prefix + '/include')
+        options.append('-DXERCES_DIR=' + self.spec['xerces-c'].prefix)
+        options.append('-DSEACAS_DIR=' + self.spec['seacas'].prefix)
+        options.append('-DSuperLU_DIR=' + self.spec['superlu'].prefix)
+        options.append('-DHYPRE_DIR=' + self.spec['hypre'].prefix)
         options.append('-DTrilinos_INSTALL_PREFIX:PATH=' + self.spec['trilinos'].prefix)
 
         # not supported or always off/on options
@@ -176,7 +187,7 @@ class Amanzi(CMakePackage):
         options.append('-DENABLE_UnitTest=ON')
 
         if '+mstk' in self.spec:
-            options.append('-DMSTK_VERSION=3.3.5')
+            options.append('-DMSTK_VERSION=3.3.6')
             options.append('-DENABLE_MESH_MSTK=ON')
         else:
             options.append('-DENABLE_MESH_MSTK=OFF')
