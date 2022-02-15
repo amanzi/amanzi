@@ -206,7 +206,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
   Errors::Message msg;
 
   // compute reverse map: should we move this to Init() ??? 
-  mesh_out_ = S_->Get<CompositeVector>(field_out_key_).Mesh();
+  mesh_out_ = S_->Get<CompositeVector>(field_out_key_, copy_field_out_tag_).Mesh();
 
   if (submodel_ == "field" || submodel_ == "conserved quantity") {
     if (mesh_->space_dimension() == mesh_->manifold_dimension() && reverse_map_.size() == 0) {
@@ -221,7 +221,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
   // create the input tuple (time + space)
   if (submodel_ == "rate") {
     const auto& flux = *S_->Get<CompositeVector>(flux_key_, copy_flux_tag_).ViewComponent("face", true);
-    const auto& flux_map = S_->Get<CompositeVector>(flux_key_).Map().Map("face", true);
+    const auto& flux_map = S_->Get<CompositeVector>(flux_key_, copy_flux_tag_).Map().Map("face", true);
 
     const auto& field_out = *S_->Get<CompositeVector>(field_out_key_, copy_field_out_tag_).ViewComponent("cell", true);
     S_->Get<CompositeVector>(field_out_key_, copy_field_out_tag_).ScatterMasterToGhosted("cell");
@@ -274,7 +274,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
 
   } else if (submodel_ == "flux exchange") {
     const auto& flux = *S_->Get<CompositeVector>(flux_key_, copy_flux_tag_).ViewComponent("face", true);
-    const auto& flux_map = S_->Get<CompositeVector>(flux_key_).Map().Map("face", true);
+    const auto& flux_map = S_->Get<CompositeVector>(flux_key_, copy_flux_tag_).Map().Map("face", true);
 
     AmanziMesh::Entity_ID_List cells, faces;
     std::vector<int> dirs;
