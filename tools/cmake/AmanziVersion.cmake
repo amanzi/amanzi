@@ -29,6 +29,20 @@ find_package(Git)
 
 if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) ) 
 
+  set(GIT_ARGS fetch --all --tags)
+  execute_process(COMMAND ${GIT_EXECUTABLE} ${GIT_ARGS}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            RESULT_VARIABLE err_occurred 
+            OUTPUT_VARIABLE AMANZI_GIT_STATUS
+            ERROR_VARIABLE err
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_STRIP_TRAILING_WHITESPACE)
+  if (err_occurred)
+    message(WARNING "Error executing git:\n ${cmd}\n${err}")
+    set(cmd_output cmd_output-NOTFOUND)
+    exit()
+  endif()
+
   # Get the name of the current branch.
   set(GIT_ARGS status)
   execute_process(COMMAND ${GIT_EXECUTABLE} ${GIT_ARGS}
