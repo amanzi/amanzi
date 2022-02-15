@@ -63,7 +63,7 @@ class RecordSet {
   void WriteCheckpoint(const Checkpoint& chkp) const;
   void ReadCheckpoint(const Checkpoint& chkp);
   bool Initialize(Teuchos::ParameterList& plist);
-  void Copy(const Tag& dest, const Tag& source);
+  void Assign(const Tag& dest, const Tag& source);
 
   // copy management
   const Record& GetRecord(const Tag& tag) const;

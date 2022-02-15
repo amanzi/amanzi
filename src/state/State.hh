@@ -404,10 +404,10 @@ class State {
     return GetRecordSetW(fieldname).SetPtr<T>(tag, owner, data);
   }
 
-  // -- copy between tags assume that operator = is supported
+  // -- assign between tags assume that operator= on the data type is supported
   inline
-  void Copy(const Key& fieldname, const Tag& dest, const Tag& source) {
-    return GetRecordSetW(fieldname).Copy(dest, source);
+  void Assign(const Key& fieldname, const Tag& dest, const Tag& source) {
+    return GetRecordSetW(fieldname).Assign(dest, source);
   }
 
 
