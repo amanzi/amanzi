@@ -24,105 +24,125 @@ class Amanzi(CMakePackage):
     homepage = "http://www.amanzi.github.io"
     git      = "https://github.com/amanzi/amanzi"
 
-    maintainers = ['julienloiseau']
+    maintainers = ['julienloiseau','jd-moulton','gcapodag']
 
     # Submodule is ON for ATS 
     version('spack', branch='spack', default=True, submodules=True)
-    version('master', branch='master', default=True, submodules=True)
-    version('1.1-dev', tag='amanzi-1.1-dev', submodules=True)
-    version('1.0.0', tag='amanzi-1.0.0', submodules=True)
+    version('master', branch='master', default=False, submodules=True)
+    version('1.1-dev', tag='amanzi-1.1-dev', default=False, submodules=True)
+    version('1.0.0', tag='amanzi-1.0.0', default=False, submodules=True)
 
-    # Trilinos framework: epetra|tpetra
-    variant('eptra', default=True, description='Enable Epetra support')
-    variant('tpetra', default=False, description='Enable Tpetra support')
+    # Trilinos data model: epetra|tpetra
+    variant('data_model', default='epetra', values=('epetra','tpetra'),
+        description='Trilinos data model')
 
     # Mesh Type: unstructured|structured
     #            (could be both, but currently not support for structured) 
     variant('mesh_type', default='unstructured', 
         values=('unstructured', 'structured'),
-        description='Select mesh type: unstructured or structured', 
-        multi=False)
-    variant('mstk', default=True, description='Enable MSTK mesh support for '
-            'unstructured mesh') 
-    variant('moab', default=False, description='Enable MOAB mesh support for '
-            'unstructured mesh')
+        description='Select mesh type: unstructured or structured')
+    variant('shared', default=True, description='Build shared libraries and TPLs')
+    variant('mesh_framework', default='mstk', values=('mstk','moab'), 
+        description='Unstructure mesh framework')
+
+    # Solvers 
+    variant('hypre', default=True, description='Enable Hypre solver support')
+
+    # Physics 
+    variant('physics', default='amanzi', values=('amanzi','ats'), description='Physics implementation')
+
+    # I/O
     variant('silo', default=False, description='Enable Silo reader for binary '
             'files')
-    
-    variant('alquimia', default=False, description='Enable alquimia support')
-    variant('hypre', default=True, description='Enable Hypre solver support')
-    variant('ats', default=False, description='Enable ATS support')
-    variant('AmanziPhysics', default=True, description='Enable Amanzi Physics support')
-    variant('ATSPhysics', default=False, description='Enable Amanzi Physics support')
+
+    # Geochemistry 
+    variant('geochemistry', default=False, description='Enable geochemistry support')
+
+
+    #variant('alquimia', default=False, description='Enable alquimia support')
+    #variant('ats', default=False, description='Enable ATS support')
+    #variant('AmanziPhysics', default=True, description='Enable Amanzi Physics support')
+    #variant('ATSPhysics', default=False, description='Enable Amanzi Physics support')
     variant('crunchtope', default=False, description='Enable CrunchTope support')
-    #variant('petsc', default=True, description='Enable PETsC support')
-#    variant('tests', default=False, description='Enable the unit test suite')
+    variant('tests', default=True, description='Enable the unit test suite')
 
     patch('exprtk.patch')
 
-    #depends_on('moab', when='+moab')
-    #depends_on('silo', when='+silo')
-    #depends_on('hdf5@1.10.6 +hl+mpi', when='-alquimia')
-    #depends_on('superlu-dist@6.0.0', when='+hypre')
-    #depends_on('hypre +superlu-dist +mpi', when='+hypre')
+    ##### Build dependencies #####
 
     depends_on('git', type='build')
     depends_on('cmake@3.15:',  type='build')
 
-    # Mandatory 
+    ##### CORE DEPENDENCIES ##### 
+
     depends_on('mpi')
-    depends_on('zlib +shared')
-    depends_on('metis +shared')
-    depends_on('parmetis +shared')
-    depends_on('seacas +shared')
-    depends_on('boost@1.67.0 cxxstd=11 +program_options +shared')
+
+    # HDF5 is provided by Ascemio, the version is very restrictive 
+    # \todo Update Ascemio package.py to target a wider range of versions 
+    core_dependencies = {
+        'zlib', 'metis', 'parmetis', 'seacas', 
+        'boost@1.67.0 cxxstd=11 +program_options', 
+        'netcdf-c +parallel-netcdf', 'hdf5@1.10.6 +mpi+fortran+hl' 
+    }
+
+    for dep in core_dependencies: 
+        depends_on(dep+' +shared',when='+shared'); 
+
+    for dep in core_dependencies: 
+        depends_on(dep+' ~shared',when='~shared'); 
+
+
+    # The following core dependencies do not support +shared/~shared
     depends_on('xerces-c')
-    # depends_on('cgns@develop +mpi')
     depends_on('ascemio')
-    depends_on('netcdf-c +parallel-netcdf +shared')
     depends_on('unittest-cpp')
-    # Alquimia
+    # depends_on('cgns@develop +mpi')
+
+
+    #### Geochemistry ####
     # xsdk-0.7.0 -> alquimia v1.0.9, pflotran v3.0.2
-    depends_on('alquimia@1.0.9', when='+alquimia')
-    depends_on('pflotran@3.0.2', when='+alquimia')
+    depends_on('alquimia@1.0.9', when='+geochemistry')
+    depends_on('pflotran@3.0.2', when='+geochemistry')
     # pflotran depends on petsc 3.10 (or newer). 
-    depends_on('petsc@3.13.3', when="+alquimia")
-    # HDF5 dependency is embeded in ascemio.
-    # depends_on('hdf5@1.10.6 +mpi+fortran+hl', when='+alquimia')
-    # Hypre
+    depends_on('petsc@3.13.3', when="+geochemistry")
+
+    ##### Hypre #####
     depends_on('superlu@5.2.2', when='+hypre')
     depends_on('superlu-dist@6.2.0', when='+hypre')
     depends_on('hypre@2.22.1 +mpi +shared', when='+hypre')
-    # MSTK 
-    depends_on('mstk@3.3.6 partitioner=all +seacas +parallel +shared', when='+mstk')
-    depends_on('nanoflann', when='+mstk')
-    # Silo
+
+    ##### MSTK #####
+    depends_on('mstk@3.3.6 partitioner=all +seacas +parallel +shared', when='mesh_framework=mstk')
+    depends_on('nanoflann', when='mesh_framework=mstk')
+
+    ##### Silo #####
     # There finally is a new version 4.11 (but we haven't tested it yet).
     depends_on('silo@4.10.2', when='+silo')
-    # Moab
+
+    ##### Moab #####
     # There is a newer version 5.3.0 (but we haven't tested it yet).
-    depends_on('moab@5.2.0', when='+moab')
-    # Other
+    depends_on('moab@5.2.0', when='mesh_framework=moab')
+
+    ##### Other #####
     depends_on('crunchtope', when='+crunchtope')
     #depends_on('trilinos@12.14.1 +pnetcdf +boost +cgns +hdf5 +metis '
     #           '+zlib +anasazi +amesos2 +epetra +ml +teuchos +superlu-dist '
     #           '+zoltan +nox +ifpack +muelu')
     depends_on('trilinos@13.0.0 +shared +boost +hdf5 '
                '+anasazi +amesos2 +epetra +ml '
-               '+zoltan +nox +ifpack +muelu')
+               '+zoltan +nox +ifpack +muelu cxxstd=11',when='data_model=epetra')
 
     # Conflicts 
-    conflicts('+crunchtope', when="-alquimia", msg="+crunchtope needs +alquimia") 
+    conflicts('+crunchtope', when="-geochemistry", msg="+crunchtope needs +geochemistry") 
 
     def cmake_args(self):
-        options = ['-DCMAKE_BUILD_TYPE=debug']
-        options.append('-DCMAKE_C_COMPILER=' + self.spec['mpi'].mpicc)
+        options = ['-DCMAKE_C_COMPILER=' + self.spec['mpi'].mpicc]
         options.append('-DCMAKE_CXX_COMPILER=' + self.spec['mpi'].mpicxx)
         options.append('-DCMAKE_Fortran_COMPILER=' + self.spec['mpi'].mpifc)
 
         # Provide information normally in the cache?
         options.append('-DUnitTest_DIR=' + self.spec['unittest-cpp'].prefix)
-        options.append('-DZLIB_DIR_DIR=' + self.spec['zlib'].prefix)
+        options.append('-DZLIB_DIR=' + self.spec['zlib'].prefix)
         options.append('-DMETIS_DIR=' + self.spec['metis'].prefix)
         options.append('-DBOOST_ROOT=' + self.spec['boost'].prefix)
         options.append('-DHDF5_ROOT=' + self.spec['hdf5'].prefix)
@@ -139,18 +159,21 @@ class Amanzi(CMakePackage):
         # not supported or always off/on options
         options.append('-DENABLE_OpenMP=OFF')
         options.append('-DENABLE_SPACK_BUILD=ON')
+        options.append('-DENABLE_ASCEMIO=ON')
+        options.append('-DENABLE_CLM=OFF')
+        options.append('-DENABLE_DBC=ON')
 
-        #if '+eptra' in self.spec: 
-        #    options.append('-DENABLE_EPETRA=ON')
-        #else: 
-        #    options.append('-DENABLE_EPETRA=OFF')
+        if 'data_model=epetra' in self.spec: 
+            options.append('-DENABLE_EPETRA=ON')
+        else: 
+            options.append('-DENABLE_EPETRA=OFF')
 
-        #if '+tpetra' in self.spec: 
-        #    options.append('-DENABLE_TPETRA=ON')
-        #else: 
-        #    options.append('-DENABLE_TPETRA=OFF')
+        if 'data_model=tpetra' in self.spec: 
+            options.append('-DENABLE_TPETRA=ON')
+        else: 
+            options.append('-DENABLE_TPETRA=OFF')
 
-        if '+alquimia' in self.spec:
+        if '+geochemistry' in self.spec:
             options.append('-DENABLE_ALQUIMIA=ON')
             options.append('-DENABLE_PETSC=ON')
             options.append('-DENABLE_PFLOTRAN=ON')
@@ -167,48 +190,47 @@ class Amanzi(CMakePackage):
         else: 
             options.append('-DENABLE_CRUNCHTOPE=OFF')
 
-        if '+AmanziPhysics' in self.spec: 
+        if 'physics=amanzi' in self.spec: 
             options.append('-DENABLE_AmanziPhysicsModule=ON')
         else: 
             options.append('-DENABLE_AmanziPhysicsModule=OFF')
 
-        if '+ATSPhysics' in self.spec: 
+        if 'physics=ats' in self.spec: 
             options.append('-DENABLE_ATSPhysicsModule=ON')
         else: 
             options.append('-DENABLE_ATSPhysicsModule=OFF')
 
+        if '+tests' in self.spec:
+            options.append('-DENABLE_TESTS=ON')
+            options.append('-DENABLE_UnitTest=ON')
+        else:
+            options.append('-DENABLE_TESTS=OFF')
+            options.append('-DENABLE_UnitTest=OFF')
 
-        # options based on variants
-        #if '+tests' in self.spec:
-        #    options.append('-DENABLE_TESTS=ON')
-        #    options.append('-DENABLE_UnitTest=ON')
-        #else:
-        options.append('-DENABLE_TESTS=ON')
-        options.append('-DENABLE_UnitTest=ON')
-
-        if '+mstk' in self.spec:
+        if 'mesh_framework=mstk' in self.spec:
             options.append('-DMSTK_VERSION=3.3.6')
             options.append('-DENABLE_MESH_MSTK=ON')
         else:
             options.append('-DENABLE_MESH_MSTK=OFF')
 
-        if self.spec.variants['mesh_type'].value == 'unstructured':
+        if 'mesh_framework=moab' in self.spec:
+            options.append('-DENABLE_MESH_MOAB=ON')
+        else:
+            options.append('-DENABLE_MESH_MOAB=OFF')
+       
+        if 'mesh_type=unstructured':
             options.append('-DENABLE_Unstructured=ON')
             options.append('-DENABLE_MESH_STK=OFF')
             options.append('-DENABLE_MESH_MOAB=OFF')
         else:
             options.append('-DENABLE_Unstructured=OFF')
 
-        if self.spec.variants['mesh_type'].value == 'structured':
-            options.append('-DENABLE_Structured=ON')
-        else:
-            options.append('-DENABLE_Structured=OFF')
+        #if 'mesh_type=structured':
+        #    options.append('-DENABLE_Structured=ON')
+        #else:
+        # Not supported in current spack 
+        options.append('-DENABLE_Structured=OFF')
         
-        if '+ascemio' in self.spec:
-            options.append('-DENABLE_ASCEMIO=ON')
-        else:
-            options.append('-DENABLE_ASCEMIO=OFF')
-
         if '+hypre' in self.spec: 
             options.append('-DENABLE_SUPERLU=ON')
             options.append('-DENABLE_HYPRE=ON')
@@ -216,9 +238,11 @@ class Amanzi(CMakePackage):
             options.append('-DENABLE_SUPERLU=OFF')
             options.append('-DENABLE_HYPRE=OFF')
 
-        options.append('-DENABLE_CLM=OFF')
-        options.append('-DENABLE_DBC=ON')
-
+        if '+silo' in self.spec:
+            options.append('-DENABLE_Silo=ON')
+        else:
+            options.append('-DENABLE_Silo=OFF')
+        
         # Change to the type of kokkos backend
         # Need trilinos to support CUDA
         #if '+gpu' in self.spec:
@@ -227,13 +251,6 @@ class Amanzi(CMakePackage):
         #    options.append('-DAMANZI_ARCH=\'\'')
 
         # unused 
-        if '+moab' in self.spec:
-            options.append('-DENABLE_MESH_MOAB=ON')
-        else:
-            options.append('-DENABLE_MESH_MOAB=OFF')
-        if '+silo' in self.spec:
-            options.append('-DENABLE_Silo=ON')
-        else:
-            options.append('-DENABLE_Silo=OFF')
+        
         
         return options
