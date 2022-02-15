@@ -45,6 +45,37 @@
 
   <ParameterList name="PKs"> <!-- no shift -->
   <ParameterList name="multiphase">
+    <ParameterList name="system">
+      <ParameterList name="pressure eqn">
+        <Parameter name="primary unknown" type="string" value="pressure_liquid"/>
+        <Parameter name="advection liquid" type="Array(string)" value="{ advection_water, pressure_liquid }"/>
+        <Parameter name="advection factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
+
+        <Parameter name="diffusion liquid" type="Array(string)" value="{ diffusion_vapor, mole_fraction_vapor }"/>
+        <Parameter name="diffusion factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
+
+        <Parameter name="accumulation" type="string" value="total_water_storage"/>
+      </ParameterList>
+
+      <ParameterList name="solute eqn">
+        <Parameter name="primary unknown" type="string" value="mole_fraction_gas"/>
+        <Parameter name="advection liquid" type="Array(string)" value="{ advection_liquid, pressure_liquid }"/>
+        <Parameter name="advection gas" type="Array(string)" value="{ advection_gas, pressure_gas }"/>
+        <Parameter name="advection factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
+
+        <Parameter name="diffusion liquid" type="Array(string)" value="{ diffusion_liquid, mole_fraction_liquid }"/>
+        <Parameter name="diffusion gas" type="Array(string)" value="{ diffusion_gas, mole_fraction_gas }"/>
+        <Parameter name="diffusion factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
+
+        <Parameter name="accumulation" type="string" value="total_component_storage"/>
+      </ParameterList>
+
+      <ParameterList name="constraint eqn">
+        <Parameter name="primary unknown" type="string" value="saturation_liquid"/>
+        <Parameter name="ncp evaluators" type="Array(string)" value="{ ncp_f, ncp_g }"/>
+      </ParameterList>
+    </ParameterList>
+
     <Parameter name="Jacobian type" type="string" value="analytic"/>
     <Parameter name="linear solver" type="string" value="AMESOS"/>
     <Parameter name="preconditioner" type="string" value="Euclid"/>
@@ -310,6 +341,20 @@
         </ParameterList>
       </ParameterList>
 
+      <ParameterList name="temperature">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="303.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
       <ParameterList name="permeability">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -394,6 +439,20 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+      <ParameterList name="mass_density_liquid">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="998.2"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
 
       <ParameterList name="molar_density_gas">
         <Parameter name="evaluator type" type="string" value="eos"/>
@@ -430,21 +489,6 @@
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="3.0e-5"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="temperature">
-        <Parameter name="evaluator type" type="string" value="independent variable"/>
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="regions" type="Array(string)" value="{All}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="303.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

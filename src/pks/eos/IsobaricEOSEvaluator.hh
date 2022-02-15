@@ -44,7 +44,7 @@ class IsobaricEOSEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, 
   Teuchos::RCP<EOS_Density> eos_;
   EOSMode mode_;
 
-  Key temp_key_, pres_key_, a_key_;
+  Key temp_key_, pres_key_;
   Tag tag_;
 
  private:

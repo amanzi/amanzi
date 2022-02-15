@@ -19,6 +19,7 @@
 
 #include "EOSFactory.hh"
 #include "COM_Tortuosity.hh"
+#include "EOS_Diffusion.hh"
 #include "Key.hh"
 #include "Mesh_Algorithms.hh"
 #include "CommonDefs.hh"
@@ -220,22 +221,22 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
 
   // Millington Quirk fit for tortuosity
   Teuchos::ParameterList plist;
-  plist.set<std::string>("eos type", "Millington Quirk");
+  plist.set<std::string>("com type", "Millington Quirk");
   AmanziEOS::EOSFactory<AmanziEOS::COM_Tortuosity> com_fac;
-  auto tau_model = com_fac.CreateEOS(plist);
+  auto tau_model = com_fac.Create(plist);
 
-  double Dref = 0.282e-4;
-  double Pref = atm_pressure_;
-  double Tref = 298.0;  // Kelvins
-  double R = CommonDefs::IDEAL_GAS_CONSTANT_R;
+  AmanziEOS::EOSFactory<AmanziEOS::EOS_Diffusion> eos_fac;
+  plist.set<std::string>("eos type", "vapor in gas");
+  auto eos_model = eos_fac.Create(plist);
 
   for (int c = 0; c != ncells_owned; ++c) {
     double tau = tau_model->Tortuosity(phi[0][c], s_l[0][c]);
     double tau_phi_sat = tau * phi[0][c] * (1.0 - s_l[0][c]);
-    double D_g = Dref * (Pref / atm_pressure_) * pow(temp[0][c] / Tref, 1.8);
+
+    double D_g = eos_model->Diffusion(temp[0][c], pres[0][c]);
     double tmp = tau_phi_sat * n_g[0][c] * D_g;
 
-    double nRT = n_l[0][c] * temp[0][c] * R;
+    double nRT = n_l[0][c] * temp[0][c] * CommonDefs::IDEAL_GAS_CONSTANT_R;
     double pc = atm_pressure_ - pres[0][c];
     tmp *= exp(-pc / nRT);
 
@@ -248,7 +249,7 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
 
 /* ******************************************************************
 * Calculate additional conribution to Richards functional:
-*  f += alpha (p_f - p_m), where
+*  f += alpha (p_f - p_m)y, where
 *    p_f   - pressure in the fracture
 *    p_m   - pressure in the matrix
 *    alpha - piecewise constant mass fransfer coeffiecient

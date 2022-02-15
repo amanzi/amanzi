@@ -28,6 +28,7 @@ include_directories(${DBG_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${EOS_SOURCE_DIR})
+include_directories(${ENERGY_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
@@ -67,7 +68,7 @@ add_amanzi_library(multiphase
                    SOURCE ${multiphase_src_files}
                    LINK_LIBS pks operators state functions 
                              mesh_functions time_integration data_structures
-                             eos)
+                             eos energy)
 
 #
 # Install Targets
@@ -128,6 +129,11 @@ if (BUILD_TESTS)
                   KIND      int
                   SOURCE    test/Main.cc test/multiphase_model1b.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+  add_amanzi_test(multiphase_model1c multiphase_model1c
+                  KIND      int
+                  SOURCE    test/Main.cc test/multiphase_model1c.cc
+                  LINK_LIBS ${amanzi_libs} energy ${UnitTest_LIBRARIES})
 
   # Unit tests: Pl-Sl-Cg
   add_amanzi_test(multiphase_model2a multiphase_model2a

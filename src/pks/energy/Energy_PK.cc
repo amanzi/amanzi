@@ -132,7 +132,7 @@ void Energy_PK::Setup()
   S_->RequireEvaluator(ie_liquid_key_, Tags::DEFAULT);
 
   S_->RequireDerivative<CV_t, CVS_t>(ie_liquid_key_, Tags::DEFAULT,
-                                    temperature_key_, Tags::DEFAULT, ie_liquid_key_);
+                                     temperature_key_, Tags::DEFAULT, ie_liquid_key_);
 
   S_->Require<CV_t, CVS_t>(ie_rock_key_, Tags::DEFAULT, ie_rock_key_)
     .SetMesh(mesh_)->SetGhosted(true)
@@ -141,7 +141,7 @@ void Energy_PK::Setup()
   S_->RequireEvaluator(ie_rock_key_, Tags::DEFAULT);
 
   S_->RequireDerivative<CV_t, CVS_t>(ie_rock_key_, Tags::DEFAULT,
-                                    temperature_key_, Tags::DEFAULT, ie_rock_key_);
+                                     temperature_key_, Tags::DEFAULT, ie_rock_key_);
 
   // -- densities
   S_->Require<CV_t, CVS_t>(mol_density_liquid_key_, Tags::DEFAULT, mol_density_liquid_key_)

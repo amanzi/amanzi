@@ -51,19 +51,32 @@
         <Parameter name="advection liquid" type="Array(string)" value="{ advection_water, pressure_liquid }"/>
         <Parameter name="advection factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
 
-        <Parameter name="diffusion liquid" type="Array(string)" value="{ diffusion_liquid, molar_density_liquid }"/>
-        <Parameter name="diffusion factors" type="Array(double)" value="{ -0.1111111111111111,  -0.1111111111111111 }"/>
+        <Parameter name="diffusion liquid" type="Array(string)" value="{ diffusion_vapor, mole_fraction_vapor }"/>
+        <Parameter name="diffusion factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
 
         <Parameter name="accumulation" type="string" value="total_water_storage"/>
       </ParameterList>
 
+      <ParameterList name="energy eqn">
+        <Parameter name="primary unknown" type="string" value="temperature"/>
+        <!--Parameter name="advection liquid" type="Array(string)" value="{ advection_energy_liquid, pressure_liquid }"/>
+        <Parameter name="advection gas" type="Array(string)" value="{ advection_energy_gas, pressure_gas }"/-->
+        <Parameter name="advection factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
+
+        <Parameter name="diffusion liquid" type="Array(string)" value="{ thermal_conductivity, temperature }"/>
+        <Parameter name="diffusion factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
+
+        <Parameter name="accumulation" type="string" value="energy"/>
+      </ParameterList>
+
       <ParameterList name="solute eqn">
-        <Parameter name="primary unknown" type="string" value="molar_density_liquid"/>
+        <Parameter name="primary unknown" type="string" value="mole_fraction_gas"/>
         <Parameter name="advection liquid" type="Array(string)" value="{ advection_liquid, pressure_liquid }"/>
         <Parameter name="advection gas" type="Array(string)" value="{ advection_gas, pressure_gas }"/>
         <Parameter name="advection factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
 
-        <Parameter name="diffusion liquid" type="Array(string)" value="{ diffusion_liquid, molar_density_liquid }"/>
+        <Parameter name="diffusion liquid" type="Array(string)" value="{ diffusion_liquid, mole_fraction_liquid }"/>
+        <Parameter name="diffusion gas" type="Array(string)" value="{ diffusion_gas, mole_fraction_gas }"/>
         <Parameter name="diffusion factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
 
         <Parameter name="accumulation" type="string" value="total_component_storage"/>
@@ -76,22 +89,21 @@
     </ParameterList>
 
     <Parameter name="Jacobian type" type="string" value="analytic"/>
-    <Parameter name="linear solver" type="string" value="GMRES"/>
+    <Parameter name="linear solver" type="string" value="AMESOS"/>
     <Parameter name="preconditioner" type="string" value="Euclid"/>
     <Parameter name="error control options" type="Array(string)" value="{residual}"/>
-    <Parameter name="number aqueous components" type="int" value="1"/>
-    <Parameter name="number gaseous components" type="int" value="0"/>
 
     <ParameterList name="molecular diffusion">
       <Parameter name="aqueous names" type="Array(string)" value="{H2}"/>
       <Parameter name="aqueous values" type="Array(double)" value="{3.0e-9}"/>
-      <Parameter name="gaseous values" type="Array(double)" value="{0.0e-9}"/>
+      <Parameter name="gaseous values" type="Array(double)" value="{3.0e-5}"/>
       <Parameter name="molar masses" type="Array(double)" value="{2.0e-3}"/>
-      <Parameter name="Henry dimensionless constants" type="Array(double)" value="{7.65e-6}"/>
+      <Parameter name="Henry dimensionless constants" type="Array(double)" value="{1.39e-10}"/>
     </ParameterList>
 
     <Parameter name="molar mass of water" type="double" value="18.0e-3"/>
 
+    <Parameter name="NCP function" type="string" value="min"/>
     <Parameter name="CPR enhancement" type="bool" value="false"/>
     <ParameterList name="CPR parameters">
       <Parameter name="global solve" type="bool" value="true"/>
@@ -107,12 +119,28 @@
         <Parameter name="van Genuchten n" type="double" value="1.49"/>
         <Parameter name="van Genuchten l" type="double" value="0.5"/>
         <Parameter name="van Genuchten alpha" type="double" value="5.0e-7"/>
-        <Parameter name="residual saturation liquid" type="double" value="0.4"/>
+        <Parameter name="residual saturation liquid" type="double" value="0.3"/>
         <Parameter name="residual saturation gas" type="double" value="0.0"/>
         <Parameter name="relative permeability model" type="string" value="Mualem"/>
         <Parameter name="regularization interval kr" type="double" value="0.005"/>
-        <Parameter name="regularization interval pc" type="double" value="0.001"/>
+        <Parameter name="regularization interval pc" type="double" value="0.01"/>
       </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="thermal conductivity evaluator">
+      <ParameterList name="thermal conductivity parameters">
+        <Parameter name="thermal conductivity type" type="string" value="two-phase Peters-Lidard"/>
+        <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
+        <Parameter name="thermal conductivity of liquid" type="double" value="0.1"/>
+        <Parameter name="thermal conductivity of gas" type="double" value="0.02"/>
+
+        <Parameter name="unsaturated alpha" type="double" value="1.0"/>
+        <Parameter name="epsilon" type="double" value="1.e-10"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="energy evaluator">
+      <Parameter name="tag" type="string" value=""/>
     </ParameterList>
 
     <ParameterList name="time integrator">
@@ -125,28 +153,28 @@
           <Parameter name="time step increase factor" type="double" value="1.25"/>
           <Parameter name="time step reduction factor" type="double" value="0.8"/>
           <Parameter name="max time step" type="double" value="6.0e+10"/>
-          <Parameter name="min time step" type="double" value="1.0e-20"/>
+          <Parameter name="min time step" type="double" value="1.0e-10"/>
         </ParameterList>
 
         <Parameter name="solver type" type="string" value="Newton"/>
         <ParameterList name="Newton parameters">
-          <Parameter name="nonlinear tolerance" type="double" value="1.0e-5"/>
+          <Parameter name="nonlinear tolerance" type="double" value="1.0e-6"/>
           <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
           <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
           <Parameter name="max error growth factor" type="double" value="1.0e+10"/>
-          <Parameter name="max divergent iterations" type="int" value="10"/>
-          <Parameter name="limit iterations" type="int" value="20"/>
+          <Parameter name="max divergent iterations" type="int" value="3"/>
+          <Parameter name="limit iterations" type="int" value="40"/>
           <Parameter name="modify correction" type="bool" value="true"/>
           <Parameter name="monitor" type="string" value="monitor update"/>
           <Parameter name="make one iteration" type="bool" value="true"/>
         </ParameterList>
         <ParameterList name="nka parameters">
-          <Parameter name="nonlinear tolerance" type="double" value="1.0e-6"/>
+          <Parameter name="nonlinear tolerance" type="double" value="1.0e-5"/>
           <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
           <Parameter name="limit iterations" type="int" value="20"/>
-          <Parameter name="max du growth factor" type="double" value="1.0e+10"/>
+          <Parameter name="max du growth factor" type="double" value="1000.0"/>
           <Parameter name="max divergent iterations" type="int" value="3"/>
-          <Parameter name="max nka vectors" type="int" value="10"/>
+          <Parameter name="max nka vectors" type="int" value="40"/>
           <Parameter name="modify correction" type="bool" value="true"/>
           <Parameter name="monitor" type="string" value="monitor update"/>
         </ParameterList>
@@ -192,7 +220,7 @@
           <Parameter name="name" type="string" value="H2"/>
           <ParameterList name="outward mass flux">
             <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="-8.831177067478435e-11"/>
+              <Parameter name="value" type="double" value="-4.4155885e-09"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -205,19 +233,6 @@
             <ParameterList name="function-constant">
               <Parameter name="value" type="double" value="1.0"/>
             </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-
-    <ParameterList name="source terms">
-      <ParameterList name="SRC 1">
-        <Parameter name="regions" type="Array(string)" value="{All}"/>
-        <Parameter name="spatial distribution method" type="string" value="none"/>
-        <Parameter name="submodel" type="string" value="intergrand"/>
-        <ParameterList name="sink">
-          <ParameterList name="function-constant">
-            <Parameter name="value" type="double" value="0.0"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -279,7 +294,7 @@
         <Parameter name="value" type="Array(double)" value="{0.0, 0.0}"/>
       </ParameterList>
       <ParameterList name="const_fluid_density">
-        <Parameter name="value" type="double" value="1000.0"/>
+        <Parameter name="value" type="double" value="998.2"/>
       </ParameterList>
       <ParameterList name="const_fluid_viscosity">
         <Parameter name="value" type="double" value="1.0e-3"/>
@@ -319,14 +334,18 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="molar_density_liquid">
+      <ParameterList name="mole_fraction_gas">
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0"/>
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.0e-20"/>
+                </ParameterList>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -340,7 +359,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="302.9998973209611"/>
+                <Parameter name="value" type="double" value="303.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -352,20 +371,20 @@
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="component" type="string" value="cell"/>
-              <ParameterList name="function">
-                <Parameter name="number of dofs" type="int" value="2"/>
-                <Parameter name="function type" type="string" value="composite function"/>
-                <ParameterList name="dof 1 function">
-                  <ParameterList name="function-constant">
-                    <Parameter name="value" type="double" value="5.0e-20"/>
-                  </ParameterList>
-                </ParameterList>
-                <ParameterList name="dof 2 function">
-                  <ParameterList name="function-constant">
-                    <Parameter name="value" type="double" value="5.0e-20"/>
-                  </ParameterList>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="5.0e-20"/>
                 </ParameterList>
               </ParameterList>
+              <ParameterList name="dof 2 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="5.0e-20"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -417,7 +436,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="molar_density_water">
+      <ParameterList name="molar_density_liquid">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
@@ -441,9 +460,20 @@
           <Parameter name="eos type" type="string" value="ideal gas"/>
           <Parameter name="molar mass of gas" type="double" value="2.0e-3"/>
         </ParameterList>
-        <!--ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="extreme"/>
-        </ParameterList-->
+      </ParameterList>
+      <ParameterList name="mass_density_liquid">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="998.2"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
 
       <ParameterList name="molecular_diff_liquid">
@@ -460,6 +490,81 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
+      <ParameterList name="molecular_diff_gas">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="3.0e-5"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="internal_energy_liquid">
+        <Parameter name="evaluator type" type="string" value="iem"/>
+        <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
+        <Parameter name="pressure key" type="string" value="pressure_liquid"/>
+        <ParameterList name="IEM parameters">
+          <ParameterList name="Material1">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <ParameterList name="IEM parameters">
+              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="molar heat capacity" type="double" value="1.0"/>
+              <Parameter name="reference temperature" type="double" value="1.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="internal_energy_gas">
+        <Parameter name="evaluator type" type="string" value="iem water vapor"/>
+        <Parameter name="internal energy key" type="string" value="internal_energy_gas"/>
+      </ParameterList>
+
+      <ParameterList name="internal_energy_rock">
+        <Parameter name="evaluator type" type="string" value="iem"/>
+        <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
+        <Parameter name="pressure key" type="string" value="pressure_liquid"/>
+        <ParameterList name="IEM parameters">
+          <ParameterList name="Material1">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <ParameterList name="IEM parameters">
+              <Parameter name="iem type" type="string" value="linear"/>
+              <Parameter name="heat capacity" type="double" value="1.0"/>
+              <Parameter name="reference temperature" type="double" value="1.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="molar_fraction_gas">
+        <Parameter name="evaluator type" type="string" value="molar fraction gas"/>
+        <Parameter name="molar fraction key" type="string" value="molar_fraction_gas"/>
+        <ParameterList name="vapor pressure model parameters">
+          <Parameter name="eos type" type="string" value="water vapor over water/ice"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="particle_density">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant"> <!-- time component -->
+                <Parameter name="value" type="double" value="2500."/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="mesh partitions">
@@ -469,7 +574,7 @@
     </ParameterList>
 
     <ParameterList name="verbose object">
-      <Parameter name="verbosity level" type="string" value="high"/>
+      <Parameter name="verbosity level" type="string" value="extreme"/>
     </ParameterList>
   </ParameterList>
 
@@ -478,15 +583,15 @@
     <ParameterList name="GMRES">
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
-        <Parameter name="error tolerance" type="double" value="2e-7"/>
+        <Parameter name="error tolerance" type="double" value="1e-14"/>
         <Parameter name="use flexible gmres" type="bool" value="true"/>
-        <Parameter name="maximum number of iterations" type="int" value="400"/>
-        <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
+        <Parameter name="maximum number of iterations" type="int" value="40"/>
+        <Parameter name="convergence criteria" type="Array(string)" value="{absolute residual, make one iteration}"/>
         <Parameter name="size of Krylov space" type="int" value="400"/>
         <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
         <Parameter name="preconditioning strategy" type="string" value="right"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="medium"/>
+          <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -501,11 +606,16 @@
 
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
+    <ParameterList name="Block ILU">
+      <Parameter name="preconditioning method" type="string" value="block ilu"/>
+      <ParameterList name="block ilu parameters">
+      </ParameterList>
+    </ParameterList>
     <ParameterList name="Euclid">
       <Parameter name="preconditioning method" type="string" value="euclid"/>
       <ParameterList name="euclid parameters">
         <Parameter name="ilu(k) fill level" type="int" value="5"/>
-        <!--<Parameter name="ILUT drop tolerance" type="double" value="0.000001"/>-->
+        <!--Parameter name="ilut drop tolerance" type="double" value="0.01"/-->
         <Parameter name="rescale rows" type="bool" value="true"/>
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>

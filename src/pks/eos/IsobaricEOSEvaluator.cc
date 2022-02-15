@@ -36,19 +36,20 @@ IsobaricEOSEvaluator::IsobaricEOSEvaluator(Teuchos::ParameterList& plist) :
   }
 
   // my keys and tags
+  Key key;
   tag_ = Tags::DEFAULT;
   if (mode_ == EOS_MODE_MOLAR || mode_ == EOS_MODE_BOTH) {
-    a_key_ = plist_.get<std::string>("molar density key");
-    my_keys_.push_back(std::make_pair(a_key_, tag_));
+    key = plist_.get<std::string>("molar density key");
+    my_keys_.push_back(std::make_pair(key, tag_));
   }
 
   if (mode_ == EOS_MODE_MASS || mode_ == EOS_MODE_BOTH) {
-    a_key_ = plist_.get<std::string>("mass density key");
-    my_keys_.push_back(std::make_pair(a_key_, tag_));
+    key = plist_.get<std::string>("mass density key");
+    my_keys_.push_back(std::make_pair(key, tag_));
   }
 
   // set up my dependencies
-  std::string domain = Keys::getDomain(a_key_);
+  std::string domain = Keys::getDomain(key);
 
   // -- temperature
   temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain, "temperature"));
@@ -60,7 +61,7 @@ IsobaricEOSEvaluator::IsobaricEOSEvaluator(Teuchos::ParameterList& plist) :
   // Construct my EOS model
   AMANZI_ASSERT(plist_.isSublist("EOS parameters"));
   EOSFactory<EOS_Density> eos_fac;
-  eos_ = eos_fac.CreateEOS(plist_.sublist("EOS parameters"));
+  eos_ = eos_fac.Create(plist_.sublist("EOS parameters"));
 };
 
 

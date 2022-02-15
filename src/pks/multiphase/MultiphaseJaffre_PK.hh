@@ -50,17 +50,10 @@ class MultiphaseJaffre_PK: public Multiphase_PK {
                    Teuchos::RCP<TreeVector> du) override; 
 
   // interface multiphase models
-  virtual void InitMPSolutionVector() override;
-  virtual void InitMPPreconditioner() override;
-  virtual void PopulateBCs(int icomp, bool flag) override;
-
-  virtual SolutionStructure EquationToSolution(int neqn) override;
   virtual void ModifyEvaluators(int neqn) override;
 
  private:
-  int missed_bc_faces_;
-
-  Key advection_water_key_, molar_density_water_key_;
+  Key advection_water_key_, mol_density_water_key_;
   Key diffusion_liquid_key_;
   Key molecular_diff_liquid_key_, molecular_diff_gas_key_; 
 

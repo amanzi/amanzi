@@ -35,7 +35,7 @@ class NCP_HenryLaw : public MultiphaseBaseEvaluator {
                                           const std::vector<CompositeVector*>& results) override;
 
  protected:
-  Key pressure_gas_key_, molar_density_liquid_key_;
+  Key pressure_gas_key_, mol_density_liquid_key_;
 };
 
 }  // namespace Multiphase

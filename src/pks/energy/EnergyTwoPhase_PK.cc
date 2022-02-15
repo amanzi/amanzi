@@ -75,7 +75,7 @@ void EnergyTwoPhase_PK::Setup()
     S_->SetEvaluator(energy_key_, Tags::DEFAULT, ee);
 
     S_->RequireDerivative<CV_t, CVS_t>(energy_key_, Tags::DEFAULT,
-                                      temperature_key_, Tags::DEFAULT, energy_key_);
+                                       temperature_key_, Tags::DEFAULT, energy_key_);
   }
 
   // -- advection of enthalpy
@@ -129,7 +129,7 @@ void EnergyTwoPhase_PK::Setup()
   S_->RequireEvaluator(ie_gas_key_, Tags::DEFAULT);
 
   S_->RequireDerivative<CV_t, CVS_t>(ie_gas_key_, Tags::DEFAULT,
-                                    temperature_key_, Tags::DEFAULT, ie_gas_key_);
+                                     temperature_key_, Tags::DEFAULT, ie_gas_key_);
 
   // -- molar/mass
   S_->Require<CV_t, CVS_t>(x_gas_key_, Tags::DEFAULT, x_gas_key_)

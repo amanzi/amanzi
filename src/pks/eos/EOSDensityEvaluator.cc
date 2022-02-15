@@ -73,7 +73,7 @@ EOSDensityEvaluator::EOSDensityEvaluator(Teuchos::ParameterList& plist)
   // Construct my EOS model
   AMANZI_ASSERT(plist_.isSublist("EOS parameters"));
   EOSFactory<EOS_Density> eos_fac;
-  eos_ = eos_fac.CreateEOS(plist_.sublist("EOS parameters"));
+  eos_ = eos_fac.Create(plist_.sublist("EOS parameters"));
 }
 
 

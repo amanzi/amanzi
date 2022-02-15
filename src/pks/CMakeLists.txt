@@ -88,6 +88,7 @@ if (ENABLE_AmanziPhysicsModule)
   add_subdirectory(eos)
 
   add_subdirectory(flow)
+  add_subdirectory(energy)
   add_subdirectory(multiphase)
   add_subdirectory(navier_stokes)
 endif()

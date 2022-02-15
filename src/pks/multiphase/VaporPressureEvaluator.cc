@@ -34,15 +34,15 @@ VaporPressureEvaluator::VaporPressureEvaluator(
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
   }
   temperature_key_ = plist_.get<std::string>("temperature key");
-  molar_density_liquid_key_ = plist_.get<std::string>("molar density liquid key");
+  mol_density_liquid_key_ = plist_.get<std::string>("molar density liquid key");
   saturation_liquid_key_ = plist_.get<std::string>("saturation liquid key");
 
   dependencies_.insert(std::make_pair(temperature_key_, Tags::DEFAULT));
-  dependencies_.insert(std::make_pair(molar_density_liquid_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(mol_density_liquid_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
 
   AmanziEOS::EOSFactory<AmanziEOS::EOS_SaturatedVaporPressure> svp_factory;
-  svp_ = svp_factory.CreateEOS(plist);
+  svp_ = svp_factory.Create(plist);
 }
 
 
@@ -62,7 +62,7 @@ void VaporPressureEvaluator::Evaluate_(
 {
   const auto& temp = *S.Get<CompositeVector>(temperature_key_).ViewComponent("cell");
   const auto& sat = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
-  const auto& nl = *S.Get<CompositeVector>(molar_density_liquid_key_).ViewComponent("cell");
+  const auto& nl = *S.Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
 
   double R = CommonDefs::IDEAL_GAS_CONSTANT_R;
@@ -84,7 +84,7 @@ void VaporPressureEvaluator::EvaluatePartialDerivative_(
 {
   const auto& temp = *S.Get<CompositeVector>(temperature_key_).ViewComponent("cell");
   const auto& sat = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
-  const auto& nl = *S.Get<CompositeVector>(molar_density_liquid_key_).ViewComponent("cell");
+  const auto& nl = *S.Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
   auto& result_c = *results[0]->ViewComponent("cell");
 
   double R = CommonDefs::IDEAL_GAS_CONSTANT_R;
@@ -98,7 +98,7 @@ void VaporPressureEvaluator::EvaluatePartialDerivative_(
       result_c[0][c] = tmp * (svp_->DPressureDT(temp[0][c])
                             + svp_->Pressure(temp[0][c]) * pc / (a * temp[0][c]));
     }
-  } else if (wrt_key == molar_density_liquid_key_) {
+  } else if (wrt_key == mol_density_liquid_key_) {
     for (int c = 0; c != ncells; ++c) {
       double pc = wrm_->second[(*wrm_->first)[c]]->capillaryPressure(sat[0][c]);
       double a = nl[0][c] * R * temp[0][c];

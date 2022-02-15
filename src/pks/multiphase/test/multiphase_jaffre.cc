@@ -91,7 +91,7 @@ void run_test(const std::string& domain, const std::string& filename)
   // initialize the multiphase process kernel
   MPK->Initialize();
   S->CheckAllFieldsInitialized();
-  S->WriteDependencyGraph();
+  // S->WriteDependencyGraph();
   WriteStateStatistics(*S, *vo);
 
   // initialize io
