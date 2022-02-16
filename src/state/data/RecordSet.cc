@@ -42,7 +42,7 @@ bool RecordSet::Initialize(Teuchos::ParameterList& plist) {
   return init;
 }
 
-void RecordSet::Copy(const Tag& dest, const Tag& source) {
+void RecordSet::Assign(const Tag& dest, const Tag& source) {
   records_.at(dest)->Assign(*records_.at(source));
 }
 

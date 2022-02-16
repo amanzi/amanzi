@@ -61,13 +61,13 @@ struct test_state {
 };
 
 
-SUITE(COPY) {
-  TEST_FIXTURE(test_state, StateCopy) {
+SUITE(ASSIGN) {
+  TEST_FIXTURE(test_state, StateAssign) {
     Tag tag1 = make_tag("tag1");
     Tag tag2 = make_tag("tag2");
     state->GetW<CompositeVector>("fieldname", tag1, "owner").PutScalar(2.0);
 
-    state->Copy("fieldname", tag2, tag1);
+    state->Assign("fieldname", tag2, tag1);
 
     auto& field = state->Get<CompositeVector>("fieldname", tag2);
     CHECK_CLOSE(2.0, (*field.ViewComponent("cell"))[0][0], 0.00001);

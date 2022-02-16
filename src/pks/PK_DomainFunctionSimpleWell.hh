@@ -98,8 +98,8 @@ void PK_DomainFunctionSimpleWell<FunctionBase>::Init(const Teuchos::ParameterLis
 
   if (submodel_ == "bhp") {
     depth_ = well_list.get<double>("depth");
-    gravity_ = S_->Get<AmanziGeometry::Point>("gravity");
-    rho_ = S->Get<double>("const_fluid_density");
+    gravity_ = S_->Get<AmanziGeometry::Point>("gravity", Tags::DEFAULT);
+    rho_ = S->Get<double>("const_fluid_density", Tags::DEFAULT);
   }
   
   // Add this source specification to the domain function.
@@ -148,7 +148,7 @@ void PK_DomainFunctionSimpleWell<FunctionBase>::Compute(double t0, double t1)
 
   } else if (submodel_ == "bhp") {
     double g = fabs(gravity_[dim - 1]);
-    const Epetra_MultiVector& wi = *S_->Get<CompositeVector>("well_index").ViewComponent("cell");
+    const Epetra_MultiVector& wi = *S_->Get<CompositeVector>("well_index", Tags::DEFAULT).ViewComponent("cell");
     
     for (auto uspec = unique_specs_.at(kind_)->begin(); uspec != unique_specs_.at(kind_)->end(); ++uspec) {
       Teuchos::RCP<MeshIDs> ids = (*uspec)->second;

@@ -91,11 +91,15 @@ if (ENABLE_AmanziPhysicsModule)
   add_subdirectory(energy)
   add_subdirectory(multiphase)
   add_subdirectory(navier_stokes)
+endif()
 
   # chemistry should be processed before transport
   add_subdirectory(chemistry)
   add_subdirectory(transport)
   add_subdirectory(shallow_water)
+
+if (ENABLE_AmanziPhysicsModule)
+  add_subdirectory(energy)
   add_subdirectory(dummy)
 
   add_subdirectory(mpc_pk)
