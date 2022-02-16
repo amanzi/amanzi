@@ -125,9 +125,6 @@ class Amanzi(CMakePackage):
 
     ##### Other #####
     depends_on('crunchtope', when='+crunchtope')
-    #depends_on('trilinos@12.14.1 +pnetcdf +boost +cgns +hdf5 +metis '
-    #           '+zlib +anasazi +amesos2 +epetra +ml +teuchos +superlu-dist '
-    #           '+zoltan +nox +ifpack +muelu')
     depends_on('trilinos@13.0.0 +shared +boost +hdf5 +hypre '
                '+anasazi +amesos2 +epetra +ml '
                '+zoltan +nox +ifpack +muelu -ifpack2 cxxstd=11')
@@ -139,6 +136,15 @@ class Amanzi(CMakePackage):
         options = ['-DCMAKE_C_COMPILER=' + self.spec['mpi'].mpicc]
         options.append('-DCMAKE_CXX_COMPILER=' + self.spec['mpi'].mpicxx)
         options.append('-DCMAKE_Fortran_COMPILER=' + self.spec['mpi'].mpifc)
+
+        # Tags 
+        if self.spec.satisfies('@spack'):
+            options.append('-DSPACK_AMANZI_VERSION_MAJOR=1')
+            options.append('-DSPACK_AMANZI_VERSION_MINOR=0')
+            options.append('-DSPACK_AMANZI_VERSION=1.0')
+            options.append('-DSPACK_AMANZI_VERSION_PATCH=0')
+            options.append('-DSPACK_AMANZI_VERSION_HASH=0')
+        
 
         # Provide information normally in the cache?
         options.append('-DUnitTest_DIR=' + self.spec['unittest-cpp'].prefix)
