@@ -830,7 +830,39 @@ State::GetEvaluatorList(const Key& key)
     }
   }
 
+  // return an empty new list
   return FEList().sublist(key);
+}
+
+
+bool
+State::HasEvaluatorList(const Key& key)
+{
+  if (FEList().isSublist(key)) return true;
+  // check for domain set
+  KeyTriple split;
+  bool is_ds = Keys::splitDomainSet(key, split);
+  if (is_ds) {
+    Key lifted_key = Keys::getKey(std::get<0>(split), "*", std::get<2>(split));
+    if (FEList().isSublist(lifted_key)) return true;
+  }
+  return false;
+}
+
+
+void State::CheckIsDebugEval_(const Key& key)
+{
+  // check for debugging.  This provides a line for setting breakpoints for
+  // debugging PK and Evaluator dependencies.
+#ifdef ENABLE_DBC
+  Teuchos::Array<Key> debug_evals = state_plist_.sublist("debug").get<Teuchos::Array<std::string>>("evaluators",
+          Teuchos::Array<Key>());
+  if (std::find(debug_evals.begin(), debug_evals.end(), key) != debug_evals.end()) {
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      *vo_->os() << "State: Evaluator for debug field \"" << key << "\" was required." << std::endl;
+    }
+  }
+#endif
 }
 
 }  // namespace Amanzi
