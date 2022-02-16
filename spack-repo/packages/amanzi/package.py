@@ -109,7 +109,7 @@ class Amanzi(CMakePackage):
     ##### Hypre #####
     depends_on('superlu@5.2.2', when='+hypre')
     depends_on('superlu-dist@6.2.0', when='+hypre')
-    depends_on('hypre@2.22.1 +mpi +shared', when='+hypre')
+    depends_on('hypre@2.22.0 +mpi +shared', when='+hypre')
 
     ##### MSTK #####
     depends_on('mstk@3.3.6 partitioner=all +seacas +parallel +shared', when='mesh_framework=mstk')
@@ -128,9 +128,9 @@ class Amanzi(CMakePackage):
     #depends_on('trilinos@12.14.1 +pnetcdf +boost +cgns +hdf5 +metis '
     #           '+zlib +anasazi +amesos2 +epetra +ml +teuchos +superlu-dist '
     #           '+zoltan +nox +ifpack +muelu')
-    depends_on('trilinos@13.0.0 +shared +boost +hdf5 '
+    depends_on('trilinos@13.0.0 +shared +boost +hdf5 +hypre '
                '+anasazi +amesos2 +epetra +ml '
-               '+zoltan +nox +ifpack +muelu cxxstd=11',when='data_model=epetra')
+               '+zoltan +nox +ifpack +muelu -ifpack2 cxxstd=11')
 
     # Conflicts 
     conflicts('+crunchtope', when="-geochemistry", msg="+crunchtope needs +geochemistry") 
@@ -162,6 +162,11 @@ class Amanzi(CMakePackage):
         options.append('-DENABLE_ASCEMIO=ON')
         options.append('-DENABLE_CLM=OFF')
         options.append('-DENABLE_DBC=ON')
+
+        if '+shared' in self.spec: 
+            options.append('BUILD_SHARED_LIBS=ON')
+        else: 
+            options.append('BUILD_SHARED_LIBS=OFF')
 
         if 'data_model=epetra' in self.spec: 
             options.append('-DENABLE_EPETRA=ON')

@@ -24,5 +24,3 @@ RegisteredPKFactory<Amanzi_PK> Amanzi_PK::reg_("chemistry amanzi");
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-
-#endif 
