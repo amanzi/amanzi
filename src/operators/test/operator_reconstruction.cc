@@ -76,11 +76,11 @@ TEST(RECONSTRUCTION_LINEAR_2D) {
 
   ReconstructionCellGrad lifting(mesh);
   lifting.Init(plist);
-  lifting.ComputePoly(field); 
+  lifting.Compute(field); 
 
   // calculate gradient error
   double err_int, err_glb, gnorm;
-  Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
+  auto& grad_computed = *lifting.data()->ViewComponent("cell");
 
   ComputePolyError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
   CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
@@ -134,11 +134,11 @@ TEST(RECONSTRUCTION_LINEAR_3D) {
 
   ReconstructionCellGrad lifting(mesh);
   lifting.Init(plist);
-  lifting.ComputePoly(field);
+  lifting.Compute(field);
 
   // calculate gradient error
   double err_int, err_glb, gnorm;
-  Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
+  auto& grad_computed = *lifting.data()->ViewComponent("cell");
 
   ComputePolyError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
   CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
@@ -163,7 +163,7 @@ TEST(RECONSTRUCTION_QUADRATIC_2D) {
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  meshfactory.set_preference(Preference({Framework::MSTK}));
 
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 7, 7);
 
@@ -195,11 +195,11 @@ TEST(RECONSTRUCTION_QUADRATIC_2D) {
 
   ReconstructionCellPoly lifting(mesh);
   lifting.Init(plist);
-  lifting.ComputePoly(field); 
+  lifting.Compute(field); 
 
-  // calculate polynomia; error
+  // calculate polynomial error
   double err_int, err_glb, gnorm;
-  Epetra_MultiVector& poly_computed = *lifting.poly()->ViewComponent("cell");
+  auto& poly_computed = *lifting.data()->ViewComponent("cell");
 
   ComputePolyError(mesh, poly_computed, poly_exact, err_int, err_glb, gnorm);
   // CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);

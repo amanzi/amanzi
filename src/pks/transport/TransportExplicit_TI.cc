@@ -37,7 +37,7 @@ void TransportExplicit_PK::FunctionalTimeDerivative(
 
   Teuchos::ParameterList plist = tp_list_->sublist("reconstruction");
   lifting_->Init(plist);
-  lifting_->ComputePoly(component_rcp);
+  lifting_->Compute(component_rcp);
 
   // extract boundary conditions for the current component
   std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
@@ -62,8 +62,8 @@ void TransportExplicit_PK::FunctionalTimeDerivative(
   }
 
   limiter_->Init(plist, darcy_flux);
-  limiter_->ApplyLimiter(component_rcp, 0, lifting_->gradient(), bc_model, bc_value);
-  limiter_->gradient()->ScatterMasterToGhosted("cell");
+  limiter_->ApplyLimiter(component_rcp, 0, lifting_, bc_model, bc_value);
+  lifting_->data()->ScatterMasterToGhosted("cell");
 
   // ADVECTIVE FLUXES
   // We assume that limiters made their job up to round-off errors.
@@ -178,7 +178,7 @@ void TransportExplicit_PK::DudtOld(double t,
 
   Teuchos::ParameterList plist = tp_list_->sublist("reconstruction");
   lifting_->Init(plist);
-  lifting_->ComputePoly(component_rcp);
+  lifting_->Compute(component_rcp);
 
   // extract boundary conditions for the current component
   std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
@@ -203,8 +203,8 @@ void TransportExplicit_PK::DudtOld(double t,
   }
 
   limiter_->Init(plist, darcy_flux);
-  limiter_->ApplyLimiter(component_rcp, 0, lifting_->gradient(), bc_model, bc_value);
-  limiter_->gradient()->ScatterMasterToGhosted("cell");
+  limiter_->ApplyLimiter(component_rcp, 0, lifting_, bc_model, bc_value);
+  lifting_->data()->ScatterMasterToGhosted("cell");
 
   // ADVECTIVE FLUXES
   // We assume that limiters made their job up to round-off errors.

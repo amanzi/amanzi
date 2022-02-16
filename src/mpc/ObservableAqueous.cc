@@ -318,7 +318,7 @@ double ObservableAqueous::CalculateWaterTable_(State& S,
   Operators::ReconstructionCellGrad lifting(mesh_);
 
   lifting.Init(plist);
-  lifting.ComputePoly(ids, pressure, 0);
+  lifting.Compute(ids, pressure, 0);
 
   // set up extreme values for water table
   int dim = mesh_->space_dimension();

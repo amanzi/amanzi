@@ -147,19 +147,19 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
     }
 
     // Compute reconstruction
-    ReconstructionCellGrad lifting(mesh);
-    lifting.Init(plist);
-    lifting.ComputePoly(field);
+    auto lifting = Teuchos::rcp(new ReconstructionCellGrad(mesh));
+    lifting->Init(plist);
+    lifting->Compute(field);
 
     // Apply limiter
     LimiterCell limiter(mesh);
     limiter.Init(plist);
     if (i == 8) limiter.set_controls(controls);
-    limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
+    limiter.ApplyLimiter(field, 0, lifting, bc_model, bc_value);
 
     // calculate gradient error.
     double err_int, err_glb, gnorm;
-    Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
+    auto& grad_computed = *lifting->data()->ViewComponent("cell");
 
     ComputePolyError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
     // Michalak-Gooch limiter is not linearity preserving near boundary
@@ -274,18 +274,18 @@ TEST(LIMITER_LINEAR_FUNCTION_3D) {
     }
 
     // Compute reconstruction
-    ReconstructionCellGrad lifting(mesh);
-    lifting.Init(plist);
-    lifting.ComputePoly(field); 
+    auto lifting = Teuchos::rcp(new ReconstructionCellGrad(mesh));
+    lifting->Init(plist);
+    lifting->Compute(field); 
 
     // Apply limiter
     LimiterCell limiter(mesh);
     limiter.Init(plist, flux);
-    limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
+    limiter.ApplyLimiter(field, 0, lifting, bc_model, bc_value);
 
     // calculate gradient error
     double err_int, err_glb, gnorm;
-    Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
+    auto& grad_computed = *lifting->data()->ViewComponent("cell");
 
     ComputePolyError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
     CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
@@ -408,18 +408,18 @@ TEST(LIMITER_SMOOTH_FIELD_2D) {
       } 
 
       // Compute reconstruction
-      ReconstructionCellGrad lifting(mesh);
-      lifting.Init(plist);
-      lifting.ComputePoly(field);
+      auto lifting = Teuchos::rcp(new ReconstructionCellGrad(mesh));
+      lifting->Init(plist);
+      lifting->Compute(field);
 
       // Apply limiter
       LimiterCell limiter(mesh);
       limiter.Init(plist, flux);
-      limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
+      limiter.ApplyLimiter(field, 0, lifting, bc_model, bc_value);
 
       // calculate gradient error
       double err_int, err_glb, gnorm;
-      Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
+      auto& grad_computed = *lifting->data()->ViewComponent("cell");
 
       ComputePolyError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
 
@@ -534,25 +534,25 @@ TEST(LIMITER_SMOOTH_FIELD_3D) {
       } 
 
       // Compute reconstruction
-      ReconstructionCellGrad lifting(mesh);
-      lifting.Init(plist);
-      lifting.ComputePoly(field);
+      auto lifting = Teuchos::rcp(new ReconstructionCellGrad(mesh));
+      lifting->Init(plist);
+      lifting->Compute(field);
 
       // Apply limiter
       LimiterCell limiter(mesh);
       limiter.Init(plist, flux);
-      limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
+      limiter.ApplyLimiter(field, 0, lifting, bc_model, bc_value);
 
       // calculate gradient error
       double err_int, err_glb, err_int_nobc, err_glb_nobc, gnorm;
-      Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
+      auto& grad_computed = *lifting->data()->ViewComponent("cell");
 
       ComputePolyError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
 
       // skip boundary data
-      limiter.ApplyLimiter(field, 0, lifting.gradient());
+      limiter.ApplyLimiter(field, 0, lifting);
 
-      Epetra_MultiVector& grad_test = *lifting.gradient()->ViewComponent("cell");
+      auto& grad_test = *lifting->data()->ViewComponent("cell");
       ComputePolyError(mesh, grad_test, grad_exact, err_int_nobc, err_glb_nobc, gnorm);
 
       if (MyPID == 0)
@@ -680,18 +680,18 @@ void SmoothField2DPoly(double extension)
     } 
 
     // Compute reconstruction
-    ReconstructionCellGrad lifting(mesh);
-    lifting.Init(plist);
-    lifting.ComputePoly(field);
+    auto lifting = Teuchos::rcp(new ReconstructionCellGrad(mesh));
+    lifting->Init(plist);
+    lifting->Compute(field);
 
     // Apply limiter
     LimiterCell limiter(mesh);
     limiter.Init(plist, flux);
-    limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
+    limiter.ApplyLimiter(field, 0, lifting, bc_model, bc_value);
 
     // calculate gradient error
     double err_int, err_glb, gnorm;
-    Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
+    auto& grad_computed = *lifting->data()->ViewComponent("cell");
 
     ComputePolyError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
 
@@ -795,11 +795,11 @@ TEST(LIMITER_LINEAR_FUNCTION_FRACTURES) {
     // Compute reconstruction
     ReconstructionCellGrad lifting(mesh);
     lifting.Init(plist);
-    lifting.ComputePoly(field);
+    lifting.Compute(field);
 
     // calculate gradient error
     double err_int, err_glb, gnorm;
-    Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
+    auto& grad_computed = *lifting.data()->ViewComponent("cell");
 
     ComputePolyError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
     CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);

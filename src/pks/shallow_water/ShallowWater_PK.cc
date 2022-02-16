@@ -546,7 +546,7 @@ std::vector<double> ShallowWater_PK::NumericalSource(
     S2 += (0.5) * (ht_rec - B_rec) * (ht_rec - B_rec) * normal[1];
   }
   
-  Epetra_MultiVector& ht_grad = *total_depth_grad_->gradient()->ViewComponent("cell", true);
+  auto& ht_grad = *total_depth_grad_->data()->ViewComponent("cell", true);
   
   S1 /= vol;
   S2 /= vol;

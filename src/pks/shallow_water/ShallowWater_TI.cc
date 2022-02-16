@@ -96,19 +96,19 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     
   // limited reconstructions using boundary data
   auto tmp1 = S_->GetW<CompositeVector>(total_depth_key_, Tags::DEFAULT, passwd_).ViewComponent("cell", true);
-  total_depth_grad_->ComputePoly(tmp1);
-  if (use_limiter_) limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_->gradient(), bc_model, bc_value_ht);
-  total_depth_grad_->gradient()->ScatterMasterToGhosted("cell");
+  total_depth_grad_->Compute(tmp1);
+  if (use_limiter_) limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_, bc_model, bc_value_ht);
+  total_depth_grad_->data()->ScatterMasterToGhosted("cell");
   
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
-  discharge_x_grad_->ComputePoly(tmp5, 0);
-  if (use_limiter_) limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_->gradient(), bc_model, bc_value_qx);
-  discharge_x_grad_->gradient()->ScatterMasterToGhosted("cell");
+  discharge_x_grad_->Compute(tmp5, 0);
+  if (use_limiter_) limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_, bc_model, bc_value_qx);
+  discharge_x_grad_->data()->ScatterMasterToGhosted("cell");
   
   auto tmp6 = A.SubVector(1)->Data()->ViewComponent("cell", true);
-  discharge_y_grad_->ComputePoly(tmp6, 1);
-  if (use_limiter_) limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_->gradient(), bc_model, bc_value_qy);
-  discharge_y_grad_->gradient()->ScatterMasterToGhosted("cell");
+  discharge_y_grad_->Compute(tmp6, 1);
+  if (use_limiter_) limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_, bc_model, bc_value_qy);
+  discharge_y_grad_->data()->ScatterMasterToGhosted("cell");
   
   // update source (external) terms
   for (int i = 0; i < srcs_.size(); ++i) {

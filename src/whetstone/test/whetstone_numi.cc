@@ -171,12 +171,29 @@ TEST(NUMI_CELL_2D_QUADRATURE_SQUARE) {
     val = numi.IntegrateFunctionsTriangulatedCell(cell, polys, order);
     CHECK_CLOSE(val, 2 * exact, 1e-12);
 
+    // functions with sharp features
+    // -- quadrature based on partition
+    TestFunction f;
     if (order > 6) {
-      TestFunction f;
       polys[0] = &f;
       val = numi.IntegrateFunctionsTriangulatedCell(cell, polys, order);
       CHECK_CLOSE(val, 0.1963, 0.1);
     }
+
+    // -- quadrature based on tensor product
+    int mmax = order / 2;
+    double val2(0.0), exact(0.196349540849362);
+    AmanziGeometry::Point q(2);
+
+    for (int i = 0; i <= mmax; ++i) { 
+      q[0] = q1d_points[mmax][i];
+      for (int j = 0; j <= mmax; ++j) { 
+        q[1] = q1d_points[mmax][j];
+        val2 += f.Value(q) * q1d_weights[mmax][i] * q1d_weights[mmax][j];
+      }
+    }
+    std::cout << "n=" << order << " " << val << " " << val2 
+              << " errs: " << val - exact << " " << val2 - exact << std::endl;
   }
 }
 

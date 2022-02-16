@@ -43,7 +43,8 @@ namespace Operators {
 ******************************************************************* */
 LimiterCell::LimiterCell(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) 
   : mesh_(mesh),
-    gradient_(Teuchos::null),
+    lifting_(Teuchos::null),
+    data_(Teuchos::null),
     component_(0),
     flux_(Teuchos::null),
     external_bounds_(false),
@@ -144,7 +145,7 @@ void LimiterCell::Init(Teuchos::ParameterList& plist,
 ****************************************************************** */
 void LimiterCell::ApplyLimiter(
     Teuchos::RCP<const Epetra_MultiVector> field, int component,
-    const Teuchos::RCP<CompositeVector>& gradient,
+    const Teuchos::RCP<Reconstruction>& lifting,
     const Teuchos::RCP<const BCs>& bc)
 {
   const auto& bc_model = bc->bc_model();
@@ -153,30 +154,30 @@ void LimiterCell::ApplyLimiter(
   AmanziMesh::Entity_ID_List ids(ncells_owned_);
   for (int c = 0; c < ncells_owned_; ++c) ids[c] = c;
 
-  ApplyLimiter(ids, field, component, gradient, bc_model, bc_value); 
+  ApplyLimiter(ids, field, component, lifting, bc_model, bc_value); 
 }
 
 
 void LimiterCell::ApplyLimiter(
     Teuchos::RCP<const Epetra_MultiVector> field, int component,
-    const Teuchos::RCP<CompositeVector>& gradient,
+    const Teuchos::RCP<Reconstruction>& lifting,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value)
 {
   AmanziMesh::Entity_ID_List ids(ncells_owned_);
   for (int c = 0; c < ncells_owned_; ++c) ids[c] = c;
-  ApplyLimiter(ids, field, component, gradient, bc_model, bc_value); 
+  ApplyLimiter(ids, field, component, lifting, bc_model, bc_value); 
 }
 
 
 void LimiterCell::ApplyLimiter(
     Teuchos::RCP<const Epetra_MultiVector> field, int component,
-    const Teuchos::RCP<CompositeVector>& gradient)
+    const Teuchos::RCP<Reconstruction>& lifting)
 {
   std::vector<int> bc_model;
   std::vector<double> bc_value;
   AmanziMesh::Entity_ID_List ids(ncells_owned_);
   for (int c = 0; c < ncells_owned_; ++c) ids[c] = c;
-  ApplyLimiter(ids, field, component, gradient, bc_model, bc_value); 
+  ApplyLimiter(ids, field, component, lifting, bc_model, bc_value); 
 }
 
 
@@ -186,11 +187,11 @@ void LimiterCell::ApplyLimiter(
 void LimiterCell::ApplyLimiter(
     const AmanziMesh::Entity_ID_List& ids,
     Teuchos::RCP<const Epetra_MultiVector> field, int component,
-    const Teuchos::RCP<CompositeVector>& gradient,
+    const Teuchos::RCP<Reconstruction>& lifting,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value)
 {
   field_ = field;
-  gradient_ = gradient;
+  lifting_ = lifting;
   component_ = component;
 
   if (external_bounds_ && bounds_ == Teuchos::null) {
@@ -202,6 +203,9 @@ void LimiterCell::ApplyLimiter(
     Errors::Message msg("External control points for limiters are requested but not provided");
     Exceptions::amanzi_throw(msg);
   }
+
+  // low level access is need for frequntly used functions
+  data_ = lifting_->data()->ViewComponent("cell");
 
   limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   limiter_->PutScalar(1.0);
@@ -227,7 +231,7 @@ void LimiterCell::ApplyLimiter(
   // apply safety factor
   if (cfl_ != 1.0) {
     limiter_->Scale(cfl_);
-    gradient_->Scale(cfl_);
+    data_->Scale(cfl_);
   }
 }
 
@@ -237,18 +241,18 @@ void LimiterCell::ApplyLimiter(
 ****************************************************************** */
 void LimiterCell::ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter)
 {
-  Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
+  int npoly = data_->NumVectors();
 
   for (int c = 0; c < ncells_owned_; c++) {
-    for (int i = 0; i < dim; i++) (*grad)[i][c] *= (*limiter)[0][c];
+    for (int i = 0; i < npoly; i++) (*data_)[i][c] *= (*limiter)[0][c];
   }
 }
 
 
 /* ******************************************************************
-* Apply internal limiter.
+* Apply internal limiter for DG schemes
 ****************************************************************** */
-void LimiterCell::ApplyLimiter(
+void LimiterCell::ApplyLimiterDG(
     const AmanziMesh::Entity_ID_List& ids,
     Teuchos::RCP<const Epetra_MultiVector> field, const WhetStone::DG_Modal& dg,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value)
@@ -286,11 +290,12 @@ void LimiterCell::LimiterTensorial_(
     const AmanziMesh::Entity_ID_List& ids,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value)
 {
+  AMANZI_ASSERT(data_->NumVectors() == dim);
+  auto& grad = *lifting_->data()->ViewComponent("cell");
+
   double u1, u1f, umin, umax, L22normal_new;
   AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
   AmanziGeometry::Point normal_new(dim), direction(dim), p(dim);
-
-  Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
 
   std::vector<AmanziGeometry::Point> normals;
 
@@ -361,7 +366,7 @@ void LimiterCell::LimiterTensorial_(
     if (grad_norm0 == 0.0) { 
       (*limiter_)[c] = 1.0;
     } else {
-      for (int i = 0; i < dim; i++) gradient_c1[i] = grad[i][c];
+      for (int i = 0; i < dim; i++) gradient_c1[i] = (*data_)[i][c];
       (*limiter_)[c] = norm(gradient_c1) / grad_norm0;
     }
   }
@@ -379,7 +384,7 @@ void LimiterCell::LimiterExtensionTransportTensorial_()
 
   double u1f, u1;
 
-  auto& grad_c = *gradient_->ViewComponent("cell", false);
+  auto& grad_c = *lifting_->data()->ViewComponent("cell");
   auto& bounds_c = *bounds_->ViewComponent("cell", true);
 
   for (int c = 0; c < ncells_owned_; c++) {
@@ -435,7 +440,6 @@ void LimiterCell::LimiterScalar_(
     Teuchos::RCP<Epetra_Vector> limiter, double (*func)(double))
 {
   limiter->PutScalar(1.0);
-  Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
 
   double u1, u1x, u1_add, umin, umax;
   AmanziGeometry::Point gradient_c(dim), xv(dim);
@@ -454,9 +458,6 @@ void LimiterCell::LimiterScalar_(
     u1 = (*field_)[component_][c];
     double tol = sqrt(OPERATOR_LIMITER_TOLERANCE) * fabs(u1);
 
-    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    for (int k = 0; k < dim; ++k) gradient_c[k] = grad[k][c];
-
     // only two options for control points are supported
     int x, nents(0);
     if (external_controls_) {
@@ -474,15 +475,15 @@ void LimiterCell::LimiterScalar_(
     for (int i = 0; i < nents; i++) {
       if (external_controls_) {
         x = c;
-        u1_add = gradient_c * ((*controls_)[c][i] - xc);
+        u1_add = lifting_->getValueSlope(c, (*controls_)[c][i]);
       } else if (location_ == AmanziMesh::FACE) {
         x = ents[i];
         const AmanziGeometry::Point& xf = mesh_->face_centroid(x);
-        u1_add = gradient_c * (xf - xc);
+        u1_add = lifting_->getValueSlope(c, xf);
       } else if (location_ == AmanziMesh::NODE) {
         x = ents[i];
         mesh_->node_get_coordinates(x, &xv);
-        u1_add = gradient_c * (xv - xc);
+        u1_add = lifting_->getValueSlope(c, xv);
       }
 
       u1x = u1 + u1_add;
@@ -519,7 +520,7 @@ void LimiterCell::LimiterExtensionTransportScalar_(
   double u1, u1f;
   AmanziGeometry::Point gradient_c1(dim);
 
-  auto& grad_c = *gradient_->ViewComponent("cell", false);
+  auto& grad_c = *lifting_->data()->ViewComponent("cell");
   auto& bounds_c = *bounds_->ViewComponent("cell", true);
 
   for (int c = 0; c < ncells_owned_; c++) {
@@ -747,7 +748,8 @@ void LimiterCell::LimiterKuzmin_(
     const AmanziMesh::Entity_ID_List& ids,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value)
 {
-  Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
+  AMANZI_ASSERT(data_->NumVectors() == dim);
+  auto& grad = *lifting_->data()->ViewComponent("cell");
 
   // calculate local extrema at nodes
   if (!external_bounds_)
@@ -887,7 +889,7 @@ void LimiterCell::LimiterExtensionTransportKuzmin_(
   AmanziGeometry::Point xp(dim);
   AmanziMesh::Entity_ID_List nodes;
 
-  auto& grad = *gradient_->ViewComponent("cell", false);
+  auto& grad = *lifting_->data()->ViewComponent("cell");
 
   for (int c = 0; c < ncells_owned_; c++) {
     const auto& faces = mesh_->cell_get_faces(c);
@@ -1263,11 +1265,10 @@ void LimiterCell::getBounds(int c, int f, int stencil, double* umin, double* uma
 ****************************************************************** */
 double LimiterCell::getValue(int c, const AmanziGeometry::Point& p)
 {
-  Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
   const auto& xc = mesh_->cell_centroid(c);
 
   double value = (*field_)[component_][c];
-  for (int i = 0; i < dim; i++) value += (*grad)[i][c] * (p[i] - xc[i]);
+  for (int i = 0; i < dim; i++) value += (*data_)[i][c] * (p[i] - xc[i]);
   return value;
 }
 
