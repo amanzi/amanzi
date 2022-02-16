@@ -46,7 +46,7 @@ class Reconstruction {
   virtual double getValueSlope(int c, const AmanziGeometry::Point& p) = 0;
   virtual WhetStone::Polynomial getPolynomial(int c) = 0;
 
-  // access function may return different reconstrutions (just a slope or full function)
+  // access function returns slope (gradient and higher-order derivatives)
   virtual Teuchos::RCP<CompositeVector> data() = 0;
 
  protected:

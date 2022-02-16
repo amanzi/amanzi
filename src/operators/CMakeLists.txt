@@ -55,6 +55,7 @@ set(operators_inc_files
     CoefficientModel.hh
     InterfaceWhetStone.hh
     LimiterCell.hh
+    LimiterCellDG.hh
     Mini_Diffusion1D.hh
     Mini_Operator1D.hh
     OperatorDefs.hh
@@ -133,7 +134,7 @@ set(operators_inc_files
 )
 
 add_amanzi_library(operators 
-                   SOURCE LimiterCell.cc
+                   SOURCE LimiterCell.cc LimiterCellDG.cc
                           Mini_Diffusion1D.cc
                           Mini_Operator1D.cc
                           OperatorUtils.cc
