@@ -13,7 +13,7 @@ Solves a 1D advection-diffusion equation in vertical coordinate for water temper
 
 .. math::
     c\rho\frac{\partial T}{\partial t} = \frac{1}{h^2} \frac{\partial}{\partial \xi} \left( \lambda \frac{\partial T}{\partial \xi} \right) +
-     c\rho\frac{dh}{dt}\frac{\xi}{h}\frac{\partial T}{\partial \xi} - c\rho\frac{1}{h}\frac{dh_0}{dt}\frac{\partial T}{\partial \xi} - \frac{1}{h}\frac{\partial S}{\partial \xi}+ M
+     c\rho\frac{dh}{dt}\frac{\xi}{h}\frac{\partial T}{\partial \xi} - c\rho\frac{B_w}{h}\frac{\partial T}{\partial \xi} - \frac{1}{h}\frac{\partial S}{\partial \xi}+ M
 
 .. table::
 
