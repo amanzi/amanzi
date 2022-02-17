@@ -18,6 +18,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "BCs.hh"
+#include "CompositeVector.hh"
 #include "Mesh.hh"
 #include "Point.hh"
 #include "Polynomial.hh"
@@ -44,7 +45,7 @@ class Reconstruction {
 
   virtual double getValue(int c, const AmanziGeometry::Point& p) = 0;
   virtual double getValueSlope(int c, const AmanziGeometry::Point& p) = 0;
-  virtual WhetStone::Polynomial getPolynomial(int c) = 0;
+  virtual WhetStone::Polynomial getPolynomial(int c) const = 0;
 
   // access function returns slope (gradient and higher-order derivatives)
   virtual Teuchos::RCP<CompositeVector> data() = 0;

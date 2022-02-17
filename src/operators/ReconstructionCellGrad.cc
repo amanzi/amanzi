@@ -37,7 +37,7 @@ void ReconstructionCellGrad::Init(Teuchos::ParameterList& plist)
   cvs.SetComponent("cell", AmanziMesh::CELL, dim);
 
   gradient_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
-  gradient_c_ = gradient_->ViewComponent("cell");
+  gradient_c_ = gradient_->ViewComponent("cell", true);
 
   // process other parameters
   poly_order_ = plist.get<int>("polynomial order", 0);
@@ -199,7 +199,7 @@ double ReconstructionCellGrad::getValueSlope(int c, const AmanziGeometry::Point&
 /* ******************************************************************
 * Returns full polynomial
 ****************************************************************** */
-WhetStone::Polynomial ReconstructionCellGrad::getPolynomial(int c) 
+WhetStone::Polynomial ReconstructionCellGrad::getPolynomial(int c) const
 {
   WhetStone::Polynomial tmp(dim, 2);
   tmp(0) = (*field_)[0][c];

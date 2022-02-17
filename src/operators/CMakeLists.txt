@@ -52,6 +52,7 @@ add_definitions("-DMSTK_HAVE_MPI")
 #
 set(operators_inc_files
     BCs.hh
+    BoundaryFlux.hh
     CoefficientModel.hh
     InterfaceWhetStone.hh
     LimiterCell.hh
@@ -86,7 +87,6 @@ set(operators_inc_files
     Operator_Factory.hh
     Operator_Node.hh
     Operator_Schema.hh
-    BoundaryFlux.hh
     PDE_Abstract.hh
     PDE_Accumulation.hh
     PDE_Advection.hh
@@ -119,6 +119,8 @@ set(operators_inc_files
     RemapUtils.hh
     Schema.hh
     SchemaUtils.hh
+    SmoothnessIndicator.hh
+    SmoothnessIndicatorShu.hh
     TreeOperator.hh
     Reconstruction.hh
     ReconstructionCellGrad.hh
@@ -167,6 +169,7 @@ add_amanzi_library(operators
                           PDE_MagneticDiffusion.cc PDE_MagneticDiffusion_TM.cc
                           PDE_Reaction.cc
                           Schema.cc SchemaUtils.cc
+                          SmoothnessIndicatorShu.cc
                           TreeOperator.cc
                           ReconstructionCellGrad.cc
                           ReconstructionCellPoly.cc
