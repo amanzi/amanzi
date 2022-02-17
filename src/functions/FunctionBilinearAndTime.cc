@@ -2,7 +2,7 @@
 
 #include "errors.hh"
 #include "exceptions.hh"
-#include "UniqueHelpers.hh"
+#include <memory>
 #include "HDF5Reader.hh"
 #include "FunctionBilinearAndTime.hh"
 

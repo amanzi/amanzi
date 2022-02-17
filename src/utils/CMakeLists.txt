@@ -63,7 +63,6 @@ add_amanzi_library(atk
                            Key.hh
                            ExprTK.hh
                            StringExt.hh
-                           UniqueHelpers.hh
                     LINK_LIBS error_handling ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${HDF5_LIBRARIES})
 
 if (APPLE AND BUILD_SHARED_LIBS)
