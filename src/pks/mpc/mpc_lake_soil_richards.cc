@@ -150,7 +150,29 @@ void MPCLakeSoilRichards::Initialize(const Teuchos::Ptr<State>& S) {
   op_tree_global_->set_block(1, 1, op1);
 //  op_tree_global_->set_operator_block(1, 1, op1_Operator);
 
-//  std::cout << "op_tree_global_ Structure with diagonal blocks:\n" << op_tree_global_->PrintDiagnostics() << std::endl;
+  auto tvs_op1 = Teuchos::rcp(new TreeVectorSpace(op1->RangeMap()));
+
+  Teuchos::RCP<Operators::Operator> op0_null;
+  auto op1_null = Teuchos::rcp(new Operators::TreeOperator(tvs_op1));
+
+  std::cout << "op0_null Structure with diagonal blocks:\n" << op0_null->PrintDiagnostics() << std::endl;
+
+  // only coupling terms
+  op_tree_coupling_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
+
+  op_tree_coupling_->set_operator_block(0, 0, op0_null);
+
+  op1_null->set_operator_block(0, 0, op0_null);
+  op1_null->set_operator_block(0, 1, op0_null);
+  op1_null->set_operator_block(1, 0, op0_null);
+  op1_null->set_operator_block(1, 1, op0_null);
+
+  std::cout << "op1_null Structure with diagonal blocks:\n" << op1_null->PrintDiagnostics() << std::endl;
+
+  op_tree_coupling_->set_block(1, 1, op1_null);
+
+  std::cout << "op_tree_global_ Structure with diagonal blocks:\n" << op_tree_global_->PrintDiagnostics() << std::endl;
+  std::cout << "op_tree_coupling_ Structure with diagonal blocks:\n" << op_tree_coupling_->PrintDiagnostics() << std::endl;
 
 //  auto op100 = op1->get_operator_block(0,0);
 //  auto op111 = op1->get_operator_block(1,1);
@@ -429,6 +451,11 @@ void MPCLakeSoilRichards::Initialize(const Teuchos::Ptr<State>& S) {
 
 //  std::cout << "op10 Structure:\n" << op10->PrintDiagnostics() << std::endl;
 
+
+  // set coupling blocks
+  op_tree_coupling_->set_block(0, 1, op01);
+  op_tree_coupling_->set_block(1, 0, op10);
+
   // print capabilities
 //  std::cout << "Tree Operator Structure:\n" << op_tree_global_->PrintDiagnostics() << std::endl;
 
@@ -488,6 +515,13 @@ void MPCLakeSoilRichards::Initialize(const Teuchos::Ptr<State>& S) {
 //    if (fail) Exceptions::amanzi_throw("Solver for coupled Darcy flow did not converge.");
 //  }
 
+  op_tree_coupling_->SymbolicAssembleMatrix();
+  op_tree_coupling_->AssembleMatrix();
+
+  std::cout << "before A_coupling" << std::endl;
+  std::cout << *op_tree_coupling_->A() << std::endl;
+  std::cout << "after A_coupling" << std::endl;
+
 //  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
   if (true) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -520,13 +554,21 @@ MPCLakeSoilRichards::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   // generate local matrices and apply sources and boundary conditions
   StrongMPC<PK_BDF_Default>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
 
-
+  // add contribution of coupling terms to the residual
+  TreeVector g(*f);
 
   // although, residual calculation can be completed using off-diagonal
   // blocks, we use global matrix-vector multiplication instead.
-  op_tree_global_->AssembleMatrix();
-  int ierr = op_tree_global_->ApplyAssembled(*u_new, *f);
-  AMANZI_ASSERT(!ierr);
+//  op_tree_global_->AssembleMatrix();
+//  int ierr = op_tree_global_->ApplyAssembled(*u_new, *f);
+//  AMANZI_ASSERT(!ierr);
+
+  op_tree_coupling_->AssembleMatrix();
+  int ierr = op_tree_coupling_->ApplyAssembled(*u_new, g);
+
+  f->Update(1.0, g, 1.0);
+
+  /*
 
   // diagonal blocks in tree operator must be lake and soil
   AMANZI_ASSERT(sub_pks_[0]->name() == "lake thermo" &&
@@ -614,6 +656,9 @@ MPCLakeSoilRichards::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
 //
 ////  // All surface to subsurface fluxes have been taken by the subsurface.
 ////  g->SubVector(1)->Data()->ViewComponent("cell",false)->PutScalar(0.);
+ *
+ *
+ */
 
 //  std::cout << "FunctionalResidual DONE" << std::endl;
 }
@@ -623,7 +668,7 @@ int MPCLakeSoilRichards::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<TreeVector> Pu) {
 
   Pu->PutScalar(0.0);
-  return op_tree_global_->ApplyInverse(*u, *Pu);
+//  return op_tree_global_->ApplyInverse(*u, *Pu);
 //  int ierr = StrongMPC::ApplyPreconditioner(u,Pu);
 
   /*
@@ -655,9 +700,9 @@ int MPCLakeSoilRichards::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
   */
 
 
-//  int ierr = StrongMPC::ApplyPreconditioner(u,Pu);
+  int ierr = StrongMPC::ApplyPreconditioner(u,Pu);
 
-//  return (ierr > 0) ? 0 : 1;
+  return (ierr > 0) ? 0 : 1;
 
 }
 
@@ -675,8 +720,8 @@ MPCLakeSoilRichards::UpdatePreconditioner(double t,
   // order important -- subsurface's pk includes the surface's local ops, so
   // doing the subsurface 2nd re-inits the surface matrices (and doesn't
   // refill them).  This is why subsurface is first
-//  StrongMPC::UpdatePreconditioner(t, up, h);
-  op_tree_global_->ComputeInverse();
+  StrongMPC::UpdatePreconditioner(t, up, h);
+//  op_tree_global_->ComputeInverse();
 
 //  std::cout << "UpdatePreconditioner DONE" << std::endl;
 

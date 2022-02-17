@@ -15,7 +15,7 @@ Note this plots:
 Layout
 ------
 
-One way of specifying what to plot is to use the layout (-x) 
+One way of specifying what to plot is to use the layout (-x)
 option.  This option takes a potentially 2D array of lists of variables
 to plot in a 2D array of axes on the figure.  The best way to understand
 how to use this option is via examples:

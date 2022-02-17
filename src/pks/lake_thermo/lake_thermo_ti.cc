@@ -314,6 +314,18 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
 
 //  if (ice_cover_) exit(0);
 
+  // save file with temperature distribution
+  std::cout << "niter_ = " << niter_ << std::endl;
+  if (int(t_new) % 86400 == 0) {
+	  std::ofstream tempfile;
+	  tempfile.open ("temperature.txt", std::ios::app);
+	  for (int i=0; i!=ncomp; ++i) {
+		  const AmanziGeometry::Point& xc = mesh_->cell_centroid(i);
+		  tempfile << temp_v[0][i] << " ";
+	  }
+	  tempfile << "\n";
+  }
+
 };
 
 

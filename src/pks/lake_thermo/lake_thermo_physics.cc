@@ -397,8 +397,6 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
     const Epetra_MultiVector& lambda_c =
     *S->GetFieldData(conductivity_key_)->ViewComponent("cell",false);
 
-    S0_ = 0.1*SS/h_;
-
     // water extinction coefficient
     alpha_e_ = 1.04;
 
@@ -407,20 +405,17 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
     for (unsigned int c=0; c!=ncells; ++c) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
+      if (temp[0][c] < 273.15) {
+    	  S0_ = 0.;
+      } else {
+    	  S0_ = 0.1*SS;
+      }
+
+      // -1.* because I switched to vertical xi coordinate
       g_c[0][c] += -1.*( (S0_*exp(-alpha_e_*h_*(1.-xc[2]))*(alpha_e_*h_)/(h_+1.e-6) - cp_*rho0*temp[0][c]*dhdt/(h_+1.e-6)) * cv[0][c] );
 //      g_c[0][c] += -1.*( -cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6) * cv[0][c] );
 
       std::cout << "c = " << c << ", SRC = " << g_c[0][c] << std::endl;
-
-
-      // -1.* because I switched to vertical xi coordinate
-//      if (temp[0][c] < 273.15) {
-//          g_c[0][c] += -1.*( -cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6) * cv[0][c] );
-//      } else {
-//          g_c[0][c] += -1.*( (S0_*exp(-alpha_e_*h_*(1.-xc[2]))*(-alpha_e_*h_)/h_ - cp_*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6)) * cv[0][c] ); // + M
-//      }
-
-//      std::cout << "SRC = " << g_c[0][c] << std::endl;
 
 //      g_c[0][c] += (8.-2.*xc[2]) * cv[0][c];
 

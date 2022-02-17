@@ -84,7 +84,7 @@ class MPCLakeSoilRichards : public StrongMPC<PK_BDF_Default> {
   Teuchos::RCP<Debugger> lake_db_;
   Teuchos::RCP<Debugger> soil_db_;
 
-  Teuchos::RCP<Operators::TreeOperator> op_tree_global_;
+  Teuchos::RCP<Operators::TreeOperator> op_tree_global_, op_tree_coupling_;
   Teuchos::RCP<TreeVector> op_tree_rhs_;
 
  private:

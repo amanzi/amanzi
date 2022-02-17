@@ -484,7 +484,6 @@ MPCLake1D::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVecto
   f->Print(std::cout);
 
   // add contribution of coupling terms to the residual
-//  Teuchos::RCP<TreeVector> g(f);
   TreeVector g(*f);
 
   // op_tree_coupling_ contains only coupling blocks

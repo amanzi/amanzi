@@ -73,7 +73,7 @@ void ThermalConductivityEvaluator::EvaluateField_(
   double z_w   = 1.0;
 
   double lambda_ice = 2.2;
-  double lambda_w   = 3.*0.561; //1.5
+  double lambda_w   = 1.5; //3.*0.561; //1.5
 //  lambda_ice = lambda_w;
 
   // get temperature

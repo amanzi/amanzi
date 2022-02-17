@@ -15,6 +15,30 @@ Solves a 1D advection-diffusion equation in vertical coordinate for water temper
     c\rho\frac{\partial T}{\partial t} = \frac{1}{h^2} \frac{\partial}{\partial \xi} \left( \lambda \frac{\partial T}{\partial \xi} \right) +
      c\rho\frac{dh}{dt}\frac{\xi}{h}\frac{\partial T}{\partial \xi} - c\rho\frac{1}{h}\frac{dh_0}{dt}\frac{\partial T}{\partial \xi} - \frac{1}{h}\frac{\partial S}{\partial \xi}+ M
 
+.. table::
+
+    +-------------------------------------+----------------------------------------------------------------------------------------+
+    | Symbol                              | Description                                                                            |
+    +=====================================+========================================================================================+
+    | :math:`T`                           | temperature :math:`[K]`                                                                |
+    +-------------------------------------+----------------------------------------------------------------------------------------+
+    | :math:`c`                           | heat capacity :math:`[J/kg/K]`                                                         |
+    +-------------------------------------+----------------------------------------------------------------------------------------+
+    | :math:`\rho`                        | density :math:`[kg/m^3]`                                                               |
+    +-------------------------------------+----------------------------------------------------------------------------------------+
+    | :math:`h`                           | depth :math:`[m]`                                                                      |
+    +-------------------------------------+----------------------------------------------------------------------------------------+
+    | :math:`\lambda`                     | heat conduction :math:`[ADD]`                                                          |
+    +-------------------------------------+----------------------------------------------------------------------------------------+
+    | :math:`B_w`                         | water balance at the free surface of the lake :math:`[-]`                              |
+    +-------------------------------------+----------------------------------------------------------------------------------------+
+    | :math:`S`                           | solar radiation flux :math:`[ADD]`                                                     |
+    +-------------------------------------+----------------------------------------------------------------------------------------+
+    | :math:`M`                           | temperature change rate due to buoyancy mixing (convection) :math:`[ADD]`              |
+    +-------------------------------------+----------------------------------------------------------------------------------------+
+    | :math:`\xi`                         | normalized coordinate :math:`\xi = \frac{1}{h}\Big(z + \int_0^t B_w(\tau)\,d\tau\Big)` |
+    +-------------------------------------+----------------------------------------------------------------------------------------+
+
 .. todo:: Document the energy error norm!
 
 .. _lake_thermal_pk-spec:
@@ -28,9 +52,6 @@ Solves a 1D advection-diffusion equation in vertical coordinate for water temper
 
     * `"boundary conditions`" ``[energy-bc-spec]`` Defaults to 0 diffusive flux
       boundary condition.  See `Energy-specific Boundary Conditions`_
-      
-    * `"thermal conductivity evaluator`"
-      ``[thermal-conductivity-evaluator-spec]`` The thermal conductivity.
 
     * `"absolute error tolerance`" ``[double]`` **76.e-6** A small amount of
       energy, see error norm. `[MJ]`
@@ -40,6 +61,8 @@ Solves a 1D advection-diffusion equation in vertical coordinate for water temper
 
       - `"arithmetic mean`" the default, average of neighboring cells
       - `"cell centered`" harmonic mean
+
+    * `"precipitation`" ``[double]`` Precipitation rate. `[-]`
 
     IF
       
