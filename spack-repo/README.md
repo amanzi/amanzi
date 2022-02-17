@@ -77,17 +77,25 @@ If you want to provide a specific library, for example mpi, you can provide them
 spack dev-build amanzi@1.0.0 +alquimia +crunchtope +ATSPhysics +AmanziPhysics ^openmpi@3.1.4 
 ```
 
-# Spack options: 
+# Spack variants: 
 
-The package support the current installation options (variants): 
+Variants:
+    Name [Default]                 When    Allowed values          Description
+    ===========================    ====    ====================    ============================================
 
-## Mesh type
+    build_type [RelWithDebInfo]    --      Debug, Release,         CMake build type
+                                           RelWithDebInfo,         
+                                           MinSizeRel              
+    data_model [epetra]            --      epetra, tpetra          Trilinos data model
+    geochemistry [off]             --      on, off                 Enable geochemistry support
+    hypre [on]                     --      on, off                 Enable Hypre solver support
+    ipo [off]                      --      on, off                 CMake interprocedural optimization
+    mesh_framework [mstk]          --      mstk, moab              Unstructure mesh framework
+    mesh_type [unstructured]       --      unstructured,           Select mesh type: unstructured or structured
+                                           structured              
+    physics [amanzi]               --      amanzi, ats             Physics implementation
+    shared [on]                    --      on, off                 Build shared libraries and TPLs
+    silo [off]                     --      on, off                 Enable Silo reader for binary files
+    tests [on]                     --      on, off                 Enable the unit test suite
 
-- mesh_type: can take values: "unstructured" and "structured". Default = "unstructured". The "structured" option is not supported yet. 
 
-## Others
-
-- +/-alquimia: Enable or disable alquimia support. This also disable crunchtope, pflortran and petsc support. Default = False 
-- +/-crunchtope: Enanle or disable crunchtope support. This options cannot be used without alquimia support. Default = False 
-- +/-ATSPhysics: Enable or disable ATS Physics module. Default = False 
-- +/-AmanziPhysics: Enable or disable Amanzi Physics module. Default = False 

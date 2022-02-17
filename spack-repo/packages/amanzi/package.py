@@ -34,7 +34,7 @@ class Amanzi(CMakePackage):
 
     # Trilinos data model: epetra|tpetra
     variant('data_model', default='epetra', values=('epetra','tpetra'),
-        description='Trilinos data model')
+        description='Trilinos data model', multi=False)
 
     # Mesh Type: unstructured|structured
     #            (could be both, but currently not support for structured) 
@@ -59,11 +59,6 @@ class Amanzi(CMakePackage):
     variant('geochemistry', default=False, description='Enable geochemistry support')
 
 
-    #variant('alquimia', default=False, description='Enable alquimia support')
-    #variant('ats', default=False, description='Enable ATS support')
-    #variant('AmanziPhysics', default=True, description='Enable Amanzi Physics support')
-    #variant('ATSPhysics', default=False, description='Enable Amanzi Physics support')
-    variant('crunchtope', default=False, description='Enable CrunchTope support')
     variant('tests', default=True, description='Enable the unit test suite')
 
     patch('exprtk.patch')
@@ -98,13 +93,13 @@ class Amanzi(CMakePackage):
     depends_on('unittest-cpp')
     # depends_on('cgns@develop +mpi')
 
-
     #### Geochemistry ####
     # xsdk-0.7.0 -> alquimia v1.0.9, pflotran v3.0.2
     depends_on('alquimia@1.0.9', when='+geochemistry')
     depends_on('pflotran@3.0.2', when='+geochemistry')
     # pflotran depends on petsc 3.10 (or newer). 
     depends_on('petsc@3.13.3', when="+geochemistry")
+    depends_on('crunchtope', when='+geochemistry')
 
     ##### Hypre #####
     depends_on('superlu@5.2.2', when='+hypre')
@@ -124,13 +119,9 @@ class Amanzi(CMakePackage):
     depends_on('moab@5.2.0', when='mesh_framework=moab')
 
     ##### Other #####
-    depends_on('crunchtope', when='+crunchtope')
     depends_on('trilinos@13.0.0 +shared +boost +hdf5 +hypre '
                '+anasazi +amesos2 +epetra +ml '
                '+zoltan +nox +ifpack +muelu -ifpack2 cxxstd=11')
-
-    # Conflicts 
-    conflicts('+crunchtope', when="-geochemistry", msg="+crunchtope needs +geochemistry") 
 
     def cmake_args(self):
         options = ['-DCMAKE_C_COMPILER=' + self.spec['mpi'].mpicc]
