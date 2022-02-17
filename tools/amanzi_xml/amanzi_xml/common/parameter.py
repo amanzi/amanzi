@@ -57,7 +57,11 @@ def _valid_parameter_from_type(ptype, value):
     # ensure types
     retval = None
     if ptype == "double":
-        retval = '%2.8g'%float(value)
+        # note, it is very useful to "pick" a value here, but too
+        # small and we can cut off some user-provided but arbitrarily
+        # highly precise numbers.  Unfortunately too low of a value
+        # then allows tests to break.  This may need rethinking?
+        retval = '%2.14g'%float(value)
     elif ptype == "int":
         retval = str(int(value))
     elif ptype == "bool":

@@ -41,7 +41,8 @@ const double Observable::nan = std::numeric_limits<double>::quiet_NaN();
 
 Observable::Observable(Teuchos::ParameterList& plist)
   : old_time_(nan),
-    has_eval_(false)
+    has_eval_(false),
+    has_data_(false)
 {
   // process the spec
   name_ = Keys::cleanPListName(plist.name());
@@ -52,6 +53,15 @@ Observable::Observable(Teuchos::ParameterList& plist)
   // Note: -1 here means either take it from the physics if possible, or if
   // this variable is not in the physics, instead will default to 1.
   num_vectors_ = plist.get<int>("number of vectors", -1);
+  dof_ = plist.get<int>("degree of freedom", -1);
+
+  if (num_vectors_ > 0 && num_vectors_ < dof_) {
+    Errors::Message msg;
+    msg << "Observable \"" << name_ << "\": inconsistent request of degree of freedom "
+        << dof_ << " for a vector with only " << num_vectors_ << " degrees of freedom.";
+    Exceptions::amanzi_throw(msg);
+  }
+
   time_integrated_ = plist.get<bool>("time integrated", false);
 
   functional_ = plist.get<std::string>("functional");
@@ -75,7 +85,7 @@ Observable::Observable(Teuchos::ParameterList& plist)
   flux_normalize_ = plist.get<bool>("direction normalized flux", false);
   if (flux_normalize_ && location_ != "face") {
     Errors::Message msg;
-    msg << "Observable " << name_ << ": \"direction normalized flux direction\" may only be used with location \"face\"";
+    msg << "Observable \"" << name_ << "\": \"direction normalized flux direction\" may only be used with location \"face\"";
     Exceptions::amanzi_throw(msg);
   }
   if (flux_normalize_) {
@@ -92,7 +102,7 @@ Observable::Observable(Teuchos::ParameterList& plist)
                 direction[1]/norm, direction[2]/norm));
       } else {
         Errors::Message msg;
-        msg << "Observable: \"direction normalized flux direction\" cannot have dimension "
+        msg << "Observable \"" << name_ << "\": \"direction normalized flux direction\" cannot have dimension "
             << (int) direction.size() << ", must be 2 or 3.";
         Exceptions::amanzi_throw(msg);
       }
@@ -105,6 +115,16 @@ Observable::Observable(Teuchos::ParameterList& plist)
 
 void Observable::Setup(const Teuchos::Ptr<State>& S)
 {
+  // Do we participate in this communicator?
+  if (comm_ == Teuchos::null) return;
+
+  // We may be in the comm, but not have this variable.
+  Key domain = Keys::getDomain(variable_);
+  if (!S->HasMesh(domain)) return;
+
+  // If we have gotten to this point, we must have data
+  has_data_ = true;
+
   // does the observed quantity have an evaluator?  Or can we make one? Note
   // that a non-evaluator based observation must already have been created by
   // PKs by now, because PK->Setup() has already been run.
@@ -114,10 +134,10 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
     has_eval_ = true;
   } else {
     // does it have an evaluator or can we make one?
-    try {
+    if (S->HasEvaluatorList(variable_)) {
       S->RequireFieldEvaluator(variable_);
       has_eval_ = true;
-     } catch(...) {
+    } else {
       has_eval_ = false;
     }
   }
@@ -132,6 +152,12 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
 
     // was num_vectors set?  if not use default of 1
     if (num_vectors_ < 0) num_vectors_ = 1;
+    if (num_vectors_ < dof_) {
+      Errors::Message msg;
+      msg << "Observable \"" << name_ << "\": inconsistent request of degree of freedom "
+          << dof_ << " for a vector with only " << num_vectors_ << " degrees of freedom.";
+      Exceptions::amanzi_throw(msg);
+    }
 
     // require the component on location_ with num_vectors_
     cvs->AddComponent(location_, AmanziMesh::entity_kind(location_), num_vectors_);
@@ -141,8 +167,11 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
 
 void Observable::FinalizeStructure(const Teuchos::Ptr<State>& S)
 {
+  // if we don't have a communicator, we can't participate in this
+  if (comm_ == Teuchos::null) return;
+
   // one last check that the structure is all set up and consistent
-  if (num_vectors_ < 0) {
+  if (has_data_ && num_vectors_ < 0) {
     const auto& field = *S->GetFieldData(variable_);
     if (!field.HasComponent(location_)) {
       Errors::Message msg;
@@ -153,29 +182,61 @@ void Observable::FinalizeStructure(const Teuchos::Ptr<State>& S)
     } else {
       num_vectors_ = field.NumVectors(location_);
     }
+
+    if (num_vectors_ < dof_) {
+      Errors::Message msg;
+      msg << "Observable \"" << name_ << "\": inconsistent request of degree of freedom "
+          << dof_ << " for a vector with only " << num_vectors_ << " degrees of freedom.";
+      Exceptions::amanzi_throw(msg);
+    }
   }
+
+  // must communicate the number of vectors so that all in comm have the right
+  // size and get_num_vectors() is valid
+  int num_vectors_l(num_vectors_);
+  comm_->MaxAll(&num_vectors_l, &num_vectors_, 1);
 }
+
 
 void Observable::Update(const Teuchos::Ptr<State>& S,
                         std::vector<double>& data, int start_loc)
 {
+  // if we don't have a communicator, we do not participate, so leave the value at NaN
+  if (comm_ == Teuchos::null) return;
+
   // deal with the time integrated case for the first observation
   if (time_integrated_ && std::isnan(old_time_)) {
-    for (int i=0; i!=num_vectors_; ++i) data[start_loc+i] = 0.;
+    for (int i=0; i!=get_num_vectors(); ++i) data[start_loc+i] = 0.;
     old_time_ = S->time();
     return;
   }
 
+  // from this point forward, has_data_ may be true or false, but we know that
+  // the comm is valid so we must participate in communication!  This deals
+  // with the case of an observation not on comm's rank 0, but must be
+  // communicated to rank 0 to write.  We do know that get_num_vectors() is valid though.
+  AMANZI_ASSERT(get_num_vectors() >= 0);
+  std::vector<double> value;
+  if (functional_ == "minimum") {
+    value.resize(get_num_vectors() + 1, 1.e20);
+  } else if (functional_ == "maximum") {
+    value.resize(get_num_vectors() + 1, -1.e20);
+  } else {
+    value.resize(get_num_vectors() + 1, 0.);
+  }
+
   // update the variable
-  if (has_eval_)
-    S->GetFieldEvaluator(variable_)->HasFieldChanged(S, "observation");
+  if (has_eval_) S->GetFieldEvaluator(variable_)->HasFieldChanged(S, "observation");
 
-  Teuchos::RCP<const Field> field = S->GetField(variable_);
-  if (field->type() == CONSTANT_SCALAR) {
+  Teuchos::RCP<const Field> field = Teuchos::null;
+  if (S->HasField(variable_)) field = S->GetField(variable_);
+
+  if (field != Teuchos::null && field->type() == CONSTANT_SCALAR) {
     // scalars, just return the value
-    data[start_loc] = *field->GetScalarData();
+    value[0] = *field->GetScalarData();
+    value[1] = 1;
 
-  } else if (field->type() == COMPOSITE_VECTOR_FIELD) {
+  } else if (field != Teuchos::null && field->type() == COMPOSITE_VECTOR_FIELD) {
     // vector field
     Teuchos::RCP<const CompositeVector> vec = field->GetFieldData();
     AMANZI_ASSERT(vec->HasComponent(location_));
@@ -184,26 +245,20 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
     AmanziMesh::Entity_kind entity = AmanziMesh::entity_kind(location_);
     AmanziMesh::Entity_ID_List ids;
     vec->Mesh()->get_set_entities(region_, entity, AmanziMesh::Parallel_type::OWNED, &ids);
-
-    std::vector<double> value;
-    if (functional_ == "minimum") {
-      value.resize(num_vectors_ + 1, 1.e20);
-    } else if (functional_ == "maximum") {
-      value.resize(num_vectors_ + 1, -1.e20);
-    } else {
-      value.resize(num_vectors_ + 1, 0.);
-    }
-
     const Epetra_MultiVector& subvec = *vec->ViewComponent(location_, false);
 
     if (entity == AmanziMesh::CELL) {
       for (AmanziMesh::Entity_ID_List::const_iterator id=ids.begin();
            id!=ids.end(); ++id) {
         double vol = vec->Mesh()->cell_volume(*id);
-        for (int i=0; i!=num_vectors_; ++i) {
-          value[i] = (*function_)(value[i], subvec[i][*id], vol);
+        if (dof_ < 0) {
+          for (int i=0; i!=get_num_vectors(); ++i) {
+            value[i] = (*function_)(value[i], subvec[i][*id], vol);
+          }
+        } else {
+          value[0] = (*function_)(value[0], subvec[dof_][*id], vol);
         }
-        value[num_vectors_] += vol;
+        value[get_num_vectors()] += vol;
       }
     } else if (entity == AmanziMesh::FACE) {
       for (AmanziMesh::Entity_ID_List::const_iterator id=ids.begin();
@@ -263,72 +318,79 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
           }
         }
 
-        for (int i=0; i!=num_vectors_; ++i) {
-          value[i] = (*function_)(value[i], sign*subvec[i][*id], vol);
+        if (dof_ < 0) {
+          for (int i=0; i!=get_num_vectors(); ++i) {
+            value[i] = (*function_)(value[i], sign*subvec[i][*id], vol);
+          }
+        } else {
+          value[0] = (*function_)(value[0], sign*subvec[dof_][*id], vol);
         }
-        value[num_vectors_] += std::abs(vol);
+        value[get_num_vectors()] += std::abs(vol);
       }
     } else if (entity == AmanziMesh::NODE) {
       for (AmanziMesh::Entity_ID_List::const_iterator id=ids.begin();
            id!=ids.end(); ++id) {
         double vol = 1.0;
 
-        for (int i=0; i!=num_vectors_; ++i) {
-          value[i] = (*function_)(value[i], subvec[i][*id], vol);
-        }
-        value[num_vectors_] += vol;
-      }
-    }
-
-    // syncronize the result across processors
-    if (functional_ == "point" ||
-        functional_ == "integral" ||
-        functional_ == "average" ||
-        functional_ == "extensive integral") {
-      std::vector<double> global_value(value);
-      S->GetMesh()->get_comm()->SumAll(value.data(), global_value.data(), value.size());
-
-      if (global_value[num_vectors_] > 0) {
-        if (functional_ == "point" ||
-            functional_ == "average") {
-          for (int i=0; i!=num_vectors_; ++i) {
-            value[i] = global_value[i] / global_value[num_vectors_];
+        if (dof_ < 0) {
+          for (int i=0; i!=get_num_vectors(); ++i) {
+            value[i] = (*function_)(value[i], subvec[i][*id], vol);
           }
-        } else if (functional_ == "integral" ||
-                   functional_ == "extensive integral") {
-          for (int i=0; i!=num_vectors_; ++i) {
-            value[i] = global_value[i];
-          }
+        } else {
+          value[0] = (*function_)(value[0], subvec[dof_][*id], vol);
         }
-      } else {
-        for (int i=0; i!=num_vectors_; ++i) {
-          value[i] = nan;
-        }
+        value[get_num_vectors()] += vol;
       }
-    } else if (functional_ == "minimum") {
-      std::vector<double> global_value(value);
-      S->GetMesh()->get_comm()->MinAll(value.data(), global_value.data(), value.size()-1);
-      value = global_value;
-    } else if (functional_ == "maximum") {
-      std::vector<double> global_value(value);
-      S->GetMesh()->get_comm()->MaxAll(value.data(), global_value.data(), value.size()-1);
-      value = global_value;
-    }
-
-    for (int i=0; i!=num_vectors_; ++i) {
-      data[start_loc+i] = value[i];
-    }
-
-  } else {
-    for (int i=0; i!=num_vectors_; ++i) {
-      data[start_loc+i] = nan;
     }
   }
 
+  // syncronize the result across processors
+  if (functional_ == "point" ||
+      functional_ == "integral" ||
+      functional_ == "average" ||
+      functional_ == "extensive integral") {
+    std::vector<double> global_value(value);
+    comm_->SumAll(value.data(), global_value.data(), value.size());
+
+    if (global_value[get_num_vectors()] > 0) {
+      if (functional_ == "point" ||
+          functional_ == "average") {
+        for (int i=0; i!=get_num_vectors(); ++i) {
+          value[i] = global_value[i] / global_value[get_num_vectors()];
+        }
+      } else if (functional_ == "integral" ||
+                 functional_ == "extensive integral") {
+        for (int i=0; i!=get_num_vectors(); ++i) {
+          value[i] = global_value[i];
+        }
+      }
+    } else {
+      for (int i=0; i!=get_num_vectors(); ++i) {
+        value[i] = nan;
+      }
+    }
+  } else if (functional_ == "minimum") {
+    std::vector<double> global_value(value);
+    comm_->MinAll(value.data(), global_value.data(), value.size()-1);
+    value = global_value;
+  } else if (functional_ == "maximum") {
+    std::vector<double> global_value(value);
+    comm_->MaxAll(value.data(), global_value.data(), value.size()-1);
+    value = global_value;
+  } else {
+    AMANZI_ASSERT(false);
+  }
+
+  // copy back from value into the data array
+  for (int i=0; i!=get_num_vectors(); ++i) {
+    data[start_loc+i] = value[i];
+  }
+
+  // factor of dt for time integration
   if (time_integrated_) {
     double dt = S->time() - old_time_;
     old_time_ = S->time();
-    for (int i=0; i!=num_vectors_; ++i) {
+    for (int i=0; i!=get_num_vectors(); ++i) {
       data[start_loc+i] *= dt;
     }
   }

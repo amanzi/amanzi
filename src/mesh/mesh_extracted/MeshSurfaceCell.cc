@@ -41,6 +41,13 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
   set_manifold_dimension(2);
 
   // set my cells
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << " constructing SurfaceCell mesh with parent that has "
+               << parent_->num_entities(AmanziMesh::Entity_kind::CELL, AmanziMesh::Parallel_type::OWNED)
+               << " cells and "
+               << parent_->num_entities(AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED)
+               << " faces." << std::endl;
+
   Entity_ID_List my_cells;
   parent_->get_set_entities(setname, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED, &my_cells);
   AMANZI_ASSERT(my_cells.size() == 1);
@@ -88,7 +95,8 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
       parent_->get_set_entities_and_vofs(r->name(), FACE, Parallel_type::OWNED, &faces_in_set, &vofs);
       sets_[r->id()] = std::find(faces_in_set.begin(), faces_in_set.end(),
               parent_face_) != faces_in_set.end();
-
+    } else if (r->type() == AmanziGeometry::ALL) {
+      sets_[r->id()] = true;
     } else if (r->is_geometric()) {
       // check containment
       if (r->space_dimension() == 3) {

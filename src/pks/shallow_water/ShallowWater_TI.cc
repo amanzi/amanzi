@@ -28,6 +28,7 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
   
   double tmp[1];
   S_->GetConstantVectorData("gravity", "state")->Norm2(tmp);
@@ -57,29 +58,65 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
 
   h_c_tmp.PutScalar(0.0);
   q_c_tmp.PutScalar(0.0);
+  
+  // update boundary conditions given by [h u v]
+  for (int i = 0; i < bcs_.size(); ++i) {
+    bcs_[i]->Compute(t, t);
+  }
+  
+  int bc_h_index, bc_vel_index;
+  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
+  std::vector<double> bc_value_hn(nnodes_wghost, 0.0);
+  std::vector<double> bc_value_h(nfaces_wghost, 0.0);
+  std::vector<double> bc_value_ht(nfaces_wghost, 0.0);
+  std::vector<double> bc_value_qx(nfaces_wghost, 0.0);
+  std::vector<double> bc_value_qy(nfaces_wghost, 0.0);
+  
+  // extract velocity and compute qx, qy, h BC at faces
+  for (int i = 0; i < bcs_.size(); ++i) {
+    if (bcs_[i]->get_bc_name() == "ponded-depth") {
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int n = it->first;
+        bc_value_hn[n] = it->second[0];
+      }
+    }
+  }
 
-  // limited reconstructions
+  AmanziMesh::Entity_ID_List nodes;
+  // extract ponded depth BC at nodes to ensure well-balancedness
+  for (int i = 0; i < bcs_.size(); ++i) {
+    if (bcs_[i]->get_bc_name() == "velocity") {
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int f = it->first;
+        mesh_->face_get_nodes(f, &nodes);
+      
+        bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value_h[f] = (bc_value_hn[nodes[0]] + bc_value_hn[nodes[1]]) / 2;
+        bc_value_qx[f] = bc_value_h[f] * it->second[0];
+        bc_value_qy[f] = bc_value_h[f] * it->second[1];
+        bc_value_ht[f] = bc_value_h[f] + (B_n[0][nodes[0]] + B_n[0][nodes[1]]) / 2;
+      }
+    }
+  }
+    
+  // limited reconstructions using boundary data
   bool use_limter = sw_list_->get<bool>("use limiter", true);
   
   auto tmp1 = S_->GetFieldData(total_depth_key_, passwd_)->ViewComponent("cell", true);
   total_depth_grad_->ComputeGradient(tmp1);
-  if (use_limiter_) limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_->gradient());
+  if (use_limiter_) limiter_->ApplyLimiter(tmp1, 0, total_depth_grad_->gradient(), bc_model, bc_value_ht);
   total_depth_grad_->gradient()->ScatterMasterToGhosted("cell");
   
   auto tmp5 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_x_grad_->ComputeGradient(tmp5, 0);
-  if (use_limiter_) limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_->gradient());
+  if (use_limiter_) limiter_->ApplyLimiter(tmp5, 0, discharge_x_grad_->gradient(), bc_model, bc_value_qx);
   discharge_x_grad_->gradient()->ScatterMasterToGhosted("cell");
   
   auto tmp6 = A.SubVector(1)->Data()->ViewComponent("cell", true);
   discharge_y_grad_->ComputeGradient(tmp6, 1);
-  if (use_limiter_) limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_->gradient());
+  if (use_limiter_) limiter_->ApplyLimiter(tmp6, 1, discharge_y_grad_->gradient(), bc_model, bc_value_qy);
   discharge_y_grad_->gradient()->ScatterMasterToGhosted("cell");
   
-  // update boundary conditions
-  if (bcs_.size() > 0)
-      bcs_[0]->Compute(t, t);
-
   // update source (external) terms
   for (int i = 0; i < srcs_.size(); ++i) {
     srcs_[i]->Compute(t, t);
@@ -150,19 +187,14 @@ void ShallowWater_PK::FunctionalTimeDerivative(double t, const TreeVector& A,
     UL[2] = h_rec * vt;
 
     if (c2 == -1) {
-      if (bcs_.size() > 0 && bcs_[0]->bc_find(f)) {
-        for (int i = 0; i < 3; ++i) {
-          UR[i] = bcs_[0]->bc_value(f)[i];
-        }
-        vn =  UR[1] * normal[0] + UR[2] * normal[1];
-        vt = -UR[1] * normal[1] + UR[2] * normal[0];
-        UR[1] = UR[0] * vn;
-        UR[2] = UR[0] * vt;
-      }
-      else {
+      if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+        UR[0] = bc_value_h[f];
+        UR[1] =  bc_value_qx[f] * normal[0] + bc_value_qy[f] * normal[1];
+        UR[2] = -bc_value_qx[f] * normal[1] + bc_value_qy[f] * normal[0];
+      } else {
+        // default outflow BC
         UR = UL;
       }
-
     } else {
       ht_rec = total_depth_grad_->getValue(c2, xf);
 

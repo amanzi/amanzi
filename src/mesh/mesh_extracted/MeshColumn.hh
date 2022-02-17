@@ -381,6 +381,7 @@ class MeshColumn : public Mesh {
                                  const Parallel_type ptype,
                                  Entity_ID_List *entids,
                                  std::vector<double> *vofs) const override {
+    entids->clear();
     switch (kind) {
       case FACE: {
         Entity_ID_List faces;
@@ -439,6 +440,7 @@ class MeshColumn : public Mesh {
         count++;
       }
     }
+    AMANZI_ASSERT(count <= 2);
   }
 
 
@@ -449,6 +451,7 @@ class MeshColumn : public Mesh {
                                 const Parallel_type ptype,
                                 Entity_ID_List *cellids) const override {
     col3D_mesh_->face_get_cells(column_faces_[faceid], ptype, cellids);
+    AMANZI_ASSERT(cellids->size() <= 2);
   }
 
 
