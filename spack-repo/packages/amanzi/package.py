@@ -75,53 +75,63 @@ class Amanzi(CMakePackage):
     # HDF5 is provided by Ascemio, the version is very restrictive 
     # \todo Update Ascemio package.py to target a wider range of versions 
     core_dependencies = {
-        'zlib', 'metis', 'parmetis', 'seacas', 
-        'boost@1.67.0 cxxstd=11 +program_options', 
-        'netcdf-c +parallel-netcdf', 'hdf5@1.10.6 +mpi+fortran+hl' 
+        'zlib','metis', 'parmetis', 'seacas',
+        'boost@1.67.0 cxxstd=11 +program_options',
+        'netcdf-c +parallel-netcdf', 'hdf5@1.10.6 +mpi+fortran+hl', 
+        'ascemio'
     }
 
     for dep in core_dependencies: 
         depends_on(dep+' +shared',when='+shared'); 
-
-    for dep in core_dependencies: 
-        depends_on(dep+' ~shared',when='~shared'); 
-
+        depends_on(dep+' -shared',when='-shared')
 
     # The following core dependencies do not support +shared/~shared
     depends_on('xerces-c')
-    depends_on('ascemio')
     depends_on('unittest-cpp')
     # depends_on('cgns@develop +mpi')
 
     #### Geochemistry ####
-    # xsdk-0.7.0 -> alquimia v1.0.9, pflotran v3.0.2
-    depends_on('alquimia@1.0.9', when='+geochemistry')
+    geochemistry = {
+        'alquimia@1.0.9','petsc@3.16:'
+    }
+    for dep in geochemistry: 
+        depends_on(dep+' +shared',when='+geochemistry +shared'); 
+        depends_on(dep+' -shared',when='+geochemistry -shared'); 
+
     depends_on('pflotran@3.0.2', when='+geochemistry')
-    # pflotran depends on petsc 3.10 (or newer). 
-    depends_on('petsc@3.13.3', when="+geochemistry")
-    depends_on('crunchtope', when='+geochemistry')
 
     ##### Hypre #####
     depends_on('superlu@5.2.2', when='+hypre')
     depends_on('superlu-dist@6.2.0', when='+hypre')
-    depends_on('hypre@2.22.0 +mpi +shared', when='+hypre')
+    depends_on('hypre@2.22.0 +mpi +shared', when='+hypre +shared')
+    depends_on('hypre@2.22.0 +mpi -shared', when='+hypre ~shared')
+
 
     ##### MSTK #####
-    depends_on('mstk@3.3.6 partitioner=all +seacas +parallel +shared', when='mesh_framework=mstk')
+    depends_on('mstk@3.3.6 partitioner=all +seacas +parallel +shared', when='mesh_framework=mstk +shared')
+    depends_on('mstk@3.3.6 partitioner=all +seacas +parallel -shared', when='mesh_framework=mstk ~shared')
+
     depends_on('nanoflann', when='mesh_framework=mstk')
 
     ##### Silo #####
     # There finally is a new version 4.11 (but we haven't tested it yet).
-    depends_on('silo@4.10.2', when='+silo')
+    depends_on('silo@4.10.2 +shared', when='+silo +shared')
+    depends_on('silo@4.10.2 -shared', when='+silo -shared')
 
     ##### Moab #####
     # There is a newer version 5.3.0 (but we haven't tested it yet).
-    depends_on('moab@5.2.0', when='mesh_framework=moab')
+    depends_on('moab@5.2.0 +shared', when='mesh_framework=moab +shared')
+    depends_on('moab@5.2.0 -shared', when='mesh_framework=moab -shared')
+
 
     ##### Other #####
     depends_on('trilinos@13.0.0 +shared +boost +hdf5 +hypre '
                '+anasazi +amesos2 +epetra +ml '
-               '+zoltan +nox +ifpack +muelu -ifpack2 cxxstd=11')
+               '+zoltan +nox +ifpack +muelu -ifpack2 cxxstd=11',when='+shared')
+
+    depends_on('trilinos@13.0.0 -shared +boost +hdf5 +hypre '
+               '+anasazi +amesos2 +epetra +ml '
+               '+zoltan +nox +ifpack +muelu -ifpack2 cxxstd=11',when='-shared')
 
     def cmake_args(self):
         options = ['-DCMAKE_C_COMPILER=' + self.spec['mpi'].mpicc]

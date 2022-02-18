@@ -23,8 +23,12 @@ class Ascemio(CMakePackage):
         sha256='f6c14e802604b56c723a69296a77835912e8282b86b7cef84fb4f2923079bbc5',
         when='@2.3')
 
+    variant("shared", default=True, description="Builds a shared version of the library")
+
     depends_on('mpi')
-    depends_on('hdf5@1.10.6 +hl+mpi+fortran+shared')
+    depends_on('hdf5@1.10.6 +hl+mpi+fortran+shared',when="+shared")
+    depends_on('hdf5@1.10.6 +hl+mpi+fortran~shared',when="-shared")
+
 
     def cmake_args(self):
         options = []
