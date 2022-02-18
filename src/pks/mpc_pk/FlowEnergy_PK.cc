@@ -249,7 +249,7 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // -- swap water_contents (current and previous)
   if (S_->HasRecord(wc_key_)) {
-    S_->Copy(prev_wc_key_, Tags::COPY, Tags::DEFAULT);
+    S_->Assign(prev_wc_key_, Tags::COPY, Tags::DEFAULT);
 
     S_->GetEvaluator(wc_key_).Update(*S_, "flow");
     const auto& wc = S_->Get<CV_t>(wc_key_);
@@ -274,7 +274,7 @@ bool FlowEnergy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     S_->GetW<CV_t>(prev_sat_liquid_key_, "flow") = sat_prev_copy;
     S_->GetW<CV_t>(prev_energy_key_, "thermal") = e_prev_copy;
     if (S_->HasRecord(wc_key_)) {
-      S_->Copy(prev_wc_key_, Tags::DEFAULT, Tags::COPY);
+      S_->Assign(prev_wc_key_, Tags::DEFAULT, Tags::COPY);
     }
 
     Teuchos::OSTab tab = vo_->getOSTab();

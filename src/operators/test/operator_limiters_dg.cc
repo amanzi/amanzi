@@ -34,6 +34,7 @@
 #include "ErrorAnalysis.hh"
 #include "LimiterCell.hh"
 #include "OperatorDefs.hh"
+#include "ReconstructionCellGrad.hh"
 
 const std::string LIMITERS[3] = {"B-J", "B-J c2c", "B-J all"};
 
@@ -144,9 +145,10 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
     }
 
     // Apply limiter
+    auto lifting = Teuchos::rcp(new ReconstructionCellGrad(mesh, grad));
     LimiterCell limiter(mesh);
     limiter.Init(plist);
-    limiter.ApplyLimiter(ids, field_c, 0, grad, bc_model, bc_value);
+    limiter.ApplyLimiter(ids, field_c, 0, lifting, bc_model, bc_value);
 
     // calculate gradient error
     double err_int, err_glb, gnorm;
@@ -277,7 +279,7 @@ void RunTestGaussPoints(const std::string& limiter_name)
   // Apply limiter
   LimiterCell limiter(mesh);
   limiter.Init(plist);
-  limiter.ApplyLimiter(field_c, dg, bc_model, bc_value);
+  limiter.ApplyLimiterDG(field_c, dg, bc_model, bc_value);
 
   double minlim, avglim, maxlim;
   limiter.limiter()->MinValue(&minlim);

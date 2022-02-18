@@ -236,7 +236,7 @@ void WalkaboutCheckpoint::CalculateData(
 
   Operators::ReconstructionCellGrad lifting(mesh);
   lifting.Init(plist);
-  lifting.ComputePoly(p);
+  lifting.Compute(p);
 
   // Populate state data at mesh nodes
   porosity.clear();

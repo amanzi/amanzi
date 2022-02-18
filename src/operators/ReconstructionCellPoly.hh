@@ -10,6 +10,9 @@
 
   At the moment, we require the input field to have valid values
   in ghost cells. 
+
+  NOTE: we compute the complete polynomial reconstruction, including 
+  the constant term.
 */
 
 #ifndef AMANZI_RECONSTRUCTION_CELL_POLY_HH_
@@ -36,33 +39,37 @@ namespace Operators {
 class ReconstructionCellPoly : public Reconstruction {  
  public:
   ReconstructionCellPoly() {};
-  ReconstructionCellPoly(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : Reconstruction(mesh) {};
+  ReconstructionCellPoly(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
+    : Reconstruction(mesh),
+      poly_(Teuchos::null) {};
   ~ReconstructionCellPoly() {};
 
   // save pointer to the already distributed field.
   virtual void Init(Teuchos::ParameterList& plist) override;
 
-  // unlimited gradient
+  // base class interface
   // -- compute gradient and keep it internally
-  virtual void ComputePoly(const Teuchos::RCP<const Epetra_MultiVector>& field,
-                           int component = 0,
-                           const Teuchos::RCP<const BCs>& bc = Teuchos::null) override {
+  virtual void Compute(const Teuchos::RCP<const Epetra_MultiVector>& field,
+                       int component = 0,
+                       const Teuchos::RCP<const BCs>& bc = Teuchos::null) override {
     int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     AmanziMesh::Entity_ID_List ids(ncells_wghost);
     for (int c = 0; c < ncells_wghost; ++c) ids[c] = c;
-    ComputePoly(ids, field, component, bc);
+    Compute(ids, field, component, bc);
   }
 
-  // -- compute gradient only in specified cells
-  void ComputePoly(const AmanziMesh::Entity_ID_List& ids,
-                   const Teuchos::RCP<const Epetra_MultiVector>& field, int component,
-                   const Teuchos::RCP<const BCs>& bc = Teuchos::null);
+  // -- calculate value, deviation from mean, and full polynomial
+  virtual double getValue(int c, const AmanziGeometry::Point& p) override;
+  virtual double getValueSlope(int c, const AmanziGeometry::Point& p) override;
+  virtual WhetStone::Polynomial getPolynomial(int c) override;
 
-  // calculate value of a linear function at point p
-  double getValue(int c, const AmanziGeometry::Point& p);
+  // -- access returns full polynomial, including the mean value
+  virtual Teuchos::RCP<CompositeVector> data() override { return poly_; }
 
-  // access
-  Teuchos::RCP<CompositeVector> poly() { return poly_; }
+  // compute gradient only in specified cells
+  void Compute(const AmanziMesh::Entity_ID_List& ids,
+               const Teuchos::RCP<const Epetra_MultiVector>& field, int component,
+               const Teuchos::RCP<const BCs>& bc = Teuchos::null);
 
  private:
   void PopulateLeastSquareSystem_(WhetStone::DenseVector& coef,
@@ -83,6 +90,8 @@ class ReconstructionCellPoly : public Reconstruction {
  private:
   int d_, degree_;
   Teuchos::RCP<CompositeVector> poly_;
+  Teuchos::RCP<Epetra_MultiVector> poly_c_;
+  std::vector<std::vector<double> > ortho_;
 };
 
 }  // namespace Operators

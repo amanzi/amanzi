@@ -31,14 +31,13 @@ namespace Operators {
 ****************************************************************** */
 void ReconstructionCellGrad::Init(Teuchos::ParameterList& plist)
 {
-  dim = mesh_->space_dimension();
-
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh_);
   cvs.SetGhosted(true);
   cvs.SetComponent("cell", AmanziMesh::CELL, dim);
 
   gradient_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
+  gradient_c_ = gradient_->ViewComponent("cell");
 
   // process other parameters
   poly_order_ = plist.get<int>("polynomial order", 0);
@@ -49,7 +48,7 @@ void ReconstructionCellGrad::Init(Teuchos::ParameterList& plist)
 * Gradient of linear reconstruction is based on stabilized 
 * least-square fit.
 ****************************************************************** */
-void ReconstructionCellGrad::ComputePoly(
+void ReconstructionCellGrad::Compute(
     const AmanziMesh::Entity_ID_List& ids,
     const Teuchos::RCP<const Epetra_MultiVector>& field, int component,
     const Teuchos::RCP<const BCs>& bc)
@@ -176,23 +175,38 @@ void ReconstructionCellGrad::CellFaceAdjCellsNonManifold_(
 ****************************************************************** */
 double ReconstructionCellGrad::getValue(int c, const AmanziGeometry::Point& p)
 {
-  Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
   const auto& xc = mesh_->cell_centroid(c);
 
   double value = (*field_)[component_][c];
-  for (int i = 0; i < dim; i++) value += (*grad)[i][c] * (p[i] - xc[i]);
+  for (int i = 0; i < dim; i++) value += (*gradient_c_)[i][c] * (p[i] - xc[i]);
   return value;
 }
 
 
 /* ******************************************************************
-* Calculates reconstructed value at point p using external gradient.
+* Calculates deviation from a mean value at point p.
 ****************************************************************** */
-double ReconstructionCellGrad::getValue(
-    const AmanziGeometry::Point& gradient, int c, const AmanziGeometry::Point& p)
+double ReconstructionCellGrad::getValueSlope(int c, const AmanziGeometry::Point& p)
 {
   const auto& xc = mesh_->cell_centroid(c);
-  return (*field_)[component_][c] + gradient * (p - xc);
+
+  double value(0.0);
+  for (int i = 0; i < dim; i++) value += (*gradient_c_)[i][c] * (p[i] - xc[i]);
+  return value;
+}
+
+
+/* ******************************************************************
+* Returns full polynomial
+****************************************************************** */
+WhetStone::Polynomial ReconstructionCellGrad::getPolynomial(int c) 
+{
+  WhetStone::Polynomial tmp(dim, 2);
+  tmp(0) = (*field_)[0][c];
+  for (int i = 0; i < dim; i++) tmp(i + 1) = (*gradient_c_)[i][c];
+
+  tmp.set_origin(mesh_->cell_centroid(c));
+  return tmp;
 }
 
 }  // namespace Operator

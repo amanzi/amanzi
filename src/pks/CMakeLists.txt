@@ -99,9 +99,7 @@ endif()
   add_subdirectory(shallow_water)
 
 if (ENABLE_AmanziPhysicsModule)
-  add_subdirectory(energy)
   add_subdirectory(dummy)
-
   add_subdirectory(mpc_pk)
 endif()
 

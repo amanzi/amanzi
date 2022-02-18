@@ -42,6 +42,7 @@
 #include "PDE_Abstract.hh"
 #include "PDE_AdvectionRiemann.hh"
 #include "PDE_Reaction.hh"
+#include "ReconstructionCellGrad.hh"
 
 #include "AnalyticDG02b.hh"
 #include "AnalyticDG06.hh"
@@ -631,7 +632,7 @@ void AdvectionFn<Analytic>::ApplyLimiter(std::string& name, CompositeVector& u)
   u.ScatterMasterToGhosted();
 
   if (name == "Barth-Jespersen dg") {
-    limiter.ApplyLimiter(u.ViewComponent("cell", true), *dg_, bc_model, bc_value);
+    limiter.ApplyLimiterDG(u.ViewComponent("cell", true), *dg_, bc_model, bc_value);
   } else {
     int nk = u_c.NumVectors();
     WhetStone::DenseVector data(nk);
@@ -656,7 +657,8 @@ void AdvectionFn<Analytic>::ApplyLimiter(std::string& name, CompositeVector& u)
 
     grad->ScatterMasterToGhosted("cell");
 
-    limiter.ApplyLimiter(u.ViewComponent("cell", true), 0, grad, bc_model, bc_value);
+    auto lifting = Teuchos::rcp(new Operators::ReconstructionCellGrad(mesh_, grad));
+    limiter.ApplyLimiter(u.ViewComponent("cell", true), 0, lifting, bc_model, bc_value);
 
     for (int c = 0; c < ncells_owned; ++c) {
       data(0) = u_c[0][c];

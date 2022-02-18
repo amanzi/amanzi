@@ -20,6 +20,7 @@
 #include "BCs.hh"
 #include "Mesh.hh"
 #include "Point.hh"
+#include "Polynomial.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -34,12 +35,19 @@ class Reconstruction {
   // main members
   virtual void Init(Teuchos::ParameterList& plist) = 0;
 
-  virtual void ComputePoly(const Teuchos::RCP<const Epetra_MultiVector>& field,
-                           int component = 0,
-                           const Teuchos::RCP<const BCs>& bc = Teuchos::null) {
+  virtual void Compute(const Teuchos::RCP<const Epetra_MultiVector>& field,
+                       int component = 0,
+                       const Teuchos::RCP<const BCs>& bc = Teuchos::null) {
     field_ = field;
     component_ = component;
   }
+
+  virtual double getValue(int c, const AmanziGeometry::Point& p) = 0;
+  virtual double getValueSlope(int c, const AmanziGeometry::Point& p) = 0;
+  virtual WhetStone::Polynomial getPolynomial(int c) = 0;
+
+  // access function may return different reconstrutions (just a slope or full function)
+  virtual Teuchos::RCP<CompositeVector> data() = 0;
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
