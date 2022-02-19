@@ -116,7 +116,7 @@ class PK_MPCStrong : virtual public PK_MPC<PK_Base>, public PK_BDF
   
  private:
   // factory registration
-  static RegisteredPKFactory<PK_MPCStrong> reg_;
+  static RegisteredPKFactory<PK_MPCStrong<PK_Base> > reg_;
 };
 
 

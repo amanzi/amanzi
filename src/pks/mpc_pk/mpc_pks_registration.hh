@@ -9,6 +9,7 @@
   Registration of MPC PKs.
 */
 
+#include "PK_MPCStrong.hh"
 #include "PK_MPCSubcycled.hh"
 
 #ifndef DISABLE_PHYSICS
@@ -28,6 +29,8 @@
 
 namespace Amanzi {
 
+template<>
+RegisteredPKFactory<PK_MPCStrong<PK_BDF> > PK_MPCStrong<PK_BDF>::reg_("mpc strong");
 RegisteredPKFactory<PK_MPCSubcycled> PK_MPCSubcycled::reg_("mpc subcycled");
 RegisteredPKFactory<PK_MPCWeak> PK_MPCWeak::reg_("mpc weak");
 
