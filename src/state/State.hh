@@ -215,7 +215,6 @@ class State {
                          const Teuchos::RCP<AmanziMesh::DomainSet> set);
   bool HasDomainSet(const Key& name) const;
   Teuchos::RCP<const AmanziMesh::DomainSet> GetDomainSet(const Key& name) const;
-  
 
   // -----------------------------------------------------------------------------
   // State handles data management.
@@ -300,7 +299,8 @@ class State {
   // -- allows PKs to add to this list to custom evaluators
   Teuchos::ParameterList& FEList() { return state_plist_.sublist("field evaluators"); }
   Teuchos::ParameterList& GetEvaluatorList(const Key& key);
-  
+  bool HasEvaluatorList(const Key& key);
+
   // -- allows PKs to add to this list to initial conditions
   Teuchos::ParameterList& ICList() { return state_plist_.sublist("initial conditions"); }
 

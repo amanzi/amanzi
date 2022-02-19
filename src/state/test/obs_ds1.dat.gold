@@ -1,0 +1,19 @@
+# Observation File: obs_ds1.dat column names:
+# -----------------------------------------------------------------------------
+# Observation Name: time [s]
+# -----------------------------------------------------------------------------
+# Observation Name: obsA
+# Region: all
+# Functional: average
+# Variable: column:0-variable
+# Number of Vectors: 1
+# -----------------------------------------------------------------------------
+# Observation Name: obsB
+# Region: all
+# Functional: average
+# Variable: column:8-variable
+# Number of Vectors: 1
+# =============================================================================
+"time [s]","obsA","obsB"
+0.000000000000e+00,0.000000000000e+00,8.000000000000e+00
+1.000000000000e+00,0.000000000000e+00,8.000000000000e+00

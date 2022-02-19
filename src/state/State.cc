@@ -1539,6 +1539,20 @@ State::GetEvaluatorList(const Key& key)
   return FEList().sublist(key);
 }
 
+bool
+State::HasEvaluatorList(const Key& key)
+{
+  if (FEList().isSublist(key)) return true;
+  // check for domain set
+  KeyTriple split;
+  bool is_ds = Keys::splitDomainSet(key, split);
+  if (is_ds) {
+    Key lifted_key = Keys::getKey(std::get<0>(split), "*", std::get<2>(split));
+    if (FEList().isSublist(lifted_key)) return true;
+  }
+  return false;
+}
+
 
 void State::CheckIsDebugEval_(const Key& key)
 {

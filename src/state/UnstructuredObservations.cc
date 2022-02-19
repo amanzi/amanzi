@@ -34,6 +34,18 @@ UnstructuredObservations::UnstructuredObservations(
     observed_once_(false),
     IOEvent(plist)
 {
+  // file information
+  filename_ = plist.get<std::string>("observation output filename");
+  delimiter_ = plist.get<std::string>("delimiter", ",");
+  interval_ = plist.get<int>("write interval", 1);
+  time_unit_ = plist.get<std::string>("time units", "s");
+  Utils::Units unit;
+  bool flag = false;
+  time_unit_factor_ = unit.ConvertTime(1., "s", time_unit_, flag);
+
+  // this sets the communicator
+  writing_domain_ = plist.get<std::string>("domain", "domain");
+
   // interpret parameter list
   // loop over the sublists and create an observable for each
   if (plist.isSublist("observed quantities")) {
@@ -62,48 +74,35 @@ UnstructuredObservations::UnstructuredObservations(
     observables_.emplace_back(obs);
     time_integrated_ |= obs->is_time_integrated();
   }
-
-  // file format
-  filename_ = plist.get<std::string>("observation output filename");
-  delimiter_ = plist.get<std::string>("delimiter", ",");
-  interval_ = plist.get<int>("write interval", 1);
-  time_unit_ = plist.get<std::string>("time units", "s");
-  Utils::Units unit;
-  bool flag = false;
-  time_unit_factor_ = unit.ConvertTime(1., "s", time_unit_, flag);
-  writing_domain_ = plist.get<std::string>("domain", "NONE");
 }
 
 void UnstructuredObservations::Setup(const Teuchos::Ptr<State>& S)
 {
+  // set the communicator
+  comm_ = Teuchos::null;
+  if (S->HasMesh(writing_domain_))
+    comm_ = S->GetMesh(writing_domain_)->get_comm();
+
   // require fields, evaluators
-  for (auto& obs : observables_) obs->Setup(S);
+  for (auto& obs : observables_) {
+    obs->set_comm(comm_);
+    obs->Setup(S);
+  }
 
   // what rank writes the file?
   write_ = false;
-  if (writing_domain_ == "NONE") {
-    if (observables_.size() > 0) {
-      writing_domain_ = Keys::getDomain(observables_[0]->get_variable());
-    } else {
-      if (getDefaultComm()->MyPID() == 0) {
-        write_ = true;
-      }
-    }
-  }
-  if (writing_domain_ != "NONE") {
-    if (S->GetMesh(writing_domain_)->get_comm()->MyPID() == 0) {
-      write_ = true;
-    }
-  }
+  if (comm_ != Teuchos::null && comm_->MyPID() == 0)
+    write_ = true;
 }
 
 void UnstructuredObservations::MakeObservations(const Teuchos::Ptr<State>& S)
 {
+  if (comm_ == Teuchos::null) return;
+
   if (!observed_once_) {
     // final setup, open file handle, etc
-    for (auto& obs : observables_) {
-      obs->FinalizeStructure(S);
-    }
+    for (auto& obs : observables_) obs->FinalizeStructure(S);
+
     num_total_ = 0;
     for (const auto& obs : observables_) num_total_ += obs->get_num_vectors();
     integrated_observation_.resize(num_total_);
