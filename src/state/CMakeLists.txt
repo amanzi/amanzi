@@ -140,6 +140,7 @@ if (BUILD_TESTS)
 
     # Mesh factory includes
     include_directories(${MESH_FACTORY_SOURCE_DIR})
+    include_directories(${MESH_EXTRACTED_SOURCE_DIR})
 
     # Copy test subdirectory for out of source builds
     if (NOT ("${STATE_SOURCE_DIR}" STREQUAL "${STATE_BINARY_DIR}"))

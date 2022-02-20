@@ -11,6 +11,7 @@
 
 #include "Epetra_Vector.h"
 #include "VisualizationDomainSet.hh"
+#include "StringReducer.hh"
 
 namespace Amanzi {
 
@@ -71,12 +72,26 @@ VisualizationDomainSet::WriteVector(const Epetra_Vector& vec, const std::string&
 void
 VisualizationDomainSet::FinalizeTimestep() const
 {
+  // construct this the first time, then it is fixed
+  if (lifted_vector_names_.size() == 0) {
+    // have to get a common set of names across all ranks
+    std::vector<std::string> my_names;
+    for (auto& lv : lifted_vectors_) {
+      my_names.push_back(lv.first);
+    }
+
+    Utils::StringReducer<100> reducer(mesh_->get_comm());
+    reducer.checkValidInput(my_names);
+    lifted_vector_names_ = reducer.intersectAll(my_names);
+  }
+
   // write the lifted vectors
-  for (const auto& vecs : lifted_vectors_) {
-    if (vecs.second.first->NumVectors() == 1) {
-      Visualization::WriteVector(*(*vecs.second.first)(0), vecs.second.second[0]);
+  for (const auto& vecname : lifted_vector_names_) {
+    const auto& vecs = lifted_vectors_.at(vecname);
+    if (vecs.first->NumVectors() == 1) {
+      Visualization::WriteVector(*(*vecs.first)(0), vecs.second[0]);
     } else {
-      Visualization::WriteVector(*vecs.second.first, vecs.second.second);
+      Visualization::WriteVector(*vecs.first, vecs.second);
     }
   }
 

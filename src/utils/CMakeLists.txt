@@ -59,11 +59,13 @@ add_amanzi_library(atk
                            TimerManager.hh
                            TimeStepManager.hh
                            UniqueHelpers.hh
+<<<<<<< HEAD
                            Units.hh
                            Utils.hh
                            VerboseObject.hh
                            VerboseObject_objs.hh
                            XMLParameterListWriter.hh
+                           StringReducer.hh
                     LINK_LIBS error_handling ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${HDF5_LIBRARIES})
 
 if (APPLE AND BUILD_SHARED_LIBS)
@@ -83,40 +85,47 @@ if (BUILD_TESTS)
     # Add the utils directory to the include paths
     include_directories(${ATK_SOURCE_DIR})
 
-    ADD_AMANZI_TEST(utils_keys utils_keys
+    add_amanzi_test(utils_keys utils_keys
                     KIND unit
                     SOURCE test/Main.cc test/utils_keys.cc
                     LINK_LIBS atk ${UnitTest_LIBRARIES})
     
-    ADD_AMANZI_TEST(utils_time_step_manager utils_time_step_manager
+    add_amanzi_test(utils_time_step_manager utils_time_step_manager
                     KIND unit
                     SOURCE test/Main.cc test/utils_time_step_manager.cc
                     LINK_LIBS atk ${UnitTest_LIBRARIES})
 
-    ADD_AMANZI_TEST(utils_verbosity utils_verbosity
+    add_amanzi_test(utils_verbosity utils_verbosity
                     KIND unit
                     SOURCE test/Main.cc test/utils_verboseobject.cc
                     LINK_LIBS atk ${UnitTest_LIBRARIES})
 
-    ADD_AMANZI_TEST(utils_units utils_units
+    add_amanzi_test(utils_units utils_units
                     KIND unit
                     SOURCE test/Main.cc test/utils_units.cc
                     LINK_LIBS atk ${UnitTest_LIBRARIES})
 
-    ADD_AMANZI_TEST(utils_spline utils_spline
+    add_amanzi_test(utils_spline utils_spline
                     KIND unit
                     SOURCE test/Main.cc test/utils_spline.cc
                     LINK_LIBS atk ${UnitTest_LIBRARIES})
 
-    ADD_AMANZI_TEST(utils_ioevent utils_ioevent
+    add_amanzi_test(utils_ioevent utils_ioevent
                     KIND unit
                     SOURCE test/Main.cc test/utils_ioevent.cc
                     LINK_LIBS atk ${UnitTest_LIBRARIES})
 
-    ADD_AMANZI_TEST(utils_exprtk utils_exprtk
+    add_amanzi_test(utils_exprtk utils_exprtk
                     KIND unit
                     SOURCE test/Main.cc test/utils_exprtk.cc
                     LINK_LIBS atk ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(utils_reducer utils_reducer
+                    KIND unit
+                    SOURCE test/Main.cc test/utils_reducer.cc
+                    LINK_LIBS atk ${UnitTest_LIBRARIES})
+    add_amanzi_test(utils_reducer_np2 utils_reducer NPROCS 2 KIND unit)
+    add_amanzi_test(utils_reducer_np5 utils_reducer NPROCS 5 KIND unit)
 
 endif()
 

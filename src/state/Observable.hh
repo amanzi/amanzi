@@ -99,6 +99,7 @@ to disk by the UnstructuredObservation_ object.
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "AmanziTypes.hh"
 #include "Key.hh"
 #include "Point.hh"
 #include "MeshDefs.hh"
@@ -114,11 +115,15 @@ class Observable {
 
   Observable(Teuchos::ParameterList& plist);
 
-  const std::string& get_name() { return name_; }
-  const std::string& get_variable() { return variable_; }
-  const std::string& get_region() { return region_; }
-  const std::string& get_location() { return location_; }
-  const std::string& get_functional() { return functional_; }
+  const std::string& get_name() const { return name_; }
+  const std::string& get_variable() const { return variable_; }
+  const std::string& get_region() const { return region_; }
+  const std::string& get_location() const { return location_; }
+  const std::string& get_functional() const { return functional_; }
+
+  const Comm_ptr_type& get_comm() const { return comm_; }
+  void set_comm(const Comm_ptr_type& comm) { comm_ = comm; }
+
   bool is_time_integrated() { return time_integrated_; }
   int get_num_vectors() {
     return (dof_ >= 0) ? 1 : num_vectors_;
@@ -130,6 +135,7 @@ class Observable {
   void Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int start_loc);
 
  protected:
+  Comm_ptr_type comm_;
   bool flux_normalize_;
   Teuchos::RCP<AmanziGeometry::Point> direction_;
   std::string flux_normalize_region_;
@@ -144,7 +150,9 @@ class Observable {
   int dof_;
   bool time_integrated_;
   double old_time_;
-  bool has_eval_;
+
+  bool has_eval_; // is there an evaluator for this variable_
+  bool has_data_; // is there data on this rank for this variable_
 
   double (*function_)(double a, double b, double vol);
 };

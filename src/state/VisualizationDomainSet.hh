@@ -70,7 +70,9 @@ class VisualizationDomainSet : public Visualization {
 
  protected:
   // note this is lazily constructed, so must be mutable
+  // Note that this relies on map being ORDERED!
   mutable std::map<std::string, std::pair<Teuchos::RCP<Epetra_MultiVector>, std::vector<std::string>>> lifted_vectors_;
+  mutable std::vector<std::string> lifted_vector_names_;
 
   std::map<Key, Teuchos::RCP<const AmanziMesh::Mesh>> subdomains_;
 };
