@@ -88,7 +88,8 @@ class Amanzi(CMakePackage):
     # The following core dependencies do not support +shared/~shared
     depends_on('xerces-c')
     depends_on('unittest-cpp')
-    # depends_on('cgns@develop +mpi')
+    depends_on('cgns@develop +mpi +shared', when='+shared')
+    depends_on('cgns@develop +mpi -shared', when='-shared')
 
     #### Geochemistry ####
     geochemistry = {
@@ -102,14 +103,15 @@ class Amanzi(CMakePackage):
 
     ##### Hypre #####
     depends_on('superlu@5.2.2', when='+hypre')
-    depends_on('superlu-dist@6.2.0', when='+hypre')
+    depends_on('superlu-dist@6.2.0 +shared', when='+hypre +shared')
+    depends_on('superlu-dist@6.2.0 -shared', when='+hypre -shared')
     depends_on('hypre@2.22.0 +mpi +shared', when='+hypre +shared')
-    depends_on('hypre@2.22.0 +mpi -shared', when='+hypre ~shared')
+    depends_on('hypre@2.22.0 +mpi -shared', when='+hypre -shared')
 
 
     ##### MSTK #####
     depends_on('mstk@3.3.6 partitioner=all +seacas +parallel +shared', when='mesh_framework=mstk +shared')
-    depends_on('mstk@3.3.6 partitioner=all +seacas +parallel -shared', when='mesh_framework=mstk ~shared')
+    depends_on('mstk@3.3.6 partitioner=all +seacas +parallel -shared', when='mesh_framework=mstk -shared')
 
     depends_on('nanoflann', when='mesh_framework=mstk')
 
