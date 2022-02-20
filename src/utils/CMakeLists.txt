@@ -59,7 +59,6 @@ add_amanzi_library(atk
                            TimerManager.hh
                            TimeStepManager.hh
                            UniqueHelpers.hh
-<<<<<<< HEAD
                            Units.hh
                            Utils.hh
                            VerboseObject.hh
