@@ -207,9 +207,11 @@ void Transport_PK::Setup()
         .SetMesh(mesh_)->SetGhosted(true)->SetComponent("face", AmanziMesh::FACE, 1);
     }
   }
+
   if (!S_->HasRecord(saturation_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(saturation_liquid_key_, Tags::DEFAULT, passwd_)
       .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    // S_->RequireEvaluator(saturation_liquid_key_, Tags::DEFAULT);
   }
   if (!S_->HasRecord(prev_saturation_liquid_key_)) {
     S_->Require<CV_t, CVS_t>(prev_saturation_liquid_key_, Tags::DEFAULT, passwd_)
@@ -909,9 +911,11 @@ bool Transport_PK::ComputeBCs_(
 ******************************************************************* */
 void Transport_PK::IdentifyUpwindCells()
 {
-  S_->Get<CV_t>(darcy_flux_key_).ScatterMasterToGhosted("face");
-  auto darcy_flux = S_->Get<CV_t>(darcy_flux_key_).ViewComponent("face", true);
-  const auto& map = S_->Get<CV_t>(darcy_flux_key_).Map().Map("face", true);
+  const auto& darcy_flux = S_->Get<CV_t>(darcy_flux_key_);
+  darcy_flux.ScatterMasterToGhosted("face");
+
+  const auto& darcy_flux_f = *darcy_flux.ViewComponent("face", true);
+  const auto& map = darcy_flux.Map().Map("face", true);
 
   upwind_cells_.clear();
   downwind_cells_.clear();
@@ -954,30 +958,30 @@ void Transport_PK::IdentifyUpwindCells()
           int pos = Operators::UniqueIndexFaceToCells(*mesh_, f, c);
 
           // define only upwind cell
-          double tmp = (*darcy_flux)[0][g + pos] * dirs[i];
+          double tmp = darcy_flux_f[0][g + pos] * dirs[i];
 
           if (tmp >= 0.0) {
             upwind_cells_[f][pos] = c;
-            upwind_flux_[f][pos] = (*darcy_flux)[0][g + pos];
+            upwind_flux_[f][pos] = darcy_flux_f[0][g + pos];
           } else {
             downwind_cells_[f][pos] = c;
-            downwind_flux_[f][pos] = (*darcy_flux)[0][g + pos];
+            downwind_flux_[f][pos] = darcy_flux_f[0][g + pos];
           }
         }
         else {
-          double tmp = (*darcy_flux)[0][g] * dirs[i];
+          double tmp = darcy_flux_f[0][g] * dirs[i];
           if (tmp >= 0.0) {
             upwind_cells_[f][0] = c;
-            upwind_flux_[f][0] = (*darcy_flux)[0][g];
+            upwind_flux_[f][0] = darcy_flux_f[0][g];
           } else if (tmp < 0.0) {
             downwind_cells_[f][0] = c;
-            downwind_flux_[f][0] = (*darcy_flux)[0][g];
+            downwind_flux_[f][0] = darcy_flux_f[0][g];
           } else if (dirs[i] > 0) {
             upwind_cells_[f][0] = c;
-            upwind_flux_[f][0] = (*darcy_flux)[0][g];            
+            upwind_flux_[f][0] = darcy_flux_f[0][g];            
           } else {
             downwind_cells_[f][0] = c;
-            downwind_flux_[f][0] = (*darcy_flux)[0][g];
+            downwind_flux_[f][0] = darcy_flux_f[0][g];
           }
         }
       }
@@ -996,7 +1000,7 @@ void Transport_PK::IdentifyUpwindCells()
         int ndofs = map->ElementSize(f);
         if (ndofs > 1) g += Operators::UniqueIndexFaceToCells(*mesh_, f, c);
 
-        double u = (*darcy_flux)[0][g] * dirs[i];  // external flux for cell c
+        double u = darcy_flux_f[0][g] * dirs[i];  // external flux for cell c
         if (u >= 0.0) {
           upwind_cells_[f].push_back(c);
           upwind_flux_[f].push_back(u);

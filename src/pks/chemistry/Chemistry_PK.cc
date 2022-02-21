@@ -49,9 +49,11 @@ void Chemistry_PK::Setup()
     ->SetGhosted(false)->AddComponent("cell", AmanziMesh::CELL, 1);
   S_->RequireEvaluator(poro_key_, Tags::DEFAULT);
 
-  S_->Require<CV_t, CVS_t>(saturation_key_, Tags::DEFAULT, saturation_key_).SetMesh(mesh_)
-    ->SetGhosted(false)->AddComponent("cell", AmanziMesh::CELL, 1);
-  S_->RequireEvaluator(saturation_key_, Tags::DEFAULT);
+  if (!S_->HasRecord(saturation_key_, Tags::DEFAULT)) {
+    S_->Require<CV_t, CVS_t>(saturation_key_, Tags::DEFAULT, saturation_key_).SetMesh(mesh_)
+      ->SetGhosted(false)->AddComponent("cell", AmanziMesh::CELL, 1);
+    S_->RequireEvaluator(saturation_key_, Tags::DEFAULT);
+  }
 
   S_->Require<CV_t, CVS_t>(fluid_den_key_, Tags::DEFAULT, fluid_den_key_).SetMesh(mesh_)
     ->SetGhosted(false)->AddComponent("cell", AmanziMesh::CELL, 1);

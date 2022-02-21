@@ -81,3 +81,8 @@ endif()
 if (ENABLE_AmanziPhysicsModule)
   add_subdirectory(common/standalone_simulation_coordinator)
 endif()
+
+# integration tests
+if (ENABLE_AmanziPhysicsModule AND ENABLE_ATSPhysicsModule)
+  add_subdirectory(interoperability)
+endif()

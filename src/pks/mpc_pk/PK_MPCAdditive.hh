@@ -70,10 +70,11 @@ class PK_MPCAdditive :  public PK_MPC<PK> {
 // Setup of PK hierarchy from PList
 // -----------------------------------------------------------------------------
 template <class PK_Base>
-PK_MPCAdditive<PK_Base>::PK_MPCAdditive(Teuchos::ParameterList& pk_tree,
-                        const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-                        const Teuchos::RCP<State>& S,
-                        const Teuchos::RCP<TreeVector>& soln)
+PK_MPCAdditive<PK_Base>::PK_MPCAdditive(
+    Teuchos::ParameterList& pk_tree,
+    const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+    const Teuchos::RCP<State>& S,
+    const Teuchos::RCP<TreeVector>& soln)
 {
   pk_tree_ = pk_tree;
   global_list_ = global_list;
