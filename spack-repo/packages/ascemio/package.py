@@ -26,8 +26,8 @@ class Ascemio(CMakePackage):
     variant("shared", default=True, description="Builds a shared version of the library")
 
     depends_on('mpi')
-    depends_on('hdf5@1.10.6 +hl+mpi+fortran+shared',when="+shared")
-    depends_on('hdf5@1.10.6 +hl+mpi+fortran~shared',when="-shared")
+    depends_on('hdf5@1.12.1 +hl+mpi+fortran+shared',when="+shared")
+    depends_on('hdf5@1.12.1 +hl+mpi+fortran~shared',when="-shared")
 
 
     def cmake_args(self):

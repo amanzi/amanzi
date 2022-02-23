@@ -77,19 +77,20 @@ class Amanzi(CMakePackage):
     core_dependencies = {
         'zlib','metis', 'parmetis', 'seacas',
         'boost@1.67.0 cxxstd=11 +program_options',
-        'netcdf-c +parallel-netcdf', 'hdf5@1.10.6 +mpi+fortran+hl', 
+        'netcdf-c +parallel-netcdf', 'hdf5@1.12.1 +mpi+fortran+hl', 
         'ascemio'
     }
 
     for dep in core_dependencies: 
         depends_on(dep+' +shared',when='+shared'); 
-        depends_on(dep+' -shared',when='-shared')
+        depends_on(dep+' -shared',when='-shared');
+
+    #depends_on('cgns@develop +mpi +shared', when='+shared')
+    depends_on('cgns@develop +mpi -shared', when='-shared')
 
     # The following core dependencies do not support +shared/~shared
     depends_on('xerces-c')
     depends_on('unittest-cpp')
-    depends_on('cgns@develop +mpi +shared', when='+shared')
-    depends_on('cgns@develop +mpi -shared', when='-shared')
 
     #### Geochemistry ####
     geochemistry = {
@@ -155,6 +156,7 @@ class Amanzi(CMakePackage):
         options.append('-DMETIS_DIR=' + self.spec['metis'].prefix)
         options.append('-DBOOST_ROOT=' + self.spec['boost'].prefix)
         options.append('-DHDF5_ROOT=' + self.spec['hdf5'].prefix)
+        options.append('-DHDF5_HL_LIBRARIES=' + self.spec['hdf5'].prefix + '/lib')
         options.append('-DASCEMIO_DIR=' + self.spec['ascemio'].prefix)
         options.append('-DNetCDF_DIR=' + self.spec['netcdf-c'].prefix)
         options.append('-DMSTK_LIBRARY_DIR=' + self.spec['mstk'].prefix + '/lib')
