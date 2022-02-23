@@ -234,7 +234,7 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
   bool has_record = S->HasRecord(variable_, tag_);
   if (has_record && S->GetRecord(variable_, tag_).ValidType<double>()) {
     // scalars, just return the value
-    value[0] = record.Get<double>();
+    value[0] = S->GetRecord(variable_, tag_).Get<double>();
     value[1] = 1;
 
   } else if (has_record && S->GetRecord(variable_, tag_).ValidType<CompositeVector>()) {

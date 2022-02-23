@@ -95,19 +95,19 @@ struct obs_test {
     S = Teuchos::rcp(new State(state_list));
     S->RegisterMesh("domain", mesh);
 
-    S->Require<CompositeVector, CompositeVectorSpace>("constant", Tags::DEFAULT, "state")
+    S->Require<CompositeVector, CompositeVectorSpace>("constant", Tags::DEFAULT, "my_password")
       .SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->Require<CompositeVector, CompositeVectorSpace>("linear", Tags::DEFAULT, "state")
+    S->Require<CompositeVector, CompositeVectorSpace>("linear", Tags::DEFAULT, "my_password")
       .SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->Require<CompositeVector, CompositeVectorSpace>("id", Tags::DEFAULT, "state")
+    S->Require<CompositeVector, CompositeVectorSpace>("id", Tags::DEFAULT, "my_password")
       .SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->Require<CompositeVector, CompositeVectorSpace>("flux", Tags::DEFAULT, "state")
+    S->Require<CompositeVector, CompositeVectorSpace>("flux", Tags::DEFAULT, "my_password")
       .SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("face", AmanziMesh::FACE, 1);
-    S->Require<CompositeVector, CompositeVectorSpace>("multi_dof", Tags::DEFAULT, "state")
+    S->Require<CompositeVector, CompositeVectorSpace>("multi_dof", Tags::DEFAULT, "my_password")
       .SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 3);
     S->Setup();
@@ -118,15 +118,15 @@ struct obs_test {
 
   void setup() {
     S->Setup();
-    S->GetW<CompositeVector>("constant", Tags::DEFAULT, "state").PutScalar(2.0);
-    S->GetW<CompositeVector>("linear", Tags::DEFAULT, "state").PutScalar(0.0);
+    S->GetW<CompositeVector>("constant", Tags::DEFAULT, "my_password").PutScalar(2.0);
+    S->GetW<CompositeVector>("linear", Tags::DEFAULT, "my_password").PutScalar(0.0);
 
-    (*S->GetW<CV>("multi_dof", Tags::DEFAULT, "state").ViewComponent("cell"))(0)->PutScalar(0.0);
-    (*S->GetW<CV>("multi_dof", Tags::DEFAULT, "state").ViewComponent("cell"))(1)->PutScalar(1.0);
-    (*S->GetW<CV>("multi_dof", Tags::DEFAULT, "state").ViewComponent("cell"))(2)->PutScalar(2.0);
+    (*S->GetW<CV>("multi_dof", Tags::DEFAULT, "my_password").ViewComponent("cell"))(0)->PutScalar(0.0);
+    (*S->GetW<CV>("multi_dof", Tags::DEFAULT, "my_password").ViewComponent("cell"))(1)->PutScalar(1.0);
+    (*S->GetW<CV>("multi_dof", Tags::DEFAULT, "my_password").ViewComponent("cell"))(2)->PutScalar(2.0);
 
     auto mesh = S->GetMesh("domain");
-    Epetra_MultiVector& flux_f = *S->GetW<CV>("flux", Tags::DEFAULT, "state")
+    Epetra_MultiVector& flux_f = *S->GetW<CV>("flux", Tags::DEFAULT, "my_password")
       .ViewComponent("face");
     AmanziGeometry::Point plus_xz(1.0, 0.0, 1.0);
 
@@ -134,7 +134,7 @@ struct obs_test {
       flux_f[0][f] = mesh->face_normal(f) * plus_xz;
     }
 
-    Epetra_MultiVector& id_c = *S->GetW<CV>("id", Tags::DEFAULT, "state").ViewComponent("cell");
+    Epetra_MultiVector& id_c = *S->GetW<CV>("id", Tags::DEFAULT, "my_password").ViewComponent("cell");
     auto& cell_map = S->GetMesh("domain")->map(AmanziMesh::CELL, false);
 
     for (int c = 0; c != id_c.MyLength(); ++c) {
@@ -144,7 +144,7 @@ struct obs_test {
 
   void advance(double dt) {
     S->advance_time(dt);
-    S->GetW<CV>("linear", Tags::DEFAULT, "state").PutScalar(S->get_time() * 0.1);
+    S->GetW<CV>("linear", Tags::DEFAULT, "my_password").PutScalar(S->get_time() * 0.1);
     S->advance_cycle();
   }
 
@@ -183,7 +183,7 @@ struct obs_domain_set_test : public obs_test {
     }
 
     for (auto& ds : *domain_set) {
-      S->Require<CompositeVector,CompositeVectorSpace>(Keys::getKey(ds,"variable"), Tags::DEFAULT, "state")
+      S->Require<CompositeVector,CompositeVectorSpace>(Keys::getKey(ds,"variable"), Tags::DEFAULT, "my_password")
         .SetMesh(S->GetMesh(ds))->SetComponent("cell", AmanziMesh::CELL, 1);
     }
   }
@@ -193,7 +193,7 @@ struct obs_domain_set_test : public obs_test {
     auto ds = S->GetDomainSet("column");
     for (auto& dname : *ds) {
       int index = Keys::getDomainSetIndex<int>(dname);
-      S->GetW<CompositeVector>(Keys::getKey(dname,"variable"),Tags::DEFAULT, "state")
+      S->GetW<CompositeVector>(Keys::getKey(dname,"variable"),Tags::DEFAULT, "my_password")
         .PutScalar(index);
     }
   }
