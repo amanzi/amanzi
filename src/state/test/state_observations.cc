@@ -191,7 +191,7 @@ struct obs_domain_set_test : public obs_test {
     auto ds = S->GetDomainSet("column");
     for (auto& dname : *ds) {
       int index = Keys::getDomainSetIndex<int>(dname);
-      S->Get<CompositeVector>(Keys::getKey(dname,"variable"),Tags::DEFAULT,"state")
+      S->GetW<CompositeVector>(Keys::getKey(dname,"variable"),Tags::DEFAULT,"state")
         .PutScalar(index);
     }
   }

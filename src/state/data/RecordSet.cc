@@ -77,7 +77,7 @@ Record& RecordSet::RequireRecord(const Tag& tag, const Key& owner) {
     records_.emplace(tag, std::make_unique<Record>(fieldname(), owner));
     auto& r = records_.at(tag);
     if (!tag.get().empty()) {
-      r->set_vis_fieldname(vis_fieldname() + std::string("_") + tag.get());
+      r->set_vis_fieldname(Keys::getKey(vis_fieldname(), tag));
     }
     return *r;
   } else {

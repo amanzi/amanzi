@@ -519,6 +519,9 @@ class State {
   Teuchos::RCP<AmanziMesh::Mesh> GetMesh_(const Key& key) const;
   Teuchos::RCP<const Functions::MeshPartition> GetMeshPartition_(Key);
 
+  // a hook to allow debuggers to connect
+  void CheckIsDebugEval_(const Key& key);
+
  private:
   Teuchos::RCP<VerboseObject> vo_;
 

@@ -13,10 +13,21 @@
 
 namespace Amanzi {
 
+
+void EvaluatorCellVolume::EnsureCompatibility(State& S)
+{
+  EvaluatorIndependent<CompositeVector,CompositeVectorSpace>::EnsureCompatibility(S);
+  Key domain = Keys::getDomain(my_key_);
+  S.Require<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_)
+    .SetMesh(S.GetMesh(domain))->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
+}
+
+
 // ---------------------------------------------------------------------------
 // Does the actual work to update the value in the state.
 // ---------------------------------------------------------------------------
-void EvaluatorCellVolume::Update_(State& S) {
+void EvaluatorCellVolume::Update_(State& S)
+{
   auto& vec = S.GetW<CompositeVector>(my_key_, my_tag_, my_key_);
   for (const auto& comp : vec) {
     if (comp == "cell") {

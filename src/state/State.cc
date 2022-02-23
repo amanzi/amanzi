@@ -279,6 +279,8 @@ bool State::HasDerivative(const Key& key, const Key& wrt_key) const {
 // -----------------------------------------------------------------------------
 Evaluator& State::RequireEvaluator(const Key& key, const Tag& tag)
 {
+  CheckIsDebugEval_(key);
+
   // does it already exist?
   if (HasEvaluator(key, tag)) {
     return GetEvaluator(key, tag);
@@ -451,11 +453,9 @@ State::GetModelParameters(std::string modelname)
 void State::Setup()
 {
   Require<double>("time", Tags::DEFAULT, "time");
-  Require<double>("time", Tags::NEXT, "time");
   GetRecordSetW("time").initializeTags();
 
   Require<int>("cycle", Tags::DEFAULT, "cycle");
-  Require<int>("cycle", Tags::NEXT, "cycle");
   GetRecordSetW("cycle").initializeTags();
 
   Require<double>("dt", Tags::DEFAULT, "dt");
