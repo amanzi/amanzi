@@ -56,6 +56,9 @@ class PK_MPC : virtual public PK {
   // -- calls all sub-PK initialize() methods
   virtual void Initialize();
 
+  // -- set tags for integration period
+  virtual void set_tags(const Tag& current, const Tag& next);
+
   // -- loops over sub-PKs
   virtual void CommitStep(double t_old, double t_new, const Tag& tag);
   virtual void CalculateDiagnostics(const Tag& tag);
@@ -161,6 +164,17 @@ void PK_MPC<PK_Base>::Initialize() {
   for (typename SubPKList::iterator pk = sub_pks_.begin(); pk != sub_pks_.end(); ++pk) {
     (*pk)->Initialize();
   }
+}
+
+
+// -----------------------------------------------------------------------------
+// Propagate tags to sub-PKs
+// -----------------------------------------------------------------------------
+template <class PK_Base>
+void PK_MPC<PK_Base>::set_tags(const Tag& current, const Tag& next)
+{
+  PK::set_tags(current, next);
+  for (auto& pk : sub_pks_) pk->set_tags(current, next);
 }
 
 

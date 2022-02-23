@@ -1,6 +1,6 @@
 /*
 
-  Copyright 2010-201x held jointly by LANS/LANL, ORNL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by LANS/LANL, ORNL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -89,6 +89,8 @@ struct obs_test {
     Teuchos::RCP<AmanziMesh::Mesh> mesh = meshfactory.create(-1,-1,-1,1,1,1,3,3,3);
 
     Teuchos::ParameterList state_list("state");
+    state_list.sublist("verbose object")
+        .set<std::string>("verbosity level", "extreme");
 
     S = Teuchos::rcp(new State(state_list));
     S->RegisterMesh("domain", mesh);
@@ -181,7 +183,7 @@ struct obs_domain_set_test : public obs_test {
     }
 
     for (auto& ds : *domain_set) {
-      S->Require<CompositeVector,CompositeVectorSpace>(Keys::getKey(ds,"variable"), Tags::DEFAULT)
+      S->Require<CompositeVector,CompositeVectorSpace>(Keys::getKey(ds,"variable"), Tags::DEFAULT, "state")
         .SetMesh(S->GetMesh(ds))->SetComponent("cell", AmanziMesh::CELL, 1);
     }
   }
@@ -191,7 +193,7 @@ struct obs_domain_set_test : public obs_test {
     auto ds = S->GetDomainSet("column");
     for (auto& dname : *ds) {
       int index = Keys::getDomainSetIndex<int>(dname);
-      S->GetW<CompositeVector>(Keys::getKey(dname,"variable"),Tags::DEFAULT,"state")
+      S->GetW<CompositeVector>(Keys::getKey(dname,"variable"),Tags::DEFAULT, "state")
         .PutScalar(index);
     }
   }

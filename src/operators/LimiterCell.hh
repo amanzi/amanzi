@@ -23,20 +23,15 @@
 #include <functional>
 #include <vector>
 
-#include "Epetra_IntVector.h"
 #include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 
 #include "BCs.hh"
 #include "CompositeVector.hh"
-#include "DenseMatrix.hh"
-#include "DenseVector.hh"
-#include "DG_Modal.hh"
 #include "Mesh.hh"
 #include "Point.hh"
 
 #include "Reconstruction.hh"
-
 
 namespace Amanzi {
 namespace Operators {
@@ -71,19 +66,6 @@ class LimiterCell {
 
   // -- apply external limiter 
   void ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter);
-
-  // limited dG solution 
-  // -- apply limiter in spcified cells
-  void ApplyLimiterDG(Teuchos::RCP<const Epetra_MultiVector> field, const WhetStone::DG_Modal& dg,
-                      const std::vector<int>& bc_model, const std::vector<double>& bc_value) {
-    AmanziMesh::Entity_ID_List ids(ncells_owned_);
-    for (int c = 0; c < ncells_owned_; ++c) ids[c] = c;
-    ApplyLimiterDG(ids, field, dg, bc_model, bc_value); 
-  }
-
-  void ApplyLimiterDG(const AmanziMesh::Entity_ID_List& ids,
-                      Teuchos::RCP<const Epetra_MultiVector> field, const WhetStone::DG_Modal& dg,
-                      const std::vector<int>& bc_model, const std::vector<double>& bc_value);
 
   // bounds for FV fields: if reset=true they are recalculated 
   Teuchos::RCP<CompositeVector> BoundsForCells(
@@ -120,10 +102,6 @@ class LimiterCell {
       const std::vector<int>& bc_model, const std::vector<double>& bc_value,
       Teuchos::RCP<Epetra_Vector> limiter, double (*)(double));
 
-  void LimiterScalarDG_(
-      const WhetStone::DG_Modal& dg, const AmanziMesh::Entity_ID_List& ids,
-      const std::vector<int>& bc_model, const std::vector<double>& bc_value, double (*)(double));
-
   void LimiterTensorial_(
       const AmanziMesh::Entity_ID_List& ids,
       const std::vector<int>& bc_model, const std::vector<double>& bc_value);
@@ -131,11 +109,6 @@ class LimiterCell {
   void LimiterKuzmin_(
       const AmanziMesh::Entity_ID_List& ids,
       const std::vector<int>& bc_model, const std::vector<double>& bc_value);
-
-  // hierarchical limiters
-  void LimiterHierarchicalDG_(
-      const WhetStone::DG_Modal& dg, const AmanziMesh::Entity_ID_List& ids,
-      const std::vector<int>& bc_model, const std::vector<double>& bc_value, double (*)(double));
 
   // supprting routines for limiters
   void LimiterKuzminCell_(int cell,
@@ -160,7 +133,7 @@ class LimiterCell {
   void LimiterExtensionTransportKuzmin_(
       const std::vector<double>& field_local_min, const std::vector<double>& field_local_max);
 
- private:
+ protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim;
   int ncells_owned_, nfaces_owned_, nedges_owned_, nnodes_owned_;

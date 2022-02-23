@@ -29,7 +29,7 @@ PK_MPCSubcycled::PK_MPCSubcycled(Teuchos::ParameterList& pk_tree,
 
   // Master PK is the PK whose time step size sets the size, the slave is subcycled.
   master_ = my_list_->get<int>("master PK index", 0);
-  slave_ = master_ == 1 ? 0 : 1;
+  slave_ = (master_ == 1) ? 0 : 1;
 
   if (sub_pks_.size() != 2) {
     Errors::Message message("PK_MPCSubcycled: only MPCs with two sub-PKs can currently be subcycled.");

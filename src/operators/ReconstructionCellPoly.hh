@@ -61,7 +61,7 @@ class ReconstructionCellPoly : public Reconstruction {
   // -- calculate value, deviation from mean, and full polynomial
   virtual double getValue(int c, const AmanziGeometry::Point& p) override;
   virtual double getValueSlope(int c, const AmanziGeometry::Point& p) override;
-  virtual WhetStone::Polynomial getPolynomial(int c) override;
+  virtual WhetStone::Polynomial getPolynomial(int c) const override;
 
   // -- access returns full polynomial, including the mean value
   virtual Teuchos::RCP<CompositeVector> data() override { return poly_; }
@@ -89,9 +89,8 @@ class ReconstructionCellPoly : public Reconstruction {
 
  private:
   int d_, degree_;
-  Teuchos::RCP<CompositeVector> poly_;
-  Teuchos::RCP<Epetra_MultiVector> poly_c_;
-  std::vector<std::vector<double> > ortho_;
+  Teuchos::RCP<CompositeVector> poly_, ortho_;
+  Teuchos::RCP<Epetra_MultiVector> poly_c_, ortho_c_;
 };
 
 }  // namespace Operators

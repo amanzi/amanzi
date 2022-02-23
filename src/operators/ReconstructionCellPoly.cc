@@ -35,16 +35,16 @@ void ReconstructionCellPoly::Init(Teuchos::ParameterList& plist)
 {
   d_ = mesh_->space_dimension();
 
-  CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh_);
-  cvs.SetGhosted(true);
-  cvs.SetComponent("cell", AmanziMesh::CELL, d_ * (d_ + 1) / 2 + d_);
+  CompositeVectorSpace cvs, cvs2;
+  cvs.SetMesh(mesh_)->SetGhosted(true)
+    ->SetComponent("cell", AmanziMesh::CELL, d_ * (d_ + 1) / 2 + d_);
 
   poly_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
-  poly_c_ = poly_->ViewComponent("cell");
+  poly_c_ = poly_->ViewComponent("cell", true);
 
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  ortho_.resize(ncells);
+  cvs2.SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 3);
+  ortho_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs2, true));
+  ortho_c_ = ortho_->ViewComponent("cell", true);
 
   // process other parameters
   degree_ = plist.get<int>("polynomial order", 0);
@@ -86,12 +86,11 @@ void ReconstructionCellPoly::Compute(
     CellAllAdjCells_(c, AmanziMesh::Parallel_type::ALL, cells);
 
     // compute othogonality coefficients
-    ortho_[c].clear();
     int n(0);
     for (int i = 0; i < d_; ++i) {
       for (int j = i; j < d_; ++j, ++n) {
         quad(2, n) = 1.0;
-        ortho_[c].push_back(numi.IntegrateFunctionsTriangulatedCell(c, funcs, 2) / vol);
+        (*ortho_c_)[n][c] = numi.IntegrateFunctionsTriangulatedCell(c, funcs, 2) / vol;
         quad(2, n) = 0.0;
       }
     }
@@ -112,7 +111,7 @@ void ReconstructionCellPoly::Compute(
       int n(0);
       for (int i = 0; i < d_; ++i) {
         for (int j = i; j < d_; ++j, ++n) {
-          quad(0) = -ortho_[c][n];
+          quad(0) = -(*ortho_c_)[n][c];
           quad(2, n) = 1.0;
           coef(d_ + n) = numi.IntegrateFunctionsTriangulatedCell(c1, funcs, 2) / vol1;
           quad(2, n) = 0.0;
@@ -142,7 +141,7 @@ void ReconstructionCellPoly::Compute(
           // -- Hessian terms
           int n(0);
           for (int i = 0; i < d_; ++i) {
-            for (int j = i; j < d_; ++j, ++n) coef(d_ + n) = xcc[i] * xcc[j] - ortho_[c][n];
+            for (int j = i; j < d_; ++j, ++n) coef(d_ + n) = xcc[i] * xcc[j] - (*ortho_c_)[n][c];
           }
 
           double value = bc_value[f] - (*field_)[component_][c];
@@ -171,7 +170,8 @@ void ReconstructionCellPoly::Compute(
     for (int i = 0; i < npoly; i++) poly[i][c] = rhs(i);
   }
 
-  poly_->ScatterMasterToGhosted("cell");
+  poly_->ScatterMasterToGhosted();
+  ortho_->ScatterMasterToGhosted();
 }
 
 
@@ -248,7 +248,7 @@ double ReconstructionCellPoly::getValue(int c, const AmanziGeometry::Point& p)
   int n(0);
   for (int i = 0; i < d_; ++i) {
     for (int j = i; j < d_; ++j, ++n) {
-      value += (*poly_c_)[d_ + n][c] * (xcc[i] * xcc[j] - ortho_[c][n]);
+      value += (*poly_c_)[d_ + n][c] * (xcc[i] * xcc[j] - (*ortho_c_)[n][c]);
     }
   }
 
@@ -269,7 +269,7 @@ double ReconstructionCellPoly::getValueSlope(int c, const AmanziGeometry::Point&
   int n(0);
   for (int i = 0; i < d_; ++i) {
     for (int j = i; j < d_; ++j, ++n) {
-      value += (*poly_c_)[d_ + n][c] * (xcc[i] * xcc[j] - ortho_[c][n]);
+      value += (*poly_c_)[d_ + n][c] * (xcc[i] * xcc[j] - (*ortho_c_)[n][c]);
     }
   }
 
@@ -280,7 +280,7 @@ double ReconstructionCellPoly::getValueSlope(int c, const AmanziGeometry::Point&
 /* ******************************************************************
 * Returns full polynomial
 ****************************************************************** */
-WhetStone::Polynomial ReconstructionCellPoly::getPolynomial(int c) 
+WhetStone::Polynomial ReconstructionCellPoly::getPolynomial(int c) const
 {
   WhetStone::Polynomial tmp(d_, 2);
   tmp(0) = (*field_)[0][c];
@@ -290,7 +290,7 @@ WhetStone::Polynomial ReconstructionCellPoly::getPolynomial(int c)
   for (int i = 0; i < d_; ++i) {
     for (int j = i; j < d_; ++j, ++n) {
       tmp(d_ + n + 1) = (*poly_c_)[d_ + n][c];
-      tmp(0) -= (*poly_c_)[d_ + n][c] * ortho_[c][n];
+      tmp(0) -= (*poly_c_)[d_ + n][c] * (*ortho_c_)[n][c];
     }
   }
 

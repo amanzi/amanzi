@@ -37,7 +37,7 @@
 #include "WhetStoneDefs.hh"
 
 // Operators
-#include "LimiterCell.hh"
+#include "LimiterCellDG.hh"
 #include "OperatorDefs.hh"
 #include "PDE_Abstract.hh"
 #include "PDE_AdvectionRiemann.hh"
@@ -626,7 +626,7 @@ void AdvectionFn<Analytic>::ApplyLimiter(std::string& name, CompositeVector& u)
   plist.set<int>("limiter points", 3);
 
   // limit gradient and save it to solution
-  Operators::LimiterCell limiter(mesh_);
+  Operators::LimiterCellDG limiter(mesh_);
   limiter.Init(plist);
 
   u.ScatterMasterToGhosted();

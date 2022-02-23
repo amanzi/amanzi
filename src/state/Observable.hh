@@ -99,8 +99,8 @@ to disk by the UnstructuredObservation_ object.
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 
-#include "Key.hh"
 #include "AmanziTypes.hh"
+#include "Key.hh"
 #include "Point.hh"
 #include "MeshDefs.hh"
 #include "IOEvent.hh"

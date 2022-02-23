@@ -226,6 +226,7 @@ void CycleDriver::Setup() {
   }
 
   pk_->Setup();
+  pk_->set_tags(Tags::CURRENT, Tags::NEXT);
   S_->Require<double>("dt", Tags::DEFAULT, "dt");
   S_->Setup();
 
@@ -271,6 +272,11 @@ void CycleDriver::Initialize() {
   S_->GetW<double>("dt", Tags::DEFAULT, "dt") = tp_dt_[0];
   S_->GetRecordW("dt", "dt").set_initialized();
 
+  if (S_->HasData<double>("dt", Tags::NEXT)) {
+    S_->GetW<double>("dt", Tags::NEXT, "dt") = tp_dt_[0];
+    S_->GetRecordW("dt", Tags::NEXT, "dt").set_initialized();
+  }
+
   // Initialize the state (initializes all dependent variables).
   S_->InitializeFields();
   S_->InitializeEvaluators();
@@ -283,7 +289,6 @@ void CycleDriver::Initialize() {
   S_->InitializeIOFlags(); 
 
   // commit the initial conditions.
-  // pk_->CommitStep(t0_-get_dt(), get_dt());
   if (!restart_requested_) {
     pk_->CommitStep(S_->get_time(), S_->get_time(), Tags::DEFAULT);
   }
@@ -367,14 +372,16 @@ void CycleDriver::ReportMemory() {
   comm_->MinAll(&doubles_count,&min_doubles_count,1);
   comm_->MaxAll(&doubles_count,&max_doubles_count,1);
 
-  Teuchos::OSTab tab = vo_->getOSTab();
-  *vo_->os() << "Doubles allocated in state fields " << std::endl;
-  *vo_->os() << "  Maximum per core:   " << std::setw(7)
-             << max_doubles_count*8/1024/1024 << " MBytes" << std::endl;
-  *vo_->os() << "  Minimum per core:   " << std::setw(7)
-             << min_doubles_count*8/1024/1024 << " MBytes" << std::endl; 
-  *vo_->os() << "  Total:              " << std::setw(7)
-             << global_doubles_count*8/1024/1024 << " MBytes" << std::endl;
+  if (vo_->os_OK(Teuchos::VERB_LOW)) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "Doubles allocated in state fields " << std::endl;
+    *vo_->os() << "  Maximum per core:   " << std::setw(7)
+               << max_doubles_count*8/1024/1024 << " MBytes" << std::endl;
+    *vo_->os() << "  Minimum per core:   " << std::setw(7)
+               << min_doubles_count*8/1024/1024 << " MBytes" << std::endl; 
+    *vo_->os() << "  Total:              " << std::setw(7)
+               << global_doubles_count*8/1024/1024 << " MBytes" << std::endl;
+  }
 }
 
 
@@ -586,11 +593,11 @@ double CycleDriver::Advance(double dt) {
       reinit = true;
     }      
 
-    fail = pk_->AdvanceStep(S_->get_time(), S_->get_time()+dt, reinit);
+    fail = pk_->AdvanceStep(S_->get_time(), S_->get_time() + dt, reinit);
   }
 
   if (!fail) {
-    pk_->CommitStep(S_->last_time(), S_->get_time(), Tags::DEFAULT);
+    pk_->CommitStep(S_->get_time(), S_->get_time() + dt, Tags::DEFAULT);
     // advance the iteration count and timestep size
     if (advance) {
       S_->advance_cycle();
@@ -704,8 +711,10 @@ void CycleDriver::WriteCheckpoint(double dt, bool force) {
 
     checkpoint_->Write(*S_, dt, final, &observations_data_);
     
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "writing checkpoint file" << std::endl;
+    if (vo_->os_OK(Teuchos::VERB_LOW)) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "writing checkpoint file" << std::endl;
+    }
   }
 }
 
@@ -815,7 +824,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
   // enfoce consistent physics after initialization
   // this is optional but helps with statistics
   S_->GetW<double>("dt", Tags::DEFAULT, "dt") = dt;
-  S_->GetRecordW("dt", "dt").set_initialized();
+  S_->GetRecordW("dt", Tags::DEFAULT, "dt").set_initialized();
 
   S_->InitializeEvaluators();
   S_->CheckAllFieldsInitialized();
@@ -946,6 +955,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
 
   // Setup
   pk_->Setup();
+  pk_->set_tags(Tags::CURRENT, Tags::NEXT);
 
   S_->Require<double>("dt", Tags::DEFAULT, "dt");
   S_->Setup();

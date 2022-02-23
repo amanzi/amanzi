@@ -67,7 +67,7 @@ class ReconstructionCellGrad : public Reconstruction {
   // -- calculate value, deviation from mean, and full polynomial
   virtual double getValue(int c, const AmanziGeometry::Point& p) override;
   virtual double getValueSlope(int c, const AmanziGeometry::Point& p) override;
-  virtual WhetStone::Polynomial getPolynomial(int c) override;
+  virtual WhetStone::Polynomial getPolynomial(int c) const override;
 
   // -- access returns gradient, i.e. no mean value
   virtual Teuchos::RCP<CompositeVector> data() override { return gradient_; }

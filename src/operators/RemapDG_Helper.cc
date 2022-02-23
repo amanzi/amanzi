@@ -62,7 +62,7 @@ RemapDG_Helper::RemapDG_Helper(
 
   if (is_limiter_) {
     smoothness_ = limlist.template get<std::string>("smoothness indicator", "none");
-    limiter_ = Teuchos::rcp(new LimiterCell(mesh0_));
+    limiter_ = Teuchos::rcp(new LimiterCellDG(mesh0_));
     limiter_->Init(limlist);
   }
 

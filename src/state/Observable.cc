@@ -1,5 +1,5 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-202x held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
@@ -130,7 +130,7 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
   // that a non-evaluator based observation must already have been created by
   // PKs by now, because PK->Setup() has already been run.
   if (!S->HasRecord(variable_, tag_)) {
-    // not yet created, require the eval
+    // not yet created, require evaluator
     S->RequireEvaluator(variable_, tag_);
     has_eval_ = true;
   } else {
@@ -231,17 +231,15 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
   if (has_eval_)
     S->GetEvaluator(variable_, tag_).Update(*S, "observation");
 
-  const auto& record = S->GetRecord(variable_, tag_);
-  if (record.ValidType<double>()) {
-    // scalars, just return the value
-    data[start_loc] = 
+  bool has_record = S->HasRecord(variable_, tag_);
+  if (has_record && S->GetRecord(variable_, tag_).ValidType<double>()) {
     // scalars, just return the value
     value[0] = record.Get<double>();
     value[1] = 1;
 
-  } else if (record.ValidType<CompositeVector>()) {
+  } else if (has_record && S->GetRecord(variable_, tag_).ValidType<CompositeVector>()) {
     // vector field
-    const CompositeVector& vec = record.Get<CompositeVector>();
+    const auto& vec = S->GetRecord(variable_, tag_).Get<CompositeVector>();
     AMANZI_ASSERT(vec.HasComponent(location_));
 
     // get the region
@@ -249,16 +247,6 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
     AmanziMesh::Entity_ID_List ids;
 
     vec.Mesh()->get_set_entities(region_, entity, AmanziMesh::Parallel_type::OWNED, &ids);
-
-    std::vector<double> value;
-    if (functional_ == "minimum") {
-      value.resize(get_num_vectors() + 1, 1.e20);
-    } else if (functional_ == "maximum") {
-      value.resize(get_num_vectors() + 1, -1.e20);
-    } else {
-      value.resize(get_num_vectors() + 1, 0.);
-    }
-
     const Epetra_MultiVector& subvec = *vec.ViewComponent(location_, false);
 
     if (entity == AmanziMesh::CELL) {

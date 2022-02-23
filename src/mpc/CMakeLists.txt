@@ -254,4 +254,11 @@ if (BUILD_TESTS)
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
 
+    # Test: default MPCs
+    add_amanzi_test(mpc_default mpc_default
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_default.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
+
 endif()

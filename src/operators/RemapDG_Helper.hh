@@ -48,7 +48,7 @@
 #include "WhetStoneDefs.hh"
 
 // Amanzi::Operators
-#include "LimiterCell.hh"
+#include "LimiterCellDG.hh"
 #include "OperatorDefs.hh"
 #include "PDE_Abstract.hh"
 #include "PDE_AdvectionRiemann.hh"
@@ -77,7 +77,7 @@ class RemapDG_Helper {
   void ApplyLimiter(double t, CompositeVector& u); 
 
   // access
-  Teuchos::RCP<LimiterCell> limiter() { return limiter_; }
+  Teuchos::RCP<LimiterCellDG> limiter() { return limiter_; }
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh0_;
@@ -101,7 +101,7 @@ class RemapDG_Helper {
 
   // shock inticators and limiters
   std::string smoothness_;
-  Teuchos::RCP<LimiterCell> limiter_;
+  Teuchos::RCP<LimiterCellDG> limiter_;
 
   // intermediate non-conservative quantity
   Teuchos::RCP<CompositeVector> field_;

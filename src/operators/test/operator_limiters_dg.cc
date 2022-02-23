@@ -32,7 +32,7 @@
 // Amanzi::Operators
 #include "AnalyticDG08b.hh"
 #include "ErrorAnalysis.hh"
-#include "LimiterCell.hh"
+#include "LimiterCellDG.hh"
 #include "OperatorDefs.hh"
 #include "ReconstructionCellGrad.hh"
 
@@ -277,7 +277,7 @@ void RunTestGaussPoints(const std::string& limiter_name)
   }
 
   // Apply limiter
-  LimiterCell limiter(mesh);
+  LimiterCellDG limiter(mesh);
   limiter.Init(plist);
   limiter.ApplyLimiterDG(field_c, dg, bc_model, bc_value);
 
