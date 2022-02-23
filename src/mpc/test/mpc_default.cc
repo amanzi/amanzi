@@ -180,10 +180,8 @@ void ImplicitPK::Setup()
   my_group_ = (int) id0_ / n;
   my_field_ = "field_group_" + std::to_string(my_group_);
 
-  tag_current_ = Tag("");
-  tag_next_ = Tag("next");
-
-  S_->Require<double>("dt", tag_next_, "dt");
+  tag_current_ = Tags::CURRENT;
+  tag_next_ = Tags::NEXT;
 
   int ngroups = NEQN / n;
   for (int i = 0; i < ngroups; ++i) {
@@ -206,8 +204,7 @@ void ImplicitPK::Setup()
 **************************************************************** */
 void ImplicitPK::Initialize()
 {
-  dt_ = S_->Get<double>("dt", tag_current_);
-  S_->GetW<double>("dt", tag_next_, "dt") = dt_;
+  dt_ = S_->Get<double>("dt", tag_next_);
 
   auto solution = S_->GetPtrW<CV_t>(my_field_, tag_next_, "state");
   soln_->SetData(solution); 
@@ -387,7 +384,6 @@ double RunTest(int test, double dt) {
   S->RegisterMesh("domain", mesh);
 
   S->Require<double>("time", Tags::CURRENT, "time");
-  S->Require<double>("time", Tags::NEXT, "time");
 
   // allow CD to drive initialization
   plist->sublist("cycle driver").sublist("time periods").sublist("TP 0").sublist("PK tree") =

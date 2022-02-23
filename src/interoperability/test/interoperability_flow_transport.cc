@@ -45,6 +45,9 @@ class ATS_Richards : public Richards {
     auto owner = S_->GetRecord("saturation_liquid", Tags::DEFAULT).owner();
     S_->GetRecordW("saturation_liquid", Tags::DEFAULT, owner).set_owner("saturation_liquid");
     S_->RequireEvaluator("saturation_liquid", Tags::DEFAULT); 
+
+    S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "coordinator");
+    S_->Require<Amanzi::AmanziGeometry::Point>("gravity", Tags::DEFAULT, "coordinator");
   }
 
   virtual void Initialize() override {
@@ -62,10 +65,10 @@ class ATS_Richards : public Richards {
   }
 
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override {
-    Richards::CommitStep(t_old, t_new, tag);
+    Richards::CommitStep(t_old, t_new, Tags::NEXT);
 
-    S_->GetW<CompositeVector>("darcy_flux", Tags::DEFAULT, "state") = 
-      S_->Get<CompositeVector>("darcy_flux", Tags::NEXT);
+    S_->GetW<CompositeVector>("darcy_flux", Tags::DEFAULT, "state") =
+      S_->Get<CompositeVector>("water_flux", Tags::NEXT);
   }
 
   virtual void CalculateDiagnostics(const Tag& tag) override {

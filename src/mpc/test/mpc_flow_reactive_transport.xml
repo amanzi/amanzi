@@ -296,6 +296,9 @@
   </ParameterList>
 
   <ParameterList name="state">
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="extreme"/>
+    </ParameterList>
     <ParameterList name="evaluators">
       <ParameterList name="viscosity_liquid">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
@@ -793,7 +796,7 @@
     <ParameterList name="OBS-4">
       <Parameter name="region" type="string" value="Soil_1"/>
       <Parameter name="functional" type="string" value="observation data: point"/>
-      <Parameter name="variable" type="string" value="Na+ gaseous concentration"/>
+      <Parameter name="variable" type="string" value="Na+ aqueous concentration"/>
       <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1, -1}" />
     </ParameterList>
     <ParameterList name="OBS-5">

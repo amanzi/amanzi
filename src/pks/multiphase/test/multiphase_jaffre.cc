@@ -122,7 +122,7 @@ void run_test(const std::string& domain, const std::string& filename)
       const auto& u3 = *S->Get<CompositeVector>("molar_density_gas").ViewComponent("cell");
 
       io->WriteVector(*u0(0), "pressure", AmanziMesh::CELL);
-      io->WriteVector(*u1(0), "saturation", AmanziMesh::CELL);
+      io->WriteVector(*u1(0), "saturation_liquid", AmanziMesh::CELL);
       io->WriteVector(*u2(0), "liquid hydrogen", AmanziMesh::CELL);
       io->WriteVector(*u3(0), "gas hydrogen", AmanziMesh::CELL);
       io->FinalizeCycle();

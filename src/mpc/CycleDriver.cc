@@ -227,7 +227,7 @@ void CycleDriver::Setup() {
 
   pk_->Setup();
   pk_->set_tags(Tags::CURRENT, Tags::NEXT);
-  S_->Require<double>("dt", Tags::DEFAULT, "dt");
+  S_->Require<double>("dt", Tags::NEXT, "dt");
   S_->Setup();
 
   // create the time step manager
@@ -271,11 +271,6 @@ void CycleDriver::Initialize() {
  
   S_->GetW<double>("dt", Tags::DEFAULT, "dt") = tp_dt_[0];
   S_->GetRecordW("dt", "dt").set_initialized();
-
-  if (S_->HasData<double>("dt", Tags::NEXT)) {
-    S_->GetW<double>("dt", Tags::NEXT, "dt") = tp_dt_[0];
-    S_->GetRecordW("dt", Tags::NEXT, "dt").set_initialized();
-  }
 
   // Initialize the state (initializes all dependent variables).
   S_->InitializeFields();
@@ -823,8 +818,8 @@ Teuchos::RCP<State> CycleDriver::Go() {
 
   // enfoce consistent physics after initialization
   // this is optional but helps with statistics
-  S_->GetW<double>("dt", Tags::DEFAULT, "dt") = dt;
-  S_->GetRecordW("dt", Tags::DEFAULT, "dt").set_initialized();
+  S_->GetW<double>("dt", Tags::NEXT, "dt") = dt;
+  S_->GetRecordW("dt", Tags::NEXT, "dt").set_initialized();
 
   S_->InitializeEvaluators();
   S_->CheckAllFieldsInitialized();
@@ -957,15 +952,15 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   pk_->Setup();
   pk_->set_tags(Tags::CURRENT, Tags::NEXT);
 
-  S_->Require<double>("dt", Tags::DEFAULT, "dt");
+  S_->Require<double>("dt", Tags::NEXT, "dt");
   S_->Setup();
 
   S_->set_cycle(S_old_->get_cycle());
   S_->set_time(tp_start_[time_pr_id]); 
   S_->set_position(TIME_PERIOD_START);
 
-  S_->GetW<double>("dt", Tags::DEFAULT, "dt") = tp_dt_[time_pr_id];
-  S_->GetRecordW("dt", Tags::DEFAULT, "dt").set_initialized();
+  S_->GetW<double>("dt", Tags::NEXT, "dt") = tp_dt_[time_pr_id];
+  S_->GetRecordW("dt", Tags::NEXT, "dt").set_initialized();
 
   // Initialize
   S_->InitializeFields();
