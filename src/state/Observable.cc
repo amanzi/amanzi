@@ -131,7 +131,6 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
   // PKs by now, because PK->Setup() has already been run.
   if (!S->HasRecord(variable_, tag_)) {
     // not yet created, require evaluator
-    S->Require<CompositeVector, CompositeVectorSpace>(variable_, tag_, "state");
     S->RequireEvaluator(variable_, tag_);
     has_eval_ = true;
   } else {
@@ -143,8 +142,6 @@ void Observable::Setup(const Teuchos::Ptr<State>& S)
       has_eval_ = false;
     }
   }
-
-  has_eval_ = S->HasEvaluator(variable_, tag_);
 
   // try to set requirements on the field, if they are not already set
   if (!S->HasRecord(variable_, tag_)) {
@@ -177,6 +174,7 @@ void Observable::FinalizeStructure(const Teuchos::Ptr<State>& S)
   // one last check that the structure is all set up and consistent
   if (has_data_ && num_vectors_ < 0) {
     const auto& field = S->Get<CompositeVector>(variable_, tag_);
+
     if (!field.HasComponent(location_)) {
       Errors::Message msg;
       msg << "Observable: \"" << name_ << "\" uses variable \""
@@ -247,6 +245,7 @@ void Observable::Update(const Teuchos::Ptr<State>& S,
     // get the region
     AmanziMesh::Entity_kind entity = AmanziMesh::entity_kind(location_);
     AmanziMesh::Entity_ID_List ids;
+
     vec.Mesh()->get_set_entities(region_, entity, AmanziMesh::Parallel_type::OWNED, &ids);
     const Epetra_MultiVector& subvec = *vec.ViewComponent(location_, false);
 

@@ -27,15 +27,21 @@ class EvaluatorCellVolume : public EvaluatorIndependent<CompositeVector,Composit
   using EvaluatorIndependent<CompositeVector,CompositeVectorSpace>::EvaluatorIndependent;
   EvaluatorCellVolume(const EvaluatorCellVolume &other) = default;
 
-  Teuchos::RCP<Evaluator> Clone() const {
+  Teuchos::RCP<Evaluator> Clone() const override {
     return Teuchos::rcp(new EvaluatorCellVolume(*this));
   }
 
  protected:
+
+  // ---------------------------------------------------------------------------
+  // Set the structure to CELL
+  // ---------------------------------------------------------------------------
+  virtual void EnsureCompatibility(State& S) override;
+
   // ---------------------------------------------------------------------------
   // Does the actual work to update the value in the state.
   // ---------------------------------------------------------------------------
-  virtual void Update_(State &S);
+  virtual void Update_(State &S) override;
 
  private:
   static Utils::RegisteredFactory<Evaluator, EvaluatorCellVolume> fac_;

@@ -279,6 +279,8 @@ bool State::HasDerivative(const Key& key, const Key& wrt_key) const {
 // -----------------------------------------------------------------------------
 Evaluator& State::RequireEvaluator(const Key& key, const Tag& tag)
 {
+  CheckIsDebugEval_(key);
+
   // does it already exist?
   if (HasEvaluator(key, tag)) {
     return GetEvaluator(key, tag);
@@ -451,11 +453,9 @@ State::GetModelParameters(std::string modelname)
 void State::Setup()
 {
   Require<double>("time", Tags::DEFAULT, "time");
-  Require<double>("time", Tags::NEXT, "time");
   GetRecordSetW("time").initializeTags();
 
   Require<int>("cycle", Tags::DEFAULT, "cycle");
-  Require<int>("cycle", Tags::NEXT, "cycle");
   GetRecordSetW("cycle").initializeTags();
 
   Require<double>("dt", Tags::DEFAULT, "dt");
@@ -829,9 +829,11 @@ State::GetEvaluatorList(const Key& key)
       }
     }
   }
+
   // return an empty new list
   return FEList().sublist(key);
 }
+
 
 bool
 State::HasEvaluatorList(const Key& key)
@@ -845,6 +847,22 @@ State::HasEvaluatorList(const Key& key)
     if (FEList().isSublist(lifted_key)) return true;
   }
   return false;
+}
+
+
+void State::CheckIsDebugEval_(const Key& key)
+{
+  // check for debugging.  This provides a line for setting breakpoints for
+  // debugging PK and Evaluator dependencies.
+#ifdef ENABLE_DBC
+  Teuchos::Array<Key> debug_evals = state_plist_.sublist("debug").get<Teuchos::Array<std::string>>("evaluators",
+          Teuchos::Array<Key>());
+  if (std::find(debug_evals.begin(), debug_evals.end(), key) != debug_evals.end()) {
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      *vo_->os() << "State: Evaluator for debug field \"" << key << "\" was required." << std::endl;
+    }
+  }
+#endif
 }
 
 }  // namespace Amanzi

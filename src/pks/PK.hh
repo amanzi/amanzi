@@ -96,7 +96,7 @@ class PK {
      const Teuchos::RCP<State>& S,
      const Teuchos::RCP<TreeVector>& solution)
     : name_(Keys::cleanPListName(pk_tree.name())),
-      tag_current_(Tags::DEFAULT),
+      tag_current_(Tags::CURRENT),
       tag_next_(Tags::NEXT),
       solution_(solution),
       S_(S)
