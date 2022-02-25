@@ -6,7 +6,7 @@
 #include "errors.hh"
 #include "VerboseObject_objs.hh"
 
-#include "UniqueHelpers.hh"
+#include <memory>
 #include "FunctionConstant.hh"
 #include "FunctionDistance.hh"
 #include "FunctionFactory.hh"

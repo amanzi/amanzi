@@ -13,11 +13,11 @@
 */
 
 #include <map>
+#include <memory>
 #include "boost/filesystem/operations.hpp"
 
 #include "UnstructuredObservations.hh"
 
-#include "UniqueHelpers.hh"
 #include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
