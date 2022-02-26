@@ -44,7 +44,6 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Data_Impl.hh"
-#include "UniqueHelpers.hh"
 
 namespace Amanzi {
 

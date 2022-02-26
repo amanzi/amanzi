@@ -12,8 +12,9 @@
   a data structure such as ownership, initialization, etc.
 */
 
+#include <memory>
+
 #include "RecordSet.hh"
-#include "UniqueHelpers.hh"
 #include "errors.hh"
 
 namespace Amanzi {
@@ -32,6 +33,7 @@ void RecordSet::WriteCheckpoint(const Checkpoint& chkp) const {
 void RecordSet::ReadCheckpoint(const Checkpoint& chkp) {
   for (auto& e : records_) {
     e.second->ReadCheckpoint(chkp);
+    e.second->set_initialized();
   }
 }
 bool RecordSet::Initialize(Teuchos::ParameterList& plist) {

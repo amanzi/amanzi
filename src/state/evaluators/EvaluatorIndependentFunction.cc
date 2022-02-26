@@ -11,9 +11,10 @@
   A field evaluator with no dependencies specified by a function.
 */
 
+#include <memory>
+
 #include "EvaluatorIndependentFunction.hh"
 #include "CompositeVectorFunctionFactory.hh"
-#include "UniqueHelpers.hh"
 
 namespace Amanzi {
 

@@ -46,6 +46,7 @@ class ATS_Richards : public Richards {
     S_->GetRecordW("saturation_liquid", Tags::DEFAULT, owner).set_owner("saturation_liquid");
     S_->RequireEvaluator("saturation_liquid", Tags::DEFAULT); 
 
+    S_->Require<double>("time", Tags::CURRENT, "time");
     S_->Require<double>("atmospheric_pressure", Tags::DEFAULT, "coordinator");
     S_->Require<Amanzi::AmanziGeometry::Point>("gravity", Tags::DEFAULT, "coordinator");
   }
@@ -57,11 +58,17 @@ class ATS_Richards : public Richards {
   }
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit) override {
-    S_->GetW<double>("time", Tags::DEFAULT, "time") = t_old;
+    S_->GetW<double>("time", Tags::CURRENT, "time") = t_old;
     S_->GetW<double>("time", Tags::NEXT, "time") = t_new;
-    WriteStateStatistics(*S_, *vo_);
+
+    S_->GetW<CompositeVector>("water_content", Tags::CURRENT, "flow") =
+      S_->Get<CompositeVector>("water_content", Tags::NEXT);
+
+    S_->GetW<CompositeVector>("saturation_liquid", Tags::CURRENT, "flow") =
+      S_->Get<CompositeVector>("saturation_liquid", Tags::NEXT);
 
     Richards::AdvanceStep(t_old, t_new, reinit);
+    // WriteStateStatistics(*S_, *vo_);
   }
 
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override {

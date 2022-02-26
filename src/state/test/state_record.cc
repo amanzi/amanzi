@@ -1,4 +1,5 @@
-#include "UniqueHelpers.hh"
+#include <memory>
+
 #include "UnitTest++.h"
 #include "data/RecordSet.hh"
 #include "errors.hh"

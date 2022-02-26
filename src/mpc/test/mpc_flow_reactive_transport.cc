@@ -81,7 +81,6 @@ using namespace Amanzi::AmanziGeometry;
       CHECK_CLOSE(tmp[k].value, -0.0002, 1.0e-5);
     }
   }
-exit(0);
 
   // restart simulation and compare results
   glist->sublist("cycle driver").sublist("restart").set<std::string>("file name", "chk_frt00005.h5");

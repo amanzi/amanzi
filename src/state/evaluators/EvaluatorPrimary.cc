@@ -11,9 +11,10 @@
   An evaluator with no dependencies solved for by a PK.
 */
 
+#include <memory>
+
 #include "EvaluatorPrimary.hh"
 #include "StateDefs.hh"
-#include "UniqueHelpers.hh"
 
 namespace Amanzi {
 
