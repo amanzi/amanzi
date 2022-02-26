@@ -68,7 +68,6 @@ class ATS_Richards : public Richards {
       S_->Get<CompositeVector>("saturation_liquid", Tags::NEXT);
 
     Richards::AdvanceStep(t_old, t_new, reinit);
-    // WriteStateStatistics(*S_, *vo_);
   }
 
   virtual void CommitStep(double t_old, double t_new, const Tag& tag) override {
@@ -76,6 +75,9 @@ class ATS_Richards : public Richards {
 
     S_->GetW<CompositeVector>("darcy_flux", Tags::DEFAULT, "state") =
       S_->Get<CompositeVector>("water_flux", Tags::NEXT);
+
+    // reset time as expected by Amanzi
+    S_->GetW<double>("time", Tags::NEXT, "time") = t_old;
   }
 
   virtual void CalculateDiagnostics(const Tag& tag) override {
