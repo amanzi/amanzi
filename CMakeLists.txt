@@ -9,7 +9,7 @@
 #(see SuperBuild/CMakeLists.txt)
 cmake_minimum_required(VERSION 3.13.3)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_CXX_EXTENSIONS OFF)
 set(ENABLE_SPACK_BUILD OFF CACHE BOOL "Enable Spack Build")

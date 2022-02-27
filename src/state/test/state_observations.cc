@@ -80,7 +80,9 @@ public:
     Teuchos::RCP<AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
 
-    AmanziMesh::MeshFactory meshfactory(comm,gm);
+    auto plist = Teuchos::rcp(new Teuchos::ParameterList("mesh factory"));
+    plist->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "zoltan_rcb");
+    AmanziMesh::MeshFactory meshfactory(comm,gm,plist);
     Teuchos::RCP<AmanziMesh::Mesh> mesh = meshfactory.create(-1,-1,-1,1,1,1,3,3,3);
 
     Teuchos::ParameterList state_list("state");
@@ -142,8 +144,10 @@ struct obs_domain_set_test : public obs_test {
   obs_domain_set_test() : obs_test() {
     // create the surface mesh
     auto parent = S->GetMesh("domain");
-    AmanziMesh::MeshFactory fac(parent->get_comm(),
-            parent->geometric_model(), Teuchos::null);
+
+    auto plist = Teuchos::rcp(new Teuchos::ParameterList("mesh factory"));
+    plist->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "zoltan_rcb");
+    AmanziMesh::MeshFactory fac(parent->get_comm(), parent->geometric_model(), plist);
     auto surface_mesh = fac.create(parent, {"top face"}, AmanziMesh::FACE, true, true, false);
     S->RegisterMesh("surface", surface_mesh);
 
