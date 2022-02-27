@@ -155,6 +155,8 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   std::string passwd_;
   int dim;
 
+  Key pressure_key_, velocity_key_;
+
   // time integrators
   Teuchos::RCP<BDF1_TI<TreeVector, TreeVectorSpace> > bdf1_dae_;
   int num_itrs_;

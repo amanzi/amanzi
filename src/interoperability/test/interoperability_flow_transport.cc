@@ -76,7 +76,7 @@ class ATS_Richards : public Richards {
     S_->GetW<CompositeVector>("darcy_flux", Tags::DEFAULT, "state") =
       S_->Get<CompositeVector>("water_flux", Tags::NEXT);
 
-    // reset time as expected by Amanzi
+    // reset time to beginning of time step as expected by Amanzi FIXME
     S_->GetW<double>("time", Tags::NEXT, "time") = t_old;
   }
 
