@@ -157,6 +157,7 @@ class Amanzi(CMakePackage):
         options.append('-DBOOST_ROOT=' + self.spec['boost'].prefix)
         options.append('-DHDF5_ROOT=' + self.spec['hdf5'].prefix)
         options.append('-DHDF5_HL_LIBRARIES=' + self.spec['hdf5'].prefix + '/lib')
+        options.append('-DHDF5_hdf5_hl_LIBRARY=' + self.spec['hdf5'].prefix + '/lib')
         options.append('-DASCEMIO_DIR=' + self.spec['ascemio'].prefix)
         options.append('-DNetCDF_DIR=' + self.spec['netcdf-c'].prefix)
         options.append('-DMSTK_LIBRARY_DIR=' + self.spec['mstk'].prefix + '/lib')
@@ -194,7 +195,7 @@ class Amanzi(CMakePackage):
             options.append('-DENABLE_PETSC=ON')
             options.append('-DENABLE_PFLOTRAN=ON')
             options.append('-DPFLOTRAN_LIBRARY_DIR=' + self.spec['pflotran'].prefix + '/lib')
-            options.append('-DALQUIMIA_DIR=' + self.spec['alquimia'].prefix)
+            options.append('-DALQUIMIA_DIR=' + self.spec['alquimia'].prefix) 
         else:
             options.append('-DENABLE_ALQUIMIA=OFF')
             options.append('-DENABLE_PETSC=OFF')
