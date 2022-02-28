@@ -139,7 +139,7 @@ else()
   set(HDF5_USE_STATIC_LIBRARIES ON)
 endif()
   
-find_package(HDF5 1.10.0 REQUIRED COMPONENTS C HL)
+find_package(HDF5 ${HDF5_VERSION} REQUIRED COMPONENTS C HL)
 
 if (NOT HDF5_IS_PARALLEL) 
     message(WARNING "The HDF5 installation found in ${HDF5_DIR} is not "

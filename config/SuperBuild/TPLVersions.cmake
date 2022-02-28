@@ -162,7 +162,12 @@
 #   0.98.1       - configuratoin updates fixing consistency of meshing options (required changes in Amanzi build as well).
 #   0.98.2       - update Hypre to 2.22.0
 #   0.98.3       - enforced c++14 standard for Trilinos and Amanzi
-
+#   0.98.4a      - update HDF5 to 1.12.1
+#                - update netcdf-c to 4.8.1
+#                - update netcdf-fortran to 4.5.4
+#   0.98.4b      - coming soon
+#                - update SEACAS to xxxxxx is needed
+#                - update SILO to 4.11 is needed
 
 include(CMakeParseArguments)
 
@@ -215,7 +220,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
-set(AMANZI_TPLS_VERSION_PATCH 3)
+set(AMANZI_TPLS_VERSION_PATCH 4a)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -332,26 +337,26 @@ set(Boost_MD5_SUM        ced776cb19428ab8488774e1415535ab)
 # TPL: HDF5
 #
 set(HDF5_VERSION_MAJOR 1)
-set(HDF5_VERSION_MINOR 10)
-set(HDF5_VERSION_PATCH 6)
+set(HDF5_VERSION_MINOR 12)
+set(HDF5_VERSION_PATCH 1)
 set(HDF5_VERSION ${HDF5_VERSION_MAJOR}.${HDF5_VERSION_MINOR}.${HDF5_VERSION_PATCH})
 set(HDF5_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(HDF5_ARCHIVE_FILE   hdf5-${HDF5_VERSION}.tar.gz)
+set(HDF5_ARCHIVE_FILE   hdf5-${HDF5_VERSION}.tar.bz2)
 set(HDF5_SAVEAS_FILE    ${HDF5_ARCHIVE_FILE})
-set(HDF5_MD5_SUM        37f3089e7487daf0890baf3d3328e54a)
+set(HDF5_MD5_SUM        442469fbf43626006346e679c22cf10a)
 
 
 #
 # TPL: NetCDF
 #
 set(NetCDF_VERSION_MAJOR 4)
-set(NetCDF_VERSION_MINOR 7)
-set(NetCDF_VERSION_PATCH 3)
+set(NetCDF_VERSION_MINOR 8)
+set(NetCDF_VERSION_PATCH 1)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
 set(NetCDF_URL_STRING     "https://github.com/Unidata/netcdf-c/archive/")
 set(NetCDF_ARCHIVE_FILE   v${NetCDF_VERSION}.tar.gz)
 set(NetCDF_SAVEAS_FILE    netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_MD5_SUM        5ebcafd3fee1d48559687b5ace414fe8)
+set(NetCDF_MD5_SUM        b069f4eb1718798c2907c38189615f95)
 
 
 #
@@ -359,12 +364,12 @@ set(NetCDF_MD5_SUM        5ebcafd3fee1d48559687b5ace414fe8)
 #
 set(NetCDF_Fortran_VERSION_MAJOR 4)
 set(NetCDF_Fortran_VERSION_MINOR 5)
-set(NetCDF_Fortran_VERSION_PATCH 2)
+set(NetCDF_Fortran_VERSION_PATCH 4)
 set(NetCDF_Fortran_VERSION ${NetCDF_Fortran_VERSION_MAJOR}.${NetCDF_Fortran_VERSION_MINOR}.${NetCDF_Fortran_VERSION_PATCH})
 set(NetCDF_Fortran_URL_STRING     "https://github.com/Unidata/netcdf-fortran/archive/")
 set(NetCDF_Fortran_ARCHIVE_FILE   v${NetCDF_Fortran_VERSION}.tar.gz)
 set(NetCDF_Fortran_SAVEAS_FILE    netcdf-fortran-${NetCDF_Fortran_VERSION}.tar.gz)
-set(NetCDF_Fortran_MD5_SUM        759402703585d12f84667716887c42df) 
+set(NetCDF_Fortran_MD5_SUM        77e1be413ab343f42a4a6e8b338b45d5)
 
 #
 # ASCEM-IO
