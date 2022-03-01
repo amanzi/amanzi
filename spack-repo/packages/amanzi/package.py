@@ -195,7 +195,8 @@ class Amanzi(CMakePackage):
             options.append('-DENABLE_PETSC=ON')
             options.append('-DENABLE_PFLOTRAN=ON')
             options.append('-DPFLOTRAN_LIBRARY_DIR=' + self.spec['pflotran'].prefix + '/lib')
-            options.append('-DALQUIMIA_DIR=' + self.spec['alquimia'].prefix) 
+            options.append('-DAlquimia_DIR=' + self.spec['alquimia'].prefix) 
+            options.append('-DAlquimia_INCLUDE_DIR=' + self.spec['alquimia'].prefix + 'include/alquimia') 
         else:
             options.append('-DENABLE_ALQUIMIA=OFF')
             options.append('-DENABLE_PETSC=OFF')
