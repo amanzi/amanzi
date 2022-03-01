@@ -165,9 +165,8 @@
 #   0.98.4a      - update HDF5 to 1.12.1
 #                - update netcdf-c to 4.8.1
 #                - update netcdf-fortran to 4.5.4
-#   0.98.4b      - coming soon
-#                - update SEACAS to xxxxxx is needed
-#                - update SILO to 4.11 is needed
+#   0.98.4b      - update SILO to 4.11 is needed
+#   0.98.4c      - update SEACAS to date tag v2022-02-16
 
 include(CMakeParseArguments)
 
@@ -220,7 +219,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
-set(AMANZI_TPLS_VERSION_PATCH 4b)
+set(AMANZI_TPLS_VERSION_PATCH 4c)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -499,14 +498,14 @@ set(Trilinos_GIT_TAG        "afc4e52595ab82f449f8a4676febbcfbf8223afc")
 #
 # TPL: SEACAS
 #
-set(SEACAS_VERSION_MAJOR 173a1e6)
-set(SEACAS_VERSION_MINOR 0)
-set(SEACAS_VERSION_PATCH 0)
-set(SEACAS_VERSION ${SEACAS_VERSION_MAJOR})
-set(SEACAS_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(SEACAS_ARCHIVE_FILE   seacas-${SEACAS_VERSION}.tgz)
-set(SEACAS_SAVEAS_FILE    ${SEACAS_ARCHIVE_FILE})
-set(SEACAS_MD5_SUM        3235d1b885ee8e1a04408382f50bd0f0)
+set(SEACAS_VERSION_MAJOR 2022)
+set(SEACAS_VERSION_MINOR 02)
+set(SEACAS_VERSION_PATCH 16)
+set(SEACAS_VERSION ${SEACAS_VERSION_MAJOR}-${SEACAS_VERSION_MINOR}-${SEACAS_VERSION_PATCH})
+set(SEACAS_URL_STRING     "https://github.com/gsjaardema/seacas/archive")
+set(SEACAS_ARCHIVE_FILE   v${SEACAS_VERSION}.tar.gz)
+set(SEACAS_SAVEAS_FILE    seacas-${SEACAS_VERSION}.tar.gz)
+set(SEACAS_MD5_SUM        40452d7badecb05a0e859eeeb010003d)
 
 #
 # TPL: PFLOTRAN
