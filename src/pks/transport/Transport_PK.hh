@@ -141,6 +141,18 @@ class Transport_PK : public PK_Physical {
 
   void CalculateAxiSymmetryDirection();
 
+  void DispersionSolver(const Epetra_MultiVector& tcc_prev,
+                        const Epetra_MultiVector& tcc_next,
+                        double t_old, double t_new);
+
+  // -- effective diffusion
+  void CalculateDiffusionTensorEffective_(
+      double mdl, double mdg, double kH,
+      const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
+
+  void DiffusionSolverEffective(const Epetra_MultiVector& tcc_next,
+                                double t_old, double t_new);
+
   // -- air-water partitioning using Henry's law. This is a temporary
   //    solution to get things moving.
   void PrepareAirWaterPartitioning_();
@@ -201,7 +213,7 @@ class Transport_PK : public PK_Physical {
 
   std::string passwd_;
 
-  bool subcycling_, use_transport_porosity_;
+  bool subcycling_, use_transport_porosity_, use_effective_diffusion_;
   int dim;
 
   Teuchos::RCP<AmanziChemistry::Chemistry_PK> chem_pk_;

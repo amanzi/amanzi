@@ -57,8 +57,8 @@ void Transport_PK::PrepareAirWaterPartitioning_()
 ******************************************************************* */
 void Transport_PK::MakeAirWaterPartitioning_()
 {
-  Epetra_MultiVector& tcc_c = *tcc_tmp->ViewComponent("cell", false);
-  const Epetra_MultiVector& sat_l = *ws;
+  auto& tcc_c = *tcc_tmp->ViewComponent("cell");
+  const auto& sat_l = *ws;
 
   int ig, il;
   double sl, total;

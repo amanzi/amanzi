@@ -68,7 +68,8 @@ set(transport_inc_files
 
 set(transport_src_files Transport_PK.cc TransportImplicit_PK.cc TransportExplicit_PK.cc
                         TransportExplicit_TI.cc Transport_VandV.cc Transport_Initialize.cc 
-                        Transport_Dispersion.cc Transport_HenryLaw.cc
+                        Transport_Dispersion.cc Transport_Diffusion_Effective.cc
+                        Transport_HenryLaw.cc
                         MDM_Isotropic.cc MDM_Bear.cc MDM_BurnettFrind.cc MDM_LichtnerKelkarRobinson.cc
                         MDMPartition.cc MDMFactory.cc
                         MultiscaleTransportPorosityFactory.cc
@@ -128,9 +129,15 @@ if (BUILD_TESTS AND ENABLE_AmanziPhysicsModule)
                     SOURCE test/Main.cc test/transport_convergence.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+    # diffusion and dispersion
     add_amanzi_test(transport_dispersion transport_dispersion
                     KIND unit
                     SOURCE test/Main.cc test/transport_dispersion.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(transport_diffusion_smiles transport_diffusion_smiles
+                    KIND unit
+                    SOURCE test/Main.cc test/transport_diffusion_smiles.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(transport_2D transport_2D

@@ -39,7 +39,7 @@
 
 
 /* **************************************************************** */
-TEST(MULTIPHASE_MODEL_I) {
+void RunTest(const std::string& filename) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -52,8 +52,7 @@ TEST(MULTIPHASE_MODEL_I) {
   if (MyPID == 0) std::cout << "Test: multiphase pk, model Pl-Sl-Xg" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/multiphase_model1c.xml";
-  auto plist = Teuchos::getParametersFromXmlFile(xmlFileName);
+  auto plist = Teuchos::getParametersFromXmlFile(filename);
 
   // create a MSTK mesh framework
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
@@ -138,4 +137,10 @@ TEST(MULTIPHASE_MODEL_I) {
   xg.MinValue(&dmin);
   xg.MaxValue(&dmax);
   CHECK(dmin >= 0.0 && dmax <= 1.0);
+}
+
+
+TEST(MULTIPHASE_MODEL_I_THERMAL) {
+  RunTest("test/multiphase_model1c_well.xml");
+  // RunTest("test/multiphase_model1c.xml");
 }

@@ -167,8 +167,9 @@ void Transport_PK::Setup()
   auto physical_models = Teuchos::sublist(tp_list_, "physical models and assumptions");
   bool abs_perm = physical_models->get<bool>("permeability field is required", false);
   std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single continuum");
-  use_transport_porosity_ = physical_models->get<bool>("effective transport porosity", false);
   bool transport_on_manifold = physical_models->get<bool>("transport in fractures", false);
+  use_transport_porosity_ = physical_models->get<bool>("effective transport porosity", false);
+  use_effective_diffusion_ = physical_models->get<bool>("effective transport diffusion", false);
 
   // generate keys here to be available for setup of the base class
   tcc_key_ = Keys::getKey(domain_, "total_component_concentration"); 
@@ -421,6 +422,7 @@ void Transport_PK::Initialize()
             bc->tcc_index().push_back(FindComponentNumber(name));
             bc->set_state(S_);
             bcs_.push_back(bc);
+std::cout << name << "  " << FindComponentNumber(name) << std::endl; 
           }
         }
       }
@@ -545,7 +547,7 @@ void Transport_PK::Initialize()
 #endif
   }
 
-  // Temporarily Transport PK hosts the Henry law.
+  // support of the Henry law
   PrepareAirWaterPartitioning_();
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
