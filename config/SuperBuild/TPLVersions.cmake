@@ -220,7 +220,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
-set(AMANZI_TPLS_VERSION_PATCH 4a)
+set(AMANZI_TPLS_VERSION_PATCH 4b)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -538,13 +538,13 @@ set(Alquimia_MD5_SUM        20c9d27ba6dd00e56b7deaeab903ccbe)
 # TPL: Silo
 #
 set(Silo_VERSION_MAJOR 4)
-set(Silo_VERSION_MINOR 10)
-set(Silo_VERSION_PATCH 2)
-set(Silo_VERSION  ${Silo_VERSION_MAJOR}.${Silo_VERSION_MINOR}.${Silo_VERSION_PATCH})
-set(Silo_URL_STRING    "https://wci.llnl.gov/sites/wci/files/2021-01")
-set(Silo_ARCHIVE_FILE  silo-4.10.2.tgz)
-set(Silo_SAVEAS_FILE   ${Silo_ARCHIVE_FILE})
-set(Silo_MD5_SUM 9ceac777a2f2469ac8cef40f4fab49c8)
+set(Silo_VERSION_MINOR 11)
+set(Silo_VERSION_PATCH 0)
+set(Silo_VERSION ${Silo_VERSION_MAJOR}.${Silo_VERSION_MINOR})
+set(Silo_URL_STRING    "https://github.com/LLNL/Silo/archive")
+set(Silo_ARCHIVE_FILE  ${Silo_VERSION}.tar.gz)
+set(Silo_SAVEAS_FILE   silo-${Silo_VERSION}.tar.gz)
+set(Silo_MD5_SUM       b09f1236d3614d97e4df11f6e890f16b)
 
 #
 # TPL: CrunchTope

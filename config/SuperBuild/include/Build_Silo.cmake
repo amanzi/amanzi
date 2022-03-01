@@ -62,10 +62,11 @@ else()
 endif()
 
 # --- Set the name of the patch 
-set(Silo_patch_file silo-4.10.2-remove-mpiposix.patch
-                    silo-4.10.2-debug-builds.patch
-                    silo-4.10.2-static-tools.patch
-                    silo-4.10.2-nouppercase.patch)
+#set(Silo_patch_file silo-4.10.2-remove-mpiposix.patch
+#                    silo-4.10.2-debug-builds.patch
+#                    silo-4.10.2-static-tools.patch
+#                    silo-4.10.2-nouppercase.patch)
+set(Silo_patch_file silo-4.11-h5epr-semi-colon.patch)
 
 set(Silo_sh_patch ${Silo_prefix_dir}/silo-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/silo-patch-step.sh.in
@@ -105,7 +106,7 @@ ExternalProject_Add(${Silo_BUILD_TARGET}
                                           CXX=${CMAKE_CXX_COMPILER}
                                           CFLAGS=${silo_cflags}
                                           CXXFLAGS=${silo_cxxflags}
-                      LIBS=-ldl ${LIBTOOL_STATIC}
+					  LIBS=-ldl ${LIBTOOL_STATIC}
                     # -- Build
                     BINARY_DIR        ${Silo_build_dir}           # Build directory 
                     BUILD_COMMAND     $(MAKE) -j 1 SILO_DIR=${Silo_source_dir} # Run the CMake script to build
