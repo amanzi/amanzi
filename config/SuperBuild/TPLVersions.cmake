@@ -167,6 +167,8 @@
 #                - update netcdf-fortran to 4.5.4
 #   0.98.4b      - update SILO to 4.11 is needed
 #   0.98.4c      - update SEACAS to date tag v2022-02-16
+#   0.98.4d      - update Nanoflann to 1.4.2
+#   0.98.5       - temntative release number
 
 include(CMakeParseArguments)
 
@@ -219,7 +221,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 98)
-set(AMANZI_TPLS_VERSION_PATCH 4c)
+set(AMANZI_TPLS_VERSION_PATCH 5)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -561,13 +563,13 @@ set(CrunchTope_MD5_SUM       059766e149e2a47c754ecf9815641d71)
 # TPL: Nanoflann
 #
 set(Nanoflann_VERSION_MAJOR 1)
-set(Nanoflann_VERSION_MINOR 3)
-set(Nanoflann_VERSION_PATCH 1)
+set(Nanoflann_VERSION_MINOR 4)
+set(Nanoflann_VERSION_PATCH 2)
 set(Nanoflann_VERSION  ${Nanoflann_VERSION_MAJOR}.${Nanoflann_VERSION_MINOR}.${Nanoflann_VERSION_PATCH})
 set(Nanoflann_URL_STRING    "https://github.com/jlblancoc/nanoflann/archive")
 set(Nanoflann_ARCHIVE_FILE  v${Nanoflann_VERSION}.tar.gz)
 set(Nanoflann_SAVEAS_FILE   nanoflann-${Nanoflann_VERSION}.tar.gz)
-set(Nanoflann_MD5_SUM       230edd6cb3843a5377743fe87959ffc5)
+set(Nanoflann_MD5_SUM       90a95679ce797efa315e76dcb79c114d)
 
 #
 # TPL: CLM
