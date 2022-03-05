@@ -63,6 +63,8 @@ class Amanzi(CMakePackage):
 
     patch('exprtk.patch')
 
+    conflicts('physics=ats', when='mesh_type=structured', msg='ERROR: ats physics is not supported in the structured mesh framework.')
+
     ##### Build dependencies #####
 
     depends_on('git', type='build')
@@ -77,7 +79,7 @@ class Amanzi(CMakePackage):
     core_dependencies = {
         'zlib','metis', 'parmetis', 'seacas',
         'boost@1.67.0 cxxstd=11 +program_options',
-        'netcdf-c +parallel-netcdf', 'hdf5@1.12.1 +mpi+fortran+hl', 
+        'netcdf-c +parallel-netcdf', 'hdf5 +mpi+fortran+hl', 
         'ascemio'
     }
 
