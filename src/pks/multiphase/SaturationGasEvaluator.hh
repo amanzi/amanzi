@@ -18,6 +18,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 // Amanzi
+#include "Factory.hh"
 #include "EvaluatorSecondaryMonotype.hh"
 
 namespace Amanzi {
@@ -37,6 +38,8 @@ class SaturationGasEvaluator : public EvaluatorSecondaryMonotype<CompositeVector
 
  private:
   std::string saturation_liquid_key_;
+
+  static Utils::RegisteredFactory<Evaluator, SaturationGasEvaluator> fac_;
 };
 
 }  // namespace Multiphase

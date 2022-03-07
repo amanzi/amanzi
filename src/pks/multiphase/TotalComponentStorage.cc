@@ -13,7 +13,7 @@
 
     TCS = phi * (eta_l * s_l * x_l + eta_g * s_g * x_g)
 
-  where X_p is the mole fraction of a component in phase p.
+  where x_p is the mole fraction of a component in phase p.
 */
 
 #include "TotalComponentStorage.hh"

@@ -276,6 +276,16 @@ void MultiphaseJaffre_PK::Setup()
     S_->RequireDerivative<CV_t, CVS_t>(ncp_g_key_, Tags::DEFAULT,
                                        saturation_liquid_key_, Tags::DEFAULT, ncp_g_key_);
   }
+
+  // additional evaluators
+  if (mp_list_->isParameter("evaluators")) {
+    auto evals = mp_list_->get<Teuchos::Array<std::string> > ("evaluators").toVector();
+    S_->Require<CV_t, CVS_t>(evals[0], Tags::DEFAULT, evals[0])
+      .SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    for (auto& e : evals) { 
+      S_->RequireEvaluator(e, Tags::DEFAULT);
+    }
+  }
 }
 
 

@@ -1,0 +1,874 @@
+<ParameterList>
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+
+  <ParameterList name="visualization data">
+    <Parameter name="file name base" type="string" value="plot_frt"/>
+    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1, -1}"/>
+  </ParameterList>
+  <ParameterList name="checkpoint data">
+    <Parameter name="file name base" type="string" value="chk_frt"/>
+    <Parameter name="file name digits" type="int" value="5"/>
+    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 5, -1}" />
+  </ParameterList>  
+  <ParameterList name="regions">
+    <ParameterList name="Entire Domain">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.00000e+00, 0.00000e+00, 0.00000e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.00000e+00, 1.00000e+00, 1.00000e+00}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="West">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.00000e+00, 0.00000e+00, 0.00000e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.00000e+00, 1.00000e+00, 1.00000e+00}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="East">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{1.00000e+00, 0.00000e+00, 0.00000e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.00000e+00, 1.00000e+00, 1.00000e+00}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Soil_1">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.00000e+00, 0.00000e+00, 0.00000e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{5.00000000000000000e-01, 1.00000e+00, 1.00000e+00}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Soil_2">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{5.00000000000000000e-01, 0.00000e+00, 0.00000e+00}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.00000e+00, 1.00000e+00, 1.00000e+00}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="All">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{-9.99e+98, -9.99e+98, -9.99e+98}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{9.99e+98, 9.99e+98, 9.99e+98}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="mesh">
+    <ParameterList name="unstructured">
+      <ParameterList name="generate mesh">
+        <Parameter name="number of cells" type="Array(int)" value="{100, 1, 1}"/>
+        <Parameter name="domain low coordinate" type="Array(double)" value="{0.00000e+00, 0.00000e+00, 0.00000e+00}"/>
+        <Parameter name="domain high coordinate" type="Array(double)" value="{1.00000e+00, 1.00000e+00, 1.00000e+00}"/>
+      </ParameterList>
+      <ParameterList name="expert">
+        <Parameter name="framework" type="string" value="MSTK"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="domain">
+    <Parameter name="spatial dimension" type="int" value="3"/>
+  </ParameterList>
+
+  <ParameterList name="cycle driver">
+    <Parameter name="start time" type="double" value="0"/>
+    <Parameter name="end time" type="double" value="1.0e+4"/>
+    <Parameter name="component names" type="Array(string)" value="{Na+, Ca++, Mg++, Cl-}"/>
+    <Parameter name="component molar masses" type="Array(double)" value="{23.0e-3, 40.0e-3, 24.3e-3, 35.5e-3}"/>
+    <ParameterList name="time periods">
+      <ParameterList name="TP 0">
+	<ParameterList name="PK tree">
+	  <ParameterList name="flow and reactive transport">
+	    <Parameter name="PK type" type="string" value="flow reactive transport"/>      
+	    <ParameterList name="flow">
+	      <Parameter name="PK type" type="string" value="ats richards flow"/>
+	    </ParameterList>    
+	    <ParameterList name="reactive transport">
+	      <Parameter name="PK type" type="string" value="reactive transport"/>
+	      <ParameterList name="transport">
+		<Parameter name="PK type" type="string" value="transport"/>
+	      </ParameterList>
+	      <ParameterList name="chemistry">
+		<Parameter name="PK type" type="string" value="chemistry amanzi"/>
+	      </ParameterList>
+	    </ParameterList>
+	  </ParameterList>    
+	</ParameterList>
+	<Parameter name="start period time" type="double" value="0.0"/>
+	<Parameter name="end period time" type="double" value="1.0e+04"/>
+        <Parameter name="initial time step" type="double" value="100.0"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="PKs">
+    <ParameterList name="flow and reactive transport">
+      <Parameter name="PK type" type="string" value="flow reactive transport"/>      
+      <Parameter name="PKs order" type="Array(string)" value="{flow, reactive transport}"/> 
+      <Parameter name="master PK index" type="int" value="0"/>
+    </ParameterList>
+    <ParameterList name="reactive transport">
+      <Parameter name="PK type" type="string" value="reactive transport"/>      
+      <Parameter name="PKs order" type="Array(string)" value="{chemistry, transport}"/> 
+    </ParameterList>
+
+    <ParameterList name="flow">
+      <ParameterList name="verbose object">
+	<Parameter name="verbosity level" type="string" value="none"/>
+      </ParameterList>
+      <Parameter name="primary variable key" type="string" value="pressure"/>
+      <Parameter name="PK type" type="string" value="richards flow"/>
+      <Parameter name="initial time step" type="double" value="100.0"/>
+      <Parameter name="relative permeability method" type="string" value="upwind with Darcy flux"/>
+      <Parameter name="modify predictor for flux BCs" type="bool" value="true"/>
+      <Parameter name="permeability rescaling" type="double" value="1.0"/>
+
+      <ParameterList name="water retention evaluator">
+        <Parameter name="minimum rel perm cutoff" type="double" value="0.0"/>
+        <ParameterList name="WRM parameters" type="ParameterList">
+          <ParameterList name="all" type="ParameterList">
+            <Parameter name="region" type="string" value="Entire Domain"/>
+            <Parameter name="WRM Type" type="string" value="van Genuchten" />
+            <Parameter name="van Genuchten alpha [Pa^-1]" type="double" value="0.0023e-8"/>
+            <Parameter name="van Genuchten m [-]" type="double" value="0.2754"/>
+            <Parameter name="residual saturation [-]" type="double" value="0.0"/>
+            <Parameter name="smoothing interval width [saturation]" type="double" value="0.1"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="diffusion">
+        <Parameter name="discretization primary" type="string" value="mfd: default" />
+	<Parameter name="gravity" type="bool" value="true"/>
+      </ParameterList>
+
+      <ParameterList name="diffusion preconditioner">
+        <Parameter name="include Newton correction" type="bool" value="true"/>
+	<Parameter name="gravity" type="bool" value="true"/>
+      </ParameterList>
+
+      <ParameterList name="boundary conditions">
+	<ParameterList name="water flux">
+	  <ParameterList name="BC 0">
+	    <Parameter name="regions" type="Array(string)" value="{West}"/>
+	    <Parameter name="spatial distribution method" type="string" value="none"/>
+	    <ParameterList name="outward water flux">
+	      <ParameterList name="function-tabular">
+		<Parameter name="x values" type="Array(double)" value="{0.00000e+00, 3.15360e+07}"/>
+		<Parameter name="y values" type="Array(double)" value="{-7.9131785900e-06, -1.31785899999999989e-04}"/>
+		<Parameter name="forms" type="Array(string)" value="{constant}"/>
+	      </ParameterList>
+	    </ParameterList>
+	  </ParameterList>
+	</ParameterList>
+	<ParameterList name="pressure">
+	  <ParameterList name="BC 1">
+	    <Parameter name="regions" type="Array(string)" value="{East}"/>
+	    <Parameter name="spatial distribution method" type="string" value="none"/>
+	    <ParameterList name="boundary pressure">
+	      <ParameterList name="function-tabular">
+		<Parameter name="x values" type="Array(double)" value="{0.00000e+00, 3.15360e+07}"/>
+		<Parameter name="y values" type="Array(double)" value="{2.01325e+05, 2.01325e+05}"/>
+		<Parameter name="forms" type="Array(string)" value="{constant}"/>
+	      </ParameterList>
+	    </ParameterList>
+	  </ParameterList>
+	</ParameterList>
+      </ParameterList>
+
+      <ParameterList name="initial condition">
+        <Parameter name="initialize faces from cells" type="bool" value="true"/>
+        <ParameterList name="function">
+          <ParameterList name="initial pressure cells">
+            <Parameter name="region" type="string" value="Entire Domain"/>
+            <Parameter name="components" type="Array(string)" value="{cell, face}"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2.01325e+05"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="time integrator">
+	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
+	<Parameter name="linear solver" type="string" value="AztecOO"/>
+	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+	<Parameter name="time integration method" type="string" value="BDF1"/>
+
+        <Parameter name="timestep controller type" type="string" value="standard"/>
+        <ParameterList name="timestep controller standard parameters">
+          <Parameter name="max iterations" type="int" value="15"/>
+          <Parameter name="min iterations" type="int" value="10"/>
+          <Parameter name="time step increase factor" type="double" value="1.0"/>
+          <Parameter name="time step reduction factor" type="double" value="8.00000000000000044e-01"/>
+          <Parameter name="max time step" type="double" value="6.00000e+10"/>
+          <Parameter name="min time step" type="double" value="9.99999999999999945e-21"/>
+        </ParameterList>
+
+        <Parameter name="solver type" type="string" value="nka"/>
+        <ParameterList name="nka parameters">
+          <Parameter name="nonlinear tolerance" type="double" value="1e-7"/>
+          <Parameter name="diverged tolerance" type="double" value="1.00000e+10"/>
+          <Parameter name="max du growth factor" type="double" value="1.00000e+03"/>
+          <Parameter name="max divergent iterations" type="int" value="3"/>
+          <Parameter name="max nka vectors" type="int" value="10"/>
+          <Parameter name="limit iterations" type="int" value="20"/>
+          <Parameter name="modify correction" type="bool" value="false"/>
+	</ParameterList>
+	<Parameter name="max preconditioner lag iterations" type="int" value="0"/>
+	<Parameter name="extrapolate initial guess" type="bool" value="true"/>
+	<Parameter name="nonlinear iteration damping factor" type="double" value="1.00000e+00"/>
+	<Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
+	<Parameter name="restart tolerance relaxation factor" type="double" value="1.00000e+00"/>
+	<Parameter name="restart tolerance relaxation factor damping" type="double" value="1.00000e+00"/>
+
+	<ParameterList name="verbose object">
+	  <Parameter name="verbosity level" type="string" value="high"/>
+	</ParameterList>
+      </ParameterList>
+
+      <ParameterList name="inverse" type="ParameterList">
+        <Parameter name="preconditioning method" type="string" value="boomer amg" />
+        <ParameterList name="boomer amg parameters" type="ParameterList">
+          <Parameter name="cycle applications" type="int" value="1" />
+          <Parameter name="smoother sweeps" type="int" value="3" />
+          <Parameter name="strong threshold" type="double" value="0.65" />
+          <Parameter name="tolerance" type="double" value=" 0" />
+          <Parameter name="verbosity" type="int" value="0" />
+        </ParameterList>
+        <ParameterList name="verbose object" type="ParameterList">
+          <Parameter name="verbosity level" type="string" value="high" />
+        </ParameterList>
+        <!--Parameter name="iterative method" type="string" value="gmres" />
+        <ParameterList name="gmres parameters" type="ParameterList">
+          <Parameter name="preconditioning strategy" type="string" value="left" />
+          <Parameter name="error tolerance" type="double" value="1e-12" />
+          <Parameter name="convergence criteria" type="Array(string)" value="{relative residual,make one iteration}" />
+          <Parameter name="maximum number of iteration" type="int" value="80" />
+        </ParameterList-->
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="chemistry">
+      <Parameter name="PK type" type="string" value="chemistry pk"/>
+      <Parameter name="component names" type="Array(string)" value="{Na+, Ca++, Mg++, Cl-}"/>
+      <Parameter name="activity model" type="string" value="unit"/>
+      <Parameter name="maximum Newton iterations" type="int" value="50"/>
+      <Parameter name="minerals" type="Array(string)" value="{Halite}"/>
+      <Parameter name="number of component concentrations" type="int" value="4"/>
+    </ParameterList>
+
+    <ParameterList name="transport">
+      <!--Parameter name="PK type" type="string" value="transport pk"/-->
+      <Parameter name="spatial discretization order" type="int" value="1"/>
+      <Parameter name="temporal discretization order" type="int" value="1"/>
+      <Parameter name="cfl" type="double" value="1.00000e+00"/>
+      <Parameter name="flow mode" type="string" value="transient"/>
+      <Parameter name="advection limiter" type="string" value="Tensorial"/>
+      <Parameter name="solver" type="string" value="PCG with Hypre AMG"/>
+
+      <ParameterList name="verbose object">
+	<Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
+      <Parameter name="enable internal tests" type="bool" value="false"/>
+
+      <ParameterList name="molecular diffusion">
+	<Parameter name="aqueous names" type="Array(string)" value="{}"/>
+	<Parameter name="aqueous values" type="Array(double)" value="{}"/>
+      </ParameterList>
+      <ParameterList name="boundary conditions">
+	<ParameterList name="concentration">
+	  <ParameterList name="Na+">
+	    <ParameterList name="West BC">
+	      <Parameter name="regions" type="Array(string)" value="{West}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+	      <ParameterList name="boundary concentration">
+		<ParameterList name="function-tabular">
+		  <Parameter name="y values" type="Array(double)" value="{9.42676899999999977e-03, 9.42676899999999977e-03}"/>
+		  <Parameter name="x values" type="Array(double)" value="{0.00000e+00, 3.15360e+07}"/>
+		  <Parameter name="forms" type="Array(string)" value="{constant}"/>
+		</ParameterList>
+	      </ParameterList>
+	    </ParameterList>
+	  </ParameterList>
+	  <ParameterList name="Ca++">
+	    <ParameterList name="West BC">
+	      <Parameter name="regions" type="Array(string)" value="{West}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+	      <ParameterList name="boundary concentration">
+		<ParameterList name="function-tabular">
+		  <Parameter name="y values" type="Array(double)" value="{5.01423899999999955e-04, 5.01423899999999955e-04}"/>
+		  <Parameter name="x values" type="Array(double)" value="{0.00000e+00, 3.15360e+07}"/>
+		  <Parameter name="forms" type="Array(string)" value="{constant}"/>
+		</ParameterList>
+	      </ParameterList>
+	    </ParameterList>
+	  </ParameterList>
+	  <ParameterList name="Mg++">
+	    <ParameterList name="West BC">
+	      <Parameter name="regions" type="Array(string)" value="{West}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+	      <ParameterList name="boundary concentration">
+		<ParameterList name="function-tabular">
+		  <Parameter name="y values" type="Array(double)" value="{2.13606599999999983e-03, 2.13606599999999983e-03}"/>
+		  <Parameter name="x values" type="Array(double)" value="{0.00000e+00, 3.15360e+07}"/>
+		  <Parameter name="forms" type="Array(string)" value="{constant}"/>
+		</ParameterList>
+	      </ParameterList>
+	    </ParameterList>
+	  </ParameterList>
+	  <ParameterList name="Cl-">
+	    <ParameterList name="West BC">
+	      <Parameter name="regions" type="Array(string)" value="{West}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+	      <ParameterList name="boundary concentration">
+		<ParameterList name="function-tabular">
+		  <Parameter name="y values" type="Array(double)" value="{1.47017488000000009e-02, 1.47017488000000009e-02}"/>
+		  <Parameter name="x values" type="Array(double)" value="{0.00000e+00, 3.15360e+07}"/>
+		  <Parameter name="forms" type="Array(string)" value="{constant}"/>
+		</ParameterList>
+	      </ParameterList>
+	    </ParameterList>
+	  </ParameterList>
+	</ParameterList>
+      </ParameterList>
+      <Parameter name="number of aqueous components" type="int" value="4"/>
+      <Parameter name="number of gaseous components" type="int" value="0"/>
+      <Parameter name="runtime diagnostics: regions" type="Array(string)" value="{}"/>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="thermodynamic database">
+    <ParameterList name="primary species">
+      <ParameterList name="Na+">
+        <Parameter name="ion size parameter" type="double" value="4.0"/>
+        <Parameter name="charge" type="int" value="1"/>
+        <Parameter name="gram molecular weight" type="double" value="22.99"/>
+      </ParameterList>
+      <ParameterList name="Ca++">
+        <Parameter name="ion size parameter" type="double" value="6.00000000000000000e+00"/>
+        <Parameter name="charge" type="int" value="2"/>
+       <Parameter name="gram molecular weight" type="double" value="4.00780000000000030e+01"/>
+      </ParameterList>
+      <ParameterList name="Mg++">
+        <Parameter name="ion size parameter" type="double" value="8.0"/>
+        <Parameter name="charge" type="int" value="2"/>
+        <Parameter name="gram molecular weight" type="double" value="24.30"/>
+      </ParameterList>
+      <ParameterList name="Cl-">
+        <Parameter name="ion size parameter" type="double" value="3.0"/>
+        <Parameter name="charge" type="int" value="-1"/>
+        <Parameter name="gram molecular weight" type="double" value="35.45"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="mineral kinetics">
+      <ParameterList name="Halite">
+        <Parameter name="rate model" type="string" value="TST"/>
+        <Parameter name="rate constant" type="double" value="-36.0"/>
+        <Parameter name="modifiers" type="string" value=""/>
+        <Parameter name="gram molecular weight" type="double" value="5.84425E+01 "/>
+        <Parameter name="reaction" type="string" value="1.0 Na+   1.0 Cl-"/>
+        <Parameter name="equilibrium constant" type="double" value="1.58550E+00"/>
+        <Parameter name="molar volume" type="double" value="2.70150E+01"/>
+        <Parameter name="specific surface area" type="double" value="1.00000000000000000e+00"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="ion exchange sites">
+      <ParameterList name="X-">
+        <Parameter name="location" type="string" value="Halite"/>
+        <Parameter name="charge" type="int" value="-1"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="ion exchange complexes">
+      <ParameterList name="Na+X">
+        <Parameter name="reaction" type="string" value="1.0 Na+  1.0 X-"/>
+        <Parameter name="equilibrium constant" type="double" value="1.00000000000000000e+00"/>
+      </ParameterList>
+      <ParameterList name="Ca++X">
+        <Parameter name="reaction" type="string" value="1.0 Ca++  2.0 X-"/>
+        <Parameter name="equilibrium constant" type="double" value="2.95300E-01"/>
+      </ParameterList>
+      <ParameterList name="Mg++X">
+        <Parameter name="reaction" type="string" value="1.0 Mg++  2.0 X-"/>
+        <Parameter name="equilibrium constant" type="double" value="1.66600E-01"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="state">
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="extreme"/>
+    </ParameterList>
+    <ParameterList name="evaluators">
+      <ParameterList name="water_content">
+        <Parameter name="evaluator type" type="string" value="richards water content"/>
+        <Parameter name="checkpoint" type="bool" value="true"/>
+      </ParameterList>
+      <ParameterList name="capillary_pressure_gas_liq">
+        <Parameter name="evaluator type" type="string" value="capillary pressure, atmospheric gas over liquid" />
+      </ParameterList>
+
+      <ParameterList name="molar_density_liquid">
+        <Parameter name="evaluator type" type="string" value="eos"/>
+        <Parameter name="EOS basis" type="string" value="both" />
+        <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
+        <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="EOS type" type="string" value="liquid water"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="molar_density_gas">
+        <Parameter name="evaluator type" type="string" value="eos" />
+        <Parameter name="EOS basis" type="string" value="molar"/>
+        <Parameter name="molar density key" type="string" value="molar_density_gas" />
+        <ParameterList name="EOS parameters">
+          <Parameter name="EOS type" type="string" value="vapor in gas"/>
+          <ParameterList name="gas EOS parameters">
+            <Parameter name="EOS type" type="string" value="ideal gas"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="viscosity_liquid">
+        <Parameter name="evaluator type" type="string" value="viscosity"/>
+        <Parameter name="viscosity key" type="string" value="viscosity_liquid"/>
+        <ParameterList name="viscosity model parameters">
+          <Parameter name="viscosity relation type" type="string" value="liquid water"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="porosity">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="Soil_1">
+            <Parameter name="regions" type="Array(string)" value="{Soil_1}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2.50000000000000000e-01"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Soil_2">
+            <Parameter name="regions" type="Array(string)" value="{Soil_2}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2.50000000000000000e-01"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="mass_density_liquid">
+        <Parameter name="evaluator type" type="string" value="independent variable" />
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="9.982e+02"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="permeability">
+        <Parameter name="evaluator type" type="string" value="independent variable" />
+        <Parameter name="permeability type" type="string" value="diagonal tensor"/>
+        <ParameterList name="function">
+          <ParameterList name="Soil_1">
+            <Parameter name="regions" type="Array(string)" value="{Entire Domain}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="3"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="9.99999999999999980e-13"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 2 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="9.99999999999999980e-13"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 3 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="9.99999999999999980e-13"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="temperature">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
+        <Parameter name="constant in time" type="bool" value="true"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Entire Domain"/>
+            <Parameter name="components" type="Array(string)" value="{cell, boundary_face}"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="298.0" />
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="initial conditions">
+      <ParameterList name="gravity">
+        <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.80665}"/>
+      </ParameterList>
+      <ParameterList name="const_fluid_density">
+        <Parameter name="value" type="double" value="9.982e+02"/>
+      </ParameterList>
+      <ParameterList name="atmospheric_pressure">
+        <Parameter name="value" type="double" value="101325.0"/>
+      </ParameterList>
+
+      <ParameterList name="pressure">
+        <ParameterList name="function">
+          <ParameterList name="Entire DomainSoil_1Soil_2">
+            <Parameter name="regions" type="Array(string)" value="{Entire Domain, Soil_1, Soil_2}"/>
+            <Parameter name="components" type="Array(string)" value="{cell, face}"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2.01325e+05"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="mineral_volume_fractions">
+        <ParameterList name="function">
+          <ParameterList name="Soil_1">
+            <Parameter name="region" type="string" value="Soil_1"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.00000000000000005e-04"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Soil_2">
+            <Parameter name="region" type="string" value="Soil_2"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="2.0e-04"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="mineral_specific_surface_area">
+        <ParameterList name="function">
+          <ParameterList name="Soil_1">
+            <Parameter name="region" type="string" value="Soil_1"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.00000e+00"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Soil_2">
+            <Parameter name="region" type="string" value="Soil_2"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="2.00000e+00"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="mineral_rate_constant">
+        <ParameterList name="function">
+          <ParameterList name="Soil_1">
+            <Parameter name="region" type="string" value="Soil_1"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.00000000000000005e-04"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Soil_2">
+            <Parameter name="region" type="string" value="Soil_2"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="2.00000000000000010e-04"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="ion_exchange_sites">
+        <ParameterList name="function">
+          <ParameterList name="Soil_1">
+            <Parameter name="region" type="string" value="Soil_1"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="7.50000e+02"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Soil_2">
+            <Parameter name="region" type="string" value="Soil_2"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="2.50000e+02"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="ion_exchange_ref_cation_conc">
+        <ParameterList name="function">
+          <ParameterList name="Soil_1">
+            <Parameter name="region" type="string" value="Soil_1"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.00000e+00"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Soil_2">
+            <Parameter name="region" type="string" value="Soil_2"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.00000e+00"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="free_ion_species">
+        <ParameterList name="function">
+          <ParameterList name="Entire Domain">
+            <Parameter name="region" type="string" value="Entire Domain"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="4"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                 <Parameter name="value" type="double" value="8.67463299999999965e-02"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 2 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.82518300000000001e-02"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 3 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.11316100000000001e-02"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 4 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.45513210000000004e-01"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Soil_1">
+            <Parameter name="region" type="string" value="Soil_1"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="4"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="8.67463299999999965e-02"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 2 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.82518300000000001e-02"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 3 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.11316100000000001e-02"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 4 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.45513210000000004e-01"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Soil_2">
+            <Parameter name="region" type="string" value="Soil_2"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="4"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="8.67463299999999965e-02"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 2 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.82518300000000001e-02"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 3 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.11316100000000001e-02"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 4 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.45513210000000004e-01"/>
+                </ParameterList>
+              </ParameterList>
+	    </ParameterList>
+	  </ParameterList>
+	</ParameterList>
+      </ParameterList>
+      <ParameterList name="total_component_concentration">
+        <Parameter name="names" type="Array(string)" value="{total, total, total, total}"/>
+        <ParameterList name="function">
+          <ParameterList name="Entire DomainSoil_1Soil_2">
+            <Parameter name="regions" type="Array(string)" value="{Entire Domain, Soil_1, Soil_2}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="4"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="8.67463299999999965e-02"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 2 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.82518300000000001e-02"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 3 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.11316100000000001e-02"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 4 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.45513210000000004e-01"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="mesh partitions">
+      <ParameterList name="materials">
+        <Parameter name="region list" type="Array(string)" value="{Soil_1, Soil_2}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="preconditioners">
+    <ParameterList name="Hypre AMG">
+      <Parameter name="preconditioning method" type="string" value="boomer amg"/>
+      <ParameterList name="boomer amg parameters">
+        <Parameter name="tolerance" type="double" value="0.00000e+00"/>
+        <Parameter name="smoother sweeps" type="int" value="3"/>
+        <Parameter name="cycle applications" type="int" value="5"/>
+        <Parameter name="strong threshold" type="double" value="0.5"/>
+        <Parameter name="cycle type" type="int" value="1"/>
+        <Parameter name="coarsen type" type="int" value="0"/>
+        <Parameter name="verbosity" type="int" value="0"/>
+        <Parameter name="relaxation type down" type="int" value="13"/>
+        <Parameter name="relaxation type up" type="int" value="14"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="solvers">
+    <ParameterList name="AztecOO">
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+        <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
+        <Parameter name="maximum number of iterations" type="int" value="100"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="PCG with Hypre AMG">
+      <Parameter name="iterative method" type="string" value="pcg"/>
+      <ParameterList name="pcg parameters">
+        <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
+        <Parameter name="maximum number of iterations" type="int" value="100"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="analysis">
+    <ParameterList name="domain">
+      <Parameter name="used boundary condition regions" type="Array(string)" value="{West, East, West, East}"/>
+      <Parameter name="used source regions" type="Array(string)" value="{}"/>
+      <Parameter name="used observation regions" type="Array(string)" value="{}"/>
+    </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

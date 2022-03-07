@@ -54,6 +54,7 @@ set(operators_inc_files
     BCs.hh
     BoundaryFlux.hh
     CoefficientModel.hh
+    FCT.hh
     InterfaceWhetStone.hh
     LimiterCell.hh
     LimiterCellDG.hh
@@ -136,7 +137,8 @@ set(operators_inc_files
 )
 
 add_amanzi_library(operators 
-                   SOURCE LimiterCell.cc LimiterCellDG.cc
+                   SOURCE FCT.cc
+                          LimiterCell.cc LimiterCellDG.cc
                           Mini_Diffusion1D.cc
                           Mini_Operator1D.cc
                           OperatorUtils.cc
@@ -389,6 +391,12 @@ if (BUILD_TESTS)
                                         test/operator_remap_gcl_reinit.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+    # fct tests
+    add_amanzi_test(operators_fct operators_fct
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_fct.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     # high-order diffusion test
     add_amanzi_test(operators_diffusion_high_order operators_diffusion_high_order
                     KIND unit
@@ -414,7 +422,6 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/operator_tree.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-
 
 endif()
                 
