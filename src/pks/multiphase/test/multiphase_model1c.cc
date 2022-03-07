@@ -141,6 +141,6 @@ void RunTest(const std::string& filename) {
 
 
 TEST(MULTIPHASE_MODEL_I_THERMAL) {
-  RunTest("test/multiphase_model1c_well.xml");
-  // RunTest("test/multiphase_model1c.xml");
+  // RunTest("test/multiphase_model1c_well.xml");
+  RunTest("test/multiphase_model1c.xml");
 }
