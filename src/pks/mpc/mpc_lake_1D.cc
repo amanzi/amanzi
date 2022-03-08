@@ -28,18 +28,12 @@ MPCLake1D::Setup(const Teuchos::Ptr<State>& S) {
   pks_list_->sublist(names[0]).set("coupled to soil via temp", true);
   pks_list_->sublist(names[1]).set("coupled to lake via temp", true);
 
-  std::cout << "names[0] = " << names[0] << std::endl;
-  std::cout << "names[1] = " << names[1] << std::endl;
-
 //  // -- ensure local ops are suface ops
 //  pks_list_->sublist(names[1]).sublist("diffusion preconditioner").set("surface operator", true);
 //  pks_list_->sublist(names[1]).sublist("accumulation preconditioner").set("surface operator", true);
 
   domain_lake_ = pks_list_->sublist(names[0]).get<std::string>("domain name","lake");
   domain_soil_ = pks_list_->sublist(names[1]).get<std::string>("domain name","soil");
-
-  std::cout << "domain_lake_ = " << domain_lake_ << std::endl;
-  std::cout << "domain_soil_ = " << domain_soil_ << std::endl;
 
   // grab the meshes
   lake_mesh_ = S->GetMesh(domain_lake_);
@@ -169,8 +163,6 @@ void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
   auto inds_soil10 = std::make_shared<std::vector<std::vector<int> > >(1);
   auto values10 = std::make_shared<std::vector<double> >(1);
 
-  std::cout << "ncells_owned_f1 = " << ncells_owned_f1 << std::endl;
-
   int np1(0);
   for (int c = 0; c < ncells_owned_f1; ++c) {
     int f = mesh_lake->entity_get_parent(AmanziMesh::CELL, c);
@@ -178,17 +170,12 @@ void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
     int first = mmap1.FirstPointInElement(f);
     int ndofs = mmap1.ElementSize(f);
 
-    std::cout << "first = " << first << std::endl;
-    std::cout << "ndofs = " << ndofs << std::endl;
-
-    std::cout << "np1 = " << np1 << std::endl;
-
     for (int k = 0; k < ndofs; ++k) {
       (*inds_lake1)[np1].resize(1);
       (*inds_soil1)[np1].resize(1);
 
       (*values1)[np1] = 0.;
-      (*values00)[np1] = 0.; //(lambda_l[0][c]+lambda_l[0][c]);
+      (*values00)[np1] = 0.;
       if (c == 0) {
           (*values1)[np1] = -lambda_l[0][c]/area;
           (*values10)[0] = -lambda_l[0][c]/area;
@@ -197,20 +184,14 @@ void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
           (*inds_soil10)[0][0] = ncells_owned_f1-1;
           (*inds_lake10)[0][0] = c;
       }   // normal??
-      if (c == ncells_owned_f1-1) { (*values00)[np1] = 0.; //-lambda_l[0][c]/area; //-40.;
+      if (c == ncells_owned_f1-1) { (*values00)[np1] = 0.;
       (*inds_lake1)[np1][0] = c;
-      (*inds_soil1)[np1][0] = 0;} //lambda_l[0][c]/area; }
-      if (c == 0) { (*values00)[np1] = lambda_s[0][c]/area; //40.;
+      (*inds_soil1)[np1][0] = 0;}
+      if (c == 0) { (*values00)[np1] = lambda_s[0][c]/area;
       (*inds_lake1)[np1][0] = c;
-      (*inds_soil1)[np1][0] = 0;} //(lambda_l[0][c]+lambda_s[0][c])/area;}
-//      if (c == 1) { (*values00)[np1] = -lambda_l[0][c]/area;}
-//      std::cout << "lambda_l[0][c] = " << lambda_l[0][c] << std::endl;}
+      (*inds_soil1)[np1][0] = 0;}
       np1++;
     }
-  }
-
-  for (int c = 0; c < ncells_owned_f1; c++) {
-      std::cout << (*values00)[c] << std::endl;
   }
 
   inds_lake1->resize(np1);
@@ -238,19 +219,12 @@ void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
   auto inds_soil01 = std::make_shared<std::vector<std::vector<int> > >(1);
   auto values01 = std::make_shared<std::vector<double> >(1);
 
-  std::cout << "ncells_owned_f = " << ncells_owned_f << std::endl;
-
   int np(0);
   for (int c = 0; c < ncells_owned_f; ++c) {
     int f = mesh_soil->entity_get_parent(AmanziMesh::CELL, c);
     double area = mesh_soil->cell_volume(c);
     int first = mmap.FirstPointInElement(f);
     int ndofs = mmap.ElementSize(f);
-
-    std::cout << "first = " << first << std::endl;
-    std::cout << "ndofs = " << ndofs << std::endl;
-
-    std::cout << "np = " << np << std::endl;
 
     for (int k = 0; k < ndofs; ++k) {
       (*inds_lake)[np].resize(1);
@@ -266,14 +240,12 @@ void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
           (*inds_lake01)[0][0] = 0;
           (*inds_soil01)[0][0] = c;
       } // normal???
-      if (c == 0) { (*values11)[np] = 0.; //-lambda_s[0][c]/area; //-40.;
+      if (c == 0) { (*values11)[np] = 0.;
             (*inds_lake)[np][0] = 0;
             (*inds_soil)[np][0] = c;}
-      if (c == ncells_owned_f-1) { (*values11)[np] = lambda_l[0][c]/area; //40.;
+      if (c == ncells_owned_f-1) { (*values11)[np] = lambda_l[0][c]/area;
             (*inds_lake)[np][0] = 0;
-            (*inds_soil)[np][0] = c;} //lambda_s[0][c]/area;}//(lambda_l[0][c]+lambda_s[0][c])/area;}
-//      if (c == ncells_owned_f-2) { (*values11)[np] = -lambda_s[0][c]/area;}
-//      std::cout << "lambda_s[0][c] = " << lambda_s[0][c] << std::endl;}
+            (*inds_soil)[np][0] = c;}
       np++;
     }
   }
@@ -369,48 +341,41 @@ void MPCLake1D::Initialize(const Teuchos::Ptr<State>& S) {
                         ls_name, *linear_operator_list_,
                         true);
 
-  std::cout << "op0 Structure:\n" << op0->PrintDiagnostics() << std::endl;
+//  std::cout << "op0 Structure:\n" << op0->PrintDiagnostics() << std::endl;
 
-  std::cout << "op1 Structure:\n" << op1->PrintDiagnostics() << std::endl;
+//  std::cout << "op1 Structure:\n" << op1->PrintDiagnostics() << std::endl;
 
-  std::cout << "op0->A()" << std::endl;
-  std::cout << "op0 = " << op0 << std::endl;
+//  std::cout << "op0->A()" << std::endl;
+//  std::cout << "op0 = " << op0 << std::endl;
   op0->SymbolicAssembleMatrix();
   op0->AssembleMatrix();
-  std::cout << *op0->A() << std::endl;
+//  std::cout << *op0->A() << std::endl;
 
-  std::cout << "op1->A()" << std::endl;
+//  std::cout << "op1->A()" << std::endl;
   op1->SymbolicAssembleMatrix();
   op1->AssembleMatrix();
-  std::cout << *op1->A() << std::endl;
+//  std::cout << *op1->A() << std::endl;
 
-  std::cout << "PRINT" << std::endl;
-  std::cout << op_tree_lake_->PrintDiagnostics() << std::endl;
-  std::cout << "PRINT DONE" << std::endl;
+//  std::cout << "PRINT" << std::endl;
+//  std::cout << op_tree_lake_->PrintDiagnostics() << std::endl;
+//  std::cout << "PRINT DONE" << std::endl;
 
   op_tree_lake_->SymbolicAssembleMatrix();
   op_tree_lake_->AssembleMatrix();
 
-  std::cout << "before A" << std::endl;
-  std::cout << *op_tree_lake_->A() << std::endl;
-  std::cout << "after A" << std::endl;
+//  std::cout << "before A" << std::endl;
+//  std::cout << *op_tree_lake_->A() << std::endl;
+//  std::cout << "after A" << std::endl;
 
   op_tree_coupling_->SymbolicAssembleMatrix();
   op_tree_coupling_->AssembleMatrix();
 
-  std::cout << "before A_coupling" << std::endl;
-  std::cout << *op_tree_coupling_->A() << std::endl;
-  std::cout << "after A_coupling" << std::endl;
+//  std::cout << "before A_coupling" << std::endl;
+//  std::cout << *op_tree_coupling_->A() << std::endl;
+//  std::cout << "after A_coupling" << std::endl;
 
-
-//  exit(0);
-
-
-  std::cout << "plist_ = " << plist_ << std::endl;
-  std::cout << "plist_->sublist('inverse') = " << plist_->sublist("inverse") << std::endl;
   op_tree_lake_->set_inverse_parameters(plist_->sublist("inverse"));
   op_tree_lake_->InitializeInverse();
-//  std::cout << "inv_list = " << inv_list << std::endl;
 //  op_tree_lake_->set_inverse_parameters(inv_list);
 //  op_tree_lake_->InitializeInverse();
 
@@ -475,13 +440,8 @@ void
 MPCLake1D::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                             Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) {
 
-  std::cout << "FunctionalResidual START" << std::endl;
-
   // generate local matrices and apply sources and boundary conditions
   StrongMPC<PK_BDF_Default>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
-
-  std::cout << "MPCLake1D::FunctionalResidual first" << std::endl;
-  f->Print(std::cout);
 
   // add contribution of coupling terms to the residual
   TreeVector g(*f);
@@ -491,63 +451,7 @@ MPCLake1D::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVecto
   op_tree_coupling_->AssembleMatrix();
   int ierr = op_tree_coupling_->ApplyAssembled(*u_new, g);
 
-//  ApplyFlattened(*op_tree_coupling_, *u_new, *g);
-
   f->Update(1.0, g, 1.0);
-
-  std::cout << "MPCLake1D::FunctionalResidual second" << std::endl;
-  f->Print(std::cout);
-
-//  exit(0);
-
-  /*
-  // HERE <----
-
-  // although, residual calculation can be completed using off-diagonal
-  // blocks, we use global matrix-vector multiplication instead.
-  op_tree_lake_->AssembleMatrix();
-  int ierr = op_tree_lake_->ApplyAssembled(*u_new, *f); // f = A*u_new
-  AMANZI_ASSERT(!ierr);
-
-  // diagonal blocks in tree operator must be lake and soil
-  AMANZI_ASSERT(sub_pks_[0]->name() == "lake thermo" &&
-                  sub_pks_[1]->name() == "soil thermo");
-
-  auto op0 = sub_pks_[0]->my_operator(Operators::OPERATOR_MATRIX);
-  auto op1 = sub_pks_[1]->my_operator(Operators::OPERATOR_MATRIX);
-
-  f->SubVector(0)->Data()->Update(-1.0, *op0->rhs(), 1.0);
-  f->SubVector(1)->Data()->Update(-1.0, *op1->rhs(), 1.0);
-  */
-
-//  lake_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(0),
-//            u_new->SubVector(0), f->SubVector(0));
-//  soil_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(1),
-//            u_new->SubVector(1), f->SubVector(1));
-//
-//  op_tree_lake_->AssembleMatrix();
-//  int ierr = op_tree_lake_->ApplyAssembled(*u_new, *f);
-//  AMANZI_ASSERT(!ierr);
-
-  /*
-  std::cout << "FunctionalResidual op0->A()" << std::endl;
-  std::cout << "op0 = " << op0 << std::endl;
-  op0->SymbolicAssembleMatrix();
-  op0->AssembleMatrix();
-  std::cout << *op0->A() << std::endl;
-
-//  op1 = sub_pks_[1]->my_operator(Operators::OPERATOR_PRECONDITIONER_RAW);
-
-  std::cout << "FunctionalResidual op1->A()" << std::endl;
-  std::cout << "op1 = " << op1 << std::endl;
-  op1->SymbolicAssembleMatrix();
-  op1->AssembleMatrix();
-  std::cout << *op1->A() << std::endl;
-
-  std::cout << *op_tree_lake_->A() << std::endl;
-  */
-
-  std::cout << "FunctionalResidual DONE" << std::endl;
 }
 
 // -- Apply preconditioner to u and returns the result in Pu.
@@ -606,8 +510,6 @@ void
 MPCLake1D::UpdatePreconditioner(double t,
         Teuchos::RCP<const TreeVector> up, double h) {
 
-  std::cout << "UpdatePreconditioner START" << std::endl;
-
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "Precon update at t = " << t << std::endl;
@@ -617,8 +519,6 @@ MPCLake1D::UpdatePreconditioner(double t,
   // refill them).  This is why subsurface is first
   StrongMPC::UpdatePreconditioner(t, up, h);
 //  op_tree_lake_->ComputeInverse();
-
-  std::cout << "UpdatePreconditioner DONE" << std::endl;
 
 
 }

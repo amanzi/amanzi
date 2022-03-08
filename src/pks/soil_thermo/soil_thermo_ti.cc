@@ -27,43 +27,10 @@ namespace SoilThermo {
 // computes the non-linear functional g = g(t,u,udot)
 // -----------------------------------------------------------------------------
 void Soil_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
-                       Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
+    Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-//  std::cout << "Soil_Thermo_PK::FunctionalResidual START" << std::endl;
-
-
   bool ice_cover_ = false; // first always assume that there is no ice
-
-//  // get temperature
-//  Teuchos::RCP<const CompositeVector> temp = S_inter_->GetFieldData(temperature_key_);
-//
-//  for (CompositeVector::name_iterator comp=temp->begin();
-//       comp!=temp->end(); ++comp) {
-//    // much more efficient to pull out vectors first
-//    const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
-//
-//    int ncomp = temp->size(*comp, false);
-//
-//    int i_ice_max;
-//
-//    for (int i=0; i!=ncomp; ++i) {
-//      if (temp_v[0][i] < 273.15) { // check if there is ice cover
-//        ice_cover_ = true;
-//        i_ice_max = i;
-//      }
-//    } // i
-//
-//
-//    // if melting occured at the top, swap cells
-//    for (int i=0; i!=ncomp; ++i) {
-//      if (ice_cover_ && i < i_ice_max && temp_v[0][i] >= 273.15 ) {
-//        temp_v[0][i] = temp_v[0][i+1];
-//        temp_v[0][i+i_ice_max] = temp_v[0][i+i_ice_max+1];
-//      }
-//    } // i
-//
-//  }
 
   // increment, get timestep
   niter_++;
@@ -76,8 +43,8 @@ void Soil_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
 #if DEBUG_FLAG
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "----------------------------------------------------------------" << std::endl
-               << "Residual calculation: t0 = " << t_old
-               << " t1 = " << t_new << " h = " << h << std::endl;
+    << "Residual calculation: t0 = " << t_old
+    << " t1 = " << t_new << " h = " << h << std::endl;
 
   // dump u_old, u_new
   db_->WriteCellInfo(true);
@@ -92,7 +59,7 @@ void Soil_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   // update boundary conditions
   bc_temperature_->Compute(t_new);
   bc_diff_flux_->Compute(t_new);
-//  bc_flux_->Compute(t_new);
+  //  bc_flux_->Compute(t_new);
   UpdateBoundaryConditions_(S_next_.ptr());
 
   // update depth
@@ -151,8 +118,6 @@ void Soil_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   }
 #endif
 
-//  std::cout << "Soil_Thermo_PK::FunctionalResidual DONE" << std::endl;
-
 };
 
 
@@ -167,20 +132,14 @@ int Soil_Thermo_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
   db_->WriteVector("T_res", u->Data().ptr(), true);
 #endif
 
-//std::cout << "Soil_Thermo_PK::ApplyPreconditioner START" << std::endl;
-
-//  preconditioner_->PrintDiagnostics();
-
   // apply the preconditioner
   int ierr = preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
 
 #if DEBUG_FLAG
   db_->WriteVector("PC*T_res", Pu->Data().ptr(), true);
 #endif
-  
-  Pu->Data()->ViewComponent("boundary_face")->PutScalar(0.0); // correction 01/22/21
 
-//  std::cout << "Soil_Thermo_PK::ApplyPreconditioner DONE" << std::endl;
+  Pu->Data()->ViewComponent("boundary_face")->PutScalar(0.0); // correction 01/22/21
 
   return (ierr > 0) ? 0 : 1;
 };
@@ -194,8 +153,6 @@ void Soil_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "Precon update at t = " << t << std::endl;
 
-//  std::cout << "Soil_Thermo_PK::UpdatePreconditioner START" << std::endl;
-
   // update state with the solution up.
 
   AMANZI_ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
@@ -206,12 +163,11 @@ void Soil_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
   // update boundary conditions
   bc_temperature_->Compute(S_next_->time());
   bc_diff_flux_->Compute(S_next_->time());
-//  bc_flux_->Compute(S_next_->time());
+  //  bc_flux_->Compute(S_next_->time());
   UpdateBoundaryConditions_(S_next_.ptr());
 
   // div K_e grad u
   UpdateConductivityData_(S_next_.ptr());
-//  std::cout << "jacobian_ = " << jacobian_ << std::endl;
   if (jacobian_) UpdateConductivityDerivativeData_(S_next_.ptr());
 
   Teuchos::RCP<const CompositeVector> conductivity =
@@ -242,31 +198,25 @@ void Soil_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
     preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), up->Data().ptr());
   }
 
-//  std::cout << "Soil preconditioner_" << std::endl;
-//  preconditioner_->SymbolicAssembleMatrix();
-//  preconditioner_->AssembleMatrix();
-//  std::cout << *preconditioner_->A() << std::endl;
-//  std::cout << "Soil preconditioner_ after diff_" << std::endl;
-
   // update with accumulation terms
   // -- update the accumulation derivatives, de/dT
   S_next_->GetFieldEvaluator(energy_key_)
-      ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
+          ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
   const Epetra_MultiVector& de_dT = *S_next_->GetFieldData(Keys::getDerivKey(energy_key_, key_))
-      ->ViewComponent("cell",false);
+          ->ViewComponent("cell",false);
   unsigned int ncells = de_dT.MyLength();
 
   CompositeVector acc(S_next_->GetFieldData(energy_key_)->Map());
   auto& acc_c = *acc.ViewComponent("cell", false);
 
 #if DEBUG_FLAG
-//  db_->WriteVector("    de_dT", S_next_->GetFieldData(Keys::getDerivKey(temperature_key_, key_)).ptr());
+  //  db_->WriteVector("    de_dT", S_next_->GetFieldData(Keys::getDerivKey(temperature_key_, key_)).ptr());
 #endif
 
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_) {
     // do not add in de/dT if the height is 0
     const Epetra_MultiVector& pres = *S_next_->GetFieldData(Keys::getKey(domain_,"pressure"))
-        ->ViewComponent("cell",false);
+            ->ViewComponent("cell",false);
     const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
 
     for (unsigned int c=0; c!=ncells; ++c) {
@@ -290,48 +240,31 @@ void Soil_Thermo_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
   }
   preconditioner_acc_->AddAccumulationTerm(acc, "cell");
 
-//  preconditioner_->SymbolicAssembleMatrix();
-//  preconditioner_->AssembleMatrix();
-//  std::cout << *preconditioner_->A() << std::endl;
-//  std::cout << "Soil preconditioner_ after acc_" << std::endl;
-
   // -- update preconditioner with source term derivatives if needed
   AddSourcesToPrecon_(S_next_.ptr(), h);
 
-//  preconditioner_->SymbolicAssembleMatrix();
-//  preconditioner_->AssembleMatrix();
-//  std::cout << *preconditioner_->A() << std::endl;
-//  std::cout << "Soil preconditioner_ after sources" << std::endl;
-
-//  // update with advection terms
-//  if (implicit_advection_ && implicit_advection_in_pc_) {
-//    Teuchos::RCP<const CompositeVector> mass_flux = S_next_->GetFieldData(flux_key_);
-//    S_next_->GetFieldEvaluator(enthalpy_key_)
-//        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-////    Teuchos::RCP<const CompositeVector> dhdT = S_next_->GetFieldData(Keys::getDerivKey(enthalpy_key_, key_));
-//    Teuchos::RCP<const CompositeVector> dhdT = S_next_->GetFieldData(Keys::getDerivKey(temperature_key_, key_));
-//    preconditioner_adv_->Setup(*mass_flux);
-//    preconditioner_adv_->SetBCs(bc_adv_, bc_adv_);
-//    preconditioner_adv_->UpdateMatrices(mass_flux.ptr(), dhdT.ptr());
-//    ApplyDirichletBCsToEnthalpy_(S_next_.ptr());  !!!!!!!!!!!!! IMPORTANT !!!!!!
-//    preconditioner_adv_->ApplyBCs(false, true, false);
-//
-//  }
+  //  // update with advection terms
+  //  if (implicit_advection_ && implicit_advection_in_pc_) {
+  //    Teuchos::RCP<const CompositeVector> mass_flux = S_next_->GetFieldData(flux_key_);
+  //    S_next_->GetFieldEvaluator(enthalpy_key_)
+  //        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
+  ////    Teuchos::RCP<const CompositeVector> dhdT = S_next_->GetFieldData(Keys::getDerivKey(enthalpy_key_, key_));
+  //    Teuchos::RCP<const CompositeVector> dhdT = S_next_->GetFieldData(Keys::getDerivKey(temperature_key_, key_));
+  //    preconditioner_adv_->Setup(*mass_flux);
+  //    preconditioner_adv_->SetBCs(bc_adv_, bc_adv_);
+  //    preconditioner_adv_->UpdateMatrices(mass_flux.ptr(), dhdT.ptr());
+  //    ApplyDirichletBCsToEnthalpy_(S_next_.ptr());  !!!!!!!!!!!!! IMPORTANT !!!!!!
+  //    preconditioner_adv_->ApplyBCs(false, true, false);
+  //
+  //  }
 
   // Apply boundary conditions.
   preconditioner_diff_->ApplyBCs(true, true, true);
 
-//  preconditioner_->SymbolicAssembleMatrix();
-//  preconditioner_->AssembleMatrix();
-//  std::cout << *preconditioner_->A() << std::endl;
-//  std::cout << "Soil preconditioner_ after ApplyBCs" << std::endl;
-
-//  std::cout << "Soil_Thermo_PK::UpdatePreconditioner DONE" << std::endl;
-
 };
 
 double Soil_Thermo_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                                    Teuchos::RCP<const TreeVector> du)
+    Teuchos::RCP<const TreeVector> du)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 

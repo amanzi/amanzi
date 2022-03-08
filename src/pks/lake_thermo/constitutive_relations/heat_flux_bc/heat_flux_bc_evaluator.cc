@@ -5,7 +5,7 @@
 
   License: BSD
   Authors: Svetlana Tokareva (tokareva@lanl.gov)
-*/
+ */
 
 #include "heat_flux_bc_evaluator.hh"
 
@@ -13,11 +13,11 @@ namespace Amanzi {
 namespace LakeThermo {
 
 HeatFluxBCEvaluator::HeatFluxBCEvaluator(
-      Teuchos::ParameterList& plist) :
-    SecondaryVariableFieldEvaluator(plist) {
+    Teuchos::ParameterList& plist) :
+            SecondaryVariableFieldEvaluator(plist) {
   if (my_key_ == std::string("")) {
     my_key_ = plist_.get<std::string>("heat flux bc key",
-            "surface-heat_flux_bc");
+        "surface-heat_flux_bc");
   }
 
   Key domain = Keys::getDomain(my_key_);
@@ -33,8 +33,8 @@ HeatFluxBCEvaluator::HeatFluxBCEvaluator(
   conductivity_key_ = Keys::readKey(plist_, domain_name, "thermal conductivity", "thermal_conductivity");
   dependencies_.insert(conductivity_key_);
 
-//  AMANZI_ASSERT(plist_.isSublist("heat flux bc parameters"));
-//  Teuchos::ParameterList sublist = plist_.sublist("heat flux bc parameters");
+  //  AMANZI_ASSERT(plist_.isSublist("heat flux bc parameters"));
+  //  Teuchos::ParameterList sublist = plist_.sublist("heat flux bc parameters");
 
   // later: read these parameters from xml
   SS = 0.;      // solar radiation (read from met data)
@@ -48,16 +48,16 @@ HeatFluxBCEvaluator::HeatFluxBCEvaluator(
 
 
 HeatFluxBCEvaluator::HeatFluxBCEvaluator(
-      const HeatFluxBCEvaluator& other) :
-    SecondaryVariableFieldEvaluator(other),
-    SS(other.SS),
-    alpha(other.alpha),
-    E_a(other.E_a),
-    E_s(other.E_s),
-    H(other.H),
-    LE(other.LE),
-    temperature_key_(other.temperature_key_),
-	conductivity_key_(other.temperature_key_){}
+    const HeatFluxBCEvaluator& other) :
+            SecondaryVariableFieldEvaluator(other),
+            SS(other.SS),
+            alpha(other.alpha),
+            E_a(other.E_a),
+            E_s(other.E_s),
+            H(other.H),
+            LE(other.LE),
+            temperature_key_(other.temperature_key_),
+            conductivity_key_(other.temperature_key_){}
 
 
 Teuchos::RCP<FieldEvaluator>
@@ -66,8 +66,8 @@ HeatFluxBCEvaluator::Clone() const {
 }
 
 void HeatFluxBCEvaluator::EvaluateField_(
-      const Teuchos::Ptr<State>& S,
-      const Teuchos::Ptr<CompositeVector>& result) {
+    const Teuchos::Ptr<State>& S,
+    const Teuchos::Ptr<CompositeVector>& result) {
 
   ice_cover_ = false; // first always assume that there is no ice
 
@@ -98,101 +98,76 @@ void HeatFluxBCEvaluator::EvaluateField_(
   double c_lwrad_emis = 0.99; //Surface emissivity with respect to the long-wave radiation
 
   for (CompositeVector::name_iterator comp=result->begin();
-         comp!=result->end(); ++comp) {
+      comp!=result->end(); ++comp) {
 
-      const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
-      const Epetra_MultiVector& cond_v = *cond->ViewComponent(*comp,false);
-      Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
+    const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
+    const Epetra_MultiVector& cond_v = *cond->ViewComponent(*comp,false);
+    Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
 
-      int ncomp = result->size(*comp, false);
+    int ncomp = result->size(*comp, false);
 
-      for (int i=0; i!=ncomp; ++i) {
+    for (int i=0; i!=ncomp; ++i) {
 
-    	double T_s = temp_v[0][ncomp-1];
+      double T_s = temp_v[0][ncomp-1];
 
-    	E_s = c_lwrad_emis*sigma*pow(T_s,4);
+      E_s = c_lwrad_emis*sigma*pow(T_s,4);
 
-    	double b1_vap   = 610.78;        // Coefficient [N m^{-2} = kg m^{-1} s^{-2}]
-	    double b3_vap   = 273.16;        // Triple point [K]
-    	double b2w_vap  = 17.2693882;    // Coefficient (water)
-    	double b2i_vap  = 21.8745584;    // Coefficient (ice)
-    	double b4w_vap  = 35.86;         // Coefficient (temperature) [K]
-    	double b4i_vap  = 7.66;          // Coefficient (temperature) [K]
+      double b1_vap   = 610.78;        // Coefficient [N m^{-2} = kg m^{-1} s^{-2}]
+      double b3_vap   = 273.16;        // Triple point [K]
+      double b2w_vap  = 17.2693882;    // Coefficient (water)
+      double b2i_vap  = 21.8745584;    // Coefficient (ice)
+      double b4w_vap  = 35.86;         // Coefficient (temperature) [K]
+      double b4i_vap  = 7.66;          // Coefficient (temperature) [K]
 
-    	// Saturation water vapour pressure [N m^{-2} = kg m^{-1} s^{-2}]
-		double wvpres_s;
+      // Saturation water vapour pressure [N m^{-2} = kg m^{-1} s^{-2}]
+      double wvpres_s;
 
-		double h_ice = 0.;
-		double h_Ice_min_flk = 1.e-9;
-    	if (h_ice < h_Ice_min_flk) {  // Water surface
-    		wvpres_s = b1_vap*std::exp(b2w_vap*(T_s-b3_vap)/(T_s-b4w_vap));
-    	} else {                      // Ice surface
-    		wvpres_s = b1_vap*std::exp(b2i_vap*(T_s-b3_vap)/(T_s-b4i_vap));
-    	}
+      double h_ice = 0.;
+      double h_Ice_min_flk = 1.e-9;
+      if (h_ice < h_Ice_min_flk) {  // Water surface
+        wvpres_s = b1_vap*std::exp(b2w_vap*(T_s-b3_vap)/(T_s-b4w_vap));
+      } else {                      // Ice surface
+        wvpres_s = b1_vap*std::exp(b2i_vap*(T_s-b3_vap)/(T_s-b4i_vap));
+      }
 
-    	// Saturation specific humidity at T=T_s
-    	double tpsf_R_dryair    = 2.8705e2;  // Gas constant for dry air [J kg^{-1} K^{-1}]
-    	double tpsf_R_watvap    = 4.6151e2;  // Gas constant for water vapour [J kg^{-1} K^{-1}]
-    	double tpsf_Rd_o_Rv  = tpsf_R_dryair/tpsf_R_watvap;
-    	double q_s = tpsf_Rd_o_Rv*wvpres_s/(P_a-(1.-tpsf_Rd_o_Rv)*wvpres_s);
+      // Saturation specific humidity at T=T_s
+      double tpsf_R_dryair    = 2.8705e2;  // Gas constant for dry air [J kg^{-1} K^{-1}]
+      double tpsf_R_watvap    = 4.6151e2;  // Gas constant for water vapour [J kg^{-1} K^{-1}]
+      double tpsf_Rd_o_Rv  = tpsf_R_dryair/tpsf_R_watvap;
+      double q_s = tpsf_Rd_o_Rv*wvpres_s/(P_a-(1.-tpsf_Rd_o_Rv)*wvpres_s);
 
-    	double height_tq = 2.;
-		double tpsf_kappa_t_a   = 2.2e-05; // Molecular temperature conductivity of air [m^{2} s^{-1}]
-    	double tpsf_kappa_q_a   = 2.4e-05; // Molecular diffusivity of air for water vapour [m^{2} s^{-1}]
+      double height_tq = 2.;
+      double tpsf_kappa_t_a   = 2.2e-05; // Molecular temperature conductivity of air [m^{2} s^{-1}]
+      double tpsf_kappa_q_a   = 2.4e-05; // Molecular diffusivity of air for water vapour [m^{2} s^{-1}]
 
-    	H = -tpsf_kappa_t_a*(T_a-T_s)/height_tq;
-    	LE = -tpsf_kappa_q_a*(q_a-q_s)/height_tq;
+      H = -tpsf_kappa_t_a*(T_a-T_s)/height_tq;
+      LE = -tpsf_kappa_q_a*(q_a-q_s)/height_tq;
 
-    	double rho_a = P_a/tpsf_R_dryair/T_s/(1.+(1./tpsf_Rd_o_Rv-1.)*q_s);
+      double rho_a = P_a/tpsf_R_dryair/T_s/(1.+(1./tpsf_Rd_o_Rv-1.)*q_s);
 
-    	std::cout << "P_a = " << P_a << std::endl;
-    	std::cout << "tpsf_R_dryair = " << tpsf_R_dryair << std::endl;
-    	std::cout << "T_s = " << T_s << std::endl;
-    	std::cout << "tpsf_Rd_o_Rv = " << tpsf_Rd_o_Rv << std::endl;
-    	std::cout << "q_s = " << q_s << std::endl;
+      double tpsf_c_a_p  = 1.005e3; // Specific heat of air at constant pressure [J kg^{-1} K^{-1}]
+      double tpsf_L_evap = 2.501e6; // Specific heat of evaporation [J kg^{-1}]
+      double tpl_L_f     = 3.3e5;   // Latent heat of fusion [J kg^{-1}]
 
-    	std::cout << "rho_a = " << rho_a << std::endl;
+      H = H*rho_a*tpsf_c_a_p;
+      double Q_watvap   = LE*rho_a;
+      LE = tpsf_L_evap;
+      if (h_ice >= h_Ice_min_flk) LE = LE + tpl_L_f;   // Add latent heat of fusion over ice
+      LE = Q_watvap*LE;
 
-    	double tpsf_c_a_p  = 1.005e3; // Specific heat of air at constant pressure [J kg^{-1} K^{-1}]
-    	double tpsf_L_evap = 2.501e6; // Specific heat of evaporation [J kg^{-1}]
-    	double tpl_L_f     = 3.3e5;   // Latent heat of fusion [J kg^{-1}]
+      result_v[0][i] = 0.1*SS*(1.-alpha) + E_a - E_s - H - LE;
 
-    	H = H*rho_a*tpsf_c_a_p;
-    	double Q_watvap   = LE*rho_a;
-    	LE = tpsf_L_evap;
-    	if (h_ice >= h_Ice_min_flk) LE = LE + tpl_L_f;   // Add latent heat of fusion over ice
-    	LE = Q_watvap*LE;
+      result_v[0][i] *= -1.; ///cond_v[0][i];
 
-    	double row0 = 1.e+3;
-//    	double evap_rate = LE/(row0*tpsf_L_evap)*10.;
+    } // i
 
-//    	std::cout << "evap_rate = " << evap_rate << std::endl;
-
-    	std::cout << "q_s = " << q_s << std::endl;
-    	std::cout << "q_a = " << q_a << std::endl;
-    	std::cout << "T_s = " << T_s << std::endl;
-    	std::cout << "T_a = " << T_a << std::endl;
-    	std::cout << "P_a = " << P_a << std::endl;
-    	std::cout << "rho_a = " << rho_a << std::endl;
-    	std::cout << "SS = " << SS << std::endl;
-    	std::cout << "E_a = " << E_a << ", E_s = " << E_s << std::endl;
-    	std::cout << "H = " << H << ", LE = " << LE << std::endl;
-
-        result_v[0][i] = 0.1*SS*(1.-alpha) + E_a - E_s - H - LE;
-
-        result_v[0][i] *= -1.; ///cond_v[0][i];
-
-//        std::cout << "cond_v[0][i] = " << cond_v[0][i] << std::endl;
-
-      } // i
-
-    }
+  }
 
 }
 
 void HeatFluxBCEvaluator::EvaluateFieldPartialDerivative_(
-      const Teuchos::Ptr<State>& S, Key wrt_key,
-      const Teuchos::Ptr<CompositeVector>& result) {
+    const Teuchos::Ptr<State>& S, Key wrt_key,
+    const Teuchos::Ptr<CompositeVector>& result) {
   std::cout<<"HEAT FLUX BC: Derivative not implemented yet!"<<wrt_key<<"\n";
   AMANZI_ASSERT(0); // not implemented, not yet needed
   result->Scale(1.e-6); // convert to MJ

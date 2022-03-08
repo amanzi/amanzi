@@ -63,20 +63,15 @@ void SoilEnergyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   double cp0 = 800./rho0;
 
   S->GetFieldEvaluator(density_key_)->HasFieldChanged(S.ptr(), "soil thermo");
-
-  std::cout << "before rho" << ", density_key_ = " << density_key_ << std::endl;
   // evaluate density
   const Epetra_MultiVector& rho =
   *S->GetFieldData(density_key_)->ViewComponent("cell",false);
-  std::cout << "after rho" << std::endl;
 
   S->GetFieldEvaluator(heat_capacity_key_)->HasFieldChanged(S.ptr(), "soil thermo");
 
-  std::cout << "before cp" << std::endl;
   // evaluate heat capacity
   const Epetra_MultiVector& cp =
   *S->GetFieldData(heat_capacity_key_)->ViewComponent("cell",false);
-  std::cout << "after cp" << std::endl;
 
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {
@@ -95,8 +90,6 @@ void SoilEnergyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
 void SoilEnergyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-
-  std::cout << "SoilEnergyEvaluator::EvaluateFieldPartialDerivative_ START" << std::endl;
 
   result->PutScalar(0.);
 
@@ -131,8 +124,6 @@ void SoilEnergyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<Sta
   if (wrt_key == pres_key_) {
       result->PutScalar(0.);
   }
-
-  std::cout << "SoilEnergyEvaluator::EvaluateFieldPartialDerivative_ DONE" << std::endl;
 
 };
 

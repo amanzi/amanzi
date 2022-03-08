@@ -55,7 +55,7 @@ void DensityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     int ncomp = result->size(*comp, false);
     for (int i=0; i!=ncomp; ++i) {
-      double T = temp_v[0][i];
+      double T = temp_v[0][i]-273.15;
       result_v[0][i] = rho0; // * (1.+8.0*1.e-5 + 5.88*1.e-5*T - 8.11*1.e-6*T*T + 4.77*1.e-8*T*T*T);
     }
   }

@@ -26,9 +26,9 @@ namespace SoilThermo {
 void Soil_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   double dt = S_next_->time() - S_inter_->time();
 
-//  // update the temperature at both the old and new times.
-//  S_next_->GetFieldEvaluator(temperature_key_)->HasFieldChanged(S_next_.ptr(), name_);
-//  S_inter_->GetFieldEvaluator(temperature_key_)->HasFieldChanged(S_inter_.ptr(), name_);
+  //  // update the temperature at both the old and new times.
+  //  S_next_->GetFieldEvaluator(temperature_key_)->HasFieldChanged(S_next_.ptr(), name_);
+  //  S_inter_->GetFieldEvaluator(temperature_key_)->HasFieldChanged(S_inter_.ptr(), name_);
 
   // get the energy at each time
   Teuchos::RCP<const CompositeVector> T1 = S_next_->GetFieldData(temperature_key_);
@@ -38,22 +38,22 @@ void Soil_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
 
   // evaluate density
   const Epetra_MultiVector& rho =
-  *S_inter_->GetFieldData(density_key_)->ViewComponent("cell",false);
+      *S_inter_->GetFieldData(density_key_)->ViewComponent("cell",false);
 
   S_inter_->GetFieldEvaluator(heat_capacity_key_)->HasFieldChanged(S_inter_.ptr(), name_);
 
   // evaluate heat capacity
   const Epetra_MultiVector& cp =
-  *S_inter_->GetFieldData(heat_capacity_key_)->ViewComponent("cell",false);
+      *S_inter_->GetFieldData(heat_capacity_key_)->ViewComponent("cell",false);
 
   double rho0 = 1200.;
   double cp0 = 800./rho0;
 
-//  // Update the residual with the accumulation of energy over the
-//  // timestep, on cells.
-//  g->ViewComponent("cell", false)
-//    ->Update(cp0*rho0/dt, *T1->ViewComponent("cell", false),
-//          -cp0*rho0/dt, *T0->ViewComponent("cell", false), 1.0);
+  //  // Update the residual with the accumulation of energy over the
+  //  // timestep, on cells.
+  //  g->ViewComponent("cell", false)
+  //    ->Update(cp0*rho0/dt, *T1->ViewComponent("cell", false),
+  //          -cp0*rho0/dt, *T0->ViewComponent("cell", false), 1.0);
 
 
   const Epetra_MultiVector& T1_c = *S_next_->GetFieldData(temperature_key_)->ViewComponent("cell", false);
@@ -63,13 +63,13 @@ void Soil_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-//   Update the residual with the accumulation of energy over the
-//   timestep, on cells.
+  //   Update the residual with the accumulation of energy over the
+  //   timestep, on cells.
   for (int c = 0; c < ncells_owned; c++) {
-      g_c[0][c] += cp[0][c]*rho[0][c]/dt*(T1_c[0][c] - T0_c[0][c]);
-//      double rho0 = 1200.;
-//      double cp0 = 800./rho0;
-//      g_c[0][c] += cp0*rho0/dt*(T1_c[0][c] - T0_c[0][c]);
+    g_c[0][c] += cp[0][c]*rho[0][c]/dt*(T1_c[0][c] - T0_c[0][c]);
+    //      double rho0 = 1200.;
+    //      double cp0 = 800./rho0;
+    //      g_c[0][c] += cp0*rho0/dt*(T1_c[0][c] - T0_c[0][c]);
   }
 
 };
@@ -79,7 +79,7 @@ void Soil_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
 // Advective term for transport of enthalpy, q dot grad h.
 // -------------------------------------------------------------
 void Soil_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
-        const Teuchos::Ptr<CompositeVector>& g, bool negate) {
+    const Teuchos::Ptr<CompositeVector>& g, bool negate) {
 
   // set up the operator
 
@@ -97,7 +97,7 @@ void Soil_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
 
   // evaluate density
   const Epetra_MultiVector& rho =
-  *S_inter_->GetFieldData(density_key_)->ViewComponent("cell",false);
+      *S_inter_->GetFieldData(density_key_)->ViewComponent("cell",false);
 
   double dhdt = r_ - E_ - R_s_ - R_b_;
   double B_w  = r_ - E_;
@@ -136,7 +136,7 @@ void Soil_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
 // Diffusion term, div K grad T
 // -------------------------------------------------------------
 void Soil_Thermo_PK::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& g) {
+    const Teuchos::Ptr<CompositeVector>& g) {
   // update the thermal conductivity
   UpdateConductivityData_(S_next_.ptr());
   Teuchos::RCP<const CompositeVector> conductivity =
@@ -145,10 +145,6 @@ void Soil_Thermo_PK::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   const Epetra_MultiVector& uw_cond_c = *S_next_->GetFieldData(uw_conductivity_key_)->ViewComponent("face", false);
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
-//  for (int f = 0; f < nfaces_owned; f++) {
-//      std::cout << "soil cond = " << uw_cond_c[0][f] << std::endl;
-//  }
-
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
 
   // update the stiffness matrix
@@ -156,18 +152,6 @@ void Soil_Thermo_PK::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, temp.ptr());
   matrix_diff_->ApplyBCs(true, true, true);
-
-//  // update the flux
-//  Teuchos::RCP<CompositeVector> flux = S->GetFieldData(energy_flux_key_, name_);
-//
-//  const Epetra_MultiVector& flux_c = *S_next_->GetFieldData(energy_flux_key_)->ViewComponent("face", false);
-//  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-//
-//  for (int f = 0; f < nfaces_owned; f++) {
-//      std::cout << "f = " << f << " flux_c = " << flux_c[0][f] << std::endl;
-//  }
-//
-//  matrix_diff_->UpdateFlux(temp.ptr(), flux.ptr());
 
   // calculate the residual
   matrix_diff_->global_operator()->ComputeNegativeResidual(*temp, *g);
@@ -178,7 +162,7 @@ void Soil_Thermo_PK::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
 // Add in energy source, which are accumulated by a single evaluator.
 // ---------------------------------------------------------------------
 void Soil_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
-        const Teuchos::Ptr<CompositeVector>& g) {
+    const Teuchos::Ptr<CompositeVector>& g) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
   is_source_term_ = true;
@@ -189,7 +173,7 @@ void Soil_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
 
     // Update the source term
     const Epetra_MultiVector& cv =
-      *S->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
+        *S->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
 
     double dhdt = r_ - E_ - R_s_ - R_b_;
     double B_w  = r_ - E_;
@@ -198,16 +182,16 @@ void Soil_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
 
     // evaluate density
     const Epetra_MultiVector& rho =
-    *S->GetFieldData(density_key_)->ViewComponent("cell",false);
+        *S->GetFieldData(density_key_)->ViewComponent("cell",false);
 
     // get temperature
     const Epetra_MultiVector& temp = *S->GetFieldData(temperature_key_)
-          ->ViewComponent("cell",false);
+              ->ViewComponent("cell",false);
 
     // get conductivity
     S->GetFieldEvaluator(conductivity_key_)->HasFieldChanged(S.ptr(), name_);
     const Epetra_MultiVector& lambda_c =
-    *S->GetFieldData(conductivity_key_)->ViewComponent("cell",false);
+        *S->GetFieldData(conductivity_key_)->ViewComponent("cell",false);
 
     // Add into residual
     unsigned int ncells = g_c.MyLength();
@@ -220,40 +204,40 @@ void Soil_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
 
     if (vo_->os_OK(Teuchos::VERB_EXTREME))
       *vo_->os() << "Adding external source term" << std::endl;
-//    db_->WriteVector("  Q_ext", S->GetFieldData(source_key_).ptr(), false);
+    //    db_->WriteVector("  Q_ext", S->GetFieldData(source_key_).ptr(), false);
     db_->WriteVector("res (src)", g, false);
   }
 }
 
 
 void Soil_Thermo_PK::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
-//  // external sources of energy (temperature dependent source)
-//  if (is_source_term_ && is_source_term_differentiable_ &&
-//      S->GetFieldEvaluator(source_key_)->IsDependency(S, key_)) {
-//
-//    Teuchos::RCP<const CompositeVector> dsource_dT;
-//    if (!is_source_term_finite_differentiable_) {
-//      // evaluate the derivative through the dag
-//      S->GetFieldEvaluator(source_key_)->HasFieldDerivativeChanged(S, name_, key_);
-//      dsource_dT = S->GetFieldData(Keys::getDerivKey(source_key_, key_));
-//    } else {
-//      // evaluate the derivative through finite differences
-//      double eps = 1.e-8;
-//      S->GetFieldData(key_, name_)->Shift(eps);
-//      ChangedSolution();
-//      S->GetFieldEvaluator(source_key_)->HasFieldChanged(S, name_);
-//      auto dsource_dT_nc = Teuchos::rcp(new CompositeVector(*S->GetFieldData(source_key_)));
-//
-//      S->GetFieldData(key_, name_)->Shift(-eps);
-//      ChangedSolution();
-//      S->GetFieldEvaluator(source_key_)->HasFieldChanged(S, name_);
-//
-//      dsource_dT_nc->Update(-1/eps, *S->GetFieldData(source_key_), 1/eps);
-//      dsource_dT = dsource_dT_nc;
-//    }
-//    db_->WriteVector("  dQ_ext/dT", dsource_dT.ptr(), false);
-//    preconditioner_acc_->AddAccumulationTerm(*dsource_dT, -1.0, "cell", true);
-//  }
+  //  // external sources of energy (temperature dependent source)
+  //  if (is_source_term_ && is_source_term_differentiable_ &&
+  //      S->GetFieldEvaluator(source_key_)->IsDependency(S, key_)) {
+  //
+  //    Teuchos::RCP<const CompositeVector> dsource_dT;
+  //    if (!is_source_term_finite_differentiable_) {
+  //      // evaluate the derivative through the dag
+  //      S->GetFieldEvaluator(source_key_)->HasFieldDerivativeChanged(S, name_, key_);
+  //      dsource_dT = S->GetFieldData(Keys::getDerivKey(source_key_, key_));
+  //    } else {
+  //      // evaluate the derivative through finite differences
+  //      double eps = 1.e-8;
+  //      S->GetFieldData(key_, name_)->Shift(eps);
+  //      ChangedSolution();
+  //      S->GetFieldEvaluator(source_key_)->HasFieldChanged(S, name_);
+  //      auto dsource_dT_nc = Teuchos::rcp(new CompositeVector(*S->GetFieldData(source_key_)));
+  //
+  //      S->GetFieldData(key_, name_)->Shift(-eps);
+  //      ChangedSolution();
+  //      S->GetFieldEvaluator(source_key_)->HasFieldChanged(S, name_);
+  //
+  //      dsource_dT_nc->Update(-1/eps, *S->GetFieldData(source_key_), 1/eps);
+  //      dsource_dT = dsource_dT_nc;
+  //    }
+  //    db_->WriteVector("  dQ_ext/dT", dsource_dT.ptr(), false);
+  //    preconditioner_acc_->AddAccumulationTerm(*dsource_dT, -1.0, "cell", true);
+  //  }
 }
 
 // -------------------------------------------------------------
@@ -262,13 +246,13 @@ void Soil_Thermo_PK::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h)
 // -------------------------------------------------------------
 void Soil_Thermo_PK::ApplyDirichletBCsToTemperature_(const Teuchos::Ptr<State>& S) {
   // put the boundary fluxes in faces for Dirichlet BCs.
-//  S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S, name_);
-  
+  //  S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S, name_);
+
   const Epetra_MultiVector& temp_bf =
-    *S->GetFieldData(temperature_key_)->ViewComponent("boundary_face",false);
+      *S->GetFieldData(temperature_key_)->ViewComponent("boundary_face",false);
   const Epetra_Map& vandalay_map = mesh_->exterior_face_map(false);
   const Epetra_Map& face_map = mesh_->face_map(false);
-  
+
   int nbfaces = temp_bf.MyLength();
   for (int bf=0; bf!=nbfaces; ++bf) {
     AmanziMesh::Entity_ID f = face_map.LID(vandalay_map.GID(bf));
@@ -278,8 +262,8 @@ void Soil_Thermo_PK::ApplyDirichletBCsToTemperature_(const Teuchos::Ptr<State>& 
     }
   }
 }
-  
 
-  
+
+
 } //namespace SoilThermo
 } //namespace Amanzi

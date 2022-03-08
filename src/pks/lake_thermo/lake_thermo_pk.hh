@@ -162,10 +162,10 @@ class Lake_Thermo_PK : public PK_PhysicalBDF_Default{
 public:
 
   Lake_Thermo_PK(Teuchos::ParameterList& FElist,
-             const Teuchos::RCP<Teuchos::ParameterList>& plist,
-             const Teuchos::RCP<State>& S,
-             const Teuchos::RCP<TreeVector>& solution);
-  
+      const Teuchos::RCP<Teuchos::ParameterList>& plist,
+      const Teuchos::RCP<State>& S,
+      const Teuchos::RCP<TreeVector>& solution);
+
   // Virtual destructor
   virtual ~Lake_Thermo_PK() {}
 
@@ -183,12 +183,12 @@ public:
   // Default implementations of BDFFnBase methods.
   // -- Compute a norm on u-du and return the result.
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                       Teuchos::RCP<const TreeVector> du) override;
+      Teuchos::RCP<const TreeVector> du) override;
 
   // Lake_Thermo_PK is a BDFFnBase
   // computes the non-linear functional f = f(t,u,udot)
   virtual void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
-                   Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) override;
+      Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) override;
 
 
   // applies preconditioner to u and returns the result in Pu
@@ -201,26 +201,26 @@ public:
   virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up) override;
 
   virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
-          Teuchos::RCP<TreeVector> u) override;
-    
+      Teuchos::RCP<TreeVector> u) override;
+
   // evaluating consistent faces for given BCs and cell values
   virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
 
   virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
   ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
-                   Teuchos::RCP<const TreeVector> u,
-                   Teuchos::RCP<TreeVector> du) override;
+      Teuchos::RCP<const TreeVector> u,
+      Teuchos::RCP<TreeVector> du) override;
 
   // -- access methods
   virtual Teuchos::RCP<Operators::Operator>
-      my_operator(const Operators::OperatorType& type) override;
+  my_operator(const Operators::OperatorType& type) override;
 
   virtual Teuchos::RCP<Operators::PDE_HelperDiscretization>
-      my_pde(const Operators::PDEType& type) override {
-        std::cout << "In lake_pk_->my_pde " << matrix_diff_ << std::endl;
-        return matrix_diff_; }
+  my_pde(const Operators::PDEType& type) override {
+    std::cout << "In lake_pk_->my_pde " << matrix_diff_ << std::endl;
+    return matrix_diff_; }
 
- protected:
+protected:
   // These must be provided by the deriving PK.
   // -- setup the evaluators
   virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);
@@ -233,7 +233,7 @@ public:
 
   // -- Add any source terms into the residual.
   virtual void AddSources_(const Teuchos::Ptr<State>& S,
-                           const Teuchos::Ptr<CompositeVector>& f);
+      const Teuchos::Ptr<CompositeVector>& f);
   virtual void AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h);
 
   // Standard methods
@@ -253,15 +253,15 @@ public:
 
   // -- advection of enthalpy
   virtual void AddAdvection_(const Teuchos::Ptr<State>& S,
-                     const Teuchos::Ptr<CompositeVector>& f, bool negate);
+      const Teuchos::Ptr<CompositeVector>& f, bool negate);
 
   // -- diffusion of temperature
   virtual void ApplyDiffusion_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& f);
+      const Teuchos::Ptr<CompositeVector>& f);
 
   virtual int BoundaryFaceGetCell(int f) const;
 
- protected:
+protected:
   int niter_;
   Teuchos::RCP<Teuchos::ParameterList> lake_list_;
 
@@ -303,7 +303,7 @@ public:
   double T_limit_;
   double mass_atol_;
   double soil_atol_;
-  
+
   bool coupled_to_subsurface_via_temp_;
   bool coupled_to_subsurface_via_flux_;
   bool coupled_to_surface_via_temp_;
@@ -343,7 +343,7 @@ public:
   double rho0;
 
   Key energy_key_;
-//  Key wc_key_;
+  //  Key wc_key_;
   Key enthalpy_key_;
   Key flux_key_;
   Key energy_flux_key_;
@@ -356,6 +356,10 @@ public:
   Key cell_is_ice_key_;
 
   Key surface_flux_key_;
+
+  Key depth_key_;
+
+  Teuchos::RCP<AmanziMesh::Mesh> mesh_scaled;
 
 private:
   // factory registration
