@@ -168,6 +168,7 @@
 #   0.98.4b      - update SILO to 4.11 is needed
 #   0.98.4c      - update SEACAS to date tag v2022-02-16
 #   0.98.4d      - update Nanoflann to 1.4.2
+#   0.98.4e      - update ExprTk to 0.0.1
 #   0.98.5       - temntative release number
 
 include(CMakeParseArguments)
@@ -588,10 +589,10 @@ set(CLM_MD5_SUM       1412ff30fc5db0d3c1dc71ef30c86995)
 #
 set(EXPRTK_VERSION_MAJOR 0)
 set(EXPRTK_VERSION_MINOR 0)
-set(EXPRTK_VERSION_PATCH d81ac1a)
+set(EXPRTK_VERSION_PATCH 1)
 set(EXPRTK_VERSION  ${EXPRTK_VERSION_MAJOR}.${EXPRTK_VERSION_MINOR}.${EXPRTK_VERSION_PATCH})
-set(EXPRTK_URL_STRING    ${AMANZI_TPLS_DOWNLOAD_URL})
-set(EXPRTK_ARCHIVE_FILE  exprtk-${EXPRTK_VERSION}.zip)
-set(EXPRTK_SAVEAS_FILE   ${EXPRTK_ARCHIVE_FILE})
-set(EXPRTK_MD5_SUM       3cd40d9d5b2cb913f1eb4fe07c7d04eb)
+set(EXPRTK_URL_STRING    "https://github.com/ArashPartow/exprtk/archive")
+set(EXPRTK_ARCHIVE_FILE  ${EXPRTK_VERSION}.tar.gz)
+set(EXPRTK_SAVEAS_FILE   exprtk-${EXPRTK_ARCHIVE_FILE})
+set(EXPRTK_MD5_SUM       030041608dc2542d2aca3b28f4e587f8)
 
