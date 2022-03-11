@@ -128,6 +128,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
 
   // get space dimension
   int space_dim = vis_mesh.space_dimension();
+  int topo_dim = vis_mesh.manifold_dimension();
 
   // Get and write node coordinate info
   // -- get coords
@@ -238,7 +239,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
       local_conn += nodes.size() + 1;
       local_entities++;
 
-    } else if (space_dim == 2) {
+    } else if (topo_dim == 2) {
       vis_mesh.cell_get_nodes(c,&nodes);
       local_conn += nodes.size() + 2;
       local_entities++;
@@ -257,7 +258,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
 		      // length of ElementMap (num_cells if non-POLYHEDRON mesh)
   local_sizes[0] = local_conn; local_sizes[1] = local_entities;
   int *global_sizes = new int[2];
-  global_sizes[0] = 0; global_sizes[1] = 0;
+  global_sizes[0] = 0;global_sizes[1] = 0;
   viz_comm_->SumAll(local_sizes, global_sizes, 2);
   int global_conn = global_sizes[0];
   int global_entities = global_sizes[1];
@@ -315,7 +316,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
       // store entity
       entities[lcv_entity++] = cmap.GID(c);
       
-    } else if (space_dim == 2) {
+    } else if (topo_dim == 2) {
       // store cell type id
       conn[lcv++] = getCellTypeID_(ctype);
 
