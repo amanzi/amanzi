@@ -35,6 +35,7 @@ initialized (as independent variables are owned by state, not by any PK).
 #include "primary_variable_field_evaluator.hh"
 #include "State.hh"
 #include "StateDefs.hh"
+#include "StringExt.hh"
 
 namespace Amanzi {
 
@@ -211,11 +212,11 @@ void State::AliasMesh(const Key& target, const Key& alias) {
   bool deformable = IsDeformableMesh(target);
   Teuchos::RCP<AmanziMesh::Mesh> mesh = GetMesh_(target);
   RegisterMesh(alias, mesh, deformable);
-  mesh_aliases_[target] = alias;
+  mesh_aliases_[alias] = target;
 
   if (GetMesh_(target+"_3d") != Teuchos::null) {
     RegisterMesh(alias+"_3d", GetMesh_(target+"_3d"), deformable);
-    mesh_aliases_[target+"_3d"] = alias+"_3d";
+    mesh_aliases_[alias+"_3d"] = target+"_3d";
   }
 };
 
@@ -319,6 +320,8 @@ State::GetDomainSet(const Key& name) const {
 // -----------------------------------------------------------------------------
 Teuchos::RCP<FieldEvaluator>
 State::RequireFieldEvaluator(Key key) {
+  CheckIsDebugEval_(key);
+
   Teuchos::RCP<FieldEvaluator> evaluator = GetFieldEvaluator_(key);
 
   // Get the evaluator from state's Plist
@@ -447,6 +450,8 @@ State::RequireFieldEvaluator(Key key) {
 
 Teuchos::RCP<FieldEvaluator>
 State::RequireFieldEvaluator(Key key, Teuchos::ParameterList& plist) {
+  CheckIsDebugEval_(key);
+
   Teuchos::RCP<FieldEvaluator> evaluator = GetFieldEvaluator_(key);
 
   // Create a new evaluator.
@@ -605,6 +610,8 @@ void State::RequireConstantVector(Key fieldname, int dimension) {
 // Vector Field requires
 Teuchos::RCP<CompositeVectorSpace>
 State::RequireField(Key fieldname, Key owner) {
+  CheckIsDebugField_(fieldname);
+
   Teuchos::RCP<Field> field = CheckConsistent_or_die_(fieldname,
           COMPOSITE_VECTOR_FIELD, owner);
 
@@ -624,6 +631,8 @@ State::RequireField(Key fieldname, Key owner) {
 Teuchos::RCP<CompositeVectorSpace>
 State::RequireField(Key fieldname, Key owner,
                     const std::vector<std::vector<std::string> >& subfield_names) {
+  CheckIsDebugField_(fieldname);
+
   Teuchos::RCP<Field> field = CheckConsistent_or_die_(fieldname,
           COMPOSITE_VECTOR_FIELD, owner);
 
@@ -1483,6 +1492,9 @@ void WriteStateStatistics(const State& S, const VerboseObject& vo)
 
     for (auto f_it = S.field_begin(); f_it != S.field_end(); ++f_it) {
       std::string name(f_it->first);
+      if (name.size() > 33) replace_all(name, "temperature", "temp");
+      if (name.size() > 33) replace_all(name, "internal_energy", "ie");
+      if (name.size() > 33) replace_all(name, "molar", "mol");
 
       if (f_it->second->type() == COMPOSITE_VECTOR_FIELD) {
         std::map<std::string, double> vmin, vmax, vavg;
@@ -1527,5 +1539,47 @@ State::GetEvaluatorList(const Key& key)
   return FEList().sublist(key);
 }
 
+bool
+State::HasEvaluatorList(const Key& key)
+{
+  if (FEList().isSublist(key)) return true;
+  // check for domain set
+  KeyTriple split;
+  bool is_ds = Keys::splitDomainSet(key, split);
+  if (is_ds) {
+    Key lifted_key = Keys::getKey(std::get<0>(split), "*", std::get<2>(split));
+    if (FEList().isSublist(lifted_key)) return true;
+  }
+  return false;
+}
+
+
+void State::CheckIsDebugEval_(const Key& key)
+{
+  // check for debugging.  This provides a line for setting breakpoints for
+  // debugging PK and Evaluator dependencies.
+#ifdef ENABLE_DBC
+  Teuchos::Array<Key> debug_evals = state_plist_.sublist("debug").get<Teuchos::Array<std::string>>("evaluators",
+          Teuchos::Array<Key>());
+  if (std::find(debug_evals.begin(), debug_evals.end(), key) != debug_evals.end()) {
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      *vo_->os() << "State: Evaluator for debug field \"" << key << "\" was required." << std::endl;
+    }
+  }
+#endif
+}
+
+void State::CheckIsDebugField_(const Key& fieldname)
+{
+#ifdef ENABLE_DBC
+  Teuchos::Array<Key> debug_fields = state_plist_.sublist("debug").get<Teuchos::Array<std::string>>("fields",
+          Teuchos::Array<Key>());
+  if (std::find(debug_fields.begin(), debug_fields.end(), fieldname) != debug_fields.end()) {
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      *vo_->os() << "State: Field for debug field \"" << fieldname << "\" was required." << std::endl;
+    }
+  }
+#endif
+}
 
 } // namespace Amanzi

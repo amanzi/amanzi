@@ -490,7 +490,6 @@
       </ParameterList>
       <ParameterList name="physical models and assumptions">
 	<Parameter name="multiscale model" type="string" value="dual continuum discontinuous matrix"/>
-	<Parameter name="water content model" type="string" value="constant density"/>
       </ParameterList>
       <ParameterList name="verbose object">
 	<Parameter name="verbosity level" type="string" value="high"/>
@@ -649,7 +648,6 @@
       </ParameterList>
       <ParameterList name="physical models and assumptions">
 	<Parameter name="multiscale model" type="string" value="dual continuum discontinuous matrix"/>
-	<Parameter name="water content model" type="string" value="constant density"/>
       </ParameterList>
       <ParameterList name="verbose object">
 	<Parameter name="verbosity level" type="string" value="high"/>

@@ -9,6 +9,7 @@ Default field evaluator base class.  A FieldEvaluator is a node in the Phalanx-l
 dependency tree.
 
 ------------------------------------------------------------------------- */
+#include "Debugger.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "secondary_variable_field_evaluator.hh"
 
@@ -201,8 +202,30 @@ void SecondaryVariableFieldEvaluator::UpdateField_(const Teuchos::Ptr<State>& S)
   // pull my variables out of state
   Teuchos::RCP<CompositeVector> myfield = S->GetFieldData(my_key_, my_key_);
 
+  // logging
+  Teuchos::RCP<Debugger> db;
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    db = Teuchos::rcp(new Debugger(myfield->Mesh(), my_key_,
+            plist_.sublist("verbose object")));
+    std::vector<Teuchos::Ptr<const CompositeVector>> vecs;
+    std::vector<Key> keys;
+    for (const auto& dep : dependencies_) {
+      keys.emplace_back(dep);
+      vecs.emplace_back(S->GetFieldData(dep).ptr());
+    }
+    if (db->get_cells().size() > 0) {
+      db->WriteDivider();
+      db->WriteVectors(keys, vecs);
+      db->WriteDivider();
+    }
+  }
+
   // call the evaluate method
   EvaluateField_(S, myfield.ptr());
+
+  // finish by writing the result
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    db->WriteVector(my_key_, myfield.ptr());
 }
 
 

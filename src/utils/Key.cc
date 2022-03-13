@@ -77,27 +77,29 @@ KeyPair split(const Key& name, const char& delimiter)
 
 bool validKey(const Key& key)
 {
-  auto deriv_del_count = std::count(key.begin(), key.end(), deriv_delimiter);
+  bool result = true;
+  int deriv_del_count = std::count(key.begin(), key.end(), deriv_delimiter);
   if (deriv_del_count > 1) {
-    return false;
+    result = false;
   } else if (deriv_del_count == 1) {
     auto split_deriv = split(key, deriv_delimiter);
-    return validKey(split_deriv.first) && validKey(split_deriv.second);
+    result = validKey(split_deriv.first) && validKey(split_deriv.second);
   } else {
-    if (std::count(key.begin(), key.end(), name_delimiter) > 1) {
-      return false;
+    int name_count = std::count(key.begin(), key.end(), name_delimiter);
+    if (name_count > 1) {
+      result = false;
     } else {
       auto domain_var = split(key, name_delimiter);
       if (starts_with(domain_var.first, dset_delimiter) ||
           ends_with(domain_var.first, dset_delimiter))
-        return false;
+        result = false;
       if (std::count(domain_var.first.begin(), domain_var.first.end(), dset_delimiter) > 1)
-        return false;
+        result = false;
       if (std::count(domain_var.second.begin(), domain_var.second.end(), dset_delimiter))
-        return false;
-      return true;
+        result = false;
     }
   }
+  return result;
 }
 
 Key getKey(const Key& domain, const Key& variable)

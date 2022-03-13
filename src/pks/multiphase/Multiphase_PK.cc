@@ -454,7 +454,7 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
                            .sublist("diffusion operator")
                            .sublist("upwind");
 
-  upwind_ = Teuchos::rcp(new Operators::UpwindFlux<int>(mesh_, Teuchos::null));
+  upwind_ = Teuchos::rcp(new Operators::UpwindFlux(mesh_));
   upwind_->Init(upw_list);
 
   // initialize other fields
@@ -463,6 +463,10 @@ void Multiphase_PK::Initialize(const Teuchos::Ptr<State>& S)
   // io
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
+    for (int i = 0; i < bcs_.size(); i++) {
+      *vo_->os() << "bc \"" << bcs_[i]->keyword() << "\" has " << bcs_[i]->size()
+                 << " entities" << std::endl;
+    }
     *vo_->os() << vo_->color("green") << "Initialization of PK is complete, T=" 
                << units_.OutputTime(S_->time()) << vo_->reset() << std::endl << std::endl;
   }

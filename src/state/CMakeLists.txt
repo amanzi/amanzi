@@ -83,6 +83,7 @@ set(state_inc_files
   Visualization.hh
   VisualizationDomainSet.hh
   UnstructuredObservations.hh
+  MultiplicativeReciprocalEvaluator.hh
   Debugger.hh)
 
 add_amanzi_library(state 
@@ -111,6 +112,7 @@ add_amanzi_library(state
                           UnstructuredObservations.cc
                           Visualization.cc
                           VisualizationDomainSet.cc
+                          MultiplicativeReciprocalEvaluator.cc
                           Debugger.cc
                    HEADERS ${state_inc_files}
 		   LINK_LIBS data_structures functions mesh_functions output mesh atk
@@ -135,6 +137,7 @@ register_evaluator_with_factory(HEADERFILE independent_variable_field_evaluator_
 register_evaluator_with_factory(HEADERFILE independent_variable_field_evaluator_constant_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE constant_variable_field_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE deforming_cell_volume_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE MultiplicativeReciprocalEvaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 
 generate_evaluators_registration_header(HEADERFILE state_evaluators_registration.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS  INSTALL True)
 
@@ -147,6 +150,7 @@ if (BUILD_TESTS)
 
     # Mesh factory includes
     include_directories(${MESH_FACTORY_SOURCE_DIR})
+    include_directories(${MESH_EXTRACTED_SOURCE_DIR})
 
     # Copy test subdirectory for out of source builds
     if (NOT ("${STATE_SOURCE_DIR}" STREQUAL "${STATE_BINARY_DIR}"))

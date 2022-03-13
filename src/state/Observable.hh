@@ -40,6 +40,9 @@ to disk by the UnstructuredObservation_ object.
 
     * `"number of vectors`" ``[int]`` **1** Number of vector components to write.
 
+    * `"degree of freedom`" ``[int]`` **-1** Degree of freedom to write.  Default
+        of -1 implies writing all degrees of freedom.
+
     * `"functional`" ``[string]`` the type of function to apply to the variable
       on the region.  One of:
 
@@ -76,6 +79,12 @@ to disk by the UnstructuredObservation_ object.
       boundary faces and that the default vector is the outward normal direction
       for each face.
 
+    * `"direction normalized flux relative to region`" ``[string]`` **optional**
+      If provided, the flux observation is assumed to be on a set of faces
+      which are the exterior of a volumetric region.  This region provides that
+      volume, and fluxes are oriented in the "outward normal" direction
+      relative to this region's interior.
+
     * `"time integrated`" ``[bool]`` **false** If true, observe the
       time-integral, observing on all cycles and accumulating the
       backwards-Euler product of dt times the observable at the new time.
@@ -90,6 +99,7 @@ to disk by the UnstructuredObservation_ object.
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "AmanziTypes.hh"
 #include "Point.hh"
 #include "MeshDefs.hh"
 #include "IOEvent.hh"
@@ -104,21 +114,30 @@ class Observable {
 
   Observable(Teuchos::ParameterList& plist);
 
-  const std::string& get_name() { return name_; }
-  const std::string& get_variable() { return variable_; }
-  const std::string& get_region() { return region_; }
-  const std::string& get_location() { return location_; }
-  const std::string& get_functional() { return functional_; }
+  const std::string& get_name() const { return name_; }
+  const std::string& get_variable() const { return variable_; }
+  const std::string& get_region() const { return region_; }
+  const std::string& get_location() const { return location_; }
+  const std::string& get_functional() const { return functional_; }
+
+  const Comm_ptr_type& get_comm() const { return comm_; }
+  void set_comm(const Comm_ptr_type& comm) { comm_ = comm; }
+
   bool is_time_integrated() { return time_integrated_; }
-  int get_num_vectors() { return num_vectors_; }
+  int get_num_vectors() {
+    return (dof_ >= 0) ? 1 : num_vectors_;
+  }
+  int get_degree_of_freedom() { return dof_; }
 
   void Setup(const Teuchos::Ptr<State>& S);
   void FinalizeStructure(const Teuchos::Ptr<State>& S);
   void Update(const Teuchos::Ptr<State>& S, std::vector<double>& data, int start_loc);
 
  protected:
+  Comm_ptr_type comm_;
   bool flux_normalize_;
   Teuchos::RCP<AmanziGeometry::Point> direction_;
+  std::string flux_normalize_region_;
 
   std::string name_;
   std::string variable_;
@@ -126,9 +145,12 @@ class Observable {
   std::string functional_;
   std::string location_;
   int num_vectors_;
+  int dof_;
   bool time_integrated_;
   double old_time_;
-  bool has_eval_;
+
+  bool has_eval_; // is there an evaluator for this variable_
+  bool has_data_; // is there data on this rank for this variable_
 
   double (*function_)(double a, double b, double vol);
 };

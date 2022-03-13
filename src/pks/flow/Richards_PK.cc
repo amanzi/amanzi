@@ -25,6 +25,7 @@
 #include "InverseFactory.hh"
 #include "Mesh.hh"
 #include "Mesh_Algorithms.hh"
+#include "MultiplicativeReciprocalEvaluator.hh"
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PK_Utils.hh"
@@ -36,7 +37,6 @@
 // Amanzi::Flow
 #include "DarcyVelocityEvaluator.hh"
 #include "PorosityModelEvaluator.hh"
-#include "RelPermEvaluator.hh"
 #include "Richards_PK.hh"
 #include "VWContentEvaluator.hh"
 #include "WRMEvaluator.hh"
@@ -138,32 +138,35 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
 
   viscosity_liquid_key_ = Keys::getKey(domain_, "viscosity_liquid"); 
   mol_density_liquid_key_ = Keys::getKey(domain_, "molar_density_liquid"); 
+ 
+  relperm_key_ = Keys::getKey(domain_, "relative_permeability"); 
+  alpha_key_ = Keys::getKey(domain_, "alpha_coef"); 
 
   // set up the base class 
   Flow_PK::Setup(S);
 
   // Our decision can be affected by the list of models
-  Teuchos::RCP<Teuchos::ParameterList> physical_models =
-      Teuchos::sublist(fp_list_, "physical models and assumptions");
-  std::string vwc_model = physical_models->get<std::string>("water content model", "constant density");
+  auto physical_models = Teuchos::sublist(fp_list_, "physical models and assumptions");
+  vapor_diffusion_ = physical_models->get<bool>("vapor diffusion", false);
   std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single continuum");
 
   // Require primary field for this PK, which is pressure
-  std::vector<std::string> names;
-  std::vector<AmanziMesh::Entity_kind> locations;
-  std::vector<int> ndofs;
+  std::vector<std::string> names({ "cell" });
+  std::vector<AmanziMesh::Entity_kind> locations({ AmanziMesh::CELL });
+  std::vector<int> ndofs(1, 1);
 
   Teuchos::RCP<Teuchos::ParameterList> list1 = Teuchos::sublist(fp_list_, "operators", true);
   Teuchos::RCP<Teuchos::ParameterList> list2 = Teuchos::sublist(list1, "diffusion operator", true);
   Teuchos::RCP<Teuchos::ParameterList> list3 = Teuchos::sublist(list2, "matrix", true);
   std::string name = list3->get<std::string>("discretization primary");
 
-  names.push_back("cell");
-  locations.push_back(AmanziMesh::CELL);
-  ndofs.push_back(1);
   if (name != "fv: default" && name != "nlfv: default") {
     names.push_back("face");
     locations.push_back(AmanziMesh::FACE);
+    ndofs.push_back(1);
+  } else {
+    names.push_back("boundary_face");
+    locations.push_back(AmanziMesh::BOUNDARY_FACE);
     ndofs.push_back(1);
   }
 
@@ -184,7 +187,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
             .set<std::string>("pressure key", pressure_key_)
             .set<std::string>("saturation key", saturation_liquid_key_)
             .set<std::string>("porosity key", porosity_key_)
-            .set<std::string>("water content model", vwc_model);
+            .set<bool>("water vapor", vapor_diffusion_);
     auto eval = Teuchos::rcp(new VWContentEvaluator(vwc_list));
     S->SetFieldEvaluator(water_content_key_, eval);
   }
@@ -280,9 +283,23 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     if (!S->HasField("const_fluid_viscosity")) {
       S->RequireScalar("const_fluid_viscosity", passwd_);
     }
-    S->RequireField(viscosity_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->GetField(viscosity_liquid_key_, passwd_)->set_io_vis(false);
+    S->RequireField(viscosity_liquid_key_, viscosity_liquid_key_)->SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+
+    double mu = glist_->sublist("state").sublist("initial conditions")
+                       .sublist("const_fluid_viscosity").get<double>("value");
+
+    std::vector<std::string> components({ "cell", "boundary_face" });
+    Teuchos::ParameterList& eval = S->FEList().sublist(viscosity_liquid_key_);
+    eval.sublist("function").sublist("DOMAIN")
+        .set<std::string>("region", "All")
+        .set<Teuchos::Array<std::string> >("components", components)
+        .sublist("function").sublist("function-constant")
+        .set<double>("value", mu);
+    eval.set<std::string>("field evaluator type", "independent variable");
+
+    S->RequireFieldEvaluator(viscosity_liquid_key_);
   }
 
   // -- model for liquid density is constant density unless specified otherwise
@@ -296,20 +313,20 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
                         .sublist("const_fluid_density").get<double>("value");
     double n_l = rho / CommonDefs::MOLAR_MASS_H2O;
 
-    Teuchos::ParameterList& wc_eval = S->FEList().sublist(mol_density_liquid_key_);
-    wc_eval.sublist("function").sublist("DOMAIN")
-           .set<std::string>("region", "All")
-           .set<std::string>("component","cell")
-           .sublist("function").sublist("function-constant")
-           .set<double>("value", n_l);
-    wc_eval.set<std::string>("field evaluator type", "independent variable");
+    std::vector<std::string> components({ "cell", "boundary_face" });
+    Teuchos::ParameterList& eval = S->FEList().sublist(mol_density_liquid_key_);
+    eval.sublist("function").sublist("DOMAIN")
+        .set<std::string>("region", "All")
+        .set<Teuchos::Array<std::string> >("components", components)
+        .sublist("function").sublist("function-constant")
+        .set<double>("value", n_l);
+    eval.set<std::string>("field evaluator type", "independent variable");
 
     S->RequireFieldEvaluator(mol_density_liquid_key_);
   }
   
   // -- saturation
-  Teuchos::RCP<Teuchos::ParameterList>
-      wrm_list = Teuchos::sublist(fp_list_, "water retention models", true);
+  auto wrm_list = Teuchos::sublist(fp_list_, "water retention models", true);
   wrm_ = CreateWRMPartition(mesh_, wrm_list);
 
   if (!S->HasField(saturation_liquid_key_)) {
@@ -328,6 +345,46 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField(prev_saturation_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S->GetField(prev_saturation_liquid_key_, passwd_)->set_io_vis(false);
+  }
+
+  // -- relative permeability
+  if (!S->HasField(relperm_key_)) {
+    S->RequireField(relperm_key_, relperm_key_)->SetMesh(mesh_)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("relative permeability key", relperm_key_);
+
+    auto eval = Teuchos::rcp(new Flow::RelPermEvaluator(elist, S.ptr(), wrm_));
+    S->SetFieldEvaluator(relperm_key_, eval);
+  }
+
+  // -- inverse of kinematic viscosity
+  if (!S->HasField(alpha_key_)) {
+    Key kkey;
+    if (flow_on_manifold_) {
+      S->RequireField(alpha_key_, alpha_key_)->SetMesh(mesh_)->SetGhosted(true)
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
+      kkey = permeability_key_;
+    } else {
+      S->RequireField(alpha_key_, alpha_key_)->SetMesh(mesh_)->SetGhosted(true)
+        ->AddComponent("cell", AmanziMesh::CELL, 1)
+        ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
+      kkey = relperm_key_;
+    }
+
+    Teuchos::ParameterList elist;
+    Teuchos::Array<std::string> list0, list1;
+    list0.push_back(Keys::getVarName(kkey));
+    list0.push_back(Keys::getVarName(mol_density_liquid_key_));
+    list1.push_back(Keys::getVarName(viscosity_liquid_key_));
+    elist.set<std::string>("my key", alpha_key_)
+         .set<Teuchos::Array<std::string> >("multiplicative dependencies", list0)
+         .set<Teuchos::Array<std::string> >("reciprocal dependencies", list1);
+
+    auto eval = Teuchos::rcp(new MultiplicativeReciprocalEvaluator(elist));
+    S->SetFieldEvaluator(alpha_key_, eval);
   }
 
   // Local fields and evaluators.
@@ -416,24 +473,20 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   // relative permeability
   // -- create basic fields, factories and control variables
   Teuchos::RCP<Teuchos::ParameterList> upw_list = Teuchos::sublist(fp_list_, "relative permeability", true);
-  relperm_ = Teuchos::rcp(new RelPerm(*upw_list, mesh_, atm_pressure_, wrm_));
 
-  Operators::UpwindFactory<RelPerm> upwind_factory;
-  upwind_ = upwind_factory.Create(mesh_, *upw_list, relperm_);
+  Operators::UpwindFactory upwind_factory;
+  upwind_ = upwind_factory.Create(mesh_, *upw_list);
 
   std::string upw_upd = upw_list->get<std::string>("upwind frequency", "every timestep");
   if (upw_upd == "every nonlinear iteration") upwind_frequency_ = FLOW_UPWIND_UPDATE_ITERATION;
   else upwind_frequency_ = FLOW_UPWIND_UPDATE_TIMESTEP;  
 
-  // relative permeability and related stractures
-  // -- create vectors using estimate of the space size
-  Teuchos::RCP<CompositeVectorSpace> upw_cvs = upwind_->Map();
-  krel_ = Teuchos::rcp(new CompositeVector(*upw_cvs));
-  dKdP_ = Teuchos::rcp(new CompositeVector(*upw_cvs));
-
-  // -- populate fields with default values
-  krel_->PutScalarMasterAndGhosted(1.0);
-  dKdP_->PutScalarMasterAndGhosted(0.0);
+  // face component of upwind field matches that of the flow field 
+  auto cvs = S_->GetFieldData(darcy_flux_key_)->Map();
+  cvs.SetOwned(false);
+  cvs.AddComponent("cell", AmanziMesh::CELL, 1);
+  alpha_upwind_ = Teuchos::rcp(new CompositeVector(cvs));
+  alpha_upwind_dP_ = Teuchos::rcp(new CompositeVector(cvs));
 
   // Process models and assumptions.
   flux_units_ = molar_rho_ / rho_;
@@ -441,7 +494,6 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   // -- coupling with other physical PKs
   Teuchos::RCP<Teuchos::ParameterList> physical_models = 
       Teuchos::sublist(fp_list_, "physical models and assumptions");
-  vapor_diffusion_ = physical_models->get<bool>("vapor diffusion", false);
   multiscale_porosity_ = (physical_models->get<std::string>(
       "multiscale model", "single continuum") != "single continuum");
 
@@ -465,19 +517,21 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   } else if (name == "other: arithmetic average") {
     nonlinear_coef = "upwind: face";
   }
-  oplist_matrix.set<std::string>("nonlinear coefficient", nonlinear_coef);
-  oplist_pc.set<std::string>("nonlinear coefficient", nonlinear_coef);
+  if (!oplist_matrix.isParameter("nonlinear coefficient")) {
+    oplist_matrix.set<std::string>("nonlinear coefficient", nonlinear_coef);
+    oplist_pc.set<std::string>("nonlinear coefficient", nonlinear_coef);
+  }
 
   Operators::PDE_DiffusionFactory opfactory(oplist_matrix, mesh_);
+  opfactory.SetConstantGravitationalTerm(gravity_, rho_);
+
   if (!flow_on_manifold_) {
     SetAbsolutePermeabilityTensor();
     Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
     opfactory.SetVariableTensorCoefficient(Kptr);
-    opfactory.SetVariableScalarCoefficient(krel_, dKdP_);
-    opfactory.SetConstantGravitationalTerm(gravity_, rho_);
+    opfactory.SetVariableScalarCoefficient(alpha_upwind_, alpha_upwind_dP_);
   } else {
-    S_->GetFieldEvaluator(permeability_key_)->HasFieldChanged(S_.ptr(), permeability_key_);
-    auto kptr = S_->GetFieldData(permeability_key_);
+    auto kptr = S_->GetFieldData(alpha_key_);
     opfactory.SetVariableScalarCoefficient(kptr);
   }
 
@@ -655,8 +709,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   if (tmp == 0.0) {
     op_matrix_diff_->UpdateFlux(solution.ptr(), darcy_flux_copy.ptr());
 
-    Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face", true);
-    for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
+    darcy_flux_copy->ScaleMasterAndGhosted(1.0 / molar_rho_);
   }
 
   // Subspace entering: re-initialize lambdas.
@@ -673,8 +726,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
       op_matrix_diff_->UpdateFlux(solution.ptr(), darcy_flux_copy.ptr());
 
       // normalize to Darcy flux, m/s
-      Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face", true);
-      for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
+      darcy_flux_copy->ScaleMasterAndGhosted(1.0 / molar_rho_);
     }
   }
 
@@ -721,19 +773,6 @@ void Richards_PK::InitializeFields_()
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // set popular default values for missed fields.
-  // -- viscosity: if not initialized, we constant value from state.
-  if (S_->GetField(viscosity_liquid_key_)->owner() == passwd_) {
-    double mu = *S_->GetScalarData("const_fluid_viscosity");
-
-    if (!S_->GetField(viscosity_liquid_key_, passwd_)->initialized()) {
-      S_->GetFieldData(viscosity_liquid_key_, passwd_)->PutScalar(mu);
-      S_->GetField(viscosity_liquid_key_, passwd_)->set_initialized();
-
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initialized " << viscosity_liquid_key_ << " to input value " << mu << std::endl;  
-    }
-  }
-
   if (S_->GetField(saturation_liquid_key_)->owner() == passwd_) {
     if (S_->HasField(saturation_liquid_key_)) {
       if (!S_->GetField(saturation_liquid_key_, passwd_)->initialized()) {
@@ -836,7 +875,7 @@ void Richards_PK::InitializeStatistics_()
 
     if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
       *vo_->os() << "\nPrinting WRM files..." << std::endl;
-      relperm_->PlotWRMcurves();
+      PlotWRMcurves_();
     }
 
     *vo_->os() << vo_->color("green") << "Initialization of PK is complete, T=" 
@@ -867,15 +906,15 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   ms_calls_ = 0;
 
   // save a copy of primary and conservative fields
-  // -- pressure
-  CompositeVector pressure_copy(*S_->GetFieldData(pressure_key_, passwd_));
+  std::map<std::string, CompositeVector> copies;
+  copies.emplace(pressure_key_, *S_->GetFieldData(pressure_key_, passwd_));
 
   // -- saturations, swap prev <- current
   S_->GetFieldEvaluator(saturation_liquid_key_)->HasFieldChanged(S_.ptr(), "flow");
   const CompositeVector& sat = *S_->GetFieldData(saturation_liquid_key_);
   CompositeVector& sat_prev = *S_->GetFieldData(prev_saturation_liquid_key_, passwd_);
 
-  CompositeVector sat_prev_copy(sat_prev);
+  copies.emplace(prev_saturation_liquid_key_, sat_prev);
   sat_prev = sat;
 
   // -- water_conten, swap prev <- current
@@ -883,18 +922,18 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   CompositeVector& wc = *S_->GetFieldData(water_content_key_, water_content_key_);
   CompositeVector& wc_prev = *S_->GetFieldData(prev_water_content_key_, passwd_);
 
-  CompositeVector wc_prev_copy(wc_prev);
+  copies.emplace(prev_water_content_key_, wc_prev);
   wc_prev = wc;
 
   // -- field for multiscale models, save and swap
   Teuchos::RCP<CompositeVector> pressure_matrix_copy, wc_matrix_prev_copy;
   if (multiscale_porosity_) {
-    pressure_matrix_copy = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("pressure_matrix", passwd_)));
+    copies.emplace("pressure_matrix", *S_->GetFieldData("pressure_matrix", passwd_));
 
     CompositeVector& wc_matrix = *S_->GetFieldData("water_content_matrix", passwd_);
     CompositeVector& wc_matrix_prev = *S_->GetFieldData("prev_water_content_matrix", passwd_);
 
-    wc_matrix_prev_copy = Teuchos::rcp(new CompositeVector(wc_matrix_prev));
+    copies.emplace("prev_water_content_matrix", wc_matrix_prev);
     wc_matrix_prev = wc_matrix;
   }
 
@@ -924,22 +963,13 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     dt_ = dt_next_;
 
     // revover the original primary solution, pressure
-    *S_->GetFieldData(pressure_key_, passwd_) = pressure_copy;
-    pressure_eval_->SetFieldAsChanged(S_.ptr());
+    for (auto it = copies.begin(); it != copies.end(); ++it) {
+      *S_->GetFieldData(it->first, passwd_) = it->second;
 
-    // revover the original fields
-    *S_->GetFieldData(prev_saturation_liquid_key_, passwd_) = sat_prev_copy;
-    *S_->GetFieldData(prev_water_content_key_, passwd_) = wc_prev_copy;
-
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Reverted pressure, prev_saturation_liquid, prev_water_content" << std::endl;
-
-    if (multiscale_porosity_) {
-      *S_->GetFieldData("pressure_matrix", passwd_) = *pressure_matrix_copy;
-      *S_->GetFieldData("prev_water_content_matrix", passwd_) = *wc_matrix_prev_copy;
-
-      *vo_->os() << "Reverted pressure_matrix, prev_water_content_matrix" << std::endl;
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "Reverted field \"" << it->first << "\"" << std::endl;
     }
+    pressure_eval_->SetFieldAsChanged(S_.ptr());
 
     return failed;
   }
@@ -977,12 +1007,13 @@ void Richards_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<Stat
 
   if (coupled_to_matrix_ || flow_on_manifold_) {
     op_matrix_diff_->UpdateFluxNonManifold(solution.ptr(), darcy_flux.ptr());
+    VV_FractureConservationLaw();
   } else {
     op_matrix_diff_->UpdateFlux(solution.ptr(), darcy_flux.ptr());
   }
 
   Epetra_MultiVector& flux = *darcy_flux->ViewComponent("face", true);
-  for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
+  flux.Scale(1.0 / molar_rho_);
   *darcy_flux_copy->ViewComponent("face", true) = flux;
 
   // update time derivative

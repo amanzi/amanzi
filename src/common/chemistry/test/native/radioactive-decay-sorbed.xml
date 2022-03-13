@@ -20,12 +20,12 @@
 <ParameterList name="radioactive decay">
   <ParameterList name="complex_0">
     <Parameter name="reactant" type="string" value="A"/>
-    <Parameter name="product" type="string" value="B"/>
+    <Parameter name="product" type="string" value="1.0 B"/>
     <Parameter name="half life" type="double" value="3.9447e+08"/>
   </ParameterList>
   <ParameterList name="complex_1">
     <Parameter name="reactant" type="string" value="B"/>
-    <Parameter name="product" type="string" value="C"/>
+    <Parameter name="product" type="string" value="1.0 C"/>
     <Parameter name="half life" type="double" value="7.8894e+08"/>
   </ParameterList>
   <ParameterList name="complex_2">

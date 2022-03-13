@@ -31,23 +31,20 @@
 namespace Amanzi {
 namespace Operators {
 
-template<class Model>
 class UpwindFactory {
  public:
-  Teuchos::RCP<Upwind<Model> > Create(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                               Teuchos::ParameterList& plist,
-                               Teuchos::RCP<const Model> model = Teuchos::null);
+  Teuchos::RCP<Upwind> Create(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                              Teuchos::ParameterList& plist);
 };
 
 
 /* ******************************************************************
 * The base class for all upwind methods. 
 ****************************************************************** */ 
-template<class Model>
-Teuchos::RCP<Upwind<Model> > UpwindFactory<Model>::Create(
+inline
+Teuchos::RCP<Upwind> UpwindFactory::Create(
     Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-    Teuchos::ParameterList& plist,
-    Teuchos::RCP<const Model> model)
+    Teuchos::ParameterList& plist)
 {
   if (!plist.isParameter("upwind method")) {
     Errors::Message msg("UpwindFactory: parameter \"upwind method\" is missing");
@@ -57,27 +54,27 @@ Teuchos::RCP<Upwind<Model> > UpwindFactory<Model>::Create(
 
   Teuchos::ParameterList sublist = plist.sublist("upwind parameters");
   if (name == "upwind: darcy velocity") {
-    Teuchos::RCP<UpwindFlux<Model> > upwind = Teuchos::rcp(new UpwindFlux<Model>(mesh, model));
+    Teuchos::RCP<UpwindFlux> upwind = Teuchos::rcp(new UpwindFlux(mesh));
     upwind->Init(sublist);
     return upwind;
   } else if (name == "upwind: gravity") {
-    Teuchos::RCP<UpwindGravity<Model> > upwind = Teuchos::rcp(new UpwindGravity<Model>(mesh, model));
+    Teuchos::RCP<UpwindGravity> upwind = Teuchos::rcp(new UpwindGravity(mesh));
     upwind->Init(sublist);
     return upwind;
   } else if (name == "upwind: amanzi") {
-    Teuchos::RCP<UpwindDivK<Model> > upwind = Teuchos::rcp(new UpwindDivK<Model>(mesh, model));
+    Teuchos::RCP<UpwindDivK> upwind = Teuchos::rcp(new UpwindDivK(mesh));
     upwind->Init(sublist);
     return upwind;
   } else if (name == "upwind: amanzi new") {
-    Teuchos::RCP<UpwindFluxAndGravity<Model> > upwind = Teuchos::rcp(new UpwindFluxAndGravity<Model>(mesh, model));
+    Teuchos::RCP<UpwindFluxAndGravity> upwind = Teuchos::rcp(new UpwindFluxAndGravity(mesh));
     upwind->Init(sublist);
     return upwind;
   } else if (name == "upwind: second-order") {
-    Teuchos::RCP<UpwindSecondOrder<Model> > upwind = Teuchos::rcp(new UpwindSecondOrder<Model>(mesh, model));
+    Teuchos::RCP<UpwindSecondOrder> upwind = Teuchos::rcp(new UpwindSecondOrder(mesh));
     upwind->Init(sublist);
     return upwind;
   } else if (name == "other: arithmetic average") {
-    Teuchos::RCP<UpwindArithmeticAverage<Model> > upwind = Teuchos::rcp(new UpwindArithmeticAverage<Model>(mesh, model));
+    Teuchos::RCP<UpwindArithmeticAverage> upwind = Teuchos::rcp(new UpwindArithmeticAverage(mesh));
     upwind->Init(sublist);
     return upwind;
   } else {

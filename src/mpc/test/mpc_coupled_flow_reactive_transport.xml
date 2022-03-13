@@ -755,6 +755,7 @@
             <Parameter name="monitor" type="string" value="monitor l2 residual"/>
           </ParameterList>
           <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+          <Parameter name="freeze preconditioner" type="bool" value="true"/>
           <Parameter name="extrapolate initial guess" type="bool" value="true"/>
           <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
           <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
@@ -873,7 +874,6 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="physical models and assumptions">
-        <Parameter name="water content model" type="string" value="constant density"/>
         <Parameter name="eos lookup table" type="string" value="false"/>
       </ParameterList>
       <ParameterList name="verbose object">
@@ -892,7 +892,6 @@
       </ParameterList>
       <ParameterList name="physical models and assumptions">
         <Parameter name="flow in fractures" type="bool" value="true"/>
-        <Parameter name="water content model" type="string" value="constant density"/>
         <Parameter name="eos lookup table" type="string" value="false"/>
       </ParameterList>
       <ParameterList name="absolute permeability">
@@ -1104,7 +1103,6 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="physical models and assumptions">
-        <Parameter name="water content model" type="string" value="constant density"/>
         <Parameter name="eos lookup table" type="string" value="false"/>
       </ParameterList>
       <ParameterList name="verbose object">
@@ -1122,7 +1120,6 @@
       </ParameterList>
       <ParameterList name="physical models and assumptions">
         <Parameter name="flow in fractures" type="bool" value="true"/>
-        <Parameter name="water content model" type="string" value="constant density"/>
         <Parameter name="eos lookup table" type="string" value="false"/>
       </ParameterList>
       <ParameterList name="absolute permeability">

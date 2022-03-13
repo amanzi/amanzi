@@ -117,7 +117,10 @@ void LimiterCell::Init(Teuchos::ParameterList& plist,
   } else if (stencil == "cell to all cells") {
     stencil_id_ = OPERATOR_LIMITER_STENCIL_C2C_ALL;
     location_ = AmanziMesh::FACE;
-  } 
+  } else {
+    Errors::Message msg("unknown stencil for limiter");
+    Exceptions::amanzi_throw(msg);
+  }
 
   if (plist.isParameter("limiter location")) {
     name = plist.get<std::string>("limiter location");

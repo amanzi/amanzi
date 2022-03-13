@@ -20,13 +20,12 @@
 #include "constant_variable_field_evaluator.hh"
 #include "errors.hh"
 #include "exceptions.hh"
+#include "Mesh_Algorithms.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "TimestepControllerFactory.hh"
 #include "Tensor.hh"
-#include "UniqueLocalIndex.hh"
-#include "WhetStoneMeshUtils.hh"
 
 // Amanzi::Flow
 #include "Darcy_PK.hh"
@@ -535,7 +534,7 @@ void Darcy_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>&
   if (coupled_to_matrix_ || flow_on_manifold_) {
     op_diff_->UpdateFluxNonManifold(solution.ptr(), flux.ptr());
     flux->Scale(1.0 / rho_);
-    FractureConservationLaw_();
+    VV_FractureConservationLaw();
   } else {
     op_diff_->UpdateFlux(solution.ptr(), flux.ptr());
     flux->Scale(1.0 / rho_);
@@ -574,7 +573,7 @@ void Darcy_PK::UpdateSpecificYield_()
       int nfaces = faces.size();
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
-        int c2 = WhetStone::cell_get_face_adj_cell(*mesh_, c, f);
+        int c2 = cell_get_face_adj_cell(*mesh_, c, f);
 
         if (c2 >= 0) {
           if (specific_yield[0][c2] <= 0.0)  // cell in the fully saturated layer
@@ -603,67 +602,6 @@ void Darcy_PK::UpdateSpecificYield_()
 ****************************************************************** */
 void Darcy_PK::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
   UpdateLocalFields_(S.ptr());
-}
-
-
-/* ******************************************************************
-* TBW
-****************************************************************** */
-void Darcy_PK::FractureConservationLaw_()
-{
-  if (!coupled_to_matrix_ || fabs(dt_) < 1e+10) return;
-
-  const auto& fracture_flux = *S_->GetFieldData("fracture-darcy_flux")->ViewComponent("face", true);
-  const auto& matrix_flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
-
-  const auto& fracture_map = S_->GetFieldData("fracture-darcy_flux")->Map().Map("face", true);
-  const auto& matrix_map = S_->GetFieldData("darcy_flux")->Map().Map("face", true);
-
-  auto mesh_matrix = S_->GetMesh("domain");
-
-  std::vector<int> dirs;
-  double err(0.0), flux_max(0.0);
-  AmanziMesh::Entity_ID_List faces, cells;
-
-  for (int c = 0; c < ncells_owned; c++) {
-    double flux_sum(0.0);
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    for (int i = 0; i < faces.size(); i++) {
-      int f = faces[i];
-      int g = fracture_map->FirstPointInElement(f);
-      int ndofs = fracture_map->ElementSize(f);
-      if (ndofs > 1) g += Operators::UniqueIndexFaceToCells(*mesh_, f, c);
-
-      flux_sum += fracture_flux[0][g] * dirs[i];
-      flux_max = std::max<double>(flux_max, std::fabs(fracture_flux[0][g]));
-    }
-
-    // sum into fluxes from matrix
-    auto f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
-    mesh_matrix->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    int pos = Operators::UniqueIndexFaceToCells(*mesh_matrix, f, cells[0]);
-
-    for (int j = 0; j != cells.size(); ++j) {
-      mesh_matrix->cell_get_faces_and_dirs(cells[j], &faces, &dirs);
-
-      for (int i = 0; i < faces.size(); i++) {
-        if (f == faces[i]) {
-          int g = matrix_map->FirstPointInElement(f);            
-          double fln = matrix_flux[0][g + (pos + j) % 2] * dirs[i];
-          flux_sum -= fln;
-          flux_max = std::max<double>(flux_max, std::fabs(fln));
-          break;
-        }
-      }
-    }
-
-    err = std::max<double>(err, fabs(flux_sum));
-  }
-
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "maximum error in conservation law:" << err << " flux_max=" << flux_max << std::endl;
-  }
 }
 
 }  // namespace Flow

@@ -172,6 +172,22 @@
         </ParameterList>
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
       </ParameterList>
+      <ParameterList name="molar_density_liquid">
+        <Parameter name="field evaluator type" type="string" value="eos"/>
+        <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="eos type" type="string" value="liquid water 0-30C"/>
+        </ParameterList>
+        <Parameter name="eos basis" type="string" value="both"/>
+        <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
+      </ParameterList>
+      <ParameterList name="viscosity_liquid">
+        <Parameter name="field evaluator type" type="string" value="viscosity"/>
+        <Parameter name="viscosity key" type="string" value="viscosity_liquid"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="eos type" type="string" value="liquid water 0-30C"/>
+        </ParameterList>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="initial conditions">
@@ -347,9 +363,6 @@
   <ParameterList name="PKs">
     <ParameterList name="steady:flow">
       <Parameter name="domain name" type="string" value="domain"/>
-      <ParameterList name="physical models and assumptions">
-        <Parameter name="water content model" type="string" value="constant density"/>
-      </ParameterList>
       <ParameterList name="absolute permeability">
         <Parameter name="coordinate system" type="string" value="cartesian"/>
       </ParameterList>
@@ -705,7 +718,7 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="time integrator">
-        <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
+        <Parameter name="error control options" type="Array(string)" value="{pressure}"/>
         <Parameter name="linear solver" type="string" value="AztecOO"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
         <ParameterList name="pressure-lambda constraints">
@@ -811,9 +824,6 @@
             <Parameter name="rainfall" type="bool" value="false"/>
           </ParameterList>
         </ParameterList>
-      </ParameterList>
-      <ParameterList name="physical models and assumptions">
-        <Parameter name="water content model" type="string" value="constant density"/>
       </ParameterList>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>

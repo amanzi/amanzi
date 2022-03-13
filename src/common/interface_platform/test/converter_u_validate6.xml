@@ -521,9 +521,6 @@
 	  </ParameterList>
 	</ParameterList>
       </ParameterList>
-      <ParameterList name="physical models and assumptions">
-	<Parameter name="water content model" type="string" value="constant density"/>
-      </ParameterList>
       <ParameterList name="verbose object">
 	<Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
@@ -540,7 +537,6 @@
       </ParameterList>
       <ParameterList name="physical models and assumptions">
 	<Parameter name="flow in fractures" type="bool" value="true"/>
-	<Parameter name="water content model" type="string" value="constant density"/>
       </ParameterList>
       <ParameterList name="absolute permeability">
 	<Parameter name="coordinate system" type="string" value="cartesian"/>
@@ -902,12 +898,12 @@
     <ParameterList name="radioactive decay">
       <ParameterList name="complex_0">
         <Parameter name="reactant" type="string" value="A"/>
-        <Parameter name="product" type="string" value="B"/>
+        <Parameter name="product" type="string" value="1.0 B"/>
         <Parameter name="half life" type="double" value="3.94470000000000000e+08"/>
       </ParameterList>
       <ParameterList name="complex_1">
         <Parameter name="reactant" type="string" value="B"/>
-        <Parameter name="product" type="string" value="C"/>
+        <Parameter name="product" type="string" value="1.0 C"/>
         <Parameter name="half life" type="double" value="7.88940000000000000e+08"/>
       </ParameterList>
       <ParameterList name="complex_2">

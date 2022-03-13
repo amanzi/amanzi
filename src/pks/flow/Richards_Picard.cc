@@ -27,7 +27,6 @@ namespace Flow {
 int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
 {
   std::vector<int>& bc_model = op_bc_->bc_model();
-  std::vector<double>& bc_value = op_bc_->bc_value();
 
   // create verbosity object
   VerboseObject* vo = new VerboseObject("Amanzi::Picard", *fp_list_); 
@@ -76,18 +75,26 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     }
     ComputeOperatorBCs(*solution);
 
-    // update permeabilities
+    // update diffusion coefficients
+    // -- function
     darcy_flux_copy->ScatterMasterToGhosted("face");
 
-    relperm_->Compute(solution, bc_model, bc_value, krel_);
-    upwind_->Compute(*darcy_flux_copy, *solution, bc_model, *krel_);
-    Operators::CellToFace_ScaleInverse(mu, krel_);
-    krel_->ScaleMasterAndGhosted(molar_rho_);
+    pressure_eval_->SetFieldAsChanged(S_.ptr());
+    auto alpha = S_->GetFieldData(alpha_key_, alpha_key_);
+    S_->GetFieldEvaluator(alpha_key_)->HasFieldChanged(S_.ptr(), "flow");
+  
+    *alpha_upwind_->ViewComponent("cell") = *alpha->ViewComponent("cell");
+    Operators::BoundaryFacesToFaces(bc_model, *alpha, *alpha_upwind_);
+    upwind_->Compute(*darcy_flux_copy, *solution, bc_model, *alpha_upwind_);
 
-    relperm_->ComputeDerivative(solution, bc_model, bc_value, dKdP_);
-    upwind_->Compute(*darcy_flux_copy, *solution, bc_model, *dKdP_);
-    Operators::CellToFace_ScaleInverse(mu, dKdP_);
-    dKdP_->ScaleMasterAndGhosted(molar_rho_);
+    // -- derivative 
+    Key der_key = Keys::getDerivKey(alpha_key_, pressure_key_);
+    S_->GetFieldEvaluator(alpha_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, pressure_key_);
+    auto alpha_dP = S_->GetFieldData(der_key);
+
+    *alpha_upwind_dP_->ViewComponent("cell") = *alpha_dP->ViewComponent("cell");
+    Operators::BoundaryFacesToFaces(bc_model, *alpha_dP, *alpha_upwind_dP_);
+    upwind_->Compute(*darcy_flux_copy, *solution, bc_model, *alpha_upwind_dP_);
 
     // create algebraic problem (matrix = preconditioner)
     op_preconditioner_->Init();
@@ -140,13 +147,12 @@ double Richards_PK::CalculateRelaxationFactor(const Epetra_MultiVector& uold,
                                               const Epetra_MultiVector& unew)
 { 
   double relaxation = 1.0;
+  double patm = *S_->GetScalarData("atmospheric_pressure");
 
   if (error_control_ & FLOW_TI_ERROR_CONTROL_SATURATION) {
-    Epetra_MultiVector dSdP(uold);
-    relperm_->Compute_dSdP(uold, dSdP);
-
     for (int c = 0; c < ncells_owned; c++) {
-      double diff = dSdP[0][c] * fabs(unew[0][c] - uold[0][c]);
+      double dSdP = wrm_->second[(*wrm_->first)[c]]->k_relative(patm - uold[0][c]);
+      double diff = dSdP * fabs(unew[0][c] - uold[0][c]);
       if (diff > 3e-2) relaxation = std::min(relaxation, 3e-2 / diff);
     }
   }

@@ -124,7 +124,7 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
 
   // Create upwind model
   Teuchos::ParameterList& ulist = plist.sublist("PK operator").sublist(upwind_list);
-  UpwindClass upwind(mesh, knc);
+  UpwindClass upwind(mesh);
   upwind.Init(ulist);
 
   knc->UpdateValues(*flux, bc_model, bc_value);  // 1st argument is not used
@@ -186,11 +186,11 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
 }
 
 TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_2D) {
-  RunTestDiffusionDivK2D<PDE_DiffusionMFD, UpwindFlux<HeatConduction> >("diffusion operator divk", "upwind");
+  RunTestDiffusionDivK2D<PDE_DiffusionMFD, UpwindFlux>("diffusion operator divk", "upwind");
 }
 
 TEST(OPERATOR_DIFFUSION_DIVK_SECOND_ORDER) {
-  RunTestDiffusionDivK2D<MyPDE_DiffusionMFD, UpwindSecondOrder<HeatConduction> >("diffusion operator second-order", "upwind second-order");
+  RunTestDiffusionDivK2D<MyPDE_DiffusionMFD, UpwindSecondOrder>("diffusion operator second-order", "upwind second-order");
 }
 
 
@@ -268,7 +268,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
 
   // Create upwind model
   Teuchos::ParameterList& ulist = plist.sublist("PK operator").sublist("upwind");
-  UpwindFlux<HeatConduction> upwind(mesh, knc);
+  UpwindFlux upwind(mesh);
   upwind.Init(ulist);
 
   knc->UpdateValues(*flux, bc_model, bc_value);  // 1st argument is not used

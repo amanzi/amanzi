@@ -1258,9 +1258,6 @@ Combination of both approaches may lead to a more efficient code.
 * `"multiscale model`" [string] specifies a multiscale model.
   Available options are `"single porosity`" (default) and `"dual continuum discontinum matrix`".
 
-* `"water content model`" [string] changes the evaluator for water
-  content. Available options are `"generic`" and `"constant density`" (default).
-
 * `"viscosity model`" [string] changes the evaluator for liquid viscosity.
   Available options are `"generic`" and `"constant viscosity`" (default).
 
@@ -1278,7 +1275,6 @@ Combination of both approaches may lead to a more efficient code.
   <ParameterList name="flow">  <!-- parent list -->
   <ParameterList name="physical models and assumptions">
     <Parameter name="vapor diffusion" type="bool" value="false"/>
-    <Parameter name="water content model" type="string" value="constant density"/>
     <Parameter name="viscosity model" type="string" value="constant viscosity"/>
     <Parameter name="porosity model" type="string" value="compressible: pressure function"/>
     <Parameter name="multiscale model" type="string" value="single porosity"/>
@@ -2830,9 +2826,6 @@ This list is often generated on a fly by a high-level MPC PK.
 * `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
   e.g. by EnergyFlow PK. The default value is `"false`".
 
-* `"water content model`" [string] changes the evaluator for water
-  content. Available options are `"generic`" and `"constant density`" (default).
-
 * `"eos lookup table`" [string] provides the name for optional EOS lookup table.
 
 .. code-block:: xml
@@ -2841,7 +2834,6 @@ This list is often generated on a fly by a high-level MPC PK.
   <ParameterList name="_ENERGY"> 
     <ParameterList name="physical models and assumptions">
       <Parameter name="vapor diffusion" type="bool" value="false"/>
-      <Parameter name="water content model" type="string" value="constant density"/>
       <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
     </ParameterList>
   </ParameterList>
@@ -3289,6 +3281,9 @@ The list of global parameters include:
 
 * `"cfl`" [double] is a safety factor (less than 1) applied to a stable 
   time step estimate. Default value is 1.
+
+* `"use limiter`" [bool] turns on/off limiters on all linear constructions.
+  Default value is *false*.
 
 
 Reconstruction and limiters

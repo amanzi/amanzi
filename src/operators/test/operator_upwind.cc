@@ -23,6 +23,7 @@
 // Amanzi
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
+#include "Mesh_Algorithms.hh"
 #include "VerboseObject.hh"
 
 // Operators
@@ -108,13 +109,11 @@ void RunTestUpwind(std::string method) {
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh)->SetGhosted(true)
        ->AddComponent("cell", AmanziMesh::CELL, 1)
-       ->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1)
        ->AddComponent("face", AmanziMesh::FACE, 1);
 
     CompositeVector field(*cvs);
     Epetra_MultiVector& fcells = *field.ViewComponent("cell", true);
     Epetra_MultiVector& ffaces = *field.ViewComponent("face", true);
-    Epetra_MultiVector& fbfs = *field.ViewComponent("dirichlet_faces", true);
 
     for (int c = 0; c < ncells_wghost; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
@@ -122,18 +121,12 @@ void RunTestUpwind(std::string method) {
     }
 
     // add boundary face component
-    const Epetra_Map& ext_face_map = mesh->exterior_face_map(true);
-    const Epetra_Map& face_map = mesh->face_map(true);
-    for (int f=0; f!=face_map.NumMyElements(); ++f) {
+    for (int f = 0; f != bc_model.size(); ++f) {
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-        AmanziMesh::Entity_ID_List cells;
-        mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-        AMANZI_ASSERT(cells.size() == 1);
-        int bf = ext_face_map.LID(face_map.GID(f));
-        fbfs[0][bf] = model->Value(cells[0], bc_value[f]);
+        int c = AmanziMesh::getFaceOnBoundaryInternalCell(*mesh, f);
+        ffaces[0][f] = model->Value(c, bc_value[f]);
       }
     }
-    
 
     // create and initialize face-based flux field
     cvs = CreateCompositeVectorSpace(mesh, "face", AmanziMesh::FACE, 1, true);
@@ -149,7 +142,7 @@ void RunTestUpwind(std::string method) {
 
     // Create two upwind models
     Teuchos::ParameterList& ulist = plist.sublist("upwind");
-    UpwindClass upwind(mesh, model);
+    UpwindClass upwind(mesh);
     upwind.Init(ulist);
 
     upwind.Compute(flux, solution, bc_model, field);
@@ -178,18 +171,18 @@ void RunTestUpwind(std::string method) {
 }
 
 TEST(UPWIND_FLUX) {
-  RunTestUpwind<UpwindFlux<Model> >("flux");
+  RunTestUpwind<UpwindFlux>("flux");
 }
 
 TEST(UPWIND_DIVK) {
-  RunTestUpwind<UpwindDivK<Model> >("divk");
+  RunTestUpwind<UpwindDivK>("divk");
 }
 
 TEST(UPWIND_GRAVITY) {
-  RunTestUpwind<UpwindGravity<Model> >("gravity");
+  RunTestUpwind<UpwindGravity>("gravity");
 }
 
 // TEST(UPWIND_FLUX_GRAVITY) {
-//  RunTestUpwind<UpwindFluxAndGravity<Model> >("flux_gravity");
+//  RunTestUpwind<UpwindFluxAndGravity>("flux_gravity");
 // }
 

@@ -89,8 +89,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   // -- fluid density and viscosity
   double rho = *S->GetScalarData("const_fluid_density");
 
-  S->GetFieldData("viscosity_liquid", passwd)->PutScalar(0.00089);
-  S->GetField("viscosity_liquid", passwd)->set_initialized();
+  S->GetFieldData("viscosity_liquid", "viscosity_liquid")->PutScalar(0.00089);
 
   // -- gravity
   Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");

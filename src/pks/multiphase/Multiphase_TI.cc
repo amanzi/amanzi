@@ -358,7 +358,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
           if (fname == keyc) {
             der_key = "constant_field";  // DAG does not calculate derivative when g(u)=u
           } else {
-            der_key = Keys::getDerivKey(key, keyc);
+            der_key = Keys::getDerivKey(fname, keyc);
             S_->GetFieldEvaluator(fname)->HasFieldDerivativeChanged(S_.ptr(), passwd_, keyc);
           }
 

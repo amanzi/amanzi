@@ -480,7 +480,7 @@
       </ParameterList>
 
       <ParameterList name="time integrator">
-	<Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
+	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 	<Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
@@ -525,7 +525,7 @@
       </ParameterList>
 
       <ParameterList name="time integrator">
-	<Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
+	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
 	<Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
 	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 

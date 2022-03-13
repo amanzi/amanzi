@@ -130,7 +130,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
   // Create upwind model
   ParameterList& ulist = plist.sublist("PK operator").sublist("upwind");
-  UpwindFlux<HeatConduction> upwind(mesh, knc);
+  UpwindFlux upwind(mesh);
   upwind.Init(ulist);
 
   // MAIN LOOP

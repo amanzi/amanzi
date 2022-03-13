@@ -165,7 +165,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Teuchos::RCP<WRMmpPartition> wrm_;
 
   // upwind
-  Teuchos::RCP<Operators::UpwindFlux<int> > upwind_;
+  Teuchos::RCP<Operators::UpwindFlux> upwind_;
  
   // time integration
   std::vector<std::string> flux_names_;
@@ -203,8 +203,7 @@ Teuchos::RCP<CompositeVector> CreateCVforUpwind(
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh)->SetGhosted(true)
      ->AddComponent("cell", AmanziMesh::CELL, 1)
-     ->AddComponent("face", AmanziMesh::FACE, 1)
-     ->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1);
+     ->AddComponent("face", AmanziMesh::FACE, 1);
   cvs.SetOwned(false);
 
   return Teuchos::rcp(new CompositeVector(cvs));

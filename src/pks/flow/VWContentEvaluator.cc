@@ -52,9 +52,7 @@ void VWContentEvaluator::Init_()
   dependencies_.insert(saturation_key_);
   dependencies_.insert(mol_density_liquid_key_);
 
-  std::string model_ = plist_.get<std::string>("water content model");
   water_vapor_ = plist_.get<bool>("water vapor", false);
-  if (model_ == "two-phase") water_vapor_ = true;
 
   if (water_vapor_) {
     dependencies_.insert(Keys::getKey(domain, "molar_density_gas"));

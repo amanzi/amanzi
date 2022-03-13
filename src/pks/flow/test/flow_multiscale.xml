@@ -302,7 +302,6 @@
       </ParameterList>
       <ParameterList name="physical models and assumptions">
 	<Parameter name="multiscale model" type="string" value="dual continuum discontinuous matrix"/>
-	<Parameter name="water content model" type="string" value="constant density"/>
       </ParameterList>
       <ParameterList name="operators">
 	<ParameterList name="diffusion operator">

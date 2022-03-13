@@ -105,7 +105,7 @@ void RunTestGravity(std::string op_list_name) {
 
   // create upwind model
   Teuchos::ParameterList& ulist = plist.sublist("PK operator").sublist("upwind");
-  UpwindFlux<HeatConduction> upwind(mesh, knc);
+  UpwindFlux upwind(mesh);
   upwind.Init(ulist);
 
   knc->UpdateValues(*flux, bc_model, bc_value);  // argument is not used

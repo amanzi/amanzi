@@ -309,7 +309,7 @@ int PK_MPCStrong<PK_Base>::ApplyPreconditioner(
 // -----------------------------------------------------------------------------
 template<class PK_Base>
 double PK_MPCStrong<PK_Base>::ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                                     Teuchos::RCP<const TreeVector> du)
+                                        Teuchos::RCP<const TreeVector> du)
 {
   double norm = 0.0;
 

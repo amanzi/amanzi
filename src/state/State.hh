@@ -215,7 +215,6 @@ class State {
                          const Teuchos::RCP<AmanziMesh::DomainSet> set);
   bool HasDomainSet(const Key& name) const;
   Teuchos::RCP<const AmanziMesh::DomainSet> GetDomainSet(const Key& name) const;
-  
 
   // -----------------------------------------------------------------------------
   // State handles data management.
@@ -300,7 +299,8 @@ class State {
   // -- allows PKs to add to this list to custom evaluators
   Teuchos::ParameterList& FEList() { return state_plist_.sublist("field evaluators"); }
   Teuchos::ParameterList& GetEvaluatorList(const Key& key);
-  
+  bool HasEvaluatorList(const Key& key);
+
   // -- allows PKs to add to this list to initial conditions
   Teuchos::ParameterList& ICList() { return state_plist_.sublist("initial conditions"); }
 
@@ -403,7 +403,20 @@ class State {
   Teuchos::RCP<Field> CheckConsistent_or_die_(Key fieldname,
           FieldType type, Key owner);
 
-private:
+  // debug help -- provides breakpoints for developers to find when fields and
+  // evals are created.
+  //
+  // Often, Arcos errors on the second call to RequireField or
+  // RequireFieldEvaluator, because the request is different from the first
+  // one.  If the second one is the "wrong" one, this is fine.  If the first
+  // one is the "wrong" one, it can be hard to know what code is requiring the
+  // field with the wrong metadata.  These functions are called in
+  // RequireField() and RequireFieldEvaluator(), and allow breakpoints to be
+  // set so the developer can trap the first call.
+  void CheckIsDebugEval_(const Key& eval);
+  void CheckIsDebugField_(const Key& field);
+
+ private:
   Teuchos::RCP<VerboseObject> vo_;
 
   // Containers

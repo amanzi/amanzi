@@ -62,13 +62,18 @@ void PreconditionerIfpack::InitializeInverse()
   if (method == "block ilu") {
     method = "ILU";
   }
-    
+
   int overlap = plist_.get<int>("overlap", 0);
   // set Amanzi defaults
   if (!plist_.isParameter("schwarz: combine mode"))
     plist_.set<std::string>("schwarz: combine mode", "Add");
 
   IfpILU_ = Teuchos::rcp(factory.Create(method, &*h_, overlap));
+  if (IfpILU_ == Teuchos::null) {
+    Errors::Message msg;
+    msg << "Ifpack does not support solver method \"" << method << "\"";
+    Exceptions::amanzi_throw(msg);
+  }
   IfpILU_->SetParameters(plist_);
   IfpILU_->Initialize();
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {

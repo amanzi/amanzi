@@ -23,8 +23,9 @@
 #include "UnitTest++.h"
 
 // Amanzi
-#include "MeshFactory.hh"
 #include "Mesh.hh"
+#include "MeshFactory.hh"
+#include "MeshExtractedManifold.hh"
 #include "State.hh"
 #include "OperatorDefs.hh"
 #include "OutputXDMF.hh"
@@ -34,7 +35,8 @@
 
 
 /* **************************************************************** */
-TEST(MULTIPHASE_2P2C) {
+void run_test(const std::string& domain, const std::string& filename)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -43,21 +45,29 @@ TEST(MULTIPHASE_2P2C) {
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
+  if (MyPID == 0) std::cout << "Test: multiphase pk, model Jaffre, domain=" << domain << std::endl;
 
-  if (MyPID == 0) std::cout << "Test: multiphase pk, model Jaffre" << std::endl;
+  int d = (domain == "2D") ? 2 : 3;
 
   // read parameter list
-  std::string xmlFileName = "test/multiphase_jaffre.xml";
-  auto plist = Teuchos::getParametersFromXmlFile(xmlFileName);
+  auto plist = Teuchos::getParametersFromXmlFile(filename);
 
   // create a MSTK mesh framework
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
-  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(d, region_list, *comm));
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 200, 10);
-  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 12.0, 50, 3);
+  RCP<const Mesh> mesh;
+  if (d == 2) {
+    // mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 200, 10);
+    mesh = meshfactory.create(0.0, 0.0, 200.0, 12.0, 50, 3);
+  } else if (domain == "fractures") {
+    auto mesh3D = meshfactory.create(0.0, 0.0, 0.0, 200.0, 12.0, 12.0, 50, 3, 6, true, true);
+    std::vector<std::string> names;
+    names.push_back("fracture");
+    mesh = meshfactory.create(mesh3D, names, AmanziMesh::FACE);
+  }
 
   // create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Multiphase_PK", *plist));
@@ -134,4 +144,10 @@ TEST(MULTIPHASE_2P2C) {
   const auto& xg = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell");
   xg.MinValue(&dmin);
   CHECK(dmin >= 0.0);
+}
+
+
+TEST(MULTIPHASE_2P2C) {
+  run_test("2D", "test/multiphase_jaffre.xml");
+  run_test("fractures", "test/multiphase_jaffre_fractures.xml");
 }

@@ -116,6 +116,9 @@
   </ParameterList>
 
   <ParameterList name="state">
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="extreme"/>
+    </ParameterList>
     <ParameterList name="field evaluators">
       <ParameterList name="particle_density">
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
@@ -173,6 +176,13 @@
         </ParameterList>
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
       </ParameterList>
+      <ParameterList name="viscosity_liquid">
+        <Parameter name="field evaluator type" type="string" value="viscosity"/>
+        <Parameter name="viscosity key" type="string" value="viscosity_liquid"/>
+        <ParameterList name="EOS parameters">
+          <Parameter name="eos type" type="string" value="liquid water 0-30C"/>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="internal_energy_liquid">
         <Parameter name="field evaluator type" type="string" value="iem"/>
         <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
@@ -206,7 +216,7 @@
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
+            <Parameter name="components" type="Array(string)" value="{ cell, face }"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="298.0"/>
