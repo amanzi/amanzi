@@ -11,8 +11,8 @@
   We use this class to remove effective water retention model.
 */
 
-#ifndef AMANZI_MULTIPHASE_WRM_NULL_HH_
-#define AMANZI_MULTIPHASE_WRM_NULL_HH_
+#ifndef AMANZI_MULTIPHASE_WRM_COREY_HH_
+#define AMANZI_MULTIPHASE_WRM_COREY_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -23,19 +23,21 @@
 namespace Amanzi {
 namespace Multiphase {
 
-class WRMmp_Null : public WRMmp {
+class WRMmp_Corey : public WRMmp {
  public:
-  WRMmp_Null(Teuchos::ParameterList& plist) {};
-  ~WRMmp_Null() {};
+  WRMmp_Corey(Teuchos::ParameterList& plist);
+  ~WRMmp_Corey() {};
   
   // required methods from the base class
-  virtual double k_relative(double Sw, int phase) { return 1.0; }
-  virtual double capillaryPressure(double saturation) { return 0.0; }
-  virtual double dPc_dS(double saturation) { return 0.0; }
-  virtual double dKdS(double Sw, int phase) { return 0.0; }
+  virtual double k_relative(double sl, int phase);
+  virtual double capillaryPressure(double saturation);
+  virtual double dPc_dS(double sl);
+  virtual double dKdS(double sl, int phase) ;
 
  private:
-  static Utils::RegisteredFactory<WRMmp, WRMmp_Null> factory_;
+  double srl_, srg_, pcap_;
+
+  static Utils::RegisteredFactory<WRMmp, WRMmp_Corey> factory_;
 };
 
 }  // namespace Multiphase
