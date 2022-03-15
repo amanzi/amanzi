@@ -828,7 +828,7 @@ void LimiterCell::IdentifyUpwindCells_()
 Teuchos::RCP<CompositeVector> LimiterCell::BoundsForCells(
     const Epetra_MultiVector& field,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value, 
-    int stencil)
+    int stencil) const
 {
   auto cvs = CreateCompositeVectorSpace(mesh_, "cell",  AmanziMesh::CELL, 2, true);
 

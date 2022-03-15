@@ -26,21 +26,31 @@ namespace Operators {
 
 class FCT {
  public:
-  FCT(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+  FCT(Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
+      Teuchos::RCP<const AmanziMesh::Mesh> mesh1,
       Teuchos::RCP<const LimiterCell> lifting,
       Teuchos::RCP<const Epetra_MultiVector> field)
-      : mesh_(mesh),
+      : mesh0_(mesh0),
+        mesh1_(mesh1),
         lifting_(lifting),
         field_(field) {};
   ~FCT() {};
 
+  // flux is from 1st to 2nd cell in the list face->cells 
   void Compute(const CompositeVector& flux_lo,
-               const CompositeVector& flux_ho, CompositeVector& flux);
+               const CompositeVector& flux_ho, 
+               const BCs& bc,
+               CompositeVector& flux);
+
+  // access
+  double get_alpha_mean() { return alpha_mean_; }
 
  private:
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh0_, mesh1_;
   Teuchos::RCP<const LimiterCell> lifting_;
   Teuchos::RCP<const Epetra_MultiVector> field_;
+
+  double alpha_mean_;
 };
 
 }  // namespace Operators
