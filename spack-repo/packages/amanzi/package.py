@@ -77,7 +77,7 @@ class Amanzi(CMakePackage):
     # HDF5 is provided by Ascemio, the version is very restrictive 
     # \todo Update Ascemio package.py to target a wider range of versions 
     core_dependencies = {
-        'zlib','metis', 'parmetis', 'seacas',
+        'zlib','metis', 'parmetis', 'seacas -x11',
         'boost@1.67.0 cxxstd=11 +program_options',
         'netcdf-c +parallel-netcdf', 'hdf5 +mpi+fortran+hl', 
         'ascemio'
