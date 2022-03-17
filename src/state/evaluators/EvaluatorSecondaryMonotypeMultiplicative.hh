@@ -99,10 +99,7 @@ protected:
 
  private:
   static Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMonotypeMultiplicative<Data_t,DataFactory_t>> fac_;
-  
-  
 };
-
 
 } // namespace Amanzi
 

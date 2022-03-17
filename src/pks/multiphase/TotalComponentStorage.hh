@@ -50,7 +50,7 @@ class TotalComponentStorage : public MultiphaseBaseEvaluator {
   Key x_liquid_key_, x_gas_key_;
   
  private:
-  static Utils::RegisteredFactory<Evaluator, TotalComponentStorage> reg_;
+  static Utils::RegisteredFactory<Evaluator, TotalComponentStorage> fac_;
 };
 
 }  // namespace Multiphase

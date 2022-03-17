@@ -17,6 +17,8 @@
 #ifndef AMANZI_MULTIPHASE_PRODUCT_EVALUATOR_HH_
 #define AMANZI_MULTIPHASE_PRODUCT_EVALUATOR_HH_
 
+#include "Factory.hh"
+
 // Multiphase
 #include "MultiphaseBaseEvaluator.hh"
 
@@ -42,6 +44,8 @@ class ProductEvaluator : public MultiphaseBaseEvaluator {
  private:
   std::vector<int> powers_;
   std::vector<int> field_n_;
+
+  static Utils::RegisteredFactory<Evaluator, ProductEvaluator> fac_;
 };
 
 }  // namespace Multiphase

@@ -36,6 +36,8 @@ class NCP_MoleFractions : public MultiphaseBaseEvaluator {
 
  protected:
   Key x_vapor_key_, x_gas_key_;
+
+  static Utils::RegisteredFactory<Evaluator, NCP_MoleFractions> fac_;
 };
 
 }  // namespace Multiphase

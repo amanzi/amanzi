@@ -36,6 +36,8 @@ class NCP_HenryLaw : public MultiphaseBaseEvaluator {
 
  protected:
   Key pressure_gas_key_, mol_density_liquid_key_;
+
+  static Utils::RegisteredFactory<Evaluator, NCP_HenryLaw> fac_;
 };
 
 }  // namespace Multiphase

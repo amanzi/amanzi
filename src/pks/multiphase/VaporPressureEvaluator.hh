@@ -21,6 +21,7 @@
 // Amanzi
 #include "EOS_SaturatedVaporPressure.hh"
 #include "EvaluatorSecondaryMonotype.hh"
+#include "Factory.hh"
 
 // Multiphase
 #include "WRMmp.hh"
