@@ -4,7 +4,7 @@
   Interface for a soil heat capacity model
 
   License: BSD
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Svetlana Tokareva (tokareva@lanl.gov)
 */
 
 #ifndef AMANZI_SOIL_HC_EVALUATOR_HH_

@@ -444,7 +444,7 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   // read model parameters
 
   rho0 = 1000.;
-  cp_ = 3990./rho0;
+  cp_ = 3990.; ///rho0;
 
   Teuchos::ParameterList& param_list = plist_->sublist("parameters");
 
@@ -455,6 +455,9 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
 
   // initial depth
   h_ = 1.5;
+
+  // initial ice thickness
+  h_ice_ = 0.;
 
 
 #if MORE_DEBUG_FLAG

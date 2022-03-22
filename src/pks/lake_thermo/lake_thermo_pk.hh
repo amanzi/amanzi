@@ -336,6 +336,9 @@ protected:
   // water depth
   double h_;
 
+  // ice thickness
+  double h_ice_;
+
   // heat capacity
   double cp_;
 

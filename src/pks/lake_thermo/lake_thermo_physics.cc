@@ -158,7 +158,7 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
   LE = Q_watvap*LE;
 
   double row0 = 1.e+3;
-  double evap_rate = LE/(row0*tpsf_L_evap)*1000.;
+  double evap_rate = LE/(row0*tpsf_L_evap); //*1000.;
   evap_rate = abs(evap_rate);
 
   E_ = evap_rate;
@@ -332,7 +332,7 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
     LE = Q_watvap*LE;
 
     double row0 = 1.e+3;
-    double evap_rate = LE/(row0*tpsf_L_evap)*1000.;
+    double evap_rate = LE/(row0*tpsf_L_evap); //*1000.;
     evap_rate = abs(evap_rate);
 
     E_ = evap_rate;
@@ -365,10 +365,10 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
     for (unsigned int c=0; c!=ncells; ++c) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
-      if (temp[0][c] < 273.15) {
+      if (temp[0][ncells-1] < 273.15) {
         S0_ = 0.;
       } else {
-        S0_ = 0.1*SS;
+        S0_ = 0.; //0.1*SS;
       }
 
       // -1.* because I switched to vertical xi coordinate

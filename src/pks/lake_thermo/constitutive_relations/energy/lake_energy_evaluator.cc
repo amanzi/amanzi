@@ -48,7 +48,7 @@ void LakeEnergyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 //  double cp = 1.; //4184.;
 
   double rho0 = 1000.;
-  double cp = 3990./rho0;
+  double cp = 3990.; ///rho0;
 
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {
@@ -72,8 +72,11 @@ void LakeEnergyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<Sta
 //    double rho0 = 1.;
 //    double cp = 1.;
 
+//    double rho0 = 1000.;
+//    double cp = 4184./rho0;
+
     double rho0 = 1000.;
-    double cp = 4184./rho0;
+    double cp = 3990.; ///rho0;
 
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
