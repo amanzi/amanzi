@@ -74,8 +74,6 @@ class Amanzi(CMakePackage):
 
     depends_on('mpi')
 
-    # HDF5 is provided by Ascemio, the version is very restrictive 
-    # \todo Update Ascemio package.py to target a wider range of versions 
     core_dependencies = {
         'zlib','metis', 'parmetis', 'seacas -x11',
         'boost@1.67.0 cxxstd=11 +program_options',
@@ -87,7 +85,6 @@ class Amanzi(CMakePackage):
         depends_on(dep+' +shared',when='+shared'); 
         depends_on(dep+' -shared',when='-shared');
 
-    #depends_on('cgns@develop +mpi +shared', when='+shared')
     depends_on('cgns@develop +mpi -shared', when='-shared')
 
     # The following core dependencies do not support +shared/~shared
@@ -245,11 +242,10 @@ class Amanzi(CMakePackage):
         else:
             options.append('-DENABLE_Unstructured=OFF')
 
-        #if 'mesh_type=structured':
-        #    options.append('-DENABLE_Structured=ON')
-        #else:
-        # Not supported in current spack 
-        options.append('-DENABLE_Structured=OFF')
+        if 'mesh_type=structured':
+            options.append('-DENABLE_Structured=ON')
+        else:
+            options.append('-DENABLE_Structured=OFF')
         
         if '+hypre' in self.spec: 
             options.append('-DENABLE_SUPERLU=ON')

@@ -57,8 +57,8 @@ You will need to download Amanzi/ATS:
 ```
 git clone --recursive git@github.com:amanzi/amanzi
 cd amanzi
-git checkout -b spack
-git pull origin spack
+git checkout spack
+git pull
 ```
 
 You will then be able to add the repository in your local spack: 
