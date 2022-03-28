@@ -51,11 +51,14 @@ packages:
 
 # Amanzi Spack
 
-This current version of Amanzi's Spack package is not (yet) available on the remove Spack repository. 
+This current version of Amanzi's Spack package is not (yet) available on the remote Spack repository. 
 You will need to download Amanzi/ATS: 
 
 ```
 git clone --recursive git@github.com:amanzi/amanzi
+cd amanzi
+git checkout -b spack
+git pull origin spack
 ```
 
 You will then be able to add the repository in your local spack: 
@@ -64,18 +67,12 @@ You will then be able to add the repository in your local spack:
 spack repo add amanzi/spack-repo
 ```
 
-The basic install option for amanzi will be available as soon as the remote spack will contain the Amanzi package. 
-For now we will proceed using a dev-build installation, installing the Amanzi/ATS in your current directory: 
+The command above will add repositories for the following four packages:
 
 ```
-spack dev-build amanzi@1.0.0 +alquimia +crunchtope +ATSPhysics +AmanziPhysics 
+amanzi  ascemio  crunchtope  mstk
 ```
 
-If you want to provide a specific library, for example mpi, you can provide them at the end of the install line: 
-
-```
-spack dev-build amanzi@1.0.0 +alquimia +crunchtope +ATSPhysics +AmanziPhysics ^openmpi@3.1.4 
-```
 
 # Spack variants: 
 
@@ -98,4 +95,7 @@ Variants:
     silo [off]                     --      on, off                 Enable Silo reader for binary files
     tests [on]                     --      on, off                 Enable the unit test suite
 
+# Notes:
+
+Currently spack does not propagate variants to dependencies, hence the static variant (shared = off) is currently a work in progress.
 
