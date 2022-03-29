@@ -315,6 +315,7 @@ protected:
   Key temperature_key_;
   Key density_key_;
   Key conductivity_key_;
+  Key heat_capacity_key_;
   Key uw_conductivity_key_;
   Key dconductivity_key_;
   Key duw_conductivity_key_;
@@ -340,10 +341,10 @@ protected:
   double h_ice_;
 
   // heat capacity
-  double cp_;
+//  double cp_;
 
   // density
-  double rho0;
+//  double rho0;
 
   Key energy_key_;
   //  Key wc_key_;

@@ -34,23 +34,32 @@ void Lake_Thermo_PK::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   Teuchos::RCP<const CompositeVector> T1 = S_next_->GetFieldData(temperature_key_);
   Teuchos::RCP<const CompositeVector> T0 = S_inter_->GetFieldData(temperature_key_);
 
-  S_inter_->GetFieldEvaluator(density_key_)->HasFieldChanged(S_inter_.ptr(), name_);
-
   // evaluate density
+  S_inter_->GetFieldEvaluator(density_key_)->HasFieldChanged(S_inter_.ptr(), name_);
   const Epetra_MultiVector& rho =
       *S_inter_->GetFieldData(density_key_)->ViewComponent("cell",false);
 
+  // evaluate heat capacity
+  S_inter_->GetFieldEvaluator(heat_capacity_key_)->HasFieldChanged(S_inter_.ptr(), name_);
+  const Epetra_MultiVector& cp =
+      *S_inter_->GetFieldData(heat_capacity_key_)->ViewComponent("cell",false);
+
   // Update the residual with the accumulation of energy over the
   // timestep, on cells.
-  g->ViewComponent("cell", false)
-        ->Update(cp_*rho0/dt, *T1->ViewComponent("cell", false),
-            -cp_*rho0/dt, *T0->ViewComponent("cell", false), 1.0);
+//  g->ViewComponent("cell", false)
+//        ->Update(cp_*rho0/dt, *T1->ViewComponent("cell", false),
+//            -cp_*rho0/dt, *T0->ViewComponent("cell", false), 1.0);
 
 
   const Epetra_MultiVector& T1_c = *S_next_->GetFieldData(temperature_key_)->ViewComponent("cell", false);
   const Epetra_MultiVector& T0_c = *S_inter_->GetFieldData(temperature_key_)->ViewComponent("cell", false);
 
   const Epetra_MultiVector& g_c = *g->ViewComponent("cell", false);
+
+  unsigned int ncells = g_c.MyLength();
+  for (unsigned int c=0; c!=ncells; ++c) {
+    g_c[0][c] += cp[0][c]*rho[0][c]*(T1_c[0][c]-T0_c[0][c])/dt;
+  }
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
@@ -75,11 +84,15 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
   //  S->GetFieldEvaluator(flux_key_)->HasFieldChanged(S.ptr(), name_);
   Teuchos::RCP<const CompositeVector> flux = S->GetFieldData(flux_key_);
 
-  S_inter_->GetFieldEvaluator(density_key_)->HasFieldChanged(S_inter_.ptr(), name_);
-
   // evaluate density
-  const Epetra_MultiVector& rho =
-      *S_inter_->GetFieldData(density_key_)->ViewComponent("cell",false);
+  S->GetFieldEvaluator(density_key_)->HasFieldChanged(S.ptr(), name_);
+  const Epetra_MultiVector& rho_v =
+      *S->GetFieldData(density_key_)->ViewComponent("cell",false);
+
+  // evaluate heat capacity
+  S->GetFieldEvaluator(heat_capacity_key_)->HasFieldChanged(S.ptr(), name_);
+  const Epetra_MultiVector& cp_v =
+      *S->GetFieldData(heat_capacity_key_)->ViewComponent("cell",false);
 
   Teuchos::ParameterList& param_list = plist_->sublist("parameters");
   FunctionFactory fac;
@@ -172,6 +185,9 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
   outfile.setf(std::ios::scientific,std::ios::floatfield);
   outfile << S->time() << " " << r_ << "\n";
 
+  r_ = 0.;
+  E_ = 0.;
+
   double dhdt = r_ - E_ - R_s_ - R_b_;
   double B_w  = r_ - E_;
 
@@ -187,7 +203,23 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
     AmanziGeometry::Point normal = mesh_->face_normal(f);
     normal /= norm(normal);
 
-    flux_f[0][f] = -1.*cp_*rho0*(dhdt*(1.-xcf[2]) - B_w)/(h_+1.e-6); // *normal or not?
+    double cp;     // cell-based but we need face values for the flux
+    double rho;
+
+    AmanziMesh::Entity_ID_List f_cells;
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &f_cells);
+    if (f_cells.size() == 1) {
+      // boundary face, use the cell value
+      cp  = cp_v[0][f_cells[0]];
+      rho = rho_v[0][f_cells[0]];
+    } else {
+      AMANZI_ASSERT(f_cells.size() == 2);
+      // interpolate between cells
+      cp  = (cp_v[0][f_cells[0]]  + cp_v[0][f_cells[1]])  / 2.;
+      rho = (rho_v[0][f_cells[0]] + rho_v[0][f_cells[1]]) / 2.;
+    }
+
+    flux_f[0][f] = -1.*cp*rho*(dhdt*(1.-xcf[2]) - B_w)/(h_+1.e-6); // *normal or not?
   }
 
   db_->WriteVector(" adv flux", flux.ptr(), true);
@@ -339,6 +371,9 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
 
     // <-- end compute evaporation rate
 
+    r_ = 0.;
+    E_ = 0.;
+
     double dhdt = r_ - E_ - R_s_ - R_b_;
     double B_w  = r_ - E_;
 
@@ -357,6 +392,11 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
     const Epetra_MultiVector& lambda_c =
         *S->GetFieldData(conductivity_key_)->ViewComponent("cell",false);
 
+    // evaluate heat capacity
+    S->GetFieldEvaluator(heat_capacity_key_)->HasFieldChanged(S.ptr(), name_);
+    const Epetra_MultiVector& cp =
+        *S->GetFieldData(heat_capacity_key_)->ViewComponent("cell",false);
+
     // water extinction coefficient
     alpha_e_ = 1.04;
 
@@ -372,7 +412,7 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
       }
 
       // -1.* because I switched to vertical xi coordinate
-      g_c[0][c] += -1.*( (S0_*exp(-alpha_e_*h_*(1.-xc[2]))*(alpha_e_*h_)/(h_+1.e-6) - cp_*rho0*temp[0][c]*dhdt/(h_+1.e-6)) * cv[0][c] );
+      g_c[0][c] += -1.*( (S0_*exp(-alpha_e_*h_*(1.-xc[2]))*(alpha_e_*h_)/(h_+1.e-6) - cp[0][c]*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6)) * cv[0][c] );
 
       /* TESTING
 //      // manufactured solution 1: linear temperature distribution

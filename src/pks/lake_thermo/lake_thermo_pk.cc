@@ -23,6 +23,7 @@ Author: Svetlana Tokareva
 #include "density_evaluator.hh"
 #include "lake_energy_evaluator.hh"
 #include "thermal_conductivity_evaluator.hh"
+#include "lake_heat_capacity_evaluator.hh"
 #include "heat_flux_bc_evaluator.hh"
 
 #include "CompositeVectorFunction.hh"
@@ -96,6 +97,7 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   energy_flux_key_ = Keys::readKey(*plist_, domain_, "diffusive energy flux", "diffusive_energy_flux");
   adv_energy_flux_key_ = Keys::readKey(*plist_, domain_, "advected energy flux", "advected_energy_flux");
   conductivity_key_ = Keys::readKey(*plist_, domain_, "thermal conductivity", "thermal_conductivity");
+  heat_capacity_key_ = Keys::readKey(*plist_, domain_, "heat capacity", "heat_capacity");
   uw_conductivity_key_ = Keys::readKey(*plist_, domain_, "upwinded thermal conductivity", "upwind_thermal_conductivity");
   cell_is_ice_key_ = Keys::readKey(*plist_, domain_, "ice", "ice");
   depth_key_ = Keys::readKey(*plist_, domain_, "water depth", "water depth");
@@ -302,6 +304,16 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
       Teuchos::rcp(new LakeThermo::ThermalConductivityEvaluator(tcm_plist));
   S->SetFieldEvaluator(conductivity_key_, tcm);
 
+  // -- heat capacity evaluator
+  S->RequireField(heat_capacity_key_)->SetMesh(mesh_)
+        ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::ParameterList hc_plist =
+      plist_->sublist("heat capacity evaluator");
+  hc_plist.set("evaluator name", heat_capacity_key_);
+  Teuchos::RCP<LakeThermo::LakeHeatCapacityEvaluator> hc =
+      Teuchos::rcp(new LakeThermo::LakeHeatCapacityEvaluator(hc_plist));
+  S->SetFieldEvaluator(heat_capacity_key_, hc);
+
 
 
 
@@ -421,6 +433,11 @@ void Lake_Thermo_PK::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
           ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(conductivity_key_);
 
+  // -- Heat capacity
+  S->RequireField(heat_capacity_key_)->SetMesh(mesh_)->SetGhosted()
+          ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(heat_capacity_key_);
+
   // -- Enthalpy
   S->RequireField(enthalpy_key_)->SetMesh(mesh_)->SetGhosted()
           ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -443,8 +460,8 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
 
   // read model parameters
 
-  rho0 = 1000.;
-  cp_ = 3990.; ///rho0;
+//  rho0 = 1000.;
+//  cp_ = 3990.; ///rho0;
 
   Teuchos::ParameterList& param_list = plist_->sublist("parameters");
 

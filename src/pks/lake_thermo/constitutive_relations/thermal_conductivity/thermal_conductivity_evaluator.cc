@@ -74,7 +74,7 @@ void ThermalConductivityEvaluator::EvaluateField_(
 
   double lambda_ice = 2.2;
   double lambda_w   = 3.*0.561; //1.5
-  //  lambda_ice = lambda_w;
+  lambda_ice = lambda_w;
 
   // get temperature
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);

@@ -70,7 +70,7 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   std::vector<double> temp_new(ncomp); // new temperatures for swapping the cells
 
   for (int i=0; i!=ncomp; ++i) {
-    temp_new[i] = -100; //temp_v[0][i];
+    temp_new[i] = -100.; //temp_v[0][i];
   }
 
   if (ice_cover_ && d_thawed > 0) {
@@ -229,6 +229,9 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   evap_rate = abs(evap_rate);
 
   E_ = evap_rate;
+
+  r_ = 0.;
+  E_ = 0.;
 
   // update depth
   double dt = S_next_->time() - S_inter_->time();

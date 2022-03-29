@@ -38,6 +38,8 @@ class LakeEnergyEvaluator : public SecondaryVariableFieldEvaluator {
  protected:
 
   Key temperature_key_;
+  Key density_key_;
+  Key heat_capacity_key_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,LakeEnergyEvaluator> factory_;

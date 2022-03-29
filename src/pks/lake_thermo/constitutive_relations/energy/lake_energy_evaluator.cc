@@ -28,11 +28,21 @@ LakeEnergyEvaluator::LakeEnergyEvaluator(Teuchos::ParameterList& plist) :
   temperature_key_ = Keys::readKey(plist_, domain_name, "temperature", "temperature");
   dependencies_.insert(temperature_key_);
 
+  // -- density
+  density_key_ = Keys::readKey(plist_, domain_name, "density", "density");
+  dependencies_.insert(density_key_);
+
+  // -- heat capacity
+  heat_capacity_key_ = Keys::readKey(plist_, domain_name, "heat capacity", "heat_capacity");
+  dependencies_.insert(heat_capacity_key_);
+
 };
 
 LakeEnergyEvaluator::LakeEnergyEvaluator(const LakeEnergyEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
-    temperature_key_(other.temperature_key_) {};
+    temperature_key_(other.temperature_key_),
+    density_key_(other.density_key_),
+    heat_capacity_key_(other.heat_capacity_key_){};
 
 Teuchos::RCP<FieldEvaluator>
 LakeEnergyEvaluator::Clone() const {
@@ -42,13 +52,19 @@ LakeEnergyEvaluator::Clone() const {
 
 void LakeEnergyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
+
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
 
-//  double rho0 = 1.; //1000.;
-//  double cp = 1.; //4184.;
+  std::cout << "temperature_key_ = " << temperature_key_ << std::endl;
+  std::cout << "density_key_ = " << density_key_ << std::endl;
 
-  double rho0 = 1000.;
-  double cp = 3990.; ///rho0;
+  // evaluate density
+  const Epetra_MultiVector& rho_v =
+      *S->GetFieldData(density_key_)->ViewComponent("cell",false);
+
+  // evaluate heat capacity
+  const Epetra_MultiVector& cp_v =
+      *S->GetFieldData(heat_capacity_key_)->ViewComponent("cell",false);
 
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {
@@ -58,7 +74,9 @@ void LakeEnergyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     int ncomp = result->size(*comp, false);
     for (int i=0; i!=ncomp; ++i) {
       double T = temp_v[0][i];
-      result_v[0][i] = rho0*cp*T;
+      double rho = rho_v[0][i];
+      double cp = cp_v[0][i];
+      result_v[0][i] = rho*cp*T;
     }
   }
 };
@@ -66,17 +84,19 @@ void LakeEnergyEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
 void LakeEnergyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
+
+  result->PutScalar(0.);
+
   if (wrt_key == temperature_key_) {
     Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temperature_key_);
 
-//    double rho0 = 1.;
-//    double cp = 1.;
+    // evaluate density
+    const Epetra_MultiVector& rho_v =
+        *S->GetFieldData(density_key_)->ViewComponent("cell",false);
 
-//    double rho0 = 1000.;
-//    double cp = 4184./rho0;
-
-    double rho0 = 1000.;
-    double cp = 3990.; ///rho0;
+    // evaluate heat capacity
+    const Epetra_MultiVector& cp_v =
+        *S->GetFieldData(heat_capacity_key_)->ViewComponent("cell",false);
 
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
@@ -86,7 +106,9 @@ void LakeEnergyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<Sta
       int ncomp = result->size(*comp, false);
       for (int i=0; i!=ncomp; ++i) {
         double T = temp_v[0][i];
-        result_v[0][i] = rho0*cp;
+        double rho = rho_v[0][i];
+        double cp = cp_v[0][i];
+        result_v[0][i] = rho*cp;
       }
     }
   }
