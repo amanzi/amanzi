@@ -230,9 +230,6 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
 
   E_ = evap_rate;
 
-  r_ = 0.;
-  E_ = 0.;
-
   // update depth
   double dt = S_next_->time() - S_inter_->time();
   double dhdt = r_ - E_ - R_s_ - R_b_;

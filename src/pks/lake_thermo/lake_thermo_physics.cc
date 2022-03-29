@@ -185,9 +185,6 @@ void Lake_Thermo_PK::AddAdvection_(const Teuchos::Ptr<State>& S,
   outfile.setf(std::ios::scientific,std::ios::floatfield);
   outfile << S->time() << " " << r_ << "\n";
 
-  r_ = 0.;
-  E_ = 0.;
-
   double dhdt = r_ - E_ - R_s_ - R_b_;
   double B_w  = r_ - E_;
 
@@ -250,9 +247,12 @@ void Lake_Thermo_PK::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   const Epetra_MultiVector& uw_cond_c = *S_next_->GetFieldData(uw_conductivity_key_)->ViewComponent("face", false);
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
+  const Epetra_MultiVector& cv =
+      *S->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
+
   // because the lake model has 1/h^2 term
   for (int f = 0; f < nfaces_owned; f++) {
-    uw_cond_c[0][f] /= (h_*h_);
+    uw_cond_c[0][f] = uw_cond_c[0][f]/(h_*h_)/cv[0][0];
   }
 
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
@@ -371,9 +371,6 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
 
     // <-- end compute evaporation rate
 
-    r_ = 0.;
-    E_ = 0.;
-
     double dhdt = r_ - E_ - R_s_ - R_b_;
     double B_w  = r_ - E_;
 
@@ -408,11 +405,11 @@ void Lake_Thermo_PK::AddSources_(const Teuchos::Ptr<State>& S,
       if (temp[0][ncells-1] < 273.15) {
         S0_ = 0.;
       } else {
-        S0_ = 0.; //0.1*SS;
+        S0_ = 0.1*SS;
       }
 
       // -1.* because I switched to vertical xi coordinate
-      g_c[0][c] += -1.*( (S0_*exp(-alpha_e_*h_*(1.-xc[2]))*(alpha_e_*h_)/(h_+1.e-6) - cp[0][c]*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6)) * cv[0][c] );
+      g_c[0][c] += -1.*( (S0_*exp(-alpha_e_*h_*(1.-xc[2]))*(alpha_e_*h_)/(h_+1.e-6) - cp[0][c]*rho[0][c]*temp[0][c]*dhdt/(h_+1.e-6)) );// * cv[0][c] );
 
       /* TESTING
 //      // manufactured solution 1: linear temperature distribution
