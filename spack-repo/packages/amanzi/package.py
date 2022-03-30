@@ -77,7 +77,7 @@ class Amanzi(CMakePackage):
     core_dependencies = {
         'zlib','metis', 'parmetis', 'seacas -x11',
         'boost@1.67.0 cxxstd=11 +program_options',
-        'netcdf-c +parallel-netcdf', 'hdf5 +mpi+fortran+hl', 
+        'netcdf-c +parallel-netcdf', 'hdf5 +mpi+fortran+hl api=default', 
         'ascemio'
     }
 
@@ -85,7 +85,8 @@ class Amanzi(CMakePackage):
         depends_on(dep+' +shared',when='+shared'); 
         depends_on(dep+' -shared',when='-shared');
 
-    depends_on('cgns@develop +mpi -shared', when='-shared')
+    #double check the version of cgns  below
+    depends_on('cgns@develop -shared', when='-shared')
 
     # The following core dependencies do not support +shared/~shared
     depends_on('xerces-c')
@@ -235,14 +236,14 @@ class Amanzi(CMakePackage):
         else:
             options.append('-DENABLE_MESH_MOAB=OFF')
        
-        if 'mesh_type=unstructured':
+        if 'mesh_type=unstructured' in self.spec:
             options.append('-DENABLE_Unstructured=ON')
             options.append('-DENABLE_MESH_STK=OFF')
             options.append('-DENABLE_MESH_MOAB=OFF')
         else:
             options.append('-DENABLE_Unstructured=OFF')
 
-        if 'mesh_type=structured':
+        if 'mesh_type=structured'in self.spec: 
             options.append('-DENABLE_Structured=ON')
         else:
             options.append('-DENABLE_Structured=OFF')
