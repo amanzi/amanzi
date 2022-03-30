@@ -88,6 +88,8 @@ class Amanzi(CMakePackage):
     #double check the version of cgns  below
     depends_on('cgns@develop -shared', when='-shared')
 
+    depends_on('ccse', when='mesh_type=structured')
+
     # The following core dependencies do not support +shared/~shared
     depends_on('xerces-c')
     depends_on('unittest-cpp')
@@ -245,6 +247,8 @@ class Amanzi(CMakePackage):
 
         if 'mesh_type=structured'in self.spec: 
             options.append('-DENABLE_Structured=ON')
+            options.append('-DENABLE_CCSE_TOOLS=ON')
+            options.append('-DCCSE_DIR=' + self.spec['ccse'].prefix)
         else:
             options.append('-DENABLE_Structured=OFF')
         
