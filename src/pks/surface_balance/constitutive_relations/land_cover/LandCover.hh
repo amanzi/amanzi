@@ -197,5 +197,5 @@ LandCoverMap getLandCover(Teuchos::ParameterList& plist);
 
 
 } // namespace SurfaceBalance
-} // namespace ATS
+} // namespace Amanzi
 

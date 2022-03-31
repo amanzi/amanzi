@@ -78,7 +78,7 @@ class CarbonSimple : public PK_Physical_Explicit_Default {
 
 
 } // namespace BGC
-} // namespace ATS
+} // namespace Amanzi
 
   
 

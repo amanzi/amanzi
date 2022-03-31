@@ -167,4 +167,4 @@ CarbonSimple::AddDecomposition_(const Teuchos::Ptr<State>& S,
 
 
 } // namespace BGC
-} // namespace ATS
+} // namespace Amanzi

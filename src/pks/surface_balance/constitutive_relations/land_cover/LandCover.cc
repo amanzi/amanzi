@@ -143,4 +143,4 @@ void checkValid(const std::string& region, const LandCover& lc, const std::strin
 
 } // namespace Impl
 } // namespace SurfaceBalance
-} // namespace ATS
+} // namespace Amanzi
