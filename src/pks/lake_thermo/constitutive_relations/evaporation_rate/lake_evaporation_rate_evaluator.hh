@@ -14,6 +14,8 @@
 
 #include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
+#include "Function.hh"
+#include "FunctionFactory.hh"
 
 namespace Amanzi {
 namespace LakeThermo {
@@ -37,11 +39,7 @@ class LakeEvaporationRateEvaluator :
  protected:
   // dependencies
 
-  double cg, cw, ci;
-
   Key temperature_key_;
-  Key water_content_key_;
-  Key ice_content_key_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,LakeEvaporationRateEvaluator> factory_;

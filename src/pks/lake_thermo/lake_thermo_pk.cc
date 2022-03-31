@@ -25,6 +25,7 @@ Author: Svetlana Tokareva
 #include "thermal_conductivity_evaluator.hh"
 #include "lake_heat_capacity_evaluator.hh"
 #include "heat_flux_bc_evaluator.hh"
+#include "lake_evaporation_rate_evaluator.hh"
 
 #include "CompositeVectorFunction.hh"
 #include "CompositeVectorFunctionFactory.hh"
@@ -101,6 +102,8 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   uw_conductivity_key_ = Keys::readKey(*plist_, domain_, "upwinded thermal conductivity", "upwind_thermal_conductivity");
   cell_is_ice_key_ = Keys::readKey(*plist_, domain_, "ice", "ice");
   depth_key_ = Keys::readKey(*plist_, domain_, "water depth", "water depth");
+  surface_flux_key_ = Keys::readKey(*plist_, domain_, "surface flux", "surface_flux");
+  evaporation_rate_key_ = Keys::readKey(*plist_, domain_, "evaporation rate", "evaporation_rate");
 
   //  std::string domain_surf;
   //  domain_surf = plist_->get<std::string>("surface domain name", "surface");
@@ -108,8 +111,6 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
   //  S->RequireField(surface_flux_key_)
   //	  ->SetMesh(S->GetMesh(domain_surf))
   //	  ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  surface_flux_key_ = Keys::readKey(*plist_, domain_, "surface flux", "surface_flux");
 
   // Get data for special-case entities.
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
@@ -314,7 +315,15 @@ void Lake_Thermo_PK::SetupLakeThermo_(const Teuchos::Ptr<State>& S) {
       Teuchos::rcp(new LakeThermo::LakeHeatCapacityEvaluator(hc_plist));
   S->SetFieldEvaluator(heat_capacity_key_, hc);
 
-
+  // -- evaporation rate evaluator
+  S->RequireField(evaporation_rate_key_)->SetMesh(mesh_)
+        ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::ParameterList er_plist =
+      plist_->sublist("evaporation rate evaluator");
+  er_plist.set("evaluator name", evaporation_rate_key_);
+  Teuchos::RCP<LakeThermo::LakeEvaporationRateEvaluator> er =
+      Teuchos::rcp(new LakeThermo::LakeEvaporationRateEvaluator(er_plist));
+  S->SetFieldEvaluator(evaporation_rate_key_, er);
 
 
   // THIS SHOULD NOT BE DEFINED ON THE MESH -- > ONLY ONE VALUE FOR THE UPPER BOUNDARY
@@ -438,6 +447,11 @@ void Lake_Thermo_PK::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
           ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(heat_capacity_key_);
 
+  // -- Evaporation rate
+  S->RequireField(evaporation_rate_key_)->SetMesh(mesh_)->SetGhosted()
+          ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(evaporation_rate_key_);
+
   // -- Enthalpy
   S->RequireField(enthalpy_key_)->SetMesh(mesh_)->SetGhosted()
           ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -458,24 +472,10 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   // initialize BDF stuff and physical domain stuff
   PK_PhysicalBDF_Default::Initialize(S);
 
-  // read model parameters
-
-//  rho0 = 1000.;
-//  cp_ = 3990.; ///rho0;
-
-  Teuchos::ParameterList& param_list = plist_->sublist("parameters");
-
   R_s_ = 0.;
   R_b_ = 0.;
   alpha_e_ = 0.;
   S0_ = 0.;
-
-  // initial depth
-  h_ = 1.5;
-
-  // initial ice thickness
-  h_ice_ = 0.;
-
 
 #if MORE_DEBUG_FLAG
   for (int i=1; i!=23; ++i) {
@@ -525,6 +525,12 @@ void Lake_Thermo_PK::Initialize(const Teuchos::Ptr<State>& S) {
   double temp = ic_list.get<double>("initial temperature [K]");
 
   S->GetFieldData(temperature_key_, name_)->PutScalar(temp);
+
+  // initial depth
+  h_ = ic_list.get<double>("initial depth [m]",1.5);
+
+  // initial ice thickness
+  h_ice_ = 0.;
 
   S->GetFieldData(cell_is_ice_key_, name_)->PutScalar(false);
   S->GetField(cell_is_ice_key_, name_)->set_initialized();

@@ -37,7 +37,7 @@ class LakeHeatCapacityEvaluator :
  protected:
   // dependencies
 
-  double cg, cw, ci;
+  double cw, ci;
 
   Key temperature_key_;
   Key water_content_key_;

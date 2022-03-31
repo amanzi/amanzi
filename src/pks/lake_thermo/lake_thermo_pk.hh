@@ -148,6 +148,8 @@ Solves a 1D advection-diffusion equation in vertical coordinate for water temper
 //#include "PK_PhysicalBDF_ATS.hh"
 #include "pk_physical_bdf_default.hh"
 #include "upwinding.hh"
+#include "../../executables/ats_mesh_factory.hh"
+#include "../../../../../mesh/mesh_factory/Meshfactory.hh"
 
 namespace Amanzi {
 
@@ -156,6 +158,8 @@ namespace Operators { class Advection; }
 namespace Functions { class BoundaryFunction; }
 
 namespace LakeThermo {
+
+using namespace ATS::Mesh;
 
 class Lake_Thermo_PK : public PK_PhysicalBDF_Default{
 
@@ -363,7 +367,9 @@ protected:
 
   Key depth_key_;
 
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_scaled;
+  Key evaporation_rate_key_;
+
+  Teuchos::RCP<AmanziMesh::Mesh> mesh_scaled_;
 
 private:
   // factory registration

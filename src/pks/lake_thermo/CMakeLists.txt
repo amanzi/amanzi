@@ -18,6 +18,7 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/lake_thermo/constitutive_relations
 include_directories(${ATS_SOURCE_DIR}/src/pks/lake_thermo/constitutive_relations/thermal_conductivity)
 include_directories(${ATS_SOURCE_DIR}/src/pks/lake_thermo/constitutive_relations/heat_capacity)
 include_directories(${ATS_SOURCE_DIR}/src/pks/lake_thermo/constitutive_relations/heat_flux_bc)
+include_directories(${ATS_SOURCE_DIR}/src/pks/lake_thermo/constitutive_relations/evaporation_rate)
 include_directories(${ATS_SOURCE_DIR}/src/constitutive_relations/eos)
 
 

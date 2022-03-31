@@ -42,11 +42,9 @@ LakeHeatCapacityEvaluator::LakeHeatCapacityEvaluator(
 
   double row  = 1000.; // density of water
   double roi  = 917.;  // density of ice
-  double ros  = 1200.; // density of soil
 
-  cw    = 3990./row;    // specific heat of water
-  ci    = 2150./roi;    // specific heat of ice
-  cg    = 800.; ///ros;     // specific heat of dry soils
+  cw    = 3990.; ///row;    // specific heat of water
+  ci    = 2150.; ///roi;    // specific heat of ice
 
 }
 
@@ -54,9 +52,9 @@ LakeHeatCapacityEvaluator::LakeHeatCapacityEvaluator(
 LakeHeatCapacityEvaluator::LakeHeatCapacityEvaluator(
     const LakeHeatCapacityEvaluator& other) :
         SecondaryVariableFieldEvaluator(other),
-        cg(other.cg),
         cw(other.cw),
         ci(other.ci),
+        temperature_key_(other.temperature_key_),
         water_content_key_(other.water_content_key_),
         ice_content_key_(other.ice_content_key_){}
 
@@ -70,6 +68,9 @@ void LakeHeatCapacityEvaluator::EvaluateField_(
     const Teuchos::Ptr<State>& S,
     const Teuchos::Ptr<CompositeVector>& result) {
 
+  // get temperature
+  Teuchos::RCP<const CompositeVector> T = S->GetFieldData(temperature_key_);
+
 //  // get water content
 //  Teuchos::RCP<const CompositeVector> wc = S->GetFieldData(water_content_key_);
 
@@ -82,8 +83,10 @@ void LakeHeatCapacityEvaluator::EvaluateField_(
   for (CompositeVector::name_iterator comp=result->begin();
       comp!=result->end(); ++comp) {
     // much more efficient to pull out vectors first
+    const Epetra_MultiVector& T_v = *T->ViewComponent(*comp,false);
 //    const Epetra_MultiVector& wc_v = *wc->ViewComponent(*comp,false);
-    //      const Epetra_MultiVector& ic_v = *ic->ViewComponent(*comp,false);
+//    const Epetra_MultiVector& ic_v = *ic->ViewComponent(*comp,false);
+
     Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
 
     int ncomp = result->size(*comp, false);
@@ -93,7 +96,10 @@ void LakeHeatCapacityEvaluator::EvaluateField_(
 //      double W = wc_v[0][i]; // * 1.8e-5; // CONVERTED UNITS from mol/m^3 to volume ratio
 //      double I = 0.;//= ic_v[0][i] * 1.8e-5;
 
-      result_v[0][i] = 3990.; ////cw; //cg + cw*W + ci*I;
+//      result_v[0][i] = cw*W + ci*I;
+
+      double T = T_v[0][i];
+      result_v[0][i] = (T < 273.15) ? ci : cw;
 
     } // i
   }

@@ -19,6 +19,8 @@ Author: Ethan Coon
 namespace Amanzi {
 namespace LakeThermo {
 
+using namespace ATS::Mesh;
+
 #define DEBUG_FLAG 1
 #define MORE_DEBUG_FLAG 0
 
@@ -151,7 +153,7 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   //  bc_flux_->Compute(t_new);
   UpdateBoundaryConditions_(S_next_.ptr());
 
-  Teuchos::ParameterList& param_list = plist_->sublist("parameters");
+  Teuchos::ParameterList& param_list = plist_->sublist("met data");
   FunctionFactory fac;
   Teuchos::RCP<Function> r_func_ = Teuchos::rcp(fac.Create(param_list.sublist("precipitation")));
   Teuchos::RCP<Function> E_func_ = Teuchos::rcp(fac.Create(param_list.sublist("evaporation")));
@@ -162,73 +164,10 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   E_ = (*E_func_)(args);
 
   // Compute evaporartion rate
-  Teuchos::ParameterList& param_list_eval = plist_->sublist("surface flux evaluator");
-  Teuchos::ParameterList& param_list_param = param_list_eval.sublist("parameters");
-  // read parameters from the met data
-  Teuchos::RCP<Amanzi::Function> SS_func_ = Teuchos::rcp(fac.Create(param_list_param.sublist("solar radiation")));
-  Teuchos::RCP<Amanzi::Function> E_a_func_ = Teuchos::rcp(fac.Create(param_list_param.sublist("atmospheric downward radiation")));
-  Teuchos::RCP<Amanzi::Function> T_a_func_ = Teuchos::rcp(fac.Create(param_list_param.sublist("air temperature")));
-  Teuchos::RCP<Amanzi::Function> H_a_func_ = Teuchos::rcp(fac.Create(param_list_param.sublist("air humidity")));
-  Teuchos::RCP<Amanzi::Function> P_a_func_ = Teuchos::rcp(fac.Create(param_list_param.sublist("atmospheric pressure")));
-
-  args[0] = S_inter_->time();
-  double SS = (*SS_func_)(args);
-  double E_a = (*E_a_func_)(args);
-  double T_a = (*T_a_func_)(args);
-  double q_a = (*H_a_func_)(args);
-  double P_a = (*P_a_func_)(args);
-
-  //    // get temperature
-  //    const Epetra_MultiVector& temp_v = *S_inter_->GetFieldData(temperature_key_)
-  //    ->ViewComponent("cell",false);
-
-  double T_s = temp_v[0][ncomp-1];
-
-  double b1_vap   = 610.78;        // Coefficient [N m^{-2} = kg m^{-1} s^{-2}]
-  double b3_vap   = 273.16;        // Triple point [K]
-  double b2w_vap  = 17.2693882;    // Coefficient (water)
-  double b2i_vap  = 21.8745584;    // Coefficient (ice)
-  double b4w_vap  = 35.86;         // Coefficient (temperature) [K]
-  double b4i_vap  = 7.66;          // Coefficient (temperature) [K]
-
-  // Saturation water vapour pressure [N m^{-2} = kg m^{-1} s^{-2}]
-  double wvpres_s;
-
-  double h_ice = 0.;
-  double h_Ice_min_flk = 1.e-9;
-  if (h_ice < h_Ice_min_flk) {  // Water surface
-    wvpres_s = b1_vap*std::exp(b2w_vap*(T_s-b3_vap)/(T_s-b4w_vap));
-  } else {                      // Ice surface
-    wvpres_s = b1_vap*std::exp(b2i_vap*(T_s-b3_vap)/(T_s-b4i_vap));
-  }
-
-  // Saturation specific humidity at T=T_s
-  double tpsf_R_dryair    = 2.8705e2;  // Gas constant for dry air [J kg^{-1} K^{-1}]
-  double tpsf_R_watvap    = 4.6151e2;  // Gas constant for water vapour [J kg^{-1} K^{-1}]
-  double tpsf_Rd_o_Rv  = tpsf_R_dryair/tpsf_R_watvap;
-  double q_s = tpsf_Rd_o_Rv*wvpres_s/(P_a-(1.-tpsf_Rd_o_Rv)*wvpres_s);
-
-  double height_tq = 2;
-  double tpsf_kappa_q_a   = 2.4e-05; // Molecular diffusivity of air for water vapour [m^{2} s^{-1}]
-
-  double LE = -tpsf_kappa_q_a*(q_a-q_s)/height_tq;
-
-  double rho_a = P_a/tpsf_R_dryair/T_s/(1.+(1./tpsf_Rd_o_Rv-1.)*q_s);
-
-  double tpsf_c_a_p  = 1.005e3; // Specific heat of air at constant pressure [J kg^{-1} K^{-1}]
-  double tpsf_L_evap = 2.501e6; // Specific heat of evaporation [J kg^{-1}]
-  double tpl_L_f     = 3.3e5;   // Latent heat of fusion [J kg^{-1}]
-
-  double Q_watvap   = LE*rho_a;
-  LE = tpsf_L_evap;
-  if (h_ice >= h_Ice_min_flk) LE = LE + tpl_L_f;   // Add latent heat of fusion over ice
-  LE = Q_watvap*LE;
-
-  double row0 = 1.e+3;
-  double evap_rate = LE/(row0*tpsf_L_evap); //*1000.;
-  evap_rate = abs(evap_rate);
-
-  E_ = evap_rate;
+  S_inter_->GetFieldEvaluator(evaporation_rate_key_)->HasFieldChanged(S_inter_.ptr(), name_);
+  const Epetra_MultiVector& E_v =
+      *S_inter_->GetFieldData(evaporation_rate_key_)->ViewComponent("cell",false);
+  E_ = E_v[0][0]; // same everywhere
 
   // update depth
   double dt = S_next_->time() - S_inter_->time();
@@ -240,18 +179,27 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   double freeze_rate = (h_ice_-h_ice_prev)/dt*86400./2.54*100.;
   if (freeze_rate > 0.) std::cout << "freeze rate = " << freeze_rate << " inch/day" << std::endl;
 
+
+  // save file with freezing rates
+  if (int(t_new) % 86400 == 0) {
+    std::string ncells(std::to_string(ncomp));
+    std::ofstream tempfile;
+    tempfile.open ("freeze_rate"+ncells+".txt", std::ios::app);
+    tempfile << int(t_new) / 86400 << " " << freeze_rate << " ";
+    tempfile << "\n";
+  }
+
   S_inter_->GetFieldData(depth_key_,name_)->PutScalar(h_);
 
   /*
   // generate new mesh
 
-  Comm_ptr_type comm;
-  Teuchos::RCP<AmanziGeometry::GeometricModel> gm;
-  Teuchos::RCP<State> S;
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
 
-  comm = getDefaultComm();
-  gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, plist_->sublist("regions"), *comm));
-  S = Teuchos::rcp(new State(plist_->sublist("state")));
+  // create a mesh framework
+//  Teuchos::ParameterList regions_list = plist_->get<Teuchos::ParameterList>("regions");
+//  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
+  Teuchos::RCP<AmanziGeometry::GeometricModel> gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, plist_->sublist("regions"), *comm));
 
   Teuchos::ParameterList& meshes_list = plist_->sublist("mesh");
   Teuchos::ParameterList gen_mesh_plist;
@@ -259,10 +207,34 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   double high_coords[3] = {1.,1.,h_};
   gen_mesh_plist.set("domain high coordinate", high_coords);
 
+//  mesh_->set_parameter_list(gen_mesh_plist);
+
+  // create a mesh
+  bool request_faces = true, request_edges = false;
+  Amanzi::AmanziMesh::MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Amanzi::AmanziMesh::Preference({Amanzi::AmanziMesh::Framework::MSTK}));
+
+  mesh_scaled_ = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, h_, 1, 1, ncomp, request_faces, request_edges);
+  */
+
+  /*
+  Comm_ptr_type comm;
+  Teuchos::RCP<AmanziGeometry::GeometricModel> gm;
+  Amanzi::State S;
+
+  comm = getDefaultComm();
+  gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, plist_->sublist("regions"), *comm));
+//  S = Teuchos::rcp(new State(plist_->sublist("state")));
+
+  Teuchos::ParameterList& meshes_list = plist_->sublist("mesh");
+  Teuchos::ParameterList gen_mesh_plist;
+  gen_mesh_plist = meshes_list.sublist("lake scaled");
+  double high_coords[3] = {1.,1.,h_};
+  gen_mesh_plist.set("domain high coordinate", high_coords);
 
   VerboseObject vo(comm, "ATS Mesh Factory", meshes_list);
-  ATS::Mesh::createMesh(meshes_list.sublist("lake scaled"), comm, gm, S, vo);
-  */
+//  ATS::Mesh::createMesh(meshes_list.sublist("lake scaled"), comm, gm, S, vo);
+ * */
 
   // zero out residual
   Teuchos::RCP<CompositeVector> res = g->Data();
@@ -315,16 +287,16 @@ void Lake_Thermo_PK::FunctionalResidual(double t_old, double t_new, Teuchos::RCP
   }
 #endif
 
-  // save file with temperature distribution
-  if (int(t_new) % 86400 == 0) {
-    std::ofstream tempfile;
-    tempfile.open ("temperature.txt", std::ios::app);
-    for (int i=0; i!=ncomp; ++i) {
-      const AmanziGeometry::Point& xc = mesh_->cell_centroid(i);
-      tempfile << temp_v[0][i] << " ";
-    }
-    tempfile << "\n";
-  }
+//  // save file with temperature distribution
+//  if (int(t_new) % 86400 == 0) {
+//    std::ofstream tempfile;
+//    tempfile.open ("temperature.txt", std::ios::app);
+//    for (int i=0; i!=ncomp; ++i) {
+//      const AmanziGeometry::Point& xc = mesh_->cell_centroid(i);
+//      tempfile << temp_v[0][i] << " ";
+//    }
+//    tempfile << "\n";
+//  }
 
 };
 
