@@ -169,7 +169,8 @@
 #   0.98.4c      - update SEACAS to date tag v2022-02-16
 #   0.98.4d      - update Nanoflann to 1.4.2
 #   0.98.4e      - update ExprTk to 0.0.1
-#   0.98.5       - temntative release number
+#   0.98.4f      - update Boost to 1.78.0
+#   0.98.5       - tentative release number
 
 include(CMakeParseArguments)
 
@@ -325,15 +326,14 @@ set(UnitTest_MD5_SUM        29f958e355e516e7ab016b467974728d)
 # TPL: Boost
 #
 set(Boost_VERSION_MAJOR 1)
-set(Boost_VERSION_MINOR 67)
-
+set(Boost_VERSION_MINOR 78)
 set(Boost_VERSION_PATCH 0)
 set(Boost_VERSION        ${Boost_VERSION_MAJOR}.${Boost_VERSION_MINOR}.${Boost_VERSION_PATCH})
 set(Boost_VERSION_STRING ${Boost_VERSION_MAJOR}_${Boost_VERSION_MINOR}_${Boost_VERSION_PATCH})
-set(Boost_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
+set(Boost_URL_STRING     "https://boostorg.jfrog.io/artifactory/main/release/${Boost_VERSION}/source/")
 set(Boost_ARCHIVE_FILE   boost_${Boost_VERSION_STRING}.tar.bz2)
 set(Boost_SAVEAS_FILE    ${Boost_ARCHIVE_FILE})
-set(Boost_MD5_SUM        ced776cb19428ab8488774e1415535ab)
+set(Boost_MD5_SUM        db0112a3a37a3742326471d20f1a186a)
 
 #
 # TPL: HDF5

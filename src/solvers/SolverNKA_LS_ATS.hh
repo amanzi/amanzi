@@ -458,7 +458,7 @@ int SolverNKA_LS_ATS<Vector, VectorSpace>::NKA_LS_ATS_(const Teuchos::RCP<Vector
           
         // minimize along the search path from min_alpha to endpoint
         double left = min_alpha_;
-        boost::uintmax_t ls_itrs(max_ls_itrs_);
+        std::uintmax_t ls_itrs(max_ls_itrs_);
         std::pair<double,double> result = boost::math::tools::brent_find_minima(
             linesearch_func, left, endpoint, bits_, ls_itrs);
         fun_calls_ += ls_itrs;
