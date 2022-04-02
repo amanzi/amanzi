@@ -111,7 +111,14 @@ class PK {
     }
 
     // set up the VerboseObject
-    vo_ = Teuchos::rcp(new VerboseObject(name_, *plist_));
+    // Note, this allows for overriding the vo plist for individual PKs in a
+    // collection of PKs
+    Teuchos::RCP<Teuchos::ParameterList> vo_plist = plist_;
+    if (plist_->isSublist(name_ + " verbose object")) {
+      vo_plist = Teuchos::rcp(new Teuchos::ParameterList(*plist_));
+      vo_plist->set("verbose object", plist_->sublist(name_ + " verbose object"));
+    }
+    vo_ = Teuchos::rcp(new VerboseObject(solution->Comm(), name_, *vo_plist));
   };
 
   // Virtual destructor

@@ -386,9 +386,10 @@ void WriteStateStatistics(const State& S, const VerboseObject& vo)
     *vo.os() << "\nField                                    Min/Max/Avg" << std::endl;
 
     for (auto name : sorted) {
-      if (name.size() > 33) replace_all(name, "temperature", "temp");
-      if (name.size() > 33) replace_all(name, "internal_energy", "ie");
-      if (name.size() > 33) replace_all(name, "molar", "mol");
+      std::string display_name(name);
+      if (name.size() > 33) replace_all(display_name, "temperature", "temp");
+      if (name.size() > 33) replace_all(display_name, "internal_energy", "ie");
+      if (name.size() > 33) replace_all(display_name, "molar", "mol");
 
       for (const auto& r : S.GetRecordSet(name)) {
         if (r.second->ValidType<CompositeVector>()) {
@@ -398,7 +399,7 @@ void WriteStateStatistics(const State& S, const VerboseObject& vo)
           r.second->Get<CompositeVector>().MeanValue(vavg);
 
           for (auto c_it = vmin.begin(); c_it != vmin.end(); ++c_it) {
-            std::string namedot(Keys::getKey(name, r.first)), name_comp(c_it->first);
+            std::string namedot(Keys::getKey(display_name, r.first)), name_comp(c_it->first);
             if (vmin.size() != 1) namedot.append("." + name_comp);
             namedot.resize(40, '.');
             *vo.os() << namedot << " " << c_it->second << " / "
@@ -407,13 +408,13 @@ void WriteStateStatistics(const State& S, const VerboseObject& vo)
 
         } else if (r.second->ValidType<double>()) {
           double vmin = r.second->Get<double>();
-          auto namedot = Keys::getKey(name, r.first);
+          auto namedot = Keys::getKey(display_name, r.first);
           namedot.resize(40, '.');
           *vo.os() << namedot << " " << vmin << std::endl;
 
         } else if (r.second->ValidType<AmanziGeometry::Point>()) {
           const auto& p = r.second->Get<AmanziGeometry::Point>();
-          auto namedot = Keys::getKey(name, r.first);
+          auto namedot = Keys::getKey(display_name, r.first);
           namedot.resize(40, '.');
           *vo.os() << namedot;
           for (int i = 0; i < p.dim(); ++i) *vo.os() << " " << p[i];
