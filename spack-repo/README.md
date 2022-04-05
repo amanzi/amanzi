@@ -40,19 +40,19 @@ spack external find
 ```
 This will update the file: ${HOME}/.spack/packages.yaml
 
-External packages (such as openmpi or mpich) can be used to specify dependencies when installing spack packages using ^, for instance on Darwin:
+External packages (such as openmpi or mpich) can be used to specify dependencies when installing spack packages using `^`, for instance on Darwin:
 
 ```
 spack install amanzi@spack ^openmpi@4.1.2
 ```
-will install amanzi with the explicit dependence on the module openmpi/4.1.2-gcc_11.2.0 to which it is associated the spack spec ^openmpi@4.1.2
+will install amanzi with the explicit dependence on the module `openmpi/4.1.2-gcc_11.2.0` to which it is associated the spack spec `^openmpi@4.1.2`.
 
 The spec is in the packages.yaml file, see below.
 
 # Manage external packages
 
 In ${HOME}/.spack/packages.yaml you can find the external libraries detected by spack, and also add others that might be associated with existing modules
-present in your system. For instance, on Darwin, the module openmpi/4.1.2-gcc_11.2.0 can be used to create the following spec
+present in your system. For instance, on Darwin, the module `openmpi/4.1.2-gcc_11.2.0` can be used to create the following spec
 
 ```
 packages:
@@ -64,7 +64,7 @@ packages:
 ```
 The line `packages:` above can be omitted if other specs are already present in the packages.yaml file.
 
-Note that if you ran spack external find the above spec may have been added to the packages.yaml file and look like this
+Note that if you ran `spack external find` the above spec may have been added to the packages.yaml file and look like this
 
 ```
 packages:
@@ -165,7 +165,7 @@ Then, cd into amanzi and build and test amanzi by doing:
 spack dev-build --test all amanzi@spack ^mpich@7.7.19 ^cray-libsci@20.09.1 %gcc@8.3.0
 ```
 
-The specific dependence on the cray scientific library is to make sure that blas and lapack are taken from there.
+The specific dependence on the cray scientific library is to make sure that `blas` and `lapack` are taken from there.
 
 # Piquillo
 
@@ -173,7 +173,7 @@ The specific dependence on the cray scientific library is to make sure that blas
 
 # Notes
 
-Currently spack does not propagate variants to dependencies, hence the static variant (shared = off) is currently a work in progress.
+Currently spack does not propagate variants to dependencies, hence the static variant (`-shared`) is currently a work in progress.
 
-The ccse spack package is currently undergoing testing so the structured variant (mesh_type=structured) is currently unavailable.
+The ccse spack package is currently undergoing testing so the structured variant (`mesh_type=structured`) is unavailable at the moment.
 
