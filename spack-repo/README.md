@@ -100,8 +100,8 @@ The command above will add repositories for the following four packages:
 amanzi  ascemio  crunchtope  mstk  ccse
 ```
 
-# Spack variants:
-
+# Spack variants
+```
 Variants:
     Name [Default]                 When    Allowed values          Description
     ===========================    ====    ====================    ============================================
@@ -120,6 +120,7 @@ Variants:
     shared [on]                    --      on, off                 Build shared libraries and TPLs
     silo [off]                     --      on, off                 Enable Silo reader for binary files
     tests [on]                     --      on, off                 Enable the unit test suite
+```
 
 # Building and testing Amanzi with spack
 
