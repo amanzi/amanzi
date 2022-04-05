@@ -100,7 +100,7 @@ The command above will add repositories for the following four packages:
 amanzi  ascemio  crunchtope  mstk  ccse
 ```
 
-# Spack variants
+# Spack variants:
 
 Variants:
     Name [Default]                 When    Allowed values          Description
