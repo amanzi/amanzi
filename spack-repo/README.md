@@ -30,7 +30,7 @@ module load gcc/XXX
 spack compiler find
 ```
 
-Note that you might find your compilers also on ${HOME}/.spack/cray/compilers.yaml (if you are on Cori for instance).
+Note that you might find your compilers also in ${HOME}/.spack/cray/compilers.yaml (if you are on Cori for instance).
 
 # Find external libraries
 
@@ -39,12 +39,14 @@ If external libraries are available on your system, spack can find them for you 
 spack external find
 ```
 This will update the file: ${HOME}/.spack/packages.yaml
-External packages (such as openmpi or mpich) can be used to specify dependencies when installing spack packages using ^, for instance on Darwin
+
+External packages (such as openmpi or mpich) can be used to specify dependencies when installing spack packages using ^, for instance on Darwin:
 
 ```
 spack install amanzi@spack ^openmpi@4.1.2
 ```
 will install amanzi with the explicit dependence on the module openmpi/4.1.2-gcc_11.2.0 to which it is associated the spack spec ^openmpi@4.1.2
+
 The spec is in the packages.yaml file, see below.
 
 # Manage external packages
@@ -60,7 +62,8 @@ packages:
         modules:
           - openmpi/4.1.2/gcc-11.2.0
 ```
-The first line above can be omitted if other specs are already present in the packages.yaml file.
+The line `packages:` above can be omitted if other specs are already present in the packages.yaml file.
+
 Note that if you ran spack external find the above spec may have been added to the packages.yaml file and look like this
 
 ```
@@ -75,7 +78,7 @@ While the above spec might work in some cases, we have found that it is safer to
 
 # Amanzi Spack
 
-This current version of Amanzi's Spack package is not (yet) available on the remote Spack repository. 
+This current version of amanzi's spack package is not (yet) available on the remote spack repository. 
 You will need to download Amanzi/ATS: 
 
 ```
@@ -120,11 +123,11 @@ Variants:
 
 # Building and testing Amanzi with spack
 
-Depending on the different systems you might be using, it is recommended to use specific specs for the Amanzi installation.
+Depending on the different systems you might be using, it is recommended to use specific specs for the amanzi build.
 Below you can find some system specific tested commands for the amanzi installation via spack
 
 # Darwin
-Go on a compute node and add the folling spec to the packages.yaml file:
+Go on a compute node and add the following spec to the packages.yaml file:
 ```
 packages:
   openmpi:
