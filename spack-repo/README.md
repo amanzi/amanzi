@@ -112,8 +112,7 @@ Variants:
     data_model [epetra]            --      epetra, tpetra          Trilinos data model
     geochemistry [off]             --      on, off                 Enable geochemistry support
     hypre [on]                     --      on, off                 Enable Hypre solver support
-    ipo [off]                      --      on, off                 CMake interprocedural optimization
-    mesh_framework [mstk]          --      mstk, moab              Unstructure mesh framework
+    mesh_framework [mstk]          --      mstk, moab              Unstructured mesh framework
     mesh_type [unstructured]       --      unstructured,           Select mesh type: unstructured or structured
                                            structured              
     physics [amanzi]               --      amanzi, ats             Physics implementation

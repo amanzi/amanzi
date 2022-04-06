@@ -43,7 +43,7 @@ class Amanzi(CMakePackage):
         description='Select mesh type: unstructured or structured')
     variant('shared', default=True, description='Build shared libraries and TPLs')
     variant('mesh_framework', default='mstk', values=('mstk','moab'), 
-        description='Unstructure mesh framework')
+        description='Unstructured mesh framework')
 
     # Solvers 
     variant('hypre', default=True, description='Enable Hypre solver support')
