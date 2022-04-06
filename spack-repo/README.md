@@ -55,14 +55,14 @@ In ${HOME}/.spack/packages.yaml you can find the external libraries detected by 
 present in your system. For instance, on Darwin, the module `openmpi/4.1.2-gcc_11.2.0` can be used to create the following spec
 
 ```
-packages:
-  openmpi:
-    externals:
-      - spec: openmpi@4.1.2
-        modules:
-          - openmpi/4.1.2/gcc-11.2.0
+openmpi:
+  externals:
+    - spec: openmpi@4.1.2
+      modules:
+        - openmpi/4.1.2/gcc-11.2.0
 ```
-The line `packages:` above can be omitted if other specs are already present in the packages.yaml file.
+If your packages.yaml file was blank, then the line `packages:` has to be added above `openmpi:`. If other specs are already present in the packages.yaml file,
+then you can just add more at the bottom and omit the `packages:` line before the library name.
 
 Note that if you ran `spack external find` the above spec may have been added to the packages.yaml file and look like this
 
@@ -137,12 +137,12 @@ packages:
         modules:
           - openmpi/4.1.2/gcc-11.2.0
 ```
-Then, cd into amanzi and build and test amanzi by doing:
+To build amanzi, run from any folder:
 ```
-spack dev-build --test all amanzi@spack <desired_variant>  ^openmpi@4.1.2
+spack install amanzi@spack <desired_variant>  ^openmpi@4.1.2
 ```
-The dev-build command has to be run from within the amanzi folder and it allows to add the --test all command in order
-to test amanzi. Spack does have a spack test run command but at the moment we do not have an amanzi test suite for spack.
+Currently amanzi does not have a spack testing suite.
+To run tests for amanzi after installation, cd into amanzi and replace `install` in the above command string with `dev-build --test all`. Note that the testing cannot be done from any folder but it as to be done from within the amanzi folder.
 
 # Cori
 Compute nodes cannot be allocated for enough time to compute the spack installation of amanzi, so it is better to proceed from a login node.
@@ -160,15 +160,33 @@ packages:
       modules:
       - cray-libsci/20.09.1
 ```
-Then, cd into amanzi and build and test amanzi by doing:
+To build amanzi, run from any folder:
 
 ```
-spack dev-build --test all amanzi@spack ^mpich@7.7.19 ^cray-libsci@20.09.1 %gcc@8.3.0
+spack install amanzi@spack <desired_variant> ^mpich@7.7.19 ^cray-libsci@20.09.1 %gcc@8.3.0
 ```
 
 The specific dependence on the cray scientific library is to make sure that `blas` and `lapack` are taken from there.
+To test amanzi, proceed as explained above suing `dev-build --test all`.
 
-# Piquillo
+# T-5 systems
+
+The following steps have been carried out on `piquillo`.
+
+Add the following spec to the packages.yaml file:
+```
+  openmpi:
+    externals:
+    - spec: openmpi@4.0.4
+      modules:
+      - openmpi/4.0.4/gcc-11.2.0
+```
+To build amanzi, run from any folder:
+```
+spack install amanzi@spack <desired_variant> ^openmpi@4.0.4 %gcc@11.2.0
+```
+Note that you might have to first load the module `gcc/11.2.0` and then do a `spack compiler find` to be able to use `%gcc@11.2.0`.
+To test amanzi, proceed as explained above suing `dev-build --test all`.
 
 # Laptop
 
