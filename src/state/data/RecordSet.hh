@@ -31,7 +31,7 @@ class Visualization;
 
 class RecordSet {
  private:
-  using RecordMap = std::unordered_map<Tag, Teuchos::RCP<Record>>;
+  using RecordMap = std::unordered_map<Tag, std::shared_ptr<Record>>;
 
  public:
   // constructors
