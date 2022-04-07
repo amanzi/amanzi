@@ -43,7 +43,7 @@ class Amanzi(CMakePackage):
         description='Select mesh type: unstructured or structured')
     variant('shared', default=True, description='Build shared libraries and TPLs')
     variant('mesh_framework', default='mstk', values=('mstk','moab'), 
-        description='Unstructure mesh framework')
+        description='Unstructured mesh framework')
 
     # Solvers 
     variant('hypre', default=True, description='Enable Hypre solver support')
@@ -88,8 +88,6 @@ class Amanzi(CMakePackage):
     #double check the version of cgns  below
     depends_on('cgns@develop -shared', when='-shared')
 
-    depends_on('ccse', when='mesh_type=structured')
-
     # The following core dependencies do not support +shared/~shared
     depends_on('xerces-c')
     depends_on('unittest-cpp')
@@ -111,23 +109,32 @@ class Amanzi(CMakePackage):
     depends_on('hypre@2.22.0 +mpi +shared', when='+hypre +shared')
     depends_on('hypre@2.22.0 +mpi -shared', when='+hypre -shared')
 
+    #### Structured ####
+    structured = {
+        'ccse','petsc@3.16:'
+    }
+    for dep in structured:
+        depends_on(dep+' +shared',when='mesh_type=structured +shared');
+        depends_on(dep+' -shared',when='mesh_type=structured -shared');
+
+    #### Unstructured ####
+    depends_on('nanoflann', when='mesh_type=unstructured')
 
     ##### MSTK #####
     depends_on('mstk@3.3.6 partitioner=all +seacas +parallel +shared', when='mesh_framework=mstk +shared')
     depends_on('mstk@3.3.6 partitioner=all +seacas +parallel -shared', when='mesh_framework=mstk -shared')
-
-    depends_on('nanoflann', when='mesh_framework=mstk')
-
-    ##### Silo #####
-    # There finally is a new version 4.11 (but we haven't tested it yet).
-    depends_on('silo@4.10.2 +shared', when='+silo +shared')
-    depends_on('silo@4.10.2 -shared', when='+silo -shared')
 
     ##### Moab #####
     # There is a newer version 5.3.0 (but we haven't tested it yet).
     depends_on('moab@5.2.0 +shared', when='mesh_framework=moab +shared')
     depends_on('moab@5.2.0 -shared', when='mesh_framework=moab -shared')
 
+    #### I/O ####
+
+    ##### Silo #####
+    # There finally is a new version 4.11 (but we haven't tested it yet).
+    depends_on('silo@4.10.2 +shared', when='+silo +shared')
+    depends_on('silo@4.10.2 -shared', when='+silo -shared')
 
     ##### Other #####
     depends_on('trilinos@13.0.0 +shared +boost +hdf5 +hypre '
@@ -162,8 +169,6 @@ class Amanzi(CMakePackage):
         options.append('-DHDF5_hdf5_hl_LIBRARY=' + self.spec['hdf5'].prefix + '/lib')
         options.append('-DASCEMIO_DIR=' + self.spec['ascemio'].prefix)
         options.append('-DNetCDF_DIR=' + self.spec['netcdf-c'].prefix)
-        options.append('-DMSTK_LIBRARY_DIR=' + self.spec['mstk'].prefix + '/lib')
-        options.append('-DMSTK_INCLUDE_DIR=' + self.spec['mstk'].prefix + '/include')
         options.append('-DXERCES_DIR=' + self.spec['xerces-c'].prefix)
         options.append('-DSEACAS_DIR=' + self.spec['seacas'].prefix)
         options.append('-DSuperLU_DIR=' + self.spec['superlu'].prefix)
@@ -186,6 +191,10 @@ class Amanzi(CMakePackage):
             options.append('-DENABLE_EPETRA=ON')
         else: 
             options.append('-DENABLE_EPETRA=OFF')
+            options.append('-DENABLE_ALQUIMIA=OFF')
+            options.append('-DENABLE_PETSC=OFF')
+            options.append('-DENABLE_PFLOTRAN=OFF')
+            options.append('-DENABLE_CRUNCHTOPE=OFF')
 
         if 'data_model=tpetra' in self.spec: 
             options.append('-DENABLE_TPETRA=ON')
@@ -230,20 +239,26 @@ class Amanzi(CMakePackage):
         if 'mesh_framework=mstk' in self.spec:
             options.append('-DMSTK_VERSION=3.3.6')
             options.append('-DENABLE_MESH_MSTK=ON')
+            options.append('-DENABLE_MESH_MOAB=OFF')
+            options.append('-DMSTK_LIBRARY_DIR=' + self.spec['mstk'].prefix + '/lib')
+            options.append('-DMSTK_INCLUDE_DIR=' + self.spec['mstk'].prefix + '/include')
         else:
             options.append('-DENABLE_MESH_MSTK=OFF')
 
         if 'mesh_framework=moab' in self.spec:
             options.append('-DENABLE_MESH_MOAB=ON')
+            options.append('-DENABLE_MESH_MSTK=OFF')
+            options.append('-DMOAB_LIBRARY_DIR=' + self.spec['moab'].prefix + '/lib')
+            options.append('-DMOAB_INCLUDE_DIR=' + self.spec['moab'].prefix + '/include/moab')
         else:
             options.append('-DENABLE_MESH_MOAB=OFF')
        
         if 'mesh_type=unstructured' in self.spec:
             options.append('-DENABLE_Unstructured=ON')
-            options.append('-DENABLE_MESH_STK=OFF')
-            options.append('-DENABLE_MESH_MOAB=OFF')
         else:
             options.append('-DENABLE_Unstructured=OFF')
+            options.append('-DENABLE_MESH_MSTK=OFF')
+            options.append('-DENABLE_MESH_MOAB=OFF')
 
         if 'mesh_type=structured'in self.spec: 
             options.append('-DENABLE_Structured=ON')

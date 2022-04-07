@@ -112,8 +112,7 @@ Variants:
     data_model [epetra]            --      epetra, tpetra          Trilinos data model
     geochemistry [off]             --      on, off                 Enable geochemistry support
     hypre [on]                     --      on, off                 Enable Hypre solver support
-    ipo [off]                      --      on, off                 CMake interprocedural optimization
-    mesh_framework [mstk]          --      mstk, moab              Unstructure mesh framework
+    mesh_framework [mstk]          --      mstk, moab              Unstructured mesh framework
     mesh_type [unstructured]       --      unstructured,           Select mesh type: unstructured or structured
                                            structured              
     physics [amanzi]               --      amanzi, ats             Physics implementation
@@ -167,7 +166,7 @@ spack install amanzi@spack <desired_variant> ^mpich@7.7.19 ^cray-libsci@20.09.1 
 ```
 
 The specific dependence on the cray scientific library is to make sure that `blas` and `lapack` are taken from there.
-To test amanzi, proceed as explained above suing `dev-build --test all`.
+To test amanzi, proceed as explained above using `dev-build --test all`.
 
 # T-5 systems
 
@@ -186,7 +185,7 @@ To build amanzi, run from any folder:
 spack install amanzi@spack <desired_variant> ^openmpi@4.0.4 %gcc@11.2.0
 ```
 Note that you might have to first load the module `gcc/11.2.0` and then do a `spack compiler find` to be able to use `%gcc@11.2.0`.
-To test amanzi, proceed as explained above suing `dev-build --test all`.
+To test amanzi, proceed as explained above using `dev-build --test all`.
 
 # Laptop
 
