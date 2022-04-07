@@ -473,7 +473,7 @@ class State {
   // Time tags and vector copies
   // -----------------------------------------------------------------------------
   // Time accessor and mutators.
-  void require_time(const Tag& tag) { return Require<double>("time", tag); }
+  void require_time(const Tag& tag) { return Require<double>("time", tag, "time"); }
   double get_time(const Tag& tag = Tags::DEFAULT) const { return Get<double>("time", tag); }
   void set_time(const Tag& tag, double value) { Assign("time", tag, "time", value); }
   void set_time(double value) { Assign("time", Tags::DEFAULT, "time", value); }
@@ -497,7 +497,7 @@ class State {
   void set_initial_time( double initial_time) { initial_time_ = initial_time; }
 
   // Cycle accessor and mutators.
-  void require_cycle(const Tag& tag) { Require<int>("cycle", tag); }
+  void require_cycle(const Tag& tag) { Require<int>("cycle", tag, "cycle"); }
   int get_cycle(Tag tag = Tags::DEFAULT) const {
     return Get<int>("cycle", tag);
   }

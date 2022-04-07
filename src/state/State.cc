@@ -452,10 +452,10 @@ State::GetModelParameters(std::string modelname)
 // All independent variables must be initialized here.
 void State::Setup()
 {
-  Require<double>("time", Tags::DEFAULT, "time");
+  require_time(Tags::DEFAULT);
   GetRecordSetW("time").initializeTags();
 
-  Require<int>("cycle", Tags::DEFAULT, "cycle");
+  require_cycle(Tags::DEFAULT);
   GetRecordSetW("cycle").initializeTags();
 
   Require<double>("dt", Tags::DEFAULT, "dt");
@@ -478,12 +478,12 @@ void State::Setup()
     EvaluatorMap evaluators_copy(evaluators_);
     for (auto& e : evaluators_copy) {
       for (auto& r : e.second) {
-        if (!r.second->ProvidesKey(e.first, r.first)) {
-          Errors::Message msg;
-          msg << "Evaluator \"" << e.first << "\" with tag \"" << r.first.get()
-              << "\" does not provide its own key.";
-          Exceptions::amanzi_throw(msg);
-        }
+        // if (!r.second->ProvidesKey(e.first, r.first)) {
+        //   Errors::Message msg;
+        //   msg << "Evaluator \"" << e.first << "\" with tag \"" << r.first.get()
+        //       << "\" does not provide its own key.";
+        //   Exceptions::amanzi_throw(msg);
+        // }
 
         if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
           Teuchos::OSTab tab1 = vo_->getOSTab();
