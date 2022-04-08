@@ -76,6 +76,7 @@
         <algorithm>explicit first-order</algorithm>
         <sub_cycling>on</sub_cycling>
         <cfl>1</cfl>
+        <flux_method>fct</flux_method>
       </unstr_transport_controls>
 
       <unstr_steady-state_controls>

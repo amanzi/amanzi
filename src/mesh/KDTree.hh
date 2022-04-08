@@ -51,7 +51,7 @@ class PointCloud {
 
 // At the moment, only one KDTree is used
 typedef nanoflann::KDTreeSingleIndexAdaptor<
-    nanoflann::L2_Adaptor<double, PointCloud>, PointCloud, -1> KDTree_L2Adaptor;
+    nanoflann::L2_Adaptor<double, PointCloud>, PointCloud, -1, size_t> KDTree_L2Adaptor;
 
 class KDTree {
  public:

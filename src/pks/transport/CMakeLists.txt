@@ -195,4 +195,12 @@ if (BUILD_TESTS AND ENABLE_AmanziPhysicsModule)
                     NPROCS 2
                     SOURCE test/Main.cc test/transport_fractures.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # fct
+    add_amanzi_test(transport_fct transport_fct
+                    KIND unit
+                    NPROCS 2
+                    SOURCE test/Main.cc test/transport_fct.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
 endif()

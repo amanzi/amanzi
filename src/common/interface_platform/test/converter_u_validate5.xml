@@ -756,6 +756,7 @@
       </ParameterList>
 
       <Parameter name="cfl" type="double" value="1.0"/>   
+      <Parameter name="method" type="string" value="muscl"/>
       <Parameter name="spatial discretization order" type="int" value="1"/>   
       <Parameter name="temporal discretization order" type="int" value="1"/>
       <Parameter name="transport subcycling" type="bool" value="false"/>      
@@ -828,6 +829,7 @@
 
       <Parameter name="domain name" type="string" value="fracture"/>      
       <Parameter name="cfl" type="double" value="1.0"/>   
+      <Parameter name="method" type="string" value="muscl"/>
       <Parameter name="spatial discretization order" type="int" value="1"/>   
       <Parameter name="temporal discretization order" type="int" value="1"/>
       <Parameter name="transport subcycling" type="bool" value="false"/>

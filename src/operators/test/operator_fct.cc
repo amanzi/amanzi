@@ -83,7 +83,7 @@ std::pair<double, double> RunTest(int n) {
   AmanziMesh::Entity_ID_List cells;
 
   CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh)->SetGhosted(false)->AddComponent("face", AmanziMesh::FACE, 1);
+  cvs.SetMesh(mesh)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, 1);
 
   auto velocity = Teuchos::rcp(new CompositeVector(cvs));
   auto& velocity_f = *velocity->ViewComponent("face");
@@ -164,9 +164,11 @@ std::pair<double, double> RunTest(int n) {
   flux_numer->Norm2(&err[0]);
   out.second = err[0] * n;
 
-  std::cout << "error lower order: " << out.first << std::endl;
-  std::cout << "error high order: " << out.second << std::endl;
-  std::cout << "mean limiter: " << fct.get_alpha_mean() << std::endl;
+  if (comm->MyPID() == 0) {
+    std::cout << "error lower order: " << out.first << std::endl;
+    std::cout << "error high order: " << out.second << std::endl;
+    std::cout << "mean limiter: " << fct.get_alpha_mean() << std::endl;
+  }
 
   return out;
 }

@@ -28,8 +28,9 @@ void FCT::Compute(const CompositeVector& flux_lo,
                   const BCs& bc,
                   CompositeVector& flux)
 {
-  int ncells_owned = mesh0_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_owned = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh0_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh0_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
   AmanziMesh::Entity_ID_List cells, faces;
 
@@ -37,9 +38,17 @@ void FCT::Compute(const CompositeVector& flux_lo,
   const auto& flux_ho_f = *flux_ho.ViewComponent("face"); 
   auto& flux_f = *flux.ViewComponent("face"); 
 
+  // allocate memory
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(mesh0_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
+  CompositeVector dlo(cvs), pos(cvs), neg(cvs);
+
+  auto& dlo_c = *dlo.ViewComponent("cell", true);
+  auto& pos_c = *pos.ViewComponent("cell", true);
+  auto& neg_c = *neg.ViewComponent("cell", true);
+
+  // collect positive and negative fluxes in each mesh cell
   int dir;
-  std::vector<double> dlo(ncells_owned, 0.0);
-  std::vector<double> pos(ncells_owned, 0.0), neg(ncells_owned, 0.0);
 
   for (int f = 0; f < nfaces_owned; ++f) {
     mesh0_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
@@ -51,17 +60,22 @@ void FCT::Compute(const CompositeVector& flux_lo,
 
     for (int i = 0; i < ncells; ++i) {
       int c = cells[i];
-      pos[c] += std::max(dtmp, 0.0);
-      neg[c] += std::min(dtmp, 0.0);
-      dlo[c] += tmp0;
+      pos_c[0][c] += std::max(dtmp, 0.0);
+      neg_c[0][c] += std::min(dtmp, 0.0);
+      dlo_c[0][c] += tmp0;
       dtmp = -dtmp;
       tmp0 = -tmp0;
     }
   }
 
+  dlo.GatherGhostedToMaster();
+  pos.GatherGhostedToMaster();
+  neg.GatherGhostedToMaster();
+
+  // collect cell-limiters for positive and negative fluxes
   const auto& bc_model = bc.bc_model();
   const auto& bc_value = bc.bc_value();
-  auto bounds = lifting_->BoundsForCells(*field_, bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_ALL);
+  auto bounds = limiter_->BoundsForCells(*field_, bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_ALL);
   auto& bounds_c = *bounds->ViewComponent("cell");
 
   double Qmin, Qmax;
@@ -71,17 +85,24 @@ void FCT::Compute(const CompositeVector& flux_lo,
     double vol0 = mesh0_->cell_volume(c);
     double vol1 = mesh1_->cell_volume(c);
 
+    if (weight0_ != Teuchos::null) vol0 *= (*weight0_)[0][c];
+    if (weight0_ != Teuchos::null) vol1 *= (*weight1_)[0][c];
+
     Qmin = Qmax = 1.0;
-    if (neg[c] != 0.0) 
-      Qmin = (vol1 * bounds_c[0][c] - vol0 * (*field_)[0][c] - dlo[c]) / neg[c];
+    if (neg_c[0][c] != 0.0) 
+      Qmin = (vol1 * bounds_c[0][c] - vol0 * (*field_)[0][c] - dlo_c[0][c]) / neg_c[0][c];
 
-    if (pos[c] != 0.0) 
-      Qmax = (vol1 * bounds_c[1][c] - vol0 * (*field_)[0][c] - dlo[c]) / pos[c];
+    if (pos_c[0][c] != 0.0) 
+      Qmax = (vol1 * bounds_c[1][c] - vol0 * (*field_)[0][c] - dlo_c[0][c]) / pos_c[0][c];
 
-    neg[c] = std::fabs(Qmin);  // re-using allocated memory
-    pos[c] = std::fabs(Qmax); 
+    neg_c[0][c] = std::fabs(Qmin);  // re-using allocated memory
+    pos_c[0][c] = std::fabs(Qmax); 
   }
 
+  pos.ScatterMasterToGhosted();
+  neg.ScatterMasterToGhosted();
+
+  // move cell-limiters to face limiters
   for (int f = 0; f < nfaces_owned; ++f) {
     mesh0_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 
@@ -89,9 +110,9 @@ void FCT::Compute(const CompositeVector& flux_lo,
       double tmp = -flux_ho_f[0][f] + flux_lo_f[0][f];
     
       if (tmp > 0.0)
-        alpha[f] = std::min({ alpha[f], pos[cells[0]], neg[cells[1]] });
+        alpha[f] = std::min({ alpha[f], pos_c[0][cells[0]], neg_c[0][cells[1]] });
       else
-        alpha[f] = std::min({ alpha[f], neg[cells[0]], pos[cells[1]] });
+        alpha[f] = std::min({ alpha[f], neg_c[0][cells[0]], pos_c[0][cells[1]] });
     }
   }
 
