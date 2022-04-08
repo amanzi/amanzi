@@ -60,6 +60,9 @@ class PK_DomainFunctionFirstOrderExchange : public FunctionBase,
   AmanziMesh::Entity_kind kind_;
   Key tcc_key_;
   Tag tcc_copy_;
+
+  Key saturation_key_, porosity_key_, molar_density_key_;
+  Tag saturation_copy_, porosity_copy_, molar_density_copy_;
 };
 
 
@@ -74,14 +77,22 @@ void PK_DomainFunctionFirstOrderExchange<FunctionBase>::Init(
 
   // get the model parameters
   Teuchos::ParameterList blist = plist.sublist("source function");
-  tcc_key_ = Keys::readKey(blist, blist.get<std::string>("domain name", "domain"),
-                           "total component concentration",
-                           "total_component_concentration");
+  std::string domain_name = blist.get<std::string>("domain name", "domain"); 
+
+  tcc_key_ = Keys::readKey(blist, domain_name, "total component concentration", "total_component_concentration");
   tcc_copy_ = make_tag(blist.get<std::string>("total component concentration copy", "default"));
+
+  saturation_key_= Keys::readKey(blist, domain_name, "saturation liquid", "ponded_depth");
+  saturation_copy_ = make_tag(blist.get<std::string>("saturation liquid copy", "default"));
+
+  porosity_key_= Keys::readKey(blist, domain_name, "porosity", "porosity");
+  porosity_copy_ = make_tag(blist.get<std::string>("porosity copy", "default"));
   
+  molar_density_key_= Keys::readKey(blist, domain_name, "molar density", "molar_density_liquid");
+  molar_density_copy_ = make_tag(blist.get<std::string>("molar density copy", "default"));
+              
   // get and check the regions
-  std::vector<std::string> regions =
-      plist.get<Teuchos::Array<std::string> >("regions").toVector();
+  auto regions = plist.get<Teuchos::Array<std::string> >("regions").toVector();
 
   // get the function for alpha
   Teuchos::RCP<Amanzi::MultiFunction> f;
@@ -95,7 +106,7 @@ void PK_DomainFunctionFirstOrderExchange<FunctionBase>::Init(
   }
 
   // Add this source specification to the domain function.
-  Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, kind_));
+  auto domain = Teuchos::rcp(new Domain(regions, kind_));
   AddSpec(Teuchos::rcp(new Spec(domain, f)));
 }
 
@@ -113,8 +124,11 @@ void PK_DomainFunctionFirstOrderExchange<FunctionBase>::Compute(double t0, doubl
   std::vector<double> args(1 + dim);
 
   // get the tcc vector
-  auto& tcc = *S_->Get<CompositeVector>(tcc_key_, tcc_copy_).ViewComponent("cell");
-  
+  const auto& tcc = *S_->Get<CompositeVector>(tcc_key_, tcc_copy_).ViewComponent("cell");
+  const auto& ws_ = *S_->Get<CompositeVector>(saturation_key_, saturation_copy_).ViewComponent("cell");
+  const auto& phi_ = *S_->Get<CompositeVector>(porosity_key_, porosity_copy_).ViewComponent("cell");
+  const auto& mol_dens_ = *S_->Get<CompositeVector>(molar_density_key_, molar_density_copy_).ViewComponent("cell");
+
   for (UniqueSpecList::const_iterator uspec = unique_specs_.at(kind_)->begin();
        uspec != unique_specs_.at(kind_)->end(); ++uspec) {
 
@@ -131,7 +145,7 @@ void PK_DomainFunctionFirstOrderExchange<FunctionBase>::Compute(double t0, doubl
             
       // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
       for (int i = 0; i < nfun; ++i) {
-        val_vec[i] = -(*(*uspec)->first->second)(args)[i]*tcc[i][*c];
+        val_vec[i] = -(*(*uspec)->first->second)(args)[i] * tcc[i][*c] * ws_[i][*c] * phi_[i][*c] * mol_dens_[i][*c];
       }
       value_[*c] = val_vec;
     }

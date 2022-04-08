@@ -53,8 +53,11 @@ class PK_DomainFunctionSubgridReturn : public FunctionBase,
   Teuchos::RCP<const State> S_;
 
  private:
-  Key field_out_suffix_, dset_;
-  Tag copy_field_out_tag_;
+  Key field_out_suffix_, dset_; 
+  Tag copy_field_out_key_; 
+
+  Key saturation_key_, porosity_key_, molar_density_key_;
+  Tag saturation_copy_, porosity_copy_, molar_density_copy_;
 };
 
 
@@ -69,17 +72,26 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Init(
 
   // get and check the model parameters
   Teuchos::ParameterList blist = plist.sublist("source function");
-  field_out_suffix_ = blist.get<std::string>("subgrid field suffix");
+  std::string domain = blist.get<std::string>("domain name", "surface"); 
 
-  // check for prefixing -- mostly used in the multisubgrid models
-  
-  dset_ = blist.get<std::string>("subgrid domain set", "subgrid");
-  
+  field_out_suffix_ = blist.get<std::string>("subgrid field suffix");
   copy_field_out_tag_ = make_tag(blist.get<std::string>("copy subgrid field", "default"));
 
+  // check for prefixing -- mostly used in the multisubgrid models
+  dset_ = blist.get<std::string>("subgrid domain set", "subgrid");
+
+  // can "surface" prefix for this field be read automatically?? it is hardcoded now, or may be not?? 
+  saturation_key_= Keys::readKey(blist, domain, "saturation liquid", "ponded_depth");
+  saturation_copy_ = make_tag(blist.get<std::string>("saturation liquid copy", "default"));
+
+  porosity_key_= Keys::readKey(blist, domain, "porosity", "porosity");
+  porosity_copy_ = make_tag(blist.get<std::string>("porosity copy", "default"));
+  
+  molar_density_key_= Keys::readKey(blist, domain, "molar density", "molar_density_liquid");
+  molar_density_copy_ = make_tag(blist.get<std::string>("molar density copy", "default"));
+
   // get and check the region
-  std::vector<std::string> regions =
-      plist.get<Teuchos::Array<std::string> >("regions").toVector();
+  auto regions = plist.get<Teuchos::Array<std::string> >("regions").toVector();
 
   // get the function for alpha
   Teuchos::RCP<Amanzi::MultiFunction> f;
@@ -113,6 +125,10 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
   
   // get the map to convert to subgrid GID
   auto& map = mesh_->map(AmanziMesh::CELL, false);
+
+  const auto& ws_ = *S_->Get<CompositeVector>(saturation_key_, saturation_copy_).ViewComponent("cell");
+  const auto& phi_ = *S_->Get<CompositeVector>(porosity_key_, porosity_copy_).ViewComponent("cell");
+  const auto& mol_dens_ = *S_->Get<CompositeVector>(molar_density_key_, molar_density_copy_).ViewComponent("cell");
   
   for (auto uspec = unique_specs_.at(AmanziMesh::CELL)->begin();
        uspec != unique_specs_.at(AmanziMesh::CELL)->end(); ++uspec) {
@@ -153,14 +169,15 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
       // DO THE INTEGRAL: currently omega_i = 1/cv_sg?
       int ncells_sg = vec_out.Mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
       
-      for (int c_sg=0; c_sg!=ncells_sg; ++c_sg) {
-        for (int k=0; k!=nfun; ++k) {
+      for (int c_sg = 0; c_sg! = ncells_sg; ++c_sg) {
+        for (int k = 0; k != nfun; ++k) {
           val[k] += vec_c[k][c_sg] * alpha[k];
         }
       }
       
       for (int k=0; k!=nfun; ++k) {
         val[k] /= ncells_sg;
+        val[k] *= ws_[k][*c] * phi_[k][*c] * mol_dens_[k][*c];
       }
       value_[*c] = val;
     }
