@@ -58,6 +58,12 @@ class PK_DomainFunctionFirstOrderExchange : public FunctionBase,
   AmanziMesh::Entity_kind kind_;
   std::string tcc_key_;
   std::string tcc_copy_;
+  std::string saturation_key_;
+  std::string saturation_copy_;
+  std::string porosity_key_;
+  std::string porosity_copy_;
+  std::string molar_density_key_;
+  std::string molar_density_copy_;
 };
 
 
@@ -76,6 +82,18 @@ void PK_DomainFunctionFirstOrderExchange<FunctionBase>::Init(
                            "total component concentration",
                            "total_component_concentration");
   tcc_copy_ = blist.get<std::string>("total component concentration copy", "default");
+  saturation_key_= Keys::readKey(blist, blist.get<std::string>("domain name", "domain"),
+                          "saturation liquid", "ponded_depth");
+  saturation_copy_ = blist.get<std::string>("saturation liquid copy", "default");
+
+  porosity_key_= Keys::readKey(blist, blist.get<std::string>("domain name", "domain"),
+                          "porosity", "porosity");
+  porosity_copy_ = blist.get<std::string>("porosity copy", "default");
+  
+  molar_density_key_= Keys::readKey(blist, blist.get<std::string>("domain name", "domain"),
+                          "molar density", "molar_density_liquid");
+  molar_density_copy_ = blist.get<std::string>("molar density copy", "default");
+              
   
   // get and check the regions
   std::vector<std::string> regions =
@@ -113,6 +131,13 @@ void PK_DomainFunctionFirstOrderExchange<FunctionBase>::Compute(double t0, doubl
   // get the tcc vector
   auto& tcc = *S_->GetFieldCopyData(tcc_key_, tcc_copy_)
               ->ViewComponent("cell", false);
+
+  auto& ws_ = *S_->GetFieldCopyData(saturation_key_, saturation_copy_)->ViewComponent("cell", false);
+
+  auto& phi_ = *S_->GetFieldCopyData(porosity_key_, porosity_copy_)->ViewComponent("cell", false);
+
+  auto& mol_dens_ = *S_->GetFieldCopyData(molar_density_key_, molar_density_copy_)->ViewComponent("cell", false);
+
   
   for (UniqueSpecList::const_iterator uspec = unique_specs_.at(kind_)->begin();
        uspec != unique_specs_.at(kind_)->end(); ++uspec) {
@@ -130,7 +155,7 @@ void PK_DomainFunctionFirstOrderExchange<FunctionBase>::Compute(double t0, doubl
             
       // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
       for (int i = 0; i < nfun; ++i) {
-        val_vec[i] = -(*(*uspec)->first->second)(args)[i]*tcc[i][*c];
+        val_vec[i] = -(*(*uspec)->first->second)(args)[i]*tcc[i][*c]*ws_[i][*c]*phi_[i][*c]*mol_dens_[i][*c];
       }
       value_[*c] = val_vec;
     }

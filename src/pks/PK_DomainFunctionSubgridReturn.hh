@@ -53,7 +53,12 @@ class PK_DomainFunctionSubgridReturn : public FunctionBase,
 
  private:
 
-  std::string field_out_suffix_, copy_field_out_key_, dset_;
+  std::string field_out_suffix_, copy_field_out_key_, dset_; 
+  std::string saturation_key_, saturation_copy_;
+  std::string porosity_key_;
+  std::string porosity_copy_;
+  std::string molar_density_key_;
+  std::string molar_density_copy_;
 };
 
 
@@ -75,6 +80,19 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Init(
   dset_ = blist.get<std::string>("subgrid domain set", "subgrid");
   
   copy_field_out_key_ = blist.get<std::string>("copy subgrid field", "default");
+
+ // can "surface" prefix for this field be read automatically?? it is hardcoded now, or may be not?? 
+  saturation_key_= Keys::readKey(blist, blist.get<std::string>("domain name", "surface"), 
+                          "saturation liquid", "ponded_depth");
+  saturation_copy_ = blist.get<std::string>("saturation liquid copy", "default");
+
+  porosity_key_= Keys::readKey(blist, blist.get<std::string>("domain name", "surface"),
+                          "porosity", "porosity");
+  porosity_copy_ = blist.get<std::string>("porosity copy", "default");
+  
+  molar_density_key_= Keys::readKey(blist, blist.get<std::string>("domain name", "surface"),
+                          "molar density", "molar_density_liquid");
+  molar_density_copy_ = blist.get<std::string>("molar density copy", "default");
 
   // get and check the region
   std::vector<std::string> regions =
@@ -112,6 +130,12 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
   
   // get the map to convert to subgrid GID
   auto& map = mesh_->map(AmanziMesh::CELL, false);
+
+  auto& ws_ = *S_->GetFieldCopyData(saturation_key_, saturation_copy_)->ViewComponent("cell", false);
+
+  auto& phi_ = *S_->GetFieldCopyData(porosity_key_, porosity_copy_)->ViewComponent("cell", false);
+
+  auto& mol_dens_ = *S_->GetFieldCopyData(molar_density_key_, molar_density_copy_)->ViewComponent("cell", false);
   
   for (auto uspec = unique_specs_.at(AmanziMesh::CELL)->begin();
        uspec != unique_specs_.at(AmanziMesh::CELL)->end(); ++uspec) {
@@ -161,6 +185,7 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
       
       for (int k=0; k!=nfun; ++k) {
         val[k] /= ncells_sg;
+        val[k] *= ws_[k][*c] * phi_[k][*c] * mol_dens_[k][*c];
       }
       value_[*c] = val;
     }
