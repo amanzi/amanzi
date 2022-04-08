@@ -30,9 +30,6 @@ class EvaluatorIndependentConstant
  protected:
   virtual void Update_(State& S) override;
 
- protected:
-  double value_;
-
  private:
   static Utils::RegisteredFactory<Evaluator, EvaluatorIndependentConstant> fac_;
 };

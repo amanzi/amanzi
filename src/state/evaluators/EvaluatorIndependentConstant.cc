@@ -20,8 +20,7 @@ namespace Amanzi {
 // ---------------------------------------------------------------------------
 EvaluatorIndependentConstant::EvaluatorIndependentConstant(
     Teuchos::ParameterList& plist)
-  : EvaluatorIndependent<CompositeVector, CompositeVectorSpace>(plist),
-    value_(plist.get<double>("value"))
+  : EvaluatorIndependent<CompositeVector, CompositeVectorSpace>(plist)
 {
   temporally_variable_ = false;
 };
@@ -39,8 +38,7 @@ Teuchos::RCP<Evaluator> EvaluatorIndependentConstant::Clone() const {
 // Update the value in the state.
 // ---------------------------------------------------------------------------
 void EvaluatorIndependentConstant::Update_(State& S) {
-  CompositeVector& cv = S.GetW<CompositeVector>(my_key_, my_tag_, my_key_);
-  cv.PutScalar(value_);
+  S.GetRecordW(my_key_, my_tag_, my_key_).Initialize(plist_);
 }
 
 } // namespace Amanzi
