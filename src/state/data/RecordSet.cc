@@ -74,6 +74,12 @@ const Record& RecordSet::GetRecord(const Tag& tag) const {
   }
 }
 
+
+void RecordSet::AliasRecord(const Tag& target, const Tag& alias) {
+  records_[alias] = records_[target];
+}
+
+
 Record& RecordSet::RequireRecord(const Tag& tag, const Key& owner) {
   if (!HasRecord(tag)) {
     records_.emplace(tag, std::make_unique<Record>(fieldname(), owner));

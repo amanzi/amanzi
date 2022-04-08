@@ -31,7 +31,7 @@ class Visualization;
 
 class RecordSet {
  private:
-  using RecordMap = std::unordered_map<Tag, std::unique_ptr<Record> >;
+  using RecordMap = std::unordered_map<Tag, std::shared_ptr<Record>>;
 
  public:
   // constructors
@@ -68,6 +68,7 @@ class RecordSet {
   // copy management
   const Record& GetRecord(const Tag& tag) const;
   Record& GetRecord(const Tag& tag);
+  void AliasRecord(const Tag& target, const Tag& alias);
 
   Record& RequireRecord(const Tag& tag, const Key& owner);
 
