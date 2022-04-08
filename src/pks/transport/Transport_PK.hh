@@ -22,6 +22,7 @@
 // Amanzi
 #include "CompositeVector.hh"
 #include "DenseVector.hh"
+#include "FCT.hh"
 #include "Key.hh"
 #include "LimiterCell.hh"
 #include "PK.hh"
@@ -105,12 +106,6 @@ class Transport_PK : public PK_Physical {
   void VV_PrintLimiterStatistics();
 
   void CalculateLpErrors(AnalyticFunction f, double t, Epetra_Vector* sol, double* L1, double* L2);
-
-  // -- limiters 
-  void LimiterBarthJespersen(const int component,
-                             Teuchos::RCP<const Epetra_Vector> scalar_field, 
-                             Teuchos::RCP<CompositeVector>& gradient, 
-                             Teuchos::RCP<Epetra_Vector>& limiter);
 
  protected:
   void InitializeFields_();
@@ -212,6 +207,7 @@ class Transport_PK : public PK_Physical {
   double cfl_, dt_, dt_debug_, t_physics_;  
 
   std::string passwd_;
+  Method_t method_;
 
   bool subcycling_, use_transport_porosity_, use_effective_diffusion_;
   int dim;
@@ -229,6 +225,7 @@ class Transport_PK : public PK_Physical {
   int current_component_;  // data for lifting
   Teuchos::RCP<Operators::ReconstructionCellGrad> lifting_;
   Teuchos::RCP<Operators::LimiterCell> limiter_;
+  Teuchos::RCP<Operators::FCT> fct_;
 
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;

@@ -161,7 +161,7 @@ void TransportExplicit_PK::AdvanceSecondOrderUpwindRKn(double dt_cycle)
   int ncomponents = num_aqueous;
 
   for (int i = 0; i < ncomponents; i++) {
-    current_component_ = i;  // it is needed in BJ called inside RK:fun
+    current_component_ = i;  // it is needed in BJ called inside RK::fun
 
     Epetra_Vector*& component_prev = tcc_prev(i);
     Epetra_Vector*& component_next = tcc_next(i);
@@ -257,10 +257,6 @@ bool TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         AdvanceDonorUpwind(dt_cycle);
       } else if (spatial_disc_order == 2 && genericRK_) {
         AdvanceSecondOrderUpwindRKn(dt_cycle);
-      /* DEPRECATED 
-      } else if (spatial_disc_order == 2 && temporal_disc_order == 1) {
-        AdvanceSecondOrderUpwindRK1(dt_cycle);
-      */
       } else if (spatial_disc_order == 2 && temporal_disc_order == 2) {
         AdvanceSecondOrderUpwindRK2(dt_cycle);
       }

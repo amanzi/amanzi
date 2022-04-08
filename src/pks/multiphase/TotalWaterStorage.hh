@@ -44,7 +44,7 @@ class TotalWaterStorage : public MultiphaseBaseEvaluator {
   Key mol_density_liquid_key_, mol_density_gas_key_;
   
  private:
-  static Utils::RegisteredFactory<Evaluator, TotalWaterStorage> reg_;
+  static Utils::RegisteredFactory<Evaluator, TotalWaterStorage> fac_;
 };
 
 }  // namespace Multiphase

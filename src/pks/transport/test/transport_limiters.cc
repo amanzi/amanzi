@@ -117,9 +117,6 @@ TEST(LIMITER_BARTH_JESPERSEN) {
   for (int c = 0; c < ncells - 1; c++) {  // the corner cell gives limiter=0
     CHECK_CLOSE(1.0, (*limiter)[c], 1e-6);
   }
- 
-  
 }
-
 
 

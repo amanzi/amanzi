@@ -21,6 +21,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 // Amanzi
+#include "Factory.hh"
 
 // Multiphase
 #include "MultiphaseBaseEvaluator.hh"
@@ -43,6 +44,8 @@ class MoleFractionLiquid : public MultiphaseBaseEvaluator {
 
  private:
   std::string x_gas_key_, pressure_gas_key_;
+
+  static Utils::RegisteredFactory<Evaluator, MoleFractionLiquid> fac_;
 };
 
 }  // namespace Flow

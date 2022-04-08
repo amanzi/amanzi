@@ -86,13 +86,14 @@ void TCMEvaluator_TwoPhase::Evaluate_(
 
 
 /* ******************************************************************
-* Evaluator of derivarives.
+* Evaluator of derivarives. Mot yet implemented due to TCM
 ****************************************************************** */
 void TCMEvaluator_TwoPhase::EvaluatePartialDerivative_(
     const State& S, const Key& wrt_key, const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results)
 {
-  AMANZI_ASSERT(0);
+  results[0]->PutScalar(0.0);
+  // AMANZI_ASSERT(0);
 }
 
 }  // namespace Energy

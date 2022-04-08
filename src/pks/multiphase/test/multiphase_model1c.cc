@@ -35,7 +35,7 @@
 #include "OutputXDMF.hh"
 
 // Multiphase
-#include "MultiphaseModel1_PK.hh"
+#include "Multiphase_PK.hh"
 
 
 /* **************************************************************** */
@@ -73,7 +73,7 @@ void RunTest(const std::string& filename) {
   // create a solution vector
   ParameterList pk_tree = plist->sublist("PKs").sublist("multiphase");
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  auto MPK = Teuchos::rcp(new MultiphaseModel1_PK(pk_tree, plist, S, soln));
+  auto MPK = Teuchos::rcp(new Multiphase_PK(pk_tree, plist, S, soln));
 
   MPK->Setup();
   S->Setup();

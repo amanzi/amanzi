@@ -11,8 +11,8 @@
   Calculates liquid mole fraction from partial gas pressure.
 */
 
-#ifndef AMANZI_MULTIPHASE_MOLAR_FRACTION_LIQUID_HH_
-#define AMANZI_MULTIPHASE_MOLAR_FRACTION_LIQUID_HH_
+#ifndef AMANZI_MULTIPHASE_TCC_LIQUID_HH_
+#define AMANZI_MULTIPHASE_TCC_LIQUID_HH_
 
 #include <string>
 #include <vector>
@@ -21,6 +21,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 // Amanzi
+#include "Factory.hh"
 
 // Multiphase
 #include "MultiphaseBaseEvaluator.hh"
@@ -43,6 +44,8 @@ class TccLiquid : public MultiphaseBaseEvaluator {
 
  private:
   std::string tcc_gas_key_;
+
+  static Utils::RegisteredFactory<Evaluator, TccLiquid> fac_;
 };
 
 }  // namespace Flow

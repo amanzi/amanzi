@@ -36,6 +36,9 @@ class NCP_MolarDensities : public MultiphaseBaseEvaluator {
 
  protected:
   Key x_vapor_key_, tcc_gas_key_, mol_density_gas_key_;
+
+ private:
+  static Utils::RegisteredFactory<Evaluator, NCP_MolarDensities> fac_;
 };
 
 }  // namespace Multiphase

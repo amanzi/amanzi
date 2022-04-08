@@ -473,7 +473,7 @@ class State {
   // Time tags and vector copies
   // -----------------------------------------------------------------------------
   // Time accessor and mutators.
-  void require_time(const Tag& tag) { return Require<double>("time", tag, "time"); }
+  void require_time(const Tag& tag, const Key& owner = "time") { return Require<double>("time", tag, owner); }
   double get_time(const Tag& tag = Tags::DEFAULT) const { return Get<double>("time", tag); }
   void set_time(const Tag& tag, double value) { Assign("time", tag, "time", value); }
   void set_time(double value) { Assign("time", Tags::DEFAULT, "time", value); }

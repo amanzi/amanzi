@@ -377,6 +377,7 @@ void Transport_PK::Initialize()
   // reconstruction initialization
   lifting_ = Teuchos::rcp(new Operators::ReconstructionCellGrad(mesh_));
   limiter_ = Teuchos::rcp(new Operators::LimiterCell(mesh_));
+  fct_ = Teuchos::rcp(new Operators::FCT(mesh_, mesh_, limiter_, Teuchos::null));
 
   // mechanical dispersion
   flag_dispersion_ = false;
@@ -422,7 +423,6 @@ void Transport_PK::Initialize()
             bc->tcc_index().push_back(FindComponentNumber(name));
             bc->set_state(S_);
             bcs_.push_back(bc);
-std::cout << name << "  " << FindComponentNumber(name) << std::endl; 
           }
         }
       }

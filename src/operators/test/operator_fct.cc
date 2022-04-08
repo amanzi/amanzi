@@ -43,7 +43,7 @@ double fun_field(const Amanzi::AmanziGeometry::Point& p) {
 Amanzi::AmanziGeometry::Point fun_velocity(const Amanzi::AmanziGeometry::Point& p) {
  double x = p[0];
  double y = p[1];
- return Amanzi::AmanziGeometry::Point(x, 2*y);
+ return Amanzi::AmanziGeometry::Point(2*x, -2*y);  // divergence-free
 }
 
 
@@ -65,9 +65,7 @@ std::pair<double, double> RunTest(int n) {
   meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, n, n);
 
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-
   int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
@@ -85,7 +83,7 @@ std::pair<double, double> RunTest(int n) {
   AmanziMesh::Entity_ID_List cells;
 
   CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh)->SetGhosted(false)->AddComponent("face", AmanziMesh::FACE, 1);
+  cvs.SetMesh(mesh)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, 1);
 
   auto velocity = Teuchos::rcp(new CompositeVector(cvs));
   auto& velocity_f = *velocity->ViewComponent("face");
@@ -100,34 +98,31 @@ std::pair<double, double> RunTest(int n) {
   auto& flux_ho_f = *flux_ho->ViewComponent("face");
   auto& flux_exact_f = *flux_exact->ViewComponent("face");
 
-  double dt(0.4 / n);
+  double dt(0.03 / n);
   for (int f = 0; f < nfaces_owned; f++) {
     mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 
-    const auto& xf = mesh->face_centroid(f);
-    const auto& normal = mesh->face_normal(f, false, cells[0], &dir);
-    const auto& xc = mesh->cell_centroid(cells[0]);
+    if (cells.size() == 2) {
+      const auto& xf = mesh->face_centroid(f);
+      const auto& normal = mesh->face_normal(f, false, cells[0], &dir);
+      const auto& xc = (dir == 1) ? mesh->cell_centroid(cells[0])
+                                  : mesh->cell_centroid(cells[1]);
 
-    double tmp = (fun_velocity(xf) * normal) * dt;
-    velocity_f[0][f] = tmp;
+      // low-order and high-order fluxes are from 1st to 2nd cell
+      double tmp = (fun_velocity(xf) * normal) * dt;
+      velocity_f[0][f] = tmp * dir;
  
-    flux_lo_f[0][f] = tmp * fun_field(xc);  // default upwind
-    flux_ho_f[0][f] = tmp * fun_field(xf);
+      flux_lo_f[0][f] = tmp * fun_field(xc);  // default upwind
+      flux_ho_f[0][f] = tmp * fun_field(xf);
 
-    flux_exact_f[0][f] = flux_ho_f[0][f];
+      flux_exact_f[0][f] = flux_ho_f[0][f];
+    }
   }
 
   // -- boundary conditions
-  std::vector<int> bc_model;
-  std::vector<double> bc_value;
-  Teuchos::ParameterList plist;
-  plist.set<int>("polynomial_order", 1)
-       .set<bool>("limiter extension for transport", false)
-       .set<std::string>("limiter", "Barth-Jespersen")
-       .set<std::string>("limiter stencil", "cell to all cells");
-
-  bc_model.assign(nfaces_wghost, 0);
-  bc_value.assign(nfaces_wghost, 0.0);
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  auto& bc_model = bc->bc_model();
+  auto& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const AmanziGeometry::Point& xf = mesh->face_centroid(f);
@@ -139,18 +134,23 @@ std::pair<double, double> RunTest(int n) {
   }
 
   // compute reconstruction
+  Teuchos::ParameterList plist;
+  plist.set<int>("polynomial_order", 1)
+       .set<bool>("limiter extension for transport", false)
+       .set<std::string>("limiter", "Barth-Jespersen")
+       .set<std::string>("limiter stencil", "cell to all cells");
+
   auto lifting = Teuchos::rcp(new ReconstructionCellGrad(mesh));
   lifting->Init(plist);
   lifting->Compute(field);
 
-  // apply limiter
+  // create limiter (Do we need it?)
   auto limiter = Teuchos::rcp(new LimiterCell(mesh));
   limiter->Init(plist, velocity->ViewComponent("face"));
-  limiter->ApplyLimiter(field, 0, lifting, bc_model, bc_value);
 
   // FCT
-  FCT fct(mesh, limiter, field);
-  fct.Compute(*flux_lo, *flux_ho, *flux_numer);
+  FCT fct(mesh, mesh, limiter, field);
+  fct.Compute(*flux_lo, *flux_ho, *bc, *flux_numer);
 
   // Error calculations
   double err[1];
@@ -164,12 +164,11 @@ std::pair<double, double> RunTest(int n) {
   flux_numer->Norm2(&err[0]);
   out.second = err[0] * n;
 
-  limiter->limiter()->MeanValue(&err[0]);
-  CHECK(err[0] < 1.0);
-
-  std::cout << "BJ limiter norm: " << err[0] << std::endl;
-  std::cout << "error lower order: " << out.first << std::endl;
-  std::cout << "error high order: " << out.second << std::endl;
+  if (comm->MyPID() == 0) {
+    std::cout << "error lower order: " << out.first << std::endl;
+    std::cout << "error high order: " << out.second << std::endl;
+    std::cout << "mean limiter: " << fct.get_alpha_mean() << std::endl;
+  }
 
   return out;
 }
@@ -186,9 +185,8 @@ TEST(FCT_2D) {
   CHECK(rate < 1.0); 
   std::cout << "\nError convergence rate: " << rate << std::endl;
 
-  std::vector<double> err2({ a1.second, a2.second, a3.second });
-  rate = Amanzi::Utils::bestLSfit(h, err2);
-  CHECK(rate > 1.5); 
-  std::cout << "Error convergence rate: " << rate << std::endl;
+  double err2 = std::max({ a1.second, a2.second, a3.second });
+  CHECK(err2 < 2.0e-4); 
+  std::cout << "Deviation from high-order flux: " << err2 << std::endl;
 }
 

@@ -6,14 +6,14 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Quan Bui (mquanbui@math.umd.edu)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 #include <cmath>
 #include <string>
 
 #include "MultiphaseDefs.hh"
-#include "WRMmp_Simple.hh"
+#include "WRMmp_Corey.hh"
 
 namespace Amanzi {
 namespace Multiphase {
@@ -21,35 +21,25 @@ namespace Multiphase {
 /* ******************************************************************
 * Setup fundamental parameters for this model.                                            
 ****************************************************************** */
-WRMmp_Simple::WRMmp_Simple(Teuchos::ParameterList& plist)
+WRMmp_Corey::WRMmp_Corey(Teuchos::ParameterList& plist)
 {
-  double S_rw = plist.get<double>("residual saturation liquid", MULTIPHASE_WRM_EXCEPTION);
-  double S_rn = plist.get<double>("residual saturation gas", MULTIPHASE_WRM_EXCEPTION);
-  double coef = plist.get<double>("coefficient", MULTIPHASE_WRM_EXCEPTION);
-
-  Init_(S_rw, S_rn, coef);
-}
-
-void WRMmp_Simple::Init_(double S_rw, double S_rn, double coef)
-{
-  S_rw_ = S_rw;
-  S_rn_ = S_rn;
-  coef_ = coef;
-  exponent_ = 1.0;
+  srl_ = plist.get<double>("residual saturation liquid", 0.0);
+  srg_ = plist.get<double>("residual saturation gas", 0.0);
+  pcap_ = plist.get<double>("capillary pressure");
 }
 
 
 /* ******************************************************************
 * Relative permeability formula.                                          
 ****************************************************************** */
-double WRMmp_Simple::k_relative(double Sw, int phase)
+double WRMmp_Corey::k_relative(double sl, int phase)
 {
-  double Swe = (Sw - S_rw_) / (1.0 - S_rw_ - S_rn_);
+  double sle = (sl - srl_ - srg_) / (1.0 - srl_ - srg_);
   if (phase == MULTIPHASE_PHASE_LIQUID) {
-    return pow(Swe, 2.0);
+    return std::pow(sle, 4.0);
   }
   else if (phase == MULTIPHASE_PHASE_GAS) {
-    return pow(1.0 - Swe, 2.0);
+    return std::pow(1.0 - sle, 2.0) * (1.0 - sle * sle);
   }
 
   return 0.0;
@@ -59,15 +49,15 @@ double WRMmp_Simple::k_relative(double Sw, int phase)
 /* ******************************************************************
 * Derivative of relative permeability wrt liquid saturation. 
 ****************************************************************** */
-double WRMmp_Simple::dKdS(double Sw, int phase)
+double WRMmp_Corey::dKdS(double sl, int phase)
 {
-  double factor = 1.0 / (1.0 - S_rw_ - S_rn_);
-  double Swe = (Sw - S_rw_) / (1.0 - S_rw_ - S_rn_);
+  double factor = 1.0 / (1.0 - srl_ - srg_);
+  double sle = (sl - srl_) / (1.0 - srl_ - srg_);
   if (phase == MULTIPHASE_PHASE_LIQUID) {
-    return 2.0 * Swe * factor;
+    return 4.0 * factor * std::pow(sle, 3.0);
   }
   else if (phase == MULTIPHASE_PHASE_GAS) {
-    return - 2.0 * (1.0 - Swe) * factor;
+    return -2.0 * factor * std::pow(1.0 - sle, 2.0) * (1.0 + 2.0 * sle);
   }
 }
 
@@ -75,10 +65,10 @@ double WRMmp_Simple::dKdS(double Sw, int phase)
 /* ******************************************************************
 * Capillary pressure formula.
 ****************************************************************** */
-double WRMmp_Simple::capillaryPressure(double Sw)
+double WRMmp_Corey::capillaryPressure(double sl)
 {
-  // use simple linear capillary pressure for now
-  return coef_ * pow(1.0 - Sw, exponent_);
+  if (sl <= srl_) return pcap_;
+  return pcap_ * (1.0 - sl) / (1.0 - srl_);
 }
 
 
@@ -86,9 +76,10 @@ double WRMmp_Simple::capillaryPressure(double Sw)
 * Derivative of capillary pressure. Hard-coded Brooks-Corey
 * with Pd = 1, gamma = 3. Assume the saturation is of the wetting phase
 ****************************************************************** */
-double WRMmp_Simple::dPc_dS(double Sw)
+double WRMmp_Corey::dPc_dS(double sl)
 {
-  return -exponent_ * coef_ * pow(1.0 - Sw, exponent_ - 1.0);
+  if (sl <= srl_) return 0.0;
+  return -pcap_ / (1.0 - srl_);
 }
 
 }  // namespace Multiphase

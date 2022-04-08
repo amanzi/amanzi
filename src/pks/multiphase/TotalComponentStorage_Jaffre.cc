@@ -14,7 +14,7 @@
     TCS = phi * (rho_l * s_l + rho_g * s_g)
 */
 
-#include "TotalComponentStorage_MolarDensity.hh"
+#include "TotalComponentStorage_Jaffre.hh"
 
 namespace Amanzi {
 namespace Multiphase {
@@ -22,7 +22,7 @@ namespace Multiphase {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-TotalComponentStorage_MolarDensity::TotalComponentStorage_MolarDensity(Teuchos::ParameterList& plist) :
+TotalComponentStorage_Jaffre::TotalComponentStorage_Jaffre(Teuchos::ParameterList& plist) :
     MultiphaseBaseEvaluator(plist) {
   Init_();
 }
@@ -31,7 +31,7 @@ TotalComponentStorage_MolarDensity::TotalComponentStorage_MolarDensity(Teuchos::
 /* ******************************************************************
 * Initialization.
 ****************************************************************** */
-void TotalComponentStorage_MolarDensity::Init_()
+void TotalComponentStorage_Jaffre::Init_()
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));
@@ -52,19 +52,19 @@ void TotalComponentStorage_MolarDensity::Init_()
 /* ******************************************************************
 * Copy constructors.
 ****************************************************************** */
-TotalComponentStorage_MolarDensity::TotalComponentStorage_MolarDensity(
-    const TotalComponentStorage_MolarDensity& other) : MultiphaseBaseEvaluator(other) {};
+TotalComponentStorage_Jaffre::TotalComponentStorage_Jaffre(
+    const TotalComponentStorage_Jaffre& other) : MultiphaseBaseEvaluator(other) {};
 
 
-Teuchos::RCP<Evaluator> TotalComponentStorage_MolarDensity::Clone() const {
-  return Teuchos::rcp(new TotalComponentStorage_MolarDensity(*this));
+Teuchos::RCP<Evaluator> TotalComponentStorage_Jaffre::Clone() const {
+  return Teuchos::rcp(new TotalComponentStorage_Jaffre(*this));
 }
 
 
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void TotalComponentStorage_MolarDensity::Evaluate_(
+void TotalComponentStorage_Jaffre::Evaluate_(
     const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& phi = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
@@ -86,7 +86,7 @@ void TotalComponentStorage_MolarDensity::Evaluate_(
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void TotalComponentStorage_MolarDensity::EvaluatePartialDerivative_(
+void TotalComponentStorage_Jaffre::EvaluatePartialDerivative_(
     const State& S, const Key& wrt_key, const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results)
 {

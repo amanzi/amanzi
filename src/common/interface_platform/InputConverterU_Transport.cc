@@ -66,6 +66,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
   out_list.set<int>("temporal discretization order", 1);
   out_list.set<double>("cfl", cfl);
   out_list.set<std::string>("flow mode", "transient");
+  out_list.set<std::string>("method", "muscl");
 
   out_list.set<std::string>("solver", "Dispersion Solver");
   out_list.set<std::string>("preconditioner", LINEAR_SOLVER_PC);
@@ -77,6 +78,12 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
   if (flag) {
     text = mm.transcode(node->getTextContent());
     out_list.set<bool>("transport subcycling", (strcmp(text, "on") == 0));
+  }
+
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, flux_method", flag);
+  if (flag) {
+    text = mm.transcode(node->getTextContent());
+    out_list.set<std::string>("method", text);
   }
 
   int poly_order(0);

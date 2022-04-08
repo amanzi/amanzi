@@ -15,8 +15,8 @@
 */
 
 
-#ifndef AMANZI_MULTIPHASE_TOTAL_COMPONENT_STORAGE_TEST_HH_
-#define AMANZI_MULTIPHASE_TOTAL_COMPONENT_STORAGE_TEST_HH_
+#ifndef AMANZI_MULTIPHASE_TOTAL_COMPONENT_STORAGE_JAFFRE_HH_
+#define AMANZI_MULTIPHASE_TOTAL_COMPONENT_STORAGE_JAFFRE_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -27,10 +27,10 @@
 namespace Amanzi {
 namespace Multiphase {
 
-class TotalComponentStorage_MolarDensity : public MultiphaseBaseEvaluator {
+class TotalComponentStorage_Jaffre : public MultiphaseBaseEvaluator {
  public:
-  TotalComponentStorage_MolarDensity(Teuchos::ParameterList& plist);
-  TotalComponentStorage_MolarDensity(const TotalComponentStorage_MolarDensity& other);
+  TotalComponentStorage_Jaffre(Teuchos::ParameterList& plist);
+  TotalComponentStorage_Jaffre(const TotalComponentStorage_Jaffre& other);
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -45,6 +45,8 @@ class TotalComponentStorage_MolarDensity : public MultiphaseBaseEvaluator {
  protected:
   Key saturation_liquid_key_, porosity_key_;
   Key mol_density_liquid_key_, mol_density_gas_key_;
+
+  static Utils::RegisteredFactory<Evaluator, TotalComponentStorage_Jaffre> fac_;
 };
 
 }  // namespace Multiphase

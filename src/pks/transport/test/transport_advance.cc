@@ -41,12 +41,6 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
   }
   
   if (Amanzi::AmanziMesh::framework_enabled(
-          Amanzi::AmanziMesh::Framework::STK)) {
-    framework_name.push_back("STK");
-    framework.push_back(Framework::STK);  
-  }
-  
-  if (Amanzi::AmanziMesh::framework_enabled(
           Amanzi::AmanziMesh::Framework::MOAB)) {
     framework_name.push_back("MOAB");
     framework.push_back(Framework::MOAB);
@@ -149,8 +143,6 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
          CHECK(((*tcc)[0][k] - (*tcc)[0][k+1]) > -1e-15);
       }
     }
-
-    
   }
 }
  

@@ -67,10 +67,10 @@ class LimiterCell {
   // -- apply external limiter 
   void ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter);
 
-  // bounds for FV fields: if reset=true they are recalculated 
+  // bounds for cell-centered fields 
   Teuchos::RCP<CompositeVector> BoundsForCells(
       const Epetra_MultiVector& field, 
-      const std::vector<int>& bc_model, const std::vector<double>& bc_value, int stencil);
+      const std::vector<int>& bc_model, const std::vector<double>& bc_value, int stencil) const;
   Teuchos::RCP<CompositeVector> BoundsForFaces(
       const Epetra_MultiVector& field,
       const std::vector<int>& bc_model, const std::vector<double>& bc_value, int stencil);
@@ -111,7 +111,7 @@ class LimiterCell {
       const AmanziMesh::Entity_ID_List& ids,
       const std::vector<int>& bc_model, const std::vector<double>& bc_value);
 
-  // supprting routines for limiters
+  // supporting routines for limiters
   void LimiterKuzminCell_(int cell,
                           AmanziGeometry::Point& gradient_c,
                           const std::vector<double>& field_node_min_c,

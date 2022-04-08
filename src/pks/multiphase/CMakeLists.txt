@@ -50,16 +50,14 @@ include_directories(${WHETSTONE_SOURCE_DIR})
 #
 set(multiphase_src_files Multiphase_PK.cc Multiphase_TI.cc
                          MultiphaseBoundaryFunction.cc
-                         MultiphaseJaffre_PK.cc
-                         MultiphaseModel1_PK.cc MultiphaseModel2_PK.cc
                          Multiphase_Utils.cc
                          NCP_F.cc NCP_HenryLaw.cc NCP_MoleFractions.cc NCP_MolarDensities.cc
                          SaturationGasEvaluator.cc
                          TotalWaterStorage.cc 
                          TotalComponentStorage.cc
-                         TotalComponentStorage_MolarDensity.cc
+                         TotalComponentStorage_Jaffre.cc
                          VaporPressureEvaluator.cc
-                         WRMmp_Simple.cc WRMmp_vanGenuchten.cc WRMmp_BrooksCorey.cc
+                         WRMmp_Simple.cc WRMmp_vanGenuchten.cc WRMmp_BrooksCorey.cc WRMmp_Corey.cc
                          MoleFractionLiquid.cc TccLiquid.cc PressureGasEvaluator.cc
                          RelPermEvaluator.cc ProductEvaluator.cc
                          FlattenedTreeOperator.cc)
@@ -75,8 +73,6 @@ add_amanzi_library(multiphase
 #
 set(multiphase_inc_files 
   Multiphase_PK.hh
-  MultiphaseJaffre_PK.hh
-  MultiphaseModel1_PK.hh MultiphaseModel2_PK.hh
   Multiphase_Utils.hh
   MultiphaseBoundaryFunction.hh
   ModelMeshPartition.hh
@@ -88,6 +84,7 @@ set(multiphase_inc_files
   TotalWaterStorage.hh TotalComponentStorage.hh
   VaporPressureEvaluator.hh
   WRMmp.hh
+  WRMmp_Corey.hh
   WRMmp_Simple.hh
   WRMmp_vanGenuchten.hh
   WRMmp_BrooksCorey.hh)

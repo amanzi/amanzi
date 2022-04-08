@@ -2214,6 +2214,9 @@ and temporal accuracy, and verbosity:
 
 * `"cfl`" [double] Time step limiter, a number less than 1. Default value is 1.
    
+* `"method`" [string] defines flux method. Available options are `"muscl`" (default) and `"fct`".
+  The `"fct`" option requires `"generic RK implementation`" to be set to *true*.
+   
 * `"spatial discretization order`" [int] defines accuracy of spatial discretization.
   It permits values 1 or 2. Default value is 1. 
   
@@ -2241,6 +2244,7 @@ and temporal accuracy, and verbosity:
   <ParameterList name="_TRANSPORT">
     <Parameter name="domain name" type="string" value="domain"/>
     <Parameter name="cfl" type="double" value="1.0"/>
+    <Parameter name="method" type="string" value="muscl"/>
     <Parameter name="spatial discretization order" type="int" value="1"/>
     <Parameter name="temporal discretization order" type="int" value="1"/>
     <Parameter name="solver" type="string" value="_PCG_SOLVER"/>

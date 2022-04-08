@@ -21,13 +21,14 @@
 #include "BDFFnBase.hh"
 #include "Evaluator.hh"
 #include "EvaluatorPrimary.hh"
+#include "FlattenedTreeOperator.hh"
 #include "Key.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_AdvectionUpwind.hh"
 #include "PDE_DiffusionFVwithGravity.hh"
+#include "PK_Factory.hh"
 #include "PK_PhysicalBDF.hh"
 #include "State.hh"
-#include "FlattenedTreeOperator.hh"
 #include "TreeVector.hh"
 #include "UpwindFlux.hh"
 
@@ -88,13 +89,22 @@ class Multiphase_PK: public PK_PhysicalBDF {
   virtual bool ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0,
                                Teuchos::RCP<TreeVector> u) override { return false; }
 
+  // possibly modifies the correction, after the nonlinear solver (NKA)
+  // has computed it, will return true if it did change the correction,
+  // so that the nonlinear iteration can store the modified correction
+  // and pass it to NKA so that the NKA space can be updated
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+  ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+                   Teuchos::RCP<const TreeVector> u,
+                   Teuchos::RCP<TreeVector> du) override; 
+
   // calling this indicates that the time integration scheme is changing 
   // the value of the solution in state.
   virtual void ChangedSolution() override;
 
   // multiphase submodels
   void PopulateBCs(int icomp, bool flag);
-  virtual void ModifyEvaluators(int neqn) = 0;
+  virtual void ModifyEvaluators(int neqn);
 
   Teuchos::RCP<TreeVector> soln() { return soln_; }
 
@@ -134,6 +144,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Key saturation_liquid_key_, saturation_gas_key_, temperature_key_;
   Key energy_key_, prev_energy_key_;
   Key porosity_key_, pressure_gas_key_;
+  Key pressure_vapor_key_, tcc_liquid_key_;
   Key permeability_key_, relperm_liquid_key_, relperm_gas_key_;
   Key advection_liquid_key_, advection_gas_key_;
   Key viscosity_liquid_key_, viscosity_gas_key_;
@@ -142,6 +153,10 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Key mass_density_liquid_key_, mass_density_gas_key_;
   Key tws_key_, tcs_key_, prev_tws_key_, prev_tcs_key_;
   Key ncp_f_key_, ncp_g_key_, ncp_fg_key_;
+  Key ie_rock_key_, ie_liquid_key_, ie_gas_key_;
+  Key conductivity_key_, particle_density_key_;
+  Key enthalpy_liquid_key_, enthalpy_gas_key_;
+  Key advection_enthalpy_liquid_key_, advection_enthalpy_gas_key_;
 
   // matrix and preconditioner
   Teuchos::RCP<Operators::FlattenedTreeOperator> op_preconditioner_;
@@ -154,6 +169,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   bool non_isothermal_;
   std::vector<EquationStructure> eqns_;
   std::vector<std::vector<int> > eqns_flattened_;
+  std::vector<std::string> eval_flattened_;
 
   // boundary conditions
   std::vector<Teuchos::RCP<MultiphaseBoundaryFunction> > bcs_; 
@@ -196,6 +212,9 @@ class Multiphase_PK: public PK_PhysicalBDF {
   // miscaleneous
   AmanziGeometry::Point gravity_;
   double g_;
+
+ private:
+  static RegisteredPKFactory<Multiphase_PK> reg_;
 };
 
 
