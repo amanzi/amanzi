@@ -157,8 +157,6 @@ std::cout << "Test: Advance on a 2D square mesh: limiter=" << limiter
       CHECK_CLOSE(0.0, (*tcc)[0][k], 2e-6);
     }
   }
-
-  
 }
 
 
@@ -166,14 +164,15 @@ TEST(ADVANCE_2D_MESH) {
   // no velocity switch
   runTest(1.0, "test/transport_2D.xml", "", "tensorial", "face to cells");
   runTest(1.0, "test/transport_2D.xml", "test/median7x8.exo", "Barth-Jespersen", "cell to closest cells");
+  runTest(1.0, "test/transport_2D.xml", "", "Kuzmin", "node to cells");
 }
 
 TEST(ADVANCE_2D_MESH_SWITCH_FLOW) {
-  runTest(0.16, "test/transport_2D.xml", "", "tensorial", "face to cells");
-  runTest(0.16, "test/transport_2D.xml", "", "tensorial", "cell to closest cells");
+  // runTest(0.16, "test/transport_2D.xml", "", "tensorial", "face to cells");
+  // runTest(0.16, "test/transport_2D.xml", "", "tensorial", "cell to closest cells");
 }
 
 TEST(ADVANCE_2D_MESH_SWITCH_FLOW_KUZMIN) {
-  runTest(0.16, "test/transport_2D.xml", "", "Kuzmin", "node to cells");
+  // runTest(0.16, "test/transport_2D.xml", "", "Kuzmin", "node to cells");
 }
 
