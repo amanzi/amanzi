@@ -43,7 +43,7 @@ class Amanzi(CMakePackage):
         description='Select mesh type: unstructured or structured')
     variant('shared', default=True, description='Build shared libraries and TPLs')
     variant('mesh_framework', default='mstk', values=('mstk','moab'), 
-        description='Unstructured mesh framework')
+        description='Unstructured mesh framework', multi=True)
 
     # Solvers 
     variant('hypre', default=True, description='Enable Hypre solver support')
@@ -59,7 +59,7 @@ class Amanzi(CMakePackage):
     variant('geochemistry', default=False, description='Enable geochemistry support')
 
 
-    variant('tests', default=True, description='Enable the unit test suite')
+    variant('tests', default=True, description='Enable the unit and the regression test suites')
 
     patch('exprtk.patch')
 
@@ -90,7 +90,7 @@ class Amanzi(CMakePackage):
 
     # The following core dependencies do not support +shared/~shared
     depends_on('xerces-c')
-    depends_on('unittest-cpp')
+    depends_on('unittest-cpp', when='+tests')
 
     #### Geochemistry ####
     geochemistry = {
@@ -110,12 +110,9 @@ class Amanzi(CMakePackage):
     depends_on('hypre@2.22.0 +mpi -shared', when='+hypre -shared')
 
     #### Structured ####
-    structured = {
-        'ccse','petsc@3.16:'
-    }
-    for dep in structured:
-        depends_on(dep+' +shared',when='mesh_type=structured +shared');
-        depends_on(dep+' -shared',when='mesh_type=structured -shared');
+    depends_on('petsc@3.16: +shared',when='mesh_type=structured +shared');
+    depends_on('petsc@3.16: -shared',when='mesh_type=structured -shared');
+    depends_on('ccse',when='mesh_type=structured');
 
     #### Unstructured ####
     depends_on('nanoflann', when='mesh_type=unstructured')
@@ -160,7 +157,6 @@ class Amanzi(CMakePackage):
         
 
         # Provide information normally in the cache?
-        options.append('-DUnitTest_DIR=' + self.spec['unittest-cpp'].prefix)
         options.append('-DZLIB_DIR=' + self.spec['zlib'].prefix)
         options.append('-DMETIS_DIR=' + self.spec['metis'].prefix)
         options.append('-DBOOST_ROOT=' + self.spec['boost'].prefix)
@@ -230,16 +226,18 @@ class Amanzi(CMakePackage):
             options.append('-DENABLE_ATSPhysicsModule=OFF')
 
         if '+tests' in self.spec:
+            options.append('-DUnitTest_DIR=' + self.spec['unittest-cpp'].prefix)
             options.append('-DENABLE_TESTS=ON')
             options.append('-DENABLE_UnitTest=ON')
+            options.append('-DENABLE_Regression_Tests=ON')
         else:
             options.append('-DENABLE_TESTS=OFF')
             options.append('-DENABLE_UnitTest=OFF')
+            options.append('-DENABLE_Regression_Tests=OFF')
 
         if 'mesh_framework=mstk' in self.spec:
             options.append('-DMSTK_VERSION=3.3.6')
             options.append('-DENABLE_MESH_MSTK=ON')
-            options.append('-DENABLE_MESH_MOAB=OFF')
             options.append('-DMSTK_LIBRARY_DIR=' + self.spec['mstk'].prefix + '/lib')
             options.append('-DMSTK_INCLUDE_DIR=' + self.spec['mstk'].prefix + '/include')
         else:
@@ -247,7 +245,6 @@ class Amanzi(CMakePackage):
 
         if 'mesh_framework=moab' in self.spec:
             options.append('-DENABLE_MESH_MOAB=ON')
-            options.append('-DENABLE_MESH_MSTK=OFF')
             options.append('-DMOAB_LIBRARY_DIR=' + self.spec['moab'].prefix + '/lib')
             options.append('-DMOAB_INCLUDE_DIR=' + self.spec['moab'].prefix + '/include/moab')
         else:
@@ -263,6 +260,7 @@ class Amanzi(CMakePackage):
         if 'mesh_type=structured'in self.spec: 
             options.append('-DENABLE_Structured=ON')
             options.append('-DENABLE_CCSE_TOOLS=ON')
+            options.append('-DCCSE_BL_SPACEDIM:INT=2')
             options.append('-DCCSE_DIR=' + self.spec['ccse'].prefix)
         else:
             options.append('-DENABLE_Structured=OFF')

@@ -7,15 +7,12 @@ from spack import *
 
 class Ccse(CMakePackage):
 
-    """ structured AMR package """
+    """ structured AMR post processing tools """
 
-    homepage = "https://github.com/amanzi/amanzi-tpls"
-    url      = "https://github.com/amanzi/amanzi-tpls/"\
-        "raw/master/src/ccse-1.3.4.tar.gz"
+    homepage = "https://ccse.lbl.gov/BoxLib/"
+    url      = "https://github.com/BoxLib-Codes/BoxLib/archive/17.05.1.tar.gz"
 
-    version('1.3.4', sha256='faa52bb553cea8ca9ea436c1a7135b12')
-
-    variant('shared', default=True, description='Build shared library')
+    version('17.05.1', sha256='97c3e1615cc649e2748fa9a7291724fa')
 
     patch('ccse-1.3.4-dependency.patch')
     patch('ccse-1.3.4-tools-compilers.patch')
@@ -31,14 +28,7 @@ class Ccse(CMakePackage):
         options = ['-DCMAKE_C_COMPILER=' + self.spec['mpi'].mpicc]
         options.append('-DCMAKE_CXX_COMPILER=' + self.spec['mpi'].mpicxx)
         options.append('-DCMAKE_Fortran_COMPILER=' + self.spec['mpi'].mpifc)
-        options.append('-DENABLE_Config_Report:BOOL=TRUE')
-        options.append('-DENABLE_MPI:INT=1')
-        options.append('-DENABLE_TESTS:BOOL=FALSE')
-        options.append('-DVERBOSE:BOOL=ON')
         # setting spacedim to 2 below 
         options.append('-DBL_SPACEDIM:INT=2')
-        if '+shared' in self.spec:
-            options.append('-DBUILD_SHARED_LIBS:BOOL=TRUE')
-        else :
-            options.append('-DBUILD_SHARED_LIBS:BOOL=FALSE')
+
         return options
