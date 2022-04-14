@@ -112,7 +112,8 @@ class Amanzi(CMakePackage):
     #### Structured ####
     depends_on('petsc@3.16: +shared',when='mesh_type=structured +shared');
     depends_on('petsc@3.16: -shared',when='mesh_type=structured -shared');
-    depends_on('ccse',when='mesh_type=structured');
+    space_dim = 2
+    depends_on('ccse dims=%d' % int(space_dim) ,when='mesh_type=structured');
 
     #### Unstructured ####
     depends_on('nanoflann', when='mesh_type=unstructured')
@@ -260,7 +261,7 @@ class Amanzi(CMakePackage):
         if 'mesh_type=structured'in self.spec: 
             options.append('-DENABLE_Structured=ON')
             options.append('-DENABLE_CCSE_TOOLS=ON')
-            options.append('-DCCSE_BL_SPACEDIM:INT=2')
+            options.append('-DCCSE_BL_SPACEDIM:INT=%d' % int(self.spec['ccse'].variants['dims'].value))
             options.append('-DCCSE_DIR=' + self.spec['ccse'].prefix)
         else:
             options.append('-DENABLE_Structured=OFF')

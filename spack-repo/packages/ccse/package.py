@@ -13,6 +13,7 @@ class Ccse(CMakePackage):
     url      = "https://github.com/BoxLib-Codes/BoxLib/archive/17.05.1.tar.gz"
 
     version('17.05.1', sha256='97c3e1615cc649e2748fa9a7291724fa')
+    variant('dims', default='2', values=('2', '3'), multi=False, description='Number of spatial dimensions')
 
     patch('ccse-1.3.4-dependency.patch')
     patch('ccse-1.3.4-tools-compilers.patch')
@@ -25,10 +26,12 @@ class Ccse(CMakePackage):
     depends_on('mpi')
 
     def cmake_args(self):
-        options = ['-DCMAKE_C_COMPILER=' + self.spec['mpi'].mpicc]
-        options.append('-DCMAKE_CXX_COMPILER=' + self.spec['mpi'].mpicxx)
-        options.append('-DCMAKE_Fortran_COMPILER=' + self.spec['mpi'].mpifc)
-        # setting spacedim to 2 below 
-        options.append('-DBL_SPACEDIM:INT=2')
+        spec = self.spec
+        options = ['-DCMAKE_C_COMPILER=' + spec['mpi'].mpicc]
+        options.append('-DCMAKE_CXX_COMPILER=' + spec['mpi'].mpicxx)
+        options.append('-DCMAKE_Fortran_COMPILER=' + spec['mpi'].mpifc)
+        options.append('-DBL_SPACEDIM=%d' % int(spec.variants['dims'].value))
+        options.append('-DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=ON')
+        options.append('-DENABLE_FBASELIB=ON')
 
         return options

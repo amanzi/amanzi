@@ -85,13 +85,15 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
           copy_directory ${EXEC_SOURCE_DIR}/inputfiles ${EXEC_BINARY_DIR}/inputfiles ) 
     endif()
 
-add_amanzi_library(udriv
+if(ENABLE_MESH_MSTK)
+  add_amanzi_library(udriv
                    SOURCE AmanziUnstructuredGridSimulationDriver.cc
                    LINK_LIBS mesh mesh_audit mesh_factory state mpc eos 
                              flow transport energy shallow_water multiphase
                              interface error_handling
                              ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${Boost_LIBRARIES}
                              ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
+endif() 
 
 #
 # Binary: verify_mesh
