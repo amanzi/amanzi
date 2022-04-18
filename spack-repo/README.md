@@ -172,6 +172,12 @@ To test amanzi, proceed as explained above using `dev-build --test all`.
 
 The following steps have been carried out on `piquillo`.
 
+First, type the following command:
+```
+export http_proxy=proxyout:8080
+export https_proxy=$http_proxy
+```
+
 Add the following spec to the packages.yaml file:
 ```
   openmpi:

@@ -110,10 +110,15 @@ class Amanzi(CMakePackage):
     depends_on('hypre@2.22.0 +mpi -shared', when='+hypre -shared')
 
     #### Structured ####
-    depends_on('petsc@3.16: +shared',when='mesh_type=structured +shared');
-    depends_on('petsc@3.16: -shared',when='mesh_type=structured -shared');
+    structured = {
+        'alquimia@1.0.9','petsc@3.16:'
+    }
+    for dep in structured:
+        depends_on(dep+' +shared',when='mesh_type=structured +shared');
+        depends_on(dep+' -shared',when='mesh_type=structured -shared');
     space_dim = 2
     depends_on('ccse dims=%d' % int(space_dim) ,when='mesh_type=structured');
+    depends_on('pflotran@3.0.2', when='mesh_type=structured')
 
     #### Unstructured ####
     depends_on('nanoflann', when='mesh_type=unstructured')
@@ -260,11 +265,21 @@ class Amanzi(CMakePackage):
 
         if 'mesh_type=structured'in self.spec: 
             options.append('-DENABLE_Structured=ON')
+            options.append('-DENABLE_PETSC=ON')
+            options.append('-DPETSc_DIR=' + self.spec['petsc'].prefix)
             options.append('-DENABLE_CCSE_TOOLS=ON')
+            options.append('-DENABLE_MPI:INT=1')
             options.append('-DCCSE_BL_SPACEDIM:INT=%d' % int(self.spec['ccse'].variants['dims'].value))
+            options.append('-DAMANZI_SPACEDIM:INT=%d' % int(self.spec['ccse'].variants['dims'].value))
             options.append('-DCCSE_DIR=' + self.spec['ccse'].prefix)
+            options.append('-DENABLE_ALQUIMIA=ON')
+            options.append('-DAlquimia_DIR=' + self.spec['alquimia'].prefix)
+            options.append('-DAlquimia_INCLUDE_DIR=' + self.spec['alquimia'].prefix + 'include/alquimia')
+            options.append('-DENABLE_PFLOTRAN=ON')
+            options.append('-DPFLOTRAN_LIBRARY_DIR=' + self.spec['pflotran'].prefix + '/lib')
         else:
             options.append('-DENABLE_Structured=OFF')
+            options.append('-DENABLE_CCSE_TOOLS=OFF')
         
         if '+hypre' in self.spec: 
             options.append('-DENABLE_SUPERLU=ON')

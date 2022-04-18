@@ -27,9 +27,9 @@ class Ccse(CMakePackage):
 
     def cmake_args(self):
         spec = self.spec
-        options = ['-DCMAKE_C_COMPILER=' + spec['mpi'].mpicc]
-        options.append('-DCMAKE_CXX_COMPILER=' + spec['mpi'].mpicxx)
-        options.append('-DCMAKE_Fortran_COMPILER=' + spec['mpi'].mpifc)
+        options = ['-DCMAKE_C_COMPILER=%s' % spec['mpi'].mpicc]
+        options.append('-DCMAKE_CXX_COMPILER=%s' % spec['mpi'].mpicxx)
+        options.append('-DCMAKE_Fortran_COMPILER=%s' % spec['mpi'].mpifc)
         options.append('-DBL_SPACEDIM=%d' % int(spec.variants['dims'].value))
         options.append('-DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=ON')
         options.append('-DENABLE_FBASELIB=ON')
