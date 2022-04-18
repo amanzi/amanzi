@@ -30,3 +30,12 @@
    endif ()
  
    if (DEFINED ADDITIONAL_CMAKE_PREFIX_PATH AND EXISTS "${ADDITIONAL_CMAKE_PREFIX_PATH}")
+--- hdf5-1.10.6/m4/aclocal_fc.f90       2019-10-18 09:38:06.000000000 -0400
++++ hdf5-1.10.6-new/m4/aclocal_fc.f90   2022-04-18 08:59:41.000000000 -0400
+@@ -138,6 +138,7 @@
+      WRITE(8,'(I0)') max_decimal_prec
+      WRITE(8,'(I0)') num_ikinds
+      WRITE(8,'(I0)') num_rkinds
++     CLOSE(8)
+ END PROGRAM FC_AVAIL_KINDS
+ !---- END ----- Determine the available KINDs for REALs and INTEGERs
