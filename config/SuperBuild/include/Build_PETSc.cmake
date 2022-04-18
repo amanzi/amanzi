@@ -118,7 +118,7 @@ set(petsc_hypre_flags --with-hypre=1 --with-hypre-dir=${TPL_INSTALL_PREFIX})
 set(petsc_superlu_flags --with-superlu=1 --with-superlu-dir=${TPL_INSTALL_PREFIX})
 set(petsc_superlu_dist_flags --with-superlu_dist=1 --with-superlu_dist-dir=${TPL_INSTALL_PREFIX})
 # hdf5 included in petsc for building pflotran full-package
-set(petsc_hdf5_flags  --with-hdf5=1 --with-hdf5-dir=${TPL_INSTALL_PREFIX})
+set(petsc_hdf5_flags  --with-hdf5=1 --with-hdf5-dir=${TPL_INSTALL_PREFIX} --download-hdf5-fortran-bindings=1)
 
 set(petsc_package_flags ${petsc_hypre_flags} ${petsc_superlu_dist_flags} ${petsc_superlu_flags}
                         ${petsc_parmetis_flags} ${petsc_sowing_flags} ${petsc_metis_flags}
@@ -197,6 +197,8 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                               ${petsc_lapack_option}
                               ${petsc_blas_option}
                               ${petsc_package_flags}
+                              PETSC_DIR=${PETSc_source_dir}
+                              PETSC_ARCH=petsc-arch-none
                     # -- Build
                     BINARY_DIR       ${PETSc_build_dir}           # Build directory 
                     BUILD_COMMAND    $(MAKE) -j 1 PETSC_DIR=${PETSc_source_dir} # Run the CMake script to build
