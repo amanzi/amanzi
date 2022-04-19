@@ -94,7 +94,7 @@ class Amanzi(CMakePackage):
 
     #### Geochemistry ####
     geochemistry = {
-        'alquimia@1.0.9','petsc@3.16:'
+            'alquimia@1.0.9','petsc@3.16.4:3.16.5'
     }
     for dep in geochemistry: 
         depends_on(dep+' +shared',when='+geochemistry +shared'); 
@@ -111,7 +111,7 @@ class Amanzi(CMakePackage):
 
     #### Structured ####
     structured = {
-        'alquimia@1.0.9','petsc@3.16:'
+            'alquimia@1.0.9','petsc@3.16.4:3.16.5'
     }
     for dep in structured:
         depends_on(dep+' +shared',when='mesh_type=structured +shared');
