@@ -17,23 +17,28 @@ on a domain.
 
 It is expected to be of the form:
 
-r = rhs_1 + ... rhs_k + rhs_A00 + rhs_A01 + ... rhs_Anm - (A00 x0 + A01 x0 + ...
+
+r = b_1 + ... b_k + rhs_A00 + rhs_A01 + ... rhs_Anm - (A00 x0 + A01 x0 + ...
 A0n x0 + A11 x1 + ... Anm xn)
 
 Where:
 
-  x0                   | is the primary variable associated with this residual
-  x1 ... xn            | are off-diagonal primary variables.
-  A0i, rhs_A0i         | are diagonal, local operators and their RHS boundary
-                       | conditions/sources.
-  Aji, rhs_Aji         | are not-necessarily diagonal, local operators and their
-                       | RHSs applied to the xj.
-  rhs_1 ... rhs_k      | are arbitrary source terms which CANNOT NOT BE AFFECTED
-                       | BY boundary conditions (i.e, for conservation equations
-                       | discretized using control volume methods, BCs affect
-                       | only faces while sources are on cells.
+  x_0                  | is the primary variable associated with this residual,
+                       | e.g. the diagonal entry in a coupled operator
+  x_j, j=1...NJ        | are off-diagonal primary variables.
+  A0i, rhs_A0i,        | are diagonal, local operators and their RHS boundary
+    i=0...NI           | conditions/sources, i = 0...NI
+  Ajm, rhs_Ajm         | are not-necessarily diagonal, local operators and their
+    m=0...NM           | RHSs applied to the x_j, e.g. j = 1...NJ
+  b_k, k=0...NK        | are arbitrary vector contributions (e.g. lumped mass
+                       | matrix accumulation terms, source terms, which CANNOT
+                       | NOT BE AFFECTED BY boundary conditions (i.e, for
+                       | conservation equations discretized using control volume
+                       | methods, BCs affect only faces while sources are on cells.
 
-Note that we can infer some constraints here:
+Notes:
+
+- All of NJ, NI, NM, and NK are arbitrarily up to the user.
 
 - The domain and range of the A0i must be subsets of the r space.  We take r's
   space to be the union of the domain and range spaces of the A0i and the
@@ -42,16 +47,63 @@ Note that we can infer some constraints here:
   equation, FV methods might only need cells, while MFD methods need cells and
   faces.  This need not be known by the PK.
 
-- The ranges of the Aji (likewise the rhs_Aji spaces) must be subsets of the r
+- The ranges of the Ajm (likewise the rhs_Ajm spaces) must be subsets of the r
 space.
 
-- The spaces of the rhs_k must be subsets of the r space.
+- The spaces of the b_k must be subsets of the r space.
 
 
+Example 1:
+~~~~~~~~~~
+Standard parabolic PDE e.g. Richards equation.
 
-NOTE: It is unclear what to do about transformed primary variables at this
-point, i.e. overland flow which writes operator(h(p)), and therefore needs to
-scale the linear operators by dh/dp. --etc
+Assume Richards equation is of the form:
+
+.. math::
+    \frac{\partial \Psi }{\partial t} - \nabla \cdot k(p) K \nabla p = Q
+
+Where :math:`\Psi = \phi \rho s(p)` is the water content (the conserved
+quantity), p is the pressure, k and K are the relative and absolutle
+permeabilities, and Q is a volumetric source of water.
+
+In this case:
+
+- x0 is p, the pressure field,
+- A00 is the only operator, the diffusion operator  :math:`\nabla \cdot k(p) K \nabla`,
+- rhs_A00 accepts any flux boundary conditions for the operator,
+- b_0 is the accumulation vector, dPsi/dt
+- b_1 is the source Q
+
+
+Example 2:
+~~~~~~~~~~
+Energy equation with an advection term driven by the Darcy flux.
+
+Assume that energy transport is being coupled to Richards equation from Example
+1.  In that case, we assume there are two primary variables -- temperature T is
+the "diagonal" primary variable while pressure p is the off-diagonal primary
+variable.  Then the equation is given by:
+
+.. math::
+    \frac{\partial E(p,T) }{\partial t} - \nabla \cdot \kappa \nabla T + \nabla \cdot h(T) q_{darcy} = Q_E + h(T_{source}) Q
+
+In this case:
+
+- x0 is T, the temperature field
+- x1 is p, the pressure field
+- A00 is the diagonal diffusion term, -\nabla \cdot \kappa \nabla T
+- rhs_A00 includes Neumann energy diffusive flux boundary conditions
+- A10 is the advective term, -\nabla \cdot h(T) k(p) K \nabla
+- rhs_A10 includes advective flux boundary conditions (typically one rhs_A00 or rhs_A10 is 0)
+- b_0 is the accumulation vector, dE/dt
+- b_1 is the energy source, Q_E
+- b_2 is the enthalpy associated with the mass source, h(T)Q
+
+By splitting out terms in this formal sense, we can ask for derivatives of this
+PDE.
+
+- with respect to T: sum_k( db_k/dT ) + A00
+- with respect to p: sum_k( db_k/dp ) + A10
 
 */
 
@@ -86,7 +138,6 @@ class Evaluator_OperatorApply : public EvaluatorSecondary {
   virtual bool UpdateDerivative(State& S, const Key& requestor,
           const Key& wrt_key, const Key& wrt_tag) override;
 
-  
  protected:
   // These do the actual work
   virtual void Update_(State& S) override;
@@ -114,8 +165,8 @@ class Evaluator_OperatorApply : public EvaluatorSecondary {
 
   // debugger for dumping vectors
   Teuchos::RCP<Debugger> db_;
-  
- private:
+
+private:
   static Utils::RegisteredFactory<Evaluator, Evaluator_OperatorApply> fac_;
 };
 

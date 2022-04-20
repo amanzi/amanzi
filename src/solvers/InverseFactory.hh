@@ -203,7 +203,7 @@ createIterativeMethod(const std::string& method_name,
     inv = Teuchos::rcp(new IterativeMethodPCG<Operator,Preconditioner,Vector,VectorSpace>());
   } else if (method_name == "nka") {
     inv = Teuchos::rcp(new IterativeMethodNKA<Operator,Preconditioner,Vector,VectorSpace>());
-  } else if (Keys::startsWith(method_name, "belos")) {
+  } else if (Keys::starts_with(method_name, "belos")) {
     inv = Teuchos::rcp(new IterativeMethodBelos<Operator,Preconditioner,Vector,VectorSpace>());
   } else {
     Errors::Message msg;
@@ -263,13 +263,13 @@ createAssembledMethod(const std::string& method_name, Teuchos::ParameterList& in
   auto& method_list = Impl::getMethodSublist(inv_list, method_name);
 
   Teuchos::RCP<Inverse<Matrix,Matrix,Vector,VectorSpace>> inv = Teuchos::null;
-  if (Keys::startsWith(method_name, "amesos")) {
+  if (Keys::starts_with(method_name, "amesos")) {
     //int amesos_version = 0;
     // figure out the version
     // -- old style -- from a parameter
     //if (method_list.isParameter("amesos version")) {
     //  amesos_version = method_list.get<int>("amesos version");
-    //} else if (Keys::startsWith(method_name, "amesos2")) {
+    //} else if (Keys::starts_with(method_name, "amesos2")) {
     //  amesos_version = 2;
     //} else {
     //  assert(false && "Amesos is not supported"); 
@@ -281,11 +281,11 @@ createAssembledMethod(const std::string& method_name, Teuchos::ParameterList& in
   //} else if (method_name == "block ilu") {
   //  method_list.set<std::string>("method", "ifpack2: ");
   //  inv = Teuchos::rcp(new PreconditionerIfpack2());
-  } else if (Keys::startsWith(method_name, "ifpack2: ")) {
+  } else if (Keys::starts_with(method_name, "ifpack2: ")) {
     method_list.set<std::string>("method", method_name.substr(std::string("ifpack2: ").length(),
             method_name.length()));
     inv = Teuchos::rcp(new PreconditionerIfpack2());
-  } else if (Keys::startsWith(method_name, "hypre: ")) {
+  } else if (Keys::starts_with(method_name, "hypre: ")) {
     method_list.set<std::string>("method", method_name.substr(std::string("hypre: ").length(),
             method_name.length()));
     inv = Teuchos::rcp(new PreconditionerHypre());

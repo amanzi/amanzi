@@ -17,29 +17,40 @@ on a domain.
 
 It is expected to be of the form:
 
-r = rhs_1 + ... rhs_k + rhs_A00 + rhs_A01 + ... rhs_Anm - (A00 x0 + A01 x0 + ...
+
+r = b_1 + ... b_k + rhs_A00 + rhs_A01 + ... rhs_Anm - (A00 x0 + A01 x0 + ...
 A0n x0 + A11 x1 + ... Anm xn)
 
 Where:
 
-  x0                   | is the primary variable associated with this residual
-  x1 ... xn            | are off-diagonal primary variables.
-  A0i, rhs_A0i         | are diagonal, local operators and their RHS boundary
-                       | conditions/sources.
-  Aji, rhs_Aji         | are not-necessarily diagonal, local operators and their
-                       | RHSs applied to the xj.
-  rhs_1 ... rhs_k      | are arbitrary source terms which CANNOT NOT BE AFFECTED
-BY | boundary conditions (i.e, for conservation equations | discretized using
-control volume methods, BCs affect only | faces while sources are on cells.
+  x_0                  | is the primary variable associated with this residual,
+                       | e.g. the diagonal entry in a coupled operator
+  x_j, j=1...NJ        | are off-diagonal primary variables.
+  A0i, rhs_A0i,        | are diagonal, local operators and their RHS boundary
+    i=0...NI           | conditions/sources, i = 0...NI
+  Ajm, rhs_Ajm         | are not-necessarily diagonal, local operators and their
+    m=0...NM           | RHSs applied to the x_j, e.g. j = 1...NJ
+  b_k, k=0...NK        | are arbitrary vector contributions (e.g. lumped mass
+                       | matrix accumulation terms, source terms, which CANNOT
+                       | NOT BE AFFECTED BY boundary conditions (i.e, for
+                       | conservation equations discretized using control volume
+                       | methods, BCs affect only faces while sources are on cells.
 
-Note that we can infer some constraints here:
+Notes:
 
-- The domain and range of the A0i must be subsets of the r space.
-  Realistically, r's space is the union of the domain and range spaces of the
-  A0i and the space of the rhs_k.
+- All of NJ, NI, NM, and NK are arbitrarily up to the user.
 
--
+- The domain and range of the A0i must be subsets of the r space.  We take r's
+  space to be the union of the domain and range spaces of the A0i and the
+  spaces of the rhs_k.  We prefer to take the r space this way as it allows
+  discretizations to impose the space -- for instance, in a conservation
+  equation, FV methods might only need cells, while MFD methods need cells and
+  faces.  This need not be known by the PK.
 
+- The ranges of the Ajm (likewise the rhs_Ajm spaces) must be subsets of the r
+space.
+
+- The spaces of the b_k must be subsets of the r space.
 
 */
 
@@ -72,7 +83,7 @@ Evaluator_OperatorApply::Evaluator_OperatorApply(Teuchos::ParameterList& plist)
       ++i;
     }
     op0_rhs_keys_ =
-      Keys::readKeys(plist_, domain, "diagonal local operator rhss", &defaults);
+      Keys::readKeys(plist_, domain, "diagonal local operator rhs", &defaults);
   }
 
   // opi, opi rhs's
@@ -90,13 +101,13 @@ Evaluator_OperatorApply::Evaluator_OperatorApply(Teuchos::ParameterList& plist)
       ++i;
     }
     op_rhs_keys_.emplace_back(Keys::readKeys(
-      plist_, domain, x_key_suffix + " local operator rhss", &defaults));
+      plist_, domain, x_key_suffix + " local operator rhs", &defaults));
   }
 
   // other rhss
-  rhs_keys_ = Keys::readKeys(plist_, domain, "additional rhss", &empty);
+  rhs_keys_ = Keys::readKeys(plist_, domain, "vector", &empty);
   if (rhs_keys_.size() > 0) {
-    rhs_scalars_ = plist_.get<Teuchos::Array<double>>("rhs coefficients");
+    rhs_scalars_ = plist_.get<Teuchos::Array<double>>("vector coefficients");
     if (rhs_keys_.size() != rhs_scalars_.size()) {
       Errors::Message message;
       message << "Evaluator_OperatorApply for " << my_keys_[0].first

@@ -170,7 +170,7 @@ State::GetRecordSet(const Key& fieldname)
     Errors::Message message(messagestream.str());
     throw(message);
   }
-}  
+}
 
 const RecordSet&
 State::GetRecordSet(const Key& fieldname) const
@@ -183,7 +183,7 @@ State::GetRecordSet(const Key& fieldname) const
     Errors::Message message(messagestream.str());
     throw(message);
   }
-}  
+}
 
 const RecordSet&
 State::GetDerivativeSet(const Key& key, const Key& tag) const
@@ -197,7 +197,7 @@ State::GetDerivativeSet(const Key& key, const Key& tag) const
     Errors::Message message(messagestream.str());
     throw(message);
   }
-}    
+}
 
 RecordSet&
 State::GetDerivativeSet(const Key& key, const Key& tag)
@@ -211,7 +211,7 @@ State::GetDerivativeSet(const Key& key, const Key& tag)
     Errors::Message message(messagestream.str());
     throw(message);
   }
-}    
+}
 
 Evaluator&
 State::RequireEvaluator(const Key& key, const Key& tag)
@@ -320,7 +320,7 @@ State::SetEvaluator(const Key& key, const Key& tag,
   evaluators_[key][tag] = evaluator;
   for (const auto& dep_tag : evaluator->dependencies()) {
     RequireEvaluator(dep_tag.first, dep_tag.second);
-  }  
+  }
 };
 
 
@@ -372,7 +372,7 @@ State::Setup()
     }
   }
 
-  
+
   // Ensure compatibility of all the evaluators -- each evaluator's dependencies
   // must provide what is required of that evaluator.
   for (auto& e : evaluators_) {
@@ -442,7 +442,7 @@ State::Initialize()
       AmanziGeometry::Point point(val.size());
       for (int i=0; i!=val.size(); ++i) {
         point[i] = val[i];
-      }    
+      }
       Set(p.first, "", "state", point);
     }
   }
@@ -478,7 +478,7 @@ State::AliasEvaluators()
 }
 
 
-// Print 
+// Print
 void
 State::Print() const
 {
@@ -523,6 +523,27 @@ State::WriteDependencyGraph() const
 }
 
 
+Teuchos::ParameterList&
+State::GetEvaluatorList(const Key& key)
+{
+  if (FEList().isParameter(key)) {
+    return FEList().sublist(key);
+  } else {
+    // check for domain set
+    KeyTriple split;
+    bool is_ds = Keys::splitDomainSet(key, split);
+    if (is_ds) {
+      Key lifted_key = Keys::getKey(std::get<0>(split), "*", std::get<2>(split));
+      if (FEList().isParameter(lifted_key)) {
+        return FEList().sublist(lifted_key);
+      }
+    }
+  }
+  // return an empty new list
+  return FEList().sublist(key);
+}
+
+
 
 // Non-member function for vis.
 void
@@ -550,7 +571,7 @@ WriteVis(Visualization& vis, State& S, const Key& tag)
     //    [user provided argument, "next", "", first tag in the record]
     // 2 -- once we've determined which tag to write, check if there is an
     //    evaluator.  If so, call update!
-    
+
     // Write all fields to the visualization file, the fields know if they
     // need to be written.
     std::string vname = vis.name();

@@ -17,16 +17,16 @@
 are defined on a single mesh, and represent a single process model.  Typically
 all leaves of the PK tree will inherit from ``PK_MixinLeaf``.
 
-* `"domain`" ``[string]`` **""**, e.g. `"surface`".
-
   Domains and meshes are 1-to-1, and the empty string refers to the main domain
 or mesh.  PKs defined on other domains must specify which domain/mesh they refer
 to.
 
-* `"primary variable`" ``[string]``
+.._mixin-leaf-spec
+.. admonition:: mixin-leaf-spec
 
-  The primary variable associated with this PK, i.e. `"pressure`",
-`"temperature`", `"surface_pressure`", etc.
+   * `"domain`" ``[string]`` **""**, e.g. `"surface`".
+   * `"primary variable`" ``[string]`` The primary variable associated with
+      this PK, i.e. `"pressure`", `"temperature`", `"surface_pressure`", etc.
 
 */
 
