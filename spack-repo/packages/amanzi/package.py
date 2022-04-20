@@ -33,17 +33,13 @@ class Amanzi(CMakePackage):
     version('1.0.0', tag='amanzi-1.0.0', default=False, submodules=True)
 
     # Trilinos data model: epetra|tpetra
-    variant('data_model', default='epetra', values=('epetra','tpetra'),
-        description='Trilinos data model', multi=False)
+    variant('data_model', default='epetra', values=('epetra','tpetra'), description='Trilinos data model', multi=False)
 
     # Mesh Type: unstructured|structured
     #            (could be both, but currently not support for structured) 
-    variant('mesh_type', default='unstructured', 
-        values=('unstructured', 'structured'),
-        description='Select mesh type: unstructured or structured')
-    variant('shared', default=True, description='Build shared libraries and TPLs')
-    variant('mesh_framework', default='mstk', values=('mstk','moab'), 
-        description='Unstructured mesh framework', multi=True)
+    variant('mesh_type', default='unstructured', values=('unstructured', 'structured'), description='Select mesh type: unstructured or structured')
+    variant('shared', default=True, description='Build Amanzi shared')
+    variant('mesh_framework', default='mstk', values=('mstk','moab'), description='Unstructured mesh framework', multi=True)
 
     # Solvers 
     variant('hypre', default=True, description='Enable Hypre solver support')
@@ -52,8 +48,7 @@ class Amanzi(CMakePackage):
     variant('physics', default='amanzi', values=('amanzi','ats'), description='Physics implementation')
 
     # I/O
-    variant('silo', default=False, description='Enable Silo reader for binary '
-            'files')
+    variant('silo', default=False, description='Enable Silo reader for binary files')
 
     # Geochemistry 
     variant('geochemistry', default=False, description='Enable geochemistry support')
@@ -62,8 +57,6 @@ class Amanzi(CMakePackage):
     variant('tests', default=True, description='Enable the unit and the regression test suites')
 
     patch('exprtk.patch')
-
-    conflicts('physics=ats', when='mesh_type=structured', msg='ERROR: ats physics is not supported in the structured mesh framework.')
 
     ##### Build dependencies #####
 
@@ -82,11 +75,7 @@ class Amanzi(CMakePackage):
     }
 
     for dep in core_dependencies: 
-        depends_on(dep+' +shared',when='+shared'); 
-        depends_on(dep+' -shared',when='-shared');
-
-    #double check the version of cgns  below
-    depends_on('cgns@develop -shared', when='-shared')
+        depends_on(dep); 
 
     # The following core dependencies do not support +shared/~shared
     depends_on('xerces-c')
@@ -97,25 +86,21 @@ class Amanzi(CMakePackage):
             'alquimia@1.0.9','petsc@3.16.4:3.16.5'
     }
     for dep in geochemistry: 
-        depends_on(dep+' +shared',when='+geochemistry +shared'); 
-        depends_on(dep+' -shared',when='+geochemistry -shared'); 
+        depends_on(dep, when='+geochemistry'); 
 
     depends_on('pflotran@3.0.2', when='+geochemistry')
 
     ##### Hypre #####
     depends_on('superlu@5.2.2', when='+hypre')
-    depends_on('superlu-dist@6.2.0 +shared', when='+hypre +shared')
-    depends_on('superlu-dist@6.2.0 -shared', when='+hypre -shared')
-    depends_on('hypre@2.22.0 +mpi +shared', when='+hypre +shared')
-    depends_on('hypre@2.22.0 +mpi -shared', when='+hypre -shared')
+    depends_on('superlu-dist@6.2.0', when='+hypre')
+    depends_on('hypre@2.22.0 +mpi', when='+hypre')
 
     #### Structured ####
     structured = {
             'alquimia@1.0.9','petsc@3.16.4:3.16.5'
     }
     for dep in structured:
-        depends_on(dep+' +shared',when='mesh_type=structured +shared');
-        depends_on(dep+' -shared',when='mesh_type=structured -shared');
+        depends_on(dep, when='mesh_type=structured');
     space_dim = 2
     depends_on('ccse dims=%d' % int(space_dim) ,when='mesh_type=structured');
     depends_on('pflotran@3.0.2', when='mesh_type=structured')
@@ -124,29 +109,25 @@ class Amanzi(CMakePackage):
     depends_on('nanoflann', when='mesh_type=unstructured')
 
     ##### MSTK #####
-    depends_on('mstk@3.3.6 partitioner=all +seacas +parallel +shared', when='mesh_framework=mstk +shared')
-    depends_on('mstk@3.3.6 partitioner=all +seacas +parallel -shared', when='mesh_framework=mstk -shared')
+    depends_on('mstk@3.3.6 partitioner=all +seacas +parallel', when='mesh_framework=mstk')
 
     ##### Moab #####
     # There is a newer version 5.3.0 (but we haven't tested it yet).
-    depends_on('moab@5.2.0 +shared', when='mesh_framework=moab +shared')
-    depends_on('moab@5.2.0 -shared', when='mesh_framework=moab -shared')
+    depends_on('moab@5.2.0', when='mesh_framework=moab')
 
     #### I/O ####
 
     ##### Silo #####
     # There finally is a new version 4.11 (but we haven't tested it yet).
-    depends_on('silo@4.10.2 +shared', when='+silo +shared')
-    depends_on('silo@4.10.2 -shared', when='+silo -shared')
+    depends_on('silo@4.10.2', when='+silo')
 
     ##### Other #####
-    depends_on('trilinos@13.0.0 +shared +boost +hdf5 +hypre '
+    depends_on('trilinos@13.0.0 +boost +hdf5 +hypre '
                '+anasazi +amesos2 +epetra +ml '
-               '+zoltan +nox +ifpack +muelu -ifpack2 cxxstd=11',when='+shared')
+               '+zoltan +nox +ifpack +muelu -ifpack2 cxxstd=11')
 
-    depends_on('trilinos@13.0.0 -shared +boost +hdf5 +hypre '
-               '+anasazi +amesos2 +epetra +ml '
-               '+zoltan +nox +ifpack +muelu -ifpack2 cxxstd=11',when='-shared')
+    conflicts('physics=ats', when='mesh_type=structured', msg='ERROR: ats physics is not supported in the structured mesh framework.')
+    conflicts('physics=ats', when='mesh_framework=moab', msg='ERROR: ats physics needs mstk on.')
 
     def cmake_args(self):
         options = ['-DCMAKE_C_COMPILER=' + self.spec['mpi'].mpicc]
@@ -183,6 +164,7 @@ class Amanzi(CMakePackage):
         options.append('-DENABLE_ASCEMIO=ON')
         options.append('-DENABLE_CLM=OFF')
         options.append('-DENABLE_DBC=ON')
+        options.append('-DENABLE_Regression_Tests=OFF')
 
         if '+shared' in self.spec: 
             options.append('BUILD_SHARED_LIBS=ON')
@@ -206,6 +188,7 @@ class Amanzi(CMakePackage):
         if '+geochemistry' in self.spec:
             options.append('-DENABLE_ALQUIMIA=ON')
             options.append('-DENABLE_PETSC=ON')
+            options.append('-DPETSc_DIR=' + self.spec['petsc'].prefix)
             options.append('-DENABLE_PFLOTRAN=ON')
             options.append('-DPFLOTRAN_LIBRARY_DIR=' + self.spec['pflotran'].prefix + '/lib')
             options.append('-DAlquimia_DIR=' + self.spec['alquimia'].prefix) 
@@ -235,26 +218,29 @@ class Amanzi(CMakePackage):
             options.append('-DUnitTest_DIR=' + self.spec['unittest-cpp'].prefix)
             options.append('-DENABLE_TESTS=ON')
             options.append('-DENABLE_UnitTest=ON')
-            options.append('-DENABLE_Regression_Tests=ON')
         else:
             options.append('-DENABLE_TESTS=OFF')
             options.append('-DENABLE_UnitTest=OFF')
-            options.append('-DENABLE_Regression_Tests=OFF')
 
         if 'mesh_framework=mstk' in self.spec:
             options.append('-DMSTK_VERSION=3.3.6')
             options.append('-DENABLE_MESH_MSTK=ON')
             options.append('-DMSTK_LIBRARY_DIR=' + self.spec['mstk'].prefix + '/lib')
             options.append('-DMSTK_INCLUDE_DIR=' + self.spec['mstk'].prefix + '/include')
-        else:
-            options.append('-DENABLE_MESH_MSTK=OFF')
-
-        if 'mesh_framework=moab' in self.spec:
+            options.append('-DENABLE_MESH_MOAB=OFF')
+        elif 'mesh_framework=moab' in self.spec:
             options.append('-DENABLE_MESH_MOAB=ON')
             options.append('-DMOAB_LIBRARY_DIR=' + self.spec['moab'].prefix + '/lib')
             options.append('-DMOAB_INCLUDE_DIR=' + self.spec['moab'].prefix + '/include/moab')
-        else:
-            options.append('-DENABLE_MESH_MOAB=OFF')
+            options.append('-DENABLE_MESH_MSTK=OFF')
+        elif 'mesh_framework=mstk,moab'or 'mesh_framework=moab,mstk' in self.spec:
+            options.append('-DMSTK_VERSION=3.3.6')
+            options.append('-DENABLE_MESH_MSTK=ON')
+            options.append('-DMSTK_LIBRARY_DIR=' + self.spec['mstk'].prefix + '/lib')
+            options.append('-DMSTK_INCLUDE_DIR=' + self.spec['mstk'].prefix + '/include')
+            options.append('-DENABLE_MESH_MOAB=ON')
+            options.append('-DMOAB_LIBRARY_DIR=' + self.spec['moab'].prefix + '/lib')
+            options.append('-DMOAB_INCLUDE_DIR=' + self.spec['moab'].prefix + '/include/moab')
        
         if 'mesh_type=unstructured' in self.spec:
             options.append('-DENABLE_Unstructured=ON')
