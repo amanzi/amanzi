@@ -31,7 +31,7 @@ namespace Amanzi {
 
 class Field {
 
- private: 
+ protected: 
   typedef std::map<Key, Teuchos::RCP<Field> > FieldMap;
   typedef std::string Units;
 
@@ -64,7 +64,7 @@ class Field {
   void RequireCopy(Key tag, Key new_owner);
   Teuchos::RCP<const Field> GetCopy(Key tag) const;
   Teuchos::RCP<Field> GetCopy(Key tag, Key pk_name);
-  void SwitchCopies(Key tag1, Key tag2);
+  virtual void SwitchCopies(Key tag1, Key tag2)  = 0;
   bool HasCopy(Key tag) const;
   bool DeleteCopy(Key tag) const;
   void SetCopy(Key tag, const Teuchos::RCP<Field>& field);

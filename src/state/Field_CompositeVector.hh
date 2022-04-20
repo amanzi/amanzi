@@ -119,6 +119,8 @@ public:
   Teuchos::RCP<const CompositeVector> GetFieldData() const { return data_; }
   Teuchos::RCP<CompositeVector> GetFieldData();
 
+  void SwitchCopies(Key tag1, Key tag2);
+
   void SetData(const Teuchos::RCP<CompositeVector>& data);
   void SetData(const CompositeVector& data);
 

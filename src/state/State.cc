@@ -73,6 +73,7 @@ State::State(const State& other, StateConstructMode mode) :
     for (FieldMap::const_iterator f_it=other.fields_.begin();
          f_it!=other.fields_.end(); ++f_it) {
       fields_[f_it->first] = f_it->second->Clone();
+      
     }
 
     for (const auto& fm_it : other.field_evaluators_) {
@@ -890,6 +891,8 @@ void State::Setup() {
     }
   }
 
+  std::cout<<state_plist_<<"\n";
+  
   // Ensure compatibility of all the evaluators -- each evaluator's dependencies must
   // provide what is required of that evaluator.
   for (FieldEvaluatorMap::iterator evaluator=field_evaluators_.begin();
@@ -1036,8 +1039,13 @@ void State::InitializeFieldCopies() {
   for (FieldMap::iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
     Teuchos::RCP<Field> field = f_it->second;
     for (Amanzi::Field::copy_iterator cp_it = field->copy_begin(); cp_it != field->copy_end(); ++cp_it){
-      Key owner_key = field->GetCopy(cp_it->first)->owner();
-      *field->GetCopy(cp_it->first,owner_key)->GetFieldData() = *field->GetFieldData();
+      if (field->type() == COMPOSITE_VECTOR_FIELD) {
+        Key owner_key = field->GetCopy(cp_it->first)->owner();
+        *field->GetCopy(cp_it->first,owner_key)->GetFieldData() = *field->GetFieldData();
+      } else if (field->type() == CONSTANT_VECTOR){
+        Key owner_key = field->GetCopy(cp_it->first)->owner();
+        *field->GetCopy(cp_it->first,owner_key)->GetConstantVectorData() = *field->GetConstantVectorData();
+      }
     } 
   }
 
@@ -1513,6 +1521,17 @@ void WriteStateStatistics(const State& S, const VerboseObject& vo)
         double vmin = *f_it->second->GetScalarData();
         name.resize(40, '.');
         *vo.os() << name << " " << vmin << std::endl;
+      } else if (f_it->second->type() == CONSTANT_VECTOR) {
+        //std::map<std::string, double> vmin, vmax, vavg;
+        double vmin, vmax, vavg;
+        f_it->second->GetConstantVectorData()->MinValue(&vmin);
+        f_it->second->GetConstantVectorData()->MaxValue(&vmax);
+        f_it->second->GetConstantVectorData()->MeanValue(&vavg);
+
+        std::string namedot(name);
+        namedot.resize(40, '.');
+        *vo.os() << namedot << " " << vmin << " "
+                  << vmax << "  " << vavg << std::endl;
       }
     }
   }

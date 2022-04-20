@@ -56,7 +56,9 @@ class PK_Physical : virtual public PK {
                           const Teuchos::RCP<State>& S_next);
 
   // access
+  Key key() {return key_;};
   Key domain() { return domain_; }
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> solution_evaluator() {return solution_evaluator_;}
   Teuchos::RCP<Debugger> debugger() { return db_; }
 
  protected:

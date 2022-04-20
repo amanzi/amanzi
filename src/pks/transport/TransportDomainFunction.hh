@@ -30,8 +30,8 @@ namespace Transport {
 
 class TransportDomainFunction {
  public:
-  TransportDomainFunction() : domain_volume_(-1.0) {};
-  TransportDomainFunction(const Teuchos::ParameterList& plist) : domain_volume_(-1.0) {};
+  TransportDomainFunction() : domain_volume_(-1.0), marker_(0) {};
+  TransportDomainFunction(const Teuchos::ParameterList& plist) : domain_volume_(-1.0), marker_(0) {};
   ~TransportDomainFunction() {};
 
   // source term on time interval (t0, t1]
@@ -47,6 +47,8 @@ class TransportDomainFunction {
   double domain_volume() { return domain_volume_; }
   // -- nick-name of the function
   std::string keyword() { return keyword_; }
+  void set_marker(int new_marker){marker_ = new_marker;}
+  int marker(){return marker_;}
 
   std::vector<std::string>& tcc_names() { return tcc_names_; }
   void set_tcc_names(const std::vector<std::string>& tcc_names){ tcc_names_ = tcc_names; }
@@ -64,6 +66,7 @@ class TransportDomainFunction {
 
  protected:
   double domain_volume_;
+  int marker_;
   std::map<int, std::vector<double> > value_;  // tcc values on boundary faces or 
                                                // src values in domain cells
   std::map<int, double> linear_term_;  // linearized term, e.g. [mol / s] for sources

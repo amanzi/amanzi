@@ -81,10 +81,12 @@ class TransportDomainFunction_UnitConversion : public T {
     reciprocal_ = reciprocal;
   }
 
+
 protected:
   double scalar_;
   Teuchos::RCP<const Epetra_MultiVector> vector_;
   bool reciprocal_;
+  std::string name_;
 };
 
 #ifdef ALQUIMIA_ENABLED
@@ -92,6 +94,8 @@ using TransportBoundaryFunction_Alquimia_Units =
   TransportDomainFunction_UnitConversion<TransportBoundaryFunction_Alquimia>;
 using TransportSourceFunction_Alquimia_Units =
   TransportDomainFunction_UnitConversion<TransportSourceFunction_Alquimia>;
+using TransportSourceFunction_Concentrations =
+  TransportDomainFunction_UnitConversion<TransportDomainFunction>;  
 #endif
 
 } // namespace Transport

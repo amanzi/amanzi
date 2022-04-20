@@ -79,7 +79,8 @@ public:
 
   void SetData(const Teuchos::RCP<Epetra_Vector>& data);
   void SetData(const Epetra_Vector& data);
-
+  void SwitchCopies(Key tag1, Key tag2);
+  
   // initialization
   virtual void Initialize(Teuchos::ParameterList& plist);
 

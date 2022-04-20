@@ -91,6 +91,59 @@ void Field_CompositeVector::SetData(const CompositeVector& data) {
   *data_ = data;
 };
 
+
+void Field_CompositeVector::SwitchCopies(Key timetag1, Key timetag2) {
+
+  if (timetag1==timetag2) return;
+  
+  if (timetag1 != "default") {
+    if (!HasCopy(timetag1)) {
+      std::stringstream messagestream;
+      messagestream << "Field " << fieldname_ << " does not have copy tagged " << timetag1;
+      Errors::Message message(messagestream.str());
+      Exceptions::amanzi_throw(message);
+    }
+  }
+   
+  if (timetag2 != "default") {
+    if (!HasCopy(timetag2)) {
+      std::stringstream messagestream;
+      messagestream << "Field " << fieldname_ << " does not have copy tagged " << timetag2;
+      Errors::Message message(messagestream.str());
+      Exceptions::amanzi_throw(message);
+    }
+  }
+
+  if (timetag1 == "default"){
+    Teuchos::RCP<CompositeVector> record = data_;
+    FieldMap::iterator lb2 = field_copy_.lower_bound(timetag2);
+
+    data_ = lb2->second->GetFieldData();
+    lb2->second->SetData(record);
+    return;
+  }
+
+  if (timetag2 == "default"){
+    Teuchos::RCP<CompositeVector> record = data_;
+    FieldMap::iterator lb1 = field_copy_.lower_bound(timetag1);
+
+    data_ = lb1->second->GetFieldData();
+    lb1->second->SetData(record);
+    return;
+  }
+
+  FieldMap::iterator lb1 = field_copy_.lower_bound(timetag1);
+  FieldMap::iterator lb2 = field_copy_.lower_bound(timetag2);
+
+  Teuchos::RCP<Field> record = lb1->second;
+  
+  lb1->second = lb2->second;
+  lb2->second = record;
+
+
+}
+
+  
 void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
   // Protect against unset names
   EnsureSubfieldNames_();

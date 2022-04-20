@@ -74,6 +74,8 @@ public:
   virtual void SetData(const Teuchos::RCP<double>& data);
   virtual void SetData(const double& data);
 
+  virtual void SwitchCopies(Key tag1, Key tag2);
+  
   // initialization
   virtual void Initialize(Teuchos::ParameterList& plist);
 

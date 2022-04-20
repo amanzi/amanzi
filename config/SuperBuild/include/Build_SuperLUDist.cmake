@@ -42,6 +42,8 @@ set(SuperLUDist_CMAKE_ARGS
       "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
       "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
       "-DBUILD_STATIC_LIBS:BOOL=${SLU_BUILD_STATIC_LIBS}"
+      "-DBLA_VENDOR=Generic"
+      "-DBLAS_ROOT=/usr/local/opt/lapack"            
       "-DTPL_ENABLE_BLASLIB:BOOL=FALSE")
 
 # --- Add external project build and tie to the SuperLU build target

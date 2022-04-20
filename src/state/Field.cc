@@ -122,31 +122,41 @@ Teuchos::RCP<const Field>  Field::GetCopy(Key timetag) const {
 
 }
 
-//  No data movement on pointer switch
-void Field::SwitchCopies(Key timetag1, Key timetag2) {
+// //  No data movement on pointer switch
+// void Field::SwitchCopies(Key timetag1, Key timetag2) {
 
-  if (!HasCopy(timetag1)) {
-    std::stringstream messagestream;
-    messagestream << "Field " << fieldname_ << " does not have copy tagged " << timetag1;
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
-  }
+//   if (timetag1 != "default") {
+//     if (!HasCopy(timetag1)) {
+//       std::stringstream messagestream;
+//       messagestream << "Field " << fieldname_ << " does not have copy tagged " << timetag1;
+//       Errors::Message message(messagestream.str());
+//       Exceptions::amanzi_throw(message);
+//     }
+//   }
 
-  if (!HasCopy(timetag2)) {
-    std::stringstream messagestream;
-    messagestream << "Field " << fieldname_ << " does not have copy tagged " << timetag2;
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
-  }
+//   if (timetag2 != "default") {
+//     if (!HasCopy(timetag2)) {
+//       std::stringstream messagestream;
+//       messagestream << "Field " << fieldname_ << " does not have copy tagged " << timetag2;
+//       Errors::Message message(messagestream.str());
+//       Exceptions::amanzi_throw(message);
+//     }
+//   }
 
 
-  FieldMap::iterator lb1 = field_copy_.lower_bound(timetag1);
-  FieldMap::iterator lb2 = field_copy_.lower_bound(timetag2);
-  Teuchos::RCP<Field> record = lb1 ->second;
-  lb1->second = lb2->second;
-  lb2->second = record;
+//   FieldMap::iterator lb1 = field_copy_.lower_bound(timetag1);
+//   FieldMap::iterator lb2 = field_copy_.lower_bound(timetag2);
 
-}
+//   Teuchos::RCP<Field> record;
+//   if (timetag1 != "default") {
+//     record = lb1 ->second;
+//   }else{
+    
+    
+//   lb1->second = lb2->second;
+//   lb2->second = record;
+
+// }
 
 // set data by pointer -- does not copy
 void Field::SetCopy(Key timetag, const Teuchos::RCP<Field>& field) {
