@@ -37,8 +37,6 @@ class Amanzi_PK : public Chemistry_PK {
             const Teuchos::RCP<State>& S,
             const Teuchos::RCP<TreeVector>& soln);
 
-  ~Amanzi_PK();
-
   // members required by PK interface
   virtual void Setup() final;
   virtual void Initialize() final;
@@ -59,7 +57,7 @@ class Amanzi_PK : public Chemistry_PK {
       int c, Teuchos::RCP<Epetra_MultiVector> aqueous_components);
 
   // access
-  Beaker* get_engine() { return chem_; }
+  std::shared_ptr<Beaker> get_engine() { return chem_; }
   const BeakerParameters& beaker_parameters() const { return beaker_parameters_; }
   BeakerState beaker_state() { return beaker_state_; }
 
@@ -76,7 +74,7 @@ class Amanzi_PK : public Chemistry_PK {
   Teuchos::RCP<TreeVector> soln_;
 
  private:
-  Beaker* chem_;
+  std::shared_ptr<Beaker> chem_;
   BeakerParameters beaker_parameters_;
   BeakerState beaker_state_, beaker_state_copy_;
 

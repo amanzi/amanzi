@@ -47,31 +47,18 @@ namespace AmanziChemistry {
 Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
                      const Teuchos::RCP<Teuchos::ParameterList>& glist,
                      const Teuchos::RCP<State>& S,
-                     const Teuchos::RCP<TreeVector>& soln) :
-    soln_(soln),
+                     const Teuchos::RCP<TreeVector>& soln)
+  : PK(pk_tree, glist, S, soln),
+    Chemistry_PK(pk_tree, glist, S, soln),
     chem_(NULL),
     current_time_(0.0),
     saved_time_(0.0)
 {
-  S_ = S;
-  // mesh_ = S_->GetMesh();
-  glist_ = glist;
-
-  // extract pk name
-  std::string pk_name = pk_tree.name();
-  auto found = pk_name.rfind("->");
-  if (found != std::string::npos) pk_name.erase(0, found + 2);
-
-  // create pointer to the chemistry parameter list
-  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  cp_list_ = Teuchos::sublist(pk_list, pk_name, true);
-  domain_ = cp_list_->get<std::string>("domain name", "domain");
-
   // obtain key of fields
   tcc_key_ = Keys::getKey(domain_, "total_component_concentration"); 
-  poro_key_ = cp_list_->get<std::string>("porosity key", Keys::getKey(domain_, "porosity"));
-  saturation_key_ = cp_list_->get<std::string>("saturation key", Keys::getKey(domain_, "saturation_liquid"));
-  fluid_den_key_ = cp_list_->get<std::string>("fluid density key", Keys::getKey(domain_, "mass_density_liquid"));
+  poro_key_ = plist_->get<std::string>("porosity key", Keys::getKey(domain_, "porosity"));
+  saturation_key_ = plist_->get<std::string>("saturation key", Keys::getKey(domain_, "saturation_liquid"));
+  fluid_den_key_ = plist_->get<std::string>("fluid density key", Keys::getKey(domain_, "mass_density_liquid"));
 
   temperature_key_ = Keys::getKey(domain_, "temperature");
   min_vol_frac_key_ = Keys::getKey(domain_, "mineral_volume_fractions");
@@ -95,10 +82,8 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   first_order_decay_constant_key_ = Keys::getKey(domain_, "first_order_decay_constant");  
   
   // collect high-level information about the problem
-  Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "state", true);
-
-  InitializeMinerals(cp_list_);
-  InitializeSorptionSites(cp_list_, Teuchos::sublist(state_list, "initial conditions"));
+  InitializeMinerals(plist_);
+  InitializeSorptionSites(plist_, S_->ICList());
 
   // grab the component names
   comp_names_.clear();
@@ -112,17 +97,6 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   number_aqueous_components_ = comp_names_.size();
   number_free_ion_ = number_aqueous_components_;
   number_total_sorbed_ = number_aqueous_components_;
-
-  // verbosity object
-  vo_ = Teuchos::rcp(new VerboseObject("Amanzi_PK:" + domain_, *cp_list_)); 
-}
-
-
-/* *******************************************************************
-* Destructor
-******************************************************************* */
-Amanzi_PK::~Amanzi_PK() {
-  delete chem_;
 }
 
 
@@ -281,11 +255,11 @@ void Amanzi_PK::XMLParameters()
 {
   // search for thermodynamic database
   Teuchos::RCP<Teuchos::ParameterList> tdb_list;
-  if (cp_list_->isSublist("thermodynamic database")) {
+  if (plist_->isSublist("thermodynamic database")) {
     // -- search by the name
-    if (cp_list_->sublist("thermodynamic database").isParameter("file")) {
+    if (plist_->sublist("thermodynamic database").isParameter("file")) {
       // check extension and read
-      std::string filename = cp_list_->sublist("thermodynamic database").get<std::string>("file");
+      std::string filename = plist_->sublist("thermodynamic database").get<std::string>("file");
       tdb_list = Teuchos::getParametersFromXmlFile(filename);
     }
   }
@@ -296,7 +270,7 @@ void Amanzi_PK::XMLParameters()
   }
 
   // currently we only support the simple format.
-  chem_ = new SimpleThermoDatabase(tdb_list, vo_);
+  chem_ = std::make_shared<SimpleThermoDatabase>(tdb_list, vo_);
   beaker_parameters_.tolerance = 1e-12;
   beaker_parameters_.max_iterations = 250;
   beaker_parameters_.activity_model_name = "unit";
@@ -308,11 +282,11 @@ void Amanzi_PK::XMLParameters()
   }
 
   // activity model
-  beaker_parameters_.activity_model_name = cp_list_->get<std::string>("activity model", "unit");
+  beaker_parameters_.activity_model_name = plist_->get<std::string>("activity model", "unit");
   // -- Pitzer virial coefficients database
   if (beaker_parameters_.activity_model_name == "pitzer-hwm") {
-    if (cp_list_->isParameter("Pitzer database file")) {
-      beaker_parameters_.pitzer_database = cp_list_->get<std::string>("Pitzer database file");
+    if (plist_->isParameter("Pitzer database file")) {
+      beaker_parameters_.pitzer_database = plist_->get<std::string>("Pitzer database file");
     } else {
       std::ostringstream msg;
       msg << "Amanzi_PK: parameter 'Pitzer database file' must be specified if activity model=pitzer-hwm'.\n";
@@ -321,13 +295,13 @@ void Amanzi_PK::XMLParameters()
   }
 
   // solver parameters
-  beaker_parameters_.tolerance = cp_list_->get<double>("tolerance", 1.0e-12);
-  beaker_parameters_.max_iterations = cp_list_->get<int>("maximum Newton iterations", 200);
+  beaker_parameters_.tolerance = plist_->get<double>("tolerance", 1.0e-12);
+  beaker_parameters_.max_iterations = plist_->get<int>("maximum Newton iterations", 200);
 
   // auxiliary data
   aux_names_.clear();
-  if (cp_list_->isParameter("auxiliary data")) {
-    Teuchos::Array<std::string> names = cp_list_->get<Teuchos::Array<std::string> >("auxiliary data");
+  if (plist_->isParameter("auxiliary data")) {
+    Teuchos::Array<std::string> names = plist_->get<Teuchos::Array<std::string> >("auxiliary data");
     for (auto name = names.begin(); name != names.end(); ++name) {
       if (*name == "pH") {
         aux_names_.push_back(*name);
@@ -341,14 +315,14 @@ void Amanzi_PK::XMLParameters()
   }
 
   // misc other chemistry flags
-  dt_control_method_ = cp_list_->get<std::string>("time step control method", "fixed");
-  dt_max_ = cp_list_->get<double>("max time step (s)", 9.9e+9);
-  dt_next_ = cp_list_->get<double>("initial time step (s)", dt_max_);
-  dt_cut_factor_ = cp_list_->get<double>("time step cut factor", 2.0);
-  dt_increase_factor_ = cp_list_->get<double>("time step increase factor", 1.2);
+  dt_control_method_ = plist_->get<std::string>("time step control method", "fixed");
+  dt_max_ = plist_->get<double>("max time step (s)", 9.9e+9);
+  dt_next_ = plist_->get<double>("initial time step (s)", dt_max_);
+  dt_cut_factor_ = plist_->get<double>("time step cut factor", 2.0);
+  dt_increase_factor_ = plist_->get<double>("time step increase factor", 1.2);
 
-  dt_cut_threshold_ = cp_list_->get<int>("time step cut threshold", 8);
-  dt_increase_threshold_ = cp_list_->get<int>("time step increase threshold", 4);
+  dt_cut_threshold_ = plist_->get<int>("time step cut threshold", 8);
+  dt_increase_threshold_ = plist_->get<int>("time step increase threshold", 4);
 
   num_successful_steps_ = 0;
 }
