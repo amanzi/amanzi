@@ -54,7 +54,7 @@ class PK_DomainFunctionSubgridReturn : public FunctionBase,
 
  private:
   Key field_out_suffix_, dset_; 
-  Tag copy_field_out_key_; 
+  Tag copy_field_out_tag_; 
 
   Key saturation_key_, porosity_key_, molar_density_key_;
   Tag saturation_copy_, porosity_copy_, molar_density_copy_;
@@ -72,7 +72,7 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Init(
 
   // get and check the model parameters
   Teuchos::ParameterList blist = plist.sublist("source function");
-  std::string domain = blist.get<std::string>("domain name", "surface"); 
+  std::string domain_name = blist.get<std::string>("domain name", "surface"); 
 
   field_out_suffix_ = blist.get<std::string>("subgrid field suffix");
   copy_field_out_tag_ = make_tag(blist.get<std::string>("copy subgrid field", "default"));
@@ -81,13 +81,13 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Init(
   dset_ = blist.get<std::string>("subgrid domain set", "subgrid");
 
   // can "surface" prefix for this field be read automatically?? it is hardcoded now, or may be not?? 
-  saturation_key_= Keys::readKey(blist, domain, "saturation liquid", "ponded_depth");
+  saturation_key_= Keys::readKey(blist, domain_name, "saturation liquid", "ponded_depth");
   saturation_copy_ = make_tag(blist.get<std::string>("saturation liquid copy", "default"));
 
-  porosity_key_= Keys::readKey(blist, domain, "porosity", "porosity");
+  porosity_key_= Keys::readKey(blist, domain_name, "porosity", "porosity");
   porosity_copy_ = make_tag(blist.get<std::string>("porosity copy", "default"));
   
-  molar_density_key_= Keys::readKey(blist, domain, "molar density", "molar_density_liquid");
+  molar_density_key_= Keys::readKey(blist, domain_name, "molar density", "molar_density_liquid");
   molar_density_copy_ = make_tag(blist.get<std::string>("molar density copy", "default"));
 
   // get and check the region
@@ -105,7 +105,7 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Init(
   }
 
   // Add this source specification to the domain function.
-  Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, AmanziMesh::CELL));
+  auto domain = Teuchos::rcp(new Domain(regions, AmanziMesh::CELL));
   AddSpec(Teuchos::rcp(new Spec(domain, f)));
   
 }
@@ -169,7 +169,7 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
       // DO THE INTEGRAL: currently omega_i = 1/cv_sg?
       int ncells_sg = vec_out.Mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
       
-      for (int c_sg = 0; c_sg! = ncells_sg; ++c_sg) {
+      for (int c_sg = 0; c_sg != ncells_sg; ++c_sg) {
         for (int k = 0; k != nfun; ++k) {
           val[k] += vec_c[k][c_sg] * alpha[k];
         }
