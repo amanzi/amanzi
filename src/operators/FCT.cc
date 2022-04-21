@@ -90,10 +90,10 @@ void FCT::Compute(const CompositeVector& flux_lo,
 
     Qmin = Qmax = 1.0;
     if (neg_c[0][c] != 0.0) 
-      Qmin = (vol1 * bounds_c[0][c] - vol0 * (*field_)[0][c] - dlo_c[0][c]) / neg_c[0][c];
+      Qmin = std::min(0.0, (vol1 * bounds_c[0][c] - vol0 * (*field_)[0][c] - dlo_c[0][c])) / neg_c[0][c];
 
     if (pos_c[0][c] != 0.0) 
-      Qmax = (vol1 * bounds_c[1][c] - vol0 * (*field_)[0][c] - dlo_c[0][c]) / pos_c[0][c];
+      Qmax = std::max(0.0, (vol1 * bounds_c[1][c] - vol0 * (*field_)[0][c] - dlo_c[0][c])) / pos_c[0][c];
 
     neg_c[0][c] = std::fabs(Qmin);  // re-using allocated memory
     pos_c[0][c] = std::fabs(Qmax); 

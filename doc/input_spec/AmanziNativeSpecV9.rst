@@ -6897,7 +6897,7 @@ time step values or intervals corresponding to the cycle number; writes are cont
 
     <ParameterList name="write regions">
       <Parameter name="regions" type="Array(string)" value="{_OBS1, _OBS2, _OBS3}"/>
-   A  <Parameter name="wells" type="Array(string)" value="{_OBS4}"/>
+      <Parameter name="wells" type="Array(string)" value="{_OBS4}"/>
     </ParameterList>
   </ParameterList>
   </ParameterList>
