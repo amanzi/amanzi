@@ -52,6 +52,10 @@ void RecordSet::AssignPtr(const Tag& alias, const Tag& target) {
   GetRecord(alias).AssignPtr(GetRecord(target));
 }
 
+void RecordSet::AssignPtr(const Tag& alias, const Tag& target) {
+  records_.at(alias)->AssignPtr(*records_.at(target));
+}
+
 
 // Copy management
 bool RecordSet::HasRecord(const Tag& tag) const {
