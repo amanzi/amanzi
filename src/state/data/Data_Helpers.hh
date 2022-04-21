@@ -56,8 +56,9 @@ void WriteVis(const Visualization& vis, const Key& fieldname,
 // Default simply dispatches to Checkpoint.  This fails to compile! if not
 // either specifically implemented in Checkpoint class or specialized below.
 template <typename T>
-void WriteCheckpoint(const Checkpoint& chkp, const Key& fieldname, const T& t) {
-  UserWriteCheckpoint(chkp, fieldname, t);
+void WriteCheckpoint(const Checkpoint& chkp, const Key& fieldname,
+                     const std::vector<std::string>& subfieldnames, const T& t) {
+  UserWriteCheckpoint(chkp, fieldname, subfieldnames, t);
 }
 
 // ReadCheckpoint reads data from file
@@ -65,8 +66,9 @@ void WriteCheckpoint(const Checkpoint& chkp, const Key& fieldname, const T& t) {
 // Default simply dispatches to Checkpoint.  This fails to compile! if not
 // either specifically implemented in Checkpoint class or specialized below.
 template <typename T>
-void ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname, T& t) {
-  UserReadCheckpoint(chkp, fieldname, t);
+void ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
+                    const std::vector<std::string>& subfieldnames, T& t) {
+  UserReadCheckpoint(chkp, fieldname, subfieldnames, t);
 }
 
 
@@ -99,10 +101,13 @@ void WriteVis<double>(const Visualization& vis, const Key& fieldname,
 
 template <>
 void WriteCheckpoint<double>(const Checkpoint& chkp, const Key& fieldname,
+                             const std::vector<std::string>& subfieldnames,
                              const double& t);
+
 
 template <>
 void ReadCheckpoint<double>(const Checkpoint& chkp, const Key& fieldname,
+                            const std::vector<std::string>& subfieldnames,
                             double& t);
 
 template <>
@@ -116,10 +121,12 @@ void WriteVis<int>(const Visualization& vis, const Key& fieldname,
 
 template <>
 void WriteCheckpoint<int>(const Checkpoint& chkp, const Key& fieldname,
+                          const std::vector<std::string>& subfieldnames,
                           const int& t);
 
 template <>
 void ReadCheckpoint<int>(const Checkpoint &chkp, const Key &fieldname,
+                         const std::vector<std::string>& subfieldnames,
                          int &t);
 
 template <>
@@ -139,11 +146,13 @@ void WriteVis<CompositeVector>(const Visualization& vis, const Key& fieldname,
 template <>
 void WriteCheckpoint<CompositeVector>(const Checkpoint& chkp,
                                       const Key& fieldname,
+                                      const std::vector<std::string>& subfieldnames,
                                       const CompositeVector& vec);
 
 template <>
 void ReadCheckpoint<CompositeVector>(const Checkpoint& chkp,
                                      const Key& fieldname,
+                                     const std::vector<std::string>& subfieldnames,
                                      CompositeVector& vec);
 
 template <>
@@ -162,10 +171,12 @@ void WriteVis<AmanziGeometry::Point>(const Visualization& vis, const Key& fieldn
 
 template <> inline
 void WriteCheckpoint<AmanziGeometry::Point>(const Checkpoint& chkp, const Key& fieldname,
+                                            const std::vector<std::string>& subfieldnames,
                                             const AmanziGeometry::Point& p) {}
 
 template <> inline
 void ReadCheckpoint<AmanziGeometry::Point>(const Checkpoint& chkp, const Key& fieldname,
+                                           const std::vector<std::string>& subfieldnames,
                                            AmanziGeometry::Point& p) {}
 
 template <>
@@ -184,10 +195,12 @@ void WriteVis<Operators::Op>(const Visualization& vis, const Key& fieldname,
 
 template <> inline
 void WriteCheckpoint<Operators::Op>(const Checkpoint& chkp, const Key& fieldname,
+                                    const std::vector<std::string>& subfieldnames,
                                     const Operators::Op& vec) {}
 
 template <> inline
 void ReadCheckpoint<Operators::Op>(const Checkpoint& chkp, const Key& fieldname,
+                                   const std::vector<std::string>& subfieldnames,
                                    Operators::Op& vec) {}
 
 template <> inline
@@ -208,10 +221,12 @@ void WriteVis<Operators::Operator>(const Visualization& vis, const Key& fieldnam
 
 template <> inline
 void WriteCheckpoint<Operators::Operator>(const Checkpoint& chkp, const Key& fieldname,
+                                          const std::vector<std::string>& subfieldnames,
                                           const Operators::Operator& global_operator) {}
 
 template <> inline
 void ReadCheckpoint<Operators::Operator>(const Checkpoint& chkp, const Key& fieldname,
+                                         const std::vector<std::string>& subfieldnames,
                                          Operators::Operator& global_operator) {}
 
 template <> inline
@@ -239,10 +254,12 @@ void WriteVis<TensorVector>(const Visualization& vis, const Key& fieldname,
 
 template <> inline
 void WriteCheckpoint<TensorVector>(const Checkpoint& chkp, const Key& fieldname,
+                                   const std::vector<std::string>& subfieldnames,
                                    const TensorVector& tensor) {}
 
 template <> inline
 void ReadCheckpoint<TensorVector>(const Checkpoint& chkp, const Key& fieldname,
+                                  const std::vector<std::string>& subfieldnames,
                                   TensorVector& tensor) {}
 
 template <> inline
@@ -264,11 +281,13 @@ WriteVis<Operators::BCs>(const Visualization& vis, const Key& fieldname,
 
 template <> inline
 void WriteCheckpoint<Operators::BCs>(const Checkpoint& chkp, const Key& fieldname,
-                                            const Operators::BCs& bc) {}
+                                     const std::vector<std::string>& subfieldnames,
+                                     const Operators::BCs& bc) {}
 
 template <> inline
 void ReadCheckpoint<Operators::BCs>(const Checkpoint& chkp, const Key& fieldname,
-                                           Operators::BCs& bc) {}
+                                    const std::vector<std::string>& subfieldnames,
+                                    Operators::BCs& bc) {}
 
 template <> inline
 bool
@@ -291,12 +310,16 @@ WriteVis<Functions::BoundaryFunction>(const Visualization& vis, const Key& field
 template <> inline
 void
 WriteCheckpoint<Functions::BoundaryFunction>(const Checkpoint& chkp,
-        const Key& fieldname, const Functions::BoundaryFunction& bc) {}
+        const Key& fieldname,
+        const std::vector<std::string>& subfieldnames,
+        const Functions::BoundaryFunction& bc) {}
 
 template <> inline
 void
 ReadCheckpoint<Functions::BoundaryFunction>(const Checkpoint& chkp,
-        const Key& fieldname, Functions::BoundaryFunction& bc) {}
+        const Key& fieldname,
+        const std::vector<std::string>& subfieldnames,
+        Functions::BoundaryFunction& bc) {}
 
 template <> inline
 bool

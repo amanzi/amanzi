@@ -64,6 +64,7 @@ class RecordSet {
   void ReadCheckpoint(const Checkpoint& chkp);
   bool Initialize(Teuchos::ParameterList& plist);
   void Assign(const Tag& dest, const Tag& source);
+  void AssignPtr(const Tag& dest, const Tag& source);
 
   // copy management
   const Record& GetRecord(const Tag& tag) const;
@@ -87,7 +88,12 @@ class RecordSet {
   // Data creation
   void CreateData() {
     for (auto& e : records_) {
-      e.second->data_ = std::forward<Data>(factory_.Create());
+      if (!aliases_.count(e.first)) {
+        e.second->data_ = std::forward<Data>(factory_.Create());
+      }
+    }
+    for (auto& pair : aliases_) {
+      records_[pair.first]->AssignPtr(*records_[pair.second]);
     }
   }
 
@@ -176,6 +182,7 @@ class RecordSet {
   Key fieldname_;
   Key vis_fieldname_;
   Utils::Units units_;
+  std::map<Tag,Tag> aliases_;
 
   DataFactory factory_;
   RecordMap records_;

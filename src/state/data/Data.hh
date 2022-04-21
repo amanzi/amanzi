@@ -78,14 +78,10 @@ class Data {
   // steal an r-value
   void swap(Data&& other) noexcept { p_.swap(other.p_); }
 
-  // operator= with lvalue reference sets the values equal
+  // operator= with lvalue reference sets the pointers equal
   Data& operator=(const Data& other) {
     if (&other != this) {
-      if (!p_) {
-        Errors::Message msg;
-        msg << " data not created through RecordSet::SetType() or State::CreateData()";
-        throw(msg);
-      }
+      if (p_ == nullptr) p_ = other.p_->CloneEmpty();
       *p_ = *other.p_;
     }
     return *this;
@@ -164,21 +160,24 @@ class Data {
     }
     p_->WriteVis(vis, fieldname, subfieldnames);
   }
-  void WriteCheckpoint(const Checkpoint& chkp, const Key& fieldname) const {
+  void WriteCheckpoint(const Checkpoint& chkp, const Key& fieldname,
+                       const std::vector<std::string>& subfieldnames) const {
+
     if (!p_) {
       Errors::Message msg;
       msg << " data not created through RecordSet::SetType() or State::CreateData()";
       throw(msg);
     }
-    p_->WriteCheckpoint(chkp, fieldname);
+    p_->WriteCheckpoint(chkp, fieldname, subfieldnames);
   }
-  void ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname) {
+  void ReadCheckpoint(const Checkpoint& chkp, const Key& fieldname,
+                      const std::vector<std::string>& subfieldnames) const {
     if (!p_) {
       Errors::Message msg;
       msg << " data not created through RecordSet::SetType() or State::CreateData()";
       throw(msg);
     }
-    p_->ReadCheckpoint(chkp, fieldname);
+    p_->ReadCheckpoint(chkp, fieldname, subfieldnames);
   }
   bool Initialize(Teuchos::ParameterList& plist, const Key& fieldname,
                   const std::vector<std::string>& subfieldnames) {

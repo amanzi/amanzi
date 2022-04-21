@@ -48,6 +48,10 @@ void RecordSet::Assign(const Tag& dest, const Tag& source) {
   records_.at(dest)->Assign(*records_.at(source));
 }
 
+void RecordSet::AssignPtr(const Tag& alias, const Tag& target) {
+  records_.at(alias)->AssignPtr(*records_.at(target));
+}
+
 
 // Copy management
 bool RecordSet::HasRecord(const Tag& tag) const {
@@ -76,13 +80,18 @@ const Record& RecordSet::GetRecord(const Tag& tag) const {
 
 
 void RecordSet::AliasRecord(const Tag& target, const Tag& alias) {
-  records_[alias] = records_[target];
+  records_[alias] = std::make_shared<Record>(*records_[target]);
+  if (!alias.get().empty())
+    records_[alias]->set_vis_fieldname(Keys::getKey(vis_fieldname(), alias));
+  else
+    records_[alias]->set_vis_fieldname(vis_fieldname());
+  aliases_[alias] = target;
 }
 
 
 Record& RecordSet::RequireRecord(const Tag& tag, const Key& owner) {
   if (!HasRecord(tag)) {
-    records_.emplace(tag, std::make_unique<Record>(fieldname(), owner));
+    records_.emplace(tag, std::make_shared<Record>(fieldname(), owner));
     auto& r = records_.at(tag);
     if (!tag.get().empty()) {
       r->set_vis_fieldname(Keys::getKey(vis_fieldname(), tag));
