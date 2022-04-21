@@ -33,7 +33,7 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 // Constructor
 // -----------------------------------------------------------------------------
-Visualization::Visualization (Teuchos::ParameterList& plist)
+Visualization::Visualization(Teuchos::ParameterList& plist)
   : IOEvent(plist),
     time_unit_written_(false)
 {
@@ -55,7 +55,7 @@ Visualization::Visualization (Teuchos::ParameterList& plist)
 // -----------------------------------------------------------------------------
 // Constructor for a disabled Vis.
 // -----------------------------------------------------------------------------
-Visualization::Visualization ()
+Visualization::Visualization()
   : IOEvent(),
     my_units_("y"),
     time_unit_written_(false)

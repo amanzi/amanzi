@@ -33,12 +33,14 @@ void WriteVis<double>(const Visualization& vis, const Key& fieldname,
 
 template <>
 void WriteCheckpoint<double>(const Checkpoint& chkp, const Key& fieldname,
+                             const std::vector<std::string>& subfieldnames,
                              const double& t) {
   chkp.Write(fieldname, t);
 }
 
 template <>
 void ReadCheckpoint<double>(const Checkpoint& chkp, const Key& fieldname,
+                            const std::vector<std::string>& subfieldnames,
                             double& t) {
   chkp.Read(fieldname, t);
 }
@@ -65,12 +67,15 @@ void WriteVis<int>(const Visualization& vis, const Key& fieldname,
 
 template <>
 void WriteCheckpoint<int>(const Checkpoint& chkp, const Key& fieldname,
+                          const std::vector<std::string>& subfieldnames,
                           const int& t) {
   chkp.Write(fieldname, t);
 }
 
 template <>
-void ReadCheckpoint<int>(const Checkpoint& chkp, const Key& fieldname, int& t) {
+void ReadCheckpoint<int>(const Checkpoint& chkp, const Key& fieldname,
+                         const std::vector<std::string>& subfieldnames,
+                         int& t) {
   chkp.Read(fieldname, t);
 }
 
@@ -153,14 +158,30 @@ void WriteVis<CompositeVector>(const Visualization& vis, const Key& fieldname,
 template <>
 void WriteCheckpoint<CompositeVector>(const Checkpoint& chkp,
                                       const Key& fieldname,
+                                      const std::vector<std::string>& subfieldnames,
                                       const CompositeVector& vec) {
   for (const auto& cname : vec) {
     const auto& vec_c = *vec.ViewComponent(cname, false);
 
-    for (int i = 0; i != vec_c.NumVectors(); ++i) {
-      std::stringstream name;
-      name << fieldname << "." << cname << "." << i;
-      chkp.Write(name.str(), *vec_c(i));
+    if (subfieldnames.size() > 0) {
+      if (vec_c.NumVectors() != subfieldnames.size()) {
+        Errors::Message msg;
+        msg << "While Visualizing \"" << fieldname << "\" a vector of lenth "
+            << vec_c.NumVectors() << ", subfieldnames of length "
+            << (int)subfieldnames.size() << " were provided.";
+        throw(msg);
+      }
+
+      for (int i = 0; i != vec_c.NumVectors(); ++i) {
+        Key name = fieldname + '.' + cname + '.' + subfieldnames[i];
+        chkp.Write(name, *vec_c(i));
+      }
+    } else {
+      for (int i = 0; i != vec_c.NumVectors(); ++i) {
+        std::stringstream name;
+        name << fieldname << "." << cname << "." << i;
+        chkp.Write(name.str(), *vec_c(i));
+      }
     }
   }
 }
@@ -168,14 +189,30 @@ void WriteCheckpoint<CompositeVector>(const Checkpoint& chkp,
 template <>
 void ReadCheckpoint<CompositeVector>(const Checkpoint& chkp,
                                      const Key& fieldname,
+                                     const std::vector<std::string>& subfieldnames,
                                      CompositeVector& vec) {
   for (const auto& cname : vec) {
     auto& vec_c = *vec.ViewComponent(cname, false);
 
-    for (int i = 0; i != vec_c.NumVectors(); ++i) {
-      std::stringstream name;
-      name << fieldname << "." << cname << "." << i;
-      chkp.Read(name.str(), *vec_c(i));
+    if (subfieldnames.size() > 0) {
+      if (vec_c.NumVectors() != subfieldnames.size()) {
+        Errors::Message msg;
+        msg << "While Visualizing \"" << fieldname << "\" a vector of lenth "
+            << vec_c.NumVectors() << ", subfieldnames of length "
+            << (int)subfieldnames.size() << " were provided.";
+        throw(msg);
+      }
+
+      for (int i = 0; i != vec_c.NumVectors(); ++i) {
+        Key name = fieldname + '.' + cname + '.' + subfieldnames[i];
+        chkp.Read(name, *vec_c(i));
+      }
+    } else {
+      for (int i = 0; i != vec_c.NumVectors(); ++i) {
+        std::stringstream name;
+        name << fieldname << "." << cname << "." << i;
+        chkp.Read(name.str(), *vec_c(i));
+      }
     }
   }
 }
@@ -191,7 +228,7 @@ bool Initialize<CompositeVector>(
   if (plist.isParameter("restart file")) {
     auto filename = plist.get<std::string>("restart file");
     Checkpoint chkp(filename, t.Comm());
-    ReadCheckpoint(chkp, fieldname, t);
+    ReadCheckpoint(chkp, fieldname, subfieldnames, t);
     chkp.Finalize();
     return true;
   }

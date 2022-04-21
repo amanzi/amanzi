@@ -84,16 +84,26 @@ TEST(FIELD_COPY) {
   CHECK_EQUAL(2.1, f->Get<double>(tag));
 }
 
-// TEST(FIELD_SET_FROM_OTHER) {
-//   auto f1 = getRecordDouble()->GetRecord("");
-//   auto f2 = getRecordDouble()->GetRecord("");
+TEST(FIELD_ASSIGN) {
+  auto f = getRecordDouble();
+  Tag tag = make_tag("prev");
+  f->RequireRecord(tag, "my_other_owner");
+  f->CreateData();
 
-//   f2.Assign("my_owner", 0.0);
-//   f1.Assign("my_owner", 1.1);
+  f->Assign(Tags::DEFAULT, "my_owner", 1.1);
+  f->Assign(tag, Tags::DEFAULT);
+  CHECK_EQUAL(1.1, f->Get<double>(tag));
+  f->Assign(Tags::DEFAULT, "my_owner", 2.1);
+  CHECK_EQUAL(1.1, f->Get<double>(tag));
+}
 
-//   f2.SetFromOther("my_owner", f1);
-//   f1.Assign("my_owner", 2.1);
+TEST(FIELD_ALIAS) {
+  // aliases share the same data
+  auto f = getRecordDouble();
+  Tag tag = make_tag("prev");
+  f->AliasRecord(Tags::DEFAULT, tag);
+  f->CreateData();
+  f->Assign(Tags::DEFAULT, "my_owner", 1.1);
+  CHECK_EQUAL(1.1, f->Get<double>(tag));
+}
 
-//   CHECK_EQUAL(1.1, f2.Get<double>());
-//   CHECK_EQUAL(2.1, f1.Get<double>());
-// }

@@ -324,7 +324,7 @@ Key cleanPListName(const std::string& name)
 Key readDomain(Teuchos::ParameterList& plist,
                const Key& prefix)
 {
-  if (prefix.empty()) {
+  if (prefix.empty() || prefix == "domain") {
     return plist.get<std::string>("domain name");
   } else {
     return plist.get<std::string>(prefix+" domain name");
@@ -336,7 +336,7 @@ Key readDomain(Teuchos::ParameterList& plist,
                const Key& prefix,
                const Key& default_name)
 {
-  if (prefix.empty()) {
+  if (prefix.empty() || prefix == "domain") {
     return plist.get<std::string>("domain name", default_name);
   } else {
     return plist.get<std::string>(prefix+" domain name", default_name);

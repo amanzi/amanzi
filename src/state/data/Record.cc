@@ -45,12 +45,12 @@ void Record::WriteVis(const Visualization& vis) const {
 }
 void Record::WriteCheckpoint(const Checkpoint& chkp) const {
   if (io_checkpoint()) {
-    data_.WriteCheckpoint(chkp, vis_fieldname());
+    data_.WriteCheckpoint(chkp, vis_fieldname(), subfieldnames());
   }
 }
 void Record::ReadCheckpoint(const Checkpoint& chkp) {
   if (io_checkpoint()) {
-    data_.ReadCheckpoint(chkp, vis_fieldname());
+    data_.ReadCheckpoint(chkp, vis_fieldname(), subfieldnames());
   }
 }
 
@@ -77,6 +77,27 @@ bool Record::Initialize(Teuchos::ParameterList& plist) {
     if (initialized_here) set_initialized();
   }
   return initialized_here;
+}
+
+
+void Record::Assign(const Record& other) {
+  try {
+    data_.Assign(other.data_);
+  } catch (const Errors::Message& msg) {
+    Errors::Message new_msg;
+    new_msg << "Access to field: \"" << fieldname() << "\"" << msg.what();
+    throw(new_msg);
+  }
+}
+
+void Record::AssignPtr(const Record& other) {
+  try {
+    data_ = other.data_;
+  } catch (const Errors::Message& msg) {
+    Errors::Message new_msg;
+    new_msg << "Access to field: \"" << fieldname() << "\"" << msg.what();
+    throw(new_msg);
+  }
 }
 
 void Record::AssertOwnerOrDie(const Key& test_owner) const {

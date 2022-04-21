@@ -213,6 +213,7 @@ class State {
   //    (optional)
   template <typename T, typename F>
   F& Require(const Key& fieldname, const Tag& tag, const Key& owner = "") {
+    CheckIsDebugData_(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
@@ -222,6 +223,7 @@ class State {
 
   template <typename T>
   void Require(const Key& fieldname, const Tag& tag, const Key& owner = "") {
+    CheckIsDebugData_(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
@@ -233,6 +235,7 @@ class State {
   template <typename T, typename F>
   F& Require(const Key& fieldname, const Tag& tag, const Key& owner,
              const std::vector<std::string>& subfield_names) {
+    CheckIsDebugData_(fieldname, tag);
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
@@ -520,7 +523,8 @@ class State {
   Teuchos::RCP<const Functions::MeshPartition> GetMeshPartition_(Key);
 
   // a hook to allow debuggers to connect
-  void CheckIsDebugEval_(const Key& key);
+  void CheckIsDebugEval_(const Key& key, const Tag& tag);
+  void CheckIsDebugData_(const Key& key, const Tag& tag);
 
  private:
   Teuchos::RCP<VerboseObject> vo_;

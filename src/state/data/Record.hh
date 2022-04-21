@@ -137,16 +137,9 @@ class Record {
     }
   }
 
-  void Assign(const Record& other) {
-    try {
-      data_.Assign(other.data_);
-    } catch (const Errors::Message& msg) {
-      Errors::Message new_msg;
-      new_msg << "Access to field: \"" << fieldname() << "\"" << msg.what();
-      throw(new_msg);
-    }
-  }
-  
+  void Assign(const Record& other);
+  void AssignPtr(const Record& other);
+
   // consistency checking
   void AssertOwnerOrDie(const Key& owner) const;
 

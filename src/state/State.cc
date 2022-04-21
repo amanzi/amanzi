@@ -279,7 +279,7 @@ bool State::HasDerivative(const Key& key, const Key& wrt_key) const {
 // -----------------------------------------------------------------------------
 Evaluator& State::RequireEvaluator(const Key& key, const Tag& tag)
 {
-  CheckIsDebugEval_(key);
+  CheckIsDebugEval_(key, tag);
 
   // does it already exist?
   if (HasEvaluator(key, tag)) {
@@ -336,7 +336,7 @@ Evaluator& State::RequireEvaluator(const Key& key, const Tag& tag)
 
   // cannot find the evaluator, error
   Errors::Message message;
-  message << "Evaluator \"" << key << "\" cannot be created in State. "
+  message << "Evaluator \"" << key << "@" << tag.get() << "\" cannot be created in State. "
           << "Verify (1) SetEvaluator is called or (2) name exists in state->evaluators.";
   Exceptions::amanzi_throw(message);
   return *Evaluator_Factory().createEvaluator(fm_plist); // silences warning
@@ -851,7 +851,7 @@ State::HasEvaluatorList(const Key& key)
 }
 
 
-void State::CheckIsDebugEval_(const Key& key)
+void State::CheckIsDebugEval_(const Key& key, const Tag& tag)
 {
   // check for debugging.  This provides a line for setting breakpoints for
   // debugging PK and Evaluator dependencies.
@@ -860,7 +860,22 @@ void State::CheckIsDebugEval_(const Key& key)
           Teuchos::Array<Key>());
   if (std::find(debug_evals.begin(), debug_evals.end(), key) != debug_evals.end()) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-      *vo_->os() << "State: Evaluator for debug field \"" << key << "\" was required." << std::endl;
+      *vo_->os() << "State: Evaluator for debug field \"" << key << "@" << tag << "\" was required." << std::endl;
+    }
+  }
+#endif
+}
+
+void State::CheckIsDebugData_(const Key& key, const Tag& tag)
+{
+  // check for debugging.  This provides a line for setting breakpoints for
+  // debugging PK and Evaluator dependencies.
+#ifdef ENABLE_DBC
+  Teuchos::Array<Key> debug_evals = state_plist_.sublist("debug").get<Teuchos::Array<std::string>>("data",
+          Teuchos::Array<Key>());
+  if (std::find(debug_evals.begin(), debug_evals.end(), key) != debug_evals.end()) {
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      *vo_->os() << "State: data for debug field \"" << key << "@" << tag << "\" was required." << std::endl;
     }
   }
 #endif
