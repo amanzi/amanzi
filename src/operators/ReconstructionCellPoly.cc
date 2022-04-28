@@ -42,7 +42,7 @@ void ReconstructionCellPoly::Init(Teuchos::ParameterList& plist)
   poly_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
   poly_c_ = poly_->ViewComponent("cell", true);
 
-  cvs2.SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 3);
+  cvs2.SetMesh(mesh_)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, d_ * (d_ + 1) / 2);
   ortho_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs2, true));
   ortho_c_ = ortho_->ViewComponent("cell", true);
 

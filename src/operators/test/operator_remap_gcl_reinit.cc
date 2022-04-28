@@ -461,15 +461,15 @@ void RemapGCLr(const Amanzi::Explicit_TI::method_t& rk_method,
   // calculate error in the new basis
   AmanziGeometry::Point v0(dim), v1(dim), tau(dim);
 
-  double pnorm, l2_err, inf_err, l20_err, inf0_err;
+  double pnorm, l2_err, inf_err, l20_err, l10_err, inf0_err;
   ana.ComputeCellErrorRemap(*dg, p2c, tend, 0, mesh1,
-                            pnorm, l2_err, inf_err, l20_err, inf0_err, &p3c);
+                            pnorm, l2_err, inf_err, l20_err, l10_err, inf0_err, &p3c);
 
   CHECK(((dim == 2) ? l2_err : l20_err) < 0.12 / (order + 1));
 
   if (MyPID == 0) {
-    printf("nx=%3d (orig) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n", 
-        nx, l20_err, l2_err, inf0_err, inf_err);
+    printf("nx=%3d (orig) L1=%12.8g(mean) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n", 
+        nx, l10_err, l20_err, l2_err, inf0_err, inf_err);
   }
 
   // concervation errors: mass and volume (CGL)
@@ -526,6 +526,8 @@ TEST(REMAP_GEOMETRIC_CONSERVATION_LAW_REINIT) {
   int deform = 5, nloop = 2;
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   double dT(0.025 * nloop), T1(1.0 / nloop);
-  RemapGCLr(rk_method, "", 8,8,8, dT,   deform, nloop, T1);
+
+  RemapGCLr(rk_method, "", 8,8,0, dT,   deform, nloop, T1);
+  // RemapGCLr(rk_method, "", 8,8,8, dT,   deform, nloop, T1);
 }
 

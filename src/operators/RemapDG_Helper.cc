@@ -289,7 +289,7 @@ void RemapDG_Helper::ApplyLimiter(double t, CompositeVector& x)
 
     // -- mean value is preserved automatically for the partially orthogonalized basis
     //    otherwise, a more complicated algorithm is needed
-    AMANZI_ASSERT(dg_->cell_basis(0).id() == WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
+    AMANZI_ASSERT(nk > dim_ || dg_->cell_basis(0).id() == WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
 
     for (int c = 0; c < ncells_wghost_; ++c) {
       for (int i = 0; i < nk; ++i) data(i) = x_c[i][c];

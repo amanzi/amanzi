@@ -24,8 +24,8 @@ implementing the missing Update_() and UpdateFieldDerivative_() methods.
 
 */
 
-#ifndef AMANZI_STATE_EVALUATOR_ALGEBRAIC_HH_
-#define AMANZI_STATE_EVALUATOR_ALGEBRAIC_HH_
+#ifndef AMANZI_STATE_EVALUATOR_SECONDARY_MONOTYPE_HH_
+#define AMANZI_STATE_EVALUATOR_SECONDARY_MONOTYPE_HH_
 
 #include <string>
 #include <vector>
