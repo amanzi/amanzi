@@ -84,6 +84,7 @@ set(state_inc_files
   VisualizationDomainSet.hh
   UnstructuredObservations.hh
   MultiplicativeReciprocalEvaluator.hh
+  MeshInfo.hh
   Debugger.hh)
 
 add_amanzi_library(state 
@@ -113,6 +114,7 @@ add_amanzi_library(state
                           Visualization.cc
                           VisualizationDomainSet.cc
                           MultiplicativeReciprocalEvaluator.cc
+                          MeshInfo.cc
                           Debugger.cc
                    HEADERS ${state_inc_files}
 		   LINK_LIBS data_structures functions mesh_functions output mesh atk
