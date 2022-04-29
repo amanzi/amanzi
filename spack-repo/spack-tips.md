@@ -18,7 +18,7 @@ Here's a quick list of the commands we use most often:
 ## Spack Environments 
 
 Spack environments allow you to create specific containers of spack modules for your project. 
-See the spack complete guide on thee [environments](https://spack.readthedocs.io/en/latest/environments.html)
+See the spack complete guide on the [environments](https://spack.readthedocs.io/en/latest/environments.html)
 
 Create the environment: 
 ```shell
@@ -37,7 +37,7 @@ spack env disactivate
 despacktivate 
 ```
 
-From inside the environment you can now install spackages as you would do using the `spack install` command. 
+From inside the environment you can now install packages as you would do using the `spack install` command. 
 They will be added to the current environment and loaded directly when the environment is activated. 
 
 ## Spack Setup
@@ -61,13 +61,13 @@ Here we'd be looking at spack building gcc, cmake, openmpi, and openblas
 ParFlow provides this guideance, it's a good start for us to think about.
 Building GCC will take considerable amount of time.
 
-```shell
+```
 spack install gcc@10.3.0
 ```
 
-Add the compiler to the set of compilers Spack can use:
+Add the compiler to the set of compilers spack can use:
 
-```shell
+```
 spack load gcc@10.3.0
 spack compiler find
 spack compilers
@@ -111,7 +111,7 @@ Here we look at the commands used most often. The `spack find` command can be us
 spack find -ld
 ```
 
-shows installed packages, their hashes (-l option) and dependency info (-d option). Recall that with spack every spec has its own unique hash. Note that there are some packages shown in the `spack find -d` output that may have not been installed explicitly (i.e. with a `spack install` command). These are dependencies that were installed implicitly. A few packages installed implicitly are not shown as dependencies in the `spack find -d` output. These are build dependencies. The following command:
+shows installed packages, their hashes (-l option) and dependency info (-d option). With Spack each package has its own unique hash. Note that there are some packages shown in the `spack find -d` output that may have not been installed explicitly (i.e. with a `spack install` command). These are dependencies that were installed implicitly. A few packages installed implicitly are not shown as dependencies in the `spack find -d` output. These are build dependencies. The following command:
 
 ```
 spack find -px
@@ -156,7 +156,7 @@ The following is an example of a spack installation of zlib
 spack install zlib@1.2.8 %gcc@6.5.0
 ```
 
-The above commands install `zlib`, version 1.2.8 with `gcc` version 6.5.0. Note that one can only install the dependencies of a package by doing
+The above command installs `zlib`, version 1.2.8 with `gcc` version 6.5.0. Note that one can install only the dependencies of a package by doing
 
 ```
 spack install --only dependencies <package>
@@ -168,13 +168,13 @@ It is also possible to install a certain package by specifying an explicit depen
 spack install zlib ^/hash
 ```
 
-Recall that the hash of a certain package can be found by doing `spack find -l`. Variants of packages can be turned on with `+` or off with either `-` or `~`. For instance:
+Recall that the hash of a certain package can be found by doing `spack find -l`. Variants of packages can be turned on with `+` or off with either `-` or `~` when specifying the install command. For instance:
 
 ``` 
 spack install hdf5 ~mpi +fortran
 ``` 
 
-installs `hdf5` without mpi support but with fortran support.
+installs hdf5 without mpi support but with fortran support.
 
  
 
