@@ -250,13 +250,13 @@ void ShallowWater_PK::Initialize()
   // reconstruction
   Teuchos::ParameterList plist = sw_list_->sublist("reconstruction");
   
-  total_depth_grad_ = Teuchos::rcp(new Operators::ReconstructionCellGrad(mesh_));
+  total_depth_grad_ = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
   total_depth_grad_->Init(plist);
 
-  discharge_x_grad_ = Teuchos::rcp(new Operators::ReconstructionCellGrad(mesh_));
+  discharge_x_grad_ = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
   discharge_x_grad_->Init(plist);
 
-  discharge_y_grad_ = Teuchos::rcp(new Operators::ReconstructionCellGrad(mesh_));
+  discharge_y_grad_ = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
   discharge_y_grad_->Init(plist);
 
   use_limiter_ = sw_list_->get<bool>("use limiter", true);

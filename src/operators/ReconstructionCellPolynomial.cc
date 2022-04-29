@@ -22,7 +22,7 @@
 #include "OperatorDefs.hh"
 #include "Point.hh"
 #include "Polynomial.hh"
-#include "ReconstructionCellPoly.hh"
+#include "ReconstructionCellPolynomial.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -31,7 +31,7 @@ namespace Operators {
 * Initialization of basic parameters.
 * NOTE: we assume that ghost values of field were already populated.
 ****************************************************************** */
-void ReconstructionCellPoly::Init(Teuchos::ParameterList& plist)
+void ReconstructionCellPolynomial::Init(Teuchos::ParameterList& plist)
 {
   d_ = mesh_->space_dimension();
 
@@ -47,7 +47,8 @@ void ReconstructionCellPoly::Init(Teuchos::ParameterList& plist)
   ortho_c_ = ortho_->ViewComponent("cell", true);
 
   // process other parameters
-  degree_ = plist.get<int>("polynomial order", 0);
+  degree_ = plist.get<int>("polynomial order", 2);
+  AMANZI_ASSERT(degree_ == 2);
 }
 
 
@@ -55,7 +56,7 @@ void ReconstructionCellPoly::Init(Teuchos::ParameterList& plist)
 * Gradient of linear reconstruction is based on stabilized 
 * least-square fit.
 ****************************************************************** */
-void ReconstructionCellPoly::Compute(
+void ReconstructionCellPolynomial::Compute(
     const AmanziMesh::Entity_ID_List& ids,
     const Teuchos::RCP<const Epetra_MultiVector>& field, int component,
     const Teuchos::RCP<const BCs>& bc)
@@ -178,7 +179,7 @@ void ReconstructionCellPoly::Compute(
 /* ******************************************************************
 * Assemble a SPD least square matrix
 ****************************************************************** */
-void ReconstructionCellPoly::PopulateLeastSquareSystem_(
+void ReconstructionCellPolynomial::PopulateLeastSquareSystem_(
     WhetStone::DenseVector& coef, double field_value,
     WhetStone::DenseMatrix& matrix, WhetStone::DenseVector& rhs)
 {
@@ -195,7 +196,7 @@ void ReconstructionCellPoly::PopulateLeastSquareSystem_(
 * On intersecting manifolds, we extract neighboors living in the same 
 * manifold using a smoothness criterion.
 ****************************************************************** */
-void ReconstructionCellPoly::CellAllAdjCells_(
+void ReconstructionCellPolynomial::CellAllAdjCells_(
     AmanziMesh::Entity_ID c, AmanziMesh::Parallel_type ptype,
     std::set<AmanziMesh::Entity_ID>& cells) const
 {
@@ -217,7 +218,7 @@ void ReconstructionCellPoly::CellAllAdjCells_(
 }
 
 
-void ReconstructionCellPoly::CellAllAdjFaces_(
+void ReconstructionCellPolynomial::CellAllAdjFaces_(
     AmanziMesh::Entity_ID c,
     const std::set<AmanziMesh::Entity_ID>& cells,
     std::set<AmanziMesh::Entity_ID>& faces) const
@@ -238,7 +239,7 @@ void ReconstructionCellPoly::CellAllAdjFaces_(
 /* ******************************************************************
 * Calculates reconstructed value at point p.
 ****************************************************************** */
-double ReconstructionCellPoly::getValue(int c, const AmanziGeometry::Point& p)
+double ReconstructionCellPolynomial::getValue(int c, const AmanziGeometry::Point& p)
 {
   AmanziGeometry::Point xcc = p - mesh_->cell_centroid(c);
 
@@ -259,7 +260,7 @@ double ReconstructionCellPoly::getValue(int c, const AmanziGeometry::Point& p)
 /* ******************************************************************
 * Calculates deviation from mean value at point p.
 ****************************************************************** */
-double ReconstructionCellPoly::getValueSlope(int c, const AmanziGeometry::Point& p)
+double ReconstructionCellPolynomial::getValueSlope(int c, const AmanziGeometry::Point& p)
 {
   AmanziGeometry::Point xcc = p - mesh_->cell_centroid(c);
 
@@ -280,7 +281,7 @@ double ReconstructionCellPoly::getValueSlope(int c, const AmanziGeometry::Point&
 /* ******************************************************************
 * Returns full polynomial
 ****************************************************************** */
-WhetStone::Polynomial ReconstructionCellPoly::getPolynomial(int c) const
+WhetStone::Polynomial ReconstructionCellPolynomial::getPolynomial(int c) const
 {
   WhetStone::Polynomial tmp(d_, 2);
   tmp(0) = (*field_)[0][c];

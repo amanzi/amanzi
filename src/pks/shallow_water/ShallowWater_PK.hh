@@ -34,7 +34,7 @@
 #include "PK_Factory.hh"
 #include "PK_Physical.hh"
 #include "PK_DomainFunction.hh"
-#include "ReconstructionCellGrad.hh"
+#include "ReconstructionCellLinear.hh"
 #include "State.hh"
 #include "Tensor.hh"
 #include "Units.hh"
@@ -144,8 +144,8 @@ class ShallowWater_PK : public PK_Physical,
 
   // limited reconstruction
   bool use_limiter_;
-  Teuchos::RCP<Operators::ReconstructionCellGrad> total_depth_grad_, bathymetry_grad_;
-  Teuchos::RCP<Operators::ReconstructionCellGrad> discharge_x_grad_, discharge_y_grad_;
+  Teuchos::RCP<Operators::ReconstructionCellLinear> total_depth_grad_, bathymetry_grad_;
+  Teuchos::RCP<Operators::ReconstructionCellLinear> discharge_x_grad_, discharge_y_grad_;
   Teuchos::RCP<Operators::LimiterCell> limiter_;
 
   // advanced cfl control

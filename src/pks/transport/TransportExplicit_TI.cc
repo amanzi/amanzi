@@ -12,7 +12,6 @@
 #include <algorithm>
 
 #include "Mesh_Algorithms.hh"
-#include "ReconstructionCellGrad.hh"
 #include "OperatorDefs.hh"
 #include "TransportExplicit_PK.hh"
 #include "UniqueLocalIndex.hh"

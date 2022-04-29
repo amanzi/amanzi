@@ -16,7 +16,7 @@
 
 #include "Epetra_Vector.h"
 
-#include "ReconstructionCellGrad.hh"
+#include "ReconstructionCellLinear.hh"
 #include "RemapDG.hh"
 #include "WhetStoneDefs.hh"
 
@@ -274,9 +274,9 @@ void RemapDG_Helper::ApplyLimiter(double t, CompositeVector& x)
 
   x.ScatterMasterToGhosted("cell");
 
-  if (limiter_->type() == OPERATOR_LIMITER_BARTH_JESPERSEN_DG ||
-      limiter_->type() == OPERATOR_LIMITER_MICHALAK_GOOCH_DG ||
-      limiter_->type() == OPERATOR_LIMITER_BARTH_JESPERSEN_DG_HIERARCHICAL) { 
+  if (limiter_->get_type() == OPERATOR_LIMITER_BARTH_JESPERSEN_DG ||
+      limiter_->get_type() == OPERATOR_LIMITER_MICHALAK_GOOCH_DG ||
+      limiter_->get_type() == OPERATOR_LIMITER_BARTH_JESPERSEN_DG_HIERARCHICAL) { 
     limiter_->ApplyLimiterDG(ids, x.ViewComponent("cell", true), *dg_, bc_model, bc_value);
   } else {
     // -- create gradient in the natural basis
@@ -302,7 +302,7 @@ void RemapDG_Helper::ApplyLimiter(double t, CompositeVector& x)
 
     // -- limit gradient and save it to solution
     //    Reconstruction object does nothing but keeping poiter to gradient
-    auto lifting = Teuchos::rcp(new ReconstructionCellGrad(mesh0_, grad));
+    auto lifting = Teuchos::rcp(new ReconstructionCellLinear(mesh0_, grad));
     limiter_->ApplyLimiter(ids, x.ViewComponent("cell", true), 0, lifting, bc_model, bc_value);
 
     for (int n = 0; n < ids.size(); ++n) {

@@ -8,15 +8,12 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  At the moment, we require the input field to have valid values
-  in ghost cells. 
-
-  NOTE: we compute the complete polynomial reconstruction, including 
-  the constant term.
+  Polynomials conservative reconstrution on cell data.
+  Due to conservation, only slope data have to be stored.
 */
 
-#ifndef AMANZI_RECONSTRUCTION_CELL_POLY_HH_
-#define AMANZI_RECONSTRUCTION_CELL_POLY_HH_
+#ifndef AMANZI_RECONSTRUCTION_CELL_POLYNOMIAL_HH_
+#define AMANZI_RECONSTRUCTION_CELL_POLYNOMIAL_HH_
 
 #include <vector>
 
@@ -36,13 +33,13 @@
 namespace Amanzi {
 namespace Operators {
 
-class ReconstructionCellPoly : public Reconstruction {  
+class ReconstructionCellPolynomial : public Reconstruction {  
  public:
-  ReconstructionCellPoly() {};
-  ReconstructionCellPoly(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
+  ReconstructionCellPolynomial() {};
+  ReconstructionCellPolynomial(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
     : Reconstruction(mesh),
       poly_(Teuchos::null) {};
-  ~ReconstructionCellPoly() {};
+  ~ReconstructionCellPolynomial() {};
 
   // save pointer to the already distributed field.
   virtual void Init(Teuchos::ParameterList& plist) override;

@@ -88,9 +88,11 @@ class LimiterCell {
 
   // access
   Teuchos::RCP<Epetra_Vector> limiter() { return limiter_; }
-  Teuchos::RCP<CompositeVector> bounds() { return bounds_; }
-  Teuchos::RCP<const CompositeVector> bounds() const { return bounds_; }
-  int type() { return type_; }
+  Teuchos::RCP<CompositeVector> get_bounds() { return bounds_; }
+  Teuchos::RCP<const CompositeVector> get_bounds() const { return bounds_; }
+
+  int get_type() { return type_; }
+  bool get_external_bounds() const { return external_bounds_; }
 
   // modifiers 
   void set_bounds(const Teuchos::RCP<CompositeVector>& bounds) { bounds_ = bounds; }

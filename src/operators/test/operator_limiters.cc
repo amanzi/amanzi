@@ -31,7 +31,7 @@
 #include "ErrorAnalysis.hh"
 #include "LimiterCell.hh"
 #include "OperatorDefs.hh"
-#include "ReconstructionCellGrad.hh"
+#include "ReconstructionCellLinear.hh"
 
 const std::string LIMITERS[9] = {"B-J", "Tensorial", "Tens. c2c", "Kuzmin",
                                  "B-J c2c", "B-J all", "M-G all", "B-J node",
@@ -147,7 +147,7 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
     }
 
     // Compute reconstruction
-    auto lifting = Teuchos::rcp(new ReconstructionCellGrad(mesh));
+    auto lifting = Teuchos::rcp(new ReconstructionCellLinear(mesh));
     lifting->Init(plist);
     lifting->Compute(field);
 
@@ -274,7 +274,7 @@ TEST(LIMITER_LINEAR_FUNCTION_3D) {
     }
 
     // Compute reconstruction
-    auto lifting = Teuchos::rcp(new ReconstructionCellGrad(mesh));
+    auto lifting = Teuchos::rcp(new ReconstructionCellLinear(mesh));
     lifting->Init(plist);
     lifting->Compute(field); 
 
@@ -408,7 +408,7 @@ TEST(LIMITER_SMOOTH_FIELD_2D) {
       } 
 
       // Compute reconstruction
-      auto lifting = Teuchos::rcp(new ReconstructionCellGrad(mesh));
+      auto lifting = Teuchos::rcp(new ReconstructionCellLinear(mesh));
       lifting->Init(plist);
       lifting->Compute(field);
 
@@ -534,7 +534,7 @@ TEST(LIMITER_SMOOTH_FIELD_3D) {
       } 
 
       // Compute reconstruction
-      auto lifting = Teuchos::rcp(new ReconstructionCellGrad(mesh));
+      auto lifting = Teuchos::rcp(new ReconstructionCellLinear(mesh));
       lifting->Init(plist);
       lifting->Compute(field);
 
@@ -680,7 +680,7 @@ void SmoothField2DPoly(double extension)
     } 
 
     // Compute reconstruction
-    auto lifting = Teuchos::rcp(new ReconstructionCellGrad(mesh));
+    auto lifting = Teuchos::rcp(new ReconstructionCellLinear(mesh));
     lifting->Init(plist);
     lifting->Compute(field);
 
@@ -793,7 +793,7 @@ TEST(LIMITER_LINEAR_FUNCTION_FRACTURES) {
     }
 
     // Compute reconstruction
-    ReconstructionCellGrad lifting(mesh);
+    ReconstructionCellLinear lifting(mesh);
     lifting.Init(plist);
     lifting.Compute(field);
 

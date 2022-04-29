@@ -15,7 +15,7 @@
 #include "ObservableAqueous.hh"
 #include "RegionPlane.hh"
 #include "RegionPolygon.hh"
-#include "ReconstructionCellGrad.hh"
+#include "ReconstructionCellLinear.hh"
 #include "Units.hh"
 
 namespace Amanzi{
@@ -315,7 +315,7 @@ double ObservableAqueous::CalculateWaterTable_(State& S,
 
   // initilize and apply the reconstruction operator
   Teuchos::ParameterList plist;
-  Operators::ReconstructionCellGrad lifting(mesh_);
+  Operators::ReconstructionCellLinear lifting(mesh_);
 
   lifting.Init(plist);
   lifting.Compute(ids, pressure, 0);

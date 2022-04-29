@@ -28,8 +28,8 @@
 // Amanzi::Operators
 #include "ErrorAnalysis.hh"
 #include "OperatorDefs.hh"
-#include "ReconstructionCellGrad.hh"
-#include "ReconstructionCellPoly.hh"
+#include "ReconstructionCellLinear.hh"
+#include "ReconstructionCellPolynomial.hh"
 #include "SmoothnessIndicatorShu.hh"
 
 
@@ -75,7 +75,7 @@ TEST(RECONSTRUCTION_LINEAR_2D) {
   plist.set<int>("polynomial_order", 1);
   plist.set<bool>("limiter extension for transport", false);
 
-  ReconstructionCellGrad lifting(mesh);
+  ReconstructionCellLinear lifting(mesh);
   lifting.Init(plist);
   lifting.Compute(field); 
 
@@ -133,7 +133,7 @@ TEST(RECONSTRUCTION_LINEAR_3D) {
   plist.set<int>("polynomial_order", 1);
   plist.set<bool>("limiter extension for transport", false);
 
-  ReconstructionCellGrad lifting(mesh);
+  ReconstructionCellLinear lifting(mesh);
   lifting.Init(plist);
   lifting.Compute(field);
 
@@ -214,7 +214,7 @@ TEST(RECONSTRUCTION_QUADRATIC_2D) {
   plist.set<int>("polynomial_order", 1);
   plist.set<bool>("limiter extension for transport", false);
 
-  auto lifting = Teuchos::rcp(new ReconstructionCellPoly(mesh));
+  auto lifting = Teuchos::rcp(new ReconstructionCellPolynomial(mesh));
   lifting->Init(plist);
   lifting->Compute(field, 0, bcs);
 

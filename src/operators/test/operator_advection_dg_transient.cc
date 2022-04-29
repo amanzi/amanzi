@@ -42,7 +42,7 @@
 #include "PDE_Abstract.hh"
 #include "PDE_AdvectionRiemann.hh"
 #include "PDE_Reaction.hh"
-#include "ReconstructionCellGrad.hh"
+#include "ReconstructionCellLinear.hh"
 
 #include "AnalyticDG02b.hh"
 #include "AnalyticDG06.hh"
@@ -657,7 +657,7 @@ void AdvectionFn<Analytic>::ApplyLimiter(std::string& name, CompositeVector& u)
 
     grad->ScatterMasterToGhosted("cell");
 
-    auto lifting = Teuchos::rcp(new Operators::ReconstructionCellGrad(mesh_, grad));
+    auto lifting = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_, grad));
     limiter.ApplyLimiter(u.ViewComponent("cell", true), 0, lifting, bc_model, bc_value);
 
     for (int c = 0; c < ncells_owned; ++c) {

@@ -27,7 +27,7 @@
 #include "Mesh_Algorithms.hh"
 #include "OperatorDefs.hh"
 #include "ParallelCommunication.hh"
-#include "ReconstructionCellGrad.hh"
+#include "ReconstructionCellLinear.hh"
 #include "Tensor.hh"
 #include "WhetStoneMeshUtils.hh"
 
@@ -234,7 +234,7 @@ void WalkaboutCheckpoint::CalculateData(
   Teuchos::ParameterList plist;
   plist.set<std::string>("limiter", "tensorial");
 
-  Operators::ReconstructionCellGrad lifting(mesh);
+  Operators::ReconstructionCellLinear lifting(mesh);
   lifting.Init(plist);
   lifting.Compute(p);
 

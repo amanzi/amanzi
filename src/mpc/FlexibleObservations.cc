@@ -19,7 +19,6 @@
 #include "Point.hh"
 #include "RegionPlane.hh"
 #include "RegionPolygon.hh"
-#include "ReconstructionCellGrad.hh"
 #include "Units.hh"
 
 // MPC

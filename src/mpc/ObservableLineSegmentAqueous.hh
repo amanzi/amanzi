@@ -2,7 +2,7 @@
 #define AMANZI_OBSERVABLE_LINE_SEGMENT_AQUEOUS_HH
 
 #include "LimiterCell.hh"
-#include "ReconstructionCellGrad.hh"
+#include "ReconstructionCellLinear.hh"
 
 #include "ObservableAmanzi.hh"
 #include "ObservableAqueous.hh"
@@ -114,7 +114,7 @@ void ObservableLineSegmentAqueous::InterpolatedValues(State& S,
 
   if (interpolation == "linear") {
     Teuchos::ParameterList plist;
-    auto lifting = Teuchos::rcp(new Operators::ReconstructionCellGrad(mesh_));
+    auto lifting = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
       
     cv->ScatterMasterToGhosted();
 

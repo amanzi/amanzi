@@ -75,7 +75,12 @@ void FCT::Compute(const CompositeVector& flux_lo,
   // collect cell-limiters for positive and negative fluxes
   const auto& bc_model = bc.bc_model();
   const auto& bc_value = bc.bc_value();
-  auto bounds = limiter_->BoundsForCells(*field_, bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_ALL);
+
+  Teuchos::RCP<const CompositeVector> bounds;
+  if (limiter_->get_external_bounds())
+    bounds = limiter_->get_bounds();
+  else
+    bounds = limiter_->BoundsForCells(*field_, bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_ALL);
   auto& bounds_c = *bounds->ViewComponent("cell");
 
   double Qmin, Qmax;

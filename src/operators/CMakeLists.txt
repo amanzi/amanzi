@@ -124,8 +124,8 @@ set(operators_inc_files
     SmoothnessIndicatorShu.hh
     TreeOperator.hh
     Reconstruction.hh
-    ReconstructionCellGrad.hh
-    ReconstructionCellPoly.hh
+    ReconstructionCellLinear.hh
+    ReconstructionCellPolynomial.hh
     UniqueLocalIndex.hh
     Upwind.hh
     UpwindArithmeticAverage.hh
@@ -173,8 +173,8 @@ add_amanzi_library(operators
                           Schema.cc SchemaUtils.cc
                           SmoothnessIndicatorShu.cc
                           TreeOperator.cc
-                          ReconstructionCellGrad.cc
-                          ReconstructionCellPoly.cc
+                          ReconstructionCellLinear.cc
+                          ReconstructionCellPolynomial.cc
                           RemapDG.cc RemapUtils.cc
                           UniqueLocalIndex.cc
                           RemapDG_Helper.cc RemapUtils.cc

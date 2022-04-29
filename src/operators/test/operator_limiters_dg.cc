@@ -34,7 +34,7 @@
 #include "ErrorAnalysis.hh"
 #include "LimiterCellDG.hh"
 #include "OperatorDefs.hh"
-#include "ReconstructionCellGrad.hh"
+#include "ReconstructionCellLinear.hh"
 
 const std::string LIMITERS[3] = {"B-J", "B-J c2c", "B-J all"};
 
@@ -145,7 +145,7 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
     }
 
     // Apply limiter
-    auto lifting = Teuchos::rcp(new ReconstructionCellGrad(mesh, grad));
+    auto lifting = Teuchos::rcp(new ReconstructionCellLinear(mesh, grad));
     LimiterCell limiter(mesh);
     limiter.Init(plist);
     limiter.ApplyLimiter(ids, field_c, 0, lifting, bc_model, bc_value);

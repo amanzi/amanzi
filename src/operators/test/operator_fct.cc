@@ -32,7 +32,7 @@
 #include "FCT.hh"
 #include "LimiterCell.hh"
 #include "OperatorDefs.hh"
-#include "ReconstructionCellGrad.hh"
+#include "ReconstructionCellLinear.hh"
 
 double fun_field(const Amanzi::AmanziGeometry::Point& p) {
  double x = p[0];
@@ -140,7 +140,7 @@ std::pair<double, double> RunTest(int n) {
        .set<std::string>("limiter", "Barth-Jespersen")
        .set<std::string>("limiter stencil", "cell to all cells");
 
-  auto lifting = Teuchos::rcp(new ReconstructionCellGrad(mesh));
+  auto lifting = Teuchos::rcp(new ReconstructionCellLinear(mesh));
   lifting->Init(plist);
   lifting->Compute(field);
 

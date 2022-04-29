@@ -20,7 +20,7 @@
 #include "Mesh.hh"
 #include "OperatorDefs.hh"
 #include "Point.hh"
-#include "ReconstructionCellGrad.hh"
+#include "ReconstructionCellLinear.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -29,7 +29,7 @@ namespace Operators {
 * Initialization of basic parameters.
 * NOTE: we assume that ghost values of field were already populated.
 ****************************************************************** */
-void ReconstructionCellGrad::Init(Teuchos::ParameterList& plist)
+void ReconstructionCellLinear::Init(Teuchos::ParameterList& plist)
 {
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh_);
@@ -48,7 +48,7 @@ void ReconstructionCellGrad::Init(Teuchos::ParameterList& plist)
 * Gradient of linear reconstruction is based on stabilized 
 * least-square fit.
 ****************************************************************** */
-void ReconstructionCellGrad::Compute(
+void ReconstructionCellLinear::Compute(
     const AmanziMesh::Entity_ID_List& ids,
     const Teuchos::RCP<const Epetra_MultiVector>& field, int component,
     const Teuchos::RCP<const BCs>& bc)
@@ -109,7 +109,7 @@ void ReconstructionCellGrad::Compute(
 /* ******************************************************************
 * Assemble a SPD least square matrix
 ****************************************************************** */
-void ReconstructionCellGrad::PopulateLeastSquareSystem_(
+void ReconstructionCellLinear::PopulateLeastSquareSystem_(
     AmanziGeometry::Point& centroid, double field_value,
     WhetStone::DenseMatrix& matrix, WhetStone::DenseVector& rhs)
 {
@@ -128,7 +128,7 @@ void ReconstructionCellGrad::PopulateLeastSquareSystem_(
 * On intersecting manifolds, we extract neighboors living in the same 
 * manifold using a smoothness criterion.
 ****************************************************************** */
-void ReconstructionCellGrad::CellFaceAdjCellsNonManifold_(
+void ReconstructionCellLinear::CellFaceAdjCellsNonManifold_(
     AmanziMesh::Entity_ID c, AmanziMesh::Parallel_type ptype,
     std::vector<AmanziMesh::Entity_ID>& cells) const
 {
@@ -173,7 +173,8 @@ void ReconstructionCellGrad::CellFaceAdjCellsNonManifold_(
 /* ******************************************************************
 * Calculates reconstructed value at point p.
 ****************************************************************** */
-double ReconstructionCellGrad::getValue(int c, const AmanziGeometry::Point& p)
+double ReconstructionCellLinear::getValue(
+    int c, const AmanziGeometry::Point& p)
 {
   const auto& xc = mesh_->cell_centroid(c);
 
@@ -186,7 +187,8 @@ double ReconstructionCellGrad::getValue(int c, const AmanziGeometry::Point& p)
 /* ******************************************************************
 * Calculates deviation from a mean value at point p.
 ****************************************************************** */
-double ReconstructionCellGrad::getValueSlope(int c, const AmanziGeometry::Point& p)
+double ReconstructionCellLinear::getValueSlope(
+    int c, const AmanziGeometry::Point& p)
 {
   const auto& xc = mesh_->cell_centroid(c);
 
@@ -199,7 +201,7 @@ double ReconstructionCellGrad::getValueSlope(int c, const AmanziGeometry::Point&
 /* ******************************************************************
 * Returns full polynomial
 ****************************************************************** */
-WhetStone::Polynomial ReconstructionCellGrad::getPolynomial(int c) const
+WhetStone::Polynomial ReconstructionCellLinear::getPolynomial(int c) const
 {
   WhetStone::Polynomial tmp(dim, 2);
   tmp(0) = (*field_)[0][c];

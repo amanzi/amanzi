@@ -110,7 +110,7 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
 
   if (interpolation == "linear") {
     Teuchos::ParameterList plist;
-    auto lifting = Teuchos::rcp(new Operators::ReconstructionCellGrad(mesh_));
+    auto lifting = Teuchos::rcp(new Operators::ReconstructionCellLinear(mesh_));
       
     cv->ScatterMasterToGhosted();
 

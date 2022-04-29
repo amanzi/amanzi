@@ -8,12 +8,15 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  At the moment, we require the input field to have valid values
-  in ghost cells. 
+  Linear conservative reconstrution on cell data.
+  Due to conservation, only gradient is needed to be stored.
+
+  NOTE: At the moment, we require the input field to have valid
+  values in ghost cells. 
 */
 
-#ifndef AMANZI_RECONSTRUCTION_CELL_GRAD_HH_
-#define AMANZI_RECONSTRUCTION_CELL_GRAD_HH_
+#ifndef AMANZI_RECONSTRUCTION_CELL_LINEAR_HH_
+#define AMANZI_RECONSTRUCTION_CELL_LINEAR_HH_
 
 #include <vector>
 
@@ -33,22 +36,22 @@
 namespace Amanzi {
 namespace Operators {
 
-class ReconstructionCellGrad : public Reconstruction {  
+class ReconstructionCellLinear : public Reconstruction {  
  public:
-  ReconstructionCellGrad() {};
+  ReconstructionCellLinear() {};
 
-  ReconstructionCellGrad(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
+  ReconstructionCellLinear(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
     : Reconstruction(mesh),
       dim(mesh->space_dimension()) {};
 
-  ReconstructionCellGrad(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
+  ReconstructionCellLinear(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                          Teuchos::RCP<CompositeVector>& gradient)
     : Reconstruction(mesh),
       dim(mesh->space_dimension()),
       gradient_(gradient),
       gradient_c_(gradient->ViewComponent("cell")) {};
 
-  ~ReconstructionCellGrad() {};
+  ~ReconstructionCellLinear() {};
 
   // save pointer to the already distributed field.
   virtual void Init(Teuchos::ParameterList& plist) override;
