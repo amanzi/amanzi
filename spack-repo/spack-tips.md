@@ -15,7 +15,7 @@ Here's a quick list of the commands we use most often:
   * ...
   
   
-## Spack Environements 
+## Spack Environments 
 
 Spack environments allow you to create specific containers of spack modules for your project. 
 See the spack complete guide on thee [environments](https://spack.readthedocs.io/en/latest/environments.html)
@@ -105,8 +105,80 @@ But then we would update by hand the entries associated with the modules we want
 
 ## Working with Spack
 
-Here we look at the commands used most often, e.g., install, spec,
-info, find etc.
+Here we look at the commands used most often. The `spack find` command can be used with different options. For instance:
+
+```
+spack find -ld
+```
+
+shows installed packages, their hashes (-l option) and dependency info (-d option). Recall that with spack every spec has its own unique hash. Note that there are some packages shown in the `spack find -d` output that may have not been installed explicitly (i.e. with a `spack install` command). These are dependencies that were installed implicitly. A few packages installed implicitly are not shown as dependencies in the `spack find -d` output. These are build dependencies. The following command:
+
+```
+spack find -px
+```
+shows  packages that were installed explicitly rather than pulled in as a dependency (-x option) and their path (-p option). The following command:
+
+```
+spack find ^mpich
+```
+returns every installed package that depends on MPICH. To show the full spec of a package, use:
+
+```
+spack find -v
+```
+
+To see what has been loaded using `spack load` type:
+
+```
+spack find --loaded
+```
+
+To see the list of available compilers, use:
+
+```
+spack compilers list
+```
+
+To add a compiler to the list of available compilers (without knowing its path) one can use:
+
+```
+spack compiler add $(spack location -i gcc@8.4.0)
+```
+
+To see the list of available repos, use:
+```
+spack repo list
+```
+
+The following is an example of a spack installation of zlib
+
+```
+spack install zlib@1.2.8 %gcc@6.5.0
+```
+
+The above commands install `zlib`, version 1.2.8 with `gcc` version 6.5.0. Note that one can only install the dependencies of a package by doing
+
+```
+spack install --only dependencies <package>
+```
+
+It is also possible to install a certain package by specifying an explicit dependence using a hash. This is helpful in case there are different versions of a package and one wants to make sure the correct one is given as dependency. The syntax is the following:
+
+```
+spack install zlib ^/hash
+```
+
+Recall that the hash of a certain package can be found by doing `spack find -l`. Variants of packages can be turned on with `+` or off with either `-` or `~`. For instance:
+
+``` 
+spack install hdf5 ~mpi +fortran
+``` 
+
+installs `hdf5` without mpi support but with fortran support.
+
+ 
+
+
 
 
 
