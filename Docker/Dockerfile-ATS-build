@@ -55,6 +55,7 @@ RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --tpl-config-file=${AMANZI_TPLS_DIR}/share/cmake/amanzi-tpl-config.cmake \
    --branch=$amanzi_branch \
    --branch_ats=$ats_branch \
+   --branch_ats_tests=$ats_regression_branch \
    --parallel=4 \
    --opt \
    --with-mpi=/usr \
