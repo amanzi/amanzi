@@ -150,6 +150,7 @@ mesh_moab=$FALSE
 # -- tools
 amanzi_branch=
 ats_branch=
+ats_tests_branch=
 ats_dev=${FALSE}
 ccse_tools=${FALSE}
 spacedim=2
@@ -346,6 +347,9 @@ Configuration:
   --branch=BRANCH         build TPLs and Amanzi found in BRANCH ['"${amanzi_branch}"']
 
   --branch_ats=BRANCH     build ATS found in BRANCH ['"${ats_branch}"']
+
+  --branch_ats_tests=BRANCH  Use tests in ATS regression tests found in BRANCH ['"${ats_tests_branch}"']
+
   --ats_dev               prevent cloning remote repository when building ATS ['"${ats_devs}"']
   
   --spacedim=DIM          dimension of structured build (DIM=2 or 3) ['"${spacedim}"']
@@ -686,6 +690,10 @@ List of INPUT parameters
 
       --branch_ats=*)
                  ats_branch=`parse_option_with_equal "${opt}" 'branch_ats'`
+                 ;;
+      
+      --branch_ats_tests=*)
+                 ats_tests_branch=`parse_option_with_equal "${opt}" 'branch_ats_tests'`
                  ;;
 
       --ats_dev)
@@ -1187,6 +1195,22 @@ function git_change_branch_ats()
     error_message "Failed to update ATS at ${ats_source_dir} to branch ${atsbranch}"
     exit_now 30
   fi
+  cd ${save_dir}
+}
+
+function git_change_branch_ats_tests()
+{
+  atstestsbranch=$1
+  save_dir=`pwd`
+  cd ${ats_source_dir}/testing/ats-regression-tests
+  status_message "In ${PWD} checking out ATS regression branch ${atsbranch}"
+  ${git_binary} checkout ${atstestsbranch}
+  if [ $? -ne 0 ]; then
+    error_message "Failed to update ATS at ${ats_source_dir}/testing/ats-regression-tests to branch ${atstestsbranch}"
+    exit_now 30
+  fi
+  # ${git_binary} branch --list
+  # ${git_binary} rev-parse --short HEAD
   cd ${save_dir}
 }
 
@@ -1890,9 +1914,16 @@ if [ "${ats_physics}" -eq "${TRUE}" ]; then
   if [ "${ats_dev}" -eq "${FALSE}" ]; then
     git_submodule_clone "src/physics/ats"
 
+    echo "Debugging: ats_branch = ${ats_branch}"
     if [ ! -z "${ats_branch}" ]; then
       git_change_branch_ats ${ats_branch}
     fi
+
+    echo "Debugging: ats_tests_branch = ${ats_tests_branch}"
+    if [ ! -z "${ats_tests_branch}" ]; then
+      git_change_branch_ats_tests ${ats_tests_branch}
+    fi
+
   fi
 fi
 
