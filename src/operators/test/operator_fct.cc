@@ -35,35 +35,43 @@
 #include "ReconstructionCellLinear.hh"
 
 double fun_field(const Amanzi::AmanziGeometry::Point& p) {
+ int d = p.dim();
  double x = p[0];
  double y = p[1];
- return x*x*y + 2*x*y*y*y;
+ if (d == 2) return x*x*y + 2*x*y*y*y;
+
+ double z = p[2];
+ return x*x*y + 2*x*y*y*y + 3*x*x*y*y*z*z;
 }
 
 Amanzi::AmanziGeometry::Point fun_velocity(const Amanzi::AmanziGeometry::Point& p) {
+ int d = p.dim();
  double x = p[0];
  double y = p[1];
- return Amanzi::AmanziGeometry::Point(2*x, -2*y);  // divergence-free
+ if (d == 2) return Amanzi::AmanziGeometry::Point(2*x, -2*y);  // divergence-free
+
+ double z = p[2];
+ return Amanzi::AmanziGeometry::Point(2*x, 2*y, -4*z);
 }
 
 
 /* *****************************************************************
 * Flux corrected transport in 2D
 ***************************************************************** */
-std::pair<double, double> RunTest(int n) {
+std::pair<double, double> RunTest(int n, int d) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  // int MyPID = comm->MyPID();
-  // if (MyPID == 0) std::cout << "\nTest: Accuracy of FCT in 2D." << std::endl;
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
-  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, n, n);
+  Teuchos::RCP<const Mesh> mesh = (d == 2) ? 
+      meshfactory.create(0.0, 0.0, 1.0, 1.0, n, n) :
+      meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
 
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
@@ -127,7 +135,8 @@ std::pair<double, double> RunTest(int n) {
   for (int f = 0; f < nfaces_wghost; f++) {
     const AmanziGeometry::Point& xf = mesh->face_centroid(f);
     if (fabs(xf[0]) < 1e-6 || fabs(1.0 - xf[0]) < 1e-6 ||
-        fabs(xf[1]) < 1e-6 || fabs(1.0 - xf[1]) < 1e-6) {
+        fabs(xf[1]) < 1e-6 || fabs(1.0 - xf[1]) < 1e-6 ||
+        fabs(xf[d]) < 1e-6 || fabs(1.0 - xf[d]) < 1e-6) {
       bc_model[f] = OPERATOR_BC_DIRICHLET;
       bc_value[f] = fun_field(xf);
     }
@@ -175,11 +184,11 @@ std::pair<double, double> RunTest(int n) {
 
 
 TEST(FCT_2D) {
-  auto a1 = RunTest(10);
-  auto a2 = RunTest(20);
-  auto a3 = RunTest(40);
+  auto a1 = RunTest(10, 2);
+  auto a2 = RunTest(20, 2);
+  auto a3 = RunTest(40, 2);
 
-  std::vector<double> h({ 1.0/10, 1.0/30, 1.0/40 });
+  std::vector<double> h({ 1.0/10, 1.0/20, 1.0/40 });
   std::vector<double> err1({ a1.first, a2.first, a3.first });
   double rate = Amanzi::Utils::bestLSfit(h, err1);
   CHECK(rate < 1.0); 
@@ -187,6 +196,22 @@ TEST(FCT_2D) {
 
   double err2 = std::max({ a1.second, a2.second, a3.second });
   CHECK(err2 < 2.0e-4); 
-  std::cout << "Deviation from high-order flux: " << err2 << std::endl;
+  std::cout << "Deviation from high-order flux: " << err2 << std::endl << std::endl;
 }
 
+
+TEST(FCT_3D) {
+  auto a1 = RunTest( 8, 3);
+  auto a2 = RunTest(16, 3);
+  auto a3 = RunTest(32, 3);
+
+  std::vector<double> h({ 1.0/8, 1.0/16, 1.0/32 });
+  std::vector<double> err1({ a1.first, a2.first, a3.first });
+  double rate = Amanzi::Utils::bestLSfit(h, err1);
+  CHECK(rate > 1.0); 
+  std::cout << "\nError convergence rate: " << rate << std::endl;
+
+  double err2 = std::max({ a1.second, a2.second, a3.second });
+  CHECK(err2 < 2.0e-4); 
+  std::cout << "Deviation from high-order flux: " << err2 << std::endl;
+}

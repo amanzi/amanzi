@@ -394,6 +394,7 @@ if (BUILD_TESTS)
     # fct tests
     add_amanzi_test(operators_fct operators_fct
                     KIND unit
+                    NPROCS 2
                     SOURCE test/Main.cc test/operator_fct.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
