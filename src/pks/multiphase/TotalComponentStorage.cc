@@ -25,15 +25,7 @@ namespace Multiphase {
 * Constructor.
 ****************************************************************** */
 TotalComponentStorage::TotalComponentStorage(Teuchos::ParameterList& plist) :
-    MultiphaseBaseEvaluator(plist) {
-  Init_();
-}
-
-
-/* ******************************************************************
-* Initialization.
-****************************************************************** */
-void TotalComponentStorage::Init_()
+    MultiphaseBaseEvaluator(plist)
 {
   if (my_keys_.size() == 0) {
     my_keys_.push_back(std::make_pair(plist_.get<std::string>("my key"), Tags::DEFAULT));

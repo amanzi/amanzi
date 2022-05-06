@@ -11,7 +11,7 @@
   Field evaluator for a total component stirage (water, hydrogen,
   etc) storage, the conserved quantity:
 
-    TCS = phi * (rho_l * s_l * X_l + rho_g * s_g * X_g)
+    TCS = phi * (rho_l * s_l * x_l + rho_g * s_g * x_g)
 
   where x_p is the mole fraction of a component in phase p.
 */
@@ -41,8 +41,6 @@ class TotalComponentStorage : public MultiphaseBaseEvaluator {
 
   virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
-
-  virtual void Init_();
 
  protected:
   Key saturation_liquid_key_, porosity_key_;

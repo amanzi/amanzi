@@ -8,11 +8,11 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Calculates liquid component concentration from gas concentration.
+  Calculates gas component concentration from liquid concentration.
 */
 
-#ifndef AMANZI_MULTIPHASE_TCC_LIQUID_HH_
-#define AMANZI_MULTIPHASE_TCC_LIQUID_HH_
+#ifndef AMANZI_MULTIPHASE_TCC_GAS_HH_
+#define AMANZI_MULTIPHASE_TCC_GAS_HH_
 
 #include <string>
 #include <vector>
@@ -30,9 +30,9 @@
 namespace Amanzi {
 namespace Multiphase {
 
-class TccLiquid : public MultiphaseBaseEvaluator {
+class TccGas : public MultiphaseBaseEvaluator {
  public:
-  TccLiquid(Teuchos::ParameterList& plist);
+  TccGas(Teuchos::ParameterList& plist);
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -43,9 +43,9 @@ class TccLiquid : public MultiphaseBaseEvaluator {
                                           const std::vector<CompositeVector*>& results) override;
 
  private:
-  std::string tcc_gas_key_;
+  std::string tcc_liquid_key_;
 
-  static Utils::RegisteredFactory<Evaluator, TccLiquid> fac_;
+  static Utils::RegisteredFactory<Evaluator, TccGas> fac_;
 };
 
 }  // namespace Flow

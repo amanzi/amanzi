@@ -36,8 +36,7 @@
 
 
 /* **************************************************************** */
-void run_test(const std::string& domain, const std::string& filename)
-{
+TEST(MULTIPHASE_SMILES) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -46,12 +45,12 @@ void run_test(const std::string& domain, const std::string& filename)
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: multiphase pk, model Jaffre, domain=" << domain << std::endl;
+  if (MyPID == 0) std::cout << "Test: multiphase Smiles diffusion test" << std::endl;
 
-  int d = (domain == "2D") ? 2 : 3;
+  int d = 2;
 
   // read parameter list
-  auto plist = Teuchos::getParametersFromXmlFile(filename);
+  auto plist = Teuchos::getParametersFromXmlFile("test/multiphase_smiles.xml");
 
   // create a MSTK mesh framework
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
@@ -59,16 +58,7 @@ void run_test(const std::string& domain, const std::string& filename)
 
   MeshFactory meshfactory(comm, gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  RCP<const Mesh> mesh;
-  if (d == 2) {
-    // mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 200, 10);
-    mesh = meshfactory.create(0.0, 0.0, 200.0, 12.0, 50, 3);
-  } else if (domain == "fractures") {
-    auto mesh3D = meshfactory.create(0.0, 0.0, 0.0, 200.0, 12.0, 12.0, 50, 3, 6, true, true);
-    std::vector<std::string> names;
-    names.push_back("fracture");
-    mesh = meshfactory.create(mesh3D, names, AmanziMesh::FACE);
-  }
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 10.0, 1.0, 51, 1);
 
   // create screen io
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Multiphase_PK", *plist));
@@ -91,7 +81,6 @@ void run_test(const std::string& domain, const std::string& filename)
   // initialize the multiphase process kernel
   MPK->Initialize();
   S->CheckAllFieldsInitialized();
-  // S->WriteDependencyGraph();
   WriteStateStatistics(*S, *vo);
 
   // initialize io
@@ -101,9 +90,9 @@ void run_test(const std::string& domain, const std::string& filename)
 
   // loop
   int iloop(0);
-  double t(0.0), tend(1.57e+12), dt(1.5768e+7), dt_max(3e+10);
-  while (t < tend && iloop < 400) {
-    while (MPK->AdvanceStep(t, t + dt, false)) { dt /= 10; }
+  double t(0.0), tend(3.15e+8), dt(3.15e+6), dt_max(3.15e+7 / 2);
+  while (t < tend) {
+    while(MPK->AdvanceStep(t, t + dt, false)) { dt /= 10; } 
 
     MPK->CommitStep(t, t + dt, Tags::DEFAULT);
     S->advance_cycle();
@@ -111,45 +100,34 @@ void run_test(const std::string& domain, const std::string& filename)
     S->advance_time(dt);
     t += dt;
     dt = std::min(dt_max, dt * 1.2);
-    iloop++;
 
     // output solution
-    if (iloop % 5 == 0) {
+    iloop++;
+    if (iloop % 5 == 0) WriteStateStatistics(*S, *vo);
+
+    if (iloop % 5000 == 0) {
       io->InitializeCycle(t, iloop, "");
-      const auto& u0 = *S->Get<CompositeVector>("pressure_liquid").ViewComponent("cell");
-      const auto& u1 = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
       const auto& u2 = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
       const auto& u3 = *S->Get<CompositeVector>("molar_density_gas").ViewComponent("cell");
 
-      io->WriteVector(*u0(0), "pressure", AmanziMesh::CELL);
-      io->WriteVector(*u1(0), "saturation_liquid", AmanziMesh::CELL);
-      io->WriteVector(*u2(0), "liquid hydrogen", AmanziMesh::CELL);
-      io->WriteVector(*u3(0), "gas hydrogen", AmanziMesh::CELL);
+      io->WriteVector(*u2(0), "liquid tritium", AmanziMesh::CELL);
+      io->WriteVector(*u3(0), "gas tritium", AmanziMesh::CELL);
       io->FinalizeCycle();
-
-      WriteStateStatistics(*S, *vo);
     }
+
+    double sl(0.01);
+    const auto& tccl = *S->Get<CompositeVector>("total_component_concentration_liquid", Tags::DEFAULT).ViewComponent("cell");
+    const auto& tccg = *S->Get<CompositeVector>("total_component_concentration_gas", Tags::DEFAULT).ViewComponent("cell");
+    printf("AAA: %g %16.10g %16.10f\n", t, tccl[0][25], tccg[0][25]);
+    // printf("AAA: %g %16.10g \n", t, tccl[0][25] + tccg[0][25] * (1 - sl) / sl);
+    // CHECK_CLOSE(0.14, tcc[0][25] + tcc[1][25] * (1 - sl) / sl, 0.002);
   }
 
   WriteStateStatistics(*S, *vo);
 
-  // verification
-  double dmin, dmax;
-  const auto& sl = *S->Get<CompositeVector>("saturation_liquid").ViewComponent("cell");
-  sl.MinValue(&dmin);
-  sl.MaxValue(&dmax);
-  CHECK(dmin >= 0.0 && dmax <= 1.0 && dmin < 0.999);
-  
-  S->Get<CompositeVector>("ncp_fg").NormInf(&dmax);
-  CHECK(dmax <= 1.0e-10);
-
-  const auto& xg = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
-  xg.MinValue(&dmin);
-  CHECK(dmin >= 0.0);
+  // const auto& xg = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
+  // xg.MinValue(&dmin);
+  // CHECK(dmin >= 0.0);
 }
 
 
-TEST(MULTIPHASE_2P2C) {
-  run_test("2D", "test/multiphase_jaffre.xml");
-  run_test("fractures", "test/multiphase_jaffre_fractures.xml");
-}

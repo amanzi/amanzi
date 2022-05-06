@@ -1,5 +1,5 @@
 /*
-  MultiPhase PK
+  Multiphase PK 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -8,31 +8,30 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Calculates liquid component concentration from gas concentration.
+  Field evaluator for conserved quantity: the total component storage
+
+    TCS = phi * (s_l * C_l + s_g * C_g)
+
+  where C_p is the concentration a component in phase p.
 */
 
-#ifndef AMANZI_MULTIPHASE_TCC_LIQUID_HH_
-#define AMANZI_MULTIPHASE_TCC_LIQUID_HH_
 
-#include <string>
-#include <vector>
+#ifndef AMANZI_MULTIPHASE_TOTAL_COMPONENT_STORAGE_TCC_HH_
+#define AMANZI_MULTIPHASE_TOTAL_COMPONENT_STORAGE_TCC_HH_
 
-#include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-// Amanzi
 #include "Factory.hh"
 
-// Multiphase
 #include "MultiphaseBaseEvaluator.hh"
-#include "MultiphaseTypeDefs.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 
-class TccLiquid : public MultiphaseBaseEvaluator {
+class TotalComponentStorage_Tcc : public MultiphaseBaseEvaluator {
  public:
-  TccLiquid(Teuchos::ParameterList& plist);
+  TotalComponentStorage_Tcc(Teuchos::ParameterList& plist);
+  TotalComponentStorage_Tcc(const TotalComponentStorage_Tcc& other);
 
   // required inteface functions
   virtual Teuchos::RCP<Evaluator> Clone() const override;
@@ -42,14 +41,15 @@ class TccLiquid : public MultiphaseBaseEvaluator {
   virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
+ protected:
+  Key saturation_liquid_key_, porosity_key_;
+  Key tcc_liquid_key_, tcc_gas_key_;
+  
  private:
-  std::string tcc_gas_key_;
-
-  static Utils::RegisteredFactory<Evaluator, TccLiquid> fac_;
+  static Utils::RegisteredFactory<Evaluator, TotalComponentStorage_Tcc> fac_;
 };
 
-}  // namespace Flow
+}  // namespace Multiphase
 }  // namespace Amanzi
 
 #endif
-

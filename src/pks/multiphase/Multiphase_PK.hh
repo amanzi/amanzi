@@ -15,6 +15,9 @@
 #ifndef AMANZI_MULTIPHASE_PK_HH_
 #define AMANZI_MULTIPHASE_PK_HH_
 
+#include <set>
+#include <vector>
+
 // Amanzi
 #include "BCs.hh"
 #include "BDF1_TI.hh"
@@ -127,6 +130,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   // unknowns
   Teuchos::RCP<TreeVector> soln_;
   std::vector<std::string> soln_names_;
+  std::set<std::string> secondary_names_;
   std::vector<std::string> component_names_; 
   int num_primary_, num_phases_;
 
@@ -143,8 +147,8 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Key pressure_liquid_key_, x_liquid_key_, x_gas_key_;
   Key saturation_liquid_key_, saturation_gas_key_, temperature_key_;
   Key energy_key_, prev_energy_key_;
-  Key porosity_key_, pressure_gas_key_;
-  Key pressure_vapor_key_, tcc_liquid_key_;
+  Key porosity_key_, pressure_gas_key_, pressure_vapor_key_;
+  Key tcc_liquid_key_, tcc_gas_key_;
   Key permeability_key_, relperm_liquid_key_, relperm_gas_key_;
   Key advection_liquid_key_, advection_gas_key_;
   Key viscosity_liquid_key_, viscosity_gas_key_;
@@ -166,7 +170,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
   Teuchos::RCP<Operators::PDE_DiffusionFVwithGravity> pde_diff_K_;
   Teuchos::RCP<Operators::PDE_DiffusionFV> pde_diff_D_;
 
-  bool non_isothermal_;
+  std::map<std::string, bool> system_;
   std::vector<EquationStructure> eqns_;
   std::vector<std::vector<int> > eqns_flattened_;
   std::vector<std::string> eval_flattened_;

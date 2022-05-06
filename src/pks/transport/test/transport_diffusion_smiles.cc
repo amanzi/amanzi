@@ -89,6 +89,7 @@ TEST(DIFFUSION_GAS_SMILES) {
 
     t_old = t_new;
     iter++;
+    printf("AAA: %g %16.10g  %16.10f\n", t_new, tcc[0][0], tcc[1][0]);
   }
 
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Smiles", *plist));

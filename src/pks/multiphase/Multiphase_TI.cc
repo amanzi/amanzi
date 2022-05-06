@@ -67,6 +67,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   // work memory for miscalleneous operator
   auto kr = CreateCVforUpwind(mesh_);
   auto& kr_c = *kr->ViewComponent("cell");
+
   std::vector<int> bcnone(nfaces_wghost_, Operators::OPERATOR_BC_NONE);
 
   // primary variables
@@ -77,9 +78,11 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
 
   // start loop over physical equations
   int neqns = eqns_.size();
+  int nncps = (system_["constraint eqn"]) ? 1 : 0;
 
   Key fname, gname, key;
-  for (int n = 0; n < neqns - 1; ++n) {
+  for (int n = 0; n < neqns - nncps; ++n) {
+    bool bcflag(true);
     Key keyr = soln_names_[eqns_flattened_[n][0]];
 
     ModifyEvaluators(n);
@@ -89,7 +92,6 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
     fone.PutScalar(0.0);
 
     for (int phase = 0; phase < 2; ++phase) {
-      bool bcflag = (phase == 0);
       fname = eqns_[n].advection[phase].first;
       gname = eqns_[n].advection[phase].second;
 
@@ -102,12 +104,15 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
         upwind_->Compute(flux, *kr, bcnone, *kr);
 
         // -- form diffusion operator
+        //    BCs are defined by the equation and must be imposed only once 
+        //    using either the total flux or Dirichlet
         auto& pde = pde_diff_K_;
         pde->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_);  // FIXME (gravity for gas phase)
         pde->SetBCs(op_bcs_[keyr], op_bcs_[keyr]);
         pde->global_operator()->Init();
         pde->UpdateMatrices(Teuchos::null, Teuchos::null);
         pde->ApplyBCs(bcflag, false, false);
+        bcflag = false;
 
         // -- add advection term to the residual
         S_->GetEvaluator(gname).Update(*S_, passwd_);
@@ -134,7 +139,8 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
         pde->SetBCs(op_bcs_[keyr], op_bcs_[keyr]);
         pde->global_operator()->Init();
         pde->UpdateMatrices(Teuchos::null, Teuchos::null);
-        pde->ApplyBCs(false, false, false);
+        pde->ApplyBCs(bcflag, false, false);
+        bcflag = false;
 
         // -- add diffusion term to the residual
         S_->GetEvaluator(gname).Update(*S_, passwd_);
@@ -171,25 +177,27 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
   }
 
   // process gas constraints
-  int n = neqns - 1;
-  key = eqns_[n].constraint.first;
-  S_->GetEvaluator(key).Update(*S_, passwd_);
-  const auto& ncp_fc = *S_->Get<CompositeVector>(key).ViewComponent("cell");
+  if (nncps > 0) {
+    int n = neqns - 1;
+    key = eqns_[n].constraint.first;
+    S_->GetEvaluator(key).Update(*S_, passwd_);
+    const auto& ncp_fc = *S_->Get<CompositeVector>(key).ViewComponent("cell");
 
-  key = eqns_[n].constraint.second;
-  S_->GetEvaluator(key).Update(*S_, passwd_);
-  const auto& ncp_gc = *S_->Get<CompositeVector>(key).ViewComponent("cell");
+    key = eqns_[n].constraint.second;
+    S_->GetEvaluator(key).Update(*S_, passwd_);
+    const auto& ncp_gc = *S_->Get<CompositeVector>(key).ViewComponent("cell");
 
-  auto& fci = *fp[eqns_flattened_[n][0]]->ViewComponent("cell");
-  if (ncp_ == "min") {
-    for (int c = 0; c < ncells_owned_; ++c) {
-      fci[0][c] = std::min(ncp_fc[0][c], ncp_gc[0][c]);
-    }
-  } else if (ncp_ == "Fischer-Burmeister") {
-    for (int c = 0; c < ncells_owned_; ++c) {
-      double a = ncp_fc[0][c];
-      double b = ncp_gc[0][c];
-      fci[0][c] = std::pow(a * a + b * b, 0.5) - (a + b);
+    auto& fci = *fp[eqns_flattened_[n][0]]->ViewComponent("cell");
+    if (ncp_ == "min") {
+      for (int c = 0; c < ncells_owned_; ++c) {
+        fci[0][c] = std::min(ncp_fc[0][c], ncp_gc[0][c]);
+      }
+    } else if (ncp_ == "Fischer-Burmeister") {
+      for (int c = 0; c < ncells_owned_; ++c) {
+        double a = ncp_fc[0][c];
+        double b = ncp_gc[0][c];
+        fci[0][c] = std::pow(a * a + b * b, 0.5) - (a + b);
+      }
     }
   }
 }
@@ -234,6 +242,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
   auto kr = CreateCVforUpwind(mesh_);
   auto& kr_c = *kr->ViewComponent("cell");
+
   std::vector<int> bcnone(nfaces_wghost_, Operators::OPERATOR_BC_NONE);
 
   auto fone = Teuchos::rcp(new CompositeVector(*up[0]));
@@ -245,9 +254,10 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
   // for each operator we linearize (a) functions on which it acts and
   // (b) non-linear coefficients
   int neqns = eqns_.size();
+  int nncps = (system_["constraint eqn"]) ? 1 : 0;
 
   Key fname, gname, key;
-  for (int row = 0; row < neqns - 1; ++row) {
+  for (int row = 0; row < neqns - nncps; ++row) {
     ModifyEvaluators(row);
     Key keyr = soln_names_[eqns_flattened_[row][0]];
     PopulateBCs(eqns_flattened_[row][1], false);
@@ -256,8 +266,6 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
       Key keyc = soln_names_[eqns_flattened_[col][0]];
 
       if (eqns_flattened_[col][2] >= 0 && row != eqns_flattened_[col][2]) continue;
-
-      bool bcflag = (row == col);
 
       // add empty operator to have a well-defined global operator pointer
       auto pde0 = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_));
@@ -278,6 +286,8 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
         gname = eqns_[row].advection[phase].second;
 
         // -- diffusion operator div[ (K f dg/dv) grad dv ] 
+        //    BCs are defined by the equation and must be imposed only once 
+        //    using either the total flux or Dirichlet
         if (fname != "") {
           if (S_->HasDerivative(gname, keyc) || gname == keyc) {
             auto pde = Teuchos::rcp(new Operators::PDE_DiffusionFV(ddf_list, global_op));
@@ -301,7 +311,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
             pde->Setup(Kptr, kr, Teuchos::null);
             pde->SetBCs(op_bcs_[keyc], op_bcs_[keyc]);
             pde->UpdateMatrices(Teuchos::null, Teuchos::null);
-            pde->ApplyBCs(bcflag, false, false);
+            pde->ApplyBCs(false, false, false);
 
             double factor = eqns_[row].adv_factors[phase];
             if (factor != 1.0) pde->local_op()->Rescale(factor);
@@ -380,12 +390,12 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
               kr_c[0][c] = (*der_c)[0][c] * coef_c[0][c];
             }
             auto& flux = S_->GetW<CompositeVector>(flux_names_[phase], passwd_);
-            upwind_->Compute(flux, *kr, op_bcs_[keyr]->bc_model(), *kr);
+            upwind_->Compute(flux, *kr, bcnone, *kr);
 
             pde->Setup(Teuchos::null, kr, Teuchos::null);
-            pde->SetBCs(op_bcs_[keyc], op_bcs_[keyc]);
+            pde->SetBCs(op_bcs_[keyr], op_bcs_[keyr]);
             pde->UpdateMatrices(Teuchos::null, Teuchos::null);
-            pde->ApplyBCs(bcflag, false, false);
+            pde->ApplyBCs(false, false, false);
 
             double factor = eqns_[row].diff_factors[phase];
             if (factor != 1.0) pde->local_op()->Rescale(factor);
@@ -406,7 +416,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
             // --- calculate advective flux 
             pde_diff_D_->Setup(Teuchos::null, kr, Teuchos::null);
-            pde_diff_D_->SetBCs(op_bcs_[keyc], op_bcs_[keyc]);
+            pde_diff_D_->SetBCs(op_bcs_[keyr], op_bcs_[keyr]);
             pde_diff_D_->UpdateMatrices(Teuchos::null, Teuchos::null);
             pde_diff_D_->UpdateFlux(tmp.ptr(), flux_tmp.ptr());
 
@@ -429,7 +439,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
             S_->GetEvaluator(gname).Update(*S_, passwd_);
             auto var = S_->GetPtr<CompositeVector>(gname, Tags::DEFAULT);
             pde_diff_D_->Setup(Teuchos::null, kr, Teuchos::null);
-            pde_diff_D_->SetBCs(op_bcs_[keyc], op_bcs_[keyc]);
+            pde_diff_D_->SetBCs(op_bcs_[keyr], op_bcs_[keyr]);
             pde_diff_D_->UpdateMatrices(Teuchos::null, Teuchos::null);
             pde_diff_D_->UpdateFlux(var.ptr(), flux_tmp.ptr());
 
@@ -442,7 +452,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
       // populate advection operator
       auto pde1 = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, global_op)); 
       pde1->Setup(*flux_acc);
-      pde1->SetBCs(op_bcs_[keyc], op_bcs_[keyc]);
+      pde1->SetBCs(op_bcs_[keyr], op_bcs_[keyr]);
       pde1->UpdateMatrices(flux_acc.ptr());
       pde1->ApplyBCs(false, false, false);
 
@@ -459,57 +469,59 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
   }
       
   // process constraint
-  int n = neqns - 1;
+  if (nncps > 0) {
+    int n = neqns - 1;
 
-  for (int i = 0; i < neqns; ++i) {
-    auto pde = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_)); 
-    op_preconditioner_->set_operator_block(n, i, pde->global_operator());
+    for (int i = 0; i < neqns; ++i) {
+      auto pde = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_)); 
+      op_preconditioner_->set_operator_block(n, i, pde->global_operator());
  
-    // -- derivatives
-    Teuchos::RCP<const Epetra_MultiVector> der_fc, der_gc;
+      // -- derivatives
+      Teuchos::RCP<const Epetra_MultiVector> der_fc, der_gc;
 
-    key = eqns_[n].constraint.first;
-    S_->GetEvaluator(key).Update(*S_, passwd_);
-    const auto& ncp_fc = *S_->Get<CompositeVector>(key).ViewComponent("cell");
+      key = eqns_[n].constraint.first;
+      S_->GetEvaluator(key).Update(*S_, passwd_);
+      const auto& ncp_fc = *S_->Get<CompositeVector>(key).ViewComponent("cell");
 
-    Key keyc = soln_names_[eqns_flattened_[i][0]];
-    if (S_->HasDerivative(key, keyc)) {
-      S_->GetEvaluator(key).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
-      der_fc = S_->GetDerivative<CompositeVector>(key, Tags::DEFAULT, keyc, Tags::DEFAULT).ViewComponent("cell");
-    }
+      Key keyc = soln_names_[eqns_flattened_[i][0]];
+      if (S_->HasDerivative(key, keyc)) {
+        S_->GetEvaluator(key).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
+        der_fc = S_->GetDerivative<CompositeVector>(key, Tags::DEFAULT, keyc, Tags::DEFAULT).ViewComponent("cell");
+      }
 
-    key = eqns_[n].constraint.second;
-    S_->GetEvaluator(key).Update(*S_, passwd_);
-    const auto& ncp_gc = *S_->Get<CompositeVector>(key).ViewComponent("cell");
+      key = eqns_[n].constraint.second;
+      S_->GetEvaluator(key).Update(*S_, passwd_);
+      const auto& ncp_gc = *S_->Get<CompositeVector>(key).ViewComponent("cell");
 
-    keyc = soln_names_[eqns_flattened_[i][0]];
-    if (S_->HasDerivative(key, keyc)) {
-      S_->GetEvaluator(key).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
-      der_gc = S_->GetDerivative<CompositeVector>(key, Tags::DEFAULT, keyc, Tags::DEFAULT).ViewComponent("cell");
-    }
+      keyc = soln_names_[eqns_flattened_[i][0]];
+      if (S_->HasDerivative(key, keyc)) {
+        S_->GetEvaluator(key).UpdateDerivative(*S_, passwd_, keyc, Tags::DEFAULT);
+        der_gc = S_->GetDerivative<CompositeVector>(key, Tags::DEFAULT, keyc, Tags::DEFAULT).ViewComponent("cell");
+      }
 
-    // -- identify active set for gas phase
-    fone->PutScalar(0.0);
-    if (ncp_ == "min") {
-      for (int c = 0; c < ncells_owned_; c++) {
-        if (ncp_fc[0][c] > ncp_gc[0][c]) {
-          if (der_gc.get()) (*fone_c)[0][c] = (*der_gc)[0][c];
-        } else {
-          if (der_fc.get()) (*fone_c)[0][c] = (*der_fc)[0][c];
+      // -- identify active set for gas phase
+      fone->PutScalar(0.0);
+      if (ncp_ == "min") {
+        for (int c = 0; c < ncells_owned_; c++) {
+          if (ncp_fc[0][c] > ncp_gc[0][c]) {
+            if (der_gc.get()) (*fone_c)[0][c] = (*der_gc)[0][c];
+          } else {
+            if (der_fc.get()) (*fone_c)[0][c] = (*der_fc)[0][c];
+          }
+        }
+      } else if (ncp_ == "Fischer-Burmeister") {
+        for (int c = 0; c < ncells_owned_; ++c) {
+          double a = ncp_fc[0][c];
+          double b = ncp_gc[0][c];
+
+          double da = (der_fc.get()) ? (*der_fc)[0][c] : 0.0;
+          double db = (der_gc.get()) ? (*der_gc)[0][c] : 0.0;
+          (*fone_c)[0][c] = (a * da + b * db) * std::pow(a * a + b * b, -0.5) - (da + db);
         }
       }
-    } else if (ncp_ == "Fischer-Burmeister") {
-      for (int c = 0; c < ncells_owned_; ++c) {
-        double a = ncp_fc[0][c];
-        double b = ncp_gc[0][c];
 
-        double da = (der_fc.get()) ? (*der_fc)[0][c] : 0.0;
-        double db = (der_gc.get()) ? (*der_gc)[0][c] : 0.0;
-        (*fone_c)[0][c] = (a * da + b * db) * std::pow(a * a + b * b, -0.5) - (da + db);
-      }
+      pde->AddAccumulationTerm(*fone, "cell");
     }
-
-    pde->AddAccumulationTerm(*fone, "cell");
   }
 
   // finalize preconditioner
@@ -530,7 +542,8 @@ int Multiphase_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
   Y->PutScalar(0.0);
   // *Y = *X; return 0;
   // return op_preconditioner_->ApplyInverse(*X, *Y);
-  return op_pc_solver_->ApplyInverse(*X, *Y);
+  int ok = op_pc_solver_->ApplyInverse(*X, *Y);
+  return ok;
 }
 
 
@@ -552,40 +565,43 @@ void Multiphase_PK::ChangedSolution()
 double Multiphase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
                                 Teuchos::RCP<const TreeVector> du) 
 {
-  // pressure error
-  auto pc = *u->SubVector(0)->Data()->ViewComponent("cell");
-  auto dpc = *du->SubVector(0)->Data()->ViewComponent("cell");
+  double error(0.0);
+  for (int i = 0; i < soln_names_.size(); ++i) { 
+    double error_tmp(0.0);
 
-  double atm_pressure(1.0e+5);
+    if (soln_names_[i] == pressure_liquid_key_) {
+      auto pc = *u->SubVector(i)->Data()->ViewComponent("cell");
+      auto dpc = *du->SubVector(i)->Data()->ViewComponent("cell");
 
-  double error_p = 0.0;
-  for (int c = 0; c < ncells_owned_; c++) {
-    double tmp = fabs(dpc[0][c]) / (fabs(pc[0][c] - atm_pressure) + atm_pressure);
-    if (tmp > error_p) {
-      error_p = tmp;
-    } 
-  }
-
-  // concentration error
-  auto dxc = *du->SubVector(1)->Data()->ViewComponent("cell");
-  int n = dxc.NumVectors();
-
-  double error_x = 0.0;
-  for (int c = 0; c < ncells_owned_; c++) {
-    for (int i = 0; i < n; ++i) {
-      error_x = std::max(error_x, fabs(dxc[i][c]));
+      double atm_pressure(1.0e+5);
+      for (int c = 0; c < ncells_owned_; c++) {
+        double tmp = fabs(dpc[0][c]) / (fabs(pc[0][c] - atm_pressure) + atm_pressure);
+        error_tmp = std::max(error_tmp, tmp);
+      }
     }
+
+    else if (soln_names_[i] == tcc_liquid_key_ ||
+             soln_names_[i] == x_gas_key_) {
+      auto dxc = *du->SubVector(i)->Data()->ViewComponent("cell");
+      int n = dxc.NumVectors();
+
+      for (int c = 0; c < ncells_owned_; c++) {
+        for (int i = 0; i < n; ++i) {
+          error_tmp = std::max(error_tmp, fabs(dxc[i][c]));
+        }
+      }
+    }
+
+    else if (soln_names_[i] == saturation_liquid_key_) {
+      auto dsc = *du->SubVector(i)->Data()->ViewComponent("cell");
+
+      for (int c = 0; c < ncells_owned_; c++) {
+        error_tmp = std::max(error_tmp, fabs(dsc[0][c]));
+      }
+    }
+    error += error_tmp;
   }
 
-  // saturation error
-  auto dsc = *du->SubVector(2)->Data()->ViewComponent("cell");
-
-  double error_s = 0.0;
-  for (int c = 0; c < ncells_owned_; c++) {
-    error_s = std::max(error_s, fabs(dsc[0][c]));
-  }
-
-  double error = error_p + error_x + error_s;
 #ifdef HAVE_MPI
   double buf = error;
   du->Comm()->MaxAll(&buf, &error, 1);  // find the global maximum

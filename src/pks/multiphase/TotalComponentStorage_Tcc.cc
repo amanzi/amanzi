@@ -6,15 +6,16 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Field evaluator for a total component storage (water, hydrogen,
-  etc) storage, the conserved quantity:
+  Field evaluator for conserved quantity: the total component storage
 
-    TCS = phi * (eta_l * s_l + eta_g * s_g)
+    TCS = phi * (s_l * C_l + s_g * C_g)
+
+  where C_p is the concentration a component in phase p.
 */
 
-#include "TotalComponentStorage_Jaffre.hh"
+#include "TotalComponentStorage_Tcc.hh"
 
 namespace Amanzi {
 namespace Multiphase {
@@ -22,7 +23,7 @@ namespace Multiphase {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-TotalComponentStorage_Jaffre::TotalComponentStorage_Jaffre(Teuchos::ParameterList& plist) :
+TotalComponentStorage_Tcc::TotalComponentStorage_Tcc(Teuchos::ParameterList& plist) :
     MultiphaseBaseEvaluator(plist)
 {
   if (my_keys_.size() == 0) {
@@ -31,46 +32,44 @@ TotalComponentStorage_Jaffre::TotalComponentStorage_Jaffre(Teuchos::ParameterLis
 
   saturation_liquid_key_ = plist_.get<std::string>("saturation liquid key");
   porosity_key_ = plist_.get<std::string>("porosity key");
-  mol_density_liquid_key_ = plist_.get<std::string>("molar density liquid key");
-  mol_density_gas_key_ = plist_.get<std::string>("molar density gas key");
+  tcc_liquid_key_ = plist_.get<std::string>("total component concentration liquid key");
+  tcc_gas_key_ = plist_.get<std::string>("total component concentration gas key");
 
   dependencies_.insert(std::make_pair(porosity_key_, Tags::DEFAULT));
   dependencies_.insert(std::make_pair(saturation_liquid_key_, Tags::DEFAULT));
-  dependencies_.insert(std::make_pair(mol_density_liquid_key_, Tags::DEFAULT));
-  dependencies_.insert(std::make_pair(mol_density_gas_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(tcc_liquid_key_, Tags::DEFAULT));
+  dependencies_.insert(std::make_pair(tcc_gas_key_, Tags::DEFAULT));
 }
 
 
 /* ******************************************************************
 * Copy constructors.
 ****************************************************************** */
-TotalComponentStorage_Jaffre::TotalComponentStorage_Jaffre(
-    const TotalComponentStorage_Jaffre& other) : MultiphaseBaseEvaluator(other) {};
+TotalComponentStorage_Tcc::TotalComponentStorage_Tcc(const TotalComponentStorage_Tcc& other) :
+    MultiphaseBaseEvaluator(other) {};
 
 
-Teuchos::RCP<Evaluator> TotalComponentStorage_Jaffre::Clone() const {
-  return Teuchos::rcp(new TotalComponentStorage_Jaffre(*this));
+Teuchos::RCP<Evaluator> TotalComponentStorage_Tcc::Clone() const {
+  return Teuchos::rcp(new TotalComponentStorage_Tcc(*this));
 }
 
 
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void TotalComponentStorage_Jaffre::Evaluate_(
+void TotalComponentStorage_Tcc::Evaluate_(
     const State& S, const std::vector<CompositeVector*>& results)
 {
   const auto& phi = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
   const auto& sl = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
-  const auto& nl = *S.Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
-  const auto& ng = *S.Get<CompositeVector>(mol_density_gas_key_).ViewComponent("cell");
+  const auto& tccl = *S.Get<CompositeVector>(tcc_liquid_key_).ViewComponent("cell");
+  const auto& tccg = *S.Get<CompositeVector>(tcc_gas_key_).ViewComponent("cell");
 
   auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell", false);
 
   for (int c = 0; c != ncells; ++c) {
-    double tmpl = phi[0][c] * nl[0][c] * sl[0][c];
-    double tmpg = phi[0][c] * ng[0][c] * (1.0 - sl[0][c]);
-    result_c[0][c] = tmpl + tmpg;
+    result_c[0][c] = phi[0][c] * (tccl[0][c] * sl[0][c] + tccg[0][c] * (1.0 - sl[0][c]));
   }
 }
 
@@ -78,34 +77,35 @@ void TotalComponentStorage_Jaffre::Evaluate_(
 /* ******************************************************************
 * Required member: field calculation.
 ****************************************************************** */
-void TotalComponentStorage_Jaffre::EvaluatePartialDerivative_(
+void TotalComponentStorage_Tcc::EvaluatePartialDerivative_(
     const State& S, const Key& wrt_key, const Tag& wrt_tag,
     const std::vector<CompositeVector*>& results)
 {
   const auto& phi = *S.Get<CompositeVector>(porosity_key_).ViewComponent("cell");
   const auto& sl = *S.Get<CompositeVector>(saturation_liquid_key_).ViewComponent("cell");
-  const auto& nl = *S.Get<CompositeVector>(mol_density_liquid_key_).ViewComponent("cell");
-  const auto& ng = *S.Get<CompositeVector>(mol_density_gas_key_).ViewComponent("cell");
+  const auto& tccl = *S.Get<CompositeVector>(tcc_liquid_key_).ViewComponent("cell");
+  const auto& tccg = *S.Get<CompositeVector>(tcc_gas_key_).ViewComponent("cell");
 
   auto& result_c = *results[0]->ViewComponent("cell");
   int ncells = results[0]->size("cell", false);
 
   if (wrt_key == porosity_key_) {
     for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = sl[0][c] * nl[0][c] + (1.0 - sl[0][c]) * ng[0][c];
+      result_c[0][c] = tccl[0][c] * sl[0][c] + tccg[0][c] * (1.0 - sl[0][c]);
     }
   }
   else if (wrt_key == saturation_liquid_key_) {
     for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = phi[0][c] * (nl[0][c] - ng[0][c]);
+      result_c[0][c] = phi[0][c] * (tccl[0][c] - tccg[0][c]);
     }
   }
 
-  else if (wrt_key == mol_density_liquid_key_) {
+  else if (wrt_key == tcc_liquid_key_) {
     for (int c = 0; c != ncells; ++c) {
       result_c[0][c] = phi[0][c] * sl[0][c];
     }
-  } else if (wrt_key == mol_density_gas_key_) {
+
+  } else if (wrt_key == tcc_gas_key_) {
     for (int c = 0; c != ncells; ++c) {
       result_c[0][c] = phi[0][c] * (1.0 - sl[0][c]);
     }

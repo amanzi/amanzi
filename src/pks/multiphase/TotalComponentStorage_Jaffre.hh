@@ -40,8 +40,6 @@ class TotalComponentStorage_Jaffre : public MultiphaseBaseEvaluator {
   virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Tag& wrt_tag,
                                           const std::vector<CompositeVector*>& results) override;
 
-  virtual void Init_();
-
  protected:
   Key saturation_liquid_key_, porosity_key_;
   Key mol_density_liquid_key_, mol_density_gas_key_;

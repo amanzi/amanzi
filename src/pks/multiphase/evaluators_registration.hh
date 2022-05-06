@@ -17,8 +17,10 @@
 #include "NCP_MoleFractions.hh"
 #include "ProductEvaluator.hh"
 #include "SaturationGasEvaluator.hh"
+#include "TccGas.hh"
 #include "TccLiquid.hh"
 #include "TotalComponentStorage.hh"
+#include "TotalComponentStorage_Tcc.hh"
 #include "TotalComponentStorage_Jaffre.hh"
 #include "TotalWaterStorage.hh"
 
@@ -32,8 +34,10 @@ Utils::RegisteredFactory<Evaluator, NCP_MoleFractions> NCP_MoleFractions::fac_("
 Utils::RegisteredFactory<Evaluator, ProductEvaluator> ProductEvaluator::fac_("product");
 Utils::RegisteredFactory<Evaluator, SaturationGasEvaluator> SaturationGasEvaluator::fac_("saturation gas");
 Utils::RegisteredFactory<Evaluator, TotalComponentStorage> TotalComponentStorage::fac_("storage component");
+Utils::RegisteredFactory<Evaluator, TotalComponentStorage_Tcc> TotalComponentStorage_Tcc::fac_("storage component tcc");
 Utils::RegisteredFactory<Evaluator, TotalComponentStorage_Jaffre> TotalComponentStorage_Jaffre::fac_("storage component jaffre");
 Utils::RegisteredFactory<Evaluator, TotalWaterStorage> TotalWaterStorage::fac_("storage water");
+Utils::RegisteredFactory<Evaluator, TccGas> TccGas::fac_("tcc gas");
 Utils::RegisteredFactory<Evaluator, TccLiquid> TccLiquid::fac_("tcc liquid");
 
 }  // namespace Multiphase

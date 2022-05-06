@@ -54,11 +54,11 @@ set(multiphase_src_files Multiphase_PK.cc Multiphase_TI.cc
                          NCP_F.cc NCP_HenryLaw.cc NCP_MoleFractions.cc NCP_MolarDensities.cc
                          SaturationGasEvaluator.cc
                          TotalWaterStorage.cc 
-                         TotalComponentStorage.cc
+                         TotalComponentStorage.cc TotalComponentStorage_Tcc.cc
                          TotalComponentStorage_Jaffre.cc
                          VaporPressureEvaluator.cc
                          WRMmp_Simple.cc WRMmp_vanGenuchten.cc WRMmp_BrooksCorey.cc WRMmp_Corey.cc
-                         MoleFractionLiquid.cc TccLiquid.cc PressureGasEvaluator.cc
+                         MoleFractionLiquid.cc TccLiquid.cc TccGas.cc PressureGasEvaluator.cc
                          RelPermEvaluator.cc ProductEvaluator.cc
                          FlattenedTreeOperator.cc)
 
@@ -76,13 +76,14 @@ set(multiphase_inc_files
   Multiphase_Utils.hh
   MultiphaseBoundaryFunction.hh
   ModelMeshPartition.hh
-  MoleFractionLiquid.hh TccLiquid.hh
+  MoleFractionLiquid.hh TccLiquid.hh TccGas.hh
   NCP_F.hh NCP_HenryLaw.hh NCP_MoleFractions.hh NCP_MolarDensities.hh
   PressureGasEvaluator.hh
   RelPermEvaluator.hh ProductEvaluator.hh
   SaturationGasEvaluator.hh
-  TotalWaterStorage.hh TotalComponentStorage.hh
   VaporPressureEvaluator.hh
+  TotalWaterStorage.hh
+  TotalComponentStorage.hh TotalComponentStorage_Tcc.hh
   WRMmp.hh
   WRMmp_Corey.hh
   WRMmp_Simple.hh
@@ -136,6 +137,12 @@ if (BUILD_TESTS)
   add_amanzi_test(multiphase_model2a multiphase_model2a
                   KIND      int
                   SOURCE    test/Main.cc test/multiphase_model2a.cc
+                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+  # Smiles
+  add_amanzi_test(multiphase_smiles multiphase_smiles
+                  KIND      int
+                  SOURCE    test/Main.cc test/multiphase_smiles.cc
                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
 endif()
