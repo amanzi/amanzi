@@ -166,6 +166,7 @@ spack install amanzi@spack <desired_variant> ^mpich@7.7.19 ^cray-libsci@20.09.1 
 ```
 
 The specific dependence on the cray scientific library is to make sure that `blas` and `lapack` are taken from there.
+Note that with versions of gcc higher than 8.3.0 there could be an argument mismatch error when building some libraries (such as [pflotran](https://github.com/spack/spack/issues/30498)). In that case, users should specify the following flag in the compilers.yaml file for the desired gcc version: `fflags:-fallow-argument-mismatch`. 
 To test amanzi, proceed as explained above using `dev-build --test all`.
 
 # T-5 systems
