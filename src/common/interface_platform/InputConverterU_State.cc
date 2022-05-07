@@ -732,6 +732,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
     out_list.sublist("initial conditions").sublist("permeability") = empty;
   }
 
+  out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
+
   return out_list;
 }
 

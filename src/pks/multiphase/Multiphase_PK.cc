@@ -23,6 +23,7 @@
 #include "EnthalpyEvaluator.hh"
 #include "EvaluatorPrimary.hh"
 #include "InverseFactory.hh"
+#include "IO.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_AdvectionUpwind.hh"
 #include "PDE_DiffusionFVwithGravity.hh"
@@ -189,9 +190,14 @@ void Multiphase_PK::Setup()
 
   // -- temperature
   if (!S_->HasRecord(temperature_key_)) {
-    auto elist = MyRequire_(temperature_key_, passwd_);
-    auto eval = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
-    S_->SetEvaluator(temperature_key_, Tags::DEFAULT, eval);
+    if (mp_list_->sublist("system").isSublist("energy eqn")) {
+      auto elist = MyRequire_(temperature_key_, passwd_);
+      auto eval = Teuchos::rcp(new EvaluatorPrimary<CV_t, CVS_t>(elist));
+      S_->SetEvaluator(temperature_key_, Tags::DEFAULT, eval);
+    } else {
+      MyRequire_(temperature_key_, temperature_key_);
+      S_->RequireEvaluator(temperature_key_, Tags::DEFAULT);
+    }
   }
   
   // -- other primary unknowns
@@ -317,7 +323,7 @@ void Multiphase_PK::Setup()
     S_->RequireEvaluator(porosity_key_, Tags::DEFAULT);
   }
 
-  // -- total energy
+  // non-isothermal model
   if (system_["energy eqn"]) {
     if (!S_->HasRecord(energy_key_)) {
       S_->Require<CV_t, CVS_t>(energy_key_, Tags::DEFAULT, energy_key_)

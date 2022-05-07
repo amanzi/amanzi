@@ -62,7 +62,7 @@
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
           <ParameterList name="transient:multiphase">
-            <Parameter name="PK type" type="string" value="multiphase pl sl xg"/>
+            <Parameter name="PK type" type="string" value="multiphase"/>
           </ParameterList>
         </ParameterList>
         <Parameter name="start period time" type="double" value="6.17266656000000000e+10"/>
@@ -88,6 +88,36 @@
     <Parameter name="Jacobian type" type="string" value="analytic"/>
     <Parameter name="linear solver" type="string" value="AMESOS"/>
     <Parameter name="preconditioner" type="string" value="Euclid"/>
+
+    <Parameter name="evaluators" type="Array(string)" value="{
+        ncp_g, total_water_storage, total_component_storage,
+        advection_water, advection_liquid, advection_gas,
+        diffusion_liquid, diffusion_gas, diffusion_vapor,
+        saturation_gas, mole_fraction_liquid, mole_fraction_vapor}"/>
+    <ParameterList name="system">
+      <ParameterList name="pressure eqn">
+        <Parameter name="primary unknown" type="string" value="pressure_liquid"/>
+        <Parameter name="advection liquid" type="Array(string)" value="{advection_water, pressure_liquid}"/>
+        <Parameter name="advection factors" type="Array(double)" value="{1.00000000000000000e+00, 1.00000000000000000e+00}"/>
+        <Parameter name="diffusion liquid" type="Array(string)" value="{diffusion_vapor, mole_fraction_vapor}"/>
+        <Parameter name="diffusion factors" type="Array(double)" value="{1.00000000000000000e+00, 1.00000000000000000e+00}"/>
+        <Parameter name="accumulation" type="string" value="total_water_storage"/>
+      </ParameterList>
+      <ParameterList name="solute eqn">
+        <Parameter name="primary unknown" type="string" value="mole_fraction_gas"/>
+        <Parameter name="advection liquid" type="Array(string)" value="{advection_liquid, pressure_liquid}"/>
+        <Parameter name="advection gas" type="Array(string)" value="{advection_gas, pressure_gas}"/>
+        <Parameter name="advection factors" type="Array(double)" value="{1.00000000000000000e+00, 1.00000000000000000e+00}"/>
+        <Parameter name="diffusion liquid" type="Array(string)" value="{diffusion_liquid, mole_fraction_liquid}"/>
+        <Parameter name="diffusion gas" type="Array(string)" value="{diffusion_gas, mole_fraction_gas}"/>
+        <Parameter name="diffusion factors" type="Array(double)" value="{1.00000000000000000e+00, 1.00000000000000000e+00}"/>
+        <Parameter name="accumulation" type="string" value="total_component_storage"/>
+      </ParameterList>
+      <ParameterList name="constraint eqn">
+        <Parameter name="primary unknown" type="string" value="saturation_liquid"/>
+        <Parameter name="ncp evaluators" type="Array(string)" value="{ncp_f, ncp_g}"/>
+      </ParameterList>
+    </ParameterList>
 
     <ParameterList name="molecular diffusion">
       <Parameter name="aqueous names" type="Array(string)" value="{H2}"/>
@@ -292,6 +322,9 @@
   </ParameterList>  <!-- PKs, no shift -->
 
   <ParameterList name="state">
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
+    </ParameterList>
     <ParameterList name="initial conditions">
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, -9.80664999999999942}"/>
@@ -382,6 +415,88 @@
     </ParameterList>
 
     <ParameterList name="evaluators">
+      <ParameterList name="ncp_g">
+        <Parameter name="evaluator type" type="string" value="ncp mole fraction gas"/>
+        <Parameter name="mole fraction vapor key" type="string" value="mole_fraction_vapor"/>
+        <Parameter name="mole fraction gas key" type="string" value="mole_fraction_gas"/>
+        <Parameter name="tag" type="string" value=""/>
+      </ParameterList>
+      <ParameterList name="total_water_storage">
+        <Parameter name="evaluator type" type="string" value="storage water"/>
+        <Parameter name="molar density liquid key" type="string" value="molar_density_liquid"/>
+        <Parameter name="molar density gas key" type="string" value="molar_density_gas"/>
+        <Parameter name="porosity key" type="string" value="porosity"/>
+        <Parameter name="saturation liquid key" type="string" value="saturation_liquid"/>
+        <Parameter name="mole fraction vapor key" type="string" value="mole_fraction_vapor"/>
+        <Parameter name="tag" type="string" value=""/>
+      </ParameterList>
+      <ParameterList name="total_component_storage">
+        <Parameter name="evaluator type" type="string" value="storage component"/>
+        <Parameter name="saturation liquid key" type="string" value="saturation_liquid"/>
+        <Parameter name="porosity key" type="string" value="porosity"/>
+        <Parameter name="molar density liquid key" type="string" value="molar_density_liquid"/>
+        <Parameter name="molar density gas key" type="string" value="molar_density_gas"/>
+        <Parameter name="mole fraction liquid key" type="string" value="mole_fraction_liquid"/>
+        <Parameter name="mole fraction gas key" type="string" value="mole_fraction_gas"/>
+        <Parameter name="tag" type="string" value=""/>
+      </ParameterList>
+
+      <ParameterList name="advection_water">
+        <Parameter name="evaluator type" type="string" value="product"/>
+        <Parameter name="dependencies" type="Array(string)" value="{molar_density_liquid, rel_permeability_liquid, viscosity_liquid}"/>
+        <Parameter name="powers" type="Array(int)" value="{1, 1, -1}"/>
+        <Parameter name="tag" type="string" value=""/>
+      </ParameterList>
+      <ParameterList name="advection_liquid">
+        <Parameter name="evaluator type" type="string" value="product"/>
+        <Parameter name="dependencies" type="Array(string)" value="{molar_density_liquid, mole_fraction_liquid, rel_permeability_liquid, viscosity_liquid}"/>
+        <Parameter name="powers" type="Array(int)" value="{1, 1, 1, -1}"/>
+        <Parameter name="tag" type="string" value=""/>
+      </ParameterList>
+      <ParameterList name="advection_gas">
+        <Parameter name="evaluator type" type="string" value="product"/>
+        <Parameter name="dependencies" type="Array(string)" value="{molar_density_gas, mole_fraction_gas, rel_permeability_gas, viscosity_gas}"/>
+        <Parameter name="powers" type="Array(int)" value="{1, 1, 1, -1}"/>
+        <Parameter name="tag" type="string" value=""/>
+      </ParameterList>
+
+      <ParameterList name="diffusion_liquid">
+        <Parameter name="evaluator type" type="string" value="product"/>
+        <Parameter name="dependencies" type="Array(string)" value="{molecular_diff_liquid, molar_density_liquid, saturation_liquid}"/>
+        <Parameter name="powers" type="Array(int)" value="{1, 1, 1}"/>
+        <Parameter name="tag" type="string" value=""/>
+      </ParameterList>
+      <ParameterList name="diffusion_gas">
+        <Parameter name="evaluator type" type="string" value="product"/>
+        <Parameter name="dependencies" type="Array(string)" value="{molecular_diff_gas, molar_density_gas, saturation_gas}"/>
+        <Parameter name="powers" type="Array(int)" value="{1, 1, 1}"/>
+        <Parameter name="tag" type="string" value=""/>
+      </ParameterList>
+      <ParameterList name="diffusion_vapor">
+        <Parameter name="evaluator type" type="string" value="product"/>
+        <Parameter name="dependencies" type="Array(string)" value="{molecular_diff_gas, molar_density_gas, porosity, saturation_gas}"/>
+        <Parameter name="powers" type="Array(int)" value="{1, 1, 1, 1}"/>
+        <Parameter name="tag" type="string" value=""/>
+      </ParameterList>
+
+      <ParameterList name="saturation_gas">
+        <Parameter name="evaluator type" type="string" value="saturation gas"/>
+        <Parameter name="saturation liquid key" type="string" value="saturation_liquid"/>
+      </ParameterList>
+
+      <ParameterList name="mole_fraction_liquid">
+        <Parameter name="evaluator type" type="string" value="mole fraction liquid"/>
+        <Parameter name="pressure gas key" type="string" value="pressure_gas"/>
+        <Parameter name="mole fraction gas key" type="string" value="mole_fraction_gas"/>
+        <Parameter name="tag" type="string" value=""/>
+      </ParameterList>
+      <ParameterList name="mole_fraction_vapor">
+        <Parameter name="evaluator type" type="string" value="product"/>
+        <Parameter name="dependencies" type="Array(string)" value="{pressure_gas, pressure_vapor}"/>
+        <Parameter name="powers" type="Array(int)" value="{-1, 1}"/>
+        <Parameter name="tag" type="string" value=""/>
+      </ParameterList>
+
       <ParameterList name="porosity">
         <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
