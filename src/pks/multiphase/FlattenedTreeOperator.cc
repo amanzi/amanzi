@@ -182,5 +182,27 @@ int FlattenedTreeOperator::Apply(const TreeVector& X, TreeVector& Y) const {
   return ApplyAssembled(X, Y);
 }
 
+
+/* ******************************************************************
+* Calculate Y = A * X using matrix-free matvec on blocks of operators.
+****************************************************************** */
+void FlattenedTreeOperator::AddColoring(Teuchos::ParameterList& plist)
+{
+  if (plist.isParameter("preconditioning method") &&
+      plist.get<std::string>("preconditioning method") == "boomer amg" &&
+      plist.isSublist("boomer amg parameters") &&
+      plist.sublist("boomer amg parameters").get<bool>("use block indices", false)) {
+
+    AMANZI_ASSERT(smap_flat_.get());
+
+    if (coloring_ == Teuchos::null || num_colors_ == 0) {
+      auto block_ids = get_row_supermap()->BlockIndices();
+      set_coloring(block_ids.first, block_ids.second);
+    }
+    plist.sublist("boomer amg parameters").set("number of unique block indices", num_colors_);
+    plist.sublist("boomer amg parameters").set("block indices", coloring_);
+  }
+}
+
 }  // namespace Operators
 }  // namespace Amanzi

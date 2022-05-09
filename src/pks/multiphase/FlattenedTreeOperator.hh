@@ -47,12 +47,16 @@ class FlattenedTreeOperator : public Operators::TreeOperator {
 
   // modified algorithms that use two supermaps
   virtual void SymbolicAssembleMatrix();
+  virtual void InitializeInverse() {};
   virtual void AssembleMatrix();
 
   // only assembled matrix is allowed
   virtual int Apply(const TreeVector& X, TreeVector& Y) const;
 
   virtual void set_operator_block(std::size_t i, std::size_t j, const Teuchos::RCP<Operator>& op);
+
+  // modifiers
+  void AddColoring(Teuchos::ParameterList& plist);
 
  private:
   Teuchos::RCP<TreeVectorSpace> tvs_flat_;

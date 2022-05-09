@@ -669,8 +669,6 @@ void Multiphase_PK::Initialize()
 
   // preconditioner is model-specific. It is created in the scope of global assembly to 
   // reduce memory footprint for large number of components.
-  op_preconditioner_ = Teuchos::rcp(new Operators::FlattenedTreeOperator(Teuchos::rcpFromRef(soln_->Map())));
-
   std::string pc_name = mp_list_->get<std::string>("preconditioner");
   std::string ls_name = mp_list_->get<std::string>("linear solver");
   auto inv_list = AmanziSolvers::mergePreconditionerSolverLists(pc_name, *pc_list_,
@@ -678,6 +676,8 @@ void Multiphase_PK::Initialize()
 								true);
   inv_list.setName(pc_name);
 
+  op_preconditioner_ = Teuchos::rcp(new Operators::FlattenedTreeOperator(Teuchos::rcpFromRef(soln_->Map())));
+  op_preconditioner_->AddColoring(inv_list);
   op_pc_solver_ = AmanziSolvers::createInverse(inv_list, op_preconditioner_);
 
   // initialize time integrator

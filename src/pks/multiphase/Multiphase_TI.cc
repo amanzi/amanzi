@@ -82,7 +82,6 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
 
   Key fname, gname, key;
   for (int n = 0; n < neqns - nncps; ++n) {
-    bool bcflag(true);
     Key keyr = soln_names_[eqns_flattened_[n][0]];
 
     ModifyEvaluators(n);
@@ -94,6 +93,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
     for (int phase = 0; phase < 2; ++phase) {
       fname = eqns_[n].advection[phase].first;
       gname = eqns_[n].advection[phase].second;
+      bool bcflag = (keyr == gname);
 
       if (fname != "") {
         S_->GetEvaluator(fname).Update(*S_, passwd_);
@@ -112,20 +112,22 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
         pde->global_operator()->Init();
         pde->UpdateMatrices(Teuchos::null, Teuchos::null);
         pde->ApplyBCs(bcflag, false, false);
-        bcflag = false;
 
         // -- add advection term to the residual
         S_->GetEvaluator(gname).Update(*S_, passwd_);
         auto var = S_->GetPtr<CompositeVector>(gname, Tags::DEFAULT);
         pde->global_operator()->ComputeNegativeResidual(*var, fadd);
-        fone.Update(1.0, fadd, 1.0);
+
+        double factor = eqns_[n].adv_factors[phase];
+        fone.Update(factor, fadd, 1.0);
       }
     }
  
-    // molecular diffusion 
+    // Molecular diffusion for all phases, div [f M grad g]
     for (int phase = 0; phase < 2; ++phase) {
       fname = eqns_[n].diffusion[phase].first;
       gname = eqns_[n].diffusion[phase].second;
+      bool bcflag = (keyr == gname);
 
       if (fname != "") {
         S_->GetEvaluator(fname).Update(*S_, passwd_);
@@ -140,7 +142,6 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
         pde->global_operator()->Init();
         pde->UpdateMatrices(Teuchos::null, Teuchos::null);
         pde->ApplyBCs(bcflag, false, false);
-        bcflag = false;
 
         // -- add diffusion term to the residual
         S_->GetEvaluator(gname).Update(*S_, passwd_);
@@ -319,6 +320,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
         }
 
         // -- advection operator div[ (K f grad dg/dv) dv ]
+        /*
         if (fname != "") {
           if (gname != keyc && S_->HasDerivative(gname, keyc)) {
             // --- upwind gas molar mobility times molar fraction 
@@ -340,6 +342,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
             flux_acc->Update(factor, *flux_tmp, 1.0);
           }
         }
+        */
 
         // -- advection operator div [ (K df/dv grad g) dv ]
         if (fname != "") {
@@ -403,6 +406,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
         }
 
         // -- advection operator div[ (f grad dg/dv) dv ]
+        /*
         if (fname != "") {
           if (gname != keyc && S_->HasDerivative(gname, keyc)) {
             // --- calculate diffusion coefficient
@@ -416,7 +420,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
 
             // --- calculate advective flux 
             pde_diff_D_->Setup(Teuchos::null, kr, Teuchos::null);
-            pde_diff_D_->SetBCs(op_bcs_[keyr], op_bcs_[keyr]);
+            pde_diff_D_->SetBCs(op_bcs_[keyc], op_bcs_[keyc]);
             pde_diff_D_->UpdateMatrices(Teuchos::null, Teuchos::null);
             pde_diff_D_->UpdateFlux(tmp.ptr(), flux_tmp.ptr());
 
@@ -424,6 +428,7 @@ void Multiphase_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVecto
             flux_acc->Update(factor, *flux_tmp, 1.0);
           }
         }
+        */
 
         // -- advection operator div [ (df/dv grad g) dv ]
         if (fname != "" && keyc == saturation_liquid_key_) {
@@ -570,8 +575,8 @@ double Multiphase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     double error_tmp(0.0);
 
     if (soln_names_[i] == pressure_liquid_key_) {
-      auto pc = *u->SubVector(i)->Data()->ViewComponent("cell");
-      auto dpc = *du->SubVector(i)->Data()->ViewComponent("cell");
+      auto& pc = *u->SubVector(i)->Data()->ViewComponent("cell");
+      auto& dpc = *du->SubVector(i)->Data()->ViewComponent("cell");
 
       double atm_pressure(1.0e+5);
       for (int c = 0; c < ncells_owned_; c++) {
@@ -582,18 +587,20 @@ double Multiphase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
     else if (soln_names_[i] == tcc_liquid_key_ ||
              soln_names_[i] == x_gas_key_) {
-      auto dxc = *du->SubVector(i)->Data()->ViewComponent("cell");
+      auto& xc = *u->SubVector(i)->Data()->ViewComponent("cell");
+      auto& dxc = *du->SubVector(i)->Data()->ViewComponent("cell");
       int n = dxc.NumVectors();
 
+      double floor(1e-20);
       for (int c = 0; c < ncells_owned_; c++) {
         for (int i = 0; i < n; ++i) {
-          error_tmp = std::max(error_tmp, fabs(dxc[i][c]));
+          error_tmp = std::max(error_tmp, fabs(dxc[i][c]) / (xc[i][c] + floor));
         }
       }
     }
 
     else if (soln_names_[i] == saturation_liquid_key_) {
-      auto dsc = *du->SubVector(i)->Data()->ViewComponent("cell");
+      auto& dsc = *du->SubVector(i)->Data()->ViewComponent("cell");
 
       for (int c = 0; c < ncells_owned_; c++) {
         error_tmp = std::max(error_tmp, fabs(dsc[0][c]));
