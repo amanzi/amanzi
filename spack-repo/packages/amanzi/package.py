@@ -69,7 +69,7 @@ class Amanzi(CMakePackage):
 
     core_dependencies = {
         'zlib','metis', 'parmetis', 'seacas -x11',
-        'boost@1.67.0 cxxstd=11 +program_options',
+        'boost@1.69.0 cxxstd=11 +program_options',
         'netcdf-c +parallel-netcdf', 'hdf5 +mpi+fortran+hl api=default', 
         'ascemio'
     }
