@@ -51,7 +51,7 @@ void TccGas::Evaluate_(
   int ncells = result_c.MyLength();
 
   for (int c = 0; c != ncells; ++c) {
-    result_c[0][c] = tcc[0][c] / kH_;
+    result_c[0][c] = tcc[0][c] * kH_;
   }
 }
 
@@ -68,7 +68,7 @@ void TccGas::EvaluatePartialDerivative_(
 
   if (wrt_key == tcc_liquid_key_) {
     for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = 1.0 / kH_;
+      result_c[0][c] = kH_;
     }
   }
 }

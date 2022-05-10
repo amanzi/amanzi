@@ -141,7 +141,7 @@ void run_test(const std::string& domain, const std::string& filename)
   CHECK(dmin >= 0.0 && dmax <= 1.0 && dmin < 0.999);
   
   S->Get<CompositeVector>("ncp_fg").NormInf(&dmax);
-  CHECK(dmax <= 1.0e-10);
+  CHECK(dmax <= 1.0e-9);
 
   const auto& xg = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
   xg.MinValue(&dmin);

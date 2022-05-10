@@ -96,6 +96,7 @@ static const char name_delimiter = '-';
 static const char deriv_delimiter = '|';
 static const char dset_delimiter = ':';
 static const char tag_delimiter = '@';
+static const char phase_delimiter = '_';
 
 //
 // Utility functions

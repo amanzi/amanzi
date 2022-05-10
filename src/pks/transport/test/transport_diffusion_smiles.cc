@@ -89,14 +89,16 @@ TEST(DIFFUSION_GAS_SMILES) {
 
     t_old = t_new;
     iter++;
-    printf("AAA: %g %16.10g  %16.10f\n", t_new, tcc[0][0], tcc[1][0]);
+    printf("AAA: %g %16.10g %16.10g ... %16.10g   %16.10g\n", t_new, tcc[0][0], tcc[0][1], tcc[0][25], tcc[1][25]);
   }
 
   auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Smiles", *plist));
   WriteStateStatistics(*S, *vo);
 
   // check for values
-  CHECK_CLOSE(0.14, tcc[0][25] + tcc[1][25] * (1 - sl) / sl, 0.002);
+  double tcc_eff = tcc[0][25] + tcc[1][25] * (1 - sl) / sl;
+  printf("Normalized effective liquid concentration: %g \n", tcc_eff);
+  CHECK_CLOSE(0.14, tcc_eff, 0.002);
 
   // check for bounds
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);

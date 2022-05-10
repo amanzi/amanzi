@@ -127,7 +127,6 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
     for (int phase = 0; phase < 2; ++phase) {
       fname = eqns_[n].diffusion[phase].first;
       gname = eqns_[n].diffusion[phase].second;
-      bool bcflag = (keyr == gname);
 
       if (fname != "") {
         S_->GetEvaluator(fname).Update(*S_, passwd_);
@@ -136,12 +135,15 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
         upwind_->Compute(flux, *kr, bcnone, *kr);
 
         // -- form diffusion operator
+        AMANZI_ASSERT(op_bcs_.find(gname) != op_bcs_.end());
+
         auto& pde = pde_diff_D_;
         pde->Setup(Teuchos::null, kr, Teuchos::null);
-        pde->SetBCs(op_bcs_[keyr], op_bcs_[keyr]);
+        // pde->SetBCs(op_bcs_[keyr], op_bcs_[keyr]);
+        pde->SetBCs(op_bcs_[gname], op_bcs_[gname]);
         pde->global_operator()->Init();
         pde->UpdateMatrices(Teuchos::null, Teuchos::null);
-        pde->ApplyBCs(bcflag, false, false);
+        pde->ApplyBCs(true, false, false);
 
         // -- add diffusion term to the residual
         S_->GetEvaluator(gname).Update(*S_, passwd_);

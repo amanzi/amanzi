@@ -31,7 +31,7 @@
       <ParameterList name="generate mesh">
         <Parameter name="number of cells" type="Array(int)" value="{51, 1}"/>
         <Parameter name="domain low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
-        <Parameter name="domain high coordinate" type="Array(double)" value="{10.0, 1.0}"/>
+        <Parameter name="domain high coordinate" type="Array(double)" value="{10.0, 2.0}"/>
       </ParameterList>
       <ParameterList name="expert">
         <Parameter name="framework" type="string" value="MSTK"/>
@@ -62,7 +62,7 @@
         <Parameter name="advection factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
 
         <!--Parameter name="diffusion liquid" type="Array(string)" value="{ diffusion_vapor, mole_fraction_vapor }"/-->
-        <Parameter name="diffusion factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
+        <Parameter name="diffusion factors" type="Array(double)" value="{ 0.0, 0.0 }"/>
 
         <Parameter name="accumulation" type="string" value="total_water_storage"/>
       </ParameterList>
@@ -71,7 +71,7 @@
         <Parameter name="primary unknown" type="string" value="total_component_concentration_liquid"/>
         <Parameter name="advection liquid" type="Array(string)" value="{ advection_liquid, pressure_liquid }"/>
         <Parameter name="advection gas" type="Array(string)" value="{ advection_gas, pressure_gas }"/>
-        <Parameter name="advection factors" type="Array(double)" value="{ 1.0, 1.0 }"/>
+        <Parameter name="advection factors" type="Array(double)" value="{ 1.0, 0.0 }"/>
 
         <Parameter name="diffusion liquid" type="Array(string)" value="{ diffusion_liquid, total_component_concentration_liquid }"/>
         <Parameter name="diffusion gas" type="Array(string)" value="{ diffusion_gas, total_component_concentration_gas }"/>
@@ -86,7 +86,7 @@
     <Parameter name="preconditioner" type="string" value="Euclid"/>
     <Parameter name="error control options" type="Array(string)" value="{residual}"/>
     <Parameter name="number aqueous components" type="int" value="1"/>
-    <Parameter name="number gaseous components" type="int" value="0"/>
+    <Parameter name="number gaseous components" type="int" value="1"/>
 
     <ParameterList name="molecular diffusion">
       <Parameter name="aqueous names" type="Array(string)" value="{Tritium}"/>
@@ -128,7 +128,7 @@
           <Parameter name="min time step" type="double" value="1.0e-20"/>
         </ParameterList>
 
-        <Parameter name="solver type" type="string" value="Newton"/>
+        <Parameter name="solver type" type="string" value="nka"/>
         <ParameterList name="Newton parameters">
           <Parameter name="nonlinear tolerance" type="double" value="1.0e-5"/>
           <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
@@ -141,7 +141,7 @@
           <Parameter name="make one iteration" type="bool" value="true"/>
         </ParameterList>
         <ParameterList name="nka parameters">
-          <Parameter name="nonlinear tolerance" type="double" value="1.0e-6"/>
+          <Parameter name="nonlinear tolerance" type="double" value="1.0e-7"/>
           <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
           <Parameter name="limit iterations" type="int" value="20"/>
           <Parameter name="max du growth factor" type="double" value="1.0e+10"/>
@@ -176,29 +176,41 @@
         </ParameterList>
       </ParameterList>
       <ParameterList name="concentration">
-        <ParameterList name="BC 2">
+        <ParameterList name="BC 2l">
           <Parameter name="regions" type="Array(string)" value="{Inflow}"/>
           <Parameter name="spatial distribution method" type="string" value="none"/>
           <Parameter name="name" type="string" value="Tritium"/>
+          <Parameter name="phase" type="string" value="liquid"/>
           <ParameterList name="boundary concentration">
             <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="1.0"/>
+              <Parameter name="value" type="double" value="1.0e-10"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="BC 2g">
+          <Parameter name="regions" type="Array(string)" value="{Inflow}"/>
+          <Parameter name="spatial distribution method" type="string" value="none"/>
+          <Parameter name="name" type="string" value="Tritium"/>
+          <Parameter name="phase" type="string" value="gas"/>
+          <ParameterList name="boundary concentration">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="1.760e-15"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <!--ParameterList name="mass flux total">
+      <ParameterList name="mass flux total-off">
         <ParameterList name="BC 3">
           <Parameter name="regions" type="Array(string)" value="{Inflow}"/>
           <Parameter name="spatial distribution method" type="string" value="none"/>
           <Parameter name="name" type="string" value="Tritium"/>
           <ParameterList name="outward mass flux">
             <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="-1.0e-9"/>
+              <Parameter name="value" type="double" value="-1.0e-10"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
-      </ParameterList-->
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="source terms">
@@ -310,7 +322,51 @@
         </ParameterList>
       </ParameterList>
 
+      <ParameterList name="total_component_concentration_liquid">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.0e-20"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="permeability">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.0e-15"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 2 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.0e-15"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="evaluators">
       <ParameterList name="temperature">
+        <Parameter name="evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="All">
             <Parameter name="regions" type="Array(string)" value="{All}"/>
@@ -324,31 +380,6 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="permeability">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="regions" type="Array(string)" value="{All}"/>
-            <Parameter name="component" type="string" value="cell"/>
-              <ParameterList name="function">
-                <Parameter name="number of dofs" type="int" value="2"/>
-                <Parameter name="function type" type="string" value="composite function"/>
-                <ParameterList name="dof 1 function">
-                  <ParameterList name="function-constant">
-                    <Parameter name="value" type="double" value="1.0e-15"/>
-                  </ParameterList>
-                </ParameterList>
-                <ParameterList name="dof 2 function">
-                  <ParameterList name="function-constant">
-                    <Parameter name="value" type="double" value="1.0e-15"/>
-                  </ParameterList>
-                </ParameterList>
-              </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-
-    <ParameterList name="evaluators">
       <!-- STORAGE -->
       <ParameterList name="total_water_storage">
         <Parameter name="evaluator type" type="string" value="storage water"/>
@@ -398,15 +429,17 @@
       <ParameterList name="diffusion_liquid">
         <Parameter name="evaluator type" type="string" value="product"/>
         <Parameter name="dependencies" type="Array(string)" value="{ molecular_diff_liquid,
+                                                                     porosity,
                                                                      saturation_liquid }"/>
-        <Parameter name="powers" type="Array(int)" value="{ 1, 1 }"/>
+        <Parameter name="powers" type="Array(int)" value="{ 1, 1, 1 }"/>
         <Parameter name="tag" type="string" value=""/>
       </ParameterList>
       <ParameterList name="diffusion_gas">
         <Parameter name="evaluator type" type="string" value="product"/>
         <Parameter name="dependencies" type="Array(string)" value="{ molecular_diff_gas,
+                                                                     porosity,
                                                                      saturation_gas }"/>
-        <Parameter name="powers" type="Array(int)" value="{ 1, 1 }"/>
+        <Parameter name="powers" type="Array(int)" value="{ 1, 1, 1 }"/>
         <Parameter name="tag" type="string" value=""/>
       </ParameterList>
       <ParameterList name="diffusion_vapor">
@@ -585,13 +618,13 @@
       <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="2e-7"/>
         <Parameter name="use flexible gmres" type="bool" value="true"/>
-        <Parameter name="maximum number of iterations" type="int" value="400"/>
+        <Parameter name="maximum number of iterations" type="int" value="40"/>
         <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
         <Parameter name="size of Krylov space" type="int" value="400"/>
         <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
         <Parameter name="preconditioning strategy" type="string" value="right"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="medium"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

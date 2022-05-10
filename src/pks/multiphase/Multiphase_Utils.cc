@@ -18,6 +18,8 @@
 #include "State.hh"
 #include "Tensor.hh"
 
+#include "MultiphaseDefs.hh"
+
 namespace Amanzi {
 namespace Multiphase {
 
@@ -77,6 +79,30 @@ void ConvertFieldToTensor(const Teuchos::RCP<State>& S, int dim,
       }  
     }
   }
+}
+
+
+/* ******************************************************************
+* Parsing phase suffix
+****************************************************************** */
+KeyPair splitPhase(const Key& name)
+{
+  std::size_t pos = name.find_last_of(Keys::phase_delimiter);
+  if (pos == std::string::npos)
+    return std::make_pair(Key(""), name);
+  else
+    return std::make_pair(name.substr(0,pos), name.substr(pos+1,std::string::npos));
+}
+
+
+Key mergePhase(const Key& name, const int phase)
+{
+  if (phase == MULTIPHASE_PHASE_LIQUID)
+    return name + Keys::phase_delimiter + "liquid";
+  else if (phase == MULTIPHASE_PHASE_GAS)
+    return name + Keys::phase_delimiter + "gas";
+  else
+    return name + Keys::phase_delimiter + "napl";
 }
 
 }  // namespace Multiphase

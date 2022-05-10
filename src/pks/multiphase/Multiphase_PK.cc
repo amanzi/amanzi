@@ -1022,8 +1022,9 @@ int Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eq
 void Multiphase_PK::PopulateBCs(int icomp, bool flag)
 {
   int n0 = (system_["energy eqn"]) ? 2 : 1;
-  Key x_key = soln_names_[n0];
+  Key x_key_base = splitPhase(soln_names_[n0]).first;
 
+  // initialize primary and secondary fields to no-BCs
   for (int i = 0; i < soln_names_.size(); ++i) {
     Key name = soln_names_[i];
     auto& bc_model = op_bcs_[name]->bc_model();
@@ -1033,6 +1034,17 @@ void Multiphase_PK::PopulateBCs(int icomp, bool flag)
     for (int n = 0; n < nfaces; ++n) {
       bc_model[n] = Operators::OPERATOR_BC_NONE;
       bc_value[n] = 0.0;
+    }
+  }
+
+  for (const auto& name : secondary_names_) {
+    auto& bc_model = op_bcs_[name]->bc_model();
+    auto& bc_value = op_bcs_[name]->bc_value();
+
+    int nfaces = bc_model.size();
+    for (int f = 0; f < nfaces; f++) {
+      bc_model[f] = Operators::OPERATOR_BC_NONE;
+      bc_value[f] = 0.0;
     }
   }
 
@@ -1063,6 +1075,7 @@ void Multiphase_PK::PopulateBCs(int icomp, bool flag)
           bc_value[f] = it->second[0] * factor;
         }
       } else if (bcs_[i]->component_id() == icomp) {
+        Key x_key = mergePhase(x_key_base, bcs_[i]->component_phase());
         auto& bc_model = op_bcs_[x_key]->bc_model();
         auto& bc_value = op_bcs_[x_key]->bc_value();
 
@@ -1076,6 +1089,7 @@ void Multiphase_PK::PopulateBCs(int icomp, bool flag)
 
     if (bcs_[i]->get_bc_name() == "concentration" &&
         bcs_[i]->component_id() == icomp) {
+      Key x_key = mergePhase(x_key_base, bcs_[i]->component_phase());
       auto& bc_model = op_bcs_[x_key]->bc_model();
       auto& bc_value = op_bcs_[x_key]->bc_value();
 
@@ -1090,6 +1104,7 @@ void Multiphase_PK::PopulateBCs(int icomp, bool flag)
       auto& bc_model_s = op_bcs_[saturation_liquid_key_]->bc_model();
       auto& bc_value_s = op_bcs_[saturation_liquid_key_]->bc_value();
 
+      Key x_key = mergePhase(x_key_base, MULTIPHASE_PHASE_LIQUID);
       auto& bc_model_x = op_bcs_[x_key]->bc_model();
       auto& bc_value_x = op_bcs_[x_key]->bc_value();
 
@@ -1112,28 +1127,20 @@ void Multiphase_PK::PopulateBCs(int icomp, bool flag)
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 
     if (cells.size() == 1) {
-      for (int i = 0; i < soln_names_.size(); ++i) {
-        Key name = soln_names_[i];
-        auto& bc_model = op_bcs_[name]->bc_model();
+      // for (int i = 0; i < soln_names_.size(); ++i) {
+      //  name = soln_names_[i];
+      for (auto it = op_bcs_.begin(); it != op_bcs_.end(); ++it) {
+        auto& bc_model = it->second->bc_model();
 
         if (bc_model[f] == Operators::OPERATOR_BC_NONE) {
           bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
-          if (i == 0) missed_bc_faces_++;
+          // if (i == 0) missed_bc_faces_++;
         }
       }
     }
   }
 
   // boundary conditions for derived fields 
-  for (const auto& name : secondary_names_) {
-    auto& bc_model = op_bcs_[name]->bc_model();
-    auto& bc_value = op_bcs_[name]->bc_value();
-    for (int f = 0; f < nfaces_owned_; f++) {
-      bc_model[f] = Operators::OPERATOR_BC_NONE;
-      bc_value[f] = 0.0;
-    }
-  }
-
   auto& bc_model_pg = op_bcs_[pressure_gas_key_]->bc_model();
   auto& bc_value_pg = op_bcs_[pressure_gas_key_]->bc_value();
 

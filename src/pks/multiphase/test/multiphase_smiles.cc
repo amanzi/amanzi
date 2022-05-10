@@ -88,9 +88,12 @@ TEST(MULTIPHASE_SMILES) {
   iolist.get<std::string>("file name base", "plot");
   auto io = Teuchos::rcp(new OutputXDMF(iolist, mesh, true, false));
 
+  const auto& tccl = *S->Get<CompositeVector>("total_component_concentration_liquid", Tags::DEFAULT).ViewComponent("cell");
+  const auto& tccg = *S->Get<CompositeVector>("total_component_concentration_gas", Tags::DEFAULT).ViewComponent("cell");
+
   // loop
   int iloop(0);
-  double t(0.0), tend(3.15e+8), dt(3.15e+6), dt_max(3.15e+7 / 2);
+  double t(0.0), tend(3.1558e+8), dt(3.1558e+6), dt_max(2 * 3.1558e+6);
   while (t < tend) {
     while(MPK->AdvanceStep(t, t + dt, false)) { dt /= 10; } 
 
@@ -100,6 +103,7 @@ TEST(MULTIPHASE_SMILES) {
     S->advance_time(dt);
     t += dt;
     dt = std::min(dt_max, dt * 1.2);
+    dt = std::min(tend - t, dt);
 
     // output solution
     iloop++;
@@ -114,20 +118,15 @@ TEST(MULTIPHASE_SMILES) {
       io->WriteVector(*u3(0), "gas tritium", AmanziMesh::CELL);
       io->FinalizeCycle();
     }
-
-    double sl(0.01);
-    const auto& tccl = *S->Get<CompositeVector>("total_component_concentration_liquid", Tags::DEFAULT).ViewComponent("cell");
-    const auto& tccg = *S->Get<CompositeVector>("total_component_concentration_gas", Tags::DEFAULT).ViewComponent("cell");
-    printf("AAA: %g %16.10g %16.10f\n", t, tccl[0][25], tccg[0][25]);
-    // printf("AAA: %g %16.10g \n", t, tccl[0][25] + tccg[0][25] * (1 - sl) / sl);
-    // CHECK_CLOSE(0.14, tcc[0][25] + tcc[1][25] * (1 - sl) / sl, 0.002);
+    printf("AAA: %g %16.10g %16.10g ... %16.10g   %16.10g\n", t, tccl[0][0], tccl[0][1], tccl[0][25], tccg[0][25]);
   }
 
   WriteStateStatistics(*S, *vo);
 
-  // const auto& xg = *S->Get<CompositeVector>("molar_density_liquid").ViewComponent("cell");
-  // xg.MinValue(&dmin);
-  // CHECK(dmin >= 0.0);
+  double sl(0.01);
+  double tccl_eff = tccl[0][25] + tccg[0][25] * (1 - sl) / sl;
+  printf("Normalized effective liquid concentration: %g \n", tccl_eff * 1e+10);
+  CHECK_CLOSE(0.14, tccl_eff / 1e-10, 0.002);
 }
 
 
