@@ -125,8 +125,8 @@ TEST(MULTIPHASE_SMILES) {
 
   double sl(0.01);
   double tccl_eff = tccl[0][25] + tccg[0][25] * (1 - sl) / sl;
-  printf("Normalized effective liquid concentration: %g \n", tccl_eff * 1e+10);
-  CHECK_CLOSE(0.14, tccl_eff / 1e-10, 0.002);
+  printf("Normalized effective liquid concentration: %g \n", tccl_eff * 1e+5);
+  CHECK_CLOSE(0.14, tccl_eff / 1e-5, 0.002);
 }
 
 

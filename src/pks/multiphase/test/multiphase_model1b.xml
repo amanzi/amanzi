@@ -89,7 +89,7 @@
     </ParameterList>
 
     <Parameter name="Jacobian type" type="string" value="analytic"/>
-    <Parameter name="linear solver" type="string" value="AMESOS"/>
+    <Parameter name="linear solver" type="string" value="GMRES"/>
     <Parameter name="preconditioner" type="string" value="Euclid"/>
     <Parameter name="error control options" type="Array(string)" value="{residual}"/>
     <Parameter name="number aqueous components" type="int" value="1"/>
@@ -98,7 +98,7 @@
     <ParameterList name="molecular diffusion">
       <Parameter name="aqueous names" type="Array(string)" value="{H2,CO2}"/>
       <Parameter name="aqueous values" type="Array(double)" value="{3.0e-9, 3.0e-9}"/>
-      <Parameter name="gaseous values" type="Array(double)" value="{3.0e-5, 3.0e-9}"/>
+      <Parameter name="gaseous values" type="Array(double)" value="{3.0e-5, 3.0e-5}"/>
       <Parameter name="molar masses" type="Array(double)" value="{2.0e-3, 2.0e-3}"/>
       <Parameter name="Henry dimensionless constants" type="Array(double)" value="{1.39e-10, 1.39e-10}"/>
     </ParameterList>
@@ -455,16 +455,18 @@
         <Parameter name="evaluator type" type="string" value="product"/>
         <Parameter name="dependencies" type="Array(string)" value="{ molecular_diff_liquid,
                                                                      molar_density_liquid,
+                                                                     porosity,
                                                                      saturation_liquid }"/>
-        <Parameter name="powers" type="Array(int)" value="{ 1, 1, 1 }"/>
+        <Parameter name="powers" type="Array(int)" value="{ 1, 1, 1, 1 }"/>
         <Parameter name="tag" type="string" value=""/>
       </ParameterList>
       <ParameterList name="diffusion_gas">
         <Parameter name="evaluator type" type="string" value="product"/>
         <Parameter name="dependencies" type="Array(string)" value="{ molecular_diff_gas,
                                                                      molar_density_gas,
+                                                                     porosity,
                                                                      saturation_gas }"/>
-        <Parameter name="powers" type="Array(int)" value="{ 1, 1, 1 }"/>
+        <Parameter name="powers" type="Array(int)" value="{ 1, 1, 1, 1 }"/>
         <Parameter name="tag" type="string" value=""/>
       </ParameterList>
 
@@ -629,7 +631,7 @@
     <ParameterList name="GMRES">
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
-        <Parameter name="error tolerance" type="double" value="1e-14"/>
+        <Parameter name="error tolerance" type="double" value="1e-10"/>
         <Parameter name="use flexible gmres" type="bool" value="true"/>
         <Parameter name="maximum number of iterations" type="int" value="40"/>
         <Parameter name="convergence criteria" type="Array(string)" value="{absolute residual, make one iteration}"/>
@@ -637,7 +639,7 @@
         <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
         <Parameter name="preconditioning strategy" type="string" value="right"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -660,7 +662,7 @@
     <ParameterList name="Euclid">
       <Parameter name="preconditioning method" type="string" value="euclid"/>
       <ParameterList name="euclid parameters">
-        <Parameter name="ilu(k) fill level" type="int" value="5"/>
+        <Parameter name="ilu(k) fill level" type="int" value="6"/>
         <!--Parameter name="ilut drop tolerance" type="double" value="0.01"/-->
         <Parameter name="rescale rows" type="bool" value="true"/>
         <Parameter name="verbosity" type="int" value="0"/>

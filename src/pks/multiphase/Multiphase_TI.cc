@@ -96,6 +96,7 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
       bool bcflag = (keyr == gname);
 
       if (fname != "") {
+        CheckCompatibilityBCs(keyr, gname);
         S_->GetEvaluator(fname).Update(*S_, passwd_);
 
         // -- upwind cell-centered coefficient
@@ -108,10 +109,10 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
         //    using either the total flux or Dirichlet
         auto& pde = pde_diff_K_;
         pde->Setup(Kptr, kr, Teuchos::null, rho_l_, gravity_);  // FIXME (gravity for gas phase)
-        pde->SetBCs(op_bcs_[keyr], op_bcs_[keyr]);
+        pde->SetBCs(op_bcs_[gname], op_bcs_[gname]);
         pde->global_operator()->Init();
         pde->UpdateMatrices(Teuchos::null, Teuchos::null);
-        pde->ApplyBCs(bcflag, false, false);
+        pde->ApplyBCs(true, false, false);
 
         // -- add advection term to the residual
         S_->GetEvaluator(gname).Update(*S_, passwd_);
@@ -139,7 +140,6 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
 
         auto& pde = pde_diff_D_;
         pde->Setup(Teuchos::null, kr, Teuchos::null);
-        // pde->SetBCs(op_bcs_[keyr], op_bcs_[keyr]);
         pde->SetBCs(op_bcs_[gname], op_bcs_[gname]);
         pde->global_operator()->Init();
         pde->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -588,6 +588,7 @@ double Multiphase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     }
 
     else if (soln_names_[i] == tcc_liquid_key_ ||
+             soln_names_[i] == tcc_gas_key_ ||
              soln_names_[i] == x_gas_key_) {
       auto& xc = *u->SubVector(i)->Data()->ViewComponent("cell");
       auto& dxc = *du->SubVector(i)->Data()->ViewComponent("cell");

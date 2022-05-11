@@ -204,7 +204,7 @@
           <Parameter name="name" type="string" value="H2"/>
           <ParameterList name="outward mass flux">
             <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="-4.4155885e-09"/>
+              <Parameter name="value" type="double" value="-4.4155885e-9"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>

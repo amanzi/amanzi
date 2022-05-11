@@ -629,7 +629,7 @@ void Multiphase_PK::Initialize()
     }
   }
 
-  // allocate memory and populate boundary conditions
+  // allocate metadata and populate boundary conditions
   op_bcs_.clear();
 
   for (const auto& name : soln_names_) {
@@ -704,6 +704,9 @@ void Multiphase_PK::Initialize()
   // io
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
+    for (const auto& name : soln_names_) {
+      *vo_->os() << "unknown: \"" << name << "\"\n\n";
+    } 
     for (int i = 0; i < bcs_.size(); i++) {
       *vo_->os() << "bc \"" << bcs_[i]->keyword() << "\" has " << bcs_[i]->size()
                  << " entities" << std::endl;
@@ -1013,157 +1016,6 @@ int Multiphase_PK::InitMPSystem_(const std::string& eqn_name, int eqn_id, int eq
   }
 
   return eqn_id + eqn_num;
-}
-
-
-/* ******************************************************************* 
-* Populate boundary conditions for various bc types
-******************************************************************* */
-void Multiphase_PK::PopulateBCs(int icomp, bool flag)
-{
-  int n0 = (system_["energy eqn"]) ? 2 : 1;
-  Key x_key_base = splitPhase(soln_names_[n0]).first;
-
-  // initialize primary and secondary fields to no-BCs
-  for (int i = 0; i < soln_names_.size(); ++i) {
-    Key name = soln_names_[i];
-    auto& bc_model = op_bcs_[name]->bc_model();
-    auto& bc_value = op_bcs_[name]->bc_value();
-
-    int nfaces = bc_model.size();
-    for (int n = 0; n < nfaces; ++n) {
-      bc_model[n] = Operators::OPERATOR_BC_NONE;
-      bc_value[n] = 0.0;
-    }
-  }
-
-  for (const auto& name : secondary_names_) {
-    auto& bc_model = op_bcs_[name]->bc_model();
-    auto& bc_value = op_bcs_[name]->bc_value();
-
-    int nfaces = bc_model.size();
-    for (int f = 0; f < nfaces; f++) {
-      bc_model[f] = Operators::OPERATOR_BC_NONE;
-      bc_value[f] = 0.0;
-    }
-  }
-
-  // calculus of variations produces zero for fixed BCs
-  double factor = (flag) ? 1.0 : 0.0;
-
-  // populate boundary conditions
-  for (int i = 0; i < bcs_.size(); ++i) {
-    if (bcs_[i]->get_bc_name() == "pressure") {
-      auto& bc_model = op_bcs_[pressure_liquid_key_]->bc_model();
-      auto& bc_value = op_bcs_[pressure_liquid_key_]->bc_value();
-
-      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
-        int f = it->first;
-        bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-        bc_value[f] = it->second[0];
-      }
-    }
-
-    if (bcs_[i]->get_bc_name() == "flux") {
-      if (bcs_[i]->component_name() == "water") { 
-        auto& bc_model = op_bcs_[pressure_liquid_key_]->bc_model();
-        auto& bc_value = op_bcs_[pressure_liquid_key_]->bc_value();
-
-        for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
-          int f = it->first;
-          bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
-          bc_value[f] = it->second[0] * factor;
-        }
-      } else if (bcs_[i]->component_id() == icomp) {
-        Key x_key = mergePhase(x_key_base, bcs_[i]->component_phase());
-        auto& bc_model = op_bcs_[x_key]->bc_model();
-        auto& bc_value = op_bcs_[x_key]->bc_value();
-
-        for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
-          int f = it->first;
-          bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
-          bc_value[f] = it->second[0] * factor;
-        }
-      }
-    }
-
-    if (bcs_[i]->get_bc_name() == "concentration" &&
-        bcs_[i]->component_id() == icomp) {
-      Key x_key = mergePhase(x_key_base, bcs_[i]->component_phase());
-      auto& bc_model = op_bcs_[x_key]->bc_model();
-      auto& bc_value = op_bcs_[x_key]->bc_value();
-
-      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
-        int f = it->first;
-        bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-        bc_value[f] = it->second[0];
-      }
-    }
-
-    if (bcs_[i]->get_bc_name() == "saturation") {
-      auto& bc_model_s = op_bcs_[saturation_liquid_key_]->bc_model();
-      auto& bc_value_s = op_bcs_[saturation_liquid_key_]->bc_value();
-
-      Key x_key = mergePhase(x_key_base, MULTIPHASE_PHASE_LIQUID);
-      auto& bc_model_x = op_bcs_[x_key]->bc_model();
-      auto& bc_value_x = op_bcs_[x_key]->bc_value();
-
-      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
-        int f = it->first;
-        bc_model_s[f] = Operators::OPERATOR_BC_DIRICHLET;
-        bc_value_s[f] = it->second[0];
-
-        bc_model_x[f] = Operators::OPERATOR_BC_DIRICHLET;  // a huck
-        bc_value_x[f] = 0.0;
-      }
-    }
-  }
-
-  // mark missing boundary conditions as zero flux conditions 
-  AmanziMesh::Entity_ID_List cells;
-  missed_bc_faces_ = 0;
-
-  for (int f = 0; f < nfaces_owned_; f++) {
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-
-    if (cells.size() == 1) {
-      // for (int i = 0; i < soln_names_.size(); ++i) {
-      //  name = soln_names_[i];
-      for (auto it = op_bcs_.begin(); it != op_bcs_.end(); ++it) {
-        auto& bc_model = it->second->bc_model();
-
-        if (bc_model[f] == Operators::OPERATOR_BC_NONE) {
-          bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
-          // if (i == 0) missed_bc_faces_++;
-        }
-      }
-    }
-  }
-
-  // boundary conditions for derived fields 
-  auto& bc_model_pg = op_bcs_[pressure_gas_key_]->bc_model();
-  auto& bc_value_pg = op_bcs_[pressure_gas_key_]->bc_value();
-
-  auto& bc_model_pl = op_bcs_[pressure_liquid_key_]->bc_model();
-  auto& bc_value_pl = op_bcs_[pressure_liquid_key_]->bc_value();
-
-  bc_model_pg = bc_model_pl;
-
-  if (op_bcs_.find(saturation_liquid_key_) != op_bcs_.end()) {
-    auto& bc_value_s = op_bcs_[saturation_liquid_key_]->bc_value();
-
-    for (int f = 0; f != nfaces_owned_; ++f) {
-      if (bc_model_pg[f] == Operators::OPERATOR_BC_DIRICHLET) {
-        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-        int c = cells[0];
-
-        bc_value_pg[f] = bc_value_pl[f] + wrm_->second[(*wrm_->first)[c]]->capillaryPressure(bc_value_s[f]);
-      }
-      else if (bc_model_pg[f] == Operators::OPERATOR_BC_NEUMANN) {
-        bc_value_pg[f] = 0.0;
-      }
-    }
-  }
 }
 
 

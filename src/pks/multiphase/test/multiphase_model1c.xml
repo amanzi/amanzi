@@ -465,16 +465,18 @@
         <Parameter name="evaluator type" type="string" value="product"/>
         <Parameter name="dependencies" type="Array(string)" value="{ molecular_diff_liquid,
                                                                      molar_density_liquid,
+                                                                     porosity,
                                                                      saturation_liquid }"/>
-        <Parameter name="powers" type="Array(int)" value="{ 1, 1, 1 }"/>
+        <Parameter name="powers" type="Array(int)" value="{ 1, 1, 1, 1 }"/>
         <Parameter name="tag" type="string" value=""/>
       </ParameterList>
       <ParameterList name="diffusion_gas">
         <Parameter name="evaluator type" type="string" value="product"/>
         <Parameter name="dependencies" type="Array(string)" value="{ molecular_diff_gas,
                                                                      molar_density_gas,
+                                                                     porosity,
                                                                      saturation_gas }"/>
-        <Parameter name="powers" type="Array(int)" value="{ 1, 1, 1 }"/>
+        <Parameter name="powers" type="Array(int)" value="{ 1, 1, 1, 1 }"/>
         <Parameter name="tag" type="string" value=""/>
       </ParameterList>
       <ParameterList name="diffusion_vapor">

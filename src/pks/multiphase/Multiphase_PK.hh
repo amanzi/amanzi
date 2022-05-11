@@ -107,6 +107,7 @@ class Multiphase_PK: public PK_PhysicalBDF {
 
   // multiphase submodels
   void PopulateBCs(int icomp, bool flag);
+  void CheckCompatibilityBCs(const Key& keyr, const Key& gname);
   virtual void ModifyEvaluators(int neqn);
 
   Teuchos::RCP<TreeVector> soln() { return soln_; }
@@ -118,6 +119,8 @@ class Multiphase_PK: public PK_PhysicalBDF {
  private:
   int InitMPSystem_(const std::string& eqn_name, int enq_id, int enq_num);
   void InitializeFields_();
+
+  void PopulateSecondaryBCs_();
 
  protected:
   int ncells_owned_, ncells_wghost_;

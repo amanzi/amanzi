@@ -183,7 +183,7 @@
           <Parameter name="phase" type="string" value="liquid"/>
           <ParameterList name="boundary concentration">
             <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="1.0e-10"/>
+              <Parameter name="value" type="double" value="1.0e-5"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -194,7 +194,7 @@
           <Parameter name="phase" type="string" value="gas"/>
           <ParameterList name="boundary concentration">
             <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="1.760e-15"/>
+              <Parameter name="value" type="double" value="1.760e-10"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>

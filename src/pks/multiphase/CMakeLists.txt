@@ -50,7 +50,7 @@ include_directories(${WHETSTONE_SOURCE_DIR})
 #
 set(multiphase_src_files Multiphase_PK.cc Multiphase_TI.cc
                          MultiphaseBoundaryFunction.cc
-                         Multiphase_Utils.cc
+                         Multiphase_Utils.cc Multiphase_BCs.cc
                          NCP_F.cc NCP_HenryLaw.cc NCP_MoleFractions.cc NCP_MolarDensities.cc
                          SaturationGasEvaluator.cc
                          TotalWaterStorage.cc 
