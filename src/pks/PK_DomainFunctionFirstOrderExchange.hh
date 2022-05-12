@@ -77,20 +77,20 @@ void PK_DomainFunctionFirstOrderExchange<FunctionBase>::Init(
 
   // get the model parameters
   Teuchos::ParameterList blist = plist.sublist("source function");
-  std::string domain_name = blist.get<std::string>("domain name", "domain"); 
+  std::string domain_name = blist.get<std::string>("domain name", "domain");
 
   tcc_key_ = Keys::readKey(blist, domain_name, "total component concentration", "total_component_concentration");
-  tcc_copy_ = make_tag(blist.get<std::string>("total component concentration copy", "default"));
+  tcc_copy_ = Keys::readTag(blist, "total component concentration copy");
 
   saturation_key_= Keys::readKey(blist, domain_name, "saturation liquid", "ponded_depth");
-  saturation_copy_ = make_tag(blist.get<std::string>("saturation liquid copy", "default"));
+  saturation_copy_ = Keys::readTag(blist, "saturation liquid copy");
 
   porosity_key_= Keys::readKey(blist, domain_name, "porosity", "porosity");
-  porosity_copy_ = make_tag(blist.get<std::string>("porosity copy", "default"));
-  
+  porosity_copy_ = Keys::readTag(blist, "porosity copy");
+
   molar_density_key_= Keys::readKey(blist, domain_name, "molar density", "molar_density_liquid");
-  molar_density_copy_ = make_tag(blist.get<std::string>("molar density copy", "default"));
-              
+  molar_density_copy_ = Keys::readTag(blist, "molar density copy");
+
   // get and check the regions
   auto regions = plist.get<Teuchos::Array<std::string> >("regions").toVector();
 
@@ -148,6 +148,7 @@ void PK_DomainFunctionFirstOrderExchange<FunctionBase>::Compute(double t0, doubl
         val_vec[i] = -(*(*uspec)->first->second)(args)[i] * tcc[i][*c] * ws_[i][*c] * phi_[i][*c] * mol_dens_[i][*c];
       }
       value_[*c] = val_vec;
+      if (*c == 0) std::cout << "Computed FOE src term with val = " << val_vec[0] << std::endl;
     }
   }
 }

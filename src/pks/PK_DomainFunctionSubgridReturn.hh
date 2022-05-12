@@ -80,15 +80,15 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Init(
   // check for prefixing -- mostly used in the multisubgrid models
   dset_ = blist.get<std::string>("subgrid domain set", "subgrid");
 
-  // can "surface" prefix for this field be read automatically?? it is hardcoded now, or may be not?? 
+  // can "surface" prefix for this field be read automatically? it is hardcoded now, or may be not?
   saturation_key_= Keys::readKey(blist, domain_name, "saturation liquid", "ponded_depth");
-  saturation_copy_ = make_tag(blist.get<std::string>("saturation liquid copy", "default"));
+  saturation_copy_ = Keys::readTag(blist, "saturation liquid copy");
 
   porosity_key_= Keys::readKey(blist, domain_name, "porosity", "porosity");
-  porosity_copy_ = make_tag(blist.get<std::string>("porosity copy", "default"));
-  
+  porosity_copy_ = Keys::readTag(blist, "porosity copy");
+
   molar_density_key_= Keys::readKey(blist, domain_name, "molar density", "molar_density_liquid");
-  molar_density_copy_ = make_tag(blist.get<std::string>("molar density copy", "default"));
+  molar_density_copy_ = Keys::readTag(blist, "molar density copy");
 
   // get and check the region
   auto regions = plist.get<Teuchos::Array<std::string> >("regions").toVector();
@@ -107,7 +107,6 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Init(
   // Add this source specification to the domain function.
   auto domain = Teuchos::rcp(new Domain(regions, AmanziMesh::CELL));
   AddSpec(Teuchos::rcp(new Spec(domain, f)));
-  
 }
 
 
@@ -180,6 +179,7 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
         val[k] *= ws_[k][*c] * phi_[k][*c] * mol_dens_[k][*c];
       }
       value_[*c] = val;
+      if (*c == 0) std::cout << "Computed return src term with val = " << val[0] << std::endl;
     }
   }
 }
