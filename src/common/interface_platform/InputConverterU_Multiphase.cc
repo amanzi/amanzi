@@ -38,7 +38,7 @@ Teuchos::ParameterList InputConverterU::TranslateMultiphase_(
 
   // solver data
   out_list.set<std::string>("Jacobian type", "analytic")
-     .set<std::string>("linear solver", "AMESOS")
+     .set<std::string>("linear solver", "GMRES for Newton-0")
      .set<std::string>("preconditioner", "Euclid")
      .set<std::string>("NCP function", "min")
      .set<bool>("CPR enhancement", false);

@@ -93,7 +93,6 @@ void Multiphase_PK::FunctionalResidual(double t_old, double t_new,
     for (int phase = 0; phase < 2; ++phase) {
       fname = eqns_[n].advection[phase].first;
       gname = eqns_[n].advection[phase].second;
-      bool bcflag = (keyr == gname);
 
       if (fname != "") {
         CheckCompatibilityBCs(keyr, gname);

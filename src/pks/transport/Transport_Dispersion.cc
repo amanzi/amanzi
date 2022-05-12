@@ -184,7 +184,6 @@ void Transport_PK::DispersionSolver(
   CompositeVector sol(cvs), factor(cvs), factor0(cvs), source(cvs);
 
   int phase, num_itrs(0);
-  bool flag_op1(true);
   double md_change, md_old(0.0), md_new, residual(0.0);
 
   // Disperse and diffuse aqueous components
@@ -195,7 +194,6 @@ void Transport_PK::DispersionSolver(
 
     if (md_change != 0.0) {
       CalculateDiffusionTensor_(md_change, phase, *transport_phi, *ws);
-      flag_op1 = true;
     }
 
     // set the initial guess
@@ -207,37 +205,23 @@ void Transport_PK::DispersionSolver(
       sol.ViewComponent("face")->PutScalar(0.0);
     }
 
-    if (flag_op1) {
-      op->Init();
-      Teuchos::RCP<std::vector<WhetStone::Tensor> > Dptr = Teuchos::rcpFromRef(D_);
-      op1->Setup(Dptr, Teuchos::null, Teuchos::null);
-      op1->UpdateMatrices(Teuchos::null, Teuchos::null);
+    op->Init();
+    Teuchos::RCP<std::vector<WhetStone::Tensor> > Dptr = Teuchos::rcpFromRef(D_);
+    op1->Setup(Dptr, Teuchos::null, Teuchos::null);
+    op1->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-      // add accumulation term
-      Epetra_MultiVector& fac = *factor.ViewComponent("cell");
-      for (int c = 0; c < ncells_owned; c++) {
-        fac[0][c] = (*phi)[0][c] * (*ws)[0][c];
-      }
-      op2->AddAccumulationDelta(sol, factor, factor, dt_MPC, "cell");
- 
-      op1->ApplyBCs(true, true, true);
-      op->ComputeInverse();
-
-    } else {
-      Epetra_MultiVector& rhs_cell = *op->rhs()->ViewComponent("cell");
-      for (int c = 0; c < ncells_owned; c++) {
-        double tmp = mesh_->cell_volume(c) * (*ws)[0][c] * (*phi)[0][c] / dt_MPC;
-        rhs_cell[0][c] = tcc_next[i][c] * tmp;
-      }
+    // add accumulation term
+    Epetra_MultiVector& fac = *factor.ViewComponent("cell");
+    for (int c = 0; c < ncells_owned; c++) {
+      fac[0][c] = (*phi)[0][c] * (*ws)[0][c];
     }
+    op2->AddAccumulationDelta(sol, factor, factor, dt_MPC, "cell");
+
+    op1->ApplyBCs(true, true, true);
+    op->ComputeInverse();
   
     CompositeVector& rhs = *op->rhs();
-    int ierr = op->ApplyInverse(rhs, sol); // NOTE: this should fail if
-                                            // flag_op1 is false, but that
-                                            // doesn't seem possible in the
-                                            // above code.  Furthermore, it
-                                            // probably should have failed in
-                                            // the old code too? --etc
+    int ierr = op->ApplyInverse(rhs, sol);
 
     if (ierr < 0) {
       Errors::Message msg("TransportExplicit_PK solver failed with message: \"");
@@ -254,7 +238,7 @@ void Transport_PK::DispersionSolver(
   }
 
   // Diffuse gaseous components. We ignore dispersion 
-  // tensor (D is reset). Inactive cells (s[c] = 1 and D_[c] = 0) 
+  // tensor (D is reset). Inactive cells (sat_l[c] = 1 and D_[c] = 0) 
   // are treated with a hack of the accumulation term.
   D_.clear();
   md_old = 0.0;
