@@ -31,5 +31,9 @@ class Ascemio(CMakePackage):
 
 
     def cmake_args(self):
-        options = []
+
+        options = ['-DCMAKE_C_COMPILER=' + self.spec['mpi'].mpicc]
+        options.append('-DCMAKE_CXX_COMPILER=' + self.spec['mpi'].mpicxx)
+        options.append('-DCMAKE_Fortran_COMPILER=' + self.spec['mpi'].mpifc)
+
         return options
