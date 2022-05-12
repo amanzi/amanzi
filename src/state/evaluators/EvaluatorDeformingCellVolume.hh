@@ -40,7 +40,7 @@ class EvaluatorDeformingCellVolume : public EvaluatorSecondary {
   virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Tag& wrt_tag) override {};
 
  protected:
-  Key my_mesh_, my_key_;
+  Key domain_;
 
  private:
   static Utils::RegisteredFactory<Evaluator, EvaluatorDeformingCellVolume> fac_;

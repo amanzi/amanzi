@@ -190,7 +190,6 @@ void Checkpoint::Write(const State& S,
   }
 }
 
-
 void Checkpoint::WriteVector(const Epetra_MultiVector& vec,
                              const std::vector<std::string>& names ) const {
   if (names.size() < vec.NumVectors()) {
@@ -219,6 +218,30 @@ void Checkpoint::WriteVector(const Epetra_MultiVector& vec,
     for (int i=0; i!=vec.NumVectors(); ++i) {
       output->writeCellDataReal(*vec(i), names[i]);
     }
+  }
+}
+
+
+template <>
+void Checkpoint::Write(const std::string& name, const Epetra_Vector& vec) const
+{
+  if (old_) {
+    const auto& output = output_.at("domain");
+    output->writeCellDataReal(vec, name);
+  } else {
+    // double check that the comms are consistent and that the user is
+    // following naming best practices
+    Key domain_name = Keys::getDomain(name);
+    if (domain_name.empty()) domain_name = "domain";
+    const auto& output = output_.at(domain_name);
+
+    if (!sameComm(*output->Comm(), vec.Comm())) {
+      Errors::Message msg;
+      msg << "Checkpoint::WriteVector : vector \"" << name << "\" communicator does not match that of domain \"" << domain_name << "\"";
+      Exceptions::amanzi_throw(msg);
+    }
+
+    output->writeCellDataReal(vec, name);
   }
 }
 
