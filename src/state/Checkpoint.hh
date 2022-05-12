@@ -116,10 +116,8 @@ class Checkpoint : public IOEvent {
 
 
 template <>
-inline void Checkpoint::Write<Epetra_Vector>(const std::string& name,
-                                             const Epetra_Vector& t) const {
-  output_.at("domain")->writeCellDataReal(t, name);
-}
+void Checkpoint::Write<Epetra_Vector>(const std::string& name,
+        const Epetra_Vector& t) const;
 
 template <>
 inline void Checkpoint::Write<double>(const std::string& name,

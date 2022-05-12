@@ -122,8 +122,8 @@ class State {
   typedef std::map<Key, Teuchos::RCP<AmanziMesh::DomainSet>> DomainSetMap;
   typedef std::map<Key, Teuchos::RCP<Functions::MeshPartition> > MeshPartitionMap;
 
-  using RecordSetMap = std::unordered_map<Key, std::unique_ptr<RecordSet> >;
-  using EvaluatorMap = std::unordered_map<Key, std::unordered_map<Tag, Teuchos::RCP<Evaluator> > >;
+  using RecordSetMap = std::map<Key, std::unique_ptr<RecordSet> >;
+  using EvaluatorMap = std::map<Key, std::unordered_map<Tag, Teuchos::RCP<Evaluator> > >;
 
  public:
   State();

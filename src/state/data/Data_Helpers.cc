@@ -172,16 +172,19 @@ void WriteCheckpoint<CompositeVector>(const Checkpoint& chkp,
         throw(msg);
       }
 
+      std::vector<std::string> comp_subfieldnames(vec_c.NumVectors());
       for (int i = 0; i != vec_c.NumVectors(); ++i) {
-        Key name = fieldname + '.' + cname + '.' + subfieldnames[i];
-        chkp.Write(name, *vec_c(i));
+        comp_subfieldnames[i] = fieldname + '.' + cname + '.' + subfieldnames[i];
       }
+      chkp.WriteVector(vec_c, comp_subfieldnames);
     } else {
+      std::vector<std::string> comp_subfieldnames(vec_c.NumVectors());
       for (int i = 0; i != vec_c.NumVectors(); ++i) {
         std::stringstream name;
         name << fieldname << "." << cname << "." << i;
-        chkp.Write(name.str(), *vec_c(i));
+        comp_subfieldnames[i] = name.str();
       }
+      chkp.WriteVector(vec_c, comp_subfieldnames);
     }
   }
 }
@@ -221,7 +224,7 @@ template <>
 bool Initialize<CompositeVector>(
     Teuchos::ParameterList& plist, CompositeVector& t, const Key& fieldname,
     const std::vector<std::string>& subfieldnames) {
-  bool fully_initialized = false;
+  bool initialized = false;
 
   // First try all initialization method which set the entire data structure.
   // ------ Try to set values from a restart file -----
@@ -230,7 +233,7 @@ bool Initialize<CompositeVector>(
     Checkpoint chkp(filename, t.Comm());
     ReadCheckpoint(chkp, fieldname, subfieldnames, t);
     chkp.Finalize();
-    return true;
+    initialized = true;
   }
 
   // // ------ Try to set values from an file -----
@@ -241,19 +244,19 @@ bool Initialize<CompositeVector>(
 
     Teuchos::ParameterList& file_list = plist.sublist("exodus file initialization");
     ReadVariableFromExodusII(file_list, t);
-    return true;
+    initialized = true;
   }
 
   // ------ Set values using a constant -----
   if (plist.isParameter("constant")) {
     double value = plist.get<double>("constant");
     t.PutScalar(value);
-    return true;
+    initialized = true;
   }
   if (plist.isParameter("value")) {
     double value = plist.get<double>("value");
     t.PutScalar(value);
-    return true;
+    initialized = true;
   }
 
   // Next try all partial initialization methods -- typically cells.
@@ -271,7 +274,7 @@ bool Initialize<CompositeVector>(
       chkp.Read(name.str(), *vec_c(i));
     }
     chkp.Finalize();
-    return true;
+    initialized = true;
   }
 
 
@@ -281,7 +284,7 @@ bool Initialize<CompositeVector>(
     if (!init_plist.isParameter("f header"))
       init_plist.set("f header", std::string("/") + fieldname);
     Functions::ReadColumnMeshFunction(init_plist, t);
-    return true;
+    initialized = true;
   }
 
   // ------ Set values using a function -----
@@ -330,7 +333,7 @@ bool Initialize<CompositeVector>(
         }
         dat_f[0][f] = vel * normal;
       }
-      return true;
+      initialized = true;
 
     } else {
       auto t_ptr = Teuchos::rcpFromRef(t).ptr();
@@ -338,25 +341,16 @@ bool Initialize<CompositeVector>(
       // no map, just evaluate the function
       auto func = Functions::CreateCompositeVectorFunction(func_plist, t.Map(), complist);
       func->Compute(0.0, t_ptr);
-      fully_initialized = true;
+      initialized = true;
     }
   }
 
-  if (fully_initialized) {
-    if ((t.HasComponent("face") || t.HasComponent("boundary_face")) &&
-         t.HasComponent("cell") &&
-         plist.get<bool>("initialize faces from cells", false)) {
-      DeriveFaceValuesFromCellValues(t);
-      return true;
-    }
-    if (t.HasComponent("boundary_face") &&
-        t.HasComponent("cell") &&
-        plist.get<bool>("initialize faces from cells", false)) {
-      DeriveFaceValuesFromCellValues(t);
-      return true;
-    }
+  if ((t.HasComponent("face") || t.HasComponent("boundary_face")) &&
+      t.HasComponent("cell") &&
+      plist.get<bool>("initialize faces from cells", false)) {
+    DeriveFaceValuesFromCellValues(t);
   }
-  return fully_initialized;
+  return initialized;
 }
 
 }  // namespace Helpers

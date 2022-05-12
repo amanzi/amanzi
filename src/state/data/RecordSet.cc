@@ -45,11 +45,11 @@ bool RecordSet::Initialize(Teuchos::ParameterList& plist) {
 }
 
 void RecordSet::Assign(const Tag& dest, const Tag& source) {
-  records_.at(dest)->Assign(*records_.at(source));
+  GetRecord(dest).Assign(GetRecord(source));
 }
 
 void RecordSet::AssignPtr(const Tag& alias, const Tag& target) {
-  records_.at(alias)->AssignPtr(*records_.at(target));
+  GetRecord(alias).AssignPtr(GetRecord(target));
 }
 
 

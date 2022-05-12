@@ -282,9 +282,7 @@ Evaluator& State::RequireEvaluator(const Key& key, const Tag& tag)
   CheckIsDebugEval_(key, tag);
 
   // does it already exist?
-  if (HasEvaluator(key, tag)) {
-    return GetEvaluator(key, tag);
-  }
+  if (HasEvaluator(key, tag)) return GetEvaluator(key, tag);
 
   // See if the key is provided by another existing evaluator.
   for (auto& e : evaluators_) {
@@ -300,9 +298,10 @@ Evaluator& State::RequireEvaluator(const Key& key, const Tag& tag)
   // -- Get the Field Evaluator plist
   Teuchos::ParameterList& fm_plist = state_plist_.sublist("evaluators");
 
-  if (fm_plist.isSublist(key)) {
+  if (HasEvaluatorList(key)) {
     // -- Get this evaluator's plist.
-    Teuchos::ParameterList sublist = fm_plist.sublist(key);
+    Teuchos::ParameterList sublist = GetEvaluatorList(key);
+    sublist.setName(key);
 
     // -- Insert any model parameters.
     if (sublist.isParameter("model parameters")) {
