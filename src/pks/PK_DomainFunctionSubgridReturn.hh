@@ -72,10 +72,8 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Init(
   field_out_suffix_ = blist.get<std::string>("subgrid field suffix");
 
   // check for prefixing -- mostly used in the multisubgrid models
-  
   dset_ = blist.get<std::string>("subgrid domain set", "subgrid");
-  
-  copy_field_out_tag_ = make_tag(blist.get<std::string>("copy subgrid field", "default"));
+  copy_field_out_tag_ = make_tag(blist.get<std::string>("copy subgrid field"));
 
   // get and check the region
   std::vector<std::string> regions =
@@ -95,7 +93,6 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Init(
   // Add this source specification to the domain function.
   Teuchos::RCP<Domain> domain = Teuchos::rcp(new Domain(regions, AmanziMesh::CELL));
   AddSpec(Teuchos::rcp(new Spec(domain, f)));
-  
 }
 
 
@@ -163,6 +160,7 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
         val[k] /= ncells_sg;
       }
       value_[*c] = val;
+      if (*c == 0) std::cout << "Computed return src term with val = " << val[0] << std::endl;
     }
   }
 }
