@@ -740,6 +740,7 @@ int Alquimia_PK::AdvanceSingleCell(
 {
   // Copy the state and property information from Amanzi's state within 
   // this cell to Alquimia.
+  // THIS SHOULD BECOME DEFAULT, not CURRENT see #646
   CopyToAlquimia(cell, aqueous_components, 
                  alq_mat_props_, alq_state_, alq_aux_data_, Tags::CURRENT);
 
