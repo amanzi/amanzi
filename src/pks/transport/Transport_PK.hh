@@ -89,7 +89,8 @@ class Transport_PK : public PK_Physical {
   void SetupAlquimia();
 
   // -- access members  
-  inline double cfl() { return cfl_; }
+  double cfl() { return cfl_; }
+  bool get_flag_dispersion() { return flag_dispersion_; }
   Teuchos::RCP<const State> state() { return S_; }
   Teuchos::RCP<CompositeVector> total_component_concentration() { return tcc_tmp; }
 
@@ -106,6 +107,14 @@ class Transport_PK : public PK_Physical {
   void VV_PrintLimiterStatistics();
 
   void CalculateLpErrors(AnalyticFunction f, double t, Epetra_Vector* sol, double* L1, double* L2);
+
+  // multi-purpose wrapper for dispersion-diffusion solvers
+  // -- solves for all components is comp0 < 0.
+  // -- otherwise, it returns global operator for component comp0.
+  Teuchos::RCP<Operators::Operator> DispersionSolver(
+      const Epetra_MultiVector& tcc_prev,
+      const Epetra_MultiVector& tcc_next,
+      double t_old, double t_new, int comp0 = -1);
 
  protected:
   void InitializeFields_();
@@ -135,10 +144,6 @@ class Transport_PK : public PK_Physical {
   int FindDiffusionValue(const std::string& tcc_name, double* md, int* phase);
 
   void CalculateAxiSymmetryDirection();
-
-  void DispersionSolver(const Epetra_MultiVector& tcc_prev,
-                        const Epetra_MultiVector& tcc_next,
-                        double t_old, double t_new);
 
   // -- effective diffusion
   void CalculateDiffusionTensorEffective_(
@@ -234,7 +239,7 @@ class Transport_PK : public PK_Physical {
   Teuchos::RCP<MDMPartition> mdm_;
   std::vector<WhetStone::Tensor> D_;
 
-  bool flag_dispersion_;
+  bool flag_dispersion_, use_dispersion_;
   std::vector<int> axi_symmetry_;  // axi-symmetry direction of permeability tensor
   std::string dispersion_preconditioner, dispersion_solver;
 

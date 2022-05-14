@@ -305,7 +305,7 @@ bool TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     if (tau == 0.0) flag_diffusion = false;
   }
 
-  if (flag_dispersion_ || flag_diffusion) {
+  if ((flag_dispersion_ || flag_diffusion) && use_dispersion_) {
     if (flag_dispersion_) {
       auto darcy_flux = *S_->Get<CompositeVector>(darcy_flux_key_).ViewComponent("face", true);
       CalculateDispersionTensor_(darcy_flux, *transport_phi, *ws);

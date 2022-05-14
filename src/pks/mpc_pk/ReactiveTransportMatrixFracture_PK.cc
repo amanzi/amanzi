@@ -80,8 +80,8 @@ void ReactiveTransportMatrixFracture_PK::Setup()
         .set<std::string>("evaluator type", "independent variable");
 
   // copies
-  S_->Require<CV_t, CVS_t>(tcc_matrix_key_, Tags::COPY, tcc_matrix_key_);
-  S_->Require<CV_t, CVS_t>(tcc_fracture_key_, Tags::COPY, tcc_fracture_key_);
+  S_->Require<CV_t, CVS_t>(tcc_matrix_key_, Tags::COPY, "state");
+  S_->Require<CV_t, CVS_t>(tcc_fracture_key_, Tags::COPY, "state");
 
   // communicate chemistry engine to transport.
   auto ic = coupled_chemistry_pk_->begin();
@@ -164,8 +164,8 @@ bool ReactiveTransportMatrixFracture_PK::AdvanceStep(
     }
     
     // tell chemistry PKs to work with copies
-    auto tcc_m_copy = S_->GetW<CV_t>(tcc_matrix_key_, Tags::COPY, tcc_matrix_key_).ViewComponent("cell", true);
-    auto tcc_f_copy = S_->GetW<CV_t>(tcc_fracture_key_, Tags::COPY, tcc_fracture_key_).ViewComponent("cell", true);  
+    auto tcc_m_copy = S_->GetW<CV_t>(tcc_matrix_key_, Tags::COPY, "state").ViewComponent("cell", true);
+    auto tcc_f_copy = S_->GetW<CV_t>(tcc_fracture_key_, Tags::COPY, "state").ViewComponent("cell", true);  
 
     subpks[0]->set_aqueous_components(tcc_m_copy);
     subpks[1]->set_aqueous_components(tcc_f_copy);
@@ -179,6 +179,8 @@ bool ReactiveTransportMatrixFracture_PK::AdvanceStep(
       .ViewComponent("cell", true) = *subpks[1]->aqueous_components();
   }
   catch (const Errors::Message& chem_error) {
+    fail = true;
+  } catch (...) {
     fail = true;
   }
 

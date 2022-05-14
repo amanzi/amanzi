@@ -143,11 +143,13 @@ void Transport_PK::CalculateAxiSymmetryDirection()
 /* ******************************************************************
 * Two-phase solver
 ****************************************************************** */
-void Transport_PK::DispersionSolver(
+Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
     const Epetra_MultiVector& tcc_prev,
     const Epetra_MultiVector& tcc_next,
-    double t_old, double t_new)
+    double t_old, double t_new, int comp0)
 {
+  int i0 = (comp0 >= 0) ? comp0 : 0;
+
   int num_components = tcc_prev.NumVectors();
   double dt_MPC = t_new - t_old;
 
@@ -187,7 +189,7 @@ void Transport_PK::DispersionSolver(
   double md_change, md_old(0.0), md_new, residual(0.0);
 
   // Disperse and diffuse aqueous components
-  for (int i = 0; i < num_aqueous; i++) {
+  for (int i = i0; i < num_aqueous; i++) {
     FindDiffusionValue(component_names_[i], &md_new, &phase);
     md_change = md_new - md_old;
     md_old = md_new;
@@ -216,10 +218,10 @@ void Transport_PK::DispersionSolver(
       fac[0][c] = (*phi)[0][c] * (*ws)[0][c];
     }
     op2->AddAccumulationDelta(sol, factor, factor, dt_MPC, "cell");
-
     op1->ApplyBCs(true, true, true);
+    if (comp0 >= 0) return op;
+
     op->ComputeInverse();
-  
     CompositeVector& rhs = *op->rhs();
     int ierr = op->ApplyInverse(rhs, sol);
 
@@ -242,7 +244,7 @@ void Transport_PK::DispersionSolver(
   // are treated with a hack of the accumulation term.
   D_.clear();
   md_old = 0.0;
-  for (int i = num_aqueous; i < num_components; i++) {
+  for (int i = std::max(i0, num_aqueous); i < num_components; i++) {
     FindDiffusionValue(component_names_[i], &md_new, &phase);
     md_change = md_new - md_old;
     md_old = md_new;
@@ -282,8 +284,9 @@ void Transport_PK::DispersionSolver(
       if ((*ws)[0][c] == 1.0) fac1[0][c] = 1.0;  // hack so far
     }
     op2->AddAccumulationDelta(sol, factor0, factor, dt_MPC, "cell");
+    if (comp0 >= 0) return op;
+
     op->ComputeInverse();
-  
     CompositeVector& rhs = *op->rhs();
     int ierr = op->ApplyInverse(rhs, sol);
 
@@ -307,6 +310,8 @@ void Transport_PK::DispersionSolver(
                << ") ||r||=" << residual / num_components
                << " itrs=" << num_itrs / num_components << std::endl;
   }
+
+  return Teuchos::null;
 }
 
 }  // namespace Transport

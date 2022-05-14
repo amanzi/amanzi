@@ -101,7 +101,7 @@ void TransportImplicit_PK::Initialize()
   
   // boundary conditions
   op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
-  op_bc_->bc_value();  // allocate intermal
+  op_bc_->bc_value();  // allocate internal
   op_bc_->bc_model();  // memory
 
   Teuchos::ParameterList& oplist = tp_list_->sublist("operators")

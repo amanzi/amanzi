@@ -346,6 +346,7 @@
       <Parameter name="internal tests tolerance" type="double" value="1e-5"/> 
       <Parameter name="component names" type="Array(string)" value="{tracer}"/>
       <!-- end of developers parameters -->
+
       <ParameterList name="reconstruction">
         <Parameter name="polynomial order" type="int" value="0"/>
         <Parameter name="limiter" type="string" value="tensorial"/>
@@ -395,6 +396,11 @@
       <Parameter name="internal tests tolerance" type="double" value="1e-5"/> 
       <Parameter name="component names" type="Array(string)" value="{tracer}"/>
       <!-- end of developers parameters -->
+
+      <ParameterList name="physical models and assumptions">
+        <!--Parameter name="transport in fractures" type="bool" value="true"/-->
+      </ParameterList>
+
       <ParameterList name="reconstruction">
         <Parameter name="polynomial order" type="int" value="0"/>
         <Parameter name="limiter" type="string" value="tensorial"/>

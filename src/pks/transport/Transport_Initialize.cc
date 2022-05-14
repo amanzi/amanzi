@@ -51,7 +51,7 @@ void Transport_PK::InitializeAll_()
   if (tp_list_->isSublist("material properties")) {
     Teuchos::ParameterList& dlist = tp_list_->sublist("material properties");
 
-    if (!linear_solver_list_->isSublist(dispersion_solver)) {
+    if (!linear_solver_list_->isSublist(dispersion_solver) && use_dispersion_) {
       Errors::Message msg;
       msg << "Transport PK: sublist \"dispersion solver\" does not exist.\n";
       Exceptions::amanzi_throw(msg);  

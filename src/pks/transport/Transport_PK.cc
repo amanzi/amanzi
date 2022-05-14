@@ -171,6 +171,7 @@ void Transport_PK::Setup()
   bool transport_on_manifold = physical_models->get<bool>("transport in fractures", false);
   use_transport_porosity_ = physical_models->get<bool>("effective transport porosity", false);
   use_effective_diffusion_ = physical_models->get<bool>("effective transport diffusion", false);
+  use_dispersion_ = physical_models->get<bool>("use dispersion solver", true);
 
   // generate keys here to be available for setup of the base class
   tcc_key_ = Keys::getKey(domain_, "total_component_concentration"); 
@@ -303,6 +304,9 @@ void Transport_PK::Setup()
 #ifdef ALQUIMIA_ENABLED
   SetupAlquimia();
 #endif
+
+  // temporary fields
+  S_->Require<CV_t, CVS_t>(tcc_key_, Tags::COPY, passwd_, component_names_);
 }
 
 
@@ -359,11 +363,11 @@ void Transport_PK::Initialize()
     transport_phi = phi;
   }
 
+  // initialize copy of component
   tcc = S_->GetPtrW<CV_t>(tcc_key_, Tags::DEFAULT, passwd_);
-
-  // memory for new components
-  tcc_tmp = Teuchos::rcp(new CompositeVector(S_->Get<CV_t>(tcc_key_)));
+  tcc_tmp = S_->GetPtrW<CV_t>(tcc_key_, Tags::COPY, passwd_);
   *tcc_tmp = *tcc;
+  S_->GetRecordW(tcc_key_, Tags::COPY, passwd_).set_initialized();
 
   // upwind structures
   IdentifyUpwindCells();
