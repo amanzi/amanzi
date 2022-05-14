@@ -274,24 +274,23 @@ bool Initialize<CompositeVector>(
       auto func = Functions::CreateCompositeVectorFunction(func_plist, vel_vec->Map(), complist);
       func->Compute(0.0, vel_vec.ptr());
 
+      // CV's map may differ from the regular mesh map due to presense of fractures
+      const auto& fmap = *t.Map().Map("face", true);
+      int nfaces_owned = t.Mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+
+      Epetra_MultiVector& dat_f = *t.ViewComponent("face");
+      const Epetra_MultiVector& vel_f = *vel_vec->ViewComponent("face");
+
       // Dot the velocity with the normal
-      unsigned int nfaces_owned =
-          t.Mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-
-      Epetra_MultiVector& dat_f = *t.ViewComponent("face", false);
-      const Epetra_MultiVector& vel_f = *vel_vec->ViewComponent("face", false);
-
       AmanziGeometry::Point vel(dim);
-      for (unsigned int f = 0; f != nfaces_owned; ++f) {
-        AmanziGeometry::Point normal = t.Mesh()->face_normal(f);
-        if (dim == 2) {
-          vel.set(vel_f[0][f], vel_f[1][f]);
-        } else if (dim == 3) {
-          vel.set(vel_f[0][f], vel_f[1][f], vel_f[2][f]);
-        } else {
-          AMANZI_ASSERT(0);
+      for (int f = 0; f != nfaces_owned; ++f) {
+        const AmanziGeometry::Point& normal = t.Mesh()->face_normal(f);
+        for (int i = 0; i < dim; ++i) vel[i] = vel_f[i][f]; 
+
+        int g = fmap.FirstPointInElement(f);
+        for (int i = 0; i < fmap.ElementSize(f); ++i) {
+          dat_f[0][g + i] = vel * normal; 
         }
-        dat_f[0][f] = vel * normal;
       }
       return true;
 
