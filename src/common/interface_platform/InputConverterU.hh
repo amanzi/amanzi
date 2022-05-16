@@ -43,6 +43,7 @@ class InputConverterU : public InputConverter {
       mesh_rectangular_(false),
       transport_permeability_(false),
       use_transport_porosity_(false),
+      use_transport_dispersion_(true),
       transport_implicit_(false),
       restart_(false),
       ic_time_flow_(0.0),
@@ -63,6 +64,7 @@ class InputConverterU : public InputConverter {
       mesh_rectangular_(false),
       transport_permeability_(false),
       use_transport_porosity_(false),
+      use_transport_dispersion_(true),
       transport_implicit_(false),
       restart_(false),
       ic_time_flow_(0.0),
@@ -261,7 +263,8 @@ class InputConverterU : public InputConverter {
   std::map<std::string, int> region_type_;  // flag for vofs
 
   // global transport and chemistry constants
-  bool transport_permeability_, use_transport_porosity_, transport_implicit_;
+  bool use_transport_porosity_, use_transport_dispersion_;
+  bool transport_permeability_, transport_implicit_;
   std::vector<std::string> comp_names_all_;
   std::map<std::string, double> solute_molar_mass_;
 

@@ -153,19 +153,13 @@ Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
   int num_components = tcc_prev.NumVectors();
   double dt_MPC = t_new - t_old;
 
-  Teuchos::ParameterList& op_list = 
-      tp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
-
-  // default boundary conditions (none inside domain and Neumann on its boundary)
   auto bc_dummy = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
 
-  std::vector<int>& bc_model = bc_dummy->bc_model();
-  std::vector<double>& bc_value = bc_dummy->bc_value();
-  ComputeBCs_(bc_model, bc_value, -1);
-
   // create the Dispersion and Accumulation operators
+  Teuchos::ParameterList& op_list = tp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
   Operators::PDE_DiffusionFactory opfactory;
   Teuchos::RCP<Operators::PDE_Diffusion> op1 = opfactory.Create(op_list, mesh_, bc_dummy);
+
   op1->SetBCs(bc_dummy, bc_dummy);
   auto op = op1->global_operator();
   auto op2 = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op));
@@ -211,6 +205,11 @@ Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
     Teuchos::RCP<std::vector<WhetStone::Tensor> > Dptr = Teuchos::rcpFromRef(D_);
     op1->Setup(Dptr, Teuchos::null, Teuchos::null);
     op1->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+    // boundary conditions
+    std::vector<int>& bc_model = bc_dummy->bc_model();
+    std::vector<double>& bc_value = bc_dummy->bc_value();
+    ComputeBCs_(bc_model, bc_value, i);
 
     // add accumulation term
     Epetra_MultiVector& fac = *factor.ViewComponent("cell");
@@ -268,6 +267,8 @@ Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
     op1->UpdateMatrices(Teuchos::null, Teuchos::null);
 
     // add boundary conditions and sources for gaseous components
+    std::vector<int>& bc_model = bc_dummy->bc_model();
+    std::vector<double>& bc_value = bc_dummy->bc_value();
     ComputeBCs_(bc_model, bc_value, i);
 
     Epetra_MultiVector& rhs_cell = *op->rhs()->ViewComponent("cell");

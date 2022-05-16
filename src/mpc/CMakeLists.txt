@@ -184,6 +184,7 @@ if (BUILD_TESTS)
 
     add_amanzi_test(mpc_coupled_dispersive_transport mpc_coupled_dispersive_transport
                     KIND      int
+                    NPROCS    2
                     SOURCE    test/Main.cc test/mpc_coupled_dispersive_transport.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                  
 

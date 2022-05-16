@@ -65,7 +65,7 @@ using namespace Amanzi::AmanziGeometry;
 
   const auto& tcc_m = *S->Get<CompositeVector>("total_component_concentration").ViewComponent("cell");
   double cmin(1e+99), cmax(-1e+99);
-  for (int c = 0; c < 216; ++c) {
+  for (int c = 0; c < tcc_m.MyLength(); ++c) {
     const auto& xc = mesh->cell_centroid(c);
     if (std::fabs(xc[0] - 5.5) < 1e-3) {
       cmin = std::min(cmin, tcc_m[0][c]);
@@ -76,14 +76,15 @@ using namespace Amanzi::AmanziGeometry;
 
   const auto& tcc_f = *S->Get<CompositeVector>("fracture-total_component_concentration").ViewComponent("cell");
   double fmin(1e+99), fmax(-1e+99);
-  for (int c = 0; c < 36; ++c) {
+  for (int c = 0; c < tcc_f.MyLength(); ++c) {
     const auto& xc = mesh_fracture->cell_centroid(c);
     if (std::fabs(xc[0] - 5.5) < 1e-3) {
       fmin = std::min(fmin, tcc_f[0][c]);
       fmax = std::max(fmax, tcc_f[0][c]);
     }
+    if (std::fabs(xc[1] - 5.5) < 0.1) std::cout << xc << " " << tcc_f[0][c] << " " << std::erfc(xc[0] / 2) << std::endl;
   }
-  CHECK_CLOSE(fmin, fmax, 1e-12);
+  if (fmin < 1.0e+98) CHECK_CLOSE(fmin, fmax, 1e-12);
 }
 
 

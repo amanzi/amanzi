@@ -404,6 +404,7 @@ void InputConverterU::PopulatePKTree_(
        .set<std::string>("PK type", pk_model_["flow"]);
   }
   else if (basename == "coupled transport") {
+    use_transport_dispersion_ = false;
     tmp.set<std::string>("PK type", "transport matrix fracture" + implicit);
     tmp.sublist(Keys::merge(prefix, "transport matrix", delimiter)).set<std::string>("PK type", "transport" + implicit);
     tmp.sublist(Keys::merge(prefix, "transport fracture", delimiter)).set<std::string>("PK type", "transport" + implicit);

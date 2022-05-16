@@ -2186,6 +2186,9 @@ This list is often generated or extended by a high-level MPC PK.
 
 * `"eos lookup table`" [string] provides the name for optional EOS lookup table.
 
+* `"use dispersion solver`" [bool] instructs PK to instantiate a solver but do
+  not call it. It is used now by MPC to form a global solver. Default is *false*.
+
 .. code-block:: xml
 
   <ParameterList name="_TRANSPORT">  <!-- parent list -->
@@ -2195,6 +2198,7 @@ This list is often generated or extended by a high-level MPC PK.
     <Parameter name="multiscale model" type="string" value="single porosity"/>
     <Parameter name="effective transport porosity" type="bool" value="false"/>
     <Parameter name="eos lookup table" type="string" value="h2o.eos"/>
+    <Parameter name="use dispersion solver" type="bool" value="false"/>
   </ParameterList>
   </ParameterList>
 

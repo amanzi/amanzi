@@ -10,6 +10,11 @@
            Daniil Svyatskiy
 
   Process kernel that couples Transport in matrix and fracture.
+
+  For molecular diffusion, we use the boundary layer or film theory (Fahien, 1983),
+  according to which the mass transfer of solute per unit area at the fracture-matrix
+  interface is given by kn (Cf - Cm). The mass transfer coefficient kn = Dm / h,
+  where h is the effective layer thickness.
 */
 
 // Amanzi

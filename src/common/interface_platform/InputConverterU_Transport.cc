@@ -269,7 +269,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
   out_list.set<int>("number of gaseous components", phases_["air"].size());
 
   out_list.sublist("physical models and assumptions")
-      .set<bool>("effective transport porosity", use_transport_porosity_);
+      .set<bool>("effective transport porosity", use_transport_porosity_)
+      .set<bool>("use dispersion solver", use_transport_dispersion_);
 
   // cross coupling of PKs
   out_list.sublist("physical models and assumptions")

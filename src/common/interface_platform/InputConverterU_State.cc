@@ -333,6 +333,11 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         Exceptions::amanzi_throw(msg);
       }
 
+      node = GetUniqueElementByTagsString_(inode, "fracture_diffusivity", flag);
+      if (flag) {
+        TranslateFieldIC_(node, "fracture-normal_diffusion", "m/s", reg_str, regions, out_ic, out_ev, "normal");
+      }
+
       // -- particle density
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, particle_density", flag);
       if (flag) {
