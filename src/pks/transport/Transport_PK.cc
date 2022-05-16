@@ -414,6 +414,7 @@ void Transport_PK::Initialize()
           bc->tcc_index().push_back(i);
         }
         bc->set_state(S_);
+        bc->set_location("interface");
         bcs_.push_back(bc);
       } else {        
         if (clist.isSublist(name)) {
@@ -889,20 +890,22 @@ bool Transport_PK::ComputeBCs_(
   }
 
   for (int m = 0; m < bcs_.size(); m++) {
-    std::vector<int>& tcc_index = bcs_[m]->tcc_index();
-    int ncomp = tcc_index.size();
+    if (bcs_[m]->get_location() == "boundary") {
+      std::vector<int>& tcc_index = bcs_[m]->tcc_index();
+      int ncomp = tcc_index.size();
 
-    for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
-      int f = it->first;
+      for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+        int f = it->first;
 
-      std::vector<double>& values = it->second; 
+        std::vector<double>& values = it->second; 
 
-      for (int i = 0; i < ncomp; i++) {
-        int k = tcc_index[i];
-        if (k == component) {
-          bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-          bc_value[f] = values[i];
-          flag = true;
+        for (int i = 0; i < ncomp; i++) {
+          int k = tcc_index[i];
+          if (k == component) {
+            bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+            bc_value[f] = values[i];
+            flag = true;
+          }
         }
       }
     }
