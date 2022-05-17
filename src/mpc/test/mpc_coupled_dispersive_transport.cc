@@ -25,8 +25,8 @@
 #include "State.hh"
 
 
-TEST(MPC_DRIVER_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE) {
-
+double RunTest(double darcy_flux,
+               double normal_diff) {
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
@@ -35,7 +35,17 @@ using namespace Amanzi::AmanziGeometry;
   
   std::string xmlInFileName = "test/mpc_coupled_dispersive_transport.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
-  
+
+  // modify the test
+  plist->sublist("state").sublist("initial conditions")
+        .sublist("fracture-darcy_flux").sublist("function")
+        .sublist("All domain").sublist("function").sublist("dof 1 function")
+        .sublist("function-constant").set<double>("value", darcy_flux);
+
+  plist->sublist("state").sublist("initial conditions")
+        .sublist("fracture-normal_diffusion").sublist("function").sublist("All").sublist("function")
+        .sublist("function-constant").set<double>("value", normal_diff);
+
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
@@ -44,7 +54,7 @@ using namespace Amanzi::AmanziGeometry;
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
   MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({Framework::MSTK}));
-  auto mesh = factory.create(0.0, 0.0, 0.0, 6.0, 6.0, 6.0, 6, 6, 6);
+  auto mesh = factory.create(0.0, 0.0, 0.0, 12.0, 1.0, 6.0, 96, 1, 6);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
@@ -67,7 +77,7 @@ using namespace Amanzi::AmanziGeometry;
   double cmin(1e+99), cmax(-1e+99);
   for (int c = 0; c < tcc_m.MyLength(); ++c) {
     const auto& xc = mesh->cell_centroid(c);
-    if (std::fabs(xc[0] - 5.5) < 1e-3) {
+    if (std::fabs(xc[0] - 4.0625) < 1e-3) {
       cmin = std::min(cmin, tcc_m[0][c]);
       cmax = std::max(cmax, tcc_m[0][c]);
     }
@@ -75,16 +85,36 @@ using namespace Amanzi::AmanziGeometry;
   }
 
   const auto& tcc_f = *S->Get<CompositeVector>("fracture-total_component_concentration").ViewComponent("cell");
-  double fmin(1e+99), fmax(-1e+99);
+  double fmin(1e+99), fmax(-1e+99), err(0.0);
+
   for (int c = 0; c < tcc_f.MyLength(); ++c) {
     const auto& xc = mesh_fracture->cell_centroid(c);
-    if (std::fabs(xc[0] - 5.5) < 1e-3) {
+    if (std::fabs(xc[0] - 4.0625) < 1e-3) {
       fmin = std::min(fmin, tcc_f[0][c]);
       fmax = std::max(fmax, tcc_f[0][c]);
     }
-    if (std::fabs(xc[1] - 5.5) < 0.1) std::cout << xc << " " << tcc_f[0][c] << " " << std::erfc(xc[0] / 2) << std::endl;
+    err += fabs(tcc_f[0][c] - std::erfc(xc[0] / 2));
   }
+  double err_tmp(err);
+  mesh->get_comm()->SumAll(&err_tmp, &err, 1);
+  err /= tcc_f.GlobalLength();
+  std::cout << "Mean error in fracture: " << err << std::endl;
+
   if (fmin < 1.0e+98) CHECK_CLOSE(fmin, fmax, 1e-12);
+
+  return err;
 }
 
+
+TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_0) {
+  // no coupling, only diffusion
+  double err = RunTest(0.0, 0.0);
+  CHECK(err < 3e-3);
+}
+
+/*
+TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_1) {
+  double err = RunTest(1.0e-5, 1.0e-6);
+}
+*/
 

@@ -287,30 +287,12 @@ bool TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   dt_ = dt_original;  // restore the original time step (just in case)
 
-  // We define tracer as the species #0 as calculate some statistics.
+  // Dispersio/diffusion solver
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", false);
 
-  bool flag_diffusion(false);
-  for (int i = 0; i < 2; i++) {
-    if (diffusion_phase_[i] != Teuchos::null) {
-      if (diffusion_phase_[i]->values().size() != 0) flag_diffusion = true;
-    }
-  }
-  if (flag_diffusion) {
-    // no molecular diffusion if all tortuosities are zero.
-    double tau(0.0);
-    for (int i = 0; i < mat_properties_.size(); i++) {
-      tau += mat_properties_[i]->tau[0] + mat_properties_[i]->tau[1];
-    }
-    if (tau == 0.0) flag_diffusion = false;
-  }
-
-  if ((flag_dispersion_ || flag_diffusion) && use_dispersion_) {
-    if (flag_dispersion_) {
-      auto darcy_flux = *S_->Get<CompositeVector>(darcy_flux_key_).ViewComponent("face", true);
-      CalculateDispersionTensor_(darcy_flux, *transport_phi, *ws);
-    }
+  if (use_dispersion_) {
     if (use_effective_diffusion_) {
+      CalculateDispersionTensor_(*transport_phi, *ws);
       DiffusionSolverEffective(tcc_next, t_old, t_new);
     } else {
       DispersionSolver(tcc_prev, tcc_next, t_old, t_new);

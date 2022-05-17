@@ -168,6 +168,7 @@ bool TransportMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool re
     auto pk0 = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(sub_pks_[0]);
     auto pk1 = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(sub_pks_[1]);
 
+    AMANZI_ASSERT(tcc_prev_m.NumVectors() == 1);
     auto op0 = pk0->DispersionSolver(tcc_prev_m, tcc_next_m, t_old, t_new, 0);
     auto op1 = pk1->DispersionSolver(tcc_prev_f, tcc_next_f, t_old, t_new, 0);
 

@@ -97,6 +97,33 @@ void Transport_PK::InitializeAll_()
     }
   }
 
+  // do we really have mechanical dispersion?
+  flag_dispersion_ = false;
+  if (tp_list_->isSublist("material properties")) {
+    Teuchos::RCP<Teuchos::ParameterList>
+        mdm_list = Teuchos::sublist(tp_list_, "material properties");
+    mdm_ = CreateMDMPartition(mesh_, mdm_list, flag_dispersion_);
+    if (flag_dispersion_) CalculateAxiSymmetryDirection();
+  }
+
+  // do we really have molecular diffusion?
+  flag_diffusion_ = false;
+  for (int i = 0; i < 2; i++) {
+    if (diffusion_phase_[i] != Teuchos::null) {
+      if (diffusion_phase_[i]->values().size() != 0) flag_diffusion_ = true;
+    }
+  }
+  if (flag_diffusion_) {
+    // no molecular diffusion if all tortuosities are zero.
+    double tau(0.0);
+    for (int i = 0; i < mat_properties_.size(); i++) {
+      tau += mat_properties_[i]->tau[0] + mat_properties_[i]->tau[1];
+    }
+    if (tau == 0.0) flag_diffusion_ = false;
+  }
+
+  use_dispersion_ &= flag_dispersion_ || flag_diffusion_;
+
   // statistics of solutes
   if (tp_list_->isParameter("runtime diagnostics: solute names")) {
     runtime_solutes_ = tp_list_->get<Teuchos::Array<std::string> >("runtime diagnostics: solute names").toVector();

@@ -134,7 +134,6 @@ class Transport_PK : public PK_Physical {
   // physical models
   // -- dispersion and diffusion
   void CalculateDispersionTensor_(
-      const Epetra_MultiVector& darcy_flux, 
       const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
 
   void CalculateDiffusionTensor_(
@@ -239,7 +238,7 @@ class Transport_PK : public PK_Physical {
   Teuchos::RCP<MDMPartition> mdm_;
   std::vector<WhetStone::Tensor> D_;
 
-  bool flag_dispersion_, use_dispersion_;
+  bool flag_dispersion_, flag_diffusion_, use_dispersion_;
   std::vector<int> axi_symmetry_;  // axi-symmetry direction of permeability tensor
   std::string dispersion_preconditioner, dispersion_solver;
 

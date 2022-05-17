@@ -33,11 +33,17 @@ namespace Transport {
 * assumed to be scaled by face area.
 ******************************************************************* */
 void Transport_PK::CalculateDispersionTensor_(
-    const Epetra_MultiVector& darcy_flux, 
     const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation)
 {
+  if (!flag_dispersion_) {
+    D_.clear();
+    return;
+  }
+
   D_.resize(ncells_owned);
   for (int c = 0; c < ncells_owned; c++) D_[c].Init(dim, 1);
+
+  const auto& darcy_flux = *S_->Get<CompositeVector>(darcy_flux_key_).ViewComponent("face", true);
 
   AmanziGeometry::Point velocity(dim);
   WhetStone::MFD3D_Diffusion mfd3d(mesh_);
@@ -148,6 +154,8 @@ Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
     const Epetra_MultiVector& tcc_next,
     double t_old, double t_new, int comp0)
 {
+  CalculateDispersionTensor_(*transport_phi, *ws);
+
   int i0 = (comp0 >= 0) ? comp0 : 0;
 
   int num_components = tcc_prev.NumVectors();

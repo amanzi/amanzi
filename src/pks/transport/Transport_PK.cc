@@ -384,15 +384,6 @@ void Transport_PK::Initialize()
   limiter_ = Teuchos::rcp(new Operators::LimiterCell(mesh_));
   fct_ = Teuchos::rcp(new Operators::FCT(mesh_, mesh_, limiter_, Teuchos::null));
 
-  // mechanical dispersion
-  flag_dispersion_ = false;
-  if (tp_list_->isSublist("material properties")) {
-    Teuchos::RCP<Teuchos::ParameterList>
-        mdm_list = Teuchos::sublist(tp_list_, "material properties");
-    mdm_ = CreateMDMPartition(mesh_, mdm_list, flag_dispersion_);
-    if (flag_dispersion_) CalculateAxiSymmetryDirection();
-  }
-
   // create boundary conditions
   if (tp_list_->isSublist("boundary conditions")) {
     // -- try simple Dirichlet conditions for species
