@@ -90,7 +90,7 @@ class Transport_PK : public PK_Physical {
 
   // -- access members  
   double cfl() { return cfl_; }
-  bool get_flag_dispersion() { return flag_dispersion_; }
+  bool get_flag_dispersion() { return flag_dispersion_ || flag_diffusion_; }
   Teuchos::RCP<const State> state() { return S_; }
   Teuchos::RCP<CompositeVector> total_component_concentration() { return tcc_tmp; }
 

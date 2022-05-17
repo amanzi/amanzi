@@ -191,12 +191,15 @@ Teuchos::RCP<Operators::Operator> Transport_PK::DispersionSolver(
   double md_change, md_old(0.0), md_new, residual(0.0);
 
   // Disperse and diffuse aqueous components
+  // -- if we reach this point, we instantiate diffusion operator 
+  //    regadless of flags, since MPC may need a properly formed operator 
+  //    (e.g. with face DOFs)
   for (int i = i0; i < num_aqueous; i++) {
     FindDiffusionValue(component_names_[i], &md_new, &phase);
     md_change = md_new - md_old;
     md_old = md_new;
 
-    if (md_change != 0.0) {
+    if (md_change != 0.0 || D_.size() == 0) {
       CalculateDiffusionTensor_(md_change, phase, *transport_phi, *ws);
     }
 

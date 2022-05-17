@@ -25,7 +25,8 @@
 #include "State.hh"
 
 
-double RunTest(double darcy_flux,
+double RunTest(double darcy_flux_f,
+               double mol_diff_f, double mol_diff_m,
                double normal_diff) {
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -40,7 +41,15 @@ using namespace Amanzi::AmanziGeometry;
   plist->sublist("state").sublist("initial conditions")
         .sublist("fracture-darcy_flux").sublist("function")
         .sublist("All domain").sublist("function").sublist("dof 1 function")
-        .sublist("function-constant").set<double>("value", darcy_flux);
+        .sublist("function-constant").set<double>("value", darcy_flux_f);
+
+  std::vector<double> tmp_f({ mol_diff_f });
+  plist->sublist("PKs").sublist("transport fracture").sublist("molecular diffusion")
+        .set<Teuchos::Array<double> >("aqueous values", tmp_f);
+
+  std::vector<double> tmp_m({ mol_diff_m });
+  plist->sublist("PKs").sublist("transport matrix").sublist("molecular diffusion")
+        .set<Teuchos::Array<double> >("aqueous values", tmp_m);
 
   plist->sublist("state").sublist("initial conditions")
         .sublist("fracture-normal_diffusion").sublist("function").sublist("All").sublist("function")
@@ -94,6 +103,7 @@ using namespace Amanzi::AmanziGeometry;
       fmax = std::max(fmax, tcc_f[0][c]);
     }
     err += fabs(tcc_f[0][c] - std::erfc(xc[0] / 2));
+if (darcy_flux_f > 0) std::cout << xc << " " << tcc_f[0][c] << std::endl;
   }
   double err_tmp(err);
   mesh->get_comm()->SumAll(&err_tmp, &err, 1);
@@ -108,13 +118,11 @@ using namespace Amanzi::AmanziGeometry;
 
 TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_0) {
   // no coupling, only diffusion
-  double err = RunTest(0.0, 0.0);
+  double err = RunTest(0.0, 1e-5, 0.0, 0.0);
   CHECK(err < 3e-3);
 }
 
-/*
 TEST(MPC_DIFFUSIVE_TRANSPORT_MATRIX_FRACTURE_1) {
-  double err = RunTest(1.0e-5, 1.0e-6);
+  double err = RunTest(1.0e-4, 0.0, 1.0e-7, 2.0e-4);
 }
-*/
 
