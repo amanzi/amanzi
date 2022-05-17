@@ -35,7 +35,7 @@ void Transport_PK::InitializeAll_()
   // global transport parameters
   cfl_ = tp_list_->get<double>("cfl", 1.0);
 
-  std::string name = tp_list_->get<std::string>("method", "fct");
+  std::string name = tp_list_->get<std::string>("method", "muscl");
   method_ = (name == "fct") ? Method_t::FCT : Method_t::MUSCL;
 
   spatial_disc_order = tp_list_->get<int>("spatial discretization order", 1);
