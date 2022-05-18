@@ -177,7 +177,7 @@ class Transport_PK : public PK_Physical {
   int spatial_disc_order, temporal_disc_order, limiter_model;
 
   int nsubcycles;  // output information
-  bool internal_tests_, genericRK_;
+  bool internal_tests_;
   double internal_tests_tol_;
 
  protected:

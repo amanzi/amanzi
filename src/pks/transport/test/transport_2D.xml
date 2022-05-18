@@ -32,7 +32,6 @@
       <Parameter name="spatial discretization order" type="int" value="2"/>   
       <Parameter name="temporal discretization order" type="int" value="2"/>   
       <!-- developers parameters --> 
-      <Parameter name="generic RK implementation" type="bool" value="true"/>   
       <Parameter name="enable internal tests" type="bool" value="true"/>   
       <Parameter name="internal tests tolerance" type="double" value="1e-5"/> 
       <!-- end of developers parameters -->

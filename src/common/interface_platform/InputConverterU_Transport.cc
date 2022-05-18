@@ -115,7 +115,6 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
 
       out_list.set<int>("spatial discretization order", nspace);
       out_list.set<int>("temporal discretization order", ntime);
-      out_list.set<bool>("generic RK implementation", true);
       poly_order = 1;
     } else if (order == "implicit") {
       std::vector<std::string> dofs({"cell"});

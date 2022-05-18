@@ -2219,14 +2219,12 @@ and temporal accuracy, and verbosity:
 * `"cfl`" [double] Time step limiter, a number less than 1. Default value is 1.
    
 * `"method`" [string] defines flux method. Available options are `"muscl`" (default) and `"fct`".
-  The `"fct`" option requires `"generic RK implementation`" to be set to *true*.
    
 * `"spatial discretization order`" [int] defines accuracy of spatial discretization.
   It permits values 1 or 2. Default value is 1. 
   
 * `"temporal discretization order`" [int] defines accuracy of temporal discretization.
-  It permits values 1 or 2 and values 3 or 4 when expert parameter 
-  `"generic RK implementation`" is set to true. Note that RK3 is not monotone.
+  It permits values 1 or 2 and values 3 or 4. Note that RK3 is not monotone.
   Default value is 1.
 
 * `"reconstruction`" [list] collects reconstruction parameters. The available options are
@@ -2610,9 +2608,6 @@ The remaining parameters that can be used by a developer include
 
 * `"enable internal tests`" [bool] turns on various internal tests during
   run time. Default value is `"false`".
-   
-* `"generic RK implementation`" [bool] leads to generic implementation of 
-  all Runge-Kutta methods. Default value is `"false`".
    
 * `"internal tests tolerance`" [double] tolerance for internal tests such as the 
   divergence-free condition. The default value is 1e-6.

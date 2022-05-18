@@ -27,7 +27,6 @@
       <Parameter name="cfl" type="double" value="0.5"/>   
       <Parameter name="spatial discretization order" type="int" value="2"/>   
       <Parameter name="temporal discretization order" type="int" value="1"/>   
-      <Parameter name="generic RK implementation" type="bool" value="true"/>
       <!-- developers parameters --> 
       <Parameter name="enable internal tests" type="bool" value="true"/>   
       <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   

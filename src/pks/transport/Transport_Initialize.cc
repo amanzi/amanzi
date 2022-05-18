@@ -138,13 +138,12 @@ void Transport_PK::InitializeAll_()
     runtime_regions_ = tp_list_->get<Teuchos::Array<std::string> >("runtime diagnostics: regions").toVector();
   }
 
-  genericRK_ = tp_list_->get<bool>("generic RK implementation", false);
   internal_tests_ = tp_list_->get<bool>("enable internal tests", false);
   internal_tests_tol_ = tp_list_->get<double>("internal tests tolerance", TRANSPORT_CONCENTRATION_OVERSHOOT);
   dt_debug_ = tp_list_->get<double>("maximum time step", TRANSPORT_LARGE_TIME_STEP);
 
   if (spatial_disc_order < 1 || spatial_disc_order > 2 ||
-     temporal_disc_order < 1 || (temporal_disc_order > 2 && !genericRK_)) {
+     temporal_disc_order < 1 || temporal_disc_order > 4) {
     Errors::Message msg;
     msg << "TransportPK: unsupported combination of spatial or temporal discretization orders.\n";
     Exceptions::amanzi_throw(msg);  

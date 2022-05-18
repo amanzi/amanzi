@@ -16,9 +16,7 @@
 #define AMANZI_TRANSPORT_EXPLICIT_PK_HH_
 
 // TPLs
-#include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
-#include "Epetra_Import.h"
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
@@ -49,7 +47,7 @@ namespace Amanzi {
 namespace Transport {
 
 class TransportExplicit_PK : public Transport_PK,
-                             public PK_Explicit<Epetra_Vector> {
+                             public PK_Explicit<CompositeVector> {
  public:
   TransportExplicit_PK(Teuchos::ParameterList& pk_tree,
                         const Teuchos::RCP<Teuchos::ParameterList>& glist,
@@ -69,9 +67,7 @@ class TransportExplicit_PK : public Transport_PK,
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override;
 
-  virtual void FunctionalTimeDerivative(double t, const Epetra_Vector& component,
-                                        Epetra_Vector& f_component) override;
-  void DudtOld(double t, const Epetra_Vector& component, Epetra_Vector& f_component);
+  virtual void FunctionalTimeDerivative(double t, const CompositeVector& component, CompositeVector& f) override;
 
   // advection members
   // -- advection in matrix
@@ -80,8 +76,8 @@ class TransportExplicit_PK : public Transport_PK,
   void AdvanceDonorUpwindNonManifold(double dT);
 
  private:
-  void FunctionalTimeDerivative_MUSCL_(double t, const Epetra_Vector& component, Epetra_Vector& f_component);
-  void FunctionalTimeDerivative_FCT_(double t, const Epetra_Vector& component, Epetra_Vector& f_component);
+  void FunctionalTimeDerivative_MUSCL_(double t, const CompositeVector& component, CompositeVector& f);
+  void FunctionalTimeDerivative_FCT_(double t, const CompositeVector& component, CompositeVector& f);
 
   void AdvanceSecondOrderUpwindRKn(double dt_cycle);
   void AdvanceSecondOrderUpwindRK2(double dt_cycle);
