@@ -127,7 +127,9 @@ void FCT::Compute(const CompositeVector& flux_lo,
     flux_f[0][f] = flux_lo_f[0][f] + alpha[f] * (flux_ho_f[0][f] - flux_lo_f[0][f]);
   }
 
-  alpha_mean_ /= nfaces_owned;
+  double tmp(alpha_mean_);
+  mesh0_->get_comm()->SumAll(&tmp, &alpha_mean_, 1);
+  alpha_mean_ /= flux_f.GlobalLength();
 }
 
 }  // namespace Operators
