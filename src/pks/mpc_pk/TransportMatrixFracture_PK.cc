@@ -155,22 +155,25 @@ bool TransportMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool re
     *vo_->os() << "Step failed." << std::endl;
   }
 
-  if (flag_dispersion_) {
-    std::string passwd("state");
+  if (!flag_dispersion_)  return fail;
 
-    // we assume that 0 and 1 correspond to matrix and fracture
-    auto& tcc_prev_m = *S_->GetW<CV_t>(tcc_matrix_key_, Tags::DEFAULT, passwd).ViewComponent("cell", true);
-    auto& tcc_prev_f = *S_->GetW<CV_t>(tcc_fracture_key_, Tags::DEFAULT, passwd).ViewComponent("cell", true);
+  std::string passwd("state");
 
-    auto& tcc_next_m = *S_->GetW<CV_t>(tcc_matrix_key_, Tags::COPY, passwd).ViewComponent("cell", true);
-    auto& tcc_next_f = *S_->GetW<CV_t>(tcc_fracture_key_, Tags::COPY, passwd).ViewComponent("cell", true);
+  // we assume that 0 and 1 correspond to matrix and fracture
+  auto& tcc_prev_m = *S_->GetW<CV_t>(tcc_matrix_key_, Tags::DEFAULT, passwd).ViewComponent("cell", true);
+  auto& tcc_prev_f = *S_->GetW<CV_t>(tcc_fracture_key_, Tags::DEFAULT, passwd).ViewComponent("cell", true);
 
-    auto pk0 = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(sub_pks_[0]);
-    auto pk1 = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(sub_pks_[1]);
+  auto& tcc_next_m = *S_->GetW<CV_t>(tcc_matrix_key_, Tags::COPY, passwd).ViewComponent("cell", true);
+  auto& tcc_next_f = *S_->GetW<CV_t>(tcc_fracture_key_, Tags::COPY, passwd).ViewComponent("cell", true);
 
-    AMANZI_ASSERT(tcc_prev_m.NumVectors() == 1);
-    auto op0 = pk0->DispersionSolver(tcc_prev_m, tcc_next_m, t_old, t_new, 0);
-    auto op1 = pk1->DispersionSolver(tcc_prev_f, tcc_next_f, t_old, t_new, 0);
+  auto pk0 = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(sub_pks_[0]);
+  auto pk1 = Teuchos::rcp_dynamic_cast<Transport::Transport_PK>(sub_pks_[1]);
+
+  int num_aqueous = tcc_next_m.NumVectors();
+
+  for (int i = 0; i < num_aqueous; i++) {
+    auto op0 = pk0->DispersionSolver(tcc_prev_m, tcc_next_m, t_old, t_new, i);
+    auto op1 = pk1->DispersionSolver(tcc_prev_f, tcc_next_f, t_old, t_new, i);
 
     // since solution's map could be anything, to create a global operator,
     // we have to rely on pk's operator structure.
@@ -248,8 +251,10 @@ bool TransportMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool re
     int ierr = op_dispersion_->ApplyInverse(rhs, sol);
 
     // copy only cell component from potentially larger solution vector
-    *S_->GetW<CV_t>(tcc_matrix_key_, Tags::COPY, passwd).ViewComponent("cell") = *sol.SubVector(0)->Data()->ViewComponent("cell");
-    *S_->GetW<CV_t>(tcc_fracture_key_, Tags::COPY, passwd).ViewComponent("cell") = *sol.SubVector(1)->Data()->ViewComponent("cell");
+    *(*S_->GetW<CV_t>(tcc_matrix_key_, Tags::COPY, passwd).ViewComponent("cell"))(i) =
+        *(*sol.SubVector(0)->Data()->ViewComponent("cell"))(0);
+    *(*S_->GetW<CV_t>(tcc_fracture_key_, Tags::COPY, passwd).ViewComponent("cell"))(i) =
+        *(*sol.SubVector(1)->Data()->ViewComponent("cell"))(0);
   }
 
   return fail;
